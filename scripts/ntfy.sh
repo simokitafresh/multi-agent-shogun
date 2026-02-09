@@ -2,6 +2,12 @@
 # SayTask通知 — ntfy.sh経由でスマホにプッシュ通知
 # FR-066: ntfy認証対応 (Bearer token / Basic auth)
 
+# --send フラグなしでの呼び出しを無視（旧デーモン互換）
+if [ "$1" != "--send" ]; then
+    exit 0
+fi
+shift
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 

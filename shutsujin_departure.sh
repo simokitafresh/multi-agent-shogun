@@ -133,7 +133,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -c, --clean         キューとダッシュボードをリセットして起動（クリーンスタート）"
             echo "                      未指定時は前回の状態を維持して起動"
             echo "  -k, --kessen        決戦の陣（全忍者をOpusで起動）"
-            echo "                      未指定時は平時の陣（忍者1-4=Sonnet, 忍者5-8=Opus）"
+            echo "                      未指定時は平時の陣（忍者1-2=Sonnet, 忍者3-8=Opus）"
             echo "  -s, --setup-only    tmuxセッションのセットアップのみ（Claude起動なし）"
             echo "  -t, --terminal      Windows Terminal で新しいタブを開く"
             echo "  -shell, --shell SH  シェルを指定（bash または zsh）"
@@ -157,11 +157,11 @@ while [[ $# -gt 0 ]]; do
             echo "モデル構成:"
             echo "  将軍:      Opus（デフォルト。--shogun-no-thinkingで無効化）"
             echo "  家老:      Opus"
-            echo "  忍者1-4:   Sonnet"
-            echo "  忍者5-8:   Opus"
+            echo "  忍者1-2:   Sonnet (佐助・霧丸)"
+            echo "  忍者3-8:   Opus (疾風・影丸・半蔵・才蔵・小太郎・飛猿)"
             echo ""
             echo "陣形:"
-            echo "  平時の陣（デフォルト）: 忍者1-4=Sonnet, 忍者5-8=Opus"
+            echo "  平時の陣（デフォルト）: 忍者1-2=Sonnet, 忍者3-8=Opus"
             echo "  決戦の陣（--kessen）:   全忍者=Opus"
             echo ""
             echo "表示モード:"
@@ -521,12 +521,12 @@ PANE_LABELS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kot
 if [ "$KESSEN_MODE" = true ]; then
     PANE_TITLES=("Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus")
 else
-    PANE_TITLES=("Opus" "Sonnet" "Sonnet" "Sonnet" "Sonnet" "Opus" "Opus" "Opus" "Opus")
+    PANE_TITLES=("Opus" "Sonnet" "Sonnet" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus")
 fi
 # 色設定（karo: 金, genin: 青, jonin: 黄）
-PANE_COLORS=("red" "blue" "blue" "blue" "blue" "yellow" "yellow" "yellow" "yellow")
+PANE_COLORS=("red" "blue" "blue" "yellow" "yellow" "yellow" "yellow" "yellow" "yellow")
 # ペイン背景色（階級別）
-PANE_BG_COLORS=("#121214" "#242428" "#242428" "#242428" "#242428" "#1a1e28" "#1a1e28" "#1a1e28" "#1a1e28")
+PANE_BG_COLORS=("#121214" "#242428" "#242428" "#1a1e28" "#1a1e28" "#1a1e28" "#1a1e28" "#1a1e28" "#1a1e28")
 
 AGENT_IDS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
 
@@ -535,7 +535,7 @@ AGENT_IDS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotar
 if [ "$KESSEN_MODE" = true ]; then
     MODEL_NAMES=("Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus")
 else
-    MODEL_NAMES=("Opus" "Sonnet" "Sonnet" "Sonnet" "Sonnet" "Opus" "Opus" "Opus" "Opus")
+    MODEL_NAMES=("Opus" "Sonnet" "Sonnet" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus")
 fi
 
 # CLI Adapter経由でモデル名を動的に上書き
@@ -570,7 +570,7 @@ for i in {0..8}; do
     tmux set-option -p -t "shogun:agents.${p}" @current_task ""
     if [ $i -eq 0 ]; then
         _tier="karo"
-    elif [ $i -le 4 ]; then
+    elif [ $i -le 2 ]; then
         _tier="genin"
     else
         _tier="jonin"
@@ -670,7 +670,7 @@ if [ "$SETUP_ONLY" = false ]; then
             p=$((PANE_BASE + i))
             ninja_name="${AGENT_IDS[$i]}"
             _ashi_cli_type="claude"
-            if [ $i -le 4 ]; then
+            if [ $i -le 2 ]; then
                 _ashi_cmd="claude --model sonnet --dangerously-skip-permissions"
             else
                 _ashi_cmd="claude --model opus --dangerously-skip-permissions"
