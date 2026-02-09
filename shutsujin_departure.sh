@@ -523,8 +523,10 @@ if [ "$KESSEN_MODE" = true ]; then
 else
     PANE_TITLES=("Opus" "Sonnet" "Sonnet" "Sonnet" "Sonnet" "Opus" "Opus" "Opus" "Opus")
 fi
-# 色設定（karo: 赤, ninja: 青）
-PANE_COLORS=("red" "blue" "blue" "blue" "blue" "blue" "blue" "blue" "blue")
+# 色設定（karo: 金, genin: 青, jonin: 黄）
+PANE_COLORS=("red" "blue" "blue" "blue" "blue" "yellow" "yellow" "yellow" "yellow")
+# ペイン背景色（階級別）
+PANE_BG_COLORS=("#121214" "#242428" "#242428" "#242428" "#242428" "#1a1e28" "#1a1e28" "#1a1e28" "#1a1e28")
 
 AGENT_IDS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
 
@@ -566,13 +568,22 @@ for i in {0..8}; do
     tmux set-option -p -t "shogun:agents.${p}" @agent_id "${AGENT_IDS[$i]}"
     tmux set-option -p -t "shogun:agents.${p}" @model_name "${MODEL_NAMES[$i]}"
     tmux set-option -p -t "shogun:agents.${p}" @current_task ""
+    if [ $i -eq 0 ]; then
+        _tier="karo"
+    elif [ $i -le 4 ]; then
+        _tier="genin"
+    else
+        _tier="jonin"
+    fi
+    tmux set-option -p -t "shogun:agents.${p}" @agent_tier "$_tier"
+    tmux select-pane -t "shogun:agents.${p}" -P "bg=${PANE_BG_COLORS[$i]}"
     PROMPT_STR=$(generate_prompt "${PANE_LABELS[$i]}" "${PANE_COLORS[$i]}" "$SHELL_SETTING")
     tmux send-keys -t "shogun:agents.${p}" "cd \"$(pwd)\" && export PS1='${PROMPT_STR}' && clear" Enter
 done
 
 # pane-border-format でモデル名を常時表示
 tmux set-option -t shogun -w pane-border-status top
-tmux set-option -t shogun -w pane-border-format '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] (#{@model_name}) #{@current_task}'
+tmux set-option -t shogun -w pane-border-format '#{?pane_active,#[reverse],}#{?#{==:#{@agent_tier},karo},#[fg=colour220],#{?#{==:#{@agent_tier},jonin},#[fg=colour141],#[fg=colour75]}}#{@agent_id} (#{@model_name})#[default] #{@current_task}'
 
 log_success "  └─ 家老・忍者の陣、構築完了"
 echo ""
