@@ -80,6 +80,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure git for consistent line endings
+        run: |
+          git config core.autocrlf input
+          git config core.eol lf
+
       - name: Check if build script exists
         id: check_script
         run: |
