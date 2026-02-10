@@ -52,7 +52,8 @@ language:
 2. `mcp__memory__read_graph` — restore rules, preferences, lessons
 3. **Read your instructions file**: shogun→`instructions/generated/codex-shogun.md`, karo→`instructions/generated/codex-karo.md`, ninja(忍者)→`instructions/generated/codex-ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
-5. Review forbidden actions, then start work
+5. Check inbox: read queue/inbox/{your_id}.yaml, process any read: false messages
+6. Review forbidden actions, then start work
 
 **CRITICAL**: dashboard.md is secondary data (karo's summary). Primary data = YAML files. Always verify from YAML.
 
@@ -74,6 +75,51 @@ Forbidden after /clear: reading instructions/generated/codex-ashigaru.md (1st ta
 ## Summary Generation (compaction)
 
 Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) Current task ID (cmd_xxx)
+
+**Post-compact**: After recovery, check inbox (`queue/inbox/{your_id}.yaml`) for unread messages before resuming work.
+
+# Context Window Management
+
+## Two-Tier Compaction Rule (全エージェント共通)
+
+### ソフト閾値: 50%
+
+コンテキスト使用率が50%を超えたら、**現タスクを完了してから** `/compact` を実行する。
+
+**作業中は中断しない。** タスク境界（完了→次のタスク開始前）でcompactする。
+
+タイミング（エージェント別）:
+- **忍者**: タスク完了 → 報告YAML書込 → inbox_write送信 → **ninja_monitorが自動/clear**（手動不要）→ /clear Recovery手順で復帰
+  - ninja_monitor.shがidle検知+CTX>50%で自動送信。忍者自身は/compactも/clearも実行不要。
+  - 理由: /compactはコンテキスト汚染を持ち越す（hayate v1→v4事件）。/clearで完全リセット。
+- **家老**: cmd完了 → ダッシュボード更新 → `bash scripts/archive_completed.sh`（完了cmd+古い戦果を自動退避） → ntfy送信 → `/compact` → Session Start / Recovery手順で復帰
+- **将軍**: 殿への報告完了 → `/compact` → Session Start / Recovery手順で復帰
+
+### ハード閾値: 90%
+
+コンテキスト使用率が90%を超えたら、**即座に** `/compact` を実行する（作業中でも中断）。
+
+**これは突然死（100%でauto-compact未発動）を防ぐ非常ブレーキである。**
+
+- 作業途中の場合は、可能な限り現状をYAMLに保存してからcompact
+- compact後は通常の復帰手順に従う
+
+### compact後の復帰手順（追加ステップ）
+
+通常の復帰手順（Session Start / Recovery または /clear Recovery）に加え、
+**compact完了後に必ず以下を実行する**:
+
+```
+1. queue/inbox/{自分のid}.yaml を読み、read: false のメッセージを処理
+2. ntfyで殿に通知を送信（compact復帰の報告）
+   - 将軍/家老: bash scripts/ntfy.sh "【{agent_id}】compact完了。復帰済み。"
+   - 忍者: inbox_writeで家老に報告 → 家老がntfy送信
+     bash scripts/inbox_write.sh karo "{ninja_name}、compact復帰。" compact_recovery {ninja_name}
+```
+
+compact中に届いたnudge（inbox通知）は処理されずに溜まる。
+inboxチェックにより取りこぼしを防ぐ。
+ntfy通知により殿が復帰状況を把握できる。
 
 # Communication Protocol
 
