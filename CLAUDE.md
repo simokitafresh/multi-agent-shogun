@@ -89,8 +89,10 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 **作業中は中断しない。** タスク境界（完了→次のタスク開始前）でcompactする。
 
 タイミング（エージェント別）:
-- **忍者**: タスク完了 → 報告YAML書込 → inbox_write送信 → `/compact` → /clear Recovery手順で復帰
-- **家老**: cmd完了 → ダッシュボード更新 → ntfy送信 → `/compact` → Session Start / Recovery手順で復帰
+- **忍者**: タスク完了 → 報告YAML書込 → inbox_write送信 → **ninja_monitorが自動/clear**（手動不要）→ /clear Recovery手順で復帰
+  - ninja_monitor.shがidle検知+CTX>50%で自動送信。忍者自身は/compactも/clearも実行不要。
+  - 理由: /compactはコンテキスト汚染を持ち越す（hayate v1→v4事件）。/clearで完全リセット。
+- **家老**: cmd完了 → ダッシュボード更新 → `bash scripts/archive_completed.sh`（完了cmd+古い戦果を自動退避） → ntfy送信 → `/compact` → Session Start / Recovery手順で復帰
 - **将軍**: 殿への報告完了 → `/compact` → Session Start / Recovery手順で復帰
 
 ### ハード閾値: 90%
