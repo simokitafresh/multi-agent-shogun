@@ -64,6 +64,10 @@
 # Development tooling
 !Makefile
 
+# Git hooks (auto-regenerate on commit)
+!.githooks/
+!.githooks/pre-commit
+
 # Config (sample files only, no secrets)
 !config/
 !config/ntfy_auth.env.sample

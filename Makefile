@@ -1,4 +1,4 @@
-.PHONY: test build lint check help install-deps clean
+.PHONY: test build lint check help install-deps clean setup-hooks
 
 # Default target
 help:
@@ -11,8 +11,16 @@ help:
 	@echo "  make lint          - Run shellcheck on lib/ and scripts/"
 	@echo "  make check         - Run build + diff check (CI equivalent)"
 	@echo "  make install-deps  - Install test dependencies (bats, helpers)"
+	@echo "  make setup-hooks   - Setup git hooks for auto-regeneration"
 	@echo "  make clean         - Clean test artifacts"
 	@echo ""
+
+# Setup git hooks (auto-regenerate on commit)
+setup-hooks:
+	@echo "Setting up git hooks..."
+	@chmod +x .githooks/pre-commit
+	@git config core.hooksPath .githooks
+	@echo "✅ Git hooks enabled. Templates will auto-regenerate on commit."
 
 # Run unit tests
 test:

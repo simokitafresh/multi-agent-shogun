@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# pre-commit hook: Auto-regenerate instruction files before commit
+#
+# Install: git config core.hooksPath .githooks
+
+set -euo pipefail
+
+# Check if any source template files are staged
+if git diff --cached --name-only | grep -qE '^instructions/(common|cli_specific|roles)/|^instructions/(ashigaru|karo|shogun)\.md$'; then
+    echo "🔄 Source templates changed. Regenerating instruction files..."
+    
+    # Run build script
+    bash scripts/build_instructions.sh > /dev/null
+    
+    # Add generated files to staging
+    git add instructions/generated/ AGENTS.md agents/default/ .github/copilot-instructions.md 2>/dev/null || true
+    
+    echo "✅ Generated files updated and staged."
+fi
