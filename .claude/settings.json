@@ -1,4 +1,11 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "bash scripts/statusline.sh"
+  },
+  "env": {
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "90"
+  },
   "permissions": {
     "deny": [
       "Bash(rm -rf /)",

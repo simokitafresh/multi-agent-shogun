@@ -37,6 +37,10 @@ workflow:
   - step: 2
     action: read_yaml
     target: queue/shogun_to_karo.yaml
+  - step: 2.5
+    action: set_own_current_task
+    command: 'tmux set-option -p @current_task "cmd_XXX"'
+    note: "家老自身のペイン枠にcmd名を表示"
   - step: 3
     action: update_dashboard
     target: dashboard.md
@@ -100,6 +104,10 @@ workflow:
       If no pending → stop (await next inbox wakeup).
       WHY: Shogun may have added new cmds while karo was processing reports.
       Same logic as step 8's check_pending, but executed after report reception flow too.
+  - step: 12.7
+    action: clear_own_current_task
+    command: 'tmux set-option -p @current_task ""'
+    note: "家老自身のペイン枠のcmd名をクリア"
 
 files:
   input: queue/shogun_to_karo.yaml
@@ -256,6 +264,33 @@ Before assigning tasks, ask yourself these five questions:
     kirimaru: Complete beginner persona — UX simulation
 ```
 
+## Pre-Deployment Ping (配備前確認)
+
+タスク配備前に対象忍者ペインの状態を確認する。応答なしの忍者へ配備すると
+タスクが停滞し全軍の進捗を損なう（cmd_018/019の影丸問題で実証済み）。
+
+### 手順
+
+1. 配備対象の忍者ペインを確認:
+   ```bash
+   tmux capture-pane -t shogun:2.{pane_index} -p | tail -5
+   ```
+
+2. 出力に `❯` が含まれていれば → **配備OK**
+
+3. 含まれていなければ → **配備しない**。以下を実施:
+   - 別の忍者を選んでタスクを割り当てる
+   - dashboard.mdに「{ninja_name} 応答なし — 配備スキップ」を記録
+   - Memory MCPに状態を記録（セッション中の再利用防止）
+
+### 適用タイミング
+
+| タイミング | 必須/任意 |
+|-----------|----------|
+| 初回配備（セッション開始後の初タスク） | **必須** |
+| 2回目以降（前タスク完了後の再配備） | 任意（前タスクで応答があれば省略可） |
+| 前回配備失敗した忍者への再配備 | **必須** |
+
 ## Task YAML Format
 
 ```yaml
@@ -336,6 +371,30 @@ Cross-reference with dashboard.md — process any reports not yet reflected.
 | Independent work items | Split and parallelize |
 | Previous step needed for next | Use `blocked_by` |
 | Same file write required | Single ninja (RACE-001) |
+
+## Ninja Load Balancing (負荷分散)
+
+タスク配備時、**稼働回数が最も少ない忍者を優先的に選ぶ**。
+特定の忍者への偏りを自然に解消するためのルール。
+
+### 手順
+
+1. 配備前にダッシュボードの忍者稼働表を確認
+2. 稼働回数が最少の忍者を優先候補とする
+3. 同数の場合は任意
+
+### 例外: タスク特性による偏り許容
+
+タスク特性上、特定の得意領域を持つ忍者が明らかに適任な場合は、
+稼働回数が多くてもそちらを優先してよい。
+
+| 条件 | 判断 |
+|------|------|
+| 稼働回数に差がある + 特性不問 | **最少の忍者を選ぶ**（基本方針） |
+| 特定の忍者が明らかに適任 | 偏りを許容（理由をダッシュボードに記録） |
+| 理由なき偏り | **禁止** |
+
+**原則**: 「なぜこの忍者を選んだか」の理由が説明できる状態を常に維持すること。
 
 ## Task Dependencies (blocked_by)
 

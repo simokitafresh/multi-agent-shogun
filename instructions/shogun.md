@@ -36,10 +36,18 @@ workflow:
     action: write_yaml
     target: queue/shogun_to_karo.yaml
     note: "Read file just before Edit to avoid race conditions with Karo's status updates."
+  - step: 2.5
+    action: set_own_current_task
+    command: 'tmux set-option -p @current_task "cmd_XXX"'
+    note: "将軍自身のペイン枠にcmd名を表示"
   - step: 3
     action: inbox_write
     target: shogun:0.0
     note: "Use scripts/inbox_write.sh — See CLAUDE.md for inbox protocol"
+  - step: 3.5
+    action: clear_own_current_task
+    command: 'tmux set-option -p @current_task ""'
+    note: "家老への委任完了後、将軍のペイン枠のcmd名をクリア"
   - step: 4
     action: wait_for_report
     note: "Karo updates dashboard.md. Shogun does NOT update it."

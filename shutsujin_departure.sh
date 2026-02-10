@@ -456,6 +456,7 @@ SHOGUN_PROMPT=$(generate_prompt "将軍" "magenta" "$SHELL_SETTING")
 tmux send-keys -t shogun:main "cd \"$(pwd)\" && export PS1='${SHOGUN_PROMPT}' && clear" Enter
 tmux select-pane -t shogun:main -P 'bg=#002b36'  # 将軍の Solarized Dark
 tmux set-option -p -t shogun:main @agent_id "shogun"
+tmux set-option -p -t shogun:main @context_pct "--"
 
 log_success "  └─ 将軍の本陣、構築完了"
 echo ""
@@ -568,6 +569,7 @@ for i in {0..8}; do
     tmux set-option -p -t "shogun:agents.${p}" @agent_id "${AGENT_IDS[$i]}"
     tmux set-option -p -t "shogun:agents.${p}" @model_name "${MODEL_NAMES[$i]}"
     tmux set-option -p -t "shogun:agents.${p}" @current_task ""
+    tmux set-option -p -t "shogun:agents.${p}" @context_pct "--"
     if [ $i -eq 0 ]; then
         _tier="karo"
     elif [ $i -le 2 ]; then
@@ -581,9 +583,10 @@ for i in {0..8}; do
     tmux send-keys -t "shogun:agents.${p}" "cd \"$(pwd)\" && export PS1='${PROMPT_STR}' && clear" Enter
 done
 
-# pane-border-format でモデル名を常時表示
-tmux set-option -t shogun -w pane-border-status top
-tmux set-option -t shogun -w pane-border-format '#{?pane_active,#[reverse],}#{?#{==:#{@agent_tier},karo},#[fg=colour220],#{?#{==:#{@agent_tier},jonin},#[fg=colour141],#[fg=colour75]}}#{@agent_id} (#{@model_name})#[default] #{@current_task}'
+# コンテキスト%表示付きペイン枠線フォーマット
+tmux set-option -t shogun pane-border-format \
+  "#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{==:#{@model_name},Opus},#[fg=#cba6f7],#[fg=#a6e3a1]}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default] #{@current_task}"
+tmux set-option -t shogun pane-border-status top
 
 log_success "  └─ 家老・忍者の陣、構築完了"
 echo ""
@@ -849,6 +852,19 @@ nohup bash "$SCRIPT_DIR/scripts/gist_sync.sh" "$GIST_ID" \
     &>> "$SCRIPT_DIR/logs/gist_sync.log" &
 disown
 log_info "📊 Gist同期ウォッチャー起動 (gist: $GIST_ID)"
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 6.10: 忍者監視デーモン起動（コンテキスト%更新）
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ -f "$SCRIPT_DIR/scripts/ninja_monitor.sh" ]; then
+    pkill -f "ninja_monitor.sh" 2>/dev/null || true
+    nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+    disown
+    log_info "👁️ 忍者監視デーモン起動 (context%更新)"
+else
+    log_info "⚠️ scripts/ninja_monitor.sh が見つかりません（スキップ）"
+fi
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════════
