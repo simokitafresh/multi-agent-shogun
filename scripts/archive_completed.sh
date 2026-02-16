@@ -4,8 +4,9 @@
 # 完了cmdと古い戦果をアーカイブし、ファイルを軽量化する
 # 家老がcmd完了判定後に呼び出す
 #
-# Usage: bash scripts/archive_completed.sh [keep_results]
+# Usage: bash scripts/archive_completed.sh [keep_results] [cmd_id]
 #   keep_results: ダッシュボードに残す戦果数（デフォルト: 3）
+#   cmd_id: 指定時にqueue/gates/{cmd_id}/archive.doneフラグを出力
 # ============================================================
 set -euo pipefail
 
@@ -22,6 +23,7 @@ ARCHIVE_CMD="$ARCHIVE_DIR/shogun_to_karo_done.yaml"
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
 KEEP_RESULTS=${1:-3}
+CMD_ID=${2:-""}
 
 mkdir -p "$ARCHIVE_DIR"
 
@@ -66,7 +68,7 @@ archive_cmds() {
             | grep '^    status: ' | head -1 \
             | sed 's/^    status: //' | tr -d '[:space:]')
 
-        if [[ "$status_val" =~ ^done ]]; then
+        if [[ "$status_val" =~ ^completed ]]; then
             sed -n "${s},${e}p" "$QUEUE_FILE" >> "$tmp_done"
             ((archived++)) || true
         else
@@ -96,8 +98,9 @@ archive_cmds() {
 archive_dashboard() {
     [ -f "$DASHBOARD" ] || return 0
 
+    # 戦果セクションのデータ行を取得（ヘッダ・区切り行を除外）
     local -a result_lines
-    mapfile -t result_lines < <(grep -n '^### 🏁 cmd_' "$DASHBOARD" | cut -d: -f1)
+    mapfile -t result_lines < <(grep -n '^| [0-9]' "$DASHBOARD" | cut -d: -f1)
 
     local total=${#result_lines[@]}
     if [ "$total" -le "$KEEP_RESULTS" ]; then
@@ -105,37 +108,26 @@ archive_dashboard() {
         return 0
     fi
 
-    # KEEP_RESULTS番目の次のエントリ開始行
-    local cut_from=${result_lines[$KEEP_RESULTS]}
+    # KEEP_RESULTS件目の次のデータ行からアーカイブ対象
+    local archive_first_line=${result_lines[$KEEP_RESULTS]}
+    local last_data_line=${result_lines[$((total - 1))]}
+    local archived_count=$((total - KEEP_RESULTS))
 
-    # その直前の---区切り行を探す
-    local sep_line
-    sep_line=$(awk -v cut="$cut_from" \
-        'NR < cut && /^---$/ { line=NR } END { print line+0 }' "$DASHBOARD")
-
-    if [ "$sep_line" -eq 0 ]; then
-        sep_line=$((cut_from - 1))
-    fi
-
-    local total_lines archived_count
-    total_lines=$(wc -l < "$DASHBOARD")
-    archived_count=$((total - KEEP_RESULTS))
-
-    # アーカイブに追記
+    # アーカイブに追記（データ行のみ）
     {
         echo ""
         echo "# Archived $(date '+%Y-%m-%d %H:%M')"
-        tail -n +$((sep_line + 1)) "$DASHBOARD"
+        sed -n "${archive_first_line},${last_data_line}p" "$DASHBOARD"
     } >> "$DASH_ARCHIVE"
 
-    # ダッシュボードをトリム（flock排他）
+    # ダッシュボードからアーカイブ済みデータ行を削除（flock排他）
     (
         flock -w 10 200 || { echo "[archive] WARN: flock timeout on DASHBOARD"; return 1; }
-        head -n "$sep_line" "$DASHBOARD" > "/tmp/dash_trim_$$.md"
+        sed "${archive_first_line},${last_data_line}d" "$DASHBOARD" > "/tmp/dash_trim_$$.md"
         mv "/tmp/dash_trim_$$.md" "$DASHBOARD"
     ) 200>"$DASHBOARD.lock"
 
-    echo "[archive] dashboard: archived=$archived_count kept=$KEEP_RESULTS (cut at L$sep_line)"
+    echo "[archive] dashboard: archived=$archived_count kept=$KEEP_RESULTS"
 }
 
 # ============================================================
@@ -144,4 +136,12 @@ archive_dashboard() {
 echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
 archive_cmds
 archive_dashboard
+
+# archive.doneフラグ出力（CMD_ID指定時のみ）
+if [ -n "$CMD_ID" ]; then
+    mkdir -p "$PROJECT_DIR/queue/gates/${CMD_ID}"
+    touch "$PROJECT_DIR/queue/gates/${CMD_ID}/archive.done"
+    echo "[archive_completed] gate flag: queue/gates/${CMD_ID}/archive.done"
+fi
+
 echo "[archive_completed] done"
