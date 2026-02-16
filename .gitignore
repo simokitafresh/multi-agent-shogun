@@ -88,6 +88,7 @@
 !scripts/ntfy_listener.sh
 !scripts/build_instructions.sh
 !scripts/archive_completed.sh
+!scripts/cmd_complete_gate.sh
 
 
 # SayTask (sample template only, not actual data)
