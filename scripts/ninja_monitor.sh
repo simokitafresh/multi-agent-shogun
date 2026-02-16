@@ -577,6 +577,9 @@ while true; do
     # 定期的にペイン再探索（ペイン構成変更に対応）
     if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
         discover_panes
+
+        # Inbox pruning (cmd_106) — 10分間隔で既読メッセージを自動削除
+        bash "$SCRIPT_DIR/scripts/inbox_prune.sh" 2>>"$SCRIPT_DIR/logs/inbox_prune.log" || true
     fi
 
     # 案B: バッチ通知用配列を初期化
