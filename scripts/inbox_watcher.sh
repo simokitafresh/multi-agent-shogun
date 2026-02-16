@@ -183,22 +183,30 @@ send_wakeup() {
         fi
     fi
 
-    # Tier 2: paste-buffer fallback (replaces send-keys for content)
-    echo "[$(date)] [FALLBACK] Sending paste-buffer nudge to $AGENT_ID" >&2
+    # Tier 2: paste-buffer nudge (replaces send-keys for content)
+    echo "[$(date)] [NUDGE] Sending paste-buffer nudge to $AGENT_ID" >&2
 
+    # Optimistic lock: update debounce BEFORE send to prevent concurrent nudges
+    if ! date +%s > "$DEBOUNCE_FILE"; then
+        echo "[$(date)] WARNING: failed to update debounce file: $DEBOUNCE_FILE" >&2
+    fi
+
+    # Pre-clear: Enter to flush any partial input in the pane
+    timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
+    sleep 0.3
+
+    # Send nudge via paste-buffer
     tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
     if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
         echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2
+        rm -f "$DEBOUNCE_FILE"  # Rollback optimistic lock on failure
         return 1
     fi
-    sleep 0.1
+    sleep 0.5
     if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
         echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
+        rm -f "$DEBOUNCE_FILE"  # Rollback optimistic lock on failure
         return 1
-    fi
-
-    if ! date +%s > "$DEBOUNCE_FILE"; then
-        echo "[$(date)] WARNING: failed to update debounce file: $DEBOUNCE_FILE" >&2
     fi
 
     echo "[$(date)] Wake-up sent to $AGENT_ID (${unread_count} unread via paste-buffer)" >&2
