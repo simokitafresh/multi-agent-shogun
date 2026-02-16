@@ -25,6 +25,14 @@ CLI_TYPE="${3:-claude}"  # CLI種別（claude/codex/copilot）。未指定→cla
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
 LOCKFILE="${INBOX}.lock"
 SEND_KEYS_TIMEOUT=5  # seconds — prevents hang (PID 274337 incident)
+DEBOUNCE_SEC=10
+DEBOUNCE_FILE="/tmp/inbox_watcher_last_nudge_${AGENT_ID}"
+
+# Self-restart on script change (cmd_100)
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
+STARTUP_TIME="$(date +%s)"
+MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 
 if [ -z "$AGENT_ID" ] || [ -z "$PANE_TARGET" ]; then
     echo "Usage: inbox_watcher.sh <agent_id> <pane_target> [cli_type]" >&2
@@ -37,7 +45,7 @@ if [ ! -f "$INBOX" ]; then
     echo "messages: []" > "$INBOX"
 fi
 
-echo "[$(date)] inbox_watcher started — agent: $AGENT_ID, pane: $PANE_TARGET, cli: $CLI_TYPE" >&2
+echo "[$(date)] inbox_watcher started — agent: $AGENT_ID, pane: $PANE_TARGET, cli: $CLI_TYPE, script_hash: $SCRIPT_HASH" >&2
 
 # Ensure inotifywait is available
 if ! command -v inotifywait &>/dev/null; then
@@ -89,8 +97,10 @@ send_cli_command() {
     local actual_cmd="$cmd"
     case "$CLI_TYPE" in
         codex)
-            # Codex: /clear対応（TUIモード）, /model非対応→スキップ
-            if [[ "$cmd" == /model* ]]; then
+            # Codex: /clear→/new変換, /model非対応→スキップ
+            if [[ "$cmd" == "/clear" ]]; then
+                actual_cmd="/new"
+            elif [[ "$cmd" == /model* ]]; then
                 echo "[$(date)] Skipping $cmd (not supported on codex)" >&2
                 return 0
             fi
@@ -150,11 +160,27 @@ agent_has_self_watch() {
 send_wakeup() {
     local unread_count="$1"
     local nudge="inbox${unread_count}"
+    local now
+    local last
+    local elapsed
 
     # Tier 1: Agent self-watch — skip nudge entirely
     if agent_has_self_watch; then
         echo "[$(date)] [SKIP] Agent $AGENT_ID has active self-watch, no nudge needed" >&2
         return 0
+    fi
+
+    # Tier 1.5: Debounce repeated nudge storms (normal messages only)
+    if [ -f "$DEBOUNCE_FILE" ]; then
+        last="$(cat "$DEBOUNCE_FILE" 2>/dev/null || true)"
+        if [[ "$last" =~ ^[0-9]+$ ]]; then
+            now="$(date +%s)"
+            elapsed=$((now - last))
+            if [ "$elapsed" -lt "$DEBOUNCE_SEC" ]; then
+                echo "[$(date)] [DEBOUNCE] Skipping nudge (${elapsed}s < ${DEBOUNCE_SEC}s) for $AGENT_ID" >&2
+                return 0
+            fi
+        fi
     fi
 
     # Tier 2: paste-buffer fallback (replaces send-keys for content)
@@ -171,8 +197,27 @@ send_wakeup() {
         return 1
     fi
 
+    if ! date +%s > "$DEBOUNCE_FILE"; then
+        echo "[$(date)] WARNING: failed to update debounce file: $DEBOUNCE_FILE" >&2
+    fi
+
     echo "[$(date)] Wake-up sent to $AGENT_ID (${unread_count} unread via paste-buffer)" >&2
     return 0
+}
+
+# ─── Self-restart on script change (cmd_100) ───
+check_script_update() {
+    local current_hash
+    current_hash="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
+    if [ "$current_hash" != "$SCRIPT_HASH" ]; then
+        local uptime=$(($(date +%s) - STARTUP_TIME))
+        if [ "$uptime" -lt "$MIN_UPTIME" ]; then
+            echo "[$(date)] [RESTART-GUARD] Script changed but uptime too short (${uptime}s < ${MIN_UPTIME}s), skipping" >&2
+            return 0
+        fi
+        echo "[$(date)] [AUTO-RESTART] Script file changed (hash: $SCRIPT_HASH → $current_hash), restarting..." >&2
+        exec "$SCRIPT_PATH" "$AGENT_ID" "$PANE_TARGET" "$CLI_TYPE"
+    fi
 }
 
 # ─── Process cycle ───
@@ -234,4 +279,5 @@ while true; do
     sleep 0.3
 
     process_unread
+    check_script_update
 done
