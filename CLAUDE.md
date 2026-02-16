@@ -49,8 +49,12 @@ language:
 **This is ONE procedure for ALL situations**: fresh start, compaction, session continuation, or any state where you see CLAUDE.md. You cannot distinguish these cases, and you don't need to. **Always follow the same steps.**
 
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
-2. `mcp__memory__read_graph` — restore rules, preferences, lessons
+2. `mcp__memory__read_graph` — **将軍のみ実行**（殿の好み+将軍教訓を復元）。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
+3.5. **Load project knowledge** (role-based):
+   - 将軍: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）
+   - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
+   - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
 5. Check inbox: read queue/inbox/{your_id}.yaml, process any read: false messages
 6. Review forbidden actions, then start work
@@ -63,9 +67,12 @@ Lightweight recovery using only CLAUDE.md (auto-loaded). Do NOT read instruction
 
 ```
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
-Step 2: mcp__memory__read_graph (skip on failure — task exec still possible)
+Step 2: 将軍のみ mcp__memory__read_graph を実行。家老・忍者はスキップ。
 Step 3: Read queue/tasks/{your_ninja_name}.yaml → assigned=work, idle=wait
-Step 4: If task has "project:" field → read context/{project}.md
+Step 4: If task has "project:" field:
+          read projects/{project}.yaml (core knowledge)
+          read projects/{project}/lessons.yaml (project lessons)
+          read context/{project}.md (detailed context)
         If task has "target_path:" → read that file
 Step 5: Start work
 ```
@@ -80,46 +87,30 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 
 # Context Window Management
 
-## Two-Tier Compaction Rule (全エージェント共通)
+コンテキスト管理は**全て外部インフラが自動処理する。エージェントは何もするな。**
 
-### ソフト閾値: 50%
+## cmd完了時の手順（家老・忍者共通）
 
-コンテキスト使用率が50%を超えたら、**現タスクを完了してから** `/compact` を実行する。
+```
+1. ダッシュボード更新（cmd完了結果を記載）
+2. bash scripts/archive_completed.sh（完了cmd+古い戦果を自動退避）
+3. ntfy送信（cmd完了報告）
+4. 新しいinbox nudgeが来ていても、上記1-3を先に完了する
+   理由: 「新cmd処理→またnudge→...」の連鎖でCTXが際限なく膨らむ（実証済み）
+5. idle状態で待つ
+```
 
-**作業中は中断しない。** タスク境界（完了→次のタスク開始前）でcompactする。
+## 復帰時の手順（全エージェント共通）
 
-タイミング（エージェント別）:
-- **忍者**: タスク完了 → 報告YAML書込 → inbox_write送信 → **ninja_monitorが自動/clear**（手動不要）→ /clear Recovery手順で復帰
-  - ninja_monitor.shがidle検知+CTX>50%で自動送信。忍者自身は/compactも/clearも実行不要。
-  - 理由: /compactはコンテキスト汚染を持ち越す（hayate v1→v4事件）。/clearで完全リセット。
-- **家老**: cmd完了 → ダッシュボード更新 → `bash scripts/archive_completed.sh`（完了cmd+古い戦果を自動退避） → ntfy送信 → `/compact` → Session Start / Recovery手順で復帰
-- **将軍**: 殿への報告完了 → `/compact` → Session Start / Recovery手順で復帰
-
-### ハード閾値: 90%
-
-コンテキスト使用率が90%を超えたら、**即座に** `/compact` を実行する（作業中でも中断）。
-
-**これは突然死（100%でauto-compact未発動）を防ぐ非常ブレーキである。**
-
-- 作業途中の場合は、可能な限り現状をYAMLに保存してからcompact
-- compact後は通常の復帰手順に従う
-
-### compact後の復帰手順（追加ステップ）
-
-通常の復帰手順（Session Start / Recovery または /clear Recovery）に加え、
-**compact完了後に必ず以下を実行する**:
+Session Start / Recovery の手順に従う（本ファイル冒頭参照）。追加で:
 
 ```
 1. queue/inbox/{自分のid}.yaml を読み、read: false のメッセージを処理
-2. ntfyで殿に通知を送信（compact復帰の報告）
-   - 将軍/家老: bash scripts/ntfy.sh "【{agent_id}】compact完了。復帰済み。"
-   - 忍者: inbox_writeで家老に報告 → 家老がntfy送信
-     bash scripts/inbox_write.sh karo "{ninja_name}、compact復帰。" compact_recovery {ninja_name}
+2. ntfyで殿に通知を送信（復帰の報告）
+   - 将軍/家老: bash scripts/ntfy.sh "【{agent_id}】復帰済み。"
+   - 忍者: inbox_writeで家老に報告
+     bash scripts/inbox_write.sh karo "{ninja_name}、復帰。" recovery {ninja_name}
 ```
-
-compact中に届いたnudge（inbox通知）は処理されずに溜まる。
-inboxチェックにより取りこぼしを防ぐ。
-ntfy通知により殿が復帰状況を把握できる。
 
 # Communication Protocol
 
@@ -183,14 +174,73 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 **Always Read before Write/Edit.** Claude Code rejects Write/Edit on unread files.
 
-# Context Layers
+# Knowledge Map
+
+## 情報保存先（6箇所）
+
+| 保存先 | 消費者 | 内容 | 書き込み権限 |
+|--------|--------|------|------------|
+| CLAUDE.md | 全員(自動ロード) | 圧縮索引。恒久ルール・手順 | 家老のみ |
+| instructions/*.md | 全員 | 役割別の恒久ルール | 家老のみ |
+| projects/{id}.yaml | 忍者・家老 | PJ核心知識(ルール要約/UUID/DBルール) | 家老のみ |
+| projects/{id}/lessons.yaml | 忍者・家老 | PJ教訓(過去の失敗・発見) | 家老のみ(lesson_write.sh経由) |
+| queue/ YAML + dashboard + reports | 家老・忍者・将軍 | タスク指示・状態・状況報告 | 各担当 |
+| MCP Memory | 将軍のみ | 殿の好み・将軍教訓 | 将軍のみ |
+
+## 判断フロー
 
 ```
-Layer 1: Memory MCP     — persistent across sessions (preferences, rules, lessons)
-Layer 2: Project files   — persistent per-project (config/, projects/, context/)
-Layer 3: YAML Queue      — persistent task data (queue/ — authoritative source of truth)
-Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md, lost on /clear)
+「これ覚えておくべきだな」
+  ├─ 全員が常に守るルール？ → instructions/*.md or CLAUDE.md
+  ├─ PJ固有の知識？ → projects/{id}.yaml
+  ├─ PJ固有の教訓？ → 報告YAMLにlesson_candidate → 家老がlesson_write.sh
+  ├─ タスクの指示・状態？ → queue/ YAML
+  ├─ 状況の報告？ → dashboard.md / reports/
+  └─ 殿の好み・将軍の教訓？ → MCP Memory（将軍のみ）
 ```
+
+## Infra
+
+詳細 → `context/infrastructure.md` を読め。推測するな。
+
+- CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/compact|AUTOCOMPACT=90%
+- inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
+- ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
+- tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
+
+## Agents
+
+| 役割 | 名前(pane) | CLI |
+|------|-----------|-----|
+| 家老 | karo(1) | Claude |
+| 下忍 | sasuke(2) kirimaru(3) | Codex gpt-5.3-codex |
+| 上忍 | hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | Claude Opus |
+
+## DM-Signal
+
+詳細 → `context/dm-signal.md` を読め。推測するな。
+
+- パス|`/mnt/c/Python_app/DM-signal/`
+- 四神|青龍(DM2) 朱雀(DM3) 白虎(DM6) 玄武(DM7+)|矛+盾分離(Tobin)
+- 哲学|平均は悪。FoF=乗り換え|TL+MRL=両輪|ショート無し
+- DB|`experiments.db`=価格truth|`dm_signal.db`=PF設定truth
+- cmd_051結論|戦略モメンタム不在|両輪>片輪だが等配分最強|動的四神選択非推奨
+- lookback標準GS|18点(10D,15D,20D,1M~12M,15M,18M,24M)|1M=21D
+- パラメータ対応表|`docs/parameter_coverage.md`(280行)|全6ブロック×18点カバレッジマップ
+
+## Skills
+- 配置|`~/.claude/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨
+- /shogun-teire|知識の棚卸し(6観点監査)|`~/.claude/skills/shogun-teire/SKILL.md`
+
+## Knowledge Maintenance
+
+1. 削るな、圧縮せよ — 情報量維持。判断ポイント(=ファイル読み回数)を減らせ
+2. CLAUDE.md — 恒久ルール・圧縮索引のみ。古い情報を差し替え、新プロジェクト追加せよ
+3. projects/{id}.yaml — PJ核心知識(ルール要約/UUID/DBルール)。家老が管理
+4. projects/{id}/lessons.yaml — PJ教訓。忍者はlesson_candidate報告→家老がlesson_write.shで正式登録
+5. context/*.md — 詳細コンテキスト。CLAUDE.mdには結論だけ書け。根拠と手順はここへ
+6. Memory MCP — 殿の好み+将軍教訓のみ(将軍専用)。事実・ポインタ・PJ詳細を入れるな
+7. 原則: 受動的(自動ロード,判断0回) > 能動的(Memory MCP,判断2回)
 
 # Project Management
 

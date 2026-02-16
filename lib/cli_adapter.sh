@@ -260,8 +260,8 @@ get_agent_model() {
             # Claude Code/Codex/Copilot用デフォルトモデル（kessen/heiji互換）
             case "$agent_id" in
                 shogun|karo)    echo "opus" ;;
-                sasuke|kirimaru|hayate|kagemaru)  echo "sonnet" ;;
-                hanzo|saizo|kotaro|tobisaru)  echo "opus" ;;
+                sasuke|kirimaru)  echo "sonnet" ;;
+                hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)  echo "opus" ;;
                 *)              echo "sonnet" ;;
             esac
             ;;

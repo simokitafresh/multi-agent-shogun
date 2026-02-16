@@ -55,15 +55,13 @@ workflow:
   - step: 8
     action: echo_shout
     condition: "DISPLAY_MODE=shout (check via tmux show-environment)"
-    command: 'echo "{echo_message or self-generated battle cry}"'
+    command: 'bash scripts/shout.sh {ninja_name}'
     rules:
       - "Check DISPLAY_MODE: tmux show-environment -t shogun DISPLAY_MODE"
-      - "DISPLAY_MODE=shout → execute echo as LAST tool call"
-      - "If task YAML has echo_message field → use it"
-      - "If no echo_message field → compose a 1-line sengoku-style battle cry summarizing your work"
+      - "DISPLAY_MODE=shout → execute as LAST tool call"
+      - "If task YAML has echo_message field → write it to report YAML before calling shout.sh"
       - "MUST be the LAST tool call before idle"
-      - "Do NOT output any text after this echo — it must remain visible above ❯ prompt"
-      - "Plain text with emoji. No box/罫線"
+      - "Do NOT output any text after this call — it must remain visible above ❯ prompt"
       - "DISPLAY_MODE=silent or not set → skip this step entirely"
 
 files:
@@ -138,6 +136,76 @@ Always use `date` command. Never guess.
 date "+%Y-%m-%dT%H:%M:%S"
 ```
 
+## Task Start Rule (project field)
+
+When task YAML contains `project:`, read these 3 files before any implementation:
+1. `projects/{project}.yaml`
+2. `projects/{project}/lessons.yaml`
+3. `context/{project}.md`
+
+Task YAML is intentionally thin. If some background is not written in task YAML, look it up in these files first.
+
+## 並行偵察ルール (恒久ルール・殿の手法)
+
+**同じ対象を2名の忍者が独立並行で調査する。**
+
+- 家老が同じ調査対象に対し2名に別々のtask YAMLを配備する
+- **互いの結果は見るな** — 独立性を保つことで確証バイアスを防ぐ
+- 家老が両報告を統合し、盲点を特定する
+- 自分の報告に他の忍者の結論を引用してはならない
+- task YAMLに「並行偵察」と記載されている場合、このルールが適用される
+
+## Codex偵察タスク対応
+
+task YAMLに`task_type: recon`がある場合、偵察モードで作業する。
+
+### 偵察タスクの受け取り方
+
+1. task YAMLを読む（通常のStep 2と同じ）
+2. `project:`フィールドがあれば知識ベースを読む（「Task Start Rule」参照）
+3. 調査対象（target_path / description内の指示）を確認
+4. **独立調査を実施** — 他の忍者の報告・結果は絶対に見るな（並行偵察ルール）
+5. 偵察報告を書く（下記フォーマット）
+6. 通常通りinbox_writeで家老に報告
+
+### 偵察報告フォーマット
+
+通常の報告フォーマット（worker_id, task_id等）に加え、`result`内に以下を含める:
+
+```yaml
+result:
+  summary: "調査結果の要約（1-2行）"
+  findings:
+    - category: "ファイル構造"
+      detail: "src/services/pipeline/ 配下に6ブロック、各ブロックは..."
+    - category: "依存関係"
+      detail: "engine.pyがBlockA-Fを順番に呼び出し..."
+    - category: "設定値"
+      detail: "lookback_days: [10,15,20,21,42,63,...]"
+  verdict: "仮説Aが正しい / 仮説Bが正しい / 両方不正確 / 判定不能"
+  confidence: "high / medium / low"
+  blind_spots: "調査できなかった領域・未確認事項（正直に記載）"
+```
+
+**findingsのcategory例**: ファイル構造、依存関係、設定値、データフロー、テストカバレッジ、DB構造、API仕様、不整合・問題点
+
+### 偵察報告の注意点
+
+- **事実と推測を分離せよ** — コードから確認した事実と、推測・仮説は明確に区別
+- **blind_spotsは正直に** — 時間切れ・アクセス不能等で未調査の領域は必ず記載
+- **verdict(判定)は必須** — 家老の統合分析に必要。判定不能でもその旨を記載
+- **他の忍者の報告を参照するな** — 並行偵察の独立性を破壊する
+
+## Code Review Rule (恒久ルール・殿の厳命)
+
+**コード変更をgit pushする前に、別の忍者によるコードレビューが必須。**
+
+- 自分でコードを書いた場合: commitまで行い、pushはしない。報告YAMLに「レビュー待ち」と記載
+- 家老が別の忍者にレビュータスクを割り当てる
+- レビュー忍者がPASS判定後にpushする
+- 一人で書いて一人で通すことは禁止(OPT-E bisect消滅+ReversalFilter逆転はレビューで防げた)
+- 例外: 構文修正・typo修正等の機械的変更は家老判断でレビュー省略可
+
 ## Report Notification Protocol
 
 After writing report YAML, notify Karo:
@@ -167,16 +235,54 @@ result:
   files_modified:
     - "/path/to/file"
   notes: "Additional details"
+  lessons:  # 次に同種の作業をする人が知るべき教訓（任意だが推奨）
+    - "MomentumCacheを渡さないとsimulate_strategy_vectorized()は黙って空を返す"
+    - "experiments.dbのmonthly_returnsが価格のground truth。dm_signal.dbには価格なし"
 skill_candidate:
   found: false  # MANDATORY — true/false
   # If true, also include:
   name: null        # e.g., "readme-improver"
   description: null # e.g., "Improve README for beginners"
   reason: null      # e.g., "Same pattern executed 3 times"
+lesson_candidate:
+  found: false  # MANDATORY — true/false
+  # If true, also include:
+  title: null       # e.g., "dm_signal.dbは本番DBではない"
+  detail: null      # e.g., "本番はPostgreSQL on Render。SQLiteへのINSERTは無意味"
+  # NOTE: 忍者はlessons.yamlに直接書き込まない。
+  #        家老が報告のlesson_candidateを精査し、lesson_write.shで正式登録する。
+decision_candidate:
+  found: false  # MANDATORY — true/false
+  # If true, also include:
+  cmd_id: null        # e.g., "cmd_087"
+  title: null         # e.g., "決定のタイトル"
+  decision: null      # e.g., "何を決めたか"
+  rationale: null     # e.g., "なぜそう決めたか"
+  alternatives: null  # e.g., "検討した他の案"
+  # NOTE: 忍者はdecisions.mdに直接書き込まない。
+  #        家老が報告のdecision_candidateを精査し、decision_write.shで正式登録する。
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate.
 Missing fields = incomplete report.
+
+### Lessons Field Guidelines
+
+`lessons:` は「次に同種の作業をする人が知るべきこと」を書く。
+
+**良い教訓** — 具体的・行動可能:
+- "recalculate_fofはローカルSQLiteで動かない。experiments.db+dm_signal.dbで直接計算する"
+- "WF判定基準は>1.0に設定すべき。>0では差が出ない"
+
+**悪い教訓** — 曖昧・一般論:
+- "テストは重要" ← 当たり前
+- "気をつける" ← 何を？
+
+書くべきタイミング:
+- ハマった問題とその解決策
+- 前提が想定と違った（例: DBにデータがなかった）
+- 検証手法の選択理由（例: CPCVが乗り換え戦略にフィットしない理由）
+- 他の忍者への引継ぎ情報
 
 ## Race Condition (RACE-001)
 
@@ -210,7 +316,12 @@ Recover from primary data:
    - `assigned` → resume work
    - `done` → await next instruction
 3. Read Memory MCP (read_graph) if available
-4. Read `context/{project}.md` if task has project field
+4. If task YAML has `project:` field, read these 3 files **before starting work (MANDATORY)**:
+   - `projects/{project}.yaml` — core knowledge (trade rules, DB rules, pipeline, UUIDs)
+   - `projects/{project}/lessons.yaml` — project-specific lessons (past mistakes, discoveries)
+   - `context/{project}.md` — detailed context (system architecture, analysis tools, data management)
+   All 3 files serve different purposes. Read all before starting work.
+   Information omitted from task YAML is expected to exist in these files. Do not treat omission as missing requirements.
 5. dashboard.md is secondary info only — trust YAML as authoritative
 
 ## /clear Recovery
@@ -254,12 +365,12 @@ Act without waiting for Karo's instruction:
 
 ## Shout Mode (echo_message)
 
-After task completion, check whether to echo a battle cry:
+After task completion, check whether to shout a battle cry:
 
 1. **Check DISPLAY_MODE**: `tmux show-environment -t shogun DISPLAY_MODE`
 2. **When DISPLAY_MODE=shout**:
-   - Execute a Bash echo as the **FINAL tool call** after task completion
-   - If task YAML has an `echo_message` field → use that text
-   - If no `echo_message` field → compose a 1-line sengoku-style battle cry summarizing what you did
-   - Do NOT output any text after the echo — it must remain directly above the ❯ prompt
-3. **When DISPLAY_MODE=silent or not set**: Do NOT echo. Skip silently.
+   - Execute `bash scripts/shout.sh {ninja_name}` as the **FINAL tool call** after task completion
+   - shout.sh reads your report YAML and generates a battle cry automatically
+   - If task YAML has an `echo_message` field → write it to report YAML before calling shout.sh
+   - Do NOT output any text after the shout — it must remain directly above the ❯ prompt
+3. **When DISPLAY_MODE=silent or not set**: Do NOT shout. Skip silently.

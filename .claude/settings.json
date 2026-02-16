@@ -1,4 +1,36 @@
 {
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tmux set-option -p -t \"$TMUX_PANE\" @agent_state active 2>/dev/null; tmux set-option -p -t \"$TMUX_PANE\" @last_active $(date +%s) 2>/dev/null"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tmux set-option -p -t \"$TMUX_PANE\" @agent_state idle 2>/dev/null; tmux set-option -p -t \"$TMUX_PANE\" @last_active $(date +%s) 2>/dev/null"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tmux set-option -p -t \"$TMUX_PANE\" @agent_state active 2>/dev/null; tmux set-option -p -t \"$TMUX_PANE\" @last_active $(date +%s) 2>/dev/null"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "bash scripts/statusline.sh"

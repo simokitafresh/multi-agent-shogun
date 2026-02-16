@@ -518,12 +518,6 @@ tmux select-layout -t "shogun:agents" '1a7c,167x49,0,0{71x49,0,0[71x25,0,0,1,71x
 
 # ペインラベル設定（プロンプト用: モデル名なし）
 PANE_LABELS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
-# ペインタイトル設定（tmuxタイトル用: モデル名付き）
-if [ "$KESSEN_MODE" = true ]; then
-    PANE_TITLES=("Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus")
-else
-    PANE_TITLES=("Opus" "Sonnet" "Sonnet" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus")
-fi
 # 色設定（karo: 金, genin: 青, jonin: 黄）
 PANE_COLORS=("red" "blue" "blue" "yellow" "yellow" "yellow" "yellow" "yellow" "yellow")
 # ペイン背景色（階級別）
@@ -531,22 +525,15 @@ PANE_BG_COLORS=("#121214" "#242428" "#242428" "#1a1e28" "#1a1e28" "#1a1e28" "#1a
 
 AGENT_IDS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
 
-# モデル名設定（pane-border-format で常時表示するため）
-# デフォルト（Claude用）
-if [ "$KESSEN_MODE" = true ]; then
-    MODEL_NAMES=("Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus")
-else
-    MODEL_NAMES=("Opus" "Sonnet" "Sonnet" "Opus" "Opus" "Opus" "Opus" "Opus" "Opus")
-fi
-
-# CLI Adapter経由でモデル名を動的に上書き
-if [ "$CLI_ADAPTER_LOADED" = true ]; then
-    for i in {0..8}; do
-        _agent="${AGENT_IDS[$i]}"
+# モデル名設定（CLI Adapterから動的に取得 — ハードコード禁止）
+MODEL_NAMES=()
+PANE_TITLES=()
+for i in {0..8}; do
+    _agent="${AGENT_IDS[$i]}"
+    if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _cli=$(get_cli_type "$_agent")
         case "$_cli" in
             codex)
-                # config.tomlからモデル名と推論レベルを取得
                 _codex_model=$(grep '^model ' ~/.codex/config.toml 2>/dev/null | head -1 | sed 's/.*= *"\(.*\)"/\1/')
                 _codex_effort=$(grep '^model_reasoning_effort' ~/.codex/config.toml 2>/dev/null | head -1 | sed 's/.*= *"\(.*\)"/\1/')
                 _codex_model=${_codex_model:-gpt-5.3-codex}
@@ -559,9 +546,30 @@ if [ "$CLI_ADAPTER_LOADED" = true ]; then
             kimi)
                 MODEL_NAMES[$i]="Kimi"
                 ;;
+            claude|*)
+                _model=$(get_agent_model "$_agent")
+                # 決戦モード: claudeは全員Opus強制
+                if [ "$KESSEN_MODE" = true ] && [ "$_cli" = "claude" ]; then
+                    _model="opus"
+                fi
+                # 先頭大文字化（opus→Opus, sonnet→Sonnet）
+                MODEL_NAMES[$i]="$(echo "${_model:0:1}" | tr '[:lower:]' '[:upper:]')${_model:1}"
+                ;;
         esac
-    done
-fi
+    else
+        # CLI Adapter未読み込み時のフォールバック
+        if [ "$KESSEN_MODE" = true ]; then
+            MODEL_NAMES[$i]="Opus"
+        else
+            case "$_agent" in
+                karo|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru) MODEL_NAMES[$i]="Opus" ;;
+                sasuke|kirimaru) MODEL_NAMES[$i]="Sonnet" ;;
+                *) MODEL_NAMES[$i]="Sonnet" ;;
+            esac
+        fi
+    fi
+    PANE_TITLES[$i]="${MODEL_NAMES[$i]}"
+done
 
 for i in {0..8}; do
     p=$((PANE_BASE + i))
@@ -834,6 +842,14 @@ if [ -n "$NTFY_TOPIC" ]; then
     nohup bash "$SCRIPT_DIR/scripts/ntfy_listener.sh" &>/dev/null &
     disown
     log_info "📱 ntfy入力リスナー起動 (topic: $NTFY_TOPIC)"
+
+    # ntfyスモークテスト: 出陣時に通知が実際に送信できることを確認
+    # curlの終了コードで判定（ネットワーク到達性 + ntfy.shの引数処理）
+    if bash "$SCRIPT_DIR/scripts/ntfy.sh" "🏯 出陣！将軍システム起動完了。" 2>/dev/null; then
+        log_info "📱 ntfyスモークテスト: ✅ 送信成功"
+    else
+        log_warn "📱 ntfyスモークテスト: ❌ 送信失敗 — ntfy.shまたはネットワークを確認"
+    fi
 else
     log_info "📱 ntfy未設定のためリスナーはスキップ"
 fi

@@ -213,8 +213,8 @@ Trigger phrases: 「今日のタスク」「タスク見せて」「仕事のタ
 Processing:
 1. Read `saytask/tasks.yaml`
 2. Apply filter: today (default), category, week, overdue, all
-3. Display with Frog 🐸 highlight on `priority: frog` tasks
-4. Show completion progress: `完了: 5/8  🐸: VF-032  🔥: 13日連続`
+3. Display with 赤鬼将軍 👹 highlight on `priority: frog` tasks
+4. Show completion progress: `完了: 5/8  👹: VF-032  🔥: 13日連続`
 5. Sort: Frog first → high → medium → low, then by due date
 
 #### (c) Task Complete Patterns → Update status in saytask/tasks.yaml
@@ -225,7 +225,7 @@ Processing:
 1. Match task by ID (VF-xxx) or fuzzy title match
 2. Update: `status: "done"`, `completed_at: now`
 3. Update `saytask/streaks.yaml`: `today.completed += 1`
-4. If Frog task → send special ntfy: `bash scripts/ntfy.sh "🐸 Frog撃破！ VF-xxx {title} 🔥{streak}日目"`
+4. If Frog task → send special ntfy: `bash scripts/ntfy.sh "⚔️ 敵将打ち取ったり！ VF-xxx {title} 🔥{streak}日目"`
 5. If regular task → send ntfy: `bash scripts/ntfy.sh "✅ VF-xxx完了！({completed}/{total}) 🔥{streak}日目"`
 6. If all today's tasks done → send ntfy: `bash scripts/ntfy.sh "🎉 全完了！{total}/{total} 🔥{streak}日目"`
 7. Echo-back to Lord with progress summary
@@ -282,9 +282,11 @@ For ambiguous inputs (e.g., 「大里さんの件」):
 Recover from primary data sources:
 
 1. **queue/shogun_to_karo.yaml** — Check each cmd status (pending/done)
-2. **config/projects.yaml** — Project list
-3. **Memory MCP (read_graph)** — System settings, Lord's preferences
-4. **dashboard.md** — Secondary info only (Karo's summary, YAML is authoritative)
+2. **config/projects.yaml** — Active project list
+3. **projects/{id}.yaml** — Each active project's core knowledge
+4. **context/{project}.md** — Summary section only (strategic overview)
+5. **Memory MCP (read_graph)** — System settings, Lord's preferences
+6. **dashboard.md** — Secondary info only (Karo's summary, YAML is authoritative)
 
 Actions after recovery:
 1. Check latest command status in queue/shogun_to_karo.yaml
@@ -295,10 +297,14 @@ Actions after recovery:
 
 1. Read CLAUDE.md (auto-loaded)
 2. Read Memory MCP (read_graph)
-3. Check config/projects.yaml
-4. Read project README.md/CLAUDE.md
+3. Read instructions/shogun.md
+4. Load project knowledge:
+   - `config/projects.yaml` → active projects一覧
+   - 各active PJの `projects/{id}.yaml` → 核心知識（ルール要約/UUID/DBルール）
+   - `context/{project}.md` → 要約セクションのみ（将軍は戦略判断に必要な粒度。全詳細は不要）
 5. Read dashboard.md for current situation
-6. Report loading complete, then start work
+6. Check inbox: read `queue/inbox/shogun.yaml`, process unread messages
+7. Report loading complete, then start work
 
 ## Skill Evaluation
 

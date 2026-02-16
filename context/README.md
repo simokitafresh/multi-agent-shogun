@@ -10,8 +10,11 @@
 ## ファイル構成
 ```
 context/
-  README.md           ← このファイル
-  {project_id}.md     ← プロジェクト固有のコンテキスト
+  README.md              ← このファイル
+  {project_id}.md        ← プロジェクト固有のコンテキスト
+  doc-style-guide.md     ← ドキュメントスタイルガイド（Vercel実証5原則）
+  infrastructure.md      ← インフラ知識ベース
+  dm-signal.md           ← DM-signalプロジェクトコンテキスト
 ```
 
 ## 使い方
