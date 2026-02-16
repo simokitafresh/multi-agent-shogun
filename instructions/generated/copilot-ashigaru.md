@@ -54,15 +54,13 @@ workflow:
   - step: 8
     action: echo_shout
     condition: "DISPLAY_MODE=shout (check via tmux show-environment)"
-    command: 'echo "{echo_message or self-generated battle cry}"'
+    command: 'bash scripts/shout.sh {ninja_name}'
     rules:
       - "Check DISPLAY_MODE: tmux show-environment -t shogun DISPLAY_MODE"
-      - "DISPLAY_MODE=shout → execute echo as LAST tool call"
-      - "If task YAML has echo_message field → use it"
-      - "If no echo_message field → compose a 1-line sengoku-style battle cry summarizing your work"
+      - "DISPLAY_MODE=shout → execute as LAST tool call"
+      - "If task YAML has echo_message field → write it to report YAML before calling shout.sh"
       - "MUST be the LAST tool call before idle"
-      - "Do NOT output any text after this echo — it must remain visible above ❯ prompt"
-      - "Plain text with emoji. No box/罫線"
+      - "Do NOT output any text after this call — it must remain visible above ❯ prompt"
       - "DISPLAY_MODE=silent or not set → skip this step entirely"
 
 files:
@@ -135,6 +133,47 @@ skill_candidate:
 
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate.
 Missing fields = incomplete report.
+
+## Codex偵察タスク対応
+
+task YAMLに`task_type: recon`がある場合、偵察モードで作業する。
+
+### 偵察タスクの受け取り方
+
+1. task YAMLを読む（通常のStep 2と同じ）
+2. `project:`フィールドがあれば知識ベースを読む（Task Start Ruleと同じ3ファイル）
+3. 調査対象（target_path / description内の指示）を確認
+4. **独立調査を実施** — 他の忍者の報告・結果は絶対に見るな（並行偵察ルール）
+5. 偵察報告を書く（下記フォーマット）
+6. 通常通りinbox_writeで家老に報告
+
+### 偵察報告フォーマット
+
+通常の報告フォーマット（worker_id, task_id等）に加え、`result`内に以下を含める:
+
+```yaml
+result:
+  summary: "調査結果の要約（1-2行）"
+  findings:
+    - category: "ファイル構造"
+      detail: "src/services/pipeline/ 配下に6ブロック、各ブロックは..."
+    - category: "依存関係"
+      detail: "engine.pyがBlockA-Fを順番に呼び出し..."
+    - category: "設定値"
+      detail: "lookback_days: [10,15,20,21,42,63,...]"
+  verdict: "仮説Aが正しい / 仮説Bが正しい / 両方不正確 / 判定不能"
+  confidence: "high / medium / low"
+  blind_spots: "調査できなかった領域・未確認事項（正直に記載）"
+```
+
+**findingsのcategory例**: ファイル構造、依存関係、設定値、データフロー、テストカバレッジ、DB構造、API仕様、不整合・問題点
+
+### 偵察報告の注意点
+
+- **事実と推測を分離せよ** — コードから確認した事実と、推測・仮説は明確に区別
+- **blind_spotsは正直に** — 時間切れ・アクセス不能等で未調査の領域は必ず記載
+- **verdict(判定)は必須** — 家老の統合分析に必要。判定不能でもその旨を記載
+- **他の忍者の報告を参照するな** — 並行偵察の独立性を破壊する
 
 ## Race Condition (RACE-001)
 

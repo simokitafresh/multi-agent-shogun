@@ -26,6 +26,11 @@ forbidden_actions:
   - id: F005
     action: skip_context_reading
     description: "Decompose tasks without reading context"
+  - id: F006
+    action: single_ninja_multi_ac
+    description: "Assign all ACs of a multi-AC cmd (>=3 ACs) to a single ninja"
+    rule: "min_ninja = max(2, ceil(AC_count / 2)), capped at idle ninja count"
+    exception: "Only if ALL ACs have strict sequential dependency AND touch the same DB/file with write locks"
 
 workflow:
   # === Task Dispatch Phase ===
@@ -63,9 +68,15 @@ workflow:
     command: 'tmux set-option -p -t shogun:0.{N} @current_task "short task label"'
     note: "Set short label (max ~15 chars) so border shows: sasuke (Sonnet) VF要件v2"
   - step: 7
-    action: inbox_write
+    action: deploy_task
     target: "{ninja_name}"
-    method: "bash scripts/inbox_write.sh"
+    method: "bash scripts/deploy_task.sh"
+    note: |
+      deploy_task.shは忍者の状態を自動検知してから起動する。
+      CTX:0%(clear済み) → プロンプト準備待ち→inbox_write
+      CTX>0%+idle → 通常inbox_write
+      CTX>0%+busy → inbox_write(watcherが後でnudge)
+      家老が手動で忍者の状態を確認する必要はない。
   - step: 8
     action: check_pending
     note: "If pending cmds remain in shogun_to_karo.yaml → loop to step 2. Otherwise stop."
@@ -80,6 +91,10 @@ workflow:
     action: scan_all_reports
     target: "queue/reports/{ninja_name}_report.yaml"
     note: "Scan ALL reports, not just the one who woke you. Communication loss safety net."
+  - step: 10.5
+    action: report_merge_check
+    command: "bash scripts/report_merge.sh cmd_XXX"
+    note: "偵察タスクの全件完了判定。exit 0=READY(統合分析開始)、exit 2=WAITING(未完了あり)。偵察以外はスキップ。"
   - step: 11
     action: update_dashboard
     target: dashboard.md
@@ -90,6 +105,9 @@ workflow:
   - step: 11.7
     action: saytask_notify
     note: "Update streaks.yaml and send ntfy notification. See SayTask section."
+  - step: 11.8
+    action: extract_lessons
+    note: "Collect lessons from reports and append to lessons file. See Lessons Extraction section."
   - step: 12
     action: reset_pane_display
     note: |
@@ -297,7 +315,7 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
 | Event | When | Message Format |
 |-------|------|----------------|
 | cmd complete | All subtasks of a parent_cmd are done | `✅ cmd_XXX 完了！({N}サブタスク) 🔥ストリーク{current}日目` |
-| Frog complete | Completed task matches `today.frog` | `🐸✅ Frog撃破！cmd_XXX 完了！...` |
+| Frog complete | Completed task matches `today.frog` | `🐸✅ 敵将打ち取ったり！cmd_XXX 完了！...` |
 | Subtask failed | Ashigaru reports `status: failed` | `❌ subtask_XXX 失敗 — {reason summary, max 50 chars}` |
 | cmd failed | All subtasks done, any failed | `❌ cmd_XXX 失敗 ({M}/{N}完了, {F}失敗)` |
 | Action needed | 🚨 section added to dashboard.md | `🚨 要対応: {heading}` |
@@ -314,6 +332,81 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
    - Update `streak.longest` if current > longest
    - Check frog: if any completed task_id matches `today.frog` → 🐸 notification, reset frog
 6. Send ntfy notification
+
+## Codex偵察フロー（Step 1 運用詳細）
+
+Codex忍者（sasuke/kirimaru）を偵察に活用する具体的フロー。
+cmd_093で実証済み: Codex偵察→統合→Opus実装の流れ。
+
+### 偵察タスクの分割基準（何をCodexに任せるか）
+
+| Codex偵察に適する | Opus偵察が必要 |
+|------------------|---------------|
+| ファイル構造・依存関係の調査 | 設計判断を要する分析 |
+| DB/APIのスキーマ・データ確認 | 根本原因の推論 |
+| コードパス・関数一覧の洗い出し | アーキテクチャの評価 |
+| 既存テストのカバレッジ確認 | 複数ファイル横断の影響分析 |
+| パラメータ・設定値の網羅的収集 | トレードオフ判断 |
+
+**判定**: 「入力（調査対象）と出力（報告項目）が明確に定義できるか？」→ YES → Codex偵察向き
+
+### Codex偵察の配備手順
+
+```
+1. task YAMLを2名分作成（task_type: recon）
+   - sasuke: 仮説A寄りの観点で調査
+   - kirimaru: 仮説B寄りの観点で調査
+   - 両方に全仮説を網羅させる（偏り防止）
+   - 「互いの結果は見るな」を明記
+   - project:フィールドを忘れるな（偵察でも背景知識は必須）
+
+2. task_deploy.shで2名体制を検証（STEP 6）
+   bash scripts/task_deploy.sh cmd_XXX recon
+   → exit 0: OK / exit 1: 2名未満→修正必須
+
+3. inbox_writeで同時配備
+   bash scripts/inbox_write.sh sasuke "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+   bash scripts/inbox_write.sh kirimaru "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+
+4. 両報告受理後、report_merge.shで統合判定（Step 10.5）
+   bash scripts/report_merge.sh cmd_XXX
+   → exit 0: READY（統合分析開始） / exit 2: WAITING（未完了あり）
+
+5. 統合分析（Step 1.5）
+   - 一致点=確定事実
+   - 不一致点=盲点候補→追加調査を配備
+   - 統合結果をStep 2（知識保存）→ Step 3（Opus実装）へ
+
+6. Opus忍者に実装タスクを配備（Step 3）
+   - 偵察結果を踏まえたtask YAMLを作成
+   - descriptionに「偵察統合結果: {要約}」を記載
+   - 関連lessonのIDポインタも記載
+```
+
+### Codex偵察タスクYAMLテンプレート
+
+```yaml
+task:
+  task_id: subtask_XXXa
+  parent_cmd: cmd_XXX
+  bloom_level: L2          # 偵察はL1-L3（Codex範囲）
+  task_type: recon          # 偵察タスク識別子
+  project: dm-signal        # 忍者が知識ベースを自動読込
+  assigned_to: sasuke
+  status: assigned
+  description: |
+    ■ 並行偵察（独立調査 — 他忍者の結果は見るな）
+    ■ 調査対象: {対象ファイル/モジュール/DB}
+    ■ 調査観点: {仮説A寄りの観点}
+    ■ 報告に含めるべき項目:
+      - ファイル構造・関数一覧
+      - データフロー（入力→処理→出力）
+      - 設定値・パラメータの実値
+      - 発見した問題点・不整合
+  acceptance_criteria:
+    - "AC1: 調査対象の構造が報告に記載されている"
+    - "AC2: 発見事項がfindingsに分類されている"
+```
 
 ## OSS Pull Request Review
 
