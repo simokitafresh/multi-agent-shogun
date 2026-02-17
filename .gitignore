@@ -91,6 +91,10 @@
 !scripts/cmd_complete_gate.sh
 !scripts/ninja_monitor.sh
 !scripts/inbox_prune.sh
+!scripts/review_gate.sh
+!scripts/report_merge.sh
+!scripts/lesson_write.sh
+!scripts/lesson_check.sh
 
 
 # SayTask (sample template only, not actual data)
