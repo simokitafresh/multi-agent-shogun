@@ -362,6 +362,78 @@ Before assigning tasks, ask yourself these five questions:
     kirimaru: Complete beginner persona — UX simulation
 ```
 
+## Task Decomposition Patterns (5 Patterns)
+
+cmd受領時、以下の5パターンの組合せで即座に分解せよ。毎回ゼロから考えるな。
+
+### Pattern Selection Flow
+
+```
+cmd受領 → 「このcmdはどのパターンの組合せか？」
+  ├─ 調査が必要か？ → YES → recon(2名) + 後続パターン
+  ├─ 複数ファイルに分割可能か？ → YES → impl_parallel(N名)
+  ├─ 単一ファイル/密結合か？ → YES → impl(1名)
+  ├─ コード変更あり？ → YES → review(1名)追加
+  └─ 複数成果物の統合必要？ → YES → integrate(1名)追加
+
+例: recon(2名) → impl_parallel(2名) → review(偵察者1名)
+```
+
+### 5 Patterns Summary
+
+| # | Pattern | 人数 | 特徴 | 使用例 |
+|---|---------|------|------|--------|
+| 1 | recon (偵察) | 2名 | 独立並行、同じ対象 | 未知領域の調査、仮説検証 |
+| 2 | impl (実装_単独) | 1名 | 単一ファイルor密結合 | バグ修正、小規模機能追加 |
+| 3 | impl_parallel (実装_並列) | N名 | 各自が別ファイル | 大規模改修、複数機能並行 |
+| 4 | review (レビュー) | 1名 | 実装者以外が検証 | コード品質、push前確認 |
+| 5 | integrate (統合) | 1名 | blocked_by複数タスク | 偵察統合、成果物マージ |
+
+### Pattern Details
+
+**1. recon (偵察)** — `task_type: recon`
+- 2名独立並行。同じ対象を異なる観点で調査
+- 完了後 `report_merge.sh` で統合判定
+- 仮説A/B寄りの観点で独立調査、両方に全仮説を網羅させる
+- 例外: 事前知識十分 or idle Codex忍者1名のみ → スキップ可
+
+**2. impl (実装_単独)** — `task_type: implement`
+- 1名、単一ファイルまたは密結合な複数ファイル
+- commitまで（pushはしない）→ review配備
+
+**3. impl_parallel (実装_並列)** — `task_type: implement`
+- N名、各自が別ファイル。**同一ファイルを複数忍者が触ること禁止**（RACE-001）
+- 各忍者に明確な担当ファイル/領域を指定
+- 全員完了後にreview or integrateで品質確認
+
+**4. review (レビュー)** — `task_type: review`
+- 1名、diff確認 + PASS判定 + push
+
+**5. integrate (統合)** — `task_type: integrate`
+- 1名、`blocked_by: [subtask_A, subtask_B, ...]`
+- 偵察統合は `report_merge.sh` → 統合分析の2段階
+- `templates/integ_*.md` 参照
+
+### Review Assignment Rules
+
+| 条件 | 担当 | 理由 |
+|------|------|------|
+| 偵察済み + 別忍者が実装 | **偵察者**がレビュー | コード知識が最も深い |
+| 偵察者 = 実装者 | **別忍者** | 独立性確保 |
+| bloom_level L4以上（思考型） | **Opus必須** | 推論・評価が必要 |
+| bloom_level L3以下（照合型） | **Codex可** | 手順照合のみ |
+| 偵察報告あり | reports_to_readで自動注入 | 知識の引き継ぎ保証 |
+
+### Common Combinations
+
+| 組合せ | パイプライン | 適用場面 |
+|--------|------------|---------|
+| 偵察→実装→レビュー | recon(2) → impl(1) → review(1) | 未知バグ調査→修正→検証 |
+| 並列実装→レビュー | impl_parallel(N) → review(1) | 複数ファイル同時改修 |
+| 実装→レビュー | impl(1) → review(1) | 単純機能追加 |
+| 偵察→並列実装→統合 | recon(2) → impl_parallel(N) → integrate(1) | 大規模機能開発 |
+| 実装のみ | impl(1) | 機械的変更（レビュー省略可） |
+
 ## Pre-Deployment Ping (配備前確認)
 
 タスク配備前に対象忍者ペインの状態を確認する。応答なしの忍者へ配備すると
