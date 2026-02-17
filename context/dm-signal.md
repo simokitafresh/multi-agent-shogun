@@ -91,8 +91,9 @@ DLコマンド:
 FoF構成詳細: docs/portfolio-research/023 §2.3
 
 現四神 = CAGRモード（激攻）のみ。
-12パターン計画: 4神 × 3モード（激攻CAGR/智将Calmar/常勝NewHigh）。
-智将・常勝モードは同一手法を指標違いで再実行して作成する。
+12パターン計画: 4神 × 3モード（激攻CAGR/鉄壁MaxDD/常勝NewHigh）。
+鉄壁・常勝モードは同一手法を指標違いで再実行して作成する。
+※ 智将(Calmar)→鉄壁(MaxDD)変更理由: Spearman相関分析でCalmarはCAGRと高相関(rho=0.86)で冗長。MaxDDはCAGRと低相関(rho=0.49)で独自軸。
 
 ⚠ L1/L2混同禁止:
 - L1 = 神の中身（GSパラメータ: lookback/safe_haven/rebalance/topN）
