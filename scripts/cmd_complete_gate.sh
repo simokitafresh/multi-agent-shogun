@@ -252,6 +252,90 @@ if [ "$REVIEWED_OK" = true ]; then
     echo "  (all lessons reviewed or no lessons)"
 fi
 
+# ─── lesson_candidate検証（found:trueなのに未登録を防止） ───
+echo ""
+echo "Lesson candidate check:"
+LC_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    LC_CHECKED=true
+
+    # lesson_candidateフィールドの検証
+    lc_status=$(python3 -c "
+import yaml, sys
+try:
+    with open('$report_file') as f:
+        data = yaml.safe_load(f)
+    if not data:
+        print('missing')
+        sys.exit(0)
+    lc = data.get('lesson_candidate')
+    if lc is None:
+        print('missing')
+    elif not isinstance(lc, dict):
+        print('malformed')
+    elif 'found' not in lc:
+        print('malformed')
+    elif lc['found'] == False:
+        print('ok_false')
+    elif lc['found'] == True:
+        print('found_true')
+    else:
+        print('malformed')
+except:
+    print('error')
+" 2>/dev/null)
+
+    case "$lc_status" in
+        ok_false)
+            echo "  ${ninja_name}: OK (lesson_candidate: found=false)"
+            ;;
+        found_true)
+            # lesson.doneのsource確認
+            lesson_done="$GATES_DIR/lesson.done"
+            if [ -f "$lesson_done" ]; then
+                lsource=$(grep '^source:' "$lesson_done" 2>/dev/null | sed 's/source: *//')
+                if [ "$lsource" = "lesson_write" ]; then
+                    echo "  ${ninja_name}: OK (lesson_candidate found:true, registered via lesson_write)"
+                else
+                    echo "  ${ninja_name}: NG ← lesson_candidate found:true but lesson.done source=${lsource} (not lesson_write)"
+                    ALL_CLEAR=false
+                fi
+            else
+                echo "  ${ninja_name}: NG ← lesson_candidate found:true but lesson.done not found"
+                ALL_CLEAR=false
+            fi
+            ;;
+        missing)
+            echo "  ${ninja_name}: NG ← lesson_candidateフィールド欠落"
+            ALL_CLEAR=false
+            ;;
+        malformed)
+            echo "  ${ninja_name}: NG ← lesson_candidate構造不正（foundキーなし等）"
+            ALL_CLEAR=false
+            ;;
+        *)
+            echo "  ${ninja_name}: NG ← lesson_candidate解析エラー"
+            ALL_CLEAR=false
+            ;;
+    esac
+done
+if [ "$LC_CHECKED" = false ]; then
+    echo "  (no reports found for this cmd)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then

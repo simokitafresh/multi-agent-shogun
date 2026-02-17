@@ -22,8 +22,14 @@ ARCHIVE_DIR="$PROJECT_DIR/queue/archive"
 ARCHIVE_CMD="$ARCHIVE_DIR/shogun_to_karo_done.yaml"
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
-KEEP_RESULTS=${1:-3}
-CMD_ID=${2:-""}
+# 引数パース: $1がcmd_で始まる場合はCMD_IDとして扱う
+if [[ "${1:-}" == cmd_* ]]; then
+    CMD_ID="$1"
+    KEEP_RESULTS=${2:-3}
+else
+    KEEP_RESULTS=${1:-3}
+    CMD_ID=${2:-""}
+fi
 
 mkdir -p "$ARCHIVE_DIR"
 
