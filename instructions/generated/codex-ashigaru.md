@@ -35,6 +35,10 @@ workflow:
     action: read_yaml
     target: "queue/tasks/{ninja_name}.yaml"
     note: "Own file ONLY"
+  - step: 2.5
+    action: read_reports
+    condition: "task YAML has reports_to_read field"
+    note: "Read ALL listed report YAMLs before starting work. These are prior ninja reports for blocked_by tasks."
   - step: 3
     action: update_status
     value: in_progress

@@ -36,6 +36,10 @@ workflow:
     action: read_yaml
     target: "queue/tasks/{ninja_name}.yaml"
     note: "Own file ONLY"
+  - step: 2.5
+    action: read_reports
+    condition: "task YAML has reports_to_read field"
+    note: "Read ALL listed report YAMLs before starting work. These are prior ninja reports for blocked_by tasks."
   - step: 3
     action: update_status
     value: in_progress
@@ -144,6 +148,8 @@ When task YAML contains `project:`, read these 3 files before any implementation
 3. `context/{project}.md`
 
 If task YAML contains `related_lessons:`, check each lesson ID in `projects/{project}/lessons.yaml` before starting work. These are auto-injected by deploy_task.sh based on keyword relevance — understand how each lesson relates to your task. **Each entry has `reviewed: false` — change to `reviewed: true` after reading, before starting work.** This is mandatory evidence of lesson review.
+
+If task YAML contains `reports_to_read:`, read ALL listed report YAMLs before starting work. These are prior ninja reports for `blocked_by` tasks — auto-injected by deploy_task.sh. Understanding prior findings prevents duplicate work and ensures knowledge continuity.
 
 Task YAML is intentionally thin. If some background is not written in task YAML, look it up in these files first.
 
@@ -327,6 +333,7 @@ Recover from primary data:
    - `context/{project}.md` — detailed context (system architecture, analysis tools, data management)
    All 3 files serve different purposes. Read all before starting work.
    If task YAML has `related_lessons:`, check each lesson ID in lessons.yaml and understand relevance to your task.
+   If task YAML has `reports_to_read:`, read ALL listed report YAMLs before starting work.
    Information omitted from task YAML is expected to exist in these files. Do not treat omission as missing requirements.
 5. dashboard.md is secondary info only — trust YAML as authoritative
 

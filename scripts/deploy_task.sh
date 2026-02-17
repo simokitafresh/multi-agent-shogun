@@ -297,6 +297,114 @@ except Exception as e:
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
 
+# ─── 偵察報告自動注入（task YAMLにreports_to_readを挿入） ───
+inject_reports_to_read() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_reports: task file not found: $task_file"
+        return 0
+    fi
+
+    python3 -c "
+import yaml, sys, os, tempfile
+
+task_file = '$task_file'
+script_dir = '$SCRIPT_DIR'
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[INJECT_REPORTS] No task section in YAML, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+
+    # 既にreports_to_readが設定済みなら上書きしない
+    if task.get('reports_to_read'):
+        print('[INJECT_REPORTS] reports_to_read already exists, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    blocked_by = task.get('blocked_by', [])
+    if not blocked_by:
+        print('[INJECT_REPORTS] No blocked_by, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    # blocked_byの各タスクIDから忍者名を解決
+    tasks_dir = os.path.join(script_dir, 'queue', 'tasks')
+    reports_dir = os.path.join(script_dir, 'queue', 'reports')
+    report_paths = []
+
+    for blocked_task_id in blocked_by:
+        # queue/tasks/*.yamlを検索してtask_idが一致するものを見つける
+        if not os.path.isdir(tasks_dir):
+            continue
+        for fname in os.listdir(tasks_dir):
+            if not fname.endswith('.yaml'):
+                continue
+            fpath = os.path.join(tasks_dir, fname)
+            try:
+                with open(fpath) as f:
+                    tdata = yaml.safe_load(f)
+                if not tdata or 'task' not in tdata:
+                    continue
+                t = tdata['task']
+                if t.get('task_id') == blocked_task_id:
+                    assigned_to = t.get('assigned_to', '')
+                    if assigned_to:
+                        report_path = os.path.join(reports_dir, f'{assigned_to}_report.yaml')
+                        if os.path.exists(report_path):
+                            report_paths.append(f'queue/reports/{assigned_to}_report.yaml')
+                        else:
+                            print(f'[INJECT_REPORTS] WARN: report not found: {report_path}', file=sys.stderr)
+                    break
+            except Exception:
+                continue
+
+    if not report_paths:
+        print('[INJECT_REPORTS] No report files found for blocked_by tasks', file=sys.stderr)
+        sys.exit(0)
+
+    # deduplicate while preserving order
+    seen = set()
+    unique_paths = []
+    for p in report_paths:
+        if p not in seen:
+            seen.add(p)
+            unique_paths.append(p)
+
+    task['reports_to_read'] = unique_paths
+
+    # description冒頭に参照報告を挿入
+    desc = task.get('description', '')
+    marker = '【参照報告】'
+    if marker not in str(desc):
+        lines = [marker + ' 以下の報告を読んでからレビューせよ']
+        for rp in unique_paths:
+            lines.append(f'  - {rp}')
+        lines.append('─' * 40)
+        prefix = '\\n'.join(lines) + '\\n\\n'
+        task['description'] = prefix + str(desc or '')
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[INJECT_REPORTS] Injected {len(unique_paths)} reports: {unique_paths}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[INJECT_REPORTS] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
@@ -319,6 +427,9 @@ log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}
 # 教訓自動注入（失敗してもデプロイは継続）
 TASK_FILE="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 inject_related_lessons "$TASK_FILE" || true
+
+# 偵察報告自動注入（失敗してもデプロイは継続）
+inject_reports_to_read "$TASK_FILE" || true
 
 # 状態に応じた処理
 if [ "$CTX_PCT" -le 0 ] 2>/dev/null; then
