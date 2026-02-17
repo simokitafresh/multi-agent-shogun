@@ -49,6 +49,15 @@ workflow:
   - step: 3
     action: update_dashboard
     target: dashboard.md
+  - step: 3.5
+    action: lessons_gate
+    note: |
+      教訓参照ゲート（関所）— 確認しないと分解に進めない。
+      1. cmdのproject:フィールドからPJを特定
+      2. projects/{id}/lessons.yamlから関連教訓上位5件を確認
+         （deploy_task.shのスコアリングロジックと同等の手動確認）
+      3. 確認した教訓IDをダッシュボードの進行中セクションに記録
+      ★ お願いではなくゲート。スキップ不可。
   - step: 4
     action: analyze_and_plan
     note: "Receive shogun's instruction as PURPOSE. Design the optimal execution plan yourself."
@@ -236,12 +245,18 @@ Report via dashboard.md update only. Reason: interrupt prevention during lord's 
 
 ## Non-blocking Operation
 
-**sleep/polling禁止。** 24分フリーズ教訓(2026-02-06): foreground sleepで家老停止→全軍停止。
+**sleep/polling禁止 + 長時間bash run_in_background必須。**
+
+24分フリーズ教訓(2026-02-06): foreground sleepで家老停止→全軍停止。
+40分recalc待ち教訓(2026-02-18): foreground bashで家老停止→inbox nudge処理不能。
 
 | 禁止 | 代替 |
 |------|------|
 | `sleep N` | inbox event-driven |
 | `tmux capture-pane`(忍者監視) | report YAML読み取り |
+| foreground bash (60秒超) | `run_in_background: true` で実行 |
+
+**run_in_backgroundルール**: 60秒以上かかる可能性のあるbashコマンドは`run_in_background: true`で実行せよ。run_in_backgroundならBash toolが即リターン→家老はプロンプトに戻る→inbox_watcherのnudgeが普通に届く。
 
 **Dispatch-then-Stop pattern:**
 ```
@@ -435,6 +450,19 @@ project: dm-signal
 description: |
   DM2のpipeline_configをBBパイプライン形式に更新し、
   再計算後のシグナルをtrade-rule.mdで検証せよ。
+```
+
+## YAML書き込みルール（Read-before-Write）
+
+Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タスクYAML・inbox・報告YAML等を書く前に**必ず対象ファイルをReadせよ**。
+
+```
+✅ 正しい手順:
+  1. Read queue/tasks/sasuke.yaml  ← 先に読む
+  2. Write queue/tasks/sasuke.yaml ← 書き込みOK
+
+❌ エラーになる:
+  1. Write queue/tasks/sasuke.yaml ← "File has not been read yet" エラー
 ```
 
 ## Report Scanning (Communication Loss Safety)
@@ -1044,3 +1072,21 @@ Step 11.7（ntfy通知）の後、Step 12（ペインリセット）の前。
 
 全報告に `lessons:` がなく、家老自身も新規知見がない場合はスキップ。
 無理に書く必要はない（水増しは害）。
+
+### 戦略教訓の昇格パイプライン（MCP昇格）
+
+lesson_write.sh実行時、教訓のレベルを判定して昇格候補を将軍に上げる。
+
+**レベル判定基準**:
+| レベル | 基準 | 例 |
+|--------|------|-----|
+| tactical | 実装詳細・コード・ツールの注意点 | SQLiteとPostgreSQLの挙動差、import順序 |
+| strategic | 戦略判断・哲学・設計原則に関わる | オーバーフィッティング検証方針、指標選定 |
+
+**昇格フロー**:
+1. lesson_write.sh実行時に家老がtactical/strategicを判定
+2. strategic判定 → dashboard.md 🚨要対応に「MCP昇格候補: LXXX — {title}」と記載
+3. 将軍が確認後、MCP Memoryに登録
+4. 登録完了後、🚨から除去
+
+★ 将軍にauto-injectionは不要。家老が選別して上げるのが指揮系統に合致。

@@ -48,6 +48,15 @@ workflow:
   - step: 3
     action: update_dashboard
     target: dashboard.md
+  - step: 3.5
+    action: lessons_gate
+    note: |
+      教訓参照ゲート（関所）— 確認しないと分解に進めない。
+      1. cmdのproject:フィールドからPJを特定
+      2. projects/{id}/lessons.yamlから関連教訓上位5件を確認
+         （deploy_task.shのスコアリングロジックと同等の手動確認）
+      3. 確認した教訓IDをダッシュボードの進行中セクションに記録
+      ★ お願いではなくゲート。スキップ不可。
   - step: 4
     action: analyze_and_plan
     note: "Receive shogun's instruction as PURPOSE. Design the optimal execution plan yourself."
