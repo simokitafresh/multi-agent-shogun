@@ -653,9 +653,13 @@ while true; do
         fi
     fi
 
-    # 案B: Phase 2完了後、バッチ通知を送信
+    # 案B: Phase 2完了後、バッチ通知を送信（pending cmdがある場合のみ）
     if [ ${#NEWLY_IDLE[@]} -gt 0 ]; then
-        notify_idle_batch "${NEWLY_IDLE[@]}"
+        if grep -q "status: pending" "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null; then
+            notify_idle_batch "${NEWLY_IDLE[@]}"
+        else
+            log "SKIP idle notification: no pending cmds (${#NEWLY_IDLE[@]} idle: ${NEWLY_IDLE[*]})"
+        fi
     fi
 
     # ═══ 停滞検知チェック（全忍者） ═══
