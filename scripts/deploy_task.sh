@@ -16,13 +16,23 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
-NINJA_NAME="$1"
-MESSAGE="$2"
+NINJA_NAME="${1:-}"
+MESSAGE="${2:-}"
 TYPE="${3:-task_assigned}"
 FROM="${4:-karo}"
 
 if [ -z "$NINJA_NAME" ] || [ -z "$MESSAGE" ]; then
     echo "Usage: deploy_task.sh <ninja_name> <message> [type] [from]" >&2
+    echo "例: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+    echo "受け取った引数: $*" >&2
+    exit 1
+fi
+
+if [[ "$NINJA_NAME" == cmd_* ]]; then
+    echo "ERROR: 第1引数はninja_name（例: hanzo, sasuke）。cmd_idではない。" >&2
+    echo "Usage: deploy_task.sh <ninja_name> <message> [type] [from]" >&2
+    echo "例: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+    echo "受け取った引数: $*" >&2
     exit 1
 fi
 

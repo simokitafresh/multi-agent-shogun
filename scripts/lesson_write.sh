@@ -6,17 +6,31 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT_ID="$1"
-TITLE="$2"
-DETAIL="$3"
-SOURCE_CMD="$4"
+PROJECT_ID="${1:-}"
+TITLE="${2:-}"
+DETAIL="${3:-}"
+SOURCE_CMD="${4:-}"
 AUTHOR="${5:-karo}"
 CMD_ID="${6:-""}"
 STRATEGIC="${7:-""}"
 
+# Scan for --force flag (bypasses duplicate check)
+FORCE=0
+for arg in "$@"; do
+    if [ "$arg" == "--force" ]; then FORCE=1; fi
+done
+
 # Validate arguments
 if [ -z "$PROJECT_ID" ] || [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
     echo "Usage: lesson_write.sh <project_id> <title> <detail> [source_cmd] [author]" >&2
+    echo "受け取った引数: $*" >&2
+    exit 1
+fi
+
+if [[ "$PROJECT_ID" == cmd_* ]]; then
+    echo "ERROR: 第1引数はproject_id（例: infra, dm-signal）。cmd_idではない。" >&2
+    echo "Usage: lesson_write.sh <project_id> <title> <detail> [source_cmd] [author]" >&2
+    echo "受け取った引数: $*" >&2
     exit 1
 fi
 
@@ -57,9 +71,10 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 10 200 || exit 1
 
         # Find max ID and append new entry
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR STRATEGIC DASHBOARD_PATH
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR STRATEGIC DASHBOARD_PATH FORCE
         python3 << 'PYEOF'
-import re, os
+import re, os, sys
+from difflib import SequenceMatcher
 
 lessons_file = os.environ["LESSONS_FILE"]
 timestamp = os.environ["TIMESTAMP"]
@@ -88,6 +103,20 @@ for m in re.finditer(r'^### L(\d+):', content, re.MULTILINE):
 
 new_id = max_id + 1
 new_id_str = f'L{new_id:03d}'
+
+# Duplicate title check (bypass with --force)
+existing = []
+for m in re.finditer(r'^### L(\d+): (.+)$', content, re.MULTILINE):
+    existing.append((f'L{int(m.group(1)):03d}', m.group(2)))
+
+force = os.environ.get("FORCE", "") == "1"
+if not force:
+    for eid, etitle in existing:
+        ratio = SequenceMatcher(None, title, etitle).ratio()
+        if ratio > 0.75:
+            print(f'ERROR: 類似教訓あり: {eid}: {etitle} (類似度: {ratio:.0%})', file=sys.stderr)
+            print(f'強制登録: --force フラグを追加', file=sys.stderr)
+            sys.exit(1)
 
 # Build new entry
 entry = f'\n### {new_id_str}: {title}\n'

@@ -22,6 +22,13 @@ ARCHIVE_DIR="$PROJECT_DIR/queue/archive"
 ARCHIVE_CMD="$ARCHIVE_DIR/shogun_to_karo_done.yaml"
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
+usage_error() {
+    echo "Usage: archive_completed.sh [keep_results] [cmd_id]" >&2
+    echo "  keep_results: 正の整数（省略時3）" >&2
+    echo "  cmd_id: cmd_XXX形式（任意）" >&2
+    echo "受け取った引数: $*" >&2
+}
+
 # 引数パース: $1がcmd_で始まる場合はCMD_IDとして扱う
 if [[ "${1:-}" == cmd_* ]]; then
     CMD_ID="$1"
@@ -29,6 +36,18 @@ if [[ "${1:-}" == cmd_* ]]; then
 else
     KEEP_RESULTS=${1:-3}
     CMD_ID=${2:-""}
+fi
+
+if [[ ! "$KEEP_RESULTS" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: keep_results は正の整数で指定せよ。" >&2
+    usage_error "$@"
+    exit 1
+fi
+
+if [ -n "$CMD_ID" ] && [[ "$CMD_ID" != cmd_* ]]; then
+    echo "ERROR: cmd_id は cmd_XXX 形式で指定せよ。" >&2
+    usage_error "$@"
+    exit 1
 fi
 
 mkdir -p "$ARCHIVE_DIR"

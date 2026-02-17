@@ -17,6 +17,14 @@ LOCKFILE="${INBOX}.lock"
 # Validate arguments
 if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
     echo "Usage: inbox_write.sh <target_agent> <content> [type] [from]" >&2
+    echo "受け取った引数: $*" >&2
+    exit 1
+fi
+
+if [[ "$TARGET" == cmd_* ]]; then
+    echo "ERROR: 第1引数はtarget_agent（例: karo, sasuke）。cmd_idではない。" >&2
+    echo "Usage: inbox_write.sh <target_agent> <content> [type] [from]" >&2
+    echo "受け取った引数: $*" >&2
     exit 1
 fi
 

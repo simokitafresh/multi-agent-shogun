@@ -7,10 +7,18 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CMD_ID="$1"
+CMD_ID="${1:-}"
 
 if [ -z "$CMD_ID" ]; then
     echo "Usage: cmd_complete_gate.sh <cmd_id>" >&2
+    echo "受け取った引数: $*" >&2
+    exit 1
+fi
+
+if [[ "$CMD_ID" != cmd_* ]]; then
+    echo "ERROR: 第1引数はcmd_id（cmd_XXX形式）でなければならない。" >&2
+    echo "Usage: cmd_complete_gate.sh <cmd_id>" >&2
+    echo "受け取った引数: $*" >&2
     exit 1
 fi
 
