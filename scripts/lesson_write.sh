@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>"
+# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic]
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
 
 set -e
@@ -12,6 +12,7 @@ DETAIL="$3"
 SOURCE_CMD="$4"
 AUTHOR="${5:-karo}"
 CMD_ID="${6:-""}"
+STRATEGIC="${7:-""}"
 
 # Validate arguments
 if [ -z "$PROJECT_ID" ] || [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
@@ -45,6 +46,7 @@ if [ ! -f "$LESSONS_FILE" ]; then
 fi
 
 TIMESTAMP=$(date "+%Y-%m-%d")
+DASHBOARD_PATH="$SCRIPT_DIR/dashboard.md"
 
 # Atomic append with flock (3 retries)
 attempt=0
@@ -55,7 +57,7 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 10 200 || exit 1
 
         # Find max ID and append new entry
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR STRATEGIC DASHBOARD_PATH
         python3 << 'PYEOF'
 import re, os
 
@@ -100,6 +102,23 @@ with open(lessons_file, 'a', encoding='utf-8') as f:
     f.write(entry)
 
 print(f'{new_id_str} added to {lessons_file}')
+
+# --strategic: Update dashboard.md 🚨要対応 with MCP promotion candidate
+strategic = os.environ.get("STRATEGIC", "")
+if strategic == "--strategic":
+    dp = os.environ["DASHBOARD_PATH"]
+    with open(dp, encoding='utf-8') as f:
+        dc = f.read()
+    line = f"- MCP昇格候補: {new_id_str} \u2014 {title}\uff08将軍確認待ち\uff09\n"
+    marker_empty = "## \U0001f6a8 要対応\n\n\uff08なし\uff09\n"
+    marker_header = "## \U0001f6a8 要対応\n\n"
+    if marker_empty in dc:
+        dc = dc.replace(marker_empty, f"## \U0001f6a8 要対応\n\n{line}")
+    elif marker_header in dc:
+        dc = dc.replace(marker_header, f"## \U0001f6a8 要対応\n\n{line}")
+    with open(dp, 'w', encoding='utf-8') as f:
+        f.write(dc)
+    print(f'Dashboard updated: {new_id_str} added to 要対応')
 PYEOF
 
     ) 200>"$LOCKFILE"; then

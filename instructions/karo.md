@@ -1167,6 +1167,23 @@ lesson_write.sh実行時、教訓のレベルを判定して昇格候補を将�
 | tactical | 実装詳細・コード・ツールの注意点 | SQLiteとPostgreSQLの挙動差、import順序 |
 | strategic | 戦略判断・哲学・設計原則に関わる | オーバーフィッティング検証方針、指標選定 |
 
+### 判定に迷うケースの基準
+
+| カテゴリ | 判定 | 理由 |
+|---------|------|------|
+| 殿の投資哲学に関わる | strategic | MCP Memoryに将軍の裁定として保存すべき |
+| 全PJ共通の運用原則 | strategic | 将軍が運用指令として発令すべき |
+| 特定API/スクリプトの挙動 | tactical | PJ内lessons.yamlで十分 |
+| DB接続/データ形式の注意 | tactical | PJ内lessons.yamlで十分 |
+| エージェント間通信の発見 | strategic (infra) | 全エージェントに影響 |
+
+### lesson_write.sh --strategic 呼び出し例
+
+```bash
+# strategic判定の場合
+bash scripts/lesson_write.sh dm-signal "教訓タイトル" "詳細" "cmd_XXX" "karo" "cmd_XXX" --strategic
+```
+
 **昇格フロー**:
 1. lesson_write.sh実行時に家老がtactical/strategicを判定
 2. strategic判定 → dashboard.md 🚨要対応に「MCP昇格候補: LXXX — {title}」と記載
