@@ -48,6 +48,7 @@ workflow:
   - step: 3
     action: update_dashboard
     target: dashboard.md
+    pre: "Read dashboard.md before Edit"
   - step: 3.5
     action: lessons_gate
     note: |
@@ -65,6 +66,7 @@ workflow:
   - step: 6
     action: write_yaml
     target: "queue/tasks/{ninja_name}.yaml"
+    pre: "Read queue/tasks/{ninja_name}.yaml before Write (create) or Edit (update)"
     echo_message_rule: |
       echo_message field is OPTIONAL.
       Include only when you want a SPECIFIC shout (e.g., company motto chanting, special occasion).
@@ -109,6 +111,7 @@ workflow:
     action: update_dashboard
     target: dashboard.md
     section: "戦果"
+    pre: "Read dashboard.md before Edit"
   - step: 11.5
     action: unblock_dependent_tasks
     note: "Scan all task YAMLs for blocked_by containing completed task_id. Remove and unblock."
