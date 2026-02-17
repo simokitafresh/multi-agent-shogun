@@ -95,6 +95,7 @@
 !scripts/report_merge.sh
 !scripts/lesson_write.sh
 !scripts/lesson_check.sh
+!scripts/deploy_task.sh
 
 
 # SayTask (sample template only, not actual data)
