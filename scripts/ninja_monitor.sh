@@ -35,6 +35,7 @@ CONFIRM_WAIT=5      # idle確認待ち（秒）— APIコール間の誤検知�
 CODEX_CONFIRM_WAIT=20  # Codex専用idle確認待ち（秒）— APIコール間隔10-15秒より長く
 CODEX_DEBOUNCE=180     # Codex専用再通知抑制（秒）— 短時間サイクル抑制
 STALL_THRESHOLD_MIN=15 # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知
+STALE_CMD_THRESHOLD=14400 # stale cmd検知しきい値（秒）— pending+subtask未配備が4時間継続で通知
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
 
 # Self-restart on script change (inbox_watcher.shから移植)
@@ -77,6 +78,7 @@ declare -A PANE_TARGETS   # 忍者名 → tmuxペインターゲット
 declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
 declare -A STALL_NOTIFIED    # 停滞通知済みフラグ — key: "ninja:task_id", value: "1"
+declare -A STALE_CMD_NOTIFIED  # stale cmd通知済みフラグ — key: "cmd_XXX", value: "1"
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
 for name in "${NINJA_NAMES[@]}"; do
@@ -419,6 +421,84 @@ check_stall() {
     fi
 }
 
+# ─── stale cmd検知（pending+4時間超+subtask未配備） ───
+# queue/shogun_to_karo.yaml から pending cmd を抽出し、
+# queue/tasks/*.yaml に parent_cmd が存在しないまま4時間超過したcmdを家老に通知
+check_stale_cmds() {
+    local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ ! -f "$cmd_file" ] && return
+
+    local now
+    now=$(date +%s)
+
+    while IFS='|' read -r cmd_id cmd_timestamp; do
+        [ -z "$cmd_id" ] && continue
+        [ -z "$cmd_timestamp" ] && continue
+
+        # デバウンス: 同一cmdの再通知を抑制
+        if [ "${STALE_CMD_NOTIFIED[$cmd_id]}" = "1" ]; then
+            continue
+        fi
+
+        local cmd_epoch
+        cmd_epoch=$(date -d "$cmd_timestamp" +%s 2>/dev/null)
+        if [ -z "$cmd_epoch" ]; then
+            log "WARN: Failed to parse cmd timestamp: ${cmd_id} ts=${cmd_timestamp}"
+            continue
+        fi
+
+        local elapsed_sec
+        elapsed_sec=$((now - cmd_epoch))
+        if [ $elapsed_sec -lt $STALE_CMD_THRESHOLD ]; then
+            continue
+        fi
+
+        # subtask存在確認: queue/tasks/*.yaml の parent_cmd を照合
+        if rg -l --glob '*.yaml' "parent_cmd:\\s*${cmd_id}\\b" "$SCRIPT_DIR/queue/tasks" >/dev/null 2>&1; then
+            continue
+        fi
+
+        local elapsed_hour
+        elapsed_hour=$((elapsed_sec / 3600))
+        local msg="${cmd_id}が${elapsed_hour}時間pendingのまま。将軍に確認せよ"
+
+        log "STALE-CMD: ${cmd_id} pending ${elapsed_hour}h with no subtasks, notifying karo"
+        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" stale_cmd ninja_monitor >> "$LOG" 2>&1; then
+            STALE_CMD_NOTIFIED[$cmd_id]="1"
+        else
+            log "ERROR: Failed to send stale cmd notification for ${cmd_id}"
+        fi
+    done < <(
+        awk '
+            function emit() {
+                if (cmd_id != "" && cmd_status == "pending" && cmd_ts != "") {
+                    print cmd_id "|" cmd_ts
+                }
+            }
+            /^[[:space:]]*-[[:space:]]id:/ {
+                emit()
+                cmd_id=$3
+                gsub(/"/, "", cmd_id)
+                cmd_ts=""
+                cmd_status=""
+                next
+            }
+            /^[[:space:]]*timestamp:/ {
+                cmd_ts=$2
+                gsub(/"/, "", cmd_ts)
+                next
+            }
+            /^[[:space:]]*status:/ {
+                cmd_status=$2
+                next
+            }
+            END {
+                emit()
+            }
+        ' "$cmd_file"
+    )
+}
+
 # ─── context_pct更新（単一ペイン） ───
 # 引数: pane_target (例: shogun:2.4)
 # 戻り値: 0=更新成功, 1=失敗(--設定)
@@ -687,6 +767,9 @@ while true; do
     for name in "${NINJA_NAMES[@]}"; do
         check_stall "$name"
     done
+
+    # ═══ Stale cmd検知チェック ═══
+    check_stale_cmds
 
     # ═══ STEP 2: 家老の外部compactチェック ═══
     check_karo_compact

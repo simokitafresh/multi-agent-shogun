@@ -96,6 +96,7 @@
 !scripts/lesson_write.sh
 !scripts/lesson_check.sh
 !scripts/deploy_task.sh
+!scripts/cmd_absorb.sh
 
 
 # SayTask (sample template only, not actual data)

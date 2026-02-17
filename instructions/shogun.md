@@ -129,6 +129,24 @@ command: |
 command: "Improve karo pipeline"
 ```
 
+### cmd Absorption / Cancellation
+
+cmdを別cmdに吸収、または中止する場合、**必ず**`cmd_absorb.sh`を実行せよ。
+口頭や会話中の決定だけでは家老のYAMLに反映されず、記憶乖離が発生する。
+
+```bash
+# 吸収（別cmdに統合）
+bash scripts/cmd_absorb.sh cmd_126 cmd_128 "AC6を吸収"
+
+# 中止（不要になった）
+bash scripts/cmd_absorb.sh cmd_999 none "不要になった"
+```
+
+処理内容:
+1. shogun_to_karo.yaml の status → absorbed/cancelled
+2. completed_changelog.yaml に記録
+3. 家老にinbox通知（自動）
+
 ## Immediate Delegation Principle
 
 **Delegate to Karo immediately and end your turn** so the Lord can input next command.
