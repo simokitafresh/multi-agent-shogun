@@ -161,6 +161,42 @@ wait_for_prompt() {
     return 1
 }
 
+# ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
+generate_report_template() {
+    local ninja_name="$1"
+    local task_id="$2"
+    local parent_cmd="$3"
+    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+
+    mkdir -p "$SCRIPT_DIR/queue/reports"
+
+    # 受領条件の存在確認（grepで取得。監査ログ用途）
+    local ac_count=0
+    if [ -f "$task_file" ] && grep -q '^  acceptance_criteria:' "$task_file" 2>/dev/null; then
+        ac_count=$(grep -A 60 '^  acceptance_criteria:' "$task_file" 2>/dev/null | grep -cE '^[[:space:]]*-[[:space:]]' || true)
+    fi
+
+    cat > "$report_file" <<EOF
+worker_id: ${ninja_name}
+task_id: ${task_id}
+parent_cmd: ${parent_cmd}
+timestamp: ""
+status: ""
+result:
+  summary: ""
+lesson_candidate:
+  found: false
+lesson_referenced: []
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+EOF
+
+    log "${ninja_name}: report template generated (${report_file}, acceptance_criteria=${ac_count})"
+}
+
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
 inject_related_lessons() {
     local task_file="$1"
@@ -430,7 +466,7 @@ IS_IDLE=false
 check_idle "$PANE_TARGET" && IS_IDLE=true
 
 # タスクステータス確認
-TASK_STATUS=$(grep -m1 'status:' "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" 2>/dev/null | awk '{print $2}' || echo "unknown")
+TASK_STATUS=$(grep -m1 '^  status:' "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" 2>/dev/null | awk '{print $2}' || echo "unknown")
 
 log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}, pane=${PANE_TARGET}"
 
@@ -459,5 +495,10 @@ else
     log "${NINJA_NAME}: CTX=${CTX_PCT}%, busy. Sending inbox_write (queued, watcher will nudge later)"
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
 fi
+
+# 報告YAML雛形生成（配備完了ログの直前）
+TASK_ID=$(grep -m1 '^  task_id:' "$TASK_FILE" 2>/dev/null | sed 's/^  task_id:[[:space:]]*//' || true)
+PARENT_CMD=$(grep -m1 '^  parent_cmd:' "$TASK_FILE" 2>/dev/null | sed 's/^  parent_cmd:[[:space:]]*//' || true)
+generate_report_template "$NINJA_NAME" "$TASK_ID" "$PARENT_CMD"
 
 log "${NINJA_NAME}: deployment complete (type=${TYPE})"
