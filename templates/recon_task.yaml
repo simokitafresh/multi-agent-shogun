@@ -1,0 +1,22 @@
+# Codex偵察タスクYAMLテンプレート
+# 使い方: 2名分コピーし、sasuke/kirimaruに割り当て。観点を仮説A/B寄りに分ける。
+task:
+  task_id: subtask_XXXa
+  parent_cmd: cmd_XXX
+  bloom_level: L2          # 偵察はL1-L3（Codex範囲）
+  task_type: recon          # 偵察タスク識別子
+  project: dm-signal        # 忍者が知識ベースを自動読込
+  assigned_to: sasuke
+  status: assigned
+  description: |
+    ■ 並行偵察（独立調査 — 他忍者の結果は見るな）
+    ■ 調査対象: {対象ファイル/モジュール/DB}
+    ■ 調査観点: {仮説A寄りの観点}
+    ■ 報告に含めるべき項目:
+      - ファイル構造・関数一覧
+      - データフロー（入力→処理→出力）
+      - 設定値・パラメータの実値
+      - 発見した問題点・不整合
+  acceptance_criteria:
+    - "AC1: 調査対象の構造が報告に記載されている"
+    - "AC2: 発見事項がfindingsに分類されている"

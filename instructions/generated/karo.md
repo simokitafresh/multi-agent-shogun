@@ -77,6 +77,7 @@ workflow:
       CTX>0%+idle → 通常inbox_write
       CTX>0%+busy → inbox_write(watcherが後でnudge)
       家老が手動で忍者の状態を確認する必要はない。
+      偵察時: task_deploy.sh exit 0=OK, exit 1=2名未満→修正必須
   - step: 8
     action: check_pending
     note: "If pending cmds remain in shogun_to_karo.yaml → loop to step 2. Otherwise stop."
@@ -104,7 +105,10 @@ workflow:
     note: "Scan all task YAMLs for blocked_by containing completed task_id. Remove and unblock."
   - step: 11.7
     action: saytask_notify
-    note: "Update streaks.yaml and send ntfy notification. See SayTask section."
+    note: |
+      Update streaks.yaml and send ntfy notification. See SayTask section.
+      review_gate.sh: exit 0=PASS/SKIP, exit 1=BLOCK→レビュー配備必須
+      cmd_complete_gate.sh: exit 0=GATE CLEAR(status自動更新), exit 1=GATE BLOCK
   - step: 11.8
     action: extract_lessons
     note: "Collect lessons from reports and append to lessons file. See Lessons Extraction section."

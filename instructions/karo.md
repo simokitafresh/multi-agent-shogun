@@ -78,6 +78,7 @@ workflow:
       CTX>0%+idle → 通常inbox_write
       CTX>0%+busy → inbox_write(watcherが後でnudge)
       家老が手動で忍者の状態を確認する必要はない。
+      偵察時: task_deploy.sh exit 0=OK, exit 1=2名未満→修正必須
   - step: 8
     action: check_pending
     note: "If pending cmds remain in shogun_to_karo.yaml → loop to step 2. Otherwise stop."
@@ -105,7 +106,10 @@ workflow:
     note: "Scan all task YAMLs for blocked_by containing completed task_id. Remove and unblock."
   - step: 11.7
     action: saytask_notify
-    note: "Update streaks.yaml and send ntfy notification. See SayTask section."
+    note: |
+      Update streaks.yaml and send ntfy notification. See SayTask section.
+      review_gate.sh: exit 0=PASS/SKIP, exit 1=BLOCK→レビュー配備必須
+      cmd_complete_gate.sh: exit 0=GATE CLEAR(status自動更新), exit 1=GATE BLOCK
   - step: 11.8
     action: extract_lessons
     note: "Collect lessons from reports and append to lessons file. See Lessons Extraction section."
@@ -230,36 +234,22 @@ bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ�
 
 Report via dashboard.md update only. Reason: interrupt prevention during lord's input.
 
-## Foreground Block Prevention (24-min Freeze Lesson)
+## Non-blocking Operation
 
-**Karo blocking = entire army halts.** On 2026-02-06, foreground `sleep` during delivery checks froze karo for 24 minutes.
+**sleep/polling禁止。** 24分フリーズ教訓(2026-02-06): foreground sleepで家老停止→全軍停止。
 
-**Rule: NEVER use `sleep` in foreground.** After dispatching tasks → stop and wait for inbox wakeup.
+| 禁止 | 代替 |
+|------|------|
+| `sleep N` | inbox event-driven |
+| `tmux capture-pane`(忍者監視) | report YAML読み取り |
 
-| Command Type | Execution Method | Reason |
-|-------------|-----------------|--------|
-| Read / Write / Edit | Foreground | Completes instantly |
-| inbox_write.sh | Foreground | Completes instantly |
-| `sleep N` | **FORBIDDEN** | Use inbox event-driven instead |
-| tmux capture-pane | **FORBIDDEN** | Read report YAML instead |
-
-### Dispatch-then-Stop Pattern
-
+**Dispatch-then-Stop pattern:**
 ```
-✅ Correct (event-driven):
-  cmd_008 dispatch → inbox_write ninja → stop (await inbox wakeup)
-  → ninja completes → inbox_write karo → karo wakes → process report
-
-❌ Wrong (polling):
-  cmd_008 dispatch → sleep 30 → capture-pane → check status → sleep 30 ...
+dispatch → inbox_write ninja → (pending cmdあれば次cmd処理) → stop
+→ ninja完了 → inbox_write karo → watcher nudge → karo起動 → 全report scan → 処理
 ```
 
-### Multiple Pending Cmds Processing
-
-1. List all pending cmds in `queue/shogun_to_karo.yaml`
-2. For each cmd: decompose → write YAML → inbox_write → **next cmd immediately**
-3. After all cmds dispatched: **stop** (await inbox wakeup from ninja)
-4. On wakeup: scan reports → process → check for more pending cmds → stop
+複数pending cmd: 各cmdを順次decompose→配備→**全cmd配備後にstop**。
 
 ## Ninja Auto-/clear Daemon（忍者自動クリア）
 
@@ -292,7 +282,7 @@ Report via dashboard.md update only. Reason: interrupt prevention during lord's 
 
 ## Deployment Checklist（配備前チェックリスト — 毎回必須）
 
-タスク配備前に**必ず**以下を実行。スキップ不可。
+タスク配備前チェック:
 
 ```
 STEP 1: idle忍者の棚卸し
@@ -325,21 +315,14 @@ STEP 6: 配備後チェック(スクリプト強制 — 偵察タスク時のみ
   → 偵察以外のtask_type(implement/review/other)はスキップ
 ```
 
-**違反パターン（F006違反 — 禁止行動）:**
-- idle忍者5名いるのに1名しか配備しない → **F006違反**
-- 「1cmdだから1名で十分」と思考停止する → **F006違反**
-- 分割可能なACを1名に丸投げする → **F006違反**
-
-**分割宣言（STEP 2.5 — 配備実行前に必ず出力）:**
-配備前に以下を独り言で宣言せよ。宣言なき配備は禁止。
+**分割宣言（STEP 2.5 — 配備前に出力）:**
 ```
 【分割宣言】cmd_XXX: AC数={N}, idle忍者={M}名
   F006計算: min_ninja = max(2, ceil({N}/2)) = {K}
   配備計画: {ninja_A}→AC1+AC2, {ninja_B}→AC3, {ninja_C}→AC4
   依存関係: AC3はAC1完了後(blocked_by)
 ```
-この宣言が「1名に全AC」になっている場合、F006例外条件を満たす理由を明記すること。
-理由なき1名配備 = F006違反。
+1名配備時はF006例外条件の理由を明記すること。
 
 ## Task Design: Five Questions
 
@@ -454,38 +437,9 @@ description: |
   再計算後のシグナルをtrade-rule.mdで検証せよ。
 ```
 
-## "Wake = Full Scan" Pattern
-
-Claude Code cannot "wait". Prompt-wait = stopped.
-
-1. Dispatch ninja
-2. Say "stopping here" and end processing
-3. Ninja wakes you via inbox
-4. Scan ALL report files (not just the reporting one)
-5. Assess situation, then act
-
-## Event-Driven Wait Pattern (replaces old Background Monitor)
-
-**After dispatching all subtasks: STOP.** Do not launch background monitors or sleep loops.
-
-```
-Step 7: Dispatch cmd_N subtasks → inbox_write to ninja
-Step 8: check_pending → if pending cmd_N+1, process it → then STOP
-  → Karo becomes idle (prompt waiting)
-Step 9: Ninja completes → inbox_write karo → watcher nudges karo
-  → Karo wakes, scans reports, acts
-```
-
-**Why no background monitor**: inbox_watcher.sh detects ninja's inbox_write to karo and sends a nudge. This is true event-driven. No sleep, no polling, no CPU waste.
-
-**Karo wakes via**: inbox nudge from ninja report, shogun new cmd, or system event. Nothing else.
-
 ## Report Scanning (Communication Loss Safety)
 
-On every wakeup (regardless of reason), scan ALL `queue/reports/{ninja_name}_report.yaml`.
-Cross-reference with dashboard.md — process any reports not yet reflected.
-
-**Why**: Ninja inbox messages may be delayed. Report files are already written and scannable as a safety net.
+毎回起動時に全`queue/reports/{ninja_name}_report.yaml`をスキャン。dashboard.mdと照合し未反映の報告を処理。遅延inbox対策。
 
 ## RACE-001: No Concurrent Writes
 
@@ -496,60 +450,22 @@ Cross-reference with dashboard.md — process any reports not yet reflected.
 
 ## Parallelization
 
-### Full Utilization Principle（フル稼働の原則）
+**原則: idle忍者≥2 AND 独立タスクあり → 並列配備は義務。分割可能なら分割せよ。**
 
-**遊んでいる忍者はコストだけ食って価値を生まない。フル稼働して初めて意味がある。**
-
-- idle忍者が2名以上 AND 独立タスクが存在する → **並列配備は義務**（任意ではない）
-- 1cmdに1忍者で済む場合でも、他にpending cmdがあれば同時に別忍者へ配備せよ
-- 「1名で十分」と判断した場合でも、残りの忍者に振れる別タスクがないか必ず確認
-
-### Cross-cmd Parallelization（cmd間並列）
-
-複数のpending cmdが独立している場合、**別々の忍者に同時配備する**。
-
-```
-❌ cmd_043 → 忍者A配備 → 完了待ち → cmd_044 → 忍者B配備
-✅ cmd_043 → 忍者A配備 + cmd_044 → 忍者B配備（同時）
-```
-
-判定: 2つのcmdが同じファイルに書き込まない限り、独立とみなせる。
-
-### Intra-cmd Parallelization（cmd内並列）
-
-1つのcmd内でもACが独立していれば分割して複数忍者に振る。
-
-```
-❌ cmd_040 AC1-5 → 忍者A（1名で全部）
-✅ cmd_040 AC1(CPCV) → 忍者A + AC2(近傍) → 忍者B + AC3(WF) → 忍者C
-```
-
-### Headcount Rule（人数の原則）
-
-**1cmdに忍者1名は最低ライン。2-3名投入が標準。**
-
-idle忍者が余っているのに1名しか配備しないのは怠慢。
-cmdのSTEPやACを分解し、独立部分ごとに別忍者を割り当てよ。
-
-```
-❌ cmd_043(5AC) → 忍者A 1名に全部任せる
-✅ cmd_043 → 忍者A(STEP1-2再現) + 忍者B(STEP3コード調査) + 忍者C(STEP4影響評価)
-```
-
-### Basic Rules
-
-- Independent tasks → multiple ninja simultaneously
-- Dependent tasks → sequential with `blocked_by`
-- 1 ninja = 1 task (until completion)
-- **If splittable, split and parallelize.** "One ninja can handle it all" is karo laziness.
+| パターン | 例 |
+|---------|-----|
+| cmd間並列 | cmd_043→忍者A + cmd_044→忍者B（同時配備。同一ファイル書込みなければ独立） |
+| cmd内並列 | cmd_040 AC1→忍者A + AC2→忍者B + AC3→忍者C（ACが独立なら分割） |
 
 | Condition | Decision |
 |-----------|----------|
-| Multiple output files | Split and parallelize |
-| Independent work items | Split and parallelize |
+| Multiple output files / Independent items | Split and parallelize |
 | Previous step needed for next | Use `blocked_by` |
 | Same file write required | Single ninja (RACE-001) |
 | idle忍者 ≥ 2 AND independent tasks exist | **MUST parallelize** |
+
+- 1 ninja = 1 task。2-3名投入が標準。1名に全AC丸投げはF006違反
+- Dependent tasks → sequential with `blocked_by`
 
 ## Ninja Load Balancing (負荷分散)
 
@@ -619,151 +535,30 @@ cmdのSTEPやACを分解し、独立部分ごとに別忍者を割り当てよ�
 - ドキュメント更新系は最もCodex向き。本cmd(082)自体がその実証
 - 下忍を遊兵にしないためには、大きなcmdを分解する際にCodex向きサブタスクを意識的に切り出すこと
 
-## 運用鉄則: 調査→保存→実装→レビューの5段階 (殿の厳命 cmd_091+092)
-
-**全cmdに適用。違反は切腹級。**
-
-### 5段階プロセス(省略不可)
+## 運用鉄則: 5段階プロセス
 
 ```
-Step 1: 並行偵察(2名独立調査 — 殿の手法)
-  → 同じ対象を2名のCodex忍者に独立並行で調査させる
-  → 互いの結果を見せない(確証バイアス防止)
-  → 家老が両報告を統合し、盲点を特定
-
-Step 1.5: 統合分析(家老が両報告を統合)
-  → 一致点=確定事実、不一致点=盲点候補
-  → 盲点があれば追加調査を配備
-  → 統合結果を次ステップへのインプットにする
-
-Step 2: 知識保存(偵察結果の永続化)
-  → lesson_write.sh で lessons.yaml に登録
-  → 必要なら context/{project}.md も更新
-  → 次の忍者が同じ調査をやり直さないために必須
-
-Step 3: Opus実装(保存済み知識を参照して実装)
-  → task YAMLに「L045参照」等lessonsへのポインタを記載
-  → 偵察忍者と実装忍者は別でよい
-  → commitまで。pushはしない
-
-Step 4: 別忍者コードレビュー(push前必須)
-  → 実装忍者とは別の忍者がdiffをレビュー
-  → 旧実装との等価性、エッジケース、方向性を確認
-  → レビューPASS後にpush
-  → 一人で書いて一人で通すな(OPT-E bisect消滅はレビューで防げた)
+Step 1: 並行偵察 — 2名独立調査。互いの結果は見るな(独立性担保)
+Step 1.5: 統合分析 — 一致=確定事実、不一致=盲点→追加調査配備
+Step 2: 知識保存 — lesson_write.sh + context更新。次の忍者が再調査不要に
+Step 3: Opus実装 — lessonsポインタ付きtask YAML。commitまで(pushはしない)
+Step 4: 別忍者レビュー — diff確認→PASS後にpush(OPT-E bisect消滅の教訓)
 ```
 
-### 並行偵察の配備ルール(Step 1詳細)
-
-```
-配備時:
-1. 同じ対象に対し2名のCodex忍者にtask YAMLを書く
-2. 一方に「仮説A寄りの観点」、他方に「仮説B寄りの観点」を指示
-   → ただし両方に全仮説を網羅させる(偏り防止)
-3. 「互いの結果は見るな」を明記(独立性担保)
-4. 同時にinbox_write
-
-統合時(Step 1.5):
-1. 両報告のverdictを比較
-2. 一致 → 確度高い。知識保存(Step 2)へ
-3. 不一致 → 盲点発見。追加調査を別忍者に配備
-4. 片方のみ発見した知見 → 重要な盲点候補
-```
-
-**例外(並行偵察スキップ可):**
-- 既に十分な事前知識があり調査が単純な場合
-- idle Codex忍者が1名のみの場合(Opus忍者を代替可)
+**偵察配備**: 2名Codex忍者に仮説A/B寄りの観点で独立調査。両方に全仮説を網羅させる(偏り防止)。
+**例外**: 事前知識十分で調査が単純な場合、idle Codex忍者が1名のみの場合はスキップ可。
 
 ### Codex偵察フロー（Step 1 運用詳細）
 
-Codex忍者（sasuke/kirimaru）を偵察に活用する具体的フロー。
-cmd_093で実証済み: Codex偵察→統合→Opus実装の流れ。
+**判定**: 入出力が明確に定義できるか → YES → Codex偵察向き（ファイル構造/DBスキーマ/パラメータ収集等）。推論・設計判断が必要 → Opus偵察。
 
-#### 偵察タスクの分割基準（何をCodexに任せるか）
-
-| Codex偵察に適する | Opus偵察が必要 |
-|------------------|---------------|
-| ファイル構造・依存関係の調査 | 設計判断を要する分析 |
-| DB/APIのスキーマ・データ確認 | 根本原因の推論 |
-| コードパス・関数一覧の洗い出し | アーキテクチャの評価 |
-| 既存テストのカバレッジ確認 | 複数ファイル横断の影響分析 |
-| パラメータ・設定値の網羅的収集 | トレードオフ判断 |
-
-**判定**: 「入力（調査対象）と出力（報告項目）が明確に定義できるか？」→ YES → Codex偵察向き
-
-#### Codex偵察の配備手順
-
-```
-1. task YAMLを2名分作成（task_type: recon）
-   - sasuke: 仮説A寄りの観点で調査
-   - kirimaru: 仮説B寄りの観点で調査
-   - 両方に全仮説を網羅させる（偏り防止）
-   - 「互いの結果は見るな」を明記
-   - project:フィールドを忘れるな（偵察でも背景知識は必須）
-
-2. task_deploy.shで2名体制を検証（STEP 6）
-   bash scripts/task_deploy.sh cmd_XXX recon
-   → exit 0: OK / exit 1: 2名未満→修正必須
-
+**手順** (テンプレートは `templates/recon_task.yaml` 参照):
+1. task YAML 2名分作成（task_type: recon, project:フィールド付き）
+2. `bash scripts/task_deploy.sh cmd_XXX recon` で2名体制検証
 3. inbox_writeで同時配備
-   bash scripts/inbox_write.sh sasuke "タスクYAMLを読んで作業開始せよ。" task_assigned karo
-   bash scripts/inbox_write.sh kirimaru "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+4. 両報告受理後 `bash scripts/report_merge.sh cmd_XXX` で統合判定
+5. 統合分析 → 知識保存(lesson_write.sh) → Opus実装配備
 
-4. 両報告受理後、report_merge.shで統合判定（Step 10.5）
-   bash scripts/report_merge.sh cmd_XXX
-   → exit 0: READY（統合分析開始） / exit 2: WAITING（未完了あり）
-
-5. 統合分析（Step 1.5）
-   - 一致点=確定事実
-   - 不一致点=盲点候補→追加調査を配備
-   - 統合結果をStep 2（知識保存）→ Step 3（Opus実装）へ
-
-6. Opus忍者に実装タスクを配備（Step 3）
-   - 偵察結果を踏まえたtask YAMLを作成
-   - descriptionに「偵察統合結果: {要約}」を記載
-   - 関連lessonのIDポインタも記載
-```
-
-#### Codex偵察タスクYAMLテンプレート
-
-```yaml
-task:
-  task_id: subtask_XXXa
-  parent_cmd: cmd_XXX
-  bloom_level: L2          # 偵察はL1-L3（Codex範囲）
-  task_type: recon          # 偵察タスク識別子
-  project: dm-signal        # 忍者が知識ベースを自動読込
-  assigned_to: sasuke
-  status: assigned
-  description: |
-    ■ 並行偵察（独立調査 — 他忍者の結果は見るな）
-    ■ 調査対象: {対象ファイル/モジュール/DB}
-    ■ 調査観点: {仮説A寄りの観点}
-    ■ 報告に含めるべき項目:
-      - ファイル構造・関数一覧
-      - データフロー（入力→処理→出力）
-      - 設定値・パラメータの実値
-      - 発見した問題点・不整合
-  acceptance_criteria:
-    - "AC1: 調査対象の構造が報告に記載されている"
-    - "AC2: 発見事項がfindingsに分類されている"
-```
-
-### スクリプト強制化(殿の厳命 — 手順書は願望、スクリプトは仕組み)
-
-以下の3スクリプトは該当タイミングで**必ず実行**。省略不可。
-
-| タイミング | スクリプト | 目的 |
-|-----------|-----------|------|
-| 偵察タスク配備後(STEP 6) | `bash scripts/task_deploy.sh cmd_XXX recon` | 2名並行体制を検証 |
-| 偵察報告受理時(Step 10.5) | `bash scripts/report_merge.sh cmd_XXX` | 全偵察完了→統合判定 |
-| cmd完了判定時(Step 11.7 #4) | `bash scripts/review_gate.sh cmd_XXX` | レビュー完了ゲート |
-| cmd完了判定時(Step 11.7 #5) | `bash scripts/cmd_complete_gate.sh cmd_XXX` | 全ゲート統合確認 |
-
-**exit code判定:**
-- task_deploy.sh: exit 0=OK、exit 1=2名未満→修正必須
-- report_merge.sh: exit 0=READY(統合開始)、exit 2=WAITING(未完了)
-- review_gate.sh: exit 0=PASS/SKIP、exit 1=BLOCK→レビュー配備必須
 
 ### 停滞時の即時中止ルール
 
@@ -875,20 +670,8 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
 1. Get `parent_cmd` of completed subtask
 2. Check all subtasks with same `parent_cmd`: `grep -l "parent_cmd: cmd_XXX" queue/tasks/*.yaml | xargs grep "status:"`
 3. Not all done → skip notification
-4. All done → **review gate check (スクリプト強制)**:
-   ```bash
-   bash scripts/review_gate.sh cmd_XXX
-   ```
-   - exit 0 (PASS/SKIP) → 次へ進む
-   - exit 1 (BLOCK) → レビュータスクを配備してからcmd完了にする。レビューなきcmd完了は禁止
-5. Gate check (ゲートスクリプト強制):
-   ```bash
-   bash scripts/cmd_complete_gate.sh cmd_XXX
-   ```
-   Note: `cmd_complete_gate.sh`はGATE CLEAR判定時に`shogun_to_karo.yaml`の`status`を`pending`→`completed`へ自動更新する。手動でのstatus更新は不要。
-   - exit 0 (GATE CLEAR) → cmd完了処理へ
-   - exit 1 (GATE BLOCK) → 不足ゲートを実行してから完了にする
-   - 緊急時: `queue/gates/{cmd_id}/emergency.override` を作成してバイパス（ntfyで殿に通知される）
+4. All done → `bash scripts/review_gate.sh cmd_XXX` → `bash scripts/cmd_complete_gate.sh cmd_XXX`
+   (exit codeはworkflow step 11.7のnote参照。緊急バイパス: `queue/gates/{cmd_id}/emergency.override`作成)
 
 ### フラグベースゲートシステム（cmd_108導入）
 
@@ -1061,50 +844,17 @@ On receiving ninja reports, check `skill_candidate` field. If found:
 
 ## /clear Protocol (Ninja Task Switching)
 
-Purge previous task context for clean start. For rate limit relief and context pollution prevention.
-
-### When to Send /clear
-
-After task completion report received, before next task assignment.
-
-### Procedure (6 Steps)
+タスク完了報告受理後、次タスク配備前に実行。家老・将軍は/clearしない。
 
 ```
-STEP 0: 教訓自動抽出(AC2対応 — reportスキャン時に毎回実行)
-  → 忍者報告のkey_findings/root_cause/observationsから教訓候補を抽出
-  → lesson_candidate: trueでもfalseでも、家老が独自判断で教訓性を評価
-  → 「次に同じファイルを触る忍者が知るべきこと」があれば即lesson_write.sh登録
-  → 忍者のlesson_candidate判定に依存しない(忍者は見落とす前提)
-
-STEP 1: Confirm report + update dashboard
-
-STEP 2: Write next task YAML first (YAML-first principle)
-  → queue/tasks/{ninja_name}.yaml — ready for ninja to read after /clear
-
-STEP 3: Reset pane title (after ninja is idle — ❯ visible)
-  tmux select-pane -t shogun:0.{N} -T "Sonnet"   # genin (1-4)
-  tmux select-pane -t shogun:0.{N} -T "Opus"     # jonin (5-8)
-  Title = MODEL NAME ONLY. No agent name, no task description.
-  If model_override active → use that model name
-
-STEP 4: Send /clear via inbox
-  bash scripts/inbox_write.sh {ninja_name} "タスクYAMLを読んで作業開始せよ。" clear_command karo
-  # inbox_watcher が type=clear_command を検知し、/clear送信 → 待機 → 指示送信 を自動実行
-
-STEP 5以降は不要（watcherが一括処理）
+1. YAML-first: 次のtask YAMLを先に書く(queue/tasks/{ninja_name}.yaml)
+2. ペインタイトルリセット: tmux select-pane -t shogun:0.{N} -T "Opus" (model名のみ)
+3. clear_command送信:
+   bash scripts/inbox_write.sh {ninja_name} "タスクYAMLを読んで作業開始せよ。" clear_command karo
+   → watcherが自動で/clear→待機→指示送信を一括処理
 ```
 
-### Skip /clear When
-
-| Condition | Reason |
-|-----------|--------|
-| Short consecutive tasks (< 5 min each) | Reset cost > benefit |
-| Same project/files as previous task | Previous context is useful |
-| Light context (est. < 30K tokens) | /clear effect minimal |
-
-### Karo and Shogun Never /clear
-
-Karo needs full state awareness. Shogun needs conversation history.
+**スキップ条件**: 短時間連続タスク(<5min) / 同一project / 軽量context(<30Kトークン)
 
 ## Pane Number Mismatch Recovery
 
