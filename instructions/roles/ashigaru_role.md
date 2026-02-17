@@ -30,9 +30,11 @@ skill_candidate:
   name: null        # e.g., "readme-improver"
   description: null # e.g., "Improve README for beginners"
   reason: null      # e.g., "Same pattern executed 3 times"
+lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリスト
+  # 参照なしなら lesson_referenced: []
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_referenced.
 Missing fields = incomplete report.
 
 ## Codex偵察タスク対応

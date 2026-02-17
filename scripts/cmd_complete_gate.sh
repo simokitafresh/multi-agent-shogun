@@ -169,6 +169,50 @@ for gate in "${ALL_GATES[@]}"; do
     fi
 done
 
+# ─── lesson_referenced検証（related_lessonsあり→報告にlesson_referenced必須） ───
+echo ""
+echo "Lesson referenced check:"
+LESSON_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    # related_lessonsの有無をチェック（空リスト[]やnullは除外）
+    has_lessons=$(python3 -c "
+import yaml, sys
+try:
+    with open('$task_file') as f:
+        data = yaml.safe_load(f)
+    task = data.get('task', {}) if data else {}
+    rl = task.get('related_lessons', [])
+    print('yes' if rl and len(rl) > 0 else 'no')
+except:
+    print('no')
+" 2>/dev/null)
+
+    if [ "$has_lessons" = "yes" ]; then
+        LESSON_CHECKED=true
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+
+        if [ -f "$report_file" ]; then
+            if grep -q 'lesson_referenced:' "$report_file" 2>/dev/null; then
+                echo "  ${ninja_name}: OK (lesson_referenced present)"
+            else
+                echo "  ${ninja_name}: NG ← related_lessonsあり、lesson_referencedフィールド欠落"
+                ALL_CLEAR=false
+            fi
+        else
+            echo "  ${ninja_name}: SKIP (report not found)"
+        fi
+    fi
+done
+if [ "$LESSON_CHECKED" = false ]; then
+    echo "  (no tasks with related_lessons for this cmd)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then

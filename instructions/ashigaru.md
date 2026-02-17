@@ -143,7 +143,7 @@ When task YAML contains `project:`, read these 3 files before any implementation
 2. `projects/{project}/lessons.yaml`
 3. `context/{project}.md`
 
-If task YAML contains `related_lessons:`, check each lesson ID in `projects/{project}/lessons.yaml` before starting work. These are auto-injected by deploy_task.sh based on keyword relevance — understand how each lesson relates to your task.
+If task YAML contains `related_lessons:`, check each lesson ID in `projects/{project}/lessons.yaml` before starting work. These are auto-injected by deploy_task.sh based on keyword relevance — understand how each lesson relates to your task. **Each entry has `reviewed: false` — change to `reviewed: true` after reading, before starting work.** This is mandatory evidence of lesson review.
 
 Task YAML is intentionally thin. If some background is not written in task YAML, look it up in these files first.
 
@@ -263,9 +263,12 @@ decision_candidate:
   alternatives: null  # e.g., "検討した他の案"
   # NOTE: 忍者はdecisions.mdに直接書き込まない。
   #        家老が報告のdecision_candidateを精査し、decision_write.shで正式登録する。
+lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリスト
+  # 参照なしなら lesson_referenced: []
+  # related_lessonsが空 or なしでも lesson_referenced: [] を必ず記載
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate, lesson_referenced.
 Missing fields = incomplete report.
 
 ### Lessons Field Guidelines

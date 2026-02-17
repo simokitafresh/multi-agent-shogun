@@ -263,7 +263,7 @@ try:
         recent = lessons[:3]  # lessons.yaml is already ordered by recency
         top = [(0, l.get('id', ''), l.get('summary', '') or l.get('title', '')) for l in recent]
 
-    related = [{'id': lid, 'summary': summary} for _, lid, summary in top]
+    related = [{'id': lid, 'summary': summary, 'reviewed': False} for _, lid, summary in top]
     task['related_lessons'] = related
 
     # Atomic write
