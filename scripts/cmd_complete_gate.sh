@@ -213,6 +213,45 @@ if [ "$LESSON_CHECKED" = false ]; then
     echo "  (no tasks with related_lessons for this cmd)"
 fi
 
+# ─── reviewed:false残存チェック（教訓確認の強制） ───
+echo ""
+echo "Lesson reviewed check:"
+REVIEWED_OK=true
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    unreviewed=$(python3 -c "
+import yaml, sys
+try:
+    with open('$task_file') as f:
+        data = yaml.safe_load(f)
+    task = data.get('task', {}) if data else {}
+    rl = task.get('related_lessons', [])
+    if not rl:
+        sys.exit(0)
+    unrev = [l.get('id','?') for l in rl if l.get('reviewed') == False]
+    if unrev:
+        print(','.join(unrev))
+except:
+    pass
+" 2>/dev/null)
+
+    ninja_name=$(basename "$task_file" .yaml)
+    if [ -n "$unreviewed" ]; then
+        echo "  ${ninja_name}: NG ← reviewed:false残存 [${unreviewed}]"
+        REVIEWED_OK=false
+        ALL_CLEAR=false
+    else
+        echo "  ${ninja_name}: OK (all reviewed)"
+    fi
+done
+if [ "$REVIEWED_OK" = true ]; then
+    echo "  (all lessons reviewed or no lessons)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then

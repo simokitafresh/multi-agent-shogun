@@ -37,6 +37,12 @@ CODEX_DEBOUNCE=180     # Codex専用再通知抑制（秒）— 短時間サイ�
 STALL_THRESHOLD_MIN=15 # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
 
+# Self-restart on script change (inbox_watcher.shから移植)
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
+STARTUP_TIME="$(date +%s)"
+MIN_UPTIME=10  # minimum seconds before allowing auto-restart
+
 # 監視対象の忍者名リスト（karoと将軍は対象外）
 NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
 
@@ -564,6 +570,21 @@ check_shogun_ctx() {
     fi
 }
 
+# ─── Self-restart on script change (inbox_watcher.shから移植) ───
+check_script_update() {
+    local current_hash
+    current_hash="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
+    if [ "$current_hash" != "$SCRIPT_HASH" ]; then
+        local uptime=$(($(date +%s) - STARTUP_TIME))
+        if [ "$uptime" -lt "$MIN_UPTIME" ]; then
+            log "RESTART-GUARD: Script changed but uptime too short (${uptime}s < ${MIN_UPTIME}s), skipping"
+            return 0
+        fi
+        log "AUTO-RESTART: Script file changed (hash: $SCRIPT_HASH → $current_hash), restarting..."
+        exec "$SCRIPT_PATH"
+    fi
+}
+
 # ─── 初期ペイン探索 ───
 discover_panes
 
@@ -678,4 +699,7 @@ while true; do
 
     # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
     write_state_file
+
+    # ═══ Self-restart check ═══
+    check_script_update
 done

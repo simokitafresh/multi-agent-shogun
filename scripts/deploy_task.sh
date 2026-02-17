@@ -266,6 +266,18 @@ try:
     related = [{'id': lid, 'summary': summary, 'reviewed': False} for _, lid, summary in top]
     task['related_lessons'] = related
 
+    # (A) description冒頭に教訓要約を挿入（忍者が即座に目にする）
+    if related:
+        desc = task.get('description', '')
+        marker = '【注入教訓】'
+        if marker not in str(desc):
+            lines = [marker + ' 必ず確認し reviewed: true に変更せよ']
+            for r in related:
+                lines.append(f\"  - {r['id']}: {r['summary'][:80]}\")
+            lines.append('─' * 40)
+            prefix = '\\n'.join(lines) + '\\n\\n'
+            task['description'] = prefix + str(desc or '')
+
     # Atomic write
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
     try:
