@@ -38,6 +38,58 @@ update_status() {
     ) 200>"$lock_file"
 }
 
+# ─── changelog自動記録関数 ───
+append_changelog() {
+    local cmd_id="$1"
+    local changelog="$SCRIPT_DIR/queue/completed_changelog.yaml"
+    local completed_at
+    completed_at=$(date '+%Y-%m-%dT%H:%M:%S')
+
+    # shogun_to_karo.yamlから該当cmdのpurposeとprojectを抽出
+    local purpose
+    purpose=$(awk -v id="  - id: ${cmd_id}" '
+        $0 == id { found=1; next }
+        found && /^  - id:/ { exit }
+        found && /^    purpose:/ { sub(/^    purpose: *"?/, ""); sub(/"$/, ""); print; exit }
+    ' "$YAML_FILE")
+
+    local project
+    project=$(awk -v id="  - id: ${cmd_id}" '
+        $0 == id { found=1; next }
+        found && /^  - id:/ { exit }
+        found && /^    project:/ { sub(/^    project: */, ""); print; exit }
+    ' "$YAML_FILE")
+
+    if [ -z "$purpose" ]; then
+        echo "CHANGELOG WARNING: purpose not found for ${cmd_id}"
+        return 0
+    fi
+    [ -z "$project" ] && project="unknown"
+
+    # ファイルが無ければヘッダ作成
+    if [ ! -f "$changelog" ]; then
+        echo "entries:" > "$changelog"
+    fi
+
+    # エントリ追記
+    cat >> "$changelog" <<EOF
+  - id: ${cmd_id}
+    project: ${project}
+    purpose: "${purpose}"
+    completed_at: "${completed_at}"
+EOF
+
+    # 20件超なら古い順に剪定（各エントリ=4行、ヘッダ=1行）
+    local entry_count
+    entry_count=$(grep -c '^  - id:' "$changelog" 2>/dev/null || echo 0)
+    if [ "$entry_count" -gt 20 ]; then
+        { head -1 "$changelog"; tail -n 80 "$changelog"; } > "${changelog}.tmp"
+        mv "${changelog}.tmp" "$changelog"
+    fi
+
+    echo "CHANGELOG: ${cmd_id} recorded (project=${project})"
+}
+
 # ─── task_type検出: タスクYAMLからparent_cmd一致のtask_typeを収集 ───
 detect_task_types() {
     local cmd_id="$1"
@@ -85,6 +137,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     done
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "🚨 緊急override: ${CMD_ID}のゲートをバイパス"
     update_status "$CMD_ID"
+    append_changelog "$CMD_ID"
     exit 0
 fi
 
@@ -121,6 +174,7 @@ echo ""
 if [ "$ALL_CLEAR" = true ]; then
     echo "GATE CLEAR: cmd完了許可"
     update_status "$CMD_ID"
+    append_changelog "$CMD_ID"
     exit 0
 else
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
