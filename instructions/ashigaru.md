@@ -143,6 +143,8 @@ When task YAML contains `project:`, read these 3 files before any implementation
 2. `projects/{project}/lessons.yaml`
 3. `context/{project}.md`
 
+If task YAML contains `related_lessons:`, check each lesson ID in `projects/{project}/lessons.yaml` before starting work. These are auto-injected by deploy_task.sh based on keyword relevance — understand how each lesson relates to your task.
+
 Task YAML is intentionally thin. If some background is not written in task YAML, look it up in these files first.
 
 ## 並行偵察ルール (恒久ルール・殿の手法)
@@ -321,6 +323,7 @@ Recover from primary data:
    - `projects/{project}/lessons.yaml` — project-specific lessons (past mistakes, discoveries)
    - `context/{project}.md` — detailed context (system architecture, analysis tools, data management)
    All 3 files serve different purposes. Read all before starting work.
+   If task YAML has `related_lessons:`, check each lesson ID in lessons.yaml and understand relevance to your task.
    Information omitted from task YAML is expected to exist in these files. Do not treat omission as missing requirements.
 5. dashboard.md is secondary info only — trust YAML as authoritative
 

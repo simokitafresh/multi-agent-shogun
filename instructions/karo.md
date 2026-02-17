@@ -299,11 +299,11 @@ STEP 3: 配備計画（idle忍者数 ≥ タスク単位数になるまで統合
   → idle忍者 3名、タスク単位 6個 → 3名配備（依存あるものはblocked_by）
   → idle忍者 6名、タスク単位 1個 → 分割が本当に不可能か再検討
 
-STEP 4: 知識自動注入(AC1対応)
-  → task YAMLにproject:がある場合:
-    1. projects/{id}/lessons.yamlから関連lessonを検索(タスク関連キーワード)
-    2. 関連lessonのIDをtask YAMLのdescriptionに「■ 関連教訓: L045, L043参照」として記載
-    3. context/{project}.mdの該当セクションへのポインタも記載
+STEP 4: 知識自動注入(deploy_task.shが自動処理)
+  → deploy_task.shが配備時にtask YAMLのproject/title/descriptionからキーワード抽出し、
+    projects/{id}/lessons.yamlとスコアリング照合して上位5件をrelated_lessonsに自動注入する。
+    家老がrelated_lessonsを手動記載する必要はない。
+    ただしdescriptionへの関連教訓ポインタは引き続き推奨（冗長な安全網）。
   → 忍者の「読み忘れ」を構造的に排除
 
 STEP 5: 配備実行
