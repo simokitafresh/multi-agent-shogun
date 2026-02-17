@@ -888,7 +888,37 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
    Note: `cmd_complete_gate.sh`はGATE CLEAR判定時に`shogun_to_karo.yaml`の`status`を`pending`→`completed`へ自動更新する。手動でのstatus更新は不要。
    - exit 0 (GATE CLEAR) → cmd完了処理へ
    - exit 1 (GATE BLOCK) → 不足ゲートを実行してから完了にする
-   - 緊急時: `queue/gates/{cmd_id}_emergency.override` を作成してバイパス（ntfyで殿に通知される）
+   - 緊急時: `queue/gates/{cmd_id}/emergency.override` を作成してバイパス（ntfyで殿に通知される）
+
+### フラグベースゲートシステム（cmd_108導入）
+
+cmd完了判定は`queue/gates/{cmd_id}/`ディレクトリ内の`.done`フラグで管理する。
+
+#### フラグ一覧と出力元
+
+| フラグ | 出力元スクリプト | 出力条件 | 必須/条件付き |
+|--------|-----------------|----------|-------------|
+| `archive.done` | `archive_completed.sh` (CMD_ID引数指定時) | 完了cmd退避実行時 | **全cmd必須** |
+| `lesson.done` | `lesson_write.sh` (第6引数にCMD_ID) / `lesson_check.sh` | 教訓登録 or 該当なし判定 | **全cmd必須** |
+| `review_gate.done` | `review_gate.sh` | PASS(レビュー済み) or SKIP(コード変更なし) | task_type=implement時 |
+| `report_merge.done` | `report_merge.sh` | READY(偵察全完了) or SKIP(偵察タスクなし) | task_type=recon時 |
+
+#### 家老のcmd完了フロー
+
+```
+1. 教訓レビュー:
+   - 教訓あり → lesson_write.sh {project} "{title}" "{detail}" "{cmd}" "karo" {cmd_id}
+   - 教訓なし → lesson_check.sh {cmd_id} "{理由}"
+   → lesson.done 出力
+
+2. archive_completed.sh {cmd_id} 実行 → archive.done 出力
+
+3. review_gate.sh / report_merge.sh は各スクリプト実行時に自動で.done出力
+
+4. cmd_complete_gate.sh {cmd_id} → 上記フラグ4種を検証
+   → GATE CLEAR: status自動更新(pending→completed)
+   → GATE BLOCK: 不足フラグ名を列挙 → 実行してから再実行
+```
 6. Review gate + Gate check PASS → **purpose validation**: Re-read the original cmd in `queue/shogun_to_karo.yaml`. Compare the cmd's stated purpose against the combined deliverables. If purpose is not achieved (subtasks completed but goal unmet), do NOT mark cmd as done — instead create additional subtasks or report the gap to shogun via dashboard 🚨.
 7. Purpose validated → update `saytask/streaks.yaml`:
    - `today.completed` += 1 (**per cmd**, not per subtask)
