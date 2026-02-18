@@ -900,7 +900,7 @@ while true; do
 
         # Phase 2b: Codex忍者は追加待機後にチェック（APIコール間隔が長い）
         if [ ${#codex_idle[@]} -gt 0 ]; then
-            local codex_confirm_wait
+            codex_confirm_wait=""
             codex_confirm_wait=$(cli_profile_get "${codex_idle[0]}" "confirm_wait")
             extra_wait=$((codex_confirm_wait - CONFIRM_WAIT))
             sleep "${extra_wait:-15}"
