@@ -97,7 +97,6 @@
 !scripts/lesson_check.sh
 !scripts/deploy_task.sh
 !scripts/cmd_absorb.sh
-!scripts/inbox_mark_read.sh
 
 
 # SayTask (sample template only, not actual data)
