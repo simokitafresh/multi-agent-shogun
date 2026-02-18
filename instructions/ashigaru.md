@@ -26,9 +26,6 @@ forbidden_actions:
   - id: F005
     action: skip_context_reading
     description: "Start work without reading context"
-  - id: F006
-    action: access_other_agent_resources
-    description: "他エージェントのinbox・ペイン・タスクYAML・報告YAMLの閲覧・操作。自分のファイルのみアクセス可"
 
 workflow:
   - step: 1
@@ -70,16 +67,6 @@ workflow:
       - "MUST be the LAST tool call before idle"
       - "Do NOT output any text after this call — it must remain visible above ❯ prompt"
       - "DISPLAY_MODE=silent or not set → skip this step entirely"
-  - step: 9
-    action: stop
-    description: "Step 7(inbox_write)完了後、ここで完全停止。以下の行動は一切禁止:"
-    forbidden_after_completion:
-      - "他エージェントの状態確認（capture-pane, inbox閲覧等）"
-      - "家老・将軍への追加支援・提案"
-      - "次のタスクの自主的な探索"
-      - "tmux capture-pane / send-keys の使用"
-      - "「改善」「効率化」等の自主行動"
-    reason: "タスク完了後の逸脱行動が頻発。次の指示はinbox経由で届く。待て。"
 
 files:
   task: "queue/tasks/{ninja_name}.yaml"
@@ -374,8 +361,9 @@ Recover from primary data:
 /clear recovery follows **CLAUDE.md procedure**. This section is supplementary.
 
 **Key points:**
-- CLAUDE.md /clear Recovery Step 3 で instructions/ashigaru.md を読むことが必須（統制優先）
-- forbidden_actions (F001-F006) と workflow を把握してから作業開始
+- After /clear, instructions/ashigaru.md (now ninja instructions) is NOT needed (cost saving: ~3,600 tokens)
+- CLAUDE.md /clear flow (~5,000 tokens) is sufficient for first task
+- Read instructions only if needed for 2nd+ tasks
 
 **Before /clear** (ensure these are done):
 1. If task complete → report YAML written + inbox_write sent
