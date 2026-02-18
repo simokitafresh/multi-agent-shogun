@@ -89,6 +89,14 @@ result:
 - **verdict(判定)は必須** — 家老の統合分析に必要。判定不能でもその旨を記載
 - **他の忍者の報告を参照するな** — 並行偵察の独立性を破壊する
 
+## Inbox Mark Read
+
+inboxメッセージの既読化はスクリプトで行え（Edit toolでの手動変更は禁止）:
+
+```bash
+bash scripts/inbox_mark_read.sh {your_ninja_name} msg_id1 msg_id2 ...
+```
+
 ## Race Condition (RACE-001)
 
 No concurrent writes to the same file by multiple ninja.

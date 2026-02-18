@@ -546,7 +546,7 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
 - Step 11.7: saytask/streaks.yaml → Read → Edit
 - Unblock: queue/tasks/{ninja}.yaml → Read → Edit
 - /clear: queue/tasks/{ninja}.yaml → Read → Write
-- inbox既読化: queue/inbox/{id}.yaml → Read → Edit
+- inbox既読化: `bash scripts/inbox_mark_read.sh {id} msg_id1 msg_id2 ...`
 
 ## Report Scanning (Communication Loss Safety)
 
