@@ -1,0 +1,54 @@
+# multi-agent-shogun 設定ファイル
+
+# 言語設定
+# ja: 日本語（戦国風日本語のみ、併記なし）
+# en: 英語（戦国風日本語 + 英訳併記）
+# その他の言語コード（es, zh, ko, fr, de 等）も対応
+language: ja
+
+# シェル設定
+# bash: bash用プロンプト（デフォルト）
+# zsh: zsh用プロンプト
+shell: bash
+
+# スキル設定
+skill:
+  # スキル保存先（スキル名に shogun- プレフィックスを付けて保存）
+  save_path: "~/.claude/skills/"
+
+  # ローカルスキル保存先（このプロジェクト専用）
+  local_path: "/mnt/c/tools/multi-agent-shogun-main/skills/"
+
+# CLI設定（エージェント別CLI種別）
+cli:
+  default: claude
+  agents:
+    sasuke:
+      type: codex
+      tier: genin
+    kirimaru:
+      type: codex
+      tier: genin
+    hayate:
+      tier: jonin
+    kagemaru:
+      tier: jonin
+    hanzo:
+      tier: jonin
+    saizo:
+      tier: jonin
+    kotaro:
+      tier: jonin
+    tobisaru:
+      tier: jonin
+
+# ntfy設定
+ntfy_topic: "shogun-simokitafresh"
+
+# Gist設定（ダッシュボード公開用）
+gist_url: "https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"
+
+# ログ設定
+logging:
+  level: info  # debug | info | warn | error
+  path: "/mnt/c/tools/multi-agent-shogun-main/logs/"

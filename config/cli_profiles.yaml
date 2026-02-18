@@ -1,0 +1,61 @@
+# cli_profiles.yaml — CLI動作差異のSSOT (Single Source of Truth)
+# cmd_143 Phase 1: Profile SSOT基盤
+#
+# 各CLIの動作差異をデータ化。
+# 値はソースコード(ninja_monitor.sh, inbox_watcher.sh)から正確に抽出。
+#
+# 参照元:
+#   scripts/lib/cli_lookup.sh (本ファイルを読み取る)
+#   将来: ninja_monitor.sh, inbox_watcher.sh がこのファイルを参照 (Stage 2)
+
+profiles:
+  claude:
+    # 起動コマンド (lib/cli_adapter.sh L137-138)
+    launch_cmd: "claude --dangerously-skip-permissions"
+    # CTXパース正規表現 (ninja_monitor.sh L181, L518)
+    ctx_pattern: "CTX:[0-9]+%"
+    # CTX解釈モード: "usage"=使用率(Claude), "remaining"=残量(Codex)
+    ctx_mode: "usage"
+    # idleプロンプト判定 (ninja_monitor.sh L154)
+    idle_pattern: "❯"
+    # ビジー判定パターン (ninja_monitor.sh L149)
+    busy_patterns:
+      - "esc to interrupt"
+      - "Running"
+      - "Streaming"
+    # セッションリセットコマンド (ninja_monitor.sh L69)
+    clear_cmd: "/clear"
+    # /modelコマンド対応 (inbox_watcher.sh L125: claude=pass through)
+    supports_model_switch: true
+    # idle確認待ち秒数 (ninja_monitor.sh L34: CONFIRM_WAIT=5)
+    confirm_wait: 5
+    # 同一忍者の再通知抑制秒数 (ninja_monitor.sh L33: DEBOUNCE=60)
+    debounce: 60
+    # auto-clear再送信抑制秒数 (ninja_monitor.sh L88: CLEAR_DEBOUNCE=300)
+    clear_debounce: 300
+
+  codex:
+    # 起動コマンド (lib/cli_adapter.sh L142)
+    launch_cmd: "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
+    # CTXパース正規表現 (ninja_monitor.sh L190, L522)
+    ctx_pattern: "[0-9]+% context left"
+    # CTX解釈モード: remaining% → usage%に変換 (ninja_monitor.sh L192-193)
+    ctx_mode: "remaining"
+    # idleプロンプト判定 (ninja_monitor.sh L154)
+    idle_pattern: "›"
+    # ビジー判定パターン (ninja_monitor.sh L149)
+    busy_patterns:
+      - "esc to interrupt"
+      - "Running"
+      - "Streaming"
+      - "background terminal running"
+    # セッションリセットコマンド (ninja_monitor.sh L70: /new)
+    clear_cmd: "/new"
+    # /modelコマンド非対応 (inbox_watcher.sh L103-106: skip)
+    supports_model_switch: false
+    # idle確認待ち秒数 (ninja_monitor.sh L35: CODEX_CONFIRM_WAIT=20)
+    confirm_wait: 20
+    # 同一忍者の再通知抑制秒数 (ninja_monitor.sh L36: CODEX_DEBOUNCE=180)
+    debounce: 180
+    # auto-clear再送信抑制秒数 (ninja_monitor.sh L89: CODEX_CLEAR_DEBOUNCE=600)
+    clear_debounce: 600
