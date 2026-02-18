@@ -233,7 +233,7 @@ Before assigning tasks, ask yourself these five questions:
 task:
   task_id: subtask_001
   parent_cmd: cmd_001
-  bloom_level: L3        # L1-L3=Sonnet, L4-L6=Opus
+  bloom_level: L3        # L1-L3=genin, L4-L6=jonin
   description: "Create hello1.md with content 'おはよう1'"
   target_path: "/mnt/c/tools/multi-agent-shogun/hello1.md"
   echo_message: "🔥 佐助、先陣を切って参る！八刃一志！"
@@ -297,30 +297,30 @@ Karo is the **only** agent that updates dashboard.md. Neither shogun nor ninja t
 
 ## Model Selection: Bloom's Taxonomy
 
-| Agent | Model | Pane |
-|-------|-------|------|
-| Shogun | Opus (effort: high) | shogun:0.0 |
-| Karo | Opus **(effort: max, always)** | shogun:0.0 |
-| 下忍(genin): sasuke/kirimaru/hayate/kagemaru | Sonnet | shogun:0.1-0.4 |
-| 上忍(jonin): hanzo/saizo/kotaro/tobisaru | Opus | shogun:0.5-0.8 |
+| Agent | Tier | Pane |
+|-------|------|------|
+| Shogun | — | shogun:0.0 |
+| Karo | — | shogun:0.0 |
+| 下忍(genin): sasuke/kirimaru/hayate/kagemaru | genin | shogun:0.1-0.4 |
+| 上忍(jonin): hanzo/saizo/kotaro/tobisaru | jonin | shogun:0.5-0.8 |
 
-**Default: Assign to 下忍(genin) - Sonnet ninja.** Use 上忍(jonin) - Opus ninja only when needed.
+**Default: Assign to 下忍(genin).** Use 上忍(jonin) only when needed. 具体的モデル名は `config/settings.yaml` 参照。
 
 ### Bloom Level → Model Mapping
 
-**⚠️ If ANY part of the task is L4+, use Opus. When in doubt, use Opus.**
+**⚠️ If ANY part of the task is L4+, use jonin. When in doubt, use jonin.**
 
-| Question | Level | Model |
-|----------|-------|-------|
-| "Just searching/listing?" | L1 Remember | Sonnet |
-| "Explaining/summarizing?" | L2 Understand | Sonnet |
-| "Applying known pattern?" | L3 Apply | Sonnet |
-| **— Sonnet / Opus boundary —** | | |
-| "Investigating root cause/structure?" | L4 Analyze | **Opus** |
-| "Comparing options/evaluating?" | L5 Evaluate | **Opus** |
-| "Designing/creating something new?" | L6 Create | **Opus** |
+| Question | Level | Tier |
+|----------|-------|------|
+| "Just searching/listing?" | L1 Remember | genin |
+| "Explaining/summarizing?" | L2 Understand | genin |
+| "Applying known pattern?" | L3 Apply | genin |
+| **— genin / jonin boundary —** | | |
+| "Investigating root cause/structure?" | L4 Analyze | **jonin** |
+| "Comparing options/evaluating?" | L5 Evaluate | **jonin** |
+| "Designing/creating something new?" | L6 Create | **jonin** |
 
-**L3/L4 boundary**: Does a procedure/template exist? YES = L3 (Sonnet). NO = L4 (Opus).
+**L3/L4 boundary**: Does a procedure/template exist? YES = L3 (genin). NO = L4 (jonin).
 
 ## SayTask Notifications
 
@@ -349,14 +349,14 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
    - Check frog: if any completed task_id matches `today.frog` → 🐸 notification, reset frog
 6. Send ntfy notification
 
-## Codex偵察フロー（Step 1 運用詳細）
+## genin偵察フロー（Step 1 運用詳細）
 
-Codex忍者（sasuke/kirimaru）を偵察に活用する具体的フロー。
-cmd_093で実証済み: Codex偵察→統合→Opus実装の流れ。
+genin忍者（sasuke/kirimaru）を偵察に活用する具体的フロー。
+cmd_093で実証済み: genin偵察→統合→jonin実装の流れ。
 
-### 偵察タスクの分割基準（何をCodexに任せるか）
+### 偵察タスクの分割基準（何をgeninに任せるか）
 
-| Codex偵察に適する | Opus偵察が必要 |
+| genin偵察に適する | jonin偵察が必要 |
 |------------------|---------------|
 | ファイル構造・依存関係の調査 | 設計判断を要する分析 |
 | DB/APIのスキーマ・データ確認 | 根本原因の推論 |
@@ -364,9 +364,9 @@ cmd_093で実証済み: Codex偵察→統合→Opus実装の流れ。
 | 既存テストのカバレッジ確認 | 複数ファイル横断の影響分析 |
 | パラメータ・設定値の網羅的収集 | トレードオフ判断 |
 
-**判定**: 「入力（調査対象）と出力（報告項目）が明確に定義できるか？」→ YES → Codex偵察向き
+**判定**: 「入力（調査対象）と出力（報告項目）が明確に定義できるか？」→ YES → genin偵察向き
 
-### Codex偵察の配備手順
+### genin偵察の配備手順
 
 ```
 1. task YAMLを2名分作成（task_type: recon）
@@ -391,21 +391,21 @@ cmd_093で実証済み: Codex偵察→統合→Opus実装の流れ。
 5. 統合分析（Step 1.5）
    - 一致点=確定事実
    - 不一致点=盲点候補→追加調査を配備
-   - 統合結果をStep 2（知識保存）→ Step 3（Opus実装）へ
+   - 統合結果をStep 2（知識保存）→ Step 3（jonin実装）へ
 
-6. Opus忍者に実装タスクを配備（Step 3）
+6. jonin忍者に実装タスクを配備（Step 3）
    - 偵察結果を踏まえたtask YAMLを作成
    - descriptionに「偵察統合結果: {要約}」を記載
    - 関連lessonのIDポインタも記載
 ```
 
-### Codex偵察タスクYAMLテンプレート
+### genin偵察タスクYAMLテンプレート
 
 ```yaml
 task:
   task_id: subtask_XXXa
   parent_cmd: cmd_XXX
-  bloom_level: L2          # 偵察はL1-L3（Codex範囲）
+  bloom_level: L2          # 偵察はL1-L3（genin範囲）
   task_type: recon          # 偵察タスク識別子
   project: dm-signal        # 忍者が知識ベースを自動読込
   assigned_to: sasuke
