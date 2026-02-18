@@ -1,7 +1,7 @@
 # GS高速化×完全一致 — 知見集約ドキュメント
 
 > 管理責任: 家老(karo)
-> 最終更新: 2026-02-18 23:10（全6忍法完了）
+> 最終更新: 2026-02-19 01:45（nukimi_c正式廃止 — nukimi T1-T5拡張統合）
 > 目的: 各忍法GSスクリプトの高速化知見を蓄積し、次の忍者のタスクYAML注入元とする
 
 ---
@@ -279,6 +279,107 @@
    - `outputs/grid_search/161_kawarimi_grid_monthly_{fast,seq}.csv`
 4. ログのmd5一致(14列CSV + 月次CSV)がYESならPASS
 
+### bunshin R3（sasuke — 2026-02-18 完了 — ✅正本mode CSVs C12使用）
+
+| 項目 | 内容 |
+|------|------|
+| 担当 | sasuke |
+| タスク | subtask_165_bunshin_r3 |
+| スクリプト | run_077_bunshin.py |
+| 入力データ | mode CSVs: joushou4(wide)+chishou4(long)+gekkou4(long) = 全12コンポーネント |
+| パターン数 | 500（PATTERN_LIMIT） |
+| グリッド全体 | 781パターン |
+| コンポーネント数 | 12（C12） |
+| 結果 | **全5AC PASS** |
+| 14列CSV md5 | cbe7b7e1334ab32af420c82924a9ece6（一致） |
+| 月次リターンCSV md5 | 64f74ebd10ef527e3e467a707080776c（一致） |
+| R3ベースライン | 0.025秒 |
+| R3最適化版 | **0.017秒** |
+| 逐次版時間 | 1.029秒 |
+| 高速化倍率 | 1.45x(vs baseline), 60.28x(vs seq) |
+| R1記録 | 0.043秒(kagemaru) → **更新** |
+| 共通月 | 173ヶ月 |
+
+**★ bunshin固有の知見（R3で判明・L049）**:
+- bunshin（均等配分）は**選出ロジックを持たない**ため、他忍法R3で効いた「純Pythonインナーループ」は**逆効果**
+  - 純Pythonインナーループ: 0.024→0.029秒（悪化、0.83x）
+- 有効だったのは**固定長分岐ベクトル化（fixed-arity vectorization）**:
+  - NaN→0埋めfilled_matrix + valid_matrix(uint8)を事前計算
+  - subset_size=2/3/4で固定されるため、N2/N3/N4ごとに加算式を固定化
+  - np.nansum/np.sum(~isnan)を置換し、関数オーバーヘッドを削減
+  - 結果: 0.025→0.017秒（1.45x）
+
+**R3手法選択の指針（L049まとめ）**:
+- picks系（Pre-computed picks + 純Python）→ kawarimi, nukimi, nukimi_c（選出ロジックあり）
+- vectorization系（fixed-arity vectorization）→ bunshin（選出ロジックなし、単純平均）
+- kasoku: picks系が有効（cutoff_score閾値選出、0.577→0.127s, 4.54x — kirimaru R3で実証）
+- oikaze: 未検証（momentum top_n選出 → picks系？ sasuke R3で検証中）
+
+**再現手順**:
+1. `cd /mnt/c/Python_app/DM-signal`
+2. `python3 scripts/analysis/grid_search/run_077_bunshin.py`
+3. 出力: `outputs/grid_search/165_bunshin_grid_{results,monthly}_{fast,seq}.csv`
+4. Phase 4でmd5一致を自動検証
+
+### kawarimi R3（kotaro — 2026-02-18 完了 — ✅正本mode CSVs C12使用）
+
+| 項目 | 内容 |
+|------|------|
+| 担当 | kotaro |
+| タスク | subtask_165_kawarimi_r3 |
+| スクリプト | run_077_kawarimi.py |
+| 入力データ | mode CSVs: joushou4(wide)+chishou4(long)+gekkou4(long) = 全12コンポーネント |
+| パターン数 | 100（検証用） |
+| コンポーネント数 | 12（C12: 全コンポーネント） |
+| 結果 | **全5AC PASS** |
+| 14列CSV md5 | 70f9de5e0e886430a657601ec7e979e5（一致） |
+| 月次リターンCSV md5 | eb192c0e5762b78305493b37eaeb0140（一致） |
+| 逐次版時間 | 0.910秒 |
+| 高速版時間(R3最適化) | **0.037秒** |
+| R2記録(C8) | 0.205秒 |
+| R3ベースライン(C12 NumPy版) | 0.206秒 |
+| 対R2倍率 | **5.54倍** |
+| 対逐次版倍率 | **24.59倍** |
+| 共通月 | 173ヶ月 |
+| グリッド全数 | 140,580 |
+
+**R3で試した手法**:
+
+**(1) Pre-computed picks + 純Pythonインナーループ（✅効果あり: 0.206s→0.037s, 5.57x）**:
+- get_sim_contextでlexsort結果を(period_idx, select_n)ごとに事前計算
+- simulate_patternではlookupのみ（lexsortの再実行を排除）
+- 内部ループからnumpy呼び出しを完全排除
+- open_matrixをPythonリスト化し、v==vでNaN判定（numpy不要）
+- 小サブセット(2-4要素)ではnumpy関数呼び出しオーバーヘッド(~1-5μs/call)が実計算コスト(~10ns)を大幅に上回る
+- 純Python演算+リストアクセスで関数呼び出しオーバーヘッドを排除
+
+**(2) multiprocessing（❌未実施: 理論的に非効率）**:
+- 計算時間0.037秒に対しプロセス生成オーバーヘッド~50ms
+- オーバーヘッドが計算量を上回るため逆効果
+
+**(3) メモリレイアウト最適化（❌効果なし）**:
+- open_matrixはnp.column_stackで既にC-contiguous
+- 追加最適化不要
+
+**(4) Numba @jit（❌未実施）**:
+- numbaモジュール未インストール（殿の指示で不使用）
+
+**核心的発見（kotaro記録）**:
+> NumPy高速化の次のフェーズは「NumPyを使わない」こと。
+> 小サブセット(2-4コンポーネント)ではnumpy関数呼び出しオーバーヘッド(~1-5μs/call)が
+> 実計算コスト(~10ns)を大幅に上回る。純Python演算+リストアクセスで
+> 関数呼び出しオーバーヘッドを排除することで5.5倍の高速化を達成。
+> 加えて、lexsort結果のキャッシュ化により同一コンテキストの複数パターン間で重複計算を排除。
+
+**月次CSV md5がR2と同一(eb192c0e)の理由**:
+- 先頭100パターンがN2サブセットでgekkou未使用のため
+
+**再現手順（kotaro記録）**:
+1. `cd /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search`
+2. `python3 run_077_kawarimi.py`
+3. 出力: `outputs/grid_search/165_kawarimi_grid_{results,monthly}_{fast,seq}.csv`
+4. Phase 4でmd5自動検証
+
 ### nukimi（kirimaru — 2026-02-18 完了 — ✅正本mode CSVs使用）
 
 | 項目 | 内容 |
@@ -331,6 +432,48 @@
 3. 出力: `outputs/grid_search/161_nukimi_grid_{results,monthly}_{fast,seq}.csv`
 4. Phase 4のmd5がfast==seqであることを確認
 5. 前提: mode CSV 8ファイルがoutputs/grid_search/に存在すること
+
+### nukimi R3（sasuke — 2026-02-18 完了）
+
+| 項目 | 内容 |
+|------|------|
+| 担当 | sasuke |
+| タスク | subtask_165_nukimi_r3 |
+| スクリプト | run_077_nukimi.py |
+| 入力データ | mode CSVs: joushou4(wide)+chishou4(long)+gekkou4(long) = 12コンポーネント |
+| パターン数 | 500 |
+| コンポーネント数 | 12(C12) |
+| 結果 | **全5AC PASS** |
+| 14列CSV md5 | f7528aef6057f7975a0c2985dee9a119（一致） |
+| 月次リターンCSV md5 | d3ef15376c468c69e595deb6157ebb24（一致） |
+| R2記録(C8/100pat) | 0.181秒 |
+| R3ベースライン(C12/500pat) | 0.651秒 |
+| **R3高速版(C12/500pat)** | **0.114秒** |
+| R3逐次版(C12/500pat) | 4.537秒 |
+| 対ベースライン倍率 | **5.71倍** |
+| 共通月 | 173ヶ月 |
+
+**R3で試した手法**:
+
+**(1) Pre-computed picks + 純Pythonインナーループ（✅効果あり: 0.651s→0.114s, 5.71x）**:
+- (combo_idx, top_n_eff)ごとのpick事前計算
+- open_matrix.tolist() + v==v NaN判定による純Python平均計算
+- NumPy関数呼出しオーバーヘッド排除
+
+**(2) top_n未正規化precompute（❌失敗: 0.099sだがmd5不一致）**:
+- N2サブセットでtop_n=3キー欠落(500中165件失敗)
+- 修正: top_n_eff=min(top_n, subset_size)でキー統一
+
+**核心的発見（sasuke記録）**:
+> N2/N3/N4混在グリッドではsubsetサイズ<top_nが起きる。
+> precomputed picksのキーをtop_n_eff=min(top_n,subset_size)で統一しないと
+> keyError/md5不一致が発生する。この正規化が全忍法に必要。
+
+**再現手順（sasuke記録）**:
+1. `cd /mnt/c/Python_app/DM-signal`
+2. `python3 scripts/analysis/grid_search/run_077_nukimi.py`
+3. 出力: `outputs/grid_search/165_nukimi_grid_{results,monthly}_{fast,seq}.csv`
+4. Phase 4でmd5自動検証
 
 ### nukimi_c（hayate — 2026-02-18 完了 — ✅正本mode CSVs使用）
 
@@ -392,6 +535,255 @@
 3. 出力: `outputs/grid_search/161_nukimi_c_grid_{results,monthly}_{fast,seq}.csv`
 4. Phase 4でmd5自動検証。戻り値0=PASS
 5. 前提: mode CSV 8ファイル存在。既存出力は事前リネーム要
+
+### nukimi_c R3（kirimaru — 2026-02-18 完了 — ※対象外だが配備済みのため完了）
+
+| 項目 | 内容 |
+|------|------|
+| 担当 | kirimaru |
+| タスク | subtask_165_nukimi_c_r3 |
+| スクリプト | run_077_nukimi_c_series.py |
+| 入力データ | mode CSVs: joushou4(wide)+chishou4(long)+gekkou4(long) = 12コンポーネント |
+| パターン数 | 500 |
+| コンポーネント数 | 12(C12) |
+| 結果 | **全5AC PASS** |
+| 14列CSV md5 | 461cd0189c52646f8522ea008aee482e（一致） |
+| 月次リターンCSV md5 | 1549d4e9e382abbb1cacf602e2644e60（一致） |
+| R2記録(C8/100pat) | 0.160秒 |
+| R3ベースライン(C12/500pat) | 0.658秒 |
+| **R3高速版(C12/500pat)** | **0.126秒** |
+| R3逐次版(C12/500pat) | 4.775秒 |
+| 対ベースライン倍率 | **5.23倍** |
+| 共通月 | 173ヶ月 |
+| 備考 | 殿指示で対象外(5忍法にnukimi_c含まず)だが配備済みのため完了 |
+
+**R3で試した手法**:
+
+**(1) Pre-computed picks + 純Pythonインナーループ（✅効果あり: 0.658s→0.126s, 5.23x）**:
+- get_sim_contextで(combo_idx, top_n)ごとのpicksを事前計算
+- open_matrixをlist化し、NaN判定をv==vで処理
+- NumPy呼び出しオーバーヘッドを排除
+
+**skill_candidate**: gs-precompute-picks-small-subset
+- 小サブセットGSでpick結果を事前計算し、inner loopを純Python化する高速化手法
+- kawarimi/nukimi_cの2忍法で再現し、C12/500でもmd5一致を保ったまま有効
+
+**再現手順（kirimaru記録）**:
+1. `cd /mnt/c/Python_app/DM-signal`
+2. `python3 scripts/analysis/grid_search/run_077_nukimi_c_series.py`
+3. 出力: `outputs/grid_search/165_nukimi_c_grid_{results,monthly}_{fast,seq}.csv`
+4. Phase 4でmd5自動検証
+
+### kasoku R3（kirimaru — 2026-02-19 完了 — ✅正本mode CSVs C12使用）
+
+| 項目 | 内容 |
+|------|------|
+| 担当 | kirimaru |
+| タスク | subtask_165_kasoku_r3 |
+| スクリプト | run_077_kasoku.py |
+| 入力データ | mode CSVs: joushou4(wide)+chishou4(long)+gekkou4(long) = 全12コンポーネント |
+| パターン数 | 500（PATTERN_LIMIT） |
+| コンポーネント数 | 12（C12） |
+| 結果 | **全5AC PASS** |
+| 14列CSV md5 | cef240cc1ef82e6bab59db6c158e32d8（一致） |
+| 月次リターンCSV md5 | 2d92b67c55cd57b65a9712d811aa759f（一致） |
+| R2記録(C8/100pat) | 0.272秒(saizo) |
+| R3ベースライン(C12/500pat) | 0.577秒 |
+| **R3最適化版(C12/500pat)** | **0.127秒** |
+| R3逐次版(C12/500pat) | 5.896秒 |
+| 対R2倍率 | **2.14倍**(0.272→0.127) |
+| 対ベースライン倍率 | **4.54倍**(0.577→0.127) |
+| 対逐次版倍率 | **46.4倍**(5.896→0.127) |
+| 共通月 | 173ヶ月 |
+
+**R3で試した手法**:
+
+**(1) Pre-computed picks + 純Pythonインナーループ（✅効果あり: 0.577s→0.127s, 4.54x）**:
+- (num_mc, den_mc, method, top_n_eff)ごとのpick tableを事前生成
+- simulate_patternではlookupのみ（再ソートを排除）
+- 内部ループからnumpy呼び出しを完全排除
+- open_matrixをPythonリスト化し、v==vでNaN判定
+- kasoku固有のcutoff_score閾値選出もpicks化に適合
+
+**(2) NumPy row-scan baseline（❌ベースラインのみ: 0.577s）**:
+- R2手法そのまま。C8→C12でオーバーヘッド増加
+
+**核心的発見（kirimaru記録）**:
+> kasokuでも小サブセット(N2/N3/N4)はprecomputed picks+純Python内ループが有効。
+> C12/500で0.577s→0.127s(4.54x)かつmd5一致。cutoff_score閾値選出もpicks化と相性良好。
+
+**skill_candidate**: gs-kasoku-precompute-picks
+- 加速スコア行列から(num_mc,den_mc,method,top_n_eff)別にpick tableを事前生成し、月ループをlookup化する
+
+**再現手順（kirimaru記録）**:
+1. `cd /mnt/c/Python_app/DM-signal`
+2. `python3 scripts/analysis/grid_search/run_077_kasoku.py`
+3. 出力: `outputs/grid_search/165_kasoku_grid_{results,monthly}_{fast,seq}.csv`
+4. Phase 4でmd5自動検証
+
+### oikaze R3（kirimaru — 2026-02-19 完了 — ✅正本mode CSVs C12使用）
+
+| 項目 | 内容 |
+|------|------|
+| 担当 | kirimaru |
+| タスク | subtask_165_oikaze_r3 |
+| スクリプト | run_077_oikaze.py |
+| 入力データ | mode CSVs: joushou4(wide)+chishou4(long)+gekkou4(long) = 全12コンポーネント |
+| パターン数 | 500（PATTERN_LIMIT） |
+| コンポーネント数 | 12（C12） |
+| 結果 | **全5AC PASS** |
+| 14列CSV md5 | 4ad941244d184596513931f931cfe8dd（一致） |
+| 月次リターンCSV md5 | f67a14b99553a172254b993c3a5aadac（一致） |
+| R2記録(C8/100pat) | 0.115秒(hanzo) |
+| R3ベースライン(C12/500pat) | 0.123秒 |
+| **R3最適化版(C12/500pat)** | **0.093秒** |
+| R3逐次版(C12/500pat) | 5.019秒 |
+| 対R2倍率 | **1.24倍**(0.115→0.093) |
+| 対ベースライン倍率 | **1.32倍**(0.123→0.093) |
+| 対逐次版倍率 | **54.23倍**(5.019→0.093) |
+| 共通月 | 173ヶ月 |
+
+**R3で試した手法**:
+
+**(1) Pre-computed picks + 純Pythonインナーループ（✅効果あり: 0.123s→0.093s）**:
+- get_sim_contextで選出結果を事前計算
+- simulate_patternではlookupのみ（再ソートを排除）
+- 内部ループからnumpy呼び出しを完全排除
+- R3主手法。目標0.115秒未満を達成
+
+**(2) common_months固定をfast側get_sim_contextへ適用（✅効果あり: md5完全一致を実現）**:
+- subset別align_monthsのままだとfast側月次配列長が混在しCSV組立で失敗
+- mainで計算した全コンポ共通月(common_months)をfastのget_sim_contextにも強制
+- cache keyにmonths signatureを追加し誤キャッシュを防止
+- 172行固定で月次CSV出力成功
+
+**(3) subset別align_months（❌失敗: md5不一致）**:
+- build_monthly_returns_dfで配列長不一致(ValueError: All arrays must be of the same length)
+
+**核心的発見（kirimaru記録）**:
+> oikazeはsubset別align_monthsのままだとfast側月次配列長が混在し、CSV組立で失敗する。
+> mainで計算した全コンポ共通月(common_months)をfastのget_sim_contextにも強制し、
+> cache keyにmonths signatureを含めると、md5完全一致を維持したまま安定出力できる。
+
+**改修箇所（kirimaru記録）**:
+- run_077_oikaze.py: get_sim_contextにcommon_months引数を追加
+- run_077_oikaze.py: cache keyへmonths signatureを追加し誤キャッシュを防止
+- run_077_oikaze.py: simulate_patternにcommon_months引数を追加
+- run_077_oikaze.py: main() fast実行からcommon_monthsを渡して月次長を固定
+
+**skill_candidate**: gs-common-month-lockstep
+- fast/seq双方へcommon_monthsを注入し、可変長月次出力不整合を予防する定型パターン
+
+**再現手順（kirimaru記録）**:
+1. `cd /mnt/c/Python_app/DM-signal`
+2. `python3 scripts/analysis/grid_search/run_077_oikaze.py`
+3. 出力: `outputs/grid_search/165_oikaze_grid_{results,monthly}_{fast,seq}.csv`
+4. Phase 4のmd5一致(14列+月次)を確認
+5. 前提: 同名出力ファイルが未存在であること
+
+### nukimi R4（kirimaru — 2026-02-19 完了 — ✅正本mode CSVs C12使用）
+
+| 項目 | 内容 |
+|------|------|
+| 担当 | kirimaru |
+| タスク | subtask_165_nukimi_r4 |
+| スクリプト | run_077_nukimi.py |
+| 入力データ | mode CSVs: joushou4(wide)+chishou4(long)+gekkou4(long) = 12コンポーネント |
+| パターン数 | 500 |
+| コンポーネント数 | 12(C12) |
+| 結果 | **全5AC PASS** |
+| 14列CSV md5 | f7528aef6057f7975a0c2985dee9a119（一致） |
+| 月次リターンCSV md5 | d3ef15376c468c69e595deb6157ebb24（一致） |
+| R3記録(C12/500pat) | 0.114秒 |
+| R4ベースライン(C12/500pat) | 0.053秒 |
+| **R4高速版(C12/500pat)** | **0.053秒** |
+| R4逐次版(C12/500pat) | 4.38秒 |
+| 対R3倍率 | **2.15倍**(0.114→0.053) |
+| 対逐次版倍率 | **82.4倍**(4.38→0.053) |
+| 共通月 | 173ヶ月 |
+
+**R4で試した手法**:
+
+**(1) R3継承手法の現行R4実装検証（✅効果あり: 0.053s — R3記録0.114sを更新）**:
+- precomputed picks + pure-python inner loop + cumprod momentum
+- R3手法がそのまま有効。追加変更なしで記録更新
+
+**(2) multiprocessing ProcessPool workers=2（❌逆効果: 0.134s）**:
+- 単体0.049sに対してプロセス初期化オーバーヘッドが支配
+
+**(3) multiprocessing ProcessPool workers=4（❌逆効果: 0.103s）**:
+- workers=2より速いが単体0.049sより遅い
+
+**(4) multiprocessing ProcessPool workers=8（❌逆効果: 0.148s）**:
+- ワーカー増で逆に悪化
+
+**(5) open_matrixメモリレイアウト確認（❌追加最適化余地なし）**:
+- C_CONTIGUOUS=True, F_CONTIGUOUS=False。既に最適
+
+**核心的発見（kirimaru記録）**:
+> 単体実行が0.05秒級のGSではmultiprocessingは逆効果。
+> workers=2/4/8すべて単体(0.049s)より遅い（0.134/0.103/0.148s）。
+> プロセス生成オーバーヘッド(~50ms)が計算時間を支配する。
+
+**再現手順（kirimaru記録）**:
+1. `cd /mnt/c/Python_app/DM-signal`
+2. `python3 scripts/analysis/grid_search/run_077_nukimi.py`
+3. 出力: `outputs/grid_search/165_nukimi_grid_{results,monthly}_{fast,seq}.csv`
+4. Phase 4でmd5自動検証
+
+### kasoku R4（sasuke — 2026-02-19 完了 — ✅正本mode CSVs C12使用）
+
+| 項目 | 内容 |
+|------|------|
+| 担当 | sasuke |
+| タスク | subtask_165_kasoku_r4 |
+| スクリプト | run_077_kasoku.py |
+| 入力データ | mode CSVs: joushou4(wide)+chishou4(long)+gekkou4(long) = 12コンポーネント |
+| パターン数 | 500 |
+| コンポーネント数 | 12(C12) |
+| 結果 | **全5AC PASS** |
+| 14列CSV md5 | cef240cc1ef82e6bab59db6c158e32d8（一致） |
+| 月次リターンCSV md5 | 2d92b67c55cd57b65a9712d811aa759f（一致） |
+| R3記録(C12/500pat) | 0.127秒 |
+| R4ベースライン(C12/500pat) | 0.110秒 |
+| **R4高速版(C12/500pat)** | **0.089秒** |
+| R4逐次版(C12/500pat) | 5.477秒 |
+| 対R3倍率 | **1.43倍**(0.127→0.089) |
+| 対逐次版倍率 | **61.5倍**(5.477→0.089) |
+| 共通月 | 173ヶ月 |
+
+**R4で試した手法**:
+
+**(1) R3再計測（ベースライン取得: 0.110s — R3記録0.127sより速い）**:
+- R3コードそのまま。環境差でR3記録より速いベースライン
+
+**(2) PeriodIndex参照最適化（✅効果あり: 0.110s→0.089s, 19.1%短縮）**:
+- get_kasoku_context内のperiod in/get_loc反復参照がボトルネック
+- index.get_indexer(months)を先計算して同一ロジックのまま高速化
+- md5完全一致を維持
+
+**(3) multiprocessing workers=2（❌逆効果: 0.154s > serial 0.096s）**:
+**(4) multiprocessing workers=4（❌逆効果: 0.166s > serial 0.096s）**:
+**(5) multiprocessing workers=8（❌逆効果: 0.223s > serial 0.096s）**:
+- 全workers数で単体実行より遅い
+
+**(6) 内ループ方式比較（✅list維持が有利）**:
+- list_inner_loop=0.0146s, numpy_row_inner_loop=0.0203s
+- list方式維持が有利と確認
+
+**核心的発見（sasuke記録）**:
+> PeriodIndexの反復参照(period in + get_loc)が前処理ボトルネック。
+> index.get_indexer(months)を先計算して同一ロジックのまま0.110→0.089s(19.1%短縮)。
+> md5完全一致を維持。
+
+**skill_candidate**: gs-periodindex-indexer-precompute
+- pandas PeriodIndex参照を月位置indexer配列へ置換し、rolling windowの意味を保持したまま前処理を高速化する手筋
+
+**再現手順（sasuke記録）**:
+1. `cd /mnt/c/Python_app/DM-signal`
+2. `python3 scripts/analysis/grid_search/run_077_kasoku.py`
+3. 出力: `outputs/grid_search/165_kasoku_grid_{results,monthly}_{fast,seq}.csv`
+4. Phase 4でmd5自動検証
 
 ### kasoku（saizo — 2026-02-18 完了 — ✅正本mode CSVs使用）
 
@@ -463,13 +855,47 @@
 | tie-breaking | なし | あり(top_n) | あり(top_n+bottom_n各別) | あり(top_n) | あり(top_n) | あり(cutoff閾値全選出) |
 | 固有要素 | なし | lookback窓,加重平均 | bottom_n選出,候補不足時前回維持 | skip_months処理 | 同nukimi(パラメータのみ差異) | ゼロ除算保護,閾値全選出 |
 | 高速化倍率 | 55.5倍(計算部) | v2:7.49倍 | 5.23倍 | 6.02倍 | 4.91倍 | 5.10倍 |
-| 高速版秒数 | — | 0.115s | 0.205s | 0.181s | 0.160s | 0.272s |
-| 逐次版秒数 | — | 0.863s | 1.075s | 1.087s | 0.789s | 1.387s |
+| 高速版秒数(R2/C8) | — | 0.115s | 0.205s | 0.181s | 0.160s | 0.272s |
+| 逐次版秒数(R2/C8) | — | 0.863s | 1.075s | 1.087s | 0.789s | 1.387s |
+| **R3高速版秒数(C12/500pat)** | **0.017s** | **0.093s** | **0.037s** | **0.114s** | **0.126s**※ | **0.127s** |
+| R3ベースライン(C12/500pat) | 0.025s | 0.123s | 0.206s | 0.651s | 0.658s※ | 0.577s |
+| R3逐次版(C12/500pat) | 1.029s | 5.019s | 0.910s | 4.537s | 4.775s※ | 5.896s |
+| R3担当 | sasuke | kirimaru | kotaro | sasuke | kirimaru※ | kirimaru |
+| R3パターン数 | 500 | 500 | 100 | 500 | 500※ | 500 |
+| R3有効手法 | fixed-arity vec | precomp picks+common_months | precomp picks | precomp picks | precomp picks※ | precomp picks |
+| **R4高速版秒数(C12/500pat)** | — | — | — | **0.053s** | — | **0.089s** |
+| R4ベースライン(C12/500pat) | — | — | — | 0.053s | — | 0.110s |
+| R4逐次版(C12/500pat) | — | — | — | 4.38s | — | 5.477s |
+| R4担当 | — | — | — | kirimaru | — | sasuke |
+| R4有効手法 | — | — | — | R3継承(そのまま) | — | PeriodIndex indexer |
+| R4 multiprocessing | — | — | — | ❌(0.103-0.148s) | — | ❌(0.154-0.223s) |
 | 入力データ | mode CSVs(正本) | mode CSVs(正本) | mode CSVs(正本) | mode CSVs(正本) | mode CSVs(正本) | mode CSVs(正本) |
 | コンポーネント数 | 12 | 8(gekkou除外) | 8(gekkou除外) | 8(gekkou除外) | 8(gekkou除外) | 8(gekkou除外) |
 | 共通月 | 143 | 173 | 173 | 173 | 173 | 173 |
 | 14列CSV md5 | ec68da... | b32408... | 078bd9... | 3a120a... | d30671... | 68a63c... |
 | 月次CSV md5 | 97aa46... | c1f07b... | eb192c... | e20925... | 57d4b2... | f76fee... |
+
+---
+
+## 7. nukimi_c正式廃止（殿裁定 2026-02-19）
+
+**結論**: nukimi_cはnukimiに統合。run_077_nukimi_c_series.pyはarchive/deprecated/へ移動。
+
+**根拠（L054 — sasuke Codex調査）**:
+- 戦略計算ロジック: **完全同一**（calc_momentum_with_skip, _calc_momentum_with_skip_at_month等、共通16関数中全て一致）
+- パラメータ差分: PARAM_GRID_TOPNのみ（nukimi: T1-T3 → nukimi_c: T1-T5）
+- 300パターン照合: mismatch = 0
+- nukimiをT1-T5に拡張すれば、nukimi_cの全761,475パターンを完全包含（差集合0）
+
+**実施内容**:
+1. run_077_nukimi.py: PARAM_GRID_TOPNにT4(top_n=4), T5(top_n=5)を追加
+2. run_077_nukimi_c_series.py → archive/deprecated/ へ移動(git mv)
+3. フル計算パターン数: 2,763,641 → 2,002,166（76万パターン削減）
+
+**影響**:
+- §6比較表のnukimi_c列は「廃止(nukimiに統合)」
+- 今後のGSではnukimi 1本でT1-T5全カバー
+- 高速化知見(R3 precomp picks等)はnukimiにそのまま適用
 
 ---
 
