@@ -79,6 +79,8 @@ declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
 declare -A STALL_NOTIFIED    # 停滞通知済みフラグ — key: "ninja:task_id", value: "1"
 declare -A STALE_CMD_NOTIFIED  # stale cmd通知済みフラグ — key: "cmd_XXX", value: "1"
+declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
+declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
 for name in "${NINJA_NAMES[@]}"; do
@@ -88,6 +90,7 @@ done
 CLEAR_DEBOUNCE=300          # /clear再送信抑制（5分）— /clear後のbusy→idleサイクルによるループ防止
 CODEX_CLEAR_DEBOUNCE=600    # Codex下忍用デバウンス（10分）— 撤廃時の安全策
 KARO_COMPACT_DEBOUNCE=600   # 家老/compact再送信抑制（10分）— compact復帰処理に5-8分かかるため
+DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
 LAST_KARO_COMPACT=0         # 家老の最終/compact送信時刻（epoch秒）
@@ -199,12 +202,64 @@ get_context_pct() {
     return 1
 }
 
-# ─── 案E: タスク配備済み判定（二重チェック: YAML + ペイン実態） ───
+# ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
+# 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
+# 戻り値: 0=完了済み(auto-done実行), 1=未完了
+check_and_update_done_task() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local report_file="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
+
+    # 報告ファイル存在確認
+    [ ! -f "$report_file" ] && return 1
+
+    # タスクのparent_cmdを取得
+    local task_parent_cmd
+    task_parent_cmd=$(grep -m1 'parent_cmd:' "$task_file" 2>/dev/null | awk '{print $2}')
+    [ -z "$task_parent_cmd" ] && return 1
+
+    # 報告のparent_cmdを取得
+    local report_parent_cmd
+    report_parent_cmd=$(grep -m1 'parent_cmd:' "$report_file" 2>/dev/null | awk '{print $2}')
+    [ -z "$report_parent_cmd" ] && return 1
+
+    # parent_cmd一致チェック
+    [ "$task_parent_cmd" != "$report_parent_cmd" ] && return 1
+
+    # 報告のstatus確認（done/completed/success を完了とみなす）
+    local report_status
+    report_status=$(grep -m1 '^status:' "$report_file" 2>/dev/null | awk '{print $2}')
+    case "$report_status" in
+        done|completed|success)
+            # 完了確認 — タスクYAMLをdoneに自動更新（flock排他制御）
+            local lock_file="/tmp/task_${name}.lock"
+            (
+                flock -x -w 5 200 || { log "ERROR: Failed to acquire lock for $name task update"; return 1; }
+                sed -i "s/status:\s*\(assigned\|in_progress\)/status: done/" "$task_file"
+            ) 200>"$lock_file"
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
+            log "AUTO-DONE: $name task auto-updated to done (report parent_cmd=$report_parent_cmd, status=$report_status)"
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# ─── 案E: タスク配備済み判定（二重チェック: YAML + ペイン実態 + 報告YAML） ───
 is_task_deployed() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     if [ -f "$task_file" ]; then
         if grep -qE 'status:\s*(assigned|in_progress)' "$task_file" 2>/dev/null; then
+            # AC1/AC2: 報告YAML完了チェック（parent_cmd一致+status:done）
+            if check_and_update_done_task "$name"; then
+                return 1  # 完了済み — not deployed
+            fi
+
             # YAML says active — cross-check with actual pane state
             local target="${PANE_TARGETS[$name]}"
             if [ -n "$target" ]; then
@@ -323,8 +378,18 @@ handle_confirmed_idle() {
         local ctx_now
         ctx_now=$(get_context_pct "$target")
         if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
-            log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean"
+            # AC3: CLEAR-SKIPカウンタ — 連続10回超で5分間隔ログ
+            CLEAR_SKIP_COUNT[$name]=$(( ${CLEAR_SKIP_COUNT[$name]:-0} + 1 ))
+            local skip_count=${CLEAR_SKIP_COUNT[$name]}
+            if [ $skip_count -le 10 ]; then
+                log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (${skip_count}/10)"
+            elif [ $(( skip_count % 15 )) -eq 0 ]; then
+                # 15サイクル=300秒(5分)ごとにログ出力
+                log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (continuous: ${skip_count})"
+            fi
         else
+            # CTX>0%に変化 → カウンタリセット
+            CLEAR_SKIP_COUNT[$name]=0
             clear_last="${LAST_CLEARED[$name]:-0}"
             clear_elapsed=$((now - clear_last))
 
@@ -342,6 +407,8 @@ handle_confirmed_idle() {
                 sleep 0.3
                 tmux send-keys -t "$target" Enter
                 LAST_CLEARED[$name]=$now
+                # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
+                tmux set-option -p -t "$target" @current_task "" 2>/dev/null
             else
                 log "CLEAR-DEBOUNCE: $name idle+no_task but ${clear_elapsed}s < ${effective_debounce}s since last /clear"
             fi
@@ -497,6 +564,63 @@ check_stale_cmds() {
             }
         ' "$cmd_file"
     )
+}
+
+# ─── 破壊コマンド検知（capture-pane経由） ───
+# capture-pane出力からD001-D008相当の危険コマンドを検知し、家老にWARN通知
+# 検知のみ（ブロックはしない）。同一パターンは5分間隔で通知抑制。
+check_destructive_commands() {
+    local name="$1"
+    local target="$2"
+
+    local output
+    output=$(tmux capture-pane -t "$target" -p -S -20 2>/dev/null)
+    [ -z "$output" ] && return
+
+    local now
+    now=$(date +%s)
+    local patterns=()
+
+    # Pattern 1: rm -rf + PJ外パス（/mnt/c/Windows, /mnt/c/Users, /home, /, ~ 等）
+    if echo "$output" | grep -qE 'rm\s+-rf\s+(/mnt/c/(Windows|Users|Program)|/home|/\s|/\.|~)'; then
+        patterns+=("rm-rf-outside-project")
+    fi
+
+    # Pattern 2: git push --force（ただし--force-with-leaseを除外）
+    if echo "$output" | grep -E 'git\s+push.*--force' 2>/dev/null | grep -qv 'force-with-lease'; then
+        patterns+=("git-push-force")
+    fi
+
+    # Pattern 3: sudo コマンド
+    if echo "$output" | grep -qE '(^|[[:space:]])sudo[[:space:]]'; then
+        patterns+=("sudo")
+    fi
+
+    # Pattern 4: kill / killall / pkill コマンド
+    if echo "$output" | grep -qE '(^|[[:space:]])(kill|killall|pkill)[[:space:]]'; then
+        patterns+=("kill-command")
+    fi
+
+    # Pattern 5: pipe-to-shell（curl|bash, wget|sh）
+    if echo "$output" | grep -qE 'curl.*\|.*bash|wget.*\|.*sh'; then
+        patterns+=("pipe-to-shell")
+    fi
+
+    # 検知パターンごとにデバウンスチェック+通知
+    for pattern in "${patterns[@]}"; do
+        local key="${name}:${pattern}"
+        local last="${DESTRUCTIVE_WARN_LAST[$key]:-0}"
+        local elapsed=$((now - last))
+
+        if [ $elapsed -lt $DESTRUCTIVE_DEBOUNCE ]; then
+            log "DESTRUCTIVE-DEBOUNCE: $name '${pattern}' (${elapsed}s < ${DESTRUCTIVE_DEBOUNCE}s)"
+            continue
+        fi
+
+        log "DESTRUCTIVE-WARN: $name detected '${pattern}'"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "${name}が危険コマンド検知: ${pattern}" destructive_warn ninja_monitor >> "$LOG" 2>&1
+        DESTRUCTIVE_WARN_LAST[$key]=$now
+    done
 }
 
 # ─── context_pct更新（単一ペイン） ───
@@ -766,6 +890,13 @@ while true; do
     # ═══ 停滞検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
         check_stall "$name"
+    done
+
+    # ═══ 破壊コマンド検知チェック（全忍者） ═══
+    for name in "${NINJA_NAMES[@]}"; do
+        target="${PANE_TARGETS[$name]}"
+        [ -z "$target" ] && continue
+        check_destructive_commands "$name" "$target"
     done
 
     # ═══ Stale cmd検知チェック ═══
