@@ -506,6 +506,28 @@ if [ "$DC_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── inbox_archive強制チェック（WARNのみ、ブロックしない） ───
+echo ""
+echo "Inbox archive check:"
+KARO_INBOX="$SCRIPT_DIR/queue/inbox/karo.yaml"
+if [ -f "$KARO_INBOX" ]; then
+    read_count=$(grep -c 'read: true' "$KARO_INBOX" 2>/dev/null || true)
+    read_count=${read_count:-0}
+
+    if [ "$read_count" -ge 10 ]; then
+        echo "INBOX_ARCHIVE_WARN: karo has ${read_count} read messages, running inbox_archive.sh"
+        if bash "$SCRIPT_DIR/scripts/inbox_archive.sh" karo; then
+            echo "  karo: inbox_archive completed"
+        else
+            echo "  WARN: inbox_archive.sh failed for karo"
+        fi
+    else
+        echo "  karo: OK (read:true=${read_count}, threshold=10)"
+    fi
+else
+    echo "  WARN: karo inbox file not found: ${KARO_INBOX}"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then

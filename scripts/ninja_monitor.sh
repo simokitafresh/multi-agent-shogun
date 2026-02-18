@@ -62,7 +62,7 @@ declare -A PANE_TARGETS   # 忍者名 → tmuxペインターゲット
 declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
 declare -A STALL_NOTIFIED    # 停滞通知済みフラグ — key: "ninja:task_id", value: "1"
-declare -A STALE_CMD_NOTIFIED  # stale cmd通知済みフラグ — key: "cmd_XXX", value: "1"
+declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
 declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
 declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
 
@@ -72,6 +72,7 @@ for name in "${NINJA_NAMES[@]}"; do
 done
 
 KARO_COMPACT_DEBOUNCE=600   # 家老/compact再送信抑制（10分）— compact復帰処理に5-8分かかるため
+STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
@@ -312,6 +313,18 @@ is_task_deployed() {
             fi
             return 0  # タスク配備済み（active or ペインチェック不可）
         fi
+        # Bug2 fix: status=done but @current_task still set → clear it
+        if grep -qE 'status:\s*done' "$task_file" 2>/dev/null; then
+            local target="${PANE_TARGETS[$name]}"
+            if [ -n "$target" ]; then
+                local current_task
+                current_task=$(tmux display-message -t "$target" -p '#{@current_task}' 2>/dev/null)
+                if [ -n "$current_task" ]; then
+                    tmux set-option -p -t "$target" @current_task "" 2>/dev/null
+                    log "TASK-CLEAR: $name @current_task cleared (task status=done, was: $current_task)"
+                fi
+            fi
+        fi
     fi
     return 1  # 未配備
 }
@@ -520,8 +533,9 @@ check_stale_cmds() {
         [ -z "$cmd_id" ] && continue
         [ -z "$cmd_timestamp" ] && continue
 
-        # デバウンス: 同一cmdの再通知を抑制
-        if [ "${STALE_CMD_NOTIFIED[$cmd_id]}" = "1" ]; then
+        # デバウンス: 同一cmdの再通知を30分間隔で抑制
+        local last_stale_notify="${STALE_CMD_NOTIFIED[$cmd_id]:-0}"
+        if [ $((now - last_stale_notify)) -lt $STALE_CMD_DEBOUNCE ]; then
             continue
         fi
 
@@ -549,7 +563,7 @@ check_stale_cmds() {
 
         log "STALE-CMD: ${cmd_id} pending ${elapsed_hour}h with no subtasks, notifying karo"
         if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" stale_cmd ninja_monitor >> "$LOG" 2>&1; then
-            STALE_CMD_NOTIFIED[$cmd_id]="1"
+            STALE_CMD_NOTIFIED[$cmd_id]=$now
         else
             log "ERROR: Failed to send stale cmd notification for ${cmd_id}"
         fi
@@ -754,6 +768,31 @@ write_state_file() {
     ) 200>"$lock_file"
 }
 
+# ─── Bug3b: 家老compact送信共通関数（全コードパスで使用） ───
+# デバウンスを内蔵。呼び出し元がデバウンスを気にする必要なし。
+# $1: ctx_num（ログ用）, $2: caller（ログ用、省略可）
+# 戻り値: 0=送信成功, 1=デバウンスで抑制
+send_karo_compact() {
+    local ctx_num="${1:-?}"
+    local caller="${2:-check_karo_compact}"
+    local karo_pane="shogun:2.1"
+
+    local now=$(date +%s)
+    local elapsed=$((now - LAST_KARO_COMPACT))
+
+    if [ $elapsed -lt $KARO_COMPACT_DEBOUNCE ]; then
+        log "KARO-COMPACT-DEBOUNCE(${caller}): CTX:${ctx_num}% but ${elapsed}s < ${KARO_COMPACT_DEBOUNCE}s"
+        return 1
+    fi
+
+    log "KARO-COMPACT(${caller}): karo CTX:${ctx_num}%, sending /compact"
+    tmux send-keys -t "$karo_pane" '/compact'
+    sleep 0.3
+    tmux send-keys -t "$karo_pane" Enter
+    LAST_KARO_COMPACT=$now
+    return 0
+}
+
 # ─── STEP 2: 家老の外部compactトリガー ───
 check_karo_compact() {
     local karo_pane="shogun:2.1"
@@ -770,20 +809,8 @@ check_karo_compact() {
         return  # CTX <= 50% → skip
     fi
 
-    # デバウンスチェック
-    local now=$(date +%s)
-    local last=$LAST_KARO_COMPACT
-    local elapsed=$((now - last))
-
-    if [ $elapsed -ge $KARO_COMPACT_DEBOUNCE ]; then
-        log "KARO-COMPACT: karo CTX:${ctx_num}%, sending /compact"
-        tmux send-keys -t "$karo_pane" '/compact'
-        sleep 0.3
-        tmux send-keys -t "$karo_pane" Enter
-        LAST_KARO_COMPACT=$now
-    else
-        log "KARO-COMPACT-DEBOUNCE: karo CTX:${ctx_num}% but ${elapsed}s < ${KARO_COMPACT_DEBOUNCE}s since last /compact"
-    fi
+    # 共通関数でデバウンス付き送信
+    send_karo_compact "$ctx_num" "check_karo_compact"
 }
 
 # ─── STEP 3: 将軍CTXアラート ───
