@@ -399,8 +399,9 @@ Frontend型: `SignalsLightResponse` (frontend/lib/types/api.ts:45-49)
 │   ├── analysis/
 │   │   ├── grid_search/              # 188件(探索・検証ランナー群)
 │   │   │   ├── grid_search_metrics_v2.py # simulate_strategy_vectorized()
+│   │   │   ├── gs_csv_loader.py      # 共通CSVローダー(cmd_160)
 │   │   │   ├── template_gs_runner.py # GSテンプレート
-│   │   │   └── run_077_*.py          # 全6ブロックGSスクリプト
+│   │   │   └── run_077_*.py          # 全6ブロックGSスクリプト(CSV直接読込)
 │   │   └── data_sync/
 │   │       └── download_all_prices.py # 価格DL(推奨)
 │   ├── verify/                       # 29件(仮説検証/回帰確認)
@@ -462,6 +463,24 @@ Frontend型: `SignalsLightResponse` (frontend/lib/types/api.ts:45-49)
 2. Utilities（変更不要: load_monthly_returns, calc_metrics, write_meta_yaml, append_data_catalog）
 3. Block Logic（書き換え: simulate_pattern, build_grid, pattern_to_row）
 4. Main（変更不要: 上書き防止+進捗表示+CSV→meta→カタログ3段出力）
+
+### 共通CSVローダー (cmd_160)
+
+パス: `scripts/analysis/grid_search/gs_csv_loader.py`
+
+全GSスクリプト(monban除く6本)はsqlite3/experiments.dbに依存せず、CSV直接読込で動作する。
+
+```python
+# 主要関数
+load_monthly_returns_from_csv(component_spec, return_kind='open', drop_latest=False) → Dict[str, pd.Series]
+load_monthly_returns_dual_from_csv(spec_open, spec_close=None, close_fallback='open') → Tuple[Dict, Dict]
+build_wide_component_spec(csv_path, column_names, year_month_col='year_month') → Dict
+get_csv_provenance(csv_paths) → Dict  # meta.yaml用
+```
+
+データソース: `outputs/grid_search/064_champion_monthly_returns.csv` (暫定。12パターン×143ヶ月)
+- DM_IDS(UUID辞書) → COMPONENT_SOURCES(component_spec辞書)に置換済み
+- meta.yaml: db_md5 → csv_provenance + source_type: csv_direct
 
 ### ブロック別GSスクリプト
 
