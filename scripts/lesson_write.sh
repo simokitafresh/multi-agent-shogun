@@ -34,6 +34,13 @@ if [[ "$PROJECT_ID" == cmd_* ]]; then
     exit 1
 fi
 
+# Summary quality gate (cmd_158)
+DETAIL_LEN=${#DETAIL}
+if [ "$DETAIL_LEN" -lt 10 ]; then
+    echo "ERROR: summary(detail)が10文字未満 (${DETAIL_LEN}文字)。具体的な内容を記載せよ" >&2
+    exit 1
+fi
+
 # Get project path from config/projects.yaml
 PROJECT_PATH=$(python3 -c "
 import yaml
