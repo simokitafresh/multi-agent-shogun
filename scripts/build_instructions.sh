@@ -12,10 +12,30 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 PARTS_DIR="$ROOT_DIR/instructions"
 OUTPUT_DIR="$ROOT_DIR/instructions/generated"
 
+# Source CLI profile lookup library (cmd_143 SSOT)
+source "$SCRIPT_DIR/lib/cli_lookup.sh"
+
+# Default CLI type (instruction files without prefix)
+DEFAULT_CLI="claude"
+
 mkdir -p "$OUTPUT_DIR"
 
 echo "=== Instruction File Build System ==="
 echo "Building instruction files..."
+
+# ============================================================
+# Helper: Get all CLI profile types from cli_profiles.yaml
+# ============================================================
+get_profile_types() {
+    python3 -c "
+import yaml
+with open('${_CLI_LOOKUP_PROFILES}') as f:
+    cfg = yaml.safe_load(f) or {}
+profiles = cfg.get('profiles', {})
+for p in profiles:
+    print(p)
+" 2>/dev/null
+}
 
 # ============================================================
 # Helper function: Build a complete instruction file
@@ -56,45 +76,47 @@ EOFYAML
     echo "" >> "$output_path"
     cat "$PARTS_DIR/common/forbidden_actions.md" >> "$output_path"
 
-    # Append CLI-specific tools section
+    # Append CLI-specific tools section (dynamic file lookup)
     echo "" >> "$output_path"
-    case "$cli_type" in
-        claude)
-            cat "$PARTS_DIR/cli_specific/claude_tools.md" >> "$output_path"
-            ;;
-        codex)
-            cat "$PARTS_DIR/cli_specific/codex_tools.md" >> "$output_path"
-            ;;
-        copilot)
-            cat "$PARTS_DIR/cli_specific/copilot_tools.md" >> "$output_path"
-            ;;
-        kimi)
-            cat "$PARTS_DIR/cli_specific/kimi_tools.md" >> "$output_path"
-            ;;
-    esac
+    local tools_file="$PARTS_DIR/cli_specific/${cli_type}_tools.md"
+    if [ -f "$tools_file" ]; then
+        cat "$tools_file" >> "$output_path"
+    else
+        echo "  ⚠️  No CLI tools file for: $cli_type (${tools_file})"
+    fi
 
     echo "  ✅ Created: $output_filename"
 }
 
-# Build Claude Code instruction files
-build_instruction_file "claude" "shogun" "shogun.md"
-build_instruction_file "claude" "karo" "karo.md"
-build_instruction_file "claude" "ashigaru" "ashigaru.md"
+# ============================================================
+# Build instruction files — profile-driven from cli_profiles.yaml
+# ============================================================
+ROLES="shogun karo ashigaru"
+PROFILE_TYPES=$(get_profile_types)
 
-# Build Codex instruction files
-build_instruction_file "codex" "shogun" "codex-shogun.md"
-build_instruction_file "codex" "karo" "codex-karo.md"
-build_instruction_file "codex" "ashigaru" "codex-ashigaru.md"
+# Default CLI — files without prefix
+for role in $ROLES; do
+    build_instruction_file "$DEFAULT_CLI" "$role" "${role}.md"
+done
 
-# Build Copilot instruction files
-build_instruction_file "copilot" "shogun" "copilot-shogun.md"
-build_instruction_file "copilot" "karo" "copilot-karo.md"
-build_instruction_file "copilot" "ashigaru" "copilot-ashigaru.md"
+# Non-default profiles — files with cli_type prefix
+for cli_type in $PROFILE_TYPES; do
+    if [[ "$cli_type" != "$DEFAULT_CLI" ]]; then
+        for role in $ROLES; do
+            build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md"
+        done
+    fi
+done
 
-# Build Kimi K2 instruction files
-build_instruction_file "kimi" "shogun" "kimi-shogun.md"
-build_instruction_file "kimi" "karo" "kimi-karo.md"
-build_instruction_file "kimi" "ashigaru" "kimi-ashigaru.md"
+# CLI types not yet in cli_profiles.yaml (temporary — remove when profiles added)
+for cli_type in copilot kimi; do
+    if echo "$PROFILE_TYPES" | grep -q "^${cli_type}$"; then
+        continue
+    fi
+    for role in $ROLES; do
+        build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md"
+    done
+done
 
 # ============================================================
 # AGENTS.md generation (Codex auto-load file)
@@ -102,10 +124,22 @@ build_instruction_file "kimi" "ashigaru" "kimi-ashigaru.md"
 # Codex CLIはリポジトリルートのAGENTS.mdを自動読み込みする。
 # CLAUDE.mdを正本とし、Claude固有部分をCodex固有に置換して生成。
 generate_agents_md() {
+    # AGENTS.md = Codex CLI auto-load file
+    # cli_type derived from profile, not hardcoded
+    local cli_type
+    cli_type=$(echo "$PROFILE_TYPES" | grep -v "^${DEFAULT_CLI}$" | head -1)
+    if [[ -z "$cli_type" ]]; then
+        echo "  ⚠️  No non-default CLI profile found. Skipping AGENTS.md generation."
+        return 1
+    fi
+
     local output_path="$ROOT_DIR/AGENTS.md"
     local claude_md="$ROOT_DIR/CLAUDE.md"
+    local cli_display
+    cli_display=$(cli_profile_get "$cli_type" "display_name")
+    [[ -z "$cli_display" ]] && cli_display="${cli_type^} CLI"
 
-    echo "Generating: AGENTS.md (Codex auto-load)"
+    echo "Generating: AGENTS.md (${cli_type} auto-load)"
 
     if [ ! -f "$claude_md" ]; then
         echo "  ⚠️  CLAUDE.md not found. Skipping AGENTS.md generation."
@@ -115,13 +149,13 @@ generate_agents_md() {
     sed \
         -e 's|CLAUDE\.md|AGENTS.md|g' \
         -e 's|CLAUDE\.local\.md|AGENTS.override.md|g' \
-        -e 's|instructions/shogun\.md|instructions/generated/codex-shogun.md|g' \
-        -e 's|instructions/karo\.md|instructions/generated/codex-karo.md|g' \
-        -e 's|instructions/ashigaru\.md|instructions/generated/codex-ashigaru.md|g' \
-        -e 's|~/.claude/|~/.codex/|g' \
-        -e 's|\.claude\.json|.codex/config.toml|g' \
+        -e "s|instructions/shogun\\.md|instructions/generated/${cli_type}-shogun.md|g" \
+        -e "s|instructions/karo\\.md|instructions/generated/${cli_type}-karo.md|g" \
+        -e "s|instructions/ashigaru\\.md|instructions/generated/${cli_type}-ashigaru.md|g" \
+        -e "s|~/\\.claude/|~/.${cli_type}/|g" \
+        -e "s|\\.claude\\.json|.${cli_type}/config.toml|g" \
         -e 's|\.mcp\.json|config.toml (mcp_servers section)|g' \
-        -e 's|Claude Code|Codex CLI|g' \
+        -e "s|Claude Code|${cli_display}|g" \
         "$claude_md" > "$output_path"
 
     echo "  ✅ Created: AGENTS.md"

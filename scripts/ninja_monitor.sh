@@ -28,12 +28,10 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
+source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 
 POLL_INTERVAL=20    # ポーリング間隔（秒）
-DEBOUNCE=60         # 同一忍者の再通知抑制（秒）
-CONFIRM_WAIT=5      # idle確認待ち（秒）— APIコール間の誤検知防止
-CODEX_CONFIRM_WAIT=20  # Codex専用idle確認待ち（秒）— APIコール間隔10-15秒より長く
-CODEX_DEBOUNCE=180     # Codex専用再通知抑制（秒）— 短時間サイクル抑制
+CONFIRM_WAIT=5      # idle確認待ち（秒）— Phase 2a base wait
 STALL_THRESHOLD_MIN=15 # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知
 STALE_CMD_THRESHOLD=14400 # stale cmd検知しきい値（秒）— pending+subtask未配備が4時間継続で通知
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
@@ -54,22 +52,8 @@ log() {
 }
 
 log "ninja_monitor started. Monitoring ${#NINJA_NAMES[@]} ninja."
-log "Poll interval: ${POLL_INTERVAL}s, Debounce: ${DEBOUNCE}s, Confirm wait: ${CONFIRM_WAIT}s"
-log "Codex agents: sasuke,kirimaru (confirm=${CODEX_CONFIRM_WAIT}s, debounce=${CODEX_DEBOUNCE}s)"
-
-# Codex CLI使用忍者の判定
-is_codex() {
-    [[ "$1" == "sasuke" || "$1" == "kirimaru" ]]
-}
-
-# CLI種別に応じたリセットコマンド取得
-get_reset_cmd() {
-    if is_codex "$1"; then
-        echo "/new"
-    else
-        echo "/clear"
-    fi
-}
+log "Poll interval: ${POLL_INTERVAL}s, Confirm wait: ${CONFIRM_WAIT}s"
+log "CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh"
 
 # ─── デバウンス・状態管理（連想配列、bash 4+） ───
 declare -A LAST_NOTIFIED  # 最終通知時刻（epoch秒）
@@ -87,8 +71,6 @@ for name in "${NINJA_NAMES[@]}"; do
     PREV_STATE[$name]="idle"
 done
 
-CLEAR_DEBOUNCE=300          # /clear再送信抑制（5分）— /clear後のbusy→idleサイクルによるループ防止
-CODEX_CLEAR_DEBOUNCE=600    # Codex下忍用デバウンス（10分）— 撤廃時の安全策
 KARO_COMPACT_DEBOUNCE=600   # 家老/compact再送信抑制（10分）— compact復帰処理に5-8分かかるため
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
@@ -122,8 +104,10 @@ discover_panes() {
 
 # ─── idle検出（単一チェック） ───
 # 戻り値: 0=IDLE, 1=BUSY, 2=ERROR
+# $1: pane_target, $2: agent_name（省略時はフォールバックパターン使用）
 check_idle() {
     local pane_target="$1"
+    local agent_name="$2"
 
     # ─── Primary: @agent_state変数ベース判定（フックが設定） ───
     local agent_state
@@ -144,17 +128,27 @@ check_idle() {
         return 2  # ペイン取得失敗
     fi
 
-    # BUSYパターン検出（いずれかがマッチすればBUSY）
-    # 1. "esc to interrupt" — ステータスバー（広いペインで完全表示時）
-    # 2. "Running" — ツール実行中（ペイン幅に依存しない）
-    # 3. "Streaming" — ストリーミング出力中
-    # 4. "background terminal running" — Codex CLIバックグラウンドターミナル稼働中
-    if echo "$output" | grep -qE "esc to interrupt|Running|Streaming|background terminal running"; then
+    # BUSYパターン検出（cli_profiles.yamlから取得）
+    local busy_pat
+    if [ -n "$agent_name" ]; then
+        busy_pat=$(cli_profile_get "$agent_name" "busy_patterns")
+    fi
+    if [ -z "$busy_pat" ]; then
+        busy_pat="esc to interrupt|Running|Streaming|background terminal running"
+    fi
+    if echo "$output" | grep -qE "$busy_pat"; then
         return 1  # BUSY
     fi
 
-    # ❯ プロンプト（Claude Code）または › プロンプト（Codex CLI）があればIDLE候補
-    if echo "$output" | grep -qE "❯|›"; then
+    # IDLEプロンプト検出（cli_profiles.yamlから取得）
+    local idle_pat
+    if [ -n "$agent_name" ]; then
+        idle_pat=$(cli_profile_get "$agent_name" "idle_pattern")
+    fi
+    if [ -z "$idle_pat" ]; then
+        idle_pat="❯|›"
+    fi
+    if echo "$output" | grep -qE "$idle_pat"; then
         return 0  # IDLE候補（要二段階確認）
     fi
 
@@ -162,10 +156,11 @@ check_idle() {
 }
 
 # ─── CTX%取得（多重ソース） ───
-# @context_pct変数 → capture-pane出力「CTX:XX%」→ 0(不明)
-# statusline.shのtmux set-option -pがサブプロセスで失効する問題の回避策
+# @context_pct変数 → capture-pane出力 → 0(不明)
+# $1: pane_target, $2: agent_name（省略時はフォールバックパターン使用）
 get_context_pct() {
     local pane_target="$1"
+    local agent_name="$2"
     local ctx_val ctx_num
 
     # Source 1: tmux pane variable (@context_pct)
@@ -180,22 +175,50 @@ get_context_pct() {
     local output
     output=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null)
 
-    # Source 2a: Claude Code パターン: "CTX:XX%" (usage%)
-    ctx_num=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+')
-    if [ -n "$ctx_num" ]; then
-        tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
-        echo "$ctx_num"
-        return 0
+    # cli_profiles.yamlからパターンとモードを取得
+    local ctx_pattern ctx_mode
+    if [ -n "$agent_name" ]; then
+        ctx_pattern=$(cli_profile_get "$agent_name" "ctx_pattern")
+        ctx_mode=$(cli_profile_get "$agent_name" "ctx_mode")
     fi
 
-    # Source 2b: Codex CLI パターン: "XX% context left" (remaining% → usage%に変換)
-    local remaining
-    remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
-    if [ -n "$remaining" ]; then
-        ctx_num=$((100 - remaining))
-        tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
-        echo "$ctx_num"
-        return 0
+    if [ -n "$ctx_pattern" ]; then
+        if [ "$ctx_mode" = "usage" ]; then
+            # usage モード（例: "CTX:XX%"）— 値をそのまま使用
+            ctx_num=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
+            if [ -n "$ctx_num" ]; then
+                tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
+                echo "$ctx_num"
+                return 0
+            fi
+        elif [ "$ctx_mode" = "remaining" ]; then
+            # remaining モード（例: "XX% context left"）— usage%に変換
+            local remaining
+            remaining=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
+            if [ -n "$remaining" ]; then
+                ctx_num=$((100 - remaining))
+                tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
+                echo "$ctx_num"
+                return 0
+            fi
+        fi
+    else
+        # フォールバック: agent_name未指定時は両パターン試行
+        ctx_num=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+')
+        if [ -n "$ctx_num" ]; then
+            tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
+            echo "$ctx_num"
+            return 0
+        fi
+
+        local remaining
+        remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
+        if [ -n "$remaining" ]; then
+            ctx_num=$((100 - remaining))
+            tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
+            echo "$ctx_num"
+            return 0
+        fi
     fi
 
     echo "0"
@@ -266,8 +289,8 @@ is_task_deployed() {
                 local pane_idle=false
                 local task_empty=false
 
-                # Check if pane shows ❯/› prompt (idle)
-                check_idle "$target"
+                # Check if pane shows idle prompt
+                check_idle "$target" "$name"
                 if [ $? -eq 0 ]; then
                     pane_idle=true
                 fi
@@ -315,7 +338,7 @@ notify_idle_batch() {
     local details=""
     for name in "${names[@]}"; do
         local target="${PANE_TARGETS[$name]}"
-        local ctx=$(get_context_pct "$target")
+        local ctx=$(get_context_pct "$target" "$name")
         local last_task=$(grep -m1 'task_id:' "$SCRIPT_DIR/queue/tasks/${name}.yaml" 2>/dev/null | awk '{print $2}')
         details="${details}${name}(CTX:${ctx}%,last:${last_task}), "
     done
@@ -355,10 +378,7 @@ handle_confirmed_idle() {
         last="${LAST_NOTIFIED[$name]:-0}"
         elapsed=$((now - last))
 
-        debounce_time=$DEBOUNCE
-        if is_codex "$name"; then
-            debounce_time=$CODEX_DEBOUNCE
-        fi
+        debounce_time=$(cli_profile_get "$name" "debounce")
 
         if [ $elapsed -ge $debounce_time ]; then
             log "IDLE confirmed: $name"
@@ -376,7 +396,7 @@ handle_confirmed_idle() {
 
         # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
         local ctx_now
-        ctx_now=$(get_context_pct "$target")
+        ctx_now=$(get_context_pct "$target" "$name")
         if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
             # AC3: CLEAR-SKIPカウンタ — 連続10回超で5分間隔ログ
             CLEAR_SKIP_COUNT[$name]=$(( ${CLEAR_SKIP_COUNT[$name]:-0} + 1 ))
@@ -393,15 +413,13 @@ handle_confirmed_idle() {
             clear_last="${LAST_CLEARED[$name]:-0}"
             clear_elapsed=$((now - clear_last))
 
-            # Codex下忍はデバウンス延長(600秒)
-            local effective_debounce=$CLEAR_DEBOUNCE
-            if [ "$agent_id" = "sasuke" ] || [ "$agent_id" = "kirimaru" ]; then
-                effective_debounce=$CODEX_CLEAR_DEBOUNCE
-            fi
+            # CLI種別に応じたデバウンス（cli_profiles.yaml参照）
+            local effective_debounce
+            effective_debounce=$(cli_profile_get "$agent_id" "clear_debounce")
 
             if [ $clear_elapsed -ge $effective_debounce ]; then
                 local reset_cmd
-                reset_cmd=$(get_reset_cmd "$name")
+                reset_cmd=$(cli_profile_get "$name" "clear_cmd")
                 log "AUTO-CLEAR: $name idle+no_task CTX=${ctx_now}%, sending $reset_cmd"
                 tmux send-keys -t "$target" "$reset_cmd"
                 sleep 0.3
@@ -462,7 +480,7 @@ check_stall() {
     local target="${PANE_TARGETS[$name]}"
     if [ -z "$target" ]; then return; fi
 
-    check_idle "$target"
+    check_idle "$target" "$name"
     if [ $? -ne 0 ]; then
         # busy状態 → 停滞追跡リセット
         unset STALL_FIRST_SEEN[$name]
@@ -624,13 +642,13 @@ check_destructive_commands() {
 }
 
 # ─── context_pct更新（単一ペイン） ───
-# 引数: pane_target (例: shogun:2.4)
+# 引数: $1=pane_target (例: shogun:2.4), $2=agent_name（省略時はフォールバック）
 # 戻り値: 0=更新成功, 1=失敗(--設定)
 update_context_pct() {
     local pane_target="$1"
+    local agent_name="$2"
     local output
     local context_pct="--"
-    local remaining
 
     output=$(tmux capture-pane -t "$pane_target" -p -S -10 2>/dev/null)
     if [ $? -ne 0 ]; then
@@ -638,13 +656,36 @@ update_context_pct() {
         return 1
     fi
 
-    # Claude Code パターン: "CTX:XX%" (statusline.sh出力)
-    if echo "$output" | grep -qE 'CTX:[0-9]+%'; then
-        context_pct=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | sed 's/CTX://')
-    # Codex CLI パターン: "XX% context left"
-    elif echo "$output" | grep -qE '[0-9]+% context left'; then
-        remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
-        context_pct="$((100 - remaining))%"
+    # cli_profiles.yamlからパターンとモードを取得
+    local ctx_pattern ctx_mode
+    if [ -n "$agent_name" ]; then
+        ctx_pattern=$(cli_profile_get "$agent_name" "ctx_pattern")
+        ctx_mode=$(cli_profile_get "$agent_name" "ctx_mode")
+    fi
+
+    if [ -n "$ctx_pattern" ]; then
+        if [ "$ctx_mode" = "usage" ]; then
+            local match
+            match=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
+            if [ -n "$match" ]; then
+                context_pct="${match}%"
+            fi
+        elif [ "$ctx_mode" = "remaining" ]; then
+            local remaining
+            remaining=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
+            if [ -n "$remaining" ]; then
+                context_pct="$((100 - remaining))%"
+            fi
+        fi
+    else
+        # フォールバック: 両パターン試行
+        if echo "$output" | grep -qE 'CTX:[0-9]+%'; then
+            context_pct=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | sed 's/CTX://')
+        elif echo "$output" | grep -qE '[0-9]+% context left'; then
+            local remaining
+            remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
+            context_pct="$((100 - remaining))%"
+        fi
     fi
 
     # tmux変数に設定（全エージェント共通）
@@ -658,15 +699,14 @@ update_all_context_pct() {
     local shogun_panes
     shogun_panes=$(tmux list-panes -t shogun:1 -F '1.#{pane_index}' 2>/dev/null)
     for pane_idx in $shogun_panes; do
-        update_context_pct "shogun:$pane_idx"
+        update_context_pct "shogun:$pane_idx" "shogun"
     done
 
-    # 家老 + 忍者ペイン（Window 2）
-    local window2_panes
-    window2_panes=$(tmux list-panes -t shogun:2 -F '2.#{pane_index}' 2>/dev/null)
-    for pane_idx in $window2_panes; do
-        update_context_pct "shogun:$pane_idx"
-    done
+    # 家老 + 忍者ペイン（Window 2）— @agent_idからCLI種別を解決
+    while read -r pane_idx agent_id; do
+        [ -z "$pane_idx" ] && continue
+        update_context_pct "shogun:$pane_idx" "${agent_id:-}"
+    done < <(tmux list-panes -t shogun:2 -F '2.#{pane_index} #{@agent_id}' 2>/dev/null)
 }
 
 # ─── STEP 1: ninja_states.yaml 自動生成 ───
@@ -686,8 +726,8 @@ write_state_file() {
         # 家老
         local karo_pane="shogun:2.1"
         local karo_status="unknown"
-        check_idle "$karo_pane" && karo_status="idle" || karo_status="busy"
-        local karo_ctx=$(get_context_pct "$karo_pane")
+        check_idle "$karo_pane" "karo" && karo_status="idle" || karo_status="busy"
+        local karo_ctx=$(get_context_pct "$karo_pane" "karo")
         echo "  karo:" >> "$state_file"
         echo "    pane: \"$karo_pane\"" >> "$state_file"
         echo "    status: $karo_status" >> "$state_file"
@@ -700,7 +740,7 @@ write_state_file() {
             if [ -z "$target" ]; then continue; fi
 
             local status="${PREV_STATE[$name]:-unknown}"
-            local ctx=$(get_context_pct "$target")
+            local ctx=$(get_context_pct "$target" "$name")
             local last_task=$(grep -m1 'task_id:' "$SCRIPT_DIR/queue/tasks/${name}.yaml" 2>/dev/null | awk '{print $2}')
             [ -z "$last_task" ] && last_task=""
 
@@ -719,13 +759,13 @@ check_karo_compact() {
     local karo_pane="shogun:2.1"
 
     # idle判定
-    check_idle "$karo_pane"
+    check_idle "$karo_pane" "karo"
     if [ $? -ne 0 ]; then
         return  # busy or error → skip
     fi
 
     # CTX取得
-    local ctx_num=$(get_context_pct "$karo_pane")
+    local ctx_num=$(get_context_pct "$karo_pane" "karo")
     if [ -z "$ctx_num" ] || [ "$ctx_num" -le 50 ] 2>/dev/null; then
         return  # CTX <= 50% → skip
     fi
@@ -751,7 +791,7 @@ check_shogun_ctx() {
     local shogun_pane="shogun:1"
 
     # CTX取得
-    local ctx_num=$(get_context_pct "$shogun_pane")
+    local ctx_num=$(get_context_pct "$shogun_pane" "shogun")
     if [ -z "$ctx_num" ] || [ "$ctx_num" -le 50 ] 2>/dev/null; then
         return  # CTX <= 50% → skip
     fi
@@ -817,7 +857,7 @@ while true; do
         target="${PANE_TARGETS[$name]}"
         [ -z "$target" ] && continue
 
-        check_idle "$target"
+        check_idle "$target" "$name"
         result=$?
 
         if [ $result -eq 2 ]; then
@@ -841,13 +881,13 @@ while true; do
         # Phase 2a: Claude Code忍者を即チェック（5秒待機で十分）
         codex_idle=()
         for name in "${maybe_idle[@]}"; do
-            if is_codex "$name"; then
+            if [ "$(cli_type "$name")" = "codex" ]; then
                 codex_idle+=("$name")
                 continue
             fi
 
             target="${PANE_TARGETS[$name]}"
-            check_idle "$target"
+            check_idle "$target" "$name"
             result=$?
 
             if [ $result -eq 0 ]; then
@@ -860,12 +900,14 @@ while true; do
 
         # Phase 2b: Codex忍者は追加待機後にチェック（APIコール間隔が長い）
         if [ ${#codex_idle[@]} -gt 0 ]; then
-            extra_wait=$((CODEX_CONFIRM_WAIT - CONFIRM_WAIT))
+            local codex_confirm_wait
+            codex_confirm_wait=$(cli_profile_get "${codex_idle[0]}" "confirm_wait")
+            extra_wait=$((codex_confirm_wait - CONFIRM_WAIT))
             sleep "${extra_wait:-15}"
 
             for name in "${codex_idle[@]}"; do
                 target="${PANE_TARGETS[$name]}"
-                check_idle "$target"
+                check_idle "$target" "$name"
                 result=$?
 
                 if [ $result -eq 0 ]; then

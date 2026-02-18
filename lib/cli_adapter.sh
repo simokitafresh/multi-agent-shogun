@@ -14,8 +14,8 @@ CLI_ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI_ADAPTER_PROJECT_ROOT="$(cd "${CLI_ADAPTER_DIR}/.." && pwd)"
 CLI_ADAPTER_SETTINGS="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
 
-# 許可されたCLI種別
-CLI_ADAPTER_ALLOWED_CLIS="claude codex copilot kimi"
+# cli_lookup.sh — CLI Profile SSOT参照（type/tier/profile取得を委譲）
+source "${CLI_ADAPTER_PROJECT_ROOT}/scripts/lib/cli_lookup.sh" 2>/dev/null || true
 
 # --- 内部ヘルパー ---
 
@@ -52,106 +52,50 @@ except Exception:
     fi
 }
 
-# _cli_adapter_is_valid_cli cli_type
-# 許可されたCLI種別かチェック
-_cli_adapter_is_valid_cli() {
-    local cli_type="$1"
-    local allowed
-    for allowed in $CLI_ADAPTER_ALLOWED_CLIS; do
-        [[ "$cli_type" == "$allowed" ]] && return 0
-    done
-    return 1
-}
-
 # --- 公開API ---
 
 # get_cli_type(agent_id)
-# 指定エージェントが使用すべきCLI種別を返す
-# フォールバック: cli.agents.{id}.type → cli.agents.{id}(文字列) → cli.default → "claude"
+# cli_lookup.sh の cli_type() に委譲（SSOTはsettings.yaml）
 get_cli_type() {
     local agent_id="$1"
-    if [[ -z "$agent_id" ]]; then
-        echo "claude"
-        return 0
-    fi
-
-    local result
-    result=$(python3 -c "
-import yaml, sys
-try:
-    with open('${CLI_ADAPTER_SETTINGS}') as f:
-        cfg = yaml.safe_load(f) or {}
-    cli = cfg.get('cli', {})
-    if not isinstance(cli, dict):
-        print('claude'); sys.exit(0)
-    agents = cli.get('agents', {})
-    if not isinstance(agents, dict):
-        print(cli.get('default', 'claude') if cli.get('default', 'claude') in ('claude','codex','copilot','kimi') else 'claude')
-        sys.exit(0)
-    agent_cfg = agents.get('${agent_id}')
-    if isinstance(agent_cfg, dict):
-        t = agent_cfg.get('type', '')
-        if t in ('claude', 'codex', 'copilot', 'kimi'):
-            print(t); sys.exit(0)
-    elif isinstance(agent_cfg, str):
-        if agent_cfg in ('claude', 'codex', 'copilot', 'kimi'):
-            print(agent_cfg); sys.exit(0)
-    default = cli.get('default', 'claude')
-    if default in ('claude', 'codex', 'copilot', 'kimi'):
-        print(default)
-    else:
-        print('claude', file=sys.stderr)
-        print('claude')
-except Exception as e:
-    print('claude', file=sys.stderr)
-    print('claude')
-" 2>/dev/null)
-
-    if [[ -z "$result" ]]; then
-        echo "claude"
-    else
-        if ! _cli_adapter_is_valid_cli "$result"; then
-            echo "[WARN] Invalid CLI type '$result' for agent '$agent_id'. Falling back to 'claude'." >&2
-            echo "claude"
-        else
-            echo "$result"
-        fi
-    fi
+    cli_type "${agent_id:-}"
 }
 
 # build_cli_command(agent_id)
-# エージェントを起動するための完全なコマンド文字列を返す
+# cli_launch_cmd()でベースコマンドを取得し、モデル指定を追加
 build_cli_command() {
     local agent_id="$1"
-    local cli_type
-    cli_type=$(get_cli_type "$agent_id")
+    local ct
+    ct=$(cli_type "$agent_id")
+    local base_cmd
+    base_cmd=$(cli_launch_cmd "$agent_id")
     local model
     model=$(get_agent_model "$agent_id")
 
-    case "$cli_type" in
+    # cli_launch_cmdが空の場合のフォールバック
+    if [[ -z "$base_cmd" ]]; then
+        base_cmd="claude --dangerously-skip-permissions"
+    fi
+
+    # cli_profiles.yamlのlaunch_cmdをベースに、モデル指定を追加
+    case "$ct" in
         claude)
-            local cmd="claude"
             if [[ -n "$model" ]]; then
-                cmd="$cmd --model $model"
+                # "claude --flags..." → "claude --model X --flags..."
+                echo "claude --model $model ${base_cmd#claude }"
+            else
+                echo "$base_cmd"
             fi
-            cmd="$cmd --dangerously-skip-permissions"
-            echo "$cmd"
-            ;;
-        codex)
-            echo "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
-            ;;
-        copilot)
-            echo "copilot --yolo"
             ;;
         kimi)
-            local cmd="kimi --yolo"
             if [[ -n "$model" ]]; then
-                cmd="$cmd --model $model"
+                echo "$base_cmd --model $model"
+            else
+                echo "$base_cmd"
             fi
-            echo "$cmd"
             ;;
         *)
-            echo "claude --dangerously-skip-permissions"
+            echo "$base_cmd"
             ;;
     esac
 }

@@ -1,8 +1,9 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
 # inbox_watcher.sh — メールボックス監視＆起動シグナル配信
-# Usage: bash scripts/inbox_watcher.sh <agent_id> <pane_target> [cli_type]
-# Example: bash scripts/inbox_watcher.sh karo shogun:0.0 claude
+# Usage: bash scripts/inbox_watcher.sh <agent_id> <pane_target>
+# Example: bash scripts/inbox_watcher.sh karo shogun:0.0
+# Note: 第3引数(cli_type)は後方互換で受け付けるが無視。cli_lookup.shで動的取得。
 #
 # 設計思想:
 #   メッセージ本体はファイル（inbox YAML）に書く = 確実
@@ -18,9 +19,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# cli_lookup.sh を source（CLI種別をsettings.yaml+cli_profiles.yamlから動的取得）
+source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+
 AGENT_ID="$1"
 PANE_TARGET="$2"
-CLI_TYPE="${3:-claude}"  # CLI種別（claude/codex/copilot）。未指定→claude（後方互換）
+# 第3引数は後方互換で受け付けるが無視（shutsujin_departure.shが渡す）
+CLI_TYPE=$(cli_type "$AGENT_ID")  # settings.yaml → cli_profiles.yaml の2段参照
 
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
 LOCKFILE="${INBOX}.lock"
@@ -35,7 +41,7 @@ STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 
 if [ -z "$AGENT_ID" ] || [ -z "$PANE_TARGET" ]; then
-    echo "Usage: inbox_watcher.sh <agent_id> <pane_target> [cli_type]" >&2
+    echo "Usage: inbox_watcher.sh <agent_id> <pane_target>" >&2
     exit 1
 fi
 
@@ -88,42 +94,47 @@ except Exception as e:
 
 # ─── Send CLI command directly via send-keys ───
 # For /clear and /model only. These are CLI commands, not conversation messages.
-# CLI_TYPE別分岐: claude→そのまま, codex→/clear対応・/modelスキップ,
-#                  copilot→Ctrl-C+再起動・/modelスキップ
+# CLI種別はcli_profiles.yamlのフィールドで動的に判定（name-based分岐なし）
 send_cli_command() {
     local cmd="$1"
-
-    # CLI別コマンド変換
     local actual_cmd="$cmd"
-    case "$CLI_TYPE" in
-        codex)
-            # Codex: /clear→/new変換, /model非対応→スキップ
-            if [[ "$cmd" == "/clear" ]]; then
-                actual_cmd="/new"
-            elif [[ "$cmd" == /model* ]]; then
-                echo "[$(date)] Skipping $cmd (not supported on codex)" >&2
-                return 0
-            fi
-            ;;
-        copilot)
-            # Copilot: /clearはCtrl-C+再起動, /model非対応→スキップ
-            if [[ "$cmd" == "/clear" ]]; then
-                echo "[$(date)] Copilot /clear: sending Ctrl-C + restart" >&2
-                timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" C-c 2>/dev/null || true
-                sleep 2
-                timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" "copilot --yolo" 2>/dev/null || true
-                sleep 0.3
-                timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
-                sleep 3
-                return 0
-            fi
-            if [[ "$cmd" == /model* ]]; then
-                echo "[$(date)] Skipping $cmd (not supported on copilot)" >&2
-                return 0
-            fi
-            ;;
-        # claude: commands pass through as-is
-    esac
+    local post_wait=1
+
+    # /clear: cli_profiles.yamlのclear_method/clear_cmdで動的解決
+    if [[ "$cmd" == "/clear" ]]; then
+        local clear_method
+        clear_method=$(cli_profile_get "$AGENT_ID" "clear_method")
+        clear_method="${clear_method:-command}"
+
+        if [[ "$clear_method" == "restart" ]]; then
+            # Ctrl-C + launch_cmdで再起動（例: copilot）
+            local launch
+            launch=$(cli_launch_cmd "$AGENT_ID")
+            echo "[$(date)] CLI restart for $AGENT_ID ($CLI_TYPE): Ctrl-C + $launch" >&2
+            timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" C-c 2>/dev/null || true
+            sleep 2
+            timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" "$launch" 2>/dev/null || true
+            sleep 0.3
+            timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
+            sleep 3
+            return 0
+        fi
+
+        # clear_method == "command": clear_cmdを送信（claude=/clear, codex=/new）
+        actual_cmd=$(cli_profile_get "$AGENT_ID" "clear_cmd")
+        actual_cmd="${actual_cmd:-/clear}"
+        post_wait=3
+    fi
+
+    # /model: supports_model_switchで動的判定
+    if [[ "$cmd" == /model* ]]; then
+        local supports_model
+        supports_model=$(cli_profile_get "$AGENT_ID" "supports_model_switch")
+        if [[ "$supports_model" != "true" ]]; then
+            echo "[$(date)] Skipping $cmd (not supported on $CLI_TYPE)" >&2
+            return 0
+        fi
+    fi
 
     echo "[$(date)] Sending CLI command to $AGENT_ID ($CLI_TYPE): $actual_cmd" >&2
 
@@ -137,12 +148,7 @@ send_cli_command() {
         return 1
     fi
 
-    # /clear needs extra wait time before follow-up
-    if [[ "$actual_cmd" == "/clear" ]]; then
-        sleep 3
-    else
-        sleep 1
-    fi
+    sleep "$post_wait"
 }
 
 # ─── Agent self-watch detection ───
@@ -224,7 +230,7 @@ check_script_update() {
             return 0
         fi
         echo "[$(date)] [AUTO-RESTART] Script file changed (hash: $SCRIPT_HASH → $current_hash), restarting..." >&2
-        exec "$SCRIPT_PATH" "$AGENT_ID" "$PANE_TARGET" "$CLI_TYPE"
+        exec "$SCRIPT_PATH" "$AGENT_ID" "$PANE_TARGET"
     fi
 }
 

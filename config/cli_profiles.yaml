@@ -6,7 +6,7 @@
 #
 # 参照元:
 #   scripts/lib/cli_lookup.sh (本ファイルを読み取る)
-#   将来: ninja_monitor.sh, inbox_watcher.sh がこのファイルを参照 (Stage 2)
+#   inbox_watcher.sh, ninja_monitor.sh がこのファイルを参照
 
 profiles:
   claude:
@@ -25,7 +25,9 @@ profiles:
       - "Streaming"
     # セッションリセットコマンド (ninja_monitor.sh L69)
     clear_cmd: "/clear"
-    # /modelコマンド対応 (inbox_watcher.sh L125: claude=pass through)
+    # clear方式: "command"=clear_cmdを送信, "restart"=Ctrl-C+launch_cmdで再起動
+    clear_method: "command"
+    # /modelコマンド対応 (inbox_watcher.sh: claude=pass through)
     supports_model_switch: true
     # idle確認待ち秒数 (ninja_monitor.sh L34: CONFIRM_WAIT=5)
     confirm_wait: 5
@@ -51,7 +53,9 @@ profiles:
       - "background terminal running"
     # セッションリセットコマンド (ninja_monitor.sh L70: /new)
     clear_cmd: "/new"
-    # /modelコマンド非対応 (inbox_watcher.sh L103-106: skip)
+    # clear方式: "command"=clear_cmdを送信, "restart"=Ctrl-C+launch_cmdで再起動
+    clear_method: "command"
+    # /modelコマンド非対応 (inbox_watcher.sh: skip)
     supports_model_switch: false
     # idle確認待ち秒数 (ninja_monitor.sh L35: CODEX_CONFIRM_WAIT=20)
     confirm_wait: 20
@@ -59,3 +63,21 @@ profiles:
     debounce: 180
     # auto-clear再送信抑制秒数 (ninja_monitor.sh L89: CODEX_CLEAR_DEBOUNCE=600)
     clear_debounce: 600
+
+  copilot:
+    # 起動コマンド
+    launch_cmd: "copilot --yolo"
+    # CTXパース（copilot固有のパターンがあれば設定）
+    ctx_pattern: ""
+    ctx_mode: "usage"
+    # idleプロンプト判定
+    idle_pattern: ""
+    busy_patterns: []
+    # セッションリセット: copilotは/clearコマンドがない→Ctrl-C+再起動
+    clear_cmd: ""
+    clear_method: "restart"
+    # /modelコマンド非対応
+    supports_model_switch: false
+    confirm_wait: 5
+    debounce: 60
+    clear_debounce: 300

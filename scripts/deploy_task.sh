@@ -16,6 +16,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
+# cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
+source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+
 NINJA_NAME="${1:-}"
 MESSAGE="${2:-}"
 TYPE="${3:-task_assigned}"
@@ -79,7 +82,7 @@ except:
     esac
 }
 
-# ─── CTX%取得（ninja_monitorと同じロジック） ───
+# ─── CTX%取得（cli_profiles.yaml経由でCLI種別に応じたパターンを取得） ───
 get_ctx_pct() {
     local pane_target="$1"
     local ctx_num
@@ -91,29 +94,30 @@ get_ctx_pct() {
         return 0
     fi
 
-    # Source 2: capture-pane
+    # Source 2: capture-pane + cli_profiles.yamlのパターン
     local output
     output=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null)
 
-    # Claude Code: "CTX:XX%"
-    ctx_num=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+')
-    if [ -n "$ctx_num" ]; then
-        echo "$ctx_num"
-        return 0
-    fi
+    local ctx_pattern ctx_mode
+    ctx_pattern=$(cli_profile_get "$NINJA_NAME" "ctx_pattern")
+    ctx_mode=$(cli_profile_get "$NINJA_NAME" "ctx_mode")
 
-    # Codex: "XX% context left"
-    local remaining
-    remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
-    if [ -n "$remaining" ]; then
-        echo $((100 - remaining))
-        return 0
+    if [ -n "$ctx_pattern" ]; then
+        ctx_num=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
+        if [ -n "$ctx_num" ]; then
+            if [ "$ctx_mode" = "remaining" ]; then
+                echo $((100 - ctx_num))
+            else
+                echo "$ctx_num"
+            fi
+            return 0
+        fi
     fi
 
     echo "0"
 }
 
-# ─── idle検知（プロンプト表示中か） ───
+# ─── idle検知（cli_profiles.yaml経由でBUSY/IDLEパターンを取得） ───
 check_idle() {
     local pane_target="$1"
 
@@ -130,13 +134,18 @@ check_idle() {
     local output
     output=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null)
 
-    # BUSYパターン
-    if echo "$output" | grep -qE 'esc to interrupt|Running|Streaming|background terminal running'; then
+    # cli_profiles.yaml経由でBUSY/IDLEパターンを取得
+    local busy_raw idle_pattern
+    busy_raw=$(cli_profile_get "$NINJA_NAME" "busy_patterns")
+    idle_pattern=$(cli_profile_get "$NINJA_NAME" "idle_pattern")
+
+    # BUSYパターン（cli_lookupはリストをパイプ区切りで返す → grep -E の alternation として使用）
+    if [ -n "$busy_raw" ] && echo "$output" | grep -qE "$busy_raw"; then
         return 1
     fi
 
     # IDLEパターン: プロンプト表示
-    if echo "$output" | tail -3 | grep -qE '[❯›$]'; then
+    if [ -n "$idle_pattern" ] && echo "$output" | tail -3 | grep -qF "$idle_pattern"; then
         return 0
     fi
 
