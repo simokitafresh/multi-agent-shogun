@@ -94,10 +94,11 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 ```
 1. ダッシュボード更新（cmd完了結果を記載）
 2. bash scripts/archive_completed.sh（完了cmd+古い戦果を自動退避）
-3. ntfy送信（cmd完了報告）
-4. 新しいinbox nudgeが来ていても、上記1-3を先に完了する
+3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
+4. ntfy送信（cmd完了報告）
+5. 新しいinbox nudgeが来ていても、上記1-4を先に完了する
    理由: 「新cmd処理→またnudge→...」の連鎖でCTXが際限なく膨らむ（実証済み）
-5. idle状態で待つ
+6. idle状態で待つ
 ```
 
 ## 復帰時の手順（全エージェント共通）

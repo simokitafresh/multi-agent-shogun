@@ -105,6 +105,7 @@
 !scripts/lib/
 !scripts/lib/cli_lookup.sh
 !scripts/lib/safe_rm.sh
+!scripts/inbox_archive.sh
 
 
 # Tasks (SSOT lessons only)
