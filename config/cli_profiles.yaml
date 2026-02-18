@@ -10,6 +10,8 @@
 
 profiles:
   claude:
+    # 表示名 (sync_pane_vars.sh → tmux @model_name)
+    display_name: "Opus"
     # 起動コマンド (lib/cli_adapter.sh L137-138)
     launch_cmd: "claude --dangerously-skip-permissions"
     # CTXパース正規表現 (ninja_monitor.sh L181, L518)
@@ -37,6 +39,8 @@ profiles:
     clear_debounce: 300
 
   codex:
+    # 表示名 (sync_pane_vars.sh → tmux @model_name)
+    display_name: "Codex"
     # 起動コマンド (lib/cli_adapter.sh L142)
     launch_cmd: "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     # CTXパース正規表現 (ninja_monitor.sh L190, L522)
@@ -65,6 +69,8 @@ profiles:
     clear_debounce: 600
 
   copilot:
+    # 表示名 (sync_pane_vars.sh → tmux @model_name)
+    display_name: "Copilot"
     # 起動コマンド
     launch_cmd: "copilot --yolo"
     # CTXパース（copilot固有のパターンがあれば設定）

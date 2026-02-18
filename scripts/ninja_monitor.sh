@@ -841,6 +841,40 @@ check_shogun_ctx() {
     fi
 }
 
+# ─── @model_name整合性チェック（REDISCOVER_EVERY周期） ───
+# settings.yaml type → cli_profiles.yaml display_name を期待値として、
+# 各ペインの@model_nameと比較。不整合があれば自動修正。
+check_model_names() {
+    local all_agents=("karo" "${NINJA_NAMES[@]}")
+
+    for name in "${all_agents[@]}"; do
+        local target
+        if [ "$name" = "karo" ]; then
+            target="shogun:2.1"
+        else
+            target="${PANE_TARGETS[$name]}"
+        fi
+        [ -z "$target" ] && continue
+
+        # 期待値: cli_profiles.yaml の display_name
+        local expected
+        expected=$(cli_profile_get "$name" "display_name")
+        if [ -z "$expected" ]; then
+            expected=$(cli_type "$name")
+        fi
+
+        # 現在値
+        local current
+        current=$(tmux show-options -p -t "$target" -v @model_name 2>/dev/null || echo "")
+
+        # 整合性チェック + 自動修正
+        if [ "$current" != "$expected" ]; then
+            tmux set-option -p -t "$target" @model_name "$expected" 2>/dev/null
+            log "MODEL_NAME_FIX: $name ${current:-<empty>} -> $expected"
+        fi
+    done
+}
+
 # ─── Self-restart on script change (inbox_watcher.shから移植) ───
 check_script_update() {
     local current_hash
@@ -869,6 +903,9 @@ while true; do
     # 定期的にペイン再探索（ペイン構成変更に対応）
     if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
         discover_panes
+
+        # @model_name整合性チェック（cmd_155）
+        check_model_names
 
         # Inbox pruning (cmd_106) — 10分間隔で既読メッセージを自動削除
         bash "$SCRIPT_DIR/scripts/inbox_prune.sh" 2>>"$SCRIPT_DIR/logs/inbox_prune.log" || true
