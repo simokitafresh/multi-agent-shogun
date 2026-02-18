@@ -15,6 +15,20 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+# Validate caller agent_id (warn-only; do not block send)
+AGENT_ID=""
+if [ -n "${TMUX_PANE:-}" ]; then
+  AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+fi
+if [ -z "$AGENT_ID" ]; then
+  AGENT_ID="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
+fi
+if [ -z "$AGENT_ID" ]; then
+  echo "WARNING: ntfy called with unavailable agent_id (outside tmux?)" >&2
+elif [ "$AGENT_ID" != "shogun" ] && [ "$AGENT_ID" != "karo" ]; then
+  echo "WARNING: ntfy called by non-authorized agent: ${AGENT_ID}" >&2
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 

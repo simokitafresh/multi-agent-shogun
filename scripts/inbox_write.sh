@@ -10,6 +10,7 @@ TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
+NINJA_NAMES="sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru"
 
 INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
 LOCKFILE="${INBOX}.lock"
@@ -25,6 +26,25 @@ if [[ "$TARGET" == cmd_* ]]; then
     echo "ERROR: 第1引数はtarget_agent（例: karo, sasuke）。cmd_idではない。" >&2
     echo "Usage: inbox_write.sh <target_agent> <content> [type] [from]" >&2
     echo "受け取った引数: $*" >&2
+    exit 1
+fi
+
+# Validate sender/target relationship
+is_ninja_sender=0
+for ninja in $NINJA_NAMES; do
+    if [ "$FROM" = "$ninja" ]; then
+        is_ninja_sender=1
+        break
+    fi
+done
+
+if [ "$is_ninja_sender" -eq 1 ] && [ "$TARGET" = "shogun" ]; then
+    echo "ERROR: Ninja cannot send inbox to shogun directly. Use karo as relay." >&2
+    exit 1
+fi
+
+if [ "$FROM" = "ninja_monitor" ] && [ "$TARGET" != "karo" ] && [ "$TARGET" != "shogun" ]; then
+    echo "ERROR: ninja_monitor can send only to karo or shogun." >&2
     exit 1
 fi
 
