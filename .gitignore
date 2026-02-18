@@ -71,6 +71,7 @@
 # Config (sample files only, no secrets)
 !config/
 !config/ntfy_auth.env.sample
+!config/cli_profiles.yaml
 
 # Templates
 !templates/
@@ -97,7 +98,14 @@
 !scripts/lesson_check.sh
 !scripts/deploy_task.sh
 !scripts/cmd_absorb.sh
+!scripts/sync_lessons.sh
+!scripts/lib/
+!scripts/lib/cli_lookup.sh
 
+
+# Tasks (SSOT lessons only)
+!tasks/
+!tasks/lessons.md
 
 # SayTask (sample template only, not actual data)
 !saytask/

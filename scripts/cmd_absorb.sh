@@ -156,4 +156,49 @@ update_cmd_yaml
 append_changelog
 notify_karo
 
+# ─── 教訓残存チェック（cancelled/absorbed cmd由来の教訓をWARN） ───
+check_stale_lessons() {
+    local cmd_id="$1"
+
+    # 全プロジェクトのlessons.md SSOTをチェック
+    for project_dir in "$SCRIPT_DIR"/projects/*/; do
+        [ -d "$project_dir" ] || continue
+        local project_id
+        project_id=$(basename "$project_dir")
+
+        # config/projects.yamlからproject pathを取得
+        local project_path
+        project_path=$(python3 -c "
+import yaml
+with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+    cfg = yaml.safe_load(f)
+for p in cfg.get('projects', []):
+    if p['id'] == '$project_id':
+        print(p['path'])
+        break
+" 2>/dev/null)
+
+        if [ -z "$project_path" ]; then
+            continue
+        fi
+
+        local ssot_file="$project_path/tasks/lessons.md"
+        if [ ! -f "$ssot_file" ]; then
+            continue
+        fi
+
+        # cmd_idをlessons.mdからgrep
+        local matches
+        matches=$(grep -n "$cmd_id" "$ssot_file" 2>/dev/null || true)
+        if [ -n "$matches" ]; then
+            echo "WARNING: ${cmd_id}由来の教訓が残存 (project=${project_id}):"
+            echo "$matches" | while IFS= read -r line; do
+                echo "  $line"
+            done
+        fi
+    done
+}
+
+check_stale_lessons "$ABSORBED_CMD"
+
 echo "OK: ${ABSORBED_CMD} -> ${MODE}"

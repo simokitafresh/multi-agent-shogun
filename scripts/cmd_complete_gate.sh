@@ -177,6 +177,42 @@ for gate in "${ALL_GATES[@]}"; do
     fi
 done
 
+# ─── related_lessons存在チェック（deploy_task.sh経由確認） ───
+echo ""
+echo "Related lessons injection check:"
+RL_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    RL_CHECKED=true
+    ninja_name=$(basename "$task_file" .yaml)
+
+    has_rl_key=$(python3 -c "
+import yaml, sys
+try:
+    with open('$task_file') as f:
+        data = yaml.safe_load(f)
+    task = data.get('task', {}) if data else {}
+    print('yes' if 'related_lessons' in task else 'no')
+except:
+    print('error')
+" 2>/dev/null)
+
+    if [ "$has_rl_key" = "yes" ]; then
+        echo "  ${ninja_name}: OK (related_lessons present)"
+    elif [ "$has_rl_key" = "no" ]; then
+        echo "  ${ninja_name}: WARN ← related_lessonsキー欠落（deploy_task.sh経由でない可能性）"
+    else
+        echo "  ${ninja_name}: WARN ← related_lessons解析エラー"
+    fi
+done
+if [ "$RL_CHECKED" = false ]; then
+    echo "  (no tasks found for this cmd)"
+fi
+
 # ─── lesson_referenced検証（related_lessonsあり→報告にlesson_referenced必須） ───
 echo ""
 echo "Lesson referenced check:"
