@@ -106,6 +106,8 @@
 !scripts/lib/cli_lookup.sh
 !scripts/lib/safe_rm.sh
 !scripts/inbox_archive.sh
+!scripts/model_switch_preflight.sh
+!scripts/sync_pane_vars.sh
 
 
 # Tasks (SSOT lessons only)
@@ -119,6 +121,7 @@
 # Docs
 !docs/
 !docs/philosophy.md
+!docs/model-switch-checklist.md
 
 # Screenshots (masked — no secrets)
 !images/
