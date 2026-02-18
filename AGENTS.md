@@ -213,8 +213,8 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 役割 | 名前(pane) | CLI |
 |------|-----------|-----|
 | 家老 | karo(1) | Claude |
-| 下忍 | sasuke(2) kirimaru(3) | Codex gpt-5.3-codex |
-| 上忍 | hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | Claude Opus |
+| 下忍(genin) | sasuke(2) kirimaru(3) | settings.yaml参照 |
+| 上忍(jonin) | hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
 
 ## DM-Signal
 

@@ -78,7 +78,7 @@ workflow:
   - step: 6.5
     action: set_pane_task
     command: 'tmux set-option -p -t shogun:0.{N} @current_task "short task label"'
-    note: "Set short label (max ~15 chars) so border shows: sasuke (Sonnet) VF要件v2"
+    note: "Set short label (max ~15 chars) so border shows: sasuke VF要件v2"
   - step: 7
     action: deploy_task
     target: "{ninja_name}"
@@ -129,7 +129,7 @@ workflow:
     action: reset_pane_display
     note: |
       Clear task label: tmux set-option -p -t shogun:0.{N} @current_task ""
-      Border shows: "sasuke (Sonnet)" when idle, "sasuke (Sonnet) VF要件v2" when working.
+      Border shows: "sasuke" when idle, "sasuke VF要件v2" when working.
   - step: 12.5
     action: check_pending_after_report
     note: |
@@ -398,7 +398,7 @@ cmd受領 → 「このcmdはどのパターンの組合せか？」
 - 2名独立並行。同じ対象を異なる観点で調査
 - 完了後 `report_merge.sh` で統合判定
 - 仮説A/B寄りの観点で独立調査、両方に全仮説を網羅させる
-- 例外: 事前知識十分 or idle Codex忍者1名のみ → スキップ可
+- 例外: 事前知識十分 or idle genin忍者1名のみ → スキップ可
 
 **2. impl (実装_単独)** — `task_type: implement`
 - 1名、単一ファイルまたは密結合な複数ファイル
@@ -423,8 +423,8 @@ cmd受領 → 「このcmdはどのパターンの組合せか？」
 |------|------|------|
 | 偵察済み + 別忍者が実装 | **偵察者**がレビュー | コード知識が最も深い |
 | 偵察者 = 実装者 | **別忍者** | 独立性確保 |
-| bloom_level L4以上（思考型） | **Opus必須** | 推論・評価が必要 |
-| bloom_level L3以下（照合型） | **Codex可** | 手順照合のみ |
+| bloom_level L4以上（思考型） | **jonin必須** | 推論・評価が必要 |
+| bloom_level L3以下（照合型） | **genin可** | 手順照合のみ |
 | 偵察報告あり | reports_to_readで自動注入 | 知識の引き継ぎ保証 |
 
 ### Common Combinations
@@ -471,7 +471,7 @@ cmd受領 → 「このcmdはどのパターンの組合せか？」
 task:
   task_id: subtask_001
   parent_cmd: cmd_001
-  bloom_level: L3        # L1-L3=Sonnet, L4-L6=Opus
+  bloom_level: L3        # L1-L3=genin, L4-L6=jonin
   description: "Create hello1.md with content 'おはよう1'"
   target_path: "/mnt/c/tools/multi-agent-shogun/hello1.md"
   echo_message: "🔥 佐助、先陣を切って参る！八刃一志！"
@@ -604,9 +604,9 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
 
 ## Task Assignment Criteria (タスク振り分け基準)
 
-基本方針: **「判断が要らない仕事はCodex、頭を使う仕事はOpus」**
+基本方針: **「L3以下はgenin、L4以上はjonin」**
 
-### Codex向き（sasuke/kirimaru — gpt-5.3-codex）
+### genin向き（L1-L3）
 
 | カテゴリ | 具体例 |
 |---------|--------|
@@ -617,7 +617,7 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
 | 単一ファイル検証 | 1ファイルのlint/test実行、出力確認 |
 | データ集計・レポート生成 | CSV集計、既知フォーマットへの整形 |
 
-### Opus必須（hayate〜tobisaru — Claude Opus）
+### jonin向き（L4-L6）
 
 | カテゴリ | 具体例 |
 |---------|--------|
@@ -632,19 +632,19 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
 
 ```
 タスクを受け取ったら:
-1. 「複数ファイルを読んで判断が必要か？」 → YES → Opus
-2. 「根本原因の調査・分析が必要か？」     → YES → Opus
-3. 「入力と出力が明確に定義されているか？」 → YES → Codex候補
-4. 「テンプレートや手順書に従うだけか？」   → YES → Codex
-5. 迷ったらOpus（安全側に倒す）
+1. 「複数ファイルを読んで判断が必要か？」 → YES → jonin
+2. 「根本原因の調査・分析が必要か？」     → YES → jonin
+3. 「入力と出力が明確に定義されているか？」 → YES → genin候補
+4. 「テンプレートや手順書に従うだけか？」   → YES → genin
+5. 迷ったらjonin（安全側に倒す）
 ```
 
 ### 家老の現場知見（cmd_082 AC5）
 
-- Codexは指示が明確であれば確実に実行する。曖昧な指示は致命的（cmd_079のSQLite誤接続はOpus忍者でも発生 — 指示の明確さが本質）
-- 「DBクエリ実行 + 結果の解釈」は分離すべき。クエリ実行=Codex、結果解釈=Opus
-- ドキュメント更新系は最もCodex向き。本cmd(082)自体がその実証
-- 下忍を遊兵にしないためには、大きなcmdを分解する際にCodex向きサブタスクを意識的に切り出すこと
+- geninは指示が明確であれば確実に実行する。曖昧な指示は致命的（cmd_079のSQLite誤接続はjonin忍者でも発生 — 指示の明確さが本質）
+- 「DBクエリ実行 + 結果の解釈」は分離すべき。クエリ実行=genin、結果解釈=jonin
+- ドキュメント更新系は最もgenin向き。本cmd(082)自体がその実証
+- 下忍を遊兵にしないためには、大きなcmdを分解する際にgenin向きサブタスクを意識的に切り出すこと
 
 ## 運用鉄則: 5段階プロセス
 
@@ -652,23 +652,23 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
 Step 1: 並行偵察 — 2名独立調査。互いの結果は見るな(独立性担保)
 Step 1.5: 統合分析 — 一致=確定事実、不一致=盲点→追加調査配備
 Step 2: 知識保存 — lesson_write.sh + context更新。次の忍者が再調査不要に
-Step 3: Opus実装 — lessonsポインタ付きtask YAML。commitまで(pushはしない)
+Step 3: jonin実装 — lessonsポインタ付きtask YAML。commitまで(pushはしない)
 Step 4: 別忍者レビュー — diff確認→PASS後にpush(OPT-E bisect消滅の教訓)
 ```
 
-**偵察配備**: 2名Codex忍者に仮説A/B寄りの観点で独立調査。両方に全仮説を網羅させる(偏り防止)。
-**例外**: 事前知識十分で調査が単純な場合、idle Codex忍者が1名のみの場合はスキップ可。
+**偵察配備**: 2名genin忍者に仮説A/B寄りの観点で独立調査。両方に全仮説を網羅させる(偏り防止)。
+**例外**: 事前知識十分で調査が単純な場合、idle genin忍者が1名のみの場合はスキップ可。
 
-### Codex偵察フロー（Step 1 運用詳細）
+### genin偵察フロー（Step 1 運用詳細）
 
-**判定**: 入出力が明確に定義できるか → YES → Codex偵察向き（ファイル構造/DBスキーマ/パラメータ収集等）。推論・設計判断が必要 → Opus偵察。
+**判定**: 入出力が明確に定義できるか → YES → genin偵察向き（ファイル構造/DBスキーマ/パラメータ収集等）。推論・設計判断が必要 → jonin偵察。
 
 **手順** (テンプレートは `templates/recon_task.yaml` 参照):
 1. task YAML 2名分作成（task_type: recon, project:フィールド付き）
 2. `bash scripts/task_deploy.sh cmd_XXX recon` で2名体制検証
 3. inbox_writeで同時配備
 4. 両報告受理後 `bash scripts/report_merge.sh cmd_XXX` で統合判定
-5. 統合分析 → 知識保存(lesson_write.sh) → Opus実装配備
+5. 統合分析 → 知識保存(lesson_write.sh) → jonin実装配備
 
 
 ### 停滞時の即時中止ルール
@@ -960,7 +960,7 @@ On receiving ninja reports, check `skill_candidate` field. If found:
 
 ```
 1. YAML-first: Read queue/tasks/{ninja_name}.yaml → 次のtask YAMLを書く
-2. ペインタイトルリセット: tmux select-pane -t shogun:0.{N} -T "Opus" (model名のみ)
+2. ペインタイトルリセット: tmux select-pane -t shogun:0.{N} -T "{ninja_name}"
 3. clear_command送信:
    bash scripts/inbox_write.sh {ninja_name} "タスクYAMLを読んで作業開始せよ。" clear_command karo
    → watcherが自動で/clear→待機→指示送信を一括処理
@@ -986,30 +986,30 @@ tmux list-panes -t shogun:agents -F '#{pane_index}' -f '#{==:#{@agent_id},hayate
 
 ### Model Configuration
 
-| Agent | Model | Pane |
-|-------|-------|------|
-| Shogun | Opus (effort: high) | shogun:main |
-| Karo | Opus **(effort: max, always)** | shogun:2.1 |
-| 下忍(genin): sasuke/kirimaru | Codex (gpt-5.3-codex) | shogun:2.2-2.3 |
-| 上忍(jonin): hayate/kagemaru/hanzo/saizo/kotaro/tobisaru | Opus | shogun:2.4-2.9 |
+| Agent | Tier | Pane |
+|-------|------|------|
+| Shogun | — | shogun:main |
+| Karo | — | shogun:2.1 |
+| 下忍(genin): sasuke/kirimaru | genin | shogun:2.2-2.3 |
+| 上忍(jonin): hayate/kagemaru/hanzo/saizo/kotaro/tobisaru | jonin | shogun:2.4-2.9 |
 
-**Default: Assign to 上忍(jonin) - Opus ninja.** 下忍はCodex CLI（L1-L3タスク向け）。
+**Default: Assign to jonin.** geninはL1-L3タスク向け。具体的モデル名は `config/settings.yaml` 参照。
 
 ### Bloom Level → Model Mapping
 
-**⚠️ If ANY part of the task is L4+, use Opus. When in doubt, use Opus.**
+**⚠️ If ANY part of the task is L4+, use jonin. When in doubt, use jonin.**
 
-| Question | Level | Model |
-|----------|-------|-------|
-| "Just searching/listing?" | L1 Remember | Sonnet |
-| "Explaining/summarizing?" | L2 Understand | Sonnet |
-| "Applying known pattern?" | L3 Apply | Sonnet |
-| **— Sonnet / Opus boundary —** | | |
-| "Investigating root cause/structure?" | L4 Analyze | **Opus** |
-| "Comparing options/evaluating?" | L5 Evaluate | **Opus** |
-| "Designing/creating something new?" | L6 Create | **Opus** |
+| Question | Level | Tier |
+|----------|-------|------|
+| "Just searching/listing?" | L1 Remember | genin |
+| "Explaining/summarizing?" | L2 Understand | genin |
+| "Applying known pattern?" | L3 Apply | genin |
+| **— genin / jonin boundary —** | | |
+| "Investigating root cause/structure?" | L4 Analyze | **jonin** |
+| "Comparing options/evaluating?" | L5 Evaluate | **jonin** |
+| "Designing/creating something new?" | L6 Create | **jonin** |
 
-**L3/L4 boundary**: Does a procedure/template exist? YES = L3 (Sonnet). NO = L4 (Opus).
+**L3/L4 boundary**: Does a procedure/template exist? YES = L3 (genin). NO = L4 (jonin).
 
 ### Dynamic Model Switching via `/model`
 
@@ -1022,20 +1022,20 @@ tmux set-option -p -t shogun:0.{N} @model_name '<DisplayName>'
 
 | Direction | Condition | Action |
 |-----------|-----------|--------|
-| Sonnet→Opus (promote) | Bloom L4+ AND all 上忍(jonin) busy | `/model opus`, `@model_name` → `Opus` |
-| Opus→Sonnet (demote) | Bloom L1-L3 task | `/model sonnet`, `@model_name` → `Sonnet` |
+| genin→jonin (promote) | Bloom L4+ AND all jonin busy | `/model` で昇格、`@model_name` 更新 |
+| jonin→genin (demote) | Bloom L1-L3 task | `/model` で降格、`@model_name` 更新 |
 
-**YAML tracking**: Add `model_override: opus` or `model_override: sonnet` to task YAML when switching.
-**Restore**: After task completion, switch back to default model before next task.
-**Before /clear**: Always restore default model first (/clear resets context, can't carry implicit state).
+**YAML tracking**: Add `model_override: jonin` or `model_override: genin` to task YAML when switching. 具体的モデル名は `config/settings.yaml` 参照。
+**Restore**: After task completion, switch back to default tier before next task.
+**Before /clear**: Always restore default tier first (/clear resets context, can't carry implicit state).
 
 ### Compaction Recovery: Model State Check
 
 ```bash
 grep -l "model_override" queue/tasks/*.yaml
 ```
-- `model_override: opus` on 下忍(genin) → currently promoted
-- `model_override: sonnet` on 上忍(jonin) → currently demoted
+- `model_override: jonin` on 下忍(genin) → currently promoted
+- `model_override: genin` on 上忍(jonin) → currently demoted
 - Fix mismatches with `/model` + `@model_name` update
 
 ## OSS Pull Request Review

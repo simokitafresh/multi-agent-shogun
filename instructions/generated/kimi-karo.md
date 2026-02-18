@@ -77,7 +77,7 @@ workflow:
   - step: 6.5
     action: set_pane_task
     command: 'tmux set-option -p -t shogun:0.{N} @current_task "short task label"'
-    note: "Set short label (max ~15 chars) so border shows: sasuke (Sonnet) VF要件v2"
+    note: "Set short label (max ~15 chars) so border shows: sasuke VF要件v2"
   - step: 7
     action: deploy_task
     target: "{ninja_name}"
@@ -128,7 +128,7 @@ workflow:
     action: reset_pane_display
     note: |
       Clear task label: tmux set-option -p -t shogun:0.{N} @current_task ""
-      Border shows: "sasuke (Sonnet)" when idle, "sasuke (Sonnet) VF要件v2" when working.
+      Border shows: "sasuke" when idle, "sasuke VF要件v2" when working.
   - step: 12.5
     action: check_pending_after_report
     note: |

@@ -163,7 +163,7 @@ Task YAML is intentionally thin. If some background is not written in task YAML,
 - 自分の報告に他の忍者の結論を引用してはならない
 - task YAMLに「並行偵察」と記載されている場合、このルールが適用される
 
-## Codex偵察タスク対応
+## 偵察タスク対応
 
 task YAMLに`task_type: recon`がある場合、偵察モードで作業する。
 
@@ -277,9 +277,9 @@ lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリ�
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate, lesson_referenced.
 Missing fields = incomplete report.
 
-### Codex CLI 報告時の注意
+### 下忍(genin) 報告時の注意
 
-Codex CLI (sasuke/kirimaru) は以下のフィールドを省略しがちです。
+下忍(genin)は以下のフィールドを省略しがちです。
 **必ず全フィールドを含めてください:**
 
 - `lesson_candidate:` — found: true/false は**必須**。省略禁止。
