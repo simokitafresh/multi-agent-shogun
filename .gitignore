@@ -108,6 +108,7 @@
 !scripts/inbox_archive.sh
 !scripts/model_switch_preflight.sh
 !scripts/sync_pane_vars.sh
+!scripts/count_gate_metrics.sh
 
 
 # Tasks (SSOT lessons only)

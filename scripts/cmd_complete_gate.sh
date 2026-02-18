@@ -25,7 +25,9 @@ fi
 GATES_DIR="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
-mkdir -p "$GATES_DIR"
+LOG_DIR="$SCRIPT_DIR/logs"
+GATE_METRICS_LOG="$LOG_DIR/gate_metrics.log"
+mkdir -p "$GATES_DIR" "$LOG_DIR"
 
 # ─── status自動更新関数 ───
 update_status() {
@@ -121,6 +123,14 @@ detect_task_types() {
     echo "${has_recon} ${has_implement}"
 }
 
+# ─── BLOCK理由収集 ───
+record_block_reason() {
+    local reason="$1"
+    if [ -n "$reason" ]; then
+        BLOCK_REASONS+=("$reason")
+    fi
+}
+
 # ─── 必須フラグ構築 ───
 ALWAYS_REQUIRED=("archive" "lesson")
 
@@ -151,6 +161,7 @@ fi
 
 # ─── 各フラグの状態確認 ───
 MISSING_GATES=()
+BLOCK_REASONS=()
 ALL_CLEAR=true
 
 echo "Gate check: ${CMD_ID}"
@@ -173,6 +184,7 @@ for gate in "${ALL_GATES[@]}"; do
     else
         echo "  ${gate}: MISSING ← 未完了"
         MISSING_GATES+=("$gate")
+        record_block_reason "missing_gate:${gate}"
         ALL_CLEAR=false
     fi
 done
@@ -246,6 +258,7 @@ except:
                 echo "  ${ninja_name}: OK (lesson_referenced present)"
             else
                 echo "  ${ninja_name}: NG ← related_lessonsあり、lesson_referencedフィールド欠落"
+                record_block_reason "${ninja_name}:missing_lesson_referenced"
                 ALL_CLEAR=false
             fi
         else
@@ -286,6 +299,7 @@ except:
     ninja_name=$(basename "$task_file" .yaml)
     if [ -n "$unreviewed" ]; then
         echo "  ${ninja_name}: NG ← reviewed:false残存 [${unreviewed}]"
+        record_block_reason "${ninja_name}:unreviewed_lessons:${unreviewed}"
         REVIEWED_OK=false
         ALL_CLEAR=false
     else
@@ -355,23 +369,28 @@ except:
                     echo "  ${ninja_name}: OK (lesson_candidate found:true, registered via lesson_write)"
                 else
                     echo "  ${ninja_name}: NG ← lesson_candidate found:true but lesson.done source=${lsource} (not lesson_write)"
+                    record_block_reason "${ninja_name}:lesson_done_source:${lsource}"
                     ALL_CLEAR=false
                 fi
             else
                 echo "  ${ninja_name}: NG ← lesson_candidate found:true but lesson.done not found"
+                record_block_reason "${ninja_name}:lesson_done_missing"
                 ALL_CLEAR=false
             fi
             ;;
         missing)
             echo "  ${ninja_name}: NG ← lesson_candidateフィールド欠落"
+            record_block_reason "${ninja_name}:lesson_candidate_missing"
             ALL_CLEAR=false
             ;;
         malformed)
             echo "  ${ninja_name}: NG ← lesson_candidate構造不正（foundキーなし等）"
+            record_block_reason "${ninja_name}:lesson_candidate_malformed"
             ALL_CLEAR=false
             ;;
         *)
             echo "  ${ninja_name}: NG ← lesson_candidate解析エラー"
+            record_block_reason "${ninja_name}:lesson_candidate_parse_error"
             ALL_CLEAR=false
             ;;
     esac
@@ -532,11 +551,20 @@ fi
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
     echo "GATE CLEAR: cmd完了許可"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed" >> "$GATE_METRICS_LOG"
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
     exit 0
 else
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
-    echo "GATE BLOCK: 不足フラグ=[${missing_list}]"
+    if [ ${#BLOCK_REASONS[@]} -gt 0 ]; then
+        block_reason=$(IFS='|'; echo "${BLOCK_REASONS[*]}")
+    elif [ -n "$missing_list" ]; then
+        block_reason="missing_gates:${missing_list}"
+    else
+        block_reason="unknown_block_reason"
+    fi
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}" >> "$GATE_METRICS_LOG"
+    echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     exit 1
 fi
