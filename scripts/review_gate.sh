@@ -43,7 +43,17 @@ cmd_id = sys.argv[1]
 tasks_dir = sys.argv[2]
 
 # コード変更を示すキーワード
-code_keywords = ['commit', 'push', 'コード変更', '修正', '実装', 'implement']
+code_keywords = [
+    # 既存
+    'commit', 'push', 'コード変更', '修正', '実装', 'implement',
+    # 英語追加
+    'update', 'change', 'refactor', 'fix', 'create', 'add',
+    'delete', 'config', 'script', 'hook', 'wrapper', 'modify',
+    'patch', 'remove',
+    # 日本語追加
+    '更新', '変更', 'リファクタ', '作成', '追加', '削除',
+    '設定', '構築', '強化',
+]
 # レビューを示すキーワード
 review_keywords = ['review', 'レビュー']
 

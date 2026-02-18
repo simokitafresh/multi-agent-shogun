@@ -380,6 +380,132 @@ if [ "$LC_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── skill_candidate検証（WARNのみ、ブロックしない） ───
+echo ""
+echo "Skill candidate check:"
+SC_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    SC_CHECKED=true
+
+    sc_status=$(python3 -c "
+import yaml, sys
+try:
+    with open('$report_file') as f:
+        data = yaml.safe_load(f)
+    if not data:
+        print('missing')
+        sys.exit(0)
+    sc = data.get('skill_candidate')
+    if sc is None:
+        print('missing')
+    elif not isinstance(sc, dict):
+        print('malformed')
+    elif 'found' not in sc:
+        print('no_found')
+    else:
+        print('ok')
+except:
+    print('error')
+" 2>/dev/null)
+
+    case "$sc_status" in
+        ok)
+            echo "  ${ninja_name}: OK (skill_candidate.found present)"
+            ;;
+        missing)
+            echo "  WARN: ${ninja_name}_report.yaml missing skill_candidate.found"
+            ;;
+        no_found)
+            echo "  WARN: ${ninja_name}_report.yaml missing skill_candidate.found"
+            ;;
+        malformed)
+            echo "  WARN: ${ninja_name}_report.yaml skill_candidate構造不正"
+            ;;
+        *)
+            echo "  WARN: ${ninja_name}_report.yaml skill_candidate解析エラー"
+            ;;
+    esac
+done
+if [ "$SC_CHECKED" = false ]; then
+    echo "  (no reports found for this cmd)"
+fi
+
+# ─── decision_candidate検証（WARNのみ、ブロックしない） ───
+echo ""
+echo "Decision candidate check:"
+DC_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    DC_CHECKED=true
+
+    dc_status=$(python3 -c "
+import yaml, sys
+try:
+    with open('$report_file') as f:
+        data = yaml.safe_load(f)
+    if not data:
+        print('missing')
+        sys.exit(0)
+    dc = data.get('decision_candidate')
+    if dc is None:
+        print('missing')
+    elif not isinstance(dc, dict):
+        print('malformed')
+    elif 'found' not in dc:
+        print('no_found')
+    else:
+        print('ok')
+except:
+    print('error')
+" 2>/dev/null)
+
+    case "$dc_status" in
+        ok)
+            echo "  ${ninja_name}: OK (decision_candidate.found present)"
+            ;;
+        missing)
+            echo "  WARN: ${ninja_name}_report.yaml missing decision_candidate.found"
+            ;;
+        no_found)
+            echo "  WARN: ${ninja_name}_report.yaml missing decision_candidate.found"
+            ;;
+        malformed)
+            echo "  WARN: ${ninja_name}_report.yaml decision_candidate構造不正"
+            ;;
+        *)
+            echo "  WARN: ${ninja_name}_report.yaml decision_candidate解析エラー"
+            ;;
+    esac
+done
+if [ "$DC_CHECKED" = false ]; then
+    echo "  (no reports found for this cmd)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
