@@ -62,6 +62,9 @@ EOFYAML
         claude)
             cat "$PARTS_DIR/cli_specific/claude_tools.md" >> "$output_path"
             ;;
+        codex)
+            cat "$PARTS_DIR/cli_specific/codex_tools.md" >> "$output_path"
+            ;;
         copilot)
             cat "$PARTS_DIR/cli_specific/copilot_tools.md" >> "$output_path"
             ;;
@@ -78,6 +81,11 @@ build_instruction_file "claude" "shogun" "shogun.md"
 build_instruction_file "claude" "karo" "karo.md"
 build_instruction_file "claude" "ashigaru" "ashigaru.md"
 
+# Build Codex instruction files
+build_instruction_file "codex" "shogun" "codex-shogun.md"
+build_instruction_file "codex" "karo" "codex-karo.md"
+build_instruction_file "codex" "ashigaru" "codex-ashigaru.md"
+
 # Build Copilot instruction files
 build_instruction_file "copilot" "shogun" "copilot-shogun.md"
 build_instruction_file "copilot" "karo" "copilot-karo.md"
@@ -87,6 +95,37 @@ build_instruction_file "copilot" "ashigaru" "copilot-ashigaru.md"
 build_instruction_file "kimi" "shogun" "kimi-shogun.md"
 build_instruction_file "kimi" "karo" "kimi-karo.md"
 build_instruction_file "kimi" "ashigaru" "kimi-ashigaru.md"
+
+# ============================================================
+# AGENTS.md generation (Codex auto-load file)
+# ============================================================
+# Codex CLIはリポジトリルートのAGENTS.mdを自動読み込みする。
+# CLAUDE.mdを正本とし、Claude固有部分をCodex固有に置換して生成。
+generate_agents_md() {
+    local output_path="$ROOT_DIR/AGENTS.md"
+    local claude_md="$ROOT_DIR/CLAUDE.md"
+
+    echo "Generating: AGENTS.md (Codex auto-load)"
+
+    if [ ! -f "$claude_md" ]; then
+        echo "  ⚠️  CLAUDE.md not found. Skipping AGENTS.md generation."
+        return 1
+    fi
+
+    sed \
+        -e 's|CLAUDE\.md|AGENTS.md|g' \
+        -e 's|CLAUDE\.local\.md|AGENTS.override.md|g' \
+        -e 's|instructions/shogun\.md|instructions/generated/codex-shogun.md|g' \
+        -e 's|instructions/karo\.md|instructions/generated/codex-karo.md|g' \
+        -e 's|instructions/ashigaru\.md|instructions/generated/codex-ashigaru.md|g' \
+        -e 's|~/.claude/|~/.codex/|g' \
+        -e 's|\.claude\.json|.codex/config.toml|g' \
+        -e 's|\.mcp\.json|config.toml (mcp_servers section)|g' \
+        -e 's|Claude Code|Codex CLI|g' \
+        "$claude_md" > "$output_path"
+
+    echo "  ✅ Created: AGENTS.md"
+}
 
 # ============================================================
 # copilot-instructions.md generation (Copilot auto-load file)
@@ -176,6 +215,7 @@ EOFYAML
 }
 
 # Generate CLI auto-load files
+generate_agents_md
 generate_copilot_instructions
 generate_kimi_instructions
 
@@ -187,6 +227,7 @@ echo "Generated instruction files:"
 ls -lh "$OUTPUT_DIR"/*.md
 echo ""
 echo "CLI auto-load files:"
+[ -f "$ROOT_DIR/AGENTS.md" ] && ls -lh "$ROOT_DIR/AGENTS.md"
 [ -f "$ROOT_DIR/.github/copilot-instructions.md" ] && ls -lh "$ROOT_DIR/.github/copilot-instructions.md"
 [ -f "$ROOT_DIR/agents/default/system.md" ] && ls -lh "$ROOT_DIR/agents/default/system.md"
 [ -f "$ROOT_DIR/agents/default/agent.yaml" ] && ls -lh "$ROOT_DIR/agents/default/agent.yaml"
