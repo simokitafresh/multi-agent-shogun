@@ -20,6 +20,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 ARCHIVE_DIR="$PROJECT_DIR/queue/archive"
 ARCHIVE_CMD="$ARCHIVE_DIR/shogun_to_karo_done.yaml"
+ARCHIVE_CMD_DIR="$ARCHIVE_DIR/cmds"
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
 usage_error() {
@@ -51,6 +52,7 @@ if [ -n "$CMD_ID" ] && [[ "$CMD_ID" != cmd_* ]]; then
 fi
 
 mkdir -p "$ARCHIVE_DIR"
+mkdir -p "$ARCHIVE_CMD_DIR"
 
 # ============================================================
 # 1. shogun_to_karo.yaml — 完了cmdをアーカイブに退避
@@ -61,6 +63,8 @@ archive_cmds() {
     local tmp_active="/tmp/stk_active_$$.yaml"
     local tmp_done="/tmp/stk_done_$$.yaml"
     local archived=0 kept=0
+    local date_stamp
+    date_stamp="$(date '+%Y%m%d')"
 
     echo "commands:" > "$tmp_active"
     : > "$tmp_done"
@@ -87,17 +91,38 @@ archive_cmds() {
             e=$total_lines
         fi
 
+        local entry
+        entry="$(sed -n "${s},${e}p" "$QUEUE_FILE")"
+
         # statusフィールドを取得（インデント4スペースの行のみ）
         local status_val
-        status_val=$(sed -n "${s},${e}p" "$QUEUE_FILE" \
+        status_val=$(printf '%s\n' "$entry" \
             | grep '^    status: ' | head -1 \
             | sed 's/^    status: //' | tr -d '[:space:]')
 
-        if [[ "$status_val" =~ ^completed ]]; then
-            sed -n "${s},${e}p" "$QUEUE_FILE" >> "$tmp_done"
+        # cmd_idを取得（退避先ファイル名に利用）
+        local cmd_id
+        cmd_id=$(printf '%s\n' "$entry" \
+            | grep '^  - id: cmd_' | head -1 \
+            | sed 's/^  - id: //')
+
+        if [[ "$status_val" =~ ^(completed|cancelled|absorbed) ]]; then
+            local archive_status="${BASH_REMATCH[1]}"
+            printf '%s\n' "$entry" >> "$tmp_done"
+
+            if [ -n "$cmd_id" ]; then
+                local cmd_archive_file="$ARCHIVE_CMD_DIR/${cmd_id}_${archive_status}_${date_stamp}.yaml"
+                {
+                    echo "commands:"
+                    printf '%s\n' "$entry"
+                } > "$cmd_archive_file"
+            else
+                echo "[archive] WARN: failed to parse cmd_id at lines ${s}-${e}" >&2
+            fi
+
             ((archived++)) || true
         else
-            sed -n "${s},${e}p" "$QUEUE_FILE" >> "$tmp_active"
+            printf '%s\n' "$entry" >> "$tmp_active"
             ((kept++)) || true
         fi
     done
