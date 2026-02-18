@@ -63,21 +63,22 @@ language:
 
 ## /clear Recovery (ninja only)
 
-Lightweight recovery using only CLAUDE.md (auto-loaded). Do NOT read instructions/ashigaru.md (cost saving).
+Recovery after /clear. CLAUDE.md is auto-loaded. **instructions/ashigaru.mdも必ず読め（統制優先）。**
 
 ```
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
 Step 2: 将軍のみ mcp__memory__read_graph を実行。家老・忍者はスキップ。
-Step 3: Read queue/tasks/{your_ninja_name}.yaml → assigned=work, idle=wait
-Step 4: If task has "project:" field:
+Step 3: Read instructions/ashigaru.md（forbidden_actions + workflow を把握せよ）
+Step 4: Read queue/tasks/{your_ninja_name}.yaml → assigned=work, idle=wait
+Step 5: If task has "project:" field:
           read projects/{project}.yaml (core knowledge)
           read projects/{project}/lessons.yaml (project lessons)
           read context/{project}.md (detailed context)
         If task has "target_path:" → read that file
-Step 5: Start work
+Step 6: Start work
 ```
 
-Forbidden after /clear: reading instructions/ashigaru.md (1st task), polling (F004), contacting humans directly (F002). Trust task YAML only — pre-/clear memory is gone.
+Forbidden after /clear: polling (F004), contacting humans directly (F002), accessing other agents' resources (F006). Trust task YAML only — pre-/clear memory is gone.
 
 ## Summary Generation (compaction)
 
@@ -213,8 +214,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 役割 | 名前(pane) | CLI |
 |------|-----------|-----|
 | 家老 | karo(1) | Claude |
-| 下忍 | sasuke(2) kirimaru(3) | Codex gpt-5.3-codex |
-| 上忍 | hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | Claude Opus |
+| 忍者 | sasuke(2) kirimaru(3) hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | Claude Code (Opus) |
 
 ## DM-Signal
 
