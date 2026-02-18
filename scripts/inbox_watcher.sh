@@ -20,7 +20,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AGENT_ID="$1"
 PANE_TARGET="$2"
-CLI_TYPE="${3:-claude}"  # CLI種別（claude/codex/copilot）。未指定→claude（後方互換）
+CLI_TYPE="${3:-claude}"  # CLI種別（claude/copilot/kimi）。未指定→claude（後方互換）
 
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
 LOCKFILE="${INBOX}.lock"
@@ -88,23 +88,13 @@ except Exception as e:
 
 # ─── Send CLI command directly via send-keys ───
 # For /clear and /model only. These are CLI commands, not conversation messages.
-# CLI_TYPE別分岐: claude→そのまま, codex→/clear対応・/modelスキップ,
-#                  copilot→Ctrl-C+再起動・/modelスキップ
+# CLI_TYPE別分岐: claude→そのまま, copilot→Ctrl-C+再起動・/modelスキップ
 send_cli_command() {
     local cmd="$1"
 
     # CLI別コマンド変換
     local actual_cmd="$cmd"
     case "$CLI_TYPE" in
-        codex)
-            # Codex: /clear→/new変換, /model非対応→スキップ
-            if [[ "$cmd" == "/clear" ]]; then
-                actual_cmd="/new"
-            elif [[ "$cmd" == /model* ]]; then
-                echo "[$(date)] Skipping $cmd (not supported on codex)" >&2
-                return 0
-            fi
-            ;;
         copilot)
             # Copilot: /clearはCtrl-C+再起動, /model非対応→スキップ
             if [[ "$cmd" == "/clear" ]]; then

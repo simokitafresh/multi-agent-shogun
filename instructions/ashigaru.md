@@ -163,7 +163,7 @@ Task YAML is intentionally thin. If some background is not written in task YAML,
 - 自分の報告に他の忍者の結論を引用してはならない
 - task YAMLに「並行偵察」と記載されている場合、このルールが適用される
 
-## Codex偵察タスク対応
+## 偵察タスク対応
 
 task YAMLに`task_type: recon`がある場合、偵察モードで作業する。
 
@@ -230,10 +230,18 @@ bash scripts/inbox_write.sh karo "疾風、任務完了でござる。報告書�
 That's it. No state checking, no retry, no delivery verification.
 The inbox_write guarantees persistence. inbox_watcher handles delivery.
 
+## Inbox Mark Read
+
+inboxメッセージの既読化はスクリプトで行え（Edit toolでの手動変更は禁止）:
+
+```bash
+bash scripts/inbox_mark_read.sh {your_ninja_name} msg_id1 msg_id2 ...
+```
+
 ## Report Format
 
 ```yaml
-worker_id: sasuke
+worker_id: {your_ninja_name}
 task_id: subtask_001
 parent_cmd: cmd_035
 timestamp: "2026-01-25T10:15:00"  # from date command
@@ -277,9 +285,9 @@ lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリ�
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate, lesson_referenced.
 Missing fields = incomplete report.
 
-### Codex CLI 報告時の注意
+### 報告時の注意
 
-Codex CLI (sasuke/kirimaru) は以下のフィールドを省略しがちです。
+以下のフィールドを省略しがちです。
 **必ず全フィールドを含めてください:**
 
 - `lesson_candidate:` — found: true/false は**必須**。省略禁止。

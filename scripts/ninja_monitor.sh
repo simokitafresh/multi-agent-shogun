@@ -21,10 +21,8 @@
 #   - "esc to interrupt" — Claude Code処理中のステータスバー表示
 #   - "Running" — ツール実行中
 #   - "Streaming" — ストリーミング出力中
-#   - "background terminal running" — Codex CLIバックグラウンドターミナル稼働中
 # IDLEパターン (フォールバック時):
 #   - ❯ プロンプト表示（Claude Code）+ BUSYパターンなし
-#   - › プロンプト表示（Codex CLI）+ BUSYパターンなし
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
@@ -32,8 +30,6 @@ LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 POLL_INTERVAL=20    # ポーリング間隔（秒）
 DEBOUNCE=60         # 同一忍者の再通知抑制（秒）
 CONFIRM_WAIT=5      # idle確認待ち（秒）— APIコール間の誤検知防止
-CODEX_CONFIRM_WAIT=20  # Codex専用idle確認待ち（秒）— APIコール間隔10-15秒より長く
-CODEX_DEBOUNCE=180     # Codex専用再通知抑制（秒）— 短時間サイクル抑制
 STALL_THRESHOLD_MIN=15 # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知
 STALE_CMD_THRESHOLD=14400 # stale cmd検知しきい値（秒）— pending+subtask未配備が4時間継続で通知
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
@@ -55,21 +51,6 @@ log() {
 
 log "ninja_monitor started. Monitoring ${#NINJA_NAMES[@]} ninja."
 log "Poll interval: ${POLL_INTERVAL}s, Debounce: ${DEBOUNCE}s, Confirm wait: ${CONFIRM_WAIT}s"
-log "Codex agents: sasuke,kirimaru (confirm=${CODEX_CONFIRM_WAIT}s, debounce=${CODEX_DEBOUNCE}s)"
-
-# Codex CLI使用忍者の判定
-is_codex() {
-    [[ "$1" == "sasuke" || "$1" == "kirimaru" ]]
-}
-
-# CLI種別に応じたリセットコマンド取得
-get_reset_cmd() {
-    if is_codex "$1"; then
-        echo "/new"
-    else
-        echo "/clear"
-    fi
-}
 
 # ─── デバウンス・状態管理（連想配列、bash 4+） ───
 declare -A LAST_NOTIFIED  # 最終通知時刻（epoch秒）
@@ -86,7 +67,6 @@ for name in "${NINJA_NAMES[@]}"; do
 done
 
 CLEAR_DEBOUNCE=300          # /clear再送信抑制（5分）— /clear後のbusy→idleサイクルによるループ防止
-CODEX_CLEAR_DEBOUNCE=600    # Codex下忍用デバウンス（10分）— 撤廃時の安全策
 KARO_COMPACT_DEBOUNCE=600   # 家老/compact再送信抑制（10分）— compact復帰処理に5-8分かかるため
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
@@ -145,13 +125,12 @@ check_idle() {
     # 1. "esc to interrupt" — ステータスバー（広いペインで完全表示時）
     # 2. "Running" — ツール実行中（ペイン幅に依存しない）
     # 3. "Streaming" — ストリーミング出力中
-    # 4. "background terminal running" — Codex CLIバックグラウンドターミナル稼働中
-    if echo "$output" | grep -qE "esc to interrupt|Running|Streaming|background terminal running"; then
+    if echo "$output" | grep -qE "esc to interrupt|Running|Streaming"; then
         return 1  # BUSY
     fi
 
-    # ❯ プロンプト（Claude Code）または › プロンプト（Codex CLI）があればIDLE候補
-    if echo "$output" | grep -qE "❯|›"; then
+    # ❯ プロンプト（Claude Code）があればIDLE候補
+    if echo "$output" | grep -qE "❯"; then
         return 0  # IDLE候補（要二段階確認）
     fi
 
@@ -185,16 +164,6 @@ get_context_pct() {
         return 0
     fi
 
-    # Source 2b: Codex CLI パターン: "XX% context left" (remaining% → usage%に変換)
-    local remaining
-    remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
-    if [ -n "$remaining" ]; then
-        ctx_num=$((100 - remaining))
-        tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
-        echo "$ctx_num"
-        return 0
-    fi
-
     echo "0"
     return 1
 }
@@ -211,7 +180,7 @@ is_task_deployed() {
                 local pane_idle=false
                 local task_empty=false
 
-                # Check if pane shows ❯/› prompt (idle)
+                # Check if pane shows ❯ prompt (idle)
                 check_idle "$target"
                 if [ $? -eq 0 ]; then
                     pane_idle=true
@@ -300,12 +269,7 @@ handle_confirmed_idle() {
         last="${LAST_NOTIFIED[$name]:-0}"
         elapsed=$((now - last))
 
-        debounce_time=$DEBOUNCE
-        if is_codex "$name"; then
-            debounce_time=$CODEX_DEBOUNCE
-        fi
-
-        if [ $elapsed -ge $debounce_time ]; then
+        if [ $elapsed -ge $DEBOUNCE ]; then
             log "IDLE confirmed: $name"
             NEWLY_IDLE+=("$name")
         else
@@ -328,22 +292,14 @@ handle_confirmed_idle() {
             clear_last="${LAST_CLEARED[$name]:-0}"
             clear_elapsed=$((now - clear_last))
 
-            # Codex下忍はデバウンス延長(600秒)
-            local effective_debounce=$CLEAR_DEBOUNCE
-            if [ "$agent_id" = "sasuke" ] || [ "$agent_id" = "kirimaru" ]; then
-                effective_debounce=$CODEX_CLEAR_DEBOUNCE
-            fi
-
-            if [ $clear_elapsed -ge $effective_debounce ]; then
-                local reset_cmd
-                reset_cmd=$(get_reset_cmd "$name")
-                log "AUTO-CLEAR: $name idle+no_task CTX=${ctx_now}%, sending $reset_cmd"
-                tmux send-keys -t "$target" "$reset_cmd"
+            if [ $clear_elapsed -ge $CLEAR_DEBOUNCE ]; then
+                log "AUTO-CLEAR: $name idle+no_task CTX=${ctx_now}%, sending /clear"
+                tmux send-keys -t "$target" "/clear"
                 sleep 0.3
                 tmux send-keys -t "$target" Enter
                 LAST_CLEARED[$name]=$now
             else
-                log "CLEAR-DEBOUNCE: $name idle+no_task but ${clear_elapsed}s < ${effective_debounce}s since last /clear"
+                log "CLEAR-DEBOUNCE: $name idle+no_task but ${clear_elapsed}s < ${CLEAR_DEBOUNCE}s since last /clear"
             fi
         fi
     fi
@@ -517,10 +473,6 @@ update_context_pct() {
     # Claude Code パターン: "CTX:XX%" (statusline.sh出力)
     if echo "$output" | grep -qE 'CTX:[0-9]+%'; then
         context_pct=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | sed 's/CTX://')
-    # Codex CLI パターン: "XX% context left"
-    elif echo "$output" | grep -qE '[0-9]+% context left'; then
-        remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
-        context_pct="$((100 - remaining))%"
     fi
 
     # tmux変数に設定（全エージェント共通）
@@ -714,14 +666,8 @@ while true; do
     if [ ${#maybe_idle[@]} -gt 0 ]; then
         sleep "$CONFIRM_WAIT"
 
-        # Phase 2a: Claude Code忍者を即チェック（5秒待機で十分）
-        codex_idle=()
+        # Phase 2: 全忍者を再チェック（5秒待機で十分）
         for name in "${maybe_idle[@]}"; do
-            if is_codex "$name"; then
-                codex_idle+=("$name")
-                continue
-            fi
-
             target="${PANE_TARGETS[$name]}"
             check_idle "$target"
             result=$?
@@ -733,25 +679,6 @@ while true; do
                 handle_busy "$name"
             fi
         done
-
-        # Phase 2b: Codex忍者は追加待機後にチェック（APIコール間隔が長い）
-        if [ ${#codex_idle[@]} -gt 0 ]; then
-            extra_wait=$((CODEX_CONFIRM_WAIT - CONFIRM_WAIT))
-            sleep "${extra_wait:-15}"
-
-            for name in "${codex_idle[@]}"; do
-                target="${PANE_TARGETS[$name]}"
-                check_idle "$target"
-                result=$?
-
-                if [ $result -eq 0 ]; then
-                    handle_confirmed_idle "$name"
-                else
-                    log "FALSE_POSITIVE: $name was idle briefly, now busy (API call gap)"
-                    handle_busy "$name"
-                fi
-            done
-        fi
     fi
 
     # 案B: Phase 2完了後、バッチ通知を送信（pending cmdがある場合のみ）

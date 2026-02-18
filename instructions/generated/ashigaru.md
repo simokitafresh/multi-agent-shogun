@@ -117,7 +117,7 @@ Check `config/settings.yaml` → `language`:
 ## Report Format
 
 ```yaml
-worker_id: sasuke
+worker_id: {your_ninja_name}
 task_id: subtask_001
 parent_cmd: cmd_035
 timestamp: "2026-01-25T10:15:00"  # from date command
@@ -140,9 +140,9 @@ lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリ�
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_referenced.
 Missing fields = incomplete report.
 
-### Codex CLI 報告時の注意
+### 報告時の注意
 
-Codex CLI (sasuke/kirimaru) は以下のフィールドを省略しがちです。
+以下のフィールドを省略しがちです。
 **必ず全フィールドを含めてください:**
 
 - `lesson_candidate:` — found: true/false は**必須**。省略禁止。
@@ -151,7 +151,7 @@ Codex CLI (sasuke/kirimaru) は以下のフィールドを省略しがちです�
   参照なしでも `lesson_referenced: []` を必ず記載。
 - `decision_candidate:` — found: true/false は**必須**。
 
-## Codex偵察タスク対応
+## 偵察タスク対応
 
 task YAMLに`task_type: recon`がある場合、偵察モードで作業する。
 

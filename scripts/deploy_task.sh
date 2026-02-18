@@ -102,14 +102,6 @@ get_ctx_pct() {
         return 0
     fi
 
-    # Codex: "XX% context left"
-    local remaining
-    remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
-    if [ -n "$remaining" ]; then
-        echo $((100 - remaining))
-        return 0
-    fi
-
     echo "0"
 }
 
@@ -131,12 +123,12 @@ check_idle() {
     output=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null)
 
     # BUSYパターン
-    if echo "$output" | grep -qE 'esc to interrupt|Running|Streaming|background terminal running'; then
+    if echo "$output" | grep -qE 'esc to interrupt|Running|Streaming'; then
         return 1
     fi
 
     # IDLEパターン: プロンプト表示
-    if echo "$output" | tail -3 | grep -qE '[❯›$]'; then
+    if echo "$output" | tail -3 | grep -qE '[❯$]'; then
         return 0
     fi
 
