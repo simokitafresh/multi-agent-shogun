@@ -460,6 +460,54 @@ except Exception as e:
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
 
+# ─── 入口門番: 前タスクの教訓未消化チェック ───
+check_entrance_gate() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "entrance_gate: PASS (task file not found: $task_file)"
+        return 0
+    fi
+
+    local result
+    local exit_code=0
+    result=$(python3 -c "
+import yaml, sys
+
+try:
+    with open('$task_file') as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        sys.exit(0)
+
+    task = data['task']
+    related = task.get('related_lessons', [])
+
+    if not related:
+        sys.exit(0)
+
+    unreviewed = [r['id'] for r in related if isinstance(r, dict) and r.get('reviewed') is False]
+
+    if unreviewed:
+        print(', '.join(unreviewed))
+        sys.exit(1)
+
+    sys.exit(0)
+except Exception as e:
+    print(f'ERROR: {e}', file=sys.stderr)
+    sys.exit(0)  # パース失敗時はブロックしない
+" 2>/dev/null) || exit_code=$?
+
+    if [ "$exit_code" -ne 0 ]; then
+        log "BLOCK: ${NINJA_NAME}の前タスクにreviewed:false残存 [${result}]。教訓を消化してから再配備せよ"
+        echo "BLOCK: ${NINJA_NAME}の前タスクにreviewed:false残存 [${result}]。教訓を消化してから再配備せよ" >&2
+        exit 1
+    fi
+
+    log "entrance_gate: PASS (no unreviewed lessons)"
+    return 0
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
@@ -479,8 +527,11 @@ TASK_STATUS=$(grep -m1 '^  status:' "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 
 log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}, pane=${PANE_TARGET}"
 
-# 教訓自動注入（失敗してもデプロイは継続）
+# 入口門番: 前タスクの教訓未消化チェック（reviewed:false残存ならブロック）
 TASK_FILE="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
+check_entrance_gate "$TASK_FILE"
+
+# 教訓自動注入（失敗してもデプロイは継続）
 inject_related_lessons "$TASK_FILE" || true
 
 # 偵察報告自動注入（失敗してもデプロイは継続）
