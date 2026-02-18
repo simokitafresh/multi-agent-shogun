@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# pre-push hook — Block bare --force (D003), allow --force-with-lease and normal push
+# Part of multi-agent-shogun destructive operation safety (cmd_147)
+
+set -euo pipefail
+
+# Read the parent process (git push) command line from /proc
+# This works on Linux/WSL2
+cmdline=""
+if [[ -r "/proc/$PPID/cmdline" ]]; then
+  # /proc/PID/cmdline uses NUL as separator; convert to spaces
+  cmdline=$(tr '\0' ' ' < "/proc/$PPID/cmdline")
+fi
+
+# If we couldn't read cmdline, allow the push (fail-open for non-Linux)
+if [[ -z "$cmdline" ]]; then
+  exit 0
+fi
+
+# Check for --force-with-lease first (safe pattern — always allow)
+if echo "$cmdline" | grep -qE -- '--force-with-lease'; then
+  exit 0
+fi
+
+# Block bare --force or -f
+if echo "$cmdline" | grep -qE -- '(^| )--force( |$)|(^| )-f( |$)'; then
+  echo "BLOCKED: git push --force is forbidden (D003). Use --force-with-lease instead." >&2
+  exit 1
+fi
+
+# Normal push — allow
+exit 0

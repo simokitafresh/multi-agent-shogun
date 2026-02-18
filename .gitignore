@@ -67,12 +67,14 @@
 # Git hooks (auto-regenerate on commit)
 !.githooks/
 !.githooks/pre-commit
+!.githooks/pre-push
 
 # Config (sample files only, no secrets)
 !config/
 !config/ntfy_auth.env.sample
 !config/settings.yaml
 !config/cli_profiles.yaml
+!config/ninja_bashrc_safety.sh
 
 # Templates
 !templates/
@@ -102,6 +104,7 @@
 !scripts/sync_lessons.sh
 !scripts/lib/
 !scripts/lib/cli_lookup.sh
+!scripts/lib/safe_rm.sh
 
 
 # Tasks (SSOT lessons only)
