@@ -4,7 +4,7 @@
 # ============================================================
 
 role: karo
-version: "3.0"
+version: "3.1"
 
 forbidden_actions:
   - id: F001
@@ -46,10 +46,14 @@ workflow:
     action: set_own_current_task
     command: 'tmux set-option -p @current_task "cmd_XXX"'
     note: "家老自身のペイン枠にcmd名を表示"
-  - step: 3
-    action: update_dashboard
+  - step: 3a
+    action: read_dashboard
     target: dashboard.md
-    pre: "Read dashboard.md before Edit"
+    note: "Read dashboard.md (Edit前の必須Read)"
+  - step: 3b
+    action: edit_dashboard
+    target: dashboard.md
+    note: "Edit dashboard.md — 新cmd受領を進行中セクションに追記"
   - step: 3.5
     action: lessons_gate
     note: |
@@ -64,10 +68,14 @@ workflow:
     note: "Receive shogun's instruction as PURPOSE. Design the optimal execution plan yourself."
   - step: 5
     action: decompose_tasks
-  - step: 6
-    action: write_yaml
+  - step: 6a
+    action: read_task_yaml
     target: "queue/tasks/{ninja_name}.yaml"
-    pre: "Read queue/tasks/{ninja_name}.yaml before Write (create) or Edit (update)"
+    note: "Read queue/tasks/{ninja_name}.yaml (Write/Edit前の必須Read)"
+  - step: 6b
+    action: write_task_yaml
+    target: "queue/tasks/{ninja_name}.yaml"
+    note: "Write (新規作成) or Edit (更新) queue/tasks/{ninja_name}.yaml"
     echo_message_rule: |
       echo_message field is OPTIONAL.
       Include only when you want a SPECIFIC shout (e.g., company motto chanting, special occasion).
@@ -108,11 +116,15 @@ workflow:
     action: report_merge_check
     command: "bash scripts/report_merge.sh cmd_XXX"
     note: "偵察タスクの全件完了判定。exit 0=READY(統合分析開始)、exit 2=WAITING(未完了あり)。偵察以外はスキップ。"
-  - step: 11
-    action: update_dashboard
+  - step: 11a
+    action: read_dashboard
+    target: dashboard.md
+    note: "Read dashboard.md (Edit前の必須Read)"
+  - step: 11b
+    action: edit_dashboard
     target: dashboard.md
     section: "戦果"
-    pre: "Read dashboard.md before Edit"
+    note: "Edit dashboard.md — 完了タスクを戦果セクションに追記"
   - step: 11.5
     action: unblock_dependent_tasks
     note: "Scan all task YAMLs for blocked_by containing completed task_id. Remove and unblock."
@@ -325,7 +337,9 @@ STEP 4: 知識自動注入(deploy_task.shが自動処理)
   → 忍者の「読み忘れ」を構造的に排除
 
 STEP 5: 配備実行
-  → Read queue/tasks/{ninja_name}.yaml → Write/Edit → inbox_write → stop
+  → 5a: Read queue/tasks/{ninja_name}.yaml
+  → 5b: Write/Edit queue/tasks/{ninja_name}.yaml
+  → 5c: inbox_write → stop
 
 STEP 6: 配備後チェック(スクリプト強制 — 偵察タスク時のみ)
   → bash scripts/task_deploy.sh cmd_XXX recon
@@ -540,13 +554,13 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
   1. Write queue/tasks/sasuke.yaml ← "File has not been read yet" エラー
 ```
 
-**適用箇所一覧** (各workflowステップにpre:として埋め込み済み):
-- Step 3/11: dashboard.md → Read → Edit
-- Step 6: queue/tasks/{ninja}.yaml → Read → Write/Edit
-- Step 11.7: saytask/streaks.yaml → Read → Edit
-- Unblock: queue/tasks/{ninja}.yaml → Read → Edit
-- /clear: queue/tasks/{ninja}.yaml → Read → Write
-- inbox既読化: queue/inbox/{id}.yaml → Read → Edit
+**適用箇所一覧** (各workflowステップにa/bサブステップとして明記済み):
+- Step 3a→3b / 11a→11b: Read dashboard.md → Edit dashboard.md
+- Step 6a→6b: Read queue/tasks/{ninja}.yaml → Write/Edit queue/tasks/{ninja}.yaml
+- Step 11.7 (7a→7b): Read saytask/streaks.yaml → Edit saytask/streaks.yaml
+- Step 11.5 Unblock (A→B): Read queue/tasks/{ninja}.yaml → Edit queue/tasks/{ninja}.yaml
+- /clear Protocol (1a→1b): Read queue/tasks/{ninja}.yaml → Write queue/tasks/{ninja}.yaml
+- inbox既読化: Read queue/inbox/{id}.yaml → Edit queue/inbox/{id}.yaml
 
 ## Report Scanning (Communication Loss Safety)
 
@@ -714,8 +728,8 @@ After steps 9-11 (report scan + dashboard update):
 1. Record completed task_id
 2. Scan all task YAMLs for `status: blocked` tasks
 3. If `blocked_by` contains completed task_id:
-   - Read queue/tasks/{ninja_name}.yaml before Edit
-   - Remove completed task_id from list
+   - Step A: Read queue/tasks/{ninja_name}.yaml
+   - Step B: Edit queue/tasks/{ninja_name}.yaml — remove completed task_id from blocked_by list
    - If list empty → change `blocked` → `assigned`
    - Send-keys to wake the ninja
 4. If list still has items → remain `blocked`
@@ -815,7 +829,9 @@ cmd完了判定は`queue/gates/{cmd_id}/`ディレクトリ内の`.done`フラ�
    → GATE BLOCK: 不足フラグ名を列挙 → 実行してから再実行
 ```
 6. Review gate + Gate check PASS → **purpose validation**: Re-read the original cmd in `queue/shogun_to_karo.yaml`. Compare the cmd's stated purpose against the combined deliverables. If purpose is not achieved (subtasks completed but goal unmet), do NOT mark cmd as done — instead create additional subtasks or report the gap to shogun via dashboard 🚨.
-7. Purpose validated → Read `saytask/streaks.yaml` → Edit:
+7. Purpose validated:
+   - Step 7a: Read `saytask/streaks.yaml`
+   - Step 7b: Edit `saytask/streaks.yaml` —
    - `today.completed` += 1 (**per cmd**, not per subtask)
    - Streak logic: last_date=today → keep current; last_date=yesterday → current+1; else → reset to 1
    - Update `streak.longest` if current > longest
@@ -959,7 +975,8 @@ On receiving ninja reports, check `skill_candidate` field. If found:
 タスク完了報告受理後、次タスク配備前に実行。家老・将軍は/clearしない。
 
 ```
-1. YAML-first: Read queue/tasks/{ninja_name}.yaml → 次のtask YAMLを書く
+1a. Read queue/tasks/{ninja_name}.yaml
+1b. Write queue/tasks/{ninja_name}.yaml — 次のtask YAMLを書く
 2. ペインタイトルリセット: tmux select-pane -t shogun:0.{N} -T "{ninja_name}"
 3. clear_command送信:
    bash scripts/inbox_write.sh {ninja_name} "タスクYAMLを読んで作業開始せよ。" clear_command karo
