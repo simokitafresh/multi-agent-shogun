@@ -52,7 +52,7 @@ language:
 2. `mcp__memory__read_graph` — **将軍のみ実行**（殿の好み+将軍教訓を復元）。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 3. **Read your instructions file**: shogun→`instructions/generated/codex-shogun.md`, karo→`instructions/generated/codex-karo.md`, ninja(忍者)→`instructions/generated/codex-ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.5. **Load project knowledge** (role-based):
-   - 将軍: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）
+   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
    - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
@@ -61,7 +61,7 @@ language:
 
 **CRITICAL**: dashboard.md is secondary data (karo's summary). Primary data = YAML files. Always verify from YAML.
 
-## /clear Recovery (ninja only)
+## /clear Recovery (ninja)
 
 Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instructions/generated/codex-ashigaru.md (cost saving).
 
@@ -69,6 +69,10 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
 Step 2: 将軍のみ mcp__memory__read_graph を実行。家老・忍者はスキップ。
 Step 3: Read queue/tasks/{your_ninja_name}.yaml → assigned=work, idle=wait
+Step 3.5: If task has "related_lessons:" with reviewed: false →
+          read each lesson in projects/{project}/lessons.yaml,
+          then Edit each entry: reviewed: false → reviewed: true
+          (entrance_gate blocks next deploy if unreviewed)
 Step 4: If task has "project:" field:
           read projects/{project}.yaml (core knowledge)
           read projects/{project}/lessons.yaml (project lessons)
@@ -78,6 +82,20 @@ Step 5: Start work
 ```
 
 Forbidden after /clear: reading instructions/generated/codex-ashigaru.md (1st task), polling (F004), contacting humans directly (F002). Trust task YAML only — pre-/clear memory is gone.
+
+## /clear Recovery (karo)
+
+家老専用の軽量復帰手順。陣形図(snapshot)により状態復元が高速化。
+
+```
+Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → karo
+Step 2: Read instructions/generated/codex-karo.md（人格・禁則・手順。省略厳禁）
+Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
+Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
+Step 5: project知識ロード（snapshotのcmdにproject指定あれば）
+Step 6: Read queue/shogun_to_karo.yaml（cmd詳細が必要な場合のみ）
+Step 7: 作業再開
+```
 
 ## Summary Generation (compaction)
 
@@ -204,7 +222,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 詳細 → `context/infrastructure.md` を読め。推測するな。
 
-- CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/compact|AUTOCOMPACT=90%
+- CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window

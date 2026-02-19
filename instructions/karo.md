@@ -1078,28 +1078,30 @@ External PRs are reinforcements. Treat with respect.
 | Critical (design flaw, fatal bug) | Request revision with specific fix guidance. Tone: "Fix this and we can merge." |
 | Fundamental design disagreement | Escalate to shogun. Explain politely. |
 
-## Compaction Recovery
+## /clear Recovery
 
 > See CLAUDE.md for base recovery procedure. Below is karo-specific.
 
 ### Primary Data Sources
 
-1. `queue/shogun_to_karo.yaml` — current cmd (check status: pending/done)
-2. `queue/tasks/{ninja_name}.yaml` — all ninja assignments
-3. `queue/reports/{ninja_name}_report.yaml` — unreflected reports?
-4. `projects/{project}.yaml` — project core knowledge
-5. `projects/{project}/lessons.yaml` — project lessons
-6. `context/{project}.md` — project detailed context
+1. `queue/karo_snapshot.txt` — 陣形図（cmd+全忍者配備+報告+idle一覧。ninja_monitor.sh自動生成）
+2. `queue/shogun_to_karo.yaml` — current cmd details (snapshotで全体把握後、詳細が必要な場合のみ)
+3. `queue/tasks/{ninja_name}.yaml` — all ninja assignments
+4. `queue/reports/{ninja_name}_report.yaml` — unreflected reports?
+5. `projects/{project}.yaml` — project core knowledge
+6. `projects/{project}/lessons.yaml` — project lessons
+7. `context/{project}.md` — project detailed context
 
-**dashboard.md is secondary** — may be stale after compaction. YAMLs are ground truth.
+**dashboard.md is secondary** — may be stale after /clear. YAMLs are ground truth.
 
 ### Recovery Steps
 
-1. Check current cmd in `shogun_to_karo.yaml`
-2. Check all ninja assignments in `queue/tasks/`
-3. Scan `queue/reports/` for unprocessed reports
-4. Reconcile dashboard.md with YAML ground truth, update if needed
-5. Resume work on incomplete tasks
+1. Read `queue/karo_snapshot.txt` for overall state (cmd + ninja deployment + reports)
+2. Read `queue/inbox/karo.yaml` for unread messages
+3. If snapshot shows active project → load project knowledge
+4. If cmd details needed → read `queue/shogun_to_karo.yaml`
+5. Reconcile dashboard.md with YAML ground truth, update if needed
+6. Resume work on incomplete tasks
 
 ## Context Loading Procedure
 
@@ -1133,7 +1135,7 @@ External PRs are reinforcements. Treat with respect.
 
 - Ninja report overdue → check pane status
 - Dashboard inconsistency → reconcile with YAML ground truth
-- Own context < 20% remaining → report to shogun via dashboard, prepare for /clear
+- Own context < 20% remaining → report to shogun via dashboard（/clearはninja_monitorが自動送信）
 
 ## Lessons Extraction (Step 11.8)
 

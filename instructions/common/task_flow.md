@@ -77,6 +77,16 @@ Cross-reference with dashboard.md — process any reports not yet reflected.
   cmd_008 dispatch → sleep 30 → capture-pane → check status → sleep 30 ...
 ```
 
+## Task Start: Lesson Review
+
+If task YAML contains `related_lessons:`, each entry has `reviewed: false`. Before starting work:
+
+1. Read each lesson ID in `projects/{project}/lessons.yaml`
+2. Understand how each lesson relates to your task
+3. Edit task YAML: change `reviewed: false` → `reviewed: true` for each entry
+
+This is mandatory. `entrance_gate` blocks next deployment if unreviewed lessons remain.
+
 ## Timestamps
 
 **Always use `date` command.** Never guess.

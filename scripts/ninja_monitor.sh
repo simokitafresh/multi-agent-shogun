@@ -71,12 +71,12 @@ for name in "${NINJA_NAMES[@]}"; do
     PREV_STATE[$name]="idle"
 done
 
-KARO_COMPACT_DEBOUNCE=600   # 家老/compact再送信抑制（10分）— compact復帰処理に5-8分かかるため
+KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
-LAST_KARO_COMPACT=0         # 家老の最終/compact送信時刻（epoch秒）
+LAST_KARO_CLEAR=0           # 家老の最終/clear送信時刻（epoch秒）
 LAST_SHOGUN_ALERT=0         # 将軍の最終アラート送信時刻（epoch秒）
 
 # ─── ペインターゲット探索 ───
@@ -768,33 +768,118 @@ write_state_file() {
     ) 200>"$lock_file"
 }
 
-# ─── Bug3b: 家老compact送信共通関数（全コードパスで使用） ───
+# ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───
+write_karo_snapshot() {
+    local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
+    local lock_file="/tmp/karo_snapshot.lock"
+    local timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
+
+    (
+        flock -x 200
+
+        {
+            echo "# 家老陣形図(karo_snapshot) — ninja_monitor.sh自動生成"
+            echo "# Generated: $timestamp"
+
+            # cmd状態: shogun_to_karo.yamlから全cmd
+            local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+            if [ -f "$cmd_file" ]; then
+                awk '
+                    function emit() {
+                        if (cmd_id != "") {
+                            purpose_short = substr(cmd_purpose, 1, 40)
+                            print "cmd|" cmd_id "|" cmd_status "|" purpose_short
+                        }
+                    }
+                    /^[[:space:]]*-[[:space:]]id:/ {
+                        emit()
+                        cmd_id=$3; gsub(/"/, "", cmd_id)
+                        cmd_status=""; cmd_purpose=""
+                        next
+                    }
+                    /^[[:space:]]*status:/ { cmd_status=$2; next }
+                    /^[[:space:]]*purpose:/ {
+                        cmd_purpose=$0
+                        sub(/^[[:space:]]*purpose:[[:space:]]*"?/, "", cmd_purpose)
+                        sub(/"$/, "", cmd_purpose)
+                        next
+                    }
+                    END { emit() }
+                ' "$cmd_file"
+            fi
+
+            # 忍者task状態
+            for name in "${NINJA_NAMES[@]}"; do
+                local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+                if [ -f "$task_file" ]; then
+                    local task_id status project
+                    task_id=$(grep -m1 'task_id:' "$task_file" 2>/dev/null | awk '{print $2}')
+                    status=$(grep -m1 'status:' "$task_file" 2>/dev/null | awk '{print $2}')
+                    project=$(grep -m1 'project:' "$task_file" 2>/dev/null | awk '{print $2}')
+                    echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}"
+                else
+                    echo "ninja|${name}|none|idle|none"
+                fi
+            done
+
+            # 報告状態
+            for name in "${NINJA_NAMES[@]}"; do
+                local report_file="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
+                if [ -f "$report_file" ]; then
+                    local report_task report_status
+                    report_task=$(grep -m1 'task_id:' "$report_file" 2>/dev/null | awk '{print $2}')
+                    report_status=$(grep -m1 '^status:' "$report_file" 2>/dev/null | awk '{print $2}')
+                    [ -n "$report_task" ] && echo "report|${name}|${report_task}|${report_status:-unknown}"
+                fi
+            done
+
+            # idle一覧
+            local idle_list=""
+            for name in "${NINJA_NAMES[@]}"; do
+                if [ "${PREV_STATE[$name]}" = "idle" ]; then
+                    idle_list="${idle_list}${name},"
+                fi
+            done
+            idle_list="${idle_list%,}"
+            echo "idle|${idle_list:-none}"
+
+        } > "$snapshot_file"
+
+    ) 200>"$lock_file"
+}
+
+# ─── 家老/clear送信共通関数（全コードパスで使用） ───
 # デバウンスを内蔵。呼び出し元がデバウンスを気にする必要なし。
 # $1: ctx_num（ログ用）, $2: caller（ログ用、省略可）
 # 戻り値: 0=送信成功, 1=デバウンスで抑制
-send_karo_compact() {
+send_karo_clear() {
     local ctx_num="${1:-?}"
-    local caller="${2:-check_karo_compact}"
+    local caller="${2:-check_karo_clear}"
     local karo_pane="shogun:2.1"
 
     local now=$(date +%s)
-    local elapsed=$((now - LAST_KARO_COMPACT))
+    local elapsed=$((now - LAST_KARO_CLEAR))
 
-    if [ $elapsed -lt $KARO_COMPACT_DEBOUNCE ]; then
-        log "KARO-COMPACT-DEBOUNCE(${caller}): CTX:${ctx_num}% but ${elapsed}s < ${KARO_COMPACT_DEBOUNCE}s"
+    if [ $elapsed -lt $KARO_CLEAR_DEBOUNCE ]; then
+        log "KARO-CLEAR-DEBOUNCE(${caller}): CTX:${ctx_num}% but ${elapsed}s < ${KARO_CLEAR_DEBOUNCE}s"
         return 1
     fi
 
-    log "KARO-COMPACT(${caller}): karo CTX:${ctx_num}%, sending /compact"
-    tmux send-keys -t "$karo_pane" '/compact'
+    # 陣形図を最終更新（鮮度保証）
+    write_karo_snapshot
+
+    local clear_cmd
+    clear_cmd=$(cli_profile_get "karo" "clear_cmd")
+    log "KARO-CLEAR(${caller}): karo CTX:${ctx_num}%, sending ${clear_cmd}"
+    tmux send-keys -t "$karo_pane" "$clear_cmd"
     sleep 0.3
     tmux send-keys -t "$karo_pane" Enter
-    LAST_KARO_COMPACT=$now
+    LAST_KARO_CLEAR=$now
     return 0
 }
 
-# ─── STEP 2: 家老の外部compactトリガー ───
-check_karo_compact() {
+# ─── STEP 2: 家老の外部/clearトリガー ───
+check_karo_clear() {
     local karo_pane="shogun:2.1"
 
     # idle判定
@@ -810,7 +895,7 @@ check_karo_compact() {
     fi
 
     # 共通関数でデバウンス付き送信
-    send_karo_compact "$ctx_num" "check_karo_compact"
+    send_karo_clear "$ctx_num" "check_karo_clear"
 }
 
 # ─── STEP 3: 将軍CTXアラート ───
@@ -1008,8 +1093,8 @@ while true; do
     # ═══ Stale cmd検知チェック ═══
     check_stale_cmds
 
-    # ═══ STEP 2: 家老の外部compactチェック ═══
-    check_karo_compact
+    # ═══ STEP 2: 家老の外部/clearチェック ═══
+    check_karo_clear
 
     # ═══ STEP 3: 将軍CTXアラート ═══
     check_shogun_ctx
@@ -1019,6 +1104,7 @@ while true; do
 
     # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
     write_state_file
+    write_karo_snapshot   # 家老陣形図更新（毎サイクル）
 
     # ═══ Self-restart check ═══
     check_script_update

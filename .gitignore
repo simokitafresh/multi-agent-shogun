@@ -80,9 +80,11 @@
 !templates/
 !templates/**
 
-# Context README
+# Context (knowledge files)
 !context/
 !context/README.md
+!context/infrastructure.md
+!context/doc-style-guide.md
 
 # Scripts
 !scripts/
@@ -112,9 +114,8 @@
 !scripts/count_gate_metrics.sh
 
 
-# Tasks (SSOT lessons only)
+# Tasks
 !tasks/
-!tasks/lessons.md
 
 # SayTask (sample template only, not actual data)
 !saytask/
