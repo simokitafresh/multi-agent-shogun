@@ -481,6 +481,7 @@ get_csv_provenance(csv_paths) → Dict  # meta.yaml用
 データソース: `outputs/grid_search/064_champion_monthly_returns.csv` (暫定。12パターン×143ヶ月)
 - DM_IDS(UUID辞書) → COMPONENT_SOURCES(component_spec辞書)に置換済み
 - meta.yaml: db_md5 → csv_provenance + source_type: csv_direct
+- GS高速化知見: `context/gs-speedup-knowledge.md`
 
 ### ブロック別GSスクリプト
 

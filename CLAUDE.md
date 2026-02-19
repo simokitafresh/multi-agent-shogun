@@ -228,6 +228,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - cmd_051結論|戦略モメンタム不在|両輪>片輪だが等配分最強|動的四神選択非推奨
 - lookback標準GS|18点(10D,15D,20D,1M~12M,15M,18M,24M)|1M=21D
 - パラメータ対応表|`docs/parameter_coverage.md`(280行)|全6ブロック×18点カバレッジマップ
+- GS高速化|`context/gs-speedup-knowledge.md`|GS高速化の実装知見・運用ルール
 
 ## Skills
 - 配置|`~/.claude/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨
