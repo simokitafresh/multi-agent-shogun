@@ -114,8 +114,9 @@
 !scripts/count_gate_metrics.sh
 
 
-# Tasks
+# Tasks (SSOT lessons only)
 !tasks/
+!tasks/lessons.md
 
 # SayTask (sample template only, not actual data)
 !saytask/
