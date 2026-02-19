@@ -956,9 +956,16 @@ When updating dashboard.md with Frog and streak info, use this expanded template
 
 After updating dashboard.md, send ntfy notification. **全テンプレートにGistリンクを必ず付与せよ。** compaction後も習慣が消えないようにするための明文化ルール。gist_urlは `config/settings.yaml` の `gist_url` 値を使え。
 
-- cmd complete: `bash scripts/ntfy.sh "✅ cmd_{id} 完了 — {summary} https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"`
-- error/fail: `bash scripts/ntfy.sh "❌ {subtask} 失敗 — {reason} https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"`
+**cmd関連の通知はntfy_cmd.shを使え。** ntfy_cmd.shはshogun_to_karo.yamlからpurposeを自動取得し、殿がスマホで文脈を即座に把握できるようにする。
+
+- cmd complete: `bash scripts/ntfy_cmd.sh cmd_{id} "✅ 完了 — {summary} https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"`
+- error/fail: `bash scripts/ntfy_cmd.sh cmd_{id} "❌ {subtask} 失敗 — {reason} https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"`
 - action required: `bash scripts/ntfy.sh "🚨 要対応 — {content} https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"`
+
+| スクリプト | 用途 | 使い分け |
+|-----------|------|---------|
+| `ntfy_cmd.sh` | cmd関連通知（完了・失敗・進捗） | purposeを自動付加。cmd_idがある通知は全てこちら |
+| `ntfy.sh` | cmd以外の通知（復帰報告・🚨要対応・VFタスク等） | cmd_idがない一般通知用 |
 
 Note: This replaces the need for inbox_write to shogun. ntfy goes directly to Lord's phone.
 Gist URL source: `config/settings.yaml` → `gist_url`。殿はAndroidからGist経由でダッシュボードを閲覧する。
