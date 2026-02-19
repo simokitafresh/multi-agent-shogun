@@ -117,7 +117,61 @@ except Exception as e:
 " || exit 1
 
     ) 200>"$LOCKFILE"; then
-        # Success
+        # Success — inbox message persisted
+
+        # Hook: report_received from ninja → auto-update task YAML to done
+        if [ "$TYPE" = "report_received" ]; then
+            is_ninja=0
+            for ninja in $NINJA_NAMES; do
+                if [ "$FROM" = "$ninja" ]; then
+                    is_ninja=1
+                    break
+                fi
+            done
+
+            if [ "$is_ninja" -eq 1 ]; then
+                TASK_YAML="$SCRIPT_DIR/queue/tasks/${FROM}.yaml"
+                TASK_LOCKFILE="${TASK_YAML}.lock"
+
+                if [ -f "$TASK_YAML" ]; then
+                    (
+                        flock -w 5 201 || exit 0  # Lock failure is non-fatal
+
+                        python3 -c "
+import yaml, tempfile, os, sys
+
+task_path = '$TASK_YAML'
+try:
+    with open(task_path) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        sys.exit(0)
+
+    current_status = data['task'].get('status', '')
+    # done/failed/blocked — do not overwrite (idempotent)
+    if current_status in ('done', 'failed', 'blocked'):
+        sys.exit(0)
+
+    # assigned/in_progress → done
+    data['task']['status'] = 'done'
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_path)
+    except:
+        os.unlink(tmp_path)
+        raise
+except Exception as e:
+    print(f'[inbox_write] task-auto-done WARN: {e}', file=sys.stderr)
+"
+                    ) 201>"$TASK_LOCKFILE"
+                fi
+            fi
+        fi
+
         exit 0
     else
         # Lock timeout or error
