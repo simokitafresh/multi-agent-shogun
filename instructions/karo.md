@@ -1053,7 +1053,7 @@ tmux set-option -p -t shogun:0.{N} @model_name '<DisplayName>'
 **Restore**: After task completion, switch back to default tier before next task.
 **Before /clear**: Always restore default tier first (/clear resets context, can't carry implicit state).
 
-### Compaction Recovery: Model State Check
+### /clear Recovery: Model State Check
 
 ```bash
 grep -l "model_override" queue/tasks/*.yaml

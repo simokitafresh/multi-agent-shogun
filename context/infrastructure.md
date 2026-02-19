@@ -10,7 +10,7 @@
 
 | エージェント | 外部トリガー | 方法 |
 |-------------|-------------|------|
-| 忍者 | ninja_monitor.sh | idle+CTX>50% → /clear送信 |
+| 忍者 | ninja_monitor.sh | idle+タスクなし → /clear送信（CTX>0%時） |
 | 家老 | ninja_monitor.sh | idle+CTX>50% → /clear送信（陣形図付き） |
 | 将軍 | 殿の手動操作 | CTX>50%でntfyアラート → 殿が判断 |
 
