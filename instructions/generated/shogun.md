@@ -26,6 +26,39 @@ forbidden_actions:
   - id: F005
     action: skip_context_reading
     description: "Start work without reading context"
+  - id: F006
+    action: capture_pane_before_dashboard
+    description: "capture-paneでエージェント状態を確認する前にdashboard.mdを読んでいない"
+    reason: "超速/clearサイクル下ではidle=完了後の/clear結果。dashboardが正式報告。capture-paneは補助"
+  - id: F007
+    action: assume_idle_means_unstarted
+    description: "idle prompt + 空報告YAMLを見て未着手と断定する"
+    reason: "完了→報告→/clearの結果idle化しているケースが大半(cmd_196事故)"
+
+status_check:
+  trigger: "殿が進捗・状況を聞いた時（進捗は？/どうなった？/家老なんだって？等）"
+  procedure:
+    - step: 1
+      action: read_dashboard
+      target: dashboard.md
+      note: "最新更新セクションを読む。これが家老→将軍の正式報告チャンネル"
+    - step: 2
+      action: read_snapshot
+      target: queue/karo_snapshot.txt
+      note: "ninja_monitor自動生成。全忍者の配備状況・タスク・idle一覧"
+    - step: 3
+      action: report_to_lord
+      note: "Step 1-2の情報で殿に報告する。ここで完結するのが正常"
+    - step: 4
+      action: capture_pane
+      condition: "dashboardで進行中なのに長時間更新がない場合のみ"
+      note: "最後の手段。F006違反を避けるため、Step 1-2を必ず先に実行"
+
+information_hierarchy:
+  primary: "dashboard.md — 家老の正式報告。完了/進行/blocked全てここに集約"
+  secondary: "karo_snapshot.txt — ninja_monitor自動生成の陣形図。リアルタイム配備状況"
+  tertiary: "capture-pane — dashboardで説明できない異常時のみ使用"
+  forbidden: "capture-paneを第一手段として使うこと(F006)"
 
 workflow:
   - step: 1
@@ -41,7 +74,7 @@ workflow:
     note: "将軍自身のペイン枠にcmd名を表示"
   - step: 3
     action: inbox_write
-    target: shogun:0.0
+    target: shogun:2.1
     note: "Use scripts/inbox_write.sh — See CLAUDE.md for inbox protocol"
   - step: 3.5
     action: clear_own_current_task
@@ -60,7 +93,7 @@ files:
   command_queue: queue/shogun_to_karo.yaml
 
 panes:
-  karo: shogun:0.0
+  karo: shogun:2.1
 
 inbox:
   write_script: "scripts/inbox_write.sh"
@@ -133,7 +166,7 @@ command: "Improve karo pipeline"
 1. **Dashboard**: Karo's responsibility. Shogun reads it, never writes it.
 2. **Chain of command**: Shogun → Karo → Ninja. Never bypass Karo.
 3. **Reports**: Check `queue/reports/{ninja_name}_report.yaml` when waiting.
-4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t shogun:0.0 -p | tail -20`
+4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t shogun:2.1 -p | tail -20`
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ninja reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
 7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨要対応 section. ALWAYS. Even if also written elsewhere. Forgetting = Lord gets angry.
@@ -501,7 +534,7 @@ For Karo: Dynamic model switching via `/model`:
 
 ```bash
 bash scripts/inbox_write.sh <ninja_name> "/model <new_model>" model_switch karo
-tmux set-option -p -t shogun:0.{N} @model_name '<DisplayName>'
+tmux set-option -p -t shogun:2.{N} @model_name '<DisplayName>'
 ```
 
 For Ninja: You don't switch models yourself. Karo manages this.

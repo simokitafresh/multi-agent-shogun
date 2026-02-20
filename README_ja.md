@@ -1179,7 +1179,7 @@ tmux attach-session -t shogun     # 接続してコマンドを出す
 
 # 特定のエージェントでClaude Codeを手動起動
 tmux send-keys -t shogun:0 'claude --dangerously-skip-permissions' Enter
-tmux send-keys -t shogun:0.0 'claude --dangerously-skip-permissions' Enter
+tmux send-keys -t shogun:2.1 'claude --dangerously-skip-permissions' Enter
 ```
 
 **クラッシュ後の再起動：**
@@ -1390,7 +1390,7 @@ tmux attach-session -t shogun
 claude --model opus --dangerously-skip-permissions
 
 # 方法2: 家老がrespawn-paneで強制再起動（ネストも解消される）
-tmux respawn-pane -t shogun:0.0 -k 'claude --model opus --dangerously-skip-permissions'
+tmux respawn-pane -t shogun:2.1 -k 'claude --model opus --dangerously-skip-permissions'
 ```
 
 **誤ってtmuxをネストしてしまった場合：**

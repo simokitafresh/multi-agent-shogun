@@ -85,7 +85,7 @@ workflow:
       When DISPLAY_MODE=silent (tmux show-environment -t shogun DISPLAY_MODE): omit echo_message entirely.
   - step: 6.5
     action: set_pane_task
-    command: 'tmux set-option -p -t shogun:0.{N} @current_task "short task label"'
+    command: 'tmux set-option -p -t shogun:2.{N} @current_task "short task label"'
     note: "Set short label (max ~15 chars) so border shows: sasuke VF要件v2"
   - step: 7
     action: deploy_task
@@ -140,7 +140,7 @@ workflow:
   - step: 12
     action: reset_pane_display
     note: |
-      Clear task label: tmux set-option -p -t shogun:0.{N} @current_task ""
+      Clear task label: tmux set-option -p -t shogun:2.{N} @current_task ""
       Border shows: "sasuke" when idle, "sasuke VF要件v2" when working.
   - step: 12.5
     action: check_pending_after_report
@@ -162,16 +162,16 @@ files:
   dashboard: dashboard.md
 
 panes:
-  self: shogun:0.0
+  self: shogun:2.1
   ninja_default:
-    - { id: 1, name: sasuke, pane: "shogun:0.1" }
-    - { id: 2, name: kirimaru, pane: "shogun:0.2" }
-    - { id: 3, name: hayate, pane: "shogun:0.3" }
-    - { id: 4, name: kagemaru, pane: "shogun:0.4" }
-    - { id: 5, name: hanzo, pane: "shogun:0.5" }
-    - { id: 6, name: saizo, pane: "shogun:0.6" }
-    - { id: 7, name: kotaro, pane: "shogun:0.7" }
-    - { id: 8, name: tobisaru, pane: "shogun:0.8" }
+    - { id: 1, name: sasuke, pane: "shogun:2.2" }
+    - { id: 2, name: kirimaru, pane: "shogun:2.3" }
+    - { id: 3, name: hayate, pane: "shogun:2.4" }
+    - { id: 4, name: kagemaru, pane: "shogun:2.5" }
+    - { id: 5, name: hanzo, pane: "shogun:2.6" }
+    - { id: 6, name: saizo, pane: "shogun:2.7" }
+    - { id: 7, name: kotaro, pane: "shogun:2.8" }
+    - { id: 8, name: tobisaru, pane: "shogun:2.9" }
   agent_id_lookup: "tmux list-panes -t shogun -F '#{pane_index}' -f '#{==:#{@agent_id},{ninja_name}}'"
 
 inbox:
@@ -450,6 +450,49 @@ cmd受領 → 「このcmdはどのパターンの組合せか？」
 | 実装→レビュー | impl(1) → review(1) | 単純機能追加 |
 | 偵察→並列実装→統合 | recon(2) → impl_parallel(N) → integrate(1) | 大規模機能開発 |
 | 実装のみ | impl(1) | 機械的変更（レビュー省略可） |
+
+## 難問エスカレーション原則（殿直伝 2026-02-21）
+
+難問に直面した時の基本の型。偵察2名並行とは別原則。
+
+### 基本の型
+
+```
+1名で着手 → 成功なら次へ
+1名で失敗 → 同一タスクを2名に丸ごと独立で振る → 知見統合 → 再挑戦
+```
+
+### 要点
+
+| # | 原則 | 理由 |
+|---|------|------|
+| 1 | 2名には**同じタスク説明**を渡す | 調査軸の分担はしない。偵察と同じ「独立並行」原則 |
+| 2 | 失敗も知見。事前の知見共有は不要 | 1名目の報告を2名目に見せない（独立性担保） |
+| 3 | 無駄とは**リソースの重複**ではなく**時間を無駄にすること** | 2名投入は重複ではなく保険 |
+| 4 | idle忍者 = 遊休資産 = **損失** | 使わないことが最大の無駄 |
+
+### 偵察2名並行との違い
+
+| | 偵察2名並行 | 難問エスカレーション |
+|---|-----------|-------------------|
+| タイミング | **初回から2名** | **失敗後に2名** |
+| 理由 | 未知領域は最初から盲点リスクが高い | まず1名で試し、解けなければ増員 |
+| 共通原則 | 同一タスクを独立で | 同一タスクを独立で |
+| 統合 | report_merge.sh → 統合分析 | 同左 |
+
+### 適用判定フロー
+
+```
+タスク失敗の報告を受領
+  ├─ 原因が明確（環境・設定・一時障害）？ → 修正して同一忍者に再配備
+  ├─ 原因不明 or 複雑？ → ★エスカレーション: 2名に同一タスクを独立配備
+  └─ idle忍者が0名？ → 稼働中タスク完了を待ってからエスカレーション
+```
+
+### 注意
+
+- この原則はashigaru.mdには書かない。**家老の配備判断**であり忍者の行動規範ではない
+- 偵察は「未知領域への予防措置」、エスカレーションは「失敗からの学習増幅」。目的が異なる
 
 ## Pre-Deployment Ping (配備前確認)
 
@@ -984,7 +1027,7 @@ On receiving ninja reports, check `skill_candidate` field. If found:
 ```
 1a. Read queue/tasks/{ninja_name}.yaml
 1b. Write queue/tasks/{ninja_name}.yaml — 次のtask YAMLを書く
-2. ペインタイトルリセット: tmux select-pane -t shogun:0.{N} -T "{ninja_name}"
+2. ペインタイトルリセット: tmux select-pane -t shogun:2.{N} -T "{ninja_name}"
 3. clear_command送信:
    bash scripts/inbox_write.sh {ninja_name} "タスクYAMLを読んで作業開始せよ。" clear_command karo
    → watcherが自動で/clear→待機→指示送信を一括処理
@@ -1004,7 +1047,7 @@ tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 tmux list-panes -t shogun:agents -F '#{pane_index}' -f '#{==:#{@agent_id},hayate}'
 ```
 
-**When to use**: After 2 consecutive delivery failures. Normally use `shogun:0.{N}`.
+**When to use**: After 2 consecutive delivery failures. Normally use `shogun:2.{N}`.
 
 ## Model Selection: Bloom's Taxonomy (OC)
 
@@ -1040,7 +1083,7 @@ tmux list-panes -t shogun:agents -F '#{pane_index}' -f '#{==:#{@agent_id},hayate
 ```bash
 # 2-step procedure (inbox-based):
 bash scripts/inbox_write.sh {ninja_name} "/model <new_model>" model_switch karo
-tmux set-option -p -t shogun:0.{N} @model_name '<DisplayName>'
+tmux set-option -p -t shogun:2.{N} @model_name '<DisplayName>'
 # inbox_watcher が type=model_switch を検知し、コマンドとして配信
 ```
 

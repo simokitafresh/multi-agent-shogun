@@ -250,7 +250,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - パス|`/mnt/c/Python_app/DM-signal/`
 - 四神|青龍(DM2) 朱雀(DM3) 白虎(DM6) 玄武(DM7+)|矛+盾分離(Tobin)
 - 哲学|平均は悪。FoF=乗り換え|TL+MRL=両輪|ショート無し
-- DB|`experiments.db`=価格truth|`dm_signal.db`=PF設定truth
+- DB|`experiments.db`=価格truth|`dm_signal.db`=本番ミラー(参照のみ)
 - cmd_051結論|戦略モメンタム不在|両輪>片輪だが等配分最強|動的四神選択非推奨
 - lookback標準GS|18点(10D,15D,20D,1M~12M,15M,18M,24M)|1M=21D
 - パラメータ対応表|`docs/parameter_coverage.md`(280行)|全6ブロック×18点カバレッジマップ
@@ -280,7 +280,7 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 1. **Dashboard**: Karo's responsibility. Shogun reads it, never writes it.
 2. **Chain of command**: Shogun → Karo → Ninja. Never bypass Karo.
 3. **Reports**: Check `queue/reports/{ninja_name}_report.yaml` when waiting.
-4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t shogun:0.0 -p | tail -20`
+4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t shogun:2.1 -p | tail -20`
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ninja reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
 7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨要対応 section. ALWAYS. Even if also written elsewhere. Forgetting = Lord gets angry.

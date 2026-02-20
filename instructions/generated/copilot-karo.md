@@ -84,7 +84,7 @@ workflow:
       When DISPLAY_MODE=silent (tmux show-environment -t shogun DISPLAY_MODE): omit echo_message entirely.
   - step: 6.5
     action: set_pane_task
-    command: 'tmux set-option -p -t shogun:0.{N} @current_task "short task label"'
+    command: 'tmux set-option -p -t shogun:2.{N} @current_task "short task label"'
     note: "Set short label (max ~15 chars) so border shows: sasuke VF要件v2"
   - step: 7
     action: deploy_task
@@ -139,7 +139,7 @@ workflow:
   - step: 12
     action: reset_pane_display
     note: |
-      Clear task label: tmux set-option -p -t shogun:0.{N} @current_task ""
+      Clear task label: tmux set-option -p -t shogun:2.{N} @current_task ""
       Border shows: "sasuke" when idle, "sasuke VF要件v2" when working.
   - step: 12.5
     action: check_pending_after_report
@@ -161,16 +161,16 @@ files:
   dashboard: dashboard.md
 
 panes:
-  self: shogun:0.0
+  self: shogun:2.1
   ninja_default:
-    - { id: 1, name: sasuke, pane: "shogun:0.1" }
-    - { id: 2, name: kirimaru, pane: "shogun:0.2" }
-    - { id: 3, name: hayate, pane: "shogun:0.3" }
-    - { id: 4, name: kagemaru, pane: "shogun:0.4" }
-    - { id: 5, name: hanzo, pane: "shogun:0.5" }
-    - { id: 6, name: saizo, pane: "shogun:0.6" }
-    - { id: 7, name: kotaro, pane: "shogun:0.7" }
-    - { id: 8, name: tobisaru, pane: "shogun:0.8" }
+    - { id: 1, name: sasuke, pane: "shogun:2.2" }
+    - { id: 2, name: kirimaru, pane: "shogun:2.3" }
+    - { id: 3, name: hayate, pane: "shogun:2.4" }
+    - { id: 4, name: kagemaru, pane: "shogun:2.5" }
+    - { id: 5, name: hanzo, pane: "shogun:2.6" }
+    - { id: 6, name: saizo, pane: "shogun:2.7" }
+    - { id: 7, name: kotaro, pane: "shogun:2.8" }
+    - { id: 8, name: tobisaru, pane: "shogun:2.9" }
   agent_id_lookup: "tmux list-panes -t shogun -F '#{pane_index}' -f '#{==:#{@agent_id},{ninja_name}}'"
 
 inbox:
@@ -311,10 +311,10 @@ Karo is the **only** agent that updates dashboard.md. Neither shogun nor ninja t
 
 | Agent | Tier | Pane |
 |-------|------|------|
-| Shogun | — | shogun:0.0 |
-| Karo | — | shogun:0.0 |
-| 下忍(genin): sasuke/kirimaru/hayate/kagemaru | genin | shogun:0.1-0.4 |
-| 上忍(jonin): hanzo/saizo/kotaro/tobisaru | jonin | shogun:0.5-0.8 |
+| Shogun | — | shogun:main |
+| Karo | — | shogun:2.1 |
+| 下忍(genin): sasuke/kirimaru/hayate/kagemaru | genin | shogun:2.2-2.5 |
+| 上忍(jonin): hanzo/saizo/kotaro/tobisaru | jonin | shogun:2.6-2.9 |
 
 **Default: Assign to 下忍(genin).** Use 上忍(jonin) only when needed. 具体的モデル名は `config/settings.yaml` 参照。
 

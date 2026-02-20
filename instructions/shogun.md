@@ -27,6 +27,39 @@ forbidden_actions:
   - id: F005
     action: skip_context_reading
     description: "Start work without reading context"
+  - id: F006
+    action: capture_pane_before_dashboard
+    description: "capture-paneでエージェント状態を確認する前にdashboard.mdを読んでいない"
+    reason: "超速/clearサイクル下ではidle=完了後の/clear結果。dashboardが正式報告。capture-paneは補助"
+  - id: F007
+    action: assume_idle_means_unstarted
+    description: "idle prompt + 空報告YAMLを見て未着手と断定する"
+    reason: "完了→報告→/clearの結果idle化しているケースが大半(cmd_196事故)"
+
+status_check:
+  trigger: "殿が進捗・状況を聞いた時（進捗は？/どうなった？/家老なんだって？等）"
+  procedure:
+    - step: 1
+      action: read_dashboard
+      target: dashboard.md
+      note: "最新更新セクションを読む。これが家老→将軍の正式報告チャンネル"
+    - step: 2
+      action: read_snapshot
+      target: queue/karo_snapshot.txt
+      note: "ninja_monitor自動生成。全忍者の配備状況・タスク・idle一覧"
+    - step: 3
+      action: report_to_lord
+      note: "Step 1-2の情報で殿に報告する。ここで完結するのが正常"
+    - step: 4
+      action: capture_pane
+      condition: "dashboardで進行中なのに長時間更新がない場合のみ"
+      note: "最後の手段。F006違反を避けるため、Step 1-2を必ず先に実行"
+
+information_hierarchy:
+  primary: "dashboard.md — 家老の正式報告。完了/進行/blocked全てここに集約"
+  secondary: "karo_snapshot.txt — ninja_monitor自動生成の陣形図。リアルタイム配備状況"
+  tertiary: "capture-pane — dashboardで説明できない異常時のみ使用"
+  forbidden: "capture-paneを第一手段として使うこと(F006)"
 
 workflow:
   - step: 1
@@ -42,7 +75,7 @@ workflow:
     note: "将軍自身のペイン枠にcmd名を表示"
   - step: 3
     action: inbox_write
-    target: shogun:0.0
+    target: shogun:2.1
     note: "Use scripts/inbox_write.sh — See CLAUDE.md for inbox protocol"
   - step: 3.5
     action: clear_own_current_task
@@ -61,7 +94,7 @@ files:
   command_queue: queue/shogun_to_karo.yaml
 
 panes:
-  karo: shogun:0.0
+  karo: shogun:2.1
 
 inbox:
   write_script: "scripts/inbox_write.sh"
@@ -299,28 +332,30 @@ For ambiguous inputs (e.g., 「大里さんの件」):
 
 Recover from primary data sources:
 
-1. **queue/shogun_to_karo.yaml** — Check each cmd status (pending/done)
-2. **config/projects.yaml** — Active project list
-3. **projects/{id}.yaml** — Each active project's core knowledge
-4. **context/{project}.md** — Summary section only (strategic overview)
-5. **Memory MCP (read_graph)** — System settings, Lord's preferences
-6. **dashboard.md** — Secondary info only (Karo's summary, YAML is authoritative)
+1. **dashboard.md** — 家老の正式報告。最新状況を最速で把握する第一情報源
+2. **queue/karo_snapshot.txt** — 陣形図。全忍者のリアルタイム配備状況
+3. **queue/shogun_to_karo.yaml** — cmd状態(pending/done)の一次データ
+4. **config/projects.yaml** — Active project list
+5. **projects/{id}.yaml** — Each active project's core knowledge
+6. **Memory MCP (read_graph)** — System settings, Lord's preferences
 
 Actions after recovery:
-1. Check latest command status in queue/shogun_to_karo.yaml
-2. If pending cmds exist → check Karo state, then issue instructions
+1. dashboard + snapshotで最新状況を把握
+2. If pending cmds exist → 家老にinbox_write
 3. If all cmds done → await Lord's next command
+
+**capture-paneは復帰手順に含まない。** dashboardとsnapshotで把握できないケースのみ使用(F006)。
 
 ## Context Loading (Session Start)
 
 1. Read CLAUDE.md (auto-loaded)
 2. Read Memory MCP (read_graph)
 3. Read instructions/shogun.md
-4. Load project knowledge:
+4. **Read dashboard.md + karo_snapshot.txt** — 最新状況を最速で把握（情報階層の第一・第二）
+5. Load project knowledge:
    - `config/projects.yaml` → active projects一覧
    - 各active PJの `projects/{id}.yaml` → 核心知識（ルール要約/UUID/DBルール）
    - `context/{project}.md` → 要約セクションのみ（将軍は戦略判断に必要な粒度。全詳細は不要）
-5. Read dashboard.md for current situation
 6. Check inbox: read `queue/inbox/shogun.yaml`, process unread messages
 7. Report loading complete, then start work
 

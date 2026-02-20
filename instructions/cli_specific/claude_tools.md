@@ -64,7 +64,7 @@ For Karo: Dynamic model switching via `/model`:
 
 ```bash
 bash scripts/inbox_write.sh <ninja_name> "/model <new_model>" model_switch karo
-tmux set-option -p -t shogun:0.{N} @model_name '<DisplayName>'
+tmux set-option -p -t shogun:2.{N} @model_name '<DisplayName>'
 ```
 
 For Ninja: You don't switch models yourself. Karo manages this.

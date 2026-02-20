@@ -517,3 +517,116 @@ get_csv_provenance(csv_paths) → Dict  # meta.yaml用
 - リトライ: 3回(1s→2s→4s指数バックオフ) | タイムアウト: 60秒
 - 環境変数: `STOCK_API_BASE_URL`
 - ローカルDL: `download_all_prices.py grid-search` を使え。`download_prod_data.py prices` は422エラーで使用不可（cmd_042）
+
+## 14. 既存ドキュメントインデックス
+
+> cmd_195で佐助(skills)・霧丸(rule)の偵察報告から統合。圧縮索引（ポインタ+1-2行要約）。
+
+### docs/skills/ (25件)
+
+| ファイル | 目的 | 優先度 | マーカー |
+|---------|------|--------|---------|
+| _INDEX.md | skills全体の目次と更新導線の集約 | high | — |
+| api-reference.md | バックエンドAPIの包括リファレンス。認証・エンドポイント・環境設定 | high | API |
+| building-block-addition-guide.md | 新規BB追加の実装チェックリスト(BE→registry→FE型→ドキュメント) | high | — |
+| building-block-pattern.md | FoFパイプライン設計原則。Selection/Terminal分離、13ブロック構成 | high | — |
+| database-schema.md | 本番DBスキーマ・信頼度・整合性ルール。29テーブル、SSOT=monthly_returns | high | DB, PARITY |
+| environment-switching.md | ローカル/本番環境切替と検証手順。DATABASE_URL・認証変数・Render設定 | high | DB, API |
+| fof-pipeline-troubleshooting.md | FoFパイプライン不具合の症状別トラブルシュート集 | high | — |
+| portfolio-analysis-idea-loop.md | 分析→アイデア→検証のPF改善ループ。Sortino超え/Return最大化2トラック | high | API |
+| portfolio-analysis-verification.md | PF構造確認・比較・検証の総合リファレンス。3視点独立評価 | high | API, PARITY, DB |
+| structural-suspect-ban.md | GSにおける構造的SUSPECT自動Ban機能の設計 | high | — |
+| Agent Skills.md | Agent Skills標準の概念・作成方法の入門 | medium | — |
+| best-practices.md | Skills/CLAUDE.md/AGENTS.mdの役割分離と文書作法の標準化 | medium | — |
+| passive-context-index-standard.md | AGENTS.md中心の受動コンテキスト設計標準 | medium | — |
+| password-expiry-management.md | Tier課金連動のパスワード有効期限管理パターン | medium | — |
+| tier-visibility-control.md | Tier別可視性制御(L1-L4)実装パターン | medium | — |
+| knowledge-01〜06.md | 戦略背景知識(トレンド/MR/リセッション/FoF設計/補完戦略/予備) | low | — |
+| document-naming-convention.md | docs配下の命名規則とステータス運用 | low | — |
+| performance-audit.md | HARを使う定期パフォーマンス監査手順 | low | — |
+| performance-measurement.md | 計測・レポート・改善反映の定量評価ワークフロー | low | — |
+| skills-creation-guide.md | skills文書の新規作成/更新/削除手順 | low | — |
+
+### docs/rule/ (25件)
+
+| ファイル | 目的 | 優先度 | マーカー |
+|---------|------|--------|---------|
+| _INDEX.md | rule配下の全体地図と優先読了順 | high | — |
+| trade-rule.md | signal/holding/rebalance/return計算の絶対ルール(RULE01-11)。**最重要SSOT** | high | — |
+| calculation-theory.md | リターン計算理論の正規定義(Level0-3データソース階層) | high | — |
+| business_rules.md | 業務ルール包括定義(データ/計算/UI/FoF/可視性) | high | — |
+| check-rule.md | Truth-Based検証ルール標準化。Stock API=Truth(D)、bp閾値判定 | high | PARITY |
+| database-info.md | DB構造・テーブル役割・データフロー明文化 | high | DB |
+| DTB3-guide.md | DTB3リスクフリーリターン計算仕様。FRED年率→日次→21D月次変換 | high | — |
+| gs-parity-verification-guide.md | GSエンジンと本番計算の一致検証手順。simulate_strategy_vectorized突合 | high | PARITY |
+| api-usage-guide.md | Stock Data Platform API利用規約・制約・エンドポイント仕様 | high | API |
+| rebalance-verification.md | rebalance_trigger準拠とsignal/holding整合の検証 | high | PARITY |
+| requirements-spec.md | 機能要件・技術構成・データモデル・API要件の基準定義 | high | — |
+| return-consistency-verification.md | RULE11(Return同一性)の検証と不一致調査手順 | high | PARITY |
+| local-postgresql-guide.md | ローカルPostgreSQL環境の構築・クローン・運用手順 | medium | DB |
+| local-verification-guide.md | 本番API依存を減らしたローカル検証フロー | medium | — |
+| ninpou-fof-creation-runbook.md | 忍法FoF(L3)作成・登録・検証の標準手順 | medium | — |
+| portfolio-naming-convention.md | PF命名規則統一(日次/月次プレフィックス、四神/L2忍法パターン) | medium | — |
+| renderyaml_guide.md | Renderデプロイ時の接続設定ベストプラクティス | medium | — |
+| rule.md | ドキュメント作成時の必須参照・テンプレート・禁止事項 | medium | — |
+| security-status.md | セキュリティ実装現状(認証・可視性・レート制限) | medium | — |
+| shijin-pf-creation-runbook.md | 四神PF作成のGS→抽出→変換→登録→再計算手順 | medium | — |
+| timing-and-bottleneck-analysis.md | Layer別計測とボトルネック分析手順 | medium | — |
+| design.md | デザインシステム(ダークテーマ)規定 | low | — |
+| design-light.md | ライトモードのデザイン原則と配色仕様 | low | — |
+| design-list.md | 現行デザイン実装の統一状況と基準値 | low | — |
+| design-list-light.md | ライトモードの実装チェックリスト | low | — |
+
+### 重要ルール抜粋（DB接続・パリティ検証・API使用法）
+
+**DB接続ルール**:
+- 本番データ参照・書き込みはPostgreSQL(`DATABASE_URL`)を正とし、`dm_signal.db`への書き込みは禁止
+- 価格truthは`experiments.db`(daily_prices)、PF設定truthは`dm_signal.db`(portfolios)を使い分ける
+- ローカルPostgreSQL環境: Docker起動、pg_dump/restore前提 → `docs/rule/local-postgresql-guide.md`
+- 本番データ読み取りもDATABASE_URL直接接続。Render HTTP API経由禁止(L064)
+
+**パリティ検証ルール**:
+- `monthly_returns`をSSOTとして整合性検証(annual=Π(1+monthly)-1)を優先 → `docs/skills/database-schema.md`
+- Stock APIをTruth(D)に据え、A/C/D比較で検証。bp閾値でPASS/FAIL判定 → `docs/rule/check-rule.md`
+- GS-本番パリティ: `simulate_strategy_vectorized`とmonthly_return_open突合が正道 → `docs/rule/gs-parity-verification-guide.md`
+- rebalance_trigger別(月次/隔月/四半期/FoF)に検証観点+FAIL条件定義 → `docs/rule/rebalance-verification.md`
+- RULE11(Return同一性)の株価計算値・DB値・UI表示の差分診断 → `docs/rule/return-consistency-verification.md`
+- 3視点独立評価(return/downside/UD比)で交差点候補判定 → `docs/skills/portfolio-analysis-verification.md`
+
+**API使用法ルール**:
+- 検証時は本番API(`https://dm-signal-backend.onrender.com`) + Basic認証を使用 → `docs/skills/api-reference.md`
+- 認証情報は環境変数(ADMIN_USER/ADMIN_PASS等)経由。ハードコード禁止
+- Stock Data Platform: rate limit、auto_fetch差分、ページング仕様 → `docs/rule/api-usage-guide.md`
+- ローカル/本番環境切替手順: DATABASE_URL・Render設定 → `docs/skills/environment-switching.md`
+
+## 15. 殿の個人PF保護リスト（絶対ルール — cmd_198 殿直伝）
+
+> DB操作(DELETE/UPDATE)タスクでは、以下のPFを**絶対に削除・変更してはならない**。
+
+### 保護対象（35体）
+
+**Standard PF（21体）**:
+DM2, DM2-20%, DM2-40%, DM2-60%, DM2-80%, DM2-test, DM2-top,
+DM3, DM4, DM5, DM5-006,
+DM6, DM6-5, DM6-20%, DM6-40%, DM6-60%, DM6-80%, DM6-Top,
+DM7+, DM-safe, DM-safe-2
+
+**FoF PF（14体）**:
+Ave-X, Ave四神, 裏Ave-X,
+MIX1, MIX2, MIX3, MIX4,
+bam-2, bam-6,
+劇薬DMオリジナル, 劇薬DMスムーズ, 劇薬bam, 劇薬bam_guard, 劇薬bam_solid
+
+### 削除許可対象（3カテゴリのみ）
+
+| カテゴリ | 判定基準 | 件数 |
+|---------|---------|------|
+| L0 GS生成PF | name LIKE 'L0-%' | ~30 |
+| 四神L1 | 激攻/鉄壁/常勝 × 青龍/朱雀/白虎/玄武 | 12 |
+| 忍法L2 | 分身/追い風/抜き身/変わり身/加速 × 激攻/鉄壁/常勝 | 15 |
+
+### 運用ルール
+
+- DB操作タスクのdescriptionに「殿PF除外」を明記必須
+- dry-runで残存PFリストを確認してから本削除
+- `projects/dm-signal.yaml` の `protected_portfolios` にリスト恒久化済み

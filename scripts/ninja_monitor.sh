@@ -806,9 +806,11 @@ check_inbox_renudge() {
         # 未読メッセージ数をカウント
         local unread_count
         unread_count=$(count_unread_messages "$inbox_file")
+        # 防御: 非数値は0に強制変換
+        [[ ! "$unread_count" =~ ^[0-9]+$ ]] && unread_count=0
 
-        # 未読0 → カウンターリセット
-        if [ "$unread_count" -eq 0 ] 2>/dev/null; then
+        # 未読0 → カウンターリセット＆スキップ
+        if [ "$unread_count" -eq 0 ]; then
             if [ "${RENUDGE_COUNT[$name]:-0}" -gt 0 ]; then
                 log "RENUDGE-RESET: $name unread=0, counter reset (was ${RENUDGE_COUNT[$name]})"
             fi
@@ -842,9 +844,15 @@ check_inbox_renudge() {
             continue
         fi
 
-        # 再nudge送信
-        log "RENUDGE: $name idle+unread=$unread_count, sending inbox${unread_count} (attempt $((count+1))/$MAX_RENUDGE)"
-        tmux send-keys -t "$target" "inbox${unread_count}" Enter
+        # 再nudge送信（二重ガード: unread>0でなければ絶対に送らない）
+        if [ "$unread_count" -gt 0 ] 2>/dev/null; then
+            log "RENUDGE: $name idle+unread=$unread_count, sending inbox${unread_count} (attempt $((count+1))/$MAX_RENUDGE)"
+            tmux send-keys -t "$target" "inbox${unread_count}" Enter
+        else
+            log "RENUDGE-GUARD: $name unread=$unread_count blocked by double-guard"
+            RENUDGE_COUNT[$name]=0
+            continue
+        fi
         RENUDGE_COUNT[$name]=$((count + 1))
     done
 }

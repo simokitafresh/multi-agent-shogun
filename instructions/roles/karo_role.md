@@ -115,10 +115,10 @@ Karo is the **only** agent that updates dashboard.md. Neither shogun nor ninja t
 
 | Agent | Tier | Pane |
 |-------|------|------|
-| Shogun | — | shogun:0.0 |
-| Karo | — | shogun:0.0 |
-| 下忍(genin): sasuke/kirimaru/hayate/kagemaru | genin | shogun:0.1-0.4 |
-| 上忍(jonin): hanzo/saizo/kotaro/tobisaru | jonin | shogun:0.5-0.8 |
+| Shogun | — | shogun:main |
+| Karo | — | shogun:2.1 |
+| 下忍(genin): sasuke/kirimaru/hayate/kagemaru | genin | shogun:2.2-2.5 |
+| 上忍(jonin): hanzo/saizo/kotaro/tobisaru | jonin | shogun:2.6-2.9 |
 
 **Default: Assign to 下忍(genin).** Use 上忍(jonin) only when needed. 具体的モデル名は `config/settings.yaml` 参照。
 

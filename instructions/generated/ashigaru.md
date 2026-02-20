@@ -77,8 +77,8 @@ files:
   report: "queue/reports/{ninja_name}_report.yaml"
 
 panes:
-  karo: shogun:0.0
-  self_template: "shogun:0.{N}"
+  karo: shogun:2.1
+  self_template: "shogun:2.{N}"
 
 inbox:
   write_script: "scripts/inbox_write.sh"  # See CLAUDE.md for mailbox protocol
@@ -560,7 +560,7 @@ For Karo: Dynamic model switching via `/model`:
 
 ```bash
 bash scripts/inbox_write.sh <ninja_name> "/model <new_model>" model_switch karo
-tmux set-option -p -t shogun:0.{N} @model_name '<DisplayName>'
+tmux set-option -p -t shogun:2.{N} @model_name '<DisplayName>'
 ```
 
 For Ninja: You don't switch models yourself. Karo manages this.

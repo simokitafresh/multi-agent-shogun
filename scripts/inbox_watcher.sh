@@ -2,7 +2,7 @@
 # ═══════════════════════════════════════════════════════════════
 # inbox_watcher.sh — メールボックス監視＆起動シグナル配信
 # Usage: bash scripts/inbox_watcher.sh <agent_id> <pane_target>
-# Example: bash scripts/inbox_watcher.sh karo shogun:0.0
+# Example: bash scripts/inbox_watcher.sh karo shogun:2.1
 # Note: 第3引数(cli_type)は後方互換で受け付けるが無視。cli_lookup.shで動的取得。
 #
 # 設計思想:

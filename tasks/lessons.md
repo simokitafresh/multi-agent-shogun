@@ -89,16 +89,28 @@
 - **日付**: 2026-02-18
 - **出典**: saizo
 - **記録者**: karo
-- infrastructure
+- CLAUDE_CONFIG_DIR=~/.claude丸ごと切替、CLAUDE_CODE_OAUTH_TOKEN=認証のみ切替。複数アカウント運用に有効
 
 ### L016: OAuthリフレッシュトークンは単一使用。複数セッション共有時にプロセスAがリフレッシュするとBのトークンが無効化される。CLAUDE_CODE_OAUTH_TOKENで直接指定すればリフレッシュ競合を回避可能
 - **日付**: 2026-02-18
 - **出典**: tobisaru
 - **記録者**: karo
-- infrastructure
+- OAuthリフレッシュトークンは1回限り使用。複数セッション共有で競合発生→CLAUDE_CODE_OAUTH_TOKENで回避
 
 ### L017: 入口門番は再配備時に自己ブロックする
 - **日付**: 2026-02-18
 - **出典**: cmd_158
 - **記録者**: karo
 - deploy_task.shの入口門番(check_entrance_gate)は、同一タスクの再配備時にもreviewed:false残存をブロックする。初回起動失敗→再配備のケースではinbox_write.sh直接送信で回避が必要。将来的にoverride経路の検討が望ましい
+
+### L018: Claude Code Edit toolはflock未対応 — 並行書込みファイルにEdit toolを使うな
+- **日付**: 2026-02-20
+- **出典**: cmd_189
+- **記録者**: karo
+- Claude Code Edit toolはファイルロック(flock)を使わない。inbox_write.shがflock付きで書込む同ファイルにEdit toolで書き戻すと、inbox_write.shの書込み内容が失われる(Lost Update)。対策: flock+atomic writeを行うシェルスクリプト(inbox_mark_read.sh)で代替。同様の問題は他のflock付きスクリプトが触るファイル全般に存在しうる。
+
+### L019: grep -c || echo 0で0件時に0\\n0が生まれる
+- **日付**: 2026-02-20
+- **出典**: cmd_192
+- **記録者**: karo
+- grep -c patternは0件時も'0'を出力してexit 1を返す。|| echo 0を付けると'0'出力後にecho 0が追加実行され、変数が'0\n0'になる。件数カウントにはawkを使うか、出力の改行/空白除去+数値バリデーションを必ず実装する。

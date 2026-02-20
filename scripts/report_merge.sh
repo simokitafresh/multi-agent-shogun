@@ -63,7 +63,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     # 偵察タスクとして登録
     local_ninja=$(grep -m1 'assigned_to:' "$task_file" 2>/dev/null | awk '{print $2}')
-    local_status=$(grep -m1 'status:' "$task_file" 2>/dev/null | awk '{print $2}')
+    local_status=$(grep -m1 '^  status:' "$task_file" 2>/dev/null | awk '{print $2}')
     local_task_id=$(grep -m1 'task_id:' "$task_file" 2>/dev/null | awk '{print $2}')
 
     RECON_FILES+=("$task_file")
