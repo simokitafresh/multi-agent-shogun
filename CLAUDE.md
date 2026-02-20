@@ -182,7 +182,8 @@ When you receive `inboxN` (e.g. `inbox3`):
 1. `Read queue/inbox/{your_id}.yaml`
 2. Find all entries with `read: false`
 3. Process each message according to its `type`
-4. Update each processed entry: `read: true` (use Edit tool)
+4. Mark as read: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}` (per message) or `bash scripts/inbox_mark_read.sh {your_id}` (all unread)
+   **Edit toolでのinbox既読化は禁止** — flock未使用のためLost Update(メッセージ消失)が発生する
 5. Resume normal workflow
 
 **Also**: After completing ANY task, check your inbox for unread messages before going idle.
@@ -254,6 +255,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - lookback標準GS|18点(10D,15D,20D,1M~12M,15M,18M,24M)|1M=21D
 - パラメータ対応表|`docs/parameter_coverage.md`(280行)|全6ブロック×18点カバレッジマップ
 - GS高速化|`context/gs-speedup-knowledge.md`|GS高速化の実装知見・運用ルール
+- L3検証方針|`context/l3-robustness.md`|WF合議→方針転換→4独立検証の経緯+次のhow
 
 ## Skills
 - 配置|`~/.claude/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨

@@ -560,7 +560,7 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
 - Step 11.7 (7a→7b): Read saytask/streaks.yaml → Edit saytask/streaks.yaml
 - Step 11.5 Unblock (A→B): Read queue/tasks/{ninja}.yaml → Edit queue/tasks/{ninja}.yaml
 - /clear Protocol (1a→1b): Read queue/tasks/{ninja}.yaml → Write queue/tasks/{ninja}.yaml
-- inbox既読化: Read queue/inbox/{id}.yaml → Edit queue/inbox/{id}.yaml
+- inbox既読化: Read queue/inbox/{id}.yaml → `bash scripts/inbox_mark_read.sh {id} {msg_id}` (Edit tool禁止 — Lost Update防止)
 
 ## Report Scanning (Communication Loss Safety)
 

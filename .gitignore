@@ -110,6 +110,7 @@
 !scripts/lib/cli_lookup.sh
 !scripts/lib/safe_rm.sh
 !scripts/inbox_archive.sh
+!scripts/inbox_mark_read.sh
 !scripts/model_switch_preflight.sh
 !scripts/sync_pane_vars.sh
 !scripts/count_gate_metrics.sh
