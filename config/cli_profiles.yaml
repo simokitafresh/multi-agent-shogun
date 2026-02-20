@@ -87,3 +87,23 @@ profiles:
     confirm_wait: 5
     debounce: 60
     clear_debounce: 300
+
+  kimi:
+    # 表示名
+    display_name: "Kimi"
+    # 起動コマンド
+    launch_cmd: "kimi --yolo"
+    # CTXパース
+    ctx_pattern: ""
+    ctx_mode: "usage"
+    # idleプロンプト判定
+    idle_pattern: ""
+    busy_patterns: []
+    # セッションリセット
+    clear_cmd: ""
+    clear_method: "restart"
+    # /modelコマンド対応
+    supports_model_switch: true
+    confirm_wait: 5
+    debounce: 60
+    clear_debounce: 300
