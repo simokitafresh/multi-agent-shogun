@@ -1,6 +1,6 @@
 #!/bin/bash
 # deploy_task.sh — タスク配備ヘルパー（忍者状態自動検知付き）
-# Usage: bash scripts/deploy_task.sh <ninja_name> "<message>" [type] [from]
+# Usage: bash scripts/deploy_task.sh <ninja_name> [message] [type] [from]
 # Example: bash scripts/deploy_task.sh hanzo "タスクYAMLを読んで作業開始せよ" task_assigned karo
 #
 # 機能:
@@ -20,21 +20,24 @@ LOG="$SCRIPT_DIR/logs/deploy_task.log"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 
 NINJA_NAME="${1:-}"
-MESSAGE="${2:-}"
+DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
+MESSAGE="${2:-$DEFAULT_MESSAGE}"
 TYPE="${3:-task_assigned}"
 FROM="${4:-karo}"
 
-if [ -z "$NINJA_NAME" ] || [ -z "$MESSAGE" ]; then
-    echo "Usage: deploy_task.sh <ninja_name> <message> [type] [from]" >&2
-    echo "例: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+if [ -z "$NINJA_NAME" ]; then
+    echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
+    echo "例1: deploy_task.sh sasuke" >&2
+    echo "例2: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
     echo "受け取った引数: $*" >&2
     exit 1
 fi
 
 if [[ "$NINJA_NAME" == cmd_* ]]; then
     echo "ERROR: 第1引数はninja_name（例: hanzo, sasuke）。cmd_idではない。" >&2
-    echo "Usage: deploy_task.sh <ninja_name> <message> [type] [from]" >&2
-    echo "例: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+    echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
+    echo "例1: deploy_task.sh sasuke" >&2
+    echo "例2: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
     echo "受け取った引数: $*" >&2
     exit 1
 fi
