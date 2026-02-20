@@ -39,6 +39,11 @@ workflow:
     action: read_reports
     condition: "task YAML has reports_to_read field"
     note: "Read ALL listed report YAMLs before starting work. These are prior ninja reports for blocked_by tasks."
+  - step: 2.7
+    action: update_status
+    value: acknowledged
+    condition: "status is assigned"
+    note: "Proof of task receipt — prevents ghost deployment"
   - step: 3
     action: update_status
     value: in_progress

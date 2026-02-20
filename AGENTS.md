@@ -29,8 +29,10 @@ cmd_format:
 
 task_status_transitions:
   - "idle → assigned (karo assigns)"
-  - "assigned → done (ninja completes)"
-  - "assigned → failed (ninja fails)"
+  - "assigned → acknowledged (ninja reads task YAML)"
+  - "acknowledged → in_progress (ninja starts work)"
+  - "in_progress → done (ninja completes)"
+  - "in_progress → failed (ninja fails)"
   - "RULE: Ninja updates OWN yaml only. Never touch other ninja's yaml."
 
 mcp_tools: [Notion, Playwright, GitHub, Sequential Thinking, Memory]
@@ -68,7 +70,7 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
 ```
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
 Step 2: 将軍のみ mcp__memory__read_graph を実行。家老・忍者はスキップ。
-Step 3: Read queue/tasks/{your_ninja_name}.yaml → assigned=work, idle=wait
+Step 3: Read queue/tasks/{your_ninja_name}.yaml → assigned=Edit status to acknowledged then work, idle=wait
 Step 3.5: If task has "related_lessons:" with reviewed: false →
           read each lesson in projects/{project}/lessons.yaml,
           then Edit each entry: reviewed: false → reviewed: true
@@ -94,6 +96,11 @@ Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告�
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
 Step 5: project知識ロード（snapshotのcmdにproject指定あれば）
 Step 6: Read queue/shogun_to_karo.yaml（cmd詳細が必要な場合のみ）
+Step 6.5: Ghost deployment check（snapshotにassigned忍者がいる場合）:
+          各assigned忍者: tmux capture-pane -t shogun:2.{pane} -p | tail -5
+          CTX:0% → ゴースト配備（CLIが停止中）→ re-nudge: bash scripts/inbox_write.sh {ninja} "再配備" task_assigned karo
+          CTX:>0% → タスクYAML status確認（acknowledged/in_progress=正常、assigned=要注意→nudge）
+          ペイン: sasuke=2, kirimaru=3, hayate=4, kagemaru=5, hanzo=6, saizo=7, kotaro=8, tobisaru=9
 Step 7: 作業再開
 ```
 

@@ -40,6 +40,11 @@ workflow:
     action: read_reports
     condition: "task YAML has reports_to_read field"
     note: "Read ALL listed report YAMLs before starting work. These are prior ninja reports for blocked_by tasks."
+  - step: 2.7
+    action: update_status
+    value: acknowledged
+    condition: "status is assigned"
+    note: "Proof of task receipt — prevents ghost deployment"
   - step: 3
     action: update_status
     value: in_progress
@@ -335,7 +340,8 @@ Recover from primary data:
 
 1. Confirm ID: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
 2. Read `queue/tasks/{your_ninja_name}.yaml`
-   - `assigned` → resume work
+   - `assigned` → Edit status to `acknowledged`, then resume work
+   - `acknowledged` / `in_progress` → resume work
    - `done` → await next instruction
 3. Read Memory MCP (read_graph) if available
 4. If task YAML has `project:` field, read these 3 files **before starting work (MANDATORY)**:
@@ -356,6 +362,7 @@ Recover from primary data:
 - After /clear, instructions/ashigaru.md (now ninja instructions) is NOT needed (cost saving: ~3,600 tokens)
 - CLAUDE.md /clear flow (~5,000 tokens) is sufficient for first task
 - Read instructions only if needed for 2nd+ tasks
+- If task YAML status is `assigned` → Edit to `acknowledged` immediately (ghost deployment prevention)
 
 **Before /clear** (ensure these are done):
 1. If task complete → report YAML written + inbox_write sent
