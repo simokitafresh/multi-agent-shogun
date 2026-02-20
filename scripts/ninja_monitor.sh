@@ -1065,6 +1065,50 @@ check_model_names() {
     done
 }
 
+# ─── inbox未読数ペイン変数更新（全エージェント + 将軍） ───
+# 各エージェントのinbox YAMLから read: false の件数をカウントし、
+# tmuxペイン変数 @inbox_count に設定。pane-border-formatで参照される。
+# 未読0: 空文字（非表示）、未読1以上: " 📨N"
+update_inbox_counts() {
+    local all_agents=("karo" "${NINJA_NAMES[@]}")
+    local inbox_dir="$SCRIPT_DIR/queue/inbox"
+
+    for name in "${all_agents[@]}"; do
+        local inbox_file="${inbox_dir}/${name}.yaml"
+        local target
+        if [ "$name" = "karo" ]; then
+            target="shogun:2.1"
+        else
+            target="${PANE_TARGETS[$name]}"
+        fi
+        [ -z "$target" ] && continue
+
+        local count=0
+        if [ -f "$inbox_file" ]; then
+            count=$(grep -c 'read: false' "$inbox_file" 2>/dev/null || echo 0)
+        fi
+
+        if [ "$count" -gt 0 ] 2>/dev/null; then
+            tmux set-option -p -t "$target" @inbox_count " 📨${count}" 2>/dev/null
+        else
+            tmux set-option -p -t "$target" @inbox_count "" 2>/dev/null
+        fi
+    done
+
+    # 将軍ペイン（shogun:1）
+    local shogun_inbox="${inbox_dir}/shogun.yaml"
+    local shogun_count=0
+    if [ -f "$shogun_inbox" ]; then
+        shogun_count=$(grep -c 'read: false' "$shogun_inbox" 2>/dev/null || echo 0)
+    fi
+
+    if [ "$shogun_count" -gt 0 ] 2>/dev/null; then
+        tmux set-option -p -t "shogun:1.1" @inbox_count " 📨${shogun_count}" 2>/dev/null
+    else
+        tmux set-option -p -t "shogun:1.1" @inbox_count "" 2>/dev/null
+    fi
+}
+
 # ─── Self-restart on script change (inbox_watcher.shから移植) ───
 check_script_update() {
     local current_hash
@@ -1212,6 +1256,9 @@ while true; do
 
     # ═══ Phase 3: context_pct更新（全ペイン） ═══
     update_all_context_pct
+
+    # ═══ inbox未読数ペイン変数更新 (cmd_188) ═══
+    update_inbox_counts
 
     # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
     write_state_file
