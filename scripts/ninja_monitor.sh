@@ -63,6 +63,8 @@ declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
 declare -A STALL_NOTIFIED    # 停滞通知済みフラグ — key: "ninja:task_id", value: "1"
 declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
+declare -A PENDING_CMD_NUDGE_COUNT  # pending cmd再起動nudge回数 — key: "cmd_XXX", value: count
+declare -A PENDING_CMD_LAST_NUDGE   # pending cmd最終nudge時刻 — key: "cmd_XXX", value: epoch秒
 declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
 declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
 declare -A RENUDGE_COUNT          # 未読再nudgeカウンター — key: agent_name, value: 連続再nudge回数
@@ -74,8 +76,10 @@ for name in "${NINJA_NAMES[@]}"; do
 done
 
 MAX_RENUDGE=5               # 未読再nudge上限回数（同一未読状態に対して）
+MAX_PENDING_NUDGE=5         # pending cmd同一cmd再起動nudge上限回数
 KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
+PENDING_NUDGE_DEBOUNCE=300  # pending cmd同一cmd再起動nudge抑制（5分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
@@ -566,10 +570,40 @@ check_stall() {
 # ─── stale cmd検知（pending+4時間超+subtask未配備） ───
 # queue/shogun_to_karo.yaml から pending cmd を抽出し、
 # queue/tasks/*.yaml に parent_cmd が存在しないまま4時間超過したcmdを家老に通知
-check_stale_cmds() {
+list_pending_cmds() {
     local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
     [ ! -f "$cmd_file" ] && return
 
+    awk '
+        function emit() {
+            if (cmd_id != "" && cmd_status == "pending" && cmd_ts != "") {
+                print cmd_id "|" cmd_ts
+            }
+        }
+        /^[[:space:]]*-[[:space:]]id:/ {
+            emit()
+            cmd_id=$3
+            gsub(/"/, "", cmd_id)
+            cmd_ts=""
+            cmd_status=""
+            next
+        }
+        /^[[:space:]]*timestamp:/ {
+            cmd_ts=$2
+            gsub(/"/, "", cmd_ts)
+            next
+        }
+        /^[[:space:]]*status:/ {
+            cmd_status=$2
+            next
+        }
+        END {
+            emit()
+        }
+    ' "$cmd_file"
+}
+
+check_stale_cmds() {
     local now
     now=$(date +%s)
 
@@ -611,35 +645,75 @@ check_stale_cmds() {
         else
             log "ERROR: Failed to send stale cmd notification for ${cmd_id}"
         fi
-    done < <(
-        awk '
-            function emit() {
-                if (cmd_id != "" && cmd_status == "pending" && cmd_ts != "") {
-                    print cmd_id "|" cmd_ts
-                }
-            }
-            /^[[:space:]]*-[[:space:]]id:/ {
-                emit()
-                cmd_id=$3
-                gsub(/"/, "", cmd_id)
-                cmd_ts=""
-                cmd_status=""
-                next
-            }
-            /^[[:space:]]*timestamp:/ {
-                cmd_ts=$2
-                gsub(/"/, "", cmd_ts)
-                next
-            }
-            /^[[:space:]]*status:/ {
-                cmd_status=$2
-                next
-            }
-            END {
-                emit()
-            }
-        ' "$cmd_file"
-    )
+    done < <(list_pending_cmds)
+}
+
+# ─── pending cmd検知（idle家老の自動再起動） ───
+# cmdがpendingの間、家老がidleなら inbox_write(cmd_pending)で再起動nudge
+# 同一cmdへの無限nudgeは回数上限+デバウンスで抑制
+check_karo_pending_cmd() {
+    local karo_pane="shogun:2.1"
+
+    # 家老がbusyならスキップ（作業中は割り込み不要）
+    check_idle "$karo_pane" "karo"
+    if [ $? -ne 0 ]; then
+        return
+    fi
+
+    local now
+    now=$(date +%s)
+    local pending_ids=()
+
+    while IFS='|' read -r cmd_id cmd_timestamp; do
+        [ -z "$cmd_id" ] && continue
+        pending_ids+=("$cmd_id")
+
+        # stale通知済みcmdは重複通知を避ける
+        if [ -n "${STALE_CMD_NOTIFIED[$cmd_id]:-}" ]; then
+            continue
+        fi
+
+        local count="${PENDING_CMD_NUDGE_COUNT[$cmd_id]:-0}"
+        if [ "$count" -ge "$MAX_PENDING_NUDGE" ]; then
+            continue
+        fi
+
+        local last_sent="${PENDING_CMD_LAST_NUDGE[$cmd_id]:-0}"
+        if [ $((now - last_sent)) -lt $PENDING_NUDGE_DEBOUNCE ]; then
+            continue
+        fi
+
+        local msg="cmd_pending ${cmd_id} pending cmd検知: ${cmd_id}。shogun_to_karo.yamlを確認し着手せよ。"
+        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" cmd_pending ninja_monitor >> "$LOG" 2>&1; then
+            PENDING_CMD_NUDGE_COUNT[$cmd_id]=$((count + 1))
+            PENDING_CMD_LAST_NUDGE[$cmd_id]=$now
+            log "PENDING-CMD-NUDGE: ${cmd_id} -> karo (${PENDING_CMD_NUDGE_COUNT[$cmd_id]}/${MAX_PENDING_NUDGE})"
+        else
+            log "ERROR: Failed pending cmd nudge for ${cmd_id}"
+        fi
+    done < <(list_pending_cmds)
+
+    # pending解消済みcmdのカウンタをリセット
+    local tracked_id still_pending pending_id
+    for tracked_id in "${!PENDING_CMD_NUDGE_COUNT[@]}"; do
+        still_pending=0
+        for pending_id in "${pending_ids[@]}"; do
+            if [ "$tracked_id" = "$pending_id" ]; then
+                still_pending=1
+                break
+            fi
+        done
+        if [ $still_pending -eq 0 ]; then
+            unset PENDING_CMD_NUDGE_COUNT[$tracked_id]
+            unset PENDING_CMD_LAST_NUDGE[$tracked_id]
+            log "PENDING-CMD-RESET: ${tracked_id} no longer pending, counters cleared"
+        fi
+    done
+}
+
+# 互換ラッパー（旧命名）
+check_karo_pending() {
+    check_karo_pending_cmd
 }
 
 # ─── 破壊コマンド検知（capture-pane経由） ───
@@ -1247,6 +1321,11 @@ while true; do
 
     # ═══ Stale cmd検知チェック ═══
     check_stale_cmds
+
+    # ═══ Pending cmd検知チェック（2分間隔） ═══
+    if [ $((cycle % 6)) -eq 0 ]; then
+        check_karo_pending
+    fi
 
     # ═══ STEP 2: 家老の外部/clearチェック ═══
     check_karo_clear
