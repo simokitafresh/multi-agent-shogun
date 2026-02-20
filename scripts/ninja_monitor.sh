@@ -776,6 +776,21 @@ check_destructive_commands() {
 # ─── 未読放置検知+再nudge (cmd_188) ───
 # idle状態のエージェントのinboxに未読メッセージがある場合、再nudgeを送信
 # inbox_watcherのnudgeが一発きりで消失する構造問題への対策
+count_unread_messages() {
+    local inbox_file="$1"
+    local raw_count
+    local count
+
+    raw_count=$(awk '/read:[[:space:]]*false/{c++} END{print c+0}' "$inbox_file" 2>/dev/null || echo "0")
+    count=$(printf '%s' "$raw_count" | tr -d '\r\n[:space:]')
+
+    if [[ ! "$count" =~ ^[0-9]+$ ]]; then
+        count=0
+    fi
+
+    echo "$count"
+}
+
 check_inbox_renudge() {
     local all_agents=("karo" "${NINJA_NAMES[@]}")
 
@@ -790,7 +805,7 @@ check_inbox_renudge() {
 
         # 未読メッセージ数をカウント
         local unread_count
-        unread_count=$(grep -c 'read: false' "$inbox_file" 2>/dev/null || echo "0")
+        unread_count=$(count_unread_messages "$inbox_file")
 
         # 未読0 → カウンターリセット
         if [ "$unread_count" -eq 0 ] 2>/dev/null; then
@@ -1159,7 +1174,7 @@ update_inbox_counts() {
 
         local count=0
         if [ -f "$inbox_file" ]; then
-            count=$(grep -c 'read: false' "$inbox_file" 2>/dev/null || echo 0)
+            count=$(count_unread_messages "$inbox_file")
         fi
 
         if [ "$count" -gt 0 ] 2>/dev/null; then
@@ -1173,7 +1188,7 @@ update_inbox_counts() {
     local shogun_inbox="${inbox_dir}/shogun.yaml"
     local shogun_count=0
     if [ -f "$shogun_inbox" ]; then
-        shogun_count=$(grep -c 'read: false' "$shogun_inbox" 2>/dev/null || echo 0)
+        shogun_count=$(count_unread_messages "$shogun_inbox")
     fi
 
     if [ "$shogun_count" -gt 0 ] 2>/dev/null; then
