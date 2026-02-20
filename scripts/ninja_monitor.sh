@@ -65,6 +65,7 @@ declare -A STALL_NOTIFIED    # 停滞通知済みフラグ — key: "ninja:task_
 declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
 declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
 declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
+declare -A RENUDGE_COUNT          # 未読再nudgeカウンター — key: agent_name, value: 連続再nudge回数
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
@@ -72,6 +73,7 @@ for name in "${NINJA_NAMES[@]}"; do
     PREV_STATE[$name]="idle"
 done
 
+MAX_RENUDGE=5               # 未読再nudge上限回数（同一未読状態に対して）
 KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
@@ -697,6 +699,67 @@ check_destructive_commands() {
     done
 }
 
+# ─── 未読放置検知+再nudge (cmd_188) ───
+# idle状態のエージェントのinboxに未読メッセージがある場合、再nudgeを送信
+# inbox_watcherのnudgeが一発きりで消失する構造問題への対策
+check_inbox_renudge() {
+    local all_agents=("karo" "${NINJA_NAMES[@]}")
+
+    for name in "${all_agents[@]}"; do
+        local inbox_file="$SCRIPT_DIR/queue/inbox/${name}.yaml"
+
+        # inbox file存在チェック
+        if [ ! -f "$inbox_file" ]; then
+            RENUDGE_COUNT[$name]=0
+            continue
+        fi
+
+        # 未読メッセージ数をカウント
+        local unread_count
+        unread_count=$(grep -c 'read: false' "$inbox_file" 2>/dev/null || echo "0")
+
+        # 未読0 → カウンターリセット
+        if [ "$unread_count" -eq 0 ] 2>/dev/null; then
+            if [ "${RENUDGE_COUNT[$name]:-0}" -gt 0 ]; then
+                log "RENUDGE-RESET: $name unread=0, counter reset (was ${RENUDGE_COUNT[$name]})"
+            fi
+            RENUDGE_COUNT[$name]=0
+            continue
+        fi
+
+        # ペインターゲット取得
+        local target
+        if [ "$name" = "karo" ]; then
+            target="shogun:2.1"
+        else
+            target="${PANE_TARGETS[$name]}"
+        fi
+        [ -z "$target" ] && continue
+
+        # idle判定（busy → skip：作業中はいずれinboxを処理する）
+        check_idle "$target" "$name"
+        if [ $? -ne 0 ]; then
+            continue
+        fi
+
+        # idle + 未読あり → 再nudge候補
+        local count="${RENUDGE_COUNT[$name]:-0}"
+
+        if [ "$count" -ge "$MAX_RENUDGE" ]; then
+            # 上限到達 → ログのみ（5サイクルに1回、スパム防止）
+            if [ $((cycle % 5)) -eq 0 ]; then
+                log "RENUDGE-MAX: $name reached MAX_RENUDGE=$MAX_RENUDGE (unread=$unread_count), manual intervention needed"
+            fi
+            continue
+        fi
+
+        # 再nudge送信
+        log "RENUDGE: $name idle+unread=$unread_count, sending inbox${unread_count} (attempt $((count+1))/$MAX_RENUDGE)"
+        tmux send-keys -t "$target" "inbox${unread_count}" Enter
+        RENUDGE_COUNT[$name]=$((count + 1))
+    done
+}
+
 # ─── context_pct更新（単一ペイン） ───
 # 引数: $1=pane_target (例: shogun:2.4), $2=agent_name（省略時はフォールバック）
 # 戻り値: 0=更新成功, 1=失敗(--設定)
@@ -1134,6 +1197,9 @@ while true; do
         [ -z "$target" ] && continue
         check_destructive_commands "$name" "$target"
     done
+
+    # ═══ 未読放置検知+再nudge (cmd_188) ═══
+    check_inbox_renudge
 
     # ═══ Stale cmd検知チェック ═══
     check_stale_cmds
