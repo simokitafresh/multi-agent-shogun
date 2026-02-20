@@ -65,6 +65,7 @@ declare -A STALL_NOTIFIED    # 停滞通知済みフラグ — key: "ninja:task_
 declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
 declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
 declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
+PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
 for name in "${NINJA_NAMES[@]}"; do
@@ -101,6 +102,47 @@ discover_panes() {
     done
 
     log "Pane discovery: ${found}/${#NINJA_NAMES[@]} ninja found"
+}
+
+# ─── ペイン生存チェック (cmd_183) ───
+# 期待される忍者ペインと実ペインを比較し、消失を検知して家老に通知
+check_pane_survival() {
+    local actual_agents
+    actual_agents=$(tmux list-panes -t shogun:2 -F '#{@agent_id}' 2>/dev/null)
+    if [ $? -ne 0 ] || [ -z "$actual_agents" ]; then
+        log "PANE-CHECK: Failed to list panes for shogun:2"
+        return
+    fi
+
+    local missing=()
+    for name in "${NINJA_NAMES[@]}"; do
+        if ! echo "$actual_agents" | grep -qx "$name"; then
+            missing+=("$name")
+        fi
+    done
+
+    if [ ${#missing[@]} -eq 0 ]; then
+        # 全員生存 — 前回消失状態をリセット
+        if [ -n "$PREV_PANE_MISSING" ]; then
+            log "PANE-RECOVERED: all ninja panes restored (was: $PREV_PANE_MISSING)"
+            PREV_PANE_MISSING=""
+        fi
+        return
+    fi
+
+    # 消失リスト構築
+    local missing_str
+    missing_str=$(printf '%s,' "${missing[@]}")
+    missing_str="${missing_str%,}"
+
+    # 重複送信防止: 前回と同じ消失状態なら再送しない
+    if [ "$missing_str" = "$PREV_PANE_MISSING" ]; then
+        return
+    fi
+
+    log "PANE-LOST: ${missing_str} (${#missing[@]}名消失)"
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "ペイン消失: ${missing_str} (${#missing[@]}名)。OOM Kill等の可能性。tmux list-panes -t shogun:2 で確認されたし" pane_lost ninja_monitor >> "$LOG" 2>&1
+    PREV_PANE_MISSING="$missing_str"
 }
 
 # ─── idle検出（単一チェック） ───
@@ -995,6 +1037,9 @@ while true; do
         # Inbox pruning (cmd_106) — 10分間隔で既読メッセージを自動削除
         bash "$SCRIPT_DIR/scripts/inbox_prune.sh" 2>>"$SCRIPT_DIR/logs/inbox_prune.log" || true
     fi
+
+    # ═══ ペイン生存チェック (cmd_183) ═══
+    check_pane_survival
 
     # 案B: バッチ通知用配列を初期化
     NEWLY_IDLE=()
