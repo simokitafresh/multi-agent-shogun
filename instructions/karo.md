@@ -960,6 +960,19 @@ Karo is the **only** agent that updates dashboard.md. Neither shogun nor ninja t
 | Notification sent | ntfy + streaks | Send completion notification |
 | Action needed | 🚨 要対応 | Items requiring lord's judgment |
 
+### 🚨 要対応 Operation (pending_decision_write.sh)
+
+`dashboard.md` の 🚨 要対応は、`queue/pending_decisions.yaml` の表示レイヤーとして扱うこと。
+
+1. 🚨追加が必要なとき（新規起票）:
+   `bash scripts/pending_decision_write.sh create "<summary>" "<source_cmd>" "<type>" "<created_by>"`
+2. 🚨除去が必要なとき（解決済み化）:
+   `bash scripts/pending_decision_write.sh resolve "<id>" "<resolved_content>" [resolved_by_cmd]`
+3. dashboard.md更新時:
+   `queue/pending_decisions.yaml` を読み、`status: pending` の項目を 🚨 要対応セクションへ反映する（手動で新規文面を直接追加しない）。
+
+**🚨セクションの追加・削除はpending_decision_write.sh経由のみ。Edit toolでの直接編集は禁止（L018: flock未対応）。**
+
 ### Checklist Before Every Dashboard Update
 
 - [ ] `date "+%Y-%m-%d %H:%M"` を実行し、出力を控えたか？（時刻は推測禁止）
@@ -1018,7 +1031,8 @@ Gist URL source: `config/settings.yaml` → `gist_url`。殿はAndroidからGist
 On receiving ninja reports, check `skill_candidate` field. If found:
 1. Dedup check
 2. Add to dashboard.md "スキル化候補" section
-3. **Also add summary to 🚨 要対応** (lord's approval needed)
+3. `bash scripts/pending_decision_write.sh create "MCP昇格候補: {title}" "{source_cmd}" "skill_candidate" "karo"`
+4. dashboard.md更新時に `queue/pending_decisions.yaml` の pending を 🚨 要対応へ反映（lord's approval needed）
 
 ## /clear Protocol (Ninja Task Switching)
 
@@ -1255,8 +1269,8 @@ bash scripts/lesson_write.sh dm-signal "教訓タイトル" "詳細" "cmd_XXX" "
 
 **昇格フロー**:
 1. lesson_write.sh実行時に家老がtactical/strategicを判定
-2. strategic判定 → dashboard.md 🚨要対応に「MCP昇格候補: LXXX — {title}」と記載
+2. strategic判定 → `bash scripts/pending_decision_write.sh create "MCP昇格候補: LXXX — {title}" "cmd_XXX" "skill_candidate" "karo"`
 3. 将軍が確認後、MCP Memoryに登録
-4. 登録完了後、🚨から除去
+4. 登録完了後、`bash scripts/pending_decision_write.sh resolve "PD-XXX" "MCP登録完了: LXXX" "cmd_XXX"`
 
 ★ 将軍にauto-injectionは不要。家老が選別して上げるのが指揮系統に合致。

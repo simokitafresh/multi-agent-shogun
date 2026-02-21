@@ -93,6 +93,7 @@ Forbidden after /clear: reading instructions/generated/codex-ashigaru.md (1st ta
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → karo
 Step 2: Read instructions/generated/codex-karo.md（人格・禁則・手順。省略厳禁）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
+Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
 Step 5: project知識ロード（snapshotのcmdにproject指定あれば）
 Step 6: Read queue/shogun_to_karo.yaml（cmd詳細が必要な場合のみ）
