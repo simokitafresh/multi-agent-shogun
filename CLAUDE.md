@@ -55,7 +55,6 @@ language:
 3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.5. **Load project knowledge** (role-based):
    - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）
-   - 将軍のみ: `bash scripts/pending_decision_reconcile.sh` を実行し、stale PD（source_cmdが完了/吸収済み）を自動resolve
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
    - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
