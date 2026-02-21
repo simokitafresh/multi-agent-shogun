@@ -115,7 +115,6 @@
 !scripts/sync_pane_vars.sh
 !scripts/count_gate_metrics.sh
 !scripts/pending_decision_write.sh
-!scripts/pending_decision_reconcile.sh
 
 
 # Tasks (SSOT lessons only)
