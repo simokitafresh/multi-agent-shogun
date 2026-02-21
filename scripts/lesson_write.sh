@@ -67,7 +67,10 @@ if [ ! -f "$LESSONS_FILE" ]; then
 fi
 
 TIMESTAMP=$(date "+%Y-%m-%d")
-DASHBOARD_PATH="$SCRIPT_DIR/dashboard.md"
+
+# Temp file for passing lesson ID out of flock subshell
+LESSON_ID_FILE=$(mktemp)
+trap 'rm -f "$LESSON_ID_FILE"' EXIT
 
 # Atomic append with flock (3 retries)
 attempt=0
@@ -78,7 +81,7 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 10 200 || exit 1
 
         # Find max ID and append new entry
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR STRATEGIC DASHBOARD_PATH FORCE
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR FORCE LESSON_ID_FILE
         python3 << 'PYEOF'
 import re, os, sys
 from difflib import SequenceMatcher
@@ -139,27 +142,32 @@ with open(lessons_file, 'a', encoding='utf-8') as f:
 
 print(f'{new_id_str} added to {lessons_file}')
 
-# --strategic: Update dashboard.md 🚨要対応 with MCP promotion candidate
-strategic = os.environ.get("STRATEGIC", "")
-if strategic == "--strategic":
-    dp = os.environ["DASHBOARD_PATH"]
-    with open(dp, encoding='utf-8') as f:
-        dc = f.read()
-    line = f"- MCP昇格候補: {new_id_str} \u2014 {title}\uff08将軍確認待ち\uff09\n"
-    marker_empty = "## \U0001f6a8 要対応\n\n\uff08なし\uff09\n"
-    marker_header = "## \U0001f6a8 要対応\n\n"
-    if marker_empty in dc:
-        dc = dc.replace(marker_empty, f"## \U0001f6a8 要対応\n\n{line}")
-    elif marker_header in dc:
-        dc = dc.replace(marker_header, f"## \U0001f6a8 要対応\n\n{line}")
-    with open(dp, 'w', encoding='utf-8') as f:
-        f.write(dc)
-    print(f'Dashboard updated: {new_id_str} added to 要対応')
+# Write lesson ID to temp file for post-flock --strategic processing
+id_file = os.environ.get("LESSON_ID_FILE", "")
+if id_file:
+    with open(id_file, 'w') as f:
+        f.write(new_id_str)
 PYEOF
 
     ) 200>"$LOCKFILE"; then
         # AC3: Auto-call sync_lessons.sh after write
         bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+        # --strategic: Register as pending decision (replaces direct dashboard.md editing)
+        if [ "$STRATEGIC" == "--strategic" ]; then
+            NEW_LESSON_ID=""
+            if [ -f "$LESSON_ID_FILE" ]; then
+                NEW_LESSON_ID=$(cat "$LESSON_ID_FILE")
+            fi
+            if [ -n "$NEW_LESSON_ID" ]; then
+                if [ -f "$SCRIPT_DIR/scripts/pending_decision_write.sh" ]; then
+                    bash "$SCRIPT_DIR/scripts/pending_decision_write.sh" create \
+                        "MCP昇格候補: $NEW_LESSON_ID — $TITLE（将軍確認待ち）" \
+                        "$SOURCE_CMD" "skill_candidate" "$AUTHOR"
+                else
+                    echo "WARN: pending_decision_write.sh not found, skipping strategic registration" >&2
+                fi
+            fi
+        fi
         # cmd_108: Write .done flag for cmd_complete_gate
         if [ -n "$CMD_ID" ]; then
             gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
