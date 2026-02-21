@@ -144,6 +144,29 @@ L2忍法FoF: 5忍法(分身/追い風/抜き身/変わり身/加速) × 3モー�
 BlockType enum定義: `backend/app/schemas/pipeline.py:18-37`
 ブロック登録: `backend/app/jobs/shared.py:208-253`
 
+### top_n同点時のtiebreakルール（cmd_217）
+
+本番のselection blockは、top_n境界で同点が出たときに次の2方式で動作する。
+
+- **cutoff_score全包含方式**: 境界スコアと同点の銘柄は全て採用し、`top_n`超過を許容する。
+- **strict slice方式**: 厳密に`top_n`/`worst_n`件だけを切り出す。
+
+忍法FoFの対応は以下。
+
+- 追い風（`MomentumFilterBlock`）: cutoff_score全包含
+- 抜き身（`SingleViewMomentumFilterBlock`）: cutoff_score全包含
+- 加速（`MomentumAccelerationFilterBlock`）: cutoff_score全包含
+- 変わり身（`TrendReversalFilterBlock`）: strict slice
+
+補足:
+- `MultiViewMomentumFilterBlock` と `MonthlyReturnMomentumFilterBlock` も cutoff_score全包含方式。
+- 変わり身のみ本番実装がstrict sliceのため、GS側もstrict sliceで一致させる。
+
+GS修正経緯（cmd_215 → cmd_217）:
+- cmd_215でtop_n境界同点時のパリティ差分を検知。
+- cmd_217で影丸・霧丸の偵察結果を統合し、方式差（cutoff_score vs strict slice）を確定。
+- 追い風はcommit `9277881`で修正済み、加速はcutoff_score適用済み、抜き身はcmd_217 Phase 3で修正継続。
+
 ### パイプライン実行
 
 ```python
