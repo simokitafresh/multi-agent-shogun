@@ -393,3 +393,16 @@ Save when:
 
 Save: Lord's preferences, key decisions + reasons, cross-project insights, solved problems.
 Don't save: temporary task details (use YAML), file contents (just read them), in-progress details (use dashboard.md).
+
+## 裁定同時記録（殿厳命）
+
+殿の裁定を記録する時、以下の2操作を**必ず1セットで実行**せよ。片方だけは禁止。
+
+```
+(1) mcp__memory__add_observations — 裁定内容をMCPに記録
+(2) bash scripts/pending_decision_write.sh resolve PD-XXX "裁定内容" [cmd_XXX]
+```
+
+**理由**: MCP記録だけではpending_decisions.yamlにPDがpendingのまま残る。
+compact後にPDを読むと「pending=未決」と判断し、殿に同じ裁定を繰り返し聞いてしまう。
+両方を同時に実行することで、MCP（将軍の記憶）とPD（システムの記録）が常に同期する。

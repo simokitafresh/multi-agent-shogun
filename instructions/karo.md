@@ -258,6 +258,27 @@ bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ�
 
 Report via dashboard.md update only. Reason: interrupt prevention during lord's input.
 
+## Halt受信手順
+
+将軍からhalt通知（type: halt）を受信した時の手順:
+
+1. **即時停止** — 該当cmdの作業を即座に中止する
+2. **忍者停止伝達** — 配備済み忍者がいればinbox_writeでclear_command送信（/clear）
+3. **関連commitのrevert** — 該当cmdで行ったgit commitがあればrevert
+4. **タスクYAML idle化** — 全忍者のタスクYAMLをidle状態に戻す
+5. **ダッシュボード更新** — dashboard.mdに「cmd_XXX HALT — 将軍指示で中止」を記録
+6. **将軍の次の指示を待つ** — 自発的に次の行動を取らない
+
+```
+inbox type: halt を受信
+  → 1. 該当cmd特定（content内のcmd_XXXを抽出）
+  → 2. 該当cmdに配備済みの忍者を全てclear_command送信で停止
+  → 3. 関連commitがあればgit revert
+  → 4. 全忍者タスクYAMLをidle化
+  → 5. dashboard.md更新
+  → 6. 停止して待機
+```
+
 ## Non-blocking Operation
 
 **sleep/polling禁止 + 長時間bash run_in_background必須。**
