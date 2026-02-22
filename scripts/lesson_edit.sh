@@ -101,12 +101,12 @@ while i < len(lines):
                 entry_end = j
                 break
             # Update status line
-            m_status = re.match(r'^- \*\*状態\*\*:', lines[j])
+            m_status = re.match(r'^- \*\*status\*\*:', lines[j])
             if m_status:
-                lines[j] = '- **状態**: confirmed'
+                lines[j] = '- **status**: confirmed'
                 status_found = True
             # Identify summary content lines (not metadata)
-            elif sline and not re.match(r'^- \*\*(日付|出典|記録者|状態|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            elif sline and not re.match(r'^- \*\*(日付|出典|記録者|status|状態|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 summary_lines.append(j)
             j += 1
 
@@ -140,7 +140,7 @@ while i < len(lines):
                     insert_pos += 1
                     continue
                 break
-            lines.insert(insert_pos, '- **状態**: confirmed')
+            lines.insert(insert_pos, '- **status**: confirmed')
 
         break
     i += 1

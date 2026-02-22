@@ -80,7 +80,7 @@ while i < len(lines):
         m_src = re.match(r'^- \*\*出典\*\*:\s*(.+)', sline)
         if m_src:
             source_cmd = m_src.group(1).strip()
-        m_status = re.match(r'^- \*\*状態\*\*:\s*(.+)', sline)
+        m_status = re.match(r'^- \*\*status\*\*:\s*(.+)', sline)
         if m_status:
             status = m_status.group(1).strip()
         j += 1

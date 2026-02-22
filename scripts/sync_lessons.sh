@@ -68,6 +68,7 @@ while i < len(lines):
     title = None
     lesson_id = None
     date_str = None
+    status = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -142,13 +143,18 @@ while i < len(lines):
             m_fsrc = re.match(r'- \*\*出典\*\*:\s*(.+)', sline)
             if m_fsrc:
                 source = m_fsrc.group(1).strip()
+        # Extract status from **status** field
+        if not status:
+            m_fstatus = re.match(r'- \*\*status\*\*:\s*(.+)', sline)
+            if m_fstatus:
+                status = m_fstatus.group(1).strip()
         # Get summary from **発生**/**問題**/**課題** fields or plain content
         if sline.startswith('- **発生**:') or sline.startswith('- **問題**:') or sline.startswith('- **課題**:'):
             text = re.sub(r'^- \*\*[^*]+\*\*:\s*', '', sline)
             summary_parts.append(text)
         elif sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -162,6 +168,8 @@ while i < len(lines):
         entry['source'] = source
     if date_str:
         entry['date'] = date_str
+    if status:
+        entry['status'] = status
 
     lessons.append(entry)
     i = j if j > i + 1 else i + 1

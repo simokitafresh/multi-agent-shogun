@@ -92,14 +92,14 @@ while i < len(lines):
             if lines[j].strip().startswith('## ') or lines[j].strip().startswith('### '):
                 entry_end = j
                 break
-            m_status = re.match(r'^- \*\*状態\*\*:\s*(.+)', lines[j])
+            m_status = re.match(r'^- \*\*status\*\*:\s*(.+)', lines[j])
             if m_status:
                 status_line_idx = j
                 current_status = m_status.group(1).strip()
                 if current_status == 'confirmed':
                     already_confirmed = True
                 elif current_status == 'draft':
-                    lines[j] = '- **状態**: confirmed'
+                    lines[j] = '- **status**: confirmed'
                     modified = True
             j += 1
         break
