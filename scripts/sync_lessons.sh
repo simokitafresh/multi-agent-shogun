@@ -189,9 +189,9 @@ for l in lessons:
         max_num += 1
         l['id'] = f'L{max_num:03d}'
 
-# Sort by ID number descending (newest/highest first), limit to 20
+# Sort by ID number descending (newest/highest first), limit to 50
 lessons.sort(key=lambda x: int(x['id'].replace('L', '')), reverse=True)
-lessons = lessons[:20]
+lessons = lessons[:50]
 
 # Build output
 data = {

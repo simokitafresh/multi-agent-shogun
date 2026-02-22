@@ -33,6 +33,19 @@
 | 2 | 01:10 | sync-standard | 個別DM戦略シグナル計算 |
 | 3 | 01:40 | sync-fof | FoFシグナル計算 |
 
+## 1.5. 再計算の排他制御（重要）
+
+本番の再計算(recalculate-sync)は**排他制御が効いている**。同時に2つの再計算は走らない。
+
+| 状況 | 結果 | 対応 |
+|------|------|------|
+| 再計算中に別のrecalculate要求 | **HTTP 409 Conflict** で即拒否 | 30秒待って再実行。パニック不要 |
+| sync-standard実行中にsync-fof要求 | レイヤー依存チェックで拒否 | L2完了を待つ |
+| 409を受けた | 正常な排他動作 | **FAILではない。報告にエラーと書くな** |
+
+仕組み: `recalc_status.py` の `threading.Lock` + `start_recalculation()` で原子的排他。
+詳細: `projects/dm-signal.yaml` (c) database → recalculate_concurrency を参照。
+
 ## 2. DB地図
 
 > 核心ルール(接続先/書き込み禁止等) → `projects/dm-signal.yaml` (c) database を読め。
@@ -144,7 +157,7 @@ L2忍法FoF: 5忍法(分身/追い風/抜き身/変わり身/加速) × 3モー�
 BlockType enum定義: `backend/app/schemas/pipeline.py:18-37`
 ブロック登録: `backend/app/jobs/shared.py:208-253`
 
-### top_n同点時のtiebreakルール（cmd_217）
+### top_n同点時のtiebreakルール（cmd_217, L092補強）
 
 本番のselection blockは、top_n境界で同点が出たときに次の2方式で動作する。
 
@@ -161,11 +174,42 @@ BlockType enum定義: `backend/app/schemas/pipeline.py:18-37`
 補足:
 - `MultiViewMomentumFilterBlock` と `MonthlyReturnMomentumFilterBlock` も cutoff_score全包含方式。
 - 変わり身のみ本番実装がstrict sliceのため、GS側もstrict sliceで一致させる。
+- L092補強: float64同値タイでtop/worst重複が出る場合、ハイブリッド方式（基本=desc/asc別ソート、重複時=desc単一リスト両端スライス）で本番挙動に寄せる。
 
 GS修正経緯（cmd_215 → cmd_217）:
 - cmd_215でtop_n境界同点時のパリティ差分を検知。
 - cmd_217で影丸・霧丸の偵察結果を統合し、方式差（cutoff_score vs strict slice）を確定。
 - 追い風はcommit `9277881`で修正済み、加速はcutoff_score適用済み、抜き身はcmd_217 Phase 3で修正継続。
+
+### GS-本番パリティ統一原則（cmd_229: PD-011/012/013）
+
+#### 全忍法の計算方式統一（AC1/PD-013）
+
+- 対象忍法: 追い風・抜き身・加速・変わり身。
+- 上記4忍法は、**cumulative_return → pct_change** 方式で統一する。
+- 分身（`EqualWeightBlock`）はこの統一対象外（モメンタム選抜を持たない）。
+- 旧方式（`monthly_return`直接取得、`dropna`前提、NaN除外で成立させる計算）は禁止。
+
+#### 504日閾値の厳守（AC2/PD-011）
+
+- GS側も本番同様、**504日分の日次データが揃うまでCash扱い**とする。
+- 月次蓄積で先行して有効値を作る近道は不可。
+- とくに長lookback（12M/24M）では、初期化期間の扱い差が大きな乖離を生むため厳守する。
+
+#### モメンタム計算パス統一（AC2/PD-012）
+
+- GS側も本番と同じく、`cumulative_return`系列から `pct_change(mc)` でモメンタムを算出する。
+- `monthly_return`を直接使う方式は、本番コードパスと一致しないため不採用。
+- 「数学的に近い」実装より「本番と同一コードパス」を優先する（`projects/dm-signal.yaml` L076原則）。
+
+#### パリティ教訓の原則要約（AC3: L086-L092）
+
+- L086: top_n同点は `cutoff_score` 全包含方式を基本にし、本番 `MonthlyReturnMomentumFilterBlock` 準拠で揃える。
+- L087: 長lookback（12M/24M）でGS-本番の初期化期間差異が顕在化しやすい。
+- L089: パリティ検証はデータソース一致が前提。比較両辺で同一ソースを使う。
+- L090: GS `monthly_return` NaN系と本番 `cumulative_return` 系で、選出コンポーネント数が変わり得る。
+- L091: GSモメンタムは `cumulative_return` ratio方式を使う（prod方式はタイブレーク不一致を誘発）。
+- L092: float64同値タイはハイブリッド方式で重複を抑止し、strict slice実装と整合させる。
 
 ### パイプライン実行
 
@@ -653,3 +697,6 @@ bam-2, bam-6,
 - DB操作タスクのdescriptionに「殿PF除外」を明記必須
 - dry-runで残存PFリストを確認してから本削除
 - `projects/dm-signal.yaml` の `protected_portfolios` にリスト恒久化済み
+
+## 殿裁定履歴
+
