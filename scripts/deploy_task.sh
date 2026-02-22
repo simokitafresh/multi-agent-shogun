@@ -290,9 +290,19 @@ try:
     words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', task_text)
     keywords = list(set(w.lower() for w in words if len(w) > 3))
 
-    # Score each lesson
-    scored = []
+    # Keep only confirmed lessons for injection (missing status = confirmed)
+    confirmed_lessons = []
+    filtered_draft = 0
     for lesson in lessons:
+        l_status = str(lesson.get('status', 'confirmed')).lower()
+        if l_status != 'confirmed':
+            filtered_draft += 1
+            continue
+        confirmed_lessons.append(lesson)
+
+    # Score each confirmed lesson
+    scored = []
+    for lesson in confirmed_lessons:
         lid = lesson.get('id', '')
         l_title = str(lesson.get('title', ''))
         l_summary = str(lesson.get('summary', ''))
@@ -316,9 +326,9 @@ try:
     scored.sort(key=lambda x: -x[0])
     top = scored[:5]
 
-    # Fallback: if 0 matches, take most recent 3 lessons
+    # Fallback: if 0 matches, take most recent 3 confirmed lessons
     if not top:
-        recent = lessons[:3]  # lessons.yaml is already ordered by recency
+        recent = confirmed_lessons[:3]  # lessons.yaml is already ordered by recency
         top = [(0, l.get('id', ''), l.get('summary', '') or l.get('title', '')) for l in recent]
 
     related = [{'id': lid, 'summary': summary, 'reviewed': False} for _, lid, summary in top]
@@ -347,7 +357,7 @@ try:
         raise
 
     ids = [r['id'] for r in related]
-    print(f'[INJECT] Injected {len(related)} lessons: {ids} for project={project}', file=sys.stderr)
+    print(f'[INJECT] Injected {len(related)} lessons: {ids} for project={project} filtered_draft={filtered_draft}', file=sys.stderr)
 
 except Exception as e:
     print(f'[INJECT] ERROR: {e}', file=sys.stderr)
