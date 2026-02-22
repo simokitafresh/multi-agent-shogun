@@ -111,6 +111,11 @@ workflow:
     action: scan_all_reports
     target: "queue/reports/{ninja_name}_report.yaml"
     note: "Scan ALL reports, not just the one who woke you. Communication loss safety net."
+  - step: 10.1
+    action: check_progress
+    target: "queue/tasks/{ninja_name}.yaml"
+    condition: "長時間タスク稼働中の忍者がいる場合"
+    note: "task YAMLのprogress欄で中間進捗を確認。問題があれば早期にinbox_writeでアドバイスを送る"
   - step: 10.5
     action: report_merge_check
     command: "bash scripts/report_merge.sh cmd_XXX"
@@ -183,6 +188,12 @@ parallelization:
   dependent_tasks: sequential
   max_tasks_per_ninja: 1
   principle: "Split and parallelize whenever possible. Don't assign all work to 1 ninja."
+
+db_exclusive:
+  rule: "本番DBに負荷をかけるタスク(recalculate/パリティ検証/DB書込み)は直列配備。並列実行はタイムアウト・エラーの原因"
+  serial_tasks: [parity_verification, recalculate, db_write, bulk_db_read]
+  parallel_ok: [code_edit, file_analysis, doc_update, test_local]
+  enforcement: "DB操作を含むタスクが2件以上ある場合、blocked_byで直列化。同時にDB操作させるな"
 
 race_condition:
   id: RACE-001
@@ -360,6 +371,14 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
    - Update `streak.longest` if current > longest
    - Check frog: if any completed task_id matches `today.frog` → 🐸 notification, reset frog
 6. Send ntfy notification
+
+### Lessons Extraction (Step 11.8)
+
+auto_draft_lesson.shが忍者報告のlesson_candidateからdraft教訓を自動登録する（cmd_complete_gate.sh内で自動実行）。家老はdraft査読のみ行う。
+
+1. `bash scripts/lesson_review.sh {project_id}` でdraft一覧を確認
+2. 各draftに対してconfirm/edit/deleteを実施
+3. 全draft処理後、`bash scripts/cmd_complete_gate.sh {cmd_id}` がdraft残存チェック（draft残存→GATE BLOCK）
 
 ## genin偵察フロー（Step 1 運用詳細）
 

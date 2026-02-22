@@ -50,6 +50,11 @@ workflow:
     value: in_progress
   - step: 4
     action: execute_task
+    note: "AC完了ごとにtask YAMLのprogress欄を更新せよ(Step 4.5参照)"
+  - step: 4.5
+    action: update_progress
+    condition: "タスクにACが2個以上ある場合"
+    note: "各AC完了時にtask YAMLのprogress欄を追記。家老が中間進捗を確認できる"
   - step: 5
     action: write_report
     target: "queue/reports/{ninja_name}_report.yaml"
@@ -260,10 +265,12 @@ skill_candidate:
 lesson_candidate:
   found: false  # MANDATORY — true/false
   # If true, also include:
+  project: null     # e.g., "dm-signal" — auto_draft_lesson.shがプロジェクト判定に使用
   title: null       # e.g., "dm_signal.dbは本番DBではない"
   detail: null      # e.g., "本番はPostgreSQL on Render。SQLiteへのINSERTは無意味"
   # NOTE: 忍者はlessons.yamlに直接書き込まない。
-  #        家老が報告のlesson_candidateを精査し、lesson_write.shで正式登録する。
+  #        found:trueの報告はauto_draft_lesson.shがdraft教訓として自動登録する。
+  #        家老がconfirm/edit/deleteで査読し正式化する。
 decision_candidate:
   found: false  # MANDATORY — true/false
   # If true, also include:
@@ -310,6 +317,50 @@ Missing fields = incomplete report.
 - 前提が想定と違った（例: DBにデータがなかった）
 - 検証手法の選択理由（例: CPCVが乗り換え戦略にフィットしない理由）
 - 他の忍者への引継ぎ情報
+
+### lesson_candidateの重要性と書き方ガイドライン
+
+**lesson_candidate.found:trueの報告はauto_draft_lesson.shがdraft教訓として自動登録する。**
+質の高いlesson_candidateを書くことが教訓システム全体の品質を決める。
+
+**title** — 問題と解決策を1行で。「〜した→〜で解決」形式:
+- 良い例: `"experiments.dbのUUIDが本番と不一致→GFS CSVを直接読込で解決"`
+- 悪い例: `"DBの問題"` ← 何が問題か不明
+
+**detail** — 具体的な技術詳細（ファイル名、行番号、コマンド）:
+- 良い例: `"register_shijin_portfolios.pyがuuid4()で新規生成するため、experiments.dbのUUIDと本番PostgreSQLのUUIDが一致しない。scripts/analysis/grid_search/配下の7本をCSV直接読込に移行して解決"`
+- 悪い例: `"UUIDが違っていた"` ← 原因も対策も不明
+
+**project** — lesson_candidateにproject:フィールドを必ず含めよ。auto_draft_lesson.shが登録先を判定する。
+
+## Progress Reporting (Step 4.5)
+
+**ACが2個以上あるタスクでは、各AC完了時にtask YAMLのprogress欄を更新せよ。**
+
+家老が中間進捗を確認し、方向転換やアドバイスを送れるようにするための仕組み。
+
+### 手順
+
+1. AC完了時にtask YAMLを読む
+2. `progress:`欄に完了ACを追記
+3. 問題があればnotesに記載
+
+```yaml
+# task YAML内に追記する形式
+progress:
+  - "AC1: コード修正完了"
+  - "AC2: ミニパリティ 6/8 PASS"
+  - "AC3: 実行中 — N4_0500でFAIL、原因調査中"
+```
+
+### ルール
+
+| ルール | 理由 |
+|--------|------|
+| AC完了ごとに即座に更新 | 家老が進捗を把握できる |
+| 問題発生時も記載 | 早期に方向転換できる |
+| AC1個のタスクはスキップ可 | 最終報告で十分 |
+| 完了報告(Step 5)とは別 | progressは中間、reportは最終 |
 
 ## Race Condition (RACE-001)
 

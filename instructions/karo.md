@@ -112,6 +112,11 @@ workflow:
     action: scan_all_reports
     target: "queue/reports/{ninja_name}_report.yaml"
     note: "Scan ALL reports, not just the one who woke you. Communication loss safety net."
+  - step: 10.1
+    action: check_progress
+    target: "queue/tasks/{ninja_name}.yaml"
+    condition: "長時間タスク稼働中の忍者がいる場合"
+    note: "task YAMLのprogress欄で中間進捗を確認。問題があれば早期にinbox_writeでアドバイスを送る"
   - step: 10.5
     action: report_merge_check
     command: "bash scripts/report_merge.sh cmd_XXX"
@@ -184,6 +189,12 @@ parallelization:
   dependent_tasks: sequential
   max_tasks_per_ninja: 1
   principle: "Split and parallelize whenever possible. Don't assign all work to 1 ninja."
+
+db_exclusive:
+  rule: "本番DBに負荷をかけるタスク(recalculate/パリティ検証/DB書込み)は直列配備。並列実行はタイムアウト・エラーの原因"
+  serial_tasks: [parity_verification, recalculate, db_write, bulk_db_read]
+  parallel_ok: [code_edit, file_analysis, doc_update, test_local]
+  enforcement: "DB操作を含むタスクが2件以上ある場合、blocked_byで直列化。同時にDB操作させるな"
 
 race_condition:
   id: RACE-001
@@ -636,6 +647,21 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
 ❌ sasuke → output.md + kirimaru → output.md  (conflict!)
 ✅ sasuke → output_1.md + kirimaru → output_2.md
 ```
+
+## DB排他配備ルール (DB-Exclusive Deployment)
+
+**本番DBに負荷をかけるタスクは直列配備せよ。** 2体以上が同時にrecalculate/パリティ検証を走らせるとタイムアウト・エラーが発生する（実証済み）。
+
+| 直列必須（DB-heavy） | 並列OK（DB非依存） |
+|--------------------|-----------------|
+| パリティ検証(recalculate実行) | コード修正・ファイル編集 |
+| 本番PF登録・シグナル再計算 | ローカルテスト・分析 |
+| 大量DB読取り(全PF×全日付) | ドキュメント更新 |
+
+**運用**:
+1. DB操作を含むタスクが2件以上 → `blocked_by`で直列化
+2. コード修正は並列、DB操作フェーズだけ直列にすると効率的
+3. 例: 忍者AがDB操作中 → 忍者Bはコード修正まで進めてDB操作はblocked
 
 ## Parallelization
 
@@ -1226,13 +1252,23 @@ Step 11.7（ntfy通知）の後、Step 12（ペインリセット）の前。
 
 ### 手順
 
-1. 完了cmdの全報告YAML（`queue/reports/{ninja}_report.yaml`）を読む
-2. 各報告の `result.lessons:` フィールドを収集
-3. 家老自身の観察（配備・デバッグ・方針変更で得た知見）も追加
-4. プロジェクト別のlessonsファイルに追記:
+auto_draft_lesson.shが忍者報告のlesson_candidateからdraft教訓を自動登録する
+（cmd_complete_gate.sh内で自動実行される）。家老はdraft査読のみ行う。
+
+1. `bash scripts/lesson_review.sh {project_id}` でdraft一覧を確認
+2. 各draftに対して以下のいずれかを実施:
+   - **confirm**: `bash scripts/lesson_confirm.sh {project_id} {lesson_id}` — 品質OKなら確定
+   - **edit**: `bash scripts/lesson_edit.sh {project_id} {lesson_id} "{new_title}" "{new_detail}"` — 内容修正して確定
+   - **delete**: `bash scripts/lesson_delete.sh {project_id} {lesson_id}` — 不要・低品質なら削除
+3. 家老自身の観察（配備・デバッグ・方針変更で得た知見）がある場合のみ手動追加:
    - `bash scripts/lesson_write.sh {project_id} "{title}" "{detail}" "{source_cmd}" "karo"`
-   - 書き込み先はSSOT（外部プロジェクト側）。sync_lessons.shがキャッシュを自動更新
-5. 重複チェック: 既存の教訓と内容が被るものはスキップ
+4. 全draft処理後、`bash scripts/cmd_complete_gate.sh {cmd_id}` がdraft残存チェックを実施
+   - draft教訓が残っている → GATE BLOCK（査読完了まで通過不可）
+   - draft教訓ゼロ → GATE CLEAR
+
+**旧手順からの変更点**:
+- 忍者報告のlesson_candidateからの手動抽出+lesson_write.shは不要（auto_draftが自動処理）
+- 家老の役割は「査読」（confirm/edit/delete）に集中
 
 ### 書き方の基準
 

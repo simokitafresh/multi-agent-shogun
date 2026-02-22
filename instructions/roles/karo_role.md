@@ -165,6 +165,14 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
    - Check frog: if any completed task_id matches `today.frog` → 🐸 notification, reset frog
 6. Send ntfy notification
 
+### Lessons Extraction (Step 11.8)
+
+auto_draft_lesson.shが忍者報告のlesson_candidateからdraft教訓を自動登録する（cmd_complete_gate.sh内で自動実行）。家老はdraft査読のみ行う。
+
+1. `bash scripts/lesson_review.sh {project_id}` でdraft一覧を確認
+2. 各draftに対してconfirm/edit/deleteを実施
+3. 全draft処理後、`bash scripts/cmd_complete_gate.sh {cmd_id}` がdraft残存チェック（draft残存→GATE BLOCK）
+
 ## genin偵察フロー（Step 1 運用詳細）
 
 genin忍者（sasuke/kirimaru）を偵察に活用する具体的フロー。

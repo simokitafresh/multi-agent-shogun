@@ -49,6 +49,11 @@ workflow:
     value: in_progress
   - step: 4
     action: execute_task
+    note: "AC完了ごとにtask YAMLのprogress欄を更新せよ(Step 4.5参照)"
+  - step: 4.5
+    action: update_progress
+    condition: "タスクにACが2個以上ある場合"
+    note: "各AC完了時にtask YAMLのprogress欄を追記。家老が中間進捗を確認できる"
   - step: 5
     action: write_report
     target: "queue/reports/{ninja_name}_report.yaml"
@@ -151,7 +156,12 @@ Missing fields = incomplete report.
 **必ず全フィールドを含めてください:**
 
 - `lesson_candidate:` — found: true/false は**必須**。省略禁止。
-  found: true の場合は title: と detail: も必須。
+  found: true の場合は project:, title:, detail: も必須。
+  **found:trueの報告はauto_draft_lesson.shがdraft教訓として自動登録する。**
+  質の高いlesson_candidateを書くことが教訓システム全体の品質を決める。
+  - title: 問題と解決策を1行で（「〜した→〜で解決」形式）
+  - detail: 具体的な技術詳細（ファイル名、行番号、コマンド）
+  - project: 教訓の登録先プロジェクトID
 - `lesson_referenced:` — related_lessonsを参照した場合はIDリストを記載。
   参照なしでも `lesson_referenced: []` を必ず記載。
 - `decision_candidate:` — found: true/false は**必須**。

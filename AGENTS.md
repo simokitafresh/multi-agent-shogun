@@ -244,6 +244,10 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 下忍(genin) | sasuke(2) kirimaru(3) | settings.yaml参照 |
 | 上忍(jonin) | hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
 
+## Deployment Rules
+- DB排他|本番DB操作(recalculate/パリティ検証)は直列配備。並列タイムアウト実証済み|karo.md参照
+- 進捗報告|忍者はAC完了ごとにtask YAMLのprogress欄を更新|ashigaru.md Step 4.5参照
+
 ## DM-Signal
 
 詳細 → `context/dm-signal.md` を読め。推測するな。
