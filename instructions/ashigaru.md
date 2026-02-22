@@ -284,6 +284,12 @@ decision_candidate:
 lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリスト
   # 参照なしなら lesson_referenced: []
   # related_lessonsが空 or なしでも lesson_referenced: [] を必ず記載
+
+# パリティ検証報告の追加フィールド（パリティ検証タスク時に必須）
+# data_sourceはパリティ検証の信頼性を担保する必須情報。省略はFAIL扱い。
+parity_data_source:
+  gs_side: "experiments.db"                    # GS側データソースを明記
+  prod_side: "PostgreSQL(DATABASE_URL)"        # 本番側データソースを明記
 ```
 
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate, lesson_referenced.
