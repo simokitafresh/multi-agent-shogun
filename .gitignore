@@ -122,6 +122,7 @@
 !scripts/lesson_confirm.sh
 !scripts/lesson_delete.sh
 !scripts/lesson_edit.sh
+!scripts/clear_prep_check.sh
 
 
 # Tasks (SSOT lessons only)
