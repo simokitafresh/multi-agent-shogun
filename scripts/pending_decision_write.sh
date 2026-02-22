@@ -180,6 +180,9 @@ try:
             d['resolved_at'] = timestamp
             d['resolved_content'] = resolved_content
             d['resolved_by'] = resolved_by
+            # context_synced: false unless auto-reconciled or test
+            if resolved_by != 'reconcile' and not d.get('source_cmd', '').startswith('TEST'):
+                d['context_synced'] = False
             found = True
             break
 

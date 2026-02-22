@@ -612,6 +612,36 @@ else
     echo "  WARN: karo inbox file not found: ${KARO_INBOX}"
 fi
 
+# ─── 未反映PD検出（WARNのみ、ブロックしない） ───
+echo ""
+echo "Pending decision context sync check:"
+PD_FILE="$SCRIPT_DIR/queue/pending_decisions.yaml"
+if [ -f "$PD_FILE" ]; then
+    unsynced_pds=$(python3 -c "
+import yaml, sys
+try:
+    with open('$PD_FILE') as f:
+        data = yaml.safe_load(f)
+    if not data or not data.get('decisions'):
+        sys.exit(0)
+    for d in data['decisions']:
+        if d.get('source_cmd') == '${CMD_ID}' and d.get('status') == 'resolved' and d.get('context_synced') == False:
+            print(d.get('id', '???'))
+except:
+    pass
+" 2>/dev/null)
+
+    if [ -n "$unsynced_pds" ]; then
+        while IFS= read -r pd_id; do
+            echo "  ⚠️ WARNING: ${pd_id} resolved but context not synced"
+        done <<< "$unsynced_pds"
+    else
+        echo "  OK (no unsynced resolved PDs for ${CMD_ID})"
+    fi
+else
+    echo "  SKIP (pending_decisions.yaml not found)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
