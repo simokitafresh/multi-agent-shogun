@@ -473,6 +473,81 @@ except Exception as e:
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
 
+# ─── context鮮度チェック（穴2対策: cmd_239） ───
+check_context_freshness() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        return 0
+    fi
+
+    local project
+    project=$(grep -m1 '^  project:' "$task_file" 2>/dev/null | sed 's/^  project:[[:space:]]*//' || true)
+    if [ -z "$project" ]; then
+        log "context_freshness: SKIP (no project field)"
+        return 0
+    fi
+
+    local projects_yaml="$SCRIPT_DIR/config/projects.yaml"
+    if [ ! -f "$projects_yaml" ]; then
+        log "context_freshness: SKIP (projects.yaml not found)"
+        return 0
+    fi
+
+    local context_file
+    context_file=$(python3 -c "
+import yaml, sys
+try:
+    with open('$projects_yaml') as f:
+        data = yaml.safe_load(f)
+    for p in data.get('projects', []):
+        if p.get('id') == '$project':
+            print(p.get('context_file', ''))
+            break
+except:
+    pass
+" 2>/dev/null)
+
+    if [ -z "$context_file" ]; then
+        log "context_freshness: SKIP (no context_file for project=$project)"
+        return 0
+    fi
+
+    local full_path="$SCRIPT_DIR/$context_file"
+    if [ ! -f "$full_path" ]; then
+        log "context_freshness: WARNING (file not found: $context_file)"
+        echo "⚠️ WARNING: $context_file not found" >&2
+        return 0
+    fi
+
+    local last_updated
+    last_updated=$(grep -o 'last_updated: [0-9-]*' "$full_path" 2>/dev/null | head -1 | cut -d' ' -f2)
+
+    if [ -z "$last_updated" ]; then
+        log "context_freshness: ⚠️ WARNING: $context_file has no last_updated metadata"
+        echo "⚠️ WARNING: $context_file has no last_updated metadata (date unknown)" >&2
+        return 0
+    fi
+
+    local days_old
+    days_old=$(python3 -c "
+from datetime import date
+try:
+    lu = date.fromisoformat('$last_updated')
+    print((date.today() - lu).days)
+except:
+    print(-1)
+" 2>/dev/null)
+
+    if [ "$days_old" -ge 14 ] 2>/dev/null; then
+        log "context_freshness: ⚠️ WARNING: $context_file last updated ${days_old} days ago"
+        echo "⚠️ WARNING: $context_file last updated ${days_old} days ago" >&2
+    else
+        log "context_freshness: OK ($context_file updated ${days_old} days ago)"
+    fi
+
+    return 0
+}
+
 # ─── 入口門番: 前タスクの教訓未消化チェック ───
 check_entrance_gate() {
     local task_file="$1"
@@ -549,6 +624,9 @@ inject_related_lessons "$TASK_FILE" || true
 
 # 偵察報告自動注入（失敗してもデプロイは継続）
 inject_reports_to_read "$TASK_FILE" || true
+
+# context鮮度チェック（失敗してもデプロイは継続）
+check_context_freshness "$TASK_FILE" || true
 
 # 状態に応じた処理
 if [ "$CTX_PCT" -le 0 ] 2>/dev/null; then
