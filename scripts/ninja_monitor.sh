@@ -68,6 +68,9 @@ declare -A PENDING_CMD_LAST_NUDGE   # pending cmd最終nudge時刻 — key: "cmd
 declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
 declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
 declare -A RENUDGE_COUNT          # 未読再nudgeカウンター — key: agent_name, value: 連続再nudge回数
+declare -A RENUDGE_FINGERPRINT    # 未読IDのfingerprint — key: agent_name, value: md5 hash (L029: ID集合ベース)
+declare -A RENUDGE_LAST_SEND      # 最終renudge送信時刻 — key: agent_name, value: epoch秒
+declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
@@ -76,6 +79,7 @@ for name in "${NINJA_NAMES[@]}"; do
 done
 
 MAX_RENUDGE=5               # 未読再nudge上限回数（同一未読状態に対して）
+RENUDGE_BACKOFF=600         # 低頻度バックオフ再通知間隔（10分=600秒）— 同一fingerprint時の安全網
 MAX_PENDING_NUDGE=5         # pending cmd同一cmd再起動nudge上限回数
 KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
@@ -505,8 +509,9 @@ handle_busy() {
         log "ACTIVE: $name resumed work"
     fi
     PREV_STATE[$name]="busy"
-    # 作業再開 → 停滞追跡リセット
+    # 作業再開 → 停滞追跡リセット + fingerprint リセット（次idle時に新鮮な判定を保証）
     unset STALL_FIRST_SEEN[$name]
+    RENUDGE_FINGERPRINT[$name]=""
 }
 
 # ─── 停滞検知（assigned+idle+15分超） ───
@@ -648,9 +653,9 @@ check_stale_cmds() {
     done < <(list_pending_cmds)
 }
 
-# ─── pending cmd検知（idle家老の自動再起動） ───
-# cmdがpendingの間、家老がidleなら inbox_write(cmd_pending)で再起動nudge
-# 同一cmdへの無限nudgeは回数上限+デバウンスで抑制
+# ─── pending cmd検知（遷移駆動 — cmd_255改修） ───
+# 新規pending cmd出現時のみ家老に1回通知。同一cmdの繰り返し送信を廃止。
+# 長時間未処理のエスカレーションは check_stale_cmds() が担当。
 check_karo_pending_cmd() {
     local karo_pane="shogun:2.1"
 
@@ -660,54 +665,39 @@ check_karo_pending_cmd() {
         return
     fi
 
-    local now
-    now=$(date +%s)
-    local pending_ids=()
+    # 現在のpending cmd集合を収集し、新規のみ通知
+    local -a current_ids=()
 
     while IFS='|' read -r cmd_id cmd_timestamp; do
         [ -z "$cmd_id" ] && continue
-        pending_ids+=("$cmd_id")
+        current_ids+=("$cmd_id")
 
-        # stale通知済みcmdは重複通知を避ける
-        if [ -n "${STALE_CMD_NOTIFIED[$cmd_id]:-}" ]; then
-            continue
-        fi
+        # 既知のpending → スキップ（遷移なし。stale_cmdsがエスカレーション担当）
+        [ "${PREV_PENDING_SET[$cmd_id]:-}" = "1" ] && continue
 
-        local count="${PENDING_CMD_NUDGE_COUNT[$cmd_id]:-0}"
-        if [ "$count" -ge "$MAX_PENDING_NUDGE" ]; then
-            continue
-        fi
+        # stale通知済みcmdは重複回避
+        [ -n "${STALE_CMD_NOTIFIED[$cmd_id]:-}" ] && continue
 
-        local last_sent="${PENDING_CMD_LAST_NUDGE[$cmd_id]:-0}"
-        if [ $((now - last_sent)) -lt $PENDING_NUDGE_DEBOUNCE ]; then
-            continue
-        fi
-
-        local msg="cmd_pending ${cmd_id} pending cmd検知: ${cmd_id}。shogun_to_karo.yamlを確認し着手せよ。"
-        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" cmd_pending ninja_monitor >> "$LOG" 2>&1; then
-            PENDING_CMD_NUDGE_COUNT[$cmd_id]=$((count + 1))
-            PENDING_CMD_LAST_NUDGE[$cmd_id]=$now
-            log "PENDING-CMD-NUDGE: ${cmd_id} -> karo (${PENDING_CMD_NUDGE_COUNT[$cmd_id]}/${MAX_PENDING_NUDGE})"
-        else
-            log "ERROR: Failed pending cmd nudge for ${cmd_id}"
-        fi
+        # 新規pending cmd → 1回通知
+        log "PENDING-CMD-NEW: ${cmd_id} -> karo (new pending detected)"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "cmd_pending ${cmd_id} 新規pending検知。shogun_to_karo.yamlを確認し着手せよ。" cmd_pending ninja_monitor >> "$LOG" 2>&1
     done < <(list_pending_cmds)
 
-    # pending解消済みcmdのカウンタをリセット
-    local tracked_id still_pending pending_id
-    for tracked_id in "${!PENDING_CMD_NUDGE_COUNT[@]}"; do
-        still_pending=0
-        for pending_id in "${pending_ids[@]}"; do
-            if [ "$tracked_id" = "$pending_id" ]; then
-                still_pending=1
-                break
-            fi
+    # PREV_PENDING_SETを現在の集合に同期
+    # 消えたcmdを除去
+    for old_id in "${!PREV_PENDING_SET[@]}"; do
+        local found=0
+        for cid in "${current_ids[@]}"; do
+            [ "$old_id" = "$cid" ] && found=1 && break
         done
-        if [ $still_pending -eq 0 ]; then
-            unset PENDING_CMD_NUDGE_COUNT[$tracked_id]
-            unset PENDING_CMD_LAST_NUDGE[$tracked_id]
-            log "PENDING-CMD-RESET: ${tracked_id} no longer pending, counters cleared"
+        if [ $found -eq 0 ]; then
+            unset PREV_PENDING_SET[$old_id]
+            log "PENDING-CMD-RESOLVED: ${old_id} no longer pending"
         fi
+    done
+    # 新規を追加
+    for cid in "${current_ids[@]}"; do
+        PREV_PENDING_SET[$cid]="1"
     done
 }
 
@@ -773,9 +763,30 @@ check_destructive_commands() {
     done
 }
 
-# ─── 未読放置検知+再nudge (cmd_188) ───
-# idle状態のエージェントのinboxに未読メッセージがある場合、再nudgeを送信
-# inbox_watcherのnudgeが一発きりで消失する構造問題への対策
+# ─── 未読メッセージのfingerprint算出 (cmd_255) ───
+# unread msg IDのsort後hash。countではなくID集合をキー化(L029)。
+# $1: inbox_file path
+# 出力: md5 hash文字列（未読0件なら空文字）
+get_unread_fingerprint() {
+    local inbox_file="$1"
+    [ ! -f "$inbox_file" ] && echo "" && return
+
+    local ids
+    ids=$(awk '
+        /^[[:space:]]*id:/ { current_id = $2 }
+        /read:[[:space:]]*false/ { if (current_id != "") print current_id }
+    ' "$inbox_file" 2>/dev/null | sort | tr '\n' '|')
+
+    if [ -z "$ids" ]; then
+        echo ""
+        return
+    fi
+    echo "$ids" | md5sum | cut -d' ' -f1
+}
+
+# ─── 未読放置検知+再nudge (cmd_188→cmd_255状態遷移化) ───
+# 状態遷移ベース: fingerprint変化時のみ即送信、同一fingerprint時はバックオフ安全網
+# inbox_watcherとの二重経路増幅(L029)を抑止する
 count_unread_messages() {
     local inbox_file="$1"
     local raw_count
@@ -793,12 +804,14 @@ count_unread_messages() {
 
 check_inbox_renudge() {
     local all_agents=("karo" "${NINJA_NAMES[@]}")
+    local now=$(date +%s)
 
     for name in "${all_agents[@]}"; do
         local inbox_file="$SCRIPT_DIR/queue/inbox/${name}.yaml"
 
         # inbox file存在チェック
         if [ ! -f "$inbox_file" ]; then
+            RENUDGE_FINGERPRINT[$name]=""
             RENUDGE_COUNT[$name]=0
             continue
         fi
@@ -809,11 +822,12 @@ check_inbox_renudge() {
         # 防御: 非数値は0に強制変換
         [[ ! "$unread_count" =~ ^[0-9]+$ ]] && unread_count=0
 
-        # 未読0 → カウンターリセット＆スキップ
+        # 未読0 → fingerprint+カウンターリセット＆スキップ
         if [ "$unread_count" -eq 0 ]; then
-            if [ "${RENUDGE_COUNT[$name]:-0}" -gt 0 ]; then
-                log "RENUDGE-RESET: $name unread=0, counter reset (was ${RENUDGE_COUNT[$name]})"
+            if [ -n "${RENUDGE_FINGERPRINT[$name]}" ] || [ "${RENUDGE_COUNT[$name]:-0}" -gt 0 ]; then
+                log "RENUDGE-RESET: $name unread=0, fingerprint+counter reset"
             fi
+            RENUDGE_FINGERPRINT[$name]=""
             RENUDGE_COUNT[$name]=0
             continue
         fi
@@ -833,27 +847,39 @@ check_inbox_renudge() {
             continue
         fi
 
-        # idle + 未読あり → 再nudge候補
-        local count="${RENUDGE_COUNT[$name]:-0}"
+        # fingerprint算出（L029: unread ID集合のsort後hash）
+        local current_fp
+        current_fp=$(get_unread_fingerprint "$inbox_file")
+        local prev_fp="${RENUDGE_FINGERPRINT[$name]:-}"
 
-        if [ "$count" -ge "$MAX_RENUDGE" ]; then
-            # 上限到達 → ログのみ（5サイクルに1回、スパム防止）
-            if [ $((cycle % 5)) -eq 0 ]; then
-                log "RENUDGE-MAX: $name reached MAX_RENUDGE=$MAX_RENUDGE (unread=$unread_count), manual intervention needed"
-            fi
-            continue
-        fi
-
-        # 再nudge送信（二重ガード: unread>0でなければ絶対に送らない）
-        if [ "$unread_count" -gt 0 ] 2>/dev/null; then
-            log "RENUDGE: $name idle+unread=$unread_count, sending inbox${unread_count} (attempt $((count+1))/$MAX_RENUDGE)"
+        # ─── 状態遷移判定 (cmd_255) ───
+        if [ "$current_fp" != "$prev_fp" ]; then
+            # fingerprint変化 = 新規未読出現 or 既読化で集合変化 → 即送信
+            log "RENUDGE-TRANSITION: $name fingerprint changed (unread=$unread_count), sending inbox${unread_count}"
             tmux send-keys -t "$target" "inbox${unread_count}" Enter
+            RENUDGE_FINGERPRINT[$name]="$current_fp"
+            RENUDGE_LAST_SEND[$name]=$now
+            RENUDGE_COUNT[$name]=1
         else
-            log "RENUDGE-GUARD: $name unread=$unread_count blocked by double-guard"
-            RENUDGE_COUNT[$name]=0
-            continue
+            # 同一fingerprint = 未読集合変化なし → バックオフ再通知判定
+            local last_send="${RENUDGE_LAST_SEND[$name]:-0}"
+            local elapsed=$((now - last_send))
+            local count="${RENUDGE_COUNT[$name]:-0}"
+
+            if [ "$count" -ge "$MAX_RENUDGE" ]; then
+                # 上限到達 → ログのみ（5サイクルに1回）
+                if [ $((cycle % 5)) -eq 0 ]; then
+                    log "RENUDGE-MAX: $name reached MAX_RENUDGE=$MAX_RENUDGE (unread=$unread_count)"
+                fi
+            elif [ $elapsed -ge $RENUDGE_BACKOFF ]; then
+                # バックオフ期間経過 → 安全網の低頻度再通知
+                log "RENUDGE-BACKOFF: $name same fingerprint but ${elapsed}s >= ${RENUDGE_BACKOFF}s, safety re-nudge ($((count+1))/$MAX_RENUDGE)"
+                tmux send-keys -t "$target" "inbox${unread_count}" Enter
+                RENUDGE_LAST_SEND[$name]=$now
+                RENUDGE_COUNT[$name]=$((count + 1))
+            fi
+            # else: バックオフ期間内 → 何もしない（同一状態の繰り返し送信を止める）
         fi
-        RENUDGE_COUNT[$name]=$((count + 1))
     done
 }
 
