@@ -642,6 +642,56 @@ else
     echo "  SKIP (pending_decisions.yaml not found)"
 fi
 
+# ─── 穴4: 調査恒久化チェック（WARNのみ、ブロックしない） ───
+echo ""
+echo "Recon knowledge persistence check (穴4):"
+# purposeを取得（append_changelog内と同じawk）
+CMD_PURPOSE=$(awk -v id="  - id: ${CMD_ID}" '
+    $0 == id { found=1; next }
+    found && /^  - id:/ { exit }
+    found && /^    purpose:/ { sub(/^    purpose: *"?/, ""); sub(/"$/, ""); print; exit }
+' "$YAML_FILE")
+
+IS_RECON=false
+if echo "$CMD_PURPOSE" | grep -qE '偵察|調査|棚卸し|recon|investigation'; then
+    IS_RECON=true
+fi
+
+if [ "$IS_RECON" = true ]; then
+    if [ -n "$CMD_PROJECT" ]; then
+        CONTEXT_FILE="$SCRIPT_DIR/context/${CMD_PROJECT}.md"
+        PROJECT_YAML="$SCRIPT_DIR/projects/${CMD_PROJECT}.yaml"
+        HAS_CHANGE=false
+
+        # git diffで変更有無を確認（ステージ済み+未ステージ両方）
+        if [ -f "$CONTEXT_FILE" ] && git -C "$SCRIPT_DIR" diff HEAD -- "context/${CMD_PROJECT}.md" 2>/dev/null | grep -q '^[+-]'; then
+            HAS_CHANGE=true
+        fi
+        if [ -f "$PROJECT_YAML" ] && git -C "$SCRIPT_DIR" diff HEAD -- "projects/${CMD_PROJECT}.yaml" 2>/dev/null | grep -q '^[+-]'; then
+            HAS_CHANGE=true
+        fi
+        # ステージ済みの変更もチェック
+        if [ "$HAS_CHANGE" = false ]; then
+            if [ -f "$CONTEXT_FILE" ] && git -C "$SCRIPT_DIR" diff --cached -- "context/${CMD_PROJECT}.md" 2>/dev/null | grep -q '^[+-]'; then
+                HAS_CHANGE=true
+            fi
+            if [ -f "$PROJECT_YAML" ] && git -C "$SCRIPT_DIR" diff --cached -- "projects/${CMD_PROJECT}.yaml" 2>/dev/null | grep -q '^[+-]'; then
+                HAS_CHANGE=true
+            fi
+        fi
+
+        if [ "$HAS_CHANGE" = true ]; then
+            echo "  OK (context/${CMD_PROJECT}.md or projects/${CMD_PROJECT}.yaml has changes)"
+        else
+            echo "  ⚠️ 穴4: 調査結果が知識基盤に未反映。context/*.md or projects/*.yaml を更新せよ"
+        fi
+    else
+        echo "  SKIP (project not found in cmd — cannot check knowledge files)"
+    fi
+else
+    echo "  SKIP (non-recon cmd: purpose does not contain recon keywords)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
