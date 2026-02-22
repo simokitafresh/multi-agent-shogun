@@ -33,6 +33,8 @@ LOCKFILE="${INBOX}.lock"
 SEND_KEYS_TIMEOUT=5  # seconds — prevents hang (PID 274337 incident)
 DEBOUNCE_SEC=10
 DEBOUNCE_FILE="/tmp/inbox_watcher_last_nudge_${AGENT_ID}"
+FINGERPRINT_FILE="/tmp/inbox_watcher_fingerprint_${AGENT_ID}"
+BACKOFF_SEC=600  # 10 minutes — safety net re-notification for stale unread
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -75,9 +77,11 @@ try:
     unread = [m for m in data['messages'] if not m.get('read', False)]
     special_types = ('clear_command', 'model_switch')
     specials = [m for m in unread if m.get('type') in special_types]
-    normal_count = len(unread) - len(specials)
+    normal = [m for m in unread if m.get('type') not in special_types]
+    normal_ids = sorted([m.get('id', '') for m in normal])
     print(json.dumps({
-        'count': normal_count,
+        'count': len(normal),
+        'normal_ids': normal_ids,
         'specials': [{'type': m.get('type',''), 'content': m.get('content','')} for m in specials],
         'has_specials': len(specials) > 0
     }))
@@ -291,13 +295,48 @@ for s in data.get('specials', []):
         done
     fi
 
-    # Send wake-up nudge for normal messages
+    # Send wake-up nudge for normal messages (fingerprint dedup)
     local normal_count
     normal_count=$(echo "$info" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count',0))" 2>/dev/null)
 
     if [ "$normal_count" -gt 0 ] 2>/dev/null; then
-        echo "[$(date)] $normal_count normal unread message(s) for $AGENT_ID" >&2
-        send_wakeup "$normal_count"
+        # Build fingerprint from sorted unread normal message IDs
+        local current_fp
+        current_fp=$(echo "$info" | python3 -c "import sys,json; ids=json.load(sys.stdin).get('normal_ids',[]); print(','.join(ids))" 2>/dev/null)
+
+        local prev_fp=""
+        if [ -f "$FINGERPRINT_FILE" ]; then
+            prev_fp=$(cat "$FINGERPRINT_FILE" 2>/dev/null || true)
+        fi
+
+        if [ "$current_fp" != "$prev_fp" ]; then
+            # Fingerprint changed → new unread messages arrived
+            echo "[$(date)] [FP-CHANGE] Unread set changed for $AGENT_ID ($normal_count unread), sending nudge" >&2
+            echo "$current_fp" > "$FINGERPRINT_FILE"
+            send_wakeup "$normal_count"
+        else
+            # Same fingerprint → check backoff for safety net re-notification
+            local fp_age=0
+            if [ -f "$FINGERPRINT_FILE" ]; then
+                local fp_mtime
+                fp_mtime=$(stat -c %Y "$FINGERPRINT_FILE" 2>/dev/null || echo 0)
+                fp_age=$(( $(date +%s) - fp_mtime ))
+            fi
+
+            if [ "$fp_age" -ge "$BACKOFF_SEC" ]; then
+                echo "[$(date)] [BACKOFF] Stale unread for ${fp_age}s >= ${BACKOFF_SEC}s, re-notifying $AGENT_ID" >&2
+                touch "$FINGERPRINT_FILE"  # reset mtime for next backoff cycle
+                send_wakeup "$normal_count"
+            else
+                echo "[$(date)] [FP-SAME] Same unread set (age ${fp_age}s), skipping nudge for $AGENT_ID" >&2
+            fi
+        fi
+    else
+        # No unread → clear fingerprint (reset for next new message)
+        if [ -f "$FINGERPRINT_FILE" ]; then
+            rm -f "$FINGERPRINT_FILE"
+            echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
+        fi
     fi
 }
 
