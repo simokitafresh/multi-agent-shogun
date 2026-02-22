@@ -191,7 +191,7 @@ for l in lessons:
 
 # Sort by ID number descending (newest/highest first), limit to 20
 lessons.sort(key=lambda x: int(x['id'].replace('L', '')), reverse=True)
-lessons = lessons[:20]
+lessons = lessons[:50]
 
 # Build output
 data = {
