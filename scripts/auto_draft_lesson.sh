@@ -135,8 +135,8 @@ PYEOF
     fi
 fi
 
-# Call lesson_write.sh with --status confirmed (穴1 auto-apply: 即座に注入対象)
-echo "[auto_draft] Registering confirmed: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
-bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed
+# Call lesson_write.sh with --status draft
+echo "[auto_draft] Registering draft: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
+bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status draft
 
-echo "[auto_draft] Confirmed lesson registered successfully"
+echo "[auto_draft] Draft registered successfully"

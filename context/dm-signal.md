@@ -697,6 +697,3 @@ bam-2, bam-6,
 - DB操作タスクのdescriptionに「殿PF除外」を明記必須
 - dry-runで残存PFリストを確認してから本削除
 - `projects/dm-signal.yaml` の `protected_portfolios` にリスト恒久化済み
-
-## 殿裁定履歴
-
