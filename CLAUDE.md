@@ -251,6 +251,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 ## DM-Signal
 
 詳細 → `context/dm-signal.md` を読め。推測するな。
+フロントエンド → `context/dm-signal-frontend.md` を読め。
 
 - パス|`/mnt/c/Python_app/DM-signal/`
 - 四神|青龍(DM2) 朱雀(DM3) 白虎(DM6) 玄武(DM7+)|矛+盾分離(Tobin)
