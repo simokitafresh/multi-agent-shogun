@@ -117,6 +117,11 @@
 !scripts/count_gate_metrics.sh
 !scripts/pending_decision_write.sh
 !scripts/cmd_halt.sh
+!scripts/auto_draft_lesson.sh
+!scripts/lesson_review.sh
+!scripts/lesson_confirm.sh
+!scripts/lesson_delete.sh
+!scripts/lesson_edit.sh
 
 
 # Tasks (SSOT lessons only)
