@@ -180,3 +180,24 @@
 - **出典**: kagemaru(cmd_237統合)
 - **記録者**: karo
 - SSOT100件中14%陳腐化。context方針レベル20-30%/広義60-80%。根本原因=追加only削除never。解決=deprecation連鎖(supersedes/deprecated_by)+sync_lessons.sh 20件制限緩和(80件未注入)。5メカニズム3Phase段階導入推奨。
+
+### L027: reports/上書き問題は統合タスク割当パターンで実害発生する
+- **日付**: 2026-02-22
+- **出典**: cmd_236
+- **記録者**: hanzo
+- **status**: confirmed
+- 偵察と統合を同一忍者に割り当てると、統合タスクのreport初期化で偵察報告が消失する。
+L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統合者を別忍者にする
+(2)report archive機能を実装する(L024根本解決) のいずれか。
+
+### L028: CI Run番号とcommit SHAの整合性確認
+- **日付**: 2026-02-22
+- **出典**: cmd_248
+- **記録者**: karo
+- タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA 06829a3と記載されていた。調査開始前にgh run listで実データを確認すべし
+
+### L029: nudge嵐主因は二重経路(watcher再送+monitor再送)の合流増幅
+- **日付**: 2026-02-22
+- **出典**: cmd_255
+- **記録者**: sasuke
+- inbox_watcherの60秒安全網とninja_monitorのrenudge/cmd_pending再送が独立に動作するため、受信側が1回取り逃すと同一未読に対するnudgeが多重化する。再送は単一路化し、状態遷移またはfingerprint基準で制御すべき。fingerprint=unread ID集合のsort後hash。countではなくID集合をキー化。
