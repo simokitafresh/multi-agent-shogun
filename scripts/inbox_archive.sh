@@ -21,11 +21,11 @@ if [ ! -f "$INBOX" ]; then
     exit 0
 fi
 
-ARCHIVE_DIR="$SCRIPT_DIR/queue/archive"
+ARCHIVE_DIR="$SCRIPT_DIR/archive/inbox"
 mkdir -p "$ARCHIVE_DIR"
 
 DATE_STAMP=$(date +%Y%m%d)
-ARCHIVE_FILE="$ARCHIVE_DIR/inbox_${AGENT}_${DATE_STAMP}.yaml"
+ARCHIVE_FILE="$ARCHIVE_DIR/${AGENT}_${DATE_STAMP}.yaml"
 
 # Atomic archive with flock (same lock as inbox_write.sh)
 attempt=0
