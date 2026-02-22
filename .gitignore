@@ -106,6 +106,7 @@
 !scripts/deploy_task.sh
 !scripts/cmd_absorb.sh
 !scripts/sync_lessons.sh
+!scripts/lesson_status_migration.sh
 !scripts/lib/
 !scripts/lib/cli_lookup.sh
 !scripts/lib/safe_rm.sh
