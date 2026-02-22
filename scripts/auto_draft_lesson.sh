@@ -1,7 +1,7 @@
 #!/bin/bash
-# auto_draft_lesson.sh — 報告YAMLのlesson_candidateからdraft教訓を自動登録
+# auto_draft_lesson.sh — 報告YAMLのlesson_candidateからconfirmed教訓を自動登録
 # Usage: bash scripts/auto_draft_lesson.sh <report_yaml_path>
-# - found: true → lesson_write.sh --status draft で登録
+# - found: true → lesson_write.sh --status confirmed で登録
 # - found: false → 何もしない (exit 0)
 # - 重複チェック: 同一title+source_cmdが既存ならスキップ (L006対応)
 
@@ -135,8 +135,8 @@ PYEOF
     fi
 fi
 
-# Call lesson_write.sh with --status draft
-echo "[auto_draft] Registering draft: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
-bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status draft
+# Call lesson_write.sh with --status confirmed
+echo "[auto_draft] Registering confirmed lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
+bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed
 
-echo "[auto_draft] Draft registered successfully"
+echo "[auto_draft] Confirmed lesson registered successfully"
