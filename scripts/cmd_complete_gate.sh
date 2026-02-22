@@ -147,6 +147,27 @@ fi
 
 ALL_GATES=("${ALWAYS_REQUIRED[@]}" "${CONDITIONAL[@]}")
 
+# ─── 忍者報告からlesson_candidate自動draft登録 ───
+echo "Auto-draft lesson candidates:"
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+    if [ -f "$report_file" ]; then
+        if bash "$SCRIPT_DIR/scripts/auto_draft_lesson.sh" "$report_file" 2>&1; then
+            true
+        else
+            echo "  WARN: auto_draft_lesson.sh failed for ${ninja_name} (non-blocking)"
+        fi
+    else
+        echo "  ${ninja_name}: no report file"
+    fi
+done
+echo ""
+
 # ─── 緊急override確認 ───
 if [ -f "$GATES_DIR/emergency.override" ]; then
     echo "GATE CLEAR (緊急override): ${CMD_ID}の全ゲートをバイパス"
@@ -523,6 +544,50 @@ except:
 done
 if [ "$DC_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
+fi
+
+# ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
+echo ""
+echo "Draft lesson check:"
+# cmdのprojectを取得
+CMD_PROJECT=$(awk -v id="  - id: ${CMD_ID}" '
+    $0 == id { found=1; next }
+    found && /^  - id:/ { exit }
+    found && /^    project:/ { sub(/^    project: */, ""); print; exit }
+' "$YAML_FILE")
+
+if [ -n "$CMD_PROJECT" ]; then
+    # projectのSSOTパスを取得
+    DRAFT_SSOT_PATH=$(python3 -c "
+import yaml
+with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+    cfg = yaml.safe_load(f)
+for p in cfg.get('projects', []):
+    if p['id'] == '$CMD_PROJECT':
+        print(p['path'])
+        break
+" 2>/dev/null)
+
+    if [ -n "$DRAFT_SSOT_PATH" ]; then
+        DRAFT_LESSONS_FILE="$DRAFT_SSOT_PATH/tasks/lessons.md"
+        if [ -f "$DRAFT_LESSONS_FILE" ]; then
+            draft_count=$(grep -c '^\- \*\*status\*\*: draft' "$DRAFT_LESSONS_FILE" 2>/dev/null || true)
+            draft_count=${draft_count:-0}
+            if [ "$draft_count" -gt 0 ]; then
+                echo "  NG ← ${CMD_PROJECT}に${draft_count}件のdraft未査読教訓あり"
+                record_block_reason "draft_lessons:${draft_count}"
+                ALL_CLEAR=false
+            else
+                echo "  OK (no draft lessons in ${CMD_PROJECT})"
+            fi
+        else
+            echo "  SKIP (lessons file not found: ${DRAFT_LESSONS_FILE})"
+        fi
+    else
+        echo "  SKIP (project path not found for: ${CMD_PROJECT})"
+    fi
+else
+    echo "  SKIP (project not found in cmd)"
 fi
 
 # ─── inbox_archive強制チェック（WARNのみ、ブロックしない） ───

@@ -20,6 +20,18 @@ for arg in "$@"; do
     if [ "$arg" == "--force" ]; then FORCE=1; fi
 done
 
+# Scan for --status flag (draft/confirmed, default: confirmed)
+STATUS="confirmed"
+prev_arg=""
+for arg in "$@"; do
+    if [ "$prev_arg" == "--status" ]; then STATUS="$arg"; fi
+    prev_arg="$arg"
+done
+if [ "$STATUS" != "draft" ] && [ "$STATUS" != "confirmed" ]; then
+    echo "ERROR: --status must be 'draft' or 'confirmed' (got: $STATUS)" >&2
+    exit 1
+fi
+
 # Validate arguments
 if [ -z "$PROJECT_ID" ] || [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
     echo "Usage: lesson_write.sh <project_id> <title> <detail> [source_cmd] [author]" >&2
@@ -81,7 +93,7 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 10 200 || exit 1
 
         # Find max ID and append new entry
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR FORCE LESSON_ID_FILE
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR FORCE LESSON_ID_FILE STATUS
         python3 << 'PYEOF'
 import re, os, sys
 from difflib import SequenceMatcher
@@ -129,11 +141,14 @@ if not force:
             sys.exit(1)
 
 # Build new entry
+status = os.environ.get("STATUS", "confirmed")
 entry = f'\n### {new_id_str}: {title}\n'
 entry += f'- **日付**: {timestamp}\n'
 if source_cmd:
     entry += f'- **出典**: {source_cmd}\n'
 entry += f'- **記録者**: {author}\n'
+if status == "draft":
+    entry += f'- **status**: draft\n'
 entry += f'- {detail}\n'
 
 # Append to file
