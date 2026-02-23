@@ -1,5 +1,5 @@
 # DM-signal コンテキスト
-<!-- last_updated: 2026-02-23 cmd_275 C1-C3知見恒久化(統一カタログ+ブレイクスルー分析追加) -->
+<!-- last_updated: 2026-02-23 cmd_276 ルックアヘッドバイアス検証(§20追加) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1426,3 +1426,58 @@ Cycle1-3の「80%は構造的に困難」という仮説を、5つの独立し�
 - `outputs/charts/cmd274_cycle4_comparison.csv` — Cycle4横断比較表
 - `outputs/charts/cmd274_cycle1234_progression.csv` — Cycle1-4精度推移表
 - `outputs/charts/cmd274_cycle1234_progression.png` — Cycle1-4精度推移チャート
+
+## 20. ルックアヘッドバイアス検証（cmd_276, 2026-02-23）
+
+### 20.1 調査概要
+
+cmd_276で本番パイプラインとGSバックテストの両系統についてルックアヘッドバイアス(LA)の有無を独立2名偵察で調査し、統合判定を実施。
+
+| 系統 | 偵察者 | 対象 | 結果 |
+|------|--------|------|------|
+| 本番パイプライン | 佐助(subtask_276_a) | sync-standard/sync-fof → recalculate_history_fast, 全14BB, FoF, monthly_returns | **LA未検出** |
+| GSバックテスト | 霧丸(subtask_276_b) | 全5忍法GS実装(分身/追い風/抜き身/変わり身/加速) | **LA未検出** |
+| 統合判定 | 影丸(subtask_276_integ) | 上記2報告の突合+盲点分析 | **LA未検出** |
+
+### 20.2 本番パイプライン検証結果
+
+**全14BBの時点制御**:
+- Momentum系(Momentum/Absolute/Relative/Acceleration/Reversal/TrendReversal): `get_momentum_value_at_date()` で `<=target_date` 参照（`base.py:152-190`、各block実装）
+- MultiView/SingleView: 明示的に `df.index<=target_date` カット（`multi_view_momentum_filter.py:142-143`, `single_view_momentum_filter.py:123-124`）
+- ComponentPrice/MonthlyReturnMomentum: `year_month→月末変換→dt>target_date除外`（`component_price.py:68-71`, `monthly_return_momentum_filter.py:122-125`）
+- SafeHaven/EqualWeight/CashTerminal/KalmanMeta: 市場データ参照なし（LA不可）
+
+**FoFタイミング(RULE03/RULE08)**:
+- FoFは月初リバランス日にのみパイプライン実行（`recalculate_fof.py:510-513,549-566`）
+- ComponentPrice経由の月次データを`target_date`で評価し、月初判定時は前月末データが実質使用される
+
+**trade-rule.md準拠**: RULE01(signal/holding分離)、RULE02(月初更新)、RULE03(前月末signal採用)、RULE09(open/close分離)、RULE10(モメンタムはclose)いずれも実装一致
+
+### 20.3 GSバックテスト検証結果
+
+全5忍法のGSスクリプトにおいて将来データ参照は未検出。低リスク所見2件:
+1. **drop_latest**: 一部ブロックに存在。データ欠損時の挙動に注意が必要だがLAバイアスではない
+2. **門番(monban)のexperiments.db依存**: ポイントインタイムのスナップショットであるためLAリスクは低い
+
+### 20.4 残存リスク
+
+| ID | 深刻度 | 内容 | 影響範囲 | 修正方向性 |
+|----|--------|------|----------|-----------|
+| R1 | medium | 当日終値未確定ガードがコード上に不在。`calc_end_date=date.today()`で実行され、StockData APIが当日未確定closeを返す環境では混入の恐れ | 朝実行時の同日データ | `最終確定営業日`算出→calc_end_date固定、またはPriceにis_finalカラム追加 |
+
+R1は外部API仕様依存であり、StockData APIが当日未確定データを返すかは本調査では未検証。
+
+### 20.5 盲点と注記
+
+1. StockData APIの当日データ返却仕様は両偵察とも未検証（外部依存）
+2. データ同期パス（download_all_prices.py → experiments.db）でのLA混入は未検証
+3. 霧丸報告はdeploy_task.sh上書き消失(L103再発)から家老が復元したため、コード行番号の詳細度が佐助報告より低い
+
+### 20.6 最終判定
+
+**本番パイプライン・GSバックテスト双方にルックアヘッドバイアスは確認されず。** 信頼度: **高**。
+
+- 本番14BB全てがtarget_date以前のデータのみを参照することをコードレベルで確認
+- GS全5忍法が過去データのみで計算していることを確認
+- 残存リスクR1（当日終値未確定ガード）は運用境界の課題であり、LAバイアスそのものではない
+- 将来監査時はR1およびStockData API仕様の検証を推奨
