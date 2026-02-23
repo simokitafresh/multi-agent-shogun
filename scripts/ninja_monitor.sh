@@ -1247,6 +1247,105 @@ check_script_update() {
     fi
 }
 
+# ─── lesson health定期チェック (cmd_279 Gate3) ───
+# gate_lesson_health.shを呼び出し、ALERTなら家老に通知
+LAST_LESSON_CHECK=0
+LESSON_CHECK_INTERVAL=600  # 10分間隔(秒)
+LESSON_ALERT_DEBOUNCE=3600 # 同一ALERT再通知抑制(1時間)
+LAST_LESSON_ALERT=0
+
+check_lesson_health() {
+    local now=$(date +%s)
+
+    # 間隔チェック
+    local elapsed=$((now - LAST_LESSON_CHECK))
+    if [ $elapsed -lt $LESSON_CHECK_INTERVAL ]; then
+        return
+    fi
+    LAST_LESSON_CHECK=$now
+
+    local gate_script="$SCRIPT_DIR/scripts/gates/gate_lesson_health.sh"
+    if [ ! -f "$gate_script" ]; then
+        log "LESSON-HEALTH: gate_lesson_health.sh not found, skip"
+        return
+    fi
+
+    local output
+    output=$(bash "$gate_script" 2>/dev/null) || true
+
+    # ALERTがあるか確認
+    if echo "$output" | grep -q "^ALERT:"; then
+        # デバウンスチェック
+        local alert_elapsed=$((now - LAST_LESSON_ALERT))
+        if [ $alert_elapsed -lt $LESSON_ALERT_DEBOUNCE ]; then
+            log "LESSON-HEALTH-DEBOUNCE: ALERT detected but ${alert_elapsed}s < ${LESSON_ALERT_DEBOUNCE}s"
+            return
+        fi
+
+        local alerts
+        alerts=$(echo "$output" | grep "^ALERT:" | tr '\n' ' ')
+        log "LESSON-HEALTH: $alerts"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "lesson健全性ALERT: ${alerts}" lesson_health ninja_monitor >> "$LOG" 2>&1
+        LAST_LESSON_ALERT=$now
+    else
+        log "LESSON-HEALTH: all projects OK"
+    fi
+}
+
+# ─── archive自動退避 (cmd_279 Gate3 Auto2) ───
+# completed cmdでqueue/gates/{cmd_id}/未作成のものを自動archive
+# flock排他 + 1 sweep あたり最大1 cmd
+ARCHIVE_LOCK="/tmp/ninja_monitor_archive.lock"
+
+check_auto_archive() {
+    local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ ! -f "$cmd_file" ] && return
+
+    # completed cmd_idを抽出
+    local -a completed_cmds
+    mapfile -t completed_cmds < <(awk '
+        /^[[:space:]]*-[[:space:]]id:/ {
+            cmd_id=$3; gsub(/"/, "", cmd_id)
+            cmd_status=""
+            next
+        }
+        /^[[:space:]]*status:/ {
+            cmd_status=$2
+            if (cmd_status == "completed" && cmd_id != "") {
+                print cmd_id
+            }
+        }
+    ' "$cmd_file")
+
+    if [ ${#completed_cmds[@]} -eq 0 ]; then
+        return
+    fi
+
+    # 1 sweepあたり最大1 cmdのみarchive
+    for cmd_id in "${completed_cmds[@]}"; do
+        local gates_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
+
+        # gates/ディレクトリが既に存在 → archive済み(archive.done含む)
+        if [ -d "$gates_dir" ]; then
+            continue
+        fi
+
+        # flock排他制御でarchive実行
+        (
+            flock -n 200 || { log "AUTO-ARCHIVE: flock busy, skip $cmd_id"; exit 1; }
+            log "AUTO-ARCHIVE: $cmd_id completed + no gates dir, running archive_completed.sh"
+            bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" >> "$LOG" 2>&1
+        ) 200>"$ARCHIVE_LOCK"
+
+        if [ $? -eq 0 ]; then
+            log "AUTO-ARCHIVE: $cmd_id done"
+        fi
+
+        # 1 cmdのみ実行して終了
+        break
+    done
+}
+
 # ─── 初期ペイン探索 ───
 discover_panes
 
@@ -1387,6 +1486,12 @@ while true; do
 
     # ═══ inbox未読数ペイン変数更新 (cmd_188) ═══
     update_inbox_counts
+
+    # ═══ lesson健全性チェック (cmd_279) ═══
+    check_lesson_health
+
+    # ═══ archive自動退避 (cmd_279) ═══
+    check_auto_archive
 
     # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
     write_state_file

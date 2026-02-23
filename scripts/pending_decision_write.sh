@@ -199,7 +199,12 @@ try:
         os.unlink(tmp_path)
         raise
 
+    # Output project field for TODO auto-append
+    project = d.get('project', '')
+    source_cmd = d.get('source_cmd', '')
     print(f'[pending_decision] Resolved {pd_id}')
+    print(f'PD_PROJECT={project}')
+    print(f'PD_SOURCE={source_cmd}')
 
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
@@ -207,6 +212,56 @@ except Exception as e:
 " || exit 1
 
         ) 200>"$LOCKFILE"; then
+            # ── Post-resolve: gate_pd_sync + TODO auto-append (outside flock, per L022) ──
+            local GATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_pd_sync.sh"
+            if [ -f "$GATE_SCRIPT" ]; then
+                bash "$GATE_SCRIPT" "$PD_ID" || true
+            fi
+
+            # Auto 1: context update TODO auto-append
+            local TODO_LOG="$SCRIPT_DIR/queue/alerts/pd_context_todo.log"
+            mkdir -p "$(dirname "$TODO_LOG")"
+
+            # Determine context_file from PD's project field
+            local CONTEXT_FILE
+            CONTEXT_FILE=$(python3 -c "
+import yaml, sys
+
+data_path = '$DATA_FILE'
+pd_id = '$PD_ID'
+
+PROJECT_MAP = {
+    'infra': 'context/infrastructure.md',
+    'dm-signal': 'context/dm-signal.md',
+    'dm-signal-frontend': 'context/dm-signal-frontend.md',
+}
+
+try:
+    with open(data_path) as f:
+        data = yaml.safe_load(f)
+    if not data or not data.get('decisions'):
+        print('unknown')
+        sys.exit(0)
+    for d in data['decisions']:
+        if d.get('id') == pd_id:
+            project = d.get('project', '')
+            if project and project in PROJECT_MAP:
+                print(PROJECT_MAP[project])
+            elif project:
+                print(f'context/{project}.md')
+            else:
+                print('unknown')
+            sys.exit(0)
+    print('unknown')
+except Exception:
+    print('unknown')
+" 2>/dev/null || echo "unknown")
+
+            local TODO_TIMESTAMP
+            TODO_TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
+            echo "$TODO_TIMESTAMP  $PD_ID → $CONTEXT_FILE に反映必要" >> "$TODO_LOG"
+            echo "[pending_decision] TODO追記: $PD_ID → $CONTEXT_FILE"
+
             return 0
         else
             attempt=$((attempt + 1))

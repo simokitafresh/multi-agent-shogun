@@ -175,6 +175,12 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  ${gate}: OVERRIDE"
     done
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "🚨 緊急override: ${CMD_ID}のゲートをバイパス"
+    # gate_yaml_status: YAML status更新（WARNING only）
+    if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
+        true
+    else
+        echo "  WARN: gate_yaml_status.sh failed (non-blocking)"
+    fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
     exit 0
@@ -697,6 +703,12 @@ echo ""
 if [ "$ALL_CLEAR" = true ]; then
     echo "GATE CLEAR: cmd完了許可"
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed" >> "$GATE_METRICS_LOG"
+    # gate_yaml_status: YAML status更新（WARNING only）
+    if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
+        true
+    else
+        echo "  WARN: gate_yaml_status.sh failed (non-blocking)"
+    fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
     exit 0

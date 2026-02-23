@@ -123,6 +123,14 @@
 !scripts/lesson_delete.sh
 !scripts/lesson_edit.sh
 !scripts/clear_prep_check.sh
+!scripts/backfill_knowledge_debt.sh
+!scripts/gates/
+!scripts/gates/gate_yaml_status.sh
+!scripts/gates/gate_pd_sync.sh
+!scripts/gates/gate_lesson_health.sh
+!scripts/switch_project.sh
+!scripts/reset_layout.sh
+!scripts/restart_watchers.sh
 
 
 # Tasks (SSOT lessons only)
