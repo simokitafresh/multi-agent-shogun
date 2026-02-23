@@ -373,6 +373,15 @@ STEP 5: 配備実行
   → 5b: Write/Edit queue/tasks/{ninja_name}.yaml
   → 5c: inbox_write → stop
 
+STEP 5.5: 偵察ゲート(deploy_task.shが自動強制 — implタスク時のみ)
+  → deploy_task.shがtask_type=implementの配備時に自動チェック:
+    a. shogun_to_karo.yamlに scout_exempt: true → PASS（偵察免除）
+    b. 同一parent_cmdのscout/reconタスクがdone 2件以上 → PASS（偵察済み）
+    c. どちらもなし → BLOCK(exit 1) + エラーメッセージ表示
+  → BLOCK時: 将軍にscout_exempt申請するか、先に偵察を配備せよ
+  → 家老にscout_exempt免除の判断権はない（将軍のみ）
+  → scout/recon/reviewタスク自体の配備はゲート対象外（無条件PASS）
+
 STEP 6: 配備後チェック(スクリプト強制 — 偵察タスク時のみ)
   → bash scripts/task_deploy.sh cmd_XXX recon
   → exit 0以外 → 2名体制に修正するまで配備やり直し

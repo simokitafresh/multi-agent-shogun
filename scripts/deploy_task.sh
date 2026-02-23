@@ -697,6 +697,104 @@ except Exception as e:
     return 0
 }
 
+# ─── 偵察ゲート: implタスクは偵察済みorscout_exempt必須 ───
+check_scout_gate() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "scout_gate: PASS (task file not found)"
+        return 0
+    fi
+
+    local result
+    local exit_code=0
+    result=$(python3 -c "
+import yaml, sys, os, glob
+
+task_file = '$task_file'
+script_dir = '$SCRIPT_DIR'
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        sys.exit(0)
+
+    task = data['task']
+
+    # 1. task_typeがimplement以外ならPASS（scout/recon/review等はゲート対象外）
+    task_type = str(task.get('task_type', '')).lower()
+    if task_type != 'implement':
+        print(f'PASS: task_type={task_type} (not implement)', file=sys.stderr)
+        sys.exit(0)
+
+    parent_cmd = task.get('parent_cmd', '')
+    if not parent_cmd:
+        print('PASS: no parent_cmd', file=sys.stderr)
+        sys.exit(0)
+
+    # 2. shogun_to_karo.yamlでscout_exemptを確認
+    stk_path = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
+    if os.path.exists(stk_path):
+        with open(stk_path) as f:
+            stk = yaml.safe_load(f)
+        for cmd in (stk or {}).get('commands', []):
+            if cmd.get('id') == parent_cmd:
+                if cmd.get('scout_exempt') is True:
+                    reason = cmd.get('scout_exempt_reason', '(no reason)')
+                    print(f'PASS: scout_exempt=true for {parent_cmd} ({reason})', file=sys.stderr)
+                    sys.exit(0)
+                break
+
+    # 3. queue/tasks/*.yamlからscout/reconタスクのdone数をカウント
+    tasks_dir = os.path.join(script_dir, 'queue', 'tasks')
+    done_count = 0
+    if os.path.isdir(tasks_dir):
+        for fname in os.listdir(tasks_dir):
+            if not fname.endswith('.yaml'):
+                continue
+            fpath = os.path.join(tasks_dir, fname)
+            try:
+                with open(fpath) as f:
+                    tdata = yaml.safe_load(f)
+                if not tdata or 'task' not in tdata:
+                    continue
+                t = tdata['task']
+                if t.get('parent_cmd') != parent_cmd:
+                    continue
+                tid = str(t.get('task_id', '')).lower()
+                if 'scout' in tid or 'recon' in tid:
+                    t_status = str(t.get('status', '')).lower()
+                    if t_status == 'done':
+                        done_count += 1
+            except Exception:
+                continue
+
+    if done_count >= 2:
+        print(f'PASS: {done_count} scout/recon tasks done for {parent_cmd}', file=sys.stderr)
+        sys.exit(0)
+
+    # BLOCK
+    print(f'BLOCK: {parent_cmd} — scout done={done_count}/2, scout_exempt=false')
+    sys.exit(1)
+
+except Exception as e:
+    print(f'ERROR: {e}', file=sys.stderr)
+    sys.exit(0)  # パース失敗時はブロックしない
+" 2>&1) || exit_code=$?
+
+    if [ "$exit_code" -ne 0 ]; then
+        log "BLOCK(scout_gate): ${result}"
+        echo "BLOCK(scout_gate): 偵察未完了。scout_reportsが2件未満かつscout_exemptなし。将軍にscout_exempt申請するか、先に偵察を配備せよ" >&2
+        echo "詳細: ${result}" >&2
+        exit 1
+    fi
+
+    # stderrの出力をログに記録
+    log "scout_gate: ${result}"
+    return 0
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
@@ -719,6 +817,9 @@ log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}
 # 入口門番: 前タスクの教訓未消化チェック（reviewed:false残存ならブロック）
 TASK_FILE="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 check_entrance_gate "$TASK_FILE"
+
+# 偵察ゲート: implタスクは偵察済みorscout_exempt必須（BLOCKならexit 1）
+check_scout_gate "$TASK_FILE"
 
 # 教訓自動注入（失敗してもデプロイは継続）
 inject_related_lessons "$TASK_FILE" || true
