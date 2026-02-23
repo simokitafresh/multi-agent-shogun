@@ -1,5 +1,5 @@
 # DM-signal コンテキスト
-<!-- last_updated: 2026-02-23 cmd_253 BBパラメータカタログ統合 -->
+<!-- last_updated: 2026-02-23 cmd_270 月次リターン傾き分析 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -339,12 +339,13 @@ GS修正経緯（cmd_215 → cmd_217）:
 | 忍法候補 | BB型 | 状態 | cmd | 主要パラメータ |
 |---------|------|------|-----|-------------|
 | 逆風(gyakufuu) | ReversalFilterBlock | 採用決定・偵察完了 | cmd_249 | bottom_n(B1-B5), lookback_periods。strict slice方式 |
-| 追い越し(oikoshi) | RelativeMomentumFilterBlock | 偵察完了 | cmd_250 | benchmark(必須), lookback_periods。ベンチマーク超過全通過 |
-| 多眼(tagan) | MultiViewMomentumFilterBlock | 偵察完了 | cmd_251 | base_period_months(≥4), top_n。SKIP_MONTHS_LIST=[0,1,2,3]固定 |
+| 追い越し(oikoshi) | RelativeMomentumFilterBlock | 偵察完了 | cmd_250 | benchmark=SPY(固定), lookback_periods。ベンチマーク超過全通過 |
+| 四つ目(yotsume) | MultiViewMomentumFilterBlock | 偵察完了 | cmd_251 | base_period_months(≥4), top_n。SKIP_MONTHS_LIST=[0,1,2,3]固定 |
 
 逆風は追い風(順張り)の対となる逆張りフィルタ。殿裁定で採用決定済み。
 追い越しはベンチマーク対比で超過リターンが高い銘柄を選抜(殿命名: cmd_250)。
-多眼は4視点(0/1/2/3Mスキップ)のTop N和集合。本番bam-2/bam-6で実使用中(cmd_247霧丸DB調査)。
+追い越しのベンチマークはSPY一本に固定（殿裁定: PD-023）。複数候補は採用しない。
+四つ目は4視点(0/1/2/3Mスキップ)のTop N和集合。本番bam-2/bam-6で実使用中(cmd_247霧丸DB調査)。
 全パラメータ詳細は§4パラメータカタログ参照。
 
 ### パイプライン実行
@@ -702,6 +703,10 @@ get_csv_provenance(csv_paths) → Dict  # meta.yaml用
 全6ブロックのGSスクリプトが `scripts/analysis/grid_search/run_077_{block}.py` に配置済み。
 詳細（パラメータ空間・本番Parity・対応ソース）: `DATA_CATALOG.md` C-7参照。
 
+PD-028裁定（2026-02-23）:
+- GS制約同期は仕組み化しない。
+- 運用は「BBカタログにPydantic制約を明記」+「各GSスクリプトのPARAM_GRIDを制約範囲へ修正」で対応する。
+
 ### データカタログ
 
 パス: `outputs/grid_search/DATA_CATALOG.md`
@@ -859,3 +864,131 @@ DM-signal教訓管理に影響するインフラ改善。3つの「穴」を全�
 | 新忍法偵察 | 逆風(cmd_249)/RelMom(cmd_250)/MultiView(cmd_251)偵察中 |
 | SVMF/MVMFバグ | 修正完了(cmd_235+cmd_244) |
 | 穴1/2/3 | 全対策完了 |
+
+## 18. backend `folder_id` 実態（cmd_269 偵察A, 2026-02-23）
+
+### 18.1 カラム定義とFK
+
+- `Portfolio.folder_id` は `backend/app/db/models.py:75` で定義。
+  - 型: `String`
+  - 制約: `ForeignKey("portfolio_folders.id", ondelete="SET NULL")`
+  - nullable: `True`
+- 親テーブル `portfolio_folders` は `backend/app/db/models.py:46-64` でORM定義済み。
+- `portfolio_folders.parent_id` も自己参照FK（`ON DELETE SET NULL`）。
+
+### 18.2 テーブル作成/マイグレーション履歴
+
+- Alembic構成は存在しない（`backend/alembic/` や `alembic/versions` ディレクトリなし、`rg "alembic"` もヒットなし）。
+- 実運用のマイグレーションは `backend/app/db/migrations.py` の起動時処理:
+  - `backend/app/db/migrations.py:66-79` で `portfolio_folders` テーブル作成
+  - `backend/app/db/migrations.py:87` で `portfolios.folder_id` を `TEXT REFERENCES portfolio_folders(id) ON DELETE SET NULL` として追加
+- `backend/migrations/*.py` には folder 関連処理なし（grepヒットなし）。
+
+### 18.3 `folder_id` 使用箇所（backend全体）
+
+`rg -n "folder_id" backend` の結果、実装上の中心は `api/folders.py`:
+
+- 定義/DDL
+  - `backend/app/db/models.py:75`
+  - `backend/app/db/migrations.py:87`
+- Folder API（参照）
+  - `backend/app/api/folders.py:77`
+  - `backend/app/api/folders.py:104`
+  - `backend/app/api/folders.py:213`
+  - `backend/app/api/folders.py:251`
+- Folder API（更新）
+  - `backend/app/api/folders.py:304` (`portfolio.folder_id = payload.folder_id`)
+- その他は request/route引数やログ文字列上の出現（`folder_ids`, `folder_id`）。
+
+### 18.4 API/Schema露出状況
+
+- `/api/portfolios` ルータ (`backend/app/api/portfolios.py`) の公開エンドポイントは:
+  - `GET /api/portfolios/get` (`:147`)
+  - `POST /api/portfolios/save` (`:215`)
+  - `POST /api/portfolios/save-legacy` (`:582`)
+- これらの response_model は `PortfoliosPayload` / `SavePortfoliosResponse` で、`Portfolio` スキーマ (`backend/app/schemas/models.py:53-140`) に `folder_id` フィールドは存在しない。
+- `backend/app/schemas/` 配下で `folder_id` は0件ヒット。
+- フォルダ情報は専用API `/api/admin/folders` (`backend/app/api/folders.py:19`) 側で扱う設計。
+
+### 18.5 Portfolio CRUDでの読み書き可否
+
+- `PortfolioRepository.load()` は `p_db.config` を `Portfolio` モデルへ詰め替える実装で、`p_db.folder_id` を `Portfolio` へ写していない（`backend/app/storage/repository.py:85-113`）。
+- `PortfolioRepository.save()` も `name/type/config/hide_*/is_active` を更新するが `folder_id` を更新しない（`backend/app/storage/repository.py:154-183`）。
+- 結論: Portfolio CRUD (`/api/portfolios/*`) では `folder_id` の読み書き未実装。`folder_id` 更新は `POST /api/admin/folders/portfolios/{portfolio_id}/move` (`backend/app/api/folders.py:283-309`) に限定。
+
+### 18.6 本番DB実値（SELECTのみ確認）
+
+2026-02-23 実行結果（`DATABASE_URL` 直結, `SELECT folder_id, COUNT(*) FROM portfolios GROUP BY folder_id`）:
+
+- `total_portfolios = 88`
+- `null_folder_id = 88`
+- `DISTINCT folder_id = {NULLのみ}`
+
+現時点の本番DBでは、全ポートフォリオがルート配下（未フォルダ割当）で運用されている。
+
+## 19. 月次リターン傾き分析（cmd_270, 2026-02-23）
+
+### 19.1 手法
+
+PFの「今の調子」を月次リターン分布の時間的変化で判定する。3Phase構成。
+
+| Phase | 内容 | 結論 |
+|-------|------|------|
+| A: ACF分析 | 代表PF8体(四神4+殿PF4)の月次リターン自己相関を算出し、有意lag消失点から統計的推奨窓幅を決定 | 最大有意lag=35M(DM7+/DM-safe)、推奨41M |
+| B: 窓幅比較 | 24M/36M/48M/60Mの4窓幅でローリング中央値・95%CI・5%ileを可視化。既知レジーム変化(COVID 2020-03/利上げ 2022-01)の検出率を評価 | 36Mが最良検出率(38%)。48M/60Mは過剰平滑化 |
+| C: 傾きランキング | 最終推奨窓幅で全PFの月次リターンに線形回帰。傾き+95%CIで4分類 | 92PF中: Improving 0/Stable 6/Declining 12/Inconclusive 74 |
+
+### 19.2 推奨窓幅: 36ヶ月
+
+- ACF推奨: 41M（最大有意lag 35M + バッファ6M）
+- レジーム検出最良: 36M（24Mは31%、36Mは38%、48Mは0%、60Mは12%）
+- 総合判定: **36M**。ACFとレジーム検出の中間で、実用上のバランスが最良
+
+### 19.3 ACF分析結果（代表PF8体）
+
+| PF | 最後の有意lag | 解釈 |
+|----|-------------|------|
+| DM2(青龍) | 2M | 短期相関のみ。ほぼランダムウォーク |
+| DM3(朱雀) | 15M | 中程度の持続性 |
+| DM6(白虎) | 28M | 強い持続性。トレンドが長期継続 |
+| DM7+(玄武) | 35M | 最も強い持続性。長期レジーム依存 |
+| DM-safe | 35M | 玄武と同様の長期構造 |
+| DM-safe-2 | 13M | 中程度 |
+| Ave-X | 5M | 短期。FoF分散効果で自己相関が薄まる |
+| DM5 | 15M | 中程度 |
+
+### 19.4 全PF調子分類（36M窓）
+
+分類基準: 線形回帰の傾き + 95%CI + p値
+
+| 分類 | 条件 | 該当数 | 解釈 |
+|------|------|--------|------|
+| Improving | p≤0.10 かつ CI下限>0 | 0体 | 統計的に有意な改善トレンドを持つPFはゼロ |
+| Stable | p≤0.10 かつ CIが0を跨ぐ | 6体 | 有意だが方向不明確 |
+| Declining | p≤0.10 かつ CI上限<0 | 12体 | 統計的に有意な下降トレンド |
+| Inconclusive | p>0.10 | 74体 | 傾きがノイズと区別できない |
+
+主要PFの傾き:
+- DM7+(玄武): slope=-0.00346/月, **Declining** — エッジ消失の兆候
+- DM6(白虎): slope=-0.00143/月, Inconclusive
+- DM2(青龍): slope=-0.00066/月, Inconclusive
+- DM3(朱雀): slope=-0.00048/月, Inconclusive
+- DM-safe: slope=+0.00045/月, Inconclusive
+- Ave-X: slope=+0.00054/月, Inconclusive
+
+### 19.5 実運用への示唆
+
+1. **Improving(好調)が0体**: 36M窓では、統計的に有意に改善中のPFは存在しない。過去の累積成績に頼る判断は危険という殿の直感を支持。
+2. **DM7+(玄武)のDeclining判定**: 四神の中で唯一の有意下降。モニタリング対象。
+3. **大多数がInconclusive(74/92)**: 月次リターンのノイズが大きく、36M窓でも傾きの方向を統計的に確定できないPFが多い。これはDM戦略の本質的特性（レジーム切替型）を反映。
+4. **窓幅36Mの限界**: レジーム変化検出率38%は低い。補完手段（例: 構造変化点検出、Bairon-Perron検定）が将来課題。
+
+### 19.6 成果物
+
+| ファイル | 内容 |
+|---------|------|
+| `outputs/charts/cmd270_phaseA_acf.png` | ACFプロット(代表PF8体) |
+| `outputs/charts/cmd270_phaseB_window_comparison.png` | 4窓幅比較チャート(代表PF8体) |
+| `outputs/charts/cmd270_phaseC_slope_ranking.png` | 全PFフォレストプロット(傾き+CI) |
+| `outputs/charts/cmd270_phaseC_slope_ranking.csv` | 全PFランキング(CSV) |
+| `scripts/analysis/cmd270_monthly_return_slope.py` | 分析スクリプト |
