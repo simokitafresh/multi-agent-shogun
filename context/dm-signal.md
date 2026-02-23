@@ -1,5 +1,5 @@
 # DM-signal コンテキスト
-<!-- last_updated: 2026-02-23 cmd_270 月次リターン傾き分析 -->
+<!-- last_updated: 2026-02-23 cmd_273 エッジ残存率バックテスト -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1096,3 +1096,41 @@ cmd_270（rawリターン傾き）、cmd_271（α傾き）、cmd_272（エッジ
 - `outputs/charts/cmd272_edge_retention_ranking.csv` — ランキングデータ
 - `outputs/charts/cmd272_three_indicator_summary.png` — 3指標統合チャート
 - `outputs/charts/cmd272_three_indicator_summary.csv` — 3指標統合データ
+
+### 19.14 エッジ残存率バックテスト（cmd_273, 2026-02-23）
+
+cmd_272のエッジ残存率を過去に遡ってローリング算出し、「エッジ低下検知→リターン低下の予測精度」をバックテストした。殿の発想: 推論が正しいか過去データと見比べれば確信度が明確になる。
+
+**手法**:
+- ローリングエッジ残存率: 各月tで「全期間α(月1～t)」「直近12Mα(月t-11～t)」を算出し比率を取る。look-ahead bias排除（各月tでt以降のデータは一切参照しない）
+- イベント検出: (1)前月比大幅低下(MoM drop): 負の変化量のP10/P25/P50パーセンタイルを閾値に使用（データ駆動、ハードコードなし）(2)0%下回り(alpha reversal)
+- 予測精度: イベント後3M/6M/12Mの累積超過リターン(PF-SPY)がマイナスかどうかでprecision/recallを算出
+
+**Precision/Recall結果（全PF対象）**:
+
+| 閾値 | Horizon | N_events | TP | Precision | Recall | F1 |
+|------|---------|----------|-----|-----------|--------|----|
+| MoM Severe(P10) | 3M | 802 | 272 | 33.9% | 4.3% | 0.077 |
+| MoM Severe(P10) | 12M | 792 | 177 | 22.3% | 5.3% | 0.086 |
+| MoM Strong(P25) | 3M | 2005 | 592 | 29.5% | 9.4% | 0.143 |
+| MoM Strong(P25) | 12M | 1914 | 352 | 18.4% | 10.6% | 0.135 |
+| MoM Moderate(P50) | 3M | 3991 | 1193 | 29.9% | 19.0% | 0.233 |
+| MoM Moderate(P50) | 12M | 3824 | 668 | 17.5% | 20.1% | 0.187 |
+| ZeroCross | 3M | 979 | 302 | 30.8% | 4.8% | 0.083 |
+
+**主要な発見**:
+1. Precisionは閾値によらず20-35%で安定。厳しい閾値(P10)でも精度は限定的
+2. Recallは緩い閾値(P50)で最大~20%。厳しい閾値では5%未満
+3. F1スコアは全体的に低い（最大0.233）。エッジ残存率の急落は「弱いがランダムではない予測シグナル」
+4. 短期(3M)の方がPrecisionが高い。長期(12M)になるほどPrecisionは低下しRecallが若干向上
+5. 代表PF時系列チャート: DM2ではエッジ残存率の低下と累積超過リターンの停滞に視覚的相関あり
+
+**殿の発想の背景**: cmd_272で静的に算出したエッジ残存率が「現在のスナップショット」であるのに対し、cmd_273は「過去のどの時点でもこの指標が予測力を持っていたか」を検証する。確信度を数値化する科学的アプローチ。結果としてPrecision~30%は「ランダムより高い」が「単独で意思決定指標にするには不十分」であることが判明。3指標統合(§19.13)の文脈で他の指標と組み合わせて使うのが妥当。
+
+**成果物**:
+- `scripts/analysis/cmd273_edge_retention_backtest.py` — バックテストスクリプト（853行）
+- `outputs/charts/cmd273_timeseries_{PF}.png` — 代表PF5体の時系列チャート（DM2/DM3/DM6/DM7+/Ave-X）
+- `outputs/charts/cmd273_precision_recall_table.png` — Precision/Recall/F1スコア表
+- `outputs/charts/cmd273_sensitivity_analysis.png` — 閾値別感度分析チャート
+- `outputs/charts/cmd273_rolling_edge_retention.csv` — ローリングER全データ
+- `outputs/charts/cmd273_all_events.csv` — 全イベント+事後リターンデータ
