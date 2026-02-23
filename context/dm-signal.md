@@ -992,3 +992,60 @@ PFの「今の調子」を月次リターン分布の時間的変化で判定す
 | `outputs/charts/cmd270_phaseC_slope_ranking.png` | 全PFフォレストプロット(傾き+CI) |
 | `outputs/charts/cmd270_phaseC_slope_ranking.csv` | 全PFランキング(CSV) |
 | `scripts/analysis/cmd270_monthly_return_slope.py` | 分析スクリプト |
+
+### 19.7 SPY超過リターン(α)分析（cmd_271, 2026-02-23）
+
+cmd_270の「生リターン傾き」に対し、市場βを除去したα傾きを追加分析した。
+
+- α定義: `alpha_t = PF_monthly_return_t - SPY_monthly_return_t`
+- SPY月次リターン: `experiments.db daily_prices` から Open-to-Open で算出（RULE09準拠）
+- SPY統計（2000-02〜2026-02, 313 months）: 平均 `0.7439%/月`, 標準偏差 `4.5151%/月`
+- 回帰窓幅: 12M / 24M / 36M の3種
+
+### 19.8 α分類基準と全PFサマリー
+
+分類基準（cmd_271）:
+- Alpha-Positive: α正（アルファ健在）
+- Alpha-Neutral: αゼロ近傍（SPY並み）
+- Alpha-Negative: α負（エッジ消失）
+
+`outputs/charts/cmd271_alpha_slope_ranking.csv` 集計（全92PF）:
+
+| 窓幅 | Alpha-Positive | Alpha-Neutral | Alpha-Negative | 解釈 |
+|------|----------------|---------------|----------------|------|
+| 12M | 0 | 90 | 2 | 短期では大半が中立、2体のみα負 |
+| 24M | 0 | 92 | 0 | 全PFが中立（識別力が低い） |
+| 36M | 0 | 82 | 10 | 長期で10体がα負、82体はSPY並み |
+
+補足: 3窓幅すべてで `Alpha-Positive=0`。統計的に有意な「α改善」PFは確認されなかった。
+
+### 19.9 推奨窓幅（α視点）
+
+推奨: **36M**
+
+理由:
+1. 24Mは全PFがAlpha-Neutralとなり識別力が不足
+2. 12Mは短期ノイズの影響が相対的に大きい
+3. 36Mは「SPY並み」と「エッジ消失」を分離し、運用判断に使える粒度を保持
+
+### 19.10 β除去前後の判定変化（cmd_270 36Mとの比較）
+
+cmd_270（raw傾き36M）とcmd_271（α傾き36M）を同一92PFで突合。
+
+| 変化タイプ | 件数 | 内容 |
+|-----------|------|------|
+| Other | 80 | 判定の実質変化なし |
+| True-decline | 10 | raw=Declining かつ α=Alpha-Negative（真のエッジ消失） |
+| Market-masked | 2 | raw=Declining だが α=Alpha-Neutral（市場要因で見かけ悪化） |
+| Market-carried | 0 | raw=Improving かつ α=Alpha-Negative（該当なし） |
+
+判定変化があったPF:
+- Market-masked（2）: `95db7c30`, `9ec5ef18`
+- True-decline（10）: `87c64386`, `5c06d995`, `3f54546a`, `9834480c`, `e37d84fb`, `ee5d1a32`, `cff7778c`, `94360073`, `DM7+`, `3b2eecab`
+
+### 19.11 実運用への示唆（α視点）
+
+- 殿の哲学: **「ベータの除去は大事。本当にアルファがあるかどうかがわかる」**
+- rawで不調に見えるPFの一部（2/12）は市場要因を除くと中立であり、即時除外は早計。
+- 一方で10PFはβ除去後もα負で、真のエッジ消失候補として優先監視対象。
+- したがって、PF評価は「raw傾き」単独ではなく「raw + α」の二段判定を標準化する。
