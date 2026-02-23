@@ -340,7 +340,7 @@ GS修正経緯（cmd_215 → cmd_217）:
 |---------|------|------|-----|-------------|
 | 逆風(gyakufuu) | ReversalFilterBlock | 採用決定・偵察完了 | cmd_249 | bottom_n(B1-B5), lookback_periods。strict slice方式 |
 | 追い越し(oikoshi) | RelativeMomentumFilterBlock | 偵察完了 | cmd_250 | benchmark=SPY(固定), lookback_periods。ベンチマーク超過全通過 |
-| 四つ目(yotsume) | MultiViewMomentumFilterBlock | 偵察完了 | cmd_251 | base_period_months(≥4), top_n。SKIP_MONTHS_LIST=[0,1,2,3]固定 |
+| 四つ目(yotsume) | MultiViewMomentumFilterBlock | **フルGS完了(cmd_284)** | cmd_251→cmd_284 | base_period_months(≥4), top_n。SKIP_MONTHS_LIST=[0,1,2,3]固定 |
 
 逆風は追い風(順張り)の対となる逆張りフィルタ。殿裁定で採用決定済み。
 追い越しはベンチマーク対比で超過リターンが高い銘柄を選抜(殿命名: cmd_250)。
