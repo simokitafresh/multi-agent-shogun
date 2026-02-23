@@ -145,6 +145,9 @@ skill_candidate:
   reason: null      # e.g., "Same pattern executed 3 times"
 lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリスト
   # 参照なしなら lesson_referenced: []
+  # ★ タスクYAMLにrelated_lessonsが1件以上ある場合、lesson_referencedに
+  #   最低1件は記載必須。空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)で
+  #   BLOCKされる。参考にした教訓のIDを記載せよ(例: [L121, L122])
 ```
 
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_referenced.
@@ -164,6 +167,8 @@ Missing fields = incomplete report.
   - project: 教訓の登録先プロジェクトID
 - `lesson_referenced:` — related_lessonsを参照した場合はIDリストを記載。
   参照なしでも `lesson_referenced: []` を必ず記載。
+  **★ タスクYAMLにrelated_lessonsが1件以上ある場合、lesson_referencedに最低1件は記載必須。**
+  空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)でBLOCKされる。
 - `decision_candidate:` — found: true/false は**必須**。
 
 ## 偵察タスク対応

@@ -284,6 +284,9 @@ decision_candidate:
 lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリスト
   # 参照なしなら lesson_referenced: []
   # related_lessonsが空 or なしでも lesson_referenced: [] を必ず記載
+  # ★ タスクYAMLにrelated_lessonsが1件以上ある場合、lesson_referencedに
+  #   最低1件は記載必須。空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)で
+  #   BLOCKされる。参考にした教訓のIDを記載せよ(例: [L121, L122])
 
 # パリティ検証報告の追加フィールド（パリティ検証タスク時に必須）
 # data_sourceはパリティ検証の信頼性を担保する必須情報。省略はFAIL扱い。
@@ -304,6 +307,8 @@ Missing fields = incomplete report.
   found: true の場合は title: と detail: も必須。
 - `lesson_referenced:` — related_lessonsを参照した場合はIDリストを記載。
   参照なしでも `lesson_referenced: []` を必ず記載。
+  **★ タスクYAMLにrelated_lessonsが1件以上ある場合、lesson_referencedに最低1件は記載必須。**
+  空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)でBLOCKされる。
 - `decision_candidate:` — found: true/false は**必須**。
 
 ### Lessons Field Guidelines
