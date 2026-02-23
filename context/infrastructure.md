@@ -55,6 +55,26 @@
    - 解決: 件数集計を`awk`代替へ切り替え、0件時でも単一の数値のみ返る実装に修正。
    - 参照cmd: `cmd_192`
 
+
+7. 穴3（裁定伝播遅延）を検出+警告へ簡素化（PD-016 / cmd_239）
+   - 殿裁定: 複雑なPhase導入は却下。自動修正はしない。
+   - 実装:
+     - `pending_decision_write.sh resolve` が通常裁定の `context_synced: false` を自動付与
+     - `cmd_complete_gate.sh` が `source_cmd=当該cmd` かつ `status=resolved` かつ `context_synced: false` を検出し WARNING表示
+   - 運用:
+     - **検出+警告のみ（非ブロッキング）**
+     - context反映の実作業は家老/担当忍者が指示系統で実施
+
+8. 穴2（知識鮮度管理）をdeploy時警告へ簡素化（PD-017 / cmd_239）
+   - 殿裁定: 5メカニズム段階導入は却下。新仕組みを増やさない。
+   - 実装:
+     - `deploy_task.sh` が `config/projects.yaml` の `context_file` を解決
+     - 対象 `context/*.md` の `last_updated` を検査し、14日以上なら WARNING表示
+     - `last_updated` メタデータ欠落/ファイル欠落も WARNING表示
+   - 運用:
+     - **検出+警告のみ（非ブロッキング）**
+     - 更新判断は既存の指示系統（将軍→家老→忍者）で行う
+
 ## ninja_monitor.sh
 
 - idle検知+CTX>50%で忍者に/clear、家老に/clearを自動送信
