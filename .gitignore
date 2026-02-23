@@ -86,6 +86,9 @@
 !context/infrastructure.md
 !context/doc-style-guide.md
 !context/l3-robustness.md
+!context/dm-signal-core.md
+!context/dm-signal-ops.md
+!context/dm-signal-research.md
 
 # Scripts
 !scripts/

@@ -473,6 +473,107 @@ except Exception as e:
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
 
+# ─── context_files自動注入（cmd_280: 分割context選択的読込） ───
+inject_context_files() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_context_files: task file not found: $task_file"
+        return 0
+    fi
+
+    python3 -c "
+import yaml, sys, os, tempfile
+
+task_file = '$task_file'
+script_dir = '$SCRIPT_DIR'
+projects_yaml = os.path.join(script_dir, 'config', 'projects.yaml')
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        sys.exit(0)
+
+    task = data['task']
+
+    # 既にcontext_filesが設定済みなら上書きしない（家老が手動指定した場合）
+    if task.get('context_files'):
+        print('[INJECT_CTX] context_files already exists, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    project = task.get('project', '')
+    if not project:
+        sys.exit(0)
+
+    if not os.path.exists(projects_yaml):
+        sys.exit(0)
+
+    with open(projects_yaml) as f:
+        pdata = yaml.safe_load(f)
+
+    # プロジェクトのcontext_files定義を探す
+    ctx_files = None
+    ctx_index = None
+    for p in pdata.get('projects', []):
+        if p.get('id') == project:
+            ctx_files = p.get('context_files', [])
+            ctx_index = p.get('context_file', '')
+            break
+
+    if not ctx_files:
+        sys.exit(0)
+
+    # 索引ファイルは常に含める
+    result = []
+    if ctx_index:
+        result.append(ctx_index)
+
+    # タスクのtask_typeやdescriptionからタグをマッチング
+    task_type = str(task.get('task_type', '')).lower()
+    description = str(task.get('description', '')).lower()
+    title = str(task.get('title', '')).lower()
+    task_text = f'{task_type} {description} {title}'
+
+    for cf in ctx_files:
+        tags = cf.get('tags', [])
+        filepath = cf.get('file', '')
+        if not filepath:
+            continue
+        # タグがタスクテキストに含まれるか、タグなしなら常に含める
+        if not tags:
+            result.append(filepath)
+        elif any(tag.lower() in task_text for tag in tags):
+            result.append(filepath)
+
+    # フォールバック: タグマッチが索引のみの場合、全ファイルを含める
+    if len(result) <= 1:
+        result = [ctx_index] if ctx_index else []
+        for cf in ctx_files:
+            filepath = cf.get('file', '')
+            if filepath:
+                result.append(filepath)
+
+    task['context_files'] = result
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[INJECT_CTX] Injected {len(result)} context files for project={project}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[INJECT_CTX] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
 # ─── context鮮度チェック（穴2対策: cmd_239） ───
 check_context_freshness() {
     local task_file="$1"
@@ -624,6 +725,9 @@ inject_related_lessons "$TASK_FILE" || true
 
 # 偵察報告自動注入（失敗してもデプロイは継続）
 inject_reports_to_read "$TASK_FILE" || true
+
+# context_files自動注入（失敗してもデプロイは継続）
+inject_context_files "$TASK_FILE" || true
 
 # context鮮度チェック（失敗してもデプロイは継続）
 check_context_freshness "$TASK_FILE" || true
