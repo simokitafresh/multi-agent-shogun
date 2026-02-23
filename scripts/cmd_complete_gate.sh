@@ -281,11 +281,42 @@ except:
         report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
 
         if [ -f "$report_file" ]; then
-            if grep -q 'lesson_referenced:' "$report_file" 2>/dev/null; then
-                echo "  ${ninja_name}: OK (lesson_referenced present)"
+            # Python判定: lesson_referencedが非空リストかチェック
+            lr_status=$(python3 -c "
+import yaml, sys
+try:
+    with open('$report_file') as f:
+        data = yaml.safe_load(f)
+    if not data:
+        print('empty')
+        sys.exit(0)
+    lr = data.get('lesson_referenced')
+    if lr and isinstance(lr, list) and len(lr) > 0:
+        print('ok')
+    else:
+        print('empty')
+except:
+    print('error')
+" 2>/dev/null)
+
+            if [ "$lr_status" = "ok" ]; then
+                echo "  ${ninja_name}: OK (lesson_referenced present and non-empty)"
             else
-                echo "  ${ninja_name}: NG ← related_lessonsあり、lesson_referencedフィールド欠落"
-                record_block_reason "${ninja_name}:missing_lesson_referenced"
+                # related_lessonsからlesson IDを抽出してメッセージに表示
+                rl_ids=$(python3 -c "
+import yaml
+try:
+    with open('$task_file') as f:
+        data = yaml.safe_load(f)
+    task = data.get('task', {}) if data else {}
+    rl = task.get('related_lessons', [])
+    ids = [str(l.get('id', '?')) for l in rl if isinstance(l, dict)]
+    print(','.join(ids) if ids else '(unknown)')
+except:
+    print('(parse_error)')
+" 2>/dev/null)
+                echo "  ${ninja_name}: NG ← lesson_referenced空。related_lessons [${rl_ids}] のうち参考にしたものを報告に記載せよ"
+                record_block_reason "${ninja_name}:empty_lesson_referenced:related=[${rl_ids}]"
                 ALL_CLEAR=false
             fi
         else
