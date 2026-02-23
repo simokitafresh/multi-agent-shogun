@@ -269,6 +269,36 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 6. Memory MCP — 殿の好み+将軍教訓のみ(将軍専用)。事実・ポインタ・PJ詳細を入れるな
 7. 原則: 受動的(自動ロード,判断0回) > 能動的(Memory MCP,判断2回)
 
+## Vercelスタイル — context/*.md記述ルール（Design for Retrieval）
+
+**原則**: 普段はcontext結論だけで判断。深掘り時のみリンク先を読む。
+
+### 構造
+- context/*.md = **索引層**（結論+参照のみ）
+- docs/research/*.md = **詳細データ恒久保存先**（データテーブル・経緯・調査過程）
+
+### 命名規則
+- ファイル名: `kebab-case`。探す側の言葉で命名（例: `core-api-endpoints.md`, `frontend-components.md`）
+- 一回限りの調査結果: cmd番号付き（例: `cmd_270_slope-analysis.md`）
+- 恒久的参照資料: 機能名（例: `core-param-catalog.md`）。cmd番号はファイル内メタデータに記載
+- セクション: §番号で順序制御（§1, §2, ...）
+- パス参照: バッククォート囲み（`` `docs/research/core-api-endpoints.md` ``）
+
+### 書き方
+- 結論1-2行 + 参照先パス（`→ docs/research/cmd_XXX_*.md` / L045等）
+- 散文禁止。テーブル or 1行結論+参照で最大情報密度
+- 大ファイルにはgrep検索パターン（§番号等）を索引に付記
+
+### 禁則
+- **リンク先なき圧縮 = 削除 = 禁止**（殿直伝）。先にリンク先を作り、確認してから圧縮
+- 索引とリンク先に同一情報を重複させるな
+- 1ファイル500行以下。超えたら分割
+
+### 圧縮手順（Phase順序厳守）
+1. リンク先作成（docs/research/に詳細移動）→ リンク先存在確認
+2. context圧縮（結論+参照の索引層に変換）
+3. 手順逆転禁止。リンク先がない状態で圧縮するな
+
 # Project Management
 
 System manages ALL white-collar work, not just self-improvement. Project folders can be external (outside this repo). `projects/` is git-ignored (contains secrets).
