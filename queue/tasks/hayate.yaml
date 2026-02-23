@@ -1,0 +1,54 @@
+task:
+  acceptance_criteria:
+  - 'AC1: 2偵察報告が統合されDTB3データ構造+MI分析結果がある'
+  - 'AC2: Phase2実施判定の根拠が明記されている'
+  - 'AC3: context(research or dm-signal)に恒久記録されている'
+  - 'AC4: git commit + pushされている'
+  assigned_to: hayate
+  bloom_level: L5
+  description: "【注入教訓】 必ず確認し reviewed: true に変更せよ\n  - L112: cmd274_c3_generalization.py\
+    \ で parse_signal_tickers() を追加し、'{\"TECL\":1.0}' 形式を jso\n  - L085: signals/monthly_returns/rolling_returns_chart/trade_performanceの4つだけでは不足。drawdow\n\
+    \  - L127: GS結果を利用する際は `DATA_CATALOG.md` と `meta.yaml` を必ず参照する\n  - L121: experiments.db\
+    \ はスナップショットであり SSOT ではない\n  - L117: saizo(cmd_277,subtask_277_nukimi)\n────────────────────────────────────────\n\
+    \n■ INTEG-001 (Mandatory)\nSee templates/integ_base.md for full rules.\n\ncmd_282偵察2名の結果を統合し、Phase2(追加外部データ調査)の要否を判定し、\n\
+    結果をcontextに恒久記録せよ。\n\n■ 統合対象\n- queue/reports/hanzo_report.yaml (subtask_282_recon_a:\
+    \ experiments.db棚卸し+DTB3特定)\n- ⚠ queue/reports/saizo_report.yaml は空テンプレート(L103問題)。\n\
+    \  才蔵のinbox要約を使用:\n  「DTB3は低情報量外部データ源(最大MI=0.058bits)。\n   Bayes上界は改善せず-5.2pp悪化。precision80%不可能を外部データ角度から再確認。」\n\
+    \  才蔵のcommit/スクリプトが outputs/scripts/cmd_282/ にあれば参照せよ。\n\n■ 偵察結果サマリ\n半蔵(recon_a):\n\
+    - experiments.db: 7テーブル、データ有=3(daily_prices/download_metadata/monthly_returns)\n\
+    - DTB3: daily_pricesテーブルにticker='DTB3'で格納。close_priceのみ。6529行(2000-2026)\n- 外部指標:\
+    \ DTB3+^VIX=2銘柄。ETF12銘柄。合計14銘柄\n- DATA_CATALOGの86銘柄記載は実際14銘柄と乖離\n\n才蔵(recon_b):\n\
+    - DTB3最大MI=0.058bits(低情報量)\n- DTB3追加後のBayes上界: 改善せず-5.2pp悪化\n- precision80%は外部データ角度からも構造的に不可能\n\
+    \n■ Phase2判定\nPhase2(追加外部データ調査=FRED API等)の実施要否を判定せよ:\n- DTB3のMI=0.058bits → 既存外部データは情報量が極めて低い\n\
+    - Bayes上界は悪化(-5.2pp) → 外部データ追加は逆効果の可能性\n- 推奨: Phase2は費用対効果が低い。cmd_282はPhase1で完結と判定\n\
+    - ※ 根拠を報告YAMLに明記すること\n\n■ context恒久化\n⚠ cmd_280がdm-signal.mdを3分割中(core/ops/research)。\n\
+    → context/dm-signal-research.md が存在すればそこに追記\n→ 存在しなければ context/dm-signal.md に追記\n\
+    - 新セクション「外部データ統合エッジ検知(cmd_282)」を追加\n- DTB3のデータ構造(テーブル/期間/品質)+MI分析結果を含める\n- DATA_CATALOGの銘柄数乖離(86→14)も記載\n\
+    - Phase2不要の判定根拠も記載\n\n■ 出力\n- context更新 (dm-signal-research.md or dm-signal.md)\n\
+    - git commit + push\n"
+  parent_cmd: cmd_282
+  project: dm-signal
+  related_lessons:
+  - id: L112
+    reviewed: true
+    summary: cmd274_c3_generalization.py で parse_signal_tickers() を追加し、'{"TECL":1.0}'
+      形式を json.loads で解析してティッカーキーを抽出。未対応時は proxy daily distribution が n=0/NaN になった。
+  - id: L085
+    reviewed: true
+    summary: signals/monthly_returns/rolling_returns_chart/trade_performanceの4つだけでは不足。drawdown_periods/portfolio_metrics等16テーブル全てをFK依存順に削除する必要がある。小太郎発見(cmd_215v2
+      cleanup)
+  - id: L127
+    reviewed: true
+    summary: GS結果を利用する際は `DATA_CATALOG.md` と `meta.yaml` を必ず参照する
+  - id: L121
+    reviewed: true
+    summary: experiments.db はスナップショットであり SSOT ではない
+  - id: L117
+    reviewed: true
+    summary: saizo(cmd_277,subtask_277_nukimi)
+  status: done
+  task_id: subtask_282_integ
+  task_type: integrate
+  timeout_minutes: 10
+  timestamp: '2026-02-23T19:30:00'
+  title: '外部データ統合エッジ検知: 偵察統合+Phase2判定+context恒久化'

@@ -1,0 +1,66 @@
+worker_id: hayate
+task_id: subtask_282_integ
+parent_cmd: cmd_282
+timestamp: "2026-02-23T19:50:00"
+status: done
+result:
+  summary: |
+    cmd_282偵察2名(半蔵:データ構造棚卸し, 才蔵:MI分析)の結果を統合完了。
+    INTEG-001矛盾検出: 矛盾なし。両偵察は異なる角度(構造 vs 情報量)から整合的に
+    「DTB3は低価値外部データ」と結論。Phase2(追加外部データ調査)は不要と判定。
+
+  ac1_integration_complete: true
+  ac1_detail: |
+    半蔵: experiments.db 7テーブル棚卸し完了。データ有=3テーブル。DTB3はdaily_pricesにticker='DTB3'で格納(6529行)。
+    才蔵: DTB3派生12特徴量のMI分析完了。最大MI=0.058bits(dtb3_corr_DM2)。
+
+  ac2_phase2_judgment: "Phase2不要"
+  ac2_detail: |
+    Phase2不要の根拠:
+    1. DTB3最大MI=0.058bits(低情報量)
+    2. Bayes上界: C2-B only=0.689 → C2-B+DTB3=0.637(-5.2pp悪化)
+    3. I(X;Y)≈0bits(DTB3とDM3崩壊間にほぼ情報なし)
+    4. cmd_274 C2-A(VIX/yield curve)も「独立だが無関連」判定済み
+    5. cmd_274 C4-B情報理論的上界=0.689(69%)既証明
+
+  ac3_context_updated: true
+  ac3_detail: "context/dm-signal-research.md §22として恒久記録済み"
+
+  ac4_git: "commit + push待ち"
+
+  integ001_contradiction_check:
+    contradictions_found: false
+    reconciliation: |
+      半蔵(データ構造)と才蔵(MI分析)の報告に矛盾なし。
+      両者は異なる角度から分析し、共に「DTB3は低価値外部データ」と収束。
+      DATA_CATALOG.mdの86銘柄 vs 実測14銘柄の乖離も両者で一致確認。
+
+lesson_candidate:
+  found: true
+  candidates:
+    - title: "DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納"
+      detail: "economic_indicatorsテーブルは空。DTB3の利回りデータはclose_priceカラムに格納"
+      source: "半蔵(subtask_282_recon_a)"
+    - title: "DATA_CATALOG.mdの86銘柄は古い情報。実際のexperiments.db daily_pricesは14銘柄"
+      detail: "本番PostgreSQLが86銘柄、experiments.dbはDM戦略使用銘柄のみのサブセット"
+      source: "半蔵(subtask_282_recon_a)"
+    - title: "外部データ(DTB3)追加はBayes上界を悪化させる(-5.2pp)。情報なき次元追加は逆効果"
+      detail: "C2-B 22特徴量のacc_upper=0.689に対し、DTB3 12特徴量追加後=0.637。次元の呪い"
+      source: "才蔵(subtask_282_recon_b)"
+
+lesson_referenced:
+  - id: L121
+    how_used: "experiments.dbがスナップショットであることを前提にDATA_CATALOGとの整合性検証"
+  - id: L127
+    how_used: "DATA_CATALOG.mdを実データと照合。86銘柄 vs 14銘柄の乖離確認"
+  - id: L112
+    how_used: "直接使用なし(JSON形式signal解析は範囲外)"
+  - id: L085
+    how_used: "直接使用なし(テーブル削除は範囲外)"
+  - id: L117
+    how_used: "直接使用なし(SPA検定知見は範囲外)"
+
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
