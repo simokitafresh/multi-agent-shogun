@@ -167,6 +167,75 @@ PYEOF
     ) 200>"$LOCKFILE"; then
         # AC3: Auto-call sync_lessons.sh after write
         bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+        # Context索引自動追記 (cmd_300)
+        NEW_LESSON_ID=""
+        if [ -f "$LESSON_ID_FILE" ]; then
+            NEW_LESSON_ID=$(cat "$LESSON_ID_FILE")
+        fi
+        if [ -n "$NEW_LESSON_ID" ]; then
+            CONTEXT_FILE=$(python3 -c "
+import yaml
+with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+    cfg = yaml.safe_load(f)
+for p in cfg.get('projects', []):
+    if p['id'] == '$PROJECT_ID':
+        print(p.get('context_file', ''))
+        break
+")
+            if [ -n "$CONTEXT_FILE" ]; then
+                CONTEXT_FULL_PATH="$SCRIPT_DIR/$CONTEXT_FILE"
+                if [ -f "$CONTEXT_FULL_PATH" ]; then
+                    # AC2: dedup — 同一LESSON_IDがあればスキップ (L006教訓)
+                    if ! grep -qF -- "- ${NEW_LESSON_ID}:" "$CONTEXT_FULL_PATH"; then
+                        (
+                            flock -w 10 201 || { echo "WARN: context lock timeout" >&2; exit 0; }
+                            export CONTEXT_FULL_PATH NEW_LESSON_ID TITLE SOURCE_CMD
+                            python3 << 'CTXEOF'
+import re, os
+
+ctx_path = os.environ["CONTEXT_FULL_PATH"]
+lesson_id = os.environ["NEW_LESSON_ID"]
+title = os.environ["TITLE"]
+source_cmd = os.environ.get("SOURCE_CMD", "")
+
+with open(ctx_path, encoding='utf-8') as f:
+    content = f.read()
+
+entry = f"- {lesson_id}: {title}"
+if source_cmd:
+    entry += f"\uFF08{source_cmd}\uFF09"
+
+# Find the last lessons section
+# Patterns: "## ...教訓..." or "## ...Lesson..."
+section_pattern = re.compile(r'^(##\s+.*(?:教訓|[Ll]esson).*)', re.MULTILINE)
+matches = list(section_pattern.finditer(content))
+
+if matches:
+    last_match = matches[-1]
+    after_section = content[last_match.end():]
+    next_heading = re.search(r'^## ', after_section, re.MULTILINE)
+    if next_heading:
+        insert_pos = last_match.end() + next_heading.start()
+        new_content = content[:insert_pos].rstrip('\n') + '\n' + entry + '\n\n' + content[insert_pos:]
+    else:
+        new_content = content.rstrip('\n') + '\n' + entry + '\n'
+else:
+    new_content = content.rstrip('\n') + '\n\n## 教訓索引（自動追記）\n\n' + entry + '\n'
+
+with open(ctx_path, 'w', encoding='utf-8') as f:
+    f.write(new_content)
+
+print(f"[lesson_write] {lesson_id} appended to {ctx_path}")
+CTXEOF
+                        ) 201>"${CONTEXT_FULL_PATH}.lock"
+                    else
+                        echo "[lesson_write] ${NEW_LESSON_ID} already in $CONTEXT_FILE, skipping context append"
+                    fi
+                else
+                    echo "WARN: context file not found: $CONTEXT_FULL_PATH" >&2
+                fi
+            fi
+        fi
         # --strategic: Register as pending decision (replaces direct dashboard.md editing)
         if [ "$STRATEGIC" == "--strategic" ]; then
             NEW_LESSON_ID=""
