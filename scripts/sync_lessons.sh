@@ -61,6 +61,8 @@ lines = body.split('\n')
 lessons = []
 i = 0
 in_numbered_section = False  # True when inside ## N. section
+# If L-style entries exist, trust only that format to avoid duplicate/ghost IDs.
+has_l_style_entries = any(re.match(r'^###\s+L\d+\s*[:：]\s*', ln) for ln in lines)
 
 while i < len(lines):
     line = lines[i]
@@ -77,7 +79,19 @@ while i < len(lines):
     # Match ### title (subsection lesson)
     m_h3 = re.match(r'^### (.+)', line)
 
-    if m_h2_num:
+    if has_l_style_entries:
+        # Canonical mode: parse only "### LXXX: title" entries.
+        if not m_h3:
+            i += 1
+            continue
+        raw_title = m_h3.group(1).strip()
+        m_lid = re.match(r'^L(\d+)\s*[:：]\s*(.+)$', raw_title)
+        if not m_lid:
+            i += 1
+            continue
+        lesson_id = f'L{int(m_lid.group(1)):03d}'
+        title = m_lid.group(2).strip()
+    elif m_h2_num:
         in_numbered_section = True
         num = int(m_h2_num.group(1))
         lesson_id = f'L{num:03d}'
@@ -102,12 +116,9 @@ while i < len(lines):
             lesson_id = f'L{int(m_lid.group(1)):03d}'
             title = m_lid.group(2).strip()
         else:
-            title = raw_title
-            # Extract date from parenthesized suffix
-            m_date = re.search(r'[（(](\d{4}-\d{2}-\d{2})[）)]', raw_title)
-            if m_date:
-                date_str = m_date.group(1)
-                title = re.sub(r'\s*[（(]\d{4}-\d{2}-\d{2}[）)]\s*$', '', title)
+            # In legacy mode, non-L### headings are structural text, not lessons.
+            i += 1
+            continue
     else:
         i += 1
         continue
@@ -174,24 +185,20 @@ while i < len(lines):
     lessons.append(entry)
     i = j if j > i + 1 else i + 1
 
-# Assign IDs to lessons without explicit IDs
-max_num = 0
-for l in lessons:
-    if l.get('id'):
-        try:
-            num = int(l['id'].replace('L', ''))
-            max_num = max(max_num, num)
-        except ValueError:
-            pass
-
-for l in lessons:
-    if not l.get('id'):
-        max_num += 1
-        l['id'] = f'L{max_num:03d}'
-
-# Sort by ID number descending (newest/highest first), limit to 20
+# Keep only explicit IDs to prevent ghost entries, then sort by newest ID first.
+lessons = [l for l in lessons if l.get('id')]
 lessons.sort(key=lambda x: int(x['id'].replace('L', '')), reverse=True)
-lessons = lessons[:50]
+
+# Deduplicate by lesson id (keep first/newest after sorting).
+seen = set()
+deduped = []
+for lesson in lessons:
+    lesson_id = lesson['id']
+    if lesson_id in seen:
+        continue
+    seen.add(lesson_id)
+    deduped.append(lesson)
+lessons = deduped
 
 # Build output
 data = {
