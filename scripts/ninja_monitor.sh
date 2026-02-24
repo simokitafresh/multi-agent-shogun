@@ -168,7 +168,14 @@ check_idle() {
 
     if [ -n "$agent_state" ]; then
         if [ "$agent_state" = "idle" ]; then
-            return 0  # IDLE（@agent_state確定）
+            local last_active
+            last_active=$(tmux display-message -t "$pane_target" -p '#{@last_active}' 2>/dev/null)
+            local now
+            now=$(date +%s)
+            if [ -n "$last_active" ] && [ $((now - last_active)) -lt 15 ]; then
+                return 1  # grace period内はBUSY扱い（thinking中の誤判定防止）
+            fi
+            return 0  # IDLE確定（grace period経過）
         else
             return 1  # BUSY（active等 — @agent_state確定）
         fi
@@ -187,7 +194,7 @@ check_idle() {
         busy_pat=$(cli_profile_get "$agent_name" "busy_patterns")
     fi
     if [ -z "$busy_pat" ]; then
-        busy_pat="esc to interrupt|Running|Streaming|background terminal running"
+        busy_pat="esc to interrupt|Running|Streaming|background terminal running|thinking|thought for"
     fi
     if echo "$output" | grep -qE "$busy_pat"; then
         return 1  # BUSY
@@ -1103,6 +1110,13 @@ send_karo_clear() {
     sleep 0.3
     tmux send-keys -t "$karo_pane" Enter
     LAST_KARO_CLEAR=$now
+
+    # 復帰トリガー: /clear完了後にinbox_writeで家老を確実に起こす
+    # sleep 5で/clear処理完了を待ち、inbox_watcher経由でnudge配信
+    sleep 5
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "auto-clear復帰。pending cmd確認せよ。" recovery ninja_monitor >> "$LOG" 2>&1
+    log "KARO-RECOVERY: recovery nudge sent after clear"
+
     return 0
 }
 
