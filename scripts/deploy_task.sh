@@ -746,6 +746,13 @@ try:
                     sys.exit(0)
                 break
 
+    # 2.5. report_merge.doneチェック（偵察が統合済みならPASS）
+    gate_dir = os.path.join(script_dir, 'queue', 'gates', parent_cmd)
+    merge_done = os.path.join(gate_dir, 'report_merge.done')
+    if os.path.exists(merge_done):
+        print(f'PASS: report_merge.done exists for {parent_cmd}', file=sys.stderr)
+        sys.exit(0)
+
     # 3. queue/tasks/*.yamlからscout/reconタスクのdone数をカウント
     tasks_dir = os.path.join(script_dir, 'queue', 'tasks')
     done_count = 0
