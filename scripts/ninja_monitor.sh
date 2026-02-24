@@ -1111,12 +1111,6 @@ send_karo_clear() {
     tmux send-keys -t "$karo_pane" Enter
     LAST_KARO_CLEAR=$now
 
-    # 復帰トリガー: /clear完了後にinbox_writeで家老を確実に起こす
-    # sleep 5で/clear処理完了を待ち、inbox_watcher経由でnudge配信
-    sleep 5
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "auto-clear復帰。pending cmd確認せよ。" recovery ninja_monitor >> "$LOG" 2>&1
-    log "KARO-RECOVERY: recovery nudge sent after clear"
-
     return 0
 }
 
