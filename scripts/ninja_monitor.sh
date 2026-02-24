@@ -1259,7 +1259,7 @@ check_script_update() {
 # gate_lesson_health.shを呼び出し、ALERTなら家老に通知
 LAST_LESSON_CHECK=0
 LESSON_CHECK_INTERVAL=600  # 10分間隔(秒)
-LESSON_ALERT_DEBOUNCE=3600 # 同一ALERT再通知抑制(1時間)
+LESSON_ALERT_DEBOUNCE=21600 # 同一ALERT再通知抑制(6時間)
 LAST_LESSON_ALERT=0
 
 check_lesson_health() {
@@ -1294,6 +1294,7 @@ check_lesson_health() {
         alerts=$(echo "$output" | grep "^ALERT:" | tr '\n' ' ')
         log "LESSON-HEALTH: $alerts"
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "lesson健全性ALERT: ${alerts}" lesson_health ninja_monitor >> "$LOG" 2>&1
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【教訓ALERT】${alerts}" >> "$LOG" 2>&1
         LAST_LESSON_ALERT=$now
     else
         log "LESSON-HEALTH: all projects OK"
