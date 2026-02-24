@@ -91,10 +91,54 @@ check_project() {
     fi
 }
 
+# 未振り分け教訓チェック (cmd_301)
+# context fileの「## 教訓索引（自動追記）」セクション内の「- L」行をカウント
+# $1: project_id
+UNSORTED_THRESHOLD=10
+
+check_unsorted_lessons() {
+    local project_id="$1"
+    local context_file
+
+    # context_fileをconfig/projects.yamlから取得
+    context_file=$(grep -A5 "id: ${project_id}" "$CONFIG_FILE" 2>/dev/null \
+        | grep 'context_file:' | head -1 \
+        | sed 's/.*context_file:[[:space:]]*//' | tr -d '"' | tr -d "'" | tr -d '[:space:]')
+
+    if [ -z "$context_file" ]; then
+        context_file="context/${project_id}.md"
+    fi
+    local context_path="$SCRIPT_DIR/$context_file"
+
+    if [ ! -f "$context_path" ]; then
+        # context fileなし → 0件扱い
+        return 0
+    fi
+
+    # セクション「## 教訓索引（自動追記）」内の「- L」行をカウント
+    local count
+    count=$(awk '
+        /^## 教訓索引（自動追記）/ { in_section=1; next }
+        in_section && /^## / { exit }
+        in_section && /^- L/ { c++ }
+        END { print c+0 }
+    ' "$context_path")
+
+    if [ "$count" -gt "$UNSORTED_THRESHOLD" ]; then
+        echo "ALERT: ${project_id}の未振り分け教訓${count}件 → /lesson-sort推奨"
+        return 1
+    elif [ "$count" -gt 0 ]; then
+        echo "OK: ${project_id}の未振り分け教訓${count}件(閾値${UNSORTED_THRESHOLD}以下)"
+    fi
+    # セクションなし or 0件 → 何も出力しない（0件扱い）
+    return 0
+}
+
 # メイン処理
 if [ $# -ge 1 ]; then
     # 引数あり: 指定projectのみチェック
     check_project "$1" || EXIT_CODE=1
+    check_unsorted_lessons "$1" || EXIT_CODE=1
 else
     # 引数なし: 全projectを走査
     if [ ! -f "$CONFIG_FILE" ]; then
@@ -115,6 +159,7 @@ else
 
     for pid in "${local_ids[@]}"; do
         check_project "$pid" || EXIT_CODE=1
+        check_unsorted_lessons "$pid" || EXIT_CODE=1
     done
 fi
 
