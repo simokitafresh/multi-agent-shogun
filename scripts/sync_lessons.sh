@@ -43,6 +43,7 @@ mkdir -p "$(dirname "$CACHE_FILE")"
     python3 << 'PYEOF'
 import re, yaml, os, tempfile
 from datetime import datetime
+from collections import defaultdict
 
 ssot_file = os.environ["SSOT_FILE"]
 cache_file = os.environ["CACHE_FILE"]
@@ -63,6 +64,7 @@ i = 0
 in_numbered_section = False  # True when inside ## N. section
 # If L-style entries exist, trust only that format to avoid duplicate/ghost IDs.
 has_l_style_entries = any(re.match(r'^###\s+L\d+\s*[:：]\s*', ln) for ln in lines)
+current_category = "未分類"
 
 while i < len(lines):
     line = lines[i]
@@ -80,6 +82,12 @@ while i < len(lines):
     m_h2_plain = re.match(r'^## (.+)', line) if not m_h2_num else None
     # Match ### title (subsection lesson)
     m_h3 = re.match(r'^### (.+)', line)
+
+    # Track current category from ## section headings
+    if m_h2_num:
+        current_category = m_h2_num.group(2).strip()
+    elif m_h2_plain:
+        current_category = m_h2_plain.group(1).strip()
 
     if has_l_style_entries:
         # Canonical mode: parse only "### LXXX: title" entries.
@@ -186,7 +194,7 @@ while i < len(lines):
 
     summary = ' '.join(summary_parts)[:200].strip() if summary_parts else title
 
-    entry = {'id': lesson_id, 'title': title, 'summary': summary}
+    entry = {'id': lesson_id, 'title': title, 'summary': summary, 'category': current_category}
     if source:
         entry['source'] = source
     if date_str:
@@ -281,6 +289,29 @@ except Exception:
     raise
 
 print(f'Synced {len(lessons)} lessons to {cache_file}')
+
+# Category summary
+cat_stats = defaultdict(lambda: {'total': 0, 'confirmed': 0, 'deprecated': 0, 'draft': 0})
+for lesson in lessons:
+    cat = lesson.get('category', '未分類')
+    cat_stats[cat]['total'] += 1
+    st = lesson.get('status', 'confirmed')
+    if st in ('confirmed', 'deprecated', 'draft'):
+        cat_stats[cat][st] += 1
+    else:
+        cat_stats[cat]['confirmed'] += 1
+
+print('Category summary:')
+for cat in sorted(cat_stats.keys()):
+    s = cat_stats[cat]
+    parts = []
+    if s['confirmed']:
+        parts.append(f"{s['confirmed']} confirmed")
+    if s['deprecated']:
+        parts.append(f"{s['deprecated']} deprecated")
+    if s['draft']:
+        parts.append(f"{s['draft']} draft")
+    print(f"  {cat}: {s['total']}件 ({', '.join(parts)})")
 PYEOF
 
 ) 200>"$LOCKFILE"
