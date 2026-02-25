@@ -870,7 +870,6 @@ except:
 
     exit 0
 else
-    # TODO: GATE BLOCK時のharmful更新は将来検討(タスク失敗とGATEプロセス不備は別)
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
     if [ ${#BLOCK_REASONS[@]} -gt 0 ]; then
         block_reason=$(IFS='|'; echo "${BLOCK_REASONS[*]}")
@@ -950,6 +949,103 @@ else
         echo "  Generated: ${DRAFT_GENERATED} draft lesson(s)"
     else
         echo "  SKIP (project not found in cmd)"
+    fi
+
+    # ─── GATE BLOCK時 harmful判定（教訓参照しなかった忍者の注入教訓にharmful +1） ───
+    echo ""
+    echo "Lesson score update (harmful - GATE BLOCK):"
+    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_update_score.sh" ]; then
+        HARMFUL_UPDATED=0
+        for task_file in "$TASKS_DIR"/*.yaml; do
+            [ -f "$task_file" ] || continue
+            if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+                continue
+            fi
+            ninja_name=$(basename "$task_file" .yaml)
+            report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+
+            # related_lessonsを取得（なければスキップ）
+            related_ids=$(python3 -c "
+import yaml, sys
+try:
+    with open('$task_file') as f:
+        data = yaml.safe_load(f)
+    task = data.get('task', {}) if data else {}
+    rl = task.get('related_lessons', [])
+    if rl:
+        for l in rl:
+            if isinstance(l, dict) and 'id' in l:
+                print(l['id'])
+except:
+    pass
+" 2>/dev/null)
+
+            if [ -z "$related_ids" ]; then
+                echo "  ${ninja_name}: SKIP (no related_lessons)"
+                continue
+            fi
+
+            # lesson_referencedの有無を確認
+            lr_empty=true
+            if [ -f "$report_file" ]; then
+                lr_check=$(python3 -c "
+import yaml, sys
+try:
+    with open('$report_file') as f:
+        data = yaml.safe_load(f)
+    if not data:
+        print('empty')
+        sys.exit(0)
+    lr = data.get('lesson_referenced')
+    if lr and isinstance(lr, list) and len(lr) > 0:
+        print('ok')
+    else:
+        print('empty')
+except:
+    print('empty')
+" 2>/dev/null)
+                if [ "$lr_check" = "ok" ]; then
+                    lr_empty=false
+                fi
+            fi
+
+            if [ "$lr_empty" = false ]; then
+                echo "  ${ninja_name}: SKIP (lesson_referenced non-empty)"
+                continue
+            fi
+
+            # タスクstatusを取得
+            task_status=$(python3 -c "
+import yaml, sys
+try:
+    with open('$task_file') as f:
+        data = yaml.safe_load(f)
+    task = data.get('task', {}) if data else {}
+    print(task.get('status', 'unknown'))
+except:
+    print('unknown')
+" 2>/dev/null)
+
+            # lesson_referenced空 + タスクdone → harmful +1
+            if [ "$task_status" = "done" ]; then
+                while IFS= read -r lid; do
+                    [ -z "$lid" ] && continue
+                    if bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$CMD_PROJECT" "$lid" harmful 2>&1; then
+                        echo "  ${ninja_name}/${lid}: harmful +1 (task done, lesson not referenced)"
+                        HARMFUL_UPDATED=$((HARMFUL_UPDATED + 1))
+                    else
+                        echo "  WARN: ${ninja_name}/${lid}: harmful score update failed (non-blocking)"
+                    fi
+                done <<< "$related_ids"
+            else
+                echo "  ${ninja_name}: SKIP (task status=${task_status}, not done — failure is not lesson's fault)"
+            fi
+        done
+        echo "  Updated: ${HARMFUL_UPDATED} harmful score(s)"
+    elif [ -z "$CMD_PROJECT" ]; then
+        echo "  SKIP (project not found in cmd)"
+    else
+        echo "  SKIP (lesson_update_score.sh not found)"
     fi
 
     exit 1

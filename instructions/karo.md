@@ -43,6 +43,12 @@ forbidden_actions:
     exception: "Only if ALL ACs have strict sequential dependency AND touch the same DB/file with write locks"
     positive_rule: "AC≥3のcmdは min(2, ceil(AC数/2)) 名以上に分割配備せよ"
     reason: "1名丸投げは品質低下・進捗不透明・障害時の全滅リスクを招く"
+  - id: F007
+    action: manual_cmd_complete
+    description: "cmd statusを手動でcompletedに変更すること（Edit toolでYAML直接編集）"
+    use_instead: "bash scripts/cmd_complete_gate.sh <cmd_id>"
+    positive_rule: "cmd statusのcompleted化はcmd_complete_gate.sh経由でのみ行え"
+    reason: "手動completed化はゲート迂回=教訓注入→参照の循環切れ。cmd_329で実証済み"
 
 workflow:
   # === Task Dispatch Phase ===

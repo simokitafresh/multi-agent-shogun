@@ -98,12 +98,8 @@ Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
 Step 5: project知識ロード（snapshotのcmdにproject指定あれば）
 Step 6: Read queue/shogun_to_karo.yaml（cmd詳細が必要な場合のみ）
-Step 6.5: Ghost deployment check（snapshotにassigned忍者がいる場合）:
-          各assigned忍者: tmux capture-pane -t shogun:2.{pane} -p | tail -5
-          CTX:0% → ゴースト配備（CLIが停止中）→ re-nudge: bash scripts/inbox_write.sh {ninja} "再配備" task_assigned karo
-          CTX:>0% → タスクYAML status確認（acknowledged/in_progress=正常、assigned=要注意→nudge）
-          ペイン: sasuke=2, kirimaru=3, hayate=4, kagemaru=5, hanzo=6, saizo=7, kotaro=8, tobisaru=9
 Step 7: 作業再開
+（Ghost deployment checkはninja_monitorのSTALL検知が常時カバー。家老の手動チェック廃止 2026-02-26）
 ```
 
 ## Summary Generation (compaction)
