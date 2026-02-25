@@ -134,6 +134,7 @@
 !scripts/switch_project.sh
 !scripts/reset_layout.sh
 !scripts/restart_watchers.sh
+!scripts/lesson_update_score.sh
 
 
 # Tasks (SSOT lessons only)

@@ -200,6 +200,37 @@ for lesson in lessons:
     deduped.append(lesson)
 lessons = deduped
 
+# Preserve score fields from existing cache (helpful_count, harmful_count, last_referenced)
+score_data = {}
+old_data = None
+try:
+    with open(cache_file, encoding='utf-8') as cf:
+        old_data = yaml.safe_load(cf)
+    for old_lesson in (old_data or {}).get('lessons', []):
+        lid = old_lesson.get('id')
+        if lid:
+            score_data[lid] = {
+                'helpful_count': old_lesson.get('helpful_count', 0),
+                'harmful_count': old_lesson.get('harmful_count', 0),
+                'last_referenced': old_lesson.get('last_referenced'),
+            }
+except FileNotFoundError:
+    pass
+except Exception:
+    pass
+
+# Merge score fields into new lessons (preserve existing, default for new)
+for lesson in lessons:
+    lid = lesson.get('id')
+    if lid in score_data:
+        lesson['helpful_count'] = score_data[lid]['helpful_count']
+        lesson['harmful_count'] = score_data[lid]['harmful_count']
+        lesson['last_referenced'] = score_data[lid]['last_referenced']
+    else:
+        lesson['helpful_count'] = 0
+        lesson['harmful_count'] = 0
+        lesson['last_referenced'] = None
+
 # Build output
 data = {
     'ssot_path': ssot_file,
@@ -214,20 +245,14 @@ header = (
 
 # Report deletions: compare with existing cache before overwrite
 new_ids = {l['id'] for l in lessons}
-try:
-    with open(cache_file, encoding='utf-8') as cf:
-        old_data = yaml.safe_load(cf)
-    old_ids = {l['id'] for l in (old_data or {}).get('lessons', [])}
+if old_data is not None:
+    old_ids = {l['id'] for l in old_data.get('lessons', [])}
     deleted = old_ids - new_ids
     added = new_ids - old_ids
     if deleted:
         print(f'Deleted from cache: {sorted(deleted)}')
     if added:
         print(f'Added to cache: {sorted(added)}')
-except FileNotFoundError:
-    pass
-except Exception:
-    pass
 
 tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(cache_file), suffix='.tmp')
 try:
