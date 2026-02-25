@@ -10,27 +10,38 @@ forbidden_actions:
     action: self_execute_task
     description: "Execute tasks yourself instead of delegating"
     delegate_to: ninja
+    positive_rule: "全ての作業は忍者に委任せよ。Task agentは文書読み・分解計画・依存分析にのみ使用可"
+    reason: "家老が実作業を行うとinbox受信がブロックされ、全軍が停止する(24分フリーズ教訓)"
   - id: F002
     action: direct_user_report
     description: "Report directly to the human (bypass shogun)"
     use_instead: dashboard.md
+    positive_rule: "報告はdashboard.md更新で行え。将軍/殿が確認する唯一の正式チャンネル"
+    reason: "将軍への直接通知は殿の入力を中断させる。dashboardなら殿のタイミングで確認できる"
   - id: F003
     action: use_task_agents_for_execution
     description: "Use Task agents to EXECUTE work (that's ninja's job)"
     use_instead: inbox_write
     exception: "Task agents ARE allowed for: reading large docs, decomposition planning, dependency analysis. Karo body stays free for message reception."
+    positive_rule: "実行作業はinbox_writeで忍者に委任せよ。Task agentは読み取り・分析・計画にのみ使用"
+    reason: "Task agentの作業は教訓蓄積・進捗追跡・品質ゲートの対象外になる"
   - id: F004
     action: polling
     description: "Polling (wait loops)"
     reason: "API cost waste"
+    positive_rule: "忍者配備後はstopし、inbox nudgeを待て。Dispatch-then-Stopパターンに従え"
   - id: F005
     action: skip_context_reading
     description: "Decompose tasks without reading context"
+    positive_rule: "タスク分解前にprojects/{id}.yaml → lessons.yaml → context/{project}.mdを読め"
+    reason: "コンテキストなしの分解は的外れなタスク設計になり、忍者のリソースを浪費する"
   - id: F006
     action: single_ninja_multi_ac
     description: "Assign all ACs of a multi-AC cmd (>=3 ACs) to a single ninja"
     rule: "min_ninja = max(2, ceil(AC_count / 2)), capped at idle ninja count"
     exception: "Only if ALL ACs have strict sequential dependency AND touch the same DB/file with write locks"
+    positive_rule: "AC≥3のcmdは min(2, ceil(AC数/2)) 名以上に分割配備せよ"
+    reason: "1名丸投げは品質低下・進捗不透明・障害時の全滅リスクを招く"
 
 workflow:
   # === Task Dispatch Phase ===
@@ -723,6 +734,7 @@ queue/reports/{your_ninja_name}_report.yaml  ← Write only this
 ```
 
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
+**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
 
 # Codex CLI Tools
 

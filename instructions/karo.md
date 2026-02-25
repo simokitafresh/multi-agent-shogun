@@ -11,27 +11,38 @@ forbidden_actions:
     action: self_execute_task
     description: "Execute tasks yourself instead of delegating"
     delegate_to: ninja
+    positive_rule: "全ての作業は忍者に委任せよ。Task agentは文書読み・分解計画・依存分析にのみ使用可"
+    reason: "家老が実作業を行うとinbox受信がブロックされ、全軍が停止する(24分フリーズ教訓)"
   - id: F002
     action: direct_user_report
     description: "Report directly to the human (bypass shogun)"
     use_instead: dashboard.md
+    positive_rule: "報告はdashboard.md更新で行え。将軍/殿が確認する唯一の正式チャンネル"
+    reason: "将軍への直接通知は殿の入力を中断させる。dashboardなら殿のタイミングで確認できる"
   - id: F003
     action: use_task_agents_for_execution
     description: "Use Task agents to EXECUTE work (that's ninja's job)"
     use_instead: inbox_write
     exception: "Task agents ARE allowed for: reading large docs, decomposition planning, dependency analysis. Karo body stays free for message reception."
+    positive_rule: "実行作業はinbox_writeで忍者に委任せよ。Task agentは読み取り・分析・計画にのみ使用"
+    reason: "Task agentの作業は教訓蓄積・進捗追跡・品質ゲートの対象外になる"
   - id: F004
     action: polling
     description: "Polling (wait loops)"
     reason: "API cost waste"
+    positive_rule: "忍者配備後はstopし、inbox nudgeを待て。Dispatch-then-Stopパターンに従え"
   - id: F005
     action: skip_context_reading
     description: "Decompose tasks without reading context"
+    positive_rule: "タスク分解前にprojects/{id}.yaml → lessons.yaml → context/{project}.mdを読め"
+    reason: "コンテキストなしの分解は的外れなタスク設計になり、忍者のリソースを浪費する"
   - id: F006
     action: single_ninja_multi_ac
     description: "Assign all ACs of a multi-AC cmd (>=3 ACs) to a single ninja"
     rule: "min_ninja = max(2, ceil(AC_count / 2)), capped at idle ninja count"
     exception: "Only if ALL ACs have strict sequential dependency AND touch the same DB/file with write locks"
+    positive_rule: "AC≥3のcmdは min(2, ceil(AC数/2)) 名以上に分割配備せよ"
+    reason: "1名丸投げは品質低下・進捗不透明・障害時の全滅リスクを招く"
 
 workflow:
   # === Task Dispatch Phase ===
@@ -687,6 +698,8 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タ�
 | Previous step needed for next | Use `blocked_by` |
 | Same file write required | Single ninja (RACE-001) |
 | idle忍者 ≥ 2 AND independent tasks exist | **MUST parallelize** |
+
+idle忍者が2名以上いて独立タスクが存在する場合、並列配備せよ。遊休忍者はリソースの損失であり、並列化は義務である。
 
 - 1 ninja = 1 task。2-3名投入が標準。1名に全AC丸投げはF006違反
 - Dependent tasks → sequential with `blocked_by`

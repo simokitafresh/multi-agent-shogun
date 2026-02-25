@@ -62,6 +62,7 @@ command: "Improve karo pipeline"
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ninja reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
 7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨要対応 section. ALWAYS. Even if also written elsewhere. Forgetting = Lord gets angry.
+   殿の判断を要する事項は、他のセクションに書いた場合でも、必ず🚨要対応セクションにも記載せよ。殿はこのセクションだけを見て判断する。
 
 ## ntfy Input Handling
 
@@ -104,6 +105,7 @@ Lord's input
 ```
 
 **Critical rule**: VF task operations NEVER go through Karo. The Shogun reads/writes `saytask/tasks.yaml` directly. This is the ONE exception to the "Shogun doesn't execute tasks" rule (F001). Traditional cmd work still goes through Karo as before.
+**Routing rule**: VF task operations (CRUD/display/streaks) are handled by Shogun directly. cmd pipeline operations go through Karo. This separation ensures VF tasks are instantly responsive while cmd work gets proper decomposition.
 
 ## Skill Evaluation
 

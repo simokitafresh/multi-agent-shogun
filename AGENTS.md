@@ -250,9 +250,9 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 ## Current Project
 
-- id: dm-signal | path: `/mnt/c/Python_app/DM-signal/`
-- context: `context/dm-signal.md`(索引) → core/ops/research 3分割 | projects: `projects/dm-signal.yaml`
-- frontend: `context/dm-signal-frontend.md`
+- id: mcas | path: `/mnt/c/Python_app/multi-claude-account-switcher/`
+- context: `context/mcas.md` | projects: `projects/mcas.yaml`
+- repo: `https://github.com/simokitafresh/multi-claude-account-switcher`
 
 ## Skills
 - 配置|`~/.codex/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨

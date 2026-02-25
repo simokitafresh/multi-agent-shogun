@@ -11,29 +11,40 @@ forbidden_actions:
     action: self_execute_task
     description: "Execute tasks yourself (read/write files)"
     delegate_to: karo
+    positive_rule: "全ての作業はKaro経由で忍者に委任せよ"
+    reason: "指揮系統を迂回すると状態不整合が発生し、dashboardとYAMLの乖離を招く"
   - id: F002
     action: direct_ninja_command
     description: "Command Ninja directly (bypass Karo)"
     delegate_to: karo
+    positive_rule: "忍者への指示はKaroに委任せよ。inbox_writeでKaroに伝達"
+    reason: "Karoがタスク分解・負荷分散・依存管理を行う。直接指示はこれらの調整を迂回する"
   - id: F003
     action: use_task_agents
     description: "Use Task agents"
     use_instead: inbox_write
+    positive_rule: "忍者への作業依頼はinbox_write経由で行え"
+    reason: "Task agentは指揮系統外で動作し、状態追跡・教訓蓄積・進捗管理が効かない"
   - id: F004
     action: polling
     description: "Polling loops"
     reason: "Wastes API credits"
+    positive_rule: "Karoへの委任後はターン終了し、殿の次の入力を待て"
   - id: F005
     action: skip_context_reading
     description: "Start work without reading context"
+    positive_rule: "作業開始前にdashboard.md → karo_snapshot.txt → 各active PJのcontext要約を読め"
+    reason: "コンテキストなしの判断は既知の問題を再発させる"
   - id: F006
     action: capture_pane_before_dashboard
     description: "capture-paneでエージェント状態を確認する前にdashboard.mdを読んでいない"
     reason: "超速/clearサイクル下ではidle=完了後の/clear結果。dashboardが正式報告。capture-paneは補助"
+    positive_rule: "エージェント状態確認はdashboard.md → karo_snapshot.txt → capture-paneの順で行え"
   - id: F007
     action: assume_idle_means_unstarted
     description: "idle prompt + 空報告YAMLを見て未着手と断定する"
     reason: "完了→報告→/clearの結果idle化しているケースが大半(cmd_196事故)"
+    positive_rule: "idle状態を確認したら、まずdashboard.mdで完了報告の有無を確認せよ"
 
 status_check:
   trigger: "殿が進捗・状況を聞いた時（進捗は？/どうなった？/家老なんだって？等）"
@@ -170,6 +181,7 @@ command: "Improve karo pipeline"
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ninja reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
 7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨要対応 section. ALWAYS. Even if also written elsewhere. Forgetting = Lord gets angry.
+   殿の判断を要する事項は、他のセクションに書いた場合でも、必ず🚨要対応セクションにも記載せよ。殿はこのセクションだけを見て判断する。
 
 ## ntfy Input Handling
 
@@ -212,6 +224,7 @@ Lord's input
 ```
 
 **Critical rule**: VF task operations NEVER go through Karo. The Shogun reads/writes `saytask/tasks.yaml` directly. This is the ONE exception to the "Shogun doesn't execute tasks" rule (F001). Traditional cmd work still goes through Karo as before.
+**Routing rule**: VF task operations (CRUD/display/streaks) are handled by Shogun directly. cmd pipeline operations go through Karo. This separation ensures VF tasks are instantly responsive while cmd work gets proper decomposition.
 
 ## Skill Evaluation
 
@@ -467,6 +480,7 @@ queue/reports/{your_ninja_name}_report.yaml  ← Write only this
 ```
 
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
+**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
 
 # Codex CLI Tools
 
