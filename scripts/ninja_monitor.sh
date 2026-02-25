@@ -29,6 +29,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 
 POLL_INTERVAL=20    # ポーリング間隔（秒）
 CONFIRM_WAIT=5      # idle確認待ち（秒）— Phase 2a base wait
@@ -1163,8 +1164,8 @@ check_shogun_ctx() {
 }
 
 # ─── @model_name整合性チェック（REDISCOVER_EVERY周期） ───
-# settings.yaml type → cli_profiles.yaml display_name を期待値として、
-# 各ペインの@model_nameと比較。不整合があれば自動修正。
+# cmd_320改修: CLIの実モデル値を検出し、@model_nameと比較。不整合があれば自動修正。
+# 実モデル検出失敗時はsettings.yaml/cli_profiles.yamlにフォールバック（AC3）。
 check_model_names() {
     local all_agents=("karo" "${NINJA_NAMES[@]}")
 
@@ -1177,11 +1178,16 @@ check_model_names() {
         fi
         [ -z "$target" ] && continue
 
-        # 期待値: cli_profiles.yaml の display_name
+        # 実モデル検出を試行（AC1: /model切替後のリアルタイム同期）
         local expected
-        expected=$(cli_profile_get "$name" "display_name")
+        expected=$(detect_real_model "$name" "$target" 2>/dev/null) || expected=""
+
+        # AC3: 実モデル検出失敗時はsettings.yaml/cli_profiles.yamlにフォールバック
         if [ -z "$expected" ]; then
-            expected=$(cli_type "$name")
+            expected=$(cli_profile_get "$name" "display_name")
+            if [ -z "$expected" ]; then
+                expected=$(cli_type "$name")
+            fi
         fi
 
         # 現在値
