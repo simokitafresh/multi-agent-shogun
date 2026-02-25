@@ -57,17 +57,17 @@ append_changelog() {
 
     # shogun_to_karo.yamlから該当cmdのpurposeとprojectを抽出
     local purpose
-    purpose=$(awk -v id="  - id: ${cmd_id}" '
-        $0 == id { found=1; next }
-        found && /^  - id:/ { exit }
-        found && /^    purpose:/ { sub(/^    purpose: *"?/, ""); sub(/"$/, ""); print; exit }
+    purpose=$(awk -v cmd="${cmd_id}" '
+        /^[ ]*- id:/ && index($0, cmd) { found=1; next }
+        found && /^[ ]*- id:/ { exit }
+        found && /^[ ]*purpose:/ { sub(/^[ ]*purpose: *"?/, ""); sub(/"$/, ""); print; exit }
     ' "$YAML_FILE")
 
     local project
-    project=$(awk -v id="  - id: ${cmd_id}" '
-        $0 == id { found=1; next }
-        found && /^  - id:/ { exit }
-        found && /^    project:/ { sub(/^    project: */, ""); print; exit }
+    project=$(awk -v cmd="${cmd_id}" '
+        /^[ ]*- id:/ && index($0, cmd) { found=1; next }
+        found && /^[ ]*- id:/ { exit }
+        found && /^[ ]*project:/ { sub(/^[ ]*project: */, ""); print; exit }
     ' "$YAML_FILE")
 
     if [ -z "$purpose" ]; then
@@ -587,10 +587,10 @@ fi
 echo ""
 echo "Draft lesson check:"
 # cmdのprojectを取得
-CMD_PROJECT=$(awk -v id="  - id: ${CMD_ID}" '
-    $0 == id { found=1; next }
-    found && /^  - id:/ { exit }
-    found && /^    project:/ { sub(/^    project: */, ""); print; exit }
+CMD_PROJECT=$(awk -v cmd="${CMD_ID}" '
+    /^[ ]*- id:/ && index($0, cmd) { found=1; next }
+    found && /^[ ]*- id:/ { exit }
+    found && /^[ ]*project:/ { sub(/^[ ]*project: */, ""); print; exit }
 ' "$YAML_FILE")
 
 if [ -n "$CMD_PROJECT" ]; then
@@ -683,10 +683,10 @@ fi
 echo ""
 echo "Recon knowledge persistence check (穴4):"
 # purposeを取得（append_changelog内と同じawk）
-CMD_PURPOSE=$(awk -v id="  - id: ${CMD_ID}" '
-    $0 == id { found=1; next }
-    found && /^  - id:/ { exit }
-    found && /^    purpose:/ { sub(/^    purpose: *"?/, ""); sub(/"$/, ""); print; exit }
+CMD_PURPOSE=$(awk -v cmd="${CMD_ID}" '
+    /^[ ]*- id:/ && index($0, cmd) { found=1; next }
+    found && /^[ ]*- id:/ { exit }
+    found && /^[ ]*purpose:/ { sub(/^[ ]*purpose: *"?/, ""); sub(/"$/, ""); print; exit }
 ' "$YAML_FILE")
 
 IS_RECON=false
@@ -804,5 +804,76 @@ else
     fi
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}" >> "$GATE_METRICS_LOG"
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
+
+    # ─── GATE BLOCK時自動draft教訓生成（ベストエフォート） ───
+    echo ""
+    echo "Auto-draft lessons for GATE BLOCK:"
+    if [ -n "$CMD_PROJECT" ]; then
+        DRAFT_GENERATED=0
+
+        # Pattern 1: lesson_referenced empty
+        lr_empty_ninjas=()
+        for reason in "${BLOCK_REASONS[@]}"; do
+            if [[ "$reason" == *":empty_lesson_referenced:"* ]]; then
+                ninja=$(echo "$reason" | cut -d: -f1)
+                lr_empty_ninjas+=("$ninja")
+            fi
+        done
+        if [ ${#lr_empty_ninjas[@]} -gt 0 ]; then
+            lr_count=${#lr_empty_ninjas[@]}
+            if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" \
+                "[自動生成] 教訓参照を怠った: ${CMD_ID}" \
+                "lesson_referencedが空のサブタスクが${lr_count}件。教訓を確認してからタスクに臨むべし" \
+                "${CMD_ID}" "gate_auto" "${CMD_ID}" --status draft 2>&1; then
+                echo "  draft: 教訓参照を怠った (${lr_count}件)"
+                DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
+            else
+                echo "  WARN: draft生成失敗 (lesson_referenced_empty)"
+            fi
+        fi
+
+        # Pattern 2: draft_remaining
+        for reason in "${BLOCK_REASONS[@]}"; do
+            if [[ "$reason" == draft_lessons:* ]]; then
+                d_count=$(echo "$reason" | cut -d: -f2)
+                if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" \
+                    "[自動生成] draft教訓の査読を怠った: ${CMD_ID}" \
+                    "draft教訓${d_count}件が未査読のままGATE到達" \
+                    "${CMD_ID}" "gate_auto" "${CMD_ID}" --status draft 2>&1; then
+                    echo "  draft: draft教訓の査読を怠った (${d_count}件)"
+                    DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
+                else
+                    echo "  WARN: draft生成失敗 (draft_remaining)"
+                fi
+                break
+            fi
+        done
+
+        # Pattern 3: reviewed_false
+        unrev_ninjas=()
+        for reason in "${BLOCK_REASONS[@]}"; do
+            if [[ "$reason" == *":unreviewed_lessons:"* ]]; then
+                ninja=$(echo "$reason" | cut -d: -f1)
+                unrev_ninjas+=("$ninja")
+            fi
+        done
+        if [ ${#unrev_ninjas[@]} -gt 0 ]; then
+            ninja_names=$(IFS=,; echo "${unrev_ninjas[*]}")
+            if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" \
+                "[自動生成] 注入教訓の確認を怠った: ${CMD_ID}" \
+                "reviewed:falseのまま作業完了した忍者: ${ninja_names}" \
+                "${CMD_ID}" "gate_auto" "${CMD_ID}" --status draft 2>&1; then
+                echo "  draft: 注入教訓の確認を怠った (忍者: ${ninja_names})"
+                DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
+            else
+                echo "  WARN: draft生成失敗 (reviewed_false)"
+            fi
+        fi
+
+        echo "  Generated: ${DRAFT_GENERATED} draft lesson(s)"
+    else
+        echo "  SKIP (project not found in cmd)"
+    fi
+
     exit 1
 fi
