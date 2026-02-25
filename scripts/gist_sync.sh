@@ -10,12 +10,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DASHBOARD="$SCRIPT_DIR/dashboard.md"
 LOG="$SCRIPT_DIR/logs/gist_sync.log"
 
-# ─── GIST_ID動的解決: current_project → gist_url → GIST_ID ───
-# 引数指定があればそちらを優先（後方互換）
+# ─── GIST_ID動的解決関数 ───
+# sync毎にcurrent_project → gist_url → GIST_IDを再解決する
+# 引数指定時は固定値を使用（後方互換）
 DEFAULT_GIST_ID="6eb495d917fb00ba4d4333c237a4ee0c"
-if [ -n "$1" ]; then
-    GIST_ID="$1"
-else
+FIXED_GIST_ID="${1:-}"  # 引数あれば固定
+
+resolve_gist_id() {
+    if [ -n "$FIXED_GIST_ID" ]; then
+        GIST_ID="$FIXED_GIST_ID"
+        CURRENT_PJ="fixed"
+        return
+    fi
+
     PROJECTS_YAML="$SCRIPT_DIR/config/projects.yaml"
     if [ -f "$PROJECTS_YAML" ]; then
         # L034: 固定インデント依存にしない柔軟なパース
@@ -39,11 +46,16 @@ else
             fi
         else
             GIST_ID="$DEFAULT_GIST_ID"
+            CURRENT_PJ="unknown"
         fi
     else
         GIST_ID="$DEFAULT_GIST_ID"
+        CURRENT_PJ="unknown"
     fi
-fi
+}
+
+# 起動時に初回解決
+resolve_gist_id
 
 POLL_INTERVAL=5   # ポーリング間隔（秒）
 DEBOUNCE=3        # デバウンス待機（秒）— 家老の連続Edit対策
@@ -77,11 +89,27 @@ sync_gist() {
     # デバウンス後にmtimeを再取得（デバウンス中の追加更新をキャッチ）
     LAST_MTIME=$(stat -c %Y "$DASHBOARD" 2>/dev/null || echo "0")
 
-    if gh gist edit "$GIST_ID" -f dashboard.md "$DASHBOARD" >> "$LOG" 2>&1; then
-        log "Gist updated successfully"
-    else
-        log "ERROR: Gist update failed (will retry on next change)"
+    # PJ切替対応: sync毎にGIST_IDを再解決
+    resolve_gist_id
+    log "Syncing to project=${CURRENT_PJ} GIST_ID=${GIST_ID}"
+
+    # ヘッダーにPJ名を動的挿入（元ファイル非破壊）
+    UPLOAD_FILE="$DASHBOARD"
+    if [ "$CURRENT_PJ" != "fixed" ] && [ "$CURRENT_PJ" != "unknown" ]; then
+        TMPFILE=$(mktemp)
+        # 既存PJ名タグ [xxx] があれば差替え、なければ挿入
+        sed "1s/# 🏯 Dashboard \[.*\]/# 🏯 Dashboard [${CURRENT_PJ}]/; t; 1s/# 🏯 Dashboard/# 🏯 Dashboard [${CURRENT_PJ}]/" "$DASHBOARD" > "$TMPFILE"
+        UPLOAD_FILE="$TMPFILE"
     fi
+
+    if gh gist edit "$GIST_ID" -f dashboard.md "$UPLOAD_FILE" >> "$LOG" 2>&1; then
+        log "Gist updated successfully (project=${CURRENT_PJ})"
+    else
+        log "ERROR: Gist update failed (project=${CURRENT_PJ}, will retry on next change)"
+    fi
+
+    # temp file cleanup
+    [ -n "${TMPFILE:-}" ] && rm -f "$TMPFILE"
 }
 
 # ─── パス判定: /mnt/ 配下ならWSL2 drvfs（inotify非対応） ───
