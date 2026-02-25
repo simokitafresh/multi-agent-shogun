@@ -1,0 +1,34 @@
+projects:
+  - id: dm-signal
+    name: "DM-Signal"
+    path: "/mnt/c/Python_app/DM-signal"
+    context_file: "context/dm-signal.md"
+    gist_url: "https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"
+    context_files:
+      - file: "context/dm-signal-core.md"
+        tags: [implementation, db, pipeline, api]
+      - file: "context/dm-signal-ops.md"
+        tags: [operations, gs, deploy, performance]
+      - file: "context/dm-signal-research.md"
+        tags: [research, analysis, verification]
+      - file: "context/dm-signal-frontend.md"
+        tags: [frontend]
+    priority: high
+    status: active
+  - id: infra
+    name: "Multi-Agent Infrastructure"
+    path: "/mnt/c/tools/multi-agent-shogun"
+    context_file: "context/infrastructure.md"
+    gist_url: "https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"
+    priority: medium
+    status: active
+
+  - id: mcas
+    name: "Multi-Claude Account Switcher"
+    path: "/mnt/c/Python_app/multi-claude-account-switcher"
+    context_file: "context/mcas.md"
+    gist_url: "https://gist.github.com/simokitafresh/b7548f6aae74850e35b506b2fe0369e1"
+    priority: high
+    status: active
+
+current_project: mcas

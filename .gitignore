@@ -73,6 +73,7 @@
 !config/
 !config/ntfy_auth.env.sample
 !config/settings.yaml
+!config/projects.yaml
 !config/cli_profiles.yaml
 !config/ninja_bashrc_safety.sh
 
@@ -138,6 +139,7 @@
 !scripts/lesson_find_duplicates.sh
 !scripts/lesson_merge.sh
 !scripts/auto_failure_lesson.sh
+!scripts/gist_sync.sh
 
 
 # Tasks (SSOT lessons only)
