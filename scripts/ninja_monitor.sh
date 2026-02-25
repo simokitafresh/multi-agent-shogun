@@ -72,6 +72,7 @@ declare -A RENUDGE_COUNT          # 未読再nudgeカウンター — key: agent
 declare -A RENUDGE_FINGERPRINT    # 未読IDのfingerprint — key: agent_name, value: md5 hash (L029: ID集合ベース)
 declare -A RENUDGE_LAST_SEND      # 最終renudge送信時刻 — key: agent_name, value: epoch秒
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
+declare -A AUTO_DEPLOY_DONE       # auto_deploy_next.sh呼出済みフラグ — key: "ninja:task_id", value: "1"
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
@@ -341,6 +342,25 @@ is_task_deployed() {
         if grep -qE 'status:\s*(assigned|in_progress)' "$task_file" 2>/dev/null; then
             # AC1/AC2: 報告YAML完了チェック（parent_cmd一致+status:done）
             if check_and_update_done_task "$name"; then
+                # ─── auto_deploy_next.sh 自動発火（二重呼出防止付き） ───
+                local task_id_val parent_cmd_val
+                task_id_val=$(grep -m1 'task_id:' "$task_file" 2>/dev/null | awk '{print $2}')
+                parent_cmd_val=$(grep -m1 'parent_cmd:' "$task_file" 2>/dev/null | awk '{print $2}')
+                local deploy_key="${name}:${task_id_val}"
+                if [ -n "$parent_cmd_val" ] && [ -n "$task_id_val" ] && [ "${AUTO_DEPLOY_DONE[$deploy_key]}" != "1" ]; then
+                    AUTO_DEPLOY_DONE[$deploy_key]="1"
+                    log "[AUTO_DEPLOY] Triggering: cmd=${parent_cmd_val} completed=${task_id_val} ninja=${name}"
+                    (
+                        timeout 30 bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" "$parent_cmd_val" "$task_id_val" >> "$LOG" 2>&1
+                        rc=$?
+                        case $rc in
+                            0) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] OK: ${name}の次サブタスク配備完了 (cmd=${parent_cmd_val})" >> "$LOG" ;;
+                            2) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] SKIP: auto_deploy=false (cmd=${parent_cmd_val})" >> "$LOG" ;;
+                            3) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] BLOCKED: 未解消依存あり or 忍者不在 (cmd=${parent_cmd_val})" >> "$LOG" ;;
+                            *) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] ERROR: 配備失敗 rc=${rc} (cmd=${parent_cmd_val})" >> "$LOG" ;;
+                        esac
+                    ) &
+                fi
                 return 1  # 完了済み — not deployed
             fi
 
