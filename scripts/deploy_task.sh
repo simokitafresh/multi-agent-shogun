@@ -290,11 +290,16 @@ try:
     words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', task_text)
     keywords = list(set(w.lower() for w in words if len(w) > 3))
 
-    # Keep only confirmed lessons for injection (missing status = confirmed)
+    # Keep only active lessons: status=confirmed or undefined (default=confirmed)
+    # Exclude: deprecated, draft, or any other non-confirmed status
     confirmed_lessons = []
     filtered_draft = 0
+    filtered_deprecated = 0
     for lesson in lessons:
         l_status = str(lesson.get('status', 'confirmed')).lower()
+        if l_status == 'deprecated':
+            filtered_deprecated += 1
+            continue
         if l_status != 'confirmed':
             filtered_draft += 1
             continue
@@ -357,7 +362,7 @@ try:
         raise
 
     ids = [r['id'] for r in related]
-    print(f'[INJECT] Injected {len(related)} lessons: {ids} for project={project} filtered_draft={filtered_draft}', file=sys.stderr)
+    print(f'[INJECT] Injected {len(related)} lessons: {ids} for project={project} filtered_draft={filtered_draft} filtered_deprecated={filtered_deprecated}', file=sys.stderr)
 
 except Exception as e:
     print(f'[INJECT] ERROR: {e}', file=sys.stderr)
