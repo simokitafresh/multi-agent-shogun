@@ -133,6 +133,7 @@
 !scripts/gates/gate_yaml_status.sh
 !scripts/gates/gate_pd_sync.sh
 !scripts/gates/gate_lesson_health.sh
+!scripts/gates/gate_shogun_memory.sh
 !scripts/switch_project.sh
 !scripts/reset_layout.sh
 !scripts/restart_watchers.sh
@@ -141,6 +142,8 @@
 !scripts/lesson_merge.sh
 !scripts/auto_failure_lesson.sh
 !scripts/gist_sync.sh
+!scripts/task_queue_status.sh
+!scripts/token_refresh.sh
 
 
 # Tasks (SSOT lessons only)
