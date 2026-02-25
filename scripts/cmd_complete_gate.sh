@@ -742,8 +742,58 @@ if [ "$ALL_CLEAR" = true ]; then
     fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
+
+    # ─── lesson score自動更新（GATE CLEAR時のみ、ベストエフォート） ───
+    echo ""
+    echo "Lesson score update (helpful):"
+    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_update_score.sh" ]; then
+        SCORE_UPDATED=0
+        for task_file in "$TASKS_DIR"/*.yaml; do
+            [ -f "$task_file" ] || continue
+            if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+                continue
+            fi
+            ninja_name=$(basename "$task_file" .yaml)
+            report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+            if [ -f "$report_file" ]; then
+                lesson_ids=$(python3 -c "
+import yaml, sys
+try:
+    with open('$report_file') as f:
+        data = yaml.safe_load(f)
+    if not data:
+        sys.exit(0)
+    lr = data.get('lesson_referenced', [])
+    if lr and isinstance(lr, list):
+        for item in lr:
+            if isinstance(item, str):
+                print(item)
+            elif isinstance(item, dict) and 'id' in item:
+                print(item['id'])
+except:
+    pass
+" 2>/dev/null)
+                while IFS= read -r lid; do
+                    [ -z "$lid" ] && continue
+                    if bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$CMD_PROJECT" "$lid" helpful 2>&1; then
+                        echo "  ${lid}: helpful +1"
+                        SCORE_UPDATED=$((SCORE_UPDATED + 1))
+                    else
+                        echo "  WARN: ${lid}: score update failed (non-blocking)"
+                    fi
+                done <<< "$lesson_ids"
+            fi
+        done
+        echo "  Updated: ${SCORE_UPDATED} lesson(s)"
+    elif [ -z "$CMD_PROJECT" ]; then
+        echo "  SKIP (project not found in cmd)"
+    else
+        echo "  SKIP (lesson_update_score.sh not found — waiting for subtask_309_score)"
+    fi
+
     exit 0
 else
+    # TODO: GATE BLOCK時のharmful更新は将来検討(タスク失敗とGATEプロセス不備は別)
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
     if [ ${#BLOCK_REASONS[@]} -gt 0 ]; then
         block_reason=$(IFS='|'; echo "${BLOCK_REASONS[*]}")
