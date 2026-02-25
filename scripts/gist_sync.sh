@@ -1,6 +1,8 @@
 #!/bin/bash
 # gist_sync.sh — dashboard.md変更検知 → Gist自動アップロード
-# Usage: bash scripts/gist_sync.sh [gist_id]
+# Usage: bash scripts/gist_sync.sh [--once | gist_id]
+#   --once: 1回sync実行後にexit (0=成功, 1=失敗)
+#   gist_id: 固定Gist ID指定（デーモンモード）
 #
 # WSL2の/mnt/c/ではinotifywaitがdrvfs上で機能しないため、
 # statによるmtimeポーリング方式を採用。
@@ -14,7 +16,13 @@ LOG="$SCRIPT_DIR/logs/gist_sync.log"
 # sync毎にcurrent_project → gist_url → GIST_IDを再解決する
 # 引数指定時は固定値を使用（後方互換）
 DEFAULT_GIST_ID="6eb495d917fb00ba4d4333c237a4ee0c"
-FIXED_GIST_ID="${1:-}"  # 引数あれば固定
+ONCE_MODE=false
+if [ "${1:-}" = "--once" ]; then
+    ONCE_MODE=true
+    FIXED_GIST_ID=""
+else
+    FIXED_GIST_ID="${1:-}"  # 引数あれば固定
+fi
 
 resolve_gist_id() {
     if [ -n "$FIXED_GIST_ID" ]; then
@@ -81,36 +89,48 @@ if [ ! -f "$DASHBOARD" ]; then
     exit 1
 fi
 
-# ─── Gist同期処理（共通） ───
-sync_gist() {
-    log "Change detected. Debouncing ${DEBOUNCE}s..."
-    sleep "$DEBOUNCE"
-
-    # デバウンス後にmtimeを再取得（デバウンス中の追加更新をキャッチ）
-    LAST_MTIME=$(stat -c %Y "$DASHBOARD" 2>/dev/null || echo "0")
-
-    # PJ切替対応: sync毎にGIST_IDを再解決
+# ─── Gist同期コア（1回実行） ───
+# Returns: 0=sync成功, 1=sync失敗
+do_sync() {
     resolve_gist_id
     log "Syncing to project=${CURRENT_PJ} GIST_ID=${GIST_ID}"
 
-    # ヘッダーにPJ名を動的挿入（元ファイル非破壊）
     UPLOAD_FILE="$DASHBOARD"
+    local tmpfile=""
     if [ "$CURRENT_PJ" != "fixed" ] && [ "$CURRENT_PJ" != "unknown" ]; then
-        TMPFILE=$(mktemp)
-        # 既存PJ名タグ [xxx] があれば差替え、なければ挿入
-        sed "1s/# 🏯 Dashboard \[.*\]/# 🏯 Dashboard [${CURRENT_PJ}]/; t; 1s/# 🏯 Dashboard/# 🏯 Dashboard [${CURRENT_PJ}]/" "$DASHBOARD" > "$TMPFILE"
-        UPLOAD_FILE="$TMPFILE"
+        tmpfile=$(mktemp)
+        sed "1s/# 🏯 Dashboard \[.*\]/# 🏯 Dashboard [${CURRENT_PJ}]/; t; 1s/# 🏯 Dashboard/# 🏯 Dashboard [${CURRENT_PJ}]/" "$DASHBOARD" > "$tmpfile"
+        UPLOAD_FILE="$tmpfile"
     fi
 
+    local rc=0
     if gh gist edit "$GIST_ID" -f dashboard.md "$UPLOAD_FILE" >> "$LOG" 2>&1; then
         log "Gist updated successfully (project=${CURRENT_PJ})"
     else
-        log "ERROR: Gist update failed (project=${CURRENT_PJ}, will retry on next change)"
+        log "ERROR: Gist update failed (project=${CURRENT_PJ})"
+        rc=1
     fi
 
-    # temp file cleanup
-    [ -n "${TMPFILE:-}" ] && rm -f "$TMPFILE"
+    [ -n "$tmpfile" ] && rm -f "$tmpfile"
+    return $rc
 }
+
+# ─── デバウンス付きsync（デーモンモード用） ───
+sync_gist() {
+    log "Change detected. Debouncing ${DEBOUNCE}s..."
+    sleep "$DEBOUNCE"
+    LAST_MTIME=$(stat -c %Y "$DASHBOARD" 2>/dev/null || echo "0")
+    do_sync
+}
+
+# ─── --onceモード: 1回sync→即終了 ───
+if [ "$ONCE_MODE" = true ]; then
+    log "Once mode: executing single sync"
+    do_sync
+    rc=$?
+    log "Once mode: finished (rc=$rc)"
+    exit $rc
+fi
 
 # ─── パス判定: /mnt/ 配下ならWSL2 drvfs（inotify非対応） ───
 is_wsl_drvfs() {
