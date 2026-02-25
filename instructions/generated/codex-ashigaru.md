@@ -137,6 +137,10 @@ result:
   files_modified:
     - "/path/to/file"
   notes: "Additional details"
+failure_analysis:    # 失敗時のみ記入（status: failed の場合）
+  root_cause: "失敗の根本原因"
+  what_would_prevent: "再発を防ぐために何をすべきか"
+  # auto_failure_lesson.shがこのセクションを読み取りdraft教訓を自動生成する
 skill_candidate:
   found: false  # MANDATORY — true/false
   # If true, also include:

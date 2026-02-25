@@ -137,6 +137,7 @@
 !scripts/lesson_update_score.sh
 !scripts/lesson_find_duplicates.sh
 !scripts/lesson_merge.sh
+!scripts/auto_failure_lesson.sh
 
 
 # Tasks (SSOT lessons only)

@@ -256,6 +256,11 @@ result:
   lessons:  # 次に同種の作業をする人が知るべき教訓（任意だが推奨）
     - "MomentumCacheを渡さないとsimulate_strategy_vectorized()は黙って空を返す"
     - "experiments.dbのmonthly_returnsが価格のground truth。dm_signal.dbには価格なし"
+failure_analysis:    # 失敗時のみ記入（status: failed の場合）
+  root_cause: "失敗の根本原因"
+  what_would_prevent: "再発を防ぐために何をすべきか"
+  # auto_failure_lesson.shがこのセクションを読み取りdraft教訓を自動生成する
+  # 未記入でもresult.summaryから自動生成されるが、記入すれば教訓の品質が向上する
 skill_candidate:
   found: false  # MANDATORY — true/false
   # If true, also include:
