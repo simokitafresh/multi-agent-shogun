@@ -201,3 +201,39 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: cmd_255
 - **記録者**: sasuke
 - inbox_watcherの60秒安全網とninja_monitorのrenudge/cmd_pending再送が独立に動作するため、受信側が1回取り逃すと同一未読に対するnudgeが多重化する。再送は単一路化し、状態遷移またはfingerprint基準で制御すべき。fingerprint=unread ID集合のsort後hash。countではなくID集合をキー化。
+
+### L030: current_projectフィールドは宣言のみで読み取りスクリプトがゼロの死コード状態
+- **日付**: 2026-02-23
+- **出典**: cmd_258
+- **記録者**: kotaro
+- config/projects.yamlのcurrent_projectは定義されているが、scripts/配下で このフィールドを読むスクリプトがゼロ。プロジェクトルーティングは完全に
+
+### L031: CLAUDE.md PJ固有比率は4%のみ(14行/347行)
+- **日付**: 2026-02-23
+- **出典**: cmd_258
+- **記録者**: kotaro
+- 95%以上がPJ非依存骨格。PJ切替時の変更対象はDM-Signal圧縮索引セクション(14行)のみ。ポインタ方式(3-4行)で切替コスト最小化可能。小太郎分析
+
+### L032: CLAUDE.md PJ固有セクション境界は##見出しレベルで識別
+- **日付**: 2026-02-23
+- **出典**: cmd_258
+- **記録者**: saizo
+- ##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計
+
+### L033: lesson_write.shはstatus=confirmed時にSSOTにstatus行を書かず、sync後のYAMLでstatus欠落を引き起こす
+- **日付**: 2026-02-23
+- **出典**: cmd_262
+- **記録者**: karo
+- lesson_write.sh L150-151でdraftのみstatus出力。confirmedはスキップ。sync_lessons.shはSSOTにstatus行がなければYAMLにも生成しない。27件の欠落がこれで説明される。推奨修正: sync_lessons.sh側でstatus未検出時にconfirmedをデフォルト設定(案B)
+
+### L034: shogun_to_karo.yamlのインデントが動的に変動する(2space→0space)
+- **日付**: 2026-02-23
+- **出典**: subtask_279_gate1
+- **記録者**: karo
+- awk/sedパターンは固定インデントに依存させず柔軟なマッチに。cmd_complete_gate.shのupdate_status()も4space固定依存あり要注意
+
+### L035: cmd_complete_gate.shの検証で副作用が発火する可能性
+- **日付**: 2026-02-23
+- **出典**: subtask_279_integ
+- **記録者**: karo
+- cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データまたは明示dry-run設計が望ましい

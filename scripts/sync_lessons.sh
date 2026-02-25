@@ -71,6 +71,8 @@ while i < len(lines):
     lesson_id = None
     date_str = None
     status = None
+    deprecated_by = None
+    merged_from = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -159,13 +161,23 @@ while i < len(lines):
             m_fstatus = re.match(r'- \*\*status\*\*:\s*(.+)', sline)
             if m_fstatus:
                 status = m_fstatus.group(1).strip()
+        # Extract deprecated_by from **deprecated_by** field
+        if not deprecated_by:
+            m_fdep = re.match(r'- \*\*deprecated_by\*\*:\s*(.+)', sline)
+            if m_fdep:
+                deprecated_by = m_fdep.group(1).strip()
+        # Extract merged_from from **merged_from** field
+        if not merged_from:
+            m_fmerge = re.match(r'- \*\*merged_from\*\*:\s*\[(.+)\]', sline)
+            if m_fmerge:
+                merged_from = [x.strip() for x in m_fmerge.group(1).split(',')]
         # Get summary from **発生**/**問題**/**課題** fields or plain content
         if sline.startswith('- **発生**:') or sline.startswith('- **問題**:') or sline.startswith('- **課題**:'):
             text = re.sub(r'^- \*\*[^*]+\*\*:\s*', '', sline)
             summary_parts.append(text)
         elif sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -181,6 +193,10 @@ while i < len(lines):
         entry['date'] = date_str
     if status:
         entry['status'] = status
+    if deprecated_by:
+        entry['deprecated_by'] = deprecated_by
+    if merged_from:
+        entry['merged_from'] = merged_from
 
     lessons.append(entry)
     i = j if j > i + 1 else i + 1

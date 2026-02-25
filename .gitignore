@@ -136,6 +136,7 @@
 !scripts/restart_watchers.sh
 !scripts/lesson_update_score.sh
 !scripts/lesson_find_duplicates.sh
+!scripts/lesson_merge.sh
 
 
 # Tasks (SSOT lessons only)
