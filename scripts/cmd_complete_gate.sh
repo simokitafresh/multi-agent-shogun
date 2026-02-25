@@ -37,12 +37,12 @@ update_status() {
     (
         flock -w 10 200 || { echo "ERROR: flock取得失敗 (${cmd_id})" >&2; return 1; }
 
-        if sed -n "/^  - id: ${cmd_id}$/,/^  - id: /p" "$YAML_FILE" | grep -q "^    status: completed"; then
+        if sed -n "/^- id: ${cmd_id}$/,/^- id: /p" "$YAML_FILE" | grep -q "^  status: completed"; then
             echo "STATUS ALREADY COMPLETED: ${cmd_id} (skip)"
             return 0
         fi
 
-        sed -i "/^  - id: ${cmd_id}$/,/^  - id: /{s/    status: pending/    status: completed/}" "$YAML_FILE"
+        sed -i "/^- id: ${cmd_id}$/,/^- id: /{s/^  status: pending/  status: completed/}" "$YAML_FILE"
 
         echo "STATUS UPDATED: ${cmd_id} → completed"
     ) 200>"$lock_file"
@@ -183,6 +183,38 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
+
+    # ─── lesson_merge自動実行（ベストエフォート） ───
+    echo ""
+    echo "Lesson merge (auto):"
+    if [ -f "$SCRIPT_DIR/scripts/lesson_merge.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/lesson_merge.sh" 2>&1; then
+            echo "  [GATE] lesson_merge: OK"
+        else
+            echo "  [GATE] lesson_merge: SKIP (non-blocking)"
+        fi
+    else
+        echo "  [GATE] lesson_merge: SKIP (script not found)"
+    fi
+
+    # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
+    echo ""
+    echo "Auto-notification (GATE CLEAR - emergency override):"
+
+    # gist_sync（先に実行。ntfyにGist URLを含めるため）
+    if bash "$SCRIPT_DIR/scripts/gist_sync.sh" >/dev/null 2>&1; then
+        echo "  gist_sync: OK"
+    else
+        echo "  gist_sync: WARN (sync failed, non-blocking)" >&2
+    fi
+
+    # ntfy_cmd（gist_sync後に実行）
+    if bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
+        echo "  ntfy_cmd: OK"
+    else
+        echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
+    fi
+
     exit 0
 fi
 
@@ -743,6 +775,19 @@ if [ "$ALL_CLEAR" = true ]; then
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
 
+    # ─── lesson_merge自動実行（ベストエフォート） ───
+    echo ""
+    echo "Lesson merge (auto):"
+    if [ -f "$SCRIPT_DIR/scripts/lesson_merge.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/lesson_merge.sh" 2>&1; then
+            echo "  [GATE] lesson_merge: OK"
+        else
+            echo "  [GATE] lesson_merge: SKIP (non-blocking)"
+        fi
+    else
+        echo "  [GATE] lesson_merge: SKIP (script not found)"
+    fi
+
     # ─── lesson score自動更新（GATE CLEAR時のみ、ベストエフォート） ───
     echo ""
     echo "Lesson score update (helpful):"
@@ -789,6 +834,24 @@ except:
         echo "  SKIP (project not found in cmd)"
     else
         echo "  SKIP (lesson_update_score.sh not found — waiting for subtask_309_score)"
+    fi
+
+    # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
+    echo ""
+    echo "Auto-notification (GATE CLEAR):"
+
+    # gist_sync（先に実行。ntfyにGist URLを含めるため）
+    if bash "$SCRIPT_DIR/scripts/gist_sync.sh" >/dev/null 2>&1; then
+        echo "  gist_sync: OK"
+    else
+        echo "  gist_sync: WARN (sync failed, non-blocking)" >&2
+    fi
+
+    # ntfy_cmd（gist_sync後に実行）
+    if bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
+        echo "  ntfy_cmd: OK"
+    else
+        echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
     fi
 
     exit 0
