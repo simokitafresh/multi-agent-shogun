@@ -373,6 +373,11 @@ Actions after recovery:
 
 1. Read CLAUDE.md (auto-loaded)
 2. Read Memory MCP (read_graph)
+2.5. **将軍知識ゲート**: `bash scripts/gates/gate_shogun_memory.sh` を実行。
+   - OK: そのまま続行
+   - WARN: 作業後に /shogun-memory-teire で棚卸し推奨
+   - ALERT: 殿にntfy通知を送信し、早急に /shogun-memory-teire を実行
+     ntfy例: `bash scripts/ntfy.sh "【将軍】MEMORY.md ALERT — 棚卸し必要"`
 3. Read instructions/shogun.md
 4. **Read dashboard.md + karo_snapshot.txt** — 最新状況を最速で把握（情報階層の第一・第二）
 5. Load project knowledge:
