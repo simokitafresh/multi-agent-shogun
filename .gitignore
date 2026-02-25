@@ -144,6 +144,7 @@
 !scripts/gist_sync.sh
 !scripts/task_queue_status.sh
 !scripts/token_refresh.sh
+!scripts/auto_deploy_next.sh
 
 
 # Tasks (SSOT lessons only)
