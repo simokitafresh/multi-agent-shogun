@@ -53,6 +53,17 @@ prefix=Ctrl+A。session=shogun、W1=将軍、W2=agents(家老+忍者9ペイン)�
 
 → `docs/research/infra-details.md` §6-7
 
+## Claude Code マルチアカウント管理（cmd_313偵察）
+
+- Usage API: `GET https://api.anthropic.com/api/oauth/usage` (OAuth Bearer + `anthropic-beta: oauth-2025-04-20`)
+- レスポンス: `five_hour.utilization`(%), `seven_day`, `extra_usage`。read-only、クレジット消費なし
+- Profile API: `GET https://api.anthropic.com/api/oauth/profile` → アカウント名・プラン・rate_limit_tier
+- 認証保存: `~/.claude/.credentials.json` (claudeAiOauth.accessToken/refreshToken)
+- 複数アカウント: `CLAUDE_CONFIG_DIR=~/.claude-{name}` でディレクトリ分離が最も堅牢(L015)
+- WSL2+tmux同時監視: HIGH(curl 1本で取得可能、pane別環境変数で2アカウント並行)
+- 注意: undocumented API(変更可能性あり)、refresh_tokenは1回限り使用(L016)
+→ `queue/reports/saizo_report.yaml`(API仕様詳細) / `queue/reports/kirimaru_report.yaml`(マルチアカウント方式)
+
 ## WSL2固有
 
 inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死注意。→ §8
@@ -96,3 +107,10 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 | L033 | confirmed時status欠落 | 教訓 | cmd_262 |
 | L034 | YAMLインデント変動 | ゲート | cmd_279 |
 | L035 | gate検証で副作用発火 | ゲート | cmd_279 |
+- L036: テストデータrevertでgit checkout -- SSOTは未コミット教訓を消失させる（cmd_310）
+- L037: WSL2でWrite tool作成の.shファイルはCRLF混入が確実に発生する（cmd_311）
+- L038: cmd_complete_gate.shテスト実行で本番lessonsにdraftが副作用で残る問題（cmd_311）
+- L039: [自動生成] 教訓参照を怠った: cmd_310（cmd_310）
+- L040: WSL2環境でUsage API応答時間5秒超（cmd_314）
+- L041: tmuxにペインレベル環境変数なし（cmd_314）
+- L042: reports/上書き問題は統合タスク割当で実害発生（L025+L027統合）

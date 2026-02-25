@@ -173,6 +173,8 @@
 - **日付**: 2026-02-22
 - **出典**: hanzo(cmd_236統合)
 - **記録者**: karo
+- **status**: deprecated
+- **deprecated_by**: L042
 - reports/上書き問題は統合タスク割当パターンで実害発生する。偵察→統合を同一忍者に割り当てるとdeploy_task.shのreport初期化で偵察報告が消失。L024の実害パターン。回避策: (1)偵察者と統合者を別忍者にする (2)report archive機能を実装する(L024根本解決)。
 
 ### L026: 知識陳腐化の定量実態と解決方針(cmd_237合議3名統合)
@@ -185,7 +187,8 @@
 - **日付**: 2026-02-22
 - **出典**: cmd_236
 - **記録者**: hanzo
-- **status**: confirmed
+- **status**: deprecated
+- **deprecated_by**: L042
 - 偵察と統合を同一忍者に割り当てると、統合タスクのreport初期化で偵察報告が消失する。
 L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統合者を別忍者にする
 (2)report archive機能を実装する(L024根本解決) のいずれか。
@@ -237,3 +240,50 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: subtask_279_integ
 - **記録者**: karo
 - cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データまたは明示dry-run設計が望ましい
+
+### L036: テストデータrevertでgit checkout -- SSOTは未コミット教訓を消失させる
+- **日付**: 2026-02-25
+- **出典**: cmd_310
+- **記録者**: karo
+- lessons.yamlはgitignoreだがlessons.md(SSOT)はgit管理下。テスト後のrevert対象をgit checkout -- lessons.mdとするとL030-L035が消失。対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエントリのみ手動削除で対処すべき
+
+
+### L037: WSL2でWrite tool作成の.shファイルはCRLF混入が確実に発生する
+- **日付**: 2026-02-25
+- **出典**: cmd_311
+- **記録者**: hayate
+- auto_failure_lesson.sh作成時にもCRLF混入(L008)。Write tool経由の新規.shは100%CRLFになる前提でsed -i 's/\r$//'を即実行すべき
+
+
+### L038: cmd_complete_gate.shテスト実行で本番lessonsにdraftが副作用で残る問題
+- **日付**: 2026-02-25
+- **出典**: cmd_311
+- **記録者**: karo
+- L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必ずテスト用cmdを使用すべき。
+
+### L039: [自動生成] 教訓参照を怠った: cmd_310
+- **日付**: 2026-02-25
+- **出典**: cmd_310
+- **記録者**: gate_auto
+- **status**: confirmed
+- lesson_referencedが空のサブタスクが1件。教訓を確認してからタスクに臨むべし
+
+### L040: WSL2環境でUsage API応答時間5秒超
+- **日付**: 2026-02-25
+- **出典**: cmd_314
+- **記録者**: karo
+- WSL2→Anthropic API間のレイテンシでUsage APIの応答が常に5秒以上。監視スクリプトのtimeout設定は10秒以上にせよ
+
+### L041: tmuxにペインレベル環境変数なし
+- **日付**: 2026-02-25
+- **出典**: cmd_314
+- **記録者**: karo
+- tmuxにはネイティブのペインレベル環境変数が存在しない。@user_optionはメタデータ用で環境変数ではない。ペインごとに異なるCLAUDE_CONFIG_DIRを設定するにはrespawn-pane -eまたはsend-keysで起動時に注入する
+
+### L042: reports/上書き問題は統合タスク割当で実害発生
+- **status**: confirmed
+- **日付**: 2026-02-25
+- **出典**: lesson_merge(L025+L027)
+- **記録者**: karo
+- **merged_from**: [L025, L027]
+- 偵察→統合を同一忍者に割り当てるとreport初期化で偵察報告が消失。L024の実害パターン。回避策: 別忍者に分離 or reportアーカイブ実装
