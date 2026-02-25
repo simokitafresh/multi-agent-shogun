@@ -43,17 +43,21 @@ if not lessons:
     print('No lessons found.', file=sys.stderr)
     sys.exit(0)
 
-# Filter out deprecated lessons
+# Filter: confirmed only (exclude deprecated + draft)
 active = []
-skipped = 0
+skipped_deprecated = 0
+skipped_draft = 0
 for lesson in lessons:
     status = str(lesson.get('status', 'confirmed')).lower()
     if status == 'deprecated':
-        skipped += 1
+        skipped_deprecated += 1
+        continue
+    if status != 'confirmed':
+        skipped_draft += 1
         continue
     active.append(lesson)
 
-print(f'Active lessons: {len(active)}, Deprecated (skipped): {skipped}', file=sys.stderr)
+print(f'Active lessons: {len(active)}, Deprecated: {skipped_deprecated}, Draft/other: {skipped_draft}', file=sys.stderr)
 
 if len(active) < 2:
     print('Not enough active lessons to compare.', file=sys.stderr)
@@ -80,5 +84,8 @@ if not pairs:
 pairs.sort(key=lambda x: -x[0])
 
 for ratio, id_a, id_b, title_a, title_b in pairs:
-    print(f'similarity: {ratio:.2f} | {id_a} vs {id_b} | {title_a} | {title_b}')
+    print(f'Score: {ratio:.2f} | {id_a} vs {id_b}')
+    print(f'  {id_a}: {title_a}')
+    print(f'  {id_b}: {title_b}')
+    print('  ---')
 "
