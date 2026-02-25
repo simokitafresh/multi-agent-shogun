@@ -1,252 +1,175 @@
 #!/bin/bash
-# lesson_merge.sh — 2つの教訓を統合し、元教訓をdeprecatedにする
+# lesson_merge.sh — 2教訓を統合し新教訓を生成、元教訓をdeprecated化
 # Usage: bash scripts/lesson_merge.sh <project> <source_id_1> <source_id_2> "<merged_title>" "<merged_summary>"
-# Example: bash scripts/lesson_merge.sh infra L025 L027 "統合タイトル" "統合サマリー"
+# Example: bash scripts/lesson_merge.sh infra L006 L023 "教訓自動化は入力品質先行が必須" "lesson_candidateからの転記自動化が最適解..."
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT_ID="${1:-}"
-SOURCE_ID_1="${2:-}"
-SOURCE_ID_2="${3:-}"
+PROJECT="${1:-}"
+SRC1="${2:-}"
+SRC2="${3:-}"
 MERGED_TITLE="${4:-}"
 MERGED_SUMMARY="${5:-}"
 
-# ── 引数検証 ──
-if [ -z "$PROJECT_ID" ] || [ -z "$SOURCE_ID_1" ] || [ -z "$SOURCE_ID_2" ] || [ -z "$MERGED_TITLE" ] || [ -z "$MERGED_SUMMARY" ]; then
+# Validate arguments
+if [ -z "$PROJECT" ] || [ -z "$SRC1" ] || [ -z "$SRC2" ] || [ -z "$MERGED_TITLE" ] || [ -z "$MERGED_SUMMARY" ]; then
     echo "Usage: lesson_merge.sh <project> <source_id_1> <source_id_2> \"<merged_title>\" \"<merged_summary>\"" >&2
-    echo "Example: bash scripts/lesson_merge.sh infra L025 L027 \"統合タイトル\" \"統合サマリー\"" >&2
     exit 1
 fi
 
-if [ "$SOURCE_ID_1" == "$SOURCE_ID_2" ]; then
-    echo "ERROR: source_id_1 and source_id_2 must be different (both are $SOURCE_ID_1)" >&2
-    exit 1
-fi
+# Normalize lesson IDs (accept L6 or L006)
+SRC1=$(printf "L%03d" "$(echo "$SRC1" | sed -E 's/^L0*//')")
+SRC2=$(printf "L%03d" "$(echo "$SRC2" | sed -E 's/^L0*//')")
 
-# ── プロジェクトパス取得 ──
+# Get project path
 PROJECT_PATH=$(python3 -c "
 import yaml
 with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
+    if p['id'] == '$PROJECT':
         print(p['path'])
         break
 ")
 
 if [ -z "$PROJECT_PATH" ]; then
-    echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
+    echo "ERROR: Project '$PROJECT' not found in config/projects.yaml" >&2
     exit 1
 fi
 
-LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
-if [ ! -f "$LESSONS_FILE" ]; then
-    echo "ERROR: SSOT not found: $LESSONS_FILE" >&2
+SSOT="$PROJECT_PATH/tasks/lessons.md"
+LOCKFILE="${SSOT}.lock"
+
+if [ ! -f "$SSOT" ]; then
+    echo "ERROR: SSOT not found: $SSOT" >&2
     exit 1
 fi
 
-# ── Step 1: ソースID存在確認 ──
-for SID in "$SOURCE_ID_1" "$SOURCE_ID_2"; do
-    if ! grep -qE "^### ${SID}:" "$LESSONS_FILE"; then
-        echo "ERROR: $SID not found in $LESSONS_FILE" >&2
+# Verify source IDs exist and are not already deprecated
+for sid in "$SRC1" "$SRC2"; do
+    NUM=$(echo "$sid" | sed -E 's/^L0*//')
+    if ! grep -qP "^### L0*${NUM}\s*[：:]" "$SSOT"; then
+        echo "ERROR: $sid not found in $SSOT" >&2
         exit 1
     fi
 done
 
-echo "[lesson_merge] Verified: $SOURCE_ID_1 and $SOURCE_ID_2 exist in SSOT"
+echo "[lesson_merge] Merging: $SRC1 + $SRC2 → \"$MERGED_TITLE\""
 
-# ── Step 2: lesson_write.sh経由で新教訓登録 ──
-OUTPUT=$(bash "$SCRIPT_DIR/scripts/lesson_write.sh" \
-    "$PROJECT_ID" \
-    "$MERGED_TITLE" \
-    "$MERGED_SUMMARY" \
-    "merged(${SOURCE_ID_1}+${SOURCE_ID_2})" \
-    "lesson_merge" \
-    "" \
-    --force 2>&1) || {
-    echo "ERROR: lesson_write.sh failed:" >&2
-    echo "$OUTPUT" >&2
-    exit 1
-}
+# ── Step 1: Register new lesson via lesson_write.sh ──
+OUTPUT=$(bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" \
+    "$MERGED_TITLE" "$MERGED_SUMMARY" "merge($SRC1+$SRC2)" "karo" "" --force)
+echo "$OUTPUT"
 
-# Extract new lesson ID (e.g., "L036 added to ...")
+# Extract new lesson ID
 NEW_ID=$(echo "$OUTPUT" | grep -oP 'L\d+' | head -1)
-
 if [ -z "$NEW_ID" ]; then
-    echo "ERROR: Failed to extract new lesson ID from output:" >&2
-    echo "$OUTPUT" >&2
+    echo "ERROR: Could not extract new lesson ID from lesson_write.sh output" >&2
     exit 1
 fi
+echo "[lesson_merge] New lesson created: $NEW_ID"
 
-echo "[lesson_merge] Created: $NEW_ID via lesson_write.sh"
-
-# ── Step 3: SSOTパッチ (merged_from + deprecated_by + status) ──
-LOCKFILE="${LESSONS_FILE}.lock"
+# ── Step 2: Add merged_from to new entry + deprecate sources (atomic, flock) ──
 (
     flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
 
-    export LESSONS_FILE NEW_ID SOURCE_ID_1 SOURCE_ID_2
+    export SSOT NEW_ID SRC1 SRC2
     python3 << 'PYEOF'
-import re, os
+import re, os, sys, tempfile
 
-lessons_file = os.environ["LESSONS_FILE"]
+ssot = os.environ["SSOT"]
 new_id = os.environ["NEW_ID"]
-source_id_1 = os.environ["SOURCE_ID_1"]
-source_id_2 = os.environ["SOURCE_ID_2"]
+src1 = os.environ["SRC1"]
+src2 = os.environ["SRC2"]
 
-with open(lessons_file, encoding='utf-8') as f:
-    content = f.read()
+with open(ssot, encoding='utf-8') as f:
+    lines = f.readlines()
 
-lines = content.split('\n')
-output = []
+result = []
 i = 0
-
 while i < len(lines):
     line = lines[i]
 
-    # ── 新統合教訓: status:confirmed + merged_from追加 ──
-    if re.match(rf'^### {re.escape(new_id)}:\s', line):
-        output.append(line)
+    # Detect new entry heading → insert merged_from after it
+    new_num = int(new_id.replace('L', ''))
+    if re.match(rf'^### L0*{new_num}\s*[：:]', line):
+        result.append(line)
         i += 1
-        section_lines = []
-        while i < len(lines):
-            if lines[i].startswith('### ') or lines[i].startswith('## '):
-                break
-            section_lines.append(lines[i])
-            i += 1
-
-        last_meta_idx = -1
-        has_status = False
-        for idx, sl in enumerate(section_lines):
-            if re.match(r'^- \*\*\w+\*\*:', sl):
-                last_meta_idx = idx
-                if re.match(r'^- \*\*status\*\*:', sl):
-                    has_status = True
-
-        insertions = []
-        if not has_status:
-            insertions.append('- **status**: confirmed')
-        insertions.append(f'- **merged_from**: [{source_id_1}, {source_id_2}]')
-
-        if last_meta_idx >= 0:
-            for j, ins in enumerate(insertions):
-                section_lines.insert(last_meta_idx + 1 + j, ins)
-        else:
-            section_lines = insertions + section_lines
-
-        output.extend(section_lines)
+        # Insert merged_from right after heading (before other metadata)
+        result.append(f'- **merged_from**: [{src1}, {src2}]\n')
         continue
 
-    # ── ソース教訓: deprecated_by + status:deprecated ──
-    if re.match(rf'^### ({re.escape(source_id_1)}|{re.escape(source_id_2)}):\s', line):
-        output.append(line)
-        i += 1
-        section_lines = []
-        while i < len(lines):
-            if lines[i].startswith('### ') or lines[i].startswith('## '):
-                break
-            section_lines.append(lines[i])
+    # Detect source entries → insert deprecated_by + status: deprecated
+    matched_src = False
+    for src_id in [src1, src2]:
+        src_num = int(src_id.replace('L', ''))
+        if re.match(rf'^### L0*{src_num}\s*[：:]', line):
+            result.append(line)
             i += 1
+            # Insert deprecated_by and status: deprecated
+            result.append(f'- **deprecated_by**: {new_id}\n')
+            result.append(f'- **status**: deprecated\n')
+            # Skip existing status/deprecated_by lines if any (avoid duplication)
+            while i < len(lines):
+                sline = lines[i]
+                if re.match(r'^- \*\*(?:deprecated_by|status)\*\*:', sline):
+                    i += 1  # skip old line
+                    continue
+                break
+            matched_src = True
+            break
 
-        new_section = []
-        has_status = False
-        has_deprecated_by = False
-        last_meta_idx = -1
+    if not matched_src:
+        # No match — pass through
+        result.append(line)
+        i += 1
 
-        for idx, sl in enumerate(section_lines):
-            if re.match(r'^- \*\*status\*\*:', sl):
-                new_section.append('- **status**: deprecated')
-                has_status = True
-                last_meta_idx = len(new_section) - 1
-            elif re.match(r'^- \*\*deprecated_by\*\*:', sl):
-                new_section.append(f'- **deprecated_by**: {new_id}')
-                has_deprecated_by = True
-                last_meta_idx = len(new_section) - 1
-            else:
-                if re.match(r'^- \*\*\w+\*\*:', sl):
-                    last_meta_idx = len(new_section)
-                new_section.append(sl)
+new_content = ''.join(result)
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(ssot), suffix='.tmp')
+try:
+    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+        f.write(new_content)
+    os.replace(tmp_path, ssot)
+except Exception:
+    os.unlink(tmp_path)
+    raise
 
-        insertions = []
-        if not has_status:
-            insertions.append('- **status**: deprecated')
-        if not has_deprecated_by:
-            insertions.append(f'- **deprecated_by**: {new_id}')
-
-        if insertions:
-            if last_meta_idx >= 0:
-                for j, ins in enumerate(insertions):
-                    new_section.insert(last_meta_idx + 1 + j, ins)
-            else:
-                new_section = insertions + new_section
-
-        output.extend(new_section)
-        continue
-
-    output.append(line)
-    i += 1
-
-with open(lessons_file, 'w', encoding='utf-8') as f:
-    f.write('\n'.join(output))
-
-print(f'[lesson_merge] Patched SSOT: {new_id} (merged_from), {source_id_1} + {source_id_2} (deprecated)')
+print(f"[lesson_merge] Added merged_from to {new_id}, deprecated {src1} and {src2}")
 PYEOF
 
 ) 200>"$LOCKFILE"
 
-# ── Step 4: YAML再同期 ──
-bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
-
-# ── Step 5: context索引注記 ──
+# ── Step 3: Annotate context index entries ──
 CONTEXT_FILE=$(python3 -c "
 import yaml
 with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
-        print(p.get('context_file', ''))
+    if p['id'] == '$PROJECT':
+        cf = p.get('context_file', '')
+        print(cf)
+        for cfe in p.get('context_files', []):
+            print(cfe['file'])
         break
 ")
 
 if [ -n "$CONTEXT_FILE" ]; then
-    CONTEXT_FULL_PATH="$SCRIPT_DIR/$CONTEXT_FILE"
-    if [ -f "$CONTEXT_FULL_PATH" ]; then
-        (
-            flock -w 10 201 || { echo "WARN: context lock timeout" >&2; exit 0; }
-            export CONTEXT_FULL_PATH SOURCE_ID_1 SOURCE_ID_2 NEW_ID
-            python3 << 'CTXEOF'
-import re, os
-
-ctx_path = os.environ["CONTEXT_FULL_PATH"]
-source_ids = [os.environ["SOURCE_ID_1"], os.environ["SOURCE_ID_2"]]
-new_id = os.environ["NEW_ID"]
-
-with open(ctx_path, encoding='utf-8') as f:
-    content = f.read()
-
-modified = False
-for sid in source_ids:
-    pattern = rf'^(- {re.escape(sid)}:.+?)$'
-    matches = list(re.finditer(pattern, content, re.MULTILINE))
-    for m in matches:
-        old_line = m.group(1)
-        annotation = f'[統合→{new_id}]'
-        if annotation not in old_line:
-            new_line = f'{old_line} {annotation}'
-            content = content.replace(old_line, new_line, 1)
-            modified = True
-            print(f'[lesson_merge] context annotated: {sid} → +{annotation}')
-
-if modified:
-    with open(ctx_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-else:
-    for sid in source_ids:
-        print(f'[lesson_merge] NOTE: {sid} not found in context — manual annotation may be needed')
-CTXEOF
-        ) 201>"${CONTEXT_FULL_PATH}.lock"
-    fi
+    for ctx_file in $CONTEXT_FILE; do
+        CTX_FULL="$SCRIPT_DIR/$ctx_file"
+        if [ ! -f "$CTX_FULL" ]; then continue; fi
+        for SRC_ID in "$SRC1" "$SRC2"; do
+            # Match only index lines starting with "- SRC_ID:" and not already annotated
+            if grep -qP "^- ${SRC_ID}:.*(?<!\[統合→${NEW_ID}\])$" "$CTX_FULL"; then
+                sed -i "/^- ${SRC_ID}:/s|$| [統合→${NEW_ID}]|" "$CTX_FULL"
+                echo "[lesson_merge] Annotated $SRC_ID in $ctx_file"
+            fi
+        done
+    done
 fi
 
-echo "[lesson_merge] Complete: ${SOURCE_ID_1} + ${SOURCE_ID_2} → ${NEW_ID}"
+# ── Step 4: Re-sync YAML (picks up merged_from + deprecated_by + status) ──
+echo "[lesson_merge] Syncing to YAML..."
+bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT"
+
+echo "[lesson_merge] Complete: $SRC1 + $SRC2 → $NEW_ID"
