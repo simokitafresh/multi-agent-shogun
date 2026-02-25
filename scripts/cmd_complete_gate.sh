@@ -42,7 +42,7 @@ update_status() {
             return 0
         fi
 
-        sed -i "/^- id: ${cmd_id}$/,/^- id: /{s/^  status: pending/  status: completed/}" "$YAML_FILE"
+        sed -i "/^- id: ${cmd_id}$/,/^- id: /{s/^  status: \(pending\|in_progress\)/  status: completed/}" "$YAML_FILE"
 
         echo "STATUS UPDATED: ${cmd_id} → completed"
     ) 200>"$lock_file"
@@ -201,8 +201,15 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     echo ""
     echo "Auto-notification (GATE CLEAR - emergency override):"
 
-    # gist_sync（先に実行。ntfyにGist URLを含めるため）
-    if bash "$SCRIPT_DIR/scripts/gist_sync.sh" >/dev/null 2>&1; then
+    # dashboard_update（最初に実行。dashboard.mdを更新）
+    if bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
+        echo "  dashboard_update: OK ($CMD_ID)"
+    else
+        echo "  dashboard_update: WARN (failed, continuing)" >&2
+    fi
+
+    # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
+    if bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1; then
         echo "  gist_sync: OK"
     else
         echo "  gist_sync: WARN (sync failed, non-blocking)" >&2
@@ -840,8 +847,15 @@ except:
     echo ""
     echo "Auto-notification (GATE CLEAR):"
 
-    # gist_sync（先に実行。ntfyにGist URLを含めるため）
-    if bash "$SCRIPT_DIR/scripts/gist_sync.sh" >/dev/null 2>&1; then
+    # dashboard_update（最初に実行。dashboard.mdを更新）
+    if bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
+        echo "  dashboard_update: OK ($CMD_ID)"
+    else
+        echo "  dashboard_update: WARN (failed, continuing)" >&2
+    fi
+
+    # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
+    if bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1; then
         echo "  gist_sync: OK"
     else
         echo "  gist_sync: WARN (sync failed, non-blocking)" >&2
