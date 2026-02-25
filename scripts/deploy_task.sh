@@ -290,6 +290,20 @@ try:
     words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', task_text)
     keywords = list(set(w.lower() for w in words if len(w) > 3))
 
+    # Category estimation from task text (keyword-based)
+    task_category = ''
+    category_rules = [
+        (r'バックエンド|API|DB|SQL|PostgreSQL|Render|フロントエンド|React|UI|コンポーネント', 'テクニカル知見'),
+        (r'パリティ|検証|バックテスト|CPCV|WF', '検証手法'),
+        (r'戦略|哲学|方針|殿|投資', '戦略哲学'),
+        (r'プロセス|手順|運用|配備|デプロイ', 'プロセス教訓'),
+        (r'数値|パフォーマンス|リターン|MaxDD|CAGR', '定量ファクト'),
+    ]
+    for pattern, cat in category_rules:
+        if re.search(pattern, task_text):
+            task_category = cat
+            break
+
     # Keep only active lessons: status=confirmed or undefined (default=confirmed)
     # Exclude: deprecated, draft, or any other non-confirmed status
     confirmed_lessons = []
@@ -323,6 +337,12 @@ try:
                 score += 3
             elif kw in other_text:
                 score += 1
+
+        # Category bonus: +2 if lesson category matches task estimated category
+        if task_category:
+            l_category = str(lesson.get('category', '')).strip()
+            if l_category and l_category == task_category:
+                score += 2
 
         if score > 0:
             scored.append((score, lid, l_summary or l_title))
@@ -362,7 +382,7 @@ try:
         raise
 
     ids = [r['id'] for r in related]
-    print(f'[INJECT] Injected {len(related)} lessons: {ids} for project={project} filtered_draft={filtered_draft} filtered_deprecated={filtered_deprecated}', file=sys.stderr)
+    print(f'[INJECT] Injected {len(related)} lessons: {ids} for project={project} task_category={task_category or \"(none)\"} filtered_draft={filtered_draft} filtered_deprecated={filtered_deprecated}', file=sys.stderr)
 
 except Exception as e:
     print(f'[INJECT] ERROR: {e}', file=sys.stderr)
