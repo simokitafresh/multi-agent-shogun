@@ -12,9 +12,6 @@ TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
 NINJA_NAMES="sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru"
 
-INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
-LOCKFILE="${INBOX}.lock"
-
 # Validate arguments
 if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
     echo "Usage: inbox_write.sh <target_agent> <content> [type] [from]" >&2
@@ -28,6 +25,23 @@ if [[ "$TARGET" == cmd_* ]]; then
     echo "受け取った引数: $*" >&2
     exit 1
 fi
+
+# HIGH-2: パストラバーサル防止 — TARGETを許可リストで検証
+ALLOWED_TARGETS="karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru shogun gunshi"
+valid_target=0
+for allowed in $ALLOWED_TARGETS; do
+    if [ "$TARGET" = "$allowed" ]; then
+        valid_target=1
+        break
+    fi
+done
+if [ "$valid_target" -eq 0 ]; then
+    echo "ERROR: Invalid target agent: '$TARGET'. Allowed: $ALLOWED_TARGETS" >&2
+    exit 1
+fi
+
+INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
+LOCKFILE="${INBOX}.lock"
 
 # Validate sender/target relationship
 is_ninja_sender=0
@@ -66,13 +80,22 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
 
-        # Add message via python3 (unified YAML handling)
+        # Add message via python3 — HIGH-1: 全変数を環境変数経由で渡す（インジェクション防止）
+        INBOX_PATH="$INBOX" MSG_ID="$MSG_ID" MSG_FROM="$FROM" \
+        MSG_TIMESTAMP="$TIMESTAMP" MSG_TYPE="$TYPE" MSG_CONTENT="$CONTENT" \
         python3 -c "
-import yaml, sys
+import yaml, sys, os
 
 try:
+    inbox_path  = os.environ['INBOX_PATH']
+    msg_id      = os.environ['MSG_ID']
+    msg_from    = os.environ['MSG_FROM']
+    msg_ts      = os.environ['MSG_TIMESTAMP']
+    msg_type    = os.environ['MSG_TYPE']
+    msg_content = os.environ['MSG_CONTENT']
+
     # Load existing inbox
-    with open('$INBOX') as f:
+    with open(inbox_path) as f:
         data = yaml.safe_load(f)
 
     # Initialize if needed
@@ -83,30 +106,30 @@ try:
 
     # Add new message
     new_msg = {
-        'id': '$MSG_ID',
-        'from': '$FROM',
-        'timestamp': '$TIMESTAMP',
-        'type': '$TYPE',
-        'content': '''$CONTENT''',
-        'read': False
+        'id':        msg_id,
+        'from':      msg_from,
+        'timestamp': msg_ts,
+        'type':      msg_type,
+        'content':   msg_content,
+        'read':      False
     }
     data['messages'].append(new_msg)
 
     # Overflow protection: keep max 50 messages
     if len(data['messages']) > 50:
-        msgs = data['messages']
+        msgs   = data['messages']
         unread = [m for m in msgs if not m.get('read', False)]
-        read = [m for m in msgs if m.get('read', False)]
+        read   = [m for m in msgs if m.get('read', False)]
         # Keep all unread + newest 30 read messages
         data['messages'] = unread + read[-30:]
 
     # Atomic write: tmp file + rename (prevents partial reads)
-    import tempfile, os
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname('$INBOX'), suffix='.tmp')
+    import tempfile
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
     try:
         with os.fdopen(tmp_fd, 'w') as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, '$INBOX')
+        os.replace(tmp_path, inbox_path)
     except:
         os.unlink(tmp_path)
         raise
@@ -137,10 +160,10 @@ except Exception as e:
                     (
                         flock -w 5 201 || exit 0  # Lock failure is non-fatal
 
-                        python3 -c "
+                        TASK_PATH="$TASK_YAML" python3 -c "
 import yaml, tempfile, os, sys
 
-task_path = '$TASK_YAML'
+task_path = os.environ['TASK_PATH']
 try:
     with open(task_path) as f:
         data = yaml.safe_load(f)

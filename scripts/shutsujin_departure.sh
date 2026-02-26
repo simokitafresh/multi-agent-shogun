@@ -22,42 +22,35 @@ tmux set-option -w -t shogun:2 pane-border-format \
   '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:Sonnet*,#{@model_name}},#[fg=#89b4fa],#[fg=#a6e3a1]}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
   2>/dev/null
 
-# Window 1 (shogun): agent_id + model_name + context_pct + inbox_count + current_task
+# Window 1 (shogun): Opus紫(#cba6f7) + model_name + context_pct
+tmux set-option -w -t shogun:1 pane-border-status top 2>/dev/null
 tmux set-option -w -t shogun:1 pane-border-format \
-  '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:Sonnet*,#{@model_name}},#[fg=#89b4fa],#[fg=#a6e3a1]}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
+  '#[fg=#cba6f7]#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]' \
   2>/dev/null
 
 echo "[shutsujin] pane-border-format: inbox count enabled (shogun:1, shogun:2)"
 
-# ─── session status-right: MCAS usage display (cmd_331/cmd_341) ───
-# BGループ方式: usage_statusbar_loop.shが60秒ごとにstatus-rightを値+色込みで直接更新。
-# #()方式は色が効かないため不採用（検証済み）。
-# 色: active=白(#ffffff), inactive=薄グレー(#585b70), PJ名=#89b4fa(青), 区切り=#585b70(灰)
-# 注意: session-level（-gなし）に設定すること。globalだとsession設定に負ける。
-MCAS_LOOP_SCRIPT="/mnt/c/Python_app/multi-claude-account-switcher/usage_statusbar_loop.sh"
-MCAS_LOOP_PID_FILE="/tmp/mcas_statusbar_loop.pid"
+# ─── status bar style: Catppuccin Mocha base ───
+tmux set-option -g status-style "bg=#1e1e2e,fg=#cdd6f4" 2>/dev/null
+echo "[shutsujin] status-style: Catppuccin Mocha base (#1e1e2e)"
 
-# まずsession-levelのstatus-rightを暫定値で設定（ループ起動前でも表示される）
-tmux set-option status-right-length 200
-tmux set-option status-right "#[fg=#89b4fa][mcas] #[fg=#585b70]| #[fg=#585b70]Main D:—  W:—  #[fg=#585b70]| #[fg=#ffffff]Sub D:—  W:—  #[fg=#585b70]| #[fg=#cdd6f4]%Y-%m-%d %H:%M"
+# ─── session status-right: datetime ───
+tmux set-option -t shogun status-right-length 200
+tmux set-option -t shogun status-right "#[fg=#cdd6f4]%Y-%m-%d %H:%M"
 
-if [[ -f "$MCAS_LOOP_SCRIPT" ]]; then
-    # Check if already running
-    already_running=false
-    if [[ -f "$MCAS_LOOP_PID_FILE" ]]; then
-        old_pid=$(cat "$MCAS_LOOP_PID_FILE" 2>/dev/null)
-        if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null; then
-            already_running=true
-        fi
-    fi
+echo "[shutsujin] status-right: datetime only"
 
-    if [[ "$already_running" == true ]]; then
-        echo "[shutsujin] status-right: MCAS usage loop already running (PID: ${old_pid}), skip"
-    else
-        nohup bash "$MCAS_LOOP_SCRIPT" >> /tmp/mcas_statusbar_loop.log 2>&1 &
-        sleep 1
-        echo "[shutsujin] status-right: MCAS usage loop started (PID: $(cat "$MCAS_LOOP_PID_FILE" 2>/dev/null))"
-    fi
-else
-    echo "[shutsujin] status-right: MCAS loop script not found, static fallback set"
-fi
+# ─── gunshi pane variables (cmd_389) ───
+# 軍師ペイン(saizo転用pane 7)にエージェント識別変数を設定
+# ninja_monitor.shはNINJA_NAMESから軍師を除外し、auto-/clear対象外とする
+tmux set-option -p -t shogun:2.7 @agent_id gunshi 2>/dev/null
+tmux set-option -p -t shogun:2.7 @agent_cli claude 2>/dev/null
+tmux set-option -p -t shogun:2.7 @model_name Opus 2>/dev/null
+echo "[shutsujin] gunshi pane variables set (shogun:2.7, model=Opus)"
+
+# ─── gunshi model switch (cmd_399) ───
+# 現行セッションが起動中ならOpusに即時切替
+# shutsujin_departure.shはCLI起動しない(tmux変数設定のみ)
+# CLIが既に起動している場合のみ /model コマンドを送信
+tmux send-keys -t shogun:2.7 "/model claude-opus-4-6" Enter 2>/dev/null
+echo "[shutsujin] gunshi model switch sent (claude-opus-4-6)"
