@@ -1,0 +1,50 @@
+# lesson_tags.yaml — 教訓タグ辞書
+# deploy_task.sh L300-312の既存11タグ + 追加11タグ
+# 使用元: scripts/lesson_auto_tag.sh, scripts/deploy_task.sh
+tag_rules:
+  # --- 既存11タグ (deploy_task.sh L300-312由来) ---
+  - tag: db
+    patterns: ['(?i)db|database|SQL|PostgreSQL']
+  - tag: api
+    patterns: ['(?i)api|endpoint|request|response|Render']
+  - tag: frontend
+    patterns: ['(?i)frontend|ui|css|react|component']
+  - tag: deploy
+    patterns: ['(?i)deploy|本番|render|環境']
+  - tag: pipeline
+    patterns: ['(?i)pipeline|batch|cron|scheduler']
+  - tag: testing
+    patterns: ['(?i)test|検証|parity|backtest']
+  - tag: review
+    patterns: ['(?i)review|査読|レビュー']
+  - tag: recon
+    patterns: ['(?i)recon|偵察|調査|分析']
+  - tag: process
+    patterns: ['(?i)process|手順|運用|workflow']
+  - tag: communication
+    patterns: ['(?i)通信|報告|inbox|notification']
+  - tag: gate
+    patterns: ['(?i)gate|門番|block|clear']
+  # --- 追加11タグ ---
+  - tag: bash
+    patterns: ['(?i)bash|shell|script|シェル']
+  - tag: yaml
+    patterns: ['(?i)yaml|YAML|yml']
+  - tag: git
+    patterns: ['(?i)git|commit|branch|merge|push']
+  - tag: wsl2
+    patterns: ['(?i)wsl|WSL|Windows|mnt']
+  - tag: security
+    patterns: ['(?i)security|injection|脆弱|認証']
+  - tag: monitor
+    patterns: ['(?i)monitor|監視|idle|stall|ninja_monitor']
+  - tag: inbox
+    patterns: ['(?i)inbox|メッセージ|通信|watcher']
+  - tag: tmux
+    patterns: ['(?i)tmux|pane|window|session']
+  - tag: oauth
+    patterns: ['(?i)oauth|token|認証|API[._]key']
+  - tag: lesson
+    patterns: ['(?i)lesson|教訓|knowledge|注入']
+  - tag: reporting
+    patterns: ['(?i)report|報告|dashboard|YAML[._]report']

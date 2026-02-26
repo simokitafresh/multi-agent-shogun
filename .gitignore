@@ -76,6 +76,7 @@
 !config/projects.yaml
 !config/cli_profiles.yaml
 !config/ninja_bashrc_safety.sh
+!config/lesson_tags.yaml
 
 # Templates
 !templates/
@@ -136,6 +137,7 @@
 !scripts/gates/gate_pd_sync.sh
 !scripts/gates/gate_lesson_health.sh
 !scripts/gates/gate_shogun_memory.sh
+!scripts/gates/gate_field_get.sh
 !scripts/switch_project.sh
 !scripts/reset_layout.sh
 !scripts/restart_watchers.sh
@@ -149,6 +151,7 @@
 !scripts/token_refresh.sh
 !scripts/auto_deploy_next.sh
 !scripts/knowledge_metrics.sh
+!scripts/lesson_auto_tag.sh
 
 
 # Tasks (SSOT lessons only)
