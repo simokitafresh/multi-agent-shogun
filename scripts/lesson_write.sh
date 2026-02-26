@@ -1,7 +1,9 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic]
+# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"]
+# Tags: --tags "tag1,tag2" (explicit) or auto-inferred from title/detail. Default: universal
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
+# Example: bash scripts/lesson_write.sh infra "Gate改修" "ゲート検証" "cmd_100" "saizo" "" --tags "gate,process"
 
 set -e
 
@@ -31,6 +33,14 @@ if [ "$STATUS" != "draft" ] && [ "$STATUS" != "confirmed" ]; then
     echo "ERROR: --status must be 'draft' or 'confirmed' (got: $STATUS)" >&2
     exit 1
 fi
+
+# Scan for --tags flag (comma-separated, e.g. "db,api,deploy". Default: auto-infer or universal)
+TAGS=""
+prev_arg=""
+for arg in "$@"; do
+    if [ "$prev_arg" == "--tags" ]; then TAGS="$arg"; fi
+    prev_arg="$arg"
+done
 
 # Validate arguments
 if [ -z "$PROJECT_ID" ] || [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
@@ -93,9 +103,9 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 10 200 || exit 1
 
         # Find max ID and append new entry
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR FORCE LESSON_ID_FILE STATUS
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR FORCE LESSON_ID_FILE STATUS TAGS SCRIPT_DIR
         python3 << 'PYEOF'
-import re, os, sys
+import re, os, sys, yaml
 from difflib import SequenceMatcher
 
 lessons_file = os.environ["LESSONS_FILE"]
@@ -131,6 +141,55 @@ existing = []
 for m in re.finditer(r'^### L(\d+): (.+)$', content, re.MULTILINE):
     existing.append((f'L{int(m.group(1)):03d}', m.group(2)))
 
+# Tag inference (AC1: config/lesson_tags.yaml辞書参照)
+tags_str = os.environ.get("TAGS", "")
+if not tags_str:
+    # (AC1-a) config/lesson_tags.yaml から辞書読み込み
+    script_dir = os.environ.get("SCRIPT_DIR", "")
+    tags_yaml_path = os.path.join(script_dir, "config", "lesson_tags.yaml") if script_dir else ""
+    tag_rules = []
+    if tags_yaml_path and os.path.exists(tags_yaml_path):
+        try:
+            with open(tags_yaml_path, encoding='utf-8') as tf:
+                tdata = yaml.safe_load(tf)
+            for rule in (tdata or {}).get("tag_rules", []):
+                tag = rule.get("tag", "")
+                patterns = rule.get("patterns", [])
+                if tag and patterns:
+                    for pat in patterns:
+                        tag_rules.append((pat, tag))
+        except Exception:
+            tag_rules = []
+
+    # Fallback: YAML不在または空の場合、従来のハードコード値
+    if not tag_rules:
+        tag_rules = [
+            (r'(?i)db|database|SQL|PostgreSQL', 'db'),
+            (r'(?i)api|endpoint|http|rest', 'api'),
+            (r'(?i)frontend|react|component|ui|visibility|dashboard', 'frontend'),
+            (r'(?i)deploy|production|本番|render', 'deploy'),
+            (r'(?i)pipeline|recalculate|signal|momentum|parity|パリティ', 'pipeline'),
+            (r'(?i)test|parity|verify|検証|パリティ', 'testing'),
+            (r'(?i)review|レビュー', 'review'),
+            (r'(?i)偵察|scout|調査|investigation', 'recon'),
+            (r'(?i)process|workflow|フロー|手順', 'process'),
+            (r'(?i)inbox|ntfy|notification|通知', 'communication'),
+            (r'(?i)gate|ゲート', 'gate'),
+        ]
+
+    text = " " + (title + " " + detail).lower() + " "
+    inferred = []
+    for pat, tag in tag_rules:
+        if tag not in inferred and re.search(pat, text):
+            inferred.append(tag)
+    tags = inferred if inferred else ["universal"]
+else:
+    # (AC1-b) --tags引数が指定されていればそのまま使用
+    tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+    if not tags:
+        tags = ["universal"]
+tags_yaml = "[" + ", ".join(tags) + "]"
+
 force = os.environ.get("FORCE", "") == "1"
 if not force:
     for eid, etitle in existing:
@@ -149,6 +208,7 @@ if source_cmd:
 entry += f'- **記録者**: {author}\n'
 if status == "draft":
     entry += f'- **status**: draft\n'
+entry += f'- **tags**: {tags_yaml}\n'
 entry += f'- {detail}\n'
 
 # Append to file
@@ -222,10 +282,33 @@ if matches:
 else:
     new_content = content.rstrip('\n') + '\n\n## 教訓索引（自動追記）\n\n' + entry + '\n'
 
+# Update sync marker: <!-- last_synced_lesson: LXXX -->
+marker_pattern = re.compile(r'<!--\s*last_synced_lesson:\s*L\d+\s*-->')
+new_marker = f'<!-- last_synced_lesson: {lesson_id} -->'
+
+if marker_pattern.search(new_content):
+    # AC2: Marker exists — update the number
+    new_content = marker_pattern.sub(new_marker, new_content)
+else:
+    # AC2: Marker absent — add after last lesson entry in the section
+    # Insert before the next heading or at EOF
+    if matches:
+        last_match_recheck = matches[-1]
+        after_recheck = new_content[last_match_recheck.end():]
+        next_h = re.search(r'^## ', after_recheck, re.MULTILINE)
+        if next_h:
+            marker_pos = last_match_recheck.end() + next_h.start()
+            new_content = new_content[:marker_pos].rstrip('\n') + '\n' + new_marker + '\n\n' + new_content[marker_pos:].lstrip('\n')
+        else:
+            new_content = new_content.rstrip('\n') + '\n' + new_marker + '\n'
+    else:
+        new_content = new_content.rstrip('\n') + '\n' + new_marker + '\n'
+
 with open(ctx_path, 'w', encoding='utf-8') as f:
     f.write(new_content)
 
 print(f"[lesson_write] {lesson_id} appended to {ctx_path}")
+print(f"[lesson_write] sync marker updated: {new_marker}")
 CTXEOF
                         ) 201>"${CONTEXT_FULL_PATH}.lock"
                     else

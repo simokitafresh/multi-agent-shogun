@@ -294,22 +294,41 @@ try:
         task_tags = [task_tags]
     task_tags = [str(t).lower().strip() for t in task_tags if t]
 
-    # (2) tagsがなければtitle+descriptionからキーワード推定
+    # (2) tagsがなければtitle+descriptionからキーワード推定 (AC2: config/lesson_tags.yaml辞書参照)
     tag_inferred = False
     if not task_tags:
-        tag_rules = [
-            (r'(?i)db|database|SQL|PostgreSQL', 'db'),
-            (r'(?i)api|endpoint|request|response|Render', 'api'),
-            (r'(?i)frontend|ui|css|react|component', 'frontend'),
-            (r'(?i)deploy|本番|render|環境', 'deploy'),
-            (r'(?i)pipeline|batch|cron|scheduler', 'pipeline'),
-            (r'(?i)test|検証|parity|backtest', 'testing'),
-            (r'(?i)review|査読|レビュー', 'review'),
-            (r'(?i)recon|偵察|調査|分析', 'recon'),
-            (r'(?i)process|手順|運用|workflow', 'process'),
-            (r'(?i)通信|報告|inbox|notification', 'communication'),
-            (r'(?i)gate|門番|block|clear', 'gate'),
-        ]
+        # (AC2-b) config/lesson_tags.yamlを読み込んでtag_rulesを動的構築
+        tags_yaml_path = os.path.join(script_dir, 'config', 'lesson_tags.yaml')
+        tag_rules = []
+        if os.path.exists(tags_yaml_path):
+            try:
+                with open(tags_yaml_path, encoding='utf-8') as tf:
+                    tdata = yaml.safe_load(tf)
+                for rule in (tdata or {}).get('tag_rules', []):
+                    tag = rule.get('tag', '')
+                    patterns = rule.get('patterns', [])
+                    if tag and patterns:
+                        for pat in patterns:
+                            tag_rules.append((pat, tag))
+            except Exception:
+                tag_rules = []
+
+        # (AC2-c) 辞書ファイル不在時のフォールバック: 従来のハードコード値
+        if not tag_rules:
+            tag_rules = [
+                (r'(?i)db|database|SQL|PostgreSQL', 'db'),
+                (r'(?i)api|endpoint|request|response|Render', 'api'),
+                (r'(?i)frontend|ui|css|react|component', 'frontend'),
+                (r'(?i)deploy|本番|render|環境', 'deploy'),
+                (r'(?i)pipeline|batch|cron|scheduler', 'pipeline'),
+                (r'(?i)test|検証|parity|backtest', 'testing'),
+                (r'(?i)review|査読|レビュー', 'review'),
+                (r'(?i)recon|偵察|調査|分析', 'recon'),
+                (r'(?i)process|手順|運用|workflow', 'process'),
+                (r'(?i)通信|報告|inbox|notification', 'communication'),
+                (r'(?i)gate|門番|block|clear', 'gate'),
+            ]
+
         for pattern, tag in tag_rules:
             if re.search(pattern, task_text):
                 task_tags.append(tag)
