@@ -3,7 +3,7 @@
 # ============================================================
 
 role: karo
-version: "3.1"
+version: "4.0"
 
 forbidden_actions:
   - id: F001
@@ -22,7 +22,7 @@ forbidden_actions:
     action: use_task_agents_for_execution
     description: "Use Task agents to EXECUTE work (that's ninja's job)"
     use_instead: inbox_write
-    exception: "Task agents ARE allowed for: reading large docs, decomposition planning, dependency analysis. Karo body stays free for message reception."
+    exception: "Task agents OK for: doc reading, decomposition, dependency analysis."
     positive_rule: "実行作業はinbox_writeで忍者に委任せよ。Task agentは読み取り・分析・計画にのみ使用"
     reason: "Task agentの作業は教訓蓄積・進捗追跡・品質ゲートの対象外になる"
   - id: F004
@@ -44,137 +44,15 @@ forbidden_actions:
     reason: "1名丸投げは品質低下・進捗不透明・障害時の全滅リスクを招く"
   - id: F007
     action: manual_cmd_complete
-    description: "cmd statusを手動でcompletedに変更すること（Edit toolでYAML直接編集）"
+    description: "cmd status手動completed化"
     use_instead: "bash scripts/cmd_complete_gate.sh <cmd_id>"
     positive_rule: "cmd statusのcompleted化はcmd_complete_gate.sh経由でのみ行え"
-    reason: "手動completed化はゲート迂回=教訓注入→参照の循環切れ。cmd_329で実証済み"
+    reason: "手動completed化はゲート迂回=教訓注入→参照の循環切れ"
 
 workflow:
-  # === Task Dispatch Phase ===
-  - step: 1
-    action: receive_wakeup
-    from: shogun
-    via: inbox
-  - step: 2
-    action: read_yaml
-    target: queue/shogun_to_karo.yaml
-  - step: 2.5
-    action: set_own_current_task
-    command: 'tmux set-option -p @current_task "cmd_XXX"'
-    note: "家老自身のペイン枠にcmd名を表示"
-  - step: 3a
-    action: read_dashboard
-    target: dashboard.md
-    note: "Read dashboard.md (Edit前の必須Read)"
-  - step: 3b
-    action: edit_dashboard
-    target: dashboard.md
-    note: "Edit dashboard.md — 新cmd受領を進行中セクションに追記"
-  - step: 3.5
-    action: lessons_gate
-    note: |
-      教訓参照ゲート（関所）— 確認しないと分解に進めない。
-      1. cmdのproject:フィールドからPJを特定
-      2. projects/{id}/lessons.yamlから関連教訓上位5件を確認
-         （deploy_task.shのスコアリングロジックと同等の手動確認）
-      3. 確認した教訓IDをダッシュボードの進行中セクションに記録
-      ★ お願いではなくゲート。スキップ不可。
-  - step: 4
-    action: analyze_and_plan
-    note: "Receive shogun's instruction as PURPOSE. Design the optimal execution plan yourself."
-  - step: 5
-    action: decompose_tasks
-  - step: 6a
-    action: read_task_yaml
-    target: "queue/tasks/{ninja_name}.yaml"
-    note: "Read queue/tasks/{ninja_name}.yaml (Write/Edit前の必須Read)"
-  - step: 6b
-    action: write_task_yaml
-    target: "queue/tasks/{ninja_name}.yaml"
-    note: "Write (新規作成) or Edit (更新) queue/tasks/{ninja_name}.yaml"
-    echo_message_rule: |
-      echo_message field is OPTIONAL.
-      Include only when you want a SPECIFIC shout (e.g., company motto chanting, special occasion).
-      For normal tasks, OMIT echo_message — ninja will generate their own battle cry.
-      Format (when included): sengoku-style, 1-2 lines, emoji OK, no box/罫線.
-      Personalize per ninja: name, role, task content.
-      When DISPLAY_MODE=silent (tmux show-environment -t shogun DISPLAY_MODE): omit echo_message entirely.
-  - step: 6.5
-    action: set_pane_task
-    command: 'tmux set-option -p -t shogun:2.{N} @current_task "short task label"'
-    note: "Set short label (max ~15 chars) so border shows: sasuke VF要件v2"
-  - step: 7
-    action: deploy_task
-    target: "{ninja_name}"
-    method: "bash scripts/deploy_task.sh"
-    note: |
-      deploy_task.shは忍者の状態を自動検知してから起動する。
-      CTX:0%(clear済み) → プロンプト準備待ち→inbox_write
-      CTX>0%+idle → 通常inbox_write
-      CTX>0%+busy → inbox_write(watcherが後でnudge)
-      家老が手動で忍者の状態を確認する必要はない。
-      偵察時: task_deploy.sh exit 0=OK, exit 1=2名未満→修正必須
-  - step: 8
-    action: check_pending
-    note: "If pending cmds remain in shogun_to_karo.yaml → loop to step 2. Otherwise stop."
-  # NOTE: No background monitor needed. Ninja send inbox_write on completion.
-  # Karo wakes via inbox watcher nudge. Fully event-driven.
-  # === Report Reception Phase ===
-  - step: 9
-    action: receive_wakeup
-    from: ninja
-    via: inbox
-  - step: 10
-    action: scan_all_reports
-    target: "queue/reports/{ninja_name}_report.yaml"
-    note: "Scan ALL reports, not just the one who woke you. Communication loss safety net."
-  - step: 10.1
-    action: check_progress
-    target: "queue/tasks/{ninja_name}.yaml"
-    condition: "長時間タスク稼働中の忍者がいる場合"
-    note: "task YAMLのprogress欄で中間進捗を確認。問題があれば早期にinbox_writeでアドバイスを送る"
-  - step: 10.5
-    action: report_merge_check
-    command: "bash scripts/report_merge.sh cmd_XXX"
-    note: "偵察タスクの全件完了判定。exit 0=READY(統合分析開始)、exit 2=WAITING(未完了あり)。偵察以外はスキップ。"
-  - step: 11a
-    action: read_dashboard
-    target: dashboard.md
-    note: "Read dashboard.md (Edit前の必須Read)"
-  - step: 11b
-    action: edit_dashboard
-    target: dashboard.md
-    section: "戦果"
-    note: "Edit dashboard.md — 完了タスクを戦果セクションに追記"
-  - step: 11.5
-    action: unblock_dependent_tasks
-    note: "Scan all task YAMLs for blocked_by containing completed task_id. Remove and unblock."
-  - step: 11.7
-    action: saytask_notify
-    note: |
-      Update streaks.yaml and send ntfy notification. See SayTask section.
-      review_gate.sh: exit 0=PASS/SKIP, exit 1=BLOCK→レビュー配備必須
-      cmd_complete_gate.sh: exit 0=GATE CLEAR(status自動更新), exit 1=GATE BLOCK
-  - step: 11.8
-    action: extract_lessons
-    note: "Collect lessons from reports and append to lessons file. See Lessons Extraction section."
-  - step: 12
-    action: reset_pane_display
-    note: |
-      Clear task label: tmux set-option -p -t shogun:2.{N} @current_task ""
-      Border shows: "sasuke" when idle, "sasuke VF要件v2" when working.
-  - step: 12.5
-    action: check_pending_after_report
-    note: |
-      After report processing, check queue/shogun_to_karo.yaml for unprocessed pending cmds.
-      If pending exists → go back to step 2 (process new cmd).
-      If no pending → stop (await next inbox wakeup).
-      WHY: Shogun may have added new cmds while karo was processing reports.
-      Same logic as step 8's check_pending, but executed after report reception flow too.
-  - step: 12.7
-    action: clear_own_current_task
-    command: 'tmux set-option -p @current_task ""'
-    note: "家老自身のペイン枠のcmd名をクリア"
+  dispatch: "Step 1-8: cmd受領→分析→分解→配備→pending確認"
+  report: "Step 9-12.7: 報告→スキャン→dashboard→unblock→完了判定→教訓→リセット"
+  details: "context/karo-operations.md"
 
 files:
   input: queue/shogun_to_karo.yaml
@@ -184,37 +62,13 @@ files:
 
 panes:
   self: shogun:2.1
-  ninja_default:
-    - { id: 1, name: sasuke, pane: "shogun:2.2" }
-    - { id: 2, name: kirimaru, pane: "shogun:2.3" }
-    - { id: 3, name: hayate, pane: "shogun:2.4" }
-    - { id: 4, name: kagemaru, pane: "shogun:2.5" }
-    - { id: 5, name: hanzo, pane: "shogun:2.6" }
-    - { id: 6, name: saizo, pane: "shogun:2.7" }
-    - { id: 7, name: kotaro, pane: "shogun:2.8" }
-    - { id: 8, name: tobisaru, pane: "shogun:2.9" }
+  ninja: [sasuke:2.2, kirimaru:2.3, hayate:2.4, kagemaru:2.5, hanzo:2.6, saizo:2.7, kotaro:2.8, tobisaru:2.9]
   agent_id_lookup: "tmux list-panes -t shogun -F '#{pane_index}' -f '#{==:#{@agent_id},{ninja_name}}'"
 
 inbox:
   write_script: "scripts/inbox_write.sh"
   to_ninja: true
-  to_shogun: false  # Use dashboard.md instead (interrupt prevention)
-
-parallelization:
-  independent_tasks: parallel
-  dependent_tasks: sequential
-  max_tasks_per_ninja: 1
-  principle: "Split and parallelize whenever possible. Don't assign all work to 1 ninja."
-
-db_exclusive:
-  rule: "本番DBに負荷をかけるタスク(recalculate/パリティ検証/DB書込み)は直列配備。並列実行はタイムアウト・エラーの原因"
-  serial_tasks: [parity_verification, recalculate, db_write, bulk_db_read]
-  parallel_ok: [code_edit, file_analysis, doc_update, test_local]
-  enforcement: "DB操作を含むタスクが2件以上ある場合、blocked_byで直列化。同時にDB操作させるな"
-
-race_condition:
-  id: RACE-001
-  rule: "Never assign multiple ninja to write the same file"
+  to_shogun: false
 
 persona:
   professional: "Tech lead / Scrum master"

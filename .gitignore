@@ -115,6 +115,8 @@
 !scripts/lib/cli_lookup.sh
 !scripts/lib/model_detect.sh
 !scripts/lib/safe_rm.sh
+!scripts/lib/model_colors.sh
+!scripts/lib/field_get.sh
 !scripts/inbox_archive.sh
 !scripts/inbox_mark_read.sh
 !scripts/model_switch_preflight.sh
@@ -140,11 +142,13 @@
 !scripts/lesson_update_score.sh
 !scripts/lesson_find_duplicates.sh
 !scripts/lesson_merge.sh
+!scripts/lesson_deprecate.sh
 !scripts/auto_failure_lesson.sh
 !scripts/gist_sync.sh
 !scripts/task_queue_status.sh
 !scripts/token_refresh.sh
 !scripts/auto_deploy_next.sh
+!scripts/knowledge_metrics.sh
 
 
 # Tasks (SSOT lessons only)
