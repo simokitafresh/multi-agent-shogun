@@ -66,7 +66,7 @@ workflow:
     note: "各AC完了時にtask YAMLのprogress欄を追記。家老が中間進捗を確認できる"
   - step: 5
     action: write_report
-    target: "queue/reports/{ninja_name}_report.yaml"
+    target: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
   - step: 6
     action: update_status
     value: done
@@ -89,7 +89,8 @@ workflow:
 
 files:
   task: "queue/tasks/{ninja_name}.yaml"
-  report: "queue/reports/{ninja_name}_report.yaml"
+  report: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
+  # 旧形式 {ninja_name}_report.yaml は非推奨
 
 panes:
   karo: shogun:2.1
@@ -147,11 +148,12 @@ Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @age
 **Your files ONLY:**
 ```
 queue/tasks/{your_ninja_name}.yaml    ← Read only this
-queue/reports/{your_ninja_name}_report.yaml  ← Write only this
+queue/reports/{your_ninja_name}_report_{cmd}.yaml  ← Write only this  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
+# 旧形式 {ninja_name}_report.yaml は非推奨
 ```
 
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
-**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
+**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report_{cmd}.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
 
 ## Timestamp Rule
 
@@ -233,6 +235,46 @@ result:
 - レビュー忍者がPASS判定後にpushする
 - 一人で書いて一人で通すことは禁止(OPT-E bisect消滅+ReversalFilter逆転はレビューで防げた)
 - 例外: 構文修正・typo修正等の機械的変更は家老判断でレビュー省略可
+- **TODO/FIXME確認義務**: 修正対象ファイル内のTODO/FIXMEコメントが全て解消されているか確認せよ。特に当該cmd/subtaskに関連するTODOが残っていないことを検証する。レビューPASS判定前の必須チェック項目
+
+## YAML Field Access Rule (L070)
+
+**YAMLファイルからフィールド値を取得する際は `field_get` を使え。grep直書き禁止。**
+
+```bash
+# source方式で読み込み
+source "$SCRIPT_DIR/scripts/lib/field_get.sh"
+
+# フィールド取得
+status=$(field_get "$task_file" "status")
+assigned=$(field_get "$task_file" "assigned_to" "default_value")
+```
+
+| 禁止パターン | 代替(field_get) | 理由 |
+|------------|----------------|------|
+| `grep '^  status:' $file` | `field_get "$file" "status"` | 2spインデント固定仮定→YAML構造変更で沈黙死(L070) |
+| `grep -E '^\s+field:' $file \| sed ...` | `field_get "$file" "field"` | grep+sed連鎖は可読性低下+エッジケース漏れ |
+| `awk '/field:/{print $2}' $file` | `field_get "$file" "field"` | field_getは依存マップ自動記録付き |
+
+**除外対象**: `scripts/lib/field_get.sh`自身、`scripts/gates/`配下（ゲートスクリプトは独自検証パターンを使用）
+
+**field_getの機能**: 任意インデント対応(^\s+)、YAML/JSON自動判別、空結果WARN、デフォルト値、依存マップ記録(field_deps.tsv)
+
+## State Verification Principle (状態検証原則 — L067/L074)
+
+**関連する複数の状態は、変更トリガーの副作用ではなく、それぞれ独立に「正しいか？」を検証せよ。**
+
+| パターン | 判定 | 理由 |
+|----------|------|------|
+| `if (changed) { update_related }` | Bad | トリガー未発火時に関連状態が永久に古いまま放置される |
+| `if (value != expected) { fix }` を各状態に適用 | Good | 各状態が独立に正しさを保証する |
+
+背景: cmd_374でmodel_name変更時のみbg_colorが更新される設計が原因で、bg_colorが永久に古いまま放置された。
+
+適用場面:
+- スクリプトで複数の状態を管理する場合（例: model_name + bg_color + border_color）
+- 設定値を読んで複数箇所に反映する場合
+- テスト時: 「変わったか」ではなく「正しい値になっているか」を検証する
 
 ## Report Notification Protocol
 

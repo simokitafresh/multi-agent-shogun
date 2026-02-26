@@ -1,0 +1,9 @@
+filename_pattern: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # 例: hanzo_report_cmd_389.yaml（旧形式{ninja_name}_report.yamlは非推奨）
+required_fields:
+  - review_result  # PASS or FAIL
+  - ac_results     # 各AC判定（AC毎にPASS/FAIL+理由）
+  - diff_check     # diff確認結果
+forbidden:
+  - "自分で修正するな(修正が必要なら報告せよ)"
+notes:
+  - "TODO/FIXME残存チェック必須"

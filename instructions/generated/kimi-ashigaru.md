@@ -65,7 +65,7 @@ workflow:
     note: "各AC完了時にtask YAMLのprogress欄を追記。家老が中間進捗を確認できる"
   - step: 5
     action: write_report
-    target: "queue/reports/{ninja_name}_report.yaml"
+    target: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
   - step: 6
     action: update_status
     value: done
@@ -88,7 +88,8 @@ workflow:
 
 files:
   task: "queue/tasks/{ninja_name}.yaml"
-  report: "queue/reports/{ninja_name}_report.yaml"
+  report: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
+  # 旧形式 {ninja_name}_report.yaml は非推奨
 
 panes:
   karo: shogun:2.1

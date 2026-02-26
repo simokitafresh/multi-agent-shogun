@@ -57,7 +57,7 @@ workflow:
 files:
   input: queue/shogun_to_karo.yaml
   task_template: "queue/tasks/{ninja_name}.yaml"
-  report_pattern: "queue/reports/{ninja_name}_report.yaml"
+  report_pattern: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。旧形式は非推奨
   dashboard: dashboard.md
 
 panes:

@@ -263,8 +263,13 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 役割 | 名前(pane) | CLI |
 |------|-----------|-----|
 | 家老 | karo(1) | Claude |
+| 軍師 | gunshi(転用pane) | Claude |
 | 下忍(genin) | sasuke(2) kirimaru(3) | settings.yaml参照 |
 | 上忍(jonin) | hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
+
+### 偵察時の鎖（軍師連携フロー）
+殿→将軍→家老→忍者(偵察)→軍師(起案)→家老(配備)→忍者(実装)
+scout_only cmd完了後、家老が偵察報告を軍師に渡し、軍師が次cmdを起案→家老がレビュー→配備。詳細 → `context/karo-operations.md` §13
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照
