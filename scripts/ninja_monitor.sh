@@ -47,7 +47,8 @@ STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 
 # 監視対象の忍者名リスト（karoと将軍は対象外）
-NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
+# gunshi(旧saizo pane 7)はauto-/clear対象外 — 起案中の文脈保持のため(cmd_389)
+NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo kotaro tobisaru)
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -297,21 +298,83 @@ get_context_pct() {
     return 1
 }
 
+get_latest_report_file() {
+    local name="$1"
+    local legacy_report="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
+    local latest_cmd_report=""
+
+    latest_cmd_report=$(ls -1t "$SCRIPT_DIR/queue/reports/${name}_report_cmd"*.yaml 2>/dev/null | head -1 || true)
+    if [ -n "$latest_cmd_report" ]; then
+        echo "$latest_cmd_report"
+        return 0
+    fi
+
+    if [ -f "$legacy_report" ]; then
+        echo "$legacy_report"
+        return 0
+    fi
+
+    return 1
+}
+
+find_matching_report_file() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_parent_cmd task_id
+    local report_parent_cmd report_task_id
+    local preferred_report legacy_report
+    local -a candidates=()
+
+    task_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+    [ -z "$task_parent_cmd" ] && return 1
+    task_id=$(yaml_field_get "$task_file" "task_id")
+
+    preferred_report="$SCRIPT_DIR/queue/reports/${name}_report_${task_parent_cmd}.yaml"
+    legacy_report="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
+    candidates+=("$preferred_report" "$legacy_report")
+
+    # 追加フォールバック: cmd付き報告の最新から順に確認
+    while IFS= read -r f; do
+        [ -z "$f" ] && continue
+        if [ "$f" != "$preferred_report" ] && [ "$f" != "$legacy_report" ]; then
+            candidates+=("$f")
+        fi
+    done < <(ls -1t "$SCRIPT_DIR/queue/reports/${name}_report_cmd"*.yaml 2>/dev/null || true)
+
+    for report_file in "${candidates[@]}"; do
+        [ -f "$report_file" ] || continue
+
+        report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd")
+        [ -z "$report_parent_cmd" ] && continue
+        [ "$report_parent_cmd" != "$task_parent_cmd" ] && continue
+
+        report_task_id=$(yaml_field_get "$report_file" "task_id")
+        if [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ]; then
+            continue
+        fi
+
+        echo "$report_file"
+        return 0
+    done
+
+    return 1
+}
+
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
 check_and_update_done_task() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-    local report_file="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
-
-    # 報告ファイル存在確認
-    [ ! -f "$report_file" ] && return 1
+    local report_file=""
 
     # タスクのparent_cmdを取得
     local task_parent_cmd
     task_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
     [ -z "$task_parent_cmd" ] && return 1
+
+    # 新形式({ninja}_report_{cmd}.yaml)優先で一致報告を探索。旧形式も許容。
+    report_file=$(find_matching_report_file "$name") || return 1
 
     # 報告のparent_cmdを取得
     local report_parent_cmd
@@ -338,7 +401,7 @@ check_and_update_done_task() {
             completed_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
             (
                 flock -x -w 5 200 || { log "ERROR: Failed to acquire lock for $name task update"; exit 1; }
-                sed -i "s/status:\s*\(assigned\|in_progress\)/status: done/" "$task_file"
+                sed -i "s/status:\s*\(assigned\|acknowledged\|in_progress\)/status: done/" "$task_file"
                 # completed_at自動記録（cmd_387: 既存なら上書きしない）
                 TASK_FILE_ENV="$task_file" COMPLETED_AT_ENV="$completed_ts" python3 -c "
 import yaml, sys, os, tempfile
@@ -369,7 +432,7 @@ except Exception as e:
             if [ $? -ne 0 ]; then
                 return 1
             fi
-            log "AUTO-DONE: $name task auto-updated to done (report parent_cmd=$report_parent_cmd, status=$report_status)"
+            log "AUTO-DONE: $name task auto-updated to done (report=$(basename "$report_file"), parent_cmd=$report_parent_cmd, status=$report_status)"
             return 0
             ;;
         *)
@@ -386,7 +449,7 @@ is_task_deployed() {
         local task_status
         task_status=$(yaml_field_get "$task_file" "status")
 
-        if [[ "$task_status" =~ ^(assigned|in_progress)$ ]]; then
+        if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
             # AC1/AC2: 報告YAML完了チェック（parent_cmd一致+status:done）
             if check_and_update_done_task "$name"; then
                 # ─── auto_deploy_next.sh 自動発火（二重呼出防止付き） ───
@@ -503,10 +566,51 @@ notify_idle_batch() {
 handle_confirmed_idle() {
     local name="$1"
 
-    # 案E: タスク配備済みならidle通知もauto-clearもスキップ
+    # 案E改: タスク配備済みの場合、statusに応じた分岐
     if is_task_deployed "$name"; then
-        log "TASK-DEPLOYED: $name has assigned/in_progress task, skip idle notification and auto-clear"
-        PREV_STATE[$name]="busy"  # タスクがあるならbusy扱いを維持
+        local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+        local task_status
+        task_status=$(yaml_field_get "$task_file" "status")
+
+        # in_progress = 忍者が着手済み。干渉しない
+        if [ "$task_status" = "in_progress" ]; then
+            log "TASK-DEPLOYED: $name in_progress, skip"
+            PREV_STATE[$name]="busy"
+            return
+        fi
+
+        # assigned/acknowledged = 未着手。デッドロック候補
+        local now
+        now=$(date +%s)
+        local deploy_stall_key="deploy_stall_${name}"
+        if [ -z "${STALL_FIRST_SEEN[$deploy_stall_key]}" ]; then
+            STALL_FIRST_SEEN[$deploy_stall_key]=$now
+            log "DEPLOY-STALL-WATCH: $name has $task_status task, idle (tracking started)"
+            PREV_STATE[$name]="busy"
+            return
+        fi
+
+        local first_seen=${STALL_FIRST_SEEN[$deploy_stall_key]}
+        local elapsed=$((now - first_seen))
+        local effective_debounce
+        effective_debounce=$(cli_profile_get "$name" "clear_debounce")
+
+        if [ "$elapsed" -ge "$effective_debounce" ]; then
+            local reset_cmd
+            reset_cmd=$(cli_profile_get "$name" "clear_cmd")
+            log "DEPLOY-STALL-CLEAR: $name stalled ${elapsed}s with $task_status task, sending $reset_cmd"
+            local target="${PANE_TARGETS[$name]}"
+            tmux send-keys -t "$target" "$reset_cmd"
+            sleep 0.3
+            tmux send-keys -t "$target" Enter
+            unset STALL_FIRST_SEEN[$deploy_stall_key]
+            # /new後にinbox nudgeで新セッションにタスクを知らせる
+            sleep 2
+            bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "タスクYAMLを読んで作業開始せよ。" task_assigned ninja_monitor >> "$LOG" 2>&1
+        else
+            log "DEPLOY-STALL-WAIT: $name $task_status+idle ${elapsed}s < ${effective_debounce}s"
+            PREV_STATE[$name]="busy"
+        fi
         return
     fi
 
@@ -587,6 +691,7 @@ handle_busy() {
     PREV_STATE[$name]="busy"
     # 作業再開 → 停滞追跡リセット + fingerprint リセット（次idle時に新鮮な判定を保証）
     unset STALL_FIRST_SEEN[$name]
+    unset STALL_FIRST_SEEN["deploy_stall_${name}"]
     RENUDGE_FINGERPRINT[$name]=""
 }
 
@@ -1129,8 +1234,9 @@ write_karo_snapshot() {
 
             # 報告状態
             for name in "${NINJA_NAMES[@]}"; do
-                local report_file="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
-                if [ -f "$report_file" ]; then
+                local report_file=""
+                report_file=$(get_latest_report_file "$name" || true)
+                if [ -n "$report_file" ] && [ -f "$report_file" ]; then
                     local report_task report_status
                     report_task=$(yaml_field_get "$report_file" "task_id")
                     report_status=$(yaml_field_get "$report_file" "status")
