@@ -30,6 +30,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
+source "$SCRIPT_DIR/scripts/lib/field_get.sh"
+
+source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 
 POLL_INTERVAL=20    # ポーリング間隔（秒）
 CONFIRM_WAIT=5      # idle確認待ち（秒）— Phase 2a base wait
@@ -50,6 +53,13 @@ mkdir -p "$SCRIPT_DIR/logs"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG"
+}
+
+yaml_field_get() {
+    local file="$1"
+    local field="$2"
+    local default="${3:-}"
+    FIELD_GET_NO_LOG=1 field_get "$file" "$field" "$default" 2>/dev/null
 }
 
 log "ninja_monitor started. Monitoring ${#NINJA_NAMES[@]} ninja."
@@ -300,27 +310,61 @@ check_and_update_done_task() {
 
     # タスクのparent_cmdを取得
     local task_parent_cmd
-    task_parent_cmd=$(grep -m1 'parent_cmd:' "$task_file" 2>/dev/null | awk '{print $2}')
+    task_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
     [ -z "$task_parent_cmd" ] && return 1
 
     # 報告のparent_cmdを取得
     local report_parent_cmd
-    report_parent_cmd=$(grep -m1 'parent_cmd:' "$report_file" 2>/dev/null | awk '{print $2}')
+    report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd")
     [ -z "$report_parent_cmd" ] && return 1
 
     # parent_cmd一致チェック
     [ "$task_parent_cmd" != "$report_parent_cmd" ] && return 1
 
+    # task_id一致チェック（同一cmd内のWave間誤マッチ防止）
+    local task_id report_task_id
+    task_id=$(yaml_field_get "$task_file" "task_id")
+    report_task_id=$(yaml_field_get "$report_file" "task_id")
+    [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ] && return 1
+
     # 報告のstatus確認（done/completed/success を完了とみなす）
     local report_status
-    report_status=$(grep -m1 '^status:' "$report_file" 2>/dev/null | awk '{print $2}')
+    report_status=$(yaml_field_get "$report_file" "status")
     case "$report_status" in
         done|completed|success)
             # 完了確認 — タスクYAMLをdoneに自動更新（flock排他制御）
             local lock_file="/tmp/task_${name}.lock"
+            local completed_ts
+            completed_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
             (
-                flock -x -w 5 200 || { log "ERROR: Failed to acquire lock for $name task update"; return 1; }
+                flock -x -w 5 200 || { log "ERROR: Failed to acquire lock for $name task update"; exit 1; }
                 sed -i "s/status:\s*\(assigned\|in_progress\)/status: done/" "$task_file"
+                # completed_at自動記録（cmd_387: 既存なら上書きしない）
+                TASK_FILE_ENV="$task_file" COMPLETED_AT_ENV="$completed_ts" python3 -c "
+import yaml, sys, os, tempfile
+task_file = os.environ['TASK_FILE_ENV']
+completed_at = os.environ['COMPLETED_AT_ENV']
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+    if not data or 'task' not in data:
+        sys.exit(0)
+    task = data['task']
+    if task.get('completed_at'):
+        sys.exit(0)
+    task['completed_at'] = completed_at
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+except Exception as e:
+    print(f'[COMPLETED_AT] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>/dev/null || true
             ) 200>"$lock_file"
             if [ $? -ne 0 ]; then
                 return 1
@@ -339,13 +383,16 @@ is_task_deployed() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     if [ -f "$task_file" ]; then
-        if grep -qE 'status:\s*(assigned|in_progress)' "$task_file" 2>/dev/null; then
+        local task_status
+        task_status=$(yaml_field_get "$task_file" "status")
+
+        if [[ "$task_status" =~ ^(assigned|in_progress)$ ]]; then
             # AC1/AC2: 報告YAML完了チェック（parent_cmd一致+status:done）
             if check_and_update_done_task "$name"; then
                 # ─── auto_deploy_next.sh 自動発火（二重呼出防止付き） ───
                 local task_id_val parent_cmd_val
-                task_id_val=$(grep -m1 'task_id:' "$task_file" 2>/dev/null | awk '{print $2}')
-                parent_cmd_val=$(grep -m1 'parent_cmd:' "$task_file" 2>/dev/null | awk '{print $2}')
+                task_id_val=$(yaml_field_get "$task_file" "task_id")
+                parent_cmd_val=$(yaml_field_get "$task_file" "parent_cmd")
                 local deploy_key="${name}:${task_id_val}"
                 if [ -n "$parent_cmd_val" ] && [ -n "$task_id_val" ] && [ "${AUTO_DEPLOY_DONE[$deploy_key]}" != "1" ]; then
                     AUTO_DEPLOY_DONE[$deploy_key]="1"
@@ -386,7 +433,7 @@ is_task_deployed() {
                 # Both idle → stale task (YAML not updated after completion)
                 if $pane_idle && $task_empty; then
                     local yaml_status
-                    yaml_status=$(grep -oE 'status:\s*(assigned|in_progress)' "$task_file" 2>/dev/null | head -1 | awk -F': *' '{print $2}')
+                    yaml_status="${task_status}"
                     log "STALE-TASK: $name has YAML status=$yaml_status but pane is idle, treating as not deployed"
                     return 1  # Stale — treat as not deployed
                 fi
@@ -394,7 +441,7 @@ is_task_deployed() {
             return 0  # タスク配備済み（active or ペインチェック不可）
         fi
         # Bug2 fix: status=done but @current_task still set → clear it
-        if grep -qE 'status:\s*done' "$task_file" 2>/dev/null; then
+        if [ "$task_status" = "done" ]; then
             local target="${PANE_TARGETS[$name]}"
             if [ -n "$target" ]; then
                 local current_task
@@ -432,7 +479,8 @@ notify_idle_batch() {
     for name in "${names[@]}"; do
         local target="${PANE_TARGETS[$name]}"
         local ctx=$(get_context_pct "$target" "$name")
-        local last_task=$(grep -m1 'task_id:' "$SCRIPT_DIR/queue/tasks/${name}.yaml" 2>/dev/null | awk '{print $2}')
+        local last_task
+        last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
         details="${details}${name}(CTX:${ctx}%,last:${last_task}), "
     done
     details="${details%, }"  # 末尾カンマ除去
@@ -556,8 +604,8 @@ check_stall() {
 
     # status: assigned 以外は対象外
     local status task_id
-    status=$(grep -m1 'status:' "$task_file" 2>/dev/null | awk '{print $2}')
-    task_id=$(grep -m1 'task_id:' "$task_file" 2>/dev/null | awk '{print $2}')
+    status=$(yaml_field_get "$task_file" "status")
+    task_id=$(yaml_field_get "$task_file" "task_id")
 
     if [ "$status" != "assigned" ]; then
         unset STALL_FIRST_SEEN[$name]
@@ -1011,7 +1059,8 @@ write_state_file() {
 
             local status="${PREV_STATE[$name]:-unknown}"
             local ctx=$(get_context_pct "$target" "$name")
-            local last_task=$(grep -m1 'task_id:' "$SCRIPT_DIR/queue/tasks/${name}.yaml" 2>/dev/null | awk '{print $2}')
+            local last_task
+            last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
             [ -z "$last_task" ] && last_task=""
 
             echo "  ${name}:" >> "$state_file"
@@ -1047,16 +1096,16 @@ write_karo_snapshot() {
                             print "cmd|" cmd_id "|" cmd_status "|" purpose_short
                         }
                     }
-                    /^[[:space:]]*-[[:space:]]id:/ {
+                    /^- id:/ {
                         emit()
                         cmd_id=$3; gsub(/"/, "", cmd_id)
                         cmd_status=""; cmd_purpose=""
                         next
                     }
-                    /^[[:space:]]*status:/ { cmd_status=$2; next }
-                    /^[[:space:]]*purpose:/ {
+                    /^  status:/ { cmd_status=$2; next }
+                    /^  purpose:/ {
                         cmd_purpose=$0
-                        sub(/^[[:space:]]*purpose:[[:space:]]*"?/, "", cmd_purpose)
+                        sub(/^  purpose:[[:space:]]*"?/, "", cmd_purpose)
                         sub(/"$/, "", cmd_purpose)
                         next
                     }
@@ -1069,9 +1118,9 @@ write_karo_snapshot() {
                 local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
                 if [ -f "$task_file" ]; then
                     local task_id status project
-                    task_id=$(grep -m1 'task_id:' "$task_file" 2>/dev/null | awk '{print $2}')
-                    status=$(grep -m1 'status:' "$task_file" 2>/dev/null | awk '{print $2}')
-                    project=$(grep -m1 'project:' "$task_file" 2>/dev/null | awk '{print $2}')
+                    task_id=$(yaml_field_get "$task_file" "task_id")
+                    status=$(yaml_field_get "$task_file" "status")
+                    project=$(yaml_field_get "$task_file" "project")
                     echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}"
                 else
                     echo "ninja|${name}|none|idle|none"
@@ -1083,8 +1132,8 @@ write_karo_snapshot() {
                 local report_file="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
                 if [ -f "$report_file" ]; then
                     local report_task report_status
-                    report_task=$(grep -m1 'task_id:' "$report_file" 2>/dev/null | awk '{print $2}')
-                    report_status=$(grep -m1 '^status:' "$report_file" 2>/dev/null | awk '{print $2}')
+                    report_task=$(yaml_field_get "$report_file" "task_id")
+                    report_status=$(yaml_field_get "$report_file" "status")
                     [ -n "$report_task" ] && echo "report|${name}|${report_task}|${report_status:-unknown}"
                 fi
             done
@@ -1214,10 +1263,25 @@ check_model_names() {
         local current
         current=$(tmux show-options -p -t "$target" -v @model_name 2>/dev/null || echo "")
 
-        # 整合性チェック + 自動修正
+        # 整合性チェック + 自動修正（model_name）
         if [ "$current" != "$expected" ]; then
             tmux set-option -p -t "$target" @model_name "$expected" 2>/dev/null
             log "MODEL_NAME_FIX: $name ${current:-<empty>} -> $expected"
+        fi
+
+        # bg_color検証（model_nameの一致/不一致に関わらず毎回チェック）
+        local expected_bg
+        expected_bg=$(resolve_bg_color "$name" "$expected")
+        local current_bg
+        current_bg=$(tmux show-options -p -t "$target" -v @bg_color 2>/dev/null || echo "")
+        # @bg_colorが未設定の場合、実際のペインスタイルからも取得を試みる
+        if [ -z "$current_bg" ]; then
+            current_bg=$(tmux show-options -p -t "$target" -v "window-style" 2>/dev/null | grep -oP 'bg=#[0-9a-f]+' | head -1 | sed 's/bg=//' || echo "")
+        fi
+        if [ "$current_bg" != "$expected_bg" ]; then
+            tmux select-pane -t "$target" -P "bg=${expected_bg}" 2>/dev/null
+            tmux set-option -p -t "$target" @bg_color "$expected_bg" 2>/dev/null
+            log "BG_COLOR_FIX: $name ${current_bg:-<empty>} -> $expected_bg (model=$expected)"
         fi
     done
 }
@@ -1381,6 +1445,31 @@ check_auto_archive() {
     done
 }
 
+# ─── shogun_to_karo.yaml肥大化監視 (cmd_369 AC3) ───
+YAML_SIZE_WARN_THRESHOLD=500       # 行数閾値
+YAML_COMPLETED_ALERT_THRESHOLD=10  # completed cmd数閾値
+
+check_yaml_size() {
+    local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ ! -f "$cmd_file" ] && return
+
+    # (1) 行数チェック
+    local line_count
+    line_count=$(wc -l < "$cmd_file")
+    if [ "$line_count" -gt "$YAML_SIZE_WARN_THRESHOLD" ]; then
+        log "[monitor] WARN: shogun_to_karo.yaml is ${line_count} lines (threshold: ${YAML_SIZE_WARN_THRESHOLD})"
+    fi
+
+    # (2) completed/done/cancelled/absorbed cmd数チェック
+    # L019教訓: grep -cは0件でexit 1するのでawkで安全にカウント
+    # L034教訓: インデント柔軟マッチ(固定space非依存)
+    local completed_count
+    completed_count=$(awk '/^[[:space:]]*status:[[:space:]]*(completed|done|cancelled|absorbed)/ {c++} END {print c+0}' "$cmd_file")
+    if [ "$completed_count" -gt "$YAML_COMPLETED_ALERT_THRESHOLD" ]; then
+        log "[monitor] ALERT: ${completed_count} completed cmds in shogun_to_karo.yaml — archive may be failing"
+    fi
+}
+
 # ─── 初期ペイン探索 ───
 discover_panes
 
@@ -1400,6 +1489,9 @@ while true; do
 
         # Inbox pruning (cmd_106) — 10分間隔で既読メッセージを自動削除
         bash "$SCRIPT_DIR/scripts/inbox_prune.sh" 2>>"$SCRIPT_DIR/logs/inbox_prune.log" || true
+
+        # shogun_to_karo.yaml肥大化監視 (cmd_369 AC3)
+        check_yaml_size
     fi
 
     # ═══ ペイン生存チェック (cmd_183) ═══

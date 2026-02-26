@@ -18,6 +18,7 @@ LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
 # cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 
 NINJA_NAME="${1:-}"
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
@@ -155,23 +156,6 @@ check_idle() {
     return 1  # デフォルト: BUSY（安全側）
 }
 
-# ─── プロンプト準備待ち（/clear後用） ───
-wait_for_prompt() {
-    local pane_target="$1"
-    local max_wait=30  # 最大30秒
-    local waited=0
-
-    while [ $waited -lt $max_wait ]; do
-        if check_idle "$pane_target"; then
-            return 0
-        fi
-        sleep 2
-        waited=$((waited + 2))
-    done
-
-    log "WARNING: $NINJA_NAME prompt not ready after ${max_wait}s, proceeding anyway"
-    return 1
-}
 
 # ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
 generate_report_template() {
@@ -185,8 +169,8 @@ generate_report_template() {
 
     # 受領条件の存在確認（grepで取得。監査ログ用途）
     local ac_count=0
-    if [ -f "$task_file" ] && grep -q '^  acceptance_criteria:' "$task_file" 2>/dev/null; then
-        ac_count=$(grep -A 60 '^  acceptance_criteria:' "$task_file" 2>/dev/null | grep -cE '^[[:space:]]*-[[:space:]]' || true)
+    if [ -f "$task_file" ] && grep -qE '^\s+acceptance_criteria:' "$task_file" 2>/dev/null; then
+        ac_count=$(grep -A 60 -E '^\s+acceptance_criteria:' "$task_file" 2>/dev/null | grep -cE '^[[:space:]]*-[[:space:]]' || true)
     fi
 
     cat > "$report_file" <<EOF
@@ -210,6 +194,7 @@ EOF
 }
 
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
+# cmd_349: タグマッチによる選択的教訓注入
 inject_related_lessons() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -236,7 +221,6 @@ try:
 
     if not project:
         task['related_lessons'] = []
-        # Atomic write
         tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
         try:
             with os.fdopen(tmp_fd, 'w') as f:
@@ -249,23 +233,33 @@ try:
         sys.exit(0)
 
     lessons_path = os.path.join(script_dir, 'projects', project, 'lessons.yaml')
-    if not os.path.exists(lessons_path):
-        task['related_lessons'] = []
-        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-        try:
-            with os.fdopen(tmp_fd, 'w') as f:
-                yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-            os.replace(tmp_path, task_file)
-        except:
-            os.unlink(tmp_path)
-            raise
+    lessons = []
+    if os.path.exists(lessons_path):
+        with open(lessons_path) as f:
+            lessons_data = yaml.safe_load(f)
+        lessons = lessons_data.get('lessons', []) if lessons_data else []
+    else:
         print(f'[INJECT] WARN: lessons.yaml not found for project={project}', file=sys.stderr)
-        sys.exit(0)
 
-    with open(lessons_path) as f:
-        lessons_data = yaml.safe_load(f)
+    # ═══ Platform教訓の追加読み込み ═══
+    projects_yaml_path = os.path.join(script_dir, 'config', 'projects.yaml')
+    platform_count = 0
+    if os.path.exists(projects_yaml_path):
+        try:
+            with open(projects_yaml_path) as pf:
+                pdata = yaml.safe_load(pf)
+            for pj in (pdata or {}).get('projects', []):
+                if pj.get('type') == 'platform' and pj.get('id') != project:
+                    plat_path = os.path.join(script_dir, 'projects', pj['id'], 'lessons.yaml')
+                    if os.path.exists(plat_path):
+                        with open(plat_path) as plf:
+                            plat_data = yaml.safe_load(plf)
+                        plat_lessons = plat_data.get('lessons', []) if plat_data else []
+                        platform_count += len(plat_lessons)
+                        lessons.extend(plat_lessons)
+        except Exception as pe:
+            print(f'[INJECT] WARN: platform lessons load failed: {pe}', file=sys.stderr)
 
-    lessons = lessons_data.get('lessons', []) if lessons_data else []
     if not lessons:
         task['related_lessons'] = []
         tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
@@ -276,36 +270,53 @@ try:
         except:
             os.unlink(tmp_path)
             raise
-        print(f'[INJECT] No lessons for project={project}', file=sys.stderr)
+        print(f'[INJECT] No lessons for project={project} (including platform)', file=sys.stderr)
         sys.exit(0)
 
     # Build task text for keyword extraction
     title = task.get('title', '')
     description = task.get('description', '')
     ac_list = task.get('acceptance_criteria', [])
-    ac_text = ' '.join(ac_list) if isinstance(ac_list, list) else str(ac_list or '')
+    if isinstance(ac_list, list):
+        ac_text = ' '.join(str(a.get('description', '')) if isinstance(a, dict) else str(a) for a in ac_list)
+    else:
+        ac_text = str(ac_list or '')
     task_text = f'{title} {description} {ac_text}'
 
     # Extract keywords: split by non-word chars, exclude <=3 chars, lowercase, dedup
     words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', task_text)
     keywords = list(set(w.lower() for w in words if len(w) > 3))
 
-    # Category estimation from task text (keyword-based)
-    task_category = ''
-    category_rules = [
-        (r'バックエンド|API|DB|SQL|PostgreSQL|Render|フロントエンド|React|UI|コンポーネント', 'テクニカル知見'),
-        (r'パリティ|検証|バックテスト|CPCV|WF', '検証手法'),
-        (r'戦略|哲学|方針|殿|投資', '戦略哲学'),
-        (r'プロセス|手順|運用|配備|デプロイ', 'プロセス教訓'),
-        (r'数値|パフォーマンス|リターン|MaxDD|CAGR', '定量ファクト'),
-    ]
-    for pattern, cat in category_rules:
-        if re.search(pattern, task_text):
-            task_category = cat
-            break
+    # ═══ タグマッチ: タスクタグの決定 ═══
+    # (1) タスクYAMLにtagsフィールドがあればそれを使用
+    task_tags = task.get('tags', [])
+    if isinstance(task_tags, str):
+        task_tags = [task_tags]
+    task_tags = [str(t).lower().strip() for t in task_tags if t]
+
+    # (2) tagsがなければtitle+descriptionからキーワード推定
+    tag_inferred = False
+    if not task_tags:
+        tag_rules = [
+            (r'(?i)db|database|SQL|PostgreSQL', 'db'),
+            (r'(?i)api|endpoint|request|response|Render', 'api'),
+            (r'(?i)frontend|ui|css|react|component', 'frontend'),
+            (r'(?i)deploy|本番|render|環境', 'deploy'),
+            (r'(?i)pipeline|batch|cron|scheduler', 'pipeline'),
+            (r'(?i)test|検証|parity|backtest', 'testing'),
+            (r'(?i)review|査読|レビュー', 'review'),
+            (r'(?i)recon|偵察|調査|分析', 'recon'),
+            (r'(?i)process|手順|運用|workflow', 'process'),
+            (r'(?i)通信|報告|inbox|notification', 'communication'),
+            (r'(?i)gate|門番|block|clear', 'gate'),
+        ]
+        for pattern, tag in tag_rules:
+            if re.search(pattern, task_text):
+                task_tags.append(tag)
+        if task_tags:
+            tag_inferred = True
 
     # Keep only active lessons: status=confirmed or undefined (default=confirmed)
-    # Exclude: deprecated, draft, or any other non-confirmed status
     confirmed_lessons = []
     filtered_draft = 0
     filtered_deprecated = 0
@@ -314,14 +325,51 @@ try:
         if l_status == 'deprecated':
             filtered_deprecated += 1
             continue
+        if lesson.get('deprecated', False):
+            filtered_deprecated += 1
+            continue
         if l_status != 'confirmed':
             filtered_draft += 1
             continue
         confirmed_lessons.append(lesson)
 
-    # Score each confirmed lesson
-    scored = []
+    # ═══ タグマッチ: 教訓をフィルタ ═══
+    # universal教訓は別管理（常に注入）
+    universal_lessons = []
+    tag_candidates = []
+
     for lesson in confirmed_lessons:
+        l_tags = lesson.get('tags', [])
+        if isinstance(l_tags, str):
+            l_tags = [l_tags]
+        l_tags = [str(t).lower().strip() for t in l_tags if t]
+
+        # universal教訓は常に注入対象
+        if 'universal' in l_tags:
+            universal_lessons.append(lesson)
+            continue
+
+        # 教訓にtagsがない場合（旧フォーマット）→常にスコアリング候補に含める（後方互換）
+        if not l_tags:
+            tag_candidates.append(lesson)
+            continue
+
+        # task_tagsが決定済みの場合、タグ重複チェック
+        if task_tags:
+            overlap = set(task_tags) & set(l_tags)
+            if overlap:
+                tag_candidates.append(lesson)
+        # task_tagsが空（推定もできなかった）→全教訓注入（安全側フォールバック）
+        else:
+            tag_candidates.append(lesson)
+
+    # (5) タスクにtagsがなくキーワード推定もできない → 全教訓注入（現行動作=安全側フォールバック）
+    if not task_tags:
+        tag_candidates = [l for l in confirmed_lessons if l not in universal_lessons]
+
+    # ═══ スコアリング: タグマッチ候補内でキーワードスコア順位付け ═══
+    scored = []
+    for lesson in tag_candidates:
         lid = lesson.get('id', '')
         l_title = str(lesson.get('title', ''))
         l_summary = str(lesson.get('summary', ''))
@@ -338,12 +386,6 @@ try:
             elif kw in other_text:
                 score += 1
 
-        # Category bonus: +2 if lesson category matches task estimated category
-        if task_category:
-            l_category = str(lesson.get('category', '')).strip()
-            if l_category and l_category == task_category:
-                score += 2
-
         if score > 0:
             scored.append((score, lid, l_summary or l_title))
 
@@ -351,12 +393,26 @@ try:
     scored.sort(key=lambda x: -x[0])
     top = scored[:5]
 
-    # Fallback: if 0 matches, take most recent 3 confirmed lessons
+    # Fallback: if 0 scored matches, take most recent 3 from tag_candidates
     if not top:
-        recent = confirmed_lessons[:3]  # lessons.yaml is already ordered by recency
+        recent = tag_candidates[:3]
         top = [(0, l.get('id', ''), l.get('summary', '') or l.get('title', '')) for l in recent]
 
     related = [{'id': lid, 'summary': summary, 'reviewed': False} for _, lid, summary in top]
+
+    # (4) universal教訓を枠外で追加（上限10件）
+    top_ids = set(r['id'] for r in related)
+    universal_added = 0
+    for ul in universal_lessons:
+        ul_id = ul.get('id', '')
+        if ul_id not in top_ids and len(related) < 10:
+            related.append({
+                'id': ul_id,
+                'summary': ul.get('summary', '') or ul.get('title', ''),
+                'reviewed': False
+            })
+            universal_added += 1
+
     task['related_lessons'] = related
 
     # (A) description冒頭に教訓要約を挿入（忍者が即座に目にする）
@@ -381,8 +437,19 @@ try:
         os.unlink(tmp_path)
         raise
 
+    # Postcondition data (cmd_378)
+    _pc_path = os.path.join(os.path.dirname(task_file), '.postcond_lesson_inject')
+    try:
+        with open(_pc_path, 'w') as _pf:
+            _pf.write(f'available={len(tag_candidates) + len(universal_lessons)}\\n')
+            _pf.write(f'injected={len(related)}\\n')
+            _pf.write(f'task_id={task.get(\"task_id\", \"unknown\")}\\n')
+    except Exception:
+        pass
+
     ids = [r['id'] for r in related]
-    print(f'[INJECT] Injected {len(related)} lessons: {ids} for project={project} task_category={task_category or \"(none)\"} filtered_draft={filtered_draft} filtered_deprecated={filtered_deprecated}', file=sys.stderr)
+    tag_info = f'task_tags={task_tags} inferred={tag_inferred}'
+    print(f'[INJECT] Injected {len(related)} lessons (universal={universal_added}, platform_loaded={platform_count}): {ids} for project={project} {tag_info} filtered_draft={filtered_draft} filtered_deprecated={filtered_deprecated}', file=sys.stderr)
 
 except Exception as e:
     print(f'[INJECT] ERROR: {e}', file=sys.stderr)
@@ -599,6 +666,172 @@ except Exception as e:
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
 
+# ─── role_reminder自動注入（cmd_384: 忍者スコープ制限リマインダ） ───
+inject_role_reminder() {
+    local task_file="$1"
+    local ninja_name="$2"
+    if [ ! -f "$task_file" ]; then
+        log "inject_role_reminder: task file not found: $task_file"
+        return 0
+    fi
+
+    # L047: 環境変数経由でPythonに値を渡す（直接補間はインジェクション危険）
+    TASK_FILE_ENV="$task_file" NINJA_NAME_ENV="$ninja_name" python3 -c "
+import yaml, sys, os, tempfile
+
+task_file = os.environ['TASK_FILE_ENV']
+ninja_name = os.environ['NINJA_NAME_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[ROLE_REMINDER] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+
+    # 既にrole_reminderが存在する場合は上書きしない
+    if task.get('role_reminder'):
+        print('[ROLE_REMINDER] Already exists, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task['role_reminder'] = f'忍者{ninja_name}。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ'
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[ROLE_REMINDER] Injected for {ninja_name}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[ROLE_REMINDER] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
+# ─── report_template自動注入（cmd_384: タスク種別別レポート雛形） ───
+inject_report_template() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_report_template: task file not found: $task_file"
+        return 0
+    fi
+
+    # L047: 環境変数経由でPythonに値を渡す
+    TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
+import yaml, sys, os, tempfile
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[REPORT_TPL] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+
+    # 既にreport_templateが存在する場合は上書きしない
+    if task.get('report_template'):
+        print('[REPORT_TPL] Already exists, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task_type = str(task.get('task_type', '')).lower()
+    if not task_type:
+        print('[REPORT_TPL] No task_type, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    template_path = os.path.join(script_dir, 'templates', f'report_{task_type}.yaml')
+    if not os.path.exists(template_path):
+        print(f'[REPORT_TPL] WARN: template not found: {template_path}', file=sys.stderr)
+        sys.exit(0)
+
+    with open(template_path) as f:
+        template_data = yaml.safe_load(f)
+
+    if template_data:
+        task['report_template'] = template_data
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[REPORT_TPL] Injected {task_type} template', file=sys.stderr)
+
+except Exception as e:
+    print(f'[REPORT_TPL] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
+# ─── deployed_at自動記録（cmd_387: 配備タイムスタンプ） ───
+# 既にdeployed_atが存在する場合は上書きしない（再配備時の元タイムスタンプ保持）
+record_deployed_at() {
+    local task_file="$1"
+    local timestamp="$2"
+    if [ ! -f "$task_file" ]; then
+        log "record_deployed_at: task file not found: $task_file"
+        return 0
+    fi
+
+    TASK_FILE_ENV="$task_file" TIMESTAMP_ENV="$timestamp" python3 -c "
+import yaml, sys, os, tempfile
+
+task_file = os.environ['TASK_FILE_ENV']
+timestamp = os.environ['TIMESTAMP_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[DEPLOYED_AT] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+
+    # 既にdeployed_atが存在する場合は上書きしない
+    if task.get('deployed_at'):
+        print(f'[DEPLOYED_AT] Already exists ({task[\"deployed_at\"]}), skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task['deployed_at'] = timestamp
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[DEPLOYED_AT] Recorded: {timestamp}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[DEPLOYED_AT] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
 # ─── context鮮度チェック（穴2対策: cmd_239） ───
 check_context_freshness() {
     local task_file="$1"
@@ -607,7 +840,7 @@ check_context_freshness() {
     fi
 
     local project
-    project=$(grep -m1 '^  project:' "$task_file" 2>/dev/null | sed 's/^  project:[[:space:]]*//' || true)
+    project=$(field_get "$task_file" "project" "")
     if [ -z "$project" ]; then
         log "context_freshness: SKIP (no project field)"
         return 0
@@ -827,6 +1060,36 @@ except Exception as e:
     return 0
 }
 
+# ─── 教訓注入postcondition（cmd_378: 事後不変条件） ───
+postcondition_lesson_inject() {
+    local task_file="$1"
+    local postcond_file
+    postcond_file="$(dirname "$task_file")/.postcond_lesson_inject"
+
+    if [ ! -f "$postcond_file" ]; then
+        # inject early exit (no project/no lessons) → postcond data not written → OK
+        return 0
+    fi
+
+    local available injected task_id
+    available=$(grep '^available=' "$postcond_file" 2>/dev/null | head -1 | cut -d= -f2)
+    injected=$(grep '^injected=' "$postcond_file" 2>/dev/null | head -1 | cut -d= -f2)
+    task_id=$(grep '^task_id=' "$postcond_file" 2>/dev/null | head -1 | cut -d= -f2)
+    rm -f "$postcond_file"
+
+    available="${available:-0}"
+    injected="${injected:-0}"
+    task_id="${task_id:-unknown}"
+
+    if [ "$available" -gt 0 ] 2>/dev/null && [ "$injected" -eq 0 ] 2>/dev/null; then
+        log "[deploy] WARN: 教訓注入ゼロ (available=${available} injected=0 task=${task_id})"
+    else
+        log "[deploy] OK: 教訓注入 (available=${available} injected=${injected} task=${task_id})"
+    fi
+
+    return 0
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
@@ -842,7 +1105,7 @@ IS_IDLE=false
 check_idle "$PANE_TARGET" && IS_IDLE=true
 
 # タスクステータス確認
-TASK_STATUS=$(grep -m1 '^  status:' "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" 2>/dev/null | awk '{print $2}' || echo "unknown")
+TASK_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "unknown")
 
 log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}, pane=${PANE_TARGET}"
 
@@ -856,11 +1119,20 @@ check_scout_gate "$TASK_FILE"
 # 教訓自動注入（失敗してもデプロイは継続）
 inject_related_lessons "$TASK_FILE" || true
 
+# 教訓注入postcondition（失敗してもデプロイは継続）
+postcondition_lesson_inject "$TASK_FILE" || true
+
 # 偵察報告自動注入（失敗してもデプロイは継続）
 inject_reports_to_read "$TASK_FILE" || true
 
 # context_files自動注入（失敗してもデプロイは継続）
 inject_context_files "$TASK_FILE" || true
+
+# role_reminder自動注入（cmd_384: 失敗してもデプロイは継続）
+inject_role_reminder "$TASK_FILE" "$NINJA_NAME" || true
+
+# report_template自動注入（cmd_384: 失敗してもデプロイは継続）
+inject_report_template "$TASK_FILE" || true
 
 # context鮮度チェック（失敗してもデプロイは継続）
 check_context_freshness "$TASK_FILE" || true
@@ -868,9 +1140,7 @@ check_context_freshness "$TASK_FILE" || true
 # 状態に応じた処理
 if [ "$CTX_PCT" -le 0 ] 2>/dev/null; then
     # CTX:0% — /clear済み、またはフレッシュセッション
-    log "${NINJA_NAME}: CTX=0% detected (clear済み). Waiting for prompt..."
-    wait_for_prompt "$PANE_TARGET"
-    log "${NINJA_NAME}: Sending inbox_write (post-clear wake-up)"
+    log "${NINJA_NAME}: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)"
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
 
 elif [ "$IS_IDLE" = "true" ]; then
@@ -885,8 +1155,11 @@ else
 fi
 
 # 報告YAML雛形生成（配備完了ログの直前）
-TASK_ID=$(grep -m1 '^  task_id:' "$TASK_FILE" 2>/dev/null | sed 's/^  task_id:[[:space:]]*//' || true)
-PARENT_CMD=$(grep -m1 '^  parent_cmd:' "$TASK_FILE" 2>/dev/null | sed 's/^  parent_cmd:[[:space:]]*//' || true)
+TASK_ID=$(field_get "$TASK_FILE" "task_id" "")
+PARENT_CMD=$(field_get "$TASK_FILE" "parent_cmd" "")
 generate_report_template "$NINJA_NAME" "$TASK_ID" "$PARENT_CMD"
+
+# deployed_at自動記録（cmd_387: 初回配備時のみ記録、再配備時は保持）
+record_deployed_at "$TASK_FILE" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
 
 log "${NINJA_NAME}: deployment complete (type=${TYPE})"
