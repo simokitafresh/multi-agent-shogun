@@ -34,6 +34,11 @@ else
     CLI_ADAPTER_LOADED=false
 fi
 
+# モデル別色定義ライブラリ読み込み
+if [ -f "$SCRIPT_DIR/scripts/lib/model_colors.sh" ]; then
+    source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
+fi
+
 # 色付きログ関数（戦国風）
 log_info() {
     echo -e "\033[1;33m【報】\033[0m $1"
@@ -520,9 +525,6 @@ tmux select-layout -t "shogun:agents" '1a7c,167x49,0,0{71x49,0,0[71x25,0,0,1,71x
 PANE_LABELS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
 # 色設定（karo: 金, genin: 青, jonin: 黄）
 PANE_COLORS=("red" "blue" "blue" "yellow" "yellow" "yellow" "yellow" "yellow" "yellow")
-# ペイン背景色（階級別）
-PANE_BG_COLORS=("#121214" "#242428" "#242428" "#1a1e28" "#1a1e28" "#1a1e28" "#1a1e28" "#1a1e28" "#1a1e28")
-
 AGENT_IDS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
 
 # モデル名設定（CLI Adapterから動的に取得 — ハードコード禁止）
@@ -561,11 +563,31 @@ for i in {0..8}; do
         if [ "$KESSEN_MODE" = true ]; then
             MODEL_NAMES[$i]="Opus"
         else
-            case "$_agent" in
-                karo|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru) MODEL_NAMES[$i]="Opus" ;;
-                sasuke|kirimaru) MODEL_NAMES[$i]="Sonnet" ;;
-                *) MODEL_NAMES[$i]="Sonnet" ;;
-            esac
+            # CLI Adapter未読み込み時: settings.yamlから直接model_nameを読む
+            _model_raw=$(python3 -c "
+import yaml
+try:
+    with open('${SETTINGS_YAML:-./config/settings.yaml}') as f:
+        cfg = yaml.safe_load(f) or {}
+    agents = cfg.get('cli', {}).get('agents', {})
+    agent = agents.get('${_agent}', {})
+    if isinstance(agent, dict):
+        mn = agent.get('model_name', '')
+        if mn:
+            for name in ['Opus', 'Sonnet', 'Haiku']:
+                if name.lower() in mn.lower():
+                    print(name)
+                    raise SystemExit
+        tier = agent.get('tier', 'jonin')
+        print('Opus' if tier == 'jonin' else 'Sonnet')
+    else:
+        print('Sonnet')
+except SystemExit:
+    pass
+except Exception:
+    print('Sonnet')
+" 2>/dev/null)
+            MODEL_NAMES[$i]="${_model_raw:-Sonnet}"
         fi
     fi
     PANE_TITLES[$i]="${MODEL_NAMES[$i]}"
@@ -586,7 +608,8 @@ for i in {0..8}; do
         _tier="jonin"
     fi
     tmux set-option -p -t "shogun:agents.${p}" @agent_tier "$_tier"
-    tmux select-pane -t "shogun:agents.${p}" -P "bg=${PANE_BG_COLORS[$i]}"
+    _bg_color=$(resolve_bg_color "${AGENT_IDS[$i]}" "${MODEL_NAMES[$i]}")
+    tmux select-pane -t "shogun:agents.${p}" -P "bg=${_bg_color}"
     PROMPT_STR=$(generate_prompt "${PANE_LABELS[$i]}" "${PANE_COLORS[$i]}" "$SHELL_SETTING")
     tmux send-keys -t "shogun:agents.${p}" "cd \"$(pwd)\" && export PS1='${PROMPT_STR}' && clear" Enter
 done
