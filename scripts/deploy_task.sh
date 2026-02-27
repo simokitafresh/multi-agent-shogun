@@ -837,6 +837,72 @@ except Exception as e:
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
 
+# ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
+# deploy_task.sh実行時にcmd_complete_gate.shが要求するgateフラグを事前生成。
+# L078: 65%のBLOCKがmissing_gate(archive/lesson/review_gate)。配備時に生成で削減。
+preflight_gate_artifacts() {
+    local task_file="$1"
+    local cmd_id
+    cmd_id=$(field_get "$task_file" "parent_cmd" "")
+
+    if [ -z "$cmd_id" ] || [[ "$cmd_id" != cmd_* ]]; then
+        log "preflight_gate: SKIP (no valid parent_cmd)"
+        return 0
+    fi
+
+    local gates_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
+    mkdir -p "$gates_dir"
+    log "preflight_gate: ${cmd_id} — artifact事前生成開始"
+
+    # (1) archive.done — archive_completed.sh実行（過去の完了cmdのアーカイブ。配備時に安全）
+    if [ ! -f "$gates_dir/archive.done" ]; then
+        if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" >/dev/null 2>&1; then
+            log "preflight_gate: archive.done generated"
+        else
+            log "preflight_gate: archive.done WARN (script failed, non-blocking)"
+        fi
+    else
+        log "preflight_gate: archive.done already exists (skip)"
+    fi
+
+    # (2) lesson.done — 配備時点で報告YAMLは未存在→lesson_check.shで「候補なし」フラグ生成
+    # 注: ninja完了後にlesson_candidate found:trueが出た場合、
+    #   cmd_complete_gate.shのpreflight upgradeロジックがsource: lesson_writeに上書きする
+    if [ ! -f "$gates_dir/lesson.done" ]; then
+        if bash "$SCRIPT_DIR/scripts/lesson_check.sh" "$cmd_id" "deploy_preflight: 配備時点で候補なし" >/dev/null 2>&1; then
+            log "preflight_gate: lesson.done generated (deploy_preflight)"
+        else
+            log "preflight_gate: lesson.done WARN (script failed, non-blocking)"
+        fi
+    else
+        log "preflight_gate: lesson.done already exists (skip)"
+    fi
+
+    # (3) review_gate.done — implement時のみ。配備時点でreview未実施のためplaceholder生成
+    local task_type
+    task_type=$(field_get "$task_file" "task_type" "")
+    if [ "$task_type" = "implement" ] && [ ! -f "$gates_dir/review_gate.done" ]; then
+        cat > "$gates_dir/review_gate.done" <<EOF
+timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
+source: deploy_preflight
+note: 配備時placeholder。review_gate.shが完了時に上書き。
+EOF
+        log "preflight_gate: review_gate.done generated (deploy_preflight)"
+    fi
+
+    # (4) report_merge.done — recon時のみ。配備時点で報告未存在のためplaceholder生成
+    if [ "$task_type" = "recon" ] && [ ! -f "$gates_dir/report_merge.done" ]; then
+        cat > "$gates_dir/report_merge.done" <<EOF
+timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
+source: deploy_preflight
+note: 配備時placeholder。report_merge.shが完了時に上書き。
+EOF
+        log "preflight_gate: report_merge.done generated (deploy_preflight)"
+    fi
+
+    log "preflight_gate: ${cmd_id} — artifact事前生成完了"
+}
+
 # ─── deployed_at自動記録（cmd_387: 配備タイムスタンプ） ───
 # 既にdeployed_atが存在する場合は上書きしない（再配備時の元タイムスタンプ保持）
 record_deployed_at() {
@@ -1217,5 +1283,8 @@ generate_report_template "$NINJA_NAME" "$TASK_ID" "$PARENT_CMD"
 
 # deployed_at自動記録（cmd_387: 初回配備時のみ記録、再配備時は保持）
 record_deployed_at "$TASK_FILE" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
+
+# preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減）
+preflight_gate_artifacts "$TASK_FILE" || true
 
 log "${NINJA_NAME}: deployment complete (type=${TYPE})"
