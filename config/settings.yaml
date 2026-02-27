@@ -25,27 +25,19 @@ cli:
   agents:
     sasuke:
       type: codex
-      tier: genin
     kirimaru:
       type: codex
-      tier: genin
     hayate:
       type: codex
-      tier: jonin
     kagemaru:
-      tier: jonin
       model_name: claude-opus-4-6
     hanzo:
-      tier: jonin
       model_name: claude-opus-4-6
     saizo:
       type: codex
-      tier: jonin
     kotaro:
-      tier: jonin
       model_name: claude-opus-4-6
     tobisaru:
-      tier: jonin
       model_name: claude-opus-4-6
 
 # ntfy設定
