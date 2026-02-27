@@ -55,6 +55,14 @@ workflow:
   report: "Step 9-12.7: 報告→スキャン→dashboard→unblock→完了判定→教訓→リセット"
   details: "context/karo-operations.md"
 
+fixes_rule:
+  positive_rule: "cmd起票時に、既存cmdの成果物の修正であればfixes: cmd_XXXを記入せよ"
+  reason: "手戻り率が品質の真の指標。記入がなければ計測できない"
+  criteria:
+    - "既存cmd成果物のバグ/不具合修正: fixes: cmd_XXX"
+    - "機能追加・改善・新規開発: fixesは空文字またはフィールドなし"
+    - "判断に迷う場合: fixesなし（偽陽性より偽陰性を優先）"
+
 files:
   input: queue/shogun_to_karo.yaml
   task_template: "queue/tasks/{ninja_name}.yaml"

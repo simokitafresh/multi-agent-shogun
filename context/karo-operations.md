@@ -45,6 +45,15 @@ STEP 6: 配備後チェック(スクリプト強制 — 偵察タスク時のみ
   → 偵察以外のtask_type(implement/review/other)はスキップ
 ```
 
+### cmd起票時のfixes記入ルール
+
+- positive_rule: "cmd起票時に、既存cmdの成果物の修正であればfixes: cmd_XXXを記入せよ"
+- reason: "手戻り率が品質の真の指標。記入がなければ計測できない"
+- 判断基準:
+  - 既存cmd成果物のバグ・不具合修正が必要: `fixes: cmd_XXX`
+  - 機能追加・改善・新規開発: `fixes`は空文字またはフィールドなし
+  - 判断に迷う場合: `fixes`なし（偽陽性より偽陰性を優先）
+
 ## §2 分解パターン（Task Decomposition Patterns）
 > cmd受領時の5パターン即時分解手順。毎回ゼロから考えるな。
 
