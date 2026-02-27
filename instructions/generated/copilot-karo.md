@@ -73,6 +73,14 @@ model_deployment_rules:
     positive_rule: "能力データにはモデルID(バージョン含む)と推論レベルを必ず併記せよ"
     reason: "同一モデルでも推論レベル(reasoning effort)で能力が変わる。バージョン+推論レベルがセットで初めて再現性のある比較になる(殿厳命)"
 
+random_deployment_rules:
+  - id: R001
+    positive_rule: "タスク配備はidle忍者にround-robinで行え。モデル・名前で選ぶな"
+    reason: "モデル別に振り分けると選択バイアスがかかり、能力比較データが汚染される(殿裁定)"
+  - id: R002
+    positive_rule: "例外はDB排他(直列)・偵察2名並列・レビュー≠実装の3つのみ"
+    reason: "構造的制約だけ守り、それ以外の判断コストをゼロにする"
+
 files:
   input: queue/shogun_to_karo.yaml
   task_template: "queue/tasks/{ninja_name}.yaml"

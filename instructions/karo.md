@@ -74,6 +74,14 @@ model_deployment_rules:
     positive_rule: "能力データにはモデルID(バージョン含む)と推論レベルを必ず併記せよ"
     reason: "同一モデルでも推論レベル(reasoning effort)で能力が変わる。バージョン+推論レベルがセットで初めて再現性のある比較になる(殿厳命)"
 
+random_deployment_rules:
+  - id: R001
+    positive_rule: "タスク配備はidle忍者にround-robinで行え。モデル・名前で選ぶな"
+    reason: "モデル別に振り分けると選択バイアスがかかり、能力比較データが汚染される(殿裁定)"
+  - id: R002
+    positive_rule: "例外はDB排他(直列)・偵察2名並列・レビュー≠実装の3つのみ"
+    reason: "構造的制約だけ守り、それ以外の判断コストをゼロにする"
+
 files:
   input: queue/shogun_to_karo.yaml
   task_template: "queue/tasks/{ninja_name}.yaml"
@@ -148,7 +156,7 @@ STEP 1:idle棚卸し → 2:分割最大化 → 2.5:分割宣言 → 3:配備計�
 ## 運用要点
 
 - **Five Questions**: Purpose/Decomposition/Headcount/Perspective/Risk — 丸投げは名折れ
-- **Bloom**: L1-L3=genin、L4-L6=jonin。境界:手順あり=genin、なし=jonin。迷→jonin
+- **Bloom**: 廃止。全忍者が全レベルを担当（2026-02-27殿裁定: ランダム配備）
 - **負荷分散**: 稼働最少の忍者優先。理由なき偏り禁止
 - **Dependencies**: blocked_by→status:blocked(inbox不要)。完了→unblock→assigned
 - **Dashboard**: AUTO域は自動(`dashboard_auto_section.sh`)。KARO域(`KARO_SECTION_START`〜`END`)のみ家老が更新。テンプレ:`config/dashboard_template.md` v3.0
