@@ -1581,6 +1581,8 @@ discover_panes
 
 # ─── メインループ ───
 cycle=0
+prev_idle=""
+prev_gate_lines=0
 
 while true; do
     sleep "$POLL_INTERVAL"
@@ -1729,6 +1731,16 @@ while true; do
     # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
     write_state_file
     write_karo_snapshot   # 家老陣形図更新（毎サイクル）
+
+    # ═══ STEP 2: ダッシュボード自動更新 (cmd_404) ═══
+    # 状態変化時のみ呼び出す（コスト最適化）
+    current_idle=$(grep "^idle|" "$SCRIPT_DIR/queue/karo_snapshot.txt" 2>/dev/null | head -1 || echo "")
+    current_gate_lines=$(wc -l < "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo 0)
+    if [[ "$current_idle" != "$prev_idle" || "$current_gate_lines" != "$prev_gate_lines" ]]; then
+        bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" 2>/dev/null || true
+        prev_idle="$current_idle"
+        prev_gate_lines="$current_gate_lines"
+    fi
 
     # ═══ Self-restart check ═══
     check_script_update
