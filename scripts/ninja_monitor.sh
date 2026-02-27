@@ -360,6 +360,54 @@ find_matching_report_file() {
     return 1
 }
 
+resolve_expected_report_file() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local report_filename parent_cmd
+
+    report_filename=$(yaml_field_get "$task_file" "report_filename")
+    if [ -z "$report_filename" ]; then
+        parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+        if [ -n "$parent_cmd" ]; then
+            report_filename="${name}_report_${parent_cmd}.yaml"
+        else
+            report_filename="${name}_report.yaml"
+        fi
+    fi
+
+    echo "$report_filename"
+}
+
+can_send_clear_with_report_gate() {
+    local name="$1"
+    local trigger="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+
+    # タスクYAMLなし: 報告不要
+    [ -f "$task_file" ] || return 0
+
+    local task_status
+    task_status=$(yaml_field_get "$task_file" "status")
+    # done以外: 報告ゲート対象外
+    [ "$task_status" = "done" ] || return 0
+
+    local report_filename report_path
+    report_filename=$(resolve_expected_report_file "$name")
+    if [[ "$report_filename" = /* ]]; then
+        report_path="$report_filename"
+    else
+        report_path="$SCRIPT_DIR/queue/reports/${report_filename}"
+    fi
+
+    if [ -f "$report_path" ]; then
+        return 0
+    fi
+
+    log "REPORT-MISSING-BLOCK: $name done but no report at $report_filename (${trigger})"
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}がdone状態だが報告未作成。/clear保留中。" report_missing ninja_monitor >> "$LOG" 2>&1 &
+    return 1
+}
+
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
@@ -596,6 +644,10 @@ handle_confirmed_idle() {
         effective_debounce=$(cli_profile_get "$name" "clear_debounce")
 
         if [ "$elapsed" -ge "$effective_debounce" ]; then
+            if ! can_send_clear_with_report_gate "$name" "DEPLOY-STALL-CLEAR"; then
+                PREV_STATE[$name]="busy"
+                return
+            fi
             local reset_cmd
             reset_cmd=$(cli_profile_get "$name" "clear_cmd")
             log "DEPLOY-STALL-CLEAR: $name stalled ${elapsed}s with $task_status task, sending $reset_cmd"
@@ -663,6 +715,11 @@ handle_confirmed_idle() {
             effective_debounce=$(cli_profile_get "$agent_id" "clear_debounce")
 
             if [ $clear_elapsed -ge $effective_debounce ]; then
+                if ! can_send_clear_with_report_gate "$name" "AUTO-CLEAR"; then
+                    log "AUTO-CLEAR-BLOCKED: $name done but report missing, keep context"
+                    PREV_STATE[$name]="idle"
+                    return
+                fi
                 local reset_cmd
                 reset_cmd=$(cli_profile_get "$name" "clear_cmd")
                 log "AUTO-CLEAR: $name idle+no_task CTX=${ctx_now}%, sending $reset_cmd"
