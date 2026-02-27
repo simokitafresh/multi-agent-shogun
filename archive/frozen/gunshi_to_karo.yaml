@@ -1,0 +1,266 @@
+commands:
+  - cmd_id: cmd_397_impl_a
+    status: draft
+    drafted_by: gunshi
+    drafted_at: "2026-02-27T08:12:00+09:00"
+    based_on: cmd_397
+    project: infra
+    title: "knowledge_metrics.sh Δ計測正規化 — cmd単位dedup+構造BLOCK分離+テストcmd除外"
+    description: |
+      cmd_397偵察(半蔵recon_a)で判明した計測粒度バイアスを修正する。
+      現行knowledge_metrics.shはTSV全行を独立カウントするが、
+      (1) BLOCK→CLEARリトライで1cmdあたり最大5行に膨張、
+      (2) missing_gate(73%)は教訓効果と無関係の構造的タイミング問題、
+      (3) テストcmd(cmd_test_*)が教訓なし群のCLEAR率を人為的に押し上げ。
+      これら3要因でΔ=-8.4ppという見かけ上の逆転が発生していた。
+
+      実装内容:
+      1. cmd単位dedup: 同一cmd_idの複数行から最終gate結果(CLEAR>BLOCK)のみ採用
+      2. テストcmd除外: cmd_test_*/cmd_TEST*パターンを集計から自動フィルタ
+      3. 構造/品質BLOCK分離: BLOCK理由にmissing_gate/archive_gate/lesson_gate/review_gate
+         を含む行を「構造BLOCK」として分離。Δ算出は品質BLOCKのみで計算
+      4. ninja=none行フィルタ: ninja欄が空orNoneの不完全データを除外
+      5. 出力に「raw Δ」と「normalized Δ」の両方を表示(raw=従来互換、normalized=正規化後)
+
+      対象ファイル: scripts/knowledge_metrics.sh
+    acceptance_criteria:
+      - id: AC1
+        description: "cmd単位dedup実装。同一cmd_idの複数TSV行から最終結果(CLEAR優先)のみ採用し、リトライ行膨張を排除"
+      - id: AC2
+        description: "テストcmd(cmd_test_*/cmd_TEST*)を集計から自動除外。フィルタ後のN数も出力"
+      - id: AC3
+        description: "構造BLOCK(missing_gate/archive_gate/lesson_gate/review_gate含むBLOCK)と品質BLOCKを分離。Δは品質BLOCKのみで算出"
+      - id: AC4
+        description: "ninja=none/空行を不完全データとしてフィルタ。フィルタ件数を出力"
+      - id: AC5
+        description: "出力にraw_delta(従来互換)とnormalized_delta(正規化後)の両方を表示"
+      - id: AC6
+        description: "既存のknowledge_metrics.sh出力フォーマットとの後方互換性維持(raw系は既存と同一値)"
+    context_files:
+      - "context/infrastructure.md"
+    tags:
+      - gate
+      - lesson
+      - metrics
+      - knowledge
+    suggested_pattern: impl_solo
+    suggested_ninja_count: 1
+    lesson_referenced:
+      - L087
+      - L060
+      - L074
+      - L019
+    rationale: |
+      半蔵recon_aの4提案(P1-P4)を統合した実装cmd。
+      L087「Δ計測は行膨張+構造BLOCK混入で歪む」の根本解決。
+      dedup後Δ=-2.3pp→構造BLOCK除外でΔ=0.0ppとなり、
+      教訓注入自体の品質低下効果はないことが立証される。
+      計測を正しくした上で、次のimpl_b(注入精度改善)の効果測定が可能になる。
+      impl_aが先行すべき(計測修正→注入改善の順序)。
+
+  - cmd_id: cmd_397_impl_b
+    status: draft
+    drafted_by: gunshi
+    drafted_at: "2026-02-27T08:12:00+09:00"
+    based_on: cmd_397
+    project: infra
+    title: "deploy_task.sh 教訓注入精度改善 — タグ推定上限+universal上限+フォールバック修正"
+    description: |
+      cmd_397偵察(飛猿recon_b)で判明した注入メカニズムの構造的問題を修正する。
+      5つの問題のうち優先度HIGH(P1タグインフレ, P2 universal過負荷)と
+      LOW(P4フォールバックノイズ)を実装する。
+      P3(IDF重み付け+日本語N-gram)はHIGH effortのため次期に先送り。
+      P5(deprecated遅延)は運用課題のため別途棚卸しcmdで対処。
+
+      実装内容:
+      1. タグ推定上限(max 3): lesson_tags.yamlパターンマッチ結果を
+         スコア上位3個に制限。汎用すぎるパターン('環境','注入','教訓')を
+         lesson_tags.yamlから除去または精緻化
+      2. universal教訓の上限: universal枠を最大3件に制限
+         (現行は無制限で平均5件占有)。helpful率上位3件のみ注入
+      3. フォールバック修正: スコア0時のフォールバック(現行:先頭3件)を
+         「注入なし」に変更(無関連教訓のCTX浪費防止)
+      4. 合計注入上限の維持: universal(max 3) + タスク固有(max 7) = max 10
+
+      対象ファイル:
+      - scripts/deploy_task.sh (inject_related_lessons関数)
+      - config/lesson_tags.yaml (パターン精緻化)
+    acceptance_criteria:
+      - id: AC1
+        description: "タグ推定数がmax 3に制限される。推定タグ数超過時はスコア上位3個を採用"
+      - id: AC2
+        description: "lesson_tags.yamlから汎用すぎるパターン('環境','注入','教訓')を除去または精緻化"
+      - id: AC3
+        description: "universal教訓の注入上限がmax 3に制限。helpful_count上位3件を選択"
+      - id: AC4
+        description: "スコア0時のフォールバックが「注入なし」に変更(空配列返却)"
+      - id: AC5
+        description: "合計注入上限max 10を維持(universal max 3 + タスク固有 max 7)"
+      - id: AC6
+        description: "deploy_task.logに注入結果の詳細ログ(推定タグ,候補数,スコア上位,universal選択)を出力"
+    context_files:
+      - "context/infrastructure.md"
+    tags:
+      - deploy
+      - lesson
+      - knowledge
+    suggested_pattern: impl_solo
+    suggested_ninja_count: 1
+    lesson_referenced:
+      - L088
+      - L089
+      - L079
+      - L070
+      - L074
+    rationale: |
+      飛猿recon_bの提案P1(タグ上限)+P2(universal棚卸し一部)+P4(フォールバック)を統合。
+      L088「タグ推定パターン広すぎ」とL089「universal膨張」の直接解決。
+      impl_aで計測を正した後にimpl_bを実施することで、
+      注入精度改善の効果をnormalized_deltaで正確に計測可能。
+      P3(IDF重み付け)はeffort=highのため次期cmd。
+      PD-041(universal基準厳格化の殿裁定)は本cmdのmax 3上限で暫定対処し、
+      基準の恒久ルール化は裁定後に実装。
+
+  # 注記: PD-041(universal教訓基準厳格化)は飛猿のdecision_candidate。
+  # 現行37件(17%)→5件以下への削減基準(helpful率80%以上かつ全タスクタイプ適用)を
+  # 殿/将軍が裁定する必要あり。impl_bではmax 3上限の暫定対処のみ。
+
+  - cmd_id: cmd_398_impl_a
+    status: draft
+    drafted_by: gunshi
+    drafted_at: "2026-02-27T08:28:00+09:00"
+    based_on: cmd_398
+    project: infra
+    title: "deploy_task.sh preflight gate artifact自動生成 + gate_metrics列拡張"
+    description: |
+      cmd_398偵察(佐助recon_a+霧丸recon_b)で判明したCLEAR率50%の最大要因
+      「missing_gate系BLOCK(56.6%)」を配備時preflightで解消する。
+      併せてgate_metricsにtask_type/ninja列を追加し、モデル別×種別分析を精密化。
+
+      ## 背景
+      gate_metrics.log BLOCK 155件中、missing_gate:archive/lesson/review_gate/report_merge
+      が56.6%(token)を占める。家老のフラグ生成タイミングと忍者の作業完了タイミングの
+      不整合が主因(L078)。配備直後にgate artifactを一括生成/検査すれば大幅削減可能。
+
+      ## 実装内容
+      1. deploy_task.sh preflight追加:
+         配備完了後、gate artifactの存在を検査し、不足分を自動生成
+         - archive_gate: archive_completed.shの完了フラグ
+         - lesson_gate: lesson処理完了フラグ(lesson.done)
+         - review_gate: レビュー完了フラグ
+         - report_merge: report_merge完了フラグ
+         ※ 自動生成は「前cmdの残存フラグ除去→新cmd用フラグ初期化」の形式
+      2. cmd_complete_gate.sh gate_metrics拡張:
+         BLOCK/CLEAR記録時にtask_type列とninja列を追加出力
+         - task_type: タスクYAMLのtypeフィールド(impl/review/recon等)
+         - ninja: 対象忍者名(モデル逆引き可能)
+      3. gate_metrics.logフォーマット:
+         既存: timestamp|cmd_id|result|reasons
+         新規: timestamp|cmd_id|result|reasons|task_type|ninja
+
+      対象ファイル:
+      - scripts/deploy_task.sh (preflight gate artifact生成)
+      - scripts/cmd_complete_gate.sh (gate_metrics列拡張)
+    acceptance_criteria:
+      - id: AC1
+        description: "deploy_task.sh配備完了後にgate artifact 4点(archive/lesson/review/report_merge)の存在検査を実行"
+      - id: AC2
+        description: "不足artifactを自動生成(前cmd残存フラグ除去→新cmd用初期化)"
+      - id: AC3
+        description: "gate_metrics.logにtask_type列とninja列を追加。既存4列の後に追加で後方互換維持"
+      - id: AC4
+        description: "task_typeはタスクYAMLのtypeフィールドから取得。取得不可時はunknown"
+      - id: AC5
+        description: "既存のgate_metrics.logパーサー(knowledge_metrics.sh等)が新列追加で破損しない(列追加=後方互換)"
+    context_files:
+      - "context/infrastructure.md"
+    tags:
+      - deploy
+      - gate
+      - metrics
+      - preflight
+    suggested_pattern: impl_solo
+    suggested_ninja_count: 1
+    lesson_referenced:
+      - L078
+      - L079
+      - L074
+      - L070
+      - L087
+    rationale: |
+      佐助P1(配備直後preflight)と両名のdecision/lesson_candidate(gate_metrics列拡張)を統合。
+      L078「BLOCK率65%は構造問題→preflight一括フラグ生成で20%台に」の直接実装。
+      cmd_397_impl_aが構造BLOCKを計測から分離するのに対し、
+      本cmdは構造BLOCKの発生自体を削減する。相互補完。
+      gate_metrics列拡張により、impl_a(正規化Δ)の精度もさらに向上する。
+
+  - cmd_id: cmd_398_impl_b
+    status: draft
+    drafted_by: gunshi
+    drafted_at: "2026-02-27T08:28:00+09:00"
+    based_on: cmd_398
+    project: infra
+    title: "ashigaru.md 品質ルール強化 — 提出前自己ゲート+テスト義務+bash -n義務"
+    description: |
+      cmd_398偵察(霧丸recon_b)で判明したashigaru.mdの品質ルールギャップを修正。
+      教訓未処理系BLOCK(17.5%)の再発防止として、忍者の提出前自己ゲートを義務化。
+
+      ## 背景
+      ashigaru.mdにはrelated_lessons.reviewed更新義務(L172)やlesson_referenced必須(L341-369)
+      が存在するが、report提出前の整合性チェック手順が未定義。
+      結果として教訓未処理系(unreviewed/lesson_done_missing/empty_lesson_referenced)が
+      BLOCK全体の17.5%を占める。
+
+      ## 実装内容(ashigaru.md追記)
+      1. Step 5.5 提出前自己ゲート(MANDATORY):
+         report作成後、statusをdoneにする前に以下を確認:
+         (a) related_lessonsが1件以上ならlesson_referencedも1件以上
+         (b) related_lessons.reviewed=falseが0件
+         (c) statusはdone|failed|blockedのみ
+         確認結果をreport.result.notesに記載
+      2. テスト義務明確化:
+         テスト実行不能時はstatus=blockedとし理由を記載。
+         SKIPは完了扱い禁止(既存CLAUDE.mdルールとの整合)
+      3. bash -n構文検査義務:
+         .sh/.bash変更時はbash -n実行を必須とし、結果をreportに証跡記載
+
+      対象ファイル:
+      - instructions/ashigaru.md (Step 5.5追加, テスト規定強化, bash -n義務)
+      - instructions/common/report_quality.md (存在すれば。共通パーツへの追記)
+    acceptance_criteria:
+      - id: AC1
+        description: "ashigaru.mdにStep 5.5(提出前自己ゲート)を追加。related_lessons/reviewed/lesson_referenced/status整合チェック"
+      - id: AC2
+        description: "テスト義務を明確化。実行不能時はblocked+理由記載。SKIPは完了扱い禁止"
+      - id: AC3
+        description: "bash -n構文検査義務を追加。.sh変更時の必須実行と証跡記載"
+      - id: AC4
+        description: "L051/L053準拠: 追加ルールは肯定形+理由付きで記述(否定形/MUST/NEVER回避)"
+    context_files:
+      - "context/infrastructure.md"
+    tags:
+      - communication
+      - gate
+      - reporting
+      - lesson
+    suggested_pattern: impl_solo
+    suggested_ninja_count: 1
+    lesson_referenced:
+      - L078
+      - L051
+      - L053
+      - L058
+      - L074
+    rationale: |
+      霧丸recon_bの3提案(提出前自己ゲート/テスト義務/bash -n義務)を統合。
+      教訓未処理系BLOCK(17.5%)の忍者側での再発防止策。
+      cmd_398_impl_aが構造BLOCK(56.6%)をpreflight解消するのに対し、
+      本cmdは忍者の品質行動規範を強化。
+      L051/L053に従い肯定形+理由付きで記述し、overtriggering回避。
+
+  # ═══ 全4件impl cmd 推奨実行順序 ═══
+  # 1. cmd_397_impl_a (metrics正規化) — 計測基盤修正。他3件の効果測定前提
+  # 2. cmd_398_impl_a (preflight + gate_metrics拡張) — 構造BLOCK削減+計測精度向上
+  # 3. cmd_397_impl_b (注入精度改善) — 教訓注入品質向上
+  # 4. cmd_398_impl_b (ashigaru.md強化) — 忍者品質行動規範。ドキュメント変更のみ
+  # 1-2は並列可能(独立ファイル)。3は1完了後が望ましい。4は任意タイミング。

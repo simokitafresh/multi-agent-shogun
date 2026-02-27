@@ -88,6 +88,8 @@
 !context/infrastructure.md
 !context/doc-style-guide.md
 !context/l3-robustness.md
+!context/karo-operations.md
+!context/dm-signal.md
 !context/dm-signal-core.md
 !context/dm-signal-ops.md
 !context/dm-signal-research.md
@@ -153,6 +155,13 @@
 !scripts/knowledge_metrics.sh
 !scripts/lesson_auto_tag.sh
 
+
+# Archive (frozen retired components)
+!archive/
+!archive/frozen/
+!archive/frozen/gunshi.md
+!archive/frozen/gunshi_to_karo.yaml
+!archive/frozen/gunshi_inbox.yaml
 
 # Tasks (SSOT lessons only)
 !tasks/
