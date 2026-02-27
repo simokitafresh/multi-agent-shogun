@@ -30,8 +30,8 @@ cli:
       type: codex
       tier: genin
     hayate:
+      type: codex
       tier: jonin
-      model_name: claude-sonnet-4-6
     kagemaru:
       tier: jonin
       model_name: claude-opus-4-6
@@ -39,8 +39,8 @@ cli:
       tier: jonin
       model_name: claude-opus-4-6
     saizo:
+      type: codex
       tier: jonin
-      model_name: claude-sonnet-4-6
     kotaro:
       tier: jonin
       model_name: claude-opus-4-6
