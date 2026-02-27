@@ -22,6 +22,7 @@
 #   C: 種別適性(モデル×task_type)
 #   D: コスト効率
 #   E: トレンド(直近20cmd窓)
+#   F: Bloom Level × Model CLEAR率
 # ============================================================
 set -euo pipefail
 
@@ -333,6 +334,7 @@ with open(GATE_LOG, "r") as f:
             "detail": detail,
             "task_type": "",
             "models": set(),
+            "bloom_level": "unknown",
         }
 
         if len(parts) >= 6:
@@ -343,6 +345,8 @@ with open(GATE_LOG, "r") as f:
                     m = m.strip()
                     if m:
                         entry["models"].add(m)
+            if len(parts) >= 7 and parts[6].strip():
+                entry["bloom_level"] = parts[6].strip()
         else:
             ninjas = set()
             if cmd_id in tracking_ninjas:
@@ -573,6 +577,27 @@ def section_e():
     return results
 
 # ═══════════════════════════════════════════════════════
+# Section F: Bloom Level × Model CLEAR率
+# ═══════════════════════════════════════════════════════
+def section_f():
+    matrix = defaultdict(lambda: defaultdict(lambda: {"clear": 0, "total": 0}))
+    for e in deduped:
+        bl = e.get("bloom_level", "unknown") or "unknown"
+        for m in e["models"]:
+            matrix[bl][m]["total"] += 1
+            if e["result"] == "CLEAR":
+                matrix[bl][m]["clear"] += 1
+    results = {}
+    for bl in sorted(matrix.keys()):
+        model_stats = {}
+        for m in sorted(matrix[bl].keys()):
+            s = matrix[bl][m]
+            rate = (s["clear"] / s["total"] * 100) if s["total"] > 0 else 0.0
+            model_stats[m] = {"clear": s["clear"], "total": s["total"], "rate": rate}
+        results[bl] = model_stats
+    return results
+
+# ═══════════════════════════════════════════════════════
 # Output Formatters
 # ═══════════════════════════════════════════════════════
 
@@ -710,6 +735,18 @@ def output_detail():
         nn = str(s["n"])
         print("  %-12s %-10s %-10s %-12s %-6s" % (m, cur, prev, trend_str, nn))
 
+    # Section F
+    f = section_f()
+    print()
+    print("[F] Bloom Level × Model CLEAR率")
+    print("-" * 50)
+    print("  %-14s %-12s %-8s %-8s %-10s" % ("bloom_level", "Model", "CLEAR", "Total", "Rate"))
+    print("  %-14s %-12s %-8s %-8s %-10s" % ("-----------", "-----", "-----", "-----", "----"))
+    for bl in sorted(f.keys()):
+        for m, s in sorted(f[bl].items(), key=lambda x: -x[1]["rate"]):
+            rate_str = "%.1f%%" % s["rate"]
+            print("  %-14s %-12s %-8d %-8d %s" % (bl, m, s["clear"], s["total"], rate_str))
+
     print()
     print("=" * 60)
 
@@ -730,6 +767,7 @@ def output_json():
         "section_c_detail": section_c_detail(),
         "section_d": section_d(),
         "section_e": section_e(),
+        "section_f": section_f(),
         "metadata": {
             "total_entries": len(entries),
             "deduped_cmds": len(deduped),
