@@ -10,6 +10,13 @@
 > タスク配備前の必須チェックリスト。STEP 1-6を毎回実行せよ。
 
 ```
+STEP 0: 五問チェック（配備前義務。STEP 1の前に毎回実施）
+  Q1 Purpose: このcmdは何を達成する？（1行）
+  Q2 Decomposition: どう分割する？どのパターンを使う？
+  Q3 Headcount: idle忍者は何名？何名必要？足りるか？
+  Q4 Difficulty: 定型(手順書あり)/判断要(設計決定あり)/未知(前例なし)
+  Q5 Risk: 最悪何が起きる？失敗のコストは？（1行）
+→ 全問に答えてから STEP 1へ進め
 STEP 1: idle忍者の棚卸し
   → tmux capture-pane で全忍者ペインを確認（❯あり=idle）
   → idle忍者の名前とCTXをリスト化
@@ -315,6 +322,11 @@ bash scripts/lesson_write.sh dm-signal "教訓タイトル" "詳細" "cmd_XXX" "
 
 ```
 【分割宣言】cmd_XXX: AC数={N}, idle忍者={M}名
+  [Q1] Purpose: {一行}
+  [Q2] Decomposition: {パターン名} — {分割内容}
+  [Q3] Headcount: idle={M}, needed={K}, surplus={M-K}
+  [Q4] Difficulty: {定型/判断要/未知} — {理由}
+  [Q5] Risk: {一行}
   F006計算: min_ninja = max(2, ceil({N}/2)) = {K}
   配備計画: {ninja_A}→AC1+AC2, {ninja_B}→AC3, {ninja_C}→AC4
   依存関係: AC3はAC1完了後(blocked_by)
@@ -546,3 +558,35 @@ deploy_task.shが idle忍者リスト(karo_snapshot.txtから取得)の先頭か
 - gate_metrics.logにモデル名+task_typeが記録される（cmd_413で整備済み）
 - model_analysis.sh --detailで定期的に検証
 - 選択バイアスなしの純粋データにより、モデル間比較の信頼性が向上
+
+## §16 CLI種別切替手順（Claude↔Codex等）
+
+> settings.yaml変更だけでは実CLIは切り替わらない。別バイナリのため以下の手順が必須。
+
+### 前提知識
+- Claude Code = `claude` バイナリ（Opus/Sonnet）
+- OpenAI Codex = `codex`(`node`) バイナリ
+- `/clear` はCLI内コンテキストリセットのみ。CLI種別は変わらない
+- `/model` はClaude CLI内のモデル切替。Codexには非対応
+
+### 手順（家老→将軍エスカレーション不要。家老自身で実行可能）
+```
+1. settings.yaml の cli.agents.{忍者名}.type を変更（例: claude → codex）
+2. 対象ペインのCLIを終了
+   → Claude: tmux send-keys -t "shogun:2.{pane}" C-c（2回、間隔2秒）
+   → Codex: tmux send-keys -t "shogun:2.{pane}" C-c（2回、間隔2秒）
+3. 新CLIを起動（cli_profiles.yamlのlaunch_cmd参照）
+   → Claude: tmux send-keys -t "shogun:2.{pane}" "claude --dangerously-skip-permissions" Enter
+   → Codex: tmux send-keys -t "shogun:2.{pane}" "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen" Enter
+4. tmux変数更新
+   → tmux set-option -p -t "shogun:2.{pane}" @model_name "{表示名}"
+   → tmux set-option -p -t "shogun:2.{pane}" @agent_cli "{cli_type}"
+   → tmux select-pane -t "shogun:2.{pane}" -T "{表示名}"
+5. tmux capture-pane で起動確認（idleプロンプト表示を確認）
+```
+
+### 確認方法
+```bash
+tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id} #{@model_name} #{@agent_cli} #{pane_current_command}'
+```
+claude → `claude`、codex → `node` がpane_current_commandに表示される
