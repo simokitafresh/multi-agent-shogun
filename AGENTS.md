@@ -51,6 +51,10 @@ language:
 **This is ONE procedure for ALL situations**: fresh start, compaction, session continuation, or any state where you see AGENTS.md. You cannot distinguish these cases, and you don't need to. **Always follow the same steps.**
 
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
+1.5. **ROUTE BY ROLE (mandatory)**:
+     - 将軍(shogun) → 続行（Step 2へ）
+     - 家老(karo) → 「/clear Recovery (karo)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
+     - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍知識ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_memory.sh` → ALERT時ntfy通知。詳細は instructions/generated/codex-shogun.md Step 2.5
 3. **Read your instructions file**: shogun→`instructions/generated/codex-shogun.md`, karo→`instructions/generated/codex-karo.md`, ninja(忍者)→`instructions/generated/codex-ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
@@ -263,13 +267,8 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 役割 | 名前(pane) | CLI |
 |------|-----------|-----|
 | 家老 | karo(1) | Claude |
-| 軍師 | gunshi(転用pane) | Claude |
 | 下忍(genin) | sasuke(2) kirimaru(3) | settings.yaml参照 |
 | 上忍(jonin) | hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
-
-### 偵察時の鎖（軍師連携フロー）
-殿→将軍→家老→忍者(偵察)→軍師(起案)→家老(配備)→忍者(実装)
-scout_only cmd完了後、家老が偵察報告を軍師に渡し、軍師が次cmdを起案→家老がレビュー→配備。詳細 → `context/karo-operations.md` §13
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照
