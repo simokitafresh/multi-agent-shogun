@@ -15,6 +15,10 @@ STEP 0: 五問チェック（配備前義務。STEP 1の前に毎回実施）
   Q2 Decomposition: どう分割する？どのパターンを使う？
   Q3 Headcount: idle忍者は何名？何名必要？足りるか？
   Q4 Difficulty: 定型(手順書あり)/判断要(設計決定あり)/未知(前例なし)
+  Q4 Difficulty判定 → bloom_level:
+    定型(手順書あり) → routine
+    判断要(設計決定あり) → complex
+    未知(前例なし) → complex
   Q5 Risk: 最悪何が起きる？失敗のコストは？（1行）
 → 全問に答えてから STEP 1へ進め
 STEP 1: idle忍者の棚卸し
