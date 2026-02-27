@@ -67,6 +67,11 @@ workflow:
   - step: 5
     action: write_report
     target: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
+  - step: 5.5
+    action: self_gate_check
+    mandatory: true
+    positive_rule: "report.result.self_gate_checkに4項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
+    reason: "cmd完了ゲートBLOCK65%はlesson_referenced空・reviewed:false残存。提出前自己ゲートで事前排除できる"
   - step: 6
     action: update_status
     value: done
@@ -237,6 +242,23 @@ result:
 - 例外: 構文修正・typo修正等の機械的変更は家老判断でレビュー省略可
 - **TODO/FIXME確認義務**: 修正対象ファイル内のTODO/FIXMEコメントが全て解消されているか確認せよ。特に当該cmd/subtaskに関連するTODOが残っていないことを検証する。レビューPASS判定前の必須チェック項目
 
+## テスト義務 (MANDATORY)
+
+**positive_rule**: スクリプト・コード変更時は構文検査を実行し、結果をreportのresult.test_resultに記載せよ。
+
+| ファイル種別 | 構文検査コマンド |
+|------------|----------------|
+| .sh | `bash -n <file>` |
+| .py | `python3 -c "import py_compile; py_compile.compile('<file>', doraise=True)"` |
+| .yaml/.yml | `python3 -c "import yaml; yaml.safe_load(open('<file>'))"` |
+
+**ルール**:
+- スクリプト変更時: bash -n必須。結果をreport.result.test_resultに記載
+- プロジェクトテストが存在する場合: 実行必須。SKIP=FAILとして扱う（テスト未実行=未完了扱い）
+- テスト実行不可時: 理由をreport.result.test_blockerに記載し、status=blocked
+
+**reason**: 構文エラーで動かないスクリプトを報告するとcmd完了ゲートが止まりチーム全体が止まる。bash -n 1コマンドで提出前に排除できる。テストSKIPを許可すると品質保証が形骸化する。
+
 ## YAML Field Access Rule (L070)
 
 **YAMLファイルからフィールド値を取得する際は `field_get` を使え。grep直書き禁止。**
@@ -354,6 +376,28 @@ parity_data_source:
 
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate, lesson_referenced.
 Missing fields = incomplete report.
+
+## Step 5.5: 提出前自己ゲート (MANDATORY)
+
+**positive_rule**: report作成後、statusをdoneにする前に以下の4項目を全て確認し、report.result.self_gate_checkに記載せよ。全PASSでなければstatusをdoneにするな。FAILを修正してから再確認。
+
+| 項目 | 確認内容 | FAILの対処 |
+|------|---------|------------|
+| (a) lesson_ref | related_lessonsが1件以上 → lesson_referencedに1件以上記載 | lesson_referencedに参照教訓IDを追記 |
+| (b) reviewed | related_lessons内のreviewed:falseが0件 | 未レビュー教訓を読んでreviewed:trueに変更 |
+| (c) lesson_candidate | found: true/falseが明記されていること | lesson_candidateにfound:true or falseを記載 |
+| (d) status_valid | status = done \| failed \| blocked のいずれか | 適切なstatusに修正 |
+
+確認結果をreport.result.self_gate_checkに記載:
+```yaml
+self_gate_check:
+  lesson_ref: PASS    # or FAIL
+  reviewed: PASS      # or FAIL
+  lesson_candidate: PASS  # or FAIL
+  status_valid: PASS  # or FAIL
+```
+
+**reason**: cmd完了ゲート(cmd_complete_gate.sh)のBLOCK主因65%はlesson_referenced空・reviewed:false残存。提出前の自己ゲートで事前排除できる。FAILを提出後に修正するより提出前の確認コストは格段に低い。
 
 ### 下忍(genin) 報告時の注意
 
