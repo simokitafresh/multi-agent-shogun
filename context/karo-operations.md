@@ -298,6 +298,19 @@ bash scripts/lesson_write.sh dm-signal "教訓タイトル" "詳細" "cmd_XXX" "
 昇格フロー: lesson_write.sh実行時にtactical/strategic判定 → strategic → `pending_decision_write.sh create "MCP昇格候補: LXXX — {title}" ...` → 将軍がMCP Memory登録 → `pending_decision_write.sh resolve "PD-XXX" "MCP登録完了"`
 ★ 将軍にauto-injectionは不要。家老が選別して上げるのが指揮系統に合致。
 
+### deprecation審査手順（cmd_414）
+
+- positive_rule: "lesson_deprecation_scan.shの候補を1件ずつ審査し、
+  deprecated判定にはdeprecated_reasonを必ず記載せよ"
+  reason: "理由なきdeprecateは知識消失と同義。復活時に判断材料がなくなる"
+- 判断基準:
+  - deprecated可: 具体的手順が自動化(gate/script)で不要になった教訓
+  - deprecated不可: 「なぜ」「原則」を含む教訓
+  - 迷ったらactive維持（偽陽性より偽陰性がマシ）
+- 実行: `bash scripts/lesson_deprecate.sh <project> <lesson_id> "<reason>" <cmd_id>`
+- 蓄積トリガー: gate_lesson_health.shが新規+10件でWARN → 審査を開始せよ
+- checkpoint更新: 審査完了後に `queue/lesson_deprecation_checkpoint.txt` へ最新L番号を記録
+
 ## §6 分割宣言テンプレート
 > STEP 2.5 — 配備前に必ず出力。F006ルールの遵守証明。
 

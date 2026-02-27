@@ -49,17 +49,49 @@ check_project() {
         return 0
     fi
 
-    local total_lessons
-    total_lessons=$(grep -c '^- id: L' "$lessons_file" 2>/dev/null || echo "0")
+    local total_lessons_raw
+    total_lessons_raw=$(awk '/^- id: L/{c++} END{print c+0}' "$lessons_file")
 
-    if [ "$total_lessons" -eq 0 ]; then
+    if [ "$total_lessons_raw" -eq 0 ]; then
         echo "OK: ${project_id} lesson 0件"
         return 0
     fi
 
-    # 全lesson IDの数値部分を取得(降順)
+    # deprecated教訓を除外してIDを収集 (L034: 固定インデント非依存)
+    # deprecated: true AND status: deprecated 両方を除外 (cmd_414)
     local -a all_ids
-    mapfile -t all_ids < <(grep '^- id: L' "$lessons_file" | sed 's/^- id: L//' | sort -rn)
+    mapfile -t all_ids < <(awk '
+        /^- id: L/ {
+            if (current_id != "" && !is_deprecated) print current_id
+            current_id = $3; sub(/^L/, "", current_id)
+            is_deprecated = 0
+        }
+        /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
+        /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
+        END { if (current_id != "" && !is_deprecated) print current_id }
+    ' "$lessons_file" | sort -rn)
+
+    # deprecated件数をログ出力 (status: deprecated OR deprecated: true, per-lesson)
+    local deprecated_count
+    deprecated_count=$(awk '
+        /^- id: L/ {
+            if (current_id != "" && is_deprecated) c++
+            current_id = $3; is_deprecated = 0
+        }
+        /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
+        /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
+        END { if (current_id != "" && is_deprecated) c++; print c+0 }
+    ' "$lessons_file")
+    if [ "$deprecated_count" -gt 0 ]; then
+        echo "INFO: ${project_id} deprecated除外: ${deprecated_count}件"
+    fi
+
+    local total_lessons="${#all_ids[@]}"
+
+    if [ "$total_lessons" -eq 0 ]; then
+        echo "OK: ${project_id} lesson 0件(deprecated除外後)"
+        return 0
+    fi
 
     local max_id="${all_ids[0]}"
 
@@ -89,6 +121,87 @@ check_project() {
         echo "OK: ${project_id}のlesson統合状況は健全(未合流${unsynced}件,total:${total_lessons},synced:L${synced_num})"
         return 0
     fi
+}
+
+# 蓄積トリガーチェック (cmd_414)
+# 前回審査時点から新規教訓が10件以上増えたらWARN
+# checkpoint: queue/lesson_deprecation_checkpoint.txt (L番号1つだけ記録)
+ACCUMULATION_THRESHOLD=10
+CHECKPOINT_FILE="$SCRIPT_DIR/queue/lesson_deprecation_checkpoint.txt"
+
+check_accumulation() {
+    # 全projectの最新L番号(deprecated除外)を取得
+    local max_id=0
+    local total_active=0
+
+    for pid in "$@"; do
+        local lessons_file="$SCRIPT_DIR/projects/${pid}/lessons.yaml"
+        [ -f "$lessons_file" ] || continue
+
+        # deprecated: true AND status: deprecated 両方を除外してactive教訓のIDを収集 (L034: 柔軟マッチ)
+        while IFS= read -r id_num; do
+            [ -z "$id_num" ] && continue
+            total_active=$((total_active + 1))
+            if [ "$id_num" -gt "$max_id" ] 2>/dev/null; then
+                max_id="$id_num"
+            fi
+        done < <(awk '
+            /^- id: L/ {
+                if (current_id != "" && !is_deprecated) print current_id
+                current_id = $3; sub(/^L/, "", current_id)
+                is_deprecated = 0
+            }
+            /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
+            /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
+            END { if (current_id != "" && !is_deprecated) print current_id }
+        ' "$lessons_file")
+    done
+
+    if [ "$max_id" -eq 0 ]; then
+        return 0
+    fi
+
+    # checkpoint読取り
+    local checkpoint=0
+    if [ -f "$CHECKPOINT_FILE" ]; then
+        local raw
+        raw=$(grep -oE 'L[0-9]+' "$CHECKPOINT_FILE" 2>/dev/null | head -1)
+        if [ -n "$raw" ]; then
+            checkpoint=$(echo "$raw" | grep -oE '[0-9]+')
+        fi
+    fi
+
+    # 新規件数計算
+    local new_count=0
+    for pid in "$@"; do
+        local lessons_file="$SCRIPT_DIR/projects/${pid}/lessons.yaml"
+        [ -f "$lessons_file" ] || continue
+
+        while IFS= read -r id_num; do
+            [ -z "$id_num" ] && continue
+            if [ "$id_num" -gt "$checkpoint" ] 2>/dev/null; then
+                new_count=$((new_count + 1))
+            fi
+        done < <(awk '
+            /^- id: L/ {
+                if (current_id != "" && !is_deprecated) print current_id
+                current_id = $3; sub(/^L/, "", current_id)
+                is_deprecated = 0
+            }
+            /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
+            /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
+            END { if (current_id != "" && !is_deprecated) print current_id }
+        ' "$lessons_file")
+    done
+
+    if [ "$new_count" -ge "$ACCUMULATION_THRESHOLD" ]; then
+        echo "WARN: 新規教訓+${new_count}件(前回審査: L${checkpoint}, 現在最新: L${max_id})。"
+        echo "      lesson_deprecation_scan.sh を実行し審査せよ。"
+        return 1
+    else
+        echo "OK: 蓄積チェック(新規${new_count}件, 前回審査: L${checkpoint}, 閾値${ACCUMULATION_THRESHOLD})"
+    fi
+    return 0
 }
 
 # 未振り分け教訓チェック (cmd_301)
@@ -139,6 +252,7 @@ if [ $# -ge 1 ]; then
     # 引数あり: 指定projectのみチェック
     check_project "$1" || EXIT_CODE=1
     check_unsorted_lessons "$1" || EXIT_CODE=1
+    check_accumulation "$1" || EXIT_CODE=1
 else
     # 引数なし: 全projectを走査
     if [ ! -f "$CONFIG_FILE" ]; then
@@ -161,6 +275,9 @@ else
         check_project "$pid" || EXIT_CODE=1
         check_unsorted_lessons "$pid" || EXIT_CODE=1
     done
+
+    # 蓄積チェックは全project横断で1回実行
+    check_accumulation "${local_ids[@]}" || EXIT_CODE=1
 fi
 
 exit $EXIT_CODE
