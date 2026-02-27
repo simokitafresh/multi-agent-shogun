@@ -43,5 +43,5 @@ echo "[shutsujin] status-right: datetime only"
 # ─── saizo pane variables (cmd_403: gunshi凍結→saizo復帰) ───
 tmux set-option -p -t shogun:2.7 @agent_id saizo 2>/dev/null
 tmux set-option -p -t shogun:2.7 @agent_cli claude 2>/dev/null
-tmux set-option -p -t shogun:2.7 @model_name Opus 2>/dev/null
-echo "[shutsujin] saizo pane variables set (shogun:2.7, model=Opus)"
+tmux set-option -p -t shogun:2.7 @model_name Sonnet 2>/dev/null
+echo "[shutsujin] saizo pane variables set (shogun:2.7, model=Sonnet)"

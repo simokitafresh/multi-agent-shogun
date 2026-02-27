@@ -173,7 +173,18 @@ get_agent_model() {
     local model_from_yaml
     model_from_yaml=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.model" "")
 
+    # model キーがなければ model_name キーをフォールバック参照
+    if [[ -z "$model_from_yaml" ]]; then
+        model_from_yaml=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.model_name" "")
+    fi
+
     if [[ -n "$model_from_yaml" ]]; then
+        # フルモデル名→ショート名変換
+        case "$model_from_yaml" in
+            claude-opus*|*opus*)       model_from_yaml="opus" ;;
+            claude-sonnet*|*sonnet*)   model_from_yaml="sonnet" ;;
+            claude-haiku*|*haiku*)     model_from_yaml="haiku" ;;
+        esac
         echo "$model_from_yaml"
         return 0
     fi
@@ -201,12 +212,14 @@ get_agent_model() {
             esac
             ;;
         *)
-            # Claude Code/Codex/Copilot用デフォルトモデル（kessen/heiji互換）
-            case "$agent_id" in
-                shogun|karo)    echo "opus" ;;
-                sasuke|kirimaru)  echo "sonnet" ;;
-                hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)  echo "opus" ;;
-                *)              echo "sonnet" ;;
+            # フォールバック: settings.yamlにmodel_nameがない場合、tierベースで判定
+            # (エージェント名のハードコード禁止 — settings.yamlがSSOT)
+            local tier
+            tier=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.tier" "jonin")
+            case "$tier" in
+                genin)  echo "sonnet" ;;
+                jonin)  echo "opus" ;;
+                *)      echo "sonnet" ;;
             esac
             ;;
     esac
