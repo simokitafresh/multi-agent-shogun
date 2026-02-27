@@ -109,6 +109,7 @@
 !scripts/inbox_prune.sh
 !scripts/review_gate.sh
 !scripts/report_merge.sh
+!scripts/rework_rate.sh
 !scripts/lesson_write.sh
 !scripts/lesson_check.sh
 !scripts/deploy_task.sh
