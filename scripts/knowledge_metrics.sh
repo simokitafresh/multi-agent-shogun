@@ -277,19 +277,23 @@ threshold = int(sys.argv[3])
 since = sys.argv[4] if sys.argv[4] else None
 json_output = sys.argv[5] == "true"
 
-# === lesson ID → project 逆引きマップ構築 ===
+# === lesson ID → project 逆引きマップ構築 + deprecated集合 ===
 lesson_project_map = {}
+deprecated_lessons = set()
 for project_dir in Path(lessons_dir).iterdir():
     lessons_file = project_dir / "lessons.yaml"
     if not lessons_file.is_file():
         continue
     project_name = project_dir.name
+    current_lid = None
     with open(lessons_file, "r") as f:
         for line in f:
-            line = line.strip()
-            if line.startswith("- id:"):
-                lid = line.split(":", 1)[1].strip()
-                lesson_project_map[lid] = project_name
+            stripped = line.strip()
+            if stripped.startswith("- id:"):
+                current_lid = stripped.split(":", 1)[1].strip()
+                lesson_project_map[current_lid] = project_name
+            elif current_lid and stripped.startswith("deprecated:") and "true" in stripped.lower():
+                deprecated_lessons.add(current_lid)
 
 # === TSVデータ読み込み ===
 rows = []
@@ -346,10 +350,12 @@ for row in rows:
             if lid:
                 ref_count[lid] += 1
 
-# 注入≥threshold かつ 参照0回の教訓
+# 注入≥threshold かつ 参照0回の教訓（deprecated済みは除外）
 elimination_candidates = []
 for lid in sorted(inject_count.keys()):
     if inject_count[lid] >= threshold and ref_count.get(lid, 0) == 0:
+        if lid in deprecated_lessons:
+            continue
         project = lesson_project_map.get(lid, "unknown")
         ninjas = sorted(inject_ninjas[lid])
         elimination_candidates.append({
