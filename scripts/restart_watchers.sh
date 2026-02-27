@@ -38,7 +38,7 @@ disown
 echo "  karo → shogun:agents.1 ($!)"
 
 # 忍者
-NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo gunshi kotaro tobisaru)
+NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
 NINJA_PANES=(2 3 4 5 6 7 8 9)
 
 for i in "${!NINJA_NAMES[@]}"; do

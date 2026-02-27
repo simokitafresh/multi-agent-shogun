@@ -31,6 +31,7 @@ cli:
       tier: genin
     hayate:
       tier: jonin
+      model_name: claude-sonnet-4-6
     kagemaru:
       tier: jonin
     hanzo:

@@ -27,7 +27,7 @@ if [[ "$TARGET" == cmd_* ]]; then
 fi
 
 # HIGH-2: パストラバーサル防止 — TARGETを許可リストで検証
-ALLOWED_TARGETS="karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru shogun gunshi"
+ALLOWED_TARGETS="karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru shogun"
 valid_target=0
 for allowed in $ALLOWED_TARGETS; do
     if [ "$TARGET" = "$allowed" ]; then

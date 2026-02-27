@@ -88,35 +88,6 @@ profiles:
     debounce: 60
     clear_debounce: 300
 
-  gunshi:
-    # 表示名 (軍師: Claude Opus転用pane)
-    display_name: "Opus"
-    # 起動コマンド (claude と同等)
-    launch_cmd: "claude --dangerously-skip-permissions"
-    # CTXパース正規表現
-    ctx_pattern: "CTX:[0-9]+%"
-    # CTX解釈モード
-    ctx_mode: "usage"
-    # idleプロンプト判定
-    idle_pattern: "❯"
-    # ビジー判定パターン
-    busy_patterns:
-      - "esc to interrupt"
-      - "Running"
-      - "Streaming"
-    # セッションリセットコマンド (cmd_402)
-    clear_cmd: "/clear"
-    # clear方式
-    clear_method: "command"
-    # /modelコマンド対応
-    supports_model_switch: true
-    # idle確認待ち秒数
-    confirm_wait: 5
-    # 同一エージェントの再通知抑制秒数
-    debounce: 60
-    # auto-clear再送信抑制秒数 (cmd_402)
-    clear_debounce: 120
-
   kimi:
     # 表示名
     display_name: "Kimi"

@@ -47,8 +47,8 @@ STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 
 # 監視対象の忍者名リスト（karoと将軍は対象外）
-# gunshi(旧saizo pane 7)はNINJA_NAMES対象外だが、check_gunshi_clear()で個別にauto-/clearを管理(cmd_402)
-NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo kotaro tobisaru)
+# saizo pane 7 (cmd_403: gunshi凍結→saizo復帰)
+NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -95,14 +95,12 @@ MAX_RENUDGE=5               # 未読再nudge上限回数（同一未読状態に
 RENUDGE_BACKOFF=600         # 低頻度バックオフ再通知間隔（10分=600秒）— 同一fingerprint時の安全網
 MAX_PENDING_NUDGE=5         # pending cmd同一cmd再起動nudge上限回数
 KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
-GUNSHI_CLEAR_DEBOUNCE=120   # 軍師/clear再送信抑制（2分）— /clear復帰~30秒のため
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
 PENDING_NUDGE_DEBOUNCE=300  # pending cmd同一cmd再起動nudge抑制（5分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
 LAST_KARO_CLEAR=0           # 家老の最終/clear送信時刻（epoch秒）
-LAST_GUNSHI_CLEAR=0         # 軍師の最終/clear送信時刻（epoch秒）
 LAST_SHOGUN_ALERT=0         # 将軍の最終アラート送信時刻（epoch秒）
 
 # ─── ペインターゲット探索 ───
@@ -1312,63 +1310,6 @@ check_karo_clear() {
     send_karo_clear "$ctx_num" "check_karo_clear"
 }
 
-# ─── 軍師/clear送信共通関数 ───
-# デバウンスを内蔵。呼び出し元がデバウンスを気にする必要なし。
-# $1: ctx_num（ログ用）, $2: caller（ログ用、省略可）
-# 戻り値: 0=送信成功, 1=デバウンスで抑制
-send_gunshi_clear() {
-    local ctx_num="${1:-?}"
-    local caller="${2:-check_gunshi_clear}"
-    local gunshi_pane
-    gunshi_pane=$(tmux list-panes -t shogun -a -F '#{window_index}.#{pane_index} #{@agent_id}' 2>/dev/null | grep " gunshi$" | awk '{print "shogun:" $1}')
-
-    if [ -z "$gunshi_pane" ]; then
-        log "GUNSHI-CLEAR(${caller}): pane not found"
-        return 1
-    fi
-
-    local now=$(date +%s)
-    local elapsed=$((now - LAST_GUNSHI_CLEAR))
-
-    if [ $elapsed -lt $GUNSHI_CLEAR_DEBOUNCE ]; then
-        log "GUNSHI-CLEAR-DEBOUNCE(${caller}): CTX:${ctx_num}% but ${elapsed}s < ${GUNSHI_CLEAR_DEBOUNCE}s"
-        return 1
-    fi
-
-    local clear_cmd
-    clear_cmd=$(cli_profile_get "gunshi" "clear_cmd")
-    log "GUNSHI-CLEAR(${caller}): gunshi CTX:${ctx_num}%, sending ${clear_cmd}"
-    tmux send-keys -t "$gunshi_pane" "$clear_cmd"
-    sleep 0.3
-    tmux send-keys -t "$gunshi_pane" Enter
-    LAST_GUNSHI_CLEAR=$now
-
-    return 0
-}
-
-# ─── STEP 2.5: 軍師の外部/clearトリガー ───
-check_gunshi_clear() {
-    local gunshi_pane
-    gunshi_pane=$(tmux list-panes -t shogun -a -F '#{window_index}.#{pane_index} #{@agent_id}' 2>/dev/null | grep " gunshi$" | awk '{print "shogun:" $1}')
-
-    [ -z "$gunshi_pane" ] && return  # ペイン未発見 → skip
-
-    # idle判定
-    check_idle "$gunshi_pane" "gunshi"
-    if [ $? -ne 0 ]; then
-        return  # busy or error → skip
-    fi
-
-    # CTX取得
-    local ctx_num=$(get_context_pct "$gunshi_pane" "gunshi")
-    if [ -z "$ctx_num" ] || [ "$ctx_num" -le 50 ] 2>/dev/null; then
-        return  # CTX <= 50% → skip
-    fi
-
-    # 共通関数でデバウンス付き送信
-    send_gunshi_clear "$ctx_num" "check_gunshi_clear"
-}
-
 # ─── STEP 3: 将軍CTXアラート ───
 check_shogun_ctx() {
     local shogun_pane="shogun:1"
@@ -1769,9 +1710,6 @@ while true; do
 
     # ═══ STEP 2: 家老の外部/clearチェック ═══
     check_karo_clear
-
-    # ═══ STEP 2.5: 軍師の外部/clearチェック ═══
-    check_gunshi_clear
 
     # ═══ STEP 3: 将軍CTXアラート ═══
     check_shogun_ctx

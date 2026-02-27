@@ -40,17 +40,8 @@ tmux set-option -t shogun status-right "#[fg=#cdd6f4]%Y-%m-%d %H:%M"
 
 echo "[shutsujin] status-right: datetime only"
 
-# ─── gunshi pane variables (cmd_389) ───
-# 軍師ペイン(saizo転用pane 7)にエージェント識別変数を設定
-# ninja_monitor.shはNINJA_NAMESから軍師を除外し、auto-/clear対象外とする
-tmux set-option -p -t shogun:2.7 @agent_id gunshi 2>/dev/null
+# ─── saizo pane variables (cmd_403: gunshi凍結→saizo復帰) ───
+tmux set-option -p -t shogun:2.7 @agent_id saizo 2>/dev/null
 tmux set-option -p -t shogun:2.7 @agent_cli claude 2>/dev/null
 tmux set-option -p -t shogun:2.7 @model_name Opus 2>/dev/null
-echo "[shutsujin] gunshi pane variables set (shogun:2.7, model=Opus)"
-
-# ─── gunshi model switch (cmd_399) ───
-# 現行セッションが起動中ならOpusに即時切替
-# shutsujin_departure.shはCLI起動しない(tmux変数設定のみ)
-# CLIが既に起動している場合のみ /model コマンドを送信
-tmux send-keys -t shogun:2.7 "/model claude-opus-4-6" Enter 2>/dev/null
-echo "[shutsujin] gunshi model switch sent (claude-opus-4-6)"
+echo "[shutsujin] saizo pane variables set (shogun:2.7, model=Opus)"
