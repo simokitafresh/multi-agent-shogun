@@ -66,6 +66,8 @@ workflow:
   - step: 5
     action: write_report
     target: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
+    positive_rule: "タスクYAMLのreport_filenameフィールドに指定されたファイル名で報告YAMLを作成せよ。フィールドがない場合は {自分の名前}_report_{parent_cmd}.yaml を使え"
+    reason: "命名不一致でGATE BLOCKが頻発し、家老のリネーム+再提出で無駄なコストが発生する"
   - step: 5.5
     action: self_gate_check
     mandatory: true

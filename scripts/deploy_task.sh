@@ -837,6 +837,62 @@ except Exception as e:
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
 
+# ─── report_filename自動注入（cmd_410: 命名ミスマッチ根治） ───
+inject_report_filename() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_report_filename: task file not found: $task_file"
+        return 0
+    fi
+
+    # L047: 環境変数経由でPythonに値を渡す
+    TASK_FILE_ENV="$task_file" NINJA_NAME_ENV="$NINJA_NAME" python3 -c "
+import yaml, sys, os, tempfile
+
+task_file = os.environ['TASK_FILE_ENV']
+ninja_name = os.environ['NINJA_NAME_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[REPORT_FN] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+
+    # 既にreport_filenameが存在する場合は上書きしない
+    if task.get('report_filename'):
+        print('[REPORT_FN] Already exists, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    parent_cmd = str(task.get('parent_cmd', '') or '')
+    if parent_cmd:
+        report_filename = f'{ninja_name}_report_{parent_cmd}.yaml'
+    else:
+        report_filename = f'{ninja_name}_report.yaml'
+
+    task['report_filename'] = report_filename
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[REPORT_FN] Injected report_filename={report_filename}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[REPORT_FN] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
 # deploy_task.sh実行時にcmd_complete_gate.shが要求するgateフラグを事前生成。
 # L078: 65%のBLOCKがmissing_gate(archive/lesson/review_gate)。配備時に生成で削減。
@@ -1255,6 +1311,9 @@ inject_role_reminder "$TASK_FILE" "$NINJA_NAME" || true
 
 # report_template自動注入（cmd_384: 失敗してもデプロイは継続）
 inject_report_template "$TASK_FILE" || true
+
+# report_filename自動注入（cmd_410: 命名ミスマッチ根治）
+inject_report_filename "$TASK_FILE" || true
 
 # context鮮度チェック（失敗してもデプロイは継続）
 check_context_freshness "$TASK_FILE" || true

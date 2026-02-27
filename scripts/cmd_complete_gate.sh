@@ -30,12 +30,24 @@ LOG_DIR="$SCRIPT_DIR/logs"
 GATE_METRICS_LOG="$LOG_DIR/gate_metrics.log"
 mkdir -p "$GATES_DIR" "$LOG_DIR"
 
-# ─── 報告YAML解決関数（L085: 新命名規則対応） ───
-# 新形式 {ninja}_report_{cmd}.yaml を優先、旧形式 {ninja}_report.yaml にフォールバック
+# ─── 報告YAML解決関数（L085: 新命名規則対応、cmd_410: report_filename最優先） ───
+# 優先順位: 1. タスクYAMLのreport_filename  2. 新形式  3. 旧形式
 resolve_report_file() {
     local ninja="$1"
     local cmd="${2:-$CMD_ID}"
+    # 1. タスクYAMLのreport_filenameを参照(最優先)
+    local task_yaml="$TASKS_DIR/${ninja}.yaml"
+    if [ -f "$task_yaml" ]; then
+        local explicit
+        explicit=$(grep 'report_filename:' "$task_yaml" | head -1 | sed 's/.*report_filename:[[:space:]]*//' | tr -d "'" | tr -d '"')
+        if [ -n "$explicit" ] && [ -f "$SCRIPT_DIR/queue/reports/$explicit" ]; then
+            echo "$SCRIPT_DIR/queue/reports/$explicit"
+            return
+        fi
+    fi
+    # 2. 新形式 (既存)
     local new_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report_${cmd}.yaml"
+    # 3. 旧形式フォールバック (既存)
     local old_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report.yaml"
     if [ -f "$new_fmt" ]; then
         echo "$new_fmt"
