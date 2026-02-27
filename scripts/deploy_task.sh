@@ -162,10 +162,17 @@ generate_report_template() {
     local ninja_name="$1"
     local task_id="$2"
     local parent_cmd="$3"
+    local project="$4"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
     local report_file=""
 
-    if [[ -n "$parent_cmd" && "$parent_cmd" == cmd_* ]]; then
+    # report_filenameフィールドを優先参照（cmd_412: 命名ミスマッチ根治）
+    local report_filename=""
+    report_filename=$(field_get "$task_file" "report_filename" "")
+
+    if [ -n "$report_filename" ]; then
+        report_file="$SCRIPT_DIR/queue/reports/${report_filename}"
+    elif [[ -n "$parent_cmd" && "$parent_cmd" == cmd_* ]]; then
         report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}.yaml"
     else
         # 後方互換: parent_cmdが未設定/不正なら旧形式にフォールバック
@@ -174,10 +181,10 @@ generate_report_template() {
 
     mkdir -p "$SCRIPT_DIR/queue/reports"
 
-    # 受領条件の存在確認（grepで取得。監査ログ用途）
-    local ac_count=0
-    if [ -f "$task_file" ] && grep -qE '^\s+acceptance_criteria:' "$task_file" 2>/dev/null; then
-        ac_count=$(grep -A 60 -E '^\s+acceptance_criteria:' "$task_file" 2>/dev/null | grep -cE '^[[:space:]]*-[[:space:]]' || true)
+    # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
+    if [ -f "$report_file" ]; then
+        log "report_template: already exists, skipping (${report_file})"
+        return 0
     fi
 
     cat > "$report_file" <<EOF
@@ -185,11 +192,16 @@ worker_id: ${ninja_name}
 task_id: ${task_id}
 parent_cmd: ${parent_cmd}
 timestamp: ""
-status: ""
+status: pending
 result:
   summary: ""
+  details: ""
+files_modified: []
 lesson_candidate:
   found: false
+  title: ""
+  detail: ""
+  project: ${project}
 lesson_referenced: []
 skill_candidate:
   found: false
@@ -197,7 +209,7 @@ decision_candidate:
   found: false
 EOF
 
-    log "${ninja_name}: report template generated (${report_file}, acceptance_criteria=${ac_count})"
+    log "report_template: generated (${report_file})"
 }
 
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
@@ -1169,9 +1181,14 @@ try:
         print('PASS: no parent_cmd', file=sys.stderr)
         sys.exit(0)
 
-    # 2. shogun_to_karo.yamlでscout_exemptを確認
-    stk_path = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
-    if os.path.exists(stk_path):
+    # 2. shogun_to_karo.yaml + archive でscout_exemptを確認
+    stk_paths = [
+        os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml'),
+        os.path.join(script_dir, 'queue', 'archive', 'shogun_to_karo_done.yaml'),
+    ]
+    for stk_path in stk_paths:
+        if not os.path.exists(stk_path):
+            continue
         with open(stk_path) as f:
             stk = yaml.safe_load(f)
         for cmd in (stk or {}).get('commands', []):
@@ -1338,7 +1355,8 @@ fi
 # 報告YAML雛形生成（配備完了ログの直前）
 TASK_ID=$(field_get "$TASK_FILE" "task_id" "")
 PARENT_CMD=$(field_get "$TASK_FILE" "parent_cmd" "")
-generate_report_template "$NINJA_NAME" "$TASK_ID" "$PARENT_CMD"
+PROJECT=$(field_get "$TASK_FILE" "project" "")
+generate_report_template "$NINJA_NAME" "$TASK_ID" "$PARENT_CMD" "$PROJECT"
 
 # deployed_at自動記録（cmd_387: 初回配備時のみ記録、再配備時は保持）
 record_deployed_at "$TASK_FILE" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
