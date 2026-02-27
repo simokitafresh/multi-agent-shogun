@@ -68,6 +68,10 @@ workflow:
     target: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
     positive_rule: "タスクYAMLのreport_filenameフィールドに指定されたファイル名で報告YAMLを作成せよ。フィールドがない場合は {自分の名前}_report_{parent_cmd}.yaml を使え"
     reason: "命名不一致でGATE BLOCKが頻発し、家老のリネーム+再提出で無駄なコストが発生する"
+    rules:
+      - id: R001
+        positive_rule: "queue/reports/に配備時に生成された報告テンプレートが存在する。Read toolでテンプレートを読み、値を埋めよ。キーの追加は可、既存キーの削除・ネスト化は禁止"
+        reason: "構造変更(ネスト化等)でgateのフィールド検出が失敗しBLOCKされる。家老の修正CTXが浪費される"
   - step: 5.5
     action: self_gate_check
     mandatory: true

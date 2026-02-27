@@ -62,6 +62,17 @@ fixes_rule:
     - "機能追加・改善・新規開発: fixesは空文字またはフィールドなし"
     - "判断に迷う場合: fixesなし（偽陽性より偽陰性を優先）"
 
+model_deployment_rules:
+  - id: M001
+    positive_rule: "タスク配備時にcontext/karo-operations.mdのモデル別能力を参照し、適材適所で割り当てよ"
+    reason: "モデルごとに得意・不得意がある。精密分析でCodex全種別100%、Opus設計力が判明"
+  - id: M002
+    positive_rule: "モデルバージョン更新時はmodel_analysis.sh --detailを再実行し、能力データを更新せよ"
+    reason: "同じモデル名でもバージョンアップで能力が全く変わる(殿厳命)"
+  - id: M003
+    positive_rule: "能力データにはモデルID(バージョン含む)と推論レベルを必ず併記せよ"
+    reason: "同一モデルでも推論レベル(reasoning effort)で能力が変わる。バージョン+推論レベルがセットで初めて再現性のある比較になる(殿厳命)"
+
 files:
   input: queue/shogun_to_karo.yaml
   task_template: "queue/tasks/{ninja_name}.yaml"

@@ -500,3 +500,26 @@ scout_only cmd完了後のフロー:
 | 2 | 家老 | 偵察報告分析+次cmd起案 | report YAML + context読取（家老自身が行う） |
 | 3 | 家老 | impl cmd書込み | `shogun_to_karo.yaml` に追記（scout_exempt: true, based_on: cmd_XXX） |
 | 4 | 家老 | 配備 | deploy_task.sh |
+
+## §14 モデル別能力（2026-02-27精密分析）
+
+> 計測バージョン: Opus=claude-opus-4-6, Codex=codex-mini-latest
+> 推論レベル: Opus=default, Codex=default
+> ⚠️ モデル更新・推論レベル変更時は `model_analysis.sh --detail` で再検証必須
+
+| 軸 | Opus | Codex |
+|----|------|-------|
+| implement CLEAR率 | 85.7% (N=7) | 100% (N=6) |
+| impl+recon CLEAR率 | 97.8% (N=45) | 100% (N=16) |
+| recon CLEAR率 | 100% (N=7) | 100% (N=7) |
+| BLOCK関与/忍者 | 13.75回 | 5.5回 |
+| コスト | x5.0 | x0.2 |
+| 特性 | 自力判断力が強い。複雑な設計判断に適性 | 素直で指示通り。BLOCK最少。定型〜中難度に最適 |
+
+### 配備指針
+- 設計判断・複雑なレビュー → Opus優先
+- 定型実装・偵察・ルール追記 → Codex優先
+- コスト意識: Codex1回 = Opus 1/25。迷ったらCodexで試行
+- ⚠️ この数値は現行バージョン時点のスナップショット
+- ⚠️ モデル更新時は `model_analysis.sh --detail` で再検証必須
+- ⚠️ 推論レベル(reasoning effort)でも能力は変わる。バージョン+推論レベルをセットで記録せよ
