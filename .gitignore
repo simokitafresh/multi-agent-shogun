@@ -156,6 +156,7 @@
 !scripts/knowledge_metrics.sh
 !scripts/lesson_auto_tag.sh
 !scripts/dashboard_auto_section.sh
+!scripts/model_analysis.sh
 
 
 # Archive (frozen retired components)

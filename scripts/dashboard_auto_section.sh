@@ -227,7 +227,7 @@ _cached_lines=0
 
 if [[ "$_gate_lines" != "$_cached_lines" ]] || [[ ! -f "$KM_JSON_CACHE" ]]; then
     bash "$SCRIPT_DIR/knowledge_metrics.sh" --json > "$KM_JSON_CACHE" 2>/dev/null || true
-    bash "$SCRIPT_DIR/knowledge_metrics.sh" --model > "$KM_MODEL_CACHE" 2>/dev/null || true
+    bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null || true
     echo "$_gate_lines" > "$KM_CACHE_LINES"
 fi
 
@@ -251,25 +251,26 @@ except Exception:
     IFS=$'\t' read -r KM_INJECT_RATE KM_REF_RATE KM_DELTA_PP <<< "$_km_parsed"
 fi
 
-# Parse model cache (model CLEAR率 N)
+# Parse model cache (model_analysis.sh --summary: key=value format)
 if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
-    _parse_model_line() {
-        local model="$1"
-        local line
-        line=$(grep "^${model}" "$KM_MODEL_CACHE" | head -1 || true)
-        if [[ -n "$line" ]]; then
-            # Format: "opus      82      66      55.4%       148"
-            local rate n
-            rate=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i ~ /%/) {gsub(/%/,"",$i); print $i"%"; exit}}')
-            n=$(echo "$line" | awk '{print $NF}')
-            echo "${rate:-—}	${n:-—}"
-        else
-            echo "—	—"
-        fi
+    _get_model_val() {
+        local key="$1"
+        grep "^${key}=" "$KM_MODEL_CACHE" | head -1 | cut -d= -f2 || true
     }
-    IFS=$'\t' read -r KM_MODEL_OPUS KM_N_OPUS <<< "$(_parse_model_line opus)"
-    IFS=$'\t' read -r KM_MODEL_SONNET KM_N_SONNET <<< "$(_parse_model_line sonnet)"
-    IFS=$'\t' read -r KM_MODEL_CODEX KM_N_CODEX <<< "$(_parse_model_line codex)"
+    _rate=$(_get_model_val opus_clear_rate)
+    [[ -n "$_rate" ]] && KM_MODEL_OPUS="${_rate}%"
+    _n=$(_get_model_val opus_n)
+    [[ -n "$_n" ]] && KM_N_OPUS="$_n"
+
+    _rate=$(_get_model_val sonnet_clear_rate)
+    [[ -n "$_rate" ]] && KM_MODEL_SONNET="${_rate}%"
+    _n=$(_get_model_val sonnet_n)
+    [[ -n "$_n" ]] && KM_N_SONNET="$_n"
+
+    _rate=$(_get_model_val codex_clear_rate)
+    [[ -n "$_rate" ]] && KM_MODEL_CODEX="${_rate}%"
+    _n=$(_get_model_val codex_n)
+    [[ -n "$_n" ]] && KM_N_CODEX="$_n"
 fi
 
 # ─── Build cmd→title map (for 戦果 section) ───
