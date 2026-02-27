@@ -159,6 +159,7 @@
 !scripts/dashboard_auto_section.sh
 !scripts/model_analysis.sh
 !scripts/backfill_task_type.sh
+!scripts/lesson_health_report.sh
 
 
 # Archive (frozen retired components)
