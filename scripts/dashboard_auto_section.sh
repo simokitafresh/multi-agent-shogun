@@ -36,6 +36,10 @@ STK="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 GATE_LOG="$PROJECT_DIR/logs/gate_metrics.log"
 TASKS_DIR="$PROJECT_DIR/queue/tasks"
 SETTINGS="$PROJECT_DIR/config/settings.yaml"
+ARCHIVE_STK_DONE="$PROJECT_DIR/queue/archive/shogun_to_karo_done.yaml"
+KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
+KM_MODEL_CACHE="/tmp/dashboard_km_model_cache.txt"
+KM_CACHE_LINES="/tmp/dashboard_km_cache_lines.txt"
 
 MARKER_START="<!-- DASHBOARD_AUTO_START -->"
 MARKER_END="<!-- DASHBOARD_AUTO_END -->"
@@ -43,7 +47,9 @@ MARKER_END="<!-- DASHBOARD_AUTO_END -->"
 TMPFILE=$(mktemp)
 TMP_METRICS=$(mktemp)
 TMP_PIPELINE=$(mktemp)
-trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE"' EXIT
+TMP_RESULTS=$(mktemp)
+TMP_TITLES=$(mktemp)
+trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES"' EXIT
 
 NOW=$(TZ=Asia/Tokyo date '+%H:%M')
 
@@ -110,6 +116,22 @@ done
 IDLE_LIST=""
 [[ -f "$SNAPSHOT" ]] && IDLE_LIST=$(grep '^idle|' "$SNAPSHOT" | head -1 | cut -d'|' -f2 || true)
 
+# ─── Calculate active ninjas from snapshot ───
+ACTIVE_COUNT=0
+ACTIVE_NAMES=""
+for _an in $ALL_NINJAS; do
+    if ! echo ",$IDLE_LIST," | grep -q ",${_an}," 2>/dev/null; then
+        ACTIVE_COUNT=$((ACTIVE_COUNT + 1))
+        _jp_an=$(name_jp "$_an")
+        if [[ -n "$ACTIVE_NAMES" ]]; then
+            ACTIVE_NAMES="${ACTIVE_NAMES}, ${_jp_an}"
+        else
+            ACTIVE_NAMES="$_jp_an"
+        fi
+    fi
+done
+[[ -z "$ACTIVE_NAMES" ]] && ACTIVE_NAMES="—"
+
 # ─── Parse pipeline commands from STK (pre-compute for subshell access) ───
 if [[ -f "$STK" ]] && grep -qE '^  -[[:space:]]*id:' "$STK" 2>/dev/null; then
     # Output tab-delimited: id\ttitle\tstatus
@@ -161,11 +183,19 @@ if [[ -f "$GATE_LOG" ]]; then
 
     # Streak: consecutive CLEARs from the end (L074: avoid ((var++)))
     STREAK=0
+    STREAK_START=""
+    STREAK_END=""
     while IFS=$'\t' read -r _ts _cmd result; do
         if [[ "$result" == "CLEAR" ]]; then
+            if [[ $STREAK -eq 0 ]]; then
+                STREAK_START="$_cmd"
+            fi
             STREAK=$((STREAK + 1))
+            STREAK_END="$_cmd"
         else
             STREAK=0
+            STREAK_START=""
+            STREAK_END=""
         fi
     done < "$TMP_METRICS"
 
@@ -177,6 +207,97 @@ if [[ -f "$GATE_LOG" ]]; then
             LAST_GATE="${BASH_REMATCH[1]}"
         fi
     fi
+fi
+
+# ─── Knowledge metrics (cached — only re-run when gate_metrics.log changes) ───
+KM_INJECT_RATE="—"
+KM_REF_RATE="—"
+KM_DELTA_PP="—"
+KM_MODEL_OPUS="—"
+KM_MODEL_SONNET="—"
+KM_MODEL_CODEX="—"
+KM_N_OPUS="—"
+KM_N_SONNET="—"
+KM_N_CODEX="—"
+
+_gate_lines=0
+[[ -f "$GATE_LOG" ]] && _gate_lines=$(wc -l < "$GATE_LOG" | tr -d ' ')
+_cached_lines=0
+[[ -f "$KM_CACHE_LINES" ]] && _cached_lines=$(cat "$KM_CACHE_LINES" 2>/dev/null | tr -d '[:space:]')
+
+if [[ "$_gate_lines" != "$_cached_lines" ]] || [[ ! -f "$KM_JSON_CACHE" ]]; then
+    bash "$SCRIPT_DIR/knowledge_metrics.sh" --json > "$KM_JSON_CACHE" 2>/dev/null || true
+    bash "$SCRIPT_DIR/knowledge_metrics.sh" --model > "$KM_MODEL_CACHE" 2>/dev/null || true
+    echo "$_gate_lines" > "$KM_CACHE_LINES"
+fi
+
+# Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp)
+if [[ -f "$KM_JSON_CACHE" ]] && [[ -s "$KM_JSON_CACHE" ]]; then
+    _km_parsed=$(python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    ir = data.get('inject_rate')
+    rr = data.get('ref_rate')
+    nd = data.get('normalized_delta', {})
+    dp = nd.get('delta_pp')
+    ir_s = f'{ir:.1f}%' if ir is not None else '—'
+    rr_s = f'{rr:.1f}%' if rr is not None else '—'
+    dp_s = f'{dp:+.1f}pp' if dp is not None else '—'
+    print(f'{ir_s}\t{rr_s}\t{dp_s}')
+except Exception:
+    print('—\t—\t—')
+" < "$KM_JSON_CACHE" 2>/dev/null || echo "—	—	—")
+    IFS=$'\t' read -r KM_INJECT_RATE KM_REF_RATE KM_DELTA_PP <<< "$_km_parsed"
+fi
+
+# Parse model cache (model CLEAR率 N)
+if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
+    _parse_model_line() {
+        local model="$1"
+        local line
+        line=$(grep "^${model}" "$KM_MODEL_CACHE" | head -1 || true)
+        if [[ -n "$line" ]]; then
+            # Format: "opus      82      66      55.4%       148"
+            local rate n
+            rate=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i ~ /%/) {gsub(/%/,"",$i); print $i"%"; exit}}')
+            n=$(echo "$line" | awk '{print $NF}')
+            echo "${rate:-—}	${n:-—}"
+        else
+            echo "—	—"
+        fi
+    }
+    IFS=$'\t' read -r KM_MODEL_OPUS KM_N_OPUS <<< "$(_parse_model_line opus)"
+    IFS=$'\t' read -r KM_MODEL_SONNET KM_N_SONNET <<< "$(_parse_model_line sonnet)"
+    IFS=$'\t' read -r KM_MODEL_CODEX KM_N_CODEX <<< "$(_parse_model_line codex)"
+fi
+
+# ─── Build cmd→title map (for 戦果 section) ───
+# From active STK
+if [[ -s "$TMP_PIPELINE" ]]; then
+    awk -F'\t' '{print $1"\t"$2}' "$TMP_PIPELINE" >> "$TMP_TITLES"
+fi
+# From archive done YAML
+if [[ -f "$ARCHIVE_STK_DONE" ]]; then
+    awk '
+        /^ *- id: cmd_/ {
+            sub(/.*- id: */, ""); gsub(/["\047[:space:]]/, "")
+            cid=$0; tit=""
+        }
+        /^    title:/ && cid!="" {
+            sub(/.*title: */, "")
+            gsub(/^["\047]|["\047]$/, "")
+            if (length($0)>50) $0=substr($0,1,47)"..."
+            tit=$0
+            print cid"\t"tit
+            cid=""
+        }
+    ' "$ARCHIVE_STK_DONE" >> "$TMP_TITLES"
+fi
+
+# ─── Get last 5 CLEAR cmds for battle results ───
+if [[ -s "$TMP_METRICS" ]]; then
+    awk -F'\t' '$3=="CLEAR"' "$TMP_METRICS" | tail -5 > "$TMP_RESULTS"
 fi
 
 # ═══════════════════════════════════════════════════════
@@ -246,11 +367,63 @@ fi
 
     echo ""
 
-    # ─── メトリクス ───
-    echo "### メトリクス"
-    echo "| 連勝 | CLEAR率 | 総cmd完了 | 最終GATE |"
-    echo "|------|---------|----------|----------|"
-    echo "| ${STREAK} | ${CLEAR_RATE} | ${TOTAL_CMDS} | ${LAST_GATE} |"
+    # ─── 戦況メトリクス ───
+    echo "### 戦況メトリクス"
+    echo "| 項目 | 値 |"
+    echo "|------|-----|"
+    echo "| cmd完了(GATE CLEAR) | ${CLEAR_COUNT:-0}/${TOTAL_CMDS} |"
+    echo "| 稼働忍者 | ${ACTIVE_COUNT}/8 (${ACTIVE_NAMES}) |"
+    if [[ -n "$STREAK_START" ]] && [[ -n "$STREAK_END" ]]; then
+        echo "| 連勝(CLEAR streak) | ${STREAK} (${STREAK_START}〜${STREAK_END}) |"
+    else
+        echo "| 連勝(CLEAR streak) | ${STREAK} |"
+    fi
+
+    echo ""
+
+    # ─── モデル別スコアボード ───
+    echo "### モデル別スコアボード"
+    echo "| モデル | CLEAR率 | サンプル数 |"
+    echo "|--------|---------|-----------|"
+    echo "| Opus | ${KM_MODEL_OPUS} | ${KM_N_OPUS} |"
+    echo "| Sonnet | ${KM_MODEL_SONNET} | ${KM_N_SONNET} |"
+    echo "| Codex | ${KM_MODEL_CODEX} | ${KM_N_CODEX} |"
+
+    echo ""
+
+    # ─── 知識サイクル健全度 ───
+    echo "### 知識サイクル健全度"
+    echo "| 項目 | 値 |"
+    echo "|------|-----|"
+    echo "| 教訓注入率 | ${KM_INJECT_RATE} |"
+    echo "| 参照率 | ${KM_REF_RATE} |"
+    echo "| Δ(効果差分) | ${KM_DELTA_PP} |"
+
+    echo ""
+
+    # ─── 戦果（直近5件） ───
+    echo "### 戦果（直近5件）"
+    if [[ -s "$TMP_RESULTS" ]]; then
+        echo "| cmd | 内容 | 結果 | 完了日時 |"
+        echo "|-----|------|------|----------|"
+        # Reverse order (newest first)
+        tac "$TMP_RESULTS" | while IFS=$'\t' read -r _ts _cmd _result; do
+            # Look up title
+            _title=$(grep "^${_cmd}"$'\t' "$TMP_TITLES" | head -1 | cut -f2 || true)
+            [[ -z "$_title" ]] && _title="—"
+            # Format timestamp (2026-02-27T12:26:56 → 02-27 12:26)
+            _date="—"
+            if [[ "$_ts" =~ ([0-9]{4}-([0-9]{2}-[0-9]{2})T([0-9]{2}:[0-9]{2})) ]]; then
+                _date="${BASH_REMATCH[2]} ${BASH_REMATCH[3]}"
+            fi
+            echo "| ${_cmd} | ${_title} | GATE CLEAR | ${_date} |"
+        done
+    else
+        echo "(戦果データなし)"
+    fi
+
+    echo ""
+    echo "> 過去の戦果は archive/dashboard/ を参照"
 
     echo "$MARKER_END"
 } > "$TMPFILE"
