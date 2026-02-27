@@ -158,6 +158,7 @@
 !scripts/lesson_auto_tag.sh
 !scripts/dashboard_auto_section.sh
 !scripts/model_analysis.sh
+!scripts/backfill_task_type.sh
 
 
 # Archive (frozen retired components)
