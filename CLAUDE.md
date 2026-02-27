@@ -267,8 +267,8 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 役割 | 名前(pane) | CLI |
 |------|-----------|-----|
 | 家老 | karo(1) | Claude |
-| 上忍(jonin) | sasuke(2) kirimaru(3) hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
-編成(2026-02-27改革): Opus上忍4(kagemaru/hanzo/kotaro/tobisaru)+Codex4(sasuke/kirimaru/hayate/saizo)。Sonnet全廃、Codex上忍昇格。全員impl/review可 → config/settings.yaml
+| 忍者 | sasuke(2) kirimaru(3) hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
+編成(2026-02-27改革): Opus4(kagemaru/hanzo/kotaro/tobisaru)+Codex4(sasuke/kirimaru/hayate/saizo)。tier廃止・round-robin配備 → config/settings.yaml
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照
