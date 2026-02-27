@@ -287,3 +287,408 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **記録者**: karo
 - **merged_from**: [L025, L027]
 - 偵察→統合を同一忍者に割り当てるとreport初期化で偵察報告が消失。L024の実害パターン。回避策: 別忍者に分離 or reportアーカイブ実装
+
+### L043: inbox_write.shのPython直接展開にコマンドインジェクション脆弱性
+- **日付**: 2026-02-25
+- **出典**: cmd_317
+- **記録者**: tobisaru
+- シェル変数($CONTENT/$TARGET)をPython文字列へ直接展開している。環境変数経由(os.environ)で渡す方式に修正すべき。TARGETも[a-z_]のみ許可バリデーション追加推奨
+
+### L044: reports/*.yamlに扁平/ネスト2構造が混在
+- **日付**: 2026-02-25
+- **出典**: cmd_317
+- **記録者**: karo
+- 忍者名_report.yaml(ルートレベルフィールド)とsubtask_*.yaml(report:キー配下)で構造が異なる。スキーマ検証やパーサーは両方に対応が必要
+
+### L045: AC達成状況フィールド名が3種混在
+- **日付**: 2026-02-25
+- **出典**: cmd_317
+- **記録者**: karo
+- reports内でacceptance_criteria/ac_status/ac_checklistの3種が混在。パース時に全パターン対応が必要
+
+### L046: capture-paneバナー解析のfalse positive防止
+- **日付**: 2026-02-25
+- **出典**: cmd_320
+- **記録者**: karo
+- CLIバナーからモデル名を検出する際、コマンドテキスト自体にバナーパターンが含まれるfalse positiveに注意。grep+tail -1だけでなく、モデル名(Opus|Sonnet|Haiku)+バージョン番号まで含めた精密パターンが必要。
+
+### L047: deploy_task.sh: Python -c文字列にシェル変数直接埋込はインジェクション危険
+- **日付**: 2026-02-25
+- **出典**: cmd_317
+- **記録者**: tobisaru
+- python3 -c内で$name等を直接補間すると、シングルクォートを含む入力でコード実行可能。環境変数経由(os.environ)か外部.pyファイル+引数渡しにせよ。R2全3モデルが独立して同一指摘(HIGH)
+
+### L048: ninja_monitor auto-done誤判定: parent_cmdのみマッチではWave間で誤done。task_idチェック追加が必須
+- **日付**: 2026-02-25
+- **出典**: cmd_317v2
+- **記録者**: karo
+- check_and_update_done_taskがparent_cmdのみで判定していたためWave1報告doneがWave2タスクassignedを自動done化した。task_id一致チェックをL311後に追加して修正済み
+
+### L049: コードレビューで既存対策を見落とす共通パターン — 全文精読とコメント確認の重要性
+- **日付**: 2026-02-25
+- **出典**: cmd_317v2
+- **記録者**: kagemaru
+- inbox_write.shの3件の独立レビューが全て同じ偽陽性(環境変数渡し済み+ホワイトリスト実装済み)を
+報告した。コード中にHIGH-1/HIGH-2のコメントで明記されていたにもかかわらず見落とし。
+コードレビュー時は (1)コメントも含めた全行精読 (2)既存の防御機構の確認 (3)推奨が既に実装されていないか検証 が必須。
+
+### L050: コードレビューで既存対策を見落とす共通パターン — コメント含む全行精読が必須
+- **日付**: 2026-02-25
+- **出典**: cmd_317v2
+- **記録者**: karo
+- 3件の独立レビューが全て同じ偽陽性を報告。ただしTask3ではタイミング交絡あり(修正前コードレビュー→修正後コード検証)。純粋な見落としではない可能性
+
+### L051: Sonnet 4.6はMUST/NEVER/ALWAYSをリテラルに従わず文脈判断でオーバーライドする。否定指示は肯定形+理由付き、絶対禁止は条件付きルーティング(IF X THEN Y)に変換すると遵守率向上。Pink Elephant研究で学術裏付け
+- **日付**: 2026-02-25
+- **記録者**: karo
+- **tags**: [process]
+- cmd_318 kagemaru
+
+### L052: ninja_monitorのDESTRUCTIVE検出でcapture-pane履歴にsend-keysが残る誤検知あり。DESTRUCTIVE判定ログ(kill/rm等)はcapture-pane結果に他エージェントのsend-keys内容が混入する可能性を考慮すべき
+- **日付**: 2026-02-25
+- **記録者**: karo
+- cmd_318 hayate
+
+### L053: Claude 4.x CRITICAL/MUST/NEVERがovertriggering副作用
+- **日付**: 2026-02-25
+- **出典**: cmd_324
+- **記録者**: karo
+- **tags**: [process]
+- Anthropic公式claude-4-best-practicesに明記。NEVER/MUSTはリテラル強制より文脈判断を優先し、ashigaru.mdのF001-F005は肯定形+理由付きに書き換えるとSonnet遵守率向上。L051の実証と一致
+
+### L054: lesson_write.shのcontextロック失敗が非致命でSSOTとcontext不整合を許容
+- **日付**: 2026-02-25
+- **出典**: cmd_323
+- **記録者**: karo
+- context追記部のflock -w 10失敗時はWARNのみで終了し教訓登録は成功扱いになるが反映漏れが静かに残る。syncマーカー更新も同じflock内のためflock失敗時はマーカーも未更新となる
+
+### L055: report YAML構造混在に対するフォールバック必須
+- **日付**: 2026-02-25
+- **出典**: cmd_337
+- **記録者**: sasuke
+- report YAMLは扁平/ネスト2系統+ACフィールド名5種混在(ac_results/ac_status/ac_checklist/acceptance_criteria/acceptance_criteria_check)。自動パーサは優先順位付きフォールバック必須。単一キー前提は破綻する
+
+### L056: タスクYAML上書き問題: auto_deploy時の全サブタスク永続化
+- **日付**: 2026-02-25
+- **出典**: cmd_338
+- **記録者**: hanzo
+- queue/tasks/*.yamlは忍者名ファイル=上書き式のため完了タスク情報が消失する。auto_deploy機能を活用するには全サブタスクのYAMLを_subtask_*.yaml形式で事前作成し永続化する必要がある。task_idによるdedup処理で重複を吸収
+
+### L057: cmd_338
+- **日付**: 2026-02-26
+- **出典**: check_and_update_done_task()はhandle_confirmed_idle()→is_task_deployed()内でのみ発火。忍者がidle確認後にしかauto-done判定されない。報告YAML→idle遷移まで最大20秒+CONFIRM_WAITのラグ存在。将来report YAML inotifywatchに移行すればラグ解消可能
+- **記録者**: karo
+- auto_deploy発火タイミング: ninja_monitor auto-doneはidle検知依存で最大25秒ラグ
+
+### L058: WSL2の/mnt/c上でClaude CodeのWrite toolを使うと.shファイルにCRLF改行が混入する。bash -nで構文エラーになるため、新規.shファイル作成後は必ず sed -i 's/\r$//' で修正すること。
+- **日付**: 2026-02-26
+- **出典**: common.sh新規作成時にCRLF混入でbash -n失敗した実体験
+- **記録者**: karo
+- hayate(subtask_340_impl_a)
+
+### L059: 共通スクリプトのリファクタ後はインタフェース契約の確認が必要。usage_status.shは引数なし統合出力設計だがusage_statusbar_loop.shが引数付き2回呼出しで重複表示バグ。呼出し側と被呼出し側のI/F整合を検証せよ。
+- **日付**: 2026-02-26
+- **出典**: usage_statusbar_loop.sh重複表示バグの修正体験
+- **記録者**: karo
+- hayate(subtask_340_verify)
+
+### L060: タスクYAML/報告YAMLの上書き式がメトリクスデータ永続性を阻害
+- **日付**: 2026-02-26
+- **出典**: cmd_344
+- **記録者**: karo
+- deploy_task.shがreport雛形を上書き、タスクYAMLも忍者別1ファイルで上書きされるため、related_lessons(注入)とlesson_referenced(参照)の個別追跡データが永続化されない。gate_metrics.logに永続化される追記ログ(lesson_tracking.tsv)をcmd_complete_gate.shに追加することで解決可能。3名独立調査(疾風/影丸/半蔵)で全員一致の致命的ギャップ。
+
+### L061: 統合設計レビューではソースコード実地確認が必須
+- **日付**: 2026-02-26
+- **出典**: cmd_344
+- **記録者**: karo
+- 3提案はそれぞれデータ構造を調査したが、cmd_complete_gate.shの実コード(1052行)を読んで初めて永続化追記の最適箇所(GATE判定直前)が判明した。提案段階の推定行番号(A:L297,C:L871)はいずれも不正確。統合レビューでは必ずソースコードの実地確認を行うべき。
+
+### L062: acceptance_criteriaフィールドはdict/str混在のためjoin前に型変換が必要
+- **日付**: 2026-02-26
+- **出典**: --tags
+- **記録者**: pipeline,process
+- **tags**: [pipeline, process]
+- ac_listがdictのリスト(id+description構造)の場合str.joinでTypeErrorになる。description抽出のフォールバックが必須。deploy_task.sh実証(cmd_349)
+
+### L063: lessons.yamlはdict構造(lessons:キー配下リスト)。for lesson in dataはdictキーをイテレート→誤り。data['lessons']で取得せよ
+- **日付**: 2026-02-26
+- **出典**: cmd_351
+- **記録者**: karo
+- **tags**: [universal]
+- 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for lesson in data.get('lessons',[])が正しい形
+
+### L064: gitignore whitelist未登録は実行テストで検出不可
+- **日付**: 2026-02-26
+- **出典**: cmd_359
+- **記録者**: kotaro
+- **tags**: [review, process]
+- knowledge_metrics.shはbash実行テストでは正常動作するが、whitelist方式.gitignoreでgit管理外になる。レビュー時にgit ls-files or git status --shortでgit管理状態を確認する手順が必須。L007+L009の複合パターン。
+
+### L065: テンプレート定義とvalidation対象の一致確認義務
+- **日付**: 2026-02-26
+- **出典**: cmd_360
+- **記録者**: hanzo
+- **tags**: [testing]
+- テンプレートを作成する際は(1)テンプレートのセクション名が実ファイルと完全一致するか(2)既存コードの依存セクション(最新更新等)がテンプレートに含まれているか の2点を検証せよ。テンプレートと実態の不一致はvalidation WARN多発の原因になる。
+
+### L066: reset_layout.shのような複数スクリプトを横断する機能では、依存APIのYAMLキー名を実データと突合せよ。settings.yamlのmodel_name vs get_agent_model()のmodelのようなキー不一致はdry-runでは正常終了するが実行結果が誤る
+- **日付**: 2026-02-26
+- **出典**: cmd_361
+- **記録者**: karo
+- **tags**: [api]
+- integration,yaml-key-mismatch,dry-run-limitation
+
+### L067: ペイン背景色は@model_name更新と連動していない(reset_layout.shのみで設定)
+- **日付**: 2026-02-26
+- **出典**: cmd_365
+- **記録者**: hayate
+- **tags**: [tmux, model-detection, background-color]
+- tmux select-pane -P bg=によるペイン背景色の設定はreset_layout.sh Step4(L355)のみ。ninja_monitor.shのcheck_model_names()は@model_nameのみ更新し背景色は更新しない。動的化にはlib化+check_model_names()での背景色同時更新が必要。
+
+### L068: shutsujin_departure.shが2ファイル存在(root+scripts/)で背景色ロジック不整合
+- **日付**: 2026-02-26
+- **出典**: cmd_365
+- **記録者**: kagemaru
+- **tags**: [inconsistency, color-definition, dual-file]
+- root版(フルデプロイ)は階級別静的PANE_BG_COLORS配列を使用し、reset_layout.shはモデル別動的_resolve_bg_color()を使用。cmd_361で導入したモデル別色がroot版に未反映。色定義の共通関数化が必要。
+
+### L069: スキルがsystem-reminderに検出されるにはSKILL.mdにYAMLフロントマター(---/name/description/allowed-tools/---)が必須
+- **日付**: 2026-02-26
+- **出典**: cmd_368
+- **記録者**: tobisaru
+- **tags**: [skill-system, yaml-frontmatter, detection]
+- shogun-param-neighbor-checkはMarkdown見出しのみでフロントマターなし→スキル検出システムに認識されず。他8スキルは全てフロントマター持ちで正常検出。
+
+### L070: deploy_task.shはタスクYAMLの2スペースインデントを6箇所で固定仮定。YAML構造変更で沈黙死
+- **日付**: 2026-02-26
+- **出典**: cmd_370
+- **記録者**: saizo
+- **tags**: [yaml-key-mismatch, silent-fail, deploy]
+- L171/172/666/901/942/943の6箇所がgrep '^  フィールド名:'で2sp固定。archive_completed.sh(cmd_369)と同根の問題。grep -E '^\s+フィールド名:'に統一せよ
+
+### L071: SCRIPT_DIR設計パターンが2系統混在(リポルート基準 vs scripts/自身基準)で新規スクリプト作成時に混乱リスク
+- **日付**: 2026-02-26
+- **出典**: cmd_370
+- **記録者**: kotaro
+- **tags**: [inconsistency, script-pattern, onboarding-risk]
+- 30+ファイルはSCRIPT_DIR=リポジトリルートだが7ファイル(shout,cmd_halt,health_check等)はscripts/自身基準でBASE_DIRで親に戻る方式。リポルート基準への統一推奨
+
+### L072: git-ignoredスクリプトがwhitelist漏れで現役使用されるリスク — clone後に動作不全
+- **日付**: 2026-02-26
+- **出典**: cmd_368
+- **記録者**: hayate
+- **tags**: [git, whitelist, security, scripts]
+- shout.sh(ninja FINAL step必須)とgate_mcp_access.sh(セキュリティhook)がwhitelist未登録。スクリプト作成直後にgit ls-files --error-unmatchで追跡確認せよ
+
+### L073: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
+- **日付**: 2026-02-26
+- **出典**: path-resolution,task-instruction-verification,security-boundary
+- **記録者**: cmd_371
+- **tags**: [testing]
+- cmd_371 C1のタスク指示は'lib/配下→..でリポルート'だったが、実際はscripts/lib/配下のため../..が必要。指示コードをそのまま使うとscripts/で止まりセキュリティ境界が誤動作する。realpathで実機確認が必須
+
+### L074: bash ((var++))はvar=0時にset -eで即exit — $((var+1))を使え
+- **日付**: 2026-02-26
+- **出典**: bash,set-e,arithmetic,trap
+- **記録者**: cmd_372
+- **tags**: [universal]
+- ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+
+### L075: L075
+- **日付**: 2026-02-26
+- **出典**: cmd_378
+- **記録者**: sync_lessons.shのcontent.split('---')がL069本文中の---でファイルを切断し、74件中69件(93%)の教訓が消失。数週間検知されず。行頭のYAMLフロントマターのみ除去する意図なのに、ファイル全体の文字列分割を使ったため本文中の---にヒット。対策: lines_raw[i].strip()=='---'で行単位判定に修正。postcondition(入出力件数乖離チェック)があれば即座に検知できた
+- **tags**: [silent-fail, string-processing, postcondition]
+- content.split(delimiter)はファイル全体で分割する — 行頭限定ならline-by-lineで処理せよ
+
+### L076: deploy_task.sh旧Python -cブロックにL047違反が残存
+- **日付**: 2026-02-27
+- **出典**: cmd_384
+- **記録者**: karo
+- **tags**: [deploy]
+- 新関数(inject_role_reminder/inject_report_template)はL047準拠(環境変数経由)だが、旧来のresolve_pane(L58-67)とcheck_context_freshness(L805-816)はshell変数を直接Python -cに補間。制御された値だが原則統一が望ましい。tags: [security, python-injection, technical-debt]
+
+### L077: Vercel構造分離では全セクション移動先マッピングを事前作成せよ
+- **日付**: 2026-02-27
+- **出典**: cmd_383
+- **記録者**: hanzo
+- **tags**: [process]
+- karo.md→operations.md分離でgenin/jonin詳細表、Status Transitions、停滞タイムアウト値等が除去されたがoperations.mdに未移動で消失。圧縮元の全セクションリスト化→移動先(圧縮/移動/削除)マッピング必須
+
+### L078: GATE BLOCK率65%は構造問題(missing_gate)。家老フラグ生成タイミングが主因
+- **日付**: 2026-02-27
+- **出典**: cmd_386
+- **記録者**: kagemaru,saizo
+- **tags**: [review, gate]
+- gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/review_gate)=家老の処理順序とゲート実行タイミングの不一致。81-90%が5分以内解決で実害は限定的。改善策: preflight一括フラグ生成でBLOCK率20%台に削減可能
+
+### L079: deploy_task.sh再配備でrelated_lessons.reviewedがfalseに戻る→入口門番BLOCK
+- **日付**: 2026-02-27
+- **出典**: cmd_387
+- **記録者**: sasuke
+- **tags**: [deploy, review, gate, bash, lesson]
+- scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+
+### L080: sync_lessons.sh新フィールド追加時はパース+キャッシュ保持の2箇所を更新必須
+- **日付**: 2026-02-27
+- **出典**: cmd_385
+- **記録者**: kotaro
+- **tags**: [review, yaml, lesson]
+- SSOT→YAMLキャッシュ変換はscore系3フィールド(helpful_count/harmful_count/last_referenced)のみ保持。tags等の新フィールドを追加してもsync側で(1)SSOTパース(2)キャッシュ保持の2箇所を更新しなければsync時に消失する。subtask_385_review_aで実証
+
+
+### L081: 追記型YAMLファイルのフォーマット変更時は既存データのマイグレーションも必須
+- **日付**: 2026-02-27
+- **出典**: cmd_388
+- **記録者**: kagemaru
+- **tags**: [yaml]
+- ntfy_listener.shのYAML出力インデント変更(2sp→0sp)でスクリプトのみ修正し既存データの一括マイグレーションを怠った。旧/新フォーマット混在でYAMLパーサーエラー発生。追記型ファイルのフォーマット変更時はsed等で既存データも同時に統一すべき
+
+### L082: Codexは~/.codex/を全エージェント共有。分離機構なし
+- **日付**: 2026-02-27
+- **出典**: cmd_390
+- **記録者**: saizo
+- **tags**: [db, tmux]
+- CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Codexエージェント間で共有。session_id混在・SQLite競合のリスクあり。per-agentのCODEX_HOME設定が望ましい
+
+### L083: bypass-approvals-and-sandboxフラグ漏れで全操作が権限確認停止
+- **日付**: 2026-02-27
+- **出典**: cmd_390
+- **記録者**: saizo
+- **tags**: [db, yaml]
+- launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手動起動時にフラグ漏れると全操作で権限確認が発生しCodex下忍が停止する
+
+### L084: roles/ashigaru_role.mdは現在不存在 — build_instructions.shがashigaru.md直接処理
+- **日付**: 2026-02-27
+- **出典**: cmd_392
+- **記録者**: hayate
+- **tags**: [frontend, lesson]
+- L005は「ashigaru.mdの本文はroles/ashigaru_role.mdから取得」と言うが、2026-02-27時点でroles/ディレクトリ自体が存在しない。build_instructions.shがinstructions/ashigaru.mdを直接入力として処理している。L005は旧アーキテクチャの教訓であり更新が必要。
+
+### L085: 報告YAML命名変更はCLAUDE.md自動ロード+common/ビルドパーツ+全スクリプトの横断更新が必須
+- **日付**: 2026-02-27
+- **出典**: cmd_392
+- **記録者**: kotaro
+- **tags**: [communication, gate, yaml, reporting]
+- cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep '_report\.yaml')で影響範囲を完全列挙してからスコープを決定すべき。
+
+### L086: auto_draft_lesson.shがlesson_write.shをCMD_ID空で呼ぶためlesson.done未生成
+- **日付**: 2026-02-27
+- **出典**: cmd_391
+- **記録者**: hanzo
+- **tags**: [gate, lesson, deploy]
+- auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shはCMD_IDが空だとlesson.doneフラグを生成しない(L339条件)。本preflight実装で補完しているが、根本的にはauto_draft_lesson.shにCMD_IDを伝搬する修正が望ましい。
+
+### L087: 教訓効果メトリクスΔはBLOCKリトライ行膨張+構造BLOCK混入で歪む — cmd単位dedup+品質BLOCK分離が必須
+- **日付**: 2026-02-27
+- **出典**: cmd_397
+- **記録者**: karo
+- **tags**: [gate, lesson]
+- knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群のBLOCK率を押し上げ(2)missing_gate(73%)は教訓効果と無関係の構造的タイミング問題。cmd dedup+構造BLOCK分離でΔ=-8.4pp→0.0ppに正規化される
+
+### L088: deploy_task.shタグ推定パターンが広すぎて平均4.6タグ→フィルタリング無効化。lesson_tags.yamlの汎用語(環境,注入等)を除去しmax 3タグ制限が必要
+- **日付**: 2026-02-27
+- **出典**: cmd_397
+- **記録者**: karo
+- **tags**: [deploy, yaml, lesson]
+- lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)。推定タグ数上限(max 3)の導入が必要
+
+### L089: universal教訓がdm-signalで30件(23%)に膨張し注入枠10件中5件を固定占有 — タスク固有教訓枠を圧迫して精度低下
+- **日付**: 2026-02-27
+- **出典**: cmd_397
+- **記録者**: karo
+- **tags**: [lesson]
+- infra7件+dm-signal30件のuniversalが全デプロイに候補入り。10件上限中5件をuniversalが占有しタスク固有教訓枠は実質5件。universal基準の厳格化(helpful率80%以上かつ全タスクタイプに適用)で5件以下に削減が必要
+
+### L090: build_instructions.sh派生ファイル(gitignore対象)はCLAUDE.md修正だけではgit diffに現れない
+- **日付**: 2026-02-27
+- **出典**: cmd_403
+- **記録者**: hanzo
+- **tags**: [frontend, testing, review, git]
+- copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生成されず、build_instructions.shの手動実行が必要。レビューACもgit diff外ファイルを検証対象に含めるべき
+
+### L091: L085再発(派生ファイル未更新): CLAUDE.md変更時は全派生ファイルをACスコープに含めよ
+- **日付**: 2026-02-27
+- **出典**: cmd_403
+- **記録者**: kagemaru
+- **tags**: [git]
+- CLAUDE.mdの変更が.github/copilot-instructions.mdとagents/default/system.mdに反映されなかった。CLAUDE.md更新タスクではgrep -riで全派生ファイルを事前列挙し、ACスコープに含めるべき
+
+### L092: awk state machine複数エージェント属性パース時のリセット位置
+- **日付**: 2026-02-27
+- **出典**: cmd_404
+- **記録者**: hanzo
+- **tags**: [universal]
+- get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた。BEGIN{at=;am=}で初期化しエージェント名行ではリセットしない方式が正。
+
+### L093: impl忍者のgit add漏れ — 新規ファイル作成時のcommit忘れ
+- **日付**: 2026-02-27
+- **出典**: cmd_404
+- **記録者**: kotaro
+- **tags**: [git]
+- 新規ファイル作成後にgit add+commitを実行せずuntrackedのまま残した。.gitignore whitelistはあったがuntrackedのまま。新規ファイル作成時はgit statusでtracked確認をACに含めるべき。
+
+### L094: scripts/shutsujin_departure.sh(session設定)にモデル名ハードコード残存
+- **日付**: 2026-02-27
+- **出典**: cmd_405
+- **記録者**: karo
+- **tags**: [bash, monitor, tmux]
+- rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscripts/shutsujin_departure.shも更新が必要。
+
+### L095: archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後は常にno-op
+- **日付**: 2026-02-27
+- **出典**: cmd_406
+- **記録者**: hanzo
+- **tags**: [gate, reporting]
+- archive_dashboard()のgrep '^\| [0-9]'は戦果行(| cmd_XXX |)にマッチしない。戦果AUTO移行後は常にno-op。gate_metrics.logから都度生成のためarchive不要。
+
+### L096: preflight_gate_flags()でlocal変数をif/else跨ぎで参照する場合、両ブロックのどちらが実行されても参照可能なスコープ（関数先頭等）で宣言・初期化すべき。bashのlocalは関数スコープだが、宣言がif内にあると実行されないelseブロックでは未初期化になる。
+- **日付**: 2026-02-27
+- **出典**: cmd_407
+- **記録者**: karo
+- **tags**: [gate, bash]
+- bash,variable-scope,preflight
+
+### L097: cmd_complete_gate.shのresolve_report_file()がgrep直書きでreport_filename取得 — L070除外対象外
+- **日付**: 2026-02-27
+- **出典**: cmd_410
+- **記録者**: kotaro
+- **tags**: [gate, bash, yaml, reporting]
+- cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+
+### L098: L_archive_mixed_yaml
+- **日付**: 2026-02-27
+- **出典**: yaml,archive,parsing,resilience
+- **記録者**: cmd_411
+- **tags**: [yaml]
+- queue/archive/shogun_to_karo_done.yamlはcommands:ブロック(2sp indent)とルートレベルリスト(bare)が混在した不正YAMLでyaml.safe_load()が失敗する。YAMLパース失敗時はsplitしてcommands:ブロック部分とベアリスト部分を別々にパースするフォールバックが必要。
+
+### L099: backfill対象ログファイルのフォーマット事前確認の重要性
+- **日付**: 2026-02-27
+- **出典**: cmd_413
+- **記録者**: hayate
+- **tags**: [gate_metrics, file_format, investigation]
+- gate_metrics.logはYAMLではなくTSV形式(6列)。タスク記述の「gate_metrics.yaml」は
+実際には「logs/gate_metrics.log」(TSV)。ファイル形式の事前確認でアプローチ変更を要した。
+
+### L100: gate_metrics task_type遡及の最適データソース
+- **日付**: 2026-02-27
+- **出典**: cmd_413
+- **記録者**: kagemaru
+- **tags**: [gate_metrics, task_type, data_quality]
+- deploy_task.logのsubtask IDパターン推定が最も正確。archive/cmdsキーワード推定は246cmdsにヒットするが複合タイプ(implement+recon)になりやすく精度劣る
+
+### L101: gate_metrics.logはTSV形式(YAMLではない)
+- **日付**: 2026-02-27
+- **出典**: cmd_413
+- **記録者**: hayate
+- **tags**: [gate, yaml]
+- gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: timestamp/cmd_id/result/reason/task_type/model)に格納される。タスク記述の「gate_metrics.yaml」は実際のファイルと異なる。実装前にファイル形式を確認せよ。
+
+### L102: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv
+- **日付**: 2026-02-27
+- **出典**: cmd_414
+- **記録者**: saizo
+- **tags**: [gate, yaml, lesson]
+- タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正しくはlogs/lesson_tracking.tsvが教訓参照情報を持つ。タスク仕様策定時のデータソース誤記。

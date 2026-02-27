@@ -160,6 +160,7 @@
 !scripts/model_analysis.sh
 !scripts/backfill_task_type.sh
 !scripts/lesson_health_report.sh
+!scripts/lesson_deprecation_scan.sh
 
 
 # Archive (frozen retired components)
