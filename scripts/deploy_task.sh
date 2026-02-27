@@ -163,7 +163,14 @@ generate_report_template() {
     local task_id="$2"
     local parent_cmd="$3"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
-    local report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+    local report_file=""
+
+    if [[ -n "$parent_cmd" && "$parent_cmd" == cmd_* ]]; then
+        report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}.yaml"
+    else
+        # 後方互換: parent_cmdが未設定/不正なら旧形式にフォールバック
+        report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+    fi
 
     mkdir -p "$SCRIPT_DIR/queue/reports"
 
@@ -334,6 +341,13 @@ try:
                 task_tags.append(tag)
         if task_tags:
             tag_inferred = True
+            # AC1: タグ推定数上限max 3 — マッチ回数スコア上位3個を採用
+            if len(task_tags) > 3:
+                tag_match_count = {}
+                for pat, t in tag_rules:
+                    if t in task_tags:
+                        tag_match_count[t] = len(re.findall(pat, task_text))
+                task_tags = sorted(set(task_tags), key=lambda t: -tag_match_count.get(t, 0))[:3]
 
     # Keep only active lessons: status=confirmed or undefined (default=confirmed)
     confirmed_lessons = []
@@ -408,18 +422,19 @@ try:
         if score > 0:
             scored.append((score, lid, l_summary or l_title))
 
-    # Sort by score descending, take top 5
+    # Sort by score descending, take top 7 (AC5: task-specific max 7)
     scored.sort(key=lambda x: -x[0])
-    top = scored[:5]
+    top = scored[:7]
 
-    # Fallback: if 0 scored matches, take most recent 3 from tag_candidates
-    if not top:
-        recent = tag_candidates[:3]
-        top = [(0, l.get('id', ''), l.get('summary', '') or l.get('title', '')) for l in recent]
+    # AC4: スコア0時のフォールバック = 注入なし（無関連教訓のCTX浪費防止）
 
     related = [{'id': lid, 'summary': summary, 'reviewed': False} for _, lid, summary in top]
 
-    # (4) universal教訓を枠外で追加（上限10件）
+    # AC3: universal教訓の注入上限max 3 — helpful_count上位3件を選択
+    universal_total_count = len(universal_lessons)
+    universal_lessons.sort(key=lambda l: -(l.get('helpful_count', 0) or 0))
+    universal_lessons = universal_lessons[:3]
+
     top_ids = set(r['id'] for r in related)
     universal_added = 0
     for ul in universal_lessons:
@@ -460,7 +475,7 @@ try:
     _pc_path = os.path.join(os.path.dirname(task_file), '.postcond_lesson_inject')
     try:
         with open(_pc_path, 'w') as _pf:
-            _pf.write(f'available={len(tag_candidates) + len(universal_lessons)}\\n')
+            _pf.write(f'available={len(tag_candidates) + universal_total_count}\\n')
             _pf.write(f'injected={len(related)}\\n')
             _pf.write(f'task_id={task.get(\"task_id\", \"unknown\")}\\n')
     except Exception:
@@ -468,7 +483,11 @@ try:
 
     ids = [r['id'] for r in related]
     tag_info = f'task_tags={task_tags} inferred={tag_inferred}'
-    print(f'[INJECT] Injected {len(related)} lessons (universal={universal_added}, platform_loaded={platform_count}): {ids} for project={project} {tag_info} filtered_draft={filtered_draft} filtered_deprecated={filtered_deprecated}', file=sys.stderr)
+    scored_count = len(scored)
+    tag_candidate_count = len(tag_candidates)
+    print(f'[INJECT] Injected {len(related)} lessons (universal={universal_added}/{universal_total_count}, task_specific={len(related)-universal_added}, platform={platform_count}): {ids}', file=sys.stderr)
+    print(f'[INJECT]   project={project} {tag_info} scored={scored_count}/{tag_candidate_count} top_scores={[(s,i) for s,i,_ in scored[:5]]}', file=sys.stderr)
+    print(f'[INJECT]   filtered: draft={filtered_draft} deprecated={filtered_deprecated}', file=sys.stderr)
 
 except Exception as e:
     print(f'[INJECT] ERROR: {e}', file=sys.stderr)
@@ -485,7 +504,7 @@ inject_reports_to_read() {
     fi
 
     python3 -c "
-import yaml, sys, os, tempfile
+import yaml, sys, os, tempfile, glob
 
 task_file = '$task_file'
 script_dir = '$SCRIPT_DIR'
@@ -532,11 +551,29 @@ try:
                 if t.get('task_id') == blocked_task_id:
                     assigned_to = t.get('assigned_to', '')
                     if assigned_to:
-                        report_path = os.path.join(reports_dir, f'{assigned_to}_report.yaml')
-                        if os.path.exists(report_path):
+                        blocked_parent_cmd = t.get('parent_cmd', '')
+                        new_report = ''
+
+                        if isinstance(blocked_parent_cmd, str) and blocked_parent_cmd.startswith('cmd_'):
+                            new_report = os.path.join(reports_dir, f'{assigned_to}_report_{blocked_parent_cmd}.yaml')
+
+                        legacy_report = os.path.join(reports_dir, f'{assigned_to}_report.yaml')
+
+                        if new_report and os.path.exists(new_report):
+                            report_paths.append(f'queue/reports/{os.path.basename(new_report)}')
+                        elif os.path.exists(legacy_report):
                             report_paths.append(f'queue/reports/{assigned_to}_report.yaml')
                         else:
-                            print(f'[INJECT_REPORTS] WARN: report not found: {report_path}', file=sys.stderr)
+                            # 後方互換: cmd指定報告がなければ最新のcmd付き報告を探索
+                            alt = sorted(
+                                glob.glob(os.path.join(reports_dir, f'{assigned_to}_report_cmd*.yaml')),
+                                key=os.path.getmtime,
+                                reverse=True
+                            )
+                            if alt:
+                                report_paths.append(f\"queue/reports/{os.path.basename(alt[0])}\")
+                            else:
+                                print(f'[INJECT_REPORTS] WARN: report not found: {new_report or legacy_report}', file=sys.stderr)
                     break
             except Exception:
                 continue

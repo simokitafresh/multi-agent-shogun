@@ -10,7 +10,7 @@ tag_rules:
   - tag: frontend
     patterns: ['(?i)frontend|ui|css|react|component']
   - tag: deploy
-    patterns: ['(?i)deploy|本番|render|環境']
+    patterns: ['(?i)deploy|本番|render']
   - tag: pipeline
     patterns: ['(?i)pipeline|batch|cron|scheduler']
   - tag: testing
@@ -45,6 +45,6 @@ tag_rules:
   - tag: oauth
     patterns: ['(?i)oauth|token|認証|API[._]key']
   - tag: lesson
-    patterns: ['(?i)lesson|教訓|knowledge|注入']
+    patterns: ['(?i)lesson|knowledge']
   - tag: reporting
     patterns: ['(?i)report|報告|dashboard|YAML[._]report']
