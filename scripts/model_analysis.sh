@@ -447,6 +447,64 @@ def section_c():
         results[m] = type_stats
     return results
 
+def section_c_detail():
+    """Extended section C with data quality indicator and model×type matrix."""
+    matrix = defaultdict(lambda: defaultdict(lambda: {"clear": 0, "total": 0}))
+    total_entries = 0
+    unknown_entries = 0
+    for e in deduped:
+        ttype = e["task_type"] if e["task_type"] else "unknown"
+        total_entries += 1
+        if ttype == "unknown":
+            unknown_entries += 1
+        for m in e["models"]:
+            matrix[m][ttype]["total"] += 1
+            if e["result"] == "CLEAR":
+                matrix[m][ttype]["clear"] += 1
+    # Data quality
+    unknown_pct = (unknown_entries / total_entries * 100) if total_entries > 0 else 0.0
+    if unknown_pct < 5:
+        reliability = "高"
+    elif unknown_pct < 20:
+        reliability = "中"
+    else:
+        reliability = "低"
+    data_quality = {
+        "unknown": unknown_entries,
+        "total": total_entries,
+        "pct": round(unknown_pct, 1),
+        "reliability": reliability,
+    }
+    # Model × type matrix (exclude unknown model row & unknown type col for the detail matrix)
+    known_types = sorted(t for t in set(
+        t for m_data in matrix.values() for t in m_data.keys()
+    ) if t != "unknown")
+    known_models = sorted(m for m in matrix.keys() if m != "unknown")
+    model_type_matrix = {}
+    for m in known_models:
+        model_type_matrix[m] = {}
+        model_total_clear = 0
+        model_total_all = 0
+        for t in known_types:
+            s = matrix[m][t]
+            if s["total"] > 0:
+                rate = round(s["clear"] / s["total"] * 100, 1)
+                model_type_matrix[m][t] = {"clear": s["clear"], "total": s["total"], "rate": rate}
+                model_total_clear += s["clear"]
+                model_total_all += s["total"]
+        # Overall for known types only
+        if model_total_all > 0:
+            model_type_matrix[m]["_overall"] = {
+                "clear": model_total_clear,
+                "total": model_total_all,
+                "rate": round(model_total_clear / model_total_all * 100, 1),
+            }
+    return {
+        "data_quality": data_quality,
+        "known_types": known_types,
+        "model_type_matrix": model_type_matrix,
+    }
+
 # ═══════════════════════════════════════════════════════
 # Section D: コスト効率
 # ═══════════════════════════════════════════════════════
@@ -553,14 +611,59 @@ def output_detail():
             print("    %-25s %4d (%.1f%%)" % (r, cnt, pct))
 
     # Section C
+    cd = section_c_detail()
+    dq = cd["data_quality"]
+    known_types = cd["known_types"]
+    mtx = cd["model_type_matrix"]
+    print()
+    print("[C] 種別適性 (モデル × タスク種別)")
+    print("-" * 50)
+    print("  データ品質: unknown %d/%d (%.1f%%) — 信頼性: %s" % (
+        dq["unknown"], dq["total"], dq["pct"], dq["reliability"]))
+    print()
+    if not known_types:
+        print("  (タスク種別データなし — backfill実行後に精度向上)")
+    else:
+        # Build header
+        col_w = 14
+        header = "  %-12s" % "Model"
+        for t in known_types:
+            header += "| %-*s" % (col_w, t)
+        header += "| %-*s" % (col_w, "総合")
+        print(header)
+        sep = "  " + "-" * 12
+        for _ in known_types:
+            sep += "|" + "-" * (col_w + 1)
+        sep += "|" + "-" * (col_w + 1)
+        print(sep)
+        for m in sorted(mtx.keys()):
+            row = "  %-12s" % m
+            for t in known_types:
+                if t in mtx[m]:
+                    s = mtx[m][t]
+                    if s["total"] >= 5:
+                        cell = "%d%% (%d/%d)" % (int(s["rate"]), s["clear"], s["total"])
+                    else:
+                        cell = "N/A (%d件)" % s["total"]
+                else:
+                    cell = "—"
+                row += "| %-*s" % (col_w, cell)
+            # Overall
+            if "_overall" in mtx[m]:
+                ov = mtx[m]["_overall"]
+                if ov["total"] >= 5:
+                    ov_cell = "%d%%" % int(ov["rate"])
+                else:
+                    ov_cell = "N/A (%d件)" % ov["total"]
+            else:
+                ov_cell = "—"
+            row += "| %-*s" % (col_w, ov_cell)
+            print(row)
+    # Also print legacy full table (including unknown) as sub-section
     c = section_c()
     print()
-    print("[C] 種別適性(モデル×task_type)")
-    print("-" * 50)
-    all_types = set()
-    for m_data in c.values():
-        all_types.update(m_data.keys())
-    all_types = sorted(all_types)
+    print("  [C-full] 全種別(unknown含む)")
+    all_types = sorted(set(t for m_data in c.values() for t in m_data.keys()))
     header = "  %-12s" % "Model"
     for t in all_types:
         header += " %-15s" % t
@@ -624,6 +727,7 @@ def output_json():
         "section_a": section_a(),
         "section_b": section_b(),
         "section_c": section_c(),
+        "section_c_detail": section_c_detail(),
         "section_d": section_d(),
         "section_e": section_e(),
         "metadata": {
@@ -690,6 +794,39 @@ def output_compare():
 
     # N
     print("  %-25s %-18s %-18s" % ("サンプル数", str(a1["total"]), str(a2["total"])))
+
+    # Type-specific comparison
+    cd = section_c_detail()
+    mtx = cd["model_type_matrix"]
+    known_types = cd["known_types"]
+    if known_types and m1 in mtx and m2 in mtx:
+        print()
+        print("  --- 種別別CLEAR率 ---")
+        print("  %-25s %-18s %-18s %s" % ("種別", m1.upper(), m2.upper(), "Winner"))
+        print("  %s %s %s %s" % ("-" * 25, "-" * 18, "-" * 18, "-" * 8))
+        for t in known_types:
+            s1 = mtx[m1].get(t, {})
+            s2 = mtx[m2].get(t, {})
+            n1 = s1.get("total", 0)
+            n2 = s2.get("total", 0)
+            if n1 >= 5:
+                c1 = "%d%%(%d/%d)" % (int(s1["rate"]), s1["clear"], n1)
+            elif n1 > 0:
+                c1 = "N/A(%d件)" % n1
+            else:
+                c1 = "—"
+            if n2 >= 5:
+                c2 = "%d%%(%d/%d)" % (int(s2["rate"]), s2["clear"], n2)
+            elif n2 > 0:
+                c2 = "N/A(%d件)" % n2
+            else:
+                c2 = "—"
+            if n1 >= 5 and n2 >= 5:
+                w = m1 if s1["rate"] >= s2["rate"] else m2
+            else:
+                w = "—"
+            print("  %-25s %-18s %-18s %s" % (t, c1, c2, w))
+
     print()
     print("=" * 50)
 
