@@ -9,9 +9,12 @@
 #   bash scripts/model_analysis.sh --compare opus sonnet  # 2モデル対比
 #
 # Data Sources:
-#   1. logs/gate_metrics.log  — CLEAR/BLOCK結果
-#   2. config/settings.yaml   — ninja→model mapping
+#   1. logs/gate_metrics.log    — CLEAR/BLOCK結果
+#   2. config/settings.yaml     — ninja→model mapping
 #   3. logs/lesson_tracking.tsv — cmd→ninja mapping
+#   4. logs/ninja_monitor.log   — AUTO-DONE/TASK-CLEAR → cmd→ninja
+#   5. logs/deploy_task.log     — deployment complete → cmd→ninja
+#   6. queue/archive/           — inbox+report+cmd archives → cmd→ninja
 #
 # Sections:
 #   A: モデル別CLEAR率
@@ -26,6 +29,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 TRACKING="$SCRIPT_DIR/logs/lesson_tracking.tsv"
+NINJA_MONITOR="$SCRIPT_DIR/logs/ninja_monitor.log"
+DEPLOY_LOG="$SCRIPT_DIR/logs/deploy_task.log"
+ARCHIVE_DIR="$SCRIPT_DIR/queue/archive"
 
 # Argument parse
 MODE=""
@@ -57,7 +63,7 @@ if [[ ! -f "$GATE_LOG" ]]; then
     exit 1
 fi
 
-export GATE_LOG SETTINGS TRACKING MODE CMP_MODEL1 CMP_MODEL2
+export GATE_LOG SETTINGS TRACKING NINJA_MONITOR DEPLOY_LOG ARCHIVE_DIR MODE CMP_MODEL1 CMP_MODEL2
 
 python3 << 'PYEOF'
 import os, sys, json, re
@@ -67,12 +73,16 @@ from collections import defaultdict, OrderedDict
 GATE_LOG = os.environ["GATE_LOG"]
 SETTINGS = os.environ["SETTINGS"]
 TRACKING = os.environ["TRACKING"]
+NINJA_MONITOR = os.environ.get("NINJA_MONITOR", "")
+DEPLOY_LOG = os.environ.get("DEPLOY_LOG", "")
+ARCHIVE_DIR = os.environ.get("ARCHIVE_DIR", "")
 MODE = os.environ["MODE"]
 CMP_MODEL1 = os.environ.get("CMP_MODEL1", "").lower()
 CMP_MODEL2 = os.environ.get("CMP_MODEL2", "").lower()
 
 COST_WEIGHTS = {"opus": 5, "sonnet": 1, "codex": 0.2}
 ALL_NINJAS = ["sasuke", "kirimaru", "hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru"]
+ALL_NINJAS_SET = set(ALL_NINJAS)
 
 # ─── Parse settings.yaml for ninja→model map ───
 def parse_ninja_model_map():
@@ -145,6 +155,122 @@ def parse_tracking():
 
 tracking_ninjas = parse_tracking()
 
+# ─── Parse ninja_monitor.log for cmd→ninjas (AUTO-DONE + TASK-CLEAR) ───
+def parse_ninja_monitor():
+    cmd_ninjas = defaultdict(set)
+    if not NINJA_MONITOR or not os.path.isfile(NINJA_MONITOR):
+        return cmd_ninjas
+    with open(NINJA_MONITOR, "r") as f:
+        for line in f:
+            m = re.search(r"AUTO-DONE: (\w+) .*parent_cmd=(cmd_\d+)", line)
+            if m and m.group(1) in ALL_NINJAS_SET:
+                cmd_ninjas[m.group(2)].add(m.group(1))
+                continue
+            m = re.search(r"TASK-CLEAR: (\w+) .*was: (cmd_\d+)", line)
+            if m and m.group(1) in ALL_NINJAS_SET:
+                cmd_ninjas[m.group(2)].add(m.group(1))
+                continue
+            m = re.search(r"TASK-CLEAR: (\w+) .*was: subtask_(\d+)", line)
+            if m and m.group(1) in ALL_NINJAS_SET:
+                cmd_ninjas["cmd_" + m.group(2)].add(m.group(1))
+    return cmd_ninjas
+
+monitor_ninjas = parse_ninja_monitor()
+
+# ─── Parse deploy_task.log for cmd→ninjas ───
+def parse_deploy_log():
+    cmd_ninjas = defaultdict(set)
+    if not DEPLOY_LOG or not os.path.isfile(DEPLOY_LOG):
+        return cmd_ninjas
+    with open(DEPLOY_LOG, "r") as f:
+        for line in f:
+            m = re.search(r"\[DEPLOY\] (\w+): deployment complete \(type=(cmd_\d+)\)", line)
+            if m and m.group(1) in ALL_NINJAS_SET:
+                cmd_ninjas[m.group(2)].add(m.group(1))
+    return cmd_ninjas
+
+deploy_ninjas = parse_deploy_log()
+
+# ─── Parse archived inbox/report/cmd files for cmd→ninjas ───
+def parse_archives():
+    cmd_ninjas = defaultdict(set)
+    if not ARCHIVE_DIR or not os.path.isdir(ARCHIVE_DIR):
+        return cmd_ninjas
+    try:
+        import yaml
+    except ImportError:
+        return cmd_ninjas
+    # Archived karo inbox → ninja reports with cmd refs
+    for fname in os.listdir(ARCHIVE_DIR):
+        if not fname.startswith("inbox_karo") or not fname.endswith(".yaml"):
+            continue
+        try:
+            with open(os.path.join(ARCHIVE_DIR, fname), "r") as f:
+                data = yaml.safe_load(f)
+            if not data or "messages" not in data:
+                continue
+            for msg in data["messages"]:
+                frm = msg.get("from", "")
+                content = msg.get("content", "")
+                if frm not in ALL_NINJAS_SET:
+                    continue
+                for c in re.findall(r"cmd_?(\d+)", content):
+                    cmd_ninjas["cmd_" + c].add(frm)
+        except Exception:
+            continue
+    # Archived ninja inbox → cmd refs
+    for fname in os.listdir(ARCHIVE_DIR):
+        if not fname.startswith("inbox_") or fname.startswith("inbox_karo") or fname.startswith("inbox_shogun"):
+            continue
+        if not fname.endswith(".yaml"):
+            continue
+        nm = re.match(r"inbox_(\w+)_\d+\.yaml", fname)
+        if not nm:
+            continue
+        ninja = nm.group(1)
+        if ninja not in ALL_NINJAS_SET:
+            continue
+        try:
+            with open(os.path.join(ARCHIVE_DIR, fname), "r") as f:
+                data = yaml.safe_load(f)
+            if not data or "messages" not in data:
+                continue
+            for msg in data["messages"]:
+                content = msg.get("content", "")
+                for c in re.findall(r"cmd_?(\d+)", content):
+                    cmd_ninjas["cmd_" + c].add(ninja)
+        except Exception:
+            continue
+    # Archived report filenames
+    reports_dir = os.path.join(ARCHIVE_DIR, "reports")
+    if os.path.isdir(reports_dir):
+        for fname in os.listdir(reports_dir):
+            m = re.match(r"^([a-z]+)_report.*?(cmd_?\d+)", fname)
+            if m and m.group(1) in ALL_NINJAS_SET:
+                cmd_id = m.group(2)
+                if not cmd_id.startswith("cmd_"):
+                    cmd_id = "cmd_" + cmd_id[3:]
+                cmd_ninjas[cmd_id].add(m.group(1))
+    # Archived cmd YAML text → ninja name mentions
+    cmds_dir = os.path.join(ARCHIVE_DIR, "cmds")
+    if os.path.isdir(cmds_dir):
+        for fname in os.listdir(cmds_dir):
+            m = re.match(r"(cmd_\d+)_", fname)
+            if not m:
+                continue
+            cmd_id = m.group(1)
+            try:
+                with open(os.path.join(cmds_dir, fname), "r") as f:
+                    content = f.read()
+                for n in ALL_NINJAS:
+                    if n in content:
+                        cmd_ninjas[cmd_id].add(n)
+            except Exception:
+                continue
+    return cmd_ninjas
+
+archive_ninjas = parse_archives()
+
 # ─── Extract ninja names from BLOCK detail column ───
 def extract_ninjas_from_detail(detail):
     ninjas = set()
@@ -197,7 +323,7 @@ with open(GATE_LOG, "r") as f:
         result = parts[2]
         detail = parts[3]
 
-        if cmd_id.startswith("cmd_test"):
+        if cmd_id.lower().startswith("cmd_test"):
             continue
 
         entry = {
@@ -213,7 +339,10 @@ with open(GATE_LOG, "r") as f:
             entry["task_type"] = parts[4]
             model_str = parts[5].lower()
             if model_str:
-                entry["models"].add(model_str)
+                for m in model_str.split(","):
+                    m = m.strip()
+                    if m:
+                        entry["models"].add(m)
         else:
             ninjas = set()
             if cmd_id in tracking_ninjas:
@@ -226,6 +355,18 @@ with open(GATE_LOG, "r") as f:
 
         entries.append(entry)
 
+# ─── Pre-dedup: collect all ninjas per cmd from ALL sources ───
+cmd_all_ninjas = defaultdict(set)
+for e in entries:
+    detail_ninjas = extract_ninjas_from_detail(e["detail"])
+    cmd_all_ninjas[e["cmd_id"]].update(detail_ninjas)
+    if e["cmd_id"] in tracking_ninjas:
+        cmd_all_ninjas[e["cmd_id"]].update(tracking_ninjas[e["cmd_id"]])
+# Merge ninja_monitor, deploy_task, and archive sources
+for src in (monitor_ninjas, deploy_ninjas, archive_ninjas):
+    for cmd_id, ninjas in src.items():
+        cmd_all_ninjas[cmd_id].update(ninjas)
+
 # ─── Cmd-level dedup (keep last result per cmd) ───
 cmd_latest = OrderedDict()
 for e in entries:
@@ -234,7 +375,13 @@ for e in entries:
 deduped = list(cmd_latest.values())
 deduped.sort(key=lambda x: x["timestamp"])
 
+# ─── Post-dedup: resolve models from pre-collected ninjas ───
 for e in deduped:
+    if not e["models"]:
+        ninjas = cmd_all_ninjas.get(e["cmd_id"], set())
+        for n in ninjas:
+            if n in ninja_model:
+                e["models"].add(ninja_model[n])
     if not e["models"]:
         e["models"].add("unknown")
 
