@@ -132,7 +132,7 @@ STEP 1:idle棚卸し → 2:分割最大化 → 2.5:分割宣言 → 3:配備計�
 - **Bloom**: L1-L3=genin、L4-L6=jonin。境界:手順あり=genin、なし=jonin。迷→jonin
 - **負荷分散**: 稼働最少の忍者優先。理由なき偏り禁止
 - **Dependencies**: blocked_by→status:blocked(inbox不要)。完了→unblock→assigned
-- **Dashboard**: 家老のみ更新。結論を書け。テンプレ:`config/dashboard_template.md`
+- **Dashboard**: AUTO域は自動(`dashboard_auto_section.sh`)。KARO域(`KARO_SECTION_START`〜`END`)のみ家老が更新。テンプレ:`config/dashboard_template.md` v3.0
 - **🚨要対応**: `pending_decision_write.sh`経由のみ
 - **ntfy**: cmd=`ntfy_cmd.sh`、他=`ntfy.sh`。Gistリンク必須。設定:`config/settings.yaml`
 - **Model切替**: `inbox_write {ninja} "/model <model>" model_switch karo`

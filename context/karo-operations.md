@@ -1,4 +1,10 @@
-# 家老運用操作詳細手順 — 参照元: instructions/karo.md | cmd_383/subtask_383_impl_a
+# 家老運用操作詳細手順 — 参照元: instructions/karo.md | cmd_383/subtask_383_impl_a | cmd_406/subtask_406_impl_b
+
+## ダッシュボードAUTO/KARO分離（cmd_406）
+- **AUTO域** (`DASHBOARD_AUTO_START`〜`END`): `dashboard_auto_section.sh`が自動生成（忍者配備/パイプライン/メトリクス）。家老は触れるな
+- **KARO域** (`KARO_SECTION_START`〜`END`): 家老のみ更新（進行中/最新更新/調査結果/要対応/戦果）
+- 戦況メトリクス・モデル別スコアボード・知識サイクル健全度・稼働忍者はAUTO側で自動。手動転記不要
+- `dashboard_update.sh`の主機能（最新更新エントリ追加）は従来通りKARO域内に挿入
 
 ## §1 配備（Deployment Checklist）
 > タスク配備前の必須チェックリスト。STEP 1-6を毎回実行せよ。
