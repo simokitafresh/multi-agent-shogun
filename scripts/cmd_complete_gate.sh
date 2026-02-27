@@ -47,12 +47,19 @@ resolve_report_file() {
     fi
     # 2. 新形式 (既存)
     local new_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report_${cmd}.yaml"
-    # 3. 旧形式フォールバック (既存)
+    # 3. 旧形式フォールバック（安全化: parent_cmd一致チェック）
     local old_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report.yaml"
     if [ -f "$new_fmt" ]; then
         echo "$new_fmt"
     elif [ -f "$old_fmt" ]; then
-        echo "$old_fmt"
+        # parent_cmd一致チェック（旧報告の誤採用防止）
+        local report_parent
+        report_parent=$(grep -E "^\s*parent_cmd:" "$old_fmt" | head -1 | sed 's/.*parent_cmd:\s*//' | tr -d "'" | tr -d '"')
+        if [ "$report_parent" = "$cmd" ]; then
+            echo "$old_fmt"  # parent_cmd一致 → 採用
+        else
+            echo "$new_fmt"  # 不一致 → 新形式パス返却（存在しない=報告なし扱い）
+        fi
     else
         echo "$new_fmt"  # デフォルト（存在チェックは呼び出し側）
     fi
@@ -144,6 +151,7 @@ detect_task_types() {
             case "$ttype" in
                 recon) has_recon=true ;;
                 implement) has_implement=true ;;
+                review) ;; # 既知の種別。条件ゲートには影響しない
                 *) echo "[WARN] Unknown task_type: '$ttype'" >&2 ;;
             esac
         fi
@@ -153,13 +161,14 @@ detect_task_types() {
     echo "${has_recon} ${has_implement}"
 }
 
-# ─── cmd_407: gate_metrics拡張用 — task_typeとmodelの収集 ───
+# ─── cmd_407: gate_metrics拡張用 — task_type/model/bloom_levelの収集 ───
 collect_gate_metrics_extra() {
     local cmd_id="$1"
     local settings_yaml="$SCRIPT_DIR/config/settings.yaml"
     local task_types_csv=""
     local models_csv=""
-    local _seen_types="" _seen_models=""
+    local bloom_levels_csv=""
+    local _seen_types="" _seen_models="" _seen_bloom_levels=""
 
     for task_file in "$TASKS_DIR"/*.yaml; do
         [ -f "$task_file" ] || continue
@@ -173,6 +182,15 @@ collect_gate_metrics_extra() {
         if [ -n "$ttype" ] && [[ "$_seen_types" != *"|$ttype|"* ]]; then
             _seen_types="${_seen_types}|${ttype}|"
             task_types_csv="${task_types_csv:+${task_types_csv},}${ttype}"
+        fi
+
+        # bloom_level収集（空欄はunknown）
+        local bloom_level
+        bloom_level=$(field_get "$task_file" "bloom_level" "")
+        [ -z "$bloom_level" ] && bloom_level="unknown"
+        if [[ "$_seen_bloom_levels" != *"|$bloom_level|"* ]]; then
+            _seen_bloom_levels="${_seen_bloom_levels}|${bloom_level}|"
+            bloom_levels_csv="${bloom_levels_csv:+${bloom_levels_csv},}${bloom_level}"
         fi
 
         # model収集: assigned_toからsettings.yamlのmodel_nameを取得
@@ -214,9 +232,10 @@ collect_gate_metrics_extra() {
 
     [ -z "$task_types_csv" ] && task_types_csv="unknown"
     [ -z "$models_csv" ] && models_csv="unknown"
+    [ -z "$bloom_levels_csv" ] && bloom_levels_csv="unknown"
 
-    # スペース区切りで2値を返す
-    echo "${task_types_csv} ${models_csv}"
+    # スペース区切りで3値を返す
+    echo "${task_types_csv} ${models_csv} ${bloom_levels_csv}"
 }
 
 # ─── lesson tracking追記（ベストエフォート） ───
@@ -488,8 +507,8 @@ fi
 
 ALL_GATES=("${ALWAYS_REQUIRED[@]}" "${CONDITIONAL[@]}")
 
-# cmd_407: gate_metrics拡張用のtask_type/model収集
-read -r GATE_TASK_TYPE GATE_MODEL <<< "$(collect_gate_metrics_extra "$CMD_ID")"
+# cmd_407: gate_metrics拡張用のtask_type/model/bloom_level収集
+read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate_metrics_extra "$CMD_ID")"
 
 # ─── 忍者報告からlesson_candidate自動draft登録 ───
 echo "Auto-draft lesson candidates:"
@@ -849,6 +868,49 @@ if [ "$LC_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── purpose_validation検証（fit:falseでBLOCK、fit空欄はWARN） ───
+echo ""
+echo "Purpose validation check:"
+PV_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    PV_CHECKED=true
+    pv_fit=$(field_get "$report_file" "fit" "")
+
+    case "$pv_fit" in
+        true)
+            # fit=true はPASS（要件どおり無出力）
+            ;;
+        false)
+            echo "GATE BLOCK: purpose_validation.fit=false (目的未達成)"
+            echo "  ${ninja_name}: fit=false"
+            record_block_reason "${ninja_name}:purpose_validation_fit_false"
+            ALL_CLEAR=false
+            ;;
+        "")
+            echo "  WARN: ${ninja_name}: fit未記入（段階導入: 非BLOCK）"
+            ;;
+        *)
+            echo "  WARN: ${ninja_name}: fit値不正 '${pv_fit}'（段階導入: 非BLOCK）"
+            ;;
+    esac
+done
+if [ "$PV_CHECKED" = false ]; then
+    echo "  (no reports found for this cmd)"
+fi
+
 # ─── skill_candidate検証（WARNのみ、ブロックしない） ───
 echo ""
 echo "Skill candidate check:"
@@ -1190,7 +1252,7 @@ fi
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
     echo "GATE CLEAR: cmd完了許可"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}" >> "$GATE_METRICS_LOG"
     # gate_yaml_status: YAML status更新（WARNING only）
     if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
         true
@@ -1339,7 +1401,7 @@ else
     else
         block_reason="unknown_block_reason"
     fi
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}" >> "$GATE_METRICS_LOG"
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     if append_lesson_tracking "$CMD_ID" "BLOCK" 2>&1; then
         true
