@@ -9,6 +9,7 @@ import csv
 import glob
 import os
 import sys
+import fcntl
 from collections import Counter, defaultdict
 
 try:
@@ -18,16 +19,28 @@ except Exception:
 
 
 def usage() -> None:
-    print("Usage: bash scripts/lesson_impact_analysis.sh [--detail LESSON_ID]")
+    print("Usage: bash scripts/lesson_impact_analysis.sh [--detail LESSON_ID] [--sync-counters] [--dry-run]")
 
 
 def parse_args(argv):
-    if not argv:
-        return None
-    if len(argv) == 2 and argv[0] == "--detail":
-        return argv[1]
-    usage()
-    sys.exit(1)
+    result = {"mode": "summary", "detail_id": None, "dry_run": False}
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg == "--detail" and i + 1 < len(argv):
+            result["mode"] = "detail"
+            result["detail_id"] = argv[i + 1]
+            i += 2
+        elif arg == "--sync-counters":
+            result["mode"] = "sync"
+            i += 1
+        elif arg == "--dry-run":
+            result["dry_run"] = True
+            i += 1
+        else:
+            usage()
+            sys.exit(1)
+    return result
 
 
 def to_bool(value: str) -> bool:
@@ -295,16 +308,95 @@ def print_detail(lesson_id: str, stats: dict, summaries: dict):
         print("A/B: insufficient data for A/B comparison")
 
 
+def sync_counters(rows, root, dry_run=False):
+    if yaml is None:
+        print("ERROR: PyYAML required for --sync-counters", file=sys.stderr)
+        sys.exit(1)
+
+    counts = {}
+    for r in rows:
+        if r["action"] != "injected":
+            continue
+        if not r["referenced"]:
+            continue
+        lid = r["lesson_id"]
+        if lid not in counts:
+            counts[lid] = {"helpful": 0, "harmful": 0, "last_ts": ""}
+        if r["result"] == "CLEAR":
+            counts[lid]["helpful"] = counts[lid]["helpful"] + 1
+        elif r["result"] == "BLOCK":
+            counts[lid]["harmful"] = counts[lid]["harmful"] + 1
+        ts = safe_date(r["timestamp"])
+        if ts > counts[lid]["last_ts"]:
+            counts[lid]["last_ts"] = ts
+
+    if not counts:
+        print("No referenced lessons found in TSV")
+        return
+
+    project_updates = []
+    for lesson_file in sorted(glob.glob(os.path.join(root, "projects", "*", "lessons.yaml"))):
+        project = os.path.basename(os.path.dirname(lesson_file))
+
+        if dry_run:
+            with open(lesson_file, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+        else:
+            f = open(lesson_file, "r+", encoding="utf-8")
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            data = yaml.safe_load(f) or {}
+
+        updated = 0
+        for lesson in data.get("lessons", []):
+            lid = str(lesson.get("id", "")).strip()
+            if lid in counts:
+                c = counts[lid]
+                lesson["helpful_count"] = c["helpful"]
+                lesson["harmful_count"] = c["harmful"]
+                if c["last_ts"]:
+                    lesson["last_referenced"] = c["last_ts"]
+                updated = updated + 1
+                print(
+                    f"SYNC: {project} {lid} helpful={c['helpful']} "
+                    f"harmful={c['harmful']} last_referenced={c['last_ts']}"
+                )
+
+        if updated > 0:
+            project_updates.append(f"{project} {updated} lessons")
+            if not dry_run:
+                f.seek(0)
+                f.truncate()
+                yaml.dump(
+                    data, f,
+                    allow_unicode=True,
+                    default_flow_style=False,
+                    sort_keys=False,
+                )
+
+        if not dry_run:
+            f.close()
+
+    summary_line = ", ".join(project_updates) if project_updates else "0 lessons"
+    if dry_run:
+        print(f"\n[DRY RUN] Would update: {summary_line}")
+    else:
+        print(f"Updated: {summary_line}")
+
+
 def main():
     data_file = sys.argv[1]
-    detail_lesson_id = parse_args(sys.argv[2:])
+    opts = parse_args(sys.argv[2:])
     rows = load_rows(data_file)
-    stats = build_stats(rows)
-    summaries = load_lesson_summaries(os.path.dirname(data_file))
 
-    if detail_lesson_id:
-        print_detail(detail_lesson_id, stats, summaries)
+    if opts["mode"] == "sync":
+        root = os.path.dirname(os.path.dirname(data_file))
+        sync_counters(rows, root, opts["dry_run"])
+    elif opts["mode"] == "detail":
+        stats = build_stats(rows)
+        summaries = load_lesson_summaries(os.path.dirname(data_file))
+        print_detail(opts["detail_id"], stats, summaries)
     else:
+        stats = build_stats(rows)
         print_summary(rows, stats)
 
 
