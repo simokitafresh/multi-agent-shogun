@@ -364,6 +364,153 @@ PY
     echo "LESSON_TRACKING: ${cmd_id} (${gate_result}) appended"
 }
 
+# ─── lesson impact更新（ベストエフォート） ───
+update_lesson_impact_tsv() {
+    local cmd_id="$1"
+    local gate_result="$2"
+    local impact_file="$LOG_DIR/lesson_impact.tsv"
+
+    if [ ! -f "$impact_file" ]; then
+        echo "LESSON_IMPACT: SKIP (file not found: ${impact_file})"
+        return 0
+    fi
+
+    IMPACT_FILE="$impact_file" TASKS_DIR="$TASKS_DIR" REPORTS_DIR="$SCRIPT_DIR/queue/reports" CMD_ID="$cmd_id" GATE_RESULT="$gate_result" python3 - <<'PY'
+import csv
+import os
+import tempfile
+import yaml
+
+impact_file = os.environ["IMPACT_FILE"]
+tasks_dir = os.environ["TASKS_DIR"]
+reports_dir = os.environ["REPORTS_DIR"]
+cmd_id = os.environ["CMD_ID"]
+gate_result = os.environ["GATE_RESULT"]
+
+
+def parse_yaml(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def add_unique(target, value):
+    s = str(value).strip()
+    if s and s not in target:
+        target.append(s)
+
+
+def resolve_report_file(ninja_name, task):
+    explicit = str(task.get("report_filename", "")).strip().strip("'\"")
+    if explicit:
+        explicit_path = os.path.join(reports_dir, explicit)
+        if os.path.exists(explicit_path):
+            return explicit_path
+
+    new_fmt = os.path.join(reports_dir, f"{ninja_name}_report_{cmd_id}.yaml")
+    if os.path.exists(new_fmt):
+        return new_fmt
+
+    old_fmt = os.path.join(reports_dir, f"{ninja_name}_report.yaml")
+    if os.path.exists(old_fmt):
+        old_data = parse_yaml(old_fmt)
+        if str(old_data.get("parent_cmd", "")).strip() == cmd_id:
+            return old_fmt
+    return None
+
+
+ninjas = []
+ninja_tasks = {}
+referenced_ids = []
+
+try:
+    task_files = sorted(
+        os.path.join(tasks_dir, name)
+        for name in os.listdir(tasks_dir)
+        if name.endswith(".yaml")
+    )
+except Exception:
+    task_files = []
+
+for task_path in task_files:
+    data = parse_yaml(task_path)
+    task = data.get("task", {})
+    if not isinstance(task, dict):
+        continue
+    if str(task.get("parent_cmd", "")).strip() != cmd_id:
+        continue
+
+    assigned_to = task.get("assigned_to")
+    if isinstance(assigned_to, list):
+        for ninja in assigned_to:
+            add_unique(ninjas, ninja)
+            ninja_tasks[str(ninja).strip()] = task
+    elif assigned_to:
+        add_unique(ninjas, assigned_to)
+        ninja_tasks[str(assigned_to).strip()] = task
+    else:
+        fallback_ninja = os.path.splitext(os.path.basename(task_path))[0]
+        add_unique(ninjas, fallback_ninja)
+        ninja_tasks[fallback_ninja] = task
+
+for ninja in ninjas:
+    report_file = resolve_report_file(ninja, ninja_tasks.get(ninja, {}))
+    if not report_file:
+        continue
+    report = parse_yaml(report_file)
+    lesson_referenced = report.get("lesson_referenced") or []
+    if isinstance(lesson_referenced, list):
+        for item in lesson_referenced:
+            if isinstance(item, dict):
+                add_unique(referenced_ids, item.get("id"))
+            else:
+                add_unique(referenced_ids, item)
+
+rows = []
+updated = 0
+fieldnames = None
+required = {"cmd_id", "lesson_id", "action", "result", "referenced"}
+
+with open(impact_file, "r", newline="", encoding="utf-8") as f:
+    reader = csv.DictReader(f, delimiter="\t")
+    fieldnames = reader.fieldnames or []
+    if not required.issubset(set(fieldnames)):
+        print("LESSON_IMPACT: SKIP (required columns missing)")
+        raise SystemExit(0)
+
+    for row in reader:
+        if row.get("cmd_id") == cmd_id and row.get("result") == "pending":
+            row["result"] = gate_result
+            if row.get("action") != "withheld":
+                row["referenced"] = "yes" if row.get("lesson_id") in referenced_ids else "no"
+            updated += 1
+        rows.append(row)
+
+if updated == 0:
+    print(f"LESSON_IMPACT: {cmd_id} no pending rows to update")
+    raise SystemExit(0)
+
+tmp_path = None
+tmp_dir = os.path.dirname(impact_file) or "."
+try:
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=tmp_dir, prefix="lesson_impact.", suffix=".tmp")
+    with os.fdopen(tmp_fd, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(rows)
+    os.replace(tmp_path, impact_file)
+except Exception:
+    if tmp_path and os.path.exists(tmp_path):
+        os.unlink(tmp_path)
+    raise
+
+print(f"LESSON_IMPACT: {cmd_id} updated rows={updated} referenced_ids={len(referenced_ids)}")
+PY
+}
+
 # ─── BLOCK理由収集 ───
 record_block_reason() {
     local reason="$1"
@@ -1248,6 +1395,26 @@ else
     echo "  TODO check: OK (0 remaining)"
 fi
 
+# ─── Vercel Phaseリンク整合チェック（context変更時のみ、BLOCK対象） ───
+echo ""
+echo "Vercel phase link check:"
+changed_contexts=$(git -C "$SCRIPT_DIR" diff --name-only HEAD~1 2>/dev/null | grep '^context/' || true)
+if [ -n "$changed_contexts" ]; then
+    if [ -f "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh"; then
+            echo "  OK (gate_vercel_phase passed)"
+        else
+            echo "  ALERT: gate_vercel_phase failed (broken docs/research refs)"
+            record_block_reason "vercel_phase:broken_references"
+            ALL_CLEAR=false
+        fi
+    else
+        echo "  WARN: gate_vercel_phase.sh not found (skip)"
+    fi
+else
+    echo "  SKIP (no context/*.md changes detected since HEAD~1)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
@@ -1265,6 +1432,11 @@ if [ "$ALL_CLEAR" = true ]; then
         true
     else
         echo "  WARN: append_lesson_tracking failed (non-blocking)"
+    fi
+    if update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1; then
+        true
+    else
+        echo "  WARN: update_lesson_impact_tsv failed (non-blocking)"
     fi
 
     # ─── lesson_merge自動実行（ベストエフォート） ───
@@ -1407,6 +1579,11 @@ else
         true
     else
         echo "  WARN: append_lesson_tracking failed (non-blocking)"
+    fi
+    if update_lesson_impact_tsv "$CMD_ID" "BLOCK" 2>&1; then
+        true
+    else
+        echo "  WARN: update_lesson_impact_tsv failed (non-blocking)"
     fi
 
     # ─── GATE BLOCK時自動draft教訓生成（ベストエフォート） ───

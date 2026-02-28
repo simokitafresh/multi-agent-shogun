@@ -142,6 +142,7 @@
 !scripts/gates/gate_lesson_health.sh
 !scripts/gates/gate_shogun_memory.sh
 !scripts/gates/gate_field_get.sh
+!scripts/gates/gate_vercel_phase.sh
 !scripts/switch_project.sh
 !scripts/reset_layout.sh
 !scripts/restart_watchers.sh
@@ -161,6 +162,7 @@
 !scripts/backfill_task_type.sh
 !scripts/lesson_health_report.sh
 !scripts/lesson_deprecation_scan.sh
+!scripts/lesson_impact_analysis.sh
 
 
 # Archive (frozen retired components)

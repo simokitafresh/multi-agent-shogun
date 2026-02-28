@@ -196,6 +196,10 @@ status: pending
 result:
   summary: ""
   details: ""
+purpose_validation:
+  cmd_purpose: ""
+  fit: true
+  purpose_gap: ""
 files_modified: []
 lesson_candidate:
   found: false
@@ -222,7 +226,7 @@ inject_related_lessons() {
     fi
 
     python3 -c "
-import yaml, sys, os, re, tempfile
+import yaml, sys, os, re, tempfile, random, datetime
 
 task_file = '$task_file'
 script_dir = '$SCRIPT_DIR'
@@ -440,7 +444,14 @@ try:
 
     # AC4: スコア0時のフォールバック = 注入なし（無関連教訓のCTX浪費防止）
 
-    related = [{'id': lid, 'summary': summary, 'reviewed': False} for _, lid, summary in top]
+    HOLDOUT_RATE = 0.2
+    related = []
+    withheld = []
+    for _, lid, summary in top:
+        if random.random() < HOLDOUT_RATE:
+            withheld.append({'id': lid, 'summary': summary})
+        else:
+            related.append({'id': lid, 'summary': summary, 'reviewed': False})
 
     # AC3: universal教訓の注入上限max 3 — helpful_count上位3件を選択
     universal_total_count = len(universal_lessons)
@@ -500,6 +511,28 @@ try:
     print(f'[INJECT] Injected {len(related)} lessons (universal={universal_added}/{universal_total_count}, task_specific={len(related)-universal_added}, platform={platform_count}): {ids}', file=sys.stderr)
     print(f'[INJECT]   project={project} {tag_info} scored={scored_count}/{tag_candidate_count} top_scores={[(s,i) for s,i,_ in scored[:5]]}', file=sys.stderr)
     print(f'[INJECT]   filtered: draft={filtered_draft} deprecated={filtered_deprecated}', file=sys.stderr)
+
+    # ═══ 教訓因果追跡ログ記録 ═══
+    impact_log = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
+    cmd_id = task.get('task_id') or task.get('parent_cmd') or 'unknown'
+    ninja_name = task.get('assigned_to', 'unknown')
+    task_type = task.get('task_type') or task.get('type', 'unknown')
+    bloom = task.get('bloom_level', 'unknown')
+
+    try:
+        os.makedirs(os.path.dirname(impact_log), exist_ok=True)
+        write_header = not os.path.exists(impact_log) or os.path.getsize(impact_log) == 0
+        with open(impact_log, 'a', encoding='utf-8') as lf:
+            if write_header:
+                lf.write('timestamp\\tcmd_id\\tninja\\tlesson_id\\taction\\tresult\\treferenced\\tproject\\ttask_type\\tbloom_level\\n')
+            ts = datetime.datetime.now().isoformat(timespec='seconds')
+            for r in related:
+                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{r[\"id\"]}\\tinjected\\tpending\\tpending\\t{project}\\t{task_type}\\t{bloom}\\n')
+            for w in withheld:
+                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{w[\"id\"]}\\twithheld\\tpending\\tno\\t{project}\\t{task_type}\\t{bloom}\\n')
+        print(f'[INJECT] Impact log: {len(related)} injected + {len(withheld)} withheld written to lesson_impact.tsv', file=sys.stderr)
+    except Exception as ie:
+        print(f'[INJECT] WARN: impact log write failed: {ie}', file=sys.stderr)
 
 except Exception as e:
     print(f'[INJECT] ERROR: {e}', file=sys.stderr)
@@ -901,6 +934,55 @@ try:
 
 except Exception as e:
     print(f'[REPORT_FN] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
+# ─── bloom_level自動注入（cmd_434: タスク複雑度メタデータ） ───
+inject_bloom_level() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_bloom_level: task file not found: $task_file"
+        return 0
+    fi
+
+    # L047: 環境変数経由でPythonに値を渡す
+    TASK_FILE_ENV="$task_file" python3 -c "
+import yaml, sys, os, tempfile
+
+task_file = os.environ['TASK_FILE_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[BLOOM_LVL] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+
+    # 既にbloom_levelが存在する場合は上書きしない
+    if 'bloom_level' in task:
+        print('[BLOOM_LVL] Already exists, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task['bloom_level'] = ''
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print('[BLOOM_LVL] Injected bloom_level (empty)', file=sys.stderr)
+
+except Exception as e:
+    print(f'[BLOOM_LVL] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
@@ -1331,6 +1413,9 @@ inject_report_template "$TASK_FILE" || true
 
 # report_filename自動注入（cmd_410: 命名ミスマッチ根治）
 inject_report_filename "$TASK_FILE" || true
+
+# bloom_level自動注入（cmd_434: タスク複雑度メタデータ）
+inject_bloom_level "$TASK_FILE" || true
 
 # context鮮度チェック（失敗してもデプロイは継続）
 check_context_freshness "$TASK_FILE" || true
