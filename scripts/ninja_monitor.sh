@@ -752,8 +752,9 @@ handle_busy() {
     RENUDGE_FINGERPRINT[$name]=""
 }
 
-# ─── 停滞検知（assigned+idle+15分超） ───
-# 忍者がタスクassigned後にペインがidle状態のまま放置された場合、家老に通知
+# ─── 停滞検知（assigned/acknowledged/in_progress+idle） ───
+# 忍者がタスク受領後にペインがidle状態のまま放置された場合、家老に通知
+# 閾値: assigned=15分, acknowledged=10分, in_progress=20分(progress未更新時)
 check_stall() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
@@ -764,15 +765,36 @@ check_stall() {
         return
     fi
 
-    # status: assigned 以外は対象外
+    # status判定: assigned/acknowledged/in_progressのみ対象
     local status task_id
     status=$(yaml_field_get "$task_file" "status")
     task_id=$(yaml_field_get "$task_file" "task_id")
 
-    if [ "$status" != "assigned" ]; then
-        unset STALL_FIRST_SEEN[$name]
-        return
-    fi
+    case "$status" in
+        assigned|acknowledged)
+            ;;
+        in_progress)
+            # progress_updated_atが最近更新されていれば作業中と判断
+            local last_progress
+            last_progress=$(yaml_field_get "$task_file" "progress_updated_at" "")
+            if [ -n "$last_progress" ]; then
+                local progress_epoch
+                progress_epoch=$(date -d "$last_progress" +%s 2>/dev/null || echo "0")
+                local now_epoch
+                now_epoch=$(date +%s)
+                local progress_age=$(( now_epoch - progress_epoch ))
+                if [ $progress_age -lt 1200 ]; then
+                    # 20分以内にprogress更新あり → 作業中
+                    unset STALL_FIRST_SEEN[$name]
+                    return
+                fi
+            fi
+            ;;
+        *)
+            unset STALL_FIRST_SEEN[$name]
+            return
+            ;;
+    esac
 
     # 同一ninja×同一task_idで通知済みならスキップ（重複防止）
     local stall_key="${name}:${task_id}"
@@ -791,20 +813,27 @@ check_stall() {
         return
     fi
 
-    # assigned + idle → 停滞追跡開始 or 経過確認
+    # idle状態 → 停滞追跡開始 or 経過確認
     local now=$(date +%s)
     if [ -z "${STALL_FIRST_SEEN[$name]}" ]; then
         STALL_FIRST_SEEN[$name]=$now
-        log "STALL-WATCH: $name has assigned task $task_id and is idle (tracking started)"
+        log "STALL-WATCH: $name has ${status} task $task_id and is idle (tracking started)"
         return
     fi
 
     local first_seen=${STALL_FIRST_SEEN[$name]}
     local elapsed_min=$(( (now - first_seen) / 60 ))
 
-    if [ $elapsed_min -ge $STALL_THRESHOLD_MIN ]; then
-        log "STALL-DETECTED: $name stalled on $task_id for ${elapsed_min}min, notifying karo"
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "${name}が${task_id}で${elapsed_min}分停滞" stall_alert ninja_monitor >> "$LOG" 2>&1
+    # statusごとの閾値分岐
+    local threshold=$STALL_THRESHOLD_MIN
+    case "$status" in
+        acknowledged) threshold=10 ;;
+        in_progress)  threshold=20 ;;
+    esac
+
+    if [ $elapsed_min -ge $threshold ]; then
+        log "STALL-DETECTED: $name stalled on $task_id for ${elapsed_min}min (status=${status}), notifying karo"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "${name}が${task_id}で${elapsed_min}分停滞(status=${status})" stall_alert ninja_monitor >> "$LOG" 2>&1
         STALL_NOTIFIED[$stall_key]="1"
         unset STALL_FIRST_SEEN[$name]
     fi
