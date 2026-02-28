@@ -143,6 +143,8 @@
 !scripts/gates/gate_shogun_memory.sh
 !scripts/gates/gate_field_get.sh
 !scripts/gates/gate_vercel_phase.sh
+!scripts/hooks/
+!scripts/hooks/*.sh
 !scripts/switch_project.sh
 !scripts/reset_layout.sh
 !scripts/restart_watchers.sh
