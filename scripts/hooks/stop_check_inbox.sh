@@ -12,11 +12,6 @@ if ! printf '%s' "$payload" | jq -e . >/dev/null 2>&1; then
   exit 0
 fi
 
-stop_hook_active="$(printf '%s' "$payload" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)"
-if [[ "$stop_hook_active" == "true" ]]; then
-  exit 0
-fi
-
 agent_id=""
 if command -v tmux >/dev/null 2>&1; then
   if [[ -n "${TMUX_PANE:-}" ]]; then
@@ -27,6 +22,14 @@ if command -v tmux >/dev/null 2>&1; then
 fi
 
 if [[ -z "$agent_id" || "$agent_id" == "shogun" ]]; then
+  exit 0
+fi
+
+idle_flag="/tmp/shogun_idle_${agent_id}"
+
+stop_hook_active="$(printf '%s' "$payload" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)"
+if [[ "$stop_hook_active" == "true" ]]; then
+  touch "$idle_flag"
   exit 0
 fi
 
@@ -41,7 +44,10 @@ if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
 fi
 
 if (( unread_count > 0 )); then
+  rm -f "$idle_flag"
   printf '{"decision":"block","reason":"inbox未読%d件"}\n' "$unread_count"
+else
+  touch "$idle_flag"
 fi
 
 exit 0
