@@ -215,17 +215,22 @@ send_wakeup() {
         return 0
     fi
 
-    # Tier 1.3: Agent busy check — skip nudge if agent is active
-    # @agent_state is set by Claude Code hooks (PreToolUse→active, Stop→idle)
-    # Active agents should not receive nudges: send-keys/paste-buffer during
-    # thinking/tool execution causes input buffer contamination.
-    # Message stays in inbox — next inotifywait timeout (60s) or BACKOFF (120s)
-    # will re-check and deliver when agent becomes idle.
-    local agent_state
-    agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "unknown")
-    if [ "$agent_state" = "active" ]; then
-        echo "[$(date)] [BUSY] Agent $AGENT_ID is active, deferring nudge" >&2
+    # Tier 1.3: Agent busy check
+    # Claude: idle flag managed by Stop hook (exists=idle, absent=busy)
+    # Codex/other: fallback to @agent_state for compatibility
+    local idle_flag="/tmp/shogun_idle_${AGENT_ID}"
+    if [[ "$CLI_TYPE" == "claude" ]] && [ ! -f "$idle_flag" ]; then
+        echo "[$(date)] [BUSY] Agent $AGENT_ID is busy (no idle flag), Stop hook will deliver" >&2
         return 0
+    fi
+
+    if [[ "$CLI_TYPE" != "claude" ]]; then
+        local agent_state
+        agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "unknown")
+        if [ "$agent_state" = "active" ]; then
+            echo "[$(date)] [BUSY] Agent $AGENT_ID is active, deferring nudge" >&2
+            return 0
+        fi
     fi
 
     # Tier 1.5: Debounce repeated nudge storms (normal messages only)
@@ -266,6 +271,9 @@ send_wakeup() {
         rm -f "$DEBOUNCE_FILE"  # Rollback optimistic lock on failure
         return 1
     fi
+
+    # After successful nudge: consume idle flag (Stop hook recreates on idle)
+    rm -f "/tmp/shogun_idle_${AGENT_ID}"
 
     # After successful nudge: mark agent as active to prevent duplicate nudges
     # before the agent's own PreToolUse/UserPromptSubmit hook fires.

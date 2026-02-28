@@ -45,3 +45,9 @@ tmux set-option -p -t shogun:2.7 @agent_id saizo 2>/dev/null
 tmux set-option -p -t shogun:2.7 @agent_cli claude 2>/dev/null
 tmux set-option -p -t shogun:2.7 @model_name Sonnet 2>/dev/null
 echo "[shutsujin] saizo pane variables set (shogun:2.7, model=Sonnet)"
+
+# ─── idle flag initialization (cmd_455) ───
+for agent in karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
+    touch "/tmp/shogun_idle_${agent}"
+done
+echo "[shutsujin] idle flags: created for all agents"
