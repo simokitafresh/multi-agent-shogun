@@ -9,6 +9,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 
 # 引数解析
 CMD_ID=""
@@ -57,13 +58,10 @@ if [ "$DRY_RUN" = true ]; then
     exit 0
 fi
 
-# (d) flock付きでstatusをcompletedに書き換え
-LOCK_FILE="${YAML_FILE}.lock"
-(
-    flock -w 10 200 || { echo "ERROR: flock取得失敗 (${CMD_ID})" >&2; exit 1; }
+# (d) yaml_field_setでstatusをcompletedに書き換え（flock+readback検証内包）
+if ! yaml_field_set "$YAML_FILE" "$CMD_ID" "status" "completed"; then
+    echo "ERROR: yaml_field_set failed for ${CMD_ID}" >&2
+    exit 1
+fi
 
-    # 該当cmdブロック内のstatus行をcompletedに置換（インデント非依存）
-    sed -i "/- id: ${CMD_ID}$/,/- id: /{s/status: ${current_status}/status: completed/}" "$YAML_FILE"
-
-    echo "UPDATED: ${CMD_ID} status: ${current_status} → completed"
-) 200>"$LOCK_FILE"
+echo "UPDATED: ${CMD_ID} status: ${current_status} → completed"

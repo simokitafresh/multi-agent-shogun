@@ -8,6 +8,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 CMD_ID="${1:-}"
 
 if [ -z "$CMD_ID" ]; then
@@ -68,20 +69,44 @@ resolve_report_file() {
 # ─── status自動更新関数 ───
 update_status() {
     local cmd_id="$1"
-    local lock_file="${YAML_FILE}.lock"
+    local current_status
+    current_status=$(awk -v cmd="${cmd_id}" '
+        {
+            line = $0
+            if (!found && line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
+                tmp = line
+                sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", tmp)
+                sub(/[[:space:]]+#.*$/, "", tmp)
+                gsub(/^["'"'"']|["'"'"']$/, "", tmp)
+                if (tmp == cmd) { found=1; next }
+            }
+            if (found && line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) { exit }
+            if (found && line ~ /^[[:space:]]*status:[[:space:]]*/) {
+                sub(/^[[:space:]]*status:[[:space:]]*/, "", line)
+                gsub(/[[:space:]]+$/, "", line)
+                print line
+                exit
+            }
+        }
+    ' "$YAML_FILE")
 
-    (
-        flock -w 10 200 || { echo "ERROR: flock取得失敗 (${cmd_id})" >&2; return 1; }
-
-        if sed -n "/^\s*- id: ${cmd_id}/,/^\s*- id: /p" "$YAML_FILE" | grep -q "^\s*status: completed"; then
+    case "$current_status" in
+        completed|done)
             echo "STATUS ALREADY COMPLETED: ${cmd_id} (skip)"
             return 0
-        fi
+            ;;
+        "")
+            echo "ERROR: status not found for ${cmd_id} in ${YAML_FILE}" >&2
+            return 1
+            ;;
+    esac
 
-        sed -i "/^- id: ${cmd_id}$/,/^- id: /{s/^  status: \(pending\|in_progress\)/  status: completed/}" "$YAML_FILE"
+    if ! yaml_field_set "$YAML_FILE" "$cmd_id" "status" "completed"; then
+        echo "ERROR: yaml_field_set failed (${cmd_id})" >&2
+        return 1
+    fi
 
-        echo "STATUS UPDATED: ${cmd_id} → completed"
-    ) 200>"$lock_file"
+    echo "STATUS UPDATED: ${cmd_id} → completed"
 }
 
 # ─── changelog自動記録関数 ───
