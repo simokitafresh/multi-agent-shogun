@@ -270,6 +270,53 @@ check_idle() {
     return 1  # デフォルトはBUSY（安全側 — 誤検知防止）
 }
 
+# ─── /clear送信ラッパー（idle二重確認） ───
+# $1: pane_target, $2: agent_name, $3: reason(任意)
+# 戻り値: 0=送信, 1=ブロック（次サイクル再試行）
+safe_send_clear() {
+    local pane="$1"
+    local agent_name="$2"
+    local reason="${3:-UNKNOWN}"
+
+    if [ -z "$pane" ] || [ -z "$agent_name" ]; then
+        log "CLEAR-BLOCKED: missing pane/agent, reason=$reason"
+        return 1
+    fi
+
+    # 1st gate: idle flag
+    if [ ! -f "/tmp/shogun_idle_${agent_name}" ]; then
+        log "CLEAR-BLOCKED: $agent_name not idle (no flag), reason=$reason, will retry next cycle"
+        return 1
+    fi
+
+    # 2nd gate: prompt確認（直近3行）
+    local output
+    output=$(tmux capture-pane -t "$pane" -p -S -8 2>/dev/null | tail -3)
+    if [ -z "$output" ]; then
+        log "CLEAR-BLOCKED: $agent_name capture-pane empty, reason=$reason, will retry next cycle"
+        return 1
+    fi
+
+    local idle_pat
+    idle_pat=$(cli_profile_get "$agent_name" "idle_pattern")
+    idle_pat=${idle_pat:-"❯|›"}
+    if ! echo "$output" | grep -qE "$idle_pat"; then
+        log "CLEAR-BLOCKED: $agent_name not idle (no prompt), reason=$reason, will retry next cycle"
+        return 1
+    fi
+
+    local clear_cmd
+    clear_cmd=$(cli_profile_get "$agent_name" "clear_cmd")
+    clear_cmd=${clear_cmd:-"/clear"}
+    log "CLEAR-SEND: $agent_name confirmed idle, sending $clear_cmd, reason=$reason"
+    if ! safe_send_keys_atomic "$pane" "$clear_cmd" 0.3; then
+        log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"
+        return 1
+    fi
+    rm -f "/tmp/shogun_idle_${agent_name}"
+    return 0
+}
+
 # ─── CTX%取得（多重ソース） ───
 # @context_pct変数 → capture-pane出力 → 0(不明)
 # $1: pane_target, $2: agent_name（省略時はフォールバックパターン使用）
@@ -699,12 +746,11 @@ handle_confirmed_idle() {
                 PREV_STATE[$name]="busy"
                 return
             fi
-            local reset_cmd
-            reset_cmd=$(cli_profile_get "$name" "clear_cmd")
-            log "DEPLOY-STALL-CLEAR: $name stalled ${elapsed}s with $task_status task, sending $reset_cmd"
             local target="${PANE_TARGETS[$name]}"
-            safe_send_keys_atomic "$target" "$reset_cmd" 0.3
-            touch "/tmp/shogun_idle_${name}"
+            if ! safe_send_clear "$target" "$name" "DEPLOY-STALL-CLEAR"; then
+                PREV_STATE[$name]="busy"
+                return
+            fi
             unset STALL_FIRST_SEEN[$deploy_stall_key]
             # /new後にinbox nudgeで新セッションにタスクを知らせる
             sleep 2
@@ -785,14 +831,11 @@ handle_confirmed_idle() {
                     PREV_STATE[$name]="idle"
                     return
                 fi
-                local reset_cmd
-                reset_cmd=$(cli_profile_get "$name" "clear_cmd")
-                log "AUTO-CLEAR: $name idle+no_task CTX=${ctx_now}%, sending $reset_cmd"
-                safe_send_keys_atomic "$target" "$reset_cmd" 0.3
-                touch "/tmp/shogun_idle_${name}"
-                LAST_CLEARED[$name]=$now
-                # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
-                tmux set-option -p -t "$target" @current_task "" 2>/dev/null
+                if safe_send_clear "$target" "$name" "AUTO-CLEAR"; then
+                    LAST_CLEARED[$name]=$now
+                    # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
+                    tmux set-option -p -t "$target" @current_task "" 2>/dev/null
+                fi
             else
                 log "CLEAR-DEBOUNCE: $name idle+no_task but ${clear_elapsed}s < ${effective_debounce}s since last /clear"
             fi
@@ -1435,10 +1478,9 @@ send_karo_clear() {
     # 陣形図を最終更新（鮮度保証）
     write_karo_snapshot
 
-    local clear_cmd
-    clear_cmd=$(cli_profile_get "karo" "clear_cmd")
-    log "KARO-CLEAR(${caller}): karo CTX:${ctx_num}%, sending ${clear_cmd}"
-    safe_send_keys_atomic "$karo_pane" "$clear_cmd" 0.3
+    if ! safe_send_clear "$karo_pane" "karo" "KARO-CLEAR(${caller})"; then
+        return 1
+    fi
     LAST_KARO_CLEAR=$now
     # AC4: /clear後にdebounceファイルを削除（inbox_watcherの再送をブロックしない）
     rm -f "/tmp/inbox_watcher_last_nudge_karo"
