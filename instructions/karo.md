@@ -185,3 +185,4 @@ CLAUDE.md手順に従う。primary:karo_snapshot.txt→YAML。作業フェーズ
 | §10 | DB排他配備 | DB操作時 |
 | §11 | 並列化 | 配備時 |
 | §12 | Report Scanning | 起動時 |
+| §16 | CLI種別切替手順(Claude↔Codex等) | CLI変更時 |

@@ -5,7 +5,7 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CMD_ID="$1"
 
 # 引数チェック（cmd_IDが必須）
@@ -22,6 +22,6 @@ if [[ ! "$CMD_ID" =~ ^cmd_ ]]; then
 fi
 
 # 家老にhalt通知を送信
-bash "$SCRIPT_DIR/inbox_write.sh" karo "$CMD_ID HALT" halt shogun
+bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$CMD_ID HALT" halt shogun
 
 echo "[cmd_halt] $CMD_ID HALT sent to karo inbox."

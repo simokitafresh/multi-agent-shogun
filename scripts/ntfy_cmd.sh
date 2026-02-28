@@ -65,6 +65,19 @@ if [ -f "$YAML_FILE" ]; then
   fi
 fi
 
+# Gist URL取得（current_projectのgist_urlをprojects.yamlから解決）
+GIST_URL=""
+PROJECTS_YAML="$SCRIPT_DIR/config/projects.yaml"
+if [ -f "$PROJECTS_YAML" ]; then
+  CURRENT_PJ=$(grep '^current_project:' "$PROJECTS_YAML" 2>/dev/null | awk '{print $2}')
+  if [ -n "$CURRENT_PJ" ]; then
+    GIST_URL=$(awk -v id="$CURRENT_PJ" '
+      /^[[:space:]]+- id:/ { found=($NF == id) }
+      found && /gist_url:/ { gsub(/.*gist_url:[[:space:]]*"?|"?[[:space:]]*$/, ""); print; exit }
+    ' "$PROJECTS_YAML" 2>/dev/null)
+  fi
+fi
+
 # メッセージ組み立て
 if [ -n "$PURPOSE" ]; then
   FINAL_MSG="【${SENDER_TAG}】${CMD_ID} ${PURPOSE}
@@ -72,6 +85,12 @@ if [ -n "$PURPOSE" ]; then
 else
   FINAL_MSG="【${SENDER_TAG}】${CMD_ID}
 ━ ${MESSAGE}"
+fi
+
+# Gistリンク付加
+if [ -n "$GIST_URL" ]; then
+  FINAL_MSG="${FINAL_MSG}
+📋 ${GIST_URL}"
 fi
 
 # ntfy.sh経由で送信（二重実装回避）

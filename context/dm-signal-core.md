@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-02-23 cmd_286 詳細移動+圧縮(631→300行以下) -->
+<!-- last_updated: 2026-02-24 lesson_sync §19 ID shift修正(L123/L124挿入による+2shift)+L124追加 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -223,7 +223,8 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L099 | `pipeline_config LIKE '%ReversalFilter%'`はTrendReversalFilterを誤検知→`jsonb_path_exists`で解決 | cmd_222 |
 | L118 | DTB3は`economic_indicators`ではなく`daily_prices`テーブルに`ticker='DTB3'`として格納 | cmd_282 |
 | L119 | DATA_CATALOG 86銘柄は本番PostgreSQL側。`experiments.db`は実際14銘柄のみ(ETF12+DTB3+VIX) | cmd_282 |
-| L126 | `experiments.db`はスナップショットでありSSOTではない | cmd_222 |
+| L124 | DB JSONカラムのstr型防御: `isinstance(value, str)+json.loads()`。`or {}`はtruthy文字列で発火しない | cmd_296 |
+| L128 | `experiments.db`はスナップショットでありSSOTではない | cmd_222 |
 
 ### 19.2 BB仕様・バグ修正
 
@@ -237,7 +238,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L101 | MVMF Phase3 momentum_cache事前計算はFoF専用でスキップ。Phase5 fallbackで計算 | cmd_222 |
 | L102 | MVMF 4視点`SKIP_MONTHS_LIST=[0,1,2,3]`はクラス変数固定。configで変更不可 | cmd_222 |
 | L105 | BB config未拘束(`Dict[str,Any]`)がGS無効パターン量産の根因。制約注入は`build_grid`直後が最適 | cmd_264 |
-| L124 | ブロック名は`BlockType` enum値で統一する | cmd_222 |
+| L126 | ブロック名は`BlockType` enum値で統一する | cmd_222 |
 
 ### 19.3 GS-本番パリティ
 
@@ -257,15 +258,35 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 
 | ID | 結論(1行) | 出典 |
 |---|---|---|
-| L127 | FoFパリティ比較は本番の現行パラメータを先に確認する | cmd_222 |
-| L129 | 新FoF追加後の再計算は`sync-fof`(L3)を使う。sync-standardでは不足 | cmd_222 |
-| L130 | GS構成四神と本番FoF構成PFの不一致に注意。登録前に突合必須 | cmd_222 |
-| L133 | FoF作成は12ステップ省略不可。ステップ2-4省略でGS前提崩壊(抜き身3の失敗) | cmd_284 |
+| L129 | FoFパリティ比較は本番の現行パラメータを先に確認する | cmd_222 |
+| L131 | 新FoF追加後の再計算は`sync-fof`(L3)を使う。sync-standardでは不足 | cmd_222 |
+| L132 | GS構成四神と本番FoF構成PFの不一致に注意。登録前に突合必須 | cmd_222 |
+| L135 | FoF作成は12ステップ省略不可。ステップ2-4省略でGS前提崩壊(抜き身3の失敗) | cmd_284 |
 
 ### 19.5 GS運用・config
 
 | ID | 結論(1行) | 出典 |
 |---|---|---|
 | L112 | `monthly_returns.signal`がJSON辞書形式(`'{"TECL":1.0}'`)のとき`json.loads`でキー抽出必須 | cmd_274 |
-| L123 | `pipeline_config`テンプレートのパラメータ名はコードと1:1一致必須 | cmd_222 |
-| L132 | GS結果を利用する際は`DATA_CATALOG.md`と`meta.yaml`を必ず参照する | cmd_222 |
+| L125 | `pipeline_config`テンプレートのパラメータ名はコードと1:1一致必須 | cmd_222 |
+| L134 | GS結果を利用する際は`DATA_CATALOG.md`と`meta.yaml`を必ず参照する | cmd_222 |
+
+### 19.6 追加統合（cmd_322）
+
+| ID | 結論(1行) | 出典 |
+|---|---|---|
+| L083 | close_fallback=openは部分欠損closeを補完しない | cmd_215 |
+| L078 | PortfolioRepository.load()は1PFバリデーションエラーで全PF読込失敗する単一障害点 | cmd_207 |
+| L065 | 本番コードパス統一原則: 数学的等価でも本番と同一コードパスを使え | cmd_196 |
+| L056 | wide形式CSV(76万列)の`pd.read_csv`はヘッダー先読み+`usecols`が必須 | cmd_184 |
+| L054 | nukimi_c統合可能: PARAM_GRID差分のみで戦略ロジック同一 | cmd_165 |
+| L045 | nukimi_c高速化: ロジック共通、差分はパラメータグリッドのみ(T1-T3 vs T1-T5) | cmd_161 |
+| L037 | standard PFでpipeline_config未設定だとrecalculate_fastがCashフォールバック | cmd_128 |
+| L032 | データ構造変更時は全使用箇所を確認せよ（tuple化後の属性アクセス破綻を防ぐ） | — |
+| L030 | Pipelineにmomentum_cache未提供だとsignal_calcが大幅劣化（9s→439s） | — |
+| L023 | DTB3経済指標のDB照会はPipelineEngine呼出回数分だけ累積する | — |
+| L022 | PipelineEngine統合の偽陽性（0/0=OK）に注意 | — |
+| L020 | signal vs holding_signalの差はリバランスタイミング差として扱え | — |
+| L018 | RULE10: シグナル判定はClose、リターン記録はOpenを厳守 | — |
+| L002 | ブロック名は`BlockType` enum値で統一する | — |
+| L001 | `pipeline_config`テンプレートのパラメータ名はコードと1:1一致必須 | — |

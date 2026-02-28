@@ -69,10 +69,14 @@ workflow:
     target: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
     positive_rule: "タスクYAMLのreport_filenameフィールドに指定されたファイル名で報告YAMLを作成せよ。フィールドがない場合は {自分の名前}_report_{parent_cmd}.yaml を使え"
     reason: "命名不一致でGATE BLOCKが頻発し、家老のリネーム+再提出で無駄なコストが発生する"
+    rules:
+      - id: R001
+        positive_rule: "queue/reports/に配備時に生成された報告テンプレートが存在する。Read toolでテンプレートを読み、値を埋めよ。キーの追加は可、既存キーの削除・ネスト化は禁止"
+        reason: "構造変更(ネスト化等)でgateのフィールド検出が失敗しBLOCKされる。家老の修正CTXが浪費される"
   - step: 5.5
     action: self_gate_check
     mandatory: true
-    positive_rule: "report.result.self_gate_checkに4項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
+    positive_rule: "report.result.self_gate_checkに5項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
     reason: "cmd完了ゲートBLOCK65%はlesson_referenced空・reviewed:false残存。提出前自己ゲートで事前排除できる"
   - step: 6
     action: update_status
@@ -332,6 +336,10 @@ result:
   lessons:  # 次に同種の作業をする人が知るべき教訓（任意だが推奨）
     - "MomentumCacheを渡さないとsimulate_strategy_vectorized()は黙って空を返す"
     - "experiments.dbのmonthly_returnsが価格のground truth。dm_signal.dbには価格なし"
+purpose_validation:
+  cmd_purpose: "(task YAMLのdescription冒頭1行を転記)"
+  fit: true
+  purpose_gap: ""  # fit: false の場合のみ記述
 failure_analysis:    # 失敗時のみ記入（status: failed の場合）
   root_cause: "失敗の根本原因"
   what_would_prevent: "再発を防ぐために何をすべきか"
@@ -381,7 +389,7 @@ Missing fields = incomplete report.
 
 ## Step 5.5: 提出前自己ゲート (MANDATORY)
 
-**positive_rule**: report作成後、statusをdoneにする前に以下の4項目を全て確認し、report.result.self_gate_checkに記載せよ。全PASSでなければstatusをdoneにするな。FAILを修正してから再確認。
+**positive_rule**: report作成後、statusをdoneにする前に以下の5項目を全て確認し、report.result.self_gate_checkに記載せよ。全PASSでなければstatusをdoneにするな。FAILを修正してから再確認。
 
 | 項目 | 確認内容 | FAILの対処 |
 |------|---------|------------|
@@ -389,6 +397,7 @@ Missing fields = incomplete report.
 | (b) reviewed | related_lessons内のreviewed:falseが0件 | 未レビュー教訓を読んでreviewed:trueに変更 |
 | (c) lesson_candidate | found: true/falseが明記されていること | lesson_candidateにfound:true or falseを記載 |
 | (d) status_valid | status = done \| failed \| blocked のいずれか | 適切なstatusに修正 |
+| (e) purpose_fit | purpose_validation.fit = true | 目的に沿う成果へ修正、不可ならpurpose_gap記載 |
 
 確認結果をreport.result.self_gate_checkに記載:
 ```yaml
@@ -397,6 +406,7 @@ self_gate_check:
   reviewed: PASS      # or FAIL
   lesson_candidate: PASS  # or FAIL
   status_valid: PASS  # or FAIL
+  purpose_fit: PASS   # or FAIL
 ```
 
 **reason**: cmd完了ゲート(cmd_complete_gate.sh)のBLOCK主因65%はlesson_referenced空・reviewed:false残存。提出前の自己ゲートで事前排除できる。FAILを提出後に修正するより提出前の確認コストは格段に低い。

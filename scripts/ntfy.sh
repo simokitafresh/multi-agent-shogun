@@ -53,7 +53,7 @@ mkdir -p "$SCRIPT_DIR/logs"
 
 MSG="$1"
 
-# Background send with timeout + retry
+# Background send with timeout + retry (only on connection failure)
 (
   _ntfy_send() {
     local http_code start end elapsed
@@ -65,16 +65,26 @@ MSG="$1"
     end=$(date +%s)
     elapsed=$((end - start))
     echo "$(date '+%Y-%m-%d %H:%M:%S') http=$http_code time=${elapsed}s msg=\"${1:0:80}\"" >> "$LOGFILE"
-    [ "$http_code" = "200" ]
+    echo "$http_code"
   }
 
-  if _ntfy_send "$MSG"; then
+  HTTP_CODE=$(_ntfy_send "$MSG")
+
+  if [ "$HTTP_CODE" = "200" ]; then
     exit 0
   fi
 
-  # Retry once after 3s
+  # Retry only on connection failure (000 = no response from server).
+  # HTTP 500 etc. means the server received the request — message likely
+  # already delivered. Retrying would cause duplicate notifications.
+  if [ "$HTTP_CODE" != "000" ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') NO_RETRY http=$HTTP_CODE (server responded)" >> "$LOGFILE"
+    exit 1
+  fi
+
   sleep 3
-  if _ntfy_send "$MSG"; then
+  HTTP_CODE=$(_ntfy_send "$MSG")
+  if [ "$HTTP_CODE" = "200" ]; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') RETRY_OK" >> "$LOGFILE"
     exit 0
   fi

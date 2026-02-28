@@ -7,13 +7,12 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-PARTS_DIR="$ROOT_DIR/instructions"
-OUTPUT_DIR="$ROOT_DIR/instructions/generated"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PARTS_DIR="$SCRIPT_DIR/instructions"
+OUTPUT_DIR="$SCRIPT_DIR/instructions/generated"
 
 # Source CLI profile lookup library (cmd_143 SSOT)
-source "$SCRIPT_DIR/lib/cli_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 
 # Default CLI type (instruction files without prefix)
 DEFAULT_CLI="claude"
@@ -45,7 +44,7 @@ build_instruction_file() {
     local role="$2"
     local output_filename="$3"
     local output_path="$OUTPUT_DIR/$output_filename"
-    local original_file="$ROOT_DIR/instructions/${role}.md"
+    local original_file="$SCRIPT_DIR/instructions/${role}.md"
 
     echo "Building: $output_filename (CLI: $cli_type, Role: $role)"
 
@@ -133,8 +132,8 @@ generate_agents_md() {
         return 1
     fi
 
-    local output_path="$ROOT_DIR/AGENTS.md"
-    local claude_md="$ROOT_DIR/CLAUDE.md"
+    local output_path="$SCRIPT_DIR/AGENTS.md"
+    local claude_md="$SCRIPT_DIR/CLAUDE.md"
     local cli_display
     cli_display=$(cli_profile_get "$cli_type" "display_name")
     [[ -z "$cli_display" ]] && cli_display="${cli_type^} CLI"
@@ -167,9 +166,9 @@ generate_agents_md() {
 # GitHub Copilot CLIは .github/copilot-instructions.md を自動読み込みする。
 # CLAUDE.mdを正本とし、Claude固有部分をCopilot固有に置換して生成。
 generate_copilot_instructions() {
-    local github_dir="$ROOT_DIR/.github"
+    local github_dir="$SCRIPT_DIR/.github"
     local output_path="$github_dir/copilot-instructions.md"
-    local claude_md="$ROOT_DIR/CLAUDE.md"
+    local claude_md="$SCRIPT_DIR/CLAUDE.md"
 
     echo "Generating: .github/copilot-instructions.md (Copilot auto-load)"
 
@@ -201,10 +200,10 @@ generate_copilot_instructions() {
 # Kimi K2 CLIは agents/default/agent.yaml + system.md を自動読み込みする。
 # CLAUDE.mdを正本とし、Claude固有部分をKimi固有に置換して生成。
 generate_kimi_instructions() {
-    local agents_dir="$ROOT_DIR/agents/default"
+    local agents_dir="$SCRIPT_DIR/agents/default"
     local system_md_path="$agents_dir/system.md"
     local agent_yaml_path="$agents_dir/agent.yaml"
-    local claude_md="$ROOT_DIR/CLAUDE.md"
+    local claude_md="$SCRIPT_DIR/CLAUDE.md"
 
     echo "Generating: agents/default/system.md + agent.yaml (Kimi auto-load)"
 
@@ -261,7 +260,7 @@ echo "Generated instruction files:"
 ls -lh "$OUTPUT_DIR"/*.md
 echo ""
 echo "CLI auto-load files:"
-[ -f "$ROOT_DIR/AGENTS.md" ] && ls -lh "$ROOT_DIR/AGENTS.md"
-[ -f "$ROOT_DIR/.github/copilot-instructions.md" ] && ls -lh "$ROOT_DIR/.github/copilot-instructions.md"
-[ -f "$ROOT_DIR/agents/default/system.md" ] && ls -lh "$ROOT_DIR/agents/default/system.md"
-[ -f "$ROOT_DIR/agents/default/agent.yaml" ] && ls -lh "$ROOT_DIR/agents/default/agent.yaml"
+[ -f "$SCRIPT_DIR/AGENTS.md" ] && ls -lh "$SCRIPT_DIR/AGENTS.md"
+[ -f "$SCRIPT_DIR/.github/copilot-instructions.md" ] && ls -lh "$SCRIPT_DIR/.github/copilot-instructions.md"
+[ -f "$SCRIPT_DIR/agents/default/system.md" ] && ls -lh "$SCRIPT_DIR/agents/default/system.md"
+[ -f "$SCRIPT_DIR/agents/default/agent.yaml" ] && ls -lh "$SCRIPT_DIR/agents/default/agent.yaml"

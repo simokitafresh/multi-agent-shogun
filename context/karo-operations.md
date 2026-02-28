@@ -366,6 +366,14 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。
 ## §8 Pre-Deployment Ping（配備前確認）
 > 配備対象ペインが応答しているか確認。応答なし忍者への配備はタスク停滞を招く。
 
+### context圧縮前チェック（Vercel Phase）
+
+context圧縮を行う直前に、参照リンク切れを必ず検査せよ。
+
+```bash
+bash scripts/gates/gate_vercel_phase.sh {context_file}
+```
+
 ```bash
 tmux capture-pane -t shogun:2.{pane_index} -p | tail -5
 ```

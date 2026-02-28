@@ -104,12 +104,22 @@ do_sync() {
     fi
 
     local rc=0
-    if gh gist edit "$GIST_ID" -f dashboard.md "$UPLOAD_FILE" >> "$LOG" 2>&1; then
+    # Use gh api instead of gh gist edit — edit misdetects UTF-8 with emoji as binary
+    local payload_file
+    payload_file=$(mktemp)
+    python3 -c "
+import json, sys
+with open(sys.argv[1]) as f:
+    content = f.read()
+json.dump({'files': {'dashboard.md': {'content': content}}}, sys.stdout)
+" "$UPLOAD_FILE" > "$payload_file" 2>/dev/null
+    if gh api --method PATCH "gists/${GIST_ID}" --input "$payload_file" >> "$LOG" 2>&1; then
         log "Gist updated successfully (project=${CURRENT_PJ})"
     else
         log "ERROR: Gist update failed (project=${CURRENT_PJ})"
         rc=1
     fi
+    rm -f "$payload_file"
 
     [ -n "$tmpfile" ] && rm -f "$tmpfile"
     return $rc

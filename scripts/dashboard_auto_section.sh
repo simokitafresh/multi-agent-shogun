@@ -209,6 +209,14 @@ if [[ -f "$GATE_LOG" ]]; then
     fi
 fi
 
+# Build CLEAR'd cmd set for pipeline filtering (must be outside subshell blocks)
+declare -A CLEARED_CMDS=()
+if [[ -s "$TMP_METRICS" ]]; then
+    while IFS=$'\t' read -r _ts _cmd _result; do
+        [[ "$_result" == "CLEAR" ]] && CLEARED_CMDS[$_cmd]=1
+    done < "$TMP_METRICS"
+fi
+
 # ─── Knowledge metrics (cached — only re-run when gate_metrics.log changes) ───
 KM_INJECT_RATE="—"
 KM_REF_RATE="—"
@@ -360,10 +368,19 @@ fi
         echo "| cmd | タイトル | status | 配備忍者 |"
         echo "|-----|---------|--------|----------|"
 
+        shown=0
         while IFS=$'\t' read -r cid tit sta; do
+            # Skip completed commands and already GATE CLEAR'd commands.
+            [[ "$sta" == "completed" ]] && continue
+            [[ -n "${CLEARED_CMDS[$cid]:-}" ]] && continue
             ninjas="${CMD_NINJAS[$cid]:-—}"
             echo "| ${cid} | ${tit} | ${sta} | ${ninjas} |"
+            shown=$((shown + 1))
         done < "$TMP_PIPELINE"
+
+        if [[ $shown -eq 0 ]]; then
+            echo "パイプライン空 — 次cmd待ち"
+        fi
     fi
 
     echo ""

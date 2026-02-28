@@ -1,5 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-02-23 cmd_280 3ファイル分割 -->
+<!-- last_updated: 2026-02-24 lesson_sync L086-L135全合流 -->
+<!-- last_synced_lesson: L135 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -50,3 +51,11 @@
 - フロントエンド: `context/dm-signal-frontend.md`
 - GS高速化知見: `context/gs-speedup-knowledge.md`
 - L3堅牢性: `context/l3-robustness.md`
+
+## 教訓索引（自動追記）
+
+- L129: [自動生成] 注入教訓の確認を怠った: cmd_356（cmd_356）
+- L130: git commitはステージ全体を含む — 自分のgit rmだけでなく事前ステージ済みファイルも巻き込む。commit前にgit diff --cachedで全ステージ内容を確認すべき（cmd_427）
+- L131: gitignoreパターンとgit復元対象のクロスチェック必須（cmd_430）
+- L134: L025（参照先scripts消滅(大掃除で削除済み)）
+- L135: L010（参照先scripts消滅(大掃除で削除済み)）

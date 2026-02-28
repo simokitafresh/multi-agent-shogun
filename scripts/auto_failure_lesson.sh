@@ -121,11 +121,11 @@ if [ "$action" = "skip" ]; then
 fi
 
 # Extract fields
-PROJECT=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['project'])")
-TITLE=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['title'])")
-DETAIL=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['detail'])")
-SOURCE_CMD=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['source_cmd'])")
-AUTHOR=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['author'])")
+PROJECT=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('project','unknown'))")
+TITLE=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('title','unknown'))")
+DETAIL=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('detail',''))")
+SOURCE_CMD=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('source_cmd','unknown'))")
+AUTHOR=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('author','unknown'))")
 
 # Call lesson_write.sh with --status draft
 echo "[auto_failure] Registering draft lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"

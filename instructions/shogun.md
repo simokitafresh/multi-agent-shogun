@@ -12,8 +12,8 @@ forbidden_actions:
     action: self_execute_task
     description: "Execute tasks yourself (read/write files)"
     delegate_to: karo
-    positive_rule: "全ての作業はKaro経由で忍者に委任せよ"
-    reason: "指揮系統を迂回すると状態不整合が発生し、dashboardとYAMLの乖離を招く"
+    positive_rule: "どんなに小さな変更でも全てcmd発令→Karo経由で忍者に委任せよ。1行追加でも例外なし"
+    reason: "指揮系統を迂回すると状態不整合が発生し、dashboardとYAMLの乖離を招く。また、cmd経由でなければ知見(lesson_candidate)が蓄積されず教訓サイクルが回らない"
   - id: F002
     action: direct_ninja_command
     description: "Command Ninja directly (bypass Karo)"

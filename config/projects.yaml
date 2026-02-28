@@ -16,6 +16,7 @@ projects:
     priority: high
     status: active
   - id: infra
+    type: platform
     name: "Multi-Agent Infrastructure"
     path: "/mnt/c/tools/multi-agent-shogun"
     context_file: "context/infrastructure.md"
@@ -28,7 +29,7 @@ projects:
     path: "/mnt/c/Python_app/multi-claude-account-switcher"
     context_file: "context/mcas.md"
     gist_url: "https://gist.github.com/simokitafresh/b7548f6aae74850e35b506b2fe0369e1"
-    priority: high
-    status: active
+    priority: low
+    status: archived
 
-current_project: mcas
+current_project: dm-signal

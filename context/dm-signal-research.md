@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-02-23 cmd_286 索引化(kotaro) -->
+<!-- last_updated: 2026-02-24 lesson_sync(hanzo) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -111,9 +111,34 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 |----|----------|------|
 | L117 | SPA p=0.99: 15万パターンGSチャンピオンはtop群内で統計的有意差なし | cmd_277 |
 | L105 | BB config未拘束がGS無効パターン量産の根因。Pydantic制約はPortfolio層偏在 | cmd_264 |
-| L132 | GS結果利用時はDATA_CATALOG.md + meta.yaml参照必須 | — |
+| L134 | GS結果利用時はDATA_CATALOG.md + meta.yaml参照必須 | — |
+| L132 | GS構成四神と本番FoF構成PFの不一致 | — |
 | L102 | MultiView skip_months=[0,1,2,3]はクラス変数固定、config変更不可 | cmd_253 |
 | L100 | MultiView base_period_months≥4必須(skip=3で0ヶ月問題) | cmd_253 |
+| L101 | MultiView Phase3 momentum_cache事前計算はFoF専用でskip | cmd_253 |
+| L099 | pipeline_config LIKE '%ReversalFilter%'はTrendReversalFilter誤検知→jsonb_path_exists | cmd_253 |
+| L069 | GS candidate→pipeline_config構築はregister_shijin_portfolios.py準拠で統一 | cmd_196 |
+| L068 | PipelineEngineはpipeline_config内lookback_periodsを使用(外部periods/weights/units無視) | cmd_196 |
+| L060 | 非月次リバランスGSチャンピオンは月次制約下で大幅劣化(特にkasoku) | cmd_190 |
+| L059 | 検証スクリプト参照CSVはcmd番号更新と同時追従が必要 | cmd_185 |
+| L058 | subset型GSのmonthly CSV出力にはcommon_months注入が必須 | saizo |
+| L057 | 168バッチGS結果は忍法ごとにCSV有無が異なる | cmd_180 |
+| L055 | kasokuはdiff方式=激攻、ratio方式=常勝に特化 | cmd_168 |
+| L053 | oikaze R3: common_months注入でfast/seq月次CSVを完全一致化 | cmd_165 |
+| L052 | kasoku R4: PeriodIndex参照最適化で19%短縮 | cmd_165 |
+| L051 | nukimi R4: 0.05秒級GSでmultiprocessingは逆効果 | cmd_165 |
+| L050 | kasoku R3: precomputed picks+純Pythonループで4.54倍速 | cmd_165 |
+| L049 | bunshin R3: 純Pythonインナーループは逆効果、fixed-arity vectorization有効 | subtask_165_bunshin_r3 |
+| L048 | nukimi R3: precompute keyはtop_n_effを使う | subtask_165_nukimi_r3 |
+| L047 | kawarimi R3: NumPy呼出し排除で5.5倍速 | subtask_165_kawarimi_r3 |
+| L041 | GS高速化: NumPyベクトル化+前処理キャッシュで55倍速 | cmd_161 |
+| L040 | nukimi C2候補はgekkou列のみ使用(close/openは同一CSVで暫定統一) | cmd_160 |
+| L039 | 064_champion CSVとC12 UUIDは別データ。GS比較は同一ソース必須 | cmd_160 |
+| L033 | GSパラメータとAPI登録ペイロードの乖離は本番結果乖離に直結 | cmd_123 |
+| L027 | C抜き身のCANDIDATE_SET不一致(CS4→C11_CCNh)は結果乖離要因 | — |
+| L013 | GS align_months交差集合はlookback warm-upを失わせる | — |
+| L012 | GSのdrop_latest=Trueはexperiments.dbでは不要 | — |
+| L008 | GS構成四神[歴史的記述]と本番FoF構成PFの不一致 | — |
 
 ### パリティ検証
 
@@ -128,6 +153,25 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L090 | GS NaN vs 本番cumulative_returnデータパス差異でコンポーネント選出変化 | cmd_225 |
 | L087 | kasoku長lookback(12M/24M)で初期化期間差異 | cmd_217 |
 | L088 | L1パリティPASSはtie処理網羅の証明にはならない | cmd_218 |
+| L095 | kasoku main()がcumulative_returns未ロード→常にfallback使用 | cmd_227 |
+| L096 | skip処理のデータ頻度判定はis_monthly_data()使用(行数ヒューリスティック禁止) | cmd_234 |
+| L097 | SVMF/MVMFのskip計算=is_monthly_data()適用(L093の拡張) | cmd_233 |
+| L098 | SVMF fallback target_date未フィルタリング(将来データ参照) | cmd_227 |
+| L077 | GS CSV monthly_return=open-based / 本番cumulative_return=close-based | cmd_207 |
+| L074 | verify_all_portfolios.pyのskipロジックはquarterly_mar対応が必要 | cmd_205 |
+| L073 | FoFパリティ検証ではコンポーネント初期化月をスキップしない | cmd_205 |
+| L072 | GS計算開始日フィルタはPhase 1後にsignal_history一括適用 | cmd_197 |
+| L071 | 低頻度リバランスPFの初期化期間は複数月。skipロジックで全Cash月をカバー | cmd_197 |
+| L070 | PipelineEngine pathとmatrix pathのNaN処理厳格さに差異あり | cmd_197 |
+| L062 | L2モメンタム式(pct_change≡product(1+r)-1)は数学的等価 | cmd_193 |
+| L061 | verify_all_portfolios.pyはFoF(type=fof)をスキップしL1四神未検証だった | cmd_193 |
+| L031 | FoFパリティ(加速-C)は164/167一致。残3件はモメンタム計算差異 | — |
+| L026 | 本番FoFコンポーネント取得は`/api/portfolios/get`のみ | — |
+| L024 | signal_historyキーはPhase2 month_last_trading_daysと同型必須 | — |
+| L019 | 同スコア時はタイブレーク均等保有ルールを明示適用する | — |
+| L017 | FoFリターン計算乖離は根本原因特定・修正まで実施する | — |
+| L016 | monthly-trade APIのフィールド意味を誤解しない(シグナル一致率の見かけに注意) | — |
+| L005 | FoFパリティ比較は本番の現行パラメータ確認を先行する | — |
 
 ### SPA/過剰最適化
 
@@ -146,6 +190,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L113 | ターゲット再定義はSNR限界を克服しない(DD>10%はbase_rate変更) | cmd_274 |
 | L115 | 回帰→分類パイプラインは月次SNR限界を克服しない | cmd_274 |
 | L116 | PF間の相関構造特徴量はエッジ崩壊予測に寄与しない | cmd_274 |
+| L112 | monthly_returns.signalがJSON辞書形式→キー抽出必須(未対応で全欠損) | cmd_274 |
 
 ### 外部データ
 

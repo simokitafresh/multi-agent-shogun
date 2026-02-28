@@ -13,6 +13,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 CMD_ID="$1"
 
 write_gate_flag() {
@@ -50,21 +51,29 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
 
     # parent_cmdが一致するか確認
-    local_parent=$(grep -m1 'parent_cmd:' "$task_file" 2>/dev/null | awk '{print $2}')
+    local_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null)
     if [ "$local_parent" != "$CMD_ID" ]; then
         continue
     fi
 
     # titleに偵察関連キーワードを含むか確認
-    local_title=$(grep -m1 'title:' "$task_file" 2>/dev/null | sed 's/.*title:[[:space:]]*//' | sed 's/^"//' | sed 's/"$//')
+    local_title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null)
     if ! echo "$local_title" | grep -qiE '偵察|recon|並行偵察'; then
         continue
     fi
 
     # 偵察タスクとして登録
-    local_ninja=$(grep -m1 'assigned_to:' "$task_file" 2>/dev/null | awk '{print $2}')
-    local_status=$(grep -m1 '^  status:' "$task_file" 2>/dev/null | awk '{print $2}')
-    local_task_id=$(grep -m1 'task_id:' "$task_file" 2>/dev/null | awk '{print $2}')
+    local_ninja=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "assigned_to" "" 2>/dev/null)
+    local_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "" 2>/dev/null)
+
+    # L070: field_get経由でインデント変動に対応 + 空結果チェック
+    task_status=""
+    task_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "" 2>/dev/null)
+    if [ -z "$task_status" ]; then
+        echo "[WARN] Empty status in $task_file" >&2
+        continue
+    fi
+    local_status="$task_status"
 
     RECON_FILES+=("$task_file")
     RECON_NINJAS+=("$local_ninja")
@@ -94,7 +103,11 @@ for i in "${!RECON_NINJAS[@]}"; do
     ninja="${RECON_NINJAS[$i]}"
     status="${RECON_STATUSES[$i]}"
     task_id="${RECON_TASK_IDS[$i]}"
-    report_path="${REPORTS_DIR}/${ninja}_report.yaml"
+    report_path="${REPORTS_DIR}/${ninja}_report_${CMD_ID}.yaml"
+    if [ ! -f "$report_path" ]; then
+        # 後方互換: 旧形式を許容
+        report_path="${REPORTS_DIR}/${ninja}_report.yaml"
+    fi
 
     if [ "$status" = "done" ]; then
         DONE_COUNT=$((DONE_COUNT + 1))

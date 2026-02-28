@@ -53,15 +53,65 @@ field_get() {
   else
     # YAML: L070対策 — ^\s+ で任意インデント対応（2sp固定禁止）
     # ネスト1段のフィールドを検索
-    result=$(grep -E "^\s+${field}:" "$file" 2>/dev/null | head -1 \
-      | sed "s/^[[:space:]]*${field}:[[:space:]]*//" \
-      | sed "s/^['\"]//;s/['\"]$//")
+    local field_line=""
+    field_line=$(grep -E "^\s+${field}:" "$file" 2>/dev/null | head -1)
+    if [[ -n "$field_line" ]]; then
+      result=$(echo "$field_line" \
+        | sed "s/^[[:space:]]*${field}:[[:space:]]*//" \
+        | sed "s/^['\"]//;s/['\"]$//")
+    fi
 
     # トップレベル(インデントなし)もフォールバック検索
-    if [[ -z "$result" ]]; then
-      result=$(grep -E "^${field}:" "$file" 2>/dev/null | head -1 \
-        | sed "s/^${field}:[[:space:]]*//" \
-        | sed "s/^['\"]//;s/['\"]$//")
+    if [[ -z "$result" && -z "$field_line" ]]; then
+      field_line=$(grep -E "^${field}:" "$file" 2>/dev/null | head -1)
+      if [[ -n "$field_line" ]]; then
+        result=$(echo "$field_line" \
+          | sed "s/^${field}:[[:space:]]*//" \
+          | sed "s/^['\"]//;s/['\"]$//")
+      fi
+    fi
+
+    # ブロック配列形式:
+    # field:
+    #   - a
+    #   - b
+    # を "a, b" に変換して返す
+    if [[ -z "$result" && -n "$field_line" && "$field_line" =~ ^[[:space:]]*${field}:[[:space:]]*$ ]]; then
+      result=$(awk -v field="$field" '
+        function ltrim(s) { sub(/^[ \t]+/, "", s); return s }
+        function rtrim(s) { sub(/[ \t]+$/, "", s); return s }
+        BEGIN { capture = 0; base = -1; count = 0; out = "" }
+        {
+          line = $0
+          if (match(line, /[^ ]/)) {
+            indent = RSTART - 1
+          } else {
+            indent = length(line)
+          }
+          if (capture == 0) {
+            if (line ~ "^[[:space:]]*" field ":[[:space:]]*$") {
+              capture = 1
+              base = indent
+            }
+            next
+          }
+          if (indent <= base && line !~ /^[[:space:]]*$/) {
+            exit
+          }
+          if (line ~ /^[[:space:]]*-[[:space:]]+/) {
+            item = line
+            sub(/^[[:space:]]*-[[:space:]]*/, "", item)
+            item = rtrim(ltrim(item))
+            if (count == 0) {
+              out = item
+            } else {
+              out = out ", " item
+            }
+            count++
+          }
+        }
+        END { print out }
+      ' "$file")
     fi
   fi
 
@@ -123,7 +173,7 @@ field_get_deps() {
 
 # ══════════════════════════════════════════════════════
 # 単体テスト (bash scripts/lib/field_get.sh --test)
-# テスト項目: (a)YAML取得 (b)JSON取得 (c)空結果WARN (d)デフォルト値 (e)依存記録
+# テスト項目: (a)YAML取得 (b)JSON取得 (c)空結果WARN (d)デフォルト値 (e)依存記録 (f)YAML配列
 # ══════════════════════════════════════════════════════
 _field_get_run_tests() {
   local pass=0
@@ -173,6 +223,17 @@ YAML
 
   result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_file" "top_level")
   _assert "YAML: トップレベルフィールド取得" "root_value" "$result"
+
+  local yaml_array_file="${tmpdir}/test_array.yaml"
+  cat > "$yaml_array_file" <<'YAML'
+task:
+  lesson_referenced:
+    - L034
+    - L035
+    - L100
+YAML
+  result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_array_file" "lesson_referenced")
+  _assert "YAML: ブロック配列をインライン変換" "L034, L035, L100" "$result"
 
   # ──────────────────────────────────────
   # (b) JSON取得

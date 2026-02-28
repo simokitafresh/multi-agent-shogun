@@ -39,9 +39,9 @@ mkdir -p "$(dirname "$CACHE_FILE")"
 (
     flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
 
-    export SSOT_FILE CACHE_FILE
+    export SSOT_FILE CACHE_FILE SCRIPT_DIR
     python3 << 'PYEOF'
-import re, yaml, os, tempfile
+import re, yaml, os, tempfile, sys, subprocess
 from datetime import datetime
 from collections import defaultdict
 
@@ -51,12 +51,18 @@ cache_file = os.environ["CACHE_FILE"]
 with open(ssot_file, encoding='utf-8') as f:
     content = f.read()
 
-# Remove YAML front matter (between --- markers)
-parts = content.split('---')
-if len(parts) >= 3:
-    body = '---'.join(parts[2:])
-else:
-    body = content
+# Remove YAML front matter (between --- markers at line start only)
+# Bug fix: content.split('---') matched mid-line '---' in lesson text (e.g. L069),
+# truncating 69 of 74 lessons. Now only matches '^---$' at line boundaries.
+lines_raw = content.split('\n')
+body_start = 0
+if lines_raw and lines_raw[0].strip() == '---':
+    # Find closing --- of front matter
+    for idx in range(1, len(lines_raw)):
+        if lines_raw[idx].strip() == '---':
+            body_start = idx + 1
+            break
+body = '\n'.join(lines_raw[body_start:])
 
 lines = body.split('\n')
 lessons = []
@@ -75,6 +81,7 @@ while i < len(lines):
     status = None
     deprecated_by = None
     merged_from = None
+    tags = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -179,13 +186,18 @@ while i < len(lines):
             m_fmerge = re.match(r'- \*\*merged_from\*\*:\s*\[(.+)\]', sline)
             if m_fmerge:
                 merged_from = [x.strip() for x in m_fmerge.group(1).split(',')]
+        # Extract tags from **tags** field
+        if tags is None:
+            m_ftags = re.match(r'- \*\*tags\*\*:\s*\[(.+)\]', sline)
+            if m_ftags:
+                tags = [t.strip() for t in m_ftags.group(1).split(',')]
         # Get summary from **発生**/**問題**/**課題** fields or plain content
         if sline.startswith('- **発生**:') or sline.startswith('- **問題**:') or sline.startswith('- **課題**:'):
             text = re.sub(r'^- \*\*[^*]+\*\*:\s*', '', sline)
             summary_parts.append(text)
         elif sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -205,6 +217,8 @@ while i < len(lines):
         entry['deprecated_by'] = deprecated_by
     if merged_from:
         entry['merged_from'] = merged_from
+    if tags:
+        entry['tags'] = tags
 
     lessons.append(entry)
     i = j if j > i + 1 else i + 1
@@ -237,6 +251,7 @@ try:
                 'helpful_count': old_lesson.get('helpful_count', 0),
                 'harmful_count': old_lesson.get('harmful_count', 0),
                 'last_referenced': old_lesson.get('last_referenced'),
+                'tags': old_lesson.get('tags'),
             }
 except FileNotFoundError:
     pass
@@ -250,6 +265,9 @@ for lesson in lessons:
         lesson['helpful_count'] = score_data[lid]['helpful_count']
         lesson['harmful_count'] = score_data[lid]['harmful_count']
         lesson['last_referenced'] = score_data[lid]['last_referenced']
+        # Tags priority: SSOT > cache
+        if 'tags' not in lesson and score_data[lid].get('tags'):
+            lesson['tags'] = score_data[lid]['tags']
     else:
         lesson['helpful_count'] = 0
         lesson['harmful_count'] = 0
@@ -312,6 +330,25 @@ for cat in sorted(cat_stats.keys()):
     if s['draft']:
         parts.append(f"{s['draft']} draft")
     print(f"  {cat}: {s['total']}件 ({', '.join(parts)})")
+
+# Postcondition: SSOT入力件数とYAML出力件数の乖離検知
+try:
+    _ssot_count = len(re.findall(r'^### L\d+', content, re.MULTILINE))
+    _out_count = len(lessons)
+    _div = abs(_ssot_count - _out_count) / _ssot_count * 100 if _ssot_count > 0 else 0.0
+    if _div > 10:
+        _msg = f'[sync_lessons] ALERT: 教訓件数乖離 (expected={_ssot_count} actual={_out_count})'
+        print(_msg, file=sys.stderr)
+        try:
+            _script_dir = os.environ.get('SCRIPT_DIR', '')
+            _ntfy = os.path.join(_script_dir, 'scripts', 'ntfy.sh') if _script_dir else 'scripts/ntfy.sh'
+            subprocess.run(['bash', _ntfy, _msg], timeout=10)
+        except Exception:
+            pass
+    elif _div > 0:
+        print(f'[sync_lessons] WARN: 教訓件数乖離 (expected={_ssot_count} actual={_out_count})', file=sys.stderr)
+except Exception as _e:
+    print(f'[sync_lessons] WARN: postcondition failed: {_e}', file=sys.stderr)
 PYEOF
 
 ) 200>"$LOCKFILE"

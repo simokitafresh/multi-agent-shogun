@@ -692,3 +692,35 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **記録者**: saizo
 - **tags**: [gate, yaml, lesson]
 - タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正しくはlogs/lesson_tracking.tsvが教訓参照情報を持つ。タスク仕様策定時のデータソース誤記。
+
+### L103: skill.md(小文字)でスキル配置するとLinux native環境やCI等case-sensitive環境でClaude Codeがスキルを検出できない。WSL2はcase-insensitiveで動作するが移植性なし。SKILL.md(大文字)への統一が必要。該当: building-block-addition, fof-pipeline-troubleshooting
+- **日付**: 2026-02-28
+- **出典**: draft
+- **記録者**: cmd_439
+- **tags**: [frontend, pipeline, gate, wsl2]
+- DM-signal側2スキルがskill.md小文字で配置。case-sensitive環境で検出不可リスク
+
+### L104: 本家参照時のパス揺れ — tree確認後に取得を標準化
+- **日付**: 2026-02-28
+- **出典**: cmd_438 sasuke
+- **記録者**: karo
+- **tags**: [recon, process]
+- タスク記述の固定パスを前提にすると404で調査停止する。先にtreeを取得して実パスを確定してから取得する手順を標準化すべき。
+
+### L105: E2Eテストでtmux pane-base-index依存は明示固定せよ
+- **日付**: 2026-02-28
+- **出典**: cmd_438 kirimaru
+- **記録者**: karo
+- **tags**: [testing, bash, tmux]
+- tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗。E2Eセッション作成直後にpane-base-index=0を設定して安定化した。
+
+### L106: lesson_impact_analysis.shのload_lesson_summariesパス誤り
+- **日付**: 2026-02-28
+- **出典**: cmd_444
+- **記録者**: kagemaru
+- **tags**: [bash, lesson]
+- L303: load_lesson_summaries(os.path.dirname(data_file))は
+data_file=SCRIPT_DIR/logs/lesson_impact.tsvの場合にlogs/を渡す。
+glob(os.path.join(root, "projects", ...))がlogs/projects/を探し
+summaryが常にnot found。修正: 親ディレクトリを2段上げるか、
+SCRIPT_DIRをbashから明示的に渡すべき。

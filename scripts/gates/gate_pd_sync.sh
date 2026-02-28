@@ -1,10 +1,10 @@
 #!/bin/bash
-# gate_pd_sync.sh — PD解決後のcontext反映チェックゲート（WARNING only）
+# gate_pd_sync.sh — PD解決後のcontext反映チェックゲート（BLOCK）
 # Usage: bash scripts/gates/gate_pd_sync.sh <pd_id>
 #
-# - pending_decisions.yamlから該当PDのcontext_syncedを確認
-# - context_synced が true 以外 → WARNING表示 + pd_unsync.logに追記
-# - ブロックはしない（WARNING only）
+# - pending_decisions.yamlから未反映PD(context_synced: false)を全件確認
+# - 1件でも存在すればBLOCK表示 + pd_unsync.logに追記 + exit 1
+# - 未反映が0件なら該当PD状態を表示してexit 0
 
 set -e
 
@@ -40,41 +40,56 @@ try:
 
     if not data or not data.get('decisions'):
         print('NOT_FOUND')
+        print('')
         sys.exit(0)
 
+    unsynced_ids = []
+    target_result = 'NOT_FOUND'
+
     for d in data['decisions']:
+        if d.get('context_synced') is False:
+            did = d.get('id')
+            if did:
+                unsynced_ids.append(did)
+
         if d.get('id') == pd_id:
             synced = d.get('context_synced')
-            if synced is True:
-                print('SYNCED')
-            else:
-                print('NOT_SYNCED')
-            sys.exit(0)
+            target_result = 'SYNCED' if synced is True else 'NOT_SYNCED'
 
-    print('NOT_FOUND')
+    print(target_result)
+    print(','.join(unsynced_ids))
 except Exception as e:
     print(f'ERROR:{e}', file=sys.stderr)
     print('ERROR')
+    print('')
 ")
 
 TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
+RESULT_STATUS=$(printf '%s\n' "$RESULT" | sed -n '1p')
+UNSYNCED_IDS_RAW=$(printf '%s\n' "$RESULT" | sed -n '2p')
 
-case "$RESULT" in
+if [ -n "$UNSYNCED_IDS_RAW" ]; then
+    BLOCK_MSG="$TIMESTAMP  BLOCK: context未反映PDあり: $UNSYNCED_IDS_RAW"
+    echo "[gate_pd_sync] $BLOCK_MSG" >&2
+    echo "$BLOCK_MSG" >> "$UNSYNC_LOG"
+    exit 1
+fi
+
+case "$RESULT_STATUS" in
     SYNCED)
         echo "[gate_pd_sync] $PD_ID: context_synced=true (OK)"
         ;;
     NOT_SYNCED)
-        WARNING_MSG="$TIMESTAMP  WARNING: context未反映: $PD_ID"
-        echo "[gate_pd_sync] $WARNING_MSG"
-        echo "$WARNING_MSG" >> "$UNSYNC_LOG"
+        echo "[gate_pd_sync] BLOCK: $PD_ID context_synced=false" >&2
+        exit 1
         ;;
     NOT_FOUND)
         echo "[gate_pd_sync] WARNING: $PD_ID not found in pending_decisions.yaml" >&2
         ;;
     *)
         echo "[gate_pd_sync] ERROR checking $PD_ID" >&2
+        exit 1
         ;;
 esac
 
-# Always exit 0 — this is a warning gate, not a blocker
 exit 0

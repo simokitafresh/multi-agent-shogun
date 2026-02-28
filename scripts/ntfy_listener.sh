@@ -60,17 +60,22 @@ while true; do
         MSG=$(echo "$line" | parse_json message)
         [ -z "$MSG" ] && continue
 
+        # Skip MCAS monitoring alerts (MCAS project archived 2026-02-26)
+        case "$MSG" in
+            *'【MCAS】'*) echo "[$(date)] Filtered MCAS alert: ${MSG:0:80}" >&2; continue ;;
+        esac
+
         MSG_ID=$(echo "$line" | parse_json id)
         TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
 
         echo "[$(date)] Received: $MSG" >&2
 
-        # Append to inbox YAML
+        # Append to inbox YAML (0-space indent for list items, 2-space for properties)
         cat >> "$INBOX" << ENTRY
-  - id: "$MSG_ID"
-    timestamp: "$TIMESTAMP"
-    message: "$MSG"
-    status: pending
+- id: "$MSG_ID"
+  timestamp: "$TIMESTAMP"
+  message: "$MSG"
+  status: pending
 ENTRY
 
         # Wake shogun via inbox

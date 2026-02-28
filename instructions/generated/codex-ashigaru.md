@@ -75,7 +75,7 @@ workflow:
   - step: 5.5
     action: self_gate_check
     mandatory: true
-    positive_rule: "report.result.self_gate_checkに4項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
+    positive_rule: "report.result.self_gate_checkに5項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
     reason: "cmd完了ゲートBLOCK65%はlesson_referenced空・reviewed:false残存。提出前自己ゲートで事前排除できる"
   - step: 6
     action: update_status

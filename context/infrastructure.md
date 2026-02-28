@@ -143,7 +143,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L051: Sonnet 4.6はMUST/NEVER/ALWAYSをリテラルに従わず文脈判断でオーバーライドする。否定指示は肯定形+理由付き、絶対禁止は条件付きルーティング(IF X THEN Y)に変換すると遵守率向上。Pink Elephant研究で学術裏付け
 - L052: ninja_monitorのDESTRUCTIVE検出でcapture-pane履歴にsend-keysが残る誤検知あり。DESTRUCTIVE判定ログ(kill/rm等)はcapture-pane結果に他エージェントのsend-keys内容が混入する可能性を考慮すべき
 - L053: Claude 4.x CRITICAL/MUST/NEVERがovertriggering副作用（cmd_324）
-<!-- last_synced_lesson: L102 -->
+<!-- last_synced_lesson: L106 -->
 - L054: lesson_write.shのcontextロック失敗が非致命でSSOTとcontext不整合を許容（cmd_323）
 - L055: report YAML構造混在に対するフォールバック必須（cmd_337）
 - L056: タスクYAML上書き問題: auto_deploy時の全サブタスク永続化（cmd_338）
@@ -192,6 +192,10 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L100: gate_metrics task_type遡及の最適データソース（cmd_413）
 - L101: gate_metrics.logはTSV形式(YAMLではない)（cmd_413）
 - L102: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv（cmd_414）
+- L103: skill.md(小文字)でスキル配置するとLinux native環境やCI等case-sensitive環境でClaude Codeがスキルを検出できない。WSL2はcase-insensitiveで動作するが移植性なし。SKILL.md(大文字)への統一が必要。該当: building-block-addition, fof-pipeline-troubleshooting（draft）
+- L104: 本家参照時のパス揺れ — tree確認後に取得を標準化（cmd_438 sasuke）
+- L105: E2Eテストでtmux pane-base-index依存は明示固定せよ（cmd_438 kirimaru）
+- L106: lesson_impact_analysis.shのload_lesson_summariesパス誤り（cmd_444）
 
 ## PD裁定反映（cmd_354同期）
 
@@ -199,3 +203,29 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 |----|------|--------|
 | PD-037 | inbox_write.sh HIGH-1(Python直接展開インジェクション)+HIGH-2(パストラバーサル)修正。殿裁定2026-02-25 | L043修正済み。`scripts/inbox_write.sh` |
 | PD-038 | ashigaru.md否定指示→案C(ハイブリッド)採用。forbidden_actions構造維持+positive_rule+reason追加。ACE準拠 | `instructions/ashigaru.md` cmd_324実装済み |
+
+## SKILL.md品質基準（7項目チェックリスト）
+
+スキル作成・更新時に必ず確認。発火精度はdescription品質で決まる。
+
+| # | 項目 | 基準 | NG例 | OK例 |
+|---|------|------|------|------|
+| 1 | What | 具体的な出力を明記 | 「ドキュメント処理」 | 「PDFからテーブル抽出しCSV変換」 |
+| 2 | When | 使用シーンを明記 | (なし) | 「gate_lesson_health.shのALERT後に使用」 |
+| 3 | トリガーワード | 発火キーワードを列挙 | (なし) | 「棚卸し」「監査」「メモリ整理」 |
+| 4 | 動詞の具体性 | 「管理」禁止 | 「知識を管理する」 | 「検出・更新提案・実行」 |
+| 5 | 長さ | 50-200文字 | 300文字の散文 | 簡潔な1-2文 |
+| 6 | 差別化 | 既存スキルとの守備範囲明示 | (なし) | 「/shogun-teireは全層監査、本スキルはMemory MCPのみ」 |
+| 7 | 角括弧不使用 | description内で[X]禁止 | 「[PDF]を処理」 | 「PDFを処理」 |
+
+### フロントマター必須フィールド
+- `allowed-tools`: 使用ツール制限（未指定=全ツール利用可。意図的な場合のみ省略）
+- `argument-hint`: 補完表示（例: `[project-id]`）
+
+### オプションフィールド
+- `context: fork`: サブエージェント隔離実行（メインCTX圧迫防止）
+- `model`: 実行時モデル指定
+
+### North Star
+カスタムフロントマターフィールドはClaude Codeに無視される。
+判断基準はMarkdown本文に記載すること。

@@ -49,13 +49,19 @@ if not project:
 source_cmd = data.get("parent_cmd", data.get("task_id", ""))
 worker_id = data.get("worker_id", "auto_draft")
 
+# Extract tags if present in lesson_candidate
+tags = lc.get("tags", "")
+if isinstance(tags, list):
+    tags = ",".join(str(t) for t in tags)
+
 print(json.dumps({
     "action": "register",
     "project": project,
     "title": title,
     "detail": detail,
     "source_cmd": source_cmd,
-    "author": worker_id
+    "author": worker_id,
+    "tags": tags
 }))
 PYEOF
 )
@@ -70,11 +76,12 @@ if [ "$action" = "skip" ]; then
 fi
 
 # Extract fields
-PROJECT=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['project'])")
-TITLE=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['title'])")
-DETAIL=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['detail'])")
-SOURCE_CMD=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['source_cmd'])")
-AUTHOR=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['author'])")
+PROJECT=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('project','unknown'))")
+TITLE=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('title','unknown'))")
+DETAIL=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('detail',''))")
+SOURCE_CMD=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('source_cmd','unknown'))")
+AUTHOR=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('author','unknown'))")
+TAGS=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tags',''))")
 
 # Duplicate check: same title + source_cmd in SSOT (L006対応)
 PROJECT_PATH=$(python3 -c "
@@ -137,6 +144,10 @@ fi
 
 # Call lesson_write.sh with --status confirmed
 echo "[auto_draft] Registering confirmed lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
-bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed
+TAGS_FLAG=""
+if [ -n "$TAGS" ]; then
+    TAGS_FLAG="--tags $TAGS"
+fi
+bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed $TAGS_FLAG
 
 echo "[auto_draft] Confirmed lesson registered successfully"

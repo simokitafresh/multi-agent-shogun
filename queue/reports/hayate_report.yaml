@@ -1,66 +1,261 @@
 worker_id: hayate
-task_id: subtask_282_integ
-parent_cmd: cmd_282
-timestamp: "2026-02-23T19:50:00"
-status: done
+task_id: subtask_418_scout_a
+parent_cmd: cmd_418
+timestamp: "2026-02-27T20:06:53"
+status: completed
 result:
   summary: |
-    cmd_282偵察2名(半蔵:データ構造棚卸し, 才蔵:MI分析)の結果を統合完了。
-    INTEG-001矛盾検出: 矛盾なし。両偵察は異なる角度(構造 vs 情報量)から整合的に
-    「DTB3は低価値外部データ」と結論。Phase2(追加外部データ調査)は不要と判定。
+    DM-signal リポジトリ整理偵察②（docs/ + ルート13ファイル）を完了。
+    docsは448ファイル・約16MBで、鮮度は高いがINDEX件数の不整合と重複管理（024番）が確認された。
+    ルートは13ファイル中、実害候補は「0-byte DB 2件」「legacy文書1件」「孤立メモ1件」。
 
-  ac1_integration_complete: true
-  ac1_detail: |
-    半蔵: experiments.db 7テーブル棚卸し完了。データ有=3テーブル。DTB3はdaily_pricesにticker='DTB3'で格納(6529行)。
-    才蔵: DTB3派生12特徴量のMI分析完了。最大MI=0.058bits(dtb3_corr_DM2)。
+  # ========================================================
+  # AC1: docs/ サブフォルダ別ファイル数・鮮度・陳腐化判定
+  # ========================================================
+  docs_inventory:
+    total_files: 448
+    total_size: "16MB"
+    root_files: 6
+    subfolders: 13
 
-  ac2_phase2_judgment: "Phase2不要"
-  ac2_detail: |
-    Phase2不要の根拠:
-    1. DTB3最大MI=0.058bits(低情報量)
-    2. Bayes上界: C2-B only=0.689 → C2-B+DTB3=0.637(-5.2pp悪化)
-    3. I(X;Y)≈0bits(DTB3とDM3崩壊間にほぼ情報なし)
-    4. cmd_274 C2-A(VIX/yield curve)も「独立だが無関連」判定済み
-    5. cmd_274 C4-B情報理論的上界=0.689(69%)既証明
+    freshness_distribution:
+      le_14_days: 415
+      d15_30: 11
+      d31_60: 17
+      gt_60_days: 5
 
-  ac3_context_updated: true
-  ac3_detail: "context/dm-signal-research.md §22として恒久記録済み"
+    subfolder_table:
+      - folder: architecture
+        files: 7
+        size_kb: 152.4
+        newest: "2026-02-17"
+        oldest: "2026-02-17"
+        stale_judgement: "最新・維持"
+      - folder: archives
+        files: 94
+        size_kb: 1389.3
+        newest: "2026-02-17"
+        oldest: "2025-12-16"
+        stale_judgement: "アーカイブ用途として妥当。最古画像1件のみ単独見直し候補"
+      - folder: deployment
+        files: 6
+        size_kb: 62.1
+        newest: "2026-02-17"
+        oldest: "2025-12-29"
+        stale_judgement: "維持"
+      - folder: future
+        files: 198
+        size_kb: 6338.3
+        newest: "2026-02-17"
+        oldest: "2025-12-27"
+        stale_judgement: "件数管理が陳腐化。整理優先対象"
+      - folder: guide
+        files: 3
+        size_kb: 61.9
+        newest: "2026-02-17"
+        oldest: "2026-02-17"
+        stale_judgement: "維持"
+      - folder: images
+        files: 12
+        size_kb: 3706.8
+        newest: "2026-01-11"
+        oldest: "2026-01-11"
+        stale_judgement: "最新ではないが静的資産として妥当"
+      - folder: kalman-filter
+        files: 8
+        size_kb: 111.8
+        newest: "2026-02-17"
+        oldest: "2026-02-17"
+        stale_judgement: "維持"
+      - folder: logging
+        files: 1
+        size_kb: 18.9
+        newest: "2026-02-17"
+        oldest: "2026-02-17"
+        stale_judgement: "維持"
+      - folder: portfolio-research
+        files: 39
+        size_kb: 1677.1
+        newest: "2026-02-17"
+        oldest: "2026-01-27"
+        stale_judgement: "維持"
+      - folder: rule
+        files: 26
+        size_kb: 496.6
+        newest: "2026-02-23"
+        oldest: "2026-02-17"
+        stale_judgement: "最重要・維持"
+      - folder: security
+        files: 18
+        size_kb: 344.4
+        newest: "2026-02-17"
+        oldest: "2025-12-20"
+        stale_judgement: "維持（古い設計タスク文書は将来archive候補）"
+      - folder: skills
+        files: 25
+        size_kb: 349.4
+        newest: "2026-02-17"
+        oldest: "2026-01-05"
+        stale_judgement: "維持"
+      - folder: spec
+        files: 5
+        size_kb: 47.2
+        newest: "2026-02-17"
+        oldest: "2026-02-17"
+        stale_judgement: "維持"
 
-  ac4_git: "commit + push待ち"
+    stale_candidates:
+      - path: docs/_INDEX.md
+        reason: "future件数を151件と記載だが実数198件。imagesも11枚記載だが実数12枚。"
+        action: "件数更新"
+      - path: docs/future/_INDEX.md
+        reason: "同一ファイル内で全185件/合計175件/全172件の3値が併存。"
+        action: "SSOT件数を1つに統一"
+      - path: docs/future/024-chart-all-period-option.md
+        reason: "docs/spec/024-chart-all-period-option.md と同番号・同主題で重複管理。"
+        action: "specを正本化しfuture側をarchiveまたは参照リンク化"
+      - path: docs/archives/misc/DrawdownChart.png
+        reason: "docs内で最古（2025-12-16）かつ参照0件。"
+        action: "不要なら削除"
 
-  integ001_contradiction_check:
-    contradictions_found: false
-    reconciliation: |
-      半蔵(データ構造)と才蔵(MI分析)の報告に矛盾なし。
-      両者は異なる角度から分析し、共に「DTB3は低価値外部データ」と収束。
-      DATA_CATALOG.mdの86銘柄 vs 実測14銘柄の乖離も両者で一致確認。
+    duplicates:
+      same_filename:
+        - "docs/future/024-chart-all-period-option.md"
+        - "docs/spec/024-chart-all-period-option.md"
+      content_hash_duplicates: "検出なし"
+
+  # ========================================================
+  # AC2: ルート13ファイルの役割・必要性・処分提案
+  # ========================================================
+  root_files:
+    total_files: 13
+    table:
+      - file: .antigravityignore
+        role: "開発支援ignore設定"
+        git_tracked: true
+        necessity: "維持"
+        proposal: "keep"
+      - file: .env
+        role: "ローカル秘密情報"
+        git_tracked: false
+        necessity: "維持（git管理外）"
+        proposal: "keep"
+      - file: .gitignore
+        role: "除外ルール"
+        git_tracked: true
+        necessity: "必須"
+        proposal: "keep"
+      - file: AGENTS-v3.6-legacy.md
+        role: "旧世代エージェント仕様"
+        git_tracked: true
+        necessity: "現行運用では低い（参照はdocs/_INDEX.mdの1箇所のみ）"
+        proposal: "archive_or_delete_candidate"
+      - file: AGENTS.md
+        role: "現行エージェント仕様"
+        git_tracked: true
+        necessity: "必須"
+        proposal: "keep"
+      - file: CLAUDE.md
+        role: "Claude向けプロジェクト知識"
+        git_tracked: true
+        necessity: "運用上有効"
+        proposal: "keep"
+      - file: README.md
+        role: "導入・概要"
+        git_tracked: true
+        necessity: "必須"
+        proposal: "keep"
+      - file: _INDEX.md
+        role: "ルート索引"
+        git_tracked: true
+        necessity: "必須"
+        proposal: "keep_with_periodic_sync"
+      - file: dm_signal.db
+        role: "0-byteプレースホルダ（本来の実DBはbackend/static/data/dm_signal.db）"
+        git_tracked: false
+        necessity: "不要"
+        proposal: "delete_candidate"
+      - file: docker-compose.local.yml
+        role: "ローカル構成"
+        git_tracked: true
+        necessity: "維持"
+        proposal: "keep"
+      - file: experiments.db
+        role: "0-byteプレースホルダ（本来の実DBはanalysis_runs/experiments.db）"
+        git_tracked: false
+        necessity: "不要"
+        proposal: "delete_candidate"
+      - file: gs-speedup-knowledge.md
+        role: "GS高速化メモ（ルート内参照0件）"
+        git_tracked: true
+        necessity: "低い（shogun側contextに同主題の大版あり）"
+        proposal: "archive_or_link_only"
+      - file: render.yaml
+        role: "Renderデプロイ設定"
+        git_tracked: true
+        necessity: "必須"
+        proposal: "keep"
+
+    key_checks:
+      agents_v36_legacy_refs: 1
+      agents_v36_legacy_ref_path: "docs/_INDEX.md"
+      gs_speedup_local_refs: 0
+      index_consistency_note: "_INDEX.md自体は有効。主な不整合はdocs側INDEX件数。"
+
+  # ========================================================
+  # AC3: 空ディレクトリ(backups/, grid_search/)の処分提案
+  # ========================================================
+  empty_dirs:
+    - path: backups/
+      entries: 0
+      judgement: "完全空"
+      proposal: "削除候補（必要時に再作成容易）"
+    - path: grid_search/
+      entries: 1
+      detail: "grid_search/output/ の空ディレクトリのみ"
+      judgement: "実質空"
+      proposal: "削除候補（またはREADME/.gitkeepで意図明示）"
+
+  cleanup_proposal:
+    delete:
+      - "dm_signal.db (root, 0-byte)"
+      - "experiments.db (root, 0-byte)"
+      - "backups/ (empty)"
+      - "grid_search/ (practical-empty)"
+      - "docs/archives/misc/DrawdownChart.png (unreferenced)"
+    archive_or_link:
+      - "AGENTS-v3.6-legacy.md"
+      - "gs-speedup-knowledge.md"
+      - "docs/future/024-chart-all-period-option.md (spec側へ統合)"
+    update_only:
+      - "docs/_INDEX.md 件数更新"
+      - "docs/future/_INDEX.md 件数整合"
+    keep:
+      - "AGENTS.md, CLAUDE.md, README.md, _INDEX.md, .gitignore, docker-compose.local.yml, render.yaml, docs/rule/*"
+
+  ac_results:
+    - id: AC1
+      status: PASS
+      evidence: "docs/配下448ファイルをサブフォルダ13+root6で集計。鮮度分布・陳腐化候補・重複候補を提示。"
+    - id: AC2
+      status: PASS
+      evidence: "ルート13ファイルすべてについて役割/必要性/処分提案を一覧化。指定3論点(AGENTS-v3.6-legacy, gs-speedup-knowledge, _INDEX)を明示判定。"
+    - id: AC3
+      status: PASS
+      evidence: "backups/は完全空、grid_search/は空outputディレクトリのみを確認し、処分案を提示。"
 
 lesson_candidate:
   found: true
   candidates:
-    - title: "DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納"
-      detail: "economic_indicatorsテーブルは空。DTB3の利回りデータはclose_priceカラムに格納"
-      source: "半蔵(subtask_282_recon_a)"
-    - title: "DATA_CATALOG.mdの86銘柄は古い情報。実際のexperiments.db daily_pricesは14銘柄"
-      detail: "本番PostgreSQLが86銘柄、experiments.dbはDM戦略使用銘柄のみのサブセット"
-      source: "半蔵(subtask_282_recon_a)"
-    - title: "外部データ(DTB3)追加はBayes上界を悪化させる(-5.2pp)。情報なき次元追加は逆効果"
-      detail: "C2-B 22特徴量のacc_upper=0.689に対し、DTB3 12特徴量追加後=0.637。次元の呪い"
-      source: "才蔵(subtask_282_recon_b)"
+    - summary: "INDEX件数は劣化しやすい。偵察時は本文記載件数と実ファイル数(find)の突合を必須化すべき。"
+      tags: [documentation, index, scout]
 
 lesson_referenced:
-  - id: L121
-    how_used: "experiments.dbがスナップショットであることを前提にDATA_CATALOGとの整合性検証"
-  - id: L127
-    how_used: "DATA_CATALOG.mdを実データと照合。86銘柄 vs 14銘柄の乖離確認"
-  - id: L112
-    how_used: "直接使用なし(JSON形式signal解析は範囲外)"
-  - id: L085
-    how_used: "直接使用なし(テーブル削除は範囲外)"
-  - id: L117
-    how_used: "直接使用なし(SPA検定知見は範囲外)"
+  - L074
+  - L086
 
 skill_candidate:
   found: false
+
 decision_candidate:
   found: false

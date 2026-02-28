@@ -86,6 +86,8 @@ else
                 case "$ttype" in
                     recon) has_recon=true ;;
                     implement) has_implement=true ;;
+                    review) ;; # 既知の種別
+                    *) echo "[WARN] Unknown task_type: '$ttype' in $task_file" >&2 ;;
                 esac
             fi
         done

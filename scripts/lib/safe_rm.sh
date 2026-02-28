@@ -10,7 +10,7 @@ safe_rm() {
   fi
 
   local project_root
-  project_root=$(realpath /mnt/c/tools/multi-agent-shogun)
+  project_root=$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)")
 
   # Validate each path argument (skip flags like -r, -f, -rf)
   local arg
