@@ -32,7 +32,7 @@ YAML
     run bash "$YAML_FIELD_SET_SCRIPT" "$yaml" "cmd_100" "status" "completed"
     [ "$status" -eq 0 ]
 
-    run rg -n "^    status: completed$" "$yaml"
+    run grep -n "^    status: completed$" "$yaml"
     [ "$status" -eq 0 ]
 }
 
@@ -47,7 +47,7 @@ YAML
     run bash "$YAML_FIELD_SET_SCRIPT" "$yaml" "cmd_101" "priority" "high"
     [ "$status" -eq 0 ]
 
-    run rg -n "^    priority: high$" "$yaml"
+    run grep -n "^    priority: high$" "$yaml"
     [ "$status" -eq 0 ]
 }
 
@@ -87,7 +87,7 @@ YAML
     [ "$rc2" -eq 0 ]
 
     local count
-    count=$(rg -c "^    status:" "$yaml")
+    count=$(grep -c "^    status:" "$yaml")
     [ "$count" -eq 1 ]
 
     local final
@@ -107,7 +107,7 @@ YAML
     run bash "$YAML_FIELD_SET_SCRIPT" "$yaml" "cmd_300" "status" "done"
     [ "$status" -eq 0 ]
 
-    run rg -n "^      status: done$" "$yaml"
+    run grep -n "^      status: done$" "$yaml"
     [ "$status" -eq 0 ]
 }
 
@@ -122,6 +122,25 @@ YAML
     run bash "$YAML_FIELD_SET_SCRIPT" "$yaml" "task" "status" "done"
     [ "$status" -eq 0 ]
 
-    run rg -n "^  status: done$" "$yaml"
+    run grep -n "^  status: done$" "$yaml"
     [ "$status" -eq 0 ]
+}
+
+@test "adds task_id field from subtask_id (cmd_465: STALL検知キー統一)" {
+    local yaml="$TEST_TMPDIR/task_id.yaml"
+    cat > "$yaml" <<'YAML'
+task:
+  subtask_id: subtask_465_impl
+  parent_cmd: cmd_465
+  status: pending
+YAML
+
+    run bash "$YAML_FIELD_SET_SCRIPT" "$yaml" "task" "task_id" "subtask_465_impl"
+    [ "$status" -eq 0 ]
+
+    run grep -n "^  task_id: subtask_465_impl$" "$yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -c "^  task_id:" "$yaml"
+    [ "$output" = "1" ]
 }

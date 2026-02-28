@@ -19,6 +19,7 @@ LOG="$SCRIPT_DIR/logs/deploy_task.log"
 # cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 
 NINJA_NAME="${1:-}"
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
@@ -157,6 +158,33 @@ check_idle() {
 }
 
 
+# ─── task_id自動注入（cmd_465: STALL検知キー統一） ───
+# subtask_idの値をtask_idとして注入。ninja_monitor check_stall()がtask_idを参照するため必須。
+inject_task_id() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_task_id: task file not found: $task_file"
+        return 1
+    fi
+
+    local subtask_id
+    subtask_id=$(field_get "$task_file" "subtask_id" "")
+    if [ -z "$subtask_id" ]; then
+        log "inject_task_id: no subtask_id found, skipping"
+        return 0
+    fi
+
+    local existing_task_id
+    existing_task_id=$(field_get "$task_file" "task_id" "")
+    if [ -n "$existing_task_id" ]; then
+        log "inject_task_id: task_id already set ($existing_task_id), skipping"
+        return 0
+    fi
+
+    yaml_field_set "$task_file" "task" "task_id" "$subtask_id"
+    log "inject_task_id: set task_id=$subtask_id"
+}
+
 # ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
 generate_report_template() {
     local ninja_name="$1"
@@ -230,6 +258,44 @@ import yaml, sys, os, re, tempfile, random, datetime
 
 task_file = '$task_file'
 script_dir = '$SCRIPT_DIR'
+
+DEDUP_THRESHOLD = 0.25
+
+def tech_terms(text):
+    '''技術用語のみ抽出（日本語テキスト対応）'''
+    text = str(text)
+    terms = set()
+    terms.update(w.lower() for w in re.findall(r'[a-zA-Z_][a-zA-Z0-9_\\.]{2,}', text))
+    terms.update(w.lower() for w in re.findall(r'L\\d{2,3}', text))
+    terms.update(w.lower() for w in re.findall(r'\\.[a-z]{1,4}', text))
+    return terms
+
+def jaccard(set_a, set_b):
+    if not set_a or not set_b:
+        return 0.0
+    return len(set_a & set_b) / len(set_a | set_b)
+
+def greedy_dedup(scored_list, all_lessons, threshold=DEDUP_THRESHOLD):
+    accepted = []
+    accepted_terms = []
+    deduped_count = 0
+    for score, lid, summary in scored_list:
+        lesson = all_lessons.get(lid, {})
+        l_text = f'{lesson.get(\"title\",\"\")} {lesson.get(\"summary\",\"\")} {lesson.get(\"content\",\"\")}'
+        terms = tech_terms(l_text)
+        is_dup = False
+        for acc_terms in accepted_terms:
+            if jaccard(terms, acc_terms) >= threshold:
+                is_dup = True
+                break
+        if is_dup:
+            deduped_count += 1
+            continue
+        accepted.append((score, lid, summary))
+        accepted_terms.append(terms)
+    if deduped_count > 0:
+        print(f'[INJECT] dedup: removed {deduped_count} similar lessons (threshold={threshold})', file=sys.stderr)
+    return accepted
 
 try:
     with open(task_file) as f:
@@ -440,6 +506,12 @@ try:
 
     # Sort by score descending, take top 7 (AC5: task-specific max 7)
     scored.sort(key=lambda x: -x[0])
+
+    # Greedy dedup: 類似教訓の枠消費防止
+    lessons_by_id = {l.get('id',''): l for l in confirmed_lessons}
+    pre_dedup_count = len(scored)
+    scored = greedy_dedup(scored, lessons_by_id)
+
     top = scored[:7]
 
     # AC4: スコア0時のフォールバック = 注入なし（無関連教訓のCTX浪費防止）
@@ -511,6 +583,8 @@ try:
     print(f'[INJECT] Injected {len(related)} lessons (universal={universal_added}/{universal_total_count}, task_specific={len(related)-universal_added}, platform={platform_count}): {ids}', file=sys.stderr)
     print(f'[INJECT]   project={project} {tag_info} scored={scored_count}/{tag_candidate_count} top_scores={[(s,i) for s,i,_ in scored[:5]]}', file=sys.stderr)
     print(f'[INJECT]   filtered: draft={filtered_draft} deprecated={filtered_deprecated}', file=sys.stderr)
+    dedup_removed = pre_dedup_count - len(scored)
+    print(f'[INJECT]   dedup: {dedup_removed} duplicates removed (threshold={DEDUP_THRESHOLD})', file=sys.stderr)
 
     # ═══ 教訓因果追跡ログ記録 ═══
     impact_log = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
@@ -1392,6 +1466,9 @@ check_entrance_gate "$TASK_FILE"
 
 # 偵察ゲート: implタスクは偵察済みorscout_exempt必須（BLOCKならexit 1）
 check_scout_gate "$TASK_FILE"
+
+# task_id自動注入（cmd_465: subtask_id→task_idエイリアス。STALL検知に必須）
+inject_task_id "$TASK_FILE" || true
 
 # 教訓自動注入（失敗してもデプロイは継続）
 inject_related_lessons "$TASK_FILE" || true
