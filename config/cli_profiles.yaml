@@ -67,6 +67,8 @@ profiles:
     debounce: 180
     # auto-clear再送信抑制秒数 (ninja_monitor.sh L89: CODEX_CLEAR_DEBOUNCE=600)
     clear_debounce: 600
+    # DEPLOY-STALL検知デバウンス秒数 (clear_debounceより短い。Codexの応答遅延を考慮)
+    stall_debounce: 180
 
   copilot:
     # 表示名 (sync_pane_vars.sh → tmux @model_name)

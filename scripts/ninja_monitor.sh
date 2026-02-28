@@ -31,6 +31,7 @@ LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
@@ -85,6 +86,7 @@ declare -A RENUDGE_FINGERPRINT    # 未読IDのfingerprint — key: agent_name, 
 declare -A RENUDGE_LAST_SEND      # 最終renudge送信時刻 — key: agent_name, value: epoch秒
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
 declare -A AUTO_DEPLOY_DONE       # auto_deploy_next.sh呼出済みフラグ — key: "ninja:task_id", value: "1"
+declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "ninja:subtask_id", value: count
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
@@ -489,7 +491,10 @@ check_and_update_done_task() {
             completed_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
             (
                 flock -x -w 5 200 || { log "ERROR: Failed to acquire lock for $name task update"; exit 1; }
-                sed -i "s/status:\s*\(assigned\|acknowledged\|in_progress\)/status: done/" "$task_file"
+                if ! yaml_field_set "$task_file" "task" "status" "done"; then
+                    log "ERROR: yaml_field_set failed for ${name} task status update"
+                    exit 1
+                fi
                 # completed_at自動記録（cmd_387: 既存なら上書きしない）
                 TASK_FILE_ENV="$task_file" COMPLETED_AT_ENV="$completed_ts" python3 -c "
 import yaml, sys, os, tempfile
@@ -682,6 +687,12 @@ handle_confirmed_idle() {
         local elapsed=$((now - first_seen))
         local effective_debounce
         effective_debounce=$(cli_profile_get "$name" "clear_debounce")
+        # AC3: stall_debounceが定義されていればclear_debounceより優先
+        local stall_debounce
+        stall_debounce=$(cli_profile_get "$name" "stall_debounce")
+        if [ -n "$stall_debounce" ]; then
+            effective_debounce=$stall_debounce
+        fi
 
         if [ "$elapsed" -ge "$effective_debounce" ]; then
             if ! can_send_clear_with_report_gate "$name" "DEPLOY-STALL-CLEAR"; then
@@ -698,6 +709,21 @@ handle_confirmed_idle() {
             # /new後にinbox nudgeで新セッションにタスクを知らせる
             sleep 2
             bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "タスクYAMLを読んで作業開始せよ。" task_assigned ninja_monitor >> "$LOG" 2>&1
+            # AC1: 家老にDEPLOY-STALL通知
+            bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+              "【DEPLOY-STALL】${name}が${task_status}のままidle ${elapsed}秒。/clear+再送実施。" \
+              deploy_stall ninja_monitor >> "$LOG" 2>&1
+            # AC2: STALLカウンター+エスカレーション
+            local subtask_id
+            subtask_id=$(yaml_field_get "$task_file" "subtask_id")
+            local stall_count_key="${name}:${subtask_id}"
+            STALL_COUNT[$stall_count_key]=$((${STALL_COUNT[$stall_count_key]:-0} + 1))
+            local count=${STALL_COUNT[$stall_count_key]}
+            if [ "$count" -ge 2 ]; then
+                bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+                  "【STALL-ESCALATE】${name}が${subtask_id}で${count}回STALL。別忍者への差替えを推奨。" \
+                  stall_escalate ninja_monitor >> "$LOG" 2>&1
+            fi
         else
             log "DEPLOY-STALL-WAIT: $name $task_status+idle ${elapsed}s < ${effective_debounce}s"
             PREV_STATE[$name]="busy"
