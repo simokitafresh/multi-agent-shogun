@@ -1438,6 +1438,7 @@ if [ "$ALL_CLEAR" = true ]; then
     else
         echo "  WARN: update_lesson_impact_tsv failed (non-blocking)"
     fi
+    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  WARN: sync-counters failed (non-blocking)"
 
     # ─── lesson_merge自動実行（ベストエフォート） ───
     echo ""
@@ -1585,6 +1586,7 @@ else
     else
         echo "  WARN: update_lesson_impact_tsv failed (non-blocking)"
     fi
+    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  WARN: sync-counters failed (non-blocking)"
 
     # ─── GATE BLOCK時自動draft教訓生成（ベストエフォート） ───
     echo ""
