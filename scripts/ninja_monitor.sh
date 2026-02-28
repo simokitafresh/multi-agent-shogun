@@ -181,6 +181,8 @@ check_idle() {
 
     if [ -n "$agent_state" ]; then
         if [ "$agent_state" = "idle" ]; then
+            # flag file存在保証（idle状態なら常にflagがあるべき）
+            [ ! -f "/tmp/shogun_idle_${agent_name}" ] && touch "/tmp/shogun_idle_${agent_name}"
             local last_active
             last_active=$(tmux display-message -t "$pane_target" -p '#{@last_active}' 2>/dev/null)
             local now
@@ -223,6 +225,7 @@ check_idle() {
                 # @agent_stateをidleに補正
                 tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null
                 log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=${agent_state} but idle prompt detected, corrected to idle"
+                touch "/tmp/shogun_idle_${agent_name}"
                 return 0  # IDLE（補正済み）
             fi
 
@@ -691,6 +694,7 @@ handle_confirmed_idle() {
             tmux send-keys -t "$target" "$reset_cmd"
             sleep 0.3
             tmux send-keys -t "$target" Enter
+            touch "/tmp/shogun_idle_${name}"
             unset STALL_FIRST_SEEN[$deploy_stall_key]
             # /new後にinbox nudgeで新セッションにタスクを知らせる
             sleep 2
@@ -762,6 +766,7 @@ handle_confirmed_idle() {
                 tmux send-keys -t "$target" "$reset_cmd"
                 sleep 0.3
                 tmux send-keys -t "$target" Enter
+                touch "/tmp/shogun_idle_${name}"
                 LAST_CLEARED[$name]=$now
                 # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
                 tmux set-option -p -t "$target" @current_task "" 2>/dev/null
