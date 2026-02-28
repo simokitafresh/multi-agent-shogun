@@ -1,50 +1,64 @@
 task:
   acceptance_criteria:
-  - description: docs/research/cmd_462_codex-stall-analysis.md が§1〜§4の構造で作成されていること
+  - description: scripts/lib/tmux_utils.shまたはninja_monitor.shにsafe_send_clear()が実装されていること
     id: AC1
-  - description: ninja_monitor.logからCodex STALL事例が定量的に集計されていること
+  - description: idle flagとcapture-pane二重確認でidle状態のみ/clearを送信すること
     id: AC2
-  - description: STALL発生率がモデル別・タスク種別別に比較されていること
+  - description: 非idle時にreturn 1でログ出力し、/clearを送信しないこと
     id: AC3
-  - description: 仮説が最低3つ、各仮説に検証可能な対策提案が付記されていること
+  - description: ninja_monitor.shの全3箇所の/clear送信がsafe_send_clear()経由に移行されていること
     id: AC4
-  assigned_to: hayate
-  bloom_level: complex
-  deployed_at: '2026-03-01T00:24:51'
-  description: "【注入教訓】 必ず確認し reviewed: true に変更せよ\n  - L003: CLAUDE.mdやinstructions/*.mdを更新しても、既に稼働中のエージェントのコンテキストには反映されない。ninja_monitor.shにc\n\
-    \  - L106: L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo\n\
-    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
-    \  - L052: cmd_318 hayate\n  - L048: check_and_update_done_taskがparent_cmdのみで判定していたためWave1報告doneがWave2タスクassignedを自動d\n\
+  - description: 既存テストが全PASSすること
+    id: AC5
+  assigned_to: ''
+  auto_deploy: true
+  blocked_by:
+  - subtask_464_impl
+  bloom_level: routine
+  deployed_at: '2026-03-01T01:08:53'
+  description: "【注入教訓】 必ず確認し reviewed: true に変更せよ\n  - L052: cmd_318 hayate\n  - L112:\
+    \ check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT\n\
+    \  - L105: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.\n\
+    \  - L046: CLIバナーからモデル名を検出する際、コマンドテキスト自体にバナーパターンが含まれるfalse positiveに注意。grep+tail\
+    \ -1だけでなく、モデ\n  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
+    \  - L041: tmuxにはネイティブのペインレベル環境変数が存在しない。@user_optionはメタデータ用で環境変数ではない。ペインごとに異なるCLAUDE_CONFIG\n\
     \  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L032: ##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計\n────────────────────────────────────────\n\
-    \nCodex忍者がタスクacknowledged後に作業を開始しない問題の原因調査。\n独立偵察（2名中1名）。もう1名の結論を知る必要はない。\n\n\
-    ## 観点A: 自己分析\n- Codexとして、タスクYAMLを読んだ後に何が起きているか\n- acknowledgeまではできるのに、なぜその後の作業に入れないのか\n\
-    - CLAUDE.mdの/clear Recovery手順のどの段階で止まるのか\n- タスクの複雑さ・説明の長さ・教訓注入量が影響しているか\n\n##\
-    \ 観点B: 環境・設定調査\n- Codex CLIの挙動がClaude CLIと異なる点はあるか\n- WSL2上のCodex固有の制約・タイムアウト・レート制限\n\
-    - config/cli_profiles.yamlのCodexプロファイルに不足・誤りはあるか\n\n## 観点C: 過去事例パターン分析\n- logs/ninja_monitor.logからCodex忍者のSTALL事例を収集\n\
-    - STALL発生率: Codex vs Opus\n- タスク種別(impl/review/scout)ごとのSTALL率\n- 時間帯・CTX使用量との相関\n\
-    \n## 成果物\ndocs/research/cmd_462_codex-stall-analysis.md\n- §1 自己分析結果\n- §2 環境・設定調査結果\n\
-    - §3 過去事例パターン分析\n- §4 仮説と対策提案（最低3仮説、各仮説に検証可能な対策）\n\n## 注意\n- 偵察タスク。コード変更なし。調査レポートのみ。\n\
-    - commitまで。pushするな。\n"
-  parent_cmd: cmd_462
+    \nsafe_send_clear()実装のレビュー+push。impl忍者の成果物を検証する。\n\n## レビュー対象ファイル\n1. scripts/lib/tmux_utils.sh\
+    \ または scripts/ninja_monitor.sh — safe_send_clear()新設箇所\n2. scripts/ninja_monitor.sh\
+    \ — 3箇所の/clear送信移行\n\n## 検証項目\n\n### AC1: safe_send_clear()の存在\n- safe_send_clear()関数が定義されていること\n\
+    \n### AC2: idle二重確認\n- /tmp/shogun_idle_{agent_name}フラグ確認が実装されていること\n- tmux capture-pane\
+    \ + idle_patternのgrep確認が実装されていること\n\n### AC3: 非idle時のブロック\n- idle flag不在時にreturn\
+    \ 1 + ログ出力されること\n- capture-paneでidle未検知時にreturn 1 + ログ出力されること\n\n### AC4: 全3箇所移行\n\
+    - handle_confirmed_idle()内のDEPLOY-STALL /clear → safe_send_clear()\n- handle_confirmed_idle()内のAUTO-CLEAR\
+    \ /clear → safe_send_clear()\n- send_karo_clear()内の家老/clear → safe_send_clear()\n\
+    - grep確認: 直接のsafe_send_keys_atomic + /clearパターンが残存していないこと\n\n### AC5: テスト\n- 既存テストが全PASSすること\n\
+    \n## push\n全AC検証後、git add + commit + push\n"
+  parent_cmd: cmd_464
   project: infra
   related_lessons:
-  - id: L003
-    reviewed: true
-    summary: CLAUDE.mdやinstructions/*.mdを更新しても、既に稼働中のエージェントのコンテキストには反映されない。ninja_monitor.shにcheck_script_update機能を追加し、スクリプト更新時に/clearを発動して再読み込みさせる仕組みで解決(cmd_125)。
-  - id: L106
-    reviewed: true
-    summary: 'L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/logs/lesson_impact.tsvの場合にlogs/を渡す。'
-  - id: L079
-    reviewed: true
-    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
   - id: L052
     reviewed: true
     summary: cmd_318 hayate
-  - id: L048
+  - id: L112
     reviewed: true
-    summary: check_and_update_done_taskがparent_cmdのみで判定していたためWave1報告doneがWave2タスクassignedを自動done化した。task_id一致チェックをL311後に追加して修正済み
+    summary: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECTEDが0件になりSTALL検知が沈黙。task_id||subtask_idフォールバック実装が必要。cmd_462偵察で疾風+才蔵が独立発見。
+  - id: L105
+    reviewed: true
+    summary: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗。E2Eセッション作成直後にpane-base-index=0を設定して安定化した。
+  - id: L046
+    reviewed: true
+    summary: CLIバナーからモデル名を検出する際、コマンドテキスト自体にバナーパターンが含まれるfalse positiveに注意。grep+tail
+      -1だけでなく、モデル名(Opus|Sonnet|Haiku)+バージョン番号まで含めた精密パターンが必要。
+  - id: L094
+    reviewed: true
+    summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
+      pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
+  - id: L041
+    reviewed: true
+    summary: tmuxにはネイティブのペインレベル環境変数が存在しない。@user_optionはメタデータ用で環境変数ではない。ペインごとに異なるCLAUDE_CONFIG_DIRを設定するにはrespawn-pane
+      -eまたはsend-keysで起動時に注入する
   - id: L074
     reviewed: true
     summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -55,20 +69,20 @@ task:
   - id: L032
     reviewed: true
     summary: '##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計'
-  report_filename: hayate_report_cmd_462.yaml
+  report_filename: hayate_report_cmd_464.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
-    - コード変更するな（調査レポートのみ）
-    - pushするな(commitまで)
+    - スコープ外改善は禁止
     notes:
-    - 偵察レポートは§1〜§4の全セクションを網羅せよ
+    - 'review_result: PASS or FAILを必ず記載せよ'
+    - レビュー者は実装者と異なること
     required_fields:
     - files_modified
     - lesson_candidate
     - lesson_referenced
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
-  subtask_id: subtask_462_recon_a
-  task_type: scout
-  title: Codex acknowledge-only問題の偵察 — 自己分析+パターン分析
+  status: failed
+  subtask_id: subtask_464_review
+  task_type: review
+  title: safe_send_clear idle保証 — レビュー+push
