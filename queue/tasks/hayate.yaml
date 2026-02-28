@@ -1,60 +1,78 @@
 task:
   acceptance_criteria:
-  - 'AC1: dashboard_auto_section.shのパイプラインからGATE CLEAR済み+status:completedのcmdが除外されること'
-  - 'AC2: パイプラインが全て完了済みの場合「パイプライン空 — 次cmd待ち」が表示されること'
-  - 'AC3: archive_completed.sh実行で最新更新セクションの古いエントリ（4件目以降）がarchiveに退避されること'
-  - 'AC4: 既存のdashboard_auto_section.shのマーカー構造・戦果表示・メトリクスが壊れていないこと'
+  - 'AC1: stop_check_inbox.shが未読なし時に/tmp/shogun_idle_{agent_id}をtouchすること'
+  - 'AC2: stop_check_inbox.shが未読あり時に/tmp/shogun_idle_{agent_id}をrm -fすること'
+  - 'AC3: inbox_watcher.shがflag不在時(Claude)にnudgeをSKIPし[BUSY]ログを出力すること'
+  - 'AC4: inbox_watcher.shがflag存在時にnudgeを送信し、送信後にflagを削除すること'
+  - 'AC5: shutsujin_departure.shがCLI起動時に全エージェントのidle flagを作成すること'
   assigned_to: hayate
   bloom_level: routine
-  description: |
-    佐助(impl_a)と霧丸(impl_b)の2名の実装を統合レビューし、
-    既存動作が壊れていないことを確認する。
-
-    ## レビュー観点
-
-    1. dashboard_auto_section.sh変更(佐助):
-       - CLEARED_CMDSのdeclare -Aがサブシェル外に正しく配置されていること
-       - パイプラインフィルタでstatus:completedとCLEAR済みcmdが除外されること
-       - フィルタ後0件時に「パイプライン空 — 次cmd待ち」が表示されること
-       - 既存マーカー(DASHBOARD_AUTO_START/END)・戦果・メトリクスが維持されていること
-       - bash -n構文チェックPASS
-
-    2. archive_completed.sh変更(霧丸):
-       - archive_karo_section()が正しく呼び出されること
-       - 「## 最新更新」の直近3件が保持され、4件目以降が退避されること
-       - flock排他パターンが正しいこと
-       - archive先がarchive/dashboard_karo_archive.mdであること
-       - 「## 最新更新」ヘッダ自体が削除されないこと
-       - bash -n構文チェックPASS
-
-    ## 統合テスト手順
-
-    ```bash
-    # 1. bash -n構文チェック
-    bash -n scripts/dashboard_auto_section.sh
-    bash -n scripts/archive_completed.sh
-
-    # 2. dashboard_auto_section.sh実行 → パイプラインに完了cmdが含まれないこと確認
-    bash scripts/dashboard_auto_section.sh
-    # dashboard.mdのパイプラインセクションを確認
-
-    # 3. archive_completed.sh実行 → 最新更新の古いエントリが退避されること確認
-    bash scripts/archive_completed.sh
-    # archive/dashboard_karo_archive.mdに退避されたことを確認
-    ```
-
-    ## 注意
-    - レビューのみ。コード修正はしない（修正が必要な場合はlesson_candidateに記載）
-    - 2名の報告YAMLを必ず確認してから統合テストに入ること
-    - commit + pushはレビュー完了後のみ
-  parent_cmd: cmd_445
+  deployed_at: '2026-02-28T23:14:46'
+  description: "【注入教訓】 必ず確認し reviewed: true に変更せよ\n  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
+    \  - L052: cmd_318 hayate\n  - L002: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground\
+    \ bashコマンドでブロック中はnudgeを受信できない。Bash tool\n  - L018: Claude Code Edit toolはファイルロック(flock)を使わない。inbox_write.shがflock付きで書込む同ファイルにEdit\
+    \ t\n  - L003: CLAUDE.mdやinstructions/*.mdを更新しても、既に稼働中のエージェントのコンテキストには反映されない。ninja_monitor.shにc\n\
+    \  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n\
+    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L032: ##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計\n────────────────────────────────────────\n\
+    \ncmd_455の全5ACを統合レビュー。impl_a(sasuke)とimpl_b(kirimaru)の成果物を検証する。\n\n## レビュー対象ファイル\n\
+    1. scripts/hooks/stop_check_inbox.sh — idle flag touch/rm（AC1+AC2）\n2. scripts/inbox_watcher.sh\
+    \ — flag判定+flag削除（AC3+AC4）\n3. scripts/shutsujin_departure.sh — flag初期化（AC5）\n\
+    \n## 検証項目\n\n### AC1+AC2: stop_check_inbox.sh\n- 未読なし→touch /tmp/shogun_idle_{id}が実行されること\n\
+    - 未読あり→rm -f /tmp/shogun_idle_{id}が実行されること\n- stop_hook_active=true→touch実行されること\n\
+    - shogun→flag操作なし（変更なし確認）\n\n### AC3+AC4: inbox_watcher.sh\n- Claude CLI: flag不在→[BUSY]ログ+nudge\
+    \ SKIP\n- Claude CLI: flag存在→nudge送信+flag削除\n- Codex CLI: 既存@agent_state判定が維持されていること\n\
+    - @agent_state設定(L272)が残っていること\n\n### AC5: shutsujin_departure.sh\n- 全エージェント(karo+忍者8名)のflag作成\n\
+    - /tmp/shogun_idle_{agent}が9つ作成されること\n\n### 統合確認\n- flag fileのパス一貫性: 3ファイルとも /tmp/shogun_idle_{agent_id}\
+    \ を使用\n- 競合なし: stop_check_inbox.shとinbox_watcher.shの同時flag操作の安全性\n\n## テスト\n-\
+    \ 既存テスト(tests/test_inbox_write.bats等)がPASSすること\n- 手動テスト:\n  - touch /tmp/shogun_idle_test\
+    \ → inbox_watcher.shのログでnudge送信確認\n  - rm /tmp/shogun_idle_test → inbox_watcher.shのログで[BUSY]確認\n\
+    \n## push\n全AC検証後、git add + commit + push\n"
+  parent_cmd: cmd_455
   project: infra
-  report_filename: hayate_report_cmd_445.yaml
+  related_lessons:
+  - id: L094
+    reviewed: true
+    summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
+      pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
+  - id: L052
+    reviewed: true
+    summary: cmd_318 hayate
+  - id: L002
+    reviewed: true
+    summary: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash
+      toolのrun_in_background=true必須化で解決。新スクリプト不要。
+  - id: L018
+    reviewed: true
+    summary: 'Claude Code Edit toolはファイルロック(flock)を使わない。inbox_write.shがflock付きで書込む同ファイルにEdit
+      toolで書き戻すと、inbox_write.shの書込み内容が失われる(Lost Update)。対策: flock+atomic writeを行うシェルスクリプト(inbox_mark_read.sh)で代替。同様の問題は他のflock付'
+  - id: L003
+    reviewed: true
+    summary: CLAUDE.mdやinstructions/*.mdを更新しても、既に稼働中のエージェントのコンテキストには反映されない。ninja_monitor.shにcheck_script_update機能を追加し、スクリプト更新時に/clearを発動して再読み込みさせる仕組みで解決(cmd_125)。
+  - id: L074
+    reviewed: true
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - id: L063
+    reviewed: true
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  - id: L032
+    reviewed: true
+    summary: '##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計'
+  report_filename: hayate_report_cmd_455.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - レビュー者は実装者と異なること(sasuke/kirimaruの実装をhayateがレビュー)
+    required_fields:
+    - files_modified
+    - lesson_candidate
+    - lesson_referenced
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
-  reports_to_read:
-  - queue/reports/sasuke_report_cmd_445.yaml
-  - queue/reports/kirimaru_report_cmd_445.yaml
-  subtask_id: subtask_445_review
+  subtask_id: subtask_455_review
   task_type: review
-  title: ダッシュボード自動清掃 — 全体レビュー+統合テスト
+  title: send-keys nudge撤廃Phase1 — 全AC統合レビュー+push
