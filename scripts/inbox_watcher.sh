@@ -34,7 +34,9 @@ SEND_KEYS_TIMEOUT=5  # seconds — prevents hang (PID 274337 incident)
 DEBOUNCE_SEC=10
 DEBOUNCE_FILE="/tmp/inbox_watcher_last_nudge_${AGENT_ID}"
 FINGERPRINT_FILE="/tmp/inbox_watcher_fingerprint_${AGENT_ID}"
-BACKOFF_SEC=600  # 10 minutes — safety net re-notification for stale unread
+RETRY_MAX=3      # immediate retries before falling back to BACKOFF interval
+RETRY_COUNT_FILE="/tmp/inbox_watcher_retry_${AGENT_ID}"
+BACKOFF_SEC=120  # 2 minutes — safety net re-notification for stale unread (was 600)
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -213,6 +215,19 @@ send_wakeup() {
         return 0
     fi
 
+    # Tier 1.3: Agent busy check — skip nudge if agent is active
+    # @agent_state is set by Claude Code hooks (PreToolUse→active, Stop→idle)
+    # Active agents should not receive nudges: send-keys/paste-buffer during
+    # thinking/tool execution causes input buffer contamination.
+    # Message stays in inbox — next inotifywait timeout (60s) or BACKOFF (120s)
+    # will re-check and deliver when agent becomes idle.
+    local agent_state
+    agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "unknown")
+    if [ "$agent_state" = "active" ]; then
+        echo "[$(date)] [BUSY] Agent $AGENT_ID is active, deferring nudge" >&2
+        return 0
+    fi
+
     # Tier 1.5: Debounce repeated nudge storms (normal messages only)
     if [ -f "$DEBOUNCE_FILE" ]; then
         last="$(cat "$DEBOUNCE_FILE" 2>/dev/null || true)"
@@ -251,6 +266,11 @@ send_wakeup() {
         rm -f "$DEBOUNCE_FILE"  # Rollback optimistic lock on failure
         return 1
     fi
+
+    # After successful nudge: mark agent as active to prevent duplicate nudges
+    # before the agent's own PreToolUse/UserPromptSubmit hook fires.
+    tmux set-option -p -t "$PANE_TARGET" @agent_state active 2>/dev/null || true
+    echo "[$(date)] Set $AGENT_ID @agent_state to active after nudge" >&2
 
     echo "[$(date)] Wake-up sent to $AGENT_ID (${unread_count} unread via paste-buffer)" >&2
     return 0
@@ -313,32 +333,60 @@ for s in data.get('specials', []):
             # Fingerprint changed → new unread messages arrived
             echo "[$(date)] [FP-CHANGE] Unread set changed for $AGENT_ID ($normal_count unread), sending nudge" >&2
             echo "$current_fp" > "$FINGERPRINT_FILE"
+            echo 0 > "$RETRY_COUNT_FILE"
             send_wakeup "$normal_count"
         else
-            # Same fingerprint → check backoff for safety net re-notification
-            local fp_age=0
-            if [ -f "$FINGERPRINT_FILE" ]; then
-                local fp_mtime
-                fp_mtime=$(stat -c %Y "$FINGERPRINT_FILE" 2>/dev/null || echo 0)
-                fp_age=$(( $(date +%s) - fp_mtime ))
+            # FP-SAME: nudge was sent but agent hasn't read messages yet
+            # Improvement A: immediate retries before BACKOFF fallback
+            local retry_count=0
+            if [ -f "$RETRY_COUNT_FILE" ]; then
+                retry_count=$(cat "$RETRY_COUNT_FILE" 2>/dev/null || echo 0)
+                retry_count=${retry_count:-0}
             fi
 
-            if [ "$fp_age" -ge "$BACKOFF_SEC" ]; then
-                echo "[$(date)] [BACKOFF] Stale unread for ${fp_age}s >= ${BACKOFF_SEC}s, re-notifying $AGENT_ID" >&2
-                touch "$FINGERPRINT_FILE"  # reset mtime for next backoff cycle
+            if [ "$retry_count" -lt "$RETRY_MAX" ] 2>/dev/null; then
+                # Unacknowledged nudge → retry immediately (next cycle)
+                retry_count=$((retry_count + 1))
+                echo "$retry_count" > "$RETRY_COUNT_FILE"
+                echo "[$(date)] [RETRY] Nudge unacknowledged, retry ${retry_count}/${RETRY_MAX} for $AGENT_ID" >&2
                 send_wakeup "$normal_count"
             else
-                echo "[$(date)] [FP-SAME] Same unread set (age ${fp_age}s), skipping nudge for $AGENT_ID" >&2
+                # Retries exhausted → fall back to BACKOFF_SEC interval
+                local fp_age=0
+                if [ -f "$FINGERPRINT_FILE" ]; then
+                    local fp_mtime
+                    fp_mtime=$(stat -c %Y "$FINGERPRINT_FILE" 2>/dev/null || echo 0)
+                    fp_age=$(( $(date +%s) - fp_mtime ))
+                fi
+
+                if [ "$fp_age" -ge "$BACKOFF_SEC" ]; then
+                    echo "[$(date)] [BACKOFF] Stale unread for ${fp_age}s >= ${BACKOFF_SEC}s, re-notifying $AGENT_ID" >&2
+                    touch "$FINGERPRINT_FILE"  # reset mtime for next backoff cycle
+                    send_wakeup "$normal_count"
+                else
+                    echo "[$(date)] [FP-SAME] Same unread set (age ${fp_age}s, retries exhausted), waiting for backoff for $AGENT_ID" >&2
+                fi
             fi
         fi
     else
-        # No unread → clear fingerprint (reset for next new message)
+        # No unread → clear fingerprint + retry counter
         if [ -f "$FINGERPRINT_FILE" ]; then
             rm -f "$FINGERPRINT_FILE"
+            rm -f "$RETRY_COUNT_FILE"
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
         fi
     fi
 }
+
+# ─── Startup: ensure @agent_state is initialized (deadlock prevention) ───
+# If @agent_state is not set (fresh pane, after reset), initialize to idle.
+# Without this, a missing state would be treated as "unknown" and nudges
+# would still be sent, but explicit initialization prevents ambiguity.
+_startup_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "")
+if [ -z "$_startup_state" ]; then
+    tmux set-option -p -t "$PANE_TARGET" @agent_state idle 2>/dev/null || true
+    echo "[$(date)] Initialized @agent_state=idle for $AGENT_ID" >&2
+fi
 
 # ─── Startup: process any existing unread messages ───
 process_unread
