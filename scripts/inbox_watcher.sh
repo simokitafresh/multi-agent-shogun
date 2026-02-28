@@ -22,6 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # cli_lookup.sh を source（CLI種別をsettings.yaml+cli_profiles.yamlから動的取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 
 AGENT_ID="$1"
 PANE_TARGET="$2"
@@ -150,11 +151,9 @@ send_cli_command() {
             local launch
             launch=$(cli_launch_cmd "$AGENT_ID")
             echo "[$(date)] CLI restart for $AGENT_ID ($CLI_TYPE): Ctrl-C + $launch" >&2
-            timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" C-c 2>/dev/null || true
+            safe_send_keys "$PANE_TARGET" C-c 2>/dev/null || true
             sleep 2
-            timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" "$launch" 2>/dev/null || true
-            sleep 0.3
-            timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
+            safe_send_keys_atomic "$PANE_TARGET" "$launch" 0.3
             sleep 3
             return 0
         fi
@@ -177,13 +176,8 @@ send_cli_command() {
 
     echo "[$(date)] Sending CLI command to $AGENT_ID ($CLI_TYPE): $actual_cmd" >&2
 
-    if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" "$actual_cmd" 2>/dev/null; then
-        echo "[$(date)] WARNING: send-keys timed out for CLI command" >&2
-        return 1
-    fi
-    sleep 0.3
-    if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
-        echo "[$(date)] WARNING: send-keys Enter timed out for CLI command" >&2
+    if ! safe_send_keys_atomic "$PANE_TARGET" "$actual_cmd" 0.3; then
+        echo "[$(date)] WARNING: safe_send_keys_atomic failed for CLI command" >&2
         return 1
     fi
 
@@ -231,6 +225,8 @@ send_wakeup() {
             echo "[$(date)] [BUSY] Agent $AGENT_ID is active, deferring nudge" >&2
             return 0
         fi
+        # @agent_state=idle時にflag補完（flag方式との整合性）
+        [ ! -f "/tmp/shogun_idle_${AGENT_ID}" ] && touch "/tmp/shogun_idle_${AGENT_ID}"
     fi
 
     # Tier 1.5: Debounce repeated nudge storms (normal messages only)
@@ -255,20 +251,27 @@ send_wakeup() {
     fi
 
     # Pre-clear: Enter to flush any partial input in the pane
-    timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
+    safe_send_keys "$PANE_TARGET" Enter 2>/dev/null || true
     sleep 0.3
 
-    # Send nudge via paste-buffer
+    # Send nudge via paste-buffer + Enter (atomic lock)
     tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
-    if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
-        echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2
-        rm -f "$DEBOUNCE_FILE"  # Rollback optimistic lock on failure
-        return 1
-    fi
-    sleep 0.5
-    if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
-        echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
-        rm -f "$DEBOUNCE_FILE"  # Rollback optimistic lock on failure
+    local lock="/tmp/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
+    (
+        flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; rm -f "$DEBOUNCE_FILE"; exit 1; }
+        if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
+            echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2
+            rm -f "$DEBOUNCE_FILE"
+            exit 1
+        fi
+        sleep 0.5
+        if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
+            echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
+            rm -f "$DEBOUNCE_FILE"
+            exit 1
+        fi
+    ) 200>"$lock"
+    if [ $? -ne 0 ]; then
         return 1
     fi
 

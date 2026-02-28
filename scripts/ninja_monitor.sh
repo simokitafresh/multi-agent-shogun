@@ -31,6 +31,7 @@ LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
+source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 
@@ -691,9 +692,7 @@ handle_confirmed_idle() {
             reset_cmd=$(cli_profile_get "$name" "clear_cmd")
             log "DEPLOY-STALL-CLEAR: $name stalled ${elapsed}s with $task_status task, sending $reset_cmd"
             local target="${PANE_TARGETS[$name]}"
-            tmux send-keys -t "$target" "$reset_cmd"
-            sleep 0.3
-            tmux send-keys -t "$target" Enter
+            safe_send_keys_atomic "$target" "$reset_cmd" 0.3
             touch "/tmp/shogun_idle_${name}"
             unset STALL_FIRST_SEEN[$deploy_stall_key]
             # /new後にinbox nudgeで新セッションにタスクを知らせる
@@ -763,9 +762,7 @@ handle_confirmed_idle() {
                 local reset_cmd
                 reset_cmd=$(cli_profile_get "$name" "clear_cmd")
                 log "AUTO-CLEAR: $name idle+no_task CTX=${ctx_now}%, sending $reset_cmd"
-                tmux send-keys -t "$target" "$reset_cmd"
-                sleep 0.3
-                tmux send-keys -t "$target" Enter
+                safe_send_keys_atomic "$target" "$reset_cmd" 0.3
                 touch "/tmp/shogun_idle_${name}"
                 LAST_CLEARED[$name]=$now
                 # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
@@ -1164,7 +1161,7 @@ check_inbox_renudge() {
         if [ "$current_fp" != "$prev_fp" ]; then
             # fingerprint変化 = 新規未読出現 or 既読化で集合変化 → 即送信
             log "RENUDGE-TRANSITION: $name fingerprint changed (unread=$unread_count), sending inbox${unread_count}"
-            tmux send-keys -t "$target" "inbox${unread_count}" Enter
+            safe_send_keys_atomic "$target" "inbox${unread_count}" 0.3
             RENUDGE_FINGERPRINT[$name]="$current_fp"
             RENUDGE_LAST_SEND[$name]=$now
             RENUDGE_COUNT[$name]=1
@@ -1174,7 +1171,13 @@ check_inbox_renudge() {
             local elapsed=$((now - last_send))
             local count="${RENUDGE_COUNT[$name]:-0}"
 
-            if [ "$count" -ge "$MAX_RENUDGE" ]; then
+            # AC3: 家老は60秒バックオフで優先re-nudge（忍者のRENUDGE_BACKOFFより短い）
+            if [ "$name" = "karo" ] && [ $elapsed -ge 60 ]; then
+                log "RENUDGE-KARO-PRIORITY: karo idle+unread=$unread_count, priority re-nudge (${elapsed}s >= 60s)"
+                safe_send_keys_atomic "$target" "inbox${unread_count}" 0.3
+                RENUDGE_LAST_SEND[$name]=$now
+                RENUDGE_COUNT[$name]=$((count + 1))
+            elif [ "$count" -ge "$MAX_RENUDGE" ]; then
                 # 上限到達 → ログのみ（5サイクルに1回）
                 if [ $((cycle % 5)) -eq 0 ]; then
                     log "RENUDGE-MAX: $name reached MAX_RENUDGE=$MAX_RENUDGE (unread=$unread_count)"
@@ -1182,7 +1185,7 @@ check_inbox_renudge() {
             elif [ $elapsed -ge $RENUDGE_BACKOFF ]; then
                 # バックオフ期間経過 → 安全網の低頻度再通知
                 log "RENUDGE-BACKOFF: $name same fingerprint but ${elapsed}s >= ${RENUDGE_BACKOFF}s, safety re-nudge ($((count+1))/$MAX_RENUDGE)"
-                tmux send-keys -t "$target" "inbox${unread_count}" Enter
+                safe_send_keys_atomic "$target" "inbox${unread_count}" 0.3
                 RENUDGE_LAST_SEND[$name]=$now
                 RENUDGE_COUNT[$name]=$((count + 1))
             fi
@@ -1409,10 +1412,10 @@ send_karo_clear() {
     local clear_cmd
     clear_cmd=$(cli_profile_get "karo" "clear_cmd")
     log "KARO-CLEAR(${caller}): karo CTX:${ctx_num}%, sending ${clear_cmd}"
-    tmux send-keys -t "$karo_pane" "$clear_cmd"
-    sleep 0.3
-    tmux send-keys -t "$karo_pane" Enter
+    safe_send_keys_atomic "$karo_pane" "$clear_cmd" 0.3
     LAST_KARO_CLEAR=$now
+    # AC4: /clear後にdebounceファイルを削除（inbox_watcherの再送をブロックしない）
+    rm -f "/tmp/inbox_watcher_last_nudge_karo"
 
     return 0
 }
