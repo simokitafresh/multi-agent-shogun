@@ -263,6 +263,62 @@ collect_gate_metrics_extra() {
     echo "${task_types_csv} ${models_csv} ${bloom_levels_csv}"
 }
 
+# ─── cmd_466: gate_metrics拡張用 — 注入教訓ID収集 ───
+collect_injected_lessons() {
+    local cmd_id="$1"
+    local injected_lessons
+
+    injected_lessons=$(python3 - "$TASKS_DIR" "$cmd_id" <<'PY'
+import os
+import sys
+import yaml
+
+tasks_dir = sys.argv[1]
+cmd_id = sys.argv[2]
+seen = set()
+ordered = []
+
+for filename in sorted(os.listdir(tasks_dir)):
+    if not filename.endswith(".yaml"):
+        continue
+    task_path = os.path.join(tasks_dir, filename)
+    try:
+        with open(task_path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    except Exception:
+        continue
+    if not isinstance(data, dict):
+        continue
+    task = data.get("task", {})
+    if not isinstance(task, dict):
+        continue
+    if str(task.get("parent_cmd", "")).strip() != cmd_id:
+        continue
+
+    related_lessons = task.get("related_lessons") or []
+    if not isinstance(related_lessons, list):
+        continue
+    for lesson in related_lessons:
+        if isinstance(lesson, dict):
+            lid = lesson.get("id")
+        else:
+            lid = lesson
+        if lid is None:
+            continue
+        lid = str(lid).strip()
+        if not lid or lid in seen:
+            continue
+        seen.add(lid)
+        ordered.append(lid)
+
+print(",".join(ordered) if ordered else "none")
+PY
+    ) || injected_lessons="none"
+
+    [ -z "$injected_lessons" ] && injected_lessons="none"
+    echo "$injected_lessons"
+}
+
 # ─── lesson tracking追記（ベストエフォート） ───
 append_lesson_tracking() {
     local cmd_id="$1"
@@ -354,9 +410,12 @@ for ninja in ninjas:
         continue
     if not isinstance(report, dict):
         continue
-    lesson_referenced = report.get("lesson_referenced") or []
-    if isinstance(lesson_referenced, list):
-        for item in lesson_referenced:
+    lessons_useful = report.get("lessons_useful")
+    if lessons_useful is None:
+        # Backward compatibility for legacy report field.
+        lessons_useful = report.get("lesson_referenced")
+    if isinstance(lessons_useful, list):
+        for item in lessons_useful:
             if isinstance(item, dict):
                 add_unique(referenced, item.get("id"))
             else:
@@ -486,9 +545,12 @@ for ninja in ninjas:
     if not report_file:
         continue
     report = parse_yaml(report_file)
-    lesson_referenced = report.get("lesson_referenced") or []
-    if isinstance(lesson_referenced, list):
-        for item in lesson_referenced:
+    lessons_useful = report.get("lessons_useful")
+    if lessons_useful is None:
+        # Backward compatibility for legacy report field.
+        lessons_useful = report.get("lesson_referenced")
+    if isinstance(lessons_useful, list):
+        for item in lessons_useful:
             if isinstance(item, dict):
                 add_unique(referenced_ids, item.get("id"))
             else:
@@ -681,6 +743,7 @@ ALL_GATES=("${ALWAYS_REQUIRED[@]}" "${CONDITIONAL[@]}")
 
 # cmd_407: gate_metrics拡張用のtask_type/model/bloom_level収集
 read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate_metrics_extra "$CMD_ID")"
+GATE_INJECTED_LESSONS="$(collect_injected_lessons "$CMD_ID")"
 
 # ─── 忍者報告からlesson_candidate自動draft登録 ───
 echo "Auto-draft lesson candidates:"
@@ -721,6 +784,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tOVERRIDE\temergency_override\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}" >> "$GATE_METRICS_LOG"
     if append_lesson_tracking "$CMD_ID" "OVERRIDE" 2>&1; then
         true
     else
@@ -834,9 +898,9 @@ if [ "$RL_CHECKED" = false ]; then
     echo "  (no tasks found for this cmd)"
 fi
 
-# ─── lesson_referenced検証（related_lessonsあり→報告にlesson_referenced必須） ───
+# ─── lessons_useful検証（related_lessonsあり→報告にlessons_useful必須） ───
 echo ""
-echo "Lesson referenced check:"
+echo "Lessons useful check:"
 LESSON_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
@@ -863,7 +927,7 @@ except:
         report_file=$(resolve_report_file "$ninja_name")
 
         if [ -f "$report_file" ]; then
-            # Python判定: lesson_referencedが非空リストかチェック
+            # Python判定: lessons_usefulが非空リストかチェック（旧lesson_referencedにも対応）
             lr_status=$(python3 -c "
 import yaml, sys
 try:
@@ -872,7 +936,9 @@ try:
     if not data:
         print('empty')
         sys.exit(0)
-    lr = data.get('lesson_referenced')
+    lr = data.get('lessons_useful')
+    if lr is None:
+        lr = data.get('lesson_referenced')
     if lr and isinstance(lr, list) and len(lr) > 0:
         print('ok')
     else:
@@ -882,7 +948,7 @@ except:
 " 2>/dev/null)
 
             if [ "$lr_status" = "ok" ]; then
-                echo "  ${ninja_name}: OK (lesson_referenced present and non-empty)"
+                echo "  ${ninja_name}: OK (lessons_useful present and non-empty)"
             else
                 # related_lessonsからlesson IDを抽出してメッセージに表示
                 rl_ids=$(python3 -c "
@@ -897,8 +963,8 @@ try:
 except:
     print('(parse_error)')
 " 2>/dev/null)
-                echo "  ${ninja_name}: NG ← lesson_referenced空。related_lessons [${rl_ids}] のうち参考にしたものを報告に記載せよ"
-                record_block_reason "${ninja_name}:empty_lesson_referenced:related=[${rl_ids}]"
+                echo "  ${ninja_name}: NG ← lessons_useful空。related_lessons [${rl_ids}] のうち実際に役立った教訓を報告に記載せよ"
+                record_block_reason "${ninja_name}:empty_lessons_useful:related=[${rl_ids}]"
                 ALL_CLEAR=false
             fi
         else
@@ -1444,7 +1510,7 @@ fi
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
     echo "GATE CLEAR: cmd完了許可"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}" >> "$GATE_METRICS_LOG"
     # gate_yaml_status: YAML status更新（WARNING only）
     if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
         true
@@ -1498,7 +1564,9 @@ try:
         data = yaml.safe_load(f)
     if not data:
         sys.exit(0)
-    lr = data.get('lesson_referenced', [])
+    lr = data.get('lessons_useful')
+    if lr is None:
+        lr = data.get('lesson_referenced', [])
     if lr and isinstance(lr, list):
         for item in lr:
             if isinstance(item, str):
@@ -1599,7 +1667,7 @@ else
     else
         block_reason="unknown_block_reason"
     fi
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}" >> "$GATE_METRICS_LOG"
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     if append_lesson_tracking "$CMD_ID" "BLOCK" 2>&1; then
         true
@@ -1619,10 +1687,10 @@ else
     if [ -n "$CMD_PROJECT" ]; then
         DRAFT_GENERATED=0
 
-        # Pattern 1: lesson_referenced empty
+        # Pattern 1: lessons_useful empty
         lr_empty_ninjas=()
         for reason in "${BLOCK_REASONS[@]}"; do
-            if [[ "$reason" == *":empty_lesson_referenced:"* ]]; then
+            if [[ "$reason" == *":empty_lessons_useful:"* || "$reason" == *":empty_lesson_referenced:"* ]]; then
                 ninja=$(echo "$reason" | cut -d: -f1)
                 lr_empty_ninjas+=("$ninja")
             fi
@@ -1630,13 +1698,13 @@ else
         if [ ${#lr_empty_ninjas[@]} -gt 0 ]; then
             lr_count=${#lr_empty_ninjas[@]}
             if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" \
-                "[自動生成] 教訓参照を怠った: ${CMD_ID}" \
-                "lesson_referencedが空のサブタスクが${lr_count}件。教訓を確認してからタスクに臨むべし" \
+                "[自動生成] 有効教訓の記録を怠った: ${CMD_ID}" \
+                "lessons_usefulが空のサブタスクが${lr_count}件。役立った教訓IDを報告に記載してから完了せよ" \
                 "${CMD_ID}" "gate_auto" "${CMD_ID}" --status draft 2>&1; then
-                echo "  draft: 教訓参照を怠った (${lr_count}件)"
+                echo "  draft: 有効教訓の記録を怠った (${lr_count}件)"
                 DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
             else
-                echo "  WARN: draft生成失敗 (lesson_referenced_empty)"
+                echo "  WARN: draft生成失敗 (lessons_useful_empty)"
             fi
         fi
 
@@ -1717,7 +1785,7 @@ except:
                 continue
             fi
 
-            # lesson_referencedの有無を確認
+            # lessons_usefulの有無を確認（旧lesson_referencedにも対応）
             lr_empty=true
             if [ -f "$report_file" ]; then
                 lr_check=$(python3 -c "
@@ -1728,7 +1796,9 @@ try:
     if not data:
         print('empty')
         sys.exit(0)
-    lr = data.get('lesson_referenced')
+    lr = data.get('lessons_useful')
+    if lr is None:
+        lr = data.get('lesson_referenced')
     if lr and isinstance(lr, list) and len(lr) > 0:
         print('ok')
     else:
@@ -1742,7 +1812,7 @@ except:
             fi
 
             if [ "$lr_empty" = false ]; then
-                echo "  ${ninja_name}: SKIP (lesson_referenced non-empty)"
+                echo "  ${ninja_name}: SKIP (lessons_useful non-empty)"
                 continue
             fi
 
@@ -1758,12 +1828,12 @@ except:
     print('unknown')
 " 2>/dev/null)
 
-            # lesson_referenced空 + タスクdone → harmful +1
+            # lessons_useful空 + タスクdone → harmful +1
             if [ "$task_status" = "done" ]; then
                 while IFS= read -r lid; do
                     [ -z "$lid" ] && continue
                     if bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$CMD_PROJECT" "$lid" harmful 2>&1; then
-                        echo "  ${ninja_name}/${lid}: harmful +1 (task done, lesson not referenced)"
+                        echo "  ${ninja_name}/${lid}: harmful +1 (task done, lesson not marked useful)"
                         HARMFUL_UPDATED=$((HARMFUL_UPDATED + 1))
                     else
                         echo "  WARN: ${ninja_name}/${lid}: harmful score update failed (non-blocking)"

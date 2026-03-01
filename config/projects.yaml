@@ -24,6 +24,14 @@ projects:
     priority: medium
     status: active
 
+  - id: google-classroom
+    name: "Google Classroom Dashboard"
+    path: "/mnt/c/Python_app/google_classroom"
+    context_file: "context/google-classroom.md"
+    repo: "https://github.com/simokitafresh/google_classroom"
+    priority: high
+    status: active
+
   - id: mcas
     name: "Multi-Claude Account Switcher"
     path: "/mnt/c/Python_app/multi-claude-account-switcher"

@@ -72,8 +72,16 @@ echo ""
 echo "--- Test 1: shogun_to_karo.yaml → status ---"
 FILE1="${SCRIPT_DIR}/queue/shogun_to_karo.yaml"
 if [[ -f "$FILE1" ]]; then
-  result=$(field_get "$FILE1" "status")
-  assert_nonempty "shogun_to_karo: status は非空" "$result"
+  # STKにcmdが0件(archive後)は正常状態。cmdが存在する場合のみstatusを検証
+  cmd_count=$(grep -c '^  - id: cmd_' "$FILE1" 2>/dev/null || true)
+  cmd_count=${cmd_count:-0}
+  if [ "$cmd_count" -gt 0 ]; then
+    result=$(field_get "$FILE1" "status")
+    assert_nonempty "shogun_to_karo: status は非空" "$result"
+  else
+    echo "  PASS: shogun_to_karo: cmdなし(archive済み)。statusテストskip"
+    PASS=$((PASS + 1))
+  fi
 else
   echo "  FAIL: $FILE1 not found"
   FAIL=$((FAIL + 1))
@@ -99,8 +107,15 @@ fi
 echo ""
 echo "--- Test 3: tasks/hayate.yaml → task_id ---"
 if [[ -f "$FILE2" ]]; then
-  result=$(field_get "$FILE2" "task_id")
-  assert_nonempty "hayate: task_id は非空" "$result"
+  # idle状態のtask YAMLにはtask_idがない。assigned/in_progress時のみ検証
+  hayate_status=$(field_get "$FILE2" "status" "" 2>/dev/null | tr -d '[:space:]')
+  if [[ "$hayate_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
+    result=$(field_get "$FILE2" "task_id")
+    assert_nonempty "hayate: task_id は非空" "$result"
+  else
+    echo "  PASS: hayate: status=$hayate_status (タスクなし)。task_idテストskip"
+    PASS=$((PASS + 1))
+  fi
 else
   echo "  FAIL: $FILE2 not found"
   FAIL=$((FAIL + 1))

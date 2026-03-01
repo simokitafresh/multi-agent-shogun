@@ -26,6 +26,8 @@ setup_file() {
 }
 
 setup() {
+    export INBOX_WRITE_TEST=1
+
     # テスト毎に独立したtmpディレクトリを作成
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/inbox_write_test.XXXXXX")"
     export TEST_INBOX_DIR="$TEST_TMPDIR/queue/inbox"

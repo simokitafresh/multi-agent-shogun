@@ -34,14 +34,15 @@ skill_candidate:
   name: null        # e.g., "readme-improver"
   description: null # e.g., "Improve README for beginners"
   reason: null      # e.g., "Same pattern executed 3 times"
-lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリスト
-  # 参照なしなら lesson_referenced: []
-  # ★ タスクYAMLにrelated_lessonsが1件以上ある場合、lesson_referencedに
+lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓IDリスト
+  # 参照なしなら lessons_useful: []
+  # 後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い
+  # ★ タスクYAMLにrelated_lessonsが1件以上ある場合、lessons_usefulに
   #   最低1件は記載必須。空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)で
-  #   BLOCKされる。参考にした教訓のIDを記載せよ(例: [L121, L122])
+  #   BLOCKされる。実際に役立った教訓のIDを記載せよ(例: [L121, L122])
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_referenced.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lessons_useful.
 Missing fields = incomplete report.
 
 ### 下忍(genin) 報告時の注意
@@ -56,9 +57,9 @@ Missing fields = incomplete report.
   - title: 問題と解決策を1行で（「〜した→〜で解決」形式）
   - detail: 具体的な技術詳細（ファイル名、行番号、コマンド）
   - project: 教訓の登録先プロジェクトID
-- `lesson_referenced:` — related_lessonsを参照した場合はIDリストを記載。
-  参照なしでも `lesson_referenced: []` を必ず記載。
-  **★ タスクYAMLにrelated_lessonsが1件以上ある場合、lesson_referencedに最低1件は記載必須。**
+- `lessons_useful:` — related_lessonsのうち実際に役立ったIDリストを記載。
+  参照なしでも `lessons_useful: []` を必ず記載。
+  **★ タスクYAMLにrelated_lessonsが1件以上ある場合、lessons_usefulに最低1件は記載必須。**
   空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)でBLOCKされる。
 - `decision_candidate:` — found: true/false は**必須**。
 

@@ -724,3 +724,66 @@ data_file=SCRIPT_DIR/logs/lesson_impact.tsvの場合にlogs/を渡す。
 glob(os.path.join(root, "projects", ...))がlogs/projects/を探し
 summaryが常にnot found。修正: 親ディレクトリを2段上げるか、
 SCRIPT_DIRをbashから明示的に渡すべき。
+
+### L107: dedupログ仕様は文言と0件時出力条件をAC文字列と厳密一致させる
+- **日付**: 2026-02-28
+- **出典**: cmd_446
+- **記録者**: saizo
+- **tags**: [universal]
+- ACにログ文言が含まれる場合、語順・語彙・プレフィックス空白も含めて一致確認が必要。N>0条件付き出力にするとN=0要件を落としやすい。
+
+### L108: compact_stateの長さ未制限による500文字超過リスク
+- **日付**: 2026-02-28
+- **出典**: cmd_452
+- **記録者**: tobisaru
+- **tags**: [process]
+- compact_stateファイルが巨大な場合、compact_sectionがsnapshot_budgetを圧迫しtotal>500文字の可能性。現運用では問題なし。将来的にcompact_stateにも長さ制限追加検討。
+
+### L109: git commit時のstaging巻き込み防止
+- **日付**: 2026-02-28
+- **出典**: cmd_452
+- **記録者**: tobisaru
+- **tags**: [git]
+- git addで対象ファイルのみ追加してもstaged済み他ファイルが巻き込まれる。git commit -- <file>で対象限定すべき。
+
+### L110: settings.local.jsonはwhitelist外、並行レビューでcommit重複リスク
+- **日付**: 2026-02-28
+- **出典**: cmd_449
+- **記録者**: hanzo
+- **tags**: [review, git]
+- .claude/settings.local.jsonはgitignore whitelist未登録でpush対象に指定されてもgit addできない。また並行hook配備で複数レビュアーが同一ファイルを先行commit+pushする重複が発生する。
+
+### L111: ACに含めるテストファイルは配備時に実在確認が必要
+- **日付**: 2026-03-01
+- **出典**: cmd_460
+- **記録者**: karo
+- **tags**: [testing, review, gate]
+- AC6にtests/test_cmd_complete_gate.batsを指定したが実在せず、レビュー工程で実行不能だった。タスク配備時にtest path存在検証を先行実施すべき。cmd_460で発覚。
+
+### L112: ninja_monitorのcheck_stall()がtask_idフィールドを参照するが現行タスクYAMLはsubtask_idのみ
+- **日付**: 2026-03-01
+- **出典**: cmd_462
+- **記録者**: karo
+- **tags**: [recon, yaml, monitor]
+- check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECTEDが0件になりSTALL検知が沈黙。task_id||subtask_idフォールバック実装が必要。cmd_462偵察で疾風+才蔵が独立発見。
+
+### L113: タスク指定ファイルが.gitignore whitelist外だとcommit要件を満たせない
+- **日付**: 2026-03-01
+- **出典**: cmd_463
+- **記録者**: sasuke
+- **tags**: [testing, bash, git, tmux]
+- scripts/lib/tmux_utils.sh は .gitignore の whitelist未登録で git add が拒否された。配備時に対象ファイルの追跡可否を事前検証すべき。
+
+### L114: safe_send_clear独自idle判定(tail -3)がCLIステータスバーで❯を見落とし永久CLEAR-BLOCKED。idle判定は必ずcheck_idle()に一本化せよ。同一判定の重複実装は片方が必ず腐る
+- **日付**: 2026-03-01
+- **出典**: ninja_monitor,idle_detection,safe_send_clear
+- **記録者**: karo
+- **tags**: [gate, monitor]
+- cmd_464_hotfix
+
+### L115: check_auto_archive()のawkがacceptance_criteria idを誤抽出。YAMLパース時はcmd_*パターン限定が必須
+- **日付**: 2026-03-01
+- **出典**: ninja_monitor,auto_archive
+- **記録者**: shogun(hotfix)
+- **tags**: [monitor, yaml, awk]
+- check_auto_archive()のawkパターン `/^[[:space:]]*-[[:space:]]id:/` がcmdレベル(2スペース)とacceptance_criteriaレベル(6スペース)の両方にマッチ。最後に拾ったAC4がarchive_completed.shに渡されて毎サイクルエラー。`cmd_*`パターン限定で解決。YAML内に同名フィールド(id:)が複数階層にある場合、awkは値のプレフィックスで階層を区別せよ。

@@ -77,7 +77,7 @@ workflow:
     action: self_gate_check
     mandatory: true
     positive_rule: "report.result.self_gate_checkに5項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
-    reason: "cmd完了ゲートBLOCK65%はlesson_referenced空・reviewed:false残存。提出前自己ゲートで事前排除できる"
+    reason: "cmd完了ゲートBLOCK65%はlessons_useful空・reviewed:false残存。提出前自己ゲートで事前排除できる"
   - step: 6
     action: update_status
     value: done
@@ -370,12 +370,13 @@ decision_candidate:
   alternatives: null  # e.g., "検討した他の案"
   # NOTE: 忍者はdecisions.mdに直接書き込まない。
   #        家老が報告のdecision_candidateを精査し、decision_write.shで正式登録する。
-lesson_referenced: [L025, L030]  # related_lessonsから参照した教訓IDリスト
-  # 参照なしなら lesson_referenced: []
-  # related_lessonsが空 or なしでも lesson_referenced: [] を必ず記載
-  # ★ タスクYAMLにrelated_lessonsが1件以上ある場合、lesson_referencedに
+lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓IDリスト
+  # 参照なしなら lessons_useful: []
+  # 後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い
+  # related_lessonsが空 or なしでも lessons_useful: [] を必ず記載
+  # ★ タスクYAMLにrelated_lessonsが1件以上ある場合、lessons_usefulに
   #   最低1件は記載必須。空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)で
-  #   BLOCKされる。参考にした教訓のIDを記載せよ(例: [L121, L122])
+  #   BLOCKされる。実際に役立った教訓のIDを記載せよ(例: [L121, L122])
 
 # パリティ検証報告の追加フィールド（パリティ検証タスク時に必須）
 # data_sourceはパリティ検証の信頼性を担保する必須情報。省略はFAIL扱い。
@@ -384,7 +385,7 @@ parity_data_source:
   prod_side: "PostgreSQL(DATABASE_URL)"        # 本番側データソースを明記
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate, lesson_referenced.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate, lessons_useful.
 Missing fields = incomplete report.
 
 ## Step 5.5: 提出前自己ゲート (MANDATORY)
@@ -393,7 +394,7 @@ Missing fields = incomplete report.
 
 | 項目 | 確認内容 | FAILの対処 |
 |------|---------|------------|
-| (a) lesson_ref | related_lessonsが1件以上 → lesson_referencedに1件以上記載 | lesson_referencedに参照教訓IDを追記 |
+| (a) lesson_ref | related_lessonsが1件以上 → lessons_usefulに1件以上記載 | lessons_usefulに役立った教訓IDを追記 |
 | (b) reviewed | related_lessons内のreviewed:falseが0件 | 未レビュー教訓を読んでreviewed:trueに変更 |
 | (c) lesson_candidate | found: true/falseが明記されていること | lesson_candidateにfound:true or falseを記載 |
 | (d) status_valid | status = done \| failed \| blocked のいずれか | 適切なstatusに修正 |
@@ -409,7 +410,7 @@ self_gate_check:
   purpose_fit: PASS   # or FAIL
 ```
 
-**reason**: cmd完了ゲート(cmd_complete_gate.sh)のBLOCK主因65%はlesson_referenced空・reviewed:false残存。提出前の自己ゲートで事前排除できる。FAILを提出後に修正するより提出前の確認コストは格段に低い。
+**reason**: cmd完了ゲート(cmd_complete_gate.sh)のBLOCK主因65%はlessons_useful空・reviewed:false残存。提出前の自己ゲートで事前排除できる。FAILを提出後に修正するより提出前の確認コストは格段に低い。
 
 ### 下忍(genin) 報告時の注意
 
@@ -418,9 +419,9 @@ self_gate_check:
 
 - `lesson_candidate:` — found: true/false は**必須**。省略禁止。
   found: true の場合は title: と detail: も必須。
-- `lesson_referenced:` — related_lessonsを参照した場合はIDリストを記載。
-  参照なしでも `lesson_referenced: []` を必ず記載。
-  **★ タスクYAMLにrelated_lessonsが1件以上ある場合、lesson_referencedに最低1件は記載必須。**
+- `lessons_useful:` — related_lessonsのうち実際に役立ったIDリストを記載。
+  参照なしでも `lessons_useful: []` を必ず記載。
+  **★ タスクYAMLにrelated_lessonsが1件以上ある場合、lessons_usefulに最低1件は記載必須。**
   空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)でBLOCKされる。
 - `decision_candidate:` — found: true/false は**必須**。
 

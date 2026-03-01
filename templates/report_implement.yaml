@@ -2,9 +2,10 @@ filename_pattern: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # 例: hanzo_r
 required_fields:
   - files_modified      # 変更ファイル一覧
   - lesson_candidate    # found: true/false + 内容
-  - lesson_referenced   # 参照した教訓ID一覧
+  - lessons_useful      # 実際に役立った教訓ID一覧
 forbidden:
   - "pushするな(commitまで)"
   - "スコープ外改善は禁止"
 notes:
   - "TODO/FIXMEが残っていないことを確認せよ"
+  - "後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い"

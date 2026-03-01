@@ -296,7 +296,7 @@ def classify_block_reason(detail):
             reasons.append("missing_gate")
         elif "unreviewed_lessons:" in tok_lower:
             reasons.append("unreviewed_lessons")
-        elif "empty_lesson_referenced:" in tok_lower:
+        elif "empty_lessons_useful:" in tok_lower or "empty_lesson_referenced:" in tok_lower:
             reasons.append("unreviewed_lessons")
         elif "lesson_done_source:" in tok_lower or "lesson_done_missing" in tok_lower:
             reasons.append("lesson_processing")

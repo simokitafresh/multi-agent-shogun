@@ -270,9 +270,11 @@ check_idle() {
     return 1  # デフォルトはBUSY（安全側 — 誤検知防止）
 }
 
-# ─── /clear送信ラッパー（idle二重確認） ───
+# ─── /clear送信ラッパー（idle確認はis_agent_idle()に一本化） ───
 # $1: pane_target, $2: agent_name, $3: reason(任意)
 # 戻り値: 0=送信, 1=ブロック（次サイクル再試行）
+# HOTFIX 2026-03-01: tail -3でステータスバーしか見えずidle prompt検出不能だった
+#   → is_agent_idle()に一本化。idle判定ロジックの重複を排除。
 safe_send_clear() {
     local pane="$1"
     local agent_name="$2"
@@ -283,25 +285,9 @@ safe_send_clear() {
         return 1
     fi
 
-    # 1st gate: idle flag
-    if [ ! -f "/tmp/shogun_idle_${agent_name}" ]; then
-        log "CLEAR-BLOCKED: $agent_name not idle (no flag), reason=$reason, will retry next cycle"
-        return 1
-    fi
-
-    # 2nd gate: prompt確認（直近3行）
-    local output
-    output=$(tmux capture-pane -t "$pane" -p -S -8 2>/dev/null | tail -3)
-    if [ -z "$output" ]; then
-        log "CLEAR-BLOCKED: $agent_name capture-pane empty, reason=$reason, will retry next cycle"
-        return 1
-    fi
-
-    local idle_pat
-    idle_pat=$(cli_profile_get "$agent_name" "idle_pattern")
-    idle_pat=${idle_pat:-"❯|›"}
-    if ! echo "$output" | grep -qE "$idle_pat"; then
-        log "CLEAR-BLOCKED: $agent_name not idle (no prompt), reason=$reason, will retry next cycle"
+    # idle判定をcheck_idle()に委譲（idle flag + capture-pane + busy pattern除外）
+    if ! check_idle "$pane" "$agent_name"; then
+        log "CLEAR-BLOCKED: $agent_name not idle (check_idle), reason=$reason, will retry next cycle"
         return 1
     fi
 
@@ -1706,8 +1692,9 @@ check_auto_archive() {
 
     # completed cmd_idを抽出
     local -a completed_cmds
+    # HOTFIX 2026-03-01: cmd_*のみ抽出。AC1-AC4等のacceptance_criteria idを除外
     mapfile -t completed_cmds < <(awk '
-        /^[[:space:]]*-[[:space:]]id:/ {
+        /^[[:space:]]*-[[:space:]]id:[[:space:]]*cmd_/ {
             cmd_id=$3; gsub(/"/, "", cmd_id)
             cmd_status=""
             next

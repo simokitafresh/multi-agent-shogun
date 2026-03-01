@@ -177,15 +177,27 @@ archive_cmds() {
 archive_reports() {
     [ -d "$REPORTS_DIR" ] || return 0
 
-    local archived=0 kept=0 skipped=0
+    local archived=0 kept=0 skipped=0 junk=0
     local date_stamp
     date_stamp="$(date '+%Y%m%d')"
 
+    # --- 非YAMLファイルの掃除 (忍者の成果物混入防止) ---
     shopt -s nullglob
-    local report_files=("$REPORTS_DIR"/*_report*.yaml)
+    local all_files=("$REPORTS_DIR"/*)
+    shopt -u nullglob
+    for f in "${all_files[@]}"; do
+        [ -f "$f" ] || continue
+        case "$f" in *.yaml) continue ;; esac
+        mv "$f" "$ARCHIVE_REPORT_DIR/"
+        junk=$((junk + 1))
+    done
+
+    # --- YAML報告のアーカイブ ---
+    shopt -s nullglob
+    local report_files=("$REPORTS_DIR"/*_report*.yaml "$REPORTS_DIR"/subtask_*.yaml)
     shopt -u nullglob
 
-    if [ ${#report_files[@]} -eq 0 ]; then
+    if [ ${#report_files[@]} -eq 0 ] && [ "$junk" -eq 0 ]; then
         echo "[archive] reports: none"
         return 0
     fi
@@ -197,19 +209,21 @@ archive_reports() {
         status_val=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "status" "" 2>/dev/null | tr -d '[:space:]')
         parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "parent_cmd" "" 2>/dev/null | tr -d '[:space:]')
 
-        # 完了報告のみをアーカイブ対象とする
-        case "$status_val" in
-            done|completed|success) ;;
-            *)
-                kept=$((kept + 1))
-                continue
-                ;;
-        esac
-
         # cmd指定時は該当cmdの報告のみを対象化
         if [ -n "$CMD_ID" ] && [ -n "$parent_cmd" ] && [ "$parent_cmd" != "$CMD_ID" ]; then
             skipped=$((skipped + 1))
             continue
+        fi
+
+        # CMD_ID指定なし(sweep mode): 完了報告のみ。CMD_ID指定あり: status不問で全archive
+        if [ -z "$CMD_ID" ]; then
+            case "$status_val" in
+                done|completed|complete|success|failed) ;;
+                *)
+                    kept=$((kept + 1))
+                    continue
+                    ;;
+            esac
         fi
 
         base_name="$(basename "$report_file")"
@@ -229,7 +243,7 @@ archive_reports() {
         archived=$((archived + 1))
     done
 
-    echo "[archive] reports: archived=$archived kept=$kept skipped=$skipped"
+    echo "[archive] reports: archived=$archived kept=$kept skipped=$skipped junk=$junk"
 }
 
 # ============================================================

@@ -234,7 +234,7 @@ lesson_candidate:
   title: ""
   detail: ""
   project: ${project}
-lesson_referenced: []
+lessons_useful: []
 skill_candidate:
   found: false
 decision_candidate:

@@ -221,6 +221,13 @@ cmd受領 → まずcmdフラグを確認:
 6. レビューFAIL → 修正タスク配備 → 再レビュー → LGTMまでループ
 7. 品質判定は忍者レビューに委ねよ。家老の役割はレビュータスクの配備とGATE判定のみ
 
+### BLOCK時 preventable_by タグ付け（cmd_466追加）
+GATE BLOCK発生時、家老が以下を判定:
+1. 既存教訓Lxxxがあればこのミスは防げたか？
+2. YES → BLOCK記録に `preventable_by: [Lxxx]` を付与
+3. NO → `preventable_by: []`（空配列）
+付与先: `logs/gate_metrics.log` のBLOCK行末尾（手動追記 or 補助スクリプト）
+
 ## §4 難問エスカレーション
 > 失敗した時の増員原則。偵察2名並行（予防措置）とは別原則（失敗からの学習増幅）。
 
