@@ -5,7 +5,7 @@
 #
 # Wraps usage_monitor.sh --status with a file-based cache.
 # Renders Day+Week usage with 5-char progress bars.
-# Output: "D:█▓░░░ 2% 12am W:█░░░░ 2% 3/4 2PM"
+# Output: "5H:█▓░░░ 2% 12am 7D:█░░░░ 2% 3/4 2PM"
 #
 # Cache TTL: MCAS_STATUS_INTERVAL (default 300s / 5 min).
 # Graceful degradation: fetch failure does NOT overwrite cache (L007).
@@ -22,11 +22,11 @@ CACHE_MAX_AGE=3600  # 1 hour: force delete stale cache regardless of TTL
 
 # =============================================================================
 # cache_valid: validate cache content format
-# Returns 0 if valid ("D:" prefix and contains "W:"), 1 if corrupted
+# Returns 0 if valid ("5H:" prefix and contains "7D:"), 1 if corrupted
 # =============================================================================
 cache_valid() {
     local content="$1"
-    [[ "$content" == D:*W:* ]]
+    [[ "$content" == 5H:*7D:* ]]
 }
 
 # =============================================================================
@@ -54,7 +54,7 @@ progress_bar() {
 }
 
 # =============================================================================
-# Format output: "D:█▓░░░ 2% 12am W:█░░░░ 2% 3/4 2pm"
+# Format output: "5H:█▓░░░ 2% 12am 7D:█░░░░ 2% 3/4 2pm"
 # =============================================================================
 format_line() {
     local d_pct="$1" d_reset="$2" w_pct="$3" w_reset="$4"
@@ -67,7 +67,7 @@ format_line() {
     if [[ "$d_pct" == "ERR" ]]; then d_disp="--"; else d_disp="${d_pct}"; fi
     if [[ "$w_pct" == "ERR" ]]; then w_disp="--"; else w_disp="${w_pct}"; fi
 
-    printf 'D:%s %s%% %s W:%s %s%% %s' \
+    printf '5H:%s %s%% %s 7D:%s %s%% %s' \
         "$d_bar" "$d_disp" "$d_reset" \
         "$w_bar" "$w_disp" "$w_reset"
 }
@@ -105,10 +105,10 @@ if [[ -z "$raw" ]]; then
         if cache_valid "$cached"; then
             echo "$cached"
         else
-            echo "D:----- --% -- W:----- --% --"
+            echo "5H:----- --% -- 7D:----- --% --"
         fi
     else
-        echo "D:----- --% -- W:----- --% --"
+        echo "5H:----- --% -- 7D:----- --% --"
     fi
     exit 0
 fi

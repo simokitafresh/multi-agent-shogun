@@ -3,7 +3,7 @@
 # usage_statusbar_loop.sh — Daemon loop for tmux status-right usage display
 #
 # Calls usage_status.sh periodically and updates tmux status-right.
-# Display: "D:█▓░░░ 2% 12am W:█░░░░ 2% 3/4 2PM | YYYY-MM-DD HH:MM"
+# Display: "[project] | 5H:█▓░░░ 2% 12am 7D:█░░░░ 2% 3/4 2PM | YYYY-MM-DD HH:MM"
 #
 # Kept from hayate's original: pidfile, DRY_RUN, INTERVAL_SEC, MAX_LOOPS
 # =============================================================================
@@ -69,14 +69,27 @@ generate_mock_output() {
     else w_bar+="░"; fi
   done
 
-  printf 'D:%s %s%% -- W:%s %s%% --' "$d_bar" "$mock_5h" "$w_bar" "$mock_7d"
+  printf '5H:%s %s%% -- 7D:%s %s%% --' "$d_bar" "$mock_5h" "$w_bar" "$mock_7d"
+}
+
+get_current_project() {
+  local config_file="${SCRIPT_ROOT}/config/projects.yaml"
+  local current_pj=""
+
+  if [[ -f "$config_file" ]]; then
+    current_pj="$(awk '/^current_project:[[:space:]]*/ { print $2; exit }' "$config_file" 2>/dev/null || true)"
+  fi
+
+  printf '%s' "${current_pj:-???}"
 }
 
 update_tmux_status_right() {
-  local usage_output="$1"
+  local usage_line="$1"
+  local current_pj
   local status_right
 
-  status_right="${usage_output} #[fg=#cdd6f4]| %Y-%m-%d %H:%M"
+  current_pj="$(get_current_project)"
+  status_right="#[fg=#cdd6f4][${current_pj}] #[fg=#585b70]| #[fg=#ffffff]${usage_line} #[fg=#585b70]| #[fg=#cdd6f4]%Y-%m-%d %H:%M"
 
   tmux set-option -t "$TMUX_TARGET" status-right-length 200 >/dev/null 2>&1 || true
   tmux set-option -t "$TMUX_TARGET" status-right "$status_right" >/dev/null
