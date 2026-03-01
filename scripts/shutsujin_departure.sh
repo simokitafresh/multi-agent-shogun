@@ -98,9 +98,9 @@ AGENTS_PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo "1"
 SAIZO_PANE_INDEX=$((AGENTS_PANE_BASE + 6))
 SAIZO_PANE_TARGET="${AGENTS_WINDOW_TARGET}.${SAIZO_PANE_INDEX}"
 tmux set-option -p -t "$SAIZO_PANE_TARGET" @agent_id saizo 2>/dev/null
-tmux set-option -p -t "$SAIZO_PANE_TARGET" @agent_cli claude 2>/dev/null
-tmux set-option -p -t "$SAIZO_PANE_TARGET" @model_name Sonnet 2>/dev/null
-echo "[shutsujin] saizo pane variables set (${SAIZO_PANE_TARGET}, model=Sonnet)"
+tmux set-option -p -t "$SAIZO_PANE_TARGET" @agent_cli codex 2>/dev/null
+tmux set-option -p -t "$SAIZO_PANE_TARGET" @model_name "gpt-5.3-codex high" 2>/dev/null
+echo "[shutsujin] saizo pane variables set (${SAIZO_PANE_TARGET}, model=gpt-5.3-codex high, cli=codex)"
 
 # ─── idle flag initialization (cmd_455) ───
 for agent in karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
