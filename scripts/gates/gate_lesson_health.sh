@@ -325,59 +325,72 @@ for l in data['lessons']:
     fi
 }
 
-# --- 教訓効果サマリ ---
-EFFECTIVENESS_SCRIPT="$SCRIPT_DIR/scripts/lesson_effectiveness.sh"
+# --- 教訓効果サマリ (cmd_473: lessons.yaml直接参照に統一) ---
 check_lesson_effectiveness() {
-    if [ ! -f "$EFFECTIVENESS_SCRIPT" ]; then
-        echo "WARN: lesson_effectiveness.sh not found — 教訓効果集計スキップ"
+    local target_pids=()
+    if [ $# -ge 1 ]; then
+        target_pids=("$1")
+    else
+        while IFS= read -r line; do
+            target_pids+=("$line")
+        done < <(awk '/^  - id:/{id=$3} /status: active/{print id}' "$CONFIG_FILE" 2>/dev/null)
+    fi
+
+    if [ ${#target_pids[@]} -eq 0 ]; then
+        echo "OK: 教訓効果データなし(対象project 0件)"
         return 0
     fi
 
-    local eff_args=""
-    if [ $# -ge 1 ]; then
-        eff_args="--project $1"
-    fi
+    local result
+    result=$(python3 -c "
+import yaml, sys, os
 
-    local eff_output
-    # shellcheck disable=SC2086
-    eff_output=$(bash "$EFFECTIVENESS_SCRIPT" $eff_args 2>/dev/null) || {
-        echo "WARN: lesson_effectiveness.sh実行失敗 — 教訓効果集計スキップ"
+base = sys.argv[1]
+pids = sys.argv[2:]
+total = 0
+helpful_positive = 0
+warn5 = []
+
+for pid in pids:
+    path = os.path.join(base, 'projects', pid, 'lessons.yaml')
+    if not os.path.exists(path):
+        continue
+    with open(path, encoding='utf-8') as f:
+        data = yaml.safe_load(f)
+    if not data or 'lessons' not in data:
+        continue
+    for l in data['lessons']:
+        st = str(l.get('status', 'confirmed')).lower()
+        if st == 'deprecated' or l.get('deprecated', False):
+            continue
+        total += 1
+        hc = l.get('helpful_count', 0) or 0
+        ic = l.get('injection_count', 0) or 0
+        if hc > 0:
+            helpful_positive += 1
+        # injection_count >= 5 かつ helpful_count == 0 (injection_count==0は除外)
+        if ic >= 5 and hc == 0:
+            warn5.append(f'  - {l[\"id\"]}: injection={ic}, helpful={hc} [{pid}]')
+
+if warn5:
+    print('WARN: 注入5回以上で効果報告0件の教訓:')
+    for w in warn5:
+        print(w)
+
+if total > 0:
+    pct = round(helpful_positive / total * 100, 1)
+    print(f'INFO: 教訓効果率: {helpful_positive}/{total} = {pct}%')
+else:
+    print('INFO: 教訓効果率: 0/0 (教訓なし)')
+" "$SCRIPT_DIR" "${target_pids[@]}" 2>/dev/null) || {
+        echo "WARN: 教訓効果率計算失敗"
         return 0
     }
 
-    # ヘッダー行を除外
-    local data_lines
-    data_lines=$(echo "$eff_output" | tail -n +2)
+    [ -n "$result" ] && echo "$result"
 
-    if [ -z "$data_lines" ]; then
-        echo "OK: 教訓効果データなし(集計対象0件)"
-        return 0
-    fi
-
-    # inject_count >= 5 かつ useful_count == 0 の教訓を検出
-    local warn_lessons
-    warn_lessons=$(echo "$data_lines" | awk -F'\t' '$2 >= 5 && $3 == 0 {print $1}')
-    if [ -n "$warn_lessons" ]; then
-        echo "WARN: 注入5回以上で効果報告0件の教訓:"
-        echo "$warn_lessons" | while IFS= read -r lid; do
-            echo "  - $lid"
-        done
-    fi
-
-    # injection_count >= 10 かつ helpful_count == 0 の教訓を検出 (cmd_470: 精密化)
-    check_injection_count_threshold "$@"
-
-    # 全体効果率サマリ
-    local total_inject total_useful
-    total_inject=$(echo "$data_lines" | awk -F'\t' '{s+=$2} END{print s+0}')
-    total_useful=$(echo "$data_lines" | awk -F'\t' '{s+=$3} END{print s+0}')
-    if [ "$total_inject" -gt 0 ]; then
-        local pct
-        pct=$(awk "BEGIN{printf \"%.1f\", ($total_useful/$total_inject)*100}")
-        echo "INFO: 教訓効果率: ${total_useful}/${total_inject} = ${pct}%"
-    else
-        echo "INFO: 教訓効果率: ${total_useful}/0 (inject未蓄積)"
-    fi
+    # injection_count >= 10 かつ helpful_count == 0 の精密チェック (cmd_470)
+    check_injection_count_threshold "${target_pids[@]}"
     return 0
 }
 
