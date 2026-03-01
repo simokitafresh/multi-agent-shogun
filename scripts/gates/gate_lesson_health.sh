@@ -280,6 +280,51 @@ else
     check_accumulation "${local_ids[@]}" || EXIT_CODE=1
 fi
 
+# --- injection_count閾値チェック (cmd_470) ---
+INJECTION_WARN_THRESHOLD=10
+check_injection_count_threshold() {
+    local target_pids=("$@")
+    if [ ${#target_pids[@]} -eq 0 ]; then
+        # 全projectを走査
+        while IFS= read -r line; do
+            target_pids+=("$line")
+        done < <(awk '/^  - id:/{id=$3} /status: active/{print id}' "$CONFIG_FILE" 2>/dev/null)
+    fi
+
+    local problem_count=0
+    for pid in "${target_pids[@]}"; do
+        local lessons_file="$SCRIPT_DIR/projects/${pid}/lessons.yaml"
+        [ -f "$lessons_file" ] || continue
+
+        # injection_count >= THRESHOLD かつ helpful_count == 0 の教訓を抽出
+        local problems
+        problems=$(python3 -c "
+import yaml, sys
+with open('$lessons_file', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+if not data or 'lessons' not in data:
+    sys.exit(0)
+for l in data['lessons']:
+    st = str(l.get('status', 'confirmed')).lower()
+    if st == 'deprecated' or l.get('deprecated', False):
+        continue
+    ic = l.get('injection_count', 0) or 0
+    hc = l.get('helpful_count', 0) or 0
+    if ic >= $INJECTION_WARN_THRESHOLD and hc == 0:
+        print(f\"  - {l['id']}: injection={ic}, helpful={hc} [{pid}]\")
+" 2>/dev/null || true)
+
+        if [ -n "$problems" ]; then
+            problem_count=$((problem_count + $(echo "$problems" | wc -l)))
+            echo "$problems"
+        fi
+    done
+
+    if [ "$problem_count" -gt 0 ]; then
+        echo "WARN: 注入${INJECTION_WARN_THRESHOLD}回以上で効果報告0件の教訓: ${problem_count}件"
+    fi
+}
+
 # --- 教訓効果サマリ ---
 EFFECTIVENESS_SCRIPT="$SCRIPT_DIR/scripts/lesson_effectiveness.sh"
 check_lesson_effectiveness() {
@@ -318,6 +363,9 @@ check_lesson_effectiveness() {
             echo "  - $lid"
         done
     fi
+
+    # injection_count >= 10 かつ helpful_count == 0 の教訓を検出 (cmd_470: 精密化)
+    check_injection_count_threshold "$@"
 
     # 全体効果率サマリ
     local total_inject total_useful

@@ -250,6 +250,7 @@ try:
             score_data[lid] = {
                 'helpful_count': old_lesson.get('helpful_count', 0),
                 'harmful_count': old_lesson.get('harmful_count', 0),
+                'injection_count': old_lesson.get('injection_count', 0),
                 'last_referenced': old_lesson.get('last_referenced'),
                 'tags': old_lesson.get('tags'),
             }
@@ -264,6 +265,7 @@ for lesson in lessons:
     if lid in score_data:
         lesson['helpful_count'] = score_data[lid]['helpful_count']
         lesson['harmful_count'] = score_data[lid]['harmful_count']
+        lesson['injection_count'] = score_data[lid]['injection_count']
         lesson['last_referenced'] = score_data[lid]['last_referenced']
         # Tags priority: SSOT > cache
         if 'tags' not in lesson and score_data[lid].get('tags'):
@@ -271,6 +273,7 @@ for lesson in lessons:
     else:
         lesson['helpful_count'] = 0
         lesson['harmful_count'] = 0
+        lesson['injection_count'] = 0
         lesson['last_referenced'] = None
 
 # Build output

@@ -221,6 +221,8 @@ fi
 KM_INJECT_RATE="—"
 KM_REF_RATE="—"
 KM_DELTA_PP="—"
+KM_LESSON_EFFECT="—"
+KM_PROBLEM_LESSONS="—"
 KM_MODEL_OPUS="—"
 KM_MODEL_SONNET="—"
 KM_MODEL_CODEX="—"
@@ -249,14 +251,18 @@ try:
     rr = data.get('ref_rate')
     nd = data.get('normalized_delta', {})
     dp = nd.get('delta_pp')
+    le = data.get('lesson_effectiveness')
+    pl = data.get('problem_lessons', 0)
     ir_s = f'{ir:.1f}%' if ir is not None else '—'
     rr_s = f'{rr:.1f}%' if rr is not None else '—'
     dp_s = f'{dp:+.1f}pp' if dp is not None else '—'
-    print(f'{ir_s}\t{rr_s}\t{dp_s}')
+    le_s = f'{le:.1f}%' if le is not None else '—'
+    pl_s = str(pl) if pl is not None else '0'
+    print(f'{ir_s}\t{rr_s}\t{dp_s}\t{le_s}\t{pl_s}')
 except Exception:
-    print('—\t—\t—')
-" < "$KM_JSON_CACHE" 2>/dev/null || echo "—	—	—")
-    IFS=$'\t' read -r KM_INJECT_RATE KM_REF_RATE KM_DELTA_PP <<< "$_km_parsed"
+    print('—\t—\t—\t—\t0')
+" < "$KM_JSON_CACHE" 2>/dev/null || echo "—	—	—	—	0")
+    IFS=$'\t' read -r KM_INJECT_RATE KM_REF_RATE KM_DELTA_PP KM_LESSON_EFFECT KM_PROBLEM_LESSONS <<< "$_km_parsed"
 fi
 
 # Parse model cache (model_analysis.sh --summary: key=value format)
@@ -414,8 +420,8 @@ fi
     echo "| 項目 | 値 |"
     echo "|------|-----|"
     echo "| 教訓注入率 | ${KM_INJECT_RATE} |"
-    echo "| 参照率 | ${KM_REF_RATE} |"
-    echo "| Δ(効果差分) | ${KM_DELTA_PP} |"
+    echo "| 教訓効果率 | ${KM_LESSON_EFFECT} |"
+    echo "| 問題教訓 | ${KM_PROBLEM_LESSONS}件 |"
 
     echo ""
 

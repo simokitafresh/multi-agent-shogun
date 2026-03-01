@@ -573,6 +573,8 @@ try:
             _pf.write(f'available={len(tag_candidates) + universal_total_count}\\n')
             _pf.write(f'injected={len(related)}\\n')
             _pf.write(f'task_id={task.get(\"task_id\", \"unknown\")}\\n')
+            _pf.write(f'project={project}\\n')
+            _pf.write(f'injected_ids={\" \".join(r[\"id\"] for r in related)}\\n')
     except Exception:
         pass
 
@@ -1475,6 +1477,25 @@ inject_related_lessons "$TASK_FILE" || true
 
 # 教訓注入postcondition（失敗してもデプロイは継続）
 postcondition_lesson_inject "$TASK_FILE" || true
+
+# 教訓injection_countカウント加算（cmd_470: 注入回数トラッキング）
+_pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
+if [ -f "$_pc_file" ]; then
+    _inj_project=$(grep '^project=' "$_pc_file" | cut -d= -f2)
+    _inj_ids=$(grep '^injected_ids=' "$_pc_file" | cut -d= -f2)
+    if [ -n "$_inj_ids" ] && [ -n "$_inj_project" ]; then
+        for _lid in $_inj_ids; do
+            bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$_inj_project" "$_lid" inject 2>/dev/null || true
+        done
+        # platform教訓はinfra PJに属するため、project!=infraの場合はinfraも走査
+        if [ "$_inj_project" != "infra" ]; then
+            for _lid in $_inj_ids; do
+                bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" infra "$_lid" inject 2>/dev/null || true
+            done
+        fi
+        log "injection_count: incremented for ${_inj_ids}"
+    fi
+fi
 
 # 偵察報告自動注入（失敗してもデプロイは継続）
 inject_reports_to_read "$TASK_FILE" || true

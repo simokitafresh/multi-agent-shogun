@@ -529,12 +529,56 @@ if json_output:
     )
     ref_rate_pct = round(ref_with_lesson / with_lessons_total * 100, 1) if with_lessons_total > 0 else None
 
+    # === cmd_470: 教訓効果率・問題教訓・top_helpful ===
+    lesson_effectiveness_data = {"lesson_effectiveness": None, "problem_lessons": 0, "top_helpful": []}
+    try:
+        import yaml as _yaml
+        total_lessons = 0
+        helpful_positive = 0
+        problem_count = 0
+        all_helpful = []
+        for project_dir in Path(lessons_dir).iterdir():
+            lf = project_dir / "lessons.yaml"
+            if not lf.is_file():
+                continue
+            with open(lf, encoding="utf-8") as _f:
+                _ld = _yaml.safe_load(_f)
+            for _l in (_ld or {}).get("lessons", []):
+                _st = str(_l.get("status", "confirmed")).lower()
+                if _st == "deprecated" or _l.get("deprecated", False):
+                    continue
+                total_lessons += 1
+                _hc = _l.get("helpful_count", 0) or 0
+                _ic = _l.get("injection_count", 0) or 0
+                if _hc > 0:
+                    helpful_positive += 1
+                    all_helpful.append({"id": _l.get("id", "?"), "count": _hc})
+                if _ic >= 10 and _hc == 0:
+                    problem_count += 1
+        if total_lessons > 0:
+            lesson_effectiveness_data["lesson_effectiveness"] = round(helpful_positive / total_lessons * 100, 1)
+        lesson_effectiveness_data["problem_lessons"] = problem_count
+        # Deduplicate by lesson ID (keep highest count)
+        _seen_ids = {}
+        for _h in all_helpful:
+            _hid = _h["id"]
+            if _hid not in _seen_ids or _h["count"] > _seen_ids[_hid]["count"]:
+                _seen_ids[_hid] = _h
+        all_helpful = list(_seen_ids.values())
+        all_helpful.sort(key=lambda x: -x["count"])
+        lesson_effectiveness_data["top_helpful"] = all_helpful[:3]
+    except Exception:
+        pass
+
     result = {
         "elimination_candidates": elimination_candidates,
         "delta": delta,
         "normalized_delta": normalized_delta,
         "inject_rate": inject_rate_pct,
         "ref_rate": ref_rate_pct,
+        "lesson_effectiveness": lesson_effectiveness_data.get("lesson_effectiveness"),
+        "problem_lessons": lesson_effectiveness_data.get("problem_lessons", 0),
+        "top_helpful": lesson_effectiveness_data.get("top_helpful", []),
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
 else:

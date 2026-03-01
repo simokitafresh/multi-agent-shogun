@@ -16,8 +16,8 @@ if [ -z "$PROJECT_ID" ] || [ -z "$LESSON_ID" ] || [ -z "$SCORE_TYPE" ]; then
     exit 1
 fi
 
-if [ "$SCORE_TYPE" != "helpful" ] && [ "$SCORE_TYPE" != "harmful" ]; then
-    echo "ERROR: score_type must be 'helpful' or 'harmful' (got: $SCORE_TYPE)" >&2
+if [ "$SCORE_TYPE" != "helpful" ] && [ "$SCORE_TYPE" != "harmful" ] && [ "$SCORE_TYPE" != "inject" ]; then
+    echo "ERROR: score_type must be 'helpful', 'harmful', or 'inject' (got: $SCORE_TYPE)" >&2
     exit 1
 fi
 
@@ -58,7 +58,10 @@ if not data or 'lessons' not in data:
 found = False
 for lesson in data['lessons']:
     if lesson.get('id') == lesson_id:
-        field = f'{score_type}_count'
+        if score_type == 'inject':
+            field = 'injection_count'
+        else:
+            field = f'{score_type}_count'
         lesson[field] = lesson.get(field, 0) + 1
         lesson['last_referenced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
         found = True

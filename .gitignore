@@ -172,6 +172,9 @@
 !scripts/usage_monitor.sh
 !scripts/usage_status.sh
 !scripts/lib/mcas_common.sh
+!scripts/oneshot/
+!scripts/oneshot/reset_harmful_counts.sh
+!scripts/oneshot/add_injection_count.sh
 
 
 # Archive (frozen retired components)
