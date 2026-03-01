@@ -255,10 +255,10 @@ send_wakeup() {
     sleep 0.3
 
     # Send nudge via paste-buffer + Enter (atomic lock)
-    tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
     local lock="/tmp/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
     (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; rm -f "$DEBOUNCE_FILE"; exit 1; }
+        tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
             echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2
             rm -f "$DEBOUNCE_FILE"

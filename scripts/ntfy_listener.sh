@@ -13,6 +13,8 @@ SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
 INBOX="$SCRIPT_DIR/queue/ntfy_inbox.yaml"
+LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.yaml"
+LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
 # ntfy_auth.sh読み込み
 # shellcheck source=../lib/ntfy_auth.sh
@@ -46,6 +48,66 @@ parse_tags() {
     python3 -c "import sys,json; print(','.join(json.load(sys.stdin).get('tags',[])))" 2>/dev/null
 }
 
+append_lord_conversation_inbound() {
+    local message="$1"
+    local timestamp
+    timestamp="$(date "+%Y-%m-%dT%H:%M:%S%:z")"
+
+    if [ ! -f "$LORD_CONVERSATION" ]; then
+        mkdir -p "$(dirname "$LORD_CONVERSATION")"
+        echo "entries: []" > "$LORD_CONVERSATION"
+    fi
+
+    if ! (
+        flock -w 5 200 || exit 1
+        CONV_PATH="$LORD_CONVERSATION" CONV_TIMESTAMP="$timestamp" \
+        CONV_MESSAGE="$message" \
+        python3 - <<'PY'
+import os
+import tempfile
+
+import yaml
+
+path = os.environ["CONV_PATH"]
+timestamp = os.environ["CONV_TIMESTAMP"]
+message = os.environ["CONV_MESSAGE"]
+
+try:
+    with open(path) as f:
+        data = yaml.safe_load(f)
+except FileNotFoundError:
+    data = {}
+
+if not isinstance(data, dict):
+    data = {}
+
+entries = data.get("entries")
+if not isinstance(entries, list):
+    entries = []
+
+entries.append({
+    "timestamp": timestamp,
+    "direction": "inbound",
+    "channel": "ntfy",
+    "message": message,
+})
+data["entries"] = entries
+
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
+try:
+    with os.fdopen(tmp_fd, "w") as f:
+        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+    os.replace(tmp_path, path)
+except Exception:
+    os.unlink(tmp_path)
+    raise
+PY
+    ) 200>"$LORD_CONVERSATION_LOCK"; then
+        echo "[$(date)] WARNING: Failed to append inbound log to lord_conversation.yaml" >&2
+        return 1
+    fi
+}
+
 echo "[$(date)] ntfy listener started — topic: $TOPIC (auth: ${NTFY_TOKEN:+token}${NTFY_USER:+basic}${NTFY_TOKEN:-${NTFY_USER:-none}})" >&2
 
 while true; do
@@ -68,6 +130,8 @@ while true; do
             *'【MCAS】'*) echo "[$(date)] Filtered MCAS alert: ${MSG:0:80}" >&2; continue ;;
         esac
 
+        append_lord_conversation_inbound "$MSG" || true
+
         MSG_ID=$(echo "$line" | parse_json id)
         TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
 
@@ -82,7 +146,15 @@ while true; do
 ENTRY
 
         # === Primary path: Direct injection to shogun pane ===
-        SHOGUN_PANE=$(tmux display-message -t shogun:0 -p '#{pane_id}' 2>/dev/null || echo "")
+        SHOGUN_PANE=$(tmux display-message -t shogun:main -p '#{pane_id}' 2>/dev/null || echo "")
+        # Safety: verify the resolved pane is actually the shogun
+        if [ -n "$SHOGUN_PANE" ]; then
+            RESOLVED_AGENT=$(tmux display-message -t "$SHOGUN_PANE" -p '#{@agent_id}' 2>/dev/null || echo "")
+            if [ "$RESOLVED_AGENT" != "shogun" ]; then
+                echo "[$(date)] CRITICAL: SHOGUN_PANE resolved to non-shogun agent ($RESOLVED_AGENT), aborting injection" >&2
+                SHOGUN_PANE=""
+            fi
+        fi
         if [ -n "$SHOGUN_PANE" ]; then
             # Truncate at 200 chars
             if [ ${#MSG} -gt 200 ]; then
@@ -98,6 +170,7 @@ ENTRY
                 tmux set-buffer -b "ntfy_inject" "$INJECT_MSG" 2>/dev/null || exit 1
                 if ! timeout 5 tmux paste-buffer -t "$SHOGUN_PANE" -b "ntfy_inject" -d 2>/dev/null; then
                     echo "[$(date)] WARNING: paste-buffer to shogun timed out" >&2
+                    tmux delete-buffer -b "ntfy_inject" 2>/dev/null || true
                     exit 1
                 fi
                 sleep 0.5
@@ -113,7 +186,7 @@ ENTRY
                 echo "[$(date)] WARNING: Failed to inject to shogun pane, falling back to inbox only" >&2
             fi
         else
-            echo "[$(date)] WARNING: Shogun pane not found (shogun:0), inbox only" >&2
+            echo "[$(date)] WARNING: Shogun pane not found (shogun:main), inbox only" >&2
         fi
 
         # === Backup path: Wake shogun via inbox ===
