@@ -44,6 +44,8 @@
 idle検知+/clear送信、is_task_deployed二重チェック、STALE-TASK検出、CLEAR_DEBOUNCE=300s、karo_snapshot自動生成、状態遷移検知(cmd_255)。
 auto-done判定: parent_cmdだけでなくtask_idも一致チェック必須。Wave間で誤done発生実績あり(L048)。
 auto_deploy統合(cmd_338): auto-done後にauto_deploy_next.sh自動発火。次サブタスク自動配備。
+DEPLOY-STALL強化(cmd_461): 家老通知(L712-715)、再STALLエスカレーション(STALL_COUNT連想配列)、Codex stall_debounce=180s(cli_profiles.yaml)。
+**既知問題(L112)**: check_stall()がtask_idフィールド参照するが現行YAMLはsubtask_idのみ → 2/26以降STALL-DETECTEDが0件(検知沈黙)。task_id||subtask_idフォールバック未実装。→ `docs/research/cmd_462_codex-stall-analysis.md`
 → `docs/research/infra-details.md` §3
 
 ## inbox_watcher.sh
@@ -86,6 +88,13 @@ capture-paneバナー解析: モデル名+バージョン番号の精密パタ�
 ## WSL2固有
 
 inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死注意。→ §8
+
+## 競合調査
+
+6スタイル+我らの定点観測レポート。毎回検索するな、ここを参照せよ。
+我ら(57pt) > OpenAI(46) > OpenClaw(42) > ACE(40) > Teams(36) > Vercel(32)。
+優位: 3層階層、6層知識、2重安全防御、インフラ構造保証。劣位: 外部可視性、セットアップ容易性。
+→ `docs/research/competitive-landscape.md`
 
 ## Infra教訓索引
 
@@ -143,7 +152,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L051: Sonnet 4.6はMUST/NEVER/ALWAYSをリテラルに従わず文脈判断でオーバーライドする。否定指示は肯定形+理由付き、絶対禁止は条件付きルーティング(IF X THEN Y)に変換すると遵守率向上。Pink Elephant研究で学術裏付け
 - L052: ninja_monitorのDESTRUCTIVE検出でcapture-pane履歴にsend-keysが残る誤検知あり。DESTRUCTIVE判定ログ(kill/rm等)はcapture-pane結果に他エージェントのsend-keys内容が混入する可能性を考慮すべき
 - L053: Claude 4.x CRITICAL/MUST/NEVERがovertriggering副作用（cmd_324）
-<!-- last_synced_lesson: L106 -->
+<!-- last_synced_lesson: L118 -->
 - L054: lesson_write.shのcontextロック失敗が非致命でSSOTとcontext不整合を許容（cmd_323）
 - L055: report YAML構造混在に対するフォールバック必須（cmd_337）
 - L056: タスクYAML上書き問題: auto_deploy時の全サブタスク永続化（cmd_338）
@@ -196,6 +205,17 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L104: 本家参照時のパス揺れ — tree確認後に取得を標準化（cmd_438 sasuke）
 - L105: E2Eテストでtmux pane-base-index依存は明示固定せよ（cmd_438 kirimaru）
 - L106: lesson_impact_analysis.shのload_lesson_summariesパス誤り（cmd_444）
+- L107: dedupログ仕様は文言と0件時出力条件をAC文字列と厳密一致させる（cmd_446）
+- L108: compact_stateの長さ未制限による500文字超過リスク（cmd_452）
+- L109: git commit時のstaging巻き込み防止（cmd_452）
+- L110: settings.local.jsonはwhitelist外、並行レビューでcommit重複リスク（cmd_449）
+- L111: ACに含めるテストファイルは配備時に実在確認が必要（cmd_460）
+- L112: ninja_monitorのcheck_stall()がtask_idフィールドを参照するが現行タスクYAMLはsubtask_idのみ（cmd_462）
+- L113: タスク指定ファイルが.gitignore whitelist外だとcommit要件を満たせない（cmd_463）
+- L114: safe_send_clear独自idle判定(tail -3)がCLIステータスバーで❯を見落とし永久CLEAR-BLOCKED。idle判定は必ずcheck_idle()に一本化せよ。同一判定の重複実装は片方が必ず腐る（ninja_monitor,idle_detection,safe_send_clear）
+- L116: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要（cmd_466）
+- L117: lesson_referenced→lessons_usefulリネーム時に全派生ファイル(generated/4本+roles/+templates/)を漏れなく更新する必要がある（cmd_466）
+- L118: tmux set-optionのtargetがsession指定だとwindow optionが意図せずcurrent windowのみ更新されることがある（cmd_468）
 
 ## PD裁定反映（cmd_354同期）
 

@@ -787,3 +787,24 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **記録者**: shogun(hotfix)
 - **tags**: [monitor, yaml, awk]
 - check_auto_archive()のawkパターン `/^[[:space:]]*-[[:space:]]id:/` がcmdレベル(2スペース)とacceptance_criteriaレベル(6スペース)の両方にマッチ。最後に拾ったAC4がarchive_completed.shに渡されて毎サイクルエラー。`cmd_*`パターン限定で解決。YAML内に同名フィールド(id:)が複数階層にある場合、awkは値のプレフィックスで階層を区別せよ。
+
+### L116: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要
+- **日付**: 2026-03-01
+- **出典**: cmd_466
+- **記録者**: hanzo
+- **tags**: [bash, git, lesson]
+- scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的に除外される。lesson L113と同根だが、テストファイル限定ではなく全ファイル共通の問題。
+
+### L117: lesson_referenced→lessons_usefulリネーム時に全派生ファイル(generated/4本+roles/+templates/)を漏れなく更新する必要がある
+- **日付**: 2026-03-01
+- **出典**: cmd_466
+- **記録者**: kagemaru
+- **tags**: [deploy, communication, gate, yaml, lesson, reporting]
+- フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/report_implement.yaml、cmd_complete_gate.sh内の全Python判定コード、deploy_task.sh報告テンプレート等の横断更新が必須。後方互換フォールバックも各箇所に必要。impl_bが全箇所カバーしていたため問題なし。
+
+### L118: tmux set-optionのtargetがsession指定だとwindow optionが意図せずcurrent windowのみ更新されることがある
+- **日付**: 2026-03-01
+- **出典**: cmd_468
+- **記録者**: sasuke
+- **tags**: [tmux]
+- pane-border-format/pane-border-statusはwindow optionのため、起動時はwindow明示(-w -t shogun:main|agents)か専用適用スクリプト呼び出しが安全
