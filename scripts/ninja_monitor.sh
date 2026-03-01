@@ -466,7 +466,8 @@ can_send_clear_with_report_gate() {
     # done以外: 報告ゲート対象外
     [ "$task_status" = "done" ] || return 0
 
-    local report_filename report_path
+    local report_filename report_path parent_cmd base_name search_pattern
+    local -a search_dirs search_patterns
     report_filename=$(resolve_expected_report_file "$name")
     if [[ "$report_filename" = /* ]]; then
         report_path="$report_filename"
@@ -478,7 +479,40 @@ can_send_clear_with_report_gate() {
         return 0
     fi
 
-    log "REPORT-MISSING-BLOCK: $name done but no report at $report_filename (${trigger})"
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+    search_dirs=("$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/archive/reports")
+
+    # Primary pattern: expected cmd-scoped report name prefix.
+    if [ -n "$parent_cmd" ]; then
+        search_pattern="${name}_report_${parent_cmd}*.yaml"
+        search_patterns+=("$search_pattern")
+    fi
+
+    # Fallback pattern from report_filename for custom report naming.
+    base_name="$(basename "$report_filename")"
+    base_name="${base_name%.yaml}"
+    if [ -n "$base_name" ]; then
+        search_pattern="${base_name}*.yaml"
+        if [ "${#search_patterns[@]}" -eq 0 ] || [ "${search_patterns[0]}" != "$search_pattern" ]; then
+            search_patterns+=("$search_pattern")
+        fi
+    fi
+
+    local dir pattern
+    for pattern in "${search_patterns[@]}"; do
+        for dir in "${search_dirs[@]}"; do
+            if compgen -G "${dir}/${pattern}" > /dev/null; then
+                return 0
+            fi
+        done
+    done
+
+    if [ -n "$parent_cmd" ]; then
+        search_pattern="${name}_report_${parent_cmd}*.yaml"
+    else
+        search_pattern="${base_name}*.yaml"
+    fi
+    log "REPORT-MISSING-BLOCK: $name done but no report matching ${search_pattern} in reports/ or archive/reports/ (${trigger})"
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}がdone状態だが報告未作成。/clear保留中。" report_missing ninja_monitor >> "$LOG" 2>&1 &
     return 1
 }
