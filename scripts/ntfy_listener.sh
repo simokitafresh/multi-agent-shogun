@@ -8,6 +8,9 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
+
+# tmux排他制御ライブラリ（将軍pane直接注入用）
+source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
 INBOX="$SCRIPT_DIR/queue/ntfy_inbox.yaml"
 
@@ -78,7 +81,42 @@ while true; do
   status: pending
 ENTRY
 
-        # Wake shogun via inbox
+        # === Primary path: Direct injection to shogun pane ===
+        SHOGUN_PANE=$(tmux display-message -t shogun:0 -p '#{pane_id}' 2>/dev/null || echo "")
+        if [ -n "$SHOGUN_PANE" ]; then
+            # Truncate at 200 chars
+            if [ ${#MSG} -gt 200 ]; then
+                INJECT_MSG="【殿ntfy】${MSG:0:200}...（全文: ntfy_inbox.yaml）"
+            else
+                INJECT_MSG="【殿ntfy】${MSG}"
+            fi
+
+            # paste-buffer + Enter (flock排他, timeout付き)
+            LOCK="/tmp/tmux_sendkeys_$(echo "$SHOGUN_PANE" | tr ':.' '_').lock"
+            (
+                flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: ntfy inject to shogun" >&2; exit 1; }
+                tmux set-buffer -b "ntfy_inject" "$INJECT_MSG" 2>/dev/null || exit 1
+                if ! timeout 5 tmux paste-buffer -t "$SHOGUN_PANE" -b "ntfy_inject" -d 2>/dev/null; then
+                    echo "[$(date)] WARNING: paste-buffer to shogun timed out" >&2
+                    exit 1
+                fi
+                sleep 0.5
+                if ! timeout 5 tmux send-keys -t "$SHOGUN_PANE" Enter 2>/dev/null; then
+                    echo "[$(date)] WARNING: send-keys Enter to shogun timed out" >&2
+                    exit 1
+                fi
+            ) 200>"$LOCK"
+
+            if [ $? -eq 0 ]; then
+                echo "[$(date)] Injected to shogun pane: ${INJECT_MSG:0:80}..." >&2
+            else
+                echo "[$(date)] WARNING: Failed to inject to shogun pane, falling back to inbox only" >&2
+            fi
+        else
+            echo "[$(date)] WARNING: Shogun pane not found (shogun:0), inbox only" >&2
+        fi
+
+        # === Backup path: Wake shogun via inbox ===
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
             "ntfyから新しいメッセージ受信。queue/ntfy_inbox.yaml を確認し処理せよ。" \
             ntfy_received ntfy_listener
