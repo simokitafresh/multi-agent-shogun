@@ -175,6 +175,7 @@
 !scripts/oneshot/
 !scripts/oneshot/reset_harmful_counts.sh
 !scripts/oneshot/add_injection_count.sh
+!scripts/oneshot/backfill_gate_titles.sh
 
 
 # Archive (frozen retired components)

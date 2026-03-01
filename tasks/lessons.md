@@ -808,3 +808,10 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **記録者**: sasuke
 - **tags**: [tmux]
 - pane-border-format/pane-border-statusはwindow optionのため、起動時はwindow明示(-w -t shogun:main|agents)か専用適用スクリプト呼び出しが安全
+
+### L119: deploy_task.shのpostcondファイル経由でbash→Pythonのデータ受け渡しパターンが確立
+- **日付**: 2026-03-01
+- **出典**: cmd_470
+- **記録者**: kagemaru
+- **tags**: [deploy, bash, lesson]
+- inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_update_score.sh呼び出し)を実行するパターン。send-keys不要で安全。

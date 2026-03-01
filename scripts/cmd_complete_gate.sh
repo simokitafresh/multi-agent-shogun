@@ -319,6 +319,43 @@ PY
     echo "$injected_lessons"
 }
 
+# ─── cmd_472: gate_metrics拡張用 — cmd title収集（shogun_to_karo.yaml） ───
+collect_cmd_title() {
+    local cmd_id="$1"
+    local cmd_title=""
+
+    cmd_title=$(awk -v cmd="${cmd_id}" '
+        /^[[:space:]]*-[[:space:]]*id:[[:space:]]*cmd_[0-9]+/ {
+            line = $0
+            sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", line)
+            sub(/[[:space:]]+#.*$/, "", line)
+            gsub(/["[:space:]]/, "", line)
+            if (line == cmd) {
+                found = 1
+                next
+            }
+            if (found) {
+                exit
+            }
+        }
+        found && /^[[:space:]]*title:[[:space:]]*/ {
+            line = $0
+            sub(/^[[:space:]]*title:[[:space:]]*/, "", line)
+            sub(/[[:space:]]+#.*$/, "", line)
+            print line
+            exit
+        }
+    ' "$YAML_FILE" 2>/dev/null || true)
+
+    cmd_title=$(printf '%s' "$cmd_title" | sed "s/^['\"]//; s/['\"]$//")
+    cmd_title=${cmd_title//$'\t'/ }
+    if [ "${#cmd_title}" -gt 50 ]; then
+        cmd_title="${cmd_title:0:47}..."
+    fi
+
+    echo "$cmd_title"
+}
+
 # ─── lesson tracking追記（ベストエフォート） ───
 append_lesson_tracking() {
     local cmd_id="$1"
@@ -744,6 +781,7 @@ ALL_GATES=("${ALWAYS_REQUIRED[@]}" "${CONDITIONAL[@]}")
 # cmd_407: gate_metrics拡張用のtask_type/model/bloom_level収集
 read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate_metrics_extra "$CMD_ID")"
 GATE_INJECTED_LESSONS="$(collect_injected_lessons "$CMD_ID")"
+CMD_TITLE="$(collect_cmd_title "$CMD_ID")"
 
 # ─── 忍者報告からlesson_candidate自動draft登録 ───
 echo "Auto-draft lesson candidates:"
@@ -784,7 +822,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tOVERRIDE\temergency_override\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tOVERRIDE\temergency_override\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
     if append_lesson_tracking "$CMD_ID" "OVERRIDE" 2>&1; then
         true
     else
@@ -1510,7 +1548,7 @@ fi
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
     echo "GATE CLEAR: cmd完了許可"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
     # gate_yaml_status: YAML status更新（WARNING only）
     if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
         true
@@ -1557,34 +1595,94 @@ if [ "$ALL_CLEAR" = true ]; then
             ninja_name=$(basename "$task_file" .yaml)
             report_file=$(resolve_report_file "$ninja_name")
             if [ -f "$report_file" ]; then
-                lesson_ids=$(python3 -c "
+                score_entries=$(python3 -c "
 import yaml, sys
-try:
-    with open('$report_file') as f:
-        data = yaml.safe_load(f)
-    if not data:
-        sys.exit(0)
-    lr = data.get('lessons_useful')
-    if lr is None:
-        lr = data.get('lesson_referenced', [])
-    if lr and isinstance(lr, list):
-        for item in lr:
+import re
+
+def parse_yaml(path):
+    try:
+        with open(path, encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return {}
+
+def normalize_lesson_ids(raw):
+    out = []
+    seen = set()
+    if isinstance(raw, list):
+        for item in raw:
+            lid = ''
             if isinstance(item, str):
-                print(item)
-            elif isinstance(item, dict) and 'id' in item:
-                print(item['id'])
+                lid = item.strip()
+            elif isinstance(item, dict):
+                lid = str(item.get('id', '')).strip()
+            if lid and lid not in seen:
+                seen.add(lid)
+                out.append(lid)
+    return out
+
+try:
+    report_data = parse_yaml('$report_file')
+    task_data = parse_yaml('$task_file')
+    task = task_data.get('task', {}) if isinstance(task_data, dict) else {}
+
+    if not report_data:
+        sys.exit(0)
+
+    lr = report_data.get('lessons_useful')
+    if lr is None:
+        lr = report_data.get('lesson_referenced', [])
+
+    explicit_ids = normalize_lesson_ids(lr)
+    explicit_set = set(explicit_ids)
+    for lid in explicit_ids:
+        print(f'explicit\t{lid}')
+
+    related_ids = []
+    related_seen = set()
+    related_lessons = task.get('related_lessons', [])
+    if isinstance(related_lessons, list):
+        for lesson in related_lessons:
+            if not isinstance(lesson, dict):
+                continue
+            lid = str(lesson.get('id', '')).strip()
+            if lid and lid not in related_seen:
+                related_seen.add(lid)
+                related_ids.append(lid)
+
+    report_text = ''
+    try:
+        with open('$report_file', encoding='utf-8') as rf:
+            report_text = rf.read()
+    except Exception:
+        report_text = ''
+
+    for lid in related_ids:
+        if lid in explicit_set:
+            continue
+        pattern = rf'(?<![A-Za-z0-9_]){re.escape(lid)}(?![A-Za-z0-9_])'
+        if re.search(pattern, report_text):
+            print(f'auto\t{lid}')
 except:
     pass
 " 2>/dev/null)
-                while IFS= read -r lid; do
+                while IFS=$'\t' read -r score_type lid; do
+                    [ -z "$score_type" ] && continue
                     [ -z "$lid" ] && continue
                     if bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$CMD_PROJECT" "$lid" helpful 2>&1; then
-                        echo "  ${lid}: helpful +1"
+                        if [ "$score_type" = "auto" ]; then
+                            echo "  ${lid}: helpful +1 (auto-detected in report text)"
+                        else
+                            echo "  ${lid}: helpful +1"
+                        fi
                         SCORE_UPDATED=$((SCORE_UPDATED + 1))
                     else
                         echo "  WARN: ${lid}: score update failed (non-blocking)"
                     fi
-                done <<< "$lesson_ids"
+                done <<< "$score_entries"
             fi
         done
         echo "  Updated: ${SCORE_UPDATED} lesson(s)"
@@ -1667,7 +1765,7 @@ else
     else
         block_reason="unknown_block_reason"
     fi
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     if append_lesson_tracking "$CMD_ID" "BLOCK" 2>&1; then
         true
@@ -1754,101 +1852,8 @@ else
     # ─── GATE BLOCK時 harmful判定（教訓参照しなかった忍者の注入教訓にharmful +1） ───
     echo ""
     echo "Lesson score update (harmful - GATE BLOCK):"
-    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_update_score.sh" ]; then
-        HARMFUL_UPDATED=0
-        for task_file in "$TASKS_DIR"/*.yaml; do
-            [ -f "$task_file" ] || continue
-            if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-                continue
-            fi
-            ninja_name=$(basename "$task_file" .yaml)
-            report_file=$(resolve_report_file "$ninja_name")
-
-            # related_lessonsを取得（なければスキップ）
-            related_ids=$(python3 -c "
-import yaml, sys
-try:
-    with open('$task_file') as f:
-        data = yaml.safe_load(f)
-    task = data.get('task', {}) if data else {}
-    rl = task.get('related_lessons', [])
-    if rl:
-        for l in rl:
-            if isinstance(l, dict) and 'id' in l:
-                print(l['id'])
-except:
-    pass
-" 2>/dev/null)
-
-            if [ -z "$related_ids" ]; then
-                echo "  ${ninja_name}: SKIP (no related_lessons)"
-                continue
-            fi
-
-            # lessons_usefulの有無を確認（旧lesson_referencedにも対応）
-            lr_empty=true
-            if [ -f "$report_file" ]; then
-                lr_check=$(python3 -c "
-import yaml, sys
-try:
-    with open('$report_file') as f:
-        data = yaml.safe_load(f)
-    if not data:
-        print('empty')
-        sys.exit(0)
-    lr = data.get('lessons_useful')
-    if lr is None:
-        lr = data.get('lesson_referenced')
-    if lr and isinstance(lr, list) and len(lr) > 0:
-        print('ok')
-    else:
-        print('empty')
-except:
-    print('empty')
-" 2>/dev/null)
-                if [ "$lr_check" = "ok" ]; then
-                    lr_empty=false
-                fi
-            fi
-
-            if [ "$lr_empty" = false ]; then
-                echo "  ${ninja_name}: SKIP (lessons_useful non-empty)"
-                continue
-            fi
-
-            # タスクstatusを取得
-            task_status=$(python3 -c "
-import yaml, sys
-try:
-    with open('$task_file') as f:
-        data = yaml.safe_load(f)
-    task = data.get('task', {}) if data else {}
-    print(task.get('status', 'unknown'))
-except:
-    print('unknown')
-" 2>/dev/null)
-
-            # lessons_useful空 + タスクdone → harmful +1
-            if [ "$task_status" = "done" ]; then
-                while IFS= read -r lid; do
-                    [ -z "$lid" ] && continue
-                    if bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$CMD_PROJECT" "$lid" harmful 2>&1; then
-                        echo "  ${ninja_name}/${lid}: harmful +1 (task done, lesson not marked useful)"
-                        HARMFUL_UPDATED=$((HARMFUL_UPDATED + 1))
-                    else
-                        echo "  WARN: ${ninja_name}/${lid}: harmful score update failed (non-blocking)"
-                    fi
-                done <<< "$related_ids"
-            else
-                echo "  ${ninja_name}: SKIP (task status=${task_status}, not done — failure is not lesson's fault)"
-            fi
-        done
-        echo "  Updated: ${HARMFUL_UPDATED} harmful score(s)"
-    elif [ -z "$CMD_PROJECT" ]; then
-        echo "  SKIP (project not found in cmd)"
-    else
-        echo "  SKIP (lesson_update_score.sh not found)"
-    fi
+    # harmful判定はACE Reflector方式に移行(cmd_470)。自己申告不在での一律harmful廃止。
+    echo "  SKIP (disabled)"
 
     # ─── GATE BLOCK時 harmful閾値による教訓自動deprecate ───
     echo ""

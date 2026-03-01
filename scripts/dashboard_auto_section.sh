@@ -235,7 +235,7 @@ _gate_lines=0
 _cached_lines=0
 [[ -f "$KM_CACHE_LINES" ]] && _cached_lines=$(cat "$KM_CACHE_LINES" 2>/dev/null | tr -d '[:space:]')
 
-if [[ "$_gate_lines" != "$_cached_lines" ]] || [[ ! -f "$KM_JSON_CACHE" ]]; then
+if [[ "$_gate_lines" != "$_cached_lines" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || ! grep -q '^opus_impl_rate=' "$KM_MODEL_CACHE" 2>/dev/null; then
     bash "$SCRIPT_DIR/knowledge_metrics.sh" --json > "$KM_JSON_CACHE" 2>/dev/null || true
     bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null || true
     echo "$_gate_lines" > "$KM_CACHE_LINES"
@@ -288,11 +288,32 @@ if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
 fi
 
 # ─── Build cmd→title map (for 戦果 section) ───
-# From active STK
+# Priority: gate_metrics.log(9列目) > active STK > archive STK done
+if [[ -f "$GATE_LOG" ]]; then
+    awk -F'\t' '
+        NF >= 9 {
+            cmd = $2
+            title = $9
+            gsub(/\r/, "", title)
+            gsub(/\t/, " ", title)
+            if (title == "") {
+                next
+            }
+            if (length(title) > 50) {
+                title = substr(title, 1, 47) "..."
+            }
+            latest_title[cmd] = title  # 同一cmdは最後の行を採用
+        }
+        END {
+            for (cmd in latest_title) {
+                print cmd "\t" latest_title[cmd]
+            }
+        }
+    ' "$GATE_LOG" >> "$TMP_TITLES"
+fi
 if [[ -s "$TMP_PIPELINE" ]]; then
     awk -F'\t' '{print $1"\t"$2}' "$TMP_PIPELINE" >> "$TMP_TITLES"
 fi
-# From archive done YAML
 if [[ -f "$ARCHIVE_STK_DONE" ]]; then
     awk '
         /^ *- id: cmd_/ {
@@ -407,11 +428,11 @@ fi
 
     # ─── モデル別スコアボード ───
     echo "### モデル別スコアボード"
-    echo "| モデル | CLEAR率 | サンプル数 |"
-    echo "|--------|---------|-----------|"
-    echo "| Opus | ${KM_MODEL_OPUS} | ${KM_N_OPUS} |"
-    echo "| Sonnet | ${KM_MODEL_SONNET} | ${KM_N_SONNET} |"
-    echo "| Codex | ${KM_MODEL_CODEX} | ${KM_N_CODEX} |"
+    echo "| モデル | CLEAR率 | impl率 | 効率 | 傾向 | N |"
+    echo "|--------|---------|--------|------|------|---|"
+    echo "| Opus | ${KM_MODEL_OPUS} | $(awk -F= '/^opus_impl_rate=/{v=$2} END{if(v==""||v=="—")print "—"; else printf "%s%%", v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^opus_efficiency=/{v=$2} END{if(v=="")print "—"; else print v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^opus_trend=/{v=$2} END{if(v=="up")print "↑"; else if(v=="down")print "↓"; else print "→"}' "$KM_MODEL_CACHE" 2>/dev/null || echo "→") | ${KM_N_OPUS} |"
+    echo "| Sonnet | ${KM_MODEL_SONNET} | $(awk -F= '/^sonnet_impl_rate=/{v=$2} END{if(v==""||v=="—")print "—"; else printf "%s%%", v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^sonnet_efficiency=/{v=$2} END{if(v=="")print "—"; else print v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^sonnet_trend=/{v=$2} END{if(v=="up")print "↑"; else if(v=="down")print "↓"; else print "→"}' "$KM_MODEL_CACHE" 2>/dev/null || echo "→") | ${KM_N_SONNET} |"
+    echo "| Codex | ${KM_MODEL_CODEX} | $(awk -F= '/^codex_impl_rate=/{v=$2} END{if(v==""||v=="—")print "—"; else printf "%s%%", v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^codex_efficiency=/{v=$2} END{if(v=="")print "—"; else print v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^codex_trend=/{v=$2} END{if(v=="up")print "↑"; else if(v=="down")print "↓"; else print "→"}' "$KM_MODEL_CACHE" 2>/dev/null || echo "→") | ${KM_N_CODEX} |"
 
     echo ""
 

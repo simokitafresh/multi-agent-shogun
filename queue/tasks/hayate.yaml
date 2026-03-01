@@ -1,65 +1,57 @@
 task:
   acceptance_criteria:
-  - 'AC1: scripts/usage_statusbar_loop.sh が存在し、bash -n構文チェックPASS'
-  - 'AC2: Usage API(five_hour.utilization, seven_day.utilization)を取得し、tmux status-rightに使用率%を表示する'
-  - 'AC4: pidfileによる多重起動防止が実装されている'
-  - 'AC5: API呼出しのtimeout>=15秒（L040準拠）'
+  - ac1: harmful判定ロジック削除(L1754-1851) + 理由コメント1行 + oneshot/reset_harmful_counts.sh作成・実行
+  - ac2: 報告YAML全文からの教訓ID自動検出→helpful+1帰属。lessons_usefulとの重複排除
   assigned_to: hayate
-  bloom_level: complex
-  completed_at: '2026-03-01T15:06:22'
-  deployed_at: '2026-03-01T15:02:10'
-  description: "【注入教訓】 必ず確認し reviewed: true に変更せよ\n  - L040: WSL2→Anthropic API間のレイテンシでUsage\
-    \ APIの応答が常に5秒以上。監視スクリプトのtimeout設定は10秒以上にせよ\n  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
-    \  - L016: OAuthリフレッシュトークンは1回限り使用。複数セッション共有で競合発生→CLAUDE_CODE_OAUTH_TOKENで回避\n\
-    \  - L015: CLAUDE_CONFIG_DIR=~/.claude丸ごと切替、CLAUDE_CODE_OAUTH_TOKEN=認証のみ切替。複数アカウント運用に有効\n\
-    \  - L113: scripts/lib/tmux_utils.sh は .gitignore の whitelist未登録で git add が拒否された。配備時に対象ファイル\n\
-    \  - L041: tmuxにはネイティブのペインレベル環境変数が存在しない。@user_optionはメタデータ用で環境変数ではない。ペインごとに異なるCLAUDE_CONFIG\n\
-    \  - L105: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.\n\
+  bloom_level: ''
+  completed_at: '2026-03-01T17:10:25+09:00'
+  deployed_at: '2026-03-01T17:05:49'
+  description: "【注入教訓】 必ず確認し reviewed: true に変更せよ\n  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    \  - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re\n\
+    \  - L038: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必\n\
+    \  - L048: check_and_update_done_taskがparent_cmdのみで判定していたためWave1報告doneがWave2タスクassignedを自動d\n\
+    \  - L044: 忍者名_report.yaml(ルートレベルフィールド)とsubtask_*.yaml(report:キー配下)で構造が異なる。スキーマ検証やパーサーは両方に対\n\
     \  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L032: ##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計\n────────────────────────────────────────\n\
-    \ntmux status barにAPI使用量(five_hour/seven_day utilization)をリアルタイム表示する\nバックグラウンドデーモンスクリプトを新規作成せよ。\n\
-    \n## 要件\n\n1. scripts/usage_statusbar_loop.sh を新規作成\n2. バックグラウンドデーモンとして動作（無限ループ、5分間隔）\n\
-    3. Usage API(five_hour.utilization, seven_day.utilization)を取得\n4. tmux status-rightを更新（既存の日時表示に使用率%を追加）\n\
-    \   - 現在のstatus-right: \"#[fg=#cdd6f4]%Y-%m-%d %H:%M\"\n   - 期待する出力例: \"5h:42%\
-    \ 7d:18% 2026-03-01 15:00\" のような形式\n5. pidfileによる多重起動防止（既に動いていれば起動しない）\n6. API失敗時はリトライせずスキップ、次サイクルで再取得\n\
-    7. WSL2→API応答遅延対策: timeout>=15秒（L040準拠）\n\n## 参考資材\n\n- scripts/usage_monitor_C.sh\
-    \ — API取得ロジックの参考実装\n  - get_oauth_token(): OAuthトークン取得\n  - fetch_usage_json():\
-    \ API呼出し（curl）\n  - extract_usage_pct(): レスポンスパース\n  ★ コピーではなく、共通関数(common.sh等)への切り出しか、直接流用を検討せよ\n\
-    - context/infrastructure.md §6: Usage API仕様\n  - URL: https://api.anthropic.com/api/oauth/usage\n\
-    \  - Headers: Authorization: Bearer {token}, anthropic-beta: oauth-2025-04-20\n\
-    \  - Response: five_hour.utilization(%), seven_day.utilization(%)\n\n## 教訓ポインタ\n\
-    \n- L059: I/F整合に注意。引数なし統合出力設計にせよ\n- L040: WSL2→Anthropic API timeout>=15秒\n- L058/L037:\
-    \ WSL2 Write tool .shファイル→CRLF混入→作成後 sed -i 's/\\r$//' 必須\n- L074: ((var++))はvar=0でset\
-    \ -e即終了→$((var+1))を使え\n\n## 注意事項\n\n- DRY_RUN環境変数対応（テスト時にモックレスポンスが使えるように）\n- tmux\
-    \ set-option -t shogun status-right で更新\n- status-right-length=200は設定済み（shutsujin_departure.sh）\n\
-    - .gitignore whitelist追加が必要（L116）\n- commitまで。pushするな。\n"
-  parent_cmd: cmd_467
+    \n教訓効果計測の計器修正。AC1(harmful撤廃)+AC2(helpful自動帰属)を実装せよ。\n\nAC1: harmful判定ロジック撤廃 +\
+    \ harmful_countリセット\n(1) cmd_complete_gate.sh L1754-1851の「lessons_useful空+task\
+    \ done→全注入教訓にharmful+1」\n    ロジックを削除(コメントアウトではなく削除)。\n    理由コメントを1行残す:\n     \
+    \ # harmful判定はACE Reflector方式に移行(cmd_470)。自己申告不在での一律harmful廃止。\n(2) ワンショットスクリプト\
+    \ scripts/oneshot/reset_harmful_counts.sh を作成・実行:\n    対象: projects/infra/lessons.yaml\
+    \ + projects/dm-signal/lessons.yaml\n    全教訓のharmful_countを0にリセット。\n\nAC2: GATE\
+    \ CLEAR時のhelpful自動帰属(ACE Reflector方式)\ncmd_complete_gate.sh L1547-1590のhelpful判定を拡張:\n\
+    - 現行(維持): lessons_useful/lesson_referencedフィールドの明示報告→helpful+1\n- 追加: 忍者の報告YAML全文から注入教訓ID(L0XX/L1XX形式)の出現を自動検出→helpful+1\n\
+    - resolve_report_file()で取得した報告YAMLをテキストとして読み込み\n- 注入教訓ID一覧(related_lessonsから取得済み)と照合\n\
+    - 報告本文中にIDが出現する教訓→helpful+1(lessons_usefulとの重複排除)\n- ログ: \"  ${lid}: helpful +1\
+    \ (auto-detected in report text)\"\n"
+  parent_cmd: cmd_470
+  progress:
+  - timestamp: '2026-03-01T17:10:25+09:00'
+    ac_id: ac1
+    status: done
+    note: harmful判定ロジックを削除し、理由コメント追加。oneshotスクリプト作成・実行で2PJ harmful_countを0化。
+  - timestamp: '2026-03-01T17:10:25+09:00'
+    ac_id: ac2
+    status: done
+    note: lessons_useful加点を維持しつつ、report全文からrelated_lessons ID自動検出→helpful加点（重複排除）を追加。
   project: infra
   related_lessons:
-  - id: L040
+  - id: L097
     reviewed: true
-    summary: WSL2→Anthropic API間のレイテンシでUsage APIの応答が常に5秒以上。監視スクリプトのtimeout設定は10秒以上にせよ
-  - id: L094
+    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+  - id: L117
     reviewed: true
-    summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
-      pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
-  - id: L016
+    summary: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/report_implement.yaml、cmd_complete_gate.sh内の全Python判定コード、deploy_task.sh報告テンプレート等の横断更新が必須。後方互換フォールバックも各箇所に必要。impl_bが全箇所カバーし
+  - id: L038
     reviewed: true
-    summary: OAuthリフレッシュトークンは1回限り使用。複数セッション共有で競合発生→CLAUDE_CODE_OAUTH_TOKENで回避
-  - id: L015
+    summary: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必ずテスト用cmdを使用すべき。
+  - id: L048
     reviewed: true
-    summary: CLAUDE_CONFIG_DIR=~/.claude丸ごと切替、CLAUDE_CODE_OAUTH_TOKEN=認証のみ切替。複数アカウント運用に有効
-  - id: L113
+    summary: check_and_update_done_taskがparent_cmdのみで判定していたためWave1報告doneがWave2タスクassignedを自動done化した。task_id一致チェックをL311後に追加して修正済み
+  - id: L044
     reviewed: true
-    summary: scripts/lib/tmux_utils.sh は .gitignore の whitelist未登録で git add が拒否された。配備時に対象ファイルの追跡可否を事前検証すべき。
-  - id: L041
-    reviewed: true
-    summary: tmuxにはネイティブのペインレベル環境変数が存在しない。@user_optionはメタデータ用で環境変数ではない。ペインごとに異なるCLAUDE_CONFIG_DIRを設定するにはrespawn-pane
-      -eまたはsend-keysで起動時に注入する
-  - id: L105
-    reviewed: true
-    summary: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗。E2Eセッション作成直後にpane-base-index=0を設定して安定化した。
+    summary: 忍者名_report.yaml(ルートレベルフィールド)とsubtask_*.yaml(report:キー配下)で構造が異なる。スキーマ検証やパーサーは両方に対応が必要
   - id: L074
     reviewed: true
     summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -70,7 +62,7 @@ task:
   - id: L032
     reviewed: true
     summary: '##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計'
-  report_filename: hayate_report_cmd_467.yaml
+  report_filename: hayate_report_cmd_470.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -83,28 +75,13 @@ task:
     - files_modified
     - lesson_candidate
     - lessons_useful
-  progress:
-  - timestamp: '2026-03-01T15:05:57+09:00'
-    ac_id: AC1
-    status: done
-    note: scripts/usage_statusbar_loop.sh新規作成 + bash -n PASS
-  - timestamp: '2026-03-01T15:05:57+09:00'
-    ac_id: AC2
-    status: done
-    note: five_hour/seven_day utilization取得とtmux status-right更新を確認
-  - timestamp: '2026-03-01T15:05:57+09:00'
-    ac_id: AC4
-    status: done
-    note: pidfileで二重起動防止（already running）を確認
-  - timestamp: '2026-03-01T15:05:57+09:00'
-    ac_id: AC5
-    status: done
-    note: API_TIMEOUT_SEC>=15を強制（14指定時はエラー終了）
-  karo_note: AC1/AC2/AC4/AC5を満たす実装と検証を完了。詳細はqueue/reports/hayate_report_cmd_467.yaml参照。
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
-  subtask_id: subtask_467_impl_a
-  target_path: scripts/usage_monitor_C.sh
-  task_id: subtask_467_impl_a
+  subtask_id: subtask_470_impl_a
+  target_path:
+  - scripts/cmd_complete_gate.sh
+  - projects/infra/lessons.yaml
+  - projects/dm-signal/lessons.yaml
+  task_id: subtask_470_impl_a
   task_type: implement
-  title: usage_statusbar_loop.sh新規作成 — tmux status barにAPI使用量リアルタイム表示するデーモン
+  title: harmful判定撤廃+harmful_countリセット+helpful自動帰属(ACE Reflector)

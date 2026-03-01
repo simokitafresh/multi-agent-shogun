@@ -152,7 +152,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L051: Sonnet 4.6はMUST/NEVER/ALWAYSをリテラルに従わず文脈判断でオーバーライドする。否定指示は肯定形+理由付き、絶対禁止は条件付きルーティング(IF X THEN Y)に変換すると遵守率向上。Pink Elephant研究で学術裏付け
 - L052: ninja_monitorのDESTRUCTIVE検出でcapture-pane履歴にsend-keysが残る誤検知あり。DESTRUCTIVE判定ログ(kill/rm等)はcapture-pane結果に他エージェントのsend-keys内容が混入する可能性を考慮すべき
 - L053: Claude 4.x CRITICAL/MUST/NEVERがovertriggering副作用（cmd_324）
-<!-- last_synced_lesson: L118 -->
+<!-- last_synced_lesson: L119 -->
 - L054: lesson_write.shのcontextロック失敗が非致命でSSOTとcontext不整合を許容（cmd_323）
 - L055: report YAML構造混在に対するフォールバック必須（cmd_337）
 - L056: タスクYAML上書き問題: auto_deploy時の全サブタスク永続化（cmd_338）
@@ -216,6 +216,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L116: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要（cmd_466）
 - L117: lesson_referenced→lessons_usefulリネーム時に全派生ファイル(generated/4本+roles/+templates/)を漏れなく更新する必要がある（cmd_466）
 - L118: tmux set-optionのtargetがsession指定だとwindow optionが意図せずcurrent windowのみ更新されることがある（cmd_468）
+- L119: deploy_task.shのpostcondファイル経由でbash→Pythonのデータ受け渡しパターンが確立（cmd_470）
 
 ## PD裁定反映（cmd_354同期）
 

@@ -752,12 +752,33 @@ def output_detail():
 
 def output_summary():
     a = section_a()
+    c = section_c()
+    d = section_d()
+    e = section_e()
     for m in sorted(a.keys()):
         if m == "unknown":
             continue
         s = a[m]
         print("%s_clear_rate=%.1f" % (m, s["rate"]))
         print("%s_n=%d" % (m, s["total"]))
+
+        impl_rate = "—"
+        impl_stats = c.get(m, {}).get("implement")
+        if impl_stats and impl_stats.get("total", 0) >= 5:
+            impl_rate = "%.1f" % impl_stats["rate"]
+        print("%s_impl_rate=%s" % (m, impl_rate))
+
+        eff_stats = d.get(m)
+        if eff_stats is not None:
+            efficiency = "%.1f" % eff_stats.get("efficiency", 0.0)
+        else:
+            efficiency = "—"
+        print("%s_efficiency=%s" % (m, efficiency))
+
+        trend = e.get(m, {}).get("trend", "stable")
+        if trend not in ("stable", "up", "down"):
+            trend = "stable"
+        print("%s_trend=%s" % (m, trend))
 
 def output_json():
     result = {
