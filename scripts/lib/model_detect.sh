@@ -70,19 +70,31 @@ detect_real_model() {
             output=$(tmux capture-pane -t "$pane_target" -p -S -1000 2>/dev/null)
 
             if [ -n "$output" ]; then
-                local model_line
+                local model_line model
                 model_line=$(echo "$output" | grep -E '│.*model:' | tail -1)
 
                 if [ -n "$model_line" ]; then
                     # "model:" の後ろ、"/model" or "│" の前
-                    local model
                     model=$(echo "$model_line" | sed -E 's/.*model:[[:space:]]*//' | sed -E 's/[[:space:]]*(\/model|│).*//')
-                    # "loading" は検出失敗扱い
-                    if [ -n "$model" ] && [ "$model" != "loading" ]; then
-                        tmux set-option -p -t "$pane_target" @real_model "$model" 2>/dev/null
-                        echo "$model"
-                        return 0
+                fi
+
+                # バナーがスクロールアウトした場合のフォールバック:
+                # フッター行 "model_name · XX% left · YY% used" から抽出
+                if [ -z "$model" ]; then
+                    local footer_line
+                    footer_line=$(echo "$output" | grep -E '·[[:space:]]*[0-9]+% left[[:space:]]*·[[:space:]]*[0-9]+% used' | tail -1)
+                    if [ -n "$footer_line" ]; then
+                        model=$(echo "$footer_line" \
+                            | sed -E 's/^[[:space:]]*//' \
+                            | sed -E 's/[[:space:]]*·[[:space:]]*[0-9]+% left[[:space:]]*·[[:space:]]*[0-9]+% used.*$//')
                     fi
+                fi
+
+                # "loading" は検出失敗扱い
+                if [ -n "$model" ] && [ "$model" != "loading" ]; then
+                    tmux set-option -p -t "$pane_target" @real_model "$model" 2>/dev/null
+                    echo "$model"
+                    return 0
                 fi
             fi
 
