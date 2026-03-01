@@ -399,7 +399,7 @@ rotate_lord_conversation() {
 
     # エントリ数を計算（"- timestamp:" 行をカウント）
     local entry_count
-    entry_count=$(grep -c '^ *- timestamp:' "$lord_conv" 2>/dev/null || echo 0)
+    entry_count=$(grep -c '^ *- timestamp:' "$lord_conv" 2>/dev/null) || entry_count=0
 
     if [ "$entry_count" -le 100 ]; then
         echo "[archive] lord_conversation: $entry_count entries <= 100, skip"
