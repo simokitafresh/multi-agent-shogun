@@ -169,6 +169,9 @@
 !scripts/lesson_impact_analysis.sh
 !scripts/lesson_effectiveness.sh
 !scripts/usage_statusbar_loop.sh
+!scripts/usage_monitor.sh
+!scripts/usage_status.sh
+!scripts/lib/mcas_common.sh
 
 
 # Archive (frozen retired components)
