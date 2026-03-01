@@ -176,7 +176,7 @@ inject_task_id() {
 
     local existing_task_id
     existing_task_id=$(field_get "$task_file" "task_id" "")
-    if [ -n "$existing_task_id" ]; then
+    if [ -n "$existing_task_id" ] && [ "$existing_task_id" != "idle" ]; then
         log "inject_task_id: task_id already set ($existing_task_id), skipping"
         return 0
     fi

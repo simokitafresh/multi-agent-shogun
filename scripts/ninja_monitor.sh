@@ -861,7 +861,8 @@ check_stall() {
     # status判定: assigned/acknowledged/in_progressのみ対象
     local status task_id
     status=$(yaml_field_get "$task_file" "status")
-    task_id=$(yaml_field_get "$task_file" "task_id")
+    task_id=$(yaml_field_get "$task_file" "subtask_id")
+    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "task_id")
 
     case "$status" in
         assigned|acknowledged)
@@ -889,7 +890,7 @@ check_stall() {
             ;;
     esac
 
-    # 同一ninja×同一task_idで通知済みならスキップ（重複防止）
+    # 同一ninja×同一subtask_id(or task_id)で通知済みならスキップ（重複防止）
     local stall_key="${name}:${task_id}"
     if [ "${STALL_NOTIFIED[$stall_key]}" = "1" ]; then
         return
