@@ -424,8 +424,9 @@ rotate_lord_conversation() {
     (
         flock -w 10 200 || { echo "[archive] WARN: flock timeout on lord_conversation"; return 1; }
         head -n $((keep_start_line - 1)) "$lord_conv" > "$archive_file"
-        # 直近keep件を残す（ヘッダ行がある場合に備えてtailではなくsedで切り出し）
-        sed -n "${keep_start_line},\$p" "$lord_conv" > "/tmp/lord_conv_trim_$$.yaml"
+        # 直近keep件を残す（entries:ヘッダを先に書き出し、sedで本体を追記）
+        echo "entries:" > "/tmp/lord_conv_trim_$$.yaml"
+        sed -n "${keep_start_line},\$p" "$lord_conv" >> "/tmp/lord_conv_trim_$$.yaml"
         mv "/tmp/lord_conv_trim_$$.yaml" "$lord_conv"
     ) 200>"$lord_conv.lock"
 
