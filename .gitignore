@@ -167,6 +167,7 @@
 !scripts/lesson_health_report.sh
 !scripts/lesson_deprecation_scan.sh
 !scripts/lesson_impact_analysis.sh
+!scripts/lesson_effectiveness.sh
 
 
 # Archive (frozen retired components)

@@ -280,4 +280,63 @@ else
     check_accumulation "${local_ids[@]}" || EXIT_CODE=1
 fi
 
+# --- 教訓効果サマリ ---
+EFFECTIVENESS_SCRIPT="$SCRIPT_DIR/scripts/lesson_effectiveness.sh"
+check_lesson_effectiveness() {
+    if [ ! -f "$EFFECTIVENESS_SCRIPT" ]; then
+        echo "WARN: lesson_effectiveness.sh not found — 教訓効果集計スキップ"
+        return 0
+    fi
+
+    local eff_args=""
+    if [ $# -ge 1 ]; then
+        eff_args="--project $1"
+    fi
+
+    local eff_output
+    # shellcheck disable=SC2086
+    eff_output=$(bash "$EFFECTIVENESS_SCRIPT" $eff_args 2>/dev/null) || {
+        echo "WARN: lesson_effectiveness.sh実行失敗 — 教訓効果集計スキップ"
+        return 0
+    }
+
+    # ヘッダー行を除外
+    local data_lines
+    data_lines=$(echo "$eff_output" | tail -n +2)
+
+    if [ -z "$data_lines" ]; then
+        echo "OK: 教訓効果データなし(集計対象0件)"
+        return 0
+    fi
+
+    # inject_count >= 5 かつ useful_count == 0 の教訓を検出
+    local warn_lessons
+    warn_lessons=$(echo "$data_lines" | awk -F'\t' '$2 >= 5 && $3 == 0 {print $1}')
+    if [ -n "$warn_lessons" ]; then
+        echo "WARN: 注入5回以上で効果報告0件の教訓:"
+        echo "$warn_lessons" | while IFS= read -r lid; do
+            echo "  - $lid"
+        done
+    fi
+
+    # 全体効果率サマリ
+    local total_inject total_useful
+    total_inject=$(echo "$data_lines" | awk -F'\t' '{s+=$2} END{print s+0}')
+    total_useful=$(echo "$data_lines" | awk -F'\t' '{s+=$3} END{print s+0}')
+    if [ "$total_inject" -gt 0 ]; then
+        local pct
+        pct=$(awk "BEGIN{printf \"%.1f\", ($total_useful/$total_inject)*100}")
+        echo "INFO: 教訓効果率: ${total_useful}/${total_inject} = ${pct}%"
+    else
+        echo "INFO: 教訓効果率: ${total_useful}/0 (inject未蓄積)"
+    fi
+    return 0
+}
+
+if [ $# -ge 1 ]; then
+    check_lesson_effectiveness "$1"
+else
+    check_lesson_effectiveness
+fi
+
 exit $EXIT_CODE

@@ -491,10 +491,10 @@ load_adapter_with() {
     [ "$result" = "opus" ]
 }
 
-@test "get_agent_model: cliセクションなし sasuke → sonnet (デフォルト)" {
+@test "get_agent_model: cliセクションなし sasuke → opus (デフォルト)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     result=$(get_agent_model "sasuke")
-    [ "$result" = "sonnet" ]
+    [ "$result" = "opus" ]
 }
 
 @test "get_agent_model: cliセクションなし hanzo → opus (デフォルト)" {
@@ -521,10 +521,10 @@ load_adapter_with() {
     [ "$result" = "gpt-5" ]
 }
 
-@test "get_agent_model: 未知agent → sonnet (デフォルト)" {
+@test "get_agent_model: 未知agent → opus (デフォルト)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     result=$(get_agent_model "unknown_agent")
-    [ "$result" = "sonnet" ]
+    [ "$result" = "opus" ]
 }
 
 @test "get_agent_model: kimi CLI hayate → k2.5 (YAML指定)" {
