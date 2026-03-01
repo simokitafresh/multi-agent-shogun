@@ -11,7 +11,7 @@
 set -euo pipefail
 
 # tmpファイルの後始末
-cleanup() { rm -f /tmp/stk_active_$$.yaml /tmp/stk_done_$$.yaml /tmp/dash_trim_$$.md /tmp/dash_karo_trim_$$.md; }
+cleanup() { rm -f /tmp/stk_active_$$.yaml /tmp/stk_done_$$.yaml /tmp/dash_trim_$$.md /tmp/dash_karo_trim_$$.md /tmp/lord_conv_trim_$$.yaml; }
 trap cleanup EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -386,6 +386,52 @@ postcondition_archive() {
 postcondition_archive || true
 
 archive_dashboard
+
+# ============================================================
+# 3. lord_conversation.yaml — 100件超→直近50件に刈り込み
+# ============================================================
+rotate_lord_conversation() {
+    local lord_conv="$PROJECT_DIR/queue/lord_conversation.yaml"
+    [ -f "$lord_conv" ] || { echo "[archive] lord_conversation: not found, skip"; return 0; }
+
+    local lord_archive_dir="$ARCHIVE_DIR/lord_conversation"
+    mkdir -p "$lord_archive_dir"
+
+    # エントリ数を計算（"- timestamp:" 行をカウント）
+    local entry_count
+    entry_count=$(grep -c '^ *- timestamp:' "$lord_conv" 2>/dev/null || echo 0)
+
+    if [ "$entry_count" -le 100 ]; then
+        echo "[archive] lord_conversation: $entry_count entries <= 100, skip"
+        return 0
+    fi
+
+    local keep=50
+    local archive_count=$((entry_count - keep))
+    local date_stamp
+    date_stamp="$(date '+%Y%m%d_%H%M%S')"
+
+    # エントリ境界の行番号を取得
+    local -a entry_starts
+    mapfile -t entry_starts < <(grep -n '^ *- timestamp:' "$lord_conv" | cut -d: -f1)
+
+    # keep件目（=archive_count+1番目）のエントリ開始行
+    local keep_start_line=${entry_starts[$archive_count]}
+
+    # アーカイブ対象（先頭〜keep_start_line-1行目）を退避
+    local archive_file="$lord_archive_dir/lord_conversation_${date_stamp}.yaml"
+
+    (
+        flock -w 10 200 || { echo "[archive] WARN: flock timeout on lord_conversation"; return 1; }
+        head -n $((keep_start_line - 1)) "$lord_conv" > "$archive_file"
+        # 直近keep件を残す（ヘッダ行がある場合に備えてtailではなくsedで切り出し）
+        sed -n "${keep_start_line},\$p" "$lord_conv" > "/tmp/lord_conv_trim_$$.yaml"
+        mv "/tmp/lord_conv_trim_$$.yaml" "$lord_conv"
+    ) 200>"$lord_conv.lock"
+
+    echo "[archive] lord_conversation: archived=$archive_count kept=$keep"
+}
+rotate_lord_conversation
 
 # archive.doneフラグ出力（CMD_ID指定時のみ）
 if [ -n "$CMD_ID" ]; then
