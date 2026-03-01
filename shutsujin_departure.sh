@@ -614,10 +614,8 @@ for i in {0..8}; do
     tmux send-keys -t "shogun:agents.${p}" "cd \"$(pwd)\" && export PS1='${PROMPT_STR}' && clear" Enter
 done
 
-# コンテキスト%表示付きペイン枠線フォーマット
-tmux set-option -t shogun pane-border-format \
-  "#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{==:#{@model_name},Opus},#[fg=#cba6f7],#[fg=#a6e3a1]}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default] #{@current_task}"
-tmux set-option -t shogun pane-border-status top
+# セッション固有設定（pane-border/status-right/remain-on-exit/将軍@model_name等）
+bash "$SCRIPT_DIR/scripts/shutsujin_departure.sh"
 
 log_success "  └─ 家老・忍者の陣、構築完了"
 echo ""
@@ -808,6 +806,13 @@ NINJA_EOF
         fi
         sleep 1
     done
+
+    # 実行中モデル名をtmuxペイン変数へ同期（将軍含む）
+    if bash "$SCRIPT_DIR/scripts/sync_pane_vars.sh" > /dev/null 2>&1; then
+        log_info "  └─ tmux @model_name 同期完了（将軍含む）"
+    else
+        log_info "  └─ ⚠️ tmux @model_name 同期失敗（起動直後のため次周期で再同期）"
+    fi
 
     # ═══════════════════════════════════════════════════════════════════
     # STEP 6.6: inbox_watcher起動（全エージェント）
