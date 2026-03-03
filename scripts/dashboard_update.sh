@@ -22,10 +22,9 @@ DRY_RUN=false
 [[ "${2:-}" == "--dry-run" ]] && DRY_RUN=true
 
 # ─── Validation ───
-if [[ -z "$CMD_ID" || "$CMD_ID" != cmd_* ]]; then
-    echo "Usage: dashboard_update.sh <cmd_id> [--dry-run]" >&2
-    echo "  cmd_id: cmd_XXX形式（必須）" >&2
-    echo "受け取った引数: $*" >&2
+if [[ -z "$CMD_ID" || ! "$CMD_ID" =~ ^cmd_[0-9]+$ ]]; then
+    echo "ERROR: cmd_id は cmd_XXX 形式（数字のみ）で指定せよ。" >&2
+    echo "  進捗メモの追記は Edit tool で dashboard.md を直接編集すること。" >&2
     exit 1
 fi
 
@@ -38,6 +37,7 @@ if [[ -f "$PROJECT_DIR/queue/dashboard.md" ]]; then
 fi
 
 REPORTS_DIR="$PROJECT_DIR/queue/reports"
+ARCHIVE_REPORTS_DIR="$PROJECT_DIR/queue/archive/reports"
 STK_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 
 if [[ ! -f "$DASHBOARD" ]]; then
@@ -48,6 +48,7 @@ fi
 # ─── Export for Python ───
 TEMPLATE="$PROJECT_DIR/config/dashboard_template.md"
 export DASHBOARD REPORTS_DIR STK_FILE CMD_ID DRY_RUN TEMPLATE
+export ARCHIVE_REPORTS_DIR
 
 # ─── Main processing (flock for concurrency safety) ───
 LOCK_FILE="${DASHBOARD}.lock"
@@ -59,6 +60,7 @@ import yaml, glob, os, sys, re
 
 DASHBOARD = os.environ['DASHBOARD']
 REPORTS_DIR = os.environ['REPORTS_DIR']
+ARCHIVE_REPORTS_DIR = os.environ['ARCHIVE_REPORTS_DIR']
 STK_FILE = os.environ['STK_FILE']
 CMD_ID = os.environ['CMD_ID']
 DRY_RUN = os.environ['DRY_RUN'] == 'true'
@@ -114,25 +116,35 @@ def summarize_ac(ac_val):
     return ''
 
 
+def find_matches(search_dir):
+    if not os.path.isdir(search_dir):
+        return []
+
+    found = []
+    for fpath in sorted(glob.glob(os.path.join(search_dir, '*.yaml'))):
+        try:
+            with open(fpath) as f:
+                raw = yaml.safe_load(f)
+            if not raw:
+                continue
+            pcmd = str(get_first(raw, 'parent_cmd', 'report.parent_cmd'))
+            if pcmd != CMD_ID:
+                continue
+            status = str(get_first(raw, 'status', 'report.status', default=''))
+            # Skip placeholder reports (empty status)
+            if not status.strip() or status.strip() == 'None':
+                continue
+            ts = str(get_first(raw, 'timestamp', 'report.timestamp', default=''))
+            found.append({'ts': ts, 'path': fpath, 'data': raw})
+        except Exception:
+            continue
+    return found
+
+
 # ─── Step 1: Find matching report YAMLs ───
-matches = []
-for fpath in sorted(glob.glob(os.path.join(REPORTS_DIR, '*.yaml'))):
-    try:
-        with open(fpath) as f:
-            raw = yaml.safe_load(f)
-        if not raw:
-            continue
-        pcmd = str(get_first(raw, 'parent_cmd', 'report.parent_cmd'))
-        if pcmd != CMD_ID:
-            continue
-        status = str(get_first(raw, 'status', 'report.status', default=''))
-        # Skip placeholder reports (empty status)
-        if not status.strip() or status.strip() == 'None':
-            continue
-        ts = str(get_first(raw, 'timestamp', 'report.timestamp', default=''))
-        matches.append({'ts': ts, 'path': fpath, 'data': raw})
-    except Exception:
-        continue
+matches = find_matches(REPORTS_DIR)
+if not matches:
+    matches = find_matches(ARCHIVE_REPORTS_DIR)
 
 if not matches:
     print(f"WARN: {CMD_ID}に対応する完了済みreport YAMLが見つかりません", file=sys.stderr)
@@ -435,7 +447,9 @@ STEP68_PY
 if [[ "$DRY_RUN" != true ]]; then
     NOW_DATE=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M')
     NOW_TIME=$(TZ=Asia/Tokyo date '+%H:%M')
-    sed -i "s/— [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} [0-9]\{2\}:[0-9]\{2\} 更新/— ${NOW_DATE} 更新/" "$DASHBOARD"
+    # 現行ヘッダー: "# 🏯 Dashboard [project] — YYYY-MM-DD HH:MM 更新"
+    sed -E -i "1s|^(# 🏯 Dashboard \\[[^]]+\\] — )[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}( 更新)$|\\1${NOW_DATE}\\2|" "$DASHBOARD"
+    # 旧テンプレート互換（残存環境向け）
     sed -i "s/忍者配備状況（[0-9]\{2\}:[0-9]\{2\}更新）/忍者配備状況（${NOW_TIME}更新）/" "$DASHBOARD"
 fi
 

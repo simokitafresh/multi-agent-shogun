@@ -5,6 +5,9 @@
 - **KARO域** (`KARO_SECTION_START`〜`END`): 家老のみ更新（進行中/最新更新/調査結果/要対応/戦果）
 - 戦況メトリクス・モデル別スコアボード・知識サイクル健全度・稼働忍者はAUTO側で自動。手動転記不要
 - `dashboard_update.sh`の主機能（最新更新エントリ追加）は従来通りKARO域内に挿入
+- **dashboard_update.shの用途**: cmd_complete_gate.sh内で自動実行される完了報告ツール。手動呼び出し不要
+- **進捗メモ**: Edit toolでdashboard.md KARO域(`KARO_SECTION_START`〜`END`)に直接追記せよ
+- **禁止**: dashboard_update.shを進捗メモに使うな（report YAML前提のため必ずエラーになる）
 
 ## §1 配備（Deployment Checklist）
 > タスク配備前の必須チェックリスト。STEP 1-6を毎回実行せよ。
