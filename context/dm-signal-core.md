@@ -99,7 +99,7 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 
 ## 4. ビルディングブロック
 
-パス: `backend/app/services/pipeline/blocks/` | BlockType enum: `schemas/pipeline.py:18-37` | 登録: `shared.py:208-253`
+パス: `backend/app/services/pipeline/blocks/` | BlockType enum: `schemas/pipeline.py:18-37` | 登録: `shared.py:225-270`
 標準パターン → `projects/dm-signal.yaml` (d) pipeline
 全14種BBパラメータ詳細・選出方式 → `docs/research/core-param-catalog.md`
 
@@ -110,8 +110,9 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 | 採用 | MomentumFilter / SingleViewMomentumFilter / TrendReversalFilter / MomentumAccelerationFilter | 追い風 / 抜き身 / 変わり身 / 加速 |
 | 採用 | AbsoluteMomentumFilter / EqualWeight | 門番 / 分身(全忍法terminal) |
 | 補助 | SafeHavenSwitch / MonthlyReturnMomentumFilter | 門番補助 / 追い風GS方式 |
-| 未採用 | ReversalFilter → **逆風**(cmd_249採用決定) / RelativeMomentumFilter(cmd_250) / MultiViewMomentumFilter(cmd_251) | 新忍法候補 |
-| 未採用 | ComponentPrice / CashTerminal / KalmanMeta | インフラ/ディスコン |
+| 採用/進行中 | ReversalFilter → **逆風**(cmd_249採用決定) / MultiViewMomentumFilter → **四つ目**(cmd_284フルGS完了・本番登録判断待ち) | 新忍法候補 |
+| 偵察中 | RelativeMomentumFilter(cmd_250) | 新忍法候補 |
+| 未採用 | ComponentPrice / CashTerminal / KalmanMeta | インフラ/スケルトン |
 
 ### tiebreakルール（cmd_217, L086/L092）
 
