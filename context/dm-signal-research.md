@@ -1,16 +1,17 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-02-24 lesson_sync(hanzo) -->
+<!-- last_updated: 2026-03-03 cmd_493 リンク整合 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
 コア定義(§0-5,8,10-11,13,15,18) → `context/dm-signal-core.md`
 運用手順(§6-7,9,12,14,16-17) → `context/dm-signal-ops.md`
+補足: 旧詳細資料(`parity-verification-details.md`, `edge-detection-cycles.md`, `spa-overfitting-analysis.md`, `gs-results-by-ninjutsu.md`)は未復旧。現存するdocs/researchは `cmd_484/485/486/488` の4件のみ。
 
 ---
 
 ## §19. 月次リターン傾き分析 (cmd_270/271/272)
 
-→ 詳細: `docs/research/parity-verification-details.md` §19
+→ 詳細資料: 未復旧（本節を一次情報として扱う）
 
 | 指標 | cmd | 結論(1行) |
 |------|-----|----------|
@@ -23,7 +24,7 @@
 
 ### エッジ検知 C1-C4 (cmd_273/274) + 外部データ(cmd_282) + 日次(cmd_281)
 
-→ 詳細: `docs/research/edge-detection-cycles.md`
+→ 詳細資料: 未復旧（本節を一次情報として扱う）
 
 **正式結論: 月次粒度二値分類でのprecision 80%は構造的に不可能**
 
@@ -43,7 +44,7 @@
 
 ## §20. ルックアヘッドバイアス検証 (cmd_276)
 
-→ 詳細: `docs/research/parity-verification-details.md` §20
+→ 詳細資料: 未復旧（本節を一次情報として扱う）
 
 **本番+GS双方でLA未検出。信頼度:高。** 全14BB+全5忍法GSでtarget_date以前参照を確認。
 残存リスク: R1(当日終値未確定ガード不在, medium)。StockData API仕様は未検証。
@@ -52,7 +53,7 @@
 
 ## §21. 過剰最適化検証 (cmd_277)
 
-→ 詳細: `docs/research/spa-overfitting-analysis.md`
+→ 詳細資料: 未復旧（本節を一次情報として扱う）
 
 **全5忍法PASS。** SPA検定でH0棄却不能、IS/OOS劣化なし。
 
@@ -71,7 +72,7 @@
 
 ## §22. 外部データ統合エッジ検知 (cmd_282)
 
-→ 詳細: `docs/research/edge-detection-cycles.md` §22
+→ 詳細資料: 未復旧（本節を一次情報として扱う）
 
 DTB3(3ヶ月T-Bill利回り)の12特徴量MI分析。最大MI=0.058bits(C2-Bの63%)。
 Bayes上界: C2-B only=69% → C2-B+DTB3=63.7%(**悪化**)。Phase2(FRED API等)不要。
@@ -80,7 +81,7 @@ Bayes上界: C2-B only=69% → C2-B+DTB3=63.7%(**悪化**)。Phase2(FRED API等)
 
 ## §23. 日次粒度エッジ検知 (cmd_281)
 
-→ 詳細: `docs/research/edge-detection-cycles.md` §23
+→ 詳細資料: 未復旧（本節を一次情報として扱う）
 
 日次Bayes上界63.2% < 月次69%(**悪化**)。全22特徴量AUC 0.506-0.543(ランダム)。
 DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。Phase2不要。
@@ -89,7 +90,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 
 ## §24. 四つ目(yotsume) フルGSチャンピオン選出 (cmd_284)
 
-→ 詳細: `docs/research/gs-results-by-ninjutsu.md`
+→ 詳細資料: 未復旧（本節を一次情報として扱う）
 
 18,744パターンから3モードチャンピオン選出。SPA検定3モード全てPASS。
 

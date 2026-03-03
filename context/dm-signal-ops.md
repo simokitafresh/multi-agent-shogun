@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-02-24 lesson_sync IDシフト修正(+2)+L103/L106/L123追加(24件) -->
+<!-- last_updated: 2026-03-03 cmd_493 リンク整合+loader/API現行化 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -10,7 +10,7 @@
 
 6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
-→ `docs/research/cmd_286_recalculate-architecture.md`
+詳細アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
 
 ## §9 性能ベースライン
 
@@ -21,21 +21,21 @@
 | OPT-E | 389s | 0.53s |
 
 ボトルネック: trade_perf(58.7s) > L3 FoF(~89s) > signal_calc(0.53s)
-→ `docs/research/cmd_286_recalculate-architecture.md` §9
+補助参照: `docs/research/cmd_484_dm-signal-supplemental-catalog-2.md` AC1-2（scripts一覧）
 
 ## §12 計算データ管理
 
 命名: `{cmd番号}_{ブロック名}_{説明}.csv` + `.meta.yaml`。上書き禁止(`_v2`)。
-テンプレ: `scripts/analysis/grid_search/template_gs_runner.py`
-CSVローダ: `scripts/analysis/grid_search/gs_csv_loader.py`(cmd_160)
+テンプレ: `scripts/analysis/grid_search/template_gs_runner.py` は現treeに不在（再配置待ち）。
+ローダ: `scripts/analysis/grid_search/gs_data_loader.py`（現行DBローダ） / `scripts/analysis/grid_search/gs_csv_loader.py`（CSV互換）
 GS全6ブロック: `scripts/analysis/grid_search/run_077_{block}.py`
 PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic制約明記+PARAM_GRID修正で運用。
-→ `docs/research/ops-procedures.md`
+補助参照: `docs/research/cmd_484_dm-signal-supplemental-catalog-2.md` AC1-2
 
 ## §14 ドキュメントインデックス
 
 docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証・API使用法ルール抜粋。
-→ `docs/research/ops-db-rules.md`
+補助参照: `docs/research/cmd_485_dm-signal-environment-catalog.md`（環境/Render/API） + `docs/research/cmd_488_dm-signal-claude-config-catalog.md`（運用設定）
 
 ## §16 知識基盤改善（穴1/2/3対策完了 — 2026-02-22）
 
@@ -113,7 +113,7 @@ docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証
 | L0 GS生成PF | ~30体(本番登録済み) |
 | L1 四神12体 | 本番登録済み+パリティPASS |
 | L2 忍法12体 | 本番登録済み+全12体 0.00bp PASS(cmd_246) |
-| 本番PF総数 | 89体(上限100) |
+| 本番PF総数 | 未確認（cmd_477後の再集計待ち） |
 | L3 堅牢性検証 | 未着手(cmd_176殿裁定待ち) |
 | 新忍法偵察 | 逆風(cmd_249)/RelMom(cmd_250)/MultiView(cmd_251)偵察中 |
 | SVMF/MVMFバグ | 修正完了(cmd_235+cmd_244) |
