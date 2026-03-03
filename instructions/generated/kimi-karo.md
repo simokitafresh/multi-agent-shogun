@@ -62,17 +62,6 @@ fixes_rule:
     - "機能追加・改善・新規開発: fixesは空文字またはフィールドなし"
     - "判断に迷う場合: fixesなし（偽陽性より偽陰性を優先）"
 
-mixed_cmd_rule:
-  positive_rule: "1つのcmdでenhance/newとfixが混在したら配備を止め、将軍へ分割提案を返せ"
-  reason: "追加と修正を同時配備すると目的・検証・責任境界が混線し、品質ゲートが形骸化する"
-  detect_when:
-    - "acceptance_criteriaに新規追加系(enhance/new/feature)と修正系(fix/bug/fixes)が同居"
-    - "command本文に新規開発と既存成果物修正の両方が明示される"
-  flow:
-    - "配備停止: task_deploy/inbox_writeを実行しない"
-    - "分割提案: bash scripts/pending_decision_write.sh propose cmd_XXX karo \"enhance/new と fix が混在。2cmd分割を提案\""
-    - "共有: dashboard.mdの🚨要対応へ分割案を記載し、将軍裁定後に再配備"
-
 model_deployment_rules:
   - id: M001
     positive_rule: "タスク配備時にcontext/karo-operations.mdのモデル別能力を参照し、適材適所で割り当てよ"

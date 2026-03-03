@@ -224,6 +224,45 @@ archive_reports() {
                     continue
                     ;;
             esac
+
+            # sweep mode安全弁: 親cmdが進行中なら報告を退避しない
+            # 取得失敗(空文字)は安全側(keep)へ倒す。
+            if [ -n "$parent_cmd" ]; then
+                local cmd_status
+                if [ ! -f "$QUEUE_FILE" ]; then
+                    kept=$((kept + 1))
+                    continue
+                fi
+
+                # exact matchでparent_cmdブロックのstatusを抽出（部分一致防止）
+                cmd_status=$(
+                    awk -v target="$parent_cmd" '
+                        BEGIN { in_target = 0 }
+                        /^[[:space:]]*-[[:space:]]id:[[:space:]]*cmd_/ {
+                            id = $0
+                            sub(/^[[:space:]]*-[[:space:]]id:[[:space:]]*/, "", id)
+                            gsub(/[[:space:]]+$/, "", id)
+                            if (in_target == 1) { exit }
+                            in_target = (id == target)
+                            next
+                        }
+                        in_target == 1 && /^[[:space:]]*status:[[:space:]]*/ {
+                            st = $0
+                            sub(/^[[:space:]]*status:[[:space:]]*/, "", st)
+                            gsub(/[[:space:]]+$/, "", st)
+                            print st
+                            exit
+                        }
+                    ' "$QUEUE_FILE"
+                )
+
+                case "$cmd_status" in
+                    pending|in_progress|acknowledged|"")
+                        kept=$((kept + 1))
+                        continue
+                        ;;
+                esac
+            fi
         fi
 
         base_name="$(basename "$report_file")"

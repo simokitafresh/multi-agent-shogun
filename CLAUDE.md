@@ -144,7 +144,7 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 
 ```
 1. ダッシュボード更新（cmd完了結果を記載）
-2. bash scripts/archive_completed.sh（完了cmd+古い戦果を自動退避）
+2. bash scripts/archive_completed.sh cmd_XXX（完了cmd+古い戦果を自動退避。cmd_id必須）
 3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
 4. ntfy送信（cmd完了報告）
 5. 新しいinbox nudgeが来ていても、上記1-4を先に完了する
