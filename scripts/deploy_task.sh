@@ -307,6 +307,60 @@ try:
 
     task = data['task']
     project = task.get('project', '')
+    task_type = str(task.get('task_type') or task.get('type') or 'unknown').lower().strip()
+
+    # cmd_513: recon/scout は教訓注入を行わない（205件の空振り削減）
+    if task_type in ('recon', 'scout'):
+        task['related_lessons'] = []
+
+        # 再配備時に残存した注入プレフィックスがあれば除去
+        desc = str(task.get('description', '') or '')
+        marker = '【注入教訓】'
+        separator = '─' * 40
+        if marker in desc and separator in desc:
+            head, tail = desc.split(separator, 1)
+            if marker in head:
+                task['description'] = tail.lstrip('\n')
+
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+        try:
+            with os.fdopen(tmp_fd, 'w') as f:
+                yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+            os.replace(tmp_path, task_file)
+        except:
+            os.unlink(tmp_path)
+            raise
+
+        skip_id = f'skipped_{task_type}'
+        _pc_path = os.path.join(os.path.dirname(task_file), '.postcond_lesson_inject')
+        try:
+            with open(_pc_path, 'w') as _pf:
+                _pf.write('available=0\n')
+                _pf.write('injected=0\n')
+                _pf.write(f'task_id={task.get(\"task_id\", \"unknown\")}\n')
+                _pf.write(f'project={project}\n')
+                _pf.write(f'injected_ids={skip_id}\n')
+        except Exception:
+            pass
+
+        # 追跡ログにスキップを残す（教訓注入なしを明示）
+        impact_log = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
+        cmd_id = task.get('task_id') or task.get('parent_cmd') or 'unknown'
+        ninja_name = task.get('assigned_to', 'unknown')
+        bloom = task.get('bloom_level', 'unknown')
+        try:
+            os.makedirs(os.path.dirname(impact_log), exist_ok=True)
+            write_header = not os.path.exists(impact_log) or os.path.getsize(impact_log) == 0
+            with open(impact_log, 'a', encoding='utf-8') as lf:
+                if write_header:
+                    lf.write('timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\n')
+                ts = datetime.datetime.now().isoformat(timespec='seconds')
+                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{skip_id}\tskipped\tskipped\tno\t{project}\t{task_type}\t{bloom}\n')
+        except Exception as ie:
+            print(f'[INJECT] WARN: impact log write failed: {ie}', file=sys.stderr)
+
+        print(f'[INJECT] task_type={task_type}: lesson injection skipped', file=sys.stderr)
+        sys.exit(0)
 
     if not project:
         task['related_lessons'] = []
