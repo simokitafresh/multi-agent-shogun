@@ -156,6 +156,11 @@ Do NOT specify: number of ninja, assignments, verification methods, personas, or
 - **purpose**: One sentence. What "done" looks like. Karo and ninja validate against this.
 - **acceptance_criteria**: List of testable conditions. All must be true for cmd to be marked done. Karo checks these at Step 11.7 before marking cmd complete.
 
+### cmd Scope Rule (Enhance vs Fix)
+
+- 起票時に必ず「追加(enhance/new)」か「修正(fix)」かを単一目的で判定し、1cmdにはどちらか一方のみを含める。
+- 追加と修正の混在が判明した場合は、そのcmdを分割して再起票する（例: enhance用cmdとfix用cmdを別IDで作成）。
+
 ### Good vs Bad examples
 
 ```yaml
