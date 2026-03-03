@@ -432,8 +432,8 @@ tmux capture-pane -t shogun:2.{pane_index} -p | tail -5
 
 | スクリプト | 用途 | 使い分け |
 |-----------|------|---------|
-| `ntfy_cmd.sh` | cmd関連通知（完了・失敗・進捗） | purposeを自動付加。cmd_idがある通知は全てこちら |
-| `ntfy.sh` | cmd以外（復帰・🚨要対応・VF等） | cmd_idがない一般通知用 |
+| `ntfy_cmd.sh` | cmd関連通知（初回配備開始・完了・失敗・進捗） | purposeを自動付加。cmd_idがある通知は全てこちら（初回配備通知は `NTFY_SYNC=1` で可観測送信） |
+| `ntfy.sh` | cmd以外（復帰・🚨要対応・VF等） | cmd_idがない一般通知用。既定は非同期送信（fire-and-forget） |
 
 `config/settings.yaml` に `ntfy_topic` がなければ全通知を黙ってスキップ。
 

@@ -1443,6 +1443,71 @@ postcondition_lesson_inject() {
     return 0
 }
 
+# ─── 初回配備開始ntfy（cmd_496） ───
+# 同一cmdで1回のみ通知。再配備・追配備では送信しない。
+mark_dispatch_ntfy_once() {
+    local cmd_id="$1"
+    local ninja_name="$2"
+    local title="$3"
+    local state_dir="$SCRIPT_DIR/queue/dispatch_ntfy_started"
+    local marker="$state_dir/${cmd_id}.started"
+    local ts
+    ts="$(date '+%Y-%m-%dT%H:%M:%S')"
+
+    mkdir -p "$state_dir"
+
+    # Atomic create: 成功した呼び出しだけが通知を送信する
+    if ( set -o noclobber; : > "$marker" ) 2>/dev/null; then
+        cat > "$marker" <<EOF
+timestamp: ${ts}
+cmd_id: ${cmd_id}
+ninja: ${ninja_name}
+title: ${title}
+EOF
+        return 0
+    fi
+
+    return 1
+}
+
+notify_initial_deploy_ntfy_once() {
+    local task_file="$1"
+    local ninja_name="$2"
+    local cmd_id
+    local title
+    local message
+
+    if [ ! -f "$task_file" ]; then
+        log "dispatch_ntfy: SKIP (task file not found)"
+        return 0
+    fi
+
+    cmd_id=$(field_get "$task_file" "parent_cmd" "")
+    title=$(field_get "$task_file" "title" "")
+    title="$(printf '%s' "$title" | tr '\n' ' ' | tr '\r' ' ')"
+
+    if [[ -z "$cmd_id" || "$cmd_id" != cmd_* ]]; then
+        log "dispatch_ntfy: SKIP (parent_cmd missing or invalid: ${cmd_id:-none})"
+        return 0
+    fi
+
+    if ! mark_dispatch_ntfy_once "$cmd_id" "$ninja_name" "$title"; then
+        log "dispatch_ntfy: SKIP already notified (${cmd_id})"
+        return 0
+    fi
+
+    message="初回配備開始 (title=${title:-(untitled)}, ninja=${ninja_name})"
+
+    if NTFY_SYNC=1 bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$cmd_id" "$message"; then
+        log "dispatch_ntfy: sent (${cmd_id}) title='${title:-untitled}' ninja=${ninja_name}"
+    else
+        # non-blocking要件: deployフローは継続
+        log "dispatch_ntfy: WARN send failed (${cmd_id}) ninja=${ninja_name}"
+    fi
+
+    return 0
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
@@ -1534,6 +1599,9 @@ else
     log "${NINJA_NAME}: CTX=${CTX_PCT}%, busy. Sending inbox_write (queued, watcher will nudge later)"
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
 fi
+
+# 初回配備開始通知（cmd_496: 同一cmdで1回のみ、失敗時non-blocking）
+notify_initial_deploy_ntfy_once "$TASK_FILE" "$NINJA_NAME" || true
 
 # 報告YAML雛形生成（配備完了ログの直前）
 TASK_ID=$(field_get "$TASK_FILE" "task_id" "")
