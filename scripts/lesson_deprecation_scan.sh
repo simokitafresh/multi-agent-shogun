@@ -8,6 +8,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/config/projects.yaml"
 TRACKING_TSV="$SCRIPT_DIR/logs/lesson_tracking.tsv"
+IMPACT_TSV="$SCRIPT_DIR/logs/lesson_impact.tsv"
 
 # --- Argument Parsing ---
 PROJECT_FILTER="all"
@@ -28,7 +29,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-export SCRIPT_DIR CONFIG_FILE TRACKING_TSV PROJECT_FILTER
+export SCRIPT_DIR CONFIG_FILE TRACKING_TSV IMPACT_TSV PROJECT_FILTER
 
 python3 << 'PYEOF'
 import os
@@ -40,6 +41,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(os.environ["SCRIPT_DIR"])
 CONFIG_FILE = Path(os.environ["CONFIG_FILE"])
 TRACKING_TSV = Path(os.environ["TRACKING_TSV"])
+IMPACT_TSV = Path(os.environ["IMPACT_TSV"])
 PROJECT_FILTER = os.environ["PROJECT_FILTER"]
 
 # --- Load projects ---
@@ -87,6 +89,29 @@ if TRACKING_TSV.exists():
                             lesson_last_cmd[lid] = cmd_num
 
 
+# --- Load lesson_impact.tsv for injection/helpful counts ---
+# Columns: timestamp  cmd_id  ninja  lesson_id  action  result  referenced  project  task_type  bloom_level
+tsv_injection_count = {}  # lesson_id -> count
+tsv_helpful_count = {}    # lesson_id -> count
+
+if IMPACT_TSV.exists():
+    with open(IMPACT_TSV, encoding="utf-8") as f:
+        for i, line in enumerate(f):
+            line = line.strip()
+            if i == 0 or not line:
+                continue
+            parts = line.split("\t")
+            if len(parts) < 7:
+                continue
+            lesson_id_tsv = parts[3]
+            action = parts[4]
+            referenced = parts[6]
+            if action == "injected" and re.match(r'^L\d+$', lesson_id_tsv):
+                tsv_injection_count[lesson_id_tsv] = tsv_injection_count.get(lesson_id_tsv, 0) + 1
+                if referenced == "yes":
+                    tsv_helpful_count[lesson_id_tsv] = tsv_helpful_count.get(lesson_id_tsv, 0) + 1
+
+
 def last_ref_text(lesson_id):
     """Format last-referenced info as 'Ncmd前(cmd_NNN)' or '参照なし'."""
     last = lesson_last_cmd.get(lesson_id)
@@ -121,6 +146,8 @@ def find_script_names(text):
 # --- Main scan ---
 confirmed = []  # (project_id, lesson_id, reason)
 review = []     # (project_id, lesson_id, title_snip, related, last_ref)
+eff_confirmed = []  # (project_id, lesson_id, title_snip, inj_count, hlp_count)
+eff_review = []     # (project_id, lesson_id, title_snip, inj_count, hlp_count, rate)
 
 for project in projects:
     project_id = project["id"]
@@ -180,6 +207,28 @@ for project in projects:
                 ))
                 break
 
+        # (c) Effectiveness rate check
+        # Prefer YAML injection_count if > 0, else fallback to TSV
+        yaml_inj = lesson.get("injection_count", 0) or 0
+        yaml_hlp = lesson.get("helpful_count", 0) or 0
+        if yaml_inj > 0:
+            inj_count = yaml_inj
+            hlp_count = yaml_hlp
+        else:
+            inj_count = tsv_injection_count.get(lesson_id, 0)
+            hlp_count = tsv_helpful_count.get(lesson_id, 0)
+
+        # (c-1) Confirmed: injection >= 5 and effectiveness == 0%
+        if inj_count >= 5 and hlp_count == 0:
+            title_snip = (title or summary)[:60]
+            eff_confirmed.append((project_id, lesson_id, title_snip, inj_count, hlp_count))
+        # (c-2) Review: injection >= 10 and effectiveness < 10%
+        elif inj_count >= 10:
+            rate = hlp_count / inj_count * 100
+            if rate < 10:
+                title_snip = (title or summary)[:60]
+                eff_review.append((project_id, lesson_id, title_snip, inj_count, hlp_count, rate))
+
 # --- Output ---
 print("=== 確定candidate（自動） ===")
 if confirmed:
@@ -196,6 +245,22 @@ if review:
         print(f"        → 関連: {related}")
         print(f"        → 最終参照: {lref}")
         print(f"        ★ 構造防止済みの可能性あり。家老判断を推奨")
+else:
+    print("  (なし)")
+
+print()
+print("=== 有効率0% 確定candidate (注入N≥5) ===")
+if eff_confirmed:
+    for proj, lid, title_snip, inj, hlp in eff_confirmed:
+        print(f"  [{proj}] {lid}: {title_snip} (injected={inj}, helpful=0)")
+else:
+    print("  (なし)")
+
+print()
+print("=== 有効率<10% 審査推奨 (注入N≥10) ===")
+if eff_review:
+    for proj, lid, title_snip, inj, hlp, rate in eff_review:
+        print(f"  [{proj}] {lid}: {title_snip} (injected={inj}, helpful={hlp}, rate={rate:.0f}%)")
 else:
     print("  (なし)")
 PYEOF
