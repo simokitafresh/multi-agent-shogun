@@ -589,23 +589,24 @@ deploy_task.shが idle忍者リスト(karo_snapshot.txtから取得)の先頭か
 - `/model` はClaude CLI内のモデル切替。Codexには非対応
 
 ### 手順（家老→将軍エスカレーション不要。家老自身で実行可能）
+標準は専用スクリプトを使う。手動手順は緊急時のみ。
+
+```bash
+# 障害時: 将軍+家老をCodexへ即切替（推奨）
+bash scripts/switch_cli_mode.sh codex --scope core
+
+# 復旧後: 将軍+家老をClaudeへ戻す
+bash scripts/switch_cli_mode.sh claude --scope core
 ```
-1. settings.yaml の cli.agents.{忍者名}.type を変更（例: claude → codex）
-2. 対象ペインのCLIを終了
-   → Claude: tmux send-keys -t "shogun:2.{pane}" C-c（2回、間隔2秒）
-   → Codex: tmux send-keys -t "shogun:2.{pane}" C-c（2回、間隔2秒）
-3. 新CLIを起動（cli_profiles.yamlのlaunch_cmd参照）
-   → Claude: tmux send-keys -t "shogun:2.{pane}" "claude --dangerously-skip-permissions" Enter
-   → Codex: tmux send-keys -t "shogun:2.{pane}" "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen" Enter
-4. tmux変数更新
-   → tmux set-option -p -t "shogun:2.{pane}" @model_name "{表示名}"
-   → tmux set-option -p -t "shogun:2.{pane}" @agent_cli "{cli_type}"
-   → tmux select-pane -t "shogun:2.{pane}" -T "{表示名}"
-5. tmux capture-pane で起動確認（idleプロンプト表示を確認）
-```
+
+オプション:
+- 全軍切替: `bash scripts/switch_cli_mode.sh codex --scope all`
+- 個別指定: `bash scripts/switch_cli_mode.sh codex --scope shogun,karo,saizo`
+- 事前確認: `bash scripts/switch_cli_mode.sh codex --scope core --dry-run`
+- 設定のみ更新(再起動なし): `--no-relaunch`
 
 ### 確認方法
 ```bash
-tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id} #{@model_name} #{@agent_cli} #{pane_current_command}'
+tmux list-panes -a -F '#{session_name}:#{window_name}.#{pane_index} #{@agent_id} #{@model_name} #{@agent_cli} #{pane_current_command}' | grep -E 'shogun|karo'
 ```
 claude → `claude`、codex → `node` がpane_current_commandに表示される

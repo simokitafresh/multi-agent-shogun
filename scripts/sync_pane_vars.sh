@@ -35,13 +35,25 @@ declare -A AGENT_PANES=(
 
 changed=0
 
-# ── 将軍ペイン（shogun:main）の @model_name 同期 ──
+# ── 将軍ペイン（shogun:main）の @model_name / @agent_cli 同期 ──
 shogun_target="shogun:main"
-shogun_model=$(detect_real_model "shogun" "$shogun_target" 2>/dev/null) || shogun_model="Opus"
+shogun_model=$(detect_real_model "shogun" "$shogun_target" 2>/dev/null) || shogun_model=""
+if [[ -z "$shogun_model" ]]; then
+    shogun_model=$(cli_profile_get "shogun" "display_name")
+fi
+shogun_model="${shogun_model:-Unknown}"
+shogun_cli=$(cli_type "shogun")
+shogun_cli="${shogun_cli:-claude}"
 shogun_current=$(tmux show-options -p -t "$shogun_target" -v @model_name 2>/dev/null || echo "")
 if [[ "$shogun_current" != "$shogun_model" ]]; then
     tmux set-option -p -t "$shogun_target" @model_name "$shogun_model"
     echo "  [sync] shogun (main): @model_name = ${shogun_model}"
+    ((changed++)) || true
+fi
+shogun_cli_current=$(tmux show-options -p -t "$shogun_target" -v @agent_cli 2>/dev/null || echo "")
+if [[ "$shogun_cli_current" != "$shogun_cli" ]]; then
+    tmux set-option -p -t "$shogun_target" @agent_cli "$shogun_cli"
+    echo "  [sync] shogun (main): @agent_cli = ${shogun_cli}"
     ((changed++)) || true
 fi
 
@@ -64,11 +76,19 @@ for agent in "${!AGENT_PANES[@]}"; do
 
     # 現在の値と比較
     current=$(tmux show-options -p -t "$target" -v @model_name 2>/dev/null || echo "")
+    current_cli=$(tmux show-options -p -t "$target" -v @agent_cli 2>/dev/null || echo "")
+    effective_cli=$(cli_type "$agent")
+    effective_cli="${effective_cli:-claude}"
 
     if [[ "$current" != "$effective_model" ]]; then
         tmux set-option -p -t "$target" @model_name "$effective_model"
         source_label="${real_model:+detected}"; source_label="${source_label:-fallback}"
         echo "  [sync] ${agent} (agents.${pane}): @model_name = ${effective_model} (${source_label})"
+        ((changed++)) || true
+    fi
+    if [[ "$current_cli" != "$effective_cli" ]]; then
+        tmux set-option -p -t "$target" @agent_cli "$effective_cli"
+        echo "  [sync] ${agent} (agents.${pane}): @agent_cli = ${effective_cli}"
         ((changed++)) || true
     fi
 done
