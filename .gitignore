@@ -170,6 +170,7 @@
 !scripts/lesson_effectiveness.sh
 !scripts/usage_statusbar_loop.sh
 !scripts/usage_monitor.sh
+!scripts/usage_monitor_codex.sh
 !scripts/usage_status.sh
 !scripts/lib/mcas_common.sh
 !scripts/oneshot/

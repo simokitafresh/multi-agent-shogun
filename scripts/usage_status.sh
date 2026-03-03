@@ -17,8 +17,46 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Cache TTL
 CACHE_TTL="${MCAS_STATUS_INTERVAL:-${MCAS_POLL_INTERVAL:-300}}"
 
-CACHE_FILE="/tmp/mcas_usage_status_cache"
 CACHE_MAX_AGE=3600  # 1 hour: force delete stale cache regardless of TTL
+
+# =============================================================================
+# detect_shogun_provider: auto-detect provider for shogun pane
+# Returns: claude | codex (fallback: claude)
+# =============================================================================
+detect_shogun_provider() {
+    local pane_cli
+    pane_cli=$(tmux show-options -p -t shogun:main -v @agent_cli 2>/dev/null | tr -d '\r[:space:]' || true)
+    case "$pane_cli" in
+        codex|claude)
+            echo "$pane_cli"
+            return 0
+            ;;
+    esac
+
+    # Fallback to settings.yaml if pane variable is absent.
+    if [[ -f "${SCRIPT_DIR}/../config/settings.yaml" ]]; then
+        python3 - "${SCRIPT_DIR}/../config/settings.yaml" <<'PY'
+import yaml
+from pathlib import Path
+import sys
+cfg_path = Path(sys.argv[1]).resolve()
+try:
+    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+    cli = (cfg.get("cli") or {})
+    agents = (cli.get("agents") or {})
+    shogun = (agents.get("shogun") or {})
+    t = (shogun.get("type") or cli.get("default") or "claude").strip()
+    if t not in {"claude", "codex"}:
+        t = "claude"
+    print(t)
+except Exception:
+    print("claude")
+PY
+        return 0
+    fi
+
+    echo "claude"
+}
 
 # =============================================================================
 # cache_valid: validate cache content format
@@ -75,6 +113,9 @@ format_line() {
 # =============================================================================
 # Check cache freshness
 # =============================================================================
+PROVIDER="$(detect_shogun_provider)"
+CACHE_FILE="/tmp/mcas_usage_status_cache_${PROVIDER}"
+
 if [[ -f "$CACHE_FILE" ]]; then
     cache_mtime=$(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo "0")
     now=$(date +%s)
@@ -96,7 +137,11 @@ fi
 # =============================================================================
 # Cache miss: fetch fresh data via --status
 # =============================================================================
-raw=$("${SCRIPT_DIR}/usage_monitor.sh" --status 2>/dev/null) || raw=""
+if [[ "$PROVIDER" == "codex" ]]; then
+    raw=$("${SCRIPT_DIR}/usage_monitor_codex.sh" --status 2>/dev/null) || raw=""
+else
+    raw=$("${SCRIPT_DIR}/usage_monitor.sh" --status 2>/dev/null) || raw=""
+fi
 
 # L007: fetch failure → don't overwrite cache
 if [[ -z "$raw" ]]; then
