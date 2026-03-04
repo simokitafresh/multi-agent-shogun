@@ -58,6 +58,14 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG"
 }
 
+send_inbox_message() {
+    local to="$1"
+    local message="$2"
+    local msg_type="$3"
+    local from="${4:-ninja_monitor}"
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$to" "$message" "$msg_type" "$from" >> "$LOG" 2>&1
+}
+
 yaml_field_get() {
     local file="$1"
     local field="$2"
@@ -75,7 +83,7 @@ declare -A PREV_STATE     # 前回の状態: busy / idle / unknown
 declare -A PANE_TARGETS   # 忍者名 → tmuxペインターゲット
 declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
-declare -A STALL_NOTIFIED    # 停滞通知済みフラグ — key: "ninja:task_id", value: "1"
+declare -A STALL_NOTIFIED    # 停滞通知時刻（epoch秒）— key: "ninja:task_id", value: epoch
 declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
 declare -A PENDING_CMD_NUDGE_COUNT  # pending cmd再起動nudge回数 — key: "cmd_XXX", value: count
 declare -A PENDING_CMD_LAST_NUDGE   # pending cmd最終nudge時刻 — key: "cmd_XXX", value: epoch秒
@@ -96,6 +104,8 @@ done
 
 MAX_RENUDGE=5               # 未読再nudge上限回数（同一未読状態に対して）
 RENUDGE_BACKOFF=600         # 低頻度バックオフ再通知間隔（10分=600秒）— 同一fingerprint時の安全網
+STALL_RENOTIFY_DEBOUNCE=300 # 同一ninja×taskのSTALL再通知デバウンス（5分）
+STALL_ESCALATE_THRESHOLD=2  # 同一taskでのstall_escalate発火閾値
 MAX_PENDING_NUDGE=5         # pending cmd同一cmd再起動nudge上限回数
 KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
@@ -787,7 +797,7 @@ handle_confirmed_idle() {
             local count=${STALL_COUNT[$stall_count_key]}
             if [ "$count" -ge 2 ]; then
                 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-                  "【STALL-ESCALATE】${name}が${subtask_id}で${count}回STALL。別忍者への差替えを推奨。" \
+                  "【STALL-ESCALATE】${name}が${subtask_id}で${count}回STALL。差し替え必須。" \
                   stall_escalate ninja_monitor >> "$LOG" 2>&1
             fi
         else
@@ -924,12 +934,6 @@ check_stall() {
             ;;
     esac
 
-    # 同一ninja×同一subtask_id(or task_id)で通知済みならスキップ（重複防止）
-    local stall_key="${name}:${task_id}"
-    if [ "${STALL_NOTIFIED[$stall_key]}" = "1" ]; then
-        return
-    fi
-
     # ペインがidleか確認
     local target="${PANE_TARGETS[$name]}"
     if [ -z "$target" ]; then return; fi
@@ -956,13 +960,39 @@ check_stall() {
     local threshold=$STALL_THRESHOLD_MIN
     case "$status" in
         acknowledged) threshold=10 ;;
-        in_progress)  threshold=20 ;;
+        in_progress)
+            threshold=$(cli_profile_get "$name" "in_progress_stall_min")
+            if ! [[ "$threshold" =~ ^[0-9]+$ ]]; then
+                threshold=20
+            fi
+            ;;
     esac
 
+    local stall_key="${name}:${task_id}"
+
     if [ $elapsed_min -ge $threshold ]; then
+        local last_notified=${STALL_NOTIFIED[$stall_key]:-0}
+        local since_last=$((now - last_notified))
+        if [ "$last_notified" -gt 0 ] && [ "$since_last" -lt "$STALL_RENOTIFY_DEBOUNCE" ]; then
+            log "STALL-DEBOUNCE: $name $task_id notified ${since_last}s ago (<${STALL_RENOTIFY_DEBOUNCE}s)"
+            return
+        fi
+
         log "STALL-DETECTED: $name stalled on $task_id for ${elapsed_min}min (status=${status}), notifying karo"
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "${name}が${task_id}で${elapsed_min}分停滞(status=${status})" stall_alert ninja_monitor >> "$LOG" 2>&1
-        STALL_NOTIFIED[$stall_key]="1"
+        send_inbox_message karo "${name}が${task_id}で${elapsed_min}分停滞(status=${status})" stall_alert
+        STALL_NOTIFIED[$stall_key]=$now
+
+        STALL_COUNT[$stall_key]=$(( ${STALL_COUNT[$stall_key]:-0} + 1 ))
+        local stall_count=${STALL_COUNT[$stall_key]}
+        if [ "$stall_count" -ge "$STALL_ESCALATE_THRESHOLD" ]; then
+            send_inbox_message karo "【STALL-ESCALATE】${name}が${task_id}で${stall_count}回STALL。差し替え必須。" stall_escalate
+        fi
+
+        if [ "$status" = "in_progress" ]; then
+            send_inbox_message "$name" "in_progress停滞を検知。task YAMLを再確認し、作業を再開せよ。" task_assigned
+            log "STALL-RECOVERY-SEND: resent task_assigned to ${name} for ${task_id}"
+        fi
+
         unset STALL_FIRST_SEEN[$name]
     fi
 }
@@ -1464,9 +1494,37 @@ write_karo_snapshot() {
                 fi
             done
 
-            # idle一覧
+            # idle一覧（cmd_519: round-robin回転ポインタ順）
+            local rr_last=""
+            local rr_file="$SCRIPT_DIR/queue/rr_pointer.txt"
+            if [ -f "$rr_file" ]; then
+                rr_last=$(head -1 "$rr_file" 2>/dev/null | tr -d '[:space:]')
+            fi
+
+            # 回転順NINJA_NAMES配列を構築
+            local rotated_names=()
+            if [ -n "$rr_last" ]; then
+                local rr_idx=-1
+                for i in "${!NINJA_NAMES[@]}"; do
+                    if [ "${NINJA_NAMES[$i]}" = "$rr_last" ]; then
+                        rr_idx=$i
+                        break
+                    fi
+                done
+                if [ "$rr_idx" -ge 0 ]; then
+                    local total=${#NINJA_NAMES[@]}
+                    for (( j=1; j<=total; j++ )); do
+                        rotated_names+=("${NINJA_NAMES[$(( (rr_idx + j) % total ))]}")
+                    done
+                else
+                    rotated_names=("${NINJA_NAMES[@]}")
+                fi
+            else
+                rotated_names=("${NINJA_NAMES[@]}")
+            fi
+
             local idle_list=""
-            for name in "${NINJA_NAMES[@]}"; do
+            for name in "${rotated_names[@]}"; do
                 if [ "${PREV_STATE[$name]}" = "idle" ]; then
                     idle_list="${idle_list}${name},"
                 fi
@@ -1797,6 +1855,10 @@ check_yaml_size() {
 }
 
 # ─── 初期ペイン探索 ───
+if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
+    return 0 2>/dev/null || exit 0
+fi
+
 discover_panes
 
 # ─── メインループ ───

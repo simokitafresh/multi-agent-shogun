@@ -261,18 +261,34 @@ else
         fi
     fi
 
-    # Priority 2: ninja_states.yamlからidle忍者
+    # Priority 2: ninja_states.yamlからidle忍者（cmd_519: round-robin回転順）
     if [ -z "$SELECTED_NINJA" ]; then
         STATES_FILE="$SCRIPT_DIR/logs/ninja_states.yaml"
+        RR_POINTER_FILE="$SCRIPT_DIR/queue/rr_pointer.txt"
         if [ -f "$STATES_FILE" ]; then
-            IDLE_NINJA=$(python3 -c "
-import yaml, sys
+            IDLE_NINJA=$(RR_FILE="$RR_POINTER_FILE" python3 -c "
+import yaml, sys, os
+
+NINJA_NAMES = ['sasuke','kirimaru','hayate','kagemaru','hanzo','saizo','kotaro','tobisaru']
+
+rr_file = os.environ.get('RR_FILE', '')
+rr_last = ''
+if rr_file and os.path.exists(rr_file):
+    with open(rr_file) as f:
+        rr_last = f.read().strip()
+
+# Build rotated order
+rotated = list(NINJA_NAMES)
+if rr_last in NINJA_NAMES:
+    idx = NINJA_NAMES.index(rr_last)
+    rotated = NINJA_NAMES[idx+1:] + NINJA_NAMES[:idx+1]
+
 try:
     with open('$STATES_FILE') as f:
         data = yaml.safe_load(f)
-    for name, info in data.get('ninjas', {}).items():
-        if name == 'karo':
-            continue
+    ninjas = data.get('ninjas', {})
+    for name in rotated:
+        info = ninjas.get(name, {})
         state = str(info.get('state', '')).lower()
         ctx = int(info.get('ctx_pct', 100))
         if state == 'idle' and ctx < 50:
@@ -284,7 +300,7 @@ except:
 
             if [ -n "$IDLE_NINJA" ]; then
                 SELECTED_NINJA="$IDLE_NINJA"
-                log "Ninja selected: ${SELECTED_NINJA} (idle from ninja_states.yaml)"
+                log "Ninja selected: ${SELECTED_NINJA} (idle from ninja_states.yaml, rr-rotated)"
             fi
         else
             log "WARN: ninja_states.yaml not found"

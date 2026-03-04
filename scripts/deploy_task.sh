@@ -1669,4 +1669,12 @@ record_deployed_at "$TASK_FILE" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
 # preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減）
 preflight_gate_artifacts "$TASK_FILE" || true
 
+# round-robin回転ポインタ更新（cmd_519: 配備偏り解消）
+RR_POINTER_FILE="$SCRIPT_DIR/queue/rr_pointer.txt"
+RR_LOCK_FILE="/tmp/rr_pointer.lock"
+(
+    flock -w 5 201
+    echo "$NINJA_NAME" > "$RR_POINTER_FILE"
+) 201>"$RR_LOCK_FILE" 2>/dev/null || log "WARN: rr_pointer update failed (non-fatal)"
+
 log "${NINJA_NAME}: deployment complete (type=${TYPE})"
