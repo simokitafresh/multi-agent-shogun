@@ -307,7 +307,7 @@ lesson_candidate:
   title: ""
   detail: ""
   project: ${project}
-lessons_useful: []
+lessons_useful: null
 skill_candidate:
   found: false
 decision_candidate:
@@ -1251,20 +1251,7 @@ preflight_gate_artifacts() {
         log "preflight_gate: archive.done already exists (skip)"
     fi
 
-    # (2) lesson.done — 配備時点で報告YAMLは未存在→lesson_check.shで「候補なし」フラグ生成
-    # 注: ninja完了後にlesson_candidate found:trueが出た場合、
-    #   cmd_complete_gate.shのpreflight upgradeロジックがsource: lesson_writeに上書きする
-    if [ ! -f "$gates_dir/lesson.done" ]; then
-        if bash "$SCRIPT_DIR/scripts/lesson_check.sh" "$cmd_id" "deploy_preflight: 配備時点で候補なし" >/dev/null 2>&1; then
-            log "preflight_gate: lesson.done generated (deploy_preflight)"
-        else
-            log "preflight_gate: lesson.done WARN (script failed, non-blocking)"
-        fi
-    else
-        log "preflight_gate: lesson.done already exists (skip)"
-    fi
-
-    # (3) review_gate.done — implement時のみ。配備時点でreview未実施のためplaceholder生成
+    # (2) review_gate.done — implement時のみ。配備時点でreview未実施のためplaceholder生成
     local task_type
     task_type=$(field_get "$task_file" "task_type" "")
     if [ "$task_type" = "implement" ] && [ ! -f "$gates_dir/review_gate.done" ]; then
@@ -1276,7 +1263,7 @@ EOF
         log "preflight_gate: review_gate.done generated (deploy_preflight)"
     fi
 
-    # (4) report_merge.done — recon時のみ。配備時点で報告未存在のためplaceholder生成
+    # (3) report_merge.done — recon時のみ。配備時点で報告未存在のためplaceholder生成
     if [ "$task_type" = "recon" ] && [ ! -f "$gates_dir/report_merge.done" ]; then
         cat > "$gates_dir/report_merge.done" <<EOF
 timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
