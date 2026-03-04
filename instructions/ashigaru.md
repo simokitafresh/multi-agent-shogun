@@ -76,8 +76,8 @@ workflow:
   - step: 5.5
     action: self_gate_check
     mandatory: true
-    positive_rule: "report.result.self_gate_checkに5項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
-    reason: "cmd完了ゲートBLOCK65%はlessons_useful空・reviewed:false残存。提出前自己ゲートで事前排除できる"
+    positive_rule: "report.result.self_gate_checkに4項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
+    reason: "cmd完了ゲートBLOCKの主因はlessons_useful空。提出前自己ゲートで事前排除できる"
   - step: 6
     action: update_status
     value: done
@@ -180,7 +180,7 @@ When task YAML contains `project:`, read these 3 files before any implementation
 2. `projects/{project}/lessons.yaml`
 3. `context/{project}.md`
 
-If task YAML contains `related_lessons:`, check each lesson ID in `projects/{project}/lessons.yaml` before starting work. These are auto-injected by deploy_task.sh based on keyword relevance — understand how each lesson relates to your task. **Each entry has `reviewed: false` — change to `reviewed: true` after reading, before starting work.** This is mandatory evidence of lesson review.
+If task YAML contains `related_lessons:`, each entry にはsummaryとdetailが埋め込まれている（deploy_task.shが自動注入）。**detailを読んでから作業開始せよ。** lessons.yamlを別途読む必要はない（push型）。
 
 If task YAML contains `reports_to_read:`, read ALL listed report YAMLs before starting work. These are prior ninja reports for `blocked_by` tasks — auto-injected by deploy_task.sh. Understanding prior findings prevents duplicate work and ensures knowledge continuity.
 
@@ -391,27 +391,25 @@ Missing fields = incomplete report.
 
 ## Step 5.5: 提出前自己ゲート (MANDATORY)
 
-**positive_rule**: report作成後、statusをdoneにする前に以下の5項目を全て確認し、report.result.self_gate_checkに記載せよ。全PASSでなければstatusをdoneにするな。FAILを修正してから再確認。
+**positive_rule**: report作成後、statusをdoneにする前に以下の4項目を全て確認し、report.result.self_gate_checkに記載せよ。全PASSでなければstatusをdoneにするな。FAILを修正してから再確認。
 
 | 項目 | 確認内容 | FAILの対処 |
 |------|---------|------------|
 | (a) lesson_ref | related_lessonsが1件以上 → lessons_usefulに1件以上記載 | lessons_usefulに役立った教訓IDを追記 |
-| (b) reviewed | related_lessons内のreviewed:falseが0件 | 未レビュー教訓を読んでreviewed:trueに変更 |
-| (c) lesson_candidate | found: true/falseが明記されていること | lesson_candidateにfound:true or falseを記載 |
-| (d) status_valid | status = done \| failed \| blocked のいずれか | 適切なstatusに修正 |
-| (e) purpose_fit | purpose_validation.fit = true | 目的に沿う成果へ修正、不可ならpurpose_gap記載 |
+| (b) lesson_candidate | found: true/falseが明記されていること | lesson_candidateにfound:true or falseを記載 |
+| (c) status_valid | status = done \| failed \| blocked のいずれか | 適切なstatusに修正 |
+| (d) purpose_fit | purpose_validation.fit = true | 目的に沿う成果へ修正、不可ならpurpose_gap記載 |
 
 確認結果をreport.result.self_gate_checkに記載:
 ```yaml
 self_gate_check:
   lesson_ref: PASS    # or FAIL
-  reviewed: PASS      # or FAIL
   lesson_candidate: PASS  # or FAIL
   status_valid: PASS  # or FAIL
   purpose_fit: PASS   # or FAIL
 ```
 
-**reason**: cmd完了ゲート(cmd_complete_gate.sh)のBLOCK主因65%はlessons_useful空・reviewed:false残存。提出前の自己ゲートで事前排除できる。FAILを提出後に修正するより提出前の確認コストは格段に低い。
+**reason**: cmd完了ゲート(cmd_complete_gate.sh)のBLOCK主因はlessons_useful空。提出前の自己ゲートで事前排除できる。FAILを提出後に修正するより提出前の確認コストは格段に低い。
 
 ### 下忍(genin) 報告時の注意
 
@@ -528,7 +526,7 @@ Recover from primary data:
    - `projects/{project}/lessons.yaml` — project-specific lessons (past mistakes, discoveries)
    - `context/{project}.md` — detailed context (system architecture, analysis tools, data management)
    All 3 files serve different purposes. Read all before starting work.
-   If task YAML has `related_lessons:`, check each lesson ID in lessons.yaml and understand relevance to your task.
+   If task YAML has `related_lessons:`, 各エントリのdetailを読んでから作業開始せよ（push型: 詳細はタスクYAMLに埋込済み）。
    If task YAML has `reports_to_read:`, read ALL listed report YAMLs before starting work.
    Information omitted from task YAML is expected to exist in these files. Do not treat omission as missing requirements.
 5. dashboard.md is secondary info only — trust YAML as authoritative

@@ -420,13 +420,7 @@ Cross-reference with dashboard.md — process any reports not yet reflected.
 
 ## Task Start: Lesson Review
 
-If task YAML contains `related_lessons:`, each entry has `reviewed: false`. Before starting work:
-
-1. Read each lesson ID in `projects/{project}/lessons.yaml`
-2. Understand how each lesson relates to your task
-3. Edit task YAML: change `reviewed: false` → `reviewed: true` for each entry
-
-This is mandatory. `entrance_gate` blocks next deployment if unreviewed lessons remain.
+If task YAML contains `related_lessons:`, each entry にはsummaryとdetailが埋め込まれている（deploy_task.shが自動注入）。**detailを読んでから作業開始せよ。** lessons.yamlを別途読む必要はない（push型）。
 
 ## Timestamps
 

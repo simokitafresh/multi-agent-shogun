@@ -1027,45 +1027,11 @@ if [ "$LESSON_CHECKED" = false ]; then
     echo "  (no tasks with related_lessons for this cmd)"
 fi
 
-# ─── reviewed:false残存チェック（教訓確認の強制） ───
+# ─── reviewed:false残存チェック（廃止: cmd_533でpush型に移行） ───
+# reviewed:falseフィールドはdeploy_task.shで付与されなくなった（detail埋込に移行）
+# 旧タスクYAMLにreviewed:falseが残存していても後方互換でブロックしない
 echo ""
-echo "Lesson reviewed check:"
-REVIEWED_OK=true
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
-
-    unreviewed=$(python3 -c "
-import yaml, sys
-try:
-    with open('$task_file') as f:
-        data = yaml.safe_load(f)
-    task = data.get('task', {}) if data else {}
-    rl = task.get('related_lessons', [])
-    if not rl:
-        sys.exit(0)
-    unrev = [l.get('id','?') for l in rl if l.get('reviewed') == False]
-    if unrev:
-        print(','.join(unrev))
-except:
-    pass
-" 2>/dev/null)
-
-    ninja_name=$(basename "$task_file" .yaml)
-    if [ -n "$unreviewed" ]; then
-        echo "  ${ninja_name}: NG ← reviewed:false残存 [${unreviewed}]"
-        record_block_reason "${ninja_name}:unreviewed_lessons:${unreviewed}"
-        REVIEWED_OK=false
-        ALL_CLEAR=false
-    else
-        echo "  ${ninja_name}: OK (all reviewed)"
-    fi
-done
-if [ "$REVIEWED_OK" = true ]; then
-    echo "  (all lessons reviewed or no lessons)"
-fi
+echo "Lesson reviewed check: SKIP (push型移行済み — cmd_533)"
 
 # ─── ac_version照合（task.ac_version vs report.ac_version_read） ───
 echo ""
@@ -1948,26 +1914,7 @@ else
             fi
         done
 
-        # Pattern 3: reviewed_false
-        unrev_ninjas=()
-        for reason in "${BLOCK_REASONS[@]}"; do
-            if [[ "$reason" == *":unreviewed_lessons:"* ]]; then
-                ninja=$(echo "$reason" | cut -d: -f1)
-                unrev_ninjas+=("$ninja")
-            fi
-        done
-        if [ ${#unrev_ninjas[@]} -gt 0 ]; then
-            ninja_names=$(IFS=,; echo "${unrev_ninjas[*]}")
-            if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" \
-                "[自動生成] 注入教訓の確認を怠った: ${CMD_ID}" \
-                "reviewed:falseのまま作業完了した忍者: ${ninja_names}" \
-                "${CMD_ID}" "gate_auto" "${CMD_ID}" --status draft 2>&1; then
-                echo "  draft: 注入教訓の確認を怠った (忍者: ${ninja_names})"
-                DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
-            else
-                echo "  WARN: draft生成失敗 (reviewed_false)"
-            fi
-        fi
+        # Pattern 3: reviewed_false — 廃止 (cmd_533: push型移行)
 
         echo "  Generated: ${DRAFT_GENERATED} draft lesson(s)"
     else

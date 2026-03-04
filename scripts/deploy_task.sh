@@ -691,7 +691,12 @@ try:
     universal_added = 0
     for c in all_candidates:
         if len(related) < MAX_INJECT:
-            related.append({'id': c['id'], 'summary': c['summary'], 'reviewed': False})
+            lesson = lessons_by_id.get(c['id'], {})
+            detail = str(lesson.get('detail', '') or lesson.get('content', '') or '')[:200]
+            entry = {'id': c['id'], 'summary': c['summary']}
+            if detail:
+                entry['detail'] = detail
+            related.append(entry)
             if c['is_universal']:
                 universal_added += 1
         else:
@@ -704,7 +709,7 @@ try:
         desc = task.get('description', '')
         marker = '【注入教訓】'
         if marker not in str(desc):
-            lines = [marker + ' 必ず確認し reviewed: true に変更せよ']
+            lines = [marker + ' 必ず確認してから作業開始せよ']
             for r in related:
                 lines.append(f\"  - {r['id']}: {r['summary'][:80]}\")
             lines.append('─' * 40)

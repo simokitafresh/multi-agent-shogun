@@ -75,8 +75,8 @@ workflow:
   - step: 5.5
     action: self_gate_check
     mandatory: true
-    positive_rule: "report.result.self_gate_checkに5項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
-    reason: "cmd完了ゲートBLOCK65%はlessons_useful空・reviewed:false残存。提出前自己ゲートで事前排除できる"
+    positive_rule: "report.result.self_gate_checkに4項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
+    reason: "cmd完了ゲートBLOCKの主因はlessons_useful空。提出前自己ゲートで事前排除できる"
   - step: 6
     action: update_status
     value: done
@@ -471,13 +471,7 @@ Cross-reference with dashboard.md — process any reports not yet reflected.
 
 ## Task Start: Lesson Review
 
-If task YAML contains `related_lessons:`, each entry has `reviewed: false`. Before starting work:
-
-1. Read each lesson ID in `projects/{project}/lessons.yaml`
-2. Understand how each lesson relates to your task
-3. Edit task YAML: change `reviewed: false` → `reviewed: true` for each entry
-
-This is mandatory. `entrance_gate` blocks next deployment if unreviewed lessons remain.
+If task YAML contains `related_lessons:`, each entry にはsummaryとdetailが埋め込まれている（deploy_task.shが自動注入）。**detailを読んでから作業開始せよ。** lessons.yamlを別途読む必要はない（push型）。
 
 ## Timestamps
 
