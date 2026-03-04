@@ -136,10 +136,9 @@ while true; do
             SAVED_IMAGE=$(download_attachment_image "$ATTACHMENT_URL")
             if [ $? -eq 0 ] && [ -n "$SAVED_IMAGE" ]; then
                 SAVED_IMAGE_REL=$(to_repo_relative_path "$SAVED_IMAGE")
-                LATEST_IMAGE_REL=$(to_repo_relative_path "$SCREENSHOT_DIR/latest.png")
                 echo "[$(date)] Saved image attachment: $SAVED_IMAGE_REL" >&2
                 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
-                    "スクショ受信: $SAVED_IMAGE_REL (latest: $LATEST_IMAGE_REL)" \
+                    "スクショ受信: $SAVED_IMAGE (latest: $SCREENSHOT_DIR/latest.png)" \
                     screenshot_received ntfy_listener
             fi
         fi
