@@ -24,6 +24,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/config/projects.yaml"
 ALERT_THRESHOLD=10
 EXIT_CODE=0
+LESSON_IMPACT_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
+LESSON_EFFECT_WINDOW_CMDS=30
+LESSON_EFFECT_WARN_THRESHOLD=50
+LESSON_EFFECT_ALERT_THRESHOLD=30
+LESSON_EFFECT_STATUS_FILE="${LESSON_EFFECT_STATUS_FILE:-$SCRIPT_DIR/queue/lesson_effectiveness_status.txt}"
+LESSON_EFFECT_NOTIFY_STATE="${LESSON_EFFECT_NOTIFY_STATE:-$SCRIPT_DIR/queue/lesson_effectiveness_notify_state.txt}"
+LESSON_EFFECT_NTFY_ENABLED="${LESSON_EFFECT_NTFY_ENABLED:-1}"
 
 # 単一projectの健全性チェック
 # $1: project_id
@@ -325,72 +332,172 @@ for l in data['lessons']:
     fi
 }
 
-# --- 教訓効果サマリ (cmd_473: lessons.yaml直接参照に統一) ---
+# 教訓効果率ステータスをダッシュボードが拾える形式で保存
+write_lesson_effect_status() {
+    local status="$1"
+    local rate="$2"
+    local window_cmds="$3"
+    local referenced="$4"
+    local injected="$5"
+    local scope="$6"
+    cat > "$LESSON_EFFECT_STATUS_FILE" <<EOF
+updated_at=$(date '+%Y-%m-%dT%H:%M:%S%z')
+status=${status}
+rate=${rate}
+window_cmds=${window_cmds}
+referenced=${referenced}
+injected=${injected}
+scope=${scope}
+EOF
+}
+
+notify_lesson_effect_if_needed() {
+    local status="$1"
+    local rate="$2"
+    local scope="$3"
+
+    local prev_status=""
+    local prev_scope=""
+    if [ -f "$LESSON_EFFECT_NOTIFY_STATE" ]; then
+        prev_status=$(awk -F= '/^last_status=/{print $2; exit}' "$LESSON_EFFECT_NOTIFY_STATE" 2>/dev/null || true)
+        prev_scope=$(awk -F= '/^scope=/{print $2; exit}' "$LESSON_EFFECT_NOTIFY_STATE" 2>/dev/null || true)
+    fi
+
+    if [ "$scope" != "$prev_scope" ]; then
+        prev_status=""
+    fi
+
+    if [ "$status" = "WARN" ] || [ "$status" = "ALERT" ]; then
+        if [ "$prev_status" != "$status" ]; then
+            if [ "$LESSON_EFFECT_NTFY_ENABLED" = "1" ]; then
+                bash "$SCRIPT_DIR/scripts/ntfy.sh" "教訓効果率${status}: ${rate}%"
+            fi
+        fi
+    fi
+
+    cat > "$LESSON_EFFECT_NOTIFY_STATE" <<EOF
+updated_at=$(date '+%Y-%m-%dT%H:%M:%S%z')
+last_status=${status}
+last_rate=${rate}
+scope=${scope}
+EOF
+}
+
+# --- 教訓効果サマリ (cmd_531: lesson_impact.tsv 直近30cmdで評価) ---
 check_lesson_effectiveness() {
-    local target_pids=()
-    if [ $# -ge 1 ]; then
-        target_pids=("$1")
-    else
-        while IFS= read -r line; do
-            target_pids+=("$line")
-        done < <(awk '/^  - id:/{id=$3} /status: active/{print id}' "$CONFIG_FILE" 2>/dev/null)
-    fi
+    local target_project="${1:-}"
+    local scope="${target_project:-all}"
 
-    if [ ${#target_pids[@]} -eq 0 ]; then
-        echo "OK: 教訓効果データなし(対象project 0件)"
+    if [ ! -f "$LESSON_IMPACT_FILE" ] || [ ! -s "$LESSON_IMPACT_FILE" ]; then
+        echo "WARN: 教訓効果率計算データなし(lesson_impact.tsv)"
+        write_lesson_effect_status "NODATA" "0.0" "0" "0" "0" "$scope"
+        notify_lesson_effect_if_needed "NODATA" "0.0" "$scope"
         return 0
     fi
 
-    local result
-    result=$(python3 -c "
-import yaml, sys, os
+    local cmd_file
+    cmd_file="$(mktemp)"
+    local reversed_file
+    reversed_file="$(mktemp)"
 
-base = sys.argv[1]
-pids = sys.argv[2:]
-total = 0
-helpful_positive = 0
-warn5 = []
+    awk '{rows[NR]=$0} END{for(i=NR;i>=1;i--) print rows[i]}' "$LESSON_IMPACT_FILE" > "$reversed_file"
 
-for pid in pids:
-    path = os.path.join(base, 'projects', pid, 'lessons.yaml')
-    if not os.path.exists(path):
-        continue
-    with open(path, encoding='utf-8') as f:
-        data = yaml.safe_load(f)
-    if not data or 'lessons' not in data:
-        continue
-    for l in data['lessons']:
-        st = str(l.get('status', 'confirmed')).lower()
-        if st == 'deprecated' or l.get('deprecated', False):
-            continue
-        total += 1
-        hc = l.get('helpful_count', 0) or 0
-        ic = l.get('injection_count', 0) or 0
-        if hc > 0:
-            helpful_positive += 1
-        # injection_count >= 5 かつ helpful_count == 0 (injection_count==0は除外)
-        if ic >= 5 and hc == 0:
-            warn5.append(f'  - {l[\"id\"]}: injection={ic}, helpful={hc} [{pid}]')
+    awk -F'\t' -v limit="$LESSON_EFFECT_WINDOW_CMDS" -v project="$target_project" '
+        $1 == "timestamp" { next }
+        {
+            cmd = $2
+            proj = $8
+            gsub(/\r$/, "", cmd)
+            gsub(/\r$/, "", proj)
+            if (cmd !~ /^cmd_/) next
+            if (cmd ~ /^cmd_test/) next
+            if (project != "" && proj != project) next
+            if (!(cmd in seen)) {
+                seen[cmd] = 1
+                print cmd
+                n++
+                if (n >= limit) exit
+            }
+        }
+    ' "$reversed_file" > "$cmd_file"
+    rm -f "$reversed_file"
 
-if warn5:
-    print('WARN: 注入5回以上で効果報告0件の教訓:')
-    for w in warn5:
-        print(w)
-
-if total > 0:
-    pct = round(helpful_positive / total * 100, 1)
-    print(f'INFO: 教訓効果率: {helpful_positive}/{total} = {pct}%')
-else:
-    print('INFO: 教訓効果率: 0/0 (教訓なし)')
-" "$SCRIPT_DIR" "${target_pids[@]}" 2>/dev/null) || {
-        echo "WARN: 教訓効果率計算失敗"
+    local window_cmds
+    window_cmds=$(wc -l < "$cmd_file" | tr -d ' ')
+    if [ "$window_cmds" -eq 0 ]; then
+        rm -f "$cmd_file"
+        echo "WARN: 教訓効果率計算対象cmdなし(scope:${scope})"
+        write_lesson_effect_status "NODATA" "0.0" "0" "0" "0" "$scope"
+        notify_lesson_effect_if_needed "NODATA" "0.0" "$scope"
         return 0
-    }
+    fi
 
-    [ -n "$result" ] && echo "$result"
+    local metric
+    metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v project="$target_project" '
+        BEGIN {
+            while ((getline line < cmd_file) > 0) {
+                gsub(/\r$/, "", line)
+                if (line != "") selected[line] = 1
+            }
+            close(cmd_file)
+        }
+        $1 == "timestamp" { next }
+        {
+            cmd = $2
+            action = $5
+            ref = tolower($7)
+            proj = $8
+            gsub(/\r$/, "", cmd)
+            gsub(/\r$/, "", action)
+            gsub(/\r$/, "", ref)
+            gsub(/\r$/, "", proj)
+            if (cmd !~ /^cmd_/) next
+            if (!(cmd in selected)) next
+            if (project != "" && proj != project) next
+            if (action == "injected") {
+                injected++
+                if (ref == "yes" || ref == "true" || ref == "1") {
+                    referenced++
+                }
+            }
+        }
+        END {
+            printf "%d\t%d\n", referenced + 0, injected + 0
+        }
+    ' "$LESSON_IMPACT_FILE")
+    rm -f "$cmd_file"
+
+    local referenced_count=0
+    local injected_count=0
+    IFS=$'\t' read -r referenced_count injected_count <<< "$metric"
+
+    local rate
+    rate=$(awk -v ref="$referenced_count" -v inj="$injected_count" 'BEGIN{
+        if (inj > 0) printf "%.1f", (ref / inj) * 100
+        else printf "0.0"
+    }')
+
+    local threshold_status="OK"
+    if [ "$injected_count" -gt 0 ]; then
+        if awk -v v="$rate" -v thr="$LESSON_EFFECT_ALERT_THRESHOLD" 'BEGIN{exit !(v < thr)}'; then
+            threshold_status="ALERT"
+        elif awk -v v="$rate" -v thr="$LESSON_EFFECT_WARN_THRESHOLD" 'BEGIN{exit !(v < thr)}'; then
+            threshold_status="WARN"
+        fi
+    fi
+
+    echo "INFO: 教訓効果率(直近${window_cmds}cmd): ${referenced_count}/${injected_count} = ${rate}%"
+    echo "METRIC: lesson_effectiveness_threshold status=${threshold_status} rate=${rate}% window_cmds=${window_cmds} referenced=${referenced_count} injected=${injected_count} scope=${scope}"
+
+    write_lesson_effect_status "$threshold_status" "$rate" "$window_cmds" "$referenced_count" "$injected_count" "$scope"
+    notify_lesson_effect_if_needed "$threshold_status" "$rate" "$scope"
 
     # injection_count >= 10 かつ helpful_count == 0 の精密チェック (cmd_470)
-    check_injection_count_threshold "${target_pids[@]}"
+    if [ -n "$target_project" ]; then
+        check_injection_count_threshold "$target_project"
+    else
+        check_injection_count_threshold
+    fi
     return 0
 }
 

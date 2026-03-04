@@ -37,6 +37,7 @@ GATE_LOG="$PROJECT_DIR/logs/gate_metrics.log"
 TASKS_DIR="$PROJECT_DIR/queue/tasks"
 SETTINGS="$PROJECT_DIR/config/settings.yaml"
 ARCHIVE_STK_DONE="$PROJECT_DIR/queue/archive/shogun_to_karo_done.yaml"
+LESSON_EFFECT_STATUS_FILE="$PROJECT_DIR/queue/lesson_effectiveness_status.txt"
 KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
 KM_MODEL_CACHE="/tmp/dashboard_km_model_cache.txt"
 KM_CACHE_LINES="/tmp/dashboard_km_cache_lines.txt"
@@ -222,6 +223,7 @@ KM_INJECT_RATE="—"
 KM_REF_RATE="—"
 KM_DELTA_PP="—"
 KM_LESSON_EFFECT="—"
+KM_LESSON_THRESHOLD="—"
 KM_PROBLEM_LESSONS="—"
 KM_MODEL_OPUS="—"
 KM_MODEL_SONNET="—"
@@ -285,6 +287,28 @@ if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
     [[ -n "$_rate" ]] && KM_MODEL_CODEX="${_rate}%"
     _n=$(_get_model_val codex_n)
     [[ -n "$_n" ]] && KM_N_CODEX="$_n"
+fi
+
+# Parse lesson effectiveness threshold snapshot (from gate_lesson_health.sh)
+if [[ -f "$LESSON_EFFECT_STATUS_FILE" ]] && [[ -s "$LESSON_EFFECT_STATUS_FILE" ]]; then
+    _threshold_status=$(awk -F= '/^status=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
+    _threshold_rate=$(awk -F= '/^rate=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
+    _threshold_window=$(awk -F= '/^window_cmds=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
+    _threshold_ref=$(awk -F= '/^referenced=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
+    _threshold_inj=$(awk -F= '/^injected=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
+    if [[ -n "$_threshold_status" ]]; then
+        case "$_threshold_status" in
+            ALERT|WARN|OK)
+                KM_LESSON_THRESHOLD="${_threshold_status} (${_threshold_rate}%, ${_threshold_ref}/${_threshold_inj}, ${_threshold_window}cmd)"
+                ;;
+            NODATA)
+                KM_LESSON_THRESHOLD="NODATA"
+                ;;
+            *)
+                KM_LESSON_THRESHOLD="${_threshold_status}"
+                ;;
+        esac
+    fi
 fi
 
 # ─── Build cmd→title map (for 戦果 section) ───
@@ -442,6 +466,7 @@ fi
     echo "|------|-----|"
     echo "| 教訓注入率 | ${KM_INJECT_RATE} |"
     echo "| 教訓効果率 | ${KM_LESSON_EFFECT} |"
+    echo "| 効果率閾値 | ${KM_LESSON_THRESHOLD} |"
     echo "| 問題教訓 | ${KM_PROBLEM_LESSONS}件 |"
 
     echo ""
