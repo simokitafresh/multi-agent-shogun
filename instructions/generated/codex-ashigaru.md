@@ -481,6 +481,18 @@ date "+%Y-%m-%d %H:%M"       # For dashboard.md
 date "+%Y-%m-%dT%H:%M:%S"    # For YAML (ISO 8601)
 ```
 
+## Commit Safety Rule (git add)
+
+Do **not** include these paths in `git add` before commit:
+- `queue/tasks/`
+- `queue/reports/`
+- `queue/gates/`
+
+These are runtime operation files and ignored by `.gitignore`. If staged by mistake, unstage them first:
+```bash
+git reset HEAD queue/tasks/ queue/reports/ queue/gates/
+```
+
 # Forbidden Actions
 
 ## Common Forbidden Actions (All Agents)

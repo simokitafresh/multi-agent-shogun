@@ -173,6 +173,18 @@ Always use `date` command. Never guess.
 date "+%Y-%m-%dT%H:%M:%S"
 ```
 
+## Commit Safety Rule (git add)
+
+commit前の`git add`では、以下を**含めるな**:
+- `queue/tasks/`
+- `queue/reports/`
+- `queue/gates/`
+
+これらは運用データであり、`.gitignore`対象。誤ってstageした場合は除外してからcommitせよ。
+```bash
+git reset HEAD queue/tasks/ queue/reports/ queue/gates/
+```
+
 ## Task Start Rule (project field)
 
 When task YAML contains `project:`, read these 3 files before any implementation:
