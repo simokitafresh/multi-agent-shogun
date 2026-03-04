@@ -10,6 +10,8 @@
 #   T-LC-005: LORD_CONVERSATION未設定時エラー
 #   T-LC-006: 既存エントリへの追記（データ保全）
 #   T-LC-007: 壊れたYAML（非dict）の回復
+#   T-LC-008: 201件目で最古エントリが削除される
+#   T-LC-009: 200件以下では削除されない
 
 setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -142,4 +144,86 @@ print(len(data.get('entries', [])))
     content=$(cat "$LORD_CONVERSATION")
     echo "$content" | grep -q "recovery msg"
     echo "$content" | grep -q "entries:"
+}
+
+# --- T-LC-008: 201件目で最古エントリが削除される ---
+
+@test "T-LC-008: append_lord_conversation trims oldest entry when adding 201st" {
+    python3 - <<PY
+import yaml
+
+entries = [
+    {
+        "timestamp": f"2026-03-01T00:00:{i:02d}+09:00",
+        "direction": "outbound",
+        "channel": "ntfy",
+        "message": f"seed-{i:03d}",
+    }
+    for i in range(1, 201)
+]
+with open("$LORD_CONVERSATION", "w") as f:
+    yaml.dump({"entries": entries}, f, default_flow_style=False, allow_unicode=True, indent=2)
+PY
+
+    run append_lord_conversation "seed-201" "outbound" "karo"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - <<PY
+import yaml
+
+with open("$LORD_CONVERSATION") as f:
+    data = yaml.safe_load(f) or {}
+entries = data.get("entries", [])
+messages = [e.get("message", "") for e in entries]
+print(len(entries))
+print(messages[0] if messages else "")
+print("seed-001" in messages)
+print("seed-201" in messages)
+PY
+)
+    [ "${result[0]}" -eq 200 ]
+    [ "${result[1]}" = "seed-002" ]
+    [ "${result[2]}" = "False" ]
+    [ "${result[3]}" = "True" ]
+}
+
+# --- T-LC-009: 200件以下では削除されない ---
+
+@test "T-LC-009: append_lord_conversation keeps all entries when total is 200" {
+    python3 - <<PY
+import yaml
+
+entries = [
+    {
+        "timestamp": f"2026-03-01T00:00:{i:02d}+09:00",
+        "direction": "outbound",
+        "channel": "ntfy",
+        "message": f"seed-{i:03d}",
+    }
+    for i in range(1, 200)
+]
+with open("$LORD_CONVERSATION", "w") as f:
+    yaml.dump({"entries": entries}, f, default_flow_style=False, allow_unicode=True, indent=2)
+PY
+
+    run append_lord_conversation "seed-200" "outbound" "karo"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - <<PY
+import yaml
+
+with open("$LORD_CONVERSATION") as f:
+    data = yaml.safe_load(f) or {}
+entries = data.get("entries", [])
+messages = [e.get("message", "") for e in entries]
+print(len(entries))
+print(messages[0] if messages else "")
+print("seed-001" in messages)
+print("seed-200" in messages)
+PY
+)
+    [ "${result[0]}" -eq 200 ]
+    [ "${result[1]}" = "seed-001" ]
+    [ "${result[2]}" = "True" ]
+    [ "${result[3]}" = "True" ]
 }

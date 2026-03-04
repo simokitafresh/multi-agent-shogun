@@ -56,6 +56,7 @@ timestamp = os.environ["CONV_TIMESTAMP"]
 direction = os.environ["CONV_DIRECTION"]
 agent = os.environ["CONV_AGENT"]
 message = os.environ["CONV_MESSAGE"]
+MAX_ENTRIES = 200
 
 try:
     with open(path) as f:
@@ -80,6 +81,8 @@ if agent:
     entry["agent"] = agent
 
 entries.append(entry)
+if len(entries) > MAX_ENTRIES:
+    entries = entries[-MAX_ENTRIES:]
 data["entries"] = entries
 
 tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
