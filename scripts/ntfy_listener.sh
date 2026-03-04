@@ -20,6 +20,10 @@ LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 # shellcheck source=../lib/ntfy_auth.sh
 source "$SCRIPT_DIR/lib/ntfy_auth.sh"
 
+# lord_conversation.sh読み込み (cmd_546: 重複ロジック集約)
+# shellcheck source=../lib/lord_conversation.sh
+source "$SCRIPT_DIR/lib/lord_conversation.sh"
+
 if [ -z "$TOPIC" ]; then
     echo "[ntfy_listener] ntfy_topic not configured in settings.yaml" >&2
     exit 1
@@ -48,66 +52,6 @@ parse_tags() {
     python3 -c "import sys,json; print(','.join(json.load(sys.stdin).get('tags',[])))" 2>/dev/null
 }
 
-append_lord_conversation_inbound() {
-    local message="$1"
-    local timestamp
-    timestamp="$(date "+%Y-%m-%dT%H:%M:%S%:z")"
-
-    if [ ! -f "$LORD_CONVERSATION" ]; then
-        mkdir -p "$(dirname "$LORD_CONVERSATION")"
-        echo "entries: []" > "$LORD_CONVERSATION"
-    fi
-
-    if ! (
-        flock -w 5 200 || exit 1
-        CONV_PATH="$LORD_CONVERSATION" CONV_TIMESTAMP="$timestamp" \
-        CONV_MESSAGE="$message" \
-        python3 - <<'PY'
-import os
-import tempfile
-
-import yaml
-
-path = os.environ["CONV_PATH"]
-timestamp = os.environ["CONV_TIMESTAMP"]
-message = os.environ["CONV_MESSAGE"]
-
-try:
-    with open(path) as f:
-        data = yaml.safe_load(f)
-except FileNotFoundError:
-    data = {}
-
-if not isinstance(data, dict):
-    data = {}
-
-entries = data.get("entries")
-if not isinstance(entries, list):
-    entries = []
-
-entries.append({
-    "timestamp": timestamp,
-    "direction": "inbound",
-    "channel": "ntfy",
-    "message": message,
-})
-data["entries"] = entries
-
-tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
-try:
-    with os.fdopen(tmp_fd, "w") as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-    os.replace(tmp_path, path)
-except Exception:
-    os.unlink(tmp_path)
-    raise
-PY
-    ) 200>"$LORD_CONVERSATION_LOCK"; then
-        echo "[$(date)] WARNING: Failed to append inbound log to lord_conversation.yaml" >&2
-        return 1
-    fi
-}
-
 echo "[$(date)] ntfy listener started — topic: $TOPIC (auth: ${NTFY_TOKEN:+token}${NTFY_USER:+basic}${NTFY_TOKEN:-${NTFY_USER:-none}})" >&2
 
 while true; do
@@ -130,7 +74,7 @@ while true; do
             *'【MCAS】'*) echo "[$(date)] Filtered MCAS alert: ${MSG:0:80}" >&2; continue ;;
         esac
 
-        append_lord_conversation_inbound "$MSG" || true
+        append_lord_conversation "$MSG" "inbound" || true
 
         MSG_ID=$(echo "$line" | parse_json id)
         TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")

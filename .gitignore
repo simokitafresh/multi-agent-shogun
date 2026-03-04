@@ -51,6 +51,7 @@
 !lib/
 !lib/cli_adapter.sh
 !lib/ntfy_auth.sh
+!lib/lord_conversation.sh
 
 # Multi-CLI: Codex auto-load file
 !AGENTS.md
