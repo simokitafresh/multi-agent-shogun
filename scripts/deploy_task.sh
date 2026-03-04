@@ -1003,6 +1003,123 @@ except Exception as e:
 " 2>&1 | while IFS= read -r line; do log "$line"; done
 }
 
+# ─── context_update自動注入（cmd_543: 親cmdの更新対象contextをタスクへ伝播） ───
+inject_context_update() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_context_update: task file not found: $task_file"
+        return 0
+    fi
+
+    TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
+import glob
+import os
+import sys
+import tempfile
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+
+def load_yaml(path):
+    try:
+        with open(path) as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+def normalize_context_update(value):
+    if isinstance(value, list):
+        result = []
+        for item in value:
+            text = str(item).strip()
+            if text:
+                result.append(text)
+        return result
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    return []
+
+def normalize_existing(value):
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if str(v).strip()]
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    return []
+
+try:
+    data = load_yaml(task_file)
+    if not data or 'task' not in data:
+        print('[INJECT_CONTEXT_UPDATE] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+    parent_cmd = str(task.get('parent_cmd', '') or '').strip()
+    if not parent_cmd:
+        print('[INJECT_CONTEXT_UPDATE] No parent_cmd, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    cmd_sources = [
+        os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml'),
+        os.path.join(script_dir, 'queue', 'archive', 'shogun_to_karo_done.yaml'),
+    ]
+    cmd_sources.extend(sorted(glob.glob(os.path.join(script_dir, 'queue', 'archive', 'cmds', '*.yaml'))))
+
+    context_update = []
+    found = False
+    source_path = ''
+    for source in cmd_sources:
+        obj = load_yaml(source)
+        commands = obj.get('commands', [])
+        if not isinstance(commands, list):
+            continue
+        for cmd in commands:
+            if not isinstance(cmd, dict):
+                continue
+            if str(cmd.get('id', '')).strip() != parent_cmd:
+                continue
+            context_update = normalize_context_update(cmd.get('context_update', []))
+            found = True
+            source_path = source
+            break
+        if found:
+            break
+
+    if not found:
+        print(f'[INJECT_CONTEXT_UPDATE] parent_cmd not found: {parent_cmd}, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    if not context_update:
+        print(f'[INJECT_CONTEXT_UPDATE] No context_update for {parent_cmd}, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    existing = normalize_existing(task.get('context_update', []))
+    if existing == context_update:
+        print('[INJECT_CONTEXT_UPDATE] context_update unchanged, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task['context_update'] = context_update
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+    rel_source = os.path.relpath(source_path, script_dir) if source_path else source_path
+    print(f'[INJECT_CONTEXT_UPDATE] Injected {len(context_update)} entries from {rel_source}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[INJECT_CONTEXT_UPDATE] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
 # ─── role_reminder自動注入（cmd_384: 忍者スコープ制限リマインダ） ───
 inject_role_reminder() {
     local task_file="$1"
@@ -1717,6 +1834,9 @@ inject_reports_to_read "$TASK_FILE" || true
 
 # context_files自動注入（失敗してもデプロイは継続）
 inject_context_files "$TASK_FILE" || true
+
+# context_update自動注入（失敗してもデプロイは継続）
+inject_context_update "$TASK_FILE" || true
 
 # role_reminder自動注入（cmd_384: 失敗してもデプロイは継続）
 inject_role_reminder "$TASK_FILE" "$NINJA_NAME" || true
