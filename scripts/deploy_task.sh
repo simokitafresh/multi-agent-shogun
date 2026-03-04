@@ -692,7 +692,7 @@ try:
     for c in all_candidates:
         if len(related) < MAX_INJECT:
             lesson = lessons_by_id.get(c['id'], {})
-            detail = str(lesson.get('detail', '') or lesson.get('content', '') or '')[:200]
+            detail = str(lesson.get('detail', '') or lesson.get('content', '') or lesson.get('summary', '') or '')[:200]
             entry = {'id': c['id'], 'summary': c['summary']}
             if detail:
                 entry['detail'] = detail
