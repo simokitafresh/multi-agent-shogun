@@ -654,19 +654,9 @@ preflight_gate_flags() {
 
     echo "Preflight gate flag generation:"
 
-    # 1. archive.done — archive_completed.sh を先に実行
-    if [ ! -f "$gates_dir/archive.done" ]; then
-        echo "  archive: generating..."
-        if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" 2>&1; then
-            echo "  archive: preflight OK"
-        else
-            echo "  archive: preflight WARN (failed, non-blocking)"
-        fi
-    else
-        echo "  archive: already exists (skip)"
-    fi
+    # archive.doneはGATE CLEAR後に自動実行（順序逆転防止）。preflightでは実行しない
 
-    # 2. lesson.done — found:true候補確認後、適切な方法でフラグ生成
+    # 1. lesson.done — found:true候補確認後、適切な方法でフラグ生成
     if [ ! -f "$gates_dir/lesson.done" ]; then
         echo "  lesson: checking lesson_candidates..."
         local has_found_true=false
@@ -763,7 +753,7 @@ except:
 }
 
 # ─── 必須フラグ構築 ───
-ALWAYS_REQUIRED=("archive" "lesson")
+ALWAYS_REQUIRED=("lesson")
 
 # task_type検出
 read -r HAS_RECON HAS_IMPLEMENT <<< "$(detect_task_types "$CMD_ID")"
@@ -865,6 +855,13 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  ntfy_cmd: OK"
     else
         echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
+    fi
+
+    # archive_completed（ntfy後に実行。報告YAML退避はgate CLEAR後でなければならない）
+    if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" 2>&1; then
+        echo "  archive_completed: OK ($CMD_ID)"
+    else
+        echo "  archive_completed: WARN (failed, non-blocking)" >&2
     fi
 
     exit 0
@@ -1086,10 +1083,12 @@ try:
     lc = data.get('lesson_candidate')
     if lc is None:
         print('missing')
+    elif isinstance(lc, list):
+        print('legacy_list')
     elif not isinstance(lc, dict):
         print('malformed')
     elif 'found' not in lc:
-        print('malformed')
+        print('found_missing')
     elif lc['found'] == False:
         print('ok_false')
     elif lc['found'] == True:
@@ -1128,8 +1127,18 @@ except:
             record_block_reason "${ninja_name}:lesson_candidate_missing"
             ALL_CLEAR=false
             ;;
+        legacy_list)
+            echo "  ${ninja_name}: NG ← lesson_candidateが旧形式(リスト)。正規フォーマット: found: true/false + title + detail + project"
+            record_block_reason "${ninja_name}:lesson_candidate_legacy_list"
+            ALL_CLEAR=false
+            ;;
+        found_missing)
+            echo "  ${ninja_name}: NG ← lesson_candidate.found が未設定。正規フォーマット: found: true/false"
+            record_block_reason "${ninja_name}:lesson_candidate_found_missing"
+            ALL_CLEAR=false
+            ;;
         malformed)
-            echo "  ${ninja_name}: NG ← lesson_candidate構造不正（foundキーなし等）"
+            echo "  ${ninja_name}: NG ← lesson_candidate構造不正"
             record_block_reason "${ninja_name}:lesson_candidate_malformed"
             ALL_CLEAR=false
             ;;
@@ -1555,8 +1564,8 @@ if [ "$ALL_CLEAR" = true ]; then
     else
         echo "  WARN: gate_yaml_status.sh failed (non-blocking)"
     fi
-    update_status "$CMD_ID"
-    append_changelog "$CMD_ID"
+    update_status "$CMD_ID" || echo "  WARN: update_status failed (non-blocking)"
+    append_changelog "$CMD_ID" || echo "  WARN: append_changelog failed (non-blocking)"
     if append_lesson_tracking "$CMD_ID" "CLEAR" 2>&1; then
         true
     else
@@ -1715,6 +1724,13 @@ except:
         echo "  ntfy_cmd: OK"
     else
         echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
+    fi
+
+    # archive_completed（ntfy後に実行。報告YAML退避はgate CLEAR後でなければならない）
+    if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" 2>&1; then
+        echo "  archive_completed: OK ($CMD_ID)"
+    else
+        echo "  archive_completed: WARN (failed, non-blocking)" >&2
     fi
 
     # ─── GATE CLEAR時 淘汰候補自動deprecate（ベストエフォート） ───
