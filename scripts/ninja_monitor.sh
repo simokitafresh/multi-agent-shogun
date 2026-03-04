@@ -33,6 +33,7 @@ source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
+source "$SCRIPT_DIR/lib/agent_state.sh"
 
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 
@@ -204,80 +205,34 @@ check_idle() {
                 return 1  # grace period内はBUSY扱い（thinking中の誤判定防止）
             fi
             return 0  # IDLE確定（grace period経過）
-        else
-            # @agent_state != "idle" (e.g., "active")
-            # Codex CLIはStop Hookが発火せず@agent_stateがactiveのまま残る。
-            # capture-paneで二重検証し、実際にidle状態ならstateを補正する。
-            local cp_output
-            cp_output=$(tmux capture-pane -t "$pane_target" -p -S -8 2>/dev/null)
-            if [ $? -ne 0 ]; then
-                return 1  # capture-pane失敗 → 安全側でBUSY
-            fi
-
-            # BUSYパターン検出（cli_profiles.yamlから取得）
-            local cp_busy_pat
-            if [ -n "$agent_name" ]; then
-                cp_busy_pat=$(cli_profile_get "$agent_name" "busy_patterns")
-            fi
-            if [ -z "$cp_busy_pat" ]; then
-                cp_busy_pat="esc to interrupt|Running|Streaming|background terminal running|thinking|thought for"
-            fi
-            if echo "$cp_output" | grep -qE "$cp_busy_pat"; then
-                return 1  # 本当にBUSY
-            fi
-
-            # IDLEプロンプト検出（cli_profiles.yamlから取得）
-            local cp_idle_pat
-            if [ -n "$agent_name" ]; then
-                cp_idle_pat=$(cli_profile_get "$agent_name" "idle_pattern")
-            fi
-            if [ -z "$cp_idle_pat" ]; then
-                cp_idle_pat="❯|›"
-            fi
-            if echo "$cp_output" | grep -qE "$cp_idle_pat"; then
-                # @agent_stateをidleに補正
-                tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null
-                log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=${agent_state} but idle prompt detected, corrected to idle"
-                touch "/tmp/shogun_idle_${agent_name}"
-                return 0  # IDLE（補正済み）
-            fi
-
-            return 1  # どちらにも該当しない → 安全側でBUSY
         fi
     fi
 
-    # ─── Fallback: capture-paneベース判定（@agent_state未設定時） ───
-    local output
-    output=$(tmux capture-pane -t "$pane_target" -p -S -8 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        return 2  # ペイン取得失敗
+    local busy_rc
+    if check_agent_busy "$pane_target" "$agent_name"; then
+        busy_rc=0
+    else
+        busy_rc=$?
     fi
 
-    # BUSYパターン検出（cli_profiles.yamlから取得）
-    local busy_pat
-    if [ -n "$agent_name" ]; then
-        busy_pat=$(cli_profile_get "$agent_name" "busy_patterns")
-    fi
-    if [ -z "$busy_pat" ]; then
-        busy_pat="esc to interrupt|Running|Streaming|background terminal running|thinking|thought for"
-    fi
-    if echo "$output" | grep -qE "$busy_pat"; then
-        return 1  # BUSY
+    if [ "$busy_rc" -eq 0 ]; then
+        if [ -n "$agent_state" ] && [ "$agent_state" != "idle" ]; then
+            log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=${agent_state} but idle prompt detected, corrected to idle"
+        fi
+        return 0
     fi
 
-    # IDLEプロンプト検出（cli_profiles.yamlから取得）
-    local idle_pat
-    if [ -n "$agent_name" ]; then
-        idle_pat=$(cli_profile_get "$agent_name" "idle_pattern")
-    fi
-    if [ -z "$idle_pat" ]; then
-        idle_pat="❯|›"
-    fi
-    if echo "$output" | grep -qE "$idle_pat"; then
-        return 0  # IDLE候補（要二段階確認）
+    if [ "$busy_rc" -eq 1 ]; then
+        return 1
     fi
 
-    return 1  # デフォルトはBUSY（安全側 — 誤検知防止）
+    # unknown:
+    #  - @agent_stateがactive等なら安全側でBUSY
+    #  - 未設定かつ判定不能ならERROR
+    if [ -n "$agent_state" ] && [ "$agent_state" != "idle" ]; then
+        return 1
+    fi
+    return 2
 }
 
 # ─── /clear送信ラッパー（idle確認はis_agent_idle()に一本化） ───

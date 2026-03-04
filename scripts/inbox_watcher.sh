@@ -23,11 +23,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # cli_lookup.sh を source（CLI種別をsettings.yaml+cli_profiles.yamlから動的取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
+source "$SCRIPT_DIR/lib/agent_state.sh"
 
 AGENT_ID="$1"
 PANE_TARGET="$2"
 # 第3引数は後方互換で受け付けるが無視（shutsujin_departure.shが渡す）
-CLI_TYPE=$(cli_type "$AGENT_ID")  # settings.yaml → cli_profiles.yaml の2段参照
+CLI_TYPE_AT_STARTUP=$(cli_type "$AGENT_ID")  # settings.yaml → cli_profiles.yaml の2段参照
 
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
 LOCKFILE="${INBOX}.lock"
@@ -56,7 +57,7 @@ if [ ! -f "$INBOX" ]; then
     echo "messages: []" > "$INBOX"
 fi
 
-echo "[$(date)] inbox_watcher started — agent: $AGENT_ID, pane: $PANE_TARGET, cli: $CLI_TYPE, script_hash: $SCRIPT_HASH" >&2
+echo "[$(date)] inbox_watcher started — agent: $AGENT_ID, pane: $PANE_TARGET, cli: $CLI_TYPE_AT_STARTUP, script_hash: $SCRIPT_HASH" >&2
 
 # Ensure inotifywait is available
 if ! command -v inotifywait &>/dev/null; then
@@ -132,6 +133,38 @@ except Exception as e:
     echo "$info"
 }
 
+# ─── Fingerprint age helper ───
+get_fp_age() {
+    if [ -f "$FINGERPRINT_FILE" ]; then
+        local fp_mtime
+        fp_mtime=$(stat -c %Y "$FINGERPRINT_FILE" 2>/dev/null || echo 0)
+        if [[ "$fp_mtime" =~ ^[0-9]+$ ]] && [ "$fp_mtime" -gt 0 ]; then
+            echo $(( $(date +%s) - fp_mtime ))
+            return
+        fi
+    fi
+    echo 0
+}
+
+# ─── Resolve effective CLI type ───
+# Prefer pane @agent_cli (runtime truth) and fall back to settings.yaml.
+# If unresolved, choose codex-safe path.
+get_effective_cli_type() {
+    local pane_cli
+    pane_cli=$(tmux show-options -p -t "$PANE_TARGET" -v @agent_cli 2>/dev/null | tr -d '\r' | head -n1 | tr -d '[:space:]')
+    case "$pane_cli" in
+        claude|codex|copilot|kimi) echo "$pane_cli"; return 0 ;;
+    esac
+
+    local cfg_cli
+    cfg_cli=$(cli_type "$AGENT_ID")
+    case "$cfg_cli" in
+        claude|codex|copilot|kimi) echo "$cfg_cli"; return 0 ;;
+    esac
+
+    echo "codex"
+}
+
 # ─── Send CLI command directly via send-keys ───
 # For /clear and /model only. These are CLI commands, not conversation messages.
 # CLI種別はcli_profiles.yamlのフィールドで動的に判定（name-based分岐なし）
@@ -139,6 +172,8 @@ send_cli_command() {
     local cmd="$1"
     local actual_cmd="$cmd"
     local post_wait=1
+    local effective_cli
+    effective_cli=$(get_effective_cli_type)
 
     # /clear: cli_profiles.yamlのclear_method/clear_cmdで動的解決
     if [[ "$cmd" == "/clear" ]]; then
@@ -150,7 +185,7 @@ send_cli_command() {
             # Ctrl-C + launch_cmdで再起動（例: copilot）
             local launch
             launch=$(cli_launch_cmd "$AGENT_ID")
-            echo "[$(date)] CLI restart for $AGENT_ID ($CLI_TYPE): Ctrl-C + $launch" >&2
+            echo "[$(date)] CLI restart for $AGENT_ID ($effective_cli): Ctrl-C + $launch" >&2
             safe_send_keys "$PANE_TARGET" C-c 2>/dev/null || true
             sleep 2
             safe_send_keys_atomic "$PANE_TARGET" "$launch" 0.3
@@ -169,12 +204,12 @@ send_cli_command() {
         local supports_model
         supports_model=$(cli_profile_get "$AGENT_ID" "supports_model_switch")
         if [[ "$supports_model" != "true" ]]; then
-            echo "[$(date)] Skipping $cmd (not supported on $CLI_TYPE)" >&2
+            echo "[$(date)] Skipping $cmd (not supported on $effective_cli)" >&2
             return 0
         fi
     fi
 
-    echo "[$(date)] Sending CLI command to $AGENT_ID ($CLI_TYPE): $actual_cmd" >&2
+    echo "[$(date)] Sending CLI command to $AGENT_ID ($effective_cli): $actual_cmd" >&2
 
     if ! safe_send_keys_atomic "$PANE_TARGET" "$actual_cmd" 0.3; then
         echo "[$(date)] WARNING: safe_send_keys_atomic failed for CLI command" >&2
@@ -202,6 +237,8 @@ send_wakeup() {
     local now
     local last
     local elapsed
+    local effective_cli
+    effective_cli=$(get_effective_cli_type)
 
     # Tier 1: Agent self-watch — skip nudge entirely
     if agent_has_self_watch; then
@@ -213,20 +250,42 @@ send_wakeup() {
     # Claude: idle flag managed by Stop hook (exists=idle, absent=busy)
     # Codex/other: fallback to @agent_state for compatibility
     local idle_flag="/tmp/shogun_idle_${AGENT_ID}"
-    if [[ "$CLI_TYPE" == "claude" ]] && [ ! -f "$idle_flag" ]; then
+    if [[ "$effective_cli" == "claude" ]] && [ ! -f "$idle_flag" ]; then
         echo "[$(date)] [BUSY] Agent $AGENT_ID is busy (no idle flag), Stop hook will deliver" >&2
-        return 0
+        return 2
     fi
 
-    if [[ "$CLI_TYPE" != "claude" ]]; then
+    if [[ "$effective_cli" != "claude" ]]; then
         local agent_state
         agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "unknown")
         if [ "$agent_state" = "active" ]; then
-            echo "[$(date)] [BUSY] Agent $AGENT_ID is active, deferring nudge" >&2
-            return 0
+            local fp_age
+            fp_age=$(get_fp_age)
+            local busy_max_defer
+            busy_max_defer=$(cli_profile_get "$AGENT_ID" "inbox_busy_max_defer_sec")
+            [[ "$busy_max_defer" =~ ^[0-9]+$ ]] || busy_max_defer=30
+            local busy_rc
+            if check_agent_busy "$PANE_TARGET" "$AGENT_ID"; then
+                busy_rc=0
+            else
+                busy_rc=$?
+            fi
+            if [ "$busy_rc" -eq 1 ]; then
+                if [ "$fp_age" -lt "$busy_max_defer" ]; then
+                    echo "[$(date)] [BUSY] Agent $AGENT_ID is active+busy, deferring nudge (age=${fp_age}s < ${busy_max_defer}s)" >&2
+                    return 2
+                fi
+                echo "[$(date)] [BUSY-FORCE] Agent $AGENT_ID active+busy for ${fp_age}s, forcing nudge" >&2
+            elif [ "$busy_rc" -eq 2 ]; then
+                if [ "$fp_age" -lt "$busy_max_defer" ]; then
+                    echo "[$(date)] [BUSY-UNKNOWN] Agent $AGENT_ID active with unknown pane state, deferring nudge (age=${fp_age}s < ${busy_max_defer}s)" >&2
+                    return 2
+                fi
+                echo "[$(date)] [BUSY-UNKNOWN-FORCE] Agent $AGENT_ID active with unknown pane state for ${fp_age}s, forcing nudge" >&2
+            fi
         fi
         # @agent_state=idle時にflag補完（flag方式との整合性）
-        [ ! -f "/tmp/shogun_idle_${AGENT_ID}" ] && touch "/tmp/shogun_idle_${AGENT_ID}"
+        [ ! -f "$idle_flag" ] && touch "$idle_flag"
     fi
 
     # Tier 1.5: Debounce repeated nudge storms (normal messages only)
@@ -345,7 +404,11 @@ for s in data.get('specials', []):
             echo "[$(date)] [FP-CHANGE] Unread set changed for $AGENT_ID ($normal_count unread), sending nudge" >&2
             echo "$current_fp" > "$FINGERPRINT_FILE"
             echo 0 > "$RETRY_COUNT_FILE"
-            send_wakeup "$normal_count"
+            local wake_rc=0
+            send_wakeup "$normal_count" || wake_rc=$?
+            if [ "$wake_rc" -eq 2 ]; then
+                echo "[$(date)] [WAKE-DEFER] Deferred initial nudge for $AGENT_ID (busy gating)" >&2
+            fi
         else
             # FP-SAME: nudge was sent but agent hasn't read messages yet
             # Improvement A: immediate retries before BACKOFF fallback
@@ -357,18 +420,19 @@ for s in data.get('specials', []):
 
             if [ "$retry_count" -lt "$RETRY_MAX" ] 2>/dev/null; then
                 # Unacknowledged nudge → retry immediately (next cycle)
-                retry_count=$((retry_count + 1))
-                echo "$retry_count" > "$RETRY_COUNT_FILE"
-                echo "[$(date)] [RETRY] Nudge unacknowledged, retry ${retry_count}/${RETRY_MAX} for $AGENT_ID" >&2
-                send_wakeup "$normal_count"
+                local wake_rc=0
+                send_wakeup "$normal_count" || wake_rc=$?
+                if [ "$wake_rc" -eq 2 ]; then
+                    echo "[$(date)] [RETRY-DEFER] Busy gating deferred retry (${retry_count}/${RETRY_MAX}) for $AGENT_ID" >&2
+                else
+                    retry_count=$((retry_count + 1))
+                    echo "$retry_count" > "$RETRY_COUNT_FILE"
+                    echo "[$(date)] [RETRY] Nudge unacknowledged, retry ${retry_count}/${RETRY_MAX} for $AGENT_ID" >&2
+                fi
             else
                 # Retries exhausted → fall back to BACKOFF_SEC interval
-                local fp_age=0
-                if [ -f "$FINGERPRINT_FILE" ]; then
-                    local fp_mtime
-                    fp_mtime=$(stat -c %Y "$FINGERPRINT_FILE" 2>/dev/null || echo 0)
-                    fp_age=$(( $(date +%s) - fp_mtime ))
-                fi
+                local fp_age
+                fp_age=$(get_fp_age)
 
                 if [ "$fp_age" -ge "$BACKOFF_SEC" ]; then
                     echo "[$(date)] [BACKOFF] Stale unread for ${fp_age}s >= ${BACKOFF_SEC}s, re-notifying $AGENT_ID" >&2

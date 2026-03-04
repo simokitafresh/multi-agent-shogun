@@ -20,6 +20,7 @@ LOG="$SCRIPT_DIR/logs/deploy_task.log"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+source "$SCRIPT_DIR/lib/agent_state.sh"
 
 NINJA_NAME="${1:-}"
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
@@ -131,29 +132,20 @@ check_idle() {
     state=$(tmux show-options -p -t "$pane_target" -v @agent_state 2>/dev/null)
     if [ "$state" = "idle" ]; then
         return 0
-    elif [ -n "$state" ] && [ "$state" != "idle" ]; then
-        return 1
     fi
 
-    # Source 2: capture-pane フォールバック
-    local output
-    output=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null)
-
-    # cli_profiles.yaml経由でBUSY/IDLEパターンを取得
-    local busy_raw idle_pattern
-    busy_raw=$(cli_profile_get "$NINJA_NAME" "busy_patterns")
-    idle_pattern=$(cli_profile_get "$NINJA_NAME" "idle_pattern")
-
-    # BUSYパターン（cli_lookupはリストをパイプ区切りで返す → grep -E の alternation として使用）
-    if [ -n "$busy_raw" ] && echo "$output" | grep -qE "$busy_raw"; then
-        return 1
+    local busy_rc
+    if check_agent_busy "$pane_target" "$NINJA_NAME"; then
+        busy_rc=0
+    else
+        busy_rc=$?
     fi
 
-    # IDLEパターン: プロンプト表示
-    if [ -n "$idle_pattern" ] && echo "$output" | tail -3 | grep -qF "$idle_pattern"; then
+    if [ "$busy_rc" -eq 0 ]; then
         return 0
     fi
 
+    # unknownは安全側でBUSY扱い
     return 1  # デフォルト: BUSY（安全側）
 }
 

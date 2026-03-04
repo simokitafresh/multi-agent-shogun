@@ -8,11 +8,13 @@ setup_file() {
     export SRC_CLI_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/cli_lookup.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    export SRC_AGENT_STATE_LIB="$PROJECT_ROOT/lib/agent_state.sh"
 
     [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
     [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
+    [ -f "$SRC_AGENT_STATE_LIB" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -22,6 +24,7 @@ setup() {
     export TEST_PROJECT="$TEST_TMPDIR/project"
 
     mkdir -p \
+        "$TEST_PROJECT/lib" \
         "$TEST_PROJECT/scripts/lib" \
         "$TEST_PROJECT/queue/tasks" \
         "$TEST_PROJECT/queue/reports" \
@@ -33,6 +36,7 @@ setup() {
     cp "$SRC_CLI_LOOKUP_SCRIPT" "$TEST_PROJECT/scripts/lib/cli_lookup.sh"
     cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
+    cp "$SRC_AGENT_STATE_LIB" "$TEST_PROJECT/lib/agent_state.sh"
 
     # Non-blocking stubs.
     cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
@@ -53,6 +57,7 @@ EOF
         "$TEST_PROJECT/scripts/lib/cli_lookup.sh" \
         "$TEST_PROJECT/scripts/lib/field_get.sh" \
         "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
+        "$TEST_PROJECT/lib/agent_state.sh" \
         "$TEST_PROJECT/scripts/inbox_write.sh" \
         "$TEST_PROJECT/scripts/ntfy_cmd.sh" \
         "$TEST_PROJECT/scripts/lesson_check.sh"
