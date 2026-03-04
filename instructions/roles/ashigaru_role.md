@@ -19,6 +19,7 @@ task_id: subtask_001
 parent_cmd: cmd_035
 timestamp: "2026-01-25T10:15:00"  # from date command
 status: done  # done | failed | blocked
+ac_version_read: 6  # task YAMLを読んだ時点のac_versionを転記
 result:
   summary: "WBS 2.3節 完了でござる"
   files_modified:
@@ -42,7 +43,7 @@ lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓
   #   BLOCKされる。実際に役立った教訓のIDを記載せよ(例: [L121, L122])
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lessons_useful.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lessons_useful.
 Missing fields = incomplete report.
 
 ### 下忍(genin) 報告時の注意
@@ -62,6 +63,7 @@ Missing fields = incomplete report.
   **★ タスクYAMLにrelated_lessonsが1件以上ある場合、lessons_usefulに最低1件は記載必須。**
   空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)でBLOCKされる。
 - `decision_candidate:` — found: true/false は**必須**。
+- `ac_version_read:` — task YAMLの`ac_version`を転記。未記載は後方互換WARNになるが、最新版運用では必須。
 
 ## 偵察タスク対応
 

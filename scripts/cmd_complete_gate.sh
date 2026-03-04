@@ -1054,6 +1054,93 @@ if [ "$REVIEWED_OK" = true ]; then
     echo "  (all lessons reviewed or no lessons)"
 fi
 
+# ─── ac_version照合（task.ac_version vs report.ac_version_read） ───
+echo ""
+echo "AC version check:"
+AC_VERSION_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    AC_VERSION_CHECKED=true
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    acv_status=$(python3 -c "
+import yaml, sys
+
+def normalize(v):
+    if v is None:
+        return None
+    if isinstance(v, bool):
+        return int(v)
+    if isinstance(v, (int, float)):
+        return int(v)
+    s = str(v).strip()
+    if s == '' or s.lower() in ('none', 'null'):
+        return None
+    try:
+        return int(s)
+    except Exception:
+        return s
+
+try:
+    with open('$task_file') as tf:
+        tdata = yaml.safe_load(tf) or {}
+    with open('$report_file') as rf:
+        rdata = yaml.safe_load(rf) or {}
+
+    task = tdata.get('task', {}) if isinstance(tdata, dict) else {}
+    task_ac = normalize(task.get('ac_version'))
+    read_ac = normalize(rdata.get('ac_version_read'))
+
+    if task_ac is None:
+        print('task_missing')
+    elif read_ac is None:
+        print(f'report_missing\\t{task_ac}\\t-')
+    elif str(task_ac) == str(read_ac):
+        print(f'ok\\t{task_ac}\\t{read_ac}')
+    else:
+        print(f'mismatch\\t{task_ac}\\t{read_ac}')
+except Exception:
+    print('error')
+" 2>/dev/null)
+
+    acv_kind=$(echo "$acv_status" | cut -f1)
+    acv_task=$(echo "$acv_status" | cut -f2)
+    acv_read=$(echo "$acv_status" | cut -f3)
+
+    case "$acv_kind" in
+        ok)
+            echo "  ${ninja_name}: OK (ac_version task=${acv_task}, report=${acv_read})"
+            ;;
+        mismatch)
+            echo "  ${ninja_name}: NG ← ac_version不一致 (task=${acv_task}, report=${acv_read})"
+            record_block_reason "${ninja_name}:ac_version_mismatch:task=${acv_task}:report=${acv_read}"
+            ALL_CLEAR=false
+            ;;
+        report_missing)
+            echo "  WARN: ${ninja_name}: ac_version_read未記載（task=${acv_task}）。後方互換として非BLOCK"
+            ;;
+        task_missing)
+            echo "  WARN: ${ninja_name}: task.ac_version未設定のため照合SKIP"
+            ;;
+        *)
+            echo "  WARN: ${ninja_name}: ac_version照合解析エラー（非BLOCK）"
+            ;;
+    esac
+done
+if [ "$AC_VERSION_CHECKED" = false ]; then
+    echo "  (no tasks found for this cmd)"
+fi
+
 # ─── lesson_candidate検証（found:trueなのに未登録を防止） ───
 echo ""
 echo "Lesson candidate check:"

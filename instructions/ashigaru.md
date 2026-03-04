@@ -328,6 +328,7 @@ task_id: subtask_001
 parent_cmd: cmd_035
 timestamp: "2026-01-25T10:15:00"  # from date command
 status: done  # done | failed | blocked
+ac_version_read: 6  # task YAMLを読んだ時点のac_versionを転記
 result:
   summary: "WBS 2.3節 完了でござる"
   files_modified:
@@ -385,7 +386,7 @@ parity_data_source:
   prod_side: "PostgreSQL(DATABASE_URL)"        # 本番側データソースを明記
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, result, skill_candidate, lesson_candidate, decision_candidate, lessons_useful.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lesson_candidate, decision_candidate, lessons_useful.
 Missing fields = incomplete report.
 
 ## Step 5.5: 提出前自己ゲート (MANDATORY)
@@ -424,6 +425,7 @@ self_gate_check:
   **★ タスクYAMLにrelated_lessonsが1件以上ある場合、lessons_usefulに最低1件は記載必須。**
   空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)でBLOCKされる。
 - `decision_candidate:` — found: true/false は**必須**。
+- `ac_version_read:` — task YAMLの`ac_version`を転記。未記載は後方互換WARNになるが、最新版運用では必須。
 
 ### Lessons Field Guidelines
 

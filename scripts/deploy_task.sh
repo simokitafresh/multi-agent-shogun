@@ -185,6 +185,65 @@ inject_task_id() {
     log "inject_task_id: set task_id=$subtask_id"
 }
 
+# ─── ac_version自動注入（cmd_530: stale作業検知） ───
+# acceptance_criteria件数をtask.ac_versionとして保持。再配備時に再計算される。
+inject_ac_version() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_ac_version: task file not found: $task_file"
+        return 0
+    fi
+
+    TASK_FILE_ENV="$task_file" python3 -c "
+import yaml, sys, os, tempfile
+
+task_file = os.environ['TASK_FILE_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[AC_VERSION] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+    ac = task.get('acceptance_criteria', [])
+
+    if isinstance(ac, list):
+        ac_version = len(ac)
+    elif ac is None:
+        ac_version = 0
+    elif isinstance(ac, str):
+        ac_version = 1 if ac.strip() else 0
+    elif isinstance(ac, dict):
+        ac_version = len(ac.keys())
+    else:
+        ac_version = 0
+
+    prev = task.get('ac_version')
+    task['ac_version'] = int(ac_version)
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+    if prev == task['ac_version']:
+        print(f'[AC_VERSION] unchanged: {task[\"ac_version\"]}', file=sys.stderr)
+    else:
+        print(f'[AC_VERSION] set: {prev} -> {task[\"ac_version\"]}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[AC_VERSION] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 | while IFS= read -r line; do log "$line"; done
+}
+
 # ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
 generate_report_template() {
     local ninja_name="$1"
@@ -215,12 +274,16 @@ generate_report_template() {
         return 0
     fi
 
+    local ac_version
+    ac_version=$(field_get "$task_file" "ac_version" "")
+
     cat > "$report_file" <<EOF
 worker_id: ${ninja_name}
 task_id: ${task_id}
 parent_cmd: ${parent_cmd}
 timestamp: ""
 status: pending
+ac_version_read: ${ac_version}
 result:
   summary: ""
   details: ""
@@ -1590,6 +1653,9 @@ check_scout_gate "$TASK_FILE"
 
 # task_id自動注入（cmd_465: subtask_id→task_idエイリアス。STALL検知に必須）
 inject_task_id "$TASK_FILE" || true
+
+# ac_version自動注入（cmd_530: AC変更時の再計算）
+inject_ac_version "$TASK_FILE" || true
 
 # 教訓自動注入（失敗してもデプロイは継続）
 inject_related_lessons "$TASK_FILE" || true
