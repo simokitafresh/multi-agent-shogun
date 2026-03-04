@@ -205,10 +205,16 @@ try:
     }
     data['decisions'].append(new_decision)
 
+    # Update summary (AC2/AC3: auto-generated counts)
+    _total = len(data['decisions'])
+    _resolved = sum(1 for d in data['decisions'] if isinstance(d, dict) and d.get('status') == 'resolved')
+    _pending = _total - _resolved
+    ordered_data = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending}, 'decisions': data['decisions']}
+
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(data_path), suffix='.tmp')
     try:
         with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+            yaml.dump(ordered_data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
         os.replace(tmp_path, data_path)
     except:
         os.unlink(tmp_path)
@@ -333,10 +339,16 @@ try:
         print(f'ERROR: {pd_id} not found', file=sys.stderr)
         sys.exit(1)
 
+    # Update summary (AC2/AC3: auto-generated counts)
+    _total = len(data['decisions'])
+    _resolved = sum(1 for d in data['decisions'] if isinstance(d, dict) and d.get('status') == 'resolved')
+    _pending = _total - _resolved
+    ordered_data = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending}, 'decisions': data['decisions']}
+
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(data_path), suffix='.tmp')
     try:
         with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+            yaml.dump(ordered_data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
         os.replace(tmp_path, data_path)
     except:
         os.unlink(tmp_path)
