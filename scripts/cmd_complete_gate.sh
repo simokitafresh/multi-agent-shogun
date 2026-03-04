@@ -711,6 +711,31 @@ except:
         fi
     else
         # cmd_407: deploy_preflightで生成済みの場合、found:true検出時にsource upgradeする
+        # cmd_536 AC2 fix: else分岐でもfound:trueをスキャンする（has_found_trueスコープ不整合修正）
+        local has_found_true=false
+        local pf_task_file
+        for pf_task_file in "$TASKS_DIR"/*.yaml; do
+            [ -f "$pf_task_file" ] || continue
+            if ! grep -q "parent_cmd: ${cmd_id}" "$pf_task_file" 2>/dev/null; then
+                continue
+            fi
+            local pf_report_file pf_lc_found pf_ninja_name
+            pf_ninja_name=$(basename "$pf_task_file" .yaml)
+            pf_report_file=$(resolve_report_file "$pf_ninja_name")
+            if [ -f "$pf_report_file" ]; then
+                pf_lc_found=$(REPORT_FILE="$pf_report_file" python3 -c "
+import yaml, os
+try:
+    with open(os.environ['REPORT_FILE']) as f:
+        data = yaml.safe_load(f)
+    lc = data.get('lesson_candidate', {}) if data else {}
+    print('true' if isinstance(lc, dict) and lc.get('found') is True else 'false')
+except:
+    print('false')
+" 2>/dev/null)
+                [ "$pf_lc_found" = "true" ] && has_found_true=true
+            fi
+        done
         local pf_lesson_source
         pf_lesson_source=$(grep -E '^\s*source:' "$gates_dir/lesson.done" 2>/dev/null | sed 's/.*source: *//')
         if [ "$pf_lesson_source" != "lesson_write" ] && [ "$has_found_true" = true ]; then
@@ -978,7 +1003,7 @@ except:
         report_file=$(resolve_report_file "$ninja_name")
 
         if [ -f "$report_file" ]; then
-            # Python判定: lessons_usefulが非空リストかチェック（旧lesson_referencedにも対応）
+            # Python判定: lessons_usefulが非空リストかチェック（旧lesson_referencedにも対応、null検知追加 cmd_536）
             lr_status=$(python3 -c "
 import yaml, sys
 try:
@@ -986,6 +1011,10 @@ try:
         data = yaml.safe_load(f)
     if not data:
         print('empty')
+        sys.exit(0)
+    # cmd_536 AC4: lessons_useful=null(明示的未記入)を検出
+    if 'lessons_useful' in data and data['lessons_useful'] is None:
+        print('null')
         sys.exit(0)
     lr = data.get('lessons_useful')
     if lr is None:
@@ -1000,6 +1029,11 @@ except:
 
             if [ "$lr_status" = "ok" ]; then
                 echo "  ${ninja_name}: OK (lessons_useful present and non-empty)"
+            elif [ "$lr_status" = "null" ]; then
+                # cmd_536 AC4: lessons_useful=null(明示的未記入)をBLOCK
+                echo "  ${ninja_name}: NG ← lessons_usefulが未記入(null)。教訓の有用性を記入せよ"
+                record_block_reason "${ninja_name}:null_lessons_useful"
+                ALL_CLEAR=false
             else
                 # related_lessonsからlesson IDを抽出してメッセージに表示
                 rl_ids=$(python3 -c "
@@ -1879,7 +1913,7 @@ else
         # Pattern 1: lessons_useful empty
         lr_empty_ninjas=()
         for reason in "${BLOCK_REASONS[@]}"; do
-            if [[ "$reason" == *":empty_lessons_useful:"* || "$reason" == *":empty_lesson_referenced:"* ]]; then
+            if [[ "$reason" == *":empty_lessons_useful:"* || "$reason" == *":empty_lesson_referenced:"* || "$reason" == *":null_lessons_useful"* ]]; then
                 ninja=$(echo "$reason" | cut -d: -f1)
                 lr_empty_ninjas+=("$ninja")
             fi
