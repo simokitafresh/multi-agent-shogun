@@ -1,5 +1,6 @@
 #!/bin/bash
-# lesson_deprecation_scan.sh - deprecation候補を自動検出する（read-only）
+# lesson_deprecation_scan.sh - deprecation候補を自動検出+自動退役する
+# cmd_531: ファイル消滅教訓・有効率10%未満×注入10回以上の教訓を自動deprecated化
 # Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all]
 # Default: --project all
 
@@ -36,6 +37,7 @@ import os
 import sys
 import re
 import yaml
+import subprocess
 from pathlib import Path
 
 SCRIPT_DIR = Path(os.environ["SCRIPT_DIR"])
@@ -257,10 +259,56 @@ else:
     print("  (なし)")
 
 print()
-print("=== 有効率<10% 審査推奨 (注入N≥10) ===")
+print("=== 有効率<10% 自動退役対象 (注入N≥10) ===")
 if eff_review:
     for proj, lid, title_snip, inj, hlp, rate in eff_review:
         print(f"  [{proj}] {lid}: {title_snip} (injected={inj}, helpful={hlp}, rate={rate:.0f}%)")
 else:
     print("  (なし)")
+
+# cmd_531: 自動退役実行
+deprecate_script = str(SCRIPT_DIR / "scripts" / "lesson_deprecate.sh")
+auto_deprecated_count = 0
+
+print()
+print("=== 自動退役実行 ===")
+
+# AC5: ファイル消滅教訓の自動退役
+for proj, lid, reason in confirmed:
+    if "ファイル消滅" in reason:
+        result = subprocess.run(
+            ["bash", deprecate_script, proj, lid, f"AUTO-DEPRECATE(file_missing): {reason}"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            print(f"  [AUTO] DEPRECATED: [{proj}] {lid} ({reason})")
+            auto_deprecated_count += 1
+        else:
+            print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+
+# AC4: 有効率10%未満 × 注入10回以上の自動退役
+for proj, lid, title_snip, inj, hlp in eff_confirmed:
+    if inj >= 10:
+        result = subprocess.run(
+            ["bash", deprecate_script, proj, lid, f"AUTO-DEPRECATE(low_effectiveness): rate=0% injected={inj} helpful=0"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            print(f"  [AUTO] DEPRECATED: [{proj}] {lid} (rate=0%, injected={inj})")
+            auto_deprecated_count += 1
+        else:
+            print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+
+for proj, lid, title_snip, inj, hlp, rate in eff_review:
+    result = subprocess.run(
+        ["bash", deprecate_script, proj, lid, f"AUTO-DEPRECATE(low_effectiveness): rate={rate:.0f}% injected={inj} helpful={hlp}"],
+        capture_output=True, text=True
+    )
+    if result.returncode == 0:
+        print(f"  [AUTO] DEPRECATED: [{proj}] {lid} (rate={rate:.0f}%, injected={inj})")
+        auto_deprecated_count += 1
+    else:
+        print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+
+print(f"  合計: {auto_deprecated_count}件 自動退役")
 PYEOF

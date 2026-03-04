@@ -639,35 +639,63 @@ try:
     pre_dedup_count = len(scored)
     scored = greedy_dedup(scored, lessons_by_id)
 
-    top = scored[:7]
+    # cmd_531: AC2 — helpful_count降順でソート（同値はkeyword scoreで副次順序）
+    scored_with_helpful = []
+    for score, lid, summary in scored:
+        lesson = lessons_by_id.get(lid, {})
+        helpful = lesson.get('helpful_count', 0) or 0
+        scored_with_helpful.append((helpful, score, lid, summary))
+    scored_with_helpful.sort(key=lambda x: (-x[0], -x[1]))
+    scored = [(s, lid, summ) for _, s, lid, summ in scored_with_helpful]
 
     # AC4: スコア0時のフォールバック = 注入なし（無関連教訓のCTX浪費防止）
 
-    HOLDOUT_RATE = 0.2
-    related = []
-    withheld = []
-    for _, lid, summary in top:
-        if random.random() < HOLDOUT_RATE:
-            withheld.append({'id': lid, 'summary': summary})
-        else:
-            related.append({'id': lid, 'summary': summary, 'reviewed': False})
+    # cmd_531: AC1 — MAX_INJECT=5 総合注入上限（universalは内数）
+    MAX_INJECT = 5
 
-    # AC3: universal教訓の注入上限max 3 — helpful_count上位3件を選択
+    # universal教訓の準備（max 3、helpful_count上位）
     universal_total_count = len(universal_lessons)
     universal_lessons.sort(key=lambda l: -(l.get('helpful_count', 0) or 0))
     universal_lessons = universal_lessons[:3]
 
-    top_ids = set(r['id'] for r in related)
-    universal_added = 0
+    # 全候補を統合: universal + task-specific → helpful_count順で選択
+    all_candidates = []
+    seen_ids = set()
     for ul in universal_lessons:
         ul_id = ul.get('id', '')
-        if ul_id not in top_ids and len(related) < 10:
-            related.append({
+        if ul_id not in seen_ids:
+            all_candidates.append({
                 'id': ul_id,
                 'summary': ul.get('summary', '') or ul.get('title', ''),
-                'reviewed': False
+                'helpful_count': ul.get('helpful_count', 0) or 0,
+                'is_universal': True
             })
-            universal_added += 1
+            seen_ids.add(ul_id)
+    for _, lid, summary in scored:
+        if lid not in seen_ids:
+            lesson = lessons_by_id.get(lid, {})
+            all_candidates.append({
+                'id': lid,
+                'summary': summary,
+                'helpful_count': lesson.get('helpful_count', 0) or 0,
+                'is_universal': False
+            })
+            seen_ids.add(lid)
+
+    # helpful_count降順で再ソート（統合後）
+    all_candidates.sort(key=lambda x: -x['helpful_count'])
+
+    # AC1/AC3: MAX_INJECT上限適用、超過分はwithheld
+    related = []
+    withheld = []
+    universal_added = 0
+    for c in all_candidates:
+        if len(related) < MAX_INJECT:
+            related.append({'id': c['id'], 'summary': c['summary'], 'reviewed': False})
+            if c['is_universal']:
+                universal_added += 1
+        else:
+            withheld.append({'id': c['id'], 'summary': c['summary']})
 
     task['related_lessons'] = related
 

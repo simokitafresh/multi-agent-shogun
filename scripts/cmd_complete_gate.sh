@@ -867,6 +867,19 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
     fi
 
+    # cmd_531: AC6 — GATE CLEAR時に教訓有効率スキャン+自動退役（緊急override時も実行）
+    echo ""
+    echo "Lesson effectiveness scan (GATE CLEAR - emergency override):"
+    if [ -f "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" --project all 2>&1; then
+            echo "  lesson_deprecation_scan: OK"
+        else
+            echo "  lesson_deprecation_scan: WARN (scan failed, non-blocking)"
+        fi
+    else
+        echo "  SKIP (lesson_deprecation_scan.sh not found)"
+    fi
+
     exit 0
 fi
 
@@ -1852,6 +1865,19 @@ except:
         fi
     else
         echo "  SKIP (knowledge_metrics.sh or lesson_deprecate.sh not found)"
+    fi
+
+    # cmd_531: AC6 — GATE CLEAR時に教訓有効率スキャン+自動退役
+    echo ""
+    echo "Lesson effectiveness scan (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" --project all 2>&1; then
+            echo "  lesson_deprecation_scan: OK"
+        else
+            echo "  lesson_deprecation_scan: WARN (scan failed, non-blocking)"
+        fi
+    else
+        echo "  SKIP (lesson_deprecation_scan.sh not found)"
     fi
 
     exit 0
