@@ -274,14 +274,24 @@ generate_report_template() {
         return 0
     fi
 
+    # タスクYAMLから自動記入値を取得（cmd_532: 機械的フィールド自動記入）
+    local worker_id
+    worker_id=$(field_get "$task_file" "assigned_to" "$ninja_name")
+    local resolved_task_id
+    resolved_task_id=$(field_get "$task_file" "subtask_id" "")
+    if [ -z "$resolved_task_id" ]; then
+        resolved_task_id=$(field_get "$task_file" "task_id" "$task_id")
+    fi
+    local resolved_parent_cmd
+    resolved_parent_cmd=$(field_get "$task_file" "parent_cmd" "$parent_cmd")
     local ac_version
     ac_version=$(field_get "$task_file" "ac_version" "")
 
     cat > "$report_file" <<EOF
-worker_id: ${ninja_name}
-task_id: ${task_id}
-parent_cmd: ${parent_cmd}
-timestamp: ""
+worker_id: ${worker_id}
+task_id: ${resolved_task_id}
+parent_cmd: ${resolved_parent_cmd}
+timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
 result:
