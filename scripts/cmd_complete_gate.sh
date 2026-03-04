@@ -643,6 +643,145 @@ record_block_reason() {
     fi
 }
 
+# ─── context_update freshness check (cmd_543 AC2) ───
+# cmdにcontext_updateが定義されている場合のみ、context/* の last_updated を検証。
+# last_updated(YYYY-MM-DD) < cmd timestamp/delegated_at の日付 なら BLOCK。
+check_context_update() {
+    local cmd_id="$1"
+    local line kind msg
+
+    echo ""
+    echo "Context update check:"
+
+    while IFS=$'\t' read -r kind msg; do
+        [ -n "$kind" ] || continue
+        case "$kind" in
+            SKIP)
+                echo "  SKIP (${msg})"
+                ;;
+            INFO)
+                echo "  ${msg}"
+                ;;
+            OK)
+                echo "  OK: ${msg}"
+                ;;
+            WARN)
+                echo "  WARN: ${msg}"
+                ;;
+            BLOCK)
+                echo "  NG ← ${msg}"
+                record_block_reason "$msg"
+                ALL_CLEAR=false
+                ;;
+            *)
+                echo "  WARN: unexpected check_context_update output: ${kind} ${msg}"
+                ;;
+        esac
+    done < <(
+        python3 - "$SCRIPT_DIR" "$cmd_id" <<'PY'
+import glob
+import os
+import re
+import sys
+
+import yaml
+
+root = sys.argv[1]
+cmd_id = sys.argv[2]
+
+def load_yaml(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def find_cmd_entry():
+    candidates = [os.path.join(root, "queue", "shogun_to_karo.yaml")]
+    archived = sorted(
+        glob.glob(os.path.join(root, "queue", "archive", "cmds", f"{cmd_id}_*.yaml")),
+        reverse=True,
+    )
+    candidates.extend(archived)
+
+    for path in candidates:
+        data = load_yaml(path)
+        commands = data.get("commands", [])
+        if not isinstance(commands, list):
+            continue
+        for cmd in commands:
+            if isinstance(cmd, dict) and str(cmd.get("id", "")).strip() == cmd_id:
+                return cmd, path
+    return None, None
+
+cmd, source_path = find_cmd_entry()
+if not cmd:
+    print("WARN\tcmd entry not found in shogun_to_karo.yaml or queue/archive/cmds")
+    sys.exit(0)
+
+context_update = cmd.get("context_update")
+if not context_update:
+    print("SKIP\tcontext_update not set")
+    sys.exit(0)
+
+if isinstance(context_update, str):
+    targets = [context_update]
+elif isinstance(context_update, list):
+    targets = [str(v).strip() for v in context_update if str(v).strip()]
+else:
+    print("WARN\tcontext_update has invalid type (expected list/string)")
+    sys.exit(0)
+
+if not targets:
+    print("SKIP\tcontext_update empty")
+    sys.exit(0)
+
+cmd_ts = str(cmd.get("timestamp") or cmd.get("delegated_at") or "").strip()
+if not cmd_ts:
+    print("WARN\tcmd timestamp/delegated_at not found; skipping")
+    sys.exit(0)
+
+m = re.search(r"(\d{4}-\d{2}-\d{2})", cmd_ts)
+if not m:
+    print(f"WARN\tcmd timestamp format unsupported: {cmd_ts}")
+    sys.exit(0)
+
+cmd_date = m.group(1)
+print(f"INFO\treference_date={cmd_date} source={os.path.basename(source_path)}")
+
+for rel in targets:
+    rel = rel.strip()
+    if not rel:
+        continue
+    abs_path = os.path.join(root, rel)
+    if not os.path.isfile(abs_path):
+        print(f"WARN\t{rel}: file not found (skip)")
+        continue
+
+    try:
+        with open(abs_path, encoding="utf-8") as f:
+            text = f.read()
+    except Exception:
+        print(f"WARN\t{rel}: cannot read file (skip)")
+        continue
+
+    m2 = re.search(r"<!--\s*last_updated:\s*(\d{4}-\d{2}-\d{2})\b", text)
+    if not m2:
+        print(f"WARN\t{rel}: last_updated comment not found (skip)")
+        continue
+
+    last_updated = m2.group(1)
+    if last_updated < cmd_date:
+        print(
+            f"BLOCK\tcontext_update:{rel}:stale (last_updated={last_updated}, cmd={cmd_ts})"
+        )
+    else:
+        print(f"OK\t{rel}: last_updated={last_updated} (cmd={cmd_date})")
+PY
+    )
+}
+
 # ─── preflight: ゲートフラグ未存在時の自動生成（冪等） ───
 # GATE BLOCK率65%の主因=missing_gate(archive/lesson/review_gate)を解消。
 # gate本体チェック前に、対応するフラグ生成処理を先行実行する。
@@ -937,6 +1076,9 @@ for gate in "${ALL_GATES[@]}"; do
         ALL_CLEAR=false
     fi
 done
+
+# ─── context_update freshness check（cmd指定時のみBLOCK） ───
+check_context_update "$CMD_ID"
 
 # ─── related_lessons存在チェック（deploy_task.sh経由確認） ───
 echo ""
