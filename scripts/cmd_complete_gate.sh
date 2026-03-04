@@ -654,9 +654,19 @@ preflight_gate_flags() {
 
     echo "Preflight gate flag generation:"
 
-    # archive.doneはGATE CLEAR後に自動実行（順序逆転防止）。preflightでは実行しない
+    # 1. archive.done — archive_completed.sh を先に実行
+    if [ ! -f "$gates_dir/archive.done" ]; then
+        echo "  archive: generating..."
+        if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" 2>&1; then
+            echo "  archive: preflight OK"
+        else
+            echo "  archive: preflight WARN (failed, non-blocking)"
+        fi
+    else
+        echo "  archive: already exists (skip)"
+    fi
 
-    # 1. lesson.done — found:true候補確認後、適切な方法でフラグ生成
+    # 2. lesson.done — found:true候補確認後、適切な方法でフラグ生成
     if [ ! -f "$gates_dir/lesson.done" ]; then
         echo "  lesson: checking lesson_candidates..."
         local has_found_true=false
@@ -753,7 +763,7 @@ except:
 }
 
 # ─── 必須フラグ構築 ───
-ALWAYS_REQUIRED=("lesson")
+ALWAYS_REQUIRED=("archive" "lesson")
 
 # task_type検出
 read -r HAS_RECON HAS_IMPLEMENT <<< "$(detect_task_types "$CMD_ID")"
@@ -855,13 +865,6 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  ntfy_cmd: OK"
     else
         echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
-    fi
-
-    # archive_completed（ntfy後に実行。報告YAML退避はgate CLEAR後でなければならない）
-    if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" 2>&1; then
-        echo "  archive_completed: OK ($CMD_ID)"
-    else
-        echo "  archive_completed: WARN (failed, non-blocking)" >&2
     fi
 
     exit 0
@@ -1724,13 +1727,6 @@ except:
         echo "  ntfy_cmd: OK"
     else
         echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
-    fi
-
-    # archive_completed（ntfy後に実行。報告YAML退避はgate CLEAR後でなければならない）
-    if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" 2>&1; then
-        echo "  archive_completed: OK ($CMD_ID)"
-    else
-        echo "  archive_completed: WARN (failed, non-blocking)" >&2
     fi
 
     # ─── GATE CLEAR時 淘汰候補自動deprecate（ベストエフォート） ───
