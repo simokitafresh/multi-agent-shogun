@@ -19,6 +19,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 source "$PROJECT_DIR/scripts/lib/field_get.sh"
 
 QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
+CHANGELOG_FILE="$PROJECT_DIR/queue/completed_changelog.yaml"
 ARCHIVE_DIR="$PROJECT_DIR/queue/archive"
 ARCHIVE_CMD="$ARCHIVE_DIR/shogun_to_karo_done.yaml"
 ARCHIVE_CMD_DIR="$ARCHIVE_DIR/cmds"
@@ -121,6 +122,16 @@ archive_cmds() {
         cmd_id=$(printf '%s\n' "$entry" \
             | grep '^ *- id: cmd_' | head -1 \
             | sed 's/^ *- id: //')
+
+        # status欠損時のみ、completed_changelog照合でcompleted扱いにする。
+        # 完全一致(anchor)で cmd_51 が cmd_515 に誤マッチしないようにする。
+        if [ -z "$status_val" ] && [ -n "$cmd_id" ] && [ -f "$CHANGELOG_FILE" ]; then
+            local cmd_id_re
+            cmd_id_re=$(printf '%s' "$cmd_id" | sed 's/[][(){}.^$*+?|\\-]/\\&/g')
+            if grep -Eq "^[[:space:]]*(-[[:space:]]*)?(id|cmd_id):[[:space:]]*${cmd_id_re}[[:space:]]*$" "$CHANGELOG_FILE"; then
+                status_val="completed"
+            fi
+        fi
 
         if [[ "$status_val" =~ ^(completed|cancelled|absorbed|halted|superseded|done) ]]; then
             local archive_status="${BASH_REMATCH[1]}"
