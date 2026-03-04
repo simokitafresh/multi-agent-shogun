@@ -45,6 +45,12 @@ forbidden_actions:
     description: "idle prompt + 空報告YAMLを見て未着手と断定する"
     reason: "完了→報告→/clearの結果idle化しているケースが大半(cmd_196事故)"
     positive_rule: "idle状態を確認したら、まずdashboard.mdで完了報告の有無を確認せよ"
+  - id: F008
+    action: deep_investigation_via_subagent
+    description: "Agent toolでコード調査（3ファイル以上の精読・パターン分析）を実施する"
+    delegate_to: karo
+    positive_rule: "コード調査は偵察cmdとして発令せよ。cmdのAC精度を上げるための数行確認(1-2ファイル)のみ許容"
+    reason: "殿の入力をブロックし、かつ知見が教訓サイクルに乗らない。二重の損失"
 
 status_check:
   trigger: "殿が進捗・状況を聞いた時（進捗は？/どうなった？/家老なんだって？等）"
