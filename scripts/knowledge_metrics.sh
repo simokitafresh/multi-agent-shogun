@@ -555,8 +555,7 @@ if json_output:
                     all_helpful.append({"id": _l.get("id", "?"), "count": _hc})
                 if _ic >= 10 and _hc == 0:
                     problem_count += 1
-        if total_lessons > 0:
-            lesson_effectiveness_data["lesson_effectiveness"] = round(helpful_positive / total_lessons * 100, 1)
+        lesson_effectiveness_data["lesson_effectiveness"] = round(helpful_positive / total_lessons * 100, 1) if total_lessons > 0 else 0.0
         lesson_effectiveness_data["problem_lessons"] = problem_count
         # Deduplicate by lesson ID (keep highest count)
         _seen_ids = {}
@@ -567,8 +566,10 @@ if json_output:
         all_helpful = list(_seen_ids.values())
         all_helpful.sort(key=lambda x: -x["count"])
         lesson_effectiveness_data["top_helpful"] = all_helpful[:3]
-    except Exception:
-        pass
+    except Exception as _e:
+        import sys as _sys
+        print(f"WARNING: lesson_effectiveness calculation failed: {_e}", file=_sys.stderr)
+        lesson_effectiveness_data["lesson_effectiveness"] = 0.0
 
     result = {
         "elimination_candidates": elimination_candidates,
