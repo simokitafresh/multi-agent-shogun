@@ -243,6 +243,26 @@ cmd受領 → まずcmdフラグを確認:
 6. レビューFAIL → 修正タスク配備 → 再レビュー → LGTMまでループ
 7. 品質判定は忍者レビューに委ねよ。家老の役割はレビュータスクの配備とGATE判定のみ
 
+### レビュー判定ルール（二値厳守）
+
+1. verdict は PASS or FAIL の二値のみ。「実質PASS」「条件付きPASS」は禁止
+2. WAIVE = ACを判定対象から除外。残ACで PASS/FAIL を決定
+   - WAIVE権限は家老。WAIVE理由を報告YAMLに明記
+   - 記法: `ac4: WAIVE — {理由}`
+3. 全非WAIVE ACがPASS → verdict: PASS → task status: done
+4. 1つでも非WAIVE ACがFAIL → verdict: FAIL → task status: failed
+5. WAIVE可能な条件: cmd起因でない既存問題、スコープ外、殿裁定済み
+
+### failed task 後処理（放置禁止）
+
+1. FAIL → 修正タスク配備 → 再レビュー（既存ルール）
+2. FAIL後にWAIVE判定で覆す場合:
+   - 家老が報告YAMLのverdictをPASSに更新
+   - task statusをdoneに更新
+   - ダッシュボードにWAIVE理由を記載
+3. failed statusのtask YAMLを放置しない。
+   次のいずれかで解決: 修正配備 / WAIVE→done更新 / 殿裁定
+
 ### BLOCK時 preventable_by タグ付け（cmd_466追加）
 GATE BLOCK発生時、家老が以下を判定:
 1. 既存教訓Lxxxがあればこのミスは防げたか？
@@ -455,12 +475,12 @@ tmux capture-pane -t shogun:2.{pane_index} -p | tail -5
 
 | フラグ | 出力元 | 必須/条件付き |
 |--------|--------|-------------|
-| `archive.done` | `archive_completed.sh` | **全cmd必須** |
 | `lesson.done` | `lesson_write.sh` / `lesson_check.sh` | **全cmd必須** |
 | `review_gate.done` | `review_gate.sh` | implement時 |
 | `report_merge.done` | `report_merge.sh` | recon時 |
 
-家老のcmd完了フロー: 教訓レビュー(lesson.done) → archive_completed.sh(archive.done) → cmd_complete_gate.sh → GATE CLEAR or BLOCK
+家老のcmd完了フロー: 教訓レビュー(lesson.done) → cmd_complete_gate.sh → GATE CLEAR → archive_completed.sh自動実行
+※ archive_completed.shはgate CLEAR時に自動呼出。手動実行不要（順序逆転防止）
 
 ### Eat the Frog（today.frog）
 Frog = 今日の最難タスク。cmd subtask か VF task のいずれか。

@@ -49,6 +49,11 @@ forbidden_actions:
     use_instead: "bash scripts/cmd_complete_gate.sh <cmd_id>"
     positive_rule: "cmd statusのcompleted化はcmd_complete_gate.sh経由でのみ行え"
     reason: "手動completed化はゲート迂回=教訓注入→参照の循環切れ"
+  - id: F008
+    action: ambiguous_verdict
+    description: "「実質PASS」「条件付きPASS」等の曖昧判定を使用する"
+    positive_rule: "verdict はPASS/FAILの二値のみ。WAIVEはACを除外する操作であり、verdictの中間状態ではない"
+    reason: "曖昧判定はfailed taskの放置・品質低下・ゲート迂回を招く"
 
 workflow:
   dispatch: "Step 1-8: cmd受領→分析→分解→配備→pending確認"
