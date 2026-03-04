@@ -77,7 +77,7 @@ fi
 if [ -z "$shogun_model" ] && declare -F cli_profile_get >/dev/null 2>&1; then
     shogun_model=$(cli_profile_get shogun "display_name" 2>/dev/null || echo "")
 fi
-shogun_model="${shogun_model:-claude-opus-4-6}"
+shogun_model="${shogun_model:-Unknown}"
 tmux set-option -p -t "$SHOGUN_PANE_TARGET" @model_name "$shogun_model" 2>/dev/null
 
 echo "[shutsujin] pane-border-format: applied (${SHOGUN_WINDOW_TARGET}, ${AGENTS_WINDOW_TARGET})"
@@ -98,9 +98,22 @@ AGENTS_PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo "1"
 SAIZO_PANE_INDEX=$((AGENTS_PANE_BASE + 6))
 SAIZO_PANE_TARGET="${AGENTS_WINDOW_TARGET}.${SAIZO_PANE_INDEX}"
 tmux set-option -p -t "$SAIZO_PANE_TARGET" @agent_id saizo 2>/dev/null
-tmux set-option -p -t "$SAIZO_PANE_TARGET" @agent_cli codex 2>/dev/null
-tmux set-option -p -t "$SAIZO_PANE_TARGET" @model_name "gpt-5.3-codex high" 2>/dev/null
-echo "[shutsujin] saizo pane variables set (${SAIZO_PANE_TARGET}, model=gpt-5.3-codex high, cli=codex)"
+saizo_cli="codex"
+saizo_model=""
+if declare -F cli_type >/dev/null 2>&1; then
+    saizo_cli=$(cli_type saizo 2>/dev/null || echo "codex")
+fi
+if declare -F cli_profile_get >/dev/null 2>&1; then
+    saizo_model=$(cli_profile_get saizo "display_name" 2>/dev/null || echo "")
+fi
+saizo_model="${saizo_model:-Unknown}"
+tmux set-option -p -t "$SAIZO_PANE_TARGET" @agent_cli "$saizo_cli" 2>/dev/null
+tmux set-option -p -t "$SAIZO_PANE_TARGET" @model_name "$saizo_model" 2>/dev/null
+echo "[shutsujin] saizo pane variables set (${SAIZO_PANE_TARGET}, model=${saizo_model}, cli=${saizo_cli})"
+
+# ─── Prefix+v: clipboard screenshot capture (cmd_551) ───
+tmux bind-key v run-shell "bash ${SCRIPT_DIR}/scripts/capture_clipboard_image.sh"
+echo "[shutsujin] keybind: Prefix+v → capture_clipboard_image.sh"
 
 # ─── idle flag initialization (cmd_455) ───
 for agent in karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
