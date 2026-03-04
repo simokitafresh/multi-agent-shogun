@@ -27,6 +27,7 @@ DASHBOARD="$PROJECT_DIR/dashboard.md"
 DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
 REPORTS_DIR="$PROJECT_DIR/queue/reports"
 ARCHIVE_REPORT_DIR="$ARCHIVE_DIR/reports"
+CHRONICLE_FILE="$PROJECT_DIR/context/cmd-chronicle.md"
 usage_error() {
     echo "Usage: archive_completed.sh [keep_results] [cmd_id]" >&2
     echo "  keep_results: 正の整数（省略時3）" >&2
@@ -62,6 +63,64 @@ mkdir -p "$ARCHIVE_REPORT_DIR"
 # postcondition用グローバル変数（archive_cmdsが設定）
 _POSTCOND_COMPLETED=0
 _POSTCOND_ARCHIVED=0
+
+# ============================================================
+# 0.5 CMD年代記への追記
+# ============================================================
+append_to_chronicle() {
+    local cmd_id="$1"
+    local entry="$2"
+
+    # Extract purpose/title from entry
+    local title
+    title=$(printf '%s\n' "$entry" | grep -m1 '^ *purpose:' | sed 's/^ *purpose: *//; s/^"//; s/"$//')
+    if [ -z "$title" ]; then
+        title=$(printf '%s\n' "$entry" | grep -m1 '^ *title:' | sed 's/^ *title: *//; s/^"//; s/"$//')
+    fi
+
+    # Extract project from entry
+    local project
+    project=$(printf '%s\n' "$entry" | grep -m1 '^ *project:' | sed 's/^ *project: *//; s/^"//; s/"$//')
+
+    # Report summary (30 chars) — reports not yet archived at this point
+    local key_result=""
+    shopt -s nullglob
+    local rfiles=("$REPORTS_DIR"/*_report_"${cmd_id}".yaml)
+    shopt -u nullglob
+    for rf in "${rfiles[@]}"; do
+        [ -f "$rf" ] || continue
+        key_result=$(FIELD_GET_NO_LOG=1 field_get "$rf" "summary" "" 2>/dev/null | cut -c1-30)
+        [ -n "$key_result" ] && break
+    done
+
+    local date_mm_dd year_month
+    date_mm_dd="$(date '+%m-%d')"
+    year_month="$(date '+%Y-%m')"
+
+    local chronicle_line="| ${cmd_id} | ${title:-—} | ${project:-—} | ${date_mm_dd} | ${key_result:-—} |"
+
+    (
+        flock -w 10 200 || { echo "[chronicle] WARN: flock timeout on chronicle" >&2; return 1; }
+
+        # Create file if not exists
+        if [ ! -f "$CHRONICLE_FILE" ]; then
+            printf '# CMD年代記\n<!-- last_updated: %s -->\n' "$(date '+%Y-%m-%d')" > "$CHRONICLE_FILE"
+        fi
+
+        # Add month section if missing
+        if ! grep -q "^## ${year_month}$" "$CHRONICLE_FILE"; then
+            printf '\n## %s\n\n| cmd | title | project | date | key_result |\n|-----|-------|---------|------|------------|\n' "$year_month" >> "$CHRONICLE_FILE"
+        fi
+
+        # Append data line
+        printf '%s\n' "$chronicle_line" >> "$CHRONICLE_FILE"
+
+        # Update last_updated
+        sed -i "s/<!-- last_updated: .* -->/<!-- last_updated: $(date '+%Y-%m-%d') -->/" "$CHRONICLE_FILE"
+    ) 200>"$CHRONICLE_FILE.lock"
+
+    echo "[chronicle] appended: $cmd_id"
+}
 
 # ============================================================
 # 1. shogun_to_karo.yaml — 完了cmdをアーカイブに退避
@@ -143,6 +202,7 @@ archive_cmds() {
                     echo "commands:"
                     printf '%s\n' "$entry"
                 } > "$cmd_archive_file"
+                append_to_chronicle "$cmd_id" "$entry" || true
             else
                 echo "[archive] WARN: failed to parse cmd_id at lines ${s}-${e}" >&2
             fi
