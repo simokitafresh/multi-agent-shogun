@@ -39,7 +39,10 @@
 - **日付**: 2026-02-18
 - **出典**: cmd_134
 - **記録者**: karo
-- 同一内容の教訓を異なるcmdから登録すると二重エントリが作成される。タイトル類似度チェックまたはsource_cmd重複チェックの追加が望ましい。
+- **if**: lesson_write.shで新規教訓を登録する時
+- **then**: タイトル類似度チェックまたはsource_cmd重複チェックを事前に実施せよ
+- **because**: 重複チェック機能が未実装のため、同一内容の教訓が複数登録されるリスクがある
+- IF lesson_write.shで新規教訓を登録する時 THEN タイトル類似度チェックまたはsource_cmd重複チェックを事前に実施せよ
 
 
 ### L007: .gitignoreがwhitelist方式の場合、新規スクリプト追加時はwhitelist許可(!path)を追加せよ
@@ -62,14 +65,20 @@
 - **日付**: 2026-02-18
 - **出典**: cmd_143
 - **記録者**: karo
-- whitelist方式.gitignoreでは新ファイルをwhitelist追加し忘れるとgit addしてもcommitに含まれない。実装者がwhitelist追加しても対象ファイル自体(settings.yaml等)の漏れは見落としやすい。レビュー時にgit status --shortで全commit対象が認識されていることを確認する手順が有効。
+- **if**: whitelist方式.gitignoreのリポジトリでcommitする時
+- **then**: git statusで全対象ファイルの認識状態を確認し、whitelist追加漏れがないか検証せよ
+- **because**: whitelist未追加ファイルはgit addしてもcommitに含まれず、実装者が気づきにくい
+- IF whitelist方式.gitignoreのリポジトリでcommitする時 THEN git statusで全対象ファイルの認識状態を確認し、whitelist追加漏れがないか検証せよ
 
 ### L010: 報告YAMLのstatus行先頭マッチ
 - **status**: confirmed
 - **日付**: 2026-02-18
 - **出典**: cmd_145
 - **記録者**: hanzo
-- 報告YAMLのstatus行は'^status:'で先頭マッチすべき。indent付きstatusフィールド(result内等)との誤マッチを防ぐ。grep -m1 '^status:'が安全。
+- **if**: 報告YAMLからstatus行をgrepで抽出する時
+- **then**: '^status:'で先頭マッチさせよ
+- **because**: indent付きstatusフィールド(result内等)との誤マッチを防ぐため
+- IF 報告YAMLからstatus行をgrepで抽出する時 THEN '^status:'で先頭マッチさせよ
 
 ### L011: core.hooksPathフック配置確認
 - **status**: confirmed
@@ -97,21 +106,30 @@
 - **日付**: 2026-02-18
 - **出典**: cmd_151
 - **記録者**: karo
-- grep --exclude-dirやgrep --excludeはWSL2の/mnt/c(Windows FSマウント)上では予期しない動作をすることがある。パイプフィルタ(grep -Ev 'pattern')の方が確実。model_switch_preflight.shで実証(cmd_151)
+- **if**: grep --exclude時
+- **then**: grep --exclude-dirやgrep --excludeはWSL2の/mnt/c(Windows FSマウント)上では予期しない動作をすることがある
+- **because**: パイプフィルタ(grep -Ev 'pattern')の方が確実
+- IF grep --exclude時 THEN grep --exclude-dirやgrep --excludeはWSL2の/mnt/c(Windows FSマウント)上では予期しない動作をすることがある
 
 ### L015: CLAUDE_CONFIG_DIR環境変数で~/.claudeディレクトリを丸ごと切替可能。CLAUDE_CODE_OAUTH_TOKENで認証のみの切替も可能
 - **status**: confirmed
 - **日付**: 2026-02-18
 - **出典**: saizo
 - **記録者**: karo
-- CLAUDE_CONFIG_DIR=~/.claude丸ごと切替、CLAUDE_CODE_OAUTH_TOKEN=認証のみ切替。複数アカウント運用に有効
+- **if**: Claude Codeで複数アカウントを運用する時
+- **then**: CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_OAUTH_TOKENで認証のみ切替を使い分けよ
+- **because**: 環境変数で設定ディレクトリや認証を分離でき、複数アカウント運用が可能になるため
+- IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_OAUTH_TOKENで認証のみ切替を使い分けよ
 
 ### L016: OAuthリフレッシュトークンは単一使用。複数セッション共有時にプロセスAがリフレッシュするとBのトークンが無効化される。CLAUDE_CODE_OAUTH_TOKENで直接指定すればリフレッシュ競合を回避可能
 - **status**: confirmed
 - **日付**: 2026-02-18
 - **出典**: tobisaru
 - **記録者**: karo
-- OAuthリフレッシュトークンは1回限り使用。複数セッション共有で競合発生→CLAUDE_CODE_OAUTH_TOKENで回避
+- **if**: OAuthリフレッシュトークンを複数セッションで共有する時
+- **then**: CLAUDE_CODE_OAUTH_TOKENで直接トークンを指定してリフレッシュ競合を回避せよ
+- **because**: リフレッシュトークンは単一使用のため、プロセスAがリフレッシュするとBのトークンが無効化される
+- IF OAuthリフレッシュトークンを複数セッションで共有する時 THEN CLAUDE_CODE_OAUTH_TOKENで直接トークンを指定してリフレッシュ競合を回避せよ
 
 ### L017: 入口門番は再配備時に自己ブロックする
 - **status**: confirmed
@@ -139,7 +157,10 @@
 - **日付**: 2026-02-21
 - **出典**: cmd_208
 - **記録者**: karo
-- cli_lookup.shのようなライブラリがcli_adapter.shにsourceされる場合、設定パスの環境変数(CLI_ADAPTER_SETTINGS)を共有すべき。独立した変数(_CLI_LOOKUP_SETTINGS)をハードコードすると、テスト時にオーバーライドできない。
+- **if**: sourceされるライブラリの設定パスを定義する時
+- **then**: 呼出し元と共通の環境変数(例: CLI_ADAPTER_SETTINGS)を使用せよ
+- **because**: 独立した変数をハードコードするとテスト時にオーバーライドできないため
+- IF sourceされるライブラリの設定パスを定義する時 THEN 呼出し元と共通の環境変数(例: CLI_ADAPTER_SETTINGS)を使用せよ
 
 ### L021: declare -Aのスコープ問題(bash source)
 - **status**: confirmed
@@ -181,7 +202,10 @@
 - **日付**: 2026-02-22
 - **出典**: kagemaru(cmd_237統合)
 - **記録者**: karo
-- SSOT100件中14%陳腐化。context方針レベル20-30%/広義60-80%。根本原因=追加only削除never。解決=deprecation連鎖(supersedes/deprecated_by)+sync_lessons.sh 20件制限緩和(80件未注入)。5メカニズム3Phase段階導入推奨。
+- **if**: 知識ファイルの陳腐化が疑われる時
+- **then**: 追加onlyの運用を見直し、定期的な削除・更新サイクルを導入せよ
+- **because**: 陳腐化の根本原因は追加のみで削除されない構造にあり、方針レベルで20-30%が陳腐化する
+- IF 知識ファイルの陳腐化が疑われる時 THEN 追加onlyの運用を見直し、定期的な削除・更新サイクルを導入せよ
 
 ### L027: reports/上書き問題は統合タスク割当パターンで実害発生する
 - **日付**: 2026-02-22
@@ -215,7 +239,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-23
 - **出典**: cmd_258
 - **記録者**: kotaro
-- 95%以上がPJ非依存骨格。PJ切替時の変更対象はDM-Signal圧縮索引セクション(14行)のみ。ポインタ方式(3-4行)で切替コスト最小化可能。小太郎分析
+- **if**: CLAUDE.md PJ固有比率時
+- **then**: 95%以上がPJ非依存骨格
+- **because**: PJ切替時の変更対象はDM-Signal圧縮索引セクション(14行)のみ
+- IF CLAUDE.md PJ固有比率時 THEN 95%以上がPJ非依存骨格
 
 ### L032: CLAUDE.md PJ固有セクション境界は##見出しレベルで識別
 - **日付**: 2026-02-23
@@ -245,7 +272,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-25
 - **出典**: cmd_310
 - **記録者**: karo
-- lessons.yamlはgitignoreだがlessons.md(SSOT)はgit管理下。テスト後のrevert対象をgit checkout -- lessons.mdとするとL030-L035が消失。対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエントリのみ手動削除で対処すべき
+- **if**: テストデータrevertでgit checkout -- SSOT時
+- **then**: 対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエントリのみ手動削除で対処すべき
+- **because**: テスト後のrevert対象をgit checkout -- lessons.mdとするとL030-L035が消失
+- IF テストデータrevertでgit checkout -- SSOT時 THEN 対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエントリのみ手動削除で対処すべき
 
 
 ### L037: WSL2でWrite tool作成の.shファイルはCRLF混入が確実に発生する
@@ -266,19 +296,28 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: cmd_310
 - **記録者**: gate_auto
 - **status**: confirmed
-- lesson_referencedが空のサブタスクが1件。教訓を確認してからタスクに臨むべし
+- **if**: タスクに着手する時
+- **then**: 関連教訓を事前に確認してから作業を開始せよ
+- **because**: 教訓参照を怠ると過去の失敗を繰り返すリスクがあるため
+- IF タスクに着手する時 THEN 関連教訓を事前に確認してから作業を開始せよ
 
 ### L040: WSL2環境でUsage API応答時間5秒超
 - **日付**: 2026-02-25
 - **出典**: cmd_314
 - **記録者**: karo
-- WSL2→Anthropic API間のレイテンシでUsage APIの応答が常に5秒以上。監視スクリプトのtimeout設定は10秒以上にせよ
+- **if**: WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時
+- **then**: timeout設定を10秒以上に設定せよ
+- **because**: WSL2→Anthropic API間のレイテンシでUsage APIの応答が常に5秒以上かかるため
+- IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ
 
 ### L041: tmuxにペインレベル環境変数なし
 - **日付**: 2026-02-25
 - **出典**: cmd_314
 - **記録者**: karo
-- tmuxにはネイティブのペインレベル環境変数が存在しない。@user_optionはメタデータ用で環境変数ではない。ペインごとに異なるCLAUDE_CONFIG_DIRを設定するにはrespawn-pane -eまたはsend-keysで起動時に注入する
+- **if**: tmuxペインにエージェント固有の状態を保持させたい時
+- **then**: @user_option(例: @agent_id)を使用せよ
+- **because**: tmuxにはネイティブのペインレベル環境変数が存在せず、@user_optionはメタデータ用であり環境変数ではない
+- IF tmuxペインにエージェント固有の状態を保持させたい時 THEN @user_option(例: @agent_id)を使用せよ
 
 ### L042: reports/上書き問題は統合タスク割当で実害発生
 - **status**: confirmed
@@ -304,7 +343,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-25
 - **出典**: cmd_317
 - **記録者**: karo
-- reports内でacceptance_criteria/ac_status/ac_checklistの3種が混在。パース時に全パターン対応が必要
+- **if**: 報告YAMLからAC達成状況を自動パースする時
+- **then**: acceptance_criteria/ac_status/ac_checklistの3パターン全てに対応せよ
+- **because**: reports内でフィールド名が3種混在しており、単一キー前提では取得漏れが発生するため
+- IF 報告YAMLからAC達成状況を自動パースする時 THEN acceptance_criteria/ac_status/ac_checklistの3パターン全てに対応せよ
 
 ### L046: capture-paneバナー解析のfalse positive防止
 - **日付**: 2026-02-25
@@ -378,7 +420,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-26
 - **出典**: check_and_update_done_task()はhandle_confirmed_idle()→is_task_deployed()内でのみ発火。忍者がidle確認後にしかauto-done判定されない。報告YAML→idle遷移まで最大20秒+CONFIRM_WAITのラグ存在。将来report YAML inotifywatchに移行すればラグ解消可能
 - **記録者**: karo
-- auto_deploy発火タイミング: ninja_monitor auto-doneはidle検知依存で最大25秒ラグ
+- **if**: auto_deploy機能の発火タイミングを設計する時
+- **then**: ninja_monitorのidle検知依存で最大25秒のラグが発生することを考慮せよ
+- **because**: check_and_update_done_taskはhandle_confirmed_idle()内でのみ発火し、報告YAML作成からidle遷移まで最大20秒+CONFIRM_WAITのラグがあるため
+- IF auto_deploy機能の発火タイミングを設計する時 THEN ninja_monitorのidle検知依存で最大25秒のラグが発生することを考慮せよ
 
 ### L058: WSL2の/mnt/c上でClaude CodeのWrite toolを使うと.shファイルにCRLF改行が混入する。bash -nで構文エラーになるため、新規.shファイル作成後は必ず sed -i 's/\r$//' で修正すること。
 - **日付**: 2026-02-26
@@ -390,13 +435,19 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-26
 - **出典**: usage_statusbar_loop.sh重複表示バグの修正体験
 - **記録者**: karo
-- hayate(subtask_340_verify)
+- **if**: 共通スクリプトのインタフェースをリファクタした後
+- **then**: 全呼出し元のI/F整合(引数・出力形式)を検証せよ
+- **because**: usage_status.shの引数なし統合設計に対しusage_statusbar_loop.shが引数付き2回呼出しで重複表示バグが発生した実例があるため
+- IF 共通スクリプトのインタフェースをリファクタした後 THEN 全呼出し元のI/F整合(引数・出力形式)を検証せよ
 
 ### L060: タスクYAML/報告YAMLの上書き式がメトリクスデータ永続性を阻害
 - **日付**: 2026-02-26
 - **出典**: cmd_344
 - **記録者**: karo
-- deploy_task.shがreport雛形を上書き、タスクYAMLも忍者別1ファイルで上書きされるため、related_lessons(注入)とlesson_referenced(参照)の個別追跡データが永続化されない。gate_metrics.logに永続化される追記ログ(lesson_tracking.tsv)をcmd_complete_gate.shに追加することで解決可能。3名独立調査(疾風/影丸/半蔵)で全員一致の致命的ギャップ。
+- **if**: 上書き式YAML(タスク/報告)でメトリクスデータを永続化したい時
+- **then**: 追記ログ(lesson_tracking.tsv等)をcmd_complete_gate.shに追加して別経路で永続化せよ
+- **because**: deploy_task.shがreport雛形を上書きし、タスクYAMLも忍者別1ファイルで上書きされるため、個別追跡データが消失する
+- IF 上書き式YAML(タスク/報告)でメトリクスデータを永続化したい時 THEN 追記ログ(lesson_tracking.tsv等)をcmd_complete_gate.shに追加して別経路で永続化せよ
 
 ### L061: 統合設計レビューではソースコード実地確認が必須
 - **日付**: 2026-02-26
@@ -409,7 +460,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: --tags
 - **記録者**: pipeline,process
 - **tags**: [pipeline, process]
-- ac_listがdictのリスト(id+description構造)の場合str.joinでTypeErrorになる。description抽出のフォールバックが必須。deploy_task.sh実証(cmd_349)
+- **if**: acceptance_criteriaフィールドをパースする時
+- **then**: dict/str混在を考慮し、join前に型変換(str化)のフォールバックを入れよ
+- **because**: 報告YAMLのacceptance_criteriaがdict型の場合もstr型の場合もあり、型不一致でエラーになるため
+- IF acceptance_criteriaフィールドをパースする時 THEN dict/str混在を考慮し、join前に型変換(str化)のフォールバックを入れよ
 
 ### L063: lessons.yamlはdict構造(lessons:キー配下リスト)。for lesson in dataはdictキーをイテレート→誤り。data['lessons']で取得せよ
 - **日付**: 2026-02-26
@@ -430,7 +484,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: cmd_360
 - **記録者**: hanzo
 - **tags**: [testing]
-- テンプレートを作成する際は(1)テンプレートのセクション名が実ファイルと完全一致するか(2)既存コードの依存セクション(最新更新等)がテンプレートに含まれているか の2点を検証せよ。テンプレートと実態の不一致はvalidation WARN多発の原因になる。
+- **if**: テンプレートを新規作成または変更する時
+- **then**: (1)セクション名が実ファイルと完全一致するか (2)既存コードの依存セクションがテンプレートに含まれているか を検証せよ
+- **because**: テンプレートと実態の不一致はvalidation WARN多発の原因になるため
+- IF テンプレートを新規作成または変更する時 THEN (1)セクション名が実ファイルと完全一致するか (2)既存コードの依存セクションがテンプレートに含まれているか を検証せよ
 
 ### L066: reset_layout.shのような複数スクリプトを横断する機能では、依存APIのYAMLキー名を実データと突合せよ。settings.yamlのmodel_name vs get_agent_model()のmodelのようなキー不一致はdry-runでは正常終了するが実行結果が誤る
 - **日付**: 2026-02-26
@@ -444,7 +501,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: cmd_365
 - **記録者**: hayate
 - **tags**: [tmux, model-detection, background-color]
-- tmux select-pane -P bg=によるペイン背景色の設定はreset_layout.sh Step4(L355)のみ。ninja_monitor.shのcheck_model_names()は@model_nameのみ更新し背景色は更新しない。動的化にはlib化+check_model_names()での背景色同時更新が必要。
+- **if**: ペイン背景色をモデル名と連動させたい時
+- **then**: reset_layout.sh(起動時一括設定)でのみ背景色を設定する現行設計を理解した上で対処せよ
+- **because**: ninja_monitor.shのcheck_model_names()は@model_nameのみ更新し背景色は更新しない設計のため
+- IF ペイン背景色をモデル名と連動させたい時 THEN reset_layout.sh(起動時一括設定)でのみ背景色を設定する現行設計を理解した上で対処せよ
 
 ### L068: shutsujin_departure.shが2ファイル存在(root+scripts/)で背景色ロジック不整合
 - **日付**: 2026-02-26
@@ -500,7 +560,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: cmd_378
 - **記録者**: sync_lessons.shのcontent.split('---')がL069本文中の---でファイルを切断し、74件中69件(93%)の教訓が消失。数週間検知されず。行頭のYAMLフロントマターのみ除去する意図なのに、ファイル全体の文字列分割を使ったため本文中の---にヒット。対策: lines_raw[i].strip()=='---'で行単位判定に修正。postcondition(入出力件数乖離チェック)があれば即座に検知できた
 - **tags**: [silent-fail, string-processing, postcondition]
-- content.split(delimiter)はファイル全体で分割する — 行頭限定ならline-by-lineで処理せよ
+- **if**: ファイル内容を特定の区切り文字で分割パースする時
+- **then**: content.split(delimiter)ではなくline-by-lineで処理せよ
+- **because**: splitはファイル全体で分割するため行頭限定のデリミタを正しく扱えない
+- IF ファイル内容を特定の区切り文字で分割パースする時 THEN content.split(delimiter)ではなくline-by-lineで処理せよ
 
 ### L076: deploy_task.sh旧Python -cブロックにL047違反が残存
 - **日付**: 2026-02-27
@@ -641,7 +704,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: cmd_406
 - **記録者**: hanzo
 - **tags**: [gate, reporting]
-- archive_dashboard()のgrep '^\| [0-9]'は戦果行(| cmd_XXX |)にマッチしない。戦果AUTO移行後は常にno-op。gate_metrics.logから都度生成のためarchive不要。
+- **if**: archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時
+- **then**: archive_dashboard()のgrep '^\| [0-9]'は戦果行(| cmd_XXX |)にマッチしない
+- **because**: gate_metrics.logから都度生成のためarchive不要
+- IF archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時 THEN archive_dashboard()のgrep '^\| [0-9]'は戦果行(| cmd_XXX |)にマッチしない
 
 ### L096: preflight_gate_flags()でlocal変数をif/else跨ぎで参照する場合、両ブロックのどちらが実行されても参照可能なスコープ（関数先頭等）で宣言・初期化すべき。bashのlocalは関数スコープだが、宣言がif内にあると実行されないelseブロックでは未初期化になる。
 - **日付**: 2026-02-27
@@ -662,14 +728,20 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: yaml,archive,parsing,resilience
 - **記録者**: cmd_411
 - **tags**: [yaml]
-- queue/archive/shogun_to_karo_done.yamlはcommands:ブロック(2sp indent)とルートレベルリスト(bare)が混在した不正YAMLでyaml.safe_load()が失敗する。YAMLパース失敗時はsplitしてcommands:ブロック部分とベアリスト部分を別々にパースするフォールバックが必要。
+- **if**: 混在フォーマットのYAMLファイル(commands:ブロック+ベアリスト)をパースする時
+- **then**: splitしてcommands:ブロックとベアリスト部分を別々にパースするフォールバックを用意せよ
+- **because**: shogun_to_karo_done.yamlのような不正YAMLはyaml.safe_load()が失敗するため
+- IF 混在フォーマットのYAMLファイル(commands:ブロック+ベアリスト)をパースする時 THEN splitしてcommands:ブロックとベアリスト部分を別々にパースするフォールバックを用意せよ
 
 ### L099: backfill対象ログファイルのフォーマット事前確認の重要性
 - **日付**: 2026-02-27
 - **出典**: cmd_413
 - **記録者**: hayate
 - **tags**: [gate_metrics, file_format, investigation]
-- gate_metrics.logはYAMLではなくTSV形式(6列)。タスク記述の「gate_metrics.yaml」は
+- **if**: 既存ログファイルをbackfillする時
+- **then**: 事前にログファイルのフォーマット(TSV/YAML/JSON等)を確認してからパーサーを実装せよ
+- **because**: gate_metrics.logはYAMLではなくTSV形式(6列)であり、フォーマット誤認がパーサー設計を根本から狂わせるため
+- IF 既存ログファイルをbackfillする時 THEN 事前にログファイルのフォーマット(TSV/YAML/JSON等)を確認してからパーサーを実装せよ
 実際には「logs/gate_metrics.log」(TSV)。ファイル形式の事前確認でアプローチ変更を要した。
 
 ### L100: gate_metrics task_type遡及の最適データソース
@@ -677,7 +749,10 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: cmd_413
 - **記録者**: kagemaru
 - **tags**: [gate_metrics, task_type, data_quality]
-- deploy_task.logのsubtask IDパターン推定が最も正確。archive/cmdsキーワード推定は246cmdsにヒットするが複合タイプ(implement+recon)になりやすく精度劣る
+- **if**: gate_metricsにtask_typeを遡及付与する時
+- **then**: deploy_task.logのsubtask IDパターン推定を使用せよ
+- **because**: archive/cmdsキーワード推定は246cmdsにヒットするが複合タイプになりやすく精度が劣るため
+- IF gate_metricsにtask_typeを遡及付与する時 THEN deploy_task.logのsubtask IDパターン推定を使用せよ
 
 ### L101: gate_metrics.logはTSV形式(YAMLではない)
 - **日付**: 2026-02-27
@@ -698,14 +773,20 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: draft
 - **記録者**: cmd_439
 - **tags**: [frontend, pipeline, gate, wsl2]
-- DM-signal側2スキルがskill.md小文字で配置。case-sensitive環境で検出不可リスク
+- **if**: skill.md(小文字)でスキル配置時
+- **then**: DM-signal側2スキルがskill.md小文字で配置
+- **because**: case-sensitive環境で検出不可リスク
+- IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置
 
 ### L104: 本家参照時のパス揺れ — tree確認後に取得を標準化
 - **日付**: 2026-02-28
 - **出典**: cmd_438 sasuke
 - **記録者**: karo
 - **tags**: [recon, process]
-- タスク記述の固定パスを前提にすると404で調査停止する。先にtreeを取得して実パスを確定してから取得する手順を標準化すべき。
+- **if**: OSSリポジトリや外部ソースからファイルを参照する時
+- **then**: 先にtreeを取得して実パスを確定してから取得せよ
+- **because**: パスが揺れるケースが多く、事前確認なしでは404や誤ファイル取得が発生するため
+- IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ
 
 ### L105: E2Eテストでtmux pane-base-index依存は明示固定せよ
 - **日付**: 2026-02-28
@@ -730,14 +811,20 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **出典**: cmd_446
 - **記録者**: saizo
 - **tags**: [universal]
-- ACにログ文言が含まれる場合、語順・語彙・プレフィックス空白も含めて一致確認が必要。N>0条件付き出力にするとN=0要件を落としやすい。
+- **if**: dedupログ仕様時
+- **then**: ACにログ文言が含まれる場合、語順・語彙・プレフィックス空白も含めて一致確認が必要
+- **because**: N>0条件付き出力にするとN=0要件を落としやすい
+- IF dedupログ仕様時 THEN ACにログ文言が含まれる場合、語順・語彙・プレフィックス空白も含めて一致確認が必要
 
 ### L108: compact_stateの長さ未制限による500文字超過リスク
 - **日付**: 2026-02-28
 - **出典**: cmd_452
 - **記録者**: tobisaru
 - **tags**: [process]
-- compact_stateファイルが巨大な場合、compact_sectionがsnapshot_budgetを圧迫しtotal>500文字の可能性。現運用では問題なし。将来的にcompact_stateにも長さ制限追加検討。
+- **if**: compact_stateにタスク状態を記録する時
+- **then**: 長さ制限(例: 500文字)の追加を検討せよ
+- **because**: 現運用では問題ないが、将来タスク増加時に制限なしだとsend-keysバッファを超過するリスクがあるため
+- IF compact_stateにタスク状態を記録する時 THEN 長さ制限(例: 500文字)の追加を検討せよ
 
 ### L109: git commit時のstaging巻き込み防止
 - **日付**: 2026-02-28
@@ -751,14 +838,20 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **出典**: cmd_449
 - **記録者**: hanzo
 - **tags**: [review, git]
-- .claude/settings.local.jsonはgitignore whitelist未登録でpush対象に指定されてもgit addできない。また並行hook配備で複数レビュアーが同一ファイルを先行commit+pushする重複が発生する。
+- **if**: settings.local.json時
+- **then**: .claude/settings.local.jsonはgitignore whitelist未登録でpush対象に指定されてもgit addできない
+- **because**: また並行hook配備で複数レビュアーが同一ファイルを先行commit+pushする重複が発生する
+- IF settings.local.json時 THEN .claude/settings.local.jsonはgitignore whitelist未登録でpush対象に指定されてもgit addできない
 
 ### L111: ACに含めるテストファイルは配備時に実在確認が必要
 - **日付**: 2026-03-01
 - **出典**: cmd_460
 - **記録者**: karo
 - **tags**: [testing, review, gate]
-- AC6にtests/test_cmd_complete_gate.batsを指定したが実在せず、レビュー工程で実行不能だった。タスク配備時にtest path存在検証を先行実施すべき。cmd_460で発覚。
+- **if**: ACにテストファイルパスを含むタスクを配備する時
+- **then**: テストファイルの実在を事前検証してから配備せよ
+- **because**: 存在しないテストファイルをACに含めると忍者が実行不能になり手戻りが発生するため
+- IF ACにテストファイルパスを含むタスクを配備する時 THEN テストファイルの実在を事前検証してから配備せよ
 
 ### L112: ninja_monitorのcheck_stall()がtask_idフィールドを参照するが現行タスクYAMLはsubtask_idのみ
 - **日付**: 2026-03-01
@@ -772,7 +865,10 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **出典**: cmd_463
 - **記録者**: sasuke
 - **tags**: [testing, bash, git, tmux]
-- scripts/lib/tmux_utils.sh は .gitignore の whitelist未登録で git add が拒否された。配備時に対象ファイルの追跡可否を事前検証すべき。
+- **if**: タスク指定ファイルが.gitignore whitelist外の可能性がある時
+- **then**: 配備時に対象ファイルのgit追跡可否を事前検証せよ
+- **because**: whitelist外のファイルはcommitできずAC要件を満たせないため
+- IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ
 
 ### L114: safe_send_clear独自idle判定(tail -3)がCLIステータスバーで❯を見落とし永久CLEAR-BLOCKED。idle判定は必ずcheck_idle()に一本化せよ。同一判定の重複実装は片方が必ず腐る
 - **日付**: 2026-03-01
@@ -786,7 +882,10 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **出典**: ninja_monitor,auto_archive
 - **記録者**: shogun(hotfix)
 - **tags**: [monitor, yaml, awk]
-- check_auto_archive()のawkパターン `/^[[:space:]]*-[[:space:]]id:/` がcmdレベル(2スペース)とacceptance_criteriaレベル(6スペース)の両方にマッチ。最後に拾ったAC4がarchive_completed.shに渡されて毎サイクルエラー。`cmd_*`パターン限定で解決。YAML内に同名フィールド(id:)が複数階層にある場合、awkは値のプレフィックスで階層を区別せよ。
+- **if**: check_auto_archive()のawkがacceptance_criteria idを誤抽出。YAMLパース時
+- **then**: check_auto_archive()のawkパターン `/^[[:space:]]*-[[:space:]]id:/` がcmdレベル(2スペース)とacceptance_criteriaレベル(6スペース)の両方にマッチ
+- **because**: 最後に拾ったAC4がarchive_completed.shに渡されて毎サイクルエラー
+- IF check_auto_archive()のawkがacceptance_criteria idを誤抽出。YAMLパース時 THEN check_auto_archive()のawkパターン `/^[[:space:]]*-[[:space:]]id:/` がcmdレベル(2スペース)とacceptance_criteriaレベル(6スペース)の両方にマッチ
 
 ### L116: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要
 - **日付**: 2026-03-01
@@ -807,7 +906,10 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **出典**: cmd_468
 - **記録者**: sasuke
 - **tags**: [tmux]
-- pane-border-format/pane-border-statusはwindow optionのため、起動時はwindow明示(-w -t shogun:main|agents)か専用適用スクリプト呼び出しが安全
+- **if**: tmux set-optionでwindow option(pane-border-format等)を設定する時
+- **then**: window明示(-w -t shogun:main|agents)か専用適用スクリプト呼出しを使え
+- **because**: session指定だと意図せずcurrent windowのみ更新され他windowに反映されないため
+- IF tmux set-optionでwindow option(pane-border-format等)を設定する時 THEN window明示(-w -t shogun:main|agents)か専用適用スクリプト呼出しを使え
 
 ### L119: deploy_task.shのpostcondファイル経由でbash→Pythonのデータ受け渡しパターンが確立
 - **日付**: 2026-03-01
@@ -815,3 +917,485 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **記録者**: kagemaru
 - **tags**: [deploy, bash, lesson]
 - inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_update_score.sh呼び出し)を実行するパターン。send-keys不要で安全。
+
+### L120: report gateの存在判定はprefix検索+archive探索が必要
+- **日付**: 2026-03-02
+- **出典**: cmd_482
+- **記録者**: kirimaru
+- **tags**: [process, communication, gate, reporting]
+- **if**: report gateで報告ファイルの存在判定を行う時
+- **then**: prefix検索+archive探索を併用せよ
+- **because**: 報告ファイル命名に日付suffixが付く運用では完全一致判定が高頻度で誤ブロックを起こすため
+- IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ
+
+### L121: YAML回転処理でヘッダ保持を欠くと後続appendが既存履歴を失う
+- **日付**: 2026-03-02
+- **出典**: cmd_490
+- **記録者**: sasuke
+- **tags**: [yaml]
+- **if**: YAML回転処理(古いエントリの刈り込み)を実装する時
+- **then**: echo headerで先にヘッダを書き出してからsed出力を>>追記せよ
+- **because**: sedのみだとヘッダ行が消失し、後続のdict前提appendが再初期化してしまうため
+- IF YAML回転処理(古いエントリの刈り込み)を実装する時 THEN echo headerで先にヘッダを書き出してからsed出力を>>追記せよ
+
+### L122: SKILL.md手順追加時に原則セクションとの矛盾を確認せよ
+- **日付**: 2026-03-02
+- **出典**: cmd_490
+- **記録者**: kagemaru
+- **tags**: [process]
+- **if**: SKILL.md手順追加時
+- **then**: SKILL.md原則に所要時間やEdit不要等の制約記載がある場合、新Stepが制約に抵触しないか確認
+- **because**: 抵触時は原則文言を更新すること
+- IF SKILL.md手順追加時 THEN SKILL.md原則に所要時間やEdit不要等の制約記載がある場合、新Stepが制約に抵触しないか確認
+
+### L123: tmuxターゲットにウィンドウINDEXを使用するな — NAME(固有名)を使え
+- **日付**: 2026-03-02
+- **出典**: cmd_494
+- **記録者**: kagemaru+hanzo
+- **tags**: [bash, tmux]
+- **if**: tmuxのsend-keysやset-optionでターゲットを指定する時
+- **then**: ウィンドウINDEXではなくNAME(例: shogun:main)を使え
+- **because**: base-indexの設定差異に依存しないため安定性が高い
+- IF tmuxのsend-keysやset-optionでターゲットを指定する時 THEN ウィンドウINDEXではなくNAME(例: shogun:main)を使え
+
+### L124: paste-bufferの-dフラグはタイムアウト時に発動しない — 明示的delete-buffer必須
+- **日付**: 2026-03-02
+- **出典**: cmd_494
+- **記録者**: kagemaru+hanzo
+- **tags**: [tmux]
+- **if**: paste-bufferの-dフラグはタイムアウト時
+- **then**: timeout N tmux paste-buffer -b name -dでタイムアウトした場合、-d(使用後削除)は発動しない
+- **because**: バッファが残留しtmux prefix+]で意図しないペインに貼付されるリスク
+- IF paste-bufferの-dフラグはタイムアウト時 THEN timeout N tmux paste-buffer -b name -dでタイムアウトした場合、-d(使用後削除)は発動しない
+
+### L125: paste-buffer注入先はagent_id検証で防御せよ(defense-in-depth)
+- **日付**: 2026-03-02
+- **出典**: cmd_494
+- **記録者**: kagemaru
+- **tags**: [testing, tmux]
+- **if**: paste-bufferで特定ペインにデータを注入する時
+- **then**: 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
+- **because**: tmuxのペイン解決が予期しない結果を返す可能性があり、誤注入を構造的に防止する必要があるため
+- IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
+
+### L126: 非同期通知ラッパーをif判定に使うと成功誤判定が起きる
+- **日付**: 2026-03-03
+- **出典**: cmd_496
+- **記録者**: hanzo
+- **tags**: [universal]
+- **if**: 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時
+- **then**: 同期モードまたは結果ファイル連携で結果を取得せよ
+- **because**: ntfy.shのように常時exit 0の設計では、呼び出し側のif/elseでsend失敗を判定できないため
+- IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時 THEN 同期モードまたは結果ファイル連携で結果を取得せよ
+
+### L127: 再配備前に先行commit/reportの存在を確認すべき
+- **日付**: 2026-03-04
+- **出典**: cmd_494
+- **記録者**: karo
+- **tags**: [git, reporting]
+- cmd_494再配備時、先行忍者(tobisaru)が既にcommit+report提出済みだった。家老は再配備前にgit log + report存在を確認することで重複作業を防止できる。小太郎cmd_494r2で発見
+
+### L128: OSS参照タスクはcanonical repository解決を初手に入れる
+- **日付**: 2026-03-04
+- **出典**: cmd_506
+- **記録者**: sasuke
+- **tags**: [api, recon]
+- **if**: OSS参照タスク時
+- **then**: task記載URLが移転/非公開化されている場合がある
+- **because**: 404時はAPI検索とorg/repo再解決を先に行うことで調査停止を防げる
+- IF OSS参照タスク時 THEN task記載URLが移転/非公開化されている場合がある
+
+### L129: WSL2 Python3.12環境では外部feed偵察時にvenv未整備ケースがある
+- **日付**: 2026-03-04
+- **出典**: cmd_506
+- **記録者**: kirimaru
+- **tags**: [recon, process, wsl2]
+- python3-venv未導入だとvenv構築不可。pip --userもPEP668で拒否されるため、偵察手順に --break-system-packages か事前venv確認を含めるべき。
+
+### L130: Get-Clipboard -Format Imageは非画像時にnullを返す
+- **日付**: 2026-03-04
+- **出典**: cmd_508
+- **記録者**: saizo
+- **tags**: [bash]
+- **if**: PowerShellのGet-Clipboard -Format Imageで画像を取得する時
+- **then**: try/catchだけでなくnull判定も必須化せよ
+- **because**: 非画像コンテンツ時にnullが返され、try/catchではキャッチできないエラーパターンがあるため
+- IF PowerShellのGet-Clipboard -Format Imageで画像を取得する時 THEN try/catchだけでなくnull判定も必須化せよ
+
+### L131: archive_completed.sh sweep modeはparent_cmd完了チェック必須
+- **日付**: 2026-03-04
+- **出典**: cmd_510
+- **記録者**: hayate
+- **tags**: [communication, reporting]
+- sweep mode（引数なし）はstatus判定のみだと進行中cmdの報告を早期退避し得る。原則はcmd_id指定呼び出しとし、sweepにはparent_cmd status確認（未解決時keep）を必ず入れる。
+
+### L132: dashboard_update.shは完了報告専用、進捗メモはEdit toolで記録すべき
+- **日付**: 2026-03-04
+- **出典**: cmd_511
+- **記録者**: saizo
+- **tags**: [communication, gate, reporting]
+- **if**: dashboard_update.sh時
+- **then**: 進捗メモ（配備開始等）にはEdit toolを使え
+- **because**: 引数バリデーションが緩く誤用を検知できなかった
+- IF dashboard_update.sh時 THEN 進捗メモ（配備開始等）にはEdit toolを使え
+
+### L133: injection_countがlessons.yamlで全件0(未同期)
+- **日付**: 2026-03-04
+- **出典**: cmd_514
+- **記録者**: tobisaru
+- **tags**: [yaml, security, lesson]
+- **if**: lessons.yamlのinjection_countを参照する時
+- **then**: 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ
+- **because**: injection_countフィールドは存在するが同期未実装の可能性があり信頼できないため
+- IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ
+
+### L134: NINJA_MONITOR_LIB_ONLYガードでbashスクリプトの関数テストが可能に
+- **日付**: 2026-03-04
+- **出典**: cmd_519
+- **記録者**: kagemaru
+- **tags**: [bash, monitor]
+- **if**: bashスクリプトの関数をbatsでユニットテストする時
+- **then**: LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメインループを実行せず関数定義のみロードせよ
+- **because**: return 0 2>/dev/null || exit 0パターンでsource時はreturn、直接実行時はexitを使い分けられるため
+- IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメインループを実行せず関数定義のみロードせよ
+
+### L135: build_instructions.sh は --help 指定でも生成処理を実行する
+- **日付**: 2026-03-04
+- **出典**: cmd_523
+- **記録者**: karo
+- **tags**: [frontend, process]
+- **if**: build_instructions.sh時
+- **then**: 副作用のないヘルプ確認を想定すると生成差分が発生する
+- **because**: 事前に実行意図を明確化し、必要時のみ実行する運用が安全
+- IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する
+
+### L136: preflight_gate_flags upgradeのhas_found_trueスコープ不整合でlesson_done_source BLOCKが頻発
+- **日付**: 2026-03-04
+- **出典**: cmd_529
+- **記録者**: karo
+- **tags**: [deploy, gate, lesson]
+- **if**: preflight_gate_flagsのupgradeロジックを修正する時
+- **then**: has_found_true変数のスコープがif/else両ブロックで有効か確認せよ
+- **because**: スコープ不整合でlesson_done_source BLOCKが全忍者共通95件/245BLOCK(39%)発生した実績があるため
+- IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロックで有効か確認せよ
+
+### L137: lesson_done先行生成とpreflight upgradeの設計的不整合
+- **日付**: 2026-03-04
+- **出典**: cmd_529
+- **記録者**: hanzo
+- **tags**: [deploy, gate, lesson]
+- deploy_task.shがlesson.doneをlesson_checkで先行生成する設計は、cmd_complete_gate.shのpreflight upgradeが正常動作する前提。しかしupgradeロジックにhas_found_trueスコープバグがあり不発。先行生成とupgradeを独立に実装すると整合性が崩れるため、lesson.done生成責任を一箇所(preflight)に集約すべき
+
+### L138: レビューcmdは要求範囲外差分をBLOCK対象として明示判定すべき
+- **日付**: 2026-03-04
+- **出典**: cmd_528
+- **記録者**: hayate
+- **tags**: [review, process, gate, git]
+- taskが特定セクション改修を要求している場合、commit diffに無関係なgate条件変更が混在した時点でFAILとし、目的適合性違反として差し戻す運用が必要。
+
+### L139: scope外変更のrevert確認では、正味diff(HEAD~N..HEAD)と個別commit diffの両方を突合すべき
+- **日付**: 2026-03-04
+- **出典**: cmd_528
+- **記録者**: kotaro
+- **tags**: [frontend, review, gate, git]
+- **if**: scope外変更のrevert確認時
+- **then**: 本件ではkirimaru impl(85c8a96)とsaizo revert(f4b264c)の正味diffで主要3点(ALWAYS_REQUIRED/preflight/GATE CLEAR後archive)の復元を確認
+- **because**: 個別diffとの突合でupdate_status/append_changelogの残存scope外変更を検出した
+- IF scope外変更のrevert確認時 THEN 本件ではkirimaru impl(85c8a96)とsaizo revert(f4b264c)の正味diffで主要3点(ALWAYS_REQUIRED/preflight/GATE CLEAR後archive)の復元を確認
+
+### L140: レビューFAIL指摘時はrevert対象を明示し、scope内差分を保持した最小修正で再提出すべき
+- **日付**: 2026-03-04
+- **出典**: cmd_528
+- **記録者**: saizo
+- **tags**: [testing, review, process, gate, lesson]
+- **if**: レビューFAILで再提出を指示する時
+- **then**: revert対象を明示し、scope内差分を保持した最小修正で再提出させよ
+- **because**: scope内変更とscope外変更が混在すると修正範囲が不明確になり手戻りが増大するため
+- IF レビューFAILで再提出を指示する時 THEN revert対象を明示し、scope内差分を保持した最小修正で再提出させよ
+
+### L141: lesson_deprecation_scan.shの自動退役はsubprocessで外部スクリプト呼出のため、大量教訓がある場合に遅くなる可能性
+- **日付**: 2026-03-04
+- **出典**: cmd_531
+- **記録者**: hanzo
+- **tags**: [process, lesson]
+- **if**: lesson_deprecation_scan.shで大量教訓を自動退役する時
+- **then**: 教訓数に応じてバッチ処理(1回のPython内で複数教訓を更新)への変更を検討せよ
+- **because**: 現行のsubprocess個別呼出し方式は教訓数に比例して遅くなるため
+- IF lesson_deprecation_scan.shで大量教訓を自動退役する時 THEN 教訓数に応じてバッチ処理(1回のPython内で複数教訓を更新)への変更を検討せよ
+
+### L142: 飛猿報告のテスト8件はbatsテスト2件のみ — テスト件数根拠明示義務
+- **日付**: 2026-03-04
+- **出典**: cmd_532
+- **記録者**: kagemaru
+- **tags**: [deploy, testing, communication, reporting]
+- **if**: 飛猿報告のテスト8件時
+- **then**: テスト件数を報告する場合は根拠(ファイル名・実行コマンド)も記載すべき
+- **because**: ad-hocテストを含めた件数と推測されるが、報告での件数根拠が不明確
+- IF 飛猿報告のテスト8件時 THEN テスト件数を報告する場合は根拠(ファイル名・実行コマンド)も記載すべき
+
+### L143: gitignoreエラーはgateログに記録されず暗数化する — 15日間で最低11件、モデル非依存
+- **日付**: 2026-03-04
+- **出典**: cmd_534
+- **記録者**: karo
+- **tags**: [gate, git]
+- **if**: gitignoreエラー時
+- **then**: 対策は(1)ashigaru.md明文化(即効)→(2)pre-commitフック(根治)の段階実施が有効
+- **because**: 忍者のgit addエラー(gitignore対象の誤addやwhitelist未登録)はgate_metrics.logに記録されない
+- IF gitignoreエラー時 THEN 対策は(1)ashigaru.md明文化(即効)→(2)pre-commitフック(根治)の段階実施が有効
+
+### L144: git add失敗の頻度分析にはgate_metricsではなく専用guardログが必要
+- **日付**: 2026-03-04
+- **出典**: cmd_534
+- **記録者**: hayate
+- **tags**: [recon, gate, git]
+- **if**: git add/gitignore失敗の頻度を分析する時
+- **then**: gate_metricsではなく専用guardログから集計せよ
+- **because**: gate_metrics.logはゲート判定理由のみを保持し、git add/gitignore失敗は記録されないため
+- IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ
+発生頻度を継続観測するには、git add実行点でignored pathを記録する
+git_add_safe.sh + guardログ化を先に実装すべき。
+
+### L145: ashigaru.md生成はbuild_instructions.shで行われる→source filesを修正すべき(L005の実践確認)
+- **日付**: 2026-03-04
+- **出典**: cmd_533
+- **記録者**: hanzo
+- **tags**: [frontend, yaml]
+- **if**: ashigaru.mdの内容を修正する時
+- **then**: build_instructions.shのソースファイル(roles/,templates/等)を修正せよ
+- **because**: instructions/ashigaru.mdはYAML front matterのみがbuild_instructions.shで使用され、本文は生成物であるため
+- IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修正せよ
+body contentはinstructions/roles/ashigaru_role.md + instructions/common/*.mdから構築。
+生成ファイルを直接編集すると次回buildで上書きされる。
+L005を適用し、source files修正→build実行→全生成ファイルに自動反映の流れで実装した。
+
+### L146: AC6系レビューは実配備YAML確認だけでなく一時環境での再現実行を必須にすべき
+- **日付**: 2026-03-04
+- **出典**: cmd_533
+- **記録者**: saizo
+- **tags**: [deploy, review, process, yaml, git, lesson]
+- **if**: AC6系(教訓注入関連)をレビューする時
+- **then**: git diff確認に加え、summary-only lessonを使ったdeploy_task再現実行を実施せよ
+- **because**: 差分確認だけでは誤判定余地が残り、実動作検証が再発防止に有効であるため
+- IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実行を実施せよ
+
+### L147: related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマではAC6未達
+- **日付**: 2026-03-04
+- **出典**: cmd_533
+- **記録者**: sasuke
+- **tags**: [deploy, yaml, lesson]
+- **if**: related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時
+- **then**: AC6を成立させるには(1) lessons.yamlへdetail同期追加、または(2)summaryをdetailへフォールバック注入する実装が必要
+- **because**: 結果として生成task YAMLへdetailが入らない
+- IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) lessons.yamlへdetail同期追加、または(2)summaryをdetailへフォールバック注入する実装が必要
+
+### L148: AC文言は値参照元変更以外(例: コメント追記)の許容範囲を明示すると判定ブレを防げる
+- **日付**: 2026-03-04
+- **出典**: cmd_532
+- **記録者**: sasuke
+- **tags**: [review]
+- **if**: AC文言は値参照元変更以外(例: コメント追記)の許容範囲を明示時
+- **then**: 今回の差分にはtimestamp行コメント追記が含まれるが、機能要件への影響はない
+- **because**: レビューACを『機能差分の主目的』と『非機能注記』に分離すると、レビュー担当間でPASS/FAIL判定の一貫性が上がる
+- IF AC文言は値参照元変更以外(例: コメント追記)の許容範囲を明示時 THEN 今回の差分にはtimestamp行コメント追記が含まれるが、機能要件への影響はない
+
+### L149: shellスクリプトでrgを使うな、grepを使え
+- **日付**: 2026-03-04
+- **出典**: cmd_537
+- **記録者**: kagemaru
+- **tags**: [bash, git]
+- **if**: shellスクリプトやgit hookでテキスト検索を行う時
+- **then**: rgではなく標準のgrepを使え
+- **because**: ポータブルなスクリプトではrg/ripgrepの存在が保証されず、|| trueパターンもエラー握りつぶしリスクがあるため
+- IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え
+
+### L150: git commit --dry-runではpre-commitが走らずAC誤判定になる
+- **日付**: 2026-03-04
+- **出典**: cmd_537
+- **記録者**: sasuke
+- **tags**: [testing, git]
+- **if**: commit関連のACを検証する時
+- **then**: git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
+- **because**: dry-runではpre-commitフックが走らず、フック起因の問題を検出できないため
+- IF commit関連のACを検証する時 THEN git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
+
+### L151: Git hook導入時はスクリプト内容だけでなく executable bit(100755) のコミット有無を必須確認
+- **日付**: 2026-03-04
+- **出典**: cmd_537
+- **記録者**: hayate
+- **tags**: [review, git]
+- **if**: Git hookをリポジトリに導入する時
+- **then**: スクリプト内容だけでなくexecutable bit(100755)のコミット有無を必ず確認せよ
+- **because**: 実行権限がないとhookが無視されるが、エラーなく静かに失敗するため見落としやすい
+- IF Git hookをリポジトリに導入する時 THEN スクリプト内容だけでなくexecutable bit(100755)のコミット有無を必ず確認せよ
+
+### L152: KM_JSON_CACHEの無効化条件にlessons.yaml変更が含まれない
+- **日付**: 2026-03-04
+- **出典**: cmd_541
+- **記録者**: kotaro
+- **tags**: [gate, yaml, lesson, reporting]
+- **if**: lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時
+- **then**: KM_JSON_CACHEの無効化条件にlessons.yaml変更検知を追加すべき
+- **because**: 現行のキャッシュ無効化はgate_metrics.logの行数変化のみで判定しており、lessons.yaml変更が反映されるまでラグがあるため
+- IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条件にlessons.yaml変更検知を追加すべき
+
+### L153: レビューACにpush条件がある場合は事前に ahead/behind を確認する
+- **日付**: 2026-03-04
+- **出典**: cmd_546
+- **記録者**: kirimaru
+- **tags**: [review, git]
+- **if**: レビューACにpush条件がある時
+- **then**: git rev-list --left-right --countでorigin/mainとの差分を事前確認せよ
+- **because**: レビュー対象外コミットが混在するとpush時に予期しない差分が含まれるため
+- IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認せよ
+
+### L154: [自動生成] 有効教訓の記録を怠った: cmd_546
+- **日付**: 2026-03-04
+- **出典**: cmd_546
+- **記録者**: gate_auto
+- **status**: deprecated
+- **deprecated_reason**: 報告フォーマット問題(nested YAML)による誤検知。実際にはL074/L081を記録済み
+- **tags**: [communication, lesson, reporting]
+- lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
+
+### L155: lib/配下の共通関数は呼出し元の環境変数依存を明示バリデーションすべき
+- **日付**: 2026-03-04
+- **出典**: cmd_546
+- **記録者**: kagemaru
+- **tags**: [inbox]
+- **if**: lib/配下の共通関数を実装する時
+- **then**: 呼出し元の環境変数依存を関数冒頭で明示バリデーションせよ
+- **because**: sourceされるライブラリは実行時に環境変数が設定されている保証がないため
+- IF lib/配下の共通関数を実装する時 THEN 呼出し元の環境変数依存を関数冒頭で明示バリデーションせよ
+
+### L156: set -e環境で共通関数の非0戻り値を直接受けると即時終了する
+- **日付**: 2026-03-04
+- **出典**: cmd_545
+- **記録者**: sasuke
+- **tags**: [universal]
+- **if**: set -e環境で非0戻り値を返す判定関数を呼び出す時
+- **then**: `if func; then rc=0; else rc=$?; fi` 形式で受けよ
+- **because**: `func; rc=$?`形式ではset -eにより即exitしてしまうため
+- IF set -e環境で非0戻り値を返す判定関数を呼び出す時 THEN `if func; then rc=0; else rc=$?; fi` 形式で受けよ
+
+### L157: 追記型YAMLの上限制御はappend直後に同一トランザクションで実施すべき
+- **日付**: 2026-03-04
+- **出典**: cmd_547
+- **記録者**: hayate
+- **tags**: [yaml]
+- **if**: 追記型YAMLの上限制御時
+- **then**: append処理とローテーションを分離すると肥大化区間が残る
+- **because**: flock配下の単一Pythonトランザクション内で entries.append→entries[-MAX_ENTRIES:] を連結すると、既存超過データも初回実行で即収束できる
+- IF 追記型YAMLの上限制御時 THEN append処理とローテーションを分離すると肥大化区間が残る
+
+### L158: ローテーション機能レビューでは境界値テストに加えて過剰初期データの実地検証が有効
+- **日付**: 2026-03-04
+- **出典**: cmd_547
+- **記録者**: sasuke
+- **tags**: [testing, review]
+- **if**: ローテーション機能をレビューする時
+- **then**: 境界値テストに加え、200超の初期データ(例:250件)を用いた追記検証を実施せよ
+- **because**: 上限超過状態での追記動作を実地検証しないとAC2の実効性を担保できないため
+- IF ローテーション機能をレビューする時 THEN 境界値テストに加え、200超の初期データ(例:250件)を用いた追記検証を実施せよ
+
+### L159: 大規模偵察タスクの並列Agent活用パターン
+- **日付**: 2026-03-05
+- **出典**: cmd_548
+- **記録者**: kagemaru
+- **tags**: [recon]
+- **if**: 5軸以上の独立した偵察を実施する時
+- **then**: 並列Agent(例: 4並列)で各軸を分担して同時実行せよ
+- **because**: 逐次実行より大幅に短縮でき、全調査を約12分で完了できるため
+- IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ
+軸ごとの独立性が高い偵察タスクではExplore Agentの並列起動が有効。
+ただしAgent間のタイムアウト差が大きい(73秒〜695秒)ため、
+最も時間のかかるAgentがボトルネックになる。
+対策: 重い軸(AC3=ファイル行数カウント+構造分析)は先行起動すべき。
+
+### L160: ntfy添付DLはAUTH_ARGS再利用でprivate topicでも同一認証経路を維持できる
+- **日付**: 2026-03-05
+- **出典**: cmd_551
+- **記録者**: sasuke
+- **tags**: [security, inbox, oauth]
+- **if**: ntfyのprivate topicから添付ファイルをダウンロードする時
+- **then**: ストリーム購読時に組み立てたAUTH_ARGSを添付ファイルcurlにも共通適用せよ
+- **because**: 認証経路が異なると『メッセージは読めるが添付は403』の不整合が発生するため
+- IF ntfyのprivate topicから添付ファイルをダウンロードする時 THEN ストリーム購読時に組み立てたAUTH_ARGSを添付ファイルcurlにも共通適用せよ
+
+### L161: 画像添付MIME整合改善の必要性
+- **日付**: 2026-03-05
+- **記録者**: auto_draft
+- **tags**: [review, process]
+- **if**: ntfy添付画像を保存する時
+- **then**: attachment MIMEに合わせた拡張子付与またはPNG変換を標準化せよ
+- **because**: 拡張子固定(常に.png)は可読性要件を満たしていても、実際のMIMEと不整合でレビュー往復が増えるため
+- IF ntfy添付画像を保存する時 THEN attachment MIMEに合わせた拡張子付与またはPNG変換を標準化せよ
+
+### L162: フックスクリプトテストではsymlink構造でSCRIPT_DIRリダイレクトするモック手法が有効
+- **日付**: 2026-03-05
+- **出典**: testing
+- **記録者**: cmd_558
+- **tags**: [bash, yaml]
+- **if**: フックスクリプトテスト時
+- **then**: dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
+- **because**: symlink構造でSCRIPT_DIRをテスト用ディレクトリに向ける
+- IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
+
+### L163: MAX_ENTRIES等の定数変更時は既存テストの前提値も同時更新が必要
+- **日付**: 2026-03-05
+- **出典**: testing
+- **記録者**: cmd_558
+- **tags**: [universal]
+- **if**: MAX_ENTRIES等の定数変更時
+- **then**: impl側の定数変更とテストの前提値の整合性チェックをACに含めるべき
+- **because**: cmd_558でMAX_ENTRIES 200→300変更時に既存テストT-LC-008/009の修正が追加発生
+- IF MAX_ENTRIES等の定数変更時 THEN impl側の定数変更とテストの前提値の整合性チェックをACに含めるべき
+
+### L164: Claude Code Hooksのshスクリプトはset -euのみ使用しpipefail禁止
+- **日付**: 2026-03-05
+- **出典**: hooks
+- **記録者**: cmd_558
+- **tags**: [bash]
+- **if**: Claude Code Hooksのshスクリプトを作成する時
+- **then**: set -euのみ使用しpipefailは使うな
+- **because**: hookはsh経由で実行されるためpipefailはbash専用オプションであり構文エラーになる
+- IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
+
+### L165: 教訓効果率は『未解決負債』だけでなく『仕組み化後の未退役』でも低下する
+- **日付**: 2026-03-05
+- **出典**: cmd_567
+- **記録者**: kirimaru
+- **tags**: [universal]
+- **if**: 教訓効果率の低い教訓群を分析する時
+- **then**: 自動退役は『低効果』だけでなく『仕組み化完了フラグ』連動で回すべき
+- **because**: 効果率0%群には、価値が低い教訓だけでなく、既にコード化され人間参照が不要になった教訓が混在するため
+- IF 教訓効果率の低い教訓群を分析する時 THEN 自動退役は『低効果』だけでなく『仕組み化完了フラグ』連動で回すべき
+
+### L166: ストリーミング受信デーモンは起動側pkillに依存せず、受信側でも単一起動ロックを持つべし
+- **日付**: 2026-03-05
+- **出典**: cmd_571
+- **記録者**: karo
+- **tags**: [universal]
+- **if**: ストリーミング受信デーモンを新規実装する時
+- **then**: 受信側にもflock/pidfileによる単一起動ロックを持たせよ
+- **because**: 起動経路が複数ある場合、起動側のpkill/nohupだけでは多重起動を完全に防げないため
+- IF ストリーミング受信デーモンを新規実装する時 THEN 受信側にもflock/pidfileによる単一起動ロックを持たせよ
+
+### L167: ストリーム購読系デーモンは singleton lock + message idempotency を必須セットで実装すべき
+- **日付**: 2026-03-05
+- **出典**: cmd_571
+- **記録者**: kirimaru
+- **tags**: [process]
+- **if**: ストリーム購読系デーモン時
+- **then**: ntfy_listenerで多重起動防止(lock/pidfile)とMSG_ID重複排除が無いと、運用上の二重起動や再接続再配送で同一イベントを二重記録する
+- **because**: 購読デーモンは両方を初期実装に含めるべき
+- IF ストリーム購読系デーモン時 THEN ntfy_listenerで多重起動防止(lock/pidfile)とMSG_ID重複排除が無いと、運用上の二重起動や再接続再配送で同一イベントを二重記録する
+
+### L168: auto_draft_lesson.shのIF-THEN引数にスペース含む値を渡すと切り詰められる
+- **日付**: 2026-03-05
+- **出典**: cmd_575
+- **記録者**: tobisaru
+- **tags**: [lesson]
+- **if**: auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時
+- **then**: IF_THEN_FLAGSの文字列結合ではなく、個別にquotedした引数として渡す
+- **because**: unquoted展開でword
+- IF auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時 THEN IF_THEN_FLAGSの文字列結合ではなく、個別にquotedした引数として渡す
