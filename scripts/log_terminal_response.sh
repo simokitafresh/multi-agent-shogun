@@ -20,3 +20,8 @@ export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.yaml"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
 append_lord_conversation "$RESPONSE" "outbound" "shogun" "terminal"
+
+# Stopフック末尾で24h保持と索引更新を実行（失敗時は記録処理を継続）
+if ! bash "$SCRIPT_DIR/scripts/conversation_retention.sh"; then
+  echo "[log_terminal_response] WARN: conversation_retention.sh failed" >&2
+fi

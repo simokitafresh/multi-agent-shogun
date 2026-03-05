@@ -96,6 +96,7 @@
 !context/dm-signal-ops.md
 !context/dm-signal-research.md
 !context/cmd-chronicle.md
+!context/lord-conversation-index.md
 
 # Scripts
 !scripts/
@@ -182,6 +183,7 @@
 !scripts/capture_clipboard_image.sh
 !scripts/log_terminal_input.sh
 !scripts/log_terminal_response.sh
+!scripts/conversation_retention.sh
 
 
 # Archive (frozen retired components)

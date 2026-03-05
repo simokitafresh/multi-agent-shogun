@@ -395,7 +395,10 @@ Actions after recovery:
    - `config/projects.yaml` → active projects一覧
    - 各active PJの `projects/{id}.yaml` → 核心知識（ルール要約/UUID/DBルール）
    - `context/{project}.md` → 要約セクションのみ（将軍は戦略判断に必要な粒度。全詳細は不要）
-5.5. **前セッション会話文脈の復元**: `queue/lord_conversation.yaml` の直近10件を読み、前セッションの会話文脈を把握する。（ファイル存在時のみ）
+5.5. **前セッション会話文脈の復元**:
+   1. まず `context/lord-conversation-index.md` を読む（索引層）。
+   2. 索引で不足する場合のみ `queue/lord_conversation.jsonl` の直近10件を確認する。
+   3. さらに過去が必要な場合のみ `logs/lord_conversation_archive/*.jsonl` を参照する。
 6. Check inbox: read `queue/inbox/shogun.yaml`, process unread messages
 7. Report loading complete, then start work
 
