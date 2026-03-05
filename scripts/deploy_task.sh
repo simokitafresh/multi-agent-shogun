@@ -362,6 +362,28 @@ def greedy_dedup(scored_list, all_lessons, threshold=DEDUP_THRESHOLD):
         print(f'[INJECT] dedup: removed {deduped_count} similar lessons (threshold={threshold})', file=sys.stderr)
     return accepted
 
+def build_lesson_detail(lesson):
+    if_then = lesson.get('if_then')
+    if isinstance(if_then, dict):
+        cond = str(if_then.get('if', '') or '').strip()
+        action = str(if_then.get('then', '') or '').strip()
+        reason = str(if_then.get('because', '') or '').strip()
+        if cond and action and reason:
+            return f'IF: {cond} → THEN: {action} (BECAUSE: {reason})'
+        if cond and action:
+            return f'IF: {cond} → THEN: {action}'
+        if action and reason:
+            return f'THEN: {action} (BECAUSE: {reason})'
+        if cond and reason:
+            return f'IF: {cond} (BECAUSE: {reason})'
+        if cond:
+            return f'IF: {cond}'
+        if action:
+            return f'THEN: {action}'
+        if reason:
+            return f'BECAUSE: {reason}'
+    return str(lesson.get('detail', '') or lesson.get('content', '') or lesson.get('summary', '') or '')
+
 try:
     with open(task_file) as f:
         data = yaml.safe_load(f)
@@ -684,7 +706,7 @@ try:
     for c in all_candidates:
         if len(related) < MAX_INJECT:
             lesson = lessons_by_id.get(c['id'], {})
-            detail = str(lesson.get('detail', '') or lesson.get('content', '') or lesson.get('summary', '') or '')[:200]
+            detail = build_lesson_detail(lesson)[:200]
             entry = {'id': c['id'], 'summary': c['summary']}
             if detail:
                 entry['detail'] = detail
