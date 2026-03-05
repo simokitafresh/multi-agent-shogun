@@ -146,6 +146,7 @@ def find_script_names(text):
 
 
 # --- Main scan ---
+global_max_id = 0  # track max lesson ID across all projects for checkpoint
 confirmed = []  # (project_id, lesson_id, reason)
 review = []     # (project_id, lesson_id, title_snip, related, last_ref)
 eff_confirmed = []  # (project_id, lesson_id, title_snip, inj_count, hlp_count)
@@ -174,6 +175,9 @@ for project in projects:
             continue  # already deprecated: skip
 
         lesson_id = lesson.get("id", "?")
+        m_id = re.match(r'^L(\d+)$', lesson_id)
+        if m_id:
+            global_max_id = max(global_max_id, int(m_id.group(1)))
         title = lesson.get("title", "")
         summary = lesson.get("summary", "")
         full_text = f"{title} {summary}"
@@ -311,4 +315,11 @@ for proj, lid, title_snip, inj, hlp, rate in eff_review:
         print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
 
 print(f"  合計: {auto_deprecated_count}件 自動退役")
+
+# --- Checkpoint update ---
+if global_max_id > 0:
+    checkpoint_path = SCRIPT_DIR / "queue" / "lesson_deprecation_checkpoint.txt"
+    with open(checkpoint_path, "w") as f:
+        f.write(f"L{global_max_id}\n")
+    print(f"\nCheckpoint updated: L{global_max_id}")
 PYEOF
