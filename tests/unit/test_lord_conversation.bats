@@ -10,8 +10,11 @@
 #   T-LC-005: LORD_CONVERSATION未設定時エラー
 #   T-LC-006: 既存エントリへの追記（データ保全）
 #   T-LC-007: 壊れたYAML（非dict）の回復
-#   T-LC-008: 201件目で最古エントリが削除される
-#   T-LC-009: 200件以下では削除されない
+#   T-LC-008: 301件目で最古エントリが削除される (MAX_ENTRIES=300)
+#   T-LC-009: 300件以下では削除されない (MAX_ENTRIES=300)
+#   T-LC-010: channel引数ありでterminalが記録されること
+#   T-LC-011: channel引数なしでntfyがデフォルトになること
+#   T-LC-012: MAX_ENTRIES=300でローテーション動作
 
 setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -146,26 +149,26 @@ print(len(data.get('entries', [])))
     echo "$content" | grep -q "entries:"
 }
 
-# --- T-LC-008: 201件目で最古エントリが削除される ---
+# --- T-LC-008: 301件目で最古エントリが削除される (MAX_ENTRIES=300) ---
 
-@test "T-LC-008: append_lord_conversation trims oldest entry when adding 201st" {
+@test "T-LC-008: append_lord_conversation trims oldest entry when adding 301st" {
     python3 - <<PY
 import yaml
 
 entries = [
     {
-        "timestamp": f"2026-03-01T00:00:{i:02d}+09:00",
+        "timestamp": f"2026-03-01T{i // 3600:02d}:{(i % 3600) // 60:02d}:{i % 60:02d}+09:00",
         "direction": "outbound",
         "channel": "ntfy",
         "message": f"seed-{i:03d}",
     }
-    for i in range(1, 201)
+    for i in range(1, 301)
 ]
 with open("$LORD_CONVERSATION", "w") as f:
     yaml.dump({"entries": entries}, f, default_flow_style=False, allow_unicode=True, indent=2)
 PY
 
-    run append_lord_conversation "seed-201" "outbound" "karo"
+    run append_lord_conversation "seed-301" "outbound" "karo"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(python3 - <<PY
@@ -178,35 +181,35 @@ messages = [e.get("message", "") for e in entries]
 print(len(entries))
 print(messages[0] if messages else "")
 print("seed-001" in messages)
-print("seed-201" in messages)
+print("seed-301" in messages)
 PY
 )
-    [ "${result[0]}" -eq 200 ]
+    [ "${result[0]}" -eq 300 ]
     [ "${result[1]}" = "seed-002" ]
     [ "${result[2]}" = "False" ]
     [ "${result[3]}" = "True" ]
 }
 
-# --- T-LC-009: 200件以下では削除されない ---
+# --- T-LC-009: 300件以下では削除されない (MAX_ENTRIES=300) ---
 
-@test "T-LC-009: append_lord_conversation keeps all entries when total is 200" {
+@test "T-LC-009: append_lord_conversation keeps all entries when total is 300" {
     python3 - <<PY
 import yaml
 
 entries = [
     {
-        "timestamp": f"2026-03-01T00:00:{i:02d}+09:00",
+        "timestamp": f"2026-03-01T{i // 3600:02d}:{(i % 3600) // 60:02d}:{i % 60:02d}+09:00",
         "direction": "outbound",
         "channel": "ntfy",
         "message": f"seed-{i:03d}",
     }
-    for i in range(1, 200)
+    for i in range(1, 300)
 ]
 with open("$LORD_CONVERSATION", "w") as f:
     yaml.dump({"entries": entries}, f, default_flow_style=False, allow_unicode=True, indent=2)
 PY
 
-    run append_lord_conversation "seed-200" "outbound" "karo"
+    run append_lord_conversation "seed-300" "outbound" "karo"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(python3 - <<PY
@@ -219,11 +222,82 @@ messages = [e.get("message", "") for e in entries]
 print(len(entries))
 print(messages[0] if messages else "")
 print("seed-001" in messages)
-print("seed-200" in messages)
+print("seed-300" in messages)
 PY
 )
-    [ "${result[0]}" -eq 200 ]
+    [ "${result[0]}" -eq 300 ]
     [ "${result[1]}" = "seed-001" ]
     [ "${result[2]}" = "True" ]
     [ "${result[3]}" = "True" ]
+}
+
+# --- T-LC-010: channel引数ありでterminalが記録されること ---
+
+@test "T-LC-010: append_lord_conversation records terminal channel when specified" {
+    run append_lord_conversation "terminal msg" "inbound" "" "terminal"
+    [ "$status" -eq 0 ]
+
+    [ -f "$LORD_CONVERSATION" ]
+    local content
+    content=$(cat "$LORD_CONVERSATION")
+
+    echo "$content" | grep -q "channel: terminal"
+    echo "$content" | grep -q "message: terminal msg"
+    echo "$content" | grep -q "direction: inbound"
+    # agentが空文字列の場合、agentフィールドは含まれない
+    ! echo "$content" | grep -q "agent:"
+}
+
+# --- T-LC-011: channel引数なしでntfyがデフォルトになること ---
+
+@test "T-LC-011: append_lord_conversation defaults channel to ntfy when omitted" {
+    run append_lord_conversation "ntfy msg" "outbound" "shogun"
+    [ "$status" -eq 0 ]
+
+    local content
+    content=$(cat "$LORD_CONVERSATION")
+
+    echo "$content" | grep -q "channel: ntfy"
+    echo "$content" | grep -q "message: ntfy msg"
+}
+
+# --- T-LC-012: MAX_ENTRIES=300でローテーション動作 ---
+
+@test "T-LC-012: append_lord_conversation rotates at MAX_ENTRIES=300 boundary" {
+    python3 - <<PY
+import yaml
+
+entries = [
+    {
+        "timestamp": f"2026-03-01T{i // 3600:02d}:{(i % 3600) // 60:02d}:{i % 60:02d}+09:00",
+        "direction": "outbound",
+        "channel": "ntfy",
+        "message": f"seed-{i:03d}",
+    }
+    for i in range(1, 301)
+]
+with open("$LORD_CONVERSATION", "w") as f:
+    yaml.dump({"entries": entries}, f, default_flow_style=False, allow_unicode=True, indent=2)
+PY
+
+    run append_lord_conversation "new-entry" "outbound" "karo"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - <<PY
+import yaml
+
+with open("$LORD_CONVERSATION") as f:
+    data = yaml.safe_load(f) or {}
+entries = data.get("entries", [])
+messages = [e.get("message", "") for e in entries]
+print(len(entries))
+print("seed-001" in messages)
+print("new-entry" in messages)
+print(messages[-1] if messages else "")
+PY
+)
+    [ "${result[0]}" -eq 300 ]
+    [ "${result[1]}" = "False" ]
+    [ "${result[2]}" = "True" ]
+    [ "${result[3]}" = "new-entry" ]
 }
