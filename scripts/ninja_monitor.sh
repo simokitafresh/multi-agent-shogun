@@ -574,7 +574,7 @@ is_task_deployed() {
         local task_status
         task_status=$(yaml_field_get "$task_file" "status")
 
-        if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
+        if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress|done)$ ]]; then
             # AC1/AC2: 報告YAML完了チェック（parent_cmd一致+status:done）
             if check_and_update_done_task "$name"; then
                 # ─── auto_deploy_next.sh 自動発火（二重呼出防止付き） ───
@@ -597,6 +597,20 @@ is_task_deployed() {
                     ) &
                 fi
                 return 1  # 完了済み — not deployed
+            fi
+
+            # done状態は常に未配備扱い（ただし報告一致時は上でauto_deploy発火済み）
+            if [ "$task_status" = "done" ]; then
+                local target="${PANE_TARGETS[$name]}"
+                if [ -n "$target" ]; then
+                    local current_task
+                    current_task=$(tmux display-message -t "$target" -p '#{@current_task}' 2>/dev/null)
+                    if [ -n "$current_task" ]; then
+                        tmux set-option -p -t "$target" @current_task "" 2>/dev/null
+                        log "TASK-CLEAR: $name @current_task cleared (task status=done, was: $current_task)"
+                    fi
+                fi
+                return 1
             fi
 
             # YAML says active — cross-check with actual pane state
@@ -627,18 +641,6 @@ is_task_deployed() {
                 fi
             fi
             return 0  # タスク配備済み（active or ペインチェック不可）
-        fi
-        # Bug2 fix: status=done but @current_task still set → clear it
-        if [ "$task_status" = "done" ]; then
-            local target="${PANE_TARGETS[$name]}"
-            if [ -n "$target" ]; then
-                local current_task
-                current_task=$(tmux display-message -t "$target" -p '#{@current_task}' 2>/dev/null)
-                if [ -n "$current_task" ]; then
-                    tmux set-option -p -t "$target" @current_task "" 2>/dev/null
-                    log "TASK-CLEAR: $name @current_task cleared (task status=done, was: $current_task)"
-                fi
-            fi
         fi
     fi
     return 1  # 未配備
