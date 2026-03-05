@@ -180,6 +180,8 @@
 !scripts/oneshot/add_injection_count.sh
 !scripts/oneshot/backfill_gate_titles.sh
 !scripts/capture_clipboard_image.sh
+!scripts/log_terminal_input.sh
+!scripts/log_terminal_response.sh
 
 
 # Archive (frozen retired components)

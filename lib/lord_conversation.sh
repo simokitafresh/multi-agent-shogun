@@ -3,10 +3,11 @@
 # cmd_546: ntfy.sh/ntfy_listener.shの重複ロジックを集約
 #
 # 提供関数:
-#   append_lord_conversation <message> <direction> [agent]
+#   append_lord_conversation <message> <direction> [agent] [channel]
 #     - message: 記録するメッセージ（必須）
 #     - direction: "outbound" or "inbound"（必須）
 #     - agent: エージェントID（省略時はエントリに含めない）
+#     - channel: 記録チャネル（省略時は"ntfy"、後方互換）
 #
 # 必須環境変数:
 #   LORD_CONVERSATION — lord_conversation.yaml のパス
@@ -18,6 +19,7 @@ append_lord_conversation() {
   local message="${1:?append_lord_conversation: message is required}"
   local direction="${2:?append_lord_conversation: direction is required}"
   local agent="${3:-}"
+  local channel="${4:-ntfy}"
 
   if [ "$direction" != "outbound" ] && [ "$direction" != "inbound" ]; then
     echo "ERROR: append_lord_conversation: direction must be 'outbound' or 'inbound', got '$direction'" >&2
@@ -45,6 +47,7 @@ append_lord_conversation() {
     flock -w 5 200 || exit 1
     CONV_PATH="$LORD_CONVERSATION" CONV_TIMESTAMP="$timestamp" \
     CONV_DIRECTION="$direction" CONV_AGENT="$agent" CONV_MESSAGE="$message" \
+    CONV_CHANNEL="$channel" \
     python3 - <<'PY'
 import os
 import tempfile
@@ -56,7 +59,7 @@ timestamp = os.environ["CONV_TIMESTAMP"]
 direction = os.environ["CONV_DIRECTION"]
 agent = os.environ["CONV_AGENT"]
 message = os.environ["CONV_MESSAGE"]
-MAX_ENTRIES = 200
+MAX_ENTRIES = 300
 
 try:
     with open(path) as f:
@@ -74,7 +77,7 @@ if not isinstance(entries, list):
 entry = {
     "timestamp": timestamp,
     "direction": direction,
-    "channel": "ntfy",
+    "channel": os.environ.get("CONV_CHANNEL", "ntfy"),
     "message": message,
 }
 if agent:

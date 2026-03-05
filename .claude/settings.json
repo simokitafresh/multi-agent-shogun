@@ -16,6 +16,10 @@
           {
             "type": "command",
             "command": "tmux set-option -p -t \"$TMUX_PANE\" @agent_state idle 2>/dev/null; tmux set-option -p -t \"$TMUX_PANE\" @last_active $(date +%s) 2>/dev/null"
+          },
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/log_terminal_response.sh"
           }
         ]
       }
@@ -26,6 +30,10 @@
           {
             "type": "command",
             "command": "tmux set-option -p -t \"$TMUX_PANE\" @agent_state active 2>/dev/null; tmux set-option -p -t \"$TMUX_PANE\" @last_active $(date +%s) 2>/dev/null"
+          },
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/log_terminal_input.sh"
           }
         ]
       }
