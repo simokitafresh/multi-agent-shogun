@@ -90,9 +90,10 @@ workflow:
     command: 'tmux set-option -p @current_task "cmd_XXX"'
     note: "将軍自身のペイン枠にcmd名を表示"
   - step: 3
-    action: inbox_write
+    action: cmd_delegate
     target: shogun:2.1
-    note: "Use scripts/inbox_write.sh — See CLAUDE.md for inbox protocol"
+    note: "Use scripts/cmd_delegate.sh — atomic delegation (inbox_write + delegated_at)"
+    example: 'bash scripts/cmd_delegate.sh cmd_XXX "cmd_XXXを書いた。配備せよ。"'
   - step: 3.5
     action: clear_own_current_task
     command: 'tmux set-option -p @current_task ""'

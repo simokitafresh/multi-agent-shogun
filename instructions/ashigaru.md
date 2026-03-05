@@ -370,6 +370,10 @@ lesson_candidate:
   project: null     # e.g., "dm-signal" — auto_draft_lesson.shがプロジェクト判定に使用
   title: null       # e.g., "dm_signal.dbは本番DBではない"
   detail: null      # e.g., "本番はPostgreSQL on Render。SQLiteへのINSERTは無意味"
+  if_then:          # 任意 — IF-THEN形式で教訓を構造化する場合に記載
+    if: null        # いつ適用するか（トリガー条件）e.g., "((PASS++))でカウンタをインクリメントする時"
+    then: null      # 何をするか（推奨アクション）e.g., "PASS=$((PASS+1))に変換する"
+    because: null   # なぜそうするか（根拠）e.g., "PASS=0の時に((0))がexit code 1→set -eで即終了"
   # NOTE: 忍者はlessons.yamlに直接書き込まない。
   #        found:trueの報告はauto_draft_lesson.shがdraft教訓として自動登録する。
   #        家老がconfirm/edit/deleteで査読し正式化する。

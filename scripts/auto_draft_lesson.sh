@@ -54,6 +54,11 @@ tags = lc.get("tags", "")
 if isinstance(tags, list):
     tags = ",".join(str(t) for t in tags)
 
+# Extract if_then if present in lesson_candidate
+if_then = lc.get("if_then", {})
+if not isinstance(if_then, dict):
+    if_then = {}
+
 print(json.dumps({
     "action": "register",
     "project": project,
@@ -61,7 +66,10 @@ print(json.dumps({
     "detail": detail,
     "source_cmd": source_cmd,
     "author": worker_id,
-    "tags": tags
+    "tags": tags,
+    "if_cond": if_then.get("if", ""),
+    "then_action": if_then.get("then", ""),
+    "because_reason": if_then.get("because", "")
 }))
 PYEOF
 )
@@ -82,6 +90,9 @@ DETAIL=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.s
 SOURCE_CMD=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('source_cmd','unknown'))")
 AUTHOR=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('author','unknown'))")
 TAGS=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tags',''))")
+IF_COND=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('if_cond',''))")
+THEN_ACTION=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('then_action',''))")
+BECAUSE_REASON=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('because_reason',''))")
 
 # Duplicate check: same title + source_cmd in SSOT (L006対応)
 PROJECT_PATH=$(python3 -c "
@@ -148,6 +159,16 @@ TAGS_FLAG=""
 if [ -n "$TAGS" ]; then
     TAGS_FLAG="--tags $TAGS"
 fi
-bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed $TAGS_FLAG
+IF_THEN_FLAGS=""
+if [ -n "$IF_COND" ]; then
+    IF_THEN_FLAGS="$IF_THEN_FLAGS --if $IF_COND"
+fi
+if [ -n "$THEN_ACTION" ]; then
+    IF_THEN_FLAGS="$IF_THEN_FLAGS --then $THEN_ACTION"
+fi
+if [ -n "$BECAUSE_REASON" ]; then
+    IF_THEN_FLAGS="$IF_THEN_FLAGS --because $BECAUSE_REASON"
+fi
+bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed $TAGS_FLAG $IF_THEN_FLAGS
 
 echo "[auto_draft] Confirmed lesson registered successfully"

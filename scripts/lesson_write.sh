@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"]
+# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--if "condition"] [--then "action"] [--because "reason"]
 # Tags: --tags "tag1,tag2" (explicit) or auto-inferred from title/detail. Default: universal
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
 # Example: bash scripts/lesson_write.sh infra "Gate改修" "ゲート検証" "cmd_100" "saizo" "" --tags "gate,process"
@@ -39,6 +39,18 @@ TAGS=""
 prev_arg=""
 for arg in "$@"; do
     if [ "$prev_arg" == "--tags" ]; then TAGS="$arg"; fi
+    prev_arg="$arg"
+done
+
+# Scan for --if/--then/--because flags (IF-THEN形式教訓, all optional)
+IF_COND=""
+THEN_ACTION=""
+BECAUSE_REASON=""
+prev_arg=""
+for arg in "$@"; do
+    if [ "$prev_arg" == "--if" ]; then IF_COND="$arg"; fi
+    if [ "$prev_arg" == "--then" ]; then THEN_ACTION="$arg"; fi
+    if [ "$prev_arg" == "--because" ]; then BECAUSE_REASON="$arg"; fi
     prev_arg="$arg"
 done
 
@@ -103,7 +115,7 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 10 200 || exit 1
 
         # Find max ID and append new entry
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR FORCE LESSON_ID_FILE STATUS TAGS SCRIPT_DIR
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR FORCE LESSON_ID_FILE STATUS TAGS SCRIPT_DIR IF_COND THEN_ACTION BECAUSE_REASON
         python3 << 'PYEOF'
 import re, os, sys, yaml
 from difflib import SequenceMatcher
@@ -209,6 +221,19 @@ entry += f'- **記録者**: {author}\n'
 if status == "draft":
     entry += f'- **status**: draft\n'
 entry += f'- **tags**: {tags_yaml}\n'
+
+# IF-THEN形式フィールド（指定されたもののみ追記）
+if_cond = os.environ.get("IF_COND", "")
+then_action = os.environ.get("THEN_ACTION", "")
+because_reason = os.environ.get("BECAUSE_REASON", "")
+if if_cond or then_action or because_reason:
+    if if_cond:
+        entry += f'- **if**: {if_cond}\n'
+    if then_action:
+        entry += f'- **then**: {then_action}\n'
+    if because_reason:
+        entry += f'- **because**: {because_reason}\n'
+
 entry += f'- {detail}\n'
 
 # Append to file

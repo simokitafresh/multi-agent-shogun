@@ -82,6 +82,9 @@ while i < len(lines):
     deprecated_by = None
     merged_from = None
     tags = None
+    if_cond = None
+    then_action = None
+    because_reason = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -191,13 +194,26 @@ while i < len(lines):
             m_ftags = re.match(r'- \*\*tags\*\*:\s*\[(.+)\]', sline)
             if m_ftags:
                 tags = [t.strip() for t in m_ftags.group(1).split(',')]
+        # Extract if/then/because fields (IF-THEN形式教訓)
+        if if_cond is None:
+            m_fif = re.match(r'- \*\*if\*\*:\s*(.+)', sline)
+            if m_fif:
+                if_cond = m_fif.group(1).strip()
+        if then_action is None:
+            m_fthen = re.match(r'- \*\*then\*\*:\s*(.+)', sline)
+            if m_fthen:
+                then_action = m_fthen.group(1).strip()
+        if because_reason is None:
+            m_fbecause = re.match(r'- \*\*because\*\*:\s*(.+)', sline)
+            if m_fbecause:
+                because_reason = m_fbecause.group(1).strip()
         # Get summary from **発生**/**問題**/**課題** fields or plain content
         if sline.startswith('- **発生**:') or sline.startswith('- **問題**:') or sline.startswith('- **課題**:'):
             text = re.sub(r'^- \*\*[^*]+\*\*:\s*', '', sline)
             summary_parts.append(text)
         elif sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|if|then|because|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -219,6 +235,16 @@ while i < len(lines):
         entry['merged_from'] = merged_from
     if tags:
         entry['tags'] = tags
+    # IF-THEN形式フィールド
+    if if_cond or then_action or because_reason:
+        if_then = {}
+        if if_cond:
+            if_then['if'] = if_cond
+        if then_action:
+            if_then['then'] = then_action
+        if because_reason:
+            if_then['because'] = because_reason
+        entry['if_then'] = if_then
 
     lessons.append(entry)
     i = j if j > i + 1 else i + 1

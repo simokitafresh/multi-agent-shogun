@@ -57,6 +57,7 @@ language:
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍知識ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_memory.sh` → ALERT時ntfy通知。詳細は instructions/generated/codex-shogun.md Step 2.5
+2.6. **cmd委任状態ゲート(将軍のみ)**: `bash scripts/gates/gate_cmd_state.sh` → pending cmdの委任状態判定。OK/WARN=再送不要、ALERT=委任確認。詳細は instructions/generated/codex-shogun.md Step 2.6
 3. **Read your instructions file**: shogun→`instructions/generated/codex-shogun.md`, karo→`instructions/generated/codex-karo.md`, ninja(忍者)→`instructions/generated/codex-ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
 
@@ -69,7 +70,7 @@ language:
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
 3.5. **Load project knowledge** (role-based):
-   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.yaml`の直近エントリを読む（存在時のみ）
+   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.yaml`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
    - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
@@ -95,10 +96,9 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
 Step 2: 将軍のみ MEMORY.md（自動ロード済み）を信頼。read_graphしない。家老・忍者はスキップ。
 Step 3: Read queue/tasks/{your_ninja_name}.yaml → assigned=Edit status to acknowledged then work, idle=wait
-Step 3.5: If task has "related_lessons:" with reviewed: false →
-          read each lesson in projects/{project}/lessons.yaml,
-          then Edit each entry: reviewed: false → reviewed: true
-          (entrance_gate blocks next deploy if unreviewed)
+Step 3.5: If task has "related_lessons:" →
+          read each entry's detail/summary（push型：deploy_task.shが詳細を埋込済み）
+          （reviewed儀式は廃止 — cmd_533）
 Step 4: If task has "project:" field:
           read projects/{project}.yaml (core knowledge)
           read projects/{project}/lessons.yaml (project lessons)
