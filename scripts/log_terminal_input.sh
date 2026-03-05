@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # log_terminal_input.sh — UserPromptSubmitフックで殿のターミナル入力を記録
-set -euo pipefail
+set -eu
 
 # agent_id判定（将軍ペインのみ）
 AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"

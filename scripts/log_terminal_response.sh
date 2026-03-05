@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # log_terminal_response.sh — Stopフックで将軍の応答を記録
-set -euo pipefail
+set -eu
 
 AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
 [ "$AGENT_ID" = "shogun" ] || exit 0
