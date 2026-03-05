@@ -193,12 +193,12 @@ archived_entries = expired_entries + overflow_entries
 archive_file = archive_dir / f"{now_utc.astimezone().date().isoformat()}.jsonl"
 if archived_entries:
     archive_dir.mkdir(parents=True, exist_ok=True)
-    with archive_file.open("a", encoding="utf-8") as f:
+    with archive_file.open("a", encoding="utf-8", errors="replace") as f:
         for entry in archived_entries:
             f.write(json.dumps(entry, ensure_ascii=False))
             f.write("\n")
 
-with jsonl_path.open("w", encoding="utf-8") as f:
+with jsonl_path.open("w", encoding="utf-8", errors="replace") as f:
     for entry in recent_entries:
         f.write(json.dumps(entry, ensure_ascii=False))
         f.write("\n")
@@ -224,7 +224,7 @@ index_body = f"""# Lord Conversation Index
 - `logs/lord_conversation_archive/*.jsonl`（24h超過・200件超過の退避先）
 """
 
-index_path.write_text(index_body, encoding="utf-8")
+index_path.write_text(index_body, encoding="utf-8", errors="replace")
 
 print(
     f"[conversation_retention] total={len(entries)} kept={len(recent_entries)} "

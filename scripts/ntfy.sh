@@ -31,7 +31,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
-LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.yaml"
+LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
 # ntfy_auth.sh読み込み
@@ -81,7 +81,7 @@ send_with_retry() {
 
   http_code=$(_ntfy_send "$payload")
   if [ "$http_code" = "200" ]; then
-    append_lord_conversation "$payload" "outbound" "${AGENT_ID:-unknown}" || true
+    append_lord_conversation "$payload" "outbound" "${AGENT_ID:-unknown}" "ntfy" || true
     return 0
   fi
 
@@ -96,7 +96,7 @@ send_with_retry() {
   sleep 3
   http_code=$(_ntfy_send "$payload")
   if [ "$http_code" = "200" ]; then
-    append_lord_conversation "$payload" "outbound" "${AGENT_ID:-unknown}" || true
+    append_lord_conversation "$payload" "outbound" "${AGENT_ID:-unknown}" "ntfy" || true
     echo "$(date '+%Y-%m-%d %H:%M:%S') RETRY_OK" >> "$LOGFILE"
     return 0
   fi

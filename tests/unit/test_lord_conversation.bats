@@ -1,20 +1,5 @@
 #!/usr/bin/env bats
-# test_lord_conversation.bats — lord_conversation.sh 単体テスト
-# cmd_546: ntfy.sh/ntfy_listener.shの重複ロジック集約
-#
-# テスト構成:
-#   T-LC-001: outbound追記（agentあり）
-#   T-LC-002: inbound追記（agentなし）
-#   T-LC-003: flock競合時のタイムアウト動作
-#   T-LC-004: 不正なdirection拒否
-#   T-LC-005: LORD_CONVERSATION未設定時エラー
-#   T-LC-006: 既存エントリへの追記（データ保全）
-#   T-LC-007: 壊れたYAML（非dict）の回復
-#   T-LC-008: 301件目で最古エントリが削除される (MAX_ENTRIES=300)
-#   T-LC-009: 300件以下では削除されない (MAX_ENTRIES=300)
-#   T-LC-010: channel引数ありでterminalが記録されること
-#   T-LC-011: channel引数なしでntfyがデフォルトになること
-#   T-LC-012: MAX_ENTRIES=300でローテーション動作
+# test_lord_conversation.bats — lord_conversation.sh JSONL 単体テスト
 
 setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -24,8 +9,8 @@ setup_file() {
 
 setup() {
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/lord_conv_test.XXXXXX")"
-    export LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.yaml"
-    export LORD_CONVERSATION_LOCK="$TEST_TMPDIR/lord_conversation.yaml.lock"
+    export LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.jsonl"
+    export LORD_CONVERSATION_LOCK="$TEST_TMPDIR/lord_conversation.jsonl.lock"
     source "$LORD_CONV_LIB"
 }
 
@@ -33,43 +18,50 @@ teardown() {
     rm -rf "$TEST_TMPDIR"
 }
 
-# --- T-LC-001: outbound追記（agentあり） ---
-
 @test "T-LC-001: append_lord_conversation adds outbound entry with agent" {
     run append_lord_conversation "test outbound msg" "outbound" "shogun"
     [ "$status" -eq 0 ]
-
     [ -f "$LORD_CONVERSATION" ]
-    local content
-    content=$(cat "$LORD_CONVERSATION")
 
-    echo "$content" | grep -q "direction: outbound"
-    echo "$content" | grep -q "agent: shogun"
-    echo "$content" | grep -q "message: test outbound msg"
-    echo "$content" | grep -q "channel: ntfy"
-    echo "$content" | grep -q "timestamp:"
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    obj = json.loads(f.read().strip().splitlines()[-1])
+print(obj.get("direction", ""))
+print(obj.get("agent", ""))
+print(obj.get("source", ""))
+print(obj.get("detail", ""))
+print(obj.get("summary", ""))
+print("ts" in obj)
+PY
+)
+    [ "${result[0]}" = "outbound" ]
+    [ "${result[1]}" = "shogun" ]
+    [ "${result[2]}" = "ntfy" ]
+    [ "${result[3]}" = "test outbound msg" ]
+    [ "${result[4]}" = "test outbound msg" ]
+    [ "${result[5]}" = "True" ]
 }
-
-# --- T-LC-002: inbound追記（agentなし） ---
 
 @test "T-LC-002: append_lord_conversation adds inbound entry without agent" {
     run append_lord_conversation "test inbound msg" "inbound"
     [ "$status" -eq 0 ]
 
-    [ -f "$LORD_CONVERSATION" ]
-    local content
-    content=$(cat "$LORD_CONVERSATION")
-
-    echo "$content" | grep -q "direction: inbound"
-    echo "$content" | grep -q "message: test inbound msg"
-    # agentフィールドが存在しないことを確認
-    ! echo "$content" | grep -q "agent:"
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    obj = json.loads(f.read().strip().splitlines()[-1])
+print(obj.get("direction", ""))
+print(obj.get("detail", ""))
+print("agent" in obj)
+PY
+)
+    [ "${result[0]}" = "inbound" ]
+    [ "${result[1]}" = "test inbound msg" ]
+    [ "${result[2]}" = "False" ]
 }
 
-# --- T-LC-003: flock競合時のタイムアウト動作 ---
-
 @test "T-LC-003: append_lord_conversation fails when lock is held" {
-    # ロックを先に取得（バックグラウンドで保持）
     (
         flock -x 200
         sleep 10
@@ -77,7 +69,6 @@ teardown() {
     local lock_pid=$!
     sleep 0.5
 
-    # flock -w 5 で5秒待ちタイムアウト → 失敗
     run timeout 8 bash -c "
         source '$LORD_CONV_LIB'
         export LORD_CONVERSATION='$LORD_CONVERSATION'
@@ -90,15 +81,11 @@ teardown() {
     wait "$lock_pid" 2>/dev/null || true
 }
 
-# --- T-LC-004: 不正なdirection拒否 ---
-
 @test "T-LC-004: append_lord_conversation rejects invalid direction" {
-    run append_lord_conversation "test msg" "invalid_direction"
+    run append_lord_conversation "test msg" "invalid-direction"
     [ "$status" -eq 1 ]
-    echo "$output" | grep -q "direction must be"
+    echo "$output" | grep -q "snake_case"
 }
-
-# --- T-LC-005: LORD_CONVERSATION未設定時エラー ---
 
 @test "T-LC-005: append_lord_conversation fails when LORD_CONVERSATION is unset" {
     unset LORD_CONVERSATION
@@ -107,197 +94,165 @@ teardown() {
     echo "$output" | grep -q "LORD_CONVERSATION"
 }
 
-# --- T-LC-006: 既存エントリへの追記（データ保全） ---
-
 @test "T-LC-006: append_lord_conversation preserves existing entries" {
-    # 先にエントリを1件追加
     append_lord_conversation "first msg" "outbound" "shogun"
-
-    # 2件目を追加
     append_lord_conversation "second msg" "inbound"
 
-    local content
-    content=$(cat "$LORD_CONVERSATION")
-
-    # 両方のエントリが存在すること
-    echo "$content" | grep -q "first msg"
-    echo "$content" | grep -q "second msg"
-
-    # entriesリストに2件あること
-    local count
-    count=$(python3 -c "
-import yaml
-with open('$LORD_CONVERSATION') as f:
-    data = yaml.safe_load(f)
-print(len(data.get('entries', [])))
-")
-    [ "$count" -eq 2 ]
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    rows = [json.loads(line) for line in f if line.strip()]
+print(len(rows))
+print(rows[0].get("detail", ""))
+print(rows[1].get("detail", ""))
+PY
+)
+    [ "${result[0]}" -eq 2 ]
+    [ "${result[1]}" = "first msg" ]
+    [ "${result[2]}" = "second msg" ]
 }
 
-# --- T-LC-007: 壊れたYAML（非dict）の回復 ---
-
-@test "T-LC-007: append_lord_conversation recovers from corrupted YAML" {
-    # 壊れたYAML（文字列のみ）を書き込み
-    echo "this is not valid yaml dict" > "$LORD_CONVERSATION"
-
+@test "T-LC-007: append_lord_conversation recovers from corrupted JSONL line" {
+    printf 'not-json-line\n' > "$LORD_CONVERSATION"
     run append_lord_conversation "recovery msg" "outbound" "karo"
     [ "$status" -eq 0 ]
 
-    local content
-    content=$(cat "$LORD_CONVERSATION")
-    echo "$content" | grep -q "recovery msg"
-    echo "$content" | grep -q "entries:"
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    rows = [json.loads(line) for line in f if line.strip()]
+print(len(rows))
+print(rows[-1].get("detail", ""))
+print(rows[0].get("direction", ""))
+PY
+)
+    [ "${result[0]}" -eq 2 ]
+    [ "${result[1]}" = "recovery msg" ]
+    [ "${result[2]}" = "invalid" ]
 }
 
-# --- T-LC-008: 301件目で最古エントリが削除される (MAX_ENTRIES=300) ---
-
-@test "T-LC-008: append_lord_conversation trims oldest entry when adding 301st" {
+@test "T-LC-008: append_lord_conversation trims oldest entry when adding 501st" {
     python3 - <<PY
-import yaml
-
-entries = [
-    {
-        "timestamp": f"2026-03-01T{i // 3600:02d}:{(i % 3600) // 60:02d}:{i % 60:02d}+09:00",
-        "direction": "outbound",
-        "channel": "ntfy",
-        "message": f"seed-{i:03d}",
-    }
-    for i in range(1, 301)
-]
-with open("$LORD_CONVERSATION", "w") as f:
-    yaml.dump({"entries": entries}, f, default_flow_style=False, allow_unicode=True, indent=2)
+import json
+with open("$LORD_CONVERSATION", "w", encoding="utf-8") as f:
+    for i in range(1, 501):
+        row = {
+            "ts": f"2026-03-01T00:00:{i%60:02d}+09:00",
+            "source": "ntfy",
+            "direction": "outbound",
+            "summary": f"seed-{i:03d}",
+            "detail": f"seed-{i:03d}",
+        }
+        f.write(json.dumps(row, ensure_ascii=False) + "\\n")
 PY
 
-    run append_lord_conversation "seed-301" "outbound" "karo"
+    run append_lord_conversation "seed-501" "outbound" "karo"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(python3 - <<PY
-import yaml
-
-with open("$LORD_CONVERSATION") as f:
-    data = yaml.safe_load(f) or {}
-entries = data.get("entries", [])
-messages = [e.get("message", "") for e in entries]
-print(len(entries))
-print(messages[0] if messages else "")
-print("seed-001" in messages)
-print("seed-301" in messages)
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    rows = [json.loads(line) for line in f if line.strip()]
+print(len(rows))
+print(rows[0].get("detail", ""))
+print(rows[-1].get("detail", ""))
 PY
 )
-    [ "${result[0]}" -eq 300 ]
+    [ "${result[0]}" -eq 500 ]
     [ "${result[1]}" = "seed-002" ]
-    [ "${result[2]}" = "False" ]
-    [ "${result[3]}" = "True" ]
+    [ "${result[2]}" = "seed-501" ]
 }
 
-# --- T-LC-009: 300件以下では削除されない (MAX_ENTRIES=300) ---
-
-@test "T-LC-009: append_lord_conversation keeps all entries when total is 300" {
+@test "T-LC-009: append_lord_conversation keeps all entries when total is 500" {
     python3 - <<PY
-import yaml
-
-entries = [
-    {
-        "timestamp": f"2026-03-01T{i // 3600:02d}:{(i % 3600) // 60:02d}:{i % 60:02d}+09:00",
-        "direction": "outbound",
-        "channel": "ntfy",
-        "message": f"seed-{i:03d}",
-    }
-    for i in range(1, 300)
-]
-with open("$LORD_CONVERSATION", "w") as f:
-    yaml.dump({"entries": entries}, f, default_flow_style=False, allow_unicode=True, indent=2)
+import json
+with open("$LORD_CONVERSATION", "w", encoding="utf-8") as f:
+    for i in range(1, 500):
+        row = {
+            "ts": f"2026-03-01T00:00:{i%60:02d}+09:00",
+            "source": "ntfy",
+            "direction": "outbound",
+            "summary": f"seed-{i:03d}",
+            "detail": f"seed-{i:03d}",
+        }
+        f.write(json.dumps(row, ensure_ascii=False) + "\\n")
 PY
 
-    run append_lord_conversation "seed-300" "outbound" "karo"
+    run append_lord_conversation "seed-500" "outbound" "karo"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(python3 - <<PY
-import yaml
-
-with open("$LORD_CONVERSATION") as f:
-    data = yaml.safe_load(f) or {}
-entries = data.get("entries", [])
-messages = [e.get("message", "") for e in entries]
-print(len(entries))
-print(messages[0] if messages else "")
-print("seed-001" in messages)
-print("seed-300" in messages)
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    rows = [json.loads(line) for line in f if line.strip()]
+print(len(rows))
+print(rows[0].get("detail", ""))
+print(rows[-1].get("detail", ""))
 PY
 )
-    [ "${result[0]}" -eq 300 ]
+    [ "${result[0]}" -eq 500 ]
     [ "${result[1]}" = "seed-001" ]
-    [ "${result[2]}" = "True" ]
-    [ "${result[3]}" = "True" ]
+    [ "${result[2]}" = "seed-500" ]
 }
 
-# --- T-LC-010: channel引数ありでterminalが記録されること ---
-
-@test "T-LC-010: append_lord_conversation records terminal channel when specified" {
-    run append_lord_conversation "terminal msg" "inbound" "" "terminal"
+@test "T-LC-010: append_lord_conversation records explicit source" {
+    run append_lord_conversation "terminal msg" "response" "shogun" "terminal"
     [ "$status" -eq 0 ]
 
-    [ -f "$LORD_CONVERSATION" ]
-    local content
-    content=$(cat "$LORD_CONVERSATION")
-
-    echo "$content" | grep -q "channel: terminal"
-    echo "$content" | grep -q "message: terminal msg"
-    echo "$content" | grep -q "direction: inbound"
-    # agentが空文字列の場合、agentフィールドは含まれない
-    ! echo "$content" | grep -q "agent:"
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    obj = json.loads(f.read().strip().splitlines()[-1])
+print(obj.get("source", ""))
+print(obj.get("direction", ""))
+print(obj.get("detail", ""))
+PY
+)
+    [ "${result[0]}" = "terminal" ]
+    [ "${result[1]}" = "response" ]
+    [ "${result[2]}" = "terminal msg" ]
 }
 
-# --- T-LC-011: channel引数なしでntfyがデフォルトになること ---
-
-@test "T-LC-011: append_lord_conversation defaults channel to ntfy when omitted" {
+@test "T-LC-011: append_lord_conversation defaults source to ntfy when omitted" {
     run append_lord_conversation "ntfy msg" "outbound" "shogun"
     [ "$status" -eq 0 ]
 
-    local content
-    content=$(cat "$LORD_CONVERSATION")
-
-    echo "$content" | grep -q "channel: ntfy"
-    echo "$content" | grep -q "message: ntfy msg"
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    obj = json.loads(f.read().strip().splitlines()[-1])
+print(obj.get("source", ""))
+print(obj.get("detail", ""))
+PY
+)
+    [ "${result[0]}" = "ntfy" ]
+    [ "${result[1]}" = "ntfy msg" ]
 }
 
-# --- T-LC-012: MAX_ENTRIES=300でローテーション動作 ---
+@test "T-LC-012: append_lord_conversation migrates legacy YAML when JSONL is empty" {
+    cat > "$TEST_TMPDIR/lord_conversation.yaml" <<'YAML'
+entries:
+  - timestamp: "2026-03-05T20:00:00+09:00"
+    direction: outbound
+    channel: terminal
+    agent: shogun
+    message: legacy message
+YAML
+    : > "$LORD_CONVERSATION"
 
-@test "T-LC-012: append_lord_conversation rotates at MAX_ENTRIES=300 boundary" {
-    python3 - <<PY
-import yaml
-
-entries = [
-    {
-        "timestamp": f"2026-03-01T{i // 3600:02d}:{(i % 3600) // 60:02d}:{i % 60:02d}+09:00",
-        "direction": "outbound",
-        "channel": "ntfy",
-        "message": f"seed-{i:03d}",
-    }
-    for i in range(1, 301)
-]
-with open("$LORD_CONVERSATION", "w") as f:
-    yaml.dump({"entries": entries}, f, default_flow_style=False, allow_unicode=True, indent=2)
-PY
-
-    run append_lord_conversation "new-entry" "outbound" "karo"
+    run append_lord_conversation "new message" "response" "shogun" "terminal"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(python3 - <<PY
-import yaml
-
-with open("$LORD_CONVERSATION") as f:
-    data = yaml.safe_load(f) or {}
-entries = data.get("entries", [])
-messages = [e.get("message", "") for e in entries]
-print(len(entries))
-print("seed-001" in messages)
-print("new-entry" in messages)
-print(messages[-1] if messages else "")
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    rows = [json.loads(line) for line in f if line.strip()]
+print(len(rows))
+print(rows[0].get("detail", ""))
+print(rows[1].get("detail", ""))
 PY
 )
-    [ "${result[0]}" -eq 300 ]
-    [ "${result[1]}" = "False" ]
-    [ "${result[2]}" = "True" ]
-    [ "${result[3]}" = "new-entry" ]
+    [ "${result[0]}" -eq 2 ]
+    [ "${result[1]}" = "legacy message" ]
+    [ "${result[2]}" = "new message" ]
 }

@@ -18,16 +18,10 @@ SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
 INBOX="$SCRIPT_DIR/queue/ntfy_inbox.yaml"
-LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.yaml"
-LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
 # ntfy_auth.sh読み込み
 # shellcheck source=../lib/ntfy_auth.sh
 source "$SCRIPT_DIR/lib/ntfy_auth.sh"
-
-# lord_conversation.sh読み込み (cmd_546: 重複ロジック集約)
-# shellcheck source=../lib/lord_conversation.sh
-source "$SCRIPT_DIR/lib/lord_conversation.sh"
 
 if [ -z "$TOPIC" ]; then
     echo "[ntfy_listener] ntfy_topic not configured in settings.yaml" >&2
@@ -162,8 +156,6 @@ while true; do
         case "$MSG" in
             *'【MCAS】'*) echo "[$(date)] Filtered MCAS alert: ${MSG:0:80}" >&2; continue ;;
         esac
-
-        append_lord_conversation "$MSG" "inbound" || true
 
         TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
 
