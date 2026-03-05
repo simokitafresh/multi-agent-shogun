@@ -7,6 +7,11 @@
 # ═══════════════════════════════════════════════════════════════
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Single-instance guard (flock) — 多重起動による二重記録を防止
+exec 200>/tmp/ntfy_listener.lock
+flock -n 200 || { echo "[$(date)] ntfy_listener already running, exiting" >&2; exit 0; }
+
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 
 # tmux排他制御ライブラリ（将軍pane直接注入用）
@@ -132,6 +137,13 @@ while true; do
 
         [ -z "$MSG" ] && [ "$HAS_IMAGE_ATTACHMENT" -eq 0 ] && continue
 
+        # MSG_ID dedup check — 同一IDが既に記録済みならスキップ（二重起動・再接続対策）
+        MSG_ID=$(echo "$line" | parse_json id)
+        if [ -n "$MSG_ID" ] && grep -q "id: \"$MSG_ID\"" "$INBOX" 2>/dev/null; then
+            echo "[$(date)] Duplicate MSG_ID: $MSG_ID, skipping" >&2
+            continue
+        fi
+
         if [ "$HAS_IMAGE_ATTACHMENT" -eq 1 ]; then
             SAVED_IMAGE=$(download_attachment_image "$ATTACHMENT_URL")
             if [ $? -eq 0 ] && [ -n "$SAVED_IMAGE" ]; then
@@ -153,7 +165,6 @@ while true; do
 
         append_lord_conversation "$MSG" "inbound" || true
 
-        MSG_ID=$(echo "$line" | parse_json id)
         TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
 
         echo "[$(date)] Received: $MSG" >&2
