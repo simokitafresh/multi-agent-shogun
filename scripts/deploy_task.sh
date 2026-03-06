@@ -292,6 +292,7 @@ generate_report_template() {
     local project="$4"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
     local report_file=""
+    local report_rel_path=""
 
     # report_filenameフィールドを優先参照（cmd_412: 命名ミスマッチ根治）
     local report_filename=""
@@ -305,12 +306,15 @@ generate_report_template() {
         # 後方互換: parent_cmdが未設定/不正なら旧形式にフォールバック
         report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
     fi
+    report_rel_path="queue/reports/$(basename "$report_file")"
 
     mkdir -p "$SCRIPT_DIR/queue/reports"
 
     # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
     if [ -f "$report_file" ]; then
         log "report_template: already exists, skipping (${report_file})"
+        yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
+        log "report_path: set (${report_rel_path})"
         return 0
     fi
 
@@ -330,6 +334,7 @@ generate_report_template() {
     cat > "$report_file" <<EOF
 # !! トップレベル構造を維持せよ。report: で包むな !!
 # !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
 worker_id: ${worker_id}
 task_id: ${resolved_task_id}
 parent_cmd: ${resolved_parent_cmd}
@@ -345,6 +350,7 @@ purpose_validation:
   purpose_gap: ""
 files_modified: []
 lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
   found: false
   title: ""
   detail: ""
@@ -356,6 +362,8 @@ decision_candidate:
   found: false
 EOF
 
+    yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
+    log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
 }
 

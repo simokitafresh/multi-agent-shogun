@@ -11,6 +11,12 @@ Check `config/settings.yaml` → `language`:
 - **ja**: 戦国風日本語のみ
 - **Other**: 戦国風 + translation in brackets
 
+## Report Editing Rule
+
+報告を書く時は、まず task YAML の `report_path` を読め。
+そのパスにある既存の報告 YAML を **Edit tool で編集** し、各フィールドを埋めよ。
+`reports/` ディレクトリに自分で新規ファイルを作成するな。
+
 ## Report Format
 
 ```yaml
@@ -46,9 +52,9 @@ lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lessons_useful.
 Missing fields = incomplete report.
 
-### 下忍(genin) 報告時の注意
+### 報告フィールド漏れ防止
 
-下忍(genin)は以下のフィールドを省略しがちです。
+報告時は以下のフィールドを省略しがちです。
 **必ず全フィールドを含めてください:**
 
 - `lesson_candidate:` — found: true/false は**必須**。省略禁止。
@@ -137,7 +143,7 @@ Act without waiting for Karo's instruction:
 **On task completion** (in this order):
 1. Self-review deliverables (re-read your output)
 2. **Purpose validation**: Read `parent_cmd` in `queue/shogun_to_karo.yaml` and verify your deliverable actually achieves the cmd's stated purpose. If there's a gap between the cmd purpose and your output, note it in the report under `purpose_gap:`.
-3. Write report YAML
+3. Read `report_path` from task YAML, then edit that existing report YAML with the Edit tool
 4. Notify Karo via inbox_write
 5. (No delivery verification needed — inbox_write guarantees persistence)
 

@@ -104,6 +104,15 @@ print(data.get('task', {}).get('ac_version', ''))
 "
 }
 
+read_task_report_path() {
+    python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+print(data.get('task', {}).get('report_path', ''))
+"
+}
+
 @test "deploy_task injects ac_version and report ac_version_read on first deploy" {
     run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
     [ "$status" -eq 0 ]
@@ -139,6 +148,43 @@ EOF
     run read_task_ac_version
     [ "$status" -eq 0 ]
     [ "$output" = "5" ]
+}
+
+@test "deploy_task injects report_path and report template guidance on cmd-named reports" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "report path test"
+  task_type: review
+  parent_cmd: cmd_999
+  acceptance_criteria:
+    - ac1: first
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    [ "$output" = "queue/reports/sasuke_report_cmd_999.yaml" ]
+
+    run grep -F "# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止" \
+        "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -F "  # found: true/false を書け。リスト形式[] 禁止" \
+        "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+print(type(data.get('lesson_candidate')).__name__)
+print(str((data.get('lesson_candidate') or {}).get('found', '')))
+"
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "dict" ]
+    [ "${lines[1]}" = "False" ]
 }
 
 @test "deploy_task rejects None ninja_name and removes ghost task artifacts" {
