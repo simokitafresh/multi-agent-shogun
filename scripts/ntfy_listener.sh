@@ -7,10 +7,13 @@
 # ═══════════════════════════════════════════════════════════════
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+NTFY_LISTENER_LIB_ONLY="${NTFY_LISTENER_LIB_ONLY:-0}"
 
 # Single-instance guard (flock) — 多重起動による二重記録を防止
-exec 200>/tmp/ntfy_listener.lock
-flock -n 200 || { echo "[$(date)] ntfy_listener already running, exiting" >&2; exit 0; }
+if [ "$NTFY_LISTENER_LIB_ONLY" != "1" ]; then
+    exec 200>/tmp/ntfy_listener.lock
+    flock -n 200 || { echo "[$(date)] ntfy_listener already running, exiting" >&2; exit 0; }
+fi
 
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 
@@ -64,9 +67,11 @@ mkdir -p "$SCREENSHOT_DIR" 2>/dev/null || \
     echo "[$(date)] WARNING: Failed to create screenshot dir: $SCREENSHOT_DIR" >&2
 
 STREAM_WATCHDOG_SECS=1800
+STREAM_READ_WATCHDOG_SECS=120
 CURL_MAX_TIME_SECS=3600
 CURL_KEEPALIVE_SECS=30
 READ_POLL_SECS=5
+ATTACHMENT_DOWNLOAD_MAX_TIME_SECS=30
 
 # JSON field extractor (python3 — jq not available)
 parse_json() {
@@ -171,7 +176,8 @@ download_attachment_image() {
     outfile="$SCREENSHOT_DIR/ntfy_${ts}.png"
     latest_file="$SCREENSHOT_DIR/latest.png"
 
-    if curl -sS --fail "${AUTH_ARGS[@]}" -o "$outfile" "$attachment_url"; then
+    if curl -sS --fail --max-time "$ATTACHMENT_DOWNLOAD_MAX_TIME_SECS" \
+        "${AUTH_ARGS[@]}" -o "$outfile" "$attachment_url"; then
         if ! cp "$outfile" "$latest_file" 2>/dev/null; then
             echo "[$(date)] WARNING: saved image but failed to update latest.png" >&2
         fi
@@ -181,6 +187,30 @@ download_attachment_image() {
 
     rm -f "$outfile"
     echo "[$(date)] ERROR: failed to download ntfy attachment from $attachment_url" >&2
+    return 1
+}
+
+mark_message_activity() {
+    LAST_MESSAGE_ACTIVITY=$(date +%s)
+}
+
+should_restart_stream() {
+    local now_epoch="$1"
+    local last_stream_activity="$2"
+    local last_message_activity="$3"
+
+    if [ $((now_epoch - last_stream_activity)) -ge "$STREAM_READ_WATCHDOG_SECS" ]; then
+        RECONNECT_REASON="Stream read timeout"
+        WATCHDOG_LOG_MSG="[$(date)] Watchdog triggered: no stream bytes for ${STREAM_READ_WATCHDOG_SECS}s, restarting curl"
+        return 0
+    fi
+
+    if [ $((now_epoch - last_message_activity)) -ge "$STREAM_WATCHDOG_SECS" ]; then
+        RECONNECT_REASON="Message activity timeout"
+        WATCHDOG_LOG_MSG="[$(date)] Watchdog triggered: no inbound messages for ${STREAM_WATCHDOG_SECS}s, restarting curl"
+        return 0
+    fi
+
     return 1
 }
 
@@ -219,6 +249,7 @@ process_stream_line() {
         if [ $? -eq 0 ] && [ -n "$SAVED_IMAGE" ]; then
             SAVED_IMAGE_REL=$(to_repo_relative_path "$SAVED_IMAGE")
             echo "[$(date)] Saved image attachment: $SAVED_IMAGE_REL" >&2
+            mark_message_activity
             bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
                 "スクショ受信: $SAVED_IMAGE (latest: $SCREENSHOT_DIR/latest.png)" \
                 screenshot_received ntfy_listener
@@ -247,6 +278,7 @@ process_stream_line() {
         echo "[$(date)] ERROR: failed to persist ntfy message to $INBOX" >&2
         return 0
     fi
+    mark_message_activity
 
     # === Primary path: Direct injection to shogun pane ===
     SHOGUN_PANE=$(tmux display-message -t shogun:main -p '#{pane_id}' 2>/dev/null || echo "")
@@ -298,6 +330,10 @@ process_stream_line() {
         ntfy_received ntfy_listener
 }
 
+if [ "$NTFY_LISTENER_LIB_ONLY" = "1" ]; then
+    return 0 2>/dev/null || exit 0
+fi
+
 echo "[$(date)] ntfy listener started — topic: $TOPIC (auth: ${NTFY_TOKEN:+token}${NTFY_USER:+basic}${NTFY_TOKEN:-${NTFY_USER:-none}})" >&2
 
 while true; do
@@ -311,7 +347,9 @@ while true; do
 
     STREAM_PID=$NTFY_STREAM_PID
     LAST_STREAM_ACTIVITY=$(date +%s)
+    LAST_MESSAGE_ACTIVITY=$LAST_STREAM_ACTIVITY
     RECONNECT_REASON="Connection lost"
+    WATCHDOG_LOG_MSG=""
 
     while true; do
         if IFS= read -r -t "$READ_POLL_SECS" -u "${NTFY_STREAM[0]}" line; then
@@ -321,11 +359,10 @@ while true; do
         fi
 
         NOW_EPOCH=$(date +%s)
-        if [ $((NOW_EPOCH - LAST_STREAM_ACTIVITY)) -ge "$STREAM_WATCHDOG_SECS" ]; then
-            echo "[$(date)] Watchdog triggered: no stream activity for ${STREAM_WATCHDOG_SECS}s, restarting curl" >&2
+        if should_restart_stream "$NOW_EPOCH" "$LAST_STREAM_ACTIVITY" "$LAST_MESSAGE_ACTIVITY"; then
+            echo "$WATCHDOG_LOG_MSG" >&2
             kill "$STREAM_PID" 2>/dev/null || true
             wait "$STREAM_PID" 2>/dev/null || true
-            RECONNECT_REASON="Connection timeout"
             break
         fi
 
