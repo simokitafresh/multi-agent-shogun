@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-02-24 lesson_sync L086-L135全合流 -->
-<!-- last_synced_lesson: L135 -->
+<!-- last_updated: 2026-03-05 lesson-sort L168-L186振り分け完了 -->
+<!-- last_synced_lesson: L192 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -43,6 +43,23 @@
 | 19 | 月次リターン傾き分析 | research |
 | 20 | ルックアヘッドバイアス検証 | research |
 | 21 | 過剰最適化検証 | research |
+| 22 | 弱体化確率推定 | (本ファイル) |
+| 23 | Deterioration Monitor本番稼働 | (本ファイル) |
+| 24 | G1/G2/P色丸ラベル | (本ファイル) |
+
+## 弱体化確率推定(P_det)
+
+P(deterioration)=Φ(-Z)方式（3窓: 6/12/24ヶ月、6ラベル、HAC/winsorize）を採用。cmd_539でエンジン実装+7PFパイロット検証を完了し、cmd_540でローリングlong基準(K=120ヶ月)の検知力天井問題を分析してドリフトガード合議を完了。
+詳細設計・裁定ログ: `MCP:deterioration_probability_design`（cmd_539, cmd_540）
+
+## §23 Deterioration Monitor 本番稼働
+
+Render BE + cronで本番運用中。P(det)=Φ(-Z)方式、3窓(6/12/24ヶ月)、6段階ラベル(Stable/Watch/Caution/Warning/Danger/Critical)。フォルダフィルタ+ページナビ対応済。
+設計詳細: `MCP:deterioration_probability_design` | エンジン実装: cmd_539 | ドリフトガード: cmd_540
+
+## §24 G1/G2/P色丸ラベル(cmd_613)
+
+Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色丸(緑/黄/オレンジ + 灰=INSUFFICIENT_DATA)に変換。直感的視認性を確保。
 
 ## 補助ポインタ
 
@@ -54,8 +71,10 @@
 
 ## 教訓索引（自動追記）
 
-- L129: [自動生成] 注入教訓の確認を怠った: cmd_356（cmd_356）
-- L130: git commitはステージ全体を含む — 自分のgit rmだけでなく事前ステージ済みファイルも巻き込む。commit前にgit diff --cachedで全ステージ内容を確認すべき（cmd_427）
-- L131: gitignoreパターンとgit復元対象のクロスチェック必須（cmd_430）
-- L134: L025（参照先scripts消滅(大掃除で削除済み)）
-- L135: L010（参照先scripts消滅(大掃除で削除済み)）
+- （現在0件。L149-L167は振り分け済。L168-L186は振り分け済 → core§2/§8/§10, ops§9/§12/§14, frontend§4/§5, research影響算定）
+- L187: ジェネリックソートフックのnull処理は方向別(multiplier)との合成結果まで検証する（cmd_569）
+- L188: window.location遷移を採用する構成ではContext単独の状態共有は永続化要件を満たさない（cmd_570）
+- L189: ページ順序定義をsidebar/mobile-menu/page-navigationに重複保持すると導線不整合が発生しやすい（cmd_564）
+- L190: 集計要件でrole分離が必要ならイベント記録時点で識別子を保存しないと後段SQLでは復元不能（cmd_574）
+- L191: TypeScript列追加時は tsc --noEmit でユニオンキー添字安全性を検証すべき。runtime安全でもunion keyを広げた row.metrics[key] は型で破綻する(cmd_613 TS7053)（cmd_613）
+- L192: レビューでは UI 挙動確認に加えて型系ユニオン拡張の添字安全性まで検査すべき（cmd_613）

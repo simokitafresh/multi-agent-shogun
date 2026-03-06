@@ -35,6 +35,10 @@
 要点: experiments.db=価格ground truth(daily_prices 414K行) | dm_signal.db=本番ミラー(PF設定用) | 本番PostgreSQL=SSOT
 UUID不一致: DM7+以外は2DB間でUUID異なる（§3参照）
 DLコマンド: `download_all_prices.py grid-search`(価格) | `download_prod_data.py monthly-returns`(月次)。`prices`は422エラー(cmd_042)
+- L156: pending判定のas_of基準は2系統存在する: DB最新日(signals) vs date.today()(monthly-trade)（cmd_524）
+- L171: バッチジョブのUPSERTはdb.merge()パターンが最も簡潔（cmd_550）
+- L172: 新規テーブル導入時はインデックス作成をif/else外に置くと自己修復性が上がる（cmd_550）
+- L173: パイロット→本番移植ではDB層分離がパリティ検証を容易にする（cmd_550）
 
 ## 3. 四神（しじん）構成
 
@@ -114,6 +118,9 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 | 偵察中 | RelativeMomentumFilter(cmd_250) | 新忍法候補 |
 | 未採用 | ComponentPrice / CashTerminal / KalmanMeta | インフラ/スケルトン |
 
+- L151: OPEN/CLOSE切替導入時はbenchmark側の*_open適用も同時チェック必須（cmd_507）
+- L154: OPEN/CLOSE切替修正ではbenchmark側の*_open参照を全ビューで同時点検する（cmd_522）
+
 ### tiebreakルール（cmd_217, L086/L092）
 
 | 方式 | 対象忍法 | 動作 |
@@ -166,11 +173,15 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success,data,error,message}`
 主要: `/api/signals` `/api/portfolios/get|save` `/admin/recalculate-sync` `/healthz`
 詳細(全EP・レスポンス構造) → `docs/research/core-api-endpoints.md` | yaml → `projects/dm-signal.yaml` (h) api
+- L153: signals APIのpending判定はrebalance_trigger共通化しないとFoF/非月次で表示不整合が起きる（cmd_515）
+- L174: 最新+前月比較APIは『前月年月サブクエリ→同テーブル再JOIN』でN+1を回避できる（cmd_550）
+- L176: 一覧トレンド判定は前月ラベルだけでなく前月p12をAPIで同時返却しないとB4を満たせない（cmd_552）
 
 ## 10. ディレクトリ構成
 
 詳細ツリー → `docs/research/core-directory-structure.md`
 主要: backend/app/(api|services/pipeline|jobs|db|schemas) | frontend/lib/ | scripts/analysis/grid_search/ | analysis_runs/experiments.db
+- L168: 未使用判定はimport探索と呼び出し探索を分離すると誤検知が減る（cmd_548）
 
 ## 11. Lookback標準グリッド（恒久ルール）
 
@@ -291,3 +302,24 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L018 | RULE10: シグナル判定はClose、リターン記録はOpenを厳守 | — |
 | L002 | ブロック名は`BlockType` enum値で統一する | — |
 | L001 | `pipeline_config`テンプレートのパラメータ名はコードと1:1一致必須 | — |
+
+## 20. Deterioration色丸(ColorDot)マッピング
+
+コンポーネント: `DeteriorationDots` | 定義: `frontend/lib/constants/deterioration-colors.ts`
+
+| 色 | Hex | Label対応 |
+|----|-----|----------|
+| 緑(good) | #22c55e | GOOD, EARLY_WARNING |
+| 黄(caution) | #eab308 | WATCH, MIXED |
+| オレンジ(warning) | #f97316 | DETERIORATING |
+| 灰(neutral) | #9ca3af | INSUFFICIENT_DATA |
+
+### 指標別→Label変換ロジック
+
+| 指標 | 関数 | 閾値 |
+|------|------|------|
+| G1(μ_long slope) | `g1ValueToColorLabel` | < -0.0002 → DETERIORATING, < 0 → WATCH, ≥ 0 → GOOD |
+| G2(p_erosion) | `g2ValueToColorLabel` | ≥ 0.8 → DETERIORATING, ≥ 0.7 → WATCH, < 0.7 → GOOD |
+| P(det) | `pValueToColorLabel` | G2と同一ロジック |
+
+null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` で統一。
