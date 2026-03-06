@@ -230,7 +230,7 @@ archive_cmds() {
         (
             flock -w 10 200 || { echo "[archive] WARN: flock timeout on QUEUE_FILE"; return 1; }
             cat "$tmp_done" >> "$ARCHIVE_CMD"
-            mv "$tmp_active" "$QUEUE_FILE"
+            mv "$tmp_active" "$QUEUE_FILE" || { echo "[archive] FATAL: mv failed: $tmp_active → $QUEUE_FILE" >&2; exit 1; }
         ) 200>"$QUEUE_FILE.lock"
         echo "[archive] cmds: archived=$archived kept=$kept"
     else
@@ -259,7 +259,7 @@ archive_reports() {
     for f in "${all_files[@]}"; do
         [ -f "$f" ] || continue
         case "$f" in *.yaml) continue ;; esac
-        mv "$f" "$ARCHIVE_REPORT_DIR/"
+        mv "$f" "$ARCHIVE_REPORT_DIR/" || { echo "[archive] WARN: mv failed: $f" >&2; continue; }
         junk=$((junk + 1))
     done
 
@@ -349,7 +349,7 @@ archive_reports() {
             dest_path="$ARCHIVE_REPORT_DIR/${target_name%.yaml}_$(date '+%H%M%S').yaml"
         fi
 
-        mv "$report_file" "$dest_path"
+        mv "$report_file" "$dest_path" || { echo "[archive] WARN: mv failed: $report_file → $dest_path" >&2; continue; }
         archived=$((archived + 1))
     done
 
@@ -415,7 +415,7 @@ archive_karo_section() {
             }
             !(NR in del) { print }
         ' "$DASHBOARD" > "/tmp/dash_karo_trim_$$.md"
-        mv "/tmp/dash_karo_trim_$$.md" "$DASHBOARD"
+        mv "/tmp/dash_karo_trim_$$.md" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: karo trim → $DASHBOARD" >&2; exit 1; }
     ) 200>"$DASHBOARD.lock"
 
     echo "[archive] karo_updates: archived=$archived_count kept=3"
@@ -453,7 +453,7 @@ archive_dashboard() {
     (
         flock -w 10 200 || { echo "[archive] WARN: flock timeout on DASHBOARD"; return 1; }
         sed "${archive_first_line},${last_data_line}d" "$DASHBOARD" > "/tmp/dash_trim_$$.md"
-        mv "/tmp/dash_trim_$$.md" "$DASHBOARD"
+        mv "/tmp/dash_trim_$$.md" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: dash trim → $DASHBOARD" >&2; exit 1; }
     ) 200>"$DASHBOARD.lock"
 
     echo "[archive] dashboard: archived=$archived_count kept=$KEEP_RESULTS"

@@ -93,16 +93,17 @@ except Exception as e:
     print(json.dumps({'count': 0, 'specials': [], 'has_specials': False}))
 " 2>/dev/null)
 
-    local has_specials
-    has_specials=$(echo "$info" | python3 -c "import sys,json; print(json.load(sys.stdin).get('has_specials',False))" 2>/dev/null)
+    echo "$info"
+}
 
-    # Phase 2: If specials found, mark them read with flock + atomic write
-    if [ "$has_specials" = "True" ]; then
-        (
-            flock -w 5 200 || { echo "$info"; return; }
+# ─── Mark special messages as read (flock + atomic write) ───
+# Called AFTER send_cli_command succeeds, to prevent message loss on send failure.
+mark_specials_read() {
+    (
+        flock -w 5 200 || { echo "[mark_specials_read] WARN: flock timeout" >&2; return 1; }
 
-            python3 -c "
-import yaml, sys, json, os, tempfile
+        python3 -c "
+import yaml, sys, os, tempfile
 try:
     with open('$INBOX') as f:
         data = yaml.safe_load(f)
@@ -124,13 +125,10 @@ try:
             os.unlink(tmp_path)
             raise
 except Exception as e:
-    print(f'[get_unread_info] flock write error: {e}', file=sys.stderr)
+    print(f'[mark_specials_read] error: {e}', file=sys.stderr)
 " 2>/dev/null
 
-        ) 200>"$LOCKFILE"
-    fi
-
-    echo "$info"
+    ) 200>"$LOCKFILE"
 }
 
 # ─── Fingerprint age helper ───
@@ -380,9 +378,19 @@ for s in data.get('specials', []):
 " 2>/dev/null)
 
     if [ -n "$specials" ]; then
-        echo "$specials" | while IFS= read -r cmd; do
-            [ -n "$cmd" ] && send_cli_command "$cmd"
-        done
+        local special_ok=true
+        while IFS= read -r cmd; do
+            if [ -n "$cmd" ]; then
+                if ! send_cli_command "$cmd"; then
+                    special_ok=false
+                    echo "[$(date)] WARNING: send_cli_command failed, specials NOT marked read" >&2
+                    break
+                fi
+            fi
+        done <<< "$specials"
+        if [ "$special_ok" = true ]; then
+            mark_specials_read
+        fi
     fi
 
     # Send wake-up nudge for normal messages (fingerprint dedup)
