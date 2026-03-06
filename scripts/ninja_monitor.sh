@@ -524,6 +524,14 @@ check_and_update_done_task() {
             completed_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
             (
                 flock -x -w 5 200 || { log "ERROR: Failed to acquire lock for $name task update"; exit 1; }
+                # S05修正: TOCTOU防止 — flock取得後にparent_cmd/task_idの一致を再検証
+                local current_parent_cmd current_task_id
+                current_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+                current_task_id=$(yaml_field_get "$task_file" "task_id")
+                if [ "$current_parent_cmd" != "$task_parent_cmd" ] || { [ -n "$task_id" ] && [ -n "$current_task_id" ] && [ "$current_task_id" != "$task_id" ]; }; then
+                    log "WARN: task file changed during check_and_update_done_task for $name (expected parent_cmd=$task_parent_cmd, got $current_parent_cmd)"
+                    exit 1
+                fi
                 if ! yaml_field_set "$task_file" "task" "status" "done"; then
                     log "ERROR: yaml_field_set failed for ${name} task status update"
                     exit 1
@@ -1040,7 +1048,7 @@ check_stale_cmds() {
         fi
 
         local cmd_epoch
-        cmd_epoch=$(date -d "$cmd_timestamp" +%s 2>/dev/null)
+        cmd_epoch=$(date -d "$cmd_timestamp" +%s 2>/dev/null || echo "0")
         if [[ ! "$cmd_epoch" =~ ^[0-9]+$ ]]; then
             log "WARN: Failed to parse cmd timestamp: ${cmd_id} ts=${cmd_timestamp} epoch=${cmd_epoch:-empty}"
             continue
@@ -1381,7 +1389,8 @@ write_state_file() {
     local timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
 
     # flock排他制御（他プロセスが読み書きする可能性に備える）
-    (
+    # S04修正: サブシェル→ブレースグループ（fd継承によるロック漏洩を回避）
+    {
         flock -x 200
 
         # YAML生成
@@ -1417,9 +1426,9 @@ write_state_file() {
             echo "    last_task: \"$last_task\"" >> "$state_file"
         done
 
-    ) 200>"$lock_file"
+    } 200>"$lock_file"
     if [ $? -ne 0 ]; then
-        log "ERROR: write_state_file flock subshell failed"
+        log "ERROR: write_state_file flock failed"
     fi
 }
 
@@ -1429,7 +1438,8 @@ write_karo_snapshot() {
     local lock_file="/tmp/karo_snapshot.lock"
     local timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
 
-    (
+    # S04修正: サブシェル→ブレースグループ（fd継承によるロック漏洩を回避）
+    {
         flock -x 200
 
         {
@@ -1529,9 +1539,9 @@ write_karo_snapshot() {
 
         } > "$snapshot_file"
 
-    ) 200>"$lock_file"
+    } 200>"$lock_file"
     if [ $? -ne 0 ]; then
-        log "ERROR: write_karo_snapshot flock subshell failed"
+        log "ERROR: write_karo_snapshot flock failed"
     fi
 }
 
@@ -1811,15 +1821,12 @@ check_auto_archive() {
             continue
         fi
 
-        # flock排他制御でarchive実行
-        (
-            flock -n 200 || { log "AUTO-ARCHIVE: flock busy, skip $cmd_id"; exit 1; }
-            log "AUTO-ARCHIVE: $cmd_id completed + no gates dir, running archive_completed.sh"
-            bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" >> "$LOG" 2>&1
-        ) 200>"$ARCHIVE_LOCK"
-
-        if [ $? -eq 0 ]; then
+        # flock排他制御でarchive実行（S04修正: ロックファイル引数形式でfd継承問題を回避）
+        log "AUTO-ARCHIVE: $cmd_id completed + no gates dir, running archive_completed.sh"
+        if flock -n "$ARCHIVE_LOCK" bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" >> "$LOG" 2>&1; then
             log "AUTO-ARCHIVE: $cmd_id done"
+        else
+            log "AUTO-ARCHIVE: flock busy or failed, skip $cmd_id"
         fi
 
         # 1 cmdのみ実行して終了

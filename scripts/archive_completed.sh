@@ -11,7 +11,7 @@
 set -euo pipefail
 
 # tmpファイルの後始末
-cleanup() { rm -f /tmp/stk_active_$$.yaml /tmp/stk_done_$$.yaml /tmp/dash_trim_$$.md /tmp/dash_karo_trim_$$.md /tmp/lord_conv_trim_$$.yaml; }
+cleanup() { rm -f /tmp/stk_active_$$.yaml /tmp/stk_done_$$.yaml /tmp/dash_karo_trim_$$.md /tmp/lord_conv_trim_$$.yaml; }
 trap cleanup EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -230,6 +230,8 @@ archive_cmds() {
         (
             flock -w 10 200 || { echo "[archive] WARN: flock timeout on QUEUE_FILE"; return 1; }
             cat "$tmp_done" >> "$ARCHIVE_CMD"
+            # S06修正: mv前にtmpファイル存在確認
+            [ -f "$tmp_active" ] || { echo "[archive] FATAL: tmp_active not found: $tmp_active" >&2; exit 1; }
             mv "$tmp_active" "$QUEUE_FILE" || { echo "[archive] FATAL: mv failed: $tmp_active → $QUEUE_FILE" >&2; exit 1; }
         ) 200>"$QUEUE_FILE.lock"
         echo "[archive] cmds: archived=$archived kept=$kept"
@@ -452,8 +454,15 @@ archive_dashboard() {
     # ダッシュボードからアーカイブ済みデータ行を削除（flock排他）
     (
         flock -w 10 200 || { echo "[archive] WARN: flock timeout on DASHBOARD"; return 1; }
-        sed "${archive_first_line},${last_data_line}d" "$DASHBOARD" > "/tmp/dash_trim_$$.md"
-        mv "/tmp/dash_trim_$$.md" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: dash trim → $DASHBOARD" >&2; exit 1; }
+        # S07修正: mktempで安全なtmp生成 + sed成功確認後にmv
+        local tmp_dash
+        tmp_dash=$(mktemp /tmp/dash_trim_XXXXXXXX.md)
+        if ! sed "${archive_first_line},${last_data_line}d" "$DASHBOARD" > "$tmp_dash"; then
+            echo "[archive] FATAL: sed failed for dashboard trim" >&2
+            rm -f "$tmp_dash"
+            exit 1
+        fi
+        mv "$tmp_dash" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: $tmp_dash → $DASHBOARD" >&2; exit 1; }
     ) 200>"$DASHBOARD.lock"
 
     echo "[archive] dashboard: archived=$archived_count kept=$KEEP_RESULTS"
