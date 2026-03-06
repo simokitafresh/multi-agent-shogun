@@ -535,9 +535,7 @@ for name, conf in agents.items():
         expected[name] = 'Codex'
     elif conf.get('model_name', ''):
         mn = conf['model_name']
-        if 'sonnet' in mn.lower():
-            expected[name] = 'Sonnet'
-        elif 'haiku' in mn.lower():
+        if 'haiku' in mn.lower():
             expected[name] = 'Haiku'
         else:
             expected[name] = 'Opus'

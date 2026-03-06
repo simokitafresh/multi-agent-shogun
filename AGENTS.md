@@ -269,7 +269,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 家老 | karo(1) | Claude |
 | 忍者 | sasuke(2) kirimaru(3) hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
 将軍はAgent toolでのコード深堀り調査を禁止(F008)。必要な調査は偵察cmdとして家老に委任せよ。
-編成(2026-02-27改革): Opus4(kagemaru/hanzo/kotaro/tobisaru)+Codex4(sasuke/kirimaru/hayate/saizo)。tier廃止・round-robin配備 → config/settings.yaml
+編成(2026-02-27改革): Opus4(kagemaru/hanzo/kotaro/tobisaru)+Codex4(sasuke/kirimaru/hayate/saizo)。階級制廃止・round-robin配備 → config/settings.yaml
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照

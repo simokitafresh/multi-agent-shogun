@@ -637,7 +637,7 @@ GitHub Copilot CLI (`copilot`) is a standalone terminal-based AI coding agent. *
 - **Launch**: `copilot` (interactive TUI)
 - **Install**: `brew install copilot-cli` / `npm install -g @github/copilot` / `winget install GitHub.Copilot`
 - **Auth**: GitHub account with active Copilot subscription. Env vars: `GH_TOKEN` or `GITHUB_TOKEN`
-- **Default model**: Claude Sonnet 4.5
+- **Default model**: Provider-managed default
 
 ## Tool Usage
 
@@ -680,7 +680,7 @@ Copilot automatically delegates to agents and runs multiple agents in parallel.
 
 | Command | Description |
 |---------|-------------|
-| `/model` | Switch model (Claude Sonnet 4.5, Claude Sonnet 4, GPT-5) |
+| `/model` | Switch model (available choices depend on Copilot account and provider) |
 | `/agent` | Select or invoke a built-in/custom agent |
 | `/delegate` (or `&` prefix) | Push work to Copilot coding agent (remote) |
 | `/resume` | Cycle through local/remote sessions (Tab to cycle) |
@@ -739,9 +739,8 @@ Instructions **combine** (all matching files included in prompt). No priority-ba
 ## Model Switching
 
 Available via `/model` command or `--model` flag:
-- Claude Sonnet 4.5 (default)
-- Claude Sonnet 4
-- GPT-5
+- Provider-managed defaults (account dependent)
+- GPT-5 class models when enabled by Copilot
 
 For Ashigaru: Karo manages model switching via inbox_write with `type: model_switch`.
 

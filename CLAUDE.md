@@ -17,7 +17,7 @@ files:
   context: "context/{project}.md"       # Project-specific notes for ninja
   cmd_queue: queue/shogun_to_karo.yaml  # Shogun → Karo commands
   tasks: "queue/tasks/{ninja_name}.yaml" # Karo → Ninja assignments (per-ninja)
-  reports: "queue/reports/{ninja_name}_report.yaml" # Ninja → Karo reports
+  reports: "queue/reports/{ninja_name}_report_{cmd}.yaml" # Ninja → Karo reports
   dashboard: dashboard.md              # Human-readable summary (secondary data)
   ntfy_inbox: queue/ntfy_inbox.yaml    # Incoming ntfy messages from Lord's phone
 
@@ -57,6 +57,7 @@ language:
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍知識ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_memory.sh` → ALERT時ntfy通知。詳細は instructions/shogun.md Step 2.5
+2.6. **cmd委任状態ゲート(将軍のみ)**: `bash scripts/gates/gate_cmd_state.sh` → pending cmdの委任状態判定。OK/WARN=再送不要、ALERT=委任確認。詳細は instructions/shogun.md Step 2.6
 3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
 
@@ -69,7 +70,7 @@ language:
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
 3.5. **Load project knowledge** (role-based):
-   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.yaml`の直近エントリを読む（存在時のみ）
+   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
    - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
@@ -95,10 +96,9 @@ Lightweight recovery using only CLAUDE.md (auto-loaded). Do NOT read instruction
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
 Step 2: 将軍のみ MEMORY.md（自動ロード済み）を信頼。read_graphしない。家老・忍者はスキップ。
 Step 3: Read queue/tasks/{your_ninja_name}.yaml → assigned=Edit status to acknowledged then work, idle=wait
-Step 3.5: If task has "related_lessons:" with reviewed: false →
-          read each lesson in projects/{project}/lessons.yaml,
-          then Edit each entry: reviewed: false → reviewed: true
-          (entrance_gate blocks next deploy if unreviewed)
+Step 3.5: If task has "related_lessons:" →
+          read each entry's detail/summary（push型：deploy_task.shが詳細を埋込済み）
+          （reviewed儀式は廃止 — cmd_533）
 Step 4: If task has "project:" field:
           read projects/{project}.yaml (core knowledge)
           read projects/{project}/lessons.yaml (project lessons)
@@ -144,12 +144,12 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 
 ```
 1. ダッシュボード更新（cmd完了結果を記載）
-2. bash scripts/archive_completed.sh cmd_XXX（完了cmd+古い戦果を自動退避。cmd_id必須）
-3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
-4. ntfy送信（cmd完了報告）
-5. 新しいinbox nudgeが来ていても、上記1-4を先に完了する
+2. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
+3. ntfy送信（cmd完了報告）
+4. 新しいinbox nudgeが来ていても、上記1-3を先に完了する
    理由: 「新cmd処理→またnudge→...」の連鎖でCTXが際限なく膨らむ（実証済み）
-6. idle状態で待つ
+5. idle状態で待つ
+※ archive_completed.shはcmd_complete_gate.sh GATE CLEAR時に自動実行される（手動不要）
 ```
 
 ## 復帰時の手順（全エージェント共通）
@@ -269,7 +269,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 家老 | karo(1) | Claude |
 | 忍者 | sasuke(2) kirimaru(3) hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
 将軍はAgent toolでのコード深堀り調査を禁止(F008)。必要な調査は偵察cmdとして家老に委任せよ。
-編成(2026-02-27改革): Opus4(kagemaru/hanzo/kotaro/tobisaru)+Codex4(sasuke/kirimaru/hayate/saizo)。tier廃止・round-robin配備 → config/settings.yaml
+編成(2026-02-27改革): Opus4(kagemaru/hanzo/kotaro/tobisaru)+Codex4(sasuke/kirimaru/hayate/saizo)。階級制廃止・round-robin配備 → config/settings.yaml
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照

@@ -97,9 +97,9 @@ Shogun isn't locked to one vendor. The system supports 4 CLI tools, each with un
 
 | CLI | Key Strength | Default Model |
 |-----|-------------|---------------|
-| **Claude Code** | Battle-tested tmux integration, Memory MCP, dedicated file tools (Read/Write/Edit/Glob/Grep) | Claude Sonnet 4.5 |
+| **Claude Code** | Battle-tested tmux integration, Memory MCP, dedicated file tools (Read/Write/Edit/Glob/Grep) | Claude Opus 4.6 |
 | **OpenAI Codex** | Sandbox execution, JSONL structured output, `codex exec` headless mode | gpt-5.4 |
-| **GitHub Copilot** | Built-in GitHub MCP, 4 specialized agents (Explore/Task/Plan/Code-review), `/delegate` to coding agent | Claude Sonnet 4.5 |
+| **GitHub Copilot** | Built-in GitHub MCP, 4 specialized agents (Explore/Task/Plan/Code-review), `/delegate` to coding agent | Provider-managed |
 | **Kimi Code** | Free tier available, strong multilingual support | Kimi k2 |
 
 A unified instruction build system generates CLI-specific instruction files from shared templates:
@@ -721,19 +721,19 @@ Behavioral psychology-driven motivation through your notification feed:
 Each tmux pane shows the agent's current task directly on its border:
 
 ```
-┌ sasuke (Sonnet) VF requirements ────┬ hayate (Opus) API research ─────────┐
+┌ sasuke (Codex) VF requirements ─────┬ hayate (Codex) API research ────────┐
 │                                      │                                     │
 │  Working on SayTask requirements     │  Researching REST API patterns      │
 │                                      │                                     │
-├ kirimaru (Sonnet) ──────────────────┼ kagemaru (Opus) DB schema design ───┤
+├ kirimaru (Codex) ───────────────────┼ kagemaru (Opus) DB schema design ───┤
 │                                      │                                     │
 │  (idle — waiting for assignment)     │  Designing database schema          │
 │                                      │                                     │
 └──────────────────────────────────────┴─────────────────────────────────────┘
 ```
 
-- **Working**: `sasuke (Sonnet) VF requirements` — agent name, model, and task summary
-- **Idle**: `sasuke (Sonnet)` — model name only, no task
+- **Working**: `sasuke (Codex) VF requirements` — agent name, model, and task summary
+- **Idle**: `sasuke (Codex)` — model name only, no task
 - Updated automatically by the Karo when assigning or completing tasks
 - Glance at all 9 panes to instantly know who's doing what
 
@@ -742,7 +742,7 @@ Each tmux pane shows the agent's current task directly on its border:
 When a ninja completes a task, it shouts a personalized battle cry in the tmux pane — a visual reminder that your army is working hard.
 
 ```
-┌ sasuke (Sonnet) ─────────────┬ kirimaru (Sonnet) ────────────┐
+┌ sasuke (Codex) ──────────────┬ kirimaru (Codex) ─────────────┐
 │                               │                               │
 │  ⚔️ sasuke、先陣切った！      │  🔥 kirimaru、二番槍の意地！  │
 │  八刃一志！                   │  八刃一志！                   │
@@ -871,19 +871,20 @@ SayTask handles personal productivity (capture → schedule → remind). The cmd
 |-------|--------------|----------|-----------|
 | Shogun | Opus | **Enabled (high)** | Strategic discussions, research, and policy design require deep reasoning. Use `--shogun-no-thinking` to disable for relay-only mode |
 | Karo | Opus | Enabled | Task distribution requires careful judgment |
-| Sasuke–Kagemaru (1–4) | Sonnet | Enabled | Cost-efficient for standard tasks |
-| Hanzo–Tobisaru (5–8) | Opus | Enabled | Full capability for complex tasks |
+| Sasuke, Kirimaru, Hayate, Saizo | Codex | Enabled | Fast implementation and repo-local execution |
+| Kagemaru, Hanzo, Kotaro, Tobisaru | Opus | Enabled | Deep review, research, and higher-ambiguity tasks |
 
 The Shogun serves as the Lord's strategic advisor — not just a task relay. Strategic discussions, research analysis, and policy design are Bloom's Taxonomy Level 4–6 (analysis, evaluation, creation), requiring Thinking mode enabled. For relay-only use, disable with `--shogun-no-thinking`.
 
-### Battle Formations
+### Current Formation
 
-| Formation | Genin (1–4) | Jonin (5–8) | Command |
-|-----------|-------------|-------------|---------|
-| **Normal** (default) | Sonnet | Opus | `./shutsujin_departure.sh` |
-| **Battle** (`-k` flag) | Opus | Opus | `./shutsujin_departure.sh -k` |
+| Role Group | Current CLI / Model | Notes |
+|------------|---------------------|-------|
+| Shogun, Karo | Claude Code / Opus | Strategic control path |
+| Sasuke, Kirimaru, Hayate, Saizo | Codex / gpt-5.4 | Codex squad |
+| Kagemaru, Hanzo, Kotaro, Tobisaru | Claude Code / Opus | Opus squad |
 
-Half the squad runs on the cheaper Sonnet model by default. When it's crunch time, switch to Battle formation with `-k` (`--kessen`) for all-Opus maximum capability. The Karo can also promote individual ninja mid-session with `/model opus` when a specific task demands it.
+The legacy split formation was retired on 2026-02-27. Current routing is based on CLI capabilities and task fit, not on the old promotion/demotion hierarchy.
 
 ### Bloom's Taxonomy Task Classification
 
@@ -891,14 +892,14 @@ Tasks are classified using Bloom's Taxonomy to optimize model assignment:
 
 | Level | Category | Description | Model |
 |-------|----------|-------------|-------|
-| L1 | Remember | Recall facts, copy, list | Sonnet |
-| L2 | Understand | Explain, summarize, paraphrase | Sonnet |
-| L3 | Apply | Execute procedures, implement known patterns | Sonnet |
+| L1 | Remember | Recall facts, copy, list | Codex |
+| L2 | Understand | Explain, summarize, paraphrase | Codex |
+| L3 | Apply | Execute procedures, implement known patterns | Codex |
 | L4 | Analyze | Compare, investigate, deconstruct | Opus |
 | L5 | Evaluate | Judge, critique, recommend | Opus |
 | L6 | Create | Design, build, synthesize new solutions | Opus |
 
-The Karo assigns each subtask a Bloom level and routes it to the appropriate agent tier. This ensures cost-efficient execution: routine work goes to Sonnet, while complex reasoning goes to Opus.
+The Karo assigns each subtask a Bloom level and routes it to the appropriate agent profile. Routine repository work tends toward Codex, while deeper reasoning and ambiguous investigation stay with Opus.
 
 ### Task Dependencies (blockedBy)
 
