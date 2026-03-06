@@ -91,9 +91,10 @@ workflow:
     command: 'tmux set-option -p @current_task "cmd_XXX"'
     note: "将軍自身のペイン枠にcmd名を表示"
   - step: 3
-    action: inbox_write
+    action: cmd_delegate
     target: shogun:2.1
-    note: "Use scripts/inbox_write.sh — See CLAUDE.md for inbox protocol"
+    note: "Use scripts/cmd_delegate.sh — atomic delegation (inbox_write + delegated_at)"
+    example: 'bash scripts/cmd_delegate.sh cmd_XXX "cmd_XXXを書いた。配備せよ。"'
   - step: 3.5
     action: clear_own_current_task
     command: 'tmux set-option -p @current_task ""'
@@ -194,6 +195,24 @@ command: |
 # ❌ Bad — vague purpose, no criteria
 command: "Improve karo pipeline"
 ```
+
+### Scout Command Neutrality（偵察中立原則）
+
+偵察(scout/recon)cmdの`command`フィールドでは、結果を誘導する表現を避け、中立的な指示を書け。
+
+```yaml
+# ❌ NG — 結果を予断させる表現
+command: "inbox_watcher.shのバグを調査せよ"
+command: "ninja_monitorの問題を探せ"
+command: "パフォーマンス劣化の原因を特定せよ"
+
+# ✅ OK — 中立的な表現
+command: "inbox_watcher.shを精査し所見を報告せよ"
+command: "ninja_monitorのロジックを追って全所見を報告せよ"
+command: "直近30日のパフォーマンス推移を計測し結果を報告せよ"
+```
+
+**理由**: 「バグを探せ」「問題を探せ」と書くと、忍者はsycophancy特性により存在しない問題を捏造するリスクがある。中立プロンプトは忍者に結果を予断させず、事実ベースの報告を促す。
 
 ### cmd Absorption / Cancellation
 
@@ -375,7 +394,9 @@ Recover from primary data sources:
 
 Actions after recovery:
 1. dashboard + snapshotで最新状況を把握
-2. If pending cmds exist → 家老にinbox_write
+2. `bash scripts/gates/gate_cmd_state.sh` を実行し、pending cmdの委任状態を確認
+   - OK/WARN → 再送不要。家老は既に受領済み
+   - ALERTのみ → `bash scripts/cmd_delegate.sh cmd_XXX "msg"` で委任実行
 3. If all cmds done → await Lord's next command
 
 **capture-paneは復帰手順に含まない。** dashboardとsnapshotで把握できないケースのみ使用(F006)。
@@ -389,6 +410,9 @@ Actions after recovery:
    - WARN: 作業後に /shogun-memory-teire で棚卸し推奨
    - ALERT: 殿にntfy通知を送信し、早急に /shogun-memory-teire を実行
      ntfy例: `bash scripts/ntfy.sh "【将軍】MEMORY.md ALERT — 棚卸し必要"`
+2.6. **cmd委任状態ゲート**: `bash scripts/gates/gate_cmd_state.sh` を実行。
+   - OK/WARN: pending cmdは委任済み。再送不要
+   - ALERT: 未委任cmdあり。`bash scripts/cmd_delegate.sh cmd_XXX "msg"` で委任せよ
 3. Read instructions/shogun.md
 4. **Read dashboard.md + karo_snapshot.txt** — 最新状況を最速で把握（情報階層の第一・第二）
 5. Load project knowledge:
