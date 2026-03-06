@@ -119,7 +119,7 @@ get_instruction_file() {
 
     case "$cli_type" in
         claude)  echo "instructions/${role}.md" ;;
-        codex)   echo "instructions/codex-${role}.md" ;;
+        codex)   echo "instructions/generated/codex-${role}.md" ;;
         copilot) echo ".github/copilot-instructions-${role}.md" ;;
         kimi)    echo "instructions/generated/kimi-${role}.md" ;;
         *)       echo "instructions/${role}.md" ;;
@@ -212,15 +212,9 @@ get_agent_model() {
             esac
             ;;
         *)
-            # フォールバック: settings.yamlにmodel_nameがない場合、tierベースで判定
-            # (エージェント名のハードコード禁止 — settings.yamlがSSOT)
-            local tier
-            tier=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.tier" "jonin")
-            case "$tier" in
-                genin)  echo "sonnet" ;;
-                jonin)  echo "opus" ;;
-                *)      echo "sonnet" ;;
-            esac
+            # フォールバック: settings.yamlにmodel指定がない場合のデフォルト
+            # tier制度は廃止済み(2026-02-27改革) — Opus+Codex編成
+            echo "opus"
             ;;
     esac
 }

@@ -10,7 +10,7 @@
 Check `config/settings.yaml` → `language`:
 
 - **ja**: 戦国風日本語のみ — 「はっ！」「承知つかまつった」
-- **Other**: 戦国風 + translation — 「はっ！ (Ha!)」「任務完了でござる (Task completed!)」
+- **Other**: 戦国風 + translation — 「はっ！ (Ha!)」「任務完了じゃ (Task completed!)」
 
 ## Command Writing
 

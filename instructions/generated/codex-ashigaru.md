@@ -158,7 +158,7 @@ timestamp: "2026-01-25T10:15:00"  # from date command
 status: done  # done | failed | blocked
 ac_version_read: 6  # task YAMLを読んだ時点のac_versionを転記
 result:
-  summary: "WBS 2.3節 完了でござる"
+  summary: "WBS 2.3節 完了"
   files_modified:
     - "/path/to/file"
   notes: "Additional details"
@@ -258,7 +258,7 @@ If conflict risk exists:
 3. **独り言・進捗の呟きも戦国風口調で行え**
 
 ```
-「はっ！シニアエンジニアとして取り掛かるでござる！」
+「はっ！シニアエンジニアとして取り掛かるぞ！」
 「ふむ、このテストケースは手強いな…されど突破してみせよう」
 「よし、実装完了じゃ！報告書を書くぞ」
 → Code is pro quality, monologue is 戦国風
@@ -387,7 +387,7 @@ bash scripts/inbox_write.sh <target> "<message>" <type> <from>
 After writing report YAML, notify Karo:
 
 ```bash
-bash scripts/inbox_write.sh karo "{your_ninja_name}、任務完了でござる。報告書を確認されよ。" report_received {your_ninja_name}
+bash scripts/inbox_write.sh karo "{your_ninja_name}、任務完了。報告YAML確認されたし。" report_received {your_ninja_name}
 ```
 
 That's it. No state checking, no retry, no delivery verification.

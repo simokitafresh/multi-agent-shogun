@@ -477,7 +477,7 @@ bash scripts/inbox_write.sh <target> "<message>" <type> <from>
 After writing report YAML, notify Karo:
 
 ```bash
-bash scripts/inbox_write.sh karo "{your_ninja_name}、任務完了でござる。報告書を確認されよ。" report_received {your_ninja_name}
+bash scripts/inbox_write.sh karo "{your_ninja_name}、任務完了。報告YAML確認されたし。" report_received {your_ninja_name}
 ```
 
 That's it. No state checking, no retry, no delivery verification.
