@@ -103,7 +103,6 @@ workflow:
 files:
   task: "queue/tasks/{ninja_name}.yaml"
   report: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
-  # 旧形式 {ninja_name}_report.yaml は非推奨
 
 panes:
   karo: shogun:2.1
@@ -183,9 +182,9 @@ lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lessons_useful.
 Missing fields = incomplete report.
 
-### 下忍(genin) 報告時の注意
+### 報告フィールド漏れ防止
 
-下忍(genin)は以下のフィールドを省略しがちです。
+報告時は以下のフィールドを省略しがちです。
 **必ず全フィールドを含めてください:**
 
 - `lesson_candidate:` — found: true/false は**必須**。省略禁止。
@@ -443,7 +442,7 @@ Claude Code cannot "wait". Prompt-wait = stopped.
 
 ## Report Scanning (Communication Loss Safety)
 
-On every wakeup (regardless of reason), scan ALL `queue/reports/*_report.yaml`.
+On every wakeup (regardless of reason), scan ALL `queue/reports/*_report_cmd_*.yaml`.
 Cross-reference with dashboard.md — process any reports not yet reflected.
 
 **Why**: Ninja inbox messages may be delayed. Report files are already written and scannable as a safety net.
@@ -530,11 +529,11 @@ Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @age
 **Your files ONLY:**
 ```
 queue/tasks/{your_ninja_name}.yaml    ← Read only this
-queue/reports/{your_ninja_name}_report.yaml  ← Write only this
+queue/reports/{your_ninja_name}_report_{cmd}.yaml  ← Write only this
 ```
 
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
-**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
+**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report_{cmd}.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
 
 # Codex CLI Tools
 

@@ -330,9 +330,33 @@ archive_reports() {
                 )
 
                 case "$cmd_status" in
-                    pending|in_progress|acknowledged|"")
+                    pending|in_progress|acknowledged)
                         kept=$((kept + 1))
                         continue
+                        ;;
+                    "")
+                        # parent cmd not in QUEUE_FILE — check child tasks
+                        local has_active_child=false
+                        local task_file_check
+                        for task_file_check in "$PROJECT_DIR/queue/tasks"/*.yaml; do
+                            [ -f "$task_file_check" ] || continue
+                            local t_parent t_status
+                            t_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file_check" "parent_cmd" "" 2>/dev/null | tr -d '[:space:]')
+                            [ "$t_parent" = "$parent_cmd" ] || continue
+                            t_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file_check" "status" "" 2>/dev/null | tr -d '[:space:]')
+                            case "$t_status" in
+                                done|completed|complete|success|failed|"") ;;
+                                *)
+                                    has_active_child=true
+                                    break
+                                    ;;
+                            esac
+                        done
+                        if $has_active_child; then
+                            kept=$((kept + 1))
+                            continue
+                        fi
+                        # No active children — safe to archive
                         ;;
                 esac
             fi

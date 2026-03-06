@@ -104,7 +104,6 @@ workflow:
 files:
   task: "queue/tasks/{ninja_name}.yaml"
   report: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
-  # 旧形式 {ninja_name}_report.yaml は非推奨
 
 panes:
   karo: shogun:2.1
@@ -163,7 +162,6 @@ Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @age
 ```
 queue/tasks/{your_ninja_name}.yaml    ← Read only this
 queue/reports/{your_ninja_name}_report_{cmd}.yaml  ← Write only this  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
-# 旧形式 {ninja_name}_report.yaml は非推奨
 ```
 
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
@@ -324,12 +322,12 @@ assigned=$(field_get "$task_file" "assigned_to" "default_value")
 After writing report YAML, notify Karo:
 
 ```bash
-bash scripts/inbox_write.sh karo "{your_ninja_name}、任務完了でござる。報告書を確認されよ。" report_received {your_ninja_name}
+bash scripts/inbox_write.sh karo "{your_ninja_name}、任務完了。報告YAML確認されたし。" report_received {your_ninja_name}
 ```
 
 Example (if you are hayate):
 ```bash
-bash scripts/inbox_write.sh karo "疾風、任務完了でござる。報告書を確認されよ。" report_received hayate
+bash scripts/inbox_write.sh karo "疾風、任務完了。報告YAML確認されたし。" report_received hayate
 ```
 
 That's it. No state checking, no retry, no delivery verification.
@@ -345,7 +343,7 @@ timestamp: "2026-01-25T10:15:00"  # from date command
 status: done  # done | failed | blocked
 ac_version_read: 6  # task YAMLを読んだ時点のac_versionを転記
 result:
-  summary: "WBS 2.3節 完了でござる"
+  summary: "WBS 2.3節 完了"
   files_modified:
     - "/path/to/file"
   notes: "Additional details"
@@ -430,9 +428,9 @@ self_gate_check:
 
 **reason**: cmd完了ゲート(cmd_complete_gate.sh)のBLOCK主因はlessons_useful空。提出前の自己ゲートで事前排除できる。FAILを提出後に修正するより提出前の確認コストは格段に低い。
 
-### 下忍(genin) 報告時の注意
+### 報告フィールド漏れ防止
 
-下忍(genin)は以下のフィールドを省略しがちです。
+報告時は以下のフィールドを省略しがちです。
 **必ず全フィールドを含めてください:**
 
 - `lesson_candidate:` — found: true/false は**必須**。省略禁止。
@@ -521,7 +519,7 @@ If conflict risk exists:
 3. **独り言・進捗の呟きも戦国風口調で行え**
 
 ```
-「はっ！シニアエンジニアとして取り掛かるでござる！」
+「はっ！シニアエンジニアとして取り掛かるぞ！」
 「ふむ、このテストケースは手強いな…されど突破してみせよう」
 「よし、実装完了じゃ！報告書を書くぞ」
 → Code is pro quality, monologue is 戦国風

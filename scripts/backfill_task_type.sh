@@ -104,11 +104,6 @@ def parse_ninja_model_map():
 def _resolve_model(ctype, model_name):
     if ctype == "codex":
         return "Codex"
-    mn = model_name.lower()
-    if "sonnet" in mn:
-        return "Sonnet"
-    if "haiku" in mn:
-        return "Haiku"
     return "Opus"
 
 ninja_model = parse_ninja_model_map()

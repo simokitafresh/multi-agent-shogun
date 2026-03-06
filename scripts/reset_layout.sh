@@ -89,6 +89,32 @@ _resolve_model_display() {
     esac
 }
 
+# 表示グループを解決（将軍編成の現在値: karo / codex / opus）
+_resolve_agent_group() {
+    local agent_id="$1"
+    local cli_type="$2"
+    local model_display="$3"
+
+    if [[ "$agent_id" == "karo" ]]; then
+        echo "karo"
+        return 0
+    fi
+
+    case "$cli_type" in
+        codex|copilot|kimi)
+            echo "$cli_type"
+            ;;
+        claude|*)
+            case "$model_display" in
+                *[Oo]pus*)   echo "opus" ;;
+                *[Ss]onnet*) echo "sonnet" ;;
+                *[Hh]aiku*)  echo "haiku" ;;
+                *)           echo "claude" ;;
+            esac
+            ;;
+    esac
+}
+
 # ログ関数
 log()      { echo "[reset_layout] $1"; }
 log_ok()   { echo "[reset_layout] OK $1"; }
@@ -285,7 +311,7 @@ log_ok "CLI起動: ${cli_start_count}件"
 
 # ═══════════════════════════════════════════════════════════════
 # Step 4: 全ペイン変数の正規化
-# @agent_id, @model_name, @agent_tier, @agent_cli → 常に再設定
+# @agent_id, @model_name, @agent_group, @agent_cli → 常に再設定
 # @context_pct, @current_task → 死亡ペインのみ初期化
 # 背景色(bg=)、ペインタイトル(-T) → 常に再設定
 # ═══════════════════════════════════════════════════════════════
@@ -295,32 +321,24 @@ for i in {0..8}; do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
 
-    # tier決定
-    if [[ $i -eq 0 ]]; then
-        tier="karo"
-    elif [[ $i -le 2 ]]; then
-        tier="genin"
-    else
-        tier="jonin"
-    fi
-
     # CLI type
     cli_t=$(get_cli_type "$agent_id")
 
     # モデル表示名
     model_display=$(_resolve_model_display "$agent_id" "$p")
+    agent_group=$(_resolve_agent_group "$agent_id" "$cli_t" "$model_display")
 
     if [[ "$DRY_RUN" == true ]]; then
         # 現在値と比較して差分を表示
         cur_aid=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_id 2>/dev/null || echo "")
         cur_model=$(tmux show-options -p -t "shogun:agents.${p}" -v @model_name 2>/dev/null || echo "")
-        cur_tier=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_tier 2>/dev/null || echo "")
+        cur_group=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_group 2>/dev/null || echo "")
         cur_cli=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_cli 2>/dev/null || echo "")
 
         changes=""
         [[ "$cur_aid" != "$agent_id" ]] && changes+=" @agent_id:${cur_aid:-empty}->${agent_id}"
         [[ "$cur_model" != "$model_display" ]] && changes+=" @model_name:${cur_model:-empty}->${model_display}"
-        [[ "$cur_tier" != "$tier" ]] && changes+=" @agent_tier:${cur_tier:-empty}->${tier}"
+        [[ "$cur_group" != "$agent_group" ]] && changes+=" @agent_group:${cur_group:-empty}->${agent_group}"
         [[ "$cur_cli" != "$cli_t" ]] && changes+=" @agent_cli:${cur_cli:-empty}->${cli_t}"
 
         bg_color=$(resolve_bg_color "$agent_id" "$model_display")
@@ -337,7 +355,7 @@ for i in {0..8}; do
         # 常に再設定（ずれ防止）
         tmux set-option -p -t "shogun:agents.${p}" @agent_id "$agent_id"
         tmux set-option -p -t "shogun:agents.${p}" @model_name "$model_display"
-        tmux set-option -p -t "shogun:agents.${p}" @agent_tier "$tier"
+        tmux set-option -p -t "shogun:agents.${p}" @agent_group "$agent_group"
         tmux set-option -p -t "shogun:agents.${p}" @agent_cli "$cli_t"
 
         # 背景色（モデル別動的決定）
@@ -361,7 +379,7 @@ log_ok "変数正規化: ${var_fix_count}ペイン処理"
 # ═══════════════════════════════════════════════════════════════
 # Step 4.5: pane-border-format再適用
 # shutsujin_departure.sh L21-23と同じ設定をWindow 2(agents)に適用
-# Color: karo=#f9e2af(黄) Opus=#cba6f7(紫) Sonnet=#89b4fa(青) else=#a6e3a1(緑)
+# Color: karo=#f9e2af(黄) Opus=#cba6f7(紫) Codex=#a6e3a1(緑) Sonnet=#89b4fa(青) Haiku=#f9e2af(黄)
 # ═══════════════════════════════════════════════════════════════
 log "Step 4.5: pane-border-format再適用"
 
@@ -369,7 +387,7 @@ if [[ "$DRY_RUN" == true ]]; then
     log_dry "  tmux set-option -w -t shogun:2 pane-border-format '...model-based colors...'"
 else
     tmux set-option -w -t shogun:2 pane-border-format \
-      '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:Sonnet*,#{@model_name}},#[fg=#89b4fa],#[fg=#a6e3a1]}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
+      '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:Codex*,#{@model_name}},#[fg=#a6e3a1],#{?#{m:Sonnet*,#{@model_name}},#[fg=#89b4fa],#{?#{m:Haiku*,#{@model_name}},#[fg=#f9e2af],#[fg=#a6e3a1]}}}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
       2>/dev/null
     log_ok "pane-border-format再適用完了（Window 2）"
 fi
@@ -417,17 +435,17 @@ echo "  変数処理:    ${var_fix_count}ペイン"
 echo ""
 echo "  最終ペイン一覧:"
 echo "  ────────────────────────────────────────────────────"
-printf "  %-4s %-10s %-5s %-7s %-8s %-10s %s\n" "Pane" "AgentID" "Dead" "Tier" "CLI" "Model" "BG"
+printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "Pane" "AgentID" "Dead" "Group" "CLI" "Model" "BG"
 echo "  ──────────────────────────────────────────────────────────"
 for i in {0..8}; do
     p=$((PANE_BASE + i))
     _id=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_id 2>/dev/null || echo "?")
     _dead=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_dead}' | awk -v p="$p" '$1==p {print $2}')
-    _tier=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_tier 2>/dev/null || echo "?")
+    _group=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_group 2>/dev/null || echo "?")
     _cli=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_cli 2>/dev/null || echo "?")
     _model=$(tmux show-options -p -t "shogun:agents.${p}" -v @model_name 2>/dev/null || echo "?")
     _display=$(_resolve_model_display "$_id" "$p")
     _bg=$(resolve_bg_color "$_id" "$_display")
-    printf "  %-4s %-10s %-5s %-7s %-8s %-10s %s\n" "$p" "$_id" "$_dead" "$_tier" "$_cli" "$_model" "$_bg"
+    printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "$p" "$_id" "$_dead" "$_group" "$_cli" "$_model" "$_bg"
 done
 echo "=========================================="

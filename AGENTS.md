@@ -17,7 +17,7 @@ files:
   context: "context/{project}.md"       # Project-specific notes for ninja
   cmd_queue: queue/shogun_to_karo.yaml  # Shogun → Karo commands
   tasks: "queue/tasks/{ninja_name}.yaml" # Karo → Ninja assignments (per-ninja)
-  reports: "queue/reports/{ninja_name}_report.yaml" # Ninja → Karo reports
+  reports: "queue/reports/{ninja_name}_report_{cmd}.yaml" # Ninja → Karo reports
   dashboard: dashboard.md              # Human-readable summary (secondary data)
   ntfy_inbox: queue/ntfy_inbox.yaml    # Incoming ntfy messages from Lord's phone
 

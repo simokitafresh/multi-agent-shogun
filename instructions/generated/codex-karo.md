@@ -316,7 +316,7 @@ cmd_093で実証済み: 偵察→統合→実装の流れ。
    - 「互いの結果は見るな」を明記
    - project:フィールドを忘れるな（偵察でも背景知識は必須）
 
-2. task_deploy.shで2名体制を検証（STEP 6）
+2. task_deploy.shで2名体制を検証（STEP 6。`deploy_task.sh` は個別忍者への配備、`task_deploy.sh` はcmd全体の偵察2名体制検証）
    bash scripts/task_deploy.sh cmd_XXX recon
    → exit 0: OK / exit 1: 2名未満→修正必須
 
@@ -533,7 +533,7 @@ Claude Code cannot "wait". Prompt-wait = stopped.
 
 ## Report Scanning (Communication Loss Safety)
 
-On every wakeup (regardless of reason), scan ALL `queue/reports/*_report.yaml`.
+On every wakeup (regardless of reason), scan ALL `queue/reports/*_report_cmd_*.yaml`.
 Cross-reference with dashboard.md — process any reports not yet reflected.
 
 **Why**: Ninja inbox messages may be delayed. Report files are already written and scannable as a safety net.
@@ -620,11 +620,11 @@ Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @age
 **Your files ONLY:**
 ```
 queue/tasks/{your_ninja_name}.yaml    ← Read only this
-queue/reports/{your_ninja_name}_report.yaml  ← Write only this
+queue/reports/{your_ninja_name}_report_{cmd}.yaml  ← Write only this
 ```
 
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
-**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
+**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report_{cmd}.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
 
 # Codex CLI Tools
 

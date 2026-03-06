@@ -6,11 +6,8 @@
 #
 # 提供関数:
 #   cli_type <agent_name>          → "claude" / "codex"
-#   cli_tier <agent_name>          → "jonin" / "genin"
 #   cli_profile_get <agent_name> <key> → cli_profiles.yamlから任意のキーを取得
 #   cli_launch_cmd <agent_name>    → 起動コマンド文字列
-#   is_genin <agent_name>          → true(0) / false(1)
-#   is_jonin <agent_name>          → true(0) / false(1)
 #
 # 設計:
 #   settings.yaml → type取得 → cli_profiles.yaml → 値取得 の2段参照
@@ -25,9 +22,8 @@ _CLI_LOOKUP_PROFILES="${_CLI_LOOKUP_DIR}/config/cli_profiles.yaml"
 # キャッシュ（連想配列、bash 4+）
 # re-source時にキャッシュをクリアし、declare -gAでグローバルスコープに宣言
 # （関数内からsourceされた場合でもグローバルになるよう -g フラグを使用）
-unset _CLI_LOOKUP_TYPE_CACHE _CLI_LOOKUP_TIER_CACHE _CLI_LOOKUP_PROFILE_CACHE 2>/dev/null
+unset _CLI_LOOKUP_TYPE_CACHE _CLI_LOOKUP_PROFILE_CACHE 2>/dev/null
 declare -gA _CLI_LOOKUP_TYPE_CACHE 2>/dev/null || declare -A _CLI_LOOKUP_TYPE_CACHE 2>/dev/null || true
-declare -gA _CLI_LOOKUP_TIER_CACHE 2>/dev/null || declare -A _CLI_LOOKUP_TIER_CACHE 2>/dev/null || true
 declare -gA _CLI_LOOKUP_PROFILE_CACHE 2>/dev/null || declare -A _CLI_LOOKUP_PROFILE_CACHE 2>/dev/null || true
 
 # --- 内部ヘルパー ---
@@ -121,27 +117,6 @@ cli_type() {
     echo "$result"
 }
 
-# cli_tier <agent_name>
-# settings.yaml の cli.agents.<name>.tier を返す。未定義なら "jonin"
-cli_tier() {
-    local agent="$1"
-    if [[ -z "$agent" ]]; then
-        echo "jonin"
-        return 0
-    fi
-
-    # キャッシュ確認
-    if [[ -n "${_CLI_LOOKUP_TIER_CACHE[$agent]+x}" ]]; then
-        echo "${_CLI_LOOKUP_TIER_CACHE[$agent]}"
-        return 0
-    fi
-
-    local result
-    result=$(_cli_lookup_settings_get "$agent" "tier" "jonin")
-    _CLI_LOOKUP_TIER_CACHE[$agent]="$result"
-    echo "$result"
-}
-
 # cli_profile_get <agent_name> <key>
 # settings.yaml → type特定 → cli_profiles.yaml から任意のキーを取得
 cli_profile_get() {
@@ -167,20 +142,4 @@ cli_profile_get() {
 # 起動コマンド文字列を返す
 cli_launch_cmd() {
     cli_profile_get "$1" "launch_cmd"
-}
-
-# is_genin <agent_name>
-# 下忍ならtrue(0)、それ以外ならfalse(1)
-is_genin() {
-    local tier
-    tier=$(cli_tier "$1")
-    [[ "$tier" == "genin" ]]
-}
-
-# is_jonin <agent_name>
-# 上忍ならtrue(0)、それ以外ならfalse(1)
-is_jonin() {
-    local tier
-    tier=$(cli_tier "$1")
-    [[ "$tier" == "jonin" ]]
 }

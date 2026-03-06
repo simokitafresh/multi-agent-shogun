@@ -145,11 +145,6 @@ for name, cfg in agents.items():
         errors.append(f'{name}: 設定が辞書型でない')
         continue
 
-    # tier チェック
-    tier = cfg.get('tier', '')
-    if not tier:
-        warnings.append(f'{name}: tier フィールド未定義')
-
     # type チェック（省略時はdefault使用 — 正当）
     agent_type = cfg.get('type', default_type)
     if agent_type not in valid_profiles:
