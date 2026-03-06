@@ -96,6 +96,7 @@ declare -A RENUDGE_LAST_SEND      # 最終renudge送信時刻 — key: agent_nam
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
 declare -A AUTO_DEPLOY_DONE       # auto_deploy_next.sh呼出済みフラグ — key: "ninja:task_id", value: "1"
 declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "ninja:subtask_id", value: count
+declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key: agent_name, value: epoch秒
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
@@ -693,6 +694,30 @@ notify_idle_batch() {
 handle_confirmed_idle() {
     local name="$1"
 
+    # ─── post_clear_cmd送信（cmd_583: /new後の/fast自動有効化） ───
+    # safe_send_clearでPOST_CLEAR_PENDINGがセットされた場合、次回idle検知時に送信
+    if [ -n "${POST_CLEAR_PENDING[$name]}" ]; then
+        local pc_target="${PANE_TARGETS[$name]}"
+        if [ -n "$pc_target" ]; then
+            local post_cmd
+            post_cmd=$(cli_profile_get "$name" "post_clear_cmd")
+            if [ -n "$post_cmd" ]; then
+                # AC4: /fastはトグルのため、既にONなら送信しない
+                local pc_banner
+                pc_banner=$(tmux capture-pane -t "$pc_target" -p -S -100 2>/dev/null)
+                if echo "$pc_banner" | grep -qE '│.*model:.*fast'; then
+                    log "POST-CLEAR-CMD-SKIP: $name fast already ON, skipping to avoid toggle-off"
+                else
+                    log "POST-CLEAR-CMD: $name sending $post_cmd after /new"
+                    safe_send_keys_atomic "$pc_target" "$post_cmd" 0.3
+                fi
+            fi
+            unset POST_CLEAR_PENDING[$name]
+            PREV_STATE[$name]="idle"
+            return
+        fi
+    fi
+
     # 案E改: タスク配備済みの場合、statusに応じた分岐
     if is_task_deployed "$name"; then
         local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
@@ -739,6 +764,11 @@ handle_confirmed_idle() {
                 return
             fi
             unset STALL_FIRST_SEEN[$deploy_stall_key]
+            # cmd_583: /new後にpost_clear_cmd(e.g. /fast)を送信するためpendingセット
+            if [ -n "$(cli_profile_get "$name" "post_clear_cmd")" ]; then
+                POST_CLEAR_PENDING[$name]=$now
+                log "POST-CLEAR-PENDING: $name queued post_clear_cmd after DEPLOY-STALL-CLEAR"
+            fi
             # /new後にinbox nudgeで新セッションにタスクを知らせる
             sleep 2
             bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "タスクYAMLを読んで作業開始せよ。" task_assigned ninja_monitor >> "$LOG" 2>&1
@@ -822,6 +852,11 @@ handle_confirmed_idle() {
                     LAST_CLEARED[$name]=$now
                     # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
                     tmux set-option -p -t "$target" @current_task "" 2>/dev/null
+                    # cmd_583: /new後にpost_clear_cmd(e.g. /fast)を送信するためpendingセット
+                    if [ -n "$(cli_profile_get "$name" "post_clear_cmd")" ]; then
+                        POST_CLEAR_PENDING[$name]=$now
+                        log "POST-CLEAR-PENDING: $name queued post_clear_cmd after AUTO-CLEAR"
+                    fi
                 fi
             else
                 log "CLEAR-DEBOUNCE: $name idle+no_task but ${clear_elapsed}s < ${effective_debounce}s since last /clear"

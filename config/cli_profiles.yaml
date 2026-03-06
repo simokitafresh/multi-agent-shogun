@@ -69,6 +69,13 @@ profiles:
     clear_debounce: 600
     # DEPLOY-STALL検知デバウンス秒数 (clear_debounceより短い。Codexの応答遅延を考慮)
     stall_debounce: 180
+    # in_progress停滞検知しきい値（分）— 未設定時はninja_monitor側で20分fallback
+    in_progress_stall_min: 20
+    # inbox_watcher BUSY判定時の最大defer秒数（超過後は強制nudge）
+    inbox_busy_max_defer_sec: 30
+    # /new後に自動送信するコマンド（cmd_583: /fastモード有効化）
+    # ninja_monitor.shが/new送信後にidle検知→このコマンドを送信
+    post_clear_cmd: "/fast"
 
   copilot:
     # 表示名 (sync_pane_vars.sh → tmux @model_name)
