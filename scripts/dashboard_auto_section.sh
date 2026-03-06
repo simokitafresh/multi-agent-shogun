@@ -225,19 +225,14 @@ KM_DELTA_PP="—"
 KM_LESSON_EFFECT="—"
 KM_LESSON_THRESHOLD="—"
 KM_PROBLEM_LESSONS="—"
-KM_MODEL_OPUS="—"
-KM_MODEL_SONNET="—"
-KM_MODEL_CODEX="—"
-KM_N_OPUS="—"
-KM_N_SONNET="—"
-KM_N_CODEX="—"
+MODEL_SCOREBOARD_ROWS=""
 
 _gate_lines=0
 [[ -f "$GATE_LOG" ]] && _gate_lines=$(wc -l < "$GATE_LOG" | tr -d ' ')
 _cached_lines=0
 [[ -f "$KM_CACHE_LINES" ]] && _cached_lines=$(cat "$KM_CACHE_LINES" 2>/dev/null | tr -d '[:space:]')
 
-if [[ "$_gate_lines" != "$_cached_lines" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || ! grep -q '^opus_impl_rate=' "$KM_MODEL_CACHE" 2>/dev/null; then
+if [[ "$_gate_lines" != "$_cached_lines" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || ! grep -q '^model_row=' "$KM_MODEL_CACHE" 2>/dev/null; then
     bash "$SCRIPT_DIR/knowledge_metrics.sh" --json > "$KM_JSON_CACHE" 2>/dev/null || true
     bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null || true
     echo "$_gate_lines" > "$KM_CACHE_LINES"
@@ -267,26 +262,32 @@ except Exception:
     IFS=$'\t' read -r KM_INJECT_RATE KM_REF_RATE KM_DELTA_PP KM_LESSON_EFFECT KM_PROBLEM_LESSONS <<< "$_km_parsed"
 fi
 
-# Parse model cache (model_analysis.sh --summary: key=value format)
+# Parse model cache (model_analysis.sh --summary: model_row=<slug>\t<label>\t<clear>\t<impl>\t<eff>\t<trend>\t<n>)
 if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
-    _get_model_val() {
-        local key="$1"
-        grep "^${key}=" "$KM_MODEL_CACHE" | head -1 | cut -d= -f2 || true
-    }
-    _rate=$(_get_model_val opus_clear_rate)
-    [[ -n "$_rate" ]] && KM_MODEL_OPUS="${_rate}%"
-    _n=$(_get_model_val opus_n)
-    [[ -n "$_n" ]] && KM_N_OPUS="$_n"
+    while IFS= read -r _line; do
+        [[ "$_line" == model_row=* ]] || continue
+        _payload=${_line#model_row=}
+        IFS=$'\t' read -r _slug _label _clear _impl _eff _trend _n <<< "$_payload"
+        [[ -z "$_label" ]] && continue
 
-    _rate=$(_get_model_val sonnet_clear_rate)
-    [[ -n "$_rate" ]] && KM_MODEL_SONNET="${_rate}%"
-    _n=$(_get_model_val sonnet_n)
-    [[ -n "$_n" ]] && KM_N_SONNET="$_n"
+        _clear_display="—"
+        [[ -n "$_clear" && "$_clear" != "—" ]] && _clear_display="${_clear}%"
 
-    _rate=$(_get_model_val codex_clear_rate)
-    [[ -n "$_rate" ]] && KM_MODEL_CODEX="${_rate}%"
-    _n=$(_get_model_val codex_n)
-    [[ -n "$_n" ]] && KM_N_CODEX="$_n"
+        _impl_display="—"
+        [[ -n "$_impl" && "$_impl" != "—" ]] && _impl_display="${_impl}%"
+
+        _eff_display="—"
+        [[ -n "$_eff" && "$_eff" != "—" ]] && _eff_display="$_eff"
+
+        _trend_display="→"
+        case "$_trend" in
+            up) _trend_display="↑" ;;
+            down) _trend_display="↓" ;;
+        esac
+
+        MODEL_SCOREBOARD_ROWS="${MODEL_SCOREBOARD_ROWS}| ${_label} | ${_clear_display} | ${_impl_display} | ${_eff_display} | ${_trend_display} | ${_n:-—} |
+"
+    done < "$KM_MODEL_CACHE"
 fi
 
 # Parse lesson effectiveness threshold snapshot (from gate_lesson_health.sh)
@@ -454,9 +455,11 @@ fi
     echo "### モデル別スコアボード"
     echo "| モデル | CLEAR率 | impl率 | 効率 | 傾向 | N |"
     echo "|--------|---------|--------|------|------|---|"
-    echo "| Opus | ${KM_MODEL_OPUS} | $(awk -F= '/^opus_impl_rate=/{v=$2} END{if(v==""||v=="—")print "—"; else printf "%s%%", v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^opus_efficiency=/{v=$2} END{if(v=="")print "—"; else print v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^opus_trend=/{v=$2} END{if(v=="up")print "↑"; else if(v=="down")print "↓"; else print "→"}' "$KM_MODEL_CACHE" 2>/dev/null || echo "→") | ${KM_N_OPUS} |"
-    echo "| Sonnet | ${KM_MODEL_SONNET} | $(awk -F= '/^sonnet_impl_rate=/{v=$2} END{if(v==""||v=="—")print "—"; else printf "%s%%", v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^sonnet_efficiency=/{v=$2} END{if(v=="")print "—"; else print v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^sonnet_trend=/{v=$2} END{if(v=="up")print "↑"; else if(v=="down")print "↓"; else print "→"}' "$KM_MODEL_CACHE" 2>/dev/null || echo "→") | ${KM_N_SONNET} |"
-    echo "| Codex | ${KM_MODEL_CODEX} | $(awk -F= '/^codex_impl_rate=/{v=$2} END{if(v==""||v=="—")print "—"; else printf "%s%%", v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^codex_efficiency=/{v=$2} END{if(v=="")print "—"; else print v}' "$KM_MODEL_CACHE" 2>/dev/null || echo "—") | $(awk -F= '/^codex_trend=/{v=$2} END{if(v=="up")print "↑"; else if(v=="down")print "↓"; else print "→"}' "$KM_MODEL_CACHE" 2>/dev/null || echo "→") | ${KM_N_CODEX} |"
+    if [[ -n "$MODEL_SCOREBOARD_ROWS" ]]; then
+        printf "%s" "$MODEL_SCOREBOARD_ROWS"
+    else
+        echo "| — | — | — | — | — | — |"
+    fi
 
     echo ""
 

@@ -244,10 +244,146 @@ detect_task_types() {
     echo "${has_recon} ${has_implement}"
 }
 
+# ─── gate_metrics model label helpers ───
+agent_pane_target() {
+    case "$1" in
+        karo) echo "shogun:2.1" ;;
+        sasuke) echo "shogun:2.2" ;;
+        kirimaru) echo "shogun:2.3" ;;
+        hayate) echo "shogun:2.4" ;;
+        kagemaru) echo "shogun:2.5" ;;
+        hanzo) echo "shogun:2.6" ;;
+        saizo) echo "shogun:2.7" ;;
+        kotaro) echo "shogun:2.8" ;;
+        tobisaru) echo "shogun:2.9" ;;
+        *) return 1 ;;
+    esac
+}
+
+normalize_model_label() {
+    local raw="$1"
+    local family="" version="" suffix="" label=""
+
+    raw=$(printf '%s' "$raw" | tr -s ' ' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+    [ -z "$raw" ] && return 1
+
+    case "$raw" in
+        Opus|Sonnet|Haiku|Codex|unknown)
+            echo "$raw"
+            return 0
+            ;;
+    esac
+
+    if [[ "$raw" =~ ^claude-opus-([0-9]+)-([0-9]+)([[:space:]]+.*)?$ ]]; then
+        family="Opus"
+        version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+        suffix="${BASH_REMATCH[3]}"
+    elif [[ "$raw" =~ ^claude-sonnet-([0-9]+)-([0-9]+)([[:space:]]+.*)?$ ]]; then
+        family="Sonnet"
+        version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+        suffix="${BASH_REMATCH[3]}"
+    elif [[ "$raw" =~ ^claude-haiku-([0-9]+)-([0-9]+)([[:space:]]+.*)?$ ]]; then
+        family="Haiku"
+        version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+        suffix="${BASH_REMATCH[3]}"
+    elif [[ "$raw" =~ ^([Oo]pus|[Ss]onnet|[Hh]aiku)([[:space:]]+([0-9]+\.[0-9]+))?([[:space:]]+.*)?$ ]]; then
+        family="${BASH_REMATCH[1]}"
+        family="${family^}"
+        version="${BASH_REMATCH[3]}"
+        suffix="${BASH_REMATCH[4]}"
+    elif [[ "$raw" =~ ^gpt-([0-9]+(\.[0-9]+)?)([[:space:]]+.*)?$ ]]; then
+        family="Codex"
+        version="${BASH_REMATCH[1]}"
+        suffix="${BASH_REMATCH[3]}"
+    elif [[ "$raw" =~ ^[Cc]odex([[:space:]]+([0-9]+\.[0-9]+))?([[:space:]]+.*)?$ ]]; then
+        family="Codex"
+        version="${BASH_REMATCH[2]}"
+        suffix="${BASH_REMATCH[3]}"
+    else
+        echo "$raw"
+        return 0
+    fi
+
+    suffix=$(printf '%s' "$suffix" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+    label="$family"
+    [ -n "$version" ] && label="$label $version"
+    [ -n "$suffix" ] && label="$label $suffix"
+    echo "$label"
+}
+
+fallback_model_label_from_settings() {
+    local ninja_name="$1"
+    local settings_yaml="$SCRIPT_DIR/config/settings.yaml"
+
+    [ -f "$settings_yaml" ] || return 1
+
+    python3 - "$settings_yaml" "$ninja_name" <<'PY'
+import sys
+import yaml
+
+settings_yaml, ninja_name = sys.argv[1], sys.argv[2]
+
+try:
+    with open(settings_yaml, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit(1)
+
+cli = data.get("cli", {}) if isinstance(data, dict) else {}
+agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
+agent_cfg = agents.get(ninja_name, {})
+default_cli = cli.get("default", "claude") if isinstance(cli, dict) else "claude"
+effort = str(data.get("effort", "") or "").strip()
+
+cli_type = default_cli
+model_name = ""
+
+if isinstance(agent_cfg, str):
+    cli_type = agent_cfg.strip() or default_cli
+elif isinstance(agent_cfg, dict):
+    cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
+    model_name = str(agent_cfg.get("model_name") or "").strip()
+
+if model_name:
+    raw = " ".join(x for x in [model_name, effort] if x)
+elif cli_type == "codex":
+    raw = " ".join(x for x in ["gpt-5.4", effort] if x)
+else:
+    raw = " ".join(x for x in ["Opus", effort] if x)
+
+print(" ".join(raw.split()))
+PY
+}
+
+resolve_agent_model_label() {
+    local ninja_name="$1"
+    local pane_target raw_model normalized
+
+    pane_target=$(agent_pane_target "$ninja_name" 2>/dev/null || true)
+    if [ -n "$pane_target" ]; then
+        raw_model=$(tmux display-message -t "$pane_target" -p '#{@model_name}' 2>/dev/null || true)
+        if [ -n "$raw_model" ] && [ "$raw_model" != '#{@model_name}' ]; then
+            normalized=$(normalize_model_label "$raw_model" 2>/dev/null || true)
+            if [ -n "$normalized" ]; then
+                echo "$normalized"
+                return 0
+            fi
+        fi
+    fi
+
+    raw_model=$(fallback_model_label_from_settings "$ninja_name" 2>/dev/null || true)
+    normalized=$(normalize_model_label "$raw_model" 2>/dev/null || true)
+    if [ -n "$normalized" ]; then
+        echo "$normalized"
+        return 0
+    fi
+
+    return 1
+}
+
 # ─── cmd_407: gate_metrics拡張用 — task_type/model/bloom_levelの収集 ───
 collect_gate_metrics_extra() {
     local cmd_id="$1"
-    local settings_yaml="$SCRIPT_DIR/config/settings.yaml"
     local task_types_csv=""
     local models_csv=""
     local bloom_levels_csv=""
@@ -276,39 +412,16 @@ collect_gate_metrics_extra() {
             bloom_levels_csv="${bloom_levels_csv:+${bloom_levels_csv},}${bloom_level}"
         fi
 
-        # model収集: assigned_toからsettings.yamlのmodel_nameを取得
-        if [ -f "$settings_yaml" ]; then
-            local ninja_name
-            ninja_name=$(field_get "$task_file" "assigned_to" "")
-            if [ -n "$ninja_name" ]; then
-                local model
-                model=$(awk -v agent="$ninja_name" '
-                    /^[[:space:]]+'"$ninja_name"':/ { found=1; next }
-                    found && /^[[:space:]]+[a-z]/ && !/model_name:/ && !/tier:/ && !/type:/ { found=0 }
-                    found && /model_name:/ { sub(/.*model_name:[[:space:]]*/, ""); print; exit }
-                ' "$settings_yaml" 2>/dev/null)
-                # Codex下忍はtype: codexでmodel_nameなし→"codex"を設定
-                if [ -z "$model" ]; then
-                    local cli_type
-                    cli_type=$(awk -v agent="$ninja_name" '
-                        /^[[:space:]]+'"$ninja_name"':/ { found=1; next }
-                        found && /^[[:space:]]+[a-z]/ && !/type:/ && !/tier:/ && !/model_name:/ { found=0 }
-                        found && /type:/ { sub(/.*type:[[:space:]]*/, ""); print; exit }
-                    ' "$settings_yaml" 2>/dev/null)
-                    [ "$cli_type" = "codex" ] && model="codex"
-                fi
-                # model_nameからショート名に変換 (claude-opus-4-6 → Opus等)
-                case "$model" in
-                    *opus*|*Opus*) model="Opus" ;;
-                    *sonnet*|*Sonnet*) model="Sonnet" ;;
-                    *haiku*|*Haiku*) model="Haiku" ;;
-                    codex) model="Codex" ;;
-                    "") model="unknown" ;;
-                esac
-                if [[ "$_seen_models" != *"|$model|"* ]]; then
-                    _seen_models="${_seen_models}|${model}|"
-                    models_csv="${models_csv:+${models_csv},}${model}"
-                fi
+        # model収集: assigned_toのtmux @model_name を優先し、不可時はsettings.yamlへフォールバック
+        local ninja_name
+        ninja_name=$(field_get "$task_file" "assigned_to" "")
+        if [ -n "$ninja_name" ]; then
+            local model
+            model=$(resolve_agent_model_label "$ninja_name" 2>/dev/null || true)
+            [ -z "$model" ] && model="unknown"
+            if [[ "$_seen_models" != *"|$model|"* ]]; then
+                _seen_models="${_seen_models}|${model}|"
+                models_csv="${models_csv:+${models_csv},}${model}"
             fi
         fi
     done

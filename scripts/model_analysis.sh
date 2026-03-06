@@ -81,9 +81,73 @@ MODE = os.environ["MODE"]
 CMP_MODEL1 = os.environ.get("CMP_MODEL1", "").lower()
 CMP_MODEL2 = os.environ.get("CMP_MODEL2", "").lower()
 
-COST_WEIGHTS = {"opus": 5, "sonnet": 1, "codex": 0.2}
+FAMILY_WEIGHTS = {"opus": 5, "sonnet": 1, "codex": 0.2}
 ALL_NINJAS = ["sasuke", "kirimaru", "hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru"]
 ALL_NINJAS_SET = set(ALL_NINJAS)
+
+def canonical_model(raw_model):
+    raw = " ".join(str(raw_model or "").split())
+    if not raw:
+        return "unknown"
+
+    lower = raw.lower()
+    if lower in ("opus", "sonnet", "haiku", "codex", "unknown"):
+        return raw.title() if lower != "unknown" else "unknown"
+
+    match = re.match(r"^claude-(opus|sonnet|haiku)-(\d+)-(\d+)(?:\s+(.*))?$", lower)
+    if match:
+        family = match.group(1).title()
+        version = f"{match.group(2)}.{match.group(3)}"
+        suffix = match.group(4) or ""
+        return " ".join(part for part in (family, version, suffix) if part)
+
+    match = re.match(r"^(opus|sonnet|haiku)(?:\s+(\d+(?:\.\d+)?))?(?:\s+(.*))?$", lower)
+    if match:
+        family = match.group(1).title()
+        version = match.group(2) or ""
+        suffix = match.group(3) or ""
+        return " ".join(part for part in (family, version, suffix) if part)
+
+    match = re.match(r"^gpt-(\d+(?:\.\d+)?)(?:\s+(.*))?$", lower)
+    if match:
+        version = match.group(1)
+        suffix = match.group(2) or ""
+        return " ".join(part for part in ("Codex", version, suffix) if part)
+
+    match = re.match(r"^codex(?:\s+(\d+(?:\.\d+)?))?(?:\s+(.*))?$", lower)
+    if match:
+        version = match.group(1) or ""
+        suffix = match.group(2) or ""
+        return " ".join(part for part in ("Codex", version, suffix) if part)
+
+    return raw
+
+def model_family(model_label):
+    canonical = canonical_model(model_label).lower()
+    if canonical.startswith("opus"):
+        return "opus"
+    if canonical.startswith("sonnet"):
+        return "sonnet"
+    if canonical.startswith("haiku"):
+        return "haiku"
+    if canonical.startswith("codex"):
+        return "codex"
+    if canonical == "unknown":
+        return "unknown"
+    return "other"
+
+def cost_weight_for_model(model_label):
+    return FAMILY_WEIGHTS.get(model_family(model_label), 1)
+
+def model_sort_key(model_label):
+    family_order = {"opus": 0, "sonnet": 1, "haiku": 2, "codex": 3, "other": 4, "unknown": 5}
+    canonical = canonical_model(model_label)
+    family = model_family(canonical)
+    return (family_order.get(family, 9), canonical.lower())
+
+def model_slug(model_label):
+    slug = re.sub(r"[^a-z0-9]+", "_", canonical_model(model_label).lower()).strip("_")
+    return slug or "unknown"
 
 # ─── Parse settings.yaml for ninja→model map ───
 def parse_ninja_model_map():
@@ -126,12 +190,12 @@ def parse_ninja_model_map():
 
 def _resolve_model(ctype, model_name):
     if ctype == "codex":
-        return "codex"
+        return "Codex"
     if "sonnet" in model_name:
-        return "sonnet"
+        return "Sonnet"
     if "haiku" in model_name:
-        return "haiku"
-    return "opus"
+        return "Haiku"
+    return "Opus"
 
 ninja_model = parse_ninja_model_map()
 
@@ -339,10 +403,10 @@ with open(GATE_LOG, "r") as f:
 
         if len(parts) >= 6:
             entry["task_type"] = parts[4]
-            model_str = parts[5].lower()
+            model_str = parts[5]
             if model_str:
                 for m in model_str.split(","):
-                    m = m.strip()
+                    m = canonical_model(m.strip())
                     if m:
                         entry["models"].add(m)
             if len(parts) >= 7 and parts[6].strip():
@@ -516,7 +580,7 @@ def section_d():
     a_data = section_a()
     results = {}
     for m, stats in a_data.items():
-        weight = COST_WEIGHTS.get(m, 1)
+        weight = cost_weight_for_model(m)
         efficiency = stats["rate"] / weight if weight > 0 else 0.0
         results[m] = {
             "clear_rate": stats["rate"],
@@ -755,30 +819,29 @@ def output_summary():
     c = section_c()
     d = section_d()
     e = section_e()
-    for m in sorted(a.keys()):
+    for m in sorted(a.keys(), key=model_sort_key):
         if m == "unknown":
             continue
         s = a[m]
-        print("%s_clear_rate=%.1f" % (m, s["rate"]))
-        print("%s_n=%d" % (m, s["total"]))
 
         impl_rate = "—"
         impl_stats = c.get(m, {}).get("implement")
         if impl_stats and impl_stats.get("total", 0) >= 5:
             impl_rate = "%.1f" % impl_stats["rate"]
-        print("%s_impl_rate=%s" % (m, impl_rate))
 
         eff_stats = d.get(m)
         if eff_stats is not None:
             efficiency = "%.1f" % eff_stats.get("efficiency", 0.0)
         else:
             efficiency = "—"
-        print("%s_efficiency=%s" % (m, efficiency))
 
         trend = e.get(m, {}).get("trend", "stable")
         if trend not in ("stable", "up", "down"):
             trend = "stable"
-        print("%s_trend=%s" % (m, trend))
+        print(
+            "model_row=%s\t%s\t%.1f\t%s\t%s\t%s\t%d"
+            % (model_slug(m), m, s["rate"], impl_rate, efficiency, trend, s["total"])
+        )
 
 def output_json():
     result = {
@@ -805,11 +868,24 @@ def output_json():
         return obj
     print(json.dumps(convert(result), indent=2, ensure_ascii=False))
 
+def resolve_compare_label(requested, available_labels):
+    wanted = canonical_model(requested).lower()
+    for label in available_labels:
+        if canonical_model(label).lower() == wanted:
+            return label
+    family = model_family(wanted)
+    family_matches = [label for label in available_labels if model_family(label) == family]
+    if len(family_matches) == 1:
+        return family_matches[0]
+    return canonical_model(requested)
+
 def output_compare():
-    m1, m2 = CMP_MODEL1, CMP_MODEL2
     a = section_a()
     d = section_d()
     e = section_e()
+    available_labels = list(a.keys())
+    m1 = resolve_compare_label(CMP_MODEL1, available_labels)
+    m2 = resolve_compare_label(CMP_MODEL2, available_labels)
 
     print("=" * 50)
     print("  Head-to-Head: %s vs %s" % (m1.upper(), m2.upper()))
