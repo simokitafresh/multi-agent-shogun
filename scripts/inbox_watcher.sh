@@ -39,6 +39,7 @@ FINGERPRINT_FILE="/tmp/inbox_watcher_fingerprint_${AGENT_ID}"
 RETRY_MAX=3      # immediate retries before falling back to BACKOFF interval
 RETRY_COUNT_FILE="/tmp/inbox_watcher_retry_${AGENT_ID}"
 BACKOFF_SEC=120  # 2 minutes — safety net re-notification for stale unread (was 600)
+STATE_LOCK_FILE="/tmp/inbox_watcher_state_${AGENT_ID}.lock"
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -86,7 +87,7 @@ try:
     print(json.dumps({
         'count': len(normal),
         'normal_ids': normal_ids,
-        'specials': [{'type': m.get('type',''), 'content': m.get('content','')} for m in specials],
+        'specials': [{'id': m.get('id',''), 'type': m.get('type',''), 'content': m.get('content','')} for m in specials],
         'has_specials': len(specials) > 0
     }))
 except Exception as e:
@@ -96,25 +97,29 @@ except Exception as e:
     echo "$info"
 }
 
-# ─── Mark special messages as read (flock + atomic write) ───
+# ─── Mark one special message as read (flock + atomic write) ───
 # Called AFTER send_cli_command succeeds, to prevent message loss on send failure.
-mark_specials_read() {
-    (
-        flock -w 5 200 || { echo "[mark_specials_read] WARN: flock timeout" >&2; return 1; }
+mark_special_read() {
+    local message_id="$1"
+    [ -n "$message_id" ] || return 1
 
-        python3 -c "
+    (
+        flock -w 5 200 || { echo "[mark_special_read] WARN: flock timeout" >&2; exit 1; }
+
+        MESSAGE_ID="$message_id" python3 -c "
 import yaml, sys, os, tempfile
 try:
     with open('$INBOX') as f:
         data = yaml.safe_load(f)
     if not data or 'messages' not in data:
         sys.exit(0)
-    special_types = ('clear_command', 'model_switch')
+    target_id = os.environ['MESSAGE_ID']
     changed = False
     for m in data['messages']:
-        if not m.get('read', False) and m.get('type') in special_types:
+        if not m.get('read', False) and str(m.get('id', '')) == target_id:
             m['read'] = True
             changed = True
+            break
     if changed:
         tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname('$INBOX'), suffix='.tmp')
         try:
@@ -129,6 +134,32 @@ except Exception as e:
 " 2>/dev/null
 
     ) 200>"$LOCKFILE"
+}
+
+write_state_file() {
+    local file_path="$1"
+    local value="$2"
+    local label="${3:-state}"
+    (
+        flock -w 5 200 || { echo "[$(date)] WARN: ${label} flock timeout: $file_path" >&2; exit 1; }
+        printf '%s' "$value" > "$file_path"
+    ) 200>"$STATE_LOCK_FILE"
+}
+
+touch_state_file() {
+    local file_path="$1"
+    local label="${2:-state}"
+    (
+        flock -w 5 200 || { echo "[$(date)] WARN: ${label} flock timeout: $file_path" >&2; exit 1; }
+        touch "$file_path"
+    ) 200>"$STATE_LOCK_FILE"
+}
+
+refresh_debounce_file() {
+    if ! date +%s > "$DEBOUNCE_FILE"; then
+        echo "[$(date)] WARNING: failed to refresh debounce file: $DEBOUNCE_FILE" >&2
+        return 1
+    fi
 }
 
 # ─── Fingerprint age helper ───
@@ -303,7 +334,7 @@ send_wakeup() {
     echo "[$(date)] [NUDGE] Sending paste-buffer nudge to $AGENT_ID" >&2
 
     # Optimistic lock: update debounce BEFORE send to prevent concurrent nudges
-    if ! date +%s > "$DEBOUNCE_FILE"; then
+    if ! refresh_debounce_file; then
         echo "[$(date)] WARNING: failed to update debounce file: $DEBOUNCE_FILE" >&2
     fi
 
@@ -314,17 +345,15 @@ send_wakeup() {
     # Send nudge via paste-buffer + Enter (atomic lock)
     local lock="/tmp/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
     (
-        flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; rm -f "$DEBOUNCE_FILE"; exit 1; }
+        flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
         tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
             echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2
-            rm -f "$DEBOUNCE_FILE"
             exit 1
         fi
         sleep 0.5
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
-            rm -f "$DEBOUNCE_FILE"
             exit 1
         fi
     ) 200>"$lock"
@@ -367,30 +396,53 @@ process_unread() {
     # Handle special CLI commands first (/clear, /model)
     local specials
     specials=$(echo "$info" | python3 -c "
-import sys, json
+import base64, sys, json
 data = json.load(sys.stdin)
 for s in data.get('specials', []):
-    if s['type'] == 'clear_command':
-        print('/clear')
-        print(s['content'])  # post-clear instruction
-    elif s['type'] == 'model_switch':
-        print(s['content'])  # /model command
+    content = base64.b64encode(str(s.get('content', '')).encode('utf-8')).decode('ascii')
+    print(f\"{s.get('id', '')}\\t{s.get('type', '')}\\t{content}\")
 " 2>/dev/null)
 
     if [ -n "$specials" ]; then
-        local special_ok=true
-        while IFS= read -r cmd; do
-            if [ -n "$cmd" ]; then
-                if ! send_cli_command "$cmd"; then
+        while IFS= read -r special_line; do
+            [ -n "$special_line" ] || continue
+
+            local special_id=""
+            local special_type=""
+            local special_content_b64=""
+            local special_content=""
+            IFS=$'\t' read -r special_id special_type special_content_b64 <<< "$special_line"
+            if [ -n "$special_content_b64" ]; then
+                special_content=$(printf '%s' "$special_content_b64" | base64 -d 2>/dev/null || true)
+            fi
+
+            local special_ok=true
+            case "$special_type" in
+                clear_command)
+                    if ! send_cli_command "/clear"; then
+                        special_ok=false
+                    elif [ -n "$special_content" ] && ! send_cli_command "$special_content"; then
+                        special_ok=false
+                    fi
+                    ;;
+                model_switch)
+                    if ! send_cli_command "$special_content"; then
+                        special_ok=false
+                    fi
+                    ;;
+                *)
                     special_ok=false
-                    echo "[$(date)] WARNING: send_cli_command failed, specials NOT marked read" >&2
-                    break
-                fi
+                    echo "[$(date)] WARNING: unknown special type '$special_type' for $AGENT_ID" >&2
+                    ;;
+            esac
+
+            if [ "$special_ok" = true ]; then
+                mark_special_read "$special_id" || true
+            else
+                echo "[$(date)] WARNING: send_cli_command failed, special '$special_type' NOT marked read" >&2
+                break
             fi
         done <<< "$specials"
-        if [ "$special_ok" = true ]; then
-            mark_specials_read
-        fi
     fi
 
     # Send wake-up nudge for normal messages (fingerprint dedup)
@@ -410,11 +462,12 @@ for s in data.get('specials', []):
         if [ "$current_fp" != "$prev_fp" ]; then
             # Fingerprint changed → new unread messages arrived
             echo "[$(date)] [FP-CHANGE] Unread set changed for $AGENT_ID ($normal_count unread), sending nudge" >&2
-            echo "$current_fp" > "$FINGERPRINT_FILE"
-            echo 0 > "$RETRY_COUNT_FILE"
+            write_state_file "$FINGERPRINT_FILE" "$current_fp" "fingerprint" || true
+            write_state_file "$RETRY_COUNT_FILE" "0" "retry_count" || true
             local wake_rc=0
             send_wakeup "$normal_count" || wake_rc=$?
             if [ "$wake_rc" -eq 2 ]; then
+                refresh_debounce_file || true
                 echo "[$(date)] [WAKE-DEFER] Deferred initial nudge for $AGENT_ID (busy gating)" >&2
             fi
         else
@@ -431,10 +484,11 @@ for s in data.get('specials', []):
                 local wake_rc=0
                 send_wakeup "$normal_count" || wake_rc=$?
                 if [ "$wake_rc" -eq 2 ]; then
+                    refresh_debounce_file || true
                     echo "[$(date)] [RETRY-DEFER] Busy gating deferred retry (${retry_count}/${RETRY_MAX}) for $AGENT_ID" >&2
                 else
                     retry_count=$((retry_count + 1))
-                    echo "$retry_count" > "$RETRY_COUNT_FILE"
+                    write_state_file "$RETRY_COUNT_FILE" "$retry_count" "retry_count" || true
                     echo "[$(date)] [RETRY] Nudge unacknowledged, retry ${retry_count}/${RETRY_MAX} for $AGENT_ID" >&2
                 fi
             else
@@ -444,7 +498,7 @@ for s in data.get('specials', []):
 
                 if [ "$fp_age" -ge "$BACKOFF_SEC" ]; then
                     echo "[$(date)] [BACKOFF] Stale unread for ${fp_age}s >= ${BACKOFF_SEC}s, re-notifying $AGENT_ID" >&2
-                    touch "$FINGERPRINT_FILE"  # reset mtime for next backoff cycle
+                    touch_state_file "$FINGERPRINT_FILE" "fingerprint" || true  # reset mtime for next backoff cycle
                     send_wakeup "$normal_count"
                 else
                     echo "[$(date)] [FP-SAME] Same unread set (age ${fp_age}s, retries exhausted), waiting for backoff for $AGENT_ID" >&2

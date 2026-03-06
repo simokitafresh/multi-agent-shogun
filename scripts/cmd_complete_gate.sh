@@ -42,10 +42,14 @@ resolve_report_file() {
     auto_unwrap_report_yaml() {
         local report_file="$1"
         local unwrap_result
+        local report_lock="${report_file}.lock"
 
         [ -f "$report_file" ] || return 0
 
-        unwrap_result=$(REPORT_FILE="$report_file" python3 - <<'PY'
+        unwrap_result=$(
+            (
+                flock -w 5 200 || { echo "flock_timeout"; exit 0; }
+                REPORT_FILE="$report_file" python3 - <<'PY'
 import os
 import tempfile
 import yaml
@@ -77,7 +81,8 @@ if len(data) == 1 and "report" in data and isinstance(data.get("report"), dict):
 else:
     print("skip")
 PY
-)
+            ) 200>"$report_lock"
+        )
 
         case "$unwrap_result" in
             unwrapped)
@@ -85,6 +90,9 @@ PY
                 ;;
             parse_error)
                 echo "[gate] WARN: report YAML parse failed during auto-unwrapping: ${report_file}" >&2
+                ;;
+            flock_timeout)
+                echo "[gate] WARN: report YAML unwrap flock timeout: ${report_file}" >&2
                 ;;
         esac
     }
@@ -177,15 +185,13 @@ append_changelog() {
     # shogun_to_karo.yamlから該当cmdのpurposeとprojectを抽出
     local purpose
     purpose=$(awk -v cmd="${cmd_id}" '
-        /^[ ]*- id:/ && index($0, cmd) { found=1; next }
-        found && /^[ ]*- id:/ { exit }
+        /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
         found && /^[ ]*purpose:/ { sub(/^[ ]*purpose: *"?/, ""); sub(/"$/, ""); print; exit }
     ' "$YAML_FILE")
 
     local project
     project=$(awk -v cmd="${cmd_id}" '
-        /^[ ]*- id:/ && index($0, cmd) { found=1; next }
-        found && /^[ ]*- id:/ { exit }
+        /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
         found && /^[ ]*project:/ { sub(/^[ ]*project: */, ""); print; exit }
     ' "$YAML_FILE")
 
@@ -1714,8 +1720,7 @@ echo ""
 echo "Draft lesson check:"
 # cmdのprojectを取得
 CMD_PROJECT=$(awk -v cmd="${CMD_ID}" '
-    /^[ ]*- id:/ && index($0, cmd) { found=1; next }
-    found && /^[ ]*- id:/ { exit }
+    /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
     found && /^[ ]*project:/ { sub(/^[ ]*project: */, ""); print; exit }
 ' "$YAML_FILE")
 
@@ -1848,8 +1853,7 @@ echo ""
 echo "Recon knowledge persistence check (穴4):"
 # purposeを取得（append_changelog内と同じawk）
 CMD_PURPOSE=$(awk -v cmd="${CMD_ID}" '
-    /^[ ]*- id:/ && index($0, cmd) { found=1; next }
-    found && /^[ ]*- id:/ { exit }
+    /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
     found && /^[ ]*purpose:/ { sub(/^[ ]*purpose: *"?/, ""); sub(/"$/, ""); print; exit }
 ' "$YAML_FILE")
 

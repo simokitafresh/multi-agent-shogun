@@ -786,7 +786,7 @@ try:
             for r in related:
                 lines.append(f"  - {r['id']}: {r['summary'][:80]}")
             lines.append('─' * 40)
-            prefix = '\\n'.join(lines) + '\\n\\n'
+            prefix = '\n'.join(lines) + '\n\n'
             task['description'] = prefix + str(desc or '')
 
     # Atomic write
@@ -803,11 +803,11 @@ try:
     _pc_path = os.path.join(os.path.dirname(task_file), '.postcond_lesson_inject')
     try:
         with open(_pc_path, 'w') as _pf:
-            _pf.write(f'available={len(tag_candidates) + universal_total_count}\\n')
-            _pf.write(f'injected={len(related)}\\n')
-            _pf.write(f'task_id={task.get("task_id", "unknown")}\\n')
-            _pf.write(f'project={project}\\n')
-            _pf.write(f'injected_ids={" ".join(r["id"] for r in related)}\\n')
+            _pf.write(f'available={len(tag_candidates) + universal_total_count}\n')
+            _pf.write(f'injected={len(related)}\n')
+            _pf.write(f'task_id={task.get("task_id", "unknown")}\n')
+            _pf.write(f'project={project}\n')
+            _pf.write(f'injected_ids={" ".join(r["id"] for r in related)}\n')
     except Exception:
         pass
 
@@ -833,12 +833,12 @@ try:
         write_header = not os.path.exists(impact_log) or os.path.getsize(impact_log) == 0
         with open(impact_log, 'a', encoding='utf-8') as lf:
             if write_header:
-                lf.write('timestamp\\tcmd_id\\tninja\\tlesson_id\\taction\\tresult\\treferenced\\tproject\\ttask_type\\tbloom_level\\n')
+                lf.write('timestamp\\tcmd_id\\tninja\\tlesson_id\\taction\\tresult\\treferenced\\tproject\\ttask_type\\tbloom_level\n')
             ts = datetime.datetime.now().isoformat(timespec='seconds')
             for r in related:
-                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{r["id"]}\\tinjected\\tpending\\tpending\\t{project}\\t{task_type}\\t{bloom}\\n')
+                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{r["id"]}\\tinjected\\tpending\\tpending\\t{project}\\t{task_type}\\t{bloom}\n')
             for w in withheld:
-                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{w["id"]}\\twithheld\\tpending\\tno\\t{project}\\t{task_type}\\t{bloom}\\n')
+                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{w["id"]}\\twithheld\\tpending\\tno\\t{project}\\t{task_type}\\t{bloom}\n')
         print(f'[INJECT] Impact log: {len(related)} injected + {len(withheld)} withheld written to lesson_impact.tsv', file=sys.stderr)
     except Exception as ie:
         print(f'[INJECT] WARN: impact log write failed: {ie}', file=sys.stderr)
