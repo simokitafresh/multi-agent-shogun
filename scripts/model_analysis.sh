@@ -86,7 +86,8 @@ ALL_NINJAS = ["sasuke", "kirimaru", "hayate", "kagemaru", "hanzo", "saizo", "kot
 ALL_NINJAS_SET = set(ALL_NINJAS)
 
 def normalize_model_label(raw_model):
-    raw = " ".join(str(raw_model or "").split())
+    raw = str(raw_model or "").replace("_", " ")
+    raw = " ".join(raw.split())
     return raw if raw else "unknown"
 
 def model_sort_key(model_label):
@@ -129,18 +130,20 @@ def build_model_alias_index():
     for _, agent_cfg in agents.items():
         cli_type = default_cli
         model_label = ""
+        has_explicit_model = False
         if isinstance(agent_cfg, str):
             cli_type = str(agent_cfg or default_cli).strip() or default_cli
         elif isinstance(agent_cfg, dict):
             cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
             model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
+            has_explicit_model = bool(model_label)
         profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
         display_name = " ".join(str(profile.get("display_name") or "").split()) if isinstance(profile, dict) else ""
         base_label = model_label or display_name or cli_type
         if not base_label:
             continue
         variants = {base_label}
-        if effort and effort not in base_label.split():
+        if has_explicit_model and effort and effort not in base_label.split():
             variants.add(f"{base_label} {effort}")
         for variant in variants:
             alias_to_cli[variant.lower()] = cli_type
@@ -165,15 +168,17 @@ def parse_ninja_model_map():
     for ninja_name, agent_cfg in agents.items():
         cli_type = default_cli
         model_label = ""
+        has_explicit_model = False
         if isinstance(agent_cfg, str):
             cli_type = str(agent_cfg or default_cli).strip() or default_cli
         elif isinstance(agent_cfg, dict):
             cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
             model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
+            has_explicit_model = bool(model_label)
         profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
         display_name = " ".join(str(profile.get("display_name") or "").split()) if isinstance(profile, dict) else ""
         label = model_label or display_name or cli_type
-        if effort and effort not in label.split():
+        if has_explicit_model and effort and effort not in label.split():
             label = f"{label} {effort}"
         nmap[ninja_name] = normalize_model_label(label)
     return nmap

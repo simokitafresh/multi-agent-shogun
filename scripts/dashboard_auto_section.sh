@@ -100,18 +100,20 @@ profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) 
 
 cli_type = default_cli
 model_label = ""
+has_explicit_model = False
 if isinstance(agent_cfg, str):
     cli_type = str(agent_cfg or default_cli).strip() or default_cli
 elif isinstance(agent_cfg, dict):
     cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
     model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
+    has_explicit_model = bool(model_label)
 
 if not model_label:
     profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
     model_label = " ".join(str(profile.get("display_name") or cli_type or "").split())
 
 parts = [model_label]
-if effort and effort not in model_label.split():
+if has_explicit_model and effort and effort not in model_label.split():
     parts.append(effort)
 
 result = " ".join(part for part in parts if part).strip()
@@ -248,15 +250,17 @@ KM_LESSON_THRESHOLD="—"
 KM_PROBLEM_LESSONS="—"
 MODEL_SCOREBOARD_ROWS=""
 
-_gate_lines=0
-[[ -f "$GATE_LOG" ]] && _gate_lines=$(wc -l < "$GATE_LOG" | tr -d ' ')
-_cached_lines=0
-[[ -f "$KM_CACHE_LINES" ]] && _cached_lines=$(cat "$KM_CACHE_LINES" 2>/dev/null | tr -d '[:space:]')
+_gate_signature="missing"
+if [[ -f "$GATE_LOG" ]]; then
+    _gate_signature=$(cksum "$GATE_LOG" | awk '{print $1 ":" $2}')
+fi
+_cached_signature=""
+[[ -f "$KM_CACHE_LINES" ]] && _cached_signature=$(tr -d '[:space:]' < "$KM_CACHE_LINES" 2>/dev/null)
 
-if [[ "$_gate_lines" != "$_cached_lines" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || ! grep -q '^model_row=' "$KM_MODEL_CACHE" 2>/dev/null; then
+if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || ! grep -q '^model_row=' "$KM_MODEL_CACHE" 2>/dev/null; then
     bash "$SCRIPT_DIR/knowledge_metrics.sh" --json > "$KM_JSON_CACHE" 2>/dev/null || true
     bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null || true
-    echo "$_gate_lines" > "$KM_CACHE_LINES"
+    echo "$_gate_signature" > "$KM_CACHE_LINES"
 fi
 
 # Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp)
@@ -290,6 +294,7 @@ if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
         _payload=${_line#model_row=}
         IFS=$'\t' read -r _slug _label _clear _impl _eff _trend _n <<< "$_payload"
         [[ -z "$_label" ]] && continue
+        _label=${_label//_/ }
 
         _clear_display="—"
         [[ -n "$_clear" && "$_clear" != "—" ]] && _clear_display="${_clear}%"

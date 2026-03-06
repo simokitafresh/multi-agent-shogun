@@ -258,6 +258,15 @@ normalize_model_label() {
     echo "$raw"
 }
 
+encode_model_label_for_tsv() {
+    local raw="$1"
+    local normalized
+
+    normalized=$(normalize_model_label "$raw" 2>/dev/null || true)
+    [ -n "$normalized" ] || return 1
+    echo "${normalized// /_}"
+}
+
 fallback_model_label_from_settings() {
     local ninja_name="$1"
     local settings_yaml="$SCRIPT_DIR/config/settings.yaml"
@@ -293,19 +302,21 @@ profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) 
 
 cli_type = default_cli
 model_label = ""
+has_explicit_model = False
 
 if isinstance(agent_cfg, str):
     cli_type = agent_cfg.strip() or default_cli
 elif isinstance(agent_cfg, dict):
     cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
     model_label = str(agent_cfg.get("model_name") or "").strip()
+    has_explicit_model = bool(model_label)
 
 if not model_label:
     profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
     model_label = str(profile.get("display_name") or cli_type or "").strip()
 
 parts = [model_label]
-if effort:
+if effort and has_explicit_model:
     label_words = model_label.split()
     if effort not in label_words:
         parts.append(effort)
@@ -378,6 +389,7 @@ collect_gate_metrics_extra() {
         if [ -n "$ninja_name" ]; then
             local model
             model=$(resolve_agent_model_label "$ninja_name" 2>/dev/null || true)
+            model=$(encode_model_label_for_tsv "$model" 2>/dev/null || true)
             [ -z "$model" ] && model="unknown"
             if [[ "$_seen_models" != *"|$model|"* ]]; then
                 _seen_models="${_seen_models}|${model}|"
@@ -390,8 +402,7 @@ collect_gate_metrics_extra() {
     [ -z "$models_csv" ] && models_csv="unknown"
     [ -z "$bloom_levels_csv" ] && bloom_levels_csv="unknown"
 
-    # スペース区切りで3値を返す
-    echo "${task_types_csv} ${models_csv} ${bloom_levels_csv}"
+    printf '%s\t%s\t%s\n' "${task_types_csv}" "${models_csv}" "${bloom_levels_csv}"
 }
 
 # ─── cmd_466: gate_metrics拡張用 — 注入教訓ID収集 ───
@@ -1074,7 +1085,7 @@ fi
 ALL_GATES=("${ALWAYS_REQUIRED[@]}" "${CONDITIONAL[@]}")
 
 # cmd_407: gate_metrics拡張用のtask_type/model/bloom_level収集
-read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate_metrics_extra "$CMD_ID")"
+IFS=$'\t' read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate_metrics_extra "$CMD_ID")"
 GATE_INJECTED_LESSONS="$(collect_injected_lessons "$CMD_ID")"
 CMD_TITLE="$(collect_cmd_title "$CMD_ID")"
 
