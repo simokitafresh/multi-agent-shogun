@@ -31,26 +31,33 @@ detect_real_model() {
 
     case "$cli_t" in
         claude)
-            # Claude Code: バナー行 ▝▜█████▛▘  {Model} · {Plan}
+            # Claude Code: バナー検出（幅差分を吸収）
+            #   狭幅(47): ▐▛███▜▌   {Opus|Sonnet|Haiku} {X.Y} with {effort} effort
+            #   標準幅(71+): ▝▜█████▛▘  {Opus|Sonnet|Haiku} {X.Y} with {effort} effort · {Plan}
             local output
             output=$(tmux capture-pane -t "$pane_target" -p -S -1000 2>/dev/null)
 
             if [ -n "$output" ]; then
-                # バナー行を抽出（モデル名パターンで精密マッチ = false positive防止）
-                # 形式: ▝▜█████▛▘  {Opus|Sonnet|Haiku} {X.Y} · {Plan}
-                local banner
-                banner=$(echo "$output" | grep -E '▝▜█████▛▘[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+[[:space:]]+·' | tail -1)
+                local banner model
 
+                # 幅共通の一次検出: どちらのアート行でもモデル行なら許容
+                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+([[:space:]]+with[[:space:]]+[a-z]+[[:space:]]+effort)?([[:space:]]+·.*)?[[:space:]]*$' | tail -1)
                 if [ -n "$banner" ]; then
-                    # モデル名抽出: ▝▜█████▛▘ の後ろ、· の前
-                    local model
-                    model=$(echo "$banner" | sed -E 's/.*▝▜█████▛▘[[:space:]]*//' | sed -E 's/[[:space:]]*·.*//')
-                    if [ -n "$model" ]; then
-                        # キャッシュに保存（次回バナースクロールオフ時の安全網）
-                        tmux set-option -p -t "$pane_target" @real_model "$model" 2>/dev/null
-                        echo "$model"
-                        return 0
+                    model=$(echo "$banner" | sed -E 's/.*(▐▛███▜▌|▝▜█████▛▘)[[:space:]]*//' | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' | sed -E 's/[[:space:]]*·.*//' | sed -E 's/[[:space:]]*$//')
+                fi
+
+                # 標準幅フォールバック: ▝▜█████▛▘  Opus 4.6 with high effort · Plan
+                if [ -z "$model" ]; then
+                    banner=$(echo "$output" | grep -E '▝▜█████▛▘[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+([[:space:]]+with[[:space:]]+[a-z]+[[:space:]]+effort)?([[:space:]]+·.*)?[[:space:]]*$' | tail -1)
+                    if [ -n "$banner" ]; then
+                        model=$(echo "$banner" | sed -E 's/.*▝▜█████▛▘[[:space:]]*//' | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' | sed -E 's/[[:space:]]*·.*//' | sed -E 's/[[:space:]]*$//')
                     fi
+                fi
+
+                if [ -n "$model" ]; then
+                    tmux set-option -p -t "$pane_target" @real_model "$model" 2>/dev/null
+                    echo "$model"
+                    return 0
                 fi
             fi
 
