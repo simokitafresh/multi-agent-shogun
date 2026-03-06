@@ -81,121 +81,102 @@ MODE = os.environ["MODE"]
 CMP_MODEL1 = os.environ.get("CMP_MODEL1", "").lower()
 CMP_MODEL2 = os.environ.get("CMP_MODEL2", "").lower()
 
-FAMILY_WEIGHTS = {"opus": 5, "sonnet": 1, "codex": 0.2}
+CLI_COST_WEIGHTS = {"claude": 5, "codex": 0.2, "copilot": 1, "kimi": 1}
 ALL_NINJAS = ["sasuke", "kirimaru", "hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru"]
 ALL_NINJAS_SET = set(ALL_NINJAS)
 
-def canonical_model(raw_model):
+def normalize_model_label(raw_model):
     raw = " ".join(str(raw_model or "").split())
-    if not raw:
-        return "unknown"
-
-    lower = raw.lower()
-    if lower in ("opus", "sonnet", "haiku", "codex", "unknown"):
-        return raw.title() if lower != "unknown" else "unknown"
-
-    match = re.match(r"^claude-(opus|sonnet|haiku)-(\d+)-(\d+)(?:\s+(.*))?$", lower)
-    if match:
-        family = match.group(1).title()
-        version = f"{match.group(2)}.{match.group(3)}"
-        suffix = match.group(4) or ""
-        return " ".join(part for part in (family, version, suffix) if part)
-
-    match = re.match(r"^(opus|sonnet|haiku)(?:\s+(\d+(?:\.\d+)?))?(?:\s+(.*))?$", lower)
-    if match:
-        family = match.group(1).title()
-        version = match.group(2) or ""
-        suffix = match.group(3) or ""
-        return " ".join(part for part in (family, version, suffix) if part)
-
-    match = re.match(r"^gpt-(\d+(?:\.\d+)?)(?:\s+(.*))?$", lower)
-    if match:
-        version = match.group(1)
-        suffix = match.group(2) or ""
-        return " ".join(part for part in ("Codex", version, suffix) if part)
-
-    match = re.match(r"^codex(?:\s+(\d+(?:\.\d+)?))?(?:\s+(.*))?$", lower)
-    if match:
-        version = match.group(1) or ""
-        suffix = match.group(2) or ""
-        return " ".join(part for part in ("Codex", version, suffix) if part)
-
-    return raw
-
-def model_family(model_label):
-    canonical = canonical_model(model_label).lower()
-    if canonical.startswith("opus"):
-        return "opus"
-    if canonical.startswith("sonnet"):
-        return "sonnet"
-    if canonical.startswith("haiku"):
-        return "haiku"
-    if canonical.startswith("codex"):
-        return "codex"
-    if canonical == "unknown":
-        return "unknown"
-    return "other"
-
-def cost_weight_for_model(model_label):
-    return FAMILY_WEIGHTS.get(model_family(model_label), 1)
+    return raw if raw else "unknown"
 
 def model_sort_key(model_label):
-    family_order = {"opus": 0, "sonnet": 1, "haiku": 2, "codex": 3, "other": 4, "unknown": 5}
-    canonical = canonical_model(model_label)
-    family = model_family(canonical)
-    return (family_order.get(family, 9), canonical.lower())
+    normalized = normalize_model_label(model_label)
+    if normalized == "unknown":
+        return (1, normalized.lower())
+    return (0, normalized.lower())
 
 def model_slug(model_label):
-    slug = re.sub(r"[^a-z0-9]+", "_", canonical_model(model_label).lower()).strip("_")
+    slug = re.sub(r"[^a-z0-9]+", "_", normalize_model_label(model_label).lower()).strip("_")
     return slug or "unknown"
 
-# ─── Parse settings.yaml for ninja→model map ───
+def load_yaml(path):
+    if not os.path.isfile(path):
+        return {}
+    try:
+        import yaml
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+settings_data = load_yaml(SETTINGS)
+profiles_data = load_yaml(os.path.join(os.path.dirname(SETTINGS), "cli_profiles.yaml"))
+
+def build_model_alias_index():
+    alias_to_cli = {}
+    cli = settings_data.get("cli", {}) if isinstance(settings_data, dict) else {}
+    agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
+    default_cli = str(cli.get("default", "claude") or "claude")
+    effort = str(settings_data.get("effort", "") or "").strip()
+    profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
+
+    for cli_type, profile in profiles.items():
+        if isinstance(profile, dict):
+            display_name = " ".join(str(profile.get("display_name") or "").split())
+            if display_name:
+                alias_to_cli[display_name.lower()] = cli_type
+
+    for _, agent_cfg in agents.items():
+        cli_type = default_cli
+        model_label = ""
+        if isinstance(agent_cfg, str):
+            cli_type = str(agent_cfg or default_cli).strip() or default_cli
+        elif isinstance(agent_cfg, dict):
+            cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
+            model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
+        profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
+        display_name = " ".join(str(profile.get("display_name") or "").split()) if isinstance(profile, dict) else ""
+        base_label = model_label or display_name or cli_type
+        if not base_label:
+            continue
+        variants = {base_label}
+        if effort and effort not in base_label.split():
+            variants.add(f"{base_label} {effort}")
+        for variant in variants:
+            alias_to_cli[variant.lower()] = cli_type
+    return alias_to_cli
+
+MODEL_ALIAS_TO_CLI = build_model_alias_index()
+
+def cost_weight_for_model(model_label):
+    cli_type = MODEL_ALIAS_TO_CLI.get(normalize_model_label(model_label).lower())
+    if cli_type:
+        return CLI_COST_WEIGHTS.get(cli_type, 1)
+    return 1
+
 def parse_ninja_model_map():
     nmap = {}
-    if not os.path.isfile(SETTINGS):
-        return nmap
-    in_agents = False
-    cur_ninja = ""
-    cur_type = ""
-    cur_model = ""
-    with open(SETTINGS, "r") as f:
-        for line in f:
-            stripped = line.rstrip()
-            if re.match(r"^\s*agents:", stripped):
-                in_agents = True
-                continue
-            if in_agents and re.match(r"^[^\s]", stripped):
-                in_agents = False
-                continue
-            if not in_agents:
-                continue
-            m = re.match(r"^    ([a-z]+):", stripped)
-            if m:
-                if cur_ninja:
-                    nmap[cur_ninja] = _resolve_model(cur_type, cur_model)
-                cur_ninja = m.group(1)
-                cur_type = ""
-                cur_model = ""
-                continue
-            if cur_ninja:
-                tm = re.match(r"^\s+type:\s*(\S+)", stripped)
-                if tm:
-                    cur_type = tm.group(1)
-                mm = re.match(r"^\s+model_name:\s*(\S+)", stripped)
-                if mm:
-                    cur_model = mm.group(1)
-    if cur_ninja:
-        nmap[cur_ninja] = _resolve_model(cur_type, cur_model)
-    return nmap
+    cli = settings_data.get("cli", {}) if isinstance(settings_data, dict) else {}
+    agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
+    default_cli = str(cli.get("default", "claude") or "claude")
+    effort = str(settings_data.get("effort", "") or "").strip()
+    profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
 
-def _resolve_model(ctype, model_name):
-    if ctype == "codex":
-        return "Codex"
-    if "sonnet" in model_name:
-        return "Sonnet"
-    if "haiku" in model_name:
-        return "Haiku"
-    return "Opus"
+    for ninja_name, agent_cfg in agents.items():
+        cli_type = default_cli
+        model_label = ""
+        if isinstance(agent_cfg, str):
+            cli_type = str(agent_cfg or default_cli).strip() or default_cli
+        elif isinstance(agent_cfg, dict):
+            cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
+            model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
+        profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
+        display_name = " ".join(str(profile.get("display_name") or "").split()) if isinstance(profile, dict) else ""
+        label = model_label or display_name or cli_type
+        if effort and effort not in label.split():
+            label = f"{label} {effort}"
+        nmap[ninja_name] = normalize_model_label(label)
+    return nmap
 
 ninja_model = parse_ninja_model_map()
 
@@ -406,7 +387,7 @@ with open(GATE_LOG, "r") as f:
             model_str = parts[5]
             if model_str:
                 for m in model_str.split(","):
-                    m = canonical_model(m.strip())
+                    m = normalize_model_label(m.strip())
                     if m:
                         entry["models"].add(m)
             if len(parts) >= 7 and parts[6].strip():
@@ -869,15 +850,14 @@ def output_json():
     print(json.dumps(convert(result), indent=2, ensure_ascii=False))
 
 def resolve_compare_label(requested, available_labels):
-    wanted = canonical_model(requested).lower()
+    wanted = normalize_model_label(requested).lower()
     for label in available_labels:
-        if canonical_model(label).lower() == wanted:
+        if normalize_model_label(label).lower() == wanted:
             return label
-    family = model_family(wanted)
-    family_matches = [label for label in available_labels if model_family(label) == family]
-    if len(family_matches) == 1:
-        return family_matches[0]
-    return canonical_model(requested)
+    for label in available_labels:
+        if normalize_model_label(label).lower().startswith(wanted):
+            return label
+    return normalize_model_label(requested)
 
 def output_compare():
     a = section_a()

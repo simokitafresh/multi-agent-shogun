@@ -246,86 +246,41 @@ detect_task_types() {
 
 # ─── gate_metrics model label helpers ───
 agent_pane_target() {
-    case "$1" in
-        karo) echo "shogun:2.1" ;;
-        sasuke) echo "shogun:2.2" ;;
-        kirimaru) echo "shogun:2.3" ;;
-        hayate) echo "shogun:2.4" ;;
-        kagemaru) echo "shogun:2.5" ;;
-        hanzo) echo "shogun:2.6" ;;
-        saizo) echo "shogun:2.7" ;;
-        kotaro) echo "shogun:2.8" ;;
-        tobisaru) echo "shogun:2.9" ;;
-        *) return 1 ;;
-    esac
+    local agent_name="$1"
+    tmux list-panes -t shogun:2 -F '#{session_name}:#{window_index}.#{pane_index}	#{@agent_id}' 2>/dev/null \
+        | awk -F '\t' -v agent="$agent_name" '$2==agent {print $1; exit}'
 }
 
 normalize_model_label() {
     local raw="$1"
-    local family="" version="" suffix="" label=""
-
     raw=$(printf '%s' "$raw" | tr -s ' ' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
     [ -z "$raw" ] && return 1
-
-    case "$raw" in
-        Opus|Sonnet|Haiku|Codex|unknown)
-            echo "$raw"
-            return 0
-            ;;
-    esac
-
-    if [[ "$raw" =~ ^claude-opus-([0-9]+)-([0-9]+)([[:space:]]+.*)?$ ]]; then
-        family="Opus"
-        version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
-        suffix="${BASH_REMATCH[3]}"
-    elif [[ "$raw" =~ ^claude-sonnet-([0-9]+)-([0-9]+)([[:space:]]+.*)?$ ]]; then
-        family="Sonnet"
-        version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
-        suffix="${BASH_REMATCH[3]}"
-    elif [[ "$raw" =~ ^claude-haiku-([0-9]+)-([0-9]+)([[:space:]]+.*)?$ ]]; then
-        family="Haiku"
-        version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
-        suffix="${BASH_REMATCH[3]}"
-    elif [[ "$raw" =~ ^([Oo]pus|[Ss]onnet|[Hh]aiku)([[:space:]]+([0-9]+\.[0-9]+))?([[:space:]]+.*)?$ ]]; then
-        family="${BASH_REMATCH[1]}"
-        family="${family^}"
-        version="${BASH_REMATCH[3]}"
-        suffix="${BASH_REMATCH[4]}"
-    elif [[ "$raw" =~ ^gpt-([0-9]+(\.[0-9]+)?)([[:space:]]+.*)?$ ]]; then
-        family="Codex"
-        version="${BASH_REMATCH[1]}"
-        suffix="${BASH_REMATCH[3]}"
-    elif [[ "$raw" =~ ^[Cc]odex([[:space:]]+([0-9]+\.[0-9]+))?([[:space:]]+.*)?$ ]]; then
-        family="Codex"
-        version="${BASH_REMATCH[2]}"
-        suffix="${BASH_REMATCH[3]}"
-    else
-        echo "$raw"
-        return 0
-    fi
-
-    suffix=$(printf '%s' "$suffix" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
-    label="$family"
-    [ -n "$version" ] && label="$label $version"
-    [ -n "$suffix" ] && label="$label $suffix"
-    echo "$label"
+    echo "$raw"
 }
 
 fallback_model_label_from_settings() {
     local ninja_name="$1"
     local settings_yaml="$SCRIPT_DIR/config/settings.yaml"
+    local profiles_yaml="$SCRIPT_DIR/config/cli_profiles.yaml"
 
     [ -f "$settings_yaml" ] || return 1
+    [ -f "$profiles_yaml" ] || return 1
 
-    python3 - "$settings_yaml" "$ninja_name" <<'PY'
+    python3 - "$settings_yaml" "$profiles_yaml" "$ninja_name" <<'PY'
 import sys
 import yaml
 
-settings_yaml, ninja_name = sys.argv[1], sys.argv[2]
+settings_yaml, profiles_yaml, ninja_name = sys.argv[1], sys.argv[2], sys.argv[3]
 
 try:
     with open(settings_yaml, encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit(1)
+
+try:
+    with open(profiles_yaml, encoding="utf-8") as f:
+        profiles_data = yaml.safe_load(f) or {}
 except Exception:
     raise SystemExit(1)
 
@@ -334,23 +289,28 @@ agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
 agent_cfg = agents.get(ninja_name, {})
 default_cli = cli.get("default", "claude") if isinstance(cli, dict) else "claude"
 effort = str(data.get("effort", "") or "").strip()
+profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
 
 cli_type = default_cli
-model_name = ""
+model_label = ""
 
 if isinstance(agent_cfg, str):
     cli_type = agent_cfg.strip() or default_cli
 elif isinstance(agent_cfg, dict):
     cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
-    model_name = str(agent_cfg.get("model_name") or "").strip()
+    model_label = str(agent_cfg.get("model_name") or "").strip()
 
-if model_name:
-    raw = " ".join(x for x in [model_name, effort] if x)
-elif cli_type == "codex":
-    raw = " ".join(x for x in ["gpt-5.4", effort] if x)
-else:
-    raw = " ".join(x for x in ["Opus", effort] if x)
+if not model_label:
+    profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
+    model_label = str(profile.get("display_name") or cli_type or "").strip()
 
+parts = [model_label]
+if effort:
+    label_words = model_label.split()
+    if effort not in label_words:
+        parts.append(effort)
+
+raw = " ".join(part for part in parts if part)
 print(" ".join(raw.split()))
 PY
 }

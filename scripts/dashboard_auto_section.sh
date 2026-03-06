@@ -72,30 +72,51 @@ name_jp() {
 }
 
 # ─── Helper: Get model for a ninja from settings.yaml ───
-# Parse without yq/python — simple awk state machine
 get_model() {
     local ninja="$1"
-    [[ ! -f "$SETTINGS" ]] && { echo "Opus"; return; }
-    awk -v agent="$ninja" '
-        BEGIN { at=""; am="" }
-        /^[[:space:]]*agents:/ { in_a=1; next }
-        in_a && /^[^[:space:]]/ { in_a=0 }
-        in_a && /^    [a-z]/ {
-            gsub(/:.*/, ""); gsub(/^[[:space:]]+/, "")
-            cur=$0
-        }
-        in_a && cur==agent && /type:[[:space:]]*codex/ { at="codex" }
-        in_a && cur==agent && /model_name:/ {
-            sub(/.*model_name:[[:space:]]*/, ""); gsub(/[[:space:]]*$/, "")
-            am=$0
-        }
-        END {
-            if (at=="codex") { print "Codex"; exit }
-            if (am ~ /sonnet/) { print "Sonnet"; exit }
-            if (am ~ /haiku/) { print "Haiku"; exit }
-            print "Opus"
-        }
-    ' "$SETTINGS"
+    local profiles_yaml="$PROJECT_DIR/config/cli_profiles.yaml"
+    [[ ! -f "$SETTINGS" || ! -f "$profiles_yaml" ]] && { echo "unknown"; return; }
+    python3 - "$SETTINGS" "$profiles_yaml" "$ninja" <<'PY'
+import sys
+import yaml
+
+settings_path, profiles_path, ninja = sys.argv[1], sys.argv[2], sys.argv[3]
+
+try:
+    with open(settings_path, encoding="utf-8") as f:
+        settings = yaml.safe_load(f) or {}
+    with open(profiles_path, encoding="utf-8") as f:
+        profiles_data = yaml.safe_load(f) or {}
+except Exception:
+    print("unknown")
+    raise SystemExit(0)
+
+cli = settings.get("cli", {}) if isinstance(settings, dict) else {}
+agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
+agent_cfg = agents.get(ninja, {})
+default_cli = str(cli.get("default", "claude") or "claude")
+effort = str(settings.get("effort", "") or "").strip()
+profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
+
+cli_type = default_cli
+model_label = ""
+if isinstance(agent_cfg, str):
+    cli_type = str(agent_cfg or default_cli).strip() or default_cli
+elif isinstance(agent_cfg, dict):
+    cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
+    model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
+
+if not model_label:
+    profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
+    model_label = " ".join(str(profile.get("display_name") or cli_type or "").split())
+
+parts = [model_label]
+if effort and effort not in model_label.split():
+    parts.append(effort)
+
+result = " ".join(part for part in parts if part).strip()
+print(result or "unknown")
+PY
 }
 
 # ─── Build cmd→ninjas mapping (from task YAMLs) ───
