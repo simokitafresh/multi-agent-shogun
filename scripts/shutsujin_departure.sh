@@ -52,11 +52,11 @@ tmux set-option -w -t "$AGENTS_WINDOW_TARGET" remain-on-exit on 2>/dev/null
 echo "[shutsujin] remain-on-exit: on (${AGENTS_WINDOW_TARGET})"
 
 # ─── pane-border-format with inbox count (cmd_188) ───
-# Color scheme: karo=#f9e2af(黄) Opus=#cba6f7(紫) Sonnet=#89b4fa(青) else=#a6e3a1(緑)
+# Color scheme: karo=#f9e2af(黄) Opus=#cba6f7(紫) gpt-*=#a6e3a1(緑/Codex) else=#89b4fa(青)
 # #{m:pattern,string} = fnmatch前方一致。"Opus 4.6"等バージョン付きにも対応
 # agents: agent_id + model_name + context_pct + inbox_count + current_task
 tmux set-option -w -t "$AGENTS_WINDOW_TARGET" pane-border-format \
-  '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:Sonnet*,#{@model_name}},#[fg=#89b4fa],#[fg=#a6e3a1]}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
+  '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:gpt-*,#{@model_name}},#[fg=#a6e3a1],#[fg=#89b4fa]}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
   2>/dev/null
 
 # shogun: Opus紫(#cba6f7) + model_name + context_pct

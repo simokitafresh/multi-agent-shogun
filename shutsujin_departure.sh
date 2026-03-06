@@ -138,7 +138,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -c, --clean         キューとダッシュボードをリセットして起動（クリーンスタート）"
             echo "                      未指定時は前回の状態を維持して起動"
             echo "  -k, --kessen        決戦の陣（全忍者をOpusで起動）"
-            echo "                      未指定時は平時の陣（忍者1-2=Sonnet, 忍者3-8=Opus）"
+            echo "                      未指定時はCLI Adapter設定に従う（Codex4+Opus4）"
             echo "  -s, --setup-only    tmuxセッションのセットアップのみ（Claude起動なし）"
             echo "  -t, --terminal      Windows Terminal で新しいタブを開く"
             echo "  -shell, --shell SH  シェルを指定（bash または zsh）"
@@ -162,11 +162,11 @@ while [[ $# -gt 0 ]]; do
             echo "モデル構成:"
             echo "  将軍:      Opus（デフォルト。--shogun-no-thinkingで無効化）"
             echo "  家老:      Opus"
-            echo "  忍者1-2:   Sonnet (佐助・霧丸)"
-            echo "  忍者3-8:   Opus (疾風・影丸・半蔵・才蔵・小太郎・飛猿)"
+            echo "  忍者(Codex): sasuke・kirimaru・hayate・saizo"
+            echo "  忍者(Opus):  kagemaru・hanzo・kotaro・tobisaru"
             echo ""
             echo "陣形:"
-            echo "  平時の陣（デフォルト）: 忍者1-2=Sonnet, 忍者3-8=Opus"
+            echo "  平時の陣（デフォルト）: CLI Adapter設定に従う（Codex4+Opus4）"
             echo "  決戦の陣（--kessen）:   全忍者=Opus"
             echo ""
             echo "表示モード:"
@@ -554,7 +554,7 @@ for i in {0..8}; do
                 if [ "$KESSEN_MODE" = true ] && [ "$_cli" = "claude" ]; then
                     _model="opus"
                 fi
-                # 先頭大文字化（opus→Opus, sonnet→Sonnet）
+                # 先頭大文字化（opus→Opus, haiku→Haiku）
                 MODEL_NAMES[$i]="$(echo "${_model:0:1}" | tr '[:lower:]' '[:upper:]')${_model:1}"
                 ;;
         esac
@@ -574,20 +574,22 @@ try:
     if isinstance(agent, dict):
         mn = agent.get('model_name', '')
         if mn:
-            for name in ['Opus', 'Sonnet', 'Haiku']:
+            for name in ['Opus', 'Haiku']:
                 if name.lower() in mn.lower():
                     print(name)
                     raise SystemExit
-        tier = agent.get('tier', 'jonin')
-        print('Opus' if tier == 'jonin' else 'Sonnet')
+            if 'gpt' in mn.lower() or 'codex' in mn.lower():
+                print('Codex')
+                raise SystemExit
+        print('Opus')
     else:
-        print('Sonnet')
+        print('Opus')
 except SystemExit:
     pass
 except Exception:
-    print('Sonnet')
+    print('Opus')
 " 2>/dev/null)
-            MODEL_NAMES[$i]="${_model_raw:-Sonnet}"
+            MODEL_NAMES[$i]="${_model_raw:-Opus}"
         fi
     fi
     PANE_TITLES[$i]="${MODEL_NAMES[$i]}"
@@ -600,14 +602,6 @@ for i in {0..8}; do
     tmux set-option -p -t "shogun:agents.${p}" @model_name "${MODEL_NAMES[$i]}"
     tmux set-option -p -t "shogun:agents.${p}" @current_task ""
     tmux set-option -p -t "shogun:agents.${p}" @context_pct "--"
-    if [ $i -eq 0 ]; then
-        _tier="karo"
-    elif [ $i -le 2 ]; then
-        _tier="genin"
-    else
-        _tier="jonin"
-    fi
-    tmux set-option -p -t "shogun:agents.${p}" @agent_tier "$_tier"
     _bg_color=$(resolve_bg_color "${AGENT_IDS[$i]}" "${MODEL_NAMES[$i]}")
     tmux select-pane -t "shogun:agents.${p}" -P "bg=${_bg_color}"
     PROMPT_STR=$(generate_prompt "${PANE_LABELS[$i]}" "${PANE_COLORS[$i]}" "$SHELL_SETTING")
@@ -709,16 +703,12 @@ if [ "$SETUP_ONLY" = false ]; then
         done
         log_info "  └─ 忍者1-8（決戦の陣）、召喚完了"
     else
-        # 平時の陣: CLI Adapter経由（デフォルト: 1-4=Sonnet, 5-8=Opus）
+        # 平時の陣: CLI Adapter経由で各忍者のCLI/モデルを決定
         for i in {1..8}; do
             p=$((PANE_BASE + i))
             ninja_name="${AGENT_IDS[$i]}"
             _ashi_cli_type="claude"
-            if [ $i -le 2 ]; then
-                _ashi_cmd="claude --model sonnet --dangerously-skip-permissions"
-            else
-                _ashi_cmd="claude --model opus --dangerously-skip-permissions"
-            fi
+            _ashi_cmd="claude --model opus --dangerously-skip-permissions"
             if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _ashi_cli_type=$(get_cli_type "${ninja_name}")
                 _ashi_cmd=$(build_cli_command "${ninja_name}")
