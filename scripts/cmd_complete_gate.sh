@@ -36,13 +36,68 @@ mkdir -p "$GATES_DIR" "$LOG_DIR"
 resolve_report_file() {
     local ninja="$1"
     local cmd="${2:-$CMD_ID}"
+    local explicit_path
+    local report_parent
+
+    auto_unwrap_report_yaml() {
+        local report_file="$1"
+        local unwrap_result
+
+        [ -f "$report_file" ] || return 0
+
+        unwrap_result=$(REPORT_FILE="$report_file" python3 - <<'PY'
+import os
+import tempfile
+import yaml
+
+report_file = os.environ["REPORT_FILE"]
+
+try:
+    with open(report_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    print("parse_error")
+    raise SystemExit(0)
+
+if not isinstance(data, dict):
+    print("skip")
+    raise SystemExit(0)
+
+if len(data) == 1 and "report" in data and isinstance(data.get("report"), dict):
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(report_file), suffix=".tmp")
+    os.close(tmp_fd)
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(data["report"], f, allow_unicode=True, sort_keys=False)
+        os.replace(tmp_path, report_file)
+        print("unwrapped")
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+else:
+    print("skip")
+PY
+)
+
+        case "$unwrap_result" in
+            unwrapped)
+                echo "[gate] report YAML auto-unwrapped: ${report_file}" >&2
+                ;;
+            parse_error)
+                echo "[gate] WARN: report YAML parse failed during auto-unwrapping: ${report_file}" >&2
+                ;;
+        esac
+    }
+
     # 1. タスクYAMLのreport_filenameを参照(最優先)
     local task_yaml="$TASKS_DIR/${ninja}.yaml"
     if [ -f "$task_yaml" ]; then
         local explicit
         explicit=$(grep 'report_filename:' "$task_yaml" | head -1 | sed 's/.*report_filename:[[:space:]]*//' | tr -d "'" | tr -d '"')
-        if [ -n "$explicit" ] && [ -f "$SCRIPT_DIR/queue/reports/$explicit" ]; then
-            echo "$SCRIPT_DIR/queue/reports/$explicit"
+        explicit_path="$SCRIPT_DIR/queue/reports/$explicit"
+        if [ -n "$explicit" ] && [ -f "$explicit_path" ]; then
+            auto_unwrap_report_yaml "$explicit_path"
+            echo "$explicit_path"
             return
         fi
     fi
@@ -50,11 +105,12 @@ resolve_report_file() {
     local new_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report_${cmd}.yaml"
     # 3. 旧形式フォールバック（安全化: parent_cmd一致チェック）
     local old_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report.yaml"
+    [ -f "$new_fmt" ] && auto_unwrap_report_yaml "$new_fmt"
+    [ -f "$old_fmt" ] && auto_unwrap_report_yaml "$old_fmt"
     if [ -f "$new_fmt" ]; then
         echo "$new_fmt"
     elif [ -f "$old_fmt" ]; then
         # parent_cmd一致チェック（旧報告の誤採用防止）
-        local report_parent
         report_parent=$(grep -E "^\s*parent_cmd:" "$old_fmt" | head -1 | sed 's/.*parent_cmd:\s*//' | tr -d "'" | tr -d '"')
         if [ "$report_parent" = "$cmd" ]; then
             echo "$old_fmt"  # parent_cmd一致 → 採用
@@ -70,25 +126,27 @@ resolve_report_file() {
 update_status() {
     local cmd_id="$1"
     local current_status
-    current_status=$(awk -v cmd="${cmd_id}" '
-        {
-            line = $0
-            if (!found && line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
-                tmp = line
-                sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", tmp)
-                sub(/[[:space:]]+#.*$/, "", tmp)
-                gsub(/^["'"'"']|["'"'"']$/, "", tmp)
-                if (tmp == cmd) { found=1; next }
-            }
-            if (found && line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) { exit }
-            if (found && line ~ /^[[:space:]]*status:[[:space:]]*/) {
-                sub(/^[[:space:]]*status:[[:space:]]*/, "", line)
-                gsub(/[[:space:]]+$/, "", line)
-                print line
-                exit
-            }
-        }
-    ' "$YAML_FILE")
+    current_status=$(CMD_ID_ENV="$cmd_id" YAML_FILE_ENV="$YAML_FILE" python3 -c "
+import yaml, os, sys
+cmd_id = os.environ['CMD_ID_ENV']
+yaml_file = os.environ['YAML_FILE_ENV']
+try:
+    with open(yaml_file) as f:
+        data = yaml.safe_load(f)
+    if not data:
+        sys.exit(0)
+    entries = data if isinstance(data, list) else data.get('commands', data.get('cmds', []))
+    if not isinstance(entries, list):
+        sys.exit(0)
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get('id') == cmd_id:
+            print(entry.get('status', ''))
+            break
+except Exception as e:
+    print(f'parse_error: {e}', file=sys.stderr)
+" 2>/dev/null || true)
 
     case "$current_status" in
         completed|done)

@@ -1041,8 +1041,8 @@ check_stale_cmds() {
 
         local cmd_epoch
         cmd_epoch=$(date -d "$cmd_timestamp" +%s 2>/dev/null)
-        if [ -z "$cmd_epoch" ]; then
-            log "WARN: Failed to parse cmd timestamp: ${cmd_id} ts=${cmd_timestamp}"
+        if [[ ! "$cmd_epoch" =~ ^[0-9]+$ ]]; then
+            log "WARN: Failed to parse cmd timestamp: ${cmd_id} ts=${cmd_timestamp} epoch=${cmd_epoch:-empty}"
             continue
         fi
 
@@ -1418,6 +1418,9 @@ write_state_file() {
         done
 
     ) 200>"$lock_file"
+    if [ $? -ne 0 ]; then
+        log "ERROR: write_state_file flock subshell failed"
+    fi
 }
 
 # ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───
@@ -1527,6 +1530,9 @@ write_karo_snapshot() {
         } > "$snapshot_file"
 
     ) 200>"$lock_file"
+    if [ $? -ne 0 ]; then
+        log "ERROR: write_karo_snapshot flock subshell failed"
+    fi
 }
 
 # ─── 家老/clear送信共通関数（全コードパスで使用） ───
