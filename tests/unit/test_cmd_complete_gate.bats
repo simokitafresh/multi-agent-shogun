@@ -215,3 +215,68 @@ EOF
     [[ "$output" == *"Context update check:"* ]]
     [[ "$output" == *"SKIP (context_update not set)"* ]]
 }
+
+@test "lesson_impact rows keyed by subtask_id are updated on gate clear" {
+    write_cmd_yaml "with_context"
+    write_context_file "2026-03-05"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: subtask_test
+  subtask_id: subtask_test
+  assigned_to: sasuke
+  task_type: review
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  ac_version: 2
+  related_lessons:
+    - id: L100
+      summary: "first lesson"
+    - id: L101
+      summary: "second lesson"
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+task_id: subtask_test
+parent_cmd: $TEST_CMD_ID
+timestamp: "2026-03-04T00:00:00"
+status: done
+ac_version_read: 2
+verdict: PASS
+purpose_validation:
+  fit: true
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful:
+  - L100
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-03-04T00:00:00	subtask_test	sasuke	L100	injected	pending	pending	infra	review	routine
+2026-03-04T00:00:00	subtask_test	sasuke	L101	injected	pending	pending	infra	review	routine
+2026-03-04T00:00:00	cmd_999	sasuke	L101	injected	pending	pending	infra	review	routine
+EOF
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+
+    run grep -F $'subtask_test\tsasuke\tL100\tinjected\tCLEAR\tyes' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+
+    run grep -F $'subtask_test\tsasuke\tL101\tinjected\tCLEAR\tno' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+
+    run grep -F $'cmd_999\tsasuke\tL101\tinjected\tCLEAR\tno' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+}

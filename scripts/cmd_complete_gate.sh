@@ -693,7 +693,9 @@ def resolve_report_file(ninja_name, task):
 
 ninjas = []
 ninja_tasks = {}
+tracked_row_ids = []
 referenced_ids = []
+referenced_by_row_id = {}
 
 try:
     task_files = sorted(
@@ -711,6 +713,14 @@ for task_path in task_files:
         continue
     if str(task.get("parent_cmd", "")).strip() != cmd_id:
         continue
+
+    task_row_ids = []
+    for key in ("task_id", "subtask_id", "parent_cmd"):
+        add_unique(task_row_ids, task.get(key))
+
+    for row_id in task_row_ids:
+        add_unique(tracked_row_ids, row_id)
+        referenced_by_row_id.setdefault(row_id, [])
 
     assigned_to = task.get("assigned_to")
     if isinstance(assigned_to, list):
@@ -730,6 +740,7 @@ for ninja in ninjas:
     if not report_file:
         continue
     report = parse_yaml(report_file)
+    report_refs = []
     lessons_useful = report.get("lessons_useful")
     if lessons_useful is None:
         # Backward compatibility for legacy report field.
@@ -737,9 +748,25 @@ for ninja in ninjas:
     if isinstance(lessons_useful, list):
         for item in lessons_useful:
             if isinstance(item, dict):
-                add_unique(referenced_ids, item.get("id"))
+                add_unique(report_refs, item.get("id"))
             else:
-                add_unique(referenced_ids, item)
+                add_unique(report_refs, item)
+
+    for ref_id in report_refs:
+        add_unique(referenced_ids, ref_id)
+
+    task = ninja_tasks.get(ninja, {})
+    task_row_ids = []
+    for key in ("task_id", "subtask_id", "parent_cmd"):
+        add_unique(task_row_ids, task.get(key))
+    for row_id in task_row_ids:
+        row_refs = referenced_by_row_id.setdefault(row_id, [])
+        for ref_id in report_refs:
+            add_unique(row_refs, ref_id)
+
+if not tracked_row_ids:
+    tracked_row_ids.append(cmd_id)
+    referenced_by_row_id.setdefault(cmd_id, [])
 
 rows = []
 updated = 0
@@ -754,10 +781,12 @@ with open(impact_file, "r", newline="", encoding="utf-8") as f:
         raise SystemExit(0)
 
     for row in reader:
-        if row.get("cmd_id") == cmd_id and row.get("result") == "pending":
+        row_cmd_id = (row.get("cmd_id") or "").strip()
+        if row_cmd_id in tracked_row_ids and row.get("result") == "pending":
             row["result"] = gate_result
             if row.get("action") != "withheld":
-                row["referenced"] = "yes" if row.get("lesson_id") in referenced_ids else "no"
+                row_refs = referenced_by_row_id.get(row_cmd_id, referenced_ids)
+                row["referenced"] = "yes" if row.get("lesson_id") in row_refs else "no"
             updated += 1
         rows.append(row)
 
