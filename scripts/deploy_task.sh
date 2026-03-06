@@ -28,7 +28,49 @@ MESSAGE="${2:-$DEFAULT_MESSAGE}"
 TYPE="${3:-task_assigned}"
 FROM="${4:-karo}"
 
-if [ -z "$NINJA_NAME" ]; then
+mkdir -p "$SCRIPT_DIR/logs"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEPLOY] $1" >> "$LOG"
+    echo "[DEPLOY] $1" >&2
+}
+
+log_output_file() {
+    local output_file="$1"
+    if [ -f "$output_file" ]; then
+        while IFS= read -r line; do
+            log "$line"
+        done < "$output_file"
+        rm -f "$output_file"
+    fi
+}
+
+run_python_logged() {
+    local output_file="$1"
+    shift
+
+    local status=0
+    "$@" >"$output_file" 2>&1 || status=$?
+    log_output_file "$output_file"
+    return "$status"
+}
+
+cleanup_none_task_files() {
+    local ghost_task="$SCRIPT_DIR/queue/tasks/None.yaml"
+    local ghost_lock="$SCRIPT_DIR/queue/tasks/None.yaml.lock"
+
+    for ghost_path in "$ghost_task" "$ghost_lock"; do
+        if [ -e "$ghost_path" ]; then
+            rm -f "$ghost_path"
+            log "Removed ghost task artifact: ${ghost_path#$SCRIPT_DIR/}"
+        fi
+    done
+}
+
+cleanup_none_task_files
+
+if [ -z "$NINJA_NAME" ] || [ "${NINJA_NAME,,}" = "none" ]; then
+    echo "ERROR: ninja_name is required and cannot be empty/None." >&2
     echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
     echo "例1: deploy_task.sh sasuke" >&2
     echo "例2: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
@@ -45,28 +87,26 @@ if [[ "$NINJA_NAME" == cmd_* ]]; then
     exit 1
 fi
 
-mkdir -p "$SCRIPT_DIR/logs"
-
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEPLOY] $1" >> "$LOG"
-    echo "[DEPLOY] $1" >&2
-}
-
 # ─── ペインターゲット解決 ───
 resolve_pane() {
     local name="$1"
     # ninja_states.yamlから取得（ninja_monitorが定期更新）
     local pane
-    pane=$(python3 -c "
-import yaml, sys
+    pane=$(
+        SCRIPT_DIR_ENV="$SCRIPT_DIR" NAME_ENV="$name" python3 - <<'PY' 2>/dev/null
+import os
+import yaml
+
 try:
-    with open('$SCRIPT_DIR/logs/ninja_states.yaml') as f:
+    states_path = os.path.join(os.environ['SCRIPT_DIR_ENV'], 'logs', 'ninja_states.yaml')
+    with open(states_path) as f:
         data = yaml.safe_load(f)
-    ninja = data.get('ninjas', {}).get('$name', {})
+    ninja = data.get('ninjas', {}).get(os.environ['NAME_ENV'], {})
     print(ninja.get('pane', ''))
-except:
+except Exception:
     pass
-" 2>/dev/null)
+PY
+    )
 
     if [ -n "$pane" ]; then
         echo "$pane"
@@ -186,8 +226,14 @@ inject_ac_version() {
         return 0
     fi
 
-    TASK_FILE_ENV="$task_file" python3 -c "
-import yaml, sys, os, tempfile
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
 
 task_file = os.environ['TASK_FILE_ENV']
 
@@ -226,14 +272,16 @@ try:
         raise
 
     if prev == task['ac_version']:
-        print(f'[AC_VERSION] unchanged: {task[\"ac_version\"]}', file=sys.stderr)
+        print(f'[AC_VERSION] unchanged: {task["ac_version"]}', file=sys.stderr)
     else:
-        print(f'[AC_VERSION] set: {prev} -> {task[\"ac_version\"]}', file=sys.stderr)
+        print(f'[AC_VERSION] set: {prev} -> {task["ac_version"]}', file=sys.stderr)
 
 except Exception as e:
     print(f'[AC_VERSION] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
@@ -280,6 +328,8 @@ generate_report_template() {
     ac_version=$(field_get "$task_file" "ac_version" "")
 
     cat > "$report_file" <<EOF
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
 worker_id: ${worker_id}
 task_id: ${resolved_task_id}
 parent_cmd: ${resolved_parent_cmd}
@@ -318,11 +368,20 @@ inject_related_lessons() {
         return 0
     fi
 
-    python3 -c "
-import yaml, sys, os, re, tempfile, random, datetime
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+import datetime
+import os
+import random
+import re
+import sys
+import tempfile
 
-task_file = '$task_file'
-script_dir = '$SCRIPT_DIR'
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
 
 DEDUP_THRESHOLD = 0.25
 
@@ -346,7 +405,7 @@ def greedy_dedup(scored_list, all_lessons, threshold=DEDUP_THRESHOLD):
     deduped_count = 0
     for score, lid, summary in scored_list:
         lesson = all_lessons.get(lid, {})
-        l_text = f'{lesson.get(\"title\",\"\")} {lesson.get(\"summary\",\"\")} {lesson.get(\"content\",\"\")}'
+        l_text = f'{lesson.get("title","")} {lesson.get("summary","")} {lesson.get("content","")}'
         terms = tech_terms(l_text)
         is_dup = False
         for acc_terms in accepted_terms:
@@ -424,7 +483,7 @@ try:
             with open(_pc_path, 'w') as _pf:
                 _pf.write('available=0\n')
                 _pf.write('injected=0\n')
-                _pf.write(f'task_id={task.get(\"task_id\", \"unknown\")}\n')
+                _pf.write(f'task_id={task.get("task_id", "unknown")}\n')
                 _pf.write(f'project={project}\n')
                 _pf.write(f'injected_ids={skip_id}\n')
         except Exception:
@@ -725,7 +784,7 @@ try:
         if marker not in str(desc):
             lines = [marker + ' 必ず確認してから作業開始せよ']
             for r in related:
-                lines.append(f\"  - {r['id']}: {r['summary'][:80]}\")
+                lines.append(f"  - {r['id']}: {r['summary'][:80]}")
             lines.append('─' * 40)
             prefix = '\\n'.join(lines) + '\\n\\n'
             task['description'] = prefix + str(desc or '')
@@ -746,9 +805,9 @@ try:
         with open(_pc_path, 'w') as _pf:
             _pf.write(f'available={len(tag_candidates) + universal_total_count}\\n')
             _pf.write(f'injected={len(related)}\\n')
-            _pf.write(f'task_id={task.get(\"task_id\", \"unknown\")}\\n')
+            _pf.write(f'task_id={task.get("task_id", "unknown")}\\n')
             _pf.write(f'project={project}\\n')
-            _pf.write(f'injected_ids={\" \".join(r[\"id\"] for r in related)}\\n')
+            _pf.write(f'injected_ids={" ".join(r["id"] for r in related)}\\n')
     except Exception:
         pass
 
@@ -777,9 +836,9 @@ try:
                 lf.write('timestamp\\tcmd_id\\tninja\\tlesson_id\\taction\\tresult\\treferenced\\tproject\\ttask_type\\tbloom_level\\n')
             ts = datetime.datetime.now().isoformat(timespec='seconds')
             for r in related:
-                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{r[\"id\"]}\\tinjected\\tpending\\tpending\\t{project}\\t{task_type}\\t{bloom}\\n')
+                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{r["id"]}\\tinjected\\tpending\\tpending\\t{project}\\t{task_type}\\t{bloom}\\n')
             for w in withheld:
-                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{w[\"id\"]}\\twithheld\\tpending\\tno\\t{project}\\t{task_type}\\t{bloom}\\n')
+                lf.write(f'{ts}\\t{cmd_id}\\t{ninja_name}\\t{w["id"]}\\twithheld\\tpending\\tno\\t{project}\\t{task_type}\\t{bloom}\\n')
         print(f'[INJECT] Impact log: {len(related)} injected + {len(withheld)} withheld written to lesson_impact.tsv', file=sys.stderr)
     except Exception as ie:
         print(f'[INJECT] WARN: impact log write failed: {ie}', file=sys.stderr)
@@ -787,7 +846,9 @@ try:
 except Exception as e:
     print(f'[INJECT] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── 偵察報告自動注入（task YAMLにreports_to_readを挿入） ───
@@ -798,11 +859,18 @@ inject_reports_to_read() {
         return 0
     fi
 
-    python3 -c "
-import yaml, sys, os, tempfile, glob
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+import glob
+import os
+import sys
+import tempfile
 
-task_file = '$task_file'
-script_dir = '$SCRIPT_DIR'
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
 
 try:
     with open(task_file) as f:
@@ -866,7 +934,7 @@ try:
                                 reverse=True
                             )
                             if alt:
-                                report_paths.append(f\"queue/reports/{os.path.basename(alt[0])}\")
+                                report_paths.append(f"queue/reports/{os.path.basename(alt[0])}")
                             else:
                                 print(f'[INJECT_REPORTS] WARN: report not found: {new_report or legacy_report}', file=sys.stderr)
                     break
@@ -913,7 +981,9 @@ try:
 except Exception as e:
     print(f'[INJECT_REPORTS] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── context_files自動注入（cmd_280: 分割context選択的読込） ───
@@ -924,11 +994,17 @@ inject_context_files() {
         return 0
     fi
 
-    python3 -c "
-import yaml, sys, os, tempfile
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
 
-task_file = '$task_file'
-script_dir = '$SCRIPT_DIR'
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
 projects_yaml = os.path.join(script_dir, 'config', 'projects.yaml')
 
 try:
@@ -1014,7 +1090,9 @@ try:
 except Exception as e:
     print(f'[INJECT_CTX] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── context_update自動注入（cmd_543: 親cmdの更新対象contextをタスクへ伝播） ───
@@ -1025,11 +1103,14 @@ inject_context_update() {
         return 0
     fi
 
-    TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
 import glob
 import os
 import sys
 import tempfile
+
 import yaml
 
 task_file = os.environ['TASK_FILE_ENV']
@@ -1131,7 +1212,9 @@ try:
 except Exception as e:
     print(f'[INJECT_CONTEXT_UPDATE] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── role_reminder自動注入（cmd_384: 忍者スコープ制限リマインダ） ───
@@ -1144,8 +1227,14 @@ inject_role_reminder() {
     fi
 
     # L047: 環境変数経由でPythonに値を渡す（直接補間はインジェクション危険）
-    TASK_FILE_ENV="$task_file" NINJA_NAME_ENV="$ninja_name" python3 -c "
-import yaml, sys, os, tempfile
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" NINJA_NAME_ENV="$ninja_name" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
 
 task_file = os.environ['TASK_FILE_ENV']
 ninja_name = os.environ['NINJA_NAME_ENV']
@@ -1182,7 +1271,9 @@ try:
 except Exception as e:
     print(f'[ROLE_REMINDER] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── report_template自動注入（cmd_384: タスク種別別レポート雛形） ───
@@ -1194,8 +1285,14 @@ inject_report_template() {
     fi
 
     # L047: 環境変数経由でPythonに値を渡す
-    TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
-import yaml, sys, os, tempfile
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
 
 task_file = os.environ['TASK_FILE_ENV']
 script_dir = os.environ['SCRIPT_DIR_ENV']
@@ -1246,7 +1343,9 @@ try:
 except Exception as e:
     print(f'[REPORT_TPL] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── report_filename自動注入（cmd_410: 命名ミスマッチ根治） ───
@@ -1258,8 +1357,14 @@ inject_report_filename() {
     fi
 
     # L047: 環境変数経由でPythonに値を渡す
-    TASK_FILE_ENV="$task_file" NINJA_NAME_ENV="$NINJA_NAME" python3 -c "
-import yaml, sys, os, tempfile
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" NINJA_NAME_ENV="$NINJA_NAME" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
 
 task_file = os.environ['TASK_FILE_ENV']
 ninja_name = os.environ['NINJA_NAME_ENV']
@@ -1302,7 +1407,9 @@ try:
 except Exception as e:
     print(f'[REPORT_FN] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── bloom_level自動注入（cmd_434: タスク複雑度メタデータ） ───
@@ -1314,8 +1421,14 @@ inject_bloom_level() {
     fi
 
     # L047: 環境変数経由でPythonに値を渡す
-    TASK_FILE_ENV="$task_file" python3 -c "
-import yaml, sys, os, tempfile
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
 
 task_file = os.environ['TASK_FILE_ENV']
 
@@ -1351,7 +1464,9 @@ try:
 except Exception as e:
     print(f'[BLOOM_LVL] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
@@ -1417,8 +1532,14 @@ record_deployed_at() {
         return 0
     fi
 
-    TASK_FILE_ENV="$task_file" TIMESTAMP_ENV="$timestamp" python3 -c "
-import yaml, sys, os, tempfile
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" TIMESTAMP_ENV="$timestamp" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
 
 task_file = os.environ['TASK_FILE_ENV']
 timestamp = os.environ['TIMESTAMP_ENV']
@@ -1435,7 +1556,7 @@ try:
 
     # 既にdeployed_atが存在する場合は上書きしない
     if task.get('deployed_at'):
-        print(f'[DEPLOYED_AT] Already exists ({task[\"deployed_at\"]}), skipping', file=sys.stderr)
+        print(f'[DEPLOYED_AT] Already exists ({task["deployed_at"]}), skipping', file=sys.stderr)
         sys.exit(0)
 
     task['deployed_at'] = timestamp
@@ -1455,7 +1576,9 @@ try:
 except Exception as e:
     print(f'[DEPLOYED_AT] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>&1 | while IFS= read -r line; do log "$line"; done
+PY
+        return 1
+    fi
 }
 
 # ─── context鮮度チェック（穴2対策: cmd_239） ───
@@ -1479,18 +1602,23 @@ check_context_freshness() {
     fi
 
     local context_file
-    context_file=$(python3 -c "
-import yaml, sys
+    context_file=$(
+        PROJECTS_YAML_ENV="$projects_yaml" PROJECT_ENV="$project" python3 - <<'PY' 2>/dev/null
+import os
+
+import yaml
+
 try:
-    with open('$projects_yaml') as f:
+    with open(os.environ['PROJECTS_YAML_ENV']) as f:
         data = yaml.safe_load(f)
     for p in data.get('projects', []):
-        if p.get('id') == '$project':
+        if p.get('id') == os.environ['PROJECT_ENV']:
             print(p.get('context_file', ''))
             break
-except:
+except Exception:
     pass
-" 2>/dev/null)
+PY
+    )
 
     if [ -z "$context_file" ]; then
         log "context_freshness: SKIP (no context_file for project=$project)"
@@ -1514,14 +1642,18 @@ except:
     fi
 
     local days_old
-    days_old=$(python3 -c "
+    days_old=$(
+        LAST_UPDATED_ENV="$last_updated" python3 - <<'PY' 2>/dev/null
 from datetime import date
+import os
+
 try:
-    lu = date.fromisoformat('$last_updated')
+    lu = date.fromisoformat(os.environ['LAST_UPDATED_ENV'])
     print((date.today() - lu).days)
-except:
+except Exception:
     print(-1)
-" 2>/dev/null)
+PY
+    )
 
     if [ "$days_old" -ge 14 ] 2>/dev/null; then
         log "context_freshness: ⚠️ WARNING: $context_file last updated ${days_old} days ago"
@@ -1543,11 +1675,15 @@ check_entrance_gate() {
 
     local result
     local exit_code=0
-    result=$(python3 -c "
-import yaml, sys
+    result=$(
+        TASK_FILE_ENV="$task_file" python3 - <<'PY' 2>/dev/null
+import os
+import sys
+
+import yaml
 
 try:
-    with open('$task_file') as f:
+    with open(os.environ['TASK_FILE_ENV']) as f:
         data = yaml.safe_load(f)
 
     if not data or 'task' not in data:
@@ -1569,7 +1705,8 @@ try:
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
     sys.exit(0)  # パース失敗時はブロックしない
-" 2>/dev/null) || exit_code=$?
+PY
+    ) || exit_code=$?
 
     if [ "$exit_code" -ne 0 ]; then
         log "BLOCK: ${NINJA_NAME}の前タスクにreviewed:false残存 [${result}]。教訓を消化してから再配備せよ"
@@ -1591,11 +1728,16 @@ check_scout_gate() {
 
     local result
     local exit_code=0
-    result=$(python3 -c "
-import yaml, sys, os, glob
+    result=$(
+        TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY' 2>&1
+import glob
+import os
+import sys
 
-task_file = '$task_file'
-script_dir = '$SCRIPT_DIR'
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
 
 try:
     with open(task_file) as f:
@@ -1677,7 +1819,8 @@ try:
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
     sys.exit(0)  # パース失敗時はブロックしない
-" 2>&1) || exit_code=$?
+PY
+    ) || exit_code=$?
 
     if [ "$exit_code" -ne 0 ]; then
         log "BLOCK(scout_gate): ${result}"

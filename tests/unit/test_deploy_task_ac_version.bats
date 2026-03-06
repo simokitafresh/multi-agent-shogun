@@ -140,3 +140,17 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "5" ]
 }
+
+@test "deploy_task rejects None ninja_name and removes ghost task artifacts" {
+    cat > "$TEST_PROJECT/queue/tasks/None.yaml" <<'EOF'
+task:
+  title: ghost
+EOF
+    : > "$TEST_PROJECT/queue/tasks/None.yaml.lock"
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" None
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"cannot be empty/None"* ]]
+    [ ! -e "$TEST_PROJECT/queue/tasks/None.yaml" ]
+    [ ! -e "$TEST_PROJECT/queue/tasks/None.yaml.lock" ]
+}
