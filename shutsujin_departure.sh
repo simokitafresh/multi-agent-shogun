@@ -538,7 +538,7 @@ for i in {0..8}; do
             codex)
                 _codex_model=$(grep '^model ' ~/.codex/config.toml 2>/dev/null | head -1 | sed 's/.*= *"\(.*\)"/\1/')
                 _codex_effort=$(grep '^model_reasoning_effort' ~/.codex/config.toml 2>/dev/null | head -1 | sed 's/.*= *"\(.*\)"/\1/')
-                _codex_model=${_codex_model:-gpt-5.3-codex}
+                _codex_model=${_codex_model:-gpt-5.4}
                 _codex_effort=${_codex_effort:-high}
                 MODEL_NAMES[$i]="${_codex_model}/${_codex_effort}"
                 ;;
@@ -626,10 +626,22 @@ echo ""
 if [ "$SETUP_ONLY" = false ]; then
     # CLI の存在チェック（Multi-CLI対応）
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
-        _default_cli=$(get_cli_type "")
-        if ! validate_cli_availability "$_default_cli"; then
-            exit 1
-        fi
+        # 全agentで実際に使うCLI種別を重複排除して検証する。
+        # get_cli_type "" は後方互換で claude を返すため、ここでは使わない。
+        declare -A _required_cli_map=()
+        for _agent in shogun karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
+            _agent_cli=$(get_cli_type "$_agent")
+            case "$_agent_cli" in
+                claude|codex|copilot|kimi)
+                    _required_cli_map["$_agent_cli"]=1
+                    ;;
+            esac
+        done
+        for _required_cli in "${!_required_cli_map[@]}"; do
+            if ! validate_cli_availability "$_required_cli"; then
+                exit 1
+            fi
+        done
     else
         if ! command -v claude &> /dev/null; then
             log_info "⚠️  claude コマンドが見つかりません"
@@ -796,12 +808,12 @@ NINJA_EOF
     echo -e "                               \033[0;36m[ASCII Art: syntax-samurai/ryu - CC0 1.0 Public Domain]\033[0m"
     echo ""
 
-    echo "  Claude Code の起動を待機中（最大30秒）..."
+    echo "  CLI起動を待機中（最大30秒）..."
 
     # 将軍の起動を確認（最大30秒待機）
     for i in {1..30}; do
-        if tmux capture-pane -t shogun:main -p | grep -q "bypass permissions"; then
-            echo "  └─ 将軍の Claude Code 起動確認完了（${i}秒）"
+        if tmux capture-pane -t shogun:main -p | grep -Eq "bypass permissions|bypass approvals and sandbox"; then
+            echo "  └─ 将軍CLIの起動確認完了（${i}秒）"
             break
         fi
         sleep 1

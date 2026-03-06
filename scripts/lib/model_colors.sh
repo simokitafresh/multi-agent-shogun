@@ -5,7 +5,7 @@
 resolve_bg_color() {
   local agent_id="$1"
   local model_display="$2"
-  # 生モデル文字列を正規化（例: "gpt-5.3-codex/high" → "Codex"）
+  # 生モデル文字列を正規化（例: "gpt-5.4/high" → "Codex"）
   local normalized
   case "$model_display" in
     *[Cc]odex*)  normalized="Codex" ;;
@@ -30,7 +30,7 @@ resolve_bg_color() {
 
 resolve_border_fg_color() {
   local model_display="$1"
-  # 生モデル文字列を正規化（例: "gpt-5.3-codex/high" → "Codex"）
+  # 生モデル文字列を正規化（例: "gpt-5.4/high" → "Codex"）
   local normalized
   case "$model_display" in
     *[Cc]odex*)  normalized="Codex" ;;
