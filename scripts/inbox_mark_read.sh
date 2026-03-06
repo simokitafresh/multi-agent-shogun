@@ -35,14 +35,15 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
 
-        python3 -c "
+        INBOX_PATH="$INBOX" MSG_ID="$MSG_ID" AGENT_ID="$AGENT_ID" python3 -c "
 import yaml, sys, os, tempfile
 
-inbox_path = '$INBOX'
-msg_id = '$MSG_ID'
+inbox_path = os.environ['INBOX_PATH']
+msg_id = os.environ.get('MSG_ID', '')
+agent_id = os.environ['AGENT_ID']
 
 try:
-    with open(inbox_path) as f:
+    with open(inbox_path, encoding='utf-8') as f:
         data = yaml.safe_load(f)
 
     if not data or not data.get('messages'):
@@ -68,14 +69,14 @@ try:
     # Atomic write: tmp file + rename (same pattern as inbox_write.sh)
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
     try:
-        with os.fdopen(tmp_fd, 'w') as f:
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
         os.replace(tmp_path, inbox_path)
     except:
         os.unlink(tmp_path)
         raise
 
-    print(f'[inbox_mark_read] Marked {changed} message(s) as read for $AGENT_ID')
+    print(f'[inbox_mark_read] Marked {changed} message(s) as read for {agent_id}')
 
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)

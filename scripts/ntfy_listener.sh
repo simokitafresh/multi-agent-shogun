@@ -76,6 +76,79 @@ parse_attachment_field() {
     python3 -c "import sys,json; k=sys.argv[1]; a=json.load(sys.stdin).get('attachment') or {}; print(a.get(k,'') if isinstance(a,dict) else '')" "$1" 2>/dev/null
 }
 
+append_ntfy_inbox() {
+    local msg_id="$1"
+    local timestamp="$2"
+    local message="$3"
+    local status="${4:-pending}"
+    local lockfile="${INBOX}.lock"
+    local py_exit
+
+    py_exit=$(
+        (
+            flock -w 5 200 || exit 1
+
+            INBOX_PATH="$INBOX" NTFY_MSG_ID="$msg_id" NTFY_TIMESTAMP="$timestamp" \
+            NTFY_MESSAGE="$message" NTFY_STATUS="$status" python3 <<'PYEOF'
+import os
+import sys
+import tempfile
+
+import yaml
+
+inbox_path = os.environ["INBOX_PATH"]
+msg_id = os.environ.get("NTFY_MSG_ID", "")
+timestamp = os.environ["NTFY_TIMESTAMP"]
+message = os.environ["NTFY_MESSAGE"]
+status = os.environ["NTFY_STATUS"]
+
+try:
+    with open(inbox_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    inbox_entries = data.get("inbox")
+    if not isinstance(inbox_entries, list):
+        inbox_entries = []
+        data["inbox"] = inbox_entries
+
+    if msg_id and any(isinstance(entry, dict) and entry.get("id") == msg_id for entry in inbox_entries):
+        print("duplicate")
+        raise SystemExit(0)
+
+    inbox_entries.append({
+        "id": msg_id,
+        "timestamp": timestamp,
+        "message": message,
+        "status": status,
+    })
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix=".tmp")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
+        os.replace(tmp_path, inbox_path)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+    print("written")
+except Exception as exc:
+    print(f"error:{exc}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
+        ) 200>"$lockfile"
+    )
+
+    case "$py_exit" in
+        written) return 0 ;;
+        duplicate) return 2 ;;
+        *)
+            [ -n "$py_exit" ] && echo "[$(date)] ERROR: append_ntfy_inbox failed: $py_exit" >&2
+            return 1
+            ;;
+    esac
+}
+
 to_repo_relative_path() {
     case "$1" in
         "$SCRIPT_DIR"/*) echo "${1#"$SCRIPT_DIR"/}" ;;
@@ -161,13 +234,16 @@ while true; do
 
         echo "[$(date)] Received: $MSG" >&2
 
-        # Append to inbox YAML (0-space indent for list items, 2-space for properties)
-        cat >> "$INBOX" << ENTRY
-- id: "$MSG_ID"
-  timestamp: "$TIMESTAMP"
-  message: "$MSG"
-  status: pending
-ENTRY
+        append_ntfy_inbox "$MSG_ID" "$TIMESTAMP" "$MSG" pending
+        append_rc=$?
+        if [ "$append_rc" -eq 2 ]; then
+            echo "[$(date)] Duplicate MSG_ID during atomic append: $MSG_ID, skipping" >&2
+            continue
+        fi
+        if [ "$append_rc" -ne 0 ]; then
+            echo "[$(date)] ERROR: failed to persist ntfy message to $INBOX" >&2
+            continue
+        fi
 
         # === Primary path: Direct injection to shogun pane ===
         SHOGUN_PANE=$(tmux display-message -t shogun:main -p '#{pane_id}' 2>/dev/null || echo "")

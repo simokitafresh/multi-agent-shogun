@@ -27,14 +27,15 @@ prune_inbox() {
     (
         flock -w 5 200 || exit 1
 
-        python3 -c "
+        INBOX_PATH="$INBOX" KEEP_READ="$KEEP_READ" AGENT_ID="$agent" python3 -c "
 import yaml, sys, os, tempfile
 
-inbox_path = '$INBOX'
-keep_read = $KEEP_READ
+inbox_path = os.environ['INBOX_PATH']
+keep_read = int(os.environ['KEEP_READ'])
+agent_id = os.environ['AGENT_ID']
 
 try:
-    with open(inbox_path) as f:
+    with open(inbox_path, encoding='utf-8') as f:
         data = yaml.safe_load(f)
 
     if not data or not data.get('messages'):
@@ -56,14 +57,14 @@ try:
     # Atomic write
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
     try:
-        with os.fdopen(tmp_fd, 'w') as f:
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
         os.replace(tmp_path, inbox_path)
     except:
         os.unlink(tmp_path)
         raise
 
-    print(f'PRUNED: $agent {pruned_count} messages removed', file=sys.stderr)
+    print(f'PRUNED: {agent_id} {pruned_count} messages removed', file=sys.stderr)
 
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)

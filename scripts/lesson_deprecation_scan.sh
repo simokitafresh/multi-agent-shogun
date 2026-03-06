@@ -145,6 +145,21 @@ def find_script_names(text):
     return re.findall(r'\b([\w_-]+\.sh)\b', text)
 
 
+def sanitize_reason(reason):
+    """Collapse control chars so deprecation reason stays single-line and log-safe."""
+    if not isinstance(reason, str):
+        raise ValueError("reason must be a string")
+
+    sanitized = reason.replace("\r", " ").replace("\n", " ").replace("\t", " ")
+    sanitized = re.sub(r"[\x00-\x1f\x7f]", "", sanitized)
+    sanitized = " ".join(sanitized.split())
+    if not sanitized:
+        raise ValueError("reason is empty after sanitization")
+    if len(sanitized) > 240:
+        sanitized = sanitized[:237] + "..."
+    return sanitized
+
+
 # --- Main scan ---
 global_max_id = 0  # track max lesson ID across all projects for checkpoint
 confirmed = []  # (project_id, lesson_id, reason)
@@ -280,8 +295,9 @@ print("=== 自動退役実行 ===")
 # AC5: ファイル消滅教訓の自動退役
 for proj, lid, reason in confirmed:
     if "ファイル消滅" in reason:
+        safe_reason = sanitize_reason(f"AUTO-DEPRECATE(file_missing): {reason}")
         result = subprocess.run(
-            ["bash", deprecate_script, proj, lid, f"AUTO-DEPRECATE(file_missing): {reason}"],
+            ["bash", deprecate_script, proj, lid, safe_reason],
             capture_output=True, text=True
         )
         if result.returncode == 0:
@@ -293,8 +309,11 @@ for proj, lid, reason in confirmed:
 # AC4: 有効率10%未満 × 注入10回以上の自動退役
 for proj, lid, title_snip, inj, hlp in eff_confirmed:
     if inj >= 10:
+        safe_reason = sanitize_reason(
+            f"AUTO-DEPRECATE(low_effectiveness): rate=0% injected={inj} helpful=0"
+        )
         result = subprocess.run(
-            ["bash", deprecate_script, proj, lid, f"AUTO-DEPRECATE(low_effectiveness): rate=0% injected={inj} helpful=0"],
+            ["bash", deprecate_script, proj, lid, safe_reason],
             capture_output=True, text=True
         )
         if result.returncode == 0:
@@ -304,8 +323,11 @@ for proj, lid, title_snip, inj, hlp in eff_confirmed:
             print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
 
 for proj, lid, title_snip, inj, hlp, rate in eff_review:
+    safe_reason = sanitize_reason(
+        f"AUTO-DEPRECATE(low_effectiveness): rate={rate:.0f}% injected={inj} helpful={hlp}"
+    )
     result = subprocess.run(
-        ["bash", deprecate_script, proj, lid, f"AUTO-DEPRECATE(low_effectiveness): rate={rate:.0f}% injected={inj} helpful={hlp}"],
+        ["bash", deprecate_script, proj, lid, safe_reason],
         capture_output=True, text=True
     )
     if result.returncode == 0:

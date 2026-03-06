@@ -35,14 +35,15 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
 
-        python3 -c "
+        INBOX_PATH="$INBOX" ARCHIVE_PATH="$ARCHIVE_FILE" AGENT_ID="$AGENT" python3 -c "
 import yaml, sys, os, tempfile
 
-inbox_path = '$INBOX'
-archive_path = '$ARCHIVE_FILE'
+inbox_path = os.environ['INBOX_PATH']
+archive_path = os.environ['ARCHIVE_PATH']
+agent_id = os.environ['AGENT_ID']
 
 # Load inbox
-with open(inbox_path) as f:
+with open(inbox_path, encoding='utf-8') as f:
     data = yaml.safe_load(f)
 
 if not data or not data.get('messages'):
@@ -53,7 +54,7 @@ msgs = data['messages']
 unread = [m for m in msgs if not m.get('read', False)]
 read_msgs = [m for m in msgs if m.get('read', False)]
 
-print(f'[inbox_archive] $AGENT: total={len(msgs)}, read={len(read_msgs)}, unread={len(unread)}')
+print(f'[inbox_archive] {agent_id}: total={len(msgs)}, read={len(read_msgs)}, unread={len(unread)}')
 
 if not read_msgs:
     print('[inbox_archive] No read messages to archive')
@@ -64,7 +65,7 @@ if unread:
 
 # Append to archive file
 if os.path.exists(archive_path):
-    with open(archive_path) as f:
+    with open(archive_path, encoding='utf-8') as f:
         archive_data = yaml.safe_load(f) or {}
 else:
     archive_data = {}
@@ -77,7 +78,7 @@ archive_data['messages'].extend(read_msgs)
 # Write archive (atomic)
 tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(archive_path), suffix='.tmp')
 try:
-    with os.fdopen(tmp_fd, 'w') as f:
+    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
         yaml.dump(archive_data, f, default_flow_style=False, allow_unicode=True, indent=2)
     os.replace(tmp_path, archive_path)
 except:
@@ -88,7 +89,7 @@ except:
 new_data = {'messages': unread} if unread else {'messages': []}
 tmp_fd2, tmp_path2 = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
 try:
-    with os.fdopen(tmp_fd2, 'w') as f:
+    with os.fdopen(tmp_fd2, 'w', encoding='utf-8') as f:
         yaml.dump(new_data, f, default_flow_style=False, allow_unicode=True, indent=2)
     os.replace(tmp_path2, inbox_path)
 except:
