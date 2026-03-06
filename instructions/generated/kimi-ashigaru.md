@@ -72,6 +72,9 @@ workflow:
       - id: R001
         positive_rule: "queue/reports/に配備時に生成された報告テンプレートが存在する。Read toolでテンプレートを読み、値を埋めよ。キーの追加は可、既存キーの削除・ネスト化は禁止"
         reason: "構造変更(ネスト化等)でgateのフィールド検出が失敗しBLOCKされる。家老の修正CTXが浪費される"
+      - id: R002
+        positive_rule: "報告YAMLはテンプレートのトップレベル構造を維持せよ。report: でラップするな。Edit toolで既存フィールドを編集せよ"
+        reason: "report: ラッパーや全上書きでトップレベル構造が崩れると、gateのフィールド検出と自動処理が失敗する"
   - step: 5.5
     action: self_gate_check
     mandatory: true

@@ -170,7 +170,7 @@ Before assigning tasks, ask yourself these five questions:
 task:
   task_id: subtask_001
   parent_cmd: cmd_001
-  bloom_level: L3        # L1-L3=genin, L4-L6=jonin
+  bloom_level: L3
   description: "Create hello1.md with content 'おはよう1'"
   target_path: "/mnt/c/tools/multi-agent-shogun/hello1.md"
   echo_message: "🔥 佐助、先陣を切って参る！八刃一志！"
@@ -232,32 +232,27 @@ Karo is the **only** agent that updates dashboard.md. Neither shogun nor ninja t
 | Previous step needed for next | Use `blocked_by` |
 | Same file write required | Single ninja (RACE-001) |
 
-## Model Selection: Bloom's Taxonomy
+## Model Selection
 
-| Agent | Tier | Pane |
-|-------|------|------|
+| Agent | CLI | Pane |
+|-------|-----|------|
 | Shogun | — | shogun:main |
-| Karo | — | shogun:2.1 |
-| 下忍(genin): sasuke/kirimaru/hayate/kagemaru | genin | shogun:2.2-2.5 |
-| 上忍(jonin): hanzo/saizo/kotaro/tobisaru | jonin | shogun:2.6-2.9 |
+| Karo | Claude | shogun:2.1 |
+| Opus忍者: kagemaru/hanzo/kotaro/tobisaru | Claude | shogun:2.5-2.6,2.8-2.9 |
+| Codex忍者: sasuke/kirimaru/hayate/saizo | Codex | shogun:2.2-2.4,2.7 |
 
-**Default: Assign to 下忍(genin).** Use 上忍(jonin) only when needed. 具体的モデル名は `config/settings.yaml` 参照。
+**配備はround-robin。** idle忍者に順に割り当てよ。モデル・名前で選ぶな（R001）。具体的モデル名は `config/settings.yaml` 参照。
 
-### Bloom Level → Model Mapping
+### Task Complexity Guide (Bloom's Taxonomy)
 
-**⚠️ If ANY part of the task is L4+, use jonin. When in doubt, use jonin.**
-
-| Question | Level | Tier |
-|----------|-------|------|
-| "Just searching/listing?" | L1 Remember | genin |
-| "Explaining/summarizing?" | L2 Understand | genin |
-| "Applying known pattern?" | L3 Apply | genin |
-| **— genin / jonin boundary —** | | |
-| "Investigating root cause/structure?" | L4 Analyze | **jonin** |
-| "Comparing options/evaluating?" | L5 Evaluate | **jonin** |
-| "Designing/creating something new?" | L6 Create | **jonin** |
-
-**L3/L4 boundary**: Does a procedure/template exist? YES = L3 (genin). NO = L4 (jonin).
+| Question | Level |
+|----------|-------|
+| "Just searching/listing?" | L1 Remember |
+| "Explaining/summarizing?" | L2 Understand |
+| "Applying known pattern?" | L3 Apply |
+| "Investigating root cause/structure?" | L4 Analyze |
+| "Comparing options/evaluating?" | L5 Evaluate |
+| "Designing/creating something new?" | L6 Create |
 
 ## SayTask Notifications
 
@@ -294,29 +289,29 @@ auto_draft_lesson.shが忍者報告のlesson_candidateからdraft教訓を自動
 2. 各draftに対してconfirm/edit/deleteを実施
 3. 全draft処理後、`bash scripts/cmd_complete_gate.sh {cmd_id}` がdraft残存チェック（draft残存→GATE BLOCK）
 
-## genin偵察フロー（Step 1 運用詳細）
+## 偵察フロー（Step 1 運用詳細）
 
-genin忍者（sasuke/kirimaru）を偵察に活用する具体的フロー。
-cmd_093で実証済み: genin偵察→統合→jonin実装の流れ。
+2名の忍者を並行偵察に活用する具体的フロー。
+cmd_093で実証済み: 偵察→統合→実装の流れ。
 
-### 偵察タスクの分割基準（何をgeninに任せるか）
+### 偵察タスクの分割基準
 
-| genin偵察に適する | jonin偵察が必要 |
-|------------------|---------------|
+| 偵察に適する | 高度な分析が必要 |
+|-------------|---------------|
 | ファイル構造・依存関係の調査 | 設計判断を要する分析 |
 | DB/APIのスキーマ・データ確認 | 根本原因の推論 |
 | コードパス・関数一覧の洗い出し | アーキテクチャの評価 |
 | 既存テストのカバレッジ確認 | 複数ファイル横断の影響分析 |
 | パラメータ・設定値の網羅的収集 | トレードオフ判断 |
 
-**判定**: 「入力（調査対象）と出力（報告項目）が明確に定義できるか？」→ YES → genin偵察向き
+**判定**: 「入力（調査対象）と出力（報告項目）が明確に定義できるか？」→ YES → 偵察向き
 
-### genin偵察の配備手順
+### 偵察の配備手順
 
 ```
 1. task YAMLを2名分作成（task_type: recon）
-   - sasuke: 仮説A寄りの観点で調査
-   - kirimaru: 仮説B寄りの観点で調査
+   - 忍者A: 仮説A寄りの観点で調査
+   - 忍者B: 仮説B寄りの観点で調査
    - 両方に全仮説を網羅させる（偏り防止）
    - 「互いの結果は見るな」を明記
    - project:フィールドを忘れるな（偵察でも背景知識は必須）
@@ -325,9 +320,7 @@ cmd_093で実証済み: genin偵察→統合→jonin実装の流れ。
    bash scripts/task_deploy.sh cmd_XXX recon
    → exit 0: OK / exit 1: 2名未満→修正必須
 
-3. inbox_writeで同時配備
-   bash scripts/inbox_write.sh sasuke "タスクYAMLを読んで作業開始せよ。" task_assigned karo
-   bash scripts/inbox_write.sh kirimaru "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+3. inbox_writeで同時配備（idle忍者にround-robin割当）
 
 4. 両報告受理後、report_merge.shで統合判定（Step 10.5）
    bash scripts/report_merge.sh cmd_XXX
@@ -336,24 +329,24 @@ cmd_093で実証済み: genin偵察→統合→jonin実装の流れ。
 5. 統合分析（Step 1.5）
    - 一致点=確定事実
    - 不一致点=盲点候補→追加調査を配備
-   - 統合結果をStep 2（知識保存）→ Step 3（jonin実装）へ
+   - 統合結果をStep 2（知識保存）→ Step 3（実装）へ
 
-6. jonin忍者に実装タスクを配備（Step 3）
+6. 忍者に実装タスクを配備（Step 3）
    - 偵察結果を踏まえたtask YAMLを作成
    - descriptionに「偵察統合結果: {要約}」を記載
    - 関連lessonのIDポインタも記載
 ```
 
-### genin偵察タスクYAMLテンプレート
+### 偵察タスクYAMLテンプレート
 
 ```yaml
 task:
   task_id: subtask_XXXa
   parent_cmd: cmd_XXX
-  bloom_level: L2          # 偵察はL1-L3（genin範囲）
-  task_type: recon          # 偵察タスク識別子
-  project: dm-signal        # 忍者が知識ベースを自動読込
-  assigned_to: sasuke
+  bloom_level: L2
+  task_type: recon
+  project: dm-signal
+  assigned_to: sasuke       # idle忍者にround-robin割当
   status: assigned
   description: |
     ■ 並行偵察（独立調査 — 他忍者の結果は見るな）
