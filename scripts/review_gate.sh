@@ -84,9 +84,10 @@ for task in all_tasks:
     title = (task.get('title') or '').lower()
     desc = (task.get('description') or '').lower()
     search_text = title + ' ' + desc
+    task_type = (task.get('type') or '').lower()
 
     is_code = any(kw.lower() in search_text for kw in code_keywords)
-    is_review = any(kw.lower() in search_text for kw in review_keywords)
+    is_review = task_type == 'review' or any(kw.lower() in search_text for kw in review_keywords)
 
     if is_review:
         review_tasks.append(task)
