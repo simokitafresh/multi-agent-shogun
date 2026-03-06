@@ -1531,7 +1531,14 @@ write_karo_snapshot() {
             local idle_list=""
             for name in "${rotated_names[@]}"; do
                 if [ "${PREV_STATE[$name]}" = "idle" ]; then
-                    idle_list="${idle_list}${name},"
+                    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+                    local task_status=""
+                    if [ -f "$task_file" ]; then
+                        task_status=$(yaml_field_get "$task_file" "status")
+                    fi
+                    if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ]; then
+                        idle_list="${idle_list}${name},"
+                    fi
                 fi
             done
             idle_list="${idle_list%,}"
