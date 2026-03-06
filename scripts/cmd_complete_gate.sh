@@ -791,6 +791,45 @@ record_block_reason() {
     fi
 }
 
+detect_task_role() {
+    local task_file="$1"
+
+    TASK_FILE_ENV="$task_file" python3 - <<'PY'
+import os
+import yaml
+
+task_file = os.environ["TASK_FILE_ENV"]
+
+try:
+    with open(task_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    print("unknown")
+    raise SystemExit(0)
+
+task = data.get("task", {}) if isinstance(data, dict) else {}
+if not isinstance(task, dict):
+    print("unknown")
+    raise SystemExit(0)
+
+tokens = []
+for key in ("task_type", "type", "task_id", "subtask_id"):
+    value = task.get(key)
+    if value is not None:
+        tokens.append(str(value).strip().lower())
+
+text = " ".join(tokens)
+if "review" in text:
+    print("review")
+elif "implement" in text or "impl" in text:
+    print("implement")
+elif "recon" in text or "scout" in text:
+    print("recon")
+else:
+    print("unknown")
+PY
+}
+
 # ─── context_update freshness check (cmd_543 AC2) ───
 # cmdにcontext_updateが定義されている場合のみ、context/* の last_updated を検証。
 # last_updated(YYYY-MM-DD) < cmd timestamp/delegated_at の日付 なら BLOCK。
@@ -1715,6 +1754,126 @@ if [ "$DC_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── review品質機械検査（cmd_607） ───
+echo ""
+echo "Review quality check:"
+REVIEW_TASK_FOUND=false
+IMPLEMENTER_IDS="|"
+REVIEWER_IDS="|"
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    task_role=$(detect_task_role "$task_file")
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    case "$task_role" in
+        implement)
+            if [ -f "$report_file" ]; then
+                impl_worker_id=$(field_get "$report_file" "worker_id" "")
+                if [ -n "$impl_worker_id" ] && [[ "$IMPLEMENTER_IDS" != *"|$impl_worker_id|"* ]]; then
+                    IMPLEMENTER_IDS="${IMPLEMENTER_IDS}${impl_worker_id}|"
+                fi
+            fi
+            ;;
+        review)
+            REVIEW_TASK_FOUND=true
+
+            if [ ! -f "$report_file" ]; then
+                echo "  ${ninja_name}: SKIP (review report not found)"
+                continue
+            fi
+
+            review_status=$(REPORT_FILE_ENV="$report_file" python3 - <<'PY'
+import os
+import yaml
+
+report_file = os.environ["REPORT_FILE_ENV"]
+
+try:
+    with open(report_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    print("parse_error\tparse_error\t")
+    raise SystemExit(0)
+
+if not isinstance(data, dict):
+    print("parse_error\tparse_error\t")
+    raise SystemExit(0)
+
+verdict = data.get("verdict")
+if isinstance(verdict, str) and verdict in ("PASS", "FAIL"):
+    verdict_status = "ok"
+else:
+    verdict_status = "ng"
+
+self_gate = data.get("self_gate_check")
+required = ("lesson_ref", "lesson_candidate", "status_valid", "purpose_fit")
+if isinstance(self_gate, dict) and all(str(self_gate.get(key, "")).strip() == "PASS" for key in required):
+    gate_status = "ok"
+else:
+    gate_status = "ng"
+
+worker_id = str(data.get("worker_id", "")).strip()
+print(f"{verdict_status}\t{gate_status}\t{worker_id}")
+PY
+)
+
+            verdict_status=$(printf '%s\n' "$review_status" | cut -f1)
+            self_gate_status=$(printf '%s\n' "$review_status" | cut -f2)
+            review_worker_id=$(printf '%s\n' "$review_status" | cut -f3)
+
+            if [ "$verdict_status" = "ok" ]; then
+                echo "  ${ninja_name}: OK (verdict=PASS/FAIL)"
+            else
+                echo "  ${ninja_name}: NG ← verdict欠落または不正値（PASS/FAIL必須）"
+                record_block_reason "review report missing verdict field"
+                ALL_CLEAR=false
+            fi
+
+            if [ "$self_gate_status" = "ok" ]; then
+                echo "  ${ninja_name}: OK (self_gate_check all PASS)"
+            else
+                echo "  ${ninja_name}: NG ← self_gate_check 4項目が不足またはPASS以外"
+                record_block_reason "review report self_gate_check incomplete or not all PASS"
+                ALL_CLEAR=false
+            fi
+
+            if [ -n "$review_worker_id" ] && [[ "$REVIEWER_IDS" != *"|$review_worker_id|"* ]]; then
+                REVIEWER_IDS="${REVIEWER_IDS}${review_worker_id}|"
+            fi
+            ;;
+    esac
+done
+
+if [ "$REVIEW_TASK_FOUND" = false ]; then
+    echo "  SKIP (no review reports for this cmd)"
+elif [ "$IMPLEMENTER_IDS" = "|" ]; then
+    echo "  reviewer/implementer split: SKIP (no implementer reports)"
+elif [ "$REVIEWER_IDS" = "|" ]; then
+    echo "  reviewer/implementer split: SKIP (no review worker_id)"
+else
+    overlapping_workers=$(python3 - "$IMPLEMENTER_IDS" "$REVIEWER_IDS" <<'PY'
+import sys
+
+implementers = {item for item in sys.argv[1].strip("|").split("|") if item}
+reviewers = {item for item in sys.argv[2].strip("|").split("|") if item}
+overlap = sorted(implementers & reviewers)
+print(",".join(overlap))
+PY
+)
+    if [ -n "$overlapping_workers" ]; then
+        echo "  NG ← reviewer and implementer overlap: ${overlapping_workers}"
+        record_block_reason "reviewer is same as implementer"
+        ALL_CLEAR=false
+    else
+        echo "  reviewer/implementer split: OK"
+    fi
+fi
+
 # ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
 echo ""
 echo "Draft lesson check:"
@@ -1897,7 +2056,7 @@ else
     echo "  SKIP (non-recon cmd: purpose does not contain recon keywords)"
 fi
 
-# ─── TODO/FIXME残存チェック（WARNのみ、ブロックしない） ───
+# ─── TODO/FIXME残存チェック（BLOCK） ───
 echo ""
 echo "TODO/FIXME residual check:"
 CMD_NUM="${CMD_ID#cmd_}"
@@ -1913,13 +2072,15 @@ TODO_COUNT=$(printf '%s' "$TODO_HITS" | grep -c '.' 2>/dev/null || true)
 TODO_COUNT=${TODO_COUNT:-0}
 
 if [ "$TODO_COUNT" -gt 0 ]; then
-    echo "  TODO_WARN: ${TODO_COUNT}件のTODO/FIXMEが残存:"
+    echo "  NG ← ${TODO_COUNT}件のTODO/FIXMEが残存:"
     printf '%s\n' "$TODO_HITS" | head -10 | while IFS= read -r line; do
         echo "    ${line}"
     done
     if [ "$TODO_COUNT" -gt 10 ]; then
         echo "    ... (${TODO_COUNT}件中10件表示)"
     fi
+    record_block_reason "todo/fixme residual found"
+    ALL_CLEAR=false
 else
     echo "  TODO check: OK (0 remaining)"
 fi

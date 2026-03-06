@@ -142,8 +142,14 @@ parent_cmd: $TEST_CMD_ID
 timestamp: "2026-03-06T14:00:00"
 status: done
 ac_version_read: 2
+verdict: PASS
 purpose_validation:
   fit: true
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
 lesson_candidate:
   found: false
 skill_candidate:
