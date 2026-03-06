@@ -41,6 +41,8 @@ POLL_INTERVAL=20    # ポーリング間隔（秒）
 CONFIRM_WAIT=5      # idle確認待ち（秒）— Phase 2a base wait
 STALL_THRESHOLD_MIN=15 # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知
 STALE_CMD_THRESHOLD=14400 # stale cmd検知しきい値（秒）— pending+subtask未配備が4時間継続で通知
+NTFY_HEALTH_THRESHOLD_MIN=10 # ntfy_listenerヘルスチェックしきい値（分）— ログが古ければゾンビ判定
+NTFY_RESTART_COOLDOWN_MIN=5  # ntfy_listener連続再起動防止クールダウン（分）
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
 
 # Self-restart on script change (inbox_watcher.shから移植)
@@ -48,6 +50,7 @@ SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
 STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
+LAST_NTFY_RESTART=0  # ntfy_listener最終再起動時刻（epoch秒）
 
 # 監視対象の忍者名リスト（karoと将軍は対象外）
 # saizo pane 7 (cmd_403: gunshi凍結→saizo復帰)
@@ -1432,6 +1435,58 @@ write_state_file() {
     fi
 }
 
+# ─── ntfy_listenerヘルスチェック (cmd_635) ───
+# ログの最終行タイムスタンプが古ければゾンビ判定→再起動
+check_ntfy_listener_health() {
+    local log_file="$SCRIPT_DIR/logs/ntfy_listener.log"
+
+    # ログが存在しない場合はスキップ（listenerが未起動）
+    if [ ! -f "$log_file" ]; then
+        return 0
+    fi
+
+    # 最終行からタイムスタンプを抽出 [Sat Mar  7 03:52:40 JST 2026]
+    local last_line
+    last_line=$(tail -1 "$log_file" 2>/dev/null || true)
+    if [ -z "$last_line" ]; then
+        return 0
+    fi
+
+    # [Day Mon DD HH:MM:SS TZ YYYY] 形式からタイムスタンプ部分を抽出
+    local ts_str
+    ts_str=$(echo "$last_line" | grep -oP '\[\K[A-Za-z]+ [A-Za-z]+ +\d+ \d+:\d+:\d+ [A-Z]+ \d+' | head -1)
+    if [ -z "$ts_str" ]; then
+        return 0
+    fi
+
+    # epoch秒に変換
+    local log_epoch
+    log_epoch=$(date -d "$ts_str" +%s 2>/dev/null || true)
+    if [ -z "$log_epoch" ]; then
+        return 0
+    fi
+
+    local now
+    now=$(date +%s)
+    local age_min=$(( (now - log_epoch) / 60 ))
+
+    # しきい値以内なら正常 — 何もしない
+    if [ "$age_min" -lt "$NTFY_HEALTH_THRESHOLD_MIN" ]; then
+        return 0
+    fi
+
+    # 連続再起動防止: クールダウン期間内ならスキップ
+    local cooldown_sec=$((NTFY_RESTART_COOLDOWN_MIN * 60))
+    if [ $((now - LAST_NTFY_RESTART)) -lt "$cooldown_sec" ]; then
+        return 0
+    fi
+
+    log "WARNING: ntfy_listener log stale (${age_min}min old). Restarting..."
+    bash "$SCRIPT_DIR/scripts/restart_ntfy_listener.sh" >> "$LOG" 2>&1 || true
+    LAST_NTFY_RESTART=$(date +%s)
+    log "ntfy_listener restart triggered by health check"
+}
+
 # ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───
 write_karo_snapshot() {
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
@@ -2025,6 +2080,7 @@ while true; do
     # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
     write_state_file
     write_karo_snapshot   # 家老陣形図更新（毎サイクル）
+    check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
 
     # ═══ STEP 2: ダッシュボード自動更新 (cmd_404) ═══
     # 状態変化時のみ呼び出す（コスト最適化）
