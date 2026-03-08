@@ -145,6 +145,7 @@ fun ShogunScreen(
 
     // Auto-scroll to bottom when content changes
     LaunchedEffect(softWrapEnabled) {
+        zoomState.clearContentWidth()
         zoomState.reset()
     }
 
@@ -221,6 +222,12 @@ fun ShogunScreen(
                             fontFamily = FontFamily.Monospace,
                             fontSize = termFontSize.sp,
                             softWrap = false,
+                            onTextLayout = { result ->
+                                val maxLineWidth = (0 until result.lineCount).maxOfOrNull {
+                                    result.getLineRight(it) - result.getLineLeft(it)
+                                } ?: 0f
+                                zoomState.updateContentWidth(maxLineWidth)
+                            },
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomed)

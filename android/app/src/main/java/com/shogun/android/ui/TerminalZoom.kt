@@ -24,23 +24,39 @@ private const val MAX_TERMINAL_SCALE = 3f
 
 @Stable
 class TerminalZoomState(
-    private val minScale: Float = MIN_TERMINAL_SCALE,
+    private val baseMinScale: Float = MIN_TERMINAL_SCALE,
     private val maxScale: Float = MAX_TERMINAL_SCALE
 ) {
-    var scale by mutableFloatStateOf(minScale)
+    var scale by mutableFloatStateOf(baseMinScale)
         private set
 
     var offset by mutableStateOf(Offset.Zero)
         private set
 
     private var viewportSize by mutableStateOf(IntSize.Zero)
+    private var contentWidth by mutableFloatStateOf(0f)
+
+    val minScale: Float
+        get() = if (contentWidth > 0f && viewportSize.width > 0)
+            (viewportSize.width.toFloat() / contentWidth).coerceIn(0.1f, baseMinScale)
+        else baseMinScale
 
     val isZoomed: Boolean
-        get() = scale > minScale + 0.01f
+        get() = kotlin.math.abs(scale - 1f) > 0.01f
 
     fun updateViewport(size: IntSize) {
         viewportSize = size
         offset = clampOffset(offset, scale)
+    }
+
+    fun updateContentWidth(width: Float) {
+        if (kotlin.math.abs(contentWidth - width) > 1f) {
+            contentWidth = width
+        }
+    }
+
+    fun clearContentWidth() {
+        contentWidth = 0f
     }
 
     fun onTransform(zoomChange: Float, panChange: Offset) {
@@ -51,12 +67,14 @@ class TerminalZoomState(
         }
 
         scale = nextScale
-        offset = clampOffset(offset + panChange, nextScale)
+        val effectivePan = if (nextScale < 1f) Offset(0f, panChange.y) else panChange
+        offset = clampOffset(offset + effectivePan, nextScale)
     }
 
     fun onDrag(dragAmount: Offset) {
         if (!isZoomed) return
-        offset = clampOffset(offset + dragAmount, scale)
+        val effectiveDrag = if (scale < 1f) Offset(0f, dragAmount.y) else dragAmount
+        offset = clampOffset(offset + effectiveDrag, scale)
     }
 
     fun reset() {
@@ -65,16 +83,24 @@ class TerminalZoomState(
     }
 
     private fun clampOffset(candidate: Offset, scale: Float): Offset {
-        if (viewportSize == IntSize.Zero || scale <= minScale + 0.01f) {
-            return Offset.Zero
-        }
+        if (viewportSize == IntSize.Zero) return Offset.Zero
+        if (kotlin.math.abs(scale - 1f) <= 0.01f) return Offset.Zero
 
-        val maxX = viewportSize.width * (scale - 1f) / 2f
-        val maxY = viewportSize.height * (scale - 1f) / 2f
-        return Offset(
-            x = candidate.x.coerceIn(-maxX, maxX),
-            y = candidate.y.coerceIn(-maxY, maxY)
-        )
+        if (scale > 1f) {
+            val maxX = viewportSize.width * (scale - 1f) / 2f
+            val maxY = viewportSize.height * (scale - 1f) / 2f
+            return Offset(
+                x = candidate.x.coerceIn(-maxX, maxX),
+                y = candidate.y.coerceIn(-maxY, maxY)
+            )
+        } else {
+            // Shrunk: Y-axis pan only
+            val maxY = viewportSize.height * (1f - scale) / 2f
+            return Offset(
+                x = 0f,
+                y = candidate.y.coerceIn(-maxY, maxY)
+            )
+        }
     }
 }
 

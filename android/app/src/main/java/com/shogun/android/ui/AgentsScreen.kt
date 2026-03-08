@@ -428,6 +428,7 @@ fun PaneFullScreen(
     }
 
     LaunchedEffect(softWrapEnabled) {
+        zoomState.clearContentWidth()
         zoomState.reset()
     }
 
@@ -506,6 +507,14 @@ fun PaneFullScreen(
                     fontFamily = FontFamily.Monospace,
                     fontSize = fontSize.sp,
                     softWrap = softWrapEnabled,
+                    onTextLayout = { result ->
+                        if (!softWrapEnabled) {
+                            val maxLineWidth = (0 until result.lineCount).maxOfOrNull {
+                                result.getLineRight(it) - result.getLineLeft(it)
+                            } ?: 0f
+                            zoomState.updateContentWidth(maxLineWidth)
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomed)
