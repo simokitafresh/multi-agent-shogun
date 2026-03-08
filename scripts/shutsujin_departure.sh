@@ -6,6 +6,8 @@
 # セッション固有の設定を適用する。
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
+mkdir -p "$STATE_DIR"
 
 # モデル検出ライブラリ（将軍@model_name同期用）
 if [ -f "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" ]; then
@@ -117,6 +119,6 @@ echo "[shutsujin] keybind: Prefix+v → capture_clipboard_image.sh"
 
 # ─── idle flag initialization (cmd_455) ───
 for agent in karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
-    touch "/tmp/shogun_idle_${agent}"
+    touch "${STATE_DIR}/shogun_idle_${agent}"
 done
 echo "[shutsujin] idle flags: created for all agents"

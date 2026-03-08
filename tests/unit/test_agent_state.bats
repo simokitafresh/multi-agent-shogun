@@ -34,9 +34,11 @@ check_agent_busy "shogun:agents.2" "sasuke"
 @test "check_agent_busy returns idle and corrects @agent_state on idle prompt" {
     run bash -lc '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
+STATE_DIR="$(mktemp -d)"
+export SHOGUN_STATE_DIR="$STATE_DIR"
 source "$PROJECT_ROOT/lib/agent_state.sh"
 agent_id="agent_state_idle_test_$$"
-flag="/tmp/shogun_idle_${agent_id}"
+flag="$SHOGUN_STATE_DIR/shogun_idle_${agent_id}"
 log_file="$(mktemp)"
 rm -f "$flag"
 tmux() {
@@ -59,6 +61,7 @@ rc=$?
 [ -f "$flag" ]
 grep -q "@agent_state idle" "$log_file"
 rm -f "$flag" "$log_file"
+rmdir "$SHOGUN_STATE_DIR"
 '
     [ "$status" -eq 0 ]
 }
@@ -66,9 +69,11 @@ rm -f "$flag" "$log_file"
 @test "check_agent_busy short-circuits when @agent_state is already idle" {
     run bash -lc '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
+STATE_DIR="$(mktemp -d)"
+export SHOGUN_STATE_DIR="$STATE_DIR"
 source "$PROJECT_ROOT/lib/agent_state.sh"
 agent_id="agent_state_short_circuit_$$"
-flag="/tmp/shogun_idle_${agent_id}"
+flag="$SHOGUN_STATE_DIR/shogun_idle_${agent_id}"
 capture_calls=0
 rm -f "$flag"
 tmux() {
@@ -85,6 +90,7 @@ rc=$?
 [ "$capture_calls" -eq 0 ]
 [ -f "$flag" ]
 rm -f "$flag"
+rmdir "$SHOGUN_STATE_DIR"
 '
     [ "$status" -eq 0 ]
 }

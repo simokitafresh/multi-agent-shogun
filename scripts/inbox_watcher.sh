@@ -30,7 +30,8 @@ PANE_TARGET="$2"
 # 第3引数は後方互換で受け付けるが無視（shutsujin_departure.shが渡す）
 CLI_TYPE_AT_STARTUP=$(cli_type "$AGENT_ID")  # settings.yaml → cli_profiles.yaml の2段参照
 
-STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
+STATE_DIR="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
+IDLE_FLAG_DIR="$STATE_DIR"
 mkdir -p "$STATE_DIR"
 
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
@@ -45,8 +46,10 @@ DEBOUNCE_FILE="${STATE_DIR}/inbox_watcher_last_nudge_${AGENT_ID}"
 FINGERPRINT_FILE="${STATE_DIR}/inbox_watcher_fingerprint_${AGENT_ID}"
 RETRY_MAX=3      # immediate retries before falling back to BACKOFF interval
 RETRY_COUNT_FILE="${STATE_DIR}/inbox_watcher_retry_${AGENT_ID}"
-BACKOFF_SEC=120  # 2 minutes — safety net re-notification for stale unread (was 600)
+BACKOFF_SEC="${BACKOFF_SEC:-120}"  # 2 minutes — safety net re-notification for stale unread (was 600)
 STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
+FIRST_UNREAD_SEEN="${FIRST_UNREAD_SEEN:-${STATE_DIR}/first_unread_seen_${AGENT_ID}}"
+FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-15}"
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -167,6 +170,46 @@ refresh_debounce_file() {
         echo "[$(date)] WARNING: failed to refresh debounce file: $DEBOUNCE_FILE" >&2
         return 1
     fi
+}
+
+get_first_unread_age() {
+    if [ -f "$FIRST_UNREAD_SEEN" ]; then
+        local first_seen
+        first_seen=$(cat "$FIRST_UNREAD_SEEN" 2>/dev/null || echo "")
+        if [[ "$first_seen" =~ ^[0-9]+$ ]]; then
+            echo $(( $(date +%s) - first_seen ))
+            return
+        fi
+    fi
+    echo 0
+}
+
+mark_first_unread_seen() {
+    if [ ! -f "$FIRST_UNREAD_SEEN" ]; then
+        write_state_file "$FIRST_UNREAD_SEEN" "$(date +%s)" "first_unread_seen" || true
+    fi
+}
+
+clear_first_unread_seen() {
+    rm -f "$FIRST_UNREAD_SEEN"
+}
+
+maybe_force_idle_flag() {
+    local effective_cli="$1"
+    [ "$effective_cli" = "claude" ] || return 1
+
+    local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
+    [ -f "$idle_flag" ] && return 1
+
+    local unread_age
+    unread_age=$(get_first_unread_age)
+    if [ "$unread_age" -lt "$FORCE_IDLE_AFTER_SEC" ]; then
+        return 1
+    fi
+
+    echo "[$(date)] [RECOVERY] forcing idle flag for $AGENT_ID after ${unread_age}s unread" >&2
+    touch "$idle_flag"
+    return 0
 }
 
 # ─── Fingerprint age helper ───
@@ -293,8 +336,8 @@ send_wakeup() {
     # Tier 1.3: Agent busy check
     # Claude: idle flag managed by Stop hook (exists=idle, absent=busy)
     # Codex/other: fallback to @agent_state for compatibility
-    local idle_flag="${STATE_DIR}/shogun_idle_${AGENT_ID}"
-    if [[ "$effective_cli" == "claude" ]] && [ ! -f "$idle_flag" ]; then
+    local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
+    if [[ "$effective_cli" == "claude" ]] && [ ! -f "$idle_flag" ] && ! maybe_force_idle_flag "$effective_cli"; then
         echo "[$(date)] [BUSY] Agent $AGENT_ID is busy (no idle flag), Stop hook will deliver" >&2
         return 2
     fi
@@ -358,7 +401,7 @@ send_wakeup() {
     sleep 0.3
 
     # Send nudge via paste-buffer + Enter (atomic lock)
-    local lock="/tmp/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
+    local lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
     (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
         tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
@@ -377,7 +420,7 @@ send_wakeup() {
     fi
 
     # After successful nudge: consume idle flag (Stop hook recreates on idle)
-    rm -f "${STATE_DIR}/shogun_idle_${AGENT_ID}"
+    rm -f "${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
 
     # After successful nudge: mark agent as active to prevent duplicate nudges
     # before the agent's own PreToolUse/UserPromptSubmit hook fires.
@@ -407,6 +450,16 @@ check_script_update() {
 process_unread() {
     local info
     info=$(get_unread_info)
+    local normal_count
+    normal_count=$(echo "$info" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count',0))" 2>/dev/null)
+    local has_specials
+    has_specials=$(echo "$info" | python3 -c "import sys,json; print('true' if json.load(sys.stdin).get('has_specials') else 'false')" 2>/dev/null)
+
+    if [ "$normal_count" -gt 0 ] 2>/dev/null || [ "$has_specials" = "true" ]; then
+        mark_first_unread_seen
+    else
+        clear_first_unread_seen
+    fi
 
     # Handle special CLI commands first (/clear, /model)
     local specials
@@ -438,20 +491,28 @@ for s in data.get('specials', []):
                     effective_cli=$(get_effective_cli_type)
                     local defer_clear=false
                     if [[ "$effective_cli" == "claude" ]]; then
-                        local idle_flag="${STATE_DIR}/shogun_idle_${AGENT_ID}"
-                        [ ! -f "$idle_flag" ] && defer_clear=true
-                    else
-                        local busy_rc
-                        if check_agent_busy "$PANE_TARGET" "$AGENT_ID"; then
-                            busy_rc=0
-                        else
-                            busy_rc=$?
+                        local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
+                        if [ ! -f "$idle_flag" ] && ! maybe_force_idle_flag "$effective_cli"; then
+                            defer_clear=true
                         fi
-                        [ "$busy_rc" -eq 1 ] && defer_clear=true
+                    else
+                        local agent_state
+                        agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "unknown")
+                        if [ "$agent_state" = "active" ]; then
+                            defer_clear=true
+                        else
+                            local busy_rc
+                            if check_agent_busy "$PANE_TARGET" "$AGENT_ID"; then
+                                busy_rc=0
+                            else
+                                busy_rc=$?
+                            fi
+                            [ "$busy_rc" -eq 1 ] && defer_clear=true
+                        fi
                     fi
 
                     if [ "$defer_clear" = true ]; then
-                        echo "[$(date)] [SKIP] Agent $AGENT_ID is busy — /clear (clear_command) deferred to next cycle" >&2
+                        echo "[$(date)] [BUSY] Agent $AGENT_ID is busy — /clear (clear_command) deferred to next cycle" >&2
                         break
                     fi
 
@@ -482,9 +543,6 @@ for s in data.get('specials', []):
     fi
 
     # Send wake-up nudge for normal messages (fingerprint dedup)
-    local normal_count
-    normal_count=$(echo "$info" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count',0))" 2>/dev/null)
-
     if [ "$normal_count" -gt 0 ] 2>/dev/null; then
         # Build fingerprint from sorted unread normal message IDs
         local current_fp
@@ -548,6 +606,7 @@ for s in data.get('specials', []):
             rm -f "$RETRY_COUNT_FILE"
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
         fi
+        clear_first_unread_seen
     fi
 }
 
@@ -567,7 +626,7 @@ process_unread
 # ─── Main loop: event-driven via inotifywait ───
 # Timeout 60s: WSL2 /mnt/c/ can miss inotify events.
 # On timeout (exit 2), check for unread messages as a safety net.
-INOTIFY_TIMEOUT=60
+INOTIFY_TIMEOUT="${INOTIFY_TIMEOUT:-60}"
 
 while true; do
     # Block until file is modified OR timeout (safety net for WSL2)

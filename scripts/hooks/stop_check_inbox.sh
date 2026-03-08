@@ -29,7 +29,9 @@ if [[ -z "$agent_id" || "$agent_id" == "shogun" ]]; then
   exit 0
 fi
 
-idle_flag="/tmp/shogun_idle_${agent_id}"
+STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
+mkdir -p "$STATE_DIR"
+idle_flag="${STATE_DIR}/shogun_idle_${agent_id}"
 last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
 
 stop_hook_active="$(printf '%s' "$payload" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)"

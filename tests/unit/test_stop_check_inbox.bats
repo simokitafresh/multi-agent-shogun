@@ -18,9 +18,10 @@ setup() {
     export TMUX_LOG="$TEST_ROOT/tmux.log"
     export INBOX_WRITE_LOG="$TEST_ROOT/inbox_write.log"
     export TMUX_AGENT_ID="hayate"
-    export TEST_IDLE_FLAG="/tmp/shogun_idle_${TMUX_AGENT_ID}"
+    export SHOGUN_STATE_DIR="$TEST_ROOT/state"
+    export TEST_IDLE_FLAG="$SHOGUN_STATE_DIR/shogun_idle_${TMUX_AGENT_ID}"
 
-    mkdir -p "$TEST_PROJECT/scripts/hooks" "$TEST_PROJECT/scripts" "$TEST_PROJECT/queue/inbox" "$TEST_BIN"
+    mkdir -p "$TEST_PROJECT/scripts/hooks" "$TEST_PROJECT/scripts" "$TEST_PROJECT/queue/inbox" "$TEST_BIN" "$SHOGUN_STATE_DIR"
     cp "$SOURCE_SCRIPT" "$TEST_PROJECT/scripts/hooks/stop_check_inbox.sh"
     chmod +x "$TEST_PROJECT/scripts/hooks/stop_check_inbox.sh"
 

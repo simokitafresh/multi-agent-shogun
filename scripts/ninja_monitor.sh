@@ -28,6 +28,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
+STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
@@ -57,6 +58,7 @@ LAST_NTFY_RESTART=0  # ntfy_listener最終再起動時刻（epoch秒）
 NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
 
 mkdir -p "$SCRIPT_DIR/logs"
+mkdir -p "$STATE_DIR"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG"
@@ -200,7 +202,7 @@ check_idle() {
     if [ -n "$agent_state" ]; then
         if [ "$agent_state" = "idle" ]; then
             # flag file存在保証（idle状態なら常にflagがあるべき）
-            [ ! -f "/tmp/shogun_idle_${agent_name}" ] && touch "/tmp/shogun_idle_${agent_name}"
+            [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
             local last_active
             last_active=$(tmux display-message -t "$pane_target" -p '#{@last_active}' 2>/dev/null)
             local now
@@ -268,7 +270,7 @@ safe_send_clear() {
         log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"
         return 1
     fi
-    rm -f "/tmp/shogun_idle_${agent_name}"
+    rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
     return 0
 }
 
