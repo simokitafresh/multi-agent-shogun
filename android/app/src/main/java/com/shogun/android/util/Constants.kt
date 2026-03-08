@@ -26,7 +26,7 @@ object Defaults {
     const val SSH_PORT = 22
     const val SSH_PORT_STR = "22"
     const val SHOGUN_SESSION = "shogun"
-    const val AGENTS_SESSION = "multiagent"
-    const val NTFY_TOPIC = "sho-y0uhey"
+    const val AGENTS_SESSION = "shogun:agents"
+    const val NTFY_TOPIC = "shogun-simokitafresh"
     const val TMUX = "/usr/bin/tmux"
 }

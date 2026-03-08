@@ -46,8 +46,14 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
     @Volatile private var isRefreshing = false
 
     private fun agentsTarget(): String {
-        val session = prefs.getString(PrefsKeys.AGENTS_SESSION, Defaults.AGENTS_SESSION) ?: Defaults.AGENTS_SESSION
-        return "$session:0"
+        val configured = prefs.getString(PrefsKeys.AGENTS_SESSION, Defaults.AGENTS_SESSION)
+            ?.trim()
+            .orEmpty()
+        return when {
+            configured.isBlank() -> Defaults.AGENTS_SESSION
+            ":" in configured -> configured
+            else -> "$configured:agents"
+        }
     }
 
     fun pauseRefresh() { paused = true }
@@ -178,7 +184,8 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
                 _rateLimitResult.value = "設定画面でプロジェクトパスを設定してください"
                 return@launch
             }
-            val result = sshManager.execCommand("bash $projectPath/scripts/ratelimit_check.sh")
+            val scriptPath = "$projectPath/scripts/usage_status.sh".replace("'", "'\\''")
+            val result = sshManager.execCommand("bash '$scriptPath'")
             _rateLimitLoading.value = false
             _rateLimitResult.value = result.getOrElse { "取得失敗: ${it.message}" }
         }

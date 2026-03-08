@@ -79,6 +79,35 @@ private data class RateLimitData(
 )
 
 private fun parseRateLimitResult(text: String): RateLimitData {
+    val usageStatusMatch = Regex(
+        """5H:\S+\s+([\d.]+)%(?:\s+(left))?\s+(.+?)\s+7D:\S+\s+([\d.]+)%(?:\s+(left))?\s+(.+)"""
+    ).find(text)
+    if (usageStatusMatch != null) {
+        val dayPercent = usageStatusMatch.groupValues[1].toFloatOrNull() ?: 0f
+        val dayLeft = usageStatusMatch.groupValues[2].isNotBlank()
+        val dayReset = usageStatusMatch.groupValues[3].trim()
+        val weekPercent = usageStatusMatch.groupValues[4].toFloatOrNull() ?: 0f
+        val weekLeft = usageStatusMatch.groupValues[5].isNotBlank()
+        val weekReset = usageStatusMatch.groupValues[6].trim()
+
+        val dayWindow = WindowInfo(if (dayLeft) 100f - dayPercent else dayPercent, dayReset)
+        val weekWindow = WindowInfo(if (weekLeft) 100f - weekPercent else weekPercent, weekReset)
+
+        return if (dayLeft || weekLeft) {
+            RateLimitData(
+                claudeMax = ClaudeMaxInfo(null, null, null, null, null, null, null),
+                codexQuota = CodexQuotaInfo(dayWindow, weekWindow, null, null, null),
+                codexEntries = emptyList()
+            )
+        } else {
+            RateLimitData(
+                claudeMax = ClaudeMaxInfo(dayWindow, weekWindow, null, null, null, null, null),
+                codexQuota = CodexQuotaInfo(null, null, null, null, null),
+                codexEntries = emptyList()
+            )
+        }
+    }
+
     val window5h = Regex("""5h window:\s+([\d.]+)%.*\(resets ([^)]+)\)""").find(text)?.let {
         WindowInfo(it.groupValues[1].toFloatOrNull() ?: 0f, it.groupValues[2])
     }
