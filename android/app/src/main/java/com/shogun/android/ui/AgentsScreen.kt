@@ -50,6 +50,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -425,6 +427,7 @@ fun PaneFullScreen(
     val density = LocalDensity.current
     val horizontalPaddingPx = with(density) { 16.dp.toPx() }
     val imeVisible = WindowInsets.ime.getBottom(density) > 0
+    val textMeasurer = rememberTextMeasurer()
 
     LaunchedEffect(imeVisible) {
         if (!imeVisible && isInputFocused) {
@@ -442,6 +445,20 @@ fun PaneFullScreen(
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
     val parsedPaneContent = remember(pane.content) { parseAnsiColors(pane.content) }
+    val desktopContentWidthPx = remember(parsedPaneContent, softWrapEnabled, fontSize) {
+        if (softWrapEnabled) {
+            0f
+        } else {
+            textMeasurer.measure(
+                text = parsedPaneContent,
+                style = TextStyle(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = fontSize.sp
+                ),
+                softWrap = false
+            ).size.width.toFloat() + horizontalPaddingPx
+        }
+    }
     var wasAtBottom by remember(pane.index) { mutableStateOf(true) }
 
     DisposableEffect(Unit) {
@@ -452,6 +469,12 @@ fun PaneFullScreen(
         zoomState.clearContentWidth()
         zoomState.reset()
         wasAtBottom = true
+    }
+
+    LaunchedEffect(desktopContentWidthPx, softWrapEnabled, pane.index) {
+        if (!softWrapEnabled) {
+            zoomState.updateContentWidth(desktopContentWidthPx)
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -535,14 +558,6 @@ fun PaneFullScreen(
                     fontFamily = FontFamily.Monospace,
                     fontSize = fontSize.sp,
                     softWrap = softWrapEnabled,
-                    onTextLayout = { result ->
-                        if (!softWrapEnabled) {
-                            val maxLineWidth = (0 until result.lineCount).maxOfOrNull {
-                                result.getLineRight(it) - result.getLineLeft(it)
-                            } ?: 0f
-                            zoomState.updateContentWidth(maxLineWidth + horizontalPaddingPx)
-                        }
-                    },
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomedIn)
