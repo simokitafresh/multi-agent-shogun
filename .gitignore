@@ -185,6 +185,7 @@
 !scripts/log_terminal_input.sh
 !scripts/log_terminal_response.sh
 !scripts/conversation_retention.sh
+!scripts/slim_yaml.py
 
 
 # Archive (frozen retired components)
@@ -236,6 +237,10 @@
 !tests/e2e/
 !tests/e2e/*.sh
 !tests/e2e/*.bats
+!tests/e2e/helpers/
+!tests/e2e/helpers/*.bash
+!tests/e2e/mock_behaviors/
+!tests/e2e/mock_behaviors/*.sh
 !tests/test_helper/
 !tests/test_helper/README.md
 
