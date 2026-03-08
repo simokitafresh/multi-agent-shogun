@@ -21,13 +21,18 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
@@ -50,6 +55,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shogun.android.R
 import com.shogun.android.viewmodel.ShogunViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun ShogunScreen(
@@ -83,6 +89,7 @@ fun ShogunScreen(
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
     val zoomState = rememberTerminalZoomState()
+    val coroutineScope = rememberCoroutineScope()
     val lines = remember(paneContent) { paneContent.lines() }
     val parsedPaneContent = remember(paneContent) { parseAnsiColors(paneContent) }
 
@@ -192,6 +199,8 @@ fun ShogunScreen(
         }
     }
 
+    val showScrollToBottomFab = if (softWrapEnabled) !wasAtBottomLazy else !wasAtBottomScroll
+
     ScreenBackground(imageResId = R.drawable.bg_shogun) {
         Column(modifier = Modifier.fillMaxSize()) {
         // 陣幕バー — 未接続時のみ赤警告バー表示
@@ -268,6 +277,39 @@ fun ShogunScreen(
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
+                }
+            }
+
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showScrollToBottomFab,
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 12.dp)
+            ) {
+                SmallFloatingActionButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            if (softWrapEnabled) {
+                                wasAtBottomLazy = true
+                                if (lines.isNotEmpty()) {
+                                    listState.animateScrollToItem(lines.lastIndex)
+                                }
+                            } else {
+                                wasAtBottomScroll = true
+                                verticalScrollState.animateScrollTo(verticalScrollState.maxValue)
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(40.dp),
+                    containerColor = Sumi.copy(alpha = 0.72f),
+                    contentColor = Kinpaku
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "最下部へ戻る"
+                    )
                 }
             }
         }

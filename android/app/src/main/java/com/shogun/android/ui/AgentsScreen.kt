@@ -22,11 +22,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Speed
 import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,6 +57,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shogun.android.R
 import com.shogun.android.viewmodel.AgentsViewModel
 import com.shogun.android.viewmodel.PaneInfo
+import kotlinx.coroutines.launch
 
 // ── Rate limit data classes ──────────────────────────────────────────────────
 private data class WindowInfo(val percent: Float, val resetStr: String)
@@ -426,6 +432,7 @@ fun PaneFullScreen(
     }
 
     val zoomState = rememberTerminalZoomState()
+    val coroutineScope = rememberCoroutineScope()
     val speechRecognizer = remember {
         if (SpeechRecognizer.isRecognitionAvailable(context))
             SpeechRecognizer.createSpeechRecognizer(context)
@@ -468,6 +475,8 @@ fun PaneFullScreen(
             verticalScrollState.scrollTo(verticalScrollState.maxValue)
         }
     }
+
+    val showScrollToBottomFab = !wasAtBottom
 
     ScreenBackground(imageResId = R.drawable.bg_agents) {
     Column(
@@ -545,6 +554,32 @@ fun PaneFullScreen(
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
+            }
+
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showScrollToBottomFab,
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 12.dp)
+            ) {
+                SmallFloatingActionButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            wasAtBottom = true
+                            verticalScrollState.animateScrollTo(verticalScrollState.maxValue)
+                        }
+                    },
+                    modifier = Modifier.size(40.dp),
+                    containerColor = Sumi.copy(alpha = 0.72f),
+                    contentColor = Kinpaku
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "最下部へ戻る"
+                    )
+                }
             }
         }
 
