@@ -10,9 +10,6 @@ import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -32,11 +29,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
 import com.shogun.android.util.PrefsKeys
@@ -67,13 +60,6 @@ fun ShogunScreen(
 
     val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
     val termFontSize = remember { prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT) }
-
-    var zoomScale by remember { mutableFloatStateOf(1f) }
-    var zoomOffset by remember { mutableStateOf(Offset.Zero) }
-    val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
-        zoomScale = (zoomScale * zoomChange).coerceIn(0.5f, 3f)
-        zoomOffset += panChange
-    }
 
     val listState = rememberLazyListState()
     val lines = remember(paneContent) { paneContent.lines() }
@@ -156,21 +142,11 @@ fun ShogunScreen(
             )
         }
 
-        // Pane content display with LazyColumn + pinch zoom + double tap reset
+        // Pane content display with LazyColumn
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .clipToBounds()
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            zoomScale = 1f
-                            zoomOffset = Offset.Zero
-                        }
-                    )
-                }
-                .transformable(state = transformableState)
         ) {
             if (errorMessage != null) {
                 Text(
@@ -186,12 +162,6 @@ fun ShogunScreen(
                     modifier = Modifier
                         .fillMaxHeight()
                         .padding(horizontal = 8.dp, vertical = 4.dp)
-                        .graphicsLayer(
-                            scaleX = zoomScale,
-                            scaleY = zoomScale,
-                            translationX = zoomOffset.x,
-                            translationY = zoomOffset.y
-                        )
                 ) {
                     items(lines) { line ->
                         SelectionContainer {
