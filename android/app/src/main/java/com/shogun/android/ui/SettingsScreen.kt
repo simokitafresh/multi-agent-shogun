@@ -53,6 +53,9 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
     var fontSizePref by remember {
         mutableFloatStateOf(prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT))
     }
+    var softWrapEnabled by remember {
+        mutableStateOf(prefs.getBoolean(PrefsKeys.SOFT_WRAP, Defaults.SOFT_WRAP_DEFAULT))
+    }
 
     var saved by remember { mutableStateOf(false) }
     var tapCount by remember { mutableIntStateOf(0) }
@@ -196,6 +199,29 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
         Spacer(modifier = Modifier.height(4.dp))
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text("テキスト折り返し", style = MaterialTheme.typography.bodyMedium, color = Zouge)
+                    Text(
+                        "OFFにすると長い行を横スクロールで確認できます",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextMuted
+                    )
+                }
+                Switch(
+                    checked = softWrapEnabled,
+                    onCheckedChange = { softWrapEnabled = it }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
             Text("背景スタイル", style = MaterialTheme.typography.bodyMedium, color = Zouge)
             BackgroundStyleOption(
                 label = "無地",
@@ -228,6 +254,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                     .putString(PrefsKeys.AGENTS_SESSION, agentsSession)
                     .putString(PrefsKeys.BACKGROUND_STYLE, backgroundStyle)
                     .putFloat(PrefsKeys.FONT_SIZE, fontSizePref)
+                    .putBoolean(PrefsKeys.SOFT_WRAP, softWrapEnabled)
                     .apply()
                 saved = true
             },

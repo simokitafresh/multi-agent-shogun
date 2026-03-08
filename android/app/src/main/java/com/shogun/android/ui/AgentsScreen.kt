@@ -11,6 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.lazy.LazyRow
@@ -192,10 +193,26 @@ fun AgentsScreen(
     val rateLimitResult by viewModel.rateLimitResult.collectAsState()
 
     val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
-    val termFontSize = remember { prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT) }
+    var termFontSize by remember { mutableFloatStateOf(prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT)) }
+    var softWrapEnabled by remember { mutableStateOf(prefs.getBoolean(PrefsKeys.SOFT_WRAP, Defaults.SOFT_WRAP_DEFAULT)) }
 
     var selectedPaneIndex by remember { mutableStateOf<Int?>(null) }
     var showRateLimitDialog by remember { mutableStateOf(false) }
+
+    DisposableEffect(prefs) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { sharedPrefs, key ->
+            when (key) {
+                PrefsKeys.FONT_SIZE -> {
+                    termFontSize = sharedPrefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT)
+                }
+                PrefsKeys.SOFT_WRAP -> {
+                    softWrapEnabled = sharedPrefs.getBoolean(PrefsKeys.SOFT_WRAP, Defaults.SOFT_WRAP_DEFAULT)
+                }
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     // Derive selected pane from live data so it auto-updates
     val selectedPane = selectedPaneIndex?.let { idx -> panes.find { it.index == idx } }
@@ -229,6 +246,7 @@ fun AgentsScreen(
         PaneFullScreen(
             pane = selectedPane,
             fontSize = termFontSize,
+            softWrapEnabled = softWrapEnabled,
             onBack = { selectedPaneIndex = null },
             onSendCommand = { cmd ->
                 viewModel.sendCommandToPane(selectedPane.index, cmd)
@@ -384,6 +402,7 @@ fun PaneCard(
 fun PaneFullScreen(
     pane: PaneInfo,
     fontSize: Float = Defaults.FONT_SIZE_DEFAULT,
+    softWrapEnabled: Boolean = Defaults.SOFT_WRAP_DEFAULT,
     onBack: () -> Unit,
     onSendCommand: (String) -> Unit,
     onRefresh: () -> Unit
@@ -397,6 +416,7 @@ fun PaneFullScreen(
         else null
     }
     val verticalScrollState = rememberScrollState()
+    val horizontalScrollState = rememberScrollState()
     val parsedPaneContent = remember(pane.content) { parseAnsiColors(pane.content) }
 
     DisposableEffect(Unit) {
@@ -474,10 +494,17 @@ fun PaneFullScreen(
                     color = Zouge,
                     fontFamily = FontFamily.Monospace,
                     fontSize = fontSize.sp,
-                    softWrap = true,
+                    softWrap = softWrapEnabled,
                     modifier = Modifier
                         .fillMaxHeight()
                         .verticalScroll(verticalScrollState)
+                        .then(
+                            if (softWrapEnabled) {
+                                Modifier
+                            } else {
+                                Modifier.horizontalScroll(horizontalScrollState)
+                            }
+                        )
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }

@@ -10,8 +10,10 @@ import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,10 +61,29 @@ fun ShogunScreen(
     var isInputExpanded by remember { mutableStateOf(false) }
 
     val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
-    val termFontSize = remember { prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT) }
+    var termFontSize by remember { mutableFloatStateOf(prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT)) }
+    var softWrapEnabled by remember { mutableStateOf(prefs.getBoolean(PrefsKeys.SOFT_WRAP, Defaults.SOFT_WRAP_DEFAULT)) }
 
     val listState = rememberLazyListState()
+    val verticalScrollState = rememberScrollState()
+    val horizontalScrollState = rememberScrollState()
     val lines = remember(paneContent) { paneContent.lines() }
+    val parsedPaneContent = remember(paneContent) { parseAnsiColors(paneContent) }
+
+    DisposableEffect(prefs) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { sharedPrefs, key ->
+            when (key) {
+                PrefsKeys.FONT_SIZE -> {
+                    termFontSize = sharedPrefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT)
+                }
+                PrefsKeys.SOFT_WRAP -> {
+                    softWrapEnabled = sharedPrefs.getBoolean(PrefsKeys.SOFT_WRAP, Defaults.SOFT_WRAP_DEFAULT)
+                }
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     val speechRecognizer = remember {
         if (SpeechRecognizer.isRecognitionAvailable(context))
@@ -119,9 +140,15 @@ fun ShogunScreen(
     }
 
     // Auto-scroll to bottom when content changes
-    LaunchedEffect(lines.size) {
-        if (lines.isNotEmpty()) {
+    LaunchedEffect(lines.size, softWrapEnabled) {
+        if (softWrapEnabled && lines.isNotEmpty()) {
             listState.scrollToItem(lines.size - 1)
+        }
+    }
+
+    LaunchedEffect(paneContent, verticalScrollState.maxValue, softWrapEnabled) {
+        if (!softWrapEnabled) {
+            verticalScrollState.scrollTo(verticalScrollState.maxValue)
         }
     }
 
@@ -157,22 +184,39 @@ fun ShogunScreen(
                     modifier = Modifier.padding(8.dp)
                 )
             } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    items(lines) { line ->
-                        SelectionContainer {
-                            Text(
-                                text = parseAnsiColors(line),
-                                color = Zouge,
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = termFontSize.sp,
-                                softWrap = true
-                            )
+                if (softWrapEnabled) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        items(lines) { line ->
+                            SelectionContainer {
+                                Text(
+                                    text = parseAnsiColors(line),
+                                    color = Zouge,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = termFontSize.sp,
+                                    softWrap = true
+                                )
+                            }
                         }
+                    }
+                } else {
+                    SelectionContainer {
+                        Text(
+                            text = parsedPaneContent,
+                            color = Zouge,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = termFontSize.sp,
+                            softWrap = false,
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .verticalScroll(verticalScrollState)
+                                .horizontalScroll(horizontalScrollState)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
                     }
                 }
             }
