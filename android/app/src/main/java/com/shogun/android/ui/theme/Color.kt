@@ -26,7 +26,7 @@ val Surface4 = Color(0xFF1E1E1E)  // Input field (inset, darker than surrounding
 val TextPrimary   = Color(0xFFC9A94E)  // Kinpaku — headings, agent names, tab labels
 val TextSecondary = Color(0xFFE8DCC8)  // Zouge — body text, terminal output
 val TextTertiary  = Color(0xFF8A9BB0)  // Lightened Tetsukon — metadata, timestamps
-val TextMuted     = Color(0xFF666666)  // Disabled, placeholders
+val TextMuted     = Color(0xFF888888)  // Disabled, placeholders (AA on Shikkoku)
 
 // Borders — Kinpaku at opacity levels
 val BorderStandard = Color(0x33C9A94E)  // 20% opacity

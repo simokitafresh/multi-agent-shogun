@@ -13,6 +13,7 @@ object PrefsKeys {
     const val AGENTS_SESSION = "agents_session"
     const val NOTIFICATION_ENABLED = "notification_enabled"
     const val NTFY_TOPIC = "ntfy_topic"
+    const val BACKGROUND_STYLE = "background_style"
     const val NOTIFY_CMD_COMPLETE = "notify_cmd_complete"
     const val NOTIFY_CMD_FAILURE = "notify_cmd_failure"
     const val NOTIFY_ACTION_REQUIRED = "notify_action_required"
@@ -28,5 +29,8 @@ object Defaults {
     const val SHOGUN_SESSION = "shogun"
     const val AGENTS_SESSION = "shogun:agents"
     const val NTFY_TOPIC = "shogun-simokitafresh"
+    const val BACKGROUND_STYLE_SOLID = "solid"
+    const val BACKGROUND_STYLE_IMAGE = "image"
+    const val BACKGROUND_STYLE = BACKGROUND_STYLE_SOLID
     const val TMUX = "/usr/bin/tmux"
 }

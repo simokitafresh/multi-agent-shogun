@@ -44,6 +44,12 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
     var projectPath by remember { mutableStateOf(prefs.getString(PrefsKeys.PROJECT_PATH, "") ?: "") }
     var shogunSession by remember { mutableStateOf(prefs.getString(PrefsKeys.SHOGUN_SESSION, Defaults.SHOGUN_SESSION) ?: Defaults.SHOGUN_SESSION) }
     var agentsSession by remember { mutableStateOf(prefs.getString(PrefsKeys.AGENTS_SESSION, Defaults.AGENTS_SESSION) ?: Defaults.AGENTS_SESSION) }
+    var backgroundStyle by remember {
+        mutableStateOf(
+            prefs.getString(PrefsKeys.BACKGROUND_STYLE, Defaults.BACKGROUND_STYLE)
+                ?: Defaults.BACKGROUND_STYLE
+        )
+    }
 
     var saved by remember { mutableStateOf(false) }
     var tapCount by remember { mutableIntStateOf(0) }
@@ -152,6 +158,24 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
 
         Divider()
 
+        Text("外観", style = MaterialTheme.typography.titleMedium, color = Kinpaku)
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("背景スタイル", style = MaterialTheme.typography.bodyMedium, color = Zouge)
+            BackgroundStyleOption(
+                label = "無地",
+                selected = backgroundStyle == Defaults.BACKGROUND_STYLE_SOLID,
+                onSelect = { backgroundStyle = Defaults.BACKGROUND_STYLE_SOLID }
+            )
+            BackgroundStyleOption(
+                label = "画像",
+                selected = backgroundStyle == Defaults.BACKGROUND_STYLE_IMAGE,
+                onSelect = { backgroundStyle = Defaults.BACKGROUND_STYLE_IMAGE }
+            )
+        }
+
+        Divider()
+
         NtfySettingsSection(viewModel = settingsViewModel)
 
         Divider()
@@ -167,6 +191,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                     .putString(PrefsKeys.PROJECT_PATH, projectPath)
                     .putString(PrefsKeys.SHOGUN_SESSION, shogunSession)
                     .putString(PrefsKeys.AGENTS_SESSION, agentsSession)
+                    .putString(PrefsKeys.BACKGROUND_STYLE, backgroundStyle)
                     .apply()
                 saved = true
             },
@@ -186,6 +211,31 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                 color = MaterialTheme.colorScheme.primary
             )
         }
+    }
+}
+
+@Composable
+private fun BackgroundStyleOption(
+    label: String,
+    selected: Boolean,
+    onSelect: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelect)
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onSelect,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = Kinpaku,
+                unselectedColor = TextMuted
+            )
+        )
+        Text(label, color = Zouge)
     }
 }
 

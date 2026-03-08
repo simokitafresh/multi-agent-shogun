@@ -1,9 +1,12 @@
 package com.shogun.android.ui
 
+import android.content.Context
 import android.webkit.WebView
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.ui.graphics.Color
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
@@ -47,18 +50,7 @@ fun DashboardScreen(
         viewModel.connect(host, port, user, keyPath, password)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Shikkoku)
-    ) {
-        Image(
-            painter = painterResource(R.drawable.bg_castle),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            alpha = 0.55f,
-            modifier = Modifier.fillMaxSize()
-        )
+    ScreenBackground(imageResId = R.drawable.bg_castle) {
         if (errorMessage != null) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -102,7 +94,7 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxSize()
             )
         }
-    } // Box
+    }
 }
 
 private fun markdownToHtml(markdown: String): String {
@@ -155,3 +147,32 @@ hr { border: none; border-top: 1px solid #555; margin: 12px 0; }
 </head>
 <body>$bodyHtml</body></html>
 """.trimIndent()
+
+@Composable
+fun ScreenBackground(
+    @DrawableRes imageResId: Int,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences(PrefsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+    val backgroundStyle = prefs.getString(PrefsKeys.BACKGROUND_STYLE, Defaults.BACKGROUND_STYLE)
+        ?: Defaults.BACKGROUND_STYLE
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Shikkoku)
+    ) {
+        if (backgroundStyle == Defaults.BACKGROUND_STYLE_IMAGE) {
+            Image(
+                painter = painterResource(imageResId),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alpha = 0.55f,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        content()
+    }
+}

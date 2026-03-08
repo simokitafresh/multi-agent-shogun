@@ -9,7 +9,6 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -35,12 +34,10 @@ import androidx.compose.ui.graphics.Color
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
 import com.shogun.android.util.PrefsKeys
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
@@ -237,18 +234,7 @@ fun AgentsScreen(
         )
     } else {
         // Grid view
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Shikkoku)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.bg_agents),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alpha = 0.55f,
-                modifier = Modifier.fillMaxSize()
-            )
+        ScreenBackground(imageResId = R.drawable.bg_agents) {
             Column(modifier = Modifier.fillMaxSize()) {
                 if (errorMessage != null) {
                     SelectionContainer {
@@ -428,18 +414,7 @@ fun PaneFullScreen(
         verticalScrollState.scrollTo(verticalScrollState.maxValue)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Shikkoku)
-    ) {
-        Image(
-            painter = painterResource(R.drawable.bg_agents),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            alpha = 0.55f,
-            modifier = Modifier.fillMaxSize()
-        )
+    ScreenBackground(imageResId = R.drawable.bg_agents) {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -567,7 +542,7 @@ fun PaneFullScreen(
             }
         }
     } // Column
-    } // Box
+    }
 }
 
 // ── Rate Limit UI ─────────────────────────────────────────────────────────────
