@@ -2,6 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+readonly COMPLETE_PATTERN='任務完了|完了でござる|報告YAML.*更新|task completed|タスク完了'
+readonly ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop'
+readonly SUMMARY_LIMIT=5
+readonly SUMMARY_SNIPPET_LEN=80
 
 payload="$(cat 2>/dev/null || true)"
 if [[ -z "$payload" ]]; then
@@ -26,11 +30,28 @@ if [[ -z "$agent_id" || "$agent_id" == "shogun" ]]; then
 fi
 
 idle_flag="/tmp/shogun_idle_${agent_id}"
+last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
 
 stop_hook_active="$(printf '%s' "$payload" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)"
 if [[ "$stop_hook_active" == "true" ]]; then
   touch "$idle_flag"
   exit 0
+fi
+
+notify_completion() {
+  local msg_type="$1"
+  local message="$2"
+  (
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" "$msg_type" "$agent_id"
+  ) >/dev/null 2>&1 &
+}
+
+if [[ -n "$last_assistant_message" ]]; then
+  if printf '%s\n' "$last_assistant_message" | grep -Eiq "$COMPLETE_PATTERN"; then
+    notify_completion "report_completed" "${agent_id}、タスク完了"
+  elif printf '%s\n' "$last_assistant_message" | grep -Eiq "$ERROR_PATTERN"; then
+    notify_completion "error_report" "${agent_id}、エラー停止"
+  fi
 fi
 
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
@@ -44,8 +65,45 @@ if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
 fi
 
 if (( unread_count > 0 )); then
-  rm -f "$idle_flag"
-  printf '{"decision":"block","reason":"inbox未読%d件"}\n' "$unread_count"
+  unread_summary="$(
+    INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" python3 - <<'PY'
+import os
+import yaml
+
+inbox_path = os.environ["INBOX_FILE"]
+limit = int(os.environ["SUMMARY_LIMIT_ENV"])
+snippet_len = int(os.environ["SUMMARY_SNIPPET_LEN_ENV"])
+
+with open(inbox_path, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+
+parts = []
+for msg in data.get("messages", []):
+    if msg.get("read") is not False:
+        continue
+    sender = str(msg.get("from", "?"))
+    msg_type = str(msg.get("type", "?"))
+    content = " ".join(str(msg.get("content", "")).split())
+    content = content[:snippet_len]
+    parts.append(f"[{sender}/{msg_type}] {content}")
+    if len(parts) >= limit:
+        break
+
+print(" | ".join(parts))
+PY
+  )"
+  touch "$idle_flag"
+  if [[ -n "$unread_summary" ]]; then
+    reason_text="inbox未読${unread_count}件あり。内容: ${unread_summary}"
+  else
+    reason_text="inbox未読${unread_count}件あり"
+  fi
+  REASON_TEXT="$reason_text" python3 - <<'PY'
+import json
+import os
+
+print(json.dumps({"decision": "block", "reason": os.environ["REASON_TEXT"]}, ensure_ascii=False))
+PY
 else
   touch "$idle_flag"
 fi
