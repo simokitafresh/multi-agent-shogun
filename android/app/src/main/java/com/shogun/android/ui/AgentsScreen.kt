@@ -423,6 +423,7 @@ fun PaneFullScreen(
     var isInputFocused by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
+    val horizontalPaddingPx = with(density) { 16.dp.toPx() }
     val imeVisible = WindowInsets.ime.getBottom(density) > 0
 
     LaunchedEffect(imeVisible) {
@@ -521,12 +522,18 @@ fun PaneFullScreen(
         }
 
         // Full screen pane content
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .terminalZoom(zoomState)
         ) {
+            val desktopWidthModifier = if (!softWrapEnabled && zoomState.scale < 1f) {
+                Modifier.width(maxWidth * zoomState.layoutWidthMultiplier)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
             SelectionContainer {
                 Text(
                     text = parsedPaneContent,
@@ -539,11 +546,12 @@ fun PaneFullScreen(
                             val maxLineWidth = (0 until result.lineCount).maxOfOrNull {
                                 result.getLineRight(it) - result.getLineLeft(it)
                             } ?: 0f
-                            zoomState.updateContentWidth(maxLineWidth)
+                            zoomState.updateContentWidth(maxLineWidth + horizontalPaddingPx)
                         }
                     },
                     modifier = Modifier
-                        .fillMaxSize()
+                        .then(desktopWidthModifier)
+                        .fillMaxHeight()
                         .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomed)
                         .then(
                             if (softWrapEnabled) {

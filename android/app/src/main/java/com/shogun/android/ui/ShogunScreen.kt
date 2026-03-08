@@ -73,6 +73,7 @@ fun ShogunScreen(
 
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
+    val horizontalPaddingPx = with(density) { 16.dp.toPx() }
     val imeVisible = WindowInsets.ime.getBottom(density) > 0
 
     LaunchedEffect(imeVisible) {
@@ -221,12 +222,18 @@ fun ShogunScreen(
         }
 
         // Pane content display with LazyColumn
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .terminalZoom(zoomState)
         ) {
+            val desktopWidthModifier = if (!softWrapEnabled && zoomState.scale < 1f) {
+                Modifier.width(maxWidth * zoomState.layoutWidthMultiplier)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
             if (errorMessage != null) {
                 Text(
                     text = "エラー: $errorMessage",
@@ -268,10 +275,11 @@ fun ShogunScreen(
                                 val maxLineWidth = (0 until result.lineCount).maxOfOrNull {
                                     result.getLineRight(it) - result.getLineLeft(it)
                                 } ?: 0f
-                                zoomState.updateContentWidth(maxLineWidth)
+                                zoomState.updateContentWidth(maxLineWidth + horizontalPaddingPx)
                             },
                             modifier = Modifier
-                                .fillMaxSize()
+                                .then(desktopWidthModifier)
+                                .fillMaxHeight()
                                 .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomed)
                                 .horizontalScroll(horizontalScrollState, enabled = !zoomState.isZoomed)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)

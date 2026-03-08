@@ -1,6 +1,7 @@
 package com.shogun.android.ui
 
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.IntSize
 
 private const val MIN_TERMINAL_SCALE = 1f
 private const val MAX_TERMINAL_SCALE = 3f
+private const val ABS_MIN_SCALE = 0.25f
 
 @Stable
 class TerminalZoomState(
@@ -38,11 +40,15 @@ class TerminalZoomState(
 
     val minScale: Float
         get() = if (contentWidth > 0f && viewportSize.width > 0)
-            (viewportSize.width.toFloat() / contentWidth).coerceIn(0.1f, baseMinScale)
+            (viewportSize.width.toFloat() / contentWidth).coerceIn(ABS_MIN_SCALE, baseMinScale)
         else baseMinScale
 
     val isZoomed: Boolean
         get() = kotlin.math.abs(scale - 1f) > 0.01f
+
+    /** Layout width multiplier for "desktop view" — content lays out wider when zoomed out */
+    val layoutWidthMultiplier: Float
+        get() = if (scale < 1f) (1f / scale) else 1f
 
     fun updateViewport(size: IntSize) {
         viewportSize = size
@@ -62,7 +68,8 @@ class TerminalZoomState(
     fun onTransform(zoomChange: Float, panChange: Offset) {
         val nextScale = (scale * zoomChange).coerceIn(minScale, maxScale)
         if (nextScale <= minScale + 0.01f) {
-            reset()
+            scale = minScale
+            offset = Offset.Zero
             return
         }
 
@@ -80,6 +87,20 @@ class TerminalZoomState(
     fun reset() {
         scale = minScale
         offset = Offset.Zero
+    }
+
+    /** Toggle between minScale and 1.0x for double-tap */
+    fun toggleDesktopView() {
+        if (minScale >= 1f) return // no desktop view when content fits
+        if (scale < 1f - 0.01f) {
+            // Currently zoomed out → snap to 1.0x
+            scale = 1f
+            offset = Offset.Zero
+        } else {
+            // Currently at 1.0x or zoomed in → snap to minScale
+            scale = minScale
+            offset = Offset.Zero
+        }
     }
 
     private fun clampOffset(candidate: Offset, scale: Float): Offset {
@@ -126,6 +147,11 @@ fun Modifier.terminalZoom(zoomState: TerminalZoomState): Modifier = composed {
             state = transformableState,
             canPan = { zoomState.isZoomed }
         )
+        .pointerInput(Unit) {
+            detectTapGestures(
+                onDoubleTap = { zoomState.toggleDesktopView() }
+            )
+        }
         .then(
             if (zoomState.isZoomed) {
                 Modifier.pointerInput(zoomState.isZoomed) {
