@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -11,14 +12,20 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
-import com.shogun.android.ssh.SshManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -114,32 +121,62 @@ class MainActivity : ComponentActivity() {
         }
         if (imageUris.isEmpty()) return
 
-        val sshManager = SshManager.getInstance()
-        if (!sshManager.isConnected()) {
-            Toast.makeText(this, "❌ SSH未接続。先にアプリを開いて接続してください", Toast.LENGTH_LONG).show()
-            return
-        }
-
         val prefs = getSharedPreferences(PrefsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-        val projectPath = prefs.getString(PrefsKeys.PROJECT_PATH, "") ?: ""
-        if (projectPath.isBlank()) {
-            Toast.makeText(this, "❌ 設定画面でプロジェクトパスを設定してください", Toast.LENGTH_LONG).show()
-            return
-        }
+        val topic = prefs.getString(PrefsKeys.NTFY_TOPIC, com.shogun.android.util.Defaults.NTFY_TOPIC)
+            ?.trim()
+            .takeUnless { it.isNullOrEmpty() }
+            ?: com.shogun.android.util.Defaults.NTFY_TOPIC
+
         val total = imageUris.size
-        Toast.makeText(this, "転送中... (${total}枚)", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "ntfy送信中... (${total}枚)", Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             var success = 0
             var failed = 0
             for (uri in imageUris) {
-                sshManager.uploadScreenshot(this@MainActivity, uri, projectPath).fold(
-                    onSuccess = { success++ },
-                    onFailure = { failed++ }
-                )
+                try {
+                    sendImageToNtfy(uri, topic)
+                    success++
+                } catch (_: Exception) {
+                    failed++
+                }
             }
-            val msg = if (failed == 0) "✅ ${success}枚 転送完了" else "✅ ${success}枚 完了 / ❌ ${failed}枚 失敗"
+            val msg = if (failed == 0) "✅ ${success}枚 ntfy送信完了"
+                else "✅ ${success}枚 完了 / ❌ ${failed}枚 失敗"
             Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
         }
+    }
+
+    private suspend fun sendImageToNtfy(uri: Uri, topic: String) = withContext(Dispatchers.IO) {
+        val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw Exception("Cannot open image")
+        val mimeType = contentResolver.getType(uri) ?: "image/png"
+        val filename = getFilenameFromUri(uri)
+            ?: "screenshot_${System.currentTimeMillis()}.png"
+
+        val client = OkHttpClient()
+        val requestBody = bytes.toRequestBody(mimeType.toMediaType())
+        val request = Request.Builder()
+            .url("https://ntfy.sh/$topic")
+            .put(requestBody)
+            .addHeader("Filename", filename)
+            .build()
+
+        val response = client.newCall(request).execute()
+        response.use {
+            if (!it.isSuccessful) {
+                throw Exception("ntfy upload failed: ${it.code}")
+            }
+        }
+    }
+
+    private fun getFilenameFromUri(uri: Uri): String? {
+        contentResolver.query(uri, null, null, null, null)?.use { cursor: Cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (nameIndex >= 0 && cursor.moveToFirst()) {
+                return cursor.getString(nameIndex)
+            }
+        }
+        return null
     }
 }
 
