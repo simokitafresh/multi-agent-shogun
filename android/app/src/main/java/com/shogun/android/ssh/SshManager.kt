@@ -103,8 +103,7 @@ class SshManager private constructor() {
                 override fun showMessage(message: String) {}
             }
             newSession.userInfo = userInfo
-            // No aggressive keepalive — Tailscale VPN delays cause false disconnects
-            // Disconnect detection handled by exec retry logic instead
+            newSession.setServerAliveInterval(15000)
             newSession.connect(10000)
             session = newSession
             // Verify exec channel works immediately after connect
@@ -190,28 +189,38 @@ class SshManager private constructor() {
 
     private fun execCommandInternal(s: Session, cmd: String): Result<String> {
         val shortCmd = if (cmd.length > 80) cmd.take(80) + "..." else cmd
-        return try {
-            val channel = s.openChannel("exec") as ChannelExec
-            channel.setCommand(cmd)
-            val inputStream = channel.inputStream
-            channel.connect(5000)
-            val baos = ByteArrayOutputStream()
-            val buffer = ByteArray(4096)
-            while (true) {
-                val n = inputStream.read(buffer)
-                if (n < 0) break
-                baos.write(buffer, 0, n)
+        val maxRetries = 3
+        var lastException: Exception? = null
+        for (attempt in 1..maxRetries) {
+            try {
+                val channel = s.openChannel("exec") as ChannelExec
+                channel.setCommand(cmd)
+                val inputStream = channel.inputStream
+                channel.connect(5000)
+                val baos = ByteArrayOutputStream()
+                val buffer = ByteArray(4096)
+                while (true) {
+                    val n = inputStream.read(buffer)
+                    if (n < 0) break
+                    baos.write(buffer, 0, n)
+                }
+                channel.disconnect()
+                val out = baos.toString("UTF-8")
+                AppLogger.log("SSH", "exec OK (${out.length}ch): $shortCmd")
+                return Result.success(out)
+            } catch (e: Exception) {
+                lastException = e
+                AppLogger.log("SSH", "exec FAIL (attempt $attempt/$maxRetries): ${e.message} cmd=$shortCmd")
+                if (attempt < maxRetries) {
+                    val backoffMs = 1000L * (1L shl (attempt - 1)) // 1s, 2s, 4s
+                    AppLogger.log("SSH", "Retrying in ${backoffMs}ms...")
+                    Thread.sleep(backoffMs)
+                }
             }
-            channel.disconnect()
-            val out = baos.toString("UTF-8")
-            AppLogger.log("SSH", "exec OK (${out.length}ch): $shortCmd")
-            Result.success(out)
-        } catch (e: Exception) {
-            val trace = e.stackTraceToString().take(500)
-            AppLogger.log("SSH", "exec FAIL: ${e.message} cmd=$shortCmd")
-            AppLogger.log("SSH", "exec TRACE: $trace")
-            Result.failure(e)
         }
+        val trace = lastException?.stackTraceToString()?.take(500) ?: ""
+        AppLogger.log("SSH", "exec TRACE: $trace")
+        return Result.failure(lastException ?: Exception("exec failed after $maxRetries retries"))
     }
 
     suspend fun reconnect(maxAttempts: Int = 3, delayMs: Long = 5000): Result<Unit> =
@@ -261,6 +270,25 @@ class SshManager private constructor() {
             }
             } // sshMutex.withLock
         }
+
+    /**
+     * Check session state and reconnect if needed.
+     * Intended for Android onResume lifecycle callback.
+     */
+    suspend fun checkAndReconnect(): Result<Unit> = withContext(Dispatchers.IO) {
+        sshMutex.withLock {
+            if (isConnectedInternal()) {
+                AppLogger.log("SSH", "checkAndReconnect: session alive, no action needed")
+                return@withContext Result.success(Unit)
+            }
+            if (lastHost.isBlank()) {
+                AppLogger.log("SSH", "checkAndReconnect: no previous connection info, skipping")
+                return@withContext Result.failure(IllegalStateException("No previous connection to restore"))
+            }
+            AppLogger.log("SSH", "checkAndReconnect: session dead, reconnecting...")
+            reconnectLocked()
+        }
+    }
 
     fun disconnect() {
         AppLogger.log("SSH", "disconnect() called")
