@@ -197,6 +197,8 @@
 !archive/frozen/gunshi.md
 !archive/frozen/gunshi_to_karo.yaml
 !archive/frozen/gunshi_inbox.yaml
+# Runtime screenshots stay local-only under queue/
+queue/screenshots/
 
 # Tasks (SSOT lessons only)
 !tasks/

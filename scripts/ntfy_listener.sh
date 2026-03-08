@@ -86,6 +86,19 @@ parse_attachment_field() {
     python3 -c "import sys,json; k=sys.argv[1]; a=json.load(sys.stdin).get('attachment') or {}; print(a.get(k,'') if isinstance(a,dict) else '')" "$1" 2>/dev/null
 }
 
+sanitize_attachment_name() {
+    python3 -c '
+import os
+import re
+import sys
+
+name = sys.argv[1] if len(sys.argv) > 1 else ""
+name = os.path.basename(name)
+name = re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("._")
+print(name or "attachment.png")
+' "$1" 2>/dev/null
+}
+
 append_ntfy_inbox() {
     local msg_id="$1"
     local timestamp="$2"
@@ -168,12 +181,14 @@ to_repo_relative_path() {
 
 download_attachment_image() {
     local attachment_url="$1"
-    local ts outfile latest_file
+    local attachment_name="${2:-}"
+    local ts safe_name outfile latest_file
 
     [ -z "$attachment_url" ] && return 1
 
     ts=$(date "+%Y%m%d_%H%M%S")
-    outfile="$SCREENSHOT_DIR/ntfy_${ts}.png"
+    safe_name=$(sanitize_attachment_name "$attachment_name")
+    outfile="$SCREENSHOT_DIR/${ts}_${safe_name}"
     latest_file="$SCREENSHOT_DIR/latest.png"
 
     if curl -sS --fail --max-time "$ATTACHMENT_DOWNLOAD_MAX_TIME_SECS" \
@@ -229,6 +244,7 @@ process_stream_line() {
     MSG=$(echo "$line" | parse_json message)
     ATTACHMENT_TYPE=$(echo "$line" | parse_attachment_field type)
     ATTACHMENT_URL=$(echo "$line" | parse_attachment_field url)
+    ATTACHMENT_NAME=$(echo "$line" | parse_attachment_field name)
 
     HAS_IMAGE_ATTACHMENT=0
     if [[ "$ATTACHMENT_TYPE" == image/* ]] && [ -n "$ATTACHMENT_URL" ]; then
@@ -245,7 +261,7 @@ process_stream_line() {
     fi
 
     if [ "$HAS_IMAGE_ATTACHMENT" -eq 1 ]; then
-        SAVED_IMAGE=$(download_attachment_image "$ATTACHMENT_URL")
+        SAVED_IMAGE=$(download_attachment_image "$ATTACHMENT_URL" "$ATTACHMENT_NAME")
         if [ $? -eq 0 ] && [ -n "$SAVED_IMAGE" ]; then
             SAVED_IMAGE_REL=$(to_repo_relative_path "$SAVED_IMAGE")
             echo "[$(date)] Saved image attachment: $SAVED_IMAGE_REL" >&2

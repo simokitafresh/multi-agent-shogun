@@ -13,12 +13,15 @@ setup() {
     export INBOX_FILE="$TEST_PROJECT/queue/ntfy_inbox.yaml"
     export SCREENSHOT_DIR_TEST="$TEST_PROJECT/screenshots"
     export CURL_LOG="$TEST_TMPDIR/curl.log"
+    export INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log"
 
     mkdir -p "$TEST_PROJECT/scripts" "$TEST_PROJECT/queue" "$SCREENSHOT_DIR_TEST" "$TEST_TMPDIR/bin"
     printf 'inbox:\n' > "$INBOX_FILE"
+    : > "$INBOX_WRITE_LOG"
 
     cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
 #!/bin/bash
+printf '%s\n' "$*" >> "$INBOX_WRITE_LOG"
 exit 0
 EOF
     chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
@@ -149,6 +152,37 @@ AUTH_ARGS=()
 
 download_attachment_image "https://example.com/test.png" >/dev/null
 grep -q -- "--max-time 30" "$CURL_LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "T-NTFY-005: image attachment is saved with timestamped original name and notifies shogun" {
+    run bash -lc '
+set -euo pipefail
+LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
+TEST_PROJECT="'"$TEST_PROJECT"'"
+INBOX_FILE="'"$INBOX_FILE"'"
+SCREENSHOT_DIR_TEST="'"$SCREENSHOT_DIR_TEST"'"
+INBOX_WRITE_LOG="'"$INBOX_WRITE_LOG"'"
+PATH="'"$TEST_TMPDIR"'/bin:$PATH"
+
+export INBOX_WRITE_LOG
+export NTFY_LISTENER_LIB_ONLY=1
+source "$LISTENER_SCRIPT"
+unset NTFY_LISTENER_LIB_ONLY
+
+SCRIPT_DIR="$TEST_PROJECT"
+INBOX="$INBOX_FILE"
+SCREENSHOT_DIR="$SCREENSHOT_DIR_TEST"
+AUTH_ARGS=()
+tmux() { return 1; }
+
+process_stream_line "{\"event\":\"message\",\"id\":\"msg-img-1\",\"message\":\"\",\"attachment\":{\"type\":\"image/png\",\"url\":\"https://example.com/test.png\",\"name\":\"screen cap.png\"}}"
+saved_file=$(find "$SCREENSHOT_DIR" -maxdepth 1 -type f -name "*screen_cap.png" ! -name latest.png | head -n 1)
+[ -n "$saved_file" ]
+[ -f "$SCREENSHOT_DIR/latest.png" ]
+grep -q "shogun" "$INBOX_WRITE_LOG"
+grep -q "screenshot_received" "$INBOX_WRITE_LOG"
 '
     [ "$status" -eq 0 ]
 }
