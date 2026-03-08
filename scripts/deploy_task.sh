@@ -142,7 +142,7 @@ get_ctx_pct() {
 
     # Source 2: capture-pane + cli_profiles.yamlのパターン
     local output
-    output=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null)
+    output=$(tmux capture-pane -t "$pane_target" -p -J -S -5 2>/dev/null)
 
     local ctx_pattern ctx_mode
     ctx_pattern=$(cli_profile_get "$NINJA_NAME" "ctx_pattern")

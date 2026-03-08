@@ -32,7 +32,7 @@ HELP
 }
 
 get_status_from_pane() {
-    tmux capture-pane -t "$TARGET_PANE" -p -S "-${SCAN_LINES}" 2>/dev/null || true
+    tmux capture-pane -t "$TARGET_PANE" -p -J -S "-${SCAN_LINES}" 2>/dev/null || true
 }
 
 monitor_status() {

@@ -35,7 +35,7 @@ detect_real_model() {
             #   狭幅(47): ▐▛███▜▌   {Opus|Sonnet|Haiku} {X.Y} with {effort} effort
             #   標準幅(71+): ▝▜█████▛▘  {Opus|Sonnet|Haiku} {X.Y} with {effort} effort · {Plan}
             local output
-            output=$(tmux capture-pane -t "$pane_target" -p -S -1000 2>/dev/null)
+            output=$(tmux capture-pane -t "$pane_target" -p -J -S -1000 2>/dev/null)
 
             if [ -n "$output" ]; then
                 local banner model
@@ -74,7 +74,7 @@ detect_real_model() {
         codex)
             # Codex CLI: │ model: {model_name} /model to change │
             local output
-            output=$(tmux capture-pane -t "$pane_target" -p -S -1000 2>/dev/null)
+            output=$(tmux capture-pane -t "$pane_target" -p -J -S -1000 2>/dev/null)
 
             if [ -n "$output" ]; then
                 local model_line model

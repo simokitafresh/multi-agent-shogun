@@ -489,6 +489,10 @@ date "+%Y-%m-%d %H:%M"       # For dashboard.md
 date "+%Y-%m-%dT%H:%M:%S"    # For YAML (ISO 8601)
 ```
 
+## `[RED]` Test Naming Rule
+
+未実装機能のテストケースには名前に `[RED]` を付与し、実装完了後に `[RED]` を除去する。SKIP=FAIL ポリシーのため、`[RED]` テストは skip ではなく fail させること。
+
 # Forbidden Actions
 
 ## Common Forbidden Actions (All Agents)

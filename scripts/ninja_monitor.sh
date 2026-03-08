@@ -290,7 +290,7 @@ get_context_pct() {
 
     # Source 2: Parse CTX from capture-pane output (statusline display)
     local output
-    output=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null)
+    output=$(tmux capture-pane -t "$pane_target" -p -J -S -5 2>/dev/null)
 
     # cli_profiles.yamlからパターンとモードを取得
     local ctx_pattern ctx_mode
@@ -715,7 +715,7 @@ handle_confirmed_idle() {
             if [ -n "$post_cmd" ]; then
                 # AC4: /fastはトグルのため、既にONなら送信しない
                 local pc_banner
-                pc_banner=$(tmux capture-pane -t "$pc_target" -p -S -100 2>/dev/null)
+                pc_banner=$(tmux capture-pane -t "$pc_target" -p -J -S -100 2>/dev/null)
                 if echo "$pc_banner" | grep -qE '│.*model:.*fast'; then
                     log "POST-CLEAR-CMD-SKIP: $name fast already ON, skipping to avoid toggle-off"
                 else
@@ -1142,7 +1142,7 @@ check_destructive_commands() {
     local target="$2"
 
     local output
-    output=$(tmux capture-pane -t "$target" -p -S -20 2>/dev/null)
+    output=$(tmux capture-pane -t "$target" -p -J -S -20 2>/dev/null)
     [ -z "$output" ] && return
 
     local now
@@ -1326,7 +1326,7 @@ update_context_pct() {
     local output
     local context_pct="--"
 
-    output=$(tmux capture-pane -t "$pane_target" -p -S -10 2>/dev/null)
+    output=$(tmux capture-pane -t "$pane_target" -p -J -S -10 2>/dev/null)
     if [ $? -ne 0 ]; then
         tmux set-option -p -t "$pane_target" @context_pct "$context_pct" 2>/dev/null
         return 1

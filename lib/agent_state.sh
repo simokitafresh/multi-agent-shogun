@@ -41,7 +41,7 @@ check_agent_busy() {
     fi
 
     local output
-    output=$(tmux capture-pane -t "$pane_target" -p -S -8 2>/dev/null) || return 2
+    output=$(tmux capture-pane -t "$pane_target" -p -J -S -8 2>/dev/null) || return 2
 
     local busy_pat
     local idle_pat

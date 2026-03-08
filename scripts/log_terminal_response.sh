@@ -203,7 +203,7 @@ EOF
 fi
 
 if [ -z "$RESPONSE" ]; then
-  RAW="$(tmux capture-pane -t "$TMUX_PANE" -p -S -200 2>/dev/null || true)"
+  RAW="$(tmux capture-pane -t "$TMUX_PANE" -p -J -S -200 2>/dev/null || true)"
   RESPONSE="$(extract_from_pane "$RAW")"
 fi
 
