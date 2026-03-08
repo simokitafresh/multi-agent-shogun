@@ -11,7 +11,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.lazy.LazyRow
@@ -30,7 +32,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
 import com.shogun.android.util.PrefsKeys
@@ -192,6 +198,9 @@ fun AgentsScreen(
     val rateLimitLoading by viewModel.rateLimitLoading.collectAsState()
     val rateLimitResult by viewModel.rateLimitResult.collectAsState()
 
+    val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
+    val termFontSize = remember { prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT) }
+
     var selectedPaneIndex by remember { mutableStateOf<Int?>(null) }
     var showRateLimitDialog by remember { mutableStateOf(false) }
 
@@ -226,6 +235,7 @@ fun AgentsScreen(
         // Full screen pane detail — always reads from live panes list
         PaneFullScreen(
             pane = selectedPane,
+            fontSize = termFontSize,
             onBack = { selectedPaneIndex = null },
             onSendCommand = { cmd ->
                 viewModel.sendCommandToPane(selectedPane.index, cmd)
@@ -256,6 +266,7 @@ fun AgentsScreen(
                     items(panes) { pane ->
                         PaneCard(
                             pane = pane,
+                            fontSize = termFontSize,
                             onClick = { selectedPaneIndex = pane.index }
                         )
                     }
@@ -330,8 +341,10 @@ fun AgentsScreen(
 @Composable
 fun PaneCard(
     pane: PaneInfo,
+    fontSize: Float = Defaults.FONT_SIZE_DEFAULT,
     onClick: () -> Unit
 ) {
+    val cardFontSize = (fontSize * 10f / 13f).coerceAtLeast(8f)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -364,7 +377,7 @@ fun PaneCard(
                 Text(
                     text = parseAnsiColors(tailLines),
                     color = Zouge,
-                    fontSize = 10.sp,
+                    fontSize = cardFontSize.sp,
                     fontFamily = FontFamily.Monospace,
                     maxLines = 10,
                     overflow = TextOverflow.Ellipsis
@@ -377,6 +390,7 @@ fun PaneCard(
 @Composable
 fun PaneFullScreen(
     pane: PaneInfo,
+    fontSize: Float = Defaults.FONT_SIZE_DEFAULT,
     onBack: () -> Unit,
     onSendCommand: (String) -> Unit,
     onRefresh: () -> Unit
@@ -389,9 +403,15 @@ fun PaneFullScreen(
             SpeechRecognizer.createSpeechRecognizer(context)
         else null
     }
-    val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
     val parsedPaneContent = remember(pane.content) { parseAnsiColors(pane.content) }
+
+    var zoomScale by remember { mutableFloatStateOf(1f) }
+    var zoomOffset by remember { mutableStateOf(Offset.Zero) }
+    val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
+        zoomScale = (zoomScale * zoomChange).coerceIn(0.5f, 3f)
+        zoomOffset += panChange
+    }
 
     DisposableEffect(Unit) {
         onDispose { speechRecognizer?.destroy() }
@@ -456,27 +476,42 @@ fun PaneFullScreen(
             }
         }
 
-        // Full screen pane content
+        // Full screen pane content with pinch zoom + double tap reset
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .horizontalScroll(horizontalScrollState)
+                .clipToBounds()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            zoomScale = 1f
+                            zoomOffset = Offset.Zero
+                        }
+                    )
+                }
+                .transformable(state = transformableState)
         ) {
             SelectionContainer {
                 Text(
                     text = parsedPaneContent,
                     color = Zouge,
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 13.sp,
-                    softWrap = false,
+                    fontSize = fontSize.sp,
+                    softWrap = true,
                     modifier = Modifier
                         .fillMaxHeight()
                         .verticalScroll(verticalScrollState)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .graphicsLayer(
+                            scaleX = zoomScale,
+                            scaleY = zoomScale,
+                            translationX = zoomOffset.x,
+                            translationY = zoomOffset.y
+                        )
                 )
             }
-        } // Box (horizontal scroll)
+        }
 
         // Special keys bar
         SpecialKeysRow(onSendKey = { onSendCommand(it) })

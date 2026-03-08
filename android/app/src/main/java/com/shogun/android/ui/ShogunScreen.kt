@@ -3,7 +3,6 @@ package com.shogun.android.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.MediaPlayer
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -11,7 +10,9 @@ import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -25,15 +26,17 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
 import com.shogun.android.util.PrefsKeys
@@ -51,11 +54,7 @@ import com.shogun.android.viewmodel.ShogunViewModel
 
 @Composable
 fun ShogunScreen(
-    viewModel: ShogunViewModel = viewModel(),
-    mediaPlayer: MediaPlayer? = null,
-    isBgmPlaying: Boolean = false,
-    bgmTrackLabel: String = "",
-    onBgmToggle: () -> Unit = {}
+    viewModel: ShogunViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val paneContent by viewModel.paneContent.collectAsState()
@@ -66,13 +65,14 @@ fun ShogunScreen(
     var isListening by remember { mutableStateOf(false) }
     var isInputExpanded by remember { mutableStateOf(false) }
 
-    // Duck BGM while voice input is active
-    LaunchedEffect(isListening) {
-        if (isListening) {
-            mediaPlayer?.setVolume(0.05f, 0.05f)
-        } else {
-            mediaPlayer?.setVolume(1.0f, 1.0f)
-        }
+    val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
+    val termFontSize = remember { prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT) }
+
+    var zoomScale by remember { mutableFloatStateOf(1f) }
+    var zoomOffset by remember { mutableStateOf(Offset.Zero) }
+    val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
+        zoomScale = (zoomScale * zoomChange).coerceIn(0.5f, 3f)
+        zoomOffset += panChange
     }
 
     val listState = rememberLazyListState()
@@ -156,19 +156,28 @@ fun ShogunScreen(
             )
         }
 
-        // Pane content display with LazyColumn
+        // Pane content display with LazyColumn + pinch zoom + double tap reset
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
+                .clipToBounds()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            zoomScale = 1f
+                            zoomOffset = Offset.Zero
+                        }
+                    )
+                }
+                .transformable(state = transformableState)
         ) {
             if (errorMessage != null) {
                 Text(
                     text = "エラー: $errorMessage",
                     color = Kurenai,
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 13.sp,
+                    fontSize = termFontSize.sp,
                     modifier = Modifier.padding(8.dp)
                 )
             } else {
@@ -177,6 +186,12 @@ fun ShogunScreen(
                     modifier = Modifier
                         .fillMaxHeight()
                         .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .graphicsLayer(
+                            scaleX = zoomScale,
+                            scaleY = zoomScale,
+                            translationX = zoomOffset.x,
+                            translationY = zoomOffset.y
+                        )
                 ) {
                     items(lines) { line ->
                         SelectionContainer {
@@ -184,8 +199,8 @@ fun ShogunScreen(
                                 text = parseAnsiColors(line),
                                 color = Zouge,
                                 fontFamily = FontFamily.Monospace,
-                                fontSize = 13.sp,
-                                softWrap = false
+                                fontSize = termFontSize.sp,
+                                softWrap = true
                             )
                         }
                     }
@@ -241,24 +256,6 @@ fun ShogunScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // BGM toggle button — cycles through 3 tracks + OFF
-            IconButton(onClick = onBgmToggle) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = if (isBgmPlaying) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                        contentDescription = "BGM",
-                        tint = if (isBgmPlaying) Kinpaku else TextMuted
-                    )
-                    if (isBgmPlaying && bgmTrackLabel.isNotEmpty()) {
-                        Text(
-                            text = bgmTrackLabel,
-                            color = Kinpaku,
-                            fontSize = 8.sp
-                        )
-                    }
-                }
-            }
-
             // Voice input button (manual ON/OFF — stays on until user taps again)
             IconButton(
                 onClick = {
@@ -322,7 +319,8 @@ fun SpecialKeysRow(onSendKey: (String) -> Unit) {
         "Tab" to "\t",      // Autocomplete
         "ESC" to "\u001b",  // Cancel / exit mode
         "C-o" to "\u000f",  // Accept line in Claude Code
-        "C-d" to "\u0004"   // EOF / exit
+        "C-d" to "\u0004",  // EOF / exit
+        "/clear" to "/clear\n"  // Clear Claude Code session
     )
     LazyRow(
         modifier = Modifier

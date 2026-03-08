@@ -50,6 +50,9 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                 ?: Defaults.BACKGROUND_STYLE
         )
     }
+    var fontSizePref by remember {
+        mutableFloatStateOf(prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT))
+    }
 
     var saved by remember { mutableStateOf(false) }
     var tapCount by remember { mutableIntStateOf(0) }
@@ -161,6 +164,38 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
         Text("外観", style = MaterialTheme.typography.titleMedium, color = Kinpaku)
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("フォントサイズ", style = MaterialTheme.typography.bodyMedium, color = Zouge)
+            Text(
+                "ターミナル出力テキストのサイズ（現在: ${fontSizePref.toInt()}sp）",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMuted
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("小" to 10f, "中" to 13f, "大" to 17f, "特大" to 22f).forEach { (label, size) ->
+                    val selected = fontSizePref == size
+                    OutlinedButton(
+                        onClick = { fontSizePref = size },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (selected) Shuaka else Color.Transparent,
+                            contentColor = if (selected) Color.White else Zouge
+                        ),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(label)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("背景スタイル", style = MaterialTheme.typography.bodyMedium, color = Zouge)
             BackgroundStyleOption(
                 label = "無地",
@@ -192,6 +227,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                     .putString(PrefsKeys.SHOGUN_SESSION, shogunSession)
                     .putString(PrefsKeys.AGENTS_SESSION, agentsSession)
                     .putString(PrefsKeys.BACKGROUND_STYLE, backgroundStyle)
+                    .putFloat(PrefsKeys.FONT_SIZE, fontSizePref)
                     .apply()
                 saved = true
             },

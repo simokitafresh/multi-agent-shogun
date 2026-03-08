@@ -20,6 +20,7 @@ object PrefsKeys {
     const val NOTIFY_DASHBOARD_UPDATE = "notify_dashboard_update"
     const val NOTIFY_STREAK_UPDATE = "notify_streak_update"
     const val NOTIFY_AGENT_RESPONSE = "notify_agent_response"
+    const val FONT_SIZE = "font_size"
 }
 
 object Defaults {
@@ -33,4 +34,7 @@ object Defaults {
     const val BACKGROUND_STYLE_IMAGE = "image"
     const val BACKGROUND_STYLE = BACKGROUND_STYLE_SOLID
     const val TMUX = "/usr/bin/tmux"
+    const val FONT_SIZE_DEFAULT = 13f
+    const val FONT_SIZE_MIN = 10f
+    const val FONT_SIZE_MAX = 22f
 }

@@ -98,16 +98,18 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
             val tmux = Defaults.TMUX
             // Single SSH call: detect pane count + batch-fetch all panes
             val batchCmd = buildString {
-                append("N=\$($tmux list-panes -t $target 2>/dev/null | wc -l); ")
+                // Use actual pane indices from tmux (may start at 1, not 0)
+                append("PANES=\$($tmux list-panes -t $target -F '#{pane_index}' 2>/dev/null); ")
+                append("N=\$(echo \"\$PANES\" | wc -l); ")
                 append("echo \"===PANE_COUNT=\$N===\"; ")
-                append("for i in \$(seq 0 \$((N-1))); do ")
-                append("echo \"===ID\$i===\"; ")
+                append("IDX=0; for i in \$PANES; do ")
+                append("echo \"===ID\$IDX===\"; ")
                 append("$tmux display-message -t $target.\$i -p '#{@agent_id}' 2>/dev/null || echo \"pane\$i\"; ")
-                append("echo \"===MODEL\$i===\"; ")
+                append("echo \"===MODEL\$IDX===\"; ")
                 append("$tmux show-options -p -t $target.\$i -v @model_name 2>/dev/null || echo ''; ")
-                append("echo \"===CONTENT\$i===\"; ")
+                append("echo \"===CONTENT\$IDX===\"; ")
                 append("$tmux capture-pane -e -t $target.\$i -p -S -50 2>/dev/null; ")
-                append("done")
+                append("IDX=\$((IDX+1)); done")
             }
             val result = sshManager.execCommand(batchCmd)
             if (result.isSuccess) {
