@@ -4,13 +4,14 @@
 
 **Command your AI army like a feudal warlord.**
 
-Run 10 AI coding agents in parallel — **Claude Code, OpenAI Codex, GitHub Copilot, Kimi Code** — orchestrated through a samurai-inspired hierarchy with zero coordination overhead.
+Run 10 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code, OpenAI Codex, GitHub Copilot, and Kimi Code** coordinated by YAML, tmux, and event-driven mailboxes.
 
-**Talk Coding, not Vibe Coding. Speak to your phone, AI executes.**
+**Talk coding, not vibe coding. Speak from your terminal, phone, or Android companion app.**
 
-[![GitHub Stars](https://img.shields.io/github/stars/yohey-w/multi-agent-shogun?style=social)](https://github.com/yohey-w/multi-agent-shogun)
+[![GitHub Stars](https://img.shields.io/github/stars/simokitafresh/multi-agent-shogun?style=social)](https://github.com/simokitafresh/multi-agent-shogun)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![v3.0 Multi-CLI](https://img.shields.io/badge/v3.0-Multi--CLI_Support-ff6600?style=flat-square&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHRleHQgeD0iMCIgeT0iMTIiIGZvbnQtc2l6ZT0iMTIiPuKalTwvdGV4dD48L3N2Zz4=)](https://github.com/yohey-w/multi-agent-shogun)
+[![Formation](https://img.shields.io/badge/formation-Opus4%20%2B%20Codex4-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
+[![GATE CLEAR](https://img.shields.io/badge/GATE%20CLEAR-461%2F463%20(99.6%25)-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
 [![Shell](https://img.shields.io/badge/Shell%2FBash-100%25-green)]()
 
 [English](README.md) | [日本語](README_ja.md)
@@ -21,19 +22,26 @@ Run 10 AI coding agents in parallel — **Claude Code, OpenAI Codex, GitHub Copi
   <img src="assets/screenshots/tmux_shogun_9panes.png" alt="multi-agent-shogun: 9 panes running in parallel" width="800">
 </p> -->
 
-<p align="center"><i>One Karo (manager) coordinating 8 Ninja (workers) — real session, no mock data.</i></p>
+<p align="center"><i>One Karo coordinating 8 ninja in the live Opus4 + Codex4 formation — real session, no mock data.</i></p>
 
 ---
 
 ## What is this?
 
-**multi-agent-shogun** is a system that runs multiple AI coding CLI instances simultaneously, orchestrating them like a feudal Japanese army. Supports **Claude Code**, **OpenAI Codex**, **GitHub Copilot**, and **Kimi Code**.
+**multi-agent-shogun** is a multi-agent development platform for real work, not toy demos. The current live formation is:
+
+- Shogun + Karo on **Claude Code / Opus**
+- Sasuke, Kirimaru, Hayate, Saizo on **Codex / gpt-5.4**
+- Kagemaru, Hanzo, Kotaro, Tobisaru on **Claude Code / Opus**
 
 **Why use it?**
-- One command spawns 8 AI workers executing in parallel
+- One command launches **10 agents** and returns control immediately
+- Workers coordinate through **YAML + tmux**, not expensive API orchestration
+- The repo includes a **GATE pipeline**, **lesson cycle**, **pending-decision system**, and **cmd chronicle**
+- Remote control is built in through **ntfy**, **Tailscale/Termux/mosh**, and the **Android companion app**
 - Zero wait time — give your next order while tasks run in the background
-- AI remembers your preferences across sessions (Memory MCP)
-- Real-time progress on a dashboard
+- AI remembers your preferences across sessions (Memory MCP for Shogun)
+- Real-time progress on a dashboard and `queue/karo_snapshot.txt`
 
 ```
         You (上様 / The Lord)
@@ -52,6 +60,20 @@ Run 10 AI coding agents in parallel — **Claude Code, OpenAI Codex, GitHub Copi
     └─┴─┴─┴─┴─┴─┴─┴─┘
           NINJA
 ```
+
+---
+
+## Live Operating Record
+
+| Metric | Current value |
+|---|---|
+| GATE CLEAR | 461 / 463 (99.6%) |
+| CLEAR streak | 291 consecutive wins (`cmd_357` to `cmd_656`) |
+| Commands issued | 661+ |
+| Lesson injection rate | 75.3% |
+| Lesson effectiveness | 70.3% |
+
+The numbers above come from the current `dashboard.md` battle metrics and reflect this local installation, not the upstream fork.
 
 ---
 
@@ -75,6 +97,21 @@ Most multi-agent frameworks burn API tokens on coordination. Shogun doesn't.
 **Full transparency** — Every agent runs in a visible tmux pane. Every instruction, report, and decision is a plain YAML file you can read, diff, and version-control. No black boxes.
 
 **Battle-tested hierarchy** — The Shogun → Karo → Ninja chain of command prevents conflicts by design: clear ownership, dedicated files per agent, event-driven communication, no polling.
+
+---
+
+## What Makes This Fork Different
+
+| Capability | What it means in this repo |
+|---|---|
+| **7-layer knowledge system** | System rules, role instructions, project core, project lessons, live YAML state, Vercel-style context indexes, and Memory MCP each have a distinct home |
+| **Vercel-style context** | `context/*.md` is an index layer; deep investigations move into `docs/research/` and are linked back instead of duplicated |
+| **Lesson cycle** | Lessons are injected into tasks, referenced during work, scored after GATE, and auto-deprecated when they stop helping |
+| **GATE system** | `cmd_complete_gate.sh`, `gate_cmd_state.sh`, and `gate_lesson_health.sh` block false-done reports and stale operational state |
+| **Karo snapshot** | `queue/karo_snapshot.txt` rebuilds real-time formation state after recovery or compaction |
+| **Pending decisions** | `queue/pending_decisions.yaml` tracks unresolved rulings that still need a human or Shogun decision |
+| **Cmd chronicle** | `context/cmd-chronicle.md` keeps the recent command history cheap to reload |
+| **Android companion** | `android/` ships a Kotlin + Jetpack Compose app for SSH control, dashboard viewing, and ntfy-driven mobile workflows |
 
 ---
 
@@ -159,9 +196,9 @@ Skills grow organically from real work — not from a predefined template librar
 
 📥 **Download the repository**
 
-[Download ZIP](https://github.com/yohey-w/multi-agent-shogun/archive/refs/heads/main.zip) and extract to `C:\tools\multi-agent-shogun`
+[Download ZIP](https://github.com/simokitafresh/multi-agent-shogun/archive/refs/heads/main.zip) and extract to `C:\tools\multi-agent-shogun`
 
-*Or use git:* `git clone https://github.com/yohey-w/multi-agent-shogun.git C:\tools\multi-agent-shogun`
+*Or use git:* `git clone https://github.com/simokitafresh/multi-agent-shogun.git C:\tools\multi-agent-shogun`
 
 </td>
 </tr>
@@ -255,39 +292,78 @@ tmux attach-session -t shogun    # or alias: csm
 
 ### 📱 Mobile Access (Command from anywhere)
 
-Control your AI army from your phone — bed, café, or bathroom.
+Control your AI army from your phone in two ways:
 
-**Requirements (all free):**
+- **Terminal route**: Tailscale + Termux + `mosh` or `ssh`
+- **App route**: the Android companion in [`android/`](android/) using SSH/JSch plus ntfy push
 
-| Name | In a nutshell | Role |
-|------|--------------|------|
-| [Tailscale](https://tailscale.com/) | A road to your home from anywhere | Connect to your home PC from anywhere |
-| SSH | The feet that walk that road | Log into your home PC through Tailscale |
-| [Termux](https://termux.dev/) | A black screen on your phone | Required to use SSH — just install it |
+#### Option A: Termux + Tailscale + mosh
 
-**Setup:**
-
-1. Install Tailscale on both WSL and your phone
-2. In WSL (auth key method — browser not needed):
+1. Install the clients
+   - Android: Tailscale, Termux from F-Droid, optional ntfy app
+   - WSL/Ubuntu host: Tailscale, `openssh-server`, `mosh`
+2. Prepare the host
    ```bash
-   curl -fsSL https://tailscale.com/install.sh | sh
-   sudo tailscaled &
-   sudo tailscale up --authkey tskey-auth-XXXXXXXXXXXX
+   sudo apt update
+   sudo apt install -y openssh-server mosh
    sudo service ssh start
+   tailscale ip -4
+   whoami
+   tmux ls
    ```
-3. In Termux on your phone:
+3. Connect from Termux
    ```sh
-   pkg update && pkg install openssh
-   ssh youruser@your-tailscale-ip
-   csm    # Connect to shogun session
+   pkg update
+   pkg install openssh mosh
+   mosh youruser@your-tailscale-ip -- tmux attach -t shogun
    ```
-   Use `Ctrl+A → 0` for Shogun, `Ctrl+A → 1` for workers.
+4. Fallback when UDP is blocked
+   ```sh
+   ssh youruser@your-tailscale-ip -t 'tmux attach -t shogun'
+   ```
+5. Work inside tmux
+   - `Ctrl+A` then `0` opens the Shogun window
+   - `Ctrl+A` then `1` opens the agents window
+   - `Ctrl+A` then `d` detaches without stopping the agents
 
-**Disconnect:** Just swipe the Termux window closed. tmux sessions survive — agents keep working.
+#### Where to find the values
 
-**Voice input:** Use your phone's voice keyboard to speak commands. The Shogun understands natural language, so typos from speech-to-text don't matter.
+| Value | Command on the host | Current example in this repo |
+|---|---|---|
+| Tailscale IPv4 | `tailscale ip -4` | `100.75.173.26` |
+| SSH username | `whoami` | `simokitafresh` |
+| Project path | `pwd` | `/mnt/c/tools/multi-agent-shogun` |
+| tmux session name | `tmux ls` | `shogun` |
+| tmux prefix | `tmux show-options -gqv prefix` | `C-a` |
+| Android APK | `ls android/release` | `multi-agent-shogun.apk` |
 
-**Even simpler:** With ntfy configured, you can receive notifications and send commands directly from the ntfy app — no SSH required.
+#### Why mosh
+
+- Handles mobile packet loss and IP changes better than plain SSH
+- Keeps the terminal usable while switching between Wi-Fi and cellular
+- Leaves the tmux session untouched, so the agents keep running even if the phone disconnects
+
+#### Troubleshooting
+
+| Problem | Check |
+|---|---|
+| `mosh` cannot connect | Confirm `mosh-server` exists on the host and UDP is not blocked |
+| SSH works but tmux does not attach | Run `tmux ls` and use the exact session name it prints |
+| The Android app opens but the wrong panes appear | Recheck the tmux session names and project path in [`android/README.md`](android/README.md) |
+| ntfy works but the Android app terminal does not | The app uses SSH/JSch, not mosh |
+| Termux packages are missing or outdated | Install Termux from F-Droid, not the deprecated Play Store build |
+
+#### Option B: Android companion app
+
+The repo now includes a mobile client in [`android/`](android/):
+
+- **Kotlin + Jetpack Compose + Material 3**
+- **4 tabs**: Shogun, Agents, Dashboard, Settings
+- **SSH/JSch** for live tmux control
+- **ntfy** for push notifications
+- Prebuilt APK at [`android/release/multi-agent-shogun.apk`](android/release/multi-agent-shogun.apk)
+
+See [`android/README.md`](android/README.md) for screen-by-screen setup.
 
 ---
 
@@ -298,7 +374,7 @@ Control your AI army from your phone — bed, café, or bathroom.
 
 ```bash
 # 1. Clone
-git clone https://github.com/yohey-w/multi-agent-shogun.git ~/multi-agent-shogun
+git clone https://github.com/simokitafresh/multi-agent-shogun.git ~/multi-agent-shogun
 cd ~/multi-agent-shogun
 
 # 2. Make scripts executable
@@ -350,8 +426,8 @@ Then restart your computer and run `install.bat` again.
 | Script | Purpose | When to run |
 |--------|---------|-------------|
 | `install.bat` | Windows: WSL2 + Ubuntu setup | First time only |
-| `first_setup.sh` | Install tmux, Node.js, Claude Code CLI + Memory MCP config | First time only |
-| `shutsujin_departure.sh` | Create tmux sessions + launch Claude Code + load instructions + start ntfy listener | Daily |
+| `first_setup.sh` | Install tmux, Node.js, required CLIs, and Memory MCP config | First time only |
+| `shutsujin_departure.sh` | Create tmux sessions + launch the mixed CLI formation + load instructions + start ntfy listener | Daily |
 
 ### What `install.bat` does automatically:
 - ✅ Checks if WSL2 is installed (guides you if not)
@@ -359,8 +435,8 @@ Then restart your computer and run `install.bat` again.
 - ✅ Shows next steps (how to run `first_setup.sh`)
 
 ### What `shutsujin_departure.sh` does:
-- ✅ Creates tmux session (shogun: main + agents windows)
-- ✅ Launches Claude Code on all agents
+- ✅ Creates tmux sessions (`shogun:main` + `shogun:agents`)
+- ✅ Launches the current mixed formation from `config/settings.yaml`
 - ✅ Auto-loads instruction files for each agent
 - ✅ Resets queue files for a fresh state
 - ✅ Starts ntfy listener for phone notifications (if configured)
@@ -553,54 +629,36 @@ Use cases:
 - Show error messages
 - Compare before/after states
 
-### 📁 6. Context Management (4-Layer Architecture)
+### 📁 6. Context and Knowledge (7-Layer Architecture)
 
-Efficient knowledge sharing through a four-layer context system:
+This repo does not rely on one giant prompt. Durable knowledge is split into seven layers:
 
 | Layer | Location | Purpose |
-|-------|----------|---------|
-| Layer 1: Memory MCP | `memory/shogun_memory.jsonl` | Cross-project, cross-session long-term memory |
-| Layer 2: Project | `config/projects.yaml`, `projects/<id>.yaml`, `context/{project}.md` | Project-specific information and technical knowledge |
-| Layer 3: YAML Queue | `queue/shogun_to_karo.yaml`, `queue/tasks/`, `queue/reports/` | Task management — source of truth for instructions and reports |
-| Layer 4: Session | CLAUDE.md, instructions/*.md | Working context (wiped by `/clear`) |
+|---|---|---|
+| 1. System rules | `AGENTS.md`, `CLAUDE.md` | Global safety rules, recovery routing, and shared operating constraints |
+| 2. Role instructions | `instructions/generated/*.md` | Shogun, Karo, and Ninja procedures |
+| 3. Project core | `config/projects.yaml`, `projects/<id>.yaml` | Project metadata, paths, and core rules |
+| 4. Project lessons | `projects/<id>/lessons.yaml` | Reusable mistakes, fixes, and heuristics |
+| 5. Live ops YAML | `queue/`, `tasks/`, `reports/` | Active commands, inboxes, task state, and reports |
+| 6. Context index | `context/*.md`, `docs/research/*.md` | Vercel-style retrieval: summaries stay in `context/`, details live in `docs/research/` |
+| 7. Memory MCP | `memory/shogun_memory.jsonl` | Lord preferences and Shogun-only long-term memory |
 
 This design enables:
-- Any ninja can work on any project
-- Context persists across agent switches
-- Clear separation of concerns
-- Knowledge survives across sessions
+- Any ninja can recover by reloading files instead of replaying the whole conversation
+- Knowledge survives agent swaps, `/clear`, and `/new`
+- Retrieval cost stays low because summaries point to deeper docs instead of duplicating them
 
-#### /clear Protocol (Cost Optimization)
+#### Vercel-style context
 
-As agents work, their session context (Layer 4) grows, increasing API costs. `/clear` wipes session memory and resets costs. Layers 1–3 persist as files, so nothing is lost.
+`context/*.md` is the index layer. Deep investigations move into `docs/research/` and are linked back from the context file. Compression without a backlink is treated as data loss.
 
-Recovery cost after `/clear`: **~6,800 tokens** (42% improved from v1 — CLAUDE.md YAML conversion + English-only instructions reduced token cost by 70%)
+#### Lesson cycle
 
-1. CLAUDE.md (auto-loaded) → recognizes itself as part of the Shogun System
-2. `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'` → identifies its own number
-3. Memory MCP read → restores the Lord's preferences (~700 tokens)
-4. Task YAML read → picks up the next assignment (~800 tokens)
+Lessons are not static notes. They are injected into tasks, referenced during work, scored after GATE, and auto-deprecated when they stop helping. That loop is what keeps the knowledge base from turning into prompt sludge.
 
-The key insight: designing **what not to load** is what drives cost savings.
+#### Recovery after `/clear` or `/new`
 
-#### Universal Context Template
-
-All projects use the same 7-section template:
-
-| Section | Purpose |
-|---------|---------|
-| What | Project overview |
-| Why | Goals and success criteria |
-| Who | Stakeholders and responsibilities |
-| Constraints | Deadlines, budgets, limitations |
-| Current State | Progress, next actions, blockers |
-| Decisions | Decisions made and their rationale |
-| Notes | Free-form observations and ideas |
-
-This unified format enables:
-- Quick onboarding for any agent
-- Consistent information management across all projects
-- Easy handoff between ninja workers
+Working context is disposable. Durable knowledge lives in the layers above, so an agent can recover by reloading rules, task YAML, and project context instead of replaying the full conversation.
 
 ### 📱 7. Phone Notifications (ntfy)
 
@@ -884,7 +942,7 @@ The Shogun serves as the Lord's strategic advisor — not just a task relay. Str
 | Sasuke, Kirimaru, Hayate, Saizo | Codex / gpt-5.4 | Codex squad |
 | Kagemaru, Hanzo, Kotaro, Tobisaru | Claude Code / Opus | Opus squad |
 
-The legacy split formation was retired on 2026-02-27. Current routing is based on CLI capabilities and task fit, not on the old promotion/demotion hierarchy.
+The current rotation has been in place since 2026-02-27. Routing is based on CLI capabilities and task fit.
 
 ### Bloom's Taxonomy Task Classification
 
@@ -1155,7 +1213,7 @@ Subscribe to the same topic in the [ntfy app](https://ntfy.sh) on your phone. Th
 │      │                                                              │
 │      ├──▶ Reset queue files and dashboard                           │
 │      │                                                              │
-│      └──▶ Launch Claude Code on all agents                          │
+│      └──▶ Launch the mixed CLI formation                            │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -1166,10 +1224,10 @@ Subscribe to the same topic in the [ntfy app](https://ntfy.sh) on your phone. Th
 <summary><b>shutsujin_departure.sh Options</b> (click to expand)</summary>
 
 ```bash
-# Default: Full startup (tmux sessions + Claude Code launch)
+# Default: Full startup (tmux sessions + mixed CLI launch)
 ./shutsujin_departure.sh
 
-# Session setup only (no Claude Code launch)
+# Session setup only (no CLI launch)
 ./shutsujin_departure.sh -s
 ./shutsujin_departure.sh --setup-only
 
@@ -1451,29 +1509,12 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 ---
 
-## What's New in v3.0 — Multi-CLI
+## Current Highlights
 
-> **Shogun is no longer Claude-only.** Mix and match 4 AI coding CLIs in a single army.
-
-- **Multi-CLI as first-class architecture** — `lib/cli_adapter.sh` dynamically selects CLI per agent. Change one line in `settings.yaml` to swap any worker between Claude Code, Codex, Copilot, or Kimi
-- **OpenAI Codex CLI integration** — GPT-5.4 with `--dangerously-bypass-approvals-and-sandbox` for true autonomous execution. `--no-alt-screen` makes agent activity visible in tmux
-- **CLI bypass flag discovery** — `--full-auto` is NOT fully automatic (it's `-a on-request`). Documented the correct flags for all 4 CLIs
-- **Hybrid architecture** — Command layer (Shogun + Karo) stays on Claude Code for Memory MCP and mailbox integration. Worker layer (Ninja) is CLI-agnostic
-- **Community-contributed CLI adapters** — Thanks to [@yuto-ts](https://github.com/yuto-ts) (cli_adapter.sh), [@circlemouth](https://github.com/circlemouth) (Codex support), [@koba6316](https://github.com/koba6316) (task routing)
-
-<details>
-<summary><b>What was in v2.0</b></summary>
-
-- **ntfy bidirectional communication** — Send commands from your phone, receive push notifications for task completion
-- **SayTask notifications** — Streak tracking, Eat the Frog, behavioral psychology-driven motivation
-- **Pane border task display** — See each agent's current task at a glance on the tmux pane border
-- **Shout mode** (default) — Ninja shout personalized battle cries after completing tasks. Disable with `--silent`
-- **Nudge-only mailbox** — Agents communicate via file-based inbox; `send-keys` only delivers a 1-line wake-up signal, eliminating transmission failures
-- **Agent self-identification** (`@agent_id`) — Stable identity via tmux user options, immune to pane reordering
-- **Battle mode** (`-k` flag) — All-Opus formation for maximum capability
-- **Task dependency system** (`blockedBy`) — Automatic unblocking of dependent tasks
-
-</details>
+- **Opus4 + Codex4 formation** — active since 2026-02-27, dispatched by CLI fit and round-robin assignment from `config/settings.yaml`
+- **GATE-first operations** — `cmd_complete_gate.sh`, `gate_cmd_state.sh`, and `gate_lesson_health.sh` protect against false completion, stale delegation, and low-value lessons
+- **Knowledge operations** — the 7-layer knowledge map, `queue/karo_snapshot.txt`, `queue/pending_decisions.yaml`, and `context/cmd-chronicle.md` keep recovery and audits cheap
+- **Mobile surface** — ntfy push, the Android companion app, and Termux/mosh access let you run the army away from the desk
 
 ---
 
