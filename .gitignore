@@ -231,6 +231,11 @@
 !tests/unit/*.bats
 !tests/integration/
 !tests/integration/*.bats
+!tests/helpers/
+!tests/helpers/*.bash
+!tests/e2e/
+!tests/e2e/*.sh
+!tests/e2e/*.bats
 !tests/test_helper/
 !tests/test_helper/README.md
 
