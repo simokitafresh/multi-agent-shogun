@@ -422,14 +422,16 @@ fun PaneFullScreen(
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
     val parsedPaneContent = remember(pane.content) { parseAnsiColors(pane.content) }
+    var wasAtBottom by remember(pane.index) { mutableStateOf(true) }
 
     DisposableEffect(Unit) {
         onDispose { speechRecognizer?.destroy() }
     }
 
-    LaunchedEffect(softWrapEnabled) {
+    LaunchedEffect(pane.index, softWrapEnabled) {
         zoomState.clearContentWidth()
         zoomState.reset()
+        wasAtBottom = true
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -444,21 +446,13 @@ fun PaneFullScreen(
         }
     }
 
-    // Auto-scroll only when user is at the bottom
-    val isAtBottom by remember {
-        derivedStateOf {
-            val maxScroll = verticalScrollState.maxValue
-            maxScroll == 0 || verticalScrollState.value >= maxScroll - 50
-        }
+    LaunchedEffect(verticalScrollState.value, softWrapEnabled, pane.index) {
+        wasAtBottom = verticalScrollState.maxValue == 0 ||
+            verticalScrollState.value >= verticalScrollState.maxValue - 50
     }
 
-    // Initial display: scroll to bottom
-    LaunchedEffect(Unit) {
-        verticalScrollState.scrollTo(verticalScrollState.maxValue)
-    }
-
-    LaunchedEffect(pane.content, verticalScrollState.maxValue, zoomState.isZoomed) {
-        if (!zoomState.isZoomed && isAtBottom) {
+    LaunchedEffect(pane.content, verticalScrollState.maxValue, zoomState.isZoomed, softWrapEnabled, pane.index) {
+        if (!zoomState.isZoomed && wasAtBottom) {
             verticalScrollState.scrollTo(verticalScrollState.maxValue)
         }
     }
