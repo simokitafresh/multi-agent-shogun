@@ -15,8 +15,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 
@@ -46,6 +48,9 @@ class TerminalZoomState(
     val isZoomed: Boolean
         get() = kotlin.math.abs(scale - 1f) > 0.01f
 
+    val isZoomedIn: Boolean
+        get() = scale > 1.01f
+
     /** Layout width multiplier for "desktop view" — content lays out wider when zoomed out */
     val layoutWidthMultiplier: Float
         get() = if (scale < 1f) (1f / scale) else 1f
@@ -74,14 +79,16 @@ class TerminalZoomState(
         }
 
         scale = nextScale
-        val effectivePan = if (nextScale < 1f) Offset(0f, panChange.y) else panChange
-        offset = clampOffset(offset + effectivePan, nextScale)
+        if (nextScale < 1f) {
+            offset = Offset.Zero
+            return
+        }
+        offset = clampOffset(offset + panChange, nextScale)
     }
 
     fun onDrag(dragAmount: Offset) {
-        if (!isZoomed) return
-        val effectiveDrag = if (scale < 1f) Offset(0f, dragAmount.y) else dragAmount
-        offset = clampOffset(offset + effectiveDrag, scale)
+        if (scale <= 1f) return
+        offset = clampOffset(offset + dragAmount, scale)
     }
 
     fun reset() {
@@ -136,16 +143,41 @@ fun Modifier.terminalZoom(zoomState: TerminalZoomState): Modifier = composed {
 
     this
         .onSizeChanged(zoomState::updateViewport)
+        .layout { measurable, constraints ->
+            if (zoomState.scale < 1f && zoomState.scale > 0f) {
+                val invScale = 1f / zoomState.scale
+                val expandedConstraints = constraints.copy(
+                    maxWidth = (constraints.maxWidth * invScale).toInt(),
+                    maxHeight = (constraints.maxHeight * invScale).toInt(),
+                    minWidth = 0,
+                    minHeight = 0
+                )
+                val placeable = measurable.measure(expandedConstraints)
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    placeable.place(0, 0)
+                }
+            } else {
+                val placeable = measurable.measure(constraints)
+                layout(placeable.width, placeable.height) {
+                    placeable.place(0, 0)
+                }
+            }
+        }
         .graphicsLayer {
             scaleX = zoomState.scale
             scaleY = zoomState.scale
-            translationX = zoomState.offset.x
-            translationY = zoomState.offset.y
-            clip = true
+            transformOrigin = if (zoomState.scale < 1f) {
+                TransformOrigin(0f, 0f)
+            } else {
+                TransformOrigin.Center
+            }
+            translationX = if (zoomState.scale >= 1f) zoomState.offset.x else 0f
+            translationY = if (zoomState.scale >= 1f) zoomState.offset.y else 0f
+            clip = zoomState.scale > 1f
         }
         .transformable(
             state = transformableState,
-            canPan = { zoomState.isZoomed }
+            canPan = { zoomState.isZoomedIn }
         )
         .pointerInput(Unit) {
             detectTapGestures(
@@ -153,8 +185,8 @@ fun Modifier.terminalZoom(zoomState: TerminalZoomState): Modifier = composed {
             )
         }
         .then(
-            if (zoomState.isZoomed) {
-                Modifier.pointerInput(zoomState.isZoomed) {
+            if (zoomState.isZoomedIn) {
+                Modifier.pointerInput(zoomState.isZoomedIn) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         zoomState.onDrag(Offset(dragAmount.x, dragAmount.y))

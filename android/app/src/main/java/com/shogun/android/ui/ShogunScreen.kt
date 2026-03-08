@@ -228,12 +228,6 @@ fun ShogunScreen(
                 .fillMaxWidth()
                 .terminalZoom(zoomState)
         ) {
-            val desktopWidthModifier = if (!softWrapEnabled && zoomState.scale < 1f) {
-                Modifier.width(maxWidth * zoomState.layoutWidthMultiplier)
-            } else {
-                Modifier.fillMaxWidth()
-            }
-
             if (errorMessage != null) {
                 Text(
                     text = "エラー: $errorMessage",
@@ -278,9 +272,8 @@ fun ShogunScreen(
                                 zoomState.updateContentWidth(maxLineWidth + horizontalPaddingPx)
                             },
                             modifier = Modifier
-                                .then(desktopWidthModifier)
-                                .fillMaxHeight()
-                                .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomed)
+                                .fillMaxSize()
+                                .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomedIn)
                                 .horizontalScroll(horizontalScrollState, enabled = !zoomState.isZoomed)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )

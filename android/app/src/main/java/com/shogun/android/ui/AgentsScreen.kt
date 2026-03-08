@@ -528,12 +528,6 @@ fun PaneFullScreen(
                 .fillMaxWidth()
                 .terminalZoom(zoomState)
         ) {
-            val desktopWidthModifier = if (!softWrapEnabled && zoomState.scale < 1f) {
-                Modifier.width(maxWidth * zoomState.layoutWidthMultiplier)
-            } else {
-                Modifier.fillMaxWidth()
-            }
-
             SelectionContainer {
                 Text(
                     text = parsedPaneContent,
@@ -550,9 +544,8 @@ fun PaneFullScreen(
                         }
                     },
                     modifier = Modifier
-                        .then(desktopWidthModifier)
-                        .fillMaxHeight()
-                        .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomed)
+                        .fillMaxSize()
+                        .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomedIn)
                         .then(
                             if (softWrapEnabled) {
                                 Modifier
