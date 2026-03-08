@@ -11,7 +11,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/simokitafresh/multi-agent-shogun?style=social)](https://github.com/simokitafresh/multi-agent-shogun)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Formation](https://img.shields.io/badge/formation-Opus4%20%2B%20Codex4-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
-[![GATE CLEAR](https://img.shields.io/badge/GATE%20CLEAR-461%2F463%20(99.6%25)-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
+[![GATE CLEAR](https://img.shields.io/badge/GATE%20CLEAR-465%2F467%20(99.6%25)-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
 [![Shell](https://img.shields.io/badge/Shell%2FBash-100%25-green)]()
 
 [English](README.md) | [日本語](README_ja.md)
@@ -67,10 +67,10 @@
 
 | 指標 | 現在値 |
 |---|---|
-| GATE CLEAR | 461 / 463 (99.6%) |
-| 連勝 | 291連勝（`cmd_357`〜`cmd_656`） |
-| 発令cmd数 | 661+ |
-| 教訓注入率 | 75.3% |
+| GATE CLEAR | 465 / 467 (99.6%) |
+| 連勝 | 295連勝（`cmd_357`〜`cmd_660`） |
+| 発令cmd数 | 665+ |
+| 教訓注入率 | 75.1% |
 | 教訓効果率 | 70.3% |
 
 上記の数値は、このローカル環境の `dashboard.md` 戦況メトリクスに基づく。
