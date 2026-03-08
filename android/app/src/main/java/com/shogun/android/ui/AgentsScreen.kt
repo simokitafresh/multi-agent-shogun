@@ -26,10 +26,12 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Speed
 import androidx.core.content.ContextCompat
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
@@ -410,6 +412,7 @@ fun PaneFullScreen(
     val context = LocalContext.current
     var commandTextValue by remember { mutableStateOf(TextFieldValue("")) }
     var isListening by remember { mutableStateOf(false) }
+    var isInputFocused by remember { mutableStateOf(false) }
     val zoomState = rememberTerminalZoomState()
     val speechRecognizer = remember {
         if (SpeechRecognizer.isRecognitionAvailable(context))
@@ -518,8 +521,9 @@ fun PaneFullScreen(
             }
         }
 
-        // Special keys bar
-        SpecialKeysRow(onSendKey = { onSendCommand(it) })
+        AnimatedVisibility(visible = isInputFocused) {
+            SpecialKeysRow(onSendKey = { onSendCommand(it) })
+        }
 
         // Command input at bottom
         Row(
@@ -531,7 +535,9 @@ fun PaneFullScreen(
             OutlinedTextField(
                 value = commandTextValue,
                 onValueChange = { commandTextValue = it },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusChanged { isInputFocused = it.isFocused },
                 placeholder = { Text("コマンドを入力") },
                 singleLine = true
             )

@@ -25,12 +25,14 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
@@ -59,6 +61,7 @@ fun ShogunScreen(
     var inputTextValue by remember { mutableStateOf(TextFieldValue("")) }
     var isListening by remember { mutableStateOf(false) }
     var isInputExpanded by remember { mutableStateOf(false) }
+    var isInputFocused by remember { mutableStateOf(false) }
 
     val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
     var termFontSize by remember { mutableFloatStateOf(prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT)) }
@@ -163,13 +166,13 @@ fun ShogunScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (isConnected) Matsuba else Kurenai)
-                .padding(4.dp),
+                .background(Surface4)
+                .padding(vertical = 2.dp),
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = if (isConnected) "接続中 — 将軍セッション" else "未接続",
-                color = Zouge,
+                text = if (isConnected) "●" else "○",
+                color = if (isConnected) Matsuba else Kurenai,
                 fontSize = 12.sp
             )
         }
@@ -229,23 +232,23 @@ fun ShogunScreen(
             }
         }
 
-        // Special keys bar
-        SpecialKeysRow(onSendKey = { viewModel.sendCommand(it) })
+        AnimatedVisibility(visible = isInputFocused) {
+            SpecialKeysRow(onSendKey = { viewModel.sendCommand(it) })
+        }
 
         // Input area
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
                 value = inputTextValue,
                 onValueChange = { inputTextValue = it },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusChanged { isInputFocused = it.isFocused },
                 placeholder = { Text("コマンドを入力", color = TextMuted) },
                 singleLine = !isInputExpanded,
                 maxLines = if (isInputExpanded) 6 else 1,
@@ -260,6 +263,8 @@ fun ShogunScreen(
                 )
             )
 
+            Spacer(modifier = Modifier.width(4.dp))
+
             // Expand/collapse text button
             IconButton(
                 onClick = { isInputExpanded = !isInputExpanded },
@@ -271,12 +276,7 @@ fun ShogunScreen(
                     tint = Kinpaku
                 )
             }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+
             // Voice input button (manual ON/OFF — stays on until user taps again)
             IconButton(
                 onClick = {
@@ -306,6 +306,8 @@ fun ShogunScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.width(4.dp))
+
             // Send button
             IconButton(
                 onClick = {
@@ -322,8 +324,7 @@ fun ShogunScreen(
                     tint = if (inputTextValue.text.isNotBlank() && isConnected && !isListening) Kinpaku else TextMuted
                 )
             }
-        } // Row (buttons)
-        } // Column (input area)
+        } // Row (input area)
         } // Column (main)
     }
 }
