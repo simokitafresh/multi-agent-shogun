@@ -43,7 +43,13 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -n "$outfile" ]; then
-    printf 'image-bytes' > "$outfile"
+    python3 - <<'PY' > "$outfile"
+import base64
+import sys
+
+png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jr1kAAAAASUVORK5CYII="
+sys.stdout.buffer.write(base64.b64decode(png))
+PY
 fi
 EOF
     chmod +x "$TEST_TMPDIR/bin/curl"
@@ -181,6 +187,12 @@ process_stream_line "{\"event\":\"message\",\"id\":\"msg-img-1\",\"message\":\"\
 saved_file=$(find "$SCREENSHOT_DIR" -maxdepth 1 -type f -name "*screen_cap.png" ! -name latest.png | head -n 1)
 [ -n "$saved_file" ]
 [ -f "$SCREENSHOT_DIR/latest.png" ]
+python3 - <<'"'"'PY'"'"' "$saved_file"
+from pathlib import Path
+import sys
+
+assert Path(sys.argv[1]).read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+PY
 grep -q "shogun" "$INBOX_WRITE_LOG"
 grep -q "screenshot_received" "$INBOX_WRITE_LOG"
 '
