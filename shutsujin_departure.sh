@@ -14,6 +14,14 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# venvプリフライトチェック（Python依存のある処理の前に確認）
+VENV_DIR="$SCRIPT_DIR/.venv"
+if [ ! -f "$VENV_DIR/bin/python3" ] || ! "$VENV_DIR/bin/python3" -c "import yaml" 2>/dev/null; then
+    echo "venv missing or broken. Recreating..."
+    python3 -m venv "$VENV_DIR" 2>/dev/null || { echo "ERROR: venv creation failed"; exit 1; }
+    "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt" -q 2>/dev/null
+fi
+
 # 言語設定を読み取り（デフォルト: ja）
 LANG_SETTING="ja"
 if [ -f "./config/settings.yaml" ]; then
@@ -456,6 +464,10 @@ if ! tmux has-session -t shogun 2>/dev/null; then
     tmux new-session -d -s shogun -n main
 fi
 
+# グローバル設定: 接続元端末サイズ差分を吸収
+tmux set-option -g window-size latest
+tmux set-option -g aggressive-resize on
+
 # 将軍ペインはウィンドウ名 "main" で指定（base-index 1 環境でも動く）
 SHOGUN_PROMPT=$(generate_prompt "将軍" "magenta" "$SHELL_SETTING")
 tmux send-keys -t shogun:main "cd \"$(pwd)\" && export PS1='${SHOGUN_PROMPT}' && clear" Enter
@@ -523,7 +535,7 @@ tmux select-layout -t "shogun:agents" '1a7c,167x49,0,0{71x49,0,0[71x25,0,0,1,71x
 
 # ペインラベル設定（プロンプト用: モデル名なし）
 PANE_LABELS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
-# 色設定（karo: 金, genin: 青, jonin: 黄）
+# 色設定（karo: 金 / Codex忍者: 青 / Opus忍者: 黄）
 PANE_COLORS=("red" "blue" "blue" "yellow" "yellow" "yellow" "yellow" "yellow" "yellow")
 AGENT_IDS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
 
@@ -608,7 +620,13 @@ for i in {0..8}; do
     tmux send-keys -t "shogun:agents.${p}" "cd \"$(pwd)\" && export PS1='${PROMPT_STR}' && clear" Enter
 done
 
-# セッション固有設定（pane-border/status-right/remain-on-exit/将軍@model_name等）
+# pane-border-format: ペイン枠にagent_id・モデル名・タスクを常時表示
+tmux set-option -t shogun:agents -w pane-border-status top
+tmux set-option -t shogun:agents -w pane-border-format \
+    '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] (#{@model_name}) #{@current_task}'
+
+# セッション固有設定は `scripts/shutsujin_departure.sh` に委譲
+# 役割分担: このroot版=レイアウト/起動オーケストレーション、scripts版=tmux共通オプション適用
 bash "$SCRIPT_DIR/scripts/shutsujin_departure.sh"
 
 log_success "  └─ 家老・忍者の陣、構築完了"
@@ -821,6 +839,9 @@ NINJA_EOF
     # ═══════════════════════════════════════════════════════════════════
     log_info "📬 メールボックス監視を起動中..."
 
+    # ntfy_inbox 7日アーカイブ（watcher起動前に古メッセージを退避）
+    bash "$SCRIPT_DIR/scripts/ntfy_inbox_archive.sh" || log_warn "ntfy_inbox_archive failed (non-fatal)"
+
     # inbox ディレクトリ初期化（シンボリックリンク先のLinux FSに作成）
     mkdir -p "$SCRIPT_DIR/logs"
     for agent in shogun karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
@@ -832,9 +853,10 @@ NINJA_EOF
     pkill -f "inotifywait.*queue/inbox" 2>/dev/null || true
     sleep 1
 
-    # 将軍のwatcher（CLI種別を第3引数で渡す）
+    # 将軍のwatcher（エスカレーション抑制 + タイムアウト無効化）
     _shogun_watcher_cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
-    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_shogun_watcher_cli" \
+    nohup env ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 \
+        bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_shogun_watcher_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" &
     disown
 

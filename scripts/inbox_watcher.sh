@@ -33,6 +33,10 @@ CLI_TYPE_AT_STARTUP=$(cli_type "$AGENT_ID")  # settings.yaml → cli_profiles.ya
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
 LOCKFILE="${INBOX}.lock"
 SEND_KEYS_TIMEOUT=5  # seconds — prevents hang (PID 274337 incident)
+# ASW_PROCESS_TIMEOUT=0: disable timeout on tmux commands to shogun pane
+if [ "${ASW_PROCESS_TIMEOUT:-}" = "0" ]; then
+    SEND_KEYS_TIMEOUT=0  # timeout 0 = no limit
+fi
 DEBOUNCE_SEC=10
 DEBOUNCE_FILE="/tmp/inbox_watcher_last_nudge_${AGENT_ID}"
 FINGERPRINT_FILE="/tmp/inbox_watcher_fingerprint_${AGENT_ID}"
@@ -199,6 +203,10 @@ get_effective_cli_type() {
 # CLI種別はcli_profiles.yamlのフィールドで動的に判定（name-based分岐なし）
 send_cli_command() {
     local cmd="$1"
+    if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
+        echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (cli_command: $cmd)" >&2
+        return 0
+    fi
     local actual_cmd="$cmd"
     local post_wait=1
     local effective_cli
@@ -262,6 +270,10 @@ agent_has_self_watch() {
 # timeout prevents the 1.5-hour hang incident from recurring.
 send_wakeup() {
     local unread_count="$1"
+    if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
+        echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (nudge: inbox${unread_count})" >&2
+        return 0
+    fi
     local nudge="inbox${unread_count}"
     local now
     local last
