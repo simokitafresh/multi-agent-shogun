@@ -410,6 +410,7 @@ fun PaneFullScreen(
     val context = LocalContext.current
     var commandTextValue by remember { mutableStateOf(TextFieldValue("")) }
     var isListening by remember { mutableStateOf(false) }
+    val zoomState = rememberTerminalZoomState()
     val speechRecognizer = remember {
         if (SpeechRecognizer.isRecognitionAvailable(context))
             SpeechRecognizer.createSpeechRecognizer(context)
@@ -421,6 +422,10 @@ fun PaneFullScreen(
 
     DisposableEffect(Unit) {
         onDispose { speechRecognizer?.destroy() }
+    }
+
+    LaunchedEffect(softWrapEnabled) {
+        zoomState.reset()
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -436,8 +441,10 @@ fun PaneFullScreen(
     }
 
     // Keep following the newest output while preserving text-selection support.
-    LaunchedEffect(pane.content, verticalScrollState.maxValue) {
-        verticalScrollState.scrollTo(verticalScrollState.maxValue)
+    LaunchedEffect(pane.content, verticalScrollState.maxValue, zoomState.isZoomed) {
+        if (!zoomState.isZoomed) {
+            verticalScrollState.scrollTo(verticalScrollState.maxValue)
+        }
     }
 
     ScreenBackground(imageResId = R.drawable.bg_agents) {
@@ -487,6 +494,7 @@ fun PaneFullScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .terminalZoom(zoomState)
         ) {
             SelectionContainer {
                 Text(
@@ -496,13 +504,13 @@ fun PaneFullScreen(
                     fontSize = fontSize.sp,
                     softWrap = softWrapEnabled,
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .verticalScroll(verticalScrollState)
+                        .fillMaxSize()
+                        .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomed)
                         .then(
                             if (softWrapEnabled) {
                                 Modifier
                             } else {
-                                Modifier.horizontalScroll(horizontalScrollState)
+                                Modifier.horizontalScroll(horizontalScrollState, enabled = !zoomState.isZoomed)
                             }
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp)

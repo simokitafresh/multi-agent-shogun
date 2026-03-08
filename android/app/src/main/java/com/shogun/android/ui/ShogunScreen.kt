@@ -67,6 +67,7 @@ fun ShogunScreen(
     val listState = rememberLazyListState()
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
+    val zoomState = rememberTerminalZoomState()
     val lines = remember(paneContent) { paneContent.lines() }
     val parsedPaneContent = remember(paneContent) { parseAnsiColors(paneContent) }
 
@@ -140,14 +141,18 @@ fun ShogunScreen(
     }
 
     // Auto-scroll to bottom when content changes
-    LaunchedEffect(lines.size, softWrapEnabled) {
-        if (softWrapEnabled && lines.isNotEmpty()) {
+    LaunchedEffect(softWrapEnabled) {
+        zoomState.reset()
+    }
+
+    LaunchedEffect(lines.size, softWrapEnabled, zoomState.isZoomed) {
+        if (softWrapEnabled && lines.isNotEmpty() && !zoomState.isZoomed) {
             listState.scrollToItem(lines.size - 1)
         }
     }
 
-    LaunchedEffect(paneContent, verticalScrollState.maxValue, softWrapEnabled) {
-        if (!softWrapEnabled) {
+    LaunchedEffect(paneContent, verticalScrollState.maxValue, softWrapEnabled, zoomState.isZoomed) {
+        if (!softWrapEnabled && !zoomState.isZoomed) {
             verticalScrollState.scrollTo(verticalScrollState.maxValue)
         }
     }
@@ -174,6 +179,7 @@ fun ShogunScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .terminalZoom(zoomState)
         ) {
             if (errorMessage != null) {
                 Text(
@@ -187,8 +193,9 @@ fun ShogunScreen(
                 if (softWrapEnabled) {
                     LazyColumn(
                         state = listState,
+                        userScrollEnabled = !zoomState.isZoomed,
                         modifier = Modifier
-                            .fillMaxHeight()
+                            .fillMaxSize()
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         items(lines) { line ->
@@ -212,9 +219,9 @@ fun ShogunScreen(
                             fontSize = termFontSize.sp,
                             softWrap = false,
                             modifier = Modifier
-                                .fillMaxHeight()
-                                .verticalScroll(verticalScrollState)
-                                .horizontalScroll(horizontalScrollState)
+                                .fillMaxSize()
+                                .verticalScroll(verticalScrollState, enabled = !zoomState.isZoomed)
+                                .horizontalScroll(horizontalScrollState, enabled = !zoomState.isZoomed)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
