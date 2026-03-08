@@ -1,6 +1,6 @@
 #!/bin/bash
 # knowledge_metrics.sh — 教訓効果メトリクス+淘汰候補検出
-# Usage: bash scripts/knowledge_metrics.sh [--json] [--since YYYY-MM-DD] [--threshold N] [--model] [--time]
+# Usage: bash scripts/knowledge_metrics.sh [--json] [--since YYYY-MM-DD] [--threshold N] [--model] [--time] [--by-project] [--by-model]
 
 set -euo pipefail
 
@@ -14,6 +14,8 @@ SINCE=""
 JSON_OUTPUT=false
 MODEL_OUTPUT=false
 TIME_OUTPUT=false
+BY_PROJECT_OUTPUT=false
+BY_MODEL_BREAKDOWN_OUTPUT=false
 SETTINGS_FILE="$SCRIPT_DIR/config/settings.yaml"
 
 # 引数解析
@@ -33,6 +35,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --model)
             MODEL_OUTPUT=true
+            shift
+            ;;
+        --by-project)
+            BY_PROJECT_OUTPUT=true
+            shift
+            ;;
+        --by-model)
+            BY_MODEL_BREAKDOWN_OUTPUT=true
             shift
             ;;
         --time)
@@ -112,10 +122,11 @@ def load_ninja_models(path: Path):
         for ninja, cfg in agents.items():
             if not isinstance(cfg, dict):
                 continue
+            model_name = str(cfg.get("model_name", "")).lower()
             if cfg.get("type") == "codex":
                 ninja_model[ninja] = "codex"
-            elif "sonnet" in str(cfg.get("model_name", "")).lower():
-                ninja_model[ninja] = "sonnet"
+            elif "haiku" in model_name:
+                ninja_model[ninja] = "haiku"
             else:
                 ninja_model[ninja] = "opus"
     except Exception:
@@ -139,8 +150,8 @@ def load_ninja_models(path: Path):
                 continue
             if re.search(r"^\s{6}type:\s*codex\s*$", raw):
                 ninja_model[current_ninja] = "codex"
-            elif re.search(r"^\s{6}model_name:.*sonnet", raw):
-                ninja_model[current_ninja] = "sonnet"
+            elif re.search(r"^\s{6}model_name:.*haiku", raw):
+                ninja_model[current_ninja] = "haiku"
     return ninja_model
 
 def list_yaml_files():
@@ -217,11 +228,11 @@ for ninja in sorted(ninja_avg.keys()):
     print(f"  - {ninja}: {avg:.1f}分 (N={n})")
 
 print("2) モデル別平均所要時間（分）")
-for model in ["opus", "sonnet", "codex"]:
+for model in ["opus", "codex", "haiku"]:
     if model in model_avg:
         avg, n = model_avg[model]
         print(f"  - {model}: {avg:.1f}分 (N={n})")
-for model in sorted(k for k in model_avg.keys() if k not in {"opus", "sonnet", "codex"}):
+for model in sorted(k for k in model_avg.keys() if k not in {"opus", "codex", "haiku"}):
     avg, n = model_avg[model]
     print(f"  - {model}: {avg:.1f}分 (N={n})")
 
@@ -263,9 +274,8 @@ if [ "$DATA_LINES" -eq 0 ]; then
 fi
 
 # Python3でTSV解析+集計
-python3 - "$TSV_FILE" "$LESSONS_DIR" "$THRESHOLD" "$SINCE" "$JSON_OUTPUT" <<'PYEOF'
+python3 - "$TSV_FILE" "$LESSONS_DIR" "$THRESHOLD" "$SINCE" "$JSON_OUTPUT" "$BY_PROJECT_OUTPUT" "$BY_MODEL_BREAKDOWN_OUTPUT" "$SCRIPT_DIR" <<'PYEOF'
 import sys
-import csv
 import json
 import os
 from collections import defaultdict
@@ -276,31 +286,161 @@ lessons_dir = sys.argv[2]
 threshold = int(sys.argv[3])
 since = sys.argv[4] if sys.argv[4] else None
 json_output = sys.argv[5] == "true"
+by_project_output = sys.argv[6] == "true"
+by_model_output = sys.argv[7] == "true"
+base_dir = Path(sys.argv[8])
 
-# === lesson ID → project 逆引きマップ構築 + deprecated集合 ===
-lesson_project_map = {}
-deprecated_lessons = set()
-for project_dir in Path(lessons_dir).iterdir():
-    lessons_file = project_dir / "lessons.yaml"
-    if not lessons_file.is_file():
-        continue
-    project_name = project_dir.name
-    current_lid = None
-    with open(lessons_file, "r") as f:
-        for line in f:
-            stripped = line.strip()
-            if stripped.startswith("- id:"):
-                current_lid = stripped.split(":", 1)[1].strip()
-                lesson_project_map[current_lid] = project_name
-            elif current_lid and stripped.startswith("deprecated:") and "true" in stripped.lower():
-                deprecated_lessons.add(current_lid)
+try:
+    import yaml as _yaml
+except Exception:
+    _yaml = None
 
-# === TSVデータ読み込み ===
+def split_csv(value):
+    text = str(value or "").strip()
+    if not text or text == "none":
+        return []
+    return [item.strip() for item in text.split(",") if item.strip()]
+
+def to_int(value):
+    try:
+        return int(value or 0)
+    except Exception:
+        return 0
+
+def percent(numerator, denominator):
+    if denominator <= 0:
+        return None
+    return round(numerator / denominator * 100, 1)
+
+def dedup_cmd_rows(items):
+    final = {}
+    for item in items:
+        cmd_id = item["cmd_id"]
+        existing = final.get(cmd_id)
+        if existing is None:
+            final[cmd_id] = item
+            continue
+        if item["gate_result"] == "CLEAR":
+            final[cmd_id] = item
+        elif existing["gate_result"] != "CLEAR":
+            final[cmd_id] = item
+    return list(final.values())
+
+def load_cmd_metadata(root_dir):
+    metadata = {}
+    candidates = [root_dir / "queue" / "shogun_to_karo.yaml"]
+    archive_dir = root_dir / "queue" / "archive" / "cmds"
+    if archive_dir.is_dir():
+        candidates.extend(sorted(archive_dir.glob("*.yaml")))
+
+    if _yaml is None:
+        return metadata
+
+    for path in candidates:
+        if not path.is_file():
+            continue
+        try:
+            data = _yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+
+        commands = []
+        if isinstance(data, dict):
+            if isinstance(data.get("commands"), list):
+                commands = data.get("commands", [])
+            elif "id" in data:
+                commands = [data]
+        elif isinstance(data, list):
+            commands = data
+
+        for command in commands:
+            if not isinstance(command, dict):
+                continue
+            cmd_id = str(command.get("id", "")).strip()
+            if not cmd_id:
+                continue
+            metadata[cmd_id] = {
+                "project": str(command.get("project", "unknown") or "unknown").strip() or "unknown",
+                "title": str(command.get("title", "") or "").strip(),
+            }
+    return metadata
+
+def load_gate_rows(gate_log_path):
+    records = []
+    if not os.path.isfile(gate_log_path):
+        return records
+    with open(gate_log_path, "r", encoding="utf-8") as gf:
+        for raw in gf:
+            line = raw.rstrip("\n")
+            if not line:
+                continue
+            parts = line.split("\t")
+            if len(parts) < 3:
+                continue
+            timestamp = parts[0]
+            if since and timestamp < since:
+                continue
+            records.append({
+                "timestamp": timestamp,
+                "cmd_id": parts[1],
+                "gate_result": parts[2],
+                "detail": parts[3] if len(parts) >= 4 else "",
+                "task_type": parts[4] if len(parts) >= 5 else "unknown",
+                "models_csv": parts[5] if len(parts) >= 6 else "unknown",
+                "bloom_levels": parts[6] if len(parts) >= 7 else "unknown",
+                "injected_ids": parts[7] if len(parts) >= 8 else "none",
+                "title": parts[8] if len(parts) >= 9 else "",
+            })
+    return records
+
+def load_lesson_catalog(root_dir):
+    lesson_catalog = {}
+    deprecated = set()
+    if _yaml is None:
+        return lesson_catalog, deprecated
+
+    root = Path(root_dir)
+    if not root.is_dir():
+        return lesson_catalog, deprecated
+
+    for project_dir in root.iterdir():
+        lessons_file = project_dir / "lessons.yaml"
+        if not lessons_file.is_file():
+            continue
+        try:
+            payload = _yaml.safe_load(lessons_file.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        lessons = payload.get("lessons", []) if isinstance(payload, dict) else []
+        for lesson in lessons:
+            if not isinstance(lesson, dict):
+                continue
+            lesson_id = str(lesson.get("id", "")).strip()
+            if not lesson_id:
+                continue
+            is_deprecated = str(lesson.get("status", "confirmed")).lower() == "deprecated" or bool(lesson.get("deprecated", False))
+            if is_deprecated:
+                deprecated.add(lesson_id)
+            lesson_catalog[lesson_id] = {
+                "id": lesson_id,
+                "project": project_dir.name,
+                "title": str(lesson.get("title", "") or "").strip() or lesson_id,
+                "injection_count": to_int(lesson.get("injection_count", 0)),
+                "helpful_count": to_int(lesson.get("helpful_count", 0)),
+                "deprecated": is_deprecated,
+            }
+    return lesson_catalog, deprecated
+
+# === lesson ID → metadata 逆引きマップ構築 + deprecated集合 ===
+lesson_catalog, deprecated_lessons = load_lesson_catalog(lessons_dir)
+lesson_project_map = {lid: meta["project"] for lid, meta in lesson_catalog.items()}
+
+# === lesson_tracking.tsv 読み込み ===
 rows = []
-with open(tsv_file, "r") as f:
+with open(tsv_file, "r", encoding="utf-8") as f:
     for line in f:
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line or line.startswith("#") or line.startswith("timestamp"):
             continue
         parts = line.split("\t")
         if len(parts) < 6:
@@ -316,6 +456,7 @@ with open(tsv_file, "r") as f:
             "gate_result": gate_result,
             "injected_ids": injected_ids,
             "referenced_ids": referenced_ids,
+            "task_type": parts[6] if len(parts) >= 7 else "unknown",
         })
 
 if not rows:
@@ -324,7 +465,16 @@ if not rows:
             "error": None,
             "message": "データ不足: lesson_tracking.tsvが空または未作成",
             "elimination_candidates": [],
-            "delta": {}
+            "delta": {},
+            "normalized_delta": {},
+            "inject_rate": None,
+            "ref_rate": None,
+            "lesson_effectiveness": None,
+            "problem_lessons": 0,
+            "top_helpful": [],
+            "bottom_lessons": [],
+            "by_project": [],
+            "by_model": [],
         }))
     else:
         print("データ不足: lesson_tracking.tsvが空または未作成")
@@ -408,25 +558,16 @@ valid_rows = [r for r in clean_rows if r["gate_result"] in ("CLEAR", "BLOCK")]
 
 # AC1: cmd単位dedup (CLEAR優先で最終結果のみ採用)
 pre_dedup_count = len(valid_rows)
-cmd_final = {}
-for row in valid_rows:
-    cid = row["cmd_id"]
-    if cid not in cmd_final:
-        cmd_final[cid] = row
-    else:
-        existing = cmd_final[cid]
-        if row["gate_result"] == "CLEAR":
-            cmd_final[cid] = row
-        elif existing["gate_result"] != "CLEAR":
-            cmd_final[cid] = row  # 最新BLOCKを保持
-dedup_rows = list(cmd_final.values())
+dedup_rows = dedup_cmd_rows(valid_rows)
 
 # AC3: 構造BLOCK分離 — gate_metrics.logからBLOCK理由取得
 STRUCTURAL_PATTERNS = ["missing_gate", "archive_gate", "lesson_gate", "review_gate"]
 gate_log_path = os.path.join(os.path.dirname(tsv_file), "gate_metrics.log")
+gate_rows = load_gate_rows(gate_log_path)
+dedup_gate_rows = {row["cmd_id"]: row for row in dedup_cmd_rows([r for r in gate_rows if r["gate_result"] in ("CLEAR", "BLOCK")])}
 cmd_block_reasons = defaultdict(list)
 if os.path.isfile(gate_log_path):
-    with open(gate_log_path, "r") as gf:
+    with open(gate_log_path, "r", encoding="utf-8") as gf:
         for gline in gf:
             gline = gline.strip()
             if not gline:
@@ -471,106 +612,164 @@ for row in quality_rows:
         if is_clear:
             n_without_clear += 1
 
-# === 出力 ===
-if json_output:
-    # Raw delta (既存互換)
-    delta = {}
-    if with_lessons_total > 0:
-        delta["with_lessons_rate"] = round(with_lessons_clear / with_lessons_total * 100, 1)
-        delta["with_lessons_n"] = with_lessons_total
-        delta["with_lessons_clear"] = with_lessons_clear
-    if without_lessons_total > 0:
-        delta["without_lessons_rate"] = round(without_lessons_clear / without_lessons_total * 100, 1)
-        delta["without_lessons_n"] = without_lessons_total
-        delta["without_lessons_clear"] = without_lessons_clear
-    if with_lessons_total > 0 and without_lessons_total > 0:
-        delta["delta_pp"] = round(
-            (with_lessons_clear / with_lessons_total - without_lessons_clear / without_lessons_total) * 100, 1
-        )
-    delta["sample_warning"] = []
-    if with_lessons_total > 0 and with_lessons_total < 10:
-        delta["sample_warning"].append(f"教訓あり N={with_lessons_total}")
-    if without_lessons_total > 0 and without_lessons_total < 10:
-        delta["sample_warning"].append(f"教訓なし N={without_lessons_total}")
+# 共通集計
+delta = {}
+if with_lessons_total > 0:
+    delta["with_lessons_rate"] = round(with_lessons_clear / with_lessons_total * 100, 1)
+    delta["with_lessons_n"] = with_lessons_total
+    delta["with_lessons_clear"] = with_lessons_clear
+if without_lessons_total > 0:
+    delta["without_lessons_rate"] = round(without_lessons_clear / without_lessons_total * 100, 1)
+    delta["without_lessons_n"] = without_lessons_total
+    delta["without_lessons_clear"] = without_lessons_clear
+if with_lessons_total > 0 and without_lessons_total > 0:
+    delta["delta_pp"] = round(
+        (with_lessons_clear / with_lessons_total - without_lessons_clear / without_lessons_total) * 100, 1
+    )
+delta["sample_warning"] = []
+if with_lessons_total > 0 and with_lessons_total < 10:
+    delta["sample_warning"].append(f"教訓あり N={with_lessons_total}")
+if without_lessons_total > 0 and without_lessons_total < 10:
+    delta["sample_warning"].append(f"教訓なし N={without_lessons_total}")
 
-    # Normalized delta
-    normalized_delta = {}
-    normalized_delta["filters"] = {
+normalized_delta = {
+    "filters": {
         "test_cmd_excluded": test_cmd_count,
         "ninja_none_excluded": ninja_none_count,
         "pre_dedup_rows": pre_dedup_count,
         "post_dedup_rows": len(dedup_rows),
         "structural_block_excluded": structural_block_count,
     }
-    if n_with_total > 0:
-        normalized_delta["with_lessons_rate"] = round(n_with_clear / n_with_total * 100, 1)
-        normalized_delta["with_lessons_n"] = n_with_total
-        normalized_delta["with_lessons_clear"] = n_with_clear
-    if n_without_total > 0:
-        normalized_delta["without_lessons_rate"] = round(n_without_clear / n_without_total * 100, 1)
-        normalized_delta["without_lessons_n"] = n_without_total
-        normalized_delta["without_lessons_clear"] = n_without_clear
-    if n_with_total > 0 and n_without_total > 0:
-        normalized_delta["delta_pp"] = round(
-            (n_with_clear / n_with_total - n_without_clear / n_without_total) * 100, 1
-        )
-    normalized_delta["sample_warning"] = []
-    if n_with_total > 0 and n_with_total < 10:
-        normalized_delta["sample_warning"].append(f"教訓あり N={n_with_total}")
-    if n_without_total > 0 and n_without_total < 10:
-        normalized_delta["sample_warning"].append(f"教訓なし N={n_without_total}")
-
-    # 注入率・参照率計算 (既存互換)
-    total_rows = with_lessons_total + without_lessons_total
-    inject_rate_pct = round(with_lessons_total / total_rows * 100, 1) if total_rows > 0 else None
-    ref_with_lesson = sum(
-        1 for r in rows
-        if r["injected_ids"] != "none" and r["referenced_ids"] != "none"
+}
+if n_with_total > 0:
+    normalized_delta["with_lessons_rate"] = round(n_with_clear / n_with_total * 100, 1)
+    normalized_delta["with_lessons_n"] = n_with_total
+    normalized_delta["with_lessons_clear"] = n_with_clear
+if n_without_total > 0:
+    normalized_delta["without_lessons_rate"] = round(n_without_clear / n_without_total * 100, 1)
+    normalized_delta["without_lessons_n"] = n_without_total
+    normalized_delta["without_lessons_clear"] = n_without_clear
+if n_with_total > 0 and n_without_total > 0:
+    normalized_delta["delta_pp"] = round(
+        (n_with_clear / n_with_total - n_without_clear / n_without_total) * 100, 1
     )
-    ref_rate_pct = round(ref_with_lesson / with_lessons_total * 100, 1) if with_lessons_total > 0 else None
+normalized_delta["sample_warning"] = []
+if n_with_total > 0 and n_with_total < 10:
+    normalized_delta["sample_warning"].append(f"教訓あり N={n_with_total}")
+if n_without_total > 0 and n_without_total < 10:
+    normalized_delta["sample_warning"].append(f"教訓なし N={n_without_total}")
 
-    # === cmd_470: 教訓効果率・問題教訓・top_helpful ===
-    lesson_effectiveness_data = {"lesson_effectiveness": None, "problem_lessons": 0, "top_helpful": []}
-    try:
-        import yaml as _yaml
-        total_lessons = 0
-        helpful_positive = 0
-        problem_count = 0
-        all_helpful = []
-        for project_dir in Path(lessons_dir).iterdir():
-            lf = project_dir / "lessons.yaml"
-            if not lf.is_file():
-                continue
-            with open(lf, encoding="utf-8") as _f:
-                _ld = _yaml.safe_load(_f)
-            for _l in (_ld or {}).get("lessons", []):
-                _st = str(_l.get("status", "confirmed")).lower()
-                if _st == "deprecated" or _l.get("deprecated", False):
-                    continue
-                total_lessons += 1
-                _hc = _l.get("helpful_count", 0) or 0
-                _ic = _l.get("injection_count", 0) or 0
-                if _hc > 0:
-                    helpful_positive += 1
-                    all_helpful.append({"id": _l.get("id", "?"), "count": _hc})
-                if _ic >= 10 and _hc == 0:
-                    problem_count += 1
-        lesson_effectiveness_data["lesson_effectiveness"] = round(helpful_positive / total_lessons * 100, 1) if total_lessons > 0 else 0.0
-        lesson_effectiveness_data["problem_lessons"] = problem_count
-        # Deduplicate by lesson ID (keep highest count)
-        _seen_ids = {}
-        for _h in all_helpful:
-            _hid = _h["id"]
-            if _hid not in _seen_ids or _h["count"] > _seen_ids[_hid]["count"]:
-                _seen_ids[_hid] = _h
-        all_helpful = list(_seen_ids.values())
-        all_helpful.sort(key=lambda x: -x["count"])
-        lesson_effectiveness_data["top_helpful"] = all_helpful[:3]
-    except Exception as _e:
-        import sys as _sys
-        print(f"WARNING: lesson_effectiveness calculation failed: {_e}", file=_sys.stderr)
-        lesson_effectiveness_data["lesson_effectiveness"] = 0.0
+total_rows = with_lessons_total + without_lessons_total
+inject_rate_pct = round(with_lessons_total / total_rows * 100, 1) if total_rows > 0 else None
+ref_with_lesson = sum(
+    1 for r in rows
+    if r["injected_ids"] != "none" and r["referenced_ids"] != "none"
+)
+ref_rate_pct = round(ref_with_lesson / with_lessons_total * 100, 1) if with_lessons_total > 0 else None
 
+dedup_inject_count = defaultdict(int)
+dedup_ref_count = defaultdict(int)
+for row in dedup_rows:
+    for lesson_id in split_csv(row["injected_ids"]):
+        dedup_inject_count[lesson_id] += 1
+    for lesson_id in split_csv(row["referenced_ids"]):
+        dedup_ref_count[lesson_id] += 1
+
+active_lessons = []
+for lesson_id, meta in lesson_catalog.items():
+    if meta["deprecated"]:
+        continue
+    reference_total = max(meta["helpful_count"], dedup_ref_count.get(lesson_id, 0))
+    injection_total = max(meta["injection_count"], dedup_inject_count.get(lesson_id, 0), reference_total)
+    effect_rate = percent(reference_total, injection_total) if injection_total > 0 else None
+    active_lessons.append({
+        "id": lesson_id,
+        "project": meta["project"],
+        "title": meta["title"],
+        "reference_count": reference_total,
+        "injection_count": injection_total,
+        "effectiveness_rate": effect_rate,
+    })
+
+helpful_positive = sum(1 for lesson in active_lessons if lesson["reference_count"] > 0)
+problem_count = sum(
+    1 for lesson in active_lessons
+    if lesson["injection_count"] >= 10 and lesson["reference_count"] == 0
+)
+top_helpful = sorted(
+    [lesson for lesson in active_lessons if lesson["reference_count"] > 0],
+    key=lambda lesson: (-lesson["reference_count"], -lesson["injection_count"], lesson["id"])
+)[:5]
+bottom_lessons = sorted(
+    [lesson for lesson in active_lessons if lesson["injection_count"] > 0],
+    key=lambda lesson: (
+        lesson["effectiveness_rate"] if lesson["effectiveness_rate"] is not None else 101.0,
+        -lesson["injection_count"],
+        lesson["id"],
+    )
+)[:5]
+lesson_effectiveness_data = {
+    "lesson_effectiveness": round(helpful_positive / len(active_lessons) * 100, 1) if active_lessons else 0.0,
+    "problem_lessons": problem_count,
+    "top_helpful": top_helpful,
+    "bottom_lessons": bottom_lessons,
+}
+
+cmd_metadata = load_cmd_metadata(base_dir)
+project_stats = defaultdict(lambda: {"total": 0, "injected": 0, "referenced": 0, "effective": 0})
+for row in quality_rows:
+    project = cmd_metadata.get(row["cmd_id"], {}).get("project", "unknown") or "unknown"
+    injected = bool(split_csv(row["injected_ids"]))
+    referenced = bool(split_csv(row["referenced_ids"]))
+    project_stats[project]["total"] += 1
+    if injected:
+        project_stats[project]["injected"] += 1
+        if referenced:
+            project_stats[project]["referenced"] += 1
+        if row["gate_result"] == "CLEAR":
+            project_stats[project]["effective"] += 1
+
+by_project = []
+for project, stats in project_stats.items():
+    by_project.append({
+        "project": project,
+        "inject_rate": percent(stats["injected"], stats["total"]),
+        "ref_rate": percent(stats["referenced"], stats["injected"]),
+        "effectiveness_rate": percent(stats["effective"], stats["injected"]),
+        "n": stats["total"],
+        "injected_n": stats["injected"],
+    })
+by_project.sort(key=lambda item: (item["project"] == "unknown", -(item["n"] or 0), item["project"]))
+
+model_stats = defaultdict(lambda: {"total": 0, "injected": 0, "referenced": 0, "effective": 0})
+for row in quality_rows:
+    gate_meta = dedup_gate_rows.get(row["cmd_id"], {})
+    models = split_csv(gate_meta.get("models_csv", "unknown")) or ["unknown"]
+    injected = bool(split_csv(row["injected_ids"]))
+    referenced = bool(split_csv(row["referenced_ids"]))
+    for model_name in models:
+        model_stats[model_name]["total"] += 1
+        if injected:
+            model_stats[model_name]["injected"] += 1
+            if referenced:
+                model_stats[model_name]["referenced"] += 1
+            if row["gate_result"] == "CLEAR":
+                model_stats[model_name]["effective"] += 1
+
+by_model = []
+for model_name, stats in model_stats.items():
+    by_model.append({
+        "model": model_name,
+        "display_name": model_name.replace("_", " "),
+        "ref_rate": percent(stats["referenced"], stats["injected"]),
+        "effectiveness_rate": percent(stats["effective"], stats["injected"]),
+        "n": stats["total"],
+        "injected_n": stats["injected"],
+    })
+by_model.sort(key=lambda item: (item["model"] == "unknown", -(item["n"] or 0), item["display_name"].lower()))
+
+# === 出力 ===
+if json_output:
     result = {
         "elimination_candidates": elimination_candidates,
         "delta": delta,
@@ -580,6 +779,9 @@ if json_output:
         "lesson_effectiveness": lesson_effectiveness_data.get("lesson_effectiveness"),
         "problem_lessons": lesson_effectiveness_data.get("problem_lessons", 0),
         "top_helpful": lesson_effectiveness_data.get("top_helpful", []),
+        "bottom_lessons": lesson_effectiveness_data.get("bottom_lessons", []),
+        "by_project": by_project if by_project_output else [],
+        "by_model": by_model if by_model_output else [],
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
 else:
@@ -644,6 +846,57 @@ else:
         n_warnings.append(f"N={n_without_total} (教訓なし)")
     if n_warnings:
         print(f"⚠ サンプル不足（参考値）: {', '.join(n_warnings)}")
+
+    if by_project_output:
+        print()
+        print("=== PJ別注入率・効果率 ===")
+        print(f"{'PJ':<18}{'注入率':<10}{'参照率':<10}{'効果率':<10}{'N':<6}")
+        for item in by_project:
+            print(
+                f"{item['project']:<18}"
+                f"{(f'{item['inject_rate']:.1f}%' if item['inject_rate'] is not None else '—'):<10}"
+                f"{(f'{item['ref_rate']:.1f}%' if item['ref_rate'] is not None else '—'):<10}"
+                f"{(f'{item['effectiveness_rate']:.1f}%' if item['effectiveness_rate'] is not None else '—'):<10}"
+                f"{item['n']:<6}"
+            )
+
+    if by_model_output:
+        print()
+        print("=== モデル別参照率・効果率 ===")
+        print(f"{'モデル':<26}{'参照率':<10}{'効果率':<10}{'N':<6}")
+        for item in sorted(by_model, key=lambda row: (-row["n"], row["display_name"].lower())):
+            print(
+                f"{item['display_name']:<26}"
+                f"{(f'{item['ref_rate']:.1f}%' if item['ref_rate'] is not None else '—'):<10}"
+                f"{(f'{item['effectiveness_rate']:.1f}%' if item['effectiveness_rate'] is not None else '—'):<10}"
+                f"{item['n']:<6}"
+            )
+
+    print()
+    print("=== Top 5 有効教訓 ===")
+    if top_helpful:
+        print(f"{'教訓':<10}{'PJ':<14}{'参照回数':<10}{'注入回数':<10}{'効果率':<10}")
+        for lesson in top_helpful:
+            effect_text = f"{lesson['effectiveness_rate']:.1f}%" if lesson["effectiveness_rate"] is not None else "—"
+            print(
+                f"{lesson['id']:<10}{lesson['project']:<14}{lesson['reference_count']:<10}"
+                f"{lesson['injection_count']:<10}{effect_text:<10}"
+            )
+    else:
+        print("(有効教訓なし)")
+
+    print()
+    print("=== Bottom 5 低効果教訓 ===")
+    if bottom_lessons:
+        print(f"{'教訓':<10}{'PJ':<14}{'参照回数':<10}{'注入回数':<10}{'効果率':<10}")
+        for lesson in bottom_lessons:
+            effect_text = f"{lesson['effectiveness_rate']:.1f}%" if lesson["effectiveness_rate"] is not None else "—"
+            print(
+                f"{lesson['id']:<10}{lesson['project']:<14}{lesson['reference_count']:<10}"
+                f"{lesson['injection_count']:<10}{effect_text:<10}"
+            )
+    else:
+        print("(低効果教訓なし)")
 PYEOF
 
 # ─── --model モード: モデル別CLEAR率集計 ───
@@ -671,10 +924,11 @@ try:
     for name, cfg in agents.items():
         if not isinstance(cfg, dict):
             continue
+        model_name = str(cfg.get("model_name", "")).lower()
         if cfg.get("type") == "codex":
             ninja_model[name] = "codex"
-        elif "sonnet" in str(cfg.get("model_name", "")):
-            ninja_model[name] = "sonnet"
+        elif "haiku" in model_name:
+            ninja_model[name] = "haiku"
         else:
             ninja_model[name] = "opus"
 except ImportError:
@@ -683,7 +937,7 @@ except ImportError:
     result = subprocess.run(
         ["awk", "/^    [a-z]+:/{name=$1; gsub(/:/, \"\", name)} "
          "/type: codex/{m[name]=\"codex\"} "
-         "/model_name:.*sonnet/{m[name]=\"sonnet\"} "
+         "/model_name:.*haiku/{m[name]=\"haiku\"} "
          "END{for(n in m) print n, m[n]}", settings_file],
         capture_output=True, text=True
     )
@@ -735,7 +989,7 @@ for r in rows:
 
 print("=== モデル別CLEAR率 ===")
 print(f"{'モデル':<10}{'CLEAR':<8}{'BLOCK':<8}{'CLEAR率':<12}{'N':<6}")
-for model in ["opus", "sonnet", "codex"]:
+for model in ["opus", "codex", "haiku"]:
     s = model_stats.get(model, {"clear": 0, "block": 0})
     n = s["clear"] + s["block"]
     if n == 0:
@@ -767,7 +1021,7 @@ if not all_types:
 else:
     header = f"{'モデル':<10}" + "".join(f"{t:<12}" for t in all_types)
     print(header)
-    for model in ["opus", "sonnet", "codex"]:
+    for model in ["opus", "codex", "haiku"]:
         cells = []
         for tt in all_types:
             s = model_type_stats[model][tt]

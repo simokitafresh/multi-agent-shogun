@@ -348,7 +348,7 @@ cd /mnt/c/tools/multi-agent-shogun
 - **4タブ構成**: Shogun / Agents / Dashboard / Settings
 - **SSH/JSch** で tmux をライブ操作
 - **ntfy** でプッシュ通知
-- 事前ビルドAPK: [`android/release/multi-agent-shogun.apk`](android/release/multi-agent-shogun.apk)
+- **APKダウンロード: [`shogun-companion.apk`](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v4.2/shogun-companion.apk)**
 
 画面ごとの設定手順は [`android/README.md`](android/README.md) を参照。
 

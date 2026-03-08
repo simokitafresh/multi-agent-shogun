@@ -57,7 +57,7 @@ command: "Improve karo pipeline"
 
 1. **Dashboard**: Karo's responsibility. Shogun reads it, never writes it.
 2. **Chain of command**: Shogun → Karo → Ninja. Never bypass Karo.
-3. **Reports**: Check `queue/reports/{ninja_name}_report.yaml` when waiting.
+3. **Reports**: Check `queue/reports/{ninja_name}_report_{cmd}.yaml` when waiting.
 4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t shogun:2.1 -p | tail -20`
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ninja reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.

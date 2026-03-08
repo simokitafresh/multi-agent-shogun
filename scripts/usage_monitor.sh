@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # usage_monitor.sh — Claude Max Plan Usage Monitor
-# Ported from MCAS. Sonnet bucket removed. No mcas repo dependency.
+# Ported from MCAS. Legacy secondary-model bucket removed. No mcas repo dependency.
 #
 # Usage:
 #   ./usage_monitor.sh --once    # Single fetch, 5h only: x% (legacy)
@@ -34,9 +34,11 @@ ALERT_STATE_DIR="/tmp/mcas_alert_state"
 fetch_usage() {
     local token="$1"
     local response
+    local ua="claude-code/$(claude --version 2>/dev/null | head -1 | sed 's/ .*//' || echo '2.0.0')"
     response=$(curl -s --max-time "$MCAS_API_TIMEOUT" \
         -H "Authorization: Bearer ${token}" \
         -H "anthropic-beta: oauth-2025-04-20" \
+        -H "User-Agent: ${ua}" \
         "$API_URL" 2>/dev/null) || { echo ""; return 1; }
 
     # Validate JSON response
@@ -204,7 +206,7 @@ monitor_status() {
         json=$(fetch_usage "$token") || true
     fi
 
-    # Day (five_hour) + Week (seven_day) — Sonnet removed
+    # Day (five_hour) + Week (seven_day) — legacy secondary-model bucket removed
     local d_pct w_pct
     d_pct=$(calc_usage_pct "$json" "five_hour")
     w_pct=$(calc_usage_pct "$json" "seven_day")

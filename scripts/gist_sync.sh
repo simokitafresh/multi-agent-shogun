@@ -113,7 +113,7 @@ with open(sys.argv[1]) as f:
     content = f.read()
 json.dump({'files': {'dashboard.md': {'content': content}}}, sys.stdout)
 " "$UPLOAD_FILE" > "$payload_file" 2>/dev/null
-    if gh api --method PATCH "gists/${GIST_ID}" --input "$payload_file" >> "$LOG" 2>&1; then
+    if gh api --method PATCH "gists/${GIST_ID}" --input "$payload_file" > /dev/null 2>&1; then
         log "Gist updated successfully (project=${CURRENT_PJ})"
     else
         log "ERROR: Gist update failed (project=${CURRENT_PJ})"

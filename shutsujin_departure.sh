@@ -342,15 +342,8 @@ EOF
     done
 
     # 忍者レポートファイルリセット
-    for name in "${NINJA_NAMES[@]}"; do
-        cat > ./queue/reports/${name}_report.yaml << EOF
-worker_id: ${name}
-task_id: null
-timestamp: ""
-status: idle
-result: null
-EOF
-    done
+    # 現行命名は {ninja}_report_{cmd}.yaml のため、clean startでは過去レポートを一括削除する
+    find ./queue/reports -maxdepth 1 -type f -name '*_report*.yaml' -delete
 
     # ntfy inbox リセット
     echo "inbox:" > ./queue/ntfy_inbox.yaml

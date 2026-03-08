@@ -6,6 +6,10 @@
 # Output format (compatible with usage_status.sh parser):
 #   D%\tD_reset\tW%\tW_reset
 #
+# Notes on percentage semantics:
+# - For Codex, D/W are "left %" from /status limits (not "used %").
+# - usage_status.sh formats Codex output as "% left".
+#
 # Notes:
 # - Codex has no public non-interactive usage endpoint in this environment.
 # - This script parses latest `/status`-style lines from pane history when present.
@@ -61,15 +65,17 @@ pending = None  # "5h" | "w" | None
 
 # Always available in Codex footer when visible:
 # "... 26% left · 74% used"
-ctx_used = None
+ctx_left = None
 ctx_re = re.compile(r'(\d+)% left\s*[·|]\s*(\d+)% used')
+line_5h_re = re.compile(r'5h limit:\s*(?:\[[^\]]*\]\s*)?(\d+)% left(?:\s*\(resets\s*([^)]+)\))?', re.I)
+line_w_re = re.compile(r'weekly limit:\s*(?:\[[^\]]*\]\s*)?(\d+)% left(?:\s*\(resets\s*([^)]+)\))?', re.I)
 
 for line in text:
     line = line.strip()
     m_ctx = ctx_re.search(line)
     if m_ctx:
         try:
-            ctx_used = int(m_ctx.group(2))
+            ctx_left = int(m_ctx.group(1))
         except Exception:
             pass
 
@@ -78,25 +84,32 @@ for line in text:
         spark_section = False
         pending = None
 
-    if "GPT-5.3-Codex-Spark limit:" in line:
+    if re.search(r'codex-spark limit:', line, re.I):
         spark_section = True
         pending = None
         continue
 
     # Main limits: parse only before Spark section.
-    if not spark_section and "5h limit:" in line:
-        m = re.search(r'(\d+)% left', line)
-        if m:
-            main_5h_left = int(m.group(1))
-            pending = "5h"
-        continue
+    if not spark_section:
+        m5 = line_5h_re.search(line)
+        if m5:
+            main_5h_left = int(m5.group(1))
+            if m5.group(2):
+                main_5h_reset = m5.group(2).strip()
+                pending = None
+            else:
+                pending = "5h"
+            continue
 
-    if not spark_section and "Weekly limit:" in line:
-        m = re.search(r'(\d+)% left', line)
-        if m:
-            main_w_left = int(m.group(1))
-            pending = "w"
-        continue
+        mw = line_w_re.search(line)
+        if mw:
+            main_w_left = int(mw.group(1))
+            if mw.group(2):
+                main_w_reset = mw.group(2).strip()
+                pending = None
+            else:
+                pending = "w"
+            continue
 
     if pending and "resets" in line:
         # Keep short reset text, e.g. "18:58" or "13:58 on 10 Mar"
@@ -109,21 +122,21 @@ for line in text:
                 main_w_reset = reset_val
         pending = None
 
-day_used = None
-week_used = None
+day_left = None
+week_left = None
 
 if main_5h_left is not None:
-    day_used = max(0, min(100, 100 - main_5h_left))
-elif ctx_used is not None:
-    # Fallback: session context usage as day-like signal.
-    day_used = max(0, min(100, ctx_used))
+    day_left = max(0, min(100, main_5h_left))
+elif ctx_left is not None:
+    # Fallback: session context left% as day-like signal.
+    day_left = max(0, min(100, ctx_left))
     main_5h_reset = "ctx"
 
 if main_w_left is not None:
-    week_used = max(0, min(100, 100 - main_w_left))
+    week_left = max(0, min(100, main_w_left))
 
-d_out = "ERR" if day_used is None else str(day_used)
-w_out = "ERR" if week_used is None else str(week_used)
+d_out = "ERR" if day_left is None else str(day_left)
+w_out = "ERR" if week_left is None else str(week_left)
 
 print(f"{d_out}\t{main_5h_reset}\t{w_out}\t{main_w_reset}")
 PY

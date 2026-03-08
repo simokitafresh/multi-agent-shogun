@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # usage_status.sh — tmux status-right integration for usage display
-# Ported from MCAS. Sonnet (S:) bar removed.
+# Ported from MCAS. Legacy secondary-model bar removed.
 #
 # Wraps usage_monitor.sh --status with a file-based cache.
 # Renders Day+Week usage with 5-char progress bars.
@@ -64,7 +64,15 @@ PY
 # =============================================================================
 cache_valid() {
     local content="$1"
-    [[ "$content" == 5H:*7D:* ]]
+    local provider="${2:-claude}"
+    if [[ "$content" != 5H:*7D:* ]]; then
+        return 1
+    fi
+    # Codex format v2 includes explicit "left" labels.
+    if [[ "$provider" == "codex" ]] && [[ "$content" != *" left "* ]]; then
+        return 1
+    fi
+    return 0
 }
 
 # =============================================================================
@@ -92,10 +100,12 @@ progress_bar() {
 }
 
 # =============================================================================
-# Format output: "5H:█▓░░░ 2% 12am 7D:█░░░░ 2% 3/4 2pm"
+# Format output:
+# - Claude: "5H:█▓░░░ 2% 12am 7D:█░░░░ 2% 3/4 2pm" (used%)
+# - Codex:  "5H:████▓ 94% left 18:58 7D:████▓ 98% left 13:58 on 10 Mar"
 # =============================================================================
 format_line() {
-    local d_pct="$1" d_reset="$2" w_pct="$3" w_reset="$4"
+    local d_pct="$1" d_reset="$2" w_pct="$3" w_reset="$4" provider="${5:-claude}"
 
     local d_bar w_bar
     d_bar=$(progress_bar "$d_pct")
@@ -105,9 +115,15 @@ format_line() {
     if [[ "$d_pct" == "ERR" ]]; then d_disp="--"; else d_disp="${d_pct}"; fi
     if [[ "$w_pct" == "ERR" ]]; then w_disp="--"; else w_disp="${w_pct}"; fi
 
-    printf '5H:%s %s%% %s 7D:%s %s%% %s' \
-        "$d_bar" "$d_disp" "$d_reset" \
-        "$w_bar" "$w_disp" "$w_reset"
+    if [[ "$provider" == "codex" ]]; then
+        printf '5H:%s %s%% left %s 7D:%s %s%% left %s' \
+            "$d_bar" "$d_disp" "$d_reset" \
+            "$w_bar" "$w_disp" "$w_reset"
+    else
+        printf '5H:%s %s%% %s 7D:%s %s%% %s' \
+            "$d_bar" "$d_disp" "$d_reset" \
+            "$w_bar" "$w_disp" "$w_reset"
+    fi
 }
 
 # =============================================================================
@@ -126,7 +142,7 @@ if [[ -f "$CACHE_FILE" ]]; then
         rm -f "$CACHE_FILE"
     elif [[ "$cache_age" -lt "$CACHE_TTL" ]]; then
         cached=$(cat "$CACHE_FILE")
-        if cache_valid "$cached"; then
+        if cache_valid "$cached" "$PROVIDER"; then
             echo "$cached"
             exit 0
         fi
@@ -147,7 +163,7 @@ fi
 if [[ -z "$raw" ]]; then
     if [[ -f "$CACHE_FILE" ]]; then
         cached=$(cat "$CACHE_FILE")
-        if cache_valid "$cached"; then
+        if cache_valid "$cached" "$PROVIDER"; then
             echo "$cached"
         else
             echo "5H:----- --% -- 7D:----- --% --"
@@ -162,7 +178,7 @@ fi
 IFS=$'\t' read -r d_pct d_reset w_pct w_reset <<< "$raw"
 
 # Build formatted output
-result=$(format_line "$d_pct" "$d_reset" "$w_pct" "$w_reset")
+result=$(format_line "$d_pct" "$d_reset" "$w_pct" "$w_reset" "$PROVIDER")
 
 # Atomic write: tmp → mv (prevents partial write corruption)
 echo "$result" > "${CACHE_FILE}.tmp.$$" && mv -f "${CACHE_FILE}.tmp.$$" "$CACHE_FILE"

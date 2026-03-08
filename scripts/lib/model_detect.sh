@@ -32,8 +32,8 @@ detect_real_model() {
     case "$cli_t" in
         claude)
             # Claude Code: バナー検出（幅差分を吸収）
-            #   狭幅(47): ▐▛███▜▌   {Opus|Sonnet|Haiku} {X.Y} with {effort} effort
-            #   標準幅(71+): ▝▜█████▛▘  {Opus|Sonnet|Haiku} {X.Y} with {effort} effort · {Plan}
+            #   狭幅(47): ▐▛███▜▌   {Opus|Haiku} {X.Y} with {effort} effort
+            #   標準幅(71+): ▝▜█████▛▘  {Opus|Haiku} {X.Y} with {effort} effort · {Plan}
             local output
             output=$(tmux capture-pane -t "$pane_target" -p -J -S -1000 2>/dev/null)
 
@@ -41,14 +41,14 @@ detect_real_model() {
                 local banner model
 
                 # 幅共通の一次検出: どちらのアート行でもモデル行なら許容
-                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+([[:space:]]+with[[:space:]]+[a-z]+[[:space:]]+effort)?([[:space:]]+·.*)?[[:space:]]*$' | tail -1)
+                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Haiku)[[:space:]]+[0-9]+\.[0-9]+([[:space:]]+with[[:space:]]+[a-z]+[[:space:]]+effort)?([[:space:]]+·.*)?[[:space:]]*$' | tail -1)
                 if [ -n "$banner" ]; then
                     model=$(echo "$banner" | sed -E 's/.*(▐▛███▜▌|▝▜█████▛▘)[[:space:]]*//' | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' | sed -E 's/[[:space:]]*·.*//' | sed -E 's/[[:space:]]*$//')
                 fi
 
                 # 標準幅フォールバック: ▝▜█████▛▘  Opus 4.6 with high effort · Plan
                 if [ -z "$model" ]; then
-                    banner=$(echo "$output" | grep -E '▝▜█████▛▘[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+([[:space:]]+with[[:space:]]+[a-z]+[[:space:]]+effort)?([[:space:]]+·.*)?[[:space:]]*$' | tail -1)
+                    banner=$(echo "$output" | grep -E '▝▜█████▛▘[[:space:]]+(Opus|Haiku)[[:space:]]+[0-9]+\.[0-9]+([[:space:]]+with[[:space:]]+[a-z]+[[:space:]]+effort)?([[:space:]]+·.*)?[[:space:]]*$' | tail -1)
                     if [ -n "$banner" ]; then
                         model=$(echo "$banner" | sed -E 's/.*▝▜█████▛▘[[:space:]]*//' | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' | sed -E 's/[[:space:]]*·.*//' | sed -E 's/[[:space:]]*$//')
                     fi

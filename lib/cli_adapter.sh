@@ -7,14 +7,14 @@
 #   build_cli_command(agent_id)             → 完全なコマンド文字列
 #   get_instruction_file(agent_id [,cli_type]) → 指示書パス
 #   validate_cli_availability(cli_type)     → 0=OK, 1=NG
-#   get_agent_model(agent_id)               → "opus" | "sonnet" | "haiku" | "k2.5"
+#   get_agent_model(agent_id)               → "opus" | "codex" | "k2.5"
 
 # プロジェクトルートを基準にsettings.yamlのパスを解決
 CLI_ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI_ADAPTER_PROJECT_ROOT="$(cd "${CLI_ADAPTER_DIR}/.." && pwd)"
 CLI_ADAPTER_SETTINGS="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
 
-# cli_lookup.sh — CLI Profile SSOT参照（type/tier/profile取得を委譲）
+# cli_lookup.sh — CLI Profile SSOT参照（type/profile取得を委譲）
 source "${CLI_ADAPTER_PROJECT_ROOT}/scripts/lib/cli_lookup.sh" 2>/dev/null || true
 
 # --- 内部ヘルパー ---
@@ -182,8 +182,8 @@ get_agent_model() {
         # フルモデル名→ショート名変換
         case "$model_from_yaml" in
             claude-opus*|*opus*)       model_from_yaml="opus" ;;
-            claude-sonnet*|*sonnet*)   model_from_yaml="sonnet" ;;
             claude-haiku*|*haiku*)     model_from_yaml="haiku" ;;
+            claude-*)                  model_from_yaml="opus" ;;
         esac
         echo "$model_from_yaml"
         return 0
@@ -213,7 +213,7 @@ get_agent_model() {
             ;;
         *)
             # フォールバック: settings.yamlにmodel指定がない場合のデフォルト
-            # tier制度は廃止済み(2026-02-27改革) — Opus+Codex編成
+            # 現行編成(2026-02-27改革以降)は Opus+Codex を前提
             echo "opus"
             ;;
     esac

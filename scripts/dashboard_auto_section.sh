@@ -248,6 +248,10 @@ KM_DELTA_PP="—"
 KM_LESSON_EFFECT="—"
 KM_LESSON_THRESHOLD="—"
 KM_PROBLEM_LESSONS="—"
+KM_PROJECT_ROWS=""
+KM_KNOWLEDGE_MODEL_ROWS=""
+KM_TOP_LESSON_ROWS=""
+KM_BOTTOM_LESSON_ROWS=""
 MODEL_SCOREBOARD_ROWS=""
 
 _gate_signature="missing"
@@ -258,15 +262,19 @@ _cached_signature=""
 [[ -f "$KM_CACHE_LINES" ]] && _cached_signature=$(tr -d '[:space:]' < "$KM_CACHE_LINES" 2>/dev/null)
 
 if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || ! grep -q '^model_row=' "$KM_MODEL_CACHE" 2>/dev/null; then
-    bash "$SCRIPT_DIR/knowledge_metrics.sh" --json > "$KM_JSON_CACHE" 2>/dev/null || true
+    bash "$SCRIPT_DIR/knowledge_metrics.sh" --json --by-project --by-model > "$KM_JSON_CACHE" 2>/dev/null || true
     bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null || true
     echo "$_gate_signature" > "$KM_CACHE_LINES"
 fi
 
-# Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp)
+# Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp + knowledge breakdown rows)
 if [[ -f "$KM_JSON_CACHE" ]] && [[ -s "$KM_JSON_CACHE" ]]; then
     _km_parsed=$(python3 -c "
 import json, sys
+def fmt_pct(value):
+    return f'{value:.1f}%' if value is not None else '—'
+def safe_text(value):
+    return str(value if value is not None else '—').replace('|', '/').replace('\n', ' ').strip() or '—'
 try:
     data = json.load(sys.stdin)
     ir = data.get('inject_rate')
@@ -280,19 +288,47 @@ try:
     dp_s = f'{dp:+.1f}pp' if dp is not None else '—'
     le_s = f'{le:.1f}%' if le is not None else '—'
     pl_s = str(pl) if pl is not None else '0'
-    print(f'{ir_s}\t{rr_s}\t{dp_s}\t{le_s}\t{pl_s}')
+    print(f'summary={ir_s}\t{rr_s}\t{dp_s}\t{le_s}\t{pl_s}')
+    for row in data.get('by_project', []):
+        print(f'project_row=| {safe_text(row.get(\"project\"))} | {fmt_pct(row.get(\"inject_rate\"))} | {fmt_pct(row.get(\"effectiveness_rate\"))} | {row.get(\"n\", \"—\")} |')
+    for row in data.get('by_model', []):
+        label = row.get('display_name') or row.get('model') or 'unknown'
+        print(f'knowledge_model_row=| {safe_text(label)} | {fmt_pct(row.get(\"ref_rate\"))} | {fmt_pct(row.get(\"effectiveness_rate\"))} | {row.get(\"n\", \"—\")} |')
+    for row in data.get('top_helpful', []):
+        print(f'top_lesson_row=| {safe_text(row.get(\"id\"))} | {safe_text(row.get(\"project\"))} | {row.get(\"reference_count\", 0)} | {row.get(\"injection_count\", 0)} | {fmt_pct(row.get(\"effectiveness_rate\"))} |')
+    for row in data.get('bottom_lessons', []):
+        print(f'bottom_lesson_row=| {safe_text(row.get(\"id\"))} | {safe_text(row.get(\"project\"))} | {row.get(\"reference_count\", 0)} | {row.get(\"injection_count\", 0)} | {fmt_pct(row.get(\"effectiveness_rate\"))} |')
 except Exception:
-    print('—\t—\t—\t—\t0')
-" < "$KM_JSON_CACHE" 2>/dev/null || echo "—	—	—	—	0")
-    IFS=$'\t' read -r KM_INJECT_RATE KM_REF_RATE KM_DELTA_PP KM_LESSON_EFFECT KM_PROBLEM_LESSONS <<< "$_km_parsed"
+    print('summary=—\t—\t—\t—\t0')
+" < "$KM_JSON_CACHE" 2>/dev/null || echo "summary=—	—	—	—	0")
+    while IFS= read -r _line; do
+        case "$_line" in
+            summary=*)
+                _payload=${_line#summary=}
+                IFS=$'\t' read -r KM_INJECT_RATE KM_REF_RATE KM_DELTA_PP KM_LESSON_EFFECT KM_PROBLEM_LESSONS <<< "$_payload"
+                ;;
+            project_row=*)
+                KM_PROJECT_ROWS="${KM_PROJECT_ROWS}${_line#project_row=}"$'\n'
+                ;;
+            knowledge_model_row=*)
+                KM_KNOWLEDGE_MODEL_ROWS="${KM_KNOWLEDGE_MODEL_ROWS}${_line#knowledge_model_row=}"$'\n'
+                ;;
+            top_lesson_row=*)
+                KM_TOP_LESSON_ROWS="${KM_TOP_LESSON_ROWS}${_line#top_lesson_row=}"$'\n'
+                ;;
+            bottom_lesson_row=*)
+                KM_BOTTOM_LESSON_ROWS="${KM_BOTTOM_LESSON_ROWS}${_line#bottom_lesson_row=}"$'\n'
+                ;;
+        esac
+    done <<< "$_km_parsed"
 fi
 
-# Parse model cache (model_analysis.sh --summary: model_row=<slug>\t<label>\t<clear>\t<impl>\t<eff>\t<trend>\t<n>)
+# Parse model cache (model_analysis.sh --summary: model_row=<slug>\t<label>\t<clear>\t<impl>\t<trend>\t<n>)
 if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
     while IFS= read -r _line; do
         [[ "$_line" == model_row=* ]] || continue
         _payload=${_line#model_row=}
-        IFS=$'\t' read -r _slug _label _clear _impl _eff _trend _n <<< "$_payload"
+        IFS=$'\t' read -r _slug _label _clear _impl _trend _n <<< "$_payload"
         [[ -z "$_label" ]] && continue
         _label=${_label//_/ }
 
@@ -302,16 +338,13 @@ if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
         _impl_display="—"
         [[ -n "$_impl" && "$_impl" != "—" ]] && _impl_display="${_impl}%"
 
-        _eff_display="—"
-        [[ -n "$_eff" && "$_eff" != "—" ]] && _eff_display="$_eff"
-
         _trend_display="→"
         case "$_trend" in
             up) _trend_display="↑" ;;
             down) _trend_display="↓" ;;
         esac
 
-        MODEL_SCOREBOARD_ROWS="${MODEL_SCOREBOARD_ROWS}| ${_label} | ${_clear_display} | ${_impl_display} | ${_eff_display} | ${_trend_display} | ${_n:-—} |
+        MODEL_SCOREBOARD_ROWS="${MODEL_SCOREBOARD_ROWS}| ${_label} | ${_clear_display} | ${_impl_display} | ${_trend_display} | ${_n:-—} |
 "
     done < "$KM_MODEL_CACHE"
 fi
@@ -479,12 +512,12 @@ fi
 
     # ─── モデル別スコアボード ───
     echo "### モデル別スコアボード"
-    echo "| モデル | CLEAR率 | impl率 | 効率 | 傾向 | N |"
-    echo "|--------|---------|--------|------|------|---|"
+    echo "| モデル | CLEAR率 | impl率 | 傾向 | N |"
+    echo "|--------|---------|--------|------|---|"
     if [[ -n "$MODEL_SCOREBOARD_ROWS" ]]; then
         printf "%s" "$MODEL_SCOREBOARD_ROWS"
     else
-        echo "| — | — | — | — | — | — |"
+        echo "| — | — | — | — | — |"
     fi
 
     echo ""
@@ -497,6 +530,47 @@ fi
     echo "| 教訓効果率 | ${KM_LESSON_EFFECT} |"
     echo "| 効果率閾値 | ${KM_LESSON_THRESHOLD} |"
     echo "| 問題教訓 | ${KM_PROBLEM_LESSONS}件 |"
+
+    echo ""
+    echo "#### PJ別"
+    echo "| PJ | 注入率 | 効果率 | N |"
+    echo "|----|--------|--------|---|"
+    if [[ -n "$KM_PROJECT_ROWS" ]]; then
+        printf "%s" "$KM_PROJECT_ROWS"
+    else
+        echo "| — | — | — | — |"
+    fi
+
+    echo ""
+    echo "#### モデル別"
+    echo "| モデル | 参照率 | 効果率 | N |"
+    echo "|--------|--------|--------|---|"
+    if [[ -n "$KM_KNOWLEDGE_MODEL_ROWS" ]]; then
+        printf "%s" "$KM_KNOWLEDGE_MODEL_ROWS"
+    else
+        echo "| — | — | — | — |"
+    fi
+
+    echo ""
+    echo "#### 教訓ランキング"
+    echo "Top 5 有効教訓"
+    echo "| 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |"
+    echo "|------|----|----------|----------|--------|"
+    if [[ -n "$KM_TOP_LESSON_ROWS" ]]; then
+        printf "%s" "$KM_TOP_LESSON_ROWS"
+    else
+        echo "| — | — | — | — | — |"
+    fi
+
+    echo ""
+    echo "Bottom 5 低効果教訓"
+    echo "| 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |"
+    echo "|------|----|----------|----------|--------|"
+    if [[ -n "$KM_BOTTOM_LESSON_ROWS" ]]; then
+        printf "%s" "$KM_BOTTOM_LESSON_ROWS"
+    else
+        echo "| — | — | — | — | — |"
+    fi
 
     echo ""
 

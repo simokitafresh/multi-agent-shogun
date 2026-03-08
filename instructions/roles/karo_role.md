@@ -195,7 +195,7 @@ cmd_093で実証済み: 偵察→統合→実装の流れ。
    - 「互いの結果は見るな」を明記
    - project:フィールドを忘れるな（偵察でも背景知識は必須）
 
-2. task_deploy.shで2名体制を検証（STEP 6）
+2. task_deploy.shで2名体制を検証（STEP 6。`deploy_task.sh` は個別忍者への配備、`task_deploy.sh` はcmd全体の偵察2名体制検証）
    bash scripts/task_deploy.sh cmd_XXX recon
    → exit 0: OK / exit 1: 2名未満→修正必須
 

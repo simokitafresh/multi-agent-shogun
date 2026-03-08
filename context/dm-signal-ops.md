@@ -11,6 +11,8 @@
 6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
 詳細アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
+- L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）
+- L157: pending判定は『存在チェック』より先にrebalance月 gatingを入れないと非月次triggerで誤表示する（cmd_525）
 
 ## §9 性能ベースライン
 
@@ -22,6 +24,12 @@
 
 ボトルネック: trade_perf(58.7s) > L3 FoF(~89s) > signal_calc(0.53s)
 補助参照: `docs/research/cmd_484_dm-signal-supplemental-catalog-2.md` AC1-2（scripts一覧）
+- L177: 本番404切り分けはopenapi.json実測でデプロイ未反映を即時判定できる（cmd_553）
+- L178: 本番404調査はopenapi実測で『ルート未登録』を先に確定すると切り分けが最短になる（cmd_553）
+- L179: 新サービスのimport文とrequirements.txtの突合確認をデプロイ前チェックに含めるべき（cmd_554）
+- L180: render.yaml cronジョブ追加時envVars sync:falseのシークレットはRenderダッシュボード手動設定が必要（cmd_554）
+- L190: 集計要件でrole分離が必要ならイベント記録時点で識別子を保存しないと後段SQLでは復元不能（cmd_574）
+- L202: Render Static Siteのheaders.pathはrootと配下階層を別globで覆わねば全txtを捕捉できぬ（cmd_643）
 
 ## §12 計算データ管理
 
@@ -31,11 +39,16 @@
 GS全6ブロック: `scripts/analysis/grid_search/run_077_{block}.py`
 PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic制約明記+PARAM_GRID修正で運用。
 補助参照: `docs/research/cmd_484_dm-signal-supplemental-catalog-2.md` AC1-2
+- L175: 統合レビューでのパリティ検証は関数シグネチャ+定数+アルゴリズム3層で行う（cmd_550）
 
 ## §14 ドキュメントインデックス
 
 docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証・API使用法ルール抜粋。
 補助参照: `docs/research/cmd_485_dm-signal-environment-catalog.md`（環境/Render/API） + `docs/research/cmd_488_dm-signal-claude-config-catalog.md`（運用設定）
+- L169: 設計書補完はMECE表+仕様章リンクの二層化で抜け漏れを抑制できる（cmd_549）
+- L170: 仕様レビューは章番号突合+commit差分限定の二段検証で誤判定を防げる（cmd_549）
+- L184: Docsの新指標説明は判定条件をテーブル化すると実装定義との突合が速い（cmd_557）
+- L194: テスト棚卸しcmd発行前にvenv/pytest環境確認を前提条件に含める（cmd_623）
 
 ## §16 知識基盤改善（穴1/2/3対策完了 — 2026-02-22）
 
@@ -47,24 +60,40 @@ docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証
 | 補助 lesson sync上限不足 | sync上限を50に引き上げ | cmd_241 |
 
 原則: 検出+警告のみ。自動修正はしない（指示系統厳守）。
+PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`description`品質改善を一括実施済み（cmd_448）。
+
+- L149: key_files成果物パターンは実在ファイル名規約と定期照合しないと再汚染する（cmd_493）
+- L150: 復旧ドキュメントは『在庫あり証跡』と『在庫不足』を分離記述すると誤再構成を防げる（cmd_493）
 
 ## Ops教訓索引
-<!-- lesson_sync: lessons.yaml照合+IDシフト修正(L123/L124新規追加で+2) + L103/L106/L123追加 = 24件 -->
+<!-- lesson_sync: 2026-03-03 lesson-sortでL129-L146を反映 -->
 
 | ID | 結論(1行) | 分類 | 出典 |
 |---|---|---|---|
-| L135 | 忍法FoF作成12ステップ省略不可(ステップ2-4省略→四神不一致) | PF登録 | — |
-| L134 | GS結果利用時DATA_CATALOG+meta.yaml必参照 | データ管理 | — |
+| L144 | context圧縮時は参照先存在確認を先に実施。リンク先なき圧縮は禁止 | 知識基盤 | cmd_492 |
+| L143 | research層消失はリポジトリ側git操作起因の可能性を先に切り分ける | 知識基盤 | cmd_492 |
+| L142 | CSV記述は入力ソースと成果物を分離しないと知識汚染が再発する | 知識基盤 | cmd_492 |
+| L141 | docs実在性チェックをCI化しないと運用手順が陳腐化する | 知識基盤 | cmd_492 |
+| L140 | registry統合など構造変更時は知識汚染が集中する | 知識基盤 | cmd_492 |
+| L139 | 依存マップはgrepより先にAST循環解析を実行する | 運用手順 | cmd_478 |
+| L138 | trade_perf調査はtiming実測→コード読解の順で進める | 運用手順 | cmd_475 |
+| L137 | FoF計測はLayerTimer.substepではなくL3 metadata.profilingで確認 | 運用手順 | cmd_475 |
+| L136 | 改善候補調査前に既存最適化履歴を照合する | 運用手順 | cmd_474 |
+| L135 | 参照先scripts消滅時は教訓参照をdeprecatedとして明示する（旧L010） | 知識基盤 | cleanup |
+| L134 | 参照先scripts消滅時は教訓参照をdeprecatedとして明示する（旧L025） | 知識基盤 | cleanup |
 | L133 | セッション開始時にtodo.md/lessons.md必読 | 運用手順 | — |
 | L132 | GS構成四神と本番FoF構成PFの不一致に注意 | PF登録 | — |
-| L131 | 新FoF追加後の再計算はsync-fof(L3)を使う | 再計算 | — |
-| L130 | 本番API呼出はPowerShell Invoke-RestMethod | API | — |
-| L129 | FoFパリティは本番現行パラメータを先に確認 | パリティ | — |
+| L131 | gitignoreパターンとgit復元対象のクロスチェック必須 | 運用プロセス | cmd_430 |
+| L130 | commit前にgit diff --cachedでステージ全体を確認する | 運用プロセス | cmd_427 |
+| L129 | 注入教訓のreviewed確認を怠ると後続ゲートで詰まる | 運用プロセス | cmd_356 |
 | L128 | experiments.dbはスナップショット、SSOTではない | DB | — |
 | L127 | PowerShell -replace/Set-ContentでUTF-8文字化け | ツール | — |
 | L126 | ブロック名はBlockType enum値で統一 | 設定規約 | — |
 | L125 | pipeline_configパラメータ名はコードと1:1一致 | 設定規約 | — |
 | L123 | WSL2 matplotlib日本語フォント: font_manager.addfont()でWindows側.ttc登録 | ツール | subtask_288 |
+| L152 | レビュータスクのAC4は『対象テストPASS』と『静的検証ベースライン健全性』を分離して判定すべき | 運用プロセス | cmd_515 |
+| L158 | WSL上のWindows venvでは .venv/Scripts/python.exe 経由でpytestを実行できる | ツール | cmd_525 |
+| L167 | WSLでWindows venv Python分析タスクは端末ログ文字化けに備えてCSV実体検証を必須にする | ツール | cmd_539 |
 | L122 | write後はGETキャッシュ明示無効化必須(TTL=3600s) | API/キャッシュ | cmd_283 |
 | L121 | backend API実コード確認必須(YAML仕様と乖離あり) | API/FE | cmd_283 |
 | L119 | DATA_CATALOGの86銘柄=本番DB、experiments.dbは14銘柄のみ | DB | cmd_282 |

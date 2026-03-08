@@ -11,7 +11,7 @@ set -euo pipefail
 
 SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-INTERVAL_SEC="${INTERVAL_SEC:-300}"
+INTERVAL_SEC="${INTERVAL_SEC:-600}"
 MAX_LOOPS="${MAX_LOOPS:-0}" # 0 = run forever
 DRY_RUN="${DRY_RUN:-0}"     # 1 = use mock payload
 

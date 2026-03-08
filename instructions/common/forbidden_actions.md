@@ -44,8 +44,8 @@ Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @age
 **Your files ONLY:**
 ```
 queue/tasks/{your_ninja_name}.yaml    ← Read only this
-queue/reports/{your_ninja_name}_report.yaml  ← Write only this
+queue/reports/{your_ninja_name}_report_{cmd}.yaml  ← Write only this
 ```
 
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
-**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
+**Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report_{cmd}.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.

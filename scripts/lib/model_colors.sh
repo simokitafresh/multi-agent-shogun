@@ -10,7 +10,6 @@ resolve_bg_color() {
   case "$model_display" in
     *[Cc]odex*)  normalized="Codex" ;;
     *[Oo]pus*)   normalized="Opus" ;;
-    *[Ss]onnet*) normalized="Sonnet" ;;
     *[Hh]aiku*)  normalized="Haiku" ;;
     *)           normalized="$model_display" ;;
   esac
@@ -19,7 +18,6 @@ resolve_bg_color() {
     *)
       case "$normalized" in
         Opus*)   echo "#1a1e28" ;;   # 紺系
-        Sonnet*) echo "#1a2420" ;;   # 深緑系
         Codex*)  echo "#201a1e" ;;   # 深紫系
         Haiku*)  echo "#1e2420" ;;   # 薄緑系
         *)       echo "#1a1e28" ;;   # fallback = Opus
@@ -35,15 +33,13 @@ resolve_border_fg_color() {
   case "$model_display" in
     *[Cc]odex*)  normalized="Codex" ;;
     *[Oo]pus*)   normalized="Opus" ;;
-    *[Ss]onnet*) normalized="Sonnet" ;;
     *[Hh]aiku*)  normalized="Haiku" ;;
     *)           normalized="$model_display" ;;
   esac
   case "$normalized" in
     Opus*)   echo "#cba6f7" ;;  # 紫
-    Sonnet*) echo "#89b4fa" ;;  # 青
     Codex*)  echo "#a6e3a1" ;;  # 緑
     Haiku*)  echo "#f9e2af" ;;  # 黄
-    *)       echo "#a6e3a1" ;;  # fallback = 緑
+    *)       echo "#89b4fa" ;;  # fallback = 汎用Claude
   esac
 }

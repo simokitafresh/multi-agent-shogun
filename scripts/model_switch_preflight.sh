@@ -66,9 +66,7 @@ check_hardcodes() {
         'sasuke.*codex'
         'kirimaru.*codex'
         'gpt-5\.'
-        'claude-opus'
-        'claude-sonnet'
-        'claude-haiku'
+        'claude-[A-Za-z0-9._-]+'
     )
 
     # 検索対象ディレクトリ
@@ -84,7 +82,7 @@ check_hardcodes() {
 
     for pattern in "${patterns[@]}"; do
         local found
-        found=$(grep -rn \
+        found=$(grep -Ern \
             --include='*.sh' --include='*.yaml' --include='*.md' \
             "$pattern" "${search_dirs[@]}" 2>/dev/null \
             | grep -Ev "$exclude_filter" || true)

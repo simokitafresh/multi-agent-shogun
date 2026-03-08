@@ -24,10 +24,17 @@ projects:
     priority: medium
     status: active
 
+  - id: auto-ops
+    name: "Auto-Ops"
+    path: "/mnt/c/Python_app/auto-ops"
+    repo: "https://github.com/simokitafresh/auto-ops"
+    context_file: "context/auto-ops.md"
+    priority: low
+    status: active
+
   - id: google-classroom
     name: "Google Classroom Dashboard"
     path: "/mnt/c/Python_app/google_classroom"
-    context_file: "context/google-classroom.md"
     repo: "https://github.com/simokitafresh/google_classroom"
     priority: high
     status: archived
@@ -35,7 +42,7 @@ projects:
   - id: mcas
     name: "Multi-Claude Account Switcher"
     path: "/mnt/c/Python_app/multi-claude-account-switcher"
-    context_file: "context/mcas.md"
+    context_file: "docs/archive/mcas.md"
     gist_url: "https://gist.github.com/simokitafresh/b7548f6aae74850e35b506b2fe0369e1"
     priority: low
     status: archived

@@ -6,7 +6,7 @@
 #   bash scripts/model_analysis.sh --detail          # 人間用テーブル(5セクション)
 #   bash scripts/model_analysis.sh --summary         # key=value (dashboard統合用)
 #   bash scripts/model_analysis.sh --json            # 機械可読JSON
-#   bash scripts/model_analysis.sh --compare opus sonnet  # 2モデル対比
+#   bash scripts/model_analysis.sh --compare opus codex   # 2モデル対比
 #
 # Data Sources:
 #   1. logs/gate_metrics.log    — CLEAR/BLOCK結果
@@ -20,7 +20,7 @@
 #   A: モデル別CLEAR率
 #   B: BLOCK理由分布(モデル別)
 #   C: 種別適性(モデル×task_type)
-#   D: コスト効率
+#   D: (削除済)
 #   E: トレンド(直近20cmd窓)
 #   F: Bloom Level × Model CLEAR率
 # ============================================================
@@ -48,7 +48,7 @@ case "${1:-}" in
         CMP_MODEL1="${2:-}"
         CMP_MODEL2="${3:-}"
         if [[ -z "$CMP_MODEL1" ]] || [[ -z "$CMP_MODEL2" ]]; then
-            echo "ERROR: --compare requires two model names (e.g. --compare opus sonnet)" >&2
+            echo "ERROR: --compare requires two model names (e.g. --compare opus codex)" >&2
             exit 1
         fi
         ;;
@@ -81,7 +81,6 @@ MODE = os.environ["MODE"]
 CMP_MODEL1 = os.environ.get("CMP_MODEL1", "").lower()
 CMP_MODEL2 = os.environ.get("CMP_MODEL2", "").lower()
 
-CLI_COST_WEIGHTS = {"claude": 5, "codex": 0.2, "copilot": 1, "kimi": 1}
 ALL_NINJAS = ["sasuke", "kirimaru", "hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru"]
 ALL_NINJAS_SET = set(ALL_NINJAS)
 
@@ -112,50 +111,6 @@ def load_yaml(path):
 
 settings_data = load_yaml(SETTINGS)
 profiles_data = load_yaml(os.path.join(os.path.dirname(SETTINGS), "cli_profiles.yaml"))
-
-def build_model_alias_index():
-    alias_to_cli = {}
-    cli = settings_data.get("cli", {}) if isinstance(settings_data, dict) else {}
-    agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
-    default_cli = str(cli.get("default", "claude") or "claude")
-    effort = str(settings_data.get("effort", "") or "").strip()
-    profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
-
-    for cli_type, profile in profiles.items():
-        if isinstance(profile, dict):
-            display_name = " ".join(str(profile.get("display_name") or "").split())
-            if display_name:
-                alias_to_cli[display_name.lower()] = cli_type
-
-    for _, agent_cfg in agents.items():
-        cli_type = default_cli
-        model_label = ""
-        has_explicit_model = False
-        if isinstance(agent_cfg, str):
-            cli_type = str(agent_cfg or default_cli).strip() or default_cli
-        elif isinstance(agent_cfg, dict):
-            cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
-            model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
-            has_explicit_model = bool(model_label)
-        profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
-        display_name = " ".join(str(profile.get("display_name") or "").split()) if isinstance(profile, dict) else ""
-        base_label = model_label or display_name or cli_type
-        if not base_label:
-            continue
-        variants = {base_label}
-        if has_explicit_model and effort and effort not in base_label.split():
-            variants.add(f"{base_label} {effort}")
-        for variant in variants:
-            alias_to_cli[variant.lower()] = cli_type
-    return alias_to_cli
-
-MODEL_ALIAS_TO_CLI = build_model_alias_index()
-
-def cost_weight_for_model(model_label):
-    cli_type = MODEL_ALIAS_TO_CLI.get(normalize_model_label(model_label).lower())
-    if cli_type:
-        return CLI_COST_WEIGHTS.get(cli_type, 1)
-    return 1
 
 def parse_ninja_model_map():
     nmap = {}
@@ -560,23 +515,6 @@ def section_c_detail():
     }
 
 # ═══════════════════════════════════════════════════════
-# Section D: コスト効率
-# ═══════════════════════════════════════════════════════
-def section_d():
-    a_data = section_a()
-    results = {}
-    for m, stats in a_data.items():
-        weight = cost_weight_for_model(m)
-        efficiency = stats["rate"] / weight if weight > 0 else 0.0
-        results[m] = {
-            "clear_rate": stats["rate"],
-            "cost_weight": weight,
-            "efficiency": efficiency,
-            "n": stats["total"],
-        }
-    return results
-
-# ═══════════════════════════════════════════════════════
 # Section E: トレンド(直近20cmd窓)
 # ═══════════════════════════════════════════════════════
 def section_e():
@@ -755,20 +693,6 @@ def output_detail():
                 row += " %-15s" % "—"
         print(row)
 
-    # Section D
-    d = section_d()
-    print()
-    print("[D] コスト効率 (CLEAR率 ÷ コスト重み)")
-    print("-" * 50)
-    print("  %-12s %-10s %-8s %-10s %-6s" % ("Model", "CLEAR率", "コスト", "効率", "N"))
-    print("  %-12s %-10s %-8s %-10s %-6s" % ("-----", "------", "----", "----", "--"))
-    for m, s in sorted(d.items(), key=lambda x: -x[1]["efficiency"]):
-        cr = "%.1f%%" % s["clear_rate"]
-        cw = "x%.1f" % s["cost_weight"]
-        eff = "%.1f" % s["efficiency"]
-        nn = str(s["n"])
-        print("  %-12s %-10s %-8s %-10s %-6s" % (m, cr, cw, eff, nn))
-
     # Section E
     e = section_e()
     print()
@@ -803,7 +727,6 @@ def output_detail():
 def output_summary():
     a = section_a()
     c = section_c()
-    d = section_d()
     e = section_e()
     for m in sorted(a.keys(), key=model_sort_key):
         if m == "unknown":
@@ -815,18 +738,12 @@ def output_summary():
         if impl_stats and impl_stats.get("total", 0) >= 5:
             impl_rate = "%.1f" % impl_stats["rate"]
 
-        eff_stats = d.get(m)
-        if eff_stats is not None:
-            efficiency = "%.1f" % eff_stats.get("efficiency", 0.0)
-        else:
-            efficiency = "—"
-
         trend = e.get(m, {}).get("trend", "stable")
         if trend not in ("stable", "up", "down"):
             trend = "stable"
         print(
-            "model_row=%s\t%s\t%.1f\t%s\t%s\t%s\t%d"
-            % (model_slug(m), m, s["rate"], impl_rate, efficiency, trend, s["total"])
+            "model_row=%s\t%s\t%.1f\t%s\t%s\t%d"
+            % (model_slug(m), m, s["rate"], impl_rate, trend, s["total"])
         )
 
 def output_json():
@@ -835,7 +752,6 @@ def output_json():
         "section_b": section_b(),
         "section_c": section_c(),
         "section_c_detail": section_c_detail(),
-        "section_d": section_d(),
         "section_e": section_e(),
         "section_f": section_f(),
         "metadata": {
@@ -866,7 +782,6 @@ def resolve_compare_label(requested, available_labels):
 
 def output_compare():
     a = section_a()
-    d = section_d()
     e = section_e()
     available_labels = list(a.keys())
     m1 = resolve_compare_label(CMP_MODEL1, available_labels)
@@ -879,14 +794,10 @@ def output_compare():
     def get_a(model):
         return a.get(model, {"clear": 0, "total": 0, "rate": 0.0})
 
-    def get_d(model):
-        return d.get(model, {"clear_rate": 0.0, "cost_weight": 1, "efficiency": 0.0, "n": 0})
-
     def get_e(model):
         return e.get(model, {"current_rate": None, "prev_rate": None, "trend": "—", "n": 0})
 
     a1, a2 = get_a(m1), get_a(m2)
-    d1, d2 = get_d(m1), get_d(m2)
     e1, e2 = get_e(m1), get_e(m2)
 
     print()
@@ -898,12 +809,6 @@ def output_compare():
     c1 = "%.1f%%(N=%d)" % (a1["rate"], a1["total"])
     c2 = "%.1f%%(N=%d)" % (a2["rate"], a2["total"])
     print("  %-25s %-18s %-18s %s" % ("CLEAR率", c1, c2, w))
-
-    # Cost efficiency
-    w = m1 if d1["efficiency"] >= d2["efficiency"] else m2
-    e1_s = "%.1f" % d1["efficiency"]
-    e2_s = "%.1f" % d2["efficiency"]
-    print("  %-25s %-18s %-18s %s" % ("コスト効率", e1_s, e2_s, w))
 
     # Trend
     cur1 = "%.1f%%" % e1["current_rate"] if e1["current_rate"] is not None else "—"

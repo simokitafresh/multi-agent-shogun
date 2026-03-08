@@ -36,17 +36,14 @@ cli:
       type: claude
       model: opus
     sasuke:
-      type: claude
-      model: sonnet
+      type: codex
     kirimaru:
-      type: claude
-      model: sonnet
+      type: codex
     hayate:
-      type: claude
-      model: sonnet
+      type: codex
     kagemaru:
       type: claude
-      model: sonnet
+      model: opus
     hanzo:
       type: codex
     saizo:
@@ -103,7 +100,7 @@ cli:
       type: codex
       model: gpt-5
 models:
-  karo: sonnet
+  karo: opus
 YAML
 
     # kimi CLI settings
@@ -172,10 +169,10 @@ load_adapter_with() {
     [ "$result" = "copilot" ]
 }
 
-@test "get_cli_type: mixed設定 sasuke → claude (個別設定)" {
+@test "get_cli_type: mixed設定 sasuke → codex (個別設定)" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
     result=$(get_cli_type "sasuke")
-    [ "$result" = "claude" ]
+    [ "$result" = "codex" ]
 }
 
 @test "get_cli_type: 文字列形式 hanzo → codex" {
@@ -224,9 +221,9 @@ load_adapter_with() {
 
 @test "get_cli_type: mixed設定 全忍者パターン" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
-    [ "$(get_cli_type sasuke)" = "claude" ]
-    [ "$(get_cli_type kirimaru)" = "claude" ]
-    [ "$(get_cli_type hayate)" = "claude" ]
+    [ "$(get_cli_type sasuke)" = "codex" ]
+    [ "$(get_cli_type kirimaru)" = "codex" ]
+    [ "$(get_cli_type hayate)" = "codex" ]
     [ "$(get_cli_type kagemaru)" = "claude" ]
     [ "$(get_cli_type hanzo)" = "codex" ]
     [ "$(get_cli_type saizo)" = "codex" ]
@@ -328,10 +325,10 @@ load_adapter_with() {
     [ "$result" = "instructions/karo.md" ]
 }
 
-@test "get_instruction_file: sasuke + claude → instructions/ashigaru.md" {
+@test "get_instruction_file: sasuke + codex → instructions/generated/codex-ashigaru.md" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
     result=$(get_instruction_file "sasuke")
-    [ "$result" = "instructions/ashigaru.md" ]
+    [ "$result" = "instructions/generated/codex-ashigaru.md" ]
 }
 
 @test "get_instruction_file: hanzo + codex → instructions/generated/codex-ashigaru.md" {
@@ -509,10 +506,10 @@ load_adapter_with() {
     [ "$result" = "haiku" ]
 }
 
-@test "get_agent_model: modelsセクションから取得 karo → sonnet" {
+@test "get_agent_model: modelsセクションから取得 karo → opus" {
     load_adapter_with "${TEST_TMP}/settings_with_models.yaml"
     result=$(get_agent_model "karo")
-    [ "$result" = "sonnet" ]
+    [ "$result" = "opus" ]
 }
 
 @test "get_agent_model: codexエージェントのmodel hanzo → gpt-5" {

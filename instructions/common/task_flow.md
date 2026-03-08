@@ -48,7 +48,7 @@ Claude Code cannot "wait". Prompt-wait = stopped.
 
 ## Report Scanning (Communication Loss Safety)
 
-On every wakeup (regardless of reason), scan ALL `queue/reports/*_report.yaml`.
+On every wakeup (regardless of reason), scan ALL `queue/reports/*_report_cmd_*.yaml`.
 Cross-reference with dashboard.md — process any reports not yet reflected.
 
 **Why**: Ninja inbox messages may be delayed. Report files are already written and scannable as a safety net.

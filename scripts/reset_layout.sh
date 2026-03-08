@@ -89,7 +89,7 @@ _resolve_model_display() {
     esac
 }
 
-# 表示グループを解決（将軍編成の現在値: karo / codex / opus）
+# 表示グループを解決（将軍編成の現在値: karo / codex / opus / haiku / claude）
 _resolve_agent_group() {
     local agent_id="$1"
     local cli_type="$2"
@@ -107,7 +107,6 @@ _resolve_agent_group() {
         claude|*)
             case "$model_display" in
                 *[Oo]pus*)   echo "opus" ;;
-                *[Ss]onnet*) echo "sonnet" ;;
                 *[Hh]aiku*)  echo "haiku" ;;
                 *)           echo "claude" ;;
             esac
@@ -379,7 +378,7 @@ log_ok "変数正規化: ${var_fix_count}ペイン処理"
 # ═══════════════════════════════════════════════════════════════
 # Step 4.5: pane-border-format再適用
 # shutsujin_departure.sh L21-23と同じ設定をWindow 2(agents)に適用
-# Color: karo=#f9e2af(黄) Opus=#cba6f7(紫) Codex=#a6e3a1(緑) Sonnet=#89b4fa(青) Haiku=#f9e2af(黄)
+# Color: karo=#f9e2af(黄) Opus=#cba6f7(紫) Codex=#a6e3a1(緑) Haiku=#f9e2af(黄) Claude=#89b4fa(青)
 # ═══════════════════════════════════════════════════════════════
 log "Step 4.5: pane-border-format再適用"
 
@@ -387,7 +386,7 @@ if [[ "$DRY_RUN" == true ]]; then
     log_dry "  tmux set-option -w -t shogun:2 pane-border-format '...model-based colors...'"
 else
     tmux set-option -w -t shogun:2 pane-border-format \
-      '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:Codex*,#{@model_name}},#[fg=#a6e3a1],#{?#{m:Sonnet*,#{@model_name}},#[fg=#89b4fa],#{?#{m:Haiku*,#{@model_name}},#[fg=#f9e2af],#[fg=#a6e3a1]}}}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
+      '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:Codex*,#{@model_name}},#[fg=#a6e3a1],#{?#{m:Haiku*,#{@model_name}},#[fg=#f9e2af],#[fg=#89b4fa]}}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
       2>/dev/null
     log_ok "pane-border-format再適用完了（Window 2）"
 fi
