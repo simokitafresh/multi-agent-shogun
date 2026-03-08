@@ -151,6 +151,36 @@ jobs:
             echo "::warning::scripts/ directory not found"
           fi
 
+  e2e-tests:
+    name: E2E Tests
+    needs: [unit-tests, shellcheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y tmux inotify-tools
+          sudo npm install -g bats
+          python3 -m venv .venv && .venv/bin/pip install pyyaml
+
+      - name: Run E2E tests
+        run: bats tests/e2e/ --timing --jobs 1
+
+      - name: Dump debug info on failure
+        if: failure()
+        run: |
+          for session in $(tmux list-sessions -F '#{session_name}' 2>/dev/null); do
+            for pane in $(tmux list-panes -t "$session" -F '#{pane_id}' 2>/dev/null); do
+              echo "=== $session/$pane ==="
+              tmux capture-pane -t "$pane" -p -J 2>/dev/null || true
+            done
+          done
+          cat /tmp/e2e_inbox_watcher_*.log 2>/dev/null || true
+
   integration-tests:
     name: Integration Tests (Claude only)
     runs-on: ubuntu-latest
