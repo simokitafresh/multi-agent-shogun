@@ -143,20 +143,42 @@ fun ShogunScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Auto-scroll to bottom when content changes
+    // Auto-scroll to bottom when content changes (only if user is at bottom)
+    val isAtBottomLazy by remember {
+        derivedStateOf {
+            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisible >= lines.size - 2
+        }
+    }
+    val isAtBottomScroll by remember {
+        derivedStateOf {
+            val maxScroll = verticalScrollState.maxValue
+            maxScroll == 0 || verticalScrollState.value >= maxScroll - 50
+        }
+    }
+
     LaunchedEffect(softWrapEnabled) {
         zoomState.clearContentWidth()
         zoomState.reset()
     }
 
+    // Initial display + softWrap toggle: always scroll to bottom
+    LaunchedEffect(softWrapEnabled) {
+        if (softWrapEnabled && lines.isNotEmpty()) {
+            listState.scrollToItem(lines.size - 1)
+        } else if (!softWrapEnabled) {
+            verticalScrollState.scrollTo(verticalScrollState.maxValue)
+        }
+    }
+
     LaunchedEffect(lines.size, softWrapEnabled, zoomState.isZoomed) {
-        if (softWrapEnabled && lines.isNotEmpty() && !zoomState.isZoomed) {
+        if (softWrapEnabled && lines.isNotEmpty() && !zoomState.isZoomed && isAtBottomLazy) {
             listState.scrollToItem(lines.size - 1)
         }
     }
 
     LaunchedEffect(paneContent, verticalScrollState.maxValue, softWrapEnabled, zoomState.isZoomed) {
-        if (!softWrapEnabled && !zoomState.isZoomed) {
+        if (!softWrapEnabled && !zoomState.isZoomed && isAtBottomScroll) {
             verticalScrollState.scrollTo(verticalScrollState.maxValue)
         }
     }

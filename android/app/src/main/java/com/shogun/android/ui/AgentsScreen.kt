@@ -444,9 +444,21 @@ fun PaneFullScreen(
         }
     }
 
-    // Keep following the newest output while preserving text-selection support.
+    // Auto-scroll only when user is at the bottom
+    val isAtBottom by remember {
+        derivedStateOf {
+            val maxScroll = verticalScrollState.maxValue
+            maxScroll == 0 || verticalScrollState.value >= maxScroll - 50
+        }
+    }
+
+    // Initial display: scroll to bottom
+    LaunchedEffect(Unit) {
+        verticalScrollState.scrollTo(verticalScrollState.maxValue)
+    }
+
     LaunchedEffect(pane.content, verticalScrollState.maxValue, zoomState.isZoomed) {
-        if (!zoomState.isZoomed) {
+        if (!zoomState.isZoomed && isAtBottom) {
             verticalScrollState.scrollTo(verticalScrollState.maxValue)
         }
     }
