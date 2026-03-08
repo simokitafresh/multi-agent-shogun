@@ -37,6 +37,8 @@ import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
 import com.shogun.android.util.PrefsKeys
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -413,6 +415,16 @@ fun PaneFullScreen(
     var commandTextValue by remember { mutableStateOf(TextFieldValue("")) }
     var isListening by remember { mutableStateOf(false) }
     var isInputFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+    val imeVisible = WindowInsets.ime.getBottom(density) > 0
+
+    LaunchedEffect(imeVisible) {
+        if (!imeVisible && isInputFocused) {
+            focusManager.clearFocus()
+        }
+    }
+
     val zoomState = rememberTerminalZoomState()
     val speechRecognizer = remember {
         if (SpeechRecognizer.isRecognitionAvailable(context))

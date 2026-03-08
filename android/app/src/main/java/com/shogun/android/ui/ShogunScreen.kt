@@ -38,6 +38,8 @@ import com.shogun.android.ui.theme.*
 import com.shogun.android.util.Defaults
 import com.shogun.android.util.PrefsKeys
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
@@ -62,6 +64,16 @@ fun ShogunScreen(
     var isListening by remember { mutableStateOf(false) }
     var isInputExpanded by remember { mutableStateOf(false) }
     var isInputFocused by remember { mutableStateOf(false) }
+
+    val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+    val imeVisible = WindowInsets.ime.getBottom(density) > 0
+
+    LaunchedEffect(imeVisible) {
+        if (!imeVisible && isInputFocused) {
+            focusManager.clearFocus()
+        }
+    }
 
     val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
     var termFontSize by remember { mutableFloatStateOf(prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT)) }
@@ -182,19 +194,21 @@ fun ShogunScreen(
 
     ScreenBackground(imageResId = R.drawable.bg_shogun) {
         Column(modifier = Modifier.fillMaxSize()) {
-        // 陣幕バー — connection status
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Surface4)
-                .padding(vertical = 2.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = if (isConnected) "●" else "○",
-                color = if (isConnected) Matsuba else Kurenai,
-                fontSize = 12.sp
-            )
+        // 陣幕バー — 未接続時のみ赤警告バー表示
+        AnimatedVisibility(visible = !isConnected) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Kurenai)
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "未接続",
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
+            }
         }
 
         // Pane content display with LazyColumn
