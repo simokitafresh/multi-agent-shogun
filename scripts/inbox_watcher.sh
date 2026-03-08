@@ -30,6 +30,9 @@ PANE_TARGET="$2"
 # 第3引数は後方互換で受け付けるが無視（shutsujin_departure.shが渡す）
 CLI_TYPE_AT_STARTUP=$(cli_type "$AGENT_ID")  # settings.yaml → cli_profiles.yaml の2段参照
 
+STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
+mkdir -p "$STATE_DIR"
+
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
 LOCKFILE="${INBOX}.lock"
 SEND_KEYS_TIMEOUT=5  # seconds — prevents hang (PID 274337 incident)
@@ -38,12 +41,12 @@ if [ "${ASW_PROCESS_TIMEOUT:-}" = "0" ]; then
     SEND_KEYS_TIMEOUT=0  # timeout 0 = no limit
 fi
 DEBOUNCE_SEC=10
-DEBOUNCE_FILE="/tmp/inbox_watcher_last_nudge_${AGENT_ID}"
-FINGERPRINT_FILE="/tmp/inbox_watcher_fingerprint_${AGENT_ID}"
+DEBOUNCE_FILE="${STATE_DIR}/inbox_watcher_last_nudge_${AGENT_ID}"
+FINGERPRINT_FILE="${STATE_DIR}/inbox_watcher_fingerprint_${AGENT_ID}"
 RETRY_MAX=3      # immediate retries before falling back to BACKOFF interval
-RETRY_COUNT_FILE="/tmp/inbox_watcher_retry_${AGENT_ID}"
+RETRY_COUNT_FILE="${STATE_DIR}/inbox_watcher_retry_${AGENT_ID}"
 BACKOFF_SEC=120  # 2 minutes — safety net re-notification for stale unread (was 600)
-STATE_LOCK_FILE="/tmp/inbox_watcher_state_${AGENT_ID}.lock"
+STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -290,7 +293,7 @@ send_wakeup() {
     # Tier 1.3: Agent busy check
     # Claude: idle flag managed by Stop hook (exists=idle, absent=busy)
     # Codex/other: fallback to @agent_state for compatibility
-    local idle_flag="/tmp/shogun_idle_${AGENT_ID}"
+    local idle_flag="${STATE_DIR}/shogun_idle_${AGENT_ID}"
     if [[ "$effective_cli" == "claude" ]] && [ ! -f "$idle_flag" ]; then
         echo "[$(date)] [BUSY] Agent $AGENT_ID is busy (no idle flag), Stop hook will deliver" >&2
         return 2
@@ -374,7 +377,7 @@ send_wakeup() {
     fi
 
     # After successful nudge: consume idle flag (Stop hook recreates on idle)
-    rm -f "/tmp/shogun_idle_${AGENT_ID}"
+    rm -f "${STATE_DIR}/shogun_idle_${AGENT_ID}"
 
     # After successful nudge: mark agent as active to prevent duplicate nudges
     # before the agent's own PreToolUse/UserPromptSubmit hook fires.
@@ -431,6 +434,27 @@ for s in data.get('specials', []):
             local special_ok=true
             case "$special_type" in
                 clear_command)
+                    local effective_cli
+                    effective_cli=$(get_effective_cli_type)
+                    local defer_clear=false
+                    if [[ "$effective_cli" == "claude" ]]; then
+                        local idle_flag="${STATE_DIR}/shogun_idle_${AGENT_ID}"
+                        [ ! -f "$idle_flag" ] && defer_clear=true
+                    else
+                        local busy_rc
+                        if check_agent_busy "$PANE_TARGET" "$AGENT_ID"; then
+                            busy_rc=0
+                        else
+                            busy_rc=$?
+                        fi
+                        [ "$busy_rc" -eq 1 ] && defer_clear=true
+                    fi
+
+                    if [ "$defer_clear" = true ]; then
+                        echo "[$(date)] [SKIP] Agent $AGENT_ID is busy — /clear (clear_command) deferred to next cycle" >&2
+                        break
+                    fi
+
                     if ! send_cli_command "/clear"; then
                         special_ok=false
                     elif [ -n "$special_content" ] && ! send_cli_command "$special_content"; then

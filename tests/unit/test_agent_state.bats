@@ -111,3 +111,62 @@ check_agent_busy "shogun:agents.2" "sasuke"
 '
     [ "$status" -eq 2 ]
 }
+
+@test "agent_is_busy_check detects Claude status bar only from the last non-empty line" {
+    run bash -lc '
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+source "$PROJECT_ROOT/lib/agent_state.sh"
+tmux() {
+    case "$1:$5" in
+        display-message:#{pane_id}) echo "%1"; return 0 ;;
+        *) ;;
+    esac
+    case "$1" in
+        capture-pane)
+            printf "older scrollback says esc to interrupt\n❯\nstatus bar esc to interrupt\n"
+            return 0
+            ;;
+        *) return 0 ;;
+    esac
+}
+agent_is_busy_check "shogun:agents.2" "hanzo"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "agent_is_busy_check detects Codex idle from context-left footer" {
+    run bash -lc '
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+source "$PROJECT_ROOT/lib/agent_state.sh"
+tmux() {
+    case "$1:$5" in
+        display-message:#{pane_id}) echo "%1"; return 0 ;;
+        *) ;;
+    esac
+    case "$1" in
+        capture-pane)
+            printf "Ready for next task\n85%% context left\n"
+            return 0
+            ;;
+        *) return 0 ;;
+    esac
+}
+agent_is_busy_check "shogun:agents.2" "sasuke"
+'
+    [ "$status" -eq 1 ]
+}
+
+@test "get_agent_state_label returns unknown when pane is absent" {
+    run bash -lc '
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+source "$PROJECT_ROOT/lib/agent_state.sh"
+tmux() {
+    case "$1:$5" in
+        display-message:#{pane_id}) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+[ "$(get_agent_state_label "shogun:agents.99" "sasuke")" = "unknown" ]
+'
+    [ "$status" -eq 0 ]
+}

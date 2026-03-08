@@ -41,6 +41,8 @@ setup_e2e_session() {
     export E2E_QUEUE="$E2E_ROOT"
     mkdir -p "$E2E_QUEUE/queue"/{inbox,tasks,reports,metrics}
     mkdir -p "$E2E_QUEUE/scripts"
+    export SHOGUN_STATE_DIR="$E2E_ROOT/state"
+    mkdir -p "$SHOGUN_STATE_DIR"
 
     cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$E2E_QUEUE/scripts/"
     cp "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$E2E_QUEUE/scripts/"
@@ -84,7 +86,7 @@ setup_e2e_session() {
         tmux set-option -p -t "${E2E_SESSION}:agents.${i}" @agent_cli "$cli_type"
         if [ -f "$mock_cli" ]; then
             tmux send-keys -t "${E2E_SESSION}:agents.${i}" \
-                "MOCK_CLI_TYPE=$cli_type MOCK_AGENT_ID=$agent_id MOCK_PROCESSING_DELAY=$E2E_MOCK_DELAY MOCK_PROJECT_ROOT=$E2E_QUEUE bash $mock_cli" \
+                "SHOGUN_STATE_DIR=$SHOGUN_STATE_DIR MOCK_CLI_TYPE=$cli_type MOCK_AGENT_ID=$agent_id MOCK_PROCESSING_DELAY=$E2E_MOCK_DELAY MOCK_PROJECT_ROOT=$E2E_QUEUE bash $mock_cli" \
                 Enter
         fi
     done
@@ -118,6 +120,7 @@ start_inbox_watcher() {
 
     INOTIFY_TIMEOUT="${E2E_INOTIFY_TIMEOUT:-5}" \
     BACKOFF_SEC="${E2E_BACKOFF_SEC:-20}" \
+    SHOGUN_STATE_DIR="${SHOGUN_STATE_DIR:-$E2E_ROOT/state}" \
     bash "$E2E_QUEUE/scripts/inbox_watcher.sh" "$agent_id" "$target" "$cli_type" >"$log_file" 2>&1 &
 
     echo "$!"

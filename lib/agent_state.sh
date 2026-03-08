@@ -2,14 +2,22 @@
 # agent_state.sh - shared busy/idle detection for tmux agents
 #
 # API:
-#   check_agent_busy <pane_target> <agent_id>
-# Returns:
-#   0 = idle
-#   1 = busy
-#   2 = unknown
+#   agent_is_busy_check <pane_target> <agent_id>   -> 0=busy, 1=idle, 2=unknown/absent
+#   get_agent_state_label <pane_target> <agent_id> -> busy|idle|unknown
+#   get_pane_state_label <pane_target> <agent_id>  -> alias of get_agent_state_label
+#   check_agent_busy <pane_target> <agent_id>      -> 0=idle, 1=busy, 2=unknown
 
-AGENT_STATE_DEFAULT_BUSY_PATTERN="esc to interrupt|Running|Streaming|background terminal running|thinking|thought for"
-AGENT_STATE_DEFAULT_IDLE_PATTERN="❯|›"
+AGENT_STATE_DEFAULT_BUSY_PATTERN="background terminal running|Working|Thinking|Planning|Sending|task is in progress|Compacting conversation|thought for|thinking|思考中|考え中|計画中|送信中|処理中|実行中"
+AGENT_STATE_DEFAULT_IDLE_PATTERN="❯|›|\\? for shortcuts|[0-9]+% (context )?left"
+
+_agent_state_runtime_dir() {
+    printf '%s\n' "${SHOGUN_STATE_DIR:-/tmp}"
+}
+
+_agent_state_idle_flag_path() {
+    local agent_id="$1"
+    printf '%s/shogun_idle_%s\n' "$(_agent_state_runtime_dir)" "$agent_id"
+}
 
 _agent_state_profile_get() {
     local agent_id="$1"
@@ -23,6 +31,100 @@ _agent_state_profile_get() {
     echo ""
 }
 
+_agent_state_capture_pane() {
+    local pane_target="$1"
+    local tmux_type
+    tmux_type=$(type -t tmux 2>/dev/null || true)
+
+    if [ "$tmux_type" = "function" ]; then
+        tmux capture-pane -t "$pane_target" -p 2>/dev/null || return 1
+    elif command -v timeout >/dev/null 2>&1; then
+        timeout 2 tmux capture-pane -t "$pane_target" -p 2>/dev/null || return 1
+    else
+        tmux capture-pane -t "$pane_target" -p 2>/dev/null || return 1
+    fi
+}
+
+_agent_state_get_tail() {
+    local pane_target="$1"
+    local full_capture
+    full_capture=$(_agent_state_capture_pane "$pane_target") || return 1
+    printf '%s\n' "$full_capture" | tail -5
+}
+
+_agent_state_last_non_empty_line() {
+    local text="$1"
+    printf '%s\n' "$text" | grep -v '^[[:space:]]*$' | tail -1
+}
+
+agent_is_busy_check() {
+    local pane_target="$1"
+    local agent_id="${2:-}"
+
+    if [ -z "$pane_target" ]; then
+        return 2
+    fi
+
+    if ! tmux display-message -t "$pane_target" -p '#{pane_id}' >/dev/null 2>&1; then
+        return 2
+    fi
+
+    local pane_tail
+    pane_tail=$(_agent_state_get_tail "$pane_target") || return 2
+
+    if [ -z "$pane_tail" ]; then
+        return 1
+    fi
+
+    local last_line
+    last_line=$(_agent_state_last_non_empty_line "$pane_tail")
+    if printf '%s\n' "$last_line" | grep -qiF 'esc to'; then
+        return 0
+    fi
+
+    local idle_pat
+    idle_pat=$(_agent_state_profile_get "$agent_id" "idle_pattern")
+    if [ -z "$idle_pat" ]; then
+        idle_pat="$AGENT_STATE_DEFAULT_IDLE_PATTERN"
+    else
+        idle_pat="${idle_pat}|\\? for shortcuts|[0-9]+% (context )?left"
+    fi
+
+    if printf '%s\n' "$pane_tail" | grep -qE "$idle_pat"; then
+        return 1
+    fi
+
+    local busy_pat
+    busy_pat=$(_agent_state_profile_get "$agent_id" "busy_patterns")
+    if [ -z "$busy_pat" ]; then
+        busy_pat="$AGENT_STATE_DEFAULT_BUSY_PATTERN"
+    else
+        busy_pat="${busy_pat}|${AGENT_STATE_DEFAULT_BUSY_PATTERN}"
+    fi
+
+    if printf '%s\n' "$pane_tail" | grep -qiE "$busy_pat"; then
+        return 0
+    fi
+
+    return 2
+}
+
+get_agent_state_label() {
+    local pane_target="$1"
+    local agent_id="${2:-}"
+
+    agent_is_busy_check "$pane_target" "$agent_id"
+    case $? in
+        0) echo "busy" ;;
+        1) echo "idle" ;;
+        *) echo "unknown" ;;
+    esac
+}
+
+get_pane_state_label() {
+    get_agent_state_label "$@"
+}
+
 check_agent_busy() {
     local pane_target="$1"
     local agent_id="$2"
@@ -31,7 +133,8 @@ check_agent_busy() {
         return 2
     fi
 
-    local idle_flag="/tmp/shogun_idle_${agent_id}"
+    local idle_flag
+    idle_flag=$(_agent_state_idle_flag_path "$agent_id")
     local agent_state
     agent_state=$(tmux display-message -t "$pane_target" -p '#{@agent_state}' 2>/dev/null || true)
 
@@ -40,26 +143,24 @@ check_agent_busy() {
         return 0
     fi
 
-    local output
-    output=$(tmux capture-pane -t "$pane_target" -p -J -S -8 2>/dev/null) || return 2
-
-    local busy_pat
-    local idle_pat
-    busy_pat=$(_agent_state_profile_get "$agent_id" "busy_patterns")
-    idle_pat=$(_agent_state_profile_get "$agent_id" "idle_pattern")
-
-    [ -z "$busy_pat" ] && busy_pat="$AGENT_STATE_DEFAULT_BUSY_PATTERN"
-    [ -z "$idle_pat" ] && idle_pat="$AGENT_STATE_DEFAULT_IDLE_PATTERN"
-
-    if echo "$output" | grep -qE "$busy_pat"; then
-        return 1
+    local state_rc
+    if agent_is_busy_check "$pane_target" "$agent_id"; then
+        state_rc=0
+    else
+        state_rc=$?
     fi
 
-    if echo "$output" | grep -qE "$idle_pat"; then
-        tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
-        [ ! -f "$idle_flag" ] && touch "$idle_flag"
-        return 0
-    fi
-
-    return 2
+    case "$state_rc" in
+        0)
+            return 1
+            ;;
+        1)
+            tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
+            [ ! -f "$idle_flag" ] && touch "$idle_flag"
+            return 0
+            ;;
+        *)
+            return 2
+            ;;
+    esac
 }
