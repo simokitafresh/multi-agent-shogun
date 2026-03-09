@@ -120,6 +120,7 @@
 !scripts/lesson_check.sh
 !scripts/deploy_task.sh
 !scripts/cmd_absorb.sh
+!scripts/cmd_delegate.sh
 !scripts/sync_lessons.sh
 !scripts/lesson_status_migration.sh
 !scripts/lib/
@@ -149,6 +150,7 @@
 !scripts/gates/gate_pd_sync.sh
 !scripts/gates/gate_lesson_health.sh
 !scripts/gates/gate_shogun_memory.sh
+!scripts/gates/gate_cmd_state.sh
 !scripts/gates/gate_field_get.sh
 !scripts/gates/gate_vercel_phase.sh
 !scripts/hooks/
