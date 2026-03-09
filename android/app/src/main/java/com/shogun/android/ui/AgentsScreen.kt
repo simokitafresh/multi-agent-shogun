@@ -239,6 +239,12 @@ fun AgentsScreen(
         viewModel.connect(host, port, user, keyPath, password)
     }
 
+    // Pause refresh when navigating to another tab
+    DisposableEffect(Unit) {
+        viewModel.resumeRefresh()
+        onDispose { viewModel.pauseRefresh() }
+    }
+
     // Pause refresh when app is in background
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -461,6 +467,15 @@ fun PaneFullScreen(
     }
     var wasAtBottom by remember(pane.index) { mutableStateOf(true) }
 
+    // IME-aware scroll fix: capture wasAtBottom before keyboard changes layout
+    var wasAtBottomBeforeIme by remember(pane.index) { mutableStateOf(true) }
+
+    SideEffect {
+        if (!imeVisible) {
+            wasAtBottomBeforeIme = wasAtBottom
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose { speechRecognizer?.destroy() }
     }
@@ -498,6 +513,16 @@ fun PaneFullScreen(
         if (!zoomState.isZoomed && wasAtBottom) {
             verticalScrollState.scrollTo(verticalScrollState.maxValue)
         }
+    }
+
+    // IME-aware scroll fix: keep at bottom when keyboard appears
+    LaunchedEffect(imeVisible, pane.index) {
+        if (!imeVisible || zoomState.isZoomed) return@LaunchedEffect
+        if (!wasAtBottomBeforeIme) return@LaunchedEffect
+        snapshotFlow { verticalScrollState.maxValue }
+            .collect { maxValue ->
+                verticalScrollState.scrollTo(maxValue)
+            }
     }
 
     val showScrollToBottomFab = !wasAtBottom

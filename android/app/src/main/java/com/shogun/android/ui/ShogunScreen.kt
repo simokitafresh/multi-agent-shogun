@@ -155,6 +155,12 @@ fun ShogunScreen(
         viewModel.connect(host, port, user, keyPath, password)
     }
 
+    // Pause refresh when navigating to another tab
+    DisposableEffect(Unit) {
+        viewModel.resumeRefresh()
+        onDispose { viewModel.pauseRefresh() }
+    }
+
     // Pause refresh when app is in background
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -182,6 +188,17 @@ fun ShogunScreen(
 
     var wasAtBottomLazy by remember { mutableStateOf(true) }
     var wasAtBottomScroll by remember { mutableStateOf(true) }
+
+    // IME-aware scroll fix: capture wasAtBottom before keyboard changes layout
+    var wasAtBottomBeforeImeScroll by remember { mutableStateOf(true) }
+    var wasAtBottomBeforeImeLazy by remember { mutableStateOf(true) }
+
+    SideEffect {
+        if (!imeVisible) {
+            wasAtBottomBeforeImeScroll = wasAtBottomScroll
+            wasAtBottomBeforeImeLazy = wasAtBottomLazy
+        }
+    }
 
     LaunchedEffect(softWrapEnabled) {
         zoomState.clearContentWidth()
@@ -220,6 +237,24 @@ fun ShogunScreen(
     LaunchedEffect(paneContent, verticalScrollState.maxValue, softWrapEnabled, zoomState.isZoomed) {
         if (!softWrapEnabled && !zoomState.isZoomed && wasAtBottomScroll) {
             verticalScrollState.scrollTo(verticalScrollState.maxValue)
+        }
+    }
+
+    // IME-aware scroll fix: keep at bottom when keyboard appears
+    LaunchedEffect(imeVisible, softWrapEnabled) {
+        if (!imeVisible || zoomState.isZoomed) return@LaunchedEffect
+        if (softWrapEnabled) {
+            if (!wasAtBottomBeforeImeLazy) return@LaunchedEffect
+            snapshotFlow { listState.layoutInfo.totalItemsCount }
+                .collect { total ->
+                    if (total > 0) listState.scrollToItem(total - 1)
+                }
+        } else {
+            if (!wasAtBottomBeforeImeScroll) return@LaunchedEffect
+            snapshotFlow { verticalScrollState.maxValue }
+                .collect { maxValue ->
+                    verticalScrollState.scrollTo(maxValue)
+                }
         }
     }
 
