@@ -1257,6 +1257,13 @@ record_block_reason() {
     fi
 }
 
+level_heading() {
+    local level="$1"
+    local title="$2"
+    echo ""
+    echo "${level} ${title}"
+}
+
 detect_task_role() {
     local task_file="$1"
 
@@ -1303,8 +1310,7 @@ check_context_update() {
     local cmd_id="$1"
     local line kind msg
 
-    echo ""
-    echo "Context update check:"
+    level_heading "[L3]" "Context update check:"
 
     while IFS=$'\t' read -r kind msg; do
         [ -n "$kind" ] || continue
@@ -1444,7 +1450,7 @@ preflight_gate_flags() {
     local gates_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
     mkdir -p "$gates_dir"
 
-    echo "Preflight gate flag generation:"
+    echo "[L1] Preflight gate flag generation:"
 
     # 1. archive.done — archive_completed.sh を先に実行
     if [ ! -f "$gates_dir/archive.done" ]; then
@@ -1705,7 +1711,8 @@ MISSING_GATES=()
 BLOCK_REASONS=()
 ALL_CLEAR=true
 
-echo "Gate check: ${CMD_ID}"
+level_heading "[L1]" "Gate check: ${CMD_ID}"
+echo "  Framework: [L1] Existence | [L2] Substantive | [L3] Integration"
 echo "  Required: ${ALL_GATES[*]}"
 if [ ${#CONDITIONAL[@]} -gt 0 ]; then
     echo "  Conditional: ${CONDITIONAL[*]} (task_type: recon=${HAS_RECON}, implement=${HAS_IMPLEMENT})"
@@ -1734,8 +1741,7 @@ done
 check_context_update "$CMD_ID"
 
 # ─── related_lessons存在チェック（deploy_task.sh経由確認） ───
-echo ""
-echo "Related lessons injection check:"
+level_heading "[L1]" "Related lessons injection check:"
 RL_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
@@ -1770,8 +1776,7 @@ if [ "$RL_CHECKED" = false ]; then
 fi
 
 # ─── lessons_useful検証（related_lessonsあり→報告にlessons_useful必須） ───
-echo ""
-echo "Lessons useful check:"
+level_heading "[L2]" "Lessons useful check:"
 LESSON_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
@@ -1859,12 +1864,10 @@ fi
 # ─── reviewed:false残存チェック（廃止: cmd_533でpush型に移行） ───
 # reviewed:falseフィールドはdeploy_task.shで付与されなくなった（detail埋込に移行）
 # 旧タスクYAMLにreviewed:falseが残存していても後方互換でブロックしない
-echo ""
-echo "Lesson reviewed check: SKIP (push型移行済み — cmd_533)"
+level_heading "[L1]" "Lesson reviewed check: SKIP (push型移行済み — cmd_533)"
 
 # ─── ac_version照合（task.ac_version vs report.ac_version_read） ───
-echo ""
-echo "AC version check:"
+level_heading "[L3]" "AC version check:"
 AC_VERSION_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
@@ -1950,8 +1953,7 @@ if [ "$AC_VERSION_CHECKED" = false ]; then
 fi
 
 # ─── lesson_candidate検証（found:trueなのに未登録を防止） ───
-echo ""
-echo "Lesson candidate check:"
+level_heading "[L1]" "Lesson candidate check:"
 LC_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
@@ -2052,8 +2054,7 @@ if [ "$LC_CHECKED" = false ]; then
 fi
 
 # ─── purpose_validation検証（fit:falseでBLOCK、fit空欄はWARN） ───
-echo ""
-echo "Purpose validation check:"
+level_heading "[L2]" "Purpose validation check:"
 PV_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
@@ -2094,9 +2095,158 @@ if [ "$PV_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── deviation回数チェック（WARNのみ、4回以上でWARNING） ───
+level_heading "[L2]" "Deviation count check:"
+DEVIATION_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    DEVIATION_CHECKED=true
+    deviation_status=$(REPORT_FILE_ENV="$report_file" python3 - <<'PY'
+import os
+import yaml
+
+report_file = os.environ["REPORT_FILE_ENV"]
+
+try:
+    with open(report_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    print("error\tparse_error")
+    raise SystemExit(0)
+
+if not isinstance(data, dict):
+    print("error\treport_not_dict")
+    raise SystemExit(0)
+
+result = data.get("result")
+if not isinstance(result, dict):
+    print("skip\tresult missing or not a mapping")
+    raise SystemExit(0)
+
+deviation = result.get("deviation")
+if deviation is None:
+    print("skip\tresult.deviation not present")
+elif not isinstance(deviation, list):
+    print("skip\tresult.deviation not a list")
+elif len(deviation) == 0:
+    print("skip\tresult.deviation empty (count 0)")
+elif len(deviation) >= 4:
+    print(f"warn\t{len(deviation)}")
+else:
+    print(f"ok\t{len(deviation)}")
+PY
+)
+
+    deviation_kind=$(printf '%s\n' "$deviation_status" | cut -f1)
+    deviation_detail=$(printf '%s\n' "$deviation_status" | cut -f2-)
+
+    case "$deviation_kind" in
+        warn)
+            echo "  WARNING: ${ninja_name}: deviation count ${deviation_detail} >= 4: 逸脱管理ルール(3回超過)に抵触"
+            ;;
+        ok)
+            echo "  ${ninja_name}: OK (deviation count ${deviation_detail} <= 3)"
+            ;;
+        skip)
+            echo "  ${ninja_name}: SKIP (${deviation_detail})"
+            ;;
+        *)
+            echo "  WARN: ${ninja_name}: deviation count解析エラー (${deviation_detail})"
+            ;;
+    esac
+done
+if [ "$DEVIATION_CHECKED" = false ]; then
+    echo "  (no reports found for this cmd)"
+fi
+
+# ─── analysis_paralysis_triggeredチェック（WARNのみ） ───
+level_heading "[L2]" "Analysis paralysis check:"
+ANALYSIS_PARALYSIS_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    ANALYSIS_PARALYSIS_CHECKED=true
+    analysis_status=$(REPORT_FILE_ENV="$report_file" python3 - <<'PY'
+import os
+import yaml
+
+report_file = os.environ["REPORT_FILE_ENV"]
+
+try:
+    with open(report_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    print("error\tparse_error")
+    raise SystemExit(0)
+
+if not isinstance(data, dict):
+    print("error\treport_not_dict")
+    raise SystemExit(0)
+
+result = data.get("result")
+if not isinstance(result, dict):
+    print("skip\tresult missing or not a mapping")
+    raise SystemExit(0)
+
+value = result.get("analysis_paralysis_triggered")
+if value is True:
+    print("warn\tanalysis paralysis was triggered during this task")
+elif value is False:
+    print("ok\tanalysis_paralysis_triggered=false")
+elif value is None:
+    print("skip\tanalysis_paralysis_triggered not present")
+else:
+    print("skip\tanalysis_paralysis_triggered not boolean")
+PY
+)
+
+    analysis_kind=$(printf '%s\n' "$analysis_status" | cut -f1)
+    analysis_detail=$(printf '%s\n' "$analysis_status" | cut -f2-)
+
+    case "$analysis_kind" in
+        warn)
+            echo "  WARNING: ${ninja_name}: ${analysis_detail}"
+            ;;
+        ok)
+            echo "  ${ninja_name}: OK (${analysis_detail})"
+            ;;
+        skip)
+            echo "  ${ninja_name}: SKIP (${analysis_detail})"
+            ;;
+        *)
+            echo "  WARN: ${ninja_name}: analysis_paralysis_triggered解析エラー (${analysis_detail})"
+            ;;
+    esac
+done
+if [ "$ANALYSIS_PARALYSIS_CHECKED" = false ]; then
+    echo "  (no reports found for this cmd)"
+fi
+
 # ─── skill_candidate検証（WARNのみ、ブロックしない） ───
-echo ""
-echo "Skill candidate check:"
+level_heading "[L1]" "Skill candidate check:"
 SC_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
@@ -2158,8 +2308,7 @@ if [ "$SC_CHECKED" = false ]; then
 fi
 
 # ─── decision_candidate検証（WARNのみ、ブロックしない） ───
-echo ""
-echo "Decision candidate check:"
+level_heading "[L1]" "Decision candidate check:"
 DC_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
@@ -2221,8 +2370,7 @@ if [ "$DC_CHECKED" = false ]; then
 fi
 
 # ─── review品質機械検査（cmd_607） ───
-echo ""
-echo "Review quality check:"
+level_heading "[L2]" "Review quality check:"
 REVIEW_TASK_FOUND=false
 IMPLEMENTER_IDS="|"
 REVIEWER_IDS="|"
@@ -2341,8 +2489,7 @@ PY
 fi
 
 # ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
-echo ""
-echo "Draft lesson check:"
+level_heading "[L3]" "Draft lesson check:"
 # cmdのprojectを取得
 CMD_PROJECT=$(awk -v cmd="${CMD_ID}" '
     /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
@@ -2384,8 +2531,7 @@ else
 fi
 
 # ─── grep直書きYAMLアクセス検出（WARNのみ、ブロックしない） L070 ───
-echo ""
-echo "Raw grep YAML access check (L070):"
+level_heading "[L2]" "Raw grep YAML access check (L070):"
 RAW_GREP_COUNT=0
 # 検出対象: scripts/*.sh と scripts/lib/*.sh
 # 除外: scripts/lib/field_get.sh 自身, scripts/gates/ 配下
@@ -2422,8 +2568,7 @@ else
 fi
 
 # ─── inbox_archive強制チェック（WARNのみ、ブロックしない） ───
-echo ""
-echo "Inbox archive check:"
+level_heading "[L1]" "Inbox archive check:"
 KARO_INBOX="$SCRIPT_DIR/queue/inbox/karo.yaml"
 if [ -f "$KARO_INBOX" ]; then
     read_count=$(grep -c 'read: true' "$KARO_INBOX" 2>/dev/null || true)
@@ -2444,8 +2589,7 @@ else
 fi
 
 # ─── 未反映PD検出（WARNのみ、ブロックしない） ───
-echo ""
-echo "Pending decision context sync check:"
+level_heading "[L3]" "Pending decision context sync check:"
 PD_FILE="$SCRIPT_DIR/queue/pending_decisions.yaml"
 if [ -f "$PD_FILE" ]; then
     unsynced_pds=$(python3 -c "
@@ -2474,8 +2618,7 @@ else
 fi
 
 # ─── 穴4: 調査恒久化チェック（WARNのみ、ブロックしない） ───
-echo ""
-echo "Recon knowledge persistence check (穴4):"
+level_heading "[L3]" "Recon knowledge persistence check (穴4):"
 # purposeを取得（append_changelog内と同じawk）
 CMD_PURPOSE=$(awk -v cmd="${CMD_ID}" '
     /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
@@ -2523,8 +2666,7 @@ else
 fi
 
 # ─── プロジェクトコードのスタブ検出（WARNのみ、cmd差分の追加行のみ） ───
-echo ""
-echo "Project code stub check:"
+level_heading "[L2]" "Project code stub check:"
 STUB_CHECK_OUTPUT=$(check_project_code_stubs "$CMD_ID" "$CMD_PROJECT" 2>/dev/null || true)
 STUB_CHECK_STATUS=$(printf '%s\n' "$STUB_CHECK_OUTPUT" | head -1 | cut -f1)
 STUB_CHECK_MESSAGE=$(printf '%s\n' "$STUB_CHECK_OUTPUT" | head -1 | cut -f2-)
@@ -2552,8 +2694,7 @@ case "$STUB_CHECK_STATUS" in
 esac
 
 # ─── 配線検証（WARNのみ、Existence != Integration） ───
-echo ""
-echo "Wiring verification:"
+level_heading "[L3]" "Wiring verification:"
 WIRING_OUTPUT=$(check_script_wiring "$CMD_ID" 2>/dev/null || true)
 if [ -z "$WIRING_OUTPUT" ]; then
     echo "  WARN: wiring verification returned no result"
@@ -2581,8 +2722,7 @@ else
 fi
 
 # ─── TODO/FIXME残存チェック（BLOCK） ───
-echo ""
-echo "TODO/FIXME residual check:"
+level_heading "[L2]" "TODO/FIXME residual check:"
 CMD_NUM="${CMD_ID#cmd_}"
 TODO_HITS=""
 # cmd_IDパターン検索
@@ -2610,8 +2750,7 @@ else
 fi
 
 # ─── Vercel Phaseリンク整合チェック（context変更時のみ、BLOCK対象） ───
-echo ""
-echo "Vercel phase link check:"
+level_heading "[L3]" "Vercel phase link check:"
 changed_contexts=$(git -C "$SCRIPT_DIR" diff --name-only HEAD~1 2>/dev/null | grep '^context/' || true)
 if [ -n "$changed_contexts" ]; then
     if [ -f "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" ]; then
