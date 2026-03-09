@@ -314,6 +314,19 @@ task YAMLに`recon_aspect`フィールドがある場合、その観点に集中
 - 例外: 構文修正・typo修正等の機械的変更は家老判断でレビュー省略可
 - **TODO/FIXME確認義務**: 修正対象ファイル内のTODO/FIXMEコメントが全て解消されているか確認せよ。特に当該cmd/subtaskに関連するTODOが残っていないことを検証する。レビューPASS判定前の必須チェック項目
 
+### ゴール逆算検証(Goal-Backward Verification)
+
+レビュー忍者はAC個別照合に加え、以下を自問せよ。
+
+1. 全ACをPASSしたとして、cmdのpurposeは本当に達成されるか？
+2. purposeに書かれていないがcmdの文脈から明らかに必要な成果が欠落していないか？
+3. 実装の副作用で既存機能が壊れていないか？
+
+レビュー報告YAMLの `review_result` には `goal_backward_check: pass/fail` を記載せよ。
+`goal_backward_check: fail` の場合は `goal_backward_note` に理由を記載せよ。
+
+これはレビュータスク専用ルールであり、implタスクには適用しない。implではAC照合を主とする。
+
 ## テスト義務 (MANDATORY)
 
 **positive_rule**: スクリプト・コード変更時は構文検査を実行し、結果をreportのresult.test_resultに記載せよ。

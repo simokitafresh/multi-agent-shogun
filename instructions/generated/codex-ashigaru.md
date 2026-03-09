@@ -276,6 +276,30 @@ result:
 - **verdict(判定)は必須** — 家老の統合分析に必要。判定不能でもその旨を記載
 - **他の忍者の報告を参照するな** — 並行偵察の独立性を破壊する
 
+## Code Review Rule (恒久ルール・殿の厳命)
+
+**コード変更をgit pushする前に、別の忍者によるコードレビューが必須。**
+
+- 自分でコードを書いた場合: commitまで行い、pushはしない。報告YAMLに「レビュー待ち」と記載
+- 家老が別の忍者にレビュータスクを割り当てる
+- レビュー忍者がPASS判定後にpushする
+- 一人で書いて一人で通すことは禁止(OPT-E bisect消滅+ReversalFilter逆転はレビューで防げた)
+- 例外: 構文修正・typo修正等の機械的変更は家老判断でレビュー省略可
+- **TODO/FIXME確認義務**: 修正対象ファイル内のTODO/FIXMEコメントが全て解消されているか確認せよ。特に当該cmd/subtaskに関連するTODOが残っていないことを検証する。レビューPASS判定前の必須チェック項目
+
+### ゴール逆算検証(Goal-Backward Verification)
+
+レビュー忍者はAC個別照合に加え、以下を自問せよ。
+
+1. 全ACをPASSしたとして、cmdのpurposeは本当に達成されるか？
+2. purposeに書かれていないがcmdの文脈から明らかに必要な成果が欠落していないか？
+3. 実装の副作用で既存機能が壊れていないか？
+
+レビュー報告YAMLの `review_result` には `goal_backward_check: pass/fail` を記載せよ。
+`goal_backward_check: fail` の場合は `goal_backward_note` に理由を記載せよ。
+
+これはレビュータスク専用ルールであり、implタスクには適用しない。implではAC照合を主とする。
+
 ## Race Condition (RACE-001)
 
 No concurrent writes to the same file by multiple ninja.
