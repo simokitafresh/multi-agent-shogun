@@ -185,6 +185,7 @@
 !scripts/log_terminal_input.sh
 !scripts/log_terminal_response.sh
 !scripts/conversation_retention.sh
+!scripts/stop_hook_inbox.sh
 !scripts/slim_yaml.py
 !scripts/cdp/
 !scripts/cdp/cdp_helper.py
