@@ -243,6 +243,20 @@ result:
 
 **findingsのcategory例**: ファイル構造、依存関係、設定値、データフロー、テストカバレッジ、DB構造、API仕様、不整合・問題点
 
+### recon_aspect対応
+
+task YAMLに`recon_aspect`フィールドがある場合、その観点に集中して調査する:
+
+| recon_aspect | 担当観点 | 調査フォーカス |
+|-------------|---------|--------------|
+| stack | 技術構成 | 依存・バージョン・互換性・ビルド・デプロイ |
+| features | 機能 | 機能一覧・現状・不足・過剰・ユーザー導線 |
+| architecture | 設計構造 | データフロー・レイヤー・結合度・拡張性 |
+| pitfalls | リスク | 落とし穴・過去の失敗・制約・セキュリティ |
+
+- 担当外の観点で重大な発見があった場合のみ、報告の補足として記載する
+- `recon_aspect`がない偵察は従来通り自由調査
+
 ### 偵察報告の注意点
 
 - **事実と推測を分離せよ** — コードから確認した事実と、推測・仮説は明確に区別
@@ -567,6 +581,15 @@ Recover from primary data:
      remaining: ["file3.ts"]
      approach: "Extract common interface then refactor"
    ```
+
+## Analysis Paralysis Guard (分析麻痺ガード)
+
+Read/Grep/Globが5回連続でEdit/Write/Bashが1回もない場合、即座に立ち止まれ。
+
+1. 何がブロックしているか1文で述べよ
+2. コードを書くか、不足情報を報告YAMLに記載せよ
+
+**例外**: 偵察タスク(`task_type: recon`)は調査が主目的のため本ルール適用外。
 
 ## Autonomous Judgment Rules
 

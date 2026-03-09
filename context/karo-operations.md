@@ -1,5 +1,5 @@
 # 家老運用索引
-<!-- last_updated: 2026-03-06 cmd_604 Vercel索引化 -->
+<!-- last_updated: 2026-03-09 cmd_707 4観点並行偵察パターン追加 -->
 
 > 索引層。詳細手順・テンプレート・判断材料は `docs/research/karo-operations-detail.md` を参照。
 > 原則: 普段は本ファイルの結論だけで判断し、深掘りが必要な時だけ詳細へ進め。
@@ -30,6 +30,7 @@
 - パターンは `recon / impl / impl_parallel / review / integrate` の5種。毎回ゼロから考えるな。
 - 追加と修正が混在したcmdは分離してから配備する。
 - 後続サブタスクは `blocked_by` + `auto_deploy: true` 付きで事前一括作成する。
+- 「4観点偵察」指定時は4忍者にstack/features/architecture/pitfallsを1観点ずつ配備。従来の2名並行偵察と併用可。task YAMLに `recon_aspect` フィールドで観点を伝達。
 → `docs/research/karo-operations-detail.md` §2
 
 ## §3 レビュー
