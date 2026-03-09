@@ -253,6 +253,8 @@ queue/screenshots/
 !tests/e2e/helpers/*.bash
 !tests/e2e/mock_behaviors/
 !tests/e2e/mock_behaviors/*.sh
+!tests/e2e/fixtures/
+!tests/e2e/fixtures/*.yaml
 !tests/test_helper/
 !tests/test_helper/README.md
 

@@ -7,10 +7,11 @@ setup_file() {
 
 @test "bloom routing: local pool keeps codex and claude ninja sets distinct" {
     run python3 - <<'PY'
+import os
 import yaml
 from pathlib import Path
 
-root = Path(r"/mnt/c/tools/multi-agent-shogun")
+root = Path(os.environ["PROJECT_ROOT"])
 with open(root / "config/settings.yaml", encoding="utf-8") as fh:
     settings = yaml.safe_load(fh) or {}
 
