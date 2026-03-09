@@ -756,8 +756,55 @@ for row in quality_rows:
             if row["gate_result"] == "CLEAR":
                 model_stats[model_name]["effective"] += 1
 
+def extract_model_family(label):
+    low = label.lower().replace("-", " ").replace("_", " ")
+    if "opus" in low and ("4.6" in low or "4 6" in low):
+        return "opus_4_6"
+    if "gpt" in low and ("5.4" in low or "5 4" in low):
+        return "gpt_5_4"
+    if "codex" in low and ("5.4" in low or "5 4" in low):
+        return "gpt_5_4"
+    import re as _re
+    return _re.sub(r"[^a-z0-9]+", "_", low).strip("_") or "unknown"
+
+def build_active_families_from_settings(settings_path, profiles_path):
+    families = set()
+    try:
+        settings = _yaml.safe_load(Path(settings_path).read_text(encoding="utf-8")) or {} if _yaml else {}
+        profiles_data = _yaml.safe_load(Path(profiles_path).read_text(encoding="utf-8")) or {} if _yaml else {}
+    except Exception:
+        return families
+    cli = settings.get("cli", {}) if isinstance(settings, dict) else {}
+    agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
+    default_cli = str(cli.get("default", "claude") or "claude")
+    effort = str(settings.get("effort", "") or "").strip()
+    profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
+    for ninja, cfg in agents.items():
+        cli_type = default_cli
+        model_label = ""
+        has_explicit_model = False
+        if isinstance(cfg, str):
+            cli_type = cfg or default_cli
+        elif isinstance(cfg, dict):
+            cli_type = str(cfg.get("type") or default_cli)
+            model_label = str(cfg.get("model_name") or "")
+            has_explicit_model = bool(model_label.strip())
+        if not model_label.strip():
+            profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
+            model_label = str(profile.get("display_name") or cli_type or "")
+        if has_explicit_model and effort and effort not in model_label.split():
+            model_label = f"{model_label} {effort}"
+        families.add(extract_model_family(model_label.strip()))
+    return families
+
+settings_path = base_dir / "config" / "settings.yaml"
+profiles_path = base_dir / "config" / "cli_profiles.yaml"
+active_families = build_active_families_from_settings(settings_path, profiles_path)
+
 by_model = []
 for model_name, stats in model_stats.items():
+    if model_name == "unknown" or extract_model_family(model_name) not in active_families:
+        continue
     by_model.append({
         "model": model_name,
         "display_name": model_name.replace("_", " "),

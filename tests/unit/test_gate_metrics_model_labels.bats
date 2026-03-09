@@ -87,13 +87,15 @@ cli:
     sasuke:
       type: codex
       model_name: gpt-5.4 high fast
+    kagemaru:
+      model_name: claude-opus-4-6
 effort: ""
 EOF
 
     cat > "$TEST_PROJECT/config/cli_profiles.yaml" <<'EOF'
 profiles:
   codex:
-    display_name: Codex
+    display_name: GPT-5.4
   claude:
     display_name: Opus
 EOF

@@ -430,8 +430,8 @@ fi
 
     # ─── 忍者配備 ───
     echo "### 忍者配備"
-    echo "| 忍者 | モデル | 状態 | 現タスク | cmd | 種別 |"
-    echo "|------|--------|------|----------|-----|------|"
+    echo "| 忍者 | モデル | 状態 | cmd | 内容 |"
+    echo "|------|--------|------|-----|------|"
 
     for ninja in $ALL_NINJAS; do
         jp=$(name_jp "$ninja")
@@ -443,29 +443,31 @@ fi
             status="idle"
         fi
 
-        # Task info from snapshot
-        task_id="—"
+        # Status from snapshot (done override)
         if [[ -f "$SNAPSHOT" ]]; then
             snap_line=$(grep "^ninja|${ninja}|" "$SNAPSHOT" | head -1 || true)
             if [[ -n "$snap_line" ]]; then
-                task_id=$(echo "$snap_line" | cut -d'|' -f3)
                 snap_status=$(echo "$snap_line" | cut -d'|' -f4)
                 [[ "$snap_status" == "done" ]] && status="done"
             fi
         fi
 
-        # parent_cmd and task_type from task YAML (L034: flexible matching)
+        # parent_cmd from task YAML
         cmd="—"
-        task_type="—"
         tf="$TASKS_DIR/${ninja}.yaml"
         if [[ -f "$tf" ]]; then
             _cmd=$(grep -E '^\s*parent_cmd:' "$tf" | head -1 | sed 's/.*parent_cmd:[[:space:]]*//' | sed "s/['\"]//g" | tr -d '[:space:]' || true)
-            _type=$(grep -E '^\s*task_type:' "$tf" | head -1 | sed 's/.*task_type:[[:space:]]*//' | sed "s/['\"]//g" | tr -d '[:space:]' || true)
             [[ -n "$_cmd" ]] && cmd="$_cmd"
-            [[ -n "$_type" ]] && task_type="$_type"
         fi
 
-        echo "| ${jp} | ${model} | ${status} | ${task_id} | ${cmd} | ${task_type} |"
+        # cmd title from TMP_TITLES (50 char limit already applied)
+        title="—"
+        if [[ "$cmd" != "—" ]] && [[ -s "$TMP_TITLES" ]]; then
+            _title=$(grep "^${cmd}"$'\t' "$TMP_TITLES" | head -1 | cut -f2 || true)
+            [[ -n "$_title" ]] && title="$_title"
+        fi
+
+        echo "| ${jp} | ${model} | ${status} | ${cmd} | ${title} |"
     done
 
     echo ""

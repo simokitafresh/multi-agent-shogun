@@ -99,6 +99,17 @@ def model_slug(model_label):
     slug = re.sub(r"[^a-z0-9]+", "_", normalize_model_label(model_label).lower()).strip("_")
     return slug or "unknown"
 
+def extract_model_family(label):
+    """Extract a family key from a model label for matching across label formats."""
+    low = label.lower().replace("-", " ").replace("_", " ")
+    if "opus" in low and ("4.6" in low or "4 6" in low):
+        return "opus_4_6"
+    if "gpt" in low and ("5.4" in low or "5 4" in low):
+        return "gpt_5_4"
+    if "codex" in low and ("5.4" in low or "5 4" in low):
+        return "gpt_5_4"
+    return model_slug(label)
+
 def load_yaml(path):
     if not os.path.isfile(path):
         return {}
@@ -139,6 +150,9 @@ def parse_ninja_model_map():
     return nmap
 
 ninja_model = parse_ninja_model_map()
+
+# Build set of active model families from current ninja→model mapping
+ACTIVE_FAMILIES = set(extract_model_family(m) for m in ninja_model.values())
 
 # ─── Parse lesson_tracking.tsv for cmd→ninjas map ───
 def parse_tracking():
@@ -724,12 +738,20 @@ def output_detail():
     print()
     print("=" * 60)
 
+def is_active_model(label):
+    """Check if a model label belongs to an active model family."""
+    if label == "unknown":
+        return False
+    return extract_model_family(label) in ACTIVE_FAMILIES
+
 def output_summary():
     a = section_a()
     c = section_c()
     e = section_e()
     for m in sorted(a.keys(), key=model_sort_key):
         if m == "unknown":
+            continue
+        if not is_active_model(m):
             continue
         s = a[m]
 
