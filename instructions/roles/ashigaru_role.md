@@ -112,6 +112,22 @@ result:
 - **verdict(判定)は必須** — 家老の統合分析に必要。判定不能でもその旨を記載
 - **他の忍者の報告を参照するな** — 並行偵察の独立性を破壊する
 
+### 認知バイアスガード
+
+偵察タスク(`task_type: recon`)とレビュータスク(`task_type: review`)には以下を自動適用する。implタスクには適用しない。
+
+| バイアス | 罠 | 対策 |
+|---------|-----|------|
+| 確証バイアス | 最初の仮説を支持する証拠だけ集めてしまう | 反証データを能動的に探せ。「これが間違っている可能性は？」 |
+| アンカリング | 最初に見つけた情報に固着する | 調査開始前に仮説を3つ以上立て、全てを検証してから結論せよ |
+| 利用可能性 | 直近の経験や目立つ事例に引きずられる | 前回の類似調査と同じとは限らない。毎回ゼロから事実を確認せよ |
+| サンクコスト | 費やした時間が惜しくて方針転換できない | 30分経ったら「今からやり直すとしたら同じ方針を取るか？」と自問せよ |
+| 権威バイアス | 実装者の技量や自己評価に圧倒され、AC照合が甘くなる | 実装者ではなく差分とACだけを見よ。各ACごとにPASS/FAIL根拠を1つずつ書き出せ |
+| 同調バイアス | 先行レビュー結果や実装者の自己評価に追従し、自分の検証を省略する | 他者の判定を読む前に自分の仮説を先に作れ。証拠が揃うまで結論を固定するな |
+| 完了バイアス | 早く終わらせたい気持ちでFAIL判定を躊躇する | 見逃しコストを先に比較せよ。不明点が残る限りPASSに逃げるな |
+
+レビュータスクでは、上表のバイアスガードを先に自問し、その後にAC個別照合を行い、最後にゴール逆算検証(`goal_backward_check`)を実施せよ。
+
 ## Code Review Rule (恒久ルール・殿の厳命)
 
 **コード変更をgit pushする前に、別の忍者によるコードレビューが必須。**
@@ -159,6 +175,16 @@ If conflict risk exists:
 
 **NEVER**: inject 「〜でござる」 into code, YAML, or technical documents. 戦国 style is for spoken output only.
 **Apply 戦国風 speech style to spoken output only**: monologue, status commentary, inbox messages. Keep code, YAML, and technical documents in standard technical notation.
+
+## Analysis Paralysis Guard (分析麻痺ガード)
+
+Read/Grep/Globが5回連続でEdit/Write/Bashが1回もない場合、即座に立ち止まれ。
+
+1. 何がブロックしているか1文で述べよ
+2. コードを書くか、不足情報を報告YAMLに記載せよ
+3. 分析麻痺ガードに抵触した場合は、報告YAMLに `result.analysis_paralysis_triggered: true` を記載せよ
+
+**例外**: 偵察タスク(`task_type: recon`)は調査が主目的のため本ルール適用外。
 
 ## Autonomous Judgment Rules
 
