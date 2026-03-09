@@ -239,12 +239,6 @@ fun AgentsScreen(
         viewModel.connect(host, port, user, keyPath, password)
     }
 
-    // Pause refresh when navigating to another tab
-    DisposableEffect(Unit) {
-        viewModel.resumeRefresh()
-        onDispose { viewModel.pauseRefresh() }
-    }
-
     // Pause refresh when app is in background
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
