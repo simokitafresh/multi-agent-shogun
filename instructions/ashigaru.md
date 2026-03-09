@@ -214,6 +214,11 @@ commit前の`git add`では、以下を**含めるな**:
 git reset HEAD queue/tasks/ queue/reports/ queue/gates/
 ```
 
+## Push Safety (pre-push hook + CI)
+
+`git push`実行時、pre-pushフックが自動でテストを実行する。フック失敗時はpushが中止される。
+pushが成功した場合もGitHub Actions CI(test.yml)が走り、`cmd_complete_gate.sh`がCI赤を検知した場合はGATE WARNINGが出力される。
+
 ## Task Start Rule (project field)
 
 When task YAML contains `project:`, read these 3 files before any implementation:

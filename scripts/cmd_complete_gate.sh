@@ -2768,6 +2768,74 @@ else
     echo "  SKIP (no context/*.md changes detected since HEAD~1)"
 fi
 
+# ─── CI status check（push済みcmdでCI赤を検知 — WARNのみ） ───
+level_heading "[L3]" "CI status check:"
+CI_PUSH_DETECTED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+    if [ -f "$report_file" ]; then
+        if grep -qE 'git push|files_modified' "$report_file" 2>/dev/null; then
+            CI_PUSH_DETECTED=true
+            break
+        fi
+    fi
+done
+
+if [ "$CI_PUSH_DETECTED" = true ]; then
+    if command -v gh >/dev/null 2>&1; then
+        ci_result=$(gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --branch main --limit 1 --json conclusion,databaseId 2>/dev/null || true)
+        if [ -n "$ci_result" ]; then
+            ci_conclusion=$(printf '%s' "$ci_result" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    if data and isinstance(data, list) and len(data) > 0:
+        print(data[0].get('conclusion', ''))
+    else:
+        print('')
+except:
+    print('')
+" 2>/dev/null)
+            ci_run_id=$(printf '%s' "$ci_result" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    if data and isinstance(data, list) and len(data) > 0:
+        print(data[0].get('databaseId', ''))
+    else:
+        print('')
+except:
+    print('')
+" 2>/dev/null)
+            case "$ci_conclusion" in
+                success)
+                    echo "  OK (CI green, run ${ci_run_id})"
+                    ;;
+                failure)
+                    echo "  WARN: CI赤 (run ${ci_run_id})"
+                    ;;
+                "")
+                    echo "  WARN: CI結果取得不可（進行中またはデータなし）"
+                    ;;
+                *)
+                    echo "  WARN: CI結果=${ci_conclusion} (run ${ci_run_id})"
+                    ;;
+            esac
+        else
+            echo "  SKIP (gh run list returned empty)"
+        fi
+    else
+        echo "  SKIP (gh CLI not available)"
+    fi
+else
+    echo "  SKIP (no push detected in reports)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then

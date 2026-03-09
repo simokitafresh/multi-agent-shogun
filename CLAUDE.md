@@ -260,6 +260,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
+- CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 
 ## Agents
