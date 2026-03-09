@@ -16,10 +16,16 @@ cd "$SCRIPT_DIR"
 
 # venvプリフライトチェック（Python依存のある処理の前に確認）
 VENV_DIR="$SCRIPT_DIR/.venv"
+REQUIREMENTS_FILE="$SCRIPT_DIR/requirements.txt"
 if [ ! -f "$VENV_DIR/bin/python3" ] || ! "$VENV_DIR/bin/python3" -c "import yaml" 2>/dev/null; then
     echo "venv missing or broken. Recreating..."
-    python3 -m venv "$VENV_DIR" 2>/dev/null || { echo "ERROR: venv creation failed"; exit 1; }
-    "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt" -q 2>/dev/null
+    if [ ! -f "$REQUIREMENTS_FILE" ]; then
+        echo "ERROR: requirements.txt not found at $REQUIREMENTS_FILE"
+        exit 1
+    fi
+    python3 -m venv "$VENV_DIR" || { echo "ERROR: venv creation failed"; exit 1; }
+    "$VENV_DIR/bin/pip" install -r "$REQUIREMENTS_FILE" -q || { echo "ERROR: pip install -r requirements.txt failed"; exit 1; }
+    "$VENV_DIR/bin/python3" -c "import yaml" 2>/dev/null || { echo "ERROR: PyYAML import failed after venv recreation"; exit 1; }
 fi
 
 # 言語設定を読み取り（デフォルト: ja）
