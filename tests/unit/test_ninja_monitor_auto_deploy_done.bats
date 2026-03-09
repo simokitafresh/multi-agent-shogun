@@ -49,7 +49,7 @@ if is_task_deployed saizo; then
 else
     echo "DEPLOYED=0"
 fi
-sleep 0.2
+sleep 0.05
 
 if grep -q "TIMEOUT:30 bash $SCRIPT_DIR/scripts/auto_deploy_next.sh cmd_575 subtask_575_impl_a" "$TEST_LOG"; then
     echo "AUTO_DEPLOY_CALL=1"

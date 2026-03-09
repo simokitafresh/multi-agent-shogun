@@ -17,7 +17,7 @@
 #   - tmux_utils.sh stub追加（ntfy_listener.shがsource必須）
 #   - tmux mock追加（実tmuxセッションへの副作用防止）
 #   - flock競合防止（テスト用lock path分離）
-#   - WSL2対応: timeout 15s（python3起動遅延考慮）
+#   - NTFY_LISTENER_LIB_ONLY=1でsource → process_stream_line直接呼出（timeout不要）
 
 setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -30,7 +30,6 @@ setup() {
     export MOCK_BIN="$TEST_TMPDIR/mock_bin"
     export ACK_LOG="$TEST_TMPDIR/ack.log"
     export INBOX_LOG="$TEST_TMPDIR/inbox.log"
-    export MOCK_CURL_OUTPUT="$TEST_TMPDIR/curl_output.json"
 
     # モックプロジェクト構築
     mkdir -p "$MOCK_PROJECT"/{config,lib,scripts/lib,queue,logs/ntfy_inbox_corrupt}
@@ -59,15 +58,6 @@ STUB
 
     # --- モックスクリプト ---
 
-    # mock curl
-    cat > "$MOCK_BIN/curl" << 'CURL_MOCK'
-#!/bin/bash
-if [ -f "$MOCK_CURL_OUTPUT" ]; then
-    cat "$MOCK_CURL_OUTPUT"
-fi
-CURL_MOCK
-    chmod +x "$MOCK_BIN/curl"
-
     # mock tmux（ローカル適応: 実tmuxセッションへの副作用防止）
     cat > "$MOCK_BIN/tmux" << 'TMUX_MOCK'
 #!/bin/bash
@@ -91,21 +81,21 @@ echo "$@" >> "$INBOX_LOG"
 INBOX_MOCK
     chmod +x "$MOCK_PROJECT/scripts/inbox_write.sh"
 
-    # ntfy_listener.shコピー（SCRIPT_DIR差し替え + lockファイル分離）
-    sed -e "s|^SCRIPT_DIR=.*|SCRIPT_DIR=\"$MOCK_PROJECT\"|" \
-        -e "s|/tmp/ntfy_listener.lock|$TEST_TMPDIR/ntfy_listener_test.lock|" \
-        "$PROJECT_ROOT/scripts/ntfy_listener.sh" \
-        > "$MOCK_PROJECT/ntfy_listener_test.sh"
-    chmod +x "$MOCK_PROJECT/ntfy_listener_test.sh"
-
     # ログ初期化
     touch "$ACK_LOG" "$INBOX_LOG"
 
-    # PATHにモックcurl/tmuxを先頭配置
+    # PATHにモックtmuxを先頭配置
     export PATH="$MOCK_BIN:$PATH"
 
     # デフォルト: ntfy.sh正常終了
     unset MOCK_NTFY_EXIT_CODE
+
+    # NTFY_LISTENER_LIB_ONLY=1でsource → 関数定義のみ（main loop不実行）
+    export NTFY_LISTENER_LIB_ONLY=1
+    sed "s|^SCRIPT_DIR=.*|SCRIPT_DIR=\"$MOCK_PROJECT\"|" \
+        "$PROJECT_ROOT/scripts/ntfy_listener.sh" \
+        > "$MOCK_PROJECT/ntfy_listener_lib.sh"
+    source "$MOCK_PROJECT/ntfy_listener_lib.sh"
 }
 
 teardown() {
@@ -117,7 +107,10 @@ teardown() {
 # --- ヘルパー ---
 
 run_listener() {
-    timeout 15 bash "$MOCK_PROJECT/ntfy_listener_test.sh" 2>/dev/null || true
+    # process_stream_lineを直接呼出（coproc/timeout不要 → 高速・決定的）
+    # 2>/dev/null: redirect失敗等のbashエラーメッセージ抑制
+    # || true: append_ntfy_inbox失敗時のERR trap回避（T-ACK-007等）
+    process_stream_line "$1" 2>/dev/null || true
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -125,10 +118,7 @@ run_listener() {
 # ═══════════════════════════════════════════════════════════════
 
 @test "T-ACK-001: Normal message triggers inbox_write to shogun" {
-    cat > "$MOCK_CURL_OUTPUT" << 'JSON'
-{"event":"message","id":"msg001","time":1234567890,"message":"テスト通知","tags":[]}
-JSON
-    run_listener
+    run_listener '{"event":"message","id":"msg001","time":1234567890,"message":"テスト通知","tags":[]}'
     [ -s "$INBOX_LOG" ]
     grep -q "shogun" "$INBOX_LOG"
 }
@@ -138,10 +128,7 @@ JSON
 # ═══════════════════════════════════════════════════════════════
 
 @test "T-ACK-002: Outbound message does NOT trigger processing (loop prevention)" {
-    cat > "$MOCK_CURL_OUTPUT" << 'JSON'
-{"event":"message","id":"msg002","time":1234567890,"message":"📱受信: echo","tags":["outbound"]}
-JSON
-    run_listener
+    run_listener '{"event":"message","id":"msg002","time":1234567890,"message":"📱受信: echo","tags":["outbound"]}'
     [ ! -s "$ACK_LOG" ]
 }
 
@@ -150,10 +137,7 @@ JSON
 # ═══════════════════════════════════════════════════════════════
 
 @test "T-ACK-003: No auto-ACK sent (shogun replies directly)" {
-    cat > "$MOCK_CURL_OUTPUT" << 'JSON'
-{"event":"message","id":"msg003","time":1234567890,"message":"テスト通知です","tags":[]}
-JSON
-    run_listener
+    run_listener '{"event":"message","id":"msg003","time":1234567890,"message":"テスト通知です","tags":[]}'
     # Auto-ACK removed — ACK_LOG should be empty
     [ ! -s "$ACK_LOG" ]
     # But inbox_write to shogun should still fire
@@ -166,10 +150,7 @@ JSON
 
 @test "T-ACK-004: ntfy.sh failure does not block inbox_write" {
     export MOCK_NTFY_EXIT_CODE=1
-    cat > "$MOCK_CURL_OUTPUT" << 'JSON'
-{"event":"message","id":"msg004","time":1234567890,"message":"test msg","tags":[]}
-JSON
-    run_listener
+    run_listener '{"event":"message","id":"msg004","time":1234567890,"message":"test msg","tags":[]}'
     [ -s "$INBOX_LOG" ]
     grep -q "shogun" "$INBOX_LOG"
 }
@@ -179,10 +160,7 @@ JSON
 # ═══════════════════════════════════════════════════════════════
 
 @test "T-ACK-005: Empty message skips processing" {
-    cat > "$MOCK_CURL_OUTPUT" << 'JSON'
-{"event":"message","id":"msg005","time":1234567890,"message":"","tags":[]}
-JSON
-    run_listener
+    run_listener '{"event":"message","id":"msg005","time":1234567890,"message":"","tags":[]}'
     [ ! -s "$ACK_LOG" ]
 }
 
@@ -191,10 +169,7 @@ JSON
 # ═══════════════════════════════════════════════════════════════
 
 @test "T-ACK-006: Non-message event (keepalive) skips processing" {
-    cat > "$MOCK_CURL_OUTPUT" << 'JSON'
-{"event":"keepalive","id":"","time":1234567890,"message":""}
-JSON
-    run_listener
+    run_listener '{"event":"keepalive","id":"","time":1234567890,"message":""}'
     [ ! -s "$ACK_LOG" ]
 }
 
@@ -203,12 +178,9 @@ JSON
 # ═══════════════════════════════════════════════════════════════
 
 @test "T-ACK-007: append_ntfy_inbox failure skips inbox_write" {
-    cat > "$MOCK_CURL_OUTPUT" << 'JSON'
-{"event":"message","id":"msg007","time":1234567890,"message":"should not ack","tags":[]}
-JSON
     # Make queue directory read-only to force flock/mkstemp failure
     chmod 555 "$MOCK_PROJECT/queue"
-    run_listener
+    run_listener '{"event":"message","id":"msg007","time":1234567890,"message":"should not ack","tags":[]}'
     # Both ACK and inbox_write should be skipped
     [ ! -s "$ACK_LOG" ]
     [ ! -s "$INBOX_LOG" ]
@@ -221,10 +193,7 @@ JSON
 # ═══════════════════════════════════════════════════════════════
 
 @test "T-ACK-008: Special characters in message preserved in inbox_write" {
-    cat > "$MOCK_CURL_OUTPUT" << 'JSON'
-{"event":"message","id":"msg008","time":1234567890,"message":"こんにちは 'world' & <test>","tags":[]}
-JSON
-    run_listener
+    run_listener '{"event":"message","id":"msg008","time":1234567890,"message":"こんにちは '\''world'\'' & <test>","tags":[]}'
     # Auto-ACK removed — verify inbox_write still fires for special characters
     [ ! -s "$ACK_LOG" ]
     [ -s "$INBOX_LOG" ]

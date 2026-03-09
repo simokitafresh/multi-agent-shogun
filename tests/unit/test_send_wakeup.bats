@@ -109,7 +109,7 @@ send_wakeup() {
         echo "[WARN] paste-buffer timed out" >&2
         return 1
     fi
-    sleep 0.1
+    sleep 0.02
     if ! timeout "\$SEND_KEYS_TIMEOUT" tmux send-keys -t "\$PANE_TARGET" Enter 2>/dev/null; then
         echo "[WARN] send-keys Enter timed out" >&2
         return 1
@@ -125,7 +125,7 @@ send_cli_command() {
     local actual_cmd="\$cmd"
     echo "[CLI] Sending CLI command: \$actual_cmd" >&2
     timeout "\$SEND_KEYS_TIMEOUT" tmux send-keys -t "\$PANE_TARGET" "\$actual_cmd" 2>/dev/null || return 1
-    sleep 0.1
+    sleep 0.02
     timeout "\$SEND_KEYS_TIMEOUT" tmux send-keys -t "\$PANE_TARGET" Enter 2>/dev/null || return 1
     return 0
 }

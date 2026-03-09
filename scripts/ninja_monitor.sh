@@ -2061,6 +2061,11 @@ while true; do
         check_karo_pending
     fi
 
+    # ═══ CI赤検知チェック（5分間隔 cmd_715） ═══
+    if [ $((cycle % 15)) -eq 0 ]; then
+        bash "$SCRIPT_DIR/scripts/ci_status_check.sh" 2>>"$SCRIPT_DIR/logs/ci_status_check.log" || true
+    fi
+
     # ═══ STEP 2: 家老の外部/clearチェック ═══
     check_karo_clear
 

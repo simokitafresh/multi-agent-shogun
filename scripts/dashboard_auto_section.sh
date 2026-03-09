@@ -472,6 +472,26 @@ fi
 
     echo ""
 
+    # ─── CI Status (cmd_715) ───
+    _ci_status=$(bash "$SCRIPT_DIR/ci_status_check.sh" --status 2>/dev/null || echo "UNKNOWN")
+    case "$_ci_status" in
+        GREEN)
+            echo "### CI Status"
+            echo "CI GREEN"
+            echo ""
+            ;;
+        RED:*)
+            _ci_run_id=$(echo "$_ci_status" | cut -d: -f2)
+            _ci_failed=$(echo "$_ci_status" | cut -d: -f3-)
+            echo "### CI Status"
+            echo "**CI RED: run ${_ci_run_id} — ${_ci_failed}**"
+            echo ""
+            ;;
+        *)
+            # UNKNOWN — skip section
+            ;;
+    esac
+
     # ─── パイプライン ───
     echo "### パイプライン"
 

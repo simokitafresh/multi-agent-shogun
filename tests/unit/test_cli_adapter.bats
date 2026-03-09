@@ -4,28 +4,27 @@
 
 # --- セットアップ ---
 
-setup() {
-    # テスト用のtmpディレクトリ
-    TEST_TMP="$(mktemp -d)"
-
-    # プロジェクトルート
+setup_file() {
+    export SETTINGS_DIR
+    SETTINGS_DIR="$(mktemp -d)"
+    export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
     # デフォルトsettings（cliセクションなし = 後方互換テスト）
-    cat > "${TEST_TMP}/settings_none.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_none.yaml" << 'YAML'
 language: ja
 shell: bash
 display_mode: shout
 YAML
 
     # claude only settings
-    cat > "${TEST_TMP}/settings_claude_only.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_claude_only.yaml" << 'YAML'
 cli:
   default: claude
 YAML
 
     # mixed CLI settings (dict形式)
-    cat > "${TEST_TMP}/settings_mixed.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_mixed.yaml" << 'YAML'
 cli:
   default: claude
   agents:
@@ -55,7 +54,7 @@ cli:
 YAML
 
     # 文字列形式のagent設定
-    cat > "${TEST_TMP}/settings_string_agents.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_string_agents.yaml" << 'YAML'
 cli:
   default: claude
   agents:
@@ -64,7 +63,7 @@ cli:
 YAML
 
     # 不正CLI名
-    cat > "${TEST_TMP}/settings_invalid_cli.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_invalid_cli.yaml" << 'YAML'
 cli:
   default: claudee
   agents:
@@ -72,24 +71,24 @@ cli:
 YAML
 
     # codexデフォルト
-    cat > "${TEST_TMP}/settings_codex_default.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_codex_default.yaml" << 'YAML'
 cli:
   default: codex
 YAML
 
     # 空ファイル
-    cat > "${TEST_TMP}/settings_empty.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_empty.yaml" << 'YAML'
 YAML
 
     # YAML構文エラー
-    cat > "${TEST_TMP}/settings_broken.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_broken.yaml" << 'YAML'
 cli:
   default: [broken yaml
   agents: {{invalid
 YAML
 
     # モデル指定付き
-    cat > "${TEST_TMP}/settings_with_models.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_with_models.yaml" << 'YAML'
 cli:
   default: claude
   agents:
@@ -104,7 +103,7 @@ models:
 YAML
 
     # kimi CLI settings
-    cat > "${TEST_TMP}/settings_kimi.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_kimi.yaml" << 'YAML'
 cli:
   default: claude
   agents:
@@ -116,14 +115,23 @@ cli:
 YAML
 
     # kimi default settings
-    cat > "${TEST_TMP}/settings_kimi_default.yaml" << 'YAML'
+    cat > "${SETTINGS_DIR}/settings_kimi_default.yaml" << 'YAML'
 cli:
   default: kimi
 YAML
 }
 
+setup() {
+    TEST_TMP="$(mktemp -d)"
+    ln -s "${SETTINGS_DIR}"/settings_*.yaml "$TEST_TMP"/
+}
+
 teardown() {
     rm -rf "$TEST_TMP"
+}
+
+teardown_file() {
+    rm -rf "$SETTINGS_DIR"
 }
 
 # ヘルパー: 特定のsettings.yamlでcli_adapterをロード

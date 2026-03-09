@@ -169,6 +169,7 @@
 !scripts/auto_deploy_next.sh
 !scripts/knowledge_metrics.sh
 !scripts/lesson_auto_tag.sh
+!scripts/ci_status_check.sh
 !scripts/dashboard_auto_section.sh
 !scripts/model_analysis.sh
 !scripts/backfill_task_type.sh

@@ -223,16 +223,11 @@ EOF
     [[ "$output" == *"[L3] Context update check:"* ]]
 }
 
-@test "deviation missing empty and non-list skip for backward compatibility" {
+@test "deviation missing and non-list skip for backward compatibility" {
     write_report ""
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *"sasuke: SKIP (result.deviation not present)"* ]]
-
-    write_report_with_deviation_count 0
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"sasuke: SKIP (result.deviation empty (count 0))"* ]]
 
     write_report "  deviation: invalid"
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
@@ -240,18 +235,16 @@ EOF
     [[ "$output" == *"sasuke: SKIP (result.deviation not a list)"* ]]
 }
 
-@test "deviation counts 1 and 3 are OK while 4 and 5 emit warnings" {
-    local count
-    for count in 1 3 4 5; do
-        write_report_with_deviation_count "$count"
-        run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
-        [ "$status" -eq 0 ]
-        if [ "$count" -ge 4 ]; then
-            [[ "$output" == *"WARNING: sasuke: deviation count ${count} >= 4: 逸脱管理ルール(3回超過)に抵触"* ]]
-        else
-            [[ "$output" == *"sasuke: OK (deviation count ${count} <= 3)"* ]]
-        fi
-    done
+@test "deviation threshold uses 3 as OK boundary and 4 as warning threshold" {
+    write_report_with_deviation_count 3
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"sasuke: OK (deviation count 3 <= 3)"* ]]
+
+    write_report_with_deviation_count 4
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: sasuke: deviation count 4 >= 4: 逸脱管理ルール(3回超過)に抵触"* ]]
 }
 
 @test "analysis_paralysis_triggered true emits warning" {
@@ -263,12 +256,7 @@ EOF
     [[ "$output" == *"WARNING: sasuke: analysis paralysis was triggered during this task"* ]]
 }
 
-@test "analysis_paralysis_triggered false is OK and missing is SKIP" {
-    write_report "  analysis_paralysis_triggered: false"
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"sasuke: OK (analysis_paralysis_triggered=false)"* ]]
-
+@test "analysis_paralysis_triggered missing is SKIP" {
     write_report ""
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]

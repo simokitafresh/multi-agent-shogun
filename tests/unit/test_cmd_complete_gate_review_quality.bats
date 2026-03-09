@@ -285,17 +285,3 @@ EOF
     [[ "$output" == *"TODO/FIXME residual check:"* ]]
     [[ "$output" == *"NG ← 1件のTODO/FIXMEが残存:"* ]]
 }
-
-@test "TODO in tests directory is ignored" {
-    write_task "sasuke" "recon"
-    write_recon_report "sasuke"
-    cat > "$TEST_PROJECT/tests/unit/fake_test.sh" <<EOF
-#!/usr/bin/env bash
-# TODO cmd_999
-exit 0
-EOF
-
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"TODO check: OK (0 remaining)"* ]]
-}

@@ -20,6 +20,8 @@ setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export BUILD_SCRIPT="$PROJECT_ROOT/scripts/build_instructions.sh"
     export OUTPUT_DIR="$PROJECT_ROOT/instructions/generated"
+    export BUILD_STATUS_FILE
+    BUILD_STATUS_FILE="$(mktemp)"
 
     # パーツディレクトリの存在確認（前提条件）
     [ -d "$PROJECT_ROOT/instructions/roles" ] || return 1
@@ -27,7 +29,12 @@ setup_file() {
     [ -d "$PROJECT_ROOT/instructions/cli_specific" ] || return 1
 
     # ビルド実行（全テストの前に1回のみ）
-    bash "$BUILD_SCRIPT" > /dev/null 2>&1 || true
+    bash "$BUILD_SCRIPT" > /dev/null 2>&1
+    printf '%s\n' "$?" > "$BUILD_STATUS_FILE"
+}
+
+teardown_file() {
+    rm -f "${BUILD_STATUS_FILE:-}"
 }
 
 setup() {
@@ -41,8 +48,7 @@ setup() {
 # =============================================================================
 
 @test "build: build_instructions.sh exits with status 0" {
-    run bash "$BUILD_SCRIPT"
-    [ "$status" -eq 0 ]
+    [ "$(cat "$BUILD_STATUS_FILE")" -eq 0 ]
 }
 
 @test "build: generated/ directory exists after build" {
@@ -206,15 +212,18 @@ setup() {
 # =============================================================================
 
 @test "idempotent: second build produces identical output" {
-    # 1st build
-    bash "$BUILD_SCRIPT" > /dev/null 2>&1
-    local checksums_first
-    checksums_first=$(find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort)
+    local first_file second_file
+    first_file="$(mktemp)"
+    second_file="$(mktemp)"
 
-    # 2nd build
     bash "$BUILD_SCRIPT" > /dev/null 2>&1
-    local checksums_second
-    checksums_second=$(find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort)
+    find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort > "$first_file"
 
-    [ "$checksums_first" = "$checksums_second" ]
+    bash "$BUILD_SCRIPT" > /dev/null 2>&1
+    find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort > "$second_file"
+
+    run diff -u "$first_file" "$second_file"
+    [ "$status" -eq 0 ]
+
+    rm -f "$first_file" "$second_file"
 }

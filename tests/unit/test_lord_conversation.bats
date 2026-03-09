@@ -64,12 +64,12 @@ PY
 @test "T-LC-003: append_lord_conversation fails when lock is held" {
     (
         flock -x 200
-        sleep 10
+        sleep 6
     ) 200>"$LORD_CONVERSATION_LOCK" &
     local lock_pid=$!
-    sleep 0.5
+    sleep 0.05
 
-    run timeout 8 bash -c "
+    run timeout 6 bash -c "
         source '$LORD_CONV_LIB'
         export LORD_CONVERSATION='$LORD_CONVERSATION'
         export LORD_CONVERSATION_LOCK='$LORD_CONVERSATION_LOCK'
