@@ -335,7 +335,7 @@ Control your AI army from your phone in two ways:
 | Project path | `pwd` | `/mnt/c/tools/multi-agent-shogun` |
 | tmux session name | `tmux ls` | `shogun` |
 | tmux prefix | `tmux show-options -gqv prefix` | `C-a` |
-| Android APK | [Download](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v4.2/shogun-companion.apk) | `shogun-companion.apk` |
+| Android APK | [Download](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v5.0/app-debug.apk) | `app-debug.apk` |
 
 #### Why mosh
 
@@ -361,7 +361,7 @@ The repo now includes a mobile client in [`android/`](android/):
 - **4 tabs**: Shogun, Agents, Dashboard, Settings
 - **SSH/JSch** for live tmux control
 - **ntfy** for push notifications
-- **Download APK: [`shogun-companion.apk`](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v4.2/shogun-companion.apk)**
+- **Download APK: [`app-debug.apk`](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v5.0/app-debug.apk)**
 
 See [`android/README.md`](android/README.md) for screen-by-screen setup.
 
