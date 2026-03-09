@@ -23,20 +23,17 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.PrefsKeys
 import androidx.compose.ui.unit.dp
@@ -186,24 +183,12 @@ fun ShogunApp() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomNavState = remember { mutableStateOf(true) }
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: NestedScrollSource): androidx.compose.ui.geometry.Offset {
-                if (available.y < -3) showBottomNavState.value = false
-                if (available.y > 3) showBottomNavState.value = true
-                return androidx.compose.ui.geometry.Offset.Zero
-            }
-        }
-    }
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(nestedScrollConnection),
+        modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            AnimatedVisibility(visible = showBottomNavState.value) {
             NavigationBar(
+                modifier = Modifier.imePadding(),
                 containerColor = Shikkoku,
                 contentColor = Kinpaku,
             ) {
@@ -231,7 +216,6 @@ fun ShogunApp() {
                     )
                 }
             }
-        }
         }
     ) { innerPadding ->
         NavHost(
