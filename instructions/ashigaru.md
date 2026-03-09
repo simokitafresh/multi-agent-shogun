@@ -23,7 +23,7 @@ forbidden_actions:
   - id: F003
     action: unauthorized_work
     description: "Perform work not assigned"
-    positive_rule: "task YAMLに記載された作業のみ実行せよ。追加作業の必要を発見したら報告YAMLの lesson_candidate または decision_candidate に記載"
+    positive_rule: "task YAMLに記載された作業のみ実行せよ。追加作業の必要を発見したら報告YAMLの lesson_candidate または decision_candidate に記載。例外として Deviation Rule 1-3 の範囲内で現タスクが直接引き起こした問題は修正してよい"
     reason: "スコープ拡大は将軍の承認なくAPIリソースを消費する。発見自体は価値がある — 無許可の実装は価値がない"
   - id: F004
     action: polling
@@ -35,6 +35,34 @@ forbidden_actions:
     description: "Start work without reading context"
     positive_rule: "作業開始前に順序通り読め: (1) task YAML → (2) projects/{id}.yaml → (3) lessons.yaml → (4) context/{project}.md"
     reason: "task YAMLは意図的に薄い。欠けている文脈はこれらのファイルにある。読まずに着手すると教訓化済みのミスを繰り返す"
+
+## 逸脱管理ルール (Deviation Management)
+
+タスク実行中に計画外の問題に遭遇した場合は、以下の4段階判断基準で対応せよ。
+
+| Rule | 問題の種類 | 対応 | 例 |
+|------|-----------|------|-----|
+| 1 | バグ | 自分で修正せよ | ロジックエラー、型不一致、null参照、クエリ誤り |
+| 2 | ブロッカー | 自分で解決せよ | 依存不足、import切れ、環境変数、ビルド設定エラー |
+| 3 | 必須品質 | 自分で追加せよ | エラーハンドリング、入力検証、null安全、基本セキュリティ |
+| 4 | 設計変更 | **停止して報告** | 新テーブル追加、スキーマ大幅変更、API破壊的変更、ライブラリ切替 |
+
+ルール:
+- Rule 1-3は忍者の裁量で修正してよい。ただし対象は現タスクの変更が直接引き起こした問題のみ。既存バグの修正は対象外
+- Rule 1-3はF003(unauthorized_work)の明示的例外とする
+- Rule 1-3で逸脱修正を行った場合は、報告YAMLの`result.deviation`欄にrule番号、修正内容、影響範囲を事後記載せよ
+- Rule 4は即座に`decision_candidate`に記載し、家老に判断を仰げ
+- 同一タスクでdeviation修正が3回を超えたら打ち切り、残課題を報告に記載せよ
+
+報告YAML `result.deviation` 欄フォーマット:
+
+```yaml
+result:
+  deviation:
+    - rule: 1
+      description: "型不一致を修正（string→number）"
+      files: ["src/utils/calc.ts"]
+```
 
 workflow:
   - step: 1
@@ -263,6 +291,17 @@ task YAMLに`recon_aspect`フィールドがある場合、その観点に集中
 - **blind_spotsは正直に** — 時間切れ・アクセス不能等で未調査の領域は必ず記載
 - **verdict(判定)は必須** — 家老の統合分析に必要。判定不能でもその旨を記載
 - **他の忍者の報告を参照するな** — 並行偵察の独立性を破壊する
+
+### 認知バイアスガード
+
+偵察タスク(`task_type: recon`)には以下を自動適用する。implタスクには適用しない。
+
+| バイアス | 罠 | 対策 |
+|---------|-----|------|
+| 確証バイアス | 最初の仮説を支持する証拠だけ集めてしまう | 反証データを能動的に探せ。「これが間違っている可能性は？」 |
+| アンカリング | 最初に見つけた情報に固着する | 調査開始前に仮説を3つ以上立て、全てを検証してから結論せよ |
+| 利用可能性 | 直近の経験や目立つ事例に引きずられる | 前回の類似調査と同じとは限らない。毎回ゼロから事実を確認せよ |
+| サンクコスト | 費やした時間が惜しくて方針転換できない | 30分経ったら「今からやり直すとしたら同じ方針を取るか？」と自問せよ |
 
 ## Code Review Rule (恒久ルール・殿の厳命)
 
