@@ -765,6 +765,182 @@ emit(
 PY
 }
 
+# ─── wiring verification（WARN only, existence != integration） ───
+check_script_wiring() {
+    local cmd_id="$1"
+
+    SCRIPT_DIR_ENV="$SCRIPT_DIR" CMD_ID_ENV="$cmd_id" python3 - <<'PY'
+import os
+import re
+import subprocess
+
+script_dir = os.environ["SCRIPT_DIR_ENV"]
+cmd_id = os.environ["CMD_ID_ENV"].strip()
+PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])(scripts/[A-Za-z0-9._/-]+\.sh)(?![A-Za-z0-9_./-])")
+
+
+def emit(row_type: str, scope: str, status: str, message: str) -> None:
+    print(f"{row_type}\t{scope}\t{status}\t{message}")
+
+
+def git(repo_path: str, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", repo_path, *args],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def detect_cmd_commit_count(repo_path: str, target_cmd_id: str) -> int:
+    log_proc = git(repo_path, "log", "--format=%H%x1f%s%x1f%b%x1e", "-n", "100")
+    if log_proc.returncode != 0:
+        return -1
+
+    count = 0
+    for record in log_proc.stdout.split("\x1e"):
+        record = record.strip()
+        if not record:
+            continue
+        parts = record.split("\x1f", 2)
+        if len(parts) != 3:
+            continue
+        _commit_hash, subject, body = parts
+        haystack = f"{subject}\n{body}"
+        if target_cmd_id in haystack:
+            count += 1
+        elif count > 0:
+            break
+
+    return count
+
+
+def is_script_target(rel_path: str) -> bool:
+    return rel_path.startswith("scripts/") and rel_path.endswith(".sh")
+
+
+def read_text(path: str) -> str:
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
+def collect_reference_files() -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    forward_candidates: list[tuple[str, str]] = []
+    reverse_candidates: list[tuple[str, str]] = []
+
+    for root, _dirs, files in os.walk(script_dir):
+        files.sort()
+        for filename in files:
+            rel_path = os.path.relpath(os.path.join(root, filename), script_dir).replace(os.sep, "/")
+            abs_path = os.path.join(root, filename)
+            if rel_path == "CLAUDE.md":
+                forward_candidates.append((rel_path, abs_path))
+                reverse_candidates.append((rel_path, abs_path))
+                continue
+            if rel_path.startswith("instructions/") and rel_path.endswith(".md"):
+                forward_candidates.append((rel_path, abs_path))
+                reverse_candidates.append((rel_path, abs_path))
+                continue
+            if is_script_target(rel_path):
+                forward_candidates.append((rel_path, abs_path))
+
+    forward_candidates.sort()
+    reverse_candidates.sort()
+    return forward_candidates, reverse_candidates
+
+
+forward_candidates, reverse_candidates = collect_reference_files()
+commit_count = detect_cmd_commit_count(script_dir, cmd_id)
+if commit_count < 0:
+    emit("CHECK", "FORWARD", "WARN", "git log failed while resolving cmd diff")
+elif commit_count == 0:
+    emit("CHECK", "FORWARD", "SKIP", f"no contiguous HEAD commits mention {cmd_id}")
+else:
+    base_ref = f"HEAD~{commit_count}"
+    base_check = git(script_dir, "rev-parse", "--verify", base_ref)
+    if base_check.returncode != 0:
+        emit("CHECK", "FORWARD", "SKIP", f"{base_ref} not available")
+    else:
+        diff_proc = git(script_dir, "diff", "--name-status", "--find-renames", base_ref, "HEAD", "--")
+        if diff_proc.returncode != 0:
+            emit("CHECK", "FORWARD", "WARN", f"git diff failed: {diff_proc.stderr.strip()}")
+        else:
+            added_scripts: list[str] = []
+            for raw in diff_proc.stdout.splitlines():
+                if not raw.strip():
+                    continue
+                parts = raw.split("\t")
+                if len(parts) < 2:
+                    continue
+                status = parts[0]
+                rel_path = parts[-1].strip()
+                if not status.startswith("A"):
+                    continue
+                if is_script_target(rel_path):
+                    added_scripts.append(rel_path)
+
+            added_scripts = sorted(dict.fromkeys(added_scripts))
+            if not added_scripts:
+                emit("CHECK", "FORWARD", "OK", f"no new scripts/*.sh in cmd diff (base={base_ref}, commits={commit_count})")
+            else:
+                unreferenced: list[str] = []
+                for rel_path in added_scripts:
+                    references: list[str] = []
+                    for candidate_rel, candidate_abs in forward_candidates:
+                        if candidate_rel == rel_path:
+                            continue
+                        try:
+                            content = read_text(candidate_abs)
+                        except OSError:
+                            continue
+                        if rel_path in content:
+                            references.append(candidate_rel)
+                    if not references:
+                        unreferenced.append(rel_path)
+
+                if unreferenced:
+                    emit(
+                        "CHECK",
+                        "FORWARD",
+                        "WARN",
+                        f"{len(unreferenced)} new scripts/*.sh file(s) have no references in instructions/*.md, CLAUDE.md, or other scripts/*.sh",
+                    )
+                    for rel_path in unreferenced:
+                        emit("DETAIL", "FORWARD", "-", rel_path)
+                else:
+                    emit(
+                        "CHECK",
+                        "FORWARD",
+                        "OK",
+                        f"all {len(added_scripts)} new scripts/*.sh file(s) are referenced (base={base_ref}, commits={commit_count})",
+                    )
+
+references: dict[str, set[str]] = {}
+for candidate_rel, candidate_abs in reverse_candidates:
+    try:
+        content = read_text(candidate_abs)
+    except OSError:
+        continue
+    for match in PATH_RE.findall(content):
+        if not is_script_target(match):
+            continue
+        references.setdefault(match, set()).add(candidate_rel)
+
+missing_refs: list[tuple[str, list[str]]] = []
+for rel_path, sources in sorted(references.items()):
+    if os.path.isfile(os.path.join(script_dir, rel_path)):
+        continue
+    missing_refs.append((rel_path, sorted(sources)))
+
+if missing_refs:
+    emit("CHECK", "REVERSE", "WARN", f"{len(missing_refs)} referenced scripts/*.sh path(s) do not exist")
+    for rel_path, sources in missing_refs:
+        emit("DETAIL", "REVERSE", "-", f"{rel_path} <- {', '.join(sources)}")
+else:
+    emit("CHECK", "REVERSE", "OK", f"all {len(references)} referenced scripts/*.sh path(s) exist")
+PY
+}
+
 # ─── lesson tracking追記（ベストエフォート） ───
 append_lesson_tracking() {
     local cmd_id="$1"
@@ -2374,6 +2550,35 @@ case "$STUB_CHECK_STATUS" in
         echo "  WARN: project code stub check returned no result"
         ;;
 esac
+
+# ─── 配線検証（WARNのみ、Existence != Integration） ───
+echo ""
+echo "Wiring verification:"
+WIRING_OUTPUT=$(check_script_wiring "$CMD_ID" 2>/dev/null || true)
+if [ -z "$WIRING_OUTPUT" ]; then
+    echo "  WARN: wiring verification returned no result"
+else
+    while IFS=$'\t' read -r row_type scope status message; do
+        case "$row_type" in
+            CHECK)
+                case "$status" in
+                    WARN)
+                        echo "  ${scope}: WARN (${message})"
+                        ;;
+                    SKIP)
+                        echo "  ${scope}: SKIP (${message})"
+                        ;;
+                    *)
+                        echo "  ${scope}: OK (${message})"
+                        ;;
+                esac
+                ;;
+            DETAIL)
+                echo "    ${message}"
+                ;;
+        esac
+    done <<< "$WIRING_OUTPUT"
+fi
 
 # ─── TODO/FIXME残存チェック（BLOCK） ───
 echo ""
