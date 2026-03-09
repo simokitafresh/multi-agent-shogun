@@ -13,12 +13,24 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts"
+
 declare -A AUTO_DEPLOY_DONE PANE_TARGETS
 TEST_LOG="$(mktemp)"
 LOG="$TEST_LOG"
 CALLED=0
 PANE_TARGETS[saizo]=""
 AUTO_DEPLOY_DONE["saizo:subtask_575_impl_a"]=""
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: done
+  task_id: subtask_575_impl_a
+  parent_cmd: cmd_575
+EOF
 
 log() { echo "$1" >> "$TEST_LOG"; }
 check_and_update_done_task() { CALLED=$((CALLED + 1)); return 0; }
@@ -39,7 +51,7 @@ else
 fi
 sleep 0.2
 
-if grep -q "TIMEOUT:30 bash $PROJECT_ROOT/scripts/auto_deploy_next.sh cmd_575 subtask_575_impl_a" "$TEST_LOG"; then
+if grep -q "TIMEOUT:30 bash $SCRIPT_DIR/scripts/auto_deploy_next.sh cmd_575 subtask_575_impl_a" "$TEST_LOG"; then
     echo "AUTO_DEPLOY_CALL=1"
 else
     echo "AUTO_DEPLOY_CALL=0"
@@ -63,11 +75,23 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
 declare -A AUTO_DEPLOY_DONE PANE_TARGETS
 TEST_LOG="$(mktemp)"
 LOG="$TEST_LOG"
 CALLED=0
 PANE_TARGETS[saizo]=""
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: done
+  task_id: subtask_575_impl_a
+  parent_cmd: cmd_575
+EOF
 
 log() { echo "$1" >> "$TEST_LOG"; }
 check_and_update_done_task() { CALLED=$((CALLED + 1)); return 1; }

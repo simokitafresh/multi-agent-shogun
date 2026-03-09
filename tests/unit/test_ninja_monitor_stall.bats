@@ -13,9 +13,20 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
 declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
 TEST_LOG="$(mktemp)"
 TEST_MESSAGES="$(mktemp)"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: assigned
+  subtask_id: subtask_500_impl_stall_enforcement
+EOF
 
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
@@ -57,9 +68,20 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
 declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
 TEST_LOG="$(mktemp)"
 TEST_MESSAGES="$(mktemp)"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: in_progress
+  subtask_id: subtask_500_impl_stall_enforcement
+EOF
 
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
@@ -102,9 +124,20 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
 declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
 TEST_LOG="$(mktemp)"
 TEST_MESSAGES="$(mktemp)"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: in_progress
+  subtask_id: subtask_500_impl_stall_enforcement
+EOF
 
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
