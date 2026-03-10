@@ -362,6 +362,24 @@ decision_candidate:
   found: false
 EOF
 
+    # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
+    local report_task_type
+    report_task_type=$(field_get "$task_file" "task_type" "")
+    if [ -z "$report_task_type" ]; then
+        report_task_type=$(field_get "$task_file" "type" "")
+    fi
+    if [ "$report_task_type" = "recon" ] || [ "$report_task_type" = "scout" ]; then
+        cat >> "$report_file" <<'RECON_EOF'
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify: []   # 変更対象ファイルと行番号 例: ["src/api/auth.py:45-60"]
+  affected_files: []    # 変更が波及する他ファイル 例: ["tests/test_auth.py"]
+  related_tests: []     # 関連テストの有無と修正要否 例: ["tests/test_auth.py — 修正必要"]
+  edge_cases: []        # エッジケース・副作用 例: ["トークン期限切れ時の再認証フロー"]
+RECON_EOF
+        log "report_template: added implementation_readiness (recon/scout)"
+    fi
+
     yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
     log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
@@ -1899,6 +1917,64 @@ EOF
     return 1
 }
 
+resolve_dispatch_title() {
+    local cmd_id="$1"
+    local task_file="$2"
+    local title=""
+    local yaml_file=""
+
+    if [ -f "$task_file" ]; then
+        title=$(field_get "$task_file" "title" "")
+    fi
+
+    if [ -z "$title" ] && [[ -n "$cmd_id" && "$cmd_id" == cmd_* ]]; then
+        for yaml_file in \
+            "$SCRIPT_DIR/queue/shogun_to_karo.yaml" \
+            "$SCRIPT_DIR/queue/archive/shogun_to_karo_done.yaml"
+        do
+            [ -f "$yaml_file" ] || continue
+            title=$(awk -v cmd="${cmd_id}" '
+                /^[[:space:]]*-[[:space:]]*id:[[:space:]]*cmd_[0-9]+/ {
+                    line = $0
+                    sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", line)
+                    sub(/[[:space:]]+#.*$/, "", line)
+                    gsub(/["[:space:]]/, "", line)
+                    if (line == cmd) {
+                        found = 1
+                        next
+                    }
+                    if (found) {
+                        exit
+                    }
+                }
+                found && /^[[:space:]]*title:[[:space:]]*/ {
+                    line = $0
+                    sub(/^[[:space:]]*title:[[:space:]]*/, "", line)
+                    sub(/[[:space:]]+#.*$/, "", line)
+                    print line
+                    exit
+                }
+            ' "$yaml_file" 2>/dev/null || true)
+
+            if [ -n "$title" ]; then
+                break
+            fi
+        done
+    fi
+
+    title=$(printf '%s' "$title" \
+        | tr '\n' ' ' \
+        | tr '\r' ' ' \
+        | sed 's/^["'\'']//; s/["'\'']$//' \
+        | awk '{gsub(/[[:space:]]+/, " "); sub(/^ /, ""); sub(/ $/, ""); print}')
+
+    if [ "${#title}" -gt 80 ]; then
+        title="${title:0:77}..."
+    fi
+
+    echo "$title"
+}
+
 notify_initial_deploy_ntfy_once() {
     local task_file="$1"
     local ninja_name="$2"
@@ -1912,8 +1988,7 @@ notify_initial_deploy_ntfy_once() {
     fi
 
     cmd_id=$(field_get "$task_file" "parent_cmd" "")
-    title=$(field_get "$task_file" "title" "")
-    title="$(printf '%s' "$title" | tr '\n' ' ' | tr '\r' ' ')"
+    title=$(resolve_dispatch_title "$cmd_id" "$task_file")
 
     if [[ -z "$cmd_id" || "$cmd_id" != cmd_* ]]; then
         log "dispatch_ntfy: SKIP (parent_cmd missing or invalid: ${cmd_id:-none})"

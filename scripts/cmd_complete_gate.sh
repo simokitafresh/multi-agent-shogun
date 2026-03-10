@@ -2665,6 +2665,56 @@ else
     echo "  SKIP (non-recon cmd: purpose does not contain recon keywords)"
 fi
 
+# ─── 偵察報告 実装直結4要件チェック（WARNのみ、cmd_754） ───
+level_heading "[L2]" "Recon implementation_readiness check (cmd_754):"
+
+if [ "$HAS_RECON" = true ]; then
+    RECON_4REQ_MISSING=0
+    RECON_4REQ_CHECKED=0
+    RECON_4REQ_KEYWORDS="files_to_modify affected_files related_tests edge_cases"
+
+    for report_file in "$REPORTS_DIR"/*_report_${CMD_ID}.yaml; do
+        [ -f "$report_file" ] || continue
+
+        # task_typeがrecon/scoutの報告のみ対象
+        local_task_type=""
+        local_task_id=$(field_get "$report_file" "task_id" "")
+        if [ -n "$local_task_id" ]; then
+            local_task_file="$TASKS_DIR/$(echo "$report_file" | sed 's|.*/\([^/]*\)_report_.*|\1|').yaml"
+            if [ -f "$local_task_file" ]; then
+                local_task_type=$(field_get "$local_task_file" "task_type" "")
+            fi
+        fi
+
+        # subtask_idからもrecon/scoutを判定
+        if [ -z "$local_task_type" ] || { [ "$local_task_type" != "recon" ] && [ "$local_task_type" != "scout" ]; }; then
+            if echo "$local_task_id" | grep -qiE 'scout|recon'; then
+                local_task_type="recon"
+            fi
+        fi
+
+        [ "$local_task_type" = "recon" ] || [ "$local_task_type" = "scout" ] || continue
+
+        RECON_4REQ_CHECKED=$((RECON_4REQ_CHECKED + 1))
+        for kw in $RECON_4REQ_KEYWORDS; do
+            if ! grep -q "$kw" "$report_file" 2>/dev/null; then
+                RECON_4REQ_MISSING=$((RECON_4REQ_MISSING + 1))
+                echo "  WARN: ${report_file##*/} に ${kw} が欠落"
+            fi
+        done
+    done
+
+    if [ "$RECON_4REQ_CHECKED" -eq 0 ]; then
+        echo "  SKIP (recon reports not found for ${CMD_ID})"
+    elif [ "$RECON_4REQ_MISSING" -eq 0 ]; then
+        echo "  OK (全偵察報告に実装直結4要件あり)"
+    else
+        echo "  WARN: 偵察報告に実装直結4要件(files_to_modify/affected_files/related_tests/edge_cases)が欠落。偵察品質を確認せよ"
+    fi
+else
+    echo "  SKIP (non-recon cmd)"
+fi
+
 # ─── プロジェクトコードのスタブ検出（WARNのみ、cmd差分の追加行のみ） ───
 level_heading "[L2]" "Project code stub check:"
 STUB_CHECK_OUTPUT=$(check_project_code_stubs "$CMD_ID" "$CMD_PROJECT" 2>/dev/null || true)

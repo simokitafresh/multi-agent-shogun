@@ -290,6 +290,21 @@ task YAMLに`recon_aspect`フィールドがある場合、その観点に集中
 - 担当外の観点で重大な発見があった場合のみ、報告の補足として記載する
 - `recon_aspect`がない偵察は従来通り自由調査
 
+### 偵察報告の実装直結4要件（殿厳命 cmd_754）
+
+偵察(recon/scout)タスクの報告には、以下の4要件を**必ず**記載せよ。偵察は現象特定で止めるな。
+報告YAMLのimplementation_readiness欄（deploy_task.shが自動生成）に記入する。
+
+| # | キー | 記載内容 |
+|---|------|---------|
+| 1 | files_to_modify | 変更対象ファイルと行番号（例: `src/api/auth.py:45-60`） |
+| 2 | affected_files | 変更が波及する他ファイル（例: `tests/test_auth.py`, `src/middleware.py`） |
+| 3 | related_tests | 関連テストの有無と修正要否（例: `tests/test_auth.py — 修正必要`） |
+| 4 | edge_cases | エッジケース・副作用（例: `トークン期限切れ時の再認証フロー`） |
+
+**positive_rule**: 4要件すべてを記載せよ。空欄のまま報告するとcmd_complete_gate.shでWARN出力される。
+**reason**: 偵察結果が「現象の列挙」で終わるとimpl着手時に再調査が必要になり、リソースが二重消費される。
+
 ### 偵察報告の注意点
 
 - **事実と推測を分離せよ** — コードから確認した事実と、推測・仮説は明確に区別
