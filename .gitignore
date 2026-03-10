@@ -192,6 +192,7 @@
 !scripts/conversation_retention.sh
 !scripts/stop_hook_inbox.sh
 !scripts/slim_yaml.py
+!scripts/x_research.py
 !scripts/cdp/
 !scripts/cdp/cdp_helper.py
 !scripts/cdp/README.md
