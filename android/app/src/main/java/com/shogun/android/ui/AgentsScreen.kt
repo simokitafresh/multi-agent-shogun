@@ -626,6 +626,7 @@ fun PaneFullScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
