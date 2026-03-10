@@ -23,6 +23,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -187,6 +188,7 @@ fun ShogunApp() {
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             NavigationBar(
+                modifier = Modifier.imePadding(),
                 containerColor = Shikkoku,
                 contentColor = Kinpaku,
             ) {
