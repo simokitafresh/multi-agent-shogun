@@ -56,10 +56,10 @@ run_hook() {
         bash -lc 'cd "$TEST_ROOT" && bash "$TEST_ROOT/.githooks/pre-push"' dummy $extra_args
 }
 
-@test "pre-push runs bats tests/unit with timeout 40 and jobs 4" {
+@test "pre-push runs bats tests/unit with timeout 120 and jobs 4" {
     run_hook
     [ "$status" -eq 0 ]
-    grep -q '^40 bats tests/unit/ --jobs 4 --timing$' "$TEST_ROOT/timeout_calls.log"
+    grep -q '^120 bats tests/unit/ --jobs 4 --timing$' "$TEST_ROOT/timeout_calls.log"
     grep -q '^tests/unit/ --jobs 4 --timing$' "$TEST_ROOT/bats_calls.log"
     [[ "$output" == *"Running unit tests before push..."* ]]
 }

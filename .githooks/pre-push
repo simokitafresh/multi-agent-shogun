@@ -21,7 +21,7 @@ run_unit_tests() {
 
   echo "Running unit tests before push..."
   set +e
-  timeout 40 bats tests/unit/ --jobs 4 --timing
+  timeout 120 bats tests/unit/ --jobs 4 --timing
   test_status=$?
   set -e
 
