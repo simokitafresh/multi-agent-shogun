@@ -25,8 +25,8 @@
 
 ## 1. システム全体像
 
-本番: Render.com — PostgreSQL + FastAPI + Next.js。viewer/admin認証は in-memory dict ではなく DB-backed token (`viewer_tokens`/`admin_tokens`) + HttpOnly Cookie (`viewer_session`/`admin_session`) が正で、Cookie期限は JST 期限日 23:59:59 を UTC に変換して設定する。参照: `/mnt/c/Python_app/DM-signal/backend/app/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/api/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/db/models.py`
-ローカル: WSL2 — dm_signal.db(本番ミラー) + experiments.db(分析用ground truth)。StockData API毎日01:00 UTC自動同期。
+本番: Render.com — PostgreSQL + FastAPI + Next.js。StockData API毎日01:00 UTC自動同期。viewer/admin認証は in-memory dict ではなく DB-backed token (`viewer_tokens`/`admin_tokens`) + HttpOnly Cookie (`viewer_session`/`admin_session`) が正で、Cookie期限は JST 期限日 23:59:59 を UTC に変換して設定する。参照: `/mnt/c/Python_app/DM-signal/backend/app/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/api/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/db/models.py`
+ローカル: WSL2 — dm_signal.db(本番ミラー) + experiments.db(分析用ground truth)。
 
 | Layer | 時刻(UTC) | ジョブ | 内容 |
 |-------|-----------|--------|------|
