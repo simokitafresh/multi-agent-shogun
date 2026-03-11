@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-03-03 cmd_493 リンク整合 -->
+<!-- last_updated: 2026-03-11 trade-rule突合6裁定(cmd_768-770)+万全偵察(cmd_761/762) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -215,3 +215,58 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 |----|----------|------|
 | L165 | P_det ローリング基準は検知力天井 β·(n+K)/2 を持つ。固定基準は時間成長するが古いアンカーの代表性リスクあり | cmd_540 |
 | L166 | ローリング基準は線形ドリフト検知力が上限飽和するため、副指標なしだと遅い劣化を取り逃しやすい | cmd_540 |
+
+---
+
+## §25. trade-rule/business_rules突合（2026-03-11 殿確定6裁定）
+
+殿とのtrade-rule.md / business_rules.md / 現行コード突合セッション。cmd_767(trade-rule補完7箇所) → cmd_769(MECE整合) → cmd_770(business_rules乖離10箇所修正)の3段で完了。
+
+| # | 確定内容 | cmd | 影響先 |
+|---|---------|-----|--------|
+| 1 | FoF参照日: 「直近リバランス時のsignal_dateで確定したsignal」が正。「前月末」表現は不正確 → 避ける | cmd_767 AC6 | RULE08 |
+| 2 | wᵢ = 月初目標ウェイト。非リバランス月でも月初リセット（暗黙的月次リバランス = ユーザー公平性設計） | cmd_769 AC2 | RULE05/06 |
+| 3 | Trade期間リターン: buy-and-holdではなく月次複利合成 R_trade=Π(1+R_月)-1 | cmd_768 AC1 | RULE05, return_calculator.py |
+| 4 | SSOT 3層: Price table(L0) → calculate_monthly_return()(L1) → MonthlyReturn table(L2キャッシュ) | cmd_769 AC4 | core §2 |
+| 5 | business_rules.md §3.4 Loading Policy（Optimistic UI禁止）は陳腐化。SWR許可 | cmd_770 AC3 | FE api-client.ts |
+| 6 | Safe Haven: コードとbusiness_rules.md §1.1完全一致。Cash=DTB3、safe_haven_asset設定でGLD/XLU等 | cmd_767 AC7 | — |
+
+→ `dm-signal.md` §25 | `projects/dm-signal.yaml` RULE05/06/08/SSOT更新済み
+→ cmd_768: calculate_trade_period_return()を月次複利合成に修正完了
+→ cmd_770: business_rules.mdの乖離10箇所修正完了
+
+---
+
+## §26. 万全偵察: DM-signal改善候補（cmd_761+762, 2026-03-11）
+
+水平4名(FEバンドル/BE応答/エラー耐性/UX導線) + 垂直4名(GSD式4観点独立分析)の8名同時投入。
+
+### 水平偵察(cmd_761)
+
+| 領域 | 担当 | 主要発見 |
+|------|------|---------|
+| FEバンドル | 影丸 | Dashboard 139kB最重量。recharts+d3(332KB raw)が最大chunk。KaTeX fonts 1.17MB |
+| BE応答速度 | 半蔵 | monthly-returns 1721ms最遅。N+1クエリ(全PF×expanded_tickers)がボトルネック |
+| エラー耐性 | 小太郎 | 401連鎖崩壊(1本失敗→全セッション崩壊)。retry/fallback不統一 |
+| UX導線 | 才蔵 | 16ページフラットナビ。Admin/一般混在。ページ説明なし |
+
+### 垂直偵察(cmd_762, GSD式)
+
+| 観点 | 担当 | Top3ペインポイント |
+|------|------|------------------|
+| ユーザー体験 | 飛猿 | (1)初回ロード2-5秒 (2)16項目フラットナビ認知負荷 (3)エラー復帰手段欠如 |
+| コード品質 | 霧丸 | 型安全性の穴(any/型assertion)、テストカバレッジ低い重要モジュール |
+| データフロー | 佐助 | PF切替→7-11 API殺到。キャッシュ戦略不統一(api-cache/IndexedDB/localStorage混在) |
+| インフラ/運用 | 疾風 | Render Free SPOF(1 worker)。監視/アラート不在。ロールバック手段なし |
+
+### 統合: 最高ROI改善策（家老統合AC5）
+
+| 優先 | 施策 | コスト | 効果 | 実行cmd |
+|------|------|--------|------|---------|
+| 1 | BE N+1クエリ最適化(monthly-returns) | M | 高 | cmd_775/791 |
+| 2 | FEバンドル最適化(recharts dynamic import等) | S | 中 | cmd_784/785/786 |
+| 3 | prefetch request storm抑制 | M | 高 | cmd_783 |
+| 4 | 401連鎖崩壊の隔離(エンドポイント単位) | S | 中 | cmd_758 |
+| 5 | フォルダフィルタ共通化(PersistentFolderFilter) | M | 中 | cmd_787 |
+
+→ 多くは後続cmdで着手/完了済み。詳細 → `context/dm-signal-frontend.md` §7以降

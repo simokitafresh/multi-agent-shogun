@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-03-03 cmd_493 リンク整合+loader/API現行化 -->
+<!-- last_updated: 2026-03-11 cmd_796 3月11日運用実績反映(cmd_746/763/790/791/792) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -24,6 +24,13 @@
 
 ボトルネック: trade_perf(58.7s) > L3 FoF(~89s) > signal_calc(0.53s)
 補助参照: `docs/research/cmd_484_dm-signal-supplemental-catalog-2.md` AC1-2（scripts一覧）
+| 項目 | 結論 | 参照 |
+|---|---|---|
+| cmd_790 APIベースライン | 15体×3 endpoint + `/api/signals` + `/api/metrics/summary` を `2026-03-11-v2/` に固定保存。monthly-returns は169-231ヶ月、全件 `year_month` あり。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_790_completed_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/hanzo_report_cmd_790_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/saizo_report_cmd_790_20260311.yaml` |
+| cmd_791 Phase2b BE最適化 | `/api/monthly-returns` から `expanded_tickers` 除去 + months前倒しを実装。15体diff完全一致PASS、monthly-trade側 `expanded_tickers` は維持。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_791_completed_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/kotaro_report_cmd_791_183558.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/kagemaru_report_cmd_791_20260311.yaml` |
+| cmd_792 ETag有効化 | FEの304誤判定を修正。`etagStore → apiCache` 復元経路で既存ETag 3件を実動化。`tsc --noEmit` PASS、api-client tests 19 PASS。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_792_completed_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/hanzo_report_cmd_792_190031.yaml` |
+| cmd_763 workers=2復帰 | 認証修正完了後の復帰cmd。CDP比較基準は workers=1時点で cold 128ms / warm 149ms / PF切替 1005ms。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_763_completed_20260311.yaml` |
+| cmd_746 CDP計測基盤 | cold/warm・PF切替・SPA遷移・API個別計測・baseline自動比較を一発実行可能化。実戦値: Dashboard cold 126ms / warm 152ms、PF切替 1003.9ms、compare-summary 155ms、monthly-returns 191ms、deterioration 170ms。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_746_completed_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/kagemaru_report_cmd_746_20260311.yaml` |
 - L177: 本番404切り分けはopenapi.json実測でデプロイ未反映を即時判定できる（cmd_553）
 - L178: 本番404調査はopenapi実測で『ルート未登録』を先に確定すると切り分けが最短になる（cmd_553）
 - L179: 新サービスのimport文とrequirements.txtの突合確認をデプロイ前チェックに含めるべき（cmd_554）
@@ -134,8 +141,9 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L006 | 本番API呼び出しはPowerShell `Invoke-RestMethod`を使う | API | — |
 | L004 | `experiments.db`はスナップショットでありSSOTではない | DB | — |
 | L003 | PowerShell `-replace`/`Set-Content`でUTF-8文字化けが起こる | ツール | — |
+| L223 | backend/.envは全体sourceせず必要変数だけgrep抽出すべし | 運用手順 | cmd_739 |
 
-## §17 現在の全体ステータス（2026-02-22）
+## §17 現在の全体ステータス（2026-03-11）
 
 | 項目 | 状態 |
 |------|------|
@@ -144,6 +152,11 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L2 忍法12体 | 本番登録済み+全12体 0.00bp PASS(cmd_246) |
 | 本番PF総数 | 未確認（cmd_477後の再集計待ち） |
 | L3 堅牢性検証 | 未着手(cmd_176殿裁定待ち) |
+| APIベースライン | cmd_790で15体×3 API + 一括2件を `docs/research/baseline_api_responses/2026-03-11-v2/` へ固定 |
+| Phase2b BE最適化 | cmd_791完了。`monthly-returns` の `expanded_tickers` 除去 + months前倒し、15体diff完全一致PASS |
+| ETag/SWR前提 | cmd_792完了。304処理修正で annual/monthly/trade returns の既存ETagが有効化 |
+| 同時処理能力 | cmd_763で `uvicorn --workers 2` 復帰対象まで到達。比較基準は workers=1 cold 128ms / warm 149ms / PF切替 1005ms |
+| CDP計測基盤 | cmd_746完了。cold/warm/PF切替/SPA/API個別/baseline比較が本番一発実行可能 |
 | 新忍法偵察 | 逆風(cmd_249)/RelMom(cmd_250)/MultiView(cmd_251)偵察中 |
 | SVMF/MVMFバグ | 修正完了(cmd_235+cmd_244) |
 | 穴1/2/3 | 全対策完了 |

@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-02-24 lesson_sync §19 ID shift修正(L123/L124挿入による+2shift)+L124追加 -->
+<!-- last_updated: 2026-03-11 認証DB化(cmd_752/755)+SSOT3層(§25)+Cookie TZ(cmd_759)+trade-rule教訓(cmd_766/767) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -44,6 +44,19 @@
 テーブル詳細(全DB) → `docs/research/core-db-tables.md`
 
 要点: experiments.db=価格ground truth(daily_prices 414K行) | dm_signal.db=本番ミラー(PF設定用) | 本番PostgreSQL=SSOT
+
+### SSOT 3層階層（殿確定 2026-03-11 §25）
+
+| Level | 名前 | 役割 | ファイル |
+|-------|------|------|---------|
+| L0(データ) | Price table | 全ての原点。営業日=Priceレコード存在日 | — |
+| L0(ルール) | trade-rule.md | 理論上の理想形(11絶対ルール定義) | `docs/rule/trade-rule.md` |
+| L1a | calculate_monthly_return() | 月次リターンのSSOT関数 | `backend/app/services/return_calculator.py` |
+| L1b | calculate_trade_period_return() | Trade期間リターンのSSOT関数（月次複利合成方式 cmd_768） | `backend/app/services/return_calculator.py` |
+| L2 | MonthlyReturn table | L1aの事前計算キャッシュ。`recalculate_fast.py`で生成 | — |
+| L3 | UI表示層 | L1/L2を使用する派生実装 | — |
+
+→ `projects/dm-signal.yaml` ssot_hierarchy
 UUID不一致: DM7+以外は2DB間でUUID異なる（§3参照）
 DLコマンド: `download_all_prices.py grid-search`(価格) | `download_prod_data.py monthly-returns`(月次)。`prices`は422エラー(cmd_042)
 - L156: pending判定のas_of基準は2系統存在する: DB最新日(signals) vs date.today()(monthly-trade)（cmd_524）
@@ -219,7 +232,8 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 > DB操作(DELETE/UPDATE)タスクでは以下のPFを**絶対に削除・変更してはならない**。
 
 **Standard PF(21体)**: DM2, DM2-20%/-40%/-60%/-80%/-test/-top, DM3, DM4, DM5, DM5-006, DM6, DM6-5/-20%/-40%/-60%/-80%/-Top, DM7+, DM-safe, DM-safe-2
-**FoF PF(14体)**: Ave-X, Ave四神, 裏Ave-X, MIX1-4, bam-2/-6, 劇薬DMオリジナル/スムーズ/bam/bam_guard/bam_solid
+**FoF PF(13体)**: Ave-X, 裏Ave-X, MIX1-4, bam-2/-6, 劇薬DMオリジナル/スムーズ/bam/bam_guard/bam_solid
+~~Ave四神~~: 2026-03-11時点で本番不在（削除済み）
 削除許可: L0-*(GS生成) / 四神L1(12体) / 忍法L2(15体) のみ
 運用: DB操作タスクのdescriptionに「殿PF除外」明記必須 / dry-runで残存PFリスト確認してから本削除
 詳細→`projects/dm-signal.yaml` protected_portfolios
@@ -313,6 +327,13 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L018 | RULE10: シグナル判定はClose、リターン記録はOpenを厳守 | — |
 | L002 | ブロック名は`BlockType` enum値で統一する | — |
 | L001 | `pipeline_config`テンプレートのパラメータ名はコードと1:1一致必須 | — |
+
+### 19.7 trade-rule突合・SSOT（cmd_766-770）
+
+| ID | 結論(1行) | 出典 |
+|---|---|---|
+| L241 | SSOT関数書き換え時、呼び出し元の不要引数計算を残さない | cmd_768 |
+| L242 | trade-rule整合レビューでは同一文書内の二次SSOT表もgrepで潰す | cmd_770 |
 
 ## 20. Deterioration色丸(ColorDot)マッピング
 
