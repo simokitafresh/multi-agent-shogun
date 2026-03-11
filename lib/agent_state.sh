@@ -57,6 +57,32 @@ _agent_state_last_non_empty_line() {
     printf '%s\n' "$text" | grep -v '^[[:space:]]*$' | tail -1
 }
 
+# pstree子プロセス検知: CLI直下にbash子プロセスがあればBash tool実行中
+# 戻り値: 0=bash子プロセスあり(busy), 1=なし
+# MCPサーバー(node/npm)はbashでないので自然に除外
+_agent_state_has_busy_subprocess() {
+    local pane_target="$1"
+    local pane_pid
+    pane_pid=$(tmux display-message -t "$pane_target" -p '#{pane_pid}' 2>/dev/null) || return 1
+    [ -n "$pane_pid" ] || return 1
+
+    # pstree -A -p でプロセスツリーを取得（ASCII出力）
+    local tree
+    tree=$(pstree -A -p "$pane_pid" 2>/dev/null) || return 1
+
+    # CLIプロセス(claude/codex/node)のPIDを抽出
+    local cli_pid
+    cli_pid=$(printf '%s\n' "$tree" | grep -oP '(claude|codex|node)\(\K[0-9]+' | head -1)
+    [ -n "$cli_pid" ] || return 1
+
+    # CLI直下のbash子プロセスを検査
+    if pgrep -xP "$cli_pid" bash >/dev/null 2>&1; then
+        return 0
+    fi
+
+    return 1
+}
+
 agent_is_busy_check() {
     local pane_target="$1"
     local agent_id="${2:-}"
@@ -131,6 +157,11 @@ check_agent_busy() {
 
     if [ -z "$pane_target" ] || [ -z "$agent_id" ]; then
         return 2
+    fi
+
+    # pstree子プロセス検知: CLI直下にbash子プロセスがあればBUSY
+    if _agent_state_has_busy_subprocess "$pane_target"; then
+        return 1
     fi
 
     local idle_flag

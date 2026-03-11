@@ -162,6 +162,66 @@ agent_is_busy_check "shogun:agents.2" "sasuke"
     [ "$status" -eq 1 ]
 }
 
+@test "check_agent_busy returns busy when pstree detects bash subprocess under CLI" {
+    run bash -lc '
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+STATE_DIR="$(mktemp -d)"
+export SHOGUN_STATE_DIR="$STATE_DIR"
+source "$PROJECT_ROOT/lib/agent_state.sh"
+tmux() {
+    case "$1" in
+        display-message)
+            case "$5" in
+                *pane_pid*) echo "12345"; return 0 ;;
+                *agent_state*) echo "idle"; return 0 ;;
+                *) echo ""; return 0 ;;
+            esac
+            ;;
+        set-option) return 0 ;;
+        *) return 0 ;;
+    esac
+}
+pstree() { echo "bash(12345)---node(23456)---bash(34567)"; return 0; }
+pgrep() { echo "34567"; return 0; }
+check_agent_busy "shogun:agents.8" "kotaro"
+'
+    [ "$status" -eq 1 ]
+}
+
+@test "check_agent_busy returns idle when pstree shows no bash subprocess" {
+    run bash -lc '
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+STATE_DIR="$(mktemp -d)"
+export SHOGUN_STATE_DIR="$STATE_DIR"
+source "$PROJECT_ROOT/lib/agent_state.sh"
+agent_id="pstree_no_sub_$$"
+flag="$SHOGUN_STATE_DIR/shogun_idle_${agent_id}"
+rm -f "$flag"
+tmux() {
+    case "$1" in
+        display-message)
+            case "$5" in
+                *pane_pid*) echo "12345"; return 0 ;;
+                *agent_state*) echo "idle"; return 0 ;;
+                *) echo ""; return 0 ;;
+            esac
+            ;;
+        set-option) return 0 ;;
+        *) return 0 ;;
+    esac
+}
+pstree() { echo "bash(12345)---node(23456)"; return 0; }
+pgrep() { return 1; }
+check_agent_busy "shogun:agents.8" "$agent_id"
+rc=$?
+[ "$rc" -eq 0 ]
+[ -f "$flag" ]
+rm -f "$flag"
+rmdir "$SHOGUN_STATE_DIR"
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "get_agent_state_label returns unknown when pane is absent" {
     run bash -lc '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"

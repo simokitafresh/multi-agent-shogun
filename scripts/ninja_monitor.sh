@@ -211,6 +211,11 @@ check_idle() {
             if [ -n "$last_active" ] && [ $((now - last_active)) -lt 15 ]; then
                 return 1  # grace period内はBUSY扱い（thinking中の誤判定防止）
             fi
+            # pstree cross-check: @agent_state=idleでも子プロセス存在時はBUSY
+            if _agent_state_has_busy_subprocess "$pane_target"; then
+                log "PSTREE-OVERRIDE: ${agent_name} @agent_state=idle but bash subprocess detected, treating as BUSY"
+                return 1
+            fi
             return 0  # IDLE確定（grace period経過）
         fi
         # ─── bash_running: Bashフック設定中はBUSY扱い（STALL誤判定防止） ───
