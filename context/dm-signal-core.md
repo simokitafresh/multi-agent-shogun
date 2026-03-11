@@ -13,10 +13,20 @@
 | L2 | 忍法FoF | 5忍法(分身/追い風/抜き身/変わり身/加速)×3モード(激攻/鉄壁/常勝)のGS・登録 | 完了(12体登録+全0.00bp PASS) |
 | L3 | 組合せ堅牢化 | 上位構造の堅牢性検証（WF優先。FoFは乗り換え戦略のため時間軸評価が本質。CPCVは補助） | 未着手(cmd_176殿裁定待ち) |
 
+**Trade-Rule教訓（cmd_766）** — LLMが間違えやすいルール:
+- L233: RULE09 Open/Closeは独立計算系列、混在禁止
+- L234: RULE10 シグナル判定はClose固定、Openはリターン計算限定
+- L235: RULE11 Monthly Trade ReturnとMonthly Returns Returnは完全一致
+- L236: 誤解5 リターンは累積インデックス比ではなく価格比×ウェイト
+- L237: 誤解6 日次複利積ではなく価格比×ウェイトで月次を出す
+- L238: 誤解7 FoFのシグナル参照日は当月初営業日のholding_signal
+- L239: 誤解13 Open-to-Openは異なる日のOpen同士を結ぶ
+- L240: 誤解14 Open/Closeデフォルト判断はOpen-to-Open
+
 ## 1. システム全体像
 
-本番: Render.com — PostgreSQL + FastAPI + Next.js。StockData API毎日01:00 UTC自動同期。
-ローカル: WSL2 — dm_signal.db(本番ミラー) + experiments.db(分析用ground truth)。
+本番: Render.com — PostgreSQL + FastAPI + Next.js。viewer/admin認証は in-memory dict ではなく DB-backed token (`viewer_tokens`/`admin_tokens`) + HttpOnly Cookie (`viewer_session`/`admin_session`) が正で、Cookie期限は JST 期限日 23:59:59 を UTC に変換して設定する。参照: `/mnt/c/Python_app/DM-signal/backend/app/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/api/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/db/models.py`
+ローカル: WSL2 — dm_signal.db(本番ミラー) + experiments.db(分析用ground truth)。StockData API毎日01:00 UTC自動同期。
 
 | Layer | 時刻(UTC) | ジョブ | 内容 |
 |-------|-----------|--------|------|
@@ -26,6 +36,7 @@
 | 3 | 01:40 | sync-fof | FoFシグナル計算 |
 
 再計算排他制御: `recalc_status.py`の`threading.Lock`。同時実行不可。409=正常排他(FAILではない)。30秒待って再実行。→ `projects/dm-signal.yaml` (c) recalculate_concurrency
+- L232: recalculate_fast.pyのholding_signal更新は「月変わりANDリバランス月」の2条件で制御される（cmd_764）
 
 ## 2. DB地図
 
@@ -170,7 +181,7 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 
 ## 8. APIエンドポイント概要
 
-FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success,data,error,message}`
+FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success,data,error,message}`。FE `api-client.ts` は TTL付きGET (`annual-returns`/`monthly-returns`/`rolling-returns`/`monthly-trade` 等) で auth-scope込み `cacheKey` を生成し、保存済みETagを `If-None-Match` 送信、`304 Not Modified` は成功扱いで保存済みpayloadへ復元する。参照: `/mnt/c/Python_app/DM-signal/frontend/lib/api-client.ts`
 主要: `/api/signals` `/api/portfolios/get|save` `/admin/recalculate-sync` `/healthz`
 詳細(全EP・レスポンス構造) → `docs/research/core-api-endpoints.md` | yaml → `projects/dm-signal.yaml` (h) api
 - L153: signals APIのpending判定はrebalance_trigger共通化しないとFoF/非月次で表示不整合が起きる（cmd_515）
