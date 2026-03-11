@@ -35,6 +35,7 @@ source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
+source "$SCRIPT_DIR/lib/rotate_log.sh"
 
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 
@@ -1658,6 +1659,9 @@ send_karo_clear() {
     # AC4: /clear後にdebounceファイルを削除（inbox_watcherの再送をブロックしない）
     rm -f "/tmp/inbox_watcher_last_nudge_karo"
 
+    # /clear後の復帰nudge — 家老が空プロンプトでidle化するのを防ぐ
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "/clear復帰。karo_snapshot.txtを読んで作業再開せよ。" clear_recovery ninja_monitor
+
     return 0
 }
 
@@ -1973,6 +1977,9 @@ while true; do
 
         # shogun_to_karo.yaml肥大化監視 (cmd_369 AC3)
         check_yaml_size
+
+        # ログローテーション (cmd_802) — 10分間隔で全ログを検査
+        rotate_all_logs "$SCRIPT_DIR/logs" 10000
     fi
 
     # ═══ ペイン生存チェック (cmd_183) ═══
