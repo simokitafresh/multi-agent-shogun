@@ -1606,6 +1606,27 @@ IFS=$'\t' read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate
 GATE_INJECTED_LESSONS="$(collect_injected_lessons "$CMD_ID")"
 CMD_TITLE="$(collect_cmd_title "$CMD_ID")"
 
+# ─── cmd_776 B層: 報告YAML自動正規化（auto-draft前に実行） ───
+NORMALIZE_LOG="$SCRIPT_DIR/logs/normalize_report.log"
+echo "Normalize report candidates (B層):"
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+    if [ -f "$report_file" ]; then
+        normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) && {
+            echo "  ${ninja_name}: WARN — auto-fixed: ${normalize_output}"
+            echo "$(date '+%Y-%m-%dT%H:%M:%S') [B層] ${CMD_ID} ${ninja_name}: ${normalize_output}" >> "$NORMALIZE_LOG"
+        } || {
+            echo "  ${ninja_name}: OK (no normalization needed)"
+        }
+    fi
+done
+echo ""
+
 # ─── 忍者報告からlesson_candidate自動draft登録 ───
 echo "Auto-draft lesson candidates:"
 for task_file in "$TASKS_DIR"/*.yaml; do
@@ -2028,9 +2049,34 @@ except:
             ALL_CLEAR=false
             ;;
         legacy_list)
-            echo "  ${ninja_name}: NG ← lesson_candidateが旧形式(リスト)。正規フォーマット: found: true/false + title + detail + project"
-            record_block_reason "${ninja_name}:lesson_candidate_legacy_list"
-            ALL_CLEAR=false
+            # cmd_776 A層: BLOCK→自動修正+WARN。normalize_report.shで修正を試みる
+            a_normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) && {
+                echo "  ${ninja_name}: WARN ← lesson_candidate旧形式を自動修正: ${a_normalize_output}"
+                echo "$(date '+%Y-%m-%dT%H:%M:%S') [A層] ${CMD_ID} ${ninja_name}: ${a_normalize_output}" >> "$SCRIPT_DIR/logs/normalize_report.log"
+                # 修正成功 → 再検証
+                lc_recheck=$(python3 -c "
+import yaml, sys
+try:
+    with open('$report_file') as f:
+        data = yaml.safe_load(f)
+    lc = data.get('lesson_candidate')
+    if isinstance(lc, dict) and 'found' in lc:
+        print('ok')
+    else:
+        print('ng')
+except:
+    print('ng')
+" 2>/dev/null)
+                if [ "$lc_recheck" != "ok" ]; then
+                    echo "  ${ninja_name}: NG ← 自動修正後も構造不正"
+                    record_block_reason "${ninja_name}:lesson_candidate_normalize_failed"
+                    ALL_CLEAR=false
+                fi
+            } || {
+                echo "  ${ninja_name}: NG ← lesson_candidate自動修正失敗"
+                record_block_reason "${ninja_name}:lesson_candidate_normalize_error"
+                ALL_CLEAR=false
+            }
             ;;
         found_missing)
             echo "  ${ninja_name}: NG ← lesson_candidate.found が未設定。正規フォーマット: found: true/false"

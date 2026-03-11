@@ -380,6 +380,11 @@ RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
     fi
 
+    # cmd_776 C層: テンプレ生成後にnormalize_report.shで正規化を保証
+    if bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" >/dev/null 2>&1; then
+        log "report_template: normalized (C層 auto-fix applied)"
+    fi
+
     yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
     log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
