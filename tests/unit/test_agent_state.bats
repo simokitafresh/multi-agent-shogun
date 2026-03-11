@@ -181,8 +181,20 @@ tmux() {
         *) return 0 ;;
     esac
 }
-pstree() { echo "bash(12345)---node(23456)---bash(34567)"; return 0; }
-pgrep() { echo "34567"; return 0; }
+pstree() { echo "bash(12345)---node(23456)---codex(34567)---bash(45678)"; return 0; }
+pgrep() {
+    case "$2" in
+        34567) echo "45678"; return 0 ;;
+        45678) return 1 ;;
+        *) return 1 ;;
+    esac
+}
+ps() {
+    case "$2" in
+        45678) echo "bash"; return 0 ;;
+        *) return 1 ;;
+    esac
+}
 check_agent_busy "shogun:agents.8" "kotaro"
 '
     [ "$status" -eq 1 ]
@@ -210,8 +222,9 @@ tmux() {
         *) return 0 ;;
     esac
 }
-pstree() { echo "bash(12345)---node(23456)"; return 0; }
+pstree() { echo "bash(12345)---node(23456)---codex(34567)"; return 0; }
 pgrep() { return 1; }
+ps() { return 1; }
 check_agent_busy "shogun:agents.8" "$agent_id"
 rc=$?
 [ "$rc" -eq 0 ]

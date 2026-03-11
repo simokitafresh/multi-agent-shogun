@@ -57,6 +57,41 @@ _agent_state_last_non_empty_line() {
     printf '%s\n' "$text" | grep -v '^[[:space:]]*$' | tail -1
 }
 
+_agent_state_extract_cli_pids() {
+    local tree="$1"
+    local matches
+
+    matches=$(printf '%s\n' "$tree" | grep -oE '(claude|codex)\([0-9]+\)' 2>/dev/null || true)
+    if [ -z "$matches" ]; then
+        matches=$(printf '%s\n' "$tree" | grep -oE 'node\([0-9]+\)' 2>/dev/null || true)
+    fi
+
+    [ -n "$matches" ] || return 1
+    printf '%s\n' "$matches" | sed -E 's/.*\(([0-9]+)\)/\1/' | awk '!seen[$0]++'
+}
+
+_agent_state_descendant_has_process_name() {
+    local parent_pid="$1"
+    local target_name="$2"
+    local children child child_name
+
+    children=$(pgrep -P "$parent_pid" 2>/dev/null || true)
+    [ -n "$children" ] || return 1
+
+    for child in $children; do
+        child_name=$(ps -p "$child" -o comm= 2>/dev/null | awk 'NR==1 {print $1}')
+        if [ "$child_name" = "$target_name" ]; then
+            return 0
+        fi
+
+        if _agent_state_descendant_has_process_name "$child" "$target_name"; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 # pstree子プロセス検知: CLI直下にbash子プロセスがあればBash tool実行中
 # 戻り値: 0=bash子プロセスあり(busy), 1=なし
 # MCPサーバー(node/npm)はbashでないので自然に除外
@@ -70,15 +105,15 @@ _agent_state_has_busy_subprocess() {
     local tree
     tree=$(pstree -A -p "$pane_pid" 2>/dev/null) || return 1
 
-    # CLIプロセス(claude/codex/node)のPIDを抽出
-    local cli_pid
-    cli_pid=$(printf '%s\n' "$tree" | grep -oP '(claude|codex|node)\(\K[0-9]+' | head -1)
-    [ -n "$cli_pid" ] || return 1
+    # codex/claudeを優先し、無い場合のみnodeへフォールバック
+    local cli_pids cli_pid
+    cli_pids=$(_agent_state_extract_cli_pids "$tree") || return 1
 
-    # CLI直下のbash子プロセスを検査
-    if pgrep -xP "$cli_pid" bash >/dev/null 2>&1; then
-        return 0
-    fi
+    for cli_pid in $cli_pids; do
+        if _agent_state_descendant_has_process_name "$cli_pid" "bash"; then
+            return 0
+        fi
+    done
 
     return 1
 }
