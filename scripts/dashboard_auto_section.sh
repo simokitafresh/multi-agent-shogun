@@ -183,6 +183,8 @@ fi
 
 # ─── Calculate gate metrics ───
 STREAK=0
+STREAK_START=""
+STREAK_END=""
 CLEAR_RATE="0.0%"
 TOTAL_CMDS=0
 LAST_GATE="—"
@@ -253,6 +255,7 @@ KM_KNOWLEDGE_MODEL_ROWS=""
 KM_TOP_LESSON_ROWS=""
 KM_BOTTOM_LESSON_ROWS=""
 MODEL_SCOREBOARD_ROWS=""
+CONTEXT_WARNINGS="$(bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings 2>/dev/null || true)"
 
 _gate_signature="missing"
 if [[ -f "$GATE_LOG" ]]; then
@@ -592,6 +595,16 @@ fi
         printf "%s" "$KM_BOTTOM_LESSON_ROWS"
     else
         echo "| — | — | — | — | — |"
+    fi
+
+    echo ""
+
+    # ─── Context freshness warnings (cmd_778 A-layer) ───
+    echo "### Context鮮度警告"
+    if [[ -n "$CONTEXT_WARNINGS" ]]; then
+        printf "%s\n" "$CONTEXT_WARNINGS"
+    else
+        echo "なし"
     fi
 
     echo ""

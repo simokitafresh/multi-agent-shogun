@@ -4,11 +4,13 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    export SRC_CONTEXT_FRESHNESS_SCRIPT="$PROJECT_ROOT/scripts/context_freshness_check.sh"
     export SRC_MODEL_ANALYSIS="$PROJECT_ROOT/scripts/model_analysis.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
 
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
+    [ -f "$SRC_CONTEXT_FRESHNESS_SCRIPT" ] || return 1
     [ -f "$SRC_MODEL_ANALYSIS" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
@@ -34,6 +36,7 @@ setup() {
         "$TEST_PROJECT/tasks"
 
     cp "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
+    cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
     cp "$SRC_MODEL_ANALYSIS" "$TEST_PROJECT/scripts/model_analysis.sh"
     cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
@@ -60,6 +63,7 @@ exit 0
 EOF
     chmod +x \
         "$TEST_PROJECT/scripts/cmd_complete_gate.sh" \
+        "$TEST_PROJECT/scripts/context_freshness_check.sh" \
         "$TEST_PROJECT/scripts/model_analysis.sh" \
         "$TEST_PROJECT/scripts/lib/field_get.sh" \
         "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \

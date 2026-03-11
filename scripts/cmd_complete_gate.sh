@@ -2961,6 +2961,22 @@ if [ "$ALL_CLEAR" = true ]; then
     fi
     bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  WARN: sync-counters failed (non-blocking)"
 
+    echo ""
+    echo "Context freshness nudge (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/context_freshness_check.sh" ]; then
+        context_warn_lines=$(bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$CMD_ID" 2>/dev/null || true)
+        if [ -n "$context_warn_lines" ]; then
+            while IFS= read -r warn_line; do
+                [ -n "$warn_line" ] || continue
+                echo "  ${warn_line}"
+            done <<< "$context_warn_lines"
+        else
+            echo "  OK: no stale project context files"
+        fi
+    else
+        echo "  WARN: context_freshness_check.sh not found (skip)"
+    fi
+
     # ─── lesson_merge自動実行（ベストエフォート） ───
     echo ""
     echo "Lesson merge (auto):"

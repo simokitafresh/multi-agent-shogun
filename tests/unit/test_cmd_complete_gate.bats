@@ -5,11 +5,13 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    export SRC_CONTEXT_FRESHNESS_SCRIPT="$PROJECT_ROOT/scripts/context_freshness_check.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
     export SRC_NORMALIZE_SCRIPT="$PROJECT_ROOT/scripts/lib/normalize_report.sh"
 
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
+    [ -f "$SRC_CONTEXT_FRESHNESS_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
     [ -f "$SRC_NORMALIZE_SCRIPT" ] || return 1
@@ -35,6 +37,7 @@ setup() {
         "$TEST_PROJECT/tasks"
 
     cp "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
+    cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
     cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
     cp "$SRC_NORMALIZE_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
@@ -75,6 +78,7 @@ EOF
 
     chmod +x \
         "$TEST_PROJECT/scripts/cmd_complete_gate.sh" \
+        "$TEST_PROJECT/scripts/context_freshness_check.sh" \
         "$TEST_PROJECT/scripts/lib/field_get.sh" \
         "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
         "$TEST_PROJECT/scripts/lib/normalize_report.sh" \
@@ -218,6 +222,17 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"Context update check:"* ]]
     [[ "$output" == *"SKIP (context_update not set)"* ]]
+}
+
+@test "GATE CLEAR emits non-blocking context freshness warning when project context is stale" {
+    write_cmd_yaml "without_context"
+    write_context_file "2026-03-01"
+    write_report
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Context freshness nudge (GATE CLEAR):"* ]]
+    [[ "$output" == *"WARN: context/infrastructure.md last_updated"* ]]
 }
 
 @test "lesson_impact rows keyed by subtask_id are updated on gate clear" {
