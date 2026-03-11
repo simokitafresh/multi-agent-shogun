@@ -7,10 +7,12 @@ setup_file() {
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    export SRC_NORMALIZE_SCRIPT="$PROJECT_ROOT/scripts/lib/normalize_report.sh"
 
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
+    [ -f "$SRC_NORMALIZE_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -35,6 +37,7 @@ setup() {
     cp "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
     cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
+    cp "$SRC_NORMALIZE_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
 
     # Non-blocking script stubs required by cmd_complete_gate.sh
     cat > "$TEST_PROJECT/scripts/auto_draft_lesson.sh" <<'EOF'
@@ -74,6 +77,7 @@ EOF
         "$TEST_PROJECT/scripts/cmd_complete_gate.sh" \
         "$TEST_PROJECT/scripts/lib/field_get.sh" \
         "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
+        "$TEST_PROJECT/scripts/lib/normalize_report.sh" \
         "$TEST_PROJECT/scripts/auto_draft_lesson.sh" \
         "$TEST_PROJECT/scripts/inbox_archive.sh" \
         "$TEST_PROJECT/scripts/lesson_impact_analysis.sh" \
@@ -279,4 +283,60 @@ EOF
 
     run grep -F $'cmd_999\tsasuke\tL101\tinjected\tCLEAR\tno' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
+}
+
+# ─── B層 normalize_report テスト ───
+
+@test "B層: normalize OK when report already dict format (exit 1)" {
+    write_cmd_yaml "without_context"
+    write_report
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"sasuke: OK (no normalization needed)"* ]]
+}
+
+@test "B層: normalize WARN when report has list-format lesson_candidate (exit 0)" {
+    write_cmd_yaml "without_context"
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+task_id: subtask_test
+parent_cmd: $TEST_CMD_ID
+timestamp: "2026-03-04T00:00:00"
+status: done
+ac_version_read: 2
+verdict: PASS
+purpose_validation:
+  fit: true
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+lesson_candidate:
+  - "some lesson in list format"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"sasuke: WARN"* ]]
+    [[ "$output" == *"auto-fixed"* ]]
+}
+
+@test "B層: normalize ERROR when normalize_report.sh is missing (exit 127)" {
+    write_cmd_yaml "without_context"
+    write_report
+
+    rm "$TEST_PROJECT/scripts/lib/normalize_report.sh"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"sasuke: ERROR"* ]]
+    [[ "$output" == *"normalize_report.sh exit="* ]]
 }

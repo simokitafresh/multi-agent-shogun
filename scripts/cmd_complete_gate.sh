@@ -1617,12 +1617,16 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
-        normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) && {
+        normalize_exit=0
+        normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) || normalize_exit=$?
+        if [ "$normalize_exit" -eq 0 ]; then
             echo "  ${ninja_name}: WARN — auto-fixed: ${normalize_output}"
             echo "$(date '+%Y-%m-%dT%H:%M:%S') [B層] ${CMD_ID} ${ninja_name}: ${normalize_output}" >> "$NORMALIZE_LOG"
-        } || {
+        elif [ "$normalize_exit" -eq 1 ]; then
             echo "  ${ninja_name}: OK (no normalization needed)"
-        }
+        else
+            echo "  ${ninja_name}: ERROR — normalize_report.sh exit=${normalize_exit}: ${normalize_output}"
+        fi
     fi
 done
 echo ""
