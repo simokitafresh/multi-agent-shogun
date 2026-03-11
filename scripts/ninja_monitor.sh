@@ -213,6 +213,22 @@ check_idle() {
             fi
             return 0  # IDLE確定（grace period経過）
         fi
+        # ─── bash_running: Bashフック設定中はBUSY扱い（STALL誤判定防止） ───
+        if [ "$agent_state" = "bash_running" ]; then
+            local bash_since
+            bash_since=$(tmux display-message -t "$pane_target" -p '#{@bash_running_since}' 2>/dev/null)
+            local now_ts
+            now_ts=$(date +%s)
+            # crash補正: 30分(1800秒)以上bash_running継続ならクラッシュ残留と判断しidle補正
+            if [ -n "$bash_since" ] && [ "$bash_since" -gt 0 ] 2>/dev/null && [ $((now_ts - bash_since)) -ge 1800 ]; then
+                log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=bash_running stale (${bash_since}→${now_ts}, $((now_ts - bash_since))s), corrected to idle"
+                tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
+                tmux set-option -p -t "$pane_target" @bash_running_since "" 2>/dev/null || true
+                [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
+                return 0  # crash補正後IDLE
+            fi
+            return 1  # bash_running中はBUSY
+        fi
     fi
 
     local busy_rc
