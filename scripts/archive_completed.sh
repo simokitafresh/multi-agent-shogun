@@ -27,6 +27,8 @@ DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
 REPORTS_DIR="$PROJECT_DIR/queue/reports"
 ARCHIVE_REPORT_DIR="$ARCHIVE_DIR/reports"
 CHRONICLE_FILE="$PROJECT_DIR/context/cmd-chronicle.md"
+PENDING_DECISIONS_FILE="$PROJECT_DIR/queue/pending_decisions.yaml"
+PENDING_DECISIONS_ARCHIVE="$ARCHIVE_DIR/pending_decisions_archive.yaml"
 usage_error() {
     echo "Usage: archive_completed.sh [keep_results] [cmd_id]" >&2
     echo "  keep_results: 正の整数（省略時3）" >&2
@@ -66,59 +68,220 @@ _POSTCOND_ARCHIVED=0
 # ============================================================
 # 0.5 CMD年代記への追記
 # ============================================================
-append_to_chronicle() {
+get_report_summary_for_cmd() {
+    local cmd_id="$1"
+    python3 - "$REPORTS_DIR" "$cmd_id" <<'PY'
+import glob
+import os
+import sys
+import yaml
+
+report_dir, cmd_id = sys.argv[1:3]
+
+patterns = [
+    os.path.join(report_dir, f"*_report_{cmd_id}.yaml"),
+    os.path.join(report_dir, "subtask_*.yaml"),
+]
+
+def normalize(value):
+    if value is None:
+        return ""
+    text = str(value).replace("\r", " ").replace("\n", " ").strip()
+    return " ".join(text.split())
+
+for pattern in patterns:
+    for path in sorted(glob.glob(pattern)):
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        parent_cmd = normalize(data.get("parent_cmd"))
+        if parent_cmd and parent_cmd != cmd_id:
+            continue
+        nested_report = data.get("report") if isinstance(data.get("report"), dict) else {}
+        for candidate in (data.get("summary"), nested_report.get("summary")):
+            text = normalize(candidate)
+            if text and text != "|":
+                print(text[:30])
+                sys.exit(0)
+
+print("")
+PY
+}
+
+sync_chronicle_entry() {
     local cmd_id="$1"
     local entry="$2"
 
-    # Extract purpose/title from entry
-    local title
+    local title project key_result
     title=$(printf '%s\n' "$entry" | grep -m1 '^ *purpose:' | sed 's/^ *purpose: *//; s/^"//; s/"$//')
     if [ -z "$title" ]; then
         title=$(printf '%s\n' "$entry" | grep -m1 '^ *title:' | sed 's/^ *title: *//; s/^"//; s/"$//')
     fi
-
-    # Extract project from entry
-    local project
     project=$(printf '%s\n' "$entry" | grep -m1 '^ *project:' | sed 's/^ *project: *//; s/^"//; s/"$//')
-
-    # Report summary (30 chars) — reports not yet archived at this point
-    local key_result=""
-    shopt -s nullglob
-    local rfiles=("$REPORTS_DIR"/*_report_"${cmd_id}".yaml)
-    shopt -u nullglob
-    for rf in "${rfiles[@]}"; do
-        [ -f "$rf" ] || continue
-        key_result=$(FIELD_GET_NO_LOG=1 field_get "$rf" "summary" "" 2>/dev/null | cut -c1-30)
-        [ -n "$key_result" ] && break
-    done
+    key_result=$(get_report_summary_for_cmd "$cmd_id")
 
     local date_mm_dd year_month
     date_mm_dd="$(date '+%m-%d')"
     year_month="$(date '+%Y-%m')"
 
-    local chronicle_line="| ${cmd_id} | ${title:-—} | ${project:-—} | ${date_mm_dd} | ${key_result:-—} |"
-
     (
         flock -w 10 200 || { echo "[chronicle] WARN: flock timeout on chronicle" >&2; return 1; }
 
-        # Create file if not exists
-        if [ ! -f "$CHRONICLE_FILE" ]; then
-            printf '# CMD年代記\n<!-- last_updated: %s -->\n' "$(date '+%Y-%m-%d')" > "$CHRONICLE_FILE"
-        fi
+        python3 - "$CHRONICLE_FILE" "$cmd_id" "$title" "$project" "$date_mm_dd" "$key_result" "$year_month" <<'PY'
+import os
+import sys
 
-        # Add month section if missing
-        if ! grep -q "^## ${year_month}$" "$CHRONICLE_FILE"; then
-            printf '\n## %s\n\n| cmd | title | project | date | key_result |\n|-----|-------|---------|------|------------|\n' "$year_month" >> "$CHRONICLE_FILE"
-        fi
+chronicle_path, cmd_id, title, project, date_mm_dd, key_result, year_month = sys.argv[1:8]
+today = __import__("datetime").datetime.now().strftime("%Y-%m-%d")
 
-        # Append data line
-        printf '%s\n' "$chronicle_line" >> "$CHRONICLE_FILE"
+def norm(value, fallback="—"):
+    value = (value or "").strip()
+    return value if value else fallback
 
-        # Update last_updated
-        sed -i "s/<!-- last_updated: .* -->/<!-- last_updated: $(date '+%Y-%m-%d') -->/" "$CHRONICLE_FILE"
+def blankish(value):
+    return value.strip() in {"", "—"}
+
+if not os.path.exists(chronicle_path):
+    with open(chronicle_path, "w", encoding="utf-8") as f:
+        f.write(f"# CMD年代記\n<!-- last_updated: {today} -->\n")
+
+with open(chronicle_path, encoding="utf-8") as f:
+    lines = f.read().splitlines()
+
+if not lines:
+    lines = ["# CMD年代記", f"<!-- last_updated: {today} -->"]
+elif len(lines) == 1:
+    lines.append(f"<!-- last_updated: {today} -->")
+
+if not lines[1].startswith("<!-- last_updated: "):
+    lines.insert(1, f"<!-- last_updated: {today} -->")
+
+row_idx = next((i for i, line in enumerate(lines) if line.startswith(f"| {cmd_id} |")), None)
+action = "noop"
+
+if row_idx is not None:
+    parts = [part.strip() for part in lines[row_idx].split("|")[1:-1]]
+    while len(parts) < 5:
+        parts.append("")
+    if blankish(parts[1]) and title.strip():
+        parts[1] = title.strip()
+        action = "updated"
+    if blankish(parts[4]) and key_result.strip():
+        parts[4] = key_result.strip()
+        action = "updated"
+    if blankish(parts[2]):
+        parts[2] = norm(project)
+        action = "updated" if action == "noop" else action
+    if blankish(parts[3]):
+        parts[3] = norm(date_mm_dd)
+        action = "updated" if action == "noop" else action
+    lines[row_idx] = f"| {parts[0] or cmd_id} | {norm(parts[1])} | {norm(parts[2])} | {norm(parts[3])} | {norm(parts[4])} |"
+else:
+    month_idx = next((i for i, line in enumerate(lines) if line == f"## {year_month}"), None)
+    if month_idx is None:
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.extend([
+            f"## {year_month}",
+            "",
+            "| cmd | title | project | date | key_result |",
+            "|-----|-------|---------|------|------------|",
+        ])
+    lines.append(f"| {cmd_id} | {norm(title)} | {norm(project)} | {norm(date_mm_dd)} | {norm(key_result)} |")
+    action = "appended"
+
+lines[1] = f"<!-- last_updated: {today} -->"
+
+with open(chronicle_path, "w", encoding="utf-8") as f:
+    f.write("\n".join(lines) + "\n")
+
+print(action)
+PY
     ) 200>"$CHRONICLE_FILE.lock"
 
-    echo "[chronicle] appended: $cmd_id"
+    echo "[chronicle] synced: $cmd_id"
+}
+
+archive_pending_decisions_for_cmd() {
+    local cmd_id="$1"
+    [ -f "$PENDING_DECISIONS_FILE" ] || return 0
+    mkdir -p "$(dirname "$PENDING_DECISIONS_ARCHIVE")"
+
+    local archived_count
+    archived_count=$(
+        (
+            flock -w 10 200 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions" >&2; exit 1; }
+            flock -w 10 201 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions_archive" >&2; exit 1; }
+
+            python3 - "$PENDING_DECISIONS_FILE" "$PENDING_DECISIONS_ARCHIVE" "$cmd_id" <<'PY'
+import os
+import sys
+import tempfile
+import yaml
+
+pending_path, archive_path, cmd_id = sys.argv[1:4]
+
+def load_yaml(path):
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+def write_yaml(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
+        os.replace(tmp_path, path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
+def build_doc(decisions):
+    total = len(decisions)
+    resolved = sum(1 for d in decisions if isinstance(d, dict) and d.get("status") == "resolved")
+    pending = total - resolved
+    return {"summary": {"total": total, "resolved": resolved, "pending": pending}, "decisions": decisions}
+
+pending_data = load_yaml(pending_path)
+decisions = pending_data.get("decisions") or []
+matched = []
+kept = []
+for decision in decisions:
+    if isinstance(decision, dict) and str(decision.get("resolved_by", "")).strip() == cmd_id and str(decision.get("status", "")).strip() == "resolved":
+        matched.append(decision)
+    else:
+        kept.append(decision)
+
+if not matched:
+    print(0)
+    sys.exit(0)
+
+archive_data = load_yaml(archive_path)
+archive_decisions = archive_data.get("decisions") or []
+existing_ids = {d.get("id") for d in archive_decisions if isinstance(d, dict)}
+for decision in matched:
+    if decision.get("id") not in existing_ids:
+        archive_decisions.append(decision)
+
+write_yaml(pending_path, build_doc(kept))
+write_yaml(archive_path, build_doc(archive_decisions))
+print(len(matched))
+PY
+        ) 200>"$PENDING_DECISIONS_FILE.lock" 201>"$PENDING_DECISIONS_ARCHIVE.lock"
+    )
+
+    if [ "${archived_count:-0}" -gt 0 ]; then
+        echo "[pending_decisions] archived=$archived_count cmd=$cmd_id"
+    else
+        echo "[pending_decisions] none for $cmd_id"
+    fi
 }
 
 # ============================================================
@@ -196,7 +359,8 @@ archive_cmds() {
                     echo "commands:"
                     printf '%s\n' "$entry"
                 } > "$cmd_archive_file"
-                append_to_chronicle "$cmd_id" "$entry" || true
+                archive_pending_decisions_for_cmd "$cmd_id" || true
+                sync_chronicle_entry "$cmd_id" "$entry" || true
             else
                 echo "[archive] WARN: failed to parse cmd_id at lines ${s}-${e}" >&2
             fi
