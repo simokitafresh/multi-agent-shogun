@@ -159,10 +159,49 @@ except Exception as e:
                 TASK_LOCKFILE="${TASK_YAML}.lock"
 
                 if [ -f "$TASK_YAML" ]; then
-                    (
-                        flock -w 5 201 || exit 0  # Lock failure is non-fatal
+                    # Report YAML existence verification before done transition (cmd_813)
+                    REPORT_FILENAME=$(TASK_PATH="$TASK_YAML" NINJA_NAME="$FROM" python3 -c "
+import yaml, os
+try:
+    with open(os.environ['TASK_PATH']) as f:
+        data = yaml.safe_load(f)
+    if data and 'task' in data:
+        rf = data['task'].get('report_filename', '')
+        if rf:
+            print(rf)
+        else:
+            pc = data['task'].get('parent_cmd', '')
+            if pc:
+                print(os.environ['NINJA_NAME'] + '_report_' + pc + '.yaml')
+except:
+    pass
+" 2>/dev/null || true)
 
-                        TASK_PATH="$TASK_YAML" python3 -c "
+                    report_found=0
+                    if [ -n "$REPORT_FILENAME" ]; then
+                        if [ -f "$SCRIPT_DIR/queue/reports/$REPORT_FILENAME" ]; then
+                            report_found=1
+                        elif [ -f "$SCRIPT_DIR/queue/archive/reports/$REPORT_FILENAME" ]; then
+                            report_found=1
+                        else
+                            # Archive files may have date suffix
+                            base="${REPORT_FILENAME%.yaml}"
+                            shopt -s nullglob
+                            archived=("$SCRIPT_DIR/queue/archive/reports/${base}"_*.yaml)
+                            shopt -u nullglob
+                            if [ "${#archived[@]}" -gt 0 ]; then
+                                report_found=1
+                            fi
+                        fi
+                    fi
+
+                    if [ "$report_found" -eq 0 ]; then
+                        echo "[inbox_write] auto-done BLOCKED: report YAML not found: ${REPORT_FILENAME:-unknown} (ninja: $FROM)" >&2
+                    else
+                        (
+                            flock -w 5 201 || exit 0  # Lock failure is non-fatal
+
+                            TASK_PATH="$TASK_YAML" python3 -c "
 import yaml, tempfile, os, sys
 
 task_path = os.environ['TASK_PATH']
@@ -192,7 +231,8 @@ try:
 except Exception as e:
     print(f'[inbox_write] task-auto-done WARN: {e}', file=sys.stderr)
 "
-                    ) 201>"$TASK_LOCKFILE"
+                        ) 201>"$TASK_LOCKFILE"
+                    fi
                 fi
             fi
         fi

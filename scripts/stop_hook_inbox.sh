@@ -37,11 +37,31 @@ if [[ -f "$task_file" && -f "$field_get_lib" ]]; then
   source "$field_get_lib"
 
   report_filename="$(field_get "$task_file" "report_filename" "")"
+  if [[ -z "$report_filename" ]]; then
+    parent_cmd="$(field_get "$task_file" "parent_cmd" "")"
+    if [[ -n "$parent_cmd" ]]; then
+      report_filename="${agent_id}_report_${parent_cmd}.yaml"
+    fi
+  fi
   if [[ -n "$report_filename" ]]; then
     task_status="$(field_get "$task_file" "status" "")"
     if [[ "$task_status" == "done" ]]; then
       report_file="$SCRIPT_DIR/queue/reports/${report_filename}"
-      if [[ ! -f "$report_file" ]]; then
+      archive_file="$SCRIPT_DIR/queue/archive/reports/${report_filename}"
+      report_exists=0
+      if [[ -f "$report_file" || -f "$archive_file" ]]; then
+        report_exists=1
+      else
+        # Archive files may have date suffix
+        base="${report_filename%.yaml}"
+        shopt -s nullglob
+        archived=("$SCRIPT_DIR/queue/archive/reports/${base}"_*.yaml)
+        shopt -u nullglob
+        if [[ "${#archived[@]}" -gt 0 ]]; then
+          report_exists=1
+        fi
+      fi
+      if [[ "$report_exists" -eq 0 ]]; then
         printf '{"decision":"block","reason":"報告が正しいパスにない。report_filename: %s を確認せよ"}\n' "$report_filename"
         exit 0
       fi
