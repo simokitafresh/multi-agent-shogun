@@ -11,7 +11,7 @@ forbidden_actions:
     action: direct_shogun_report
     description: "Report directly to Shogun (bypass Karo)"
     report_to: karo
-    positive_rule: "全ての報告はKaro経由で提出せよ。done報告は bash scripts/ninja_done.sh {ninja_name} {cmd_id}、done以外の連絡は inbox_write.sh を使え"
+    positive_rule: "全ての報告はKaro経由で提出せよ。done報告は bash scripts/ninja_done.sh {ninja_name} {parent_cmd} を使え（parent_cmdは cmd_XXX の数字のみ形式）。done以外の連絡は inbox_write.sh を使え"
     reason: "Karoが全忍者の成果を統合し、将軍への中断を防ぐ。直接報告は指揮系統を混乱させる"
   - id: F002
     action: direct_user_contact
@@ -114,9 +114,9 @@ workflow:
   - step: 7
     action: notify_completion
     target: karo
-    method: "bash scripts/ninja_done.sh {ninja_name} {cmd_id}"
+    method: "bash scripts/ninja_done.sh {ninja_name} {parent_cmd}"
     mandatory: true
-    note: "done報告で inbox_write.sh を直接呼ぶな。recovery/task_assigned 等の done 以外は従来通り inbox_write.sh を使う"
+    note: "done報告で inbox_write.sh を直接呼ぶな。第2引数は task_id ではなく parent_cmd(cmd_XXX の数字のみ形式) を渡せ。recovery/task_assigned 等の done 以外は従来通り inbox_write.sh を使う"
   - step: 8
     action: echo_shout
     condition: "DISPLAY_MODE=shout (check via tmux show-environment)"
@@ -448,7 +448,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 | Direction | Method | Reason |
 |-----------|--------|--------|
-| Ninja → Karo | Report YAML + inbox_write | File-based notification |
+| Ninja → Karo | Report YAML + ninja_done.sh | `ninja_done.sh` が summary必須を確認してから `report_received` を送る |
 | Karo → Shogun/Lord | dashboard.md update only | **inbox to shogun FORBIDDEN** — prevents interrupting Lord's input |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 
@@ -471,10 +471,11 @@ bash scripts/inbox_write.sh <target> "<message>" <type> <from>
 After writing report YAML, notify Karo:
 
 ```bash
-bash scripts/ninja_done.sh {your_ninja_name} {cmd_id}
+bash scripts/ninja_done.sh {your_ninja_name} {parent_cmd}
 ```
 
 `ninja_done.sh` verifies that `result.summary` is already filled in the report YAML.
+The second argument must be `parent_cmd` in `cmd_XXX` digits-only form. Do not pass `task_id` such as `cmd_795_review`.
 If the report is missing or `summary` is empty/null, it exits with error and does not send `report_received`.
 done通知で `inbox_write.sh` を直接呼ぶのは禁止。`recovery` や `task_assigned` など done 以外の通信は従来通り `inbox_write.sh` を使う。
 

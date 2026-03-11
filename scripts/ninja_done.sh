@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ninja_done.sh — done通知前に報告YAMLのsummary記入を強制する
-# Usage: bash scripts/ninja_done.sh <ninja_name> <cmd_id>
+# Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>
 
 set -euo pipefail
 
@@ -11,8 +11,9 @@ ARCHIVE_REPORT_DIR="$SCRIPT_DIR/queue/archive/reports"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 
 usage() {
-    echo "Usage: bash scripts/ninja_done.sh <ninja_name> <cmd_id>" >&2
+    echo "Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>" >&2
     echo "Example: bash scripts/ninja_done.sh hayate cmd_795" >&2
+    echo "Note: parent_cmd must be cmd_XXX (digits only). task_id like cmd_795_review is invalid." >&2
 }
 
 resolve_report_file() {
@@ -66,30 +67,32 @@ summary_is_present() {
         return 1
     fi
 
-    if [ "$trimmed" = "null" ]; then
-        return 1
-    fi
+    case "$trimmed" in
+        null|'|'|'>'|'|-'|'>-')
+            return 1
+            ;;
+    esac
 
     return 0
 }
 
 main() {
     local ninja_name="${1:-}"
-    local cmd_id="${2:-}"
+    local parent_cmd="${2:-}"
     local report_file=""
 
-    if [ -z "$ninja_name" ] || [ -z "$cmd_id" ]; then
+    if [ -z "$ninja_name" ] || [ -z "$parent_cmd" ]; then
         usage
         exit 1
     fi
 
-    if [[ "$cmd_id" != cmd_* ]]; then
-        echo "ERROR: cmd_id は cmd_XXX 形式で指定せよ: $cmd_id" >&2
+    if [[ ! "$parent_cmd" =~ ^cmd_[0-9]+$ ]]; then
+        echo "ERROR: parent_cmd は cmd_XXX 形式（数字のみ。task_id/cmd_XXX_suffix不可）で指定せよ: $parent_cmd" >&2
         exit 1
     fi
 
-    report_file=$(resolve_report_file "$ninja_name" "$cmd_id") || {
-        echo "ERROR: report YAML not found for ${ninja_name}/${cmd_id}. 報告を先に書け。" >&2
+    report_file=$(resolve_report_file "$ninja_name" "$parent_cmd") || {
+        echo "ERROR: report YAML not found for ${ninja_name}/${parent_cmd}. 報告を先に書け。" >&2
         exit 1
     }
 

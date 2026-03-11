@@ -454,7 +454,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 | Direction | Method | Reason |
 |-----------|--------|--------|
-| Ninja → Karo | Report YAML + inbox_write | File-based notification |
+| Ninja → Karo | Report YAML + ninja_done.sh | `ninja_done.sh` が summary必須を確認してから `report_received` を送る |
 | Karo → Shogun/Lord | dashboard.md update only | **inbox to shogun FORBIDDEN** — prevents interrupting Lord's input |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 
@@ -477,10 +477,11 @@ bash scripts/inbox_write.sh <target> "<message>" <type> <from>
 After writing report YAML, notify Karo:
 
 ```bash
-bash scripts/ninja_done.sh {your_ninja_name} {cmd_id}
+bash scripts/ninja_done.sh {your_ninja_name} {parent_cmd}
 ```
 
 `ninja_done.sh` verifies that `result.summary` is already filled in the report YAML.
+The second argument must be `parent_cmd` in `cmd_XXX` digits-only form. Do not pass `task_id` such as `cmd_795_review`.
 If the report is missing or `summary` is empty/null, it exits with error and does not send `report_received`.
 done通知で `inbox_write.sh` を直接呼ぶのは禁止。`recovery` や `task_assigned` など done 以外の通信は従来通り `inbox_write.sh` を使う。
 
