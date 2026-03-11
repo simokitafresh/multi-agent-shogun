@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
 ACTIVE_STK="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
-ARCHIVE_STK="$SCRIPT_DIR/queue/archive/shogun_to_karo_done.yaml"
+ARCHIVE_CMD_DIR="$SCRIPT_DIR/queue/archive/cmds"
 
 if [ ! -f "$GATE_LOG" ]; then
     echo "ERROR: gate log not found: $GATE_LOG" >&2
@@ -49,7 +49,13 @@ extract_cmd_titles() {
 }
 
 {
-    extract_cmd_titles "$ARCHIVE_STK"
+    if [ -d "$ARCHIVE_CMD_DIR" ]; then
+        shopt -s nullglob
+        for archive_file in "$ARCHIVE_CMD_DIR"/cmd_*.yaml; do
+            extract_cmd_titles "$archive_file"
+        done
+        shopt -u nullglob
+    fi
     extract_cmd_titles "$ACTIVE_STK"
 } | awk -F'\t' '
     $1 != "" {

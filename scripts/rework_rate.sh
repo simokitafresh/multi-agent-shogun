@@ -7,7 +7,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ACTIVE_STK="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
-ARCHIVE_STK="$SCRIPT_DIR/queue/archive/shogun_to_karo_done.yaml"
+ARCHIVE_CMD_DIR="$SCRIPT_DIR/queue/archive/cmds"
 
 SINCE=""
 OUTPUT_JSON=false
@@ -22,7 +22,7 @@ done
 
 # L047: Python heredocへの変数渡しは環境変数経由
 export REWORK_ACTIVE="$ACTIVE_STK"
-export REWORK_ARCHIVE="$ARCHIVE_STK"
+export REWORK_ARCHIVE_DIR="$ARCHIVE_CMD_DIR"
 export REWORK_SINCE="$SINCE"
 export REWORK_JSON="$OUTPUT_JSON"
 
@@ -30,6 +30,7 @@ python3 << 'PYEOF'
 import os
 import sys
 import json
+import glob
 import yaml
 from collections import defaultdict
 from datetime import datetime
@@ -110,12 +111,14 @@ def parse_ts(ts_str):
 
 
 active_path  = os.environ.get('REWORK_ACTIVE', '')
-archive_path = os.environ.get('REWORK_ARCHIVE', '')
+archive_dir  = os.environ.get('REWORK_ARCHIVE_DIR', '')
 since_str    = os.environ.get('REWORK_SINCE', '')
 output_json  = os.environ.get('REWORK_JSON', 'false').lower() == 'true'
 
 # 全cmd読み込み
-all_cmds = load_cmds(active_path) + load_cmds(archive_path)
+all_cmds = load_cmds(active_path)
+for archive_path in sorted(glob.glob(os.path.join(archive_dir, '*.yaml'))):
+    all_cmds.extend(load_cmds(archive_path))
 
 # --since フィルタ
 if since_str:

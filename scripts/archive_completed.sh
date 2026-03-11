@@ -11,7 +11,7 @@
 set -euo pipefail
 
 # tmpファイルの後始末
-cleanup() { rm -f /tmp/stk_active_$$.yaml /tmp/stk_done_$$.yaml /tmp/dash_karo_trim_$$.md /tmp/lord_conv_trim_$$.yaml; }
+cleanup() { rm -f /tmp/stk_active_$$.yaml /tmp/dash_karo_trim_$$.md /tmp/lord_conv_trim_$$.yaml; }
 trap cleanup EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -21,7 +21,6 @@ source "$PROJECT_DIR/scripts/lib/field_get.sh"
 QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 CHANGELOG_FILE="$PROJECT_DIR/queue/completed_changelog.yaml"
 ARCHIVE_DIR="$PROJECT_DIR/queue/archive"
-ARCHIVE_CMD="$ARCHIVE_DIR/shogun_to_karo_done.yaml"
 ARCHIVE_CMD_DIR="$ARCHIVE_DIR/cmds"
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
@@ -129,14 +128,11 @@ archive_cmds() {
     [ -f "$QUEUE_FILE" ] || return 0
 
     local tmp_active="/tmp/stk_active_$$.yaml"
-    local tmp_done="/tmp/stk_done_$$.yaml"
     local archived=0 kept=0
     local date_stamp
     date_stamp="$(date '+%Y%m%d')"
 
     echo "commands:" > "$tmp_active"
-    : > "$tmp_done"
-
     # エントリ境界を行番号で特定
     local -a starts
     mapfile -t starts < <(grep -n '^ *- id: cmd_' "$QUEUE_FILE" | cut -d: -f1)
@@ -150,7 +146,7 @@ archive_cmds() {
         fi
         _POSTCOND_COMPLETED=$pre_check
         echo "[archive] cmds: no entries found"
-        rm -f "$tmp_active" "$tmp_done"
+        rm -f "$tmp_active"
         return 0
     fi
 
@@ -194,8 +190,6 @@ archive_cmds() {
 
         if [[ "$status_val" =~ ^(completed|cancelled|absorbed|halted|superseded|done) ]]; then
             local archive_status="${BASH_REMATCH[1]}"
-            printf '%s\n' "$entry" >> "$tmp_done"
-
             if [ -n "$cmd_id" ]; then
                 local cmd_archive_file="$ARCHIVE_CMD_DIR/${cmd_id}_${archive_status}_${date_stamp}.yaml"
                 {
@@ -225,11 +219,10 @@ archive_cmds() {
         echo "[archive] WARN: $completed_count completed cmds found but 0 archived — grep pattern mismatch?" >&2
     fi
 
-    if [ "$archived" -gt 0 ] && [ -s "$tmp_done" ]; then
+    if [ "$archived" -gt 0 ]; then
         # flockでYAMLファイルへの書き込みを排他制御
         (
             flock -w 10 200 || { echo "[archive] WARN: flock timeout on QUEUE_FILE"; return 1; }
-            cat "$tmp_done" >> "$ARCHIVE_CMD"
             # S06修正: mv前にtmpファイル存在確認
             [ -f "$tmp_active" ] || { echo "[archive] FATAL: tmp_active not found: $tmp_active" >&2; exit 1; }
             mv "$tmp_active" "$QUEUE_FILE" || { echo "[archive] FATAL: mv failed: $tmp_active → $QUEUE_FILE" >&2; exit 1; }
@@ -239,7 +232,6 @@ archive_cmds() {
         rm -f "$tmp_active"
         echo "[archive] cmds: nothing to archive (kept=$kept)"
     fi
-    rm -f "$tmp_done"
 }
 
 # ============================================================

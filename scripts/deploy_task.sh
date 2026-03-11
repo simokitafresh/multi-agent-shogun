@@ -486,8 +486,8 @@ try:
     project = task.get('project', '')
     task_type = str(task.get('task_type') or task.get('type') or 'unknown').lower().strip()
 
-    # cmd_513: recon/scout は教訓注入を行わない（205件の空振り削減）
-    if task_type in ('recon', 'scout'):
+    # cmd_513: recon/scout/research は教訓注入を行わない（偵察系タスクの空振り削減）
+    if task_type in ('recon', 'scout', 'research'):
         task['related_lessons'] = []
 
         # 再配備時に残存した注入プレフィックスがあれば除去
@@ -1189,7 +1189,6 @@ try:
 
     cmd_sources = [
         os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml'),
-        os.path.join(script_dir, 'queue', 'archive', 'shogun_to_karo_done.yaml'),
     ]
     cmd_sources.extend(sorted(glob.glob(os.path.join(script_dir, 'queue', 'archive', 'cmds', '*.yaml'))))
 
@@ -1793,7 +1792,6 @@ try:
     # 2. shogun_to_karo.yaml + archive でscout_exemptを確認
     stk_paths = [
         os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml'),
-        os.path.join(script_dir, 'queue', 'archive', 'shogun_to_karo_done.yaml'),
     ]
     for stk_path in stk_paths:
         if not os.path.exists(stk_path):
@@ -1935,7 +1933,7 @@ resolve_dispatch_title() {
     if [ -z "$title" ] && [[ -n "$cmd_id" && "$cmd_id" == cmd_* ]]; then
         for yaml_file in \
             "$SCRIPT_DIR/queue/shogun_to_karo.yaml" \
-            "$SCRIPT_DIR/queue/archive/shogun_to_karo_done.yaml"
+            "$SCRIPT_DIR/queue/archive/cmds/"*.yaml
         do
             [ -f "$yaml_file" ] || continue
             title=$(awk -v cmd="${cmd_id}" '

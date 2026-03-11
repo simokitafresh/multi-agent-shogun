@@ -36,7 +36,7 @@ STK="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 GATE_LOG="$PROJECT_DIR/logs/gate_metrics.log"
 TASKS_DIR="$PROJECT_DIR/queue/tasks"
 SETTINGS="$PROJECT_DIR/config/settings.yaml"
-ARCHIVE_STK_DONE="$PROJECT_DIR/queue/archive/shogun_to_karo_done.yaml"
+ARCHIVE_CMD_DIR="$PROJECT_DIR/queue/archive/cmds"
 LESSON_EFFECT_STATUS_FILE="$PROJECT_DIR/queue/lesson_effectiveness_status.txt"
 KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
 KM_MODEL_CACHE="/tmp/dashboard_km_model_cache.txt"
@@ -401,21 +401,26 @@ fi
 if [[ -s "$TMP_PIPELINE" ]]; then
     awk -F'\t' '{print $1"\t"$2}' "$TMP_PIPELINE" >> "$TMP_TITLES"
 fi
-if [[ -f "$ARCHIVE_STK_DONE" ]]; then
-    awk '
-        /^ *- id: cmd_/ {
-            sub(/.*- id: */, ""); gsub(/["\047[:space:]]/, "")
-            cid=$0; tit=""
-        }
-        /^    title:/ && cid!="" {
-            sub(/.*title: */, "")
-            gsub(/^["\047]|["\047]$/, "")
-            if (length($0)>50) $0=substr($0,1,47)"..."
-            tit=$0
-            print cid"\t"tit
-            cid=""
-        }
-    ' "$ARCHIVE_STK_DONE" >> "$TMP_TITLES"
+if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
+    shopt -s nullglob
+    for archive_file in "$ARCHIVE_CMD_DIR"/cmd_*.yaml; do
+        [[ -f "$archive_file" ]] || continue
+        awk '
+            /^ *- id: cmd_/ {
+                sub(/.*- id: */, ""); gsub(/["\047[:space:]]/, "")
+                cid=$0; tit=""
+            }
+            /^    title:/ && cid!="" {
+                sub(/.*title: */, "")
+                gsub(/^["\047]|["\047]$/, "")
+                if (length($0)>50) $0=substr($0,1,47)"..."
+                tit=$0
+                print cid"\t"tit
+                cid=""
+            }
+        ' "$archive_file" >> "$TMP_TITLES"
+    done
+    shopt -u nullglob
 fi
 
 # ─── Get last 5 CLEAR cmds for battle results ───
