@@ -97,7 +97,14 @@ setup_e2e_session() {
 teardown_e2e_session() {
     tmux kill-session -t "${E2E_SESSION:-$E2E_SESSION_NAME}" 2>/dev/null || true
     if [ -n "${E2E_ROOT:-}" ] && [ -d "$E2E_ROOT" ]; then
-        rm -rf "$E2E_ROOT"
+        local real_path
+        real_path="$(realpath "$E2E_ROOT")"
+        # D002 guard: only delete if path is under PROJECT_ROOT/.tmp/
+        if [[ "$real_path" == "$(realpath "${PROJECT_ROOT:-.}")/.tmp/"* ]]; then
+            rm -rf "$E2E_ROOT"
+        else
+            echo "teardown: REFUSED rm -rf on '$real_path' (not under .tmp/)" >&2
+        fi
     fi
 }
 
