@@ -12,7 +12,7 @@ forbidden_actions:
     action: direct_shogun_report
     description: "Report directly to Shogun (bypass Karo)"
     report_to: karo
-    positive_rule: "全ての報告はKaro経由で提出せよ。inbox_write.sh karo で報告完了を通知"
+    positive_rule: "全ての報告はKaro経由で提出せよ。done報告は bash scripts/ninja_done.sh {ninja_name} {cmd_id}、done以外の連絡は inbox_write.sh を使え"
     reason: "Karoが全忍者の成果を統合し、将軍への中断を防ぐ。直接報告は指揮系統を混乱させる"
   - id: F002
     action: direct_user_contact
@@ -113,10 +113,11 @@ workflow:
     action: update_status
     value: done
   - step: 7
-    action: inbox_write
+    action: notify_completion
     target: karo
-    method: "bash scripts/inbox_write.sh"
+    method: "bash scripts/ninja_done.sh {ninja_name} {cmd_id}"
     mandatory: true
+    note: "done報告で inbox_write.sh を直接呼ぶな。recovery/task_assigned 等の done 以外は従来通り inbox_write.sh を使う"
   - step: 8
     action: echo_shout
     condition: "DISPLAY_MODE=shout (check via tmux show-environment)"

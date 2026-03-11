@@ -14,7 +14,7 @@ Examples:
 bash scripts/inbox_write.sh karo "cmd_048を書いた。実行せよ。" cmd_new shogun
 
 # Ninja → Karo
-bash scripts/inbox_write.sh karo "半蔵、任務完了。報告YAML確認されたし。" report_received hanzo
+bash scripts/ninja_done.sh hanzo cmd_389
 
 # Karo → Ninja
 bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ。" task_assigned karo
@@ -75,8 +75,9 @@ bash scripts/inbox_write.sh <target> "<message>" <type> <from>
 After writing report YAML, notify Karo:
 
 ```bash
-bash scripts/inbox_write.sh karo "{your_ninja_name}、任務完了。報告YAML確認されたし。" report_received {your_ninja_name}
+bash scripts/ninja_done.sh {your_ninja_name} {cmd_id}
 ```
 
-That's it. No state checking, no retry, no delivery verification.
-The inbox_write guarantees persistence. inbox_watcher handles delivery.
+`ninja_done.sh` verifies that `result.summary` is already filled in the report YAML.
+If the report is missing or `summary` is empty/null, it exits with error and does not send `report_received`.
+done通知で `inbox_write.sh` を直接呼ぶのは禁止。`recovery` や `task_assigned` など done 以外の通信は従来通り `inbox_write.sh` を使う。
