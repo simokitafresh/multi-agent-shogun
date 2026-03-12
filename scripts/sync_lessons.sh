@@ -39,14 +39,24 @@ mkdir -p "$(dirname "$CACHE_FILE")"
 (
     flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
 
-    export SSOT_FILE CACHE_FILE SCRIPT_DIR
+    export SSOT_FILE CACHE_FILE SCRIPT_DIR PROJECT_ID
     python3 << 'PYEOF'
+import csv
 import re, yaml, os, tempfile, sys, subprocess
 from datetime import datetime
 from collections import defaultdict
 
 ssot_file = os.environ["SSOT_FILE"]
 cache_file = os.environ["CACHE_FILE"]
+project_id = os.environ["PROJECT_ID"]
+impact_file = os.path.join(os.environ["SCRIPT_DIR"], "logs", "lesson_impact.tsv")
+
+
+def to_int(value):
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
 
 with open(ssot_file, encoding='utf-8') as f:
     content = f.read()
@@ -264,6 +274,24 @@ for lesson in lessons:
     deduped.append(lesson)
 lessons = deduped
 
+# Sync injection_count from lesson_impact.tsv with project boundary isolation.
+impact_injection_count = defaultdict(int)
+if os.path.exists(impact_file):
+    with open(impact_file, encoding='utf-8', newline='') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        for row in reader:
+            if not isinstance(row, dict):
+                continue
+            if (row.get('project') or '').strip() != project_id:
+                continue
+            if (row.get('action') or '').strip().lower() != 'injected':
+                continue
+            if (row.get('result') or '').strip().upper() == 'PENDING':
+                continue
+            lesson_id = (row.get('lesson_id') or '').strip()
+            if re.match(r'^L\d+$', lesson_id):
+                impact_injection_count[lesson_id] += 1
+
 # Preserve score fields from existing cache (helpful_count, harmful_count, last_referenced)
 score_data = {}
 old_data = None
@@ -291,7 +319,10 @@ for lesson in lessons:
     if lid in score_data:
         lesson['helpful_count'] = score_data[lid]['helpful_count']
         lesson['harmful_count'] = score_data[lid]['harmful_count']
-        lesson['injection_count'] = score_data[lid]['injection_count']
+        lesson['injection_count'] = max(
+            to_int(score_data[lid]['injection_count']),
+            impact_injection_count.get(lid, 0),
+        )
         lesson['last_referenced'] = score_data[lid]['last_referenced']
         # Tags priority: SSOT > cache
         if 'tags' not in lesson and score_data[lid].get('tags'):
@@ -299,7 +330,7 @@ for lesson in lessons:
     else:
         lesson['helpful_count'] = 0
         lesson['harmful_count'] = 0
-        lesson['injection_count'] = 0
+        lesson['injection_count'] = impact_injection_count.get(lid, 0)
         lesson['last_referenced'] = None
 
 # Build output

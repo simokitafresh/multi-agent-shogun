@@ -59,9 +59,53 @@ else:
         print(f"ERROR: project '{PROJECT_FILTER}' not found", file=sys.stderr)
         sys.exit(1)
 
+project_root_map = {}
+for project in all_projects:
+    project_id = str(project.get("id", "")).strip()
+    if not project_id:
+        continue
+    project_root_map[project_id] = Path(str(project.get("path", SCRIPT_DIR))).expanduser()
+
+
+def load_cmd_metadata(root_dir):
+    metadata = {}
+    candidates = [root_dir / "queue" / "shogun_to_karo.yaml"]
+    archive_dir = root_dir / "queue" / "archive" / "cmds"
+    if archive_dir.is_dir():
+        candidates.extend(sorted(archive_dir.glob("*.yaml")))
+
+    for path in candidates:
+        if not path.is_file():
+            continue
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+
+        commands = []
+        if isinstance(data, dict):
+            if isinstance(data.get("commands"), list):
+                commands = data.get("commands", [])
+            elif "id" in data:
+                commands = [data]
+        elif isinstance(data, list):
+            commands = data
+
+        for command in commands:
+            if not isinstance(command, dict):
+                continue
+            cmd_id = str(command.get("id", "")).strip()
+            project_id = str(command.get("project", "")).strip()
+            if cmd_id and project_id:
+                metadata[cmd_id] = project_id
+    return metadata
+
+
+cmd_project_map = load_cmd_metadata(SCRIPT_DIR)
+
 # --- Load lesson_tracking.tsv for last_referenced_cmd ---
 # Columns: timestamp  cmd_id  ninja  gate_result  injected_ids  referenced_ids
-lesson_last_cmd = {}  # lesson_id -> last cmd_num (int)
+lesson_last_cmd = {}  # (project_id, lesson_id) -> last cmd_num (int)
 max_cmd_num = 0
 
 if TRACKING_TSV.exists():
@@ -81,20 +125,24 @@ if TRACKING_TSV.exists():
             cmd_num = int(m.group(1))
             if cmd_num >= 900:  # skip test cmds (cmd_999 etc.)
                 continue
+            project_id = cmd_project_map.get(cmd_id)
+            if not project_id:
+                continue
             max_cmd_num = max(max_cmd_num, cmd_num)
             if referenced_str and referenced_str != "none":
                 for lid in referenced_str.split(","):
                     lid = lid.strip()
                     if re.match(r'^L\d+$', lid):
-                        prev = lesson_last_cmd.get(lid, 0)
+                        key = (project_id, lid)
+                        prev = lesson_last_cmd.get(key, 0)
                         if cmd_num > prev:
-                            lesson_last_cmd[lid] = cmd_num
+                            lesson_last_cmd[key] = cmd_num
 
 
 # --- Load lesson_impact.tsv for injection/helpful counts ---
 # Columns: timestamp  cmd_id  ninja  lesson_id  action  result  referenced  project  task_type  bloom_level
-tsv_injection_count = {}  # lesson_id -> count
-tsv_helpful_count = {}    # lesson_id -> count
+tsv_injection_count = {}  # (project_id, lesson_id) -> count
+tsv_helpful_count = {}    # (project_id, lesson_id) -> count
 
 if IMPACT_TSV.exists():
     with open(IMPACT_TSV, encoding="utf-8") as f:
@@ -103,20 +151,25 @@ if IMPACT_TSV.exists():
             if i == 0 or not line:
                 continue
             parts = line.split("\t")
-            if len(parts) < 7:
+            if len(parts) < 8:
                 continue
             lesson_id_tsv = parts[3]
             action = parts[4]
+            result = parts[5].strip().upper()
             referenced = parts[6]
-            if action == "injected" and re.match(r'^L\d+$', lesson_id_tsv):
-                tsv_injection_count[lesson_id_tsv] = tsv_injection_count.get(lesson_id_tsv, 0) + 1
+            project_id = parts[7].strip()
+            key = (project_id, lesson_id_tsv)
+            if result == "PENDING":
+                continue
+            if action == "injected" and re.match(r'^L\d+$', lesson_id_tsv) and project_id:
+                tsv_injection_count[key] = tsv_injection_count.get(key, 0) + 1
                 if referenced == "yes":
-                    tsv_helpful_count[lesson_id_tsv] = tsv_helpful_count.get(lesson_id_tsv, 0) + 1
+                    tsv_helpful_count[key] = tsv_helpful_count.get(key, 0) + 1
 
 
-def last_ref_text(lesson_id):
+def last_ref_text(project_id, lesson_id):
     """Format last-referenced info as 'Ncmd前(cmd_NNN)' or '参照なし'."""
-    last = lesson_last_cmd.get(lesson_id)
+    last = lesson_last_cmd.get((project_id, lesson_id))
     if last is None:
         return "参照なし"
     diff = max_cmd_num - last
@@ -145,6 +198,16 @@ def find_script_names(text):
     return re.findall(r'\b([\w_-]+\.sh)\b', text)
 
 
+def ref_exists(project_root, relative_path):
+    candidate_paths = [project_root / relative_path, SCRIPT_DIR / relative_path]
+    return any(path.exists() for path in candidate_paths)
+
+
+def script_exists(project_root, script_name):
+    candidate_paths = [project_root / "scripts" / script_name, SCRIPT_DIR / "scripts" / script_name]
+    return any(path.exists() for path in candidate_paths)
+
+
 def sanitize_reason(reason):
     """Collapse control chars so deprecation reason stays single-line and log-safe."""
     if not isinstance(reason, str):
@@ -170,6 +233,7 @@ eff_review = []     # (project_id, lesson_id, title_snip, inj_count, hlp_count, 
 for project in projects:
     project_id = project["id"]
     project_status = project.get("status", "active")
+    project_root = project_root_map.get(project_id, SCRIPT_DIR)
     lessons_file = SCRIPT_DIR / "projects" / project_id / "lessons.yaml"
 
     if not lessons_file.exists():
@@ -205,8 +269,7 @@ for project in projects:
         # (a-2) Confirmed: explicit file path in text -> file no longer exists
         added_confirmed = False
         for ref in find_file_refs(full_text):
-            target = SCRIPT_DIR / ref
-            if not target.exists():
+            if not ref_exists(project_root, ref):
                 confirmed.append((project_id, lesson_id, f"{ref}参照（ファイル消滅）"))
                 added_confirmed = True
                 break
@@ -216,10 +279,9 @@ for project in projects:
 
         # (b) Review recommended: .sh script name mentioned + that script exists in scripts/
         for sname in find_script_names(full_text):
-            spath = SCRIPT_DIR / "scripts" / sname
-            if spath.exists():
+            if script_exists(project_root, sname):
                 title_snip = (title or summary)[:60]
-                lref = last_ref_text(lesson_id)
+                lref = last_ref_text(project_id, lesson_id)
                 review.append((
                     project_id, lesson_id,
                     f'"{title_snip}"',
@@ -229,15 +291,12 @@ for project in projects:
                 break
 
         # (c) Effectiveness rate check
-        # Prefer YAML injection_count if > 0, else fallback to TSV
+        # Safety pattern: project-aware MAX(YAML, TSV) to avoid stale-cache false positives.
         yaml_inj = lesson.get("injection_count", 0) or 0
         yaml_hlp = lesson.get("helpful_count", 0) or 0
-        if yaml_inj > 0:
-            inj_count = yaml_inj
-            hlp_count = yaml_hlp
-        else:
-            inj_count = tsv_injection_count.get(lesson_id, 0)
-            hlp_count = tsv_helpful_count.get(lesson_id, 0)
+        count_key = (project_id, lesson_id)
+        inj_count = max(yaml_inj, tsv_injection_count.get(count_key, 0))
+        hlp_count = max(yaml_hlp, tsv_helpful_count.get(count_key, 0))
 
         # (c-1) Confirmed: injection >= 5 and effectiveness == 0%
         if inj_count >= 5 and hlp_count == 0:
