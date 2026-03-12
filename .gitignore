@@ -196,6 +196,7 @@
 !scripts/x_research.py
 !scripts/cdp/
 !scripts/cdp/cdp_helper.py
+!scripts/cdp/cdp_cli.sh
 !scripts/cdp/README.md
 
 

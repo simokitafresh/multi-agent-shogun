@@ -1,14 +1,16 @@
-# CDP Helper Library
+# CDP Automation Toolkit
 
-WSL2からWindows上のEdge/Chromeを自動操作するためのCDPヘルパーライブラリ。
+WSL2からWindows上のEdge/Chromeを自動操作するためのCDPツールキット。
+2つの経路を提供: **Daemon mode**（推奨）と **Legacy helper**（直接WebSocket）。
 
 ## 前提
 
 - WSL2環境（powershell.exeが利用可能）
-- Edge or Chrome がインストール済み
-- Python 3.10+（標準ライブラリのみ使用）
+- Edge or Chrome がインストール済み（`--remote-debugging-port=9222` で起動）
+- Python 3.10+
+- Daemon mode: `pip install websocket-client`（requirements.txt参照）
 
-## Import
+## Legacy Helper Import
 
 ```python
 from cdp_helper import launch_browser, get_tab, js_eval, navigate
@@ -95,9 +97,68 @@ Python → shell → PowerShell → WebSocket → CDP → JavaScript の5層を
 通過するためクォートが衝突する。Base64でペイロード全体をエンコードし
 PowerShell側でデコードすることで回避。
 
+## Daemon Mode（cdp_server.py + cdp_cli.sh）
+
+persistent WebSocket接続を維持するHTTPデーモン。毎回のWebSocket接続/切断コストを排除。
+
+### 起動
+
+```bash
+# サーバー手動起動（通常はcdp_cli.shが自動起動する）
+python3 scripts/cdp/cdp_server.py
+
+# サーバー情報は /tmp/cdp-server.json に書き出される
+cat /tmp/cdp-server.json
+# {"port": 8222, "token": "uuid-...", "pid": 12345}
+```
+
+### CLI使用例
+
+```bash
+# ヘルスチェック（サーバー未起動なら自動起動）
+scripts/cdp/cdp_cli.sh healthz
+
+# URL遷移
+scripts/cdp/cdp_cli.sh navigate "https://example.com"
+
+# スクリーンショット
+scripts/cdp/cdp_cli.sh screenshot /tmp/page.png
+
+# アクセシビリティツリー取得（@ref付き）
+scripts/cdp/cdp_cli.sh snapshot
+
+# ref-based要素クリック
+scripts/cdp/cdp_cli.sh click @e1
+
+# JavaScript実行
+scripts/cdp/cdp_cli.sh eval "document.title"
+
+# サーバー停止
+scripts/cdp/cdp_cli.sh stop
+```
+
+### アーキテクチャ
+
+```
+bash (cdp_cli.sh)
+  └─ curl → HTTP localhost:8222
+       └─ cdp_server.py (Python daemon)
+            └─ persistent WebSocket → Chrome CDP (port 9222)
+```
+
+### Legacy helper（cdp_helper.py）との違い
+
+| | Daemon mode | Legacy helper |
+|---|---|---|
+| 接続方式 | persistent WebSocket | 毎回PowerShell→WebSocket |
+| 呼び出し | bash (curl) | Python import |
+| 依存 | websocket-client | 標準ライブラリのみ |
+| ref選択 | AXTree @ref | CSS selector |
+| 速度 | 高速（接続維持） | 低速（毎回接続） |
+
 ## 注意事項
 
 - デバッグポートはブラウザ起動時のみ指定可能（後付け不可）
-- WebSocketバッファは1MB
-- SPA描画待ちのためnavigate後にデフォルト5秒wait
-- 外部ライブラリ依存なし（subprocess, json, base64, time, os のみ）
+- Legacy helper: WebSocketバッファは1MB、navigate後にデフォルト5秒wait
+- Daemon mode: idle 30分で自動停止、Bearer認証必須
+- Legacy helper: 外部ライブラリ依存なし（subprocess, json, base64, time, os のみ）

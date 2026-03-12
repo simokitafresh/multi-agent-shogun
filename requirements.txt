@@ -1,1 +1,2 @@
 PyYAML==6.0.3
+websocket-client>=1.6.0  # CDP daemon mode (cdp_server.py) — persistent WebSocket connection
