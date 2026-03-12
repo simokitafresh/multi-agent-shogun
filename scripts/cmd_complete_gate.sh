@@ -949,6 +949,7 @@ append_lesson_tracking() {
     local parsed ninja injected_ids referenced_ids timestamp
 
     parsed=$(python3 - "$TASKS_DIR" "$SCRIPT_DIR/queue/reports" "$cmd_id" <<'PY'
+import glob
 import os
 import sys
 import yaml
@@ -956,6 +957,7 @@ import yaml
 tasks_dir = sys.argv[1]
 reports_dir = sys.argv[2]
 cmd_id = sys.argv[3]
+archive_reports_dir = os.path.join(os.path.dirname(reports_dir), "archive", "reports")
 
 ninjas = []
 injected = []
@@ -983,6 +985,7 @@ def detect_task_type(task_id_str):
         return "design"
     return "unknown"
 
+# Primary: extract ninja/injected/task_type from task files
 for filename in sorted(os.listdir(tasks_dir)):
     if not filename.endswith(".yaml"):
         continue
@@ -1019,11 +1022,48 @@ for filename in sorted(os.listdir(tasks_dir)):
             else:
                 add_unique(injected, lesson)
 
+# Fallback: when task files are already idle/reassigned, extract from report filenames
+if not ninjas:
+    for search_dir in [reports_dir, archive_reports_dir]:
+        if not os.path.isdir(search_dir):
+            continue
+        for rpath in sorted(glob.glob(os.path.join(search_dir, f"*_report_{cmd_id}*.yaml"))):
+            bname = os.path.basename(rpath)
+            if bname.endswith(".lock"):
+                continue
+            idx = bname.find(f"_report_{cmd_id}")
+            if idx > 0:
+                add_unique(ninjas, bname[:idx])
+            if not task_types:
+                try:
+                    with open(rpath, encoding="utf-8") as rf:
+                        rdata = yaml.safe_load(rf) or {}
+                    if isinstance(rdata, dict):
+                        rtid = rdata.get("task_id", "")
+                        if rtid:
+                            add_unique(task_types, detect_task_type(rtid))
+                except Exception:
+                    pass
+
+def find_report(ninja_name):
+    """Find report file in reports_dir or archive, return path or None."""
+    for candidate in [
+        os.path.join(reports_dir, f"{ninja_name}_report_{cmd_id}.yaml"),
+        os.path.join(reports_dir, f"{ninja_name}_report.yaml"),
+    ]:
+        if os.path.exists(candidate):
+            return candidate
+    if os.path.isdir(archive_reports_dir):
+        matches = sorted(glob.glob(
+            os.path.join(archive_reports_dir, f"{ninja_name}_report_{cmd_id}*.yaml")))
+        for m in matches:
+            if not m.endswith(".lock"):
+                return m
+    return None
+
 for ninja in ninjas:
-    report_path = os.path.join(reports_dir, f"{ninja}_report_{cmd_id}.yaml")
-    if not os.path.exists(report_path):
-        report_path = os.path.join(reports_dir, f"{ninja}_report.yaml")
-    if not os.path.exists(report_path):
+    report_path = find_report(ninja)
+    if not report_path:
         continue
     try:
         with open(report_path, encoding="utf-8") as f:
