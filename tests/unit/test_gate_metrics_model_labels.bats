@@ -169,7 +169,11 @@ EOF
 @test "cmd_complete_gate writes encoded model labels without shifting TSV columns" {
     write_gate_cmd_fixture
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    # Prevent live tmux pane lookup from overriding test settings.yaml model_name
+    mkdir -p "$TEST_TMPDIR/bin"
+    printf '#!/bin/sh\nexit 1\n' > "$TEST_TMPDIR/bin/tmux"
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+    run env PATH="$TEST_TMPDIR/bin:$PATH" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
 
     result="$(python3 - <<'PY' "$TEST_PROJECT/logs/gate_metrics.log"
