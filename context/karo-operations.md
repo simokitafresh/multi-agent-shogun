@@ -22,6 +22,7 @@
 - 配備前は毎回「五問チェック」を通す。Purpose / Decomposition / Headcount / Difficulty / Risk を1行で言えなければ配備するな。
 - implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
 - 偵察配備後の2名体制検証は `task_deploy.sh` の役割。`deploy_task.sh` と混同するな。
+- BE系タスク配備ルール: `backend/` 配下のファイルが変更対象の場合、タスクYAMLの `context_files` に `docs/rule/trade-rule.md` パスを含めよ。理由: RULE09/10/11 と 14 の誤解パターンを忍者が自動参照するため。
 → `docs/research/karo-operations-detail.md` §1
 
 ## §2 分解
@@ -50,6 +51,7 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 - 家老の役割はレビュー配備とGATE判定のみ。品質判定そのものは忍者レビューに委ねる。
 - verdict は PASS / FAIL の二値厳守。条件付きPASSは禁止。
 - failed を放置するな。修正配備 / WAIVE→done / 殿裁定のいずれかへ必ず進める。
+- Two-pass Review: CRITICALはblocking(PASS/FAIL直結)、INFORMATIONALは記録のみ(non-blocking)。→ `docs/research/karo-operations-detail.md` §3 Two-pass Review
 → `docs/research/karo-operations-detail.md` §3
 
 ## §4 難問エスカレーション
