@@ -113,6 +113,24 @@ print(data.get('task', {}).get('report_path', ''))
 "
 }
 
+read_task_field() {
+    local field_name="$1"
+    TASK_FILE_ENV="$TEST_PROJECT/queue/tasks/sasuke.yaml" FIELD_NAME_ENV="$field_name" python3 -c "
+import os, yaml
+with open(os.environ['TASK_FILE_ENV'], encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+task = data.get('task', {})
+value = task.get(os.environ['FIELD_NAME_ENV'], '__missing__')
+if isinstance(value, list):
+    print('list')
+    print('|'.join(str(v) for v in value))
+elif value == '__missing__':
+    print('__missing__')
+else:
+    print(str(value))
+"
+}
+
 @test "deploy_task injects ac_version and report ac_version_read on first deploy" {
     run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
     [ "$status" -eq 0 ]
@@ -123,6 +141,25 @@ print(data.get('task', {}).get('report_path', ''))
 
     run grep -E "^ac_version_read:[[:space:]]*3$" "$TEST_PROJECT/queue/reports/sasuke_report.yaml"
     [ "$status" -eq 0 ]
+
+    run read_task_field stop_for
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "" ]
+
+    run read_task_field never_stop_for
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "" ]
+
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "" ]
+
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "" ]
 }
 
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
@@ -148,6 +185,69 @@ EOF
     run read_task_ac_version
     [ "$status" -eq 0 ]
     [ "$output" = "5" ]
+}
+
+@test "deploy_task skips ac_priority injection when acceptance_criteria has fewer than 3 items" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "short ac"
+  task_type: review
+  acceptance_criteria:
+    - ac1: first
+    - ac2: second
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "__missing__" ]
+
+    run read_task_field stop_for
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+}
+
+@test "deploy_task preserves existing execution control values on redeploy" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "existing controls"
+  task_type: review
+  acceptance_criteria:
+    - ac1: first
+    - ac2: second
+    - ac3: third
+  stop_for:
+    - test failure
+  never_stop_for:
+    - formatting only
+  parallel_ok:
+    - AC1
+  ac_priority: "AC2 > AC1 > AC3"
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field stop_for
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "test failure" ]
+
+    run read_task_field never_stop_for
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "formatting only" ]
+
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "AC1" ]
+
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "AC2 > AC1 > AC3" ]
 }
 
 @test "deploy_task injects report_path and report template guidance on cmd-named reports" {

@@ -1499,6 +1499,81 @@ PY
     fi
 }
 
+# ─── task execution controls注入（cmd_875: gstack停止条件/優先順位/並列許可） ───
+inject_execution_controls() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_execution_controls: task file not found: $task_file"
+        return 0
+    fi
+
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+
+
+def ac_count(value):
+    if isinstance(value, list):
+        return len(value)
+    if value is None:
+        return 0
+    if isinstance(value, str):
+        return 1 if value.strip() else 0
+    if isinstance(value, dict):
+        return len(value.keys())
+    return 0
+
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[EXEC_CTRL] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+    changed = False
+
+    for key in ('stop_for', 'never_stop_for', 'parallel_ok'):
+        if key not in task or task.get(key) is None:
+            task[key] = []
+            changed = True
+
+    if ac_count(task.get('acceptance_criteria')) >= 3 and 'ac_priority' not in task:
+        task['ac_priority'] = ''
+        changed = True
+
+    if not changed:
+        print('[EXEC_CTRL] Already present, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+    print('[EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority as needed', file=sys.stderr)
+
+except Exception as e:
+    print(f'[EXEC_CTRL] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+PY
+        return 1
+    fi
+}
+
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
 # deploy_task.sh実行時にcmd_complete_gate.shが要求するgateフラグを事前生成。
 # L078: 65%のBLOCKがmissing_gate(archive/lesson/review_gate)。配備時に生成で削減。
@@ -2092,6 +2167,9 @@ inject_report_filename "$TASK_FILE" || true
 
 # bloom_level自動注入（cmd_434: タスク複雑度メタデータ）
 inject_bloom_level "$TASK_FILE" || true
+
+# task execution controls注入（cmd_875: 停止条件/優先順位/並列許可）
+inject_execution_controls "$TASK_FILE" || true
 
 # context鮮度チェック（失敗してもデプロイは継続）
 check_context_freshness "$TASK_FILE" || true
