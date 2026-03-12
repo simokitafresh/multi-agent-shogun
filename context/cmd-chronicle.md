@@ -58,11 +58,11 @@
 | cmd_485 | DM-signal環境・デプロイ・Cron全容調査 | dm-signal | 03-02 | DM-signal環境・デプロイ・Cron全容調査 |
 | cmd_484 | DM-signal追加偵察   backend/scripts +… | dm-signal | 03-02 | DM-signal追加偵察   backend/scrip… |
 | cmd_543 | context未更新ゲート — システム変更cmdのcontext反映を強制化 | infra | 03-04 | — |
-| cmd_544 | CMD年代記 — Vercelスタイルのcmd索引自動生成 | infra | 03-04 | | |
-| cmd_546 | lord_conversation append重複解消 — ntfy.sh/ntfy_listener.shの共通関数抽出 | infra | 03-04 | | |
+| cmd_544 | CMD年代記 — Vercelスタイルのcmd索引自動生成 | infra | 03-04 | CMD年代記 — Vercelスタイルのcmd索引自動生成 |
+| cmd_546 | lord_conversation append重複解消 — ntfy.sh/ntfy_listener.shの共通関数抽出 | infra | 03-04 | lord_conversation append重複解消 — 共通関数抽出 |
 | cmd_545 | busy/idleパターン検出の共有ライブラリ化 — 3重複を lib/agent_state.sh に集約 | infra | 03-04 | cmd_545全AC PASS。lib/agent_ |
 | cmd_547 | lord_conversation.yaml ローテーション — 無制限成長の防止 | infra | 03-04 | — |
-| cmd_548 | 偵察 — DM-signalリファクタリング候補の体系的洗い出し | dm-signal | 03-05 | | |
+| cmd_548 | 偵察 — DM-signalリファクタリング候補の体系的洗い出し | dm-signal | 03-05 | 偵察 — DM-signalリファクタリング候補の体系的洗い出し |
 | cmd_549 | 001.md実装準備書のMECE補完 — 仕様書との情報ギャップ18件を解消 | dm-signal | 03-05 | レビューPASS。001.mdは� |
 | cmd_544 | 弱体化確率推定 — 本番パイプライン設計書+本番DB実測検証 | dm-signal | 03-05 | cmd_544 再レビューは PAS |
 | cmd_531 | 教訓注入の量→質転換 — 注入上限+自動退役+効果率監視の自動化 | infra | 03-05 | 全6AC実装完了。3ファ� |
@@ -71,7 +71,7 @@
 | cmd_526 | バックエンド未接続時のフォールバックUI — 戦国スタイルのエラー表示 | dm-signal | 03-05 | — |
 | cmd_527 | 偵察 — FEページ整理+ログイン画面新設の現状調査 | dm-signal | 03-05 | — |
 | cmd_528 | lesson_candidateフォーマット強制 — cmd_complete_gate.shにバリデーション追加 | infra | 03-05 | レビューFAIL。lesson_cand |
-| cmd_551 | スクショ入力2経路実装 — PC(Prefix+v)+スマホ(ntfy添付)→Claude Code読込 | infra | 03-05 | | |
+| cmd_551 | スクショ入力2経路実装 — PC(Prefix+v)+スマホ(ntfy添付)→Claude Code読込 | infra | 03-05 | スクショ入力2経路実装(PC+スマホ→Claude Code読込) |
 | cmd_550 | Deterioration Monitor本番実装 Phase 1 — バックエンド(DB+計算ロジック+バッチ+API) | dm-signal | 03-05 | 全active PFの弱体化確率 |
 | cmd_552 | Deterioration Monitor本番実装 Phase 2 — フロントエンド(型定義+テーブル+チャート+ナビ) | dm-signal | 03-05 | AC4+AC5+AC6 ページ本体実 |
 | cmd_553 | 偵察 — Deterioration Monitor本番稼働阻害要因の全面調査(Render BE+cron+DB) | dm-signal | 03-05 | 本番404の根因はBackend� |
@@ -104,7 +104,7 @@
 | cmd_581 | 2026-02-27改革（Sonnet全廃・tier廃止・Codex上忍昇格）がshutsujin_departure.shに未反映のまま残っており、CLI Adapter未ロード時のフォールバックでSonnetが起動するリスクがある。これを現行編成に合わせて修正する | infra | 03-06 | shutsujin_departure.sh Sonnet� |
 | cmd_587 | inbox_watcher.shのspecial message先既読化によるメッセージ消失リスクと、archive_completed.shのmv未チェックによるデータ消失リスクを修正する | infra | 03-06 | レビューPASS。先既読� |
 | cmd_588 | deploy_task.shのPython呼出し6箇所でexit codeが喪失する問題、ninja_name=Noneのガード不在、heredocでの変数直接埋込インジェクションリスクを修正する | infra | 03-06 | 佐助(subtask_588_impl)のdep |
-| cmd_589 | YAML安全書込みとbash→Python変数受渡しのインジェクション防止を、関連する5ファイルで一括修正する | infra | 03-06 | | |
+| cmd_589 | YAML安全書込みとbash→Python変数受渡しのインジェクション防止を、関連する5ファイルで一括修正する | infra | 03-06 | YAML安全書込み+インジェクション防止 5ファイル一括修正 |
 | cmd_590 | ninja_monitor.shのサブシェルflock問題・date変換バグと、cmd_complete_gate.shのAWK YAMLパース前提違反を修正し、監視系の誤判定リスクを排除する | infra | 03-06 | レビューPASS。cmd_590 の |
 | cmd_586 | 忍者が報告YAMLを report: キーで包んでしまい、ゲートが読めない問題を、テンプレートでの予防とゲート側の自動アンラップで根絶し、家老の手動修正をゼロにする | infra | 03-06 | AC1-AC6全PASS。才蔵の実� |
 | cmd_583 | Codex忍者が毎セッション自動でfastモードになり、ペイン枠にfastであることが表示される状態にする | infra | 03-06 | レビューFAIL。/fast自動 |
@@ -151,7 +151,7 @@
 | cmd_634 | ninja_monitor.shのwrite_karo_snapshot()がidle行をPREV_STATE[]（ペイン表示）だけで判定し、task YAMLのstatus（in_progress/acknowledged）を参照していない。task配備直後やCodex pending steer時に、ninja行ではin_progressなのにidle行にも載る矛盾が発生し、家老が配備可能忍者を誤認する | infra | 03-07 | 佐助のidle行修正をレ� |
 | cmd_635 | ntfy_listenerが約1時間ごとに接続切れ→再接続するが、まれに再接続に失敗しプロセスだけ残るゾンビ状態に陥る。内部watchdog(cmd_609)では検知不能（プロセス自体が機能停止しているため）。外部からの定期ヘルスチェックで強制再起動する仕組みが必要 | infra | 03-07 | ninja_monitor.shにntfy_listen |
 | cmd_636 | cmd_631でwindow.location.hrefをrouter.push()に置換した結果、本番環境でハンバーガーメニュー（MobileMenu→dropdown-menu.tsx）からのページ遷移が動作しなくなった。殿が本番で確認済み。Static Export環境でrouter.push()が正常動作しない可能性がある | dm-signal | 03-08 | cmd_636 review PASS。3導線� |
-| cmd_637 | cmd_631でrouter.push()によるSPA遷移を導入したが、本番Static Export環境で動作しなかった（cmd_636でロールバック済み）。原因を調査し、正しい方法でSPA遷移を再導入する | dm-signal | 03-08 | | |
+| cmd_637 | cmd_631でrouter.push()によるSPA遷移を導入したが、本番Static Export環境で動作しなかった（cmd_636でロールバック済み）。原因を調査し、正しい方法でSPA遷移を再導入する | dm-signal | 03-08 | SPA遷移再実装 — 原因調査+正しいSPA遷移の再導入 |
 | cmd_638 | cmd_637偵察で疾風と影丸の見解が食い違った。互いの報告を読ませて協議し、技術的事実として決着させる | dm-signal | 03-08 | — |
 | cmd_640 | SPA遷移に関する全調査・実装・失敗の知見を005.mdに集約し、今後の判断材料として永続化する | dm-signal | 03-08 | — |
 | cmd_639 | cmd_637でLink統一によるSPA遷移を再導入したが、本番で再びハンバーガーメニュー・サイドバーの遷移が動作しない。即座にロールバックして本番復旧し、なぜLinkでも動かないのか原因を調査する | dm-signal | 03-08 | — |
@@ -161,7 +161,7 @@
 | cmd_641 | Service Workerがnext/linkのRSCフライトリクエスト(index.txt/_rsc)を横取りしてSPA遷移を阻害している。sw.jsにbypassルールを追加し、Link統一によるSPA遷移を本番で動作させる | dm-signal | 03-08 | — |
 | cmd_642 | cmd_641(SW修正+Link統一)が本番で3度目の動作不能。将軍がコード確認し真犯人を特定: dropdown-menu.tsxのLink onClick={closeMenu}がsetIsOpen(false)→ポータルアンマウント→Link要素がDOMから消えてSPA遷移がキャンセルされる。ロールバック後にポータルアンマウント問題を修正してSPA遷移を実現する | dm-signal | 03-08 | レビューでuseEffect依存 |
 | cmd_647 | cmd_646の調査結果に基づき、全ページ瞬間表示の推奨アプローチを実際に動くか検証する。Phase 1（キャッシュ永続化）とPhase 2（SPA再試行）を順に検証し、本番導入可否を判定する | dm-signal | 03-08 | 佐助(IndexedDB PoC)+霧丸(S |
-| cmd_646 | DM-signalサイトのどのページに移動しても一瞬で表示される状態を実現する方法を、手段を限定せず全方位的に調査する。SPA遷移は手段の一つに過ぎない。キャッシュ維持・段階的プリフェッチ・状態永続化など、目的を達成できるあらゆるアプローチを探索し、実現可能性と推奨案を報告する | dm-signal | 03-08 | | |
+| cmd_646 | DM-signalサイトのどのページに移動しても一瞬で表示される状態を実現する方法を、手段を限定せず全方位的に調査する。SPA遷移は手段の一つに過ぎない。キャッシュ維持・段階的プリフェッチ・状態永続化など、目的を達成できるあらゆるアプローチを探索し、実現可能性と推奨案を報告する | dm-signal | 03-08 | 全ページ瞬間表示の実現方法探索 — 8人全方位偵察 |
 | cmd_648 | stop_check_inbox.sh に3つの改善を適用し、inbox配信の信頼性を向上させる。潜在deadlockバグ修正、完了自動検出による報告漏れ防止、block時サマリ注入によるRead tool節約 | infra | 03-08 | `stop_check_inbox.sh` に cmd_ |
 | cmd_649 | yohey-w/multi-agent-shogun から発見したデメリットゼロの小改善3点をバッチ適用し、tmux出力解析の堅牢性と日本語表示の品質を向上させる | infra | 03-08 | — |
 | cmd_650 | cmd_647でlocalhostPoCが全成功したIndexedDB永続化+SPA Link化を、Render preview deployで動作確認し、問題なければ本番pushする | dm-signal | 03-08 | — |
@@ -174,7 +174,7 @@
 | cmd_655 | yohey-w版ユニットテスト5ファイル(450+テストケース)適応移植 | infra | 03-08 | — |
 | cmd_656 | yohey-w版E2E基盤(mock_behaviors/tmux_helpers)+シナリオ11本の適応移植 | infra | 03-08 | — |
 | cmd_657 | CI強化+ライブラリ改善 — SKIP=FAIL自動強制+agent_status+copilot-instructions | infra | 03-08 | — |
-| cmd_658 | Androidモバイルアプリ偵察+初期セットアップ — yohey-w版Kotlin/Compose調査 | infra | 03-08 | — | |
+| cmd_658 | Androidモバイルアプリ偵察+初期セットアップ — yohey-w版Kotlin/Compose調査 | infra | 03-08 | — |
 | cmd_654 | cmd_650でpushしたSPA Link化(eec7f2f)により本番のハンバーガーメニューとサイドバーのリンクが全て動作しなくなった。殿が本番で確認済み。修正し、.env.premiumを用いた100%動作検証を完了する | dm-signal | 03-08 | 3導線を next/link から bu |
 | cmd_652 | E2Eテストの信頼性を向上させ、CIでのE2E自動実行を実現する。AIなしでinbox配信→タスク処理→報告の全経路を検証可能にする | infra | 03-08 | E2Eテスト信頼性向上+CI |
 | cmd_659 | Annual/Monthly Returnsページ高速化 — 2-pass loading + prefetch昇格 | dm-signal | 03-08 | — |
@@ -190,11 +190,11 @@
 | cmd_664 | WSL2にJDK17とAndroid SDK(コマンドラインツール)を導入し、android/のAPKビルドを可能にする | infra | 03-08 | 全AC合格。WSL2 Android SDK |
 | cmd_665 | DM-signalの全ページを自動巡回し、体感速度を計測・記録・比較するワークフローを構築する | auto-ops | 03-08 | cmd_665 review PASS。DM-signa |
 | cmd_667 | Androidコンパニオンからスクショをntfy経由で送り、将軍がRead toolで即座に確認できるようにする | infra | 03-08 | ntfy listener の画像添付 |
-| cmd_666 | PF切り替え+ページ遷移の7.5秒遅延の根本原因を特定し、10倍速(750ms以内)を実現する | dm-signal | 03-09 | | |
+| cmd_666 | PF切り替え+ページ遷移の7.5秒遅延の根本原因を特定し、10倍速(750ms以内)を実現する | dm-signal | 03-09 | PF切替遅延偵察+改善 — 7.5秒→750ms目標 |
 | cmd_668 | Dashboardはyears=0(全期間)で取得するが、prefetchはyears=3/20しか取得しない。prefetch側にyears=0を追加しキャッシュヒットさせる | dm-signal | 03-09 | prefetch側へ performance 0 / |
 | cmd_669 | 背景画像で文字コントラストが不安定。無地背景をデフォルトにし、TextMutedのWCAG不合格を修正する | infra | 03-09 | Android アプリに背景ス |
 | cmd_662 | WSL2からEdge/Chromeを自動操作するCDPヘルパーをライブラリ化し、忍者が毎回インラインで書く無駄を排除する | auto-ops | 03-09 | 全AC PASS。11関数レビュ |
-| cmd_670 | cmd_668(prefetchにyears=0追加)デプロイ後のPF切り替え速度を本番で計測し、改善効果を定量確認する | dm-signal | 03-09 | | |
+| cmd_670 | cmd_668(prefetchにyears=0追加)デプロイ後のPF切り替え速度を本番で計測し、改善効果を定量確認する | dm-signal | 03-09 | PF切替高速化 効果計測 — cmd_668デプロイ後 |
 | cmd_671 | PCターミナル出力をそのまま表示しているため小画面で読みにくい。フォントサイズ調整とピンチズームで各デバイスに最適化する | infra | 03-09 | AC1-7全PASS。フォントサ |
 | cmd_673 | Google Classroomダッシュボードのクラウド完全自動化に向け、現行スクレイピング構成を解明し、Render上ヘッドレスChromeで過去に取得できなかった情報の原因を特定する | google-classroom | 03-09 | Google Classroomスクレイ |
 | cmd_663 | Google Workspace CLI(gws)をインストールし、Gmail検索・Drive操作が動作する状態を確立する | auto-ops | 03-09 | AC1-5全PASS。gws 0.8.0更新 |
@@ -205,7 +205,7 @@
 | cmd_678 | ターミナル表示エリアを最大化する。キーボード表示時に送信ボタンが隠れる致命的バグも修正 | infra | 03-09 | cmd_678 の Android UI 省ス |
 | cmd_679 | cmd_677で導入した1.0x-3.0x拡大のみのピンチズームを拡張し、softWrap OFFモードでPC端末の全幅をスマホ画面にフィットさせる縮小表示を追加する | infra | 03-09 | cmd_679 ピンチズーム全 |
 | cmd_680 | ターミナル出力更新時にユーザーが上にスクロールして読んでいると強制的に最下部に飛ばされるバグを修正する | infra | 03-09 | cmd_680 自動スクロール |
-| cmd_681 | cmd_676 Phase2計測でDashboard warm cacheがAPI9本/合計19秒と判明。他ページの10倍以上遅い最大ボトルネック。9本のAPIの内訳を特定し、改善策を提示する | dm-signal | 03-09 | | |
+| cmd_681 | cmd_676 Phase2計測でDashboard warm cacheがAPI9本/合計19秒と判明。他ページの10倍以上遅い最大ボトルネック。9本のAPIの内訳を特定し、改善策を提示する | dm-signal | 03-09 | Dashboard API 19秒ボトルネック解析+改善 |
 | cmd_676 | cmd_672でPF切替は-78%改善を確認したが、計測対象がPF切替+3ページのみ。全19ページの性能ベースラインを網羅計測し、次の最適化対象を特定する | dm-signal | 03-09 | AC1 PASS(18ページcold cache |
 | cmd_682 | cmd_678で実装した接続バー圧縮とボトムナビ自動非表示に殿から2点の指摘。(1)接続バー「●」は意味がない→正常時は非表示に (2)ボトムナビが下にずれただけでターミナル表示が広がっていない→実装修正 | infra | 03-09 | cmd_682 review は FAIL。実 |
 | cmd_684 | cmd_680で上スクロール中の強制復帰を抑止したが、大量にスクロールした後に最下部(最新出力+入力欄)に戻る手段がない。フローティングボタンでワンタップ復帰を実現する | infra | 03-09 | Androidアプリの Shogun 画 |
@@ -316,10 +316,14 @@
 | cmd_788 | 偵察 — BE APIレスポンス ベースラインスナップショット取得 | dm-signal | 03-11 | API baseline取得（signals/metr... |
 | cmd_789 | 偵察 — 本番PFリスト取得 + protected_portfolios突合 | dm-signal | 03-11 | 本番PFリストとprotected_portfolio... |
 | cmd_787 | impl — PersistentFolderFilter hook抽出 + Page shell抽出 | dm-signal | 03-11 | Phase2a Part2: PageShellコンポ... |
-| cmd_790 | 偵察 — BEベースライン再取得（正確PFセット15体×全期間×全API） | dm-signal | 03-11 | AC1-AC5 完了。`docs/research/b... |
+| cmd_790 | 偵察 — BEベースライン再取得（正確PFセット15体×全期間×全API） | dm-signal | 03-11 | AC1-AC5完了。BEベースライン再取得 |
 | cmd_791 | impl — monthly-returns API高速化（expanded_tickersスキップ + months前倒しslice） | dm-signal | 03-11 | monthly-returns APIからexpand... |
 | cmd_792 | impl — 304エラー扱いバグ修正 + ETag有効化 | dm-signal | 03-11 | impl — 304エラー扱いバグ修正 + ETag有効化 |
 | cmd_795 | | | infra | 03-11 | cmd_795再レビューPASS。b |
 | cmd_796 | | | dm-signal | 03-11 | dm-signal-core.md と dm-signa |
 | cmd_797 | | | infra | 03-11 | cmd_797事後レビューは P |
-| cmd_798 | | | infra | 03-11 | | |
+| cmd_798 | | | infra | 03-11 | 偵察 — NDL OCR-Lite深掘り調査(サーバーサイド運用設計) |
+| cmd_793 | | | dm-signal | 03-11 | cmd_793 re-review は PASS。p |
+| cmd_802 | | | infra | 03-11 | cmd_802ログローテーシ� |
+| cmd_799 | | | infra | 03-11 | cmd_799レビュー PASS。PD� |
+| cmd_801 | | | infra | 03-11 | — |
