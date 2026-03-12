@@ -340,8 +340,8 @@ EOF
 
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"sasuke: WARN"* ]]
-    [[ "$output" == *"auto-fixed"* ]]
+    [[ "$output" == *"[INFO] sasuke:"* ]]
+    [[ "$output" == *"自動修正"* ]] || [[ "$output" == *"auto-fixed"* ]]
 }
 
 @test "B層: normalize ERROR when normalize_report.sh is missing (exit 127)" {

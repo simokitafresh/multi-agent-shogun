@@ -229,7 +229,7 @@ EOF
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 1 ]
     [[ "$output" == *"Review quality check:"* ]]
-    [[ "$output" == *"hayate: NG ← verdict欠落または不正値"* ]]
+    [[ "$output" == *"[CRITICAL] hayate: NG ← verdict欠落または不正値"* ]]
     [[ "$output" == *"review report missing verdict field"* ]]
 }
 
@@ -245,7 +245,7 @@ EOF
 
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 1 ]
-    [[ "$output" == *"hayate: NG ← self_gate_check 4項目が不足またはPASS以外"* ]]
+    [[ "$output" == *"[CRITICAL] hayate: NG ← self_gate_check 4項目が不足またはPASS以外"* ]]
     [[ "$output" == *"review report self_gate_check incomplete or not all PASS"* ]]
 }
 
@@ -261,7 +261,7 @@ EOF
 
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 1 ]
-    [[ "$output" == *"reviewer and implementer overlap: sasuke"* ]]
+    [[ "$output" == *"[CRITICAL] NG ← reviewer and implementer overlap: sasuke"* ]]
     [[ "$output" == *"reviewer is same as implementer"* ]]
 }
 
@@ -287,5 +287,5 @@ EOF
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 1 ]
     [[ "$output" == *"TODO/FIXME residual check:"* ]]
-    [[ "$output" == *"NG ← 1件のTODO/FIXMEが残存:"* ]]
+    [[ "$output" == *"[CRITICAL] NG ← 1件のTODO/FIXMEが残存:"* ]]
 }

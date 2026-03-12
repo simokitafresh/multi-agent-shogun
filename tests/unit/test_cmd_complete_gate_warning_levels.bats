@@ -248,7 +248,7 @@ EOF
     write_report_with_deviation_count 4
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"WARNING: sasuke: deviation count 4 >= 4: 逸脱管理ルール(3回超過)に抵触"* ]]
+    [[ "$output" == *"[INFO] sasuke: deviation count 4 >= 4: 逸脱管理ルール(3回超過)に抵触"* ]]
 }
 
 @test "analysis_paralysis_triggered true emits warning" {
@@ -257,7 +257,7 @@ EOF
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *"[L2] Analysis paralysis check:"* ]]
-    [[ "$output" == *"WARNING: sasuke: analysis paralysis was triggered during this task"* ]]
+    [[ "$output" == *"[INFO] sasuke: analysis paralysis was triggered during this task"* ]]
 }
 
 @test "analysis_paralysis_triggered missing is SKIP" {

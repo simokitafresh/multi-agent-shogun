@@ -164,7 +164,7 @@ EOF
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 1 ]
     [[ "$output" == *"AC version check:"* ]]
-    [[ "$output" == *"sasuke: NG ← ac_version不一致 (task=7, report=6)"* ]]
+    [[ "$output" == *"[CRITICAL] sasuke: NG ← ac_version不一致 (task=7, report=6)"* ]]
 }
 
 @test "ac_version missing: warn only (backward compatible)" {
@@ -173,5 +173,5 @@ EOF
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *"AC version check:"* ]]
-    [[ "$output" == *"WARN: sasuke: ac_version_read未記載（task=7）。後方互換として非BLOCK"* ]]
+    [[ "$output" == *"[INFO] sasuke: ac_version_read未記載（task=7）。後方互換として非BLOCK"* ]]
 }

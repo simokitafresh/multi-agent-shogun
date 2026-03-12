@@ -176,6 +176,7 @@
 !scripts/backfill_task_type.sh
 !scripts/lesson_health_report.sh
 !scripts/lesson_deprecation_scan.sh
+!scripts/chronicle_metrics.sh
 !scripts/lesson_impact_analysis.sh
 !scripts/lesson_effectiveness.sh
 !scripts/usage_statusbar_loop.sh

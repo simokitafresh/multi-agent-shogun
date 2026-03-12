@@ -1365,15 +1365,15 @@ check_context_update() {
                 echo "  OK: ${msg}"
                 ;;
             WARN)
-                echo "  WARN: ${msg}"
+                echo "  [INFO] ${msg}"
                 ;;
             BLOCK)
-                echo "  NG ← ${msg}"
+                echo "  [CRITICAL] NG ← ${msg}"
                 record_block_reason "$msg"
                 ALL_CLEAR=false
                 ;;
             *)
-                echo "  WARN: unexpected check_context_update output: ${kind} ${msg}"
+                echo "  [INFO] unexpected check_context_update output: ${kind} ${msg}"
                 ;;
         esac
     done < <(
@@ -1498,7 +1498,7 @@ preflight_gate_flags() {
         if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" 2>&1; then
             echo "  archive: preflight OK"
         else
-            echo "  archive: preflight WARN (failed, non-blocking)"
+            echo "  [INFO] archive: preflight WARN (failed, non-blocking)"
         fi
     else
         echo "  archive: already exists (skip)"
@@ -1544,7 +1544,7 @@ except:
             if bash "$SCRIPT_DIR/scripts/lesson_check.sh" "$cmd_id" "preflight: no found:true lesson_candidate" 2>&1; then
                 echo "  lesson: preflight OK (via lesson_check)"
             else
-                echo "  lesson: preflight WARN (lesson_check failed, non-blocking)"
+                echo "  [INFO] lesson: preflight WARN (lesson_check failed, non-blocking)"
             fi
         fi
     else
@@ -1596,7 +1596,7 @@ except:
         if bash "$SCRIPT_DIR/scripts/review_gate.sh" "$cmd_id" 2>&1; then
             echo "  review_gate: preflight OK"
         else
-            echo "  review_gate: preflight WARN (review may not be complete)"
+            echo "  [INFO] review_gate: preflight WARN (review may not be complete)"
         fi
     elif [ "$pf_needs_review" = true ]; then
         echo "  review_gate: already exists (skip)"
@@ -1613,7 +1613,7 @@ except:
             if bash "$SCRIPT_DIR/scripts/report_merge.sh" "$cmd_id" 2>&1; then
                 echo "  report_merge: preflight OK"
             else
-                echo "  report_merge: preflight WARN (merge may not be ready)"
+                echo "  [INFO] report_merge: preflight WARN (merge may not be ready)"
             fi
         else
             echo "  report_merge: SKIP (script not found)"
@@ -1660,7 +1660,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         normalize_exit=0
         normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) || normalize_exit=$?
         if [ "$normalize_exit" -eq 0 ]; then
-            echo "  ${ninja_name}: WARN — auto-fixed: ${normalize_output}"
+            echo "  [INFO] ${ninja_name}: auto-fixed: ${normalize_output}"
             echo "$(date '+%Y-%m-%dT%H:%M:%S') [B層] ${CMD_ID} ${ninja_name}: ${normalize_output}" >> "$NORMALIZE_LOG"
         elif [ "$normalize_exit" -eq 1 ]; then
             echo "  ${ninja_name}: OK (no normalization needed)"
@@ -1684,7 +1684,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         if bash "$SCRIPT_DIR/scripts/auto_draft_lesson.sh" "$report_file" 2>&1; then
             true
         else
-            echo "  WARN: auto_draft_lesson.sh failed for ${ninja_name} (non-blocking)"
+            echo "  [INFO] auto_draft_lesson.sh failed for ${ninja_name} (non-blocking)"
         fi
     else
         echo "  ${ninja_name}: no report file"
@@ -1706,7 +1706,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
         true
     else
-        echo "  WARN: gate_yaml_status.sh failed (non-blocking)"
+        echo "  [INFO] gate_yaml_status.sh failed (non-blocking)"
     fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
@@ -1714,7 +1714,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     if append_lesson_tracking "$CMD_ID" "OVERRIDE" 2>&1; then
         true
     else
-        echo "  WARN: append_lesson_tracking failed (non-blocking)"
+        echo "  [INFO] append_lesson_tracking failed (non-blocking)"
     fi
 
     # ─── lesson_merge自動実行（ベストエフォート） ───
@@ -1738,21 +1738,21 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     if bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
         echo "  dashboard_update: OK ($CMD_ID)"
     else
-        echo "  dashboard_update: WARN (failed, continuing)" >&2
+        echo "  [INFO] dashboard_update: WARN (failed, continuing)" >&2
     fi
 
     # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
     if bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1; then
         echo "  gist_sync: OK"
     else
-        echo "  gist_sync: WARN (sync failed, non-blocking)" >&2
+        echo "  [INFO] gist_sync: WARN (sync failed, non-blocking)" >&2
     fi
 
     # ntfy_cmd（gist_sync後に実行）
     if bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
         echo "  ntfy_cmd: OK"
     else
-        echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
+        echo "  [INFO] ntfy_cmd: WARN (notification failed, non-blocking)" >&2
     fi
 
     # cmd_531: AC6 — GATE CLEAR時に教訓有効率スキャン+自動退役（緊急override時も実行）
@@ -1762,7 +1762,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         if bash "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" --project all 2>&1; then
             echo "  lesson_deprecation_scan: OK"
         else
-            echo "  lesson_deprecation_scan: WARN (scan failed, non-blocking)"
+            echo "  [INFO] lesson_deprecation_scan: WARN (scan failed, non-blocking)"
         fi
     else
         echo "  SKIP (lesson_deprecation_scan.sh not found)"
@@ -1795,7 +1795,7 @@ for gate in "${ALL_GATES[@]}"; do
             echo "  ${gate}: DONE"
         fi
     else
-        echo "  ${gate}: MISSING ← 未完了"
+        echo "  [CRITICAL] ${gate}: MISSING ← 未完了"
         MISSING_GATES+=("$gate")
         record_block_reason "missing_gate:${gate}"
         ALL_CLEAR=false
@@ -1831,9 +1831,9 @@ except:
     if [ "$has_rl_key" = "yes" ]; then
         echo "  ${ninja_name}: OK (related_lessons present)"
     elif [ "$has_rl_key" = "no" ]; then
-        echo "  ${ninja_name}: WARN ← related_lessonsキー欠落（deploy_task.sh経由でない可能性）"
+        echo "  [INFO] ${ninja_name}: related_lessonsキー欠落（deploy_task.sh経由でない可能性）"
     else
-        echo "  ${ninja_name}: WARN ← related_lessons解析エラー"
+        echo "  [INFO] ${ninja_name}: related_lessons解析エラー"
     fi
 done
 if [ "$RL_CHECKED" = false ]; then
@@ -1896,7 +1896,7 @@ except:
                 echo "  ${ninja_name}: OK (lessons_useful present and non-empty)"
             elif [ "$lr_status" = "null" ]; then
                 # cmd_536 AC4: lessons_useful=null(明示的未記入)をBLOCK
-                echo "  ${ninja_name}: NG ← lessons_usefulが未記入(null)。教訓の有用性を記入せよ"
+                echo "  [CRITICAL] ${ninja_name}: NG ← lessons_usefulが未記入(null)。教訓の有用性を記入せよ"
                 record_block_reason "${ninja_name}:null_lessons_useful"
                 ALL_CLEAR=false
             else
@@ -1913,7 +1913,7 @@ try:
 except:
     print('(parse_error)')
 " 2>/dev/null)
-                echo "  ${ninja_name}: NG ← lessons_useful空。related_lessons [${rl_ids}] のうち実際に役立った教訓を報告に記載せよ"
+                echo "  [CRITICAL] ${ninja_name}: NG ← lessons_useful空。related_lessons [${rl_ids}] のうち実際に役立った教訓を報告に記載せよ"
                 record_block_reason "${ninja_name}:empty_lessons_useful:related=[${rl_ids}]"
                 ALL_CLEAR=false
             fi
@@ -1998,18 +1998,18 @@ except Exception:
             echo "  ${ninja_name}: OK (ac_version task=${acv_task}, report=${acv_read})"
             ;;
         mismatch)
-            echo "  ${ninja_name}: NG ← ac_version不一致 (task=${acv_task}, report=${acv_read})"
+            echo "  [CRITICAL] ${ninja_name}: NG ← ac_version不一致 (task=${acv_task}, report=${acv_read})"
             record_block_reason "${ninja_name}:ac_version_mismatch:task=${acv_task}:report=${acv_read}"
             ALL_CLEAR=false
             ;;
         report_missing)
-            echo "  WARN: ${ninja_name}: ac_version_read未記載（task=${acv_task}）。後方互換として非BLOCK"
+            echo "  [INFO] ${ninja_name}: ac_version_read未記載（task=${acv_task}）。後方互換として非BLOCK"
             ;;
         task_missing)
-            echo "  WARN: ${ninja_name}: task.ac_version未設定のため照合SKIP"
+            echo "  [INFO] ${ninja_name}: task.ac_version未設定のため照合SKIP"
             ;;
         *)
-            echo "  WARN: ${ninja_name}: ac_version照合解析エラー（非BLOCK）"
+            echo "  [INFO] ${ninja_name}: ac_version照合解析エラー（非BLOCK）"
             ;;
     esac
 done
@@ -2077,25 +2077,25 @@ except:
                 if [ "$lsource" = "lesson_write" ]; then
                     echo "  ${ninja_name}: OK (lesson_candidate found:true, registered via lesson_write)"
                 else
-                    echo "  ${ninja_name}: NG ← lesson_candidate found:true but lesson.done source=${lsource} (not lesson_write)"
+                    echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate found:true but lesson.done source=${lsource} (not lesson_write)"
                     record_block_reason "${ninja_name}:lesson_done_source:${lsource}"
                     ALL_CLEAR=false
                 fi
             else
-                echo "  ${ninja_name}: NG ← lesson_candidate found:true but lesson.done not found"
+                echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate found:true but lesson.done not found"
                 record_block_reason "${ninja_name}:lesson_done_missing"
                 ALL_CLEAR=false
             fi
             ;;
         missing)
-            echo "  ${ninja_name}: NG ← lesson_candidateフィールド欠落"
+            echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidateフィールド欠落"
             record_block_reason "${ninja_name}:lesson_candidate_missing"
             ALL_CLEAR=false
             ;;
         legacy_list)
             # cmd_776 A層: BLOCK→自動修正+WARN。normalize_report.shで修正を試みる
             a_normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) && {
-                echo "  ${ninja_name}: WARN ← lesson_candidate旧形式を自動修正: ${a_normalize_output}"
+                echo "  [INFO] ${ninja_name}: lesson_candidate旧形式を自動修正: ${a_normalize_output}"
                 echo "$(date '+%Y-%m-%dT%H:%M:%S') [A層] ${CMD_ID} ${ninja_name}: ${a_normalize_output}" >> "$SCRIPT_DIR/logs/normalize_report.log"
                 # 修正成功 → 再検証
                 lc_recheck=$(python3 -c "
@@ -2112,28 +2112,28 @@ except:
     print('ng')
 " 2>/dev/null)
                 if [ "$lc_recheck" != "ok" ]; then
-                    echo "  ${ninja_name}: NG ← 自動修正後も構造不正"
+                    echo "  [CRITICAL] ${ninja_name}: NG ← 自動修正後も構造不正"
                     record_block_reason "${ninja_name}:lesson_candidate_normalize_failed"
                     ALL_CLEAR=false
                 fi
             } || {
-                echo "  ${ninja_name}: NG ← lesson_candidate自動修正失敗"
+                echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate自動修正失敗"
                 record_block_reason "${ninja_name}:lesson_candidate_normalize_error"
                 ALL_CLEAR=false
             }
             ;;
         found_missing)
-            echo "  ${ninja_name}: NG ← lesson_candidate.found が未設定。正規フォーマット: found: true/false"
+            echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate.found が未設定。正規フォーマット: found: true/false"
             record_block_reason "${ninja_name}:lesson_candidate_found_missing"
             ALL_CLEAR=false
             ;;
         malformed)
-            echo "  ${ninja_name}: NG ← lesson_candidate構造不正"
+            echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate構造不正"
             record_block_reason "${ninja_name}:lesson_candidate_malformed"
             ALL_CLEAR=false
             ;;
         *)
-            echo "  ${ninja_name}: NG ← lesson_candidate解析エラー"
+            echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate解析エラー"
             record_block_reason "${ninja_name}:lesson_candidate_parse_error"
             ALL_CLEAR=false
             ;;
@@ -2168,16 +2168,16 @@ for task_file in "$TASKS_DIR"/*.yaml; do
             # fit=true はPASS（要件どおり無出力）
             ;;
         false)
-            echo "GATE BLOCK: purpose_validation.fit=false (目的未達成)"
+            echo "[CRITICAL] GATE BLOCK: purpose_validation.fit=false (目的未達成)"
             echo "  ${ninja_name}: fit=false"
             record_block_reason "${ninja_name}:purpose_validation_fit_false"
             ALL_CLEAR=false
             ;;
         "")
-            echo "  WARN: ${ninja_name}: fit未記入（段階導入: 非BLOCK）"
+            echo "  [INFO] ${ninja_name}: fit未記入（段階導入: 非BLOCK）"
             ;;
         *)
-            echo "  WARN: ${ninja_name}: fit値不正 '${pv_fit}'（段階導入: 非BLOCK）"
+            echo "  [INFO] ${ninja_name}: fit値不正 '${pv_fit}'（段階導入: 非BLOCK）"
             ;;
     esac
 done
@@ -2244,7 +2244,7 @@ PY
 
     case "$deviation_kind" in
         warn)
-            echo "  WARNING: ${ninja_name}: deviation count ${deviation_detail} >= 4: 逸脱管理ルール(3回超過)に抵触"
+            echo "  [INFO] ${ninja_name}: deviation count ${deviation_detail} >= 4: 逸脱管理ルール(3回超過)に抵触"
             ;;
         ok)
             echo "  ${ninja_name}: OK (deviation count ${deviation_detail} <= 3)"
@@ -2253,7 +2253,7 @@ PY
             echo "  ${ninja_name}: SKIP (${deviation_detail})"
             ;;
         *)
-            echo "  WARN: ${ninja_name}: deviation count解析エラー (${deviation_detail})"
+            echo "  [INFO] ${ninja_name}: deviation count解析エラー (${deviation_detail})"
             ;;
     esac
 done
@@ -2318,7 +2318,7 @@ PY
 
     case "$analysis_kind" in
         warn)
-            echo "  WARNING: ${ninja_name}: ${analysis_detail}"
+            echo "  [INFO] ${ninja_name}: ${analysis_detail}"
             ;;
         ok)
             echo "  ${ninja_name}: OK (${analysis_detail})"
@@ -2327,7 +2327,7 @@ PY
             echo "  ${ninja_name}: SKIP (${analysis_detail})"
             ;;
         *)
-            echo "  WARN: ${ninja_name}: analysis_paralysis_triggered解析エラー (${analysis_detail})"
+            echo "  [INFO] ${ninja_name}: analysis_paralysis_triggered解析エラー (${analysis_detail})"
             ;;
     esac
 done
@@ -2380,16 +2380,16 @@ except:
             echo "  ${ninja_name}: OK (skill_candidate.found present)"
             ;;
         missing)
-            echo "  WARN: ${ninja_name}_report.yaml missing skill_candidate.found"
+            echo "  [INFO] ${ninja_name}_report.yaml missing skill_candidate.found"
             ;;
         no_found)
-            echo "  WARN: ${ninja_name}_report.yaml missing skill_candidate.found"
+            echo "  [INFO] ${ninja_name}_report.yaml missing skill_candidate.found"
             ;;
         malformed)
-            echo "  WARN: ${ninja_name}_report.yaml skill_candidate構造不正"
+            echo "  [INFO] ${ninja_name}_report.yaml skill_candidate構造不正"
             ;;
         *)
-            echo "  WARN: ${ninja_name}_report.yaml skill_candidate解析エラー"
+            echo "  [INFO] ${ninja_name}_report.yaml skill_candidate解析エラー"
             ;;
     esac
 done
@@ -2442,16 +2442,16 @@ except:
             echo "  ${ninja_name}: OK (decision_candidate.found present)"
             ;;
         missing)
-            echo "  WARN: ${ninja_name}_report.yaml missing decision_candidate.found"
+            echo "  [INFO] ${ninja_name}_report.yaml missing decision_candidate.found"
             ;;
         no_found)
-            echo "  WARN: ${ninja_name}_report.yaml missing decision_candidate.found"
+            echo "  [INFO] ${ninja_name}_report.yaml missing decision_candidate.found"
             ;;
         malformed)
-            echo "  WARN: ${ninja_name}_report.yaml decision_candidate構造不正"
+            echo "  [INFO] ${ninja_name}_report.yaml decision_candidate構造不正"
             ;;
         *)
-            echo "  WARN: ${ninja_name}_report.yaml decision_candidate解析エラー"
+            echo "  [INFO] ${ninja_name}_report.yaml decision_candidate解析エラー"
             ;;
     esac
 done
@@ -2533,7 +2533,7 @@ PY
             if [ "$verdict_status" = "ok" ]; then
                 echo "  ${ninja_name}: OK (verdict=PASS/FAIL)"
             else
-                echo "  ${ninja_name}: NG ← verdict欠落または不正値（PASS/FAIL必須）"
+                echo "  [CRITICAL] ${ninja_name}: NG ← verdict欠落または不正値（PASS/FAIL必須）"
                 record_block_reason "review report missing verdict field"
                 ALL_CLEAR=false
             fi
@@ -2541,7 +2541,7 @@ PY
             if [ "$self_gate_status" = "ok" ]; then
                 echo "  ${ninja_name}: OK (self_gate_check all PASS)"
             else
-                echo "  ${ninja_name}: NG ← self_gate_check 4項目が不足またはPASS以外"
+                echo "  [CRITICAL] ${ninja_name}: NG ← self_gate_check 4項目が不足またはPASS以外"
                 record_block_reason "review report self_gate_check incomplete or not all PASS"
                 ALL_CLEAR=false
             fi
@@ -2570,7 +2570,7 @@ print(",".join(overlap))
 PY
 )
     if [ -n "$overlapping_workers" ]; then
-        echo "  NG ← reviewer and implementer overlap: ${overlapping_workers}"
+        echo "  [CRITICAL] NG ← reviewer and implementer overlap: ${overlapping_workers}"
         record_block_reason "reviewer is same as implementer"
         ALL_CLEAR=false
     else
@@ -2604,7 +2604,7 @@ for p in cfg.get('projects', []):
             draft_count=$(grep -c '^\- \*\*status\*\*: draft' "$DRAFT_LESSONS_FILE" 2>/dev/null || true)
             draft_count=${draft_count:-0}
             if [ "$draft_count" -gt 0 ]; then
-                echo "  NG ← ${CMD_PROJECT}に${draft_count}件のdraft未査読教訓あり"
+                echo "  [CRITICAL] NG ← ${CMD_PROJECT}に${draft_count}件のdraft未査読教訓あり"
                 record_block_reason "draft_lessons:${draft_count}"
                 ALL_CLEAR=false
             else
@@ -2644,7 +2644,7 @@ for script_file in "$SCRIPT_DIR"/scripts/*.sh "$SCRIPT_DIR"/scripts/lib/*.sh; do
         | grep -E '[a-z_]+:' \
         || true)
     if [ -n "$hits" ]; then
-        echo "  WARN: ${rel_path} — raw grep YAML access detected:"
+        echo "  [INFO] ${rel_path} — raw grep YAML access detected:"
         echo "$hits" | head -3 | while IFS= read -r line; do
             echo "    $line"
         done
@@ -2654,7 +2654,7 @@ done
 if [ "$RAW_GREP_COUNT" -eq 0 ]; then
     echo "  OK (no raw grep YAML access detected in scripts/)"
 else
-    echo "  WARN: ${RAW_GREP_COUNT} script(s) use raw grep for YAML field access. Migrate to field_get (scripts/lib/field_get.sh)"
+    echo "  [INFO] ${RAW_GREP_COUNT} script(s) use raw grep for YAML field access. Migrate to field_get (scripts/lib/field_get.sh)"
 fi
 
 # ─── inbox_archive強制チェック（WARNのみ、ブロックしない） ───
@@ -2665,17 +2665,17 @@ if [ -f "$KARO_INBOX" ]; then
     read_count=${read_count:-0}
 
     if [ "$read_count" -ge 10 ]; then
-        echo "INBOX_ARCHIVE_WARN: karo has ${read_count} read messages, running inbox_archive.sh"
+        echo "[INFO] INBOX_ARCHIVE_WARN: karo has ${read_count} read messages, running inbox_archive.sh"
         if bash "$SCRIPT_DIR/scripts/inbox_archive.sh" karo; then
             echo "  karo: inbox_archive completed"
         else
-            echo "  WARN: inbox_archive.sh failed for karo"
+            echo "  [INFO] inbox_archive.sh failed for karo"
         fi
     else
         echo "  karo: OK (read:true=${read_count}, threshold=10)"
     fi
 else
-    echo "  WARN: karo inbox file not found: ${KARO_INBOX}"
+    echo "  [INFO] karo inbox file not found: ${KARO_INBOX}"
 fi
 
 # ─── 未反映PD検出（WARNのみ、ブロックしない） ───
@@ -2698,7 +2698,7 @@ except:
 
     if [ -n "$unsynced_pds" ]; then
         while IFS= read -r pd_id; do
-            echo "  ⚠️ WARNING: ${pd_id} resolved but context not synced"
+            echo "  [INFO] ${pd_id} resolved but context not synced"
         done <<< "$unsynced_pds"
     else
         echo "  OK (no unsynced resolved PDs for ${CMD_ID})"
@@ -2746,7 +2746,7 @@ if [ "$IS_RECON" = true ]; then
         if [ "$HAS_CHANGE" = true ]; then
             echo "  OK (context/${CMD_PROJECT}.md or projects/${CMD_PROJECT}.yaml has changes)"
         else
-            echo "  ⚠️ 穴4: 調査結果が知識基盤に未反映。context/*.md or projects/*.yaml を更新せよ"
+            echo "  [INFO] 穴4: 調査結果が知識基盤に未反映。context/*.md or projects/*.yaml を更新せよ"
         fi
     else
         echo "  SKIP (project not found in cmd — cannot check knowledge files)"
@@ -2789,7 +2789,7 @@ if [ "$HAS_RECON" = true ]; then
         for kw in $RECON_4REQ_KEYWORDS; do
             if ! grep -q "$kw" "$report_file" 2>/dev/null; then
                 RECON_4REQ_MISSING=$((RECON_4REQ_MISSING + 1))
-                echo "  WARN: ${report_file##*/} に ${kw} が欠落"
+                echo "  [INFO] ${report_file##*/} に ${kw} が欠落"
             fi
         done
     done
@@ -2799,7 +2799,7 @@ if [ "$HAS_RECON" = true ]; then
     elif [ "$RECON_4REQ_MISSING" -eq 0 ]; then
         echo "  OK (全偵察報告に実装直結4要件あり)"
     else
-        echo "  WARN: 偵察報告に実装直結4要件(files_to_modify/affected_files/related_tests/edge_cases)が欠落。偵察品質を確認せよ"
+        echo "  [INFO] 偵察報告に実装直結4要件(files_to_modify/affected_files/related_tests/edge_cases)が欠落。偵察品質を確認せよ"
     fi
 else
     echo "  SKIP (non-recon cmd)"
@@ -2813,7 +2813,7 @@ STUB_CHECK_MESSAGE=$(printf '%s\n' "$STUB_CHECK_OUTPUT" | head -1 | cut -f2-)
 
 case "$STUB_CHECK_STATUS" in
     WARN)
-        echo "  WARN: ${STUB_CHECK_MESSAGE}"
+        echo "  [INFO] ${STUB_CHECK_MESSAGE}"
         printf '%s\n' "$STUB_CHECK_OUTPUT" | tail -n +2 | while IFS= read -r line; do
             [ -n "$line" ] || continue
             echo "    ${line}"
@@ -2826,10 +2826,10 @@ case "$STUB_CHECK_STATUS" in
         echo "  SKIP (${STUB_CHECK_MESSAGE})"
         ;;
     ERR)
-        echo "  WARN: ${STUB_CHECK_MESSAGE}"
+        echo "  [INFO] ${STUB_CHECK_MESSAGE}"
         ;;
     *)
-        echo "  WARN: project code stub check returned no result"
+        echo "  [INFO] project code stub check returned no result"
         ;;
 esac
 
@@ -2837,14 +2837,14 @@ esac
 level_heading "[L3]" "Wiring verification:"
 WIRING_OUTPUT=$(check_script_wiring "$CMD_ID" 2>/dev/null || true)
 if [ -z "$WIRING_OUTPUT" ]; then
-    echo "  WARN: wiring verification returned no result"
+    echo "  [INFO] wiring verification returned no result"
 else
     while IFS=$'\t' read -r row_type scope status message; do
         case "$row_type" in
             CHECK)
                 case "$status" in
                     WARN)
-                        echo "  ${scope}: WARN (${message})"
+                        echo "  [INFO] ${scope}: WARN (${message})"
                         ;;
                     SKIP)
                         echo "  ${scope}: SKIP (${message})"
@@ -2876,7 +2876,7 @@ TODO_COUNT=$(printf '%s' "$TODO_HITS" | grep -c '.' 2>/dev/null || true)
 TODO_COUNT=${TODO_COUNT:-0}
 
 if [ "$TODO_COUNT" -gt 0 ]; then
-    echo "  NG ← ${TODO_COUNT}件のTODO/FIXMEが残存:"
+    echo "  [CRITICAL] NG ← ${TODO_COUNT}件のTODO/FIXMEが残存:"
     printf '%s\n' "$TODO_HITS" | head -10 | while IFS= read -r line; do
         echo "    ${line}"
     done
@@ -2897,12 +2897,12 @@ if [ -n "$changed_contexts" ]; then
         if bash "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh"; then
             echo "  OK (gate_vercel_phase passed)"
         else
-            echo "  ALERT: gate_vercel_phase failed (broken docs/research refs)"
+            echo "  [CRITICAL] ALERT: gate_vercel_phase failed (broken docs/research refs)"
             record_block_reason "vercel_phase:broken_references"
             ALL_CLEAR=false
         fi
     else
-        echo "  WARN: gate_vercel_phase.sh not found (skip)"
+        echo "  [INFO] gate_vercel_phase.sh not found (skip)"
     fi
 else
     echo "  SKIP (no context/*.md changes detected since HEAD~1)"
@@ -2957,13 +2957,13 @@ except:
                     echo "  OK (CI green, run ${ci_run_id})"
                     ;;
                 failure)
-                    echo "  WARN: CI赤 (run ${ci_run_id})"
+                    echo "  [INFO] CI赤 (run ${ci_run_id})"
                     ;;
                 "")
-                    echo "  WARN: CI結果取得不可（進行中またはデータなし）"
+                    echo "  [INFO] CI結果取得不可（進行中またはデータなし）"
                     ;;
                 *)
-                    echo "  WARN: CI結果=${ci_conclusion} (run ${ci_run_id})"
+                    echo "  [INFO] CI結果=${ci_conclusion} (run ${ci_run_id})"
                     ;;
             esac
         else
@@ -2985,21 +2985,21 @@ if [ "$ALL_CLEAR" = true ]; then
     if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
         true
     else
-        echo "  WARN: gate_yaml_status.sh failed (non-blocking)"
+        echo "  [INFO] gate_yaml_status.sh failed (non-blocking)"
     fi
-    update_status "$CMD_ID" || echo "  WARN: update_status failed (non-blocking)"
-    append_changelog "$CMD_ID" || echo "  WARN: append_changelog failed (non-blocking)"
+    update_status "$CMD_ID" || echo "  [INFO] update_status failed (non-blocking)"
+    append_changelog "$CMD_ID" || echo "  [INFO] append_changelog failed (non-blocking)"
     if append_lesson_tracking "$CMD_ID" "CLEAR" 2>&1; then
         true
     else
-        echo "  WARN: append_lesson_tracking failed (non-blocking)"
+        echo "  [INFO] append_lesson_tracking failed (non-blocking)"
     fi
     if update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1; then
         true
     else
-        echo "  WARN: update_lesson_impact_tsv failed (non-blocking)"
+        echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
     fi
-    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  WARN: sync-counters failed (non-blocking)"
+    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
 
     echo ""
     echo "Context freshness nudge (GATE CLEAR):"
@@ -3014,7 +3014,7 @@ if [ "$ALL_CLEAR" = true ]; then
             echo "  OK: no stale project context files"
         fi
     else
-        echo "  WARN: context_freshness_check.sh not found (skip)"
+        echo "  [INFO] context_freshness_check.sh not found (skip)"
     fi
 
     # ─── lesson_merge自動実行（ベストエフォート） ───
@@ -3128,7 +3128,7 @@ except:
                         fi
                         SCORE_UPDATED=$((SCORE_UPDATED + 1))
                     else
-                        echo "  WARN: ${lid}: score update failed (non-blocking)"
+                        echo "  [INFO] ${lid}: score update failed (non-blocking)"
                     fi
                 done <<< "$score_entries"
             fi
@@ -3148,21 +3148,21 @@ except:
     if bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
         echo "  dashboard_update: OK ($CMD_ID)"
     else
-        echo "  dashboard_update: WARN (failed, continuing)" >&2
+        echo "  [INFO] dashboard_update: WARN (failed, continuing)" >&2
     fi
 
     # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
     if bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1; then
         echo "  gist_sync: OK"
     else
-        echo "  gist_sync: WARN (sync failed, non-blocking)" >&2
+        echo "  [INFO] gist_sync: WARN (sync failed, non-blocking)" >&2
     fi
 
     # ntfy_cmd（gist_sync後に実行）
     if bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
         echo "  ntfy_cmd: OK"
     else
-        echo "  ntfy_cmd: WARN (notification failed, non-blocking)" >&2
+        echo "  [INFO] ntfy_cmd: WARN (notification failed, non-blocking)" >&2
     fi
 
     # ─── GATE CLEAR時 淘汰候補自動deprecate（ベストエフォート） ───
@@ -3191,7 +3191,7 @@ except:
                         echo "  [gate] AUTO-DEPRECATE(unused): ${lid} project=${project} (injected=${injected} referenced=0)"
                         UNUSED_DEPRECATE_COUNT=$((UNUSED_DEPRECATE_COUNT + 1))
                     else
-                        echo "  WARN: ${lid}: auto-deprecate failed (non-blocking)"
+                        echo "  [INFO] ${lid}: auto-deprecate failed (non-blocking)"
                     fi
                 done <<< "$elimination_ids"
             fi
@@ -3210,7 +3210,7 @@ except:
         if bash "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" --project all 2>&1; then
             echo "  lesson_deprecation_scan: OK"
         else
-            echo "  lesson_deprecation_scan: WARN (scan failed, non-blocking)"
+            echo "  [INFO] lesson_deprecation_scan: WARN (scan failed, non-blocking)"
         fi
     else
         echo "  SKIP (lesson_deprecation_scan.sh not found)"
@@ -3231,14 +3231,14 @@ else
     if append_lesson_tracking "$CMD_ID" "BLOCK" 2>&1; then
         true
     else
-        echo "  WARN: append_lesson_tracking failed (non-blocking)"
+        echo "  [INFO] append_lesson_tracking failed (non-blocking)"
     fi
     if update_lesson_impact_tsv "$CMD_ID" "BLOCK" 2>&1; then
         true
     else
-        echo "  WARN: update_lesson_impact_tsv failed (non-blocking)"
+        echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
     fi
-    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  WARN: sync-counters failed (non-blocking)"
+    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
 
     # ─── GATE BLOCK時自動draft教訓生成（ベストエフォート） ───
     echo ""
@@ -3263,7 +3263,7 @@ else
                 echo "  draft: 有効教訓の記録を怠った (${lr_count}件)"
                 DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
             else
-                echo "  WARN: draft生成失敗 (lessons_useful_empty)"
+                echo "  [INFO] draft生成失敗 (lessons_useful_empty)"
             fi
         fi
 
@@ -3278,7 +3278,7 @@ else
                     echo "  draft: draft教訓の査読を怠った (${d_count}件)"
                     DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
                 else
-                    echo "  WARN: draft生成失敗 (draft_remaining)"
+                    echo "  [INFO] draft生成失敗 (draft_remaining)"
                 fi
                 break
             fi
@@ -3342,7 +3342,7 @@ except Exception:
                         echo "  [gate] AUTO-DEPRECATE: ${lid} (harmful=${harmful} > helpful=${helpful})"
                         DEPRECATE_COUNT=$((DEPRECATE_COUNT + 1))
                     else
-                        echo "  WARN: ${lid}: auto-deprecate failed (non-blocking)"
+                        echo "  [INFO] ${lid}: auto-deprecate failed (non-blocking)"
                     fi
                 done <<< "$deprecate_targets"
             fi
