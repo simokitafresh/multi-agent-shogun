@@ -6,12 +6,13 @@
 # Usage:
 #   bash scripts/gates/gate_shogun_memory.sh
 #
-# 5項目:
+# 6項目:
 #   (1) MEMORY.md行数       >150 WARN, >180 ALERT
 #   (2) 陳腐化検出          completed/resolved項目の残存 → WARN
 #   (3) CLAUDE.mdとの重複   cmd_ID+キーワード重複 → WARN
 #   (4) MCP observation数   INFO出力のみ(スクリプトからアクセス不可)
 #   (5) 最終curation日      >7日 WARN, >14日 ALERT
+#   (6) MCP→lessons未同期   sync log鮮度 >7日 WARN, >14日 ALERT
 #
 # Exit code: 0=全OK, 1=1つ以上ALERT, 2=WARNのみ(ALERTなし)
 # ============================================================
@@ -192,6 +193,118 @@ check_last_curated() {
 }
 
 # ============================================================
+# (6) MCP→lessons未同期チェック (cmd_735)
+#     staging YAML vs tracker の差分比較で未同期を検知
+# ============================================================
+check_mcp_sync() {
+    local staging_file="$SCRIPT_DIR/queue/mcp_sync_staging.yaml"
+    local tracker_file="$SCRIPT_DIR/queue/mcp_sync_tracker.yaml"
+    local sync_log="$SCRIPT_DIR/logs/mcp_sync.log"
+
+    # staging file がなければ同期対象なし → OK
+    if [ ! -f "$staging_file" ]; then
+        echo "OK: MCP同期: staging fileなし(同期対象なし)"
+        return
+    fi
+
+    # tracker がなければ全件未同期
+    if [ ! -f "$tracker_file" ]; then
+        # staging に entries があるかチェック
+        local has_entries
+        has_entries=$(python3 -c "
+import yaml, sys
+with open('$staging_file', encoding='utf-8') as f:
+    d = yaml.safe_load(f) or {}
+print(len(d.get('entries', [])))
+" 2>/dev/null) || has_entries="0"
+
+        if [ "$has_entries" -gt 0 ]; then
+            echo "WARN: MCP同期: tracker未作成。${has_entries}件の未同期[share:ninja]あり"
+            HAS_WARN=1
+        else
+            echo "OK: MCP同期: staging空、tracker未作成(同期対象なし)"
+        fi
+        return
+    fi
+
+    # staging vs tracker 差分比較 (python3)
+    local result
+    result=$(STAGING_FILE="$staging_file" TRACKER_FILE="$tracker_file" python3 << 'PYEOF'
+import yaml, hashlib, sys, os
+
+staging_file = os.environ["STAGING_FILE"]
+tracker_file = os.environ["TRACKER_FILE"]
+
+with open(staging_file, encoding='utf-8') as f:
+    staging = yaml.safe_load(f) or {}
+
+with open(tracker_file, encoding='utf-8') as f:
+    tracker = yaml.safe_load(f) or {}
+
+entries = staging.get('entries', [])
+if not entries:
+    print("OK:0")
+    sys.exit(0)
+
+# Build set of tracked hashes
+tracked_hashes = set()
+for item in tracker.get('synced', []) or []:
+    if isinstance(item, dict) and 'hash' in item:
+        tracked_hashes.add(item['hash'])
+
+# Count unsynced: hash = sha256(project:observation)
+unsynced = 0
+for entry in entries:
+    obs = entry.get('observation', '')
+    if not obs:
+        continue
+    project = entry.get('project', 'infra')
+    h = hashlib.sha256(f"{project}:{obs}".encode('utf-8')).hexdigest()[:16]
+    if h not in tracked_hashes:
+        unsynced += 1
+
+print(f"RESULT:{unsynced}:{len(entries)}")
+PYEOF
+    ) || {
+        echo "WARN: MCP同期: 差分比較スクリプト実行失敗"
+        HAS_WARN=1
+        return
+    }
+
+    if [[ "$result" == OK:* ]]; then
+        echo "OK: MCP同期: staging空(同期対象なし)"
+        return
+    fi
+
+    local unsynced_count total_count
+    unsynced_count=$(echo "$result" | cut -d: -f2)
+    total_count=$(echo "$result" | cut -d: -f3)
+
+    if [ "$unsynced_count" -gt 0 ]; then
+        echo "WARN: MCP同期: ${unsynced_count}/${total_count}件の未同期[share:ninja]あり。mcp_sync_lesson.sh実行推奨"
+        HAS_WARN=1
+    else
+        echo "OK: MCP同期: 全${total_count}件同期済み"
+    fi
+
+    # 補助チェック: 同期ログの鮮度(同期自体が長期未実行でないか)
+    if [ -f "$sync_log" ]; then
+        local last_date
+        last_date=$(tail -1 "$sync_log" | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        if [ -n "$last_date" ]; then
+            local today_epoch last_epoch days_ago
+            today_epoch=$(date +%s)
+            last_epoch=$(date -d "$last_date" +%s 2>/dev/null) || return
+            days_ago=$(( (today_epoch - last_epoch) / 86400 ))
+            if [ "$days_ago" -gt 14 ]; then
+                echo "WARN: MCP同期(鮮度): 最終同期${last_date}(${days_ago}日前 >14日)"
+                HAS_WARN=1
+            fi
+        fi
+    fi
+}
+
+# ============================================================
 # メイン処理
 # ============================================================
 check_line_count
@@ -199,6 +312,7 @@ check_staleness
 check_duplication
 check_mcp
 check_last_curated
+check_mcp_sync
 
 # 総合判定
 if [ "$HAS_ALERT" -gt 0 ]; then

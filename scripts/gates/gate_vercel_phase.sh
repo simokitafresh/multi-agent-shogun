@@ -120,7 +120,9 @@ check_context_file() {
 
 collect_context_files() {
     if [ "$#" -eq 0 ]; then
-        find "$SCRIPT_DIR/context" -maxdepth 1 -type f -name '*.md' | sort
+        # lord-conversation-index.md は auto-generated 会話ログ。参照チェック対象外
+        find "$SCRIPT_DIR/context" -maxdepth 1 -type f -name '*.md' \
+            ! -name 'lord-conversation-index.md' | sort
         return 0
     fi
 

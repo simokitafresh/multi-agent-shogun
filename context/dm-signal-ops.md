@@ -13,6 +13,7 @@
 詳細アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
 - L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）
 - L157: pending判定は『存在チェック』より先にrebalance月 gatingを入れないと非月次triggerで誤表示する（cmd_525）
+- L268: managed DBではpool_pre_ping=True必須。workerごと独立キャッシュはヒット率低下する（cmd_831）
 
 ## §9 性能ベースライン
 
@@ -77,6 +78,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 
 | ID | 結論(1行) | 分類 | 出典 |
 |---|---|---|---|
+| L261 | キャッシュ系precomputeテーブル欠落はhealth endpointでdegradedに昇格させる | 運用手順 | cmd_828 |
+| L256 | [自動生成] 有効教訓の記録を怠った: cmd_814 | 自動生成 | cmd_814 |
 | L144 | context圧縮時は参照先存在確認を先に実施。リンク先なき圧縮は禁止 | 知識基盤 | cmd_492 |
 | L143 | research層消失はリポジトリ側git操作起因の可能性を先に切り分ける | 知識基盤 | cmd_492 |
 | L142 | CSV記述は入力ソースと成果物を分離しないと知識汚染が再発する | 知識基盤 | cmd_492 |
@@ -142,6 +145,9 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L004 | `experiments.db`はスナップショットでありSSOTではない | DB | — |
 | L003 | PowerShell `-replace`/`Set-Content`でUTF-8文字化けが起こる | ツール | — |
 | L223 | backend/.envは全体sourceせず必要変数だけgrep抽出すべし | 運用手順 | cmd_739 |
+| L249 | Render env APIが認証SSOTでbackend/.envのviewer passwordは本番とズレうる | 認証/deploy | cmd_790 |
+| L250 | APIフィールド除去テスト修正時はxfail/docstringまでgrepし旧仕様残存を潰す | テスト | cmd_791 |
+| L273 | live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する | テスト/監査 | cmd_856 |
 
 ## §17 現在の全体ステータス（2026-03-11）
 
@@ -152,7 +158,7 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L2 忍法12体 | 本番登録済み+全12体 0.00bp PASS(cmd_246) |
 | 本番PF総数 | 未確認（cmd_477後の再集計待ち） |
 | L3 堅牢性検証 | 未着手(cmd_176殿裁定待ち) |
-| APIベースライン | cmd_790で15体×3 API + 一括2件を `docs/research/baseline_api_responses/2026-03-11-v2/` へ固定 |
+| APIベースライン | cmd_790で15体×3 API + 一括2件を固定（→ cmd_790報告参照） |
 | Phase2b BE最適化 | cmd_791完了。`monthly-returns` の `expanded_tickers` 除去 + months前倒し、15体diff完全一致PASS |
 | ETag/SWR前提 | cmd_792完了。304処理修正で annual/monthly/trade returns の既存ETagが有効化 |
 | 同時処理能力 | cmd_763で `uvicorn --workers 2` 復帰対象まで到達。比較基準は workers=1 cold 128ms / warm 149ms / PF切替 1005ms |

@@ -63,6 +63,7 @@ DLコマンド: `download_all_prices.py grid-search`(価格) | `download_prod_da
 - L171: バッチジョブのUPSERTはdb.merge()パターンが最も簡潔（cmd_550）
 - L172: 新規テーブル導入時はインデックス作成をif/else外に置くと自己修復性が上がる（cmd_550）
 - L173: パイロット→本番移植ではDB層分離がパリティ検証を容易にする（cmd_550）
+- L296: 履歴特徴量系の新手法を入れる前にsnapshot SSOTを埋めよ（cmd_861）
 
 ## 3. 四神（しじん）構成
 
@@ -88,6 +89,8 @@ cmd_246完了: 12体チャンピオン本番DB登録済み。全0.00bp PASS。PF
 新忍法候補: 逆風(cmd_249採用決定)/追い越し(cmd_250)/四つ目(cmd_284フルGS完了) → §4新忍法候補参照
 
 ⚠ L1/L2混同禁止: L1=神の中身(GSパラメータ) | L2=神の組み合わせ(BB)
+- L262: recursive FoF expanderはroute層からrequest-scope cacheを注入しない限りquery storm化する（cmd_830）
+- L269: FoF request-scope cacheのkeyはauth→portfolio_id+signal_dateに寄せ、maskingはroute後段に隔離せよ（cmd_834）
 
 ### L2忍法チャンピオン（cmd_246完了 — 全12体 0.00bp PASS）
 
@@ -191,6 +194,9 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 `simulate_strategy_vectorized()`: `grid_search_metrics_v2.py`。MomentumCache必須(渡さないと黙って空リスト)。
 月次リターン: 月末シグナル→翌月適用。Return=(月末価格/月初価格)-1。マルチアセット=単純平均。
 詳細(全パラメータ・スケジュール) → `docs/research/core-local-analysis.md`
+- L260: 上流の件数制限はprecomputed queryとfallback queryの両方へ必ず伝播させる（cmd_829）
+- L264: precomputedテーブル存在時はraw再計算APIを残さずfast pathを導入せよ（cmd_830）
+- L271: years付きmonthly fast pathは境界月だけdaily fallbackを残すと完全一致と高速化を両立できる（cmd_833）
 
 ## 8. APIエンドポイント概要
 
@@ -200,6 +206,11 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 - L153: signals APIのpending判定はrebalance_trigger共通化しないとFoF/非月次で表示不整合が起きる（cmd_515）
 - L174: 最新+前月比較APIは『前月年月サブクエリ→同テーブル再JOIN』でN+1を回避できる（cmd_550）
 - L176: 一覧トレンド判定は前月ラベルだけでなく前月p12をAPIで同時返却しないとB4を満たせない（cmd_552）
+- L246: months引数の件数制限は末尾sliceだけでなく下流queryまで通せ（cmd_782）
+- L252: PriceCacheパターン横展開がN+1最適化の最安全手法（cmd_806）
+- L254: FoF展開共通関数のcache未注入でquery storm化する（cmd_806）
+- L255: ticker precompute欠落時のfallbackはmonths windowをPrice queryへ必ず伝播させる（cmd_805）
+- L257: Monthly Trade raw payload: Pydantic未宣言fieldもAPI contract（cmd_819）
 
 ## 10. ディレクトリ構成
 
@@ -263,6 +274,10 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L124 | DB JSONカラムのstr型防御: `isinstance(value, str)+json.loads()`。`or {}`はtruthy文字列で発火しない | cmd_296 |
 | L128 | `experiments.db`はスナップショットでありSSOTではない | cmd_222 |
 
+### 19.2 実装パターン
+- L258: try/exceptフォールバックでbulk preload+mock DB両立。bulk_loaded flagで本番最適化/テストmock分岐（cmd_820）
+- L259: try/exceptフォールバックパターンでmock DB互換性とN+1最適化を両立（cmd_820）
+
 ### 19.2 BB仕様・バグ修正
 
 | ID | 結論(1行) | 出典 |
@@ -299,6 +314,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L131 | 新FoF追加後の再計算は`sync-fof`(L3)を使う。sync-standardでは不足 | cmd_222 |
 | L132 | GS構成四神と本番FoF構成PFの不一致に注意。登録前に突合必須 | cmd_222 |
 | L135 | FoF作成は12ステップ省略不可。ステップ2-4省略でGS前提崩壊(抜き身3の失敗) | cmd_284 |
+| L283 | FoFパイプラインのsnapshot参照はleakage-free設計必須。当月snapshot参照=データリーク | cmd_860 |
 
 ### 19.5 GS運用・config
 

@@ -289,6 +289,77 @@ def resolve_ref(state: DaemonState, ref: str) -> dict | None:
     return entry
 
 
+def ref_action(
+    state: DaemonState, backend_node_id: int, action: str, body: dict
+) -> dict:
+    """Perform an action on an element identified by backendDOMNodeId."""
+    # Resolve backendDOMNodeId -> objectId
+    resolve_result = cdp_command(
+        state, "DOM.resolveNode", {"backendNodeId": backend_node_id}
+    )
+    if "error" in resolve_result:
+        return {"ok": False, "error": resolve_result["error"]}
+    object_id = resolve_result.get("object", {}).get("objectId")
+    if not object_id:
+        return {"ok": False, "error": "Could not resolve node to object"}
+
+    if action == "click":
+        # Scroll into view then click
+        cdp_command(
+            state,
+            "Runtime.callFunctionOn",
+            {
+                "objectId": object_id,
+                "functionDeclaration": "function() { this.scrollIntoView({block:'center'}); this.click(); }",
+                "returnByValue": True,
+            },
+        )
+        return {"ok": True, "action": "click"}
+
+    elif action == "type":
+        text = body.get("text", "")
+        text_json = json.dumps(text)
+        cdp_command(
+            state,
+            "Runtime.callFunctionOn",
+            {
+                "objectId": object_id,
+                "functionDeclaration": f"""function() {{
+                    this.focus();
+                    var proto = Object.getPrototypeOf(this);
+                    var desc = Object.getOwnPropertyDescriptor(proto, 'value')
+                        || Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
+                        || Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+                    if (desc && desc.set) {{
+                        desc.set.call(this, {text_json});
+                    }} else {{
+                        this.value = {text_json};
+                    }}
+                    this.dispatchEvent(new Event('input', {{bubbles: true}}));
+                    this.dispatchEvent(new Event('change', {{bubbles: true}}));
+                }}""",
+                "returnByValue": True,
+            },
+        )
+        return {"ok": True, "action": "type"}
+
+    elif action == "get_text":
+        result = cdp_command(
+            state,
+            "Runtime.callFunctionOn",
+            {
+                "objectId": object_id,
+                "functionDeclaration": "function() { return (this.innerText || this.textContent || this.value || '').trim(); }",
+                "returnByValue": True,
+            },
+        )
+        text = result.get("result", {}).get("value", "")
+        return {"ok": True, "action": "get_text", "text": text}
+
+    else:
+        return {"ok": False, "error": f"Unknown action: {action}"}
+
+
 # ---------------------------------------------------------------------------
 # HTTP Handler
 # ---------------------------------------------------------------------------
@@ -367,6 +438,8 @@ class CDPHandler(BaseHTTPRequestHandler):
             self._handle_ax_snapshot()
         elif self.path == "/ref/resolve":
             self._handle_ref_resolve()
+        elif self.path == "/ref/action":
+            self._handle_ref_action()
         else:
             self._send_json(404, {"error": "Not found"})
 
@@ -413,6 +486,30 @@ class CDPHandler(BaseHTTPRequestHandler):
             )
             return
         self._send_json(200, {"element": entry})
+
+    def _handle_ref_action(self):
+        body = self._read_body()
+        ref = body.get("ref")
+        action = body.get("action")
+        if not ref or not action:
+            self._send_json(400, {"error": "Missing 'ref' or 'action' field"})
+            return
+
+        entry = resolve_ref(self._state(), ref)
+        if entry is None:
+            self._send_json(
+                404,
+                {"error": f"Ref '{ref}' not found or stale (page navigated)"},
+            )
+            return
+
+        backend_node_id = entry.get("backendDOMNodeId")
+        if not backend_node_id:
+            self._send_json(400, {"error": f"Ref '{ref}' has no backendDOMNodeId"})
+            return
+
+        result = ref_action(self._state(), backend_node_id, action, body)
+        self._send_json(200, result)
 
 
 # ---------------------------------------------------------------------------

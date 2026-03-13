@@ -24,6 +24,23 @@ projects:
     priority: medium
     status: active
 
+  - id: database
+    name: "Stock Database"
+    path: "/mnt/c/Python_app/database"
+    repo: "https://github.com/simokitafresh/database"
+    context_file: "context/database.md"
+    priority: medium
+    status: active
+    note: "殿の株式データベース。Supabase+Render構成。DM-Signalとは独立"
+
+  - id: milk
+    name: "M!LK"
+    path: "/mnt/c/Python_app/milk"
+    context_file: "context/milk.md"
+    priority: high
+    status: planned
+    note: "別PC+専用将軍クローンで開発。ここでは設計のみ保管"
+
   - id: auto-ops
     name: "Auto-Ops"
     path: "/mnt/c/Python_app/auto-ops"

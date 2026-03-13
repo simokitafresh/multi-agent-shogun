@@ -9,6 +9,10 @@
 # Step 2: ディレクトリの探索を許可（中身は個別に許可）
 !*/
 
+# Local runtime / sandbox artifacts
+.codex-tmp/
+.venv/
+
 # Step 3: OSS公開対象ファイルを許可
 !.gitignore
 !.gitattributes

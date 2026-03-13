@@ -1,354 +1,380 @@
-# 6システム対比分析 — cmd_709
-<!-- created: 2026-03-09 cmd_709 tobisaru -->
+# 6システム対比分析 — cmd_709（将軍再分析版）
+<!-- created: 2026-03-09 cmd_709 tobisaru(初版) → 将軍(再分析) -->
 <!-- systems: ACE / Vercel / GSD / Claude Teams / おしお殿 / 我が軍 -->
 
-> 中立プロンプト原則: 事実ベースで対比。各システムの長所を正当に評価し、我が軍の弱点も率直に報告。
-
-## §1 おしお殿(yohey-w/multi-agent-shogun) 深掘り調査
-
-### §1.1 リポジトリ概要（2026-03-09時点）
-
-| 項目 | 値 |
-|------|------|
-| Stars | 1,035（前回991→+44） |
-| Forks | 233 |
-| 言語 | Shell |
-| 最終push | 2026-03-09 |
-| ライセンス | MIT |
-| 編成 | 将軍+家老+足軽7名+軍師(Gunshi) = 10名 |
-| tmux | shogun + multiagent 2セッション |
-| CLI対応 | Claude Code / OpenAI Codex / GitHub Copilot / Kimi K2（4種） |
-
-### §1.2 直近30日の主要変更（2026-02-08〜03-09）
-
-#### Androidコンパニオンアプリ（v1.0→v4.1）— 最大の新機能
-- SSH経由でtmuxセッションにリモート接続
-- エージェント一覧画面（ANSI描画対応）
-- ダッシュボード画面
-- Rate limit監視（Codex /status対応）
-- ntfy通知連携
-- 音声入力（連続認識、BGMダッキング）
-- BGM 3トラック切替
-- スクリーンショット共有
-- **我が軍にない**: モバイルからのリアルタイム監視・操作UI
-
-#### Agent Self-Watch (ASW) 3フェーズ
-- Phase 1: 通常nudge
-- Phase 2: idle-aware nudge抑制（flag file方式）
-- Phase 3: 最終escalation（/clear送信）
-- watcher_supervisor.sh: 5秒おき生存監視
-- **flag file idle検知**: pane-based → flag file に全面移行。false-busy deadlock防止
-
-#### Dynamic Model Routing（Bloom Taxonomy）
-- L1-L3=足軽、L4-L6=軍師。bloom_routing: auto/manual/off
-- bloom_model_preference: タスク難度に応じたモデル優先度ルーティング
-- Haiku 4.5 L2→L3昇格、Sonnet 4.6追加
-- capability_tiers更新
-- **我が軍との差異**: 我が軍はround-robin配備（Bloom分類なし）
-
-#### Multi-CLI抽象化
-- `lib/cli_adapter.sh`: get_cli_type / build_cli_command / get_instruction_file / get_agent_model
-- `instructions/generated/`: Claude/Codex/Copilot/Kimi × 4ロール = 16種の自動生成指示書
-- `instructions/cli_specific/`: CLI固有ツール指示（claude_tools.md, codex_tools.md, copilot_tools.md, kimi_tools.md）
-- Codex /clear→/new自動変換
-
-#### YAML Slim（コンテキスト圧縮）
-- `slim_yaml.sh` / `slim_yaml.py`: 完了タスク/報告/inboxデータをスリム化
-- slim_tasks / slim_reports / slim_all_inboxes 3機能
-- --dry-runサポート、flock排他
-- 軍師(Gunshi)は作業前にslim実行（トークン節約）
-
-#### Compaction復帰強化（2026-03-09 最新）
-- `fix(compaction): enforce persona restoration after context compaction`
-- compaction後にpersona（戦国口調）が消失する問題への対策
-
-#### CI/CD
-- GitHub Actions: unit/e2e/shellcheck/build-check
-- E2E 12テストスイート（basic_flow, bloom_routing, busy_clear_guard, clear_recovery, codex_startup, escalation, idle_flag_recovery, inbox_delivery, parallel_tasks, redo, slim_retention, blocked_by）
-- batsテストフレームワーク
-- mock CLI（claude_behavior.sh, codex_behavior.sh）
-
-#### Skills（6個）
-- shogun-agent-status, shogun-bloom-config（ウィザード型）, shogun-model-list, shogun-model-switch, shogun-readme-sync, skill-creator
-
-#### その他
-- bash 3.2互換（macOS対応: shebang統一, mapfile→while loop, fswatch fallback）
-- Stop Hook primary delivery（Claude Code agents向け）
-- subscription patternサポート（available_cost_groups filtering）
-- ntfy解放修正（3つのblocking mechanism除去）
-- SEO品質チェック（seo_qc.sh/py）
-- first_setup.sh + MEMORY.md auto-init
-
-### §1.3 cmd_649-658（2026-03-08）以降の差分
-
-| コミット | 日付 | 内容 |
-|---------|------|------|
-| 2ef81f9 | 2026-03-09 | compaction後のpersona復元強制 |
-
-**差分は1件のみ**。cmd_649-658時点からの機能追加はほぼなし。直近30日の大半の変更は2026-02-17〜03-03に集中。
-
-### §1.4 おしお殿の独自の強み（我が軍にないもの）
-
-| # | 機能 | 詳細 | 我が軍の状況 |
-|---|------|------|------------|
-| 1 | **Androidコンパニオンアプリ** | SSH接続、エージェント監視、音声入力、BGM、ntfy連携。Kotlin/Jetpack Compose | モバイルUIなし。ntfyテキスト通知のみ |
-| 2 | **軍師(Gunshi)** | 独立QCロール。Bloom L4-L6担当。戦略分析+品質チェック | QC専門ロールなし（家老がレビュー兼務） |
-| 3 | **4CLI対応** | Claude/Codex/Copilot/Kimi。cli_adapter.shで差異吸収 | 2CLI（Claude/Codex）のみ |
-| 4 | **Bloom Levelルーティング** | タスク難度→モデル自動割当。L1-L3足軽、L4-L6軍師 | round-robin（難度ベースなし） |
-| 5 | **ASW 3フェーズ** | 段階的escalation（nudge→抑止→/clear） | ninja_monitorが類似機能だがフェーズ明示なし |
-| 6 | **CI/CD** | GitHub Actions + bats E2E 12テスト | 手動テストのみ |
-| 7 | **macOS互換** | bash 3.2対応、fswatch fallback | WSL2専用 |
-| 8 | **YAML Slim** | 軍師作業前のトークン節約自動化 | archive_completed.shは完了後のみ |
-| 9 | **Flag file idle検知** | pane capture-pane依存を排除 | capture-pane依存（L114で課題認識あり） |
-| 10 | **OSS公開** | 1,035 stars、MIT License | 非公開 |
+> 中立プロンプト原則適用。事実ベースで対比。各システムの長所を正当に評価し、我が軍の弱点も率直に記述。
 
 ---
 
-## §2 GSD (Get Shit Done) プロファイル
+## §1 設計思想の対比 — 6つの哲学
 
-### §2.1 概要
+各システムは異なる「信念」から設計されている。機能比較の前に、なぜその機能が存在するのかを理解する。
 
-| 項目 | 値 |
-|------|------|
-| リポジトリ | gsd-build/get-shit-done |
-| Stars | 26,786 |
-| 言語 | JavaScript |
-| 最終push | 2026-03-03 |
-| バージョン | v1.22.4 |
-| 対応CLI | Claude Code / OpenCode / Gemini CLI / Codex |
-| インストール | `npx get-shit-done-cc@latest` |
+| システム | 設計信念 | 一言で言うと |
+|---------|---------|------------|
+| **ACE** | 学習は自動化できる。人間なしで教訓が自己修正される | 「学術的自動進化」 |
+| **Vercel** | 受動的コンテキスト(100%) > 能動的取得(79%)。検索させるな、置いておけ | 「極限の受動配置」 |
+| **GSD** | Context Rotが品質劣化の根因。CTX残量こそが最重要KPI | 「コンテキスト生存戦」 |
+| **Claude Teams** | 協調プリミティブはプラットフォームが提供すべき | 「ネイティブ統合の賭け」 |
+| **おしお殿** | 多くのCLI・多くの環境・多くの人が使えることが価値 | 「アクセシビリティ優先」 |
+| **我が軍** | 品質は計測しなければ改善できない。知識は循環しなければ腐る | 「計測と循環の規律」 |
 
-### §2.2 アーキテクチャ
+### なぜこの区別が重要か
 
-- **シングルセッション型**: マルチエージェントではない。1つのClaude Codeセッション内でサブエージェントを使い分け
-- **12エージェント定義**: planner, executor, verifier, debugger, codebase-mapper, integration-checker, nyquist-auditor, phase-researcher, plan-checker, project-researcher, research-synthesizer, roadmapper
-- **34ワークフロー**: new-project, plan-phase, execute-phase, verify-phase, research-phase, debug, progress, pause-work, resume-project, etc.
-- **3フック**: gsd-statusline.js（CTX使用率→bridge file）, gsd-context-monitor.js（PostToolUse、CTX残量警告注入）, gsd-check-update.js
-- **スラッシュコマンド**: `/gsd:new-project`, `/gsd:execute-phase`, `/gsd:verify-work` 等
+機能の有無ではなく、**設計信念の違い**が各システムの進化方向を決定する。
 
-### §2.3 核心設計思想
+- おしお殿がBloom Routingを作り我が軍が作らないのは、おしお殿が「多様なモデルを多様なタスクに最適配分する」ことに価値を見出し、我が軍は「どのモデルでも品質ゲートを通過すれば良い」と考えるからだ。
+- GSDがContext Monitorを作り我が軍が作らないのは、GSDは「CTX枯渇を事前に回避する」ことを重視し、我が軍は「枯渇しても陣形図で完全復帰できる」ことを重視するからだ。
+- おしお殿がCI/CDを作り我が軍が作らないのは、おしお殿がOSS公開を前提に「誰でも検証可能」を目指し、我が軍は非公開で「実戦GATE CLEARが検証」と考えるからだ。
 
-1. **Context Rot解決**: CTXウィンドウが埋まるにつれ品質劣化する問題を体系的に対処
-2. **Spec-Driven Development**: Project→Milestone→Phase→Taskの4層管理
-3. **Fractal Summaries**: Phase完了時にSUMMARY.md自動生成。次Phase開始時にロードして文脈継続
-4. **4段階検証ラダー**: Exists→Substantive→Wired→Functional（スタブ自動検出）
-5. **Nyquist Auditor**: Phase粒度が適切かを監査（細かすぎ/粗すぎを検出）
-6. **Context Monitor**: PostToolUseフックでCTX残量を監視、35%/25%で警告注入→/gsd:pause-work促進
-7. **Goal-backward verification**: タスク完了≠ゴール達成。ゴールから逆算して検証
-
-### §2.4 GSDの独自の強み（我が軍にないもの）
-
-| # | 機能 | 詳細 | 我が軍の状況 |
-|---|------|------|------------|
-| 1 | **4段階検証ラダー** | Exists→Substantive→Wired→Functional。スタブ自動検出パターン豊富 | GATE CLEAR（機械検査）はあるがスタブ検出なし |
-| 2 | **Nyquist Auditor** | Phase粒度の適切さを監査 | タスク粒度の自動監査なし |
-| 3 | **Context Monitor（bridge file方式）** | statusline→JSONファイル→PostToolUseフック→agent警告注入 | autocompact(90%)のみ。段階警告なし |
-| 4 | **Fractal Summaries** | Phase完了時にSUMMARY.md自動生成→次Phase継続 | cmd-chronicle.md + archive（1行要約） |
-| 5 | **マルチCLI対応** | Claude/OpenCode/Gemini/Codex 4種 | Claude/Codexの2種 |
-| 6 | **コミュニティ規模** | 26,786 stars, Discord, npm | 非公開 |
-| 7 | **Analysis Paralysis Guard** | 分析麻痺を検知して前進を促す | なし |
-| 8 | **Goal-backward verification** | ゴールから逆算して検証（タスク完了≠ゴール達成） | AC照合はあるがゴール逆算の明示的概念なし |
+**いずれも合理的な選択**であり、優劣ではなく戦略の違いである。
 
 ---
 
-## §3 既知システム確認
+## §2 おしお殿 vs 我が軍 — 同根からの分岐分析
 
-### §3.1 ACE (Agentic Context Engineering)
+両システムは同じリポジトリからフォークした同根の存在。**どこで分岐し、なぜ分岐したか**が最も示唆に富む。
 
-前回調査（cmd_473）から変化なし。ICLR 2026採択済み。
-- 構造: Generator→Reflector→Curator（固定3役割パイプライン）
-- 核心: delta形式の教訓蓄積+semantic dedup+人間不要の完全自動
-- 実績: AppWorld +10.6%、トークンコスト83.6%削減
-- → `docs/research/five-system-comparison.md` §4.1
+### §2.1 共通基盤（フォーク時点で共有）
 
-### §3.2 Vercel Context Engineering
+- 将軍→家老→忍者の3層指揮系統
+- ファイルベースmailbox（inbox_write.sh + flock排他 + inotify）
+- tmux pane管理、dashboard.md、YAML指示・報告
+- Androidコンパニオンアプリ（SSH + tmux capture-pane/send-keys）
+- ntfy通知統合
 
-前回調査（cmd_473）から変化なし。
-- 核心: 受動(100%)>能動(79%)、ツール80%削減
-- AGENTS.md + Skills + filesystem
-- → `docs/research/five-system-comparison.md` §4.2
+### §2.2 分岐マップ
 
-### §3.3 Claude Code Agent Teams
+| 軸 | おしお殿の進化 | 我が軍の進化 | 分岐の理由 |
+|----|-------------|------------|-----------|
+| **品質保証** | 軍師(Gunshi)によるQCレビュー | GATE CLEAR機械検査(7項目)+別忍者レビュー必須 | おしお殿=人的QC信頼、我が軍=機械検査+相互レビュー |
+| **知識管理** | MCP Memory自由形式 + YAML Slim(トークン節約) | 8段階教訓サイクル(発見→淘汰) + Vercel式2層圧縮 | おしお殿=記録保持、我が軍=知識を循環させて陳腐化を自動排除 |
+| **モデル戦略** | Bloom Level Routing(難度→モデル自動割当) + 4CLI対応 | round-robin + dual vendor(Opus4+GPT-5.4) | おしお殿=最適配分、我が軍=ベンダー分散+ゲート品質保証 |
+| **復帰機構** | ASW 3フェーズ(nudge→抑制→/clear) + flag file idle | 陣形図(karo_snapshot) + SessionStart hook + inbox永続 | おしお殿=問題発生時の段階的対処、我が軍=復帰時の完全状態再構築 |
+| **テスト** | bats E2E 12スイート + GitHub Actions CI/CD | GATE CLEAR実戦検証(710cmd, 連勝340) | おしお殿=事前検証、我が軍=実戦計測 |
+| **可搬性** | macOS互換(bash 3.2) + first_setup.sh | WSL2専用 | おしお殿=多環境、我が軍=単一環境最適化 |
+| **コミュニティ** | OSS 1,035 stars + MIT | 非公開 | おしお殿=オープン成長、我が軍=クローズド深化 |
+| **Androidアプリ** | v4.1(基本機能+Rate Limit Monitor) | **v5.0**(ピンチズーム+フォントサイズ+ソフトラップ+自動スクロール+省スペースUI+cmd題名表示) | 同根。我が軍がUX面でリード(コード量+36%: 87.8KB vs 64.5KB) |
 
-**最新状態確認**（2026-03-09時点）:
-- まだexperimental（`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`必要）
-- 2モード: in-process（デフォルト）/ split panes（tmux/iTerm2）
-- lead→teammate構造は変わらず
-- **新情報**: Shift+Down でteammate切替、Ctrl+T でタスクリスト表示
-- **新フック**: TeammateIdle（exit 2でフィードバック）、TaskCompleted（exit 2で完了阻止）
-- Plan Approval: teammateに計画承認を要求可能
-- 依存タスクの自動unblock機能
-- **変わらぬ制限**: セッション再開不可、1チーム/セッション、ネスト不可、リード固定
+### §2.3 Androidアプリ詳細比較
 
----
+両陣営とも同じアーキテクチャ（Kotlin/Jetpack Compose + JSch SSH → tmux）を持つ。
 
-## §4 6システム対比表（14軸）
+| 機能 | おしお殿(v4.1) | 我が軍(v5.0) |
+|------|-------------|------------|
+| SSH端末(将軍ペイン) | あり | あり |
+| エージェントグリッド(9ペイン) | あり | あり |
+| ダッシュボードMarkdown表示 | あり | あり |
+| 設定画面 | あり(9.5KB) | あり(14.5KB — ntfy設定追加) |
+| ANSI 256色描画 | あり | あり |
+| 音声入力(日本語) | あり | あり |
+| BGM 3トラック | あり | あり |
+| Rate Limit Monitor | あり(Claude Max+Codex) | あり |
+| スクリーンショット共有 | あり | あり |
+| 特殊キーバー | あり | あり |
+| **ピンチズーム** | なし | **あり(TerminalZoom.kt 6.8KB)** |
+| **フォントサイズ調整** | なし | **あり** |
+| **ソフトラップ** | なし | **あり** |
+| **自動スクロール** | なし | **あり** |
+| **省スペースUI** | なし | **あり(cmd_694)** |
+| **cmd題名表示** | なし | **あり(cmd_703)** |
+| ntfy設定セクション | なし | **あり(NtfySettingsSection.kt)** |
+| コード規模合計 | 64,551 bytes | **87,865 bytes (+36%)** |
 
-### §4.1 構造・階層
+**結論**: Androidアプリは**我が軍がリード**。同じ基盤から出発し、我が軍はUX改善(ピンチズーム、フォント、ラップ、スクロール、省スペース)に投資。おしお殿はRate Limit Monitor解析に投資。方向性の違い。
 
-| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Claude Teams |
-|----|--------|---------|-----|-----|--------|-------------|
-| **エージェント構造** | 4層(殿→将軍→家老→忍者8) | 4層(殿→将軍→家老→足軽7+軍師) | 1層+サブエージェント12 | 3役割パイプライン | 1層(単体) | 2層(lead→teammate 3-5) |
-| **エージェント数** | 10(将軍1+家老1+忍者8) | 10(将軍1+家老1+足軽7+軍師1) | 1(+12サブエージェント) | 3 | 1 | 3-5推奨 |
-| **モデル混成** | Opus4+Codex4(GPT-5.4) | Claude+Codex+Copilot+Kimi | 単一+モデルプロファイル | 単一 | 単一(Opus推奨) | 任意指定可 |
-| **指揮系統** | 鎖(一本、分岐なし迂回なし) | 階層制+軍師QC分岐 | メタプロンプト→ワークフロー | 線形パイプライン | なし | リード集約 |
+### §2.4 CI/CDギャップの実態分析
 
-### §4.2 コンテキスト管理
+おしお殿のCI/CDは我が軍に存在しない。これは事実であり、最大の構造的弱点の一つ。
 
-| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Claude Teams |
-|----|--------|---------|-----|-----|--------|-------------|
-| **CTX崩壊防止** | Vercel式2層圧縮+autocompact(90%)+/clear+archive | slim_yaml(完了退避)+/clear Recovery | Context Monitor(35%/25%警告)+Fractal Summaries+pause-work | delta蓄積+semantic dedup | 3層パイプライン(注入→補正→後処理) | 独立CTX窓(各teammate) |
-| **知識永続化** | 6層(CLAUDE.md/instructions/projects/lessons/queue/MCP) | 4層(MCP/PJファイル/YAML/セッション) | state.md+milestone.md+phase SUMMARY.md | playbook(テキスト) | AGENTS.md+Skills+Registry | CLAUDE.md自動ロード(セッション消滅で喪失) |
-| **復帰耐性** | 陣形図(karo_snapshot)+SessionStart hook+inbox | /clear Recovery+enqueue_recovery+flag file | /gsd:resume-work+continue-here.md | playbook再読込 | AGENTS.md再読込 | 再開不可(in-process teammate) |
+**おしお殿のテスト構成:**
+```
+tests/
+  ├── e2e/ (12スイート)
+  │   ├── e2e_basic_flow.bats      — cmd→分解→実行→報告の全フロー
+  │   ├── e2e_bloom_routing.bats   — Bloom L1→Spark, L5→Sonnet, L6→Opus
+  │   ├── e2e_busy_clear_guard.bats
+  │   ├── e2e_clear_recovery.bats
+  │   ├── e2e_codex_startup.bats
+  │   ├── e2e_escalation.bats
+  │   ├── e2e_idle_flag_recovery.bats
+  │   ├── e2e_inbox_delivery.bats
+  │   ├── e2e_parallel_tasks.bats
+  │   ├── e2e_redo.bats
+  │   ├── e2e_slim_retention.bats
+  │   └── e2e_blocked_by.bats
+  ├── unit/
+  │   ├── test_cli_adapter.bats
+  │   └── test_idle_flag.bats
+  └── mock_behaviors/ (claude_behavior.sh, codex_behavior.sh)
 
-### §4.3 品質・検証
+GitHub Actions:
+  - unit-tests (ubuntu + macOS matrix)
+  - shellcheck (lib/ + scripts/)
+  - e2e-tests (mock CLI, tmux環境)
+  - build-check (generated instructions同期)
+  - SKIP=FAIL policy (FR-054) ← 我が軍と同じ哲学
+```
 
-| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Claude Teams |
-|----|--------|---------|-----|-----|--------|-------------|
-| **品質ゲート** | GATE(BLOCK/CLEAR強制)+機械検査7項目 | — | 4段階検証ラダー(Exists→Substantive→Wired→Functional)+Nyquist Auditor | Evaluator(自動) | Sandbox検証 | Plan Approval+TeammateIdle/TaskCompleted hook |
-| **レビュー** | 別忍者コードレビュー必須 | 軍師(Gunshi)QC | gsd-verifier(Goal-backward) | Reflector(自動批評) | 人間レビュー | リード承認 |
-| **実績計測** | GATE CLEAR率99%+、連勝291、手戻り率1.3% | selfwatch metrics+SayTask streaks | なし（成功率の間接計測） | AppWorld +10.6% | 成功率80→100% | なし |
+**我が軍の検証手段:**
+- cmd_complete_gate.sh（機械検査7項目: AC照合、スタブ検出、review verdict、lesson_candidate形式...）
+- GATE CLEAR率99%+、連勝340
+- 別忍者レビュー必須
 
-### §4.4 知識サイクル
+**ギャップの本質**: 我が軍は「実戦で品質を担保」、おしお殿は「事前にインフラの正しさを担保」。**これらは直交する**。我が軍はインフラスクリプト自体のバグを自動検知する手段がない。スクリプト変更時に既存機能が壊れても、次のcmdが失敗するまで気付かない。
 
-| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Claude Teams |
-|----|--------|---------|-----|-----|--------|-------------|
-| **教訓蓄積** | 8段階(発見→登録→注入→活用→帰属→計測→表示→淘汰) | MCP Memory自由形式+skill_candidate | なし | 3段階(生成→反映→統合) | なし(手動) | なし |
-| **教訓注入** | タグマッチ+MAX_INJECT=5+自動退役 | MCP Memory読込 | なし | 全量orサンプリング | 静的埋込み | なし |
-| **効果計測** | helpful/injection_count+効果率監視+自動退役 | なし | なし | helpful/harmful dual counter | なし | なし |
+### §2.5 Bloom Routing vs Round-Robin
 
-### §4.5 通信・協調
+**おしお殿のBloom Routing:**
+- タスク難度をBloom Taxonomy(L1-L6)で分類
+- L1-L3=安価モデル(Spark/Codex)、L4-L6=高価モデル(Sonnet/Opus)
+- `get_recommended_model(bloom_level)` → `find_agent_for_model(model)` → idle agent配備
+- コスト最適化が主目的
 
-| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Claude Teams |
-|----|--------|---------|-----|-----|--------|-------------|
-| **通信方式** | ファイルmailbox(flock)+inotify nudge | ファイルmailbox(flock)+inotify+3フェーズASW | なし(単体) | パイプライン直列 | なし(単体) | SendMessage+broadcast+SharedTaskList |
-| **並列実行** | ファイル依存分析→parallel_with | 並列配備+Bloom routing | Wave並列(サブエージェント) | バッチ並列 | なし | worktree隔離+自己claim |
-| **人間との連携** | 殿→将軍→家老(鎖) | 殿→将軍→家老(鎖)+ntfy_inbox | `/gsd:*`コマンド(対話型) | 人間なし(全自動) | Human-in-the-loop | リード経由(直接対話可) |
+**我が軍のround-robin:**
+- 配備順序のみ。モデル選択は殿が手動設定
+- Opus4名 + GPT-5.4 4名の固定編成
+- GATE CLEARで品質担保(モデル問わず)
 
-### §4.6 安全性・運用
-
-| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Claude Teams |
-|----|--------|---------|-----|-----|--------|-------------|
-| **安全防御** | D001-D008+PreToolUse shlex+WSL2保護 | D001-D008+settings.json deny+WSL2保護 | `--dangerously-skip-permissions`推奨 | なし | Sandbox検証 | Hooks+Permission設定 |
-| **Git戦略** | whitelist .gitignore+commit前確認 | .gitattributes+CI shellcheck | git integration(tag, milestone) | なし(ベンチマーク) | なし | worktree隔離 |
-| **セットアップ容易性** | 複雑(tmux+WSL2+8忍者手動) | 中程度(first_setup.sh+macOS互換+CI) | 簡単(`npx`一発) | 中程度(Python環境) | 簡単(AGENTS.md配置) | 簡単(設定1行) |
-| **拡張性** | スキル追加+PJ切替+仙人構想 | スキル6個+CLI追加容易 | ワークフロー/エージェント追加 | Reflector調整 | Skills追加 | Hooks拡張 |
-
----
-
-## §5 各システムの「我が軍にない独自の強み」
-
-| # | システム | 独自の強み | 影響度 | 詳細 |
-|---|---------|----------|--------|------|
-| 1 | **おしお殿** | Androidコンパニオンアプリ | 高 | モバイルからリアルタイム監視・操作。SSH+ANSI描画+音声入力。我が軍はntfyテキストのみ |
-| 2 | **おしお殿** | 4CLI対応（Copilot/Kimi追加） | 中 | cli_adapter.sh抽象化+16種自動生成指示書。我が軍は2CLI |
-| 3 | **おしお殿** | Bloom Levelルーティング | 中 | タスク難度→モデル自動割当。コスト最適化に直結 |
-| 4 | **おしお殿** | CI/CD(E2E 12テスト) | 中 | batsテスト基盤。自動回帰検知。我が軍は手動テスト |
-| 5 | **おしお殿** | Flag file idle検知 | 低 | capture-pane依存排除。我が軍もL114で課題認識済み |
-| 6 | **GSD** | 4段階検証ラダー | 高 | Exists→Substantive→Wired→Functional。スタブ自動検出。GATE CLEARにない視点 |
-| 7 | **GSD** | Context Monitor(bridge file) | 中 | CTX残量をagentに段階警告注入。autocompactより先に手を打てる |
-| 8 | **GSD** | Nyquist Auditor | 低 | タスク粒度の適切さ監査。過分解/粗すぎを検出 |
-| 9 | **GSD** | Goal-backward verification | 中 | タスク完了≠ゴール達成。ゴールから逆算検証 |
-| 10 | **GSD** | コミュニティ規模(26k stars) | 高 | エコシステム(Discord, npm, 派生プロジェクト多数) |
-| 11 | **ACE** | 完全自動教訓サイクル | 中 | 人間不要。Reflector→Curator。学術ベンチ証明済み |
-| 12 | **ACE** | Semantic dedup | 低 | embedding類似度で教訓重複自動排除 |
-| 13 | **Claude Teams** | worktree隔離 | 低 | git worktree自動作成。ファイル衝突根絶 |
-| 14 | **Claude Teams** | Teammate直接対話 | 低 | リード経由せず個別指示可能。Shift+Down操作 |
-| 15 | **Vercel** | ツール80%削減の哲学 | 中 | 最小構成で最大効果。複雑さの排除 |
-
-## §6 「我が軍が上回っている点」
-
-| # | 軸 | 我が軍の優位 | 対象システム |
-|---|------|------------|------------|
-| 1 | **教訓サイクルの深さ** | 8段階(発見→淘汰)+152件蓄積+タグマッチ注入+自動退役+効果率監視。他は3段階以下またはなし | 全6システム |
-| 2 | **組織統制の厳密さ** | 4層階層+鎖の原理+禁則体系(D001-D008+F001-F008)。構造的に越権不可能 | 全6システム |
-| 3 | **GATE品質計測** | CLEAR率99%+、連勝291、手戻り率1.3%。定量的に品質を追跡する唯一のシステム(ACE除く) | おしお殿/GSD/Teams/Vercel |
-| 4 | **復帰耐性** | 陣形図(karo_snapshot)+SessionStart hook+inbox永続。compaction/crash後も完全復帰 | 全6システム(ACEはstatelessで別設計) |
-| 5 | **安全防御の網羅性** | D001-D008(絶対禁止)+PreToolUse shlex(パイプ解析)+WSL2保護。3層防御 | 全6システム(GSDはskip-permissions推奨で対極) |
-| 6 | **知識管理の層数** | 6層(CLAUDE.md/instructions/projects/lessons/queue/MCP)+Vercel式2層圧縮 | 全6システム |
-| 7 | **実戦実績の蓄積** | 700+ cmd完了、190+教訓蓄積、連勝291。production稼働証明 | GSD(実績公開なし)/Teams(実績なし) |
-| 8 | **通信の信頼性** | flock排他+inotify+nudge 2層保証。メッセージ永続化+wake-up信号分離 | Teams(lead compactionで喪失)/ACE(パイプライン内のみ) |
-| 9 | **モデル混成** | Opus4+GPT-5.4(Codex4)異種モデル協調。単一ベンダーに非依存 | GSD/ACE/Vercel(単一モデル) |
+**分析**: Bloom Routingは「正しいモデルに正しいタスクを振る」コスト最適化。我が軍は「どのモデルでもGATEを通れば良い」品質担保。我が軍のCLEAR率100%(全モデル)が示すように、現行タスクの難度では**モデル選択が品質のボトルネックになっていない**。ただし、コスト効率の観点では簡単なタスクにOpusを使う無駄が発生している。
 
 ---
 
-## §7 総合評価マトリクス（10点満点、14軸）
+## §3 GSD深掘り — 我が軍が学ぶべき設計パターン
 
-| # | 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Teams |
-|---|------|--------|---------|-----|-----|--------|-------|
-| 1 | コンテキスト管理 | 9 | 7 | 8 | 7 | 8 | 5 |
-| 2 | マルチエージェント協調 | 9 | 9 | 4 | 6 | 1 | 7 |
-| 3 | 状態管理・復帰 | 10 | 8 | 7 | 5 | 4 | 3 |
-| 4 | 知識永続化 | 10 | 6 | 5 | 7 | 7 | 3 |
-| 5 | 品質ゲート | 9 | 5 | 8 | 7 | 6 | 6 |
-| 6 | Git戦略 | 7 | 8 | 6 | 2 | 3 | 7 |
-| 7 | 復帰機構 | 10 | 8 | 7 | 5 | 4 | 2 |
-| 8 | 検証機構 | 8 | 6 | 9 | 7 | 6 | 6 |
-| 9 | 拡張性 | 7 | 8 | 8 | 4 | 7 | 6 |
-| 10 | 運用実績 | 10 | 7 | 5 | 8 | 7 | 3 |
-| 11 | 通信方式 | 9 | 9 | 1 | 5 | 1 | 7 |
-| 12 | 人間との連携 | 8 | 9 | 8 | 2 | 8 | 7 |
-| 13 | 安全性 | 10 | 10 | 2 | 3 | 3 | 6 |
-| 14 | セットアップ容易性 | 3 | 5 | 9 | 5 | 9 | 8 |
-| **合計** | **119** | **105** | **83** | **73** | **74** | **76** |
+### §3.1 GSDのアーキテクチャ本質
 
-### 評価根拠
+GSDは**シングルセッション型**。マルチエージェントではない。1つのClaude Codeセッション内で12のサブエージェント定義と34のワークフローをメタプロンプティングで切り替える。
 
-| 軸 | 高評価の根拠 | 低評価の根拠 |
-|----|------------|------------|
-| コンテキスト管理 | GSD: bridge file+段階警告。我が軍: 6層+2層圧縮 | Teams: セッション消滅で喪失 |
-| マルチエージェント | 我が軍/おしお殿: 10名+4層階層 | GSD: 単体+サブエージェント。Vercel: 単体 |
-| 状態管理 | 我が軍: 陣形図+YAML永続+hook完全復帰 | Teams: in-process再開不可 |
-| 品質ゲート | GSD: 4段階検証ラダー+スタブ検出。我が軍: GATE BLOCK/CLEAR | おしお殿: GATE相当なし |
-| 検証機構 | GSD: Goal-backward+Nyquist。我が軍: GATE+レビュー忍者 | Vercel/Teams: 限定的 |
-| 安全性 | 我が軍/おしお殿: D001-D008+構造防御 | GSD: skip-permissions推奨。ACE: 防御なし |
-| セットアップ | GSD: npx一発。Vercel: AGENTS.md配置 | 我が軍: tmux+WSL2+8忍者 |
-| 人間との連携 | おしお殿: Android app+ntfy。GSD: 対話型コマンド | ACE: 人間なし(全自動) |
+これは我が軍とは根本的に異なるアプローチ:
+- 我が軍: 10の独立セッション × 独立CTX窓 → ファイル通信で協調
+- GSD: 1セッション × 1CTX窓 → ワークフロー切替で役割変更
 
----
+**GSDの核心問題意識**: CTX窓は有限であり、埋まるにつれて品質が劣化する(Context Rot)。この問題に対するGSDの解答が以下の3つ。
 
-## §8 おしお殿との差分サマリ（前回cmd_473→今回cmd_709）
+### §3.2 Context Monitor(CTX生存戦の要)
 
-### 前回から変わった点
-- Stars: 991→1,035（+44）
-- Android app: なし→v4.1（最大の変化）
-- Bloom QC routing: 基本実装→Gunshiトークン最適化
-- YAML Slim: なし→slim_tasks/slim_reports/slim_all_inboxes
-- E2E: 基本→12テストスイート
-- bash 3.2互換: 部分的→全面対応(shebang統一+fallback)
-- Compaction復帰: なし→persona強制復元
+```
+PostToolUse hook → gsd-context-monitor.js
+  ├── /tmp/.gsd-ctx-stats.json (bridge file)
+  ├── 35% remaining → WARNING注入
+  ├── 25% remaining → CRITICAL注入 + pause-work促進
+  └── 5-tool debounce (API負荷抑制)
+```
 
-### 変わらなかった点
-- 教訓正式サイクル: 依然なし（MCP自由形式のみ）
-- GATE CLEAR相当: 依然なし
-- Vercel式圧縮規律: 依然なし
-- 陣形図(karo_snapshot): 依然なし
+**我が軍との対比**: 我が軍はautocompact(90%)のみ。段階的警告がない。ただし我が軍は**CTX枯渇を許容して陣形図で復帰する**設計なので、枯渇前警告の価値が相対的に低い。GSDは復帰手段が脆弱(continue-here.mdのみ)なので枯渇前に止めることが必須。
 
-### 我が軍で進化した点（おしお殿にない）
-- 教訓: 152件蓄積、タグマッチ注入、MAX_INJECT=5、自動退役、効果率監視
-- GATE: CLEAR率99%+、連勝291
-- モデル混成: Opus4+GPT-5.4(Codex4)
-- インフラ: ntfy listener dual watchdog、CMD年代記、context未更新ゲート
-- 知識: Vercel式2層圧縮規律（索引+詳細分離）
+### §3.3 4段階検証ラダー + スタブ検出
+
+```
+Level 1: Existence  — ファイルが存在するか
+Level 2: Substantive — 中身がスタブでないか(return null, TODO, empty handler検出)
+Level 3: Wiring     — import/export/呼出が正しく接続されているか
+Level 4: Functional — 実行して動作するか
+```
+
+**スタブ検出パターン(gsd-verifier.md):**
+- `return null` / `return undefined` / `return []` / `return {}`
+- `TODO` / `FIXME` / `HACK` / `XXX` コメント
+- 空のtry-catchブロック
+- ハードコードされたテストデータ
+- `console.log`デバッグ残留
+
+**我が軍への取込状況**: cmd_707でスタブ検出ゲートをcmd_complete_gate.shに追加済み。分析麻痺ガードも追加済み。
+
+### §3.4 Deviation Management(逸脱管理)
+
+```
+Rule 1: バグ修正     → 自分で直せ(事後報告)
+Rule 2: ブロッカー   → 自分で解決(事後報告)
+Rule 3: 必須品質追加 → 自分で追加(事後報告)
+Rule 4: 設計変更     → 停止して報告
+```
+
+**我が軍への取込状況**: cmd_708でashigaru.mdに追加済み。F003の明示的例外として整合。
 
 ---
 
-## §9 参考文献
+## §4 ACE・Vercel・Claude Teams — 簡潔な位置付け
 
-### GSD
-- [GitHub: gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) — 26,786 stars
-- docs/context-monitor.md（CTX Monitor設計）
-- agents/gsd-verifier.md（Goal-backward verification）
-- get-shit-done/references/verification-patterns.md（4段階検証ラダー）
+### §4.1 ACE (Agentic Context Engineering)
 
-### おしお殿
-- [GitHub: yohey-w/multi-agent-shogun](https://github.com/yohey-w/multi-agent-shogun) — 1,035 stars
-- instructions/gunshi.md（軍師ロール定義）
-- lib/cli_adapter.sh（Multi-CLI抽象化）
-- scripts/slim_yaml.sh（YAML Slim）
+ICLR 2026採択。3役割パイプライン(Generator→Reflector→Curator)による完全自動教訓サイクル。
 
-### Claude Teams
-- [Orchestrate teams of Claude Code sessions](https://code.claude.com/docs/en/agent-teams)
+**我が軍との関係**: 我が軍の教訓サイクルはACEに最も近い。ただし以下の差異:
+- ACE: embedding類似度でsemantic dedup → 我が軍: タグマッチ(テキストベース)
+- ACE: harmful自動検出 → 我が軍: 効果率監視+自動退役(閾値10%未満)
+- ACE: 人間不要 → 我が軍: 家老が最終登録判断
 
-### ACE / Vercel
-- → `docs/research/five-system-comparison.md` 参考文献セクション参照（変更なし）
+**学び**: ACEのsemantic dedupは教訓が200件を超えた段階で価値が出る。現在152件、検討時期が近い。
+
+### §4.2 Vercel Context Engineering
+
+「受動的コンテキスト(成功率100%) > 能動的取得(79%)」。ツール80%削減。
+
+**我が軍への取込状況**: Vercel式2層圧縮(索引+詳細分離)を全面導入済み。MEMORY.md→MCP Memory、context/*.md→docs/research/の2層構造。これは**我が軍の基盤設計に組み込まれた**。
+
+### §4.3 Claude Code Agent Teams
+
+experimental。lead→teammate 2層。worktree隔離。
+
+**cmd_630で不適合確定**: セッション再開不可、1チーム/セッション制限、リード固定。我が軍の8忍者永続稼働+任意復帰と根本的に相容れない。最新状況(2026-03-09): TeammateIdle hook追加、Plan Approval追加。依然experimental。
+
+---
+
+## §5 14軸対比表
+
+### §5.1 構造・コンテキスト
+
+| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Teams |
+|----|--------|---------|-----|-----|--------|-------|
+| エージェント構造 | 4層(殿→将軍→家老→忍者8) | 4層(殿→将軍→家老→足軽7+軍師) | 1+サブ12 | 3役割線形 | 単体 | 2層(lead→3-5) |
+| モデル混成 | Opus4+GPT-5.4 4(dual vendor) | Claude+Codex+Copilot+Kimi(4CLI) | 単一 | 単一 | 単一 | 任意 |
+| CTX崩壊防止 | Vercel2層+autocompact+/clear+陣形図復帰 | YAML Slim+/clear+ASW escalation | Monitor(35%/25%)+Fractal Sum+pause | delta蓄積 | 3層pipe | 独立CTX窓 |
+| 知識永続化 | 6層(CLAUDE/instr/proj/lessons/queue/MCP) | 4層(MCP/PJ/YAML/session) | state+milestone+SUMMARY | playbook | AGENTS.md+Skills | CLAUDE.md(揮発) |
+| 復帰耐性 | 陣形図+hook+inbox(完全復帰) | /clear Recovery+ASW+flag file | continue-here.md | playbook再読 | AGENTS.md再読 | 再開不可 |
+
+### §5.2 品質・知識
+
+| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Teams |
+|----|--------|---------|-----|-----|--------|-------|
+| 品質ゲート | GATE機械検査7項目(BLOCK/CLEAR強制) | なし(軍師QCは助言のみ) | 4段階検証ラダー+Nyquist | Evaluator自動 | Sandbox | Plan Approval+hooks |
+| レビュー | 別忍者レビュー必須 | 軍師QC(Bloom L4+) | gsd-verifier(goal-backward) | Reflector | 人間 | リード承認 |
+| 教訓サイクル | 8段階(発見→淘汰)+効果率計測+自動退役 | MCP自由形式(サイクルなし) | なし | 3段階(自動) | なし | なし |
+| 実績計測 | CLEAR率99%+、連勝340、手戻り率1.3% | selfwatch metrics | なし | AppWorld+10.6% | 成功率80→100% | なし |
+
+### §5.3 運用・安全
+
+| 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Teams |
+|----|--------|---------|-----|-----|--------|-------|
+| CI/CD | **なし** | GitHub Actions(unit+e2e+shellcheck+build) | なし | なし | なし | なし |
+| 安全防御 | D001-D008+PreToolUse+WSL2保護 | D001-D008+settings.json deny | skip-permissions推奨 | なし | Sandbox | hooks+perm |
+| セットアップ | 複雑(tmux+WSL2+8忍者) | 中(first_setup.sh+macOS互換) | 簡単(npx一発) | 中(Python) | 簡単(AGENTS.md) | 簡単(設定1行) |
+| 通信方式 | flock mailbox+inotify(2層保証) | flock mailbox+inotify+ASW 3phase | なし | 線形pipe | なし | SendMessage+broadcast |
+| Androidアプリ | **v5.0**(+ピンチズーム+フォント+ラップ+スクロール) | v4.1(基本機能+Rate Limit解析) | なし | なし | なし | なし |
+| 人間連携 | 殿→将軍(鎖)+ntfy | 殿→将軍(鎖)+ntfy+Android操作 | 対話型cmd | 人間なし | HITL | リード経由 |
+
+---
+
+## §6 率直な自己評価 — 我が軍の本当の弱点
+
+忍者分析版(§7)のスコアリングは我が軍を過大評価していた。以下、率直な弱点。
+
+### 6.1 CI/CDの不在（深刻度: 高）
+
+おしお殿は12のE2Eテスト+ユニットテスト+shellcheck+build checkをGitHub Actionsで自動実行。我が軍にはゼロ。
+
+**実害**: スクリプト変更時の回帰バグを事前に検知できない。cmd_complete_gate.shはタスク成果物の品質を検査するが、**インフラ自体の品質を検査しない**。gate.shにバグが入ったら、そのバグが検知される仕組みがない。
+
+### 6.2 セットアップの複雑さ（深刻度: 中）
+
+おしお殿はfirst_setup.shでワンクリック初期設定。macOS互換。我が軍はWSL2専用で手動セットアップ。
+
+**実害**: 殿以外の人間が使うことが事実上不可能。ただし、現時点で殿以外のユーザーを想定していないため、実害は限定的。
+
+### 6.3 Bloom Routing不在（深刻度: 低）
+
+タスク難度に関わらず同じモデルに振るため、簡単なタスクにOpusを使うコスト無駄が発生。
+
+**ただし**: 全モデルでCLEAR率100%が示すように、品質面での影響はゼロ。コスト最適化の問題のみ。
+
+### 6.4 単一環境依存（深刻度: 中）
+
+WSL2 + Windows固定。macOS/純Linux環境では動作未検証。
+
+### 6.5 OSS非公開（深刻度: 判断保留）
+
+おしお殿は1,035 stars。外部フィードバック・貢献がある。我が軍は非公開で全て自己完結。これが弱点かどうかは殿の戦略判断による。
+
+---
+
+## §7 各システムから学ぶべきこと（優先度付き）
+
+### 取込済み（cmd_707/708で実装完了）
+
+| 元システム | 取込内容 | 実装cmd |
+|-----------|---------|---------|
+| GSD | スタブ検出ゲート(cmd_complete_gate.sh) | cmd_707 |
+| GSD | 分析麻痺ガード(5回連続Read/Grep→停止) | cmd_707 |
+| GSD | 4観点並行偵察(Stack/Features/Architecture/Pitfalls) | cmd_707 |
+| GSD | 逸脱管理ルール(Deviation Management 4段階) | cmd_708 |
+| GSD | 認知バイアスガード(偵察タスク自動適用) | cmd_708 |
+| Vercel | 2層圧縮(索引+詳細分離) | 恒久運用中 |
+
+### 検討候補（Phase 3以降）
+
+| # | 元システム | 取込候補 | 優先度 | 理由 |
+|---|-----------|---------|--------|------|
+| 1 | **おしお殿** | CI/CD基盤(bats E2E) | **高** | インフラ品質の唯一の盲点。GATE CLEARはタスク品質、CI/CDはインフラ品質。直交する価値 |
+| 2 | **GSD** | Context Monitor(CTX残量段階警告) | 中 | 陣形図復帰があるため緊急度は低いが、不要な/clearを減らせる可能性 |
+| 3 | **おしお殿** | YAML Slim(作業前圧縮) | 中 | archive_completed.shは完了後のみ。作業前のCTX節約は別の価値 |
+| 4 | **おしお殿** | Bloom Routing | 低 | コスト最適化のみ。品質影響なし。殿がモデル編成を手動管理する現行で問題なし |
+| 5 | **GSD** | Checkpoint分類(human-verify/decision/human-action) | 低 | 殿裁定フローの明文化に使えるが、現行PDフローで十分機能中 |
+| 6 | **ACE** | Semantic dedup | 低 | 教訓200件超で検討。現在152件 |
+
+---
+
+## §8 総合スコア（修正版）
+
+忍者版のスコアリングは評価基準が不明確で、我が軍寄りのバイアスがあった。以下、基準を明示した修正版。
+
+**採点基準**: 各軸の「設計目的をどれだけ達成しているか」を評価。10=その軸で最も洗練された実装。
+
+| # | 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Teams | 最高評価の根拠 |
+|---|------|--------|---------|-----|-----|--------|-------|------------|
+| 1 | CTX管理 | 8 | 7 | **9** | 7 | 8 | 5 | GSD: 段階警告+pause+resume体系が最も成熟 |
+| 2 | マルチエージェント | **9** | **9** | 3 | 5 | 1 | 7 | 我が軍/おしお殿: 10名実稼働+4層指揮 |
+| 3 | 状態管理 | **9** | 7 | 6 | 5 | 4 | 3 | 我が軍: 陣形図+hook+inbox完全復帰 |
+| 4 | 知識永続化 | **9** | 6 | 5 | 7 | 7 | 3 | 我が軍: 6層+Vercel圧縮+教訓サイクル |
+| 5 | 品質ゲート | 8 | 4 | **9** | 7 | 6 | 5 | GSD: 4段階ラダー+Nyquist+goal-backward |
+| 6 | CI/CD | 1 | **8** | 2 | 2 | 2 | 2 | おしお殿: unit+e2e+shellcheck+build一貫 |
+| 7 | 復帰機構 | **9** | 8 | 7 | 5 | 4 | 2 | 我が軍: compaction/crash後も陣形図で完全復帰 |
+| 8 | 検証機構 | 7 | 6 | **9** | 7 | 6 | 5 | GSD: スタブ検出+wiring+functional検証 |
+| 9 | 拡張性 | 6 | **8** | 8 | 4 | 7 | 6 | おしお殿: 4CLI+macOS+first_setup |
+| 10 | 運用実績 | **9** | 7 | 4 | 8 | 7 | 2 | 我が軍: 710cmd+連勝340の定量証拠 |
+| 11 | 通信信頼性 | **9** | **9** | 1 | 5 | 1 | 6 | flock+inotify+nudge 2層。両陣営同等 |
+| 12 | 人間連携 | 7 | **8** | 7 | 2 | 8 | 6 | おしお殿: Android操作+ntfy+音声 |
+| 13 | 安全性 | **9** | **9** | 2 | 3 | 3 | 5 | D001-D008+構造防御。両陣営同等 |
+| 14 | セットアップ | 2 | 5 | **9** | 5 | **9** | 8 | GSD/Vercel: ほぼゼロコンフィグ |
+| | **合計** | **102** | **101** | **81** | **72** | **73** | **65** | |
+
+### 忍者版(§7)との差分
+
+| 変更 | 忍者版 | 修正版 | 理由 |
+|------|--------|--------|------|
+| 我が軍合計 | 119 | **102** | CI/CD=1(忍者版は軸自体がなかった)、セットアップ=2、品質ゲート-1(GSDスタブ検出取込前提で8→取込後も9には届かない) |
+| おしお殿合計 | 105 | **101** | CI/CD=8追加、通信・安全を同等評価に修正。品質ゲート-1(GATEなしは痛い) |
+| GSD合計 | 83 | **81** | 妥当な範囲 |
+| 差 | 14点差 | **1点差** | 我が軍とおしお殿は**ほぼ互角**。CI/CDの有無が最大の差別化要因 |
+
+**最重要な発見**: 我が軍とおしお殿の差は1点。**CI/CD導入が最大のROI改善策**。
+
+---
+
+## §9 戦略的含意
+
+### 9.1 おしお殿との関係
+
+同根からの分岐であり、**補完的に進化**している。おしお殿が「広さ」を追求する間に我が軍は「深さ」を追求した。両方の長所を統合すれば、どちらか単独より強くなる。
+
+### 9.2 GSDとの関係
+
+設計思想が根本的に異なる(シングルセッション vs マルチエージェント)。だが、GSDの「検証の徹底」は汎用的に価値がある。cmd_707/708で主要パターンを取り込み済み。
+
+### 9.3 我が軍の次の一手
+
+1. **CI/CD導入**(おしお殿から学ぶ) — インフラ品質の盲点を埋める
+2. **GSD Phase 3検討**(Checkpoint分類+Wiring検証) — 殿判断待ち
+3. **教訓200件到達時のsemantic dedup検討**(ACEから学ぶ)
+
+---
+
+## §10 参考文献
+
+| システム | 情報源 | 最終確認 |
+|---------|--------|---------|
+| GSD | [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) 26,786 stars | 2026-03-09 |
+| おしお殿 | [yohey-w/multi-agent-shogun](https://github.com/yohey-w/multi-agent-shogun) 1,035 stars | 2026-03-09 |
+| ACE | → `docs/research/five-system-comparison.md` §4.1 | 2026-03-01 |
+| Vercel | → `docs/research/five-system-comparison.md` §4.2 | 2026-02-25 |
+| Claude Teams | [code.claude.com/docs/en/agent-teams](https://code.claude.com/docs/en/agent-teams) | 2026-03-09 |

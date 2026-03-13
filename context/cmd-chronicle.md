@@ -356,3 +356,25 @@
 | cmd_878 | 修正 — 教訓injection_count同期修復+deprecatio… | infra | 03-13 | PD-002根本解決。L217登録 |
 | cmd_876 | 実装 — gstack知見Tier2: 家老レビュー強化+PJ知識拡張+定… | infra | 03-13 | gstack知見Tier2。L218登録。自動退役4件 |
 | cmd_877 | 実装 — gstack知見Tier3: CDP persistent da… | infra | 03-13 | gstack知見Tier3 |
+| cmd_883 | | | infra | 03-13 | — |
+| cmd_884 | | | infra | 03-13 | — |
+| cmd_888 | | | infra | 03-13 | — |
+| cmd_887 | | | infra | 03-13 | — |
+| cmd_886 | | | dm-signal | 03-13 | — |
+| cmd_885 | | | auto-ops | 03-13 | — |
+| cmd_880 | | | dm-signal | 03-13 | — |
+| cmd_881 | | | dm-signal | 03-13 | — |
+| cmd_890 | | | dm-signal | 03-13 | — |
+| cmd_892 | | | dm-signal | 03-13 | — |
+| cmd_891 | | | infra | 03-13 | — |
+| cmd_893 | | | dm-signal | 03-13 | — |
+| cmd_889 | | | dm-signal | 03-13 | — |
+| cmd_879 | | | dm-signal | 03-13 | — |
+| cmd_882 | | | dm-signal | 03-13 | — |
+| cmd_895 | | | auto-ops | 03-13 | — |
+| cmd_894 | | | auto-ops | 03-13 | — |
+| cmd_896 | | | auto-ops | 03-13 | — |
+| cmd_898 | | | auto-ops | 03-13 | — |
+| cmd_897 | | | auto-ops | 03-13 | — |
+| cmd_899 | | | auto-ops | 03-13 | Drive上の個人事業_2025.csvヘッダー13列目「殿 |
+| cmd_900 | | | auto-ops | 03-13 | — |

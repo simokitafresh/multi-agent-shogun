@@ -130,6 +130,33 @@ cmd_click() {
     post_json "/ref/resolve" "$(printf '{"ref":"%s","action":"click"}' "$ref")"
 }
 
+cmd_click_ref() {
+    local ref="${1:?Usage: cdp_cli.sh click_ref <@ref>}"
+    ref="${ref#@}"
+    ensure_server
+    post_json "/ref/action" "$(printf '{"ref":"%s","action":"click"}' "$ref")"
+}
+
+cmd_type_ref() {
+    local ref="${1:?Usage: cdp_cli.sh type_ref <@ref> <text>}"
+    local text="${2:?Usage: cdp_cli.sh type_ref <@ref> <text>}"
+    ref="${ref#@}"
+    ensure_server
+    local body
+    body=$(python3 -c "
+import json, sys
+print(json.dumps({'ref': sys.argv[1], 'action': 'type', 'text': sys.argv[2]}))
+" "$ref" "$text")
+    post_json "/ref/action" "$body"
+}
+
+cmd_get_ref_text() {
+    local ref="${1:?Usage: cdp_cli.sh get_ref_text <@ref>}"
+    ref="${ref#@}"
+    ensure_server
+    post_json "/ref/action" "$(printf '{"ref":"%s","action":"get_text"}' "$ref")"
+}
+
 cmd_eval() {
     local expression="${1:?Usage: cdp_cli.sh eval <expression>}"
     ensure_server
@@ -181,7 +208,10 @@ Commands:
   navigate <url>         Navigate to URL
   screenshot <path>      Capture screenshot and save to file
   snapshot               Get accessibility tree (@ref annotated)
-  click <@ref>           Click element by ref (e.g., @e1 or e1)
+  click <@ref>           Click element by ref (legacy, resolves only)
+  click_ref <@ref>       Click element by ref (performs click action)
+  type_ref <@ref> <text> Type text into element by ref
+  get_ref_text <@ref>    Get text content of element by ref
   eval <expression>      Evaluate JavaScript expression
   healthz                Check server health
   stop                   Stop the daemon server
@@ -199,12 +229,15 @@ command="$1"
 shift
 
 case "$command" in
-    navigate)    cmd_navigate "$@" ;;
-    screenshot)  cmd_screenshot "$@" ;;
-    snapshot)    cmd_snapshot "$@" ;;
-    click)       cmd_click "$@" ;;
-    eval)        cmd_eval "$@" ;;
-    healthz)    cmd_healthz "$@" ;;
-    stop)        cmd_stop "$@" ;;
-    *)           die "Unknown command: $command"; usage ;;
+    navigate)      cmd_navigate "$@" ;;
+    screenshot)    cmd_screenshot "$@" ;;
+    snapshot)      cmd_snapshot "$@" ;;
+    click)         cmd_click "$@" ;;
+    click_ref)     cmd_click_ref "$@" ;;
+    type_ref)      cmd_type_ref "$@" ;;
+    get_ref_text)  cmd_get_ref_text "$@" ;;
+    eval)          cmd_eval "$@" ;;
+    healthz)       cmd_healthz "$@" ;;
+    stop)          cmd_stop "$@" ;;
+    *)             die "Unknown command: $command"; usage ;;
 esac

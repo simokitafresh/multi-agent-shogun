@@ -122,6 +122,8 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L105 | BB config未拘束がGS無効パターン量産の根因。Pydantic制約はPortfolio層偏在 | cmd_264 |
 | L134 | GS結果利用時はDATA_CATALOG.md + meta.yaml参照必須 | — |
 | L132 | GS構成四神と本番FoF構成PFの不一致 | — |
+| L286 | ルールベース戦略のOOS検証はpipeline blockではなくGS runner上位の評価層に配置 | cmd_860 |
+| L299 | GS shared metricsとrunner CSV metricsが別系統だとdrift | cmd_861 |
 | L102 | MultiView skip_months=[0,1,2,3]はクラス変数固定、config変更不可 | cmd_253 |
 | L100 | MultiView base_period_months≥4必須(skip=3で0ヶ月問題) | cmd_253 |
 | L101 | MultiView Phase3 momentum_cache事前計算はFoF専用でskip | cmd_253 |
@@ -215,6 +217,25 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 |----|----------|------|
 | L165 | P_det ローリング基準は検知力天井 β·(n+K)/2 を持つ。固定基準は時間成長するが古いアンカーの代表性リスクあり | cmd_540 |
 | L166 | ローリング基準は線形ドリフト検知力が上限飽和するため、副指標なしだと遅い劣化を取り逃しやすい | cmd_540 |
+| L278 | P(det)指標を戦略転用する前にlabel taxonomyとstrategy taxonomyを分離せよ | cmd_859 |
+| L279 | P(det) recent窓(n=6)のHAC SE推定は統計的に不安定。P6単独をトリガーにするな | cmd_859 |
+| L285 | P(det)と構造変化検定を同義扱いするな。break検出と悪化方向判定は分離 | cmd_860 |
+
+### パフォーマンス持続性（cmd_860/861）
+
+| ID | 結論(1行) | 出典 |
+|----|----------|------|
+| L281 | レバレッジETF fat tails(尖度5-8)は正規性仮定の全統計手法でリスク。t分布 or ノンパラメトリック手法を優先 | cmd_860 |
+| L282 | 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須 | cmd_860 |
+| L288 | n=84でのOOS R²は検出力不足。予測力なし≠予測力がない(データ不足の可能性) | cmd_860 |
+| L289 | panel化時に91PFをIID時系列として扱うな。month/pf cluster前提でSE補正 | cmd_860 |
+| L291 | 91PF panel は横断本数をそのまま有効サンプル数と見なすな | cmd_860 |
+| L293 | 多層防御の生命線はLayer4の上流完全独立性 | cmd_861 |
+| L294 | PSRとベイズ持続確率は部分冗長。手法統合では冗長ペアを事前特定し吸収せよ | cmd_861 |
+| L295 | DSRは試行数直接補正の唯一手法。大規模GS(>10万パターン)で必須 | cmd_861 |
+| L297 | 84ヶ月×91PFの高相関panelへraw multivariate HMMを直適用するな | cmd_861 |
+| L298 | FracDiffのd最適化を全期間一括で行うな | cmd_861 |
+| L301 | PSR/DSRは時系列順序を無視する弱点あり。p平均法で補完必須 | cmd_861 |
 
 ---
 

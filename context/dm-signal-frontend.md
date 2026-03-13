@@ -62,6 +62,7 @@ UIライブラリなし（全13コンポーネント手製）。
 
 → 詳細資料: `docs/research/frontend-components.md` §3, §5
 - L201: useEffectの依存配列にstate変数を含めると意図しないタイミングでeffectが発火する（cmd_642）
+- L266: prefetchとpage effectに同一endpoint群を持たせるとorchestration重複とstate update重複が残る（cmd_831）
 
 ## 4. APIクライアント
 
@@ -74,6 +75,9 @@ UIライブラリなし（全13コンポーネント手製）。
 - L204: API永続キャッシュはUI state用localStorageと分離し、auth-scope付きIndexedDBを主格にすべき（cmd_646）
 - L228: api-client.tsが304をエラー扱い→既存ETag実装3件が実質無効（cmd_748）
 - L229: SWR化はcache hit迂回fresh fetch経路が必要（cmd_748）
+- L263: persistent data cacheにvalidatorを永続化しないとwarm reloadはfull refetchに崩れる（cmd_830）
+- L267: etagStoreにdataを持たせるとapiCacheと二重保持でRAM倍増する（cmd_831）
+- L272: IndexedDB非同期参照はSWRバックグラウンドrevalidationのタイミングを遅延させる（cmd_847）
 
 ## 5. コンポーネント
 
@@ -87,10 +91,16 @@ UIライブラリなし（全13コンポーネント手製）。
 - L187: ジェネリックソートフックのnull処理は方向別(multiplier)との合成結果まで検証する（cmd_569）
 - L191: TypeScript列追加時はtsc --noEmitでユニオンキー添字安全性を検証すべき（cmd_613）
 - L192: レビューではUI挙動確認に加えて型系ユニオン拡張の添字安全性まで検査すべき（cmd_613）
+- L245: フォルダフィルタ共通化は状態モデル(multi/single)を揃えてから抽出せよ（cmd_783）
+- L277: 履歴グラフUIは時系列snapshot蓄積と取得窓の両方が揃わないと単月表示へ退化する（cmd_859）
+- L280: 入替推奨UIは候補(candidate)語彙+連続月数条件+Progressive Disclosureで設計せよ（cmd_859）
 
 ## 6. デザインシステム
 
 13色CSSトークン(Light/Dark)。チャート7色パレット。ブレークポイント: xs(375)/sidebar(1100)/sidebar-xl(1280)。
+- L284: 統計指標UIは信号機パターン(3色+灰)+Progressive Disclosure 3層。7±2超えは判断麻痺（cmd_860）
+- L287: 確率値の単独表示は過信誘発。頻度リフレーミングを添えよ（cmd_860）
+- L292: 統計指標UIの解釈可能性設計3原則（cmd_860）
 
 → 詳細資料: `docs/research/frontend-components.md` §4, `docs/research/frontend-deploy.md` §0
 
@@ -116,6 +126,8 @@ UIライブラリなし（全13コンポーネント手製）。
 
 **本番ベースライン計測(cmd_719+720)**: /dashboard First Load JS 238kB(最重量)。最遅API=monthly-returns 1721.5ms/62.7KB。キャッシュヒット率85-90%。偵察時に記載された「Renderコールドスタート15s+」は、backend が `plan: pro` のため本件では誤認。
 完了済み施策: SignalsContext useMemo化(cmd_740) / katex CSS→docs移動(cmd_741) / signal-pie-chart dynamic import(cmd_742) / prefetch縮退83→3本(cmd_733) / uvicorn workers 2→revert→再投入(cmd_743/751/763) / SWR化(cmd_765) / date-fns除去+lucide optimize+MtdChart dynamic import(cmd_786) / ETag FE対応(cmd_760) / 401連鎖崩壊修正(cmd_758) / Phase2a共通化4件(cmd_784-787)。
+- L265: Next.js App Router output:exportでもclient-side routingは動作する（cmd_831）
+- L270: Portal内shared navのclient-side routingは遷移開始より先に閉じるなを絶対条件にせよ（cmd_832）
 改善Top3(未完了): (1)`/api/monthly-returns`最適化(1721ms, cmd_775取組中) (2)route gate+request budget導入(cmd_783指摘) (3)N+1クエリ最適化(cmd_764調査済み)
 → `docs/research/cmd_719_720_performance-baseline.md`
 
@@ -143,6 +155,9 @@ UIライブラリなし（全13コンポーネント手製）。
 - L220: CDP計測のwait_for_readyがダッシュボードAPI応答遅延で恒常的にタイムアウトする（cmd_725）
 - L221: CDP計測の `spa` は実ナビゲーション実装と一致させ、hard reload と別ラベルで報告せよ（cmd_737）
 - L222: summarize_runs()のfloat出力をshell整数比較に渡す時はint変換必須（cmd_737）
+- L244: usePrefetch request stormは10N+3本。route gate+request budget導入が先決（cmd_783）
+- L247: 全PFプリフェッチは1PFあたり約10API自動発火でrequest storm化する（cmd_783）
+- L248: グローバルProviderのroute非依存prefetchは別ページでAPIファンアウト再発する（cmd_783）
 
 ## 9. PWA・テスト・デプロイ
 
@@ -154,6 +169,10 @@ PWA: manifest + SW(dm-signal-v8) + オフラインページ。CacheFirst(static)
 - L224: full Jestではapi-client singletonのpendingRequestsがtest間に残留しうる（cmd_742）
 - L230: api-client/api-cache importするJestではcleanup intervalを明示停止必須（cmd_758）
 - L231: 大フック/大APIクライアントはhelper testだけでは保守性劣化を防げない（cmd_762）
+- L243: Static Export buildがcleanup失敗でも.next manifestは先に生成されることがある（cmd_774）
+- L251: Jest 30では--testPathPatternが廃止され--testPathPatternsへ置換が必要（cmd_792）
+- L300: バッチ手法追加は新バッチ並走が安全（cmd_861）
+- L253: Next.js大バージョンアップではpeer dep対応が最大リスク変数（cmd_807）
 i18n: EN/JPの2言語のみ(FAQページ)。本格フレームワーク未導入。
 SEO: グローバルmetadataのみ。OG/robots.txt/sitemap未実装。
 環境変数: `NEXT_PUBLIC_API_HOST`(APIベースURL), `NODE_ENV`(ログ制御)の2つのみ。
