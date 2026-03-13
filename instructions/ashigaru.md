@@ -55,6 +55,17 @@ forbidden_actions:
 - Rule 4は即座に`decision_candidate`に記載し、家老に判断を仰げ
 - 同一タスクでdeviation修正が3回を超えたら打ち切り、残課題を報告に記載せよ
 
+### 停止条件二分法
+
+- **positive_rule**: タスク開始時に`never_stop_for`と`stop_for`を確認し、遭遇事象を先に照合せよ
+  **reason**: 停止条件を事前確認しないと、既存インフラが自動対処できる事象でも忍者ごとに判断がぶれる
+- **positive_rule**: `never_stop_for`に該当する事象では停止せず、まず実行を試みよ。実行して失敗した場合のみ家老へ報告せよ
+  **reason**: auto-launch・retry・fallback等の既存機能が吸収できる問題で停止すると、速度だけ失われる
+- **positive_rule**: `stop_for`に該当する事象でのみ停止・報告せよ
+  **reason**: 本当に人判断が必要な条件だけを停止対象に固定し、不要確認を構造的に排除する
+- **positive_rule**: どちらにも該当しない場合のデフォルトは「まず実行」とせよ
+  **reason**: gstack Escape Hatch。「試す前に聞くな」を既定動作にする
+
 報告YAML `result.deviation` 欄フォーマット:
 
 ```yaml
@@ -88,7 +99,7 @@ workflow:
     value: in_progress
   - step: 4
     action: execute_task
-    note: "AC完了ごとにtask YAMLのprogress欄を更新せよ(Step 4.5参照)"
+    note: "AC完了ごとにtask YAMLのprogress欄を更新せよ(Step 4.5参照)。エラー遭遇時は `never_stop_for` → `stop_for` → どちらにも無ければ『まず実行』の順で判断せよ"
   - step: 4.5
     action: update_progress
     condition: "タスクにACが2個以上ある場合"
@@ -267,15 +278,20 @@ result:
   findings:
     - category: "ファイル構造"
       detail: "src/services/pipeline/ 配下に6ブロック、各ブロックは..."
+      recommendation: "pipeline/block_a.pyのL45-60をバッチ処理に変更せよ。理由: 現行の逐次処理で10万件超時にOOMが発生する"
     - category: "依存関係"
       detail: "engine.pyがBlockA-Fを順番に呼び出し..."
+      recommendation: "engine.pyのL120の呼出順序を維持せよ。理由: BlockCがBlockBの出力に依存する"
     - category: "設定値"
       detail: "lookback_days: [10,15,20,21,42,63,...]"
+      recommendation: "lookback_days=21を削除せよ。理由: 20と重複し計算コストだけ増える"
   verdict: "仮説Aが正しい / 仮説Bが正しい / 両方不正確 / 判定不能"
   confidence: "high / medium / low"
-  recommendation: "Do X. Because Y. (必須。推薦+WHY1文)"
+  recommendation: "全体推薦: Do X. Because Y. (必須。推薦+WHY1文)"
   blind_spots: "調査できなかった領域・未確認事項（正直に記載）"
 ```
+
+**findings.recommendation形式（必須）**: 各所見に`recommendation:`を記載せよ。形式: `"{ファイル}のL{行}を{修正内容}に変更せよ。理由: {WHY}"` — 命令形で判断を先に述べ、理由を1-2文で添える。選択肢を並べるメニュー形式は禁止。「問題がある」で止めるな。
 
 **findingsのcategory例**: ファイル構造、依存関係、設定値、データフロー、テストカバレッジ、DB構造、API仕様、不整合・問題点
 
@@ -328,6 +344,25 @@ task YAMLに`recon_aspect`フィールドがある場合、その観点に集中
 | S4 | レビュー対象diffで既に対処済みの問題 | diff全体を読んでから報告せよ |
 | S5 | 「テストをもっと厳密に」（動作をカバーしていれば十分） | 動作カバレッジを超える厳密さは過剰品質 |
 | S6 | 閾値/定数にコメント追加の提案 | 閾値はチューニングで常に変わるためコメントは腐る |
+| S7 | 一貫性だけの変更提案（他と同じguardで囲め等） | 動作に影響しない統一性は改善ではなくノイズ |
+| S8 | 入力が制約されており実際に発生しないエッジケースの指摘 | 理論上の可能性と実際のリスクを区別せよ |
+| S9 | 無害なno-op（配列に絶対いない要素へのreject等） | 動作に影響しない冗長コードは偵察の報告対象外 |
+| S10 | 冗長だが可読な記法（例: `len(x) > 0` vs `if x`、`[ -n "$var" ]` vs `[[ $var ]]`） | 可読性を優先した冗長表現は正当な設計判断であり指摘不要 |
+| S11 | テストが複数ガード条件を同時に検証している | 統合的なガードテストは正当。分割を強制する必要はない |
+| S12 | 評価閾値・スコアリング定数の値変更 | 経験的チューニングで常に変わる値であり変更理由の説明は不要 |
+
+<!-- gstack §2.1 全9項目 → Sx対応表（網羅性記録）
+  #1 冗長だが可読な記法        → S10（Bash/Python文脈に翻訳）
+  #2 閾値/定数コメント追加提案  → S6
+  #3 テストをもっと厳密に       → S5
+  #4 一貫性だけの変更提案       → S7
+  #5 発生しないエッジケース     → S8
+  #6 複数ガード同時テスト       → S11（Bash/Python文脈に翻訳）
+  #7 Eval閾値変更               → S12（Bash/Python文脈に翻訳）
+  #8 無害なno-op                → S9
+  #9 diff内既対処の再指摘       → S4
+  S1-S3は我が軍固有の追加（gstack原文に対応項目なし）
+-->
 
 ### 認知バイアスガード
 
