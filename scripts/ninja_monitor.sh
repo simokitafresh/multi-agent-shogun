@@ -53,6 +53,9 @@ SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
 STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 LAST_NTFY_RESTART=0  # ntfy_listener最終再起動時刻（epoch秒）
+CDP_CLEANUP_SCRIPT="$SCRIPT_DIR/scripts/cdp_chrome_cleanup.sh"
+CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
+LAST_CDP_CLEANUP=0        # CDP cleanup最終実行時刻（epoch秒）
 
 # 監視対象の忍者名リスト（karoと将軍は対象外）
 # saizo pane 7 (cmd_403: gunshi凍結→saizo復帰)
@@ -1949,6 +1952,30 @@ check_yaml_size() {
     fi
 }
 
+# ─── CDP Chrome idle連動クリーンアップ (cmd_905) ───
+run_cdp_cleanup() {
+    # スクリプト存在チェック（cmd_905_Aが未配備でもエラーにならない）
+    if [ ! -x "$CDP_CLEANUP_SCRIPT" ]; then
+        return 0
+    fi
+
+    local now
+    now=$(date +%s)
+    local elapsed=$((now - LAST_CDP_CLEANUP))
+    if [ $elapsed -lt $CDP_CLEANUP_INTERVAL ]; then
+        log "CDP-CLEANUP-DEBOUNCE: ${elapsed}s < ${CDP_CLEANUP_INTERVAL}s, skip"
+        return 0
+    fi
+
+    log "CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)"
+    if bash "$CDP_CLEANUP_SCRIPT" >> "$LOG" 2>&1; then
+        log "CDP-CLEANUP: Completed successfully"
+    else
+        log "CDP-CLEANUP: Script exited with error (non-fatal)"
+    fi
+    LAST_CDP_CLEANUP=$now
+}
+
 # ─── 初期ペイン探索 ───
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
     return 0 2>/dev/null || exit 0
@@ -2065,6 +2092,11 @@ while true; do
         else
             log "SKIP idle notification: no pending cmds (${#NEWLY_IDLE[@]} idle: ${NEWLY_IDLE[*]})"
         fi
+    fi
+
+    # ═══ CDP Chrome cleanup（idle忍者検出時 cmd_905） ═══
+    if [ ${#NEWLY_IDLE[@]} -gt 0 ]; then
+        run_cdp_cleanup
     fi
 
     # ═══ 停滞検知チェック（全忍者） ═══
