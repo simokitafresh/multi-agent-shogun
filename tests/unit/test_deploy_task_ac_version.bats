@@ -157,11 +157,11 @@ else:
     run read_task_field parallel_ok
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "" ]
+    [ "${lines[1]}" = "AC1|AC2|AC3" ]
 
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
-    [ "$output" = "" ]
+    [ "$output" = "AC1 > AC2 > AC3" ]
 }
 
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
@@ -287,6 +287,200 @@ print(str((data.get('lesson_candidate') or {}).get('found', '')))
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "dict" ]
     [ "${lines[1]}" = "False" ]
+}
+
+@test "deploy_task generates ac_priority and parallel_ok from explicit AC ids" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "explicit ids"
+  task_type: review
+  acceptance_criteria:
+    - id: FOO
+      description: "first"
+    - id: BAR
+      description: "second"
+    - id: BAZ
+      description: "third"
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "FOO > BAR > BAZ" ]
+
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "FOO|BAR|BAZ" ]
+}
+
+@test "deploy_task generates parallel_ok for 2 ACs but skips ac_priority" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "two acs"
+  task_type: review
+  acceptance_criteria:
+    - id: X1
+      description: "first"
+    - id: X2
+      description: "second"
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "__missing__" ]
+
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "X1|X2" ]
+}
+
+@test "deploy_task sets empty parallel_ok for single AC" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "single ac"
+  task_type: review
+  acceptance_criteria:
+    - id: ONLY
+      description: "the only one"
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "" ]
+
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "__missing__" ]
+}
+
+@test "deploy_task replaces empty-string ac_priority with default for 3+ ACs" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "empty ac_priority sentinel"
+  task_type: impl
+  acceptance_criteria:
+    - id: AC1
+      description: "first"
+    - id: AC2
+      description: "second"
+    - id: AC3
+      description: "third"
+  ac_priority: ""
+  parallel_ok:
+    - AC1
+    - AC2
+    - AC3
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "AC1 > AC2 > AC3" ]
+
+    # parallel_ok should be preserved (non-empty)
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "AC1|AC2|AC3" ]
+}
+
+@test "deploy_task replaces empty-list parallel_ok with default AC IDs for 3 ACs" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "empty parallel_ok sentinel"
+  task_type: impl
+  acceptance_criteria:
+    - id: AC1
+      description: "first"
+    - id: AC2
+      description: "second"
+    - id: AC3
+      description: "third"
+  ac_priority: "AC1 > AC2 > AC3"
+  parallel_ok: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "AC1|AC2|AC3" ]
+
+    # ac_priority should be preserved (non-empty)
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "AC1 > AC2 > AC3" ]
+}
+
+@test "deploy_task replaces empty-list parallel_ok with default AC IDs for 2 ACs" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "empty parallel_ok 2 ACs"
+  task_type: impl
+  acceptance_criteria:
+    - id: X1
+      description: "first"
+    - id: X2
+      description: "second"
+  parallel_ok: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "X1|X2" ]
+
+    # ac_priority should not be injected (< 3 ACs)
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "__missing__" ]
+}
+
+@test "deploy_task replaces both empty ac_priority and empty parallel_ok simultaneously" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "both empty sentinels"
+  task_type: impl
+  acceptance_criteria:
+    - id: AC1
+      description: "first"
+    - id: AC2
+      description: "second"
+    - id: AC3
+      description: "third"
+  ac_priority: ""
+  parallel_ok: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field ac_priority
+    [ "$status" -eq 0 ]
+    [ "$output" = "AC1 > AC2 > AC3" ]
+
+    run read_task_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "list" ]
+    [ "${lines[1]}" = "AC1|AC2|AC3" ]
 }
 
 @test "deploy_task rejects None ninja_name and removes ghost task artifacts" {

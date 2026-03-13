@@ -54,6 +54,17 @@ forbidden_actions:
 - Rule 4は即座に`decision_candidate`に記載し、家老に判断を仰げ
 - 同一タスクでdeviation修正が3回を超えたら打ち切り、残課題を報告に記載せよ
 
+### 停止条件二分法
+
+- **positive_rule**: タスク開始時に`never_stop_for`と`stop_for`を確認し、遭遇事象を先に照合せよ
+  **reason**: 停止条件を事前確認しないと、既存インフラが自動対処できる事象でも忍者ごとに判断がぶれる
+- **positive_rule**: `never_stop_for`に該当する事象では停止せず、まず実行を試みよ。実行して失敗した場合のみ家老へ報告せよ
+  **reason**: auto-launch・retry・fallback等の既存機能が吸収できる問題で停止すると、速度だけ失われる
+- **positive_rule**: `stop_for`に該当する事象でのみ停止・報告せよ
+  **reason**: 本当に人判断が必要な条件だけを停止対象に固定し、不要確認を構造的に排除する
+- **positive_rule**: どちらにも該当しない場合のデフォルトは「まず実行」とせよ
+  **reason**: gstack Escape Hatch。「試す前に聞くな」を既定動作にする
+
 報告YAML `result.deviation` 欄フォーマット:
 
 ```yaml
@@ -87,7 +98,7 @@ workflow:
     value: in_progress
   - step: 4
     action: execute_task
-    note: "AC完了ごとにtask YAMLのprogress欄を更新せよ(Step 4.5参照)"
+    note: "AC完了ごとにtask YAMLのprogress欄を更新せよ(Step 4.5参照)。エラー遭遇時は `never_stop_for` → `stop_for` → どちらにも無ければ『まず実行』の順で判断せよ"
   - step: 4.5
     action: update_progress
     condition: "タスクにACが2個以上ある場合"

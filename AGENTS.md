@@ -284,7 +284,8 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 ## Skills
 - 配置|`~/.codex/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨
-- /shogun-teire|知識の棚卸し(6観点監査)|`~/.codex/skills/shogun-teire/SKILL.md`
+- 設計ルール|`context/skill-design-rules.md`|description1024字制限+What/When/NOT When必須+5000語制限+最小権限
+- /shogun-teire|知識の棚卸し(8観点監査)|`~/.codex/skills/shogun-teire/SKILL.md`
 - /reset-layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`~/.codex/skills/reset-layout/SKILL.md`
 
 ## Knowledge Maintenance

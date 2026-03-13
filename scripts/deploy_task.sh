@@ -1536,6 +1536,22 @@ def ac_count(value):
     return 0
 
 
+def extract_ac_ids(ac_list):
+    if not isinstance(ac_list, list):
+        return []
+    ids = []
+    for i, ac in enumerate(ac_list):
+        if isinstance(ac, dict):
+            ac_id = ac.get('id', '')
+            if ac_id:
+                ids.append(str(ac_id))
+            else:
+                ids.append(f'AC{i+1}')
+        else:
+            ids.append(f'AC{i+1}')
+    return ids
+
+
 try:
     with open(task_file) as f:
         data = yaml.safe_load(f)
@@ -1553,17 +1569,29 @@ try:
         "自明な修正（typo等） — 実行→事後報告",
     ]
 
-    for key in ('stop_for', 'parallel_ok'):
-        if key not in task or task.get(key) is None:
-            task[key] = []
-            changed = True
+    if 'stop_for' not in task or task.get('stop_for') is None:
+        task['stop_for'] = []
+        changed = True
 
     if 'never_stop_for' not in task or task.get('never_stop_for') is None:
         task['never_stop_for'] = NEVER_STOP_DEFAULTS
         changed = True
 
-    if ac_count(task.get('acceptance_criteria')) >= 3 and 'ac_priority' not in task:
-        task['ac_priority'] = ''
+    ac_list = task.get('acceptance_criteria', [])
+    ac_ids = extract_ac_ids(ac_list)
+    num_acs = ac_count(ac_list)
+
+    # ac_priority: AC3個以上で未設定/空文字 → "AC1 > AC2 > AC3" 形式のデフォルト生成
+    if num_acs >= 3 and ('ac_priority' not in task or not task.get('ac_priority')):
+        task['ac_priority'] = ' > '.join(ac_ids) if ac_ids else ''
+        changed = True
+
+    # parallel_ok: AC2個以上で未設定/None/空リスト → 全AC IDリストをデフォルト生成
+    if 'parallel_ok' not in task or not task.get('parallel_ok'):
+        if num_acs >= 2 and ac_ids:
+            task['parallel_ok'] = ac_ids
+        else:
+            task['parallel_ok'] = []
         changed = True
 
     if not changed:
