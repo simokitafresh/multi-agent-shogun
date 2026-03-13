@@ -292,6 +292,7 @@ result:
 ```
 
 **findings.recommendation形式（必須）**: 各所見に`recommendation:`を記載せよ。形式: `"{ファイル}のL{行}を{修正内容}に変更せよ。理由: {WHY}"` — 命令形で判断を先に述べ、理由を1-2文で添える。選択肢を並べるメニュー形式は禁止。「問題がある」で止めるな。
+**findings.detail形式（必須）**: `detail:`でも抽象表現を禁止する。形式: `"{ファイル}のL{行}の{関数/処理}が{条件}で{例外/値}を返す"` を基本とし、ファイル名・行番号・条件・観測結果を必ず含めよ。
 
 **findingsのcategory例**: ファイル構造、依存関係、設定値、データフロー、テストカバレッジ、DB構造、API仕様、不整合・問題点
 
@@ -564,6 +565,20 @@ parity_data_source:
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lesson_candidate, decision_candidate, lessons_useful.
 Missing fields = incomplete report.
 
+### 報告具体性ルール（「名前をつけろ」）
+
+**偵察報告・実装報告の両方で、抽象表現を禁止する。**
+
+- 禁止: 「問題がある」「エラーが出る」「パフォーマンスが悪い」「修正した」だけで終える表現
+- 必須（問題報告）: `"{ファイル}のL{行}の{関数/処理}が{条件}で{例外/値}を返す"`
+- 必須（実装報告）: `"{ファイル}のL{行}を{旧}→{新}に変更"` または `"{ファイル}に{関数/テスト}を追加"`
+
+例:
+- 悪い例: `"API周りに問題がある"`
+- 良い例: `"src/api/auth.pyのL52のrefresh_token()が期限切れJWTでTokenExpiredErrorを送出し、呼び出し側で救済していない"`
+- 悪い例: `"バグを修正した"`
+- 良い例: `"src/api/auth.pyのL52-L60をtry/except追加へ変更し、TokenExpiredError時は401 JSONを返すようにした"`
+
 ## Step 5.5: 提出前自己ゲート (MANDATORY)
 
 **positive_rule**: report作成後、statusをdoneにする前に以下の4項目を全て確認し、report.result.self_gate_checkに記載せよ。全PASSでなければstatusをdoneにするな。FAILを修正してから再確認。
@@ -662,14 +677,17 @@ skill_candidate:
 ## Progress Reporting (Step 4.5)
 
 **ACが2個以上あるタスクでは、各AC完了時にtask YAMLのprogress欄を更新せよ。**
+**ACが3個以上あるタスクでは、各AC完了直後に AC完了チェックポイント を必ず実施せよ。**
 
 家老が中間進捗を確認し、方向転換やアドバイスを送れるようにするための仕組み。
 
 ### 手順
 
 1. AC完了時にtask YAMLを読む
-2. `progress:`欄に完了ACを追記
-3. 問題があればnotesに記載
+2. 次ACの前提条件が満たされているか確認する
+3. scope drift（残りACに不要な作業の混入）が起きていないか確認する
+4. `progress:`欄に完了ACを追記
+5. 問題があればnotesに記載
 
 ```yaml
 # task YAML内に追記する形式
@@ -687,6 +705,14 @@ progress:
 | 問題発生時も記載 | 早期に方向転換できる |
 | AC1個のタスクはスキップ可 | 最終報告で十分 |
 | 完了報告(Step 5)とは別 | progressは中間、reportは最終 |
+
+### AC完了チェックポイント（3AC以上で必須）
+
+task YAMLに`ac_checkpoint:`がある場合、その指示を各AC完了後にそのまま実施せよ。未記載でも、ACが3個以上なら以下を必ず確認する。
+
+1. **次ACの前提条件確認**: 直前の変更で必要なファイル・テスト・データが揃っているか確認する
+2. **scope drift検出**: 次AC達成に不要な改善案・横道作業が混入していないか確認する。見つけた案は実装せず `lesson_candidate` または `decision_candidate` に逃がす
+3. **progress更新**: `progress:` に完了ACを具体的な文で追記する。例: `"AC2: scripts/deploy_task.shのac_checkpoint自動注入を追加"`
 
 ## Race Condition (RACE-001)
 

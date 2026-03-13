@@ -1586,6 +1586,11 @@ try:
         task['ac_priority'] = ' > '.join(ac_ids) if ac_ids else ''
         changed = True
 
+    # ac_checkpoint: AC3個以上で未設定/空文字 → 各AC後のチェックポイント指示を注入
+    if num_acs >= 3 and ('ac_checkpoint' not in task or not task.get('ac_checkpoint')):
+        task['ac_checkpoint'] = '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+        changed = True
+
     # parallel_ok: AC2個以上で未設定/None/空リスト → 全AC IDリストをデフォルト生成
     if 'parallel_ok' not in task or not task.get('parallel_ok'):
         if num_acs >= 2 and ac_ids:
@@ -1607,7 +1612,7 @@ try:
         os.unlink(tmp_path)
         raise
 
-    print('[EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority as needed', file=sys.stderr)
+    print('[EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed', file=sys.stderr)
 
 except Exception as e:
     print(f'[EXEC_CTRL] ERROR: {e}', file=sys.stderr)

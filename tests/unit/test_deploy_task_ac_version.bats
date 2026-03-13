@@ -162,6 +162,10 @@ else:
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
     [ "$output" = "AC1 > AC2 > AC3" ]
+
+    run read_task_field ac_checkpoint
+    [ "$status" -eq 0 ]
+    [ "$output" = "各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新" ]
 }
 
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
@@ -206,6 +210,10 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "__missing__" ]
 
+    run read_task_field ac_checkpoint
+    [ "$status" -eq 0 ]
+    [ "$output" = "__missing__" ]
+
     run read_task_field stop_for
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "list" ]
@@ -224,6 +232,7 @@ task:
     - test failure
   never_stop_for:
     - formatting only
+  ac_checkpoint: "custom checkpoint"
   parallel_ok:
     - AC1
   ac_priority: "AC2 > AC1 > AC3"
@@ -250,6 +259,10 @@ EOF
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
     [ "$output" = "AC2 > AC1 > AC3" ]
+
+    run read_task_field ac_checkpoint
+    [ "$status" -eq 0 ]
+    [ "$output" = "custom checkpoint" ]
 }
 
 @test "deploy_task injects report_path and report template guidance on cmd-named reports" {
