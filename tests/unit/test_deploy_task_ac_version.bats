@@ -150,7 +150,9 @@ else:
     run read_task_field never_stop_for
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "" ]
+    [[ "${lines[1]}" == *"CDPポート未応答"* ]]
+    [[ "${lines[1]}" == *"自動対処機能"* ]]
+    [[ "${lines[1]}" == *"自明な修正"* ]]
 
     run read_task_field parallel_ok
     [ "$status" -eq 0 ]

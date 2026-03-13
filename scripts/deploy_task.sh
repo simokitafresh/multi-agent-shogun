@@ -1547,10 +1547,20 @@ try:
     task = data['task']
     changed = False
 
-    for key in ('stop_for', 'never_stop_for', 'parallel_ok'):
+    NEVER_STOP_DEFAULTS = [
+        "CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ",
+        "既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告",
+        "自明な修正（typo等） — 実行→事後報告",
+    ]
+
+    for key in ('stop_for', 'parallel_ok'):
         if key not in task or task.get(key) is None:
             task[key] = []
             changed = True
+
+    if 'never_stop_for' not in task or task.get('never_stop_for') is None:
+        task['never_stop_for'] = NEVER_STOP_DEFAULTS
+        changed = True
 
     if ac_count(task.get('acceptance_criteria')) >= 3 and 'ac_priority' not in task:
         task['ac_priority'] = ''
