@@ -48,7 +48,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 _isLoading.value = false
                 return@launch
             }
-            val result = sshManager.execCommand("cat $projectPath/dashboard.md")
+            val escaped = projectPath.replace("'", "'\\''")
+            val result = sshManager.execCommand("cat '$escaped/dashboard.md'")
             if (result.isSuccess) {
                 _markdownContent.value = result.getOrDefault("")
                 _errorMessage.value = null

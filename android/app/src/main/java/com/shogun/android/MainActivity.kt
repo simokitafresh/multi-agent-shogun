@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.PrefsKeys
 import androidx.compose.ui.unit.dp
@@ -71,7 +70,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         NotificationHelper.initChannels(this)
         setContent {
-            ShogunTheme {
+            val context = LocalContext.current.applicationContext
+            val themePreferences = remember(context) { ThemePreferences(context) }
+            val themeMode by themePreferences.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
+
+            ShogunTheme(themeMode = themeMode) {
                 ShogunApp()
             }
         }

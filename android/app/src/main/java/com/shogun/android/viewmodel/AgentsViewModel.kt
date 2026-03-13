@@ -103,6 +103,7 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
                 append("N=\$(echo \"\$PANES\" | wc -l); ")
                 append("echo \"===PANE_COUNT=\$N===\"; ")
                 append("IDX=0; for i in \$PANES; do ")
+                append("echo \"===PANEIDX\$IDX===\$i===\"; ")
                 append("echo \"===ID\$IDX===\"; ")
                 append("$tmux display-message -t $target.\$i -p '#{@agent_id}' 2>/dev/null || echo \"pane\$i\"; ")
                 append("echo \"===MODEL\$IDX===\"; ")
@@ -135,11 +136,15 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
             val contentMarker = "===CONTENT$i==="
             val nextIdMarker = "===ID${i + 1}==="
 
+            // Parse actual tmux pane index (pane-base-index may be 1)
+            val paneIdxMatch = Regex("===PANEIDX$i===(\\d+)===").find(output)
+            val actualPaneIndex = paneIdxMatch?.groupValues?.get(1)?.toIntOrNull() ?: i
+
             val idStart = output.indexOf(idMarker)
             val modelStart = output.indexOf(modelMarker)
             val contentStart = output.indexOf(contentMarker)
             if (idStart == -1 || contentStart == -1) {
-                panes.add(PaneInfo(index = i, agentId = "pane$i", modelName = "", content = ""))
+                panes.add(PaneInfo(index = actualPaneIndex, agentId = "pane$actualPaneIndex", modelName = "", content = ""))
                 continue
             }
 
@@ -154,7 +159,7 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
                 output.length
             }
             val content = output.substring(contentStart + contentMarker.length, contentEnd).trim()
-            panes.add(PaneInfo(index = i, agentId = agentId, modelName = modelName, content = content))
+            panes.add(PaneInfo(index = actualPaneIndex, agentId = agentId, modelName = modelName, content = content))
         }
         return panes
     }
@@ -168,7 +173,11 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
             val target = "${agentsTarget()}.$paneIndex"
             val escaped = text.replace("'", "'\\''")
             // Send text and Enter SEPARATELY with 0.3s gap (Claude Code requirement)
-            sshManager.execCommand("${Defaults.TMUX} send-keys -t $target '$escaped'")
+            val sendResult = sshManager.execCommand("${Defaults.TMUX} send-keys -t $target '$escaped'")
+            if (sendResult.isFailure) {
+                _errorMessage.value = "送信失敗: ${sendResult.exceptionOrNull()?.message}"
+                return@launch
+            }
             delay(300)
             sshManager.execCommand("${Defaults.TMUX} send-keys -t $target Enter")
             delay(1000)

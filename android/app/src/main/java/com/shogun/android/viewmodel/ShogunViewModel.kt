@@ -93,10 +93,18 @@ class ShogunViewModel(application: Application) : AndroidViewModel(application) 
 
     fun sendCommand(text: String) {
         viewModelScope.launch {
+            if (!sshManager.isConnected()) {
+                _errorMessage.value = "SSH未接続"
+                return@launch
+            }
             val target = tmuxTarget()
             val escaped = text.replace("'", "'\\''")
             // Send text and Enter SEPARATELY with 0.3s gap (Claude Code requirement)
-            sshManager.execCommand("${Defaults.TMUX} send-keys -t $target '$escaped'")
+            val sendResult = sshManager.execCommand("${Defaults.TMUX} send-keys -t $target '$escaped'")
+            if (sendResult.isFailure) {
+                _errorMessage.value = "送信失敗: ${sendResult.exceptionOrNull()?.message}"
+                return@launch
+            }
             delay(300)
             sshManager.execCommand("${Defaults.TMUX} send-keys -t $target Enter")
             delay(1500)

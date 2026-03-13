@@ -3,14 +3,19 @@ package com.shogun.android.viewmodel
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.shogun.android.ui.theme.ThemeMode
+import com.shogun.android.ui.theme.ThemePreferences
 import com.shogun.android.util.Defaults
 import com.shogun.android.util.PrefsKeys
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val prefs = application.getSharedPreferences(PrefsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+    private val themePreferences = ThemePreferences(application.applicationContext)
 
     private val _notificationEnabled = MutableStateFlow(prefs.getBoolean(PrefsKeys.NOTIFICATION_ENABLED, true))
     val notificationEnabled: StateFlow<Boolean> = _notificationEnabled
@@ -35,6 +40,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val _notifyAgentResponse = MutableStateFlow(prefs.getBoolean(PrefsKeys.NOTIFY_AGENT_RESPONSE, false))
     val notifyAgentResponse: StateFlow<Boolean> = _notifyAgentResponse
+
+    private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
+    val themeMode: StateFlow<ThemeMode> = _themeMode
+
+    init {
+        viewModelScope.launch {
+            themePreferences.themeMode.collect { mode ->
+                _themeMode.value = mode
+            }
+        }
+    }
 
     fun setNotificationEnabled(value: Boolean) {
         _notificationEnabled.value = value
@@ -74,5 +90,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setNotifyAgentResponse(value: Boolean) {
         _notifyAgentResponse.value = value
         prefs.edit().putBoolean(PrefsKeys.NOTIFY_AGENT_RESPONSE, value).apply()
+    }
+
+    fun setThemeMode(value: ThemeMode) {
+        viewModelScope.launch {
+            themePreferences.setThemeMode(value)
+        }
     }
 }

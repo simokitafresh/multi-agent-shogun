@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shogun.android.util.AppLogger
+import com.shogun.android.BuildConfig
 import com.shogun.android.viewmodel.SettingsViewModel
 
 @Composable
@@ -56,6 +57,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
     var softWrapEnabled by remember {
         mutableStateOf(prefs.getBoolean(PrefsKeys.SOFT_WRAP, Defaults.SOFT_WRAP_DEFAULT))
     }
+    val themeMode by settingsViewModel.themeMode.collectAsState()
 
     var saved by remember { mutableStateOf(false) }
     var tapCount by remember { mutableIntStateOf(0) }
@@ -129,7 +131,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
             visualTransformation = PasswordVisualTransformation()
         )
 
-        Divider()
+        HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))
 
         Text("プロジェクト設定", style = MaterialTheme.typography.titleMedium, color = Kinpaku)
 
@@ -142,7 +144,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
             singleLine = true
         )
 
-        Divider()
+        HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))
 
         Text("セッション設定", style = MaterialTheme.typography.titleMedium, color = Kinpaku)
 
@@ -162,11 +164,44 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
             singleLine = true
         )
 
-        Divider()
+        HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))
 
         Text("外観", style = MaterialTheme.typography.titleMedium, color = Kinpaku)
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("テーマ", style = MaterialTheme.typography.bodyMedium, color = Zouge)
+            Text(
+                "System / Dark / Light / Black AMOLED を即時切替します",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMuted
+            )
+            ThemeModeOption(
+                label = "System default",
+                description = "端末設定に追従",
+                selected = themeMode == ThemeMode.SYSTEM,
+                onSelect = { settingsViewModel.setThemeMode(ThemeMode.SYSTEM) }
+            )
+            ThemeModeOption(
+                label = "Dark",
+                description = "現行の漆黒",
+                selected = themeMode == ThemeMode.DARK,
+                onSelect = { settingsViewModel.setThemeMode(ThemeMode.DARK) }
+            )
+            ThemeModeOption(
+                label = "Light",
+                description = "白壁の城",
+                selected = themeMode == ThemeMode.LIGHT,
+                onSelect = { settingsViewModel.setThemeMode(ThemeMode.LIGHT) }
+            )
+            ThemeModeOption(
+                label = "Black AMOLED",
+                description = "真夜中の陣",
+                selected = themeMode == ThemeMode.BLACK,
+                onSelect = { settingsViewModel.setThemeMode(ThemeMode.BLACK) }
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
             Text("フォントサイズ", style = MaterialTheme.typography.bodyMedium, color = Zouge)
             Text(
                 "ターミナル出力テキストのサイズ（現在: ${fontSizePref.toInt()}sp）",
@@ -235,11 +270,11 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
             )
         }
 
-        Divider()
+        HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))
 
         NtfySettingsSection(viewModel = settingsViewModel)
 
-        Divider()
+        HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))
 
         Button(
             onClick = {
@@ -274,6 +309,17 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                 color = MaterialTheme.colorScheme.primary
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+            color = TextMuted,
+            fontSize = 12.sp,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }
 
@@ -299,6 +345,39 @@ private fun BackgroundStyleOption(
             )
         )
         Text(label, color = Zouge)
+    }
+}
+
+@Composable
+private fun ThemeModeOption(
+    label: String,
+    description: String,
+    selected: Boolean,
+    onSelect: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelect)
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onSelect,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = Kinpaku,
+                unselectedColor = TextMuted
+            )
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(label, color = Zouge)
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMuted
+            )
+        }
     }
 }
 

@@ -159,6 +159,7 @@ private fun parseRateLimitResult(text: String): RateLimitData {
     return RateLimitData(claudeMax, codexQuota, codexEntries)
 }
 
+@Composable
 private fun rateLimitBarColor(percent: Float): Color = when {
     percent >= 80f -> Color(0xFFCC4444)
     percent >= 50f -> Kinpaku

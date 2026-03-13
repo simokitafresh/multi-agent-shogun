@@ -28,6 +28,26 @@ Dense like a military command center. Warm like firelight in a castle. Authorita
 | `--tetsukon` | #3A4A5C | Secondary, metadata | Iron armor plate |
 | `--kurenai` | #CC3333 | Error, disconnected | Blood red |
 
+### Theme Modes
+| Mode | Background | Surface | Body Text | Accent Gold | Accent Red | Mood |
+|------|------------|---------|-----------|-------------|------------|------|
+| Dark | `#1A1A1A` | `#2D2D2D` | `#E8DCC8` | `#C9A94E` | `#B33B24` | 現行の漆黒。篝火と甲冑の war room |
+| Light | `#F5EFE3` | `#FFF9F0` | `#332A22` | `#7A5A16` | `#9B3A2A` | 白壁の城、書院造り。明所でも文字が沈まない |
+| Black AMOLED | `#000000` | `#0A0A0A` | `#F5F1E8` | `#D4B96A` | `#C24A33` | 真夜中の陣。OLED省電力と最大コントラスト |
+
+### Theme Surface Stack
+| Mode | Base | Card | Raised | Overlay | Input |
+|------|------|------|--------|---------|-------|
+| Dark | `#1A1A1A` | `#2D2D2D` | `#363636` | `#404040` | `#1E1E1E` |
+| Light | `#F5EFE3` | `#FFF9F0` | `#E9DDCA` | `#E0D2BE` | `#F8F1E6` |
+| Black AMOLED | `#000000` | `#0A0A0A` | `#141414` | `#1D1D1D` | `#101010` |
+
+### Accessibility Guardrails
+- Light mode本文 `#332A22` on `#F5EFE3` = 12.27:1
+- Light mode見出し金 `#7A5A16` on `#F5EFE3` = 5.55:1
+- Black mode本文 `#F5F1E8` on `#000000` = 18.63:1
+- 純黒テキストは使わない。ライト mode の濃色文字は `#332A22` を基準にする
+
 ### Text Hierarchy
 | Level | Color | Use |
 |-------|-------|-----|
