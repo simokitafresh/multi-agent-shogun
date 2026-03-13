@@ -598,6 +598,32 @@ self_gate_check:
 
 **project** — lesson_candidateにproject:フィールドを必ず含めよ。auto_draft_lesson.shが登録先を判定する。
 
+### skill_candidateの判定基準
+
+**3回以上同じ手順を実行していると感じたら `skill_candidate.found: true` で報告せよ。**
+
+判定トリガー:
+- 同じ手順を3回以上繰り返し実行した（異なるタスク・cmd間で）
+- 手順が定型化されており、毎回同じ手順書を参照している
+- 他の忍者も同じ手順を実行する可能性がある
+
+具体例:
+- CDP計測手順（PowerShell経由のChrome起動→DOM操作→スクリーンショット取得）
+- context索引更新手順（docs/research/へ詳細移動→context圧縮→リンク確認）
+- Render deploy検証手順（デプロイ→ヘルスチェック→ログ確認→パリティ検証）
+
+**ただし実装するな。報告のみ。** スキル設計と実装は家老が判断し、将軍承認後に別cmdで行う。
+
+報告フォーマット（報告YAMLのskill_candidate欄）:
+```yaml
+skill_candidate:
+  found: true
+  name: "cdp-page-measure"
+  description: "CDP経由でページ計測を自動実行するスキル"
+  reason: "CDP計測手順を5回以上手動実行した"
+  project: "dm-signal"
+```
+
 ## Progress Reporting (Step 4.5)
 
 **ACが2個以上あるタスクでは、各AC完了時にtask YAMLのprogress欄を更新せよ。**

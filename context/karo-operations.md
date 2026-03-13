@@ -106,3 +106,16 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 - 設計判断や複雑レビューは Opus 優位、定型実装と偵察は Codex 優位。ただし配備順序の恣意性は避ける。
 - CLI切替は `/clear` ではなく `switch_cli_mode.sh` を使う。
 → `docs/research/karo-operations-detail.md` §14-16
+
+## §12 skill_candidate受領時の処理フロー
+
+忍者の報告YAMLに `skill_candidate.found: true` がある場合の処理手順:
+
+1. **収集**: 報告YAMLからskill_candidateの内容（name/description/reason/project）を確認
+2. **dashboard記載**: dashboardの将軍宛報告セクション(🚨要対応)にスキル提案として記載
+3. **将軍承認**: 将軍がスキル化の要否を判断。承認/却下/保留を裁定
+4. **設計doc作成**: 承認後、家老がスキル設計（SKILL.md骨子・トリガー条件・入出力）をcmdとして起案
+5. **実装cmd**: 設計完了後、スキル実装cmdを忍者に配備
+
+- 忍者はスキルを実装しない。報告のみ。実装判断は家老→将軍承認の鎖に従う
+- 複数の忍者から同一パターンのskill_candidateが上がった場合は優先度を上げる
