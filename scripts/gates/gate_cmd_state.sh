@@ -27,6 +27,13 @@ HAS_ALERT=0
 HAS_WARN=0
 CHECKED=0
 
+emit_actionable() {
+    local message="$1"
+    local action="$2"
+    echo "$message"
+    echo "action: $action"
+}
+
 if [ ! -f "$SHOGUN_TO_KARO" ]; then
     echo "OK: shogun_to_karo.yaml not found — no cmds to check"
     echo "--- 総合判定: OK ---"
@@ -94,10 +101,14 @@ for cmd_id in "${CMD_IDS[@]}"; do
     fi
 
     if [ "$has_evidence" -eq 1 ]; then
-        echo "WARN: $cmd_id — delegated_at未設定だが二次証跡あり。再送不要。"
+        emit_actionable \
+            "WARN: $cmd_id — delegated_at未設定だが二次証跡あり。再送不要。" \
+            "queue/shogun_to_karo.yaml の delegated_at 欠落だけを修正し、家老への再送はするな。"
         HAS_WARN=1
     else
-        echo "ALERT: $cmd_id — 未委任の可能性。委任を確認せよ。"
+        emit_actionable \
+            "ALERT: $cmd_id — 未委任の可能性。委任を確認せよ。" \
+            "queue/shogun_to_karo.yaml・queue/inbox/karo.yaml・dashboard.md を確認し、未委任なら家老へ委任せよ。"
         HAS_ALERT=1
     fi
 done

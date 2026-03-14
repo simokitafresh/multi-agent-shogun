@@ -51,7 +51,9 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 - 家老の役割はレビュー配備とGATE判定のみ。品質判定そのものは忍者レビューに委ねる。
 - verdict は PASS / FAIL の二値厳守。条件付きPASSは禁止。
 - failed を放置するな。修正配備 / WAIVE→done / 殿裁定のいずれかへ必ず進める。
-- Two-pass Review: CRITICALはblocking(PASS/FAIL直結)、INFORMATIONALは記録のみ(non-blocking)。→ `docs/research/karo-operations-detail.md` §3 Two-pass Review
+- Two-pass Review: CRITICALはblocking(PASS/FAIL直結)、INFORMATIONALは記録のみ(non-blocking)。→ detail §3 Two-pass Review
+- A/B/C Triage: レビュー指摘を3分類。A:Fix(修正必須→impl再配備)、B:Acknowledge(認識するが今回対応不要→理由記録)、C:False Positive(偽陽性→以後抑制)。PASS/FAIL/WAIVEとの対応表あり。→ detail §3 A/B/C Triage
+- Re-review Loop: blocking fix→修正task配備→再レビュー配備の明示フロー。曖昧に続行するな。→ detail §3 Re-review Loop
 → `docs/research/karo-operations-detail.md` §3
 
 ## §4 難問エスカレーション

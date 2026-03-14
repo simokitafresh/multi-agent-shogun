@@ -15,13 +15,22 @@ UNSYNC_LOG="$ALERT_DIR/pd_unsync.log"
 
 PD_ID="$1"
 
+emit_prefixed_actionable_stderr() {
+    local message="$1"
+    local action="$2"
+    echo "$message" >&2
+    echo "[gate_pd_sync] action: $action" >&2
+}
+
 if [ -z "$PD_ID" ]; then
     echo "Usage: gate_pd_sync.sh <pd_id>" >&2
     exit 1
 fi
 
 if [ ! -f "$DATA_FILE" ]; then
-    echo "[gate_pd_sync] WARNING: $DATA_FILE not found" >&2
+    emit_prefixed_actionable_stderr \
+        "[gate_pd_sync] WARNING: $DATA_FILE not found" \
+        "queue/pending_decisions.yaml の配置を確認し、PD同期の一次データを復旧せよ。"
     exit 0
 fi
 
@@ -70,7 +79,9 @@ UNSYNCED_IDS_RAW=$(printf '%s\n' "$RESULT" | sed -n '2p')
 
 if [ -n "$UNSYNCED_IDS_RAW" ]; then
     BLOCK_MSG="$TIMESTAMP  BLOCK: context未反映PDあり: $UNSYNCED_IDS_RAW"
-    echo "[gate_pd_sync] $BLOCK_MSG" >&2
+    emit_prefixed_actionable_stderr \
+        "[gate_pd_sync] $BLOCK_MSG" \
+        "pending_decisions.yaml の context_synced=false を解消し、対応する context/*.md を更新せよ。"
     echo "$BLOCK_MSG" >> "$UNSYNC_LOG"
     exit 1
 fi
@@ -80,11 +91,15 @@ case "$RESULT_STATUS" in
         echo "[gate_pd_sync] $PD_ID: context_synced=true (OK)"
         ;;
     NOT_SYNCED)
-        echo "[gate_pd_sync] BLOCK: $PD_ID context_synced=false" >&2
+        emit_prefixed_actionable_stderr \
+            "[gate_pd_sync] BLOCK: $PD_ID context_synced=false" \
+            "該当PDの内容を context へ反映し、context_synced を true に更新せよ。"
         exit 1
         ;;
     NOT_FOUND)
-        echo "[gate_pd_sync] WARNING: $PD_ID not found in pending_decisions.yaml" >&2
+        emit_prefixed_actionable_stderr \
+            "[gate_pd_sync] WARNING: $PD_ID not found in pending_decisions.yaml" \
+            "PD ID を確認し、pending_decisions.yaml に存在する正しい ID で再実行せよ。"
         ;;
     *)
         echo "[gate_pd_sync] ERROR checking $PD_ID" >&2

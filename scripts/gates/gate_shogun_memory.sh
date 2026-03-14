@@ -27,12 +27,21 @@ PENDING_DECISIONS="$SCRIPT_DIR/queue/pending_decisions.yaml"
 HAS_ALERT=0
 HAS_WARN=0
 
+emit_actionable() {
+    local message="$1"
+    local action="$2"
+    echo "$message"
+    echo "action: $action"
+}
+
 # ============================================================
 # (1) MEMORY.md行数
 # ============================================================
 check_line_count() {
     if [ ! -f "$MEMORY_FILE" ]; then
-        echo "ALERT: MEMORY.md行数: ファイルが見つかりません($MEMORY_FILE)"
+        emit_actionable \
+            "ALERT: MEMORY.md行数: ファイルが見つかりません($MEMORY_FILE)" \
+            "MEMORY.md の配置を確認し、欠損なら復旧してから再実行せよ。"
         HAS_ALERT=1
         return
     fi
@@ -41,10 +50,14 @@ check_line_count() {
     lines=$(wc -l < "$MEMORY_FILE")
 
     if [ "$lines" -gt 180 ]; then
-        echo "ALERT: MEMORY.md行数: ${lines}行(>180 ALERT閾値)"
+        emit_actionable \
+            "ALERT: MEMORY.md行数: ${lines}行(>180 ALERT閾値)" \
+            "MEMORY.md を棚卸しし、古い項目を整理して 180 行以下へ圧縮せよ。"
         HAS_ALERT=1
     elif [ "$lines" -gt 150 ]; then
-        echo "WARN: MEMORY.md行数: ${lines}行(>150 WARN閾値)"
+        emit_actionable \
+            "WARN: MEMORY.md行数: ${lines}行(>150 WARN閾値)" \
+            "MEMORY.md を棚卸しし、不要な重複や陳腐化項目を整理せよ。"
         HAS_WARN=1
     else
         echo "OK: MEMORY.md行数: ${lines}行(健全)"
@@ -56,7 +69,9 @@ check_line_count() {
 # ============================================================
 check_staleness() {
     if [ ! -f "$MEMORY_FILE" ]; then
-        echo "ALERT: 陳腐化検出: MEMORY.mdが見つかりません"
+        emit_actionable \
+            "ALERT: 陳腐化検出: MEMORY.mdが見つかりません" \
+            "MEMORY.md を復旧し、completed/resolved 項目の棚卸し前提を整えよ。"
         HAS_ALERT=1
         return
     fi
@@ -107,7 +122,9 @@ check_staleness() {
             [ -n "$details" ] && details+=", "
             details+="resolved_PD: ${stale_pds[*]}"
         fi
-        echo "WARN: 陳腐化検出: ${total_stale}件の既解決項目がMEMORY.mdに残存(${details})"
+        emit_actionable \
+            "WARN: 陳腐化検出: ${total_stale}件の既解決項目がMEMORY.mdに残存(${details})" \
+            "既に解決済みの cmd/PD を MEMORY.md から外し、必要なら他の恒久保存先へ移せ。"
         HAS_WARN=1
     else
         echo "OK: 陳腐化検出: 既解決項目の残存なし"
@@ -119,7 +136,9 @@ check_staleness() {
 # ============================================================
 check_duplication() {
     if [ ! -f "$MEMORY_FILE" ] || [ ! -f "$CLAUDE_MD" ]; then
-        echo "WARN: CLAUDE.md重複: ファイル不在のためスキップ"
+        emit_actionable \
+            "WARN: CLAUDE.md重複: ファイル不在のためスキップ" \
+            "MEMORY.md と CLAUDE.md の配置を確認し、重複監査できる状態へ戻せ。"
         HAS_WARN=1
         return
     fi
@@ -136,7 +155,9 @@ check_duplication() {
     done
 
     if [ ${#dup_cmds[@]} -gt 0 ]; then
-        echo "WARN: CLAUDE.md重複: ${#dup_cmds[@]}件のcmd_IDがMEMORY.mdとCLAUDE.mdの両方に存在(${dup_cmds[*]})"
+        emit_actionable \
+            "WARN: CLAUDE.md重複: ${#dup_cmds[@]}件のcmd_IDがMEMORY.mdとCLAUDE.mdの両方に存在(${dup_cmds[*]})" \
+            "重複 cmd を整理し、MEMORY.md と CLAUDE.md の役割分担を回復せよ。"
         HAS_WARN=1
     else
         echo "OK: CLAUDE.md重複: MEMORY.mdとCLAUDE.mdの重複なし"
@@ -155,7 +176,9 @@ check_mcp() {
 # ============================================================
 check_last_curated() {
     if [ ! -f "$MEMORY_FILE" ]; then
-        echo "ALERT: 最終curation日: MEMORY.mdが見つかりません"
+        emit_actionable \
+            "ALERT: 最終curation日: MEMORY.mdが見つかりません" \
+            "MEMORY.md を復旧し、curation 日付を記録できる状態へ戻せ。"
         HAS_ALERT=1
         return
     fi
@@ -166,7 +189,9 @@ check_last_curated() {
         | head -1 | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
 
     if [ -z "$curated_date" ]; then
-        echo "WARN: 最終curation日: Meta欄なし。/shogun-memory-teire推奨"
+        emit_actionable \
+            "WARN: 最終curation日: Meta欄なし。/shogun-memory-teire推奨" \
+            "Meta 欄へ Last curated を追加し、/shogun-memory-teire を実行せよ。"
         HAS_WARN=1
         return
     fi
@@ -174,7 +199,9 @@ check_last_curated() {
     local today_epoch curated_epoch days_ago
     today_epoch=$(date +%s)
     curated_epoch=$(date -d "$curated_date" +%s 2>/dev/null) || {
-        echo "WARN: 最終curation日: 日付パース失敗($curated_date)"
+        emit_actionable \
+            "WARN: 最終curation日: 日付パース失敗($curated_date)" \
+            "Last curated の日付形式を YYYY-MM-DD に修正せよ。"
         HAS_WARN=1
         return
     }
@@ -182,10 +209,14 @@ check_last_curated() {
     days_ago=$(( (today_epoch - curated_epoch) / 86400 ))
 
     if [ "$days_ago" -gt 14 ]; then
-        echo "ALERT: 最終curation日: ${curated_date}(${days_ago}日前 >14日 ALERT閾値)"
+        emit_actionable \
+            "ALERT: 最終curation日: ${curated_date}(${days_ago}日前 >14日 ALERT閾値)" \
+            "MEMORY.md を直ちに棚卸しし、Last curated を今日の日付へ更新せよ。"
         HAS_ALERT=1
     elif [ "$days_ago" -gt 7 ]; then
-        echo "WARN: 最終curation日: ${curated_date}(${days_ago}日前 >7日 WARN閾値)"
+        emit_actionable \
+            "WARN: 最終curation日: ${curated_date}(${days_ago}日前 >7日 WARN閾値)" \
+            "近いうちに MEMORY.md を棚卸しし、Last curated を更新せよ。"
         HAS_WARN=1
     else
         echo "OK: 最終curation日: ${curated_date}(${days_ago}日前、健全)"
@@ -219,7 +250,9 @@ print(len(d.get('entries', [])))
 " 2>/dev/null) || has_entries="0"
 
         if [ "$has_entries" -gt 0 ]; then
-            echo "WARN: MCP同期: tracker未作成。${has_entries}件の未同期[share:ninja]あり"
+            emit_actionable \
+                "WARN: MCP同期: tracker未作成。${has_entries}件の未同期[share:ninja]あり" \
+                "mcp_sync_lesson.sh を実行し、tracker を作成して staging を同期せよ。"
             HAS_WARN=1
         else
             echo "OK: MCP同期: staging空、tracker未作成(同期対象なし)"
@@ -266,7 +299,9 @@ for entry in entries:
 print(f"RESULT:{unsynced}:{len(entries)}")
 PYEOF
     ) || {
-        echo "WARN: MCP同期: 差分比較スクリプト実行失敗"
+        emit_actionable \
+            "WARN: MCP同期: 差分比較スクリプト実行失敗" \
+            "staging/tracker YAML の内容と python3 実行環境を確認せよ。"
         HAS_WARN=1
         return
     }
@@ -281,7 +316,9 @@ PYEOF
     total_count=$(echo "$result" | cut -d: -f3)
 
     if [ "$unsynced_count" -gt 0 ]; then
-        echo "WARN: MCP同期: ${unsynced_count}/${total_count}件の未同期[share:ninja]あり。mcp_sync_lesson.sh実行推奨"
+        emit_actionable \
+            "WARN: MCP同期: ${unsynced_count}/${total_count}件の未同期[share:ninja]あり。mcp_sync_lesson.sh実行推奨" \
+            "mcp_sync_lesson.sh を実行し、未同期 entry を lessons 側へ反映せよ。"
         HAS_WARN=1
     else
         echo "OK: MCP同期: 全${total_count}件同期済み"
@@ -297,7 +334,9 @@ PYEOF
             last_epoch=$(date -d "$last_date" +%s 2>/dev/null) || return
             days_ago=$(( (today_epoch - last_epoch) / 86400 ))
             if [ "$days_ago" -gt 14 ]; then
-                echo "WARN: MCP同期(鮮度): 最終同期${last_date}(${days_ago}日前 >14日)"
+                emit_actionable \
+                    "WARN: MCP同期(鮮度): 最終同期${last_date}(${days_ago}日前 >14日)" \
+                    "mcp_sync_lesson.sh を再実行し、同期ログの鮮度を更新せよ。"
                 HAS_WARN=1
             fi
         fi

@@ -32,6 +32,13 @@ LESSON_EFFECT_STATUS_FILE="${LESSON_EFFECT_STATUS_FILE:-$SCRIPT_DIR/queue/lesson
 LESSON_EFFECT_NOTIFY_STATE="${LESSON_EFFECT_NOTIFY_STATE:-$SCRIPT_DIR/queue/lesson_effectiveness_notify_state.txt}"
 LESSON_EFFECT_NTFY_ENABLED="${LESSON_EFFECT_NTFY_ENABLED:-1}"
 
+emit_actionable() {
+    local message="$1"
+    local action="$2"
+    echo "$message"
+    echo "action: $action"
+}
+
 # 単一projectの健全性チェック
 # $1: project_id
 check_project() {
@@ -122,7 +129,9 @@ check_project() {
 
     # (d)(e) 判定と出力
     if [ "$unsynced" -gt "$ALERT_THRESHOLD" ]; then
-        echo "ALERT: ${project_id}のlesson→context未合流${unsynced}件(total:${total_lessons},synced:L${synced_num},max:L${max_id})"
+        emit_actionable \
+            "ALERT: ${project_id}のlesson→context未合流${unsynced}件(total:${total_lessons},synced:L${synced_num},max:L${max_id})" \
+            "context 側へ未合流教訓を反映し、last_synced_lesson を更新せよ。"
         return 1
     else
         echo "OK: ${project_id}のlesson統合状況は健全(未合流${unsynced}件,total:${total_lessons},synced:L${synced_num})"
@@ -202,8 +211,9 @@ check_accumulation() {
     done
 
     if [ "$new_count" -ge "$ACCUMULATION_THRESHOLD" ]; then
-        echo "WARN: 新規教訓+${new_count}件(前回審査: L${checkpoint}, 現在最新: L${max_id})。"
-        echo "      lesson_deprecation_scan.sh を実行し審査せよ。"
+        emit_actionable \
+            "WARN: 新規教訓+${new_count}件(前回審査: L${checkpoint}, 現在最新: L${max_id})。" \
+            "bash scripts/lesson_deprecation_scan.sh を実行し、新規教訓を審査せよ。"
         return 1
     else
         echo "OK: 蓄積チェック(新規${new_count}件, 前回審査: L${checkpoint}, 閾値${ACCUMULATION_THRESHOLD})"
@@ -245,7 +255,9 @@ check_unsorted_lessons() {
     ' "$context_path")
 
     if [ "$count" -gt "$UNSORTED_THRESHOLD" ]; then
-        echo "ALERT: ${project_id}の未振り分け教訓${count}件 → /lesson-sort推奨"
+        emit_actionable \
+            "ALERT: ${project_id}の未振り分け教訓${count}件 → /lesson-sort推奨" \
+            "/lesson-sort を実行し、未振り分け教訓を適切なcontextセクションへ移動せよ。"
         return 1
     elif [ "$count" -gt 0 ]; then
         echo "OK: ${project_id}の未振り分け教訓${count}件(閾値${UNSORTED_THRESHOLD}以下)"
@@ -274,7 +286,9 @@ else
     done < <(awk '/^  - id:/{id=$3} /status: active/{print id}' "$CONFIG_FILE")
 
     if [ ${#local_ids[@]} -eq 0 ]; then
-        echo "WARN: active projectが見つかりません"
+        emit_actionable \
+            "WARN: active projectが見つかりません" \
+            "config/projects.yaml の active project 設定を確認し、対象projectを有効化せよ。"
         exit 0
     fi
 
@@ -328,7 +342,9 @@ for l in data['lessons']:
     done
 
     if [ "$problem_count" -gt 0 ]; then
-        echo "WARN: 注入${INJECTION_WARN_THRESHOLD}回以上で効果報告0件の教訓: ${problem_count}件"
+        emit_actionable \
+            "WARN: 注入${INJECTION_WARN_THRESHOLD}回以上で効果報告0件の教訓: ${problem_count}件" \
+            "helpful_count=0 の教訓を見直し、改善するか deprecated 候補として審査せよ。"
     fi
 }
 
@@ -389,7 +405,9 @@ check_lesson_effectiveness() {
     local scope="${target_project:-all}"
 
     if [ ! -f "$LESSON_IMPACT_FILE" ] || [ ! -s "$LESSON_IMPACT_FILE" ]; then
-        echo "WARN: 教訓効果率計算データなし(lesson_impact.tsv)"
+        emit_actionable \
+            "WARN: 教訓効果率計算データなし(lesson_impact.tsv)" \
+            "logs/lesson_impact.tsv の生成経路を確認し、メトリクス収集を有効化せよ。"
         write_lesson_effect_status "NODATA" "0.0" "0" "0" "0" "$scope"
         notify_lesson_effect_if_needed "NODATA" "0.0" "$scope"
         return 0
@@ -426,7 +444,9 @@ check_lesson_effectiveness() {
     window_cmds=$(wc -l < "$cmd_file" | tr -d ' ')
     if [ "$window_cmds" -eq 0 ]; then
         rm -f "$cmd_file"
-        echo "WARN: 教訓効果率計算対象cmdなし(scope:${scope})"
+        emit_actionable \
+            "WARN: 教訓効果率計算対象cmdなし(scope:${scope})" \
+            "scope 設定と logs/lesson_impact.tsv の project 列を確認せよ。"
         write_lesson_effect_status "NODATA" "0.0" "0" "0" "0" "$scope"
         notify_lesson_effect_if_needed "NODATA" "0.0" "$scope"
         return 0

@@ -293,6 +293,57 @@ cmd受領 → まずcmdフラグを確認:
 
 注意: Pass 1でFAILの場合、Pass 2のINFORMATIONAL指摘は修正配備に含めない。CRITICALの修正に集中させる。
 
+### A/B/C Triage（gstack G3-3 適用 — cmd_933）
+
+レビュー指摘を3分類し、PASS/FAIL/WAIVEとの対応を明確にする。
+
+| 分類 | 名称 | 意味 | blocking | 家老の対応 |
+|------|------|------|----------|-----------|
+| A | Fix | 修正必須。ACを満たしていない | Yes | impl taskで修正配備→Re-review Loop |
+| B | Acknowledge | 指摘は正当だが今回は対応不要 | No | 理由を報告YAMLに記録。次cmdで対応可 |
+| C | False Positive | 偽陽性。実際には問題ない | No | 以後の同種指摘を抑制対象に追加 |
+
+#### PASS/FAIL/WAIVE との対応表
+
+| Triage | verdict影響 | WAIVE関連 | 備考 |
+|--------|-----------|-----------|------|
+| A (Fix) | → FAIL直結 | WAIVEしない | CRITICAL項目のFAIL。修正→再レビュー必須 |
+| B (Acknowledge) | → verdict不変 | WAIVE可 | ACスコープ外の正当指摘はWAIVEで除外可。理由明記 |
+| C (False Positive) | → verdict不変 | 不要 | 指摘自体が無効。suppressions記録のみ |
+
+#### 判定フロー
+
+```
+レビュー指摘受領
+  → 指摘ごとにA/B/Cを判定
+    ├─ A (Fix) が1件以上 → verdict: FAIL → 修正配備（Re-review Loop）
+    ├─ B (Acknowledge) のみ → verdict: PASS → 理由を記録して完了
+    └─ C (False Positive) のみ → verdict: PASS → suppressions記録
+```
+
+**注意**: A/B/C判定はTwo-pass ReviewのPass 1(CRITICAL)項目に対して適用する。Pass 2(INFORMATIONAL)項目はA/B/C判定不要（記録のみ）。
+
+### Re-review Loop（gstack G6-3 適用 — cmd_933）
+
+blocking fix発生時の修正→再レビューフローを明文化。曖昧に続行せず、明示的に再レビューサイクルを回す。
+
+```
+A (Fix) 判定
+  → 家老が修正impl taskを配備（忍者C）
+    → 忍者Cが修正完了・報告
+      → 家老が再レビューtaskを配備（忍者D ≠ C）
+        → 忍者Dがレビュー
+          ├─ 全指摘解決 → verdict: PASS → GATE判定へ
+          └─ 新たなA (Fix) あり → 再度修正配備（ループ）
+```
+
+| ルール | 内容 | reason |
+|--------|------|--------|
+| 修正完了=再レビュー必須 | 修正taskのdone報告後、必ず再レビューtaskを配備する | 修正が新たな問題を導入するリスクを排除 |
+| 修正者≠再レビュー者 | 既存ルールと同一。確証バイアス防止 | 自分の修正は自分で見落とす |
+| ループ上限なし | LGTMまで繰り返す。ただし3回目以降は家老がエスカレーション検討 | 品質を妥協しない。ただし無限ループは設計の問題 |
+| A指摘のみ修正対象 | B/C指摘は修正taskに含めない。CRITICALの修正に集中 | スコープ拡大を防ぐ（Two-pass Reviewと整合） |
+
 ### コードレビュー自動配備（AC3対応 — push報告受理時に毎回確認）
 忍者の報告にgit commit(push前)が含まれる場合:
 1. 報告にcommitハッシュがあるか確認
