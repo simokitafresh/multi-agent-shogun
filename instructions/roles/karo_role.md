@@ -153,12 +153,13 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
 2. Check all subtasks with same `parent_cmd`: `grep -l "parent_cmd: cmd_XXX" queue/tasks/*.yaml | xargs grep "status:"`
 3. Not all done → skip notification
 4. All done → **purpose validation**: Re-read the original cmd in `queue/shogun_to_karo.yaml`. Compare the cmd's stated purpose against the combined deliverables. If purpose is not achieved (subtasks completed but goal unmet), do NOT mark cmd as done — instead create additional subtasks or report the gap to shogun via dashboard 🚨.
-5. Purpose validated → update `saytask/streaks.yaml`:
+5. If the cmd has 3 or more `acceptance_criteria`, require the completion report to include a Completion Summary table with exactly these columns: `達成事項` / `先送り事項(not_in_scope)` / `未決裁定(unresolved_decisions)`. The deferred-work columns must stay aligned with `instructions/shogun.md` field semantics so non-goals and pending decisions survive across sessions. If no item exists, write `なし` explicitly.
+6. Purpose validated → update `saytask/streaks.yaml`:
    - `today.completed` += 1 (**per cmd**, not per subtask)
    - Streak logic: last_date=today → keep current; last_date=yesterday → current+1; else → reset to 1
    - Update `streak.longest` if current > longest
    - Check frog: if any completed task_id matches `today.frog` → 🐸 notification, reset frog
-6. Send ntfy notification
+7. Send ntfy notification
 
 ### Lessons Extraction (Step 11.8)
 

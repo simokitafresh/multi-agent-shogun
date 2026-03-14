@@ -22,9 +22,11 @@ files:
   ntfy_inbox: queue/ntfy_inbox.yaml    # Incoming ntfy messages from Lord's phone
 
 cmd_format:
-  required_fields: [id, timestamp, purpose, acceptance_criteria, command, project, priority, status]
+  required_fields: [id, timestamp, purpose, acceptance_criteria, not_in_scope, unresolved_decisions, command, project, priority, status]
   purpose: "One sentence — what 'done' looks like. Verifiable."
   acceptance_criteria: "List of testable conditions. ALL must be true for cmd=done."
+  not_in_scope: "Intentional non-goals for this cmd. Required when AC count >= 3."
+  unresolved_decisions: "Deferred decisions to preserve across sessions. Reference PD-XXX or write 'none'."
   validation: "Karo checks acceptance_criteria at Step 11.7. Ashigaru checks parent_cmd purpose on task completion."
 
 task_status_transitions:

@@ -205,6 +205,10 @@ Do NOT specify: number of ninja, assignments, verification methods, personas, or
   acceptance_criteria:
     - "Criterion 1 — specific, testable condition"
     - "Criterion 2 — specific, testable condition"
+  not_in_scope:
+    - "Intentional non-goal 1"
+  unresolved_decisions:
+    - "PD-XXX: decision intentionally deferred"
   command: |
     Detailed instruction for Karo...
   project: project-id
@@ -214,6 +218,8 @@ Do NOT specify: number of ninja, assignments, verification methods, personas, or
 
 - **purpose**: One sentence. What "done" looks like. Karo and ninja validate against this.
 - **acceptance_criteria**: List of testable conditions. All must be true for cmd to be marked done. Karo checks these at Step 11.7 before marking cmd complete.
+- **not_in_scope**: このcmdで意図的にやらないこと。**AC3個以上のcmdでは必須**。後続cmdに回す論点をここへ明記せよ。
+- **unresolved_decisions**: 先送り裁定の記録。`PD-XXX`へのポインタか、「裁定なし」の明示を書く。pending_decisionsとの対応を失うな。
 
 ### cmd Scope Rule (Enhance vs Fix)
 
@@ -263,11 +269,28 @@ acceptance_criteria:
   - "karo.md contains subagent workflow for task decomposition"
   - "F003 is conditionally lifted for decomposition tasks"
   - "2 cmds submitted simultaneously are processed in parallel"
+not_in_scope:
+  - "ninja_monitor の停滞検知ロジック変更"
+  - "既存 cmd の retrospective 整理"
+unresolved_decisions:
+  - "PD-241: review専用subagentの許容範囲は別cmdで裁定"
 command: |
   Design and implement karo pipeline with subagent support...
 
-# ❌ Bad — vague purpose, no criteria
-command: "Improve karo pipeline"
+# ❌ Bad — vague purpose, no criteria, deferred work disappears
+purpose: "Improve karo pipeline"
+acceptance_criteria:
+  - "Make it better"
+command: "Improve karo pipeline and fix whatever else looks wrong"
+
+# ❌ Bad — AC3なのに先送り情報が欠落
+purpose: "Strengthen karo review flow"
+acceptance_criteria:
+  - "karo review checklist is updated"
+  - "waive path is documented"
+  - "handoff example is added"
+command: |
+  Update karo review docs and decide the rest while implementing.
 ```
 
 ### Scout Command Neutrality（偵察中立原則）
