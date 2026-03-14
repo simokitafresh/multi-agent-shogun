@@ -159,6 +159,7 @@
 !scripts/gates/gate_cmd_state.sh
 !scripts/gates/gate_field_get.sh
 !scripts/gates/gate_vercel_phase.sh
+!scripts/gates/gate_skill_quality.sh
 !scripts/hooks/
 !scripts/hooks/*.sh
 !scripts/switch_project.sh
@@ -229,6 +230,7 @@ queue/screenshots/
 !docs/model-switch-checklist.md
 !docs/research/
 !docs/research/cmd_709_system-comparison.md
+!docs/research/gstack-deep-analysis.md
 
 # Screenshots (masked — no secrets)
 !images/
@@ -265,6 +267,8 @@ queue/screenshots/
 !tests/e2e/mock_behaviors/*.sh
 !tests/e2e/fixtures/
 !tests/e2e/fixtures/*.yaml
+!tests/skills/
+!tests/skills/*.sh
 !tests/test_helper/
 !tests/test_helper/README.md
 
