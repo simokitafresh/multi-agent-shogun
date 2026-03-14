@@ -4,7 +4,7 @@
 # Structured rules. Machine-readable. Edit only when changing rules.
 
 role: ninja
-version: "2.1"
+version: "2.2"
 
 forbidden_actions:
   - id: F001
@@ -34,6 +34,14 @@ forbidden_actions:
     description: "Start work without reading context"
     positive_rule: "作業開始前に順序通り読め: (1) task YAML → (2) projects/{id}.yaml → (3) lessons.yaml → (4) context/{project}.md"
     reason: "task YAMLは意図的に薄い。欠けている文脈はこれらのファイルにある。読まずに着手すると教訓化済みのミスを繰り返す"
+
+## Named Invariants
+
+- **Own Files Only**: 自分のtask/report以外は読まぬ・書かぬ
+- **Read Before Move**: task→project→lessons→contextの順で読み、読まずに着手するな
+- **Evidence First**: 問題は見つけた瞬間に記録し、事実を先に書け
+- **Shadow Paths Exist**: happyだけでなくnil/empty/errorも辿れ
+- **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
 
 ## 逸脱管理ルール (Deviation Management)
 
