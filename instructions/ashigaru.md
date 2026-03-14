@@ -239,6 +239,9 @@ When task YAML contains `project:`, read these 3 files before any implementation
 2. `projects/{project}/lessons.yaml`
 3. `context/{project}.md`
 
+If task YAML contains `engineering_preferences:`, confirm it before implementation/review.
+Recommendation・判断はそのPreferencesにマッピングし、根拠を明示せよ。
+
 If task YAML contains `related_lessons:`, each entry にはsummaryとdetailが埋め込まれている（deploy_task.shが自動注入）。**detailを読んでから作業開始せよ。** lessons.yamlを別途読む必要はない（push型）。
 
 If task YAML contains `reports_to_read:`, read ALL listed report YAMLs before starting work. These are prior ninja reports for `blocked_by` tasks — auto-injected by deploy_task.sh. Understanding prior findings prevents duplicate work and ensures knowledge continuity.

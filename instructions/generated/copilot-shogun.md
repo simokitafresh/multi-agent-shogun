@@ -425,6 +425,9 @@ Cross-reference with dashboard.md — process any reports not yet reflected.
 
 If task YAML contains `related_lessons:`, each entry にはsummaryとdetailが埋め込まれている（deploy_task.shが自動注入）。**detailを読んでから作業開始せよ。** lessons.yamlを別途読む必要はない（push型）。
 
+If task YAML contains `engineering_preferences:`, 実装・レビュー前に必ず確認せよ。
+推薦・判断はそのPreferencesにマッピングし、根拠を明示せよ。
+
 ## Timestamps
 
 **Always use `date` command.** Never guess.

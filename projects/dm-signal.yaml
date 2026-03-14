@@ -13,20 +13,17 @@ project:
   description: "動的モメンタムシグナルシステム。トレンドフォロー自動適応。FoF=乗り換え戦略。"
 
 # =============================================================================
-# (a-0) Engineering Preferences (gstack知見適用 — cmd_876)
+# (a-0) Engineering Preferences (gstack知見適用 — cmd_876 / cmd_927)
 # =============================================================================
 # PJ固有の判断基準。レビュー・偵察での推薦はこの基準にマッピングせよ。
 
 engineering_preferences:
-  critical_inspection_points:
-    - "RULE01-11遵守確認（trade-rule.mdとの照合）"
-    - "計算完全一致検証（BE変更時の実API diff）"
-    - "DB UPSERT維持（DELETE+INSERT分離不許可）"
-    - "SSOT層メンテナンス（Level 0-3の整合性）"
-  code_style:
-    - "explicit over clever"
-    - "minimal diff（最少ファイル変更）"
-    - "テスト多めを許容（SKIP=FAIL原則維持）"
+  - "prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ"
+  - "prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測"
+  - "prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな"
+  - "prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解"
+  - "prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路"
+  - "prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな"
 
 # =============================================================================
 # (a) Trade Rule 要約 (RULE01-11)

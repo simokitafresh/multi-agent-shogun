@@ -887,6 +887,152 @@ PY
     fi
 }
 
+# ─── Engineering Preferences自動注入（task YAMLにengineering_preferencesを挿入） ───
+inject_engineering_preferences() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_engineering_preferences: task file not found: $task_file"
+        return 0
+    fi
+
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+
+
+def is_empty(value):
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, (list, dict)):
+        return len(value) == 0
+    return False
+
+
+def flatten_preferences(value):
+    flattened = []
+    if isinstance(value, str):
+        text = value.strip()
+        if text:
+            flattened.append(text)
+    elif isinstance(value, list):
+        for item in value:
+            flattened.extend(flatten_preferences(item))
+    elif isinstance(value, dict):
+        for nested in value.values():
+            flattened.extend(flatten_preferences(nested))
+    return flattened
+
+
+def dedupe_keep_order(values):
+    seen = set()
+    result = []
+    for value in values:
+        if value not in seen:
+            seen.add(value)
+            result.append(value)
+    return result
+
+
+def extract_preferences_from_text(raw_text):
+    lines = raw_text.splitlines()
+    body = []
+    capture = False
+
+    for line in lines:
+        stripped = line.strip()
+        if not capture:
+            if stripped == 'engineering_preferences:':
+                capture = True
+            continue
+
+        if stripped.startswith('#'):
+            break
+        if not stripped:
+            body.append(line)
+            continue
+        if line.startswith((' ', '\t')):
+            body.append(line)
+            continue
+        break
+
+    if not body:
+        return []
+
+    try:
+        section = yaml.safe_load('engineering_preferences:\n' + '\n'.join(body) + '\n') or {}
+    except Exception:
+        return []
+
+    return flatten_preferences(section.get('engineering_preferences'))
+
+
+try:
+    with open(task_file, encoding='utf-8') as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        sys.exit(0)
+
+    task = data['task']
+    existing = task.get('engineering_preferences')
+    if not is_empty(existing):
+        print('[INJECT_PREFS] engineering_preferences already exists, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    project = str(task.get('project', '') or '').strip()
+    if not project:
+        sys.exit(0)
+
+    project_file = os.path.join(script_dir, 'projects', f'{project}.yaml')
+    if not os.path.exists(project_file):
+        task['engineering_preferences'] = []
+        print(f'[INJECT_PREFS] WARN: project file not found for {project}', file=sys.stderr)
+    else:
+        with open(project_file, encoding='utf-8') as f:
+            raw_text = f.read()
+
+        preferences = []
+        try:
+            project_data = yaml.safe_load(raw_text)
+        except Exception:
+            project_data = None
+
+        if isinstance(project_data, dict):
+            preferences = flatten_preferences(project_data.get('engineering_preferences'))
+
+        if not preferences:
+            preferences = extract_preferences_from_text(raw_text)
+
+        task['engineering_preferences'] = dedupe_keep_order(preferences)
+        print(f'[INJECT_PREFS] project={project} injected={len(task["engineering_preferences"])}', file=sys.stderr)
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+except Exception as e:
+    print(f'[INJECT_PREFS] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+PY
+        return 1
+    fi
+}
+
 # ─── 偵察報告自動注入（task YAMLにreports_to_readを挿入） ───
 inject_reports_to_read() {
     local task_file="$1"
@@ -2172,6 +2318,9 @@ inject_ac_version "$TASK_FILE" || true
 
 # 教訓自動注入（失敗してもデプロイは継続）
 inject_related_lessons "$TASK_FILE" || true
+
+# Engineering Preferences自動注入（失敗してもデプロイは継続）
+inject_engineering_preferences "$TASK_FILE" || true
 
 # 教訓注入postcondition（失敗してもデプロイは継続）
 postcondition_lesson_inject "$TASK_FILE" || true
