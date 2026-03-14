@@ -1,0 +1,162 @@
+# =============================================================================
+# Auto-Ops Project Knowledge
+# =============================================================================
+# CDP + Google Workspace CLI によるデスクトップ・ブラウザ自動化基盤
+
+project:
+  id: auto-ops
+  name: "Auto-Ops"
+  repo: "https://github.com/simokitafresh/auto-ops"
+  path: "/mnt/c/Python_app/auto-ops"
+  language: python
+  created: "2026-03-08"
+  description: "CDP + Google Workspace CLI によるデスクトップ・ブラウザ自動化基盤"
+
+engineering_preferences:
+  - "prefer 標準ライブラリ・既存CLI helpers over 新規外部依存。依存追加は最後の手段"
+  - "prefer fail-close over warn-and-continue。証票抽出・rename/upload・オーケストレーションの確信度が低ければ止めよ"
+  - "prefer preflight-first（process確認→必要ならlaunch→接続確認→本処理）over 楽観実行"
+  - "prefer Chrome/Edge 9222規約 + fresh tab / isolated session over 長寿命CDP接続の使い回し"
+  - "prefer PowerShell仲介 + B64など再現性ある quoting over 巧妙だが壊れやすいワンライナー"
+  - "prefer MF互換列維持（1-10列不可侵）over きれいな再設計。既存CSV/Spreadsheet消費者を壊すな"
+
+core_rules:
+  - "CDP: Chrome優先、Edge fallback。CDPポートは 9222 に統一（cmd_885）"
+  - "CDP計測CLI本体: workflows/perf_measure.py"
+  - "CDP transport: cdp/cdp_helper.py"
+  - "preflight-first順序: プロセス確認 → 未起動時 launch_browser() → preflight_cdp_check() → 計測"
+  - "browser launch args: --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0"
+  - "CDP計測出力: results/perf_<timestamp>.json + .md + results/screenshots/"
+  - "PowerShell仲介パターン（subprocess.run → powershell.exe）"
+  - "B64エンコードで多重クォート回避"
+  - "外部ライブラリ依存最小（標準ライブラリ優先）"
+  - "gws: npm i -g @googleworkspace/cli"
+
+expense_pdf_naming:
+  format: "{対象年月}_{発行元}_{種別}_{金額}_{元ファイル名}.pdf"
+  fields:
+    - name: "対象年月"
+      description: "経費が発生した年月(YYYY-MM)"
+      example: "2025-06"
+    - name: "発行元"
+      description: "サービス名(小文字)"
+      example: "note, google, aws"
+    - name: "種別"
+      description: "手数料種別"
+      example: "PF手数料, 振込手数料, Workspace"
+    - name: "金額"
+      description: "税込金額(円)"
+      example: "173709円"
+    - name: "元ファイル名"
+      description: "ダウンロード時の元名(検索用に保持)"
+      example: "取引ID xxx _ note（ノート）"
+  rules:
+    - "元ファイル名は消さない。prefix追加のみ。取得時の名前は検索に使う"
+    - "対象年月は『内容』の月（領収日ではない）。振込手数料等で内容月がない場合は領収日の年月"
+    - "ソート: ファイル名先頭がYYYY-MMなのでエクスプローラーで自然にソートされる"
+    - "確定申告フォルダ: デスクトップ/{年}確定申告_{対象期間}/"
+    - "範囲外の前後月(例: 2024-12, 2026-01)は許容。時系列の文脈把握に有用"
+
+expense_master_spreadsheet:
+  drive_location: "『2026確定申告 個人事業』フォルダ直下"
+  spreadsheet_id: "1OQNSIhm2iSdkgXJUDCShvlrHenOTOc4PDl3TA29YIN4"
+  url: "https://docs.google.com/spreadsheets/d/1OQNSIhm2iSdkgXJUDCShvlrHenOTOc4PDl3TA29YIN4/edit"
+  columns:
+    - "判定キー"
+    - "発行元名"
+    - "個人事業"
+    - "簡易説明テンプレ"
+    - "候補勘定科目"
+    - "データ取得経路"
+    - "殿メモ"
+  seed_data: "19発行元パターン（cmd_898で投入）"
+
+master_csv:
+  filename: "個人事業_{年}.csv"
+  example: "個人事業_2025.csv"
+  drive_location: "『2026確定申告 個人事業』フォルダ直下"
+  drive_id: "16Bfc-6OOILZDHq58N6uxbzp_2TRHKTrV"
+  columns:
+    - name: "計算対象"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "日付"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "内容"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "金額（円）"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "保有金融機関"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "大項目"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "中項目"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "メモ"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "振替"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "ID"
+      owner: "MoneyForward"
+      description: "MF互換列"
+    - name: "簡易説明"
+      owner: "自動推定"
+      description: "発行元+種別から生成。例: note売上手数料(6月分), Anthropic API利用料"
+    - name: "候補勘定科目"
+      owner: "自動推定"
+      description: "会計士の最終判断材料。例: 支払手数料, 通信費, 研究開発費"
+    - name: "補足メモ"
+      owner: "殿（手入力）"
+      description: "殿の補足・指示・会計士への伝達事項"
+    - name: "証票フォルダ"
+      owner: "自動"
+      description: "Drive上のサブフォルダ名。例: note_売上手数料, Anthropic"
+    - name: "証票PDF"
+      owner: "自動"
+      description: "リネーム後のPDFファイル名"
+  design_principles:
+    - "列1-10はMF出力そのまま。列11-15は右に追加（MF互換を壊さない）"
+    - "会計士の読み順: 内容→簡易説明→勘定科目候補→補足メモ→証票"
+    - "MoneyForward起源でない行（note売上手数料等）は列1-10をMF互換形式で手動/自動記入"
+
+drive_integrity_checklist:
+  description: "確定申告関連cmdで忍者が事前/事後に参照するDrive整合性チェックリスト"
+  created: "2026-03-14"
+  created_by: "cmd_940"
+  items:
+    - id: CHK1
+      name: "CSV↔Spreadsheet データ一致"
+      description: "Drive上の個人事業_{年}.csvとSpreadsheet「個人事業_{年}」の共有列(col0-9, 証票フォルダ, 証票PDF)が完全一致すること"
+      check_method: "共有列の行単位diff。差異0行が合格"
+    - id: CHK2
+      name: "ローカルCSV↔Drive CSV 一致"
+      description: "ローカル(data/expense_master/master/個人事業_{年}.csv)とDrive CSVの内容が一致すること。ローカルCSVがマスター"
+      check_method: "行数・ID列・日付フォーマット・保有金融機関表記・証票列の差異検出"
+    - id: CHK3
+      name: "経費マスター↔CSV 判定キー整合"
+      description: "経費マスターSpreadsheetの全判定キーがCSVの「内容」列にマッチすること。逆に、CSVの全行が何れかの判定キーにマッチすること"
+      check_method: "部分文字列マッチ。unmatched patterns + unmatched CSV rows を検出"
+    - id: CHK4
+      name: "証票PDF↔フォルダ列 突合（リンク切れなし）"
+      description: "CSVの証票フォルダ・証票PDF列に記載されたファイルがDrive上に実在すること。逆に、Driveに存在するPDFがCSVに記載されていること"
+      check_method: "CSV証票列の値 vs Drive subfolder内ファイル名リスト。欠損・余剰を検出"
+    - id: CHK5
+      name: "note売上CSV 最新1ファイルのみ"
+      description: "note_売上CSVフォルダに月次CSVが同一内容で複数存在しないこと。追記形式のため最新1ファイルで十分"
+      check_method: "ファイル数カウント + 内容ハッシュ比較。同一内容ファイルは冗長"
+    - id: CHK6
+      name: "証票PDF 命名規則準拠"
+      description: "全PDFが命名規則({対象年月}_{発行元}_{種別}_{金額}_{元ファイル名}.pdf)に準拠すること"
+      check_method: "正規表現マッチ。違反PDFのリストと違反パターンを検出"
+    - id: CHK7
+      name: "重複ファイルなし"
+      description: "同一フォルダ内に同名ファイルや同一内容ファイル(_1.pdf等のコピー)が存在しないこと"
+      check_method: "同名検出 + サイズ一致ペア検出。強い重複候補をリスト化"
