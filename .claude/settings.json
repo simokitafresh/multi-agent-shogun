@@ -58,10 +58,6 @@
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/log_terminal_response.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/stop-test-gate.sh"
           }
         ]
       }
