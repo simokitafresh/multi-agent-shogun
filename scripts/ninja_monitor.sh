@@ -46,6 +46,7 @@ STALE_CMD_THRESHOLD=14400 # stale cmd検知しきい値（秒）— pending+subt
 NTFY_HEALTH_THRESHOLD_MIN=10 # ntfy_listenerヘルスチェックしきい値（分）— ログが古ければゾンビ判定
 NTFY_RESTART_COOLDOWN_MIN=5  # ntfy_listener連続再起動防止クールダウン（分）
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
+NTFY_BATCH_FLUSH_INTERVAL=900 # INFOバッチ通知フラッシュ間隔（秒）
 
 # Self-restart on script change (inbox_watcher.shから移植)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -53,6 +54,7 @@ SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
 STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 LAST_NTFY_RESTART=0  # ntfy_listener最終再起動時刻（epoch秒）
+LAST_BATCH_FLUSH=0   # ntfy_batch_flush最終実行時刻（epoch秒）
 CDP_CLEANUP_SCRIPT="$SCRIPT_DIR/scripts/cdp_chrome_cleanup.sh"
 CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
 LAST_CDP_CLEANUP=0        # CDP cleanup最終実行時刻（epoch秒）
@@ -1875,6 +1877,18 @@ check_lesson_health() {
     fi
 }
 
+check_ntfy_batch_flush() {
+    local now
+    now=$(date +%s)
+
+    if [ "$LAST_BATCH_FLUSH" -ne 0 ] && [ $((now - LAST_BATCH_FLUSH)) -lt "$NTFY_BATCH_FLUSH_INTERVAL" ]; then
+        return
+    fi
+
+    bash "$SCRIPT_DIR/scripts/ntfy_batch_flush.sh" >> "$LOG" 2>&1 || true
+    LAST_BATCH_FLUSH=$now
+}
+
 # ─── archive自動退避 (cmd_279 Gate3 Auto2) ───
 # completed cmdでqueue/gates/{cmd_id}/未作成のものを自動archive
 # flock排他 + 1 sweep あたり最大1 cmd
@@ -2126,6 +2140,9 @@ while true; do
     if [ $((cycle % 15)) -eq 0 ]; then
         bash "$SCRIPT_DIR/scripts/ci_status_check.sh" 2>>"$SCRIPT_DIR/logs/ci_status_check.log" || true
     fi
+
+    # ═══ INFOバッチ通知フラッシュ（15分間隔 cmd_960 AC2） ═══
+    check_ntfy_batch_flush
 
     # ═══ STEP 2: 家老の外部/clearチェック ═══
     check_karo_clear

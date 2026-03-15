@@ -671,7 +671,7 @@ postcondition_archive() {
 
     if [ "$output" -eq 0 ]; then
         echo "[archive] ALERT: completed存在するがアーカイブ0件 (expected=$input actual=0)" >&2
-        bash "$PROJECT_DIR/scripts/ntfy.sh" "[archive] ALERT: completed存在するがアーカイブ0件 (expected=${input} actual=0)" || true
+        bash "$PROJECT_DIR/scripts/ntfy_batch.sh" "[archive] INFO: completed存在するがアーカイブ0件 (expected=${input} actual=0)" || true
         return 0
     fi
 

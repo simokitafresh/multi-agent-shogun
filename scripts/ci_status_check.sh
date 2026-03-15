@@ -24,6 +24,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 REPO="simokitafresh/multi-agent-shogun"
 WORKFLOW="test.yml"
 LAST_ALERT_FILE="/tmp/last_ci_alert_run_id"
+LAST_NOTIFY_FILE="/tmp/last_ci_notify_state"
 STATUS_MODE=false
 
 [[ "${1:-}" == "--status" ]] && STATUS_MODE=true
@@ -51,14 +52,8 @@ if [[ -z "$conclusion" ]] || [[ "$conclusion" == "None" ]]; then
     exit 0
 fi
 
-if [[ "$conclusion" != "failure" ]]; then
-    $STATUS_MODE && echo "GREEN"
-    exit 0
-fi
-
-# CI is RED — get failed job names
 failed_jobs=""
-if [[ -n "$run_id" ]]; then
+if [[ "$conclusion" == "failure" && -n "$run_id" ]]; then
     failed_jobs=$(gh run view "$run_id" --repo "$REPO" --json jobs 2>/dev/null \
         | python3 -c "
 import json, sys
@@ -72,21 +67,34 @@ except Exception:
 fi
 
 if $STATUS_MODE; then
-    echo "RED:${run_id}:${failed_jobs}"
+    if [[ "$conclusion" == "failure" ]]; then
+        echo "RED:${run_id}:${failed_jobs}"
+    elif [[ "$conclusion" == "success" ]]; then
+        echo "GREEN"
+    else
+        echo "UNKNOWN"
+    fi
     exit 0
 fi
 
-# Notification mode — check dedup
-last_alerted=""
-[[ -f "$LAST_ALERT_FILE" ]] && last_alerted=$(cat "$LAST_ALERT_FILE" 2>/dev/null || true)
+last_notified=""
+[[ -f "$LAST_NOTIFY_FILE" ]] && last_notified=$(cat "$LAST_NOTIFY_FILE" 2>/dev/null || true)
 
-if [[ "$run_id" == "$last_alerted" ]]; then
-    # Already notified for this run
+if [[ "$conclusion" == "failure" ]]; then
+    if [[ "$last_notified" == "failure:${run_id}" ]]; then
+        exit 0
+    fi
+    bash "$SCRIPT_DIR/ntfy.sh" "CI赤: run ${run_id} ${failed_jobs}"
+    echo "$run_id" > "$LAST_ALERT_FILE"
+    echo "failure:${run_id}" > "$LAST_NOTIFY_FILE"
     exit 0
 fi
 
-# Send ntfy notification
-bash "$SCRIPT_DIR/ntfy.sh" "CI赤: run ${run_id} ${failed_jobs}"
-
-# Save run_id for dedup
-echo "$run_id" > "$LAST_ALERT_FILE"
+if [[ "$conclusion" == "success" ]]; then
+    if [[ "$last_notified" == "success:${run_id}" ]]; then
+        exit 0
+    fi
+    bash "$SCRIPT_DIR/ntfy_batch.sh" "CI緑: run ${run_id}"
+    echo "success:${run_id}" > "$LAST_NOTIFY_FILE"
+    exit 0
+fi

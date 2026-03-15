@@ -140,6 +140,19 @@ format_account() {
     fi
 }
 
+set_usage_state() {
+    local account_key="$1"
+    local state="$2"
+    mkdir -p "$ALERT_STATE_DIR" 2>/dev/null || true
+    printf '%s\n' "$state" > "${ALERT_STATE_DIR}/${account_key}.status"
+}
+
+get_usage_state() {
+    local account_key="$1"
+    local status_file="${ALERT_STATE_DIR}/${account_key}.status"
+    [[ -f "$status_file" ]] && cat "$status_file" 2>/dev/null || echo "unknown"
+}
+
 should_alert() {
     local account_key="$1"
     local state_file="${ALERT_STATE_DIR}/${account_key}"
@@ -166,14 +179,21 @@ send_alert() {
 
     [[ "$pct" == "ERR" ]] && return
     [[ -z "$MCAS_NTFY_TOPIC" ]] && return
-    [[ "$pct" -lt "$MCAS_ALERT_THRESHOLD" ]] && return
+    if [[ "$pct" -lt "$MCAS_ALERT_THRESHOLD" ]]; then
+        if [[ "$(get_usage_state "$account_key")" == "alert" ]]; then
+            bash "${SCRIPT_DIR}/ntfy_batch.sh" "【Usage INFO】${name} usage recovered to ${pct}%"
+        fi
+        set_usage_state "$account_key" "ok"
+        return
+    fi
+
+    set_usage_state "$account_key" "alert"
 
     if ! should_alert "$account_key"; then
         return
     fi
 
-    curl -s -d "【Usage】${name} usage ${pct}% (threshold: ${MCAS_ALERT_THRESHOLD}%)" \
-        "https://ntfy.sh/${MCAS_NTFY_TOPIC}" >/dev/null 2>&1 || true
+    bash "${SCRIPT_DIR}/ntfy.sh" "【Usage ALERT】${name} usage ${pct}% (threshold: ${MCAS_ALERT_THRESHOLD}%)" >/dev/null 2>&1 || true
 
     mkdir -p "$ALERT_STATE_DIR" 2>/dev/null || true
     date +%s > "${ALERT_STATE_DIR}/${account_key}"

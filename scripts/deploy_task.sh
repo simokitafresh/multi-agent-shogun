@@ -1277,6 +1277,137 @@ PY
     fi
 }
 
+# ─── credential_files自動注入（cmd_949: 認証タスクに.envを自動追加） ───
+inject_credential_files() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_credentials: task file not found: $task_file"
+        return 0
+    fi
+
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
+import os
+import sys
+import glob
+import tempfile
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        sys.exit(0)
+
+    task = data['task']
+
+    # 認証関連キーワードの検出
+    auth_keywords = ['cdp', 'login', 'ログイン', '認証', 'credential', 'chrome', 'edge',
+                     'note.com', 'moneyforward', 'mf_', 'receipt', '領収書', 'selenium',
+                     'browser', 'preflight_cdp', '.env']
+
+    # タスク全テキストを結合して検索
+    task_text = ' '.join([
+        str(task.get('command', '')),
+        str(task.get('description', '')),
+        str(task.get('context', '')),
+        str(task.get('title', '')),
+    ]).lower()
+
+    if not any(kw.lower() in task_text for kw in auth_keywords):
+        sys.exit(0)
+
+    # target_pathから.envファイルを探す
+    target_path = task.get('target_path', '')
+    if not target_path or not os.path.isdir(target_path):
+        # target_pathがないが認証キーワードが検出された → 警告注入
+        warn = task.get('credential_warning', '')
+        if not warn:
+            task['credential_warning'] = (
+                '⚠ 認証が必要なタスクだがtarget_pathが未設定。'
+                '認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。'
+            )
+            changed = True
+        else:
+            changed = False
+        if changed:
+            tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+            try:
+                with os.fdopen(tmp_fd, 'w') as f:
+                    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+                os.replace(tmp_path, task_file)
+            except:
+                os.unlink(tmp_path)
+                raise
+            print('[INJECT_CRED] WARN: auth task but no target_path', file=sys.stderr)
+        sys.exit(0)
+
+    env_files = glob.glob(os.path.join(target_path, '.env.*'))
+    env_base = os.path.join(target_path, '.env')
+    if os.path.exists(env_base):
+        env_files.append(env_base)
+
+    # .example ファイルは除外
+    all_env = [f for f in env_files if not f.endswith('.example')]
+
+    if not all_env:
+        # 認証キーワードあり + target_pathあり + .envなし → 警告注入
+        warn = task.get('credential_warning', '')
+        if not warn:
+            task['credential_warning'] = (
+                f'⚠ 認証が必要なタスクだが{target_path}に.envファイルが見つからない。'
+                '認証情報の準備が必要。家老に即報告せよ。'
+            )
+            tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+            try:
+                with os.fdopen(tmp_fd, 'w') as f:
+                    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+                os.replace(tmp_path, task_file)
+            except:
+                os.unlink(tmp_path)
+                raise
+            print(f'[INJECT_CRED] WARN: auth task but no .env in {target_path}', file=sys.stderr)
+        sys.exit(0)
+
+    # context_filesに追加（重複排除）
+    existing = task.get('context_files', []) or []
+    existing_set = set(existing)
+    added = []
+    for ef in sorted(all_env):
+        if ef not in existing_set:
+            existing.append(ef)
+            added.append(ef)
+
+    if not added:
+        sys.exit(0)
+
+    task['context_files'] = existing
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[INJECT_CRED] Added {len(added)} credential files: {added}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[INJECT_CRED] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+PY
+        return 1
+    fi
+}
+
 # ─── context_update自動注入（cmd_543: 親cmdの更新対象contextをタスクへ伝播） ───
 inject_context_update() {
     local task_file="$1"
@@ -2349,6 +2480,9 @@ inject_reports_to_read "$TASK_FILE" || true
 
 # context_files自動注入（失敗してもデプロイは継続）
 inject_context_files "$TASK_FILE" || true
+
+# credential_files自動注入（cmd_949: 認証タスクに.envを自動追加）
+inject_credential_files "$TASK_FILE" || true
 
 # context_update自動注入（失敗してもデプロイは継続）
 inject_context_update "$TASK_FILE" || true

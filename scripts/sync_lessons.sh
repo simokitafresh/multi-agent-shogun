@@ -397,11 +397,11 @@ try:
     _out_count = len(lessons)
     _div = abs(_ssot_count - _out_count) / _ssot_count * 100 if _ssot_count > 0 else 0.0
     if _div > 10:
-        _msg = f'[sync_lessons] ALERT: 教訓件数乖離 (expected={_ssot_count} actual={_out_count})'
+        _msg = f'[sync_lessons] INFO: 教訓件数乖離 (expected={_ssot_count} actual={_out_count})'
         print(_msg, file=sys.stderr)
         try:
             _script_dir = os.environ.get('SCRIPT_DIR', '')
-            _ntfy = os.path.join(_script_dir, 'scripts', 'ntfy.sh') if _script_dir else 'scripts/ntfy.sh'
+            _ntfy = os.path.join(_script_dir, 'scripts', 'ntfy_batch.sh') if _script_dir else 'scripts/ntfy_batch.sh'
             subprocess.run(['bash', _ntfy, _msg], timeout=10)
         except Exception:
             pass

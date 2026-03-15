@@ -58,5 +58,8 @@ cp "$FILEPATH" "$LATEST"
 # 古いスクリーンショットを削除（72時間超）
 find "$SCREENSHOT_DIR" -type f \( -name 'shot_*.png' -o -name 'ntfy_*.png' \) -mmin +$((RETENTION_HOURS * 60)) -delete 2>/dev/null || true
 
+# 現在のペインにファイルパスを自動入力（Claude Codeが画像を認識する）
+tmux send-keys "$FILEPATH"
+
 # 成功通知
 tmux display-message "Screenshot: ${FILEPATH}"

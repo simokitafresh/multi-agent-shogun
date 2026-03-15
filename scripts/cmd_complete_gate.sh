@@ -130,6 +130,28 @@ PY
     fi
 }
 
+LAST_GATE_NOTIFY_ROUTE=""
+
+send_high_notification() {
+    local message="$1"
+    LAST_GATE_NOTIFY_ROUTE="ntfy.sh"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "$message"
+}
+
+send_info_cmd_notification() {
+    local cmd_id="$1"
+    local message="$2"
+    local batch_script="$SCRIPT_DIR/scripts/ntfy_batch.sh"
+
+    if [ -x "$batch_script" ]; then
+        LAST_GATE_NOTIFY_ROUTE="ntfy_batch.sh"
+        bash "$batch_script" "$cmd_id" "$message"
+    else
+        LAST_GATE_NOTIFY_ROUTE="ntfy_cmd.sh"
+        bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$cmd_id" "$message"
+    fi
+}
+
 # ─── status自動更新関数 ───
 update_status() {
     local cmd_id="$1"
@@ -1343,6 +1365,39 @@ else:
 PY
 }
 
+check_how_it_works_status() {
+    local report_file="$1"
+
+    REPORT_FILE_ENV="$report_file" python3 - <<'PY'
+import os
+import yaml
+
+report_file = os.environ["REPORT_FILE_ENV"]
+
+try:
+    with open(report_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    print("error")
+    raise SystemExit(0)
+
+if not isinstance(data, dict):
+    print("error")
+    raise SystemExit(0)
+
+value = data.get("how_it_works")
+if value is None:
+    print("missing")
+elif isinstance(value, str):
+    print("ok" if value.strip() else "empty")
+elif isinstance(value, list):
+    has_text = any(isinstance(item, str) and item.strip() for item in value)
+    print("ok" if has_text else "empty")
+else:
+    print("empty")
+PY
+}
+
 # ─── context_update freshness check (cmd_543 AC2) ───
 # cmdにcontext_updateが定義されている場合のみ、context/* の last_updated を検証。
 # last_updated(YYYY-MM-DD) < cmd timestamp/delegated_at の日付 なら BLOCK。
@@ -1701,7 +1756,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     for gate in "${ALL_GATES[@]}"; do
         echo "  ${gate}: OVERRIDE"
     done
-    bash "$SCRIPT_DIR/scripts/ntfy.sh" "🚨 緊急override: ${CMD_ID}のゲートをバイパス"
+    send_high_notification "🚨 緊急override: ${CMD_ID}のゲートをバイパス"
     # gate_yaml_status: YAML status更新（WARNING only）
     if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
         true
@@ -1749,10 +1804,10 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
 
     # ntfy_cmd（gist_sync後に実行）
-    if bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
-        echo "  ntfy_cmd: OK"
+    if send_info_cmd_notification "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
+        echo "  ${LAST_GATE_NOTIFY_ROUTE}: OK (INFO)"
     else
-        echo "  [INFO] ntfy_cmd: WARN (notification failed, non-blocking)" >&2
+        echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
     fi
 
     # cmd_531: AC6 — GATE CLEAR時に教訓有効率スキャン+自動退役（緊急override時も実行）
@@ -2459,6 +2514,44 @@ if [ "$DC_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── how_it_works検証（implementタスクはWARN導入） ───
+level_heading "[L2]" "Implementation walkthrough check:"
+HOW_IT_WORKS_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    task_role=$(detect_task_role "$task_file")
+    [ "$task_role" = "implement" ] || continue
+
+    HOW_IT_WORKS_CHECKED=true
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (implement report not found)"
+        continue
+    fi
+
+    walkthrough_status=$(check_how_it_works_status "$report_file")
+    case "$walkthrough_status" in
+        ok)
+            echo "  ${ninja_name}: OK (how_it_works present)"
+            ;;
+        missing|empty)
+            echo "  [INFO] ${ninja_name}: how_it_works missing or empty (implement report)"
+            ;;
+        *)
+            echo "  [INFO] ${ninja_name}: how_it_works parse error (non-blocking)"
+            ;;
+    esac
+done
+if [ "$HOW_IT_WORKS_CHECKED" = false ]; then
+    echo "  (no implement tasks found for this cmd)"
+fi
+
 # ─── review品質機械検査（cmd_607） ───
 level_heading "[L2]" "Review quality check:"
 REVIEW_TASK_FOUND=false
@@ -2889,6 +2982,98 @@ else
     echo "  TODO check: OK (0 remaining)"
 fi
 
+# ─── テストSKIP検査（skip_count > 0 で BLOCK） ───
+level_heading "[L2]" "Test skip count check:"
+TEST_SKIP_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    TEST_SKIP_CHECKED=true
+    test_skip_status=$(REPORT_FILE_ENV="$report_file" python3 - <<'PY'
+import os
+import yaml
+
+report_file = os.environ["REPORT_FILE_ENV"]
+
+try:
+    with open(report_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    print("error\tparse_error")
+    raise SystemExit(0)
+
+if not isinstance(data, dict):
+    print("error\treport_not_dict")
+    raise SystemExit(0)
+
+# test_skip_count (top-level) を優先検索
+skip_count = data.get("test_skip_count")
+
+# フォールバック: test_results.skipped
+if skip_count is None:
+    test_results = data.get("test_results")
+    if test_results is None:
+        print("warn\ttest_results not present")
+        raise SystemExit(0)
+    elif isinstance(test_results, dict):
+        skip_count = test_results.get("skipped")
+        if skip_count is None:
+            print("warn\ttest_results.skipped not present")
+            raise SystemExit(0)
+    else:
+        print("warn\ttest_results not a mapping")
+        raise SystemExit(0)
+
+try:
+    count = int(skip_count)
+except (ValueError, TypeError):
+    print(f"warn\ttest_skip_count not a number: {skip_count}")
+    raise SystemExit(0)
+
+if count > 0:
+    print(f"block\t{count}")
+elif count == 0:
+    print(f"ok\t{count}")
+else:
+    print(f"warn\ttest_skip_count negative: {count}")
+PY
+)
+
+    test_skip_kind=$(printf '%s\n' "$test_skip_status" | cut -f1)
+    test_skip_detail=$(printf '%s\n' "$test_skip_status" | cut -f2-)
+
+    case "$test_skip_kind" in
+        block)
+            echo "  [CRITICAL] ${ninja_name}: テスト未完了: SKIP ${test_skip_detail}件。SKIP=FAILルール"
+            record_block_reason "${ninja_name}:test_skip_count_${test_skip_detail}"
+            ALL_CLEAR=false
+            ;;
+        ok)
+            echo "  ${ninja_name}: OK (test_skip_count ${test_skip_detail})"
+            ;;
+        warn)
+            echo "  [INFO] ${ninja_name}: ${test_skip_detail}"
+            ;;
+        *)
+            echo "  [INFO] ${ninja_name}: test_skip_count解析エラー (${test_skip_detail})"
+            ;;
+    esac
+done
+if [ "$TEST_SKIP_CHECKED" = false ]; then
+    echo "  (no reports found for this cmd)"
+fi
+
 # ─── Vercel Phaseリンク整合チェック（context変更時のみ、BLOCK対象） ───
 level_heading "[L3]" "Vercel phase link check:"
 changed_contexts=$(git -C "$SCRIPT_DIR" diff --name-only HEAD~1 2>/dev/null | grep '^context/' || true)
@@ -3159,10 +3344,10 @@ except:
     fi
 
     # ntfy_cmd（gist_sync後に実行）
-    if bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
-        echo "  ntfy_cmd: OK"
+    if send_info_cmd_notification "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
+        echo "  ${LAST_GATE_NOTIFY_ROUTE}: OK (INFO)"
     else
-        echo "  [INFO] ntfy_cmd: WARN (notification failed, non-blocking)" >&2
+        echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
     fi
 
     # ─── GATE CLEAR時 淘汰候補自動deprecate（ベストエフォート） ───

@@ -80,8 +80,9 @@ check_staleness() {
     local stale_pds=()
 
     # MEMORY.md内のcmd_XXXパターンを抽出(ユニーク)
+    # MCP Memory Indexテーブル行(|始まり)は除外 — 教訓の出典cmd等は陳腐化対象外
     local -a cmd_ids
-    mapfile -t cmd_ids < <(grep -oE 'cmd_[0-9]+' "$MEMORY_FILE" 2>/dev/null | sort -u)
+    mapfile -t cmd_ids < <(grep -v '^\s*|' "$MEMORY_FILE" 2>/dev/null | grep -oE 'cmd_[0-9]+' | sort -u)
 
     # completed_changelog.yamlと照合
     if [ -f "$CHANGELOG" ] && [ ${#cmd_ids[@]} -gt 0 ]; then
@@ -93,8 +94,9 @@ check_staleness() {
     fi
 
     # MEMORY.md内のPD-XXXパターンを抽出(ユニーク)
+    # MCP Memory Indexテーブル行(|始まり)は除外 — 裁定記録PDは陳腐化対象外
     local -a pd_ids
-    mapfile -t pd_ids < <(grep -oE 'PD-[0-9]+' "$MEMORY_FILE" 2>/dev/null | sort -u)
+    mapfile -t pd_ids < <(grep -v '^\s*|' "$MEMORY_FILE" 2>/dev/null | grep -oE 'PD-[0-9]+' | sort -u)
 
     # pending_decisions.yamlと照合(resolvedのもの)
     if [ -f "$PENDING_DECISIONS" ] && [ ${#pd_ids[@]} -gt 0 ]; then
