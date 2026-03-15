@@ -8,6 +8,44 @@
             "command": "tmux set-option -p -t \"$TMUX_PANE\" @agent_state active 2>/dev/null; tmux set-option -p -t \"$TMUX_PANE\" @last_active $(date +%s) 2>/dev/null"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-no-verify-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-config-guard.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/test_result_guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-write-shellcheck.sh"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -20,6 +58,10 @@
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/log_terminal_response.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/stop-test-gate.sh"
           }
         ]
       }
@@ -48,6 +90,7 @@
   },
   "permissions": {
     "allow": [
+      "Bash(*)",
       "Bash(bash *)",
       "Bash(cd *)",
       "Bash(git *)",
@@ -116,6 +159,10 @@
       "Bash(pkill *)",
       "Bash(git push --force*)",
       "Bash(git push -f *)",
+      "Bash(git commit --no-verify*)",
+      "Bash(git commit * --no-verify*)",
+      "Bash(git commit -n*)",
+      "Bash(git commit * -n*)",
       "Bash(git reset --hard*)",
       "Bash(tmux kill-server*)",
       "Bash(tmux kill-session*)",
