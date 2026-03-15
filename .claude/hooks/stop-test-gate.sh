@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# Stop Hook: Run bats tests before ninja stops. If tests fail, inject context to prompt fix.
-# - Only runs for ninjas (not shogun/karo)
-# - Counter-based loop guard: after MAX_FAILURES consecutive failures, skip to prevent infinite loop
+# Stop Hook: Run bats tests before ninja stops.
+# Loop prevention: file-based failure hash comparison.
+# Design: Same failure repeated = agent can't fix → allow stop + escalate to karo.
+#         New/different failure = block stop, prompt fix.
 set -eu
-
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-MAX_FAILURES=2
 
 # --- Skip for non-tmux or shogun/karo ---
 if [ -z "${TMUX_PANE:-}" ]; then
@@ -16,22 +14,7 @@ if [ -z "$AGENT_ID" ] || [ "$AGENT_ID" = "shogun" ] || [ "$AGENT_ID" = "karo" ];
     exit 0
 fi
 
-# --- Counter-based loop prevention ---
-COUNTER_FILE="/tmp/stop_hook_failures_${AGENT_ID}"
-fail_count=0
-if [ -f "$COUNTER_FILE" ]; then
-    fail_count=$(cat "$COUNTER_FILE" 2>/dev/null || echo 0)
-    # Expire counter after 300s (stale from previous task)
-    counter_age=$(( $(date +%s) - $(stat -c %Y "$COUNTER_FILE" 2>/dev/null || echo 0) ))
-    if [ "$counter_age" -gt 300 ]; then
-        fail_count=0
-        rm -f "$COUNTER_FILE"
-    fi
-fi
-if [ "$fail_count" -ge "$MAX_FAILURES" ]; then
-    rm -f "$COUNTER_FILE"
-    exit 0
-fi
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # --- Skip if no bats test files ---
 test_dir="${PROJECT_ROOT}/tests/unit"
@@ -59,20 +42,47 @@ exit_code=0
 output=$(bats "${bats_files[@]}" 2>&1) || exit_code=$?
 
 if [ "$exit_code" -eq 0 ]; then
-    rm -f "$COUNTER_FILE"
+    # Tests passed — clean up any previous failure marker and allow stop
+    rm -f "/tmp/stop_hook_${AGENT_ID}_fail_hash" 2>/dev/null
     exit 0
 fi
 
-# --- Increment failure counter ---
-echo $(( fail_count + 1 )) > "$COUNTER_FILE"
+# --- Tests failed: compare with previous failure ---
+fail_hash_file="/tmp/stop_hook_${AGENT_ID}_fail_hash"
+current_hash="$(printf '%s' "$output" | md5sum | cut -d' ' -f1)"
 
-# --- Emit additionalContext on failure ---
-remaining=$(( MAX_FAILURES - fail_count - 1 ))
+if [ -f "$fail_hash_file" ]; then
+    prev_hash="$(cat "$fail_hash_file" 2>/dev/null || true)"
+    if [ "$current_hash" = "$prev_hash" ]; then
+        # Same failure repeated — agent cannot fix this.
+        # Allow stop but escalate to karo.
+        rm -f "$fail_hash_file" 2>/dev/null
+        if [ -x "${PROJECT_ROOT}/scripts/inbox_write.sh" ]; then
+            bash "${PROJECT_ROOT}/scripts/inbox_write.sh" karo \
+                "${AGENT_ID}: Stop Hook batsテスト同一失敗繰り返し。修正不能と判断しstop許可。要対応。" \
+                error_report "$AGENT_ID" 2>/dev/null || true
+        fi
+        # Emit warning but allow stop (exit 0)
+        cat <<HOOK_JSON
+{
+  "hookSpecificOutput": {
+    "hookEventName": "Stop",
+    "additionalContext": "WARNING: bats tests still failing (same failure repeated). Stop allowed but escalated to karo.\nWHY: Same test failure occurred twice — agent cannot resolve this autonomously.\nACTION: karo has been notified. Test fix will be handled in a follow-up task."
+  }
+}
+HOOK_JSON
+        exit 0
+    fi
+fi
+
+# --- New or different failure: save hash and block stop ---
+printf '%s' "$current_hash" > "$fail_hash_file"
+
 cat <<HOOK_JSON
 {
   "hookSpecificOutput": {
     "hookEventName": "Stop",
-    "additionalContext": "ERROR: bats tests failed (exit code ${exit_code}). You MUST fix failing tests before completing.\nWHY: SKIP=FAIL rule (CLAUDE.md). All tests must pass.\nFIX: 1) Read the test output below. 2) Fix the failing test or source script. 3) Re-run bats to confirm. 4) Try completing again.\nRetries remaining: ${remaining}\n\n--- bats output ---\n${output}\n--- end ---"
+    "additionalContext": "ERROR: bats tests failed (exit code ${exit_code}). You MUST fix failing tests before completing.\nWHY: SKIP=FAIL rule (CLAUDE.md). All tests must pass.\nFIX: 1) Read the test output below. 2) Fix the failing test or source script. 3) Try completing again.\n\n--- bats output ---\n${output}\n--- end ---"
   }
 }
 HOOK_JSON
