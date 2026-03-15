@@ -197,6 +197,7 @@ private fun formatResetTime(resetStr: String): String {
 
 @Composable
 fun AgentsScreen(
+    resetTrigger: Int = 0,
     viewModel: AgentsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -211,6 +212,13 @@ fun AgentsScreen(
 
     var selectedPaneIndex by remember { mutableStateOf<Int?>(null) }
     var showRateLimitDialog by remember { mutableStateOf(false) }
+
+    // Bottom nav re-tap → return to grid
+    LaunchedEffect(resetTrigger) {
+        if (resetTrigger > 0) {
+            selectedPaneIndex = null
+        }
+    }
 
     DisposableEffect(prefs) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { sharedPrefs, key ->

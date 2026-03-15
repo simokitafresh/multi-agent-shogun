@@ -27,6 +27,8 @@
 # Claude Code settings (spinner verbs only, no secrets)
 !.claude/
 !.claude/settings.json
+!.claude/hooks/
+!.claude/hooks/*.sh
 
 # Instructions (core OSS)
 !instructions/
@@ -74,6 +76,8 @@
 !.githooks/
 !.githooks/pre-commit
 !.githooks/pre-push
+!lefthook.yml
+!lefthook-local.yml
 
 # Config (sample files only, no secrets)
 !config/
@@ -111,6 +115,8 @@
 !scripts/inbox_write.sh
 !scripts/inbox_watcher.sh
 !scripts/ntfy.sh
+!scripts/ntfy_batch.sh
+!scripts/ntfy_batch_flush.sh
 !scripts/ntfy_cmd.sh
 !scripts/ntfy_listener.sh
 !scripts/restart_ntfy_listener.sh
@@ -201,6 +207,7 @@
 !scripts/stop_hook_inbox.sh
 !scripts/slim_yaml.py
 !scripts/x_research.py
+!scripts/run_precommit_checks.sh
 !scripts/cdp/
 !scripts/cdp/cdp_helper.py
 !scripts/cdp/cdp_cli.sh
@@ -215,6 +222,7 @@
 !archive/frozen/gunshi_inbox.yaml
 # Runtime screenshots stay local-only under queue/
 queue/screenshots/
+queue/ntfy_batch_queue.txt
 
 # Tasks (SSOT lessons only)
 !tasks/

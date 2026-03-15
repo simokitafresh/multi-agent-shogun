@@ -122,9 +122,12 @@ master_csv:
     - name: "証票PDF"
       owner: "自動"
       description: "リネーム後のPDFファイル名"
+    - name: "使用カード"
+      owner: "自動（二段階）"
+      description: "決済に使用したクレジットカード。第一段階: MF保有金融機関から発行元レベル（三井住友/AMEX等）を一括付与。第二段階: PayPal/Stripeレシートからカード下4桁まで特定し上書き（例: VISA x-6120, AMEX x-1706）。note売上入金等カード決済でない行は空欄"
   design_principles:
-    - "列1-10はMF出力そのまま。列11-15は右に追加（MF互換を壊さない）"
-    - "会計士の読み順: 内容→簡易説明→勘定科目候補→補足メモ→証票"
+    - "列1-10はMF出力そのまま。列11-16は右に追加（MF互換を壊さない）"
+    - "会計士の読み順: 内容→簡易説明→勘定科目候補→補足メモ→証票→使用カード"
     - "MoneyForward起源でない行（note売上手数料等）は列1-10をMF互換形式で手動/自動記入"
 
 drive_integrity_checklist:
@@ -160,3 +163,152 @@ drive_integrity_checklist:
       name: "重複ファイルなし"
       description: "同一フォルダ内に同名ファイルや同一内容ファイル(_1.pdf等のコピー)が存在しないこと"
       check_method: "同名検出 + サイズ一致ペア検出。強い重複候補をリスト化"
+
+# =============================================================================
+# 確定申告 証票管理ルール（殿厳命 2026-03-14）
+# =============================================================================
+# 以下は確定申告関連の全cmdで忍者が必ず参照するルール。違反はFAIL差し戻し。
+
+receipt_matching_rules:
+  description: "証票PDF↔マスターCSV(MF)の突合ルール。3条件全てを満たすこと"
+  created: "2026-03-14"
+  rules:
+    - id: MATCH1
+      name: "日付一致"
+      rule: "証票の日付とMFの日付が同一日であること"
+      exceptions:
+        - "PayPal経由クレカ決済: 金額が完全一致していれば日付ズレは許容（±1日〜数日）"
+    - id: MATCH2
+      name: "金額一致"
+      rule: "証票の金額とMFの金額が一致すること"
+      exceptions:
+        - "ドル建て→日本円換算: 10%未満の乖離は為替差として許容"
+        - "10%以上の乖離は不一致扱い（怪しい）"
+    - id: MATCH3
+      name: "1対1対応"
+      rule: "MFに同一日・同一金額の行がN件あれば、証票もN枚必要"
+      examples:
+        - "MFに3/1 ¥1,000が2行 → 証票PDFも2枚必要（別々にカウント）"
+        - "1枚の証票で2行をカバーしてはならない"
+        - "余った行は「証票なし」と正直に記載"
+
+receipt_validity:
+  description: "証票として有効なPDFの判定基準"
+  valid:
+    - "Receipt（領収書）: 金額・日付・発行元が明記されたもの"
+    - "Invoice（請求書）: 金額・日付・発行元が明記されたもの"
+  invalid:
+    - "email PDF: 金額が記載されていないメール通知（証票として無効）"
+    - "email PDF: 同一取引でReceipt/Invoiceが存在する場合（冗長・削除対象）"
+    - "金額未記載のPDF全般"
+
+folder_status_naming:
+  description: "Driveサブフォルダ名に証票状態を表示するプレフィックス"
+  rules:
+    - prefix: "[OK]_"
+      meaning: "確認済み — 全行に証票あり＋MF日付金額突合済み"
+    - prefix: "[NG]_"
+      meaning: "要対応 — 一部証票なし or 突合に乖離あり"
+    - prefix: "[--]_"
+      meaning: "未解決 — 証票ゼロ or 入手ルート未確定"
+  constraints:
+    - "ASCII文字のみ。絵文字禁止（環境依存）"
+    - "ソート順: [--] → [NG] → [OK] でASCII順に状態別に並ぶ"
+
+spreadsheet_truth_rules:
+  description: "Spreadsheet証票列の記載ルール。嘘なし・曖昧なし"
+  rules:
+    - "証票あり → 証票PDF列にファイル名を記載"
+    - "証票なし → 「証票なし（具体的入手方法）」を記載"
+    - "入手方法の例: 「Anthropic Billing > Invoicesからダウンロード可」"
+    - "入手方法の例: 「Gmail検索: Render Invoice で取得可能性あり」"
+    - "入手方法の例: 「発行元に再発行依頼が必要」"
+  forbidden:
+    - "「信頼性が低い」「おそらく」等の曖昧・主観的表現"
+    - "根拠のない所見（ファイル名・件数・データ比較なき報告はFAIL）"
+
+receipt_acquisition_principle:
+  description: "証票取得の大原則（殿厳命 2026-03-14）"
+  core: "正しいものが取得できているかが全て。汚染されたごまかしデータの存在が最悪"
+  rules:
+    - id: ACQ1
+      name: "Gmail第一手段、不十分なら個別パイプライン構築"
+      rule: |
+        Gmailから100%証票として使えるものが取得できない発行元は、
+        noteやMFのように個別の全自動取得パイプラインを構築する。
+        Gmailのメール通知PDFで「とりあえず埋める」のは禁止。
+    - id: ACQ2
+      name: "正確性 > 網羅性"
+      rule: |
+        証票なしの行が残ることより、間違った証票が紐づくことの方が遥かに悪い。
+        確信がなければ「証票なし」と正直に書け。ごまかすな。
+    - id: ACQ3
+      name: "汚染データ即時排除"
+      rule: |
+        金額不一致・日付不一致・email通知で代替した証票が発見された場合、
+        即座に削除せよ。「あるだけマシ」という判断は禁止。
+        ゼロの方が嘘より100倍マシ。
+
+report_quality:
+  description: "確定申告関連cmdの報告品質基準"
+  rules:
+    - "全ての所見に具体的根拠を付けること（ファイル名・件数・データ比較）"
+    - "曖昧表現は禁止。事実のみ記載"
+    - "根拠なき所見はFAIL差し戻し"
+
+# =============================================================================
+# 確定申告ワークフロー改善TODO（2025年確定申告完了後に着手）
+# =============================================================================
+# 発見経緯: cmd_940〜947の一連作業で露呈した穴。殿指示で恒久化予定。
+# ステータス: pending（2025年確定申告完了後に確立）
+
+tax_workflow_todo:
+  description: "確定申告年次ワークフローの未完成箇所。2025年完了後にパイプラインとして確立する"
+  created: "2026-03-14"
+  created_by: "cmd_940-947の実戦から抽出"
+  status: "pending — 2025年確定申告完了後に着手"
+  items:
+    - id: TWF1
+      name: "MFクレカ登録の完全性チェック"
+      description: "MF CSV DL後にPayPal取引のカード下4桁とMF保有金融機関を突合し、未登録カードを自動検出する"
+      discovered_by: "cmd_944 — AMEX未登録で24行欠落"
+      priority: high
+    - id: TWF2
+      name: "PayPal領収書DL自動化パイプライン"
+      description: "PayPal CDPログイン→取引履歴→各取引のprint-details PDFを自動DL。Stripe系Gmail/note系CDPと並ぶ第三の取得経路"
+      discovered_by: "cmd_945 — 殿が手動DLした10件"
+      priority: high
+    - id: TWF3
+      name: "PDF品質検証の自動化（取得直後）"
+      description: "PDF取得直後にpdfplumber本文抽出→金額・発行元・日付の3点が抽出できなければfail-close。email-PDF本文欠落を事前検出"
+      discovered_by: "cmd_942/943 — Dynalist等のemail-PDFが本文欠落"
+      priority: high
+    - id: TWF4
+      name: "note領収書の取引IDユニーク性検証"
+      description: "DL/upload時に取引IDでユニーク性検証。同一取引IDの重複は即reject。ファイル名の月表記を信用しない"
+      discovered_by: "cmd_943_S — 振込手数料全12ファイルが1月分コピー"
+      priority: high
+    - id: TWF5
+      name: "note振込サイクル日付ズレの許容ルール"
+      description: "MATCH1例外追加: note振込サイクル（N月分→N+1月末振込）で取引IDによる1:1対応が取れれば月ズレ許容"
+      discovered_by: "cmd_943_S — 飛猿decision_candidate"
+      priority: medium
+    - id: TWF6
+      name: "Drive整合性チェック（CHK1-7）自動化"
+      description: "CHK1-7を年次ワークフローの最終検証ステップとしてスクリプト化。手動実行を排除"
+      discovered_by: "cmd_940 — 毎回忍者が手動実行"
+      priority: medium
+    - id: TWF7
+      name: "年次ワークフローパイプライン定義"
+      description: |
+        以下の順序パイプラインを1 cmdで実行可能にする:
+        (1) MFセットアップ検証（全カード登録確認）
+        (2) MF CSV DL
+        (3) 証票取得（Stripe系Gmail / PayPal CDP / note CDP / その他手動）
+        (4) 証票品質検証（PDF本文抽出+MATCH1/2/3自動チェック）
+        (5) Drive同期（リネーム+アップロード+フォルダ整理）
+        (6) CSV/Spreadsheet同期
+        (7) 整合性チェック（CHK1-7自動実行）
+        (8) ステータス付与+最終報告
+      discovered_by: "cmd_940-947 — 場当たり的に8 cmd発令した反省"
+      priority: high

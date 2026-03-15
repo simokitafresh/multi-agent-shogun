@@ -187,6 +187,9 @@ fun ShogunApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // Re-tap same tab → reset internal state (e.g., AgentsScreen detail → grid)
+    var agentsResetTrigger by remember { mutableIntStateOf(0) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -208,12 +211,16 @@ fun ShogunApp() {
                             indicatorColor = Sumi,
                         ),
                         onClick = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                            if (currentRoute == screen.route && screen == Screen.Agents) {
+                                agentsResetTrigger++
+                            } else {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         }
                     )
@@ -227,7 +234,7 @@ fun ShogunApp() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Shogun.route) { ShogunScreen() }
-            composable(Screen.Agents.route) { AgentsScreen() }
+            composable(Screen.Agents.route) { AgentsScreen(resetTrigger = agentsResetTrigger) }
             composable(Screen.Dashboard.route) { DashboardScreen() }
             composable(Screen.Settings.route) { SettingsScreen() }
         }
