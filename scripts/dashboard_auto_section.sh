@@ -185,9 +185,7 @@ fi
 STREAK=0
 STREAK_START=""
 STREAK_END=""
-CLEAR_RATE="0.0%"
 TOTAL_CMDS=0
-LAST_GATE="—"
 
 if [[ -f "$GATE_LOG" ]]; then
     # Cmd-latest dedup (exclude test cmds), sorted by timestamp
@@ -204,7 +202,7 @@ if [[ -f "$GATE_LOG" ]]; then
     CLEAR_COUNT=$(awk -F'\t' '$3=="CLEAR"{c++} END{print c+0}' "$TMP_METRICS")
 
     if [[ "$TOTAL_CMDS" -gt 0 ]]; then
-        CLEAR_RATE=$(awk -v c="$CLEAR_COUNT" -v t="$TOTAL_CMDS" 'BEGIN{printf "%.1f%%", (c/t)*100}')
+        : # CLEAR_COUNT/TOTAL_CMDS used directly in output
     fi
 
     # Streak: consecutive CLEARs from the end (L074: avoid ((var++)))
@@ -225,14 +223,7 @@ if [[ -f "$GATE_LOG" ]]; then
         fi
     done < "$TMP_METRICS"
 
-    # Last GATE time
-    last_line=$(tail -1 "$TMP_METRICS" || true)
-    if [[ -n "$last_line" ]]; then
-        _last_ts=$(echo "$last_line" | cut -f1)
-        if [[ "$_last_ts" =~ T([0-9]{2}:[0-9]{2}) ]]; then
-            LAST_GATE="${BASH_REMATCH[1]}"
-        fi
-    fi
+    # Last GATE time (informational only, not rendered in dashboard)
 fi
 
 # Build CLEAR'd cmd set for pipeline filtering (must be outside subshell blocks)
@@ -245,8 +236,6 @@ fi
 
 # ─── Knowledge metrics (cached — only re-run when gate_metrics.log changes) ───
 KM_INJECT_RATE="—"
-KM_REF_RATE="—"
-KM_DELTA_PP="—"
 KM_LESSON_EFFECT="—"
 KM_LESSON_THRESHOLD="—"
 KM_PROBLEM_LESSONS="—"
@@ -254,6 +243,7 @@ KM_PROJECT_ROWS=""
 KM_KNOWLEDGE_MODEL_ROWS=""
 KM_TOP_LESSON_ROWS=""
 KM_BOTTOM_LESSON_ROWS=""
+KM_TASK_TYPE_ROWS=""
 MODEL_SCOREBOARD_ROWS=""
 CONTEXT_WARNINGS="$(bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings 2>/dev/null || true)"
 
@@ -308,7 +298,7 @@ except Exception:
         case "$_line" in
             summary=*)
                 _payload=${_line#summary=}
-                IFS=$'\t' read -r KM_INJECT_RATE KM_REF_RATE KM_DELTA_PP KM_LESSON_EFFECT KM_PROBLEM_LESSONS <<< "$_payload"
+                IFS=$'\t' read -r KM_INJECT_RATE _km_ref_rate _km_delta_pp KM_LESSON_EFFECT KM_PROBLEM_LESSONS <<< "$_payload"
                 ;;
             project_row=*)
                 KM_PROJECT_ROWS="${KM_PROJECT_ROWS}${_line#project_row=}"$'\n'
@@ -372,6 +362,27 @@ if [[ -f "$LESSON_EFFECT_STATUS_FILE" ]] && [[ -s "$LESSON_EFFECT_STATUS_FILE" ]
                 ;;
         esac
     fi
+fi
+
+# ─── Task type injection breakdown (from lesson_impact.tsv) ───
+LESSON_IMPACT_FILE="$PROJECT_DIR/logs/lesson_impact.tsv"
+if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
+    KM_TASK_TYPE_ROWS=$(awk -F'\t' '
+        NR > 1 && $5 != "" && $9 != "" && ($5 == "injected" || $5 == "skipped") {
+            if ($5 == "injected") inj[$9]++
+            if ($5 == "skipped") skip[$9]++
+        }
+        END {
+            for (t in inj) { if (!(t in skip)) skip[t] = 0 }
+            for (t in skip) { if (!(t in inj)) inj[t] = 0 }
+            for (t in inj) {
+                n = inj[t] + skip[t]
+                if (n > 0) rate = sprintf("%.0f%%", inj[t] / n * 100)
+                else rate = "—"
+                printf "| %s | %d | %d | %s | %d |\n", t, inj[t], skip[t], rate, n
+            }
+        }
+    ' "$LESSON_IMPACT_FILE" | sort -t'|' -k6 -rn)
 fi
 
 # ─── Build cmd→title map (for 戦果 section) ───
@@ -569,6 +580,16 @@ fi
         printf "%s" "$KM_PROJECT_ROWS"
     else
         echo "| — | — | — | — |"
+    fi
+
+    echo ""
+    echo "#### タスク種別別"
+    echo "| task_type | 注入 | スキップ | 注入率 | N |"
+    echo "|-----------|------|---------|--------|---|"
+    if [[ -n "$KM_TASK_TYPE_ROWS" ]]; then
+        printf "%s\n" "$KM_TASK_TYPE_ROWS"
+    else
+        echo "| — | — | — | — | — |"
     fi
 
     echo ""
