@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-03-11 cmd_796 3月11日運用実績反映(cmd_746/763/790/791/792) -->
+<!-- last_updated: 2026-03-15 cmd_955 monthly-returns fallback window query化(既存cmd_818実装確認) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -72,6 +72,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 
 - L149: key_files成果物パターンは実在ファイル名規約と定期照合しないと再汚染する（cmd_493）
 - L150: 復旧ドキュメントは『在庫あり証跡』と『在庫不足』を分離記述すると誤再構成を防げる（cmd_493）
+- L307: 偵察3回×延べ24名の知識基盤構築には統合専任担当(水平H)が不可欠（cmd_862）
+- L308: KB浄化cmdは解釈移送先ファイルをACで明示せよ（cmd_871）
 
 ## Ops教訓索引
 <!-- lesson_sync: 2026-03-03 lesson-sortでL129-L146を反映 -->
@@ -160,6 +162,7 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L3 堅牢性検証 | 未着手(cmd_176殿裁定待ち) |
 | APIベースライン | cmd_790で15体×3 API + 一括2件を固定（→ cmd_790報告参照） |
 | Phase2b BE最適化 | cmd_791完了。`monthly-returns` の `expanded_tickers` 除去 + months前倒し、15体diff完全一致PASS |
+| fallback window query化 | cmd_818(553d9958)で実装済み。`_calculate_ticker_returns_from_prices()`にmin_year_month追加、months=12で-88%改善(8.6s→1s)。cmd_955で再確認PASS |
 | ETag/SWR前提 | cmd_792完了。304処理修正で annual/monthly/trade returns の既存ETagが有効化 |
 | 同時処理能力 | cmd_763で `uvicorn --workers 2` 復帰対象まで到達。比較基準は workers=1 cold 128ms / warm 149ms / PF切替 1005ms |
 | CDP計測基盤 | cmd_746完了。cold/warm/PF切替/SPA/API個別/baseline比較が本番一発実行可能 |

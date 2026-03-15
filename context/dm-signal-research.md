@@ -190,6 +190,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 |----|----------|------|
 | L117 | SPA p=0.99: チャンピオンはtop群内ノイズ範囲。full-sample選出が妥当 | cmd_277 |
 | L114 | 高相関な弱予測器のスタッキングはDM3で精度改善しない | cmd_274 |
+| L306 | DM-SignalはGS由来の過適合3兄弟(F08/F09/F10)に最も脆弱 | cmd_862 |
 
 ### エッジ検知
 
@@ -236,6 +237,10 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L297 | 84ヶ月×91PFの高相関panelへraw multivariate HMMを直適用するな | cmd_861 |
 | L298 | FracDiffのd最適化を全期間一括で行うな | cmd_861 |
 | L301 | PSR/DSRは時系列順序を無視する弱点あり。p平均法で補完必須 | cmd_861 |
+| L302 | Backtest validationはtrials_log SSOTがなければ成立しない | cmd_862 |
+| L303 | Sharpe inference実装ではkurtosisとexcess kurtosisを混同するな | cmd_862 |
+| L304 | n≤5のFoFではEqualWeightがML手法(NCO/HRP)に勝つ可能性がある | cmd_862 |
+| L305 | 月次84点データでは高頻度特徴量(VPIN/Kyle/SADF等)の大半が適用不可 | cmd_862 |
 
 ---
 

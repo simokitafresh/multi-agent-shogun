@@ -173,6 +173,7 @@ PWA: manifest + SW(dm-signal-v8) + オフラインページ。CacheFirst(static)
 - L251: Jest 30では--testPathPatternが廃止され--testPathPatternsへ置換が必要（cmd_792）
 - L300: バッチ手法追加は新バッチ並走が安全（cmd_861）
 - L253: Next.js大バージョンアップではpeer dep対応が最大リスク変数（cmd_807）
+- L309: static export(output:'export')アプリでは\<Link\>SPA遷移を使うな — window.location.hrefで統一せよ（cmd_886）
 i18n: EN/JPの2言語のみ(FAQページ)。本格フレームワーク未導入。
 SEO: グローバルmetadataのみ。OG/robots.txt/sitemap未実装。
 環境変数: `NEXT_PUBLIC_API_HOST`(APIベースURL), `NODE_ENV`(ログ制御)の2つのみ。

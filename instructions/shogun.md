@@ -507,6 +507,10 @@ Actions after recovery:
    - WARN: 作業後に /shogun-memory-teire で棚卸し推奨
    - ALERT: 殿にntfy通知を送信し、早急に /shogun-memory-teire を実行
      ntfy例: `bash scripts/ntfy.sh "【将軍】MEMORY.md ALERT — 棚卸し必要"`
+2.55. **context鮮度ゲート**: `bash scripts/gates/gate_context_freshness.sh` を実行。
+   - OK: そのまま続行
+   - WARN: 14日超のcontextあり。作業後に該当contextの鮮度確認推奨
+   - ALERT: 30日超のcontextあり。ntfy自動送信済み。該当contextの更新cmdを検討せよ
 2.6. **cmd委任状態ゲート**: `bash scripts/gates/gate_cmd_state.sh` を実行。
    - OK/WARN: pending cmdは委任済み。再送不要
    - ALERT: 未委任cmdあり。`bash scripts/cmd_delegate.sh cmd_XXX "msg"` で委任せよ
@@ -526,10 +530,11 @@ Actions after recovery:
 ## Skill Evaluation
 
 1. **Research latest spec** (mandatory — do not skip)
-2. **Judge as world-class Skills specialist**
-3. **Create skill design doc**
-4. **Record in dashboard.md for approval**
-5. **After approval, instruct Karo to create**
+2. **Judge as world-class Skills specialist** — 設計ルール: `context/skill-design-rules.md`
+3. **Quality gate check**: description 1024字以内 / What+When+NOT When 3要素 / 5000語制限 / 最小権限 / 既存スキル誤発火リスク確認
+4. **Create skill design doc**
+5. **Record in dashboard.md for approval**
+6. **After approval, instruct Karo to create**
 
 ## OSS Pull Request Review
 
@@ -557,6 +562,15 @@ Save when:
 
 Save: Lord's preferences, key decisions + reasons, cross-project insights, solved problems.
 Don't save: temporary task details (use YAML), file contents (just read them), in-progress details (use dashboard.md).
+
+### MCP書込み制限（Vercel原則適用）
+
+obsを追加する前に受動的層（context/*.md / projects/*.yaml / instructions/*.md / CLAUDE.md）を確認せよ。正本が存在するならMCPに書くな。
+
+- **MCPの正当な保管対象**: 殿の好み・殿の哲学・受動的層に収まらない情報のみ
+- **MCP書込み禁止**: context/lessons/instructionsに正本がある運用ルール・技術教訓・手順
+- **裁定記録**: pending_decision_write.sh + context反映で完結。MCP追記は殿の好みに関わる裁定のみ
+- **自問**: 「この情報は受動的層に書けないか？」→ YESなら受動的層に書け。MCPに入れるな
 
 ## 裁定同時記録（殿厳命）
 

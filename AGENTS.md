@@ -242,6 +242,12 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | queue/ YAML + dashboard + reports | 家老・忍者・将軍 | タスク指示・状態・状況報告 | 各担当 |
 | MCP Memory | 将軍のみ | 殿の好み・将軍教訓 | 将軍のみ |
 
+**MCP書込み制限**:
+- MCPに書くのは「殿の好み」「殿の哲学」「受動的層に収まらない情報」のみ
+- context/lessons/instructionsに正本がある情報のMCP書込み禁止（重複排除）
+- 裁定記録時: pending_decision_write.sh + context反映で完結。MCP追記は殿の好みに関わる場合のみ
+- MCP obs追加前に「受動的層に書けないか？」を必ず自問せよ
+
 ## 判断フロー
 
 ```
@@ -358,6 +364,7 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 | D006 | `kill`, `killall`, `pkill`, `tmux kill-server`, `tmux kill-session` | Terminates other agents or infrastructure |
 | D007 | `mkfs`, `dd if=`, `fdisk`, `mount`, `umount` | Disk/partition destruction |
 | D008 | `curl|bash`, `wget -O-|sh`, `curl|sh` (pipe-to-shell patterns) | Remote code execution |
+| D009 | `chrome --headless` / `chrome.exe --headless` without `--user-data-dir` | Destroys 殿's Chrome sessions (全アカウントログアウト). 必ず隔離プロファイル指定必須 |
 
 ## Tier 2: STOP-AND-REPORT (halt work, notify Karo/Shogun)
 

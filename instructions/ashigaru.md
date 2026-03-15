@@ -213,6 +213,8 @@ queue/tasks/{your_ninja_name}.yaml    ← Read only this
 queue/reports/{your_ninja_name}_report_{cmd}.yaml  ← Write only this  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
 ```
 
+**NEVER create a similarly named new file when the task requires editing an existing file.** Read the existing target first, then modify that file. If the correct target is unclear, report to Karo instead of creating a shadow file.
+
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
 **Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report_{cmd}.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
 
@@ -533,6 +535,10 @@ result:
   lessons:  # 次に同種の作業をする人が知るべき教訓（任意だが推奨）
     - "MomentumCacheを渡さないとsimulate_strategy_vectorized()は黙って空を返す"
     - "experiments.dbのmonthly_returnsが価格のground truth。dm_signal.dbには価格なし"
+how_it_works: |
+  task_type: implement / impl の報告では必須。
+  変更したロジックがなぜその挙動になるかを1-3行で説明する。
+  recon / scout / review タスクでは不要。
 purpose_validation:
   cmd_purpose: "(task YAMLのdescription冒頭1行を転記)"
   fit: true
@@ -586,7 +592,7 @@ parity_data_source:
   prod_side: "PostgreSQL(DATABASE_URL)"        # 本番側データソースを明記
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lesson_candidate, decision_candidate, lessons_useful.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lesson_candidate, decision_candidate, lessons_useful. `how_it_works` is additionally required for implement / impl tasks only.
 Missing fields = incomplete report.
 
 ### 報告具体性ルール（「名前をつけろ」）

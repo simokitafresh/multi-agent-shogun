@@ -45,6 +45,7 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 - build: `pip install` → `alembic upgrade head` → gunicorn起動
 - healthcheck: GET `/healthz`
 - 問題: web=Python runtime vs Docker系ファイル(Dockerfile/entrypoint.sh)が混在。統一要
+- L001: Render blueprintが実在しないDockerfileを参照 — manifest参照先存在確認が初手（cmd_865）
 - → 詳細: `queue/reports/saizo_report_cmd_865.yaml`
 
 ## §5 DM-Signalとの関係
@@ -53,6 +54,7 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 - **データソース差異**: database=yfinance(adjusted) vs DM-Signal=StockData API
 - **補完可能**: DTB3(1954年〜)がDM-Signalリスクフリーレート補完に有用
 - **推奨**: OPT-C(独立維持+DTB3共有のみ)が安全。統合にはclose価格差異検証が前提
+- L002: databaseプロジェクトはDM-Signalと銘柄大幅重複だがデータソース異なる（cmd_865）
 - → 詳細: `queue/reports/tobisaru_report_cmd_865.yaml`
 
 ## §6 既知の問題（改善余地）
@@ -76,6 +78,5 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 
 ## 教訓索引（自動追記）
 
-- L001: Render blueprintが実在しないDockerfileを参照 — manifest参照先存在確認が初手（cmd_865）
+- （L001-L002は振り分け済 → §4 Render構成(L001), §5 DM-Signalとの関係(L002)）
 <!-- last_synced_lesson: L002 -->
-- L002: databaseプロジェクトはDM-Signalと銘柄大幅重複だがデータソース異なる（cmd_865）

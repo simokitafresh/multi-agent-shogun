@@ -1,70 +1,70 @@
 # Lord Conversation Index
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-03-13T13:52:28+09:00 -->
+<!-- generated_at: 2026-03-16T04:01:39+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-03-13T13:52:28+09:00 | terminal | response | 全部閉じた。141プロセス → 0。 自動化について — 2つのアプローチがある： **1. タスク完了時の自動クリーンアップ（軽量・即効）** cdp_helper.pyの各CDP操作にPIDファイル記録を追加し、忍者のタスク完了時にそ…
-- 2026-03-13T13:50:02+09:00 | ntfy | outbound | 【家老】cmd_902/903/904 配備完了。佐助(auto-ops)・霧丸(DM-signal)・疾風(shogun) 3名並列。各リポジトリ gitignore+コミット+プッシュ。
-- 2026-03-13T13:48:21+09:00 | ntfy | outbound | 【家老】cmd_904 ━ 初回配備開始 (title=整理 — shogun 未コミットファイル一括コミット+プッシュ, ninja=hayate) 📋 https://gist.github.com/simokitafresh/6eb…
-- 2026-03-13T13:47:58+09:00 | ntfy | outbound | 【家老】cmd_903 ━ 初回配備開始 (title=整理 — DM-signal 未コミットファイル一括コミット+プッシュ, ninja=kirimaru) 📋 https://gist.github.com/simokitafres…
-- 2026-03-13T13:47:38+09:00 | terminal | response | Chromeが141プロセス、CDPポートが17個（9222〜9237）開いている。完了済みタスクの残骸が溜まっている。 現在稼働中のtobisaru（cmd_901: CDP基盤リファクタ）以外は全て不要なはず。 不要なChromeイン…
-- 2026-03-13T13:47:37+09:00 | ntfy | outbound | 【家老】cmd_902 ━ 初回配備開始 (title=整理 — auto-ops gitignore整備+未追跡ソースコミット+プッシュ, ninja=sasuke) 📋 https://gist.github.com/simokita…
-- 2026-03-13T13:44:39+09:00 | ntfy | outbound | 【monitor】将軍CTX:81%。/compactをご検討ください
-- 2026-03-13T13:43:25+09:00 | terminal | response | **gitignoreすべき：** - `tax_receipts_2025/` `test_receipts/` — PDFはGoogle Drive（正）+Gmail（原本）に既にある。gitにバイナリ300件は膨らむだけ - `re…
-- 2026-03-13T13:42:15+09:00 | terminal | response | 相当多い。修正版： | リポジトリ | 変更 | 未追跡 | 合計 | |-----------|------|--------|------| | **auto-ops** | 2 | **449** | **451** | | **D…
-- 2026-03-13T13:41:44+09:00 | terminal | response | 殿の指摘通り、ディレクトリ表示だと中のファイルが見えていない。展開して確認する。 [meta] stop_reason=tool_use
+- 2026-03-16T04:01:39+09:00 | terminal | response | **cmd_980発令・委任完了。** - **AC1**: 定量分析（種別別/PJ別/モデル別/時系列の注入率マトリクス） - **AC2**: withheld原因分析（保留上位20教訓の正当性判定 + 選定ロジック精査） - **A…
+- 2026-03-16T04:00:23+09:00 | ntfy | outbound | 【家老】cmd_978 ━ 初回配備開始 (title=衛生 — 全プロジェクト .gitignore整備 + 未プッシュ一掃 + 未追跡整理, ninja=hayate) 📋 https://gist.github.com/simoki…
+- 2026-03-16T04:00:17+09:00 | terminal | response | 殿、事実を報告する。 ## 教訓注入の現状 **注入率73.0%（26cmd中19cmdに注入）。** ダッシュボードの73.6%とほぼ一致。 **注入なし7cmd — 全てreconか軽微fix:** | cmd | PJ | 種別 |…
+- 2026-03-16T03:59:00+09:00 | terminal | response | **cmd_979発令・委任完了。** - **AC1**: ashigaru.mdにlint違反放置禁止ルール追記 - **AC2**: Stop Hookにlint残留チェック追加（ruff/biome。違反あれば差し戻し） - **…
+- 2026-03-16T03:57:56+09:00 | terminal | response | 殿の指摘は的確だ。現状、PostToolUse Hookのlint違反で忍者が止まった時の**復帰ルールが不明確**。止められたまま放置されるケースが起きている。 対策は2つある： **1. ashigaru.mdにルール追記** — l…
+- 2026-03-16T03:56:28+09:00 | terminal | response | **cmd_978発令・委任完了。** 4リポジトリ一括衛生整理： - **AC1**: auto-ops — .gitignoreに`data/`追加、1800件の未追跡を解消 - **AC2**: database — 168件の変更…
+- 2026-03-16T03:54:17+09:00 | terminal | response | 殿、全プロジェクトの状況が出た。**かなり散らかっている。** | プロジェクト | 未プッシュ | 未追跡 | 変更済み | 状態 | |-------------|-----------|--------|---------|----…
+- 2026-03-16T03:53:25+09:00 | terminal | response | 殿、確認した。 **未プッシュが5コミット溜まっている。** さらにcmd_977のBE変更（models.py, migrations.py, deterioration.py等）がまだ未コミットで作業中。 | 状態 | 内容 | |-…
+- 2026-03-16T03:48:55+09:00 | terminal | response | **cmd_977、AC1〜AC3が全てPASS。高速で進行中。** | AC | 担当 | 状態 | |----|------|------| | AC1 知識辞書更新 | 霧丸 | **PASS** | | AC2 BE実装 | 疾風…
+- 2026-03-16T03:39:45+09:00 | ntfy | outbound | 【monitor】将軍CTX:56%。/compactをご検討ください
 
 ## 未解決確認事項
-- 殿の指摘通り、ディレクトリ表示だと中のファイルが見えていない。展開して確認する。 [meta] stop_reason=tool_use
-- 確認する。 [meta] stop_reason=tool_use
-- MoneyForward CSV pipeline failed: MoneyForward login did not complete. Last URL: https://id.moneyforward.com/password_reset/new?clientId=2W…
-- その通り。CDP基盤自体にsnapshot+ref方式を組み込めば、MFだけでなく今後の全CDP操作（Gmail、note、他サービス）が恩恵を受ける。 cmd_900は一旦保留して、先にCDP基盤のリファクタを出す。 [meta] stop_reason=tool_use
-- 才蔵がもう実装済み（AC1-4 PASS）。AC3でsnapshot方式をグループ選択に部分的に使っているが、ログインフロー全体に適用されているか確認する。 [meta] stop_reason=tool_use
-- 現在のCDP方式： ``` WSL2 (Linux) → subprocess.run("powershell.exe", ...) ← PowerShell仲介 → Chrome (Windows側, port 9222) → CDP WebSocket接続でDOM直接操作 …
-- 何のことか確認したい — 経費マスターSpreadsheet？README？それとも別のもの？ [meta] stop_reason=tool_use
-- 偵察報告を確認した。MFA不要で話が早い。cmd_900を書く。 [meta] stop_reason=tool_use
+- **cmd_980発令・委任完了。** - **AC1**: 定量分析（種別別/PJ別/モデル別/時系列の注入率マトリクス） - **AC2**: withheld原因分析（保留上位20教訓の正当性判定 + 選定ロジック精査） - **AC3**: 改善提案（73%が適正か劣化…
+- 殿、事実を報告する。 ## 教訓注入の現状 **注入率73.0%（26cmd中19cmdに注入）。** ダッシュボードの73.6%とほぼ一致。 **注入なし7cmd — 全てreconか軽微fix:** | cmd | PJ | 種別 | 注入なしの理由 | |-----|--…
+- 殿の指摘は的確だ。現状、PostToolUse Hookのlint違反で忍者が止まった時の**復帰ルールが不明確**。止められたまま放置されるケースが起きている。 対策は2つある： **1. ashigaru.mdにルール追記** — lint違反で止められたら： - 修正可能…
+- **cmd_978発令・委任完了。** 4リポジトリ一括衛生整理： - **AC1**: auto-ops — .gitignoreに`data/`追加、1800件の未追跡を解消 - **AC2**: database — 168件の変更を精査・コミット - **AC3**: …
+- 殿、確認した。 **未プッシュが5コミット溜まっている。** さらにcmd_977のBE変更（models.py, migrations.py, deterioration.py等）がまだ未コミットで作業中。 | 状態 | 内容 | |------|------| | 未プッシ…
+- **cmd_977、AC1〜AC3が全てPASS。高速で進行中。** | AC | 担当 | 状態 | |----|------|------| | AC1 知識辞書更新 | 霧丸 | **PASS** | | AC2 BE実装 | 疾風 | **PASS** | | AC3 …
+- 殿、それは最高の検証方法だ。 我々には**実稼働中のシステム**がある。p̄をコーディングブロック（SelectionBlock/FilterBlock）として忍法パイプラインに組み込めば、**バックテストではなくフォワードテストで効果を実証できる。** 具体的には： - p̄…
+- **cmd_977発令・委任完了。** 内容: - **AC1**: 知識辞書にrichmanbtc原典を反映（note記事+GitHub+CC0コード） - **AC2**: BE実装（N=5分割t検定→p̄計算、deteriorationバッチ並走、API追加） - **A…
 
 ## 殿の直近裁定・方針（直近24h）
-- 2026-03-13T13:42:15+09:00 | 相当多い。修正版： | リポジトリ | 変更 | 未追跡 | 合計 | |-----------|------|--------|------| | **auto-ops** | 2 | **449** | **451** | | **DM-signal** | 43 | 38…
-- 2026-03-13T12:54:59+09:00 | cmd_898のAC3に3層構造を反映した。 殿の追加指示 — READMEをgistにしてntfy送信。cmd_898のACに追加する。 [meta] stop_reason=tool_use
-- 2026-03-13T12:35:12+09:00 | 【家老】cmd_894+cmd_895連続GATE CLEAR。連勝516。PD-003(note自動化方式)殿裁定待ち。全忍者idle。
-- 2026-03-13T12:18:53+09:00 | その通り。既存`note/`は資料費（記事購入）、今回は**売上に対するPF手数料**で勘定科目が違う。 フォルダ名はどうするか？ 例えば： - `note_PF手数料` - `note_売上手数料` - `note_事業収入` 殿の方針は？ [meta] stop_reaso…
-- 2026-03-13T11:12:53+09:00 | 殿、報告する。 **cmd_893（Render build failure復旧）** — 半蔵が稼働中。陣形図では `pending` のまま、dashboard更新は11:02時点。配備から約10分経過。 | cmd | 状態 | 詳細 | |-----|------|--…
-- 2026-03-13T11:03:58+09:00 | 将軍復帰完了。現況を報告する。 ## 戦況 | 項目 | 状態 | |------|------| | 連勝 | **512** (cmd_357〜cmd_892) | | CI | GREEN | | PD | 0件（全解決済み） | ## 進行中 | cmd | 状態 | …
-- 2026-03-13T11:00:43+09:00 | ## 裁定待ち **PD: 0件。** 全て解決済み(PD-001, PD-002)。 ## 現況 **連勝512。cmd_891/892 GATE CLEAR。** | cmd | 状態 | 詳細 | |-----|------|------| | cmd_892 | GAT…
-- 2026-03-13T10:59:39+09:00 | **cmd_892** 委任完了。render CLIでbuild log取得→原因特定→修正方針を報告させる。 cmd_890のlive反映確認も含めているので、build failure解消と合わせてDM-Signal frontendの本番状態を正確に把握できる。 [me…
+- 2026-03-16T02:35:38+09:00 | 【将軍】復帰済み。全軍idle、パイプライン空。連勝595。殿の次の指示を待つ。
+- 2026-03-16T01:43:39+09:00 | 了解。ntfyインフラは正常だ。家老からの通知が来ていなかったのは、家老側のタイミングの問題だろう。cmd_976のパス修正+再配備指示は家老のinboxに入っている。処理されれば通知が来るはずだ。 [meta] stop_reason=end_turn
+- 2026-03-16T01:41:51+09:00 | 【家老】cmd_972 ━ 初回配備開始 (title=強化 — Stop Hook完了ゲート + エラーメッセージ修正指示形式, ninja=kotaro) 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4…
+- 2026-03-16T01:36:02+09:00 | 家老に「/clear→再配備」を追加指示した。辞書未読の中途半端な成果物を使わせない。 [meta] stop_reason=end_turn
+- 2026-03-16T01:34:59+09:00 | 家老に指示を送った。辞書は `/mnt/c/Python_app/DM-signal/` 配下に実在する。task YAMLの相対パスが原因で忍者が見つけられなかっただけだ。修正→再配備で解決する。 [meta] stop_reason=end_turn
+- 2026-03-16T01:31:52+09:00 | **半分入っている。半分入っていない。** **入っている（忍者・家老がアクセス可能）:** - 四神DNA制約（降りない/債券スイッチ/レジーム判定/構造的逆張り）— `projects/dm-signal.yaml` (e) - SM01〜SM21（誤解リスト21項目）— …
+- 2026-03-16T01:26:23+09:00 | cmd_976委任完了。設計逆転の裁定をMCPに記録した。 殿、現況を報告する。 **完了したこと:** - **cmd_976**（診断指標再設計偵察）を家老に委任。殿の哲学「体験→指標→道具」から導く5つの問いをベースに、GSD式4観点で万全偵察を配備させる - 設計逆転の…
+- 2026-03-16T01:21:22+09:00 | 核心を突く問いだ。正直に言う。**そのまま使えるものと、我々の特殊性とぶつかるものがある。** --- ## SM21の壁 — 辞書の手法は「受動的資産」前提 殿自身が教えたL0概念: > DM PF = 意思決定が埋め込まれた価格系列。論文の手法をそのまま適用(apply)で…
 
 ## 参照cmd
-- cmd_8
-- cmd_89
+- cmd_95
 - cmd_357
-- cmd_631
-- cmd_804
-- cmd_832
-- cmd_865
+- cmd_707
+- cmd_761
+- cmd_766
+- cmd_767
+- cmd_768
+- cmd_769
+- cmd_770
+- cmd_859
+- cmd_860
+- cmd_863
 - cmd_875
-- cmd_876
-- cmd_877
-- cmd_878
-- cmd_879
-- cmd_880
-- cmd_881
-- cmd_882
-- cmd_883
-- cmd_884
-- cmd_885
-- cmd_886
-- cmd_887
-- cmd_888
-- cmd_889
-- cmd_890
-- cmd_891
-- cmd_892
-- cmd_893
-- cmd_894
-- cmd_895
-- cmd_896
 - cmd_897
+- cmd_909
+- cmd_941
+- cmd_955
+- cmd_956
+- cmd_957
+- cmd_958
+- cmd_959
+- cmd_960
+- cmd_961
+- cmd_962
+- cmd_963
+- cmd_964
+- cmd_965
+- cmd_966
+- cmd_967
+- cmd_968
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
