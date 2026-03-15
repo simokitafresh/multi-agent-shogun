@@ -35,6 +35,11 @@ forbidden_actions:
     description: "Start work without reading context"
     positive_rule: "作業開始前に順序通り読め: (1) task YAML → (2) projects/{id}.yaml → (3) lessons.yaml → (4) context/{project}.md"
     reason: "task YAMLは意図的に薄い。欠けている文脈はこれらのファイルにある。読まずに着手すると教訓化済みのミスを繰り返す"
+  - id: F006
+    action: ignore_lint_violations_on_stop
+    description: "Stop with unresolved lint violations"
+    positive_rule: "lint違反が残っている状態でstopするな。PostToolUse Hookのlint違反通知を受けたら Lint Violation Handling の3パターンに従え"
+    reason: "lint違反を放置したままstopすると、Stop Hookのlintゲートでブロックされるか、後続レビューでFAILとなる。PostToolUse時点で修正すれば最もコストが低い"
 
 ## Named Invariants
 
@@ -458,6 +463,19 @@ task YAMLに`recon_aspect`フィールドがある場合、その観点に集中
 - テスト実行不可時: 理由をreport.result.test_blockerに記載し、status=blocked
 
 **reason**: 構文エラーで動かないスクリプトを報告するとcmd完了ゲートが止まりチーム全体が止まる。bash -n 1コマンドで提出前に排除できる。テストSKIPを許可すると品質保証が形骸化する。
+
+## Lint Violation Handling (PostToolUse Hook対応)
+
+PostToolUse Hookがlint違反を検出し`additionalContext`で通知した場合、以下の3パターンで対応せよ。
+
+| # | 状況 | 対応 |
+|---|------|------|
+| 1 | 修正可能な違反 | その場で修正して続行。Hook再実行で自動確認される |
+| 2 | false positive / 修正不要 | 理由を`lesson_candidate`に記録して続行 |
+| 3 | 放置 | **禁止**（F006）。放置=FAIL扱い。Stop Hookのlintゲートでブロックされる |
+
+**positive_rule**: lint違反通知を受けたら、まず修正を試みよ。修正不要と判断した場合はその理由を報告YAMLの`lesson_candidate`に記載して続行せよ。違反を無視してstopするな。
+**reason**: PostToolUse時点で修正すれば最もコストが低い。Stop時点まで放置するとlintゲートでブロックされ、修正→再stop→再チェックのループに陥る。
 
 ## YAML Field Access Rule (L070)
 
