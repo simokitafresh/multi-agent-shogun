@@ -65,8 +65,7 @@ if [ -n "$py_files" ]; then
         for f in $py_files; do
             full_path="$SHOGUN_ROOT/$f"
             [ -f "$full_path" ] || continue
-            ruff_out="$("$ruff_cmd" check --select E,W,F "$full_path" 2>/dev/null)" || true
-            if [ -n "$ruff_out" ]; then
+            if ! ruff_out="$("$ruff_cmd" check --quiet --select E,W,F "$full_path" 2>&1)"; then
                 violations="${violations}--- ruff: $f ---\n${ruff_out}\n"
             fi
         done
