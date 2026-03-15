@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
@@ -46,6 +47,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.shogun.android.ui.AgentsScreen
 import com.shogun.android.ui.DashboardScreen
+import com.shogun.android.ui.MemoScreen
 import com.shogun.android.ui.SettingsScreen
 import com.shogun.android.ui.ShogunScreen
 import com.shogun.android.ui.theme.ShogunTheme
@@ -53,6 +55,7 @@ import com.shogun.android.ui.theme.ShogunTheme
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Shogun : Screen("shogun", "将軍", Icons.Default.Star)
     object Agents : Screen("agents", "エージェント", Icons.Default.List)
+    object Memos : Screen("memos", "メモ", Icons.Default.Edit)
     object Dashboard : Screen("dashboard", "戦況", Icons.Default.Home)
     object Settings : Screen("settings", "設定", Icons.Default.Settings)
 }
@@ -60,6 +63,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 val bottomNavItems = listOf(
     Screen.Shogun,
     Screen.Agents,
+    Screen.Memos,
     Screen.Dashboard,
     Screen.Settings
 )
@@ -235,6 +239,7 @@ fun ShogunApp() {
         ) {
             composable(Screen.Shogun.route) { ShogunScreen() }
             composable(Screen.Agents.route) { AgentsScreen(resetTrigger = agentsResetTrigger) }
+            composable(Screen.Memos.route) { MemoScreen() }
             composable(Screen.Dashboard.route) { DashboardScreen() }
             composable(Screen.Settings.route) { SettingsScreen() }
         }
