@@ -204,6 +204,7 @@ with jsonl_path.open("w", encoding="utf-8", errors="replace") as f:
         f.write("\n")
 
 index_body = f"""# Lord Conversation Index
+<!-- last_updated: {now_utc.astimezone().date().isoformat()} auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
 <!-- generated_at: {now_utc.astimezone().isoformat(timespec="seconds")} -->
 

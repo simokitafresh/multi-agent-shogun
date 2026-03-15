@@ -1,5 +1,5 @@
 # context ディレクトリ
-<!-- last_updated: 2026-02-22 -->
+<!-- last_updated: 2026-03-16 cmd_992 freshness review -->
 
 プロジェクト固有のコンテキストを管理するディレクトリ。
 
@@ -25,8 +25,9 @@ context/
 2. 下記テンプレートに沿って記載
 
 ### 作業開始時
-1. `memory/global_context.md` を読む（システム全体の設定）
+1. 自分のCLIが自動ロードする指示ファイルを基準にせよ（Codex=`AGENTS.md`, Claude=`CLAUDE.md`）
 2. `context/{project_id}.md` を読む（プロジェクト固有情報）
+3. 深掘りが必要な時だけ `docs/research/*.md` を参照せよ
 
 ## テンプレート
 

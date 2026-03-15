@@ -1,5 +1,5 @@
 # GS高速化×完全一致 — 知見集約ドキュメント（索引）
-<!-- last_updated: 2026-02-26 -->
+<!-- last_updated: 2026-03-16 cmd_992 freshness review -->
 <!-- Vercel分割: 詳細 → docs/research/gs-speedup-details.md -->
 
 > 管理責任: 家老(karo)
