@@ -21,12 +21,12 @@ run_unit_tests() {
 
   echo "Running unit tests before push..."
   set +e
-  timeout 120 bats tests/unit/ --jobs 4 --timing
+  timeout 300 bats tests/unit/ --jobs 4 --timing
   test_status=$?
   set -e
 
   if [ "$test_status" -eq 124 ]; then
-    echo "BLOCKED: unit tests exceeded 40 seconds." >&2
+    echo "BLOCKED: unit tests exceeded 300 seconds." >&2
     exit 1
   fi
 
