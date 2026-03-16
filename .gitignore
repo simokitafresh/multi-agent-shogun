@@ -62,6 +62,17 @@
 
 # Multi-CLI: Codex auto-load file
 !AGENTS.md
+!android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt
+!android/app/src/main/java/com/shogun/android/MainActivity.kt
+!android/app/src/main/java/com/shogun/android/data/
+!android/app/src/main/java/com/shogun/android/data/AppDatabase.kt
+!android/app/src/main/java/com/shogun/android/data/MemoDao.kt
+!android/app/src/main/java/com/shogun/android/data/MemoEntity.kt
+!android/app/src/main/java/com/shogun/android/ui/MemoScreen.kt
+!android/app/src/main/java/com/shogun/android/util/MemoSyncFormatter.kt
+!android/app/src/main/java/com/shogun/android/viewmodel/MemoViewModel.kt
+!android/app/src/test/java/com/shogun/android/util/MemoSyncFormatterTest.kt
+!android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt
 
 # Setup and deployment scripts
 !shutsujin_departure.sh
