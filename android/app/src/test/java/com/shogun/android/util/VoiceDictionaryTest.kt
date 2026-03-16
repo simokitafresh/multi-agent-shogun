@@ -48,10 +48,7 @@ class VoiceDictionaryTest {
         val prefs = FakeSharedPreferences()
         prefs.edit().putString(
             PrefsKeys.VOICE_DICTIONARY,
-            JSONObject()
-                .put("ギットハブ", "旧GitHub")
-                .put("ユーザー独自", "独自変換")
-                .toString()
+            """{"ギットハブ":"旧GitHub","ユーザー独自":"独自変換"}"""
         ).apply()
 
         val dictionary = VoiceDictionary(prefs)
