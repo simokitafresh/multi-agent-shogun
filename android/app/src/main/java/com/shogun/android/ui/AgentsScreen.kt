@@ -205,6 +205,7 @@ fun AgentsScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val rateLimitLoading by viewModel.rateLimitLoading.collectAsState()
     val rateLimitResult by viewModel.rateLimitResult.collectAsState()
+    val rateLimitProvider by viewModel.rateLimitProvider.collectAsState()
 
     val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
     var termFontSize by remember { mutableFloatStateOf(prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT)) }
@@ -334,8 +335,27 @@ fun AgentsScreen(
                     viewModel.clearRateLimitResult()
                 },
                 title = {
-                    SelectionContainer {
-                        Text("Rate Limit Check", color = Kinpaku)
+                    Column {
+                        SelectionContainer {
+                            Text("Rate Limit Check", color = Kinpaku)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            RateLimitProviderTab(
+                                label = "Claude",
+                                selected = rateLimitProvider == "claude",
+                                onClick = { viewModel.selectRateLimitProvider("claude") }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            RateLimitProviderTab(
+                                label = "OpenAI",
+                                selected = rateLimitProvider == "openai",
+                                onClick = { viewModel.selectRateLimitProvider("openai") }
+                            )
+                        }
                     }
                 },
                 text = {
@@ -679,6 +699,24 @@ fun PaneFullScreen(
 }
 
 // ── Rate Limit UI ─────────────────────────────────────────────────────────────
+@Composable
+private fun RateLimitProviderTab(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) Kinpaku else Surface3,
+            contentColor = if (selected) Shikkoku else Zouge
+        ),
+        modifier = Modifier.height(32.dp)
+    ) {
+        Text(text = label, fontSize = 13.sp)
+    }
+}
+
 @Composable
 private fun RateLimitContent(rawText: String) {
     val data = remember(rawText) { parseRateLimitResult(rawText) }

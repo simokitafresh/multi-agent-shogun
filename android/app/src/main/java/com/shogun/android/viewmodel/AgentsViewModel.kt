@@ -41,6 +41,9 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
     private val _rateLimitLoading = MutableStateFlow(false)
     val rateLimitLoading: StateFlow<Boolean> = _rateLimitLoading
 
+    private val _rateLimitProvider = MutableStateFlow("claude")
+    val rateLimitProvider: StateFlow<String> = _rateLimitProvider
+
     private var refreshJob: Job? = null
     @Volatile private var paused = false
     @Volatile private var isRefreshing = false
@@ -185,7 +188,14 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun execRateLimitCheck() {
+    fun selectRateLimitProvider(provider: String) {
+        if (_rateLimitProvider.value != provider) {
+            _rateLimitProvider.value = provider
+            execRateLimitCheck(provider)
+        }
+    }
+
+    fun execRateLimitCheck(provider: String? = null) {
         viewModelScope.launch {
             _rateLimitLoading.value = true
             _rateLimitResult.value = null
@@ -196,7 +206,9 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
                 return@launch
             }
             val scriptPath = "$projectPath/scripts/usage_status.sh".replace("'", "'\\''")
-            val result = sshManager.execCommand("bash '$scriptPath'")
+            val prov = provider ?: _rateLimitProvider.value
+            val provArg = if (prov == "openai") "codex" else "claude"
+            val result = sshManager.execCommand("bash '$scriptPath' $provArg")
             _rateLimitLoading.value = false
             _rateLimitResult.value = result.getOrElse { "取得失敗: ${it.message}" }
         }

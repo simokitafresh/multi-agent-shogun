@@ -129,7 +129,12 @@ format_line() {
 # =============================================================================
 # Check cache freshness
 # =============================================================================
-PROVIDER="$(detect_shogun_provider)"
+# Optional positional arg overrides auto-detection (e.g., "claude" or "codex")
+if [[ -n "${1:-}" ]]; then
+    PROVIDER="$1"
+else
+    PROVIDER="$(detect_shogun_provider)"
+fi
 CACHE_FILE="/tmp/mcas_usage_status_cache_${PROVIDER}"
 
 if [[ -f "$CACHE_FILE" ]]; then
