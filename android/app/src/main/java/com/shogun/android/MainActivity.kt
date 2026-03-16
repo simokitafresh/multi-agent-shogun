@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import com.shogun.android.ui.theme.*
 import com.shogun.android.util.PrefsKeys
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -205,7 +206,7 @@ fun ShogunApp() {
                 bottomNavItems.forEach { screen ->
                     NavigationBarItem(
                         icon = { Icon(screen.icon, contentDescription = screen.label) },
-                        label = { Text(screen.label, fontSize = 10.sp, maxLines = 1) },
+                        label = { Text(screen.label, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         selected = currentRoute == screen.route,
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Kinpaku,
