@@ -451,6 +451,7 @@ fun PaneFullScreen(
     val context = LocalContext.current
     var commandTextValue by remember { mutableStateOf(TextFieldValue("")) }
     var isListening by remember { mutableStateOf(false) }
+    var partialText by remember { mutableStateOf("") }
     var isInputFocused by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
@@ -510,10 +511,13 @@ fun PaneFullScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted && speechRecognizer != null) {
-            startContinuousListening(speechRecognizer, { isListening }) { result ->
-                val newText = if (commandTextValue.text.isEmpty()) result else "${commandTextValue.text} $result"
-                commandTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
-            }
+            startContinuousListening(speechRecognizer, { isListening },
+                onResult = { result ->
+                    val newText = if (commandTextValue.text.isEmpty()) result else "${commandTextValue.text} $result"
+                    commandTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
+                },
+                onPartialResult = { partialText = it }
+            )
             isListening = true
         }
     }
@@ -632,6 +636,19 @@ fun PaneFullScreen(
             SpecialKeysRow(onSendKey = { onSendCommand(it) })
         }
 
+        // Partial recognition text (shown while listening)
+        AnimatedVisibility(visible = isListening && partialText.isNotEmpty()) {
+            Text(
+                text = "🎤 $partialText",
+                color = TextMuted,
+                fontSize = 12.sp,
+                maxLines = 1,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 2.dp)
+            )
+        }
+
         // Command input at bottom
         Row(
             modifier = Modifier
@@ -659,11 +676,15 @@ fun PaneFullScreen(
                         if (isListening) {
                             speechRecognizer.cancel()
                             isListening = false
+                            partialText = ""
                         } else {
-                            startContinuousListening(speechRecognizer, { isListening }) { result ->
-                                val newText = if (commandTextValue.text.isEmpty()) result else "${commandTextValue.text} $result"
-                                commandTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
-                            }
+                            startContinuousListening(speechRecognizer, { isListening },
+                                onResult = { result ->
+                                    val newText = if (commandTextValue.text.isEmpty()) result else "${commandTextValue.text} $result"
+                                    commandTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
+                                },
+                                onPartialResult = { partialText = it }
+                            )
                             isListening = true
                         }
                     } else {

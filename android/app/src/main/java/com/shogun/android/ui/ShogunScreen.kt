@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shogun.android.R
+import com.shogun.android.util.VoiceDictionary
 import com.shogun.android.viewmodel.ShogunViewModel
 import kotlinx.coroutines.launch
 
@@ -70,6 +71,7 @@ fun ShogunScreen(
 
     var inputTextValue by remember { mutableStateOf(TextFieldValue("")) }
     var isListening by remember { mutableStateOf(false) }
+    var partialText by remember { mutableStateOf("") }
     var isInputExpanded by remember { mutableStateOf(false) }
     var isInputFocused by remember { mutableStateOf(false) }
 
@@ -86,6 +88,7 @@ fun ShogunScreen(
     }
 
     val prefs = remember { context.getSharedPreferences(PrefsKeys.PREFS_NAME, android.content.Context.MODE_PRIVATE) }
+    val voiceDictionary = remember(prefs) { VoiceDictionary(prefs) }
     var termFontSize by remember { mutableFloatStateOf(prefs.getFloat(PrefsKeys.FONT_SIZE, Defaults.FONT_SIZE_DEFAULT)) }
     var softWrapEnabled by remember { mutableStateOf(prefs.getBoolean(PrefsKeys.SOFT_WRAP, Defaults.SOFT_WRAP_DEFAULT)) }
 
@@ -136,10 +139,13 @@ fun ShogunScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted && speechRecognizer != null) {
-            startContinuousListening(speechRecognizer, { isListening }) { result ->
-                val newText = if (inputTextValue.text.isEmpty()) result else "${inputTextValue.text} $result"
-                inputTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
-            }
+            startContinuousListening(speechRecognizer, { isListening },
+                onResult = { result ->
+                    val newText = if (inputTextValue.text.isEmpty()) result else "${inputTextValue.text} $result"
+                    inputTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
+                },
+                onPartialResult = { partialText = it }
+            )
             isListening = true
         }
     }
@@ -163,10 +169,13 @@ fun ShogunScreen(
                 Lifecycle.Event.ON_RESUME -> {
                     viewModel.resumeRefresh()
                     if (isListening && speechRecognizer != null) {
-                        startContinuousListening(speechRecognizer, { isListening }) { result ->
-                            val newText = if (inputTextValue.text.isEmpty()) result else "${inputTextValue.text} $result"
-                            inputTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
-                        }
+                        startContinuousListening(speechRecognizer, { isListening },
+                            onResult = { result ->
+                                val newText = if (inputTextValue.text.isEmpty()) result else "${inputTextValue.text} $result"
+                                inputTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
+                            },
+                            onPartialResult = { partialText = it }
+                        )
                     }
                 }
                 Lifecycle.Event.ON_PAUSE -> {
@@ -336,6 +345,19 @@ fun ShogunScreen(
             SpecialKeysRow(onSendKey = { viewModel.sendCommand(it) })
         }
 
+        // Partial recognition text (shown while listening)
+        AnimatedVisibility(visible = isListening && partialText.isNotEmpty()) {
+            Text(
+                text = "🎤 $partialText",
+                color = TextMuted,
+                fontSize = 12.sp,
+                maxLines = 1,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 2.dp)
+            )
+        }
+
         // Input area
         Row(
             modifier = Modifier
@@ -387,11 +409,15 @@ fun ShogunScreen(
                         if (isListening) {
                             speechRecognizer.cancel()
                             isListening = false
+                            partialText = ""
                         } else {
-                            startContinuousListening(speechRecognizer, { isListening }) { result ->
-                                val newText = if (inputTextValue.text.isEmpty()) result else "${inputTextValue.text} $result"
-                                inputTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
-                            }
+                            startContinuousListening(speechRecognizer, { isListening },
+                                onResult = { result ->
+                                    val newText = if (inputTextValue.text.isEmpty()) result else "${inputTextValue.text} $result"
+                                    inputTextValue = TextFieldValue(text = newText, selection = TextRange(newText.length))
+                                },
+                                onPartialResult = { partialText = it }
+                            )
                             isListening = true
                         }
                     } else {
@@ -412,7 +438,8 @@ fun ShogunScreen(
             IconButton(
                 onClick = {
                     if (inputTextValue.text.isNotBlank()) {
-                        viewModel.sendCommand(inputTextValue.text)
+                        val replacedText = voiceDictionary.applyAll(inputTextValue.text)
+                        viewModel.sendCommand(replacedText)
                         inputTextValue = TextFieldValue("")
                     }
                 },
@@ -479,15 +506,17 @@ fun SpecialKeysRow(onSendKey: (String) -> Unit) {
 fun startContinuousListening(
     speechRecognizer: SpeechRecognizer,
     isActive: () -> Boolean,
-    onResult: (String) -> Unit
+    onResult: (String) -> Unit,
+    onPartialResult: (String) -> Unit = {}
 ) {
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ja-JP")
         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L)
-        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L)
-        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 2000L)
+        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L)
     }
     speechRecognizer.setRecognitionListener(object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {}
@@ -512,6 +541,7 @@ fun startContinuousListening(
             }
         }
         override fun onResults(results: Bundle?) {
+            onPartialResult("")
             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
             if (!matches.isNullOrEmpty()) {
                 onResult(matches[0])
@@ -520,7 +550,12 @@ fun startContinuousListening(
                 speechRecognizer.startListening(intent)
             }
         }
-        override fun onPartialResults(partialResults: Bundle?) {}
+        override fun onPartialResults(partialResults: Bundle?) {
+            val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            if (!matches.isNullOrEmpty() && matches[0].isNotBlank()) {
+                onPartialResult(matches[0])
+            }
+        }
         override fun onEvent(eventType: Int, params: Bundle?) {}
     })
     speechRecognizer.startListening(intent)
