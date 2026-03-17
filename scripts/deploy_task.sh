@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC1091
 # deploy_task.sh — タスク配備ヘルパー（忍者状態自動検知付き）
 # Usage: bash scripts/deploy_task.sh <ninja_name> [message] [type] [from]
 # Example: bash scripts/deploy_task.sh hanzo "タスクYAMLを読んで作業開始せよ" task_assigned karo
@@ -20,6 +21,8 @@ LOG="$SCRIPT_DIR/logs/deploy_task.log"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
+source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 
 NINJA_NAME="${1:-}"
@@ -62,7 +65,7 @@ cleanup_none_task_files() {
     for ghost_path in "$ghost_task" "$ghost_lock"; do
         if [ -e "$ghost_path" ]; then
             rm -f "$ghost_path"
-            log "Removed ghost task artifact: ${ghost_path#$SCRIPT_DIR/}"
+            log "Removed ghost task artifact: ${ghost_path#"$SCRIPT_DIR"/}"
         fi
     done
 }
@@ -87,81 +90,12 @@ if [[ "$NINJA_NAME" == cmd_* ]]; then
     exit 1
 fi
 
-# ─── ペインターゲット解決 ───
+# ─── ペインターゲット解決 → lib/pane_lookup.sh に統合済み（pane_lookup関数） ───
 resolve_pane() {
-    local name="$1"
-    # ninja_states.yamlから取得（ninja_monitorが定期更新）
-    local pane
-    pane=$(
-        SCRIPT_DIR_ENV="$SCRIPT_DIR" NAME_ENV="$name" python3 - <<'PY' 2>/dev/null
-import os
-import yaml
-
-try:
-    states_path = os.path.join(os.environ['SCRIPT_DIR_ENV'], 'logs', 'ninja_states.yaml')
-    with open(states_path) as f:
-        data = yaml.safe_load(f)
-    ninja = data.get('ninjas', {}).get(os.environ['NAME_ENV'], {})
-    print(ninja.get('pane', ''))
-except Exception:
-    pass
-PY
-    )
-
-    if [ -n "$pane" ]; then
-        echo "$pane"
-        return 0
-    fi
-
-    # フォールバック: 既知のペインマッピング
-    case "$name" in
-        karo)     echo "shogun:agents.1" ;;
-        sasuke)   echo "shogun:agents.2" ;;
-        kirimaru) echo "shogun:agents.3" ;;
-        hayate)   echo "shogun:agents.4" ;;
-        kagemaru) echo "shogun:agents.5" ;;
-        hanzo)    echo "shogun:agents.6" ;;
-        saizo)    echo "shogun:agents.7" ;;
-        kotaro)   echo "shogun:agents.8" ;;
-        tobisaru) echo "shogun:agents.9" ;;
-        *) echo "" ;;
-    esac
+    pane_lookup "$1"
 }
 
-# ─── CTX%取得（cli_profiles.yaml経由でCLI種別に応じたパターンを取得） ───
-get_ctx_pct() {
-    local pane_target="$1"
-    local ctx_num
-
-    # Source 1: tmux pane variable
-    ctx_num=$(tmux show-options -p -t "$pane_target" -v @context_pct 2>/dev/null | grep -oE '[0-9]+' | tail -1)
-    if [ -n "$ctx_num" ] 2>/dev/null; then
-        echo "$ctx_num"
-        return 0
-    fi
-
-    # Source 2: capture-pane + cli_profiles.yamlのパターン
-    local output
-    output=$(tmux capture-pane -t "$pane_target" -p -J -S -5 2>/dev/null)
-
-    local ctx_pattern ctx_mode
-    ctx_pattern=$(cli_profile_get "$NINJA_NAME" "ctx_pattern")
-    ctx_mode=$(cli_profile_get "$NINJA_NAME" "ctx_mode")
-
-    if [ -n "$ctx_pattern" ]; then
-        ctx_num=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
-        if [ -n "$ctx_num" ]; then
-            if [ "$ctx_mode" = "remaining" ]; then
-                echo $((100 - ctx_num))
-            else
-                echo "$ctx_num"
-            fi
-            return 0
-        fi
-    fi
-
-    echo "0"
-}
+# ─── CTX%取得 → lib/ctx_utils.sh に統合済み（get_ctx_pct関数） ───
 
 # ─── idle検知（cli_profiles.yaml経由でBUSY/IDLEパターンを取得） ───
 check_idle() {
@@ -2425,7 +2359,7 @@ if [ -z "$PANE_TARGET" ]; then
     exit 1
 fi
 
-CTX_PCT=$(get_ctx_pct "$PANE_TARGET")
+CTX_PCT=$(get_ctx_pct "$PANE_TARGET" "$NINJA_NAME")
 IS_IDLE=false
 check_idle "$PANE_TARGET" && IS_IDLE=true
 

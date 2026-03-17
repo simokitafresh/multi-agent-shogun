@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC1091,SC2034,SC2155
 # ═══════════════════════════════════════════════════════════════
 # inbox_watcher.sh — メールボックス監視＆起動シグナル配信
 # Usage: bash scripts/inbox_watcher.sh <agent_id> <pane_target>
@@ -24,6 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
+source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 
 AGENT_ID="$1"
 PANE_TARGET="$2"
@@ -81,10 +83,11 @@ fi
 get_unread_info() {
     # Phase 1: Lock-free read to check for unread messages
     local info
-    info=$(python3 -c "
-import yaml, sys, json
+    info=$(INBOX_PATH="$INBOX" python3 -c "
+import yaml, sys, json, os
 try:
-    with open('$INBOX') as f:
+    inbox_path = os.environ['INBOX_PATH']
+    with open(inbox_path) as f:
         data = yaml.safe_load(f)
     if not data or 'messages' not in data or not data['messages']:
         print(json.dumps({'count': 0, 'specials': [], 'has_specials': False}))
@@ -116,10 +119,11 @@ mark_special_read() {
     (
         flock -w 5 200 || { echo "[mark_special_read] WARN: flock timeout" >&2; exit 1; }
 
-        MESSAGE_ID="$message_id" python3 -c "
+        INBOX_PATH="$INBOX" MESSAGE_ID="$message_id" python3 -c "
 import yaml, sys, os, tempfile
 try:
-    with open('$INBOX') as f:
+    inbox_path = os.environ['INBOX_PATH']
+    with open(inbox_path) as f:
         data = yaml.safe_load(f)
     if not data or 'messages' not in data:
         sys.exit(0)
@@ -131,11 +135,11 @@ try:
             changed = True
             break
     if changed:
-        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname('$INBOX'), suffix='.tmp')
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
         try:
             with os.fdopen(tmp_fd, 'w') as f:
                 yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-            os.replace(tmp_path, '$INBOX')
+            os.replace(tmp_path, inbox_path)
         except:
             os.unlink(tmp_path)
             raise
@@ -401,8 +405,9 @@ send_wakeup() {
     sleep 0.3
 
     # Send nudge via paste-buffer + Enter (atomic lock)
-    local lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
-    (
+    local lock
+    lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
+    if ! (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
         tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
@@ -414,8 +419,7 @@ send_wakeup() {
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
         fi
-    ) 200>"$lock"
-    if [ $? -ne 0 ]; then
+    ) 200>"$lock"; then
         return 1
     fi
 
@@ -431,20 +435,7 @@ send_wakeup() {
     return 0
 }
 
-# ─── Self-restart on script change (cmd_100) ───
-check_script_update() {
-    local current_hash
-    current_hash="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
-    if [ "$current_hash" != "$SCRIPT_HASH" ]; then
-        local uptime=$(($(date +%s) - STARTUP_TIME))
-        if [ "$uptime" -lt "$MIN_UPTIME" ]; then
-            echo "[$(date)] [RESTART-GUARD] Script changed but uptime too short (${uptime}s < ${MIN_UPTIME}s), skipping" >&2
-            return 0
-        fi
-        echo "[$(date)] [AUTO-RESTART] Script file changed (hash: $SCRIPT_HASH → $current_hash), restarting..." >&2
-        exec "$SCRIPT_PATH" "$AGENT_ID" "$PANE_TARGET"
-    fi
-}
+
 
 # ─── Process cycle ───
 process_unread() {
@@ -518,13 +509,26 @@ for s in data.get('specials', []):
 
                     if ! send_cli_command "/clear"; then
                         special_ok=false
-                    elif [ -n "$special_content" ] && ! send_cli_command "$special_content"; then
-                        special_ok=false
+                    elif [ -n "$special_content" ]; then
+                        # Whitelist: only plain text (no shell metacharacters or CLI commands beyond safe content)
+                        # Allow: alphanumeric, Japanese, whitespace, basic punctuation, newlines
+                        # Reject: backticks, $(), pipe, semicolon, &&, || etc.
+                        if [[ "$special_content" =~ [\`\$\|\;\&\<\>] ]]; then
+                            echo "[$(date)] [SECURITY] clear_command content rejected (shell metacharacters): ${special_content:0:80}" >&2
+                        elif ! send_cli_command "$special_content"; then
+                            special_ok=false
+                        fi
                     fi
                     ;;
                 model_switch)
-                    if ! send_cli_command "$special_content"; then
-                        special_ok=false
+                    # Whitelist: only /model <known-provider-prefix> allowed
+                    if [[ "$special_content" =~ ^/model[[:space:]]+(claude-|gpt-|o[0-9]|opus|sonnet|haiku) ]]; then
+                        if ! send_cli_command "$special_content"; then
+                            special_ok=false
+                        fi
+                    else
+                        echo "[$(date)] [SECURITY] model_switch content rejected (not whitelisted): ${special_content:0:80}" >&2
+                        special_ok=true  # mark read to prevent retry loop
                     fi
                     ;;
                 *)
@@ -620,6 +624,20 @@ if [ -z "$_startup_state" ]; then
     echo "[$(date)] Initialized @agent_state=idle for $AGENT_ID" >&2
 fi
 
+# ─── Cleanup trap: safely kill child processes on exit ───
+cleanup_inbox_watcher() {
+    # Kill any remaining child processes (e.g., inotifywait)
+    local child_pids
+    child_pids=$(jobs -p 2>/dev/null || true)
+    for pid in $child_pids; do
+        if kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+        fi
+    done
+    echo "[$(date)] inbox_watcher exiting for $AGENT_ID" >&2
+}
+trap cleanup_inbox_watcher EXIT
+
 # ─── Startup: process any existing unread messages ───
 process_unread
 
@@ -633,7 +651,8 @@ while true; do
     # set +e: inotifywait returns 2 on timeout, which would kill script under set -e
     set +e
     inotifywait -q -t "$INOTIFY_TIMEOUT" -e modify -e close_write "$INBOX" 2>/dev/null
-    rc=$?
+    # rc=0: event, rc=1: watch invalidated (atomic write), rc=2: timeout
+    # All cases handled identically: check unread then re-watch
     set -e
 
     # rc=0: event fired (instant delivery)
@@ -645,5 +664,5 @@ while true; do
     sleep 0.3
 
     process_unread
-    check_script_update
+    check_script_update "$AGENT_ID" "$PANE_TARGET"
 done

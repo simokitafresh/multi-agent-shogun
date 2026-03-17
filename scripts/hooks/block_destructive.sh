@@ -234,6 +234,21 @@ for segment in split_segments(command):
     if cmd0 == "dd" and any(tok.startswith("if=") for tok in tokens[1:]):
         print("D007: dd with if= is forbidden")
         raise SystemExit(0)
+
+    # D009: chrome/chrome.exe/chromium --headless requires --user-data-dir
+    if cmd0 in {"chrome", "chrome.exe", "chromium", "google-chrome", "google-chrome-stable"}:
+        has_headless = any(
+            tok == "--headless" or tok.startswith("--headless=")
+            for tok in tokens[1:]
+        )
+        if has_headless:
+            has_user_data_dir = any(
+                tok.startswith("--user-data-dir")
+                for tok in tokens[1:]
+            )
+            if not has_user_data_dir:
+                print("D009: chrome --headless requires --user-data-dir")
+                raise SystemExit(0)
 PY
 )"
 

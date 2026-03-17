@@ -801,17 +801,31 @@ settings_path = base_dir / "config" / "settings.yaml"
 profiles_path = base_dir / "config" / "cli_profiles.yaml"
 active_families = build_active_families_from_settings(settings_path, profiles_path)
 
-by_model = []
+# Aggregate model_stats by family to avoid duplicate rows for same model
+family_agg = {}  # family -> {total, injected, referenced, effective, label, max_n}
 for model_name, stats in model_stats.items():
-    if model_name == "unknown" or extract_model_family(model_name) not in active_families:
+    family = extract_model_family(model_name)
+    if model_name == "unknown" or family not in active_families:
         continue
+    if family not in family_agg:
+        family_agg[family] = {"total": 0, "injected": 0, "referenced": 0, "effective": 0, "label": model_name, "max_n": 0}
+    family_agg[family]["total"] += stats["total"]
+    family_agg[family]["injected"] += stats["injected"]
+    family_agg[family]["referenced"] += stats["referenced"]
+    family_agg[family]["effective"] += stats["effective"]
+    if stats["total"] > family_agg[family]["max_n"]:
+        family_agg[family]["max_n"] = stats["total"]
+        family_agg[family]["label"] = model_name
+
+by_model = []
+for family, agg in family_agg.items():
     by_model.append({
-        "model": model_name,
-        "display_name": model_name.replace("_", " "),
-        "ref_rate": percent(stats["referenced"], stats["injected"]),
-        "effectiveness_rate": percent(stats["effective"], stats["injected"]),
-        "n": stats["total"],
-        "injected_n": stats["injected"],
+        "model": agg["label"],
+        "display_name": agg["label"].replace("_", " "),
+        "ref_rate": percent(agg["referenced"], agg["injected"]),
+        "effectiveness_rate": percent(agg["effective"], agg["injected"]),
+        "n": agg["total"],
+        "injected_n": agg["injected"],
     })
 by_model.sort(key=lambda item: (item["model"] == "unknown", -(item["n"] or 0), item["display_name"].lower()))
 

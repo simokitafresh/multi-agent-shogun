@@ -56,8 +56,9 @@ field_get() {
     local field_line=""
     field_line=$(grep -E "^\s+${field}:" "$file" 2>/dev/null | head -1)
     if [[ -n "$field_line" ]]; then
+      # 最初のコロンでのみ分割（フィールド名にregex特殊文字があっても安全）
       result=$(echo "$field_line" \
-        | sed "s/^[[:space:]]*${field}:[[:space:]]*//" \
+        | sed 's/^[[:space:]]*[^:]*:[[:space:]]*//' \
         | sed "s/^['\"]//;s/['\"]$//")
     fi
 
@@ -66,7 +67,7 @@ field_get() {
       field_line=$(grep -E "^${field}:" "$file" 2>/dev/null | head -1)
       if [[ -n "$field_line" ]]; then
         result=$(echo "$field_line" \
-          | sed "s/^${field}:[[:space:]]*//" \
+          | sed 's/^[^:]*:[[:space:]]*//' \
           | sed "s/^['\"]//;s/['\"]$//")
       fi
     fi
@@ -148,6 +149,22 @@ _field_get_log() {
   local lock_file="${_FIELD_DEPS_TSV}.lock"
   (
     flock -n 200 || exit 0
+
+    # 10MB超で5世代ローテーション（偵察cmd_1041指摘: 無限肥大防止）
+    if [[ -f "$_FIELD_DEPS_TSV" ]]; then
+      local size
+      size=$(stat -c%s "$_FIELD_DEPS_TSV" 2>/dev/null || echo 0)
+      if [[ "$size" -gt 10485760 ]]; then
+        local i=4
+        while [[ $i -ge 1 ]]; do
+          [[ -f "${_FIELD_DEPS_TSV}.${i}" ]] && mv -f "${_FIELD_DEPS_TSV}.${i}" "${_FIELD_DEPS_TSV}.$((i + 1))"
+          i=$((i - 1))
+        done
+        mv -f "$_FIELD_DEPS_TSV" "${_FIELD_DEPS_TSV}.1"
+        touch "$_FIELD_DEPS_TSV"
+      fi
+    fi
+
     printf '%s\t%s\t%s\t%s\n' "$caller" "$file" "$field" "$ts" >> "$_FIELD_DEPS_TSV"
   ) 200>"$lock_file" 2>/dev/null
 }
@@ -190,12 +207,12 @@ _field_get_run_tests() {
     local actual="$3"
     if [[ "$actual" == "$expected" ]]; then
       echo "  PASS: $desc"
-      ((pass++))
+      pass=$((pass + 1))
     else
       echo "  FAIL: $desc"
       echo "        expected: '$expected'"
       echo "        actual:   '$actual'"
-      ((fail++))
+      fail=$((fail + 1))
     fi
   }
 
@@ -223,6 +240,28 @@ YAML
 
   result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_file" "top_level")
   _assert "YAML: トップレベルフィールド取得" "root_value" "$result"
+
+  # (a2) colon含むYAML値の取得テスト
+  local yaml_colon_file="${tmpdir}/test_colon.yaml"
+  cat > "$yaml_colon_file" <<'YAML'
+task:
+  deployed_at: '2026-03-18T02:12:06'
+  url: https://example.com:8080/path
+  description: 'content: with colon'
+top_url: http://host:3000
+YAML
+
+  result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_colon_file" "deployed_at")
+  _assert "YAML: colon含む値(timestamp)" "2026-03-18T02:12:06" "$result"
+
+  result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_colon_file" "url")
+  _assert "YAML: colon含む値(URL)" "https://example.com:8080/path" "$result"
+
+  result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_colon_file" "description")
+  _assert "YAML: colon含む値(text with colon)" "content: with colon" "$result"
+
+  result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_colon_file" "top_url")
+  _assert "YAML: トップレベルcolon含む値" "http://host:3000" "$result"
 
   local yaml_array_file="${tmpdir}/test_array.yaml"
   cat > "$yaml_array_file" <<'YAML'
@@ -258,11 +297,11 @@ YAML
   warn_output=$(FIELD_GET_NO_LOG=1 field_get "$yaml_file" "nonexistent_field_xyz" 2>&1 >/dev/null)
   if echo "$warn_output" | grep -q "\[field_get\] WARN"; then
     echo "  PASS: 空結果WARN出力(stderr)"
-    ((pass++))
+    pass=$((pass + 1))
   else
     echo "  FAIL: 空結果WARNが出力されなかった"
     echo "        stderr: '$warn_output'"
-    ((fail++))
+    fail=$((fail + 1))
   fi
 
   # ──────────────────────────────────────
@@ -275,10 +314,10 @@ YAML
   warn_output=$(FIELD_GET_NO_LOG=1 field_get "$yaml_file" "nonexistent_field_xyz" "default_val" 2>&1 >/dev/null)
   if echo "$warn_output" | grep -q "\[field_get\] WARN"; then
     echo "  FAIL: デフォルト値指定時にWARNが出力された"
-    ((fail++))
+    fail=$((fail + 1))
   else
     echo "  PASS: デフォルト値指定時WARNなし"
-    ((pass++))
+    pass=$((pass + 1))
   fi
 
   # ──────────────────────────────────────
@@ -290,11 +329,27 @@ YAML
 
   if [[ -f "${tmpdir}/field_deps.tsv" ]] && grep -q "status" "${tmpdir}/field_deps.tsv"; then
     echo "  PASS: 依存記録(field_deps.tsv に追記)"
-    ((pass++))
+    pass=$((pass + 1))
   else
     echo "  FAIL: 依存記録がfield_deps.tsvに追記されなかった"
-    echo "        tsv exists: $(ls -la ${tmpdir}/field_deps.tsv 2>&1)"
-    ((fail++))
+    echo "        tsv exists: $(ls -la "${tmpdir}/field_deps.tsv" 2>&1)"
+    fail=$((fail + 1))
+  fi
+
+  # ──────────────────────────────────────
+  # (f) ローテーション — 10MB超で世代管理
+  # ──────────────────────────────────────
+  # 11MBのダミーTSVを作成してローテーション発火を確認
+  dd if=/dev/zero of="${tmpdir}/field_deps.tsv" bs=1M count=11 2>/dev/null
+  FIELD_GET_NO_LOG=0 field_get "$yaml_file" "status" >/dev/null 2>&1 || true
+  sleep 0.1
+
+  if [[ -f "${tmpdir}/field_deps.tsv.1" ]]; then
+    echo "  PASS: ローテーション発火(10MB超→.1作成)"
+    pass=$((pass + 1))
+  else
+    echo "  FAIL: ローテーションが発火しなかった"
+    fail=$((fail + 1))
   fi
 
   rm -rf "$tmpdir"

@@ -90,6 +90,33 @@ assert_denied() {
     [ -z "$output" ]
 }
 
+@test "D009 blocks chrome --headless without --user-data-dir" {
+    run_hook "chrome --headless --disable-gpu https://example.com"
+    assert_denied "D009"
+}
+
+@test "D009 blocks chrome.exe --headless without --user-data-dir" {
+    run_hook "chrome.exe --headless --screenshot https://example.com"
+    assert_denied "D009"
+}
+
+@test "D009 blocks chromium --headless without --user-data-dir" {
+    run_hook "chromium --headless --dump-dom https://example.com"
+    assert_denied "D009"
+}
+
+@test "D009 allows chrome --headless with --user-data-dir" {
+    run_hook "chrome --headless --user-data-dir=/tmp/chrome-profile --screenshot https://example.com"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D009 allows chrome without --headless" {
+    run_hook "chrome https://example.com"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 @test "non-Bash tool input is ignored" {
     local payload
     payload='{"tool_name":"Edit","tool_input":{"command":"rm -rf /"}}'

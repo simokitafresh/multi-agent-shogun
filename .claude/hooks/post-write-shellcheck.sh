@@ -107,12 +107,12 @@ if not violations:
 
 append_violation_log(root, "shellcheck", relative_target, violations)
 msg = (
-        f"ERROR: ShellCheck violations in {relative_target}\n"
-        f"WHY: Shell script lint violations must be resolved before proceeding.\n"
-        f"FIX: 1) Read the violations below. 2) Fix each violation in {relative_target}. "
-        f"3) ShellCheck will re-check automatically on save. "
-        f"4) For CRLF errors (SC1017), run: sed -i 's/\\r$//' {relative_target}\n"
-        f"\n{violations}"
-    )
-    emit_context(msg)
+    f"ERROR: ShellCheck violations in {relative_target}\n"
+    f"WHY: Shell script lint violations must be resolved before proceeding.\n"
+    f"FIX: 1) Read the violations below. 2) Fix each violation in {relative_target}. "
+    f"3) ShellCheck will re-check automatically on save. "
+    f"4) For CRLF errors (SC1017), run: sed -i 's/\\r$//' {relative_target}\n"
+    f"\n{violations}"
+)
+emit_context(msg)
 PY

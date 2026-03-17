@@ -593,8 +593,10 @@ decision_candidate:
   decision: null      # e.g., "何を決めたか"
   rationale: null     # e.g., "なぜそう決めたか"
   alternatives: null  # e.g., "検討した他の案"
+  pd_duplicate_check: null  # MANDATORY when found:true — pending_decisions.yamlを確認し、既存裁定と重複がないか記載。重複あればDC起票せず「PD-XXXで裁定済み」と記載
   # NOTE: 忍者はdecisions.mdに直接書き込まない。
   #        家老が報告のdecision_candidateを精査し、decision_write.shで正式登録する。
+  # ★ DC起票前にpending_decisions.yamlを必ず読め。既に殿が裁定済みの件を再質問するのは禁止。
 lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓IDリスト
   # 参照なしなら lessons_useful: []
   # 後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い

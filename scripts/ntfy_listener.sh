@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC1091,SC2317
 # ═══════════════════════════════════════════════════════════════
 # ntfy Input Listener
 # Streams messages from ntfy topic, writes to inbox YAML, wakes shogun.
@@ -240,8 +241,8 @@ process_stream_line() {
     TAGS=$(echo "$line" | parse_tags)
     echo "$TAGS" | grep -q "outbound" && return 0
 
-    # Extract payload
-    MSG=$(echo "$line" | parse_json message)
+    # Extract payload (sanitize control characters from external input, preserve Japanese)
+    MSG=$(echo "$line" | parse_json message | tr -d '\000-\010\013-\037\177')
     ATTACHMENT_TYPE=$(echo "$line" | parse_attachment_field type)
     ATTACHMENT_URL=$(echo "$line" | parse_attachment_field url)
     ATTACHMENT_NAME=$(echo "$line" | parse_attachment_field name)

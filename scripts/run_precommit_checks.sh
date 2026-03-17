@@ -58,9 +58,9 @@ if printf '%s\n' "${staged_files[@]}" | grep -qE '^instructions/(common|cli_spec
     )
 fi
 
-mapfile -t python_files < <(printf '%s\n' "${staged_files[@]}" | rg '\.py$' || true)
-mapfile -t shell_files < <(printf '%s\n' "${staged_files[@]}" | rg '\.(sh|bash)$' || true)
-mapfile -t js_files < <(printf '%s\n' "${staged_files[@]}" | rg '\.(js|jsx|ts|tsx)$' || true)
+mapfile -t python_files < <(printf '%s\n' "${staged_files[@]}" | grep -E '\.py$' || true)
+mapfile -t shell_files < <(printf '%s\n' "${staged_files[@]}" | grep -E '\.(sh|bash)$' || true)
+mapfile -t js_files < <(printf '%s\n' "${staged_files[@]}" | grep -E '\.(js|jsx|ts|tsx)$' || true)
 
 if [ "${#python_files[@]}" -gt 0 ]; then
     ruff_cmd="$(resolve_ruff_cmd)"

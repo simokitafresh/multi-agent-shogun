@@ -159,21 +159,21 @@ done
 # ─── Parse pipeline commands from STK (pre-compute for subshell access) ───
 if [[ -f "$STK" ]] && grep -qE '^  -[[:space:]]*id:' "$STK" 2>/dev/null; then
     # Output tab-delimited: id\ttitle\tstatus
-    # Only match command-level "- id:" (2-space indent), not nested AC entries (6+)
+    # Match command-level "- id:" (no indent), not nested AC entries (2-space indent)
     awk '
-        /^  -[[:space:]]*id:/ {
+        /^-[[:space:]]+id:/ {
             if (cid != "") printf "%s\t%s\t%s\n", cid, tit, sta
-            sub(/.*-[[:space:]]*id:[[:space:]]*/, "")
+            sub(/.*id:[[:space:]]*/, "")
             gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
             cid=$0; tit=""; sta=""
         }
-        /^    title:/ && cid!="" {
+        /^  title:/ && cid!="" {
             sub(/.*title:[[:space:]]*/, "")
             gsub(/^["'"'"']|["'"'"']$/, "")
             if (length($0)>50) $0=substr($0,1,47)"..."
             tit=$0
         }
-        /^    status:/ && cid!="" {
+        /^  status:/ && cid!="" {
             sub(/.*status:[[:space:]]*/, ""); gsub(/[[:space:]]*$/, "")
             sta=$0
         }

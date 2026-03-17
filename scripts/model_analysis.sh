@@ -748,24 +748,56 @@ def output_summary():
     a = section_a()
     c = section_c()
     e = section_e()
-    for m in sorted(a.keys(), key=model_sort_key):
+    # Aggregate by model family to prevent duplicate rows for same model
+    family_stats = {}  # family -> {clear, total, impl_clear, impl_total, label, trend}
+    for m in a.keys():
         if m == "unknown":
             continue
         if not is_active_model(m):
             continue
+        family = extract_model_family(m)
         s = a[m]
+        if family not in family_stats:
+            family_stats[family] = {
+                "clear": 0, "total": 0, "impl_clear": 0, "impl_total": 0,
+                "label": m, "max_n": 0, "trends": [],
+            }
+        family_stats[family]["clear"] += s["clear"]
+        family_stats[family]["total"] += s["total"]
+        # Keep the label with the most samples as canonical
+        if s["total"] > family_stats[family]["max_n"]:
+            family_stats[family]["max_n"] = s["total"]
+            family_stats[family]["label"] = m
+        # Aggregate impl stats
+        impl_stats = c.get(m, {}).get("implement")
+        if impl_stats:
+            family_stats[family]["impl_clear"] += impl_stats.get("clear", 0)
+            family_stats[family]["impl_total"] += impl_stats.get("total", 0)
+        # Collect trends
+        trend_data = e.get(m, {})
+        if trend_data.get("trend") in ("stable", "up", "down"):
+            family_stats[family]["trends"].append(trend_data)
+
+    for family in sorted(family_stats.keys()):
+        fs = family_stats[family]
+        label = fs["label"]
+        rate = (fs["clear"] / fs["total"] * 100) if fs["total"] > 0 else 0.0
 
         impl_rate = "—"
-        impl_stats = c.get(m, {}).get("implement")
-        if impl_stats and impl_stats.get("total", 0) >= 5:
-            impl_rate = "%.1f" % impl_stats["rate"]
+        if fs["impl_total"] >= 5:
+            impl_rate = "%.1f" % ((fs["impl_clear"] / fs["impl_total"] * 100) if fs["impl_total"] > 0 else 0.0)
 
-        trend = e.get(m, {}).get("trend", "stable")
+        # Use trend from the variant with most samples
+        trend = "stable"
+        if fs["trends"]:
+            best = max(fs["trends"], key=lambda t: t.get("n", 0))
+            trend = best.get("trend", "stable")
         if trend not in ("stable", "up", "down"):
             trend = "stable"
+
         print(
             "model_row=%s\t%s\t%.1f\t%s\t%s\t%d"
-            % (model_slug(m), m, s["rate"], impl_rate, trend, s["total"])
+            % (model_slug(label), label, rate, impl_rate, trend, fs["total"])
         )
 
 def output_json():

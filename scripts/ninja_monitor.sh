@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC1091,SC2034,SC2129
 # ninja_monitor.sh — 忍者idle検知デーモン
 # Usage: bash scripts/ninja_monitor.sh
 #
@@ -38,6 +39,7 @@ source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/lib/rotate_log.sh"
 
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
+source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 
 POLL_INTERVAL=20    # ポーリング間隔（秒）
 CONFIRM_WAIT=5      # idle確認待ち（秒）— Phase 2a base wait
@@ -46,6 +48,7 @@ STALE_CMD_THRESHOLD=14400 # stale cmd検知しきい値（秒）— pending+subt
 NTFY_HEALTH_THRESHOLD_MIN=10 # ntfy_listenerヘルスチェックしきい値（分）— ログが古ければゾンビ判定
 NTFY_RESTART_COOLDOWN_MIN=5  # ntfy_listener連続再起動防止クールダウン（分）
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
+KARO_PANE="shogun:2.1"  # 家老ペインターゲット（EH6: ハードコード排除）
 NTFY_BATCH_FLUSH_INTERVAL=900 # INFOバッチ通知フラッシュ間隔（秒）
 
 # Self-restart on script change (inbox_watcher.shから移植)
@@ -97,14 +100,12 @@ declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
 declare -A STALL_NOTIFIED    # 停滞通知時刻（epoch秒）— key: "ninja:task_id", value: epoch
 declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
-declare -A PENDING_CMD_NUDGE_COUNT  # pending cmd再起動nudge回数 — key: "cmd_XXX", value: count
-declare -A PENDING_CMD_LAST_NUDGE   # pending cmd最終nudge時刻 — key: "cmd_XXX", value: epoch秒
+declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
 declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
 declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
 declare -A RENUDGE_COUNT          # 未読再nudgeカウンター — key: agent_name, value: 連続再nudge回数
 declare -A RENUDGE_FINGERPRINT    # 未読IDのfingerprint — key: agent_name, value: md5 hash (L029: ID集合ベース)
 declare -A RENUDGE_LAST_SEND      # 最終renudge送信時刻 — key: agent_name, value: epoch秒
-declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
 declare -A AUTO_DEPLOY_DONE       # auto_deploy_next.sh呼出済みフラグ — key: "ninja:task_id", value: "1"
 declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "ninja:subtask_id", value: count
 declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key: agent_name, value: epoch秒
@@ -119,10 +120,8 @@ MAX_RENUDGE=5               # 未読再nudge上限回数（同一未読状態に
 RENUDGE_BACKOFF=600         # 低頻度バックオフ再通知間隔（10分=600秒）— 同一fingerprint時の安全網
 STALL_RENOTIFY_DEBOUNCE=300 # 同一ninja×taskのSTALL再通知デバウンス（5分）
 STALL_ESCALATE_THRESHOLD=2  # 同一taskでのstall_escalate発火閾値
-MAX_PENDING_NUDGE=5         # pending cmd同一cmd再起動nudge上限回数
 KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
-PENDING_NUDGE_DEBOUNCE=300  # pending cmd同一cmd再起動nudge抑制（5分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
@@ -158,8 +157,7 @@ discover_panes() {
 # 期待される忍者ペインと実ペインを比較し、消失を検知して家老に通知
 check_pane_survival() {
     local actual_agents
-    actual_agents=$(tmux list-panes -t shogun:2 -F '#{@agent_id}' 2>/dev/null)
-    if [ $? -ne 0 ] || [ -z "$actual_agents" ]; then
+    if ! actual_agents=$(tmux list-panes -t shogun:2 -F '#{@agent_id}' 2>/dev/null) || [ -z "$actual_agents" ]; then
         log "PANE-CHECK: Failed to list panes for shogun:2"
         return
     fi
@@ -269,11 +267,11 @@ check_idle() {
     return 2
 }
 
-# ─── /clear送信ラッパー（idle確認はis_agent_idle()に一本化） ───
+# ─── /clear送信ラッパー（idle確認はcheck_idle()に一本化） ───
 # $1: pane_target, $2: agent_name, $3: reason(任意)
 # 戻り値: 0=送信, 1=ブロック（次サイクル再試行）
 # HOTFIX 2026-03-01: tail -3でステータスバーしか見えずidle prompt検出不能だった
-#   → is_agent_idle()に一本化。idle判定ロジックの重複を排除。
+#   → check_idle()に一本化。idle判定ロジックの重複を排除。
 safe_send_clear() {
     local pane="$1"
     local agent_name="$2"
@@ -377,7 +375,7 @@ get_latest_report_file() {
     local legacy_report="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
     local latest_cmd_report=""
 
-    latest_cmd_report=$(ls -1t "$SCRIPT_DIR/queue/reports/${name}_report_cmd"*.yaml 2>/dev/null | head -1 || true)
+    latest_cmd_report=$(find "$SCRIPT_DIR/queue/reports/" -maxdepth 1 -name "${name}_report_cmd*.yaml" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
     if [ -n "$latest_cmd_report" ]; then
         echo "$latest_cmd_report"
         return 0
@@ -596,6 +594,8 @@ except Exception as e:
     sys.exit(1)
 " 2>/dev/null || true
             ) 200>"$lock_file"
+            # subshell+fd redirection の戻り値
+            # shellcheck disable=SC2181
             if [ $? -ne 0 ]; then
                 return 1
             fi
@@ -662,8 +662,7 @@ is_task_deployed() {
                 local task_empty=false
 
                 # Check if pane shows idle prompt
-                check_idle "$target" "$name"
-                if [ $? -eq 0 ]; then
+                if check_idle "$target" "$name"; then
                     pane_idle=true
                 fi
 
@@ -688,19 +687,6 @@ is_task_deployed() {
     return 1  # 未配備
 }
 
-# ─── 通知処理 ───
-notify_idle() {
-    local name="$1"
-    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "${name}がidle状態。タスク割り当て可能でござる。" ninja_idle ninja_monitor >> "$LOG" 2>&1; then
-        log "Notification sent to karo: $name idle"
-        LAST_NOTIFIED[$name]=$(date +%s)
-        return 0
-    else
-        log "ERROR: Failed to send notification for $name"
-        return 1
-    fi
-}
-
 # ─── 案B: バッチ通知処理 ───
 notify_idle_batch() {
     local -a names=("$@")
@@ -710,7 +696,8 @@ notify_idle_batch() {
     local details=""
     for name in "${names[@]}"; do
         local target="${PANE_TARGETS[$name]}"
-        local ctx=$(get_context_pct "$target" "$name")
+        local ctx
+        ctx=$(get_context_pct "$target" "$name")
         local last_task
         last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
         details="${details}${name}(CTX:${ctx}%,last:${last_task}), "
@@ -720,7 +707,8 @@ notify_idle_batch() {
     local msg="idle(新規): ${details}。計${#names[@]}名タスク割り当て可能。"
     if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" ninja_idle ninja_monitor >> "$LOG" 2>&1; then
         log "Batch notification sent to karo: ${names[*]}"
-        local now=$(date +%s)
+        local now
+        now=$(date +%s)
         for name in "${names[@]}"; do
             LAST_NOTIFIED[$name]=$now
         done
@@ -731,175 +719,200 @@ notify_idle_batch() {
     fi
 }
 
-# ─── idle→通知の処理（状態遷移+デバウンス） ───
-handle_confirmed_idle() {
-    local name="$1"
+# ─── handle_confirmed_idle サブ関数群 ───
 
-    # ─── post_clear_cmd送信（cmd_583: /new後の/fast自動有効化） ───
-    # safe_send_clearでPOST_CLEAR_PENDINGがセットされた場合、次回idle検知時に送信
-    if [ -n "${POST_CLEAR_PENDING[$name]}" ]; then
-        local pc_target="${PANE_TARGETS[$name]}"
-        if [ -n "$pc_target" ]; then
-            local post_cmd
-            post_cmd=$(cli_profile_get "$name" "post_clear_cmd")
-            if [ -n "$post_cmd" ]; then
-                # AC4: /fastはトグルのため、既にONなら送信しない
-                local pc_banner
-                pc_banner=$(tmux capture-pane -t "$pc_target" -p -J -S -100 2>/dev/null)
-                if echo "$pc_banner" | grep -qE '│.*model:.*fast'; then
-                    log "POST-CLEAR-CMD-SKIP: $name fast already ON, skipping to avoid toggle-off"
-                else
-                    log "POST-CLEAR-CMD: $name sending $post_cmd after /new"
-                    safe_send_keys_atomic "$pc_target" "$post_cmd" 0.3
-                fi
-            fi
-            unset POST_CLEAR_PENDING[$name]
-            PREV_STATE[$name]="idle"
-            return
+# post_clear_cmd送信（cmd_583: /new後の/fast自動有効化）
+# 戻り値: 0=処理済み(呼び出し元でreturn), 1=未処理(続行)
+_handle_post_clear_pending() {
+    local name="$1"
+    [ -z "${POST_CLEAR_PENDING[$name]}" ] && return 1
+
+    local pc_target="${PANE_TARGETS[$name]}"
+    [ -z "$pc_target" ] && return 1
+
+    local post_cmd
+    post_cmd=$(cli_profile_get "$name" "post_clear_cmd")
+    if [ -n "$post_cmd" ]; then
+        # AC4: /fastはトグルのため、既にONなら送信しない
+        local pc_banner
+        pc_banner=$(tmux capture-pane -t "$pc_target" -p -J -S -100 2>/dev/null)
+        if echo "$pc_banner" | grep -qE '│.*model:.*fast'; then
+            log "POST-CLEAR-CMD-SKIP: $name fast already ON, skipping to avoid toggle-off"
+        else
+            log "POST-CLEAR-CMD: $name sending $post_cmd after /new"
+            safe_send_keys_atomic "$pc_target" "$post_cmd" 0.3
         fi
     fi
+    unset "POST_CLEAR_PENDING[$name]"
+    PREV_STATE[$name]="idle"
+    return 0
+}
 
-    # 案E改: タスク配備済みの場合、statusに応じた分岐
-    if is_task_deployed "$name"; then
-        local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-        local task_status
-        task_status=$(yaml_field_get "$task_file" "status")
+# deploy stall処理（タスク配備済み+idle時の/clear+再送）
+# 戻り値: 0=処理済み(呼び出し元でreturn), 1=未処理(続行)
+_handle_deploy_stall() {
+    local name="$1"
+    ! is_task_deployed "$name" && return 1
 
-        # acknowledged/in_progress はStage 1（Phase 1）で既にフィルタ済み
-        # ここに到達するのは assigned/done/idle/statusなし のみ
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_status
+    task_status=$(yaml_field_get "$task_file" "status")
 
-        # assigned = 未着手。デッドロック候補（/clear+再送の対象）
-        local now
-        now=$(date +%s)
-        local deploy_stall_key="deploy_stall_${name}"
-        if [ -z "${STALL_FIRST_SEEN[$deploy_stall_key]}" ]; then
-            STALL_FIRST_SEEN[$deploy_stall_key]=$now
-            log "DEPLOY-STALL-WATCH: $name has $task_status task, idle (tracking started)"
+    # acknowledged/in_progress はStage 1（Phase 1）で既にフィルタ済み
+    # ここに到達するのは assigned/done/idle/statusなし のみ
+
+    local now
+    now=$(date +%s)
+    local deploy_stall_key="deploy_stall_${name}"
+    if [ -z "${STALL_FIRST_SEEN[$deploy_stall_key]}" ]; then
+        STALL_FIRST_SEEN[$deploy_stall_key]=$now
+        log "DEPLOY-STALL-WATCH: $name has $task_status task, idle (tracking started)"
+        PREV_STATE[$name]="busy"
+        return 0
+    fi
+
+    local first_seen=${STALL_FIRST_SEEN[$deploy_stall_key]}
+    local elapsed=$((now - first_seen))
+    local effective_debounce
+    effective_debounce=$(cli_profile_get "$name" "clear_debounce")
+    # AC3: stall_debounceが定義されていればclear_debounceより優先
+    local stall_debounce
+    stall_debounce=$(cli_profile_get "$name" "stall_debounce")
+    if [ -n "$stall_debounce" ]; then
+        effective_debounce=$stall_debounce
+    fi
+
+    if [ "$elapsed" -ge "$effective_debounce" ]; then
+        if ! can_send_clear_with_report_gate "$name" "DEPLOY-STALL-CLEAR"; then
             PREV_STATE[$name]="busy"
-            return
+            return 0
         fi
-
-        local first_seen=${STALL_FIRST_SEEN[$deploy_stall_key]}
-        local elapsed=$((now - first_seen))
-        local effective_debounce
-        effective_debounce=$(cli_profile_get "$name" "clear_debounce")
-        # AC3: stall_debounceが定義されていればclear_debounceより優先
-        local stall_debounce
-        stall_debounce=$(cli_profile_get "$name" "stall_debounce")
-        if [ -n "$stall_debounce" ]; then
-            effective_debounce=$stall_debounce
+        local target="${PANE_TARGETS[$name]}"
+        if ! safe_send_clear "$target" "$name" "DEPLOY-STALL-CLEAR"; then
+            PREV_STATE[$name]="busy"
+            return 0
         fi
-
-        if [ "$elapsed" -ge "$effective_debounce" ]; then
-            if ! can_send_clear_with_report_gate "$name" "DEPLOY-STALL-CLEAR"; then
-                PREV_STATE[$name]="busy"
-                return
-            fi
-            local target="${PANE_TARGETS[$name]}"
-            if ! safe_send_clear "$target" "$name" "DEPLOY-STALL-CLEAR"; then
-                PREV_STATE[$name]="busy"
-                return
-            fi
-            unset STALL_FIRST_SEEN[$deploy_stall_key]
-            # cmd_583: /new後にpost_clear_cmd(e.g. /fast)を送信するためpendingセット
-            if [ -n "$(cli_profile_get "$name" "post_clear_cmd")" ]; then
-                POST_CLEAR_PENDING[$name]=$now
-                log "POST-CLEAR-PENDING: $name queued post_clear_cmd after DEPLOY-STALL-CLEAR"
-            fi
-            # /new後にinbox nudgeで新セッションにタスクを知らせる
-            sleep 2
-            bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "タスクYAMLを読んで作業開始せよ。" task_assigned ninja_monitor >> "$LOG" 2>&1
-            # AC1: 家老にDEPLOY-STALL通知
+        unset "STALL_FIRST_SEEN[$deploy_stall_key]"
+        # cmd_583: /new後にpost_clear_cmd(e.g. /fast)を送信するためpendingセット
+        if [ -n "$(cli_profile_get "$name" "post_clear_cmd")" ]; then
+            POST_CLEAR_PENDING[$name]=$now
+            log "POST-CLEAR-PENDING: $name queued post_clear_cmd after DEPLOY-STALL-CLEAR"
+        fi
+        # /new後にinbox nudgeで新セッションにタスクを知らせる
+        sleep 2
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "タスクYAMLを読んで作業開始せよ。" task_assigned ninja_monitor >> "$LOG" 2>&1
+        # AC1: 家老にDEPLOY-STALL通知
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+          "【DEPLOY-STALL】${name}が${task_status}のままidle ${elapsed}秒。/clear+再送実施。" \
+          deploy_stall ninja_monitor >> "$LOG" 2>&1
+        # AC2: STALLカウンター+エスカレーション
+        local subtask_id
+        subtask_id=$(yaml_field_get "$task_file" "subtask_id")
+        local stall_count_key="${name}:${subtask_id}"
+        STALL_COUNT[$stall_count_key]=$((${STALL_COUNT[$stall_count_key]:-0} + 1))
+        local count=${STALL_COUNT[$stall_count_key]}
+        if [ "$count" -ge 2 ]; then
             bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-              "【DEPLOY-STALL】${name}が${task_status}のままidle ${elapsed}秒。/clear+再送実施。" \
-              deploy_stall ninja_monitor >> "$LOG" 2>&1
-            # AC2: STALLカウンター+エスカレーション
-            local subtask_id
-            subtask_id=$(yaml_field_get "$task_file" "subtask_id")
-            local stall_count_key="${name}:${subtask_id}"
-            STALL_COUNT[$stall_count_key]=$((${STALL_COUNT[$stall_count_key]:-0} + 1))
-            local count=${STALL_COUNT[$stall_count_key]}
-            if [ "$count" -ge 2 ]; then
-                bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-                  "【STALL-ESCALATE】${name}が${subtask_id}で${count}回STALL。差し替え必須。" \
-                  stall_escalate ninja_monitor >> "$LOG" 2>&1
-            fi
-        else
-            log "DEPLOY-STALL-WAIT: $name $task_status+idle ${elapsed}s < ${effective_debounce}s"
-            PREV_STATE[$name]="busy"
+              "【STALL-ESCALATE】${name}が${subtask_id}で${count}回STALL。差し替え必須。" \
+              stall_escalate ninja_monitor >> "$LOG" 2>&1
+        fi
+    else
+        log "DEPLOY-STALL-WAIT: $name $task_status+idle ${elapsed}s < ${effective_debounce}s"
+        PREV_STATE[$name]="busy"
+    fi
+    return 0
+}
+
+# idle通知（busy→idle遷移時のデバウンス付き通知）
+_handle_idle_notify() {
+    local name="$1"
+    local now="$2"
+
+    [ "${PREV_STATE[$name]}" = "idle" ] && return
+
+    local last elapsed debounce_time
+    last="${LAST_NOTIFIED[$name]:-0}"
+    elapsed=$((now - last))
+
+    debounce_time=$(cli_profile_get "$name" "debounce")
+
+    if [ "$elapsed" -ge "$debounce_time" ]; then
+        log "IDLE confirmed: $name"
+        NEWLY_IDLE+=("$name")
+    else
+        log "DEBOUNCE: $name idle but ${elapsed}s < ${debounce_time}s since last notify"
+    fi
+}
+
+# idle時自動/clear（毎サイクル判定）
+_handle_auto_clear() {
+    local name="$1"
+    local now="$2"
+
+    local target agent_id clear_last clear_elapsed
+    target="${PANE_TARGETS[$name]}"
+    [ -z "$target" ] && return
+
+    agent_id=$(tmux display-message -t "$target" -p '#{@agent_id}' 2>/dev/null)
+
+    # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
+    local ctx_now
+    ctx_now=$(get_context_pct "$target" "$name")
+    if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
+        # AC3: CLEAR-SKIPカウンタ — 連続10回超で5分間隔ログ
+        CLEAR_SKIP_COUNT[$name]=$(( ${CLEAR_SKIP_COUNT[$name]:-0} + 1 ))
+        local skip_count=${CLEAR_SKIP_COUNT[$name]}
+        if [ "$skip_count" -le 10 ]; then
+            log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (${skip_count}/10)"
+        elif [ $(( skip_count % 15 )) -eq 0 ]; then
+            # 15サイクル=300秒(5分)ごとにログ出力
+            log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (continuous: ${skip_count})"
         fi
         return
     fi
 
+    # CTX>0%に変化 → カウンタリセット
+    CLEAR_SKIP_COUNT[$name]=0
+    clear_last="${LAST_CLEARED[$name]:-0}"
+    clear_elapsed=$((now - clear_last))
+
+    # CLI種別に応じたデバウンス（cli_profiles.yaml参照）
+    local effective_debounce
+    effective_debounce=$(cli_profile_get "$agent_id" "clear_debounce")
+
+    if [ "$clear_elapsed" -ge "$effective_debounce" ]; then
+        if ! can_send_clear_with_report_gate "$name" "AUTO-CLEAR"; then
+            log "AUTO-CLEAR-BLOCKED: $name done but report missing, keep context"
+            return
+        fi
+        if safe_send_clear "$target" "$name" "AUTO-CLEAR"; then
+            LAST_CLEARED[$name]=$now
+            # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
+            tmux set-option -p -t "$target" @current_task "" 2>/dev/null
+            # cmd_583: /new後にpost_clear_cmd(e.g. /fast)を送信するためpendingセット
+            if [ -n "$(cli_profile_get "$name" "post_clear_cmd")" ]; then
+                POST_CLEAR_PENDING[$name]=$now
+                log "POST-CLEAR-PENDING: $name queued post_clear_cmd after AUTO-CLEAR"
+            fi
+        fi
+    else
+        log "CLEAR-DEBOUNCE: $name idle+no_task but ${clear_elapsed}s < ${effective_debounce}s since last /clear"
+    fi
+}
+
+# ─── idle→通知の処理（状態遷移+デバウンス） ───
+# 4サブ関数に分割: _handle_post_clear_pending / _handle_deploy_stall /
+#                   _handle_idle_notify / _handle_auto_clear
+handle_confirmed_idle() {
+    local name="$1"
+
+    if _handle_post_clear_pending "$name"; then return; fi
+    if _handle_deploy_stall "$name"; then return; fi
+
     local now
     now=$(date +%s)
-
-    # ─── 通知（busy→idle遷移時のみ） ───
-    if [ "${PREV_STATE[$name]}" != "idle" ]; then
-        local last elapsed debounce_time
-        last="${LAST_NOTIFIED[$name]:-0}"
-        elapsed=$((now - last))
-
-        debounce_time=$(cli_profile_get "$name" "debounce")
-
-        if [ $elapsed -ge $debounce_time ]; then
-            log "IDLE confirmed: $name"
-            NEWLY_IDLE+=("$name")
-        else
-            log "DEBOUNCE: $name idle but ${elapsed}s < ${debounce_time}s since last notify"
-        fi
-    fi
-
-    # ─── idle時自動/clear（毎サイクル判定、状態遷移に依存しない） ───
-    local target agent_id clear_last clear_elapsed
-    target="${PANE_TARGETS[$name]}"
-    if [ -n "$target" ]; then
-        agent_id=$(tmux display-message -t "$target" -p '#{@agent_id}' 2>/dev/null)
-
-        # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
-        local ctx_now
-        ctx_now=$(get_context_pct "$target" "$name")
-        if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
-            # AC3: CLEAR-SKIPカウンタ — 連続10回超で5分間隔ログ
-            CLEAR_SKIP_COUNT[$name]=$(( ${CLEAR_SKIP_COUNT[$name]:-0} + 1 ))
-            local skip_count=${CLEAR_SKIP_COUNT[$name]}
-            if [ $skip_count -le 10 ]; then
-                log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (${skip_count}/10)"
-            elif [ $(( skip_count % 15 )) -eq 0 ]; then
-                # 15サイクル=300秒(5分)ごとにログ出力
-                log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (continuous: ${skip_count})"
-            fi
-        else
-            # CTX>0%に変化 → カウンタリセット
-            CLEAR_SKIP_COUNT[$name]=0
-            clear_last="${LAST_CLEARED[$name]:-0}"
-            clear_elapsed=$((now - clear_last))
-
-            # CLI種別に応じたデバウンス（cli_profiles.yaml参照）
-            local effective_debounce
-            effective_debounce=$(cli_profile_get "$agent_id" "clear_debounce")
-
-            if [ $clear_elapsed -ge $effective_debounce ]; then
-                if ! can_send_clear_with_report_gate "$name" "AUTO-CLEAR"; then
-                    log "AUTO-CLEAR-BLOCKED: $name done but report missing, keep context"
-                    PREV_STATE[$name]="idle"
-                    return
-                fi
-                if safe_send_clear "$target" "$name" "AUTO-CLEAR"; then
-                    LAST_CLEARED[$name]=$now
-                    # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
-                    tmux set-option -p -t "$target" @current_task "" 2>/dev/null
-                    # cmd_583: /new後にpost_clear_cmd(e.g. /fast)を送信するためpendingセット
-                    if [ -n "$(cli_profile_get "$name" "post_clear_cmd")" ]; then
-                        POST_CLEAR_PENDING[$name]=$now
-                        log "POST-CLEAR-PENDING: $name queued post_clear_cmd after AUTO-CLEAR"
-                    fi
-                fi
-            else
-                log "CLEAR-DEBOUNCE: $name idle+no_task but ${clear_elapsed}s < ${effective_debounce}s since last /clear"
-            fi
-        fi
-    fi
+    _handle_idle_notify "$name" "$now"
+    _handle_auto_clear "$name" "$now"
 
     PREV_STATE[$name]="idle"
 }
@@ -913,9 +926,51 @@ handle_busy() {
     fi
     PREV_STATE[$name]="busy"
     # 作業再開 → 停滞追跡リセット + fingerprint リセット（次idle時に新鮮な判定を保証）
-    unset STALL_FIRST_SEEN[$name]
-    unset STALL_FIRST_SEEN["deploy_stall_${name}"]
+    unset "STALL_FIRST_SEEN[$name]"
+    unset "STALL_FIRST_SEEN[deploy_stall_${name}]"
     RENUDGE_FINGERPRINT[$name]=""
+}
+
+# ─── 連想配列クリーンアップ（H1: メモリリーク防止） ───
+# 長時間稼働で蓄積するinactiveキーを定期削除
+_cleanup_stale_keys() {
+    # アクティブエージェント集合を構築
+    local -A active
+    local n
+    for n in "${NINJA_NAMES[@]}"; do
+        active[$n]=1
+    done
+    active[karo]=1
+
+    # agent名キーの配列: inactive agentのキーを削除
+    local key agent_part
+    for key in "${!STALL_FIRST_SEEN[@]}"; do
+        agent_part="${key#deploy_stall_}"
+        if [ -z "${active[$agent_part]}" ] && [ -z "${active[$key]}" ]; then
+            unset "STALL_FIRST_SEEN[$key]"
+        fi
+    done
+
+    # compound key (agent:task_id) の配列: agentが非アクティブなら削除
+    for key in "${!STALL_NOTIFIED[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "STALL_NOTIFIED[$key]"
+    done
+
+    for key in "${!AUTO_DEPLOY_DONE[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "AUTO_DEPLOY_DONE[$key]"
+    done
+
+    for key in "${!STALL_COUNT[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "STALL_COUNT[$key]"
+    done
+
+    for key in "${!DESTRUCTIVE_WARN_LAST[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "DESTRUCTIVE_WARN_LAST[$key]"
+    done
 }
 
 # ─── 停滞検知（assigned/acknowledged/in_progress+idle） ───
@@ -927,7 +982,7 @@ check_stall() {
 
     # タスクファイルなし → 追跡リセット
     if [ ! -f "$task_file" ]; then
-        unset STALL_FIRST_SEEN[$name]
+        unset "STALL_FIRST_SEEN[$name]"
         return
     fi
 
@@ -952,13 +1007,13 @@ check_stall() {
                 local progress_age=$(( now_epoch - progress_epoch ))
                 if [ $progress_age -lt 1200 ]; then
                     # 20分以内にprogress更新あり → 作業中
-                    unset STALL_FIRST_SEEN[$name]
+                    unset "STALL_FIRST_SEEN[$name]"
                     return
                 fi
             fi
             ;;
         *)
-            unset STALL_FIRST_SEEN[$name]
+            unset "STALL_FIRST_SEEN[$name]"
             return
             ;;
     esac
@@ -967,15 +1022,15 @@ check_stall() {
     local target="${PANE_TARGETS[$name]}"
     if [ -z "$target" ]; then return; fi
 
-    check_idle "$target" "$name"
-    if [ $? -ne 0 ]; then
+    if ! check_idle "$target" "$name"; then
         # busy状態 → 停滞追跡リセット
-        unset STALL_FIRST_SEEN[$name]
+        unset "STALL_FIRST_SEEN[$name]"
         return
     fi
 
     # idle状態 → 停滞追跡開始 or 経過確認
-    local now=$(date +%s)
+    local now
+    now=$(date +%s)
     if [ -z "${STALL_FIRST_SEEN[$name]}" ]; then
         STALL_FIRST_SEEN[$name]=$now
         log "STALL-WATCH: $name has ${status} task $task_id and is idle (tracking started)"
@@ -999,7 +1054,7 @@ check_stall() {
 
     local stall_key="${name}:${task_id}"
 
-    if [ $elapsed_min -ge $threshold ]; then
+    if [ "$elapsed_min" -ge "$threshold" ]; then
         local last_notified=${STALL_NOTIFIED[$stall_key]:-0}
         local since_last=$((now - last_notified))
         if [ "$last_notified" -gt 0 ] && [ "$since_last" -lt "$STALL_RENOTIFY_DEBOUNCE" ]; then
@@ -1022,7 +1077,7 @@ check_stall() {
             log "STALL-RECOVERY-SEND: resent task_assigned to ${name} for ${task_id}"
         fi
 
-        unset STALL_FIRST_SEEN[$name]
+        unset "STALL_FIRST_SEEN[$name]"
     fi
 }
 
@@ -1090,7 +1145,7 @@ check_stale_cmds() {
         fi
 
         # subtask存在確認: queue/tasks/*.yaml の parent_cmd を照合
-        if rg -l --glob '*.yaml' "parent_cmd:\\s*${cmd_id}\\b" "$SCRIPT_DIR/queue/tasks" >/dev/null 2>&1; then
+        if grep -l "parent_cmd:.*${cmd_id}" "$SCRIPT_DIR/queue/tasks/"*.yaml >/dev/null 2>&1; then
             continue
         fi
 
@@ -1111,11 +1166,8 @@ check_stale_cmds() {
 # 新規pending cmd出現時のみ家老に1回通知。同一cmdの繰り返し送信を廃止。
 # 長時間未処理のエスカレーションは check_stale_cmds() が担当。
 check_karo_pending_cmd() {
-    local karo_pane="shogun:2.1"
-
     # 家老がbusyならスキップ（作業中は割り込み不要）
-    check_idle "$karo_pane" "karo"
-    if [ $? -ne 0 ]; then
+    if ! check_idle "$KARO_PANE" "karo"; then
         return
     fi
 
@@ -1145,7 +1197,7 @@ check_karo_pending_cmd() {
             [ "$old_id" = "$cid" ] && found=1 && break
         done
         if [ $found -eq 0 ]; then
-            unset PREV_PENDING_SET[$old_id]
+            unset "PREV_PENDING_SET[$old_id]"
             log "PENDING-CMD-RESOLVED: ${old_id} no longer pending"
         fi
     done
@@ -1258,7 +1310,8 @@ count_unread_messages() {
 
 check_inbox_renudge() {
     local all_agents=("karo" "${NINJA_NAMES[@]}")
-    local now=$(date +%s)
+    local now
+    now=$(date +%s)
 
     for name in "${all_agents[@]}"; do
         local inbox_file="$SCRIPT_DIR/queue/inbox/${name}.yaml"
@@ -1289,15 +1342,14 @@ check_inbox_renudge() {
         # ペインターゲット取得
         local target
         if [ "$name" = "karo" ]; then
-            target="shogun:2.1"
+            target="$KARO_PANE"
         else
             target="${PANE_TARGETS[$name]}"
         fi
         [ -z "$target" ] && continue
 
         # idle判定（busy → skip：作業中はいずれinboxを処理する）
-        check_idle "$target" "$name"
-        if [ $? -ne 0 ]; then
+        if ! check_idle "$target" "$name"; then
             continue
         fi
 
@@ -1344,55 +1396,16 @@ check_inbox_renudge() {
 }
 
 # ─── context_pct更新（単一ペイン） ───
+# get_context_pctのthin wrapper。デフォルト"--"を設定後、再パースで上書き。
 # 引数: $1=pane_target (例: shogun:2.4), $2=agent_name（省略時はフォールバック）
 # 戻り値: 0=更新成功, 1=失敗(--設定)
 update_context_pct() {
     local pane_target="$1"
     local agent_name="$2"
-    local output
-    local context_pct="--"
-
-    output=$(tmux capture-pane -t "$pane_target" -p -J -S -10 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        tmux set-option -p -t "$pane_target" @context_pct "$context_pct" 2>/dev/null
-        return 1
-    fi
-
-    # cli_profiles.yamlからパターンとモードを取得
-    local ctx_pattern ctx_mode
-    if [ -n "$agent_name" ]; then
-        ctx_pattern=$(cli_profile_get "$agent_name" "ctx_pattern")
-        ctx_mode=$(cli_profile_get "$agent_name" "ctx_mode")
-    fi
-
-    if [ -n "$ctx_pattern" ]; then
-        if [ "$ctx_mode" = "usage" ]; then
-            local match
-            match=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
-            if [ -n "$match" ]; then
-                context_pct="${match}%"
-            fi
-        elif [ "$ctx_mode" = "remaining" ]; then
-            local remaining
-            remaining=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
-            if [ -n "$remaining" ]; then
-                context_pct="$((100 - remaining))%"
-            fi
-        fi
-    else
-        # フォールバック: 両パターン試行
-        if echo "$output" | grep -qE 'CTX:[0-9]+%'; then
-            context_pct=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | sed 's/CTX://')
-        elif echo "$output" | grep -qE '[0-9]+% context left'; then
-            local remaining
-            remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
-            context_pct="$((100 - remaining))%"
-        fi
-    fi
-
-    # tmux変数に設定（全エージェント共通）
-    tmux set-option -p -t "$pane_target" @context_pct "$context_pct" 2>/dev/null
-    return 0
+    # デフォルト値設定後、get_context_pctで再パース
+    # get_context_pctが成功すれば@context_pctを上書き、失敗すれば"--"が残る
+    tmux set-option -p -t "$pane_target" @context_pct "--" 2>/dev/null
+    get_context_pct "$pane_target" "$agent_name" > /dev/null
 }
 
 # ─── 全ペインのcontext_pct更新 ───
@@ -1415,50 +1428,50 @@ update_all_context_pct() {
 write_state_file() {
     local state_file="$SCRIPT_DIR/queue/ninja_states.yaml"
     local lock_file="/tmp/ninja_states.lock"
-    local timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
 
     # flock排他制御（他プロセスが読み書きする可能性に備える）
     # S04修正: サブシェル→ブレースグループ（fd継承によるロック漏洩を回避）
     {
-        flock -x 200
+        if ! flock -x -w 5 200; then
+            log "ERROR: write_state_file flock failed"
+        else
+            # YAML生成
+            echo "updated_at: \"$timestamp\"" > "$state_file"
+            echo "agents:" >> "$state_file"
 
-        # YAML生成
-        echo "updated_at: \"$timestamp\"" > "$state_file"
-        echo "agents:" >> "$state_file"
+            # 家老
+            local karo_status="unknown"
+            check_idle "$KARO_PANE" "karo" && karo_status="idle" || karo_status="busy"
+            local karo_ctx
+            karo_ctx=$(get_context_pct "$KARO_PANE" "karo")
+            echo "  karo:" >> "$state_file"
+            echo "    pane: \"$KARO_PANE\"" >> "$state_file"
+            echo "    status: $karo_status" >> "$state_file"
+            echo "    ctx_pct: $karo_ctx" >> "$state_file"
+            echo "    last_task: \"\"" >> "$state_file"
 
-        # 家老
-        local karo_pane="shogun:2.1"
-        local karo_status="unknown"
-        check_idle "$karo_pane" "karo" && karo_status="idle" || karo_status="busy"
-        local karo_ctx=$(get_context_pct "$karo_pane" "karo")
-        echo "  karo:" >> "$state_file"
-        echo "    pane: \"$karo_pane\"" >> "$state_file"
-        echo "    status: $karo_status" >> "$state_file"
-        echo "    ctx_pct: $karo_ctx" >> "$state_file"
-        echo "    last_task: \"\"" >> "$state_file"
+            # 忍者
+            for name in "${NINJA_NAMES[@]}"; do
+                local target="${PANE_TARGETS[$name]}"
+                if [ -z "$target" ]; then continue; fi
 
-        # 忍者
-        for name in "${NINJA_NAMES[@]}"; do
-            local target="${PANE_TARGETS[$name]}"
-            if [ -z "$target" ]; then continue; fi
+                local status="${PREV_STATE[$name]:-unknown}"
+                local ctx
+                ctx=$(get_context_pct "$target" "$name")
+                local last_task
+                last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
+                [ -z "$last_task" ] && last_task=""
 
-            local status="${PREV_STATE[$name]:-unknown}"
-            local ctx=$(get_context_pct "$target" "$name")
-            local last_task
-            last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
-            [ -z "$last_task" ] && last_task=""
-
-            echo "  ${name}:" >> "$state_file"
-            echo "    pane: \"$target\"" >> "$state_file"
-            echo "    status: $status" >> "$state_file"
-            echo "    ctx_pct: $ctx" >> "$state_file"
-            echo "    last_task: \"$last_task\"" >> "$state_file"
-        done
-
+                echo "  ${name}:" >> "$state_file"
+                echo "    pane: \"$target\"" >> "$state_file"
+                echo "    status: $status" >> "$state_file"
+                echo "    ctx_pct: $ctx" >> "$state_file"
+                echo "    last_task: \"$last_task\"" >> "$state_file"
+            done
+        fi
     } 200>"$lock_file"
-    if [ $? -ne 0 ]; then
-        log "ERROR: write_state_file flock failed"
-    fi
 }
 
 # ─── ntfy_listenerヘルスチェック (cmd_635) ───
@@ -1517,120 +1530,119 @@ check_ntfy_listener_health() {
 write_karo_snapshot() {
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
     local lock_file="/tmp/karo_snapshot.lock"
-    local timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
 
     # S04修正: サブシェル→ブレースグループ（fd継承によるロック漏洩を回避）
     {
-        flock -x 200
+        if ! flock -x -w 5 200; then
+            log "ERROR: write_karo_snapshot flock failed"
+        else
+            {
+                echo "# 家老陣形図(karo_snapshot) — ninja_monitor.sh自動生成"
+                echo "# Generated: $timestamp"
 
-        {
-            echo "# 家老陣形図(karo_snapshot) — ninja_monitor.sh自動生成"
-            echo "# Generated: $timestamp"
-
-            # cmd状態: shogun_to_karo.yamlから全cmd
-            local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
-            if [ -f "$cmd_file" ]; then
-                awk '
-                    function emit() {
-                        if (cmd_id != "") {
-                            purpose_short = substr(cmd_purpose, 1, 40)
-                            print "cmd|" cmd_id "|" cmd_status "|" purpose_short
+                # cmd状態: shogun_to_karo.yamlから全cmd
+                local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+                if [ -f "$cmd_file" ]; then
+                    awk '
+                        function emit() {
+                            if (cmd_id != "") {
+                                purpose_short = substr(cmd_purpose, 1, 40)
+                                print "cmd|" cmd_id "|" cmd_status "|" purpose_short
+                            }
                         }
-                    }
-                    /^- id:/ {
-                        emit()
-                        cmd_id=$3; gsub(/"/, "", cmd_id)
-                        cmd_status=""; cmd_purpose=""
-                        next
-                    }
-                    /^  status:/ { cmd_status=$2; next }
-                    /^  purpose:/ {
-                        cmd_purpose=$0
-                        sub(/^  purpose:[[:space:]]*"?/, "", cmd_purpose)
-                        sub(/"$/, "", cmd_purpose)
-                        next
-                    }
-                    END { emit() }
-                ' "$cmd_file"
-            fi
-
-            # 忍者task状態
-            for name in "${NINJA_NAMES[@]}"; do
-                local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-                if [ -f "$task_file" ]; then
-                    local task_id status project
-                    task_id=$(yaml_field_get "$task_file" "task_id")
-                    status=$(yaml_field_get "$task_file" "status")
-                    project=$(yaml_field_get "$task_file" "project")
-                    echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}"
-                else
-                    echo "ninja|${name}|none|idle|none"
+                        /^- id:/ {
+                            emit()
+                            cmd_id=$3; gsub(/"/, "", cmd_id)
+                            cmd_status=""; cmd_purpose=""
+                            next
+                        }
+                        /^  status:/ { cmd_status=$2; next }
+                        /^  purpose:/ {
+                            cmd_purpose=$0
+                            sub(/^  purpose:[[:space:]]*"?/, "", cmd_purpose)
+                            sub(/"$/, "", cmd_purpose)
+                            next
+                        }
+                        END { emit() }
+                    ' "$cmd_file"
                 fi
-            done
 
-            # 報告状態
-            for name in "${NINJA_NAMES[@]}"; do
-                local report_file=""
-                report_file=$(get_latest_report_file "$name" || true)
-                if [ -n "$report_file" ] && [ -f "$report_file" ]; then
-                    local report_task report_status
-                    report_task=$(yaml_field_get "$report_file" "task_id")
-                    report_status=$(yaml_field_get "$report_file" "status")
-                    [ -n "$report_task" ] && echo "report|${name}|${report_task}|${report_status:-unknown}"
-                fi
-            done
-
-            # idle一覧（cmd_519: round-robin回転ポインタ順）
-            local rr_last=""
-            local rr_file="$SCRIPT_DIR/queue/rr_pointer.txt"
-            if [ -f "$rr_file" ]; then
-                rr_last=$(head -1 "$rr_file" 2>/dev/null | tr -d '[:space:]')
-            fi
-
-            # 回転順NINJA_NAMES配列を構築
-            local rotated_names=()
-            if [ -n "$rr_last" ]; then
-                local rr_idx=-1
-                for i in "${!NINJA_NAMES[@]}"; do
-                    if [ "${NINJA_NAMES[$i]}" = "$rr_last" ]; then
-                        rr_idx=$i
-                        break
+                # 忍者task状態
+                for name in "${NINJA_NAMES[@]}"; do
+                    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+                    if [ -f "$task_file" ]; then
+                        local task_id status project
+                        task_id=$(yaml_field_get "$task_file" "task_id")
+                        status=$(yaml_field_get "$task_file" "status")
+                        project=$(yaml_field_get "$task_file" "project")
+                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}"
+                    else
+                        echo "ninja|${name}|none|idle|none"
                     fi
                 done
-                if [ "$rr_idx" -ge 0 ]; then
-                    local total=${#NINJA_NAMES[@]}
-                    for (( j=1; j<=total; j++ )); do
-                        rotated_names+=("${NINJA_NAMES[$(( (rr_idx + j) % total ))]}")
+
+                # 報告状態
+                for name in "${NINJA_NAMES[@]}"; do
+                    local report_file=""
+                    report_file=$(get_latest_report_file "$name" || true)
+                    if [ -n "$report_file" ] && [ -f "$report_file" ]; then
+                        local report_task report_status
+                        report_task=$(yaml_field_get "$report_file" "task_id")
+                        report_status=$(yaml_field_get "$report_file" "status")
+                        [ -n "$report_task" ] && echo "report|${name}|${report_task}|${report_status:-unknown}"
+                    fi
+                done
+
+                # idle一覧（cmd_519: round-robin回転ポインタ順）
+                local rr_last=""
+                local rr_file="$SCRIPT_DIR/queue/rr_pointer.txt"
+                if [ -f "$rr_file" ]; then
+                    rr_last=$(head -1 "$rr_file" 2>/dev/null | tr -d '[:space:]')
+                fi
+
+                # 回転順NINJA_NAMES配列を構築
+                local rotated_names=()
+                if [ -n "$rr_last" ]; then
+                    local rr_idx=-1
+                    for i in "${!NINJA_NAMES[@]}"; do
+                        if [ "${NINJA_NAMES[$i]}" = "$rr_last" ]; then
+                            rr_idx=$i
+                            break
+                        fi
                     done
+                    if [ "$rr_idx" -ge 0 ]; then
+                        local total=${#NINJA_NAMES[@]}
+                        for (( j=1; j<=total; j++ )); do
+                            rotated_names+=("${NINJA_NAMES[$(( (rr_idx + j) % total ))]}")
+                        done
+                    else
+                        rotated_names=("${NINJA_NAMES[@]}")
+                    fi
                 else
                     rotated_names=("${NINJA_NAMES[@]}")
                 fi
-            else
-                rotated_names=("${NINJA_NAMES[@]}")
-            fi
 
-            local idle_list=""
-            for name in "${rotated_names[@]}"; do
-                if [ "${PREV_STATE[$name]}" = "idle" ]; then
-                    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-                    local task_status=""
-                    if [ -f "$task_file" ]; then
-                        task_status=$(yaml_field_get "$task_file" "status")
+                local idle_list=""
+                for name in "${rotated_names[@]}"; do
+                    if [ "${PREV_STATE[$name]}" = "idle" ]; then
+                        local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+                        local task_status=""
+                        if [ -f "$task_file" ]; then
+                            task_status=$(yaml_field_get "$task_file" "status")
+                        fi
+                        if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ]; then
+                            idle_list="${idle_list}${name},"
+                        fi
                     fi
-                    if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ]; then
-                        idle_list="${idle_list}${name},"
-                    fi
-                fi
-            done
-            idle_list="${idle_list%,}"
-            echo "idle|${idle_list:-none}"
+                done
+                idle_list="${idle_list%,}"
+                echo "idle|${idle_list:-none}"
 
-        } > "$snapshot_file"
-
+            } > "$snapshot_file"
+        fi
     } 200>"$lock_file"
-    if [ $? -ne 0 ]; then
-        log "ERROR: write_karo_snapshot flock failed"
-    fi
 }
 
 # ─── 家老/clear送信共通関数（全コードパスで使用） ───
@@ -1640,9 +1652,8 @@ write_karo_snapshot() {
 send_karo_clear() {
     local ctx_num="${1:-?}"
     local caller="${2:-check_karo_clear}"
-    local karo_pane="shogun:2.1"
-
-    local now=$(date +%s)
+    local now
+    now=$(date +%s)
     local elapsed=$((now - LAST_KARO_CLEAR))
 
     if [ $elapsed -lt $KARO_CLEAR_DEBOUNCE ]; then
@@ -1653,7 +1664,7 @@ send_karo_clear() {
     # 陣形図を最終更新（鮮度保証）
     write_karo_snapshot
 
-    if ! safe_send_clear "$karo_pane" "karo" "KARO-CLEAR(${caller})"; then
+    if ! safe_send_clear "$KARO_PANE" "karo" "KARO-CLEAR(${caller})"; then
         return 1
     fi
     LAST_KARO_CLEAR=$now
@@ -1668,16 +1679,14 @@ send_karo_clear() {
 
 # ─── STEP 2: 家老の外部/clearトリガー ───
 check_karo_clear() {
-    local karo_pane="shogun:2.1"
-
     # idle判定
-    check_idle "$karo_pane" "karo"
-    if [ $? -ne 0 ]; then
+    if ! check_idle "$KARO_PANE" "karo"; then
         return  # busy or error → skip
     fi
 
     # CTX取得
-    local ctx_num=$(get_context_pct "$karo_pane" "karo")
+    local ctx_num
+    ctx_num=$(get_context_pct "$KARO_PANE" "karo")
     if [ -z "$ctx_num" ] || [ "$ctx_num" -le 50 ] 2>/dev/null; then
         return  # CTX <= 50% → skip
     fi
@@ -1691,13 +1700,15 @@ check_shogun_ctx() {
     local shogun_pane="shogun:1"
 
     # CTX取得
-    local ctx_num=$(get_context_pct "$shogun_pane" "shogun")
+    local ctx_num
+    ctx_num=$(get_context_pct "$shogun_pane" "shogun")
     if [ -z "$ctx_num" ] || [ "$ctx_num" -le 50 ] 2>/dev/null; then
         return  # CTX <= 50% → skip
     fi
 
     # デバウンスチェック
-    local now=$(date +%s)
+    local now
+    now=$(date +%s)
     local last=$LAST_SHOGUN_ALERT
     local elapsed=$((now - last))
 
@@ -1723,7 +1734,7 @@ check_model_names() {
     for name in "${all_agents[@]}"; do
         local target
         if [ "$name" = "karo" ]; then
-            target="shogun:2.1"
+            target="$KARO_PANE"
         else
             target="${PANE_TARGETS[$name]}"
         fi
@@ -1780,7 +1791,7 @@ update_inbox_counts() {
         local inbox_file="${inbox_dir}/${name}.yaml"
         local target
         if [ "$name" = "karo" ]; then
-            target="shogun:2.1"
+            target="$KARO_PANE"
         else
             target="${PANE_TARGETS[$name]}"
         fi
@@ -1812,20 +1823,6 @@ update_inbox_counts() {
     fi
 }
 
-# ─── Self-restart on script change (inbox_watcher.shから移植) ───
-check_script_update() {
-    local current_hash
-    current_hash="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
-    if [ "$current_hash" != "$SCRIPT_HASH" ]; then
-        local uptime=$(($(date +%s) - STARTUP_TIME))
-        if [ "$uptime" -lt "$MIN_UPTIME" ]; then
-            log "RESTART-GUARD: Script changed but uptime too short (${uptime}s < ${MIN_UPTIME}s), skipping"
-            return 0
-        fi
-        log "AUTO-RESTART: Script file changed (hash: $SCRIPT_HASH → $current_hash), restarting..."
-        exec "$SCRIPT_PATH"
-    fi
-}
 
 # ─── lesson health定期チェック (cmd_279 Gate3) ───
 # gate_lesson_health.shを呼び出し、ALERTなら家老に通知
@@ -1835,7 +1832,8 @@ LESSON_ALERT_DEBOUNCE=21600 # 同一ALERT再通知抑制(6時間)
 LAST_LESSON_ALERT=0
 
 check_lesson_health() {
-    local now=$(date +%s)
+    local now
+    now=$(date +%s)
 
     # 間隔チェック
     local elapsed=$((now - LAST_LESSON_CHECK))
@@ -1988,6 +1986,7 @@ run_cdp_cleanup() {
 
 # ─── 初期ペイン探索 ───
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
+    # shellcheck disable=SC2317
     return 0 2>/dev/null || exit 0
 fi
 
@@ -2186,6 +2185,11 @@ while true; do
         prev_idle="$current_idle"
         prev_gate_lines="$current_gate_lines"
         prev_context_warn_sig="$current_context_warn_sig"
+    fi
+
+    # ═══ 連想配列クリーンアップ（10分間隔 H1: メモリリーク防止） ═══
+    if [ $((cycle % 30)) -eq 0 ]; then
+        _cleanup_stale_keys
     fi
 
     # ═══ Self-restart check ═══

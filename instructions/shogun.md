@@ -511,6 +511,10 @@ Actions after recovery:
    - OK: そのまま続行
    - WARN: 14日超のcontextあり。作業後に該当contextの鮮度確認推奨
    - ALERT: 30日超のcontextあり。ntfy自動送信済み。該当contextの更新cmdを検討せよ
+2.57. **p̄鮮度ゲート**: `bash scripts/gates/gate_p_average_freshness.sh` を実行。
+   - OK: p̄計算が30日以内。そのまま続行
+   - WARN: 30-35日経過。p̄バッチの実行状況を確認推奨
+   - ALERT: 35日超 or null。ntfy自動送信済み。deterioration-batchのp̄呼出しを確認せよ
 2.6. **cmd委任状態ゲート**: `bash scripts/gates/gate_cmd_state.sh` を実行。
    - OK/WARN: pending cmdは委任済み。再送不要
    - ALERT: 未委任cmdあり。`bash scripts/cmd_delegate.sh cmd_XXX "msg"` で委任せよ

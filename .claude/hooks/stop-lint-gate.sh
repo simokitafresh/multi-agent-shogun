@@ -106,10 +106,8 @@ if [ -f "$fail_hash_file" ]; then
         fi
         cat <<HOOK_JSON
 {
-  "hookSpecificOutput": {
-    "hookEventName": "Stop",
-    "additionalContext": "WARNING: Lint violations still present (same failure repeated). Stop allowed but escalated to karo.\nWHY: Same lint violations occurred twice — agent cannot resolve autonomously.\nACTION: karo has been notified. Lint fix will be handled in a follow-up task."
-  }
+  "decision": "approve",
+  "reason": "WARNING: Lint violations still present (same failure repeated). Stop allowed but escalated to karo. Same lint violations occurred twice — agent cannot resolve autonomously. karo has been notified."
 }
 HOOK_JSON
         exit 0
@@ -124,10 +122,8 @@ violations_escaped="$(printf '%b' "$violations" | head -100 | sed 's/\\/\\\\/g; 
 
 cat <<HOOK_JSON
 {
-  "hookSpecificOutput": {
-    "hookEventName": "Stop",
-    "additionalContext": "ERROR: Lint violations found in changed files. You MUST fix them before completing.\nWHY: F006 — lint違反を無視してstopするな。\nFIX: 1) Read violations below. 2) Fix each violation. 3) Try completing again.\n\n${violations_escaped}"
-  }
+  "decision": "block",
+  "reason": "ERROR: Lint violations found in changed files. You MUST fix them before completing.\nWHY: F006 — lint違反を無視してstopするな。\nFIX: 1) Read violations below. 2) Fix each violation. 3) Try completing again.\n\n${violations_escaped}"
 }
 HOOK_JSON
 exit 1

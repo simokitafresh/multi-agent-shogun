@@ -23,6 +23,7 @@
 - implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
 - 偵察配備後の2名体制検証は `task_deploy.sh` の役割。`deploy_task.sh` と混同するな。
 - BE系タスク配備ルール: `backend/` 配下のファイルが変更対象の場合、タスクYAMLの `context_files` に `docs/rule/trade-rule.md` パスを含めよ。理由: RULE09/10/11 と 14 の誤解パターンを忍者が自動参照するため。
+- **担当者指名禁止（殿厳命）**: 忍者配備で「偵察担当をそのまま実装に回す」等の担当者指名をするな。忍者は/clearで全記憶消去される。誰がやっても報告YAMLを読めば同じ結果を出せる。配備判断は**負荷分散・idle順**で行え。知識の引継ぎは報告YAMLパスをタスクYAMLの`context_files`に注入することで担保せよ。
 → `docs/research/karo-operations-detail.md` §1
 
 ## §2 分解
@@ -55,6 +56,13 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 - A/B/C Triage: レビュー指摘を3分類。A:Fix(修正必須→impl再配備)、B:Acknowledge(認識するが今回対応不要→理由記録)、C:False Positive(偽陽性→以後抑制)。PASS/FAIL/WAIVEとの対応表あり。→ detail §3 A/B/C Triage
 - Re-review Loop: blocking fix→修正task配備→再レビュー配備の明示フロー。曖昧に続行するな。→ detail §3 Re-review Loop
 → `docs/research/karo-operations-detail.md` §3
+
+## §3.5 DCエスカレーション（裁定重複チェック必須）
+
+- 忍者報告のdecision_candidateを将軍にエスカレーションする前に、**必ず`pending_decisions.yaml`の全resolved裁定と照合**せよ。
+- 既存裁定と重複するDCは起票せず「PD-XXXで裁定済み」として忍者に差し戻す。
+- **Why**: 殿に同じ裁定を二度求めることは禁止（2026-03-16殿厳命）。PD-007朱雀全滅許容を再質問した失敗が契機。
+- **How to apply**: DC受領→pending_decisions.yaml全件スキャン→重複なし→将軍へエスカレーション。重複あり→差し戻し+既存裁定を引用。
 
 ## §4 難問エスカレーション
 

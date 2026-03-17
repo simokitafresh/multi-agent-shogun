@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091
 # =============================================================================
 # usage_monitor.sh — Claude Max Plan Usage Monitor
 # Ported from MCAS. Legacy secondary-model bucket removed. No mcas repo dependency.
