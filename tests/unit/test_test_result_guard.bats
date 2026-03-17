@@ -74,6 +74,26 @@ assert_context_contains() {
     assert_context_contains "ERROR: 1 test(s) FAILED"
 }
 
+@test "bats TAP line with skip in test name does not false-positive SKIP" {
+    # BUG-H3-001: "ok 293 skip and fail can both be emitted" was misread as 293 skips
+    local payload
+    local tap_output
+    tap_output=$'1..5\nok 1 first test\nok 2 second test\nok 3 skip and fail can both be emitted\nok 4 fourth test\nok 5 fifth test'
+    payload="$(jq -cn --arg cmd "bats tests/unit/test_example.bats" --arg result "$tap_output" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:$result}')"
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "bats TAP line with actual # skip annotation is correctly detected" {
+    local payload
+    local tap_output
+    tap_output=$'1..3\nok 1 first test\nok 2 second test # skip reason here\nok 3 third test'
+    payload="$(jq -cn --arg cmd "bats tests/unit/test_example.bats" --arg result "$tap_output" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:$result}')"
+    run_hook "$payload"
+    assert_context_contains "ERROR: 1 test(s) SKIPPED"
+}
+
 @test "all-pass output stays silent" {
     local payload
     payload="$(jq -cn --arg cmd "pytest -q" --arg result "================ 8 passed in 0.10s ================" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:$result}')"

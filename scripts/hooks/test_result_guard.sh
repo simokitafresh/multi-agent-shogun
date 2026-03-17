@@ -124,9 +124,20 @@ def numeric_matches(text: str, patterns):
     return values
 
 
+def _filter_tap_lines(text: str) -> str:
+    """Remove bats TAP output lines (ok N .../not ok N ...) to prevent
+    false positives in generic skip/fail regex patterns."""
+    return "\n".join(
+        line for line in text.splitlines()
+        if not re.match(r"\s*(?:ok|not ok)\b", line)
+    )
+
+
 def parse_skip_count(text: str) -> int:
+    non_tap_text = _filter_tap_lines(text)
+
     matches = numeric_matches(
-        text,
+        non_tap_text,
         (
             r"(\d+)\s+(?:tests?\s+)?skipped\b",
             r"(\d+)\s+(?:tests?\s+)?skips?\b",
@@ -142,7 +153,7 @@ def parse_skip_count(text: str) -> int:
     if matches:
         return max(matches)
 
-    if re.search(r"\bSKIPPED\b|\bSKIP\b", text):
+    if re.search(r"\bSKIPPED\b|\bSKIP\b", non_tap_text):
         return 1
 
     return 0

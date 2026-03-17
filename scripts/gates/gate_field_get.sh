@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091
 # ============================================================
 # gate_field_get.sh
 # field_get.sh の契約テスト — 主要YAMLの代表フィールドが正常取得できることを検証
@@ -102,18 +103,18 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# (3) queue/tasks/hayate.yaml → "task_id"
+# (3) queue/tasks/hayate.yaml → "parent_cmd"
 # ──────────────────────────────────────────────
 echo ""
-echo "--- Test 3: tasks/hayate.yaml → task_id ---"
+echo "--- Test 3: tasks/hayate.yaml → parent_cmd ---"
 if [[ -f "$FILE2" ]]; then
-  # idle状態のtask YAMLにはtask_idがない。assigned/in_progress時のみ検証
+  # idle状態のtask YAMLにはparent_cmdがない。assigned/in_progress時のみ検証
   hayate_status=$(field_get "$FILE2" "status" "" 2>/dev/null | tr -d '[:space:]')
   if [[ "$hayate_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
-    result=$(field_get "$FILE2" "task_id")
-    assert_nonempty "hayate: task_id は非空" "$result"
+    result=$(field_get "$FILE2" "parent_cmd")
+    assert_nonempty "hayate: parent_cmd は非空" "$result"
   else
-    echo "  PASS: hayate: status=$hayate_status (タスクなし)。task_idテストskip"
+    echo "  PASS: hayate: status=$hayate_status (タスクなし)。parent_cmdテストskip"
     PASS=$((PASS + 1))
   fi
 else
