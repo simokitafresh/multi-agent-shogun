@@ -196,7 +196,8 @@ EOF
     run bash "$TEST_PROJECT/scripts/model_analysis.sh" --summary
     [ "$status" -eq 0 ]
     [[ "$output" == *$'model_row=codex_5_4_high_fast\tCodex 5.4 high fast\t100.0'* ]]
-    [[ "$output" == *$'model_row=gpt_5_4_high_fast\tgpt-5.4 high fast\t100.0'* ]]
+    # gpt-5.4 and Codex 5.4 are same family (gpt_5_4) → merged into one row
+    [[ "$output" != *$'model_row=gpt_5_4_high_fast\t'* ]]
     [[ "$output" == *$'model_row=opus_4_6_high\tOpus 4.6 high\t100.0'* ]]
     [[ "$output" != *$'\tCodex high\t'* ]]
     [[ "$output" != *$'\tgpt-5.4\t'* ]]
