@@ -1923,28 +1923,41 @@ except:
         report_file=$(resolve_report_file "$ninja_name")
 
         if [ -f "$report_file" ]; then
-            # Python判定: lessons_usefulが非空リストかチェック（旧lesson_referencedにも対応、null検知追加 cmd_536）
+            # Python判定: lessons_usefulが非空リスト+各要素の形式チェック（cmd_536 null検知 + cmd_1045 形式厳格化）
             lr_status=$(python3 -c "
-import yaml, sys
+import yaml
+result = 'error'
 try:
     with open('$report_file') as f:
         data = yaml.safe_load(f)
     if not data:
-        print('empty')
-        sys.exit(0)
-    # cmd_536 AC4: lessons_useful=null(明示的未記入)を検出
-    if 'lessons_useful' in data and data['lessons_useful'] is None:
-        print('null')
-        sys.exit(0)
-    lr = data.get('lessons_useful')
-    if lr is None:
-        lr = data.get('lesson_referenced')
-    if lr and isinstance(lr, list) and len(lr) > 0:
-        print('ok')
+        result = 'empty'
+    elif 'lessons_useful' in data and data['lessons_useful'] is None:
+        # cmd_536 AC4: lessons_useful=null(明示的未記入)を検出
+        result = 'null'
     else:
-        print('empty')
-except:
-    print('error')
+        lr = data.get('lessons_useful')
+        if lr is None:
+            lr = data.get('lesson_referenced')
+        if lr and isinstance(lr, list) and len(lr) > 0:
+            # cmd_1045: 各要素の形式検証（dict + useful:bool 必須）
+            valid = True
+            for item in lr:
+                if not isinstance(item, dict):
+                    valid = False
+                    break
+                if item.get('useful') is None:
+                    valid = False
+                    break
+                if not isinstance(item.get('useful'), bool):
+                    valid = False
+                    break
+            result = 'ok' if valid else 'invalid_format'
+        else:
+            result = 'empty'
+except Exception:
+    result = 'error'
+print(result)
 " 2>/dev/null)
 
             if [ "$lr_status" = "ok" ]; then
@@ -1953,6 +1966,15 @@ except:
                 # cmd_536 AC4: lessons_useful=null(明示的未記入)をBLOCK
                 echo "  [CRITICAL] ${ninja_name}: NG ← lessons_usefulが未記入(null)。教訓の有用性を記入せよ"
                 record_block_reason "${ninja_name}:null_lessons_useful"
+                ALL_CLEAR=false
+            elif [ "$lr_status" = "invalid_format" ]; then
+                # cmd_1045: lessons_usefulの要素形式が不正（文字列/useful欠落/non-bool）
+                echo "  [CRITICAL] ${ninja_name}: NG ← lessons_usefulの形式が不正。各要素は以下の形式で記載せよ:"
+                echo "    lessons_useful:"
+                echo "      - id: L028"
+                echo "        useful: true"
+                echo "        reason: '理由を記載'"
+                record_block_reason "${ninja_name}:invalid_lessons_useful_format"
                 ALL_CLEAR=false
             else
                 # related_lessonsからlesson IDを抽出してメッセージに表示

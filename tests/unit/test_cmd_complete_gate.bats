@@ -277,7 +277,9 @@ skill_candidate:
 decision_candidate:
   found: false
 lessons_useful:
-  - L100
+  - id: L100
+    useful: true
+    reason: 'test'
 EOF
 
     cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
@@ -354,4 +356,132 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"sasuke: ERROR"* ]]
     [[ "$output" == *"normalize_report.sh exit="* ]]
+}
+
+# ─── cmd_1045 lessons_useful形式検証テスト ───
+
+write_report_with_lessons_useful() {
+    local lu_block="$1"
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+task_id: subtask_test
+parent_cmd: $TEST_CMD_ID
+timestamp: "2026-03-04T00:00:00"
+status: done
+ac_version_read: 2
+verdict: PASS
+purpose_validation:
+  fit: true
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+${lu_block}
+EOF
+}
+
+@test "cmd_1045: lessons_useful string_list format blocks gate" {
+    write_cmd_yaml "without_context"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: impl
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  ac_version: 2
+  related_lessons:
+    - id: L028
+      summary: "test lesson"
+EOF
+
+    write_report_with_lessons_useful "$(cat <<'LUEOF'
+lessons_useful:
+  - L028
+LUEOF
+)"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"invalid_lessons_useful_format"* ]] || [[ "$output" == *"形式が不正"* ]]
+}
+
+@test "cmd_1045: lessons_useful dict_no_useful format blocks gate" {
+    write_cmd_yaml "without_context"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: impl
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  ac_version: 2
+  related_lessons:
+    - id: L028
+      summary: "test lesson"
+EOF
+
+    write_report_with_lessons_useful "$(cat <<'LUEOF'
+lessons_useful:
+  - id: L028
+    note: "some note without useful field"
+LUEOF
+)"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"invalid_lessons_useful_format"* ]] || [[ "$output" == *"形式が不正"* ]]
+}
+
+@test "cmd_1045: lessons_useful proper format passes gate" {
+    write_cmd_yaml "without_context"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: impl
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  ac_version: 2
+  related_lessons:
+    - id: L028
+      summary: "test lesson"
+EOF
+
+    write_report_with_lessons_useful "$(cat <<'LUEOF'
+lessons_useful:
+  - id: L028
+    useful: true
+    reason: 'helped avoid counter bug'
+LUEOF
+)"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"sasuke: OK (lessons_useful present and non-empty)"* ]]
+}
+
+@test "cmd_1045: lessons_useful null blocks gate (regression)" {
+    write_cmd_yaml "without_context"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: impl
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  ac_version: 2
+  related_lessons:
+    - id: L028
+      summary: "test lesson"
+EOF
+
+    write_report_with_lessons_useful "lessons_useful: null"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"null_lessons_useful"* ]] || [[ "$output" == *"未記入(null)"* ]]
 }
