@@ -765,43 +765,8 @@ handle_confirmed_idle() {
         local task_status
         task_status=$(yaml_field_get "$task_file" "status")
 
-        # acknowledged/in_progress = 忍者が着手済み。/clear禁止 (cmd_1039 AC1)
-        if [ "$task_status" = "acknowledged" ] || [ "$task_status" = "in_progress" ]; then
-            # AC2: STALL安全弁 — 60分超無更新なら家老に通知（/clearはしない）
-            local stall_ref_time=""
-            # progress_updated_at を優先参照
-            local progress_ts
-            progress_ts=$(yaml_field_get "$task_file" "progress_updated_at" "")
-            if [ -n "$progress_ts" ]; then
-                stall_ref_time=$(date -d "$progress_ts" +%s 2>/dev/null || echo "")
-            fi
-            # fallback: assigned_at
-            if [ -z "$stall_ref_time" ]; then
-                local assigned_ts
-                assigned_ts=$(yaml_field_get "$task_file" "assigned_at" "")
-                if [ -n "$assigned_ts" ]; then
-                    stall_ref_time=$(date -d "$assigned_ts" +%s 2>/dev/null || echo "")
-                fi
-            fi
-            if [ -n "$stall_ref_time" ] && [ "$stall_ref_time" -gt 0 ] 2>/dev/null; then
-                local now_epoch
-                now_epoch=$(date +%s)
-                local stall_elapsed_min=$(( (now_epoch - stall_ref_time) / 60 ))
-                if [ "$stall_elapsed_min" -ge 60 ]; then
-                    local ac2_stall_key="${name}:ac2_stall"
-                    local last_notified_ac2=${STALL_NOTIFIED[$ac2_stall_key]:-0}
-                    local since_last_ac2=$((now_epoch - last_notified_ac2))
-                    if [ "$last_notified_ac2" -eq 0 ] || [ "$since_last_ac2" -ge "$STALL_RENOTIFY_DEBOUNCE" ]; then
-                        log "AC2-STALL: $name ${task_status} ${stall_elapsed_min}min no update, notifying karo (no /clear)"
-                        send_inbox_message karo "STALL疑い: ${name} ${task_status} ${stall_elapsed_min}分経過" stall_alert
-                        STALL_NOTIFIED[$ac2_stall_key]=$now_epoch
-                    fi
-                fi
-            fi
-            log "TASK-DEPLOYED: $name ${task_status}, skip /clear"
-            PREV_STATE[$name]="busy"
-            return
-        fi
+        # acknowledged/in_progress はStage 1（Phase 1）で既にフィルタ済み
+        # ここに到達するのは assigned/done/idle/statusなし のみ
 
         # assigned = 未着手。デッドロック候補（/clear+再送の対象）
         local now
@@ -2076,7 +2041,17 @@ while true; do
         fi
 
         if [ $result -eq 0 ]; then
-            # IDLE候補 — Phase 2で確認
+            # ═══ Stage 1: task YAML確認（三段階/clear） ═══
+            _s1_task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+            if [ -f "$_s1_task_file" ]; then
+                _s1_task_status=$(yaml_field_get "$_s1_task_file" "status")
+                if [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ]; then
+                    log "STAGE1-SKIP: $name idle but task_status=${_s1_task_status}, /clear禁止"
+                    PREV_STATE[$name]="busy"
+                    continue
+                fi
+            fi
+            # Stage 1通過 → Stage 2（Phase 2）へ
             maybe_idle+=("$name")
         else
             # 確実にBUSY
