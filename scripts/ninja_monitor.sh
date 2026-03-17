@@ -765,14 +765,45 @@ handle_confirmed_idle() {
         local task_status
         task_status=$(yaml_field_get "$task_file" "status")
 
-        # in_progress = 忍者が着手済み。干渉しない
-        if [ "$task_status" = "in_progress" ]; then
-            log "TASK-DEPLOYED: $name in_progress, skip"
+        # acknowledged/in_progress = 忍者が着手済み。/clear禁止 (cmd_1039 AC1)
+        if [ "$task_status" = "acknowledged" ] || [ "$task_status" = "in_progress" ]; then
+            # AC2: STALL安全弁 — 60分超無更新なら家老に通知（/clearはしない）
+            local stall_ref_time=""
+            # progress_updated_at を優先参照
+            local progress_ts
+            progress_ts=$(yaml_field_get "$task_file" "progress_updated_at" "")
+            if [ -n "$progress_ts" ]; then
+                stall_ref_time=$(date -d "$progress_ts" +%s 2>/dev/null || echo "")
+            fi
+            # fallback: assigned_at
+            if [ -z "$stall_ref_time" ]; then
+                local assigned_ts
+                assigned_ts=$(yaml_field_get "$task_file" "assigned_at" "")
+                if [ -n "$assigned_ts" ]; then
+                    stall_ref_time=$(date -d "$assigned_ts" +%s 2>/dev/null || echo "")
+                fi
+            fi
+            if [ -n "$stall_ref_time" ] && [ "$stall_ref_time" -gt 0 ] 2>/dev/null; then
+                local now_epoch
+                now_epoch=$(date +%s)
+                local stall_elapsed_min=$(( (now_epoch - stall_ref_time) / 60 ))
+                if [ "$stall_elapsed_min" -ge 60 ]; then
+                    local ac2_stall_key="${name}:ac2_stall"
+                    local last_notified_ac2=${STALL_NOTIFIED[$ac2_stall_key]:-0}
+                    local since_last_ac2=$((now_epoch - last_notified_ac2))
+                    if [ "$last_notified_ac2" -eq 0 ] || [ "$since_last_ac2" -ge "$STALL_RENOTIFY_DEBOUNCE" ]; then
+                        log "AC2-STALL: $name ${task_status} ${stall_elapsed_min}min no update, notifying karo (no /clear)"
+                        send_inbox_message karo "STALL疑い: ${name} ${task_status} ${stall_elapsed_min}分経過" stall_alert
+                        STALL_NOTIFIED[$ac2_stall_key]=$now_epoch
+                    fi
+                fi
+            fi
+            log "TASK-DEPLOYED: $name ${task_status}, skip /clear"
             PREV_STATE[$name]="busy"
             return
         fi
 
-        # assigned/acknowledged = 未着手。デッドロック候補
+        # assigned = 未着手。デッドロック候補（/clear+再送の対象）
         local now
         now=$(date +%s)
         local deploy_stall_key="deploy_stall_${name}"
