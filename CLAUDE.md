@@ -59,6 +59,7 @@ language:
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍知識ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_memory.sh` → ALERT時ntfy通知。詳細は instructions/shogun.md Step 2.5
+2.57. **p̄鮮度ゲート(将軍のみ)**: `bash scripts/gates/gate_p_average_freshness.sh` → p̄計算の鮮度判定。OK=30日以内、WARN=30-35日、ALERT=35日超/null。詳細は instructions/shogun.md Step 2.57
 2.6. **cmd委任状態ゲート(将軍のみ)**: `bash scripts/gates/gate_cmd_state.sh` → pending cmdの委任状態判定。OK/WARN=再送不要、ALERT=委任確認。詳細は instructions/shogun.md Step 2.6
 3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
@@ -278,7 +279,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 家老 | karo(1) | Claude |
 | 忍者 | sasuke(2) kirimaru(3) hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
 将軍はAgent toolでのコード深堀り調査を禁止(F008)。必要な調査は偵察cmdとして家老に委任せよ。
-編成(2026-02-27改革): Opus4(kagemaru/hanzo/kotaro/tobisaru)+Codex4(sasuke/kirimaru/hayate/saizo)。階級制廃止・round-robin配備 → config/settings.yaml
+編成(2026-03-17統一): 全8名Opus 4.6。round-robin配備 → config/settings.yaml
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照

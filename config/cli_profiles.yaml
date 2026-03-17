@@ -40,7 +40,7 @@ profiles:
 
   codex:
     # 表示名 (sync_pane_vars.sh → tmux @model_name)
-    display_name: "GPT-5.4"
+    display_name: "Opus 4.6"
     # 起動コマンド (lib/cli_adapter.sh L142)
     launch_cmd: "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     # CTXパース正規表現 (ninja_monitor.sh L190, L522)
@@ -76,43 +76,3 @@ profiles:
     # /new後に自動送信するコマンド（cmd_583: /fastモード有効化）
     # ninja_monitor.shが/new送信後にidle検知→このコマンドを送信
     post_clear_cmd: "/fast"
-
-  copilot:
-    # 表示名 (sync_pane_vars.sh → tmux @model_name)
-    display_name: "Copilot"
-    # 起動コマンド
-    launch_cmd: "copilot --yolo"
-    # CTXパース（copilot固有のパターンがあれば設定）
-    ctx_pattern: ""
-    ctx_mode: "usage"
-    # idleプロンプト判定
-    idle_pattern: ""
-    busy_patterns: []
-    # セッションリセット: copilotは/clearコマンドがない→Ctrl-C+再起動
-    clear_cmd: ""
-    clear_method: "restart"
-    # /modelコマンド非対応
-    supports_model_switch: false
-    confirm_wait: 5
-    debounce: 60
-    clear_debounce: 300
-
-  kimi:
-    # 表示名
-    display_name: "Kimi"
-    # 起動コマンド
-    launch_cmd: "kimi --yolo"
-    # CTXパース
-    ctx_pattern: ""
-    ctx_mode: "usage"
-    # idleプロンプト判定
-    idle_pattern: ""
-    busy_patterns: []
-    # セッションリセット
-    clear_cmd: ""
-    clear_method: "restart"
-    # /modelコマンド対応
-    supports_model_switch: true
-    confirm_wait: 5
-    debounce: 60
-    clear_debounce: 300

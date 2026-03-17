@@ -245,7 +245,8 @@ except Exception as e:
             echo "[inbox_write] Lock timeout for $INBOX (attempt $attempt/$max_attempts), retrying..." >&2
             sleep 1
         else
-            echo "[inbox_write] Failed to acquire lock after $max_attempts attempts for $INBOX" >&2
+            echo "[inbox_write] Failed to acquire lock after $max_attempts attempts for $INBOX (target=$TARGET, from=$FROM)" >&2
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "[inbox_write] FAIL: lock取得失敗 target=$TARGET from=$FROM" 2>/dev/null || true
             exit 1
         fi
     fi

@@ -287,24 +287,6 @@ load_adapter_with() {
     [ "$result" = "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen" ]
 }
 
-@test "build_cli_command: copilot → copilot --yolo" {
-    load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
-    result=$(build_cli_command "kotaro")
-    [ "$result" = "copilot --yolo" ]
-}
-
-@test "build_cli_command: kimi + model → kimi --yolo --model k2.5" {
-    load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(build_cli_command "hayate")
-    [ "$result" = "kimi --yolo --model k2.5" ]
-}
-
-@test "build_cli_command: kimi (モデル指定なし) → kimi --yolo --model k2.5" {
-    load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(build_cli_command "kagemaru")
-    [ "$result" = "kimi --yolo --model k2.5" ]
-}
-
 @test "build_cli_command: cliセクションなし → claude フォールバック" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     result=$(build_cli_command "sasuke")

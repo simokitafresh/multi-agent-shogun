@@ -22,7 +22,7 @@ fi
 # Normalize IDs (accept L026 or L26 → L026)
 normalize_id() {
     local raw="$1"
-    python3 -c "s='$raw'; n=int(s.replace('L','')); print(f'L{n:03d}')"
+    RAW_ID="$raw" python3 -c "import os; s=os.environ['RAW_ID']; n=int(s.replace('L','')); print(f'L{n:03d}')"
 }
 SOURCE_ID_1=$(normalize_id "$SOURCE_ID_1")
 SOURCE_ID_2=$(normalize_id "$SOURCE_ID_2")
@@ -33,12 +33,12 @@ if [ "$SOURCE_ID_1" == "$SOURCE_ID_2" ]; then
 fi
 
 # Get project path from config/projects.yaml
-PROJECT_PATH=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+PROJECT_PATH=$(SCRIPT_DIR_ENV="$SCRIPT_DIR" PROJECT_ID_ENV="$PROJECT_ID" python3 -c "
+import yaml, os
+with open(os.path.join(os.environ['SCRIPT_DIR_ENV'], 'config/projects.yaml'), encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
+    if p['id'] == os.environ['PROJECT_ID_ENV']:
         print(p['path'])
         break
 ")
@@ -212,12 +212,12 @@ PYEOF
 
         # Context索引更新: 旧エントリに[統合→新ID]注釈 + 新エントリ追記
         if [ -n "$NEW_LESSON_ID" ]; then
-            CONTEXT_FILE=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+            CONTEXT_FILE=$(SCRIPT_DIR_ENV="$SCRIPT_DIR" PROJECT_ID_ENV="$PROJECT_ID" python3 -c "
+import yaml, os
+with open(os.path.join(os.environ['SCRIPT_DIR_ENV'], 'config/projects.yaml'), encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
+    if p['id'] == os.environ['PROJECT_ID_ENV']:
         print(p.get('context_file', ''))
         break
 ")

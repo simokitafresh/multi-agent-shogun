@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091,SC2129
 # ============================================================
 # Instruction File Build System
 # ============================================================
@@ -26,9 +27,9 @@ echo "Building instruction files..."
 # Helper: Get all CLI profile types from cli_profiles.yaml
 # ============================================================
 get_profile_types() {
-    python3 -c "
-import yaml
-with open('${_CLI_LOOKUP_PROFILES}') as f:
+    CLI_PROFILES_PATH="${_CLI_LOOKUP_PROFILES}" python3 -c "
+import yaml, os
+with open(os.environ['CLI_PROFILES_PATH']) as f:
     cfg = yaml.safe_load(f) or {}
 profiles = cfg.get('profiles', {})
 for p in profiles:
