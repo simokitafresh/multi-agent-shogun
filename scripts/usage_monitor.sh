@@ -21,11 +21,19 @@ MCAS_ALERT_COOLDOWN="${MCAS_ALERT_COOLDOWN:-300}"
 MCAS_NTFY_TOPIC="${MCAS_NTFY_TOPIC:-}"
 MCAS_API_TIMEOUT="${MCAS_API_TIMEOUT:-15}"
 
+# Provider: claude (API-based) or codex (SQLite-based)
+PROVIDER="${PROVIDER:-claude}"
+
 # Expand ~ in directory paths
 MCAS_PRIMARY_DIR="${MCAS_PRIMARY_DIR/#\~/$HOME}"
 
 API_URL="https://api.anthropic.com/api/oauth/usage"
 ALERT_STATE_DIR="/tmp/mcas_alert_state"
+
+# Codex SQLite config (used when PROVIDER=codex)
+CODEX_DB="${CODEX_DB:-${HOME}/.codex/state_5.sqlite}"
+CODEX_BUDGET_5H="${CODEX_BUDGET_5H:-80000000}"
+CODEX_BUDGET_7D="${CODEX_BUDGET_7D:-1600000000}"
 
 # =============================================================================
 # Functions
@@ -34,7 +42,8 @@ ALERT_STATE_DIR="/tmp/mcas_alert_state"
 fetch_usage() {
     local token="$1"
     local response
-    local ua="claude-code/$(claude --version 2>/dev/null | head -1 | sed 's/ .*//' || echo '2.0.0')"
+    local ua
+    ua="claude-code/$(claude --version 2>/dev/null | head -1 | sed 's/ .*//' || echo '2.0.0')"
     response=$(curl -s --max-time "$MCAS_API_TIMEOUT" \
         -H "Authorization: Bearer ${token}" \
         -H "anthropic-beta: oauth-2025-04-20" \
@@ -199,6 +208,48 @@ send_alert() {
     date +%s > "${ALERT_STATE_DIR}/${account_key}"
 }
 
+monitor_status_codex() {
+    if [[ ! -f "$CODEX_DB" ]]; then
+        printf 'ERR\t--\tERR\t--\n'
+        return
+    fi
+
+    local now h5_ago d7_ago h5_tokens d7_tokens
+    now=$(date +%s)
+    h5_ago=$((now - 5 * 3600))
+    d7_ago=$((now - 7 * 86400))
+
+    h5_tokens=$(sqlite3 "$CODEX_DB" \
+        "SELECT COALESCE(SUM(tokens_used),0) FROM threads WHERE model_provider='openai' AND updated_at > $h5_ago;" \
+        2>/dev/null) || h5_tokens=0
+    d7_tokens=$(sqlite3 "$CODEX_DB" \
+        "SELECT COALESCE(SUM(tokens_used),0) FROM threads WHERE model_provider='openai' AND updated_at > $d7_ago;" \
+        2>/dev/null) || d7_tokens=0
+
+    local h5_used_pct d7_used_pct h5_left d7_left
+    if (( CODEX_BUDGET_5H > 0 )); then
+        h5_used_pct=$(awk "BEGIN { printf \"%.0f\", ($h5_tokens / $CODEX_BUDGET_5H) * 100 }")
+        h5_left=$(( 100 - h5_used_pct ))
+        (( h5_left < 0 )) && h5_left=0
+    else
+        h5_left="ERR"
+    fi
+
+    if (( CODEX_BUDGET_7D > 0 )); then
+        d7_used_pct=$(awk "BEGIN { printf \"%.0f\", ($d7_tokens / $CODEX_BUDGET_7D) * 100 }")
+        d7_left=$(( 100 - d7_used_pct ))
+        (( d7_left < 0 )) && d7_left=0
+    else
+        d7_left="ERR"
+    fi
+
+    local h5_reset d7_reset
+    h5_reset=$(date -d "+5 hours" +%H:%M 2>/dev/null || date +%H:%M)
+    d7_reset="rolling"
+
+    printf '%s\t%s\t%s\t%s\n' "$h5_left" "$h5_reset" "$d7_left" "$d7_reset"
+}
+
 monitor_once() {
     local token="" json="" pct
 
@@ -218,6 +269,11 @@ monitor_once() {
 }
 
 monitor_status() {
+    if [[ "$PROVIDER" == "codex" ]]; then
+        monitor_status_codex
+        return
+    fi
+
     local token="" json=""
 
     token=$(mcas_get_token "$MCAS_PRIMARY_DIR" 2>/dev/null) || true
@@ -255,7 +311,7 @@ monitor_watch() {
 
 show_help() {
     cat <<'HELP'
-usage_monitor.sh — Claude Max Plan Usage Monitor
+usage_monitor.sh — Unified Usage Monitor (Claude API + Codex SQLite)
 
 Usage:
   ./usage_monitor.sh [--once]    Single fetch (default). Outputs: [72%]
@@ -263,8 +319,13 @@ Usage:
   ./usage_monitor.sh --watch     Continuous polling with timestamps
   ./usage_monitor.sh --help      Show this help
 
+Environment:
+  PROVIDER=claude|codex   Select data source (default: claude)
+    claude: Anthropic OAuth Usage API
+    codex:  Local SQLite (~/.codex/state_5.sqlite), outputs "left %"
+
 Output format:
-  --once:   [72%]                       (5h only)
+  --once:   [72%]                       (5h only, claude provider)
   --status: D%\tD_reset\tW%\tW_reset
 HELP
     exit 0

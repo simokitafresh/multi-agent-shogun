@@ -158,11 +158,7 @@ fi
 # =============================================================================
 # Cache miss: fetch fresh data via --status
 # =============================================================================
-if [[ "$PROVIDER" == "codex" ]]; then
-    raw=$("${SCRIPT_DIR}/usage_monitor_codex.sh" --status 2>/dev/null) || raw=""
-else
-    raw=$("${SCRIPT_DIR}/usage_monitor.sh" --status 2>/dev/null) || raw=""
-fi
+raw=$(PROVIDER="$PROVIDER" "${SCRIPT_DIR}/usage_monitor.sh" --status 2>/dev/null) || raw=""
 
 # L007: fetch failure → don't overwrite cache
 if [[ -z "$raw" ]]; then
