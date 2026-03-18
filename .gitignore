@@ -154,6 +154,9 @@
 !scripts/lib/field_get.sh
 !scripts/lib/yaml_field_set.sh
 !scripts/lib/tmux_utils.sh
+!scripts/lib/ctx_utils.sh
+!scripts/lib/pane_lookup.sh
+!scripts/lib/script_update.sh
 !scripts/inbox_archive.sh
 !scripts/inbox_mark_read.sh
 !scripts/model_switch_preflight.sh
