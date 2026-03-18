@@ -142,17 +142,59 @@ append_changelog() {
     ) 200>"$CHANGELOG_LOCK"
 }
 
+abort_deployed_ninjas() {
+    ABORTED_NINJAS=""
+    local snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
+    if [ ! -f "$snapshot" ]; then
+        return 0
+    fi
+
+    local cmd_id="$ABSORBED_CMD"
+    local ninjas_to_abort
+    ninjas_to_abort=$(grep "^ninja|" "$snapshot" \
+        | grep "|${cmd_id}_" \
+        | awk -F'|' '$4 == "in_progress" || $4 == "acknowledged" { print $2 }' \
+        || true)
+
+    if [ -z "$ninjas_to_abort" ]; then
+        return 0
+    fi
+
+    local aborted_list=""
+    while IFS= read -r ninja_name; do
+        [ -z "$ninja_name" ] && continue
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$ninja_name" \
+            "${cmd_id}は吸収/中止されたため作業を停止せよ。" \
+            clear_command cmd_absorb
+        if [ -n "$aborted_list" ]; then
+            aborted_list="${aborted_list},${ninja_name}"
+        else
+            aborted_list="$ninja_name"
+        fi
+    done <<< "$ninjas_to_abort"
+
+    ABORTED_NINJAS="$aborted_list"
+}
+
 notify_karo() {
     local message
     if [ "$MODE" = "absorbed" ]; then
-        message="${ABSORBED_CMD}は${ABSORBING_CMD}に吸収。理由: ${REASON}"
+        message="${ABSORBED_CMD}は${ABSORBING_CMD}に吸収。"
     else
-        message="${ABSORBED_CMD}はcancelled。理由: ${REASON}"
+        message="${ABSORBED_CMD}はcancelled。"
     fi
+
+    if [ -n "$ABORTED_NINJAS" ]; then
+        message="${message}自動停止: ${ABORTED_NINJAS}。"
+    fi
+
+    message="${message}理由: ${REASON}"
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" cmd_absorbed cmd_absorb
 }
 
+ABORTED_NINJAS=""
 update_cmd_yaml
+abort_deployed_ninjas
 append_changelog
 notify_karo
 
