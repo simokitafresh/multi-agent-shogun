@@ -500,6 +500,43 @@ assigned=$(field_get "$task_file" "assigned_to" "default_value")
 
 **field_getの機能**: 任意インデント対応(^\s+)、YAML/JSON自動判別、空結果WARN、デフォルト値、依存マップ記録(field_deps.tsv)
 
+## Task YAML更新手順
+
+task YAMLのフィールド更新（status変更等）は `yaml_field_set.sh` 経由で行うこと。
+yqは環境に存在しない。Edit toolでの直接編集もYAML構造破壊のリスクがある。
+
+### コマンド書式
+
+```bash
+# 直接実行
+bash scripts/lib/yaml_field_set.sh <yaml_file> <block_id> <field> <new_value>
+
+# source方式（スクリプト内で使う場合）
+source scripts/lib/yaml_field_set.sh
+yaml_field_set <yaml_file> <block_id> <field> <new_value>
+```
+
+- `block_id`: task YAMLでは `task`（トップレベルキー）
+- flock排他制御+post-write verification付き
+
+### 例
+
+```bash
+# status更新
+bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task status acknowledged
+bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task status in_progress
+bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task status done
+
+# progress追記（単一行）
+bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task progress "AC1: 完了"
+```
+
+### 注意
+
+- Edit toolでのtask YAML直接編集は、progress欄の追記等でやむを得ない場合のみ許容
+- status遷移は assigned → acknowledged → in_progress → done の順
+- done通知は `bash scripts/ninja_done.sh {ninja_name} {parent_cmd}` で行う（Step 7参照）
+
 ## State Verification Principle (状態検証原則 — L067/L074)
 
 **関連する複数の状態は、変更トリガーの副作用ではなく、それぞれ独立に「正しいか？」を検証せよ。**
@@ -515,6 +552,52 @@ assigned=$(field_get "$task_file" "assigned_to" "default_value")
 - スクリプトで複数の状態を管理する場合（例: model_name + bg_color + border_color）
 - 設定値を読んで複数箇所に反映する場合
 - テスト時: 「変わったか」ではなく「正しい値になっているか」を検証する
+
+## 報告YAML作成・編集手順
+
+報告YAMLの作成・編集は全て `report_field_set.sh` 経由で行うこと。
+Write/Edit toolによる `queue/reports/*.yaml` への直接書き込みはhookでブロックされる。
+
+### コマンド書式
+
+```bash
+# 単一値
+bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>
+
+# 複数行値（stdinから読み込み）
+cat <<'EOF' | bash scripts/report_field_set.sh <report_path> <dot.notation.key> -
+- item1
+- item2
+EOF
+```
+
+### 例
+
+```bash
+# ステータス設定
+bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml status done
+
+# ネストフィールド
+bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml result.summary "WBS 2.3節 完了"
+
+# 複数行値
+cat <<'EOF' | bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml result.files_modified -
+- /path/to/file1
+- /path/to/file2
+EOF
+
+# 真偽値・null（自動型変換）
+bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml lesson_candidate.found true
+bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml decision_candidate.found false
+```
+
+### 仕様
+
+- ファイル未存在時は自動新規作成される
+- ドット記法でネストフィールドに対応（例: `result.self_gate_check.lesson_ref`）
+- 中間dictも自動作成される
+- flock排他制御+atomic write（安全な並行アクセス）
+- 値の型は自動判定: true/false→bool、null/none→None、整数→int、小数→float、その他→string
 
 ## Report Notification Protocol
 
