@@ -675,6 +675,22 @@ is_task_deployed() {
 
                 # Both idle → stale task (YAML not updated after completion)
                 if $pane_idle && $task_empty; then
+                    # Grace period: skip STALE-TASK if deployed recently (< 5min)
+                    local deployed_at_val
+                    deployed_at_val=$(yaml_field_get "$task_file" "deployed_at")
+                    if [ -n "$deployed_at_val" ]; then
+                        local deployed_epoch elapsed
+                        deployed_epoch=$(date -d "$deployed_at_val" +%s 2>/dev/null || echo "")
+                        if [ -n "$deployed_epoch" ]; then
+                            local now_epoch
+                            now_epoch=$(date +%s)
+                            elapsed=$((now_epoch - deployed_epoch))
+                            if [ "$elapsed" -lt 300 ]; then
+                                log "STALE-TASK-GRACE: $name deployed ${elapsed}s ago, within grace period"
+                                return 0  # Within grace period — treat as deployed
+                            fi
+                        fi
+                    fi
                     local yaml_status
                     yaml_status="${task_status}"
                     log "STALE-TASK: $name has YAML status=$yaml_status but pane is idle, treating as not deployed"
