@@ -44,9 +44,14 @@ case "$tool_name" in
         ;;
     Write|Edit)
         # queue/tasks/*.yaml → 無条件deny（deploy_task.shを使え）
+        # queue/reports/*.yaml → 無条件deny（report_field_set.shを使え）
         case "$file_path" in
             */queue/tasks/*.yaml)
                 printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"queue/tasks/*.yamlはWrite/Editで直接書くな。deploy_task.shを使え。"}}\n'
+                exit 1
+                ;;
+            */queue/reports/*.yaml)
+                printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"queue/reports/*.yamlはWrite/Editで直接書くな。代わりに: bash scripts/report_field_set.sh <report_path> <key> <value>"}}\n'
                 exit 1
                 ;;
         esac
