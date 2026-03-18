@@ -72,5 +72,5 @@ get_ctx_pct() {
 
     # デフォルト: 50（不明時は中間値で安全側）
     echo "$_CTX_UTILS_DEFAULT"
-    return 1
+    return 0
 }
