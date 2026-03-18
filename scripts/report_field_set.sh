@@ -56,6 +56,13 @@ stdin_value = sys.argv[4] if len(sys.argv) > 4 else ''
 # Use stdin value if marker
 if value == '-':
     value = stdin_value
+    # Try parsing stdin as YAML structure (list/dict)
+    try:
+        parsed = yaml.safe_load(value)
+        if isinstance(parsed, (list, dict)):
+            value = parsed
+    except yaml.YAMLError:
+        pass  # fallback to existing type detection
 
 # Load existing or create empty
 if os.path.exists(report_path):
@@ -72,8 +79,10 @@ for key in keys[:-1]:
         current[key] = {}
     current = current[key]
 
-# Auto-detect type: bool, int, float, or string
-if value.lower() == 'true':
+# Auto-detect type: bool, int, float, or string (only for strings)
+if not isinstance(value, str):
+    pass  # already parsed (e.g. list/dict from YAML)
+elif value.lower() == 'true':
     value = True
 elif value.lower() == 'false':
     value = False
