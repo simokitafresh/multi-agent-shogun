@@ -85,7 +85,7 @@ assert_context_contains() {
     [ -z "$output" ]
 }
 
-@test "bats TAP line with actual # skip annotation is correctly detected" {
+@test "bats TAP line with actual skip-directive annotation is correctly detected" {
     local payload
     local tap_output
     tap_output=$'1..3\nok 1 first test\nok 2 second test # skip reason here\nok 3 third test'
