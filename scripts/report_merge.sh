@@ -41,7 +41,7 @@ TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 REPORTS_DIR="$SCRIPT_DIR/queue/reports"
 
 # ─── 偵察タスク収集 ───
-# queue/tasks/*.yaml から parent_cmd=<cmd_id> かつ titleに偵察/recon/並行偵察を含むものを列挙
+# queue/tasks/*.yaml から parent_cmd=<cmd_id> かつ task_type=recon|scout のものを列挙
 declare -a RECON_FILES=()
 declare -a RECON_NINJAS=()
 declare -a RECON_STATUSES=()
@@ -56,9 +56,9 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         continue
     fi
 
-    # titleに偵察関連キーワードを含むか確認
-    local_title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null)
-    if ! echo "$local_title" | grep -qiE '偵察|recon|並行偵察'; then
+    # task_typeがreconまたはscoutであるか確認
+    local_task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null)
+    if [[ "$local_task_type" != "recon" && "$local_task_type" != "scout" ]]; then
         continue
     fi
 
