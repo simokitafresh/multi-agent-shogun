@@ -43,6 +43,13 @@ case "$tool_name" in
         exit 0
         ;;
     Write|Edit)
+        # queue/tasks/*.yaml → 無条件deny（deploy_task.shを使え）
+        case "$file_path" in
+            */queue/tasks/*.yaml)
+                printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"queue/tasks/*.yamlはWrite/Editで直接書くな。deploy_task.shを使え。"}}\n'
+                exit 1
+                ;;
+        esac
         # New file → allow
         if [ ! -f "$file_path" ]; then
             exit 0
