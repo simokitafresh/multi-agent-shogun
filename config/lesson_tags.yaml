@@ -48,3 +48,6 @@ tag_rules:
     patterns: ['(?i)lesson|knowledge']
   - tag: reporting
     patterns: ['(?i)report|報告|dashboard|YAML[._]report']
+  # --- 不変量検出タグ (2026-03-17追加) ---
+  - tag: production_invariant
+    patterns: ['(?i)本番.*解像度|本番.*日次|production.*daily|production.*resolution|本番.*挙動|本番コード.*確認|パリティ.*破壊|パリティ.*不一致']

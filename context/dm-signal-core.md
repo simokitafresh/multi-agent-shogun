@@ -96,6 +96,7 @@ DLコマンド: `download_all_prices.py grid-search`(価格) | `download_prod_da
 - **根源**: SM21: DM PFを単一銘柄と同じに扱える→受動的資産vs意思決定システムの出力。SM13-SM20の全根源
 - 全21件の詳細 → `projects/dm-signal.yaml` (e) common_misconceptions_shijin
 
+- **計算と解釈の分離原則（殿裁定 2026-03-16）**: 評価指標（p̄, CPCV等）は全PFに一律で計算し、結果はそのまま記録する。計算結果をどう解釈・運用するかは別レイヤーの人間判断。朱雀がp̄で高く出ても/CPCVで不合格でも、それは「単独システムとしての一貫性がない」という事実であり、素材としての価値否定ではない。四神は素材であり、FoFが動的に組み合わせる完成品。素材レベルで一貫性を要求するのは設計思想と矛盾する。**CPCVやp̄の結果が悪いからFoFに使わない、は誤用。**
 - **殿の指標哲学(2026-03-16裁定)**: 体験→指標→道具の順で設計。Sharpe/σ後回し。優先4指標: Max Run-up / Tail Contribution / Left-tail Jumps / NHF。「平均は悪、極値が全て」
 - **辞書フィットネス**: ◎M03(Rank Persistence) ○→◎M10(DSR→CAGR/NHR差替) △→○M05(HMM→市場適用) △M09(PSR=Sharpe衝突) ×M08(Meta-Labeling=再訓練なし)
 - 詳細 → `projects/dm-signal.yaml` (f) indicator_philosophy + dictionary_fitness
@@ -162,6 +163,7 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 | 玄武(DM7+) | 8650d48d | **8650d48d(同一)** | リセッション防御 |
 
 シグナル生成(例DM2): MomentumFilter(top1) → AbsoluteMomentum(LQD>DTB3?) → SafeHavenSwitch(空→XLU) → EqualWeight → signal
+- L325: FoF valid_start_dateとdownstream warm-upは別物。valid_startはselection block lookback考慮、warm-upはcash初期化期間（cmd_1003）
 
 ## 4. ビルディングブロック
 
@@ -182,6 +184,8 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 
 - L151: OPEN/CLOSE切替導入時はbenchmark側の*_open適用も同時チェック必須（cmd_507）
 - L154: OPEN/CLOSE切替修正ではbenchmark側の*_open参照を全ビューで同時点検する（cmd_522）
+- L318: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、スイッチ型(朱雀/TMF-TMV)を排除する（cmd_981）
+- L320: p̄検定は朱雀(DM3)のDNA「債券方向スイッチ」と構造的に不適合（cmd_981）
 
 ### tiebreakルール（cmd_217, L086/L092）
 
@@ -232,6 +236,7 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 - L260: 上流の件数制限はprecomputed queryとfallback queryの両方へ必ず伝播させる（cmd_829）
 - L264: precomputedテーブル存在時はraw再計算APIを残さずfast pathを導入せよ（cmd_830）
 - L271: years付きmonthly fast pathは境界月だけdaily fallbackを残すと完全一致と高速化を両立できる（cmd_833）
+- L317: MetricsCalculator右尾4指標は実装済みだがFE未露出（cmd_976）
 
 ## 8. APIエンドポイント概要
 
@@ -246,6 +251,10 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 - L254: FoF展開共通関数のcache未注入でquery storm化する（cmd_806）
 - L255: ticker precompute欠落時のfallbackはmonths windowをPrice queryへ必ず伝播させる（cmd_805）
 - L257: Monthly Trade raw payload: Pydantic未宣言fieldもAPI contract（cmd_819）
+- L310: apiCache.clear()はETag IDB未削除→304エラーの可能性。汎用clear()は未対応（cmd_962）
+- L311: isRetryableError()はHTTP 5xx未対応→Render cold start 502/503で即エラー表示（cmd_962）
+- L314: CORS expose_headersなしではFEがカスタムレスポンスヘッダを読めない（cmd_964）
+- L315: Payload cache+validator cache分離構成ではinvalidatorが両層同時破棄必須（cmd_964）
 
 ## 10. ディレクトリ構成
 

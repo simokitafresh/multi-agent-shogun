@@ -1,71 +1,67 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-03-16 auto-generated -->
+<!-- last_updated: 2026-03-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-03-16T06:49:12+09:00 -->
+<!-- generated_at: 2026-03-18T15:33:24+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-03-16T06:39:57+09:00 | ntfy | outbound | 【INFOバッチ】 2026-03-16 06:25:50|cmd_988 2026-03-16 06:28:36|cmd_986 2026-03-16 06:29:28|cmd_986 2026-03-16 06:30:57|cmd_9…
-- 2026-03-16T06:35:38+09:00 | ntfy | outbound | 【家老】cmd_985/986/987/988/989/991 全GATE CLEAR+アーカイブ完了。cmd_992(sasuke)作業中。7名idle。
-- 2026-03-16T06:35:01+09:00 | ntfy | outbound | 【家老】cmd_992 ━ 初回配備開始 (title=修正 — context鮮度警告の解消（last_updated追記+陳腐化確認）, ninja=sasuke) 📋 https://gist.github.com/simokita…
-- 2026-03-16T06:26:42+09:00 | terminal | response | ntfy双方向復旧確認。殿のスマホからの「進んでる」を受信できた。cmd_989（デーモン死活監視）が完了すれば、今後はlistenerが落ちても自動で復旧する。 殿の指示をお待ちする。 [meta] stop_reason=end_tu…
-- 2026-03-16T06:26:38+09:00 | ntfy | outbound | 📱 受信確認。ntfy双方向復旧済み。現在7cmd稼働/委任中。順調でござる。
-- 2026-03-16T06:26:19+09:00 | ntfy | outbound | 【watchdog】ntfy_listener.shを自動再起動しました
-- 2026-03-16T06:25:57+09:00 | ntfy | outbound | 【watchdog】ntfy_listener.shを自動再起動しました
-- 2026-03-16T06:24:46+09:00 | ntfy | outbound | 【INFOバッチ】 2026-03-16 06:16:27|cmd_985 2026-03-16 06:17:24|cmd_985 2026-03-16 06:18:26|cmd_985
-- 2026-03-16T06:24:46+09:00 | ntfy | outbound | 【monitor】将軍CTX:51%。/compactをご検討ください
-- 2026-03-16T06:24:17+09:00 | terminal | response | cmd_992発令・委任完了。 **現在の全cmd状況:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_985 | Android Usage表示 | 稼働中 | | cmd_986 | …
+- 2026-03-18T15:33:24+09:00 | terminal | response | **cmd_1047 委任完了。** 全3プロジェクトのgit一括整理。AC5つ、並列配備可能。 cmd_1046（CI RED）と並行して進む。AC4のみcmd_1046完了待ち。 [meta] stop_reason=end_turn
+- 2026-03-18T15:30:20+09:00 | terminal | response | DM-Signal 1,914件の全容： | カテゴリ | 件数 | 対処 | |---------|------|------| | `.venv-cmd-1034/` | **1,337** | gitignore追加（仮想環境） |…
+- 2026-03-18T15:26:41+09:00 | terminal | response | 全4プロジェクト確認完了。改めてまとめる。 ## 全プロジェクトgit状態 | プロジェクト | 未push | 未commit | 未追跡 | 状態 | |-------------|--------|---------|-------…
+- 2026-03-18T15:26:01+09:00 | terminal | response | 全容が見えた。 ## 状況まとめ ### multi-agent-shogun（19変更 + 4未追跡） | 種別 | 件数 | 内容 | |------|------|------| | 未push commit | 0 | — | |…
+- 2026-03-18T15:24:08+09:00 | terminal | response | 才蔵の作業内容: **cmd_1046（CI RED修正）** — 進行中、終盤。 1. **AC1**: deploy_taskテストに不足していた`ctx_utils.sh`と`pane_lookup.sh`のsetup追加 → テス…
+- 2026-03-18T15:14:47+09:00 | terminal | response | 才蔵は**思考中**（8分16秒経過、CTX 37%）。CI RED修正の作業を進めている。もう少しで結果が出るはず。 [meta] stop_reason=end_turn
+- 2026-03-18T14:08:06+09:00 | terminal | response | 既に消えていた。問題なし。ntfy_listenerは正常稼働中。 cmd_1046（CI RED修正、才蔵稼働中）の完了を待っている状態でござる。他に指示があれば申されよ。 [meta] stop_reason=end_turn
+- 2026-03-18T14:07:09+09:00 | terminal | response | 報告する。 **inbox_watcher**: 10/10再起動完了（shogun含む全員）。 **ntfy_listener**: D006フック（kill禁止）がスクリプト内のkillを阻止したが、新プロセスは起動済み（14:06:…
+- 2026-03-18T14:04:29+09:00 | ntfy | outbound | 🏯 出陣！将軍システム起動完了。
+- 2026-03-18T14:01:44+09:00 | ntfy | outbound | 【家老】/clear復帰。cmd_1046(才蔵稼働中)の監視を継続。idle忍者7名。次cmd待ち。
 
 ## 未解決確認事項
-- 【家老】cmd_992 ━ 初回配備開始 (title=修正 — context鮮度警告の解消（last_updated追記+陳腐化確認）, ninja=sasuke) 📋 https://gist.github.com/simokitafresh/6eb495d917fb00…
-- ntfy双方向復旧確認。殿のスマホからの「進んでる」を受信できた。cmd_989（デーモン死活監視）が完了すれば、今後はlistenerが落ちても自動で復旧する。 殿の指示をお待ちする。 [meta] stop_reason=end_turn
-- 📱 受信確認。ntfy双方向復旧済み。現在7cmd稼働/委任中。順調でござる。
-- **context鮮度ゲート結果:** | 状態 | ファイル | 経過日数 | 所見 | |------|---------|---------|------| | ALERT | doc-style-guide.md | 33日 | 記述ルールガイド。内容が古い可能性 | …
-- 送信側は全て **http=200** で正常に届いている。直近の復帰通知もテスト通知も200で成功している。 殿、ntfyサーバーへの送信は問題ない。考えられるのは： 1. **スマホ側の受信遅延** — ntfyアプリのバックグラウンド制限（Android省電力）で通知がリ…
-- その通りだ。人間の記憶に頼るな、仕組みで保証しろ、が我が軍の原則。 現状、p̄バッチは `deterioration-batch` に**コードレベルで組み込まれている**ので月次cronで自動実行される。だが、もしdeterioration側の改修でp̄呼び出しが外れたら**…
-- 了解した。全く別物だな。 - **SayTask**: 殿の日常TODO（買い物、連絡、予約等）。人間の生活タスク - **今回のメモ**: **開発アイデア帳・フューチャーリクエスト**。「こんな機能ほしい」「ここ改善したい」を思いついた時にサッと書き留める つまりこのメモ機…
-- `tasks.yaml`が存在しない。`streaks.yaml`だけ。つまり**殿は一度もSayTaskを使っていない。** 設計はshogun.mdに書いてあるが、実運用では未稼働だ。今回のAndroidメモ機能と統合するなら、SayTaskを別途立ち上げるより、**メモ機…
+- 全4プロジェクト確認完了。改めてまとめる。 ## 全プロジェクトgit状態 | プロジェクト | 未push | 未commit | 未追跡 | 状態 | |-------------|--------|---------|--------|------| | **multi-…
+- 報告する。 **inbox_watcher**: 10/10再起動完了（shogun含む全員）。 **ntfy_listener**: D006フック（kill禁止）がスクリプト内のkillを阻止したが、新プロセスは起動済み（14:06:41ログ確認）。古いプロセスと新しいプロ…
+- **全cmd完了。連勝7。全8名idle。** | cmd | 結果 | 成果 | |-----|------|------| | **cmd_1042** | GATE CLEAR | gs-bench-gateスキル+gs_benchmark.py拡張。push済(5fe2…
+- 【家老】復帰完了。cmd_1043 GATE CLEAR確認。全cmd(1011-1045)完了済。パイプライン空・8名idle。次cmd待ち。
+- 調査結果: **hookの仕組み（本プロジェクトの実装から確認）**: - 入力: **stdin経由のJSON** — `tool_name` + `tool_input.file_path` - ブロック: **exit 1** + JSON `{"hookSpecific…
+- 【家老】cmd_1042配備完了。kotaro(AC1-3 gs_benchmark.py拡張)+tobisaru(AC4 スキル作成)。sasuke(review)blocked。cmd_1041 AC3統合完了・GATE保留(flock timeout)。
+- 設計ルールを確認した。設計書を作成する。 --- ## gs-bench-gate スキル設計書 ### 概要 | 項目 | 内容 | |------|------| | パターン | Sequential（before→改良→after の直線フロー） | | 使用者 | 忍…
+- もう少し掘る。 **4. CPU競合で偽退行** before計測時は8忍者idle、after計測時は他忍者がGS稼働中 — という状況だとCPU/メモリ競合でms/patが膨らみ、偽REGRESSIONが出る。before/afterは**同一負荷条件**で取らないと比較が…
 
 ## 殿の直近裁定・方針（直近24h）
-- 2026-03-16T06:26:42+09:00 | ntfy双方向復旧確認。殿のスマホからの「進んでる」を受信できた。cmd_989（デーモン死活監視）が完了すれば、今後はlistenerが落ちても自動で復旧する。 殿の指示をお待ちする。 [meta] stop_reason=end_turn
-- 2026-03-16T06:24:17+09:00 | cmd_992発令・委任完了。 **現在の全cmd状況:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_985 | Android Usage表示 | 稼働中 | | cmd_986 | Androidアイデア帳 | 稼働中 |…
-- 2026-03-16T06:21:08+09:00 | cmd_990取消 → cmd_991発令・委任完了。 殿の質問に答える — **ダッシュボード更新は自動化済み。** ninja_monitor.shが定期的にダッシュボードを自動生成している。cmd_991で種別テーブルの生成ロジックを追加すれば、以降は自動で更新される。 …
-- 2026-03-16T06:18:54+09:00 | cmd_990発令・委任完了。 recon/scoutスキップ分を分母から外すだけの外科的修正だ。これでdm-signalの注入率が実態を正しく反映するようになる。 殿の指示をお待ちする。 [meta] stop_reason=end_turn
-- 2026-03-16T06:15:52+09:00 | cmd_989発令・委任完了。 **daemon_watchdog.sh** — cronで毎分回し、ntfy_listener / inbox_watcher / ninja_monitorの3デーモンを監視。落ちていたら自動再起動+ntfy通知。cron自体はOSが保証する…
-- 2026-03-16T06:11:26+09:00 | 殿、現況を報告する。 **稼働中cmd 4件:** | cmd | 内容 | 状態 | 忍者 | |-----|------|------|------| | cmd_985 | Android Usage表示 | 半蔵完了 → 飛猿レビュー(done) | 完了間近 | | …
-- 2026-03-16T06:10:40+09:00 | 復帰完了でござる。 **現況:** - **稼働中cmd 3件**: cmd_985(Android Usage表示・半蔵完了→飛猿レビュー中), cmd_986(アイデア帳・佐助実装中), cmd_987(PBarSelectionBlock・小太郎実装中) - **連勝60…
-- 2026-03-16T06:10:33+09:00 | 【将軍】復帰済み。3cmd稼働中(985/986/987)、連勝603。殿の指示をお待ちする。
+- 2026-03-18T15:26:01+09:00 | 全容が見えた。 ## 状況まとめ ### multi-agent-shogun（19変更 + 4未追跡） | 種別 | 件数 | 内容 | |------|------|------| | 未push commit | 0 | — | | 未commit変更 | 17 | co…
+- 2026-03-18T14:08:06+09:00 | 既に消えていた。問題なし。ntfy_listenerは正常稼働中。 cmd_1046（CI RED修正、才蔵稼働中）の完了を待っている状態でござる。他に指示があれば申されよ。 [meta] stop_reason=end_turn
+- 2026-03-18T02:39:10+09:00 | それもhookで潰せる。報告YAML（`queue/reports/`）へのWrite時に、`related_lessons`があるのに`lesson_useful`が空なら即ブロック。忍者が報告を書いた瞬間に気づく。 Read追跡hook（cmd_1044）の延長で同じスクリ…
+- 2026-03-18T01:40:45+09:00 | 設計ルールを確認した。設計書を作成する。 --- ## gs-bench-gate スキル設計書 ### 概要 | 項目 | 内容 | |------|------| | パターン | Sequential（before→改良→after の直線フロー） | | 使用者 | 忍…
+- 2026-03-18T01:37:04+09:00 | 4つある。 **PD-A: CPU競合の対策方針** 「稼働状態を記録する」と「単独実行を強制する」の二択を出したまま決めていない。 - 記録のみ: 偽退行は防げないが効率を落とさない - 単独実行: 確実だが他忍者を止める必要がある - 妥協案: CPU使用率を記録し、高負荷…
+- 2026-03-18T01:35:27+09:00 | もう少し掘る。 **4. CPU競合で偽退行** before計測時は8忍者idle、after計測時は他忍者がGS稼働中 — という状況だとCPU/メモリ競合でms/patが膨らみ、偽REGRESSIONが出る。before/afterは**同一負荷条件**で取らないと比較が…
+- 2026-03-18T01:34:23+09:00 | 3つ抜けがある。 **1. パラメータ固定保証がない** beforeとafterで`--patterns 150`と`--patterns 500`を使ったら比較が無意味。beforeのJSONに実行パラメータを記録し、afterはそれを読んで**同一パラメータを強制**すべ…
+- 2026-03-18T01:21:51+09:00 | dashboardと陣形図から報告する。 ## シン四神パイプライン進捗 | Phase | 内容 | cmd | 状態 | |-------|------|-----|------| | 1 | L1 GS: 191,796変種の月次リターン+8メトリクス | cmd_101…
 
 ## 参照cmd
-- cmd_658
-- cmd_957
-- cmd_958
-- cmd_959
-- cmd_962
-- cmd_965
-- cmd_969
-- cmd_970
-- cmd_971
-- cmd_972
-- cmd_973
-- cmd_974
-- cmd_975
-- cmd_976
-- cmd_977
-- cmd_978
-- cmd_979
-- cmd_980
+- cmd_101
+- cmd_357
 - cmd_981
-- cmd_982
-- cmd_983
-- cmd_984
-- cmd_985
-- cmd_986
-- cmd_987
-- cmd_988
-- cmd_989
-- cmd_990
-- cmd_991
-- cmd_992
+- cmd_1018
+- cmd_1019
+- cmd_1020
+- cmd_1021
+- cmd_1023
+- cmd_1024
+- cmd_1027
+- cmd_1029
+- cmd_1031
+- cmd_1034
+- cmd_1035
+- cmd_1036
+- cmd_1037
+- cmd_1038
+- cmd_1039
+- cmd_1040
+- cmd_1041
+- cmd_1042
+- cmd_1043
+- cmd_1044
+- cmd_1045
+- cmd_1046
+- cmd_1047
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

@@ -148,6 +148,13 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L033 | GSパラメータとAPI登録ペイロードの乖離は本番結果乖離に直結 | cmd_123 |
 | L027 | C抜き身のCANDIDATE_SET不一致(CS4→C11_CCNh)は結果乖離要因 | — |
 | L013 | GS align_months交差集合はlookback warm-upを失わせる | — |
+| L338 | 忍法15体分析時に分身不在を事前確認 | cmd_1010 |
+| L341 | 既存GSチャンピオン流用時はdeployed portfolio configを正本にする | cmd_1012 |
+| L342 | 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因 | cmd_1012 |
+| L343 | experiments.db monthly_returnsのシグナルJSON内ティッカー構成でL1ファミリー分類が可能 | cmd_1014 |
+| L348 | 長lookbackを含むL1 GSはnominal periodではなくlive common periodを先に固定せよ | cmd_1018 |
+| L358 | 非典型lookback(4M/5M/10M)がGSチャンピオン上位。間引きはチャンピオン喪失リスク | cmd_1025 |
+| L359 | kasoku旧GS Top100でdiff=73件/ratio=27件。倍率制約は1位を消す | cmd_1025 |
 | L012 | GSのdrop_latest=Trueはexperiments.dbでは不要 | — |
 | L008 | GS構成四神[歴史的記述]と本番FoF構成PFの不一致 | — |
 
@@ -183,6 +190,11 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L017 | FoFリターン計算乖離は根本原因特定・修正まで実施する | — |
 | L016 | monthly-trade APIのフィールド意味を誤解しない(シグナル一致率の見かけに注意) | — |
 | L005 | FoFパリティ比較は本番の現行パラメータ確認を先行する | — |
+| L361 | 歴史GS出力と現DB rerunの比較はnear-match帯を設けよ | cmd_1027 |
+| L378 | パリティベースラインはコード変更と同一環境で生成すべき | cmd_1032 |
+| L389 | PeriodIndex.to_timestamp(how='end')は23:59:59.999生成→normalize()で00:00:00化必須 | cmd_1035 |
+| L391 | kawarimi worst選出tiebreak: ranked_asc[:N]と本番ranked_desc[-N:]で選出が異なる | cmd_1035 |
+| L392 | yotsume 4視点union batch simでIEEE 754 FPノイズ(5.55e-17)。パリティ閾値1e-12 | cmd_1035 |
 
 ### SPA/過剰最適化
 
@@ -241,6 +253,15 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L303 | Sharpe inference実装ではkurtosisとexcess kurtosisを混同するな | cmd_862 |
 | L304 | n≤5のFoFではEqualWeightがML手法(NCO/HRP)に勝つ可能性がある | cmd_862 |
 | L305 | 月次84点データでは高頻度特徴量(VPIN/Kyle/SADF等)の大半が適用不可 | cmd_862 |
+| L322 | 候補集合間で比較する事前計算指標は共通期間かサンプル窓メタデータを必ず持たせよ | cmd_1000 |
+| L323 | rolling p̄ BTではno-selection warm-upを別指標で明示せよ | cmd_999 |
+| L324 | p̄計算のMIN_PERIOD_LENGTH制約とmonths_per_fold設計 | cmd_1002 |
+| L327 | 短窓BT reportは実効保有数を条件欄に明示せよ | cmd_1005 |
+| L328 | MIN_PERIOD_LENGTH=1だけでは短窓p̄検定が退化しうる | cmd_1005 |
+| L334 | top_n=1のp̄ BTはEW-12だけでなく単体12体の同期間比較を必須化せよ | cmd_1008 |
+| L335 | 3体プール×mpf=1ではp̄が統計的に退化しtie expansion 100%発生。最小有効mpf=2 | cmd_1008 |
+| L336 | ファミリー内3モード選択でp̄は最弱を上回るが最強を上回ることは稀。性能差小ファミリーで有効性相対高 | cmd_1008 |
+| L337 | p̄月次戦術運用は選出・退避いずれも無効。Sharpe勝率0/192全敗。5連敗で結論確定 | cmd_1009 |
 
 ---
 
@@ -296,3 +317,56 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | 5 | フォルダフィルタ共通化(PersistentFolderFilter) | M | 中 | cmd_787 |
 
 → 多くは後続cmdで着手/完了済み。詳細 → `context/dm-signal-frontend.md` §7以降
+
+## §27. シン四神 設計（2026-03-16〜17 殿・将軍合同検討）
+<!-- last_updated: 2026-03-17 cmd_1022 ファミリー独立Triple-E確定 -->
+
+CPCV+脱相関アンサンブルによるL1パラメータ過適合対策。191,796変種(4ファミリー)。
+
+### パイプライン進捗
+
+| Phase | 内容 | cmd | 状態 |
+|-------|------|-----|------|
+| 1 | L1 GS: 191,796変種の月次リターン+8メトリクス | cmd_1018 | ✅完了 |
+| 2 | メトリクス相関分析 → ファミリー独立Triple-E確定 | cmd_1019/1022 | ✅完了(PD-009殿裁定) |
+| — | CPCVエンジン先行構築(logit完璧版・pluggable) | cmd_1020 | ✅完了 |
+| — | スクリプト棚卸しカタログ | cmd_1021 | ✅完了 |
+| 3 | CPCV+PBO(3メトリクス独立×ファミリー独立) | TBD | ⬜次 |
+| 4 | 脱相関K体選出 → 16 L1ユニット | TBD | ⬜ |
+| 5 | シン忍法GS | TBD | ⬜ |
+| 6 | 本番デプロイ+パリティ+殿承認 | TBD | ⬜ |
+
+### 殿裁定事項
+
+| 裁定 | 内容 |
+|------|------|
+| 命名 | シンprefix必須。現行四神は変更不可 |
+| Triple-E | **ファミリー独立**(PD-009)。C2(時間安定)/C4(共通)廃止。C1∩C3で選定 |
+| DM7P | メトリクスフィルタなし。全96体→Phase 4直行 |
+| PBO閾値 | 0.05固定。データ依存させない。生存者ゼロも正当な結論 |
+| OOS | 廃止。CPCVの28foldがOOS28回。レジーム検出はp̄が担当 |
+| 均等保有 | K体均等(1/K)。ハードコードウェイト厳禁 |
+
+### ファミリー別Triple-E(cmd_1022確定)
+
+| ファミリー | Triple-E | C1∩C3 PASS |
+|-----------|----------|-----------|
+| DM2(青龍) | UD + SK + TC | 1/56 |
+| DM3(朱雀) | SK + UW + LJ | 4/56 |
+| DM6(白虎) | UD + SK + TC | 3/56 |
+| DM7P(玄武) | フィルタなし | 全96体→Phase 4 |
+
+→ 設計書全文: `outputs/analysis/shin_shijin_design.md`
+→ Phase 2分析: `outputs/analysis/shin_shijin_phase2_metrics_analysis.md`
+→ Triple-E再評価: `outputs/analysis/cmd_1022_family_triple_e.md`
+→ スクリプトカタログ: `outputs/analysis/shin_shijin_script_catalog.md`
+
+### CPCV/相関/パターン分析（cmd_1019-1026）
+
+| ID | 結論(1行) | 出典 |
+|----|----------|------|
+| L351 | CPCV群分割で割り切れない場合のnp.array_split+サイズ差ログ標準化 | cmd_1020 |
+| L352 | CPCVでlower-is-betterメトリクス使用時はスコア反転必要 | cmd_1020 |
+| L354 | L1フルデータ(191K変種)では全ペア相関が時間的に不安定 | cmd_1019 |
+| L355 | DM7+ファミリーPASS候補全4体がGLD系でXLU系全滅 | cmd_1024 |
+| L356 | 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1% | cmd_1026 |

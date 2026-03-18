@@ -12,6 +12,7 @@
 # Local runtime / sandbox artifacts
 .codex-tmp/
 .venv/
+.claude/worktrees/
 
 # Step 3: OSS公開対象ファイルを許可
 !.gitignore

@@ -369,6 +369,12 @@ shijin:
     parameter_unity: "全パラメータが一体となって一つの意味を成す。個別パラメータだけでは本質を掴めない"
     three_modes: "3モード(激攻/鉄壁/常勝)はDNA内の味付け。源流の性格は不変"
     orthogonality: "4ファミリーは時間スケール×対象市場×行動頻度×攻守構造で直交"
+    metric_separation: |
+      計算と解釈の分離原則（殿裁定 2026-03-16）:
+      評価指標（p̄, CPCV等）は全PFに一律で計算し、結果はそのまま記録する。
+      解釈・運用は別レイヤーの人間判断。四神は素材、FoFが完成品。
+      朱雀がp̄高/CPCV不合格でも素材価値は別。素材に単独一貫性を要求するのは設計矛盾。
+      「CPCVダメだからFoFに使わない」は誤用。例外を作らず一律計算、使い方で分ける。
 
   family_dna:
     DM2:
@@ -649,6 +655,26 @@ naming_convention:
     merged: "nukimi_c → nukimiに統合(L054)"
     max_count: 15  # 5忍法 × 3モード
 
+  # =========================================================================
+  # シン四神 命名規則 (殿裁定 2026-03-16)
+  # =========================================================================
+  shin_shijin:
+    ruling_date: "2026-03-16"
+    source: "殿直接指示"
+    rule: |
+      現行四神は本番プロモーション済みのため変更不可。
+      CPCV+脱相関アンサンブルで構成する新版には「シン」prefixを必ず付与。
+      混乱防止のためシンprefixの徹底は絶対。
+    L1_format: "{モード}-シン{四神名}"
+    L1_examples: ["激攻-シン青龍", "鉄壁-シン朱雀", "常勝-シン白虎", "常勝-シン玄武"]
+    L2_format: "シン{忍法名}-{モード}"
+    L2_examples: ["シン追い風-激攻", "シン抜き身-常勝"]
+    design: |
+      各ファミリー ~43Kパラメータ → CPCVスクリーニング(PBO閾値)
+      → 生存者からペアワイズ相関で脱相関K体を貪欲選出
+      → K体均等保有 = 強化版ファミリー(シン四神)
+      → シン四神の上に忍法(シン忍法)が乗る構造
+
   modes:
     gekkou: {name: "激攻", metric: "CAGR", description: "リターン最大化"}
     teppeki: {name: "鉄壁", metric: "MaxDD", description: "ドローダウン最小化"}
@@ -743,6 +769,27 @@ naming_convention:
       - "パリティ報告YAMLではdata_sourceフィールドを必須とする"
       - "本番コードパス統一原則: 数学的に等価でも本番と同一コードパスを使え(database.rules参照)"
     enforcement: "報告テンプレートにdata_sourceを必須化し、記載欠落はFAIL扱い"
+
+  # =========================================================================
+  # 本番不変量 (Production Invariants)
+  # =========================================================================
+  # 本番バックエンドの挙動のうち、GS・偵察・impl設計時に前提として必須の事実。
+  # 受動的知識層: Session Start Step 3.5で全エージェントに自動ロードされる。
+  # 教訓サイクルで発見された不変量は /lesson-sort で自動抽出・ここに追記。
+  # 根拠: 2026-03-17 殿直伝「受動的知識(0ms)が最速の防御層」
+  production_invariants:
+    last_updated: "2026-03-17"
+    entries:
+      - id: PI-001
+        fact: "本番シグナル計算は日次解像度。10D/15D/20D/1M は全て異なるlookback期間として計算される"
+        implication: "GS月次解像度では10D≠15D≠20D≠1Mの区別が消える。月次解像度のdedup（canonical 1Mに寄せる等）は本番パリティを破壊する"
+        source: "cmd_1031 失敗分析 + cmd_1032 差し戻し"
+        verified_file: "backend/app/services/pipeline/blocks/momentum_filter.py"
+      - id: PI-002
+        fact: "SQLiteミラー(backend/static/data/dm_signal.db)は不完全。本番PostgreSQLとデータ乖離(例: 加速FoF本番3体/SQLite0体)"
+        implication: "DB調査・パリティ検証は本番PostgreSQL必須。SQLite前提のテスト/偵察は不正確"
+        source: "cmd_1025"
+        verified_file: "backend/static/data/dm_signal.db"
 
   data_pipeline:
     description: "DB直接読込方式(主系) + CSV互換ローダー併用"

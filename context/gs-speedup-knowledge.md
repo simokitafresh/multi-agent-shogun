@@ -1,5 +1,5 @@
 # GS高速化×完全一致 — 知見集約ドキュメント（索引）
-<!-- last_updated: 2026-03-16 cmd_992 freshness review -->
+<!-- last_updated: 2026-03-17 kasoku ratio/diff 2分割恒久化 + R5チャンク分割基準追加 -->
 <!-- Vercel分割: 詳細 → docs/research/gs-speedup-details.md -->
 
 > 管理責任: 家老(karo)
@@ -60,6 +60,30 @@
 - 全コンポーネント(bunshinなら12個)の月次リターンを143×N のndarrayとして1回構築
 - 各パターンではnumpyスライスで必要列を取得
 
+### (4) subset context前計算を先に最適化（cmd_1030）
+- L366: pattern内loopよりsubset context前計算を先に最適化すべし。wall-clock支配はsimulate_patternのfor-loopよりget_*_contextのprecomputed_picks/momentum cacheに集中
+- L380: kasoku ctx buildの主犯はprecomputed_picks構築(84.8%=79.34ms/93.54ms)。momentum計算は11msで支配的でない（cmd_1034）
+- L395: picks構築ボトルネックはscore matrix数に比例(kasoku 306 vs yotsume 10)。アルゴリズム転用では改善しない。numpy vectorizeが正攻法（cmd_1037）
+
+### (5) Numba適用はpure kernelに絞れ（cmd_1030）
+- L369: subset cache削減後はNumba候補をpure kernel(simulate_pattern hot loop, momentum kernel)に絞らぬと費用対効果が崩れる。pandas境界がブロック
+- L382: kernel-only 14.3xだがPython→ndarray pack毎回で0.42x逆効果。pack済みpicks事前保存する設計に限定（cmd_1034。L387統合）
+- L398: 5忍法(bunshin除)のsimulate_pattern inner loop完全同一構造。共有@njitカーネル化で14-22x(kernel単体)。ただしctx build 84.8%天井でcombined 1.3-1.5x（cmd_1037）
+
+### (6) GS並列化 PPE（cmd_1030-1031）
+- L372: context buildがボトルネック、ThreadPool無効、ProcessPoolExecutor 6 workers最適
+- L373: 月次解像度GS dedupはbuild_grid canonicalizationに閉じ込めよ（cmd_1031）
+- L374: GS PPEはsubset_id単位chunkingを維持せよ。pattern単位分割だとcache localityを捨てる（cmd_1031）
+- L383: PPE result pickleがoverhead最大要因(50Kで877ms=51%)。metrics-only returnでndarray転送不要に（cmd_1034。L388統合）
+- L396: PPE result pickleの92.1%はndarray(168 float64)。shared_memoryで50Kスケール877ms→96ms削減見込。パリティ完全一致確認済み（cmd_1037）
+
+### (7) vectorized batch simulation（cmd_1034-1037）
+- L385: boolean mask方式でsim phase 3.36x高速化。ただしctx build支配(85ms vs sim30ms)でcombined 1.23x。mask構築65%がforward-fill依存でpure numpy不可→Cython/Numba候補（cmd_1034）
+- L390: yotsume batch sim(3D mask)はregression。4視点union+forward-fill構造にはboolean mask不適合（cmd_1035）
+- L393: serialがbatchより速い場合あり: grouped順+context cacheが効く150pat規模では逐次呼出しの方がbatch(毎回context構築)より速い（cmd_1035）
+- L394: batch sim適用判断基準: 制御フロー線形 AND ctx build支配率>50%の忍法にのみ有効。yotsumeは-225%regression（cmd_1037）
+- L399: picks構築ボトルネック解消にはデータ表現変更(list→bool mask)が鍵。データ形式変更の連鎖的高速化(picks+sim mask両方)が大きい（cmd_1037）
+
 ### 月次リターンCSV出力（build_monthly_returns_df）
 - wide形式: 1列目=year_month, 残列=pattern_id
 - 値=月次リターン(float)、NaNなし
@@ -76,6 +100,17 @@
 **解決**: main()で全コンポーネント共通のcommon_monthsを事前計算し、逐次版にも高速版にも同じ月セットを渡す。これにより同一月セットが保証される。
 
 **教訓**: 逐次版と高速化版で「入力データの前提」を揃えないと出力が一致しない。align_monthsの呼び出し箇所と引数を必ず確認せよ。
+
+### subset cache GS の計測の罠（cmd_1029-1030）
+- L364: subset単位キャッシュを持つGSはランダムpat単価で全量時間を外挿するな。grouped/random比=0.05-0.07で4-20x過大評価になりうる
+- L365: チャンクプロトタイプの計測値を全量見積りに使うな。プロトタイプ0.490ms/pat vs AC3ベンチマーク4.936ms/pat(10倍差)
+- L367: 月次解像度重複パターン10D/15D/20D/1Mは数学的同一。kasoku30.7%,oikaze16.7%,kawarimi16.0%が重複（cmd_1030。L371はL367に統合）
+
+### PPE/profiler計測の罠（cmd_1033-1037）
+- L379: PPE異常診断ではfull-script benchmarkとcore _run_mp計測を分離すべし。data load/preflight外オーバーヘッドを分離しないとPPE効率を誤診する（cmd_1033）
+- L384: in-loop perf_counter profilerはoverhead+60%(0.178ms vs native 0.111ms/pat)。内訳比率は方向性有用だが絶対値は膨張する。native runtime必須（cmd_1034。L386統合）
+- L397: GS忍法ndarray(16KB-750KB)は全てL2/L3内。cache missはボトルネックではない(<5%)。Python interpreter overhead支配。ループ排除が本命（cmd_1037）
+- L401: 正確性修正(tiebreak+normalize)は全性能最適化に先行すべき。パリティ基準が不正確だと最適化後の検証自体が無効（cmd_1037）
 
 ---
 
@@ -120,21 +155,56 @@
 
 **R4結論**: multiprocessingは0.05秒級GSで全て逆効果（プロセス生成~50msが支配）
 
+### R5（cmd_1025-1032: 大規模GS高速化+PPE導入）
+
+- L360: 大規模GS(100万超)はチャンク分割+中間CSV保存+忍者並列実行。READ-onlyのためDB排他不要（cmd_1025）
+- L363: 大規模GSの対策順位は実測ボトルネック寄与で評価せよ。kasoku支配率90.6%（cmd_1027）
+- PPE(ProcessPoolExecutor 6 workers)導入済み（cmd_1031）。Grid dedup差し戻し済み（cmd_1032、PI-001）
+
+- L402: cmd_1029計測値は最適化前基準。cmd_1035以降はcmd_1035値を基準にすべし。kasoku 4.936→0.714、nukimi 1.426→0.440（cmd_1036）
+
+**チャンク分割の基準（殿指示 2026-03-17）**: 1チャンク実行時間 ≤ 5分。分割単位は `(method, subset_id)`。
+kasoku ratio/diff は独立実行可能 → 最大分割粒度: method(2) × subset_id(N) のうち5分以内になる組合せ。
+
+| 忍法 | パターン | PPE6 ms/pat | 直列時間 | 5minチャンク数 |
+|------|---------|------------|---------|--------------|
+| kasoku-ratio | 6,336,648 | 1.89 | 3.3h | 40 |
+| kasoku-diff | 6,336,648 | 1.89 | 3.3h | 40 |
+| nukimi | 3,230,448 | 0.46 | 24.6min | 5 |
+| oikaze | 1,490,976 | 0.48 | 11.9min | 3 |
+| kawarimi | 1,490,976 | 1.24 | 30.8min | 7 |
+| yotsume | 248,496 | 0.31 | 1.3min | 1 |
+| bunshin | 41,416 | 0.14 | ~6s | 1 |
+
 ---
 
 ## §6 忍法間の差異まとめ
 
-| 項目 | bunshin | oikaze | kawarimi | nukimi | kasoku |
-|------|---------|--------|----------|--------|--------|
-| 配分方式 | 均等配分(1/N) | モメンタムtop_n | top_n+bottom_n和集合 | 単一窓(base-skip)top_n | 加速度cutoff |
-| モメンタム計算 | 不要 | 必要(lookback窓) | 必要(period_months軸) | 必要(base-skip窓) | 必要(長短2窓+ratio) |
-| 月次リターン長 | 全月固定 | 可変→固定NaN埋め | 可変→固定NaN埋め | 可変→固定NaN埋め | 可変→固定NaN埋め |
-| tie-breaking | なし | あり(top_n) | あり(top_n+bottom_n各別) | あり(top_n) | あり(cutoff閾値全選出) |
-| 固有要素 | なし | lookback窓,加重平均 | bottom_n,候補不足時前回維持 | skip_months処理 | ゼロ除算保護,閾値全選出 |
-| 最速記録(C12/500) | 0.017s | 0.093s | 0.037s | 0.053s(R4) | 0.089s(R4) |
-| 対逐次版倍率 | 60.28x | 54.23x | 24.59x | 82.4x(R4) | 61.5x(R4) |
+| 項目 | bunshin | oikaze | kawarimi | nukimi | kasoku-ratio | kasoku-diff | yotsume |
+|------|---------|--------|----------|--------|-------------|-------------|---------|
+| 配分方式 | 均等配分(1/N) | モメンタムtop_n | top_n+bottom_n和集合 | 単一窓(base-skip)top_n | 短期/長期ratio cutoff | 短期-長期diff cutoff | 4視点和集合top_n |
+| モメンタム計算 | 不要 | 必要(lookback窓) | 必要(period_months軸) | 必要(base-skip窓) | 必要(長短2窓) | 必要(長短2窓) | 必要(4skip×base窓) |
+| パターン数(32体) | 41,416 | 1,490,976 | 1,490,976 | 3,230,448 | 6,336,648 | 6,336,648 | 248,496 |
+| ms/pat(grouped) | 0.14 | 1.19 | 1.33 | 1.43 | 4.94 | 4.94 | 0.61 |
+| ms/pat(PPE6) | — | 0.48 | 1.24 | 0.46 | 1.89 | 1.89 | 0.31 |
+| 直列見込(grouped) | ~6s | 29.5min | 33min | 76.7min | 8.7h | 8.7h | 2.5min |
+| 直列見込(PPE6) | ~6s | 11.9min | 30.8min | 24.6min | 3.3h | 3.3h | 1.3min |
+
+### kasoku ratio/diff 2分割の事実（恒久化 2026-03-17 殿指示）
+
+`run_077_kasoku.py` は1本のスクリプトだが、内部で **ratio** と **diff** の2メソッドを直列実行する。
+- **ratio**: `score = short_momentum / long_momentum`（倍率）
+- **diff**: `score = short_momentum - long_momentum`（差分）
+- パターン空間は同一(153ペア × 18 lookback × 18 period × size2-4)だがスコア系列が異なるため**結果は独立**
+- 合計 12,673,296 = 6,336,648(ratio) + 6,336,648(diff)
+- **並列分割時の最小単位は `(method, subset_id)`** — ratio/diffは独立実行可能
 
 ※ nukimi_cはnukimiに統合済み（殿裁定 2026-02-19）。詳細 → `docs/research/gs-speedup-details.md` §16
+
+### 忍法間共有化の影響（cmd_1030）
+- L368: 忍法間共有化の性能インパクトはcontext build(0.058%)でなくsimulate_pattern(99.94%)が支配的。共有化の主価値は保守性向上
+- L370: momentum計算は通常(oikaze/kasoku/kawarimi: cumret.pct_change)とskip(nukimi/yotsume: cum比率)の2系統に分類可能
+- L381: cross-subset momentum共有は理論231x削減でも実時間8.1%のみ(110.4s→101.5s)。picks計算(80.7%)がsubset依存で共有不可（cmd_1034）
 
 ---
 

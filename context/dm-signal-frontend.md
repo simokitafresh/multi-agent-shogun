@@ -78,6 +78,8 @@ UIライブラリなし（全13コンポーネント手製）。
 - L263: persistent data cacheにvalidatorを永続化しないとwarm reloadはfull refetchに崩れる（cmd_830）
 - L267: etagStoreにdataを持たせるとapiCacheと二重保持でRAM倍増する（cmd_831）
 - L272: IndexedDB非同期参照はSWRバックグラウンドrevalidationのタイミングを遅延させる（cmd_847）
+- L326: slice後件数をtotal_monthsに使うとFEが全件ロード済みと誤認する（cmd_1003）
+- L340: apiCache.has()はETag送信前のガード条件に最適（cmd_1011）
 
 ## 5. コンポーネント
 
@@ -128,6 +130,7 @@ UIライブラリなし（全13コンポーネント手製）。
 完了済み施策: SignalsContext useMemo化(cmd_740) / katex CSS→docs移動(cmd_741) / signal-pie-chart dynamic import(cmd_742) / prefetch縮退83→3本(cmd_733) / uvicorn workers 2→revert→再投入(cmd_743/751/763) / SWR化(cmd_765) / date-fns除去+lucide optimize+MtdChart dynamic import(cmd_786) / ETag FE対応(cmd_760) / 401連鎖崩壊修正(cmd_758) / Phase2a共通化4件(cmd_784-787)。
 - L265: Next.js App Router output:exportでもclient-side routingは動作する（cmd_831）
 - L270: Portal内shared navのclient-side routingは遷移開始より先に閉じるなを絶対条件にせよ（cmd_832）
+- L333: FoF UUID生値を含む/api/signals cacheは壊れたpayloadとみなしfresh再取得へ倒す（cmd_1006）
 改善Top3(未完了): (1)`/api/monthly-returns`最適化(1721ms, cmd_775取組中) (2)route gate+request budget導入(cmd_783指摘) (3)N+1クエリ最適化(cmd_764調査済み)
 → `docs/research/cmd_719_720_performance-baseline.md`
 
@@ -203,6 +206,7 @@ cmd_295 Phase1の全tier hide_portfolio=trueがGlobal変更をブロックして
 ## 12. Frontend関連教訓
 
 L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-signal-ops.md` 教訓索引に記載済み
+- （L340は§4 APIクライアントへ振り分け済）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 

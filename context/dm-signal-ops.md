@@ -14,6 +14,9 @@
 - L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）
 - L157: pending判定は『存在チェック』より先にrebalance月 gatingを入れないと非月次triggerで誤表示する（cmd_525）
 - L268: managed DBではpool_pre_ping=True必須。workerごと独立キャッシュはヒット率低下する（cmd_831）
+- L319: p_average_results本番テーブルが空（バッチ未実行 or cold sleep）（cmd_981）
+- L330: sync-fof API実行後の検証は60秒以上待て。locked=falseでも再計算進行中の可能性あり（cmd_1004）
+- L332: FoF of FoF partial recalculate-syncはlive dataを欠損させうる。L3正規経路で復旧（cmd_1004）
 
 ## §9 性能ベースライン
 
@@ -38,6 +41,7 @@
 - L180: render.yaml cronジョブ追加時envVars sync:falseのシークレットはRenderダッシュボード手動設定が必要（cmd_554）
 - L190: 集計要件でrole分離が必要ならイベント記録時点で識別子を保存しないと後段SQLでは復元不能（cmd_574）
 - L202: Render Static Siteのheaders.pathはrootと配下階層を別globで覆わねば全txtを捕捉できぬ（cmd_643）
+- L321: admin tier系テストはRender env同期を実APIに飛ばすとローカルsuiteを汚染する（cmd_987）
 
 ## §12 計算データ管理
 
@@ -80,6 +84,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 
 | ID | 結論(1行) | 分類 | 出典 |
 |---|---|---|---|
+| L357 | 本番DB確認はPostgreSQL必須。SQLiteミラーは不完全 | DB | cmd_1025 |
+| L329 | 生成artifactの指摘修正はgenerator scriptへも同修正を戻せ | 開発プロセス | cmd_1005 |
 | L261 | キャッシュ系precomputeテーブル欠落はhealth endpointでdegradedに昇格させる | 運用手順 | cmd_828 |
 | L256 | [自動生成] 有効教訓の記録を怠った: cmd_814 | 自動生成 | cmd_814 |
 | L144 | context圧縮時は参照先存在確認を先に実施。リンク先なき圧縮は禁止 | 知識基盤 | cmd_492 |
@@ -150,6 +156,13 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L249 | Render env APIが認証SSOTでbackend/.envのviewer passwordは本番とズレうる | 認証/deploy | cmd_790 |
 | L250 | APIフィールド除去テスト修正時はxfail/docstringまでgrepし旧仕様残存を潰す | テスト | cmd_791 |
 | L273 | live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する | テスト/監査 | cmd_856 |
+| L339 | download_prod_data.pyのsilent failure検証 | ツール | cmd_1010 |
+| L344 | analysis_runs/experiments.dbのschemaはdocs/_INDEXより先にlive確認せよ | DB | cmd_1017 |
+| L345 | run_077グリッド数変更時DATA_CATALOG/analysis_runs/docsを同時更新必須 | データ管理 | cmd_1017 |
+| L346 | cmd_426大掃除で旧GSパイプライン5本中4本削除済み、残存1本もimport不可 | 運用 | cmd_1017 |
+| L347 | 統合偵察で前提sub報告未完了時は自力調査で速度を稼げ | 運用手順 | cmd_1017 |
+| L349 | GitHub 100MB制限: GS出力CSVのサイズ事前確認必須 | 運用プロセス | cmd_1018 |
+| L350 | サブディレクトリCSVはgitignoreの*.csvでは除外されない | 運用プロセス | cmd_1018 |
 
 ## §17 現在の全体ステータス（2026-03-11）
 

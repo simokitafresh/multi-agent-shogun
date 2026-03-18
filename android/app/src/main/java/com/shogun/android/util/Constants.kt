@@ -22,6 +22,7 @@ object PrefsKeys {
     const val NOTIFY_AGENT_RESPONSE = "notify_agent_response"
     const val FONT_SIZE = "font_size"
     const val SOFT_WRAP = "soft_wrap"
+    const val VOICE_DICTIONARY = "voice_dictionary"
 }
 
 object Defaults {

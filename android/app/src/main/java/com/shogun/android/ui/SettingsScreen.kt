@@ -272,6 +272,10 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
 
         HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))
 
+        VoiceDictionarySection()
+
+        HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))
+
         NtfySettingsSection(viewModel = settingsViewModel)
 
         HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))

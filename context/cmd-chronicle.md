@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-16 -->
+<!-- last_updated: 2026-03-18 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -451,3 +451,70 @@
 | cmd_972 | | | infra | 03-16 | — |
 | cmd_973 | | | infra | 03-16 | — |
 | cmd_976 | | | dm-signal | 03-16 | — |
+| cmd_978 | | | infra | 03-16 | — |
+| cmd_980 | | | infra | 03-16 | — |
+| cmd_979 | | | infra | 03-16 | — |
+| cmd_981 | 'p̄（p平均法）をFoFレイヤーのコーディングブロックとして忍法パイプラインに組み込み、 | dm-signal | 03-16 | — |
+| cmd_982 | 'Render BEデプロイが2連続update_failed。 | dm-signal | 03-16 | — |
+| cmd_983 | 'p̄の複合PK化・複数n_splits事前計算・パイプラインブロック・FE表示について、 | dm-signal | 03-16 | — |
+| cmd_977 | 'p平均法を知識辞書に反映し、DM-Signal BEに実装し、FEに表示する。 | dm-signal | 03-16 | — |
+| cmd_984 | Android音声入力（Gboard等のIME）の認識結果に対し、アプリ内で後処理辞書による 自動置換を適用し、将軍運用で頻出する専門用語の入力精度を向上させる。 | infra | 03-16 | AC3+AC4完了。VoiceDictionarySecti |
+| cmd_985 | AndroidアプリからOpenAI APIのusage（使用量・コスト）を確認できるようにする。 既存のClaude usage表示と並列で、Claude/OpenAI切替で両方のAPIコストを把握可能にする。 | infra | 03-16 | — |
+| cmd_990 | 'cancelled - replaced by cmd_991' | infra | 03-16 | — |
+| cmd_988 | 'p̄バッチがサイレントに壊れた場合を検知するゲートを追加し、 | dm-signal | 03-16 | — |
+| cmd_986 | 'Androidアプリにオフライン対応の開発アイデア帳を追加し、 | infra | 03-16 | — |
+| cmd_987 | 'PBarSelectionBlockをパイプラインに追加し、複合PK化+複数n_splits事前計算を実装する。 | dm-signal | 03-16 | — |
+| cmd_989 | 'ntfy_listener, inbox_watcher, ninja_monitor等のデーモンが落ちた場合に | infra | 03-16 | — |
+| cmd_991 | 'ダッシュボードの教訓注入率セクションにタスク種別(impl/review/recon/scout)ごとの | infra | 03-16 | — |
+| cmd_992 | 'gate_context_freshness.shのWARN/ALERTを解消する。 | infra | 03-16 | — |
+| cmd_994 | 'Androidアプリ v6.0をビルドし、GitHubリリースを作成してAPKをアップロード、 | infra | 03-16 | — |
+| cmd_993 | 'dashboard_auto_section.shのshellcheck SC2034違反（未使用変数CLEAR_RATE, LAST_GATE）を修正し、Stop Hook lintをパスさせる。' | infra | 03-16 | dashboard_auto_section.sh の sh |
+| cmd_995 | 'cmd_985のRate Limit表示を殿の要件通りに修正する。 | infra | 03-16 | — |
+| cmd_996 | 'cmd_985/986の実装で発生した横スクロールを修正し、 | infra | 03-16 | — |
+| cmd_997 | '音声辞書のプリセットを複数の方法論で大幅に増やす。 | infra | 03-16 | — |
+| cmd_998 | 'PBarSelectionBlockを四神×3パターン=12体の入力プールでtop_n=2実行し、 | dm-signal | 03-16 | PBarSelectionBlock実戦テスト完了。四神×3 |
+| cmd_1000 | '既存ビルディングブロック群とPBarSelectionBlockの動作形式の整合性を確認し、 | dm-signal | 03-16 | — |
+| cmd_999 | 'PBarSelectionBlockの月次リバランス・均等保有バックテストを実施し、 | dm-signal | 03-16 | — |
+| cmd_1001 | 'cmd_1000偵察でビルディングブロック内に共通期間算出がないことを確認した。 | dm-signal | 03-16 | — |
+| cmd_1003 | '殿が発見した2件の表示バグを調査・修正し、さらに全PF/FoFで | dm-signal | 03-16 | — |
+| cmd_1002 | 'PBarSelectionBlockのp̄計算に任意のlookback_months（ルックバック期間）を | dm-signal | 03-16 | — |
+| cmd_1005 | '(1) MIN_PERIOD_LENGTH=12はrichmanbtcの実装判断であり学術的根拠なし。 | dm-signal | 03-16 | — |
+| cmd_1004 | 'FoFの計算開始日(fof_valid_start_date)が構成PFのシグナル開始日しか見ておらず、 | dm-signal | 03-16 | — |
+| cmd_1007 | 'cmd_1005のPBar BTをtop_n=1で再実行し、毎月p̄最良1体に集中した場合の | dm-signal | 03-16 | — |
+| cmd_1008 | '各ファミリー（青龍/朱雀/白虎/玄武）内の3モード（激攻/鉄壁/常勝）から | dm-signal | 03-16 | — |
+| cmd_1010 | | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
+| cmd_1014 | Max Run-upと直交する2メトリクスをL1レベルで特定し、シン四神CPCVスクリーニング用トリプルEを確定する | dm-signal | 03-17 | シン四神Phase1: L1ファミリー別メトリクス相関分析を |
+| cmd_1016 | trade-ruleパリティ修正前に生成された汚染GS結果データを特定し完全削除する | dm-signal | 03-17 | — |
+| cmd_1015 | run_077正規計算でL1フルGS月次リターンを生成し、Max Run-upと直交する2メトリクスをL1レベルで特定する | dm-signal | 03-17 | — |
+| cmd_1017 | analysis_runs/docs/に定義された既存GSパイプライン(5 Phase, 56,556候補/ファミリー)がシン四神のL1 CPCVスクリーニング基盤として使えるか、精査し所見を報告する | dm-signal | 03-17 | — |
+| cmd_1018 | シン四神設計書(outputs/analysis/shin_shijin_design.md §3)に定義された191,796変種のL1パラメータ空間をGS実行し、全変種の月次リターン+8メトリクスを算出する。GSエンジンは本番PipelineEngineと計算完全一致であること | dm-signal | 03-17 | — |
+| cmd_1019 | cmd_1018出力の191,796変種×8メトリクスを3手法(全期間/ローリング/DD条件付き)で相関分析し、トリプルE候補を殿に推薦する | dm-signal | 03-17 | — |
+| cmd_1020 | Phase 2(トリプルE確定)と並行してCPCV+PBO完璧版エンジンを構築する。メトリクス名はパラメータ化し、Phase 2完了後に即実行可能な状態にする | dm-signal | 03-17 | — |
+| cmd_1021 | シン四神パイプラインで使用する全スクリプト（GS/メトリクス/CPCV/忍法/四つ身）の所在・状態・依存関係を棚卸しし、再利用カタログとして恒久記録する | dm-signal | 03-17 | — |
+| cmd_1022 | 分析+設計更新 — シン四神トリプルE: ファミリー独立化+C3符号修正+設計書反映 | dm-signal | 03-17 | FAIL。C3の正方向jump限定ロジック自体は scrip |
+| cmd_1023 | 実装 — シン四神Phase3: CPCV+PBOスクリーニング（ファミリー独立×3メトリクス独立） | dm-signal | 03-17 | — |
+| cmd_1024 | シン四神 Phase 4 — 脱相関K体選出 + 16ユニット構築 | dm-signal | 03-17 | — |
+| cmd_1025 | Phase 4完了後の殿裁定（ファミリー別K選択+32体構成）を設計書に正確に記録し、Phase 5以降の前提を確定させる | dm-signal | 03-17 | — |
+| cmd_1026 | シン忍法GS(Phase 5)の前提として、四つ目GSスクリプトを作成して6忍法体制を完成させ、全スクリプトの命名を統一し、カタログドキュメントに記録する | dm-signal | 03-17 | 四つ目(yotsume) GSスクリプト新規作成 + 6忍法 |
+| cmd_1027 | 32体ユニバースでの7忍法GS実行時間を実測し、チャンク分割並列実行の設計パラメータを確定する | dm-signal | 03-17 | — |
+| cmd_1028 | シン忍法知見の教訓登録+設計書同期確認 | dm-signal | 03-17 | cmd_1028 impl成果物の全検証PASS。L357- |
+| cmd_1029 | cmd_1027ベンチマークは本番高速化パスを使わず計測していた。本番と同じ実行方式で正確なms/patを取得し、全量見積もりを再算出する | dm-signal | 03-17 | — |
+| cmd_1030 | cmd_1029でgrouped実行23.19h(直列)まで短縮済み。さらに10倍（直列2-3h、8並列20-30min）を目指し、全高速化手段を調査する | dm-signal | 03-17 | — |
+| cmd_1031 | cmd_1030偵察結果の高速化#1(Grid dedup)+#2(PPE全忍法)+#5(worker 4→6)を実装。23h→2.8hを目指す。本番パリティ完全一致が絶対条件。 | dm-signal | 03-17 | — |
+| cmd_1032 | cmd_1031のGrid dedupを差し戻す。本番は日次解像度でシグナル計算するため10D/15D/20D/1Mは全て異なる値を生む。月次GS内のbefore/after比較は本番パリティではない。PPE導入部分は残す。 | dm-signal | 03-17 | — |
+| cmd_1033 | kawarimiのPPE効率が1.09x（他忍法2.5-3.75x）である原因を特定し、改善可能か判定する | dm-signal | 03-17 | — |
+| cmd_1034 | kasoku GS(12.6Mパターン, PPE6で6.6h)のさらなる高速化余地を6観点から調査し、次の実装cmdの設計根拠を確立する | dm-signal | 03-17 | — |
+| cmd_1035 | Phase 5(シン忍法GS 19.2Mパターン)実行前に、cmd_1034実証済み高速化をkasokuに組込み、他忍法にも横展開し、全7忍法スクリプトの本番パリティを再検証する | dm-signal | 03-17 | yotsume+bunshinベンチマーク計測完了。 yot |
+| cmd_1037 | cmd_1035で各忍法に適用した高速化手法を横断分析し、忍法間の知見転用でさらなる高速化余地を定量的に特定する | dm-signal | 03-18 | — |
+| cmd_1036 | 全忍法のGSベンチマークを1本の共通スクリプトで統一し、計測方法のブレ・重複実装・ミスを排除する | dm-signal | 03-18 | — |
+| cmd_1039 | ninja_monitorの/clear判定を三段階化し、作業中(acknowledged/in_progress)の忍者を/clearしない | infra | 03-18 | — |
+| cmd_1038 | cmd_1037偵察で実証済みの3高速化手法+tiebreakバグ修正を並列実装し、19.2M GS実行時間を20-30分から10-15分圏内に短縮する | dm-signal | 03-18 | — |
+| cmd_1040 | cmd_1039の実装が殿の三段階仕様と不一致。正しい三段階（Stage 1: YAML確認→Stage 2: 再確認→Stage 3: /clear）に再実装 | infra | 03-18 | — |
+| cmd_1041 | hooks・ninja_monitor・CI/テスト・通信基盤のバグ・エラーを網羅的に洗い出す | infra | 03-18 | — |
+| cmd_1042 | GS高速化の1改良1ベンチ規律を強制するスキル+ベンチスクリプト拡張を整備する | dm-signal | 03-18 | — |
+| cmd_1044 | Read追跡hook — Write/Edit前の未Readファイルを自動ブロック | infra | 03-18 | Read追跡hook作成完了。全3AC達成。 |
+| cmd_1011 | 緊急修正 — DM-Signal本番 304 Not Modified キャッシュ不整合バグ | dm-signal | 03-18 | — |
+| cmd_1012 | 分析 — 忍法二段重ね(2段パイプライン)BT | dm-signal | 03-18 | — |
+| cmd_1013 | 分析 — CPCV+PBO過適合検証（既存忍法+二段重ね全チャンピオン） | dm-signal | 03-18 | — |
+| cmd_1043 | インフラ全修正 — cmd_1041偵察で検出した全問題を殲滅（CRITICAL3+HIGH4+MEDIUM5+LOW3+EH群） | infra | 03-18 | AC8統合レビュー完了。5観点全PASS。19ファイル(+6 |
+| cmd_1045 | 修正 — lessons_usefulゲート穴塞ぎ（string_list/dict_no_usefulすり抜け229件） | infra | 03-18 | — |
