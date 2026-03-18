@@ -149,29 +149,65 @@ lessons_useful: []
 EOF
 }
 
-@test "ac_version match: gate passes" {
+@test "ac_version legacy numeric: gate skips (backward compatible)" {
+    # task has numeric ac_version=7 (old format) → legacy_skip
     write_report "ac_version_read: 7"
 
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *"AC version check:"* ]]
-    [[ "$output" == *"sasuke: OK (ac_version task=7, report=7)"* ]]
+    [[ "$output" == *"旧形式(数値)ac_version=7のため照合SKIP（後方互換）"* ]]
 }
 
-@test "ac_version mismatch: gate blocks" {
-    write_report "ac_version_read: 6"
+@test "ac_version hash match: gate passes" {
+    # Set hash-based ac_version in task
+    python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
+    data = yaml.safe_load(f)
+data['task']['ac_version'] = 'a3f2b1c9'
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', 'w') as f:
+    yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
+"
+    write_report "ac_version_read: a3f2b1c9"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AC version check:"* ]]
+    [[ "$output" == *"sasuke: OK (ac_version task=a3f2b1c9, report=a3f2b1c9)"* ]]
+}
+
+@test "ac_version hash mismatch: gate blocks (content change detection)" {
+    # Task has hash A but report has hash B (same AC count, different content)
+    python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
+    data = yaml.safe_load(f)
+data['task']['ac_version'] = 'd287147e'
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', 'w') as f:
+    yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
+"
+    write_report "ac_version_read: 519485d7"
 
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 1 ]
     [[ "$output" == *"AC version check:"* ]]
-    [[ "$output" == *"[CRITICAL] sasuke: NG ← ac_version不一致 (task=7, report=6)"* ]]
+    [[ "$output" == *"[CRITICAL] sasuke: NG ← ac_version不一致 (task=d287147e, report=519485d7)"* ]]
 }
 
-@test "ac_version missing: warn only (backward compatible)" {
+@test "ac_version hash with missing report: warn only (backward compatible)" {
+    python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
+    data = yaml.safe_load(f)
+data['task']['ac_version'] = 'a3f2b1c9'
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', 'w') as f:
+    yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
+"
     write_report ""
 
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *"AC version check:"* ]]
-    [[ "$output" == *"[INFO] sasuke: ac_version_read未記載（task=7）。後方互換として非BLOCK"* ]]
+    [[ "$output" == *"[INFO] sasuke: ac_version_read未記載（task=a3f2b1c9）。後方互換として非BLOCK"* ]]
 }

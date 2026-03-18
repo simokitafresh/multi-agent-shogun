@@ -145,9 +145,9 @@ else:
 
     run read_task_ac_version
     [ "$status" -eq 0 ]
-    [ "$output" = "3" ]
+    [ "$output" = "7d010443" ]
 
-    run grep -E "^ac_version_read:[[:space:]]*3$" "$TEST_PROJECT/queue/reports/sasuke_report.yaml"
+    run grep -E "^ac_version_read:[[:space:]]*7d010443$" "$TEST_PROJECT/queue/reports/sasuke_report.yaml"
     [ "$status" -eq 0 ]
 
     run read_task_field stop_for
@@ -190,7 +190,7 @@ task:
     - ac3: third
     - ac4: fourth
     - ac5: fifth
-  ac_version: 3
+  ac_version: 7d010443
 EOF
 
     run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
@@ -198,7 +198,52 @@ EOF
 
     run read_task_ac_version
     [ "$status" -eq 0 ]
-    [ "$output" = "5" ]
+    [ "$output" = "59d7d64d" ]
+}
+
+@test "deploy_task detects ac_version change when AC count same but content differs" {
+    # 3 ACs with descriptions: first, second, third
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "content change test"
+  task_type: review
+  acceptance_criteria:
+    - id: AC1
+      description: "first"
+    - id: AC2
+      description: "second"
+    - id: AC3
+      description: "third"
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+    run read_task_ac_version
+    [ "$status" -eq 0 ]
+    local hash_before="$output"
+    [ "$hash_before" = "519485d7" ]
+
+    # Same count (3) but different content
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "content change test"
+  task_type: review
+  acceptance_criteria:
+    - id: AC1
+      description: "alpha"
+    - id: AC2
+      description: "beta"
+    - id: AC3
+      description: "gamma"
+  ac_version: 519485d7
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+    run read_task_ac_version
+    [ "$status" -eq 0 ]
+    [ "$output" = "d287147e" ]
+    [ "$output" != "$hash_before" ]
 }
 
 @test "deploy_task skips ac_priority injection when acceptance_criteria has fewer than 3 items" {

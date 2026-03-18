@@ -2029,20 +2029,28 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     acv_status=$(python3 -c "
 import yaml, sys
 
+def is_legacy_numeric(v):
+    # Legacy numeric ac_version check
+    if v is None:
+        return False
+    if isinstance(v, bool):
+        return False
+    if isinstance(v, (int, float)):
+        return True
+    s = str(v).strip()
+    try:
+        int(s)
+        return True
+    except (ValueError, TypeError):
+        return False
+
 def normalize(v):
     if v is None:
         return None
-    if isinstance(v, bool):
-        return int(v)
-    if isinstance(v, (int, float)):
-        return int(v)
     s = str(v).strip()
     if s == '' or s.lower() in ('none', 'null'):
         return None
-    try:
-        return int(s)
-    except Exception:
-        return s
+    return s
 
 try:
     with open('$task_file') as tf:
@@ -2051,14 +2059,19 @@ try:
         rdata = yaml.safe_load(rf) or {}
 
     task = tdata.get('task', {}) if isinstance(tdata, dict) else {}
-    task_ac = normalize(task.get('ac_version'))
-    read_ac = normalize(rdata.get('ac_version_read'))
+    raw_task_ac = task.get('ac_version')
+    raw_read_ac = rdata.get('ac_version_read')
+    task_ac = normalize(raw_task_ac)
+    read_ac = normalize(raw_read_ac)
 
     if task_ac is None:
         print('task_missing')
+    elif is_legacy_numeric(raw_task_ac):
+        _r = read_ac or '-'
+        print(f'legacy_skip\\t{task_ac}\\t{_r}')
     elif read_ac is None:
         print(f'report_missing\\t{task_ac}\\t-')
-    elif str(task_ac) == str(read_ac):
+    elif task_ac == read_ac:
         print(f'ok\\t{task_ac}\\t{read_ac}')
     else:
         print(f'mismatch\\t{task_ac}\\t{read_ac}')
@@ -2081,6 +2094,9 @@ except Exception:
             ;;
         report_missing)
             echo "  [INFO] ${ninja_name}: ac_version_read未記載（task=${acv_task}）。後方互換として非BLOCK"
+            ;;
+        legacy_skip)
+            echo "  [INFO] ${ninja_name}: 旧形式(数値)ac_version=${acv_task}のため照合SKIP（後方互換）"
             ;;
         task_missing)
             echo "  [INFO] ${ninja_name}: task.ac_version未設定のため照合SKIP"

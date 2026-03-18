@@ -151,8 +151,9 @@ inject_task_id() {
     log "inject_task_id: set task_id=$subtask_id"
 }
 
-# ─── ac_version自動注入（cmd_530: stale作業検知） ───
-# acceptance_criteria件数をtask.ac_versionとして保持。再配備時に再計算される。
+# ─── ac_version自動注入（cmd_530: stale作業検知, cmd_1053: ハッシュ化） ───
+# acceptance_criteriaの各descriptionをソート→連結→md5先頭8桁をtask.ac_versionとして保持。
+# 件数が同じでも内容が変われば異なるハッシュになる。再配備時に再計算される。
 inject_ac_version() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -163,6 +164,7 @@ inject_ac_version() {
     local py_output
     py_output=$(mktemp)
     if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
+import hashlib
 import os
 import sys
 import tempfile
@@ -182,19 +184,28 @@ try:
     task = data['task']
     ac = task.get('acceptance_criteria', [])
 
+    descriptions = []
     if isinstance(ac, list):
-        ac_version = len(ac)
-    elif ac is None:
-        ac_version = 0
+        for item in ac:
+            if isinstance(item, dict):
+                descriptions.append(str(item.get('description', '')).strip())
+            else:
+                descriptions.append(str(item).strip())
     elif isinstance(ac, str):
-        ac_version = 1 if ac.strip() else 0
+        descriptions.append(ac.strip())
     elif isinstance(ac, dict):
-        ac_version = len(ac.keys())
+        for key in sorted(ac.keys()):
+            descriptions.append(str(ac[key]).strip() if ac[key] else str(key))
+
+    if descriptions:
+        descriptions.sort()
+        concat = '|'.join(descriptions)
+        ac_version = hashlib.md5(concat.encode('utf-8')).hexdigest()[:8]
     else:
-        ac_version = 0
+        ac_version = hashlib.md5(b'').hexdigest()[:8]
 
     prev = task.get('ac_version')
-    task['ac_version'] = int(ac_version)
+    task['ac_version'] = ac_version
 
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
     try:
@@ -205,10 +216,10 @@ try:
         os.unlink(tmp_path)
         raise
 
-    if prev == task['ac_version']:
-        print(f'[AC_VERSION] unchanged: {task["ac_version"]}', file=sys.stderr)
+    if str(prev) == str(ac_version):
+        print(f'[AC_VERSION] unchanged: {ac_version}', file=sys.stderr)
     else:
-        print(f'[AC_VERSION] set: {prev} -> {task["ac_version"]}', file=sys.stderr)
+        print(f'[AC_VERSION] set: {prev} -> {ac_version}', file=sys.stderr)
 
 except Exception as e:
     print(f'[AC_VERSION] ERROR: {e}', file=sys.stderr)
