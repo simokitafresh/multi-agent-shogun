@@ -523,6 +523,53 @@ Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。
 ```
 適用箇所: Step 3a→3b/11a→11b(dashboard.md) / Step 6a→6b(tasks YAML) / Step 11.7(streaks.yaml) / Step 11.5 Unblock(tasks YAML) / /clear Protocol(tasks YAML) / inbox既読化(`inbox_mark_read.sh`経由、Edit tool禁止)
 
+### YAML操作ツール一覧と使い方
+
+**⚠ yqは環境に存在しない。** YAML操作には以下の専用ツールのみを使用せよ。
+
+| ツール | 用途 | コマンド書式 |
+|--------|------|------------|
+| `deploy_task.sh` | タスクYAML配備（教訓注入・ac_version・忍者通知を自動処理） | `bash scripts/deploy_task.sh <ninja_name> [message] [type] [from]` |
+| `report_field_set.sh` | 報告YAMLのフィールド更新（flock排他制御付き） | `bash scripts/report_field_set.sh <path> <dot.key> <value>` |
+| `field_get.sh` | YAMLフィールド値の取得（source方式） | `. scripts/lib/field_get.sh && field_get <file> <field> [default]` |
+| `yaml_field_set.sh` | 汎用YAMLフィールド更新（flock排他制御付き） | `bash scripts/lib/yaml_field_set.sh <yaml_file> <block_id> <field> <value>` |
+
+#### タスクYAML作成ルール
+
+**task YAMLの作成はBash toolで `cat` / `echo` を使って書くこと。** Write/Edit toolで `queue/tasks/*.yaml` に直接書き込むとhookでブロックされる。
+
+```bash
+# ✅ 正しい手順: Bash toolでcat/echoで書き込み → deploy_task.shで配備
+cat > queue/tasks/hanzo.yaml <<'EOF'
+task:
+  status: pending
+  task_id: cmd_XXX_impl
+  ...
+EOF
+bash scripts/deploy_task.sh hanzo "タスクYAMLを読んで作業開始せよ" task_assigned karo
+```
+
+`deploy_task.sh` は配備時に以下を自動処理する:
+- `related_lessons`: project教訓の自動注入
+- `ac_version`: ACコンテンツハッシュの自動計算
+- 忍者CTX状態の検知と適切な起動方法の選択
+- `inbox_write.sh` による忍者への通知
+
+#### 報告YAML操作ルール
+
+報告YAMLの操作は `report_field_set.sh` 経由で行うこと。Edit toolでの直接編集はflock未使用のためLost Updateリスクあり。
+
+```bash
+# 単一値の設定
+bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml results.AC1.status PASS
+
+# 複数行値の設定（パイプ）
+cat <<'EOF' | bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml results.AC1.notes -
+修正対象ファイル3件を更新。
+テスト全件PASSを確認。
+EOF
+```
+
 ## §8 Pre-Deployment Ping（配備前確認）
 > 配備対象ペインが応答しているか確認。応答なし忍者への配備はタスク停滞を招く。
 

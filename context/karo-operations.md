@@ -23,6 +23,7 @@
 - implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
 - 偵察配備後の2名体制検証は `task_deploy.sh` の役割。`deploy_task.sh` と混同するな。
 - BE系タスク配備ルール: `backend/` 配下のファイルが変更対象の場合、タスクYAMLの `context_files` に `docs/rule/trade-rule.md` パスを含めよ。理由: RULE09/10/11 と 14 の誤解パターンを忍者が自動参照するため。
+- **成果のcontext還流**: cmd成果に数値・事実（ベンチマーク、設計決定等）を含む場合、cmd設計時にcontext更新を最終ACに含めることを推奨。ただし判定は§3 Context還流判定に統合。
 - **担当者指名禁止（殿厳命）**: 忍者配備で「偵察担当をそのまま実装に回す」等の担当者指名をするな。忍者は/clearで全記憶消去される。誰がやっても報告YAMLを読めば同じ結果を出せる。配備判断は**負荷分散・idle順**で行え。知識の引継ぎは報告YAMLパスをタスクYAMLの`context_files`に注入することで担保せよ。
 → `docs/research/karo-operations-detail.md` §1
 
@@ -55,6 +56,7 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 - Two-pass Review: CRITICALはblocking(PASS/FAIL直結)、INFORMATIONALは記録のみ(non-blocking)。→ detail §3 Two-pass Review
 - A/B/C Triage: レビュー指摘を3分類。A:Fix(修正必須→impl再配備)、B:Acknowledge(認識するが今回対応不要→理由記録)、C:False Positive(偽陽性→以後抑制)。PASS/FAIL/WAIVEとの対応表あり。→ detail §3 A/B/C Triage
 - Re-review Loop: blocking fix→修正task配備→再レビュー配備の明示フロー。曖昧に続行するな。→ detail §3 Re-review Loop
+- **Context還流判定**: GATE CLEAR前に「この報告にcontext索引を更新すべき数値・事実があるか？」を判定せよ。あればGATE CLEAR処理の一部としてcontext更新を実行。対象: 性能テーブル、設計決定、新API仕様、パイプライン状態等。**Why**: 報告YAMLに閉じた情報はアーカイブ後に将軍から見えなくなり、古いcontextで誤判断する（cmd_1048-1052後のgs-speedup§6未更新が契機）。
 → `docs/research/karo-operations-detail.md` §3
 
 ## §3.5 DCエスカレーション（裁定重複チェック必須）
@@ -82,7 +84,10 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 - 分割宣言は配備前の遵守証跡。1名配備なら例外理由を必ず書く。
 - task YAML は薄書きが原則。既知知識を重複転記するな。
 - すべて Read-before-Write。inbox既読化は `inbox_mark_read.sh` を使う。
-→ `docs/research/karo-operations-detail.md` §6-7
+- **task YAML作成はBash tool(`cat`/`echo`)で書け**（Write/Edit直接はhookブロック）。配備は `deploy_task.sh` 経由。
+- **報告YAML操作は `report_field_set.sh` 経由**（Edit tool直接禁止=Lost Updateリスク）。
+- **yqは環境に存在しない**。YAML操作ツール: `deploy_task.sh` / `report_field_set.sh` / `field_get.sh` / `yaml_field_set.sh`
+→ `docs/research/karo-operations-detail.md` §6-7（YAML操作ツール詳細・コマンド書式あり）
 
 ## §7 配備前確認
 
