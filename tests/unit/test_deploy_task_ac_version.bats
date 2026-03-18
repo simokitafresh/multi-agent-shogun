@@ -9,12 +9,16 @@ setup_file() {
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
     export SRC_AGENT_STATE_LIB="$PROJECT_ROOT/lib/agent_state.sh"
+    export SRC_CTX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/ctx_utils.sh"
+    export SRC_PANE_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/pane_lookup.sh"
 
     [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
     [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
     [ -f "$SRC_AGENT_STATE_LIB" ] || return 1
+    [ -f "$SRC_CTX_UTILS_SCRIPT" ] || return 1
+    [ -f "$SRC_PANE_LOOKUP_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -37,6 +41,8 @@ setup() {
     cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
     cp "$SRC_AGENT_STATE_LIB" "$TEST_PROJECT/lib/agent_state.sh"
+    cp "$SRC_CTX_UTILS_SCRIPT" "$TEST_PROJECT/scripts/lib/ctx_utils.sh"
+    cp "$SRC_PANE_LOOKUP_SCRIPT" "$TEST_PROJECT/scripts/lib/pane_lookup.sh"
 
     # Non-blocking stubs.
     cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
@@ -58,6 +64,8 @@ EOF
         "$TEST_PROJECT/scripts/lib/field_get.sh" \
         "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
         "$TEST_PROJECT/lib/agent_state.sh" \
+        "$TEST_PROJECT/scripts/lib/ctx_utils.sh" \
+        "$TEST_PROJECT/scripts/lib/pane_lookup.sh" \
         "$TEST_PROJECT/scripts/inbox_write.sh" \
         "$TEST_PROJECT/scripts/ntfy_cmd.sh" \
         "$TEST_PROJECT/scripts/lesson_check.sh"
