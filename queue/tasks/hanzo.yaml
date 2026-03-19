@@ -1,0 +1,49 @@
+status: in_progress
+parent_cmd: cmd_1096
+task_type: implement
+ninja: hanzo
+project: dm-signal
+command: |
+  シン忍法21体のFoFパイプラインが本番で実際にBBを実行しているか診断せよ。
+
+  ■ 調査手順
+  1. SELECT count(*) FROM fof_component_weights WHERE portfolio_id IN (シン忍法21体のUUID)
+  2. 0件確定なら: シン忍法1体のconfig→pipeline_config JSONの中身を確認
+  3. recalculate_fast.pyのFoF処理パスを読み、pipeline_configからBBをインスタンス化する箇所を特定
+  4. BBが実行されない条件(分岐)を特定し報告
+
+  ■ 関連PI
+  - PI-003: pipeline_config必須
+  - PI-004: GSはpydanticスキーマを通さない
+
+  ■ 実装参考
+  - DB接続: DATABASE_URL
+  - recalculate: backend/app/jobs/recalculate_fast.py
+  - pipeline engine: backend/app/services/pipeline/engine.py
+  - BB blocks: backend/app/services/pipeline/blocks/
+
+acceptance_criteria:
+  - id: AC1
+    description: "本番DBのfof_component_weightsテーブルからシン忍法21体のレコード数を取得。0件ならBB未実行確定。1件以上なら月数とweight値の妥当性を確認"
+    binary_checks:
+      - "fof_component_weightsのSELECT COUNT(*)を実行したか？"
+      - "レコード数を報告したか？"
+  - id: AC2
+    description: "シン忍法1体のpipeline_config JSONを本番DBから取得し、BBブロック名・パラメータを報告。recalculate_fast.pyのFoF計算パスをコードリーディングし、pipeline_configがどう使われるかを報告"
+    binary_checks:
+      - "pipeline_config JSONの中身を確認したか？"
+      - "recalculate_fast.pyのFoF計算パスを読んだか？"
+      - "pipeline_configの使用箇所を特定したか？"
+  - id: AC3
+    description: "BB未実行の場合の原因仮説を報告(pipeline_config形式不正/BBクラス未登録/例外握り潰し等)"
+    binary_checks:
+      - "原因仮説を具体的に報告したか？"
+      - "git commitが完了したか？"
+
+context_files:
+  - docs/rule/db-operations-runbook.md
+  - projects/dm-signal.yaml
+
+stop_for:
+  - "DB接続エラー(DATABASE_URL未設定等)"
+never_stop_for: []
