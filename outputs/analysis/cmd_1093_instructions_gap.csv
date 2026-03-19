@@ -1,0 +1,92 @@
+gap_type,source,content_summary,severity,recommended_action
+欠落(高影響教訓),L032,"[infra] CLAUDE.md PJ固有セクション境界は##見出しレベルで識別 (helpful:20, inj:38)",high,高頻度参照の教訓。instructionsへの昇格を強く推奨
+欠落(高影響教訓),L032,"[dm-signal] データ構造変更時は全使用箇所を確認せよ（2026-02-15） (helpful:20, inj:3)",high,高頻度参照の教訓。instructionsへの昇格を強く推奨
+欠落(高影響教訓),L094,"[infra] scripts/shutsujin_departure.sh(session設定)にモデル名ハードコード残存 (helpful:12, inj:21)",high,高頻度参照の教訓。instructionsへの昇格を強く推奨
+欠落(高影響教訓),L094,"[dm-signal] oikaze cutoff_score epsilon tolerance(1e-12)が必要 (helpful:12, inj:0)",high,高頻度参照の教訓。instructionsへの昇格を強く推奨
+欠落(高影響教訓),L309,"[dm-signal] static export(output:'export')アプリでは<Link>SPA遷移を使うな — window.location.hrefで統一せよ (helpful:10, inj:0)",high,高頻度参照の教訓。instructionsへの昇格を強く推奨
+根拠薄弱(ルールあり/教訓なし),L0048(NI-3),[Named Invariants] Evidence First: 問題は見つけた瞬間に記録し事実を先に書け,medium,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0051(NI-6),[Named Invariants] Learning Loop: AC完了ごとに二値チェック,medium,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+欠落(教訓あり/ルールなし),L164,[infra] Claude Code Hooksのshスクリプトはset -euのみ使用しpipefail禁止,medium,"IF-THENパターンをinstructionsに昇格検討 (helpful:2, injection:0)"
+矛盾(分散),RPT-1+TYML-1+YFA-1,YAML操作ツール使い分け(field_get/yaml_field_set/report_field_set)が3箇所に分散。統合ガイドなし,medium,YAML操作ツール一覧表を1セクションにまとめ、用途別使い分けを明示
+記述不足(教訓多数/ルール薄い),L0011(F001),"[Forbidden Actions] direct_shogun_report: 教訓51件マッチ (例:L229, L211, L210, L209, L189)",medium,教訓51件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0023(F003),"[Forbidden Actions] unauthorized_work: 教訓22件マッチ (例:L233, L172, L153, L140, L139)",medium,教訓22件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0028(F004),"[Forbidden Actions] polling: 教訓16件マッチ (例:L205, L204, L193, L114, L059)",medium,教訓16件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0033(F005),"[Forbidden Actions] skip_context_reading: 教訓25件マッチ (例:L242, L224, L220, L200, L076)",medium,教訓25件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0050(NI-5),"[Named Invariants] Review Is Read-only: 教訓38件マッチ (例:L239, L233, L218, L188, L186)",medium,教訓38件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0065(DEV-SCOPE),"[Deviation Management] スコープ制限: 教訓20件マッチ (例:L233, L172, L153, L140, L139)",medium,教訓20件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0106(WF-2.7),"[Workflow] acknowledged更新: 教訓24件マッチ (例:L230, L222, L185, L171, L146)",medium,教訓24件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0236(GIT-1),"[Commit Safety] commit除外: 教訓24件マッチ (例:L245, L220, L219, L218, L185)",medium,教訓24件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0320(RECON-DET),"[偵察タスク対応] detail形式: 教訓29件マッチ (例:L243, L233, L213, L183, L153)",medium,教訓29件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0429(REV-1),"[Code Review Rule] Read-only Default: 教訓47件マッチ (例:L239, L233, L218, L192, L190)",medium,教訓47件の頻出知見を集約しinstructions拡充
+根拠薄弱(ルールあり/教訓なし),L0060(DEV-2),[Deviation Management] Blocker自力解決: ブロッカーは自分で解決,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0061(DEV-3),[Deviation Management] 必須品質自力追加: 必須品質は自分で追加,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0068(DEV-ESC),[Deviation Management] Escape Hatch: 自明な修正は確認せず実行し事後通知,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0076(STOP-2),[停止条件二分法] never_stop_for実行: never_stop_for該当は停止せずまず実行,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0095(WF-1),[Workflow] receive_wakeup: inboxからwakeup受信,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0098(WF-2),[Workflow] read_yaml: 自分のtask YAML読込,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0113(WF-4),[Workflow] execute_task: AC完了ごとに二値チェック,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0121(WF-5),[Workflow] write_report: 報告YAML作成,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0138(WF-6),[Workflow] done status: status=done,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0222(SELF-2),[Self-Identification] 影ファイル禁止: 新ファイルで既存ファイル回避するな,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0258(TSR-2),[Task Start Rule] eng_preferences確認: engineering_preferencesがあれば確認,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0263(TSR-4),[Task Start Rule] reports_to_read: reports_to_readの全報告YAML事前読込,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0319(RECON-REC),[偵察タスク対応] recommendation形式: 命令形。メニュー禁止,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0339(RECON-4REQ),[偵察タスク対応] 実装直結4要件: files_to_modify/affected_files/related_tests/edge_cases,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0394(RECON-BIAS),[偵察タスク対応] 認知バイアスガード: 7種バイアス対策,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0434(REV-3),[Code Review Rule] 一人完結禁止: 自分で書いて自分で通すこと禁止,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0438(REV-5),[Code Review Rule] ゴール逆算検証: 全ACパスでcmd purpose達成されるか,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0464(TEST-3),[テスト義務] テスト不可時報告: 理由をtest_blockerに記載,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0506(TYML-1),[Task YAML更新手順] yaml_field_set使用: task YAML更新はyaml_field_set.sh経由,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0699(RF-FIELDS),[Report Format] 必須フィールド: worker_id/task_id/parent_cmd/status等全フィールド,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0702(RF-SPEC),[Report Format] 報告具体性ルール: 抽象表現禁止。ファイルのL行の関数形式,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0716(RF-GATE),[Report Format] Step 5.5自己ゲート: 4項目確認後にdone,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0787(RF-SC),[Report Format] skill_candidateガイド: 3回以上同じ手順でfound:true,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0917(APG-1),[Analysis Paralysis Guard] 分析麻痺ガード: Read5回連続でEdit0回なら即停止,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0930(AJ-1),[Autonomous Judgment] Self-review: 成果物を自己レビュー,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+根拠薄弱(ルールあり/教訓なし),L0931(AJ-2),[Autonomous Judgment] Purpose validation: parent_cmdのpurposeに対して検証,low,教訓による裏付けなし。根拠を確認し正当ならPI化、不要なら簡素化
+欠落(教訓あり/ルールなし),L014,[infra] grep --excludeはWSL2 /mnt/c上で不安定,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L015,[infra] CLAUDE_CONFIG_DIR環境変数で~/.claudeディレクトリを丸ごと切替可能。CLAUDE_CODE_OAUTH_TOKENで認証のみの切替も可能,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L016,[infra] OAuthリフレッシュトークンは単一使用。複数セッション共有時にプロセスAがリフレッシュするとBのトークンが無効化される。CLAUDE_CODE_OAUTH_TOKENで直接指定すればリフレッシュ競合,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L019,[dm-signal] タイブレーク均等保有ルール（2026-02-14）,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L020,[infra] cli_lookup.shの設定パス環境変数共有,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L026,[infra] 知識陳腐化の定量実態と解決方針(cmd_237合議3名統合),low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L031,[infra] CLAUDE.md PJ固有比率は4%のみ(14行/347行),low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:1)"
+欠落(教訓あり/ルールなし),L036,[infra] テストデータrevertでgit checkout -- SSOTは未コミット教訓を消失させる,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L040,[infra] WSL2環境でUsage API応答時間5秒超,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L055,[dm-signal] kasoku diff方式は激攻、ratio方式は常勝に特化,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L067,[infra] ペイン背景色は@model_name更新と連動していない(reset_layout.shのみで設定),low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:1)"
+欠落(教訓あり/ルールなし),L075,[infra] L075,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L075,[dm-signal] 新規PFのrecalculateにはrecalculate-syncが必要,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L099,[infra] backfill対象ログファイルのフォーマット事前確認の重要性,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L108,[infra] compact_stateの長さ未制限による500文字超過リスク,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L118,[infra] tmux set-optionのtargetがsession指定だとwindow optionが意図せずcurrent windowのみ更新されることがある,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L118,[dm-signal] DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納。close_priceカラムに利回りデータ。economic_indic,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L121,[infra] YAML回転処理でヘッダ保持を欠くと後続appendが既存履歴を失う,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L122,[infra] SKILL.md手順追加時に原則セクションとの矛盾を確認せよ,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L123,[infra] tmuxターゲットにウィンドウINDEXを使用するな — NAME(固有名)を使え,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L124,[infra] paste-bufferの-dフラグはタイムアウト時に発動しない — 明示的delete-buffer必須,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L128,[infra] OSS参照タスクはcanonical repository解決を初手に入れる,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L133,[infra] injection_countがlessons.yamlで全件0(未同期),low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L135,[infra] build_instructions.sh は --help 指定でも生成処理を実行する,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L135,[dm-signal] L010,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L145,[infra] ashigaru.md生成はbuild_instructions.shで行われる→source filesを修正すべき(L005の実践確認),low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L150,[infra] git commit --dry-runではpre-commitが走らずAC誤判定になる,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L151,[infra] Git hook導入時はスクリプト内容だけでなく executable bit(100755) のコミット有無を必須確認,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L151,[dm-signal] OPEN/CLOSE切替導入時はbenchmark側の*_open適用も同時チェック必須,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L155,[infra] lib/配下の共通関数は呼出し元の環境変数依存を明示バリデーションすべき,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L156,[infra] set -e環境で共通関数の非0戻り値を直接受けると即時終了する,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L162,[infra] フックスクリプトテストではsymlink構造でSCRIPT_DIRリダイレクトするモック手法が有効,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L163,[infra] MAX_ENTRIES等の定数変更時は既存テストの前提値も同時更新が必要,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L168,[infra] auto_draft_lesson.shのIF-THEN引数にスペース含む値を渡すと切り詰められる,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L195,[infra] UIコントラスト・アクセシビリティ基準,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L198,[infra] UIボタン・インタラクション基準,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L199,[infra] UIビジュアルヒエラルキー・一貫性基準,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L413,[dm-signal] DM7+ XLU1銘柄でtop_n軸冗長,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+欠落(教訓あり/ルールなし),L414,[dm-signal] DM7+ 24M RXLU CPCV Max_Run-up PBO=1.0,low,"IF-THENパターンをinstructionsに昇格検討 (helpful:0, injection:0)"
+矛盾(ルール間潜在),L229 vs TEST-1,L229「Stop Hookで全テスト実行は有害」vs TEST-1「構文検査必須」— 範囲が異なるが混同リスクあり,low,TEST-1は構文検査(bash -n等)のみ。L229は全batsテスト実行の禁止。区別を明記
+矛盾(重複教訓),L215+L216,[infra] L215とL216はtitle/summaryが逆転した同一内容の重複教訓,low,L215を削除(L216に統合済み)
+記述不足(教訓多数/ルール薄い),L0102(WF-2.5),"[Workflow] read_reports: 教訓12件マッチ (例:L179, L085, L062, L060, L057)",low,教訓12件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0224(SELF-3),"[Self-Identification] 他忍者ファイル禁止: 教訓9件マッチ (例:L205, L191, L139, L402, L395)",low,教訓9件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0321(RECON-SP),"[偵察タスク対応] Shadow Paths 4分岐: 教訓12件マッチ (例:L228, L223, L222, L072, L411)",low,教訓12件の頻出知見を集約しinstructions拡充
+記述不足(教訓多数/ルール薄い),L0463(TEST-2),"[テスト義務] SKIP=FAIL: 教訓13件マッチ (例:L240, L370, L102, L101, L100)",low,教訓13件の頻出知見を集約しinstructions拡充
+陳腐化(古い参照),L0543(SV-1),State Verification Principle — cmd_374の事例参照。現在のインフラで既に対処済みか未確認,low,cmd_374の事例が現在も有効か確認。原則は有効でも事例が古い場合は更新
