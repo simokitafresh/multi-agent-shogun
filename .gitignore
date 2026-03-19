@@ -223,6 +223,7 @@
 !scripts/x_research.py
 !scripts/run_precommit_checks.sh
 !scripts/report_field_set.sh
+!scripts/ralph_loop_closer.sh
 !scripts/cdp/
 !scripts/cdp/cdp_helper.py
 !scripts/cdp/cdp_cli.sh
