@@ -297,6 +297,7 @@ files_modified: []
 lesson_candidate:
   # found: true/false を書け。リスト形式[] 禁止
   found: false
+  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。例: "既知のL084と同じパターン"
   title: ""
   detail: ""
   project: ${project}

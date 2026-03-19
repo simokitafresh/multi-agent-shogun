@@ -658,7 +658,12 @@ skill_candidate:
   reason: null      # e.g., "Same pattern executed 3 times"
 lesson_candidate:
   found: false  # MANDATORY — true/false
-  # If true, also include:
+  # If found: false, MUST include:
+  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け
+  #   例: "既知のL084と同じパターン" / "単純な設定変更で新知見なし" / "定型的なファイル修正のみ"
+  #   空のまま提出するとfound:false+no_lesson_reason空=家老差し戻し対象
+  # If found: true, include:
+  #   推奨: 「次回このタスクをやる忍者が知っていれば速くなること」を1つ書け
   project: null     # e.g., "dm-signal" — auto_draft_lesson.shがプロジェクト判定に使用
   title: null       # e.g., "dm_signal.dbは本番DBではない"
   detail: null      # e.g., "本番はPostgreSQL on Render。SQLiteへのINSERTは無意味"
@@ -771,6 +776,12 @@ self_gate_check:
 
 **lesson_candidate.found:trueの報告はauto_draft_lesson.shがdraft教訓として自動登録する。**
 質の高いlesson_candidateを書くことが教訓システム全体の品質を決める。
+
+**found: false の場合**: `no_lesson_reason` に理由を1文で書け。全タスクに学びがある。found:falseはラルフループの燃料切れを意味する。理由なきfound:falseは家老が差し戻す。
+- 良い例: `"既知のL084と同じパターン"` / `"単純な設定変更で新知見なし"` / `"定型的なファイル修正のみ"`
+- 悪い例: (空欄) ← 差し戻し対象
+
+**found: true の場合(推奨)**: 「次回このタスクをやる忍者が知っていれば速くなること」を1つ書け。
 
 **title** — 問題と解決策を1行で。「〜した→〜で解決」形式:
 - 良い例: `"experiments.dbのUUIDが本番と不一致→GFS CSVを直接読込で解決"`
