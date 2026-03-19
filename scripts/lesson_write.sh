@@ -367,6 +367,61 @@ CTXEOF
             echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$gates_dir/lesson.done"
             echo "source: lesson_write" >> "$gates_dir/lesson.done"
         fi
+        # REFLUX_CHECK: 穴検出3問チェック (cmd_1088)
+        # 教訓登録=一回失敗=周辺に穴。キーワードでPI/ランブック/instructionsをgrep、還流漏れを検出
+        REFLUX_LESSON_ID=""
+        if [ -f "$LESSON_ID_FILE" ]; then
+            REFLUX_LESSON_ID=$(cat "$LESSON_ID_FILE")
+        fi
+        if [ -n "$REFLUX_LESSON_ID" ]; then
+            REFLUX_KEYWORDS=$(TITLE="$TITLE" DETAIL="$DETAIL" python3 << 'REFLUX_KWEOF'
+import re, os
+title = os.environ.get("TITLE", "")
+detail = os.environ.get("DETAIL", "")
+text = title + " " + detail
+# Extract meaningful tokens: English words (3+ chars), Kanji chunks (2+), Katakana chunks (2+)
+tokens = re.findall(r'[a-zA-Z_]{3,}|[\u4e00-\u9fff]{2,}|[\u30a0-\u30ff]{2,}', text)
+seen = set()
+unique = []
+for t in tokens:
+    tl = t.lower()
+    if tl not in seen:
+        seen.add(tl)
+        unique.append(t)
+# Output top 3 keywords as grep -E alternation pattern
+print("|".join(unique[:3]))
+REFLUX_KWEOF
+            ) || true
+
+            REFLUX_PI="MISSING"
+            REFLUX_RUNBOOK="MISSING"
+            REFLUX_INSTRUCTIONS="MISSING"
+
+            if [ -n "$REFLUX_KEYWORDS" ]; then
+                # (1) PI check: projects/{project}.yaml の production_invariants 関連
+                PI_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}.yaml"
+                if [ -f "$PI_FILE" ] && grep -qE "$REFLUX_KEYWORDS" "$PI_FILE" 2>/dev/null; then
+                    REFLUX_PI="FOUND"
+                fi
+
+                # (2) Runbook check: docs/rule/*.md
+                if [ -d "$SCRIPT_DIR/docs/rule" ]; then
+                    if grep -rlE "$REFLUX_KEYWORDS" "$SCRIPT_DIR/docs/rule/"*.md >/dev/null 2>&1; then
+                        REFLUX_RUNBOOK="FOUND"
+                    fi
+                fi
+
+                # (3) Instructions check: instructions/*.md
+                if grep -rlE "$REFLUX_KEYWORDS" "$SCRIPT_DIR/instructions/"*.md >/dev/null 2>&1; then
+                    REFLUX_INSTRUCTIONS="FOUND"
+                fi
+            fi
+
+            echo "REFLUX_CHECK: (1)PI=$REFLUX_PI (2)RUNBOOK=$REFLUX_RUNBOOK (3)INSTRUCTIONS=$REFLUX_INSTRUCTIONS"
+            if [ "$REFLUX_PI" = "MISSING" ] || [ "$REFLUX_RUNBOOK" = "MISSING" ] || [ "$REFLUX_INSTRUCTIONS" = "MISSING" ]; then
+                echo "WARN: 還流漏れの可能性あり。MISSING箇所にこの教訓の知見を反映すべきか検討せよ"
+            fi
+        fi
         exit 0
     else
         attempt=$((attempt + 1))
