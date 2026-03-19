@@ -16,6 +16,7 @@ trap cleanup EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+# shellcheck disable=SC1091
 source "$PROJECT_DIR/scripts/lib/field_get.sh"
 
 QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
