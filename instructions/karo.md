@@ -60,6 +60,7 @@ learning_loop:
   dispatch_rule: "ACを忍者に渡す際、各ACに二値チェック(yes/no質問3-6個)を付与せよ。忍者はこのチェックでAC単位の自己検証を行う"
   review_rule: "レビュー完了時、FAIL原因またはPASS成功手法から次回同種タスクに適用すべき新チェックを1つ以上抽出し、該当するランブック・テンプレート・lessons.yamlに還流せよ"
   reason: "計測だけでは品質管理。知見をシステムに還流して次サイクルを構造的に強化するのが成長(殿厳命2026-03-19)"
+  karo_lesson_rule: "レビュー完了時、家老自身の判断ミス・見落とし・手順不備があればlesson_write_karo.shで家老教訓を登録せよ。Usage: bash scripts/lesson_write_karo.sh \"タイトル\" \"詳細\" cmd_XXX → projects/infra/lessons_karo.yamlに追記。忍者用lesson_write.shとは別系統。家老の運用改善に特化した教訓を蓄積する"
 
 workflow:
   dispatch: "Step 1-8: cmd受領→分析→分解→配備→pending確認"

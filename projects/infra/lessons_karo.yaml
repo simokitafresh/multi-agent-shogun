@@ -1,0 +1,28 @@
+lessons:
+- id: LK001
+  title: STALL忍者の検知遅延 — assigned放置を早期発見すべし
+  detail: assigned/acknowledged状態で忍者がidle化（/clear後にtask YAMLを読まず待機）するケースがcmd_1105で判明。ninja_monitorにSTALL検知（10分閾値）を追加し自動再配備フローを構築した。家老は配備直後の初動確認を意識し、STALL通知受信時は即座に別忍者へ再配備せよ。
+  source_cmd: cmd_1105
+  created_at: '2026-03-19'
+- id: LK002
+  title: cmd_1082事故 — pipeline_config欠落を家老レビューで検知できず
+  detail: GS本番登録時にPipelineConfig欠落が本番障害を引き起こした。家老レビューで「本番パリティAC」の有無を確認すべきだったが見落とし。以降、本番DB操作を含むcmdのレビューでは(1)本番コードとの差分確認AC有無
+    (2)production_invariantsとの照合 を必須チェック項目とする。
+  source_cmd: cmd_1082
+  created_at: '2026-03-19'
+- id: LK003
+  title: 霧丸/影丸idle化 — /clearレースコンディションで配備直後に記憶消失
+  detail: 'ninja_monitorの自動/clearと家老の配備タイミングが競合し、配備直後に/clearが走って忍者が記憶喪失→idle化するケースが発生。対策:
+    ninja_monitorにStage 1ガード（assigned/acknowledged状態の忍者は/clearしない）を追加。家老は配備後にninja_monitorのclear猶予期間を意識し、配備→nudge送信の間隔を最小化せよ。'
+  source_cmd: cmd_1108
+  created_at: '2026-03-19'
+- id: LK004
+  title: 教訓還流の仕組み変更は3層同時修正必須
+  detail: 教訓フロー変更時にテンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)のうち1箇所だけ修正しても他が追随しないと形骸化する。cmd_1104で判明。仕組み変更時は必ず3層(テンプレート/忍者ルール/家老ルール)を同時修正するcmdを設計せよ。
+  source_cmd: cmd_1104
+  created_at: '2026-03-19'
+- id: LK005
+  title: DCエスカレーション前に既存裁定との重複チェック必須
+  detail: 忍者報告のdecision_candidateを将軍にエスカレーションする際、pending_decisions.yamlの既存裁定と照合せずに同一質問を殿に再提出してしまった（PD-007朱雀全滅許容の再質問）。以降、DC受領時は全resolved裁定をスキャンし、重複なしの場合のみエスカレーションする。
+  source_cmd: cmd_1097
+  created_at: '2026-03-19'
