@@ -2066,6 +2066,25 @@ while true; do
                     continue
                 fi
             fi
+            # ═══ Stage 1.5: レースコンディション防止ガード（OR条件） ═══
+            # Guard 1: inbox未読チェック — 未処理メッセージがある = これから作業開始の可能性
+            _s1_inbox_file="$SCRIPT_DIR/queue/inbox/${name}.yaml"
+            if [ -f "$_s1_inbox_file" ] && grep -q "read: false" "$_s1_inbox_file" 2>/dev/null; then
+                log "SKIP_CLEAR: $name has unread inbox"
+                PREV_STATE[$name]="busy"
+                continue
+            fi
+            # Guard 2: task YAML鮮度チェック — 2分以内に更新 = 配備直後の可能性
+            if [ -f "$_s1_task_file" ]; then
+                _s1_mtime=$(stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
+                _s1_now=$(date +%s)
+                _s1_age=$((_s1_now - _s1_mtime))
+                if [ "$_s1_age" -lt 120 ]; then
+                    log "SKIP_CLEAR: $name recent task update (${_s1_age}s ago)"
+                    PREV_STATE[$name]="busy"
+                    continue
+                fi
+            fi
             # Stage 1通過 → Stage 2（Phase 2）へ
             maybe_idle+=("$name")
         else
