@@ -27,6 +27,8 @@ DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
 REPORTS_DIR="$PROJECT_DIR/queue/reports"
 ARCHIVE_REPORT_DIR="$ARCHIVE_DIR/reports"
 CHRONICLE_FILE="$PROJECT_DIR/context/cmd-chronicle.md"
+CHRONICLE_ARCHIVE_DIR="$PROJECT_DIR/archive/cmd-chronicle"
+STK_ARCHIVE_DIR="$ARCHIVE_DIR/shogun_to_karo"
 PENDING_DECISIONS_FILE="$PROJECT_DIR/queue/pending_decisions.yaml"
 PENDING_DECISIONS_ARCHIVE="$ARCHIVE_DIR/pending_decisions_archive.yaml"
 usage_error() {
@@ -649,10 +651,143 @@ archive_dashboard() {
 }
 
 # ============================================================
+# 2.5 cmd-chronicle.md — 30日超のエントリをarchive/cmd-chronicle/YYYY-MM.mdに退避
+# ============================================================
+trim_cmd_chronicle() {
+    [ -f "$CHRONICLE_FILE" ] || return 0
+
+    local cutoff_date
+    cutoff_date=$(date -d '30 days ago' '+%Y-%m-%d')
+
+    (
+        flock -w 10 200 || { echo "[chronicle-trim] WARN: flock timeout" >&2; return 1; }
+
+        python3 - "$CHRONICLE_FILE" "$CHRONICLE_ARCHIVE_DIR" "$cutoff_date" <<'PY'
+import os
+import sys
+from datetime import datetime
+
+chronicle_path, archive_dir, cutoff_str = sys.argv[1:4]
+cutoff = datetime.strptime(cutoff_str, "%Y-%m-%d")
+
+with open(chronicle_path, encoding="utf-8") as f:
+    lines = f.read().splitlines()
+
+# Phase 1: Parse into file_header + sections
+file_header = []
+sections = []  # [(ym, header_lines, data_rows)]
+current_ym = None
+section_header = []
+section_data = []
+
+for line in lines:
+    if line.startswith("## "):
+        if current_ym is not None:
+            sections.append((current_ym, list(section_header), list(section_data)))
+        current_ym = line[3:].strip()
+        section_header = [line]
+        section_data = []
+    elif current_ym is None:
+        file_header.append(line)
+    elif line.startswith("| cmd_"):
+        section_data.append(line)
+    else:
+        if not section_data:
+            section_header.append(line)
+        else:
+            section_data.append(line)
+
+if current_ym is not None:
+    sections.append((current_ym, list(section_header), list(section_data)))
+
+# Phase 2: Separate keep vs archive
+to_archive = {}  # ym -> [rows]
+kept_sections = []
+total_archived = 0
+
+for ym, header, data in sections:
+    year = ym[:4]
+    keep = []
+    for row in data:
+        if not row.startswith("| cmd_"):
+            keep.append(row)
+            continue
+        parts = [p.strip() for p in row.split("|")]
+        date_str = parts[4] if len(parts) > 4 else ""
+        try:
+            full_date = datetime.strptime(f"{year}-{date_str}", "%Y-%m-%d")
+        except (ValueError, IndexError):
+            keep.append(row)
+            continue
+        if full_date < cutoff:
+            target_ym = full_date.strftime("%Y-%m")
+            to_archive.setdefault(target_ym, []).append(row)
+            total_archived += 1
+        else:
+            keep.append(row)
+    has_data = any(r.startswith("| cmd_") for r in keep)
+    if has_data:
+        kept_sections.append((ym, header, keep))
+
+if total_archived == 0:
+    print("noop")
+    sys.exit(0)
+
+# Phase 3: Write archive files
+os.makedirs(archive_dir, exist_ok=True)
+for ym, rows in to_archive.items():
+    archive_path = os.path.join(archive_dir, f"{ym}.md")
+    if os.path.exists(archive_path):
+        with open(archive_path, encoding="utf-8") as f:
+            existing = f.read().splitlines()
+        existing_ids = set()
+        for el in existing:
+            if el.startswith("| cmd_"):
+                existing_ids.add(el.split("|")[1].strip())
+        new_rows = [r for r in rows if r.split("|")[1].strip() not in existing_ids]
+        if new_rows:
+            existing.extend(new_rows)
+            with open(archive_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(existing) + "\n")
+    else:
+        content = [
+            f"# CMD年代記 Archive: {ym}",
+            "",
+            "| cmd | title | project | date | key_result |",
+            "|-----|-------|---------|------|------------|",
+        ]
+        content.extend(rows)
+        with open(archive_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(content) + "\n")
+
+# Phase 4: Rebuild chronicle
+output = list(file_header)
+for ym, header, data in kept_sections:
+    output.extend(header)
+    output.extend(data)
+
+today = datetime.now().strftime("%Y-%m-%d")
+for idx, line in enumerate(output):
+    if line.startswith("<!-- last_updated:"):
+        output[idx] = f"<!-- last_updated: {today} -->"
+        break
+
+with open(chronicle_path, "w", encoding="utf-8") as f:
+    f.write("\n".join(output) + "\n")
+
+print(f"trimmed: archived={total_archived}")
+PY
+    ) 200>"$CHRONICLE_FILE.lock"
+
+    echo "[chronicle-trim] done"
+}
+
+# ============================================================
 # Main
 # ============================================================
 echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
 archive_cmds
+trim_cmd_chronicle
 archive_reports
 archive_karo_section
 
