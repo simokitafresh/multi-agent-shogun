@@ -150,6 +150,17 @@ Timestamp: `date`必須。推測禁止。dashboard=`date "+%Y-%m-%d %H:%M"` / YA
 ninja_monitor.shがidle+タスクなし忍者を5分後に自動/clear(CTX:0%)。
 idle忍者は記憶なし前提で配備。忍者はproject:から自力知識回復。
 
+## STALL通知処理（assigned→idle化検知）
+
+ninja_monitor.shがassigned/acknowledged状態で10分以上idle化した忍者を検知し、`stall_alert`で家老に通知する。
+
+**受信時の対処**:
+1. STALL忍者のタスクを別のidle忍者にround-robin再配備（deploy_task.sh経由）
+2. STALL忍者はninja_monitorがDEPLOY-STALL-CLEARで自動/clear実行済み
+3. 同一タスクで2回以上STALLした場合は`stall_escalate`通知が来る → その忍者を当該タスクから外し、別忍者に差し替え
+
+**原因**: /clear後にtask YAMLを読まず、inbox nudgeも処理せず待機状態に入るケース（cmd_1097実証）
+
 ## 5パターン骨格表
 
 | # | Pattern | 人数 | 説明 |

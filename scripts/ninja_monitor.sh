@@ -43,7 +43,7 @@ source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 
 POLL_INTERVAL=20    # ポーリング間隔（秒）
 CONFIRM_WAIT=5      # idle確認待ち（秒）— Phase 2a base wait
-STALL_THRESHOLD_MIN=15 # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知
+STALL_THRESHOLD_MIN=10 # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知 (cmd_1105: 15→10分に短縮)
 STALE_CMD_THRESHOLD=14400 # stale cmd検知しきい値（秒）— pending+subtask未配備が4時間継続で通知
 NTFY_HEALTH_THRESHOLD_MIN=10 # ntfy_listenerヘルスチェックしきい値（分）— ログが古ければゾンビ判定
 NTFY_RESTART_COOLDOWN_MIN=5  # ntfy_listener連続再起動防止クールダウン（分）
