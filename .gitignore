@@ -233,6 +233,7 @@
 !scripts/post_recalculate_checks.sh
 !scripts/parity_check.sh
 !scripts/gate_auto_respond.sh
+!scripts/gate_improvement_trigger.sh
 
 
 # Archive (frozen retired components)
