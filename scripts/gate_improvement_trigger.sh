@@ -118,6 +118,9 @@ get_gate_supplement() {
         ci_red)
             echo "CIが赤い。なぜテストが失敗した？テストカバレッジの穴はないか？"
             ;;
+        hook_failure)
+            echo "hookに引っかかった。コード品質の問題か、hook設定の問題か？パターンがあるか確認せよ。"
+            ;;
         *)
             echo "gate固有の補足なし。"
             ;;
@@ -291,6 +294,74 @@ process_gate "p_average_freshness" "bash $GATES_DIR/gate_p_average_freshness.sh"
 
 # (5) CI赤
 check_ci_red
+
+# (6) Hook失敗検知 (cmd_1117)
+# logs/hook_failures.yamlに新規レコードがあれば穴検出3問を家老inboxに送信
+check_hook_failures() {
+    local gate_name="hook_failure"
+    local failures_file="$SCRIPT_DIR/logs/hook_failures.yaml"
+    local state_file="${STATE_DIR}/gate_improvement_hook_last_count"
+
+    if [ ! -f "$failures_file" ]; then
+        echo "OK: ${gate_name} — no failures file"
+        return 0
+    fi
+
+    # 現在のレコード数（awk使用: cmd_192 grep -c バグ回避）
+    local current_count
+    current_count=$(awk '/^- timestamp:/{c++}END{print c+0}' "$failures_file" 2>/dev/null)
+
+    # 前回確認時のレコード数
+    local last_count=0
+    if [ -f "$state_file" ]; then
+        last_count=$(tr -d '[:space:]' < "$state_file" 2>/dev/null) || last_count=0
+        if ! [[ "$last_count" =~ ^[0-9]+$ ]]; then
+            last_count=0
+        fi
+    fi
+
+    if [ "$current_count" -gt "$last_count" ]; then
+        local new_count=$((current_count - last_count))
+        local alert_lines="ALERT: hook失敗 ${new_count}件の新規レコード検知(total: ${current_count})"
+
+        # 最新の失敗レコードを取得（最後の5行）
+        local latest_detail
+        latest_detail=$(tail -5 "$failures_file" 2>/dev/null | tr '\n' ' ')
+
+        if ! check_idempotent "$gate_name" "$alert_lines"; then
+            echo "SKIP: ${gate_name} — 前回と同一ALERT状態。送信済み。"
+            echo "$current_count" > "$state_file"
+            return 0
+        fi
+
+        local alert_id
+        alert_id=$(get_next_alert_id)
+
+        # hook版穴検出3問（タスク指定のQ1-Q3）
+        local message
+        message=$(cat <<EOF
+【hook穴検出3問】${gate_name} ALERT (alert_id: ${alert_id})
+検知内容: ${alert_lines}
+最新失敗: ${latest_detail}
+Q1: なぜこのhookに引っかかったか？コード品質の問題か、hook設定の問題か
+Q2: 同じ種類の引っかかりが他の忍者でも起きていないか？パターンはあるか
+Q3: 次に引っかからないようにする防御層は何か？
+→ 忍者に調査配備し、結果をlesson登録+防御層に反映せよ
+補足: $(get_gate_supplement "$gate_name")
+EOF
+)
+
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_alert gate_improvement_trigger
+        record_alert "$alert_id" "$gate_name" "$alert_lines"
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【改善トリガー】${gate_name} ALERT (${alert_id})" || true
+
+        echo "$current_count" > "$state_file"
+        echo "SENT: ${gate_name} → ${alert_id}"
+    else
+        echo "OK: ${gate_name} — no new failures (count=${current_count})"
+    fi
+}
+check_hook_failures
 
 echo ""
 echo "=== gate_improvement_trigger.sh complete ==="
