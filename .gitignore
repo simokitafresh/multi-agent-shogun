@@ -228,6 +228,8 @@
 !scripts/cdp/cdp_helper.py
 !scripts/cdp/cdp_cli.sh
 !scripts/cdp/README.md
+!scripts/post_recalculate_checks.sh
+!scripts/parity_check.sh
 
 
 # Archive (frozen retired components)
