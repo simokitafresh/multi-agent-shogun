@@ -920,6 +920,10 @@ naming_convention:
         implication: "手順書作成cmdのACに「実際のコードパス(recalculate_fast.py等)との照合検証」を含めること。手順書の欠落はそれを信頼する全cmdに波及する"
         source: "cmd_1082事故（ランブック§3.2欠落→佐助がランブック通りにNone設定）"
         verified_file: "docs/rule/db-operations-runbook.md §3.2"
+      - id: PI-007
+        fact: "GS結果と本番計算結果は構造的に乖離しうる(月次vs日次解像度、pydanticバリデーション差異等)"
+        implication: "本番DB登録前に、登録対象PFの全期間保有シグナル完全一致+月次リターン完全一致を確認するパリティ検証cmdが完了していること。パリティ未検証の本番登録は禁止"
+        source: "cmd_1082事故+cmd_1090乖離分析"
 
   data_pipeline:
     description: "DB直接読込方式(主系) + CSV互換ローダー併用"

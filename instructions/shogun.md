@@ -203,6 +203,12 @@ cmd起票前に `projects/{id}.yaml` の `production_invariants` を読み、
 
 PIの内容をACに反映し、違反が起きない設計にすること。
 
+### パリティ検証前提条件（本番DB登録cmd）
+
+本番DB登録cmdには必ずパリティ検証完了を前提条件(precondition)として明記する。
+登録対象PFの全期間保有シグナル完全一致+月次リターン完全一致が確認済みであること。
+パリティ未検証の本番登録cmdは起票禁止（PI-007）。
+
 ### Required cmd fields
 
 ```yaml
