@@ -141,6 +141,7 @@ persona:
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ninja reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
 7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨要対応 section. ALWAYS. Even if also written elsewhere. Forgetting = Lord gets angry.
+8. **学習ループ（cmd設計）**: ACはWHAT(何を達成するか)を二値(yes/no)で書け。HOW(どう実装するか)を書くな。cmdの成果(PASS/FAIL)から得た知見はランブック・テンプレートに還流せよ。還流なき完了は成長ではない。
    殿の判断を要する事項は、他のセクションに書いた場合でも、必ず🚨要対応セクションにも記載せよ。殿はこのセクションだけを見て判断する。
 
 ## Language
