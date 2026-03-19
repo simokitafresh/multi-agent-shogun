@@ -369,9 +369,21 @@ shijin:
     parameter_unity: "全パラメータが一体となって一つの意味を成す。個別パラメータだけでは本質を掴めない"
     three_modes: "3モード(激攻/鉄壁/常勝)はDNA内の味付け。源流の性格は不変"
     orthogonality: "4ファミリーは時間スケール×対象市場×行動頻度×攻守構造で直交"
+    theoretical_low_correlation: |
+      理論ベース低相関 > 統計ベース低相関（殿裁定 2026-03-19）:
+      統計ベースの低相関は危機時に崩壊する（同じ因子に依存）。
+      理論ベースの低相関（異なる構造原理=異なる駆動因子）は危機時にむしろ強化される。
+      四神の危機時4/6ペア逆相関化(cmd_1010)は構造的必然。
+      DM2=LQDトレンド、DM3=金利ボラ、DM6=VIX mean reversion、DM7+=稀な逆張り。
+      駆動因子が異なるためcrisis alphaが保存される。これがFoFアーキテクチャの本質的防御。
+    overfit_validation: |
+      過適合検証はCPCVではなく構造原理への準拠確認で行う（殿裁定 2026-03-19）:
+      CPCV(Phase 3)はDM×FoFに構造的不適合として廃止。材料に完成品の基準を当てていた。
+      正しい検証: DNA準拠(構造原理保存) + decorrelation(Phase 4) + 10年超バックテスト実績。
+      FoF材料は全天候である必要なし。一瞬のきらめきがあれば材料として価値がある。
     metric_separation: |
       計算と解釈の分離原則（殿裁定 2026-03-16）:
-      評価指標（p̄, CPCV等）は全PFに一律で計算し、結果はそのまま記録する。
+      評価指標（p̄等）は全PFに一律で計算し、結果はそのまま記録する。
       解釈・運用は別レイヤーの人間判断。四神は素材、FoFが完成品。
       朱雀がp̄高/CPCV不合格でも素材価値は別。素材に単独一貫性を要求するのは設計矛盾。
       「CPCVダメだからFoFに使わない」は誤用。例外を作らず一律計算、使い方で分ける。
@@ -421,6 +433,8 @@ shijin:
         ■ safe_havenは株・債券と非相関な資産（GLD等）。
           理由: VIXレジーム判定は株/債券の二項対立を超えた第三軸。safe_havenも第三軸であるべき。
         ■ lookbackとrebalanceの「落差」がDNAの本質。両方短いor両方長いはDM6ではない。
+          構造的意味: 短lb=VIXスパイク即検知、長rebal=平均回帰を待つ。この組合せがVIX mean reversionを捕捉。
+          短lb×短rebalにすると常時保有(DM2近似)に退化し、FoF材料としての独自価値が消失する(殿解説 2026-03-19)。
     "DM7+":
       absolute: SPXL
       dna: "構造的逆張り"
@@ -656,24 +670,120 @@ naming_convention:
     max_count: 15  # 5忍法 × 3モード
 
   # =========================================================================
-  # シン四神 命名規則 (殿裁定 2026-03-16)
+  # シン四神 命名規則 (殿裁定 2026-03-16〜19 確定)
   # =========================================================================
   shin_shijin:
-    ruling_date: "2026-03-16"
+    ruling_date: "2026-03-19"
     source: "殿直接指示"
     rule: |
-      現行四神は本番プロモーション済みのため変更不可。
-      CPCV+脱相関アンサンブルで構成する新版には「シン」prefixを必ず付与。
-      混乱防止のためシンprefixの徹底は絶対。
-    L1_format: "{モード}-シン{四神名}"
-    L1_examples: ["激攻-シン青龍", "鉄壁-シン朱雀", "常勝-シン白虎", "常勝-シン玄武"]
+      現行四神は本番プロモーション済みのため変更不可。退役しない。
+      シン版は追加のみ。シンprefixの徹底は絶対。
+
+    # =========================================================================
+    # シン四神 v2 GS パラメータ設計（殿裁定 2026-03-19）
+    # =========================================================================
+    # 旧方式（広く探索→CPCV→Triple-E→脱相関K体→32ユニット）を全面廃止。
+    # DNA理解に基づくパラメータ制約を事前適用 → 3モードチャンピオン直接選出。
+    # 4ファミリー × 3モード(CAGR/MaxDD/NewHigh) = 12体。
+    # 根拠: 191,796パターン既存GS結果のデータ分析（殿・将軍合同 2026-03-19）。
+    v2_design:
+      approach: |
+        DNA理解→パラメータ事前制約→チャンピオン直接選出。
+        旧: 191,796変種→CPCV→Triple-E→脱相関→32ユニット（複雑、DNA理解が甘い）
+        新: DNA制約済みGS→CAGR/MaxDD/NHF各1位選出→重複吸収→10体（シンプル、原理原則準拠）
+      L1_format: "シン{四神名}-{モード}"
+      L1_examples: ["シン青龍-激攻", "シン青龍-鉄壁", "シン青龍-常勝"]
+      L1_total: 10  # 青龍3+朱雀2+白虎3+玄武2（重複吸収後）
+      absorption_rule: |
+        モード間で同一変種が選出された場合、優先度 激攻>常勝>鉄壁 で吸収。
+        低優先モードは消滅。朱雀(激攻=常勝→常勝消滅)、玄武(激攻=常勝→常勝消滅)。
+      champions:
+        # 全10体確定（殿裁定 2026-03-19）
+        DM2:  # 青龍 3体
+          - {name: "シン青龍-激攻", pid: "DM2_SXLU_T1_M_L2502", lb: "11M:60|5M:20|1M:20", tn: 1, cagr: 53.7, maxdd: -61.0, nhf: 49.1}
+          - {name: "シン青龍-常勝", pid: "DM2_SXLU_T2_M_L2502", lb: "11M:60|5M:20|1M:20", tn: 2, cagr: 52.8, maxdd: -57.6, nhf: 49.7}
+          - {name: "シン青龍-鉄壁", pid: "DM2_SXLU_T2_M_L2754", lb: "12M:40|9M:30|2M:30", tn: 2, cagr: 44.6, maxdd: -57.6, nhf: 43.1}
+        DM3:  # 朱雀 2体（常勝=激攻同一→常勝消滅）
+          - {name: "シン朱雀-激攻", pid: "DM3_STMV_T2_Be_L0003", lb: "1M:100", tn: 2, cagr: 35.6, maxdd: -65.2, nhf: 31.7}
+          - {name: "シン朱雀-鉄壁", pid: "DM3_STMV_T2_Be_L0005", lb: "3M:100", tn: 2, cagr: 35.3, maxdd: -57.6, nhf: 29.3}
+        DM6:  # 白虎 3体
+          - {name: "シン白虎-激攻", pid: "DM6_SGLD_T1_Qj_L0247", lb: "4M:50|1M:50", tn: 1, cagr: 46.6, maxdd: -29.4, nhf: 44.9}
+          - {name: "シン白虎-常勝", pid: "DM6_SGLD_T2_Qj_L0247", lb: "4M:50|1M:50", tn: 2, cagr: 44.7, maxdd: -33.6, nhf: 44.9}
+          - {name: "シン白虎-鉄壁", pid: "DM6_SGLD_T1_Qj_L0713", lb: "5M:40|2M:40|15D:20", tn: 1, cagr: 43.2, maxdd: -27.7, nhf: 37.1}
+        DM7P:  # 玄武 2体（常勝=激攻同一→常勝消滅）
+          - {name: "シン玄武-激攻", pid: "DM7P_RXLU_T1_M_L0001", lb: "15M:100", tn: 1, cagr: 37.9, maxdd: -45.6, nhf: 43.1}
+          - {name: "シン玄武-鉄壁", pid: "DM7P_RXLU_T1_M_L0003", lb: "24M:100", tn: 1, cagr: 30.9, maxdd: -26.1, nhf: 40.1}
+      parameter_table:
+        # | パラメータ  | DM2(青龍)     | DM3(朱雀)    | DM6(白虎)     | DM7+(玄武)  |
+        # |------------|--------------|-------------|--------------|------------|
+        # | absolute   | LQD固定       | TMF固定      | ^VIX固定      | SPXL固定    |
+        # | relative   | TQQQ,TECL固定 | TECL,TQQQ固定| TQQQ,TECL固定 | XLU固定     |
+        # | safe_haven | XLU固定       | TMV固定      | GLD固定       | TQQQ固定    |
+        # | risk_free  | DTB3固定      | DTB3固定     | DTB3固定      | DTB3固定    |
+        # | top_n      | 1, 2         | 1, 2        | 1, 2         | 1          |
+        # | rebalance  | M のみ        | Bo, Be のみ  | Qj, Qf, Qm のみ | M のみ   |
+        # | lookback   | 10D〜12M      | 10D〜3M      | 10D〜6M       | 15M〜24M   |
+        # | composite  | 3-term許可    | 単一のみ      | 3-term許可    | 単一のみ    |
+        DM2:
+          absolute: LQD
+          relative: [TQQQ, TECL]
+          safe_haven: XLU  # GLD削除。DNA「退避しても株の中に留まる」
+          top_n: [1, 2]
+          rebalance: [monthly]  # DNA「降りない」は月次行動
+          lookback_range: "10D〜12M"  # composite 3-term許可
+          lookback_composite: true
+          lookback_rationale: "長期+短期混合で+14pp上乗せ。短期成分はノイズではない（データ実証）"
+        DM3:
+          absolute: TMF
+          relative: [TECL, TQQQ]
+          safe_haven: TMV  # 債券正逆ペア必須
+          top_n: [1, 2]
+          rebalance: [bimonthly_odd, bimonthly_even]  # 3xレバwhipsaw防止
+          lookback_range: "10D〜3M"  # 単一のみ
+          lookback_composite: false
+          lookback_rationale: "short帯が圧倒。1M〜3Mが最適帯。long lookbackは無価値（データ実証）"
+        DM6:
+          absolute: "^VIX"
+          relative: [TQQQ, TECL]
+          safe_haven: GLD  # 第三軸（株でも債券でもない）。XLU削除
+          top_n: [1, 2]
+          rebalance: [quarterly_jan, quarterly_feb, quarterly_mar]  # VIXノイズ除去
+          lookback_range: "10D〜6M"  # composite 3-term許可
+          lookback_composite: true
+          lookback_rationale: "medium(4-6M)+短期compositeがCAGR/MaxDD/NHF全1位。4-6MはVIX mean reversionサイクル全体を捕捉（データ実証）"
+        DM7P:
+          absolute: SPXL
+          relative: [XLU]  # RGLD廃止。DNA「構造的逆張り」準拠
+          safe_haven: TQQQ
+          top_n: [1]  # XLU 1銘柄のためtop_n=1のみ
+          rebalance: [monthly]
+          lookback_range: "15M〜24M"  # 単一のみ。12M削除（15Mに劣後）
+          lookback_composite: false
+          lookback_rationale: "15M=CAGR最大(+37.9%)、24M=MaxDD最小(-26.1%)。明確に分離（データ実証）"
+      data_source: "shin_shijin_l1/ 191,796パターンGS結果（cmd_1018、本番パリティ未検証(cmd_1097/1098で検証中)）"
+      analysis_date: "2026-03-19"
+
     L2_format: "シン{忍法名}-{モード}"
-    L2_examples: ["シン追い風-激攻", "シン抜き身-常勝"]
-    design: |
-      各ファミリー ~43Kパラメータ → CPCVスクリーニング(PBO閾値)
-      → 生存者からペアワイズ相関で脱相関K体を貪欲選出
-      → K体均等保有 = 強化版ファミリー(シン四神)
-      → シン四神の上に忍法(シン忍法)が乗る構造
+    L2_examples: ["シン追い風-激攻", "シン抜き身-鉄壁", "シン加速R-常勝", "シン加速D-激攻"]
+    L2_ninpo_names: [追い風, 抜き身, 変わり身, 加速R, 加速D, 分身, 四つ目]
+    L2_note: "加速R=ratio(正規化), 加速D=diff(絶対差分)。殿裁定 2026-03-19"
+    L2_total: 21  # 7忍法 × 3モード(激攻/鉄壁/常勝)。吸収0（全ユニーク）
+    L2_gs_result: "cmd_1080 GATE CLEAR。173,625パターン→21チャンピオン全選出"
+    L2_top_performers:
+      best_cagr: "加速D-激攻 86.6%"
+      best_maxdd: "加速D-鉄壁 -13.6%"
+      best_nhf: "変わり身-常勝 3.37"
+    L2_data: "outputs/analysis/shin_ninpo_v2_champions.csv"
+    registration:
+      total_pfs: 31  # 10 standard + 21 FoF
+      L0_L1_standard: 10  # シン四神（K=1のみ、L0=L1）
+      L2_fof: 21  # シン忍法（component=10体のsubset）
+      L0_hidden: 0  # v2ではK=2/K=3なし→非表示素材不要
+      runbook: "docs/rule/db-operations-runbook.md"  # §1-§9 統合ランブック(2026-03-19)
+      runbook_v1_ref: "docs/rule/shin-shijin-registration-runbook.md"  # v1用(参考)
+    folders:
+      shin_shijin: "シン四神（10体）"
+      shin_ninpo: "シン忍法（21体）"
 
   modes:
     gekkou: {name: "激攻", metric: "CAGR", description: "リターン最大化"}
@@ -790,6 +900,26 @@ naming_convention:
         implication: "DB調査・パリティ検証は本番PostgreSQL必須。SQLite前提のテスト/偵察は不正確"
         source: "cmd_1025"
         verified_file: "backend/static/data/dm_signal.db"
+      - id: PI-003
+        fact: "standard PFのconfig JSONにはpipeline_configが必須。NoneだとrecalculateでCashフォールバック（全期間シグナルがCash=月次リターン異常）"
+        implication: "DB登録時に既存PFから同一ファミリーのpipeline_configをコピーすること。FoFのcomponentも連鎖的に異常になる"
+        source: "cmd_1082事故"
+        verified_file: "backend/app/jobs/recalculate_fast.py L884-891"
+      - id: PI-004
+        fact: "GSはnumpy配列操作のみで本番pydanticスキーマを通さない。GSチャンピオンのパラメータが本番スキーマに適合する保証がない"
+        implication: "GS→本番DB登録cmdでは、登録前に本番pydanticスキーマ(LookbackPeriod,PipelineConfig,Portfolio等)でバリデーションを通すACを必ず含めること"
+        source: "cmd_1082事故（pipeline_config欠落+LookbackPeriod上限超過の2件同時発覚）"
+        verified_file: "backend/app/schemas/pipeline.py, backend/app/services/pipeline/blocks/momentum_acceleration_filter.py"
+      - id: PI-005
+        fact: "新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則。部分recalculate連続実行は依存順序の罠でエラー連鎖する"
+        implication: "recalculate-sync APIをportfolio_id指定なしで1回だけ叩く。standard→FoFの手動順序制御は不要"
+        source: "cmd_1081 abort理由（部分recalculate連続実行でエラー連鎖）"
+        verified_file: "backend/app/jobs/recalculate_fast.py"
+      - id: PI-006
+        fact: "手順書/ランブックの記載はrecalculateコードパスとの照合なしには信頼できない。ランブック§3.2(standard PF)にpipeline_config記載漏れが31体全滅を招いた"
+        implication: "手順書作成cmdのACに「実際のコードパス(recalculate_fast.py等)との照合検証」を含めること。手順書の欠落はそれを信頼する全cmdに波及する"
+        source: "cmd_1082事故（ランブック§3.2欠落→佐助がランブック通りにNone設定）"
+        verified_file: "docs/rule/db-operations-runbook.md §3.2"
 
   data_pipeline:
     description: "DB直接読込方式(主系) + CSV互換ローダー併用"
@@ -978,30 +1108,24 @@ asset_inventory:
     ruling_date: "2026-02-21"
     source: "殿確定フロー(将軍経由)"
     description: "ミニパリティ後の正しいフロー"
+    note: "v1フロー(旧四神/旧忍法)→シン四神v2/シン忍法v2へ切替。以下は現状反映版"
     steps:
       - step: 1
         name: "ミニパリティ全5忍法PASS"
-        status: "進行中(分身✅/追い風✅/抜き身✅/加速→cmd_222/変わり身→cmd_223)"
+        status: "完了(v1時代に実施済み。v2では不要—GS設計が刷新されたため)"
       - step: 2
-        name: "フルGS 4忍法再実行"
-        detail: "分身以外。追い風もtiebreak修正前のGS結果なので再実行必須"
-        status: "未着手(ミニパリティ完了後にcmd発行)"
-        per_ninpou:
-          bunshin: "不要（EqualWeight、tiebreak対象外、cmd_214で完了）"
-          oikaze: "必須（tiebreak修正前の42,174件は無効）"
-          nukimi: "必須（未実施）"
-          kawarimi: "必須（未実施）"
-          kasoku: "必須（未実施）"
+        name: "フルGS再実行"
+        status: "完了(シン四神v2: cmd_1018 191,796パターン / シン忍法v2: cmd_1080 173,625パターン)"
       - step: 3
-        name: "L1四神12体 本番DB登録+パリティ確認"
-        status: "済(cmd_205)"
+        name: "旧四神12体 本番DB登録+パリティ確認"
+        status: "済(cmd_205)。検証精度はcmd_1098で確認中"
       - step: 4
-        name: "L2忍法 最大15体 本番DB登録"
-        detail: "L1が構成PF。L1登録済みが前提"
-        status: "未着手"
+        name: "シン四神v2(10体) + シン忍法v2(21体) 本番DB登録"
+        detail: "計31体。L0_L1_standard=10(K=1), L2_FoF=21(7忍法×3モード)"
+        status: "未着手(cmd_1097/1098の検証完了後に実施予定)"
       - step: 5
-        name: "L2本番パリティ確認"
-        status: "未着手"
+        name: "シン四神v2/シン忍法v2 本番パリティ確認"
+        status: "未着手(Step 4完了後)"
       - step: 6
         name: "いったん終了"
         detail: "存在意義検証・L3は別フェーズ"
