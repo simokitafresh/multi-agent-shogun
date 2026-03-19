@@ -1847,6 +1847,10 @@ LESSON_CHECK_INTERVAL=600  # 10分間隔(秒)
 LESSON_ALERT_DEBOUNCE=21600 # 同一ALERT再通知抑制(6時間)
 LAST_LESSON_ALERT=0
 
+# ─── gate_improvement定期チェック (cmd_1114) ───
+LAST_GATE_IMPROVEMENT=0
+GATE_IMPROVEMENT_INTERVAL=300  # 5分間隔(秒)
+
 check_lesson_health() {
     local now
     now=$(date +%s)
@@ -1885,6 +1889,25 @@ check_lesson_health() {
     else
         log "LESSON-HEALTH: all projects OK"
     fi
+}
+
+check_gate_improvement() {
+    local now
+    now=$(date +%s)
+
+    local elapsed=$((now - LAST_GATE_IMPROVEMENT))
+    if [ $elapsed -lt $GATE_IMPROVEMENT_INTERVAL ]; then
+        return
+    fi
+    LAST_GATE_IMPROVEMENT=$now
+
+    local gate_script="$SCRIPT_DIR/scripts/gates/gate_improvement_trigger.sh"
+    if [ ! -f "$gate_script" ]; then
+        log "GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip"
+        return
+    fi
+
+    bash "$gate_script" >> "$SCRIPT_DIR/logs/gate_improvement.log" 2>&1 || true
 }
 
 check_ntfy_batch_flush() {
@@ -2180,6 +2203,9 @@ while true; do
     if [ $((cycle % 15)) -eq 0 ]; then
         bash "$SCRIPT_DIR/scripts/ci_status_check.sh" 2>>"$SCRIPT_DIR/logs/ci_status_check.log" || true
     fi
+
+    # ═══ gate_improvement定期チェック（5分間隔 cmd_1114） ═══
+    check_gate_improvement
 
     # ═══ INFOバッチ通知フラッシュ（15分間隔 cmd_960 AC2） ═══
     check_ntfy_batch_flush
