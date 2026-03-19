@@ -696,6 +696,11 @@ lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓
 
 # パリティ検証報告の追加フィールド（パリティ検証タスク時に必須）
 # data_sourceはパリティ検証の信頼性を担保する必須情報。省略はFAIL扱い。
+# ★ FoF BBパリティ検証時のM-1オフセット（L423）:
+#   FoFパイプラインは月初にBB選択を実行し、利用可能なcumulative_returnは前月(M-1)まで。
+#   GS側でFoF BBのパリティ検証を行う際は、必ずM-1オフセットを適用してcumulative_returnを参照せよ。
+#   全BB種別共通（追い風・抜き身・変わり身・加速R・加速D・分身・四つ目）。
+#   詳細: docs/rule/db-operations-runbook.md §3
 parity_data_source:
   gs_side: "experiments.db"                    # GS側データソースを明記
   prod_side: "PostgreSQL(DATABASE_URL)"        # 本番側データソースを明記
