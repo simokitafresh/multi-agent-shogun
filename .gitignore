@@ -251,6 +251,7 @@ queue/ntfy_batch_queue.txt
 !outputs/
 !outputs/analysis/
 !outputs/analysis/cmd_1092_failure_patterns.csv
+!outputs/analysis/cmd_1094_runbook_audit.csv
 
 # Docs
 !docs/
