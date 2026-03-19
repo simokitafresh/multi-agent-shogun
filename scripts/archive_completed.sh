@@ -29,7 +29,6 @@ REPORTS_DIR="$PROJECT_DIR/queue/reports"
 ARCHIVE_REPORT_DIR="$ARCHIVE_DIR/reports"
 CHRONICLE_FILE="$PROJECT_DIR/context/cmd-chronicle.md"
 CHRONICLE_ARCHIVE_DIR="$PROJECT_DIR/archive/cmd-chronicle"
-STK_ARCHIVE_DIR="$ARCHIVE_DIR/shogun_to_karo"
 PENDING_DECISIONS_FILE="$PROJECT_DIR/queue/pending_decisions.yaml"
 PENDING_DECISIONS_ARCHIVE="$ARCHIVE_DIR/pending_decisions_archive.yaml"
 usage_error() {
@@ -784,11 +783,146 @@ PY
 }
 
 # ============================================================
+# 2.7 shogun_to_karo.yaml — 完了済み+30日超のエントリを退避 (cmd_1120_b)
+# ============================================================
+STK_ARCHIVE_DIR="$PROJECT_DIR/archive/shogun_to_karo"
+
+trim_stk_old_entries() {
+    [ -f "$QUEUE_FILE" ] || return 0
+
+    (
+        flock -w 10 200 || { echo "[stk-trim] WARN: flock timeout on QUEUE_FILE" >&2; return 1; }
+
+        python3 - "$QUEUE_FILE" "$STK_ARCHIVE_DIR" <<'PY'
+import os
+import sys
+import tempfile
+from datetime import datetime, timedelta, timezone
+
+import yaml
+
+stk_path, archive_dir = sys.argv[1:3]
+CUTOFF_DAYS = 30
+ARCHIVE_STATUSES = {"done", "absorbed", "cancelled"}
+# pending/in_progress は絶対に退避しない
+KEEP_STATUSES = {"pending", "in_progress", "acknowledged", "assigned"}
+
+now = datetime.now(timezone(timedelta(hours=9)))
+cutoff = now - timedelta(days=CUTOFF_DAYS)
+
+with open(stk_path, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+
+cmds = data.get("commands")
+if not isinstance(cmds, dict):
+    print("noop: no commands dict")
+    sys.exit(0)
+
+keep = {}
+to_archive = {}  # ym -> {cmd_id: entry}
+archived_count = 0
+
+for cmd_id, entry in cmds.items():
+    if not isinstance(entry, dict):
+        keep[cmd_id] = entry
+        continue
+
+    status = str(entry.get("status", "")).strip().lower()
+
+    # 安全弁: pending/in_progressは無条件で残す
+    if status in KEEP_STATUSES:
+        keep[cmd_id] = entry
+        continue
+
+    if status not in ARCHIVE_STATUSES:
+        keep[cmd_id] = entry
+        continue
+
+    # timestamp解析 (複数フォーマット対応)
+    ts_raw = entry.get("timestamp") or entry.get("delegated_at") or ""
+    ts_str = str(ts_raw).strip().strip("'\"")
+    entry_dt = None
+    for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S+09:00",
+                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            entry_dt = datetime.strptime(ts_str, fmt)
+            if entry_dt.tzinfo is None:
+                entry_dt = entry_dt.replace(tzinfo=timezone(timedelta(hours=9)))
+            break
+        except ValueError:
+            continue
+
+    if entry_dt is None:
+        # timestamp解析失敗 → 安全側(keep)
+        keep[cmd_id] = entry
+        continue
+
+    if entry_dt >= cutoff:
+        # 30日以内 → keep
+        keep[cmd_id] = entry
+        continue
+
+    # 退避対象
+    ym = entry_dt.strftime("%Y-%m")
+    to_archive.setdefault(ym, {})[cmd_id] = entry
+    archived_count += 1
+
+if archived_count == 0:
+    print("noop: no entries to archive")
+    sys.exit(0)
+
+# Phase 2: 退避先に書き出し (月別 YYYY-MM.yaml)
+os.makedirs(archive_dir, exist_ok=True)
+for ym, entries in to_archive.items():
+    archive_path = os.path.join(archive_dir, f"{ym}.yaml")
+    if os.path.exists(archive_path):
+        with open(archive_path, encoding="utf-8") as f:
+            existing = yaml.safe_load(f) or {}
+        existing_cmds = existing.get("commands") or {}
+    else:
+        existing_cmds = {}
+
+    existing_cmds.update(entries)
+    archive_data = {"commands": existing_cmds}
+
+    fd, tmp_path = tempfile.mkstemp(dir=archive_dir, suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            yaml.dump(archive_data, f, default_flow_style=False,
+                      allow_unicode=True, indent=2, sort_keys=False)
+        os.replace(tmp_path, archive_path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
+# Phase 3: 元ファイルを更新 (keep のみ残す)
+trimmed_data = {"commands": keep}
+fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(stk_path), suffix=".tmp")
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        yaml.dump(trimmed_data, f, default_flow_style=False,
+                  allow_unicode=True, indent=2, sort_keys=False)
+    os.replace(tmp_path, stk_path)
+except Exception:
+    if os.path.exists(tmp_path):
+        os.unlink(tmp_path)
+    raise
+
+print(f"trimmed: archived={archived_count} kept={len(keep)}")
+PY
+    ) 200>"$QUEUE_FILE.lock"
+
+    echo "[stk-trim] done"
+}
+
+# ============================================================
 # Main
 # ============================================================
 echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
 archive_cmds
 trim_cmd_chronicle
+trim_stk_old_entries
 archive_reports
 archive_karo_section
 
