@@ -247,6 +247,11 @@ queue/ntfy_batch_queue.txt
 !saytask/
 !saytask/streaks.yaml.sample
 
+# Analysis outputs
+!outputs/
+!outputs/analysis/
+!outputs/analysis/cmd_1092_failure_patterns.csv
+
 # Docs
 !docs/
 !docs/philosophy.md

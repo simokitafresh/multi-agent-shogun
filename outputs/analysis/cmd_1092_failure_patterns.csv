@@ -1,0 +1,30 @@
+cmd_id,title,failure_type,root_cause_category,recurrence,pi_candidate,runbook_candidate,instructions_candidate
+cmd_528,lesson_candidateフォーマット強制 — レビューFAIL(スコープ外変更混入),review_fail,AC設計不備,yes(L138/L139/L140),IF impl cmd THEN ACに「スコープ外変更禁止」を明示せよ,,karo.md: レビュー時にdiff範囲とAC範囲の一致を必ず確認
+cmd_536,lesson_done_source BLOCK根治,gate_block,手順書欠落,yes(cmd_529で再調査),lesson_done先行生成とpreflight upgradeの設計的不整合を解消すること,,ashigaru.md: lesson_done_sourceのフォーマットと生成タイミングを明記
+cmd_583,Codex /fast自動化 — レビューFAIL,review_fail,AC設計不備,no,IF 環境設定系cmd THEN 全対象CLI/ペインで動作確認ACを必須化,,karo.md: 環境設定変更cmdはACに全ペイン検証を含めること
+cmd_602,AWK部分文字列マッチ+date -dフォールバック欠如,rework(再レビュー),コード理解不足,no,IF AWKでID照合 THEN 部分文字列マッチではなく正規表現アンカー(^...$)を使え,cmd_complete_gate.sh修正時のテスト手順書(IDマッチング確認),
+cmd_617,review_gate.sh typeフィールド未参照 — GATE BLOCK,gate_block,コード理解不足,no,IF ゲートスクリプトがタスク種別を判定 THEN type YAMLフィールドを第一判定条件とせよ,,
+cmd_644,SPA遷移全ロールバック(8回失敗後の撤退),revert,知識不足,yes(cmd_631/636/637/639/641/642/643),Render Static Site環境ではnext/link SPA遷移は動作しない。window.location.href統一が正解,SPA遷移試行時のチェックリスト: (1)Static Export互換性 (2)SW干渉 (3)Portal内Link問題,projects/dm-signal.yaml: SPA遷移不可の事実をPI化
+cmd_654,SPA Link化 — ハンバーガー/サイドバー動作不能,revert,知識不足,yes(cmd_644と同根),cmd_644と同一PI,,
+cmd_682,Android接続バー/ボトムナビ — レビューFAIL(殿指摘と実装乖離),review_fail,AC設計不備,no,IF UI実装cmd THEN ACに殿の意図(非表示条件/エリア拡大)を具体的に記述せよ,,karo.md: UI cmdは殿の発言を逐語的にACに変換し曖昧さを排除
+cmd_714,CI全緑化 — レビューFAIL(WSL2 vs CI環境差),review_fail,環境依存,yes(cmd_797/1046も同根),IF CIテスト修正 THEN WSL2とubuntu-latestの両環境で検証をACに含めよ,CI RED修復ランブック: (1)ローカル再現 (2)CI環境差分特定 (3)両環境PASS確認,
+cmd_751,workers=2で本番認証障害 — 緊急revert,revert,知識不足,no,uvicorn workers複数化の前提: 全状態をDB/Redis等の共有ストアに移行すること。インメモリdictは使用不可,本番認証変更ランブック: (1)インメモリ状態の棚卸し (2)共有ストア移行 (3)workers=2テスト (4)段階デプロイ,projects/dm-signal.yaml: BE状態管理はDB保存必須(インメモリ禁止)
+cmd_757,GATE CLEAR連勝リセット(377→0),gate_block,コード理解不足,no,,,
+cmd_776,lesson_candidate旧形式BLOCK根治,gate_block,手順書欠落,yes(cmd_528から繰り返し),lesson_candidateはdict形式(found/title/detail/project)のみ許容。リスト形式[]禁止,,ashigaru.md: lesson_candidateフォーマット明記(既にcmd_776で自動修正導入済み)
+cmd_795,done通知スクリプト化 — 再レビュー,rework(再レビュー),AC設計不備,no,,,
+cmd_879,SPA Phase1 — cancelled(技術的不可能判明),cancelled,知識不足,yes(cmd_644系列),cmd_644 PIと同一,,
+cmd_880,SPA Phase2 — cancelled(技術的不可能判明),cancelled,知識不足,yes(cmd_644系列),cmd_644 PIと同一,,
+cmd_881,SPA Phase3 — cancelled(技術的不可能判明),cancelled,知識不足,yes(cmd_644系列),cmd_644 PIと同一,,
+cmd_882,SPA Phase1修正 — cancelled,cancelled,知識不足,yes(cmd_644系列),cmd_644 PIと同一,,
+cmd_892,Render frontend build failure,build_failure,コード理解不足,no,IF FE prop型を変更 THEN TypeScript build検証をACに含めよ,,
+cmd_893,Render build failure復旧(isLoadingMore prop型定義),build_failure,コード理解不足,no,cmd_892と同一PI,,
+cmd_937,確定申告ファイル削除 — cancelled(方針変更),cancelled,AC設計不備,no,,,
+cmd_982,Render BEデプロイ失敗(Annotated+future annotations競合),deploy_failure,知識不足,no,IF Python型ヒントを変更 THEN from __future__ import annotationsとの互換性を確認せよ,Renderデプロイ失敗復旧ランブック: (1)render-cli log取得 (2)直近commit特定 (3)revert or fix (4)redeploy確認,
+cmd_990,ダッシュボード教訓注入率 — cancelled(殿方針変更で置換),cancelled,AC設計不備,no,IF メトリクス設計 THEN 殿に方針確認してからcmd起票せよ,,
+cmd_1022,シン四神トリプルE — FAIL(C3符号修正ロジック不整合),review_fail,知識不足,no,IF ドメインロジック変更 THEN 変更前後の具体的な計算例をACに含めよ,,
+cmd_1032,Grid dedup差し戻し(本番パリティ違反),revert,知識不足,no,「本番パリティ」=本番BE(日次解像度)との突合。GSスクリプト内before/afterは「スクリプト内整合性」であり本番パリティではない,本番パリティ検証ランブック: (1)本番BEの計算解像度確認 (2)GS出力と本番出力をticker/日付単位で突合 (3)完全一致確認,projects/dm-signal.yaml: 本番パリティの定義をPI化
+cmd_1040,ninja_monitor /clear三段階化 — 仕様不一致で再実装,rework,AC設計不備,no,IF 殿の仕様が明示的 THEN ACに仕様の全ステージを逐語的に記述せよ,,
+cmd_1068,12体レガシー四神で誤実行 — GS出力汚染,data_contamination,コード理解不足,no,IF GS実行cmd THEN 実行前にuniverse設定(何体で実行されるか)の確認ACを必須化,GS実行前チェックリスト: (1)universe YAML確認 (2)候補数ログ確認 (3)出力ファイル名にuniverse情報埋込,
+cmd_1069,GS universe設定の読み込みフロー精査,recon(原因調査),コード理解不足,no,IF 外部設定ファイル化 THEN 全呼び出し元が新設定を参照していることをACで検証せよ,,
+cmd_179/188,忍者commit未実施でdone報告(再発),process_violation,手順書欠落,yes(L179→L188),IF done報告 THEN git status確認を必須化(ninja_done.shで自動チェック済み),,ashigaru.md: done前のcommit確認手順(既にninja_done.shで強制済み)
+cmd_189/190,並列impl配備時のcommit漏れ,process_violation,手順書欠落,yes(L189→L190),IF 並列impl後のreview配備 THEN 全忍者のcommit完了をgit statusで確認,,karo.md: 並列impl完了後のcommit確認チェックリスト
