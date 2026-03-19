@@ -196,6 +196,13 @@ Shogun decides **what** (purpose), **success criteria** (acceptance_criteria), a
 
 Do NOT specify: number of ninja, assignments, verification methods, personas, or task splits.
 
+### PI参照チェック（DB操作・GS登録・本番デプロイ系cmd）
+
+cmd起票前に `projects/{id}.yaml` の `production_invariants` を読み、
+関連PIをcmdの `command` フィールドに「■ 関連PI」セクションとして引用せよ。
+
+PIの内容をACに反映し、違反が起きない設計にすること。
+
 ### Required cmd fields
 
 ```yaml
