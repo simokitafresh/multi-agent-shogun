@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-03-11 cmd_796 context鮮度回復(SPA結論/SWR/prefetch/bundle/Phase2a/request-storm) -->
+<!-- last_updated: 2026-03-20 cmd_1123 Biome導入(cmd_971)+304 cache修正(cmd_1011)+表示バグ修正(cmd_1003) -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -14,6 +14,7 @@
 | UI | React 18 + TypeScript 5.4 + Tailwind CSS 3.4 |
 | チャート | カスタムSVG (PieChartのみRecharts) |
 | テスト | Jest 30 + React Testing Library |
+| リンター/フォーマッター | Biome (ESLintから移行, cmd_971) |
 | テーマ | next-themes (class方式dark mode) |
 
 UIライブラリなし（全13コンポーネント手製）。

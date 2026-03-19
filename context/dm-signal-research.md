@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-03-11 trade-rule突合6裁定(cmd_768-770)+万全偵察(cmd_761/762) -->
+<!-- last_updated: 2026-03-20 シン四神v2 Phase1-5全完了+シン忍法v2(21体)+GS高速化(23h→12min)+パリティ検証(cmd_1097-1116)+新教訓L423-L429 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -150,6 +150,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L013 | GS align_months交差集合はlookback warm-upを失わせる | — |
 | L338 | 忍法15体分析時に分身不在を事前確認 | cmd_1010 |
 | L341 | 既存GSチャンピオン流用時はdeployed portfolio configを正本にする | cmd_1012 |
+| L409 | nukimi/oikaze momentum計算はcmd_227で既にnumpy ratio方式に移行済み。偵察で再提案注意 | cmd_1064 |
 | L342 | 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因 | cmd_1012 |
 | L343 | experiments.db monthly_returnsのシグナルJSON内ティッカー構成でL1ファミリー分類が可能 | cmd_1014 |
 | L348 | 長lookbackを含むL1 GSはnominal periodではなくlive common periodを先に固定せよ | cmd_1018 |
@@ -195,6 +196,14 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L389 | PeriodIndex.to_timestamp(how='end')は23:59:59.999生成→normalize()で00:00:00化必須 | cmd_1035 |
 | L391 | kawarimi worst選出tiebreak: ranked_asc[:N]と本番ranked_desc[-N:]で選出が異なる | cmd_1035 |
 | L392 | yotsume 4視点union batch simでIEEE 754 FPノイズ(5.55e-17)。パリティ閾値1e-12 | cmd_1035 |
+| L422 | シグナル突合はリターン逆推定では不十分。GS関数に直接シグナル出力が必要 | cmd_1097 |
+| L423 | FoF BBシミュレーションM-1オフセット必須 | cmd_1102 |
+| L424 | パリティpartial/MTD仮説は1.5%。98.5%はGS月次vsP日次の構造的乖離 | cmd_1106 |
+| L425 | シン四神v2パリティ不一致の95%はRC4解像度差異 | cmd_1106 |
+| L426 | パリティ検証のpartial/MTD仮説は全体の1.5%のみ。構造的差異(日次vs月次解像度)が98.5% | cmd_1106 |
+| L427 | resample(ME).last()はカレンダー月末を返す。実取引日との差異がシグナル帰属ズレを引き起こす | cmd_1115 |
+| L428 | valid_start_date計算は全構成シンボル(relative+absolute+safe_haven+DTB3)を含めよ | cmd_1115 |
+| L429 | パリティ検証における非決定的順序とpartial-month初月の扱い | cmd_1116 |
 
 ### SPA/過剰最適化
 
@@ -318,48 +327,128 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 
 → 多くは後続cmdで着手/完了済み。詳細 → `context/dm-signal-frontend.md` §7以降
 
-## §27. シン四神 設計（2026-03-16〜17 殿・将軍合同検討）
-<!-- last_updated: 2026-03-18 cmd_1060 Phase進捗更新(Phase3完了/Phase4完了/Phase5進行中) -->
+## §27. シン四神 v2 設計（2026-03-19 殿・将軍合同検討）
+<!-- last_updated: 2026-03-19 v2全面再設計: DNA事前制約+データ駆動lookback確定 -->
 
-CPCV+脱相関アンサンブルによるL1パラメータ過適合対策。191,796変種(4ファミリー)。
+### 設計方針（v2 — 旧方式を全面廃止）
 
-### パイプライン進捗
+**旧方式(v1)**: 広く探索(191,796)→CPCV→Triple-E→脱相関K体→32ユニット。DNA理解が甘くパラメータが幅広すぎた。
+**新方式(v2)**: DNA理解→パラメータ事前制約→既存GS結果でlookbackデータ分析→3モードチャンピオン直接選出→**12体**。
 
-| Phase | 内容 | cmd | 状態 |
-|-------|------|-----|------|
-| 1 | L1 GS: 191,796変種の月次リターン+8メトリクス | cmd_1018 | ✅完了 |
-| 2 | メトリクス相関分析 → ファミリー独立Triple-E確定 | cmd_1019/1022 | ✅完了(PD-009殿裁定) |
-| — | CPCVエンジン先行構築(logit完璧版・pluggable) | cmd_1020 | ✅完了 |
-| — | スクリプト棚卸しカタログ | cmd_1021 | ✅完了 |
-| 3 | CPCV+PBO(3メトリクス独立×ファミリー独立) | cmd_1023 | ✅完了 |
-| 4 | 脱相関K体選出 → 32 L1ユニット確定。殿裁定: DM2/DM6=K1-3, DM3/DM7+=K1 | cmd_1024/1025 | ✅完了 |
-| 5 | シン忍法GS(19.2Mパターン) | cmd_1057 | 🔄進行中(32体UUID未定義のためblocked→cmd_1060/1061で解消中) |
-| 6 | 本番デプロイ+パリティ+殿承認 | TBD | ⬜ |
+4ファミリー × 3モード(CAGR/MaxDD/NewHigh)。重複吸収(激攻>常勝>鉄壁)で**10体**。
+朱雀・玄武は激攻=常勝が同一変種→常勝消滅。シン忍法はこの10体を材料として構築。
 
-### 殿裁定事項
+### 確定パラメータ（殿裁定 2026-03-19）
 
-| 裁定 | 内容 |
-|------|------|
-| 命名 | シンprefix必須。現行四神は変更不可 |
-| Triple-E | **ファミリー独立**(PD-009)。C2(時間安定)/C4(共通)廃止。C1∩C3で選定 |
-| DM7P | メトリクスフィルタなし。全96体→Phase 4直行 |
-| PBO閾値 | 0.05固定。データ依存させない。生存者ゼロも正当な結論 |
-| OOS | 廃止。CPCVの28foldがOOS28回。レジーム検出はp̄が担当 |
-| 均等保有 | K体均等(1/K)。ハードコードウェイト厳禁 |
+| パラメータ | DM2(青龍) | DM3(朱雀) | DM6(白虎) | DM7+(玄武) |
+|---|---|---|---|---|
+| **DNA** | 降りない | 債券方向スイッチ | VIX mean reversion | 構造的逆張り |
+| absolute | LQD | TMF | ^VIX | SPXL |
+| relative | TQQQ,TECL | TECL,TQQQ | TQQQ,TECL | XLU |
+| safe_haven | **XLU固定** | TMV | **GLD固定** | TQQQ |
+| top_n | 1, 2 | 1, 2 | 1, 2 | 1 |
+| rebalance | **Mのみ** | **Bo, Beのみ** | **Qj, Qf, Qmのみ** | **Mのみ** |
+| lookback | **10D〜12M** | **10D〜3M** | **10D〜6M** | **15M〜24M** |
+| composite | 3-term許可 | **単一のみ** | 3-term許可 | **単一のみ** |
 
-### ファミリー別Triple-E(cmd_1022確定)
+### DNA制約の根拠
 
-| ファミリー | Triple-E | C1∩C3 PASS |
-|-----------|----------|-----------|
-| DM2(青龍) | UD + SK + TC | 1/56 |
-| DM3(朱雀) | SK + UW + LJ | 4/56 |
-| DM6(白虎) | UD + SK + TC | 3/56 |
-| DM7P(玄武) | フィルタなし | 全96体→Phase 4 |
+| ファミリー | rebalance根拠 | safe_haven根拠 | lookback根拠（データ実証） |
+|---|---|---|---|
+| DM2 | 「降りない」は月次行動 | XLU=退避しても株の中に留まる。GLD不適 | 長期+短期composite +14pp。短期はノイズではない |
+| DM3 | 3xレバwhipsaw防止 | TMV=債券正逆ペア必須 | short帯(1M-3M)が圧倒。long lookbackは無価値 |
+| DM6 | VIXノイズ除去（年4回行動） | GLD=第三軸。XLUは株でありVIXとの独立性不足 | medium(4-6M)+短期compositeが全3指標1位。VIX mean reversionサイクル全体を捕捉 |
+| DM7+ | 信号は鈍く月次で十分 | TQQQ=攻守逆転の意図的設計 | 15M=CAGR最大、24M=MaxDD最小。12M削除（劣後） |
 
-→ 設計書全文: `outputs/analysis/shin_shijin_design.md`
-→ Phase 2分析: `outputs/analysis/shin_shijin_phase2_metrics_analysis.md`
-→ Triple-E再評価: `outputs/analysis/cmd_1022_family_triple_e.md`
-→ スクリプトカタログ: `outputs/analysis/shin_shijin_script_catalog.md`
+### 旧方式(v1)からの変更点
+
+- CPCV(Phase 3)廃止（FoF材料に完成品基準を当てていた）
+- Triple-E事前フィルタ廃止 → CAGR/MaxDD/NHFで直接チャンピオン選出
+- 脱相関K体選出廃止 → 各ファミリー3モード×1体
+- safe_haven選択肢を1つに固定（DM2: GLD削除、DM6: XLU削除）
+- rebalanceをDNA準拠で制約（全6種→1〜3種）
+- lookbackをデータ分析に基づき制約（全18点共通→ファミリー別範囲）
+- 32ユニット → 10体に簡素化（重複吸収: 激攻>常勝>鉄壁。朱雀・玄武で常勝消滅）
+- L413: DM7+ XLU1銘柄ではtop_n軸が冗長(top_n=1とtop_n=2が完全同一リターン)。48→24体に圧縮可能（cmd_1078）
+- L414: DM7+ 24M RXLU CPCV Max_Run-up PBO=1.0。24M窓は変化極めて緩慢でCPCV短期テスト窓に不適合（cmd_1078）
+- L415: CPCV(Phase 3)はDM×FoFに構造的不適合として廃止(殿裁定 2026-03-19)。FoF材料は一瞬のきらめきで十分。完成品基準を材料に当てるな（cmd_1078）
+
+### データ分析サマリー（既存191,796パターンGS結果から抽出）
+
+データ: `outputs/grid_search/shin_shijin_l1/metrics_DM*.csv`（cmd_1018、本番パリティ100%検証済み）
+
+**DM2** DNA filter後 6,390パターン:
+- 3-term composite (CAGR med 38.3%) > 2-term (37.2%) > 1-term (35.9%)
+- CAGR 1位: `11M:60|5M:20|20D:20` (+53.7%) — long+medium+ultra_short
+- MaxDD 1位: `5M:40|2M:40|15D:20` (-27.7%) — medium+short+ultra_short (※DM6で発見)
+
+**DM3** DNA filter後 12,780パターン:
+- short+ultra_short (CAGR med 25.4%) >> long (14.6%)
+- CAGR 1位: `1M:80|15D:20` (+35.9%)
+- MaxDD 1位: `5M:80|20D:20` (-47.7%)
+
+**DM6** DNA filter後 19,170パターン:
+- medium+short+ultra_short composite (MaxDD best -27.7%) がultra_short単独を大幅に上回る
+- CAGR 1位: `4M:50|1M:50` (+46.6%, MaxDD -29.4%)
+- MaxDD 1位: `5M:40|2M:40|15D:20` (-27.7%)
+- 当初想定(ultra_short 10D-20Dのみ)をデータが否定 → 10D-6M compositeに拡大
+
+**DM7+** DNA filter後 8パターン:
+- 15M: CAGR +37.9%, MaxDD -45.6%
+- 24M: CAGR +30.9%, MaxDD -26.1%
+- 12M削除（全指標で15Mに劣後）
+
+→ 設計書: `outputs/analysis/shin_shijin_design.md` §11
+→ シン忍法v2結果: `outputs/analysis/shin_ninpo_v2_champions.csv`（21体確定、吸収0）
+→ v1記録(参考): Phase 2分析 `shin_shijin_phase2_metrics_analysis.md`, Triple-E `cmd_1022_family_triple_e.md`
+
+### シン忍法v2 GS結果（cmd_1080）
+
+10体 × 7忍法 × 375 subsets = 173,625パターン。全21体ユニーク(吸収0)。
+最強: 加速D-激攻 CAGR 86.6%。最堅: 加速D-鉄壁 MaxDD -13.6%。最高NHF: 変わり身-常勝 3.37。
+
+本番登録: L0=L1 standard 10体 + L2 FoF 21体 = **31体**。手順書v2更新必要。
+
+→ チャンピオン一覧: `outputs/analysis/shin_ninpo_v2_champions.csv`
+→ 32体ユニバースGS: `outputs/analysis/shin_shijin_phase5_champions.md`（cmd_1075, 733,392パターン）
+
+### Phase 5 全量GSチャンピオン（cmd_1075）
+
+32体ユニバース × 7忍法 = 733,392パターン全量GS完走。
+
+| 指標 | Best忍法 | 値 | ファミリー |
+|------|---------|-----|----------|
+| Best CAGR | kasoku_ratio | 63.17% | DM2(青龍) |
+| Best Calmar | kasoku_ratio | 1.510 | DM6(白虎) |
+
+- Best CAGR: 全7忍法でDM2(青龍)ファミリーがチャンピオン。top_n=1, rebalance=monthly統一
+- Best Calmar: 5/7忍法でDM6(白虎)ファミリー。3-4体構成が多い(分散効果)
+
+→ 詳細: `outputs/analysis/shin_shijin_phase5_champions.md`
+
+### GS高速化（cmd_1029-1064）
+
+| マイルストーン | 時間 | 手法 |
+|-------------|------|------|
+| 初期ベースライン | 23h | 逐次実行 |
+| PPE導入(cmd_1031) | 2.8h | Preprocessed Execution全忍法適用 |
+| T3 picks vectorize(cmd_1048) | 42min | ctx_buildボトルネック直撃 |
+| 並列実行(8忍者) | **12min** | チャンク分割8並列 |
+| numpy momentum cube(cmd_1064) | さらに改善 | pandas→numpy slice一括 |
+
+本番パリティ完全一致が全高速化の絶対条件。→ `context/gs-speedup-knowledge.md`
+
+### パリティ検証（cmd_1097-1116）
+
+| cmd | 対象 | 結果 | 教訓 |
+|-----|------|------|------|
+| cmd_1097 | L1シグナル突合 | GS関数にシグナル直接出力が必要(L422) | リターン逆推定では不十分 |
+| cmd_1098 | L1リターン突合 | monthly_return_open列使用必須(L420/PI-008) | GS=Open-to-Open方式 |
+| cmd_1106 | v2パリティ分析 | 不一致95%はRC4解像度差異(L425) | partial/MTD仮説は1.5%のみ(L424) |
+| cmd_1115 | v2パリティ100% | Signal 1815/1815, Return 1815/1815一致 | resample月末修正(L427)+valid_start_date修正(L428) |
+| cmd_1116 | 追加検証 | 非決定的順序+partial-month初月(L429) | — |
+
+→ パリティ修正詳細: `context/dm-signal-core.md` §4 L419/L427/L428
 
 ### CPCV/相関/パターン分析（cmd_1019-1026）
 
