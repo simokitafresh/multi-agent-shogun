@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-03-11 認証DB化(cmd_752/755)+SSOT3層(§25)+Cookie TZ(cmd_759)+trade-rule教訓(cmd_766/767) -->
+<!-- last_updated: 2026-03-20 cmd_1123 PI制度導入+FoF flush修正(cmd_1096)+resample修正(cmd_1115)+PBarSelectionBlock+p̄バッチ -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -36,6 +36,7 @@
 | 3 | 01:40 | sync-fof | FoFシグナル計算 |
 
 再計算排他制御: `recalc_status.py`の`threading.Lock`。同時実行不可。409=正常排他(FAILではない)。30秒待って再実行。→ `projects/dm-signal.yaml` (c) recalculate_concurrency
+p̄バッチ: `p_average_results`テーブルに事前計算結果を格納。バッチ未実行 or cold sleepで空(L319)。p̄ゲート: `gate_p_average_freshness.sh`で鮮度監視。
 - L232: recalculate_fast.pyのholding_signal更新は「月変わりANDリバランス月」の2条件で制御される（cmd_764）
 
 ## 2. DB地図
@@ -64,6 +65,7 @@ DLコマンド: `download_all_prices.py grid-search`(価格) | `download_prod_da
 - L172: 新規テーブル導入時はインデックス作成をif/else外に置くと自己修復性が上がる（cmd_550）
 - L173: パイロット→本番移植ではDB層分離がパリティ検証を容易にする（cmd_550）
 - L296: 履歴特徴量系の新手法を入れる前にsnapshot SSOTを埋めよ（cmd_861）
+- L420: monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列。GSはOpen-to-Open方式。パリティ検証はmonthly_return_open列を使うこと（cmd_1098）[PI-008]
 
 ## 3. 四神（しじん）構成
 
@@ -178,7 +180,8 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 | 採用 | MomentumFilter / SingleViewMomentumFilter / TrendReversalFilter / MomentumAccelerationFilter | 追い風 / 抜き身 / 変わり身 / 加速 |
 | 採用 | AbsoluteMomentumFilter / EqualWeight | 門番 / 分身(全忍法terminal) |
 | 補助 | SafeHavenSwitch / MonthlyReturnMomentumFilter | 門番補助 / 追い風GS方式 |
-| 採用/進行中 | ReversalFilter → **逆風**(cmd_249採用決定) / MultiViewMomentumFilter → **四つ目**(cmd_284フルGS完了・本番登録判断待ち) | 新忍法候補 |
+| 採用 | ReversalFilter → **逆風**(cmd_249採用決定) / MultiViewMomentumFilter → **四つ目**(cmd_284フルGS完了) | シン忍法v2で7忍法体制確定 |
+| 採用 | PBarSelectionBlock → **p̄選別**(cmd_977-987) | p̄ベースFoF材料選別。月次戦術運用は無効(cmd_1009) |
 | 偵察中 | RelativeMomentumFilter(cmd_250) | 新忍法候補 |
 | 未採用 | ComponentPrice / CashTerminal / KalmanMeta | インフラ/スケルトン |
 
@@ -227,6 +230,12 @@ GS修正経緯(cmd_215→217): cmd_215でtop_n同点パリティ差分検知→c
 `PipelineEngine.execute_pipeline(pipeline_config, target_date, initial_tickers, price_data_cache, momentum_cache)` → `{signal, momentum_data, block_results, weights}`
 PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果) / `final_weights`(Terminal配分)
 **signal**: パイプライン生出力 | **holding_signal**: リバランス月でなければ前月維持。MonthlyReturnはholding_signalで計算せよ
+- L419: fof_component_weightsフラッシュ未配線(全FoF影響)。flush関数実装済みでもrecalculate_fof.pyのimport+呼出がなければ永久に空（cmd_1096）
+- L421: flush関数の実装+exportだけでは不十分。呼出元のimport+呼出コードが存在するか二値チェック必須（cmd_1101）
+- L423: FoF BBシミュレーションM-1オフセット必須（cmd_1102）
+- L427: resample(ME).last()はカレンダー月末を返す。実取引日との差異がシグナル帰属ズレを引き起こす（cmd_1115）
+- L428: valid_start_date計算は全構成シンボル(relative+absolute+safe_haven+DTB3)を含めよ（cmd_1115）
+- L429: パリティ検証における非決定的順序とpartial-month初月の扱い（cmd_1116）
 
 ## 5. ローカル分析関数
 
@@ -255,6 +264,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 - L311: isRetryableError()はHTTP 5xx未対応→Render cold start 502/503で即エラー表示（cmd_962）
 - L314: CORS expose_headersなしではFEがカスタムレスポンスヘッダを読めない（cmd_964）
 - L315: Payload cache+validator cache分離構成ではinvalidatorが両層同時破棄必須（cmd_964）
+- L412: BE定数変更時はFE定数(frontend/lib/constants.ts)も必ず確認・同期せよ（cmd_1079）
 
 ## 10. ディレクトリ構成
 
