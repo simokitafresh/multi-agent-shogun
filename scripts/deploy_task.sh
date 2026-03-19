@@ -311,6 +311,9 @@ skill_candidate:
   # project: ""     # 対象PJ 例: "dm-signal"
 decision_candidate:
   found: false
+hook_failures:
+  count: 0
+  details: ""
 EOF
 
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
