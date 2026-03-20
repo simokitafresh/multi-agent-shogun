@@ -186,6 +186,7 @@
 !scripts/gates/gate_vercel_phase.sh
 !scripts/gates/gate_skill_quality.sh
 !scripts/gates/gate_dc_duplicate.sh
+!scripts/gates/gate_report_format.sh
 !scripts/hooks/
 !scripts/hooks/*.sh
 !scripts/switch_project.sh
