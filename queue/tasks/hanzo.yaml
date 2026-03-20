@@ -1,37 +1,20 @@
-task_id: cmd_1153_script
-parent_cmd: cmd_1153
-status: pending
-project: infra
-type: implement
-command: |
-  AC1+AC3を実装せよ。
-  
-  AC1: scripts/workaround_pattern_check.sh を新設:
-    1. logs/karo_workarounds.yaml を読む
-    2. 同一issueまたは同一categoryの出現回数を集計
-    3. 閾値（3回以上）に達したパターンを検出
-    4. 検出時: 家老inboxにtype: workaround_patternで通知
-       bash scripts/inbox_write.sh karo "パターン検出: {パターン名} {回数}回" workaround_pattern workaround_check
-    5. 冪等性: 同一パターンの通知は1回のみ（通知済みフラグで管理。
-       logs/workaround_notified.yamlに記録）
-  
-  AC3: ninja_monitor.shの巡回ループにworkaround_pattern_check.shの呼び出しを追加:
-    - 10分間隔の頻度制限（前回実行時刻をチェック）
-    - エラー防御(|| true)
-    - logs/workaround_pattern.logにリダイレクト
-acceptance_criteria: |
-  AC1: workaround_pattern_check.shが存在し実行可能
-  AC3: ninja_monitor.shにworkaround_pattern_check.sh呼び出しあり
+acceptance_criteria: 'AC2: instructions/gunshi.mdにdecomposition_feedback送信手順が記載されていること
+
+  '
 binary_checks:
-  AC1:
-    - "scripts/workaround_pattern_check.sh が存在し実行可能か?"
-    - "bash -n scripts/workaround_pattern_check.sh がエラーなしか?"
-    - "閾値3回のチェック処理が含まれるか?"
-    - "冪等性のための通知済みフラグ管理が実装されているか?"
-  AC3:
-    - "ninja_monitor.shにworkaround_pattern_check呼び出しがあるか?"
-    - "10分間隔の頻度制限があるか?"
-    - "|| true でエラー防御されているか?"
-stop_for:
-  - bash -n でシンタックスエラー
+  AC2:
+  - instructions/gunshi.mdにdecomposition_feedbackキーワードがあるか?
+  - inbox_writeコマンド例がdecomposition_feedbackタイプで記載されているか?
+  - 判定基準(タスク分解を変えれば防げたか)が記載されているか?
+command: "AC2を実装せよ。\n\ninstructions/gunshi.mdに追記:\n  - REQUEST_CHANGES判定時、指摘内容がタスク分解の問題に起因する場合:\n\
+  \    家老にinbox_write（type: decomposition_feedback）\n    bash scripts/inbox_write.sh\
+  \ karo \"分解フィードバック: {問題の要約}。{推奨改善}\" decomposition_feedback gunshi\n  - 判定基準: 「この問題はタスク分解を変えれば防げたか？」\n\
+  \    YES → decomposition_feedback送信\n    NO → 送信不要\n"
 never_stop_for: []
+parent_cmd: cmd_1155
+progress: AC2 PASS — gunshi.mdにdecomposition_feedback送信手順追記完了
+project: infra
+status: done
+stop_for: []
+task_id: cmd_1155_gunshi_md
+type: implement

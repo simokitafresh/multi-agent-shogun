@@ -178,6 +178,33 @@ bash scripts/inbox_write.sh karo "{指摘サマリ}" gunshi_lesson_candidate gun
 
 レビュー返信（review_result）と同一ターンで送信する。lesson_candidateは別メッセージとして送信し、review_resultと混在させない。
 
+### Decomposition Feedback送信 — REQUEST_CHANGES時の分解品質還流
+
+REQUEST_CHANGES判定時、指摘内容が**タスク分解の問題に起因する場合**、decomposition_feedbackとして家老に送信せよ。
+
+#### 判定基準
+
+**「この問題はタスク分解を変えれば防げたか？」**
+
+| 判定 | 対応 | 例 |
+|------|------|-----|
+| **YES** | decomposition_feedback送信 | AC粒度が大きすぎて忍者が迷う、依存関係のあるACが並列配備されている、1cmdに詰め込みすぎてscope超過 |
+| **NO** | 送信不要（忍者の作業品質 or cmd設計の問題） | 忍者の実装ミス、偵察不足、AC記述の誤り |
+
+#### 送信手順
+
+```bash
+bash scripts/inbox_write.sh karo "分解フィードバック: {問題の要約}。{推奨改善}" decomposition_feedback gunshi
+```
+
+内容に含めるべき情報:
+- **問題の要約**: タスク分解のどこに問題があったか1行で
+- **推奨改善**: 次回の分解でどう変えるべきか
+
+#### タイミング
+
+レビュー返信（review_result）と同一ターンで送信する。decomposition_feedbackは別メッセージとして送信し、review_resultと混在させない。
+
 ### 緊急度分類（severity）— REQUEST_CHANGES時の必須付記
 
 REQUEST_CHANGES verdict時、指摘の緊急度を必ず付記せよ。家老はこの緊急度に基づいて忍者の作業継続/停止を判断する。
