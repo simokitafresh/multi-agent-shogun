@@ -565,11 +565,27 @@ check_and_update_done_task() {
                     exit 1
                 fi
                 if ! yaml_field_set "$task_file" "task" "status" "done"; then
-                    log "ERROR: yaml_field_set failed for ${name} task status update"
-                    exit 1
-                fi
-                # completed_at自動記録（cmd_387: 既存なら上書きしない）
-                TASK_FILE_ENV="$task_file" COMPLETED_AT_ENV="$completed_ts" python3 -c "
+                    # cmd_1156: Flat YAML fallback — yaml_field_set fails when no "task:" block
+                    if grep -q "^status:" "$task_file"; then
+                        sed -i "s/^status: .*/status: done/" "$task_file"
+                        log "FLAT-YAML-FALLBACK: $name status → done (yaml_field_set failed, flat format detected)"
+                    else
+                        log "ERROR: yaml_field_set failed for ${name} task status update (not flat format either)"
+                        exit 1
+                    fi
+                    # Flat YAML: completed_at via sed (python3 block requires task block)
+                    if ! grep -q "^completed_at:" "$task_file"; then
+                        sed -i "/^status: done/a completed_at: '$completed_ts'" "$task_file"
+                    fi
+                    # Post-update verification
+                    _verify_status=$(yaml_field_get "$task_file" "status")
+                    if [ "$_verify_status" != "done" ]; then
+                        log "ERROR: FLAT-YAML-FALLBACK verification failed for ${name} (status=$_verify_status, expected=done)"
+                        exit 1
+                    fi
+                else
+                    # completed_at自動記録（cmd_387: 既存なら上書きしない）
+                    TASK_FILE_ENV="$task_file" COMPLETED_AT_ENV="$completed_ts" python3 -c "
 import yaml, sys, os, tempfile
 task_file = os.environ['TASK_FILE_ENV']
 completed_at = os.environ['COMPLETED_AT_ENV']
@@ -594,6 +610,7 @@ except Exception as e:
     print(f'[COMPLETED_AT] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
 " 2>/dev/null || true
+                fi
             ) 200>"$lock_file"
             # subshell+fd redirection の戻り値
             # shellcheck disable=SC2181
@@ -2114,9 +2131,28 @@ while true; do
             if [ -f "$_s1_task_file" ]; then
                 _s1_task_status=$(yaml_field_get "$_s1_task_file" "status")
                 if [ "$_s1_task_status" = "assigned" ] || [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ] || [ "$_s1_task_status" = "pending" ]; then
-                    log "STAGE1-SKIP: $name idle but task_status=${_s1_task_status}, /clear禁止"
-                    PREV_STATE[$name]="busy"
-                    continue
+                    # cmd_1156 AC2: STAGE1-SKIP timeout safety valve
+                    _s1_task_mtime=$(stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
+                    _s1_now=$(date +%s)
+                    _s1_age=$(( _s1_now - _s1_task_mtime ))
+                    _s1_threshold=900  # 15 minutes default
+                    if [ "$_s1_task_status" = "in_progress" ]; then
+                        _s1_threshold=1800  # 30 minutes for in_progress
+                    fi
+                    if [ "$_s1_age" -ge "$_s1_threshold" ]; then
+                        # Stale task: reset status to idle and allow /clear
+                        if grep -q "^status:" "$_s1_task_file"; then
+                            sed -i "s/^status: .*/status: idle/" "$_s1_task_file"
+                        else
+                            yaml_field_set "$_s1_task_file" "task" "status" "idle" 2>/dev/null || \
+                                sed -i "s/^\([[:space:]]*\)status: .*/\1status: idle/" "$_s1_task_file"
+                        fi
+                        log "STAGE1-TIMEOUT: $name task_status=$_s1_task_status stale for ${_s1_age}s, resetting to idle"
+                    else
+                        log "STAGE1-SKIP: $name idle but task_status=${_s1_task_status}, /clear禁止"
+                        PREV_STATE[$name]="busy"
+                        continue
+                    fi
                 fi
             fi
             # ═══ Stage 1.5: レースコンディション防止ガード（OR条件） ═══
