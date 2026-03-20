@@ -50,3 +50,6 @@ screenshot:
 logging:
   level: info
   path: /mnt/c/tools/multi-agent-shogun/logs/
+layout:
+  col1_width_pct: 38
+  karo_height: 24

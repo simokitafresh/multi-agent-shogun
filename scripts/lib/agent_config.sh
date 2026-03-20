@@ -97,3 +97,15 @@ get_allowed_targets() {
     _agent_config_load
     echo "karo $_AGENT_CONFIG_ALL_NAMES shogun"
 }
+
+get_layout_col1_width_pct() {
+    local val
+    val=$(grep -A1 '^layout:' "$_AGENT_CONFIG_SETTINGS" | grep 'col1_width_pct:' | sed 's/.*col1_width_pct:[[:space:]]*//')
+    echo "${val:-38}"
+}
+
+get_layout_karo_height() {
+    local val
+    val=$(grep -A2 '^layout:' "$_AGENT_CONFIG_SETTINGS" | grep 'karo_height:' | sed 's/.*karo_height:[[:space:]]*//')
+    echo "${val:-24}"
+}
