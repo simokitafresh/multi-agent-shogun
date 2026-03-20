@@ -287,6 +287,145 @@ PY
 }
 
 # ============================================================
+# 0.9 STK dict形式status同期+アーカイブ退避
+#   1. archive/cmds/ + 完了報告 から完了cmd_idを収集
+#   2. STK内delegated→doneに更新
+#   3. done/cancelled/absorbed エントリをarchive/cmds/に退避しSTKから除去
+# ============================================================
+sync_stk_status_from_archive() {
+    [ -f "$QUEUE_FILE" ] || return 0
+
+    local result
+    result=$(
+        (
+            flock -w 10 200 || { echo "[stk-sync] WARN: flock timeout" >&2; echo "0 0"; exit 1; }
+
+            python3 - "$QUEUE_FILE" "$ARCHIVE_CMD_DIR" "$REPORTS_DIR" "$ARCHIVE_REPORT_DIR" <<'PY'
+import glob
+import os
+import sys
+import tempfile
+from datetime import datetime
+
+import yaml
+
+stk_path, archive_cmd_dir, reports_dir, archive_report_dir = sys.argv[1:5]
+SAFE_STATUSES = {"pending", "in_progress", "acknowledged", "assigned"}
+DONE_STATUSES = {"done", "cancelled", "absorbed"}
+
+# === Phase 1: 完了cmd_idを3ソースから収集 ===
+
+completed_ids = set()
+
+# Source 1: archive/cmds/ のファイル名
+if os.path.isdir(archive_cmd_dir):
+    for fname in os.listdir(archive_cmd_dir):
+        if fname.startswith("cmd_") and fname.endswith(".yaml"):
+            parts = fname.split("_")
+            if len(parts) >= 2:
+                completed_ids.add(f"{parts[0]}_{parts[1]}")
+
+# Source 2: 現行報告 (status: done/completed)
+def check_reports_dir(rdir):
+    if not os.path.isdir(rdir):
+        return
+    for fname in os.listdir(rdir):
+        if not fname.endswith(".yaml"):
+            continue
+        path = os.path.join(rdir, fname)
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        status = str(data.get("status", "")).strip()
+        if status in ("done", "completed", "complete", "success"):
+            parent = str(data.get("parent_cmd", "")).strip()
+            if parent.startswith("cmd_"):
+                # parent_cmd → cmd_id (cmd_1136 from cmd_1136_impl_b)
+                cid = "_".join(parent.split("_")[:2])
+                completed_ids.add(cid)
+
+check_reports_dir(reports_dir)
+
+# Source 3: アーカイブ済み報告
+check_reports_dir(archive_report_dir)
+
+# === Phase 2: STK読み込み+status同期+退避 ===
+
+with open(stk_path, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+
+cmds = data.get("commands")
+if not isinstance(cmds, dict):
+    print("0 0")
+    sys.exit(0)
+
+date_stamp = datetime.now().strftime("%Y%m%d")
+synced = 0
+archived = 0
+keep = {}
+
+for cmd_id, entry in cmds.items():
+    if not isinstance(entry, dict):
+        keep[cmd_id] = entry
+        continue
+
+    status = str(entry.get("status", "")).strip()
+
+    # 安全弁: pending/in_progressは無条件で残す
+    if status in SAFE_STATUSES:
+        keep[cmd_id] = entry
+        continue
+
+    # delegated → done 同期
+    if status == "delegated" and cmd_id in completed_ids:
+        entry["status"] = "done"
+        status = "done"
+        synced += 1
+
+    # done/cancelled/absorbed → archive/cmds/に退避
+    if status in DONE_STATUSES:
+        archive_path = os.path.join(archive_cmd_dir, f"{cmd_id}_{status}_{date_stamp}.yaml")
+        if not os.path.exists(archive_path):
+            os.makedirs(archive_cmd_dir, exist_ok=True)
+            with open(archive_path, "w", encoding="utf-8") as f:
+                yaml.dump({"commands": {cmd_id: entry}}, f,
+                          default_flow_style=False, allow_unicode=True,
+                          indent=2, sort_keys=False)
+        archived += 1
+        continue
+
+    keep[cmd_id] = entry
+
+# STK書き戻し（keepのみ）
+if archived > 0:
+    trimmed_data = {"commands": keep}
+    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(stk_path), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            yaml.dump(trimmed_data, f, default_flow_style=False,
+                      allow_unicode=True, indent=2, sort_keys=False)
+        os.replace(tmp_path, stk_path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
+print(f"{synced} {archived}")
+PY
+        ) 200>"$QUEUE_FILE.lock"
+    )
+
+    local synced archived
+    synced=$(echo "$result" | awk '{print $1}')
+    archived=$(echo "$result" | awk '{print $2}')
+    echo "[stk-sync] delegated→done: ${synced:-0}, archived: ${archived:-0}"
+}
+
+# ============================================================
 # 1. shogun_to_karo.yaml — 完了cmdをアーカイブに退避
 # ============================================================
 archive_cmds() {
@@ -398,6 +537,7 @@ archive_cmds() {
         rm -f "$tmp_active"
         echo "[archive] cmds: nothing to archive (kept=$kept)"
     fi
+
 }
 
 # ============================================================
@@ -921,6 +1061,7 @@ PY
 # ============================================================
 echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
 archive_cmds
+sync_stk_status_from_archive
 trim_cmd_chronicle
 trim_stk_old_entries
 archive_reports
