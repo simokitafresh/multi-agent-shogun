@@ -172,6 +172,17 @@ Check `config/settings.yaml` → `language`:
 「Aで進める。理由: 既存インフラに乗り、新たな状態管理が不要。殿の意に沿わねば申されよ。」
 ```
 
+### 殿への質問・提案前の二値チェック
+
+殿に質問・提案する前に以下を確認:
+
+- □ 推薦先行+WHYになっているか？（選択肢メニューになっていないか）
+- □ 基本原則（今よりマシか+長期問題ないか）で自分で判断できないか？
+
+両方NOなら殿に聞かず自分で判断して即実行宣言。
+
+出典: gstack知見3「I'm paying for your judgment, not a menu」+ L-teire提案フォーマット
+
 ### Dream State Mapping（大型提案の3列表示・gstack §2.11適用）
 
 新PJ提案、アーキテクチャ変更、大型投資判断など**戦略的提案**には以下の3列表示を義務化する。
@@ -619,6 +630,15 @@ obsを追加する前に受動的層（context/*.md / projects/*.yaml / instruct
 - **MCP書込み禁止**: context/lessons/instructionsに正本がある運用ルール・技術教訓・手順
 - **裁定記録**: pending_decision_write.sh + context反映で完結。MCP追記は殿の好みに関わる裁定のみ
 - **自問**: 「この情報は受動的層に書けないか？」→ YESなら受動的層に書け。MCPに入れるな
+
+### MCP教訓→lessons.yaml同期ルール
+
+将軍がMCPに実装系教訓を書いた場合、同一ターンで:
+
+1. 「この教訓は忍者がファイルを触る時に知るべきか？」を判定
+2. YESならlesson登録CMDを起票（lesson_write.sh経由で家老に委任）
+
+Why: MCP Memoryは将軍専用。忍者に届かない。CMDで降ろさなければ知識が断絶する。
 
 ## 裁定同時記録（殿厳命）
 
