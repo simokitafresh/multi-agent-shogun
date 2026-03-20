@@ -1,55 +1,66 @@
-task_id: cmd_1157_impl
-parent_cmd: cmd_1157
+task:
+  ac_version: 849837cc
+  acceptance_criteria:
+  - binary_checks:
+    - L278のコロンクォート原則がランブックに記載されたか？
+    - L279のawk優先原則がランブックに記載されたか？
+    - 既存のランブック構造と整合しているか？
+    description: context/infrastructure.mdのbashスクリプト設計原則/防御層の該当§に L278(YAML値出力時コロン含み値は必ずダブルクォートで囲む)
+      と L279(複数フィールド検出はsed+headよりawkパターンマッチ使用) を追記
+    id: AC3
+  bloom_level: ''
+  command: context/infrastructure.mdのランブックにL278(コロンクォート)・L279(awk優先原則)の防御策を記載せよ
+  context_files:
+  - context/infrastructure.md
+  - tasks/lessons.md
+  deployed_at: '2026-03-20T20:55:06'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    ────────────────────────────────────────\n\n"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  never_stop_for: []
+  not_in_scope:
+  - yaml_field_set.shのコード修正（別忍者担当）
+  parallel_ok: []
+  parent_cmd: cmd_1176
+  project: infra
+  related_lessons:
+  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    id: L074
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    id: L225
+    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  report_filename: hanzo_report_cmd_1176.yaml
+  report_path: queue/reports/hanzo_report_cmd_1176.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - pushするな(commitまで)
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+    required_fields:
+    - ac_version_read
+    - files_modified
+    - lesson_candidate
+    - lessons_useful
+  role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  status: assigned
+  stop_for: []
+  target_path: context/infrastructure.md
+  task_type: implement
 status: done
-project: infra
-type: implement
-command: |
-  cmd_1157 AC1+AC2+AC3を実装せよ。
-
-  ■ AC1: yaml_field_set.shのflat形式対応
-  scripts/lib/yaml_field_set.sh:
-    現行: block_id不在時 → exit 2 (FATAL)
-    修正: block_id不在時のフォールバック検索:
-      1. block_idが"task"で不在の場合、ルートレベルのフィールドを直接更新
-      2. awkのbegin_target関数に第3のパターン追加:
-         block_id + ":" がなくても、ルートレベルにフィールドが存在する場合
-         → ルートレベルを対象ブロックとして扱う
-      3. ルートレベル更新時: field_indent=0, block_kind="root"
-      4. _yaml_field_get_in_block にも同等のフォールバック追加（post-write verification用）
-    既存テスト: bash scripts/lib/yaml_field_set.sh --test が存在するなら実行して回帰確認
-
-  ■ AC2: deploy_task.shのYAML正規化
-  scripts/deploy_task.sh:
-    配備時にtask YAMLのフォーマットを検査・正規化する関数 normalize_task_yaml() を追加:
-      1. ファイル先頭が"task:"で始まらない + "task_id:"または"status:"がルートに存在 → flat形式と判定
-      2. flat形式の場合: 全フィールドを2spインデントし、先頭に"task:"を追加 → nested形式に変換
-      3. 変換後のYAMLがyaml_field_setで操作可能なことを検証
-      4. 配備フローの先頭（status強制注入の前）で呼び出し
-    防御: 変換失敗時はログ出力のみ（配備は継続。cmd_1156のフォールバック対応あり）
-
-  ■ AC3: 統合テスト
-  テスト:
-    1. flat形式task YAMLに対しyaml_field_set "task" "status" "done"が成功すること
-    2. nested形式task YAMLに対し既存動作が変わらないこと
-    3. deploy_task.shのnormalize_task_yamlがflat→nested変換すること
-    4. 変換後のYAMLがyaml_field_setで操作可能なこと
-    5. bash scripts/lib/yaml_field_set.sh --test が全PASSすること（存在時）
-acceptance_criteria: |
-  AC1: yaml_field_set.shがflat形式YAMLに対してもフィールド更新可能
-  AC2: deploy_task.shがflat→nested正規化を実行
-  AC3: flat/nestedの両形式でテスト全PASS
-binary_checks:
-  AC1:
-    - "flat形式YAMLに対しyaml_field_setがexit 0で完了するか?"
-    - "nested形式YAMLでの既存動作に回帰がないか?"
-    - "_yaml_field_get_in_blockもflat対応しているか?"
-  AC2:
-    - "normalize_task_yaml関数がdeploy_task.shに存在するか?"
-    - "flat形式がnested形式に変換されるか?"
-    - "変換失敗時に配備が継続するか(防御的)?"
-  AC3:
-    - "テスト用flat YAMLでyaml_field_setが動作するか?"
-    - "--testが存在する場合、全テストPASSか?"
-stop_for:
-  - yaml_field_set.shの既存テストで回帰が発生した場合
-never_stop_for: []
