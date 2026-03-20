@@ -4,14 +4,14 @@
 
 **Command your AI army like a feudal warlord.**
 
-Run 10 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code, OpenAI Codex, GitHub Copilot, and Kimi Code** coordinated by YAML, tmux, and event-driven mailboxes.
+Run 9 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code / Opus 4.6** coordinated by YAML, tmux, and event-driven mailboxes.
 
 **Talk coding, not vibe coding. Speak from your terminal, phone, or Android companion app.**
 
 [![GitHub Stars](https://img.shields.io/github/stars/simokitafresh/multi-agent-shogun?style=social)](https://github.com/simokitafresh/multi-agent-shogun)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Formation](https://img.shields.io/badge/formation-Opus4%20%2B%20Codex4-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
-[![GATE CLEAR](https://img.shields.io/badge/GATE%20CLEAR-465%2F467%20(99.6%25)-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
+[![Formation](https://img.shields.io/badge/formation-Full%20Opus%204.6-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
+[![GATE CLEAR](https://img.shields.io/badge/GATE%20CLEAR-909%2F912%20(99.7%25)-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
 [![Shell](https://img.shields.io/badge/Shell%2FBash-100%25-green)]()
 
 [English](README.md) | [日本語](README_ja.md)
@@ -22,7 +22,7 @@ Run 10 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code, 
   <img src="assets/screenshots/tmux_shogun_9panes.png" alt="multi-agent-shogun: 9 panes running in parallel" width="800">
 </p> -->
 
-<p align="center"><i>One Karo coordinating 8 ninja in the live Opus4 + Codex4 formation — real session, no mock data.</i></p>
+<p align="center"><i>One Karo coordinating 6 ninja + 1 gunshi (military advisor) in the live Full Opus 4.6 formation — real session, no mock data.</i></p>
 
 ---
 
@@ -30,12 +30,12 @@ Run 10 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code, 
 
 **multi-agent-shogun** is a multi-agent development platform for real work, not toy demos. The current live formation is:
 
-- Shogun + Karo on **Claude Code / Opus**
-- Sasuke, Kirimaru, Hayate, Saizo on **Codex / gpt-5.4**
-- Kagemaru, Hanzo, Kotaro, Tobisaru on **Claude Code / Opus**
+- Shogun + Karo on **Claude Code / Opus 4.6**
+- Gunshi (military advisor) on **Claude Code / Opus 4.6**
+- Hayate, Kagemaru, Hanzo, Saizo, Kotaro, Tobisaru on **Claude Code / Opus 4.6**
 
 **Why use it?**
-- One command launches **10 agents** and returns control immediately
+- One command launches **9 agents** and returns control immediately
 - Workers coordinate through **YAML + tmux**, not expensive API orchestration
 - The repo includes a **GATE pipeline**, **lesson cycle**, **pending-decision system**, and **cmd chronicle**
 - Remote control is built in through **ntfy**, **Tailscale/Termux/mosh**, and the **Android companion app**
@@ -55,10 +55,10 @@ Run 10 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code, 
       │    KARO     │  ← Distributes tasks to workers
       └──────┬──────┘
              │
-    ┌─┬─┬─┬─┴─┬─┬─┬─┐
-    │1│2│3│4│5│6│7│8│  ← 8 workers execute in parallel
-    └─┴─┴─┴─┴─┴─┴─┴─┘
-          NINJA
+    ┌─┬─┬─┬─┴─┬─┬─┐
+    │1│2│3│4│5│6│G│  ← 6 ninja + 1 gunshi execute in parallel
+    └─┴─┴─┴─┴─┴─┴─┘
+      NINJA    GUNSHI
 ```
 
 ---
@@ -67,11 +67,11 @@ Run 10 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code, 
 
 | Metric | Current value |
 |---|---|
-| GATE CLEAR | 465 / 467 (99.6%) |
-| CLEAR streak | 295 consecutive wins (`cmd_357` to `cmd_660`) |
-| Commands issued | 665+ |
-| Lesson injection rate | 75.1% |
-| Lesson effectiveness | 70.3% |
+| GATE CLEAR | 909 / 912 (99.7%) |
+| CLEAR streak | 85 consecutive wins (`cmd_1038` to `cmd_1135`) |
+| Commands issued | ~1137 |
+| Lesson injection rate | 74.0% |
+| Lesson effectiveness | 58.8% |
 
 The numbers above come from the current `dashboard.md` battle metrics and reflect this local installation, not the upstream fork.
 
@@ -84,7 +84,7 @@ Most multi-agent frameworks burn API tokens on coordination. Shogun doesn't.
 | | Claude Code `Task` tool | LangGraph | CrewAI | **multi-agent-shogun** |
 |---|---|---|---|---|
 | **Architecture** | Subagents inside one process | Graph-based state machine | Role-based agents | Feudal hierarchy via tmux |
-| **Parallelism** | Sequential (one at a time) | Parallel nodes (v0.2+) | Limited | **8 independent agents** |
+| **Parallelism** | Sequential (one at a time) | Parallel nodes (v0.2+) | Limited | **6 ninja + 1 gunshi** |
 | **Coordination cost** | API calls per Task | API + infra (Postgres/Redis) | API + CrewAI platform | **Zero** (YAML + tmux) |
 | **Observability** | Claude logs only | LangSmith integration | OpenTelemetry | **Live tmux panes** + dashboard |
 | **Skill discovery** | None | None | None | **Bottom-up auto-proposal** |
@@ -92,7 +92,7 @@ Most multi-agent frameworks burn API tokens on coordination. Shogun doesn't.
 
 ### What makes this different
 
-**Zero coordination overhead** — Agents talk through YAML files on disk. The only API calls are for actual work, not orchestration. Run 8 agents and pay only for 8 agents' work.
+**Zero coordination overhead** — Agents talk through YAML files on disk. The only API calls are for actual work, not orchestration. Run 9 agents and pay only for 9 agents' work.
 
 **Full transparency** — Every agent runs in a visible tmux pane. Every instruction, report, and decision is a plain YAML file you can read, diff, and version-control. No black boxes.
 
@@ -117,29 +117,20 @@ Most multi-agent frameworks burn API tokens on coordination. Shogun doesn't.
 
 ## Why CLI (Not API)?
 
-Most AI coding tools charge per token. Running 8 Opus-grade agents through the API costs **$100+/hour**. CLI subscriptions flip this:
+Most AI coding tools charge per token. Running 9 Opus-grade agents through the API costs **$100+/hour**. CLI subscriptions flip this:
 
 | | API (Per-Token) | CLI (Flat-Rate) |
 |---|---|---|
-| **8 agents × Opus** | ~$100+/hour | ~$200/month |
+| **9 agents × Opus** | ~$100+/hour | ~$200/month |
 | **Cost predictability** | Unpredictable spikes | Fixed monthly bill |
 | **Usage anxiety** | Every token counts | Unlimited |
 | **Experimentation budget** | Constrained | Deploy freely |
 
-**"Use AI recklessly"** — With flat-rate CLI subscriptions, deploy 8 agents without hesitation. The cost is the same whether they work 1 hour or 24 hours. No more choosing between "good enough" and "thorough" — just run more agents.
+**"Use AI recklessly"** — With flat-rate CLI subscriptions, deploy 9 agents without hesitation. The cost is the same whether they work 1 hour or 24 hours. No more choosing between "good enough" and "thorough" — just run more agents.
 
-### Multi-CLI Support
+### CLI and Instruction Build System
 
-Shogun isn't locked to one vendor. The system supports 4 CLI tools, each with unique strengths:
-
-| CLI | Key Strength | Default Model |
-|-----|-------------|---------------|
-| **Claude Code** | Battle-tested tmux integration, Memory MCP, dedicated file tools (Read/Write/Edit/Glob/Grep) | Claude Opus 4.6 |
-| **OpenAI Codex** | Sandbox execution, JSONL structured output, `codex exec` headless mode | gpt-5.4 |
-| **GitHub Copilot** | Built-in GitHub MCP, 4 specialized agents (Explore/Task/Plan/Code-review), `/delegate` to coding agent | Provider-managed |
-| **Kimi Code** | Free tier available, strong multilingual support | Kimi k2 |
-
-A unified instruction build system generates CLI-specific instruction files from shared templates:
+The current formation runs entirely on **Claude Code / Opus 4.6**. A unified instruction build system generates role-specific instruction files from shared templates:
 
 ```
 instructions/
@@ -466,13 +457,14 @@ If you prefer to install dependencies manually:
 
 ### After Setup
 
-Whichever option you chose, **10 AI agents** are automatically launched:
+Whichever option you chose, **9 AI agents** are automatically launched:
 
 | Agent | Role | Count |
 |-------|------|-------|
 | 🏯 Shogun | Supreme commander — receives your orders | 1 |
 | 📋 Karo | Manager — distributes tasks | 1 |
-| ⚔️ Ninja | Workers — execute tasks in parallel | 8 |
+| 🧠 Gunshi | Military advisor — strategic analysis | 1 |
+| ⚔️ Ninja | Workers — execute tasks in parallel | 6 |
 
 One tmux session is created with two windows:
 - `shogun:main` — connect here to give commands (Window 0)
@@ -515,8 +507,8 @@ Open `dashboard.md` in your editor for a real-time status view:
 ## In Progress
 | Worker | Task | Status |
 |--------|------|--------|
-| Sasuke | Research React | Running |
-| Kirimaru | Research Vue | Running |
+| Hanzo | Research React | Running |
+| Saizo | Research Vue | Running |
 | Hayate | Research Angular | Completed |
 ```
 
@@ -532,11 +524,11 @@ The Karo breaks the task into subtasks:
 
 | Worker | Assignment |
 |--------|-----------|
-| Sasuke | Research Notion MCP |
-| Kirimaru | Research GitHub MCP |
+| Hanzo | Research Notion MCP |
+| Saizo | Research GitHub MCP |
 | Hayate | Research Playwright MCP |
 | Kagemaru | Research Memory MCP |
-| Hanzo | Research Sequential Thinking MCP |
+| Kotaro | Research Sequential Thinking MCP |
 
 All 5 ninja research simultaneously. You can watch them work in real time:
 
@@ -779,30 +771,30 @@ Behavioral psychology-driven motivation through your notification feed:
 Each tmux pane shows the agent's current task directly on its border:
 
 ```
-┌ sasuke (Codex) VF requirements ─────┬ hayate (Codex) API research ────────┐
+┌ hanzo (Opus) VF requirements ────────┬ hayate (Opus) API research ─────────┐
 │                                      │                                     │
 │  Working on SayTask requirements     │  Researching REST API patterns      │
 │                                      │                                     │
-├ kirimaru (Codex) ───────────────────┼ kagemaru (Opus) DB schema design ───┤
+├ saizo (Opus) ────────────────────────┼ kagemaru (Opus) DB schema design ───┤
 │                                      │                                     │
 │  (idle — waiting for assignment)     │  Designing database schema          │
 │                                      │                                     │
 └──────────────────────────────────────┴─────────────────────────────────────┘
 ```
 
-- **Working**: `sasuke (Codex) VF requirements` — agent name, model, and task summary
-- **Idle**: `sasuke (Codex)` — model name only, no task
+- **Working**: `hanzo (Opus) VF requirements` — agent name, model, and task summary
+- **Idle**: `hanzo (Opus)` — model name only, no task
 - Updated automatically by the Karo when assigning or completing tasks
-- Glance at all 9 panes to instantly know who's doing what
+- Glance at all panes to instantly know who's doing what
 
 ### 🔊 9. Shout Mode (Battle Cries)
 
 When a ninja completes a task, it shouts a personalized battle cry in the tmux pane — a visual reminder that your army is working hard.
 
 ```
-┌ sasuke (Codex) ──────────────┬ kirimaru (Codex) ─────────────┐
+┌ hanzo (Opus) ────────────────┬ saizo (Opus) ─────────────────┐
 │                               │                               │
-│  ⚔️ sasuke、先陣切った！      │  🔥 kirimaru、二番槍の意地！  │
+│  ⚔️ hanzo、先陣切った！       │  🔥 saizo、二番槍の意地！     │
 │  八刃一志！                   │  八刃一志！                   │
 │  ❯                            │  ❯                            │
 └───────────────────────────────┴───────────────────────────────┘
@@ -817,7 +809,7 @@ The Karo writes an `echo_message` field in each task YAML. After completing all 
 task:
   task_id: subtask_001
   description: "Create comparison table"
-  echo_message: "🔥 sasuke、先陣を切って参る！八刃一志！"
+  echo_message: "🔥 hanzo、先陣を切って参る！八刃一志！"
 ```
 
 **Shout mode is the default.** To disable (saves API tokens on the echo call):
@@ -925,24 +917,20 @@ SayTask handles personal productivity (capture → schedule → remind). The cmd
 
 ## Model Settings
 
-| Agent | Default Model | Thinking | Rationale |
-|-------|--------------|----------|-----------|
-| Shogun | Opus | **Enabled (high)** | Strategic discussions, research, and policy design require deep reasoning. Use `--shogun-no-thinking` to disable for relay-only mode |
-| Karo | Opus | Enabled | Task distribution requires careful judgment |
-| Sasuke, Kirimaru, Hayate, Saizo | Codex | Enabled | Fast implementation and repo-local execution |
-| Kagemaru, Hanzo, Kotaro, Tobisaru | Opus | Enabled | Deep review, research, and higher-ambiguity tasks |
+All agents run on **Claude Code / Opus 4.6** with extended thinking enabled:
+
+| Agent | Model | Thinking | Rationale |
+|-------|-------|----------|-----------|
+| Shogun | Opus 4.6 | **Enabled (high)** | Strategic discussions, research, and policy design require deep reasoning. Use `--shogun-no-thinking` to disable for relay-only mode |
+| Karo | Opus 4.6 | Enabled | Task distribution requires careful judgment |
+| Gunshi | Opus 4.6 | Enabled | Strategic analysis and advisory |
+| Hayate, Kagemaru, Hanzo, Saizo, Kotaro, Tobisaru | Opus 4.6 | Enabled | Implementation, review, research, and all task types |
 
 The Shogun serves as the Lord's strategic advisor — not just a task relay. Strategic discussions, research analysis, and policy design are Bloom's Taxonomy Level 4–6 (analysis, evaluation, creation), requiring Thinking mode enabled. For relay-only use, disable with `--shogun-no-thinking`.
 
 ### Current Formation
 
-| Role Group | Current CLI / Model | Notes |
-|------------|---------------------|-------|
-| Shogun, Karo | Claude Code / Opus | Strategic control path |
-| Sasuke, Kirimaru, Hayate, Saizo | Codex / gpt-5.4 | Codex squad |
-| Kagemaru, Hanzo, Kotaro, Tobisaru | Claude Code / Opus | Opus squad |
-
-The current rotation has been in place since 2026-02-27. Routing is based on CLI capabilities and task fit.
+All 9 agents run on **Claude Code / Opus 4.6**. The formation has been unified since 2026-03-20.
 
 ### Bloom's Taxonomy Task Classification
 
@@ -950,24 +938,24 @@ Tasks are classified using Bloom's Taxonomy to optimize model assignment:
 
 | Level | Category | Description | Model |
 |-------|----------|-------------|-------|
-| L1 | Remember | Recall facts, copy, list | Codex |
-| L2 | Understand | Explain, summarize, paraphrase | Codex |
-| L3 | Apply | Execute procedures, implement known patterns | Codex |
-| L4 | Analyze | Compare, investigate, deconstruct | Opus |
-| L5 | Evaluate | Judge, critique, recommend | Opus |
-| L6 | Create | Design, build, synthesize new solutions | Opus |
+| L1 | Remember | Recall facts, copy, list | Opus 4.6 |
+| L2 | Understand | Explain, summarize, paraphrase | Opus 4.6 |
+| L3 | Apply | Execute procedures, implement known patterns | Opus 4.6 |
+| L4 | Analyze | Compare, investigate, deconstruct | Opus 4.6 |
+| L5 | Evaluate | Judge, critique, recommend | Opus 4.6 |
+| L6 | Create | Design, build, synthesize new solutions | Opus 4.6 |
 
-The Karo assigns each subtask a Bloom level and routes it to the appropriate agent profile. Routine repository work tends toward Codex, while deeper reasoning and ambiguous investigation stay with Opus.
+The Karo assigns each subtask a Bloom level for classification. All agents run on Opus 4.6, with round-robin assignment from `config/settings.yaml`.
 
 ### Task Dependencies (blockedBy)
 
 Tasks can declare dependencies on other tasks using `blockedBy`:
 
 ```yaml
-# queue/tasks/kirimaru.yaml
+# queue/tasks/saizo.yaml
 task:
   task_id: subtask_010b
-  blockedBy: ["subtask_010a"]  # Waits for sasuke's task to complete
+  blockedBy: ["subtask_010a"]  # Waits for hanzo's task to complete
   description: "Integrate the API client built by subtask_010a"
 ```
 
@@ -1016,7 +1004,7 @@ These principles are documented in detail: **[docs/philosophy.md](docs/philosoph
 
 ### Agent Identification (@agent_id)
 
-Each pane has a `@agent_id` tmux user option (e.g., `karo`, `sasuke`). While `pane_index` can shift when panes are rearranged, `@agent_id` is set at startup by `shutsujin_departure.sh` and never changes.
+Each pane has a `@agent_id` tmux user option (e.g., `karo`, `hanzo`). While `pane_index` can shift when panes are rearranged, `@agent_id` is set at startup by `shutsujin_departure.sh` and never changes.
 
 Agent self-identification:
 ```bash
@@ -1122,11 +1110,11 @@ You: "Research the top 5 AI coding assistants and compare them"
 What happens:
 1. Shogun delegates to Karo
 2. Karo assigns:
-   - Sasuke: Research GitHub Copilot
-   - Kirimaru: Research Cursor
+   - Hanzo: Research GitHub Copilot
+   - Saizo: Research Cursor
    - Hayate: Research Claude Code
    - Kagemaru: Research Codeium
-   - Hanzo: Research Amazon CodeWhisperer
+   - Kotaro: Research Amazon CodeWhisperer
 3. All 5 research simultaneously
 4. Results compiled in dashboard.md
 ```
@@ -1138,7 +1126,7 @@ You: "Prepare a PoC for the project on this Notion page: [URL]"
 
 What happens:
 1. Karo fetches Notion content via MCP
-2. Kirimaru: Lists items to verify
+2. Saizo: Lists items to verify
 3. Hayate: Investigates technical feasibility
 4. Kagemaru: Drafts a PoC plan
 5. All results compiled in dashboard.md — meeting prep done
@@ -1209,7 +1197,7 @@ Subscribe to the same topic in the [ntfy app](https://ntfy.sh) on your phone. Th
 │      ├──▶ Create tmux session                                       │
 │      │         • "shogun" session                               │
 │      │           Window 0: main (Shogun, 1 pane)                    │
-│      │           Window 1: agents (Karo + 8 Ninja, 3x3 grid)       │
+│      │           Window 1: agents (Karo + 6 Ninja + 1 Gunshi)      │
 │      │                                                              │
 │      ├──▶ Reset queue files and dashboard                           │
 │      │                                                              │
@@ -1344,7 +1332,7 @@ multi-agent-shogun/
 │   ├── inbox/                # Per-agent inbox files
 │   │   ├── shogun.yaml       # Messages to Shogun
 │   │   ├── karo.yaml         # Messages to Karo
-│   │   └── {ninja_name}.yaml  # Messages to each ninja (sasuke, kirimaru, hayate, kagemaru, hanzo, saizo, kotaro, tobisaru)
+│   │   └── {ninja_name}.yaml  # Messages to each ninja (hayate, kagemaru, hanzo, saizo, kotaro, tobisaru)
 │   ├── tasks/                # Per-worker task files
 │   └── reports/              # Worker reports
 │
@@ -1511,7 +1499,7 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 ## Current Highlights
 
-- **Opus4 + Codex4 formation** — active since 2026-02-27, dispatched by CLI fit and round-robin assignment from `config/settings.yaml`
+- **Full Opus 4.6 + Gunshi formation** — active since 2026-03-20, round-robin assignment from `config/settings.yaml`
 - **GATE-first operations** — `cmd_complete_gate.sh`, `gate_cmd_state.sh`, and `gate_lesson_health.sh` protect against false completion, stale delegation, and low-value lessons
 - **Knowledge operations** — the 7-layer knowledge map, `queue/karo_snapshot.txt`, `queue/pending_decisions.yaml`, and `context/cmd-chronicle.md` keep recovery and audits cheap
 - **Mobile surface** — ntfy push, the Android companion app, and Termux/mosh access let you run the army away from the desk
@@ -1538,7 +1526,7 @@ Based on [Claude-Code-Communication](https://github.com/Akira-Papa/Claude-Code-C
 
 <div align="center">
 
-**One command. Eight agents. Zero coordination cost.**
+**One command. Nine agents. Zero coordination cost.**
 
 ⭐ Star this repo if you find it useful — it helps others discover it.
 
