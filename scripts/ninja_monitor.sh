@@ -1009,6 +1009,12 @@ check_stall() {
     task_id=$(yaml_field_get "$task_file" "subtask_id")
     [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "task_id")
 
+    # Ghost Filter: task_id空のSTALL誤検知を排除(cmd_1150)
+    if [ -z "$task_id" ]; then
+        log "STALL-GHOST: $name has status=${status} but empty task_id — skipping stall detection"
+        return
+    fi
+
     case "$status" in
         assigned|acknowledged)
             ;;
