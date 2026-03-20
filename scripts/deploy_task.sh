@@ -316,6 +316,53 @@ hook_failures:
   details: ""
 EOF
 
+    # cmd_1131: related_lessonsが存在する場合、lessons_usefulを記入用雛形に差替え
+    local _lu_output
+    _lu_output=$(mktemp)
+    if run_python_logged "$_lu_output" env TASK_FILE_ENV="$task_file" REPORT_FILE_ENV="$report_file" python3 - <<'LUEOF'
+import os
+import sys
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+report_file = os.environ['REPORT_FILE_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+    if not data:
+        sys.exit(1)
+    task = data.get('task', data)
+    related = task.get('related_lessons', [])
+    if not related or not isinstance(related, list):
+        sys.exit(1)
+
+    ids = [r['id'] for r in related if isinstance(r, dict) and 'id' in r]
+    if not ids:
+        sys.exit(1)
+
+    lines = ["lessons_useful:"]
+    for lid in ids:
+        lines.append(f"  - id: {lid}")
+        lines.append(f"    useful: # true or false")
+        lines.append(f"    reason: # 1行で。trueなら何に役立ったか、falseならなぜ不要だったか")
+
+    with open(report_file) as f:
+        content = f.read()
+    content = content.replace('lessons_useful: null', '\n'.join(lines))
+    with open(report_file, 'w') as f:
+        f.write(content)
+
+    print(f'lessons_useful template: {len(ids)} entries injected')
+except Exception as e:
+    print(f'WARN: lessons_useful inject failed: {e}', file=sys.stderr)
+LUEOF
+    then
+        log "report_template: lessons_useful template injected"
+    fi
+    rm -f "$_lu_output"
+
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
     local report_task_type
     report_task_type=$(field_get "$task_file" "task_type" "")
@@ -2396,6 +2443,13 @@ check_idle "$PANE_TARGET" && IS_IDLE=true
 TASK_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "unknown")
 
 log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}, pane=${PANE_TARGET}"
+
+# status強制注入（cmd_1126: pending/unknown→assigned化。Stage 1ガード保護対象に入れる）
+if [ "$TASK_STATUS" = "pending" ] || [ "$TASK_STATUS" = "unknown" ]; then
+    yaml_field_set "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "task" "status" "assigned"
+    log "status_force: ${TASK_STATUS} → assigned (Stage 1保護対象化)"
+    TASK_STATUS="assigned"
+fi
 
 # 入口門番: 前タスクの教訓未消化チェック（reviewed:false残存ならブロック）
 TASK_FILE="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"

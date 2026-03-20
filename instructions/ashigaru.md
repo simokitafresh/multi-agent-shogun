@@ -130,6 +130,9 @@ workflow:
       - id: R002
         positive_rule: "報告YAMLはテンプレートのトップレベル構造を維持せよ。report: でラップするな。Edit toolで既存フィールドを編集せよ"
         reason: "report: ラッパーや全上書きでトップレベル構造が崩れると、gateのフィールド検出と自動処理が失敗する"
+      - id: R003
+        positive_rule: "テンプレートにlessons_useful雛形がある場合（related_lessons注入時に自動生成）、各教訓IDのuseful(true/false)とreason(1行)を埋めよ。trueなら何に役立ったか、falseならなぜ不要だったかを書け"
+        reason: "lessons_useful空がcmd完了ゲートBLOCKの主因。テンプレートにIDが列挙済みなので、値を埋めるだけで漏れを防げる"
   - step: 5.5
     action: self_gate_check
     mandatory: true
@@ -707,6 +710,11 @@ lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓
   # ★ タスクYAMLにrelated_lessonsが1件以上ある場合、lessons_usefulに
   #   最低1件は記載必須。空のまま報告するとcmd完了ゲート(cmd_complete_gate.sh)で
   #   BLOCKされる。実際に役立った教訓のIDを記載せよ(例: [L121, L122])
+  # ★ deploy_task.shが報告テンプレートにlessons_useful雛形を自動生成する（cmd_1131）。
+  #   テンプレートに以下の形式でIDが列挙されるので、usefulとreasonを埋めるだけでよい:
+  #   - id: L074
+  #     useful: true
+  #     reason: shadow_paths確認の手順が直接役立った
 
 # パリティ検証報告の追加フィールド（パリティ検証タスク時に必須）
 # data_sourceはパリティ検証の信頼性を担保する必須情報。省略はFAIL扱い。
