@@ -104,19 +104,16 @@ handle_cmd_state() {
         state="WARN"
     fi
 
-    # ALERTのみ対応（WARN/OKは何もしない）
+    # ALERTのみ対応（WARN/OKは何もしない）— 通知のみ、自動委任しない
     if should_act "cmd_state" "$state" "ALERT"; then
         # ALERT行からcmd_IDを抽出
         local cmd_ids
         mapfile -t cmd_ids < <(echo "$output" | grep -oP '(?<=^ALERT: )(cmd_[0-9]+)' || true)
 
         if [ ${#cmd_ids[@]} -gt 0 ]; then
-            for cmd_id in "${cmd_ids[@]}"; do
-                bash "$SCRIPT_DIR/cmd_delegate.sh" "$cmd_id" "gate自動委任: ${cmd_id}" 2>&1 || true
-            done
-            bash "$SCRIPT_DIR/ntfy.sh" "【gate自動】cmd未委任ALERT: ${cmd_ids[*]} → 自動委任実行"
+            bash "$SCRIPT_DIR/ntfy.sh" "【要確認】cmd未委任ALERT: ${cmd_ids[*]} — 将軍確認待ち"
         fi
-        echo "ACTION: cmd_state (→ALERT, cmds: ${cmd_ids[*]:-none})"
+        echo "NOTIFY: cmd_state (→ALERT, cmds: ${cmd_ids[*]:-none})"
     elif [ "$state" = "ALERT" ]; then
         echo "SKIP: cmd_state (ALERT→ALERT 再送抑止)"
     else
