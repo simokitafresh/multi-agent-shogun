@@ -25,7 +25,7 @@ _yaml_field_set_unquote() {
     local s="$1"
     if [ "${#s}" -ge 2 ]; then
         case "$s" in
-            \"*\") s="${s#\"}"; s="${s%\"}" ;;
+            \"*\") s="${s#\"}"; s="${s%\"}"; s="${s//\\\"/\"}" ;;
             \'*\') s="${s#\'}"; s="${s%\'}" ;;
         esac
     fi
@@ -60,11 +60,23 @@ function regex_escape(str,    out,i,c) {
     }
     return out
 }
+function yaml_safe(v,    out,i,c) {
+    if (index(v, ":") > 0) {
+        out = ""
+        for (i = 1; i <= length(v); i++) {
+            c = substr(v, i, 1)
+            if (c == "\"") { out = out "\\" c }
+            else { out = out c }
+        }
+        return "\"" out "\""
+    }
+    return v
+}
 BEGIN { replaced = 0; has_fields = 0 }
 {
     field_re = "^" regex_escape(field) ":[[:space:]]*"
     if (!replaced && $0 ~ field_re) {
-        print field ": " new_value
+        print field ": " yaml_safe(new_value)
         replaced = 1
         has_fields = 1
         next
@@ -74,7 +86,7 @@ BEGIN { replaced = 0; has_fields = 0 }
 }
 END {
     if (!has_fields) exit 2
-    if (!replaced) print field ": " new_value
+    if (!replaced) print field ": " yaml_safe(new_value)
 }
 ' "$yaml_file" > "$out_file"
 }
@@ -88,8 +100,10 @@ _yaml_field_get_root() {
 function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
 function unquote(s) {
     if (length(s) >= 2) {
-        if ((substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") ||
-            (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'")) {
+        if (substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") {
+            s = substr(s, 2, length(s)-2)
+            gsub(/\\"/, "\"", s)
+        } else if (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'") {
             s = substr(s, 2, length(s)-2)
         }
     }
@@ -140,8 +154,10 @@ _yaml_field_set_apply() {
 function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
 function unquote(s) {
     if (length(s) >= 2) {
-        if ((substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") ||
-            (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'")) {
+        if (substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") {
+            s = substr(s, 2, length(s)-2)
+            gsub(/\\"/, "\"", s)
+        } else if (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'") {
             s = substr(s, 2, length(s)-2)
         }
     }
@@ -221,6 +237,18 @@ function is_boundary(line,    indent,t) {
     if (indent <= block_indent) return 1
     return 0
 }
+function yaml_safe(v,    out,i,c) {
+    if (index(v, ":") > 0) {
+        out = ""
+        for (i = 1; i <= length(v); i++) {
+            c = substr(v, i, 1)
+            if (c == "\"") { out = out "\\" c }
+            else { out = out c }
+        }
+        return "\"" out "\""
+    }
+    return v
+}
 function flush_block(    i,line,indent_str,field_re,replaced) {
     indent_str = make_indent(field_indent)
     field_re = "^" indent_str regex_escape(field) ":[[:space:]]*"
@@ -229,7 +257,7 @@ function flush_block(    i,line,indent_str,field_re,replaced) {
     for (i = 1; i <= block_len; i++) {
         line = block_lines[i]
         if (i > 1 && !replaced && line ~ field_re) {
-            print indent_str field ": " new_value
+            print indent_str field ": " yaml_safe(new_value)
             replaced = 1
         } else {
             print line
@@ -237,7 +265,7 @@ function flush_block(    i,line,indent_str,field_re,replaced) {
     }
 
     if (!replaced) {
-        print indent_str field ": " new_value
+        print indent_str field ": " yaml_safe(new_value)
     }
 
     delete block_lines
@@ -296,8 +324,10 @@ _yaml_field_get_in_block() {
 function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
 function unquote(s) {
     if (length(s) >= 2) {
-        if ((substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") ||
-            (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'")) {
+        if (substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") {
+            s = substr(s, 2, length(s)-2)
+            gsub(/\\"/, "\"", s)
+        } else if (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'") {
             s = substr(s, 2, length(s)-2)
         }
     }

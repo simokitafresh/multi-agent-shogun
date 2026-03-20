@@ -1,41 +1,94 @@
-task_id: cmd_1159_impl
-parent_cmd: cmd_1159
-status: done
-project: infra
-type: implement
-command: |
-  cmd_1159 AC1+AC2+AC3を実装せよ。
-
-  ■ AC1: パターン修正追跡機能
-  scripts/workaround_pattern_check.sh を拡張:
-    - パターン通知時にlogs/workaround_patterns.yamlに記録:
-      pattern_id, category, count, first_seen, notified_at
-    - 次回パターンチェック時: resolved済みパターンの再発をカウント
-      resolved後に同categoryが再出現 → "REGRESSION: {pattern_id} 再発({count}件)"をログ+家老通知
-      resolved後に再出現なし → "EFFECTIVE: {pattern_id} 修正有効"をログ
-
-  ■ AC2: workaround_pattern_resolve.sh新設
-  scripts/workaround_pattern_resolve.sh:
-    引数: pattern_id, fix_cmd_id
-    動作: workaround_patterns.yamlの該当エントリにresolved_at+fix_cmd_idを追記
-    冪等: 既にresolved済みなら何もしない
-
-  ■ AC3: 二値チェック
-  - workaround_patterns.yamlにnotified_at付きエントリが記録されること
-  - resolve後の再発がREGRESSIONとして検出されること
-  - resolve後の非再発がEFFECTIVEとして記録されること
-acceptance_criteria: |
-  AC1: パターン検出時にworkaround_patterns.yamlに記録される
-  AC2: workaround_pattern_resolve.shが存在し動作する
-  AC3: REGRESSION/EFFECTIVE判定が正しく動作する
-binary_checks:
-  AC1:
-    - "パターン検出時にworkaround_patterns.yamlに記録されるか?"
-    - "再発がREGRESSIONとして検出されるか?"
-  AC2:
-    - "workaround_pattern_resolve.shが存在し実行可能か?"
-    - "resolved済みエントリに対して冪等に動作するか?"
-  AC3:
-    - "EFFECTIVE判定が正しく出力されるか?"
-stop_for: []
-never_stop_for: []
+task:
+  ac_priority: AC1 > AC2
+  ac_version: b7f45b3d
+  acceptance_criteria:
+  - binary_checks:
+    - _yaml_field_set_apply_rootのprint行でコロンガードが追加されたか？
+    - flush_blockのprint行でコロンガードが追加されたか？
+    - report_field_set.sh L158のecho出力にコロンガードが追加されたか？
+    - ダブルクォート自体が値に含まれるケースのエスケープが考慮されたか？
+    description: yaml_field_set.shのawk write箇所（_yaml_field_set_apply_root L67/L77、flush_block
+      L232/L240）およびreport_field_set.sh L158で、値にコロンを含む場合にダブルクォートで囲む出力に変更
+    id: AC1
+  - binary_checks:
+    - 'テスト1: bash scripts/report_field_set.sh /tmp/test_l278.yaml key ''value: with:
+      colons'' が正常完了したか？'
+    - 'テスト2: bash scripts/report_field_set.sh /tmp/test_l278.yaml key ''normal_value''
+      が正常完了したか？'
+    - 'テスト3: bash scripts/report_field_set.sh /tmp/test_l278.yaml results.AC1.status
+      ''PASS: details here'' が正常完了したか？'
+    - 全テストでpost-write verification PASSか？
+    description: コロン含み値の書込み→読み戻しがpost-write verificationをPASSすること
+    id: AC2
+  bloom_level: ''
+  command: yaml_field_set.shのawk write箇所でコロン含み値をYAML-safeにクォート出力する修正と回帰テストを実施せよ
+  context_files:
+  - scripts/lib/yaml_field_set.sh
+  - scripts/report_field_set.sh
+  deployed_at: '2026-03-20T20:54:17'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L209: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report\
+    \ file 未作成でも \n  - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは\n\
+    ────────────────────────────────────────\n\n"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  never_stop_for: []
+  not_in_scope:
+  - yaml_field_set.shの全面リファクタ
+  - Python fallbackパスの修正（既にyaml.dumpでクォート処理済み）
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_1176
+  project: infra
+  related_lessons:
+  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    id: L074
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    id: L225
+    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  - detail: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file
+      未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
+      側の auto-done hook は残さない。
+    id: L209
+    summary: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report
+      file 未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
+      側の auto-done hook は残さない。
+  - detail: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shはCMD_IDが空だとlesson.doneフラグを生成しない(L339条件)。本preflight実装で補完しているが、根本的にはauto_draft_lesson.shにCMD_IDを伝搬する修正が望ましい。
+    id: L086
+    summary: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shはCMD_IDが空だとlesson.doneフラグを生成しない(L339条件)。本preflight実装で補完しているが、根本的にはauto_draft_lesson.shにCMD_IDを伝搬する修正が望ましい。
+  report_filename: tobisaru_report_cmd_1176.yaml
+  report_path: queue/reports/tobisaru_report_cmd_1176.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - pushするな(commitまで)
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+    required_fields:
+    - ac_version_read
+    - files_modified
+    - lesson_candidate
+    - lessons_useful
+  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  status: done
+  stop_for:
+  - 修正後にpost-write verificationが繰り返し失敗する場合
+  target_path: scripts/lib/yaml_field_set.sh
+  task_type: implement
+  progress: AC1+AC2 complete
