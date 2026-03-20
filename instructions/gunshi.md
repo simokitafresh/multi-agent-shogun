@@ -218,7 +218,7 @@ REQUEST_CHANGES verdict時、指摘の緊急度を必ず付記せよ。家老は
 
 ## Report Review — 忍者報告の一次レビュー
 
-家老から忍者報告のレビュー依頼（type: report_review_request）を受けた際の手順。
+家老から忍者報告のレビュー依頼（type: report_review）を受けた際の手順。
 draftレビュー（上記§Communication Protocol）とは別プロセス。混同禁止。
 
 ### レビュー対象
@@ -353,7 +353,12 @@ bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunsh
 # Report（忍者報告）レビュー
 - cmd_id: cmd_XXXX
   review_type: report         # draft / report
-  verdict: LGTM              # LGTM / FAIL
+  verdict: LGTM              # LGTM / FAIL (全体判定)
+  report_ninja: hayate         # レビュー対象の忍者名
+  report_task_id: cmd_XXXX_impl  # レビュー対象のタスクID
+  report_verdict: LGTM        # LGTM / FAIL (個別忍者判定)
+  fail_reasons: []            # FAIL時の理由リスト (FAIL時のみ)
+  lesson_quality: "OK"        # 忍者のlesson_candidateの品質評価
   gate_result: null           # GATE結果判明後に更新
   findings_summary: "4観点OK、lesson_quality:OK"
   lesson_candidate: ""        # レビューで発見した「次回注意すべきパターン」を記載
