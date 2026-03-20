@@ -372,6 +372,7 @@ log_step "STEP 6: ディレクトリ構造作成"
 DIRECTORIES=(
     "queue/tasks"
     "queue/reports"
+    "queue/inbox"
     "config"
     "status"
     "instructions"
@@ -489,27 +490,30 @@ RESULTS+=("設定ファイル: OK")
 # ============================================================
 log_step "STEP 8: キューファイル初期化"
 
-# 忍者用タスクファイル作成
-NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
-for name in "${NINJA_NAMES[@]}"; do
+# エージェント名をsettings.yamlから動的取得
+AGENT_NAMES=$(python3 -c "
+import yaml
+with open('$SCRIPT_DIR/config/settings.yaml') as f:
+    cfg = yaml.safe_load(f)
+for name in cfg.get('cli',{}).get('agents',{}):
+    print(name)
+")
+AGENT_COUNT=$(echo "$AGENT_NAMES" | wc -l)
+
+# エージェント用タスクファイル作成
+for name in $AGENT_NAMES; do
     TASK_FILE="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     if [ ! -f "$TASK_FILE" ]; then
         cat > "$TASK_FILE" << EOF
-# ${name}専用タスクファイル
-task:
-  task_id: null
-  parent_cmd: null
-  description: null
-  target_path: null
-  status: idle
-  timestamp: ""
+task_id: idle
+status: idle
 EOF
     fi
 done
-log_info "忍者タスクファイル (8名) を確認/作成しました"
+log_info "エージェントタスクファイル (${AGENT_COUNT}名) を確認/作成しました"
 
-# 忍者用レポートファイル作成
-for name in "${NINJA_NAMES[@]}"; do
+# エージェント用レポートファイル作成
+for name in $AGENT_NAMES; do
     REPORT_FILE="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
     if [ ! -f "$REPORT_FILE" ]; then
         cat > "$REPORT_FILE" << EOF
@@ -521,7 +525,18 @@ result: null
 EOF
     fi
 done
-log_info "忍者レポートファイル (8名) を確認/作成しました"
+log_info "エージェントレポートファイル (${AGENT_COUNT}名) を確認/作成しました"
+
+# inboxファイル初期化（全エージェント + karo + shogun）
+for name in $AGENT_NAMES karo shogun; do
+    INBOX_FILE="$SCRIPT_DIR/queue/inbox/${name}.yaml"
+    if [ ! -f "$INBOX_FILE" ]; then
+        echo "messages:" > "$INBOX_FILE"
+    fi
+done
+INBOX_COUNT=$(echo "$AGENT_NAMES" | wc -l)
+INBOX_COUNT=$((INBOX_COUNT + 2))  # +karo +shogun
+log_info "inboxファイル (${INBOX_COUNT}名) を確認/作成しました"
 
 RESULTS+=("キューファイル: OK")
 
