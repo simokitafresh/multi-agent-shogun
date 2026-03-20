@@ -50,26 +50,86 @@ if ! [[ "$SUPPLEMENTARY_CMDS" =~ ^[0-9]+$ ]]; then
 fi
 
 # --- Auto-fetch: gunshi_verdict ---
-# Search karo inbox for gunshi verdict messages matching cmd_id
+# Search gunshi_review_log.yaml first (persistent), then karo inbox (fallback)
+# Priority: draft verdict (APPROVE/REQUEST_CHANGES) > report verdict (LGTM/FAIL) > inbox > unknown
 fetch_gunshi_verdict() {
+    local review_log="$REPO_ROOT/logs/gunshi_review_log.yaml"
     local karo_inbox="$REPO_ROOT/queue/inbox/karo.yaml"
-    if [[ ! -f "$karo_inbox" ]]; then
-        echo "unknown"
-        return
+
+    # Primary source: gunshi_review_log.yaml (persistent, not affected by inbox archive)
+    if [[ -f "$review_log" ]]; then
+        local draft_verdict=""
+        local report_verdict=""
+
+        # Scan all entries for this cmd_id, classify by review_type
+        # awk outputs: review_type<TAB>verdict (rtype defaults to "draft" when absent)
+        while IFS=$'\t' read -r _rtype _rverdict; do
+            case "$_rtype" in
+                draft)
+                    [[ -z "$draft_verdict" ]] && draft_verdict="$_rverdict"
+                    ;;
+                report)
+                    [[ -z "$report_verdict" ]] && report_verdict="$_rverdict"
+                    ;;
+            esac
+        done < <(awk -v cid="$CMD_ID" '
+            /^- cmd_id:/ || /^-  *cmd_id:/ {
+                if (match_cmd && verdict != "") {
+                    print (rtype == "" ? "draft" : rtype) "\t" verdict
+                }
+                match_cmd = 0; rtype = ""; verdict = ""
+                sub(/.*cmd_id:[[:space:]]*/, "")
+                gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
+                if ($0 == cid) match_cmd = 1
+                next
+            }
+            match_cmd && /review_type:/ {
+                sub(/.*review_type:[[:space:]]*/, "")
+                gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
+                rtype = $0
+            }
+            match_cmd && /report_verdict:/ {
+                sub(/.*report_verdict:[[:space:]]*/, "")
+                gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
+                verdict = $0
+            }
+            match_cmd && !/report_verdict:/ && /verdict:/ {
+                sub(/.*verdict:[[:space:]]*/, "")
+                gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
+                if (verdict == "") verdict = $0
+            }
+            END {
+                if (match_cmd && verdict != "") {
+                    print (rtype == "" ? "draft" : rtype) "\t" verdict
+                }
+            }
+        ' "$review_log" 2>/dev/null)
+
+        # Priority: draft verdict > report verdict
+        if [[ -n "$draft_verdict" ]]; then
+            echo "$draft_verdict"
+            return
+        fi
+        if [[ -n "$report_verdict" ]]; then
+            echo "$report_verdict"
+            return
+        fi
     fi
-    # grep for lines containing both the cmd_id and "verdict:"
-    # Pattern: gunshi sends "cmd_XXXX...verdict: APPROVE/REQUEST_CHANGES" to karo inbox
-    local verdict_line
-    verdict_line=$(grep -A1 "$CMD_ID" "$karo_inbox" 2>/dev/null | grep -oP 'verdict:\s*\K(APPROVE|REQUEST_CHANGES)' | tail -1) || true
-    if [[ -z "$verdict_line" ]]; then
-        # Try single-line match (content often spans one line)
-        verdict_line=$(grep "$CMD_ID" "$karo_inbox" 2>/dev/null | grep -oP 'verdict:\s*\K(APPROVE|REQUEST_CHANGES)' | tail -1) || true
+
+    # Fallback: karo inbox (may be archived)
+    if [[ -f "$karo_inbox" ]]; then
+        local verdict_line
+        verdict_line=$(grep -A1 "$CMD_ID" "$karo_inbox" 2>/dev/null | grep -oP 'verdict:\s*\K(APPROVE|REQUEST_CHANGES)' | tail -1) || true
+        if [[ -z "$verdict_line" ]]; then
+            verdict_line=$(grep "$CMD_ID" "$karo_inbox" 2>/dev/null | grep -oP 'verdict:\s*\K(APPROVE|REQUEST_CHANGES)' | tail -1) || true
+        fi
+        if [[ -n "$verdict_line" ]]; then
+            echo "$verdict_line"
+            return
+        fi
     fi
-    if [[ -n "$verdict_line" ]]; then
-        echo "$verdict_line"
-    else
-        echo "unknown"
-    fi
+
+    echo "unknown"
 }
 
 # --- Auto-fetch: ninja_blockers ---
