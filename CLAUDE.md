@@ -184,11 +184,12 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 
 ```
 1. ダッシュボード更新（cmd完了結果を記載）
-2. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
-3. ntfy送信（cmd完了報告）
-4. 新しいinbox nudgeが来ていても、上記1-3を先に完了する
+2. 戦局日誌更新: context/senkyoku-log.mdにcmdの意図・結果・因果を1-2行で追記
+3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
+4. ntfy送信（cmd完了報告）
+5. 新しいinbox nudgeが来ていても、上記1-4を先に完了する
    理由: 「新cmd処理→またnudge→...」の連鎖でCTXが際限なく膨らむ（実証済み）
-5. idle状態で待つ
+6. idle状態で待つ
 ※ archive_completed.shはcmd_complete_gate.sh GATE CLEAR時に自動実行される（手動不要）
 ```
 
@@ -314,9 +315,10 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 役割 | 名前(pane) | CLI |
 |------|-----------|-----|
 | 家老 | karo(1) | Claude |
-| 忍者 | sasuke(2) kirimaru(3) hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
+| 軍師 | gunshi(2) | Claude |
+| 忍者 | hayate(3) kagemaru(4) hanzo(5) saizo(6) kotaro(7) tobisaru(8) | settings.yaml参照 |
 将軍はAgent toolでのコード深堀り調査を禁止(F008)。必要な調査は偵察cmdとして家老に委任せよ。
-編成(2026-03-17統一): 全8名Opus 4.6。round-robin配備 → config/settings.yaml
+編成(2026-03-20更新): 6忍者+1軍師 Opus 4.6。round-robin配備 → config/settings.yaml
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照

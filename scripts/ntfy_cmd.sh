@@ -61,9 +61,30 @@ if [ -f "$YAML_FILE" ]; then
 
   # 「—」以前の部分のみ使用（簡潔に）
   if [ -n "$RAW" ]; then
-    PURPOSE=$(echo "$RAW" | sed 's/ *—.*//')
+    PURPOSE="${RAW%%—*}"
   fi
 fi
+
+# streak数取得（dashboard.mdの「連勝」行から数値抽出）
+STREAK=""
+DASHBOARD="$SCRIPT_DIR/dashboard.md"
+if [ -f "$DASHBOARD" ]; then
+  STREAK=$(grep '連勝' "$DASHBOARD" 2>/dev/null | grep -oP '\d+' | head -1)
+fi
+
+# 軍師verdict取得（queue/inbox + archive/inboxのgunshi→karo msg）
+GUNSHI_VERDICT=""
+for src in "$SCRIPT_DIR/queue/inbox/karo.yaml" $(find "$SCRIPT_DIR/archive/inbox" -maxdepth 1 -name 'karo_*.yaml' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -3 | cut -d' ' -f2); do
+  [ -f "$src" ] || continue
+  RAW_VERDICT=$(grep -B5 "from: gunshi" "$src" 2>/dev/null \
+    | grep "$CMD_ID" \
+    | grep -o 'verdict[: ]*[A-Z_]*' \
+    | sed 's/verdict[: ]*//' | tail -1)
+  if [ -n "$RAW_VERDICT" ]; then
+    GUNSHI_VERDICT="$RAW_VERDICT"
+    break
+  fi
+done
 
 # Gist URL取得（current_projectのgist_urlをprojects.yamlから解決）
 GIST_URL=""
@@ -78,13 +99,22 @@ if [ -f "$PROJECTS_YAML" ]; then
   fi
 fi
 
+# streak付加（MESSAGE中にGATE CLEARがある場合のみ）
+if [[ "$MESSAGE" == *"GATE CLEAR"* ]] && [ -n "$STREAK" ]; then
+  MESSAGE="${MESSAGE}(連勝${STREAK})"
+fi
+
 # メッセージ組み立て
+FINAL_MSG="【${SENDER_TAG}】${CMD_ID} ${MESSAGE}"
+
 if [ -n "$PURPOSE" ]; then
-  FINAL_MSG="【${SENDER_TAG}】${CMD_ID} ${PURPOSE}
-━ ${MESSAGE}"
-else
-  FINAL_MSG="【${SENDER_TAG}】${CMD_ID}
-━ ${MESSAGE}"
+  FINAL_MSG="${FINAL_MSG}
+${PURPOSE}"
+fi
+
+if [ -n "$GUNSHI_VERDICT" ]; then
+  FINAL_MSG="${FINAL_MSG}
+軍師: ${GUNSHI_VERDICT}"
 fi
 
 # Gistリンク付加
