@@ -149,6 +149,43 @@ verdictの判断基準:
 - **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載
 - **REJECT**: 根本的な設計問題あり。再偵察または再設計が必要
 
+## Feedback Processing — GATEフィードバック処理
+
+家老からreview_feedback（type: review_feedback）を受信した際の処理手順。
+
+### 処理手順
+
+1. **照合**: 自分のレビュー判定（verdict）とGATE結果を照合する
+2. **分類と対処**:
+   - **APPROVE → FAIL**: 見落とした観点を特定し、lesson_candidateとして家老に報告。最優先で原因分析せよ
+   - **APPROVE → CLEAR**: 正常。ログ記録のみ
+   - **REQUEST_CHANGES → CLEAR（修正後）**: 指摘が有効だった証拠。ログ記録
+   - **REQUEST_CHANGES → FAIL**: 指摘箇所以外で失敗。追加の見落とし観点をlesson_candidateで報告
+   - **REJECT → （任意）**: 将軍判断待ち。結果をログ記録
+3. **精度自己計測**: 下記accuracy計算式で自分のレビュー精度を更新
+4. **ログ記録**: logs/gunshi_review_log.yaml にエントリ追記（→AC3参照）
+
+### accuracy計算式
+
+```
+accuracy = (APPROVE→CLEAR + REQUEST_CHANGES→修正後CLEAR) / 全レビュー数
+```
+
+- 分子: レビュー判定が最終的に正しかった件数
+- 分母: 全レビュー実施件数
+- APPROVE→FAILは精度低下の最重要指標（見落とし）
+
+### APPROVE→FAIL時の対処
+
+APPROVE→FAILは軍師の見落としを意味する。以下を必ず実施:
+
+1. **原因特定**: 6観点のどれで見落としたかを特定
+2. **lesson_candidate報告**: 家老にinbox_writeで報告
+   ```bash
+   bash scripts/inbox_write.sh karo "APPROVE→FAIL: cmd_XXXX。見落とし観点: {観点名}。{1行原因}" review_feedback gunshi
+   ```
+3. **自己改善**: 見落としパターンをログに記録し、同種の見落とし再発を防ぐ
+
 ## Idle Activities — レビュー待ち時間の活動
 
 レビュー依頼がない時は以下のデータ分析を実施:
@@ -168,6 +205,27 @@ verdictの判断基準:
 bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunshi
 ```
 
+## Review Log — レビュー履歴蓄積
+
+軍師のレビュー履歴を `logs/gunshi_review_log.yaml` に蓄積する。
+
+### エントリ構造
+
+```yaml
+- cmd_id: cmd_XXXX
+  verdict: APPROVE          # APPROVE / REQUEST_CHANGES / REJECT
+  gate_result: CLEAR        # CLEAR / FAIL / BLOCK
+  findings_summary: "4観点OK、副作用なし"  # 1行
+  timestamp: "2026-03-20T17:30:00"         # ISO8601
+```
+
+### 運用ルール
+
+- レビュー完了時に1エントリ追記する
+- review_feedback受信時にgate_resultを更新する
+- 500行超えたらアーカイブ（`logs/archive/gunshi_review_log_YYYYMM.yaml` に移動）
+- /clear復帰時にこのログを読んで過去の傾向（accuracy、見落としパターン）を把握する
+
 ## Forbidden Actions
 
 | ID | 禁止事項 | 代わりにやること | 理由 |
@@ -185,8 +243,9 @@ bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunsh
 ```
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → gunshi を確認
 Step 2: instructions/gunshi.md を読む（省略禁止）
-Step 3: queue/inbox/gunshi.yaml を読む → レビュー依頼があれば処理
-Step 4: 依頼なしならidle activities実行
+Step 3: logs/gunshi_review_log.yaml を読む（過去のaccuracy・見落とし傾向を把握）
+Step 4: queue/inbox/gunshi.yaml を読む → レビュー依頼があれば処理
+Step 5: 依頼なしならidle activities実行
 ```
 
 Forbidden after /clear: 将軍・殿への直接報告(F-G01)、cmd起案(F-G02)、忍者への直接指示(F-G03)。

@@ -57,6 +57,10 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 - A/B/C Triage: レビュー指摘を3分類。A:Fix(修正必須→impl再配備)、B:Acknowledge(認識するが今回対応不要→理由記録)、C:False Positive(偽陽性→以後抑制)。PASS/FAIL/WAIVEとの対応表あり。→ detail §3 A/B/C Triage
 - Re-review Loop: blocking fix→修正task配備→再レビュー配備の明示フロー。曖昧に続行するな。→ detail §3 Re-review Loop
 - **Context還流判定**: GATE CLEAR前に「この報告にcontext索引を更新すべき数値・事実があるか？」を判定せよ。あればGATE CLEAR処理の一部としてcontext更新を実行。対象: 性能テーブル、設計決定、新API仕様、パイプライン状態等。**Why**: 報告YAMLに閉じた情報はアーカイブ後に将軍から見えなくなり、古いcontextで誤判断する（cmd_1048-1052後のgs-speedup§6未更新が契機）。
+- **Workaroundログ記録（必須）**: 忍者報告の手動修正（報告YAML修正・コード手直し等）を行った場合、修正のたびに `karo_workaround_log.sh` を呼んで記録せよ。任意ではなく必須。修正パターンの蓄積により再発防止策（テンプレート改善・教訓追加）を導出する。
+  ```
+  修正実施後: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<修正内容>" "<修正方法>"
+  ```
 → `docs/research/karo-operations-detail.md` §3
 
 ## §3.5 DCエスカレーション（裁定重複チェック必須）

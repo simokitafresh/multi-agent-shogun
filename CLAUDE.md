@@ -160,6 +160,7 @@ Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を
   - cmd受領→配備時: §1配備 + §2分解パターン
   - 報告受領→レビュー時: §3レビューサイクル
   - 教訓抽出時: §5教訓抽出
+Step 2.8: logs/karo_workarounds.yamlの直近10件を読む（前セッションの修正履歴把握）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
 Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
