@@ -600,6 +600,9 @@ Actions after recovery:
 5.7. **cmd品質ログ確認**: `logs/cmd_design_quality.yaml` の直近10件のサマリーを読む。
    - 自分のcmd設計の傾向を把握する（rework率、blocker率、補足cmd率）
    - 繰り返し発生するパターンがあれば、cmd起票時に意識して改善する
+5.8. **cmdフリクションログ確認**: `logs/cmd_friction.yaml` の直近10件を読む（存在時のみ）。
+   - 家老が分解しにくいと感じたcmd設計のパターンを把握する
+   - cmd_design_quality.yamlと合わせて自分の設計傾向を振り返る
 6. Check inbox: read `queue/inbox/shogun.yaml`, process unread messages
 7. Report loading complete, then start work
 

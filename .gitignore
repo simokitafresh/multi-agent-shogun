@@ -238,6 +238,7 @@
 !scripts/gate_improvement_trigger.sh
 !scripts/karo_workaround_log.sh
 !scripts/cmd_quality_log.sh
+!scripts/cmd_friction_log.sh
 
 
 # Archive (frozen retired components)

@@ -53,6 +53,16 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 
 これは推奨値であり強制(BLOCK)ではない。家老の判断で超過を許容できる（タスク粒度は内容に依存するため）。ただし超過時は理由をダッシュボードに記載する。
 
+### フリクション記録
+
+タスク分解中に以下のフリクションがあった場合、記録する:
+```bash
+bash scripts/cmd_friction_log.sh "{cmd_id}" "{friction_type}" "{detail}"
+```
+friction_type: `ambiguous_scope` | `missing_context` | `too_many_acs` | `unclear_dependency` | `other`
+記録先: `logs/cmd_friction.yaml`
+※ フリクションがなければ記録不要
+
 → `docs/research/karo-operations-detail.md` §2
 
 ## §3 レビュー

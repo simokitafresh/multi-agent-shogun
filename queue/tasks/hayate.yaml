@@ -1,46 +1,51 @@
-task_id: cmd_1156_impl
-parent_cmd: cmd_1156
-status: pending
+task_id: cmd_1160_impl
+parent_cmd: cmd_1160
+status: done
 project: infra
 type: implement
 command: |
-  【緊急バグ修正】ninja_monitor.shのflat YAML非対応修正。AC1+AC2を実装せよ。
+  cmd_1160 AC1+AC2+AC3+AC4を実装せよ。
 
-  AC1: scripts/ninja_monitor.sh の check_and_update_done_task 修正（L567付近）
-    現行: yaml_field_set "$task_file" "task" "status" "done" → flat YAMLで FATAL
-    修正: yaml_field_set失敗時のフォールバック追加:
-      1. yaml_field_setをif文で囲み、失敗時にフォールバックへ
-      2. grep -q "^status:" "$task_file" でflat形式を確認
-      3. sed -i "s/^status: .*/status: done/" "$task_file" で直接更新
-      4. log "FLAT-YAML-FALLBACK: $name status → done (yaml_field_set failed, flat format detected)"
-      5. completed_atも同様にflat形式対応（python3ブロックがtask blockを前提 → 不在時はsed）
-      6. 更新後にfield_get "$task_file" "status"が"done"を返すことを確認
+  ■ AC1: 家老のcmd分解フリクション記録
+  context/karo-operations.mdのタスク分解手順§に追記:
+    タスク分解中に以下のフリクションがあった場合、記録する:
+    bash scripts/cmd_friction_log.sh "{cmd_id}" "{friction_type}" "{detail}"
+    friction_type: ambiguous_scope | missing_context | too_many_acs | unclear_dependency | other
+    記録先: logs/cmd_friction.yaml
+    ※ フリクションがなければ記録不要
 
-  AC2: STAGE1-SKIPタイマー安全弁追加（L2093付近）
-    現行: status=assigned/acknowledged/in_progress/pending → 無条件/clear禁止
-    修正: mtime 15分超 + pane idle → STAGE1-SKIP解除
-      1. task YAMLのmtimeをstat -c %Y で取得
-      2. 現在時刻との差が900秒以上 → STAGE1-SKIP解除
-      3. task YAMLのstatusをidleにリセット（sedフォールバック使用）
-      4. log "STAGE1-TIMEOUT: $name task_status=$status stale for ${age}s, resetting to idle"
-      5. 通常の/clearフローへ合流
-      6. 注意: in_progressの場合は閾値を1800秒（30分）にする
+  ■ AC2: cmd_friction_log.sh新設
+  scripts/cmd_friction_log.sh:
+    引数: cmd_id, friction_type, detail
+    動作: logs/cmd_friction.yamlにflock排他でエントリ追記
+    構造: entries配列に {cmd_id, friction_type, detail, timestamp}
+    bash -n構文チェック通過
+
+  ■ AC3: 将軍参照手順
+  instructions/shogun.mdのContext Loading§に追記:
+    - /clear復帰時にlogs/cmd_friction.yamlの直近10件を読む（存在時のみ）
+    - 家老が分解しにくいと感じたcmd設計のパターンを把握
+    - cmd_design_quality.yamlと合わせて自分の設計傾向を振り返る
+
+  ■ AC4: 二値チェック
+  - scripts/cmd_friction_log.shが存在し実行可能であること
+  - karo-operations.mdにfriction記録手順が記載されていること
+  - instructions/shogun.mdにfriction参照手順が記載されていること
 acceptance_criteria: |
-  AC1: yaml_field_set失敗時にflat形式フォールバックが発火しstatus更新が成功すること
-  AC2: STAGE1-SKIP 15分タイマーが実装され、stale taskで/clear解除されること
+  AC1: karo-operations.mdにfriction記録手順が追記されていること
+  AC2: cmd_friction_log.shが存在し動作すること
+  AC3: shogun.mdにfriction参照手順が追記されていること
+  AC4: 二値チェック全PASS
 binary_checks:
   AC1:
-    - "yaml_field_set失敗時のフォールバックコードがcheck_and_update_done_taskに存在するか?"
-    - "grep ^status: によるflat形式検出があるか?"
-    - "sed -i によるstatus直接更新があるか?"
-    - "FLAT-YAML-FALLBACKのログ出力があるか?"
-    - "field_getによるpost-update検証があるか?"
+    - "karo-operations.mdにcmd_friction_log.sh呼出し手順があるか?"
   AC2:
-    - "stat -c %Y によるmtime取得があるか?"
-    - "900秒(15分)の閾値チェックがあるか?"
-    - "in_progress時の1800秒(30分)閾値があるか?"
-    - "STAGE1-TIMEOUTのログ出力があるか?"
-    - "statusをidleにリセットするコードがあるか?"
-stop_for:
-  - bash -n scripts/ninja_monitor.sh がシンタックスエラー
+    - "scripts/cmd_friction_log.shが存在し実行可能か?"
+    - "bash -n構文チェックが通過するか?"
+    - "flock排他でログ追記するか?"
+  AC3:
+    - "instructions/shogun.mdにfriction参照手順があるか?"
+  AC4:
+    - "cmd_friction_log.sh実行後にlogs/cmd_friction.yamlにエントリが追加されるか?"
+stop_for: []
 never_stop_for: []
