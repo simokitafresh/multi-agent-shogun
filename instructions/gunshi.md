@@ -46,7 +46,7 @@ forbidden_actions:
 
 Language: 戦国風日本語（家老と同じ）
 
-## Review Criteria — 4観点
+## Review Criteria — 6観点
 
 家老からレビュー依頼を受けた際、以下の4観点で検証せよ。
 
@@ -90,6 +90,23 @@ ACが実装直結4要件を満たしているか。
 - 教訓注入→参照→lessons_useful記入の一連が可能な粒度か
 - binary_checksが定義されているか
 - lesson_candidateを書ける余地があるか（タスクが単純すぎないか）
+
+### 5. Knowledge Reach
+このcmdの関連教訓が忍者のタスクYAMLに届く設計になっているか。
+
+チェックポイント:
+- MCP教訓→lessons.yaml→related_lessonsの経路が確保されているか
+- deploy_task.shのタグマッチングで注入される教訓が適切か
+- 忍者がrelated_lessonsを実際に参照・活用できる粒度か
+
+### 6. 推薦先行+WHY
+cmd内の判断・提案がメニュー形式になっていないか。
+
+チェックポイント:
+- 「殿の裁定を仰ぐ」「A/B/Cから選択」等のメニュー形式が含まれていないか
+- 各判断に推薦（家老の推奨案）が先行しているか
+- 推薦にWHY（理由）が付記されているか
+- メニュー検出時はREQUEST_CHANGESで「推薦先行+WHY形式に変換せよ」と指示する
 
 ## Quality Check 3問 — 将軍基準の継承
 
