@@ -515,31 +515,77 @@ else
     tmux set-environment -t shogun DISPLAY_MODE "shout"
 fi
 
-# 2x4グリッド作成（合計8ペイン: karo大 + gunshi + 6忍者）
-# ペイン番号は pane-base-index に依存（0 または 1）
-# 最初に2列に分割
-tmux split-window -h -t "shogun:agents"
+# 3列動的レイアウト作成（agent_config.shから動的取得・ハードコード禁止）
+# 列割当: 忍者を列2,3に3名ずつ → 残り(karo+非忍者+余り忍者)を列1
+read -ra _ALL_AG <<< "$(get_all_agents)"
+_ninja_ci=0; _COL1=(); _COL2=(); _COL3=()
+for _ag in "${_ALL_AG[@]}"; do
+    _r=$(get_agent_role "$_ag")
+    if [[ "$_r" == "ninja" ]]; then
+        if (( _ninja_ci < 3 )); then _COL2+=("$_ag")
+        elif (( _ninja_ci < 6 )); then _COL3+=("$_ag")
+        else _COL1+=("$_ag")
+        fi
+        _ninja_ci=$((_ninja_ci + 1))
+    else
+        _COL1+=("$_ag")
+    fi
+done
+_COL1_N=${#_COL1[@]}; _COL2_N=${#_COL2[@]}; _COL3_N=${#_COL3[@]}
 
-# 左列を4行に分割（karo大 + 3ペイン）
-tmux select-pane -t "shogun:agents.${PANE_BASE}"
-tmux split-window -v
-tmux split-window -v
-tmux split-window -v
+# 3列作成: split-window -h ×2
+tmux split-window -h -t "shogun:agents.${PANE_BASE}"
+tmux split-window -h -t "shogun:agents.$((PANE_BASE+1))"
 
-# 右列を4行に分割
-tmux select-pane -t "shogun:agents.$((PANE_BASE+4))"
-tmux split-window -v
-tmux split-window -v
-tmux split-window -v
+# 各列の縦分割（均等分割: -l で比率指定）
+_nxt=$((PANE_BASE + 3))
 
-# レイアウト適用: 左列=karo大(上)+3ペイン, 右列=4ペイン均等
-# karo=25行, 他=均等
-tmux select-layout -t "shogun:agents" tiled
-# tiled後にkaro(左上)を大きくするカスタムレイアウト
-tmux select-layout -t "shogun:agents" '2x4,167x49,0,0{83x49,0,0[83x19,0,0,1,83x9,0,20,2,83x9,0,30,3,83x9,0,40,4],83x49,84,0[83x12,84,0,5,83x12,84,13,6,83x12,84,26,7,83x11,84,39,8]}'
+# 列1
+_cur=${PANE_BASE}
+for ((r=1; r<_COL1_N; r++)); do
+    _rem=$((_COL1_N - r + 1)); _pct=$((100 * (_COL1_N - r) / _rem))
+    tmux split-window -v -t "shogun:agents.${_cur}" -l "${_pct}%"
+    _cur=${_nxt}; _nxt=$((_nxt + 1))
+done
 
-# ペインラベル・色・IDを動的構築（agent_config.shから取得）
-read -ra AGENT_IDS <<< "$(get_all_agents)"
+# 列2
+_cur=$((PANE_BASE + 1))
+for ((r=1; r<_COL2_N; r++)); do
+    _rem=$((_COL2_N - r + 1)); _pct=$((100 * (_COL2_N - r) / _rem))
+    tmux split-window -v -t "shogun:agents.${_cur}" -l "${_pct}%"
+    _cur=${_nxt}; _nxt=$((_nxt + 1))
+done
+
+# 列3
+_cur=$((PANE_BASE + 2))
+for ((r=1; r<_COL3_N; r++)); do
+    _rem=$((_COL3_N - r + 1)); _pct=$((100 * (_COL3_N - r) / _rem))
+    tmux split-window -v -t "shogun:agents.${_cur}" -l "${_pct}%"
+    _cur=${_nxt}; _nxt=$((_nxt + 1))
+done
+
+# 列幅: get_layout_col1_width_pctで列1幅を設定、列2,3は残りを等分
+_col1_pct=$(get_layout_col1_width_pct)
+_win_w=$(tmux display-message -t "shogun:agents" -p '#{window_width}')
+_col1_w=$((_win_w * _col1_pct / 100))
+tmux resize-pane -t "shogun:agents.${PANE_BASE}" -x "${_col1_w}"
+
+# karoペイン高さ: get_layout_karo_heightで設定
+_karo_h=$(get_layout_karo_height)
+tmux resize-pane -t "shogun:agents.${PANE_BASE}" -y "${_karo_h}"
+
+# PANE_IDS: エージェント順(列1→列2→列3)からペインインデックスへのマッピング
+# ペイン作成順: col1-top(PB), col2-top(PB+1), col3-top(PB+2), col1-v(PB+3..), col2-v(..), col3-v(..)
+PANE_IDS=()
+PANE_IDS+=("${PANE_BASE}"); _p=$((PANE_BASE + 3))
+for ((r=1; r<_COL1_N; r++)); do PANE_IDS+=("$_p"); _p=$((_p + 1)); done
+PANE_IDS+=("$((PANE_BASE + 1))")
+for ((r=1; r<_COL2_N; r++)); do PANE_IDS+=("$_p"); _p=$((_p + 1)); done
+PANE_IDS+=("$((PANE_BASE + 2))")
+for ((r=1; r<_COL3_N; r++)); do PANE_IDS+=("$_p"); _p=$((_p + 1)); done
+
+# ペインラベル・色・IDを動的構築（列順で再構築）
+AGENT_IDS=("${_COL1[@]}" "${_COL2[@]}" "${_COL3[@]}")
 PANE_LABELS=("${AGENT_IDS[@]}")
 # 色設定: role判定で動的生成（karo=red, gunshi=cyan, ninja=yellow）
 PANE_COLORS=()
@@ -622,7 +668,7 @@ except Exception:
 done
 
 for i in $(seq 0 $((AGENT_COUNT-1))); do
-    p=$((PANE_BASE + i))
+    p=${PANE_IDS[$i]}
     tmux select-pane -t "shogun:agents.${p}" -T "${PANE_TITLES[$i]}"
     tmux set-option -p -t "shogun:agents.${p}" @agent_id "${AGENT_IDS[$i]}"
     tmux set-option -p -t "shogun:agents.${p}" @model_name "${MODEL_NAMES[$i]}"
@@ -634,14 +680,58 @@ for i in $(seq 0 $((AGENT_COUNT-1))); do
     tmux send-keys -t "shogun:agents.${p}" "cd \"$(pwd)\" && export PS1='${PROMPT_STR}' && clear" Enter
 done
 
-# pane-border-format: ペイン枠にagent_id・モデル名・タスクを常時表示
-tmux set-option -t shogun:agents -w pane-border-status top
-tmux set-option -t shogun:agents -w pane-border-format \
-    '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] (#{@model_name}) #{@current_task}'
+# ─── remain-on-exit (cmd_183) ───
+# CLIプロセスが死んでもペインを残す（OOM Kill等の原因調査用）
+tmux set-option -w -t "shogun:agents" remain-on-exit on 2>/dev/null
 
-# セッション固有設定は `scripts/shutsujin_departure.sh` に委譲
-# 役割分担: このroot版=レイアウト/起動オーケストレーション、scripts版=tmux共通オプション適用
-bash "$SCRIPT_DIR/scripts/shutsujin_departure.sh"
+# ─── pane-border-format: ペイン枠にagent_id・モデル名・タスクを常時表示 ───
+# Color scheme: karo=#f9e2af(黄) gunshi=#94e2d5(水色) Opus=#cba6f7(紫) gpt-*=#a6e3a1(緑) else=#89b4fa(青)
+tmux set-option -t shogun:agents -w pane-border-status top
+tmux set-option -w -t "shogun:agents" pane-border-format \
+  '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{==:#{@agent_id},gunshi},#[fg=#94e2d5],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:gpt-*,#{@model_name}},#[fg=#a6e3a1],#[fg=#89b4fa]}}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
+  2>/dev/null
+
+# ─── shogun window pane-border ───
+tmux set-option -w -t "shogun:main" pane-border-status top 2>/dev/null
+tmux set-option -w -t "shogun:main" pane-border-format \
+  '#[fg=#cba6f7]#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]' \
+  2>/dev/null
+
+# ─── 将軍ペイン変数 ───
+_shogun_pane_idx=$(tmux list-panes -t "shogun:main" -F '#{pane_index}' 2>/dev/null | head -1)
+tmux set-option -p -t "shogun:main.${_shogun_pane_idx:-0}" @agent_id shogun 2>/dev/null
+tmux set-option -p -t "shogun:main.${_shogun_pane_idx:-0}" @model_name "Opus" 2>/dev/null
+
+# ─── status bar style: Catppuccin Mocha base ───
+tmux set-option -g status-style "bg=#1e1e2e,fg=#cdd6f4" 2>/dev/null
+tmux set-option -t shogun status-right-length 200
+tmux set-option -t shogun status-right "#[fg=#cdd6f4]%Y-%m-%d %H:%M"
+
+# ─── Prefix+v: clipboard screenshot capture (cmd_551) ───
+tmux bind-key v run-shell "bash ${SCRIPT_DIR}/scripts/capture_clipboard_image.sh"
+
+# ─── idle flag initialization (cmd_455) ───
+_STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
+mkdir -p "$_STATE_DIR"
+for _agent in $(get_all_agents); do
+    touch "${_STATE_DIR}/shogun_idle_${_agent}"
+done
+
+# ─── ペイン変数検証 ───
+_verify_fail=0
+for i in $(seq 0 $((AGENT_COUNT-1))); do
+    p=${PANE_IDS[$i]}
+    _actual_id=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_id 2>/dev/null)
+    if [ "$_actual_id" != "${AGENT_IDS[$i]}" ]; then
+        echo "  ⚠️ VERIFY FAIL: pane ${p} expected @agent_id='${AGENT_IDS[$i]}' got '${_actual_id}'"
+        _verify_fail=1
+    fi
+done
+if [ "$_verify_fail" -eq 0 ]; then
+    log_success "  └─ ペイン変数検証: 全${AGENT_COUNT}名 OK"
+else
+    echo "  ⚠️ ペイン変数に不整合あり。手動確認してください。"
+fi
 
 log_success "  └─ 家老・忍者の陣、構築完了"
 echo ""
@@ -701,7 +791,7 @@ if [ "$SETUP_ONLY" = false ]; then
     sleep 1
 
     # 家老（pane 0）: CLI Adapter経由でコマンド構築
-    p=$((PANE_BASE + 0))
+    p=${PANE_IDS[0]}
     _karo_cli_type="claude"
     _karo_cmd="claude --model opus --dangerously-skip-permissions"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
@@ -717,7 +807,7 @@ if [ "$SETUP_ONLY" = false ]; then
     if [ "$KESSEN_MODE" = true ]; then
         # 決戦の陣: CLI Adapter経由（claudeはOpus強制）
         for i in $(seq 1 $NINJA_PANE_COUNT); do
-            p=$((PANE_BASE + i))
+            p=${PANE_IDS[$i]}
             ninja_name="${AGENT_IDS[$i]}"
             _ashi_cli_type="claude"
             _ashi_cmd="claude --model opus --dangerously-skip-permissions"
@@ -738,7 +828,7 @@ if [ "$SETUP_ONLY" = false ]; then
     else
         # 平時の陣: CLI Adapter経由で各忍者のCLI/モデルを決定
         for i in $(seq 1 $NINJA_PANE_COUNT); do
-            p=$((PANE_BASE + i))
+            p=${PANE_IDS[$i]}
             ninja_name="${AGENT_IDS[$i]}"
             _ashi_cli_type="claude"
             _ashi_cmd="claude --model opus --dangerously-skip-permissions"
@@ -876,14 +966,14 @@ NINJA_EOF
     disown
 
     # 家老のwatcher
-    _karo_watcher_cli=$(tmux show-options -p -t "shogun:agents.${PANE_BASE}" -v @agent_cli 2>/dev/null || echo "claude")
-    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.${PANE_BASE}" "$_karo_watcher_cli" \
+    _karo_watcher_cli=$(tmux show-options -p -t "shogun:agents.${PANE_IDS[0]}" -v @agent_cli 2>/dev/null || echo "claude")
+    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.${PANE_IDS[0]}" "$_karo_watcher_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" &
     disown
 
     # 忍者・軍師のwatcher
     for i in $(seq 1 $NINJA_PANE_COUNT); do
-        p=$((PANE_BASE + i))
+        p=${PANE_IDS[$i]}
         ninja_name="${AGENT_IDS[$i]}"
         _ashi_watcher_cli=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_cli 2>/dev/null || echo "claude")
         nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${ninja_name}" "shogun:agents.${p}" "$_ashi_watcher_cli" \
@@ -984,20 +1074,23 @@ echo "     ┌──────────────────────
 echo "     │  将軍 (SHOGUN)              │  ← 総大将・プロジェクト統括"
 echo "     └─────────────────────────────┘"
 echo ""
-echo "     Window 1: agents（家老・軍師・忍者の陣 2x4 = 8ペイン）"
-echo "     ┌───────────┬───────────┐"
-echo "     │   karo    │  hanzo    │"
-echo "     │  (家老)   │  (半蔵)   │"
-echo "     ├───────────┼───────────┤"
-echo "     │  gunshi   │  saizo    │"
-echo "     │  (軍師)   │  (才蔵)   │"
-echo "     ├───────────┼───────────┤"
-echo "     │  hayate   │  kotaro   │"
-echo "     │  (疾風)   │ (小太郎)  │"
-echo "     ├───────────┼───────────┤"
-echo "     │ kagemaru  │ tobisaru  │"
-echo "     │  (影丸)   │  (飛猿)   │"
-echo "     └───────────┴───────────┘"
+echo "     Window 1: agents（3列レイアウト）"
+# 列情報を動的に取得して3列布陣図を表示
+_max_rows=$_COL1_N
+(( _COL2_N > _max_rows )) && _max_rows=$_COL2_N
+(( _COL3_N > _max_rows )) && _max_rows=$_COL3_N
+echo "     ┌──────────┬──────────┬──────────┐"
+for ((_fr=0; _fr<_max_rows; _fr++)); do
+    _c1=""; _c2=""; _c3=""
+    (( _fr < _COL1_N )) && _c1="${_COL1[$_fr]}"
+    (( _fr < _COL2_N )) && _c2="${_COL2[$_fr]}"
+    (( _fr < _COL3_N )) && _c3="${_COL3[$_fr]}"
+    printf "     │ %-8s │ %-8s │ %-8s │\n" "$_c1" "$_c2" "$_c3"
+    if (( _fr < _max_rows - 1 )); then
+        echo "     ├──────────┼──────────┼──────────┤"
+    fi
+done
+echo "     └──────────┴──────────┴──────────┘"
 echo ""
 
 echo ""
@@ -1016,7 +1109,7 @@ if [ "$SETUP_ONLY" = true ]; then
     echo "  │    'claude --dangerously-skip-permissions' Enter         │"
     echo "  │                                                          │"
     echo "  │  # 家老・忍者を一斉召喚                                  │"
-    echo "  │  for p in \$(seq $PANE_BASE $((PANE_BASE+AGENT_COUNT-1))); do                                 │"
+    echo "  │  for p in ${PANE_IDS[*]}; do                              │"
     echo "  │      tmux send-keys -t shogun:agents.\$p \\            │"
     echo "  │      'claude --dangerously-skip-permissions' Enter       │"
     echo "  │  done                                                    │"
