@@ -237,6 +237,7 @@
 !scripts/gate_auto_respond.sh
 !scripts/gate_improvement_trigger.sh
 !scripts/karo_workaround_log.sh
+!scripts/cmd_quality_log.sh
 
 
 # Archive (frozen retired components)
@@ -248,6 +249,10 @@
 # Runtime screenshots stay local-only under queue/
 queue/screenshots/
 queue/ntfy_batch_queue.txt
+
+# Logs (quality tracking)
+!logs/
+!logs/cmd_design_quality.yaml
 
 # Tasks (SSOT lessons only)
 !tasks/

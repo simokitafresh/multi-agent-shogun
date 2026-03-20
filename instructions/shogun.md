@@ -207,6 +207,20 @@ Shogun decides **what** (purpose), **success criteria** (acceptance_criteria), a
 
 Do NOT specify: number of ninja, assignments, verification methods, personas, or task splits.
 
+### cmd起票手順（3段階）
+
+cmdの起票は以下の3段階で行う。効率化を求めて設計品質を犠牲にしてはならない。
+
+1. **書く**: Read toolで`queue/shogun_to_karo.yaml`末尾を確認 → Edit toolでcmdブロックを追記
+   - `cat >>`やBash直接追記は禁止（Read before Write違反の温床）
+   - cmdの内容は将軍が考えて手で書く（**学習機会**。テンプレ自動生成は品質低下の原因）
+   - AC設計・command記述・因果関係の思考は将軍の手作業であり学習機会
+2. **保存確認**: `bash scripts/cmd_save.sh <cmd_id>`（重複・競合チェック）
+3. **通知**: `bash scripts/inbox_write.sh karo "cmd_XXXを書いた。配備せよ。" cmd_new shogun`
+
+自動化すべきは機械的な安全チェック（重複・競合・Read確認）のみ。
+cmdのAC設計・command記述・因果関係の思考は将軍の手作業であり**学習機会**。
+
 ### 品質チェック3問（cmd起票ゲート）
 
 cmd起票前に以下3問を自問せよ。全問クリアしなければ起票するな。
@@ -583,6 +597,9 @@ Actions after recovery:
    1. まず `context/lord-conversation-index.md` を読む（索引層）。
    2. 索引で不足する場合のみ `queue/lord_conversation.jsonl` の直近10件を確認する。
    3. さらに過去が必要な場合のみ `logs/lord_conversation_archive/*.jsonl` を参照する。
+5.7. **cmd品質ログ確認**: `logs/cmd_design_quality.yaml` の直近10件のサマリーを読む。
+   - 自分のcmd設計の傾向を把握する（rework率、blocker率、補足cmd率）
+   - 繰り返し発生するパターンがあれば、cmd起票時に意識して改善する
 6. Check inbox: read `queue/inbox/shogun.yaml`, process unread messages
 7. Report loading complete, then start work
 

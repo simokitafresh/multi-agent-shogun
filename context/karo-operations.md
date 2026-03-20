@@ -68,6 +68,19 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
   ```
   修正実施後: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<修正内容>" "<修正方法>"
   ```
+### Workaround Pattern対処フロー
+
+`karo_workaround_log.sh` でworkaround_patternが通知された場合の対処手順:
+
+1. **推定根本原因を確認**: 修正ログの `fix_description` と `fix_method` から、原因がテンプレート / スクリプト / 手順書のいずれにあるかを特定
+2. **根本原因に対する修正cmdを起案**: 教訓登録（忍者に教える）より、テンプレ・スクリプトの直接修正を優先。構造で問題を防げ
+   - テンプレート起因 → テンプレートファイル修正cmd
+   - スクリプト起因 → スクリプト修正cmd
+   - 手順書起因 → instructions/*.md or karo-operations.md 修正cmd
+3. **修正cmd配備後、workaround_pattern通知を「対処済み」に更新**: `karo_workaround_log.sh` の該当エントリに対処cmdを記録
+
+**原則**: 「教訓で忍者に教える」より「テンプレを直して問題が発生しない構造にする」を優先。同じworkaroundを2回やったら構造が間違っている。
+
 → `docs/research/karo-operations-detail.md` §3
 
 ## §3.5 DCエスカレーション（裁定重複チェック必須）
@@ -110,7 +123,12 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 
 - cmd関連通知は `ntfy_cmd.sh`、それ以外は `ntfy.sh` を使い分ける。
 - Frog は1日1件。cmd と VF task で競合する。
-- cmd完了時は lesson review → cmd_complete_gate → GATE CLEAR → archive の順を崩すな。
+- cmd完了時は lesson review → cmd_complete_gate → GATE CLEAR → **cmd品質記録** → archive の順を崩すな。
+- **cmd品質記録**: GATE CLEAR/FAIL後、以下を実行:
+  ```
+  bash scripts/cmd_quality_log.sh <cmd_id> <gate_result> <karo_rework:yes/no> <supplementary_cmds:数値>
+  ```
+  自動取得: gunshi_verdict(karo inbox), ninja_blockers(報告YAML), ac_count(shogun_to_karo.yaml)
 → `docs/research/karo-operations-detail.md` §9
 
 ## §9 配備制約
@@ -146,7 +164,34 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 - 忍者はスキルを実装しない。報告のみ。実装判断は家老→将軍承認の鎖に従う
 - 複数の忍者から同一パターンのskill_candidateが上がった場合は優先度を上げる
 
-## §13 失敗ループ学習（retry_loop）
+## §13 gunshi_lesson_candidate受信時の処理フロー
+
+軍師レビュー報告に `lesson_candidate` が含まれる場合の処理手順:
+
+1. **重複チェック**: 既存教訓と重複していないか確認
+   ```bash
+   grep -i "<教訓キーワード>" projects/infra/lessons.yaml
+   ```
+   対象PJが infra 以外の場合は `projects/{project}/lessons.yaml` を検索。
+
+2. **重複なし → 正式登録**: `lesson_write.sh` で教訓を登録（source: gunshi）
+   ```bash
+   bash scripts/lesson_write.sh infra "{title}" "{detail}" cmd_XXXX gunshi
+   ```
+   - `{title}`: 教訓タイトル（軍師報告から抽出）
+   - `{detail}`: 具体的な知見（再利用可能な形に家老が要約）
+   - `cmd_XXXX`: 元のcmd番号
+   - 最後の引数 `gunshi` がsourceとして記録される
+
+3. **重複あり → retagまたは補強**:
+   - 既存教訓の `effectiveness` を確認
+   - 軍師の指摘が既存教訓を強化する内容であれば、detail を補強
+   - 同一内容であれば登録せず、既存教訓IDを軍師報告に紐付けるのみ
+
+- **Why**: 軍師レビューで発見された知見を教訓基盤に還流し、忍者の品質を継続的に向上させるため
+- **How to apply**: 軍師からの報告受信時（inbox type: gunshi_review等）にlesson_candidateフィールドの有無を確認。あれば本手順を実行
+
+## §14 失敗ループ学習（retry_loop）
 
 cmdに `retry_policy: retry_loop` がある場合、家老は以下のループ運用を行う。
 
