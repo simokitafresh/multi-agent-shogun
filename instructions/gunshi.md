@@ -150,6 +150,34 @@ verdictの判断基準:
 - **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載。**severity必須**
 - **REJECT**: 根本的な設計問題あり。再偵察または再設計が必要
 
+### Lesson Candidate送信 — REQUEST_CHANGES時の教訓還流
+
+REQUEST_CHANGES判定時、指摘内容が**忍者の作業品質に関わる場合**、lesson_candidateとして家老に送信せよ。
+
+#### 判定基準
+
+**「この指摘は忍者がタスク実行時に知っていれば防げたか？」**
+
+| 判定 | 対応 | 例 |
+|------|------|-----|
+| **YES** | gunshi_lesson_candidate送信 | ACの前提条件見落とし、ファイル操作の安全確認不足、テスト実行前の前提チェック漏れ |
+| **NO** | 送信不要（cmd設計の問題であり将軍の領域） | AC自体の設計不備、scope定義の曖昧さ、偵察不足による情報欠落 |
+
+#### 送信手順
+
+```bash
+bash scripts/inbox_write.sh karo "{指摘サマリ}" gunshi_lesson_candidate gunshi
+```
+
+内容に含めるべき情報:
+- **指摘の要約**: 何が問題だったか1行で
+- **該当パターン**: どのような状況で発生するか
+- **推奨チェック項目**: 忍者のbinary_checksに追加すべき項目
+
+#### タイミング
+
+レビュー返信（review_result）と同一ターンで送信する。lesson_candidateは別メッセージとして送信し、review_resultと混在させない。
+
 ### 緊急度分類（severity）— REQUEST_CHANGES時の必須付記
 
 REQUEST_CHANGES verdict時、指摘の緊急度を必ず付記せよ。家老はこの緊急度に基づいて忍者の作業継続/停止を判断する。
