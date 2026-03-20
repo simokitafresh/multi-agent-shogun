@@ -14,6 +14,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# エージェント構成の一元管理ライブラリ読み込み
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+
 # venvプリフライトチェック（Python依存のある処理の前に確認）
 VENV_DIR="$SCRIPT_DIR/.venv"
 REQUIREMENTS_FILE="$SCRIPT_DIR/requirements.txt"
@@ -152,7 +155,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -c, --clean         キューとダッシュボードをリセットして起動（クリーンスタート）"
             echo "                      未指定時は前回の状態を維持して起動"
             echo "  -k, --kessen        決戦の陣（全忍者をOpusで起動）"
-            echo "                      未指定時はCLI Adapter設定に従う（Codex4+Opus4）"
+            echo "                      未指定時はCLI Adapter設定に従う"
             echo "  -s, --setup-only    tmuxセッションのセットアップのみ（Claude起動なし）"
             echo "  -t, --terminal      Windows Terminal で新しいタブを開く"
             echo "  -shell, --shell SH  シェルを指定（bash または zsh）"
@@ -174,13 +177,13 @@ while [[ $# -gt 0 ]]; do
             echo "  ./shutsujin_departure.sh -S           # サイレントモード（echo表示なし）"
             echo ""
             echo "モデル構成:"
-            echo "  将軍:      Opus（デフォルト。--shogun-no-thinkingで無効化）"
-            echo "  家老:      Opus"
-            echo "  忍者(Codex): sasuke・kirimaru・hayate・saizo"
-            echo "  忍者(Opus):  kagemaru・hanzo・kotaro・tobisaru"
+            echo "  将軍:      Opus 4.6"
+            echo "  家老:      Opus 4.6"
+            echo "  軍師:      Opus 4.6"
+            echo "  忍者(全員): Opus 4.6"
             echo ""
             echo "陣形:"
-            echo "  平時の陣（デフォルト）: CLI Adapter設定に従う（Codex4+Opus4）"
+            echo "  平時の陣（デフォルト）: CLI Adapter設定に従う（全Opus 4.6）"
             echo "  決戦の陣（--kessen）:   全忍者=Opus"
             echo ""
             echo "表示モード:"
@@ -240,18 +243,20 @@ show_battle_cry() {
     # 忍者隊列（オリジナル）
     # ═══════════════════════════════════════════════════════════════════════════
     echo -e "\033[1;34m  ╔═════════════════════════════════════════════════════════════════════════════╗\033[0m"
-    echo -e "\033[1;34m  ║\033[0m                    \033[1;37m【 忍 者 隊 列 ・ 八 名 配 備 】\033[0m                      \033[1;34m║\033[0m"
+    _ninja_count=$(get_ninja_names | wc -w)
+    _squad_label="軍師1名+忍者${_ninja_count}名"
+    echo -e "\033[1;34m  ║\033[0m                    \033[1;37m【 忍 者 隊 列 ・ ${_squad_label} 配 備 】\033[0m                      \033[1;34m║\033[0m"
     echo -e "\033[1;34m  ╚═════════════════════════════════════════════════════════════════════════════╝\033[0m"
 
     cat << 'NINJA_EOF'
 
-       /\      /\      /\      /\      /\      /\      /\      /\
-      /||\    /||\    /||\    /||\    /||\    /||\    /||\    /||\
-     /_||\   /_||\   /_||\   /_||\   /_||\   /_||\   /_||\   /_||\
-       ||      ||      ||      ||      ||      ||      ||      ||
-      /||\    /||\    /||\    /||\    /||\    /||\    /||\    /||\
-      /  \    /  \    /  \    /  \    /  \    /  \    /  \    /  \
-     [佐助]  [霧丸]  [疾風]  [影丸]  [半蔵]  [才蔵] [小太郎] [飛猿]
+       /\      /\      /\      /\      /\      /\      /\
+      /||\    /||\    /||\    /||\    /||\    /||\    /||\
+     /_||\   /_||\   /_||\   /_||\   /_||\   /_||\   /_||\
+       ||      ||      ||      ||      ||      ||      ||
+      /||\    /||\    /||\    /||\    /||\    /||\    /||\
+      /  \    /  \    /  \    /  \    /  \    /  \    /  \
+     [軍師]  [疾風]  [影丸]  [半蔵]  [才蔵] [小太郎] [飛猿]
 
 NINJA_EOF
 
@@ -264,7 +269,7 @@ NINJA_EOF
     echo -e "\033[1;33m  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\033[0m"
     echo -e "\033[1;33m  ┃\033[0m  \033[1;37m🏯 multi-agent-shogun\033[0m  〜 \033[1;36m戦国マルチエージェント統率システム\033[0m 〜           \033[1;33m┃\033[0m"
     echo -e "\033[1;33m  ┃\033[0m                                                                           \033[1;33m┃\033[0m"
-    echo -e "\033[1;33m  ┃\033[0m    \033[1;35m将軍\033[0m: プロジェクト統括    \033[1;31m家老\033[0m: タスク管理    \033[1;34m忍者\033[0m: 実働部隊×8      \033[1;33m┃\033[0m"
+    echo -e "\033[1;33m  ┃\033[0m  \033[1;35m将軍\033[0m: 統括  \033[1;31m家老\033[0m: 管理  \033[1;36m軍師\033[0m: 参謀×1  \033[1;34m忍者\033[0m: 実働×${_ninja_count}      \033[1;33m┃\033[0m"
     echo -e "\033[1;33m  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\033[0m"
     echo ""
 }
@@ -330,8 +335,8 @@ fi
 if [ "$CLEAN_MODE" = true ]; then
     log_info "📜 前回の軍議記録を破棄中..."
 
-    # 忍者名配列
-    NINJA_NAMES=("sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
+    # 忍者名配列（agent_config.shから動的取得）
+    read -ra NINJA_NAMES <<< "$(get_ninja_names)"
 
     # 忍者タスクファイルリセット
     for name in "${NINJA_NAMES[@]}"; do
@@ -355,7 +360,7 @@ EOF
     echo "inbox:" > ./queue/ntfy_inbox.yaml
 
     # agent inbox リセット
-    for agent in shogun karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
+    for agent in shogun $(get_all_agents); do
         echo "messages:" > "./queue/inbox/${agent}.yaml"
     done
 
@@ -483,7 +488,8 @@ PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 5.1: agents ウィンドウ追加（9ペイン：karo + ninja1-8）
 # ═══════════════════════════════════════════════════════════════════════════════
-log_war "⚔️ 家老・忍者の陣を構築中（9名配備）..."
+_deploy_count=$(get_all_agents | wc -w)
+log_war "⚔️ 家老・忍者の陣を構築中（${_deploy_count}名配備）..."
 
 # shogun セッションに agents ウィンドウを追加
 if ! tmux new-window -t shogun -n "agents" 2>/dev/null; then
@@ -509,39 +515,48 @@ else
     tmux set-environment -t shogun DISPLAY_MODE "shout"
 fi
 
-# 3x3グリッド作成（合計9ペイン）
+# 2x4グリッド作成（合計8ペイン: karo大 + gunshi + 6忍者）
 # ペイン番号は pane-base-index に依存（0 または 1）
-# 最初に3列に分割
-tmux split-window -h -t "shogun:agents"
+# 最初に2列に分割
 tmux split-window -h -t "shogun:agents"
 
-# 各列を3行に分割
+# 左列を4行に分割（karo大 + 3ペイン）
 tmux select-pane -t "shogun:agents.${PANE_BASE}"
 tmux split-window -v
 tmux split-window -v
-
-tmux select-pane -t "shogun:agents.$((PANE_BASE+3))"
-tmux split-window -v
 tmux split-window -v
 
-tmux select-pane -t "shogun:agents.$((PANE_BASE+6))"
+# 右列を4行に分割
+tmux select-pane -t "shogun:agents.$((PANE_BASE+4))"
+tmux split-window -v
 tmux split-window -v
 tmux split-window -v
 
-# レイアウト適用: 左列1.5倍幅(karo大), 右2列均等
-# karo=25行, sasuke/kirimaru=11行, 他=均等16行
-tmux select-layout -t "shogun:agents" '1a7c,167x49,0,0{71x49,0,0[71x25,0,0,1,71x11,0,26,2,71x11,0,38,3],47x49,72,0[47x16,72,0,4,47x16,72,17,5,47x15,72,34,6],47x49,120,0[47x16,120,0,7,47x16,120,17,8,47x15,120,34,9]}'
+# レイアウト適用: 左列=karo大(上)+3ペイン, 右列=4ペイン均等
+# karo=25行, 他=均等
+tmux select-layout -t "shogun:agents" tiled
+# tiled後にkaro(左上)を大きくするカスタムレイアウト
+tmux select-layout -t "shogun:agents" '2x4,167x49,0,0{83x49,0,0[83x19,0,0,1,83x9,0,20,2,83x9,0,30,3,83x9,0,40,4],83x49,84,0[83x12,84,0,5,83x12,84,13,6,83x12,84,26,7,83x11,84,39,8]}'
 
-# ペインラベル設定（プロンプト用: モデル名なし）
-PANE_LABELS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
-# 色設定（karo: 金 / Codex忍者: 青 / Opus忍者: 黄）
-PANE_COLORS=("red" "blue" "blue" "yellow" "yellow" "yellow" "yellow" "yellow" "yellow")
-AGENT_IDS=("karo" "sasuke" "kirimaru" "hayate" "kagemaru" "hanzo" "saizo" "kotaro" "tobisaru")
+# ペインラベル・色・IDを動的構築（agent_config.shから取得）
+read -ra AGENT_IDS <<< "$(get_all_agents)"
+PANE_LABELS=("${AGENT_IDS[@]}")
+# 色設定: role判定で動的生成（karo=red, gunshi=cyan, ninja=yellow）
+PANE_COLORS=()
+for _aid in "${AGENT_IDS[@]}"; do
+    _role=$(get_agent_role "$_aid")
+    case "$_role" in
+        karo)   PANE_COLORS+=("red") ;;
+        gunshi) PANE_COLORS+=("cyan") ;;
+        *)      PANE_COLORS+=("yellow") ;;
+    esac
+done
 
 # モデル名設定（CLI Adapterから動的に取得 — ハードコード禁止）
 MODEL_NAMES=()
 PANE_TITLES=()
-for i in {0..8}; do
+AGENT_COUNT=${#AGENT_IDS[@]}
+for i in $(seq 0 $((AGENT_COUNT-1))); do
     _agent="${AGENT_IDS[$i]}"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _cli=$(get_cli_type "$_agent")
@@ -606,7 +621,7 @@ except Exception:
     PANE_TITLES[$i]="${MODEL_NAMES[$i]}"
 done
 
-for i in {0..8}; do
+for i in $(seq 0 $((AGENT_COUNT-1))); do
     p=$((PANE_BASE + i))
     tmux select-pane -t "shogun:agents.${p}" -T "${PANE_TITLES[$i]}"
     tmux set-option -p -t "shogun:agents.${p}" @agent_id "${AGENT_IDS[$i]}"
@@ -640,7 +655,7 @@ if [ "$SETUP_ONLY" = false ]; then
         # 全agentで実際に使うCLI種別を重複排除して検証する。
         # get_cli_type "" は後方互換で claude を返すため、ここでは使わない。
         declare -A _required_cli_map=()
-        for _agent in shogun karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
+        for _agent in shogun $(get_all_agents); do
             _agent_cli=$(get_cli_type "$_agent")
             case "$_agent_cli" in
                 claude|codex|copilot|kimi)
@@ -698,9 +713,10 @@ if [ "$SETUP_ONLY" = false ]; then
     tmux send-keys -t "shogun:agents.${p}" Enter
     log_info "  └─ 家老（${_karo_cli_type}）、召喚完了"
 
+    NINJA_PANE_COUNT=$((AGENT_COUNT - 1))
     if [ "$KESSEN_MODE" = true ]; then
         # 決戦の陣: CLI Adapter経由（claudeはOpus強制）
-        for i in {1..8}; do
+        for i in $(seq 1 $NINJA_PANE_COUNT); do
             p=$((PANE_BASE + i))
             ninja_name="${AGENT_IDS[$i]}"
             _ashi_cli_type="claude"
@@ -718,10 +734,10 @@ if [ "$SETUP_ONLY" = false ]; then
             tmux send-keys -t "shogun:agents.${p}" "$_ashi_cmd"
             tmux send-keys -t "shogun:agents.${p}" Enter
         done
-        log_info "  └─ 忍者1-8（決戦の陣）、召喚完了"
+        log_info "  └─ 忍者・軍師1-${NINJA_PANE_COUNT}（決戦の陣）、召喚完了"
     else
         # 平時の陣: CLI Adapter経由で各忍者のCLI/モデルを決定
-        for i in {1..8}; do
+        for i in $(seq 1 $NINJA_PANE_COUNT); do
             p=$((PANE_BASE + i))
             ninja_name="${AGENT_IDS[$i]}"
             _ashi_cli_type="claude"
@@ -734,7 +750,7 @@ if [ "$SETUP_ONLY" = false ]; then
             tmux send-keys -t "shogun:agents.${p}" "$_ashi_cmd"
             tmux send-keys -t "shogun:agents.${p}" Enter
         done
-        log_info "  └─ 忍者1-8（平時の陣）、召喚完了"
+        log_info "  └─ 忍者・軍師1-${NINJA_PANE_COUNT}（平時の陣）、召喚完了"
     fi
 
     if [ "$KESSEN_MODE" = true ]; then
@@ -843,7 +859,7 @@ NINJA_EOF
 
     # inbox ディレクトリ初期化（シンボリックリンク先のLinux FSに作成）
     mkdir -p "$SCRIPT_DIR/logs"
-    for agent in shogun karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
+    for agent in shogun $(get_all_agents); do
         [ -f "$SCRIPT_DIR/queue/inbox/${agent}.yaml" ] || echo "messages:" > "$SCRIPT_DIR/queue/inbox/${agent}.yaml"
     done
 
@@ -865,8 +881,8 @@ NINJA_EOF
         &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" &
     disown
 
-    # 忍者のwatcher
-    for i in {1..8}; do
+    # 忍者・軍師のwatcher
+    for i in $(seq 1 $NINJA_PANE_COUNT); do
         p=$((PANE_BASE + i))
         ninja_name="${AGENT_IDS[$i]}"
         _ashi_watcher_cli=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_cli 2>/dev/null || echo "claude")
@@ -875,7 +891,7 @@ NINJA_EOF
         disown
     done
 
-    log_success "  └─ 10エージェント分のinbox_watcher起動完了"
+    log_success "  └─ $((AGENT_COUNT + 1))エージェント分のinbox_watcher起動完了"
 
     # STEP 6.7 は廃止 — CLAUDE.md Session Start (step 1: tmux agent_id) で各自が自律的に
     # 自分のinstructions/*.mdを読み込む。検証済み (2026-02-08)。
@@ -968,17 +984,20 @@ echo "     ┌──────────────────────
 echo "     │  将軍 (SHOGUN)              │  ← 総大将・プロジェクト統括"
 echo "     └─────────────────────────────┘"
 echo ""
-echo "     Window 1: agents（家老・忍者の陣 3x3 = 9ペイン）"
-echo "     ┌─────────┬─────────┬─────────┐"
-echo "     │  karo   │  hayate │  saizo  │"
-echo "     │  (家老) │ (疾風)  │ (才蔵)  │"
-echo "     ├─────────┼─────────┼─────────┤"
-echo "     │ sasuke  │kagemaru │ kotaro  │"
-echo "     │ (佐助)  │ (影丸)  │(小太郎) │"
-echo "     ├─────────┼─────────┼─────────┤"
-echo "     │kirimaru │  hanzo  │tobisaru │"
-echo "     │ (霧丸)  │ (半蔵)  │ (飛猿)  │"
-echo "     └─────────┴─────────┴─────────┘"
+echo "     Window 1: agents（家老・軍師・忍者の陣 2x4 = 8ペイン）"
+echo "     ┌───────────┬───────────┐"
+echo "     │   karo    │  hanzo    │"
+echo "     │  (家老)   │  (半蔵)   │"
+echo "     ├───────────┼───────────┤"
+echo "     │  gunshi   │  saizo    │"
+echo "     │  (軍師)   │  (才蔵)   │"
+echo "     ├───────────┼───────────┤"
+echo "     │  hayate   │  kotaro   │"
+echo "     │  (疾風)   │ (小太郎)  │"
+echo "     ├───────────┼───────────┤"
+echo "     │ kagemaru  │ tobisaru  │"
+echo "     │  (影丸)   │  (飛猿)   │"
+echo "     └───────────┴───────────┘"
 echo ""
 
 echo ""
@@ -997,7 +1016,7 @@ if [ "$SETUP_ONLY" = true ]; then
     echo "  │    'claude --dangerously-skip-permissions' Enter         │"
     echo "  │                                                          │"
     echo "  │  # 家老・忍者を一斉召喚                                  │"
-    echo "  │  for p in \$(seq $PANE_BASE $((PANE_BASE+8))); do                                 │"
+    echo "  │  for p in \$(seq $PANE_BASE $((PANE_BASE+AGENT_COUNT-1))); do                                 │"
     echo "  │      tmux send-keys -t shogun:agents.\$p \\            │"
     echo "  │      'claude --dangerously-skip-permissions' Enter       │"
     echo "  │  done                                                    │"
