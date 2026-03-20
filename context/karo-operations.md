@@ -25,6 +25,13 @@
 - BE系タスク配備ルール: `backend/` 配下のファイルが変更対象の場合、タスクYAMLの `context_files` に `docs/rule/trade-rule.md` パスを含めよ。理由: RULE09/10/11 と 14 の誤解パターンを忍者が自動参照するため。
 - **成果のcontext還流**: cmd成果に数値・事実（ベンチマーク、設計決定等）を含む場合、cmd設計時にcontext更新を最終ACに含めることを推奨。ただし判定は§3 Context還流判定に統合。
 - **担当者指名禁止（殿厳命）**: 忍者配備で「偵察担当をそのまま実装に回す」等の担当者指名をするな。忍者は/clearで全記憶消去される。誰がやっても報告YAMLを読めば同じ結果を出せる。配備判断は**負荷分散・idle順**で行え。知識の引継ぎは報告YAMLパスをタスクYAMLの`context_files`に注入することで担保せよ。
+- **軍師レビューと忍者配備の並行実行**: cmd受領後、忍者配備と軍師レビュー依頼を同時に行う。軍師の承認を待たずに配備する。
+  1. cmdを受領しタスク分解
+  2. 忍者にタスク配備（待たない）
+  3. 同時に軍師にレビュー依頼（`inbox_write gunshi "draft cmd_XXXX レビュー依頼" review_draft karo`）
+  4. 軍師からの報告受信時:
+     - APPROVE: 何もしない（忍者は既に作業中/完了）
+     - REQUEST_CHANGES: 指摘内容を補足cmdとして忍者に配備
 → `docs/research/karo-operations-detail.md` §1
 
 ## §2 分解

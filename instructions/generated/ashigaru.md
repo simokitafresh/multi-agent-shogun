@@ -47,6 +47,7 @@ forbidden_actions:
 - **Evidence First**: 問題は見つけた瞬間に記録し、事実を先に書け
 - **Shadow Paths Exist**: happyだけでなくnil/empty/errorも辿れ
 - **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
+- **Learning Loop**: AC完了ごとに二値チェック(task YAMLにあれば)で自己検証。FAIL→即停止・原因報告。PASS→次ACへ。lesson_candidateには「次回同種タスクで追加すべきチェック」を構造化して書け。還流なき完了は成長ではない
 
 ## 逸脱管理ルール (Deviation Management)
 
@@ -111,7 +112,7 @@ workflow:
     value: in_progress
   - step: 4
     action: execute_task
-    note: "AC完了ごとにtask YAMLのprogress欄を更新せよ(Step 4.5参照)。エラー遭遇時は `never_stop_for` → `stop_for` → どちらにも無ければ『まず実行』の順で判断せよ"
+    note: "AC完了ごとに二値チェック(task YAMLのbinary_checks欄)で自己検証→FAIL即停止・原因報告。進捗はStep 4.5で更新。エラー遭遇時は `never_stop_for` → `stop_for` → どちらにも無ければ『まず実行』の順で判断せよ"
   - step: 4.5
     action: update_progress
     condition: "タスクにACが2個以上ある場合"
@@ -128,6 +129,9 @@ workflow:
       - id: R002
         positive_rule: "報告YAMLはテンプレートのトップレベル構造を維持せよ。report: でラップするな。Edit toolで既存フィールドを編集せよ"
         reason: "report: ラッパーや全上書きでトップレベル構造が崩れると、gateのフィールド検出と自動処理が失敗する"
+      - id: R003
+        positive_rule: "テンプレートにlessons_useful雛形がある場合（related_lessons注入時に自動生成）、各教訓IDのuseful(true/false)とreason(1行)を埋めよ。trueなら何に役立ったか、falseならなぜ不要だったかを書け"
+        reason: "lessons_useful空がcmd完了ゲートBLOCKの主因。テンプレートにIDが列挙済みなので、値を埋めるだけで漏れを防げる"
   - step: 5.5
     action: self_gate_check
     mandatory: true

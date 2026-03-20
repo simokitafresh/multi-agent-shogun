@@ -7,6 +7,30 @@ description: "Opus + tmux multi-agent parallel dev platform with sengoku militar
 hierarchy: "Lord (human) → Shogun → Karo → Ninja 1-8"
 communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
 
+# ============================================================
+# 学習ループ原則（殿厳命 2026-03-19 — 全員必読・例外なし）
+# ============================================================
+# 全ての作業に学習ループを回せ。cmdも、ACも、レビューも、
+# 偵察も、設計も、GS選出も、教訓も、インフラ改善も。
+# 何をやるときにも。どんなときにも。細胞レベルで。
+#
+# ┌→ 実行 → 二値計測 → 知見還流 → 次サイクル強化 →┐
+# └──────────────────────────────────────────────────┘
+#
+# 三要素（1つでも欠ければ成長しない）:
+#   1. 二値計測: 「良い」をyes/noで定義。曖昧な評価は計測ではない
+#   2. 即時調整: FAILなら即停止・原因特定。PASSなら手法確定
+#   3. 知見還流: 失敗→新チェック追加。成功→正解記録。次サイクルに組込む
+#
+# 計測だけでは品質管理。還流して初めて成長。
+# 計測できないものは改善できない。還流しないものは成長しない。
+#
+# 各層の責務:
+#   将軍: WHAT+二値基準を定義。HOWは書くな
+#   家老: レビューで新チェックを抽出→テンプレート/ランブックに還流
+#   忍者: AC単位で二値チェック→FAIL即停止→知見を構造化して報告
+# ============================================================
+
 tmux_sessions:
   shogun: { pane_0: shogun }
   shogun: { pane_0: karo, pane_1: sasuke, pane_2: kirimaru, pane_3: hayate, pane_4: kagemaru, pane_5: hanzo, pane_6: saizo, pane_7: kotaro, pane_8: tobisaru }
@@ -72,6 +96,12 @@ language:
   報告は家老のみ。将軍・殿に語りかけるな。
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
+
+★ 学習ループ: 全作業に回せ。
+  AC完了ごとに二値チェック(binary_checks欄)で自己検証。
+  FAIL→即停止・原因報告。PASS→次ACへ。
+  lesson_candidateには「次回追加すべきチェック」を書け。
+  計測して止まるだけでは品質管理。還流して初めて成長。
 3.5. **Load project knowledge** (role-based):
    - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
@@ -96,6 +126,12 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
 
+★ 学習ループ: 全作業に回せ。
+  AC完了ごとに二値チェック(binary_checks欄)で自己検証。
+  FAIL→即停止・原因報告。PASS→次ACへ。
+  lesson_candidateには「次回追加すべきチェック」を書け。
+  計測して止まるだけでは品質管理。還流して初めて成長。
+
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
 Step 2: 将軍のみ MEMORY.md（自動ロード済み）を信頼。read_graphしない。家老・忍者はスキップ。
 Step 3: Read queue/tasks/{your_ninja_name}.yaml → assigned=Edit status to acknowledged then work, idle=wait
@@ -119,10 +155,12 @@ Forbidden after /clear: reading instructions/generated/codex-ashigaru.md (1st ta
 ```
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → karo
 Step 2: Read instructions/generated/codex-karo.md（人格・禁則・手順。省略厳禁）
-Step 2.5: 作業フェーズに応じてcontext/karo-operations.mdの該当§を読む
+Step 2.5: Read projects/infra/lessons_karo.yaml（家老教訓の自動ロード）
+Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を読む
   - cmd受領→配備時: §1配備 + §2分解パターン
   - 報告受領→レビュー時: §3レビューサイクル
   - 教訓抽出時: §5教訓抽出
+Step 2.8: logs/karo_workarounds.yamlの直近10件を読む（前セッションの修正履歴把握）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
 Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
@@ -147,11 +185,12 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 
 ```
 1. ダッシュボード更新（cmd完了結果を記載）
-2. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
-3. ntfy送信（cmd完了報告）
-4. 新しいinbox nudgeが来ていても、上記1-3を先に完了する
+2. 戦局日誌更新: context/senkyoku-log.mdにcmdの意図・結果・因果を1-2行で追記
+3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
+4. ntfy送信（cmd完了報告）
+5. 新しいinbox nudgeが来ていても、上記1-4を先に完了する
    理由: 「新cmd処理→またnudge→...」の連鎖でCTXが際限なく膨らむ（実証済み）
-5. idle状態で待つ
+6. idle状態で待つ
 ※ archive_completed.shはcmd_complete_gate.sh GATE CLEAR時に自動実行される（手動不要）
 ```
 
@@ -277,9 +316,10 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 役割 | 名前(pane) | CLI |
 |------|-----------|-----|
 | 家老 | karo(1) | Claude |
-| 忍者 | sasuke(2) kirimaru(3) hayate(4) kagemaru(5) hanzo(6) saizo(7) kotaro(8) tobisaru(9) | settings.yaml参照 |
+| 軍師 | gunshi(2) | Claude |
+| 忍者 | hayate(3) kagemaru(4) hanzo(5) saizo(6) kotaro(7) tobisaru(8) | settings.yaml参照 |
 将軍はAgent toolでのコード深堀り調査を禁止(F008)。必要な調査は偵察cmdとして家老に委任せよ。
-編成(2026-03-17統一): 全8名Opus 4.6。round-robin配備 → config/settings.yaml
+編成(2026-03-20更新): 6忍者+1軍師 Opus 4.6。round-robin配備 → config/settings.yaml
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照

@@ -142,12 +142,24 @@ findings:
   side_effect: OK/NG + 1行理由
   learning_loop: OK/NG + 1行理由
 suggested_changes: (REQUEST_CHANGESの場合のみ、具体的な修正指示)
+severity: urgent / normal  (REQUEST_CHANGESの場合のみ、指摘の緊急度)
 ```
 
 verdictの判断基準:
 - **APPROVE**: 4観点全てOK。即配備可能
-- **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載
+- **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載。**severity必須**
 - **REJECT**: 根本的な設計問題あり。再偵察または再設計が必要
+
+### 緊急度分類（severity）— REQUEST_CHANGES時の必須付記
+
+REQUEST_CHANGES verdict時、指摘の緊急度を必ず付記せよ。家老はこの緊急度に基づいて忍者の作業継続/停止を判断する。
+
+| 緊急度 | 定義 | 家老の対応 | 例 |
+|--------|------|-----------|-----|
+| **urgent** | そのまま配備すると致命的問題が発生。即時作業停止が必要 | 忍者のタスクを即停止し、修正後に再配備 | 本番DB破壊、データ不整合、指揮系統破壊、Destructive Operation Safety違反、production_invariants違反 |
+| **normal** | 問題はあるが補足cmdで修正可能。現行作業の継続に支障なし | 忍者は現タスク継続。修正は補足cmdで対応 | ACの記述不足、エッジケース考慮漏れ、テスト追加要、ドキュメント不整合 |
+
+判断基準: **「このまま忍者が作業を進めたら、取り返しのつかない損害が出るか？」** → YES=urgent、NO=normal
 
 ## Feedback Processing — GATEフィードバック処理
 
