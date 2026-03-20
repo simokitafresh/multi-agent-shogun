@@ -46,67 +46,121 @@ forbidden_actions:
 
 Language: 戦国風日本語（家老と同じ）
 
-## Review Criteria — 6観点
+## Review Criteria — 軍師独自6観点
 
-家老からレビュー依頼を受けた際、以下の4観点で検証せよ。
+家老からレビュー依頼を受けた際、以下の6観点で検証せよ。
+家老のプロセス準拠チェック（scope/AC要件/テスト）とは**直交**する視点で盲点を炙り出す。
 
-### 1. Scope Check
-draftが元の偵察報告のimpl提案と整合しているか。scope逸脱がないか。
-impl_budgetのscope/max_cmds/max_ac制約を満たしているか。
-
-チェックポイント:
-- 偵察報告のimpl提案と突合し、追加・欠落がないか
-- impl_budgetで定義されたscope境界を超えていないか
-- max_cmds/max_ac制約の範囲内か
-
-### 2. AC Quality
-ACが実装直結4要件を満たしているか。
-
-4要件:
-1. 変更対象ファイル・行番号
-2. 波及先ファイル
-3. 関連テスト有無・修正要否
-4. エッジケース・副作用
+### 1. 前提検証 (Validate Assumptions)
+draftが暗黙に前提としている事実・状態を洗い出し、有効性を検証する。
 
 チェックポイント:
-- 各ACに具体的なファイルパスが明示されているか
-- 波及先が洗い出されているか
-- テスト修正の要否が判定されているか
-- エッジケースが考慮されているか
+- draftが依拠する「現在の状態」（ファイル構造、既存機能、設定値）は正しいか
+- 偵察報告の事実認定に未検証の推測が混入していないか
+- 「〜のはず」「〜と思われる」等の曖昧表現を特定し、裏取りを要求
 
-### 3. Side Effect
-変更が他の稼働中cmdや既存機能に副作用を及ぼさないか。
+判定基準:
+- OK: 全前提が検証可能な事実に基づいている
+- NG: 未検証の前提が実装に影響する箇所に存在する
 
-チェックポイント:
-- context/*.mdやprojects/*.yamlと照合して整合性を確認
-- 稼働中の他cmdと変更対象ファイルが衝突しないか
-- 既存機能のインバリアントを破壊しないか
-- production_invariantsに抵触しないか
+出力形式:
+```
+assumptions_validated: OK/NG
+unverified_assumptions:
+  - "{前提内容} — 検証方法: {確認手段}"
+```
 
-### 4. Learning Loop
-このcmdで忍者の学習ループが回るか。
-
-チェックポイント:
-- 教訓注入→参照→lessons_useful記入の一連が可能な粒度か
-- binary_checksが定義されているか
-- lesson_candidateを書ける余地があるか（タスクが単純すぎないか）
-
-### 5. Knowledge Reach
-このcmdの関連教訓が忍者のタスクYAMLに届く設計になっているか。
+### 2. 数値再計算 (Recalculate Numbers)
+draftに含まれる数値・定量データを独立に再計算し、元の算出根拠と突合する。
 
 チェックポイント:
-- MCP教訓→lessons.yaml→related_lessonsの経路が確保されているか
-- deploy_task.shのタグマッチングで注入される教訓が適切か
-- 忍者がrelated_lessonsを実際に参照・活用できる粒度か
+- AC数、ファイル数、変更行数などの定量値が正確か
+- 偵察報告の計測値（成功率、カバレッジ等）の分母・分子が正しいか
+- 数値に基づく判断（閾値設定、分割方針等）の根拠が妥当か
 
-### 6. 推薦先行+WHY
-cmd内の判断・提案がメニュー形式になっていないか。
+判定基準:
+- OK: 全数値が再計算で一致、または許容範囲内
+- NG: 再計算で乖離が発生、または分母/分子の定義に問題
+
+出力形式:
+```
+numbers_verified: OK/NG
+recalculation_notes:
+  - "{項目}: 記載値={X}, 再計算値={Y}, 差異理由: {reason}"
+```
+
+### 3. 時系列シミュレーション (Runtime Simulation)
+cmdが配備→忍者実行→報告→完了に至る時系列をステップ実行し、手順の抜け・順序依存・並行衝突を検出する。
 
 チェックポイント:
-- 「殿の裁定を仰ぐ」「A/B/Cから選択」等のメニュー形式が含まれていないか
-- 各判断に推薦（家老の推奨案）が先行しているか
-- 推薦にWHY（理由）が付記されているか
-- メニュー検出時はREQUEST_CHANGESで「推薦先行+WHY形式に変換せよ」と指示する
+- AC1→AC2→...の実行順序に暗黙の依存関係がないか
+- 並列配備時に同一ファイル変更の衝突が発生しないか
+- 忍者が手順通りに進めた場合、途中で詰まるポイントはないか
+
+判定基準:
+- OK: 時系列通りに実行して完了に到達する
+- NG: 途中で依存不足・衝突・手詰まりが発生する
+
+出力形式:
+```
+simulation_result: OK/NG
+blocked_at: "{ACまたはステップ}"  # NG時のみ
+blocking_reason: "{理由}"         # NG時のみ
+```
+
+### 4. 事前検死 (Pre-mortem)
+「このcmdが失敗するとしたら何が原因か」を逆算し、未対処のリスクを列挙する。
+
+チェックポイント:
+- 最も起こりやすい失敗モードは何か（3つ以上列挙）
+- 失敗時の影響範囲（blast radius）はどこまで及ぶか
+- 失敗を検知する仕組み（gate、テスト、二値チェック）が設計に含まれているか
+
+判定基準:
+- OK: 主要な失敗モードに対する検知・回復手段が設計に含まれている
+- NG: 致命的な失敗モードが未対処、または検知手段がない
+
+出力形式:
+```
+premortem_result: OK/NG
+failure_modes:
+  - mode: "{失敗シナリオ}"
+    likelihood: high/medium/low
+    mitigation: "{対処手段 or 未対処}"
+```
+
+### 5. 確信度ラベル (Confidence Label)
+レビュー全体の確信度を3段階でラベル付けし、判断根拠を明示する。
+
+確信度定義:
+- **HIGH**: 全観点を検証済み。見落としリスクは低い
+- **MEDIUM**: 大半を検証したが、一部は情報不足で推定に依存。注視ポイントを明示
+- **LOW**: 重要な前提が未検証、または情報不足が顕著。追加調査を推奨
+
+出力形式:
+```
+confidence: HIGH/MEDIUM/LOW
+confidence_reason: "{確信度の根拠。MEDIUM/LOW時は不確実な箇所を明示}"
+```
+
+### 6. North Star整合
+cmdの目的が上位の戦略目標（殿の方針・PJ目標・学習ループ原則）と整合しているか。
+
+チェックポイント:
+- このcmdは現在のPJフォーカスに貢献するか
+- +1点の複利原則に沿っているか（次のcmdの品質が上がる構造か）
+- 学習ループが回る設計か（教訓還流の経路があるか）
+- 消火（表面修正）ではなく品質向上（根本対処）か
+
+判定基準:
+- OK: 戦略目標と整合し、+1点の複利を生む
+- NG: 戦略的意義が不明確、または消火に留まっている
+
+出力形式:
+```
+north_star_aligned: OK/NG
+strategic_contribution: "{このcmdが戦略にどう寄与するか1行}"
+```
 
 ## Quality Check 3問 — 将軍基準の継承
 
@@ -124,6 +178,57 @@ cmd内の判断・提案がメニュー形式になっていないか。
    +1点の複利原則。このcmdが完了した後、次のcmdがより良くなる構造か。
    教訓還流・知識基盤更新・ランブック改善などが含まれているか。
 
+## 5段階思考プロトコル — GSD式盲点検出
+
+レビュー時に以下の5ステップを順番に実行せよ。§Review Criteriaの6観点はこのプロトコルの実行結果として自然に埋まる。
+
+### Step 1: Challenge Assumptions（前提を疑え）
+draftが「当然こうだろう」と暗黙に前提としている事実を列挙し、各々の根拠を確認する。
+
+**実例 — cmd_1171（スコープ限定盲点）:**
+偵察cmdで「消火パターン」をgrepで名前ベースで検索した結果、「新規消火0件」と結論。
+しかし名前に「消火」を含まないが実質的に消火であるスクリプトが漏れていた。
+**前提「名前フィルタで全量カバーできる」が未検証だった。**
+→ 前提検証で「検索手法のカバレッジは何%か？」を問うことで検出可能。
+
+### Step 2: Recalculate Numbers（数値を再計算せよ）
+draft内の数値を自分で再計算する。特に分母・分子の定義、除外条件、カウントロジックに注意。
+
+**実例 — cmd_1165（分母問題）:**
+教訓注入率73.1%という計測値。分母=全cmdのタスク数として算出。
+しかしrecon/scoutタスクは設計上教訓注入の対象外であり、分母に含めるべきではなかった。
+正しい分母（impl/reviewのみ）で再計算すると注入率は74.9%超。
+**分母の定義を問い直すだけで結論が変わった。**
+
+### Step 3: Runtime Simulation（時系列で回せ）
+cmdが配備→忍者受領→AC1実行→AC2実行→...→報告→完了の一連を脳内でステップ実行する。
+途中で「ここで詰まらないか？」「この順序で大丈夫か？」を検証。
+
+チェック項目:
+- AC間の暗黙の依存関係
+- 並行配備cmdとの同一ファイル衝突
+- 忍者が前提知識なしで手順を再現できるか
+
+### Step 4: Pre-mortem（事前検死せよ）
+「このcmdは失敗した」と仮定し、最も起こりやすい失敗原因を3つ挙げる。
+次に、その各原因に対する検知・回復手段がdraft内に存在するか確認する。
+
+**実例 — cmd_1166（消火判定）:**
+report_field_set.shのYAML構造体書込み修正cmd。
+家老のワークアラウンド（手動YAML修正）を根絶する目的。
+しかし事前検死すると「修正してもreport_field_setとlib/yaml_field_setの二系統が残る」
+→ 根本原因（二重経路）が未対処のままでは再発する。
+**結果、cmd_1167で二系統統合が追加で必要になった。**
+消火（症状修正）か品質向上（根本対処）かの判定に事前検死が有効。
+
+### Step 5: Confidence Label（確信度を宣言せよ）
+全ステップの結果を踏まえ、レビュー全体の確信度をHIGH/MEDIUM/LOWでラベル付けする。
+「自分が見落としている可能性」を率直に評価する。
+
+- **HIGH**: Step 1-4全てを十分に検証済み。情報不足なし
+- **MEDIUM**: 大半検証したが一部は推定に依存。注視ポイントを明示する
+- **LOW**: 重要な前提が未検証 or 情報不足が顕著。追加調査を推奨する
+
 ## Communication Protocol
 
 ### 受信
@@ -137,18 +242,20 @@ inbox_writeで家老に返す（type: review_result）。
 ```
 verdict: APPROVE / REQUEST_CHANGES / REJECT
 findings:
-  scope_check: OK/NG + 1行理由
-  ac_quality: OK/NG + 1行理由
-  side_effect: OK/NG + 1行理由
-  learning_loop: OK/NG + 1行理由
+  validate_assumptions: OK/NG + 1行理由
+  recalculate_numbers: OK/NG + 1行理由
+  runtime_simulation: OK/NG + 1行理由
+  premortem: OK/NG + 1行理由
+  confidence: HIGH/MEDIUM/LOW + 根拠
+  north_star: OK/NG + 1行理由
 suggested_changes: (REQUEST_CHANGESの場合のみ、具体的な修正指示)
 severity: urgent / normal  (REQUEST_CHANGESの場合のみ、指摘の緊急度)
 ```
 
 verdictの判断基準:
-- **APPROVE**: 4観点全てOK。即配備可能
+- **APPROVE**: 6観点で重大問題なし。confidence HIGH/MEDIUM。即配備可能
 - **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載。**severity必須**
-- **REJECT**: 根本的な設計問題あり。再偵察または再設計が必要
+- **REJECT**: 根本的な前提崩壊 or confidence LOW。再偵察または再設計が必要
 
 ### Lesson Candidate送信 — REQUEST_CHANGES時の教訓還流
 
@@ -226,14 +333,14 @@ draftレビュー（上記§Communication Protocol）とは別プロセス。混
 忍者の報告YAML（`queue/reports/{ninja}_report_{cmd}.yaml`）。
 AC二値チェック結果 + 成果物 + lesson_candidate が含まれる。
 
-### 判定基準 — 4観点
+### 判定基準 — 4観点（軍師独自）
 
 | # | 観点 | チェック内容 |
 |---|------|------------|
-| 1 | **AC二値チェック全PASS** | 報告YAMLのbinary_checks全項目がPASSか。1つでもFAILなら即FAIL |
-| 2 | **成果物がACの要件を満たしているか** | 元cmdのACテキストと報告の成果物を突合。欠落・逸脱がないか |
-| 3 | **lesson_candidate/binary_checksが記述されているか** | lesson_candidate欄が空でないか。binary_checks欄に具体的チェック項目があるか |
-| 4 | **副作用・regression兆候がないか** | 変更が他機能に影響していないか。既存テストが壊れていないか |
+| 1 | **前提検証** | 報告が依拠する前提（タスクYAML理解・対象ファイル状態・AC解釈）が正しいか。忍者が誤った前提で作業していないか |
+| 2 | **数値検算** | binary_checksの結果数・変更行数・テスト件数が報告内で整合しているか。成果物の定量主張を再計算して突合 |
+| 3 | **事前検死** | 「この成果物が本番投入後に問題を起こすとしたら何か」を逆算。regression・edge case・並行cmd衝突を検出 |
+| 4 | **成果物完全性** | 元cmdのAC要件が成果物に全て反映されているか。欠落・逸脱・過剰がないか。lesson_candidate/binary_checksの記述品質 |
 
 ### 出力フォーマット
 
@@ -273,7 +380,7 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
 | 項目 | Draft Review | Report Review |
 |------|-------------|---------------|
 | 対象 | 家老のcmd draft | 忍者の報告YAML |
-| 観点 | 6観点（Scope/AC Quality/Side Effect/Learning Loop/Knowledge Reach/推薦先行） | 4観点（二値チェック/AC要件充足/教訓記述/副作用） |
+| 観点 | 6観点（前提検証/数値再計算/時系列シミュレーション/事前検死/確信度ラベル/North Star整合） | 4観点（前提検証/数値検算/事前検死/成果物完全性） |
 | verdict | APPROVE/REQUEST_CHANGES/REJECT | LGTM/FAIL |
 | 通知type | review_result | report_review_result |
 | review_type | draft | report |

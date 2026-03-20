@@ -1,44 +1,26 @@
 task:
-  ac_version: e6fe80aa
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  ac_version: f84b5566
   acceptance_criteria:
     AC1:
-      binary_checks:
-      - production_invariants欄に不変量が追加されたか? yes/no
-      - 不変量の内容が教訓L276の知見を正確に反映しているか? yes/no
-      description: production_invariantsにこの教訓の不変量が追加されていること
+      description: instructions/gunshi.mdの§Review Criteriaを刷新。現行6観点(家老重複)を廃止し、軍師独自6観点に置換。(1)前提検証(2)数値再計算(3)時系列シミュレーション(4)事前検死(5)確信度ラベル(6)North
+        Star整合。各観点にチェックポイント+判定基準+出力形式を明記
+      status: pending
     AC2:
-      binary_checks:
-      - 該当ランブックに知見が追記されたか? yes/no
-      - 追記内容が既存ルールと整合しているか? yes/no
-      description: 該当ランブックにこの教訓の知見が追記されていること
+      description: §Report Reviewも同様に刷新。現行4観点(家老重複)→独自軸での検証に変更。reportレビューでも前提検証・数値検算・事前検死を適用する形式に
+      status: pending
+    AC3:
+      description: '5段階思考プロトコル(Challenge Assumptions→Recalculate Numbers→Runtime Simulation→Pre-mortem→Confidence
+        Label)をgunshi.mdに追記。コピーではなく我が軍の文脈に適応させること。各Stepに実例付記: Step1=cmd_1171スコープ限定盲点、Step2=cmd_1165分母問題、Step4=cmd_1166消火判定'
+      status: pending
   bloom_level: ''
-  command: 'ラルフループ穴修復: L276教訓(計測指標の分母が意図的除外を含む場合はフィルタ漏れに注意)の知見をMISSING箇所に反映せよ。
-
-
-    教訓内容: inject_rate_pctの分母にrecon/scout(意図的スキップ対象)が含まれていた。除外対象のtask_typeが正確に分類されていない(unknown混在)とフィルタが不完全になる。分母定義変更時は分類精度(detect_task_type等の上流)も合わせて確認すべき。
-
-
-    AC1: projects/infra.yaml の production_invariants に不変量を追加。
-
-    内容: 「計測指標の分母にスキップ対象が混入していないか検証せよ。分母定義変更時は上流の分類精度(task_type判定等)も合わせて確認」
-
-    既存PIの採番ルールに従い、次番号でPI追加。
-
-
-    AC2: docs/rule/ の該当ランブック(集計・メトリクス関連)にこの知見を追記。
-
-    該当ランブックがなければ最も関連性の高いランブックに1行追記。
-
-
-    参考: projects/infra.yaml(既存PI構造の確認)
-
-    参考: docs/rule/(ランブック一覧の確認)
-
-    '
-  deployed_at: '2026-03-20T20:10:33'
+  deployed_at: '2026-03-20T20:37:13'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
     ────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -51,10 +33,14 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  ninja: hayate
+  notes: cmd_1173がgunshi.mdに§FAIL Criteria等を追記予定。§Review CriteriaとReport Reviewの刷新は本タスクの範囲。競合を避けるため§FAIL
+    Criteriaセクションがあれば保持すること
   parallel_ok: []
-  parent_cmd: cmd_1168
+  parent_cmd: cmd_1174
   project: infra
-  ralph_loop_repair: true
+  reference_files:
+  - logs/gunshi_review_log.yaml
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
     id: L074
@@ -67,11 +53,32 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  report_filename: hayate_report_cmd_1168.yaml
-  report_path: queue/reports/hayate_report_cmd_1168.yaml
+  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+    id: L097
+    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+  - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+    id: L079
+    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+  report_filename: hayate_report_cmd_1174.yaml
+  report_path: queue/reports/hayate_report_cmd_1174.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - pushするな(commitまで)
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+    required_fields:
+    - ac_version_read
+    - files_modified
+    - lesson_candidate
+    - lessons_useful
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: assigned
   stop_for: []
-  task_id: cmd_1168_reflux
-  type: implement
+  summary: 軍師に家老と直交する独自判断基準を整備(GSD式盲点検出)
+  target_path: instructions/gunshi.md
+  task_id: cmd_1174_criteria
+  task_type: implement
 status: done
