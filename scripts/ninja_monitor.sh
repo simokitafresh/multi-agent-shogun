@@ -1854,6 +1854,10 @@ LESSON_CHECK_INTERVAL=600  # 10分間隔(秒)
 LESSON_ALERT_DEBOUNCE=21600 # 同一ALERT再通知抑制(6時間)
 LAST_LESSON_ALERT=0
 
+# ─── workaround pattern定期チェック (cmd_1153 AC3) ───
+LAST_WORKAROUND_PATTERN_CHECK=0
+WORKAROUND_PATTERN_CHECK_INTERVAL=600  # 10分間隔(秒)
+
 # ─── gate_improvement定期チェック (cmd_1114) ───
 LAST_GATE_IMPROVEMENT=0
 GATE_IMPROVEMENT_INTERVAL=300  # 5分間隔(秒)
@@ -1896,6 +1900,25 @@ check_lesson_health() {
     else
         log "LESSON-HEALTH: all projects OK"
     fi
+}
+
+check_workaround_pattern() {
+    local now
+    now=$(date +%s)
+
+    local elapsed=$((now - LAST_WORKAROUND_PATTERN_CHECK))
+    if [ $elapsed -lt $WORKAROUND_PATTERN_CHECK_INTERVAL ]; then
+        return
+    fi
+    LAST_WORKAROUND_PATTERN_CHECK=$now
+
+    local check_script="$SCRIPT_DIR/scripts/workaround_pattern_check.sh"
+    if [ ! -f "$check_script" ]; then
+        log "WORKAROUND-PATTERN: workaround_pattern_check.sh not found, skip"
+        return
+    fi
+
+    bash "$check_script" >> "$SCRIPT_DIR/logs/workaround_pattern.log" 2>&1 || true
 }
 
 check_gate_improvement() {
@@ -2231,6 +2254,9 @@ while true; do
 
     # ═══ lesson健全性チェック (cmd_279) ═══
     check_lesson_health
+
+    # ═══ workaroundパターン検出 (cmd_1153) ═══
+    check_workaround_pattern
 
     # ═══ archive自動退避 (cmd_279) ═══
     check_auto_archive
