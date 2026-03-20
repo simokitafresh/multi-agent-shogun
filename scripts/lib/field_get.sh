@@ -52,9 +52,16 @@ field_get() {
     fi
   else
     # YAML: L070対策 — ^\s+ で任意インデント対応（2sp固定禁止）
-    # ネスト1段のフィールドを検索
+    # 最浅マッチ: 全マッチからインデント幅最小の行を選択（cmd_1185 AC1修正）
     local field_line=""
-    field_line=$(grep -E "^\s+${field}:" "$file" 2>/dev/null | head -1)
+    field_line=$(grep -E "^\s+${field}:" "$file" 2>/dev/null | awk '{
+      match($0, /[^ \t]/)
+      indent = RSTART - 1
+      if (NR == 1 || indent < min_indent) {
+        min_indent = indent
+        best = $0
+      }
+    } END { if (NR > 0) print best }')
     if [[ -n "$field_line" ]]; then
       # 最初のコロンでのみ分割（フィールド名にregex特殊文字があっても安全）
       result=$(echo "$field_line" \
@@ -262,6 +269,22 @@ YAML
 
   result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_colon_file" "top_url")
   _assert "YAML: トップレベルcolon含む値" "http://host:3000" "$result"
+
+  # (a3) 最浅マッチテスト: AC内statusとtask-level statusの共存（cmd_1185 AC1）
+  local yaml_shallow_file="${tmpdir}/test_shallow.yaml"
+  cat > "$yaml_shallow_file" <<'YAML'
+task:
+  acceptance_criteria:
+    AC1:
+      status: pending
+    AC2:
+      status: pending
+  status: idle
+  assigned_to: hayate
+YAML
+
+  result=$(FIELD_GET_NO_LOG=1 field_get "$yaml_shallow_file" "status")
+  _assert "YAML: 最浅マッチ(task-level status=idle vs AC status=pending)" "idle" "$result"
 
   local yaml_array_file="${tmpdir}/test_array.yaml"
   cat > "$yaml_array_file" <<'YAML'

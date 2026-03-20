@@ -2145,9 +2145,13 @@ while true; do
                             sed -i "s/^status: .*/status: idle/" "$_s1_task_file"
                         else
                             yaml_field_set "$_s1_task_file" "task" "status" "idle" 2>/dev/null || \
-                                sed -i "s/^\([[:space:]]*\)status: .*/\1status: idle/" "$_s1_task_file"
+                                sed -i "s/^  status: .*/  status: idle/" "$_s1_task_file"
                         fi
                         log "STAGE1-TIMEOUT: $name task_status=$_s1_task_status stale for ${_s1_age}s, resetting to idle"
+                        # cmd_1185 AC2: TIMEOUT後はGuard 2をバイパスしてmaybe_idleへ直接追加
+                        # 理由: sed/yaml_field_setでmtime更新→Guard 2が120s未満と誤判定→/clear永久スキップ
+                        maybe_idle+=("$name")
+                        continue
                     else
                         log "STAGE1-SKIP: $name idle but task_status=${_s1_task_status}, /clear禁止"
                         PREV_STATE[$name]="busy"
