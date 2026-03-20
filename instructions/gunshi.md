@@ -216,6 +216,68 @@ REQUEST_CHANGES verdict時、指摘の緊急度を必ず付記せよ。家老は
 
 判断基準: **「このまま忍者が作業を進めたら、取り返しのつかない損害が出るか？」** → YES=urgent、NO=normal
 
+## Report Review — 忍者報告の一次レビュー
+
+家老から忍者報告のレビュー依頼（type: report_review_request）を受けた際の手順。
+draftレビュー（上記§Communication Protocol）とは別プロセス。混同禁止。
+
+### レビュー対象
+
+忍者の報告YAML（`queue/reports/{ninja}_report_{cmd}.yaml`）。
+AC二値チェック結果 + 成果物 + lesson_candidate が含まれる。
+
+### 判定基準 — 4観点
+
+| # | 観点 | チェック内容 |
+|---|------|------------|
+| 1 | **AC二値チェック全PASS** | 報告YAMLのbinary_checks全項目がPASSか。1つでもFAILなら即FAIL |
+| 2 | **成果物がACの要件を満たしているか** | 元cmdのACテキストと報告の成果物を突合。欠落・逸脱がないか |
+| 3 | **lesson_candidate/binary_checksが記述されているか** | lesson_candidate欄が空でないか。binary_checks欄に具体的チェック項目があるか |
+| 4 | **副作用・regression兆候がないか** | 変更が他機能に影響していないか。既存テストが壊れていないか |
+
+### 出力フォーマット
+
+```yaml
+verdict: LGTM            # LGTM / FAIL
+fail_reasons:            # FAIL時のみ。具体的な不備を列挙
+  - "AC2のbinary_check未記入"
+lesson_quality: OK        # OK / WEAK / MISSING
+escalation_needed: false  # true=家老判断が必要な深刻問題あり
+```
+
+verdict判断基準:
+- **LGTM**: 4観点全てOK。家老スタンプのみで完了可能
+- **FAIL**: 1つ以上の観点でNG。fail_reasonsに具体的不備を記載
+
+### 通知手順
+
+レビュー完了後、家老にinbox_writeで送信:
+```bash
+bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: {LGTM/FAIL}。{findings}" report_review_result gunshi
+```
+
+### ログ記録
+
+レビュー完了時に `logs/gunshi_review_log.yaml` にエントリ追記:
+```yaml
+- cmd_id: cmd_XXXX
+  review_type: report       # draft / report
+  verdict: LGTM             # LGTM / FAIL (report) / APPROVE / REQUEST_CHANGES / REJECT (draft)
+  gate_result: null          # GATE結果判明後に更新
+  findings_summary: "4観点OK、lesson_quality:OK"
+  timestamp: "2026-03-20T19:30:00"
+```
+
+### draftレビューとの違い
+
+| 項目 | Draft Review | Report Review |
+|------|-------------|---------------|
+| 対象 | 家老のcmd draft | 忍者の報告YAML |
+| 観点 | 6観点（Scope/AC Quality/Side Effect/Learning Loop/Knowledge Reach/推薦先行） | 4観点（二値チェック/AC要件充足/教訓記述/副作用） |
+| verdict | APPROVE/REQUEST_CHANGES/REJECT | LGTM/FAIL |
+| 通知type | review_result | report_review_result |
+| review_type | draft | report |
+
 ## Feedback Processing — GATEフィードバック処理
 
 家老からreview_feedback（type: review_feedback）を受信した際の処理手順。
@@ -279,16 +341,31 @@ bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunsh
 ### エントリ構造
 
 ```yaml
+# Draftレビュー
 - cmd_id: cmd_XXXX
-  verdict: APPROVE          # APPROVE / REQUEST_CHANGES / REJECT
-  gate_result: CLEAR        # CLEAR / FAIL / BLOCK
-  findings_summary: "4観点OK、副作用なし"  # 1行
+  review_type: draft          # draft / report
+  verdict: APPROVE            # APPROVE / REQUEST_CHANGES / REJECT
+  gate_result: CLEAR          # CLEAR / FAIL / BLOCK
+  findings_summary: "6観点OK、副作用なし"  # 1行
+  lesson_candidate: ""        # レビューで発見した「次回注意すべきパターン」を記載
   timestamp: "2026-03-20T17:30:00"         # ISO8601
+
+# Report（忍者報告）レビュー
+- cmd_id: cmd_XXXX
+  review_type: report         # draft / report
+  verdict: LGTM              # LGTM / FAIL
+  gate_result: null           # GATE結果判明後に更新
+  findings_summary: "4観点OK、lesson_quality:OK"
+  lesson_candidate: ""        # レビューで発見した「次回注意すべきパターン」を記載
+  timestamp: "2026-03-20T17:30:00"
 ```
+
+`review_type` フィールドは必須。draftとreportの区別により、accuracy計測で種別ごとの精度を追跡可能。
 
 ### 運用ルール
 
-- レビュー完了時に1エントリ追記する
+- レビュー完了時に1エントリ追記する（review_type必須）
+- レビュー完了時にlesson_candidateフィールドに「次回注意すべきパターン」を記載する。発見がなければ空文字列。レビューで気づいた再発しうるパターン・見落としやすい観点を蓄積し、projects/infra/lessons_gunshi.yamlへの正式登録に繋げる
 - review_feedback受信時にgate_resultを更新する
 - 500行超えたらアーカイブ（`logs/archive/gunshi_review_log_YYYYMM.yaml` に移動）
 - /clear復帰時にこのログを読んで過去の傾向（accuracy、見落としパターン）を把握する
@@ -311,6 +388,7 @@ bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunsh
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → gunshi を確認
 Step 2: instructions/gunshi.md を読む（省略禁止）
 Step 3: logs/gunshi_review_log.yaml を読む（過去のaccuracy・見落とし傾向を把握）
+Step 3.5: projects/infra/lessons_gunshi.yaml を読む（軍師レビュー教訓の自動ロード）
 Step 4: queue/inbox/gunshi.yaml を読む → レビュー依頼があれば処理
 Step 5: 依頼なしならidle activities実行
 ```
