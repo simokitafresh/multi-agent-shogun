@@ -1,51 +1,77 @@
-task_id: cmd_1160_impl
-parent_cmd: cmd_1160
+task:
+  ac_version: e6fe80aa
+  acceptance_criteria:
+    AC1:
+      binary_checks:
+      - production_invariants欄に不変量が追加されたか? yes/no
+      - 不変量の内容が教訓L276の知見を正確に反映しているか? yes/no
+      description: production_invariantsにこの教訓の不変量が追加されていること
+    AC2:
+      binary_checks:
+      - 該当ランブックに知見が追記されたか? yes/no
+      - 追記内容が既存ルールと整合しているか? yes/no
+      description: 該当ランブックにこの教訓の知見が追記されていること
+  bloom_level: ''
+  command: 'ラルフループ穴修復: L276教訓(計測指標の分母が意図的除外を含む場合はフィルタ漏れに注意)の知見をMISSING箇所に反映せよ。
+
+
+    教訓内容: inject_rate_pctの分母にrecon/scout(意図的スキップ対象)が含まれていた。除外対象のtask_typeが正確に分類されていない(unknown混在)とフィルタが不完全になる。分母定義変更時は分類精度(detect_task_type等の上流)も合わせて確認すべき。
+
+
+    AC1: projects/infra.yaml の production_invariants に不変量を追加。
+
+    内容: 「計測指標の分母にスキップ対象が混入していないか検証せよ。分母定義変更時は上流の分類精度(task_type判定等)も合わせて確認」
+
+    既存PIの採番ルールに従い、次番号でPI追加。
+
+
+    AC2: docs/rule/ の該当ランブック(集計・メトリクス関連)にこの知見を追記。
+
+    該当ランブックがなければ最も関連性の高いランブックに1行追記。
+
+
+    参考: projects/infra.yaml(既存PI構造の確認)
+
+    参考: docs/rule/(ランブック一覧の確認)
+
+    '
+  deployed_at: '2026-03-20T20:10:33'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    ────────────────────────────────────────\n\n"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  parallel_ok: []
+  parent_cmd: cmd_1168
+  project: infra
+  ralph_loop_repair: true
+  related_lessons:
+  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    id: L074
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    id: L225
+    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  report_filename: hayate_report_cmd_1168.yaml
+  report_path: queue/reports/hayate_report_cmd_1168.yaml
+  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  status: assigned
+  stop_for: []
+  task_id: cmd_1168_reflux
+  type: implement
 status: done
-project: infra
-type: implement
-command: |
-  cmd_1160 AC1+AC2+AC3+AC4を実装せよ。
-
-  ■ AC1: 家老のcmd分解フリクション記録
-  context/karo-operations.mdのタスク分解手順§に追記:
-    タスク分解中に以下のフリクションがあった場合、記録する:
-    bash scripts/cmd_friction_log.sh "{cmd_id}" "{friction_type}" "{detail}"
-    friction_type: ambiguous_scope | missing_context | too_many_acs | unclear_dependency | other
-    記録先: logs/cmd_friction.yaml
-    ※ フリクションがなければ記録不要
-
-  ■ AC2: cmd_friction_log.sh新設
-  scripts/cmd_friction_log.sh:
-    引数: cmd_id, friction_type, detail
-    動作: logs/cmd_friction.yamlにflock排他でエントリ追記
-    構造: entries配列に {cmd_id, friction_type, detail, timestamp}
-    bash -n構文チェック通過
-
-  ■ AC3: 将軍参照手順
-  instructions/shogun.mdのContext Loading§に追記:
-    - /clear復帰時にlogs/cmd_friction.yamlの直近10件を読む（存在時のみ）
-    - 家老が分解しにくいと感じたcmd設計のパターンを把握
-    - cmd_design_quality.yamlと合わせて自分の設計傾向を振り返る
-
-  ■ AC4: 二値チェック
-  - scripts/cmd_friction_log.shが存在し実行可能であること
-  - karo-operations.mdにfriction記録手順が記載されていること
-  - instructions/shogun.mdにfriction参照手順が記載されていること
-acceptance_criteria: |
-  AC1: karo-operations.mdにfriction記録手順が追記されていること
-  AC2: cmd_friction_log.shが存在し動作すること
-  AC3: shogun.mdにfriction参照手順が追記されていること
-  AC4: 二値チェック全PASS
-binary_checks:
-  AC1:
-    - "karo-operations.mdにcmd_friction_log.sh呼出し手順があるか?"
-  AC2:
-    - "scripts/cmd_friction_log.shが存在し実行可能か?"
-    - "bash -n構文チェックが通過するか?"
-    - "flock排他でログ追記するか?"
-  AC3:
-    - "instructions/shogun.mdにfriction参照手順があるか?"
-  AC4:
-    - "cmd_friction_log.sh実行後にlogs/cmd_friction.yamlにエントリが追加されるか?"
-stop_for: []
-never_stop_for: []

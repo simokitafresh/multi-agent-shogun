@@ -1,0 +1,39 @@
+worker_id: hayate
+task_id: cmd_1168_reflux
+parent_cmd: cmd_1168
+timestamp: 2026-03-20 20:12:00
+status: done
+ac_version_read: e6fe80aa
+result:
+  summary: 'AC1: PI-INFRA-002追加(分母スキップ対象混入検証)、AC2: bash-conventions.md §2追加(計測指標の分母フィルタリング)'
+  details: 'AC1: projects/infra.yamlにPI-INFRA-002を追加。L276教訓の知見を不変量化。AC2: docs/rule/bash-conventions.mdに§2を新設。メトリクス専用ランブックがないため唯一のランブックに追記'
+purpose_validation:
+  cmd_purpose: L276教訓の知見をPI+ランブックに反映(ラルフループ穴修復)
+  fit: true
+  purpose_gap: ''
+files_modified:
+- projects/infra.yaml
+- docs/rule/bash-conventions.md
+lesson_candidate:
+  found: false
+  no_lesson_reason: タスク自体が教訓反映作業であり新たな発見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+  '0':
+    useful: false
+    reason: 本タスクはbash算術式に関係ないPI追記作業
+  '1':
+    useful: false
+    reason: 本タスクはMCP整理に関係ないPI追記作業
+  '2':
+    useful: false
+    reason: 本タスクはYAML解析に関係ないPI追記作業
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''

@@ -1,0 +1,107 @@
+# =============================================================================
+# Infra プロジェクト核心知識
+# =============================================================================
+# 用途: 将軍/家老がcompact復帰時に読み込む。マルチエージェントインフラの核心ルール
+# 詳細コンテキスト: context/infrastructure.md
+# 更新日: 2026-03-06
+
+project:
+  id: infra
+  name: "Multi-Agent Infrastructure"
+  path: "/mnt/c/tools/multi-agent-shogun"
+  description: "Claude Code + Codex + tmux マルチエージェント並行開発基盤。戦国軍制ヒエラルキー。"
+
+# =============================================================================
+# (a-0) Engineering Preferences (gstack知見適用 — cmd_927)
+# =============================================================================
+# PJ固有の判断基準。レビュー・偵察での推薦はこの基準にマッピングせよ。
+
+engineering_preferences:
+  - "prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ"
+  - "prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ"
+  - "prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集"
+  - "prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集"
+  - "prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変"
+  - "prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順"
+
+# =============================================================================
+# (a) CLI種別とエージェント対応
+# =============================================================================
+cli_agents:
+  claude:
+    autoload: "CLAUDE.md"
+    agents: [karo, kagemaru, hanzo, kotaro, tobisaru]
+    clear_command: "/clear"
+    model_switch: "/model {name}"
+    prompt_pattern: "❯"
+    ctx_pattern: "CTX:{pct}%"
+  codex:
+    autoload: "AGENTS.md"
+    agents: [sasuke, kirimaru, hayate, saizo]
+    clear_command: "/new"  # NOT /clear
+    model_switch: null  # TUI only, no send-keys support
+    prompt_pattern: "›"
+    ctx_pattern: "{pct}% context left"
+
+# =============================================================================
+# (b) 通信プロトコル要約
+# =============================================================================
+communication:
+  method: "YAML mailbox (inbox_write.sh → inbox_watcher.sh → send-keys nudge)"
+  rule_top_down: "将軍→家老: inbox_write"
+  rule_bottom_up: "家老→将軍: dashboard.mdのみ(inbox禁止)"
+  rule_ninja: "忍者→家老: report YAML + inbox_write"
+  wakeup: "inbox_watcher.sh が inotifywait で検知 → nudge(inboxN) を send-keys"
+  unread_counter: "cmd_188: @inbox_unread で未読件数を保持。nudge欠落時も inboxN 相当を復元できる"
+  read_protocol: "cmd_189: 既読化は inbox_mark_read.sh (flock+atomic write) のみ。Edit tool 直接編集は禁止"
+  auto_nudge_idle_karo: "cmd_191: pending cmd がある限り、ninja_monitor が idle 家老へ自動 re-nudge する"
+
+# =============================================================================
+# (c) コンテキスト管理
+# =============================================================================
+context_management:
+  autocompact: "90% (CLAUDE_AUTOCOMPACT_PCT_OVERRIDE)"
+  ninja_monitor: "idle+タスクなし → 無条件/clear(codexは/new)"
+  karo_compact: "CTX>50%タスク境界でcompact"
+  task_status_acknowledged: "cmd_181: assigned→acknowledged→in_progress を明文化。ゴースト配備防止の入口状態"
+  pane_recovery: "cmd_183: tmuxペイン消失を監視し自動再配備。remain-on-exit=on で異常可視化を維持"
+  known_issues:
+    - "CLAUDE.md更新しても稼働中エージェントには即反映されない"
+    - "auto-/clearループ: CTX>50%忍者にタスク配備→idle検知→/clear→復帰でCTX増→再/clear"
+    - "cmd_192: grep -c || echo 0 は 0件時に '0\\n0' 混入バグを起こす。件数取得はawk系に統一する"
+
+# =============================================================================
+# (d) 知識読み込み経路
+# =============================================================================
+knowledge_loading:
+  shogun:
+    session_start: "Memory MCP → instructions/shogun.md → config/projects.yaml → projects/{id}.yaml → context/{project}.md(要約)"
+    compaction: "同上"
+  karo:
+    session_start: "instructions/karo.md → config/projects.yaml → projects/{id}.yaml → projects/{id}/lessons.yaml → context/{project}.md"
+    compaction: "同上"
+  ninja_claude:
+    clear_recovery: "CLAUDE.md → task YAML → project:{id}なら3ファイル読込"
+    session_start: "instructions/ashigaru.md → task YAML → project知識"
+  ninja_codex:
+    clear_recovery: "AGENTS.md → task YAML → project:{id}なら3ファイル読込"
+    session_start: "codex-ashigaru.md → task YAML → project知識"
+    note: "AGENTS.mdとCLAUDE.mdは同一内容(build_instructions.shで同期)"
+
+# =============================================================================
+# (e) Production Invariants (本番不変量)
+# =============================================================================
+# cmd起票前に確認。PIに抵触するACは設計段階で排除すること。
+production_invariants:
+  last_updated: "2026-03-20"
+  entries:
+    - id: PI-INFRA-001
+      fact: "scripts/lib/配下のライブラリ関数でwhile readループの変数名はプレフィックス付き(_XX_)を使用すること"
+      implication: "bashの動的スコープにより、while read変数名が呼出元のlocal変数と同名だと値が上書きされ、意図しない動作になる。ライブラリ関数は多数のスクリプトから呼ばれるため衝突リスクが高い"
+      source: "L263 (cmd_1136)"
+      verified_file: "scripts/lib/agent_config.sh"
+    - id: PI-INFRA-002
+      fact: "計測指標の分母にスキップ対象(recon/scout等の意図的除外タスク)が混入していないか検証せよ。分母定義変更時は上流の分類精度(task_type判定等)も合わせて確認すること"
+      implication: "分母に意図的スキップ対象が含まれると指標が実態より低く出る。また上流のtask_type分類が不正確(unknown混在等)だとフィルタが不完全になり、除外漏れが発生する"
+      source: "L276 (cmd_1168)"
+      verified_file: "scripts/cmd_quality_log.sh"
