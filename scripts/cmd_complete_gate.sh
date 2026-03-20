@@ -1860,6 +1860,44 @@ done
 # ─── context_update freshness check（cmd指定時のみBLOCK） ───
 check_context_update "$CMD_ID"
 
+# ─── 報告YAML存在チェック（cmd_1192: タスクあり報告なしをBLOCK） ───
+level_heading "[L1]" "Report YAML existence check:"
+REPORT_TASK_COUNT=0
+REPORT_FOUND_COUNT=0
+REPORT_MISSING_FILES=()
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    REPORT_TASK_COUNT=$((REPORT_TASK_COUNT + 1))
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ -f "$report_file" ]; then
+        REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
+        echo "  ${ninja_name}: OK ($(basename "$report_file"))"
+    else
+        REPORT_MISSING_FILES+=("$(basename "$report_file")")
+        echo "  [CRITICAL] ${ninja_name}: MISSING ← 報告YAML不在: $(basename "$report_file")"
+    fi
+done
+
+if [ "$REPORT_TASK_COUNT" -ge 1 ] && [ "$REPORT_FOUND_COUNT" -eq 0 ]; then
+    echo "  [CRITICAL] BLOCK: タスク${REPORT_TASK_COUNT}件に対して報告YAML 0件"
+    for missing_f in "${REPORT_MISSING_FILES[@]}"; do
+        record_block_reason "report_yaml_missing:${missing_f}"
+    done
+    ALL_CLEAR=false
+elif [ "$REPORT_TASK_COUNT" -gt "$REPORT_FOUND_COUNT" ] && [ "$REPORT_FOUND_COUNT" -gt 0 ]; then
+    echo "  [WARNING] タスク${REPORT_TASK_COUNT}件中、報告YAML ${REPORT_FOUND_COUNT}件のみ（一部不在、非BLOCK）"
+elif [ "$REPORT_TASK_COUNT" -eq 0 ]; then
+    echo "  (no tasks found for this cmd)"
+else
+    echo "  OK (全${REPORT_TASK_COUNT}件の報告YAML確認済み)"
+fi
+
 # ─── related_lessons存在チェック（deploy_task.sh経由確認） ───
 level_heading "[L1]" "Related lessons injection check:"
 RL_CHECKED=false
