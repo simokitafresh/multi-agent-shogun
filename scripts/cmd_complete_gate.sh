@@ -3439,6 +3439,19 @@ except:
         echo "  SKIP (lesson_deprecation_scan.sh not found)"
     fi
 
+    # ─── cmd品質ログ記録（GATE CLEAR時、ベストエフォート） ───
+    echo ""
+    echo "Cmd quality log (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" 2>&1; then
+            echo "  cmd_quality_log: OK"
+        else
+            echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)"
+        fi
+    else
+        echo "  SKIP (cmd_quality_log.sh not found)"
+    fi
+
     exit 0
 else
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
@@ -3519,6 +3532,19 @@ else
     echo "Lesson score update (harmful - GATE BLOCK):"
     # harmful判定はACE Reflector方式に移行(cmd_470)。自己申告不在での一律harmful廃止。
     echo "  SKIP (disabled)"
+
+    # ─── cmd品質ログ記録（GATE BLOCK時、ベストエフォート） ───
+    echo ""
+    echo "Cmd quality log (GATE BLOCK):"
+    if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" 2>&1; then
+            echo "  cmd_quality_log: OK"
+        else
+            echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)"
+        fi
+    else
+        echo "  SKIP (cmd_quality_log.sh not found)"
+    fi
 
     # ─── GATE BLOCK時 harmful閾値による教訓自動deprecate ───
     echo ""
