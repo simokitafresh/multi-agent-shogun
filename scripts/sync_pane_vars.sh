@@ -20,18 +20,16 @@ source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 # model_detect.sh を使って実行中モデル名を検出
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 
-# エージェント → ペインのマッピング
-declare -A AGENT_PANES=(
-    [karo]=1
-    [sasuke]=2
-    [kirimaru]=3
-    [hayate]=4
-    [kagemaru]=5
-    [hanzo]=6
-    [saizo]=7
-    [kotaro]=8
-    [tobisaru]=9
-)
+# エージェント → ペインのマッピング（settings.yamlから動的生成 — cmd_1136）
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+declare -A AGENT_PANES=()
+_sp_idx=1
+for _sp_agent in $(get_all_agents); do
+    AGENT_PANES[$_sp_agent]=$_sp_idx
+    ((_sp_idx++)) || true
+done
+unset _sp_idx _sp_agent
 
 changed=0
 

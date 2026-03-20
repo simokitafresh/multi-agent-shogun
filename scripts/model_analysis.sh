@@ -81,7 +81,21 @@ MODE = os.environ["MODE"]
 CMP_MODEL1 = os.environ.get("CMP_MODEL1", "").lower()
 CMP_MODEL2 = os.environ.get("CMP_MODEL2", "").lower()
 
-ALL_NINJAS = ["sasuke", "kirimaru", "hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru"]
+# Read ninja names from settings.yaml (cmd_1136)
+def _load_ninja_names():
+    import yaml as _y
+    _settings = os.environ.get("SETTINGS", "")
+    if not _settings or not os.path.isfile(_settings):
+        return []
+    try:
+        with open(_settings) as _f:
+            _d = _y.safe_load(_f)
+        return [n for n, c in (_d or {}).get("cli", {}).get("agents", {}).items()
+                if isinstance(c, dict) and c.get("role") == "ninja"]
+    except Exception:
+        return []
+
+ALL_NINJAS = _load_ninja_names()
 ALL_NINJAS_SET = set(ALL_NINJAS)
 
 def normalize_model_label(raw_model):

@@ -14,7 +14,7 @@ resolve_bg_color() {
     *)           normalized="$model_display" ;;
   esac
   case "$agent_id" in
-    karo) echo "#121214" ;;
+    karo|gunshi) echo "#121214" ;;
     *)
       case "$normalized" in
         Opus*)   echo "#1a1e28" ;;   # 紺系

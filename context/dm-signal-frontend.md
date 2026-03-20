@@ -120,7 +120,7 @@ UIライブラリなし（全13コンポーネント手製）。
 
 2パスロード / プリフェッチ / ダウンサンプリング(520-1040点) / RAF / セマフォ(4並列) / メモ化 / Static Export
 
-**SPA遷移最終結論(cmd_644/654)**: Render Static Siteでnext/link SPA遷移は8回試行全て本番失敗→断念。3導線(sidebar/dropdown-menu/page-navigation)はwindow.location.hrefに復帰(cmd_654)。IndexedDB永続化(api-cache.ts + idb-keyval 2層キャッシュ)は維持(cmd_647)。→ `docs/future-01/005.md`(全知見集約)
+**SPA遷移最終結論(cmd_644/654)**: Render Static Siteでnext/link SPA遷移は8回試行全て本番失敗→断念。3導線(sidebar/dropdown-menu/page-navigation)はwindow.location.hrefに復帰(cmd_654)。IndexedDB永続化(api-cache.ts + idb-keyval 2層キャッシュ)は維持(cmd_647)。
 **prefetch縮退(cmd_733)**: 初期ロード83本一斉prefetch→selected PF用3本(mtd, performance(3), performance(0))に縮退。残りはオンデマンド取得。
 **SWR化(cmd_765)**: clearSignalsCache()毎回呼出を廃止→stale-while-revalidate導入。キャッシュ即表示(stale)+BGでfresh fetch。初回ロード2-5秒空白画面を解消。admin操作後のみcache invalidation。
 **バンドル最適化**: katex CSS→docsのみ(cmd_741, -27KB) / signal-pie-chart dynamic import(cmd_742, recharts~280KB排除) / date-fns除去+lucide optimizePackageImports+MtdChart/MtdDailyTable dynamic import(cmd_786, -12~20kB gzip)。

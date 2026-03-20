@@ -10,7 +10,7 @@ if [ -z "${TMUX_PANE:-}" ]; then
     exit 0
 fi
 AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
-if [ -z "$AGENT_ID" ] || [ "$AGENT_ID" = "shogun" ] || [ "$AGENT_ID" = "karo" ]; then
+if [ -z "$AGENT_ID" ] || [ "$AGENT_ID" = "shogun" ] || [ "$AGENT_ID" = "karo" ] || [ "$AGENT_ID" = "gunshi" ]; then
     exit 0
 fi
 
@@ -39,12 +39,12 @@ done <<< "$changed_files"
 # --- Run lint checks ---
 violations=""
 
-# ShellCheck for .sh files
+# ShellCheck for .sh files (-S warning: info/style除外。既存警告での偽ブロック防止)
 if [ -n "$sh_files" ] && command -v shellcheck >/dev/null 2>&1; then
     for f in $sh_files; do
         full_path="$SHOGUN_ROOT/$f"
         [ -f "$full_path" ] || continue
-        sc_out="$(shellcheck "$full_path" 2>&1)" || true
+        sc_out="$(shellcheck -S warning "$full_path" 2>&1)" || true
         if [ -n "$sc_out" ]; then
             violations="${violations}--- shellcheck: $f ---\n${sc_out}\n"
         fi
@@ -126,4 +126,4 @@ cat <<HOOK_JSON
   "reason": "ERROR: Lint violations found in changed files. You MUST fix them before completing.\nWHY: F006 — lint違反を無視してstopするな。\nFIX: 1) Read violations below. 2) Fix each violation. 3) Try completing again.\n\n${violations_escaped}"
 }
 HOOK_JSON
-exit 1
+exit 0

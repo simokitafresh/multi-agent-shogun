@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-18 -->
+<!-- last_updated: 2026-03-19 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -518,3 +518,29 @@
 | cmd_1013 | 分析 — CPCV+PBO過適合検証（既存忍法+二段重ね全チャンピオン） | dm-signal | 03-18 | — |
 | cmd_1043 | インフラ全修正 — cmd_1041偵察で検出した全問題を殲滅（CRITICAL3+HIGH4+MEDIUM5+LOW3+EH群） | infra | 03-18 | AC8統合レビュー完了。5観点全PASS。19ファイル(+6 |
 | cmd_1045 | 修正 — lessons_usefulゲート穴塞ぎ（string_list/dict_no_usefulすり抜け229件） | infra | 03-18 | — |
+| cmd_1046 | 修正 — CI RED解消（pushトリガー不発+テスト失敗修正） | infra | 03-18 | CI RED修正完了。Unit Tests/Shell Li |
+| cmd_1047 | 全activeプロジェクト(3PJ)のgit状態をクリーンにし、IDEの差分表示を正常化する | infra | 03-18 | DM-Signal gitignore整理+成果物commi |
+| cmd_1048 | 高速化 — kasoku picks vectorize（T3: ctx build 84.8%ボトルネック直撃） | dm-signal | 03-18 | — |
+| cmd_1049 | 修正 — ninja_monitor STALE-TASK判定にデプロイ直後グレースピリオド追加 | infra | 03-18 | — |
+| cmd_1051 | oikaze/kawarimi/yotsumeにT3(picks vectorize)を横展開し、19.2M GS全体を62min→20min以下にする | dm-signal | 03-18 | — |
+| cmd_1050 | 高速化 — nukimi picks vectorize（T3横展開: 残り最大ボトルネック2.3h） | dm-signal | 03-18 | — |
+| cmd_1054 | cmd吸収時に旧cmdで稼働中の忍者を即座に/clearし、無駄な作業時間を防ぐ | infra | 03-18 | cmd_absorb.shにabort_deployed_n |
+| cmd_1053 | ac_versionをACテキスト内容のハッシュに変更し、AC内容差替えを確実に検知する | infra | 03-18 | — |
+| cmd_1052 | oikaze/kawarimi/yotsumeにT3を横展開し、各忍法のGS出力が本番(Render)と完全一致することを検証する | dm-signal | 03-18 | — |
+| cmd_1055 | Playwrightスクレイパーのheadlessモード安定化とUI変更耐性の強化 | google-classroom | 03-18 | scrape_classroom.pyの脆弱なCSSセレクタ |
+| cmd_1060 | Phase 3-4完了済みなのにドキュメントが未更新。32体ユニバース構成の正式定義が設計書にあるがcontext索引に反映されていない。コードとドキュメントの乖離を修復する | dm-signal | 03-18 | context/dm-signal-research.md |
+| cmd_1061 | run_077_*.pyのPORTFOLIO_MAP/CANDIDATE_SETハードコードを外部YAML設定化し、シン四神32体・将来の新構成PFに差し替え可能にする | dm-signal | 03-18 | — |
+| cmd_1062 | T3(picks vectorize)で全量42min→並列12minに到達。さらなる高速化余地を定量的に把握し、Phase 5実行前に追加最適化の要否を判断する材料を得る | dm-signal | 03-19 | — |
+| cmd_1064 | 4忍法のmomentum_cube計算をpandas pct_change→numpy slice一括に置換し、ctx_build高速化+本番パリティ完全一致を確認する | dm-signal | 03-19 | — |
+| cmd_1065 | queue/tasks/*.yamlへのWrite/Editをhookで無条件denyし、deploy_task.sh経由のみでタスクYAML生成を強制する | infra | 03-19 | — |
+| cmd_1058 | 日次cronスクレイパー(第一段)のセレクタ劣化をメトリクスで検知し、classroom側スキル(第二段)でaria_snapshot+refによるセレクタ診断・修繕案提示を可能にする二段構えの自己回復機構を構築する | google-classroom | 03-19 | — |
+| cmd_1066 | レビュー報告テンプレートにverdict/self_gate_checkを追加し、ゲートBLOCKによる家老の手戻りを解消する | infra | 03-19 | — |
+| cmd_1068 | 12体レガシー四神で誤実行されたcmd_1057のGS出力18ファイルを削除し、汚染データの後続混入を防ぐ | dm-signal | 03-19 | — |
+| cmd_1067 | queue/reports/*.yamlへのWrite/Editをhookで無条件denyし、report_field_set.sh経由のみで報告YAML更新を強制する | infra | 03-19 | — |
+| cmd_1072 | 家老が/clear後もdeploy_task.sh・report_field_set.shの使い方を知っている状態にし、hookブロック→再学習の無駄サイクルを根絶する | infra | 03-19 | — |
+| cmd_1071 | 'report_merge.shがtask YAMLのtitleフィールド（存在しない）で偵察判定しているバグを修正し、task_type: reconで判定するようにする' | infra | 03-19 | — |
+| cmd_1070 | 忍者が/clear後もreport_field_set.shの使い方を知っている状態にし、hookブロック→再学習の無駄サイクルを根絶する | infra | 03-19 | — |
+| cmd_1069 | run_077_*.pyがuniverse設定をどこから読み、なぜ32体ではなく12体で実行されたかを特定する | dm-signal | 03-19 | — |
+| cmd_1074 | report_field_set.shがpipe入力のYAMLリスト/dictを文字列として格納するバグを修正し、構造化データを正しく保持する | infra | 03-19 | — |
+| cmd_1073 | projects/dm-signal/lessons.yaml の全409件を精査し、本番バックエンド挙動に関する事実（PI候補）を網羅的に抽出する | dm-signal | 03-19 | — |
+| cmd_1057 | 32体シン四神ユニバースで7忍法GS全量実行し、チャンピオンパラメータを決定する | dm-signal | 03-19 | — |

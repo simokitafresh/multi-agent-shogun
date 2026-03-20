@@ -48,8 +48,10 @@ result_warn() {
     WARN_COUNT=$((WARN_COUNT + 1))
 }
 
-# 全忍者名リスト
-ALL_NINJAS=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
+# 全忍者名リスト（settings.yamlから動的取得 — cmd_1136）
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+read -ra ALL_NINJAS <<< "$(get_ninja_names)"
 
 # --- Check 1: ハードコードgrepスキャン ---
 
@@ -63,8 +65,8 @@ check_hardcodes() {
     # 検索パターン
     local patterns=(
         'is_codex'
-        'sasuke.*codex'
-        'kirimaru.*codex'
+        'gunshi.*codex'
+        'hayate.*codex'
         'gpt-5\.'
         'claude-[A-Za-z0-9._-]+'
     )
@@ -158,16 +160,11 @@ if not errors and not warnings:
     print('OK:全agent定義が正常')
 " 2>&1)
 
-    local has_error=false
-    local has_warn=false
-
     while IFS= read -r line; do
         if [[ "$line" == ERROR:* ]]; then
             result_fail "${line#ERROR:}"
-            has_error=true
         elif [[ "$line" == WARN:* ]]; then
             result_warn "${line#WARN:}"
-            has_warn=true
         elif [[ "$line" == OK:* ]]; then
             result_pass "${line#OK:}"
         fi

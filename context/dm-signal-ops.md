@@ -182,3 +182,4 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | 新忍法偵察 | 逆風(cmd_249)/RelMom(cmd_250)/MultiView(cmd_251)偵察中 |
 | SVMF/MVMFバグ | 修正完了(cmd_235+cmd_244) |
 | 穴1/2/3 | 全対策完了 |
+| PF健全性スイープ | cmd_1091: 全122PF×5項目パス。定期実行候補(L417) |

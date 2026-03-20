@@ -85,7 +85,11 @@ fi
 
 validate_cli_availability "$TARGET_CLI" >/dev/null
 
-ALL_AGENTS=(shogun karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
+# shellcheck source=/dev/null
+source "${SCRIPT_DIR}/scripts/lib/agent_config.sh"
+read -ra _cfg_agents <<< "$(get_all_agents)"
+ALL_AGENTS=(shogun "${_cfg_agents[@]}")
+unset _cfg_agents
 CORE_AGENTS=(shogun karo)
 
 declare -a TARGET_AGENTS=()
@@ -153,20 +157,21 @@ find_agent_pane() {
         return 0
     fi
 
+    # 動的フォールバック（settings.yamlから — cmd_1136）
     local pane_base
     pane_base=$(tmux show-options -gv pane-base-index 2>/dev/null || echo "1")
-    case "$agent" in
-        karo) echo "${agents_window}.$((pane_base + 0))" ;;
-        sasuke) echo "${agents_window}.$((pane_base + 1))" ;;
-        kirimaru) echo "${agents_window}.$((pane_base + 2))" ;;
-        hayate) echo "${agents_window}.$((pane_base + 3))" ;;
-        kagemaru) echo "${agents_window}.$((pane_base + 4))" ;;
-        hanzo) echo "${agents_window}.$((pane_base + 5))" ;;
-        saizo) echo "${agents_window}.$((pane_base + 6))" ;;
-        kotaro) echo "${agents_window}.$((pane_base + 7))" ;;
-        tobisaru) echo "${agents_window}.$((pane_base + 8))" ;;
-        *) return 1 ;;
-    esac
+    local _offset=0
+    local _found=0
+    for _fa in $(get_all_agents); do
+        if [[ "$_fa" == "$agent" ]]; then
+            echo "${agents_window}.$((pane_base + _offset))"
+            _found=1
+            break
+        fi
+        ((_offset++)) || true
+    done
+    [[ "$_found" -eq 0 ]] && return 1
+    return 0
 }
 
 agent_pane_target() {

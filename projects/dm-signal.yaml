@@ -888,7 +888,7 @@ naming_convention:
   # 教訓サイクルで発見された不変量は /lesson-sort で自動抽出・ここに追記。
   # 根拠: 2026-03-17 殿直伝「受動的知識(0ms)が最速の防御層」
   production_invariants:
-    last_updated: "2026-03-17"
+    last_updated: "2026-03-19"
     entries:
       - id: PI-001
         fact: "本番シグナル計算は日次解像度。10D/15D/20D/1M は全て異なるlookback期間として計算される"
@@ -924,6 +924,11 @@ naming_convention:
         fact: "GS結果と本番計算結果は構造的に乖離しうる(月次vs日次解像度、pydanticバリデーション差異等)"
         implication: "本番DB登録前に、登録対象PFの全期間保有シグナル完全一致+月次リターン完全一致を確認するパリティ検証cmdが完了していること。パリティ未検証の本番登録は禁止"
         source: "cmd_1082事故+cmd_1090乖離分析"
+      - id: PI-008
+        fact: "monthly_returnsテーブルにはmonthly_return(Close-to-Close)とmonthly_return_open(Open-to-Open)の2列が存在。GSはOpen-to-Open方式で計算"
+        implication: "パリティ検証ではmonthly_return_open列を使用すること。monthly_return(Close)列で比較すると偽の不一致が発生する"
+        source: "cmd_1098(L420)"
+        verified_file: "backend/app/models/monthly_return.py"
 
   data_pipeline:
     description: "DB直接読込方式(主系) + CSV互換ローダー併用"

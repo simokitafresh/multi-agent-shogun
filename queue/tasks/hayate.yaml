@@ -1,87 +1,46 @@
-task:
-  acceptance_criteria:
-  - ac1: harmful判定ロジック削除(L1754-1851) + 理由コメント1行 + oneshot/reset_harmful_counts.sh作成・実行
-  - ac2: 報告YAML全文からの教訓ID自動検出→helpful+1帰属。lessons_usefulとの重複排除
-  assigned_to: hayate
-  bloom_level: ''
-  completed_at: '2026-03-01T17:10:25+09:00'
-  deployed_at: '2026-03-01T17:05:49'
-  description: "【注入教訓】 必ず確認し reviewed: true に変更せよ\n  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
-    \  - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re\n\
-    \  - L038: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必\n\
-    \  - L048: check_and_update_done_taskがparent_cmdのみで判定していたためWave1報告doneがWave2タスクassignedを自動d\n\
-    \  - L044: 忍者名_report.yaml(ルートレベルフィールド)とsubtask_*.yaml(report:キー配下)で構造が異なる。スキーマ検証やパーサーは両方に対\n\
-    \  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n\
-    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L032: ##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計\n────────────────────────────────────────\n\
-    \n教訓効果計測の計器修正。AC1(harmful撤廃)+AC2(helpful自動帰属)を実装せよ。\n\nAC1: harmful判定ロジック撤廃 +\
-    \ harmful_countリセット\n(1) cmd_complete_gate.sh L1754-1851の「lessons_useful空+task\
-    \ done→全注入教訓にharmful+1」\n    ロジックを削除(コメントアウトではなく削除)。\n    理由コメントを1行残す:\n     \
-    \ # harmful判定はACE Reflector方式に移行(cmd_470)。自己申告不在での一律harmful廃止。\n(2) ワンショットスクリプト\
-    \ scripts/oneshot/reset_harmful_counts.sh を作成・実行:\n    対象: projects/infra/lessons.yaml\
-    \ + projects/dm-signal/lessons.yaml\n    全教訓のharmful_countを0にリセット。\n\nAC2: GATE\
-    \ CLEAR時のhelpful自動帰属(ACE Reflector方式)\ncmd_complete_gate.sh L1547-1590のhelpful判定を拡張:\n\
-    - 現行(維持): lessons_useful/lesson_referencedフィールドの明示報告→helpful+1\n- 追加: 忍者の報告YAML全文から注入教訓ID(L0XX/L1XX形式)の出現を自動検出→helpful+1\n\
-    - resolve_report_file()で取得した報告YAMLをテキストとして読み込み\n- 注入教訓ID一覧(related_lessonsから取得済み)と照合\n\
-    - 報告本文中にIDが出現する教訓→helpful+1(lessons_usefulとの重複排除)\n- ログ: \"  ${lid}: helpful +1\
-    \ (auto-detected in report text)\"\n"
-  parent_cmd: cmd_470
-  progress:
-  - timestamp: '2026-03-01T17:10:25+09:00'
-    ac_id: ac1
-    status: done
-    note: harmful判定ロジックを削除し、理由コメント追加。oneshotスクリプト作成・実行で2PJ harmful_countを0化。
-  - timestamp: '2026-03-01T17:10:25+09:00'
-    ac_id: ac2
-    status: done
-    note: lessons_useful加点を維持しつつ、report全文からrelated_lessons ID自動検出→helpful加点（重複排除）を追加。
-  project: infra
-  related_lessons:
-  - id: L097
-    reviewed: true
-    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-  - id: L117
-    reviewed: true
-    summary: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/report_implement.yaml、cmd_complete_gate.sh内の全Python判定コード、deploy_task.sh報告テンプレート等の横断更新が必須。後方互換フォールバックも各箇所に必要。impl_bが全箇所カバーし
-  - id: L038
-    reviewed: true
-    summary: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必ずテスト用cmdを使用すべき。
-  - id: L048
-    reviewed: true
-    summary: check_and_update_done_taskがparent_cmdのみで判定していたためWave1報告doneがWave2タスクassignedを自動done化した。task_id一致チェックをL311後に追加して修正済み
-  - id: L044
-    reviewed: true
-    summary: 忍者名_report.yaml(ルートレベルフィールド)とsubtask_*.yaml(report:キー配下)で構造が異なる。スキーマ検証やパーサーは両方に対応が必要
-  - id: L074
-    reviewed: true
-    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  - id: L063
-    reviewed: true
-    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-  - id: L032
-    reviewed: true
-    summary: '##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計'
-  report_filename: hayate_report_cmd_470.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - pushするな(commitまで)
-    - スコープ外改善は禁止
-    notes:
-    - TODO/FIXMEが残っていないことを確認せよ
-    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-    required_fields:
-    - files_modified
-    - lesson_candidate
-    - lessons_useful
-  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
-  subtask_id: subtask_470_impl_a
-  target_path:
-  - scripts/cmd_complete_gate.sh
-  - projects/infra/lessons.yaml
-  - projects/dm-signal/lessons.yaml
-  task_id: subtask_470_impl_a
-  task_type: implement
-  title: harmful判定撤廃+harmful_countリセット+helpful自動帰属(ACE Reflector)
+task_id: cmd_1156_impl
+parent_cmd: cmd_1156
+status: pending
+project: infra
+type: implement
+command: |
+  【緊急バグ修正】ninja_monitor.shのflat YAML非対応修正。AC1+AC2を実装せよ。
+
+  AC1: scripts/ninja_monitor.sh の check_and_update_done_task 修正（L567付近）
+    現行: yaml_field_set "$task_file" "task" "status" "done" → flat YAMLで FATAL
+    修正: yaml_field_set失敗時のフォールバック追加:
+      1. yaml_field_setをif文で囲み、失敗時にフォールバックへ
+      2. grep -q "^status:" "$task_file" でflat形式を確認
+      3. sed -i "s/^status: .*/status: done/" "$task_file" で直接更新
+      4. log "FLAT-YAML-FALLBACK: $name status → done (yaml_field_set failed, flat format detected)"
+      5. completed_atも同様にflat形式対応（python3ブロックがtask blockを前提 → 不在時はsed）
+      6. 更新後にfield_get "$task_file" "status"が"done"を返すことを確認
+
+  AC2: STAGE1-SKIPタイマー安全弁追加（L2093付近）
+    現行: status=assigned/acknowledged/in_progress/pending → 無条件/clear禁止
+    修正: mtime 15分超 + pane idle → STAGE1-SKIP解除
+      1. task YAMLのmtimeをstat -c %Y で取得
+      2. 現在時刻との差が900秒以上 → STAGE1-SKIP解除
+      3. task YAMLのstatusをidleにリセット（sedフォールバック使用）
+      4. log "STAGE1-TIMEOUT: $name task_status=$status stale for ${age}s, resetting to idle"
+      5. 通常の/clearフローへ合流
+      6. 注意: in_progressの場合は閾値を1800秒（30分）にする
+acceptance_criteria: |
+  AC1: yaml_field_set失敗時にflat形式フォールバックが発火しstatus更新が成功すること
+  AC2: STAGE1-SKIP 15分タイマーが実装され、stale taskで/clear解除されること
+binary_checks:
+  AC1:
+    - "yaml_field_set失敗時のフォールバックコードがcheck_and_update_done_taskに存在するか?"
+    - "grep ^status: によるflat形式検出があるか?"
+    - "sed -i によるstatus直接更新があるか?"
+    - "FLAT-YAML-FALLBACKのログ出力があるか?"
+    - "field_getによるpost-update検証があるか?"
+  AC2:
+    - "stat -c %Y によるmtime取得があるか?"
+    - "900秒(15分)の閾値チェックがあるか?"
+    - "in_progress時の1800秒(30分)閾値があるか?"
+    - "STAGE1-TIMEOUTのログ出力があるか?"
+    - "statusをidleにリセットするコードがあるか?"
+stop_for:
+  - bash -n scripts/ninja_monitor.sh がシンタックスエラー
+never_stop_for: []

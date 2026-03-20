@@ -1,5 +1,5 @@
 # GS高速化×完全一致 — 知見集約ドキュメント（索引）
-<!-- last_updated: 2026-03-17 kasoku ratio/diff 2分割恒久化 + R5チャンク分割基準追加 -->
+<!-- last_updated: 2026-03-18 L403-L407振り分け(T3 picks vectorize知見) -->
 <!-- Vercel分割: 詳細 → docs/research/gs-speedup-details.md -->
 
 > 管理責任: 家老(karo)
@@ -51,6 +51,7 @@
 ### (1) pd.Series演算 → NumPy配列一括演算に置換
 - ループ内のpd.Series.get()を143月×N回呼ぶ → ndarray一括演算に変更
 - Python loopがボトルネック。NumPy化でC言語レベルの速度に
+- L408: momentum_cube `cumret.pct_change(periods=N)` → `cum_values[N:]/cum_values[:-N]-1.0` で82.8x高速化。pandas Series毎回構築オーバーヘッド(0.184ms/call)が支配的（cmd_1062）
 
 ### (2) 月次リターン前処理をループ外で事前キャッシュ化
 - パターンループの外で1回だけ前処理を実行
@@ -64,6 +65,9 @@
 - L366: pattern内loopよりsubset context前計算を先に最適化すべし。wall-clock支配はsimulate_patternのfor-loopよりget_*_contextのprecomputed_picks/momentum cacheに集中
 - L380: kasoku ctx buildの主犯はprecomputed_picks構築(84.8%=79.34ms/93.54ms)。momentum計算は11msで支配的でない（cmd_1034）
 - L395: picks構築ボトルネックはscore matrix数に比例(kasoku 306 vs yotsume 10)。アルゴリズム転用では改善しない。numpy vectorizeが正攻法（cmd_1037）
+- L403: 3D batch nanmax: top_n=1でargsort→nanmax置換+240回Python呼出し→1回numpy演算でpicks構築54.9x高速化（cmd_1048）
+- L404: batch化の費用対効果: picks構築>forward-fill>pack。ボトルネック支配率の高い箇所を優先（cmd_1048）
+- L407: picks vectorize効果はentry数に比例。kasoku240→54.9x、nukimi39→24.2x、yotsume12→微小（cmd_1052）
 
 ### (5) Numba適用はpure kernelに絞れ（cmd_1030）
 - L369: subset cache削減後はNumba候補をpure kernel(simulate_pattern hot loop, momentum kernel)に絞らぬと費用対効果が崩れる。pandas境界がブロック
@@ -88,6 +92,7 @@
 - wide形式: 1列目=year_month, 残列=pattern_id
 - 値=月次リターン(float)、NaNなし
 - 逐次版・高速化版それぞれで出力し、md5比較
+- L416: numpy.where内除算のRuntimeWarning回避: np.maximum(b,1)でsafe denominator使用（cmd_1080）
 
 ---
 
@@ -106,11 +111,15 @@
 - L365: チャンクプロトタイプの計測値を全量見積りに使うな。プロトタイプ0.490ms/pat vs AC3ベンチマーク4.936ms/pat(10倍差)
 - L367: 月次解像度重複パターン10D/15D/20D/1Mは数学的同一。kasoku30.7%,oikaze16.7%,kawarimi16.0%が重複（cmd_1030。L371はL367に統合）
 
+### gs_benchmark.pyアダプタ保守（cmd_1064）
+- L410: gs_benchmark.pyアダプタはrun_077_*.pyのAPI変更（load_monthly_returns_dual_from_db→load_monthly_returns_dual_from_universe等）に追従が必要（cmd_1064）
+
 ### PPE/profiler計測の罠（cmd_1033-1037）
 - L379: PPE異常診断ではfull-script benchmarkとcore _run_mp計測を分離すべし。data load/preflight外オーバーヘッドを分離しないとPPE効率を誤診する（cmd_1033）
 - L384: in-loop perf_counter profilerはoverhead+60%(0.178ms vs native 0.111ms/pat)。内訳比率は方向性有用だが絶対値は膨張する。native runtime必須（cmd_1034。L386統合）
 - L397: GS忍法ndarray(16KB-750KB)は全てL2/L3内。cache missはボトルネックではない(<5%)。Python interpreter overhead支配。ループ排除が本命（cmd_1037）
 - L401: 正確性修正(tiebreak+normalize)は全性能最適化に先行すべき。パリティ基準が不正確だと最適化後の検証自体が無効（cmd_1037）
+- L411: GS並列実行時のメモリ競合によるBus error。複数忍者が同時にGS実行するとメモリ不足で即死（cmd_1075）
 
 ---
 
@@ -185,10 +194,15 @@ kasoku ratio/diff は独立実行可能 → 最大分割粒度: method(2) × sub
 | 配分方式 | 均等配分(1/N) | モメンタムtop_n | top_n+bottom_n和集合 | 単一窓(base-skip)top_n | 短期/長期ratio cutoff | 短期-長期diff cutoff | 4視点和集合top_n |
 | モメンタム計算 | 不要 | 必要(lookback窓) | 必要(period_months軸) | 必要(base-skip窓) | 必要(長短2窓) | 必要(長短2窓) | 必要(4skip×base窓) |
 | パターン数(32体) | 41,416 | 1,490,976 | 1,490,976 | 3,230,448 | 6,336,648 | 6,336,648 | 248,496 |
-| ms/pat(grouped) | 0.14 | 1.19 | 1.33 | 1.43 | 4.94 | 4.94 | 0.61 |
-| ms/pat(PPE6) | — | 0.48 | 1.24 | 0.46 | 1.89 | 1.89 | 0.31 |
-| 直列見込(grouped) | ~6s | 29.5min | 33min | 76.7min | 8.7h | 8.7h | 2.5min |
-| 直列見込(PPE6) | ~6s | 11.9min | 30.8min | 24.6min | 3.3h | 3.3h | 1.3min |
+| ms/pat(PPE6) T4後 | 0.14 | 0.057 | 0.041 | 0.064 | 0.035 | 0.035 | ~0.31 |
+| ms/pat(PPE6) T3後 | 0.14 | 0.258 | ~0.165 | 0.104 | 0.057 | 0.057 | ~0.31 |
+| ms/pat(PPE6) T3前 | — | 0.48 | 1.24 | 0.46 | 1.89 | 1.89 | 0.31 |
+| T4改善倍率(vs T3後) | — | 4.53x | 4.05x | —(無変更) | 1.63x | 1.63x | — |
+| T3改善倍率(vs T3前) | — | 1.86x | 7.5x | 24.2x | 54.9x | 54.9x | 微小 |
+| 直列見込(PPE6) T4後 | ~6s | 1.4min | ~1.0min | 3.5min | 7.3min | 7.3min | ~1.3min |
+| 直列見込(PPE6) T3後 | ~6s | 6.4min | ~4.1min | 5.6min | 12.0min | 12.0min | ~1.3min |
+| 直列見込(PPE6) T3前 | ~6s | 11.9min | 30.8min | 24.6min | 3.3h | 3.3h | 1.3min |
+| **合計(PPE6) T4後: ~15min** (T3後: ~42min, T3前: ~7.4h) | | | | | | | |
 
 ### kasoku ratio/diff 2分割の事実（恒久化 2026-03-17 殿指示）
 
@@ -200,6 +214,10 @@ kasoku ratio/diff は独立実行可能 → 最大分割粒度: method(2) × sub
 - **並列分割時の最小単位は `(method, subset_id)`** — ratio/diffは独立実行可能
 
 ※ nukimi_cはnukimiに統合済み（殿裁定 2026-02-19）。詳細 → `docs/research/gs-speedup-details.md` §16
+
+### T3 picks vectorize忍法差異（cmd_1048-1052）
+- L405: nukimi momentum_cubeは既に3D(n_combos,n_months,n_comp)。kasokuのようなnp.stack不要。忍法固有のデータ構造に確認してから適用方式を選択（cmd_1050）
+- L406: kawarimi T3: top+bottom和集合でargsort不可避→改善幅7.5x。cutoff_score方式(kasoku/nukimi)のnanmax劇的改善(54.9x/24.2x)と対照的（cmd_1052）
 
 ### 忍法間共有化の影響（cmd_1030）
 - L368: 忍法間共有化の性能インパクトはcontext build(0.058%)でなくsimulate_pattern(99.94%)が支配的。共有化の主価値は保守性向上

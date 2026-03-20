@@ -50,7 +50,9 @@ if [[ -z "$NEW_PROJECT_NAME" ]]; then
 fi
 
 # --- 全エージェントに inbox_write で通知 ---
-AGENTS=(karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/lib/agent_config.sh"
+read -ra AGENTS <<< "$(get_all_agents)"
 MSG="PJフォーカス切替: ${OLD_PROJECT_NAME} → ${NEW_PROJECT_NAME}。次の/clear時に新PJ知識がロードされる。"
 
 sent=0

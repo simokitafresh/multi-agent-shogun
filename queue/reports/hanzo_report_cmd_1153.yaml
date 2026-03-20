@@ -1,7 +1,0 @@
-ninja: hanzo
-parent_cmd: cmd_1153
-task_id: cmd_1153_script
-result: done
-changed_files: scripts/workaround_pattern_check.sh, scripts/ninja_monitor.sh
-summary: 'AC1: workaround_pattern_check.sh新設(閾値3回検出+冪等性)。AC3: ninja_monitor.shに10分間隔check_workaround_pattern追加(||
-  true防御)。bash -n両ファイルPASS。'

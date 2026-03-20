@@ -146,7 +146,7 @@ awk -F'\t' '$3 == "BLOCK" {
     for (i in reasons) {
         r = reasons[i]
         # 忍者名を除去して正規化
-        gsub(/^(sasuke|hanzo|hayate|kagemaru|kirimaru|saizo|kotaro|tobisaru):/, "", r)
+        gsub(/^[a-z]+:/, "", r)
         if (r ~ /^missing_gate:/) category = r
         else if (r ~ /lesson_candidate/) category = "lesson_candidate_issue"
         else if (r ~ /lesson_done/) category = "lesson_done_issue"

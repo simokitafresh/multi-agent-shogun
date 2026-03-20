@@ -16,17 +16,17 @@ from pathlib import Path
 
 import yaml
 
-LOCAL_AGENTS = {
-    "karo",
-    "sasuke",
-    "kirimaru",
-    "hayate",
-    "kagemaru",
-    "hanzo",
-    "saizo",
-    "kotaro",
-    "tobisaru",
-}
+def _load_local_agents():
+    """settings.yamlからエージェント名を動的取得（cmd_1136）"""
+    settings_path = Path(__file__).resolve().parent.parent / "config" / "settings.yaml"
+    try:
+        with settings_path.open() as f:
+            data = yaml.safe_load(f) or {}
+        return {"karo"} | set(data.get("cli", {}).get("agents", {}).keys())
+    except Exception:
+        return {"karo"}
+
+LOCAL_AGENTS = _load_local_agents()
 LEGACY_AGENTS = {f"ashigaru{i}" for i in range(1, 9)} | {"gunshi"}
 CANONICAL_TASKS = LOCAL_AGENTS | LEGACY_AGENTS
 CANONICAL_REPORTS = {f"{agent}_report" for agent in CANONICAL_TASKS}
@@ -195,7 +195,8 @@ def slim_inbox(agent_id: str, dry_run: bool = False) -> bool:
 
     archive_file = queue_dir() / "archive" / f"inbox_{agent_id}_{timestamp()}.yaml"
     if dry_run:
-        print(f"[DRY-RUN] would archive read messages from {inbox_file} -> {archive_file}")
+        print(f"[DRY-RUN] would archive read messages "
+              f"from {inbox_file} -> {archive_file}")
         return True
 
     if not save_yaml(archive_file, {"messages": archived_messages}):

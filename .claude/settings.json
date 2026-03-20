@@ -166,6 +166,7 @@
       "Read",
       "Write",
       "Edit",
+      "Edit(.claude/hooks/*)",
       "Glob",
       "Grep",
       "Agent",

@@ -18,7 +18,7 @@ remaining=$(ps aux | grep inbox_watcher | grep -v grep | grep -v restart_watcher
 echo "  残存プロセス: $remaining"
 
 # 2. PANE_BASEを取得
-PANE_BASE=$(tmux show-options -p -t "shogun:agents.1" -v @pane_index 2>/dev/null || echo "1")
+# pane_base: pane_lookup()が内部で解決するため直接参照は不要
 
 # 3. 全watcherを再起動
 echo "[2/3] 新プロセスを起動..."
@@ -37,18 +37,21 @@ nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.1" "$_cli"
 disown
 echo "  karo → shogun:agents.1 ($!)"
 
-# 忍者
-NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
-NINJA_PANES=(2 3 4 5 6 7 8 9)
+# 忍者+軍師（settings.yamlから動的取得 — cmd_1136）
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 
-for i in "${!NINJA_NAMES[@]}"; do
-    name="${NINJA_NAMES[$i]}"
-    pane="${NINJA_PANES[$i]}"
-    _cli=$(tmux show-options -p -t "shogun:agents.${pane}" -v @agent_cli 2>/dev/null || echo "claude")
-    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${name}" "shogun:agents.${pane}" "$_cli" \
+for name in $(get_all_agents); do
+    [[ "$name" == "karo" ]] && continue  # karo is handled above
+    pane=$(pane_lookup "$name" 2>/dev/null)
+    [[ -z "$pane" ]] && continue
+    _cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "claude")
+    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${name}" "$pane" "$_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_${name}.log" &
     disown
-    echo "  ${name} → shogun:agents.${pane} ($!)"
+    echo "  ${name} → ${pane} ($!)"
 done
 
 echo "[3/3] 起動確認..."

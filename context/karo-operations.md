@@ -81,6 +81,21 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 
 **原則**: 「教訓で忍者に教える」より「テンプレを直して問題が発生しない構造にする」を優先。同じworkaroundを2回やったら構造が間違っている。
 
+### Workaround Pattern → 軍師レビューヒント共有
+
+`workaround_pattern_check.sh` がパターン検出した際、そのパターンを軍師にも `review_hint` として共有する。軍師がレビュー時にこのヒントを参照し、該当パターンを重点チェックすることで、同じ間違いの再発を水際で防ぐ。
+
+**トリガー**: `karo_workaround_log.sh` 実行後に `workaround_pattern_check.sh` がパターンを検出した場合
+
+**手順**: パターン検出時、以下のinbox_writeを実行して軍師にヒントを送信:
+```bash
+bash scripts/inbox_write.sh gunshi "レビューヒント: {パターン名}。忍者が頻繁に間違えるパターン。重点確認せよ" review_hint karo
+```
+
+- `{パターン名}` は `workaround_pattern_check.sh` が出力したパターン名に置換
+- 軍師は受信した `review_hint` を次回以降のレビュー時に該当パターンを重点チェックする
+- 複数パターンが同時検出された場合は、パターンごとに1通ずつ送信
+
 → `docs/research/karo-operations-detail.md` §3
 
 ## §3.5 DCエスカレーション（裁定重複チェック必須）
