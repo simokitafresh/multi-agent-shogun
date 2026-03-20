@@ -43,16 +43,14 @@ STDIN_VALUE=""
 USE_PYTHON=0
 if [ "$VALUE" = "-" ]; then
     STDIN_VALUE="$(cat)"
-    # Try to convert YAML structure (list/dict) to JSON flow format
-    if FLOW_VALUE=$(python3 -c "
-import yaml, json, sys
+    # Detect YAML structure (list/dict) → Python fallback for faithful preservation
+    if python3 -c "
+import yaml, sys
 data = yaml.safe_load(sys.stdin.read())
-if isinstance(data, (list, dict)):
-    print(json.dumps(data, ensure_ascii=False))
-else:
-    sys.exit(1)
-" <<< "$STDIN_VALUE" 2>/dev/null); then
-        VALUE="$FLOW_VALUE"
+sys.exit(0 if isinstance(data, (list, dict)) else 1)
+" <<< "$STDIN_VALUE" 2>/dev/null; then
+        VALUE="$STDIN_VALUE"
+        USE_PYTHON=1
     elif [[ "$STDIN_VALUE" == *$'\n'* ]]; then
         # Multi-line text: awk cannot handle, use Python
         VALUE="$STDIN_VALUE"
