@@ -401,8 +401,8 @@ try:
     lines = ["lessons_useful:"]
     for lid in ids:
         lines.append(f"  - id: {lid}")
-        lines.append(f"    useful: # true or false")
-        lines.append(f"    reason: # 1行で。trueなら何に役立ったか、falseならなぜ不要だったか")
+        lines.append(f"    useful: FILL_THIS  # true or false に書き換えよ（必須）")
+        lines.append(f"    reason: FILL_THIS  # 1行で理由を書け（必須）")
 
     with open(report_file) as f:
         content = f.read()
