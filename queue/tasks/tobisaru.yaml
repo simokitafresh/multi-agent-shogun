@@ -1,0 +1,41 @@
+task_id: cmd_1159_impl
+parent_cmd: cmd_1159
+status: done
+project: infra
+type: implement
+command: |
+  cmd_1159 AC1+AC2+AC3を実装せよ。
+
+  ■ AC1: パターン修正追跡機能
+  scripts/workaround_pattern_check.sh を拡張:
+    - パターン通知時にlogs/workaround_patterns.yamlに記録:
+      pattern_id, category, count, first_seen, notified_at
+    - 次回パターンチェック時: resolved済みパターンの再発をカウント
+      resolved後に同categoryが再出現 → "REGRESSION: {pattern_id} 再発({count}件)"をログ+家老通知
+      resolved後に再出現なし → "EFFECTIVE: {pattern_id} 修正有効"をログ
+
+  ■ AC2: workaround_pattern_resolve.sh新設
+  scripts/workaround_pattern_resolve.sh:
+    引数: pattern_id, fix_cmd_id
+    動作: workaround_patterns.yamlの該当エントリにresolved_at+fix_cmd_idを追記
+    冪等: 既にresolved済みなら何もしない
+
+  ■ AC3: 二値チェック
+  - workaround_patterns.yamlにnotified_at付きエントリが記録されること
+  - resolve後の再発がREGRESSIONとして検出されること
+  - resolve後の非再発がEFFECTIVEとして記録されること
+acceptance_criteria: |
+  AC1: パターン検出時にworkaround_patterns.yamlに記録される
+  AC2: workaround_pattern_resolve.shが存在し動作する
+  AC3: REGRESSION/EFFECTIVE判定が正しく動作する
+binary_checks:
+  AC1:
+    - "パターン検出時にworkaround_patterns.yamlに記録されるか?"
+    - "再発がREGRESSIONとして検出されるか?"
+  AC2:
+    - "workaround_pattern_resolve.shが存在し実行可能か?"
+    - "resolved済みエントリに対して冪等に動作するか?"
+  AC3:
+    - "EFFECTIVE判定が正しく出力されるか?"
+stop_for: []
+never_stop_for: []
