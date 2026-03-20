@@ -196,6 +196,25 @@ Shogun decides **what** (purpose), **success criteria** (acceptance_criteria), a
 
 Do NOT specify: number of ninja, assignments, verification methods, personas, or task splits.
 
+### 品質チェック3問（cmd起票ゲート）
+
+cmd起票前に以下3問を自問せよ。全問クリアしなければ起票するな。
+
+1. **これは消火か？品質向上か？**
+   Why: 表面的症状の修正は消火。根本原因に到達しなければ品質は上がらない。
+   OK: 「忍者が振り返りを書く場を作る」（品質向上）
+   NG: 「スクリプトの型バグを直して家老の手動修正を減らす」（消火）
+
+2. **自動化で人間の学習機会を奪っていないか？**
+   Why: スクリプトで自動で埋めると計測データが偽物になり品質が落ちる。
+   OK: 「テンプレートに記入欄を用意し、忍者が埋める」（学習機会を作る）
+   NG: 「lessons_usefulをスクリプトで自動生成する」（学習機会を奪う）
+
+3. **この変更で次のcmdの品質が上がるか？**
+   Why: 今回だけの問題を消すのではなく、次のサイクルが強くなる変更か。
+   OK: 「判断基準をcmd起票手順に組み込む」（次から自問が発生する）
+   NG: 「個別のスクリプトバグを直す」（この問題だけ消える）
+
 ### PI参照チェック（DB操作・GS登録・本番デプロイ系cmd）
 
 cmd起票前に `projects/{id}.yaml` の `production_invariants` を読み、
@@ -228,12 +247,23 @@ PIの内容をACに反映し、違反が起きない設計にすること。
   project: project-id
   priority: high/medium/low
   status: pending
+  # 偵察cmdのみ任意。偵察結果から家老が自律的にimplを起案する権限を付与
+  impl_budget:
+    max_cmds: 3          # 家老が起案してよいcmdの上限
+    scope: REDUCTION     # REDUCTION=既存改善のみ, HOLD=変更なし確認のみ
+    max_ac: 3            # 1cmdあたりAC上限
+    verify: "指標 > 閾値" # 任意。impl完了後の効果検証条件
 ```
 
 - **purpose**: One sentence. What "done" looks like. Karo and ninja validate against this.
 - **acceptance_criteria**: List of testable conditions. All must be true for cmd to be marked done. Karo checks these at Step 11.7 before marking cmd complete.
 - **not_in_scope**: このcmdで意図的にやらないこと。**AC3個以上のcmdでは必須**。後続cmdに回す論点をここへ明記せよ。
 - **unresolved_decisions**: 先送り裁定の記録。`PD-XXX`へのポインタか、「裁定なし」の明示を書く。pending_decisionsとの対応を失うな。
+- **impl_budget** (偵察cmd専用・任意): 偵察結果から家老が自律的にimpl cmdを起案→軍師レビュー→配備する権限を付与する。将軍は事後にdashboardで確認。
+  - `max_cmds`: 家老が起案してよいcmdの上限数
+  - `scope`: 起案cmdのスコープ制約。`REDUCTION`=既存改善のみ、`HOLD`=変更なし確認のみ
+  - `max_ac`: 1cmdあたりのAC上限数
+  - `verify` (任意): impl完了後の効果検証条件（例: `"CLEAR率 > 95%"`）
 
 ### cmd Scope Rule (Enhance vs Fix)
 
