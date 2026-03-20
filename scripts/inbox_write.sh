@@ -76,6 +76,74 @@ fi
 MSG_ID="msg_$(date +%Y%m%d_%H%M%S)_$(head -c 4 /dev/urandom | xxd -p)"
 TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
 
+# Pre-action auto-capture: 将軍→エージェント送信時、送信先ペインの現在状態を送信前に自動表示+ログ
+# 目的: 「観察なき行動」を構造的に防止（知性の外部化原則 2026-03-21）
+if [ "$FROM" = "shogun" ] || [ "$FROM" = "karo" ]; then
+    _pane_idx=""
+    while IFS=' ' read -r _idx _aid; do
+        if [ "$_aid" = "$TARGET" ]; then
+            _pane_idx="$_idx"
+            break
+        fi
+    done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
+
+    if [ -n "$_pane_idx" ]; then
+        _capture=$(tmux capture-pane -t "shogun:agents.${_pane_idx}" -p 2>/dev/null | tail -8 || true)
+        echo "[pre-send capture] ${TARGET} pane state BEFORE message:"
+        echo "$_capture"
+        echo "---"
+        # Persistent log (survives /clear, enables post-mortem)
+        _logdir="$SCRIPT_DIR/logs"
+        mkdir -p "$_logdir"
+        printf '%s [%s→%s type=%s] pane:\n%s\n---\n' \
+            "$TIMESTAMP" "$FROM" "$TARGET" "$TYPE" "$_capture" \
+            >> "$_logdir/shogun_action_log.txt" 2>/dev/null || true
+    fi
+fi
+
+# Report format gate: type=report_received → 報告YAMLのフォーマット検証
+# 目的: 家老の手動修正作業を根絶（karo_workarounds 5件連続同一問題を自動化×強制で解消）
+if [ "$TYPE" = "report_received" ]; then
+    # Find report YAML path from task YAML
+    is_ninja_reporter=0
+    for ninja in $NINJA_NAMES; do
+        if [ "$FROM" = "$ninja" ]; then
+            is_ninja_reporter=1
+            break
+        fi
+    done
+
+    if [ "$is_ninja_reporter" -eq 1 ]; then
+        TASK_YAML="$SCRIPT_DIR/queue/tasks/${FROM}.yaml"
+        if [ -f "$TASK_YAML" ]; then
+            REPORT_PATH=$(TASK_PATH="$TASK_YAML" python3 -c "
+import yaml, os
+try:
+    with open(os.environ['TASK_PATH']) as f:
+        data = yaml.safe_load(f)
+    if data and 'task' in data:
+        rp = data['task'].get('report_path', '')
+        if rp:
+            print(rp)
+except:
+    pass
+" 2>/dev/null || true)
+
+            if [ -n "$REPORT_PATH" ]; then
+                FULL_REPORT="$SCRIPT_DIR/$REPORT_PATH"
+                if [ -f "$FULL_REPORT" ]; then
+                    GATE_RESULT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1 || true)
+                    if echo "$GATE_RESULT" | grep -q "^FAIL"; then
+                        echo "[report_format_gate] BLOCKED: $GATE_RESULT" >&2
+                        echo "[report_format_gate] 報告YAMLを修正してから再送信せよ: $REPORT_PATH" >&2
+                        exit 1
+                    fi
+                fi
+            fi
+        fi
+    fi
+fi
+
 # Atomic write with flock (3 retries)
 attempt=0
 max_attempts=3
