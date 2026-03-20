@@ -67,7 +67,28 @@ friction_type: `ambiguous_scope` | `missing_context` | `too_many_acs` | `unclear
 
 ## §3 レビュー
 
-- 家老の役割はレビュー配備とGATE判定のみ。品質判定そのものは忍者レビューに委ねる。
+### 忍者報告レビューフロー（軍師一次→家老スタンプ方式）[cmd_1162]
+
+忍者報告受領時のデフォルトフロー。軍師が一次レビュー → 家老はスタンプ+教訓抽出に専念。
+
+| ステップ | 実行者 | アクション |
+|---------|--------|-----------|
+| 1. 報告受領 | 家老 | 軍師にreport_review依頼（`inbox_write gunshi ... report_review karo`） |
+| 2a. LGTM | 家老 | レビュー省略→スタンプ(PASS)+教訓抽出+context還流判定+GATE進行 |
+| 2b. FAIL | 家老 | fail_reasonsを確認→Re-review Loop or 修正task配備を判断 |
+| 2c. 未完了 | 家老 | フォールバック: 家老フルレビュー（旧フロー） |
+
+**旧フローとの差分**:
+- 旧: 忍者報告受領 → **家老がフルレビュー** → PASS/FAIL判定 → 教訓抽出 → GATE
+- 新: 忍者報告受領 → **軍師に一次レビュー委任** → LGTM時は家老スタンプのみ → 教訓抽出 → GATE
+- 家老フルレビューはフォールバック（軍師未完了時）のみ発動
+- **切替条件**: 軍師(gunshi)が稼働中 = 新フロー。軍師未応答/未配備 = 旧フロー自動適用
+
+→ 手順詳細: `instructions/karo.md`「忍者報告レビューフロー」セクション
+
+### レビュー原則（新旧共通）
+
+- 家老の役割はレビュー配備とGATE判定のみ。品質判定そのものは軍師または忍者レビューに委ねる。
 - verdict は PASS / FAIL の二値厳守。条件付きPASSは禁止。
 - failed を放置するな。修正配備 / WAIVE→done / 殿裁定のいずれかへ必ず進める。
 - Two-pass Review: CRITICALはblocking(PASS/FAIL直結)、INFORMATIONALは記録のみ(non-blocking)。→ detail §3 Two-pass Review
