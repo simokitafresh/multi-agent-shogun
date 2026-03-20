@@ -236,6 +236,7 @@
 !scripts/parity_check.sh
 !scripts/gate_auto_respond.sh
 !scripts/gate_improvement_trigger.sh
+!scripts/karo_workaround_log.sh
 
 
 # Archive (frozen retired components)
