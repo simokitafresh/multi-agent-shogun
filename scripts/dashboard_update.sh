@@ -16,6 +16,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+# shellcheck source=/dev/null
+source "$PROJECT_DIR/scripts/lib/agent_config.sh"
 
 CMD_ID="${1:-}"
 DRY_RUN=false
@@ -65,11 +67,23 @@ STK_FILE = os.environ['STK_FILE']
 CMD_ID = os.environ['CMD_ID']
 DRY_RUN = os.environ['DRY_RUN'] == 'true'
 
-NAME_MAP = {
-    'sasuke': '佐助', 'kirimaru': '霧丸', 'hayate': '疾風',
-    'kagemaru': '影丸', 'hanzo': '半蔵', 'saizo': '才蔵',
-    'kotaro': '小太郎', 'tobisaru': '飛猿', 'karo': '家老',
-}
+# Build NAME_MAP dynamically from settings.yaml (cmd_1136)
+def _build_name_map():
+    import yaml as _y
+    _map = {'karo': '家老'}
+    _settings_path = os.path.join(os.environ.get('DASHBOARD', ''), '..', '..', 'config', 'settings.yaml')
+    _settings_path = os.path.normpath(os.path.join(os.path.dirname(DASHBOARD), 'config', 'settings.yaml'))
+    try:
+        with open(_settings_path) as _f:
+            _data = _y.safe_load(_f)
+        for _name, _conf in (_data or {}).get('cli', {}).get('agents', {}).items():
+            if isinstance(_conf, dict):
+                _map[_name] = _conf.get('japanese_name', _name)
+    except Exception:
+        pass
+    return _map
+
+NAME_MAP = _build_name_map()
 
 
 def get_nested(data, path, default=None):

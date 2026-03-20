@@ -54,21 +54,13 @@ trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLE
 
 NOW=$(TZ=Asia/Tokyo date '+%H:%M')
 
-ALL_NINJAS="sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru"
+# shellcheck source=/dev/null
+source "$(dirname "$SCRIPT_DIR")/scripts/lib/agent_config.sh"
+ALL_NINJAS=$(get_ninja_names)
 
-# ─── Helper: Japanese name ───
+# ─── Helper: Japanese name (settings.yamlから動的取得) ───
 name_jp() {
-    case "$1" in
-        sasuke)   echo "佐助" ;;
-        kirimaru) echo "霧丸" ;;
-        hayate)   echo "疾風" ;;
-        kagemaru) echo "影丸" ;;
-        hanzo)    echo "半蔵" ;;
-        saizo)    echo "才蔵" ;;
-        kotaro)   echo "小太郎" ;;
-        tobisaru) echo "飛猿" ;;
-        *)        echo "$1" ;;
-    esac
+    get_japanese_name "$1"
 }
 
 # ─── Helper: Get model for a ninja from settings.yaml ───

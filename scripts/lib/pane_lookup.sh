@@ -13,22 +13,22 @@
 
 _PANE_LOOKUP_SCRIPT_DIR="${_PANE_LOOKUP_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 
-# 静的フォールバックマッピング
-declare -A _PANE_LOOKUP_MAP=(
-    [karo]="shogun:agents.1"
-    [sasuke]="shogun:agents.2"
-    [kirimaru]="shogun:agents.3"
-    [hayate]="shogun:agents.4"
-    [kagemaru]="shogun:agents.5"
-    [hanzo]="shogun:agents.6"
-    [saizo]="shogun:agents.7"
-    [kotaro]="shogun:agents.8"
-    [tobisaru]="shogun:agents.9"
-)
+# agent_config.shから動的取得（cmd_1136: ハードコード全廃）
+# shellcheck source=/dev/null
+source "${_PANE_LOOKUP_SCRIPT_DIR}/scripts/lib/agent_config.sh"
+
+# 静的フォールバックマッピング（settings.yamlから動的生成）
+declare -A _PANE_LOOKUP_MAP=()
+_pane_idx=1
+for _agent in $(get_all_agents); do
+    _PANE_LOOKUP_MAP[$_agent]="shogun:agents.${_pane_idx}"
+    ((_pane_idx++)) || true
+done
+unset _pane_idx _agent
 
 # エージェント名の順序リスト（表示用。source先で参照）
 # shellcheck disable=SC2034
-PANE_LOOKUP_AGENT_ORDER=(karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
+read -ra PANE_LOOKUP_AGENT_ORDER <<< "$(get_all_agents)"
 
 pane_lookup() {
     local name="$1"

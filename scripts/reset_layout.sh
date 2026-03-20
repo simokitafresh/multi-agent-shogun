@@ -22,8 +22,19 @@ fi
 # ═══════════════════════════════════════════════════════════════
 # 定数
 # ═══════════════════════════════════════════════════════════════
-EXPECTED_AGENTS=(karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
-PROMPT_COLORS=(red blue blue yellow yellow yellow yellow yellow yellow)
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+read -ra EXPECTED_AGENTS <<< "$(get_all_agents)"
+# karo=red, gunshi=cyan, ninjas=yellow (動的生成)
+PROMPT_COLORS=()
+for _ea in "${EXPECTED_AGENTS[@]}"; do
+    case "$(get_agent_role "$_ea")" in
+        karo)   PROMPT_COLORS+=(red) ;;
+        gunshi) PROMPT_COLORS+=(cyan) ;;
+        *)      PROMPT_COLORS+=(yellow) ;;
+    esac
+done
+unset _ea
 LAYOUT_STRING='1a7c,167x49,0,0{71x49,0,0[71x25,0,0,1,71x11,0,26,2,71x11,0,38,3],47x49,72,0[47x16,72,0,4,47x16,72,17,5,47x15,72,34,6],47x49,120,0[47x16,120,0,7,47x16,120,17,8,47x15,120,34,9]}'
 
 # ═══════════════════════════════════════════════════════════════

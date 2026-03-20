@@ -222,22 +222,19 @@ esac
 # Step 5: Ninja selection
 # ═══════════════════════════════════════
 
-# CTX% helper (tmux @context_pct → ハードコードペインマッピング)
+# CTX% helper (pane_lookup経由で動的解決 — cmd_1136)
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 get_ctx_pct() {
     local name="$1"
     local pane
-    case "$name" in
-        karo)     pane="shogun:agents.1" ;;
-        sasuke)   pane="shogun:agents.2" ;;
-        kirimaru) pane="shogun:agents.3" ;;
-        hayate)   pane="shogun:agents.4" ;;
-        kagemaru) pane="shogun:agents.5" ;;
-        hanzo)    pane="shogun:agents.6" ;;
-        saizo)    pane="shogun:agents.7" ;;
-        kotaro)   pane="shogun:agents.8" ;;
-        tobisaru) pane="shogun:agents.9" ;;
-        *) echo "100"; return ;;
-    esac
+    pane=$(pane_lookup "$name" 2>/dev/null)
+    if [[ -z "$pane" ]]; then
+        echo "100"
+        return
+    fi
     local ctx
     ctx=$(tmux show-options -p -t "$pane" -v @context_pct 2>/dev/null | grep -oE '[0-9]+' | tail -1 || true)
     echo "${ctx:-0}"
@@ -269,7 +266,12 @@ else
             IDLE_NINJA=$(RR_FILE="$RR_POINTER_FILE" python3 -c "
 import yaml, sys, os
 
-NINJA_NAMES = ['sasuke','kirimaru','hayate','kagemaru','hanzo','saizo','kotaro','tobisaru']
+# Read ninja names from settings.yaml (cmd_1136)
+import yaml as _y
+with open(os.path.join(os.path.dirname('$STATES_FILE'), '..', 'config', 'settings.yaml')) as _sf:
+    _sdata = _y.safe_load(_sf)
+NINJA_NAMES = [n for n, c in (_sdata or {}).get('cli', {}).get('agents', {}).items()
+               if isinstance(c, dict) and c.get('role') == 'ninja']
 
 rr_file = os.environ.get('RR_FILE', '')
 rr_last = ''

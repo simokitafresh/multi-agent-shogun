@@ -6,11 +6,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
-NINJA_NAMES="sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru"
+NINJA_NAMES=$(get_ninja_names)
 
 # Validate arguments
 if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
@@ -20,7 +22,7 @@ if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
 fi
 
 if [[ "$TARGET" == cmd_* ]]; then
-    echo "ERROR: 第1引数はtarget_agent（例: karo, sasuke）。cmd_idではない。" >&2
+    echo "ERROR: 第1引数はtarget_agent（例: karo, hanzo）。cmd_idではない。" >&2
     echo "Usage: inbox_write.sh <target_agent> <content> [type] [from]" >&2
     echo "受け取った引数: $*" >&2
     exit 1
@@ -29,7 +31,7 @@ fi
 # HIGH-2: パストラバーサル防止 + sender/target制約
 # INBOX_WRITE_TEST=1: テスト環境でバリデーションをスキップ（CI用）
 if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
-    ALLOWED_TARGETS="karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru shogun"
+    ALLOWED_TARGETS=$(get_allowed_targets)
     valid_target=0
     for allowed in $ALLOWED_TARGETS; do
         if [ "$TARGET" = "$allowed" ]; then

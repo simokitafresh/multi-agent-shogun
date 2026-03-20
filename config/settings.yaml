@@ -6,30 +6,41 @@ skill:
 cli:
   default: claude
   agents:
-    sasuke:
+    gunshi:
       type: claude
       model_name: claude-opus-4-6
-    kirimaru:
-      type: claude
-      model_name: claude-opus-4-6
+      role: gunshi
+      japanese_name: 軍師
     hayate:
       type: claude
       model_name: claude-opus-4-6
+      role: ninja
+      japanese_name: 疾風
     kagemaru:
       type: claude
       model_name: claude-opus-4-6
+      role: ninja
+      japanese_name: 影丸
     hanzo:
       type: claude
       model_name: claude-opus-4-6
+      role: ninja
+      japanese_name: 半蔵
     saizo:
       type: claude
       model_name: claude-opus-4-6
+      role: ninja
+      japanese_name: 才蔵
     kotaro:
       type: claude
       model_name: claude-opus-4-6
+      role: ninja
+      japanese_name: 小太郎
     tobisaru:
       type: claude
       model_name: claude-opus-4-6
+      role: ninja
+      japanese_name: 飛猿
 effort: high  # v2.1.68でmediumデフォルト化→high固定(~/.claude/settings.json)
 ntfy_topic: shogun-simokitafresh
 gist_url: https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c

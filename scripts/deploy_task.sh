@@ -19,6 +19,7 @@ LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
 # cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
@@ -75,17 +76,17 @@ cleanup_none_task_files
 if [ -z "$NINJA_NAME" ] || [ "${NINJA_NAME,,}" = "none" ]; then
     echo "ERROR: ninja_name is required and cannot be empty/None." >&2
     echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
-    echo "例1: deploy_task.sh sasuke" >&2
-    echo "例2: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+    echo "例1: deploy_task.sh hanzo" >&2
+    echo "例2: deploy_task.sh hanzo \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
     echo "受け取った引数: $*" >&2
     exit 1
 fi
 
 if [[ "$NINJA_NAME" == cmd_* ]]; then
-    echo "ERROR: 第1引数はninja_name（例: hanzo, sasuke）。cmd_idではない。" >&2
+    echo "ERROR: 第1引数はninja_name（例: hanzo, hayate）。cmd_idではない。" >&2
     echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
-    echo "例1: deploy_task.sh sasuke" >&2
-    echo "例2: deploy_task.sh sasuke \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+    echo "例1: deploy_task.sh hanzo" >&2
+    echo "例2: deploy_task.sh hanzo \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
     echo "受け取った引数: $*" >&2
     exit 1
 fi

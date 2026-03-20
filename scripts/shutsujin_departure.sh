@@ -58,7 +58,7 @@ echo "[shutsujin] remain-on-exit: on (${AGENTS_WINDOW_TARGET})"
 # #{m:pattern,string} = fnmatch前方一致。"Opus 4.6"等バージョン付きにも対応
 # agents: agent_id + model_name + context_pct + inbox_count + current_task
 tmux set-option -w -t "$AGENTS_WINDOW_TARGET" pane-border-format \
-  '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:gpt-*,#{@model_name}},#[fg=#a6e3a1],#[fg=#89b4fa]}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
+  '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{==:#{@agent_id},gunshi},#[fg=#94e2d5],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:gpt-*,#{@model_name}},#[fg=#a6e3a1],#[fg=#89b4fa]}}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
   2>/dev/null
 
 # shogun: Opus紫(#cba6f7) + model_name + context_pct
@@ -95,30 +95,40 @@ tmux set-option -t shogun status-right "#[fg=#cdd6f4]%Y-%m-%d %H:%M"
 
 echo "[shutsujin] status-right: datetime only"
 
-# ─── saizo pane variables (cmd_403: gunshi凍結→saizo復帰) ───
+# ─── 全エージェント pane variables (cmd_1136: saizo固有→全エージェント汎用化) ───
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 AGENTS_PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo "1")
-SAIZO_PANE_INDEX=$((AGENTS_PANE_BASE + 6))
-SAIZO_PANE_TARGET="${AGENTS_WINDOW_TARGET}.${SAIZO_PANE_INDEX}"
-tmux set-option -p -t "$SAIZO_PANE_TARGET" @agent_id saizo 2>/dev/null
-saizo_cli="codex"
-saizo_model=""
-if declare -F cli_type >/dev/null 2>&1; then
-    saizo_cli=$(cli_type saizo 2>/dev/null || echo "codex")
-fi
-if declare -F cli_profile_get >/dev/null 2>&1; then
-    saizo_model=$(cli_profile_get saizo "display_name" 2>/dev/null || echo "")
-fi
-saizo_model="${saizo_model:-Unknown}"
-tmux set-option -p -t "$SAIZO_PANE_TARGET" @agent_cli "$saizo_cli" 2>/dev/null
-tmux set-option -p -t "$SAIZO_PANE_TARGET" @model_name "$saizo_model" 2>/dev/null
-echo "[shutsujin] saizo pane variables set (${SAIZO_PANE_TARGET}, model=${saizo_model}, cli=${saizo_cli})"
+_pane_offset=1  # karo=+0, 以降+1,+2,...
+for _agent_name in $(get_all_agents); do
+    if [[ "$_agent_name" == "karo" ]]; then
+        continue  # karo is handled separately (pane 1, already set above)
+    fi
+    _agent_pane_idx=$((AGENTS_PANE_BASE + _pane_offset))
+    _agent_pane_target="${AGENTS_WINDOW_TARGET}.${_agent_pane_idx}"
+    tmux set-option -p -t "$_agent_pane_target" @agent_id "$_agent_name" 2>/dev/null
+    _agent_cli="claude"
+    _agent_model=""
+    if declare -F cli_type >/dev/null 2>&1; then
+        _agent_cli=$(cli_type "$_agent_name" 2>/dev/null || echo "claude")
+    fi
+    if declare -F cli_profile_get >/dev/null 2>&1; then
+        _agent_model=$(cli_profile_get "$_agent_name" "display_name" 2>/dev/null || echo "")
+    fi
+    _agent_model="${_agent_model:-Unknown}"
+    tmux set-option -p -t "$_agent_pane_target" @agent_cli "$_agent_cli" 2>/dev/null
+    tmux set-option -p -t "$_agent_pane_target" @model_name "$_agent_model" 2>/dev/null
+    echo "[shutsujin] ${_agent_name} pane variables set (${_agent_pane_target}, model=${_agent_model}, cli=${_agent_cli})"
+    ((_pane_offset++)) || true
+done
+unset _pane_offset _agent_name _agent_pane_idx _agent_pane_target _agent_cli _agent_model
 
 # ─── Prefix+v: clipboard screenshot capture (cmd_551) ───
 tmux bind-key v run-shell "bash ${SCRIPT_DIR}/scripts/capture_clipboard_image.sh"
 echo "[shutsujin] keybind: Prefix+v → capture_clipboard_image.sh"
 
 # ─── idle flag initialization (cmd_455) ───
-for agent in karo sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru; do
+for agent in $(get_all_agents); do
     touch "${STATE_DIR}/shogun_idle_${agent}"
 done
 echo "[shutsujin] idle flags: created for all agents"

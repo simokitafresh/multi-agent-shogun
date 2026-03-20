@@ -40,6 +40,7 @@ source "$SCRIPT_DIR/lib/rotate_log.sh"
 
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 
 POLL_INTERVAL=20    # ポーリング間隔（秒）
 CONFIRM_WAIT=5      # idle確認待ち（秒）— Phase 2a base wait
@@ -63,8 +64,8 @@ CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
 LAST_CDP_CLEANUP=0        # CDP cleanup最終実行時刻（epoch秒）
 
 # 監視対象の忍者名リスト（karoと将軍は対象外）
-# saizo pane 7 (cmd_403: gunshi凍結→saizo復帰)
-NINJA_NAMES=(sasuke kirimaru hayate kagemaru hanzo saizo kotaro tobisaru)
+# settings.yamlから動的取得（cmd_1136: ハードコード全廃）
+read -ra NINJA_NAMES <<< "$(get_ninja_names)"
 
 mkdir -p "$SCRIPT_DIR/logs"
 mkdir -p "$STATE_DIR"
@@ -2083,7 +2084,7 @@ while true; do
             _s1_task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
             if [ -f "$_s1_task_file" ]; then
                 _s1_task_status=$(yaml_field_get "$_s1_task_file" "status")
-                if [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ]; then
+                if [ "$_s1_task_status" = "assigned" ] || [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ] || [ "$_s1_task_status" = "pending" ]; then
                     log "STAGE1-SKIP: $name idle but task_status=${_s1_task_status}, /clear禁止"
                     PREV_STATE[$name]="busy"
                     continue
