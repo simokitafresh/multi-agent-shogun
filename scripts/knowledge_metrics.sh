@@ -660,7 +660,19 @@ if n_without_total > 0 and n_without_total < 10:
     normalized_delta["sample_warning"].append(f"教訓なし N={n_without_total}")
 
 total_rows = with_lessons_total + without_lessons_total
-inject_rate_pct = round(with_lessons_total / total_rows * 100, 1) if total_rows > 0 else None
+# 注入率はimpl/reviewベースで算出（recon/scoutは意図的スキップのため分母から除外 — cmd_1168）
+recon_scout_rows = sum(
+    1 for r in rows
+    if any(t in ("recon", "scout") for t in r["task_type"].split(","))
+)
+recon_scout_with_lessons = sum(
+    1 for r in rows
+    if any(t in ("recon", "scout") for t in r["task_type"].split(","))
+    and r["injected_ids"] != "none"
+)
+inject_rate_denominator = total_rows - recon_scout_rows
+inject_rate_numerator = with_lessons_total - recon_scout_with_lessons
+inject_rate_pct = round(inject_rate_numerator / inject_rate_denominator * 100, 1) if inject_rate_denominator > 0 else None
 ref_with_lesson = sum(
     1 for r in rows
     if r["injected_ids"] != "none" and r["referenced_ids"] != "none"
