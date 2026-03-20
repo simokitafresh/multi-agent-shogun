@@ -1942,9 +1942,14 @@ try:
         if lr and isinstance(lr, list) and len(lr) > 0:
             # cmd_1045: 各要素の形式検証（dict + useful:bool 必須）
             valid = True
+            fill_this = False
             for item in lr:
                 if not isinstance(item, dict):
                     valid = False
+                    break
+                # cmd_1180: FILL_THIS検出（invalid_formatより先にチェック）
+                if item.get('useful') == 'FILL_THIS' or item.get('reason') == 'FILL_THIS':
+                    fill_this = True
                     break
                 if item.get('useful') is None:
                     valid = False
@@ -1952,7 +1957,12 @@ try:
                 if not isinstance(item.get('useful'), bool):
                     valid = False
                     break
-            result = 'ok' if valid else 'invalid_format'
+            if fill_this:
+                result = 'fill_this_remaining'
+            elif valid:
+                result = 'ok'
+            else:
+                result = 'invalid_format'
         else:
             result = 'empty'
 except Exception:
@@ -1966,6 +1976,11 @@ print(result)
                 # cmd_536 AC4: lessons_useful=null(明示的未記入)をBLOCK
                 echo "  [CRITICAL] ${ninja_name}: NG ← lessons_usefulが未記入(null)。教訓の有用性を記入せよ"
                 record_block_reason "${ninja_name}:null_lessons_useful"
+                ALL_CLEAR=false
+            elif [ "$lr_status" = "fill_this_remaining" ]; then
+                # cmd_1180: FILL_THISテンプレートが未置換
+                echo "  [CRITICAL] ${ninja_name}: NG ← lessons_usefulにFILL_THISが残っている。各教訓のusefulをtrue/falseに、reasonを理由文に書き換えよ"
+                record_block_reason "${ninja_name}:fill_this_remaining"
                 ALL_CLEAR=false
             elif [ "$lr_status" = "invalid_format" ]; then
                 # cmd_1045: lessons_usefulの要素形式が不正（文字列/useful欠落/non-bool）
@@ -2148,9 +2163,23 @@ try:
     elif 'found' not in lc:
         print('found_missing')
     elif lc['found'] == False:
-        print('ok_false')
+        nlr = lc.get('no_lesson_reason', '')
+        if not nlr or not str(nlr).strip():
+            print('ok_false_no_reason')
+        else:
+            print('ok_false')
     elif lc['found'] == True:
-        print('found_true')
+        title = lc.get('title', '')
+        detail = lc.get('detail', '')
+        missing = []
+        if not title or not str(title).strip():
+            missing.append('title')
+        if not detail or not str(detail).strip():
+            missing.append('detail')
+        if missing:
+            print('found_true_empty:' + ','.join(missing))
+        else:
+            print('found_true')
     else:
         print('malformed')
 except:
@@ -2160,6 +2189,17 @@ except:
     case "$lc_status" in
         ok_false)
             echo "  ${ninja_name}: OK (lesson_candidate: found=false)"
+            ;;
+        ok_false_no_reason)
+            echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate found:false but no_lesson_reason is empty"
+            record_block_reason "${ninja_name}:lesson_candidate_no_reason_empty"
+            ALL_CLEAR=false
+            ;;
+        found_true_empty:*)
+            missing_fields="${lc_status#found_true_empty:}"
+            echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate found:true but empty fields: ${missing_fields}"
+            record_block_reason "${ninja_name}:lesson_candidate_fields_empty:${missing_fields}"
+            ALL_CLEAR=false
             ;;
         found_true)
             # lesson.doneのsource確認
@@ -2236,6 +2276,81 @@ if [ "$LC_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── binary_checks検証（AC二値チェック全PASS確認） ───
+level_heading "[L1]" "Binary checks validation:"
+BC_CHECKED=false
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+        continue
+    fi
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    BC_CHECKED=true
+
+    bc_status=$(python3 -c "
+import yaml, sys
+try:
+    with open('$report_file') as f:
+        data = yaml.safe_load(f)
+    if not data:
+        print('missing')
+        sys.exit(0)
+    bc = data.get('binary_checks')
+    if bc is None:
+        print('missing')
+    elif not isinstance(bc, list):
+        print('malformed')
+    else:
+        fails = []
+        for i, item in enumerate(bc):
+            if not isinstance(item, dict):
+                fails.append(f'item_{i}:not_dict')
+                continue
+            result = item.get('result', '')
+            if str(result).strip().upper() != 'PASS':
+                check_name = item.get('check', f'item_{i}')
+                fails.append(str(check_name))
+        if fails:
+            print('fail:' + '|'.join(fails))
+        else:
+            print('ok')
+except:
+    print('error')
+" 2>/dev/null)
+
+    case "$bc_status" in
+        ok)
+            echo "  ${ninja_name}: OK (binary_checks: all PASS)"
+            ;;
+        missing)
+            echo "  [WARN] ${ninja_name}: binary_checks key missing or null"
+            ;;
+        fail:*)
+            failed_checks="${bc_status#fail:}"
+            echo "  [CRITICAL] ${ninja_name}: NG ← binary_checks has non-PASS results: ${failed_checks}"
+            record_block_reason "${ninja_name}:binary_checks_fail"
+            ALL_CLEAR=false
+            ;;
+        malformed)
+            echo "  [WARN] ${ninja_name}: binary_checks is not a list"
+            ;;
+        *)
+            echo "  [WARN] ${ninja_name}: binary_checks parse error"
+            ;;
+    esac
+done
+if [ "$BC_CHECKED" = false ]; then
+    echo "  (no reports found for this cmd)"
+fi
+
 # ─── purpose_validation検証（fit:falseでBLOCK、fit空欄はWARN） ───
 level_heading "[L2]" "Purpose validation check:"
 PV_CHECKED=false
@@ -2276,6 +2391,51 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 done
 if [ "$PV_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
+fi
+
+# ─── decision_candidate重複チェック（resolved PDとの照合、cmd_1179） ───
+level_heading "[L2]" "Decision candidate duplicate check (cmd_1179):"
+if [ "$HAS_RECON" = true ] && [ "$HAS_IMPLEMENT" = false ]; then
+    echo "  SKIP (recon-only cmd)"
+else
+    DC_DUP_CHECKED=false
+    for task_file in "$TASKS_DIR"/*.yaml; do
+        [ -f "$task_file" ] || continue
+        if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+            continue
+        fi
+
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+
+        if [ ! -f "$report_file" ]; then
+            echo "  ${ninja_name}: SKIP (report not found)"
+            continue
+        fi
+
+        DC_DUP_CHECKED=true
+        dc_dup_result=$(bash "$SCRIPT_DIR/scripts/gates/gate_dc_duplicate.sh" "$report_file" 2>/dev/null || echo "BLOCK: gate script error")
+
+        case "$dc_dup_result" in
+            BLOCK:*)
+                echo "  [CRITICAL] ${ninja_name}: ${dc_dup_result}"
+                record_block_reason "${ninja_name}:dc_duplicate_block"
+                ALL_CLEAR=false
+                ;;
+            WARN:*)
+                echo "  [INFO] ${ninja_name}: ${dc_dup_result}"
+                ;;
+            OK:*|SKIP:*)
+                echo "  ${ninja_name}: ${dc_dup_result}"
+                ;;
+            *)
+                echo "  [INFO] ${ninja_name}: dc_dup unexpected: ${dc_dup_result}"
+                ;;
+        esac
+    done
+    if [ "$DC_DUP_CHECKED" = false ]; then
+        echo "  (no reports found for this cmd)"
+    fi
 fi
 
 # ─── deviation回数チェック（WARNのみ、4回以上でWARNING） ───
