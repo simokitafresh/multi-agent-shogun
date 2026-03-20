@@ -1,20 +1,55 @@
-acceptance_criteria: 'AC2: instructions/gunshi.mdにdecomposition_feedback送信手順が記載されていること
-
-  '
-binary_checks:
-  AC2:
-  - instructions/gunshi.mdにdecomposition_feedbackキーワードがあるか?
-  - inbox_writeコマンド例がdecomposition_feedbackタイプで記載されているか?
-  - 判定基準(タスク分解を変えれば防げたか)が記載されているか?
-command: "AC2を実装せよ。\n\ninstructions/gunshi.mdに追記:\n  - REQUEST_CHANGES判定時、指摘内容がタスク分解の問題に起因する場合:\n\
-  \    家老にinbox_write（type: decomposition_feedback）\n    bash scripts/inbox_write.sh\
-  \ karo \"分解フィードバック: {問題の要約}。{推奨改善}\" decomposition_feedback gunshi\n  - 判定基準: 「この問題はタスク分解を変えれば防げたか？」\n\
-  \    YES → decomposition_feedback送信\n    NO → 送信不要\n"
-never_stop_for: []
-parent_cmd: cmd_1155
-progress: AC2 PASS — gunshi.mdにdecomposition_feedback送信手順追記完了
-project: infra
+task_id: cmd_1157_impl
+parent_cmd: cmd_1157
 status: done
-stop_for: []
-task_id: cmd_1155_gunshi_md
+project: infra
 type: implement
+command: |
+  cmd_1157 AC1+AC2+AC3を実装せよ。
+
+  ■ AC1: yaml_field_set.shのflat形式対応
+  scripts/lib/yaml_field_set.sh:
+    現行: block_id不在時 → exit 2 (FATAL)
+    修正: block_id不在時のフォールバック検索:
+      1. block_idが"task"で不在の場合、ルートレベルのフィールドを直接更新
+      2. awkのbegin_target関数に第3のパターン追加:
+         block_id + ":" がなくても、ルートレベルにフィールドが存在する場合
+         → ルートレベルを対象ブロックとして扱う
+      3. ルートレベル更新時: field_indent=0, block_kind="root"
+      4. _yaml_field_get_in_block にも同等のフォールバック追加（post-write verification用）
+    既存テスト: bash scripts/lib/yaml_field_set.sh --test が存在するなら実行して回帰確認
+
+  ■ AC2: deploy_task.shのYAML正規化
+  scripts/deploy_task.sh:
+    配備時にtask YAMLのフォーマットを検査・正規化する関数 normalize_task_yaml() を追加:
+      1. ファイル先頭が"task:"で始まらない + "task_id:"または"status:"がルートに存在 → flat形式と判定
+      2. flat形式の場合: 全フィールドを2spインデントし、先頭に"task:"を追加 → nested形式に変換
+      3. 変換後のYAMLがyaml_field_setで操作可能なことを検証
+      4. 配備フローの先頭（status強制注入の前）で呼び出し
+    防御: 変換失敗時はログ出力のみ（配備は継続。cmd_1156のフォールバック対応あり）
+
+  ■ AC3: 統合テスト
+  テスト:
+    1. flat形式task YAMLに対しyaml_field_set "task" "status" "done"が成功すること
+    2. nested形式task YAMLに対し既存動作が変わらないこと
+    3. deploy_task.shのnormalize_task_yamlがflat→nested変換すること
+    4. 変換後のYAMLがyaml_field_setで操作可能なこと
+    5. bash scripts/lib/yaml_field_set.sh --test が全PASSすること（存在時）
+acceptance_criteria: |
+  AC1: yaml_field_set.shがflat形式YAMLに対してもフィールド更新可能
+  AC2: deploy_task.shがflat→nested正規化を実行
+  AC3: flat/nestedの両形式でテスト全PASS
+binary_checks:
+  AC1:
+    - "flat形式YAMLに対しyaml_field_setがexit 0で完了するか?"
+    - "nested形式YAMLでの既存動作に回帰がないか?"
+    - "_yaml_field_get_in_blockもflat対応しているか?"
+  AC2:
+    - "normalize_task_yaml関数がdeploy_task.shに存在するか?"
+    - "flat形式がnested形式に変換されるか?"
+    - "変換失敗時に配備が継続するか(防御的)?"
+  AC3:
+    - "テスト用flat YAMLでyaml_field_setが動作するか?"
+    - "--testが存在する場合、全テストPASSか?"
+stop_for:
+  - yaml_field_set.shの既存テストで回帰が発生した場合
+never_stop_for: []

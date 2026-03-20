@@ -39,6 +39,93 @@ _yaml_field_set_normalize() {
     printf '%s' "$(_yaml_field_set_trim "$s")"
 }
 
+_yaml_field_set_apply_root() {
+    local yaml_file="$1"
+    local out_file="$2"
+    local field="$3"
+    local new_value="$4"
+
+    awk \
+        -v field="$field" \
+        -v new_value="$new_value" '
+function regex_escape(str,    out,i,c) {
+    out = ""
+    for (i = 1; i <= length(str); i++) {
+        c = substr(str, i, 1)
+        if (c ~ /[][\\.^$*+?(){}|]/) {
+            out = out "\\" c
+        } else {
+            out = out c
+        }
+    }
+    return out
+}
+BEGIN { replaced = 0; has_fields = 0 }
+{
+    field_re = "^" regex_escape(field) ":[[:space:]]*"
+    if (!replaced && $0 ~ field_re) {
+        print field ": " new_value
+        replaced = 1
+        has_fields = 1
+        next
+    }
+    if ($0 ~ /^[A-Za-z0-9_.-]+:[[:space:]]/) has_fields = 1
+    print
+}
+END {
+    if (!has_fields) exit 2
+    if (!replaced) print field ": " new_value
+}
+' "$yaml_file" > "$out_file"
+}
+
+_yaml_field_get_root() {
+    local yaml_file="$1"
+    local field="$2"
+
+    awk \
+        -v field="$field" '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function unquote(s) {
+    if (length(s) >= 2) {
+        if ((substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") ||
+            (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'")) {
+            s = substr(s, 2, length(s)-2)
+        }
+    }
+    return s
+}
+function regex_escape(str,    out,i,c) {
+    out = ""
+    for (i = 1; i <= length(str); i++) {
+        c = substr(str, i, 1)
+        if (c ~ /[][\\.^$*+?(){}|]/) {
+            out = out "\\" c
+        } else {
+            out = out c
+        }
+    }
+    return out
+}
+BEGIN { found = 0 }
+{
+    field_re = "^" regex_escape(field) ":[[:space:]]*"
+    if (!found && $0 ~ field_re) {
+        value = $0
+        sub(field_re, "", value)
+        sub(/[[:space:]]+#.*$/, "", value)
+        value = trim(unquote(value))
+        print value
+        found = 1
+        exit 0
+    }
+}
+END {
+    if (!found) exit 3
+}
+' "$yaml_file"
+}
+
 _yaml_field_set_apply() {
     local yaml_file="$1"
     local out_file="$2"
@@ -358,12 +445,21 @@ yaml_field_set() {
             return 1
         }
 
+        local use_root=0
         _yaml_field_set_apply "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value"
         local rc=$?
+        if [ "$rc" -eq 2 ]; then
+            # Fallback: block_id not found → try root-level field update (flat YAML support)
+            _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value"
+            rc=$?
+            if [ "$rc" -eq 0 ]; then
+                use_root=1
+            fi
+        fi
         if [ "$rc" -ne 0 ]; then
             rm -f "$tmp_file"
             if [ "$rc" -eq 2 ]; then
-                echo "FATAL: yaml_field_set: block_id not found: $block_id ($yaml_file)" >&2
+                echo "FATAL: yaml_field_set: block_id not found and no root-level fields: $block_id ($yaml_file)" >&2
             else
                 echo "FATAL: yaml_field_set: failed to rewrite file: $yaml_file" >&2
             fi
@@ -377,7 +473,12 @@ yaml_field_set() {
         fi
 
         local actual normalized_actual normalized_expected
-        if ! actual="$(_yaml_field_get_in_block "$yaml_file" "$block_id" "$field")"; then
+        if [ "$use_root" -eq 1 ]; then
+            if ! actual="$(_yaml_field_get_root "$yaml_file" "$field")"; then
+                echo "FATAL: yaml_field_set: post-write readback failed for root.${field} in $yaml_file" >&2
+                return 1
+            fi
+        elif ! actual="$(_yaml_field_get_in_block "$yaml_file" "$block_id" "$field")"; then
             echo "FATAL: yaml_field_set: post-write readback failed for ${block_id}.${field} in $yaml_file" >&2
             return 1
         fi

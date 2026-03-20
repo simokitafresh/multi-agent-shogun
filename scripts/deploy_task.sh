@@ -125,6 +125,61 @@ check_idle() {
 }
 
 
+# ─── cmd_1157: flat→nested YAML正規化 ───
+# flat形式(task:ブロックなし)のtask YAMLをnested形式に変換する。
+# 変換失敗時はログ出力のみ（配備は継続。yaml_field_setのフォールバック対応あり）
+normalize_task_yaml() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        return 1
+    fi
+
+    # nested形式判定: 先頭が"task:"で始まる → 変換不要
+    if head -1 "$task_file" | grep -qE '^task:'; then
+        return 0
+    fi
+
+    # flat形式判定: task_id: or status: がルートに存在
+    if ! grep -qE '^(task_id|status):' "$task_file"; then
+        return 0  # flat形式でもない → 未知の形式、触らない
+    fi
+
+    log "normalize_task_yaml: flat→nested conversion for $(basename "$task_file")"
+
+    local tmp_file
+    tmp_file="$(mktemp "${task_file}.norm.XXXXXX")" || {
+        log "normalize_task_yaml: mktemp failed"
+        return 1
+    }
+
+    # 全行を2spインデントし、先頭に"task:"を追加
+    {
+        echo "task:"
+        sed 's/^/  /' "$task_file"
+    } > "$tmp_file"
+
+    # 変換後のYAMLがyaml_field_setで操作可能か検証
+    local verify_tmp
+    verify_tmp="$(mktemp "${task_file}.verify.XXXXXX")" || {
+        rm -f "$tmp_file"
+        log "normalize_task_yaml: verify mktemp failed"
+        return 1
+    }
+
+    # 検証: task blockが見つかることを確認（_yaml_field_set_applyのdry-run相当）
+    if _yaml_field_get_in_block "$tmp_file" "task" "task_id" >/dev/null 2>&1 || \
+       _yaml_field_get_in_block "$tmp_file" "task" "status" >/dev/null 2>&1; then
+        mv "$tmp_file" "$task_file"
+        rm -f "$verify_tmp"
+        log "normalize_task_yaml: conversion successful"
+        return 0
+    else
+        rm -f "$tmp_file" "$verify_tmp"
+        log "normalize_task_yaml: verification failed, keeping original"
+        return 1
+    fi
+}
+
 # ─── task_id自動注入（cmd_465: STALL検知キー統一） ───
 # subtask_idの値をtask_idとして注入。ninja_monitor check_stall()がtask_idを参照するため必須。
 inject_task_id() {
@@ -2439,6 +2494,9 @@ fi
 CTX_PCT=$(get_ctx_pct "$PANE_TARGET" "$NINJA_NAME")
 IS_IDLE=false
 check_idle "$PANE_TARGET" && IS_IDLE=true
+
+# cmd_1157: flat→nested YAML正規化（status強制注入の前に実行）
+normalize_task_yaml "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" || true
 
 # タスクステータス確認
 TASK_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "unknown")
