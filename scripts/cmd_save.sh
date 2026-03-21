@@ -64,6 +64,14 @@ if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
 
     if ! echo "$CMD_BLOCK" | grep -q "quality_gate:"; then
         echo "BLOCK: quality_gate未記入。3問に答えてからcmd_save.shを実行せよ" >&2
+        cat >&2 <<'QG_TEMPLATE'
+---
+quality_gate:
+  q1_firefighting: "no/yes — 理由"
+  q2_learning: "奪わない/奪う — 学習機会への影響"
+  q3_next_quality: "上がる/下がる — 品質への影響"
+---
+QG_TEMPLATE
         exit 1
     fi
 
@@ -77,6 +85,18 @@ if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
     if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
         echo "BLOCK: quality_gate未記入。3問に答えてからcmd_save.shを実行せよ" >&2
         echo "  未記入キー: ${MISSING_KEYS[*]}" >&2
+        {
+            echo "---"
+            echo "quality_gate:"
+            for _MK in "${MISSING_KEYS[@]}"; do
+                case "$_MK" in
+                    q1_firefighting)  echo '  q1_firefighting: "no/yes — 理由"' ;;
+                    q2_learning)      echo '  q2_learning: "奪わない/奪う — 学習機会への影響"' ;;
+                    q3_next_quality)  echo '  q3_next_quality: "上がる/下がる — 品質への影響"' ;;
+                esac
+            done
+            echo "---"
+        } >&2
         exit 1
     fi
 fi
