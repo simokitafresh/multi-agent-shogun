@@ -167,6 +167,13 @@ for attempt in $(seq 1 $MAX_RETRIES); do
             exit $?
         fi
 
+        # Array index key (e.g., files_modified[0]) → Python fallback
+        # awk経路はリテラルキーとして扱うため配列インデックスを正しく処理できない
+        if [[ "$DOT_KEY" == *'['* ]]; then
+            _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "$VALUE" "$STDIN_VALUE"
+            exit $?
+        fi
+
         tmp_file="$(mktemp "${REPORT_PATH}.tmp.XXXXXX")"
         rc=0
 
