@@ -20,6 +20,7 @@ import yaml, os, sys
 
 report_path = os.environ['REPORT_PATH']
 errors = []
+hints = []
 
 try:
     with open(report_path) as f:
@@ -45,6 +46,7 @@ if lc is None and 'lesson_candidate' in data:
 elif lc is not None:
     if isinstance(lc, str):
         errors.append('lesson_candidate: is string (must be dict with found/title/detail)')
+        hints.append('FIX (lesson_candidate): dict形式で再記入せよ:\\n  lesson_candidate:\\n    found: true  # or false\\n    title: \"教訓タイトル\"\\n    detail: \"詳細\"')
     elif isinstance(lc, dict):
         if 'found' not in lc:
             errors.append('lesson_candidate: missing \"found\" field')
@@ -75,6 +77,7 @@ elif lu is not None:
                 errors.append(f'lessons_useful[{i}]: is {type(item).__name__} (must be dict)')
     elif isinstance(lu, dict):
         errors.append('lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists')
+        hints.append(f'FIX (lessons_useful): Pythonで変換せよ:\\n  python3 -c \"import yaml; d=yaml.safe_load(open(\\'{report_path}\\')); d[\\'lessons_useful\\']=[v for v in d[\\'lessons_useful\\'].values()]; yaml.dump(d,open(\\'{report_path}\\',\\'w\\'),allow_unicode=True)\"')
     else:
         errors.append(f'lessons_useful: unexpected type {type(lu).__name__} (must be list of dicts)')
 
@@ -83,7 +86,8 @@ bc = data.get('binary_checks')
 if bc is None and 'binary_checks' in data:
     errors.append('binary_checks: null (must be dict with AC entries)')
 elif isinstance(bc, str):
-    errors.append('binary_checks: is string (must be dict). → dict形式で記入: binary_checks:\\n  AC1:\\n    status: PASS\\n    evidence: \"テスト実行結果のサマリ\"')
+    errors.append('binary_checks: is string (must be dict with AC entries)')
+    hints.append('FIX (binary_checks): dict形式で再記入せよ:\\n  binary_checks:\\n    AC1:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
 elif isinstance(bc, dict) and not bc:
     errors.append('binary_checks: empty dict (must have at least one AC entry)')
 elif isinstance(bc, list) and not bc:
@@ -106,6 +110,9 @@ else:
 # --- Output ---
 if errors:
     print('FAIL: ' + '; '.join(errors))
+    if hints:
+        for h in hints:
+            print(h)
     sys.exit(1)
 else:
     print('PASS')
