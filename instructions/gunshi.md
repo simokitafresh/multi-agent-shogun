@@ -158,9 +158,16 @@ cmdの目的が上位の戦略目標（殿の方針・PJ目標・学習ループ
 - 学習ループが回る設計か（教訓還流の経路があるか）
 - 消火（表面修正）ではなく品質向上（根本対処）か
 
+4質問診断（チェックポイント通過後に必ず実施）:
+1. この変更は症状の抑制か根本原因の解消か
+2. 同じ問題が再発したらこの修正で防げるか
+3. このcmdから学習ループは回るか
+4. 次に何を改善すべきかが明確か
+
 判定基準:
 - OK: 戦略目標と整合し、+1点の複利を生む
 - NG: 戦略的意義が不明確、または消火に留まっている
+- NG: 4質問中2つ以上NGの場合（根本対処不足）
 
 出力形式:
 ```
@@ -191,41 +198,18 @@ strategic_contribution: "{このcmdが戦略にどう寄与するか1行}"
 ### Step 1: Challenge Assumptions（前提を疑え）
 draftが「当然こうだろう」と暗黙に前提としている事実を列挙し、各々の根拠を確認する。
 
-**実例 — cmd_1171（スコープ限定盲点）:**
-偵察cmdで「消火パターン」をgrepで名前ベースで検索した結果、「新規消火0件」と結論。
-しかし名前に「消火」を含まないが実質的に消火であるスクリプトが漏れていた。
-**前提「名前フィルタで全量カバーできる」が未検証だった。**
-→ 前提検証で「検索手法のカバレッジは何%か？」を問うことで検出可能。
+実例: cmd_1171で名前ベースgrep→「新規消火0件」と結論したが、名前に含まない実質消火スクリプトが漏れていた。「カバレッジ%は？」で検出可能。
 
 ### Step 2: Recalculate Numbers（数値を再計算せよ）
-draft内の数値を自分で再計算する。特に分母・分子の定義、除外条件、カウントロジックに注意。
-
-**実例 — cmd_1165（分母問題）:**
-教訓注入率73.1%という計測値。分母=全cmdのタスク数として算出。
-しかしrecon/scoutタスクは設計上教訓注入の対象外であり、分母に含めるべきではなかった。
-正しい分母（impl/reviewのみ）で再計算すると注入率は74.9%超。
-**分母の定義を問い直すだけで結論が変わった。**
+draft内の数値を再計算。分母・分子の定義、除外条件に注意。
+実例: cmd_1165で教訓注入率の分母にrecon/scoutを含めていた。正しい分母で結論が変わった。
 
 ### Step 3: Runtime Simulation（時系列で回せ）
-cmdが配備→忍者受領→AC1実行→AC2実行→...→報告→完了の一連を脳内でステップ実行する。
-途中で「ここで詰まらないか？」「この順序で大丈夫か？」を検証。
-
-チェック項目:
-- AC間の暗黙の依存関係
-- 並行配備cmdとの同一ファイル衝突
-- 忍者が前提知識なしで手順を再現できるか
+配備→AC1→AC2→...→報告の流れをステップ実行。AC依存関係・並行衝突・忍者の再現性を検証。
 
 ### Step 4: Pre-mortem（事前検死せよ）
-「このcmdは失敗した」と仮定し、最も起こりやすい失敗原因を3つ挙げる。
-次に、その各原因に対する検知・回復手段がdraft内に存在するか確認する。
-
-**実例 — cmd_1166（消火判定）:**
-report_field_set.shのYAML構造体書込み修正cmd。
-家老のワークアラウンド（手動YAML修正）を根絶する目的。
-しかし事前検死すると「修正してもreport_field_setとlib/yaml_field_setの二系統が残る」
-→ 根本原因（二重経路）が未対処のままでは再発する。
-**結果、cmd_1167で二系統統合が追加で必要になった。**
-消火（症状修正）か品質向上（根本対処）かの判定に事前検死が有効。
+「このcmdは失敗した」と仮定し失敗原因を3つ。各原因に検知・回復手段があるか確認。
+実例: cmd_1166でYAML修正cmdだが二系統残存→根本未対処→cmd_1167追加が必要に。消火vs品質向上の判定に有効。
 
 ### Step 5: Confidence Label（確信度を宣言せよ）
 全ステップの結果を踏まえ、レビュー全体の確信度をHIGH/MEDIUM/LOWでラベル付けする。
@@ -263,60 +247,17 @@ verdictの判断基準:
 - **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載。**severity必須**
 - **REJECT**: 根本的な前提崩壊 or confidence LOW。再偵察または再設計が必要
 
-### Lesson Candidate送信 — REQUEST_CHANGES時の教訓還流
+### REQUEST_CHANGES時の還流（2種）
 
-REQUEST_CHANGES判定時、指摘内容が**忍者の作業品質に関わる場合**、lesson_candidateとして家老に送信せよ。
-
-#### 判定基準
-
-**「この指摘は忍者がタスク実行時に知っていれば防げたか？」**
-
-| 判定 | 対応 | 例 |
-|------|------|-----|
-| **YES** | gunshi_lesson_candidate送信 | ACの前提条件見落とし、ファイル操作の安全確認不足、テスト実行前の前提チェック漏れ |
-| **NO** | 送信不要（cmd設計の問題であり将軍の領域） | AC自体の設計不備、scope定義の曖昧さ、偵察不足による情報欠落 |
-
-#### 送信手順
-
+**Lesson Candidate**: 「忍者が知っていれば防げたか？」→YES→ `gunshi_lesson_candidate` で家老に送信。指摘要約+該当パターン+推奨チェック項目。review_resultと別メッセージで同一ターンに送信。
 ```bash
 bash scripts/inbox_write.sh karo "{指摘サマリ}" gunshi_lesson_candidate gunshi
 ```
 
-内容に含めるべき情報:
-- **指摘の要約**: 何が問題だったか1行で
-- **該当パターン**: どのような状況で発生するか
-- **推奨チェック項目**: 忍者のbinary_checksに追加すべき項目
-
-#### タイミング
-
-レビュー返信（review_result）と同一ターンで送信する。lesson_candidateは別メッセージとして送信し、review_resultと混在させない。
-
-### Decomposition Feedback送信 — REQUEST_CHANGES時の分解品質還流
-
-REQUEST_CHANGES判定時、指摘内容が**タスク分解の問題に起因する場合**、decomposition_feedbackとして家老に送信せよ。
-
-#### 判定基準
-
-**「この問題はタスク分解を変えれば防げたか？」**
-
-| 判定 | 対応 | 例 |
-|------|------|-----|
-| **YES** | decomposition_feedback送信 | AC粒度が大きすぎて忍者が迷う、依存関係のあるACが並列配備されている、1cmdに詰め込みすぎてscope超過 |
-| **NO** | 送信不要（忍者の作業品質 or cmd設計の問題） | 忍者の実装ミス、偵察不足、AC記述の誤り |
-
-#### 送信手順
-
+**Decomposition Feedback**: 「タスク分解を変えれば防げたか？」→YES→ `decomposition_feedback` で家老に送信。問題要約+推奨改善。
 ```bash
 bash scripts/inbox_write.sh karo "分解フィードバック: {問題の要約}。{推奨改善}" decomposition_feedback gunshi
 ```
-
-内容に含めるべき情報:
-- **問題の要約**: タスク分解のどこに問題があったか1行で
-- **推奨改善**: 次回の分解でどう変えるべきか
-
-#### タイミング
-
-レビュー返信（review_result）と同一ターンで送信する。decomposition_feedbackは別メッセージとして送信し、review_resultと混在させない。
 
 ### 緊急度分類（severity）— REQUEST_CHANGES時の必須付記
 
@@ -453,62 +394,19 @@ bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunsh
 
 ### エントリ構造
 
-```yaml
-# Draftレビュー
-- cmd_id: cmd_XXXX
-  review_type: draft          # draft / report
-  verdict: APPROVE            # APPROVE / REQUEST_CHANGES / REJECT
-  gate_result: CLEAR          # CLEAR / FAIL / BLOCK
-  findings_summary: "6観点OK、副作用なし"  # 1行
-  lesson_candidate: ""        # レビューで発見した「次回注意すべきパターン」を記載
-  timestamp: "2026-03-20T17:30:00"         # ISO8601
-
-# Report（忍者報告）レビュー
-- cmd_id: cmd_XXXX
-  review_type: report         # draft / report
-  verdict: LGTM              # LGTM / FAIL (全体判定)
-  report_ninja: hayate         # レビュー対象の忍者名
-  report_task_id: cmd_XXXX_impl  # レビュー対象のタスクID
-  report_verdict: LGTM        # LGTM / FAIL (個別忍者判定)
-  fail_reasons: []            # FAIL時の理由リスト (FAIL時のみ)
-  lesson_quality: "OK"        # 忍者のlesson_candidateの品質評価
-  gate_result: null           # GATE結果判明後に更新
-  findings_summary: "4観点OK、lesson_quality:OK"
-  lesson_candidate: ""        # レビューで発見した「次回注意すべきパターン」を記載
-  timestamp: "2026-03-20T17:30:00"
-```
-
-`review_type` フィールドは必須。draftとreportの区別により、accuracy計測で種別ごとの精度を追跡可能。
+ログの索引層ヘッダーに統計を維持。エントリ形式:
+- **draft**: cmd_id, review_type:draft, verdict(APPROVE/REQUEST_CHANGES/REJECT), gate_result, findings_summary(1行), lesson_candidate, timestamp
+- **report**: + report_ninja, report_task_id, report_verdict, fail_reasons, lesson_quality(OK/WEAK/MISSING)
 
 ### 運用ルール
 
-- レビュー完了時に1エントリ追記する（review_type必須）
-- レビュー完了時にlesson_candidateフィールドに「次回注意すべきパターン」を記載する。発見がなければ空文字列。レビューで気づいた再発しうるパターン・見落としやすい観点を蓄積し、projects/infra/lessons_gunshi.yamlへの正式登録に繋げる
-- review_feedback受信時にgate_resultを更新する
-- 500行超えたらアーカイブ（`logs/archive/gunshi_review_log_YYYYMM.yaml` に移動）
-- /clear復帰時にこのログを読んで過去の傾向（accuracy、見落としパターン）を把握する
+- レビュー完了時に1エントリ追記(review_type必須)。lesson_candidateに「次回注意パターン」記載(なければ空)
+- review_feedback受信→gate_result更新。500行超→`logs/archive/`にアーカイブ
 
 ## Forbidden Actions
 
-| ID | 禁止事項 | 代わりにやること | 理由 |
-|----|---------|---------------|------|
-| F-G01 | 将軍・殿に直接報告 | 家老のみに通信 | 鎖は家老→軍師→家老の閉ループ |
-| F-G02 | cmdを起案する | draftレビューのみ | 起案権は家老にある |
-| F-G03 | 忍者に直接指示 | 家老にレビュー結果で伝達 | 忍者の指揮権は家老 |
-| F-G04 | shogun_to_karo.yamlに書く | inbox_write.shを使う | 将軍→家老の専用チャネル |
-| F-G05 | 他エージェントファイルに触れる・push | commitまで。pushは家老 | ファイル競合防止 |
-
-全エージェント共通の禁則（CLAUDE.md Destructive Operation Safety）も遵守。
+YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（CLAUDE.md Destructive Operation Safety）も遵守。
 
 ## /clear Recovery手順
 
-```
-Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → gunshi を確認
-Step 2: instructions/gunshi.md を読む（省略禁止）
-Step 3: logs/gunshi_review_log.yaml を読む（過去のaccuracy・見落とし傾向を把握）
-Step 3.5: projects/infra/lessons_gunshi.yaml を読む（軍師レビュー教訓の自動ロード）
-Step 4: queue/inbox/gunshi.yaml を読む → レビュー依頼があれば処理
-Step 5: 依頼なしならidle activities実行
-```
-
-Forbidden after /clear: 将軍・殿への直接報告(F-G01)、cmd起案(F-G02)、忍者への直接指示(F-G03)。
+CLAUDE.md `/clear Recovery` 手順に従う。追加: (1) `logs/gunshi_review_log.yaml` を読む(accuracy把握) (2) `projects/infra/lessons_gunshi.yaml` を読む(レビュー教訓)
