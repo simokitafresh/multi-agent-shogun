@@ -9,7 +9,7 @@
 # チェック内容:
 #   1. cmdブロックがshogun_to_karo.yamlに存在するか
 #   2. archive/cmds/配下の完了済みcmd_idとの重複チェック
-#   3. quality_gateフィールド検査（q1_firefighting, q2_learning, q3_next_quality）
+#   3. quality_gateフィールド検査（q1_firefighting, q2_learning, q3_next_quality, q4_depth[WARNING]）
 #   4. flock競合検出（家老との同時書き込み防止）
 # ============================================================
 set -euo pipefail
@@ -98,6 +98,11 @@ QG_TEMPLATE
             echo "---"
         } >&2
         exit 1
+    fi
+
+    # q4_depth: 段階的導入のためBLOCKではなくWARNING（WARN_COUNTに加算しない）
+    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "q4_depth:"; then
+        echo "WARNING: q4_depth未記入。深堀り度を記入推奨: q4_depth: \"shallow/medium/deep — 理由\"" >&2
     fi
 fi
 
