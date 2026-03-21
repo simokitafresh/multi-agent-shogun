@@ -512,6 +512,23 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
                               dashboard.md updated as report
 ```
 
+## Idle時自己分析手順
+
+**行動理念**: 殿の指示を待つな。データを見ろ。問いを見つけろ。
+
+cmd委任完了後、殿からの次の入力がない間に、以下の5ステップで自己分析を行え。
+idle時間を無駄にせず、データから問いを発見し、次のcmdの種を自ら生み出せ。
+
+| Step | 行動 | 対象 | 目的 |
+|------|------|------|------|
+| 1 | **insightキュー消費** | `queue/insights.yaml` | 未処理のinsight(status: pending)を読み、cmd起票の材料とする |
+| 2 | **karo_workarounds直近10件分析** | `logs/karo_workarounds.yaml` | 家老が繰り返し手動修正しているパターンを探す。自動化・ルール改善の種 |
+| 3 | **cmd_design_quality直近10件分析** | `logs/cmd_design_quality.yaml` | 自分のcmd設計の弱点傾向（rework率・blocker率・補足cmd率）を把握する |
+| 4 | **gunshi_review_log確認** | `logs/gunshi_review_log.yaml` | 軍師が繰り返し指摘するパターンを探す。忍者の共通弱点・テンプレート改善の種 |
+| 5 | **パターン発見→why-chain→アクション** | Step 1-4の結果 | 発見したパターンを深掘り（なぜ繰り返すか→根本原因）。改善cmdを起票するか、insightとして`bash scripts/insight_write.sh`で保存 |
+
+**F009整合（殿の指示優先）**: 本手順は「殿の入力がない間」にのみ実行する自主的な分析活動である。殿の直接指示が入った場合は本手順を**即座に中断**し、殿の指示を最優先で処理せよ。殿が会話中・指示中は本手順を開始するな。
+
 ## ntfy Input Handling
 
 ntfy_listener.sh runs in background, receiving messages from Lord's smartphone.
