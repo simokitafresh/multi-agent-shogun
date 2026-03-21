@@ -212,14 +212,40 @@ else
     $BRIEF || echo "  karo_workarounds.yaml不在"
 fi
 
+# --- Gate 10: idle自走トリガー ---
+$BRIEF || echo "■ idle自走トリガー"
+IDLE_TRIGGER="OFF"
+if [ -f "$snapshot" ]; then
+    # ninja行から稼働中cmd(in_progress/assigned/acknowledged)を数える
+    active_cmds=$(grep "^ninja|" "$snapshot" | grep -cE "\|(in_progress|assigned|acknowledged)\|" || true)
+    total_ninjas=$(grep -c "^ninja|" "$snapshot" || true)
+    idle_or_done=$(grep "^ninja|" "$snapshot" | grep -cE "\|(idle|done)\|" || true)
+
+    if [ "$active_cmds" -eq 0 ] && [ "$total_ninjas" -gt 0 ] && [ "$idle_or_done" -eq "$total_ninjas" ]; then
+        IDLE_TRIGGER="ON"
+        if ! $BRIEF; then
+            echo "  全忍者idle・パイプライン空。idle時自己分析に入れ:"
+            echo "  Step 1: insightsキュー消費 (queue/insights.yaml)"
+            echo "  Step 2: karo_workarounds直近10件分析"
+            echo "  Step 3: cmd_design_quality直近10件分析"
+            echo "  Step 4: gunshi_review_log確認"
+            echo "  Step 5: パターン発見→why-chain→アクション"
+        fi
+    else
+        $BRIEF || echo "  稼働中cmd: ${active_cmds}件、idle忍者: ${idle_or_done}/${total_ninjas}"
+    fi
+else
+    $BRIEF || echo "  karo_snapshot.txt不在 — 判定不可"
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ
     PERF_BRIEF="rework:${REWORK_PCT}% workaround:${WA_COUNT}件"
     if [ ${#alerts[@]} -gt 0 ]; then
-        echo "startup_gate: ${overall} — $(IFS=', '; echo "${alerts[*]}") | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
+        echo "startup_gate: ${overall} — $(IFS=', '; echo "${alerts[*]}") | idle_trigger:${IDLE_TRIGGER} | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
     else
-        echo "startup_gate: OK | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
+        echo "startup_gate: OK | idle_trigger:${IDLE_TRIGGER} | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
     fi
 else
     echo ""
