@@ -243,6 +243,7 @@
 !scripts/karo_workaround_log.sh
 !scripts/cmd_quality_log.sh
 !scripts/cmd_friction_log.sh
+!scripts/gunshi_gate_reflux.sh
 
 
 # Archive (frozen retired components)

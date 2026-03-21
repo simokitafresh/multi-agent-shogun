@@ -3675,6 +3675,15 @@ except:
         echo "  SKIP (cmd_quality_log.sh not found)"
     fi
 
+    # ─── 軍師gate_result自動還流（GATE CLEAR時、ベストエフォート） ───
+    echo ""
+    echo "Gunshi gate_result reflux (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
+        bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1 || true
+    else
+        echo "  SKIP (gunshi_gate_reflux.sh not found)"
+    fi
+
     exit 0
 else
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
