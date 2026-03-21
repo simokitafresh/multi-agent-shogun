@@ -3684,6 +3684,86 @@ except:
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
 
+    # ─── GATE CLEAR時 insight候補通知（cmd_1217: lesson_candidate/decision_candidate found:true検出） ───
+    echo ""
+    echo "Insight candidate detection (GATE CLEAR):"
+    INSIGHT_TMP=$(mktemp)
+    trap "rm -f '$INSIGHT_TMP'" EXIT
+    INSIGHT_COUNT=0
+    for task_file in "$TASKS_DIR"/*.yaml; do
+        [ -f "$task_file" ] || continue
+        if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+            continue
+        fi
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+        [ -f "$report_file" ] || continue
+
+        insight_line=$(REPORT_FILE="$report_file" python3 -c "
+import yaml, os, sys
+try:
+    with open(os.environ['REPORT_FILE']) as f:
+        data = yaml.safe_load(f) or {}
+    lc = data.get('lesson_candidate', {})
+    dc = data.get('decision_candidate', {})
+    lc_found = isinstance(lc, dict) and lc.get('found') is True
+    dc_found = isinstance(dc, dict) and dc.get('found') is True
+    parts = []
+    if lc_found:
+        title = str(lc.get('title', lc.get('summary', '')))[:80]
+        parts.append('LC: ' + title if title else 'LC: (untitled)')
+    if dc_found:
+        title = str(dc.get('title', dc.get('summary', dc.get('question', ''))))[:80]
+        parts.append('DC: ' + title if title else 'DC: (untitled)')
+    if parts:
+        print(' / '.join(parts))
+except:
+    pass
+" 2>/dev/null)
+
+        if [ -n "$insight_line" ]; then
+            INSIGHT_COUNT=$((INSIGHT_COUNT + 1))
+            echo "  ${ninja_name}: ${insight_line}"
+            echo "${ninja_name}: ${insight_line}" >> "$INSIGHT_TMP"
+        fi
+    done
+
+    if [ "$INSIGHT_COUNT" -gt 0 ]; then
+        DASHBOARD="$SCRIPT_DIR/dashboard.md"
+        if [ -f "$DASHBOARD" ]; then
+            DASHBOARD_FILE="$DASHBOARD" CMD_ID_ENV="$CMD_ID" INSIGHT_FILE="$INSIGHT_TMP" python3 -c "
+import os, sys
+dashboard = os.environ['DASHBOARD_FILE']
+cmd_id = os.environ['CMD_ID_ENV']
+insight_file = os.environ['INSIGHT_FILE']
+try:
+    with open(insight_file, 'r', encoding='utf-8') as f:
+        notes = [line.strip() for line in f if line.strip()]
+    if not notes:
+        sys.exit(0)
+    with open(dashboard, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    insert_idx = None
+    for i, line in enumerate(lines):
+        if line.strip() == '## 将軍宛報告':
+            insert_idx = i + 1
+            break
+    if insert_idx is not None:
+        for note in notes:
+            lines.insert(insert_idx, f'- [INSIGHT] {cmd_id} {note}\n')
+            insert_idx += 1
+        with open(dashboard, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+except Exception as e:
+    print(f'  [INFO] dashboard insight append failed: {e}', file=sys.stderr)
+" 2>/dev/null || echo "  [INFO] dashboard insight append failed (non-blocking)"
+            echo "  Notified: ${INSIGHT_COUNT} insight candidate(s) → dashboard 将軍宛セクション"
+        fi
+    else
+        echo "  OK: no insight candidates (found:true=0)"
+    fi
+    rm -f "$INSIGHT_TMP"
+
     exit 0
 else
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
