@@ -1898,6 +1898,31 @@ else
     echo "  OK (全${REPORT_TASK_COUNT}件の報告YAML確認済み)"
 fi
 
+# ─── 報告YAMLフォーマット検証（cmd_1202: タスクYAML非依存・ディレクトリ直接スキャン） ───
+# バイパス経路防止: タスクYAMLは忍者再配備で上書きされるため、
+# 報告ディレクトリを直接スキャンしてgate_report_format.shを実行する（最終防衛線）
+level_heading "[L1]" "Report format validation (direct scan):"
+REPORT_FORMAT_CHECKED=0
+REPORT_FORMAT_FAILED=0
+for report_file in "$SCRIPT_DIR/queue/reports/"*_report_${CMD_ID}.yaml; do
+    [ -f "$report_file" ] || continue
+    REPORT_FORMAT_CHECKED=$((REPORT_FORMAT_CHECKED + 1))
+    GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1 || true)
+    if echo "$GATE_OUTPUT" | grep -q "^FAIL"; then
+        REPORT_FORMAT_FAILED=$((REPORT_FORMAT_FAILED + 1))
+        echo "  [CRITICAL] $(basename "$report_file"): $GATE_OUTPUT"
+        record_block_reason "report_format:$(basename "$report_file")"
+        ALL_CLEAR=false
+    else
+        echo "  $(basename "$report_file"): PASS"
+    fi
+done
+if [ "$REPORT_FORMAT_CHECKED" -eq 0 ]; then
+    echo "  (no report files found for ${CMD_ID})"
+elif [ "$REPORT_FORMAT_FAILED" -eq 0 ]; then
+    echo "  OK (全${REPORT_FORMAT_CHECKED}件フォーマット検証PASS)"
+fi
+
 # ─── related_lessons存在チェック（deploy_task.sh経由確認） ───
 level_heading "[L1]" "Related lessons injection check:"
 RL_CHECKED=false
