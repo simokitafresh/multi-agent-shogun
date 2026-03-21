@@ -108,6 +108,7 @@ declare -A RENUDGE_COUNT          # 未読再nudgeカウンター — key: agent
 declare -A RENUDGE_FINGERPRINT    # 未読IDのfingerprint — key: agent_name, value: md5 hash (L029: ID集合ベース)
 declare -A RENUDGE_LAST_SEND      # 最終renudge送信時刻 — key: agent_name, value: epoch秒
 declare -A AUTO_DEPLOY_DONE       # auto_deploy_next.sh呼出済みフラグ — key: "ninja:task_id", value: "1"
+declare -A REPORT_GATE_SENT      # 報告フォーマットgate FAIL送信済みフラグ — key: "ninja:cmd_id", value: "1"
 declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "ninja:subtask_id", value: count
 declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key: agent_name, value: epoch秒
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
@@ -637,6 +638,21 @@ is_task_deployed() {
         if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress|done)$ ]]; then
             # AC1/AC2: 報告YAML完了チェック（parent_cmd一致+status:done）
             if check_and_update_done_task "$name"; then
+                # ─── 報告フォーマットgate（cmd_1236: 家老workaround根絶） ───
+                local gate_report_file gate_parent_cmd gate_key gate_output
+                gate_report_file=$(find_matching_report_file "$name") || true
+                gate_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+                gate_key="${name}:${gate_parent_cmd}"
+                if [ -n "$gate_report_file" ] && [ -f "$gate_report_file" ] && [ "${REPORT_GATE_SENT[$gate_key]}" != "1" ]; then
+                    gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$gate_report_file" 2>&1) || true
+                    if ! echo "$gate_output" | grep -q "^PASS"; then
+                        REPORT_GATE_SENT[$gate_key]="1"
+                        log "REPORT-FORMAT-FAIL: $name report=$(basename "$gate_report_file") output=$gate_output"
+                        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "報告YAMLフォーマットエラー: ${gate_output}。報告YAMLを修正して再送信せよ。対象: $(basename "$gate_report_file")" report_format_fix karo >> "$LOG" 2>&1 &
+                    else
+                        log "REPORT-FORMAT-PASS: $name report=$(basename "$gate_report_file")"
+                    fi
+                fi
                 # ─── auto_deploy_next.sh 自動発火（二重呼出防止付き） ───
                 local task_id_val parent_cmd_val
                 task_id_val=$(yaml_field_get "$task_file" "task_id")
@@ -994,6 +1010,11 @@ _cleanup_stale_keys() {
     for key in "${!AUTO_DEPLOY_DONE[@]}"; do
         agent_part="${key%%:*}"
         [ -z "${active[$agent_part]}" ] && unset "AUTO_DEPLOY_DONE[$key]"
+    done
+
+    for key in "${!REPORT_GATE_SENT[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "REPORT_GATE_SENT[$key]"
     done
 
     for key in "${!STALL_COUNT[@]}"; do

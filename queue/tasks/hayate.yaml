@@ -1,21 +1,42 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  ac_version: f84b5566
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: de990c2b
   acceptance_criteria:
+    AC1: ninja_monitor.shのタスク完了検知ロジック(status→done遷移)の箇所にgate_report_format.sh呼び出しを追加すること
+    AC2: gate FAIL時、該当忍者にinbox_write(type=report_format_fix)でエラー詳細+修正指示を自動送信すること
+    AC3: gate PASS時は既存フロー(karo_snapshot更新)に影響を与えないこと
+    AC4: 動作テスト。壊れた報告YAML(lessons_useful=dict, files_modified=string)でFAIL+inbox送信を確認。正常な報告YAMLでPASS+無音通過を確認
+  binary_checks:
     AC1:
-      description: instructions/gunshi.mdの§Review Criteriaを刷新。現行6観点(家老重複)を廃止し、軍師独自6観点に置換。(1)前提検証(2)数値再計算(3)時系列シミュレーション(4)事前検死(5)確信度ラベル(6)North
-        Star整合。各観点にチェックポイント+判定基準+出力形式を明記
-      status: pending
+    - ninja_monitor.shのstatus→done遷移箇所を特定したか？ [yes/no]
+    - gate_report_format.sh呼び出しを追加したか？ [yes/no]
+    - 報告YAMLパスを正しくgate_report_format.shに渡しているか？ [yes/no]
     AC2:
-      description: §Report Reviewも同様に刷新。現行4観点(家老重複)→独自軸での検証に変更。reportレビューでも前提検証・数値検算・事前検死を適用する形式に
-      status: pending
+    - gate FAIL時にinbox_writeが実行されるか？ [yes/no]
+    - inbox_writeのtype=report_format_fixを使用しているか？ [yes/no]
+    - エラー詳細(gate出力)がメッセージに含まれるか？ [yes/no]
     AC3:
-      description: '5段階思考プロトコル(Challenge Assumptions→Recalculate Numbers→Runtime Simulation→Pre-mortem→Confidence
-        Label)をgunshi.mdに追記。コピーではなく我が軍の文脈に適応させること。各Stepに実例付記: Step1=cmd_1171スコープ限定盲点、Step2=cmd_1165分母問題、Step4=cmd_1166消火判定'
-      status: pending
+    - gate PASS時に既存のkaro_snapshot更新フローが正常動作するか？ [yes/no]
+    - gate追加による余分な出力やエラーがないか？ [yes/no]
+    AC4:
+    - 壊れた報告YAML(lessons_useful=dict)でFAIL+inbox送信を確認したか？ [yes/no]
+    - 正常な報告YAMLでPASS+無音通過を確認したか？ [yes/no]
+    - 同一報告に対して複数回FAILを送らないフラグ管理があるか？ [yes/no]
   bloom_level: ''
-  deployed_at: '2026-03-20T20:37:13'
+  command: "■ 背景\ngate_report_format.shは存在するが発火タイミングが間違っている。\n現在の発火点:\n  (1) inbox_write.sh\
+    \ type=report_received — 忍者がメッセージ送信時\n  (2) cmd_complete_gate.sh — cmd完了判定時\n\
+    しかし家老はninja_monitor経由で報告を直接読む。\nその結果、gateを通らずに壊れた報告を読み、手動でworkaround修正している(76%)。\n\
+    \n■ 修正方針\nninja_monitorでタスクのstatus→done遷移を検知した時点でgate_report_format.shを実行する。\n\
+    これにより「忍者が書いた直後、家老が読む前」にgateが走る。\nFAILなら忍者に差し戻し(inbox_write)、忍者が自分で修正する。\n家老のworkaround作業がゼロになる。\n\
+    \n■ 修正箇所\nscripts/ninja_monitor.sh — タスク完了検知の箇所\n  → report YAML存在確認 → gate_report_format.sh実行\n\
+    \  → FAIL: bash scripts/inbox_write.sh {ninja} \"報告YAMLフォーマットエラー: {gate出力}。修正して再送信せよ。\"\
+    \ report_format_fix karo\n  → PASS: 既存フロー続行\n\n■ 技術的注意\n- ninja_monitorはループで動いている。gate追加でパフォーマンス劣化しないこと(gateは軽量だが頻繁呼び出しに注意)\n\
+    - 同一報告に対して複数回FAILを送らないよう、送信済みフラグ管理が必要\n- gate_report_format.shのパス: scripts/gates/gate_report_format.sh\n"
+  context_files:
+  - scripts/ninja_monitor.sh
+  - scripts/gates/gate_report_format.sh
+  deployed_at: '2026-03-22T00:58:43'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
@@ -25,22 +46,20 @@ task:
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
   - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  ninja: hayate
-  notes: cmd_1173がgunshi.mdに§FAIL Criteria等を追記予定。§Review CriteriaとReport Reviewの刷新は本タスクの範囲。競合を避けるため§FAIL
-    Criteriaセクションがあれば保持すること
+  ninja_id: hayate
+  not_in_scope:
+  - gate_report_format.sh自体の検証項目追加(files_modified追加は将軍が実施済み)
+  - karo_workarounds.yamlのスキーマ強制(別途対策)
+  - cmd_complete_gate.shの変更(最終防衛線として維持)
   parallel_ok: []
-  parent_cmd: cmd_1174
+  parent_cmd: cmd_1236
   project: infra
-  reference_files:
-  - logs/gunshi_review_log.yaml
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
     id: L074
@@ -59,26 +78,10 @@ task:
   - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
     id: L079
     summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-  report_filename: hayate_report_cmd_1174.yaml
-  report_path: queue/reports/hayate_report_cmd_1174.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - pushするな(commitまで)
-    - スコープ外改善は禁止
-    notes:
-    - TODO/FIXMEが残っていないことを確認せよ
-    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-    required_fields:
-    - ac_version_read
-    - files_modified
-    - lesson_candidate
-    - lessons_useful
+  report_filename: hayate_report_cmd_1236.yaml
+  report_path: queue/reports/hayate_report_cmd_1236.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
-  stop_for: []
-  summary: 軍師に家老と直交する独自判断基準を整備(GSD式盲点検出)
-  target_path: instructions/gunshi.md
-  task_id: cmd_1174_criteria
-  task_type: implement
-status: done
+  scope_mode: REDUCTION
+  status: done
+  stop_for:
+  - gate_report_format.shが存在しないまたは実行権限がない場合
