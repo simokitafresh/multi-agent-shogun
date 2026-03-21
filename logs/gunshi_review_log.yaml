@@ -1,0 +1,211 @@
+# gunshi_review_log.yaml — 軍師レビュー履歴
+# ─── Vercel索引層: /clear後はここだけ読め ───
+# 累計: 121件 (draft:56, report:65) | 2026-03-20〜
+# accuracy: gate_result判明分 100% (67/67 CLEAR, 0 FAIL)
+#   未判明: 54件(45%)
+# verdict分布: APPROVE:50 LGTM:64 REQ_CHANGES:6 FAIL:1
+# 教訓: LG001-005登録済み。LG001(git show HEAD)=唯一完全な免疫サイクル
+# 見落としパターン: uncommitted差分誤認(LG001で解消済み)
+# 品質Flag頻出: binary_checks関連(26回)
+# 忍者別品質: WEAK=才蔵2回 / HIGH=半蔵1,才蔵1,小太郎2,疾風1,影丸1
+# 自己研鑽: 3構造的断絶(計測/還流/実践)+Vercel化実施(2026-03-21)
+# 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
+# ─── エントリ形式(簡略) ───
+# draft: cmd_id, verdict, gate_result, findings_summary(1行), timestamp
+# report: + report_ninja, lesson_quality
+# ─────────────────────────
+
+- cmd_id: cmd_1200
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "7忍法GS再実行+21体チャンピオン選出。PE統合7本全commit確認(revert3本は対象外)。6名並列配備・衝突なし。oikaze fill_value fallback明記。確信度HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T15:05:00"
+- cmd_id: cmd_1200
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  report_task_id: cmd_1200_kagemaru
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "OK"
+  gate_result: null
+  findings_summary: "nukimi GS 60918パターン完走。3体選出基準全正しい(数値突合OK)。PI-009全3体max_diff=0.0完全一致。binary_checksセクション非独立(details内包)"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T15:12:00"
+- cmd_id: cmd_1200
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  report_task_id: cmd_1200_saizo
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "OK"
+  gate_result: null
+  findings_summary: "kasoku_ratio GS 119493パターン完走。選出基準全正しい(数値突合OK)。PI-009全3体max_diff=0.0。binary_checks独立セクション全yes。内部検証(md5+parity)全PASS。高品質報告"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T15:14:00"
+- cmd_id: cmd_1200
+  review_type: report
+  verdict: LGTM
+  report_ninja: kotaro
+  report_task_id: cmd_1200_kotaro
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "OK"
+  gate_result: null
+  findings_summary: "kasoku_diff GS 119493パターン完走。選出基準全正しい。PI-009全3体max_diff=0.00。lesson_candidate有用(内蔵検証スケーリング)。品質Flag: binary_checks/files_modified文字列形式(軽微)"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T15:17:00"
+- cmd_id: cmd_1200
+  review_type: report
+  verdict: LGTM
+  report_ninja: tobisaru
+  report_task_id: subtask_1200_tobisaru
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "OK"
+  gate_result: null
+  findings_summary: "bunshin781+yotsume4686パターン完走。全6体PI-009 PASS(5.55e-17は閾値内)。yotsume mp md5問題→単一プロセス回避妥当。decision_candidate有用。品質Flag: binary_checks欠落+NHR/NHF表記揺れ(軽微)"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T15:30:00"
+- cmd_id: cmd_1200
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: subtask_1200_oikaze_hayate
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "HIGH"
+  gate_result: null
+  findings_summary: "oikaze GS 28116パターンPE経由完走。batch vs PE不一致→PEフォールバック(draft伏兵予測通り)。PI-009全3体max_diff≈1e-16。binary_checks正規YAML全yes。lesson_candidate高品質(乖離原因詳述)。高品質報告"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T16:07:00"
+- cmd_id: cmd_1201
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR  # review_feedback受信2026-03-21T18:32: GATE CLEAR。L462登録済み
+  findings_summary: "ドキュメント矛盾一掃3AC。前提全確認(L1_total=10/§28「10体」/§3旧四神のみ)。背景§11.5「100%」は事実誤認(実際「未検証」)だが修正箇所は正確。§11はDM-signalリポ未commitだが問題なし。ファイル重複なし並列安全。確信度HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T17:30:00"
+- cmd_id: cmd_1201
+  review_type: report
+  verdict: LGTM
+  report_ninja: tobisaru
+  report_task_id: cmd_1201_tobisaru
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "OK"
+  gate_result: null
+  findings_summary: "AC1 L1_total=12+L1_actual=10分離(4cee8a8)。AC2 design.md §11 12スロット/未検証(6e2e3d4f)。DM-signal 326行commit(先行uncommitted §11含む、飛猿修正は3箇所)。lesson_candidate有用(リポ未commit蓄積)"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T17:40:00"
+- cmd_id: cmd_1201
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_1201_hayate
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "OK"
+  gate_result: CLEAR
+  findings_summary: "dm-signal.md §28に12スロット設計明記(0cc3af8)。dm-signal-core.md §3旧四神ディスコン+v2セクション新設。binary_checks details内包(独立セクションなし・軽微)"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T17:40:00"
+- cmd_id: cmd_1200
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  report_task_id: cmd_1200_hanzo
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "OK"
+  gate_result: null
+  findings_summary: "kawarimi GS 28116パターン完走。3チャンピオン全メトリクスCSV突合OK。PI-009全3体max_diff=0.00。batch→PEフォールバック(1600倍速度低下)。lesson_candidate有用(Python3.12 batch不一致)。品質Flag: FILL_THIS残存+binary_checks非独立"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T17:50:00"
+# === 軍師自己研鑽分析 (2026-03-21T18:20:00) ===
+# deepdive_why_chain_20260321.mdを読み、自分の学習ループを分析した結果
+# --- 定量分析 ---
+# Total reviews: 116 (draft:53, report:63)
+# Draft accuracy (known): 100% (23/23) — BUT gate_result null: 57%
+# Report accuracy (known): 100% (44/44) — gate_result null: 30%
+# REQUEST_CHANGES: 6件 (うち正当:3, 誤判定→自己訂正:3)
+# Report FAIL: 1件 (cmd_1179 未commitファイル検出)
+# lesson_candidate記載: 22件 → lessons_gunshi.yaml登録: 0件
+# 品質Flag binary_checks欠落: 20回(17%) — 前半→後半 +67%悪化
+# --- 構造的断絶 3件 ---
+# (1) 計測の断絶: gate_result 57% null → accuracy計測不完全
+# (2) 還流の断絶: lesson_candidate22件未登録 → 学習が消失
+# (3) 実践の断絶: 品質Flag繰り返し → 忍者行動変容なし(WARNING止まり)
+# --- 根本原因 ---
+# 全て「知識が環境に外部化されていない」= deepdive Phase 4の原理的限界
+# --- 対処 ---
+# top5 lesson_candidateを家老に送信(還流断絶の即時対処)
+# 構造改善提案を家老に送信(計測+還流+実践の3断絶)
+# 本エントリを記録(分析自体の外部化)
+- cmd_id: cmd_1202
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "gateバイパス経路調査+cmd_complete_gate二重チェック。inbox_write.sh BLOCKING確認済み。バイパス経路実証済み(hanzo_report_cmd_1200)。構造的穴修正。confidence HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T18:35:00"
+- cmd_id: cmd_1203
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "kawarimi batch/sequential md5不一致DC偵察。28116パターン/1600倍速度低下。Python3.12/3.13差異調査。PI-009前提のbatch信頼性検証。confidence HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T18:35:00"
+# === 軍師自己研鑽 第二回 (2026-03-21T18:45:00) ===
+# deepdive_why_chain_20260321.md全文追体験
+# --- 定量分析(更新) ---
+# Total: 118 entries (draft ~54, report ~64)
+# APPROVE: 49, REQUEST_CHANGES: 6 (正当3/誤判定3), LGTM: 62, FAIL: 1
+# gate_result判明: 68 CLEAR / 0 FAIL / 56 null(47%)
+# REQUEST_CHANGES精度: 50% (LG001適用後は100%)
+# lesson_quality: OK:43, HIGH:5, WEAK:2(才蔵), N/A:4
+# 忍者別レビュー数: 疾風13/影丸10/才蔵9/飛猿8/小太郎7/半蔵7
+# --- 3構造的断絶(deepdive Phase 4-5適用) ---
+# (1) 計測断絶: gate_result 47% null
+# (2) 還流断絶: lesson_candidate 22件→5件登録=77%消失
+# (3) 実践断絶: 品質Flag「軽微」20回=消火構造
+# --- deepdive最深層 ---
+# 「なぜ」の目的は理解ではなく自動化ターゲットの特定
+# LG001の成功: git show HEAD→gunshi.md永続→以後0件誤判定=完全な免疫サイクル
+# 残り4教訓(LG002-005)はまだ免疫サイクルの実証がない
+# --- dm-signal固有lesson_candidate 5件(家老送信済み) ---
+# DTB3 ref mode / to_timestamp(how=E) / 誤差基準不統一 / oikaze batch-PE / PI-009効果限定
+- cmd_id: cmd_1202
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  report_task_id: cmd_1202_hanzo
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "OK"
+  gate_result: null
+  findings_summary: "commit 3991116確認。バイパス経路3つ特定+直接スキャン実装。binary_checks 9項目全yes"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T18:50:00"
+- cmd_id: cmd_1203
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  report_task_id: cmd_1203_saizo
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: "HIGH"
+  gate_result: null
+  findings_summary: "偵察。set→list非決定的反復順序=16.75%タイ頻度で顕在化。10+ブロック汎用問題。sorted()統一推奨。decision_candidate有用"
+  lesson_candidate: "set型からlist変換時のsorted()強制はPI候補。GS正確性の基盤"
+  timestamp: "2026-03-21T18:50:00"
+- cmd_id: cmd_1204
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "base templateにbinary_checks/verdict追加。2AC。review verdict重複リスク注意済み。cmd_1202相乗効果。confidence HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-21T18:55:00"
