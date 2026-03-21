@@ -105,6 +105,11 @@ DLコマンド: `download_all_prices.py grid-search`(価格) | `download_prod_da
 
 詳細設計・DNA制約・誤解リスト → `projects/dm-signal.yaml` (e) shijin
 
+### 旧四神(v1: cmd_246時代 — FoF構成) ⚠ ディスコン
+
+> **v1(191,796パターン広探索→CPCV→32ユニット方式)は全廃。シン四神v2に移行済み。**
+> 以下は記録として残置。新規タスクではシン四神v2を参照せよ。
+
 四神 = 各DMファミリー全パラメータ総当たりGS(172,818パターン) → GFS → チャンピオン戦略均等配分FoF。
 
 | 四神 | 構成 | チャンピオン戦略 | FoF CAGR |
@@ -116,12 +121,22 @@ DLコマンド: `download_all_prices.py grid-search`(価格) | `download_prod_da
 
 選定: GFS(CAGR最大化順次追加) | 堅牢性: SUSPECT検出 | 参照: portfolio-research/015→023§2.3
 
+### シン四神v2（cmd_1018-1080: L1 standard PF）— 現行
+
+旧v1を全面廃止。DNA事前制約→データ駆動lookback→3モードチャンピオン直接選出。
+**12スロット設計**(4ファミリー×3モード)。GS結果(cmd_1018)では重複吸収後**10体**。
+朱雀・玄武は激攻=常勝が同一変種→常勝消滅。
+登録形態: **L1 standard PF**（旧四神のFoF構成とは異なる）。
+シン忍法v2(21体)はこの10体を材料として構築。
+
+確定パラメータ・DNA制約根拠・データ分析 → `context/dm-signal-research.md` §27
+
 ### 命名規則（殿裁定 2026-02-20）
 
 L1四神FoF: {モード}-{四神名}（激攻-青龍等） | L2忍法FoF: {忍法名}-{モード}（加速-激攻等）
 モード: 激攻(CAGR) / 鉄壁(MaxDD) / 常勝(NewHigh)。旧サフィックス廃止。同一config→忍法名のみ
 ※ 智将(Calmar)→鉄壁(MaxDD)変更理由: Spearman相関分析でCalmarはCAGRと高相関(rho=0.86)で冗長。MaxDDはCAGRと低相関(rho=0.49)で独自軸
-現四神=CAGRモード（激攻）のみ。12パターン計画: 4神×3モード（激攻/鉄壁/常勝）
+シン四神v2確定: 4神×3モード=12スロット（吸収後10体）。旧四神(激攻のみ4体FoF)はディスコン
 L2忍法FoF: 5忍法×3モード=最大15体。monban除外(ext_pricesのCSV化に追加設計必要)。nukimi_c→nukimiに統合(L054)
 cmd_246完了: 12体チャンピオン本番DB登録済み。全0.00bp PASS。PF総数89(上限100)
 新忍法候補: 逆風(cmd_249採用決定)/追い越し(cmd_250)/四つ目(cmd_284フルGS完了) → §4新忍法候補参照
@@ -345,6 +360,9 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L102 | MVMF 4視点`SKIP_MONTHS_LIST=[0,1,2,3]`はクラス変数固定。configで変更不可 | cmd_222 |
 | L105 | BB config未拘束(`Dict[str,Any]`)がGS無効パターン量産の根因。制約注入は`build_grid`直後が最適 | cmd_264 |
 | L126 | ブロック名は`BlockType` enum値で統一する | cmd_222 |
+| L438 | MomentumAccelerationFilterのnumerator/denominator_periodはLookbackPeriodスキーマ準拠必須 | cmd_1190 |
+| L445 | DTB3を株式用momentum関数で処理してはならない | cmd_1194 |
+| L447 | nukimiのみ`_run_mp`関数不在で構造差異 | cmd_1196 |
 
 ### 19.3 GS-本番パリティ
 
@@ -369,6 +387,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L132 | GS構成四神と本番FoF構成PFの不一致に注意。登録前に突合必須 | cmd_222 |
 | L135 | FoF作成は12ステップ省略不可。ステップ2-4省略でGS前提崩壊(抜き身3の失敗) | cmd_284 |
 | L283 | FoFパイプラインのsnapshot参照はleakage-free設計必須。当月snapshot参照=データリーク | cmd_860 |
+| L431 | 既存PF更新時はUUID維持でFoF参照を保護 | cmd_1126 |
 
 ### 19.5 GS運用・config
 
