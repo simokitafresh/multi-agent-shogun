@@ -129,15 +129,46 @@ except:
     pass
 " 2>/dev/null || true)
 
+            FULL_REPORT=""
             if [ -n "$REPORT_PATH" ]; then
                 FULL_REPORT="$SCRIPT_DIR/$REPORT_PATH"
+            else
+                # Fallback: report_path未設定 → queue/reports/{from}_report_{cmd_id}*.yaml を検索
+                CMD_ID=$(TASK_PATH="$TASK_YAML" python3 -c "
+import yaml, os
+try:
+    with open(os.environ['TASK_PATH']) as f:
+        data = yaml.safe_load(f)
+    if data and 'task' in data:
+        pc = data['task'].get('parent_cmd', '')
+        if pc:
+            print(pc)
+except:
+    pass
+" 2>/dev/null || true)
+                if [ -n "$CMD_ID" ]; then
+                    FALLBACK=$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -name "${FROM}_report_${CMD_ID}*.yaml" -printf '%T@\t%p\n' 2>/dev/null | sort -rn | head -1 | cut -f2- || true)
+                    if [ -n "$FALLBACK" ]; then
+                        FULL_REPORT="$FALLBACK"
+                        echo "[report_format_gate] fallback: report_path未設定 → $(basename "$FALLBACK") を検出" >&2
+                    else
+                        echo "[report_format_gate] WARNING: 報告YAML未発見: queue/reports/${FROM}_report_${CMD_ID}*.yaml" >&2
+                    fi
+                else
+                    echo "[report_format_gate] WARNING: report_path未設定 + parent_cmd未設定 → gate検証スキップ" >&2
+                fi
+            fi
+
+            if [ -n "$FULL_REPORT" ]; then
                 if [ -f "$FULL_REPORT" ]; then
                     GATE_RESULT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1 || true)
                     if echo "$GATE_RESULT" | grep -q "^FAIL"; then
                         echo "[report_format_gate] BLOCKED: $GATE_RESULT" >&2
-                        echo "[report_format_gate] 報告YAMLを修正してから再送信せよ: $REPORT_PATH" >&2
+                        echo "[report_format_gate] 報告YAMLを修正してから再送信せよ: $FULL_REPORT" >&2
                         exit 1
                     fi
+                else
+                    echo "[report_format_gate] WARNING: 報告ファイルが存在しません: $FULL_REPORT" >&2
                 fi
             fi
         fi
