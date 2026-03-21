@@ -62,7 +62,7 @@ if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
     # cmdブロックを抽出（cmd_id行の次行から、次のcmd_行の直前まで）
     CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
 
-    if ! echo "$CMD_BLOCK" | grep -q "quality_gate:"; then
+    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "quality_gate:"; then
         echo "BLOCK: quality_gate未記入。3問に答えてからcmd_save.shを実行せよ" >&2
         cat >&2 <<'QG_TEMPLATE'
 ---
@@ -77,7 +77,7 @@ QG_TEMPLATE
 
     MISSING_KEYS=()
     for _QG_KEY in q1_firefighting q2_learning q3_next_quality; do
-        if ! echo "$CMD_BLOCK" | grep -q "${_QG_KEY}:"; then
+        if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "${_QG_KEY}:"; then
             MISSING_KEYS+=("$_QG_KEY")
         fi
     done
