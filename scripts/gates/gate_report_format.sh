@@ -38,9 +38,11 @@ for field in required:
     if field not in data:
         errors.append(f'{field}: MISSING')
 
-# --- lesson_candidate must be dict with 'found' ---
+# --- lesson_candidate must be dict with 'found' (null = FAIL) ---
 lc = data.get('lesson_candidate')
-if lc is not None:
+if lc is None and 'lesson_candidate' in data:
+    errors.append('lesson_candidate: null (must be dict with found/title/detail)')
+elif lc is not None:
     if isinstance(lc, str):
         errors.append('lesson_candidate: is string (must be dict with found/title/detail)')
     elif isinstance(lc, dict):
@@ -83,9 +85,11 @@ elif isinstance(bc, dict) and not bc:
 elif isinstance(bc, list) and not bc:
     errors.append('binary_checks: empty list (must have at least one entry)')
 
-# --- purpose_validation should exist ---
+# --- purpose_validation should exist and not be null ---
 if 'purpose_validation' not in data:
     errors.append('purpose_validation: MISSING')
+elif data.get('purpose_validation') is None:
+    errors.append('purpose_validation: null (must be dict with fit/reason)')
 
 # --- result.summary should exist ---
 result = data.get('result', {})
