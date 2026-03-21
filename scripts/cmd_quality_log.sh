@@ -5,7 +5,7 @@
 # 自動取得フィールド:
 #   gunshi_verdict: queue/inbox/karo.yamlからcmd_idに該当する軍師verdict (APPROVE/REQUEST_CHANGES/unknown)
 #   ninja_blockers: queue/reports/配下のparent_cmd=cmd_idかつstatus=blockedの件数
-#   ac_count: shogun_to_karo.yamlの該当cmdのAC数(■ ACパターンをカウント)
+#   ac_count: shogun_to_karo.yamlの該当cmdのAC数(acceptance_criteria配下の'ACN:'リスト項目をカウント)
 
 set -euo pipefail
 
@@ -156,15 +156,22 @@ fetch_ninja_blockers() {
 }
 
 # --- Auto-fetch: ac_count ---
-# Count ■ AC lines in shogun_to_karo.yaml for this cmd
+# Count acceptance_criteria items (- 'ACN: ...') in shogun_to_karo.yaml for this cmd
 fetch_ac_count() {
     local stk="$REPO_ROOT/queue/shogun_to_karo.yaml"
     if [[ ! -f "$stk" ]]; then
         echo 0
         return
     fi
-    # Use awk: find cmd block (2-space indent), count ■ AC lines until next cmd block
-    awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found && /■ AC/{count++} END{print count+0}" "$stk"
+    # Find cmd block, then acceptance_criteria section, count "- 'ACN:" list items
+    awk -v cid="$CMD_ID" '
+        $0 ~ "^  " cid ":" { found=1; next }
+        found && /^  cmd_/ { exit }
+        found && /^    acceptance_criteria:/ { in_ac=1; next }
+        found && in_ac && /^    [a-zA-Z_]/ { in_ac=0 }
+        found && in_ac && /^    - .AC[0-9]/ { count++ }
+        END { print count+0 }
+    ' "$stk"
 }
 
 GUNSHI_VERDICT=$(fetch_gunshi_verdict)
