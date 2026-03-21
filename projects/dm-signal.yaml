@@ -690,10 +690,11 @@ naming_convention:
       approach: |
         DNA理解→パラメータ事前制約→チャンピオン直接選出。
         旧: 191,796変種→CPCV→Triple-E→脱相関→32ユニット（複雑、DNA理解が甘い）
-        新: DNA制約済みGS→CAGR/MaxDD/NHF各1位選出→重複吸収→10体（シンプル、原理原則準拠）
+        新: DNA制約済みGS→CAGR/MaxDD/NHF各1位選出→12スロット設計→重複吸収(GS結果)→実績10体
       L1_format: "シン{四神名}-{モード}"
       L1_examples: ["シン青龍-激攻", "シン青龍-鉄壁", "シン青龍-常勝"]
-      L1_total: 10  # 青龍3+朱雀2+白虎3+玄武2（重複吸収後）
+      L1_total: 12  # 設計定義=4ファミリー×3モード。吸収はGS結果であり定義ではない
+      L1_actual_after_absorption: 10  # GS結果: 朱雀・玄武で常勝消滅（重複吸収後実績値）
       absorption_rule: |
         モード間で同一変種が選出された場合、優先度 激攻>常勝>鉄壁 で吸収。
         低優先モードは消滅。朱雀(激攻=常勝→常勝消滅)、玄武(激攻=常勝→常勝消滅)。
@@ -929,6 +930,10 @@ naming_convention:
         implication: "パリティ検証ではmonthly_return_open列を使用すること。monthly_return(Close)列で比較すると偽の不一致が発生する"
         source: "cmd_1098(L420)"
         verified_file: "backend/app/models/monthly_return.py"
+      - id: PI-009
+        fact: "GSは本番と同一の結果を出さなければならない。同一の結果=全期間holding_signal完全一致(必須)+monthly_return 1e-6以内(浮動小数点演算順序差は許容)。エンジン実装は問わない"
+        implication: "holding_signalが1月でも不一致ならそのGS結果は汚染データ。チャンピオン選出は無効。monthly_returnの6e-7程度のIEEE754丸め差は物理的限界として許容"
+        source: "cmd_1191+cmd_1194偵察+殿裁定(2026-03-21)"
 
   data_pipeline:
     description: "DB直接読込方式(主系) + CSV互換ローダー併用"
