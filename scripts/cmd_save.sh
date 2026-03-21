@@ -108,6 +108,15 @@ if ! (flock -n 200) 200>"$LOCK_FILE" 2>/dev/null; then
     WARN_COUNT=$((WARN_COUNT + 1))
 fi
 
+# --- Check 5: uncommitted changes検出 ---
+UNCOMMITTED=$(git -C "$PROJECT_DIR" status --porcelain 2>/dev/null | grep -v 'queue/shogun_to_karo\.yaml' || true)
+if [[ -n "$UNCOMMITTED" ]]; then
+    echo "WARN: 未コミット変更を検出（コミット忘れ注意）:" >&2
+    echo "$UNCOMMITTED" | while IFS= read -r line; do
+        echo "  $line" >&2
+    done
+fi
+
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
     local QUALITY_LOG="$PROJECT_DIR/logs/cmd_design_quality.yaml"

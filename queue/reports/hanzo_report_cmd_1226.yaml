@@ -1,0 +1,50 @@
+worker_id: hanzo
+task_id: hanzo_cmd_1226
+parent_cmd: cmd_1226
+timestamp: '2026-03-21T22:55:24'
+status: done
+ac_version_read: 90235c08
+result:
+  summary: Check 5のWARN_COUNT加算行を削除。表示のみ残し非ブロッキング化完了
+  details: scripts/cmd_save.sh L118のWARN_COUNT加算を削除。WARNメッセージは維持。Check 1-4不変。未コミット変更ある状態でexit
+    0確認済み
+purpose_validation:
+  cmd_purpose: Check 5を非ブロッキング化し未コミット変更があってもcmd保存を妨げない
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/cmd_save.sh
+lesson_candidate:
+  found: false
+  no_lesson_reason: 単純な1行削除。新たなパターンなし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+  '0':
+    useful: false
+    reason: ((PASS++))パターンは今回の修正に無関係
+  '1':
+    useful: false
+    reason: MCP entity名義の話で今回の修正に無関係
+  '2':
+    useful: false
+    reason: Pythonのデータ構造の話で今回のbash修正に無関係
+  '3':
+    useful: false
+    reason: shutsujin_departure.shの話で今回の修正に無関係
+  '4':
+    useful: false
+    reason: cmd_complete_gate.shの話で今回の修正に無関係
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1: '[{check: ''Check 5のWARN_COUNT加算行が削除されたか'', result: ''yes''}]'
+  AC2: "[{check: '未コミット変更ある状態でexit 0か', result: 'yes'}]"
+  AC3: "[{check: 'Check 1-4のWARN_COUNT加算は維持か', result: 'yes'}]"
+verdict: PASS
