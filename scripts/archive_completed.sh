@@ -437,9 +437,9 @@ archive_cmds() {
     date_stamp="$(date '+%Y%m%d')"
 
     echo "commands:" > "$tmp_active"
-    # エントリ境界を行番号で特定
+    # エントリ境界を行番号で特定（リスト形式 + マッピング形式の両対応）
     local -a starts
-    mapfile -t starts < <(grep -n '^ *- id: cmd_' "$QUEUE_FILE" | cut -d: -f1)
+    mapfile -t starts < <(grep -nE '^ *- id: cmd_|^  cmd_[0-9a-z_]+:' "$QUEUE_FILE" | cut -d: -f1)
 
     if [ ${#starts[@]} -eq 0 ]; then
         # 空振り検出: エントリ境界が0件でも完了ステータスが存在するならパターン不一致
@@ -476,11 +476,11 @@ archive_cmds() {
         status_val=$(FIELD_GET_NO_LOG=1 field_get "$entry_tmp" "status" "" 2>/dev/null | tr -d '[:space:]')
         rm -f "$entry_tmp"
 
-        # cmd_idを取得（退避先ファイル名に利用）
+        # cmd_idを取得（退避先ファイル名に利用。リスト形式 + マッピング形式の両対応）
         local cmd_id
         cmd_id=$(printf '%s\n' "$entry" \
-            | grep '^ *- id: cmd_' | head -1 \
-            | sed 's/^ *- id: //')
+            | grep -m1 -E '^ *- id: cmd_|^  cmd_[0-9a-z_]+:' \
+            | sed -E 's/^ *- id: *//; s/^[[:space:]]*(cmd_[0-9a-z_]+):.*/\1/')
 
         # status欠損時のみ、completed_changelog照合でcompleted扱いにする。
         # 完全一致(anchor)で cmd_51 が cmd_515 に誤マッチしないようにする。
@@ -583,6 +583,13 @@ archive_reports() {
         # cmd指定時は該当cmdの報告のみを対象化
         if [ -n "$CMD_ID" ] && [ -n "$parent_cmd" ] && [ "$parent_cmd" != "$CMD_ID" ]; then
             skipped=$((skipped + 1))
+            continue
+        fi
+
+        # CMD_ID指定パス: status=pending → スキップ（生成直後のテンプレート保護）
+        if [ -n "$CMD_ID" ] && [ "$status_val" = "pending" ]; then
+            echo "[archive] WARNING: Skipping pending report: $(basename "$report_file")"
+            kept=$((kept + 1))
             continue
         fi
 
