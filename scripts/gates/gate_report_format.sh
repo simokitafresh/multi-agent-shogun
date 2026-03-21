@@ -78,10 +78,12 @@ elif lu is not None:
     else:
         errors.append(f'lessons_useful: unexpected type {type(lu).__name__} (must be list of dicts)')
 
-# --- binary_checks must not be null or empty ---
+# --- binary_checks must not be null, empty, or string ---
 bc = data.get('binary_checks')
 if bc is None and 'binary_checks' in data:
     errors.append('binary_checks: null (must be dict with AC entries)')
+elif isinstance(bc, str):
+    errors.append('binary_checks: is string (must be dict). → dict形式で記入: binary_checks:\\n  AC1:\\n    status: PASS\\n    evidence: \"テスト実行結果のサマリ\"')
 elif isinstance(bc, dict) and not bc:
     errors.append('binary_checks: empty dict (must have at least one AC entry)')
 elif isinstance(bc, list) and not bc:
