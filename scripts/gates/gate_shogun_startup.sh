@@ -1,0 +1,234 @@
+#!/bin/bash
+# gate_shogun_startup.sh — 将軍セッション起動時の全チェックを一括実行
+# 目的: 3つの個別gateを覚えて実行する「意志依存」を排除（知性の外部化原則 2026-03-21）
+# Usage: bash scripts/gates/gate_shogun_startup.sh [--brief]
+# --brief: session_start_inject用。一行サマリのみ出力
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+GATE_DIR="$SCRIPT_DIR/scripts/gates"
+BRIEF=false
+[ "${1:-}" = "--brief" ] && BRIEF=true
+
+overall="OK"
+alerts=()
+
+$BRIEF || echo "=== 将軍起動チェック $(date '+%H:%M:%S') ==="
+$BRIEF || echo ""
+
+# --- Gate 1: Memory健全度 (Step 2.5) ---
+$BRIEF || echo "■ Memory健全度"
+result1=$("$GATE_DIR/gate_shogun_memory.sh" 2>&1 | tail -1)
+$BRIEF || echo "  $result1"
+if echo "$result1" | grep -q "ALERT"; then
+    overall="ALERT"
+    alerts+=("Memory健全度: ALERT")
+fi
+
+# --- Gate 2: p̄鮮度 (Step 2.57) ---
+$BRIEF || echo "■ p̄鮮度"
+result2=$("$GATE_DIR/gate_p_average_freshness.sh" 2>&1 | tail -1)
+$BRIEF || echo "  $result2"
+if echo "$result2" | grep -q "ALERT\|WARN"; then
+    if echo "$result2" | grep -q "ALERT"; then
+        overall="ALERT"
+        alerts+=("p̄鮮度: ALERT")
+    elif [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("p̄鮮度: WARN")
+    fi
+fi
+
+# --- Gate 3: cmd委任状態 (Step 2.6) ---
+$BRIEF || echo "■ cmd委任状態"
+result3=$("$GATE_DIR/gate_cmd_state.sh" 2>&1 | tail -1)
+$BRIEF || echo "  $result3"
+if echo "$result3" | grep -q "ALERT"; then
+    overall="ALERT"
+    alerts+=("cmd委任状態: ALERT")
+fi
+
+# --- Gate 4: 未読inbox ---
+$BRIEF || echo "■ inbox未読"
+inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
+if [ -f "$inbox_file" ]; then
+    unread=$(python3 -c "
+import yaml
+with open('$inbox_file') as f:
+    data = yaml.safe_load(f)
+msgs = data.get('messages', []) if data else []
+print(sum(1 for m in msgs if not m.get('read', False)))
+" 2>/dev/null || echo "0")
+    $BRIEF || echo "  未読: ${unread}件"
+    if [ "$unread" -gt 0 ] && [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("inbox未読: ${unread}件")
+    fi
+else
+    $BRIEF || echo "  未読: 0件"
+fi
+
+# --- Gate 5: 陣形図鮮度 ---
+$BRIEF || echo "■ 陣形図鮮度"
+snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
+if [ -f "$snapshot" ]; then
+    snap_time=$(head -2 "$snapshot" | grep "Generated:" | sed 's/.*Generated: //')
+    $BRIEF || echo "  最終更新: $snap_time"
+else
+    $BRIEF || echo "  WARNING: karo_snapshot.txt不在"
+    if [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("陣形図不在")
+    fi
+fi
+
+# --- Gate 6: 必読ファイル存在チェック ---
+REQUIRED_READ="$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"
+$BRIEF || echo "■ 必読ファイル"
+if [ -f "$REQUIRED_READ" ]; then
+    $BRIEF || echo "  OK: $(basename "$REQUIRED_READ") 存在確認"
+else
+    overall="ALERT"
+    alerts+=("必読ファイル不在: memory/deepdive_why_chain_20260321.md")
+    $BRIEF || echo "  ALERT: $REQUIRED_READ が存在しない"
+fi
+
+# --- Gate 7: 前セッション裁定の知識還流チェック ---
+LORD_INDEX="$SCRIPT_DIR/context/lord-conversation-index.md"
+$BRIEF || echo "■ 前セッション裁定"
+if [ -f "$LORD_INDEX" ]; then
+    ruling_count=$(grep -c "^- " <(sed -n '/殿の直近裁定・方針/,/^## /p' "$LORD_INDEX") 2>/dev/null || echo "0")
+    if [ "$ruling_count" -gt 0 ]; then
+        $BRIEF || echo "  前セッション裁定${ruling_count}件あり。projects/*.yamlへの反映を確認せよ"
+    else
+        $BRIEF || echo "  裁定なし"
+    fi
+else
+    $BRIEF || echo "  lord-conversation-index.md不在"
+fi
+
+# --- Gate 8: 気づきキュー ---
+INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
+$BRIEF || echo "■ 気づきキュー"
+if [ -f "$INSIGHTS_FILE" ]; then
+    pending_count=$(python3 -c "
+import yaml
+with open('$INSIGHTS_FILE') as f:
+    data = yaml.safe_load(f) or {}
+items = data.get('insights', [])
+print(sum(1 for i in items if i.get('status') == 'pending'))
+" 2>/dev/null || echo "0")
+    if [ "$pending_count" -gt 0 ]; then
+        $BRIEF || echo "  未処理: ${pending_count}件（idle時に確認推奨）"
+    else
+        $BRIEF || echo "  未処理: 0件"
+    fi
+else
+    $BRIEF || echo "  キューなし"
+fi
+
+# --- Gate 9: 将軍パフォーマンスフィードバック ---
+$BRIEF || echo "■ 将軍パフォーマンスフィードバック"
+DESIGN_QUALITY="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+WORKAROUNDS_FILE="$SCRIPT_DIR/logs/karo_workarounds.yaml"
+REWORK_PCT="N/A"
+BLOCK_PCT="N/A"
+WA_COUNT=0
+
+# 9a: cmd設計品質 (直近10件)
+if [ -f "$DESIGN_QUALITY" ]; then
+    dq_result=$(DQFILE="$DESIGN_QUALITY" python3 -c '
+import yaml, os
+try:
+    filepath = os.environ["DQFILE"]
+    with open(filepath) as f:
+        data = yaml.safe_load(f) or {}
+    entries = data.get("entries", [])
+    last10 = entries[-10:] if len(entries) >= 10 else entries
+    total = len(last10)
+    if total == 0:
+        print("N/A N/A")
+    else:
+        rework = sum(1 for e in last10 if str(e.get("karo_rework", "no")).lower() in ("yes", "true"))
+        block = sum(1 for e in last10 if e.get("gate_result") == "BLOCK")
+        print(f"{int(rework*100/total)} {int(block*100/total)}")
+except Exception:
+    print("N/A N/A")
+' 2>/dev/null || echo "N/A N/A")
+    read -r REWORK_PCT BLOCK_PCT <<< "$dq_result"
+    $BRIEF || echo "  直近10件: rework率=${REWORK_PCT}% blocker率=${BLOCK_PCT}%"
+else
+    $BRIEF || echo "  cmd_design_quality.yaml不在"
+fi
+
+# 9b: 家老workaround (直近5件)
+if [ -f "$WORKAROUNDS_FILE" ]; then
+    wa_result=$(WAFILE="$WORKAROUNDS_FILE" python3 -c '
+import yaml, re, os
+try:
+    filepath = os.environ["WAFILE"]
+    items = []
+    try:
+        with open(filepath) as f:
+            data = yaml.safe_load(f)
+        items = data.get("workarounds", [])
+    except yaml.YAMLError:
+        with open(filepath) as f:
+            lines = f.readlines()
+        current = None
+        for line in lines:
+            s = line.rstrip()
+            if re.match(r"^- cmd:", s):
+                if current is not None:
+                    items.append(current)
+                current = {}
+            elif current is not None and s.startswith("  ") and ":" in s and not s.strip().startswith("- "):
+                key, _, val = s.strip().partition(":")
+                key = key.strip()
+                val = val.strip()
+                if key == "workaround":
+                    current["workaround"] = val.lower() in ("true", "yes")
+                elif key == "category":
+                    current["category"] = val
+        if current is not None:
+            items.append(current)
+    last5 = items[-5:] if len(items) >= 5 else items
+    wa_count = sum(1 for i in last5 if i.get("workaround", False))
+    cats = {}
+    for i in last5:
+        if i.get("workaround", False):
+            cat = i.get("category", "uncategorized")
+            cats[cat] = cats.get(cat, 0) + 1
+    parts = [f"{k}:{v}" for k, v in sorted(cats.items(), key=lambda x: -x[1])]
+    cat_str = ", ".join(parts) if parts else "none"
+    print(f"{wa_count} {len(last5)} {cat_str}")
+except Exception:
+    print("0 0 error")
+' 2>/dev/null || echo "0 0 error")
+    read -r WA_COUNT WA_TOTAL WA_CATS <<< "$wa_result"
+    $BRIEF || echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件 (${WA_CATS})"
+else
+    $BRIEF || echo "  karo_workarounds.yaml不在"
+fi
+
+# --- 総合判定 ---
+if $BRIEF; then
+    # session_start_inject用: 一行サマリ
+    PERF_BRIEF="rework:${REWORK_PCT}% workaround:${WA_COUNT}件"
+    if [ ${#alerts[@]} -gt 0 ]; then
+        echo "startup_gate: ${overall} — $(IFS=', '; echo "${alerts[*]}") | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
+    else
+        echo "startup_gate: OK | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
+    fi
+else
+    echo ""
+    echo "=== 総合判定: $overall ==="
+    if [ ${#alerts[@]} -gt 0 ]; then
+        for a in "${alerts[@]}"; do
+            echo "  ⚠ $a"
+        done
+    fi
+    echo ""
+    echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
+fi
