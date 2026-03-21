@@ -370,6 +370,8 @@ decision_candidate:
 hook_failures:
   count: 0
   details: ""
+binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
+verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
 EOF
 
     # cmd_1131: related_lessonsが存在する場合、lessons_usefulを記入用雛形に差替え
@@ -437,18 +439,17 @@ RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
     fi
 
-    # cmd_1066: reviewタスクにはverdict+self_gate_check欄を追加
+    # cmd_1066: reviewタスクにはself_gate_check欄を追加（verdictはbase templateに移設済み cmd_1204）
     if [ "$report_task_type" = "review" ]; then
         cat >> "$report_file" <<'REVIEW_EOF'
 # ─── レビュー判定（cmd_1066: reviewタスク必須） ───
-verdict: ""  # PASS or FAIL
 self_gate_check:
   lesson_ref: ""
   lesson_candidate: ""
   status_valid: ""
   purpose_fit: ""
 REVIEW_EOF
-        log "report_template: added verdict/self_gate_check (review)"
+        log "report_template: added self_gate_check (review)"
     fi
 
     # cmd_776 C層: テンプレ生成後にnormalize_report.shで正規化を保証
