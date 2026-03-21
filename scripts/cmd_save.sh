@@ -178,6 +178,52 @@ show_quality_summary() {
 
 show_quality_summary
 
+# --- Gunshi直近指摘表示（informational — WARN_COUNTに加算しない） ---
+show_gunshi_recent_issues() {
+    local GUNSHI_LOG="$PROJECT_DIR/logs/gunshi_review_log.yaml"
+
+    # AC3: ファイル不存在/空→スキップ
+    if [[ ! -f "$GUNSHI_LOG" ]] || [[ ! -s "$GUNSHI_LOG" ]]; then
+        return 0
+    fi
+
+    # AC1+AC2: 直近REQ_CHANGES/FAILを最大3件表示
+    awk '
+    /^- cmd_id:/ {
+        n++
+        cmd[n] = $3
+    }
+    /^  verdict:/ {
+        v = $2
+        gsub(/#.*/, "", v)
+        gsub(/[" ]/, "", v)
+        verdict[n] = v
+    }
+    /^  findings_summary:/ {
+        s = $0
+        sub(/^  findings_summary: *"?/, "", s)
+        sub(/"$/, "", s)
+        summary[n] = substr(s, 1, 60)
+    }
+    END {
+        m = 0
+        for (i = 1; i <= n; i++) {
+            if (verdict[i] == "REQUEST_CHANGES" || verdict[i] == "FAIL") {
+                issues[++m] = i
+            }
+        }
+        if (m == 0) exit
+        start = (m > 3) ? m - 2 : 1
+        for (j = start; j <= m; j++) {
+            k = issues[j]
+            printf "軍師直近指摘: %s %s — %s\n", cmd[k], verdict[k], summary[k]
+        }
+    }
+    ' "$GUNSHI_LOG" 2>/dev/null || true
+}
+
+show_gunshi_recent_issues
+
 # --- 結果出力 ---
 if [[ "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"
