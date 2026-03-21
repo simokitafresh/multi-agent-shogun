@@ -53,9 +53,11 @@ if lc is not None:
     else:
         errors.append(f'lesson_candidate: unexpected type {type(lc).__name__}')
 
-# --- lessons_useful must be list of dicts ---
+# --- lessons_useful must be list of dicts (null = FAIL) ---
 lu = data.get('lessons_useful')
-if lu is not None:
+if lu is None and 'lessons_useful' in data:
+    errors.append('lessons_useful: null (must be list of dicts, not null)')
+elif lu is not None:
     if isinstance(lu, str):
         errors.append('lessons_useful: is string (must be list of dicts)')
     elif isinstance(lu, list):
@@ -71,6 +73,15 @@ if lu is not None:
                 errors.append(f'lessons_useful[{i}]: is {type(item).__name__} (must be dict)')
     else:
         errors.append(f'lessons_useful: unexpected type {type(lu).__name__}')
+
+# --- binary_checks must not be null or empty ---
+bc = data.get('binary_checks')
+if bc is None and 'binary_checks' in data:
+    errors.append('binary_checks: null (must be dict with AC entries)')
+elif isinstance(bc, dict) and not bc:
+    errors.append('binary_checks: empty dict (must have at least one AC entry)')
+elif isinstance(bc, list) and not bc:
+    errors.append('binary_checks: empty list (must have at least one entry)')
 
 # --- purpose_validation should exist ---
 if 'purpose_validation' not in data:
