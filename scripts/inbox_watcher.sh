@@ -265,7 +265,7 @@ send_cli_command() {
     # /clear: cli_profiles.yamlのclear_method/clear_cmdで動的解決
     if [[ "$cmd" == "/clear" ]]; then
         local clear_method
-        clear_method=$(cli_profile_get "$AGENT_ID" "clear_method")
+        clear_method=$(cli_profile_get_for_type "$effective_cli" "clear_method")
         clear_method="${clear_method:-command}"
 
         if [[ "$clear_method" == "restart" ]]; then
@@ -281,7 +281,7 @@ send_cli_command() {
         fi
 
         # clear_method == "command": clear_cmdを送信（claude=/clear, codex=/new）
-        actual_cmd=$(cli_profile_get "$AGENT_ID" "clear_cmd")
+        actual_cmd=$(cli_profile_get_for_type "$effective_cli" "clear_cmd")
         actual_cmd="${actual_cmd:-/clear}"
         post_wait=3
     fi
@@ -289,7 +289,7 @@ send_cli_command() {
     # /model: supports_model_switchで動的判定
     if [[ "$cmd" == /model* ]]; then
         local supports_model
-        supports_model=$(cli_profile_get "$AGENT_ID" "supports_model_switch")
+        supports_model=$(cli_profile_get_for_type "$effective_cli" "supports_model_switch")
         if [[ "$supports_model" != "true" ]]; then
             echo "[$(date)] Skipping $cmd (not supported on $effective_cli)" >&2
             return 0

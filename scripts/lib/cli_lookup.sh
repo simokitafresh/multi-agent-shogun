@@ -138,6 +138,15 @@ cli_profile_get() {
     echo "$result"
 }
 
+# cli_profile_get_for_type <cli_type> <key>
+# CLI typeを直接指定してcli_profiles.yamlからプロファイル値を取得
+# agent名→settings.yaml→type解決をスキップする（ランタイムオーバーライド用）
+cli_profile_get_for_type() {
+    local cli_type="$1"
+    local key="$2"
+    _cli_lookup_profile_get "$cli_type" "$key"
+}
+
 # cli_launch_cmd <agent_name>
 # 起動コマンド文字列を返す
 cli_launch_cmd() {

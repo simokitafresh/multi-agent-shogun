@@ -43,6 +43,9 @@ setup_e2e_session() {
     mkdir -p "$E2E_QUEUE/scripts"
     export SHOGUN_STATE_DIR="$E2E_ROOT/state"
     mkdir -p "$SHOGUN_STATE_DIR"
+    # E2Eテストはテスト用エージェント名(sasuke等)を使うため、
+    # inbox_write.shの本番エージェント名検証をスキップ
+    export INBOX_WRITE_TEST=1
 
     cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$E2E_QUEUE/scripts/"
     cp "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$E2E_QUEUE/scripts/"
