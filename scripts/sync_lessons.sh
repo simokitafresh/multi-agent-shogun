@@ -274,8 +274,9 @@ for lesson in lessons:
     deduped.append(lesson)
 lessons = deduped
 
-# Sync injection_count from lesson_impact.tsv with project boundary isolation.
+# Sync injection_count and reference_count from lesson_impact.tsv with project boundary isolation.
 impact_injection_count = defaultdict(int)
+impact_reference_count = defaultdict(int)
 if os.path.exists(impact_file):
     with open(impact_file, encoding='utf-8', newline='') as f:
         reader = csv.DictReader(f, delimiter='\t')
@@ -284,13 +285,16 @@ if os.path.exists(impact_file):
                 continue
             if (row.get('project') or '').strip() != project_id:
                 continue
-            if (row.get('action') or '').strip().lower() != 'injected':
-                continue
-            if (row.get('result') or '').strip().upper() == 'PENDING':
-                continue
             lesson_id = (row.get('lesson_id') or '').strip()
-            if re.match(r'^L\d+$', lesson_id):
-                impact_injection_count[lesson_id] += 1
+            if not re.match(r'^L\d+$', lesson_id):
+                continue
+            # injection_count: action=injected, result!=PENDING
+            if (row.get('action') or '').strip().lower() == 'injected':
+                if (row.get('result') or '').strip().upper() != 'PENDING':
+                    impact_injection_count[lesson_id] += 1
+            # reference_count: referenced=yes
+            if (row.get('referenced') or '').strip().lower() == 'yes':
+                impact_reference_count[lesson_id] += 1
 
 # Preserve score fields from existing cache (helpful_count, harmful_count, last_referenced)
 score_data = {}
@@ -305,6 +309,7 @@ try:
                 'helpful_count': old_lesson.get('helpful_count', 0),
                 'harmful_count': old_lesson.get('harmful_count', 0),
                 'injection_count': old_lesson.get('injection_count', 0),
+                'reference_count': old_lesson.get('reference_count', 0),
                 'last_referenced': old_lesson.get('last_referenced'),
                 'tags': old_lesson.get('tags'),
             }
@@ -323,6 +328,10 @@ for lesson in lessons:
             to_int(score_data[lid]['injection_count']),
             impact_injection_count.get(lid, 0),
         )
+        lesson['reference_count'] = max(
+            to_int(score_data[lid]['reference_count']),
+            impact_reference_count.get(lid, 0),
+        )
         lesson['last_referenced'] = score_data[lid]['last_referenced']
         # Tags priority: SSOT > cache
         if 'tags' not in lesson and score_data[lid].get('tags'):
@@ -331,6 +340,7 @@ for lesson in lessons:
         lesson['helpful_count'] = 0
         lesson['harmful_count'] = 0
         lesson['injection_count'] = impact_injection_count.get(lid, 0)
+        lesson['reference_count'] = impact_reference_count.get(lid, 0)
         lesson['last_referenced'] = None
 
 # Build output
