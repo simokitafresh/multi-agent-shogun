@@ -705,6 +705,18 @@ if git_dir_proc.returncode != 0:
     emit("SKIP", f"git repo not found: {project_path}")
     raise SystemExit(0)
 
+# cmd_1244: uncommitted変更検出 — commit漏れをBLOCKで構造的に防止
+unstaged = git(project_path, "diff", "--name-only")
+staged = git(project_path, "diff", "--cached", "--name-only")
+uncommitted_files: list[str] = []
+if unstaged.returncode == 0 and unstaged.stdout.strip():
+    uncommitted_files.extend(unstaged.stdout.strip().splitlines())
+if staged.returncode == 0 and staged.stdout.strip():
+    uncommitted_files.extend(staged.stdout.strip().splitlines())
+if uncommitted_files:
+    emit("BLOCK", f"commit_missing: {len(uncommitted_files)} uncommitted file(s) in {project_path}", uncommitted_files[:10])
+    raise SystemExit(1)
+
 commit_count = detect_cmd_commit_count(project_path, cmd_id)
 if commit_count < 0:
     emit("ERR", f"git log failed for {project_path}")
@@ -3849,7 +3861,7 @@ else
     echo ""
     echo "Cmd quality log (GATE BLOCK):"
     if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
-        local block_notes=""
+        block_notes=""
         if [ ${#BLOCK_REASONS[@]} -gt 0 ]; then
             block_notes=$(IFS='|'; echo "${BLOCK_REASONS[*]}")
         fi
