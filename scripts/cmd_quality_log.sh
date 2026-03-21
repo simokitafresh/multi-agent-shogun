@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cmd_quality_log.sh — cmd設計品質をlogs/cmd_design_quality.yamlに記録
-# Usage: bash scripts/cmd_quality_log.sh <cmd_id> <gate_result> <karo_rework:yes/no> <supplementary_cmds:数値>
+# Usage: bash scripts/cmd_quality_log.sh <cmd_id> <gate_result> <karo_rework:yes/no> <supplementary_cmds:数値> [notes]
 #
 # 自動取得フィールド:
 #   gunshi_verdict: queue/inbox/karo.yamlからcmd_idに該当する軍師verdict (APPROVE/REQUEST_CHANGES/unknown)
@@ -15,9 +15,10 @@ LOG_FILE="$REPO_ROOT/logs/cmd_design_quality.yaml"
 LOCK_FILE="/tmp/cmd_design_quality.lock"
 
 # --- Argument validation ---
-if [[ $# -ne 4 ]]; then
-    echo "Usage: bash scripts/cmd_quality_log.sh <cmd_id> <gate_result> <karo_rework:yes/no> <supplementary_cmds:数値>" >&2
+if [[ $# -lt 4 || $# -gt 5 ]]; then
+    echo "Usage: bash scripts/cmd_quality_log.sh <cmd_id> <gate_result> <karo_rework:yes/no> <supplementary_cmds:数値> [notes]" >&2
     echo "Example: bash scripts/cmd_quality_log.sh cmd_1100 CLEAR no 0" >&2
+    echo "Example: bash scripts/cmd_quality_log.sh cmd_1100 BLOCK no 0 'reason1|reason2'" >&2
     exit 1
 fi
 
@@ -25,6 +26,7 @@ CMD_ID="$1"
 GATE_RESULT="$2"
 KARO_REWORK="$3"
 SUPPLEMENTARY_CMDS="$4"
+NOTES="${5:-}"
 
 if [[ -z "$CMD_ID" || -z "$GATE_RESULT" || -z "$KARO_REWORK" || -z "$SUPPLEMENTARY_CMDS" ]]; then
     echo "[cmd_quality_log] Error: All arguments must be non-empty" >&2
@@ -200,6 +202,11 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     timestamp: "$TIMESTAMP"
 EOF
 
-    echo "[cmd_quality_log] Logged: $CMD_ID | AC:$AC_COUNT | gate:$GATE_RESULT | rework:$KARO_REWORK | gunshi:$GUNSHI_VERDICT | blockers:$NINJA_BLOCKERS | supp_cmds:$SUPPLEMENTARY_CMDS"
+    # Append notes field only when provided (optional 5th argument)
+    if [[ -n "$NOTES" ]]; then
+        echo "    notes: \"$NOTES\"" >> "$LOG_FILE"
+    fi
+
+    echo "[cmd_quality_log] Logged: $CMD_ID | AC:$AC_COUNT | gate:$GATE_RESULT | rework:$KARO_REWORK | gunshi:$GUNSHI_VERDICT | blockers:$NINJA_BLOCKERS | supp_cmds:$SUPPLEMENTARY_CMDS${NOTES:+ | notes:$NOTES}"
 
 ) 200>"$LOCK_FILE"

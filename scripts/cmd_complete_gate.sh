@@ -3849,7 +3849,11 @@ else
     echo ""
     echo "Cmd quality log (GATE BLOCK):"
     if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" 2>&1; then
+        local block_notes=""
+        if [ ${#BLOCK_REASONS[@]} -gt 0 ]; then
+            block_notes=$(IFS='|'; echo "${BLOCK_REASONS[*]}")
+        fi
+        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_notes" 2>&1; then
             echo "  cmd_quality_log: OK"
         else
             echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)"
