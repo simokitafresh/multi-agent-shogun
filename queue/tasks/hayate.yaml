@@ -33,6 +33,7 @@ task:
     \  → FAIL: bash scripts/inbox_write.sh {ninja} \"報告YAMLフォーマットエラー: {gate出力}。修正して再送信せよ。\"\
     \ report_format_fix karo\n  → PASS: 既存フロー続行\n\n■ 技術的注意\n- ninja_monitorはループで動いている。gate追加でパフォーマンス劣化しないこと(gateは軽量だが頻繁呼び出しに注意)\n\
     - 同一報告に対して複数回FAILを送らないよう、送信済みフラグ管理が必要\n- gate_report_format.shのパス: scripts/gates/gate_report_format.sh\n"
+  completed_at: '2026-03-22T05:45:53'
   context_files:
   - scripts/ninja_monitor.sh
   - scripts/gates/gate_report_format.sh

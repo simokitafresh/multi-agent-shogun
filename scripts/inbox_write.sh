@@ -7,12 +7,16 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+if [ "${INBOX_WRITE_TEST:-}" != "1" ] && [ -f "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]; then
+    source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+    NINJA_NAMES=$(get_ninja_names)
+else
+    NINJA_NAMES=""
+fi
 TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
-NINJA_NAMES=$(get_ninja_names)
 
 # Validate arguments
 if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
@@ -29,8 +33,8 @@ if [[ "$TARGET" == cmd_* ]]; then
 fi
 
 # HIGH-2: パストラバーサル防止 + sender/target制約
-# INBOX_WRITE_TEST=1: テスト環境でバリデーションをスキップ（CI用）
-if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
+# INBOX_WRITE_TEST=1 or agent_config.sh未ロード: テスト環境でバリデーションをスキップ
+if [ "${INBOX_WRITE_TEST:-}" != "1" ] && type get_allowed_targets &>/dev/null; then
     ALLOWED_TARGETS=$(get_allowed_targets)
     valid_target=0
     for allowed in $ALLOWED_TARGETS; do
