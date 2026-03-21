@@ -71,7 +71,7 @@ NUM_KEYS=${#KEYS[@]}
 _report_field_set_python() {
     local rp="$1" dk="$2" val="$3" sv="$4"
     python3 -c "
-import sys, os, yaml, tempfile
+import sys, os, yaml, tempfile, re
 
 report_path = sys.argv[1]
 dot_key = sys.argv[2]
@@ -112,10 +112,34 @@ else:
 keys = dot_key.split('.')
 current = data
 for key in keys[:-1]:
-    if key not in current or not isinstance(current.get(key), dict):
-        current[key] = {}
-    current = current[key]
-current[keys[-1]] = value
+    m = re.match(r'^(.+)\[(\d+)\]$', key)
+    if m:
+        arr_key, idx = m.group(1), int(m.group(2))
+        if arr_key not in current or not isinstance(current.get(arr_key), list):
+            current[arr_key] = []
+        arr = current[arr_key]
+        while len(arr) <= idx:
+            arr.append(None)
+        if arr[idx] is None or not isinstance(arr[idx], dict):
+            arr[idx] = {}
+        current = arr[idx]
+    else:
+        if key not in current or not isinstance(current.get(key), dict):
+            current[key] = {}
+        current = current[key]
+
+last_key = keys[-1]
+m_last = re.match(r'^(.+)\[(\d+)\]$', last_key)
+if m_last:
+    arr_key, idx = m_last.group(1), int(m_last.group(2))
+    if arr_key not in current or not isinstance(current.get(arr_key), list):
+        current[arr_key] = []
+    arr = current[arr_key]
+    while len(arr) <= idx:
+        arr.append(None)
+    arr[idx] = value
+else:
+    current[last_key] = value
 
 dir_name = os.path.dirname(report_path) or '.'
 fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
@@ -127,7 +151,7 @@ except Exception:
     os.unlink(tmp_path)
     raise
 
-print(f'[report_field_set] {dot_key} = {current[keys[-1]]}')
+print(f'[report_field_set] {dot_key} = {value}')
 " "$rp" "$dk" "$val" "$sv"
 }
 
