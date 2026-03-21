@@ -38,18 +38,18 @@ lesson_candidate:
     mp)で全パターン実行可能(28116pat/2353s)。他忍法でも同様の不一致がありうるため、GS実行前にbatch vs PEパリティを必ず検証し、不一致時はPEフォールバックを使用すべき。
   project: dm-signal
 lessons_useful:
-  '0':
-    useful: false
-    reason: L074はquarterly Cash月スキップの問題。oikazeはmonthly固定で該当せず
-  '1':
-    useful: false
-    reason: L225はMCP entity名義の混入問題。本タスクでMCPは未使用
-  '2':
-    useful: true
-    reason: L283の教訓通り、batch vs PE不一致をmd5検証で検出し、想像でなく確認で対応できた
-  '3':
-    useful: false
-    reason: L282はlesson_candidate/binary_checks検証。gate側の話で本タスクでは直接関係なし
+- id: L074
+  useful: false
+  reason: L074はquarterly Cash月スキップの問題。oikazeはmonthly固定で該当せず
+- id: L225
+  useful: false
+  reason: L225はMCP entity名義の混入問題。本タスクでMCPは未使用
+- id: L283
+  useful: true
+  reason: L283の教訓通り、batch vs PE不一致をmd5検証で検出し、想像でなく確認で対応できた
+- id: L282
+  useful: false
+  reason: L282はlesson_candidate/binary_checks検証。gate側の話で本タスクでは直接関係なし
 skill_candidate:
   found: false
 decision_candidate:
@@ -57,3 +57,25 @@ decision_candidate:
 hook_failures:
   count: 0
   details: ''
+binary_checks:
+  AC1:
+  - check: 結果CSVがoutputs/配下に生成されているか
+    result: 'yes'
+  - check: 全パターンが完走したか(エラー0件)
+    result: 'yes'
+  - check: CSV行数が期待パターン数と一致するか
+    result: 'yes'
+  AC2:
+  - check: 激攻(CAGR最大)のパラメータと数値を特定したか
+    result: 'yes'
+  - check: 鉄壁(MaxDD最小=絶対値最小)のパラメータと数値を特定したか
+    result: 'yes'
+  - check: 常勝(NHF最大)のパラメータと数値を特定したか
+    result: 'yes'
+  AC3:
+  - check: 3チャンピオン全てでholding_signalが完全一致したか
+    result: 'yes'
+  - check: 3チャンピオン全てでmonthly_return差分が1e-6以内か
+    result: 'yes'
+  - check: 検証コード/コマンドの実行結果を報告に記載したか
+    result: 'yes'
