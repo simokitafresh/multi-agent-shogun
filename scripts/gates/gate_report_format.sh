@@ -73,8 +73,10 @@ elif lu is not None:
                     errors.append(f'lessons_useful[{i}]: missing \"reason\" field')
             else:
                 errors.append(f'lessons_useful[{i}]: is {type(item).__name__} (must be dict)')
+    elif isinstance(lu, dict):
+        errors.append('lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists')
     else:
-        errors.append(f'lessons_useful: unexpected type {type(lu).__name__}')
+        errors.append(f'lessons_useful: unexpected type {type(lu).__name__} (must be list of dicts)')
 
 # --- binary_checks must not be null or empty ---
 bc = data.get('binary_checks')
