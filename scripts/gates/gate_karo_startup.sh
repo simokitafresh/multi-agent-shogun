@@ -168,7 +168,16 @@ else
     echo "  karo_workarounds.yaml不在"
 fi
 
-# --- Check 6: 忍者別workaround率 (GP-011) ---
+# --- Check 6: 全体workaround率 (cmd_1308) ---
+WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
+if [ -x "$WA_RATE_SCRIPT" ]; then
+    bash "$WA_RATE_SCRIPT" --last 10 2>&1 || echo "  [INFO] gate_workaround_rate.sh failed (non-blocking)"
+else
+    echo "■ Workaround率"
+    echo "  SKIP: gate_workaround_rate.sh が存在しないか実行権限なし"
+fi
+
+# --- Check 7: 忍者別workaround率 (GP-011) ---
 echo "■ 忍者別workaround率"
 NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
 if [ -x "$NINJA_WA_SCRIPT" ]; then

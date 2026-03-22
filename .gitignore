@@ -190,6 +190,7 @@
 !scripts/gates/gate_dc_duplicate.sh
 !scripts/gates/gate_report_format.sh
 !scripts/gates/gate_ninja_workaround_rate.sh
+!scripts/gates/gate_workaround_rate.sh
 !scripts/gates/gate_karo_startup.sh
 !scripts/hooks/
 !scripts/hooks/*.sh
