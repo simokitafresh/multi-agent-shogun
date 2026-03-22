@@ -9482,3 +9482,6 @@ OK: dashboard.md auto section updated (06:06)
 [2026-03-23 06:08:39] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
 [2026-03-23 06:08:39] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
 [2026-03-23 06:08:39] SHOGUN-ALERT: sent ntfy to lord (CTX:57%)
+[2026-03-23 06:08:47] LESSON-HEALTH: all projects OK
+[2026-03-23 06:08:48] LOOP-HEALTH: OK
+[2026-03-23 06:08:49] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
