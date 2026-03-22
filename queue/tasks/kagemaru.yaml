@@ -1,0 +1,95 @@
+task:
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 8fdb59cc
+  acceptance_criteria:
+  - binary_checks:
+    - check: scripts/gates/gate_karo_startup.sh が存在し実行可能か
+      result: ''
+    - check: deepdive必読の強制表示が出力に含まれるか
+      result: ''
+    description: gate_karo_startup.shが5項目を一括チェックし、deepdive必読を強制表示すること
+    id: AC1
+  - binary_checks:
+    - check: CLAUDE.mdにStep 2.9としてgate実行が追記されているか
+      result: ''
+    description: CLAUDE.mdの/clear Recovery (karo)にgate実行ステップが追加されていること
+    id: AC2
+  - binary_checks:
+    - check: bash実行してエラーなく完了するか
+      result: ''
+    description: bash scripts/gates/gate_karo_startup.sh がエラーなく実行完了すること
+    id: AC3
+  bloom_level: ''
+  cmd_id: cmd_1285
+  command: "■ AC1: scripts/gates/gate_karo_startup.sh を作成。以下5項目を一括チェック:\n  (1) deepdive必読ファイル存在確認\
+    \ + 「inbox処理前にdeepdiveを読め」の強制表示\n  (2) 陣形図(karo_snapshot.txt)の鮮度（最終更新からの経過時間）\n\
+    \  (3) inbox未読件数（情報表示のみ）\n  (4) pending_decisions未解決件数\n  (5) karo_workarounds直近5件の傾向サマリ\n\
+    ■ 参考: scripts/gates/gate_shogun_startup.sh（構造を踏襲）\n■ AC2: CLAUDE.mdの /clear Recovery\
+    \ (karo) にStep 2.9として\n  bash scripts/gates/gate_karo_startup.sh を追加。\n  既存Step\
+    \ 2.85(deepdive必読)の直後、Step 3(snapshot読み)の前に配置\n■ AC3: gate実行結果が正常に表示されること（手動テスト:\
+    \ bash scripts/gates/gate_karo_startup.sh）\n"
+  deployed_at: '2026-03-23T02:27:38'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
+    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    ────────────────────────────────────────\n\n家老用スタートアップゲート作成 — deepdive必読の自動化×強制"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1285
+  progress: AC1-AC3全PASS完了
+  project: infra
+  related_lessons:
+  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    id: L074
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    id: L225
+    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  - detail: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
+      pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
+    id: L094
+    summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
+      pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
+  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+    id: L097
+    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+  report_filename: kagemaru_report_cmd_1285.yaml
+  report_path: queue/reports/kagemaru_report_cmd_1285.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - pushするな(commitまで)
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+    required_fields:
+    - ac_version_read
+    - files_modified
+    - lesson_candidate
+    - lessons_useful
+  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  status: done
+  stop_for: []
+  task_type: implement

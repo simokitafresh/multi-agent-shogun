@@ -173,6 +173,7 @@ Step 2.85: Read memory/deepdive_why_chain_20260321.md（毎セッション必読
   特にPhase 4「LLMに生存本能はない→自動化×強制」と
   Phase 5「なぜの目的=自動化ターゲット特定」が家老の判断品質の基盤。
   これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
+Step 2.9: bash scripts/gates/gate_karo_startup.sh（5項目一括チェック: deepdive必読強制+陣形図鮮度+inbox未読+PD未解決+workaround傾向）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
 Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
