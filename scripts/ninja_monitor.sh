@@ -1505,7 +1505,7 @@ import yaml
 with open('$task_file') as f: d=yaml.safe_load(f) or {}
 print(d.get('status','idle'))
 " 2>/dev/null || echo "idle")
-            if [ "${ctx_pct:-0}" -le 0 ] 2>/dev/null && [ "$task_status" = "idle" -o "$task_status" = "done" ]; then
+            if [ "${ctx_pct:-0}" -le 0 ] 2>/dev/null && { [ "$task_status" = "idle" ] || [ "$task_status" = "done" ]; }; then
                 continue
             fi
         fi
