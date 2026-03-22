@@ -1,10 +1,11 @@
 # =============================================================================
-# DM-Signal プロジェクト核心知識
+# DM-Signal プロジェクト核心知識（索引）
 # =============================================================================
 # 用途: /clear後の忍者が自動読み込みし、プロジェクト核心知識を即座に取得するためのファイル
 # 正規ソース: /mnt/c/Python_app/DM-signal/docs/rule/trade-rule.md (Level 0 SSOT)
 # 詳細コンテキスト: context/dm-signal.md (索引) → 分割3ファイル (L2)
-# 更新日: 2026-02-18
+# 詳細分割先: projects/dm-signal/ 配下
+# 更新日: 2026-03-23
 
 project:
   id: dm-signal
@@ -15,7 +16,6 @@ project:
 # =============================================================================
 # (a-0) Engineering Preferences (gstack知見適用 — cmd_876 / cmd_927)
 # =============================================================================
-# PJ固有の判断基準。レビュー・偵察での推薦はこの基準にマッピングせよ。
 
 engineering_preferences:
   - "prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ"
@@ -28,8 +28,7 @@ engineering_preferences:
 # =============================================================================
 # (a) Trade Rule 要約 (RULE01-11)
 # =============================================================================
-# 正規ソース: docs/rule/trade-rule.md
-# 11の絶対ルール。例外なく適用される。
+# 正規ソース: docs/rule/trade-rule.md — 11の絶対ルール。例外なく適用される。
 
 trade_rules:
   source: "docs/rule/trade-rule.md"
@@ -64,27 +63,11 @@ trade_rules:
     - "RULE10: モメンタム計算(シグナル判定)にOpenを使うことはない"
     - "誤解14(重要): デフォルトはOpen-to-Open(Close-to-Closeではない)。実運用T+1始値執行に近い"
 
-  # =========================================================================
-  # BE変更時の計算完全一致要件（殿厳命 2026-03-11 — 絶対ルール）
-  # =========================================================================
-  # DM-signalは投資を扱う。BE最適化・リファクタリング時は以下を厳守せよ。
   calculation_integrity:
     ruling_date: "2026-03-11"
     source: "殿直接指示"
-    rule: |
-      signals/returns/metricsなど全数値フィールドが
-      全PF×全期間で許容誤差ゼロの完全一致であること。
-      これがBE変更の最低基準。
-    requirements:
-      - "変更前後で実APIを叩き、全数値フィールドが完全一致することをdiffで検証"
-      - "フィールド除去時は除去対象以外の全フィールドが完全一致"
-      - "処理順序変更(slicing前倒し等)でも浮動小数点の計算順序が変わらないこと"
-      - "一見無駄に見えるフィールドでも、他のページ・エンドポイント・テストで使われている可能性がある。全消費者を網羅確認"
-    enforcement:
-      - "BE変更implのACに必ず「実API diff検証（除去対象以外の全フィールド完全一致）」を含めよ"
-      - "偵察段階でFE grepだけでなく、BE内部の参照・テストの前提・admin系ページも確認"
-      - "段階的除去を推奨: オプショナル化→FE不要確認→本削除"
-    warning: "効率化に目がくらんで他で使っている一見無駄なものを壊すな"
+    rule: "signals/returns/metricsなど全数値フィールドが全PF×全期間で許容誤差ゼロの完全一致であること。これがBE変更の最低基準"
+    enforcement: "BE変更implのACに必ず「実API diff検証」を含めよ"
 
   ssot_hierarchy:
     - level: "Level 0 (データ)"
@@ -135,7 +118,7 @@ momentum_calculation:
     問題の根源はNaN行の扱いではなく、共通期間を先に確定していないこと。
 
 # =============================================================================
-# (c) 本番DB接続ルール
+# (c) 本番DB接続ルール（要約。詳細→ projects/dm-signal/database-detail.yaml）
 # =============================================================================
 
 database:
@@ -143,472 +126,39 @@ database:
     type: "PostgreSQL"
     host: "singapore-postgres.render.com"
     connection: "backend/.envのDATABASE_URLを使用"
-    tables:
-      signals:
-        pk: "(portfolio_id, date)"
-        fk: "portfolio_id → portfolios.id"
-        columns: "signal, holding_signal, momentum_data(JSON), created_at"
-        model: "backend/app/db/models.py:91-101"
-        upsert: "ON CONFLICT(portfolio_id,date) DO UPDATE signal,holding_signal,momentum_data"
-        upsert_impl: "backend/app/jobs/flush/signal_flush.py:45-54"
-      portfolios:
-        pk: "id (UUID)"
-        columns: "name, type, config(JSON), folder_id, created_at, updated_at, hide_portfolio, hide_signal, is_active"
-        model: "backend/app/db/models.py:66-84"
-        note: "pipeline_configはconfig JSON内にネスト(独立カラムではない)"
-    rules:
-      - "書き込みは必ずPostgreSQL経由"
-      - "dm_signal.db(SQLite)は本番ではない。書き込み禁止"
-      - "ローカルSQLiteへのINSERTは無意味"
-      - "UPSERT維持が正解。DELETE+INSERT分離はデータ消失リスク(L038/L040)"
-      - "本番データ読み取りもDATABASE_URL(PostgreSQL直接接続)を使え。Render HTTP API経由禁止 — DNS障害等の障害点を増やす不要な中間層(cmd_194教訓/L064)"
-      - "本番コードパス統一原則: 数学的等価でも本番と同一コードパスを使え。MomentumCache≡PipelineEngineでも、本番がPipelineならGSもPipelineを使用。同一設定にはコードパスも含む(cmd_196殿裁定/L076)"
-
-    recalculate_concurrency:
-      description: "本番再計算(recalculate-sync)は排他制御が効いている。同時実行は不可能"
-      mechanism:
-        - "API門番: POST /admin/recalculate-sync 呼出時にis_recalculating()チェック → 実行中ならHTTP 409 Conflict即拒否"
-        - "実行ロック: threading.Lock + start_recalculation() → 原子的排他制御(recalc_status.py)"
-        - "レイヤーロック: sync-prices/tickers/standard/fofの4層独立ロック + 依存チェック"
-      source_files:
-        - "backend/app/utils/recalc_status.py (ロック本体)"
-        - "backend/app/api/etl_trigger.py:329 (409チェック)"
-      when_409_received:
-        meaning: "別のプロセスが再計算中。データ破損ではない"
-        action: "30秒待って再実行すればよい。パニック不要"
-        do_not: "エラーとしてFAIL報告するな。409は正常な排他動作"
-      operational_rule: "複数忍者がrecalculateを同時に叩くとどちらかが409で弾かれる。家老はDB操作タスクを直列配備すること"
-
-  local_sqlite:
-    dm_signal_db:
-      path: "backend/static/data/dm_signal.db"
-      role: "本番PostgreSQLのローカルミラー。PF設定の参照のみ"
-      write: false
-    experiments_db:
-      path: "analysis_runs/experiments.db"
-      role: "価格データground truth(ローカル分析用)"
-      tables:
-        daily_prices: "OHLCV日次価格(86銘柄)"
-        monthly_returns: "バックテスト月次リターン"
-      note: "run_077_monban.py は DM_IDS + experiments.db を継続使用。その他run_077_*は gs_data_loader 経由で本番PostgreSQL直読が主系"
-
-  common_mistakes:
-    - wrong: "dm_signal.dbから価格取得"
-      correct: "experiments.dbのdaily_pricesを使え"
-    - wrong: "dm_signal.dbに書き込み"
-      correct: "本番PostgreSQLに書き込め"
-    - wrong: "recalculate_fof.pyをローカル実行"
-      correct: "動かない(スキーマ差異)。experiments.db+dm_signal.dbで直接計算せよ"
-    - wrong: "DELETE+INSERT分離で高速化(OPT-D)"
-      correct: "UPSERT維持。性能差+1.3s(0.05%)で安全性犠牲不可(L038/L040)"
+  rules:
+    - "書き込みは必ずPostgreSQL経由"
+    - "dm_signal.db(SQLite)は本番ではない。書き込み禁止"
+    - "UPSERT維持が正解。DELETE+INSERT分離はデータ消失リスク(L038/L040)"
+    - "本番データ読み取りもDATABASE_URL(PostgreSQL直接接続)を使え"
+    - "本番コードパス統一原則: 数学的等価でも本番と同一コードパスを使え(cmd_196殿裁定/L076)"
+  detail: "→ projects/dm-signal/database-detail.yaml (テーブルスキーマ・排他制御・SQLite・よくある間違い)"
 
 # =============================================================================
-# (d) BBパイプライン構成
+# (d) BBパイプライン（要約。詳細→ projects/dm-signal/pipeline-blocks.yaml）
 # =============================================================================
 
 pipeline:
   source: "backend/app/services/pipeline/"
   engine: "backend/app/services/pipeline/engine.py"
-  base: "backend/app/services/pipeline/base.py"
-
-  block_catalog:
-    selection_blocks:  # 11 types
-      - type: MomentumFilterBlock
-        alias: "追い風の術(oikaze)"
-        description: "モメンタム上位N選択"
-      - type: AbsoluteMomentumFilterBlock
-        alias: "門番(monban)"
-        description: "絶対モメンタム閾値判定"
-      - type: RelativeMomentumFilterBlock
-        alias: "追い越しの術(oikoshi)"
-        description: "参照資産との相対モメンタム比較"
-      - type: MomentumAccelerationFilterBlock
-        alias: "加速の術(kasoku)"
-        description: "短期/長期モメンタム比率による加速度判定"
-      - type: ReversalFilterBlock
-        alias: "逆風の術(gyakufuu)"
-        description: "低モメンタム逆張りフィルタ"
-      - type: SafeHavenSwitchBlock
-        alias: "セーフヘイブン切替"
-        description: "空集合時にセーフヘイブン資産に切替"
-      - type: ComponentPriceBlock
-        alias: "コンポーネント価格読込"
-        description: "FoF用:構成PFの累積リターンを価格として読込"
-      - type: MultiViewMomentumFilterBlock
-        alias: "複数視点モメンタム"
-        description: "4視点(0M,1M,2M,3Mスキップ)のTop N和集合"
-      - type: SingleViewMomentumFilterBlock
-        alias: "抜き身の術(nukimi)"
-        description: "単一視点skip付きモメンタム"
-      - type: TrendReversalFilterBlock
-        alias: "変わり身の術(kawarimi)"
-        description: "トレンド+リバーサル和集合選択"
-      - type: MonthlyReturnMomentumFilterBlock
-        alias: "月次リターンモメンタム"
-        description: "MonthlyReturnテーブルから直接読取り(GS方式)"
-
-    terminal_blocks:  # 3 types
-      - type: EqualWeightBlock
-        alias: "分身の術(bunshin)"
-        description: "均等配分"
-      - type: CashTerminalBlock
-        alias: "キャッシュ退避"
-        description: "全額キャッシュ(空集合時)"
-      - type: KalmanMetaBlock
-        alias: "カルマンフィルタ加重"
-        description: "スケルトン実装(将来統合用)。block registryには登録済み"
-
-  standard_pattern:
-    description: "DM戦略の標準パイプライン構成"
-    flow: "MomentumFilter → AbsoluteMomentumFilter → SafeHavenSwitch → EqualWeight"
-    blocks:
-      - step: 1
-        type: MomentumFilterBlock
-        role: "relative_assetsからtop_n選出"
-      - step: 2
-        type: AbsoluteMomentumFilterBlock
-        role: "absolute_assetのモメンタム > RFなら通過、さもなくば空集合"
-      - step: 3
-        type: SafeHavenSwitchBlock
-        role: "空集合ならsafe_haven_assetに切替"
-      - step: 4
-        type: EqualWeightBlock
-        role: "最終配分(均等)"
-
-  pipeline_config_structure:
-    description: "pipeline_configはportfolios.config JSON内にネスト(独立カラムではない)"
-    schema:
-      selection_pipeline:
-        blocks: "SelectionBlockの配列"
-      terminal_block: "1つのTerminalBlock"
+  standard_flow: "MomentumFilter → AbsoluteMomentumFilter → SafeHavenSwitch → EqualWeight"
+  selection_blocks: 11  # MomentumFilter, AbsoluteMomentumFilter, RelativeMomentumFilter, MomentumAccelerationFilter, ReversalFilter, SafeHavenSwitch, ComponentPrice, MultiViewMomentumFilter, SingleViewMomentumFilter, TrendReversalFilter, MonthlyReturnMomentumFilter
+  terminal_blocks: 3  # EqualWeight, CashTerminal, KalmanMeta
+  detail: "→ projects/dm-signal/pipeline-blocks.yaml (ブロックカタログ・標準パターン・config構造)"
 
 tiebreak_rule:
   principle: "GS側のtop_n選出は本番のselection blockと完全一致させる"
-  cutoff_score_blocks:
-    - "MomentumFilterBlock (追い風/oikaze)"
-    - "SingleViewMomentumFilterBlock (抜き身/nukimi)"
-    - "MomentumAccelerationFilterBlock (加速/kasoku)"
-    - "MultiViewMomentumFilterBlock (多眼)"
-    - "MonthlyReturnMomentumFilterBlock (月次リターン)"
-  strict_slice_blocks:
-    - "TrendReversalFilterBlock (変わり身/kawarimi)"
-    - "ReversalFilterBlock (逆風/gyakufuu)"
+  cutoff_score_blocks: ["MomentumFilter", "SingleViewMomentumFilter", "MomentumAccelerationFilter", "MultiViewMomentumFilter", "MonthlyReturnMomentumFilter"]
+  strict_slice_blocks: ["TrendReversalFilter", "ReversalFilter"]
   note: "変わり身・逆風は本番がstrict slice。GS側もstrict sliceで一致"
 
 # =============================================================================
-# (e) 四神 — DMファミリー設計原理と構成
+# (e) 四神 — メンバーとUUID（設計原理→ projects/dm-signal/shijin-design.yaml）
 # =============================================================================
-# ★ 全エージェント必読。すべての検討はこの理解が前提条件。
 
 shijin:
   description: "4つの守護神ファミリー。各DMファミリーのGSチャンピオン戦略で構成。4体×3モード=12体"
-
-  # =========================================================================
-  # 設計原理（殿直伝 2026-03-15）
-  # =========================================================================
-  #
-  # ■ L0概念: 単一銘柄とDM PFは根源的に異なる（最重要・全ての前提）
-  #
-  #   単一銘柄(SPY,TQQQ等) = 受動的な価格系列。市場が動けば価格が動く。
-  #   判断はない。意思はない。学術論文のほぼ全てはこれを前提としている。
-  #
-  #   DM PF(青龍,玄武等) = 意思決定が埋め込まれた価格系列。
-  #   中にアルゴリズムがいる。ルックバック窓で市場を見て、absoluteと比較し、
-  #   relativeから選び、safe havenに切り替える。出力されるリターン系列は
-  #   「市場の動き＋アルゴリズムの判断」の合成物。
-  #
-  #   DM-Signalはこの「意思決定が埋め込まれたDM PF」をL0として扱う。
-  #   四神はL0。忍法はL0を選択するFoF。
-  #   この根源的な相違を理解していないと、以下が全て間違う:
-  #
-  #   (1) モメンタム分析: DM PFのモメンタム=モメンタム戦略のモメンタム(二階微分)
-  #       受動的資産のモメンタムとは統計的性質が全く異なる
-  #   (2) 相関分析: DM PFの相関は時変。青龍はTQQQ保有時(市場高相関)と
-  #       XLU保有時(市場低相関)で別の資産になる。1つの相関係数は無意味
-  #   (3) forward-looking: 「SPYが来月上がるか」=市場予測(1変数)
-  #       「青龍が来月良いか」=市場環境×アルゴリズム判断の組合せ予測(多変数)
-  #       市場が上がってもlookback窓のタイミングでsafe havenにいる可能性がある
-  #   (4) 最適化の二重化: DM PFのパラメータは既にGSで最適化済み。
-  #       その上にメタレイヤー(FoFウェイト最適化)を乗せると過適合リスクが乗算
-  #   (5) 性能の因果分解: 好成績=市場が良かったのか/切替が当たったのか/
-  #       リバランス日が偶然良かったのか。受動的資産より因果分解が困難
-  #
-  #   ★ 論文の手法をDM PFに適用する際は、分析対象が受動的資産ではなく
-  #     意思決定システムの出力であることを常に意識せよ。
-  #     手法をそのまま適用できるケースはほぼない。適応が必要。
-  #
-  # ■ absolute assetが戦略のDNA
-  #   absolute_assetの選択がファミリーを定義し、戦略の性格を決定する。
-  #   GS(172,818パターン)はこのDNA制約の中で最適パラメータを「発見」した。
-  #   設計ではなく発見。だがabsolute assetが問題空間を制約するため、
-  #   発見されたパラメータは一つの意思を持つ組み合わせに自然に収束する。
-  #
-  # ■ 全パラメータが一体となって一つの意味を成す
-  #   lookback・rebalance・relative・safe_havenを個別に見ても本質は掴めない。
-  #   全パラメータの組み合わせが一つの統一された戦略性格を形成する。
-  #
-  # ■ 3モード（激攻/鉄壁/常勝）はDNAの中での味付け
-  #   3モードは最適化メトリクス（CAGR/MaxDD/NewHigh）が異なるだけ。
-  #   absolute + relative + safe_havenは共通（＝ファミリー定義＝不変）。
-  #   GS結果のlookback/rebalance/top_Nが変わるが、源流の性格は変わらない。
-  #
-  # ■ 4ファミリーの直交性
-  #   時間スケール(15D〜24M) × 対象市場(株/債券/VIX/マクロ) ×
-  #   行動頻度(月次〜四半期) × 攻守構造(常時攻め/スイッチ/レジーム/逆転)。
-  #   構造的に相関が低く、同じ市場環境で4つが全く異なる判断を下す。
-
-  design_principles:
-    l0_concept: |
-      DM PFは単一銘柄と根源的に異なる。単一銘柄=受動的価格系列(判断なし)。
-      DM PF=意思決定が埋め込まれた価格系列(市場の動き+アルゴリズムの判断の合成物)。
-      DM-SignalはこのDM PFをL0として扱う。論文の手法をDM PFに適用する際は
-      「分析対象が意思決定システムの出力である」ことを常に意識せよ。
-      影響: モメンタム分析(二階微分), 相関(時変), forward-looking(多変数),
-      最適化(二重化リスク), 性能分解(因果不明)の全てが受動的資産と異なる。
-    dna_rule: "absolute_assetがファミリーを定義し、戦略のDNAを決定する"
-    parameter_unity: "全パラメータが一体となって一つの意味を成す。個別パラメータだけでは本質を掴めない"
-    three_modes: "3モード(激攻/鉄壁/常勝)はDNA内の味付け。源流の性格は不変"
-    orthogonality: "4ファミリーは時間スケール×対象市場×行動頻度×攻守構造で直交"
-    theoretical_low_correlation: |
-      理論ベース低相関 > 統計ベース低相関（殿裁定 2026-03-19）:
-      統計ベースの低相関は危機時に崩壊する（同じ因子に依存）。
-      理論ベースの低相関（異なる構造原理=異なる駆動因子）は危機時にむしろ強化される。
-      四神の危機時4/6ペア逆相関化(cmd_1010)は構造的必然。
-      DM2=LQDトレンド、DM3=金利ボラ、DM6=VIX mean reversion、DM7+=稀な逆張り。
-      駆動因子が異なるためcrisis alphaが保存される。これがFoFアーキテクチャの本質的防御。
-    overfit_validation: |
-      過適合検証はCPCVではなく構造原理への準拠確認で行う（殿裁定 2026-03-19）:
-      CPCV(Phase 3)はDM×FoFに構造的不適合として廃止。材料に完成品の基準を当てていた。
-      正しい検証: DNA準拠(構造原理保存) + decorrelation(Phase 4) + 10年超バックテスト実績。
-      FoF材料は全天候である必要なし。一瞬のきらめきがあれば材料として価値がある。
-    metric_separation: |
-      計算と解釈の分離原則（殿裁定 2026-03-16）:
-      評価指標（p̄等）は全PFに一律で計算し、結果はそのまま記録する。
-      解釈・運用は別レイヤーの人間判断。四神は素材、FoFが完成品。
-      朱雀がp̄高/CPCV不合格でも素材価値は別。素材に単独一貫性を要求するのは設計矛盾。
-      「CPCVダメだからFoFに使わない」は誤用。例外を作らず一律計算、使い方で分ける。
-
-  family_dna:
-    DM2:
-      absolute: LQD
-      dna: "降りない"
-      explanation: |
-        LQD(投資適格債券)は極めて安定。これをabsoluteに置くと退避がほぼ発動しない。
-        safe_haven=XLU(公益株)=退避しても株の中にいる。12M複合窓はノイズを平滑化。
-        全パラメータが「長期上昇トレンドに乗り続ける」に収束。常時リスクオン。
-      dna_constraints: |
-        ■ relative assetsは3倍レバETF必須（TQQQ/TECL/SOXL等）。
-          理由: LQDが退避を抑制するため、ほぼ常時保有する。非レバ(SPY/QQQ等)では
-          「降りない」設計の恩恵を活かせない。レバレッジ×常時保有で最大リターンを狙う構造。
-          例: SOXL(3倍半導体)→OK(セクター違いだがレバ×攻め)。SPY(1倍広域)→NG(設計の無駄遣い)
-        ■ safe havenは防御的「株」であること（XLU等）。
-          理由: 債券や現金に逃げると「降りない」DNAが崩れる。退避しても株の中に留まる設計。
-        ■ lookbackは長期寄り（月単位）。短期(日単位)はwhipsawを招きDNA「降りない」と矛盾。
-    DM3:
-      absolute: TMF
-      dna: "債券方向スイッチ"
-      explanation: |
-        TMF(3倍債券ロング)とTMV(3倍債券ショート)は完全逆ポジション。
-        20D窓で直近の勢いを捉え、債券の攻め↔守りを切り替える。
-        bimonthlyは3倍レバ×短期窓の過剰切替を防ぐブレーキ。
-        株ではなく債券方向にレバレッジで賭ける独自軸。
-      dna_constraints: |
-        ■ absoluteとsafe_havenは債券の正逆ペア必須（TMF/TMV）。
-          理由: DNAは「債券方向の賭け」。GLDやXLUをsafe_havenにすると方向スイッチが壊れる。
-        ■ rebalanceは短すぎず（3倍レバのwhipsaw防止）。bimonthly程度が適切。
-        ■ lookbackは短期（日〜数週間）。債券トレンドの短期転換を捉える必要がある。
-    DM6:
-      absolute: "^VIX"
-      dna: "レジーム判定"
-      explanation: |
-        ^VIXは株でもETFでもなく恐怖の指数。absoluteに使うとモメンタム判定が
-        「恐怖の上昇/下降」のレジーム検知に変わる。15D窓で瞬間状態を読み取るが
-        quarterly rebalanceで年4回しか行動しない。観測は最速、行動は最遅。
-        VIXの日次ノイズを無視し、本当のレジーム変化のみに反応する設計。
-        safe_haven=GLD(金)は恐怖局面で買われる第三の軸(株でも債券でもない)。
-      dna_constraints: |
-        ■ rebalanceは低頻度（quarterly）必須。
-          理由: VIXは日次で極端に乱高下する。月次以上の頻度ではノイズに振り回される。
-          観測窓(15D)が短いのは「今の状態」を正確に読むため。行動頻度と観測窓は独立の概念。
-        ■ safe_havenは株・債券と非相関な資産（GLD等）。
-          理由: VIXレジーム判定は株/債券の二項対立を超えた第三軸。safe_havenも第三軸であるべき。
-        ■ lookbackとrebalanceの「落差」がDNAの本質。両方短いor両方長いはDM6ではない。
-          構造的意味: 短lb=VIXスパイク即検知、長rebal=平均回帰を待つ。この組合せがVIX mean reversionを捕捉。
-          短lb×短rebalにすると常時保有(DM2近似)に退化し、FoF材料としての独自価値が消失する(殿解説 2026-03-19)。
-    "DM7+":
-      absolute: SPXL
-      dna: "構造的逆張り"
-      explanation: |
-        relative=XLU(守り)1つ、safe_haven=TQQQ(攻め)。通常DMと攻守が逆転。
-        24M窓に2年分の上昇が残っている限り、短期暴落でもTQQQを離さない。
-        月次チェックでも24M窓はほぼ動かない=本物のマクロ転換でのみポジション変更。
-        攻守逆転は設計のバグではなく、「常に最も攻撃的なポジションに居座る」を
-        構造的に強制する意図的な仕掛け。
-      dna_constraints: |
-        ■ lookbackは超長期（年単位）必須。短期ルックバックの提案はDNAの否定。
-          理由: 短期窓にすると暴落に反応して退避する=逆張りではなくなる。
-          24M窓が短期暴落を吸収する構造こそが「構造的逆張り」の実体。
-        ■ 攻守逆転（relative=守り、safe_haven=攻め）は意図的設計。「修正」するな。
-          理由: 通常DMの攻守を正す提案はDNAの破壊。この逆転が「常に最攻撃的」を実現する。
-        ■ safe_havenに防御的資産(GLD/XLU/債券)を置く提案はNG。
-          理由: 玄武の「safe haven」は名前と逆で最大火力ポジション。ここを防御にすると凡庸なDMになる。
-
-  # =========================================================================
-  # よくある誤解（殿直伝 2026-03-15 — LLM/人間の暗黙の前提による典型的誤判断）
-  # =========================================================================
-  # 一般的な投資常識・ML常識を四神に当てはめると必ず間違える。
-  # 以下は「正しいと思い込んで提案するが、四神では全て間違い」のリスト。
-  common_misconceptions_shijin:
-    - id: SM01
-      misconception: "safe havenは防御的資産（債券/現金/金）であるべき"
-      reality: "玄武のsafe_haven=TQQQ(3倍Nasdaq)は最大火力ポジション。攻守逆転は意図的設計"
-      cause: "教科書のsafe haven定義を無条件に適用"
-    - id: SM02
-      misconception: "レバレッジETF(3倍)は長期保有に不適。ボラティリティ減衰で損する"
-      reality: "四神は全て3倍レバETFを使用。レバ×常時保有(DM2+)やレバ×方向スイッチ(DM3)が設計の核心"
-      cause: "『レバETF=デイトレ専用』という一般論を無条件に適用"
-    - id: SM03
-      misconception: "暴落時はポジションを縮小してリスク管理すべき"
-      reality: "青龍はLQD基準で暴落中も保有を継続する設計。『降りない』がDNA。これはバグではない"
-      cause: "リスク管理=退避という暗黙の前提"
-    - id: SM04
-      misconception: "危機時は債券に逃げるべき（60/40ポートフォリオの前提）"
-      reality: "朱雀は危機時にTMV(債券ショート)に行く。債券急騰は行き過ぎると判断する逆方向の賭け"
-      cause: "株↓→債券↑という相関の固定観念"
-    - id: SM05
-      misconception: "VIXが高い=危険=退避すべき"
-      reality: "DM6はVIXの『水準』ではなく『方向(上昇中/下降中)』を見ている。高VIXでも下降中なら攻め"
-      cause: "VIX=恐怖指数→高い=怖いという単純化"
-    - id: SM06
-      misconception: "リバランス頻度を上げれば変化を速く捉えられる"
-      reality: "DM6のquarterlyはVIXのノイズ除去装置。月次にするとノイズに振り回されて性能劣化"
-      cause: "頻度↑=性能↑という最適化バイアス"
-    - id: SM07
-      misconception: "ルックバックを短くすれば敏感になって有利"
-      reality: "DM7+の24Mは鈍さが本質。短期暴落を吸収する構造が逆張りを実現。短縮=DNA破壊"
-      cause: "速さ=良さというテック志向の暗黙前提"
-    - id: SM08
-      misconception: "戦略ラベル(strategy名)は戦略の動作を正確に説明する"
-      reality: "玄武の旧ラベル『リセッション防御』は動作と真逆。実態はマクロ逆張り(リセッション時にも攻撃的ポジション維持)"
-      cause: "ラベルを字義通り信頼する"
-    - id: SM09
-      misconception: "CAGR最低の戦略は劣っている・改善すべき"
-      reality: "玄武のCAGR29.5%(最低)は弱点ではない。価値は他3つとの低相関。4つ合わせた時の分散効果が本質"
-      cause: "単体リターン最大化=最適という前提。ポートフォリオ理論の欠如"
-    - id: SM10
-      misconception: "パラメータは独立にチューニングできる（lookbackだけ変更等）"
-      reality: "全パラメータが一体で一つの意味を成す。lookbackだけ変えるとrebalanceやasset選択との整合が壊れる"
-      cause: "ML的な独立変数最適化の発想"
-    - id: SM11
-      misconception: "relative assetが1つしかないのは設計ミス（比較対象が必要）"
-      reality: "玄武のrelative=XLU1つは意図的。相対モメンタム比較ではなくXLUのモメンタム状態によるレジーム判定"
-      cause: "デュアルモメンタム=2資産比較という教科書的理解"
-    - id: SM12
-      misconception: "relativeに非レバETF(SPY/QQQ)を使えばリスクが下がって安全"
-      reality: "DM2+はLQD基準でほぼ常時保有。非レバを持つと「降りない」設計の恩恵を活かせない。レバ×常時保有が設計の核心"
-      cause: "レバ=リスク、非レバ=安全という単純化。設計全体の整合性を無視"
-    # --- 思想レベルの誤解（パラメータではなく運用哲学） ---
-    - id: SM13
-      misconception: "4ファミリーに動的ウェイトを付けて最適化すべき（長期重視60%/短期40%等）"
-      reality: "メタ最適化=オーバーフィッティング。均等保有か好みで3つ選ぶのが正解。殿の哲学: 全パラメータは本質的に不可知"
-      cause: "ポートフォリオ理論(平均分散最適化)の機械的適用。未来のウェイトは計算できない"
-    - id: SM14
-      misconception: "複数PFを組み合わせて1つの完璧なPFを作るべき"
-      reality: "10個を混ぜて1つの完璧を作ろうとする=オーバーフィッティング(殿明確否定)。単純均等か好みの3つ選択が優れる"
-      cause: "最適化すれば必ず改善するという信念。バックテスト最適化の罠"
-    - id: SM15
-      misconception: "最も成績が良い神に集中すべき（成績が悪い神は外す）"
-      reality: "パフォーマンスチェイシング。玄武を外す=低相関を捨てる=分散効果を破壊。4つの価値は組み合わせにある"
-      cause: "過去の成績が未来を予測するという前提。単体最適化思考"
-    - id: SM16
-      misconception: "4つの神が一致したとき（全員リスクオン等）だけ行動すれば確度が上がる"
-      reality: "不一致こそが低相関の証明。合意フィルタは4戦略を1戦略に縮退させる。独立に動くことが設計の本質"
-      cause: "コンセンサス=正しいという民主主義的バイアス"
-    - id: SM17
-      misconception: "忍法は四神の上位互換（忍法があれば四神は不要）"
-      reality: "忍法はBBで四神を動的に選択するFoF。レイヤーが違う。四神の均等保有にも忍法の選択式にもそれぞれ別の意味がある"
-      cause: "新しい仕組み=古い仕組みの置き換えという進化論的思考"
-    - id: SM18
-      misconception: "ある神のシグナルで別の神を制御すれば改善できる（朱雀で玄武のタイミングを計る等）"
-      reality: "1つの神で別の神を制御=独立性の破壊。4つが独立に動くことで相関が低く保たれている"
-      cause: "情報の統合=改善という直感。独立性の価値の軽視"
-    - id: SM19
-      misconception: "FoFの構成比率を動的に変えるのが高度な運用"
-      reality: "動的配分=メタレイヤーの最適化。殿の哲学は真逆: 全パラメータは不可知→単純保有+長期で見る。複雑化は過適合の入口"
-      cause: "高度=複雑=優秀という前提。ヘッジファンド的運用への憧れ"
-    - id: SM20
-      misconception: "ビルディングブロックを増やしてパイプラインを複雑にすれば精度が上がる"
-      reality: "忍法のBBは選択の切り口を変えるもの。追い風(モメンタム上位N)のようなシンプルなBBがGSチャンピオン。複雑化≠精度向上"
-      cause: "パイプライン段数↑=精度↑というMLエンジニアリングの発想"
-    # --- 根源的誤解（L0概念: 受動的資産 vs 意思決定システム） ---
-    - id: SM21
-      misconception: "DM PFを単一銘柄と同じように分析・最適化できる"
-      reality: |
-        単一銘柄=受動的価格系列(市場だけで決まる)。
-        DM PF=意思決定が埋め込まれた価格系列(市場+アルゴリズム判断の合成物)。
-        この区別を無視すると以下が全て間違う:
-        (a) モメンタム分析→DM PFのモメンタムはモメンタム戦略のモメンタム(二階微分)
-        (b) 相関分析→DM PFの相関は時変(保有銘柄がregimeで切り替わるため)
-        (c) forward-looking→市場予測だけでは不十分。市場×アルゴリズム判断の組合せを予測する必要
-        (d) 最適化→既にGSで最適化済みのDM PFにメタ最適化を重ねると過適合リスクが乗算
-        (e) 性能分解→好成績が市場要因か/切替の当たりか/リバランス日の偶然か分解困難
-      cause: |
-        学術論文・教科書が暗黙に仮定する「資産=受動的価格系列」をDM PFにそのまま適用。
-        SM13-SM20の全てはこの根源的誤解から派生する。
-        論文の手法をDM PFに適用する際は必ず「意思決定システムの出力である」ことを
-        前提に手法を適応(adapt)せよ。そのまま適用(apply)できるケースはほぼない。
-
-  # (f) 殿の指標哲学と設計アプローチ（2026-03-16 殿裁定）
-  indicator_philosophy:
-    core_principle: "平均は悪、極値が全て。全パラメータは本質的に不可知"
-    design_approach: |
-      体験→指標→道具 (Experience→Metrics→Tools) の順で設計せよ。
-      道具→設計（辞書の手法をそのまま適用）は誤り。
-      殿の哲学から問いを導き、問いに答える指標を設計し、最後に道具を選ぶ。
-    preferred_metrics:
-      - rank: 1
-        name: "Max Run-up"
-        reason: "最重要。「降りない」設計の恩恵を測る直接指標"
-      - rank: 2
-        name: "Tail Contribution Ratio"
-        reason: "極値イベントでの貢献度。平均ではなく極値を見る"
-      - rank: 3
-        name: "Left-tail Jumps"
-        reason: "下方極値への反応。暴落時にDNAが機能しているかの証拠"
-      - rank: 4
-        name: "New High Frequency"
-        reason: "新高値の頻度。構造的な上昇トレンド維持の証拠"
-    deprioritized: "Sharpe / Sortino / σ — 平均ベースの指標は殿の哲学に反する"
-    five_questions: |
-      診断指標は以下の5問に答える形で設計せよ:
-      (1) このPFは「降りない」を維持しているか
-      (2) 極値イベントにどう反応したか
-      (3) 最近のリターンは構造的か偶発的か
-      (4) 他の四神と同時に沈むか
-      (5) いつ入れ替えるべきか
-  # 金融ML知識辞書フィットネス評価（2026-03-16 殿と将軍の合同評価）
-  # 辞書は道具箱として正しいが「辞書→積み上げ」は殿の哲学に反する
-  dictionary_fitness:
-    - id: M03
-      name: "Rank Persistence"
-      fit: "◎"
-      reason: "分布非依存。順位の持続性を見るだけ。受動的資産前提なし。最適合"
-    - id: M10
-      name: "DSR (Deflated Sharpe Ratio)"
-      fit: "○→◎"
-      reason: "Sharpe前提だがCAGR/NHRに差し替えれば使える。多重検定補正の考え方自体は有効"
-    - id: M05
-      name: "HMM (Hidden Markov Model)"
-      fit: "△→○"
-      reason: "PFに適用すると意味がない(SM21)。市場のレジーム判定に使うなら有効"
-    - id: M09
-      name: "PSR (Probabilistic Sharpe Ratio)"
-      fit: "△"
-      reason: "Sharpe哲学と正面衝突。殿の「平均は悪、極値が全て」に反する"
-    - id: M08
-      name: "Meta-Labeling"
-      fit: "×"
-      reason: "再訓練サイクルがない。GSで一度決めたら固定。ラベル→再学習ループ前提の手法は使えない"
+  detail: "→ projects/dm-signal/shijin-design.yaml (設計原理・DNA制約・誤解集SM01-21・指標哲学・辞書フィットネス)"
 
   members:
     - name: "青龍(Seiryu)"
@@ -648,616 +198,110 @@ shijin:
       rebalance: monthly
       lookback: "24M"
 
-# =============================================================================
-# (k) ポートフォリオ命名規則 (殿裁定 2026-02-20)
-# =============================================================================
-
-naming_convention:
-  ruling_date: "2026-02-20"
-  source: "docs/rule/portfolio-naming-convention.md"
-
-  L1_shijin_fof:
-    format: "{モード}-{四神名}"
-    examples: ["激攻-青龍", "鉄壁-朱雀", "常勝-白虎"]
-
-  L2_ninpou_fof:
-    format: "{忍法名}-{モード}"
-    examples: ["加速-激攻", "四つ目-鉄壁", "抜き身-常勝"]
-    ninpou_names: [追い風, 抜き身, 変わり身, 加速, 四つ目]
-    note: "分身(bunshin)は本番不在(2026-03-11確認)。四つ目(MultiViewMomentum)が存在"
-    excluded: "monban(門番)=ext_pricesのCSV化に追加設計必要"
-    merged: "nukimi_c → nukimiに統合(L054)"
-    max_count: 15  # 5忍法 × 3モード
-
-  # =========================================================================
-  # シン四神 命名規則 (殿裁定 2026-03-16〜19 確定)
-  # =========================================================================
-  shin_shijin:
-    ruling_date: "2026-03-19"
-    source: "殿直接指示"
-    rule: |
-      現行四神は本番プロモーション済みのため変更不可。退役しない。
-      シン版は追加のみ。シンprefixの徹底は絶対。
-
-    # =========================================================================
-    # シン四神 v2 GS パラメータ設計（殿裁定 2026-03-19）
-    # =========================================================================
-    # 旧方式（広く探索→CPCV→Triple-E→脱相関K体→32ユニット）を全面廃止。
-    # DNA理解に基づくパラメータ制約を事前適用 → 3モードチャンピオン直接選出。
-    # 4ファミリー × 3モード(CAGR/MaxDD/NewHigh) = 12体。
-    # 根拠: 191,796パターン既存GS結果のデータ分析（殿・将軍合同 2026-03-19）。
-    v2_design:
-      approach: |
-        DNA理解→パラメータ事前制約→チャンピオン直接選出。
-        旧: 191,796変種→CPCV→Triple-E→脱相関→32ユニット（複雑、DNA理解が甘い）
-        新: DNA制約済みGS→CAGR/MaxDD/NHF各1位選出→12スロット設計→重複吸収(GS結果)→実績10体
-      L1_format: "シン{四神名}-{モード}"
-      L1_examples: ["シン青龍-激攻", "シン青龍-鉄壁", "シン青龍-常勝"]
-      L1_total: 12  # 設計定義=4ファミリー×3モード。吸収はGS結果であり定義ではない
-      L1_actual_after_absorption: 10  # GS結果: 朱雀・玄武で常勝消滅（重複吸収後実績値）
-      absorption_rule: |
-        モード間で同一変種が選出された場合、優先度 激攻>常勝>鉄壁 で吸収。
-        低優先モードは消滅。朱雀(激攻=常勝→常勝消滅)、玄武(激攻=常勝→常勝消滅)。
-      champions:
-        # 全10体確定（殿裁定 2026-03-19）
-        DM2:  # 青龍 3体
-          - {name: "シン青龍-激攻", pid: "DM2_SXLU_T1_M_L2502", lb: "11M:60|5M:20|1M:20", tn: 1, cagr: 53.7, maxdd: -61.0, nhf: 49.1}
-          - {name: "シン青龍-常勝", pid: "DM2_SXLU_T2_M_L2502", lb: "11M:60|5M:20|1M:20", tn: 2, cagr: 52.8, maxdd: -57.6, nhf: 49.7}
-          - {name: "シン青龍-鉄壁", pid: "DM2_SXLU_T2_M_L2754", lb: "12M:40|9M:30|2M:30", tn: 2, cagr: 44.6, maxdd: -57.6, nhf: 43.1}
-        DM3:  # 朱雀 2体（常勝=激攻同一→常勝消滅）
-          - {name: "シン朱雀-激攻", pid: "DM3_STMV_T2_Be_L0003", lb: "1M:100", tn: 2, cagr: 35.6, maxdd: -65.2, nhf: 31.7}
-          - {name: "シン朱雀-鉄壁", pid: "DM3_STMV_T2_Be_L0005", lb: "3M:100", tn: 2, cagr: 35.3, maxdd: -57.6, nhf: 29.3}
-        DM6:  # 白虎 3体
-          - {name: "シン白虎-激攻", pid: "DM6_SGLD_T1_Qj_L0247", lb: "4M:50|1M:50", tn: 1, cagr: 46.6, maxdd: -29.4, nhf: 44.9}
-          - {name: "シン白虎-常勝", pid: "DM6_SGLD_T2_Qj_L0247", lb: "4M:50|1M:50", tn: 2, cagr: 44.7, maxdd: -33.6, nhf: 44.9}
-          - {name: "シン白虎-鉄壁", pid: "DM6_SGLD_T1_Qj_L0713", lb: "5M:40|2M:40|15D:20", tn: 1, cagr: 43.2, maxdd: -27.7, nhf: 37.1}
-        DM7P:  # 玄武 2体（常勝=激攻同一→常勝消滅）
-          - {name: "シン玄武-激攻", pid: "DM7P_RXLU_T1_M_L0001", lb: "15M:100", tn: 1, cagr: 37.9, maxdd: -45.6, nhf: 43.1}
-          - {name: "シン玄武-鉄壁", pid: "DM7P_RXLU_T1_M_L0003", lb: "24M:100", tn: 1, cagr: 30.9, maxdd: -26.1, nhf: 40.1}
-      parameter_table:
-        # | パラメータ  | DM2(青龍)     | DM3(朱雀)    | DM6(白虎)     | DM7+(玄武)  |
-        # |------------|--------------|-------------|--------------|------------|
-        # | absolute   | LQD固定       | TMF固定      | ^VIX固定      | SPXL固定    |
-        # | relative   | TQQQ,TECL固定 | TECL,TQQQ固定| TQQQ,TECL固定 | XLU固定     |
-        # | safe_haven | XLU固定       | TMV固定      | GLD固定       | TQQQ固定    |
-        # | risk_free  | DTB3固定      | DTB3固定     | DTB3固定      | DTB3固定    |
-        # | top_n      | 1, 2         | 1, 2        | 1, 2         | 1          |
-        # | rebalance  | M のみ        | Bo, Be のみ  | Qj, Qf, Qm のみ | M のみ   |
-        # | lookback   | 10D〜12M      | 10D〜3M      | 10D〜6M       | 15M〜24M   |
-        # | composite  | 3-term許可    | 単一のみ      | 3-term許可    | 単一のみ    |
-        DM2:
-          absolute: LQD
-          relative: [TQQQ, TECL]
-          safe_haven: XLU  # GLD削除。DNA「退避しても株の中に留まる」
-          top_n: [1, 2]
-          rebalance: [monthly]  # DNA「降りない」は月次行動
-          lookback_range: "10D〜12M"  # composite 3-term許可
-          lookback_composite: true
-          lookback_rationale: "長期+短期混合で+14pp上乗せ。短期成分はノイズではない（データ実証）"
-        DM3:
-          absolute: TMF
-          relative: [TECL, TQQQ]
-          safe_haven: TMV  # 債券正逆ペア必須
-          top_n: [1, 2]
-          rebalance: [bimonthly_odd, bimonthly_even]  # 3xレバwhipsaw防止
-          lookback_range: "10D〜3M"  # 単一のみ
-          lookback_composite: false
-          lookback_rationale: "short帯が圧倒。1M〜3Mが最適帯。long lookbackは無価値（データ実証）"
-        DM6:
-          absolute: "^VIX"
-          relative: [TQQQ, TECL]
-          safe_haven: GLD  # 第三軸（株でも債券でもない）。XLU削除
-          top_n: [1, 2]
-          rebalance: [quarterly_jan, quarterly_feb, quarterly_mar]  # VIXノイズ除去
-          lookback_range: "10D〜6M"  # composite 3-term許可
-          lookback_composite: true
-          lookback_rationale: "medium(4-6M)+短期compositeがCAGR/MaxDD/NHF全1位。4-6MはVIX mean reversionサイクル全体を捕捉（データ実証）"
-        DM7P:
-          absolute: SPXL
-          relative: [XLU]  # RGLD廃止。DNA「構造的逆張り」準拠
-          safe_haven: TQQQ
-          top_n: [1]  # XLU 1銘柄のためtop_n=1のみ
-          rebalance: [monthly]
-          lookback_range: "15M〜24M"  # 単一のみ。12M削除（15Mに劣後）
-          lookback_composite: false
-          lookback_rationale: "15M=CAGR最大(+37.9%)、24M=MaxDD最小(-26.1%)。明確に分離（データ実証）"
-      data_source: "shin_shijin_l1/ 191,796パターンGS結果（cmd_1018、本番パリティ未検証(cmd_1097/1098で検証中)）"
-      analysis_date: "2026-03-19"
-
-    L2_format: "シン{忍法名}-{モード}"
-    L2_examples: ["シン追い風-激攻", "シン抜き身-鉄壁", "シン加速R-常勝", "シン加速D-激攻"]
-    L2_ninpo_names: [追い風, 抜き身, 変わり身, 加速R, 加速D, 分身, 四つ目]
-    L2_note: "加速R=ratio(正規化), 加速D=diff(絶対差分)。殿裁定 2026-03-19"
-    L2_total: 21  # 7忍法 × 3モード(激攻/鉄壁/常勝)。吸収0（全ユニーク）
-    L2_gs_result: "cmd_1080 GATE CLEAR。173,625パターン→21チャンピオン全選出"
-    L2_top_performers:
-      best_cagr: "加速D-激攻 86.6%"
-      best_maxdd: "加速D-鉄壁 -13.6%"
-      best_nhf: "変わり身-常勝 3.37"
-    L2_data: "outputs/analysis/shin_ninpo_v2_champions.csv"
-    registration:
-      total_pfs: 33  # 12 standard + 21 FoF (DB実態。吸収2体含む)
-      L0_L1_standard: 12  # シン四神（吸収対象の朱雀-常勝/玄武-常勝含む全12体がDB登録済。FoFのcomponent元）
-      L2_fof: 21  # シン忍法（component=12体standard PFのsubset）
-      L0_hidden: 0  # v2ではK=2/K=3なし→非表示素材不要
-      runbook: "docs/rule/db-operations-runbook.md"  # §1-§9 統合ランブック(2026-03-19)
-      runbook_v1_ref: "docs/rule/shin-shijin-registration-runbook.md"  # v1用(参考)
-    folders:
-      shin_shijin: "シン四神（10体）"
-      shin_ninpo: "シン忍法（21体）"
-
   modes:
     gekkou: {name: "激攻", metric: "CAGR", description: "リターン最大化"}
     teppeki: {name: "鉄壁", metric: "MaxDD", description: "ドローダウン最小化"}
     joushou: {name: "常勝", metric: "NewHigh", description: "新高値頻度最大化"}
 
-  config_aggregation:
-    rule: "3モードで同一configの忍法はモード省略（忍法名のみ）"
-    partial: "2モード同一+1異なる → 同一側を無印、異なる側にモード付与"
+# =============================================================================
+# (k) 命名規則・保護PF（要約。詳細→ projects/dm-signal/naming-portfolios.yaml）
+# =============================================================================
 
-  deprecated_suffixes: ["-Dd", "-Nh", "-C", "-So", "-Sh"]
-
-  # =========================================================================
-  # 殿の個人PF保護リスト (殿直伝 2026-02-20 — 絶対ルール)
-  # =========================================================================
-  # DB操作(DELETE/UPDATE)タスクでは、以下のPFを絶対に削除・変更するな。
-  # 削除対象はGS生成PF(L0-*プレフィックス)、四神12体、忍法15体のみ。
-  protected_portfolios:
-    ruling_date: "2026-02-20"
-    source: "殿直接指示(cmd_198)"
-    rule: "以下のPFはDB操作で絶対に削除・変更してはならない"
-    enforcement: "DB操作タスクのdescriptionに殿PF除外を注入必須"
-    portfolios:
-      personal_standard:
-        - DM2
-        - DM2-20%
-        - DM2-40%
-        - DM2-60%
-        - DM2-80%
-        - DM2-test
-        - DM2-top
-        - DM3
-        - DM4
-        - DM5
-        - DM5-006
-        - DM6
-        - DM6-5
-        - DM6-20%
-        - DM6-40%
-        - DM6-60%
-        - DM6-80%
-        - DM6-Top
-        - DM7+
-        - DM-safe
-        - DM-safe-2
-      personal_fof:
-        - Ave-X
-        # Ave四神 — 2026-03-11時点で本番不在。削除済み
-        - 裏Ave-X
-        - MIX1
-        - MIX2
-        - MIX3
-        - MIX4
-        - bam-2
-        - bam-6
-        - 劇薬DMオリジナル
-        - 劇薬DMスムーズ
-        - 劇薬bam
-        - 劇薬bam_guard
-        - 劇薬bam_solid
-    deletion_targets_only:
-      - "L0-*プレフィックスPF（GS生成分）"
-      - "四神L1: 激攻/鉄壁/常勝 × 青龍/朱雀/白虎/玄武 (12体)"
-      - "忍法L2: 分身/追い風/抜き身/変わり身/加速 × 激攻/鉄壁/常勝 (15体)"
-
-  portfolio_limit:
-    ruling_date: "2026-02-21"
-    source: "殿直接指示(cmd_213追加裁定)"
-    max_production_portfolios: 100
-    rules:
-      - "本番PFは上限100体。超過時は不要PFを整理"
-      - "テスト用PF(TEST-*プレフィックス等)は検証完了後に必ず削除"
-      - "パリティ検証で仮作成したPFは各忍法の検証完了後に即削除"
-    enforcement: "パリティ検証タスクのACにテストPF削除を必ず含める"
-
-  rebalance_rule:
-    ruling_date: "2026-02-20"
-    source: "cmd_190"
-    rule: "忍法GSのrebalance_triggerはmonthly固定。他の値(quarterly/bimonthly/semiannual/annual)は探索しない"
-    reason: "リバランス頻度は過剰最適化の温床。月次運用前提なら月次のみでGS"
-    enforcement: "GSスクリプト(run_077_*.py)のPARAM_GRID_2/rebalance_masksをmonthlyのみに制限済み"
-
-  parity_validation_rule:
-    ruling_date: "2026-02-22"
-    source: "殿直接指示(cmd_226, cmd_243追記)"
-    rules:
-      - "パリティ検証の両辺は必ず同一データソースを使う"
-      - "現在のSSOTは本番PostgreSQL(DATABASE_URL)"
-      - "GS側=experiments.db(本番PostgreSQLからsyncしたローカルコピー)、本番側=本番PostgreSQL(DATABASE_URL)で計算し、結果を突合する"
-      - "GS側と本番側で異なるデータソースを使った比較は無効"
-      - "CSVは古いデータのためパリティ検証に使うと結果は無効。CSVと本番DBの比較はパリティ検証として認めない"
-      - "「DB」の曖昧表記は禁止。必ず本番PostgreSQL(DATABASE_URL)かexperiments.dbを明記する"
-      - "パリティ報告YAMLではdata_sourceフィールドを必須とする"
-      - "本番コードパス統一原則: 数学的に等価でも本番と同一コードパスを使え(database.rules参照)"
-    enforcement: "報告テンプレートにdata_sourceを必須化し、記載欠落はFAIL扱い"
-
-  # =========================================================================
-  # 本番不変量 (Production Invariants)
-  # =========================================================================
-  # 本番バックエンドの挙動のうち、GS・偵察・impl設計時に前提として必須の事実。
-  # 受動的知識層: Session Start Step 3.5で全エージェントに自動ロードされる。
-  # 教訓サイクルで発見された不変量は /lesson-sort で自動抽出・ここに追記。
-  # 根拠: 2026-03-17 殿直伝「受動的知識(0ms)が最速の防御層」
-  production_invariants:
-    last_updated: "2026-03-22"
-    entries:
-      - id: PI-001
-        fact: "本番シグナル計算は日次解像度。10D/15D/20D/1M は全て異なるlookback期間として計算される"
-        implication: "GS月次解像度では10D≠15D≠20D≠1Mの区別が消える。月次解像度のdedup（canonical 1Mに寄せる等）は本番パリティを破壊する"
-        source: "cmd_1031 失敗分析 + cmd_1032 差し戻し"
-        verified_file: "backend/app/services/pipeline/blocks/momentum_filter.py"
-      - id: PI-002
-        fact: "SQLiteミラー(backend/static/data/dm_signal.db)は不完全。本番PostgreSQLとデータ乖離(例: 加速FoF本番3体/SQLite0体)"
-        implication: "DB調査・パリティ検証は本番PostgreSQL必須。SQLite前提のテスト/偵察は不正確"
-        source: "cmd_1025"
-        verified_file: "backend/static/data/dm_signal.db"
-      - id: PI-003
-        fact: "standard PFのconfig JSONにはpipeline_configが必須。NoneだとrecalculateでCashフォールバック（全期間シグナルがCash=月次リターン異常）"
-        implication: "DB登録時に既存PFから同一ファミリーのpipeline_configをコピーすること。FoFのcomponentも連鎖的に異常になる"
-        source: "cmd_1082事故"
-        verified_file: "backend/app/jobs/recalculate_fast.py L884-891"
-      - id: PI-004
-        fact: "GSはnumpy配列操作のみで本番pydanticスキーマを通さない。GSチャンピオンのパラメータが本番スキーマに適合する保証がない"
-        implication: "GS→本番DB登録cmdでは、登録前に本番pydanticスキーマ(LookbackPeriod,PipelineConfig,Portfolio等)でバリデーションを通すACを必ず含めること"
-        source: "cmd_1082事故（pipeline_config欠落+LookbackPeriod上限超過の2件同時発覚）"
-        verified_file: "backend/app/schemas/pipeline.py, backend/app/services/pipeline/blocks/momentum_acceleration_filter.py"
-      - id: PI-005
-        fact: "新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則。部分recalculate連続実行は依存順序の罠でエラー連鎖する"
-        implication: "recalculate-sync APIをportfolio_id指定なしで1回だけ叩く。standard→FoFの手動順序制御は不要"
-        source: "cmd_1081 abort理由（部分recalculate連続実行でエラー連鎖）"
-        verified_file: "backend/app/jobs/recalculate_fast.py"
-      - id: PI-006
-        fact: "手順書/ランブックの記載はrecalculateコードパスとの照合なしには信頼できない。ランブック§3.2(standard PF)にpipeline_config記載漏れが31体全滅を招いた"
-        implication: "手順書作成cmdのACに「実際のコードパス(recalculate_fast.py等)との照合検証」を含めること。手順書の欠落はそれを信頼する全cmdに波及する"
-        source: "cmd_1082事故（ランブック§3.2欠落→佐助がランブック通りにNone設定）"
-        verified_file: "docs/rule/db-operations-runbook.md §3.2"
-      - id: PI-007
-        fact: "GS結果と本番計算結果は構造的に乖離しうる(月次vs日次解像度、pydanticバリデーション差異等)"
-        implication: "本番DB登録前に、登録対象PFの全期間保有シグナル完全一致+月次リターン完全一致を確認するパリティ検証cmdが完了していること。パリティ未検証の本番登録は禁止"
-        source: "cmd_1082事故+cmd_1090乖離分析"
-      - id: PI-008
-        fact: "monthly_returnsテーブルにはmonthly_return(Close-to-Close)とmonthly_return_open(Open-to-Open)の2列が存在。GSはOpen-to-Open方式で計算"
-        implication: "パリティ検証ではmonthly_return_open列を使用すること。monthly_return(Close)列で比較すると偽の不一致が発生する"
-        source: "cmd_1098(L420)"
-        verified_file: "backend/app/models/monthly_return.py"
-      - id: PI-009
-        fact: "GSは本番と同一の結果を出さなければならない。同一の結果=全期間holding_signal完全一致(必須)+monthly_return 1e-6以内(浮動小数点演算順序差は許容)。エンジン実装は問わない"
-        implication: "holding_signalが1月でも不一致ならそのGS結果は汚染データ。チャンピオン選出は無効。monthly_returnの6e-7程度のIEEE754丸め差は物理的限界として許容"
-        source: "cmd_1191+cmd_1194偵察+殿裁定(2026-03-21)"
-      - id: PI-010
-        fact: "本番はprice_by_symbolに非市場ティッカー(^VIX/DTB3)を含めず、PipelineEngineがDB直接照会で固有日付インデックスを使用する"
-        implication: "GS側のprice_data_cacheにも非市場ティッカーを含めるな。stock-trading-dayリサンプルで日付情報が失われ、pct_change(N)の参照日ズレでholding_signal不一致が発生する"
-        source: "cmd_1243(L473)"
-        verified_file: "scripts/analysis/grid_search/grid_search_metrics_v2.py"
-      - id: PI-011
-        fact: "シン忍法v2(21体)のterminal_blockは全てEqualWeight。selection_pipelineがcomponentsを絞り込み、選ばれたcomponentsを均等保有。選別と終端は別の関心事"
-        implication: "シン忍法v2のパリティ検証: 本番holding_signalから選択components特定→均等加重リターン計算→本番monthly_returnと比較。selection_blocks有無で検証方法を分岐させるな"
-        source: "cmd_1269 BLOCKED事故(selection_blocks存在→検証不能と誤認)+殿指摘(2026-03-22)"
-        verified_file: "backend/app/services/pipeline/engine.py, backend/app/services/pipeline/blocks/equal_weight.py"
-
-  data_pipeline:
-    description: "DB直接読込方式(主系) + CSV互換ローダー併用"
-    flow: "本番PostgreSQL → gs_data_loader.py (主系) → run_077_* GS。必要時のみ gs_csv_loader.py を component_spec 指定で利用"
-    note: "DM_IDS常用は monban 系のみ。主系run_077_*は gs_data_loader.L1_PORTFOLIO_MAP / component_spec 設計に統一"
+naming_convention:
+  L1_format: "{モード}-{四神名}（例: 激攻-青龍）"
+  L2_format: "{忍法名}-{モード}（例: 加速-激攻）"
+  shin_L1_format: "シン{四神名}-{モード}（例: シン青龍-激攻）。12スロット設計、吸収後10体"
+  shin_L2_format: "シン{忍法名}-{モード}（例: シン追い風-激攻）。7忍法×3モード=21体"
+  protected_portfolios: "殿の個人PF(standard21体+FoF13体)は絶対に削除・変更禁止"
+  max_production_portfolios: 100
+  detail: "→ projects/dm-signal/naming-portfolios.yaml (v2設計・チャンピオン・パラメータ表・保護リスト全量・パリティルール)"
 
 # =============================================================================
-# (f) 主要ファイルパス (backend/配下のrelative path)
+# (PI) 本番不変量 (Production Invariants)
+# =============================================================================
+# 受動的知識層: 全エージェントに自動ロード。GS・偵察・impl設計の前提事実。
+
+production_invariants:
+  last_updated: "2026-03-22"
+  entries:
+    - id: PI-001
+      fact: "本番シグナル計算は日次解像度。10D/15D/20D/1M は全て異なるlookback期間として計算される"
+      implication: "GS月次解像度では10D≠15D≠20D≠1Mの区別が消える。月次解像度のdedupは本番パリティを破壊する"
+    - id: PI-002
+      fact: "SQLiteミラー(backend/static/data/dm_signal.db)は不完全。本番PostgreSQLとデータ乖離"
+      implication: "DB調査・パリティ検証は本番PostgreSQL必須"
+    - id: PI-003
+      fact: "standard PFのconfig JSONにはpipeline_configが必須。NoneだとrecalculateでCashフォールバック"
+      implication: "DB登録時に既存PFから同一ファミリーのpipeline_configをコピーすること"
+    - id: PI-004
+      fact: "GSはnumpy配列操作のみで本番pydanticスキーマを通さない"
+      implication: "GS→本番DB登録cmdでは登録前に本番pydanticスキーマでバリデーション必須"
+    - id: PI-005
+      fact: "新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+      implication: "部分recalculate連続実行は依存順序の罠でエラー連鎖する"
+    - id: PI-006
+      fact: "手順書/ランブックの記載はrecalculateコードパスとの照合なしには信頼できない"
+      implication: "手順書作成cmdのACに「実際のコードパスとの照合検証」を含めること"
+    - id: PI-007
+      fact: "GS結果と本番計算結果は構造的に乖離しうる(月次vs日次解像度、pydanticバリデーション差異等)"
+      implication: "本番DB登録前にパリティ検証cmd完了必須。パリティ未検証の本番登録は禁止"
+    - id: PI-008
+      fact: "monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列が存在"
+      implication: "パリティ検証ではmonthly_return_open列を使用すること。Close列で比較すると偽の不一致が発生"
+    - id: PI-009
+      fact: "GSは本番と同一の結果を出さなければならない。全期間holding_signal完全一致(必須)+monthly_return 1e-6以内"
+      implication: "holding_signalが1月でも不一致ならそのGS結果は汚染データ。チャンピオン選出は無効"
+    - id: PI-010
+      fact: "本番はprice_by_symbolに非市場ティッカー(^VIX/DTB3)を含めない"
+      implication: "GS側のprice_data_cacheにも非市場ティッカーを含めるな。日付リサンプル汚染が発生"
+    - id: PI-011
+      fact: "シン忍法v2(21体)のterminal_blockは全てEqualWeight。selection_pipelineが絞り込み→均等保有"
+      implication: "パリティ検証でselection_blocks有無で検証方法を分岐させるな"
+
+# =============================================================================
+# データパイプライン
+# =============================================================================
+
+data_pipeline:
+  description: "DB直接読込方式(主系) + CSV互換ローダー併用"
+  flow: "本番PostgreSQL → gs_data_loader.py (主系) → run_077_* GS"
+  note: "DM_IDS常用は monban 系のみ。主系run_077_*は gs_data_loader.L1_PORTFOLIO_MAP / component_spec 設計に統一"
+
+# =============================================================================
+# 主要ファイルパス・API・recalculate・資産棚卸し（詳細は分割先参照）
 # =============================================================================
 
 key_files:
-  # ルール・設定
-  trade_rule: "docs/rule/trade-rule.md"
-  production_env: "backend/.env"
-  viewer_auth_env: ".env.premium"  # viewer認証情報。CDP自動認証(cmd_695)で使用
-
-  # パイプライン
-  pipeline_engine: "backend/app/services/pipeline/engine.py"
-  pipeline_base: "backend/app/services/pipeline/base.py"
-  pipeline_blocks: "backend/app/services/pipeline/blocks/"
-  block_type_enum: "backend/app/schemas/pipeline.py:18-37"
-  block_registry: "backend/app/jobs/shared.py:225-270"
-  execute_pipeline: "backend/app/services/pipeline/engine.py:63"
-  execute_pipeline_with_blocks: "backend/app/services/pipeline/engine.py:191"
-
-  # 計算エンジン
-  recalculate_fast: "backend/app/jobs/recalculate_fast.py"
-  recalculate_fof: "backend/app/jobs/recalculate_fof.py"
-  return_calculator: "backend/app/services/return_calculator.py"
-  momentum_cache: "backend/app/services/momentum_cache.py"
-  vectorized_momentum: "backend/app/services/vectorized_momentum.py"
-  signal_flush: "backend/app/jobs/flush/signal_flush.py"
-  price_ratio_calculator: "backend/app/services/price_ratio_calculator.py"
-
-  # DB・モデル
-  db_models: "backend/app/db/models.py"
-  experiments_db: "analysis_runs/experiments.db"
-  dm_signal_db: "backend/static/data/dm_signal.db"
-
-  # API
-  api_signals: "backend/app/api/signals.py"
-  api_portfolios: "backend/app/api/portfolios.py"
-  api_etl_trigger: "backend/app/api/etl_trigger.py"
-  api_main: "backend/app/main.py"
-  api_response_schema: "backend/app/schemas/response.py:7-12"
-
-  # フロントエンド
-  frontend_api_client: "frontend/lib/api-client.ts"
-  frontend_types: "frontend/lib/types/"
-
-  # GS・分析 — 用語定義（混同厳禁）
-  # 狭義GS = 四神作成スクリプト（パラメータ総当たり→チャンピオン選定）
-  # 忍法スクリプト = 四神12体をコンポーネントとしてFoFを構成・計算（1スクリプト=1ビルディングブロック）
-  # 広義GS = grid_searchディレクトリ全体（狭義GS + 忍法スクリプト7本 + 共通ライブラリ）
-  gs_shijin_creator: "scripts/analysis/grid_search/shin_shijin_l1_gs.py (狭義GS: 四神作成)"
-  gs_ninpou_scripts:
-    oikaze: "scripts/analysis/grid_search/run_077_oikaze.py (MomentumFilter)"
-    nukimi: "scripts/analysis/grid_search/run_077_nukimi.py (SingleViewMomentumFilter)"
-    kawarimi: "scripts/analysis/grid_search/run_077_kawarimi.py (TrendReversalFilter)"
-    kasoku_ratio: "scripts/analysis/grid_search/run_077_kasoku_ratio.py (MomentumAccelerationFilter/ratio)"
-    kasoku_diff: "scripts/analysis/grid_search/run_077_kasoku_diff.py (MomentumAccelerationFilter/diff)"
-    bunshin: "scripts/analysis/grid_search/run_077_bunshin.py (EqualWeight単体)"
-    yotsume: "scripts/analysis/grid_search/run_077_yotsume.py (MultiViewMomentumFilter)"
-  gs_csv_loader: "scripts/analysis/grid_search/gs_csv_loader.py"
-  gs_speedup_knowledge: "context/gs-speedup-knowledge.md"
-  data_catalog: "outputs/grid_search/DATA_CATALOG.md"
-  champion_csv: "outputs/grid_search/*_grid_monthly_fast.csv (実ファイルはDATA_CATALOG.mdで確認)"
-  docs_index: "docs/_INDEX.md"
-
-  # 重要ドキュメントポインタ (cmd_195で発掘)
-  parity_verification:
-    - "docs/rule/gs-parity-verification-guide.md — GS-本番パリティ検証手順"
-    - "docs/rule/rebalance-verification.md — rebalance_trigger別検証観点"
-    - "docs/rule/return-consistency-verification.md — RULE11 Return同一性の差分診断"
-    - "docs/rule/check-rule.md — Stock API=Truth(D)、A/C/D比較、bp閾値"
-    - "docs/skills/portfolio-analysis-verification.md — 3視点独立評価(return/downside/UD比)"
-    - "docs/skills/database-schema.md — monthly_returns SSOT整合性検証"
-  db_operations:
-    - "docs/rule/local-postgresql-guide.md — ローカルPostgreSQL Docker+pg_dump/restore"
-  api_usage:
-    - "docs/skills/api-reference.md — 本番API+Basic認証"
-    - "docs/rule/api-usage-guide.md — Stock Data Platform rate limit/auto_fetch"
-    - "docs/skills/environment-switching.md — ローカル/本番切替手順"
+  detail: "→ projects/dm-signal/key-files.yaml (全ファイルパス・ドキュメントポインタ)"
 
 related_docs:
   - "docs/rule/trade-rule.md"
   - "docs/rule/business_rules.md"
 
-# =============================================================================
-# (h) API構成
-# =============================================================================
-
 api:
-  total_routers: "20 (+debug有効時21)"
   total_endpoints: "84-88"
-  router_registration: "backend/app/main.py:313-337 (+debug:341-343)"
-  response_wrapper: "ApiResponse{success,data,error,message} (backend/app/schemas/response.py:7-12)"
-
-  core_endpoints:
-    signals:
-      path: "GET /api/signals"
-      backend: "backend/app/api/signals.py:67"
-      response: "{as_of, calculated_at, portfolios[{id,name,type,signal,momentum,...}]}"
-      frontend_call: "frontend/lib/api-client.ts:751-753"
-      frontend_type: "SignalsLightResponse (frontend/lib/types/api.ts:45-49)"
-    portfolios_get:
-      path: "GET /api/portfolios/get"
-      backend: "backend/app/api/portfolios.py:147"
-      response: "ApiResponse[PortfoliosPayload{portfolios: List[Portfolio]}]"
-      frontend_call: "frontend/lib/api-client.ts:578-584"
-    portfolios_save:
-      path: "POST /api/portfolios/save"
-      backend: "backend/app/api/portfolios.py:215"
-    recalculate:
-      path: "POST /admin/recalculate-sync"
-      backend: "backend/app/api/etl_trigger.py:284"
-      frontend_call: "frontend/lib/api-client.ts:641-643"
-    healthz:
-      path: "GET /healthz, GET /healthz/deep"
-    debug:
-      note: "DEBUG_API_ENABLED=true時のみ (backend/app/main.py:341-343)"
-
-  momentum_data:
-    sanitize: "_sanitize_momentum_data() → relative[]/absolute/risk_free/safe_haven"
-    backend_impl: "backend/app/api/signals.py:28-64"
-    frontend_type: "PortfolioMomentum (frontend/lib/types/market.ts:8-13)"
-
-  frontend:
-    framework: "Next.js"
-    api_client: "frontend/lib/api-client.ts"
-    base_url: "NEXT_PUBLIC_API_HOST"
-    auth: "credentials=include"
-    context: "SignalsContext (frontend/contexts/signals-context.tsx)"
-
-# =============================================================================
-# (i) 本番デプロイ
-# =============================================================================
+  response_wrapper: "ApiResponse{success,data,error,message}"
+  detail: "→ projects/dm-signal/api-endpoints.yaml (全エンドポイント・フロントエンド構成)"
 
 production:
   platform: "Render.com"
   start_command: "python -m app.db.init_db && uvicorn ..."
-  healthz: "GET /healthz, GET /healthz/deep"
-  recalc_trigger: "POST /admin/recalculate-sync"
   hosts:
     frontend: "dm-signal-frontend.onrender.com"
     backend: "dm-signal-backend.onrender.com"
-    note: "dm-signal.onrender.comは404を返す（旧URL）。CDP計測・本番検証では上記2ホストを使え"
-  ui_automation:
-    pf_selector:
-      type: "plain button群"
-      note: "role=combobox/optionではない。CDP自動操作時は実DOMを先に観測してからhookを組め"
+    note: "dm-signal.onrender.comは404を返す（旧URL）"
   cron_jobs:
-    - "01:00 UTC: /admin/sync-prices (StockData APIから価格DL)"
-    - "01:05 UTC: /admin/sync-tickers (ティッカーメタデータ同期)"
-    - "01:10 UTC: /admin/sync-standard (個別DM戦略シグナル計算)"
-    - "01:40 UTC: /admin/sync-fof (FoFシグナル計算)"
+    - "01:00 UTC: /admin/sync-prices"
+    - "01:05 UTC: /admin/sync-tickers"
+    - "01:10 UTC: /admin/sync-standard"
+    - "01:40 UTC: /admin/sync-fof"
   warnings:
     - "再計算中のgit pushはデータ消失リスク(L039)"
     - "ローカルからrecalculate_history_fast()直接実行は本番DB全データ削除リスク(L043)"
 
-# =============================================================================
-# (j) 資産棚卸しサマリー
-# =============================================================================
-
 asset_inventory:
-  scripts:
-    total: 671
-    major_groups:
-      - "analysis/grid_search: 188 (探索・検証ランナー群)"
-      - "analysis/archive: 115 (旧分析ログ)"
-      - "archive/check: 87 (DB/API整合チェック)"
-      - "archive/debug: 49 (不具合再現デバッグ)"
-      - "core: 6 (運用トリガー/収集)"
-      - "verify: 29 (仮説検証/回帰確認)"
-  docs:
-    total: "419-443"
-    major_groups:
-      - "docs/future: 191"
-      - "docs/archives: 92"
-      - "docs/portfolio-research: 33"
-      - "docs/rule: 25 (trade-rule.md=63K)"
-      - "docs/skills: 25"
-  tasks:
-    files: ["_INDEX.md", "decisions.md", "lessons.md", "todo.md"]
-
-  chart_output:
-    rule: "分析チャート(matplotlib等で生成するPNG)の出力先は outputs/charts/ に統一"
-    path: "/mnt/c/Python_app/DM-signal/outputs/charts/"
-    established: "cmd_182 (2026-02-20)"
-
-  l3_robustness:
-    context_doc: "context/l3-robustness.md"
-    summary: "WF合議(cmd_176)→殿叱責→方針転換→4シンプル独立検証(散布図/95%CI/Calmarヒスト/Boxplot)。3本柱(層別・極値・反証可能性)は知見として保持。次=忍法別L3判定(cmd_186)+本番登録(cmd_175)"
-    established: "cmd_187 (2026-02-20)"
-
-  post_mini_parity_flow:
-    ruling_date: "2026-02-21"
-    source: "殿確定フロー(将軍経由)"
-    description: "ミニパリティ後の正しいフロー"
-    note: "v1フロー(旧四神/旧忍法)→シン四神v2/シン忍法v2へ切替。以下は現状反映版"
-    steps:
-      - step: 1
-        name: "ミニパリティ全5忍法PASS"
-        status: "完了(v1時代に実施済み。v2では不要—GS設計が刷新されたため)"
-      - step: 2
-        name: "フルGS再実行"
-        status: "完了(シン四神v2: cmd_1018 191,796パターン / シン忍法v2: cmd_1080 173,625パターン)"
-      - step: 3
-        name: "旧四神12体 本番DB登録+パリティ確認"
-        status: "完了(cmd_205登録済。cmd_1098でL1リターン突合完了→PI-008確立)"
-      - step: 4
-        name: "シン四神v2(12体) + シン忍法v2(21体) 本番DB登録"
-        detail: "計33体。L0_L1_standard=12(吸収2体含む全12体がDB登録済), L2_FoF=21(7忍法×3モード)"
-        status: "登録済(cmd_1249: FoF 21体component+params DB更新PASS)。recalculate後パリティFAIL(cmd_1250: holding_signal 21/21不一致—selection_pipeline.blocks未機能)"
-      - step: 5
-        name: "シン四神v2/シン忍法v2 本番パリティ確認"
-        status: "PoC 1体PASS(cmd_1251: シン分身-激攻 EqualWeight全期間完全一致)。全体パリティFAIL(cmd_1250: selection_pipeline要調査)"
-      - step: 6
-        name: "いったん終了"
-        detail: "存在意義検証・L3は別フェーズ"
-        status: "未着手"
-
-# =============================================================================
-# (g) recalculate_fast.py 計算パス (Phase構成)
-# =============================================================================
-# ファイル: backend/app/jobs/recalculate_fast.py
-# 殿の制約: 全PF×全日を計算(差分計算・PF数削減・日数間引き禁止)
-# OPT-E適用後: signal_calc 0.53s(3,786倍高速化), 全体389s(6.2倍短縮)
+  detail: "→ projects/dm-signal/asset-inventory.yaml (スクリプト671本・ドキュメント419本・フロー)"
 
 recalculate_phases:
-  overview: |
-    recalculate_history_fast()は6フェーズで全PFのシグナル+パフォーマンスを再計算する。
-    L2(個別PF)→L3(FoF)の2レイヤー構成。
-
-  phases:
-    - id: "Phase0"
-      name: "クリーンアップ"
-      line: "L694"
-      description: "_cleanup_before_recalculate()。DELETEは独立COMMIT(L038/L039注意)"
-
-    - id: "Phase1"
-      name: "データロード"
-      line: "L702"
-      description: "全銘柄の価格データをDBから一括ロード"
-      key_function: "_load_all_prices()"
-
-    - id: "Phase1.5"
-      name: "有効開始日決定"
-      line: "L740"
-      description: "各PFの計算開始日を決定"
-
-    - id: "Phase2"
-      name: "前処理+MomentumCache初期化"
-      line: "L827"
-      description: "pivot+全期間モメンタム事前計算。PriceCacheの構築"
-      notes: "Phase2.5は存在しない。OPT-6(最適化6)はPhase2内の前処理で実施される"
-
-    - id: "Phase3"
-      name: "PipelineモメンタムCache事前計算"
-      line: "L903"
-      description: "全BBブロック×全ティッカーの事前計算(OPT-A)"
-
-    - id: "Phase3.5"
-      name: "Pipeline block事前解決(OPT-A)"
-      line: "L1166"
-      description: "各PFのpipeline_configからブロック設定を事前解決"
-
-    - id: "Phase3.7"
-      name: "OPT-E: Vectorizedシグナル事前計算"
-      line: "L1178"
-      description: |
-        全pipeline PFの全日付シグナルを1パスで事前計算し、dictに格納。
-        Phase4ではO(1) dict lookupのみ。signal_calc 1724s→0.53sの主因。
-        データ構造: vectorized_pipeline_signals: Dict[str, Dict[date, str]] (L1185)
-      key_function: "_precompute_pipeline_signals()"
-      commits: ["dc35b83", "f452c23", "151345c", "91c04a4"]
-      bugs_fixed:
-        - "bisectフォールバック消滅(L045): dict厳密一致→旧パスのbisect直近日参照を復元"
-        - "ReversalFilter方向逆転(L045): top_n降順→bottom_n昇順に修正"
-        - "日次フォールバック追加(L045/91c04a4): miss時→execute_pipeline_with_blocks (L1718-1738)"
-      bisect_impl: "_dict_lookup_with_bisect (L509-523)"
-
-    - id: "Phase4"
-      name: "L2日次ループ(シグナル+パフォーマンス計算)"
-      line: "L1508"
-      description: |
-        全日付×全PFをループし、シグナル計算+パフォーマンス計算+DB書込。
-        OPT-E後: シグナルはPhase3.7のdict lookupで取得(O(1))。
-        パイプライン未設定PFはlegacy(determine_signal_fast)で計算。
-      bottleneck: "trade_perf(58.7s)が新ボトルネック。signal_calcは0.53sで脱落"
-
-    - id: "Phase4.5"
-      name: "月次リターン計算"
-      line: "L1909"
-      description: "月次リターンの集計・書込"
-
-    - id: "Phase5_FoF"
-      name: "L3 FoF再計算"
-      line: "L1921"
-      description: "FoF(Fund of Funds)レイヤー。L2シグナルを集約してFoFシグナル+パフォーマンスを計算"
-      timing: "~89s(OPT-E対象外)"
-
-    - id: "Phase5_precompute"
-      name: "プリコンピュートテーブル"
-      line: "L1958"
-      description: "パフォーマンスデータの事前計算テーブル生成"
-
-  performance_history:
-    - run: "初回ベースライン"
-      total: "11,818s (3h17m)"
-    - run: "OPT-A/D/F適用"
-      total: "2,397s (40m)"
-      signal_calc: "2,007s"
-    - run: "OPT-E適用(090d)"
-      total: "389s (6m30s)"
-      signal_calc: "0.53s"
-      note: "112件signal消失バグあり→151345cで修正"
+  overview: "recalculate_history_fast()は6フェーズ。L2(個別PF)→L3(FoF)。OPT-E後389s(6m30s)"
+  detail: "→ projects/dm-signal/recalculate-phases.yaml (Phase0-5詳細・性能履歴)"

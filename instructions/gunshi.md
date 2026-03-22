@@ -450,4 +450,10 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 
 ## /clear Recovery手順
 
-CLAUDE.md `/clear Recovery` 手順に従う。追加: (1) `logs/gunshi_review_log.yaml` を読む(accuracy把握) (2) `projects/infra/lessons_gunshi.yaml` を読む(レビュー教訓)
+CLAUDE.md `/clear Recovery` 手順に従う。追加:
+(1) `memory/deepdive_why_chain_20260321.md` を読む（**毎セッション必読・省略厳禁**）
+    結論ではなく思考過程の追体験が目的。Phase 4「自動化×強制」と
+    Phase 5「なぜの目的=自動化ターゲット特定」が軍師レビューの品質天井を決める。
+    これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
+(2) `logs/gunshi_review_log.yaml` を読む(accuracy把握)
+(3) `projects/infra/lessons_gunshi.yaml` を読む(レビュー教訓)
