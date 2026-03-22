@@ -8967,3 +8967,25 @@ OK: dashboard.md auto section updated (05:52)
   ⏵⏵ bypass permissions on (shift+tab to cycle)
 ---
 [2026-03-23 05:54:11] CLEAR-SEND: hayate confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 05:54:15] UNCOMMITTED-BLOCK: kagemaru files=dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hayate.log logs/inbox_watcher_karo.log logs/inbox_watcher_kotaro.log logs/lesson_tracking.tsv logs/ninja_monitor.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log 
+[2026-03-23 05:54:15] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kagemaru (kagemaru:cmd_1311) — STALL検知は継続
+[pre-send capture] kagemaru pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:54:23] CLEAR-SEND: kagemaru confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 05:54:29] UNCOMMITTED-BLOCK: hanzo files=logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/ninja_monitor.log logs/shogun_action_log.txt 
+[2026-03-23 05:54:29] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hanzo (hanzo:cmd_1307) — STALL検知は継続
+[pre-send capture] hanzo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:54:38] CLEAR-SEND: hanzo confirmed idle, sending /clear, reason=AUTO-CLEAR
