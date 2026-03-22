@@ -1,0 +1,39 @@
+worker_id: hanzo
+task_id: null
+parent_cmd: cmd_1302
+timestamp: '2026-03-23T04:09:20'
+status: complete
+ac_version_read: d41d8cd9
+result:
+  summary: cmd_complete_gate.sh内のarchive_completed.sh呼出しをpreflight(L1581)からGATE CLEAR後(L3816)に移動。報告YAML存在チェック(L1872)がarchiveより確実に先行する順序に修正
+  details: 'preflight内ではarchive: deferredと表示しスキップ。GATE CLEAR判定+全ポストプロセス完了後にarchive_completed.shを実行。GATES_DIRグローバル変数を使用'
+purpose_validation:
+  cmd_purpose: archive→reportチェックの順序逆転を修正しGATE BLOCK誤発火を防止
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/cmd_complete_gate.sh
+lesson_candidate:
+  found: false
+  no_lesson_reason: 順序変更のみ。既知のタイミング問題パターン
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful: []
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - result: PASS
+  - result: PASS
+  AC2:
+  - result: PASS
+  AC3:
+  - result: PASS
+  - result: PASS
+verdict: PASS
