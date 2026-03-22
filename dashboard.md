@@ -1,22 +1,22 @@
-# 🏯 Dashboard [dm-signal] — 2026-03-23 04:31 更新
+# 🏯 Dashboard [dm-signal] — 2026-03-23 04:37 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (04:34 自動更新)
+## 📊 リアルタイム状況 (04:39 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
-| 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1304 | — |
+| 疾風 | claude-opus-4-6 high | idle | cmd_1304 | — |
 | 影丸 | claude-opus-4-6 high | done | cmd_1306 | — |
 | 半蔵 | claude-opus-4-6 high | done | cmd_1307 | — |
 | 才蔵 | claude-opus-4-6 high | done | cmd_1308 | — |
-| 小太郎 | claude-opus-4-6 high | 稼働中 | cmd_1309 | — |
+| 小太郎 | claude-opus-4-6 high | done | cmd_1309 | — |
 | 飛猿 | claude-opus-4-6 high | 稼働中 | cmd_1310 | — |
 
 ### CI Status
 **CI RED: run 23410290395 — Shell Script Linting, Unit Tests (bats)**
 
-**WARN: 17件のcommit未push。`git push`を検討せよ**
+**WARN: 19件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1054/1069 |
-| 稼働忍者 | 5/8 (疾風, 半蔵, 才蔵, 小太郎, 飛猿) |
-| 連勝(CLEAR streak) | 1 (cmd_1306〜cmd_1306) |
+| cmd完了(GATE CLEAR) | 1055/1070 |
+| 稼働忍者 | 2/8 (小太郎, 飛猿) |
+| 連勝(CLEAR streak) | 2 (cmd_1306〜cmd_1307) |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -36,8 +36,8 @@
 ### 知識サイクル健全度
 | 項目 | 値 |
 |------|-----|
-| 教訓注入率 | 75.1% |
-| 教訓効果率 | 56.8% |
+| 教訓注入率 | 75.0% |
+| 教訓効果率 | 57.4% |
 | 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
 | 問題教訓 | 0件 |
 
@@ -78,10 +78,10 @@ Bottom 5 低効果教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
 | L039 | dm-signal | 0 | 2 | 0.0% |
-| L113 | infra | 0 | 2 | 0.0% |
 | L115 | infra | 0 | 2 | 0.0% |
-| L263 | infra | 0 | 2 | 0.0% |
 | L027 | dm-signal | 0 | 1 | 0.0% |
+| L062 | infra | 0 | 1 | 0.0% |
+| L111 | infra | 0 | 1 | 0.0% |
 
 ### Context鮮度警告
 なし
@@ -89,33 +89,30 @@ Bottom 5 低効果教訓
 ### 戦果（直近5件）
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
+| cmd_1307 | — | GATE CLEAR | 03-23 04:36 |
 | cmd_1306 | — | GATE CLEAR | 03-23 04:31 |
 | cmd_1291 | — | GATE CLEAR | 03-23 03:19 |
 | cmd_1288 | — | GATE CLEAR | 03-23 03:05 |
 | cmd_1286 | — | GATE CLEAR | 03-23 02:52 |
-| cmd_1285 | — | GATE CLEAR | 03-23 02:37 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
-## 最新更新 (04:26更新)
-- **cmd_1306**: 完了。 — test_result_guard.sh L95-97のlast_assistant_message混入を除去。bats 36/36 PASS、0 SKIP確認 error 0件、exit 0確認済。影丸完遂
-- **cmd_1301**: 完了。影丸PASS。startup gate bash算術エラー修正(grep -c anti-pattern)
-- **cmd_1302**: 完了。半蔵PASS。archive実行タイミング修正(GATE外完了根絶)
-- **cmd_1303**: 完了。才蔵PASS。uncommittedチェックscope修正(運用ファイル除外)
-- **cmd_1305**: 完了。飛猿PASS。lesson_update_score.sh既にcmd_1283で対応済み確認
+## 最新更新 (04:38更新)
+- **cmd_1304**: 完了。疾風PASS。削除済みスクリプト参照21ファイル処理。残存0件
+- **cmd_1306**: 完了(GATE処理中)。影丸PASS。test_result_guard.sh偽SKIP修正。軍師LGTM
+- **cmd_1307**: 完了(GATE処理中)。半蔵PASS。GP-021 ninja_weak_points自動注入
+- **cmd_1308**: 完了(GATE処理中)。才蔵PASS。gate_workaround_rate.sh新規+統合
+- **cmd_1309**: 完了。小太郎PASS。subtask YAML 47件archive移動
 
 ### パイプライン
 | cmd | 内容 | 忍者 | 状態 |
 |-----|------|------|------|
-| cmd_1304 | 削除済みスクリプト参照クリーンアップ | 疾風 | 稼働中 |
-| cmd_1306 | test_result_guard.sh偽SKIP検出修正 | 影丸 | 稼働中 |
-| cmd_1307 | GP-021 忍者別失敗パターン自動注入 | 半蔵 | 稼働中 |
-| cmd_1308 | workaround率自動計測gate | 才蔵 | 稼働中 |
+| cmd_1310 | CI RED修正(bats L77) | 飛猿 | 稼働中 |
 
 ### idle忍者
-小太郎、飛猿(2名idle)
+影丸、半蔵、才蔵、疾風、小太郎(5名idle)
 
 ## 🚨要対応
 

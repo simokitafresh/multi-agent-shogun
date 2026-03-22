@@ -389,3 +389,25 @@
 - ts: "2026-03-23T04:35:12+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
 - ts: "2026-03-23T04:35:56+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null)"
 - ts: "2026-03-23T04:36:08+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T04:38:21+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T04:38:29+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T04:39:22+09:00", file: "/tmp/report_tpl.CXZ7L6/report.yaml", result: PASS
+- ts: "2026-03-23T04:39:23+09:00", file: "/tmp/report_tpl.vSsF8T/report.yaml", result: PASS
+- ts: "2026-03-23T04:39:23+09:00", file: "/tmp/report_tpl.KyJTUj/report.yaml", result: FAIL, reasons: "binary_checks: is string (must be dict with AC entries)"
+- ts: "2026-03-23T04:39:23+09:00", file: "/tmp/report_tpl.SGZh9O/report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null)"
+- ts: "2026-03-23T04:39:23+09:00", file: "/tmp/report_tpl.uM0xCO/report.yaml", result: FAIL, reasons: "lesson_candidate: found=true but no title"
+- ts: "2026-03-23T04:39:23+09:00", file: "/tmp/report_tpl.kYtP3j/report.yaml", result: FAIL, reasons: "verdict: \"CONDITIONAL_PASS\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T04:39:23+09:00", file: "/tmp/report_tpl.ljIKLX/report.yaml", result: PASS
+- ts: "2026-03-23T04:39:24+09:00", file: "/tmp/report_tpl.DJxKGJ/report.yaml", result: PASS
+- ts: "2026-03-23T04:39:24+09:00", file: "/tmp/report_tpl.iGprQd/report.yaml", result: FAIL, reasons: "verdict: \"None\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T04:39:24+09:00", file: "/tmp/report_tpl.tTTCbV/report.yaml", result: FAIL, reasons: "verdict: \"\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T04:39:24+09:00", file: "/tmp/report_tpl.Ic8nz3/report.yaml", result: FAIL, reasons: "lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists"
+- ts: "2026-03-23T04:39:24+09:00", file: "/tmp/report_tpl.89FO2b/report.yaml", result: FAIL, reasons: "lessons_useful[0]: missing \"id\" field (must have lesson ID like L074)"
+- ts: "2026-03-23T04:39:24+09:00", file: "/tmp/report_tpl.5sbFrI/report.yaml", result: FAIL, reasons: "lessons_useful[0]: useful=yes is str (must be true or false)"
+- ts: "2026-03-23T04:39:25+09:00", file: "/tmp/report_tpl.WTeX1X/report.yaml", result: FAIL, reasons: "lessons_useful[0]: contains FILL_THIS (must fill actual values); lessons_useful[0]: useful=FILL_THIS is str (must be true or false)"
+- ts: "2026-03-23T04:39:25+09:00", file: "/tmp/report_tpl.Pkjx9Q/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is str (must be list of check items)"
+- ts: "2026-03-23T04:39:25+09:00", file: "/tmp/report_tpl.lgzI7S/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is dict (must be list of check items)"
+- ts: "2026-03-23T04:39:25+09:00", file: "/tmp/report_tpl.350VKm/report.yaml", result: FAIL, reasons: "lesson_candidate: found=false but no no_lesson_reason"
+- ts: "2026-03-23T04:40:21+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T04:40:28+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T04:40:49+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS

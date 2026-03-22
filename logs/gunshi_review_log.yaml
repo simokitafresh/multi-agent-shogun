@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 229件 (draft:101, report:108, self_study:26) | 2026-03-20〜
+# 累計: 234件 (draft:103, report:111, self_study:26) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:87 LGTM:87 REQ_CHANGES:8 FAIL:6
+# verdict分布: APPROVE:89 LGTM:88 REQ_CHANGES:8 FAIL:8
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -1032,7 +1032,7 @@
 - cmd_id: cmd_1307
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "GP-021 ninja-adaptive injection。dual-match 93%カバレッジ。YAML3スキーマ混在リスクあり(MEDIUM)。deploy_task.sh統合は堅実"
   timestamp: "2026-03-23T04:30:00"
 - cmd_id: cmd_1308
@@ -1050,3 +1050,54 @@
   findings_summary: "test_result_guard偽SKIP修正。SG0 PASS。commit 92d57c3(L95-97除去+コメント追記)。bats 36/36 PASS。workaround不要"
   lesson_quality: N/A
   timestamp: "2026-03-23T04:35:00"
+- cmd_id: cmd_1309
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "subtask YAML 47件archive移動。mvのみ低リスク。q5で47件検証済み。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T04:40:00"
+- cmd_id: cmd_1310
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "CI RED修正(bats L77)。6日間RED復旧。調査→修正→全テスト→push+CI GREEN。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T04:40:00"
+- cmd_id: cmd_1304
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1304
+  report_verdict: FAIL
+  fail_reasons:
+    - "SG0 FAIL: binary_checks欠落、purpose_validation欠落。LG006適用"
+  gate_result: null
+  findings_summary: "21ファイル注記追加、残存参照0件。実作業問題なし。報告フォーマット非標準"
+  lesson_quality: WEAK
+  timestamp: "2026-03-23T04:40:00"
+- cmd_id: cmd_1307
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1307
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "GP-021 ninja-adaptive injection。SG0 PASS(git show e0565a6確認)。inject_ninja_weak_points L2038存在。binary_checks AC1-AC3全6チェックPASS。context還流推奨(infrastructure.md)"
+  lesson_quality: N/A
+  sg7_bundle:
+    gate_precheck: {report_format: PASS, commit_verified: true, gate_prediction: WARN}
+    lesson_extraction: {has_candidate: false}
+    context_reflux: {needed: true, target: "context/infrastructure.md", content: "GP-021 ninja-adaptive weak points injection完了"}
+    dashboard_line: "cmd_1307 hanzo PASS。deploy_task.shにinject_ninja_weak_points追加。workaround: no"
+    karo_workaround_needed: no
+  timestamp: "2026-03-23T04:40:00"
+- cmd_id: cmd_1308
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1308
+  report_verdict: FAIL
+  fail_reasons:
+    - "報告YAML旧データ残存: parent_cmd不一致、成果物データ未反映"
+  gate_result: null
+  findings_summary: "実装確認済み(ea51afb, gate_workaround_rate.sh 139行)。報告YAML未更新。karo workaround必要"
+  lesson_quality: N/A
+  timestamp: "2026-03-23T04:40:00"

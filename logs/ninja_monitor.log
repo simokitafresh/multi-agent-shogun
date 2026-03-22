@@ -7419,3 +7419,94 @@ STATUS: SUCCESS
   Curl stream:  active
   Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
 [2026-03-23 04:36:48] ntfy_listener restart triggered by health check
+OK: dashboard.md auto section updated (04:37)
+[2026-03-23 04:38:07] STAGE1-TIMEOUT: hayate task_status=assigned stale for 923s, resetting to idle
+[2026-03-23 04:38:07] SKIP_CLEAR: kotaro recent task update (118s ago)
+[2026-03-23 04:38:13] IDLE confirmed: hayate
+[2026-03-23 04:38:20] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:38:21] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:38:28] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:38:29] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:38:36] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:38:48] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:38:48] Batch notification sent to karo: hayate
+[2026-03-23 04:38:48] CDP-CLEANUP-DEBOUNCE: 140s < 300s, skip
+[2026-03-23 04:38:48] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:38:48] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:38:49] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:38:49] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:38:49] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:38:49] STALL-GHOST: tobisaru has status=acknowledged but empty task_id — skipping stall detection
+[2026-03-23 04:38:49] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 04:38:52] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:39:12] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:12] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:12] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:13] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:13] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:13] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:13] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:13] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:13] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:13] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:13] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:13] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:13] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:13] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:14] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:14] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:14] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:14] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:14] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:14] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:14] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:14] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:14] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:14] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:15] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:15] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:15] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:15] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:15] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:15] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:15] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:15] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:15] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 04:39:15] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 04:39:15] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 04:39:15] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+OK: dashboard.md auto section updated (04:39)
+[2026-03-23 04:40:08] AGENT-STATE-CORRECTION: tobisaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:40:08] STAGE1-SKIP: tobisaru idle but task_status=acknowledged, /clear禁止
+[2026-03-23 04:40:20] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:40:21] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:40:27] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:40:28] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:40:35] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:40:46] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:40:49] UNCOMMITTED-BLOCK: kotaro files=dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_gunshi.log logs/inbox_watcher_karo.log logs/ninja_monitor.log queue/tasks/hayate.yaml queue/tasks/kotaro.yaml 
+[2026-03-23 04:40:49] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:40:49] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kotaro (kotaro:cmd_1309) — STALL検知は継続
+[pre-send capture] kotaro pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 04:40:49] IDLE confirmed: kotaro
+[2026-03-23 04:40:56] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: queue/tasks/hayate.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:40:57] Batch notification sent to karo: kotaro
+[2026-03-23 04:40:57] CDP-CLEANUP-DEBOUNCE: 269s < 300s, skip
+[2026-03-23 04:40:57] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:40:57] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:40:57] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:40:57] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:40:57] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:40:57] STALL-GHOST: tobisaru has status=acknowledged but empty task_id — skipping stall detection
+[2026-03-23 04:40:57] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:40:57] RENUDGE-TRANSITION: karo fingerprint changed (unread=16), sending inbox16
+[2026-03-23 04:40:58] AGENT-STATE-CORRECTION: kotaro @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:40:58] RENUDGE-TRANSITION: kotaro fingerprint changed (unread=1), sending inbox1
+[2026-03-23 04:40:59] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
