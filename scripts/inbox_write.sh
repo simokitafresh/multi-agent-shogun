@@ -156,10 +156,12 @@ except:
                         FULL_REPORT="$FALLBACK"
                         echo "[report_format_gate] fallback: report_path未設定 → $(basename "$FALLBACK") を検出" >&2
                     else
-                        echo "[report_format_gate] WARNING: 報告YAML未発見: queue/reports/${FROM}_report_${CMD_ID}*.yaml" >&2
+                        echo "[report_format_gate] BLOCKED: 報告YAMLが見つからない: queue/reports/${FROM}_report_${CMD_ID}*.yaml" >&2
+                        exit 1
                     fi
                 else
-                    echo "[report_format_gate] WARNING: report_path未設定 + parent_cmd未設定 → gate検証スキップ" >&2
+                    echo "[report_format_gate] BLOCKED: 報告YAMLが見つからない: report_path未設定 + parent_cmd未設定 (ninja: ${FROM})" >&2
+                    exit 1
                 fi
             fi
 
@@ -172,7 +174,8 @@ except:
                         exit 1
                     fi
                 else
-                    echo "[report_format_gate] WARNING: 報告ファイルが存在しません: $FULL_REPORT" >&2
+                    echo "[report_format_gate] BLOCKED: 報告YAMLが見つからない: $FULL_REPORT" >&2
+                    exit 1
                 fi
             fi
         fi
