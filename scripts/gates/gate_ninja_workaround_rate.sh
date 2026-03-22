@@ -1,9 +1,10 @@
 #!/bin/bash
 # gate_ninja_workaround_rate.sh — 忍者別workaround率を集計
 # 目的: karo_workarounds.yamlから直近N cmd分の忍者別workaround件数/率を出力
-# Usage: bash scripts/gates/gate_ninja_workaround_rate.sh [--last N] [--quiet]
-#   --last N : 直近N件を対象 (default: 30)
-#   --quiet  : サマリ1行のみ出力 (gate_karo_startup.sh統合用)
+# Usage: bash scripts/gates/gate_ninja_workaround_rate.sh [--last N] [--quiet] [--ninja NAME]
+#   --last N     : 直近N件を対象 (default: 30)
+#   --quiet      : サマリ1行のみ出力 (gate_karo_startup.sh統合用)
+#   --ninja NAME : 指定忍者のみの履歴を表示 (SG9用)
 
 set -e
 
@@ -12,11 +13,13 @@ WA_FILE="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 
 LAST_N=30
 QUIET=false
+NINJA_FILTER=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --last) LAST_N="$2"; shift 2 ;;
         --quiet) QUIET=true; shift ;;
+        --ninja) NINJA_FILTER="$2"; shift 2 ;;
         *) shift ;;
     esac
 done
@@ -30,12 +33,13 @@ if [ ! -f "$WA_FILE" ]; then
     exit 0
 fi
 
-WAFILE="$WA_FILE" LAST_N="$LAST_N" QUIET="$QUIET" python3 << 'PYEOF'
+WAFILE="$WA_FILE" LAST_N="$LAST_N" QUIET="$QUIET" NINJA_FILTER="$NINJA_FILTER" python3 << 'PYEOF'
 import os, re, sys
 
 wa_file = os.environ["WAFILE"]
 last_n = int(os.environ["LAST_N"])
 quiet = os.environ["QUIET"] == "true"
+ninja_filter = os.environ.get("NINJA_FILTER", "")
 
 # --- ninja name mapping (Japanese → romaji) ---
 NINJA_JP_MAP = {
@@ -164,6 +168,28 @@ for entry in target:
 # --- Calculate totals ---
 total_wa = sum(s["workaround"] for s in stats.values())
 total_clean = total - total_wa
+
+# --- Ninja filter mode (SG9) ---
+if ninja_filter:
+    s = stats.get(ninja_filter, {"total": 0, "workaround": 0})
+    if s["total"] == 0:
+        print(f"=== {ninja_filter} workaround履歴 (直近{total}件中) ===")
+        print(f"  担当件数: 0 — 対象期間にエントリなし")
+    else:
+        rate = s["workaround"] / s["total"] * 100
+        print(f"=== {ninja_filter} workaround履歴 (直近{total}件中) ===")
+        print(f"  担当件数: {s['total']}  WA件数: {s['workaround']}  WA率: {rate:.1f}%")
+        # Show individual workaround entries for this ninja
+        wa_entries = [e for e in target if extract_ninja(e) == ninja_filter and is_workaround(e)]
+        if wa_entries:
+            print(f"  直近workaround詳細:")
+            for e in wa_entries[-5:]:
+                cmd = e.get("cmd", e.get("cmd_id", "?"))
+                cat = e.get("category", e.get("root_cause", "?"))
+                print(f"    - {cmd}: {cat}")
+        else:
+            print(f"  workaroundなし: clean")
+    sys.exit(0)
 
 # --- Output ---
 if quiet:

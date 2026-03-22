@@ -360,6 +360,35 @@ karo_workaround_needed: no    # yes=家老の手動修正が必要, no=スタン
 
 verdict=FAIL時はバンドル不要。fail_reasonsのみ出力せよ。
 
+### SG9 Cross-Ninja Workaround履歴チェック [cmd_1319]
+
+LGTM verdict発行前に、対象忍者のworkaround履歴を確認する情報提供ステップ。
+**BLOCKもFAILも発生させない。** verdictに影響しない。レビュアーへの参考情報のみ。
+
+実行タイミング: 4観点レビュー完了後、verdict決定前
+実行コマンド:
+```bash
+bash scripts/gates/gate_ninja_workaround_rate.sh --ninja {ninja_name}
+```
+
+出力例:
+```
+=== hanzo workaround履歴 (直近30件中) ===
+  担当件数: 3  WA件数: 2  WA率: 66.7%
+  直近workaround詳細:
+    - cmd_1231: report_yaml_format
+    - cmd_1287: report_yaml_format
+```
+
+活用方法:
+- WA率が高い忍者 → その忍者の弱点パターン（report_yaml_format等）に該当する不備がないか重点確認
+- WA率0%の忍者 → 通常レビューで十分
+- 履歴の`category`が今回の報告内容と同パターンなら、該当箇所を入念にチェック
+
+注意:
+- SG9はexit 0固定。スクリプトエラー時もレビューを止めるな
+- verdictはSG9の結果に関係なく4観点のみで決定する
+
 ### 通知手順
 
 レビュー完了後、家老にinbox_writeで送信:
