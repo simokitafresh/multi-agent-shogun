@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 263件 (draft:105, report:113, self_study:51) | 2026-03-20〜
+# 累計: 264件 (draft:105, report:113, self_study:52) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -1322,3 +1322,8 @@
       description: "gate_report_autofix.sh Fix8: bc dict→list wrap。30回FAILの68%を自動修正"
       status: pending
   timestamp: "2026-03-23T08:15:00"
+- cmd_id: self_study_S73
+  review_type: self_study
+  findings_summary: "教訓注入率歴史推移(50cmd batch単位CLEAR分)。350-499:91-96%(黄金期)→550-599:30%(第1次低下)→600-1099:42-82%(変動期)→1100-1149:20%(第2次低下)→1200-1249:82%(回復)→1250-1299:62%(GP-028前baseline)→1300-1312:0%(完全崩壊=史上最悪)。(1)0%は全歴史で初。過去最低は20%(cmd_1100-1149)。(2)GP-028の影響範囲: 11 CLEAR全てでinjected=none。dashboard教訓注入率74.2%は1250以前の蓄積。1300+が継続すれば急落する。(3)崩壊タイミング: cmd_1301が分水嶺。deploy_task.shのnormalize_task_yaml(flat→nested変換)がidle YAMLに実行→project fieldなし→全inject関数でproject=''→related_lessons=[]。(4)回復後予測: GP-028実装→注入率はbaseline62%に回復。さらにGP-028がidle YAMLスキップも実装すれば100%inject対象(=project付きcmd)での注入率は95%+に到達可能"
+  proposals: []
+  timestamp: "2026-03-23T08:20:00"

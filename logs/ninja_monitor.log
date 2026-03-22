@@ -9404,3 +9404,79 @@ no changes added to commit (use "git add" and/or "git commit -a")
 [2026-03-23 06:06:28] RENUDGE-RESET: tobisaru unread=0, fingerprint+counter reset
 [2026-03-23 06:06:28] SHOGUN-ALERT-DEBOUNCE: shogun CTX:56% but 141s < 1800s since last alert
 [2026-03-23 06:06:34] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (06:06)
+[2026-03-23 06:07:27] AUTO-RESTART: Change detected (script) [script:e0f3afae4bad282aca9a4c918bcfa0ae→a1f8879f08c9c63af13c01547aa3180c deps:1390f7261a536ae5b300e6faa683c97a→1390f7261a536ae5b300e6faa683c97a], restarting...
+[2026-03-23 06:07:27] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 06:07:27] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 06:07:27] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 06:07:27] Pane discovery: 6/6 ninja found
+[2026-03-23 06:07:48] ACTIVE: hayate resumed work
+[2026-03-23 06:07:56] UNCOMMITTED-BLOCK: kagemaru files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_karo.log logs/ninja_monitor.log 
+[2026-03-23 06:07:56] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kagemaru (kagemaru:cmd_1311) — STALL検知は継続
+[pre-send capture] kagemaru pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:23%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[inbox_mark_read] Marked 1 message(s) as read for kagemaru
+[2026-03-23 06:08:01] CLEAR-SEND: kagemaru confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:08:04] UNCOMMITTED-BLOCK: hanzo files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/ninja_monitor.log logs/shogun_action_log.txt 
+[2026-03-23 06:08:04] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hanzo (hanzo:cmd_1307) — STALL検知は継続
+[pre-send capture] hanzo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[inbox_mark_read] Marked 1 message(s) as read for hanzo
+[2026-03-23 06:08:09] CLEAR-SEND: hanzo confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:08:14] UNCOMMITTED-BLOCK: saizo files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/ninja_monitor.log logs/shogun_action_log.txt 
+[2026-03-23 06:08:14] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for saizo (saizo:cmd_1308) — STALL検知は継続
+[pre-send capture] saizo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 06:08:14] CLEAR-SKIP: saizo CTX=0%, already clean (1/10)
+[2026-03-23 06:08:17] UNCOMMITTED-BLOCK: kotaro files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/inbox_watcher_saizo.log logs/ninja_monitor.log logs/shogun_action_log.txt 
+[2026-03-23 06:08:17] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kotaro (kotaro:cmd_1309) — STALL検知は継続
+[pre-send capture] kotaro pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[inbox_mark_read] Marked 1 message(s) as read for kotaro
+[2026-03-23 06:08:24] CLEAR-SEND: kotaro confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:08:27] UNCOMMITTED-BLOCK: tobisaru files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/inbox_watcher_kotaro.log logs/inbox_watcher_saizo.log logs/ninja_monitor.log logs/shogun_action_log.txt 
+[2026-03-23 06:08:27] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for tobisaru (tobisaru:cmd_1310) — STALL検知は継続
+[pre-send capture] tobisaru pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[inbox_mark_read] Marked 1 message(s) as read for tobisaru
+[2026-03-23 06:08:36] CLEAR-SEND: tobisaru confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:08:36] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:08:36] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:08:36] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:08:37] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:08:37] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:08:37] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:08:37] RENUDGE-TRANSITION: karo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 06:08:38] AGENT-STATE-CORRECTION: saizo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:08:38] RENUDGE-TRANSITION: saizo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 06:08:39] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip

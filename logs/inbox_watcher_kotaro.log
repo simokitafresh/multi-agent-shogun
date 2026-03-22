@@ -2931,3 +2931,8 @@ Terminated
 [Mon Mar 23 06:05:00 JST 2026] Wake-up sent to kotaro (1 unread via paste-buffer)
 [Mon Mar 23 06:05:00 JST 2026] [RETRY] Nudge unacknowledged, retry 1/3 for kotaro
 [Mon Mar 23 06:05:14 JST 2026] [FP-RESET] No unread, cleared fingerprint for kotaro
+[Mon Mar 23 06:08:18 JST 2026] [FP-CHANGE] Unread set changed for kotaro (1 unread), sending nudge
+[Mon Mar 23 06:08:18 JST 2026] [NUDGE] Sending paste-buffer nudge to kotaro
+[Mon Mar 23 06:08:19 JST 2026] Set kotaro @agent_state to active after nudge
+[Mon Mar 23 06:08:19 JST 2026] Wake-up sent to kotaro (1 unread via paste-buffer)
+[Mon Mar 23 06:08:24 JST 2026] [FP-RESET] No unread, cleared fingerprint for kotaro
