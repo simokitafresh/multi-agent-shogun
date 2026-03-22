@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 211件 (draft:93, report:100, self_study:24) | 2026-03-20〜
+# 累計: 219件 (draft:99, report:101, self_study:25) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:81 LGTM:86 REQ_CHANGES:8 FAIL:6
+# verdict分布: APPROVE:87 LGTM:87 REQ_CHANGES:8 FAIL:6
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -34,8 +34,11 @@
 # | 018 | /clear前commit検査    | pending            | S40  | ninja_monitor git status。GP-014と補完関係。優先2 |
 # | 019 | L247 gate強制          | pending            | S40  | found:false理由なし→BLOCK。教訓ループ閉鎖。優先2 |
 # | 020 | lesson候補ハーベスト   | pending            | S40  | 82.8%消失対策。定期スキャン。優先3 |
-# 集計: ★implemented:14 / ✗obsolete:2 / pending:4
-# 将軍推薦順: GP-016→GP-018→GP-019→GP-020
+# | 021 | ninja-adaptive注入    | pending            | S43  | deploy_task.sh忍者名ベース失敗パターン注入。次世代 |
+# | 022 | bc evidence必須化     | pending            | S43  | binary_checksにevidence(出力snippet)必須。次世代 |
+# | 023 | SG9 cross-ninja検出   | pending            | S43  | LGTM前に忍者workaround履歴チェック。次世代 |
+# 集計: ★implemented:14 / ✗obsolete:2 / pending:4(cmd化済) / pending(次世代):3
+# 将軍推薦順: GP-016→GP-018→GP-019→GP-020 | 次世代: GP-021→GP-023→GP-022
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -853,3 +856,68 @@
       description: "lesson_candidate定期ハーベスト。82.8%消失対策。未登録候補のアーカイブスキャン"
       status: pending
   timestamp: "2026-03-23T03:30:00"
+- cmd_id: cmd_1294
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1294
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "PreToolUse DENY hookでreport YAML直接書込み防止。SG0 PASS。commit 0fab225確認。settings.local.json登録済。テスト4パターンPASS。GP-003完遂"
+  lesson_quality: N/A
+  sg7_bundle:
+    gate_precheck: {report_format: PASS, commit_verified: true, gate_prediction: CLEAR}
+    lesson_extraction: {has_candidate: false}
+    context_reflux: {needed: true, target: "context/infrastructure.md", content: "GP-003 PreToolUse DENY hookでreport YAML直接書込み防止完了"}
+    dashboard_line: "cmd_1294 hanzo PASS。PreToolUse DENY hook実装(GP-003完遂)。workaround: no"
+    karo_workaround_needed: no
+  timestamp: "2026-03-23T03:40:00"
+- cmd_id: cmd_1295
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "軍師startup gate+archive競合修正。将軍作成済みの検証+commit。3AC明確。SG8: 該当なし。confidence:HIGH"
+  timestamp: "2026-03-23T03:40:00"
+- cmd_id: cmd_1296
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-018 ninja_monitor /clear前git uncommittedチェック。S40分析直結。3AC明確。SG8: 該当なし。confidence:HIGH"
+  timestamp: "2026-03-23T03:40:00"
+- cmd_id: cmd_1297
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-015教訓退役制度。S32 Bottom5分析直結(参照率0%=44件/無駄339回)。retired flag+deploy_task skip。3AC明確。SG8: 該当なし。confidence:HIGH"
+  timestamp: "2026-03-23T03:40:00"
+- cmd_id: cmd_1298
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-016 Bash reportリダイレクト検出hook。S38分析直結。Write/Edit DENY(GP-003)のBashすり抜け補完。正規表現パターンマッチ。3AC明確。SG8: 該当なし。confidence:HIGH"
+  timestamp: "2026-03-23T03:40:00"
+- cmd_id: cmd_1299
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-019 L247 gate強制。S40分析直結。found:false理由品質(3文字以下/プレースホルダ→FAIL)。既存正常報告への影響なし。3AC明確。SG8: 該当なし。confidence:HIGH"
+  timestamp: "2026-03-23T03:40:00"
+- cmd_id: cmd_1300
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-020 lesson候補ハーベスト。S40分析直結(82.8%消失対策)。archive報告スキャン+未登録候補一覧化。3AC明確。SG8: 該当なし。confidence:HIGH"
+  timestamp: "2026-03-23T03:40:00"
+- cmd_id: self_study_S43
+  review_type: self_study
+  findings_summary: "利他サイクル6: GP-016-020実装後の世界分析。3エージェント並列調査。発見: (1)binary_checks自己申告=検証なし(purpose_validation.fit=100% rubber stamp)。(2)忍者間知識流通は broadcast not network(deploy_task.sh教訓注入は100% generic、忍者名不使用)。(3)軍師blind spot=stateless after /clear(cross-ninja pattern検出不能)。(4)lesson_candidate pipeline=input-strong output-broken(忍者の質は良いが82.8%消失)。次世代GP候補: SG9(cross-ninja pattern検出)、binary_checks evidence field、ninja-adaptive lesson injection"
+  proposals:
+    - id: GP-021
+      description: "ninja-adaptive lesson injection — deploy_task.shに忍者名ベースの過去失敗パターン注入"
+      status: pending
+    - id: GP-022
+      description: "binary_checks evidence field — 非自明なチェックにevidence(出力スニペット)を必須化"
+      status: pending
+    - id: GP-023
+      description: "SG9 cross-ninja pattern検出 — LGTM前に当該忍者のworkaround履歴チェック"
+      status: pending
+  timestamp: "2026-03-23T03:45:00"

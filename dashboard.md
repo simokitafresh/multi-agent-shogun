@@ -1,22 +1,22 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 03:20 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (03:42 自動更新)
+## 📊 リアルタイム状況 (03:47 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
 | 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1298 | — |
-| 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1299 | — |
+| 影丸 | claude-opus-4-6 high | done | cmd_1299 | — |
 | 半蔵 | claude-opus-4-6 high | 稼働中 | cmd_1300 | — |
-| 才蔵 | claude-opus-4-6 high | 稼働中 | cmd_1296 | — |
+| 才蔵 | claude-opus-4-6 high | done | cmd_1296 | — |
 | 小太郎 | claude-opus-4-6 high | 稼働中 | cmd_1297 | — |
 | 飛猿 | claude-opus-4-6 high | done | cmd_1295 | — |
 
 ### CI Status
 **CI RED: run 23403709313 — E2E Tests**
 
-**WARN: 46件のcommit未push。`git push`を検討せよ**
+**WARN: 49件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -25,7 +25,7 @@
 | 項目 | 値 |
 |------|-----|
 | cmd完了(GATE CLEAR) | 1053/1064 |
-| 稼働忍者 | 6/8 (疾風, 影丸, 半蔵, 才蔵, 小太郎, 飛猿) |
+| 稼働忍者 | 4/8 (疾風, 影丸, 半蔵, 小太郎) |
 | 連勝(CLEAR streak) | 0 |
 
 ### モデル別スコアボード

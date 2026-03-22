@@ -1,38 +1,26 @@
-progress: AC1-3 PASS。全完了
+progress: 'AC1-AC2 PASS。AC3 partial FAIL: gate_gunshi_startup.shが.gitignore除外で未commit'
 status: idle
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 09a93f75
+  ac_version: f3931e7c
   acceptance_criteria:
   - binary_checks:
-    - check: bash scripts/gates/gate_gunshi_startup.sh がエラーなく完了するか
+    - check: git ls-files scripts/gates/gate_gunshi_startup.sh で出力があるか
       result: ''
-    description: gate_gunshi_startup.shが6項目チェックを正常出力すること
+    description: gate_gunshi_startup.shがgit追跡対象になりcommitされていること
     id: AC1
-  - binary_checks:
-    - check: preflight_gate_flags()でreview_gate.doneブロックがarchive.doneブロックの前にあるか
-      result: ''
-    description: cmd_complete_gate.shのpreflight順序がreview_gate→archiveであること
-    id: AC2
-  - binary_checks:
-    - check: 3ファイルがcommitされているか
-      result: ''
-    description: 3ファイルがcommitされていること
-    id: AC3
   bloom_level: ''
   cmd_id: cmd_1295
-  command: "将軍が既に以下3ファイルを変更済み。差分確認+テスト+commitせよ。\n1. scripts/gates/gate_gunshi_startup.sh（新規作成）\n\
-    2. scripts/cmd_complete_gate.sh（preflight順序: review_gate→archive）\n3. instructions/gunshi.md（/clear\
-    \ Recovery手順にgate追加）\n\n■ AC1: bash scripts/gates/gate_gunshi_startup.sh をbash実行して\n\
-    \       エラーなく6項目チェックが出力されること\n■ AC2: cmd_complete_gate.shのpreflight_gate_flags()で\n\
-    \       review_gate.doneブロックがarchive.doneブロックの前にあること（コード目視確認）\n■ AC3: 上記3ファイルをcommitすること\n"
-  deployed_at: '2026-03-23T03:38:33'
+  command: 'cmd_1295 AC3の修正。gate_gunshi_startup.shが.gitignoreで除外されておりcommitされていない。
+
+    git add -f scripts/gates/gate_gunshi_startup.sh でforce addしてcommitせよ。
+
+    git ls-files scripts/gates/gate_gunshi_startup.sh で追跡されていることを確認せよ。
+
+    '
+  deployed_at: '2026-03-23T03:47:22'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
-    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
     ────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -45,10 +33,7 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
+  parallel_ok: []
   parent_cmd: cmd_1295
   project: infra
   related_lessons:
@@ -63,14 +48,6 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-    id: L097
-    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-  - detail: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
-      '_report\.yaml')で影響範囲を完全列挙してからスコープを
-    id: L085
-    summary: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
-      '_report\.yaml')で影響範囲を完全列挙してからスコープを
   report_filename: tobisaru_report_cmd_1295.yaml
   report_path: queue/reports/tobisaru_report_cmd_1295.yaml
   report_template:
@@ -87,7 +64,6 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: assigned
   stop_for: []
-  target_path: scripts/gates/gate_gunshi_startup.sh
   task_type: implement

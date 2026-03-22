@@ -800,7 +800,12 @@ try:
     confirmed_lessons = []
     filtered_draft = 0
     filtered_deprecated = 0
+    filtered_retired = 0
     for lesson in lessons:
+        # Skip retired lessons (cmd_1297: 退役制度)
+        if lesson.get('retired', False):
+            filtered_retired += 1
+            continue
         l_status = str(lesson.get('status', 'confirmed')).lower()
         if l_status == 'deprecated':
             filtered_deprecated += 1
@@ -982,7 +987,7 @@ try:
     tag_candidate_count = len(tag_candidates)
     print(f'[INJECT] Injected {len(related)} lessons (universal={universal_added}/{universal_total_count}, task_specific={len(related)-universal_added}, platform={platform_count}): {ids}', file=sys.stderr)
     print(f'[INJECT]   project={project} {tag_info} scored={scored_count}/{tag_candidate_count} top_scores={[(s,i) for s,i,_ in scored[:5]]}', file=sys.stderr)
-    print(f'[INJECT]   filtered: draft={filtered_draft} deprecated={filtered_deprecated}', file=sys.stderr)
+    print(f'[INJECT]   filtered: draft={filtered_draft} deprecated={filtered_deprecated} retired={filtered_retired}', file=sys.stderr)
     dedup_removed = pre_dedup_count - len(scored)
     print(f'[INJECT]   dedup: {dedup_removed} duplicates removed (threshold={DEDUP_THRESHOLD})', file=sys.stderr)
 

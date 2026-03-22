@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-03-23 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-03-23T03:40:44+09:00 -->
+<!-- generated_at: 2026-03-23T03:46:52+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-03-23T03:46:51+09:00 | terminal | response | 起動完了。状況を把握した。 **現在の状態:** - 6cmd並列配備中（cmd_1295〜1300）— GP総点検関連 - 才蔵(cmd_1296)・飛猿(cmd_1295): **done** - 疾風(1298)・影丸(1299)・…
+- 2026-03-23T03:43:05+09:00 | ntfy | outbound | 【家老】cmd_1300 初回配備開始 (title=(untitled), ninja=hanzo) GP-020 lesson候補ハーベスト（未登録候補定期スキャン） 📋 https://gist.github.com/simokit…
+- 2026-03-23T03:42:35+09:00 | ntfy | outbound | 【家老】cmd_1299 初回配備開始 (title=(untitled), ninja=kagemaru) GP-019 lesson_candidate L247 gate強制 📋 https://gist.github.com/si…
+- 2026-03-23T03:42:30+09:00 | ntfy | outbound | 【monitor】将軍CTX:61%。/compactをご検討ください
+- 2026-03-23T03:42:01+09:00 | ntfy | outbound | 【家老】cmd_1298 初回配備開始 (title=(untitled), ninja=hayate) GP-016 Bash reportリダイレクト検出hook 📋 https://gist.github.com/simokitaf…
 - 2026-03-23T03:40:44+09:00 | terminal | response | 発令完了。全GP cmd一覧: | cmd | GP | 内容 | 優先度 | |-----|-----|------|--------| | cmd_1295 | — | 軍師startup gate + archive競合修正 | h…
 - 2026-03-23T03:39:22+09:00 | ntfy | outbound | 【家老】cmd_1297 初回配備開始 (title=(untitled), ninja=kotaro) GP-015 教訓退役制度（retired flag + lessons索引除外） 📋 https://gist.github.co…
 - 2026-03-23T03:38:54+09:00 | ntfy | outbound | 【家老】cmd_1296 初回配備開始 (title=(untitled), ninja=saizo) GP-018 ninja_monitor /clear前 git uncommittedチェック 📋 https://gist.git…
 - 2026-03-23T03:38:32+09:00 | ntfy | outbound | 【家老】cmd_1295 初回配備開始 (title=(untitled), ninja=tobisaru) 軍師startup gate新設 + archive競合順序修正 📋 https://gist.github.com/simok…
 - 2026-03-23T03:36:15+09:00 | ntfy | outbound | 【将軍】cmd_1295/1296/1297発令。GP-018(uncommittedチェック)+GP-015(教訓退役)+gunshi gate新設。家老に委任済み。
-- 2026-03-23T03:36:15+09:00 | terminal | response | 発令完了。 | cmd | 内容 | 優先度 | GP | |-----|------|--------|-----| | cmd_1295 | 軍師startup gate + archive競合修正 | high | — | | cm…
-- 2026-03-23T03:32:10+09:00 | ntfy | outbound | 【INFOバッチ】 2026-03-23 03:18:02|cmd_1290 2026-03-23 03:20:30|cmd_1291
-- 2026-03-23T03:30:18+09:00 | ntfy | outbound | 【karo】cmd_1290-1294全5cmd完了処理済み。GATE/archive timing競合を将軍宛要対応に記載。6名idle。/clear実行。
-- 2026-03-23T03:29:41+09:00 | terminal | response | 状況整理: **進行中**: cmd_1293 影丸(CLAUDE.md Step4.5), cmd_1294 半蔵(report DENY hook) — GP-016/017 **idle**: 疾風、才蔵、小太郎、飛猿（4名） **…
-- 2026-03-23T03:26:47+09:00 | terminal | response | 完了。変更まとめ: **1. 軍師スタートアップゲート新設** - `scripts/gates/gate_gunshi_startup.sh` — 6項目チェック（deepdive/inbox/レビューログ統計/workaround傾向…
 
 ## 未解決確認事項
 - 完了。変更まとめ: **1. 軍師スタートアップゲート新設** - `scripts/gates/gate_gunshi_startup.sh` — 6項目チェック（deepdive/inbox/レビューログ統計/workaround傾向/教訓/GATE未確認） - `inst…
@@ -45,7 +45,6 @@
 - cmd_1260
 - cmd_1263
 - cmd_1265
-- cmd_1267
 - cmd_1268
 - cmd_1269
 - cmd_1270
@@ -66,6 +65,7 @@
 - cmd_1285
 - cmd_1286
 - cmd_1287
+- cmd_1288
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
