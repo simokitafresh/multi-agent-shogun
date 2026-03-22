@@ -21,9 +21,14 @@ lesson_candidate:
   detail: ''
   project: infra
 lessons_useful:
-- useful: true
-  reason: PASS=1形式を意識。本スクリプトはPython実装のため直接該当しないが算術評価回避の原則として有用
-- useful: true
+- id: L074
+  useful: true
+  reason: PASS=$((PASS+1))形式を意識。本スクリプトはPython実装のため直接該当しないが算術評価回避の原則として有用
+- id: L225
+  useful: false
+  reason: ''
+- id: L063
+  useful: true
   reason: data.get('lessons',[])でlessons.yamlを正しくパース。直接イテレーション回避に役立った
 skill_candidate:
   found: false
@@ -34,10 +39,14 @@ hook_failures:
   details: ''
 binary_checks:
   AC1:
-  - result: PASS
-  - result: PASS
+  - check: lesson_harvest.shが存在し実行可能か
+    result: PASS
+  - check: アーカイブ報告のスキャンが動作するか
+    result: PASS
   AC2:
-  - result: PASS
+  - check: 候補0件時に「未登録候補なし」と出力されるか
+    result: PASS
   AC3:
-  - result: PASS
+  - check: bash scripts/lesson_harvest.sh がエラーなく完了するか
+    result: PASS
 verdict: PASS
