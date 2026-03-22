@@ -3574,3 +3574,51 @@
 [2026-03-23 04:25:54] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
 [2026-03-23 04:25:54] [DEPLOY] preflight_gate: cmd_1308 — artifact事前生成完了
 [2026-03-23 04:25:54] [DEPLOY] saizo: deployment complete (type=task_assigned)
+[2026-03-23 04:32:39] [DEPLOY] kotaro: CTX=0%, idle=true, task_status=assigned, pane=shogun:agents.7
+[2026-03-23 04:32:39] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 04:32:39] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 04:32:39] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 04:32:39] [DEPLOY] [AC_VERSION] set: None -> d41d8cd9
+[2026-03-23 04:32:40] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 04:32:40] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 04:32:40] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 04:32:40] [DEPLOY] [ROLE_REMINDER] Injected for kotaro
+[2026-03-23 04:32:40] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 04:32:40] [DEPLOY] [REPORT_FN] Injected report_filename=kotaro_report.yaml
+[2026-03-23 04:32:40] [DEPLOY] [BLOOM_LVL] Injected bloom_level (empty)
+[2026-03-23 04:32:40] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 04:32:41] [DEPLOY] [NINJA_WP] kotaro: 0 workarounds, skipping injection
+[2026-03-23 04:32:41] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 04:32:41] [DEPLOY] kotaro: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)
+[2026-03-23 04:32:57] [DEPLOY] dispatch_ntfy: sent (cmd_1309) title='untitled' ninja=kotaro
+[2026-03-23 04:32:57] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml)
+[2026-03-23 04:32:57] [DEPLOY] report_path: set (queue/reports/kotaro_report.yaml)
+[2026-03-23 04:32:57] [DEPLOY] [DEPLOYED_AT] Recorded: 2026-03-23T04:32:57
+[2026-03-23 04:32:58] [DEPLOY] preflight_gate: cmd_1309 — artifact事前生成開始
+[2026-03-23 04:32:58] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
+[2026-03-23 04:32:58] [DEPLOY] preflight_gate: cmd_1309 — artifact事前生成完了
+[2026-03-23 04:32:58] [DEPLOY] kotaro: deployment complete (type=task_assigned)
+[2026-03-23 04:32:58] [DEPLOY] tobisaru: CTX=0%, idle=true, task_status=assigned, pane=shogun:agents.8
+[2026-03-23 04:32:58] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 04:32:58] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 04:32:58] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 04:32:58] [DEPLOY] [AC_VERSION] set: None -> d41d8cd9
+[2026-03-23 04:32:58] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 04:32:59] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 04:32:59] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 04:32:59] [DEPLOY] [ROLE_REMINDER] Injected for tobisaru
+[2026-03-23 04:32:59] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 04:32:59] [DEPLOY] [REPORT_FN] Injected report_filename=tobisaru_report.yaml
+[2026-03-23 04:32:59] [DEPLOY] [BLOOM_LVL] Injected bloom_level (empty)
+[2026-03-23 04:32:59] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 04:32:59] [DEPLOY] [NINJA_WP] tobisaru: 1 workarounds injected (top: commit_missing=1)
+[2026-03-23 04:33:00] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 04:33:00] [DEPLOY] tobisaru: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)
+[2026-03-23 04:33:15] [DEPLOY] dispatch_ntfy: sent (cmd_1310) title='untitled' ninja=tobisaru
+[2026-03-23 04:33:15] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml)
+[2026-03-23 04:33:15] [DEPLOY] report_path: set (queue/reports/tobisaru_report.yaml)
+[2026-03-23 04:33:15] [DEPLOY] [DEPLOYED_AT] Recorded: 2026-03-23T04:33:15
+[2026-03-23 04:33:15] [DEPLOY] preflight_gate: cmd_1310 — artifact事前生成開始
+[2026-03-23 04:33:15] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
+[2026-03-23 04:33:15] [DEPLOY] preflight_gate: cmd_1310 — artifact事前生成完了
+[2026-03-23 04:33:15] [DEPLOY] tobisaru: deployment complete (type=task_assigned)

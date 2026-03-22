@@ -66,7 +66,7 @@ teardown() {
 
     run python3 -c "
 import yaml
-with open('$TEST_PROJECT/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+with open('$TEST_PROJECT/projects/testproj/lessons_archive.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
 lesson = data['lessons'][0]
 assert lesson['id'] == 'L001'

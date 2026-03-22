@@ -1,22 +1,22 @@
-# 🏯 Dashboard [dm-signal] — 2026-03-23 03:20 更新
+# 🏯 Dashboard [dm-signal] — 2026-03-23 04:31 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (04:27 自動更新)
+## 📊 リアルタイム状況 (04:34 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
 | 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1304 | — |
-| 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1306 | — |
-| 半蔵 | claude-opus-4-6 high | 稼働中 | cmd_1307 | — |
-| 才蔵 | claude-opus-4-6 high | 稼働中 | cmd_1308 | — |
-| 小太郎 | claude-opus-4-6 high | done | cmd_1297 | — |
-| 飛猿 | claude-opus-4-6 high | done | cmd_1295 | — |
+| 影丸 | claude-opus-4-6 high | done | cmd_1306 | — |
+| 半蔵 | claude-opus-4-6 high | done | cmd_1307 | — |
+| 才蔵 | claude-opus-4-6 high | done | cmd_1308 | — |
+| 小太郎 | claude-opus-4-6 high | 稼働中 | cmd_1309 | — |
+| 飛猿 | claude-opus-4-6 high | 稼働中 | cmd_1310 | — |
 
 ### CI Status
 **CI RED: run 23410290395 — Shell Script Linting, Unit Tests (bats)**
 
-**WARN: 11件のcommit未push。`git push`を検討せよ**
+**WARN: 17件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1053/1068 |
-| 稼働忍者 | 4/8 (疾風, 影丸, 半蔵, 才蔵) |
-| 連勝(CLEAR streak) | 0 |
+| cmd完了(GATE CLEAR) | 1054/1069 |
+| 稼働忍者 | 5/8 (疾風, 半蔵, 才蔵, 小太郎, 飛猿) |
+| 連勝(CLEAR streak) | 1 (cmd_1306〜cmd_1306) |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -36,7 +36,7 @@
 ### 知識サイクル健全度
 | 項目 | 値 |
 |------|-----|
-| 教訓注入率 | 75.2% |
+| 教訓注入率 | 75.1% |
 | 教訓効果率 | 56.8% |
 | 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
 | 問題教訓 | 0件 |
@@ -89,17 +89,18 @@ Bottom 5 低効果教訓
 ### 戦果（直近5件）
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
+| cmd_1306 | — | GATE CLEAR | 03-23 04:31 |
 | cmd_1291 | — | GATE CLEAR | 03-23 03:19 |
 | cmd_1288 | — | GATE CLEAR | 03-23 03:05 |
 | cmd_1286 | — | GATE CLEAR | 03-23 02:52 |
 | cmd_1285 | — | GATE CLEAR | 03-23 02:37 |
-| cmd_1284 | — | GATE CLEAR | 03-23 02:33 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
 ## 最新更新 (04:26更新)
+- **cmd_1306**: 完了。 — test_result_guard.sh L95-97のlast_assistant_message混入を除去。bats 36/36 PASS、0 SKIP確認 error 0件、exit 0確認済。影丸完遂
 - **cmd_1301**: 完了。影丸PASS。startup gate bash算術エラー修正(grep -c anti-pattern)
 - **cmd_1302**: 完了。半蔵PASS。archive実行タイミング修正(GATE外完了根絶)
 - **cmd_1303**: 完了。才蔵PASS。uncommittedチェックscope修正(運用ファイル除外)

@@ -83,7 +83,7 @@ language:
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
-2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-8の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
+2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
 3. **Read your instructions file**: shogun→`instructions/generated/codex-shogun.md`, karo→`instructions/generated/codex-karo.md`, ninja(忍者)→`instructions/generated/codex-ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
 
@@ -95,6 +95,10 @@ language:
   報告は家老のみ。将軍・殿に語りかけるな。
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
+
+★ 自動消火禁止: 問題を隠す変更をするな。表面的な対処は根源を覆い改革の動機を殺す。
+  「この変更は何を隠すか？根源的問題を先送りしないか？」を常に自問せよ。
+  疑問があればdecision_candidateに書け。理解だけでは行動は変わらない。自問を習慣化せよ。
 
 ★ 学習ループ: 全作業に回せ。
   AC完了ごとに二値チェック(binary_checks欄)で自己検証。
@@ -125,6 +129,10 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
 
+★ 自動消火禁止: 問題を隠す変更をするな。表面的な対処は根源を覆い改革の動機を殺す。
+  「この変更は何を隠すか？根源的問題を先送りしないか？」を常に自問せよ。
+  疑問があればdecision_candidateに書け。理解だけでは行動は変わらない。自問を習慣化せよ。
+
 ★ 学習ループ: 全作業に回せ。
   AC完了ごとに二値チェック(binary_checks欄)で自己検証。
   FAIL→即停止・原因報告。PASS→次ACへ。
@@ -139,9 +147,10 @@ Step 3.5: If task has "related_lessons:" →
           （reviewed儀式は廃止 — cmd_533）
 Step 4: If task has "project:" field:
           read projects/{project}.yaml (core knowledge)
-          read projects/{project}/lessons.yaml (project lessons)
           read context/{project}.md (detailed context)
         If task has "target_path:" → read that file
+Step 4.5: If task has "report_path:" field → Read that file as report template.
+          報告YAMLはこのテンプレートをベースに作成せよ。新規作成禁止。
 Step 5: Start work
 ```
 
@@ -161,6 +170,12 @@ Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を
   - 報告受領→レビュー時: §3レビューサイクル
   - 教訓抽出時: §5教訓抽出
 Step 2.8: logs/karo_workarounds.yamlの直近10件を読む（前セッションの修正履歴把握）
+Step 2.85: Read memory/deepdive_why_chain_20260321.md（毎セッション必読・省略厳禁）
+  結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追え。
+  特にPhase 4「LLMに生存本能はない→自動化×強制」と
+  Phase 5「なぜの目的=自動化ターゲット特定」が家老の判断品質の基盤。
+  これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
+Step 2.9: bash scripts/gates/gate_karo_startup.sh（5項目一括チェック: deepdive必読強制+陣形図鮮度+inbox未読+PD未解決+workaround傾向）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
 Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）

@@ -7941,3 +7941,11 @@ GP-021 ninja-adaptive failur"
 workaround率自動計測gate 
 📋 https"
 2026-03-23 04:26:06 http=200 time=6s msg="【将軍】利他サイクル始動。cmd_1306(hook偽陽性修正)+cmd_1307(忍者別失敗パターン注入)+cmd_1308(WA率自動計測)を家老に委任。全"
+2026-03-23 04:32:57 http=200 time=5s msg="【家老】cmd_1309 初回配備開始 (title=(untitled), ninja=kotaro)
+queue/tasks/subtask_*.yaml "
+2026-03-23 04:33:15 http=200 time=6s msg="【家老】cmd_1310 初回配備開始 (title=(untitled), ninja=tobisaru)
+CI RED修正 
+📋 https://gist."
+2026-03-23 04:33:52 http=200 time=5s msg="【INFOバッチ】
+2026-03-23 04:32:00|cmd_1306"
+2026-03-23 04:33:52 http=200 time=5s msg="【monitor】将軍CTX:72%。/compactをご検討ください"

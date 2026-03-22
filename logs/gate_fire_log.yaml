@@ -377,3 +377,13 @@
 - ts: "2026-03-23T04:26:56+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
 - ts: "2026-03-23T04:28:14+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report_cmd_1297.yaml", result: PASS
 - ts: "2026-03-23T04:29:25+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T04:30:02+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report_cmd_1297.yaml", result: PASS
+- ts: "2026-03-23T04:31:06+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T04:32:15+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T04:32:24+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report_cmd_1297.yaml", result: PASS
+- ts: "2026-03-23T04:32:42+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T04:32:43+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T04:32:48+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T04:33:39+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T04:34:55+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T04:35:12+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS

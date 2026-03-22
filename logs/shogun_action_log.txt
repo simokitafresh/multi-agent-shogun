@@ -5200,3 +5200,71 @@
   CTX:68%
   ⏵⏵ bypass permissions on (shift+tab to cycle)
 ---
+2026-03-23T04:31:39 [shogun→karo type=cmd_new] pane:
+✻ 引き継ぎゼロの討死… (4m 36s · thought for 3s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  1 shell · ⏵⏵ bypass permissions on
+---
+2026-03-23T04:32:41 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:33:00 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:33:23 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-23T04:33:23 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-23T04:34:45 [karo→gunshi type=review_report] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:34:46 [karo→gunshi type=review_report] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:34:46 [karo→gunshi type=review_report] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:35:12 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:42%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---

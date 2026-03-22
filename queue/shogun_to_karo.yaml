@@ -871,7 +871,7 @@ commands:
       q4_depth: deep — 将軍がtest_result_guard.sh L80-160を現物確認。extract_output_text L95がlast_assistant_messageを混合する根本原因を特定済み
       q5_verified_source: scripts/hooks/test_result_guard.sh 現物確認(Read tool)
       q6_not_hiding: no — hookの誤検知バグを正面から修正
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T04:21:56\""
   cmd_1307:
     title: GP-021 ninja-adaptive failure injection — 忍者別過去失敗パターン自動注入
