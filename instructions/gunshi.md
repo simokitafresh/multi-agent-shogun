@@ -419,8 +419,25 @@ bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunsh
 ### エントリ構造
 
 ログの索引層ヘッダーに統計を維持。エントリ形式:
-- **draft**: cmd_id, review_type:draft, verdict(APPROVE/REQUEST_CHANGES/REJECT), gate_result, findings_summary(1行), lesson_candidate, timestamp
-- **report**: + report_ninja, report_task_id, report_verdict, fail_reasons, lesson_quality(OK/WEAK/MISSING)
+- **draft**: cmd_id, review_type:draft, verdict(APPROVE/REQUEST_CHANGES/REJECT), gate_result, findings_summary(1行), lesson_candidate, timestamp, proposals(optional)
+- **report**: + report_ninja, report_task_id, report_verdict, fail_reasons, lesson_quality(OK/WEAK/MISSING), proposals(optional)
+- **self_study**: cmd_id(self_study_SXX), review_type:self_study, findings_summary, proposals, timestamp
+
+### 提案記載ルール
+
+提案は `proposals:` フィールドに構造化して記録せよ。`#` コメントに書くな。
+
+```yaml
+proposals:
+  - id: GP-XXX        # GP-001から連番
+    description: "提案内容1行"
+    status: pending    # pending/accepted/rejected
+```
+
+- レビュー中に改善提案が生まれたら、該当エントリの `proposals:` に追記
+- 自己研鑽で生まれた提案は `review_type: self_study` エントリの `proposals:` に記録
+- 提案なしのエントリでは `proposals:` フィールド自体を省略してよい（optional）
+- GP-IDは全エントリ横断で一意。採番は既存最大+1
 
 ### 運用ルール
 
