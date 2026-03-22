@@ -19,6 +19,7 @@
 - L332: FoF of FoF partial recalculate-syncはlive dataを欠損させうる。L3正規経路で復旧（cmd_1004）
 - L474: recalculate_fast.pyの事前計算はPipelineEngineと同一データソース(df_dtb3_raw)を使え。reindex済みデータは日付ズレの原因（cmd_1245）
 - L475: Phase 3.7 DTB3リサンプル問題。DTB3をprice_datesにreindexするとrolling(N)の参照日がPipelineEngine(DTB3固有日付)と不一致。PI-010同根（cmd_1245）
+- L477: FoF recalculate時のPYTHONPATH問題。CLIからrecalculate_fast.py実行時にsys.path.insert(0,backend)必要。selection_pipeline動作乖離も確認（cmd_1250）
 
 ## §9 性能ベースライン
 

@@ -1,32 +1,45 @@
 task:
-  ac_priority: AC2
-  ac_version: 36ff56f3
+  ac_priority: AC1
+  ac_version: e15dd554
   acceptance_criteria:
   - binary_checks:
-    - check: gunshi_review_log.yamlからproposals status=pending件数を集計するか
+    - check: T-ACK-001〜008が全てPASSするか
       result: PASS
-    - check: 1件以上で WARN表示するか
-      result: PASS
-    - check: proposals未存在時は0件として安全に処理するか
-      result: PASS
-    - check: bash -n scripts/gates/gate_shogun_startup.sh が成功するか
-      result: PASS
-    description: gate_shogun_startup.shに未処理提案カウント表示を追加
-    id: AC2
+    description: test_ntfy_ack.bats 8テスト全PASS。setup()にscripts/lib/script_update.shのstub作成を追加
+    id: AC1
   bloom_level: ''
-  command: "軍師提案パイプライン構造化 — gate_shogun_startup.shに未処理提案カウント追加。\n\nAC2: gate_shogun_startup.shに軍師未処理提案カウントを追加。\n\
-    \      gunshi_review_log.yamlからstatus: pendingのproposals件数を集計し表示。\n      1件以上あれば「WARN:\
-    \ 軍師未処理提案 N件」を出力。\n      (cmd_1256 AC2のPROPOSAL表示と統合 — ダッシュボード+review_log両方をスキャン)\n\
-    \n■ 注意\n- proposals:フィールドはkotaro(AC1)が並行で追加中。\n- proposals:フィールドが存在しない場合は0件として扱うこと（存在チェック必須）。\n\
-    - gate_shogun_startup.shの既存出力フォーマットを崩さないこと。\n"
+  cmd_id: cmd_1268
+  command: 'CI RED修正。test_ntfy_ack.bats 8テスト失敗を修正せよ。
+
+
+    ■ 原因
+
+    setup()がmock環境にscripts/lib/script_update.shを作成していない。
+
+    ntfy_listener_lib.shがline 23でsource script_update.shするがmock側に未配置。
+
+
+    ■ 修正
+
+    setup()でmkdir -p + touch(またはcat)でscript_update.shのstubを作成。
+
+
+    ■ 確認
+
+    bats tests/unit/test_ntfy_ack.bats で8テスト全PASS
+
+    '
   context_files:
-  - scripts/gates/gate_shogun_startup.sh
-  - logs/gunshi_review_log.yaml
-  deployed_at: '2026-03-22T20:14:38'
+  - tests/unit/test_ntfy_ack.bats
+  - scripts/ntfy_listener_lib.sh
+  - scripts/lib/script_update.sh
+  deployed_at: '2026-03-22T21:38:20'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────\n\n"
+    \  - L105: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.\n\
+    \  - L240: parse_skip_count()の汎用正規表現 r\"(\\d+)\\s+(?:tests?\\s+)?skips?\\b\" は\
+    \ bats TAP出力 \"ok 293\n────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -38,9 +51,11 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC2
-  parent_cmd: cmd_1261
+  ninja: tobisaru
+  parallel_ok: []
+  parent_cmd: cmd_1268
+  priority: critical
+  progress: 'AC1 PASS: 8テスト全PASS confirmed'
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -54,8 +69,16 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  report_filename: tobisaru_report_cmd_1261.yaml
-  report_path: queue/reports/tobisaru_report_cmd_1261.yaml
+  - detail: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗。E2Eセッション作成直後にpane-base-index=0を設定して安定化した。
+    id: L105
+    summary: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗。E2Eセッション作成直後にpane-base-index=0を設定して安定化した。
+  - detail: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
+      "ok 293 skip and fail..." のテスト番号+テスト名を
+    id: L240
+    summary: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
+      "ok 293 skip and fail..." のテスト番号+テスト名を
+  report_filename: tobisaru_report_cmd_1268.yaml
+  report_path: queue/reports/tobisaru_report_cmd_1268.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -72,7 +95,5 @@ task:
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_shogun_startup.sh
-  task_id: cmd_1261_b
   task_type: implement
-  worker_id: tobisaru
+  title: 'cmd_1268 AC1: test_ntfy_ack.bats 8テスト修正'

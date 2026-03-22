@@ -388,6 +388,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L135 | FoF作成は12ステップ省略不可。ステップ2-4省略でGS前提崩壊(抜き身3の失敗) | cmd_284 |
 | L283 | FoFパイプラインのsnapshot参照はleakage-free設計必須。当月snapshot参照=データリーク | cmd_860 |
 | L431 | 既存PF更新時はUUID維持でFoF参照を保護 | cmd_1126 |
+| L478 | 吸収(absorption)はGS概念。DB物理では独立PFとして全体が登録される | cmd_1259 |
 
 ### 19.5 GS運用・config
 

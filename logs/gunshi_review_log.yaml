@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 150件 (draft:68, report:81, self_study:1) | 2026-03-20〜
+# 累計: 151件 (draft:69, report:81, self_study:1) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:61 LGTM:71 REQ_CHANGES:6 FAIL:6
+# verdict分布: APPROVE:62 LGTM:71 REQ_CHANGES:6 FAIL:6
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -719,7 +719,15 @@
 - cmd_id: cmd_1267
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "dashboard陳腐化防止。AC1(unpush WARN)明快。AC2に2実装判断: タイムスタンプ源不在+auto_section設計原則(マーカー外不変)との矛盾。忍者裁量で対応可能。confidence:MEDIUM"
   lesson_candidate: ""
+  gate_result: CLEAR
   timestamp: "2026-03-22T21:30:00"
+- cmd_id: cmd_1268
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "CI RED修正。ntfy_ack 8件(mock setup不備)+auto_deploy_done 1件(assertion不整合)。診断具体的。並列安全。AC3で全344テストregression検知。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T21:40:00"

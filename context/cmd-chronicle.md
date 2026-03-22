@@ -560,3 +560,5 @@
 | cmd_1260 | 軍師S6提案実装 — lessons_useful/binary_checksプリフィル + report構造強制 | infra | 03-22 | — |
 | cmd_1261 | 軍師提案パイプライン構造化 — YAMLコメント→構造化フィールド+自動サーフェシング | infra | 03-22 | — |
 | cmd_1262 | ninja_monitor.sh AUTO-DONE重複書込みバグ修正 — idle通知嵐の根絶 | infra | 03-22 | — |
+| cmd_1264 | inbox_write.sh gate発火100%化 — サイレントスキップ→BLOCK | infra | 03-22 | — |
+| cmd_1266 | 偵察 — FoF selection_pipeline動作乖離の根本原因調査 | dm-signal | 03-22 | — |

@@ -204,6 +204,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L427 | resample(ME).last()はカレンダー月末を返す。実取引日との差異がシグナル帰属ズレを引き起こす | cmd_1115 |
 | L428 | valid_start_date計算は全構成シンボル(relative+absolute+safe_haven+DTB3)を含めよ | cmd_1115 |
 | L429 | パリティ検証における非決定的順序とpartial-month初月の扱い | cmd_1116 |
+| L476 | FoF top_n=1でもselection_blocks空ならmomentum選択なし(EqualWeight) [PI候補] | cmd_1251 |
 
 ### SPA/過剰最適化
 

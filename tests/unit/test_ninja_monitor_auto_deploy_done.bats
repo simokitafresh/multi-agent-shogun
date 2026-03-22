@@ -18,7 +18,7 @@ trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts"
 
-declare -A AUTO_DEPLOY_DONE PANE_TARGETS
+declare -A AUTO_DEPLOY_DONE PANE_TARGETS UNCOMMITTED_BLOCK_SENT REPORT_GATE_SENT
 TEST_LOG="$(mktemp)"
 LOG="$TEST_LOG"
 CALLED=0
@@ -34,6 +34,7 @@ EOF
 
 log() { echo "$1" >> "$TEST_LOG"; }
 check_and_update_done_task() { CALLED=$((CALLED + 1)); return 0; }
+find_matching_report_file() { echo ""; return 1; }
 yaml_field_get() {
     case "$2" in
         status) echo "done" ;;
