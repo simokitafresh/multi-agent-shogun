@@ -638,39 +638,45 @@ is_task_deployed() {
         if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress|done)$ ]]; then
             # AC1/AC2: 報告YAML完了チェック（parent_cmd一致+status:done）
             if check_and_update_done_task "$name"; then
-                # ─── 報告フォーマットgate（cmd_1236: 家老workaround根絶） ───
-                local gate_report_file gate_parent_cmd gate_key gate_output
+                # ─── 報告フォーマットgate（cmd_1236: 家老workaround根絶, cmd_1254: FAIL時auto_deployスキップ） ───
+                local gate_report_file gate_parent_cmd gate_key gate_output gate_passed
+                gate_passed=true
                 gate_report_file=$(find_matching_report_file "$name") || true
                 gate_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
                 gate_key="${name}:${gate_parent_cmd}"
                 if [ -n "$gate_report_file" ] && [ -f "$gate_report_file" ] && [ "${REPORT_GATE_SENT[$gate_key]}" != "1" ]; then
                     gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$gate_report_file" 2>&1) || true
                     if ! echo "$gate_output" | grep -q "^PASS"; then
+                        gate_passed=false
                         REPORT_GATE_SENT[$gate_key]="1"
-                        log "REPORT-FORMAT-FAIL: $name report=$(basename "$gate_report_file") output=$gate_output"
+                        log "REPORT-FORMAT-FAIL: $name report=$(basename "$gate_report_file") output=$gate_output — auto_deploy BLOCKED"
                         bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "報告YAMLフォーマットエラー: ${gate_output}。報告YAMLを修正して再送信せよ。対象: $(basename "$gate_report_file")" report_format_fix karo >> "$LOG" 2>&1 &
                     else
                         log "REPORT-FORMAT-PASS: $name report=$(basename "$gate_report_file")"
                     fi
                 fi
-                # ─── auto_deploy_next.sh 自動発火（二重呼出防止付き） ───
-                local task_id_val parent_cmd_val
-                task_id_val=$(yaml_field_get "$task_file" "task_id")
-                parent_cmd_val=$(yaml_field_get "$task_file" "parent_cmd")
-                local deploy_key="${name}:${task_id_val}"
-                if [ -n "$parent_cmd_val" ] && [ -n "$task_id_val" ] && [ "${AUTO_DEPLOY_DONE[$deploy_key]}" != "1" ]; then
-                    AUTO_DEPLOY_DONE[$deploy_key]="1"
-                    log "[AUTO_DEPLOY] Triggering: cmd=${parent_cmd_val} completed=${task_id_val} ninja=${name}"
-                    (
-                        timeout 30 bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" "$parent_cmd_val" "$task_id_val" >> "$LOG" 2>&1
-                        rc=$?
-                        case $rc in
-                            0) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] OK: ${name}の次サブタスク配備完了 (cmd=${parent_cmd_val})" >> "$LOG" ;;
-                            2) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] SKIP: auto_deploy=false (cmd=${parent_cmd_val})" >> "$LOG" ;;
-                            3) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] BLOCKED: 未解消依存あり or 忍者不在 (cmd=${parent_cmd_val})" >> "$LOG" ;;
-                            *) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] ERROR: 配備失敗 rc=${rc} (cmd=${parent_cmd_val})" >> "$LOG" ;;
-                        esac
-                    ) &
+                # ─── auto_deploy_next.sh 自動発火（二重呼出防止付き, cmd_1254: gate FAIL時スキップ） ───
+                if [ "$gate_passed" = "true" ]; then
+                    local task_id_val parent_cmd_val
+                    task_id_val=$(yaml_field_get "$task_file" "task_id")
+                    parent_cmd_val=$(yaml_field_get "$task_file" "parent_cmd")
+                    local deploy_key="${name}:${task_id_val}"
+                    if [ -n "$parent_cmd_val" ] && [ -n "$task_id_val" ] && [ "${AUTO_DEPLOY_DONE[$deploy_key]}" != "1" ]; then
+                        AUTO_DEPLOY_DONE[$deploy_key]="1"
+                        log "[AUTO_DEPLOY] Triggering: cmd=${parent_cmd_val} completed=${task_id_val} ninja=${name}"
+                        (
+                            timeout 30 bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" "$parent_cmd_val" "$task_id_val" >> "$LOG" 2>&1
+                            rc=$?
+                            case $rc in
+                                0) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] OK: ${name}の次サブタスク配備完了 (cmd=${parent_cmd_val})" >> "$LOG" ;;
+                                2) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] SKIP: auto_deploy=false (cmd=${parent_cmd_val})" >> "$LOG" ;;
+                                3) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] BLOCKED: 未解消依存あり or 忍者不在 (cmd=${parent_cmd_val})" >> "$LOG" ;;
+                                *) echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] ERROR: 配備失敗 rc=${rc} (cmd=${parent_cmd_val})" >> "$LOG" ;;
+                            esac
+                        ) &
+                    fi
+                else
+                    log "[AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for $name (${gate_key}) — STALL検知は継続"
                 fi
                 return 1  # 完了済み — not deployed
             fi

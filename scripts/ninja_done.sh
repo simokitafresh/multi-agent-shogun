@@ -101,6 +101,15 @@ main() {
         exit 1
     fi
 
+    # cmd_1254: gate_report_format.sh — 家老への報告送信前にフォーマット検証
+    local gate_output
+    gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || {
+        echo "ERROR: gate_report_format.sh FAIL — 報告YAMLを修正して再実行せよ。" >&2
+        echo "  対象: $report_file" >&2
+        echo "  詳細: $gate_output" >&2
+        exit 1
+    }
+
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" \
         karo \
         "${ninja_name}、任務完了。報告YAML確認されたし。" \
