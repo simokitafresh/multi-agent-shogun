@@ -996,3 +996,46 @@ commands:
       q6_not_hiding: no — 不要ファイル移動のみ
     status: pending
     delegated_at: "\"2026-03-23T04:29:50\""
+  cmd_1310:
+    title: CI RED修正 — test_sync_lessons_injection_count_sync.bats L77 失敗
+    task_type: implement
+    command: |
+      ■ 背景
+      CI(test.yml)が2026-03-17以降6日間REDのまま。
+      344テスト中、唯一の失敗:
+        not ok 331 sync_lessons writes back project-local injection_count from lesson_impact.tsv
+        tests/unit/test_sync_lessons_injection_count_sync.bats L77
+        `[ "$status" -eq 0 ]` failed
+
+      sync_lessonsスクリプトがexit 0で終了しない。
+      テスト自体のバグか、sync_lessonsの実装変更で壊れたか、
+      テスト前提条件の変化か、いずれかを特定して修正する。
+
+      ■ 調査手順
+      1. tests/unit/test_sync_lessons_injection_count_sync.bats を読んで
+         テストが何を期待しているか理解する
+      2. テスト対象のsync_lessonsスクリプトの現在の実装を確認
+      3. ローカルで当該テストのみ実行して再現確認:
+         bats tests/unit/test_sync_lessons_injection_count_sync.bats
+      4. 根本原因を特定し修正
+      5. 全テスト実行（bats tests/）で回帰なし確認
+      6. git commit + push
+
+      ■ 注意
+      - テスト修正の場合: テストが実装と乖離した理由を報告（lesson_candidate）
+      - 実装修正の場合: 他テストへの波及確認必須
+    acceptance_criteria:
+    - bats tests/unit/test_sync_lessons_injection_count_sync.bats がPASS
+    - bats tests/ 全テストPASS・0 SKIP
+    - git push完了後、CI(test.yml)がGREEN
+    project: infra
+    priority: high
+    quality_gate:
+      q1_firefighting: no — 6日間のCI RED修復。品質基盤の復旧
+      q2_learning: 奪わない — 忍者がテスト調査+修正を実装
+      q3_next_quality: 上がる — CI GREENでgate信頼性が回復
+      q4_depth: deep — gh run view --log-failedでtest 331が唯一の失敗を特定。テストファイル名+行番号確定済み
+      q5_verified_source: gh run view 23410290395 --log-failed (CI失敗ログ現物)
+      q6_not_hiding: no — CI REDを正面から修正
+    status: pending
+    delegated_at: "\"2026-03-23T04:31:39\""
