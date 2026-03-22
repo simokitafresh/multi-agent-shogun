@@ -11,7 +11,7 @@ task:
   report_filename: hanzo_report.yaml
   report_path: queue/reports/hanzo_report.yaml
   role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: acknowledged
+  status: done
   stop_for: []
   task:
     acceptance_criteria:
