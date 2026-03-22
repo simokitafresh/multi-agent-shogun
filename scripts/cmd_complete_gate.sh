@@ -1559,7 +1559,23 @@ preflight_gate_flags() {
 
     echo "[L1] Preflight gate flag generation:"
 
-    # 1. archive.done — archive_completed.sh を先に実行
+    # 1. review_gate.done — archiveより先に実行（競合防止: review_gate.done不在時にarchiveがスキップするため）
+    local pf_gate pf_needs_review=false
+    for pf_gate in "${ALL_GATES[@]}"; do
+        [ "$pf_gate" = "review_gate" ] && pf_needs_review=true && break
+    done
+    if [ "$pf_needs_review" = true ] && [ ! -f "$gates_dir/review_gate.done" ]; then
+        echo "  review_gate: generating..."
+        if bash "$SCRIPT_DIR/scripts/review_gate.sh" "$cmd_id" 2>&1; then
+            echo "  review_gate: preflight OK"
+        else
+            echo "  [INFO] review_gate: preflight WARN (review may not be complete)"
+        fi
+    elif [ "$pf_needs_review" = true ]; then
+        echo "  review_gate: already exists (skip)"
+    fi
+
+    # 2. archive.done — review_gate.done存在後に実行（競合解消済み）
     if [ ! -f "$gates_dir/archive.done" ]; then
         echo "  archive: generating..."
         if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" 2>&1; then
@@ -1571,7 +1587,7 @@ preflight_gate_flags() {
         echo "  archive: already exists (skip)"
     fi
 
-    # 2. lesson.done — found:true候補確認後、適切な方法でフラグ生成
+    # 3. lesson.done — found:true候補確認後、適切な方法でフラグ生成
     if [ ! -f "$gates_dir/lesson.done" ]; then
         echo "  lesson: checking lesson_candidates..."
         local has_found_true=false
@@ -1651,22 +1667,6 @@ except:
         else
             echo "  lesson: already exists (skip)"
         fi
-    fi
-
-    # 3. review_gate.done (conditional — ALL_GATESに含まれる場合のみ)
-    local pf_gate pf_needs_review=false
-    for pf_gate in "${ALL_GATES[@]}"; do
-        [ "$pf_gate" = "review_gate" ] && pf_needs_review=true && break
-    done
-    if [ "$pf_needs_review" = true ] && [ ! -f "$gates_dir/review_gate.done" ]; then
-        echo "  review_gate: generating..."
-        if bash "$SCRIPT_DIR/scripts/review_gate.sh" "$cmd_id" 2>&1; then
-            echo "  review_gate: preflight OK"
-        else
-            echo "  [INFO] review_gate: preflight WARN (review may not be complete)"
-        fi
-    elif [ "$pf_needs_review" = true ]; then
-        echo "  review_gate: already exists (skip)"
     fi
 
     # 4. report_merge.done (conditional — ALL_GATESに含まれる場合のみ)

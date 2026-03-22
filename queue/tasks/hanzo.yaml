@@ -1,3 +1,4 @@
+status: done
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
@@ -83,8 +84,7 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
+  status: done
   stop_for: []
   target_path: scripts/hooks/pre-write-report-deny.sh
   task_type: implement
-status: done

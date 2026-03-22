@@ -1,14 +1,14 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 03:20 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (03:20 自動更新)
+## 📊 リアルタイム状況 (03:28 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
 | 疾風 | claude-opus-4-6 high | done | cmd_1292 | — |
 | 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1293 | — |
-| 半蔵 | claude-opus-4-6 high | done | cmd_1287 | — |
+| 半蔵 | claude-opus-4-6 high | done | cmd_1294 | — |
 | 才蔵 | claude-opus-4-6 high | done | cmd_1289 | — |
 | 小太郎 | claude-opus-4-6 high | done | cmd_1290 | — |
 | 飛猿 | claude-opus-4-6 high | done | cmd_1288 | — |
@@ -16,7 +16,7 @@
 ### CI Status
 **CI RED: run 23403709313 — E2E Tests**
 
-**WARN: 40件のcommit未push。`git push`を検討せよ**
+**WARN: 42件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1054/1061 |
-| 稼働忍者 | 2/8 (疾風, 影丸) |
-| 連勝(CLEAR streak) | 53 (cmd_1235〜cmd_1291) |
+| cmd完了(GATE CLEAR) | 1053/1063 |
+| 稼働忍者 | 2/8 (影丸, 半蔵) |
+| 連勝(CLEAR streak) | 0 |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -37,7 +37,7 @@
 | 項目 | 値 |
 |------|-----|
 | 教訓注入率 | 75.2% |
-| 教訓効果率 | 57.4% |
+| 教訓効果率 | 56.8% |
 | 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
 | 問題教訓 | 0件 |
 
@@ -49,7 +49,7 @@
 | auto-ops | 82.1% | 100.0% | 56 |
 | google-classroom | 66.7% | 100.0% | 3 |
 | database | 0.0% | — | 1 |
-| unknown | 54.3% | 97.5% | 221 |
+| unknown | 54.7% | 95.9% | 223 |
 
 #### タスク種別別
 | task_type | 注入 | スキップ | 注入率 | N |
@@ -68,9 +68,9 @@
 Top 5 有効教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
-| L074 | infra | 383 | 547 | 70.0% |
-| L063 | infra | 261 | 506 | 51.6% |
-| L225 | infra | 136 | 146 | 93.2% |
+| L074 | infra | 385 | 549 | 70.1% |
+| L063 | infra | 263 | 508 | 51.8% |
+| L225 | infra | 138 | 148 | 93.2% |
 | L032 | infra | 87 | 215 | 40.5% |
 | L097 | infra | 79 | 113 | 69.9% |
 
@@ -78,10 +78,10 @@ Bottom 5 低効果教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
 | L039 | dm-signal | 0 | 2 | 0.0% |
+| L113 | infra | 0 | 2 | 0.0% |
 | L115 | infra | 0 | 2 | 0.0% |
+| L263 | infra | 0 | 2 | 0.0% |
 | L027 | dm-signal | 0 | 1 | 0.0% |
-| L062 | infra | 0 | 1 | 0.0% |
-| L111 | infra | 0 | 1 | 0.0% |
 
 ### Context鮮度警告
 なし
@@ -90,41 +90,40 @@ Bottom 5 低効果教訓
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
 | cmd_1291 | — | GATE CLEAR | 03-23 03:19 |
-| cmd_1290 | — | GATE CLEAR | 03-23 03:17 |
 | cmd_1288 | — | GATE CLEAR | 03-23 03:05 |
 | cmd_1286 | — | GATE CLEAR | 03-23 02:52 |
 | cmd_1285 | — | GATE CLEAR | 03-23 02:37 |
+| cmd_1284 | — | GATE CLEAR | 03-23 02:33 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
-## 最新更新 (02:56更新)
-- **cmd_1291**: 完了。 — archive_reports()にreview_gate.doneチェック追加。CMD_ID指定・sweep mode両方で家老レビュー前のアーカイブ防止を実現
-- **cmd_1288**: 完了。 — GP-004 SG7完全パッケージ — 軍師LGTM時に家老後処理バンドルを出力する仕様を3ファイルに定義。飛猿完遂
-- **cmd_1286**: GATE CLEAR。GP-014 commit層自動防御。疾風完遂
-- **cmd_1287**: 半蔵完了→軍師報告RV中。GP-012 RC修正再検証フロー
+## 最新更新 (03:28更新)
+- **cmd_1290**: 完了。小太郎PASS。Gate8にinsights自動アーカイブ追加。workaround: no
+- **cmd_1291**: 完了。影丸PASS。archive_reportsにreview_gate.doneチェック追加。workaround: no
+- **cmd_1292**: 完了。疾風PASS。ninja_monitor report存在チェック追加。workaround: no
+- **cmd_1293**: 完了。影丸PASS(軍師APPROVE)。CLAUDE.md Step 4.5追加(GP-017)。workaround: no
+- **cmd_1294**: 完了。半蔵PASS。PreToolUse DENYフック実装(GP-003完遂)。workaround: no
 
 ### パイプライン
-| cmd | 忍者 | 内容 | 状態 |
-|-----|------|------|------|
-| cmd_1287 | 半蔵 | GP-012 RC修正再検証フロー | 軍師報告RV中 |
-| cmd_1288 | 飛猿 | GP-004 SG7完全パッケージ | 軍師報告RV中 |
-| cmd_1289 | 才蔵 | GP-011 忍者別workaround率計測 | 軍師報告RV中 |
-| cmd_1290 | 小太郎 | insightsキュー自動アーカイブ | 作業中 |
+パイプライン空 — 次cmd待ち
 
 ### idle忍者
-疾風/影丸/半蔵/才蔵/飛猿(5名idle)
+疾風/影丸/半蔵/才蔵/小太郎/飛猿(6名idle)
 
 ### 軍師GP総点検結果
-- GP-003: **完了**(cmd_1284)
-- GP-014: **GATE CLEAR**(cmd_1286)
-- GP-012: **軍師報告RV中**(cmd_1287)
-- GP-004: **軍師報告RV中**(cmd_1288)
-- GP-011: **軍師報告RV中**(cmd_1289)
+- GP-003: **完了**(cmd_1284+cmd_1294 PreToolUse DENY実装)
+- GP-014: **完了**(cmd_1286)
+- GP-012: **完了**(cmd_1287)
+- GP-004: **完了**(cmd_1288)
+- GP-011: **完了**(cmd_1289)
+- GP-017: **完了**(cmd_1293 テンプレート導線修復)
 
 ## 🚨要対応
-（なし — cmd_1284で清掃済み）
+
+### GATE/archive preflightタイミング競合
+deploy_task.shがdeploy時にreview_gate.doneを事前生成→cmd_1291のarchive_reportsがreview_gate.done存在=レビュー完了と判定→preflightで報告YAMLをアーカイブ→直後のGATEが報告不在でBLOCK。cmd_1290/1292/1293で発生。家老検証+軍師LGTMで完了処理済みだがGATE経由ではない。**修正案**: (A) review_gate.doneのdeploy時事前生成を廃止しレビュー完了時にのみ作成 or (B) cmd_complete_gate.sh内のarchive preflightを報告存在チェック後に移動
 
 ## 🔧 将軍へのcmd起票提案（家老自己研鑽より）
 
@@ -132,9 +131,11 @@ Bottom 5 低効果教訓
 
 | # | 内容 | 状態 | cmd |
 |---|------|------|-----|
-| 1 | inbox_write.sh gate発火100%化 | **GATE CLEAR** | cmd_1264 |
-| 2 | report_field_set.sh強制hook | **GATE CLEAR** | cmd_1265 |
-| 3 | BLOCK昇格(PreToolUse deny復元) | **cmd_1284** | cmd_1284 |
+| 1 | inbox_write.sh gate発火100%化 | **完了** | cmd_1264 |
+| 2 | report_field_set.sh強制hook | **完了** | cmd_1265 |
+| 3 | BLOCK昇格(PreToolUse deny) | **完了** | cmd_1284+1294 |
+| 4 | テンプレート導線修復(GP-017) | **完了** | cmd_1293 |
+| 5 | GATE/archive timing修正 | **要起票** | — |
 
 ### deploy高速化 — 軍師GP-006
 
