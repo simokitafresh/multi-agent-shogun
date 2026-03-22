@@ -1,51 +1,36 @@
 task:
-  ac_priority: AC2 > AC3
-  ac_version: '28797652'
+  ac_version: 5885dc4e
   acceptance_criteria:
   - binary_checks:
-    - check: infra/lessons.yaml が500行以下か
+    - check: 🚨要対応セクションにcmd_1265/1269が残っていないか
       result: ''
-    description: projects/infra/lessons.yaml が500行以下の索引になっていること
-    id: AC2
+    description: 🚨要対応セクションからcmd_1265とcmd_1269のエントリが削除されていること
+    id: AC1
   - binary_checks:
-    - check: auto-ops/lessons.yaml が500行以下か
+    - check: PreToolUse denyでreport YAML直接Editが拒否されるか
       result: ''
-    description: projects/auto-ops/lessons.yaml が500行以下の索引になっていること
-    id: AC3
+    description: pre-write-read-tracker.shでqueue/reports/*.yamlへのEdit/WriteがPreToolUse
+      denyされること
+    id: AC2
   bloom_level: ''
-  cmd_id: cmd_1280
-  command: '■ AC2: infra/lessons.yaml Vercel化
+  cmd_id: cmd_1284
+  command: '■ AC1: dashboard.mdの🚨要対応セクションからcmd_1269とcmd_1265のエントリを削除
 
-    projects/infra/lessons.yamlを「索引(500行以下) + アーカイブ」に分離:
+    ■ AC2: pre-write-read-tracker.shのqueue/reports/*.yaml case文を復元し、
 
-    - 索引: retired:false のアクティブ教訓の要約行のみ (id + title + project + 1行summary)
+    report YAML直接EditをPreToolUse denyでBLOCKする状態に戻す
 
-    - アーカイブ先: projects/infra/lessons_archive.yaml
-
-    - 索引にアーカイブへの参照パスを記載
-
-    - flock使用箇所があれば新ファイルにも適用
-
-
-    ■ AC3: auto-ops/lessons.yaml Vercel化
-
-    projects/auto-ops/lessons.yamlを同様に分離:
-
-    - アーカイブ先: projects/auto-ops/lessons_archive.yaml
+    (cmd_1265でWARNに降格した箇所の復元)
 
     '
-  context_files:
-  - projects/infra/lessons.yaml
-  - projects/auto-ops/lessons.yaml
-  - scripts/lesson_write.sh
-  deployed_at: '2026-03-23T01:42:27'
+  deployed_at: '2026-03-23T02:26:30'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
-    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
-    ────────────────────────────────────────\n\nlessons.yaml Vercel化(2/2) — infra/lessons.yaml\
-    \ + auto-ops/lessons.yaml索引化"
+    \  - L223: IF gate/スクリプトのエラー出力を設計する THEN 「次にやるべきこと」を含むAI行動指示形式にせよ。チェックリストは外部md分離(Read失敗→STO\n\
+    \  - L275: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ\n\
+    ────────────────────────────────────────\n\ndashboard\U0001F6A8要対応清掃+report_field_set.sh\
+    \ BLOCK昇格"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -57,15 +42,11 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  not_in_scope:
-  - 教訓の内容変更・新規登録・退役判定
-  - dm-signal lessons.yaml（別忍者担当）
-  - deploy_task.shの注入テスト（別忍者担当）
   parallel_ok:
+  - AC1
   - AC2
-  - AC3
-  parent_cmd: cmd_1280
-  progress: AC2 PASS(286行), AC3 PASS(64行). commit済み. 報告YAML作成済み
+  parent_cmd: cmd_1284
+  progress: AC1 PASS, AC2 PASS. commit済み. 報告YAML作成済み
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -79,14 +60,16 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-    id: L097
-    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-  - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-    id: L079
-    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-  report_filename: hanzo_report_cmd_1280.yaml
-  report_path: queue/reports/hanzo_report_cmd_1280.yaml
+  - detail: IF gate/スクリプトのエラー出力を設計する THEN 「次にやるべきこと」を含むAI行動指示形式にせよ。チェックリストは外部md分離(Read失敗→STOP)。長手順は短名原則にパック化(Named
+      Invariants) BECAUSE gstackの全コードベースでエラーメッセージの受信者=AIエージェント前提で設計されており、エージェントの自律判断精度が向上する(cmd_931深掘り偵
+    id: L223
+    summary: IF gate/スクリプトのエラー出力を設計する THEN 「次にやるべきこと」を含むAI行動指示形式にせよ。チェックリストは外部md分離(Read失敗→STOP)。長手順は短名原則にパック化(Named
+      Invariants) BECAUSE gstackの全コードベースでエラーメッセージの受信者=AIエージェント前提で設計されており、エージェントの自律判断精度が向上する(cmd_931深掘り偵
+  - detail: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ
+    id: L275
+    summary: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ
+  report_filename: hanzo_report_cmd_1284.yaml
+  report_path: queue/reports/hanzo_report_cmd_1284.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -101,9 +84,6 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  scope_mode: EXACT
   status: done
-  stop_for:
-  - lesson_write.shのパス変更が必要で影響範囲が不明な場合
-  target_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons.yaml
+  stop_for: []
   task_type: implement
