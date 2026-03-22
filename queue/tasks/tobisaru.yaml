@@ -1,0 +1,105 @@
+task:
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: f74db017
+  acceptance_criteria:
+  - binary_checks:
+    - check: task YAMLからtarget_pathを読み取るロジックがあるか
+      result: ''
+    - check: git diff --name-onlyで未commit変更を検出できるか
+      result: ''
+    - check: WARN出力がログに記録されるか
+      result: ''
+    description: preflight段階でtarget_pathの未commit変更を検出しWARN出力すること
+    id: AC1
+  - binary_checks:
+    - check: WARN出力後にexit 0ではなく処理続行するか
+      result: ''
+    description: WARNであってBLOCKではないこと（GATE CLEARを妨げない）
+    id: AC2
+  - binary_checks:
+    - check: 'committed_silent: 全target_path commit済み時に無音で通過するか'
+      result: ''
+    description: target_pathが全てcommit済みの場合はWARNが出ないこと
+    id: AC3
+  assigned_to: tobisaru
+  bloom_level: ''
+  command: 'GP-027 commit漏れ検出WARN。cmd_complete_gate.shのpreflight段階にtarget_pathの未commit変更検出を追加。
+
+    task YAMLのtarget_pathを読み、git diff --name-onlyで未commit変更を確認。
+
+    変更ありならWARN出力(BLOCKではない)。GATE CLEARを妨げない。
+
+    '
+  deployed_at: '2026-03-23T06:33:28'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
+    ────────────────────────────────────────\n\n"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  ninja_weak_points:
+    breakdown: commit_missing(1件)
+    source: karo_workarounds.yaml
+    top_pattern: commit_missing(1件)
+    total_workarounds: 1
+    warning: ⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1317
+  project: infra
+  related_lessons:
+  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    id: L074
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    id: L225
+    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+    id: L097
+    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+  - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+    id: L079
+    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+  report_filename: tobisaru_report_cmd_1317.yaml
+  report_path: queue/reports/tobisaru_report_cmd_1317.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - pushするな(commitまで)
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+    required_fields:
+    - ac_version_read
+    - files_modified
+    - lesson_candidate
+    - lessons_useful
+  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  scope_mode: EXACT
+  status: in_progress
+  stop_for:
+  - 既存のcommit_missing BLOCKロジック(L708-718)との競合が判明した場合
+  target_path:
+  - scripts/cmd_complete_gate.sh
+  task_id: cmd_1317_AC1-3
+  task_type: implement

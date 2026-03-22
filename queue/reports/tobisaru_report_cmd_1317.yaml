@@ -1,0 +1,61 @@
+worker_id: tobisaru
+task_id: cmd_1317_AC1-3
+parent_cmd: cmd_1317
+timestamp: '2026-03-23T06:40:45'
+status: done
+ac_version_read: f74db017
+result:
+  summary: preflight_gate_flags()内にtarget_path未commit変更検出WARNを追加。python3でtask YAMLからtarget_pathとproject解決、git
+    diff --name-onlyで検出、WARN出力（BLOCKしない）。commit済み時は無音通過。
+  details: L1688-1748に実装。python3でtask.target_path(リスト/文字列両対応)とproject解決→bash git diff(unstaged+staged)→WARN
+    echo+gate_fire_log記録。exit/BLOCKなし。既存commit_missing BLOCK(L708-718)と競合なし（対象範囲が異なる）。
+purpose_validation:
+  cmd_purpose: cmd_complete_gate.shのpreflight段階にtarget_path未commit変更検出WARNを追加
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/cmd_complete_gate.sh
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既存のpreflight_gate_flagsパターンに沿った追加実装。新規教訓なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: true
+  reason: PASS=1形式を使用。tp_warn_count=1で回避済み
+- id: L225
+  useful: false
+  reason: ''
+- id: L063
+  useful: false
+  reason: ''
+- id: L097
+  useful: false
+  reason: ''
+- id: L079
+  useful: false
+  reason: ''
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: task YAMLからtarget_pathを読み取るロジックがあるか
+    result: 'yes'
+  - check: git diff --name-onlyで未commit変更を検出できるか
+    result: 'yes'
+  - check: WARN出力がログに記録されるか
+    result: 'yes'
+  AC2:
+  - check: WARN出力後にexit 0ではなく処理続行するか
+    result: 'yes'
+  AC3:
+  - check: 'committed_silent: 全target_path commit済み時に無音で通過するか'
+    result: 'yes'
+verdict: PASS
