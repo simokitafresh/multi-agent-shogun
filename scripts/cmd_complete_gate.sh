@@ -1685,6 +1685,65 @@ except:
         echo "  report_merge: already exists (skip)"
     fi
 
+    # 5. GP-027: target_path未commit変更検出（WARN only、BLOCKしない）
+    echo "  target_path uncommitted check:"
+    local tp_warn_count=0
+    local tp_task_file
+    for tp_task_file in "$TASKS_DIR"/*.yaml; do
+        [ -f "$tp_task_file" ] || continue
+        if ! grep -q "parent_cmd: ${cmd_id}" "$tp_task_file" 2>/dev/null; then
+            continue
+        fi
+        local tp_info
+        tp_info=$(TASK_FILE="$tp_task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
+import yaml, os
+script_dir = os.environ['SCRIPT_DIR_ENV']
+try:
+    with open(os.environ['TASK_FILE']) as f:
+        data = yaml.safe_load(f) or {}
+    task = data.get('task', {})
+    project_id = task.get('project', '')
+    target_paths = task.get('target_path', [])
+    if isinstance(target_paths, str):
+        target_paths = [target_paths]
+    if not target_paths:
+        raise SystemExit(0)
+    # resolve project path
+    project_path = script_dir  # default: infra
+    if project_id and project_id != 'infra':
+        pj_file = os.path.join(script_dir, 'projects', f'{project_id}.yaml')
+        if os.path.exists(pj_file):
+            with open(pj_file) as f:
+                pj = yaml.safe_load(f) or {}
+            for candidate in (pj.get('project', {}).get('path'), pj.get('path')):
+                if isinstance(candidate, str) and candidate.strip():
+                    project_path = candidate.strip()
+                    break
+    for tp in target_paths:
+        print(f'{project_path}\t{tp}')
+except Exception:
+    pass
+" 2>/dev/null)
+        [ -z "$tp_info" ] && continue
+        while IFS=$'\t' read -r tp_proj_path tp_file; do
+            [ -z "$tp_file" ] && continue
+            if [ ! -d "$tp_proj_path" ]; then
+                continue
+            fi
+            if (cd "$tp_proj_path" && git diff --name-only -- "$tp_file" 2>/dev/null | grep -q .) || \
+               (cd "$tp_proj_path" && git diff --cached --name-only -- "$tp_file" 2>/dev/null | grep -q .); then
+                echo "    [WARN] uncommitted: $tp_file"
+                tp_warn_count=$((tp_warn_count + 1))
+            fi
+        done <<< "$tp_info"
+    done
+    if [ "$tp_warn_count" -gt 0 ]; then
+        echo "    -> ${tp_warn_count} file(s) with uncommitted changes (WARN, non-blocking)"
+        echo "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${cmd_id} target_path_uncommitted: ${tp_warn_count} file(s)" >> "$LOG_DIR/gate_fire_log.yaml"
+    else
+        echo "    all target_path committed (OK)"
+    fi
+
     echo ""
 }
 
