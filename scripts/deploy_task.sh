@@ -2766,6 +2766,70 @@ inject_ac_version "$TASK_FILE" || true
 # 教訓自動注入（失敗してもデプロイは継続）
 inject_related_lessons "$TASK_FILE" || true
 
+# cmd_1321: auto-injectフィールド一括クリア（前cmdの残留値を排除）
+# cmd_1312方式を8箇所に横展開: inject前にフィールド削除→再inject
+_clear_py_output=$(mktemp)
+if ! run_python_logged "$_clear_py_output" env TASK_FILE_ENV="$TASK_FILE" python3 - <<'CLEAR_PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+
+# 8箇所のinject対象フィールド + exec_controlのサブフィールド
+FIELDS_TO_CLEAR = [
+    'engineering_preferences',
+    'reports_to_read',
+    'context_files',
+    'role_reminder',
+    'report_template',
+    'bloom_level',
+    'stop_for',
+    'never_stop_for',
+    'ac_priority',
+    'ac_checkpoint',
+    'parallel_ok',
+    'ninja_weak_points',
+]
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        sys.exit(0)
+
+    task = data['task']
+    cleared = []
+    for field in FIELDS_TO_CLEAR:
+        if field in task:
+            del task[field]
+            cleared.append(field)
+
+    if not cleared:
+        print('[FIELD_CLEAR] No fields to clear', file=sys.stderr)
+        sys.exit(0)
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[FIELD_CLEAR] Cleared {len(cleared)} fields: {", ".join(cleared)}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[FIELD_CLEAR] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+CLEAR_PY
+    log "WARN: auto-inject field clear failed (non-fatal)"
+fi
+
 # Engineering Preferences自動注入（失敗してもデプロイは継続）
 inject_engineering_preferences "$TASK_FILE" || true
 
