@@ -530,6 +530,11 @@ check_and_update_done_task() {
     task_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
     [ -z "$task_parent_cmd" ] && return 1
 
+    # cmd_1262: 既にdoneなら即リターン（AUTO-DONE重複書込み+通知嵐を根絶）
+    local task_status
+    task_status=$(yaml_field_get "$task_file" "status")
+    [ "$task_status" = "done" ] && return 0
+
     # 新形式({ninja}_report_{cmd}.yaml)優先で一致報告を探索。旧形式も許容。
     report_file=$(find_matching_report_file "$name") || return 1
 
