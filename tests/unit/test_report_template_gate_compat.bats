@@ -205,6 +205,106 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
     [[ "$output" == *"verdict"* ]]
 }
 
+@test "lessons_useful dict form is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['lessons_useful'] = {0: {'id': 'L074', 'useful': True, 'reason': 'test'}}
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"lessons_useful"* ]]
+    [[ "$output" == *"dict"* ]]
+}
+
+@test "lessons_useful entry missing id is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['lessons_useful'] = [{'useful': True, 'reason': 'test'}]
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"missing \"id\""* ]]
+}
+
+@test "lessons_useful useful=string is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['lessons_useful'] = [{'id': 'L074', 'useful': 'yes', 'reason': 'test'}]
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"useful="* ]]
+    [[ "$output" == *"must be true or false"* ]]
+}
+
+@test "lessons_useful FILL_THIS in useful is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['lessons_useful'] = [{'id': 'L074', 'useful': 'FILL_THIS', 'reason': 'test'}]
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"FILL_THIS"* ]]
+}
+
+@test "binary_checks AC value as string is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['binary_checks'] = {'AC1': 'yes', 'AC2': [{'check': 'ok', 'result': 'yes'}]}
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"binary_checks.AC1"* ]]
+    [[ "$output" == *"must be list"* ]]
+}
+
+@test "binary_checks AC value as dict is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['binary_checks'] = {'AC1': {'check': 'ok', 'result': 'yes'}}
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"binary_checks.AC1"* ]]
+    [[ "$output" == *"must be list"* ]]
+}
+
 @test "lesson_candidate found=false without no_lesson_reason is rejected" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
     python3 -c "

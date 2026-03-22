@@ -69,8 +69,13 @@ elif lu is not None:
             if isinstance(item, dict):
                 if 'FILL_THIS' in str(item.get('useful', '')) or 'FILL_THIS' in str(item.get('reason', '')):
                     errors.append(f'lessons_useful[{i}]: contains FILL_THIS (must fill actual values)')
+                if 'id' not in item:
+                    errors.append(f'lessons_useful[{i}]: missing \"id\" field (must have lesson ID like L074)')
                 if 'useful' not in item:
                     errors.append(f'lessons_useful[{i}]: missing \"useful\" field')
+                elif not isinstance(item['useful'], bool):
+                    errors.append(f'lessons_useful[{i}]: useful={item[\"useful\"]} is {type(item[\"useful\"]).__name__} (must be true or false)')
+                    hints.append(f'FIX (lessons_useful[{i}]): useful: true または useful: false を指定せよ（文字列やnullは不可）')
                 if 'reason' not in item:
                     errors.append(f'lessons_useful[{i}]: missing \"reason\" field')
             else:
@@ -90,6 +95,11 @@ elif isinstance(bc, str):
     hints.append('FIX (binary_checks): dict形式で再記入せよ:\\n  binary_checks:\\n    AC1:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
 elif isinstance(bc, dict) and not bc:
     errors.append('binary_checks: empty dict (must have at least one AC entry)')
+elif isinstance(bc, dict):
+    for ac_key, ac_val in bc.items():
+        if not isinstance(ac_val, list):
+            errors.append(f'binary_checks.{ac_key}: is {type(ac_val).__name__} (must be list of check items)')
+            hints.append(f'FIX (binary_checks.{ac_key}): list形式で記入せよ:\\n  binary_checks:\\n    {ac_key}:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
 elif isinstance(bc, list) and not bc:
     errors.append('binary_checks: empty list (must have at least one entry)')
 
