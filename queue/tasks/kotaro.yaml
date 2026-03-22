@@ -1,5 +1,5 @@
-progress: ''
-status: idle
+progress: 'AC1-3 PASS. 全binary_checks完了。verdict: PASS'
+status: done
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
