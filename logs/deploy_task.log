@@ -3436,3 +3436,27 @@
 [2026-03-23 04:05:56] [DEPLOY] preflight_gate: cmd_1295 — artifact事前生成開始
 [2026-03-23 04:05:56] [DEPLOY] preflight_gate: cmd_1295 — artifact事前生成完了
 [2026-03-23 04:05:56] [DEPLOY] tobisaru: deployment complete (type=task_assigned)
+[2026-03-23 04:14:51] [DEPLOY] normalize_task_yaml: flat→nested conversion for hayate.yaml
+[2026-03-23 04:14:51] [DEPLOY] normalize_task_yaml: conversion successful
+[2026-03-23 04:14:51] [DEPLOY] hayate: CTX=0%, idle=true, task_status=idle, pane=shogun:agents.3
+[2026-03-23 04:14:51] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 04:14:51] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 04:14:51] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 04:14:51] [DEPLOY] [AC_VERSION] set: None -> d41d8cd9
+[2026-03-23 04:14:51] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 04:14:52] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 04:14:52] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 04:14:52] [DEPLOY] [ROLE_REMINDER] Injected for hayate
+[2026-03-23 04:14:52] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 04:14:52] [DEPLOY] [REPORT_FN] Injected report_filename=hayate_report.yaml
+[2026-03-23 04:14:52] [DEPLOY] [BLOOM_LVL] Injected bloom_level (empty)
+[2026-03-23 04:14:52] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 04:14:52] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 04:14:52] [DEPLOY] hayate: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)
+[2026-03-23 04:15:02] [DEPLOY] dispatch_ntfy: SKIP already notified (cmd_1298)
+[2026-03-23 04:15:02] [DEPLOY] report_path: set (queue/reports/hayate_report.yaml)
+[2026-03-23 04:15:02] [DEPLOY] report_template: generated (/mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report.yaml)
+[2026-03-23 04:15:02] [DEPLOY] [DEPLOYED_AT] Recorded: 2026-03-23T04:15:02
+[2026-03-23 04:15:02] [DEPLOY] preflight_gate: cmd_1298 — artifact事前生成開始
+[2026-03-23 04:15:02] [DEPLOY] preflight_gate: cmd_1298 — artifact事前生成完了
+[2026-03-23 04:15:02] [DEPLOY] hayate: deployment complete (type=task_assigned)

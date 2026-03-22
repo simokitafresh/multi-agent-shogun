@@ -4066,3 +4066,8 @@ no server running on /tmp/tmux-1000/default
 [Mon Mar 23 04:10:43 JST 2026] Set hanzo @agent_state to active after nudge
 [Mon Mar 23 04:10:43 JST 2026] Wake-up sent to hanzo (1 unread via paste-buffer)
 [Mon Mar 23 04:10:43 JST 2026] [RETRY] Nudge unacknowledged, retry 1/3 for hanzo
+[Mon Mar 23 04:11:43 JST 2026] [NUDGE] Sending paste-buffer nudge to hanzo
+[Mon Mar 23 04:11:44 JST 2026] Set hanzo @agent_state to active after nudge
+[Mon Mar 23 04:11:44 JST 2026] Wake-up sent to hanzo (1 unread via paste-buffer)
+[Mon Mar 23 04:11:44 JST 2026] [RETRY] Nudge unacknowledged, retry 2/3 for hanzo
+[Mon Mar 23 04:12:45 JST 2026] [FP-RESET] No unread, cleared fingerprint for hanzo

@@ -6948,3 +6948,129 @@ OK: dashboard.md auto section updated (04:10)
 [2026-03-23 04:10:53] ACTIVE: hanzo resumed work
 [2026-03-23 04:10:53] STAGE1-SKIP: kotaro idle but task_status=assigned, /clear禁止
 [2026-03-23 04:10:53] SKIP_CLEAR: tobisaru recent task update (117s ago)
+[2026-03-23 04:10:59] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report_cmd_1299.yaml
+[2026-03-23 04:11:05] CLEAR-SEND: kagemaru confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 04:11:14] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: queue/reports/hanzo_report.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:11:14] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 04:11:14] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:11:14] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:11:14] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:11:14] STALL-GHOST: kotaro has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 04:11:14] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:11:14] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:11:14] RENUDGE-TRANSITION: karo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 04:11:15] AGENT-STATE-CORRECTION: hanzo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:11:15] RENUDGE-TRANSITION: hanzo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 04:11:16] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:11:17] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:11:22] CLEAR-BLOCKED-UNCOMMITTED: karo has uncommitted files: queue/reports/hanzo_report.yaml  reason=KARO-CLEAR(check_karo_clear)
+[2026-03-23 04:11:26] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (04:11)
+[2026-03-23 04:12:31] STAGE1-SKIP: hayate idle but task_status=assigned, /clear禁止
+[2026-03-23 04:12:31] STAGE1-SKIP: kotaro idle but task_status=assigned, /clear禁止
+[2026-03-23 04:12:37] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report_cmd_1299.yaml
+[2026-03-23 04:12:37] CLEAR-SKIP: kagemaru CTX=0%, already clean (1/10)
+[2026-03-23 04:12:39] CLEAR-SKIP: saizo CTX=0%, already clean (1/10)
+[2026-03-23 04:12:40] REPORT-FORMAT-FAIL: tobisaru report=tobisaru_report.yaml output=FAIL: lesson_candidate: found=false but no no_lesson_reason; lessons_useful: null (must be list of dicts, not null); binary_checks: empty dict (must have at least one AC entry); result.summary: MISSING or empty; verdict: "" is not valid (must be "PASS" or "FAIL")
+verdictはPASS/FAILの二値のみ。binary_checks全yes→PASS、1つでもno→FAIL — auto_deploy BLOCKED
+[2026-03-23 04:12:40] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for tobisaru (tobisaru:cmd_1295) — STALL検知は継続
+[2026-03-23 04:12:40] IDLE confirmed: tobisaru
+[pre-send capture] tobisaru pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 04:12:40] CLEAR-SKIP: tobisaru CTX=0%, already clean (2/10)
+[2026-03-23 04:12:41] Batch notification sent to karo: tobisaru
+[2026-03-23 04:12:41] CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)
+[cdp_cleanup] 2026-03-23 04:12:41 Starting CDP Chrome cleanup scan...
+[cdp_cleanup] 2026-03-23 04:12:41 No PID files found. Nothing to clean.
+[cdp_cleanup] 2026-03-23 04:12:41 Done.
+[2026-03-23 04:12:41] CDP-CLEANUP: Completed successfully
+[2026-03-23 04:12:41] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 04:12:41] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:12:41] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:12:41] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:12:41] STALL-GHOST: kotaro has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 04:12:41] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:12:41] RENUDGE-RESET: hanzo unread=0, fingerprint+counter reset
+[2026-03-23 04:12:42] RENUDGE-TRANSITION: tobisaru fingerprint changed (unread=1), sending inbox1
+OK: dashboard.md auto section updated (04:12)
+[2026-03-23 04:13:43] STAGE1-SKIP: hayate idle but task_status=assigned, /clear禁止
+[2026-03-23 04:13:44] STAGE1-SKIP: kotaro idle but task_status=assigned, /clear禁止
+[2026-03-23 04:13:45] AGENT-STATE-CORRECTION: tobisaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:13:45] SKIP_CLEAR: tobisaru has unread inbox
+[2026-03-23 04:13:50] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report_cmd_1299.yaml
+[2026-03-23 04:13:51] CLEAR-SKIP: kagemaru CTX=0%, already clean (2/10)
+[2026-03-23 04:13:52] IDLE confirmed: hanzo
+[2026-03-23 04:13:53] CLEAR-SKIP: hanzo CTX=0%, already clean (1/10)
+[2026-03-23 04:13:55] CLEAR-SKIP: saizo CTX=0%, already clean (2/10)
+[2026-03-23 04:13:56] Batch notification sent to karo: hanzo
+[2026-03-23 04:13:56] CDP-CLEANUP-DEBOUNCE: 75s < 300s, skip
+[2026-03-23 04:13:56] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 04:13:56] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:13:56] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:13:56] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:13:56] STALL-GHOST: kotaro has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 04:13:56] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:14:01] LESSON-HEALTH: all projects OK
+[2026-03-23 04:14:04] WARNING: ntfy_listener log stale (10min old). Restarting...
+[Mon Mar 23 04:14:04 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 04:14:04 JST 2026] Found existing ntfy_listener process(es): 2291664
+2350581
+2350586
+[Mon Mar 23 04:14:04 JST 2026] Killing PID 2291664 ...
+[Mon Mar 23 04:14:04 JST 2026] Killing PID 2350586 ...
+[Mon Mar 23 04:14:04 JST 2026] Killing orphan curl stream process(es): 2291707
+[Mon Mar 23 04:14:09 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 04:14:10 JST 2026] Lock file is free
+[Mon Mar 23 04:14:10 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 04:14:10 JST 2026] Launched with PID: 2350815
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 2350815
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 04:14:13] ntfy_listener restart triggered by health check
+OK: dashboard.md auto section updated (04:14)
+[2026-03-23 04:15:08] AGENT-STATE-CORRECTION: hayate @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:15:08] SKIP_CLEAR: hayate has unread inbox
+[2026-03-23 04:15:09] STAGE1-TIMEOUT: kotaro task_status=assigned stale for 900s, resetting to idle
+[2026-03-23 04:15:15] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report_cmd_1299.yaml
+[2026-03-23 04:15:15] CLEAR-SKIP: kagemaru CTX=0%, already clean (3/10)
+[2026-03-23 04:15:17] CLEAR-SKIP: hanzo CTX=0%, already clean (2/10)
+[2026-03-23 04:15:19] CLEAR-SKIP: saizo CTX=0%, already clean (3/10)
+[2026-03-23 04:15:20] AUTO-DONE: kotaro task auto-updated to done (report=kotaro_report_cmd_1297.yaml, parent_cmd=cmd_1297, status=done)
+[2026-03-23 04:15:22] UNCOMMITTED-BLOCK: kotaro files=context/lord-conversation-index.md dashboard.md logs/deploy_task.log logs/gate_fire_log.yaml logs/gist_sync.log logs/inbox_watcher_gunshi.log logs/inbox_watcher_hanzo.log logs/inbox_watcher_hayate.log logs/inbox_watcher_karo.log logs/inbox_watcher_tobisaru.log logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log logs/workaround_pattern.log queue/reports/tobisaru_report.yaml queue/tasks/kotaro.yaml 
+[2026-03-23 04:15:22] REPORT-FORMAT-PASS: kotaro report=kotaro_report_cmd_1297.yaml
+[2026-03-23 04:15:22] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kotaro (kotaro:cmd_1297) — STALL検知は継続
+[pre-send capture] kotaro pane state BEFORE message:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 04:15:22] IDLE confirmed: kotaro
+[2026-03-23 04:15:22] CLEAR-SKIP: kotaro CTX=0%, already clean (1/10)
+[2026-03-23 04:15:23] IDLE confirmed: tobisaru
+[2026-03-23 04:15:29] CLEAR-BLOCKED-UNCOMMITTED: tobisaru has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/tasks/kotaro.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:15:30] Batch notification sent to karo: kotaro tobisaru
+[2026-03-23 04:15:30] CDP-CLEANUP-DEBOUNCE: 169s < 300s, skip
+[2026-03-23 04:15:30] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:15:30] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:15:30] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:15:30] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:15:30] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:15:30] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:15:30] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:15:30] RENUDGE-TRANSITION: karo fingerprint changed (unread=2), sending inbox2
+[2026-03-23 04:15:31] AGENT-STATE-CORRECTION: kotaro @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:15:31] RENUDGE-TRANSITION: kotaro fingerprint changed (unread=1), sending inbox1
+[2026-03-23 04:15:31] RENUDGE-RESET: tobisaru unread=0, fingerprint+counter reset
+[2026-03-23 04:15:31] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 04:15:34] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
