@@ -1,0 +1,47 @@
+worker_id: kotaro
+task_id: cmd_1316_AC1-3
+parent_cmd: cmd_1316
+timestamp: '2026-03-23T06:30:03'
+status: done
+ac_version_read: e16f5e3b
+result:
+  summary: Fix8(binary_checks dict→list wrap)をFix5の後に追加。テスト3件PASS
+  details: Fix5(string→list,L82-96)の後にFix8を挿入。dictかつlistでないAC値を[dict]にwrap。既存Fix5・list値への影響なし確認済み
+purpose_validation:
+  cmd_purpose: gate_report_autofix.shにFix8追加(binary_checks dict→list wrap)
+  fit: true
+  purpose_gap: ''
+files_modified: '[{path: scripts/gates/gate_report_autofix.sh, change: "Fix8 dict→list
+  wrap追加(Fix5の後)"}]'
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既知パターン(Fix5のstring版と同構造のdict版対応。L271で予見済み)
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+  '4':
+    useful: true
+    reason: L271がdict形式の問題を指摘→今回のFix8で自動修正化
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+    '0':
+      result: PASS
+    '1':
+      result: PASS
+  AC2:
+    '0':
+      result: PASS
+  AC3:
+    '0':
+      result: PASS
+    '1':
+      result: PASS
+verdict: PASS
