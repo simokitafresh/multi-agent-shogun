@@ -8,12 +8,14 @@ setup_file() {
     export SRC_MODEL_ANALYSIS="$PROJECT_ROOT/scripts/model_analysis.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    export SRC_NORMALIZE_REPORT_SCRIPT="$PROJECT_ROOT/scripts/lib/normalize_report.sh"
 
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
     [ -f "$SRC_CONTEXT_FRESHNESS_SCRIPT" ] || return 1
     [ -f "$SRC_MODEL_ANALYSIS" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
+    [ -f "$SRC_NORMALIZE_REPORT_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -40,6 +42,7 @@ setup() {
     cp "$SRC_MODEL_ANALYSIS" "$TEST_PROJECT/scripts/model_analysis.sh"
     cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
+    cp "$SRC_NORMALIZE_REPORT_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
 
     for stub in \
         auto_draft_lesson.sh \
@@ -61,12 +64,25 @@ EOF
 #!/usr/bin/env bash
 exit 0
 EOF
+    cat > "$TEST_PROJECT/scripts/gates/gate_dc_duplicate.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "OK: no duplicates"
+exit 0
+EOF
+    cat > "$TEST_PROJECT/scripts/gates/gate_report_format.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "PASS"
+exit 0
+EOF
     chmod +x \
+        "$TEST_PROJECT/scripts/gates/gate_dc_duplicate.sh" \
+        "$TEST_PROJECT/scripts/gates/gate_report_format.sh" \
         "$TEST_PROJECT/scripts/cmd_complete_gate.sh" \
         "$TEST_PROJECT/scripts/context_freshness_check.sh" \
         "$TEST_PROJECT/scripts/model_analysis.sh" \
         "$TEST_PROJECT/scripts/lib/field_get.sh" \
         "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
+        "$TEST_PROJECT/scripts/lib/normalize_report.sh" \
         "$TEST_PROJECT/scripts/gates/gate_yaml_status.sh"
 
     cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done" <<'EOF'
@@ -158,10 +174,16 @@ self_gate_check:
   purpose_fit: PASS
 lesson_candidate:
   found: false
+  no_lesson_reason: "テスト用フィクスチャ — 教訓該当なし"
 skill_candidate:
   found: false
 decision_candidate:
   found: false
+  entries: []
+binary_checks:
+  AC1:
+    - check: "gate metrics test"
+      result: PASS
 lessons_useful: []
 EOF
 }

@@ -136,17 +136,33 @@ YAML
 }
 
 @test "chronicle: auto-generates month section with table header" {
-    # Create chronicle without current month
-    cat > "$TEST_PROJECT/context/cmd-chronicle.md" <<'MD'
-# CMD年代記
-<!-- last_updated: 2026-01-01 -->
+    # Use a recent date in the previous month (within 30 days) so trim_cmd_chronicle
+    # does not archive it. Fallback to last-day-of-prev-month when 25-days-ago lands
+    # in the current month (day-of-month >= 26).
+    local prev_ym prev_date
+    prev_ym="$(date -d '25 days ago' '+%Y-%m')"
+    prev_date="$(date -d '25 days ago' '+%m-%d')"
+    if [ "$prev_ym" = "$(date '+%Y-%m')" ]; then
+        local fallback
+        fallback="$(date -d "$(date '+%Y-%m-01') - 1 day" '+%Y-%m-%d')"
+        prev_ym="$(date -d "$fallback" '+%Y-%m')"
+        prev_date="$(date -d "$fallback" '+%m-%d')"
+    fi
 
-## 2026-01
+    # Create chronicle without current month but with a recent old section
+    cat > "$TEST_PROJECT/context/cmd-chronicle.md" <<MD
+# CMD年代記
+<!-- last_updated: $(date '+%Y-%m-%d') -->
+
+## ${prev_ym}
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_100 | old test | infra | 01-15 | — |
+| cmd_100 | old test | infra | ${prev_date} | — |
 MD
+
+    # Ensure archive directory exists for trim_cmd_chronicle
+    mkdir -p "$TEST_PROJECT/archive/cmd-chronicle"
 
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
 commands:
@@ -165,8 +181,8 @@ YAML
     run grep -q "^## ${year_month}$" "$TEST_PROJECT/context/cmd-chronicle.md"
     [ "$status" -eq 0 ]
 
-    # old month section should still exist
-    run grep -q "^## 2026-01$" "$TEST_PROJECT/context/cmd-chronicle.md"
+    # old month section should still exist (within 30-day retention)
+    run grep -q "^## ${prev_ym}$" "$TEST_PROJECT/context/cmd-chronicle.md"
     [ "$status" -eq 0 ]
 
     # new entry should be present
