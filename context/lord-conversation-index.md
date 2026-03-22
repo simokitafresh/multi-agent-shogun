@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-03-23 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-03-23T03:17:19+09:00 -->
+<!-- generated_at: 2026-03-23T03:18:59+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-03-23T03:18:59+09:00 | terminal | response | **軍師にはスタートアップゲートがない。** 存在するのは: - `scripts/gates/gate_shogun_startup.sh` — 将軍用 - `scripts/gates/gate_karo_startup.sh` — …
 - 2026-03-23T03:17:19+09:00 | terminal | response | **サイクル4完了。** **サイクル1→2→3→4の因果連鎖:** ``` サイクル1: insightsキュー一掃 → doneの溜まり → 自動アーカイブcmd_1290 サイクル2: karo_workarounds → repo…
 - 2026-03-23T03:16:10+09:00 | ntfy | outbound | 【monitor】将軍CTX:75%。/compactをご検討ください
 - 2026-03-23T03:13:14+09:00 | ntfy | outbound | 【家老】cmd_1293 初回配備開始 (title=(untitled), ninja=kagemaru) 忍者報告テンプレート導線修復 📋 https://gist.github.com/simokitafresh/6eb495d91…
@@ -13,7 +14,6 @@
 - 2026-03-23T03:06:50+09:00 | terminal | response | 状況: - **影丸がcmd_1291(報告YAMLアーカイブ時期修正)を作業中** — 唯一の稼働忍者 - cmd_1286(GP-014) **GATE CLEAR**。cmd_1287/1288/1289は**軍師レビュー中**。c…
 - 2026-03-23T03:02:49+09:00 | ntfy | outbound | 【monitor】将軍CTX:62%。/compactをご検討ください
 - 2026-03-23T03:01:40+09:00 | terminal | response | サイクル2完了。 **サイクル2の流れ:** 1. **気づき**: karo_workaroundsにreport_missingが2つの経路で発生 - パターン2(archive競合) → cmd_1291で対処済み - パターン1(…
-- 2026-03-23T02:57:01+09:00 | terminal | response | cmd_1291委任完了。 **問題の構造**: `cmd_complete_gate.sh` のpreflight段階で `archive_completed.sh` が走り、家老がレビューする前に報告YAMLがdiskから消える。家老…
 
 ## 未解決確認事項
 - **サイクル4完了。** **サイクル1→2→3→4の因果連鎖:** ``` サイクル1: insightsキュー一掃 → doneの溜まり → 自動アーカイブcmd_1290 サイクル2: karo_workarounds → report_missing 2経路 → cmd…
@@ -44,7 +44,6 @@
 - cmd_1250
 - cmd_1251
 - cmd_1260
-- cmd_1261
 - cmd_1263
 - cmd_1264
 - cmd_1265
@@ -66,6 +65,7 @@
 - cmd_1281
 - cmd_1282
 - cmd_1283
+- cmd_1284
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

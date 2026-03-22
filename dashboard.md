@@ -1,12 +1,12 @@
-# 🏯 Dashboard [dm-signal] — 2026-03-23 02:52 更新
+# 🏯 Dashboard [dm-signal] — 2026-03-23 03:20 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (03:13 自動更新)
+## 📊 リアルタイム状況 (03:20 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
-| 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1292 | — |
+| 疾風 | claude-opus-4-6 high | done | cmd_1292 | — |
 | 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1293 | — |
 | 半蔵 | claude-opus-4-6 high | done | cmd_1287 | — |
 | 才蔵 | claude-opus-4-6 high | done | cmd_1289 | — |
@@ -16,7 +16,7 @@
 ### CI Status
 **CI RED: run 23403709313 — E2E Tests**
 
-**WARN: 36件のcommit未push。`git push`を検討せよ**
+**WARN: 40件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1052/1059 |
+| cmd完了(GATE CLEAR) | 1054/1061 |
 | 稼働忍者 | 2/8 (疾風, 影丸) |
-| 連勝(CLEAR streak) | 51 (cmd_1235〜cmd_1288) |
+| 連勝(CLEAR streak) | 53 (cmd_1235〜cmd_1291) |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -36,8 +36,8 @@
 ### 知識サイクル健全度
 | 項目 | 値 |
 |------|-----|
-| 教訓注入率 | 75.3% |
-| 教訓効果率 | 56.8% |
+| 教訓注入率 | 75.2% |
+| 教訓効果率 | 57.4% |
 | 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
 | 問題教訓 | 0件 |
 
@@ -49,7 +49,7 @@
 | auto-ops | 82.1% | 100.0% | 56 |
 | google-classroom | 66.7% | 100.0% | 3 |
 | database | 0.0% | — | 1 |
-| unknown | 54.8% | 97.5% | 219 |
+| unknown | 54.3% | 97.5% | 221 |
 
 #### タスク種別別
 | task_type | 注入 | スキップ | 注入率 | N |
@@ -78,10 +78,10 @@ Bottom 5 低効果教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
 | L039 | dm-signal | 0 | 2 | 0.0% |
-| L113 | infra | 0 | 2 | 0.0% |
 | L115 | infra | 0 | 2 | 0.0% |
-| L263 | infra | 0 | 2 | 0.0% |
 | L027 | dm-signal | 0 | 1 | 0.0% |
+| L062 | infra | 0 | 1 | 0.0% |
+| L111 | infra | 0 | 1 | 0.0% |
 
 ### Context鮮度警告
 なし
@@ -89,17 +89,18 @@ Bottom 5 低効果教訓
 ### 戦果（直近5件）
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
+| cmd_1291 | — | GATE CLEAR | 03-23 03:19 |
+| cmd_1290 | — | GATE CLEAR | 03-23 03:17 |
 | cmd_1288 | — | GATE CLEAR | 03-23 03:05 |
 | cmd_1286 | — | GATE CLEAR | 03-23 02:52 |
 | cmd_1285 | — | GATE CLEAR | 03-23 02:37 |
-| cmd_1284 | — | GATE CLEAR | 03-23 02:33 |
-| cmd_1283 | — | GATE CLEAR | 03-23 02:29 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
 ## 最新更新 (02:56更新)
+- **cmd_1291**: 完了。 — archive_reports()にreview_gate.doneチェック追加。CMD_ID指定・sweep mode両方で家老レビュー前のアーカイブ防止を実現
 - **cmd_1288**: 完了。 — GP-004 SG7完全パッケージ — 軍師LGTM時に家老後処理バンドルを出力する仕様を3ファイルに定義。飛猿完遂
 - **cmd_1286**: GATE CLEAR。GP-014 commit層自動防御。疾風完遂
 - **cmd_1287**: 半蔵完了→軍師報告RV中。GP-012 RC修正再検証フロー

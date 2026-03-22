@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 203件 (draft:92, report:98, self_study:19) | 2026-03-20〜
+# 累計: 205件 (draft:92, report:98, self_study:21) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -12,7 +12,7 @@
 # gate強化: cmd_1246(verdict二値)+cmd_1248(id必須/useful bool/binary_checks list)
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
-# 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)
+# 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)
 # ─── GP追跡表(S37総点検:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
@@ -31,8 +31,9 @@
 # | 014 | commit層gate           | pending            | S33  | commit_missing35%根絶。優先1 |
 # | 016 | Bash report検出        | pending            | S38  | DENY hookギャップ根絶。優先1 |
 # | 017 | report_path導線修復    | pending            | S39  | CLAUDE.md Step4.5。format WA源流根絶。優先1 |
-# 集計: ★implemented:8 / ✗obsolete:2 / pending:4 / design_complete:1 / pending低:1
-# 将軍推薦順: GP-016→GP-014→GP-012→GP-004→GP-011
+# | 018 | /clear前commit検査    | pending            | S40  | ninja_monitor git status。commit_missing17%根絶。優先2 |
+# 集計: ★implemented:8 / ✗obsolete:2 / pending:5 / design_complete:1 / pending低:1
+# 将軍推薦順: GP-016→GP-017→GP-014→GP-018→GP-012→GP-004→GP-011
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -734,7 +735,7 @@
 - cmd_id: cmd_1290
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "insightsキュー自動アーカイブ。6観点OK。Gate8既存パターン延長。低リスク。confidence:HIGH"
   timestamp: "2026-03-23T02:55:00"
 - cmd_id: self_study_S38
@@ -758,7 +759,7 @@
   report_ninja: kotaro
   report_task_id: cmd_1290
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "Gate8にinsights自動アーカイブ追加。SG0 PASS。commit fd3ec21確認。done/monitoring/observation/deferred合計5件以上→archive。テスト確認済。定型ロジック追加、品質良好"
   lesson_quality: N/A
   sg7_bundle:
@@ -773,7 +774,7 @@
   report_ninja: kagemaru
   report_task_id: cmd_1291
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "archive_reportsにreview_gate.doneチェック追加。SG0 PASS。commit ab57508確認。CMD_ID指定+sweep mode両方で動作確認済。家老レビュー前アーカイブ防止の構造修正"
   lesson_quality: N/A
   sg7_bundle:
@@ -783,6 +784,19 @@
     dashboard_line: "cmd_1291 kagemaru PASS。archive_reportsにreview_gate.doneチェック追加。workaround: no"
     karo_workaround_needed: no
   timestamp: "2026-03-23T03:16:00"
+- cmd_id: self_study_S40
+  review_type: self_study
+  findings_summary: "利他サイクル3: 教訓効果分析。workaround分類: format52%(12/23)+commit_missing17%(4/23)+verdict_format13%。教訓参照率12-18%(82-88%CTX浪費)。教訓L251/L271/L278存在するが再発=構造的強制不足。教訓よりgate/hookの自動化が10倍効果的。commit_missingは ninja_monitor /clear前git statusチェックで構造根絶可能"
+  proposals:
+    - id: GP-018
+      description: "ninja_monitor /clear前にgit uncommittedチェック追加。commit_missing workaround(17%)構造根絶"
+      status: pending
+  timestamp: "2026-03-23T03:20:00"
+- cmd_id: self_study_S41
+  review_type: self_study
+  findings_summary: "利他サイクル4: タスクYAML品質分析。主要忍者タスク6名分はdeploy_task.sh注入正常(report_path/related_lessons有)。/clear Recovery Step4.5不在が導線断裂原因(GP-017で対処)。追加発見: 旧テンプレートとの品質差拡大。deploy_task.sh binary_checks事前展開の効果はcmd_1260以降のタスクで顕著"
+  proposals: []
+  timestamp: "2026-03-23T03:20:00"
 - cmd_id: cmd_1292
   review_type: draft
   verdict: APPROVE
