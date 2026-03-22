@@ -8870,3 +8870,21 @@ OK: dashboard.md auto section updated (05:46)
 [2026-03-23 05:47:35] AGENT-STATE-CORRECTION: saizo @agent_state=active but idle prompt detected, corrected to idle
 [2026-03-23 05:47:35] ACTIVE: kotaro resumed work
 [2026-03-23 05:47:35] ACTIVE: tobisaru resumed work
+[2026-03-23 05:47:52] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md  reason=AUTO-CLEAR
+[2026-03-23 05:48:03] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md  reason=AUTO-CLEAR
+[2026-03-23 05:48:03] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:48:03] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:48:04] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:48:04] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:48:04] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:48:04] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:48:04] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:48:04] RENUDGE-TRANSITION: karo fingerprint changed (unread=6), sending inbox6
+[2026-03-23 05:48:05] RENUDGE-RESET: hayate unread=0, fingerprint+counter reset
+[2026-03-23 05:48:05] RENUDGE-RESET: kagemaru unread=0, fingerprint+counter reset
+[2026-03-23 05:48:05] RENUDGE-RESET: hanzo unread=0, fingerprint+counter reset
+[2026-03-23 05:48:05] RENUDGE-RESET: saizo unread=0, fingerprint+counter reset
+[2026-03-23 05:48:05] AGENT-STATE-CORRECTION: kotaro @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:48:05] RENUDGE-TRANSITION: kotaro fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:48:05] RENUDGE-RESET: tobisaru unread=0, fingerprint+counter reset
+[2026-03-23 05:48:06] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
