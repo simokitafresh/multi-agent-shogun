@@ -58,6 +58,12 @@ SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
 STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
+WATCHED_DEPS=(
+    "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+    "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
+    "$SCRIPT_DIR/lib/agent_state.sh"
+)
+DEPS_HASH="$(compute_deps_hash)"
 
 if [ -z "$AGENT_ID" ] || [ -z "$PANE_TARGET" ]; then
     echo "Usage: inbox_watcher.sh <agent_id> <pane_target>" >&2

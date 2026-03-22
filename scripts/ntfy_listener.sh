@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC1091,SC2317
+# shellcheck disable=SC1091,SC2034,SC2317
 # ═══════════════════════════════════════════════════════════════
 # ntfy Input Listener
 # Streams messages from ntfy topic, writes to inbox YAML, wakes shogun.
@@ -20,6 +20,7 @@ SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 
 # tmux排他制御ライブラリ（将軍pane直接注入用）
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
+source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
 INBOX="$SCRIPT_DIR/queue/ntfy_inbox.yaml"
 
@@ -351,9 +352,21 @@ if [ "$NTFY_LISTENER_LIB_ONLY" = "1" ]; then
     return 0 2>/dev/null || exit 0
 fi
 
+# Self-restart on script/dependency change
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
+STARTUP_TIME="$(date +%s)"
+MIN_UPTIME=10
+WATCHED_DEPS=(
+    "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
+    "$SCRIPT_DIR/lib/ntfy_auth.sh"
+)
+DEPS_HASH="$(compute_deps_hash)"
+
 echo "[$(date)] ntfy listener started — topic: $TOPIC (auth: ${NTFY_TOKEN:+token}${NTFY_USER:+basic}${NTFY_TOKEN:-${NTFY_USER:-none}})" >&2
 
 while true; do
+    check_script_update
     coproc NTFY_STREAM {
         exec curl -s --no-buffer \
             --keepalive-time "$CURL_KEEPALIVE_SECS" \
@@ -374,6 +387,8 @@ while true; do
             process_stream_line "$line"
             continue
         fi
+
+        check_script_update
 
         NOW_EPOCH=$(date +%s)
         if should_restart_stream "$NOW_EPOCH" "$LAST_STREAM_ACTIVITY" "$LAST_MESSAGE_ACTIVITY"; then

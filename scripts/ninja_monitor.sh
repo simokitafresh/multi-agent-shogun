@@ -57,6 +57,18 @@ SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
 STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
+WATCHED_DEPS=(
+    "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+    "$SCRIPT_DIR/scripts/lib/model_detect.sh"
+    "$SCRIPT_DIR/scripts/lib/field_get.sh"
+    "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+    "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
+    "$SCRIPT_DIR/lib/agent_state.sh"
+    "$SCRIPT_DIR/lib/rotate_log.sh"
+    "$SCRIPT_DIR/scripts/lib/model_colors.sh"
+    "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+)
+DEPS_HASH="$(compute_deps_hash)"
 LAST_NTFY_RESTART=0  # ntfy_listener最終再起動時刻（epoch秒）
 LAST_BATCH_FLUSH=0   # ntfy_batch_flush最終実行時刻（epoch秒）
 CDP_CLEANUP_SCRIPT="$SCRIPT_DIR/scripts/cdp_chrome_cleanup.sh"
