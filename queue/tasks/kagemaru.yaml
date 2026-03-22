@@ -1,56 +1,92 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: d41d8cd9
+  ac_version: 96639f40
   acceptance_criteria:
   - binary_checks:
-    - check: review_gate.done未存在の報告YAMLがarchive_reportsでスキップされるか
+    - check: CLAUDE.mdのStep 5前にStep 4.5が追加されているか
       result: ''
-    description: review_gate.done未存在の報告YAMLがarchive_reportsでスキップされること
+    description: CLAUDE.md /clear Recovery(ninja)にStep 4.5(report_path:テンプレート使用)が追加されていること
     id: AC1
   - binary_checks:
-    - check: review_gate.done存在時は従来通りアーカイブされるか
+    - check: CLAUDE.mdの構文が正しいか（YAMLフロントマターなし、Markdown整合）
       result: ''
-    description: review_gate.done存在時は従来通りアーカイブされること
+    description: 構文エラーがないこと
     id: AC2
   - binary_checks:
-    - check: CMD_ID指定・sweep mode両方で正しく動作するか
+    - check: grep report_path queue/tasks/*.yaml で1件以上ヒットするか
       result: ''
-    description: CMD_ID指定・sweep mode両方で正しく動作すること
+    description: deploy_task.shのreport_path:記載が現物で確認できること
     id: AC3
   bloom_level: ''
-  cmd_id: cmd_1291
-  command: |
-    ■ 問題: cmd_complete_gate.sh preflight(L1562-1565)でarchive_completed.shが実行され、
-    家老がレビューする前に報告YAMLがdiskから消える。
-
-    ■ AC1: archive_completed.sh archive_reports()に条件追加:
-           CMD_ID指定時、queue/gates/${CMD_ID}/review_gate.done が存在しない場合は
-           そのcmdの報告YAMLのアーカイブをスキップする。
-
-    ■ AC2: sweep mode(CMD_ID未指定)でも同様:
-           parent_cmdに対応するreview_gate.doneが存在しない報告はアーカイブしない
-
-    ■ AC3: テスト: review_gate.done未存在→スキップ、存在時→正常アーカイブ
-  deployed_at: '2026-03-23T02:58:00'
-  description: "報告YAMLアーカイブ時期修正 — 家老レビュー完了前のアーカイブ防止"
+  cmd_id: cmd_1293
+  command: "■ AC1: CLAUDE.md「/clear Recovery (ninja)」セクションのStep 5(Start work)の前に\n\
+    \       Step 4.5を追加:\n       「If task has \"report_path:\" field → Read that file\
+    \ as report template.\n       報告YAMLはこのテンプレートをベースに作成せよ。新規作成禁止。」\n       （deploy_task.shが配備時にreport_path:を自動記載済み。導線が繋がっていないだけ）\n\
+    ■ AC2: 変更後のCLAUDE.mdが構文的に正しいこと（YAMLフロントマターなし、Markdown整合）\n■ AC3: deploy_task.shがreport_path:を実際に記載していることを現物確認\n\
+    \       (grep report_path queue/tasks/*.yaml で1件以上ヒット)\n"
+  deployed_at: '2026-03-23T03:13:15'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
+    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   never_stop_for:
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   parallel_ok:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1291
-  progress: AC1-AC3全PASS完了
+  parent_cmd: cmd_1293
   project: infra
-  related_lessons: []
-  report_filename: kagemaru_report_cmd_1291.yaml
-  report_path: queue/reports/kagemaru_report_cmd_1291.yaml
+  related_lessons:
+  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    id: L074
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    id: L225
+    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+    id: L079
+    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+  - detail: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
+      '_report\.yaml')で影響範囲を完全列挙してからスコープを
+    id: L085
+    summary: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
+      '_report\.yaml')で影響範囲を完全列挙してからスコープを
+  report_filename: kagemaru_report_cmd_1293.yaml
+  report_path: queue/reports/kagemaru_report_cmd_1293.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - pushするな(commitまで)
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+    required_fields:
+    - ac_version_read
+    - files_modified
+    - lesson_candidate
+    - lessons_useful
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: assigned
   stop_for: []
+  target_path: CLAUDE.md
   task_type: implement
+status: done
+progress: AC1-AC3全PASS完了

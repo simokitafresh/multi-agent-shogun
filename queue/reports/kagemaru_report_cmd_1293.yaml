@@ -1,0 +1,55 @@
+worker_id: kagemaru
+task_id: cmd_1293
+parent_cmd: cmd_1293
+timestamp: '2026-03-23T03:14:03'
+status: done
+ac_version_read: 96639f40
+result:
+  summary: CLAUDE.md /clear Recovery(ninja)にStep 4.5(report_path:テンプレート使用)を追加完了
+  details: Step 4とStep 5の間にStep 4.5を追加。report_path:フィールドがあればそのファイルをテンプレートとして読み、新規作成禁止とする導線を確立。deploy_task.shが全忍者タスクにreport_path:を記載済みであることも現物確認(6件ヒット)。
+purpose_validation:
+  cmd_purpose: 忍者がreport_path:テンプレートを使用する導線をCLAUDE.mdに追加
+  fit: true
+  purpose_gap: ''
+files_modified:
+- CLAUDE.md
+lesson_candidate:
+  found: false
+  no_lesson_reason: CLAUDE.mdへの定型Step追加のみ。新知見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bash算術の教訓。今回はCLAUDE.md編集のみで該当なし
+- id: L225
+  useful: false
+  reason: MCP obs分類の教訓。今回は無関係
+- id: L063
+  useful: false
+  reason: YAML構造の教訓。今回はMarkdown編集のみ
+- id: L079
+  useful: false
+  reason: deploy_task.shの教訓。今回はdeploy_task.sh変更なし
+- id: L085
+  useful: true
+  reason: 影響範囲の全文検索の教訓。AC3でgreport_pathの全量確認を実施する際に意識した
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: CLAUDE.mdのStep 5前にStep 4.5が追加されているか
+    result: PASS
+  AC2:
+  - check: CLAUDE.mdの構文が正しいか（YAMLフロントマターなし、Markdown整合）
+    result: PASS
+  AC3:
+  - check: grep report_path queue/tasks/*.yaml で1件以上ヒットするか
+    result: PASS
+verdict: PASS
