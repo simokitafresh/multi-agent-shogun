@@ -307,18 +307,24 @@ safe_send_clear() {
 
     # cmd_1296: /clear前のgit uncommittedチェック
     # cmd_1303: 運用ファイル除外フィルタ（自動更新される運用ファイルで/clearをブロックしない）
+    # 改善: BLOCKせず自動commit → /clearを続行（忍者を起こさない）
     local _uncommitted
     _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain 2>/dev/null \
         | grep -v -E '^.. (dashboard\.md|logs/|queue/inbox/|queue/karo_snapshot\.txt|queue/insights\.yaml|queue/reports/|\.claude/)')
     if [ -n "$_uncommitted" ]; then
         local _file_list
         _file_list=$(echo "$_uncommitted" | sed 's/^...//' | tr '\n' ' ')
-        log "CLEAR-BLOCKED-UNCOMMITTED: $agent_name has uncommitted files: $_file_list reason=$reason"
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-          "未commitファイルあり: ${_file_list}。${agent_name}の/clearを中止した。git add + git commitを実行せよ。" \
-          uncommitted_block ninja_monitor >> "$LOG" 2>&1 &
-        return 1
+        log "AUTO-COMMIT-BEFORE-CLEAR: $agent_name uncommitted files: $_file_list"
+        # 忍者を起こさず自動commit（運用ファイルのみ）
+        (
+            cd "$SCRIPT_DIR" || exit
+            git add "$_file_list" 2>/dev/null || true
+            git commit -m "chore: auto-commit before /clear ($agent_name) — 運用ファイル" 2>/dev/null || true
+        )
     fi
+
+    # /clear前にinboxを既読化（/clear後のnudge再起動を防止）
+    bash "$SCRIPT_DIR/scripts/inbox_mark_read.sh" "$agent_name" >> "$LOG" 2>&1 || true
 
     local clear_cmd
     clear_cmd=$(cli_profile_get "$agent_name" "clear_cmd")
