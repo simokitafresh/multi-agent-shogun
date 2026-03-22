@@ -108,10 +108,43 @@ else
     $BRIEF || echo "  lord-conversation-index.md不在"
 fi
 
-# --- Gate 8: 気づきキュー ---
+# --- Gate 8: 気づきキュー（自動アーカイブ付き） ---
 INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
+INSIGHTS_ARCHIVE="$SCRIPT_DIR/queue/archive/insights_archive.yaml"
 $BRIEF || echo "■ 気づきキュー"
 if [ -f "$INSIGHTS_FILE" ]; then
+    # Auto-archive: done/monitoring/observation/deferred が合計5件以上なら自動アーカイブ
+    archive_result=$(IFILE="$INSIGHTS_FILE" AFILE="$INSIGHTS_ARCHIVE" python3 -c '
+import yaml, os
+ifile = os.environ["IFILE"]
+afile = os.environ["AFILE"]
+with open(ifile) as f:
+    data = yaml.safe_load(f) or {}
+items = data.get("insights", [])
+archivable_statuses = {"done", "monitoring", "observation", "deferred"}
+archivable = [i for i in items if i.get("status") in archivable_statuses]
+remaining = [i for i in items if i.get("status") not in archivable_statuses]
+if len(archivable) >= 5:
+    if os.path.exists(afile):
+        with open(afile) as f:
+            archive_data = yaml.safe_load(f) or {}
+    else:
+        archive_data = {}
+    archive_list = archive_data.get("insights", [])
+    archive_list.extend(archivable)
+    archive_data["insights"] = archive_list
+    with open(afile, "w") as f:
+        yaml.dump(archive_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    data["insights"] = remaining
+    with open(ifile, "w") as f:
+        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    print(f"ARCHIVED {len(archivable)}件→insights_archive.yaml, 残{len(remaining)}件")
+else:
+    print(f"アーカイブ対象{len(archivable)}件(閾値5未満), pending{len(remaining)}件")
+' 2>/dev/null || echo "ERROR: アーカイブ処理失敗")
+    $BRIEF || echo "  $archive_result"
+
+    # Count pending (after potential archive)
     pending_count=$(python3 -c "
 import yaml
 with open('$INSIGHTS_FILE') as f:
