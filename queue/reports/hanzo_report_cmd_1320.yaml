@@ -1,0 +1,58 @@
+worker_id: hanzo
+task_id: cmd_1320_AC1-3
+parent_cmd: cmd_1320
+timestamp: '2026-03-23T07:30:15'
+status: done
+ac_version_read: 8a0f19a0
+result:
+  summary: parse_skip_count SKIP偽陽性を4箇所修正。根本原因はextract_output_textがtool_responseキー未対応でtranscript
+    fallbackしていた点
+  details: '修正4箇所: (1)extract_output_textにtool_responseキー追加(根本原因:Claude Code payloadのtool_response.stdoutを認識せずtranscript
+    fallback), (2)_filter_tap_linesにbats pretty形式除外追加, (3)bats_skips正規表現にテスト番号要件追加,
+    (4)L155のSKIP/SKIPPED検出を行頭/行末限定に変更。全10既存batsテストPASS。AC1-3二値チェック全PASS'
+purpose_validation:
+  cmd_purpose: PostToolUse hookのSKIP検出偽陽性修正
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/hooks/test_result_guard.sh
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: extract_output_textのpayloadキーマッピング不備がhook偽陽性の根本原因
+  detail: SKIP偽陽性の直接原因はparse_skip_countの正規表現ではなく、extract_output_textがClaude Code実payloadのtool_responseキーを認識せずtranscript
+    fallbackし、会話履歴全体をテスト出力として解析していた点。hookのpayload構造変更時はextract_output_textのキーリストを必ず更新すること
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: ''
+- id: L225
+  useful: false
+  reason: ''
+- id: L063
+  useful: false
+  reason: ''
+- id: L240
+  useful: true
+  reason: L240がparse_skip_countの汎用正規表現の問題を指摘しており、修正方針の出発点になった
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: parse_fail_countも同じtranscript fallback経由で偽陽性リスクあり
+  detail: parse_fail_countはoriginal textに対して動作し_filter_tap_linesを使わない。extract_output_text修正で根本原因は解消されたが、防御的にparse_fail_countにもTAP行フィルタを適用すべきか検討が必要
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: bats TAP出力で# skipアノテーション行のみカウントする正規表現に変更されたか
+    result: PASS
+  AC2:
+  - check: テスト名にskip文字列を含む場合でもSKIPカウントが0であるか
+    result: PASS
+  AC3:
+  - check: '# skipアノテーション付きテストがカウントされるか'
+    result: PASS
+verdict: PASS
