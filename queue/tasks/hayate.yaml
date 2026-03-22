@@ -1,38 +1,37 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: 966cb4f4
+  ac_version: 859b32e5
   acceptance_criteria:
   - binary_checks:
-    - check: inbox_write.sh内にgit uncommittedチェックが追加されているか
+    - check: ninja_monitor.shのsafe_send_clear内にreport YAML存在チェックが追加されているか
       result: ''
-    description: inbox_write.sh type=report_received時にgit uncommittedチェックが実行されること
+    description: idle+タスクactive+report不在時に/clearが送信されないこと
     id: AC1
   - binary_checks:
-    - check: uncommitted変更がある場合にWARNINGが表示されるか
+    - check: report存在時は従来通り/clearフローが動作するか
       result: ''
-    description: uncommitted変更がある場合にWARNINGメッセージ+未commitファイル一覧が表示されること
+    description: idle+タスクactive+report存在時は従来通り/clearが送信されること
     id: AC2
   - binary_checks:
-    - check: 全commitされている場合に無音で通過するか
+    - check: report不在時にWARNログが出力されるか
       result: ''
-    description: 全commit済みの場合は無音で通過すること
+    description: WARNログが出力され家老が状況把握できること
     id: AC3
   bloom_level: ''
-  cmd_id: cmd_1286
-  command: "■ AC1: inbox_write.sh内のtype=report_received処理にgit uncommittedチェックを追加。\n\
-    \     忍者のtask YAMLにtarget_path/filesがあればそのパスのgit statusを確認、\n     uncommitted変更があればWARNING表示（段階的導入。安定後BLOCK化）\n\
-    ■ AC2: uncommitted検出時のWARNINGメッセージに未commitファイル一覧を表示し、\n     忍者が自分で気づいてcommitできる状態にする\n\
-    ■ AC3: 正常系テスト（全commitされている場合はWARNINGなし=無音通過）\n■ 参考: 既存 inbox_write.sh内のgate_report_format.sh呼出（type=report_received時に自動実行）。同じ箇所にgit\
-    \ uncommittedチェックを追加する構造\n"
-  deployed_at: '2026-03-23T02:38:42'
+  cmd_id: cmd_1292
+  command: "■ AC1: ninja_monitor.shで忍者idle+タスクactive(assigned/acknowledged/in_progress)時、\n\
+    \       /clearを送る前に報告YAML(queue/reports/{name}_report_{parent_cmd}.yaml)の\n  \
+    \     存在をチェック。不在なら/clearを送らずWARNログ出力\n■ AC2: テスト: タスクactive+reportなし+idle状態で/clearが送信されないこと\n\
+    ■ AC3: テスト: タスクactive+report存在+idle状態では従来通り/clearが送信されること\n"
+  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
+  deployed_at: '2026-03-23T03:11:55'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L209: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report\
-    \ file 未作成でも \n  - L276: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit\
-    \ 1)が鉄則。WARNING+続行\n────────────────────────────────────────\n\nGP-014 commit層自動防御\
-    \ — report完了前のgit uncommittedチェックgate"
+    \  - L252: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両\n\
+    \  - L248: STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止\n────────────────────────────────────────\n\
+    \n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -41,15 +40,13 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   parallel_ok:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1286
-  progress: 'AC1-3 PASS: git uncommitted check実装+テスト完了'
+  parent_cmd: cmd_1292
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -63,18 +60,14 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  - detail: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file
-      未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
-      側の auto-done hook は残さない。
-    id: L209
-    summary: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report
-      file 未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
-      側の auto-done hook は残さない。
-  - detail: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行は問題を検知したが無視すると同義。inbox_write.shで3箇所のサイレントスキップをBLOCKED+exit1に修正して根絶
-    id: L276
-    summary: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行は問題を検知したが無視すると同義。inbox_write.shで3箇所のサイレントスキップをBLOCKED+exit1に修正して根絶
-  report_filename: hayate_report_cmd_1286.yaml
-  report_path: queue/reports/hayate_report_cmd_1286.yaml
+  - detail: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両経路を一箇所で保護できる
+    id: L252
+    summary: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両経路を一箇所で保護できる
+  - detail: STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止
+    id: L248
+    summary: STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止
+  report_filename: hayate_report_cmd_1292.yaml
+  report_path: queue/reports/hayate_report_cmd_1292.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -89,6 +82,6 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: assigned
   stop_for: []
   task_type: implement

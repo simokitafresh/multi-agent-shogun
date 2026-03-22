@@ -1,13 +1,13 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 02:52 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (03:08 自動更新)
+## 📊 リアルタイム状況 (03:13 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
-| 疾風 | claude-opus-4-6 high | done | cmd_1286 | — |
-| 影丸 | claude-opus-4-6 high | done | cmd_1291 | — |
+| 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1292 | — |
+| 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1293 | — |
 | 半蔵 | claude-opus-4-6 high | done | cmd_1287 | — |
 | 才蔵 | claude-opus-4-6 high | done | cmd_1289 | — |
 | 小太郎 | claude-opus-4-6 high | done | cmd_1290 | — |
@@ -16,7 +16,7 @@
 ### CI Status
 **CI RED: run 23403709313 — E2E Tests**
 
-**WARN: 35件のcommit未push。`git push`を検討せよ**
+**WARN: 36件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -25,7 +25,7 @@
 | 項目 | 値 |
 |------|-----|
 | cmd完了(GATE CLEAR) | 1052/1059 |
-| 稼働忍者 | 0/8 (—) |
+| 稼働忍者 | 2/8 (疾風, 影丸) |
 | 連勝(CLEAR streak) | 51 (cmd_1235〜cmd_1288) |
 
 ### モデル別スコアボード

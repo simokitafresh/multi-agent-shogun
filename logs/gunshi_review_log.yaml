@@ -744,3 +744,11 @@
       description: "Bash hookにqueue/reports/*.yamlへのリダイレクト検出追加。PreToolUse DENYの防御ギャップ根絶"
       status: pending
   timestamp: "2026-03-23T03:00:00"
+- cmd_id: self_study_S39
+  review_type: self_study
+  findings_summary: "利他サイクル2: 報告フォーマント不備の根本原因=テンプレート導線断裂。deploy_task.shが正しいテンプレートをreport_path:で記載するが/clear Recovery手順にテンプレート使用誘導なし。忍者はテンプレートを知らず新規作成→構造破壊。修正案: CLAUDE.md /clear Recovery(ninja)にStep4.5追加。1行変更。教訓参照率12-18%も発見(82-88%CTX浪費)"
+  proposals:
+    - id: GP-017
+      description: "CLAUDE.md /clear Recovery(ninja)にStep4.5追加: report_path:テンプレート使用誘導。format workaround構造的根絶"
+      status: pending
+  timestamp: "2026-03-23T03:15:00"

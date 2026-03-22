@@ -2220,6 +2220,22 @@ while true; do
                         _s1_threshold=1800  # 30 minutes for in_progress
                     fi
                     if [ "$_s1_age" -ge "$_s1_threshold" ]; then
+                        # cmd_1292 AC1: report存在チェック — active taskでreport未提出なら/clear禁止
+                        _s1_report_file=$(resolve_expected_report_file "$name")
+                        _s1_report_found=false
+                        if [[ "$_s1_report_file" = /* ]]; then
+                            [ -f "$_s1_report_file" ] && _s1_report_found=true
+                        else
+                            [ -f "$SCRIPT_DIR/queue/reports/${_s1_report_file}" ] && _s1_report_found=true
+                            if [ "$_s1_report_found" = false ]; then
+                                compgen -G "$SCRIPT_DIR/queue/archive/reports/${_s1_report_file}" > /dev/null 2>&1 && _s1_report_found=true
+                            fi
+                        fi
+                        if [ "$_s1_report_found" = false ]; then
+                            log "STAGE1-REPORT-MISSING: $name task_status=$_s1_task_status stale for ${_s1_age}s but no report (${_s1_report_file}), /clear禁止"
+                            PREV_STATE[$name]="busy"
+                            continue
+                        fi
                         # Stale task: reset status to idle and allow /clear
                         if grep -q "^status:" "$_s1_task_file"; then
                             sed -i "s/^status: .*/status: idle/" "$_s1_task_file"
