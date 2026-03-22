@@ -663,3 +663,21 @@ entries: []
     supplementary_cmds: 0
     timestamp: "2026-03-22T18:34:48Z"
     notes: "report_yaml_missing:hanzo_report_cmd_1294.yaml"
+  - cmd_id: "cmd_1296"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T18:50:20Z"
+    notes: "report_yaml_missing:saizo_report_cmd_1296.yaml"
+  - cmd_id: "cmd_1295"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T18:52:25Z"
+    notes: "report_yaml_missing:tobisaru_report_cmd_1295.yaml"
