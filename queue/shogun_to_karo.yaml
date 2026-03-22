@@ -735,7 +735,7 @@ commands:
       q4_depth: deep — archive timing競合の根本原因(preflight内の実行順序)を将軍が特定済み。cmd_complete_gate.sh line 1581確認済み
       q5_verified_source: cmd_complete_gate.sh(grep archive_completedで現物確認) + dashboard🚨報告
       q6_not_hiding: no — GATE外完了の根本原因を修正。11cmd分の品質検証欠落を解消
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T03:59:56\""
   cmd_1303:
     title: ninja_monitor uncommittedチェック scope修正 — 運用ファイル除外
@@ -835,5 +835,5 @@ commands:
       q4_depth: medium — cmd_1280 kagemaru LCで問題報告済み。cmd_1283で一部対応済み
       q5_verified_source: dashboard将軍宛報告(cmd_1280 kagemaru LC) + cmd_1283完了記録
       q6_not_hiding: no — Vercel化の不完全な移行を修正
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T04:04:00\""
