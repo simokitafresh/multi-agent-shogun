@@ -2033,6 +2033,196 @@ PY
     fi
 }
 
+# ─── ninja_weak_points自動注入（cmd_1307: 忍者別過去失敗パターン注入） ───
+# karo_workarounds.yamlから忍者名でフィルタし、category別件数をtask YAMLに注入
+inject_ninja_weak_points() {
+    local task_file="$1"
+    local ninja_name="$2"
+    if [ ! -f "$task_file" ]; then
+        log "inject_ninja_weak_points: task file not found: $task_file"
+        return 0
+    fi
+
+    local workarounds_file="$SCRIPT_DIR/logs/karo_workarounds.yaml"
+    if [ ! -f "$workarounds_file" ]; then
+        log "inject_ninja_weak_points: karo_workarounds.yaml not found, skipping"
+        return 0
+    fi
+
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" WORKAROUNDS_FILE_ENV="$workarounds_file" NINJA_NAME_ENV="$ninja_name" python3 - <<'PY'; then
+import os
+import re
+import sys
+import tempfile
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+workarounds_file = os.environ['WORKAROUNDS_FILE_ENV']
+ninja_name = os.environ['NINJA_NAME_ENV']
+
+# 忍者名の日本語↔ローマ字マッピング
+NINJA_JP_MAP = {
+    'hayate': '疾風',
+    'kagemaru': '影丸',
+    'hanzo': '半蔵',
+    'saizo': '才蔵',
+    'tobisaru': '飛猿',
+    'kotaro': '小太郎',
+}
+
+def match_ninja(entry, target_name):
+    """エントリが対象忍者に属するか判定"""
+    ninja_field = entry.get('ninja', '')
+    if ninja_field and ninja_field.lower() == target_name.lower():
+        return True
+    jp_name = NINJA_JP_MAP.get(target_name.lower(), '')
+    if not jp_name:
+        return False
+    for field in ('root_cause', 'detail', 'issue', 'workaround_detail'):
+        val = str(entry.get(field, '') or '')
+        if jp_name in val:
+            return True
+    return False
+
+def is_workaround(entry):
+    """workaround: true判定（新旧形式対応）"""
+    wa = entry.get('workaround')
+    if wa is True:
+        return True
+    if wa is False:
+        return False
+    kw = str(entry.get('karo_workaround', '') or '').lower()
+    if kw == 'yes':
+        return True
+    return False
+
+def parse_workarounds_robust(filepath):
+    """karo_workarounds.yamlをロバストに解析（混在形式対応）"""
+    with open(filepath) as f:
+        content = f.read()
+
+    # まずyaml.safe_loadを試す
+    try:
+        wa_data = yaml.safe_load(content)
+        if isinstance(wa_data, dict):
+            return wa_data.get('workarounds', [])
+        if isinstance(wa_data, list):
+            return wa_data
+    except yaml.YAMLError:
+        pass
+
+    # フォールバック: トップレベル '- ' エントリを個別にパース
+    entries = []
+    # workarounds:ヘッダを除去
+    body = re.sub(r'^workarounds:\s*\n', '', content)
+    # トップレベルのリストアイテムで分割（行頭が '- ' のもの）
+    blocks = re.split(r'\n(?=- )', body)
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+        # ネストされた不正な '  - timestamp:' 行を除去
+        cleaned_lines = []
+        for line in block.split('\n'):
+            # トップレベルエントリ内にネストされた別形式エントリを除外
+            if re.match(r'^  - (timestamp|cmd|ninja|issue|fix|category|resolved_by_cmd):', line):
+                continue
+            cleaned_lines.append(line)
+        cleaned = '\n'.join(cleaned_lines)
+        try:
+            parsed = yaml.safe_load(cleaned)
+            if isinstance(parsed, list) and parsed:
+                entries.append(parsed[0])
+            elif isinstance(parsed, dict):
+                entries.append(parsed)
+        except yaml.YAMLError:
+            continue
+    return entries
+
+try:
+    entries = parse_workarounds_robust(workarounds_file)
+    if not entries:
+        print('[NINJA_WP] No entries parsed from karo_workarounds.yaml', file=sys.stderr)
+        sys.exit(0)
+
+    # 対象忍者のworkaround: trueエントリをフィルタ
+    matched = [e for e in entries if isinstance(e, dict) and match_ninja(e, ninja_name) and is_workaround(e)]
+
+    if not matched:
+        print(f'[NINJA_WP] {ninja_name}: 0 workarounds, skipping injection', file=sys.stderr)
+        sys.exit(0)
+
+    # category別集計
+    cat_counts = {}
+    for e in matched:
+        if 'category' in e and e['category']:
+            cat = str(e['category']).strip()
+        else:
+            cat = 'uncategorized'
+        cat_counts[cat] = cat_counts.get(cat, 0) + 1
+
+    total = len(matched)
+    top_cat = max(cat_counts, key=cat_counts.get)
+    top_count = cat_counts[top_cat]
+
+    # warning生成（top categoryに応じた具体的な注意事項）
+    WARNING_MAP = {
+        'report_yaml_format': '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守',
+        'commit_missing': '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁',
+        'report_missing': '⚠ 報告YAML作成を必ず完了してから完了報告。report未作成での完了報告禁止',
+        'file_disappearance': '⚠ ファイル操作後は存在確認。特にreport YAMLが消失していないか検証',
+    }
+    warning = WARNING_MAP.get(top_cat, f'⚠ 過去{total}件のworkaround発生。品質に注意')
+
+    # category内訳文字列
+    breakdown = ', '.join(f'{cat}({cnt}件)' for cat, cnt in sorted(cat_counts.items(), key=lambda x: -x[1]))
+
+    # task YAMLに注入
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        print('[NINJA_WP] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task = data['task']
+
+    # 既に注入済みならスキップ（冪等性）
+    if 'ninja_weak_points' in task:
+        print('[NINJA_WP] Already injected, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    task['ninja_weak_points'] = {
+        'source': 'karo_workarounds.yaml',
+        'total_workarounds': total,
+        'top_pattern': f'{top_cat}({top_count}件)',
+        'breakdown': breakdown,
+        'warning': warning,
+    }
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[NINJA_WP] {ninja_name}: {total} workarounds injected (top: {top_cat}={top_count})', file=sys.stderr)
+
+except Exception as e:
+    print(f'[NINJA_WP] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+PY
+        return 1
+    fi
+    rm -f "$py_output"
+}
+
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
 # deploy_task.sh実行時にcmd_complete_gate.shが要求するgateフラグを事前生成。
 # L078: 65%のBLOCKがmissing_gate(archive/lesson/review_gate)。配備時に生成で削減。
@@ -2636,6 +2826,9 @@ inject_bloom_level "$TASK_FILE" || true
 
 # task execution controls注入（cmd_875: 停止条件/優先順位/並列許可）
 inject_execution_controls "$TASK_FILE" || true
+
+# ninja_weak_points自動注入（cmd_1307: 忍者別過去失敗パターン）
+inject_ninja_weak_points "$TASK_FILE" "$NINJA_NAME" || true
 
 # context鮮度チェック（失敗してもデプロイは継続）
 check_context_freshness "$TASK_FILE" || true

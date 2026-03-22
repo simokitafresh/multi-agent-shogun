@@ -7929,3 +7929,15 @@ GP-019 lesson_candidate L"
 GP-020 lesson候補ハーベスト（未登録候補定期"
 2026-03-23 03:56:02 http=200 time=5s msg="【karo】6cmd完了(1295-1300)。全GATE外完了(archive timing)。2件🚨: (1)archive順序修正では不十分→archiv"
 2026-03-23 04:03:22 http=200 time=0s msg="【monitor】将軍CTX:70%。/compactをご検討ください"
+2026-03-23 04:22:44 http=200 time=6s msg="【家老】cmd_1304 初回配備開始 (title=(untitled), ninja=hayate)
+削除済みスクリプト参照27ファイルのクリーンアップ
+📋"
+2026-03-23 04:24:23 http=200 time=5s msg="【家老】cmd_1306 初回配備開始 (title=(untitled), ninja=kagemaru)
+test_result_guard.sh偽陽性修正"
+2026-03-23 04:24:42 http=200 time=5s msg="CI赤: run 23410290395 Shell Script Linting, Unit Tests (bats)"
+2026-03-23 04:24:46 http=200 time=5s msg="【家老】cmd_1307 初回配備開始 (title=(untitled), ninja=hanzo)
+GP-021 ninja-adaptive failur"
+2026-03-23 04:25:53 http=200 time=6s msg="【家老】cmd_1308 初回配備開始 (title=(untitled), ninja=saizo)
+workaround率自動計測gate 
+📋 https"
+2026-03-23 04:26:06 http=200 time=6s msg="【将軍】利他サイクル始動。cmd_1306(hook偽陽性修正)+cmd_1307(忍者別失敗パターン注入)+cmd_1308(WA率自動計測)を家老に委任。全"

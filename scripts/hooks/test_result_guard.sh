@@ -92,9 +92,8 @@ def extract_output_text(data: dict) -> str:
         if key in data:
             candidates.append(collect_text(data.get(key)))
 
-    last_assistant = data.get("last_assistant_message") or data.get("lastAssistantMessage")
-    if last_assistant:
-        candidates.append(collect_text(last_assistant))
+    # last_assistant_message is NOT tool output — exclude from SKIP/FAIL detection
+    # to prevent false positives when conversation text contains "SKIP"/"FAIL".
 
     text = "\n".join(part for part in candidates if part.strip())
     if text.strip():

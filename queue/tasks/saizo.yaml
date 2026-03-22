@@ -11,7 +11,7 @@ task:
   report_filename: saizo_report.yaml
   report_path: queue/reports/saizo_report.yaml
   role_reminder: 忍者saizo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
+  status: acknowledged
   stop_for: []
   task:
     acceptance_criteria:

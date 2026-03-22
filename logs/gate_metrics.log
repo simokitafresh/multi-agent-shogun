@@ -2129,3 +2129,5 @@
 2026-03-23T03:52:20	cmd_1295	BLOCK	report_yaml_missing:tobisaru_report_cmd_1295.yaml	implement	unknown	unknown	L074,L225,L063	
 2026-03-23T03:54:41	cmd_1300	BLOCK	report_yaml_missing:hanzo_report_cmd_1300.yaml	implement	unknown	unknown	L074,L225,L063	
 2026-03-23T04:04:21	cmd_1301	BLOCK	missing_gate:archive	unknown	unknown	unknown	none	
+2026-03-23T04:21:23	cmd_1301	BLOCK	missing_gate:archive	unknown	unknown	unknown	none	
+2026-03-23T04:28:57	cmd_1306	BLOCK	missing_gate:archive	implement	unknown	unknown	none	

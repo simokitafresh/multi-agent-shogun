@@ -31,20 +31,16 @@ hook_failures:
   details: none
 binary_checks:
   AC1:
-  - check: line 101のruling_count行が var=$(grep -c ...) || var=0 形式か
+  - check: L95付近でlast_assistant_messageがcandidatesリストに追加されていないか
     result: 'yes'
-  - check: line 282のdash_proposals行が var=$(grep -c ...) || var=0 形式か
-    result: 'yes'
-  - check: grep -c.*||.*echo パターンがファイル内に0件か
+  - check: lastAssistantMessageキーも同様に除外されているか
     result: 'yes'
   AC2:
-  - check: stderr出力にsyntax errorが含まれないか
-    result: 'yes'
-  - check: exit code 0で正常終了するか
-    result: 'yes'
+  - check: bats tests/実行で全件PASSか
+    result: yes (36/36 PASS)
+  - check: hookのstderr/stdoutに偽SKIP警告がないか
+    result: yes (SKIP警告なし)
   AC3:
-  - check: dash_proposals変数が正しく数値を返すか
-    result: 'yes'
-  - check: 未処理PROPOSALセクションが期待通り表示されるか
-    result: 'yes'
+  - check: transcript_pathを使うfallbackロジックがコードに残っているか
+    result: yes (L102-112に残存)
 verdict: PASS

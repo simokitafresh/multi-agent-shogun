@@ -11,7 +11,7 @@ task:
   report_filename: kagemaru_report.yaml
   report_path: queue/reports/kagemaru_report.yaml
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
+  status: done
   stop_for: []
   task:
     acceptance_criteria:

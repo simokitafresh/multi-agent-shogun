@@ -3460,3 +3460,117 @@
 [2026-03-23 04:15:02] [DEPLOY] preflight_gate: cmd_1298 — artifact事前生成開始
 [2026-03-23 04:15:02] [DEPLOY] preflight_gate: cmd_1298 — artifact事前生成完了
 [2026-03-23 04:15:02] [DEPLOY] hayate: deployment complete (type=task_assigned)
+[2026-03-23 04:21:42] [DEPLOY] hayate: CTX=32%, idle=true, task_status=idle, pane=shogun:agents.3
+[2026-03-23 04:21:42] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 04:21:43] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 04:21:43] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 04:21:43] [DEPLOY] [AC_VERSION] unchanged: d41d8cd9
+[2026-03-23 04:21:43] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 04:21:43] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 04:21:43] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 04:21:43] [DEPLOY] [ROLE_REMINDER] Already exists, skipping
+[2026-03-23 04:21:43] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 04:21:43] [DEPLOY] [REPORT_FN] Already exists, skipping
+[2026-03-23 04:21:44] [DEPLOY] [BLOOM_LVL] Already exists, skipping
+[2026-03-23 04:21:44] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 04:21:44] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 04:21:44] [DEPLOY] hayate: CTX=32%, idle. Sending inbox_write (normal nudge)
+[2026-03-23 04:21:54] [DEPLOY] dispatch_ntfy: SKIP already notified (cmd_1298)
+[2026-03-23 04:21:54] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report.yaml)
+[2026-03-23 04:21:54] [DEPLOY] report_path: set (queue/reports/hayate_report.yaml)
+[2026-03-23 04:21:54] [DEPLOY] [DEPLOYED_AT] Already exists (2026-03-23T04:15:02), skipping
+[2026-03-23 04:21:54] [DEPLOY] preflight_gate: cmd_1298 — artifact事前生成開始
+[2026-03-23 04:21:54] [DEPLOY] preflight_gate: cmd_1298 — artifact事前生成完了
+[2026-03-23 04:21:54] [DEPLOY] hayate: deployment complete (type=task_assigned)
+[2026-03-23 04:22:28] [DEPLOY] hayate: CTX=35%, idle=true, task_status=assigned, pane=shogun:agents.3
+[2026-03-23 04:22:28] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 04:22:28] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 04:22:28] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 04:22:28] [DEPLOY] [AC_VERSION] set: None -> d41d8cd9
+[2026-03-23 04:22:28] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 04:22:28] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 04:22:29] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 04:22:29] [DEPLOY] [ROLE_REMINDER] Injected for hayate
+[2026-03-23 04:22:29] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 04:22:29] [DEPLOY] [REPORT_FN] Injected report_filename=hayate_report.yaml
+[2026-03-23 04:22:29] [DEPLOY] [BLOOM_LVL] Injected bloom_level (empty)
+[2026-03-23 04:22:29] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 04:22:29] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 04:22:29] [DEPLOY] hayate: CTX=35%, idle. Sending inbox_write (normal nudge)
+[2026-03-23 04:22:44] [DEPLOY] dispatch_ntfy: sent (cmd_1304) title='untitled' ninja=hayate
+[2026-03-23 04:22:44] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report.yaml)
+[2026-03-23 04:22:44] [DEPLOY] report_path: set (queue/reports/hayate_report.yaml)
+[2026-03-23 04:22:44] [DEPLOY] [DEPLOYED_AT] Recorded: 2026-03-23T04:22:44
+[2026-03-23 04:22:44] [DEPLOY] preflight_gate: cmd_1304 — artifact事前生成開始
+[2026-03-23 04:22:44] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
+[2026-03-23 04:22:44] [DEPLOY] preflight_gate: cmd_1304 — artifact事前生成完了
+[2026-03-23 04:22:44] [DEPLOY] hayate: deployment complete (type=task_assigned)
+[2026-03-23 04:24:02] [DEPLOY] kagemaru: CTX=0%, idle=true, task_status=assigned, pane=shogun:agents.4
+[2026-03-23 04:24:02] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 04:24:02] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 04:24:02] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 04:24:03] [DEPLOY] [AC_VERSION] set: None -> d41d8cd9
+[2026-03-23 04:24:03] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 04:24:03] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 04:24:03] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 04:24:03] [DEPLOY] [ROLE_REMINDER] Injected for kagemaru
+[2026-03-23 04:24:03] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 04:24:03] [DEPLOY] [REPORT_FN] Injected report_filename=kagemaru_report.yaml
+[2026-03-23 04:24:03] [DEPLOY] [BLOOM_LVL] Injected bloom_level (empty)
+[2026-03-23 04:24:04] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 04:24:04] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 04:24:04] [DEPLOY] kagemaru: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)
+[2026-03-23 04:24:23] [DEPLOY] dispatch_ntfy: sent (cmd_1306) title='untitled' ninja=kagemaru
+[2026-03-23 04:24:23] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml)
+[2026-03-23 04:24:23] [DEPLOY] report_path: set (queue/reports/kagemaru_report.yaml)
+[2026-03-23 04:24:24] [DEPLOY] [DEPLOYED_AT] Recorded: 2026-03-23T04:24:23
+[2026-03-23 04:24:24] [DEPLOY] preflight_gate: cmd_1306 — artifact事前生成開始
+[2026-03-23 04:24:24] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
+[2026-03-23 04:24:24] [DEPLOY] preflight_gate: cmd_1306 — artifact事前生成完了
+[2026-03-23 04:24:24] [DEPLOY] kagemaru: deployment complete (type=task_assigned)
+[2026-03-23 04:24:24] [DEPLOY] hanzo: CTX=0%, idle=true, task_status=assigned, pane=shogun:agents.5
+[2026-03-23 04:24:25] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 04:24:25] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 04:24:25] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 04:24:25] [DEPLOY] [AC_VERSION] set: None -> d41d8cd9
+[2026-03-23 04:24:25] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 04:24:25] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 04:24:25] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 04:24:25] [DEPLOY] [ROLE_REMINDER] Injected for hanzo
+[2026-03-23 04:24:25] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 04:24:26] [DEPLOY] [REPORT_FN] Injected report_filename=hanzo_report.yaml
+[2026-03-23 04:24:26] [DEPLOY] [BLOOM_LVL] Injected bloom_level (empty)
+[2026-03-23 04:24:26] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 04:24:26] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 04:24:26] [DEPLOY] hanzo: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)
+[2026-03-23 04:24:46] [DEPLOY] dispatch_ntfy: sent (cmd_1307) title='untitled' ninja=hanzo
+[2026-03-23 04:24:47] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml)
+[2026-03-23 04:24:47] [DEPLOY] report_path: set (queue/reports/hanzo_report.yaml)
+[2026-03-23 04:24:47] [DEPLOY] [DEPLOYED_AT] Recorded: 2026-03-23T04:24:47
+[2026-03-23 04:24:47] [DEPLOY] preflight_gate: cmd_1307 — artifact事前生成開始
+[2026-03-23 04:24:47] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
+[2026-03-23 04:24:47] [DEPLOY] preflight_gate: cmd_1307 — artifact事前生成完了
+[2026-03-23 04:24:47] [DEPLOY] hanzo: deployment complete (type=task_assigned)
+[2026-03-23 04:25:32] [DEPLOY] saizo: CTX=0%, idle=true, task_status=assigned, pane=shogun:agents.6
+[2026-03-23 04:25:32] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 04:25:32] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 04:25:32] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 04:25:32] [DEPLOY] [AC_VERSION] set: None -> d41d8cd9
+[2026-03-23 04:25:32] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 04:25:32] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 04:25:33] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 04:25:33] [DEPLOY] [ROLE_REMINDER] Injected for saizo
+[2026-03-23 04:25:33] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 04:25:33] [DEPLOY] [REPORT_FN] Injected report_filename=saizo_report.yaml
+[2026-03-23 04:25:33] [DEPLOY] [BLOOM_LVL] Injected bloom_level (empty)
+[2026-03-23 04:25:33] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 04:25:33] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 04:25:33] [DEPLOY] saizo: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)
+[2026-03-23 04:25:53] [DEPLOY] dispatch_ntfy: sent (cmd_1308) title='untitled' ninja=saizo
+[2026-03-23 04:25:53] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml)
+[2026-03-23 04:25:53] [DEPLOY] report_path: set (queue/reports/saizo_report.yaml)
+[2026-03-23 04:25:53] [DEPLOY] [DEPLOYED_AT] Recorded: 2026-03-23T04:25:53
+[2026-03-23 04:25:53] [DEPLOY] preflight_gate: cmd_1308 — artifact事前生成開始
+[2026-03-23 04:25:54] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
+[2026-03-23 04:25:54] [DEPLOY] preflight_gate: cmd_1308 — artifact事前生成完了
+[2026-03-23 04:25:54] [DEPLOY] saizo: deployment complete (type=task_assigned)

@@ -1011,3 +1011,33 @@
   findings_summary: "lesson_harvest.sh。SG0 PASS(archive版)。commit fd9727c確認。archive報告2194件スキャン→未登録候補227件検出。GP-020完遂"
   lesson_quality: N/A
   timestamp: "2026-03-23T04:10:00"
+- cmd_id: cmd_1304
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: null
+  findings_summary: "削除済みスクリプト参照クリーンアップ。前提OK(7本削除確認、参照26≒27)。スコープ問題: 26中12件がqueue/reports過去報告。活きたファイル14件に限定すべき。severity: normal"
+  timestamp: "2026-03-23T04:20:00"
+- cmd_id: cmd_1305
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "lesson_update_score.sh書込先修正。cmd_1283で対応済み確認(commit 5bb9ad9)。3AC全PASS。追加変更不要。confidence: HIGH"
+  timestamp: "2026-03-23T04:20:00"
+- cmd_id: cmd_1306
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "test_result_guard.sh偽SKIP修正。last_assistant_message除外確認。generic fallback SKIP|SKIPPED根本原因正しい。confidence: HIGH"
+  timestamp: "2026-03-23T04:30:00"
+- cmd_id: cmd_1307
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-021 ninja-adaptive injection。dual-match 93%カバレッジ。YAML3スキーマ混在リスクあり(MEDIUM)。deploy_task.sh統合は堅実"
+  timestamp: "2026-03-23T04:30:00"
+- cmd_id: cmd_1308
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "workaround率自動計測gate。自動化×強制原則の直接実装。情報表示のみ(安全)。YAML形式不統一注意(cmd_1307共通)。confidence: HIGH"
+  timestamp: "2026-03-23T04:30:00"

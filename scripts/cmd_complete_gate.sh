@@ -3808,6 +3808,15 @@ except:
         echo "  OK: no pending lesson_candidates"
     fi
 
+    # ─── Workaround率表示（情報のみ、BLOCKしない） ───
+    echo ""
+    echo "Workaround rate (GATE CLEAR):"
+    if [ -x "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" ]; then
+        bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 2>&1 || echo "  [INFO] gate_workaround_rate.sh failed (non-blocking)"
+    else
+        echo "  SKIP (gate_workaround_rate.sh not found)"
+    fi
+
     # ─── archive実行（GATE CLEAR後、全チェック+ポストプロセス完了後） ───
     # cmd_1302: 報告YAMLをGATEが読み終わってからアーカイブ
     echo ""
@@ -3918,6 +3927,15 @@ else
         fi
     else
         echo "  SKIP (cmd_quality_log.sh not found)"
+    fi
+
+    # ─── Workaround率表示（情報のみ、BLOCKしない） ───
+    echo ""
+    echo "Workaround rate (GATE BLOCK):"
+    if [ -x "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" ]; then
+        bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 2>&1 || echo "  [INFO] gate_workaround_rate.sh failed (non-blocking)"
+    else
+        echo "  SKIP (gate_workaround_rate.sh not found)"
     fi
 
     # ─── GATE BLOCK時 harmful閾値による教訓自動deprecate ───

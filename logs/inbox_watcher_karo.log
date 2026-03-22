@@ -8668,3 +8668,75 @@
 [Mon Mar 23 04:15:34 JST 2026] [DEBOUNCE] Skipping nudge (4s < 10s) for karo
 [Mon Mar 23 04:15:34 JST 2026] [RETRY] Nudge unacknowledged, retry 1/3 for karo
 [Mon Mar 23 04:15:46 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 04:16:38 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:16:38 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:16:39 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:16:39 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 04:16:49 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 04:17:21 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:17:21 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:17:22 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:17:22 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 04:17:53 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 04:18:40 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:18:40 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:18:41 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:18:41 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 04:18:54 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 04:21:56 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:21:56 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:21:57 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:21:57 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 04:22:45 JST 2026] [FP-CHANGE] Unread set changed for karo (2 unread), sending nudge
+[Mon Mar 23 04:22:45 JST 2026] [RECOVERY] forcing idle flag for karo after 49s unread
+[Mon Mar 23 04:22:45 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:22:46 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:22:46 JST 2026] Wake-up sent to karo (2 unread via paste-buffer)
+[Mon Mar 23 04:22:46 JST 2026] [FP-CHANGE] Unread set changed for karo (3 unread), sending nudge
+[Mon Mar 23 04:22:46 JST 2026] [RECOVERY] forcing idle flag for karo after 50s unread
+[Mon Mar 23 04:22:46 JST 2026] [DEBOUNCE] Skipping nudge (1s < 10s) for karo
+[Mon Mar 23 04:23:01 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:23:01 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:23:02 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:23:02 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 04:23:03 JST 2026] [FP-CHANGE] Unread set changed for karo (2 unread), sending nudge
+[Mon Mar 23 04:23:03 JST 2026] [RECOVERY] forcing idle flag for karo after 67s unread
+[Mon Mar 23 04:23:03 JST 2026] [DEBOUNCE] Skipping nudge (2s < 10s) for karo
+[Mon Mar 23 04:23:24 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 04:24:28 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:24:28 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:24:29 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:24:29 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 04:24:59 JST 2026] [FP-CHANGE] Unread set changed for karo (2 unread), sending nudge
+[Mon Mar 23 04:24:59 JST 2026] [RECOVERY] forcing idle flag for karo after 31s unread
+[Mon Mar 23 04:24:59 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:25:00 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:25:00 JST 2026] Wake-up sent to karo (2 unread via paste-buffer)
+[Mon Mar 23 04:25:09 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 04:26:32 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:26:33 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:26:33 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:26:33 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 04:26:46 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 04:26:57 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:26:57 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:26:58 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:26:58 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 04:27:13 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 04:28:30 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 04:28:30 JST 2026] [BUSY] Agent karo is busy (no idle flag), Stop hook will deliver
+[Mon Mar 23 04:28:30 JST 2026] [WAKE-DEFER] Deferred initial nudge for karo (busy gating)
+[Mon Mar 23 04:28:36 JST 2026] [FP-CHANGE] Unread set changed for karo (2 unread), sending nudge
+[Mon Mar 23 04:28:36 JST 2026] [BUSY] Agent karo is busy (no idle flag), Stop hook will deliver
+[Mon Mar 23 04:28:36 JST 2026] [WAKE-DEFER] Deferred initial nudge for karo (busy gating)
+[Mon Mar 23 04:28:42 JST 2026] [FP-CHANGE] Unread set changed for karo (3 unread), sending nudge
+[Mon Mar 23 04:28:42 JST 2026] [BUSY] Agent karo is busy (no idle flag), Stop hook will deliver
+[Mon Mar 23 04:28:42 JST 2026] [WAKE-DEFER] Deferred initial nudge for karo (busy gating)
+[Mon Mar 23 04:29:44 JST 2026] [RECOVERY] forcing idle flag for karo after 74s unread
+[Mon Mar 23 04:29:44 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 04:29:45 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 04:29:45 JST 2026] Wake-up sent to karo (3 unread via paste-buffer)
+[Mon Mar 23 04:29:45 JST 2026] [RETRY] Nudge unacknowledged, retry 1/3 for karo
+[Mon Mar 23 04:29:51 JST 2026] [FP-CHANGE] Unread set changed for karo (4 unread), sending nudge
+[Mon Mar 23 04:29:52 JST 2026] [RECOVERY] forcing idle flag for karo after 82s unread
+[Mon Mar 23 04:29:52 JST 2026] [DEBOUNCE] Skipping nudge (8s < 10s) for karo

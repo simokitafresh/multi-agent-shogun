@@ -967,3 +967,32 @@ commands:
       q6_not_hiding: no — 品質計測を手動→自動に移行
     status: delegated
     delegated_at: "\"2026-03-23T04:24:27\""
+  cmd_1309:
+    title: queue/tasks/subtask_*.yaml 47件をarchive移動 — 旧アーキテクチャ残骸清掃
+    task_type: implement
+    command: |
+      ■ 背景
+      queue/tasks/にsubtask_*.yamlが47件残存。
+      旧アーキテクチャ（サブタスク分解方式）の残骸で、現在は誰にも読まれていない。
+      忍者タスクファイル6件に対してゴミ47件。ディレクトリが汚い。
+
+      ■ 作業
+      1. queue/archive/subtasks/ ディレクトリを作成
+      2. queue/tasks/subtask_*.yaml を全て queue/archive/subtasks/ に mv
+      3. 移動後に queue/tasks/ の中身を確認（忍者名.yaml 6件のみ残存）
+      4. git commit
+    acceptance_criteria:
+    - queue/tasks/subtask_*.yaml が0件であること
+    - queue/archive/subtasks/ に47件移動されていること
+    - queue/tasks/ に忍者タスクファイル（hayate/kagemaru/hanzo/saizo/kotaro/tobisaru.yaml）のみ残存
+    project: infra
+    priority: low
+    quality_gate:
+      q1_firefighting: no — 清掃
+      q2_learning: 奪わない — mvのみ
+      q3_next_quality: 上がる — ディレクトリ可読性向上
+      q4_depth: shallow — ls確認済み。47件全てsubtask_*形式
+      q5_verified_source: ls queue/tasks/subtask_*.yaml | wc -l → 47
+      q6_not_hiding: no — 不要ファイル移動のみ
+    status: pending
+    delegated_at: "\"2026-03-23T04:29:50\""
