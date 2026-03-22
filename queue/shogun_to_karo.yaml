@@ -804,7 +804,7 @@ commands:
       q4_depth: medium — cmd_1275 DC(影丸報告)で27ファイルの参照残存を確認済み
       q5_verified_source: dashboard将軍宛報告(cmd_1275 kagemaru DC) + cmd_1275完了済み
       q6_not_hiding: no — 削除済みスクリプトの残存参照を適切に処理
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T04:03:59\""
   cmd_1305:
     title: lesson_update_score.sh書込先修正 — Vercel化後のarchive参照切替
@@ -921,7 +921,7 @@ commands:
       q4_depth: deep — karo_workarounds.yaml全量分析済み。忍者別パターン特定済み(疾風6/半蔵3/影丸4/才蔵4)
       q5_verified_source: logs/karo_workarounds.yaml 現物確認(Read tool全量)
       q6_not_hiding: no — 忍者の再犯パターンを可視化して根本対処
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T04:23:03\""
   cmd_1308:
     title: workaround率自動計測gate — cmd_complete_gate統合でpost-GP効果を自動追跡
@@ -965,7 +965,7 @@ commands:
       q4_depth: deep — karo_workarounds.yaml全量読了済み。フォーマット不統一(cmd/cmd_id/inline dict)を確認済み
       q5_verified_source: logs/karo_workarounds.yaml 現物確認 + insights.yaml(INS-20260323-040210: post-GP計測要件)
       q6_not_hiding: no — 品質計測を手動→自動に移行
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T04:24:27\""
   cmd_1309:
     title: queue/tasks/subtask_*.yaml 47件をarchive移動 — 旧アーキテクチャ残骸清掃
@@ -994,7 +994,7 @@ commands:
       q4_depth: shallow — ls確認済み。47件全てsubtask_*形式
       q5_verified_source: ls queue/tasks/subtask_*.yaml | wc -l → 47
       q6_not_hiding: no — 不要ファイル移動のみ
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T04:29:50\""
   cmd_1310:
     title: CI RED修正 — test_sync_lessons_injection_count_sync.bats L77 失敗
@@ -1039,3 +1039,50 @@ commands:
       q6_not_hiding: no — CI REDを正面から修正
     status: delegated
     delegated_at: "\"2026-03-23T04:31:39\""
+  cmd_1311:
+    title: GP-003正規表現バグ修正 — report YAML hookが全忍者で未発火
+    task_type: implement
+    command: |
+      ■ 背景
+      GP-003(PreToolUse DENY)はWrite/Editによる報告YAML直接書込みを禁止するhook。
+      しかし**正規表現バグにより全忍者で発火していなかった。**
+
+      ■ 根本原因（将軍が確認済み）
+      hookの正規表現: queue/reports/.*_report_.*\.yaml$
+      実際のファイル名: hayate_report.yaml（全6忍者同パターン）
+
+      _report_ は _report.yaml にマッチしない。
+      _report_ は _report_cmd_1307.yaml にはマッチする。
+      現在のdeploy_task.shは report_filename: {ninja}_report.yaml を生成。
+      → hookは全忍者の報告で発火しない。GP-003は実質無効だった。
+
+      ■ 検証コマンド（将軍実施済み）
+      [[ "queue/reports/hayate_report.yaml" =~ queue/reports/.*_report_.*\.yaml$ ]]
+      → NO MATCH（hookすり抜け確認）
+
+      ■ 修正箇所
+      scripts/hooks/pre-write-report-deny.sh L35:
+        修正前: if [[ "$file_path" =~ queue/reports/.*_report_.*\.yaml$ ]]; then
+        修正後: if [[ "$file_path" =~ queue/reports/.*_report[_.].*\.yaml$ ]]; then
+      （_report_ → _report[_.] で _report.yaml と _report_cmd_XXX.yaml の両方にマッチ）
+
+      ■ テスト
+      修正後に以下の4パターンで発火テスト:
+      (1) hayate_report.yaml → DENY（修正後新たにマッチ）
+      (2) hayate_report_cmd_1307.yaml → DENY（既存マッチ維持）
+      (3) queue/tasks/hayate.yaml → 通過（report以外は無関係）
+      (4) report_field_set.sh経由 → 通過（REPORT_FIELD_SET_ACTIVE=1バイパス）
+    acceptance_criteria:
+    - pre-write-report-deny.shの正規表現が {ninja}_report.yaml にマッチすること
+    - 修正後4パターンテスト全PASS（上記■テスト参照）
+    - 既存テスト（bats）が回帰なしで全PASS
+    project: infra
+    priority: high
+    quality_gate:
+      q1_firefighting: no — 三層学習ループの深い「なぜ」5層から特定した根本原因
+      q2_learning: 奪わない — 忍者が正規表現修正+発火テスト実施
+      q3_next_quality: 上がる — GP-003が初めて正しく機能し、report_yaml_format workaroundが構造的に消滅
+      q4_depth: deep — 将軍がhook実ファイル読了+正規表現を実パターンでテスト実行済み。全6忍者のreport_filenameがcmd接尾辞なしパターンであることを確認
+      q5_verified_source: scripts/hooks/pre-write-report-deny.sh L35(正規表現現物) + queue/tasks/*.yaml全6件(report_filename現物) + bash regex test実行結果
+      q6_not_hiding: no — hookバグを正面から修正
+    status: new

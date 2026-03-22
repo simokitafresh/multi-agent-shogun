@@ -5284,3 +5284,29 @@
   CTX:24%
   ⏵⏵ bypass permissions on (shift+tab to cycle)
 ---
+2026-03-23T04:41:20 [shogun→karo type=cmd_new] pane:
+✽ 引き継ぎゼロの討死… (14m 18s · ↓ 4.7k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:46:12 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:50:59 [shogun→karo type=cmd_new] pane:
+✢ 引き継ぎゼロの討死… (23m 56s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---

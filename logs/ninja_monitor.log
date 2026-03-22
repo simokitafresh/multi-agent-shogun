@@ -7510,3 +7510,240 @@ OK: dashboard.md auto section updated (04:39)
 [2026-03-23 04:40:58] AGENT-STATE-CORRECTION: kotaro @agent_state=active but idle prompt detected, corrected to idle
 [2026-03-23 04:40:58] RENUDGE-TRANSITION: kotaro fingerprint changed (unread=1), sending inbox1
 [2026-03-23 04:40:59] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (04:41)
+[2026-03-23 04:42:14] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:42:15] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:42:19] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:42:20] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:42:25] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:42:34] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:42:35] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:42:40] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:42:40] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:42:40] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:42:40] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:42:40] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:42:41] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:42:41] STALL-GHOST: tobisaru has status=acknowledged but empty task_id — skipping stall detection
+[2026-03-23 04:42:41] RENUDGE-RESET: kotaro unread=0, fingerprint+counter reset
+[2026-03-23 04:42:44] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (04:43)
+[2026-03-23 04:43:44] SKIP_CLEAR: tobisaru recent task update (42s ago)
+[2026-03-23 04:43:56] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:43:56] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:44:03] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:44:03] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:44:10] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:44:18] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:44:19] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:44:25] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:44:25] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:44:25] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:44:25] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:44:25] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:44:26] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:44:26] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:44:26] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+OK: dashboard.md auto section updated (04:44)
+[2026-03-23 04:45:38] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:45:38] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:45:46] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:45:46] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:45:53] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:46:02] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:46:02] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:46:10] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:46:12] UNCOMMITTED-BLOCK: tobisaru files=context/lord-conversation-index.md dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_karo.log logs/lesson_tracking.tsv logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml 
+[2026-03-23 04:46:12] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:46:12] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for tobisaru (tobisaru:cmd_1310) — STALL検知は継続
+[pre-send capture] tobisaru pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 04:46:12] IDLE confirmed: tobisaru
+[2026-03-23 04:46:19] CLEAR-BLOCKED-UNCOMMITTED: tobisaru has uncommitted files: context/lord-conversation-index.md queue/reports/tobisaru_report.yaml queue/shogun_to_karo.yaml queue/tasks/tobisaru.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:46:19] Batch notification sent to karo: tobisaru
+[2026-03-23 04:46:19] CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)
+[cdp_cleanup] 2026-03-23 04:46:19 Starting CDP Chrome cleanup scan...
+[cdp_cleanup] 2026-03-23 04:46:19 No PID files found. Nothing to clean.
+[cdp_cleanup] 2026-03-23 04:46:19 Done.
+[2026-03-23 04:46:19] CDP-CLEANUP: Completed successfully
+[2026-03-23 04:46:19] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:46:19] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:46:20] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:46:20] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:46:20] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:46:20] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:46:20] AGENT-STATE-CORRECTION: tobisaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:46:20] RENUDGE-TRANSITION: tobisaru fingerprint changed (unread=1), sending inbox1
+[2026-03-23 04:46:21] SHOGUN-ALERT-DEBOUNCE: shogun CTX:57% but 754s < 1800s since last alert
+OK: dashboard.md auto section updated (04:46)
+[2026-03-23 04:47:47] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:47:47] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:47:53] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:47:54] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:48:00] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:48:08] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:48:08] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:48:14] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:48:15] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:48:20] CLEAR-BLOCKED-UNCOMMITTED: tobisaru has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:48:20] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:48:20] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:48:20] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:48:21] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:48:21] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:48:21] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:48:21] RENUDGE-RESET: tobisaru unread=0, fingerprint+counter reset
+[2026-03-23 04:48:21] SHOGUN-ALERT-DEBOUNCE: shogun CTX:60% but 874s < 1800s since last alert
+[2026-03-23 04:48:25] LESSON-HEALTH: all projects OK
+[2026-03-23 04:48:26] WARNING: ntfy_listener log stale (11min old). Restarting...
+[Mon Mar 23 04:48:26 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 04:48:26 JST 2026] Found existing ntfy_listener process(es): 2527034
+2629314
+2629324
+[Mon Mar 23 04:48:26 JST 2026] Killing PID 2527034 ...
+[Mon Mar 23 04:48:26 JST 2026] Killing PID 2629324 ...
+[Mon Mar 23 04:48:26 JST 2026] Killing orphan curl stream process(es): 2527099
+[Mon Mar 23 04:48:31 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 04:48:32 JST 2026] Lock file is free
+[Mon Mar 23 04:48:32 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 04:48:32 JST 2026] Launched with PID: 2630768
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 2630768
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 04:48:35] ntfy_listener restart triggered by health check
+OK: dashboard.md auto section updated (04:48)
+[2026-03-23 04:49:54] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:49:55] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:50:01] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:50:01] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:50:07] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:50:14] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:50:14] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:50:20] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:50:20] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:50:26] CLEAR-BLOCKED-UNCOMMITTED: tobisaru has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:50:26] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:50:26] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:50:26] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:50:26] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:50:26] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:50:26] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:50:27] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:50:27] RENUDGE-TRANSITION: karo fingerprint changed (unread=32), sending inbox32
+[2026-03-23 04:50:27] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 04:50:27] SHOGUN-ALERT-DEBOUNCE: shogun CTX:63% but 1000s < 1800s since last alert
+OK: dashboard.md auto section updated (04:50)
+[2026-03-23 04:51:52] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:51:52] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:51:57] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:51:57] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:52:02] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:52:08] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:52:09] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:52:13] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:52:14] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:52:19] CLEAR-BLOCKED-UNCOMMITTED: tobisaru has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:52:19] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:52:19] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:52:19] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:52:19] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:52:19] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:52:20] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:52:20] SHOGUN-ALERT-DEBOUNCE: shogun CTX:65% but 1113s < 1800s since last alert
+[2026-03-23 04:52:57] Pane discovery: 6/6 ninja found
+[2026-03-23 04:52:59] [monitor] WARN: shogun_to_karo.yaml is 1088 lines (threshold: 500)
+[2026-03-23 04:53:11] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md queue/reports/saizo_report.yaml queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:53:11] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:53:17] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: context/lord-conversation-index.md queue/reports/saizo_report.yaml queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:53:18] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:53:24] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: context/lord-conversation-index.md queue/reports/saizo_report.yaml queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:53:24] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 04:53:30] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md queue/reports/saizo_report.yaml queue/shogun_to_karo.yaml  reason=AUTO-CLEAR
+[2026-03-23 04:53:31] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:53:31] CLEAR-SKIP: kotaro CTX=0%, already clean (1/10)
+[2026-03-23 04:53:31] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:53:32] CLEAR-SKIP: tobisaru CTX=0%, already clean (1/10)
+[2026-03-23 04:53:32] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:53:32] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:53:32] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:53:32] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:53:32] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:53:32] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:53:34] SHOGUN-ALERT-DEBOUNCE: shogun CTX:65% but 1187s < 1800s since last alert
+OK: dashboard.md auto section updated (04:53)
+[2026-03-23 04:54:34] ACTIVE: kagemaru resumed work
+[2026-03-23 04:54:40] CLEAR-SKIP: hayate CTX=0%, already clean (1/10)
+[2026-03-23 04:54:40] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:54:41] CLEAR-SKIP: hanzo CTX=0%, already clean (1/10)
+[2026-03-23 04:54:41] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 04:54:41] CLEAR-SKIP: saizo CTX=0%, already clean (1/10)
+[2026-03-23 04:54:42] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:54:42] CLEAR-SKIP: kotaro CTX=0%, already clean (2/10)
+[2026-03-23 04:54:43] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:54:43] CLEAR-SKIP: tobisaru CTX=0%, already clean (2/10)
+[2026-03-23 04:54:43] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:54:43] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:54:43] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:54:43] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:54:43] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:54:43] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:54:43] SHOGUN-ALERT-DEBOUNCE: shogun CTX:65% but 1256s < 1800s since last alert
+OK: dashboard.md auto section updated (04:55)
+[2026-03-23 04:56:02] CLEAR-SKIP: hayate CTX=0%, already clean (2/10)
+[2026-03-23 04:56:02] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:56:02] IDLE confirmed: kagemaru
+[2026-03-23 04:56:03] CLEAR-SKIP: kagemaru CTX=0%, already clean (1/10)
+[2026-03-23 04:56:03] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:56:03] CLEAR-SKIP: hanzo CTX=0%, already clean (2/10)
+[2026-03-23 04:56:04] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 04:56:04] CLEAR-SKIP: saizo CTX=0%, already clean (2/10)
+[2026-03-23 04:56:05] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:56:05] CLEAR-SKIP: kotaro CTX=0%, already clean (3/10)
+[2026-03-23 04:56:06] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:56:06] CLEAR-SKIP: tobisaru CTX=0%, already clean (3/10)
+[2026-03-23 04:56:06] Batch notification sent to karo: kagemaru
+[2026-03-23 04:56:06] CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)
+[cdp_cleanup] 2026-03-23 04:56:07 Starting CDP Chrome cleanup scan...
+[cdp_cleanup] 2026-03-23 04:56:07 No PID files found. Nothing to clean.
+[cdp_cleanup] 2026-03-23 04:56:07 Done.
+[2026-03-23 04:56:07] CDP-CLEANUP: Completed successfully
+[2026-03-23 04:56:07] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:56:07] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:56:07] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:56:07] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:56:07] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:56:07] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:56:07] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 04:56:07] SHOGUN-ALERT-DEBOUNCE: shogun CTX:65% but 1340s < 1800s since last alert
+OK: dashboard.md auto section updated (04:56)
+[2026-03-23 04:57:23] CLEAR-SKIP: hayate CTX=0%, already clean (3/10)
+[2026-03-23 04:57:23] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:57:24] CLEAR-SKIP: kagemaru CTX=0%, already clean (2/10)
+[2026-03-23 04:57:24] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:57:24] CLEAR-SKIP: hanzo CTX=0%, already clean (3/10)
+[2026-03-23 04:57:25] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 04:57:25] CLEAR-SKIP: saizo CTX=0%, already clean (3/10)
+[2026-03-23 04:57:26] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:57:26] CLEAR-SKIP: kotaro CTX=0%, already clean (4/10)
+[2026-03-23 04:57:27] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:57:27] CLEAR-SKIP: tobisaru CTX=0%, already clean (4/10)
+[2026-03-23 04:57:27] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:57:27] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:57:27] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:57:27] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:57:27] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:57:27] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:57:27] RENUDGE-RESET: karo unread=0, fingerprint+counter reset
+[2026-03-23 04:57:28] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 04:57:29] CLEAR-BLOCKED: karo not idle (check_idle), reason=KARO-CLEAR(check_karo_clear), will retry next cycle
+[2026-03-23 04:57:29] SHOGUN-ALERT-DEBOUNCE: shogun CTX:67% but 1422s < 1800s since last alert
+[2026-03-23 04:57:31] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle

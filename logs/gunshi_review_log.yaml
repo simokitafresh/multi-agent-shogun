@@ -13,6 +13,7 @@
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
 # 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
+# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)
 # ─── GP追跡表(S42整理:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
@@ -29,17 +30,19 @@
 # | 012 | RC再検証フロー         | ★implemented      | S30  | instructions/gunshi.md §396-457。cmd_1287で初適用 |
 # | 013 | GP追跡表構造化         | ★implemented      | S31  | S35で本ヘッダに実装 |
 # | 014 | commit層gate           | ★implemented      | S33  | inbox_write.sh WARNING mode(cmd_1286)。BLOCK昇格は安定後 |
-# | 016 | Bash report検出        | pending            | S38  | Write/Edit DENY(GP-003)のBashすり抜け対策。優先1 |
-# | 017 | report_path導線修復    | ★implemented      | S39  | cmd_1293(kagemaru)で実装完了 |
-# | 018 | /clear前commit検査    | pending            | S40  | ninja_monitor git status。GP-014と補完関係。優先2 |
-# | 019 | L247 gate強制          | pending            | S40  | found:false理由なし→BLOCK。教訓ループ閉鎖。優先2 |
-# | 020 | lesson候補ハーベスト   | pending            | S40  | 82.8%消失対策。定期スキャン。優先3 |
-# | 021 | ninja-adaptive注入    | pending            | S43  | deploy_task.sh忍者名ベース失敗パターン注入。次世代 |
-# | 022 | bc evidence必須化     | pending            | S43  | binary_checksにevidence(出力snippet)必須。次世代 |
+# | 015 | 教訓退役制度           | ★implemented      | S37  | cmd_1297(kotaro) LGTM。lesson_write.sh --retire+deploy filter |
+# | 016 | Bash report検出        | ★implemented      | S38  | cmd_1298(hayate) LGTM。pre-bash-report-deny.sh |
+# | 017 | report_path導線修復    | ★implemented      | S39  | cmd_1293(kagemaru) LGTM |
+# | 018 | /clear前commit検査    | ★implemented      | S40  | cmd_1296(saizo) LGTM。scope修正=cmd_1303 |
+# | 019 | L247 gate強制          | ★implemented      | S40  | cmd_1299(kagemaru) LGTM |
+# | 020 | lesson候補ハーベスト   | ★implemented      | S40  | cmd_1300(hanzo) LGTM。227候補検出 |
+# | 021 | ninja-adaptive注入    | ★implemented      | S43  | cmd_1307(hanzo) LGTM。deploy_task.sh L2038 |
+# | 022 | bc evidence必須化     | ✗obsolete          | S46  | 忍者がresult:内に自然にevidence埋込(e.g."yes(36/36)")。形式強制は過剰 |
 # | 023 | SG9 cross-ninja検出   | pending            | S43  | LGTM前に忍者workaround履歴チェック。次世代 |
-# | 024 | archive race根本修正  | pending            | S44  | review_gate.doneトリガー欠落。cmd_1291不十分。優先1 |
-# 集計: ★implemented:14 / ✗obsolete:2 / pending:4(cmd化済) / pending(次世代):4
-# 将軍推薦順: GP-024→GP-016→GP-018→GP-019→GP-020 | 次世代: GP-021→GP-023→GP-022
+# | 024 | archive race根本修正  | ★monitoring       | S44  | cmd_1302(archive→GATE後移動)。review_gate.done 548件存在。要観察 |
+# | 025 | archive gate循環修正  | pending            | S46  | DEFERRED_GATES配列でgate checkスキップ。初回CLEAR率37%→70%+ |
+# 集計: ★implemented:21 / ★monitoring:1 / ✗obsolete:2 / pending(次世代+新規):3
+# 優先順: GP-025(初回CLEAR率直結)→GP-022→GP-023。GP-024=monitoring
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -1014,7 +1017,7 @@
 - cmd_id: cmd_1304
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "削除済みスクリプト参照クリーンアップ。前提OK(7本削除確認、参照26≒27)。スコープ問題: 26中12件がqueue/reports過去報告。活きたファイル14件に限定すべき。severity: normal"
   timestamp: "2026-03-23T04:20:00"
 - cmd_id: cmd_1305
@@ -1038,7 +1041,7 @@
 - cmd_id: cmd_1308
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "workaround率自動計測gate。自動化×強制原則の直接実装。情報表示のみ(安全)。YAML形式不統一注意(cmd_1307共通)。confidence: HIGH"
   timestamp: "2026-03-23T04:30:00"
 - cmd_id: cmd_1306
@@ -1053,7 +1056,7 @@
 - cmd_id: cmd_1309
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "subtask YAML 47件archive移動。mvのみ低リスク。q5で47件検証済み。confidence:HIGH"
   lesson_candidate: ""
   timestamp: "2026-03-23T04:40:00"
@@ -1071,7 +1074,7 @@
   report_verdict: FAIL
   fail_reasons:
     - "SG0 FAIL: binary_checks欠落、purpose_validation欠落。LG006適用"
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "21ファイル注記追加、残存参照0件。実作業問題なし。報告フォーマット非標準"
   lesson_quality: WEAK
   timestamp: "2026-03-23T04:40:00"
@@ -1080,7 +1083,7 @@
   report_ninja: hanzo
   report_task_id: cmd_1307
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "GP-021 ninja-adaptive injection。SG0 PASS(git show e0565a6確認)。inject_ninja_weak_points L2038存在。binary_checks AC1-AC3全6チェックPASS。context還流推奨(infrastructure.md)"
   lesson_quality: N/A
   sg7_bundle:
@@ -1097,7 +1100,25 @@
   report_verdict: FAIL
   fail_reasons:
     - "報告YAML旧データ残存: parent_cmd不一致、成果物データ未反映"
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "実装確認済み(ea51afb, gate_workaround_rate.sh 139行)。報告YAML未更新。karo workaround必要"
   lesson_quality: N/A
   timestamp: "2026-03-23T04:40:00"
+- cmd_id: self_study_S45
+  review_type: self_study
+  findings_summary: "WA pattern shift分析+GP21/24到達。Phase1(cmd_1182-1260):WA率58%,report_yaml_format支配(8件)。Phase2(cmd_1263+):WA率89%(8/9)だがarchive_timing(3)+report_missing(2)がインフラバグとして浮上。GP-001〜021で忍者フォーマット問題は構造的に根絶進行中→インフラ層バグが露呈。cmd_1302(archive timing→GATE後移動)+cmd_1303(uncommitted scope修正)で対処中。review_gate.done=548件存在(S44の予測「マーカー0件」は検索パスミス)。GP追跡表更新: 21/24 implemented, 1 monitoring, 2 pending(次世代)。GP完遂率87.5%。次サイクル: cmd_1302/1303の効果計測(次バッチでWA率低下するか)+GP-022/023の必要性再評価"
+  proposals: []
+  timestamp: "2026-03-23T04:50:00"
+- cmd_id: self_study_S46
+  review_type: self_study
+  findings_summary: "archive gate循環依存の根本原因特定。ALWAYS_REQUIRED=(archive lesson)だがcmd_1302でarchive→GATE CLEAR後に移動→archive.doneがGATE判定前に存在しない→BLOCK(missing_gate:archive)。直近30cmdの初回CLEAR率37%。report_yaml_missing(14件)+missing_gate:archive(3件)が主因。循環の証拠: cmd_1306 BLOCK→3分後CLEAR、cmd_1309 BLOCK→49秒後CLEAR(別トリガーがarchive.done作成)。修正案: preflightでdeferred宣言したgateをgate check loop(L1850)でSKIP。DEFERRED_GATES配列追加、L1860にDEFERRED判定を挿入。効果予測: missing_gate:archive 3件消滅→初回CLEAR率37%→47%以上。report_yaml_missingの減少(cmd_1302効果)と合わせて初回CLEAR率70%超到達可能"
+  proposals:
+    - id: GP-025
+      description: "archive gate循環依存修正: preflightでDEFERRED宣言→gate check loopでSKIP。初回CLEAR率37%→70%+見込み"
+      status: pending
+  timestamp: "2026-03-23T04:55:00"
+- cmd_id: self_study_S47
+  review_type: self_study
+  findings_summary: "軍師精度とインフラノイズ分離。APPROVE→BLOCK 14件中13件(93%)=archive race/timingインフラノイズ。真の見落とし=1件(cmd_1308 ac_version_mismatch=ninja report問題、draft APPROVE自体は正当)。真の軍師精度: 90%(9/10)。GP-025でインフラノイズ13件消滅→GATE CLEAR率37%→80%予測。GP-022はobsolete(忍者が自然にevidence埋込)。GP-023はGP-021効果計測後に再評価。忍者別: hayate=89%WA(最多8件)、kotaro=0%(最優秀)。GP-021のhayate改善効果が次バッチの計測ポイント"
+  proposals: []
+  timestamp: "2026-03-23T05:00:00"
