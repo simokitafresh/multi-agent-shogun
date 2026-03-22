@@ -45,7 +45,7 @@
 # | 027 | commit漏れ検出WARN    | pending            | S50  | target_path未commit時WARN。cmd_1311で影丸commit忘れ検出 |
 # | 028 | 教訓注入タイミング修正| pending            | S57  | inject前にproject存在確認。なければtask:内のネストから取得 |
 # 集計: ★implemented:21 / ★monitoring:1 / ✗obsolete:3 / pending:6
-# 優先順: GP-028(教訓注入0%→復旧)→GP-025(初回CLEAR率直結)→GP-026(BLOCK65%根絶)→GP-027(commit漏れ)→GP-023
+# 優先順(S66再評価): GP-028(教訓注入0%復旧:12cmd全滅)→GP-025(STUCK2件+毎回BLOCK)→GP-026(STUCK6件+65%BLOCK)→GP-027(commit漏れ)→GP-023(データ待ち)
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml

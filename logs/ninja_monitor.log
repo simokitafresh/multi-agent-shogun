@@ -8888,3 +8888,4 @@ OK: dashboard.md auto section updated (05:46)
 [2026-03-23 05:48:05] RENUDGE-TRANSITION: kotaro fingerprint changed (unread=1), sending inbox1
 [2026-03-23 05:48:05] RENUDGE-RESET: tobisaru unread=0, fingerprint+counter reset
 [2026-03-23 05:48:06] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:48:09] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
