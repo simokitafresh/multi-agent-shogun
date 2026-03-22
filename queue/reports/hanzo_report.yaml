@@ -41,16 +41,16 @@ hook_failures:
   details: ''
 binary_checks:
   AC1:
-    '0':
-      result: PASS
-    '1':
-      result: PASS
+  - check: archive_completed.sh呼出しが報告YAML存在チェック+全GATEチェックの後にあるか
+    result: PASS
+  - check: 報告YAMLがarchiveされる前にGATEが報告を読む順序になっているか
+    result: PASS
   AC2:
-    '0':
-      result: PASS
+  - check: 報告YAMLが存在する状態でcmd_complete_gate.shがreportチェックPASSを出力するか
+    result: PASS
   AC3:
-    '0':
-      result: PASS
-    '1':
-      result: PASS
+  - check: GATE CLEAR後にarchive_completed.shが実行されるか
+    result: PASS
+  - check: archive後にarchive.doneフラグが作成されるか
+    result: PASS
 verdict: PASS
