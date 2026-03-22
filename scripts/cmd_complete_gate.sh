@@ -1887,11 +1887,12 @@ done
 # ─── context_update freshness check（cmd指定時のみBLOCK） ───
 check_context_update "$CMD_ID"
 
-# ─── 報告YAML存在チェック（cmd_1192: タスクあり報告なしをBLOCK） ───
+# ─── 報告YAML存在チェック（cmd_1192: タスクあり報告なしをBLOCK, GP-026: in_progress忍者はWAIT） ───
 level_heading "[L1]" "Report YAML existence check:"
 REPORT_TASK_COUNT=0
 REPORT_FOUND_COUNT=0
 REPORT_MISSING_FILES=()
+REPORT_WAIT_NINJAS=()
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
     if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
@@ -1906,10 +1907,33 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
         echo "  ${ninja_name}: OK ($(basename "$report_file"))"
     else
-        REPORT_MISSING_FILES+=("$(basename "$report_file")")
-        echo "  [CRITICAL] ${ninja_name}: MISSING ← 報告YAML不在: $(basename "$report_file")"
+        # GP-026: in_progress忍者はWAIT、done/complete忍者は即BLOCK
+        ninja_status=$(grep -E '^\s+status:' "$task_file" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
+        if [ "$ninja_status" = "in_progress" ]; then
+            REPORT_WAIT_NINJAS+=("$ninja_name")
+            echo "  [WAIT] ${ninja_name}: 報告YAML未着（status=in_progress、60秒後に再チェック）"
+        else
+            REPORT_MISSING_FILES+=("$(basename "$report_file")")
+            echo "  [CRITICAL] ${ninja_name}: MISSING ← 報告YAML不在(status=${ninja_status}): $(basename "$report_file")"
+        fi
     fi
 done
+
+# GP-026: WAIT忍者がいる場合は60秒待機→再チェック
+if [ "${#REPORT_WAIT_NINJAS[@]}" -gt 0 ]; then
+    echo "  [WAIT] ${#REPORT_WAIT_NINJAS[@]}名のin_progress忍者の報告待ち。60秒後に再チェック..."
+    sleep 60
+    for ninja_name in "${REPORT_WAIT_NINJAS[@]}"; do
+        report_file=$(resolve_report_file "$ninja_name")
+        if [ -f "$report_file" ]; then
+            REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
+            echo "  ${ninja_name}: OK (再チェックで発見: $(basename "$report_file"))"
+        else
+            REPORT_MISSING_FILES+=("$(basename "$report_file")")
+            echo "  [CRITICAL] ${ninja_name}: MISSING ← 再チェック後も報告YAML不在: $(basename "$report_file")"
+        fi
+    done
+fi
 
 if [ "$REPORT_TASK_COUNT" -ge 1 ] && [ "$REPORT_FOUND_COUNT" -eq 0 ]; then
     echo "  [CRITICAL] BLOCK: タスク${REPORT_TASK_COUNT}件に対して報告YAML 0件"
