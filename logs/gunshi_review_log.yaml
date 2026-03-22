@@ -930,3 +930,18 @@
       description: "archive race根本修正 — deploy_task.shのreview_gate.done placeholderがarchive_completed.shを騙す。archive側でsource:deploy_preflightをSKIP条件に追加"
       status: pending
   timestamp: "2026-03-23T03:55:00"
+- cmd_id: cmd_1301
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1301
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "grep -c anti-pattern 2箇所修正。commit 736a279確認。diff+2/-2。SG0 PASS。他grep -c(L253-255)影響なし。AC1-3全PASS"
+  lesson_quality: N/A
+  sg7_bundle:
+    gate_precheck: {report_format: PASS, commit_verified: true, gate_prediction: CLEAR}
+    lesson_extraction: {has_candidate: false}
+    context_reflux: {needed: false}
+    dashboard_line: "cmd_1301 kagemaru PASS。gate_shogun_startup.sh grep -c修正。workaround: no"
+    karo_workaround_needed: no
+  timestamp: "2026-03-23T04:05:00"

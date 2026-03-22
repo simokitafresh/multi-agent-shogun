@@ -306,8 +306,10 @@ safe_send_clear() {
     fi
 
     # cmd_1296: /clear前のgit uncommittedチェック
+    # cmd_1303: 運用ファイル除外フィルタ（自動更新される運用ファイルで/clearをブロックしない）
     local _uncommitted
-    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain 2>/dev/null)
+    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain 2>/dev/null \
+        | grep -v -E '^.. (dashboard\.md|logs/|queue/inbox/|queue/karo_snapshot\.txt|queue/insights\.yaml|\.claude/)')
     if [ -n "$_uncommitted" ]; then
         local _file_list
         _file_list=$(echo "$_uncommitted" | sed 's/^...//' | tr '\n' ' ')

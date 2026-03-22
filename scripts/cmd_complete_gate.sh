@@ -1575,14 +1575,10 @@ preflight_gate_flags() {
         echo "  review_gate: already exists (skip)"
     fi
 
-    # 2. archive.done — review_gate.done存在後に実行（競合解消済み）
+    # 2. archive.done — GATE CLEAR後に実行（報告YAMLをGATEが読み終わってからアーカイブ）
+    #    cmd_1302: archiveをpreflight→GATE CLEAR後に移動。preflight時点ではスキップ。
     if [ ! -f "$gates_dir/archive.done" ]; then
-        echo "  archive: generating..."
-        if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" 2>&1; then
-            echo "  archive: preflight OK"
-        else
-            echo "  [INFO] archive: preflight WARN (failed, non-blocking)"
-        fi
+        echo "  archive: deferred (will run after GATE CLEAR)"
     else
         echo "  archive: already exists (skip)"
     fi
@@ -3810,6 +3806,21 @@ except:
     done
     if [ "$LC_WARN_COUNT" -eq 0 ]; then
         echo "  OK: no pending lesson_candidates"
+    fi
+
+    # ─── archive実行（GATE CLEAR後、全チェック+ポストプロセス完了後） ───
+    # cmd_1302: 報告YAMLをGATEが読み終わってからアーカイブ
+    echo ""
+    echo "Archive (post-GATE CLEAR):"
+    local gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
+    if [ ! -f "$gates_dir/archive.done" ]; then
+        if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" 2>&1; then
+            echo "  archive: OK"
+        else
+            echo "  [INFO] archive: WARN (failed, non-blocking)"
+        fi
+    else
+        echo "  archive: already done (skip)"
     fi
 
     exit 0

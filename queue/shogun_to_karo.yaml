@@ -773,3 +773,67 @@ commands:
       q6_not_hiding: no — 忍者/clear阻害の根本原因を修正
     status: delegated
     delegated_at: "\"2026-03-23T03:59:56\""
+  cmd_1304:
+    title: 削除済みスクリプト参照27ファイルのクリーンアップ
+    task_type: implement
+    command: |
+      ■ 背景
+      cmd_1275でGS混乱候補スクリプト7本を削除した。
+      しかし27ファイルがまだ削除済みスクリプトを参照している(cmd_1275 影丸DC)。
+      死んだ参照は忍者の混乱を招き、将来のバグの原因になる。
+
+      ■ AC
+      AC1: 削除済み7スクリプトのファイル名をgrepで特定し、
+           参照している全ファイルをリスト化
+      AC2: 各参照を適切に処理（削除/コメントアウト/代替パスへ更新）
+           — 参照の種類に応じて判断:
+             - import/sourceなら削除
+             - ドキュメント参照なら「(削除済み)」注記追加
+             - テストなら関連テストごと削除
+      AC3: grep再実行で残存参照が0件であることを確認
+    acceptance_criteria:
+    - 削除済み7スクリプトへの参照が全ファイルから除去されていること
+    - 参照除去後にbash -n構文チェックでエラーがないこと
+    - grep再確認で残存参照0件であること
+    project: infra
+    priority: medium
+    quality_gate:
+      q1_firefighting: no — tech debt清掃。品質向上
+      q2_learning: 奪わない — 忍者がgrep+修正を実装
+      q3_next_quality: 上がる — 死んだ参照による混乱リスク排除
+      q4_depth: medium — cmd_1275 DC(影丸報告)で27ファイルの参照残存を確認済み
+      q5_verified_source: dashboard将軍宛報告(cmd_1275 kagemaru DC) + cmd_1275完了済み
+      q6_not_hiding: no — 削除済みスクリプトの残存参照を適切に処理
+    status: pending
+    delegated_at: "\"2026-03-23T04:03:59\""
+  cmd_1305:
+    title: lesson_update_score.sh書込先修正 — Vercel化後のarchive参照切替
+    task_type: implement
+    command: |
+      ■ 背景
+      cmd_1280でlessons.yamlをVercel化(索引+archive分離)した。
+      しかしlesson_update_score.shの書込先がindex(lessons.yaml)のまま。
+      結果: block-style書き戻しが発生し、索引層が膨張する。
+      書込先をlessons_archive.yamlに切替える必要がある(cmd_1283で一部対応済み)。
+
+      ■ AC
+      AC1: lesson_update_score.shの書込先をlessons_archive.yamlに変更
+           (cmd_1283の対応と整合性確認)
+      AC2: 書込みテスト: lesson_update_score.sh実行後に
+           lessons.yaml(索引)が膨張していないこと
+      AC3: lessons_archive.yamlに正しくスコアが書き込まれること
+    acceptance_criteria:
+    - lesson_update_score.shがlessons_archive.yamlに書き込むこと
+    - lessons.yaml(索引)のサイズが増加しないこと
+    - スコア更新が正しくarchiveに反映されること
+    project: infra
+    priority: medium
+    quality_gate:
+      q1_firefighting: no — Vercel化の後続修正。品質向上
+      q2_learning: 奪わない — 忍者がスクリプト修正を実装
+      q3_next_quality: 上がる — 索引層膨張防止でCTX効率維持
+      q4_depth: medium — cmd_1280 kagemaru LCで問題報告済み。cmd_1283で一部対応済み
+      q5_verified_source: dashboard将軍宛報告(cmd_1280 kagemaru LC) + cmd_1283完了記録
+      q6_not_hiding: no — Vercel化の不完全な移行を修正
+    status: pending
+    delegated_at: "\"2026-03-23T04:04:00\""
