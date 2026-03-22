@@ -1603,3 +1603,24 @@
 [2026-03-23 05:47:16] Change detected. Debouncing 3s...
 [2026-03-23 05:47:19] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
 [2026-03-23 05:47:21] Gist updated successfully (project=fixed)
+[2026-03-23 05:48:57] Change detected. Debouncing 3s...
+[2026-03-23 05:49:01] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:49:02] Gist updated successfully (project=fixed)
+[2026-03-23 05:51:19] Change detected. Debouncing 3s...
+[2026-03-23 05:51:22] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:51:23] Gist updated successfully (project=fixed)
+[2026-03-23 05:53:31] Change detected. Debouncing 3s...
+[2026-03-23 05:53:34] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:53:35] Gist updated successfully (project=fixed)
+[2026-03-23 05:53:40] Change detected. Debouncing 3s...
+[2026-03-23 05:53:43] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:53:44] Gist updated successfully (project=fixed)
+[2026-03-23 05:54:07] gist_sync started. Watching: /mnt/c/tools/multi-agent-shogun/dashboard.md (GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c, project=dm-signal)
+[2026-03-23 05:54:07] gh auth verified OK
+[2026-03-23 05:54:07] Once mode: executing single sync
+[2026-03-23 05:54:07] Syncing to project=dm-signal GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:54:08] Gist updated successfully (project=dm-signal)
+[2026-03-23 05:54:08] Once mode: finished (rc=0)
+[2026-03-23 05:54:09] Change detected. Debouncing 3s...
+[2026-03-23 05:54:12] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:54:14] Gist updated successfully (project=fixed)

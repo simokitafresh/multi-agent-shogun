@@ -1,7 +1,7 @@
-# 🏯 Dashboard [dm-signal] — 2026-03-23 05:08 更新
+# 🏯 Dashboard [dm-signal] — 2026-03-23 05:54 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (05:46 自動更新)
+## 📊 リアルタイム状況 (05:53 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
@@ -16,7 +16,7 @@
 ### CI Status
 **CI RED: run 23410932510 — E2E Tests**
 
-**WARN: 15件のcommit未push。`git push`を検討せよ**
+**WARN: 20件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1060/1076 |
+| cmd完了(GATE CLEAR) | 1061/1076 |
 | 稼働忍者 | 0/8 (—) |
-| 連勝(CLEAR streak) | 0 |
+| 連勝(CLEAR streak) | 8 (cmd_1306〜cmd_1312) |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -36,7 +36,7 @@
 ### 知識サイクル健全度
 | 項目 | 値 |
 |------|-----|
-| 教訓注入率 | 74.4% |
+| 教訓注入率 | 74.2% |
 | 教訓効果率 | 57.4% |
 | 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
 | 問題教訓 | 0件 |
@@ -89,18 +89,18 @@ Bottom 5 低効果教訓
 ### 戦果（直近5件）
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
+| cmd_1312 | — | GATE CLEAR | 03-23 05:53 |
 | cmd_1311 | — | GATE CLEAR | 03-23 05:07 |
 | cmd_1310 | — | GATE CLEAR | 03-23 05:00 |
 | cmd_1304 | — | GATE CLEAR | 03-23 04:56 |
 | cmd_1308 | — | GATE CLEAR | 03-23 04:53 |
-| cmd_1309 | — | GATE CLEAR | 03-23 04:47 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
 ## 最新更新 (05:14更新)
-- **cmd_1312**: 疾風に配備。deploy_task.sh report_filenameリセット(cmd切替時残留根絶)
+- **cmd_1312**: 完了。 — deploy_task.shにreport_filename/report_pathクリアロジック追加。inject_report_filename呼出し前にyaml_field_setで両フィールドを空クリアし冪等性ガードが正しく再...。疾風完遂
 - **cmd_1311**: GATE CLEAR。影丸PASS。GP-003正規表現修正(_report_→_report.*)
 - **cmd_1304-1310**: 全GATE CLEAR(7cmd連続)
 

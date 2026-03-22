@@ -8889,3 +8889,81 @@ OK: dashboard.md auto section updated (05:46)
 [2026-03-23 05:48:05] RENUDGE-RESET: tobisaru unread=0, fingerprint+counter reset
 [2026-03-23 05:48:06] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
 [2026-03-23 05:48:09] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (05:48)
+[2026-03-23 05:49:29] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: queue/reports/hayate_report.yaml  reason=AUTO-CLEAR
+[2026-03-23 05:49:30] IDLE confirmed: kagemaru
+[2026-03-23 05:49:39] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: queue/reports/hayate_report.yaml  reason=AUTO-CLEAR
+[2026-03-23 05:49:41] IDLE confirmed: hanzo
+[2026-03-23 05:49:48] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: queue/reports/hayate_report.yaml  reason=AUTO-CLEAR
+[2026-03-23 05:49:57] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: queue/reports/hayate_report.yaml  reason=AUTO-CLEAR
+[2026-03-23 05:49:58] IDLE confirmed: kotaro
+[2026-03-23 05:50:06] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: queue/reports/hayate_report.yaml  reason=AUTO-CLEAR
+[2026-03-23 05:50:07] IDLE confirmed: tobisaru
+[2026-03-23 05:50:14] CLEAR-BLOCKED-UNCOMMITTED: tobisaru has uncommitted files: queue/reports/hayate_report.yaml  reason=AUTO-CLEAR
+[2026-03-23 05:50:14] Batch notification sent to karo: kagemaru hanzo kotaro tobisaru
+[2026-03-23 05:50:14] CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)
+[cdp_cleanup] 2026-03-23 05:50:14 Starting CDP Chrome cleanup scan...
+[cdp_cleanup] 2026-03-23 05:50:14 No PID files found. Nothing to clean.
+[cdp_cleanup] 2026-03-23 05:50:14 Done.
+[2026-03-23 05:50:14] CDP-CLEANUP: Completed successfully
+[2026-03-23 05:50:14] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:50:14] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:50:15] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:50:15] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:50:15] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:50:15] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:50:15] RENUDGE-RESET: kotaro unread=0, fingerprint+counter reset
+[2026-03-23 05:50:15] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+OK: dashboard.md auto section updated (05:50)
+[2026-03-23 05:51:54] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: queue/reports/hayate_report.yaml queue/reports/tobisaru_report_cmd_1305.yaml scripts/ninja_monitor.sh  reason=AUTO-CLEAR
+[2026-03-23 05:52:02] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: queue/reports/hayate_report.yaml queue/reports/tobisaru_report_cmd_1305.yaml scripts/ninja_monitor.sh  reason=AUTO-CLEAR
+[2026-03-23 05:52:09] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: queue/reports/hayate_report.yaml queue/reports/tobisaru_report_cmd_1305.yaml scripts/ninja_monitor.sh  reason=AUTO-CLEAR
+[2026-03-23 05:52:17] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: queue/reports/hayate_report.yaml queue/reports/tobisaru_report_cmd_1305.yaml scripts/ninja_monitor.sh  reason=AUTO-CLEAR
+[2026-03-23 05:52:24] CLEAR-BLOCKED-UNCOMMITTED: kotaro has uncommitted files: queue/reports/hayate_report.yaml queue/reports/tobisaru_report_cmd_1305.yaml scripts/ninja_monitor.sh  reason=AUTO-CLEAR
+[2026-03-23 05:52:31] CLEAR-BLOCKED-UNCOMMITTED: tobisaru has uncommitted files: queue/reports/hayate_report.yaml queue/reports/tobisaru_report_cmd_1305.yaml scripts/ninja_monitor.sh  reason=AUTO-CLEAR
+[2026-03-23 05:52:31] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:52:31] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:52:31] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:52:31] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:52:31] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:52:31] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:52:31] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:52:32] RENUDGE-TRANSITION: karo fingerprint changed (unread=13), sending inbox13
+[2026-03-23 05:52:35] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:52:36] WARNING: ntfy_listener log stale (11min old). Restarting...
+[Mon Mar 23 05:52:36 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 05:52:36 JST 2026] Found existing ntfy_listener process(es): 3124418
+3232492
+3232498
+[Mon Mar 23 05:52:36 JST 2026] Killing PID 3124418 ...
+[Mon Mar 23 05:52:36 JST 2026] Killing PID 3232498 ...
+[Mon Mar 23 05:52:36 JST 2026] Killing orphan curl stream process(es): 3124452
+[Mon Mar 23 05:52:41 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 05:52:42 JST 2026] Lock file is free
+[Mon Mar 23 05:52:42 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 05:52:42 JST 2026] Launched with PID: 3232662
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 3232662
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 05:52:45] ntfy_listener restart triggered by health check
+OK: dashboard.md auto section updated (05:52)
+[2026-03-23 05:53:35] AUTO-RESTART: Change detected (script) [script:831c73b7a26305443405d433eba21f0a→cab4e2c9e16093cc0b3154ea3d595c61 deps:1390f7261a536ae5b300e6faa683c97a→1390f7261a536ae5b300e6faa683c97a], restarting...
+[2026-03-23 05:53:35] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:53:35] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:53:35] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:53:35] Pane discovery: 6/6 ninja found
+[2026-03-23 05:54:04] UNCOMMITTED-BLOCK: hayate files=dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_karo.log logs/inbox_watcher_kotaro.log logs/lesson_tracking.tsv logs/ninja_monitor.log logs/ntfy_listener.log logs/usage_statusbar_loop.log 
+[2026-03-23 05:54:04] REPORT-FORMAT-PASS: hayate report=hayate_report_cmd_1312.yaml
+[2026-03-23 05:54:04] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hayate (hayate:cmd_1312) — STALL検知は継続
+[pre-send capture] hayate pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:23%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:54:11] CLEAR-SEND: hayate confirmed idle, sending /clear, reason=AUTO-CLEAR
