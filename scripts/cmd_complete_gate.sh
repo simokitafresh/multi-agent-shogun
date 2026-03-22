@@ -3700,7 +3700,7 @@ except:
     echo ""
     echo "Insight candidate detection (GATE CLEAR):"
     INSIGHT_TMP=$(mktemp)
-    trap "rm -f '$INSIGHT_TMP'" EXIT
+    trap 'rm -f "$INSIGHT_TMP"' EXIT
     INSIGHT_COUNT=0
     for task_file in "$TASKS_DIR"/*.yaml; do
         [ -f "$task_file" ] || continue
@@ -3775,6 +3775,42 @@ except Exception as e:
         echo "  OK: no insight candidates (found:true=0)"
     fi
     rm -f "$INSIGHT_TMP"
+
+    # ─── lesson_candidate未登録 WARN（cmd_1256: GATE CLEAR時、情報提供のみ） ───
+    echo ""
+    echo "Lesson candidate registration check (GATE CLEAR):"
+    LC_WARN_COUNT=0
+    for task_file in "$TASKS_DIR"/*.yaml; do
+        [ -f "$task_file" ] || continue
+        if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
+            continue
+        fi
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+        [ -f "$report_file" ] || continue
+
+        lc_warn=$(REPORT_FILE="$report_file" python3 -c "
+import yaml, os
+try:
+    with open(os.environ['REPORT_FILE']) as f:
+        data = yaml.safe_load(f) or {}
+    lc = data.get('lesson_candidate', {})
+    if isinstance(lc, dict) and lc.get('found') is True:
+        title = str(lc.get('title', '')).strip()
+        if title:
+            print(title[:80])
+except:
+    pass
+" 2>/dev/null)
+
+        if [ -n "$lc_warn" ]; then
+            LC_WARN_COUNT=$((LC_WARN_COUNT + 1))
+            echo "  WARN: lesson_candidate未登録 — ${ninja_name}: ${lc_warn} — lesson_write.shで登録せよ"
+        fi
+    done
+    if [ "$LC_WARN_COUNT" -eq 0 ]; then
+        echo "  OK: no pending lesson_candidates"
+    fi
 
     exit 0
 else
