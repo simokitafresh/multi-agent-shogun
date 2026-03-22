@@ -1,0 +1,27 @@
+cmd_id: cmd_1263
+task_id: cmd_1263
+parent_cmd: cmd_1263
+ninja: hayate
+status: done
+title: ninja_monitorにcommit未完了チェック追加
+ac_version_read: 68eea8d6
+results:
+  AC1:
+    status: PASS
+  AC2:
+    status: PASS
+  AC3:
+    status: PASS
+files_modified:
+  scripts/ninja_monitor.sh: L124 declare追加, L666-685 uncommittedチェックロジック, L1074-1078
+    クリーンアップ
+lessons_useful:
+- id: L074
+  useful: false
+  reason: ((PASS++))パターン未使用
+- id: L223
+  useful: true
+  reason: inbox_writeメッセージに行動指示含めた
+lesson_candidate:
+- content: git diffテスト用一時リポジトリにはgit config user.email/name設定必須。未設定だとcommit失敗しテスト前提が崩れる
+  category: testing
