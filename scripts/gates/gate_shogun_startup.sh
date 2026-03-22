@@ -238,6 +238,16 @@ else
     $BRIEF || echo "  karo_snapshot.txt不在 — 判定不可"
 fi
 
+# --- Gate 11: 未処理PROPOSAL (cmd_1256) ---
+DASHBOARD="$SCRIPT_DIR/dashboard.md"
+if [ -f "$DASHBOARD" ]; then
+    proposal_count=$(grep -c '\[PROPOSAL\]' "$DASHBOARD" 2>/dev/null || echo "0")
+    if [ "$proposal_count" -gt 0 ]; then
+        $BRIEF || echo "■ 未処理PROPOSAL"
+        $BRIEF || echo "  未処理PROPOSAL: ${proposal_count}件"
+    fi
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ
