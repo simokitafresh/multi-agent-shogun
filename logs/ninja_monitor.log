@@ -7375,3 +7375,47 @@ OK: dashboard.md auto section updated (04:34)
 ---
 [2026-03-23 04:35:12] IDLE confirmed: hanzo
 [2026-03-23 04:35:31] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: AGENTS.md queue/shogun_to_karo.yaml tests/unit/test_sync_lessons_injection_count_sync.bats  reason=AUTO-CLEAR
+[2026-03-23 04:35:45] UNCOMMITTED-BLOCK: saizo files=AGENTS.md dashboard.md logs/cmd_design_quality.yaml logs/deploy_task.log logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_gunshi.log logs/inbox_watcher_hanzo.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/inbox_watcher_kotaro.log logs/inbox_watcher_tobisaru.log logs/lesson_tracking.tsv logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log queue/reports/kotaro_report.yaml queue/shogun_to_karo.yaml tests/unit/test_sync_lessons_injection_count_sync.bats 
+[2026-03-23 04:35:45] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for saizo (saizo:cmd_1308) — STALL検知は継続
+[2026-03-23 04:35:46] IDLE confirmed: saizo
+[pre-send capture] saizo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 04:36:27] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: AGENTS.md queue/reports/kotaro_report.yaml queue/shogun_to_karo.yaml tests/unit/test_sync_lessons_injection_count_sync.bats  reason=AUTO-CLEAR
+[2026-03-23 04:36:28] Batch notification sent to karo: hanzo saizo
+[2026-03-23 04:36:28] CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)
+[cdp_cleanup] 2026-03-23 04:36:28 Starting CDP Chrome cleanup scan...
+[cdp_cleanup] 2026-03-23 04:36:28 No PID files found. Nothing to clean.
+[cdp_cleanup] 2026-03-23 04:36:28 Done.
+[2026-03-23 04:36:28] CDP-CLEANUP: Completed successfully
+[2026-03-23 04:36:28] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 04:36:28] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:36:28] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:36:28] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:36:29] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:36:29] STALL-GHOST: tobisaru has status=acknowledged but empty task_id — skipping stall detection
+[2026-03-23 04:36:37] LESSON-HEALTH: all projects OK
+[2026-03-23 04:36:39] WARNING: ntfy_listener log stale (11min old). Restarting...
+[Mon Mar 23 04:36:39 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 04:36:39 JST 2026] Found existing ntfy_listener process(es): 2436376
+2525914
+2525930
+[Mon Mar 23 04:36:39 JST 2026] Killing PID 2436376 ...
+[Mon Mar 23 04:36:39 JST 2026] Killing PID 2525930 ...
+[Mon Mar 23 04:36:39 JST 2026] Killing orphan curl stream process(es): 2436409
+[Mon Mar 23 04:36:44 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 04:36:45 JST 2026] Lock file is free
+[Mon Mar 23 04:36:45 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 04:36:45 JST 2026] Launched with PID: 2527034
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 2527034
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 04:36:48] ntfy_listener restart triggered by health check

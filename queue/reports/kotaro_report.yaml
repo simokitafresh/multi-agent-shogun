@@ -1,39 +1,41 @@
-# !! トップレベル構造を維持せよ。report: で包むな !!
-# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
-# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
 worker_id: kotaro
-task_id: 
-parent_cmd: 
-timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
-status: pending
+task_id: cmd_1309
+parent_cmd: cmd_1309
+timestamp: '2026-03-23T04:34:49'
+status: done
 ac_version_read: d41d8cd9
 result:
-  summary: ""
-  details: ""
+  summary: subtask_*.yaml 47件をqueue/archive/subtasks/に移動完了
+  details:
+    1. queue/archive/subtasks/ディレクトリ作成 2. subtask_*.yaml 47件を移動 3. 移動元=0件、移動先=47件を確認 4. gitignore対象のためcommit対象なし。AC3備考: cmdは6件と記載しているが実際は8忍者分yaml+.tmp/.lockが存在。subtask_*は全排除済み。
 purpose_validation:
-  cmd_purpose: ""
+  cmd_purpose: subtask_*.yamlの整理・アーカイブ
   fit: true
-  purpose_gap: ""
+  purpose_gap: ''
 files_modified: []
 lesson_candidate:
-  # found: true/false を書け。リスト形式[] 禁止
   found: false
-  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。例: "既知のL084と同じパターン"
-  title: ""
-  detail: ""
-  project: 
-lessons_useful: null
+  no_lesson_reason: 単純なファイル移動。新しい知見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful: []
 skill_candidate:
-  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
-  # found: true の場合は以下も記入:
-  # name: ""        # スキル名 例: "cdp-page-measure"
-  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
-  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
-  # project: ""     # 対象PJ 例: "dm-signal"
-decision_candidate:
   found: false
+decision_candidate:
+  found: true
+  title: queue/tasks/に非稼働忍者(kirimaru,sasuke)のyaml+大量の.tmp/.lockが残存。清掃の要否は家老判断を仰ぐ
 hook_failures:
-  count: 0
-  details: ""
-binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
-verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
+  count: 1
+  details: task YAML直接Edit→hookでブロック(deploy_task.sh使用強制)
+binary_checks:
+  AC1:
+  - check: subtask_*.yamlが0件か
+    result: 'yes'
+  AC2:
+  - check: archive/subtasks/に47件か
+    result: 'yes'
+  AC3:
+  - check: queue/tasks/に忍者名.yaml 6件のみか
+    result: no (8忍者yaml+tmp/lock多数。subtask_*は全排除済み)
+verdict: PASS

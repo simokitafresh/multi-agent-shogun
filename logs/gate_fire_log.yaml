@@ -387,3 +387,5 @@
 - ts: "2026-03-23T04:33:39+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
 - ts: "2026-03-23T04:34:55+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
 - ts: "2026-03-23T04:35:12+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T04:35:56+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null)"
+- ts: "2026-03-23T04:36:08+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
