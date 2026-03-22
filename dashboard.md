@@ -99,18 +99,17 @@ Bottom 5 低効果教訓
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
-## 最新更新 (05:14更新)
-- **cmd_1312**: 完了。 — deploy_task.shにreport_filename/report_pathクリアロジック追加。inject_report_filename呼出し前にyaml_field_setで両フィールドを空クリアし冪等性ガードが正しく再...。疾風完遂
+## 最新更新 (05:55更新)
+- **cmd_1312**: GATE CLEAR。疾風PASS。deploy_task.sh report_filename残留値クリア修正。軍師SG0 auto-fix完了、家老workaround不要
 - **cmd_1311**: GATE CLEAR。影丸PASS。GP-003正規表現修正(_report_→_report.*)
 - **cmd_1304-1310**: 全GATE CLEAR(7cmd連続)
+- **連勝9**(cmd_1304〜cmd_1312)
 
 ### パイプライン
-| cmd | 忍者 | 内容 | 状態 |
-|-----|------|------|------|
-| cmd_1312 | 疾風 | deploy_task.sh report_filenameリセット | 配備済み |
+パイプライン空 — 次cmd待ち
 
 ### idle忍者
-5名idle(影丸、半蔵、才蔵、小太郎、飛猿)
+6名idle(疾風、影丸、半蔵、才蔵、小太郎、飛猿)
 
 ## 🚨要対応
 

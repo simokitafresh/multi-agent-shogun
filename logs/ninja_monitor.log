@@ -9011,3 +9011,25 @@ OK: dashboard.md auto section updated (05:52)
   ⏵⏵ bypass permissions on (shift+tab to cycle)
 ---
 [2026-03-23 05:55:09] CLEAR-SEND: kotaro confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 05:55:13] UNCOMMITTED-BLOCK: tobisaru files=logs/cmd_design_quality.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_karo.log logs/inbox_watcher_kotaro.log logs/inbox_watcher_saizo.log logs/ninja_monitor.log logs/shogun_action_log.txt 
+[2026-03-23 05:55:13] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for tobisaru (tobisaru:cmd_1310) — STALL検知は継続
+[pre-send capture] tobisaru pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:55:23] CLEAR-SEND: tobisaru confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 05:55:24] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:55:24] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:55:24] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:55:24] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:55:24] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:55:24] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:55:24] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:55:25] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:55:30] LESSON-HEALTH: all projects OK
+[2026-03-23 05:55:30] LOOP-HEALTH: OK
+[2026-03-23 05:55:30] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle

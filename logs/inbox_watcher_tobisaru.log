@@ -3017,3 +3017,7 @@
 [Mon Mar 23 05:46:54 JST 2026] Wake-up sent to tobisaru (1 unread via paste-buffer)
 [Mon Mar 23 05:46:54 JST 2026] [RETRY] Nudge unacknowledged, retry 2/3 for tobisaru
 [Mon Mar 23 05:47:49 JST 2026] [FP-RESET] No unread, cleared fingerprint for tobisaru
+[Mon Mar 23 05:55:14 JST 2026] [FP-CHANGE] Unread set changed for tobisaru (1 unread), sending nudge
+[Mon Mar 23 05:55:14 JST 2026] [NUDGE] Sending paste-buffer nudge to tobisaru
+[Mon Mar 23 05:55:15 JST 2026] Set tobisaru @agent_state to active after nudge
+[Mon Mar 23 05:55:15 JST 2026] Wake-up sent to tobisaru (1 unread via paste-buffer)
