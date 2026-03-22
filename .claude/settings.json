@@ -66,11 +66,24 @@
         ]
       },
       {
+        "matcher": "Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-search-completeness-guard.sh"
+          }
+        ]
+      },
+      {
         "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-write-shellcheck.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-edit-report-guard.sh"
           }
         ]
       }

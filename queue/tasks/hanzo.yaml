@@ -1,64 +1,76 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: f8f675d0
+  ac_version: bdd96eae
   acceptance_criteria:
   - binary_checks:
-    - check: queue/reports/*_report_*.yamlへのEdit tool直接書込みを検出するhookが存在するか
+    - check: ninja recovery Step4にlessons.yaml読込指示がないか
       result: ''
-    - check: 検出時にWARNINGメッセージで「報告YAMLはreport_field_set.sh経由で更新せよ」が表示されるか
-      result: ''
-    - check: 初期はWARN(ブロックではない)であるか
-      result: ''
-    description: PostToolUse hookまたはPre-commit hookで、queue/reports/*_report_*.yaml
-      へのEdit tool直接書込みを検出。検出時にWARNING表示。初期はWARN、安定後にBLOCK昇格
+    description: CLAUDE.md /clear Recovery (ninja) Step4から lessons.yaml 読込指示が削除されていること
     id: AC1
   - binary_checks:
-    - check: report_field_set.sh経由の書込みがhookに引っかからないか
+    - check: 家老セクションのlessons.yaml読込指示が残っているか
       result: ''
-    description: report_field_set.sh経由の書込みはhookに引っかからないことを確認
+    description: 家老セクションの lessons.yaml 読込指示はそのまま残すこと
     id: AC2
   - binary_checks:
-    - check: 既存のhook設定が正常に動作するか
+    - check: 直近タスクYAMLにrelated_lessonsが注入されているか確認
       result: ''
-    - check: settings.jsonのhooks構造が壊れていないか
-      result: ''
-    description: 既存のhook設定を壊さないことを確認
+    description: deploy_task.shのpush型注入(related_lessons)が正常動作していることを確認
     id: AC3
   bloom_level: ''
-  cmd_id: cmd_1265
-  command: "忍者が報告YAMLをEdit toolで直接編集する代わりに\nreport_field_set.sh経由を強制するhookを追加する。\n\
-    \n■ 背景\n家老提案#2+軍師GP-003が独立に同結論。\ngateは事後検出。hookは事前防止。二重防御。\n忍者がlessons_usefulをdict形式で書く→hookがブロック→\n\
-    report_field_set.sh経由を案内→正しい構造で書ける。\n\n■ AC\nAC1: PostToolUse hookまたはPre-commit\
-    \ hookで、\n     queue/reports/*_report_*.yaml へのEdit tool直接書込みを検出。\n     検出時にWARNING:\
-    \ 「報告YAMLはreport_field_set.sh経由で更新せよ」を表示。\n     （初期はWARN、安定後にBLOCK昇格）\nAC2: report_field_set.sh経由の書込みはhookに引っかからないことを確認。\n\
-    AC3: 既存のhook設定を壊さないことを確認。\n"
+  cmd_id: cmd_1278
+  command: '■ 背景
+
+    GP-008 P0(軍師提案): dm-signal/lessons.yaml 7,552行 + infra/lessons.yaml 4,540行 = 12,092行。
+
+    忍者はStep3.5でdeploy_task.shのpush型注入により関連教訓をtask YAML内に既に受け取っている。
+
+    にもかかわらずStep4でlessons.yaml全量を別途読む指示がCLAUDE.mdにある。二重読込かつ99%が無関係。
+
+
+    ■ 変更箇所
+
+    CLAUDE.md:
+
+    - /clear Recovery (ninja) Step4: ''read projects/{project}/lessons.yaml (project
+    lessons)'' を削除
+
+    - Session Start / Recovery Step 3.5 忍者セクション: 同上（存在すれば）
+
+    ※ 家老セクションのlessons.yaml読込は維持（家老は教訓管理者）
+
+    '
   context_files:
-  - .claude/hooks/
-  - scripts/report_field_set.sh
-  deployed_at: '2026-03-22T20:54:10'
+  - CLAUDE.md
+  - scripts/deploy_task.sh
+  deployed_at: '2026-03-23T01:29:09'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
     \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
-    ────────────────────────────────────────\n\n"
+    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
+    ────────────────────────────────────────\n\nlessons.yaml二重読込の排除 — CLAUDE.mdのStep4からlessons.yaml全量読込指示を削除"
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態
-  - prefer flock/atomic helper over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  ninja: hanzo
+  not_in_scope:
+  - lessons.yamlファイル自体の分割・アーカイブ化
+  - 家老のlessons.yaml読込手順の変更
+  - deploy_task.shの注入ロジック変更
   parallel_ok:
   - AC1
   - AC2
   - AC3
-  priority: high
+  parent_cmd: cmd_1278
   progress: ''
   project: infra
   related_lessons:
@@ -73,18 +85,14 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  - detail: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
-      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
-      files を除外するか commit/push 対象から切り離さないと実運用で達成
-    id: L220
-    summary: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
-      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
-      files を除外するか commit/push 対象から切り離さないと実運用で達成
   - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
     id: L097
     summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-  report_filename: hanzo_report.yaml
-  report_path: queue/reports/hanzo_report.yaml
+  - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+    id: L079
+    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
+  report_filename: hanzo_report_cmd_1278.yaml
+  report_path: queue/reports/hanzo_report_cmd_1278.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -99,9 +107,9 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
-  stop_for: []
+  scope_mode: REDUCTION
+  status: done
+  stop_for:
+  - 家老のlessons.yaml読込指示を削除する操作
+  target_path: /mnt/c/tools/multi-agent-shogun/CLAUDE.md
   task_type: implement
-  title: 'cmd_1265: report_field_set.sh強制hook'
-status: acknowledged
-progress: "AC1着手: PostToolUse hook作成中"

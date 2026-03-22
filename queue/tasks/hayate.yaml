@@ -1,104 +1,103 @@
 task:
-  ac_priority: AC2 > AC3
-  ac_version: f20bb794
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 1bd575ad
   acceptance_criteria:
   - binary_checks:
-    - check: is_task_deployedテスト1がPASSするか
+    - check: DB列挙結果がチェックリスト14体と完全一致したか
       result: ''
-    description: test_ninja_monitor_auto_deploy_done.bats テスト1修正。テストのassertionとninja_monitor.shの実装を突合し不整合を修正
+    description: 本番DBでtype=fof+selection_pipeline.blocks空のFoF全体を列挙し、チェックリスト14体と突合。差異があれば報告
+    id: AC1
+  - binary_checks:
+    - check: 常勝-朱雀のholding_signal+monthly_returnが完全一致したか
+      result: ''
+    - check: 常勝-玄武のholding_signal+monthly_returnが完全一致したか
+      result: ''
+    description: 常勝-朱雀、常勝-玄武の2体をverify_fof_parity.pyで検証
     id: AC2
   - binary_checks:
-    - check: bats tests/unit/ 全テストが0 failuresで完了するか
+    - check: チェックリストの常勝-朱雀, 常勝-玄武行が更新されたか
       result: ''
-    description: bats tests/unit/ 全テストPASS(既存テスト破壊なし)
+    description: チェックリストPhase Aテーブルの該当行に結果を記入
     id: AC3
   bloom_level: ''
-  cmd_id: cmd_1268
-  command: 'CI RED修正。test_ninja_monitor_auto_deploy_done.bats テスト1件失敗を修正せよ。
+  cmd_id: cmd_1276
+  command: '■ AC1: EqualWeight FoF全体リスト突合
+
+    本番DBでtype=''fof''かつselection_pipeline.blocksが空(0件 or null)のFoF全体を列挙し、
+
+    チェックリスト(context/checklist-shin-v2-registration.md Phase A)の14体と完全一致するか突合せよ。
+
+    差異があれば即報告。
 
 
-    ■ 失敗テスト
+    ■ AC2: 担当2体のパリティ検証
 
-    テスト名: ''is_task_deployed: status=doneでもcheck_and_update_done_task経由でauto_deploy発火''
+    verify_fof_parity.pyで以下2体を検証:
 
-    修正: テストのassertionとninja_monitor.shの実装を突合し不整合を修正。
+    (1) 常勝-朱雀
+
+    (2) 常勝-玄武
+
+    Usage: python scripts/analysis/grid_search/verify_fof_parity.py --name "FoF名"
+
+    判定: holding_signal完全一致 + monthly_return完全一致 → PASS。1ヶ月でも不一致 → FAIL。
+
+    init月NULL問題が出た場合も事実をそのまま報告。スキップ不可。
 
 
-    ■ AC3: 全テスト確認
+    ■ AC3: 結果記入
 
-    bats tests/unit/ で全テストが0 failuresで完了すること。
+    context/checklist-shin-v2-registration.md Phase Aテーブルの該当行(常勝-朱雀, 常勝-玄武)の⬜を結果で更新。
 
-    注意: 飛猿がAC1(test_ntfy_ack.bats修正)を並行作業中。
-
-    飛猿のcommitがまだない場合はtest_ntfy_ack.bats以外の全テストPASSで報告せよ。
+    AC1の突合結果もチェックリスト冒頭に追記。
 
     '
   context_files:
-  - tests/unit/test_ninja_monitor_auto_deploy_done.bats
-  - scripts/ninja_monitor.sh
-  deployed_at: '2026-03-22T21:39:13'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L105: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.\n\
-    \  - L240: parse_skip_count()の汎用正規表現 r\"(\\d+)\\s+(?:tests?\\s+)?skips?\\b\" は\
-    \ bats TAP出力 \"ok 293\n────────────────────────────────────────\n\n"
+  - context/checklist-shin-v2-registration.md
+  - scripts/analysis/grid_search/verify_fof_parity.py
+  deployed_at: '2026-03-23T01:01:13'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: L071(quarterly_jan)と同様、quarterly_marも初期化Cash月が複数月発生する。現skipロジックは最初の1Cash月しかスキップし\n\
+    \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L482: selection_pipeline.blocksがあるFoFも本番holding_signalから選択componentsを特定しEqualWeight独立計\n\
+    \  - L476: FoFのtop_n=1がconfigに存在しても、pipeline_config.selection_pipeline.blocksが空の場合はmomentum\n\
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  ninja: hayate
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  never_stop_for: []
+  not_in_scope:
+  - selection_blocks付きFoF（Phase B以降）
+  - v2（シン）FoFの検証
+  - 検証スクリプトの新規作成
   parallel_ok:
+  - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1268
-  priority: critical
-  progress: AC2+AC3 PASS完了
-  project: infra
+  project: dm-signal
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
     id: L074
-    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    summary: L071(quarterly_jan)と同様、quarterly_marも初期化Cash月が複数月発生する。現skipロジックは最初の1Cash月しかスキップしない。init_phase_doneフラグ方式でquarterly_mar/jan両方に対応すべき。cmd_205
+      影丸発見
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-    id: L063
-    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-  - detail: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗。E2Eセッション作成直後にpane-base-index=0を設定して安定化した。
-    id: L105
-    summary: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗。E2Eセッション作成直後にpane-base-index=0を設定して安定化した。
-  - detail: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
-      "ok 293 skip and fail..." のテスト番号+テスト名を
-    id: L240
-    summary: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
-      "ok 293 skip and fail..." のテスト番号+テスト名を
-  report_filename: hayate_report_cmd_1268.yaml
-  report_path: queue/reports/hayate_report_cmd_1268.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - pushするな(commitまで)
-    - スコープ外改善は禁止
-    notes:
-    - TODO/FIXMEが残っていないことを確認せよ
-    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-    required_fields:
-    - ac_version_read
-    - files_modified
-    - lesson_candidate
-    - lessons_useful
+  - detail: selection_pipeline.blocksがあるFoFも本番holding_signalから選択componentsを特定しEqualWeight独立計算で検証可能。Cashフォールバック月はcomponentベース検証対象外。
+    id: L482
+    summary: selection_pipeline.blocksがあるFoFも本番holding_signalから選択componentsを特定しEqualWeight独立計算で検証可能。Cashフォールバック月はcomponentベース検証対象外。
+  - detail: FoFのtop_n=1がconfigに存在しても、pipeline_config.selection_pipeline.blocksが空の場合はmomentum選択が発生しない。terminal_block=EqualWeightにより全componentが均等保有される。GS実装時にtop_n値だけ見て選択ロジックを実装すると本番と乖離する。pipeline_config.selection_p
+    id: L476
+    summary: FoFのtop_n=1がconfigに存在しても、pipeline_config.selection_pipeline.blocksが空の場合はmomentum選択が発生しない。terminal_block=EqualWeightにより全componentが均等保有される。GS実装時にtop_n値だけ見て選択ロジックを実装すると本番と乖離する。pipeline_config.selection_p
+  report_filename: hayate_report.yaml
+  report_path: queue/reports/hayate_report.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
-  stop_for: []
-  task_type: implement
-  title: 'cmd_1268 AC2+AC3: auto_deploy_doneテスト修正+全テストPASS確認'
+  scope_mode: EXACT
+  status: idle
+  stop_for:
+  - 本番DBへの書き込み操作が必要な場合
+  target_path: /mnt/c/Python_app/DM-signal

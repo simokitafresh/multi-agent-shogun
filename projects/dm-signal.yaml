@@ -939,6 +939,11 @@ naming_convention:
         implication: "GS側のprice_data_cacheにも非市場ティッカーを含めるな。stock-trading-dayリサンプルで日付情報が失われ、pct_change(N)の参照日ズレでholding_signal不一致が発生する"
         source: "cmd_1243(L473)"
         verified_file: "scripts/analysis/grid_search/grid_search_metrics_v2.py"
+      - id: PI-011
+        fact: "シン忍法v2(21体)のterminal_blockは全てEqualWeight。selection_pipelineがcomponentsを絞り込み、選ばれたcomponentsを均等保有。選別と終端は別の関心事"
+        implication: "シン忍法v2のパリティ検証: 本番holding_signalから選択components特定→均等加重リターン計算→本番monthly_returnと比較。selection_blocks有無で検証方法を分岐させるな"
+        source: "cmd_1269 BLOCKED事故(selection_blocks存在→検証不能と誤認)+殿指摘(2026-03-22)"
+        verified_file: "backend/app/services/pipeline/engine.py, backend/app/services/pipeline/blocks/equal_weight.py"
 
   data_pipeline:
     description: "DB直接読込方式(主系) + CSV互換ローダー併用"
@@ -989,9 +994,20 @@ key_files:
   frontend_api_client: "frontend/lib/api-client.ts"
   frontend_types: "frontend/lib/types/"
 
-  # GS・分析
+  # GS・分析 — 用語定義（混同厳禁）
+  # 狭義GS = 四神作成スクリプト（パラメータ総当たり→チャンピオン選定）
+  # 忍法スクリプト = 四神12体をコンポーネントとしてFoFを構成・計算（1スクリプト=1ビルディングブロック）
+  # 広義GS = grid_searchディレクトリ全体（狭義GS + 忍法スクリプト7本 + 共通ライブラリ）
+  gs_shijin_creator: "scripts/analysis/grid_search/shin_shijin_l1_gs.py (狭義GS: 四神作成)"
+  gs_ninpou_scripts:
+    oikaze: "scripts/analysis/grid_search/run_077_oikaze.py (MomentumFilter)"
+    nukimi: "scripts/analysis/grid_search/run_077_nukimi.py (SingleViewMomentumFilter)"
+    kawarimi: "scripts/analysis/grid_search/run_077_kawarimi.py (TrendReversalFilter)"
+    kasoku_ratio: "scripts/analysis/grid_search/run_077_kasoku_ratio.py (MomentumAccelerationFilter/ratio)"
+    kasoku_diff: "scripts/analysis/grid_search/run_077_kasoku_diff.py (MomentumAccelerationFilter/diff)"
+    bunshin: "scripts/analysis/grid_search/run_077_bunshin.py (EqualWeight単体)"
+    yotsume: "scripts/analysis/grid_search/run_077_yotsume.py (MultiViewMomentumFilter)"
   gs_csv_loader: "scripts/analysis/grid_search/gs_csv_loader.py"
-  grid_search_template: "scripts/analysis/grid_search/run_077_oikaze.py (代表ランナー)"
   gs_speedup_knowledge: "context/gs-speedup-knowledge.md"
   data_catalog: "outputs/grid_search/DATA_CATALOG.md"
   champion_csv: "outputs/grid_search/*_grid_monthly_fast.csv (実ファイルはDATA_CATALOG.mdで確認)"

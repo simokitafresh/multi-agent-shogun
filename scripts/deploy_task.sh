@@ -2039,16 +2039,7 @@ preflight_gate_artifacts() {
     mkdir -p "$gates_dir"
     log "preflight_gate: ${cmd_id} — artifact事前生成開始"
 
-    # (1) archive.done — archive_completed.sh実行（過去の完了cmdのアーカイブ。配備時に安全）
-    if [ ! -f "$gates_dir/archive.done" ]; then
-        if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$cmd_id" >/dev/null 2>&1; then
-            log "preflight_gate: archive.done generated"
-        else
-            log "preflight_gate: archive.done WARN (script failed, non-blocking)"
-        fi
-    else
-        log "preflight_gate: archive.done already exists (skip)"
-    fi
+    # (1) archive.done — cmd_complete_gate.sh GATE CLEAR時に自動実行（CLAUDE.md記載）。配備時の実行は冗長のため除去(cmd_1277)
 
     # (2) review_gate.done — implement時のみ。配備時点でreview未実施のためplaceholder生成
     local task_type

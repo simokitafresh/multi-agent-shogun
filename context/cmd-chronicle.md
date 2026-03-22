@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-22 -->
+<!-- last_updated: 2026-03-23 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -562,3 +562,12 @@
 | cmd_1262 | ninja_monitor.sh AUTO-DONE重複書込みバグ修正 — idle通知嵐の根絶 | infra | 03-22 | — |
 | cmd_1264 | inbox_write.sh gate発火100%化 — サイレントスキップ→BLOCK | infra | 03-22 | — |
 | cmd_1266 | 偵察 — FoF selection_pipeline動作乖離の根本原因調査 | dm-signal | 03-22 | — |
+| cmd_1263 | ninja_monitorにcommit未完了チェック追加 — commit_missing構造的根絶 | infra | 03-23 | — |
+| cmd_1268 | CI RED修正 — Unit Tests 9件失敗(ntfy_ack mock不備+auto_deploy_done不整合) | infra | 03-23 | — |
+| cmd_1269 | FoFパリティ検証 バッチ1(7体) — cmd_1251スクリプト展開 | dm-signal | 03-23 | — |
+| cmd_1270 | FoFパリティ検証 バッチ2(7体) — 第2陣並列実行 | dm-signal | 03-23 | — |
+| cmd_1271 | FoFパリティ検証 バッチ3(7体) — 第3陣並列実行 | dm-signal | 03-23 | — |
+| cmd_1272 | L1シン四神12体 登録スクリプト構築+dry-run検証 | dm-signal | 03-23 | — |
+| cmd_1273 | 本番登録環境PI-006検証 — ランブックv2全Step実行可能性の事前確認 | dm-signal | 03-23 | — |
+| cmd_1265 | report_field_set.sh強制hook — 忍者の直接Edit禁止で源流から構造不正防止 | infra | 03-23 | — |
+| cmd_1275 | GS混乱候補スクリプト7本削除 — 忍法スクリプト誤用防止 | dm-signal | 03-23 | — |

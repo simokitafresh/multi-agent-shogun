@@ -104,6 +104,15 @@ QG_TEMPLATE
     if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "q4_depth:"; then
         echo "WARNING: q4_depth未記入。深堀り度を記入推奨: q4_depth: \"shallow/medium/deep — 理由\"" >&2
     fi
+
+    # q5_verified_source: cmdの前提を一次情報源で確認したか（BLOCK）
+    # 一次情報源 = コード/本番DB/API応答。前cmdの報告は一次情報源ではない
+    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "q5_verified_source:"; then
+        echo "BLOCK: q5_verified_source未記入。cmdの前提を何で確認したか記載せよ" >&2
+        echo "  一次情報源 = コード/本番DB/API応答。前cmdの報告は一次情報源ではない" >&2
+        echo '  例: q5_verified_source: "engine.py L107-137 + 本番FoF API GET応答で構造確認"' >&2
+        exit 1
+    fi
 fi
 
 # --- Check 4: flock競合検出 ---

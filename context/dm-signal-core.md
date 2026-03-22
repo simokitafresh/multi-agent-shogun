@@ -252,6 +252,17 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 - L428: valid_start_date計算は全構成シンボル(relative+absolute+safe_haven+DTB3)を含めよ（cmd_1115）
 - L429: パリティ検証における非決定的順序とpartial-month初月の扱い（cmd_1116）
 
+## 4.5 GS用語定義（混同厳禁）
+
+| 用語 | 意味 | 実体 |
+|------|------|------|
+| 狭義GS（四神作成スクリプト） | パラメータ総当たり→チャンピオン選定 | `shin_shijin_l1_gs.py` |
+| 忍法スクリプト（7本） | 四神12体をコンポーネントとしてFoFを構成・計算。1本=1ビルディングブロック | `run_077_*.py` |
+| GS（広義） | `scripts/analysis/grid_search/` 全体 | 狭義GS + 忍法スクリプト7本 + 共通ライブラリ |
+
+流れ: 狭義GS → シン四神12体 → 忍法スクリプト7本 → シン忍法v2 21体
+スクリプト詳細一覧 → `projects/dm-signal.yaml` key `gs_ninpou_scripts`
+
 ## 5. ローカル分析関数
 
 `simulate_strategy_vectorized()`: `grid_search_metrics_v2.py`。MomentumCache必須(渡さないと黙って空リスト)。

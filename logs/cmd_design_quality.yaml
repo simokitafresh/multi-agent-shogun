@@ -296,3 +296,156 @@ entries: []
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-03-22T12:59:35Z"
+  - cmd_id: "cmd_1270"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T13:31:14Z"
+  - cmd_id: "cmd_1265"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T13:33:55Z"
+  - cmd_id: "cmd_1271"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T13:35:14Z"
+  - cmd_id: "cmd_1272"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T13:36:59Z"
+  - cmd_id: "cmd_1273"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T13:38:34Z"
+  - cmd_id: "cmd_1265"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T13:43:03Z"
+  - cmd_id: "cmd_1269"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T13:47:11Z"
+  - cmd_id: "cmd_1265"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:34:10Z"
+  - cmd_id: "cmd_1269"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:35:22Z"
+  - cmd_id: "cmd_1270"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:36:35Z"
+  - cmd_id: "cmd_1271"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:37:53Z"
+  - cmd_id: "cmd_1272"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:39:17Z"
+  - cmd_id: "cmd_1273"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:40:33Z"
+  - cmd_id: "cmd_1268"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:45:59Z"
+  - cmd_id: "cmd_1263"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:47:49Z"
+  - cmd_id: "cmd_1274"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T14:59:43Z"
+  - cmd_id: "cmd_1275"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T15:11:23Z"
+  - cmd_id: "cmd_1276"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T16:09:14Z"
+  - cmd_id: "cmd_1277"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T16:33:25Z"
+    notes: "report_yaml_missing:kagemaru_report_cmd_1277.yaml"

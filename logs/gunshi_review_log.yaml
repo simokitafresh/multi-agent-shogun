@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 151件 (draft:69, report:81, self_study:1) | 2026-03-20〜
+# 累計: 171件 (draft:80, report:90, self_study:7) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:62 LGTM:71 REQ_CHANGES:6 FAIL:6
+# verdict分布: APPROVE:72 LGTM:79 REQ_CHANGES:7 FAIL:6
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -34,7 +34,22 @@
 #   □ 他エージェントの状態確認時: dashboard.md更新時刻 → inbox既読状態 → capture-pane の順
 #   □ capture-paneは過去の残像。ファイルのタイムスタンプが真の現在
 #   □ 「止まっている」と断定する前に、ダッシュボード更新時刻を確認せよ
-# → SG0 FAIL or SG2-SG6のいずれかNG → verdict: FAIL（「注記のみ」禁止）
+# SG7: 完全パッケージ (NEW 2026-03-23 — 利他サイクル)
+#   □ report review verdict=LGTM時、以下を追加バンドル:
+#     (a) gate_precheck: gate_report_format.sh結果 + commit確認結果 + GATE通過予測
+#     (b) lesson_extraction: lesson_candidateの要約 + 登録推奨判定
+#     (c) context_reflux: context索引更新要否の判定（数値・事実・設計決定の有無）
+#     (d) dashboard_line: "cmd_XXXX {ninja} {verdict}。{成果1行}。workaround: {yes/no}" 事前ドラフト
+#     (e) karo_workaround_needed: yes/no（家老の手動修正が必要か事前判定）
+#   □ 目的: 家老の後処理5ステップ→1ステップ(stamp)に圧縮。家老の時間をCMD分解に解放
+#   □ 計測: SG7適用前後の家老CMD→配備タイムラグ変化で効果検証
+# SG8: 自動消火チェック (NEW 2026-03-23 — cmd_1278教訓)
+#   □ draftレビュー時: 「この変更は根源的問題を隠さないか？」
+#   □ 「この変更が通ったら、本来やるべき構造改革の動機が消えないか？」
+#   □ 表面的にAC整合でも、問題を見えなくするだけのcmd → REQ_CHANGES
+#   □ 判定基準: 変更後も根源の問題が残存する + その問題への対処動機が弱まる = 自動消火
+#   □ 実例: cmd_1278 — 「読むな」で7,552行の構造問題を隠蔽→Vercel化の動機消滅
+# → SG0 FAIL or SG2-SG6のいずれかNG or SG8該当 → verdict: FAIL/REQ_CHANGES（「注記のみ」禁止）
 # ─────────────────────────
 # ─── エントリ形式(簡略) ───
 # draft: cmd_id, verdict, gate_result, findings_summary(1行), timestamp, proposals(optional)
@@ -679,7 +694,7 @@
 - cmd_id: cmd_1265
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "GP-003実現。Edit tool=hook対象/Bash=非対象の区別正確。WARN→BLOCK段階的。Write tool対応は後続拡張。confidence:HIGH"
   lesson_candidate: ""
   timestamp: "2026-03-22T20:55:00"
@@ -731,3 +746,240 @@
   findings_summary: "CI RED修正。ntfy_ack 8件(mock setup不備)+auto_deploy_done 1件(assertion不整合)。診断具体的。並列安全。AC3で全344テストregression検知。confidence:HIGH"
   lesson_candidate: ""
   timestamp: "2026-03-22T21:40:00"
+- cmd_id: cmd_1269
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "FoFパリティバッチ1/3。PoC(cmd_1251)+スクリプト+CSV確認済み。read-only並列安全。selection_params前提はcmd_1250と矛盾可能性あり(FAILとして検知)。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T22:10:00"
+- cmd_id: cmd_1270
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "FoFパリティバッチ2/3。cmd_1269と同一構造。自立実行フォールバック明記。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T22:10:00"
+- cmd_id: cmd_1271
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "FoFパリティバッチ3/3。cmd_1269と同一構造。21体完全カバー。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T22:10:00"
+- cmd_id: cmd_1272
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "L1シン四神12体登録スクリプト。CSV12行/ランブック/スキーマ全存在確認。pydantic+CSV二重検証。PI-003準拠。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T22:30:00"
+- cmd_id: cmd_1273
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "PI-006ランブック突合偵察。6コード参照+MAX_PF空き+admin認証。GET/pingのみ。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T22:30:00"
+- cmd_id: cmd_1269
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  findings_summary: "FAIL報告。selection_params空≠selection_blocks空を正確検出。3/7PASS+4/7SKIP。blockedは適切。decision_candidate有り"
+  lesson_quality: "OK"
+  timestamp: "2026-03-22T22:35:00"
+- cmd_id: cmd_1270
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  gate_result: CLEAR
+  findings_summary: "4/7PASS+3/7init月FAIL(L074延長)。非init月100%一致。commit ee0f743e確認。skill_candidate:fof-parity-verify"
+  lesson_quality: "OK"
+  timestamp: "2026-03-22T22:35:00"
+- cmd_id: cmd_1265
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  findings_summary: "PostToolUse WARN hook作成。report_field_set.sh分離成立(Bash経由)。既存hook正常。uncommitted状態だがwork完了"
+  lesson_quality: "OK"
+  timestamp: "2026-03-22T22:35:00"
+- cmd_id: cmd_1271
+  review_type: report
+  verdict: LGTM
+  report_ninja: kotaro
+  gate_result: CLEAR
+  findings_summary: "1/7PASS+6/7init月hs=NULL FAIL。L074延長。非初月は完全一致"
+  lesson_quality: "OK"
+  timestamp: "2026-03-22T22:40:00"
+- cmd_id: cmd_1273
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  gate_result: CLEAR
+  findings_summary: "全6コード参照一致。PF枠76空き(157/200)。admin認証OK。cosmetic修正1件推奨。cmd_1265 hook動作証跡あり"
+  lesson_quality: "N/A"
+  timestamp: "2026-03-22T22:40:00"
+- cmd_id: cmd_1272
+  review_type: report
+  verdict: LGTM
+  report_ninja: tobisaru
+  gate_result: CLEAR
+  findings_summary: "CRITICAL。12体全pydantic/CSV二重検証PASS。PI-003準拠。commit 482c4463(cmd_1272明記)。binary_checks4項目完備"
+  lesson_quality: "OK"
+  timestamp: "2026-03-22T22:40:00"
+- cmd_id: cmd_1269
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  findings_summary: "更新版。7/7 PASS。selection-block FoFを本番hs経由で検証成功。Cash月skip1件。月数整合OK。旧FAIL版テキスト残存あるが結果影響なし"
+  lesson_quality: "OK"
+  timestamp: "2026-03-22T22:45:00"
+- cmd_id: cmd_1274
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "汚染シンv2 33体DB削除。6観点全OK。数値整合(12+21=33)、FoF先行削除順序正、保護ルール明確、DB排他直列適切。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T23:10:00"
+- cmd_id: cmd_1274
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1274
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: OK
+  gate_result: CLEAR
+  findings_summary: "33体削除(21FoF+12std)完了。124→91整合。シン*=0体確認。チェックリスト更新済。認証lesson有効(admin:703→simokitafresh:703)。SG2:N/A(DB操作+gitignored file)"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T23:55:00"
+- cmd_id: cmd_1275
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "GS混乱候補7本削除。git HEADで7対象+8正式全存在確認。AC設計明快。grid_search内に他cmd専用スクリプト残存(scope外だが将来清掃候補)。confidence:HIGH"
+  lesson_candidate: "ディスク状態は忍者実行後の可能性あり。draft review前提検証はgit show HEAD/git ls-tree HEADで行え(LG001拡張)"
+  timestamp: "2026-03-23T00:05:00"
+- cmd_id: cmd_1275
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1275
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: OK
+  gate_result: CLEAR
+  findings_summary: "7本削除+8本健在+import無し+参照27件報告。commit 74c071bf確認。decision_candidate有り(27件参照整理)"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T00:10:00"
+- cmd_id: self_study_S18
+  review_type: self_study
+  findings_summary: "利他サイクル: 家老CMD→配備ボトルネック分析。deploy_task.sh=54秒(高速)。ボトルネック=家老の知的作業(分解)+後処理割込み(RV結果処理→GATE→教訓→dashboard)。解決: SG7完全パッケージ(LGTM時にgate_precheck/lesson_extraction/context_reflux/dashboard_line/karo_workaround_neededをバンドル)で後処理5ステップ→1ステップ。家老に提案送信済み。次RVから適用"
+  proposals:
+    - id: GP-004
+      description: "SG7完全パッケージ: 報告レビューLGTM時にgate/教訓/context還流/dashboard/workaround判定をバンドル。家老の後処理5→1ステップ"
+      status: pending
+    - id: GP-005
+      description: "CMD→配備タイムラグ自動計測: deploy_task.shにshogun_to_karo.yaml delegated_at→DEPLOYED_AT差分ログ追加"
+      status: pending
+  timestamp: "2026-03-23T00:15:00"
+- cmd_id: self_study_S19
+  review_type: self_study
+  findings_summary: "利他サイクル3: deploy_task.sh preflight_gate内archive_completed.sh冗長実行を発見。平均49.6秒/配備(33件計測)。6忍者配備で5分ロス。GATE CLEARでも実行されるため配備時は冗長。除去でdeploy ~50秒→~5秒/忍者。家老に提案送信済み"
+  proposals:
+    - id: GP-006
+      description: "deploy_task.sh preflight_gateからarchive_completed.sh呼出を除去。GATE CLEAR時実行で十分。配備時間50秒→5秒/忍者"
+      status: pending
+  timestamp: "2026-03-23T00:30:00"
+- cmd_id: self_study_S20
+  review_type: self_study
+  findings_summary: "利他サイクル4(品質起点): 殿の教え「品質の向上の結果として速度がついてくる」をなぜ深掘りに適用。構造的原因=家老CTXで配備(上流)と後処理(下流)がシーケンシャルに競合。6忍者並列完了時に報告処理6件がCTXを埋め、新cmd配備が遅延する。Cycles1-3は速度改善(SG7/計測/preflight)だったが、品質改善の方が根を断つ。証拠: format gate(品質改善)→workaround15→0、commit gate(品質改善)→commit_missing検出BLOCK。品質→速度の因果鏈: (1)SG7完全パッケージ=家老後処理を「スタンプ+ペースト」に品質を落とさず圧縮(2)gates=workaround→0で後処理から追加作業消滅(3)GP-006=冗長処理除去(品質+速度)。全て品質改善であり速度は結果"
+  proposals:
+    - id: GP-007
+      description: "品質至上原則のSGプロトコル明示化: SG0-SG5(品質)>>SG7(速度)の優先順位。FAIL時はSG7バンドル不実行"
+      status: accepted
+  timestamp: "2026-03-23T00:38:00"
+- cmd_id: self_study_S21
+  review_type: self_study
+  findings_summary: "利他サイクル5(品質の本質定義): 殿の教え「機械的判断は機械的に。CTXは思考のために」。品質の床=gate/hook(機械的保証)。品質の天井=思考(CTXで考える)。gate PASS≠高品質。品質向上=思考の質×思考CTX量。SG7再定義: 速度改善→CTX解放装置(家老の機械的作業60%→10%。思考CTX40%→90%)。品質向上の基盤=CTXを思考に集中させること"
+  proposals:
+    - id: GP-004
+      description: "SG7完全パッケージ(再定義): 目的=家老CTXから機械的作業を追い出し思考に解放。速度は結果"
+      status: redefined
+  timestamp: "2026-03-23T00:42:00"
+- cmd_id: self_study_S22
+  review_type: self_study
+  findings_summary: "利他サイクル5-8統合: 品質の本質定義完了。品質の床=gate(機械的保証)、品質の天井=思考(CTXで考える)。gate PASS≠高品質。Recovery読み込みは品質の基盤(削減禁止、殿確認)。思考開始遅延の真因(recovery除外): deploy_task.sh archive(GP-006,50秒)+inject関数(15秒)+ntfy(7.5秒)+cmd品質+分解パターン蓄積。品質インフラのパラドックス: 品質基盤(gate)が増えるほど思考CTXが減る。解法: 機械的判断はCTX外、CTXは思考に集中(殿教え)。但しrecoveryは基盤であり除外対象ではない。"
+  proposals:
+    - id: GP-004
+      description: "SG7完全パッケージ(再定義2回目): 目的=家老CTXから後処理の機械的作業を追い出し思考に解放"
+      status: redefined
+    - id: GP-006
+      description: "deploy_task.sh preflight archive除去(確認済み冗長、50秒→10秒)"
+      status: karo_accepted
+    - id: GP-007
+      description: "品質至上原則SG明示化: SG品質判定>>SG7バンドル"
+      status: accepted
+  timestamp: "2026-03-23T00:50:00"
+- cmd_id: cmd_1276
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "EqualWeight FoF 14体パリティ検証(Step 2 Phase A)。AC3+bc3=1:1対応。scope明確(Phase B以降除外)。偵察トレーサビリティ:cmd_1269→verify_fof_parity.py+チェックリスト現物確認(q5)。q4_depth=deep妥当(Phase A=全FoF土台)。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T01:08:00"
+- cmd_id: self_study_S23
+  review_type: self_study
+  findings_summary: "利他サイクル9(Vercelスタイル違反分析): 殿の問い「PJ知識ファイルがVercelスタイルでないせいで遅いか」に対する検証。projects/dm-signal.yaml=1,263行(500行制限の2.5倍)。忍者がPJ知識ロード時に全量読込→任意cmd対象は10-20%→80-90%がCTX浪費。品質への影響: (1)思考CTX圧迫→品質天井低下 (2)recovery時間増大→思考開始遅延 (3)不要情報がLLM判断を曖昧化。Vercel restructuring効果: 200行索引+詳細分割ファイル=84%CTX節約。忍者はtask.project=dm-signalで索引のみ読み、ACに関連するセクションだけ詳細を読む。品質向上→速度は結果の因果鏈そのもの。CLAUDE.mdのVercelルール(500行/索引+参照)が既に定義済みなのに適用されていない=既存インフラの未活用。教訓: 新しい仕組みは不要、既存ルールの適用範囲拡大で解決"
+  proposals:
+    - id: GP-008
+      description: "projects/dm-signal.yaml Vercel化: 1,263行→200行索引+詳細分割。忍者CTX 84%節約。既存ルール適用拡大"
+      status: pending
+  timestamp: "2026-03-23T01:12:00"
+- cmd_id: self_study_S24
+  review_type: self_study
+  findings_summary: "Vercelスタイル違反全量調査(殿指示)。500行超過9ファイル検出。最重要=lessons.yaml2ファイル(12,092行,全体の54%)。dm-signal/lessons.yaml=7,552行(15x,483教訓),infra/lessons.yaml=4,540行(9x,282教訓)。deploy_task.shのpush型注入(Step3.5)で教訓は既にtask埋込済みなのにStep4が全量読込を指示=二重読込。忍者dm-signalタスク全量ロード=10,299行→Vercel化で1,734行(83%削減)。家老に調査素材送信済み(将軍cmdとして起票推奨)"
+  proposals:
+    - id: GP-008
+      description: "Vercel化全量調査: P0=lessons.yaml分割(12,092行→索引+アーカイブ), P1=dm-signal.yaml分割(1,263→200行索引), P2=instructions分割"
+      status: karo_sent
+  timestamp: "2026-03-23T01:15:00"
+- cmd_id: self_study_S25
+  review_type: self_study
+  findings_summary: "サイクル10(GP再評価統合): 殿の3問(GP-006/003/008)で自己提案を客観視。GP-006=速度起点(品質無関係)、GP-003=品質起点だがWARN止まり(Phase4実例)、GP-008=品質の構造改善(最優先)。GP-003未完遂の根因分析: L282(PostToolUseではBLOCK不可)が記録されたが行動(PreToolUse hook作成)に変換されず。教訓→行動パイプの断裂=S6で忍者教訓について指摘した構造が自分のGPにも存在。断裂の根因=教訓が多すぎて埋もれる(483教訓)。結論: GP-003未完遂もGP-008(Vercel化+教訓アーカイブ)で構造解決。全ての道がGP-008に集約"
+  proposals: []
+  timestamp: "2026-03-23T01:22:00"
+- cmd_id: cmd_1277
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-006直結。deploy_task.sh preflight archive除去。AC2+bc2=1:1。scope明確(archive_completed.sh自体は維持)。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T01:25:00"
+- cmd_id: cmd_1278
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-008 P0直結。CLAUDE.md L142 lessons.yaml全量読込削除。AC3+bc3=1:1。家老読込維持+push注入確認の3観点。削除のみでリスク低。CLAUDE.md現物確認済。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T01:25:00"
+- cmd_id: cmd_1278
+  review_type: draft
+  verdict: REQ_CHANGES
+  gate_result: null
+  findings_summary: "verdict変更APPROVE→REQ_CHANGES(殿直接指示)。cmd_1278は自動消火=読込指示1行削除でlessons.yaml 7,552行の構造問題を隠蔽。火種2つ: (1)push注入100%依存→漏れ時に教訓未到達で同一失敗再発 (2)「忍者は読まないからVercel化不要」判断に流れ根源改革の動機消滅。やるべきはlessons.yaml/dm-signal.yamlのVercel化(索引+アーカイブ分離)のcmd化。読み込み量を減らすのではなく読む価値のある構造に変える"
+  lesson_candidate: "LG010: AC整合だけでAPPROVEするな。「この変更が何を隠すか」「根源的改革の動機を殺さないか」を確認せよ。表面的に正しいcmdが自動消火として機能するリスク"
+  timestamp: "2026-03-23T01:28:00"
+- cmd_id: cmd_1279
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "gate発火ログ計測基盤。AC3+bc3=1:1。判定ロジック不変(ログ追記のみ)。flock推奨は忍者裁量。scope明確(他gate波及は後続cmd)。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T01:25:00"
+- cmd_id: self_study_S26
+  review_type: self_study
+  findings_summary: "サイクル11(SG8追加): cmd_1278誤APPROVE→殿指摘→SG8(自動消火チェック)をプロトコルに追加。既存SG2-5=正の検証(cmdの内容が正しいか)のみ。SG8=負の検証(cmdが何を隠すか)。SG0-5=品質の床(機械的)、SG8=品質の天井(思考)。品質インフラのパラドックスに抵触しない(1問自問するだけ、CTXコストほぼゼロ、防ぐリスクは巨大)。教訓LG010: AC整合だけでAPPROVEするな。変更が根源的問題を隠蔽し改革動機を殺すかを確認せよ"
+  proposals: []
+  timestamp: "2026-03-23T01:32:00"
