@@ -392,3 +392,6 @@
 | cmd_1279 | gate発火ログ計測基盤の構築 — gate_report_format.shの発火・結果をログに記録し、gate効果の定量的計測を可能にする | infra | 03-23 | — |
 | cmd_1280 | lessons.yaml 3ファイルのVercel化 — 索引+アーカイブ分離で500行以下に圧縮し、読込エージェントのCTX浪費を構造的に解消する | infra | 03-23 | — |
 | cmd_1282 | 運用ファイル3件のVercel化 — context/cmd-chronicle.md + context/infrastructure.md + logs/gunshi_review_log.yaml を500行以下に圧縮する | infra | 03-23 | — |
+| cmd_1281 | 核心知識ファイル3件のVercel化 — projects/dm-signal.yaml + instructions/shogun.md + instructions/karo.md を500行以下に圧縮する | infra | 03-23 | dm-signal.yaml 307行+shogun.md 275行+karo.md 367行。二重配備(小太郎+疾風)発生もファイル破損なし |
+| cmd_1283 | lesson_update_score.shのCACHE_FILE→lessons_archive.yaml切替 — Vercel化索引の再膨張防止 | infra | 03-23 | — |
+| cmd_1284 | dashboard🚨要対応セクション清掃 + report_field_set.sh BLOCK昇格 | infra | 03-23 | — |

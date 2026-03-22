@@ -54,9 +54,13 @@ lessons:
   automated: false
   enforcement: dashboard軍師セクションにproposal状態表示を追加済み(2026-03-22)
 - id: LK009
-  title: STALL再配備時の旧忍者タスクYAMLクリア必須
-  detail: 'STALL検知→別忍者に再配備する際、旧忍者のtask YAMLをidleにクリアしなかった。結果: 小太郎と疾風がcmd_1281 AC2+AC3に二重配備。根本原因:
-    (1)deploy_task.shに同一cmd重複ガードなし (2)ninja_monitorのSTALL処理がtask YAMLをクリアしない (3)家老手順LK001に旧タスククリアが含まれない。3層の穴が同時存在。構造的解決:
-    deploy_task.shに重複ガード追加(即時)+ ninja_monitorにSTALL時タスククリア追加(恒久)。暫定対策: 家老が再配備前に旧忍者のタスクYAMLをstatus:idleに変更する手順を必ず実行'
+  title: STALL再配備は「検証→クリア→再配備」の3段階必須
+  detail: 'STALL検知→別忍者に再配備する際、(A)検証なしで即再配備 (B)旧忍者のtask YAMLをidleにクリアしなかった。結果: 小太郎と疾風がcmd_1281 AC2+AC3に二重配備。
+    サイクル1根本原因: 3層の穴 (1)deploy_task.shに同一cmd重複ガードなし (2)ninja_monitorのSTALL処理がtask YAMLをクリアしない (3)家老手順に旧タスククリアなし。
+    サイクル2深堀り: STALL通知は「信号」であり「事実」ではない。家老がSTALL通知を事実として受け入れ検証せず再配備した=「想像するな確認せよ」原則違反。
+    再配備前の検証3点: (i)task YAML progressに進捗あるか (ii)同一cmd_idが他忍者に配備済みでないか (iii)uncommitted changesがあるか。
+    即時対策: karo.md STALL手順を「検証→クリア→再配備」の3段階に改訂済み。構造的解決: deploy_task.shに重複ガード追加(cmd待ち)。
+    今回の被害: hayateがkotaroのcommit上に作業し結果的にファイル破損なし。だがこれは偶然であり、真に並列だった場合はconflict・データ消失のリスクがあった'
   source_cmd: cmd_1281
   created_at: '2026-03-23'
+  cycle2_updated: '2026-03-23'

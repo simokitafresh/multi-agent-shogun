@@ -1,14 +1,14 @@
-# 🏯 Dashboard [dm-signal] — 2026-03-23 02:18 更新
+# 🏯 Dashboard [dm-signal] — 2026-03-23 02:34 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (02:27 自動更新)
+## 📊 リアルタイム状況 (02:33 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
 | 疾風 | claude-opus-4-6 high | done | cmd_1281 | — |
-| 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1285 | — |
-| 半蔵 | claude-opus-4-6 high | 稼働中 | cmd_1284 | — |
+| 影丸 | claude-opus-4-6 high | done | cmd_1285 | — |
+| 半蔵 | claude-opus-4-6 high | done | cmd_1284 | — |
 | 才蔵 | claude-opus-4-6 high | idle | cmd_1281 | — |
 | 小太郎 | claude-opus-4-6 high | idle | — | — |
 | 飛猿 | claude-opus-4-6 high | done | cmd_1282 | — |
@@ -16,7 +16,7 @@
 ### CI Status
 **CI RED: run 23403709313 — E2E Tests**
 
-**WARN: 20件のcommit未push。`git push`を検討せよ**
+**WARN: 23件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1047/1054 |
+| cmd完了(GATE CLEAR) | 1049/1056 |
 | 稼働忍者 | 2/8 (影丸, 半蔵) |
-| 連勝(CLEAR streak) | 46 (cmd_1235〜cmd_1281) |
+| 連勝(CLEAR streak) | 48 (cmd_1235〜cmd_1284) |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -37,7 +37,7 @@
 | 項目 | 値 |
 |------|-----|
 | 教訓注入率 | 75.2% |
-| 教訓効果率 | 56.3% |
+| 教訓効果率 | 57.2% |
 | 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
 | 問題教訓 | 0件 |
 
@@ -49,7 +49,7 @@
 | auto-ops | 82.1% | 100.0% | 56 |
 | google-classroom | 66.7% | 100.0% | 3 |
 | database | 0.0% | — | 1 |
-| unknown | 54.2% | 97.4% | 214 |
+| unknown | 54.2% | 97.4% | 216 |
 
 #### タスク種別別
 | task_type | 注入 | スキップ | 注入率 | N |
@@ -68,20 +68,20 @@
 Top 5 有効教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
-| L074 | infra | 378 | 543 | 69.6% |
-| L063 | infra | 256 | 502 | 51.0% |
-| L225 | infra | 131 | 142 | 92.3% |
+| L074 | infra | 380 | 544 | 69.9% |
+| L063 | infra | 258 | 503 | 51.3% |
+| L225 | infra | 133 | 143 | 93.0% |
 | L032 | infra | 87 | 215 | 40.5% |
-| L097 | infra | 77 | 112 | 68.8% |
+| L097 | infra | 78 | 112 | 69.6% |
 
 Bottom 5 低効果教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
 | L039 | dm-signal | 0 | 2 | 0.0% |
-| L113 | infra | 0 | 2 | 0.0% |
 | L115 | infra | 0 | 2 | 0.0% |
-| L263 | infra | 0 | 2 | 0.0% |
 | L027 | dm-signal | 0 | 1 | 0.0% |
+| L062 | infra | 0 | 1 | 0.0% |
+| L111 | infra | 0 | 1 | 0.0% |
 
 ### Context鮮度警告
 なし
@@ -89,20 +89,20 @@ Bottom 5 低効果教訓
 ### 戦果（直近5件）
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
+| cmd_1284 | — | GATE CLEAR | 03-23 02:33 |
+| cmd_1283 | — | GATE CLEAR | 03-23 02:29 |
 | cmd_1281 | — | GATE CLEAR | 03-23 02:17 |
 | cmd_1280 | — | GATE CLEAR | 03-23 02:04 |
 | cmd_1282 | — | GATE CLEAR | 03-23 01:55 |
-| cmd_1279 | — | GATE CLEAR | 03-23 01:39 |
-| cmd_1277 | — | GATE CLEAR | 03-23 01:35 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
 ## 最新更新 (02:22更新)
-- **cmd_1283**: 影丸PASS。lesson_update_score.sh書込先→archive切替完了。軍師RV中
+- **cmd_1284**: 完了。 — dashboard.md🚨要対応セクション清掃+pre-write-read-tracker.shのreport YAML直接Edit BLOCK復元。半蔵完遂
+- **cmd_1283**: 完了。 — lesson_update_score.shのCACHE_FILEをlessons_archive.yamlに切替え+フォールバック追加。索引(lessons.yaml)のmtime不変を検証済み。影丸完遂
 - **cmd_1281**: **GATE CLEAR**。核心知識Vercel化。二重配備(小太郎+疾風)発生もファイル破損なし
-- **cmd_1284**: 配備準備中。🚨要対応清掃+BLOCK昇格
 
 ### パイプライン
 | cmd | 忍者 | 内容 | 状態 |
