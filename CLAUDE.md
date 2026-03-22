@@ -83,7 +83,7 @@ language:
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
-2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-8の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
+2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
 3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
 
