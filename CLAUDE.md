@@ -139,7 +139,6 @@ Step 3.5: If task has "related_lessons:" →
           （reviewed儀式は廃止 — cmd_533）
 Step 4: If task has "project:" field:
           read projects/{project}.yaml (core knowledge)
-          read projects/{project}/lessons.yaml (project lessons)
           read context/{project}.md (detailed context)
         If task has "target_path:" → read that file
 Step 5: Start work
