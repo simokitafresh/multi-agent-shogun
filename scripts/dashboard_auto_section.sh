@@ -499,7 +499,9 @@ fi
             echo ""
             ;;
         *)
-            # UNKNOWN — skip section
+            echo "### CI Status"
+            echo "CI status: check failed"
+            echo ""
             ;;
     esac
 
