@@ -8609,3 +8609,97 @@ OK: dashboard.md auto section updated (05:32)
 [2026-03-23 05:34:06] CLEAR-BLOCKED-UNCOMMITTED: karo has uncommitted files: queue/tasks/hayate.yaml scripts/inbox_write.sh  reason=KARO-CLEAR(check_karo_clear)
 [2026-03-23 05:34:06] SHOGUN-ALERT-DEBOUNCE: shogun CTX:77% but 662s < 1800s since last alert
 [2026-03-23 05:34:10] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (05:34)
+[2026-03-23 05:35:18] AGENT-STATE-CORRECTION: hayate @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:35:18] STAGE1-SKIP: hayate idle but task_status=assigned, /clear禁止
+[2026-03-23 05:35:24] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:35:25] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:35:26] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:35:27] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:35:28] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:35:28] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:35:29] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:35:29] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:35:29] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:35:29] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:35:29] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:35:29] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:35:29] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:35:30] CLEAR-BLOCKED: karo not idle (check_idle), reason=KARO-CLEAR(check_karo_clear), will retry next cycle
+[2026-03-23 05:35:30] SHOGUN-ALERT-DEBOUNCE: shogun CTX:77% but 746s < 1800s since last alert
+OK: dashboard.md auto section updated (05:35)
+[2026-03-23 05:36:35] SKIP_CLEAR: hayate recent task update (50s ago)
+[2026-03-23 05:36:41] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:36:42] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:36:43] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:36:43] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:36:44] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:36:44] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:36:44] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:36:44] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:36:44] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:36:45] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:36:45] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:36:45] SHOGUN-ALERT-DEBOUNCE: shogun CTX:80% but 821s < 1800s since last alert
+[2026-03-23 05:36:47] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (05:37)
+[2026-03-23 05:37:54] UNCOMMITTED-BLOCK: hayate files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_gunshi.log logs/inbox_watcher_karo.log logs/ninja_monitor.log 
+[2026-03-23 05:37:54] REPORT-FORMAT-FAIL: hayate report=hayate_report.yaml output=FAIL: lessons_useful: null (must be list of dicts, not null); binary_checks.AC1: is str (must be list of check items); binary_checks.AC2: is str (must be list of check items); binary_checks.AC3: is str (must be list of check items); binary_checks.AC4: is str (must be list of check items)
+FIX (binary_checks.AC1): list形式で記入せよ:
+  binary_checks:
+    AC1:
+      - check: "確認内容"
+        result: "yes"
+FIX (binary_checks.AC2): list形式で記入せよ:
+  binary_checks:
+    AC2:
+      - check: "確認内容"
+        result: "yes"
+FIX (binary_checks.AC3): list形式で記入せよ:
+  binary_checks:
+    AC3:
+      - check: "確認内容"
+        result: "yes"
+FIX (binary_checks.AC4): list形式で記入せよ:
+  binary_checks:
+    AC4:
+      - check: "確認内容"
+        result: "yes" — auto_deploy BLOCKED
+[2026-03-23 05:37:54] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hayate (hayate:cmd_1312) — STALL検知は継続
+[pre-send capture] hayate pane state BEFORE message:
+❯ 
+───────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:37:54] IDLE confirmed: hayate
+[pre-send capture] hayate pane state BEFORE message:
+❯ 
+───────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:38:00] CLEAR-SEND: hayate confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 05:38:01] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:38:02] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:38:03] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:38:04] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:38:05] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:38:06] Batch notification sent to karo: hayate
+[2026-03-23 05:38:06] CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)
+[cdp_cleanup] 2026-03-23 05:38:06 Starting CDP Chrome cleanup scan...
+[cdp_cleanup] 2026-03-23 05:38:06 No PID files found. Nothing to clean.
+[cdp_cleanup] 2026-03-23 05:38:06 Done.
+[2026-03-23 05:38:06] CDP-CLEANUP: Completed successfully
+[2026-03-23 05:38:06] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:38:06] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:38:06] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:38:06] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:38:06] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:38:06] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:38:06] RENUDGE-TRANSITION: karo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:38:07] AGENT-STATE-CORRECTION: hayate @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:38:07] RENUDGE-TRANSITION: hayate fingerprint changed (unread=2), sending inbox2
+[2026-03-23 05:38:07] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:38:14] CLEAR-BLOCKED-UNCOMMITTED: karo has uncommitted files: queue/reports/hayate_report.yaml  reason=KARO-CLEAR(check_karo_clear)
+[2026-03-23 05:38:14] SHOGUN-ALERT-DEBOUNCE: shogun CTX:80% but 910s < 1800s since last alert

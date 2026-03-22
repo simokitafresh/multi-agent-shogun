@@ -722,3 +722,24 @@
 - ts: "2026-03-23T05:33:56+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
 - ts: "2026-03-23T05:33:56+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
 - ts: "2026-03-23T05:33:57+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:35:24+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:35:25+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:35:26+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:35:27+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:35:28+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:35:53+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report.yaml", result: AUTO-FIXED, fixes: "files_modified string→dict変換"
+- ts: "2026-03-23T05:35:53+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null); binary_checks.AC1: is str (must be list of check items); binary_checks.AC2: is str (must be list of check items); binary_checks.AC3: is str (must be list of check items); binary_checks.AC4: is str (must be list of check items)"
+- ts: "2026-03-23T05:36:29+09:00", file: "/tmp/test_hayate_report.yaml", result: AUTO-FIXED, fixes: "binary_checks string→list変換; lessons_useful null→空list"
+- ts: "2026-03-23T05:36:29+09:00", file: "/tmp/test_hayate_report.yaml", result: PASS
+- ts: "2026-03-23T05:36:41+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:36:42+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:36:43+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:36:43+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:36:44+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:37:54+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null); binary_checks.AC1: is str (must be list of check items); binary_checks.AC2: is str (must be list of check items); binary_checks.AC3: is str (must be list of check items); binary_checks.AC4: is str (must be list of check items)"
+- ts: "2026-03-23T05:38:01+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:38:02+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:38:03+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:38:04+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:38:05+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:38:10+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report.yaml", result: PASS

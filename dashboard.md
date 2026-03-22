@@ -1,12 +1,12 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 05:08 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (05:32 自動更新)
+## 📊 リアルタイム状況 (05:37 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
-| 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1312 | — |
+| 疾風 | claude-opus-4-6 high | done | cmd_1312 | — |
 | 影丸 | claude-opus-4-6 high | done | cmd_1311 | — |
 | 半蔵 | claude-opus-4-6 high | done | cmd_1307 | — |
 | 才蔵 | claude-opus-4-6 high | done | cmd_1308 | — |
@@ -15,6 +15,8 @@
 
 ### CI Status
 **CI RED: run 23410932510 — E2E Tests**
+
+**WARN: 11件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち

@@ -21,7 +21,7 @@ lesson_candidate:
   title: ''
   detail: ''
   project: infra
-lessons_useful: null
+lessons_useful: []
 skill_candidate:
   found: false
 decision_candidate:
@@ -30,13 +30,22 @@ hook_failures:
   count: 0
   details: ''
 binary_checks:
-  AC1: '[{check: ''inject_report_filename呼出し前にreport_filenameをクリアするコードがあるか'', result:
-    ''yes''}, {check: ''inject_report_filename呼出し前にreport_pathをクリアするコードがあるか'', result:
-    ''yes''}]'
-  AC2: '[{check: ''deploy_task.sh実行後にreport_filenameが{ninja}_report_{parent_cmd}.yaml形式か'',
-    result: ''yes''}, {check: ''6忍者全てで検証したか'', result: ''yes''}]'
-  AC3: '[{check: ''新report_filenameに対応するテンプレートファイルがqueue/reports/に存在するか'', result:
-    ''yes''}]'
-  AC4: '[{check: ''batsテスト全PASSか'', result: ''yes''}, {check: ''SKIP数が0か'', result:
-    ''yes''}]'
+  AC1:
+  - check: inject_report_filename呼出し前にreport_filenameをクリアするコードがあるか
+    result: 'yes'
+  - check: inject_report_filename呼出し前にreport_pathをクリアするコードがあるか
+    result: 'yes'
+  AC2:
+  - check: deploy_task.sh実行後にreport_filenameが{ninja}_report_{parent_cmd}.yaml形式か
+    result: 'yes'
+  - check: 6忍者全てで検証したか
+    result: 'yes'
+  AC3:
+  - check: 新report_filenameに対応するテンプレートファイルがqueue/reports/に存在するか
+    result: 'yes'
+  AC4:
+  - check: batsテスト全PASSか
+    result: 'yes'
+  - check: SKIP数が0か
+    result: 'yes'
 verdict: PASS
