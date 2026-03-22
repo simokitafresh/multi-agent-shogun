@@ -1,22 +1,22 @@
-# 🏯 Dashboard [dm-signal] — 2026-03-23 02:37 更新
+# 🏯 Dashboard [dm-signal] — 2026-03-23 02:52 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (02:47 自動更新)
+## 📊 リアルタイム状況 (02:52 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
 | 疾風 | claude-opus-4-6 high | done | cmd_1286 | — |
 | 影丸 | claude-opus-4-6 high | done | cmd_1285 | — |
-| 半蔵 | claude-opus-4-6 high | 稼働中 | cmd_1287 | — |
-| 才蔵 | claude-opus-4-6 high | 稼働中 | cmd_1289 | — |
+| 半蔵 | claude-opus-4-6 high | done | cmd_1287 | — |
+| 才蔵 | claude-opus-4-6 high | done | cmd_1289 | — |
 | 小太郎 | claude-opus-4-6 high | idle | — | — |
-| 飛猿 | claude-opus-4-6 high | 稼働中 | cmd_1288 | — |
+| 飛猿 | claude-opus-4-6 high | done | cmd_1288 | — |
 
 ### CI Status
 **CI RED: run 23403709313 — E2E Tests**
 
-**WARN: 26件のcommit未push。`git push`を検討せよ**
+**WARN: 30件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1050/1057 |
-| 稼働忍者 | 3/8 (半蔵, 才蔵, 飛猿) |
-| 連勝(CLEAR streak) | 49 (cmd_1235〜cmd_1285) |
+| cmd完了(GATE CLEAR) | 1051/1058 |
+| 稼働忍者 | 1/8 (才蔵) |
+| 連勝(CLEAR streak) | 50 (cmd_1235〜cmd_1286) |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -37,8 +37,8 @@
 | 項目 | 値 |
 |------|-----|
 | 教訓注入率 | 75.3% |
-| 教訓効果率 | 56.5% |
-| 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
+| 教訓効果率 | 56.8% |
+| 効果率閾値 | NODATA |
 | 問題教訓 | 0件 |
 
 #### PJ別
@@ -49,7 +49,7 @@
 | auto-ops | 82.1% | 100.0% | 56 |
 | google-classroom | 66.7% | 100.0% | 3 |
 | database | 0.0% | — | 1 |
-| unknown | 54.4% | 97.5% | 217 |
+| unknown | 54.6% | 97.5% | 218 |
 
 #### タスク種別別
 | task_type | 注入 | スキップ | 注入率 | N |
@@ -68,9 +68,9 @@
 Top 5 有効教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
-| L074 | infra | 381 | 545 | 69.9% |
-| L063 | infra | 259 | 504 | 51.4% |
-| L225 | infra | 134 | 144 | 93.1% |
+| L074 | infra | 382 | 546 | 70.0% |
+| L063 | infra | 260 | 505 | 51.5% |
+| L225 | infra | 135 | 145 | 93.1% |
 | L032 | infra | 87 | 215 | 40.5% |
 | L097 | infra | 79 | 113 | 69.9% |
 
@@ -89,23 +89,21 @@ Bottom 5 低効果教訓
 ### 戦果（直近5件）
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
+| cmd_1286 | — | GATE CLEAR | 03-23 02:52 |
 | cmd_1285 | — | GATE CLEAR | 03-23 02:37 |
 | cmd_1284 | — | GATE CLEAR | 03-23 02:33 |
 | cmd_1283 | — | GATE CLEAR | 03-23 02:29 |
 | cmd_1281 | — | GATE CLEAR | 03-23 02:17 |
-| cmd_1280 | — | GATE CLEAR | 03-23 02:04 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
 ## 最新更新 (02:45更新)
+- **cmd_1286**: 完了。 — inbox_write.sh type=report_received処理にgit uncommittedチェックを追加。target_path/filesのgit status確認、未commitあればWARNING表示。段階的導入。。疾風完遂
 - **cmd_1289**: 才蔵に配備。GP-011 忍者別workaround率計測
 - **cmd_1288**: 飛猿に配備。GP-004 SG7完全パッケージ
 - **cmd_1287**: 半蔵に配備。GP-012 RC修正再検証フロー
-- **cmd_1286**: 疾風完了。軍師レビュー中。GP-014 commit層自動防御
-- **cmd_1285**: **GATE CLEAR**。家老用スタートアップゲート。影丸完遂。workaround: no
-- **cmd_1284**: **GATE CLEAR**。🚨要対応清掃+BLOCK昇格。半蔵完遂。workaround: no
 
 ### パイプライン
 | cmd | 忍者 | 内容 | 状態 |
@@ -142,6 +140,7 @@ Bottom 5 低効果教訓
 |---|------|------|-----|
 
 ## 将軍宛報告
+- [INSIGHT] cmd_1286 hayate: LC: target_path/filesなしタスクではgit uncommittedチェックがスキップされる
 - [INSIGHT] cmd_1285 kagemaru: LC: 運用YAMLファイルはYAML構造破損を前提にfallback parser設計必須
 - [INSIGHT] cmd_1281 hayate: LC: Vercel化は分割先ファイルの既存内容と前任作業状況を先に確認せよ
 - [INSIGHT] cmd_1281 saizo: LC: Vercel分割後のcontext参照先更新

@@ -49,7 +49,7 @@ task:
   - AC2
   - AC3
   parent_cmd: cmd_1288
-  progress: ''
+  progress: 'AC1-AC3 PASS。commit dd36b6b。報告YAML完了'
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -79,6 +79,6 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: in_progress
+  status: done
   stop_for: []
   task_type: implement

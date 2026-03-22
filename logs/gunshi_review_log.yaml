@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 195件 (draft:90, report:93, self_study:18) | 2026-03-20〜
+# 累計: 196件 (draft:90, report:93, self_study:19) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -658,7 +658,7 @@
 - cmd_id: cmd_1286
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "GP-014 commit層gate。inbox_write.sh既存gate構造に乗る最小実装。WARNING段階的導入。commit_missing35%構造根絶。SG8:PASS。confidence:HIGH"
   timestamp: "2026-03-23T03:00:00"
 - cmd_id: cmd_1286
@@ -666,7 +666,7 @@
   report_ninja: hayate
   report_task_id: cmd_1286
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "GP-014実装。commit 88ace22確認。git uncommittedチェック追加。WARNING段階。binary_checksが[0]キー形式(非標準)。成果物OK"
   lesson_quality: OK
   timestamp: "2026-03-23T03:05:00"
@@ -688,3 +688,11 @@
   gate_result: null
   findings_summary: "GP-011 ninja rate計測。karo_workarounds集計。YAML形式3種混在注意。confidence:MEDIUM"
   timestamp: "2026-03-23T03:05:00"
+- cmd_id: self_study_S37
+  review_type: self_study
+  findings_summary: "教訓効果率分析+GP総点検。lesson_impact.tsv 22701行。参照率0%教訓44件/無駄注入339回。退役推奨12件(Tier1:7件構造的陳腐化+Tier2:5件過度具体的)。CTX25000トークン解放。GP14件総点検: implemented8→obsolete2→active4(将軍推薦順:014→012→004→011)。全4件即cmd化(1286-1289)"
+  proposals:
+    - id: GP-015
+      description: "教訓退役制度: lesson_write.shにretired flag追加。lessons索引から除外しつつarchiveに保存"
+      status: pending
+  timestamp: "2026-03-23T03:10:00"

@@ -567,3 +567,20 @@ entries: []
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-03-22T17:38:19Z"
+  - cmd_id: "cmd_1286"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T17:50:50Z"
+    notes: "report_yaml_missing:hayate_report_cmd_1286.yaml"
+  - cmd_id: "cmd_1286"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T17:53:20Z"
