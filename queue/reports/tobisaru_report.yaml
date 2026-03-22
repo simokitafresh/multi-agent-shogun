@@ -1,21 +1,29 @@
 worker_id: tobisaru
-task_id: cmd_1295
-parent_cmd: cmd_1295
-timestamp: '2026-03-23T04:13:33'
+task_id: cmd_1310
+parent_cmd: cmd_1310
+timestamp: '2026-03-23T04:45:00'
 status: done
 ac_version_read: d41d8cd9
 result:
-  summary: gate_gunshi_startup.shをgit add -fでforce add+commit完了。git ls-filesで追跡確認済み。
+  summary:
+    CI RED原因: test_sync_lessons_injection_count_sync.batsがINDEXファイル(lessons.yaml)を読んでいたが、sync_lessons.shのINDEX形式変更後はスコアフィールド(injection_count等)がARCHIVEファイル(lessons_archive.yaml)にのみ存在。テストをARCHIVEから読むよう修正。344テスト全PASS・0
+      SKIP。
   details:
-    AC1: git ls-files scripts/gates/gate_gunshi_startup.sh → 出力あり。追跡対象確認。
+    AC1: 当該テストPASS確認済み
+    AC2: bats tests/ → 344テスト全PASS・0 SKIP
+    AC3: git push完了。CI run出現待ち（ローカル全テストPASS確認済み）
+  root_cause: sync_lessons.shがINDEX(lessons.yaml)をコンパクト形式(id/title/summary/tagsのみ)に変更。スコアフィールド(helpful_count,
+    injection_count等)はARCHIVE(lessons_archive.yaml)にのみ出力。テストはINDEXを読んでいたためKeyErrorで失敗。
+  fix: テストの読み込み先をlessons.yaml→lessons_archive.yamlに変更（1行修正）
 purpose_validation:
-  cmd_purpose: gate_gunshi_startup.shが.gitignoreで除外されcommitされていない問題の修正
+  cmd_purpose: CI RED修正（test_sync_lessons_injection_count_sync.bats失敗）
   fit: true
   purpose_gap: ''
-files_modified: []
+files_modified:
+- tests/unit/test_sync_lessons_injection_count_sync.bats
 lesson_candidate:
   found: false
-  no_lesson_reason: git add -fによる単純操作。既知手順のため新規教訓なし
+  no_lesson_reason: テストと実装の乖離は既知パターン。新規教訓なし
   title: ''
   detail: ''
   project: infra
@@ -29,6 +37,14 @@ hook_failures:
   details: ''
 binary_checks:
   AC1:
-  - check: git ls-files scripts/gates/gate_gunshi_startup.sh で出力があるか
+  - check: 当該テストがPASSか
+    result: 'yes'
+  AC2:
+  - check: 全テストPASSか
+    result: 'yes'
+  - check: SKIP 0件か
+    result: 'yes'
+  AC3:
+  - check: git pushが成功したか
     result: 'yes'
 verdict: PASS
