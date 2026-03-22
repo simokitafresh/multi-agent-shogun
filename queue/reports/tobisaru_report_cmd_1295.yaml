@@ -26,14 +26,19 @@ lesson_candidate:
 lessons_useful:
 - useful: false
   reason: ((PASS++))パターンは本タスクに該当なし
+  id: L074
 - useful: false
   reason: entity名義確認は本タスクに該当なし
+  id: L225
 - useful: false
   reason: YAML構造操作は本タスクに該当なし
+  id: L063
 - useful: false
   reason: field_get移行は本タスクのスコープ外
+  id: L097
 - useful: false
   reason: 影響範囲列挙は本タスクに該当なし
+  id: L085
 skill_candidate:
   found: false
 decision_candidate:
