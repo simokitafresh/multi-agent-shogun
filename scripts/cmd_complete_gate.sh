@@ -3812,8 +3812,7 @@ except:
     # cmd_1302: 報告YAMLをGATEが読み終わってからアーカイブ
     echo ""
     echo "Archive (post-GATE CLEAR):"
-    local gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
-    if [ ! -f "$gates_dir/archive.done" ]; then
+    if [ ! -f "$GATES_DIR/archive.done" ]; then
         if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" 2>&1; then
             echo "  archive: OK"
         else

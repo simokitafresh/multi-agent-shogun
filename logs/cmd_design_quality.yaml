@@ -690,3 +690,12 @@ entries: []
     supplementary_cmds: 0
     timestamp: "2026-03-22T18:54:47Z"
     notes: "report_yaml_missing:hanzo_report_cmd_1300.yaml"
+  - cmd_id: "cmd_1301"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T19:04:36Z"
+    notes: "missing_gate:archive"

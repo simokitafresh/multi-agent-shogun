@@ -700,7 +700,7 @@ commands:
       q4_depth: deep — 将軍§14自己分析→root cause(grep -c exit code)→影響範囲(2箇所)→修正方法確定済み
       q5_verified_source: gate_shogun_startup.sh line 101,282 (grep -nで現物確認済み)
       q6_not_hiding: no — 自動化自体のバグを修正。Phase 9の教訓実践
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T03:56:47\""
   cmd_1302:
     title: cmd_complete_gate.sh archive実行タイミング修正 — GATE外完了の根絶
