@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 146件 (draft:66, report:79, self_study:1) | 2026-03-20〜
+# 累計: 150件 (draft:68, report:81, self_study:1) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:59 LGTM:70 REQ_CHANGES:6 FAIL:5
+# verdict分布: APPROVE:61 LGTM:71 REQ_CHANGES:6 FAIL:6
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -665,14 +665,14 @@
 - cmd_id: cmd_1263
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "commit_missing構造的根絶。L658挿入点正確。事前検死: git diffがper-ninja限定でなく誤検知可能性(低確率)+外部PJ検出不可(実績0)。confidence:HIGH"
   lesson_candidate: ""
   timestamp: "2026-03-22T20:55:00"
 - cmd_id: cmd_1264
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "gate発火100%化。L122 TASK_YAML不在時サイレントスキップが主修正対象。L159/163/177のexit 1は既存。defense-in-depth。confidence:MEDIUM(別経路の可能性排除しきれず)"
   lesson_candidate: ""
   timestamp: "2026-03-22T20:55:00"
@@ -683,3 +683,43 @@
   findings_summary: "GP-003実現。Edit tool=hook対象/Bash=非対象の区別正確。WARN→BLOCK段階的。Write tool対応は後続拡張。confidence:HIGH"
   lesson_candidate: ""
   timestamp: "2026-03-22T20:55:00"
+- cmd_id: cmd_1264
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1264
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: OK
+  gate_result: PASS
+  findings_summary: "SG0:PASS。commit d64d1b7確認。3箇所WARNING→BLOCKED+exit 1変更diffで正確。4観点全OK。lesson: WARNING続行=サイレント障害の温床"
+  lesson_candidate: "LG008: draft review時にRead toolで対象ファイルを読むと忍者の進行中修正を含む可能性(LG001タイムラグ変種)。draft reviewはcmd起票前なので影響小だが認識必要"
+  gate_feedback: "APPROVE→CLEAR+workaround(report_missing: 影丸commit後/clear前にreport未作成→家老代行)。軍師LGTM時点ではreport存在=判定正当。/clear後の消失は軍師制御外"
+  timestamp: "2026-03-22T21:00:00"
+- cmd_id: cmd_1263
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1263
+  report_verdict: FAIL
+  fail_reasons:
+    - "result.summaryが別タスク内容(cmd_complete_gate.sh lesson検証)を記載。実際はninja_monitor.sh uncommittedチェック"
+    - "binary_checksが別タスクのチェック項目。タスクYAMLのAC定義と不一致"
+    - "SG2: 忍者commit(b16a0f0)はreport YAMLのみ。コード変更は05d27a3(家老一括commit)に含まれる=commit_missing"
+  lesson_quality: WEAK
+  gate_result: CLEAR
+  findings_summary: "SG0:PASS。実装コードは高品質(project path lookup付き)。しかしresult.summary/binary_checksが別タスクの内容。commit_missingも再発。reportの信頼性がゼロ"
+  lesson_candidate: "LG009: テンプレートのresult.summary/binary_checksが前タスクの残骸で上書きされるパターン。deploy_task.shのテンプレート生成でresult.summaryをクリアすべき"
+  timestamp: "2026-03-22T21:08:00"
+- cmd_id: cmd_1266
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "FoF selection_pipeline偵察。cmd_1250(21/21 FAIL)+cmd_1251(blocks空PASS)で仮説確認済み。2名並列(saizo AC1+AC3/kotaro AC2)。PI-009違反解消直結。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T21:15:00"
+- cmd_id: cmd_1267
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "dashboard陳腐化防止。AC1(unpush WARN)明快。AC2に2実装判断: タイムスタンプ源不在+auto_section設計原則(マーカー外不変)との矛盾。忍者裁量で対応可能。confidence:MEDIUM"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T21:30:00"

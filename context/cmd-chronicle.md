@@ -558,3 +558,5 @@
 | cmd_1258 | dashboard CI状態の自動反映 + 陳腐化防止 | infra | 03-22 | — |
 | cmd_1259 | dm-signal.yaml pipeline flow + registration陳腐化ステータス更新 | dm-signal | 03-22 | — |
 | cmd_1260 | 軍師S6提案実装 — lessons_useful/binary_checksプリフィル + report構造強制 | infra | 03-22 | — |
+| cmd_1261 | 軍師提案パイプライン構造化 — YAMLコメント→構造化フィールド+自動サーフェシング | infra | 03-22 | — |
+| cmd_1262 | ninja_monitor.sh AUTO-DONE重複書込みバグ修正 — idle通知嵐の根絶 | infra | 03-22 | — |
