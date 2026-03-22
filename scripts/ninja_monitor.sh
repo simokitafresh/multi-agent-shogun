@@ -144,6 +144,7 @@ LAST_KARO_CLEAR=0           # 家老の最終/clear送信時刻（epoch秒）
 LAST_SHOGUN_ALERT=0         # 将軍の最終アラート送信時刻（epoch秒）
 prev_context_warn_sig=""
 prev_ci_status=""
+prev_unpushed_count=""
 
 # ─── ペインターゲット探索 ───
 # tmuxの@agent_idからペインターゲットを動的に解決
@@ -2394,12 +2395,14 @@ while true; do
             | cksum | awk '{print $1 ":" $2}' || echo "missing"
     )
     current_ci_status=$(bash "$SCRIPT_DIR/scripts/ci_status_check.sh" --status 2>/dev/null || echo "UNKNOWN")
-    if [[ "$current_idle" != "$prev_idle" || "$current_gate_lines" != "$prev_gate_lines" || "$current_context_warn_sig" != "$prev_context_warn_sig" || "$current_ci_status" != "$prev_ci_status" ]]; then
+    current_unpushed_count=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo 0)
+    if [[ "$current_idle" != "$prev_idle" || "$current_gate_lines" != "$prev_gate_lines" || "$current_context_warn_sig" != "$prev_context_warn_sig" || "$current_ci_status" != "$prev_ci_status" || "$current_unpushed_count" != "$prev_unpushed_count" ]]; then
         bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" 2>/dev/null || true
         prev_idle="$current_idle"
         prev_gate_lines="$current_gate_lines"
         prev_context_warn_sig="$current_context_warn_sig"
         prev_ci_status="$current_ci_status"
+        prev_unpushed_count="$current_unpushed_count"
     fi
 
     # ═══ 連想配列クリーンアップ（10分間隔 H1: メモリリーク防止） ═══

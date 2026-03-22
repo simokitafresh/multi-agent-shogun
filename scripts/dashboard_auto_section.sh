@@ -505,6 +505,13 @@ fi
             ;;
     esac
 
+    # ─── Unpushed Commits WARN (cmd_1267) ───
+    _unpushed_count=$(cd "$PROJECT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo 0)
+    if [[ "$_unpushed_count" -ge 10 ]]; then
+        echo "**WARN: ${_unpushed_count}件のcommit未push。\`git push\`を検討せよ**"
+        echo ""
+    fi
+
     # ─── パイプライン ───
     echo "### パイプライン"
 
@@ -661,6 +668,18 @@ fi
 # ═══════════════════════════════════════════════════════
 if [[ "$DRY_RUN" == true ]]; then
     cat "$TMPFILE"
+    # Report strikethrough entries that would be removed from 将軍宛報告
+    if [[ -f "$DASHBOARD" ]] && grep -q '^## 将軍宛報告' "$DASHBOARD"; then
+        _strike_count=$(awk '
+            /^## 将軍宛報告/ { in_section=1; next }
+            in_section && /^#/ { in_section=0 }
+            in_section && /^- ~~/ { c++ }
+            END { print c+0 }
+        ' "$DASHBOARD")
+        if [[ "$_strike_count" -gt 0 ]]; then
+            echo "DRY-RUN: Would remove ${_strike_count} strikethrough entries from 将軍宛報告"
+        fi
+    fi
     exit 0
 fi
 
@@ -691,3 +710,25 @@ fi
 
 mv "${DASHBOARD}.tmp" "$DASHBOARD"
 echo "OK: dashboard.md auto section updated (${NOW})"
+
+# ─── Remove strikethrough entries from 将軍宛報告 section ───
+if grep -q '^## 将軍宛報告' "$DASHBOARD"; then
+    TMP_STRIKE=$(mktemp)
+    awk '
+        /^## 将軍宛報告/ { in_section=1; print; next }
+        in_section && /^#/ { in_section=0 }
+        in_section && /^- ~~/ { next }
+        { print }
+    ' "$DASHBOARD" > "$TMP_STRIKE"
+
+    _orig_lines=$(wc -l < "$DASHBOARD")
+    _new_lines=$(wc -l < "$TMP_STRIKE")
+    _removed=$((_orig_lines - _new_lines))
+
+    if [[ "$_removed" -gt 0 ]]; then
+        mv "$TMP_STRIKE" "$DASHBOARD"
+        echo "OK: removed ${_removed} strikethrough entries from 将軍宛報告"
+    else
+        rm -f "$TMP_STRIKE"
+    fi
+fi
