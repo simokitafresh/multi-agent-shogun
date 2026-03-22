@@ -1,0 +1,10 @@
+filename_pattern: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # 例: hanzo_report_cmd_389.yaml（旧形式{ninja_name}_report.yamlは非推奨）
+required_fields:
+  - findings    # category + detail per finding
+  - verdict     # 結論（1行）
+  - confidence  # HIGH/MEDIUM/LOW
+  - blind_spots # 調査できなかった領域
+forbidden:
+  - "方針提案・設計判断は禁止。事実と分析のみ報告せよ"
+notes:
+  - "他の忍者の報告を参照するな（並行偵察の独立性）"

@@ -1,0 +1,4 @@
+pre-commit:
+  commands:
+    repo-checks:
+      run: bash scripts/run_precommit_checks.sh

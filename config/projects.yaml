@@ -1,0 +1,67 @@
+projects:
+  - id: dm-signal
+    name: "DM-Signal"
+    path: "/mnt/c/Python_app/DM-signal"
+    context_file: "context/dm-signal.md"
+    gist_url: "https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"
+    context_files:
+      - file: "context/dm-signal-core.md"
+        tags: [implementation, db, pipeline, api]
+      - file: "context/dm-signal-ops.md"
+        tags: [operations, gs, deploy, performance]
+      - file: "context/dm-signal-research.md"
+        tags: [research, analysis, verification]
+      - file: "context/dm-signal-frontend.md"
+        tags: [frontend]
+    priority: high
+    status: active
+  - id: infra
+    type: platform
+    name: "Multi-Agent Infrastructure"
+    path: "/mnt/c/tools/multi-agent-shogun"
+    context_file: "context/infrastructure.md"
+    gist_url: "https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"
+    priority: medium
+    status: active
+
+  - id: database
+    name: "Stock Database"
+    path: "/mnt/c/Python_app/database"
+    repo: "https://github.com/simokitafresh/database"
+    context_file: "context/database.md"
+    priority: medium
+    status: active
+    note: "殿の株式データベース。Supabase+Render構成。DM-Signalとは独立"
+
+  - id: milk
+    name: "M!LK"
+    path: "/mnt/c/Python_app/milk"
+    context_file: "context/milk.md"
+    priority: high
+    status: planned
+    note: "別PC+専用将軍クローンで開発。ここでは設計のみ保管"
+
+  - id: auto-ops
+    name: "Auto-Ops"
+    path: "/mnt/c/Python_app/auto-ops"
+    repo: "https://github.com/simokitafresh/auto-ops"
+    context_file: "context/auto-ops.md"
+    priority: low
+    status: active
+
+  - id: google-classroom
+    name: "Google Classroom Dashboard"
+    path: "/mnt/c/Python_app/google_classroom"
+    repo: "https://github.com/simokitafresh/google_classroom"
+    priority: high
+    status: archived
+
+  - id: mcas
+    name: "Multi-Claude Account Switcher"
+    path: "/mnt/c/Python_app/multi-claude-account-switcher"
+    context_file: "docs/archive/mcas.md"
+    gist_url: "https://gist.github.com/simokitafresh/b7548f6aae74850e35b506b2fe0369e1"
+    priority: low
+    status: archived
+
+current_project: dm-signal

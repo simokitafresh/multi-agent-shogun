@@ -1,0 +1,22 @@
+runbook_file,section,code_match,lesson_coverage,pi_coverage,prerequisites,error_handling,score,note
+DTB3-guide.md,全体,ok,missing,missing,missing,missing,1/5,理論文書。PI-001(シグナル日次解像度)関連だが言及なし。前提条件・エラーハンドリングなし
+api-usage-guide.md,API Endpoints,ok,missing,missing,ok,ok,3/5,エンドポイント/レスポンス形式は実装準拠。認証・レート制限記載あり。PI-002(SQLite不完全)・PI-003(pipeline_config)関連の運用注意なし。教訓参照なし
+business_rules.md,全体,ok,missing,partial,missing,missing,2/5,コード参照概ね一致。PI-005(full recalculate)間接言及あり。PI-003/004未反映。教訓・前提条件・エラーハンドリングなし
+calculation-theory.md,全体,ok,missing,missing,missing,missing,1/5,RULE05式・calculate_monthly_return()参照OK。理論文書のため教訓・PI・前提・エラー未記載
+check-rule.md,全体,ok,missing,partial,ok,ok,3/5,検証スクリプト参照OK。環境変数(SUPABASE_URL等)前提記載あり。エラー時対処手順あり。PI-006に部分準拠。教訓参照なし
+database-info.md,全体,ok,missing,partial,partial,missing,2/5,テーブル定義はDB実態と整合。PI-002関連だがSQLite制約未明記。前提条件不十分。エラーハンドリングなし
+db-operations-runbook.md,全体,ok,ok,ok,ok,ok,5/5,コード参照正確。教訓L035-L332の15件索引化済。PI-003/PI-004/PI-005明記。DATABASE_URL前提条件あり。is_running=None罠(L084)等エラーハンドリングあり
+gs-parity-verification-guide.md,全体,ng,missing,partial,missing,partial,1/5,recalculateパス不正確(backend/app/services/→実際はbackend/app/jobs/)。PI-004間接的含有。前提条件未記載。リカバリ手順不十分。教訓参照なし
+local-postgresql-guide.md,全体,partial,missing,partial,ok,ok,3/5,セットアップ手順パス概ねOK。PI-002趣旨合致。前提条件(PostgreSQL/Python)記載。トラブルシューティングあり。教訓参照なし
+local-verification-guide.md,全体,partial,missing,partial,ok,ok,3/5,検証スクリプト/recalculate参照あり。PI-002部分準拠。前提条件(ローカルDB/環境変数)記載。トラブルシューティングあり。教訓参照なし
+ninpou-fof-creation-runbook.md,全体,ok,missing,partial,ok,partial,3/5,pipeline_configテンプレート正確。前提条件(.env/Admin認証)記載。PI-003暗黙準拠(テンプレートに含む)だが明示なし。PI-005準拠(recalculate-sync呼出)。エラー処理は上書き防止のみ。教訓参照なし
+portfolio-naming-convention.md,全体,ok,missing,missing,missing,missing,1/5,命名規則リファレンス文書。コード参照OK。PI/教訓/前提/エラー全て未記載
+rebalance-verification.md,全体,ok,missing,partial,missing,partial,2/5,コード参照(is_rebalance_month等)実在。PI-001間接関連。検証ロジック・エラーパターン記載あるが前提条件なし。教訓参照なし
+renderyaml_guide.md,全体,ok,missing,missing,missing,missing,1/5,render.yaml構成ガイド。コード参照OK。インフラ教訓(L232等)関連だが未参照。前提・PI・エラーなし
+requirements-spec.md,全体,ng,missing,missing,missing,missing,0/5,要件仕様書。recalculateパスがbackend/app/services/と記載(実際はbackend/app/jobs/)。教訓・PI・前提・エラーなし
+return-consistency-verification.md,全体,ok,missing,partial,partial,ok,3/5,SSOT関数参照正確。PI-001間接準拠。デバッグ手順ステップバイステップあり。前提条件部分的(DB接続暗黙)。教訓なし
+security-status.md,全体,ok,missing,missing,missing,missing,1/5,認証アーキテクチャ・APIマトリクス記載。コード参照OK。教訓・PI・前提・エラー全て未記載
+shijin-pf-creation-runbook.md,全体,ng,missing,partial,partial,missing,1/5,register_shijin_portfolios.py参照は実在せず(実際はregister_shin_v2.py)。PI-003暗黙準拠だが明示なし。PI-004(pydantic検証)未記載。前提条件散在的。エラーハンドリングなし。教訓なし
+shin-shijin-registration-runbook.md,全体,partial,missing,partial,ok,partial,3/5,register_shin_v2.py参照実在確認OK。pipeline_config生成・recalculate-sync手順あり。PI-003/005暗黙準拠。PI-004(pydantic検証)明示なし。前提条件(DB接続/Admin認証)記載。エラー処理部分的。教訓参照なし
+timing-and-bottleneck-analysis.md,全体,ng,missing,missing,missing,missing,0/5,recalculateパス古い(services/→実際はjobs/)。GS教訓(L403-L408等)関連だが未参照。前提・PI・エラーなし
+trade-rule.md,全体,ok,missing,partial,missing,missing,2/5,コード参照(return_calculator.py等)全て実在OK。PI-001(日次解像度)全体準拠。PI-003/004/005/006未言及。教訓・前提・エラーなし

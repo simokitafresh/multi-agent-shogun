@@ -1,0 +1,170 @@
+#!/bin/bash
+# gate_report_format.sh — 忍者報告YAMLのフォーマット検証
+# 目的: 家老の手動フォーマット修正作業を根絶（karo_workarounds 5件連続同一問題）
+# 知性の外部化原則: 正しいフォーマットを忍者の記憶に依存させず、自動検証で強制
+# Usage: bash scripts/gates/gate_report_format.sh <report_yaml_path>
+# Exit: 0=PASS, 1=FAIL(修正必要)
+
+set -e
+
+REPORT_PATH="$1"
+
+if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
+    echo "FAIL: report file not found: ${REPORT_PATH:-<empty>}" >&2
+    exit 1
+fi
+
+# Python validation — checks all known failure patterns from karo_workarounds
+RESULT=$(REPORT_PATH="$REPORT_PATH" python3 -c "
+import yaml, os, sys
+
+report_path = os.environ['REPORT_PATH']
+errors = []
+hints = []
+
+try:
+    with open(report_path) as f:
+        data = yaml.safe_load(f)
+except Exception as e:
+    print(f'FAIL: YAML parse error: {e}')
+    sys.exit(1)
+
+if not data or not isinstance(data, dict):
+    print('FAIL: report is empty or not a dict')
+    sys.exit(1)
+
+# --- Required top-level fields ---
+required = ['ac_version_read', 'binary_checks', 'files_modified', 'lesson_candidate', 'lessons_useful']
+for field in required:
+    if field not in data:
+        errors.append(f'{field}: MISSING')
+
+# --- lesson_candidate must be dict with 'found' (null = FAIL) ---
+lc = data.get('lesson_candidate')
+if lc is None and 'lesson_candidate' in data:
+    errors.append('lesson_candidate: null (must be dict with found/title/detail)')
+elif lc is not None:
+    if isinstance(lc, str):
+        errors.append('lesson_candidate: is string (must be dict with found/title/detail)')
+        hints.append('FIX (lesson_candidate): dict形式で再記入せよ:\\n  lesson_candidate:\\n    found: true  # or false\\n    title: \"教訓タイトル\"\\n    detail: \"詳細\"')
+    elif isinstance(lc, dict):
+        if 'found' not in lc:
+            errors.append('lesson_candidate: missing \"found\" field')
+        if not lc.get('found') and not lc.get('no_lesson_reason'):
+            errors.append('lesson_candidate: found=false but no no_lesson_reason')
+        # --- no_lesson_reason quality check (cmd_1299) ---
+        if not lc.get('found') and lc.get('no_lesson_reason'):
+            reason = str(lc.get('no_lesson_reason', '')).strip()
+            if len(reason) <= 3:
+                errors.append(f'lesson_candidate: no_lesson_reason too short ({len(reason)} chars, need >3)')
+                hints.append('FIX (lesson_candidate): no_lesson_reasonに具体的な理由を記入せよ。例: \"既知のL084と同じパターン\"')
+            placeholder_values = ['なし', '特になし', 'N/A', 'n/a', 'none', 'None', 'no', 'No']
+            if reason in placeholder_values:
+                errors.append(f'lesson_candidate: no_lesson_reason=\"{reason}\" is placeholder (write a real reason)')
+                hints.append('FIX (lesson_candidate): プレースホルダ禁止。なぜ教訓がないのか具体的に書け')
+        if lc.get('found') and not lc.get('title'):
+            errors.append('lesson_candidate: found=true but no title')
+        if lc.get('found') and not lc.get('detail') and not lc.get('summary'):
+            errors.append('lesson_candidate: found=true but no detail or summary')
+    else:
+        errors.append(f'lesson_candidate: unexpected type {type(lc).__name__}')
+
+# --- lessons_useful must be list of dicts (null = FAIL) ---
+lu = data.get('lessons_useful')
+if lu is None and 'lessons_useful' in data:
+    errors.append('lessons_useful: null (must be list of dicts, not null)')
+elif lu is not None:
+    if isinstance(lu, str):
+        errors.append('lessons_useful: is string (must be list of dicts)')
+    elif isinstance(lu, list):
+        for i, item in enumerate(lu):
+            if isinstance(item, dict):
+                if 'FILL_THIS' in str(item.get('useful', '')) or 'FILL_THIS' in str(item.get('reason', '')):
+                    errors.append(f'lessons_useful[{i}]: contains FILL_THIS (must fill actual values)')
+                if 'id' not in item:
+                    errors.append(f'lessons_useful[{i}]: missing \"id\" field (must have lesson ID like L074)')
+                if 'useful' not in item:
+                    errors.append(f'lessons_useful[{i}]: missing \"useful\" field')
+                elif not isinstance(item['useful'], bool):
+                    errors.append(f'lessons_useful[{i}]: useful={item[\"useful\"]} is {type(item[\"useful\"]).__name__} (must be true or false)')
+                    hints.append(f'FIX (lessons_useful[{i}]): useful: true または useful: false を指定せよ（文字列やnullは不可）')
+                if 'reason' not in item:
+                    errors.append(f'lessons_useful[{i}]: missing \"reason\" field')
+            else:
+                errors.append(f'lessons_useful[{i}]: is {type(item).__name__} (must be dict)')
+    elif isinstance(lu, dict):
+        errors.append('lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists')
+        hints.append(f'FIX (lessons_useful): Pythonで変換せよ:\\n  python3 -c \"import yaml; d=yaml.safe_load(open(\\'{report_path}\\')); d[\\'lessons_useful\\']=[v for v in d[\\'lessons_useful\\'].values()]; yaml.dump(d,open(\\'{report_path}\\',\\'w\\'),allow_unicode=True)\"')
+    else:
+        errors.append(f'lessons_useful: unexpected type {type(lu).__name__} (must be list of dicts)')
+
+# --- binary_checks must not be null, empty, or string ---
+bc = data.get('binary_checks')
+if bc is None and 'binary_checks' in data:
+    errors.append('binary_checks: null (must be dict with AC entries)')
+elif isinstance(bc, str):
+    errors.append('binary_checks: is string (must be dict with AC entries)')
+    hints.append('FIX (binary_checks): dict形式で再記入せよ:\\n  binary_checks:\\n    AC1:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
+elif isinstance(bc, dict) and not bc:
+    errors.append('binary_checks: empty dict (must have at least one AC entry)')
+elif isinstance(bc, dict):
+    for ac_key, ac_val in bc.items():
+        if not isinstance(ac_val, list):
+            errors.append(f'binary_checks.{ac_key}: is {type(ac_val).__name__} (must be list of check items)')
+            hints.append(f'FIX (binary_checks.{ac_key}): list形式で記入せよ:\\n  binary_checks:\\n    {ac_key}:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
+elif isinstance(bc, list) and not bc:
+    errors.append('binary_checks: empty list (must have at least one entry)')
+
+# --- purpose_validation should exist and not be null ---
+if 'purpose_validation' not in data:
+    errors.append('purpose_validation: MISSING')
+elif data.get('purpose_validation') is None:
+    errors.append('purpose_validation: null (must be dict with fit/reason)')
+
+# --- result.summary should exist ---
+result = data.get('result', {})
+if isinstance(result, dict):
+    if not result.get('summary'):
+        errors.append('result.summary: MISSING or empty')
+else:
+    errors.append('result: not a dict')
+
+# --- verdict must be PASS or FAIL (strict binary) ---
+verdict = data.get('verdict')
+if not isinstance(verdict, str) or verdict not in ('PASS', 'FAIL'):
+    errors.append(f'verdict: \"{verdict}\" is not valid (must be \"PASS\" or \"FAIL\")')
+    hints.append('verdictはPASS/FAILの二値のみ。binary_checks全yes→PASS、1つでもno→FAIL')
+
+# --- Output ---
+if errors:
+    print('FAIL: ' + '; '.join(errors))
+    if hints:
+        for h in hints:
+            print(h)
+    sys.exit(1)
+else:
+    print('PASS')
+    sys.exit(0)
+" 2>&1) || true
+
+echo "$RESULT"
+
+# --- Gate fire logging (cmd_1279) ---
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+LOG_FILE="$REPO_ROOT/logs/gate_fire_log.yaml"
+TS=$(date -Is)
+
+if echo "$RESULT" | grep -q "^PASS"; then
+    (
+        flock -w 5 200 2>/dev/null
+        printf -- '- ts: "%s", file: "%s", result: PASS\n' "$TS" "$REPORT_PATH" >> "$LOG_FILE"
+    ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    exit 0
+else
+    REASONS=$(echo "$RESULT" | head -1 | sed 's/^FAIL: //' | sed 's/"/\\"/g')
+    (
+        flock -w 5 200 2>/dev/null
+        printf -- '- ts: "%s", file: "%s", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
+    ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    exit 1
+fi

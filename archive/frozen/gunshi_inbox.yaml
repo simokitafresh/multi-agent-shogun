@@ -1,0 +1,40 @@
+messages:
+- content: review_test
+  from: kagemaru
+  id: msg_20260227_043315_aa847185
+  read: true
+  timestamp: '2026-02-27T04:33:15'
+  type: test
+- content: 'cmd_397偵察完了。教訓効果逆転(Δ=-8.4pp)の原因解析。両名PASS。報告YAML: queue/reports/hanzo_report.yaml(旧命名)
+    + queue/reports/tobisaru_report_cmd_397.yaml(アーカイブ済み→queue/archive/reports/)。改善提案7件+PD-041(universal基準厳格化)。次cmd起案をgunshi_to_karo.yamlに書かれたし。'
+  from: karo
+  id: msg_20260227_045340_3c6bb4bf
+  read: true
+  timestamp: '2026-02-27T04:53:40'
+  type: scout_done
+- content: '補足: 報告ファイル正確パス — 半蔵(recon_a): queue/archive/reports/hanzo_report_cmd_397_045324.yaml、飛猿(recon_b):
+    queue/reports/tobisaru_report_cmd_397.yaml。cmd_398(CLEAR率50%原因解析)の佐助報告も参照推奨: queue/archive/reports/にあり。'
+  from: karo
+  id: msg_20260227_045404_bdb2d39d
+  read: true
+  timestamp: '2026-02-27T04:54:04'
+  type: scout_done
+- content: 軍師、inboxに未読あり。scout_done通知を処理し、cmd起案に着手せよ。watcher未起動により3時間遅延していた。復帰せよ。
+  from: karo
+  id: msg_20260227_081034_c95e6d66
+  read: true
+  timestamp: '2026-02-27T08:10:34'
+  type: wake_up
+- content: 軍師、inboxにscout_done未読3件あり。cmd_397偵察結果を読みimpl cmd起案に着手せよ。起案はgunshi_to_karo.yamlに書け。
+  from: karo
+  id: msg_20260227_081251_954fc53b
+  read: true
+  timestamp: '2026-02-27T08:12:51'
+  type: wake_up
+- content: 'cmd_398偵察完了(CLEAR率50%原因解析)。佐助+霧丸の2名独立偵察PASS。報告YAML: queue/reports/sasuke_report_cmd_398.yaml,
+    queue/archive/reports/kirimaru_report_cmd_398_20260227.yaml。分析着手されたし。'
+  from: karo
+  id: msg_20260227_082604_62d7e4ea
+  read: true
+  timestamp: '2026-02-27T08:26:04'
+  type: scout_done

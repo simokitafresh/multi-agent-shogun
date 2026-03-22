@@ -9301,3 +9301,8 @@
 [Mon Mar 23 06:06:19 JST 2026] Set karo @agent_state to active after nudge
 [Mon Mar 23 06:06:19 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
 [Mon Mar 23 06:06:29 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo
+[Mon Mar 23 06:06:58 JST 2026] [FP-CHANGE] Unread set changed for karo (1 unread), sending nudge
+[Mon Mar 23 06:06:58 JST 2026] [NUDGE] Sending paste-buffer nudge to karo
+[Mon Mar 23 06:06:59 JST 2026] Set karo @agent_state to active after nudge
+[Mon Mar 23 06:06:59 JST 2026] Wake-up sent to karo (1 unread via paste-buffer)
+[Mon Mar 23 06:07:08 JST 2026] [FP-RESET] No unread, cleared fingerprint for karo

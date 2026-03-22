@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+npx --yes lefthook run pre-commit --no-auto-install "$@"
