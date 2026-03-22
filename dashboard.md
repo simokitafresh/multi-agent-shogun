@@ -1,7 +1,7 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 05:08 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (05:37 自動更新)
+## 📊 リアルタイム状況 (05:43 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
@@ -16,7 +16,7 @@
 ### CI Status
 **CI RED: run 23410932510 — E2E Tests**
 
-**WARN: 11件のcommit未push。`git push`を検討せよ**
+**WARN: 13件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1060/1075 |
+| cmd完了(GATE CLEAR) | 1060/1076 |
 | 稼働忍者 | 1/8 (疾風) |
-| 連勝(CLEAR streak) | 7 (cmd_1306〜cmd_1311) |
+| 連勝(CLEAR streak) | 0 |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -49,7 +49,7 @@
 | auto-ops | 82.1% | 100.0% | 56 |
 | google-classroom | 66.7% | 100.0% | 3 |
 | database | 0.0% | — | 1 |
-| unknown | 55.3% | 92.9% | 228 |
+| unknown | 55.0% | 92.9% | 229 |
 
 #### タスク種別別
 | task_type | 注入 | スキップ | 注入率 | N |

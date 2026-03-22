@@ -8703,3 +8703,164 @@ FIX (binary_checks.AC4): list形式で記入せよ:
 [2026-03-23 05:38:07] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
 [2026-03-23 05:38:14] CLEAR-BLOCKED-UNCOMMITTED: karo has uncommitted files: queue/reports/hayate_report.yaml  reason=KARO-CLEAR(check_karo_clear)
 [2026-03-23 05:38:14] SHOGUN-ALERT-DEBOUNCE: shogun CTX:80% but 910s < 1800s since last alert
+OK: dashboard.md auto section updated (05:38)
+[2026-03-23 05:39:27] CLEAR-DEBOUNCE: hayate idle+no_task but 93s < 300s since last /clear
+[2026-03-23 05:39:27] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:39:28] CLEAR-SKIP: kagemaru CTX=0%, already clean (continuous: 30)
+[2026-03-23 05:39:28] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:39:29] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:39:30] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:39:31] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:39:31] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:39:31] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:39:31] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:39:31] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:39:31] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:39:31] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:39:31] RENUDGE-RESET: karo unread=0, fingerprint+counter reset
+[2026-03-23 05:39:31] RENUDGE-RESET: hayate unread=0, fingerprint+counter reset
+OK: dashboard.md auto section updated (05:39)
+[2026-03-23 05:40:42] CLEAR-DEBOUNCE: hayate idle+no_task but 168s < 300s since last /clear
+[2026-03-23 05:40:43] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:40:43] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:40:44] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:40:45] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:40:45] CLEAR-SKIP: kotaro CTX=0%, already clean (continuous: 45)
+[2026-03-23 05:40:46] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:40:46] CLEAR-SKIP: tobisaru CTX=0%, already clean (continuous: 45)
+[2026-03-23 05:40:46] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:40:46] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:40:46] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:40:46] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:40:46] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:40:46] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:40:47] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:40:51] LESSON-HEALTH: all projects OK
+[2026-03-23 05:40:54] WARNING: ntfy_listener log stale (10min old). Restarting...
+[Mon Mar 23 05:40:54 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 05:40:54 JST 2026] Found existing ntfy_listener process(es): 3050348
+3124329
+3124334
+[Mon Mar 23 05:40:54 JST 2026] Killing PID 3050348 ...
+[Mon Mar 23 05:40:54 JST 2026] Killing PID 3124334 ...
+[Mon Mar 23 05:40:54 JST 2026] Killing orphan curl stream process(es): 3050383
+[Mon Mar 23 05:40:59 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 05:41:00 JST 2026] Lock file is free
+[Mon Mar 23 05:41:00 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 05:41:00 JST 2026] Launched with PID: 3124418
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 3124418
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 05:41:03] ntfy_listener restart triggered by health check
+OK: dashboard.md auto section updated (05:41)
+[2026-03-23 05:42:20] ACTIVE: hayate resumed work
+[2026-03-23 05:42:31] CLEAR-SKIP: hanzo CTX=0%, already clean (continuous: 45)
+[2026-03-23 05:42:34] CLEAR-SKIP: saizo CTX=0%, already clean (continuous: 45)
+[2026-03-23 05:42:38] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:42:38] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:42:38] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:42:38] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:42:38] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:42:38] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:42:38] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:42:38] RENUDGE-TRANSITION: karo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:42:49] CLEAR-BLOCKED-UNCOMMITTED: karo has uncommitted files: context/cmd-chronicle.md queue/reports/hanzo_report.yaml queue/reports/hanzo_report.yaml.lock queue/reports/hanzo_report_cmd_1302.yaml.lock queue/reports/hanzo_report_cmd_531.yaml queue/reports/hayate_report.yaml queue/reports/hayate_report_cmd_1298.yaml queue/reports/hayate_report_cmd_544.yaml queue/reports/kagemaru_report.yaml queue/reports/kagemaru_report.yaml.lock queue/reports/kagemaru_report_cmd_1299.yaml queue/reports/kagemaru_report_cmd_530.yaml queue/reports/kagemaru_report_cmd_532.yaml queue/reports/kotaro_report.yaml queue/reports/kotaro_report_cmd_1297.yaml queue/reports/saizo_report.yaml queue/reports/saizo_report.yaml.lock queue/reports/saizo_report_cmd_1289.yaml queue/reports/saizo_report_cmd_1303.yaml.lock queue/reports/sasuke_report_cmd_530.yaml queue/reports/sasuke_report_cmd_531.yaml queue/reports/sasuke_report_cmd_532.yaml queue/reports/sasuke_report_cmd_544.yaml queue/reports/tobisaru_report.yaml queue/reports/tobisaru_report_cmd_1288.yaml queue/reports/tobisaru_report_cmd_1305.yaml.lock queue/reports/tobisaru_report_cmd_532.yaml queue/shogun_to_karo.yaml scripts/ninja_monitor.sh  reason=KARO-CLEAR(check_karo_clear)
+[2026-03-23 05:42:52] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (05:43)
+[2026-03-23 05:43:52] AUTO-RESTART: Change detected (script) [script:babba02c39f05bd8af24d311def0f999→831c73b7a26305443405d433eba21f0a deps:1390f7261a536ae5b300e6faa683c97a→1390f7261a536ae5b300e6faa683c97a], restarting...
+[2026-03-23 05:43:52] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:43:52] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:43:52] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:43:52] Pane discovery: 6/6 ninja found
+[2026-03-23 05:44:22] UNCOMMITTED-BLOCK: hayate files=context/cmd-chronicle.md dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hayate.log logs/inbox_watcher_karo.log logs/lesson_tracking.tsv logs/ninja_monitor.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log logs/workaround_pattern.log queue/reports/hanzo_report.yaml queue/reports/hanzo_report.yaml.lock queue/reports/hanzo_report_cmd_1302.yaml.lock queue/reports/hanzo_report_cmd_531.yaml queue/reports/hayate_report.yaml queue/reports/hayate_report_cmd_1298.yaml queue/reports/hayate_report_cmd_544.yaml queue/reports/kagemaru_report.yaml queue/reports/kagemaru_report.yaml.lock queue/reports/kagemaru_report_cmd_1299.yaml queue/reports/kagemaru_report_cmd_530.yaml queue/reports/kagemaru_report_cmd_532.yaml queue/reports/kotaro_report.yaml queue/reports/kotaro_report_cmd_1297.yaml queue/reports/saizo_report.yaml queue/reports/saizo_report.yaml.lock queue/reports/saizo_report_cmd_1289.yaml queue/reports/saizo_report_cmd_1303.yaml.lock queue/reports/sasuke_report_cmd_530.yaml queue/reports/sasuke_report_cmd_531.yaml queue/reports/sasuke_report_cmd_532.yaml queue/reports/sasuke_report_cmd_544.yaml queue/reports/tobisaru_report.yaml queue/reports/tobisaru_report_cmd_1288.yaml queue/reports/tobisaru_report_cmd_1305.yaml.lock queue/reports/tobisaru_report_cmd_532.yaml queue/shogun_to_karo.yaml scripts/ninja_monitor.sh 
+[2026-03-23 05:44:22] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hayate (hayate:cmd_1312) — STALL検知は継続
+[pre-send capture] hayate pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:44:22] CLEAR-SKIP: hayate CTX=0%, already clean (1/10)
+[2026-03-23 05:44:26] UNCOMMITTED-BLOCK: kagemaru files=context/cmd-chronicle.md dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hayate.log logs/inbox_watcher_karo.log logs/lesson_tracking.tsv logs/ninja_monitor.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log logs/workaround_pattern.log queue/reports/hanzo_report.yaml queue/reports/hanzo_report.yaml.lock queue/reports/hanzo_report_cmd_1302.yaml.lock queue/reports/hanzo_report_cmd_531.yaml queue/reports/hayate_report.yaml queue/reports/hayate_report_cmd_1298.yaml queue/reports/hayate_report_cmd_544.yaml queue/reports/kagemaru_report.yaml queue/reports/kagemaru_report.yaml.lock queue/reports/kagemaru_report_cmd_1299.yaml queue/reports/kagemaru_report_cmd_530.yaml queue/reports/kagemaru_report_cmd_532.yaml queue/reports/kotaro_report.yaml queue/reports/kotaro_report_cmd_1297.yaml queue/reports/saizo_report.yaml queue/reports/saizo_report.yaml.lock queue/reports/saizo_report_cmd_1289.yaml queue/reports/saizo_report_cmd_1303.yaml.lock queue/reports/sasuke_report_cmd_530.yaml queue/reports/sasuke_report_cmd_531.yaml queue/reports/sasuke_report_cmd_532.yaml queue/reports/sasuke_report_cmd_544.yaml queue/reports/tobisaru_report.yaml queue/reports/tobisaru_report_cmd_1288.yaml queue/reports/tobisaru_report_cmd_1305.yaml.lock queue/reports/tobisaru_report_cmd_532.yaml queue/shogun_to_karo.yaml scripts/ninja_monitor.sh 
+[2026-03-23 05:44:26] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kagemaru (kagemaru:cmd_1311) — STALL検知は継続
+[pre-send capture] kagemaru pane state BEFORE message:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:44:27] CLEAR-SKIP: kagemaru CTX=0%, already clean (1/10)
+[2026-03-23 05:44:31] UNCOMMITTED-BLOCK: hanzo files=context/cmd-chronicle.md dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/lesson_tracking.tsv logs/ninja_monitor.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log logs/workaround_pattern.log queue/reports/hanzo_report.yaml queue/reports/hanzo_report.yaml.lock queue/reports/hanzo_report_cmd_1302.yaml.lock queue/reports/hanzo_report_cmd_531.yaml queue/reports/hayate_report.yaml queue/reports/hayate_report_cmd_1298.yaml queue/reports/hayate_report_cmd_544.yaml queue/reports/kagemaru_report.yaml queue/reports/kagemaru_report.yaml.lock queue/reports/kagemaru_report_cmd_1299.yaml queue/reports/kagemaru_report_cmd_530.yaml queue/reports/kagemaru_report_cmd_532.yaml queue/reports/kotaro_report.yaml queue/reports/kotaro_report_cmd_1297.yaml queue/reports/saizo_report.yaml queue/reports/saizo_report.yaml.lock queue/reports/saizo_report_cmd_1289.yaml queue/reports/saizo_report_cmd_1303.yaml.lock queue/reports/sasuke_report_cmd_530.yaml queue/reports/sasuke_report_cmd_531.yaml queue/reports/sasuke_report_cmd_532.yaml queue/reports/sasuke_report_cmd_544.yaml queue/reports/tobisaru_report.yaml queue/reports/tobisaru_report_cmd_1288.yaml queue/reports/tobisaru_report_cmd_1305.yaml.lock queue/reports/tobisaru_report_cmd_532.yaml queue/shogun_to_karo.yaml scripts/ninja_monitor.sh 
+[2026-03-23 05:44:31] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hanzo (hanzo:cmd_1307) — STALL検知は継続
+[pre-send capture] hanzo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:44:32] CLEAR-SKIP: hanzo CTX=0%, already clean (1/10)
+[2026-03-23 05:44:37] UNCOMMITTED-BLOCK: saizo files=context/cmd-chronicle.md dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/lesson_tracking.tsv logs/ninja_monitor.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log logs/workaround_pattern.log queue/reports/hanzo_report.yaml queue/reports/hanzo_report.yaml.lock queue/reports/hanzo_report_cmd_1302.yaml.lock queue/reports/hanzo_report_cmd_531.yaml queue/reports/hayate_report.yaml queue/reports/hayate_report_cmd_1298.yaml queue/reports/hayate_report_cmd_544.yaml queue/reports/kagemaru_report.yaml queue/reports/kagemaru_report.yaml.lock queue/reports/kagemaru_report_cmd_1299.yaml queue/reports/kagemaru_report_cmd_530.yaml queue/reports/kagemaru_report_cmd_532.yaml queue/reports/kotaro_report.yaml queue/reports/kotaro_report_cmd_1297.yaml queue/reports/saizo_report.yaml queue/reports/saizo_report.yaml.lock queue/reports/saizo_report_cmd_1289.yaml queue/reports/saizo_report_cmd_1303.yaml.lock queue/reports/sasuke_report_cmd_530.yaml queue/reports/sasuke_report_cmd_531.yaml queue/reports/sasuke_report_cmd_532.yaml queue/reports/sasuke_report_cmd_544.yaml queue/reports/tobisaru_report.yaml queue/reports/tobisaru_report_cmd_1288.yaml queue/reports/tobisaru_report_cmd_1305.yaml.lock queue/reports/tobisaru_report_cmd_532.yaml queue/shogun_to_karo.yaml scripts/ninja_monitor.sh 
+[2026-03-23 05:44:37] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for saizo (saizo:cmd_1308) — STALL検知は継続
+[pre-send capture] saizo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:44:38] CLEAR-SKIP: saizo CTX=0%, already clean (1/10)
+[2026-03-23 05:44:41] UNCOMMITTED-BLOCK: kotaro files=context/cmd-chronicle.md dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/inbox_watcher_saizo.log logs/lesson_tracking.tsv logs/ninja_monitor.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log logs/workaround_pattern.log queue/reports/hanzo_report.yaml queue/reports/hanzo_report.yaml.lock queue/reports/hanzo_report_cmd_1302.yaml.lock queue/reports/hanzo_report_cmd_531.yaml queue/reports/hayate_report.yaml queue/reports/hayate_report_cmd_1298.yaml queue/reports/hayate_report_cmd_544.yaml queue/reports/kagemaru_report.yaml queue/reports/kagemaru_report.yaml.lock queue/reports/kagemaru_report_cmd_1299.yaml queue/reports/kagemaru_report_cmd_530.yaml queue/reports/kagemaru_report_cmd_532.yaml queue/reports/kotaro_report.yaml queue/reports/kotaro_report_cmd_1297.yaml queue/reports/saizo_report.yaml queue/reports/saizo_report.yaml.lock queue/reports/saizo_report_cmd_1289.yaml queue/reports/saizo_report_cmd_1303.yaml.lock queue/reports/sasuke_report_cmd_530.yaml queue/reports/sasuke_report_cmd_531.yaml queue/reports/sasuke_report_cmd_532.yaml queue/reports/sasuke_report_cmd_544.yaml queue/reports/tobisaru_report.yaml queue/reports/tobisaru_report_cmd_1288.yaml queue/reports/tobisaru_report_cmd_1305.yaml.lock queue/reports/tobisaru_report_cmd_532.yaml queue/shogun_to_karo.yaml scripts/ninja_monitor.sh 
+[2026-03-23 05:44:41] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kotaro (kotaro:cmd_1309) — STALL検知は継続
+[pre-send capture] kotaro pane state BEFORE message:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:44:41] CLEAR-SKIP: kotaro CTX=0%, already clean (1/10)
+[2026-03-23 05:44:46] UNCOMMITTED-BLOCK: tobisaru files=context/cmd-chronicle.md dashboard.md logs/cmd_design_quality.yaml logs/gate_fire_log.yaml logs/gate_metrics.log logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/inbox_watcher_kotaro.log logs/inbox_watcher_saizo.log logs/lesson_tracking.tsv logs/ninja_monitor.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log logs/workaround_pattern.log queue/reports/hanzo_report.yaml queue/reports/hanzo_report.yaml.lock queue/reports/hanzo_report_cmd_1302.yaml.lock queue/reports/hanzo_report_cmd_531.yaml queue/reports/hayate_report.yaml queue/reports/hayate_report_cmd_1298.yaml queue/reports/hayate_report_cmd_544.yaml queue/reports/kagemaru_report.yaml queue/reports/kagemaru_report.yaml.lock queue/reports/kagemaru_report_cmd_1299.yaml queue/reports/kagemaru_report_cmd_530.yaml queue/reports/kagemaru_report_cmd_532.yaml queue/reports/kotaro_report.yaml queue/reports/kotaro_report_cmd_1297.yaml queue/reports/saizo_report.yaml queue/reports/saizo_report.yaml.lock queue/reports/saizo_report_cmd_1289.yaml queue/reports/saizo_report_cmd_1303.yaml.lock queue/reports/sasuke_report_cmd_530.yaml queue/reports/sasuke_report_cmd_531.yaml queue/reports/sasuke_report_cmd_532.yaml queue/reports/sasuke_report_cmd_544.yaml queue/reports/tobisaru_report.yaml queue/reports/tobisaru_report_cmd_1288.yaml queue/reports/tobisaru_report_cmd_1305.yaml.lock queue/reports/tobisaru_report_cmd_532.yaml queue/shogun_to_karo.yaml scripts/ninja_monitor.sh 
+[2026-03-23 05:44:46] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for tobisaru (tobisaru:cmd_1310) — STALL検知は継続
+[pre-send capture] tobisaru pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:44:47] CLEAR-SKIP: tobisaru CTX=0%, already clean (1/10)
+[2026-03-23 05:44:47] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:44:47] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:44:47] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:44:47] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:44:47] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:44:47] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:44:48] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:44:48] RENUDGE-TRANSITION: karo fingerprint changed (unread=2), sending inbox2
+[2026-03-23 05:44:49] AGENT-STATE-CORRECTION: hayate @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:44:49] RENUDGE-TRANSITION: hayate fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:44:50] AGENT-STATE-CORRECTION: kagemaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:44:50] RENUDGE-TRANSITION: kagemaru fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:44:50] AGENT-STATE-CORRECTION: hanzo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:44:50] RENUDGE-TRANSITION: hanzo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:44:51] AGENT-STATE-CORRECTION: saizo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:44:51] RENUDGE-TRANSITION: saizo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:44:52] AGENT-STATE-CORRECTION: kotaro @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:44:52] RENUDGE-TRANSITION: kotaro fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:44:53] AGENT-STATE-CORRECTION: tobisaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:44:53] RENUDGE-TRANSITION: tobisaru fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:44:54] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:44:58] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:45:13] CLEAR-BLOCKED-UNCOMMITTED: karo has uncommitted files: context/cmd-chronicle.md queue/reports/hanzo_report.yaml queue/reports/hanzo_report.yaml.lock queue/reports/hanzo_report_cmd_1302.yaml.lock queue/reports/hanzo_report_cmd_531.yaml queue/reports/hayate_report.yaml queue/reports/hayate_report_cmd_1298.yaml queue/reports/hayate_report_cmd_544.yaml queue/reports/kagemaru_report.yaml queue/reports/kagemaru_report.yaml.lock queue/reports/kagemaru_report_cmd_1299.yaml queue/reports/kagemaru_report_cmd_530.yaml queue/reports/kagemaru_report_cmd_532.yaml queue/reports/kotaro_report.yaml queue/reports/kotaro_report_cmd_1297.yaml queue/reports/saizo_report.yaml queue/reports/saizo_report.yaml.lock queue/reports/saizo_report_cmd_1289.yaml queue/reports/saizo_report_cmd_1303.yaml.lock queue/reports/sasuke_report_cmd_530.yaml queue/reports/sasuke_report_cmd_531.yaml queue/reports/sasuke_report_cmd_532.yaml queue/reports/sasuke_report_cmd_544.yaml queue/reports/tobisaru_report.yaml queue/reports/tobisaru_report_cmd_1288.yaml queue/reports/tobisaru_report_cmd_1305.yaml.lock queue/reports/tobisaru_report_cmd_532.yaml queue/shogun_to_karo.yaml scripts/ninja_monitor.sh  reason=KARO-CLEAR(check_karo_clear)
+[2026-03-23 05:45:19] LESSON-HEALTH: all projects OK
+[2026-03-23 05:45:20] LOOP-HEALTH: OK
+[2026-03-23 05:45:21] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle

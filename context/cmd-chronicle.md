@@ -402,3 +402,14 @@
 | cmd_1292 | ninja_monitor report存在チェック — report未作成での/clear防止 | infra | 03-23 | — |
 | cmd_1293 | 忍者報告テンプレート導線修復 — format workaround源流根絶(GP-017) | infra | 03-23 | — |
 | cmd_1294 | PreToolUse DENY実装 — Write/Editでの報告YAML直接作成を阻止(GP-003完遂) | infra | 03-23 | — |
+| cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | — |
+| cmd_1302 | cmd_complete_gate.sh archive実行タイミング修正 — GATE外完了の根絶 | infra | 03-23 | — |
+| cmd_1303 | ninja_monitor uncommittedチェック scope修正 — 運用ファイル除外 | infra | 03-23 | — |
+| cmd_1304 | 削除済みスクリプト参照27ファイルのクリーンアップ | infra | 03-23 | — |
+| cmd_1305 | lesson_update_score.sh書込先修正 — Vercel化後のarchive参照切替 | infra | 03-23 | cmd_1283で既に対応済み。lesson_update_ |
+| cmd_1306 | test_result_guard.sh偽陽性修正 — last_assistant_messageのSKIP誤検知除去 | infra | 03-23 | — |
+| cmd_1307 | GP-021 ninja-adaptive failure injection — 忍者別過去失敗パターン自動注入 | infra | 03-23 | — |
+| cmd_1308 | workaround率自動計測gate — cmd_complete_gate統合でpost-GP効果を自動追跡 | infra | 03-23 | — |
+| cmd_1309 | queue/tasks/subtask_*.yaml 47件をarchive移動 — 旧アーキテクチャ残骸清掃 | infra | 03-23 | — |
+| cmd_1310 | CI RED修正 — test_sync_lessons_injection_count_sync.bats L77 失敗 | infra | 03-23 | — |
+| cmd_1311 | GP-003正規表現バグ修正 — report YAML hookが全忍者で未発火 | infra | 03-23 | — |

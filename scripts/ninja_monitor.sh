@@ -1974,6 +1974,12 @@ WORKAROUND_PATTERN_CHECK_INTERVAL=600  # 10分間隔(秒)
 LAST_GATE_IMPROVEMENT=0
 GATE_IMPROVEMENT_INTERVAL=300  # 5分間隔(秒)
 
+# ─── 第三層loop health定期チェック (三層学習ループ自己監視) ───
+LAST_LOOP_HEALTH_CHECK=0
+LOOP_HEALTH_CHECK_INTERVAL=1800  # 30分間隔(秒)
+LOOP_HEALTH_ALERT_DEBOUNCE=21600  # 同一ALERT再通知抑制(6時間)
+LAST_LOOP_HEALTH_ALERT=0
+
 check_lesson_health() {
     local now
     now=$(date +%s)
@@ -2011,6 +2017,44 @@ check_lesson_health() {
         LAST_LESSON_ALERT=$now
     else
         log "LESSON-HEALTH: all projects OK"
+    fi
+}
+
+check_loop_health() {
+    local now
+    now=$(date +%s)
+
+    local elapsed=$((now - LAST_LOOP_HEALTH_CHECK))
+    if [ $elapsed -lt $LOOP_HEALTH_CHECK_INTERVAL ]; then
+        return
+    fi
+    LAST_LOOP_HEALTH_CHECK=$now
+
+    local gate_script="$SCRIPT_DIR/scripts/gates/gate_loop_health.sh"
+    if [ ! -f "$gate_script" ]; then
+        log "LOOP-HEALTH: gate_loop_health.sh not found, skip"
+        return
+    fi
+
+    local output
+    output=$(bash "$gate_script" 2>/dev/null) || true
+
+    # WARNING検出 → ntfy通知(デバウンス付き)
+    if echo "$output" | grep -q "WARNING:"; then
+        local alert_elapsed=$((now - LAST_LOOP_HEALTH_ALERT))
+        if [ $alert_elapsed -lt $LOOP_HEALTH_ALERT_DEBOUNCE ]; then
+            log "LOOP-HEALTH-DEBOUNCE: WARNING detected but ${alert_elapsed}s < ${LOOP_HEALTH_ALERT_DEBOUNCE}s"
+            return
+        fi
+
+        local warnings
+        warnings=$(echo "$output" | grep "WARNING:" | tr '\n' ' ')
+        log "LOOP-HEALTH: $warnings"
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【三層ループALERT】${warnings}" >> "$LOG" 2>&1
+        LAST_LOOP_HEALTH_ALERT=$now
+    else
+        # Auto-insight起票は gate_loop_health.sh 内で自動実行済み
+        log "LOOP-HEALTH: OK"
     fi
 }
 
@@ -2405,6 +2449,9 @@ while true; do
 
     # ═══ lesson健全性チェック (cmd_279) ═══
     check_lesson_health
+
+    # ═══ 第三層loop健全性チェック (三層学習ループ自己監視) ═══
+    check_loop_health
 
     # ═══ workaroundパターン検出 (cmd_1153) ═══
     check_workaround_pattern
