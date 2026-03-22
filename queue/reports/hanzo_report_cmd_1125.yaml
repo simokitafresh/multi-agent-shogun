@@ -1,0 +1,96 @@
+worker_id: hanzo
+task_id: cmd_1125_a
+parent_cmd: cmd_1125
+timestamp: "2026-03-20T01:50:00"
+status: stop_for
+ac_version_read: 1
+result:
+  summary: |
+    AC1完了+AC2/AC3完了。STOP_FOR発動: 差分10/12体(≧5体)で殿裁定が必要。
+    修正済みGSコード(commit 6b1a7201)で191,796パターン全量再実行。
+    v2方式(DNA制約→3モードチャンピオン直接選出)で12体確定(吸収0)。
+    旧10体→新12体: 玄武2体のみ同一、他10体は全変更。
+  details: |
+    ■ AC1: GS全量再実行 — PASS
+    - 4ファミリー×191,796パターン（DM2:76,680 + DM3:38,340 + DM6:76,680 + DM7+:96）
+    - common period: 2012-04..2026-01(166ヶ月)← 旧167ヶ月から1ヶ月減(valid_start_date修正影響)
+    - 実行時間: 約21分（DM2:563s, DM3:240s, DM6:476s, DM7+:0.7s）
+    - 旧結果はshin_shijin_l1_pre_cmd1125に退避済み
+
+    ■ AC2: DNA制約フィルタ + 3モードチャンピオン選出 — PASS
+    - DM2: 76,680→3,864 / DM3: 38,340→24 / DM6: 76,680→2,160 / DM7+: 96→3
+    - CPCV/PBOはv2で廃止済み(殿裁定2026-03-19)。v2方式で実行。
+
+    ■ AC3: 新ユニバース確定 + 差分 — STOP_FOR
+    12体確定(吸収0=全モード異なる変種)
+
+    新12体:
+    1. シン青龍-激攻: DM2_SXLU_T1_M_L2633 (12M:40|4M:40|2M:20, CAGR 51.4%)
+    2. シン青龍-常勝: DM2_SXLU_T1_M_L0775 (6M:50|2M:40|10D:10, NHF 51.2%)
+    3. シン青龍-鉄壁: DM2_SXLU_T1_M_L0070 (4M:70|15D:30, MaxDD -55.5%)
+    4. シン朱雀-激攻: DM3_STMV_T1_Be_L0005 (3M:100, CAGR 30.5%)
+    5. シン朱雀-常勝: DM3_STMV_T2_Be_L0003 (1M:100, NHF 31.9%)
+    6. シン朱雀-鉄壁: DM3_STMV_T1_Be_L0003 (1M:100, MaxDD -61.9%)
+    7. シン白虎-激攻: DM6_SGLD_T1_Qj_L0706 (5M:40|2M:30|10D:30, CAGR 46.2%)
+    8. シン白虎-常勝: DM6_SGLD_T2_Qj_L0039 (2M:80|15D:20, NHF 42.8%)
+    9. シン白虎-鉄壁: DM6_SGLD_T2_Qj_L0705 (5M:40|2M:40|10D:20, MaxDD -28.0%)
+    10. シン玄武-激攻: DM7P_RXLU_T1_M_L0001 (15M:100, CAGR 36.2%)
+    11. シン玄武-常勝: DM7P_RXLU_T1_M_L0002 (18M:100, NHF 39.8%)
+    12. シン玄武-鉄壁: DM7P_RXLU_T1_M_L0003 (24M:100, MaxDD -26.1%)
+
+    差分: SAME:2(玄武-激攻,玄武-鉄壁) / CHANGED:8 / NEW:2(玄武-常勝,朱雀-常勝)
+    根本原因: valid_start_date修正でcommon period 1ヶ月短縮→メトリクス変化→チャンピオン入替
+purpose_validation:
+  cmd_purpose: "修正済みGSコードで全量再実行し、シン四神v2を再選定"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - "outputs/grid_search/shin_shijin_l1/ (全ファミリーCSV)"
+  - "outputs/analysis/cmd_1125_v2_champions.csv"
+  - "outputs/analysis/cmd_1125_v2_selection_report.md"
+  - "scripts/analysis/grid_search/cmd_1125_v2_champion_select.py"
+lesson_candidate:
+  found: true
+  title: "valid_start_date修正1ヶ月差がチャンピオン選出を大幅変更する"
+  detail: |
+    GS共通コードの修正(valid_start_date計算の全シンボル考慮)により
+    common periodが1ヶ月短縮(167→166ヶ月)。この1ヶ月の差がメトリクス値を
+    変え、4ファミリー中3ファミリーでチャンピオンが入れ替わった。
+    修正後は必ず再選定+差分確認を行うこと。
+  project: dm-signal
+decision_candidate:
+  found: true
+  title: "修正版GSで12体(旧10体)確定 — 10/12変更で殿裁定必要"
+  detail: |
+    修正GSにより吸収が0件(旧2件)となり12体に増加。
+    殿の判断事項: (1)12体で進めるか (2)旧10体から大幅変更を承認するか
+    (3)シン忍法v2 GS(cmd_1080)の再実行が必要か
+  project: dm-signal
+lessons_useful:
+  - id: L428
+    useful: true
+    reason: "valid_start_dateの全シンボル考慮修正が再実行の直接原因"
+skill_candidate:
+  found: false
+binary_checks:
+  AC1:
+    - check: "修正済みgrid_search_metrics_v2.py(commit 6b1a7201)を使用しているか？"
+      result: PASS
+    - check: "4ファミリー全てのGS結果が出力されたか？"
+      result: PASS
+    - check: "旧結果と混在していないか？"
+      result: PASS
+  AC2:
+    - check: "corrected metricsでスクリーニングされたか？"
+      result: PASS
+    - check: "過適合フィルタ通過候補リストが出力されたか？"
+      result: PASS
+  AC3:
+    - check: "新ユニバースが確定したか？"
+      result: PASS
+    - check: "旧10体との差分が明示されたか？"
+      result: PASS
+    - check: "ファミリー別選出の根拠が記載されたか？"
+      result: PASS
+stop_for_triggered: true
+stop_for_reason: "旧10体と新10体の差分が5体以上(10/12変更) — 殿裁定が必要"

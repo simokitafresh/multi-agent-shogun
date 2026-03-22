@@ -1,0 +1,72 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+worker_id: saizo
+task_id: cmd_849_impl_prefetch_unify
+parent_cmd: cmd_849
+timestamp: "2026-03-12T18:49:26+09:00"
+status: done
+ac_version_read: 4
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: |
+      dashboard/summary/metrics/compare/compare-summary/monthly-returns/annual-returns/monthly-trade/drawdowns/rolling-returns/deterioration の page module 側へ PAGE_APIS を配置し、visible page data の prefetch 定義元を page 側へ一本化した。
+  - id: AC2
+    status: pass
+    evidence: |
+      frontend/hooks/usePrefetch.ts のページ別 switch 文を除去し、動的 import + PAGE_APIS 読み出しへ置換。signals-context.tsx の prefetchForCurrentPage 呼び出しは維持し、fetch 重複定義を解消した。
+  - id: AC3
+    status: pass
+    evidence: |
+      一括移行対象 11 ページすべてで PAGE_APIS を定義し、既存 page-side fetch パラメータ(3/0 years, 12/120 months, 24 limit, drawdowns:10 等)をそのまま移送した。
+  - id: AC4
+    status: pass
+    evidence: |
+      npm test -- --runInBand で 40 suites / 245 tests 全 PASS。加えて npm run build も PASS。
+
+result:
+  summary: |
+    current page prefetch のページ別 API 定義を usePrefetch の switch から切り離し、
+    各 page module 側の PAGE_APIS を SSOT とする構成へ移行完了。
+  details: |
+    Next.js App Router の page.tsx named export 制約があるため、
+    PAGE_APIS は各 page module 内の定数として保持しつつ default export 関数へ property として付与。
+    usePrefetch 側は動的 import 後に module/default の PAGE_APIS を読んで prefetch task を組み立てる。
+
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/hooks/usePrefetch.ts
+  - /mnt/c/Python_app/DM-signal/frontend/hooks/__tests__/usePrefetch.test.ts
+  - /mnt/c/Python_app/DM-signal/frontend/app/dashboard/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/summary/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/metrics/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/compare/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/compare-summary/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/monthly-returns/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/annual-returns/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/monthly-trade/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/drawdowns/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/rolling-returns/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/deterioration/page.tsx
+
+purpose_validation:
+  cmd_purpose: "usePrefetch+signals-context+各pageの重複fetch責務をpage側に一本化"
+  fit: true
+  purpose_gap: ""
+
+lessons_useful:
+  - id: L266
+    useful: true
+    reason: "PAGE_APIS SSOT設計で参照"
+
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+decision_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+skill_candidate:
+  found: false

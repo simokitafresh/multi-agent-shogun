@@ -1,0 +1,76 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: tobisaru
+task_id: cmd_862_recon_horizontal_H
+parent_cmd: cmd_862
+timestamp: "2026-03-12T22:17:30"
+status: done
+ac_version_read: 1
+result:
+  summary: "cmd_860/861/862の3回偵察(延べ24名)を完全統合。辞書エントリ20件の集大成として、完全知識マップ(S02)+統合報告を作成。4層多層防御アーキテクチャ最終設計+Phase 1-3ロードマップを具体的ファイルパスレベルで整備。index.mdにS02追加+関連資料リンク追記。"
+  details: |
+    【作成ファイル】
+    1. sources/ldp-complete-knowledge-map.md (S02, ~320行)
+       - §1 López de Prado著作・講義の全体像（3著書+10講義+主要論文→辞書エントリ対応表）
+       - §2 辞書エントリ完全一覧（20エントリ: methods 8 + preprocessing 3 + validation 3 + pitfalls 3 + portfolio 3 + sources 2）
+       - §3 4層多層防御アーキテクチャ最終設計（手法間補完・競合マトリクス+PF構築手法の位置づけ）
+       - §4 DM-Signal適用ロードマップ（Phase 1/1.5/2/3の具体ファイル+依存関係図）
+       - §5 実装直結4要件の横断まとめ（共通変更対象ファイル9件+共通エッジケース10件）
+       - §6 未決裁定事項（cmd_860/861/862の全DC統合。新規DC-862-1〜6）
+       - §7 教訓候補（cmd_862新規LC-862-1〜5）
+       - §8 GitHub実装の移植可能部品Tier分類
+
+    2. cmd_862_ldp-knowledge-extraction.md (統合報告, ~270行)
+       - §1 Executive Summary（偵察規模: 延べ24名/11手法+α/20辞書エントリ）
+       - §2 偵察員担当と成果（A-G全7名PASS）
+       - §3 辞書エントリの核心知見（カテゴリ別テーブル）
+       - §4 4層多層防御アーキテクチャ最終設計
+       - §5 実装ロードマップ（Phase 1-3）
+       - §6 横断的発見（構造的優位性+構造的脆弱性+最重要注意点4件）
+       - §7 未決裁定事項(DC-862-1〜6)
+       - §8 教訓候補(LC-862-1〜5)
+
+    【更新ファイル】
+    3. index.md: §6にS02追加、関連資料にcmd_862統合報告+完全知識マップのリンク追記
+
+    【横断的発見】
+    - DM-Signalの構造的優位: ルールベース戦略はML固有の罠(F01/F03-F06)を構造的回避
+    - DM-Signalの構造的脆弱: GS由来3兄弟(F08/F09/F10)に最脆弱→CPCV+DSR最優先
+    - 最重要前提条件: trials_log SSOT化。これなしにDSR/PBO/MinBTL/CPCV全て不成立
+    - pandas `.kurt()` = excess kurtosis の罠。PSR/DSR実装時にγ₄+3必須
+purpose_validation:
+  cmd_purpose: "水平A-Gの全報告+cmd_860/861統合報告を読み、López de Prado知見の全体統合を辞書エントリとして作成"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/docs/research/knowledge-base/sources/ldp-complete-knowledge-map.md
+  - /mnt/c/Python_app/DM-signal/docs/research/cmd_862_ldp-knowledge-extraction.md
+  - /mnt/c/Python_app/DM-signal/docs/research/knowledge-base/index.md
+lesson_candidate:
+  found: true
+  title: "偵察3回×延べ24名の知識基盤構築には統合専任担当(水平H)が不可欠"
+  detail: "cmd_860/861/862の3回偵察で辞書20エントリを作成したが、A-G各忍者は自担当範囲の辞書を高品質に作れる一方、エントリ間の重複・矛盾・gap検出は不可能。統合専任(H)が全報告を横断的に読み、完全知識マップ+ロードマップ+横断エッジケースを作成して初めて実装可能な形になった。大規模偵察では統合専任をcmd設計段階で組み込むべき。"
+  project: dm-signal
+lessons_useful: null
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify:
+    - "docs/research/knowledge-base/sources/ldp-complete-knowledge-map.md (新規作成済み)"
+    - "docs/research/cmd_862_ldp-knowledge-extraction.md (新規作成済み)"
+    - "docs/research/knowledge-base/index.md (S02追加+関連資料追記済み)"
+  affected_files:
+    - "docs/research/knowledge-base/index.md — 今後のエントリ追加時にS02リンクも更新"
+  related_tests:
+    - "辞書・統合報告はドキュメント → 実行テスト不要"
+  edge_cases:
+    - "A-G各忍者がindex.mdを並行編集したため、複数のS01行後挿入が起きている可能性あり（今回の統合で確認・正規化済み）"
+    - "完全知識マップは3回の偵察の集約のため、Phase進行に伴い更新が必要"
+ac_checklist:
+  - id: AC8
+    status: pass
+    evidence: "A-G全7報告+cmd_860/861統合報告を読み、20エントリの完全マップ+DM-Signal適用ロードマップ(Phase 1/1.5/2/3、依存関係図付き)を辞書エントリ(S02)+統合報告として作成。index.md更新済み。"

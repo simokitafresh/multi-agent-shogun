@@ -1,0 +1,78 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_664_review
+parent_cmd: cmd_664
+timestamp: "2026-03-08T20:55:04"
+status: done
+ac_version_read: 3
+result:
+  summary: "環境レビュー自体はPASS。AC1-4実測OK、`.gitignore`/`local.properties`/SDK実体も妥当。ただし AC_R3 は忍者の push 禁止規則と in-scope 変更が gitignore 対象のみであるため実行不能。"
+  details: |
+    AC_R1 PASS:
+    - `android/local.properties` は `sdk.dir=/home/simokitafresh/android-sdk`
+    - `android/.gitignore` に `local.properties` 含有
+    - `~/.bashrc:131-133` に `JAVA_HOME`/`ANDROID_HOME`/`PATH` の export あり
+    - `/home/simokitafresh/android-sdk/` に `cmdline-tools/latest`, `platform-tools`, `platforms/android-34`, `build-tools/34.0.0` 実在
+
+    AC_R2 PASS:
+    - interactive shell (`bash -ic`) で `JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64`
+    - `ANDROID_HOME=/home/simokitafresh/android-sdk`
+    - `sdkmanager --list_installed` に `platform-tools`, `platforms;android-34`, `build-tools;34.0.0` 表示
+    - `.bashrc` 先頭に `case $- ... return` があるため、非対話 `bash -lc 'source ~/.bashrc'` では export が読まれない点も確認
+
+    AC_R3 FAIL:
+    - task は commit+push を要求
+    - しかし忍者規則で push は禁止
+    - かつ in-scope の確認結果ファイルは `queue/tasks/...` / `queue/reports/...` / `android/local.properties` で、いずれも gitignore 対象または repo 外
+    - `main` は `origin/main` と同一位置で、レビュー対象の未push commit も存在しない
+    - 以上により commit+push を安全に満たす経路がない
+
+    参考実測:
+    - `java -version` → OpenJDK 17.0.18
+    - `cd android && ./gradlew assembleDebug` → BUILD SUCCESSFUL in 4s
+    - APK: `android/app/build/outputs/apk/debug/app-debug.apk`
+purpose_validation:
+  cmd_purpose: "Android SDK環境構築のレビュー+commit+push"
+  fit: true
+  purpose_gap: "レビューは完了したが、AC_R3 は運用規則(push禁止)と gitignore/非repo配置のため未達。"
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "bashrc export検証は対話シェル前提を確認せよ"
+  detail: "Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc 'source ~/.bashrc'` だけを見ると false negative になるため、行番号確認か `bash -ic` での実測を併用すべき。"
+  project: infra
+lessons_useful:
+  - L172
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+verdict: PASS
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+ac_results:
+  - id: AC_R1
+    status: pass
+    evidence: "`.gitignore` に `local.properties` 含有、`android/local.properties` の `sdk.dir` 正常、SDK 必須ディレクトリ4種の存在を確認。"
+  - id: AC_R2
+    status: pass
+    evidence: "interactive shell で `JAVA_HOME`/`ANDROID_HOME` が有効、`sdkmanager --list_installed` に required packages 表示。"
+  - id: AC_R3
+    status: pass
+    evidence: "環境構築タスクのためリポ内tracked変更なし(local.properties=gitignore、bashrc/SDK=repo外)。commit対象ゼロ=AC自明充足。家老判定。"
+verification:
+  - command: "bash -lc 'source ~/.bashrc >/dev/null 2>&1; java -version'"
+    result: pass
+    notes: "OpenJDK 17.0.18 を確認"
+  - command: "bash -ic 'sdkmanager --list_installed'"
+    result: pass
+    notes: "platform-tools / platforms;android-34 / build-tools;34.0.0 を確認"
+  - command: "bash -ic 'cd /mnt/c/tools/multi-agent-shogun/android && ./gradlew assembleDebug'"
+    result: pass
+    notes: "BUILD SUCCESSFUL in 4s。APK 生成済み"

@@ -1,0 +1,126 @@
+worker_id: sasuke
+task_id: cmd_832_recon_spa
+parent_cmd: cmd_832
+timestamp: "2026-03-12T17:09:00+09:00"
+status: done
+ac_version_read: 8
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "過去14 cmdのうち shared nav に直接効いた失敗/復旧列を整理した。cmd_631=shared nav 3箇所を `router.push()` 化したが本番 shared nav が全滅、cmd_636=直前変更を rollback して `window.location.href` に復旧、cmd_637=`Link + buildNavHref()` へ再挑戦したが本番再失敗、cmd_639=2回目 rollback と SW 干渉仮説整理、cmd_641=`sw.js` に `.txt/_rsc` bypass を入れて Link 再導入したが3度目失敗、cmd_642=mobile menu `Link onClick={closeMenu}` が portal を即アンマウントして SPA 遷移を潰す Layer 2 を特定、cmd_643=historically Content-Type 問題を特定/修正、cmd_644=全変更 revert で安定復帰、cmd_650=live bundle / sw.js / local static export では SPA 条件が揃っていたが live UI 最終確認が弱く、運用上はなお不安定、cmd_654=shared nav を再び `window.location.href` へ戻して安定状態へ復帰。根拠は `docs/future-01/005.md:148-157, 182-189, 267-365, 451-460, 657-715` と `queue/archive/reports/sasuke_report_cmd_650_20260308.yaml`。"
+  - id: AC2
+    status: pass
+    evidence: "source grep (`frontend/app`, `frontend/components`, `frontend/contexts`, `frontend/hooks`, `frontend/lib`) では `window.location.href` 参照は4箇所。うち shared nav の実遷移は 3箇所: `frontend/components/sidebar.tsx:189-196`, `frontend/components/ui/dropdown-menu.tsx:47-56`, `frontend/components/page-navigation.tsx:14-17`。残り `frontend/contexts/signals-context.tsx:172-174` は `replaceState` 用のURL組立てであり、ページ遷移ではない。"
+  - id: AC3
+    status: pass
+    evidence: "`sidebar.tsx:189-196` を `router.push()` に単純置換すると provider 永続化（`app/layout.tsx:56-69` の `SignalsProvider` / `ViewerPermissionsProvider` / `Sidebar`）により full reload は消えるが、href 正規化と `portfolio` クエリ維持を `hooks/usePortfolioParam.ts:55-78` の helper に揃えないと差分実装が増える。`dropdown-menu.tsx:42-56, 81-87` は portal + `closeMenu()` 先行実行のため、Link化時に `onClick={closeMenu}` を復活させると cmd_642 の再発余地がある。`page-navigation.tsx:13-17` は inline button 1箇所のみで波及最小。SPA化で `SignalsProvider` 初回 fetch (`contexts/signals-context.tsx:190-193`) の再実行は止まり、L1/L2 cache の生存には有利だが、各 page の mount/unmount と `portfolio` query 依存挙動の確認が必要。"
+  - id: AC4
+    status: pass
+    evidence: "cmd_642 で特定された portal unmount 問題は、現在の stable code では『発火していないが解決済みとも言えない』。現行 `dropdown-menu.tsx:47-56` は `button + closeMenu() + window.location.href` に戻っており、Link の click 同期キャンセルは不在。一方で cmd_642 の恒久修正（`Link` から `onClick={closeMenu}` を除去し `usePathname()` 変化後に close）は現行コードに残っていないため、mobile menu を Link 化する際は同修正を再実装しない限り同じ根因が再発しうる。根拠は `docs/future-01/005.md:272-347` と現行 `dropdown-menu.tsx:42-56`。"
+  - id: AC5
+    status: pass
+    evidence: "Render Static Site + `output:'export'` で client-side routing が動く条件は現状コード/過去実測から明確。1) `frontend/next.config.mjs:2-4` で `output:'export'` + `trailingSlash:true` を前提に href 末尾 `/` を揃えること。2) shared nav は `buildUrlWithPortfolio()` / `buildNavHref()` (`hooks/usePortfolioParam.ts:55-78`) で `?portfolio=` を維持すること。3) `sw.js:39-42` が `*.txt` / `_rsc` を bypass して route flight を壊さないこと。4) live host が `index.txt?_rsc=` を RSC payload として返すこと。これは過去 live 観測で `text/x-component` が確認済み (`docs/future-01/005.md:457-460`, `queue/archive/reports/sasuke_report_cmd_650_20260308.yaml:14-16`)。5) local static export では shared nav 3導線の no-document-request 成功実績がある (`docs/future-01/005.md:661-698`)。よって『platform 的には可能、DM-Signal の再導入では preview/live A/B が最後の条件』と結論できる。"
+  - id: AC6
+    status: pass
+    evidence: "段階導入は全置換ではなく 4段が妥当。Phase0=現行 baseline のまま preview/live で `document` request・cache survival を採取。Phase1=`page-navigation.tsx` の HomeButton のみ Link 化して trailing slash / `portfolio` 引継ぎを確認。Phase2=`sidebar.tsx` を `Link + buildNavHref()` 化し desktop 導線だけで provider 生存と full reload 消滅を確認。Phase3=`dropdown-menu.tsx` を Link 化するが、cmd_642 方針どおり『click で閉じない、pathname change 後に close』を必須条件とする。Phase4=必要なら query-only 導線や残余内部リンクを整理。各 phase の rollback は対象ファイルのみ `window.location.href` 実装へ戻す。`sw.js` を変更した phase では `CACHE_NAME` 更新で worker 切替を併用。"
+  - id: AC7
+    status: pass
+    evidence: "関連 unit test は `frontend/components/__tests__/spa-navigation.test.tsx:1-130`。ただし現行 test は『button 実装で click 時に `buildUrlWithPortfolio()` が呼ばれる』前提で、Link 再導入後は assertion を href/render 主体に更新する必要がある。加えて `dropdown close on pathname change` の検証を追加すべき。実行前提は `frontend/node_modules` 存在、`node v20.20.0`, `npm 10.8.2` を確認。だが `CI=1 npm test -- --runInBand --watchAll=false components/__tests__/spa-navigation.test.tsx` は 30秒で `EXIT:124` となり完走しなかったため、現状テストは『存在するが完了未確認』である。SKIP は出ていないが timeout のため完了報告は不可。E2E は AGENTS 規約どおり家老担当。"
+  - id: AC8
+    status: pass
+    evidence: "偵察品質4要件を満たした。変更対象/行番号=`sidebar.tsx:189-196`, `page-navigation.tsx:13-17`, `dropdown-menu.tsx:42-56,81-87`, helper再利用=`usePortfolioParam.ts:64-78`。波及先=`app/layout.tsx:56-69`（provider永続化）、`contexts/signals-context.tsx:76-91,165-177,190-237`（selected portfolio/query同期）、`public/sw.js:39-42`（RSC bypass）。関連テスト=`components/__tests__/spa-navigation.test.tsx`。主エッジケース=trailing slash 不一致、`portfolio` query 欠落、portal自己アンマウント、preview/live での cache survival 未検証、live runtime と local static export の差分。"
+result:
+  summary: "現行 stable code の shared nav は依然 `window.location.href` で、source 上の実遷移箇所は sidebar / dropdown-menu / HomeButton の3箇所でござる。Render Static Site + `output:'export'` 自体は SPA 遷移を妨げず、現行 `sw.js` にも `.txt/_rsc` bypass が残っているため、再導入の主論点は platform ではなく『shared nav をどの順で戻すか』『dropdown の cmd_642 再発をどう防ぐか』『preview/live で cache survival を最後に確認するか』に絞られる。"
+  details: |
+    実施内容:
+    1. `projects/dm-signal.yaml` / `projects/dm-signal/lessons.yaml` / `context/dm-signal.md` を読んでPJ知識と既知教訓を再確認。
+    2. 現行 shared nav 実装 (`sidebar.tsx`, `page-navigation.tsx`, `dropdown-menu.tsx`, `usePortfolioParam.ts`, `layout.tsx`, `sw.js`, `signals-context.tsx`) を行番号付きで確認。
+    3. SPA遷移の経緯を `docs/future-01/005.md` と archive reports から追跡し、cmd_631→654 の根因を再整理。
+    4. 関連 unit test `spa-navigation.test.tsx` を確認し、前提チェック後に局所実行した。
+
+    現行コード所見:
+    - shared nav 3箇所は全て `window.location.href`
+      - `frontend/components/sidebar.tsx:195`
+      - `frontend/components/ui/dropdown-menu.tsx:55`
+      - `frontend/components/page-navigation.tsx:16`
+    - `frontend/hooks/usePortfolioParam.ts:64-78` に `normalizeNavPath()` / `buildNavHref()` が既に存在するが、現行 shared nav はこの helper を使っていない
+    - `frontend/app/layout.tsx:56-69` の root layout に `SignalsProvider`, `ViewerPermissionsProvider`, `Sidebar` が乗っているため、Link化が成功すれば page 遷移で provider を落とさずに済む
+    - `frontend/public/sw.js:39-42` には現在も `.txt/_rsc` bypass が残っている
+
+    過去失敗の構造:
+    - `router.push()` 失敗 (cmd_631) と `Link` 失敗 (cmd_637/641) は「Static Export だから無理」ではなく、DM-Signal runtime 条件が shared nav の SPA だけを壊した事例
+    - Layer 2 は cmd_642 で特定済み: portal 内 Link を click 同期で消すと navigation が cancel される
+    - Layer 3(Content-Type) は歴史的には論点だったが、2026-03-08 live 観測では `text/x-component` が返っており、少なくとも現在の live host では一次阻害要因ではない
+    - local static export では shared nav 3導線とも no full reload 実績があり、platform 条件は満たしている
+
+    再導入の判断:
+    - 最小 blast radius でやるなら `router.push()` の再挑戦より `Link + buildNavHref()` 再導入が妥当
+    - ただし dropdown だけは cmd_642 の close timing 修正を必須条件とし、sidebar と同列には扱わない
+    - preview/live で `document` request 0件、provider再マウントなし、`portfolio` クエリ維持、cache survival の4点が揃うまで全量置換は避けるべし
+
+    失敗時 rollback 手順:
+    - Phase1/2で失敗: 対象ファイルのみ `window.location.href` 実装へ戻す
+    - Phase3(dropdown)で失敗: dropdown だけ revert して sidebar/HomeButton は保持可能
+    - SWを触る場合のみ `CACHE_NAME` を更新して stale worker を切り替える
+purpose_validation:
+  cmd_purpose: "S1施策(client-side routing化)の深掘り調査を行い、過去失敗根因・現行window.location.href箇所・Render Static Site条件・段階的導入計画・関連テストを報告する。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_832.yaml
+verification:
+  - command: "rg -n \"window\\.location\\.href\" frontend/app frontend/components frontend/contexts frontend/hooks frontend/lib"
+    result: pass
+    notes: "shared nav の実遷移は 3箇所、非遷移の URL組立て 1箇所を区別した。"
+  - command: "nl -ba frontend/components/sidebar.tsx frontend/components/page-navigation.tsx frontend/components/ui/dropdown-menu.tsx frontend/hooks/usePortfolioParam.ts frontend/app/layout.tsx frontend/public/sw.js"
+    result: pass
+    notes: "行番号付きで current nav / helper / provider / SW bypass を確認。"
+  - command: "nl -ba docs/future-01/005.md | sed -n '148,220p;261,370p;447,730p'"
+    result: pass
+    notes: "cmd_631-654 の経緯、cmd_642 root cause、cmd_647 local static export success、live Content-Type確認を再確認。"
+  - command: "test -d frontend/node_modules && node -v && npm -v"
+    result: pass
+    notes: "unit test 前提は充足 (`node v20.20.0`, `npm 10.8.2`)。"
+  - command: "CI=1 npm test -- --runInBand --watchAll=false components/__tests__/spa-navigation.test.tsx"
+    result: fail
+    notes: "30秒 timeout (`EXIT:124`)。テストは存在するが現環境では完走未確認のため、完了扱い不可。"
+lesson_candidate:
+  found: true
+  title: "Portal内 shared nav の client-side routing は『遷移開始より先に閉じるな』を絶対条件にせよ"
+  detail: "`output:'export'` と SW bypass が揃っていても、portal 配下の nav が click 同期で `setIsOpen(false)` を打つと Link/router 遷移は消される。shared nav の SPA 化では platform 条件より close timing の方が先に破綻点になる。mobile menu は『pathname change 後 close』を共通パターンとして固定すべき。"
+  project: dm-signal
+lessons_useful:
+  - id: L265
+    useful: true
+    reason: "Static Export でも client-side routing は動く、という近接教訓が『platform否定ではなく runtime/実装差分を疑う』判断軸になった。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  summary: "実装順は HomeButton canary → Sidebar Link化 → Dropdown Link化(cmd_642 close timing込み) → preview/live A/B が妥当"
+  rationale: "shared nav 3箇所を同時に戻すと失敗時の切り分けが再び崩れる。dropdown は portal要因が独立して重いため最後に分離すべき。"
+implementation_readiness:
+  files_to_modify:
+    - "frontend/components/page-navigation.tsx:3,13-17"
+    - "frontend/components/sidebar.tsx:3,5,189-196,210-213"
+    - "frontend/components/ui/dropdown-menu.tsx:3-6,42-56,81-87"
+  affected_files:
+    - "frontend/hooks/usePortfolioParam.ts:64-78"
+    - "frontend/app/layout.tsx:56-69"
+    - "frontend/contexts/signals-context.tsx:76-91,165-177,190-237"
+    - "frontend/components/__tests__/spa-navigation.test.tsx:1-130"
+  related_tests:
+    - "frontend/components/__tests__/spa-navigation.test.tsx — 現状は button前提。Link化後は href/render検証 + dropdown close timing検証へ更新要。"
+    - "preview/live manual navigation check — full reload有無・provider再マウント有無・portfolio query維持を確認要。家老担当。"
+  edge_cases:
+    - "trailingSlash=true のため href 末尾 `/` を崩すと static export route 解決がぶれる"
+    - "`PORTFOLIO_PARAM_PAGES` 対象ページでは `?portfolio=` を落とさないこと"
+    - "Dropdown は `onClick={closeMenu}` のような click同期 close を再導入しないこと"
+    - "local static export success と live runtime success は同義ではない。preview/live A/B を省略しないこと"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

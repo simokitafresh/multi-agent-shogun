@@ -1,0 +1,124 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_1001
+parent_cmd: cmd_1001
+timestamp: "2026-03-16T14:09:08+09:00"
+status: done
+ac_version_read: 2
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "frontend compare chart で intersection/union 整列を確認し、backend/app/api と backend/app/db では複数PF/FoFの共通期間算出が存在しないことを grep + 精読で確認した。"
+  - id: AC2
+    status: pass
+    evidence: "files_to_modify / affected_files / related_tests / edge_cases を implementation_readiness に整理した。"
+result:
+  summary: "api/db/frontend層を精査した結果、複数PF/FoFの共通期間整列を実行しているのは frontend Compare chart 側だった。API は portfolio_id 単位の単系列取得、DB は月次系列と開始/終了メタ保存のみで、api/db層での共通期間算出は確認できなかった。"
+  details: |
+    発見:
+    1. frontend/app/compare/page.tsx:L61,L115-L175
+       Compare page は periodMode の初期値を `intersection` に設定し、
+       選択PFごとに `api.getPerformance(id, 0)` を並列実行して単体系列を集める。
+       ベンチマークも別APIで独立取得しており、この段階では共通期間算出はしていない。
+
+    2. frontend/components/comparison-chart.tsx:L129-L206
+       実際の共通期間算出はここで実施。
+       - `intersection`: 各PFの date 集合の積集合を `displayDatesRaw` にする (L130-L132)
+       - `union`: 全 date の和集合を使う (L133-L136)
+       - union時は各PFの開始日/終了日を critical date として追加 (L141-L150)
+       - 正規化基準値は intersection では共通先頭日、union では各PFの先頭日 (L154-L160)
+       - union時の欠損日は `findNearestByDate()` で最近傍補完する (L162-L169)
+       - benchmark も displayDates 範囲へ slice 後、完全一致優先+最近傍で整列する (L175-L206)
+
+    3. frontend/lib/chart-utils.ts:L55-L60,L92-L132
+       共通期間ロジックを支える補助関数。
+       - `sliceBenchmarkToPortfolioPeriod()` は benchmark を表示範囲へ切る
+       - `findNearestByDate()` は union mode の最近傍日付選択を担当
+
+    4. backend/app/api/performance.py:L29-L130
+       `/api/performance/{portfolio_id}` は `MonthlyReturn.portfolio_id == portfolio_id` で
+       単一PFの月次累積系列だけを返す。複数PFの merge/intersection はしていない。
+
+    5. backend/app/api/monthly_returns.py:L26-L112
+       `/api/monthly-returns/{portfolio_id}` も単一PF向け。
+       `MonthlyReturnsCalculator.calculate(portfolio_id, actual_months, ...)` の結果を返すだけで、
+       複数PF/FoFを揃える API 応答処理はない。
+
+    6. backend/app/api/metrics.py:L74-L103,L147-L201
+       metrics API は `PortfolioMetrics` に `start_date/end_date/period_months` を
+       PFごとに保存・再利用するが、summary 取得時も portfolio ごとに loop しているだけで、
+       共通期間を算出していない。
+
+    7. backend/app/db/models.py:L127-L153,L378-L401
+       DB層は `monthly_returns` に PF単位の月次系列を、`portfolio_metrics` に
+       PF単位の `data_start_date/data_end_date/months_count` を保持するのみ。
+       `backend/app/db/` 配下に common/intersect/align/dropna/reindex/merge 由来の
+       共通期間算出ロジックは見当たらなかった。
+
+    補足:
+    - タスク記載の `frontend/src/` は実在せず、実装本体は `frontend/app/`, `frontend/components/`, `frontend/lib/`, `frontend/hooks/` に存在した。
+purpose_validation:
+  cmd_purpose: "api/db/frontend層を精査し、複数PF/FoF月次リターンの共通期間算出の所在を報告する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_1001.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful: null
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify:
+    - "frontend/components/comparison-chart.tsx:L129-L206 — intersection/union算出、正規化基準、benchmark整列の本体"
+    - "frontend/app/compare/page.tsx:L61,L115-L175 — periodMode初期値と単体系列fetchの配線"
+    - "frontend/lib/chart-utils.ts:L55-L60,L92-L132 — benchmark slice / union時最近傍選択の補助"
+    - "backend/app/api/performance.py:L81-L129 — server-side整列へ移す場合の現行データ供給口"
+    - "backend/app/api/metrics.py:L74-L103,L147-L201 — start/end/monthsメタの保存・summary返却"
+    - "backend/app/db/models.py:L134-L153,L387-L401 — PF単位系列・期間メタの保存スキーマ"
+  affected_files:
+    - "frontend/lib/__tests__/chart-utils.test.ts — sliceBenchmarkToPortfolioPeriod/findNearestByDate の既存テスト"
+    - "frontend/lib/faq-content.ts:L115 — Common(intersection)/Full(union) の説明文"
+    - "backend/tests/test_api_response.py — /api/performance レスポンス形の回帰"
+    - "backend/tests/test_api_masking.py — performance API の可視性/マスキング回帰"
+    - "backend/tests/test_monthly_returns_056_fields.py — monthly-returns payload変更時に要確認"
+  related_tests:
+    - "frontend/lib/__tests__/chart-utils.test.ts — 既存。union時最近傍/benchmark slice の回帰点"
+    - "comparison-chart 自体の intersection/union 結果を直接検証する専用テストは未発見。変更時は追加推奨"
+    - "backend/tests/test_api_response.py, backend/tests/test_api_masking.py — API contract変更時に修正要否確認"
+  edge_cases:
+    - "intersection mode で selected PF 間の共通日付が空だと displayDates が空になり、チャート表示不能になる"
+    - "union mode は欠損日を `findNearestByDate()` で最近傍補完するため、厳密な共通月ではなく近傍月値が採用される"
+    - "benchmark は `displayDates[0]..displayDates[-1]` に slice 後に整列するため、範囲外だと benchmark 線が消える"
+    - "server-sideへ共通期間算出を移す場合、`/api/performance` の単一PF contract と `portfolio_metrics` のPF単位メタ設計を崩す可能性がある"
+findings:
+  frontend_alignment:
+    status: pass
+    detail: "共通期間整列の実体は `frontend/components/comparison-chart.tsx`。intersection/union の日付集合生成、正規化、benchmark整列までここで完結している。"
+  api_layer:
+    status: no_common_period_logic_found
+    detail: "`/api/performance` `/api/monthly-returns` `/api/metrics/summary` はいずれも portfolio 単位取得または portfolio ごとの loop であり、複数PF/FoF整列は行っていない。"
+  db_layer:
+    status: metadata_only
+    detail: "`monthly_returns` はPF単位系列、`portfolio_metrics` はPF単位の開始/終了/月数メタ保存のみ。共通期間算出ロジックは確認できなかった。"
+confidence: 0.92
+blind_spots:
+  - "調査対象は task 指定どおり api/db/frontend 層に限定した。jobs/services 層に上流の共通期間算出が存在する可能性はこの報告の範囲外。"
+  - "frontend は `frontend/src` ではなく `frontend/app|components|lib|hooks` 構成だったため、その実体パスを追って調査した。"
+  - "comparison-chart の専用テストは未発見で、frontend helper test と静的コード読解に依存している。"

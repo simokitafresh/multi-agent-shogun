@@ -1,0 +1,84 @@
+worker_id: sasuke
+task_id: cmd_852_recon_cdp_group1
+parent_cmd: cmd_852
+timestamp: "2026-03-12T19:29:30+0900"
+status: done
+ac_version_read: 4
+result:
+  summary: "Group1 の 4ページ（Home / Dashboard / Summary / Compare）について cold/warm 各3回の CDP reload 計測を完了し、cmd_804 ベースライン比較表を `/mnt/c/Python_app/DM-signal/docs/research/cmd_852_cdp-after-after-group1.md` に保存した。代表値は Home `156.3/115.5ms`, Dashboard `130.9/105.3ms`, Summary `148.5/90.8ms`, Compare `116.8/93.7ms`（cold/warm）でござる。"
+  details: |
+    実施内容:
+    1. `projects/dm-signal.yaml` / `projects/dm-signal/lessons.yaml` / `context/dm-signal.md` / `cmd_804_performance-after-phase3.md` を再確認。
+    2. `perf_measure.py --profile production --pages home dashboard summary compare --mode both` を再実行し、FE/BE 疎通回復は確認。
+    3. ただし framework 本体では以下が再発:
+       - Home `/` は viewer 画面で封鎖ページが出るため待機 selector の前提が不安定
+       - Compare で `wait_for_page_ready()` 中の `powershell.exe` CDP ラッパーが 60s timeout
+    4. 計測を止めず、同一 Edge CDP port (`localhost:9223`) へ Python `websockets` で直結し、viewer password を admin API から再取得してブラウザ再認証。
+    5. 4ページ × cold/warm × 3回の full reload を実行し、`performance.getEntriesByType('navigation')[0]` の `loadEventEnd` を採用（fallback は `duration` / `performance.timing`）。
+    6. cmd_804 の §1-§2 と比較し、before/after と改善率表を研究ノートへ記録。
+
+    実測中央値:
+    - Home: cold 156.3ms / warm 115.5ms
+    - Dashboard: cold 130.9ms / warm 105.3ms
+    - Summary: cold 148.5ms / warm 90.8ms
+    - Compare: cold 116.8ms / warm 93.7ms
+
+    cmd_804 比較:
+    - Home: cold `199.0→156.3ms (+21.5%)`, warm `124.0→115.5ms (+6.9%)`
+    - Dashboard: cold `117.0→130.9ms (-11.9%)`, warm `181.0→105.3ms (+41.8%)`
+    - Summary: cold `130.0→148.5ms (-14.2%)`, warm `132.0→90.8ms (+31.2%)`
+    - Compare: cold `129.0→116.8ms (+9.5%)`, warm `166.0→93.7ms (+43.6%)`
+
+    観測メモ:
+    - Warm は4ページすべて改善。
+    - Cold は Summary run1=522.0ms, Compare run1=544.8ms, Home warm run2=314.5ms の外れ値があったが、中央値は 90-156ms 帯に収束。
+    - Home は認証後も viewer 上で「この街道は現在封鎖中にございます」画面が表示されるが、CDP navigation timing 自体は安定して取得可能だった。
+purpose_validation:
+  cmd_purpose: "CDP計測で本番4ページを計測し、cmd_804ベースラインと定量比較する"
+  fit: true
+  purpose_gap: "framework helper 自体は Compare の PowerShell CDP timeout により最後まで完走しなかったが、同一 CDP ポート直結で required output を完成させた。"
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "Home / Dashboard / Summary / Compare の cold cache 3回計測を完了し、中央値を研究ノート §1.1 に保存。"
+  - id: AC2
+    status: pass
+    evidence: "同4ページの warm cache 3回計測を完了し、中央値を研究ノート §1.2 に保存。"
+  - id: AC3
+    status: pass
+    evidence: "cmd_804 と cmd_852 の before/after × 改善率を研究ノート §2 に記載。"
+  - id: AC4
+    status: pass
+    evidence: "`/mnt/c/Python_app/DM-signal/docs/research/cmd_852_cdp-after-after-group1.md` を作成済み。"
+test_results:
+  - command: "python3 /mnt/c/Python_app/auto-ops/workflows/perf_measure.py --profile production --pages home dashboard summary compare --mode both"
+    status: failed
+    notes: "疎通は回復したが、Compare 待機時に PowerShell CDP ラッパーが 60s timeout。"
+  - command: "curl -I -L -m 15 https://dm-signal-frontend.onrender.com/"
+    status: pass
+    notes: "HTTP/2 200 を確認。"
+  - command: "curl -I -L -m 15 https://dm-signal-backend.onrender.com/"
+    status: pass
+    notes: "HTTP/2 200 を確認。"
+  - command: "python3 (websockets) で Edge CDP `localhost:9223` へ直結し、4ページ cold/warm 各3回 reload 計測"
+    status: pass
+    notes: "24本すべて responseStatus=200 で中央値取得完了。"
+files_modified:
+  - /mnt/c/Python_app/DM-signal/docs/research/cmd_852_cdp-after-after-group1.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_852.yaml
+lesson_candidate:
+  found: true
+  title: "CDP reload 計測の ready 条件は static selector 固定ではなく viewer 実DOM に合わせて見直せ"
+  detail: "IF production viewer pages を CDP reload 計測する THEN `h1` 固定の待機条件に依存せず、認証壁・封鎖ページ・ページ固有DOM差を含めた ready 判定を持て BECAUSE cmd_852 では Home/Compare で selector 前提が崩れ、framework helper が timeout した。"
+  project: dm-signal
+lessons_useful: []
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "compare/page-ready 条件の見直しは別cmdで切るべき"
+  options:
+    - "案A: `perf_measure.py` の page-ready 判定を viewer 実DOMベースへ修正し、今後の CDP 計測を安定化する"
+    - "案B: 現状の framework helper は据え置き、必要時のみ直結 CDP script で回避する"
+  recommendation: "案A"

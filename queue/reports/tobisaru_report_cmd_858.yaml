@@ -1,0 +1,84 @@
+task_id: cmd_858_impl_gitignore_cleanup
+parent_cmd: cmd_858
+agent: tobisaru
+status: done
+result: PASS
+acceptance_criteria:
+- id: AC1
+  description: nul（Windows NULデバイス誤残骸）を削除している
+  status: PASS
+  evidence: L86 `nul` を削除。ファイル自体も存在しないことを確認済み
+- id: AC2
+  description: 古いcmd番号コメント（cmd_114, cmd_259）を目的ベースのコメントに書き換えている
+  status: PASS
+  evidence: 'L91: `# Snapshot data (cmd_114)` → `# Snapshot data (backend pipeline
+    snapshots)`
+
+    L94: `# Generated file patterns (cmd_259)` → `# Backup and snapshot directories`
+
+    '
+- id: AC3
+  description: outputs/093a3_* のPF UUID断片ハードコードをoutputs/tmp_*等の汎用パターンに統合している
+  status: PASS
+  evidence: outputs/093a3_* を削除。該当ファイル不在。outputs/tmp_* が汎用パターンとして既存
+- id: AC4
+  description: outputs/grid_search/exp_kawarimi_mp/ 等の特定実験固有パスが不要なら削除
+  status: PASS
+  evidence: outputs/grid_search/exp_kawarimi_mp/ を削除。ディレクトリ不在を確認済み
+- id: AC5
+  description: root直下debugスクリプトパターン（/analyze_*.py等6行）を統合可能なら統合している
+  status: PASS
+  evidence: '7パターン(/analyze_*.py, /check_*.py, /debug_*.py, /profile_*.py, /test_*.py,
+    /upload_*.py, /verify_*.py)は
+
+    異なるプレフィックスのため単一globに統合不可。予防パターンとして個別維持が適切と判断。
+
+    既存ファイルも存在しない（予防ルールとして機能中）
+
+    '
+- id: AC6
+  description: セクションコメントが整理され、既存の正当なignoreルールが壊れていないことをgit status差分なしで確認
+  status: PASS
+  evidence: 'git statusで.gitignore以外の意図しない差分なし。
+
+    削除した3パターン(nul, outputs/093a3_*, exp_kawarimi_mp/)は全てファイル/ディレクトリ不在のため
+
+    既存の正当なignoreルールへの影響なし。129行→125行に整理。
+
+    '
+commit: 826cd3b6
+files_changed:
+- path: /mnt/c/Python_app/DM-signal/.gitignore
+  action: edit
+  detail: nul削除、cmd番号コメント書換え、UUID断片パターン削除、実験固有パス削除
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: ".gitignore整理にbash算術演算の教訓は無関係"
+  - id: L063
+    useful: false
+    reason: ".gitignore整理にYAML構造の教訓は無関係"
+  - id: L167
+    useful: false
+    reason: ".gitignore整理にPF名文字化けの教訓は無関係"
+  - id: L011
+    useful: false
+    reason: ".gitignore整理にencoding/hooksPathの教訓は無関係"
+  - id: L158
+    useful: false
+    reason: ".gitignore整理にpytest実行の教訓は無関係"
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

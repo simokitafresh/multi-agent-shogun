@@ -1,0 +1,86 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: sasuke
+task_id: cmd_735_review
+parent_cmd: cmd_735
+timestamp: "2026-03-10T14:44:51+0900"
+status: done
+ac_version_read: 4
+verdict: PASS
+result:
+  summary: "fix再レビューPASS。前回指摘の2点は解消され、AC1-4を満たす。check_mcp_sync() は staging vs tracker 差分で未同期件数を検知し、mcp_sync_lesson.sh の tracker hash も project 含有へ修正された。"
+  details: |
+    確認結果:
+    1. AC1: PASS
+       - `scripts/mcp_sync_lesson.sh` の staging → `lesson_write.sh` 経路は維持されている。
+
+    2. AC2: PASS
+       - `scripts/mcp_sync_lesson.sh:97-101` で hash が `sha256(f"{project}:{obs}")` に変更された。
+       - 同一 observation を複数 project に共有しても hash 衝突しないことを最小再現で確認した。
+
+    3. AC3: PASS
+       - `scripts/gates/gate_shogun_memory.sh:199-305` の `check_mcp_sync()` は `queue/mcp_sync_staging.yaml` と `queue/mcp_sync_tracker.yaml` を読み、entry 単位で差分比較する実装へ更新された。
+       - tracker 不在 + staging有で WARN、未同期件数 >0 で WARN、全件同期済みで OK となる分岐を確認した。
+       - 最小再現でも staging 2件 / tracked 1件で `unsynced=1` になることを確認した。
+
+    4. AC4: PASS
+       - `bash -n scripts/mcp_sync_lesson.sh scripts/gates/gate_shogun_memory.sh` : PASS
+       - `timeout 120 bats tests/unit --jobs 4` : 252 PASS / 0 FAIL / 0 SKIP
+
+    追加確認:
+    - `queue/mcp_sync_tracker.yaml` はトップレベル dict の `synced:` 配下リスト構造で、差分比較ロジックの前提と整合する。
+    - 前回レビューの高/中所見に相当する不備は再現しなかった。
+purpose_validation:
+  cmd_purpose: "cmd_735のコードレビューを実施し、AC1-4充足とテスト全PASSを再確認する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/scripts/mcp_sync_lesson.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_shogun_memory.sh
+test_results:
+  - command: "bash -n scripts/mcp_sync_lesson.sh scripts/gates/gate_shogun_memory.sh"
+    result: pass
+    notes: "対象shell 2本とも構文エラーなし。"
+  - command: "python3 -c 'hash(project:observation) reproducibility check'"
+    result: pass
+    notes: "同一observationで infra / dm-signal が異なる16桁hashになることを確認。"
+  - command: "python3 -c 'staging vs tracker diff reproduction'"
+    result: pass
+    notes: "staging 2件 / tracker 1件の最小再現で unsynced=1, total=2 を確認。"
+  - command: "timeout 120 bats tests/unit --jobs 4"
+    result: pass
+    notes: "252 PASS / 0 FAIL / 0 SKIP。既存unit全緑。"
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`scripts/mcp_sync_lesson.sh` が staging YAML を読み、`lesson_write.sh` 経由で教訓登録する経路を実装している。"
+  - id: AC2
+    status: pass
+    evidence: "`scripts/mcp_sync_lesson.sh:97-101` で hash が `project + observation` ベースに更新され、project別トラッキングが成立した。"
+  - id: AC3
+    status: pass
+    evidence: "`scripts/gates/gate_shogun_memory.sh:199-305` が staging / tracker 差分比較で未同期件数を算出し、未同期時に WARN へ遷移する。"
+  - id: AC4
+    status: pass
+    evidence: "既存unit 252件が全PASS、shell構文/改行も問題なし。"
+findings: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L063
+    useful: true
+    reason: "tracker がトップレベルdictで `synced:` 配下リスト構造かを再確認する際に直接使った。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

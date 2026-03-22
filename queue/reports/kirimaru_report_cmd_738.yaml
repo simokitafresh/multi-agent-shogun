@@ -1,0 +1,104 @@
+worker_id: kirimaru
+task_id: cmd_738_review
+parent_cmd: cmd_738
+timestamp: "2026-03-10T15:07:22+0900"
+status: done
+ac_version_read: 5
+review_result: PASS
+verdict: PASS
+result:
+  summary: "半蔵のX Research実装をレビューし、AC1-AC5をPASS判定した。`scripts/x_research.py` を commit `abf05c8` として main に push 済み。"
+  details: |
+    1) 実装確認
+    - `scripts/x_research.py` は `--topic/--locale/--audience/--dry-run` を実装し、`requests.post()` で xAI Responses API (`https://api.x.ai/v1/responses`) を `tools=[{\"type\":\"x_search\"}]` 付きで呼び出す構造。
+    - `load_api_key()` は `config/xai_api.env` から `XAI_API_KEY=` を読み取る。スクリプト本体と SKILL.md にキーのハードコードなし。
+    - `save_context_pack()` は `data/x-research/` を自動作成し、Markdown を `{timestamp}_{topic_slug}.md` へ保存する設計。
+
+    2) 検証結果
+    - `python3 -m py_compile scripts/x_research.py`: PASS
+    - `python3 scripts/x_research.py --topic "AI agent" --locale ja --audience engineer --dry-run`: PASS
+      JSON payload 内に model / x_search tool / Meta, Trend Clusters, Key Posts, Primary Sources, Secondary Sources, Safe/Not Say 見出しを確認。
+    - `data/x-research/_debug_response.json` の実レスポンスを `_extract_text()` で再検証し、必要セクション抽出を確認。
+    - `git push origin main`: PASS（pre-push unit tests 252/252 PASS の後、`ecfad3e..abf05c8 main -> main`）
+
+    3) レビュー所見
+    - `~/.claude/skills/x-research/SKILL.md` は YAML frontmatter / name / description / argument-hint / allowed-tools を備え、Claude Code skill としての構造は妥当。
+    - 同 SKILL.md は CRLF 改行だったが、Markdown skill 読み込みを壊す証跡はなく、外部パス(`~/.claude/skills/...`)改変は今回の review scope 外のため未修正。
+    - ワークツリーには他タスク由来の未コミット変更が多数あったため、本 task では `scripts/x_research.py` のみを commit 対象とした。
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`scripts/x_research.py` に `--topic/--locale/--audience` 引数、xAI Responses API 呼出し、`tools=[{\"type\": \"x_search\"}]` を確認。`--dry-run` 実行で期待 payload を出力。"
+  - id: AC2
+    status: pass
+    evidence: "`~/.claude/skills/x-research/SKILL.md` が存在し、frontmatter 付きで `/x-research \"AI agent\"` 形式の利用例と実行コマンドを記述。"
+  - id: AC3
+    status: pass
+    evidence: "スクリプトの `save_context_pack()` が `data/x-research/` 自動作成+Markdown保存を実装。`_debug_response.json` の実レスポンスを `_extract_text()` で再検証し、Trend Clusters / Key Posts / Primary Sources / Secondary Sources を含む本文を確認。"
+  - id: AC4
+    status: pass
+    evidence: "`load_api_key()` が `config/xai_api.env` から `XAI_API_KEY` を読む。`rg` でスクリプト/SKILL.md にキー直書きがないことを確認。`git status --short config/xai_api.env` でも追跡対象外。"
+  - id: AC5
+    status: pass
+    evidence: "system prompt と user prompt の双方で投資助言表現禁止・一次情報URL優先を指示。実レスポンス抽出でも `買い` / `売り推奨` / `価格目標` は未検出。"
+diff_check:
+  changed_by_hanzo: true
+  commit_required: true
+  method: "git show --stat abf05c8"
+  files_changed:
+    - scripts/x_research.py
+  unintended_changes: false
+  notes: "reviewer(kirimaru)が半蔵implを承認し、repo change は `scripts/x_research.py` のみを commit/push。外部 skill path は review のみ。"
+purpose_validation:
+  cmd_purpose: "半蔵(hanzo)のcmd_738 impl成果物をレビューし、AC1-AC5を検証してcommit+pushせよ"
+  fit: true
+  purpose_gap: ""
+test_results:
+  - command: "python3 -m py_compile scripts/x_research.py"
+    result: pass
+    notes: "構文エラーなし"
+  - command: "python3 scripts/x_research.py --topic \"AI agent\" --locale ja --audience engineer --dry-run"
+    result: pass
+    notes: "payload に x_search tool と required headings を確認"
+  - command: "python3 - <<'PY' ... _extract_text(debug_response) ... PY"
+    result: pass
+    notes: "実レスポンスから本文抽出成功。Meta/Trend/Key/Primary/Secondary/Safe sections あり"
+  - command: "file scripts/x_research.py ~/.claude/skills/x-research/SKILL.md"
+    result: pass
+    notes: "script=UTF-8, skill markdown=CRLF。skill構造は有効、CRLFは非blocking観察事項"
+  - command: "git push origin main"
+    result: pass
+    notes: "pre-push unit tests 252/252 PASS 後に `abf05c8` を main へ push"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_738.yaml
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "Bash算術 `((var++))` パターンは今回の Python 実装レビュー対象外。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml dict 構造の注意点は今回の対象外。"
+  - id: L008
+    useful: true
+    reason: "WSL2/CRLF確認の教訓として `file` で SKILL.md 行末を確認し、非blocking観察事項を抽出できた。"
+  - id: L032
+    useful: false
+    reason: "セクション差替えルールは今回のレビュー対象外。"
+  - id: L173
+    useful: false
+    reason: "instructions再生成系の教訓は今回の skill/script 実装レビューでは未使用。"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

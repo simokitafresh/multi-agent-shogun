@@ -1,0 +1,70 @@
+ac_version_read: 73b29e5e
+binary_checks:
+  AC1:
+  - check: gate_report_format.shにverdict検証ブロックを追加したか？
+    result: 'yes'
+  - check: verdictが PASS/FAIL 以外の場合にerrorsにappendされるか？
+    result: 'yes'
+  - check: ガイダンスメッセージが表示されるか？
+    result: 'yes'
+  AC2:
+  - check: CONDITIONAL_PASS→gate FAILになるか？
+    result: 'yes'
+  - check: PASS→gate PASSになるか？
+    result: 'yes'
+  - check: FAIL→gate PASSになるか？
+    result: 'yes'
+  - check: 空/null→gate FAILになるか？
+    result: 'yes'
+  - check: 既存テストに退行がないか？
+    result: 'yes'
+  AC3:
+  - check: commitが完了したか？
+    result: 'yes'
+decision_candidate:
+  found: false
+files_modified:
+- change: L110-115にverdict検証ブロック追加(isinstance+not in PASS/FAIL→errors.append+hints.append)
+  path: scripts/gates/gate_report_format.sh
+- change: verdict検証テスト5件追加(CONDITIONAL_PASS→FAIL, PASS→PASS, FAIL→PASS, null→FAIL, 空文字→FAIL)
+  path: tests/unit/test_report_template_gate_compat.bats
+hook_failures:
+  count: 0
+  details: ''
+lesson_candidate:
+  detail: ''
+  found: false
+  no_lesson_reason: 既存Pythonバリデーションパターンに沿った素直な追加。新たな教訓なし
+  project: infra
+  title: ''
+lessons_useful:
+- id: L074
+  reason: bash算術演算の問題。本件はPython実装のためスコープ外
+  useful: false
+- id: L225
+  reason: MCP entity名義混入の問題。本件はgateスクリプト修正のためスコープ外
+  useful: false
+- id: L063
+  reason: lessons.yamlデータ構造の問題。本件ではlessons.yamlを扱わない
+  useful: false
+- id: L097
+  reason: field_get義務の問題。本件はgate_report_format.sh(scripts/gates/配下)のため除外対象
+  useful: false
+- id: L079
+  reason: deploy_task.shのrelated_lessons再構築問題。本件では触れない
+  useful: false
+parent_cmd: cmd_1246
+purpose_validation:
+  cmd_purpose: verdict CONDITIONAL_PASSの不正値をdone遷移時に早期検出し、karo workaroundを根絶する
+  fit: true
+  purpose_gap: ''
+result:
+  details: Python validationセクションのresult.summary検証後にverdict検証ブロックを追加。isinstance(verdict,str)とnot in PASS/FAILの二段チェックでMISSING/null/不正文字列を網羅的に検出。ガイダンスhint付き。
+  summary: gate_report_format.shにverdict二値バリデーションを追加。PASS/FAIL以外(CONDITIONAL_PASS,null,空文字等)をgate FAILとし早期フィードバックを実現。テスト5件追加、既存6件退行なし。commit完了。
+skill_candidate:
+  found: false
+status: done
+task_id: cmd_1246
+timestamp: '2026-03-22T15:52:00'
+verdict: PASS
+worker_id: hanzo

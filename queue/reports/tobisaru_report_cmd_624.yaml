@@ -1,0 +1,64 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: tobisaru
+task_id: subtask_624_review
+parent_cmd: cmd_624
+timestamp: "2026-03-07T00:35:00+09:00"
+status: done
+ac_version_read: 6
+verdict: PASS
+result:
+  summary: "疾風のcmd_624実装をレビュー。commit 27b112b で既にcommit+push済みだったため事後レビューを実施。全AC充足を確認。"
+  details: |
+    レビュー結果:
+    - AC1: page-masking.test.tsx削除確認(commit 27b112bで72行削除)
+    - AC2: movePortfolio.test.tsが実hook(useAdminPage.ts)のmovePortfolioInStateをimport。ロジック複製なし
+    - AC3: visibility-page.test.tsxが実コンポーネントVisibilitySettingsPageをimport。proxy再実装全削除
+    - AC4: page_masking.test.tsx→portfolio-details-masking.test.tsxに改名
+    - AC5: npm test -- --runInBand: 32 suites / 204 tests PASS, SKIP 0
+    - AC_push: git push origin main済み(origin/main=27b112b)
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "page-masking.test.tsxが削除されている(commit 27b112bで72行削除確認)"
+  - id: AC2
+    status: pass
+    evidence: "movePortfolio.test.tsが実hook(useAdminPage.ts)のmovePortfolioInStateをimport。テスト内ロジック複製撤去"
+  - id: AC3
+    status: pass
+    evidence: "visibility-page.test.tsxが実VisibilitySettingsPageをimport。resolvePortfolioVisibilityをlib/visibility.tsに抽出"
+  - id: AC4
+    status: pass
+    evidence: "page_masking.test.tsx→portfolio-details-masking.test.tsxに改名(gitがrename検出)"
+  - id: AC5
+    status: pass
+    evidence: "npm test -- --runInBand: 32 suites / 204 tests PASS, SKIP 0"
+  - id: AC_push
+    status: pass
+    evidence: "git push origin main済み(origin/main=27b112b、HEAD差分なし)"
+purpose_validation:
+  cmd_purpose: "frontendテスト4件を整理しレビュー+push"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/app/__tests__/page-masking.test.tsx (deleted)
+  - /mnt/c/Python_app/DM-signal/frontend/app/__tests__/portfolio-details-masking.test.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/hooks/__tests__/movePortfolio.test.ts
+  - /mnt/c/Python_app/DM-signal/frontend/app/admin/visibility/__tests__/visibility-page.test.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/lib/visibility.ts
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - L105
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

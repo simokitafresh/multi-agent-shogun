@@ -1,0 +1,89 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_729_impl
+parent_cmd: cmd_729
+timestamp: "2026-03-10T13:43:52+0900"
+status: done
+ac_version_read: 7
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`android/app/src/main/java/com/shogun/android/ui/theme/Color.kt` に Dark/Light/Black AMOLED 3系統の `SengokuPalette` を定義し、Light 用 `#F5EFE3/#FFF9F0/#332A22`、Black 用 `#000000/#0A0A0A/#F5F1E8` を追加した。"
+  - id: AC2
+    status: pass
+    evidence: "`android/app/src/main/java/com/shogun/android/ui/theme/Theme.kt` で `darkScheme` / `lightScheme` と `ThemeMode.SYSTEM|DARK|LIGHT|BLACK` 切替を実装し、`MainActivity.kt` から `ThemePreferences` の Flow を `ShogunTheme(themeMode = ...)` へ接続した。"
+  - id: AC3
+    status: pass
+    evidence: "`android/app/src/main/java/com/shogun/android/ui/theme/ThemePreferences.kt` で `preferencesDataStore(name = \"theme_preferences\")` を実装し、`SettingsViewModel.kt` で `themeMode` StateFlow と `setThemeMode()` を追加、`SettingsScreen.kt` に 4択 UI (`System default / Dark / Light / Black AMOLED`) を接続した。"
+  - id: AC4
+    status: pass
+    evidence: "`Color.kt` の戦国パレットを `CompositionLocal` 化し、既存の `Kinpaku` / `Zouge` / `Shikkoku` 参照を多画面でそのままモード追従させた。Light は『白壁の城』、Black は『真夜中の陣』として金箔・朱赤・松葉アクセントを維持している。"
+  - id: AC5
+    status: pass
+    evidence: "`python3` で contrast を実測し、Light本文 `#332A22 on #F5EFE3 = 12.27:1`、Light金見出し `#7A5A16 on #F5EFE3 = 5.55:1`、Black本文 `#F5F1E8 on #000000 = 18.63:1` を確認した。いずれも 4.5:1 以上。"
+  - id: AC6
+    status: pass
+    evidence: "`cd android && ./gradlew :app:assembleDebug` が BUILD SUCCESSFUL。Compose/Kotlin コンパイル、dex、package まで完走した。"
+  - id: AC7
+    status: pass
+    evidence: "`android/.interface-design/system.md` に `Theme Modes` / `Theme Surface Stack` / `Accessibility Guardrails` を追記し、Dark/Light/Black AMOLED の背景・面・本文・アクセント定義を明文化した。"
+result:
+  summary: "Android 3テーマ実装を完了した。`DataStore` で `System/Dark/Light/Black AMOLED` を永続化し、`ShogunTheme` と既存戦国トークンを `CompositionLocal` 化して全画面の固定色参照をモード追従に変えた。APK ビルド成功、ライト/ブラックの本文コントラストは WCAG AA を満たす。"
+  details: |
+    実施内容:
+    1. `androidx.datastore:datastore-preferences` を追加し、`ThemePreferences.kt` でテーマモード永続化を実装した。
+    2. `SettingsViewModel.kt` に `themeMode` StateFlow を追加し、設定画面から即時保存できるようにした。
+    3. `MainActivity.kt` で DataStore の Flow を購読し、アプリ全体の `ShogunTheme` へ流した。
+    4. `Color.kt` を静的色定数から `SengokuPalette + CompositionLocal` 構成へ置換し、Dark / Light / Black AMOLED の 3パレットを追加した。
+    5. `Theme.kt` に `darkScheme` / `lightScheme` と `ThemeMode` 切替を追加し、System default では端末設定に追従させた。
+    6. `SettingsScreen.kt` に 4択テーマ UI を追加し、既存のフォントサイズ・背景設定は維持した。
+    7. `AgentsScreen.kt` の非 `@Composable` 色関数を `@Composable` 化し、動的トークン導入後もビルドが通るように調整した。
+    8. `android/.interface-design/system.md` に 3モードの配色とアクセシビリティ基準を追記した。
+purpose_validation:
+  cmd_purpose: "Android 3テーマ(Dark/Light/Black AMOLED)を実装し、設定画面から切替・永続化できるようにする"
+  fit: true
+  purpose_gap: ""
+verification:
+  - command: "cd android && ./gradlew :app:assembleDebug"
+    result: pass
+    notes: "BUILD SUCCESSFUL。SKIP 表示なし。"
+  - command: "python3 contrast-check"
+    result: pass
+    notes: "Light本文 12.27:1、Light金見出し 5.55:1、Black本文 18.63:1 を確認。"
+  - command: "grep -n \"ThemeModeOption\\|ThemePreferences\\|themeMode\" android/app/src/main/java/com/shogun/android/ui/SettingsScreen.kt android/app/src/main/java/com/shogun/android/ui/theme/ThemePreferences.kt android/app/src/main/java/com/shogun/android/MainActivity.kt android/app/src/main/java/com/shogun/android/viewmodel/SettingsViewModel.kt"
+    result: pass
+    notes: "Settings UI、DataStore、アプリ適用、ViewModel 経路を確認。"
+  - command: "grep -n \"Theme Modes\\|Accessibility Guardrails\" android/.interface-design/system.md"
+    result: pass
+    notes: "設計書追記を確認。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/android/app/build.gradle.kts
+  - /mnt/c/tools/multi-agent-shogun/android/gradle/libs.versions.toml
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/theme/Color.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/theme/Theme.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/theme/ThemePreferences.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/viewmodel/SettingsViewModel.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/MainActivity.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/SettingsScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/android/.interface-design/system.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_729.yaml
+lesson_candidate:
+  found: true
+  title: "Compose で固定テーマ定数が広く直参照されている時は Material colorScheme 追加だけでは多テーマ化できない"
+  detail: "今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lightColorScheme` を足すだけでは Light/Black へ切り替わらなかった。既存 UI を大規模書換えせず多テーマ化するには、静的定数を `CompositionLocal` 経由の動的パレットへ昇格させ、既存トークン名のまま mode-aware にする方が安全。"
+  project: infra
+lessons_useful:
+  - L074
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

@@ -1,0 +1,97 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_1018_review
+parent_cmd: cmd_1018
+timestamp: "2026-03-17T03:06:32+0900"
+status: done
+ac_version_read: 2
+verdict: FAIL
+review_result: FAIL
+ac_results:
+  - id: AC1
+    status: fail
+    evidence: "`shin_shijin_l1_gs.py` のパラメータ空間生成・191,796通り・8メトリクス出力・CSV形状は設計書準拠だったが、`run_parity_check()` が初期Cash月を1回しかスキップせず、L074の『quarterly_jan/quarterly_marは複数月の初期Cashがあり得る』教訓を未反映。`/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/shin_shijin_l1_gs.py:589-603`"
+  - id: AC2
+    status: fail
+    evidence: "出力CSV / meta / parity_check 自体は整合したが、`DATA_CATALOG.md` は C-5 rebalance 修正後も C-6 に旧L1件数 `172,818` が残存し、Active Catalog に `cmd_1018` / `shin_shijin_l1` 行が無い。`/mnt/c/Python_app/DM-signal/outputs/grid_search/DATA_CATALOG.md:164` と `:220-263`"
+diff_check:
+  status: fail
+  evidence: "`git status --short` で `scripts/analysis/grid_search/shin_shijin_l1_gs.py` と `outputs/grid_search/shin_shijin_l1/` は未追跡のまま。加えて `DATA_CATALOG.md` 差分は rebalance修正に加え、`cmd_246`/`cmd_077` の既存行追記のみで、今回生成物のカタログ化が未完。"
+result:
+  summary: "cmd_1018 レビュー結果は FAIL。実装本体の計算・出力形状は概ね良好だが、四半期系の初期Cash処理が教訓L074未反映で、`DATA_CATALOG.md` も新成果物の記録まで完了していないため、push条件を満たさない。"
+  details: |
+    判定根拠:
+    1. コード本体の良い点
+       - `build_standard_lookback_configs()` は 3,195 通り、`build_dm7_lookback_configs()` は 4 通りを生成し、`generate_family_patterns()` 合計 191,796 通りを再現した。
+       - `compute_metrics()` は設計書§3.7の8メトリクスを実装し、出力CSVでも全メトリクス列が数値で埋まっていた。
+       - `meta.yaml` は common period `2012-03..2026-01 (167 months)`、family counts、md5 を保持し、`parity_check.md` は4ファミリー mismatch 0 だった。
+
+    2. FAIL所見1: parity前処理が四半期初期化に弱い
+       - `run_parity_check()` は `holding_signal == "Cash"` かつ微小リターンの月を1回だけスキップした時点で `first_real=True` に切り替える。
+       - 注入教訓L074は quarterly_jan / quarterly_mar に複数の初期Cash月があり得ると明示しており、この実装だと追加の初期Cash月を production_returns に混ぜる。
+       - 現在の live 4ファミリー parity は通っているが、四半期系の一般化・将来再利用を考えるとレビューPASSは出せない。
+
+    3. FAIL所見2: DATA_CATALOG の更新が不整合
+       - C-5 の rebalance 値域は 6種へ修正済み。
+       - しかし C-6 は旧L1記述 `172,818パターン` のままで、現行設計書・meta.yaml の `191,796` と衝突している。
+       - さらに Active Catalog に `cmd_1018` / `shin_shijin_l1` 行が存在せず、Operation Rules「新ファイル出力時はActive Catalogに追記」に未達。
+
+    4. 出力検証
+       - `monthly_returns_DM{2,3,6,7P}.csv` は各167行で `2012-03` 始まり `2026-01` 終了。
+       - 列数は `pattern_count + 1(year_month)` と一致: DM2/DM6=76,681, DM3=38,341, DM7P=97。
+       - `metrics_*.csv` は DM2/DM6=76,680行, DM3=38,340行, DM7P=96行。8メトリクス列に非数値は無かった。
+
+    5. push判定
+       - FAIL のため `git add/commit/push` は未実施。
+purpose_validation:
+  cmd_purpose: "cmd_1018(佐助実装)のレビュー+push。設計書§3準拠・191,796変種・lookback制約・rebalance 6種・8メトリクス・出力物整合性・DATA_CATALOG C-5確認を行い、PASS時のみcommit+pushする。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_1018.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "quarterly_jan/quarterly_mar の初期Cash複数月リスクを parity 前処理の確認ポイントとして使えた"
+  - id: L348
+    useful: true
+    reason: "common period 167ヶ月固定の妥当性確認で live common period を先に見る観点が有効だった"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verification:
+  - command: "python3 -m py_compile /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/shin_shijin_l1_gs.py"
+    result: pass
+    notes: "構文エラーなし。"
+  - command: "python3 - <<'PY' ... build_standard_lookback_configs / generate_family_patterns ... PY"
+    result: pass
+    notes: "標準3,195 + DM7 4、4ファミリー合計191,796通りを再生成確認。"
+  - command: "python3 - <<'PY' ... pandas shape checks for metrics/monthly_returns ... PY"
+    result: pass
+    notes: "各CSVの行数・列数・期間(2012-03..2026-01)・8メトリクス列の数値性を確認。"
+  - command: "sed -n '1,220p' /mnt/c/Python_app/DM-signal/outputs/grid_search/shin_shijin_l1/parity_check.md"
+    result: pass
+    notes: "DM2/DM3/DM6/DM7+ mismatch 0 を確認。"
+  - command: "git -C /mnt/c/Python_app/DM-signal diff -- outputs/grid_search/DATA_CATALOG.md"
+    result: fail
+    notes: "C-5 rebalance修正はあるが、cmd_1018成果物のActive Catalog追記は無く、C-6旧件数172,818も残存。"

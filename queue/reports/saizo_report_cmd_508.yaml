@@ -1,0 +1,92 @@
+worker_id: saizo
+task_id: subtask_508_recon_screenshot_paste
+parent_cmd: cmd_508
+timestamp: "2026-03-04T01:06:30+09:00"
+status: done
+findings:
+  - id: F1
+    title: "WSL2→PowerShell経由でClipboard画像の取得・PNG保存は実動作する"
+    evidence: "Get-Clipboard -Format Image で 64x32 画像を取得し PNG 保存成功（exit=0）"
+  - id: F2
+    title: "非画像Clipboard時は例外ではなくnull返却があり得る"
+    evidence: "Set-Clipboard text 後の取得で IMAGE_NULL / exit=2"
+  - id: F3
+    title: "画像形式はPNG/JPEGが実用、BMPはClaude Code側で非対応"
+    evidence: "view_image: png/jpg成功、bmpは unsupported image format"
+  - id: F4
+    title: "サイズ検証では8192x8192 PNGまで読込成功"
+    evidence: "size_1024/4096/8192 のview_image成功"
+  - id: F5
+    title: "トリガーはtmux keybindが速度・実現性のバランス最良"
+    evidence: "4方式比較で高実現性かつ最小操作"
+verdict:
+  recommendation: "Prefix+v tmux keybind + queue/screenshots保存 + display-message通知（send-keysはopt-in）を採用"
+  reason: "高速操作、非割込み通知、PNG固定による読込成功率を同時に満たすため"
+confidence: high
+blind_spots:
+  - "実ユーザーのSnipping Tool運用（Win+Shift+S）直後の連続操作は未検証"
+  - "高解像度かつ高容量（写真系）画像での上限は未検証"
+  - "Cursorの画像貼付け機能は公式keyboard docs上の明示がなく、製品版差異の可能性あり"
+result:
+  summary: "cmd_508 偵察完了。AC1-AC5を満たし、推奨方式1案と実装cmd草案を提示。"
+  details: |
+    - AC1: WSL2からPowerShell呼出しでClipboard画像保存の成功/失敗を実測。
+    - AC2: トリガー方式を4種類比較しpros/cons表を作成。
+    - AC3: Claude Code画像読込を実地確認（PNG/JPEG成功、BMP失敗）。
+    - AC4: 推奨構成（trigger+path+notify）を1案に絞りcmd草案化。
+    - AC5: docs/research/cmd_508_screenshot-paste-recon.md を新規作成。
+purpose_validation:
+  cmd_purpose: "WSL2+tmux環境でクリップボード画像をClaude Codeに渡す実用経路を調査し、推奨案を提示する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/docs/research/cmd_508_screenshot-paste-recon.md
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_508.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+test_results:
+  - command: "powershell.exe Set-Clipboard(text) + Get-Clipboard -Format Image"
+    result: pass
+    evidence: "IMAGE_NULL / exit=2（失敗系ハンドリング条件を確認）"
+  - command: "PowerShellでBitmap生成→Clipboard→Get-Clipboard→PNG保存"
+    result: pass
+    evidence: "clipboard_capture.png 保存成功 / DIM 64x32 / exit=0"
+  - command: "Clipboard画像をPNG/BMP/JPEG保存"
+    result: pass
+    evidence: "from_clipboard.png/.bmp/.jpg 生成成功"
+  - command: "view_image png/jpg/bmp"
+    result: pass
+    evidence: "png/jpg成功、bmp unsupported"
+  - command: "view_image size_1024/4096/8192.png"
+    result: pass
+    evidence: "全て読込成功"
+lessons_useful:
+  - L129
+  - L074
+  - L063
+  - L032
+  - L024
+lesson_candidate:
+  found: true
+  title: "Get-Clipboard -Format Image は非画像時に例外ではなくnullを返す場合がある"
+  detail: "Clipboard画像検知は try/catch だけでなく null 判定を必須化すべき。"
+  project: infra
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "成功系/失敗系コマンドを実地実行し、exit code付きで記録。"
+  - id: AC2
+    status: pass
+    evidence: "tmux keybind / bash関数 / send-keys通知 / 監視方式の比較表を作成。"
+  - id: AC3
+    status: pass
+    evidence: "view_image実測で対応形式とサイズ挙動を確認。"
+  - id: AC4
+    status: pass
+    evidence: "推奨方式（trigger+path+notify）を1案化しcmd草案を提示。"
+  - id: AC5
+    status: pass
+    evidence: "docs/research/cmd_508_screenshot-paste-recon.md を新規作成。"

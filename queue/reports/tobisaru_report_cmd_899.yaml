@@ -1,0 +1,35 @@
+task_id: cmd_899_A
+parent_cmd: cmd_899
+ninja: tobisaru
+status: done
+type: impl
+project: auto-ops
+summary: Drive上の個人事業_2025.csvヘッダー13列目「殿コメント」→「補足メモ」に改名完了。UTF-8 BOM維持、データ行変更なし。再ダウンロード検証済み。
+acceptance_criteria:
+- id: AC1
+  status: pass
+  evidence: '再ダウンロード検証: ヘッダー13列目=「補足メモ」確認。UTF-8 BOM(EF BB BF)維持。データ行変更なし（バイト差3=列名短縮分のみ）。'
+changes: []
+commits: []
+test_result:
+  summary: gws drive files getで再ダウンロード→ヘッダー確認+BOMバイト確認
+  pass: 2
+  fail: 0
+  skip: 0
+lessons_useful:
+  - L032
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

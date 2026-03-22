@@ -1,0 +1,67 @@
+worker_id: kotaro
+task_id: cmd_1255_b
+parent_cmd: cmd_1255
+timestamp: '2026-03-22T18:15:00'
+status: done
+ac_version_read: 3f5213a0
+result:
+  summary: cmd_complete_gate系20FAIL + deploy_task系19FAIL = 全39FAIL修正完了。全52テストPASS。
+  details:
+    AC2根本原因: (1)no_lesson_reasonフィールド欠落(cmd_1248追加分) (2)gate_dc_duplicate.shスタブ欠落(cmd_1179追加分)
+    AC3根本原因: scripts/lib/agent_config.shがdeploy_task.shの新source依存として追加されたがテストsetup未追従
+    修正内容: 全7テストファイルのsetup/レポートテンプレートを現行スクリプトに追従
+purpose_validation:
+  cmd_purpose: unit test修正(cmd_complete_gate系+deploy_task系FAIL修正)
+  fit: true
+  purpose_gap: null
+files_modified:
+- tests/unit/test_cmd_complete_gate.bats
+- tests/unit/test_cmd_complete_gate_ac_version.bats
+- tests/unit/test_cmd_complete_gate_review_quality.bats
+- tests/unit/test_cmd_complete_gate_warning_levels.bats
+- tests/unit/test_deploy_task_ac_version.bats
+- tests/unit/test_deploy_task_engineering_preferences.bats
+- tests/unit/test_deploy_task_if_then.bats
+lesson_candidate:
+  found: false
+  no_lesson_reason: テスト追従修正のみ。新たな教訓パターンなし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bash算術展開問題。今回はテストsetup/アサーション修正のみ
+- id: L225
+  useful: false
+  reason: MCP entity混入問題。今回のタスクと無関係
+- id: L063
+  useful: false
+  reason: YAML dict/listイテレーション。今回のタスクと無関係
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC2:
+  - check: cmd_complete_gate系のFAIL原因を把握したか
+    result: PASS
+  - check: commit BLOCKテストのアサーション修正済みか
+    result: PASS
+  - check: verdict二値テストのアサーション修正済みか
+    result: PASS
+  - check: lessons_useful形式テストのアサーション修正済みか
+    result: PASS
+  AC3:
+  - check: deploy_task系のFAIL原因を把握したか
+    result: PASS
+  - check: ac_version関連テストの修正済みか
+    result: PASS
+  - check: engineering_preferences関連テストの修正済みか
+    result: PASS
+  - check: report_path関連テストの修正済みか
+    result: PASS
+verdict: PASS

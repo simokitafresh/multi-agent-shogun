@@ -1,0 +1,74 @@
+worker_id: kotaro
+task_id: subtask_545_review
+parent_cmd: cmd_545
+timestamp: "2026-03-04T23:20:00+0900"
+status: done
+ac_version_read: 6
+
+result:
+  summary: "cmd_545全AC PASS。lib/agent_state.shの共通関数化によるbusy/idle判定一元化を検証完了。169件全テストPASS、SKIP 0件。git push確認済(already up-to-date)。"
+  review_result: PASS
+  details: |
+    レビュー実施内容:
+    - commit 1386d91 の差分を全行精読
+    - AC1: lib/agent_state.shにcheck_agent_busy(pane_target, agent_id)が正しく実装。戻り値0=idle/1=busy/2=unknown
+    - AC2: inbox_watcher.shのsend_wakeup()がcheck_agent_busy()に置換済。get_effective_cli_type()追加、busy defer時return 2でフィードバック
+    - AC3: ninja_monitor.shのcheck_idle()がcheck_agent_busy()に置換済。65行→20行に削減。AGENT-STATE-CORRECTIONログ維持
+    - AC4: deploy_task.shのcheck_idle()がcheck_agent_busy()に置換済。if文形式で非0戻り値安全受取
+    - AC5: 169件全テストPASS、SKIP 0件
+    - AC6: 佐助報告にlesson_candidate記載確認済。review PASS → git push実行(already up-to-date)
+    - bash -n構文チェック: 4ファイル全OK
+    - cli_profiles.yamlとの整合性: busy_patterns/idle_patternキー名が一致
+
+    品質評価:
+    - デフォルトbusy_patternsの一元管理: AGENT_STATE_DEFAULT_BUSY_PATTERN/IDLE_PATTERNに集約済
+    - set -e環境での非0戻り値: if文形式で安全に受取(deploy_task/ninja_monitor/inbox_watcher全てで確認)
+    - idle検出時の@agent_state補正+idle_flag touch: check_agent_busy内で実施(L59-60)
+    - _agent_state_profile_get()によるcli_profiles.yaml連携: command -v確認でcli_profile_get未ロード時も安全
+
+purpose_validation:
+  cmd_purpose: "busy/idleパターン検出ロジックを共通関数に抽出し、3スクリプトの重複を解消する"
+  fit: true
+  purpose_gap: "なし"
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report_cmd_545.yaml
+
+lesson_candidate:
+  found: false
+
+lessons_useful: []
+
+test_results:
+  - command: "bash -n lib/agent_state.sh scripts/deploy_task.sh scripts/inbox_watcher.sh scripts/ninja_monitor.sh"
+    result: pass
+    notes: "4ファイル構文チェックOK"
+  - command: "bats tests/unit/*.bats"
+    result: pass
+    notes: "169 tests, 0 failures, 0 skipped"
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "lib/agent_state.shにcheck_agent_busy()実装済(戻り値0/1/2)。デフォルトパターン一元管理。"
+  - id: AC2
+    status: pass
+    evidence: "inbox_watcher.shのsend_wakeup()がcheck_agent_busy()呼出に置換済。"
+  - id: AC3
+    status: pass
+    evidence: "ninja_monitor.shのcheck_idle()がcheck_agent_busy()呼出に置換済。65行→20行削減。"
+  - id: AC4
+    status: pass
+    evidence: "deploy_task.shのcheck_idle()がcheck_agent_busy()呼出に置換済。if文形式で安全受取。"
+  - id: AC5
+    status: pass
+    evidence: "169件全PASS、SKIP 0件。"
+  - id: AC6
+    status: pass
+    evidence: "全AC PASS確認。git push実行済(already up-to-date)。"
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: false

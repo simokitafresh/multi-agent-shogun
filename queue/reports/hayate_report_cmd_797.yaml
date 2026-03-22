@@ -1,0 +1,79 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_797_review
+parent_cmd: cmd_797
+timestamp: "2026-03-11T19:13:44+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "[setup.bash](/mnt/c/tools/multi-agent-shogun/tests/helpers/setup.bash#L100) は `realpath \"$E2E_ROOT\"` を取得し、[setup.bash](/mnt/c/tools/multi-agent-shogun/tests/helpers/setup.bash#L103) で `$(realpath \"${PROJECT_ROOT:-.}\")/.tmp/` 配下のみ `rm -rf` を許可している。`mktemp -d \"$PROJECT_ROOT/.tmp/e2e_env.XXXXXX\"` で生成する作業ディレクトリと整合し、D002の削除スコープを満たす。"
+  - id: AC2
+    status: pass
+    evidence: "`cd /mnt/c/tools/multi-agent-shogun && bats tests/e2e/` を実行し `1..18` に対して `ok 1` から `ok 18` まで全件PASSを確認。skip行は出ておらず SKIP=0。"
+  - id: AC3
+    status: pass
+    evidence: "本報告で `verdict: PASS` を明示。対象commit `7c0b639` は既に `origin/main` にあり、再push不要。"
+result:
+  summary: "cmd_797事後レビューは PASS。`teardown_e2e_session` の realpath ガードは `.tmp/` 配下に削除範囲を限定しており、E2E 18/18 PASS, SKIP=0 も確認した。"
+  details: |
+    実施内容:
+    1. `projects/infra.yaml` / `projects/infra/lessons.yaml` / `context/infrastructure.md` を読み、review手順と注入教訓を確認。
+    2. `git diff HEAD~1..HEAD -- tests/helpers/setup.bash` と現行 [setup.bash](/mnt/c/tools/multi-agent-shogun/tests/helpers/setup.bash#L97) 周辺を精読し、`teardown_e2e_session` の削除条件を確認。
+    3. `git log --oneline -- tests/helpers/setup.bash` で対象commitが `7c0b639` であることを確認。
+    4. `cd /mnt/c/tools/multi-agent-shogun && bats tests/e2e/` を実行し、18件すべて `ok` を確認。
+
+    判定:
+    - `rm -rf` は `realpath` 正規化済みの `$E2E_ROOT` が `PROJECT_ROOT/.tmp/` 配下の時だけ実行されるため、D002の「作業木外削除禁止」に反しない。
+    - guard 不一致時は stderr に拒否メッセージを出すのみで、削除を強行しない。
+    - `teardown_e2e_session` の他処理は従来どおり tmux session cleanup のみで、E2E全件PASSからも副作用は見当たらない。
+purpose_validation:
+  cmd_purpose: "cmd_797の事後レビューを実施し、teardown修正が安全かつE2E非退行であることを判定する。"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+verification:
+  - command: "git diff HEAD~1..HEAD -- tests/helpers/setup.bash"
+    result: pass
+    notes: "変更範囲が `teardown_e2e_session` の安全ガード追加に限定されることを確認。"
+  - command: "git log --oneline -- tests/helpers/setup.bash"
+    result: pass
+    notes: "対象変更が `7c0b639 fix(e2e): add D002 safety guard to teardown_e2e_session rm -rf` であることを確認。"
+  - command: "cd /mnt/c/tools/multi-agent-shogun && bats tests/e2e/"
+    result: pass
+    notes: "18/18 PASS、SKIP=0。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術の set -e 教訓であり、今回の realpath ガード精査には直接使っていない。"
+  - id: L063
+    useful: false
+    reason: "Pythonでの lessons.yaml 走査教訓であり、今回の bash helper review には直接関係しない。"
+  - id: L032
+    useful: false
+    reason: "PJセクション差替え規則の教訓であり、レビュー対象外。"
+  - id: L105
+    useful: true
+    reason: "`tests/helpers/setup.bash` 周辺のE2E安定化履歴を踏まえ、helper全体の副作用を確認する観点として有効だった。"
+  - id: L142
+    useful: true
+    reason: "テスト件数報告には根拠コマンドを添えるべき、という教訓に従い `bats tests/e2e/` の 18件PASS を明示した。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

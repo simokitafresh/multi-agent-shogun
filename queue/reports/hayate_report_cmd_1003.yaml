@@ -1,0 +1,130 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_1003_recon_scan
+parent_cmd: cmd_1003
+timestamp: "2026-03-16T15:01:12+09:00"
+status: done
+ac_version_read: 1
+verdict: PASS
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+ac_results:
+  - id: AC3
+    status: pass
+    evidence: |
+      - 本番 PostgreSQL (`backend/.env` の `DATABASE_URL`) で active portfolios / monthly_returns / signals を直読し、FoF 15体(追い風/抜き身/変わり身/加速/四つ目 × 激攻/鉄壁/常勝) と Standard 53体を横断集計した。
+      - 本番 API `https://dm-signal-backend.onrender.com/api/performance/{id}?years=0` を管理者 Basic Auth で実呼出しし、FoF 15体の Total Return 開始月を確認した。
+      - FoF 15体は全件で `api/performance` 開始月 = DB上の `monthly_returns.min(year_month)` = 全構成PFの `monthly_returns.min(year_month)` の最大値 だった。FoF側 selection lookback を開始判定に入れていない。
+      - visible cash warm-up は 8/15 体、premature selection は 7/15 体。Standard 53体は初期 cash warm-up 0/53。
+      - `/api/monthly-returns/{id}` の既定呼出しでは FoF/Standard ともに 120件返却・`total_months=120`。同一PFへ `?months=240` を付けると 175件(加速-常勝) / 181件(DM2) を返し、本番既定120ヶ月上限の影響を確認した。
+result:
+  summary: "FoF 15体は全件で component ready 月から Total Return/Monthly Return が始まっており、FoF selection lookback を valid_start に反映していない。結果として 8体は初期 cash warm-up、7体は lookback 未充足のまま即選抜開始。Standard 53体には同症状なし。加えて本番 `/api/monthly-returns` 既定呼出しは全PF/FoFを120ヶ月に切り詰め、追加履歴の存在も返していない。"
+  details: |
+    1. FoF 15体の Total Return 開始月と初期症状
+       - 加速-常勝: start=2011-09, lookback=24M, cash warm-up 18ヶ月, first active=2013-03
+       - 加速-激攻: start=2011-09, lookback=4M, premature selection, first active=2011-09
+       - 加速-鉄壁: start=2012-03, lookback=10M, cash warm-up 2ヶ月, first active=2012-05
+       - 四つ目-常勝: start=2012-03, lookback=6M, cash warm-up 1ヶ月, first active=2012-04
+       - 四つ目-激攻: start=2012-03, lookback=18M, cash warm-up 6ヶ月, first active=2012-09
+       - 四つ目-鉄壁: start=2011-09, lookback=18M, cash warm-up 5ヶ月, first active=2012-02
+       - 変わり身-常勝: start=2012-03, lookback=24M, premature selection, first active=2012-03
+       - 変わり身-激攻: start=2011-09, lookback=24M, premature selection, first active=2011-09
+       - 変わり身-鉄壁: start=2012-03, lookback=24M, premature selection, first active=2012-03
+       - 抜き身-常勝: start=2012-03, lookback=18M, premature selection, first active=2012-03
+       - 抜き身-激攻: start=2012-03, lookback=18M, cash warm-up 6ヶ月, first active=2012-09
+       - 抜き身-鉄壁: start=2011-06, lookback=18M, cash warm-up 8ヶ月, first active=2012-02
+       - 追い風-常勝: start=2012-03, lookback=15M, cash warm-up 1ヶ月, first active=2012-04
+       - 追い風-激攻: start=2012-03, lookback=18M, premature selection, first active=2012-03
+       - 追い風-鉄壁: start=2011-09, lookback=18M, premature selection, first active=2011-09
+
+    2. 共通パターン
+       - FoF 15/15 で `monthly_returns.min(year_month)` が「全構成PFの最古月次リターン月の最大値」と完全一致した。
+       - つまり FoF開始判定は component ready 月しか見ておらず、FoF selection block の lookback (4M/6M/10M/15M/18M/24M) を使っていない。
+       - visible bug は2系統:
+         a. cash warm-up型 8体: 開始直後が Cash / in_market=0 のまま 1〜18ヶ月継続
+         b. premature selection型 7体: 15〜24ヶ月 lookback が必要なのに開始月から即非Cash
+
+    3. Standard PF 対照結果
+       - active Standard 53体を同条件で確認したところ、開始直後の cash warm-up は 0/53。
+       - FoF特有の開始判定ロジック問題であり、Standard PF の valid_start 実装に同症状は見られなかった。
+
+    4. 120ヶ月上限の横断結果
+       - DB上は active FoF 38/38, active Standard 53/53 が monthly_returns 120件超を保持。
+       - しかし本番 `/api/monthly-returns/{id}` の既定呼出しは 120件しか返さず、`total_months` も 120 を返した。
+       - 実測:
+         * 加速-常勝: DB 175件 (`2011-09`〜`2026-03`) / API default 120件 (`2016-04`〜`2026-03`) / API `?months=240` 175件
+         * DM2: DB 181件 (`2011-03`〜`2026-03`) / API default 120件 (`2016-04`〜`2026-03`) / API `?months=240` 181件
+       - よって Monthly Returns の既定120ヶ月制限は全PF/FoFに実効影響がある。
+purpose_validation:
+  cmd_purpose: "全PF/FoFのキャッシュ期間・データ切れ・表示異常を横断調査し、実装修正に直結する所見を報告する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_1003.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful: []
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify:
+    - "backend/app/jobs/recalculate_fof.py:284-309 — `fof_valid_start_date` が『全構成PFのシグナルが揃う最古日』しか見ておらず、FoF selection lookback を無視している主因箇所"
+    - "backend/app/jobs/recalculate_fof.py:362-520 — `valid_dates_sorted` が早すぎる開始日をそのまま daily pipeline 実行へ流している箇所"
+    - "backend/app/api/monthly_returns.py:38-46 — API既定 `actual_months=120` の入口。期間制限の方針修正時に要変更"
+    - "frontend/app/monthly-returns/page.tsx:16-17,42-43,153-181 — quick=12/full=120 の既定値と showAll リクエスト月数制御"
+    - "frontend/lib/api-client.ts:1238-1245 — `getMonthlyReturns()` の既定 `months=120`"
+  affected_files:
+    - "backend/app/api/performance.py:69-145 — Total Return chart は monthly_returns をそのまま返すため、FoF開始判定修正の影響を直接受ける"
+    - "backend/app/services/monthly_returns_calculator.py:58-150,319-330 — precomputed monthly_returns を UIへ返す経路。120件制限/total_months の実挙動再確認対象"
+    - "backend/app/services/component_price_cache.py:78-116 — FoFブロックが参照する component cumulative_return 月次系列"
+    - "frontend/app/dashboard/page.tsx / frontend/app/compare/page.tsx — performance chart consumer。FoF開始月修正後の表示確認対象"
+    - "frontend/components/monthly-returns-table.tsx:109-145 — `total_months` 前提で Show All を出すため、本番APIが total_months=120 を返す現状と整合確認が必要"
+  related_tests:
+    - "backend/tests/test_data_loader.py — common_start + lookback の既存概念テスト。FoF valid_start helper化時の近傍"
+    - "backend/tests/test_fof_individual_recalculate.py / backend/tests/test_127_fof_upward_recalculation.py — FoF再計算系の既存近傍テスト"
+    - "FoF valid_start が selection lookback を反映する専用テストは未発見。`_recalculate_fof_history()` に対する新規追加が必要"
+    - "API回帰: `/api/performance/{id}?years=0` と `/api/monthly-returns/{id}` で FoF開始月・件数・total_months を固定値検証すべき"
+  edge_cases:
+    - "ネストFoFでは子FoFの ready month と親FoF lookback の両方を考慮する必要がある"
+    - "複数 selection block を持つ pipeline では必要 warm-up を block 単位の max で取る必要がある"
+    - "開始直後が本当に Cash になる戦略は valid_start 後にも存在し得るため、『初期 Cash を丸ごと削る』実装は誤り。warm-up と本物の Cash を分離せよ"
+    - "days→months 変換(例 504d→24M, 210d→10M) と month-end / signal_date のズレを揃えないと 1ヶ月ずれが再発する"
+findings:
+  fof_start_gate:
+    status: fail
+    detail: "FoF 15/15 が component ready 月から開始しており、`backend/app/jobs/recalculate_fof.py:284-309` の開始判定が FoF selection lookback を見ていない。"
+  visible_cash_warmup:
+    status: fail
+    detail: "FoF 8/15 で開始直後に Cash / in_market=0 が 1〜18ヶ月継続した。最長は 加速-常勝 18ヶ月、抜き身-鉄壁 8ヶ月、四つ目-激攻/抜き身-激攻 各6ヶ月。"
+  premature_selection:
+    status: fail
+    detail: "FoF 7/15 は 15〜24ヶ月 lookback 設定にもかかわらず開始月から即非Cash。追い風-激攻/鉄壁、変わり身3体、抜き身-常勝、加速-激攻が該当。"
+  standard_pf_control:
+    status: pass
+    detail: "active Standard 53体では同条件の初期 cash warm-up 0/53。問題は FoF側 valid_start/表示データ生成に局在。"
+  monthly_returns_120_cap:
+    status: warn
+    detail: "本番 `/api/monthly-returns` の既定呼出しは FoF/Standard とも 120件返却・`total_months=120`。DBには全active PF/FoFが120件超を保持しており、既定表示は全件で期間短縮される。"
+confidence: 0.97
+blind_spots:
+  - "本番再計算は実行していない。既存DB/APIの静的観測とソース読解に基づく報告である"
+  - "ブラウザUIの目視確認は未実施。表示異常判定は production API payload と monthly_returns/signals 実データから行った"
+  - "Monthly Returns API の `total_months=120` は本番API実測とローカルソースの挙動が食い違う。デプロイ差分の有無までは本任務の範囲外"

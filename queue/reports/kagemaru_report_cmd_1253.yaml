@@ -1,0 +1,68 @@
+ac_version_read: 32d51065
+binary_checks:
+  AC1:
+  - check: L016のstatus=deprecated設定済みか(infra+dm-signal両方)
+    result: 'yes'
+  - check: L024のstatus=deprecated設定済みか(infra+dm-signal両方)
+    result: 'yes'
+  AC2:
+  - check: L103のstatus=deprecated設定済みか(infra+dm-signal両方)
+    result: 'yes'
+  AC3:
+  - check: L090にapplies_to_task_types:[implement]設定済みか(infra+dm-signal両方)
+    result: 'yes'
+  - check: L117にapplies_to_task_types:[implement]設定済みか(infra+dm-signal両方)
+    result: 'yes'
+  - check: L060にapplies_to_task_types:[implement]設定済みか(infra+dm-signal両方)
+    result: 'yes'
+  AC4:
+  - check: sync_lessons.sh実行でdeprecated教訓が注入対象外になったか
+    result: 'yes'
+  - check: YAML構文検証PASS(python3 safe_load)か
+    result: 'yes'
+decision_candidate:
+  found: false
+files_modified:
+- projects/infra/lessons.yaml
+- projects/dm-signal/lessons.yaml
+hook_failures:
+  count: 0
+  details: ''
+lesson_candidate:
+  detail: 'sync_lessons.shはinfra(SSOT)からdm-signalへ同期する。先にdm-signalを修正してもsync実行で上書きされる。手順:
+    infra修正→sync→dm-signal再修正。'
+  found: true
+  no_lesson_reason: ''
+  project: infra
+  title: sync_lessons.shはSSOTからdm-signal/lessons.yamlを上書きするため両ファイル修正時はsync後にdm-signal再修正が必要
+lessons_useful:
+- id: L074
+  reason: シェルスクリプト作業なし
+  useful: false
+- id: L225
+  reason: MCP正本突合の作業なし
+  useful: false
+- id: L063
+  reason: lessons.yamlのトップレベル構造理解に役立った
+  useful: true
+- id: L097
+  reason: task_type揺れの作業なし
+  useful: false
+- id: L085
+  reason: sync_lessons.shのフィールド保持仕様を知り上書き問題に早く気付けた
+  useful: true
+parent_cmd: cmd_1253
+purpose_validation:
+  cmd_purpose: 0%有用率教訓6件の注入停止・task_type限定
+  fit: true
+  purpose_gap: ''
+result:
+  details: sync_lessons.shがdm-signalを上書きするため、infra修正→sync→dm-signal再修正の順序で対処。全AC PASS。
+  summary: 0%有用率教訓6件の注入停止完了。L016,L024,L103→deprecated。L090,L117,L060→applies_to_task_types:[implement]。infra+dm-signal両方で修正。
+skill_candidate:
+  found: false
+status: done
+task_id: cmd_1253
+timestamp: '2026-03-22T19:05:00'
+verdict: PASS
+worker_id: kagemaru

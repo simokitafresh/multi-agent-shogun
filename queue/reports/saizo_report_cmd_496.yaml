@@ -1,0 +1,88 @@
+worker_id: saizo
+task_id: subtask_496_review_r2
+parent_cmd: cmd_496
+timestamp: "2026-03-03T17:05:07+09:00"
+status: done
+review_result: pass
+ac_results:
+  AC1: pass
+  AC2: pass
+  AC3: pass
+diff_check:
+  changed_by_saizo: false
+  commit_required: false
+  note: "レビュータスクのため追加実装なし。修正は tobisaru commit a9da108 を確認。"
+result:
+  summary: "cmd_496 再レビュー(r2)完了。4観点すべてPASS（可観測WARN・non-blocking継続・運用文書整合・完了通知非競合）。"
+  details: |
+    観点1) 初回配備通知の失敗がWARNで可観測か: PASS
+    - scripts/deploy_task.sh:1501-1506
+      NTFY_SYNC=1 で ntfy_cmd.sh を同期実行し、失敗時は
+      dispatch_ntfy: WARN send failed (...) をログ出力。
+    - logs/deploy_task.log:11636 に WARN 実ログを確認。
+
+    観点2) 失敗時もdeployフロー継続か: PASS
+    - deploy_task.sh:1504-1508 は WARN後に return 0。
+    - deploy_task.sh:1604 は notify関数を || true で呼び出し。
+    - logs/deploy_task.log:11643 に WARN後 deployment complete を確認。
+
+    観点3) context/karo-operations.md 記述整合: PASS
+    - context/karo-operations.md:435-436
+      cmd_id付き通知は ntfy_cmd.sh、初回配備通知は NTFY_SYNC=1 と明記。
+    - deploy_task.sh実装（1501行）と一致。
+
+    観点4) cmd完了通知(ntfy_cmd.sh)と競合しないか: PASS
+    - scripts/cmd_complete_gate.sh:864,1714 は従来どおり ntfy_cmd.sh 経路。
+    - deploy_task.sh の初回配備通知は別トリガーで、完了通知経路の上書きなし。
+
+    補足確認:
+    - scripts/deploy_task.sh / scripts/ntfy.sh / scripts/ntfy_cmd.sh を bash -n で構文OK。
+    - 修正commit a9da108 の変更対象は deploy_task.sh + context/karo-operations.md の2ファイルで一致。
+purpose_validation:
+  cmd_purpose: "家老フローのcmd受領→初回配備完了時に、cmd完了通知とは別の着手通知を1回だけ自動送信する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_496.yaml
+test_results:
+  - command: "bash -n scripts/deploy_task.sh"
+    result: pass
+    evidence: "PASS_deploy_task_syntax"
+  - command: "bash -n scripts/ntfy.sh"
+    result: pass
+    evidence: "PASS_ntfy_syntax"
+  - command: "bash -n scripts/ntfy_cmd.sh"
+    result: pass
+    evidence: "PASS_ntfy_cmd_syntax"
+  - command: "rg -n 'dispatch_ntfy|NTFY_SYNC=1|ntfy_cmd.sh' scripts/deploy_task.sh scripts/cmd_complete_gate.sh context/karo-operations.md"
+    result: pass
+    evidence: "deploy_task(1501/1505), cmd_complete_gate(864/1714), context(435/436)整合"
+  - command: "nl -ba logs/deploy_task.log | sed -n '11550,11645p'"
+    result: pass
+    evidence: "11636 WARN, 11643 deployment complete, 11611 SKIP already notified"
+lessons_useful:
+  - L080
+  - L009
+  - L074
+  - L063
+  - L032
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "可観測性/継続性/文書整合/競合有無の4観点レビューを完了。"
+  - id: AC2
+    status: pass
+    evidence: "レビューPASSかつ差分不要のため、追加commit不要。"
+  - id: AC3
+    status: pass
+    evidence: "本報告YAMLに判定・証跡・diff_checkを記載。"

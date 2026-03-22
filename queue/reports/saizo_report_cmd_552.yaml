@@ -1,0 +1,96 @@
+worker_id: saizo
+task_id: subtask_552_review
+parent_cmd: cmd_552
+timestamp: "2026-03-05T09:41:59+0900"
+status: done
+ac_version_read: 2
+result:
+  summary: "cmd_552の統合レビューを完了。AC4/AC5不足を補修し、frontend build PASS・main pushまで完了。"
+  details: |
+    実施内容:
+    - 4実装(impl_a〜impl_d)の差分を仕様書 `docs/spec/deterioration-monitoring.md` §4 と
+      準備書 `docs/future-01/001.md` §B1-B5 に照合してレビュー
+    - 検出した不足を修正:
+      1) Trend(B4)の同一ラベル時 ±0.05 判定未実装
+      2) 統計テーブル(§4.4.3/B2)の必須項目不足
+      3) StepGraph のホバー情報不足
+      4) ナビ文言が仕様名("Deterioration Monitor")と不一致
+    - 補修実装:
+      - `backend/app/api/deterioration.py`:
+        `prev_p12`（一覧）と `n_months/mu_long_12/mu_recent_12/z_value_12`（history）を返却
+      - `frontend/app/deterioration/page.tsx`:
+        Trend 5パターン判定、StepGraphのラベル色ステップ描画+hover情報、
+        統計テーブルを仕様項目へ更新
+      - `frontend/components/sidebar.tsx` / `mobile-menu.tsx`:
+        メニュー名を Deterioration Monitor へ統一
+    - 検証:
+      - `frontend` で `npm run build` 実行（修正前後ともPASS）
+      - `python3 -m py_compile backend/app/api/deterioration.py` PASS
+    - commit/push:
+      - commit: `008d375` (fix: close deterioration monitor AC4/AC5 gaps)
+      - push: `main -> origin/main` 完了
+  self_gate_check:
+    lesson_ref: PASS
+    lesson_candidate: PASS
+    status_valid: PASS
+    purpose_fit: PASS
+purpose_validation:
+  cmd_purpose: "cmd_552の4サブタスク成果物を統合レビューし、AC1-AC9判定を完了してpushする"
+  fit: true
+  purpose_gap: ""
+review_result: PASS
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`frontend/lib/types/deterioration.ts` は001.md §B1の5型定義と一致（追加/欠落なし）。"
+  - id: AC2
+    status: pass
+    evidence: "`useSortableTable` ジェネリック化後も `compare-summary-table.tsx` が新APIで利用し、`npm run build`で `/compare-summary` 含め成功。"
+  - id: AC3
+    status: pass
+    evidence: "`frontend/lib/api-client.ts` の `getDeteriorationList` / `getDeteriorationHistory` 実装を確認。"
+  - id: AC4
+    status: pass
+    evidence: "一覧テーブルでラベル色/ソート/フィルタを確認。Trendは `prev_label` + `prev_p12` で5パターン判定に修正。"
+  - id: AC5
+    status: pass
+    evidence: "PF詳細で StepGraph(色付きステップ+hover情報), P_det折れ線(0.70/0.80閾値), 統計テーブル(n_months/mu_long/mu_recent/z/g1/g2)を実装。"
+  - id: AC6
+    status: pass
+    evidence: "`PFDetail` が `flex-col lg:flex-row` でモバイル縦積み/デスクトップ横並び、テーブルは横スクロール対応。"
+  - id: AC7
+    status: pass
+    evidence: "`sidebar.tsx` と `mobile-menu.tsx` に `/deterioration` ナビ項目を実装し、文言を Deterioration Monitor に統一。"
+  - id: AC8
+    status: pass
+    evidence: "`cd frontend && npm run build` PASS（Next.js build 完了、/deterioration を静的生成）。"
+  - id: AC9
+    status: pass
+    evidence: "lesson_candidate を本レポートに記録。"
+files_modified:
+  - /mnt/c/Python_app/DM-signal/backend/app/api/deterioration.py
+  - /mnt/c/Python_app/DM-signal/frontend/app/deterioration/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/components/sidebar.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/components/mobile-menu.tsx
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_552.yaml
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm run build"
+    result: "pass"
+    notes: "next build完了（23/23 static pages generated）"
+  - command: "cd /mnt/c/Python_app/DM-signal && python3 -m py_compile backend/app/api/deterioration.py"
+    result: "pass"
+    notes: "APIファイル構文エラーなし"
+commit:
+  sha: 008d375
+  message: "fix: close deterioration monitor AC4/AC5 gaps"
+lesson_candidate:
+  found: true
+  title: "一覧トレンド判定は前月ラベルだけでなく前月p12をAPIで同時返却しないとB4を満たせない"
+  detail: "Trendの同一ラベル分岐(±0.05)は current p12 だけでは判定不能。`/api/deterioration` に `prev_p12` を含めると UI側の追加API呼び出しなしで要件充足でき、N+1も回避できる。"
+  project: dm-signal
+lessons_useful: []
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

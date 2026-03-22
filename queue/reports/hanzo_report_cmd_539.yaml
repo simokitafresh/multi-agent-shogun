@@ -1,0 +1,112 @@
+worker_id: hanzo
+task_id: subtask_539_impl
+parent_cmd: cmd_539
+timestamp: '2026-03-04T18:40:00'
+status: done
+ac_version_read: 9
+
+review_result: PASS
+
+summary: |
+  弱体化確率推定エンジンをパイロット実装。
+  コア(P_det rolling) + ドリフトガード(G1 slope + G2 p_erosion) + ラベル分類を実装。
+  7PFで実行し結果CSVを出力。30単体テスト全PASS。
+
+ac_results:
+  ac1:
+    status: PASS
+    detail: "scripts/analysis/deterioration/deterioration_estimator.py が存在し、P(deterioration)を算出"
+  ac2:
+    status: PASS
+    detail: "3窓(6/12/24) x rolling long(K=120cap), min_long=60。split_periods()で実装"
+  ac2.5:
+    status: PASS
+    detail: "G1: compute_drift_guard_g1() OLS slope。G2: compute_drift_guard_g2() p_erosion。anchor warm_up=12, anchor_len=84, gamma=0.25"
+  ac3:
+    status: PASS
+    detail: "newey_west_var_of_mean() with Bartlett kernel。lag=max(1, floor(4*(n/100)^(2/9)))"
+  ac4:
+    status: PASS
+    detail: "winsorize(lower=0.01, upper=0.99) デフォルト有効"
+  ac5:
+    status: PASS
+    detail: "14列tidy CSV: fund,window,n_long,n_recent,mu_long,mu_recent,diff,se_diff,z_value,p_det_roll,mu_anchor,p_erosion,mu_long_slope,label"
+  ac6:
+    status: PASS
+    detail: "classify_label()で6ラベル分類。設計書C節の閾値準拠"
+  ac7:
+    status: PASS
+    detail: "7PF x 3窓 = 21行のCSV出力。結果: Ave-X=DETERIORATING, DM2=MIXED, 劇薬DMオリジナル=MIXED, 激攻-朱雀=MIXED, 激攻-玄武=EARLY_WARNING, 激攻-白虎=GOOD, 激攻-青龍=EARLY_WARNING"
+  ac8:
+    status: PASS
+    detail: "30テスト全PASS(0 SKIP)。期間分割非重複、SE_dガード、定数列ガード、欠損値dropna処理をカバー"
+
+files_modified:
+  - path: scripts/analysis/deterioration/deterioration_estimator.py
+    action: created
+    lines: 556
+  - path: scripts/analysis/deterioration/test_deterioration_estimator.py
+    action: created
+    lines: 312
+  - path: scripts/analysis/deterioration/output/deterioration_report.csv
+    action: created
+    lines: 22
+
+commit: c5c3430
+
+test_results:
+  total: 30
+  passed: 30
+  failed: 0
+  skipped: 0
+  duration_sec: 7.73
+
+pilot_results:
+  - fund: Ave-X
+    months: 169
+    p12: 0.811
+    p_erosion: 0.026
+    label: DETERIORATING
+  - fund: DM2
+    months: 181
+    p12: 0.730
+    p_erosion: 0.004
+    label: MIXED
+  - fund: "劇薬DMオリジナル"
+    months: 169
+    p12: 0.743
+    p_erosion: 0.019
+    label: MIXED
+  - fund: "激攻-朱雀"
+    months: 190
+    p12: 0.520
+    p_erosion: 0.003
+    label: MIXED
+  - fund: "激攻-玄武"
+    months: 181
+    p12: 0.344
+    p_erosion: 0.006
+    label: EARLY_WARNING
+  - fund: "激攻-白虎"
+    months: 178
+    p12: 0.054
+    p_erosion: 0.011
+    label: GOOD
+  - fund: "激攻-青龍"
+    months: 175
+    p12: 0.326
+    p_erosion: 0.005
+    label: EARLY_WARNING
+
+purpose_validation:
+  cmd_purpose: "弱体化確率推定エンジンをパイロット実装し、7PFで効果検証"
+  fit: true
+  purpose_gap: ""
+lessons_useful:
+  - L094
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

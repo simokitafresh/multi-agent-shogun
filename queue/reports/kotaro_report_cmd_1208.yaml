@@ -1,0 +1,59 @@
+worker_id: kotaro
+task_id: cmd_1208
+parent_cmd: cmd_1208
+timestamp: '2026-03-21T19:15:38'
+status: done
+ac_version_read: 3597a3ba
+result:
+  summary: gunshi_review_stats.shを作成。archive含む全121エントリからヘッダ統計を自動計算・更新
+  details: scripts/gunshi_review_stats.shを新規作成。bash+awkでlogs/gunshi_review_log.yaml+archive/*.yamlをパースし累計件数/accuracy/verdict分布/忍者別品質/品質Flag頻出を自動計算してヘッダコメント行を上書き更新。L074適用((PASS++))回避。品質Flagは正の言及除外ロジック実装
+purpose_validation:
+  cmd_purpose: 軍師レビューログのヘッダ統計を手書きから自動計算に移行(意志依存排除)
+  fit: true
+  purpose_gap: ''
+files_modified: scripts/gunshi_review_stats.sh, logs/gunshi_review_log.yaml
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: 品質Flagは構造化フィールドで記録すべき
+  detail: 2つの自動化ターゲット。(1)gunshi_review_stats.shの実行が意志依存。レビュー追加後に自動トリガーすべき(inbox_write type=reviewやhook等)。Phase7の統合gate→session_start_inject統合と同じ構造。(2)品質Flagがfindings_summaryのフリーテキストに埋没。quality_flags構造化フィールドで記録すれば14行のif文が1行のカウントになる。データ設計の問題を後からスクリプトで補うのは自動消火に近い
+  project: infra
+lessons_useful:
+- id: L074
+  useful: true
+  reason: bashスクリプトでカウンタ変数を使用。((PASS++))回避してPASS=$((PASS+1))形式に統一した
+- id: L225
+  useful: false
+  reason: MCP entity整合性は本タスクのスコープ外
+- id: L063
+  useful: false
+  reason: YAMLデータ構造のイテレーションはawkで処理。Pythonのdict/list構造は無関係
+- id: L220
+  useful: false
+  reason: pre-commitフックやgit status cleanは本タスクのACに含まれない
+- id: L097
+  useful: false
+  reason: cmd_complete_gate.shのfield_get移行は本タスクのスコープ外
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: gunshi_review_stats.sh自動トリガー化+品質Flag構造化フィールド導入
+  detail: 意志依存排除の完遂に2つの設計判断が必要。(1)stats.shをレビューログ変更時に自動実行する仕組み(2)findings_summaryフリーテキストからquality_flags構造化フィールドへの移行
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: scripts/gunshi_review_stats.shが作成されたか
+    result: 'yes'
+  - check: 累計件数が正しく計算されるか
+    result: 'yes'
+  - check: verdict分布が正しく集計されるか
+    result: 'yes'
+  - check: archive分も集計対象に含まれるか
+    result: 'yes'
+  AC2:
+  - check: git commitが成功したか
+    result: 'yes'
+verdict: PASS

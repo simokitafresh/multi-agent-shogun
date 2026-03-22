@@ -1,0 +1,79 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_960
+parent_cmd: cmd_960
+timestamp: "2026-03-15T19:55:03+0900"
+status: done
+ac_version_read: 1
+verdict: PASS
+ac_results:
+  - id: AC3
+    status: pass
+    evidence: "`AGENTS.md` を 47 行の索引版へ置換し、プロジェクト概要・主要ディレクトリ・エージェント表・通信/安全ルール・`CLAUDE.md` 参照ポインタを収めた。将軍/家老/忍者の固有手順は削除し、詳細は `CLAUDE.md` / `instructions/generated/` へ委譲した。"
+result:
+  summary: "AGENTS.md を 47 行の他ツール向けブリーフへ更新した。CLAUDE.md から共通部分のみ抽出し、エージェント構成表と運用/安全ルールの索引に整理した。"
+  details: |
+    実施内容:
+    - `CLAUDE.md` の Knowledge Map / Agents / Deployment Rules / Destructive Operation Safety を読み、共通情報だけを抽出。
+    - `projects/infra.yaml` と `context/infrastructure.md` を照合し、Codex 自動ロード前提の repo 位置と通信経路を確認。
+    - 既存 390 行の `AGENTS.md` を、47 行の短い索引版へ差し替えた。
+
+    反映した要素:
+    - 冒頭 frontmatter に project 名・説明・詳細参照先 (`CLAUDE.md`) を記載
+    - 主要ディレクトリ (`queue/`, `projects/`, `context/`, `instructions/generated/`, `scripts/`) を表形式で整理
+    - Shogun / Karo / Ninja の役割とメンバー一覧を表形式で整理
+    - 通信は `inbox_write.sh`、一次データは `queue/` YAML、共有ファイルは helper 経由で更新、という共通ルールを明記
+    - 破壊的操作禁止、WSL2 配下の広域変更禁止、越境作業時は停止してエスカレーション、を安全ルールとして要約
+
+    除外した要素:
+    - 将軍/家老/忍者の復帰手順や固有禁則
+    - 詳細な gate 手順、知識保守規約、スキル一覧
+    - 長文の歴史・改善履歴
+    これらは `CLAUDE.md` と `instructions/generated/` に委譲した。
+purpose_validation:
+  cmd_purpose: "cmd_960 AC3: プロジェクトルートに AGENTS.md を作成/更新し、CLAUDE.md から他ツール互換のエージェント構成ブリーフを 60 行以下で抽出する。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/AGENTS.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_960.yaml
+verification:
+  - command: wc -l AGENTS.md
+    result: pass
+    notes: "`AGENTS.md` が 47 行で、60 行以下要件を満たすことを確認。"
+  - command: sed -n '232,380p' CLAUDE.md
+    result: pass
+    notes: Knowledge Map / Agents / Deployment Rules / Destructive Operation Safety の元情報を確認し、共通部分だけを抽出。
+  - command: sed -n '1,220p' projects/infra.yaml
+    result: pass
+    notes: Codex の autoload が `AGENTS.md` であること、通信・知識読込の core knowledge を再確認。
+  - command: sed -n '1,220p' context/infrastructure.md
+    result: pass
+    notes: inbox / context 管理 / tmux 配備の運用要点を索引へ落とす際の参照元として使用。
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L032
+    useful: true
+    reason: 既存長文 `AGENTS.md` を丸ごと索引版へ置換する際、境界を曖昧に切らず全体を読み切ってから差し替える判断を支えた。
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

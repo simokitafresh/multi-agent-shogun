@@ -1,0 +1,60 @@
+ac_version_read: 6fcbef9f
+binary_checks:
+  AC1:
+  - check: cmd_complete_gate.shにlesson_candidate検出ロジック追加済みか
+    result: 'yes'
+  - check: lesson_candidate.found=true+title非空でWARN出力するか
+    result: 'yes'
+  - check: lesson_candidate空の場合はWARN出力しないか
+    result: 'yes'
+  - check: GATE結果(CLEAR/BLOCK)に影響しないか
+    result: 'yes'
+  AC3:
+  - check: WARN出力テストPASSか
+    result: 'yes'
+  - check: WARN非出力テストPASSか
+    result: 'yes'
+decision_candidate:
+  found: false
+files_modified:
+- scripts/cmd_complete_gate.sh
+hook_failures:
+  count: 0
+  details: ''
+lesson_candidate:
+  detail: ''
+  found: false
+  no_lesson_reason: 既存パターンの拡張実装。新規知見なし。
+  project: infra
+  title: ''
+lessons_useful:
+- id: L074
+  reason: シェルスクリプトのPASS++問題に遭遇せず
+  useful: false
+- id: L225
+  reason: MCP正本突合の作業なし
+  useful: false
+- id: L063
+  reason: lessons.yamlのイテレーション作業なし
+  useful: false
+- id: L097
+  reason: cmd_complete_gate.shの位置確認に役立った(scripts/配下であることの確認)
+  useful: true
+- id: L085
+  reason: 影響範囲の意識が役立った。既存insight detectionとの整合を確認できた
+  useful: true
+parent_cmd: cmd_1256
+purpose_validation:
+  cmd_purpose: cmd_complete_gate.shにlesson_candidate未登録WARN追加
+  fit: true
+  purpose_gap: ''
+result:
+  details: 既存のinsight candidate detection(cmd_1217)の直後、exit 0の前に新セクションを追加。Pythonでlesson_candidate.found+titleを検査しWARN出力。テスト2件PASS。
+  summary: cmd_complete_gate.shのGATE CLEAR処理にlesson_candidate未登録WARNを追加。found:true+title非空でWARN出力、それ以外は出力なし。GATE判定に影響なし。
+skill_candidate:
+  found: false
+status: done
+task_id: cmd_1256_a
+timestamp: '2026-03-22T19:15:00'
+verdict: PASS
+worker_id: kagemaru

@@ -1,0 +1,69 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_875_B
+parent_cmd: cmd_875
+timestamp: "2026-03-13T00:49:00+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC4
+    status: pass
+    evidence: "`scripts/deploy_task.sh` に `inject_execution_controls()` を追加し、`stop_for` / `never_stop_for` / `parallel_ok` が未設定または null の場合のみ `[]` を注入するようにした。既存値は上書きしない。"
+  - id: AC5
+    status: pass
+    evidence: "同関数で `acceptance_criteria` 件数を list/string/dict 対応で数え、3件以上のときだけ `ac_priority: ''` を追加するようにした。2件以下では未追加のまま維持。"
+  - id: AC6
+    status: pass
+    evidence: "`tests/unit/test_deploy_task_ac_version.bats` を拡張し、空配列注入、`ac_priority` 条件付き注入、既存値保持を検証した。既存の `bats tests/unit/test_deploy_task_ac_version.bats tests/unit/test_deploy_task_if_then.bats` が 8/8 PASS。"
+result:
+  summary: "`deploy_task.sh` に任務制御フィールドの後方互換注入を追加し、`stop_for` / `never_stop_for` / `parallel_ok` を空配列で自動補完、`ac_priority` は AC3件以上のときだけ空文字で注入するようにした。関連 unit test 8件は全PASS。"
+  details: |
+    変更内容:
+    1. `scripts/deploy_task.sh`
+       - `inject_execution_controls()` を追加
+       - `stop_for` / `never_stop_for` / `parallel_ok` は missing/null 時のみ `[]` を注入
+       - `acceptance_criteria` 件数が3件以上かつ `ac_priority` 未設定時のみ `''` を注入
+       - メイン処理に新注入関数を組み込み
+    2. `tests/unit/test_deploy_task_ac_version.bats`
+       - 初回 deploy で新フィールドが生成されることを確認
+       - AC2件では `ac_priority` を追加しないことを確認
+       - 既存の stop/priority/parallel 設定を redeploy で保持することを確認
+verification:
+  - command: "bash -n scripts/deploy_task.sh"
+    result: pass
+    notes: "構文エラーなし。SKIP 0."
+  - command: "bats tests/unit/test_deploy_task_ac_version.bats tests/unit/test_deploy_task_if_then.bats"
+    result: pass
+    notes: "8 tests, 8 passed. SKIP 0."
+purpose_validation:
+  cmd_purpose: "gstack調査から抽出した3テクニックをdeploy_task.sh（タスクYAMLテンプレート）に組み込む。新フィールドはオプショナルで後方互換を維持する。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - scripts/deploy_task.sh
+  - tests/unit/test_deploy_task_ac_version.bats
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "新しい Python 注入関数でも `((PASS++))` のような set -e 落ちパターンを避け、既存の `run_python_logged` フローに寄せて実装した。"
+  - id: L063
+    useful: true
+    reason: "`acceptance_criteria` 件数計算で list/string/dict を分岐し、YAML構造の取り違えを避けた。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

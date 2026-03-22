@@ -1,0 +1,54 @@
+worker_id: hayate
+task_id: cmd_1163_docs
+parent_cmd: cmd_1163
+timestamp: '2026-03-20T19:15:24'
+status: done
+ac_version_read: 7f0649cb
+result:
+  summary: 'AC3: karo.md Deployment Checklist STEP2.3に段取りリスト作成手順を追加(義務化条件/作成手順/複雑度S-M-L/チャンク分割指針/置き場)。AC4:
+    ashigaru.mdにChecklist運用手順セクションを新設(checklist_update.sh呼出し手順+/clear後再開手順)'
+  details:
+    AC3: karo.md L274にSTEP2.3段取りリストを要約行に追加。L276-302に新セクション「段取りリスト作成（STEP 2.3）」を挿入。義務化条件(10件以上)、リスト作成手順(4ステップ)、複雑度見積もりS/M/L定義、チャンク分割指針(按分/同種まとめ/初版粗く)、置き場(queue/checklists/cmd_XXXX.md)、task
+      YAML記載例を記述。
+    AC4: ashigaru.md L889-924に新セクション「Checklist運用手順」を挿入。(a)checklist:フィールドがある場合の5ステップ処理手順(Read→chunk確認→1件ずつ処理→checklist_update.sh→done報告)と引数説明。(b)/clear後の5ステップ再開手順(パス取得→進捗確認→未完了確認→担当照合→再開)を記述。
+  self_gate_check:
+    lesson_ref: PASS
+    lesson_candidate: PASS
+    status_valid: PASS
+    purpose_fit: PASS
+purpose_validation:
+  cmd_purpose: cmd_1163 段取りリスト(マスターリスト)運用の文書化+スクリプト整備
+  fit: true
+  purpose_gap: ''
+files_modified:
+- instructions/karo.md
+- instructions/ashigaru.md
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: instructions変更時は正本(instructions/*.md)+CLAUDE.md要約行の同時更新を確認せよ
+  detail: karo.mdのDeployment Checklist要約行(STEP列挙行)にSTEP2.3を追加した際、CLAUDE.mdにも同じ要約行が存在する可能性がある。CLAUDE.md側は別cmdで更新するか、正本ビルド(build_instructions.sh)経由で同期する必要がある
+  project: infra
+lessons_useful:
+- id: L085
+  useful: true
+  reason: 命名規則変更の影響範囲全文検索の教訓が、STEP要約行とセクション追加位置の整合性確認に活きた
+- id: L074
+  useful: false
+  reason: bash算術式の教訓。今回はmd文書編集のみでスクリプト変更なし
+- id: L225
+  useful: false
+  reason: MCP entity名義混入の教訓。今回の作業に関連なし
+- id: L063
+  useful: false
+  reason: YAML辞書イテレーションの教訓。今回Pythonコード記述なし
+- id: L079
+  useful: false
+  reason: deploy_task.sh再構築の教訓。今回deploy_task.sh未変更
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''

@@ -1,0 +1,103 @@
+worker_id: kagemaru
+task_id: subtask_494_recon_signal_frontend
+parent_cmd: cmd_494
+timestamp: "2026-03-03T20:29:32+0900"
+status: done
+result:
+  summary: "Signalページのcurrent signal表示は `/api/signals` の `as_of` スナップショット値をそのまま表示し、月次pending投影を持たないため、2026-03-02 pre-openで2月保有表示が発生しうる。Monthly Trade側はpending/月次行ロジックを持つため表示源が分離している。"
+  details: |
+    偵察対象:
+    - frontend: app/page.tsx, app/dashboard/page.tsx, components/portfolio-details.tsx, app/monthly-trade/page.tsx, components/monthly-trade-table.tsx, contexts/signals-context.tsx, lib/types/portfolio.ts
+    - backend: app/api/signals.py, app/api/monthly_trade.py, app/services/monthly_trade_calculator.py
+    - docs: docs/research/cmd_499_march-holding-signal-validation.md
+
+    主要事実:
+    1) Signalページ表示ソース
+      - `api.getSignalsLight()` → `/api/signals` を参照（frontend/lib/api-client.ts:752-753）。
+      - `/api/signals` は最新 `Signal.date` を `as_of_date` に採用し、その日付行のみを `sig_map` 化（backend/app/api/signals.py:87-103）。
+      - standard PFの表示値は `sig.holding_signal or sig.signal`（backend/app/api/signals.py:178-181）。
+
+    2) Current signal UIロジック
+      - current signalの月ラベルはクライアント現在時刻 `new Date()` から算出（frontend/components/portfolio-details.tsx:31-33, 41）。
+      - 表示値は `selectedPortfolio.signal` をそのまま表示（frontend/components/portfolio-details.tsx:64, 101-105, 88-93）。
+      - Dashboard側も `selectedPortfolio.signal` 直表示（frontend/app/dashboard/page.tsx:331-335）。
+      - monthly/non-monthly分岐は存在しない（rebalance trigger判定なし）。
+      - `PortfolioSignal` 型に `rebalance_trigger` / `signal_source_date` などの判定材料が無い（frontend/lib/types/portfolio.ts:97-108）。
+
+    3) Monthly Trade表示ソース
+      - Monthly Tradeページは `/api/monthly-trade/{portfolio_id}` を直接参照（frontend/app/monthly-trade/page.tsx:43, 65）。
+      - backendは `MonthlyReturn` を基準に `position=mr.holding_signal` を採用（backend/app/services/monthly_trade_calculator.py:154-156）。
+      - pendingエントリ生成ロジックあり（backend/app/services/monthly_trade_calculator.py:261-266, 294-335, 379-448）。
+      - UIも `entry.is_pending` バッジと `entry.position` を表示（frontend/components/monthly-trade-table.tsx:267-269, 332-359）。
+
+    4) 2026-03-02 / 2026-03-03 の不変条件
+      - cmd_499資料より、計算結果自体は RULE03 準拠（3/2 holding_signal == 2/27 signal）で不一致0件。
+      - 従ってズレは計算不正ではなく、Signalページが as_ofスナップショット表示のみで「月替わりpending投影」を持たない表示契約差に起因。
+
+findings:
+  - id: F1
+    title: "Signalページは as_of スナップショット直表示で、月次pending投影を実施していない"
+    evidence:
+      - "/api/signals: as_of_date採用と当日行固定取得（backend/app/api/signals.py:99-103）"
+      - "current signal: selectedPortfolio.signal直表示（frontend/components/portfolio-details.tsx:101-105）"
+      - "月ラベル: クライアント現在時刻から生成（frontend/components/portfolio-details.tsx:31-33）"
+    impact: "2026-03-02 pre-openのように as_of が2月末のままの場合、UI上は3月ラベルでも2月保有が表示される。"
+  - id: F2
+    title: "Current signalロジックに monthly/non-monthly 分岐が存在しない"
+    evidence:
+      - "PortfolioSignalに rebalance_trigger が無い（frontend/lib/types/portfolio.ts:97-108）"
+      - "Dashboard/Homeともに selectedPortfolio.signal を共通描画（frontend/app/dashboard/page.tsx:331-335, frontend/components/portfolio-details.tsx:101-105）"
+    impact: "monthly PFだけに必要な表示補正をUI側で判定できず、non-monthlyと同一処理になる。"
+  - id: F3
+    title: "Monthly Tradeは pendingを持つが SignalページAPI契約には同等メタ情報が無い"
+    evidence:
+      - "pending生成ロジック（backend/app/services/monthly_trade_calculator.py:261-266, 294-335, 379-448）"
+      - "Signal APIのportfolio payloadに pending関連情報なし（backend/app/api/signals.py:202-213）"
+    impact: "ページ間で『当月保有の見え方』が一致しない。"
+
+verdict: "AC1-AC3を満たす原因特定完了。ズレはUI/API契約差分であり、計算ロジック不具合ではない。"
+confidence: "high"
+blind_spots:
+  - "本偵察はコード読解中心で、本ターンでは本番API再実行は未実施（cmd_499のDB検証結果を参照）。"
+  - "SignalsContextの自動再取得抑止（frontend/contexts/signals-context.tsx:156-161）が実運用でどの程度影響するかはセッション保持条件に依存。"
+
+purpose_validation:
+  cmd_purpose: "Signalページcurrent signal表示とMonthly Trade表示の不整合条件を特定し、UI/API契約修正案を示す"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report_cmd_494.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+lessons_useful:
+  - id: L016
+    useful: true
+    reason: "Monthly Tradeでのsignal/positionフィールド意味差分を先に固定し、表示不整合の切り分けに使用。"
+  - id: L112
+    useful: true
+    reason: "表示系調査でもフィールド解釈を厳密化する必要がある点を再確認。"
+  - id: L014
+    useful: true
+    reason: "データソース混同を避け、コード上のsource-of-truthを明示して分析。"
+lesson_candidate:
+  found: true
+  title: "Signalページ表示契約に rebalance情報が無いと monthly専用表示補正が不可能"
+  detail: "Current signalをmonthly/non-monthlyで分岐するには、/api/signalsに少なくとも rebalance_trigger と signal_source_date(月判定情報)が必要。UI単体では判定不能。"
+  project: dm-signal
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  summary: "/api/signals に monthly表示用メタ情報を追加するか、Signalページを monthly-trade由来データへ寄せるかの裁定が必要"
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "as_of固定取得とcurrent signal直表示の組合せでズレ条件を特定（signals.py:99-103, portfolio-details.tsx:31-33,101-105）"
+  - id: AC2
+    status: pass
+    evidence: "current signal表示ロジックと分岐不在を行番号で特定（portfolio-details.tsx:64,88-93,101-105; dashboard/page.tsx:331-335）"
+  - id: AC3
+    status: pass
+    evidence: "2026-03-02/03-03不変条件に対し、monthly専用メタ情報追加をUI/API契約修正案として提示（findings F2/F3）"
+  - id: AC4
+    status: pass
+    evidence: "本ファイル queue/reports/kagemaru_report_cmd_494.yaml を提出"

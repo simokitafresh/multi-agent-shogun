@@ -1,0 +1,49 @@
+worker_id: sasuke
+task_id: subtask_531_review
+parent_cmd: cmd_531
+timestamp: "2026-03-04T15:35:57+0900"
+status: done
+ac_version_read: 5
+review_result: PASS
+result:
+  summary: "cmd_531（半蔵+霧丸実装）をAC1-AC8でレビューし全項目PASS。bash -n 5ファイルPASS。git push実行済み。"
+  details: "対象commit e552b6f(半蔵)とe02c8f8(霧丸)をdiff確認。deploy_task.shでMAX_INJECT=5上限、helpful_count優先、withheld記録を確認。lesson_deprecation_scan.shでファイル消滅教訓の自動退役と低有効率(注入>=10, rate<10%)自動退役を確認。cmd_complete_gate.shでGATE CLEAR(通常/緊急override)双方に自動スキャン追加を確認。gate_lesson_health.shで直近30cmd効果率閾値(50 WARN/30 ALERT)とntfy状態遷移通知、dashboard_auto_section.shで効果率閾値表示連携を確認。実行検証: bash -n 5ファイルPASS、LESSON_EFFECT_NTFY_ENABLED=0 gate実行でMETRIC出力OK、dashboard --dry-runで閾値行表示OK。git push origin main実行結果はEverything up-to-date（既にorigin/mainがe552b6f）。"
+ac_results:
+  AC1: "PASS - deploy_task.shにMAX_INJECT=5が定義され、len(related)<MAX_INJECTで注入数上限を適用"
+  AC2: "PASS - scored/all_candidatesともhelpful_count降順を採用（同値時はkeyword score副次）"
+  AC3: "PASS - MAX_INJECT超過分をwithheld配列へ格納しlesson_impact.tsvへwithheld行を記録"
+  AC4: "PASS - lesson_deprecation_scan.shで低有効率(注入>=10, rate<10%)を自動deprecated化"
+  AC5: "PASS - confirmed中のファイル消滅教訓をAUTO-DEPRECATE(file_missing)で自動退役"
+  AC6: "PASS - cmd_complete_gate.shのGATE CLEAR（通常/緊急override）双方でlesson_deprecation_scan.sh --project allを実行"
+  AC7: "PASS - gate_lesson_health.shで直近30cmd効果率を算出し、<50 WARN/<30 ALERTでntfy通知（状態遷移時）"
+  AC8: "PASS - dashboard_auto_section.shがqueue/lesson_effectiveness_status.txtを読取り、知識サイクル健全度へ効果率閾値を表示"
+diff_check: "git show e552b6f/e02c8f8で対象5ファイル変更を確認。task指示の実装範囲内でAC要求と一致。"
+purpose_validation:
+  cmd_purpose: "教訓注入の量→質転換（注入上限+自動退役+効果率閾値監視）"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - scripts/deploy_task.sh
+  - scripts/lesson_deprecation_scan.sh
+  - scripts/cmd_complete_gate.sh
+  - scripts/gates/gate_lesson_health.sh
+  - scripts/dashboard_auto_section.sh
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "set -e環境の算術式落とし穴を意識し、レビュー観点として危険パターン不在を確認した"
+  - id: L063
+    useful: true
+    reason: "lessons.yaml構造の読み違いがないか（lessonsキー配下）を確認する観点として有効だった"
+  - id: L007
+    useful: true
+    reason: "新規/変更スクリプトの追跡漏れをreview時に確認する教訓として有効だった"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

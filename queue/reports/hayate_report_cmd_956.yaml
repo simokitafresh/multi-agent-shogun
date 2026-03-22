@@ -1,0 +1,69 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_956_B
+parent_cmd: cmd_956
+timestamp: "2026-03-15T18:09:54"
+status: done
+ac_version_read: 2
+result:
+  summary: "db_admin.py と folders.py の N+1 を GROUP BY 集約へ置換し、portfolio/folder ごとの count・latest を一括取得へ変更した。戻り値 shape は維持。"
+  details: |
+    実装:
+    1. `backend/app/api/db_admin.py`
+       - `Portfolio` 一覧取得後に `Signal.portfolio_id` 単位の `count/max(date)` を GROUP BY で一括取得
+       - `portfolio_count` は追加 `COUNT(*)` をやめて `len(portfolios)` で算出
+       - 既存レスポンスの `signal_count` / `latest_signal` は集約結果から復元
+    2. `backend/app/api/folders.py`
+       - `_get_portfolio_count_map()` を追加
+       - `list_folders()` / `get_folder_tree()` の folder ごとの `.count()` を廃止
+       - `Portfolio.folder_id` の GROUP BY 結果を map 化し、既存 `portfolio_count` へ差し込む
+purpose_validation:
+  cmd_purpose: "db_admin.pyとfolders.pyのN+1クエリをGROUP BY化し、既存の戻り値を変えずにクエリ数を削減する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/backend/app/api/db_admin.py
+  - /mnt/c/Python_app/DM-signal/backend/app/api/folders.py
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_956.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - L063
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+ac_results:
+  - id: AC2
+    status: pass
+    evidence: "`get_db_status()` の portfolio loop 内 `Signal.count()` / `max(date)` 個別クエリを、`Signal.portfolio_id` GROUP BY 1回へ置換。`Portfolio.count()` も `len(portfolios)` へ変更し、portfolio詳細部は 2 query 構成になった。"
+  - id: AC3
+    status: pass
+    evidence: "`_get_portfolio_count_map()` で `PortfolioDB.folder_id` GROUP BY 集約を導入し、`list_folders()` / `get_folder_tree()` の folderごと `.count()` を撤去。各APIは `folders + counts` の 2 query で済む。"
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal/backend && /mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe -m compileall app/api/db_admin.py app/api/folders.py"
+    result: pass
+    notes: "両ファイルの構文コンパイル成功"
+  - command: "cd /mnt/c/Python_app/DM-signal/backend && PYTHONPATH=. /mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe - <<'PY' ... import app.api.db_admin / app.api.folders ... PY"
+    result: pass
+    notes: "imports_ok"
+  - command: "cd /mnt/c/Python_app/DM-signal/backend && PYTHONPATH=. /mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe - <<'PY' ... sqlite in-memory smoke ... PY"
+    result: pass
+    notes: "smoke_ok。2 portfolio/2 folder の fixture で signal_count/latest_signal と folder tree の portfolio_count を確認"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

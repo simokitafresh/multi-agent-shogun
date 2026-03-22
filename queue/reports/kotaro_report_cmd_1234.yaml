@@ -1,0 +1,77 @@
+ac_version_read: 0102b40f
+binary_checks:
+  AC1:
+  - check: 本番DBに接続できたか？
+    result: 'yes'
+  - check: 全PFをtype別に分類したか？
+    result: 'yes'
+  - check: 総数を報告したか？
+    result: 'yes'
+  AC2:
+  - check: 全FoF PFのcomponent_portfoliosを抽出したか？
+    result: 'yes'
+  - check: 一覧表(PF名/type/component数/component名リスト)を作成したか？
+    result: 'yes'
+  AC3:
+  - check: Nested FoF(FoF→FoF)の存在を判定したか？
+    result: 'yes'
+  - check: ネスト構造図を報告したか？
+    result: 'yes'
+  AC4:
+  - check: Phase 2テスト候補PFをリストアップしたか？
+    result: 'yes'
+  - check: Phase 3テスト候補PFをリストアップしたか？
+    result: 'yes'
+decision_candidate:
+  found: false
+files_modified: []
+hook_failures:
+  count: 0
+  details: ''
+lesson_candidate:
+  detail: component_portfoliosはportfolios.idのUUIDリストで格納。名前解決にはportfoliosテーブルとのJOINが必須。また、旧四神(10体)はtype=fof、シン四神(12体)はtype=standardという重要な構造差がv1→v2設計にある。これによりシン忍法v2はSimple
+    FoF、旧忍法はNested FoFとなる。
+  found: true
+  no_lesson_reason: ''
+  project: dm-signal
+  title: FoF component_portfoliosはUUID格納。旧四神=fof型、シン四神=standard型の構造差
+lessons_useful:
+- reason: DB偵察タスクでbashスクリプト記述なし。該当なし
+  useful: false
+- reason: MCP entity操作なし。該当なし
+  useful: false
+- reason: 既存スクリプト確認は不要だった。新規作成なし
+  useful: false
+- reason: 旧GSパイプライン関連の作業なし
+  useful: false
+- reason: TypeScript/git diff関連の作業なし
+  useful: false
+parent_cmd: cmd_1234
+purpose_validation:
+  cmd_purpose: 本番DBの全FoF/Nested FoF構成を偵察し、Phase2/3パリティ検証の計画基礎データ作成
+  fit: true
+  purpose_gap: none
+result:
+  details: "AC1: 総数122(standard63+fof59、全active、inactive=0)\n\nAC2: FoF構成一覧(59体、全てpipeline_config設定済み)\n\
+    \  ■ 殿の個人FoF(8体):\n    Ave-X(6comp: DM2,DM3,DM4,DM5,DM6,DM7+)\n    裏Ave-X(4comp:\
+    \ DM2,DM4,DM5,DM6)\n    bam-2(7comp: DM2系全%), bam-6(7comp: DM6系全%)\n    MIX1-4(各8comp:\
+    \ DM2-7++bam-2+bam-6, 構成PF同一/ウェイト差異)\n  ■ 劇薬(5体):\n    劇薬DMオリジナル(3comp: DM2-test,DM6,DM7+)\n\
+    \    劇薬DMスムーズ(4comp: +DM-safe-2)\n    劇薬bam(3comp: bam-2,bam-6,DM7+)\n    劇薬bam_guard(4comp:\
+    \ +DM-safe-2)\n    劇薬bam_solid(2comp: bam-2,bam-6)\n  ■ 四神(10体): 常勝/激攻/鉄壁-朱雀/玄武/白虎/青龍。comp=L0-*\
+    \ standard(2-5体)\n  ■ 旧忍法(15体): 加速/四つ目/変わり身/抜き身/追い風×常勝/激攻/鉄壁。comp=四神(FoF)(2-4体)\n\
+    \  ■ シン忍法v2(21体): シン分身/加速D/加速R/四つ目/変わり身/抜き身/追い風×常勝/激攻/鉄壁。comp=シン四神(standard)(2-4体)\n\
+    \nAC3: Nested FoF=22体、最大深度2、L3なし\n  パターン1: MIX1-4→bam-2/bam-6→DM standard(4体)\n\
+    \  パターン2: 劇薬bam系→bam-2/bam-6→DM standard(3体)\n  パターン3: 旧忍法→四神(FoF)→L0 standard(15体)\n\
+    \  重要: シン四神はtype=standard→シン忍法v2はNested FoFではなくSimple FoF\n\nAC4: テスト候補選定\n  Phase2(Simple\
+    \ FoF, 37体中7体推薦):\n    常勝-青龍(最小2comp), 常勝-白虎(最大5comp), Ave-X(個人FoF),\n    bam-2(7comp),\
+    \ シン分身-鉄壁(v2最小), シン加速R-鉄壁(v2 4comp), 劇薬DMオリジナル\n  Phase3(Nested FoF, 22体中5体推薦):\n\
+    \    劇薬bam_solid(最小nested), MIX1(混合), 加速-鉄壁(旧忍法最小),\n    四つ目-常勝(全comp=FoF), 変わり身-鉄壁(鉄壁-朱雀含む)"
+  summary: 本番DB偵察完了。PF総数122(standard63+fof59)。FoF59体中、Simple FoF37体、Nested FoF22体。最大ネスト深度2(L3なし)。シン四神はtype=standard(旧四神はfof)→シン忍法v2はSimple
+    FoF。Phase2候補7体、Phase3候補5体を選定。
+skill_candidate:
+  found: false
+status: done
+task_id: cmd_1234
+timestamp: '2026-03-22T00:46:49'
+verdict: PASS
+worker_id: kotaro

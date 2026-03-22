@@ -1,0 +1,58 @@
+worker_id: sasuke
+task_id: cmd_731_impl
+parent_cmd: cmd_731
+timestamp: "2026-03-10T13:36:52+0900"
+status: done
+ac_version_read: 3
+result:
+  summary: "deploy_task.sh の初回配備ntfyで、task.title 欠落時に parent_cmd から cmd title を補完するよう修正した。"
+  details: |
+    原因:
+    - notify_initial_deploy_ntfy_once() が task YAML の title だけを参照していた。
+    - 現行の忍者 task YAML には title フィールドが無い配備があり、(untitled) に落ちていた。
+
+    修正:
+    - scripts/deploy_task.sh に resolve_dispatch_title() を追加。
+    - まず task.title を参照し、無ければ一次データとして queue/shogun_to_karo.yaml、続いて queue/archive/shogun_to_karo_done.yaml から parent_cmd 一致の title を抽出。
+    - 改行・余分な空白・外側引用符を正規化し、80文字超は切り詰める。
+
+    実データ確認:
+    - cmd_728 で「偵察 — DM-signal UIゼロベース再設計調査（現行全情報・全機能の最適実現方式）」を取得できることを確認。
+    - 90文字の疑似 title を与えると 77文字+... に切り詰められることを確認。
+purpose_validation:
+  cmd_purpose: "家老がcmd配備時に殿へ送るntfy通知で、(untitled) ではなく正しいcmd titleを表示する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
+test_results:
+  - command: "bash -n scripts/deploy_task.sh"
+    result: pass
+    evidence: "構文エラーなし"
+  - command: "bash heredocで resolve_dispatch_title cmd_728 queue/tasks/sasuke.yaml を実行"
+    result: pass
+    evidence: "偵察 — DM-signal UIゼロベース再設計調査（現行全情報・全機能の最適実現方式）"
+  - command: "bash heredocで 90文字 title を与えて resolve_dispatch_title を実行"
+    result: pass
+    evidence: "77文字+... へ切り詰めを確認"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L034
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "cmd title を task.title 欠落時でも一次データから補完する実装を追加。"
+  - id: AC2
+    status: pass
+    evidence: "queue/shogun_to_karo.yaml / queue/archive/shogun_to_karo_done.yaml を参照。"
+  - id: AC3
+    status: pass
+    evidence: "80文字超で切り詰める処理を resolve_dispatch_title() に追加。"

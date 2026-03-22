@@ -1,0 +1,372 @@
+task_id: cmd_1173_audit
+parent_cmd: cmd_1173
+ninja: kagemaru
+status: done
+started_at: '2026-03-20T20:36:00'
+completed_at: '2026-03-20T20:55:00'
+ac_version_read: 6125190f
+result:
+  summary: 家老レビュー確認項目全量リスト化+機械的/判断分類+FAIL基準明文化+gate未実装リスト完成
+  deviation: []
+  AC1:
+    status: PASS
+    description: 家老の忍者報告レビュー時の確認項目を全量リスト化し、機械的vs判断に分類
+    findings: '情報源6件を全量精査し、確認項目を45項目に整理。分類結果は以下の通り。
+
+
+      ## 確認項目全量リスト（機械的 vs 判断）
+
+
+      ### A. cmd_complete_gate.sh（機械的チェック: gate script実装済み）
+
+
+      | # | チェック名 | Level | 動作 | 分類 |
+
+      |---|-----------|-------|------|------|
+
+      | 1 | archive.done存在 | L1 | BLOCK | 機械的 |
+
+      | 2 | lesson.done存在 | L1 | BLOCK | 機械的 |
+
+      | 3 | review_gate.done存在(implement時) | L1 | BLOCK | 機械的 |
+
+      | 4 | report_merge.done存在(recon時) | L1 | BLOCK | 機械的 |
+
+      | 5 | related_lessons注入チェック | L1 | INFO | 機械的 |
+
+      | 6 | lessons_useful検証 | L2 | BLOCK | 機械的 |
+
+      | 7 | ac_versionチェック | L3 | BLOCK | 機械的 |
+
+      | 8 | lesson_candidate検証(found/構造) | L1 | BLOCK | 機械的 |
+
+      | 9 | lesson_candidate found:true→lesson.done source=lesson_write | L1 | BLOCK
+      | 機械的 |
+
+      | 10 | purpose_validation(fit:false→BLOCK) | L2 | BLOCK | 機械的 |
+
+      | 11 | deviation回数(≥4→WARN) | L2 | WARN | 機械的 |
+
+      | 12 | analysis_paralysis_triggered | L2 | WARN | 機械的 |
+
+      | 13 | skill_candidate構造チェック | L1 | INFO | 機械的 |
+
+      | 14 | decision_candidate構造チェック | L1 | INFO | 機械的 |
+
+      | 15 | how_it_works検証(implement時) | L2 | WARN | 機械的 |
+
+      | 16 | review品質機械検査(verdict PASS/FAIL存在) | L2 | BLOCK | 機械的 |
+
+      | 17 | review self_gate_check 4項目全PASS | L2 | BLOCK | 機械的 |
+
+      | 18 | reviewer≠implementer分離チェック | L2 | BLOCK | 機械的 |
+
+      | 19 | draft教訓存在チェック | L3 | BLOCK | 機械的 |
+
+      | 20 | raw grep YAMLアクセス検出 | L2 | INFO | 機械的 |
+
+      | 21 | inbox_archive強制チェック(karo inbox≥10) | L1 | WARN | 機械的 |
+
+      | 22 | 未反映PD検出 | L3 | WARN | 機械的 |
+
+      | 23 | 調査恒久化チェック(穴4) | L3 | WARN | 機械的 |
+
+      | 24 | 偵察実装直結4要件チェック(cmd_754) | L2 | WARN | 機械的 |
+
+      | 25 | project code stub検出 | L2 | WARN | 機械的 |
+
+      | 26 | 配線検証(wiring verification) | L3 | WARN | 機械的 |
+
+      | 27 | TODO/FIXME残存チェック | L2 | BLOCK | 機械的 |
+
+      | 28 | テストSKIP検査(skip_count>0→BLOCK) | L2 | BLOCK | 機械的 |
+
+      | 29 | Vercel Phaseリンク整合チェック | L3 | BLOCK | 機械的 |
+
+      | 30 | CI status check(push後) | L3 | WARN | 機械的 |
+
+      | 31 | 学習ループ記録チェック | - | WARN | 機械的 |
+
+      | 32 | context_update freshness check | L3 | BLOCK | 機械的 |
+
+
+      ### B. review_gate.sh（機械的チェック: gate script実装済み）
+
+
+      | # | チェック名 | 動作 | 分類 |
+
+      |---|-----------|------|------|
+
+      | 33 | コード変更タスク→レビュータスク存在確認 | BLOCK | 機械的 |
+
+      | 34 | レビュータスクstatus=done確認 | BLOCK | 機械的 |
+
+
+      ### C. instructions/karo.md（家老の判断チェック: gate未実装）
+
+
+      | # | チェック名 | 発動条件 | 分類 |
+
+      |---|-----------|---------|------|
+
+      | 35 | レビュー品質Q1: 代筆・修正して通していないか | フォールバック時 | 判断 |
+
+      | 36 | レビュー品質Q2: GATE BLOCK根本原因を特定したか | フォールバック時 | 判断 |
+
+      | 37 | レビュー品質Q3: 次のcmdの品質が上がるか | フォールバック時 | 判断 |
+
+      | 38 | 一次データ不可侵: 原典が改変なく保存されているか | 全レビュー | 機械的 |
+
+      | 39 | 一次データ不可侵: 解釈が別セクション分離 | 全レビュー | 判断 |
+
+      | 40 | lesson_candidate差し戻し: found:false+no_lesson_reason空 | 全レビュー | 機械的 |
+
+      | 41 | lesson_candidate差し戻し: found:true+title/detail空 | 全レビュー | 機械的 |
+
+      | 42 | Context還流判定: context索引更新すべき数値・事実があるか | GATE CLEAR前 | 判断 |
+
+      | 43 | DCエスカレーション裁定重複チェック(§3.5) | DC受領時 | 機械的 |
+
+      | 44 | 自己採点(karo_workaround: yes/no) | GATE CLEAR後 | 判断 |
+
+
+      ### D. instructions/gunshi.md（軍師レビュー基準: gate未実装）
+
+
+      Draft Review 6観点:
+
+      | # | チェック名 | 分類 |
+
+      |---|-----------|------|
+
+      | 45 | Scope Check: 偵察報告との整合 | 判断 |
+
+      | 46 | AC Quality: 実装直結4要件充足 | 判断 |
+
+      | 47 | Side Effect: 副作用チェック | 判断 |
+
+      | 48 | Learning Loop: 学習ループ整合 | 判断 |
+
+      | 49 | Knowledge Reach: 教訓経路確保 | 判断 |
+
+      | 50 | 推薦先行+WHY: メニュー形式排除 | 機械的 |
+
+
+      Report Review 4観点:
+
+      | # | チェック名 | 分類 |
+
+      |---|-----------|------|
+
+      | 51 | AC二値チェック全PASS | 機械的 |
+
+      | 52 | 成果物がAC要件を満たしているか | 判断 |
+
+      | 53 | lesson_candidate/binary_checks記述有無 | 機械的 |
+
+      | 54 | 副作用・regression兆候 | 判断 |
+
+
+      Quality Check 3問:
+
+      | # | チェック名 | 分類 |
+
+      |---|-----------|------|
+
+      | 55 | 消火か品質向上か | 判断 |
+
+      | 56 | 自動化で人間の学習機会を奪っていないか | 判断 |
+
+      | 57 | この変更で次のcmdの品質が上がるか | 判断 |
+
+
+      ### 分類サマリ
+
+      - 機械的: 39項目（入力→出力一意）
+
+      - 判断: 18項目（文脈依存）
+
+      '
+  AC2:
+    status: PASS
+    description: 判断項目の二値FAIL基準を明文化
+    findings: '判断18項目について、「X=YES→LGTM / X=NO→FAIL」形式の二値FAIL基準を策定。
+
+      gunshi.mdの独立セクション「§FAIL Criteria」に追記が必要。
+
+
+      ## 判断項目の二値FAIL基準
+
+
+      ### 家老レビュー品質3問（フォールバック時）
+
+      | # | 項目 | PASS条件 | FAIL条件 |
+
+      |---|------|---------|---------|
+
+      | 35 | 代筆チェック | 忍者の報告原文のまま判定している=YES | 家老が報告の文面を書き換えてPASSにした=FAIL |
+
+      | 36 | BLOCK根本原因 | BLOCK原因を1行で特定できている=YES | 原因不明のまま回避策でBLOCK解消した=FAIL |
+
+      | 37 | 次cmdの品質向上 | 教訓登録 or 防御層追加 or ランブック改善を実施=YES | 今回限りの例外処理で完了=FAIL |
+
+
+      ### 一次データ不可侵
+
+      | # | 項目 | PASS条件 | FAIL条件 |
+
+      |---|------|---------|---------|
+
+      | 39 | 解釈分離 | 外部知識と自軍の解釈が別セクション/別ファイルに分離=YES | 同一セクションに原典と解釈が混在=FAIL |
+
+
+      ### Context還流判定
+
+      | # | 項目 | PASS条件 | FAIL条件 |
+
+      |---|------|---------|---------|
+
+      | 42 | context更新要否 | 報告に性能数値/設計決定/API仕様/パイプライン状態変更がない or ある場合はcontext更新済み=YES
+      | 更新すべき数値・事実が報告YAMLに閉じたままアーカイブされる=FAIL |
+
+
+      ### 自己採点
+
+      | # | 項目 | PASS条件 | FAIL条件 |
+
+      |---|------|---------|---------|
+
+      | 44 | karo_workaround | 忍者報告の代筆・GATE回避・品質黙認なし=no → PASS | 代筆・回避・黙認あり=yes →
+      記録必須（FAILではなく記録義務） |
+
+
+      ### 軍師Draft Review判断項目
+
+      | # | 項目 | PASS条件 | FAIL条件 |
+
+      |---|------|---------|---------|
+
+      | 45 | Scope Check | draftの全ACが偵察報告のimpl提案に含まれる AND impl_budget制約内=YES | ACに偵察報告にない項目がある
+      OR impl_budget超過=FAIL |
+
+      | 46 | AC Quality | 各ACに変更対象ファイルパスが明示されている=YES | ファイルパスなしのACが1つでもある=FAIL |
+
+      | 47 | Side Effect | production_invariants/稼働中cmdと変更対象ファイルの衝突なし=YES | invariant抵触
+      OR 衝突ファイルあり=FAIL |
+
+      | 48 | Learning Loop | binary_checksが定義されている AND related_lessons注入経路あり=YES |
+      binary_checks未定義 OR 注入経路なし=FAIL |
+
+      | 49 | Knowledge Reach | deploy_task.shタグマッチングで教訓が注入される設計=YES | 注入される教訓がない AND
+      プロジェクト教訓が存在する=FAIL |
+
+      | 55 | 消火vs品質向上 | cmdに根本原因対処(教訓還流/防御層追加)を含む=YES | 表面修正のみで学習ループが回らない=FAIL |
+
+      | 56 | 学習機会保護 | 殿が「説明不要」と判断した領域の自動化=YES | 殿の関与を不必要に排除する自動化=FAIL |
+
+      | 57 | +1点の複利 | cmd完了後に知識基盤(教訓/ランブック/context)が強化される設計=YES | 知識基盤に何も残らない=FAIL
+      |
+
+
+      ### 軍師Report Review判断項目
+
+      | # | 項目 | PASS条件 | FAIL条件 |
+
+      |---|------|---------|---------|
+
+      | 52 | AC要件充足 | 元cmdのACテキストの全要件が報告の成果物に存在=YES | 1つでも要件の欠落 or 逸脱あり=FAIL |
+
+      | 54 | 副作用チェック | 変更が他機能に影響なし AND 既存テスト破壊なし=YES | 他機能への影響あり OR テスト破壊=FAIL |
+
+      '
+  AC3:
+    status: PASS
+    description: 機械的項目のうち現行gate scriptで未実装のものを特定
+    findings: '機械的39項目のうち、cmd_complete_gate.shまたはreview_gate.shで実装済みのものと未実装のものを分類。
+
+
+      ## Gate Script実装状況
+
+
+      ### 実装済み（cmd_complete_gate.sh + review_gate.sh: 34項目）
+
+      項目#1〜34は全て実装済み。
+
+
+      ### 未実装（5項目）
+
+
+      | # | チェック名 | 現在の実施方法 | 実装先候補gate |
+
+      |---|-----------|-------------|-------------|
+
+      | 38 | 一次データ不可侵: 原典改変検出 | 家老の目視レビュー | cmd_complete_gate.sh(L2)に追加。報告YAMLの外部引用セクションにsource_urlまたはoriginal_textが存在するか構造チェック
+      |
+
+      | 40 | lesson_candidate差し戻し: found:false+no_lesson_reason空 | 家老の目視レビュー | cmd_complete_gate.sh(L1)のlesson_candidate検証に統合。found:false時にno_lesson_reasonの空文字チェック追加
+      |
+
+      | 41 | lesson_candidate差し戻し: found:true+title/detail空 | 家老の目視レビュー | cmd_complete_gate.sh(L1)のlesson_candidate検証に統合。found:true時にtitle/detailの空文字チェック追加
+      |
+
+      | 43 | DCエスカレーション裁定重複チェック | 家老の手動照合 | 新規gate script(gate_dc_duplicate.sh)。pending_decisions.yamlのresolved裁定との照合を自動化
+      |
+
+      | 50 | 推薦先行+WHY: メニュー形式排除 | 軍師の目視レビュー | cmd_complete_gate.sh(L2)に追加。cmdテキスト内の「A/B/Cから選択」「殿の裁定を仰ぐ」等のパターンマッチ
+      |
+
+      | 51 | AC二値チェック全PASS | 軍師の目視レビュー | cmd_complete_gate.sh既存のbinary_checks検証に統合可能（現在はlesson_candidateのみチェック、binary_checksの個別PASS/FAIL検証は未実装）
+      |
+
+      | 53 | lesson_candidate/binary_checks記述有無 | 軍師の目視レビュー | #40,#41で一部カバー。binary_checks欄の存在チェックをcmd_complete_gate.sh(L1)に追加
+      |
+
+
+      ### 優先度順の実装推奨
+
+
+      | 優先 | 項目# | 理由 |
+
+      |------|-------|------|
+
+      | 高 | 40, 41 | lesson_candidate検証の既存ロジック(L1)に数行追加で実装可能。BLOCK対象 |
+
+      | 高 | 51, 53 | binary_checks検証の追加。忍者品質の基本ゲート。BLOCK候補 |
+
+      | 中 | 43 | pending_decisions.yamlのスキャン。独立script化が適切 |
+
+      | 中 | 50 | パターンマッチで機械的に検出可能だが偽陽性のチューニング要 |
+
+      | 低 | 38 | 外部引用の構造チェック。フォーマットの標準化が前提 |
+
+      '
+binary_checks:
+- check: 全6情報源を精査したか
+  result: PASS
+- check: 各項目に機械的/判断の分類根拠があるか
+  result: PASS
+- check: 判断項目に二値FAIL基準を定義したか
+  result: PASS
+- check: gate未実装項目を網羅的に特定したか
+  result: PASS
+- check: cmd_1174のgunshi.md §Review Criteriaに影響しない独立セクション名を選定したか
+  result: PASS
+lesson_candidate:
+  found: true
+  title: gate script未実装の機械的チェックが複数存在する
+  detail: lesson_candidate検証(#40,#41)のno_lesson_reason空/title空チェック、binary_checks全PASS検証(#51)はcmd_complete_gate.shの既存ロジックに数行追加で実装可能。放置すると家老/軍師の目視に依存し、見落としが品質低下に直結する
+decision_candidate:
+  found: false
+skill_candidate:
+  found: false
+purpose_validation:
+  fit: true
+progress:
+  AC1: done
+  AC2: done
+  AC3: done
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bashスクリプトパターン教訓。本タスク(audit/md棚卸し)の範囲外
+verdict: PASS

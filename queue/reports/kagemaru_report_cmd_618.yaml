@@ -1,0 +1,53 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: kagemaru
+task_id: subtask_618_impl_d
+parent_cmd: cmd_618
+timestamp: "2026-03-06T22:20:52+0900"
+status: done
+ac_version_read: 1
+verdict: PASS
+result:
+  summary: "Dashboard, Compare Summary, Deterioration Monitorの3ページにFAQ/Docsへのヘルプリンク(HelpLinkコンポーネント)を追加。小さな?アイコンをクリックするとFAQとDocsへのリンクが表示されるドロップダウンUI。"
+  details: |
+    ## 実装内容
+    1. HelpLinkコンポーネント新規作成 (frontend/components/help-link.tsx)
+       - lucide-react HelpCircleアイコン(16x16)トリガーのミニドロップダウン
+       - FAQ(MessageCircleQuestion) + Docs(BookOpen) の2リンク
+       - 外部クリックで自動閉じ、ダークモード対応(テーマトークン使用)
+    2. Dashboard (frontend/app/dashboard/page.tsx) - h1とTimingToggle間に配置
+    3. Compare Summary (frontend/app/compare-summary/page.tsx) - h1とTimingToggle間に配置
+    4. Deterioration Monitor (frontend/app/deterioration/page.tsx) - loading/error/mainの3ヘッダー全てに配置
+ac_checklist:
+  - id: AC4
+    status: pass
+    evidence: "3ページ全てにHelpLink配置済み。tsc --noEmitで新規エラー0件。"
+purpose_validation:
+  cmd_purpose: "Dashboard/Compare Summary/Deterioration MonitorにFAQ/Docsへのヘルプリンク追加"
+  fit: true
+  purpose_gap: ""
+verification:
+  - command: "npx tsc --noEmit"
+    result: pass
+    notes: "新規エラー0件。既存4件(page-masking.test.tsx)は無関係。"
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/components/help-link.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/dashboard/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/compare-summary/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/deterioration/page.tsx
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - L074
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: "PASS"
+  lesson_candidate: "PASS"
+  status_valid: "PASS"
+  purpose_fit: "PASS"

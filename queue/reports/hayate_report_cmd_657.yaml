@@ -1,0 +1,75 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_657_review
+parent_cmd: cmd_657
+timestamp: "2026-03-08T18:06:22+0900"
+status: done
+ac_version_read: 3
+verdict: FAIL
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`lib/agent_state.sh:60-165` で `agent_is_busy_check` / `get_agent_state_label` / `get_pane_state_label` を追加しつつ、`check_agent_busy` は 0=idle / 1=busy / 2=unknown の既存契約を維持している。`bats tests/unit/ --timing` では `test_agent_state.bats` を含む 243/243 PASS。"
+  - id: AC2
+    status: fail
+    evidence: "`bats tests/e2e/ --timing` は FAIL。`tests/e2e/e2e_idle_flag_recovery.bats:69-140` の idle flag 回復2件が落ち、さらに E2E-011-A/B/C は `# skip slim_yaml.py not found` で3 SKIP。SKIP=FAIL ルールにより受け入れ条件未達。"
+  - id: AC3
+    status: fail
+    evidence: "AC2 未達のため `git push` は実行していない。"
+result:
+  summary: "`cmd_657` review は fail-close。`check_agent_busy` 契約自体は維持されているが、`SHOGUN_STATE_DIR` 導入が watcher 側に偏っており idle flag 回復系 E2E を破壊したため、push は差し止めた。"
+  details: |
+    Blocking findings:
+    1. `scripts/inbox_watcher.sh:33-49,296-333` と `lib/agent_state.sh:13-20,136-159` は idle flag / state file の保存先を `SHOGUN_STATE_DIR` に切り替えたが、実運用の producer/consumer がまだ `/tmp/shogun_idle_*` を参照している。
+       具体的には `scripts/hooks/stop_check_inbox.sh:32-38,95-108`、`scripts/ninja_monitor.sh:200-203,271`、`scripts/shutsujin_departure.sh:118-121`、`tests/e2e/mock_behaviors/common.sh:77-88` が旧 `/tmp` 固定のまま。
+       その結果、state dir を切り替えた環境では watcher が見る flag と hook/monitor/mock が更新する flag が別物になり、idle/busy 協調が壊れる。
+    2. 既存の E2E 契約である `IDLE_FLAG_DIR` / `FIRST_UNREAD_SEEN` が今回の変更セットから消えている。`tests/e2e/e2e_idle_flag_recovery.bats:73-95,110-137` はその契約を前提にしているが、現行 `scripts/inbox_watcher.sh` には両変数の参照も `"forcing idle flag"` ログも存在しない。
+       実際に E2E-010-A, E2E-010-B が失敗し、回帰が再現した。
+
+    結論:
+    - AC1 は通過
+    - AC2 は FAIL（E2E 2 failure + 3 skip）
+    - AC3 は FAIL（push 未実施）
+    - 修正なしでの push は不可
+purpose_validation:
+  cmd_purpose: "cmd_657のコード変更をレビューし、品質確認後にpushせよ。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/lib/agent_state.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/inbox_watcher.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/helpers/setup.bash
+  - /mnt/c/tools/multi-agent-shogun/tests/unit/test_agent_state.bats
+verification:
+  - command: "git show --unified=120 --no-ext-diff 4027bfd -- lib/agent_state.sh scripts/inbox_watcher.sh tests/helpers/setup.bash tests/unit/test_agent_state.bats"
+    result: pass
+    notes: "対象差分を精読し、`check_agent_busy` 契約維持と `SHOGUN_STATE_DIR` 導入箇所を確認。"
+  - command: "rg -n \"/tmp/shogun_idle_|SHOGUN_STATE_DIR|IDLE_FLAG_DIR|FIRST_UNREAD_SEEN\" -S scripts lib tests"
+    result: fail
+    notes: "watcher/lib は `SHOGUN_STATE_DIR` へ移行済みだが、stop hook・monitor・bootstrap・mock は旧 `/tmp` 固定。`IDLE_FLAG_DIR` / `FIRST_UNREAD_SEEN` の実装痕跡も現行コードから消失。"
+  - command: "bats tests/unit/ --timing"
+    result: pass
+    notes: "243/243 PASS, 0 FAIL, 0 SKIP。"
+  - command: "bats tests/e2e/ --timing"
+    result: fail
+    notes: "18 tests 中 2 FAIL（E2E-010-A/B）, 3 SKIP（E2E-011-A/B/C: `slim_yaml.py not found`）。SKIP=FAIL ルールにより未達。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "状態ファイルパス切替は producer/consumer/test 契約を一括で移行せよ"
+  detail: "IF idle flag や watcher state の保存先を `/tmp` から可変ディレクトリへ変更する時 THEN stop hook・monitor・bootstrap・mock・E2E env 契約（`IDLE_FLAG_DIR` 等）まで同一コミットで揃えよ because watcher だけ先に移行すると state が二重化し、idle/busy 協調破綻が E2E で露出するため。"
+  project: infra
+lessons_useful:
+  - L105
+  - L172
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

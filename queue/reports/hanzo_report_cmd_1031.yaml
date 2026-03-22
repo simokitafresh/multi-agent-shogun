@@ -1,0 +1,70 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hanzo
+task_id: cmd_1031_re_review
+parent_cmd: cmd_1031
+timestamp: "2026-03-17T19:22:45"
+status: done
+ac_version_read: 2
+verdict: PASS
+review_result:
+  status: PASS
+  verdict: PASS
+  findings: []
+ac_results:
+  AC1:
+    status: PASS
+    detail: |
+      commit整合性チェック全項目PASS:
+      1. HEAD(90cc63ce) = impl_a "Add grid dedup to GS runners + parity harness"
+         収録: cmd_1031_before_baseline.json, cmd_1031_benchmark_after_ppe.json,
+         cmd_1031_grid_dedup_parity.py, run_077_{kasoku,kawarimi,oikaze}.py (6ファイル)
+      2. HEAD~1(db1f29f9) = impl_b "Add PPE to GS runners"
+         収録: run_077_{kasoku,kawarimi,nukimi,oikaze,yotsume}.py (5ファイル)
+      3. 両commit合計=cmd_1031全成果物(8ファイル)。スコープ外混入なし(git diff --name-status確認)
+      4. after_results.json: comparison.zero_diff=true, mismatches=[]
+  AC2:
+    status: PASS
+    detail: |
+      AC1 PASSのためgit push実行。
+      結果: 02dd6b61..90cc63ce main -> main (成功)
+result:
+  summary: "PASS。kagemaru commit修正(90cc63ce)後、impl_a+impl_bでcmd_1031全成果物が揃い、zero_diff=true確認。git push成功。"
+  details: |
+    1. git log --oneline -5 でHEAD=90cc63ce(impl_a), HEAD~1=db1f29f9(impl_b)を確認
+    2. git show --name-only HEAD/HEAD~1 で各commit収録ファイルを検証
+    3. git diff --name-status origin/main..HEAD で8ファイル(A3+M5)、スコープ外なし
+    4. after_results.json の comparison.zero_diff=true を python3で確認
+    5. git push → 02dd6b61..90cc63ce main -> main 成功
+purpose_validation:
+  cmd_purpose: "cmd_1031のcommit整合性を再確認し、PASSならpushする"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report_cmd_1031.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L192
+    useful: true
+    reason: "git diff --name-statusで全差分を先に検証する手順がcommit整合性チェックの核心として有効"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

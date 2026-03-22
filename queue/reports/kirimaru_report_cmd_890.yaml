@@ -1,0 +1,78 @@
+worker_id: kirimaru
+task_id: cmd_890_A
+parent_cmd: cmd_890
+timestamp: 2026-03-13T09:39:48+0900
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+- id: AC1
+  status: pass
+  evidence: '`frontend/components/help-link.tsx` の `next/link` を削除し、FAQ/Docs の両導線を
+    `button + window.location.href` に変更した。遷移先文字列は `faqPath` / `docsPath` をそのまま使用している。'
+- id: AC2
+  status: pass
+  evidence: '`HelpLink` 専用テストは存在しなかったため修正不要。代わりに `npm test -- --runInBand` を実行し、40
+    suite / 245 tests が全件 PASS、SKIP=0 を確認した。'
+- id: AC3
+  status: pass
+  evidence: '`npm run build` が成功し、static pages 23/23 を生成した。FAQ/Docs への遷移先は `navigateTo(faqPath|docsPath)`
+    実装で維持されている。'
+result:
+  summary: help-link の SPA 遷移を廃止し、sidebar/dropdown と同じ hard navigation に統一した。`next/link`
+    を除去し、FAQ/Docs はフルリロード遷移へ変更。build と Jest 全体も通過。
+  details: "実施内容:\n1. `frontend/components/help-link.tsx`\n   - `next/link` import\
+    \ を削除。\n   - `navigateTo()` を追加し、クリック時に `close()` 後 `window.location.href = href`\
+    \ を実行。\n   - 2つの `<Link>` を `type=\"button\"` の要素へ置換。\n   - FAQ/Docs の表示文言と渡し先\
+    \ path は維持。\n\n2. 検証:\n   - `rg -n \"HelpLink|help-link|faqPath|docsPath\" frontend\
+    \ --glob '*test*'`\n     → help-link 専用テストなし。\n   - `npm run build`\n     → 成功。Next.js\
+    \ static build 完了。\n   - `npm test -- --runInBand`\n     → `Test Suites: 40 passed,\
+    \ 40 total`\n     → `Tests: 245 passed, 245 total`\n     → SKIP 表示なし。\n\n3. commit:\n\
+    \   - `/mnt/c/Python_app/DM-signal` で `6d29637c fix(frontend): use hard navigation\
+    \ in help link` を作成。\n"
+purpose_validation:
+  cmd_purpose: help-link.tsxの<Link>(next/link)をwindow.location.href方式に変更せよ。
+  fit: true
+  purpose_gap: ''
+files_modified:
+- /mnt/c/Python_app/DM-signal/frontend/components/help-link.tsx
+- /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+- /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_890.yaml
+verification:
+- command: rg -n "HelpLink|help-link|faqPath|docsPath" /mnt/c/Python_app/DM-signal/frontend
+    --glob '*test*'
+  result: pass
+  notes: help-link 専用テストは存在しないことを確認。
+- command: npm run build
+  result: pass
+  notes: Next.js build 成功。23 static pages 生成。
+- command: npm test -- --runInBand
+  result: pass
+  notes: 40 suite / 245 tests が全件 PASS、SKIP=0。
+- command: git -C /mnt/c/Python_app/DM-signal rev-parse --short HEAD
+  result: pass
+  notes: commit `6d29637c` を確認。
+lesson_candidate:
+  found: false
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術の教訓。help-link.tsx修正にはbash操作なく無関係"
+  - id: L005
+    useful: false
+    reason: "ashigaru.md build教訓。help-link.tsx修正には無関係"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

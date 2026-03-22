@@ -1,0 +1,252 @@
+worker_id: saizo
+task_id: subtask_479_recon_b
+parent_cmd: cmd_479
+timestamp: "2026-03-02T00:01:32+09:00"
+status: done
+result:
+  summary: "DM-signal frontend解析B完了（components/lib/contexts/hooksカタログ作成）"
+  details: "AC2: components 60件、AC3: lib core 12件+types 11件+api-client 50メソッド、AC4: contexts/hooks 12件のカタログを作成。使用箇所はapp page import基準（必要に応じてcomponents内利用も併記）。"
+purpose_validation:
+  cmd_purpose: "DM-signal frontend/後半範囲（components+lib+contexts/hooks）を網羅カタログ化する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - queue/tasks/saizo.yaml
+  - queue/reports/saizo_report_cmd_479.yaml
+test_results:
+  - command: "rg --files frontend/components -g '!**/__tests__/*' | sort"
+    result: pass
+  - command: "rg --files frontend/lib frontend/contexts frontend/hooks | sort"
+    result: pass
+  - command: "line/export/usage抽出スクリプト（components/lib/contexts/hooks）"
+    result: pass
+  - command: "api-client.ts の public method -> API path 抽出"
+    result: pass
+lessons_useful:
+  - L121
+  - L122
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC2
+    status: pass
+    evidence: "frontend/components/ 非テスト60ファイルをカタログ化（行数/export/Props型/ページ使用箇所）。"
+  - id: AC3
+    status: pass
+    evidence: "frontend/lib/ core12 + types11をカタログ化。api-client.tsはpublic API 50メソッドと対応パスを抽出。"
+  - id: AC4
+    status: pass
+    evidence: "frontend/contexts/ + frontend/hooks/ 12ファイルをカタログ化（提供Context/Hook名、状態管理要素、使用箇所）。"
+catalogs:
+  components:
+    total_components: 60
+    table: |
+      file|lines|exports|props|used_in_pages
+      ErrorBoundary.tsx|63|(no direct export line)|Props|/admin,/admin/visibility,/dashboard,/
+      RecalculateStatus.tsx|138|function RecalculateStatus|RecalculateStatusProps|/admin
+      annual-returns-chart.tsx|447|function AnnualReturnsChart|Props|/annual-returns
+      annual-returns-table.tsx|277|function AnnualReturnsTable|Props|/annual-returns
+      auth-status.tsx|134|function AuthStatus|AuthStatusProps|(indirect or none)
+      chart/ChartAxes.tsx|187|function ChartAxes|ChartAxesProps|(indirect or none)
+      chart/ChartControls.tsx|30|function ChartControls;function ChartControlsGroup|ChartControlsGroupProps,ChartControlsProps|(indirect or none)
+      chart/ChartLegend.tsx|48|function ChartLegend;function LegendItem|ChartLegendProps,LegendItemProps|(indirect or none)
+      chart/ChartTooltip.tsx|72|function ChartTooltip;function TooltipItem|ChartTooltipProps,TooltipItemProps|(indirect or none)
+      chart/FromYearSelector.tsx|68|function FromYearSelector|FromYearSelectorProps|/compare,/
+      chart/PeriodModeToggle.tsx|54|function PeriodModeToggle|PeriodModeToggleProps|/compare
+      chart/ScaleToggle.tsx|33|function ScaleToggle|ScaleToggleProps|(indirect or none)
+      chart/TimingToggle.tsx|37|function TimingToggle|TimingToggleProps|/annual-returns,/compare-summary,/dashboard,/drawdowns,/metrics,/monthly-returns,/monthly-trade,/rolling-returns,/summary,/trades
+      chart/YearRangeSelector.tsx|84|function YearRangeSelector|YearRangeSelectorProps|(indirect or none)
+      compare-summary-table.tsx|203|function CompareSummaryTable|CompareSummaryTableProps|/compare-summary
+      comparison-chart.tsx|340|const ComparisonChart|ComparisonChartProps|/compare
+      docs/disclosures-content.tsx|62|default function DisclosuresContent|-|/docs
+      docs/methodology-content.tsx|90|default function MethodologyContent|-|/docs
+      docs/terms-content.tsx|245|default function TermsContent|-|/docs
+      drawdowns-chart.tsx|288|const DrawdownsChart|DrawdownsChartProps|/drawdowns
+      drawdowns-table.tsx|78|function DrawdownsTable|DrawdownsTableProps|/drawdowns
+      install-prompt.tsx|84|function InstallPrompt|-|/
+      language-toggle.tsx|40|function LanguageToggle|LanguageToggleProps|/faq
+      metrics-table.tsx|92|function MetricsTable|MetricsTableProps|/metrics
+      mobile-menu.tsx|216|function MobileMenu|MobileMenuProps|/admin,/annual-returns,/compare-summary,/compare,/dashboard,/drawdowns,/metrics,/monthly-returns,/monthly-trade,/,/rolling-returns,/summary,/trades
+      model-trades-table.tsx|314|function ModelTradesTable|ModelTradesTableProps|/trades
+      momentum-chart.tsx|348|const MomentumChart|MomentumChartProps|/
+      monthly-returns-table.tsx|322|function MonthlyReturnsTable|Props|/monthly-returns
+      monthly-trade-table.tsx|441|function MonthlyTradeTable|MonthlyTradeRowProps,MonthlyTradeTableProps|/monthly-trade
+      mtd-chart.tsx|288|const MtdChart|MtdChartProps|/dashboard
+      mtd-daily-table.tsx|127|const MtdDailyTable|MtdDailyTableProps|/dashboard
+      period-notes.tsx|73|function PeriodNotes|Props|(indirect or none)
+      portfolio-details.tsx|236|function PortfolioDetails|-|/
+      portfolio-nav-selector.tsx|118|function PortfolioNavSelector|-|/annual-returns,/dashboard,/drawdowns,/metrics,/monthly-returns,/monthly-trade,/,/rolling-returns,/summary,/trades
+      portfolio-select-items.tsx|199|function PortfolioSelectItems;named { groupByFolder }|PortfolioSelectItemsProps|(indirect or none)
+      portfolio-selector.tsx|219|function PortfolioSelector|PortfolioSelectorProps|/compare
+      risk-management-table.tsx|266|function RiskManagementTable|RiskManagementTableProps|/trades
+      rolling-return-chart.tsx|357|const RollingReturnChart|RollingReturnChartProps|/rolling-returns
+      rolling-returns-summary-table.tsx|261|function RollingReturnsSummaryTable|RollingReturnsSummaryTableProps|/rolling-returns
+      sidebar.tsx|263|function Sidebar|-|(indirect or none)
+      signal-pie-chart.tsx|136|const SignalPieChart|CustomTooltipProps,SignalPieChartProps|/dashboard
+      summary-table.tsx|205|function SummaryTable|SummaryTableProps|/summary
+      sw-register.tsx|97|function ServiceWorkerRegister|-|(indirect or none)
+      theme-provider.tsx|9|function ThemeProvider|ThemeProviderProps|(indirect or none)
+      theme-toggle.tsx|54|function ThemeToggle|-|(indirect or none)
+      total-return-chart.tsx|344|const TotalReturnChart|TotalReturnChartProps|/dashboard,/
+      ui/accordion.tsx|48|function Accordion|AccordionProps|/compare,/docs,/faq
+      ui/button.tsx|37|named { Button }|ButtonProps|/admin/fof,/admin/folders,/admin,/admin/visibility
+      ui/dropdown-menu.tsx|141|function DropdownMenu|DropdownMenuProps|(indirect or none)
+      ui/glass-card.tsx|14|function GlassCard|GlassCardProps|/admin/fof,/admin/folders,/admin,/admin/visibility,/docs,/drawdowns,/faq,/monthly-returns,/offline,/rolling-returns
+      ui/input.tsx|23|named { Input }|InputProps|(indirect or none)
+      ui/latex.tsx|27|function Latex|LatexProps|(indirect or none)
+      ui/loading.tsx|15|function Loading|-|/admin/fof,/admin/folders,/annual-returns,/compare,/dashboard,/docs,/drawdowns,/faq,/metrics,/monthly-returns,/monthly-trade,/,/rolling-returns,/summary,/trades
+      ui/message-banner.tsx|30|function MessageBanner|MessageBannerProps|/admin/fof,/admin/folders,/admin,/admin/visibility,/annual-returns,/compare-summary,/dashboard,/drawdowns,/metrics,/monthly-returns,/monthly-trade,/,/rolling-returns,/summary,/trades
+      ui/page-header.tsx|74|function PageHeader|PageHeaderProps|/docs,/faq
+      ui/select.tsx|374|named { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectGroupLabel, SelectSeparator }|SelectContentProps,SelectGroupLabelProps,SelectGroupProps,SelectItemProps,SelectProps,SelectTriggerProps,SelectValueProps|/admin,/compare
+      ui/skeleton.tsx|92|function Skeleton;function ChartSkeleton function SignalDetailsSkeleton;function GraphAreaSkeleton named { Loading }|SkeletonProps|(indirect or none)
+      ui/transition-overlay.tsx|10|function TransitionOverlay|-|(indirect or none)
+      up-down-market-chart.tsx|553|function UpDownMarketChart|Props|/metrics
+      viewer-auth-modal.tsx|204|function ViewerAuthModal|-|(indirect or none)
+  lib_core:
+    total_files: 12
+    table: |
+      file|lines|exports
+      admin-auth.ts|36|const adminAuth
+      api-cache.ts|126|const apiCache
+      api-client.ts|1121|type ApiResult;interface DbStatus interface BackfillStatus;interface RecalculateResponse interface RecalculateStatusResponse;interface SyncLayerResponse interface LayerProgress;interface SyncStatusResponse const api
+      chart-utils.ts|213|type TimeRange;type RollingPeriod const TIME_RANGE_CONFIG;const ROLLING_PERIOD_CONFIG const MOBILE_STROKE_MULTIPLIER;function getStrokeWidth function getRollingStrokeWidth;function formatDateLabel function sliceBenchmarkToPortfolioPeriod;function downsampleData function findNearestByDate;function filterDataByYearRange function filterDataByFromYear;function getDataStartYear function generateFromYearOptions
+      colors.ts|45|const CHART_COLORS;const PORTFOLIO_COLORS function getPortfolioColor;const PORTFOLIO_COLOR_NAMES
+      constants.ts|9|const MAX_PORTFOLIOS
+      faq-content.ts|1355|interface FAQItem;interface FAQSection interface CTAItem;interface FAQContent const faqContent
+      fof-validation.ts|239|const MIN_FOF_COMPONENTS;interface ValidationResult function buildFoFGraph;function detectCircularReference function validateFoFComponents;function canSelectComponent function canSelectComponentWithGraph;function getCircularRiskFoFs
+      lookbackFormatter.ts|138|function formatLookbackShort;function formatLookbackFull function formatLookbackTooltip;function formatLookbackPeriods function formatMonthLabel;function formatDaysLabel
+      portfolio-diff.ts|196|type ChangeType;interface PortfolioChange interface ChangeSet;function detectChanges function summarizeChanges
+      utils.ts|6|function cn
+      viewer-auth.ts|81|const viewerAuth;interface ViewerAuthResponse
+  lib_types:
+    total_files: 11
+    table: |
+      file|lines|major_exported_types
+      api.ts|313|interface PortfoliosPayload;type ChangeType interface PortfolioChange;interface SavePortfoliosRequest interface SaveSummary;interface SavePortfoliosResponse interface SignalsLightResponse;interface HistoryResponse interface PerformanceResponse;interface MtdResponse interface BenchmarkReturnEntry;interface BenchmarkPerformanceResponse interface AnnualReturnEntry;interface AnnualReturnsResponse interface MonthlyReturnEntry;interface MonthlyReturnsResponse interface MonthlyTradeEntry;interface MonthlyTradeResponse interface RollingReturnsSummary;interface RollingReturnsChartDataPoint interface RollingReturnsResponse;interface RiskManagementEntry interface ModelTradeEntry;interface TradesResponse interface ViewerPermissionsResponse
+      auth.ts|5|interface AuthCredentials
+      chart.ts|22|type YearRange;type FromYear
+      compare-summary.ts|94|interface PortfolioSummaryMetrics;interface CompareSummaryRow type SortableColumn;type SortDirection interface SortState;interface ColumnDef
+      drawdowns.ts|27|interface DrawdownEntry;interface DrawdownsChartDataPoint interface DrawdownsResponse
+      index.ts|10|(no direct export line)
+      market.ts|33|interface MomentumValue;interface PortfolioMomentum interface DailyMomentumValue;interface DailyTotalReturn
+      metrics.ts|42|interface MetricValue;interface MetricItem interface MetricsResponse;interface PortfolioMetricsSummary interface MetricsSummaryResponse
+      pipeline.ts|346|type BlockCategory;type BlockType interface MomentumFilterConfig;interface AbsoluteMomentumFilterConfig interface RelativeMomentumFilterConfig;type BlockConfig interface BlockDefinition;interface SelectionPipeline interface PipelineConfig
+      portfolio.ts|185|type MomentumMethod;interface LookbackPeriod type RebalanceTrigger;interface PortfolioFolder interface Portfolio;interface PortfolioSignal type LookbackOption
+      tiers.ts|99|interface ViewerTier;interface PortfolioVisibilitySetting interface FolderVisibilitySetting;interface TierVisibilitySettings interface GlobalVisibilitySettings;interface ViewerTierCreate interface ViewerTierUpdate;interface TierReorderRequest interface CreateTierResponse;interface RotatePasswordResponse interface TierPassword;interface TierPasswordsResponse interface RotateAllResponse
+  api_client:
+    file: frontend/lib/api-client.ts
+    line_count: 1121
+    method_count: 50
+    method_to_path: |
+      adminLogin|POST /api/admin/login
+      copyTier|POST /api/admin/tiers/${tierId}/copy
+      createFolder|POST /api/admin/folders
+      createTier|POST /api/admin/tiers
+      deletePortfolio|DELETE /api/portfolios/${portfolioId}
+      deleteTier|DELETE /api/admin/tiers/${tierId}
+      getAllTierPasswords|GET /api/admin/tiers/passwords
+      getAnnualReturns|GET /api/annual-returns/${portfolioId}?years=${years}&initial_balance=${initialBalance}
+      getBackfillStatus|GET /admin/backfill-status
+      getBenchmarkPerformance|GET /api/benchmark/${ticker}?years=${years}
+      getDbStatus|GET /admin/db-status
+      getDrawdowns|GET /api/drawdowns/${portfolioId}?limit=${limit}
+      getFolders|GET /api/admin/folders
+      getGlobalVisibility|GET /api/admin/tiers/visibility/global
+      getHistory|GET /api/history/${portfolioId}?days=${days}
+      getMetricsSummary|GET /api/metrics/summary?years=${years}
+      getMetrics|GET /api/metrics/${portfolioId}?years=${years}
+      getMonthlyReturns|GET /api/monthly-returns/${portfolioId}?months=${months}&initial_balance=${initialBalance}
+      getMonthlyTrade|GET /api/monthly-trade/${portfolioId}?limit=${limit}
+      getMtd|GET /api/mtd/${portfolioId}
+      getPerformance|GET /api/performance/${portfolioId}?years=${years}
+      getPortfolios|GET /api/portfolios/get(+optional ?include_inactive=true)
+      getRecalculateStatus|GET /admin/recalculate-status
+      getRollingReturns|GET /api/rolling-returns/${portfolioId}
+      getSignalsLight|GET /api/signals
+      getSyncStatus|GET /admin/sync-status
+      getTierVisibility|GET /api/admin/tiers/${tierId}/visibility
+      getTiers|GET /api/admin/tiers
+      getTrades|GET /api/trades/${portfolioId}?trades_limit=${tradesLimit}
+      getUpDownMarketAnalysis|GET /api/metrics/${portfolioId}/up-down-market
+      getViewerPermissions|GET /api/viewer-permissions
+      logout|POST /api/auth/logout
+      movePortfolioToFolder|POST /api/admin/folders/portfolios/${portfolioId}/move
+      recalculateHistory|POST /admin/recalculate-sync?${params.toString()}
+      reorderTiers|PUT /api/admin/tiers/reorder
+      rotateAllTierPasswords|POST /api/admin/tiers/rotate-all
+      rotateTierPassword|POST /api/admin/tiers/${tierId}/rotate
+      runEtl|POST /admin/run-etl
+      savePortfolios|POST /api/portfolios/save
+      syncFof|POST /admin/sync-fof?${params.toString()}
+      syncPrices|POST /admin/sync-prices?days=${days}
+      syncStandard|POST /admin/sync-standard?${params.toString()}
+      syncTickers|POST /admin/sync-tickers
+      triggerFullBackfill|POST /admin/long-term-backfill?start_year=${startYear}
+      updateFolder|PATCH /api/admin/folders/${folderId}
+      updateGlobalVisibility|PUT /api/admin/tiers/visibility/global
+      updateTierVisibility|PUT /api/admin/tiers/${tierId}/visibility
+      updateTier|PUT /api/admin/tiers/${tierId}
+      updateViewerPermissions|POST /api/admin/viewer-permissions
+      verifyViewer|POST /api/auth/verify-viewer
+  contexts_hooks:
+    total_files: 12
+    catalog_table: |
+      file|lines|exports|state_symbols|used_in
+      contexts/admin-auth-context.tsx|135|function AdminAuthProvider;function useAdminAuth|context<AdminAuthContextValue | null>;const [isAuthenticated, setIsAuthenticated] = useState const [isCheckingAuth, setIsCheckingAuth] = useState;const [loginError, setLoginError] = useState const [portfolios, setPortfolios] = useState;const [loadingPortfolios, setLoadingPortfolios] = useState|(none)
+      contexts/execution-timing-context.tsx|99|function ExecutionTimingProvider;function useExecutionTiming function useExecutionTimingOptional|context<ExecutionTimingContextValue | null>;const [timing, setTimingState] = useState const [isInitialized, setIsInitialized] = useState|(none)
+      contexts/index.ts|3|named { SignalsProvider, useSignals, useSignalsOptional };named { ExecutionTimingProvider, useExecutionTiming, useExecutionTimingOptional, type ExecutionTiming }|-|(none)
+      contexts/signals-context.tsx|236|function SignalsProvider;function useSignals function useSignalsOptional|context<SignalsContextValue | null>;const [signals, setSignals] = useState const [folders, setFolders] = useState;const [loading, setLoading] = useState const [error, setError] = useState;const [selectedId, setSelectedId] = useState|(none)
+      contexts/viewer-permissions-context.tsx|111|function ViewerPermissionsProvider;function useViewerPermissions|context<ViewerPermissionsContextValue | null>;const [role, setRole] = useState const [hiddenPages, setHiddenPages] = useState;const [loading, setLoading] = useState|(none)
+      hooks/useAdminPage.ts|550|function useAdminPage|const [portfolios, setPortfolios] = useState;const [originalPortfolios, setOriginalPortfolios] = useState const [initialSyncDone, setInitialSyncDone] = useState;const [hiddenPages, setHiddenPages] = useState const [originalHiddenPages, setOriginalHiddenPages] = useState;const [selectedIndex, setSelectedIndex] = useState const [saving, setSaving] = useState;const [recalculating, setRecalculating] = useState const [syncingLayer, setSyncingLayer] = useState;const [dbStatus, setDbStatus] = useState const [loadingDbStatus, setLoadingDbStatus] = useState;const [message, setMessage] = useState|(none)
+      hooks/useAppVisibility.ts|76|function useAppVisibility|-|(none)
+      hooks/useChartInteraction.ts|198|function useChartInteraction|const [hoverIndex, setHoverIndex] = useState;const [tooltipPosition, setTooltipPosition] = useState|(none)
+      hooks/useIsMobile.ts|29|function useIsMobile|const [isMobile, setIsMobile] = useState|(none)
+      hooks/usePortfolioParam.ts|63|const PORTFOLIO_PARAM_PAGES;function usePortfolioParam function getCurrentPortfolioId;function buildUrlWithPortfolio|const [portfolioId, setPortfolioId] = useState|(none)
+      hooks/usePrefetch.ts|177|const PREFETCH_HISTORY_DAYS;const PREFETCH_PERF_YEARS const PREFETCH_METRICS_YEARS;function usePrefetch|-|(none)
+      hooks/useSortableTable.ts|76|function useSortableTable|const [sortState, setSortState] = useState|(none)
+    usage_table: |
+      file|exported_symbols|usage_files
+      contexts/admin-auth-context.tsx|AdminAuthProvider,useAdminAuth|frontend/app/admin/fof/__tests__/fof_copy_reorder.test.tsx,frontend/app/admin/fof/page.tsx,frontend/app/admin/folders/page.tsx,frontend/app/admin/layout.tsx,frontend/app/admin/visibility/__tests__/visibility-page.test.tsx,frontend/hooks/useAdminPage.ts
+      contexts/execution-timing-context.tsx|ExecutionTiming,ExecutionTimingProvider,useExecutionTiming,useExecutionTimingOptional|frontend/app/__tests__/page_masking.test.tsx,frontend/app/annual-returns/page.tsx,frontend/app/compare-summary/page.tsx,frontend/app/dashboard/page.tsx,frontend/app/drawdowns/page.tsx,frontend/app/layout.tsx,frontend/app/metrics/page.tsx,frontend/app/monthly-returns/page.tsx,frontend/app/monthly-trade/page.tsx,frontend/app/rolling-returns/page.tsx,frontend/app/summary/page.tsx,frontend/app/trades/page.tsx,frontend/components/__tests__/annual_returns_masking.test.tsx,frontend/components/__tests__/annual_returns_open_toggle.test.tsx,frontend/components/__tests__/monthly_returns_056.test.tsx,frontend/components/__tests__/monthly_returns_masking.test.tsx,frontend/components/__tests__/monthly_returns_open_toggle.test.tsx,frontend/components/__tests__/summary-table-true-cagr.test.tsx,frontend/components/annual-returns-table.tsx,frontend/components/chart/TimingToggle.tsx,frontend/components/drawdowns-table.tsx,frontend/components/metrics-table.tsx,frontend/components/model-trades-table.tsx,frontend/components/monthly-returns-table.tsx,frontend/components/portfolio-details.tsx,frontend/components/rolling-return-chart.tsx,frontend/components/rolling-returns-summary-table.tsx,frontend/components/summary-table.tsx,frontend/components/total-return-chart.tsx,frontend/contexts/index.ts
+      contexts/index.ts|ExecutionTimingProvider,SignalsProvider,typeExecutionTiming,useExecutionTiming,useExecutionTimingOptional,useSignals,useSignalsOptional|frontend/app/__tests__/page_masking.test.tsx,frontend/app/admin/folders/page.tsx,frontend/app/annual-returns/page.tsx,frontend/app/compare-summary/page.tsx,frontend/app/compare/page.tsx,frontend/app/dashboard/page.tsx,frontend/app/drawdowns/page.tsx,frontend/app/layout.tsx,frontend/app/metrics/page.tsx,frontend/app/monthly-returns/page.tsx,frontend/app/monthly-trade/page.tsx,frontend/app/page.tsx,frontend/app/rolling-returns/page.tsx,frontend/app/summary/page.tsx,frontend/app/trades/page.tsx,frontend/components/__tests__/annual_returns_masking.test.tsx,frontend/components/__tests__/annual_returns_open_toggle.test.tsx,frontend/components/__tests__/monthly_returns_056.test.tsx,frontend/components/__tests__/monthly_returns_masking.test.tsx,frontend/components/__tests__/monthly_returns_open_toggle.test.tsx,frontend/components/__tests__/summary-table-true-cagr.test.tsx,frontend/components/annual-returns-table.tsx,frontend/components/drawdowns-table.tsx,frontend/components/metrics-table.tsx,frontend/components/model-trades-table.tsx,frontend/components/monthly-returns-table.tsx,frontend/components/portfolio-details.tsx,frontend/components/portfolio-nav-selector.tsx,frontend/components/rolling-return-chart.tsx,frontend/components/rolling-returns-summary-table.tsx,frontend/components/summary-table.tsx,frontend/components/total-return-chart.tsx,frontend/contexts/execution-timing-context.tsx,frontend/contexts/signals-context.tsx
+      contexts/signals-context.tsx|SignalsProvider,useSignals,useSignalsOptional|frontend/app/admin/folders/page.tsx,frontend/app/annual-returns/page.tsx,frontend/app/compare-summary/page.tsx,frontend/app/compare/page.tsx,frontend/app/dashboard/page.tsx,frontend/app/drawdowns/page.tsx,frontend/app/layout.tsx,frontend/app/metrics/page.tsx,frontend/app/monthly-returns/page.tsx,frontend/app/monthly-trade/page.tsx,frontend/app/page.tsx,frontend/app/rolling-returns/page.tsx,frontend/app/summary/page.tsx,frontend/app/trades/page.tsx,frontend/components/portfolio-nav-selector.tsx,frontend/contexts/index.ts
+      contexts/viewer-permissions-context.tsx|AuthRole,ViewerPermissionsProvider,useViewerPermissions|frontend/app/admin/fof/__tests__/fof_copy_reorder.test.tsx,frontend/app/compare-summary/page.tsx,frontend/app/dashboard/page.tsx,frontend/app/layout.tsx,frontend/app/page.tsx,frontend/app/summary/page.tsx,frontend/components/auth-status.tsx,frontend/components/mobile-menu.tsx,frontend/components/sidebar.tsx
+      hooks/useAdminPage.ts|AdminPageActions,AdminPageState,useAdminPage|frontend/app/admin/page.tsx,frontend/app/admin/visibility/page.tsx,frontend/hooks/__tests__/movePortfolio.test.ts
+      hooks/useAppVisibility.ts|useAppVisibility|(none)
+      hooks/useChartInteraction.ts|useChartInteraction|frontend/components/comparison-chart.tsx,frontend/components/drawdowns-chart.tsx,frontend/components/momentum-chart.tsx,frontend/components/mtd-chart.tsx,frontend/components/rolling-return-chart.tsx,frontend/components/total-return-chart.tsx
+      hooks/useIsMobile.ts|useIsMobile|frontend/components/comparison-chart.tsx,frontend/components/momentum-chart.tsx,frontend/components/mtd-chart.tsx,frontend/components/rolling-return-chart.tsx,frontend/components/total-return-chart.tsx
+      hooks/usePortfolioParam.ts|PORTFOLIO_PARAM_PAGES,buildUrlWithPortfolio,getCurrentPortfolioId,usePortfolioParam|frontend/components/sidebar.tsx,frontend/components/ui/dropdown-menu.tsx
+      hooks/usePrefetch.ts|PREFETCH_HISTORY_DAYS,PREFETCH_METRICS_YEARS,PREFETCH_PERF_YEARS,PrefetchOptions,usePrefetch|frontend/app/page.tsx,frontend/components/portfolio-nav-selector.tsx,frontend/contexts/signals-context.tsx
+      hooks/useSortableTable.ts|useSortableTable|frontend/components/compare-summary-table.tsx
+  utility_roles:
+    - file: frontend/lib/admin-auth.ts
+      role: "Admin BasicAuth資格情報の保存・取得・破棄"
+    - file: frontend/lib/api-cache.ts
+      role: "TTL付きLRUキャッシュ（keyごとの有効期限管理）"
+    - file: frontend/lib/api-client.ts
+      role: "API呼び出し統合（認証、再試行、セマフォ、タイムアウト、キャッシュ連携）"
+    - file: frontend/lib/chart-utils.ts
+      role: "時系列チャート整形（ダウンサンプル、年フィルタ、ラベル整形）"
+    - file: frontend/lib/colors.ts
+      role: "チャート・PF色定義と色選択"
+    - file: frontend/lib/constants.ts
+      role: "共有定数（最大PF数など）"
+    - file: frontend/lib/faq-content.ts
+      role: "FAQ/Docs向け静的コンテンツ定義"
+    - file: frontend/lib/fof-validation.ts
+      role: "FoF構成の循環参照検出と選択バリデーション"
+    - file: frontend/lib/lookbackFormatter.ts
+      role: "lookback期間表示の短縮/詳細フォーマット"
+    - file: frontend/lib/portfolio-diff.ts
+      role: "Portfolio編集差分検出と要約"
+    - file: frontend/lib/utils.ts
+      role: "className結合ユーティリティ（cn）"
+    - file: frontend/lib/viewer-auth.ts
+      role: "Viewer認証トークン保存・有効期限管理"

@@ -1,0 +1,145 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: tobisaru
+task_id: cmd_1027_re_review
+parent_cmd: cmd_1027
+timestamp: "2026-03-17T15:35:00+09:00"
+status: done
+ac_version_read: 1
+verdict: FAIL
+review_result:
+  status: FAIL
+  verdict: FAIL
+  findings:
+    - severity: high
+      area: AC_RR1
+      detail: |
+        fix_analysis.mdの実測値がbenchmark.jsonと一致しない。
+        fix_analysisは sasuke報告ベース(serial 75.95h)を使用しているが、
+        benchmark.json(権威的生データ)は serial 100.91h を示す。
+
+        乖離一覧(fix vs json):
+        - oikaze:   1.75h vs 2.43h (1.39x)
+        - kawarimi: 2.19h vs 2.46h (1.12x)
+        - nukimi:   3.73h vs 4.39h (1.18x)
+        - kasoku:   68.17h vs 91.45h (1.34x)
+        - yotsume:  0.108h vs 0.171h (1.59x)
+        - 合計:     75.95h vs 100.91h (1.33x)
+
+        原因推定: sasuke報告タイムスタンプ(15:05)がJSON生成(15:12)より前。
+        ベンチスクリプトが報告後に再実行され、JSONが更新された可能性が高い。
+        saizo fixはsasuke報告文面を信頼したが、JSONの現在値を参照していない。
+    - severity: info
+      area: AC_RR1
+      detail: |
+        定性的結論は有効:
+        - kasoku支配率: fix 89.8% vs json 90.6% (同等)
+        - 粗密+並列が首位、並列のみ後退、k<=3がpure parallelを上回る — 構造不変
+        - kirimaru元推定(22-109x乖離)からの大幅改善(12-59%乖離)は達成済み
+        - 7案の相対順位は絶対値が変わっても崩れない
+ac_results:
+  AC_RR1:
+    status: FAIL
+    detail: |
+      1. fix_analysis.md存在: YES ✓
+      2. 実測ベース7案再評価: YES ✓ (内部計算は全て正確。算術検証PASS)
+         - k<=3: C(32,2)+C(32,3)=5,456/41,416=13.17% → 75.95h*13.17%=10.01h ✓
+         - top_n=1: saved=3.89h → 72.06h ✓
+         - family closure: 1,584/41,416=3.82% → 2.90h ✓
+         - kasoku method: 68.17/2=34.09 saved → 41.87h ✓
+         - coarse+parallel: kasoku 10.16h/4=2.54h ✓
+         - coarse serial: 12.27h ✓
+      3. 実測値がsasuke報告と一致: YES ✓
+      4. 実測値がbenchmark.jsonと一致: NO ✗
+         - JSON serial=100.91h vs fix serial=75.95h (33%乖離)
+         - JSON parallel=91.45h vs fix parallel=68.17h (34%乖離)
+      5. 推奨順位変更理由の妥当性: YES ✓ (kasoku支配による並列のみ後退は論理的に正しい)
+
+      結論: ACの「sasuke報告/benchmark.jsonと一致」の後者を満たさない。FAIL。
+  AC_RR2:
+    status: FAIL
+    detail: |
+      AC_RR1 FAILのためcommit/pushは未実施。
+
+      全体整合確認:
+      - AC1-AC3(sasuke成果物): benchmark.md/benchmark.json/benchmark.pyの3点は相互整合 ✓
+        - JSON serial_total=100.91h、MD serial=100.91h、parallel=91.45h — 一致
+        - parity: 5忍法near_match、yotsume smoke_only — 整合
+        - パターン数: bunshin 41,416 / oikaze 1,490,976 / nukimi 3,230,448 /
+          kawarimi 1,490,976 / kasoku 12,673,296 / yotsume 248,496 — 再計算一致
+      - AC4 fix(saizo成果物): 内部論理は整合するが、基準値がbenchmark.jsonと不一致
+      - origin/main..HEAD: 4ファイル変更(benchmark script+json+md+fix_analysis)
+        - 不要ファイル混入なし ✓
+diff_check:
+  repo: /mnt/c/Python_app/DM-signal
+  status: FAIL
+  detail: |
+    origin/main..HEAD の全差分:
+    - outputs/analysis/cmd_1027_fix_analysis.md (130行追加)
+    - outputs/analysis/cmd_1027_shin_ninpou_benchmark.json (386行追加)
+    - outputs/analysis/cmd_1027_shin_ninpou_benchmark.md (41行追加)
+    - scripts/analysis/cmd_1027_shin_ninpou_benchmark.py (747行追加)
+    計4ファイル、1,304行挿入。不要変更なし。
+
+    問題点: fix_analysis.mdの基準値(75.95h)とbenchmark.json(100.91h)の不一致。
+    これはsasuke報告とbenchmark.json間の既存不整合に起因する。
+
+    修正案(自分で修正はしない):
+    - fix_analysis.mdをbenchmark.jsonの値(100.91h)で再計算すべき
+    - benchmark.jsonのms_per_pattern値を基準にすれば7案全ての実時間が正確に求まる
+    - もしくはsasuke報告の75.95hの出典を特定し、JSONと報告のどちらが正しいか確定すべき
+result:
+  summary: "FAIL。fix_analysis.mdの基準値(serial 75.95h)がbenchmark.json(serial 100.91h)と33%乖離。定性的結論(kasoku支配・順位構造)は有効だが、ACの数値一致基準を満たさない。"
+  details: |
+    検証内容:
+    1. fix_analysis.md精読 — 存在確認、7案計算の算術検証(全PASS)
+    2. benchmark.json全数値照合 — per-ninjutsu serial_sec/ms_per_pattern/patterns_32
+    3. fix_analysis基準値とbenchmark.json比較 — 33%乖離検出
+    4. sasuke報告/benchmark.md/benchmark.json三者比較:
+       - benchmark.md=benchmark.json(一致): serial 100.91h
+       - sasuke報告(不一致): serial 75.95h
+       - タイムスタンプ差(報告15:05 < JSON生成15:12)が原因を示唆
+    5. origin/main..HEAD diff — 4ファイル、不要変更なし
+    6. kirimaru報告/sasuke報告/saizo fix報告の全参照読了
+
+    結論:
+    - saizo fixの方向性は正しい(12体外挿→32体実測への転換)
+    - 内部計算ロジックは全て正確(算術検証PASS)
+    - ただしbenchmark.jsonとの数値不一致によりAC_RR1 FAIL
+    - 推奨: benchmark.jsonの値で再計算するだけで解決する(論理構造の変更不要)
+purpose_validation:
+  cmd_purpose: "cmd_1027全成果物の再レビュー+PASS時push"
+  fit: true
+  purpose_gap: "FAIL判定のためpush未実施。数値不一致の報告により次のfix方向は明確。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report_cmd_1027.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+verification:
+  - command: "python3 — benchmark.json値とfix_analysis値の照合"
+    result: fail
+    notes: "全ninjutsuで12-59%の乖離。合計は75.95h vs 100.91h(33%乖離)。"
+  - command: "python3 — fix_analysis内部算術検証"
+    result: pass
+    notes: "k<=3/top_n=1/family closure/kasoku method/coarse/coarse+parallel 全6案の計算が基準値(75.95h)に対して正確。"
+  - command: "git diff origin/main..HEAD --stat"
+    result: pass
+    notes: "4ファイル/1304行挿入。スコープ外変更なし。"
+lesson_candidate:
+  found: true
+  title: "ベンチマーク計測報告はJSON(生データ)を唯一の根拠とし、報告YAML文面を二次参照するな"
+  detail: "cmd_1027ではsasuke報告(75.95h)とbenchmark.json(100.91h)が33%乖離。報告文面はJSONより先に書かれた可能性がある(タイムスタンプ差7分)。fix作成者(saizo)は報告文面を信頼しJSONを直接参照しなかった。今後のfix/レビューはJSON等の生データファイルを唯一のSSoTとし、報告YAMLの文面は検算用の二次ソースとして扱うべき。"
+  project: dm-signal
+lessons_useful:
+  - id: L357
+    useful: false
+    reason: "本タスクはレビューのみでliveデータ確認は不要だった"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

@@ -1,0 +1,75 @@
+ac_version_read: de990c2b
+binary_checks:
+  AC1:
+  - check: ninja_monitor.shのstatus→done遷移箇所を特定したか？
+    result: 'yes'
+  - check: gate_report_format.sh呼び出しを追加したか？
+    result: 'yes'
+  - check: 報告YAMLパスを正しくgate_report_format.shに渡しているか？
+    result: 'yes'
+  AC2:
+  - check: gate FAIL時にinbox_writeが実行されるか？
+    result: 'yes'
+  - check: inbox_writeのtype=report_format_fixを使用しているか？
+    result: 'yes'
+  - check: エラー詳細(gate出力)がメッセージに含まれるか？
+    result: 'yes'
+  AC3:
+  - check: gate PASS時に既存のkaro_snapshot更新フローが正常動作するか？
+    result: 'yes'
+  - check: gate追加による余分な出力やエラーがないか？
+    result: 'yes'
+  AC4:
+  - check: 壊れた報告YAML(lessons_useful=dict)でFAIL確認したか？
+    result: 'yes'
+  - check: 正常な報告YAMLでPASS+無音通過を確認したか？
+    result: 'yes'
+  - check: 同一報告に対して複数回FAILを送らないフラグ管理があるか？
+    result: 'yes'
+decision_candidate:
+  found: false
+files_modified:
+- action: 'modified (3箇所: declare追加, gate呼出し追加, cleanup追加)'
+  path: scripts/ninja_monitor.sh
+hook_failures:
+  count: 0
+  details: ''
+lesson_candidate:
+  detail: ''
+  found: false
+  no_lesson_reason: 既存パターン(AUTO_DEPLOY_DONE)に倣った実装。新たな教訓なし。
+  project: infra
+  title: ''
+lessons_useful:
+- id: L074
+  reason: set -eとexit code 1の関係を意識してgate呼び出しに|| trueを付与
+  useful: true
+- id: L225
+  reason: 本件はMCP Memory操作ではなくbashスクリプト変更
+  useful: false
+- id: L063
+  reason: 本件はlessons.yamlのパースではなくninja_monitor変更
+  useful: false
+- id: L097
+  reason: cmd_complete_gate.shには変更なし
+  useful: false
+- id: L079
+  reason: deploy_task.shには変更なし
+  useful: false
+no_lesson_reason: 既存パターン(AUTO_DEPLOY_DONE)に倣った実装。新たな教訓なし。
+parent_cmd: cmd_1236
+purpose_validation:
+  cmd_purpose: gate_report_format.shの発火タイミングをninja_monitorのdone遷移時に移動し家老のworkaround修正を根絶
+  fit: true
+  purpose_gap: ''
+result:
+  details: '3箇所の変更: (1) declare -A REPORT_GATE_SENT追加 (2) is_task_deployed内check_and_update_done_task成功後にgate実行。find_matching_report_fileで報告パス取得→gate_report_format.sh実行→FAIL:
+    フラグセット+inbox_write / PASS: ログのみ (3) cleanup_stale_entriesにREPORT_GATE_SENTクリーンアップ追加'
+  summary: ninja_monitor.shのstatus→done遷移検知箇所にgate_report_format.sh呼び出しを追加。FAIL時は忍者にinbox_write(type=report_format_fix)で差し戻し、PASS時は既存フロー無影響。REPORT_GATE_SENTフラグで重複FAIL送信防止。
+skill_candidate:
+  found: false
+status: done
+task_id: cmd_1236
+timestamp: '2026-03-22T01:10:00'
+verdict: PASS
+worker_id: hayate

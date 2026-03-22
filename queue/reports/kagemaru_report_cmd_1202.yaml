@@ -1,0 +1,61 @@
+worker_id: kagemaru
+task_id: cmd_1202_kagemaru
+parent_cmd: cmd_1202
+timestamp: '2026-03-21T18:49:51'
+status: done
+ac_version_read: 0e827015
+result:
+  summary: 半蔵のAC2実装(commit 3991116)を検証。バイパス経路3つ確認+gate動作テストPASS
+  details: 'AC1: バイパス経路3つ確認。(1)主要=cmd_complete_gate.shがtask YAMLのparent_cmd grepに依存→忍者再配備でtask上書き→旧cmd報告が検証対象外。(2)副次=ninja_monitor.sh
+    check_and_update_done_task(L521-627)がgate_report_format.sh未呼出でtask→done遷移。(3)inbox_write.sh
+    gateはBLOCKするがディスク上の報告ファイルは残存→経路1+2でバイパス。AC2: commit 3991116で[L1]Report format
+    validation追加済み(hanzo実装)。queue/reports直接スキャンでtask YAML非依存。AC3: hanzo_report_cmd_1200.yaml(FILL_THIS残留)→BLOCK確認。hanzo_report_cmd_1202.yaml(正常)→PASS確認。cmd_complete_gate.sh
+    cmd_1200実行でも[L1]がFILL_THISをCRITICAL検出確認'
+purpose_validation:
+  cmd_purpose: 報告YAML品質ゲートのバイパス経路調査+cmd_complete_gate.shに二重チェック追加
+  fit: true
+  purpose_gap: null
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: 半蔵の報告に同一教訓記載済み
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bashスクリプト新規作成なし。既存gate検証のみで((PASS++))パターン未使用
+- id: L225
+  useful: false
+  reason: entity名義の切り分けはgate調査タスクでは不要だった
+- id: L063
+  useful: false
+  reason: lessons.yamlイテレーション処理は本タスクに含まれなかった
+- id: L097
+  useful: true
+  reason: cmd_complete_gate.shのgrep直接利用がtask YAML依存バイパスの根本原因。field_get+直接スキャンの対比で理解促進
+- id: L079
+  useful: false
+  reason: deploy_task.shのrelated_lessons再構築問題は本タスクの調査対象外だった
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - 'inbox_write.sh内のgate実行条件を全て列挙したか: yes'
+  - 'cmd_complete_gate.shに報告フォーマット検証が既にあるか確認したか: yes(commit 3991116で追加済み)'
+  - 'バイパス経路を具体的なコードパス(ファイル名+行番号)で特定したか: yes'
+  AC2:
+  - 'gate_report_format.shの呼び出しがcmd_complete_gate.shに追加されたか: yes(hanzo commit 3991116)'
+  - '複数忍者cmdの全報告パス解決ロジックが実装されたか: yes(glob *_report_${CMD_ID}.yaml)'
+  - 'FAIL時にBLOCK出力が正しく表示されるか: yes'
+  AC3:
+  - 'FILL_THIS残留テストでBLOCKされたか: yes'
+  - '正常報告でPASSしたか: yes'
+  - 'git commitが成功したか: yes(hanzo commit 3991116)'
+verdict: PASS

@@ -1,0 +1,81 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: kirimaru
+task_id: cmd_756_review_2
+parent_cmd: cmd_756
+timestamp: "2026-03-11T03:58:00+09:00"
+status: done
+ac_version_read: 3
+result:
+  summary: "review retry 完了。指定6ファイルを commit `c9cd9c7` にまとめ、`origin/main` へ push 済み。対象6ファイルは clean 化された。repo 全体の worktree には別件の既存変更が残る。"
+  details: |
+    実施結果:
+    1) AC1: PASS
+       - 指定6ファイルのみを commit 対象として追加し、以下の commit を作成した。
+       - `c9cd9c7 fix: patch auth edge cases (PORTFOLIO_PARAM_PAGES + 401 cleanup + visibility guard)`
+
+    2) AC2: PASS
+       - push 前確認:
+         - `git ls-remote origin refs/heads/main` → `3906843`
+         - `git rev-parse HEAD` / `git log -1 --oneline` → local HEAD `c9cd9c7`
+       - push 実行:
+         - `git push origin main`
+         - 結果: `3906843..c9cd9c7  main -> main`
+
+    3) AC3: 条件付きPASS
+       - `git status --short -- frontend/hooks/usePortfolioParam.ts frontend/lib/api-client.ts frontend/app/admin/visibility/page.tsx frontend/lib/__tests__/api-client-auth.test.ts frontend/app/admin/visibility/__tests__/visibility-page.test.tsx frontend/hooks/__tests__/usePortfolioParam.test.ts`
+         は空で、対象6ファイルは clean。
+       - ただし `git status --short --branch` では repo 全体に他ファイルの既存変更が多数残存しており global clean ではない。
+       - それらは本タスク対象外のため未変更。
+
+    参考:
+    - 品質確認は前回 review(cmd_756_review_1) で完了済み。
+    - 今回 retry では commit+push のみ実施した。
+verdict: PASS
+purpose_validation:
+  cmd_purpose: "佐助のfrontend差分6ファイルをcommit+pushする"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/hooks/usePortfolioParam.ts
+  - /mnt/c/Python_app/DM-signal/frontend/lib/api-client.ts
+  - /mnt/c/Python_app/DM-signal/frontend/app/admin/visibility/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/lib/__tests__/api-client-auth.test.ts
+  - /mnt/c/Python_app/DM-signal/frontend/app/admin/visibility/__tests__/visibility-page.test.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/hooks/__tests__/usePortfolioParam.test.ts
+test_results:
+  - command: "git commit -m \"fix: patch auth edge cases (PORTFOLIO_PARAM_PAGES + 401 cleanup + visibility guard)\" -- <6 files>"
+    result: pass
+    notes: "commit `c9cd9c7` を作成。"
+  - command: "git push origin main"
+    result: pass
+    notes: "`3906843..c9cd9c7  main -> main` を確認。"
+  - command: "git status --short -- <6 files>"
+    result: pass
+    notes: "対象6ファイルは clean。repo 全体の global clean ではない。"
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "指定6ファイルを commit `c9cd9c7` にまとめた。"
+  - id: AC2
+    status: pass
+    evidence: "`git push origin main` が成功し、`3906843..c9cd9c7  main -> main` を確認。"
+  - id: AC3
+    status: pass
+    evidence: "対象6ファイルの status は空。repo 全体の汚れは本タスク外の既存変更。"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - L186
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

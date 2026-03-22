@@ -1,0 +1,79 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: sasuke
+task_id: cmd_667_review
+parent_cmd: cmd_667
+timestamp: "2026-03-08T23:14:07+09:00"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC_R1
+    status: pass
+    evidence: "`git show b706e89 e583d7b 64f3c32` と現行ファイルを確認し、`scripts/ntfy_listener.sh` の画像添付検知・安全化・保存、`tests/unit/test_ntfy_listener.bats` のPNG保存/通知検証、`android/app/src/main/java/com/shogun/android/MainActivity.kt` の share sheet→ntfy PUT 実装(OkHttp/Content-Type/Filename header) が仕様通りであることを確認した。レビュー所見なし。"
+  - id: AC_R2
+    status: pass
+    evidence: "`bats tests/unit/test_ntfy_listener.bats` 5/5 PASS、`bats tests/unit/test_ntfy_ack.bats` 8/8 PASS、`./gradlew assembleDebug` BUILD SUCCESSFUL を確認。SKIPなし。"
+  - id: AC_R3
+    status: pass
+    evidence: "`git branch -vv` と `git rev-parse HEAD origin/main` で `main` が `origin/main` に対して ahead 3 を確認後、`git push origin main` を実施。`3c84e47..e583d7b  main -> main` で push 成功。"
+result:
+  summary: "疾風(listener)・影丸(android)の cmd_667 実装を統合レビューし、所見なしで PASS 判定した。listener 回帰2本と Android build を通し、既存3 commit を origin/main へ push 完了。"
+  details: |
+    実施内容:
+    1. 差分レビュー
+       - `b706e89`, `e583d7b`, `64f3c32` の commit diff と現行ファイルを確認。
+       - listener 側は `attachment.name` 取得、`sanitize_attachment_name()`、`queue/screenshots/{timestamp}_{name}` 保存、`latest.png` 更新、`inbox_write.sh shogun ... screenshot_received ntfy_listener` 通知を確認。
+       - test 側は mock curl による real PNG 保存、PNG signature 検証、`screenshot_received` 通知検証を確認。
+       - Android 側は `ACTION_SEND` / `ACTION_SEND_MULTIPLE` 受信、SharedPreferences から `PrefsKeys.NTFY_TOPIC` 読み込み、OkHttp PUT + `Filename` header 送信、Manifest の `image/*` intent-filter 既存定義を確認。
+
+    2. 検証
+       - `bats tests/unit/test_ntfy_listener.bats` → 5/5 PASS
+       - `bats tests/unit/test_ntfy_ack.bats` → 8/8 PASS
+       - `./gradlew assembleDebug` (`android/`) → BUILD SUCCESSFUL
+
+    3. Git / push
+       - `git branch -vv` で `main e583d7b [origin/main: ahead 3]` を確認。
+       - `git rev-parse HEAD origin/main` で HEAD=`e583d7b...`, origin/main=`3c84e47...` を確認。
+       - `git push origin main` 成功: `3c84e47..e583d7b  main -> main`
+
+    結論:
+    - レビュー所見なし。AC1-4 を満たす実装として PASS。
+purpose_validation:
+  cmd_purpose: "cmd_667のレビュー+push。疾風(listener)と影丸(android)の2名の実装を統合レビューし、commit+push。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/scripts/ntfy_listener.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/unit/test_ntfy_listener.bats
+  - /mnt/c/tools/multi-agent-shogun/.gitignore
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/MainActivity.kt
+verification:
+  - command: "bats tests/unit/test_ntfy_listener.bats"
+    result: pass
+    notes: "5件全PASS。添付PNG保存、latest.png更新、screenshot_received通知、PNG signature確認を含む。"
+  - command: "bats tests/unit/test_ntfy_ack.bats"
+    result: pass
+    notes: "8件全PASS。既存の ntfy 受信/通知経路に回帰なし。"
+  - command: "./gradlew assembleDebug"
+    result: pass
+    notes: "android/ 配下で BUILD SUCCESSFUL。MainActivity.kt の share sheet→ntfy PUT 実装はビルド通過。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L172
+  - L179
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

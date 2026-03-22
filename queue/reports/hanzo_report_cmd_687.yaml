@@ -1,0 +1,28 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hanzo
+task_id: cmd_687_impl
+parent_cmd: cmd_687
+timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
+status: pending
+ac_version_read: 4
+result:
+  summary: ""
+  details: ""
+purpose_validation:
+  cmd_purpose: ""
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful: null
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

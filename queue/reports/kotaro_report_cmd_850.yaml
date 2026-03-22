@@ -1,0 +1,65 @@
+worker_id: kotaro
+task_id: cmd_850_impl_chronicle_supplement
+parent_cmd: cmd_850
+timestamp: 2026-03-12T18:45:00+0900
+status: done
+ac_version_read: 3
+ac_results:
+- id: AC1
+  status: pass
+  evidence: 'grep検証でkey_result空欄行が0件。
+
+    修正前: 11行が空欄(| |)。修正後: 全行にkey_resultが記載済み。
+
+    cmd_658の余分な末尾パイプも整形済み(key_result「—」は変更なし)。
+
+    '
+- id: AC2
+  status: pass
+  evidence: '全11件のkey_resultをarchive/cmds/{cmd_id}*.yamlのtitleから転記。
+
+    対象: cmd_544,546,548,551,589,637,646,666,670,681,798。
+
+    各archiveのtitleフィールドを確認し、要約形式でkey_resultに記載。
+
+    '
+- id: AC3
+  status: pass
+  evidence: '既存の記載済み行は一切変更していない。
+
+    変更は空欄key_result行11件の補完+cmd_658の余分パイプ削除のみ。
+
+    git diffで確認済み。
+
+    '
+files_changed:
+- path: context/cmd-chronicle.md
+  changes: key_result空欄11行を補完、cmd_658の余分パイプ削除
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "chronicle空欄補完タスクにbash算術演算の教訓は無関係"
+  - id: L063
+    useful: false
+    reason: "YAML lessons.yamlの構造教訓は本タスクに無関係"
+  - id: L032
+    useful: false
+    reason: "セクション差替え教訓は本タスクに無関係"
+  - id: L101
+    useful: false
+    reason: "gate_metricsのデータ形式教訓は本タスクに無関係"
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

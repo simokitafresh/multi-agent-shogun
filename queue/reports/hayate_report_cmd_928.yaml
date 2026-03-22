@@ -1,0 +1,73 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_928_RV2
+parent_cmd: cmd_928
+timestamp: "2026-03-14T00:48:22+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+review_result:
+  verdict: PASS
+  reason: "`queue/shogun_to_karo.yaml` の cmd format コメントに `scope_mode` が追加され、`instructions/shogun.md` の Required cmd fields / Scope Mode Declaration と値域・順序が整合している。既存 cmd 本文にも `scope_mode` 注入やID欠落は見当たらず、YAML/front matter 構文検証も PASS。"
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`queue/shogun_to_karo.yaml:2-18` の cmd format コメントで `purpose` 直後に `scope_mode: \"EXPANSION | HOLD | REDUCTION\"` を確認。`instructions/shogun.md:198-235` でも Required cmd fields と Scope Mode Declaration が同じ値域・配置を定義している。`queue/shogun_to_karo.yaml` の実cmdは `cmd_920, 926, 927, 928, 929, 930, 931` の7件を維持し、既存 cmd 本文への `scope_mode` 注入は存在しない。"
+  - id: AC2
+    status: pass
+    evidence: "`python3 + yaml.safe_load` で `queue/shogun_to_karo.yaml` は `commands` 7件として parse 成功。`instructions/shogun.md` front matter も `yaml.safe_load` で `role=shogun`, `version=2.1` を確認。SKIP は 0。"
+  - id: AC3
+    status: pass
+    evidence: "`git commit --allow-empty -m \"review(cmd_928): approve scope_mode cmd format fix\"` で承認コミット `e49af23` を作成し、`git push origin main` で `main -> main` を確認。pre-push hook の unit tests は 281/281 PASS、SKIP 0。"
+result:
+  summary: "PASS。`queue/shogun_to_karo.yaml` の cmd format コメントに `scope_mode` が追加され、`instructions/shogun.md` の Scope Mode 定義と整合していること、YAML/front matter 構文が健全であることを確認した。"
+  details: |
+    確認内容:
+    - `queue/shogun_to_karo.yaml:2-18`
+      - cmd format コメントに `scope_mode: "EXPANSION | HOLD | REDUCTION"` を追加済み。
+      - 位置は `purpose` の直後で、task指示どおり「フォーマット定義」だけに限定されている。
+    - `instructions/shogun.md:198-235`
+      - Required cmd fields に `scope_mode` が追加されている。
+      - Scope Mode Declaration で EXPANSION / HOLD / REDUCTION の値域と scope drift 禁止が定義されている。
+    - 既存 cmd 本文
+      - `yaml.safe_load` 後の `commands` は7件 (`cmd_920, 926, 927, 928, 929, 930, 931`) を保持。
+      - 実cmdエントリ内に `scope_mode` キーは存在せず、既存本文へ余計な値注入は見当たらない。
+
+    テスト:
+    - `python3` で `queue/shogun_to_karo.yaml` を `yaml.safe_load`
+    - `python3` で `instructions/shogun.md` front matter を `yaml.safe_load`
+    - `rg -n "scope_mode|Scope Mode Declaration|Required cmd fields" instructions/shogun.md queue/shogun_to_karo.yaml`
+    - `git push origin main` 前 hook で unit tests 281件 PASS
+purpose_validation:
+  cmd_purpose: "sasukeのcmd_928_RW修正をレビューし、scope_mode定義の反映・整合性・構文健全性を検証したうえで、PASS時のみ commit/push する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_928.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L034
+    useful: true
+    reason: "YAMLコメント定義の確認でインデントや位置ずれを疑い、先頭コメントブロックを行番号付きで精査する判断に効いた。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false

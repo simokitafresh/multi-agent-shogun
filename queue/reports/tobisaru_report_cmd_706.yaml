@@ -1,0 +1,77 @@
+task_id: cmd_706
+subtask_id: cmd_706_impl
+agent: tobisaru
+status: done
+timestamp: '2026-03-09T20:00:00'
+project: dm-signal
+summary: 'CDP計測自動パイプラインスクリプト(deploy_and_measure.sh)を実装。
+
+  git push後のRender auto-deploy完了をAPI pollingで検知し、
+
+  CDP計測→ntfy通知まで一本のシェルスクリプトで実行する。
+
+  '
+acceptance_criteria:
+  AC1:
+    status: PASS
+    detail: auto-ops/deploy_and_measure.sh作成済み、chmod +x実行済み
+  AC2:
+    status: PASS
+    detail: 'Render API v1でフロントエンド(srv-d4ja8pp5pdvs739a5fsg)のデプロイステータスを正しく取得。実測: status=live,
+      deploy_id=dep-d6n36m4r85hc73aqut5g, commit=f8890741'
+  AC3:
+    status: PASS
+    detail: Step1(デプロイpolling)→status=live検知→Step2(CDP計測)の順序で実行される構造
+  AC4:
+    status: PASS
+    detail: 'ntfy通知フォーマット: 【CDP計測】deploy完了 commit:{hash} total:{X}ms render:{Y}ms
+      api:{Z}本 PASS/FAIL'
+  AC5:
+    status: PASS
+    detail: die関数で6箇所のエラーケース(API取得失敗/デプロイ失敗/canceled/タイムアウト/CDP計測失敗/RENDER_API_KEY未設定)にntfyエラー通知
+files_changed:
+- path: auto-ops/deploy_and_measure.sh
+  action: created
+  description: CDP計測自動パイプラインスクリプト(新規作成)
+implementation_details:
+- フロントエンドサービスID(srv-d4ja8pp5pdvs739a5fsg)をデフォルト設定。環境変数RENDER_FRONTEND_SERVICE_IDで上書き可能
+- RENDER_API_KEYは環境変数優先、未設定時backend/.envから自動読込
+- polling間隔15秒、タイムアウト15分
+- CDP計測はcdp_benchmark.py(cold mode, dashboard)を呼出すだけ(既存スクリプト未修正)
+- 'PASS/FAIL判定: cold dashboard 5000ms以下をPASS'
+- '出力JSON: outputs/cdp_benchmark/deploy_measure.json'
+notes:
+- backend/.envのRENDER_SERVICE_IDはバックエンド(srv-d4ja7q15pdvs739a4q1g)。本スクリプトではフロントエンドIDを使用
+- Render APIは実際にデプロイ情報を返すことを実測確認済み
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+decision_candidate:
+  found: false
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "算術式set -e罠は今回のスクリプト作成に直接関係なし"
+  - id: L063
+    useful: false
+    reason: "lessons.yamlのPythonパースは今回扱っていない"
+  - id: L079
+    useful: false
+    reason: "sync-fof APIリトライはRender API pollingとは別問題"
+  - id: L058
+    useful: false
+    reason: "hayateタスク固有の教訓であり関連なし"
+  - id: L002
+    useful: false
+    reason: "inbox_watcherのブロック問題は今回の実装と無関係"
+purpose_validation:
+  cmd_purpose: "CDP計測自動パイプラインスクリプトの実装"
+  fit: true
+  purpose_gap: ""
+skill_candidate:
+  found: false
+ac_version_read: 5
+worker_id: tobisaru
+parent_cmd: cmd_706

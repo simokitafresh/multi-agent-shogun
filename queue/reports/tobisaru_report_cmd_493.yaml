@@ -1,0 +1,104 @@
+worker_id: tobisaru
+task_id: subtask_493_impl_research_analysis_r2
+parent_cmd: cmd_493
+timestamp: "2026-03-03T21:52:48+09:00"
+status: done
+result:
+  summary: "AC1(research)として分析系docs/research 4ファイルを実在証跡ベースで再作成し、DM-signal側でcommit 12e5c03を作成。"
+  details: |
+    実施内容:
+    - 以下4ファイルを再作成（推測値を排除し、実在する outputs/scripts/archive report を根拠化）
+      1) docs/research/parity-verification-details.md
+      2) docs/research/spa-overfitting-analysis.md
+      3) docs/research/edge-detection-cycles.md
+      4) docs/research/gs-results-by-ninjutsu.md
+
+    反映方針:
+    - 実在ファイルに基づく値のみ掲載
+    - 欠落アーティファクトは「在庫不足」と明記
+    - 各ドキュメントに再現コマンドを記載
+
+    主要根拠:
+    - /mnt/c/Python_app/DM-signal/outputs/trend_scan/*.csv
+    - /mnt/c/Python_app/DM-signal/outputs/grid_search/246_*_grid_results_fast.csv
+    - /mnt/c/Python_app/DM-signal/outputs/grid_search/yotsume/284_yotsume_grid_results_fast.meta.yaml
+    - /mnt/c/tools/multi-agent-shogun/queue/archive/reports/subtask_274_*.yaml
+    - /mnt/c/tools/multi-agent-shogun/queue/archive/reports/subtask_277_oikaze_20260301.yaml
+    - /mnt/c/tools/multi-agent-shogun/queue/archive/reports/kirimaru_report_276b_recovered_20260227.yaml
+
+    commit:
+    - repo: /mnt/c/Python_app/DM-signal
+    - hash: 12e5c03
+    - message: docs(research): rebuild missing analysis references with verifiable evidence
+
+findings:
+  - id: F1
+    title: "対象4ファイルの再作成完了（AC1）"
+    evidence:
+      - "/mnt/c/Python_app/DM-signal/docs/research/parity-verification-details.md"
+      - "/mnt/c/Python_app/DM-signal/docs/research/spa-overfitting-analysis.md"
+      - "/mnt/c/Python_app/DM-signal/docs/research/edge-detection-cycles.md"
+      - "/mnt/c/Python_app/DM-signal/docs/research/gs-results-by-ninjutsu.md"
+    impact: "research系contextの参照先4件を再提供。"
+  - id: F2
+    title: "根拠パスをコード/出力/報告に限定して明示（AC2）"
+    evidence:
+      - "outputs/trend_scan/*.csv, outputs/grid_search/246_*"
+      - "outputs/scripts/cmd_284/*.py"
+      - "queue/archive/reports/subtask_274_*.yaml, subtask_277_oikaze_20260301.yaml"
+    impact: "推測埋めを排除し、検証可能性を確保。"
+  - id: F3
+    title: "DM-signal repoでcommit作成（AC3）"
+    evidence:
+      - "12e5c03 docs(research): rebuild missing analysis references with verifiable evidence"
+    impact: "再作成成果を履歴化し、差分追跡可能化。"
+
+verdict: "AC1-AC3を満たして完了。"
+confidence: "high"
+blind_spots:
+  - "cmd_277の一次出力はoikaze分のみ確認可能で、他忍法はcmd_246 CSV規模確認まで。"
+  - "cmd_281/cmd_282のoutputs/scripts一次成果物は現ワークスペース不在。"
+
+purpose_validation:
+  cmd_purpose: "cmd_492報告を入力に、消失した分析系docs/researchを実コード/実測データ根拠で再作成する"
+  fit: true
+  purpose_gap: ""
+
+files_modified:
+  - /mnt/c/Python_app/DM-signal/docs/research/parity-verification-details.md
+  - /mnt/c/Python_app/DM-signal/docs/research/spa-overfitting-analysis.md
+  - /mnt/c/Python_app/DM-signal/docs/research/edge-detection-cycles.md
+  - /mnt/c/Python_app/DM-signal/docs/research/gs-results-by-ninjutsu.md
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report_cmd_493.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "対象4ファイルを再作成し保存済み。"
+  - id: AC2
+    status: pass
+    evidence: "各ファイルに根拠パス（outputs/scripts/archive reports）を明記。"
+  - id: AC3
+    status: pass
+    evidence: "DM-signalでcommit 12e5c03を作成。再現コマンドを各ファイル末尾に記載。"
+
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "task手順どおりreviewed更新とステータス遷移を先行し、作業停止を回避。"
+  - id: L063
+    useful: true
+    reason: "構造化データ（YAML/CSV）を実読みで確認し、推測記述を排除した。"
+
+lesson_candidate:
+  found: true
+  title: "復旧ドキュメントは『在庫あり証跡』と『在庫不足』を分離記述すると誤再構成を防げる"
+  detail: "cmd_493再配備では、欠落アーティファクトを未検証値として明示し、実在するoutputs/archiveのみで本文を構成したことで、推測混入を抑止できた。"
+  project: dm-signal
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: false

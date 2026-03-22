@@ -1,0 +1,73 @@
+worker_id: saizo
+task_id: cmd_814_update
+parent_cmd: cmd_814
+timestamp: "2026-03-12T04:42:02+0900"
+status: done
+ac_version_read: 4
+summary: "context/dm-signal.md を 2026-03-12 時点へ更新し、cmd_804〜cmd_812 の性能・運用成果を §26 の索引表へ反映した。"
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`context/dm-signal.md` の `last_updated` を `2026-03-12` に更新した。"
+  - id: AC2
+    status: pass
+    evidence: "`§26 2026-03-12 性能・運用更新` を追加し、cmd_804〜cmd_812 の成果要約を反映した。"
+  - id: AC3
+    status: pass
+    evidence: "追加内容は表形式の索引層に限定し、各行を結論+参照パスで記述した。"
+  - id: AC4
+    status: pass
+    evidence: "`wc -l context/dm-signal.md` は `102` 行で、500行以下を維持した。"
+result:
+  summary: "context/dm-signal.md を 2026-03-12 時点へ更新し、cmd_804〜cmd_812 の性能・運用成果を §26 の索引表へ反映した。"
+  details: |
+    実施内容:
+    1. `last_updated` を本日付へ更新。
+    2. セクション対応表に §25/§26 を追記し、索引の実体と対応を一致させた。
+    3. `§26 2026-03-12 性能・運用更新` を新設し、以下を結論+参照パスで集約した。
+       - cmd_804: 16ページ全閾値PASS、Monthly Returns warm -12.2%
+       - cmd_805: monthly-returns fallback 全Price scan、window query化で months=12 は約-88%
+       - cmd_806: N+1を12箇所、最重要は monthly_trade 170→3 queries
+       - cmd_808: Before計測は進行中ステータス
+       - cmd_810: preflight fail-fast 4.63s と timeout分離
+       - cmd_811: auto_launch_browser 実装
+       - cmd_812: report file 未検証 auto-done hook が欠損原因
+purpose_validation:
+  cmd_purpose: "context/dm-signal.mdを最新状態に更新し、cmd_804〜cmd_812の成果を索引層として反映する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/context/dm-signal.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "context更新タスクにbash算術評価の教訓は無関係"
+  - id: L063
+    useful: false
+    reason: "YAML構造の教訓だがcontext.md更新には直接関係なし"
+  - id: L072
+    useful: false
+    reason: "NaN処理の教訓でcontext更新には無関係"
+  - id: L008
+    useful: false
+    reason: "GS構成の教訓でcontext索引更新には無関係"
+  - id: L028
+    useful: false
+    reason: "ユーザー確認プロセスの教訓でcontext更新には無関係"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+verification:
+  - command: "wc -l context/dm-signal.md"
+    result: pass
+    notes: "102行でAC4を満たす。"
+  - command: "rg -n \"last_updated|§26|cmd_804|cmd_812\" context/dm-signal.md"
+    result: pass
+    notes: "更新日と cmd_804〜cmd_812 索引の追加を確認。"

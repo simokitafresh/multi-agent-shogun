@@ -1,0 +1,76 @@
+worker_id: saizo
+task_id: cmd_1005_impl
+parent_cmd: cmd_1005
+timestamp: "2026-03-16T15:01:51+0900"
+status: done
+ac_version_read: 3
+result:
+  summary: "p_bar BT に first_active_month と共通期間メトリクスを追加し、6パターン再BTを完走した。active 3パターンはいずれも 2015-04 開始の132ヶ月比較となり、共通期間でも EW-12 優勢と確認した。"
+  details: |
+    実装:
+    - `/mnt/c/Python_app/DM-signal/backend/app/services/p_bar_backtest.py`
+      - 初回選出月 `first_active_month` を記録
+      - `common_period_start_month/common_period_end_month/common_period_months` を summary へ追加
+      - strategy / equal_weight_12 / fixed_top の共通期間メトリクスを再計算して返却
+    - `/mnt/c/Python_app/DM-signal/scripts/analysis/p_bar_window_backtest.py`
+      - cmd_1005 用レポートへ更新
+      - comparison_table.csv に full/common 両系統の列を追加
+      - report.md に「全期間 vs 共通期間」「共通期間メトリクス」「戦略 vs EW-12 勝敗」を追加
+      - 出力ディレクトリを `cmd_1005_pbar_window_comparison_*` へ変更
+    - `/mnt/c/Python_app/DM-signal/backend/tests/test_p_bar_backtest.py`
+      - first_active_month 起点の共通期間メトリクス
+      - no-selection パターンで共通期間が N/A になること
+
+    再BT結果:
+    - 出力: `/mnt/c/Python_app/DM-signal/analysis_runs/results/fof/reports/cmd_1005_pbar_window_comparison_20260316_150117`
+    - mpf=6/8/10: permanent no-selection、共通期間=N/A
+    - mpf=12/14/None: first_active_month=2015-04、共通期間=2015-04〜2026-03 (132ヶ月)
+    - 共通期間EW-12: 累積+7135.58%、年率47.59%、Sharpe 1.347、MaxDD -37.06%
+    - 共通期間Strategy:
+      - mpf=12: 累積+3385.82%、年率38.11%、Sharpe 0.979、MaxDD -39.11%
+      - mpf=14: 累積+1356.87%、年率27.57%、Sharpe 0.762、MaxDD -56.31%
+      - 全履歴: 累積+4474.72%、年率41.56%、Sharpe 1.141、MaxDD -30.51%
+    - 勝敗分析: active 3パターンとも EW-12 優勢。全履歴のみ MaxDD は Strategy 勝ち、それ以外は敗北。
+purpose_validation:
+  cmd_purpose: "p_bar BTの比較期間を戦略稼働開始月に揃え、6パターン再BTと比較レポートを出す"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/backend/app/services/p_bar_backtest.py
+  - /mnt/c/Python_app/DM-signal/backend/tests/test_p_bar_backtest.py
+  - /mnt/c/Python_app/DM-signal/scripts/analysis/p_bar_window_backtest.py
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_1005.yaml
+verification:
+  - command: "./.venv/Scripts/python.exe -m py_compile backend/app/services/p_bar_backtest.py scripts/analysis/p_bar_window_backtest.py backend/tests/test_p_bar_backtest.py"
+    result: pass
+    notes: "構文チェック通過。"
+  - command: "./.venv/Scripts/python.exe -m pytest backend/tests/test_p_bar_backtest.py -q"
+    result: pass
+    notes: "8 passed in 1.39s。共通期間メトリクス追加の回帰確認。"
+  - command: "./.venv/Scripts/python.exe scripts/analysis/p_bar_window_backtest.py"
+    result: pass
+    notes: "6パターン再BT完走。`cmd_1005_pbar_window_comparison_20260316_150117` を生成。"
+lessons_useful:
+  - L063
+lesson_candidate:
+  found: false
+decision_candidate:
+  found: false
+skill_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`p_bar_backtest.py` で first_active_month と common period metrics を追加し、comparison_table.csv に full/common 両列を出力。"
+  - id: AC2
+    status: pass
+    evidence: "`scripts/analysis/p_bar_window_backtest.py` を実行し、months_per_fold=[6,8,10,12,14,None] の 6パターン結果を `/mnt/c/Python_app/DM-signal/analysis_runs/results/fof/reports/cmd_1005_pbar_window_comparison_20260316_150117` へ出力。"
+  - id: AC3
+    status: pass
+    evidence: "`report.md` に全期間 vs 共通期間比較テーブルと Strategy vs EW-12 勝敗分析を記載。active 3パターンが EW-12 優勢と確認。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

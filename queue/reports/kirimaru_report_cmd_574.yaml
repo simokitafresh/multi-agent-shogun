@@ -1,0 +1,100 @@
+worker_id: kirimaru
+task_id: subtask_574_scout_a
+parent_cmd: cmd_574
+timestamp: "2026-03-05T18:44:43+0900"
+status: done
+ac_version_read: 2
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`backend/app/api/analytics.py:88-105` で `/api/analytics/pageview` が `track_page_view` に到達し、`tier_id=_extract_tier_id(db, request)` (`:99`) で決定。`_extract_tier_id` は admin認証時に `None` を返す (`:62-63`)。admin判定は `backend/app/auth.py:214-236` の `is_admin_authenticated` で、Basic認証ヘッダ `Authorization: Basic ...` を `:223-232` で検出。結果としてBasic認証adminのPVは現状 `tier_id=NULL` でINSERTされる。"
+  - id: AC2
+    status: pass
+    evidence: "Basic認証判定箇所は `backend/app/auth.py:223-232`。一方、`page_views` スキーマ/ORMは `tier_name` 列を持たず（`backend/app/db/models.py:415-420`, `backend/app/db/migrations.py:358-364, 369-383`）、admin文字列を永続化できない。`tier_name='admin'` 記録には列追加+INSERT時設定が必要。"
+
+result:
+  summary: "偵察A完了。`POST /api/analytics/pageview` の実処理フローを特定し、Basic認証adminのPVは現状 `tier_id=NULL` で記録されることを確認。`tier_name='admin'` 永続化のための具体修正案を提示。"
+  details: |
+    ■ 1) リクエスト処理フロー（現状）
+    1. `backend/app/api/analytics.py:88-94`
+       - `POST /api/analytics/pageview` → `track_page_view(request, payload, db)`
+    2. `backend/app/api/analytics.py:97-103`
+       - `PageView(...)` を生成し `db.add`→`db.commit`
+       - `tier_id` は `:99` で `_extract_tier_id(db, request)` の戻り値をそのまま使用
+    3. `backend/app/api/analytics.py:60-85`
+       - `_extract_tier_id` は `is_admin_authenticated(request)` が真なら即 `None` を返却 (`:62-63`)
+       - viewer token時のみ tier UUID を返す（`admin/legacy/空` は `None`）
+
+    ■ 2) admin(Basic認証)の判定方法
+    - `backend/app/auth.py:214-236` の `is_admin_authenticated(request)`
+      - `admin_session` Cookie検証 (`:218-220`)
+      - 失敗時は `Authorization` ヘッダを確認し、`Basic ` プレフィックスを検出 (`:223-224`)
+      - Base64 decode後に `ADMIN_USER`/`ADMIN_PASS` と比較 (`:226-232`)
+
+    ■ 3) page_viewsテーブル現状
+    - ORM: `backend/app/db/models.py:415-420`
+      - `id, timestamp, page, tier_id, device_type, os_type` のみ
+      - `tier_name` 列なし
+    - Migration: `backend/app/db/migrations.py:358-364, 369-383`
+      - CREATE/追設とも `tier_name` 列追加なし
+      - cmd_566由来の `os_type` はあるが、tier名保持列は未定義
+
+    ■ 4) 修正案（コード変更は未実施、提案のみ）
+    目的: adminアクセス時に `page_views.tier_name='admin'` を永続化
+
+    A. スキーマ追加
+    - `backend/app/db/models.py` の `PageView` に `tier_name = Column(String(50), nullable=True, index=True)` を追加
+    - `backend/app/db/migrations.py` の page_views分岐へ
+      - `add_column_if_missing(conn, "page_views", "tier_name", "VARCHAR(50)")`
+      - `CREATE INDEX IF NOT EXISTS ix_page_views_tier_name ON page_views(tier_name)`
+
+    B. 挿入時ロジック追加
+    - `backend/app/api/analytics.py` で tier解決を `(tier_id, tier_name)` 返却に変更
+      - admin認証時: `(None, "admin")`
+      - viewer token時: `(viewer tier_id, token_data.tier_name)`
+      - 未認証時: `(None, None)`
+    - `track_page_view` の `PageView(...)` 生成時に `tier_name=tier_name` を追加
+
+    C. 集計表示の互換（推奨）
+    - `get_analytics_summary` の tier表示で `ViewerTier.name` が取れない行は
+      `PageView.tier_name` をfallback利用（adminや将来の退役tier対応）
+
+purpose_validation:
+  cmd_purpose: "adminユーザーのPV記録を識別可能にするため、pageview処理・認証判定・保存スキーマの現状を特定し修正案を提示する"
+  fit: true
+  purpose_gap: "なし"
+
+verification:
+  - command: "nl -ba backend/app/api/analytics.py | sed -n '60,120p'"
+    result: pass
+    notes: "pageview endpoint, _extract_tier_id, PageView INSERT点を確認"
+  - command: "nl -ba backend/app/auth.py | sed -n '168,236p'"
+    result: pass
+    notes: "is_admin_authenticatedのBasic認証判定（Authorization: Basic）を確認"
+  - command: "nl -ba backend/app/db/models.py | sed -n '410,425p'"
+    result: pass
+    notes: "page_views ORMにtier_name列が無いことを確認"
+  - command: "nl -ba backend/app/db/migrations.py | sed -n '356,389p'"
+    result: pass
+    notes: "page_views CREATE/追設でtier_name列追加が未定義であることを確認"
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_574.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+
+lessons_useful: null
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: true
+  title: "admin識別の保存設計裁定（`tier_id=NULL + tier_name='admin'` 方式採用可否）"
+  detail: "`tier_id` は FK(`viewer_tiers.id`) のため admin固定文字列を直接入れにくい。admin識別は `tier_name='admin'` 追加で保持し、summaryは `ViewerTier.name` 不在時に fallback表示する方針を採るか裁定が必要。"

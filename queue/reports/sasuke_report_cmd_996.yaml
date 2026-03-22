@@ -1,0 +1,101 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: sasuke
+task_id: cmd_996_review
+parent_cmd: cmd_996
+timestamp: "2026-03-16T09:04:58+0900"
+status: done
+ac_version_read: 1
+review_result:
+  verdict: FAIL
+  reason: "`13d0a2d` 自体は cmd_996 の 3ファイル変更に限定され、remote `main` も同 SHA だったが、task AC を満たす検証は完了できなかった。`git diff --check` は repo 全体の既存未整理差分で大量 FAIL、`./gradlew compileDebugKotlin` は Kotlin cache/daemon 異常で再試行込みでも成功せず、`git push origin main` は pre-push hook の unit tests timeout(40秒超)で BLOCK された。"
+verdict: FAIL
+ac_results:
+  - id: AC1
+    status: FAIL
+    evidence: |
+      task指定の4条件を順に確認した。
+      1. `git diff --check`:
+         repo 全体では FAIL。`android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt` / `SettingsScreen.kt` / `AgentsViewModel.kt` ほか既存未整理差分に trailing whitespace が多数残っていた。
+         一方で `git show --check 13d0a2d` は clean、`git diff --ignore-space-at-eol --stat 13d0a2d^ 13d0a2d -- ...` では `MainActivity.kt` +5, `DashboardScreen.kt` +8/-1, `MemoScreen.kt` 新規343行で、commit自体は cmd_996 範囲に収まっている。
+      2. `commit 13d0a2d` 内容確認:
+         `git diff-tree --no-commit-id --name-only -r 13d0a2d` は `MainActivity.kt` / `DashboardScreen.kt` / `MemoScreen.kt` の3件のみ。`UsageScreen.kt` は commit に含まれていない。
+      3. `./gradlew compileDebugKotlin`:
+         FAIL。初回は `lookups.tab` corruption と missing class hash、再試行(`--stop`, `--no-daemon`, `kotlin.compiler.execution.strategy=in-process`)でも daemon stop/hang が解消しなかった。
+      4. `git push origin main`:
+         FAIL。remote `main` は既に `13d0a2d3cc30376ccf3b33dee5b2d340c8e6ad56` だったが、push 実行時に pre-push hook が `Running unit tests before push...` 後 `BLOCKED: unit tests exceeded 40 seconds.` で停止し、push は拒否された。
+diff_check:
+  changed_by_sasuke: false
+  commit_required: false
+  commit: "13d0a2d3cc30376ccf3b33dee5b2d340c8e6ad56"
+  push: "FAIL (pre-push hook blocked after unit tests exceeded 40 seconds)"
+  note: "review対象 commit 自体は clean だが、repo 全体の未整理差分と build/push 環境異常のため AC 全体は未達。local HEAD / origin/main はともに 13d0a2d 済み。"
+result:
+  summary: "FAIL。`13d0a2d` は cmd_996 の3ファイル差分として妥当だったが、repo 全体 `git diff --check` FAIL・`compileDebugKotlin` FAIL・pre-push timeout により task AC は満たせず、push 完了もできなかった。"
+  details: |
+    実施内容:
+    - `queue/reports/kirimaru_report_cmd_996.yaml` と `queue/reports/hanzo_report_cmd_996.yaml` を照合。
+    - `git show --check 13d0a2d`, `git diff-tree --name-only -r 13d0a2d`, `git diff --ignore-space-at-eol --stat 13d0a2d^ 13d0a2d -- ...` で commit 範囲を検証。
+    - `git ls-remote origin refs/heads/main`, `git rev-parse HEAD`, `git log -1 --oneline` で local/remote HEAD を再確認。
+    - `rg -n "TODO|FIXME"` を対象3ファイルに実行し、追加 TODO/FIXME は検出なし。
+    - `./gradlew compileDebugKotlin` を通常実行後、`./gradlew --stop`、`./gradlew --no-daemon compileDebugKotlin`、`./gradlew -Dorg.gradle.jvmargs= -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process compileDebugKotlin` で再試行。
+    - `git push origin main` を実行したが、pre-push hook が 294 unit tests 実行中に 40秒 timeout で BLOCK。
+
+    判断:
+    - `13d0a2d` の変更対象は `MainActivity.kt` / `DashboardScreen.kt` / `MemoScreen.kt` のみで、cmd_996以外のファイル混入は見当たらない。
+    - ただし task AC は repo 全体 `git diff --check` と build success を要求しており、現 working tree / build 環境では満たせなかった。
+    - remote `main` は既に同 SHA に到達済みのためコード自体は配布済みだが、review task としては FAIL 判定が妥当。
+purpose_validation:
+  cmd_purpose: "cmd_996（横スクロール修正）の修正commitを検証し、問題なければpushする"
+  fit: true
+  purpose_gap: "commit 内容確認までは完了したが、AC未達（repo-wide diff check / compile / push）により『問題なければpush』の完了条件を満たせなかった。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_996.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "review task の `git diff --check` AC は対象commitスコープか clean-tree 前提を明示すべし"
+  detail: "review/push task で `git diff --check` を repo 全体に対して要求すると、対象 commit が clean でも unrelated dirty worktree により恒常的に FAIL し得る。AC には `git show --check <commit>` のような commit-scope 検証を使うか、事前条件として clean-tree を明記すべき。"
+  project: infra
+lessons_useful:
+  - id: L186
+    useful: true
+    reason: "push 前に `git ls-remote origin refs/heads/main` と local HEAD を再確認したことで、remote が既に `13d0a2d` 済みと即断できた。"
+  - id: L220
+    useful: true
+    reason: "runtime tracked / unrelated dirty files が review AC を阻害し得るという教訓どおり、repo 全体 `git diff --check` が cmd_996 以外で落ちることを早期に把握できた。"
+  - id: L225
+    useful: true
+    reason: "infra task として一次データ・repo 実体を先に切り分け、DM-Signal ではなく infra repo 上の `13d0a2d` を正本として検証できた。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verification:
+  - command: "git show --check 13d0a2d"
+    result: PASS
+    notes: "commit 自体に whitespace error はなかった。"
+  - command: "git diff-tree --no-commit-id --name-only -r 13d0a2d"
+    result: PASS
+    notes: "対象は `MainActivity.kt` / `DashboardScreen.kt` / `MemoScreen.kt` の3件のみ。"
+  - command: "git diff --check"
+    result: FAIL
+    notes: "repo 全体の unrelated dirty files に trailing whitespace が多数残っていた。"
+  - command: "./gradlew compileDebugKotlin"
+    result: FAIL
+    notes: "Kotlin cache corruption / daemon stop / missing class hash により成功せず。"
+  - command: "git push origin main"
+    result: FAIL
+    notes: "pre-push hook が unit tests 40秒 timeout で BLOCK。remote main は既に同 SHA。"

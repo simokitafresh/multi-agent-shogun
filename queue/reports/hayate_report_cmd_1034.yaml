@@ -1,0 +1,96 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: hayate
+task_id: cmd_1034_angle1
+parent_cmd: cmd_1034
+timestamp: "2026-03-17T21:38:10+09:00"
+status: done
+ac_version_read: 1
+verdict: PASS
+ac_results:
+  AC1:
+    status: PASS
+    detail: |
+      `outputs/analysis/cmd_1034_angle1_hot_loop.json` を生成。
+      grouped sample 1224 patterns（subset 4個: size2×2, size3×1, size4×1）で
+      `simulate_pattern` hot loop を分解計測した。
+
+      overall profiler内訳:
+      - total: 0.177848 ms/pat
+      - metrics_calc: 0.053882 ms/pat (30.297%)
+      - picked_iteration_loop: 0.023307 ms/pat (13.105%)
+      - ret_sum_accumulation: 0.011993 ms/pat (6.743%)
+      - nan_check: 0.010836 ms/pat (6.093%)
+      - post_loop_prep: 0.004106 ms/pat (2.309%)
+      - residual_other: 0.069645 ms/pat (39.160%)
+
+      native 実行時間:
+      - 0.110826 ms/pat
+
+      profiler parity:
+      - checked_patterns=1224
+      - all_match=true
+
+      補足:
+      - in-loop `perf_counter()` により profiler overhead は +60.475%
+      - よって内訳比率は方向性の強い分解として解釈すべき
+      - context build は AC対象外として別計測し、4 subset 合計 361.727ms
+        (= 0.2955 ms/pat amortized) だった
+result:
+  summary: "PASS。kasoku simulate_pattern hot loop は 1224 patterns で line-level 分解を取得した。最大の明示区分は `metrics_calc` 0.0539ms/pat で、`picked iteration` 0.0233ms/pat、`ret_sum + NaN` は合計 0.0228ms/pat。"
+  details: |
+    実施内容:
+    1. 既存の `scripts/analysis/cmd_1034_angle1_hot_loop.py` を読み、task要件との整合を確認。
+    2. スクリプトを実行して `cmd_1034_angle1_hot_loop.json` を生成。
+    3. JSON から主要指標を再抽出し、1224 patterns / all_match=true / TODOなし を確認。
+
+    読み筋:
+    - hot loop 内の純加算部分(`ret_sum_accumulation`)は 0.0120ms/pat と小さい
+    - `NaN check` も 0.0108ms/pat で同程度
+    - 最大の明示区分は `metrics_calc` 0.0539ms/pat
+    - ただし `residual_other` 0.0696ms/pat が残るため、loop control / row lookup / branch / store の合算も無視できぬ
+    - AC外の参考値として context build amortized 0.2955ms/pat が native hot loop 0.1108ms/pat を上回る
+purpose_validation:
+  cmd_purpose: "kasokuのsimulate_pattern内の時間内訳をline-levelで計測する"
+  fit: true
+  purpose_gap: "none"
+files_modified:
+  - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1034_angle1_hot_loop.json
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_1034.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+verification:
+  - command: "python3 /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1034_angle1_hot_loop.py"
+    result: pass
+    notes: "`cmd_1034_angle1_hot_loop.json` を生成。selected_patterns=1224, all_match=true。"
+  - command: "python3 - <<'PY' ... json key extraction ... PY"
+    result: pass
+    notes: "overall ms/pat, breakdown shares, native runtime, profiler overhead を再抽出し報告値と整合確認。"
+  - command: "rg -n \"TODO|FIXME\" /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1034_angle1_hot_loop.py"
+    result: pass
+    notes: "TODO/FIXME は非検出。"
+lesson_candidate:
+  found: true
+  title: "line-level profiler は native runtime を必ず併記せよ"
+  detail: "cmd_1034 angle1 のように in-loop `perf_counter()` を差し込む計測は profiler overhead が大きくなりうる。hot loop 分解を報告する際は native 実行時間と overhead率を併記し、絶対値と比率を混同させぬべき。"
+  project: dm-signal
+lessons_useful:
+  - id: L372
+    useful: true
+    reason: "context build がボトルネックという prior を持っていたため、AC外参考として context amortized 値も併記できた。"
+  - id: L379
+    useful: true
+    reason: "full runtime と core/hot-loop runtime を分離して扱う判断に直結した。"
+  - id: L344
+    useful: false
+    reason: "DB schema 調査の教訓であり、今回の主作業はコード実測だった。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "kasoku最適化の次打ち手は pure hot loop の加算より metrics/residual の切り分け優先"
+  detail: "ret_sum_accumulation と NaN check は各 ~0.01ms/pat と小さい。hot loop 改善を続けるなら `metrics_calc` と residual_other(loop control / row lookup / branch) の詳細分解を先に行う方が効果見込みが高い。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

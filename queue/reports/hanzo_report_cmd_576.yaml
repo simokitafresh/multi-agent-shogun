@@ -1,0 +1,126 @@
+worker_id: hanzo
+task_id: subtask_576_review
+parent_cmd: cmd_576
+timestamp: "2026-03-05T21:10:00+09:00"
+status: done
+ac_version_read: 1
+verdict: FAIL
+
+result:
+  summary: "IF-THEN一括変換の変換率・スキーマ整合・注入動作は全PASS。だが品質検査で深刻な問題を検出。infra 30%/dm-signal 0%しか品質基準を満たさない。pushは見送り。"
+  details: |
+    ■ AC1: 変換率 — PASS
+    - infra: 77/77 = 100%
+    - dm-signal: 94/94 = 100%
+    - 80%閾値を大幅超過
+
+    ■ AC2: スキーマ整合 — PASS
+    - bash scripts/sync_lessons.sh infra → Synced 168 lessons, exit 0
+    - bash scripts/sync_lessons.sh dm-signal → Synced 189 lessons, exit 0 (佐助が先行実行済み)
+    - bats test_sync_lessons_if_then_compat.bats → 1/1 PASS
+    - bats test_deploy_task_if_then.bats → 2/2 PASS
+    - bats test_cmd_complete_gate.bats → 3/3 PASS
+
+    ■ AC3: スキップリスト — CONDITIONAL PASS
+    - 佐助報告: 0件スキップ（明示記載あり）
+    - 疾風: 報告YAML未作成。変換率100%からスキップ0件と推定
+
+    ■ AC4: deploy_task.sh注入 — PASS
+    - L168のIF-THEN注入を実証:
+      IF: auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時
+      THEN: IF_THEN_FLAGSの文字列結合ではなく、個別にquotedした引数として渡す
+      BECAUSE: unquoted展開でword
+    - フォーマット「IF: ... -> THEN: ... (BECAUSE: ...)」が正常生成
+
+    ■ 品質検査 — FAIL（レビュー観点5）
+
+    【infra（疾風）: 77件中】
+    - 循環IF（タイトル+"に直面した時"）: 30件 (39%)
+    - THEN==BECAUSE重複: 30件 (39%)
+    - 品質問題なし: 23件 (30%)
+
+    【dm-signal（佐助）: 94件中】
+    - 循環IF（タイトル+"に直面した時"）: 94件 (100%)
+    - THEN==BECAUSE重複: 18件 (19%)
+    - 品質問題なし: 0件 (0%)
+
+    ■ 品質問題の具体例
+
+    1) 循環IF — IFがトリガー条件になっていない:
+       L165: IF=「教訓効果率は『未解決負債』だけでなく『仕組み化後の未退役』でも低下するに直面した時」
+       → タイトルそのまま+"に直面した時"。具体的状況・条件ではない。
+
+    2) THEN==BECAUSE重複 — 分離の意味がない:
+       L166: THEN=BECAUSE=「ntfy_listener.shは起動経路が複数あるため...」
+       → 行動と理由が同一文。IF-THEN-BECAUSE三分割の意図が達成されていない。
+
+    3) 情報損失:
+       L026: 元summary=「SSOT100件中14%陳腐化...5メカニズム3Phase段階導入推奨」
+       → IF-THEN変換後: THEN=「根本原因=追加only削除never」のみ。詳細な分析結果が消失。
+
+    4) 切り詰め:
+       L005: IF=「lesson_write.shに時」 — 文が不完全
+       L059: THEN=「hayate(subtask_340_verify)」 — 意味不明の断片
+
+    ■ FAIL理由
+    IF-THEN形式の本質は「具体的なトリガー条件→明確な行動→簡潔な理由」の三分割。
+    現状の変換は機械的なテキスト切り貼りで、教訓の実用性を向上させていない。
+    dm-signalは全件が循環IFであり、変換の意味をなしていない。
+
+    ■ 推奨対応
+    1. dm-signal全94件: 循環IF("に直面した時"パターン)の全面再変換が必要
+    2. infra 30件: 循環IFの再変換
+    3. infra 30件: THEN==BECAUSE重複の解消
+    4. 疾風: 報告YAML作成の督促
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "infra 77/77 (100%), dm-signal 94/94 (100%). 80%閾値超過."
+  - id: AC2
+    status: pass
+    evidence: "sync_lessons.sh infra/dm-signal正常終了。batsテスト3種6/6全PASS."
+  - id: AC3
+    status: pass
+    evidence: "佐助報告: skip 0件明示。疾風: 報告YAML未作成だが変換率100%."
+  - id: AC4
+    status: pass
+    evidence: "L168でIF/THEN/BECAUSE注入フォーマット正常確認."
+
+review_quality_check:
+  verdict: FAIL
+  infra_circular_if: "30/77 (39%)"
+  infra_then_eq_because: "30/77 (39%)"
+  infra_good_quality: "23/77 (30%)"
+  dm_signal_circular_if: "94/94 (100%)"
+  dm_signal_then_eq_because: "18/94 (19%)"
+  dm_signal_good_quality: "0/94 (0%)"
+
+test_results:
+  - command: "bash scripts/sync_lessons.sh infra"
+    result: pass
+    notes: "Synced 168 lessons"
+  - command: "bash scripts/sync_lessons.sh dm-signal"
+    result: pass
+    notes: "Synced 189 lessons (佐助実行済み分)"
+  - command: "bats tests/unit/test_sync_lessons_if_then_compat.bats"
+    result: pass
+    notes: "1/1 ok"
+  - command: "bats tests/unit/test_deploy_task_if_then.bats"
+    result: pass
+    notes: "2/2 ok"
+  - command: "bats tests/unit/test_cmd_complete_gate.bats"
+    result: pass
+    notes: "3/3 ok"
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report_cmd_576.yaml
+
+lessons_useful: []
+
+lesson_candidate:
+  found: false
+
+decision_candidate:
+  found: false

@@ -1,0 +1,296 @@
+worker_id: kirimaru
+task_id: subtask_477_recon_b
+parent_cmd: cmd_477
+timestamp: "2026-03-02T00:03:03+09:00"
+status: done
+result:
+  summary: "DM-signal知識資産棚卸し(後半)を完了。docs/skills 25件カタログ化、lessons 128件分類、横断重複・欠落・INDEX整合性を報告"
+  details: |
+    AC2: docs/skills/配下25ファイルを全件カタログ化（行数・更新日・鮮度・依存・Agent Skill対応・allowed-tools）。
+    AC3: tasks/lessons.md TOCのL001-L128を8カテゴリに分類し、ID+1行要約で一覧化。
+    AC5後半: docs/rule+docs/skills横断カテゴリ表、重複/欠落候補、_INDEX.md整合性監査を実施。
+
+    注意:
+    - lessons分類はタイトルベースの一次分類（必要最小限の手動補正）で、本文精査を要する境界ケースあり。
+    - docs/skillsの更新日はgit最終更新日を採用（全25件fresh）。
+    - knowledge-06.md は0行の空ファイルを確認。
+
+  ac2_catalog: |
+    - Agent Skills.md | topic=Agent Skills | lines=152 | updated=2025-12-28 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - _INDEX.md | topic=skills配下の索引とAgent Skills一覧 | lines=130 | updated=2026-02-15 | freshness=fresh | deps=AGENTS.md,CLAUDE.md,api-reference.md,best-practices.md,building-block-addition-guide.md,building-block-pattern.md,database-schema.md,document-naming-convention.md,environment-switching.md,fof-pipeline-troubleshooting.md,knowledge-01.md,knowledge-02.md,knowledge-03.md,knowledge-04.md,knowledge-05.md,knowledge-06.md,passive-context-index-standard.md,password-expiry-management.md,performance-audit.md,performance-measurement.md,portfolio-analysis-idea-loop.md,portfolio-analysis-verification.md,skills-creation-guide.md,structural-suspect-ban.md,tier-visibility-control.md | pair=manage-index-md | allowed_tools=[Read, Edit, Write, Glob, Grep, Bash]
+    - api-reference.md | topic=API endpoint仕様・運用注意点 | lines=737 | updated=2026-01-31 | freshness=fresh | deps=073-layer-separation-architecture.md,business_rules.md,check-rule.md,database-schema.md,environment-switching.md,password-expiry-management.md,requirements-spec.md,tier-visibility-control.md | pair=api-testing | allowed_tools=Read, Grep, Glob, Bash
+    - best-practices.md | topic=Skills ドキュメント ベストプラクティス | lines=401 | updated=2026-01-04 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - building-block-addition-guide.md | topic=Building Block 追加ガイド | lines=620 | updated=2026-01-15 | freshness=fresh | deps=building-block-pattern.md | pair=building-block-addition | allowed_tools=Read, Grep, Glob, Bash, Edit, Write
+    - building-block-pattern.md | topic=Building Block Pattern（ビルディングブロックパターン） | lines=691 | updated=2026-02-12 | freshness=fresh | deps=001-fof-unified-model.md,002-pipeline-signal-framework.md,building-block-addition-guide.md,business_rules.md | pair=building-block-pattern | allowed_tools=Read, Grep, Glob
+    - database-schema.md | topic=データベース構造スキル (Database Schema Skill) | lines=871 | updated=2026-01-28 | freshness=fresh | deps=api-reference.md,business_rules.md,calculation-theory.md,check-rule.md,fof-pipeline-troubleshooting.md,password-expiry-management.md | pair=unpaired | allowed_tools=-
+    - document-naming-convention.md | topic=ドキュメント命名規則 (Document Naming Convention) | lines=299 | updated=2026-01-07 | freshness=fresh | deps=- | pair=document-naming-convention | allowed_tools=Read, Grep, Glob
+    - environment-switching.md | topic=環境切り替えスキル (Environment Switching Skill) | lines=351 | updated=2026-01-05 | freshness=fresh | deps=PostgreSQL.md,api-usage-guide.md,check-rule.md,password-expiry-management.md,render-info.md | pair=unpaired | allowed_tools=-
+    - fof-pipeline-troubleshooting.md | topic=FoF Pipeline Troubleshooting Guide | lines=643 | updated=2026-01-15 | freshness=fresh | deps=046-fof-signal-unification.md,building-block-addition-guide.md,building-block-pattern.md,business_rules.md,calculation-theory.md | pair=fof-pipeline-troubleshooting | allowed_tools=[Read, Glob, Grep, Bash]
+    - knowledge-01.md | topic=トレンド/逆張り4戦略と低相関分散の基礎 | lines=72 | updated=2026-01-05 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - knowledge-02.md | topic=リセッション型別の資産配分・セクター耐性分析 | lines=266 | updated=2026-01-05 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - knowledge-03.md | topic=デュアルモメンタム研究動向(2015-2025)レビュー | lines=226 | updated=2026-01-05 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - knowledge-04.md | topic=現行FoF戦略の構造評価とリスク制御解説 | lines=78 | updated=2026-01-05 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - knowledge-05.md | topic=Core Momentum拡張案(平均回帰/ボラ/マクロ/現金層) | lines=113 | updated=2026-01-05 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - knowledge-06.md | topic=(空ファイル: 内容未記載) | lines=0 | updated=2026-01-05 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - passive-context-index-standard.md | topic=Passive Context Index Standard | lines=152 | updated=2026-02-02 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - password-expiry-management.md | topic=Skill: パスワード有効期限管理 | lines=332 | updated=2025-12-23 | freshness=fresh | deps=password.md | pair=password-expiry-management | allowed_tools=[Read, Edit, Write, Glob, Grep, Bash]
+    - performance-audit.md | topic=パフォーマンス監査ワークフロー | lines=38 | updated=2025-12-24 | freshness=fresh | deps=- | pair=unpaired(index-claims-performance-audit) | allowed_tools=-
+    - performance-measurement.md | topic=パフォーマンス計測スキル | lines=41 | updated=2025-12-24 | freshness=fresh | deps=- | pair=unpaired(index-claims-performance-measurement) | allowed_tools=-
+    - portfolio-analysis-idea-loop.md | topic=ポートフォリオ分析アイデア・ループ (Sortino超え / Ret | lines=481 | updated=2026-01-05 | freshness=fresh | deps=api-reference.md,business_rules.md,calculation-theory.md,kalman-design.md,portfolio-analysis-verification.md | pair=unpaired | allowed_tools=-
+    - portfolio-analysis-verification.md | topic=ポートフォリオ分析・検証スキル | lines=1321 | updated=2026-01-07 | freshness=fresh | deps=building-block-addition-guide.md,building-block-pattern.md,business_rules.md,calculation-theory.md,kalman-design.md,portfolio-analysis-idea-loop.md | pair=unpaired | allowed_tools=-
+    - skills-creation-guide.md | topic=Skills 作成ガイド (Skills Creation Guide) | lines=262 | updated=2025-12-24 | freshness=fresh | deps=best-practices.md,xxx.md | pair=skills-creation-guide | allowed_tools=[Read, Write, Edit, Glob, Grep, Bash]
+    - structural-suspect-ban.md | topic=構造的SUSPECT検出+自動Ban機能 設計書 | lines=710 | updated=2026-02-17 | freshness=fresh | deps=- | pair=unpaired | allowed_tools=-
+    - tier-visibility-control.md | topic=Tier可視性制御の仕様・実装ガイド | lines=314 | updated=2026-01-31 | freshness=fresh | deps=Visibility-Settings.md | pair=tier-visibility-control | allowed_tools=[Read, Edit, Write, Glob, Grep, Bash]
+
+  knowledge_01_06_summary: |
+    - knowledge-01: トレンドロング/ショート + ミーンリバージョンロング/ショートの4戦略整理と低相関分散の基礎。
+    - knowledge-02: リセッション型（信用崩壊/供給停止/インフレ）別に資産・セクター耐性を比較した配分指針。
+    - knowledge-03: デュアルモメンタム研究の発展（リスク制御、ML/AI、資産拡張、タイミング統合、構築手法）。
+    - knowledge-04: 現行FoF戦略を「時間分散×ボラ制御」で解説した構造評価メモ。
+    - knowledge-05: Core Momentumに非相関エンジン（平均回帰/ボラキャリー/マクロ/動的キャッシュ）を重ねる拡張案。
+    - knowledge-06: 空ファイル（0行、内容未記載）。
+
+  ac3_classification:
+    counts:
+      計算ロジック: 11
+      DB・データ: 11
+      GS・最適化: 17
+      パイプライン: 26
+      API・FE: 7
+      運用・デプロイ: 22
+      開発プロセス: 10
+      その他: 24
+    category_id_sets:
+      計算ロジック: "L017,L018,L020,L062,L071,L072,L077,L087,L090,L111,L115"
+      DB・データ: "L004,L014,L064,L067,L082,L085,L107,L112,L118,L119,L124"
+      GS・最適化: "L008,L012,L025,L027,L029,L033,L039,L041,L057,L058,L089,L091,L105,L110,L117,L120,L127"
+      パイプライン: "L001,L013,L022,L023,L024,L030,L040,L045,L047,L048,L051,L052,L053,L054,L055,L060,L068,L069,L070,L086,L092,L094,L095,L099,L101,L102"
+      API・FE: "L015,L016,L026,L121,L122,L123,L125"
+      運用・デプロイ: "L002,L003,L006,L007,L009,L010,L011,L036,L037,L049,L050,L065,L075,L076,L079,L080,L081,L084,L093,L100,L106,L126"
+      開発プロセス: "L021,L028,L032,L034,L059,L066,L098,L103,L104,L109"
+      その他: "L005,L019,L031,L035,L038,L042,L043,L044,L046,L056,L061,L063,L073,L074,L078,L083,L088,L096,L097,L108,L113,L114,L116,L128"
+    categorized_lessons: |
+      L001 | パイプライン | pipeline_config テンプレートのパラメータ名はコードと1:1一致必須
+      L002 | 運用・デプロイ | ブロック名は BlockType enum 値で統一する
+      L003 | 運用・デプロイ | PowerShell の -replace / Set-Content で日本語UTF-8ファイルが文字化けする
+      L004 | DB・データ | experiments.db はスナップショットであり SSOT ではない
+      L005 | その他 | FoFパリティ比較は本番の現行パラメータを先に確認する
+      L006 | 運用・デプロイ | 本番API呼び出しは PowerShell `Invoke-RestMethod` を使う
+      L007 | 運用・デプロイ | 新FoF追加後の再計算は `sync-fof`（L3）を使う
+      L008 | GS・最適化 | GS構成四神と本番FoF構成PFの不一致
+      L009 | 運用・デプロイ | sync-fof API は Query Parameter 方式（JSON Body ではない）
+      L010 | 運用・デプロイ | download_prod_data.py 実行時は PYTHONPATH 設定が必要
+      L011 | 運用・デプロイ | Windows 環境での YAML/ファイル読み込みはエンコーディング明示が必須
+      L012 | GS・最適化 | GS の `drop_latest=True` は experiments.db では不要（2026-02-14）
+      L013 | パイプライン | GS の align_months 交差集合は lookback warm-up を失う（2026-02-14）
+      L014 | DB・データ | experiments.db と 本番DB の UUID は別体系（2026-02-14）
+      L015 | API・FE | 本番API呼び出しは `requests` + HTTPBasicAuth（2026-02-14）
+      L016 | API・FE | monthly-trade API のフィールド意味（FoF）（2026-02-14）
+      L017 | 計算ロジック | FoFリターン計算方式の乖離 → 根本原因特定・修正完了（2026-02-14）
+      L018 | 計算ロジック | RULE10: シグナル判定はClose、リターン記録はOpen（2026-02-14）
+      L019 | その他 | タイブレーク均等保有ルール（2026-02-14）
+      L020 | 計算ロジック | signal vs holding_signal — リバランスタイミングの罠（2026-02-14）
+      L021 | 開発プロセス | 車輪の再発明は厳禁 — 既存スクリプトを先に確認せよ（2026-02-14）
+      L022 | パイプライン | PipelineEngine統合の偽陽性 — 0/0 = OK（2026-02-15）
+      L023 | パイプライン | DTB3経済指標のDB照会はPipelineEngine呼び出し回数分累積する（2026-02-15）
+      L024 | パイプライン | signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）
+      L025 | GS・最適化 | GSスクリプト・データ同期スクリプトのパス規約（2026-02-15）
+      L026 | API・FE | 本番FoFコンポーネント取得は `/api/portfolios/get` のみ（2026-02-15）
+      L027 | GS・最適化 | C抜き身のCANDIDATE_SET不一致 — CS4(4体)→C11_CCNh(11体)（2026-02-15）
+      L028 | 開発プロセス | ⚠️ エージェントの独自判断エラー — ユーザー確認なしの設計変更（2026-02-15）
+      L029 | GS・最適化 | gs_metadata による FoF 鮮度追跡（2026-02-15）
+      L030 | パイプライン | ⚠️ Pipeline momentum_cache未提供でsignal_calcが27倍増（9s→439s）（2026-02-15）
+      L031 | その他 | FoF パリティ検証: 加速-C 164/167、残り3件はモメンタム計算差異（2026-02-15）
+      L032 | 開発プロセス | データ構造変更時は全使用箇所を確認せよ（2026-02-15）
+      L033 | GS・最適化 | API登録スクリプトでPF定義を生成する際、GSスクリプトで使用しているパラメータ（risk_free_asset等）が登録ペイロードに含まれているか必ず...
+      L034 | 開発プロセス | Claude CodeはRead未実施のファイルへのWrite/Editを拒否する
+      L035 | その他 | FoF参照L0 PFはDELETE不可→UPDATE方式が安全
+      L036 | 運用・デプロイ | recalculate-syncのstart_dateパラメータは無視される
+      L037 | 運用・デプロイ | standard PFでpipeline_config未設定だとrecalculate_fastがCashフォールバック
+      L038 | その他 | sync_lessons.shは最後の## N.以降の### L0xx:エントリを全てスキップする(in_numbered_sectionフラグ未リセット)
+      L039 | GS・最適化 | 064_champion CSVとC12 UUIDは別データ。064はcmd_064時点の旧チャンピオン(143ヶ月)、C12はcmd_123登録の新パタ...
+      L040 | パイプライン | nukimi C2候補はgekkou列のみ使用、close/openは同一CSVデータで暫定統一
+      L041 | GS・最適化 | GS高速化: NumPyベクトル化+前処理キャッシュで55倍速
+      L042 | その他 | L042
+      L043 | その他 | L054
+      L044 | その他 | L055
+      L045 | パイプライン | nukimi_c高速化: nukimiとnukimi_cの計算ロジックは完全同一(C-series固有差異なし)。パラメータグリッドのみ異なる(T1-T3...
+      L046 | その他 | L057
+      L047 | パイプライン | kawarimi R3: NumPy呼出し排除で5.5倍(0.037秒)
+      L048 | パイプライン | nukimi R3: precompute keyはtop_n_effを使え
+      L049 | 運用・デプロイ | bunshin R3: 純Pythonインナーループは逆効果。fixed-arity vectorizationが有効
+      L050 | 運用・デプロイ | kasoku R3: precomputed picks+純Pythonインナーループで4.54倍速(0.577→0.127秒)
+      L051 | パイプライン | nukimi R4: multiprocessingは0.05秒級GSで逆効果
+      L052 | パイプライン | kasoku R4: PeriodIndex参照最適化で19%短縮
+      L053 | パイプライン | oikaze R3: common_months注入でfast/seq月次CSV完全一致
+      L054 | パイプライン | nukimi_c統合可能: PARAM_GRID差分のみで戦略ロジック同一
+      L055 | パイプライン | kasoku diff方式は激攻、ratio方式は常勝に特化
+      L056 | その他 | wide形式CSV(76万列)のpd.read_csvはヘッダー先読み+usecolsが必須
+      L057 | GS・最適化 | 168バッチGS結果は忍法ごとにCSV有無が異なる
+      L058 | GS・最適化 | subset型GSのmonthly CSV出力にはcommon_months注入が必須
+      L059 | 開発プロセス | 検証スクリプトの参照CSVはcmd番号更新と同時に追従が必要
+      L060 | パイプライン | 非月次リバランスのGSチャンピオンは月次制約下で大幅劣化する(特にkasoku)
+      L061 | その他 | verify_all_portfolios.pyはFoF(type=fof)をスキップする — L1四神パリティは未検証だった
+      L062 | 計算ロジック | L2モメンタム計算式(pct_change≡product(1+r)-1)は数学的に等価 — L2にバグなし
+      L063 | その他 | download_prod_data.py monthly-returnsは大量エラーでもexit 0で終了する（偽成功に注意）
+      L064 | DB・データ | 本番データアクセスはDATABASE_URLでPostgreSQLに直接接続。API経由禁止
+      L065 | 運用・デプロイ | 本番コードパス統一原則 — 数学的等価でも本番と同一コードパスを使え
+      L066 | 開発プロセス | 殿裁定事項は3箇所に刻め(MCP+projects/*.yaml+lessons.yaml)
+      L067 | DB・データ | 殿の個人PF(35体)は本番DBから絶対に削除・変更するな
+      L068 | パイプライン | PipelineEngineはpipeline_config内のlookback_periodsを使い、別途渡されたperiods/weights/uni...
+      L069 | パイプライン | GS candidateからpipeline_config構築はregister_shijin_portfolios.pyのbuild_pipeline_...
+      L070 | パイプライン | PipelineEngine pathとmatrix pathのNaN処理厳格さの差異
+      L071 | 計算ロジック | 低頻度リバランスPFの初期化期間は複数月 — skipロジックは全Cash初期化月カバー必須
+      L072 | 計算ロジック | GS計算開始日フィルタの設計原則 — Phase 1後にsignal_historyを一括フィルタ
+      L073 | その他 | FoFパリティ検証ではコンポーネント初期化月をスキップするな
+      L074 | その他 | verify_all_portfolios.pyのskipロジックはquarterly_marにも対応必要
+      L075 | 運用・デプロイ | 新規PFのrecalculateにはrecalculate-syncが必要
+      L076 | 運用・デプロイ | Layer lockはプロセス内限定。再計算の最終保存点はUPSERTで冪等化しておく
+      L077 | 計算ロジック | GS CSV monthly_return = open-based / Production cumulative_return = close-based
+      L078 | その他 | PortfolioRepository.load()は1PFバリデーションエラーで全PF読込失敗する単一障害点
+      L079 | 運用・デプロイ | sync-fof APIの409 conflict対応(リトライ+30秒待機必要)
+      L080 | 運用・デプロイ | save APIのsuccess=Falseでも実際にはDB登録済み。削除はDB直接DELETEが確実。performanceテーブルは本番DBに存在しない
+      L081 | 運用・デプロイ | recalculate Phase0でmonthly_returnsが一時的に空になる
+      L082 | DB・データ | monthly_returns.portfolio_id(varchar)とportfolios.id(uuid)の型不整合
+      L083 | その他 | close_fallback=openは部分欠損closeを補完しない
+      L084 | 運用・デプロイ | recalculate-statusのis_running=Noneは完了ではない
+      L085 | DB・データ | テストPF削除のFK依存は16テーブル
+      L086 | パイプライン | GS tiebreak本番完全準拠: cutoff_score全包含方式
+      L087 | 計算ロジック | kasoku長lookback(12M/24M)でGS-本番初期化期間差異が発生する
+      L088 | その他 | L1パリティPASSはtie処理網羅の証明にはならない
+      L089 | GS・最適化 | GS-本番パリティはデータソース一致が前提条件
+      L090 | 計算ロジック | GS monthly_return NaN vs 本番 cumulative_return データパス差異でコンポーネント選出が変わる
+      L091 | GS・最適化 | GS momentum計算はcumulative_return ratio方式を使え(prod方式は浮動小数点タイブレーク不一致)
+      L092 | パイプライン | kawarimi tiebreak float64精度同値タイ
+      L093 | 運用・デプロイ | SingleViewMomentumFilterBlock月次/日次判定バグ
+      L094 | パイプライン | oikaze cutoff_score epsilon tolerance(1e-12)が必要
+      L095 | パイプライン | kasoku main()がcumulative_returnsを未ロード — 転換コード死蔵
+      L096 | その他 | skip処理のデータ頻度判定はis_monthly_data()を使え（行数ヒューリスティック禁止）
+      L097 | その他 | SVMF/MVMFのskip計算には行数ヒューリスティックではなくis_monthly_data()を使え
+      L098 | 開発プロセス | draft
+      L099 | パイプライン | pipeline_config LIKE '%ReversalFilter%' は TrendReversalFilter を誤検知→jsonb_path...
+      L100 | 運用・デプロイ | MultiViewMomentumFilterBlockはbase_period_months≥4必須(skip=3で0ヶ月問題)
+      L101 | パイプライン | MultiViewのPhase3 momentum_cache事前計算はFoF専用のためskipされる
+      L102 | パイプライン | MultiViewの4視点skip_months=[0,1,2,3]はクラス変数固定でconfigで変更不可
+      L103 | 開発プロセス | 報告YAMLが後続cmd deployで上書き消失する場合、ソースコード直接読解で復元可能
+      L104 | 開発プロセス | subtask間依存でgitignoreがコミット計画をブロック
+      L105 | GS・最適化 | BB config未拘束がGS無効パターン量産の根因
+      L106 | 運用・デプロイ | L103(報告上書き消失)がcmd_263で再発 — deploy_task.shの構造的対策が未実装
+      L107 | DB・データ | 生成物調査ではDATA_CATALOG掲載有無とmeta.output.file実在の二軸照合が有効
+      L108 | その他 | エッジ残存率バックテスト: 予測精度は限定的だが健全度可視化に有効
+      L109 | 開発プロセス | 分析スクリプトにタイムアウト必須
+      L110 | GS・最適化 | 日次/週次粒度変更は月次崩壊予測precision最大65.5%止まり(80%未達)
+      L111 | 計算ロジック | Cycle1統合:月次リターン粒度でのエッジ崩壊precision80%は構造的に困難
+      L112 | DB・データ | monthly_returns.signalがJSON辞書形式のときはキー抽出しないと日次分布分析が全欠損になる
+      L113 | その他 | ターゲット再定義は予測タスクの性質を変えるがSNR限界は克服しない
+      L114 | その他 | 高相関な弱予測器のスタッキングはDM3で精度改善しない
+      L115 | 計算ロジック | 回帰→分類パイプラインは月次リターンSNR限界を克服しない
+      L116 | その他 | PF間の相関構造特徴量はエッジ崩壊予測に寄与しない
+      L117 | GS・最適化 | SPA検定でp=0.99: 15万パターンGSのチャンピオンはtop群内で統計的に有意差なし。パラメータ空間が連続分布で特定パラメータの劇的エッジなし。f...
+      L118 | DB・データ | DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納。close_priceカラ...
+      L119 | DB・データ | DATA_CATALOG.mdの86銘柄は本番PostgreSQL側の情報。experiments.db(SQLite)のdaily_pricesは実際1...
+      L120 | GS・最適化 | 外部データ(DTB3)追加はBayes上界を悪化させる(-5.2pp)。情報なき次元追加は次元の呪いで逆効果。MI=0.058bitsの低情報量データは特...
+      L121 | API・FE | フロント実装前にbackend API実コードの仕様確認必須(PUT vs PATCH、バルクエンドポイント有無)
+      L122 | API・FE | TTL付きGETキャッシュはwrite操作後に自動無効化されない
+      L123 | API・FE | WSL2のmatplotlibでは日本語フォントが未登録。plt.rcParams['font.family']指定だけでは不可。font_manager...
+      L124 | DB・データ | DB JSONカラムのstr型防御パターン
+      L125 | API・FE | Visibility Tier>Globalカスケード構造問題
+      L126 | 運用・デプロイ | セッション開始時に `todo.md` / `lessons.md` を必ず読む
+      L127 | GS・最適化 | GS結果を利用する際は `DATA_CATALOG.md` と `meta.yaml` を必ず参照する
+      L128 | その他 | 忍法FoF作成の正しいフロー（抜き身3の失敗を踏まえた完全版）
+
+    stale_lessons:
+      - "L010: projects/dm-signal/lessons.yaml上でdeprecated扱い（参照先scripts消滅）"
+      - "L025: projects/dm-signal/lessons.yaml上でdeprecated扱い（参照先scripts消滅）"
+      - "L042/L043/L044/L046: タイトルがIDのみで要約欠落（実質プレースホルダ）"
+      - "L098: タイトルdraftの未確定教訓"
+    duplicate_lessons:
+      - "L096 と L097: is_monthly_data()適用の同趣旨重複"
+      - "L103 と L106: 報告YAML上書き消失問題（再発報告）"
+      - "L005, L008, L027, L127: GS候補集合と本番構成不一致の同一系トピック"
+    contradictory_lessons:
+      - "L006(本番APIはPowerShell Invoke-RestMethod) vs L015(本番APIはrequests+HTTPBasicAuth)"
+      - "L007(新FoF再計算はsync-fof) vs L075(新規PFはrecalculate-sync必要)"
+
+  ac5_analysis:
+    cross_category_table: |
+      | 横断カテゴリ | docs/rule件数 | docs/skills件数 | 主な該当ファイル |
+      |---|---:|---:|---|
+      | 計算・取引ルール | 6 | 11 | rule: business_rules/calculation-theory/trade-rule 等, skills: building-block*, fof-pipeline, knowledge-01..06, portfolio-analysis* |
+      | API・DB・データ | 5 | 3 | rule: api-usage-guide/database-info/local-postgresql/DTB3-guide/requirements-spec, skills: api-reference/database-schema/environment-switching |
+      | 運用・デプロイ・検証 | 8 | 4 | rule: gs-parity/local-verification/runbook群/renderyaml/check-rule, skills: performance-*, password-expiry, tier-visibility |
+      | ドキュメント規約・メタ | 2 | 7 | rule: _INDEX/vercel-style-guide, skills: _INDEX/best-practices/skills-creation/document-naming/passive-context 等 |
+      | UI/デザイン | 4 | 0 | rule: design*.md |
+      | セキュリティ状況 | 1 | 0 | rule: security-status.md |
+    duplicate_topics_docs_rule_skills: |
+      - 命名規約系: docs/rule/portfolio-naming-convention.md と docs/skills/document-naming-convention.md が重複領域を持つ。
+      - API運用系: docs/rule/api-usage-guide.md と docs/skills/api-reference.md で呼び出し規約が二重管理。
+      - FoF構築導線: docs/rule/*runbook.md と docs/skills/building-block-addition-guide.md の責務境界が曖昧。
+    missing_doc_candidates: |
+      - docs/skills/knowledge-06.md が空（0行）: knowledgeシリーズ完結用の本文が未整備。
+      - docs/skills/agent-skill-matrix.md 相当が不在: docs/skills と .claude/skills の対応表SSOTがない。
+      - tasks/lessons-taxonomy.md 相当が不在: lessonsカテゴリ判定基準が文書化されておらず分類ぶれを誘発。
+    index_consistency: |
+      docs/skills file links:
+      actual_files=25
+      index_unique_links=24
+      missing_in_index=_INDEX.md
+      
+      agent skills links:
+      actual_skill_dirs=24
+      index_skill_links=17
+      missing_in_index=create-ninpou-fof,download-prod-pf,jounin-advisor,ninja-build-force,ninja-council,ninja-daily-report,ninja-doc-review,ninja-monthly-report,ninja-task-force
+      extra_in_index=performance-audit,performance-measurement
+      
+      allowed-tools mismatches:
+      building-block-addition: declared (制限なし) / actual Read,Grep,Glob,Bash,Edit,Write
+      building-block-pattern: declared (制限なし) / actual Read,Grep,Glob
+      document-naming-convention: declared (制限なし) / actual Read,Grep,Glob
+      documentation-guide: declared (制限なし) / actual [Read,Edit,Write,Glob,Grep,Bash]
+      fof-pipeline-troubleshooting: declared Read,Grep,Glob,Bash,Write / actual [Read,Glob,Grep,Bash]
+      password-expiry-management: declared (制限なし) / actual [Read,Edit,Write,Glob,Grep,Bash]
+      performance-analysis: declared (制限なし) / actual [Read,Write,Glob,Grep,Bash]
+      skills-creation-guide: declared (制限なし) / actual [Read,Write,Edit,Glob,Grep,Bash]
+      tier-visibility-control: declared (制限なし) / actual [Read,Edit,Write,Glob,Grep,Bash]
+      create-yaml-toc: declared (制限なし) / actual Read,Grep,Glob,Edit,Write
+      manage-index-md: declared (制限なし) / actual [Read,Edit,Write,Glob,Grep,Bash]
+purpose_validation:
+  cmd_purpose: "DM-signal知識資産の現状マップ作成（docs/skillsカタログ・lessons分類・重複/欠落/INDEX整合）"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - queue/tasks/kirimaru.yaml
+  - queue/reports/kirimaru_report_cmd_477.yaml
+test_results:
+  - command: "find docs/skills -maxdepth 1 -type f -name '*.md' | wc -l"
+    result: pass
+    notes: "25件を確認（AC2対象件数一致）"
+  - command: "awkでtasks/lessons.md toc件数カウント"
+    result: pass
+    notes: "L001-L128の128件を確認（AC3対象件数一致）"
+  - command: "_INDEX.md と実ファイル・.claude/skills ディレクトリ差分照合"
+    result: pass
+    notes: "docs/skillsリンク不整合、Agent Skills一覧不整合、allowed-tools乖離を検出（AC5）"
+lesson_candidate:
+  found: true
+  title: "_INDEXと実体ディレクトリの二重乖離は知識探索を壊す"
+  detail: "docs/skills/_INDEX.md のAgent Skills一覧(17)と実体ディレクトリ(24)が乖離し、さらにallowed-tools定義も複数齟齬。索引を信じる運用で誤ったSkill選択が発生するため、索引自動同期または差分検査gateが必要。"
+  project: dm-signal
+lessons_useful:
+  - L126
+  - L127
+  - L130
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC2
+    status: pass
+    evidence: "docs/skills 25件の1行カタログ（主題/行数/更新日/鮮度/依存/pair/allowed-tools）を作成。knowledge-01..06要約も追記。"
+  - id: AC3
+    status: pass
+    evidence: "tasks/lessons.md TOC L001-L128を8カテゴリへ分類し、ID+1行要約一覧を付与。陳腐化/重複/矛盾候補を抽出。"
+  - id: AC5_partial
+    status: pass
+    evidence: "docs/rule+skills横断カテゴリ表、重複/欠落候補、_INDEX整合性（リンク件数・Agent Skills差分・allowed-tools乖離）を提示。"

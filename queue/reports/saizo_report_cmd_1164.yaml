@@ -1,0 +1,51 @@
+task_id: cmd_1164_impl
+ninja: saizo
+status: done
+parent_cmd: cmd_1164
+started_at: '2026-03-20T19:24:00'
+completed_at: '2026-03-20T19:28:00'
+progress: 3/3 AC完了
+acceptance_criteria:
+  AC1:
+    status: PASS
+    binary_checks:
+    - check: lessons_gunshi.yamlがprojects/infra/配下に存在するか?
+      result: PASS
+    - check: lessons_karo.yamlと同一フォーマット(id,summary,detail,tags,created_at)か?
+      result: PASS
+    evidence: projects/infra/lessons_gunshi.yaml を新規作成。ヘッダコメントに軍師レビュー教訓記載。lessons_karo.yamlと同一構造。
+  AC2:
+    status: PASS
+    binary_checks:
+    - check: gunshi.mdのレビュー完了手順にlesson_candidate記述の指示があるか?
+      result: PASS
+    - check: gunshi_review_log.yamlのエントリ構造にlesson_candidateフィールドが明記されているか?
+      result: PASS
+    evidence: gunshi.md運用ルールとエントリ構造にlesson_candidateフィールドと記述手順を追加。
+  AC3:
+    status: PASS
+    binary_checks:
+    - check: /clear Recovery手順にlessons_gunshi.yaml読込ステップがあるか?
+      result: PASS
+    - check: Step 3の後（Step 3.5）に配置されているか?
+      result: PASS
+    evidence: /clear Recovery手順のStep 3直後にStep 3.5としてprojects/infra/lessons_gunshi.yaml読込を追加。
+lesson_candidate:
+  found: true
+  title: '{''pattern'': ''新規yamlファイル作成時、フォーマット参照元のファイルを先に読んで構造を正確に把握してから作成すべし''}'
+  detail: '{''pattern'': ''新規yamlファイル作成時、フォーマット参照元のファイルを先に読んで構造を正確に把握してから作成すべし''}'
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: '[]'
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+lessons_useful:
+- id: L097
+  useful: false
+  reason: 教訓参照の構造は既知。新規yaml作成タスクで直接適用なし

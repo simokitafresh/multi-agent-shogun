@@ -1,0 +1,82 @@
+task_id: cmd_845_impl_delayed_loading
+ninja: tobisaru
+status: done
+timestamp: '2026-03-12T17:55:00+09:00'
+parent_cmd: cmd_845
+summary: '6ページにuseDelayedLoading(300ms閾値)を適用。
+
+  spinner表示条件をdelayed版に置換。No data分岐はactual state維持。
+
+  TSビルド成功。既存テスト240/241 PASS(1件既存etag失敗、本変更無関係)。SKIP=0。
+
+  commit: 0c272959
+
+  '
+ac_results:
+  AC1:
+    status: PASS
+    detail: '6ページ全てにuseDelayedLoading適用済み:
+
+      - annual-returns/page.tsx: import + showPageLoading/showDataLoading
+
+      - monthly-returns/page.tsx: import + showPageLoading/showDataLoading
+
+      - monthly-trade/page.tsx: import + showPageLoading/showDataLoading
+
+      - metrics/page.tsx: import + showPageLoading/showMetricsLoading
+
+      - drawdowns/page.tsx: import + showPageLoading/showDrawdownsLoading
+
+      - rolling-returns/page.tsx: import + showPageLoading/showDataLoading
+
+      '
+  AC2:
+    status: PASS
+    detail: '全ページでuseDelayedLoading(loading, 300)とuseDelayedLoading(dataLoading, 300)を使用。
+
+      spinner表示条件を{showPageLoading && ...}と{showDataLoading ? ...}に置換。
+
+      300ms未満のロードではuseDelayedLoadingがfalseを返すためspinnerは表示されない。
+
+      '
+  AC3:
+    status: PASS
+    detail: 'No data分岐は全ページでactual stateを維持:
+
+      - {!loading && !error && selectedPortfolio && !data && !dataLoading && (...)}
+
+      delayed版(showPageLoading/showDataLoading)はspinner表示条件のみに使用。
+
+      '
+  AC4:
+    status: PASS
+    detail: 'npx tsc --noEmit: EXIT_CODE=0
+
+      npx jest: 240 passed, 1 failed (api-client-etag.test.ts:65 既存失敗、本変更無関係), SKIP=0
+
+      '
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術の教訓。FE delayedLoading適用には無関係。"
+  - id: L063
+    useful: false
+    reason: "YAML構造の教訓。FE変更スコープ外。"
+  - id: L077
+    useful: false
+    reason: "Vercel構造分離の教訓。ページ修正には無関係。"
+  - id: L094
+    useful: false
+    reason: "本タスクには無関係。"
+  - id: L078
+    useful: false
+    reason: "GATE BLOCK率の教訓。ページ修正には無関係。"
+lesson_candidate:
+  found: false
+decision_candidate:
+  found: false
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

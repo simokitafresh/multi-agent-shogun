@@ -1,0 +1,71 @@
+worker_id: saizo
+task_id: cmd_997_fix
+parent_cmd: cmd_997
+timestamp: "2026-03-16T08:58:23+09:00"
+status: failed
+ac_version_read: 2
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`android/app/src/main/java/com/shogun/android/viewmodel/MemoViewModel.kt` でメモ保存時に `VoiceDictionary(prefs).apply(...)` を通す接続を追加。`android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt` では保存済み辞書を `presetEntries` と merge し、プリセットキーは最新値優先・ユーザー独自キーは保持するよう修正し、差分があれば SharedPreferences へ再保存するようにした。`android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt` に preset merge の回帰テストを追加。"
+  - id: AC2
+    status: fail
+    evidence: "`./gradlew compileDebugKotlin` は一度 `BUILD SUCCESSFUL` を確認したが、続く `./gradlew :app:testDebugUnitTest --tests 'com.shogun.android.util.VoiceDictionaryTest'` はプロジェクト全体の Gradle 不安定で失敗。並列実行時は `compileDebugJavaWithJavac` が `MemoDao` / `MemoEntity` 不可視で崩れ、単独再実行では UI 各画面の `R` / `BuildConfig` unresolved、`--stop && clean --no-daemon` でも `android/app/build` の削除ロックで停止した。よって test PASS / commit / push は未達。"
+diff_check:
+  method: "対象3ファイル精読 + `git status --short`"
+  files_changed:
+    - android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt
+    - android/app/src/main/java/com/shogun/android/viewmodel/MemoViewModel.kt
+    - android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt
+  unintended_changes: false
+  notes: "worktree には他cmdの差分があるが、本タスクで触った実装対象は上記3ファイルのみ。"
+result:
+  summary: "VoiceDictionary の実アプリ接続と preset merge 修正は完了したが、Gradle/WSL2 側の build 不安定により AC2 を満たせず failed とする。"
+  details: |
+    実装内容:
+    1. `VoiceDictionary` に `apply()` を追加し、既存 `applyAll()` の互換を維持した。
+    2. 保存済み辞書ロード時に `presetEntries` を土台として merge し、プリセットキーは最新プリセット値を常に優先、ユーザー独自キーは保持する挙動へ変更した。
+    3. merge 結果が保存値と異なる場合は SharedPreferences を自己修復更新するようにした。
+    4. `MemoViewModel` の `createMemo` / `updateMemo` で保存前に `VoiceDictionary.apply()` を通し、アプリ経路へ接続した。
+    5. `VoiceDictionaryTest` に preset merge + persist 回帰テストを追加した。
+
+    検証阻害:
+    - 同一 `android/` ワークツリーで Gradle を複数本走らせた後、debug variant の生成物が不安定化。
+    - 単独再実行でも `R` / `BuildConfig` unresolved や class file 欠落、`clean` の build directory lock が発生。
+    - 失敗箇所は今回変更ファイル外（`AgentsScreen.kt` / `DashboardScreen.kt` / `SettingsScreen.kt` 等）で、現時点では環境・生成物側の問題と判断。
+purpose_validation:
+  cmd_purpose: "cmd_997 review FAILとなった VoiceDictionary 接続不足と preset merge 不足を修正し、build+test+commit+push まで完了する"
+  fit: true
+  purpose_gap: "接続修正と merge 修正は完了したが、Gradle 検証不安定により build/test 完走と commit/push が未達。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/viewmodel/MemoViewModel.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_997_fix.yaml
+verification:
+  - command: "./gradlew compileDebugKotlin"
+    result: pass
+    notes: "初回実行では `BUILD SUCCESSFUL in 45s` を確認。"
+  - command: "./gradlew :app:testDebugUnitTest --tests 'com.shogun.android.util.VoiceDictionaryTest'"
+    result: fail
+    notes: "並列実行時は `compileDebugJavaWithJavac` が `MemoDao` / `MemoEntity` 不可視で失敗。"
+  - command: "./gradlew :app:testDebugUnitTest --tests 'com.shogun.android.util.VoiceDictionaryTest'  # 単独再実行"
+    result: fail
+    notes: "単独実行でも `AgentsScreen.kt` ほか複数 UI ファイルで `R` / `BuildConfig` unresolved により `compileDebugKotlin` 失敗。"
+  - command: "./gradlew --stop && ./gradlew clean :app:compileDebugKotlin :app:testDebugUnitTest --tests 'com.shogun.android.util.VoiceDictionaryTest' --no-daemon"
+    result: fail
+    notes: "`:app:clean` が `android/app/build` の delete lock で失敗。"
+lesson_candidate:
+  found: true
+  title: "WSL2 /mnt/c 上の Android Gradle は生成物ロック時に clean でも復旧できないことがある"
+  detail: "IF /mnt/c 上の Android プロジェクトで Gradle 検証を回す THEN 同一 build directory に対する並列実行を避け、生成物欠落や clean delete lock が出たらコード変更ではなく環境ロックとして切り分けよ BECAUSE 今回は `R` / `BuildConfig` unresolved・class file 欠落・build dir delete lock が連鎖し、変更ファイル外で検証が崩れた。"
+  project: infra
+lessons_useful:
+  - id: L220
+    useful: true
+    reason: "runtime tracked files や live-generated state が混じる環境では、commit 前に変更スコープと検証不能要因を切り分ける必要がある点で有効だった。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

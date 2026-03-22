@@ -1,0 +1,55 @@
+task_id: cmd_844_impl_etag_dedup
+ninja: kotaro
+status: complete
+parent_cmd: cmd_844
+project: dm-signal
+timestamp: '2026-03-12T18:10:00'
+summary: 'B4 etagStore dedup実装完了。etagStoreをMap<string, { etag, data }>からMap<string, string>に縮退。
+  304応答時のデータ復元をapiCache一本化。全16テストPASS（etag 7 + auth 9）。'
+ac1:
+  status: PASS
+  title: etagStoreがetag stringのみを保持している
+  evidence: 'L253: private etagStore = new Map<string, string>()
+    L757,774: this.etagStore.set(cacheKey, responseEtag) — dataなし'
+ac2:
+  status: PASS
+  title: 304判定ロジックがapiCacheからdataを取得する形に変更されている
+  evidence: 'L688-700: 304ハンドラからetagStore.data復元コード(旧L690-696)を削除。
+    apiCache.get(cacheKey)のみでデータ復元。TTLリフレッシュも実装。'
+ac3:
+  status: PASS
+  title: etagStoreのdata参照箇所4箇所が全てapiCache参照に切り替わっている
+  evidence: '変更箇所:
+    1. L253: 型変更 Map<string, { etag, data }> → Map<string, string>
+    2. L659-664: stored.etag → storedEtag (直接string参照)
+    3. L688-700: stored.data復元 → apiCache.get()に統一
+    4. L757: etagStore.set(cacheKey, { etag, data }) → etagStore.set(cacheKey, responseEtag)
+    5. L774: 同上(raw fallbackパス)
+    6. L1555: etagStore.delete(cacheKey) — 変更不要(Map.delete互換)'
+ac4:
+  status: PASS
+  title: 既存テストが全PASSしている
+  evidence: 'api-client-etag.test.ts: 7/7 PASS (テスト修正含む)
+    api-client-auth.test.ts: 9/9 PASS
+    テスト修正内容:
+    - EtagEntry interface削除、getApiEtagStore()をMap<string, string>に
+    - stored.etag/stored.data参照を直接string参照に変更
+    - 304テスト: apiCacheからのデータ復元を検証する形に更新
+    - SWR background revalidation経由でIf-None-Match送信を検証'
+commit: efc2829e
+files_changed:
+  - frontend/lib/api-client.ts
+  - frontend/lib/__tests__/api-client-etag.test.ts
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術の教訓。FE etagStore dedup変更には無関係。"
+  - id: L063
+    useful: false
+    reason: "YAML構造の教訓。FE変更スコープ外。"
+lesson_candidate:
+  found: false
+decision_candidate:
+  found: false
+skill_candidate:
+  found: false

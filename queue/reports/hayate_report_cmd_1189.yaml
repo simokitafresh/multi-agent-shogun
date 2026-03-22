@@ -1,0 +1,67 @@
+worker_id: hayate
+task_id: cmd_1189_delete_shin
+parent_cmd: cmd_1189
+timestamp: '2026-03-21T03:03:55'
+status: done
+ac_version_read: f6d1cc5b
+result:
+  summary: '全3AC PASS。シンPF33体(FoF21+Standard12)をFoF→Standard順で全削除。保護リスト衝突0件。削除後PF総数91、空き枠109(>=31)。'
+  details: 'AC1偵察: シンPF33体(FoF21+Standard12)を特定。シン四神フォルダ=4917a3e8-7fee-434e-9303-3237ede919d8。シン忍法フォルダ=d41626a4-3b38-4ecf-b426-26df466f0ca3。AC2削除: 保護リスト照合→33体全て非保護。FoF21体を先に削除、Standard12体を後に削除。全33体DELETE成功。AC3確認: シンPF=0体、PF総数=91、空き枠=109>=31→OK。'
+  karo_reconstructed: true
+  karo_note: '疾風の報告YAML消失(WSL2同期問題の可能性)。疾風inbox報告+影丸報告YAMLのデータを基に家老が再構成。'
+purpose_validation:
+  cmd_purpose: 古いシンPFを本番DBから全削除し、v2登録用の枠を確保する
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: true
+  title: 報告YAML消失時は両忍者のinbox報告で交差検証し再構成可能
+  detail: hayateとkagemaruが同一cmdを並列実行し、両者のinbox完了報告が一致。報告YAML消失時にも別系統の確認手段(inbox)で結果を検証できた。
+  project: dm-signal
+lessons_useful:
+- id: L074
+  useful: false
+  reason: ((PASS++))はbash固有。API操作タスクで無関係
+- id: L225
+  useful: false
+  reason: MCP entity名義問題。DB削除タスクで無関係
+- id: L063
+  useful: true
+  reason: 件数確認で成功検証。AC3でPF総数0件確認を実施
+- id: L220
+  useful: false
+  reason: pre-commitフック問題。DB操作のみでgit操作なし
+- id: L097
+  useful: false
+  reason: field_get義務。API操作タスクでYAML解析なし
+binary_checks:
+  AC1:
+    checks:
+    - q: シン含むPF一覧を報告したか
+      result: true
+    - q: シン四神/シン忍法フォルダUUIDを報告したか
+      result: true
+    - q: PF総数と空き枠を報告したか
+      result: true
+  AC2:
+    checks:
+    - q: 保護リストと照合し削除対象を区別できたか
+      result: true
+    - q: FoF→Standard順序で削除したか
+      result: true
+    - q: 保護リストPFに触れていないか
+      result: true
+  AC3:
+    checks:
+    - q: シンPFが0件であることを確認したか
+      result: true
+    - q: 削除後PF総数と31体分の空きを確認したか
+      result: true
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''

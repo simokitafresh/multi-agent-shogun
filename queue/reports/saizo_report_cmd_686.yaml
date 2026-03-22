@@ -1,0 +1,87 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_686_review
+parent_cmd: cmd_686
+timestamp: "2026-03-09T09:55:46+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+review_result:
+  verdict: PASS
+  reason: "AC1 PASS(コード品質問題なし)。AC2 WAIVE(spa-navigation.test.tsx失敗はcmd_686起因でなく既存問題—SPA遷移方式はcmd_628で撤退済み)。AC3 PASS(commit既にorigin/main上)"
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "commit 0b3f050 の差分4ファイルをレビュー。`lib/api-client.ts` の in-flight dedupe、`hooks/usePrefetch.ts` の deterioration prefetch、`app/dashboard/page.tsx` の Map 化、`lib/__tests__/api-client-auth.test.ts` の追加テストに blocking issue は見当たらず"
+  - id: AC2
+    status: "WAIVE — spa-navigation.test.tsx失敗はcmd_686起因でなく既存問題。テストはLink/SPA遷移を期待するがcmd_628で撤退済み方式。0b3f050変更対象外のファイル3件のテスト"
+    evidence: "`cd /mnt/c/Python_app/DM-signal/frontend && npm test -- --runInBand` → Test Suites: 1 failed, 33 passed, 34 total / Tests: 3 failed, 209 passed, 212 total。失敗は `components/__tests__/spa-navigation.test.tsx` のみ。0b3f050の変更対象外"
+  - id: AC3
+    status: pass
+    evidence: "`git show --no-patch --oneline --decorate 0b3f050` → `HEAD -> main, origin/main, origin/HEAD`。commit既にorigin/main上に存在。push済み"
+result:
+  summary: "レビューPASS(家老WAIVE付き)。0b3f050の差分に品質問題なし。AC2のspa-navigation.test.tsx失敗はcmd_686起因でなく既存問題(cmd_628撤退済み方式)のため家老がWAIVE。commitは既にorigin/main上。"
+  details: |
+    差分レビュー:
+    - `frontend/lib/api-client.ts`
+      - TTL付きGETで cacheKey 単位の pending Promise 共有を追加。
+      - `await apiCache.get()` 後から `pendingRequests.set()` まで await がなく、同一event loop上では race なく dedupe される。
+      - `finally()` で pending map を掃除しており、失敗時の再試行も阻害しない。
+    - `frontend/hooks/usePrefetch.ts`
+      - Tier3 に deterioration を追加し、cache 済みなら prefetch をスキップ。
+      - cache miss 中に複数 caller が来ても `api-client` 側 dedupe が効く構成。
+    - `frontend/app/dashboard/page.tsx`
+      - deterioration を初回1回だけ取得し `Map<portfolio_id, entry>` に格納。
+      - PF切替ごとの一覧再取得を止めつつ、`selectedId` 変更時は `useMemo` 参照で追随する。
+    - `frontend/lib/__tests__/api-client-auth.test.ts`
+      - concurrent `getDeteriorationList()` が fetch 1回に畳まれる検証を追加。
+
+    テスト結果:
+    - 実行: `cd /mnt/c/Python_app/DM-signal/frontend && npm test -- --runInBand`
+    - 結果: FAIL (64.377s)
+    - 失敗: `components/__tests__/spa-navigation.test.tsx` 3件
+      1. dropdown の menuitem が `href="/summary/?portfolio=alpha"` を持たない
+      2. pathname 変更後も dropdown が閉じない
+      3. sidebar / home button が client-side link として描画されない
+
+    切り分け:
+    - failing suite が期待するのは `<a>`/Link ベース挙動
+    - 現行実装は `frontend/components/ui/dropdown-menu.tsx`、`frontend/components/sidebar.tsx`、`frontend/components/page-navigation.tsx` でいずれも `<button>` + `window.location.href`
+    - 上記3ファイルは commit 0b3f050 の変更対象外
+    - `frontend` の未コミット差分は `frontend/hooks/useDelayedLoading.ts` のみで、今回の失敗箇所とは別
+
+    結論:
+    - commit 0b3f050 のレビュー観点では blocking issue なし
+    - ただし task AC2 は full test PASS を要求しており、現状は未充足
+    - 従って review PASS / push 完了とは報告できない
+purpose_validation:
+  cmd_purpose: "霧丸(commit 0b3f050)のレビューを行い、品質確認と指定テスト確認のうえ、PASS時のみ push する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_686.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L179
+    useful: true
+    reason: "実装完了報告のあとでも reviewer 側で commit/push 実態と AC を独立検証すべき、という観点が今回も有効だった"
+  - id: L105
+    useful: true
+    reason: "UI/E2E系の不具合は tmux や前提差異だけでなく、テスト期待と実装のズレそのものを切り分ける必要があると再確認できた"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

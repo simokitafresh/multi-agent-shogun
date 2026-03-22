@@ -1,0 +1,56 @@
+worker_id: saizo
+task_id: subtask_561_impl_a
+parent_cmd: cmd_561
+timestamp: "2026-03-05T14:46:09+09:00"
+status: done
+ac_version_read: 4
+result:
+  summary: "cmd_561 実装Aを完了。deterioration色定数を共通化し、Dashboard Section1の丸印+P(det)%表示とエラー時非表示を確認。"
+  details: |
+    実施内容:
+    - `frontend/lib/constants/deterioration-colors.ts` を新規追加し、6ラベルのHEX色を定義
+    - `frontend/app/deterioration/page.tsx` のローカル `LABEL_CHART_COLORS` を削除して共通定数importへ切替
+    - Dashboard側は現HEAD(ef94560)で `getDeteriorationList` + `selectedDeterioration` + `P(det)`表示が実装済みであることを確認
+    - `npm run build` を実行し、型/ビルドエラーなしを確認
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "Dashboard Section1に `selectedDeterioration` 表示があり、色付き丸印+`P(det) XX.X%` を描画（dashboard/page.tsx L397-L405, L431-L439）。"
+  - id: AC3
+    status: pass
+    evidence: "Dashboard・Deteriorationともに `LABEL_CHART_COLORS` を `frontend/lib/constants/deterioration-colors.ts` から参照（dashboard L9, deterioration L12）。"
+  - id: AC4
+    status: pass
+    evidence: "共通定数ファイルで6種ラベル全てのHEX色を定義（deterioration-colors.ts L3-L10）。"
+  - id: AC5
+    status: pass
+    evidence: "DashboardでAPI失敗/未一致時は `setSelectedDeterioration(null)` とし、`selectedDeterioration && ...` 条件描画のため丸印非表示（dashboard L259-L270, L397, L431）。"
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm run build"
+    result: pass
+    notes: "Next.js build successful (Compiled successfully / static pages 23/23)"
+commit:
+  sha: d026c03
+  message: "feat: show deterioration badge on dashboard"
+  pushed: false
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/lib/constants/deterioration-colors.ts
+  - /mnt/c/Python_app/DM-signal/frontend/app/deterioration/page.tsx
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_561.yaml
+lesson_referenced:
+  - id: L181
+    applied: true
+    note: "deterioration APIレスポンスにfolder_idがない前提を維持し、DashboardではselectedIdによるportfolio_id一致のみで表示判定。"
+  - id: L001
+    applied: true
+    note: "タスクYAML・inbox・報告YAMLをRead後に更新。"
+  - id: L034
+    applied: true
+    note: "queue配下ファイルはRead後に更新。"
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

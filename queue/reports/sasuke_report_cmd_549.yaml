@@ -1,0 +1,88 @@
+worker_id: sasuke
+task_id: subtask_549_impl
+parent_cmd: cmd_549
+timestamp: "2026-03-05T00:49:00+0900"
+status: done
+ac_version_read: 6
+verdict: PASS
+
+result:
+  summary: "AC1-AC6を満たして完了。docs/future-01/001.md をMECE 4軸で再構成し、A1-A5/B1-B5/C1-C5 + D1-D3を仕様書整合で反映。commit 63bf94c（push未実施）。"
+  details: |
+    実施内容:
+    - 001.mdのワイヤーフレームを更新
+      - PF詳細を3サブセクション（Label Step Graph / P_det Trend / Stats Table）で明示
+    - 再利用パーツ一覧を拡張
+      - step graph実装に必要な既存資産（drawdowns-chart.tsx, chart-utils.ts等）を追加
+    - 実装仕様（MECE補完）セクションを新設
+      - A: バックエンド5件（A1-A5）
+      - B: フロントエンド5件（B1-B5）
+      - C: 横断5件（C1-C5、9定数一覧含む）
+    - 実装フェーズを粒度細分化
+      - Phase1/2 を 1-1..1-6 / 2-1..2-7 に精緻化
+    - 仕様書章番号との突合を実施
+      - 参照リンクを各項目に記載し、矛盾なしを確認
+
+purpose_validation:
+  cmd_purpose: "docs/future-01/001.mdの仕様ギャップ18件をMECEで補完し、001.md単体で実装着手可能な状態にする"
+  fit: true
+  purpose_gap: "なし"
+
+files_modified:
+  - /mnt/c/Python_app/DM-signal/docs/future-01/001.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_549.yaml
+
+lesson_candidate:
+  found: true
+  title: "設計書補完はMECE表+仕様章リンクの二層化で抜け漏れを抑制できる"
+  detail: "A/B/C/Dを先に固定し、各行に仕様書の章参照を付与すると、追記の網羅性確認と矛盾検出が高速化する。特に『仕様にない項目(A2)』は既存実装パターンの根拠ファイルを併記すると再現性が高い。"
+  project: dm-signal
+
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術/set -eの教訓であり、今回のMarkdown仕様補完には直接非該当。"
+  - id: L063
+    useful: false
+    reason: "Pythonでlessons.yamlを読む際の構造教訓であり、今回は読み取りのみで実装影響なし。"
+  - id: L064
+    useful: true
+    reason: "『中間層を増やさず一次情報を直接参照』の原則を適用し、仕様書+既存実装を直接根拠として記載した。"
+  - id: L094
+    useful: false
+    reason: "tmux/model名ハードコード注意であり、今回スコープ外。"
+  - id: L119
+    useful: false
+    reason: "inline Python出力連携の教訓であり、今回は未使用。"
+
+test_results:
+  - command: 'bash -lc ''for id in A1 A2 A3 A4 A5 B1 B2 B3 B4 B5 C1 C2 C3 C4 C5; do rg -q "$id" docs/future-01/001.md; done && rg -q "Label Step Graph" docs/future-01/001.md && rg -q "drawdowns-chart.tsx" docs/future-01/001.md && rg -q "run_migrations()" docs/future-01/001.md && rg -q "require_viewer" docs/future-01/001.md && rg -q "require_admin" docs/future-01/001.md'''
+    result: pass
+    notes: "doc_validation: PASS"
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "001.md『実装仕様（MECE補完）/A』にA1-A5を追加（仕様書§1/§2.2/§2.3/§2.5 + migrations.py根拠）。"
+  - id: AC2
+    status: pass
+    evidence: "001.md『B』にB1-B5を追加（型完全版、詳細3セクション、色6、Trend5、レスポンシブ）。"
+  - id: AC3
+    status: pass
+    evidence: "001.md『C』にC1-C5を追加（認証/エラー4/性能/保持/定数9）。"
+  - id: AC4
+    status: pass
+    evidence: "ワイヤーフレーム更新 + 再利用パーツ追加 + 実装フェーズ精緻化を反映。"
+  - id: AC5
+    status: pass
+    evidence: "各項目に仕様書章参照を付与し、章番号ベースで整合確認。"
+  - id: AC6
+    status: pass
+    evidence: "本報告の lesson_candidate に知見を記録。"
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: false

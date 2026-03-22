@@ -1,0 +1,70 @@
+worker_id: hayate
+task_id: null
+parent_cmd: cmd_1209
+timestamp: '2026-03-21T19:22:44'
+status: done
+ac_version_read: 066f26bd
+result:
+  summary: ashigaru.md(1030行)を3ファイルに分割完了。ashigaru.md:370行、ashigaru-procedures.md:464行、ashigaru-recon.md:136行。全500行以下。CLAUDE.md
+    /clear Recovery (ninja)はashigaru.md不読設計を維持。
+  details: YAML front matter+中核ルールをashigaru.mdに残し、詳細手順をashigaru-procedures.mdに、偵察・レビュールールをashigaru-recon.mdに移動。各分割先へのポインタを本体に記載。.gitignoreに分割先ファイルを追加。build_instructions.sh動作確認済み。
+  self_gate_check:
+    lesson_ref: PASS
+    lesson_candidate: PASS
+    status_valid: PASS
+    purpose_fit: PASS
+purpose_validation:
+  cmd_purpose: ashigaru.md(1030行)をVercel 500行以下に分割し、全忍者のCTX効率を改善する
+  fit: true
+  purpose_gap: ''
+files_modified:
+- instructions/ashigaru.md
+- instructions/ashigaru-procedures.md
+- instructions/ashigaru-recon.md
+- .gitignore
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: .gitignoreホワイトリスト方式ではinstructions/配下の新規ファイルもブロックされる
+  detail: instructions/配下にファイル分割で新規mdファイルを作成するとgit addで.gitignoreにブロックされる。ホワイトリスト方式のため!instructions/ashigaru-procedures.md等の明示的許可が必要。
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bash算術の教訓はファイル分割作業に該当せず
+- id: L225
+  useful: false
+  reason: MCP entity名義混入の教訓はファイル分割に該当せず
+- id: L063
+  useful: false
+  reason: YAML dict構造の教訓はファイル分割に該当せず
+- id: L085
+  useful: true
+  reason: 影響範囲の全文検索が必要という教訓を適用し、grepでashigaru.mdの全参照箇所を確認した
+- id: L103
+  useful: false
+  reason: skill.md小文字問題はファイル分割に該当せず
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: ashigaru.mdが500行以下か
+    result: yes (370行)
+  - check: YAML front matterがashigaru.mdに残っているか
+    result: 'yes'
+  AC2:
+  - check: 分割先ファイルが各500行以下か
+    result: yes (procedures:464行, recon:136行)
+  - check: 全ての内容が保持されているか
+    result: yes (全30セクション確認済み)
+  AC3:
+  - check: /clear Recovery (ninja)がashigaru.md不読設計を維持しているか
+    result: 'yes'
+  - check: git commitが成功したか
+    result: yes (0728ba6)
+verdict: PASS

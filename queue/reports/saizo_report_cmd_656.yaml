@@ -1,0 +1,63 @@
+worker_id: saizo
+task_id: cmd_656_e2e_base
+parent_cmd: cmd_656
+timestamp: "2026-03-08T17:47:22+09:00"
+status: done
+result:
+  summary: "E2E基盤とシナリオ6本をローカル編成へ移植し、既存E2Eを含む7本のBats PASSを確認。"
+  details: |
+    - AC1: `tests/e2e/mock_behaviors/` に common/claude/codex の3ファイルを追加し、`mock_cli.sh` から利用する形に再構成。
+    - AC2: `tests/e2e/helpers/tmux_helpers.bash` を追加し、既存 `tests/helpers` を参照する wrapper も配置。
+    - AC3: `e2e_basic_flow / blocked_by / bloom_routing / busy_clear_guard / clear_recovery / codex_startup` をローカル pane/agent 構成向けに追加。
+    - AC4: `bats --timing` で上記6本と `tests/e2e/e2e_inbox_delivery.bats` のPASSを確認。
+purpose_validation:
+  cmd_purpose: "yohey-w版E2E基盤+シナリオ前半6本の適応移植"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/.gitignore
+  - /mnt/c/tools/multi-agent-shogun/scripts/inbox_watcher.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/mock_cli.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/mock_behaviors/common.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/mock_behaviors/claude_behavior.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/mock_behaviors/codex_behavior.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/helpers/setup.bash
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/helpers/assertions.bash
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/helpers/tmux_helpers.bash
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/e2e_basic_flow.bats
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/e2e_blocked_by.bats
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/e2e_bloom_routing.bats
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/e2e_busy_clear_guard.bats
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/e2e_clear_recovery.bats
+  - /mnt/c/tools/multi-agent-shogun/tests/e2e/e2e_codex_startup.bats
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_656.yaml
+test_results:
+  - command: "bats --timing tests/e2e/e2e_basic_flow.bats tests/e2e/e2e_blocked_by.bats tests/e2e/e2e_bloom_routing.bats tests/e2e/e2e_busy_clear_guard.bats tests/e2e/e2e_clear_recovery.bats tests/e2e/e2e_codex_startup.bats tests/e2e/e2e_inbox_delivery.bats"
+    result: pass
+    evidence: "7/7 PASS"
+lessons_useful:
+  - L074
+  - L063
+  - L032
+  - L058
+  - L002
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "mock_behaviors 3ファイルを追加し、mock_cli から source する構成へ変更。"
+  - id: AC2
+    status: pass
+    evidence: "tests/e2e/helpers/tmux_helpers.bash を追加し、setup/assertions wrapper と共存。"
+  - id: AC3
+    status: pass
+    evidence: "指定6シナリオを tests/e2e/ に追加し、ローカル agent 名・pane 構成へ適応。"
+  - id: AC4
+    status: pass
+    evidence: "Bats 7本一括実行で全PASS。"

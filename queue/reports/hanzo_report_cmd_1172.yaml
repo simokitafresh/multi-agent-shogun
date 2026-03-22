@@ -1,0 +1,79 @@
+worker_id: hanzo
+task_id: cmd_1172_scan
+parent_cmd: cmd_1172
+status: done
+task_type: recon
+timestamp: 2026-03-20 20:21:17+09:00
+summary:
+  ? scripts/配下の全142本.shファイルに対し4パターンカテゴリ(a:自動アクション, b:意思決定スキップ, c:gate後自動処理, d:人間介入回避)でgrepスクリーニングを実施。候補86本/非候補56本。cmd_1171カバー済み21本を除外し残り72本を精査。結果
+  : 消火=0件, グレー=7ファイル(閾値ベース自動アクション), 正当=65ファイル。142本全量で消火パターンはcmd_1171既検出のgate_auto_respond.sh
+    L115(handle_cmd_state自動委任)1件のみ。新規消火パターン0件。
+ac_results:
+  AC1:
+    status: PASS
+    detail:
+      142本全スクリーニング完了。候補86本(1件以上ヒット)/非候補56本(ヒットなし)。上位: cmd_complete_gate.sh(142hits),
+        ninja_monitor.sh(66), deploy_task.sh(42), auto_deploy_next.sh(37), inbox_watcher.sh(32),
+        gate_auto_respond.sh(24)
+    binary_checks: 142本grep済:yes, 4カテゴリ全検索:yes, 全ファイルフラグ付与:yes
+  AC2:
+    status: PASS
+    detail:
+      72本精査完了。消火0件/グレー7件/正当65件。cmd_1171結果と統合: 全142本で消火1件(gate_auto_respond.sh L115のみ、cmd_1171既検出)
+    binary_checks: cmd_1171除外して精査対象特定:yes, 3観点判定記載:yes, 統合サマリ作成:yes
+lesson_candidate:
+  found: false
+grey_files: 'グレー7ファイル(閾値ベース自動アクション、消火ではない):
+
+  1. ninja_monitor.sh - L1755:SHOGUN_ALERT_DEBOUNCE(通知間引き), L1903-1916:LESSON_ALERT_DEBOUNCE(通知間引き),
+  L110:AUTO_DEPLOY_DONE(auto_deploy_next.sh呼出元/cmd_1171#6で判定済み), L1800-1802:MODEL_NAME_FIX(表示変数自動修正),
+  L2035-2044:YAML_SIZE閾値チェック(通知のみ)
+
+  2. daemon_watchdog.sh - L41-47:ninja_monitor死亡→自動再起動+ntfy通知, L54-60:ntfy_listener死亡→自動再起動+ntfy通知,
+  L74-113:inbox_watcher死亡→自動再起動+ntfy通知
+
+  3. health_check.sh - L144-179:inbox_watcher死亡→自動再起動+karo通知, L74-89:タスク停滞→karo通知のみ,
+  L132-136:未読滞留→karo通知のみ, L209-220:CLI死亡→karo通知のみ
+
+  4. inbox_watcher.sh - L56-60:スクリプトhash変更→self-restart(MIN_UPTIME guard付), L271-275:CLI
+  restart(inbox指示ベース), L49-50:inotify不発時retry+backoff
+
+  5. ntfy_listener.sh - L213-226:curlストリーム停滞→自動再接続, L379:watchdog判定→curl再起動
+
+  6. lib/script_update.sh - L14-21:スクリプトhash変更→MIN_UPTIME guard→自動再起動(デーモン自己更新ライブラリ)
+
+  7. usage_monitor.sh - L177:MCAS_ALERT_COOLDOWN(アラート再送抑制), L192-202:MCAS_ALERT_THRESHOLD(使用量閾値通知)
+
+  全て: gateブロック解消ロジックなし。インフラ生命維持/通知制御のみ。'
+legitimate_files_summary: '正当65ファイルのgrepヒットは全て以下に該当:
+
+  (1) ログ/コメント内skip文言 - データスキップの記録
+
+  (2) デフォルト値fallback - 値不在時の安全なデフォルト
+
+  (3) flockロックretry - 排他制御の標準パターン
+
+  (4) YAML解析スキップ - 不正/不在データの正常スキップ
+
+  (5) gate結果の参照/表示 - ALERT/BLOCK/WARN文字列の読取りのみ
+
+  (6) 手動実行用restart系(restart_monitor/restart_watchers/restart_ntfy_listener)
+
+  注目: auto_draft_lesson.sh=正当(lesson_candidate.found=true時のみ登録、判断はレビュー段階で完了済), hooks/test_result_guard.sh=正当(SKIP/FAIL検出→コンテキスト注入、自動修正なし)'
+integration_summary:
+  全142本統合結果:
+  - 消火パターン: 1件(gate_auto_respond.sh L115 handle_cmd_state自動委任 — cmd_1171#2で既検出)
+  - グレー(閾値ベース): cmd_1171約15件 + cmd_1172で7ファイル = 約22ファイル
+  - 正当: 約119ファイル
+  - 結論: 新規消火パターン0件。グレーはインフラデーモン再起動/通知抑制のみでgateブロック解消ロジックなし
+verdict: PASS
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

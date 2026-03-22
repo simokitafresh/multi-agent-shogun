@@ -1,0 +1,77 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_693_review
+parent_cmd: cmd_693
+timestamp: "2026-03-09T12:18:15+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`MainActivity.kt:187-219` の `Scaffold.bottomBar` は `NavigationBar` を常時描画しており、`AnimatedVisibility` や scroll 連動状態は存在しない。`git diff HEAD~1` でも自動非表示用の `showBottomNavState` / `NestedScrollConnection` / `nestedScroll` が撤去されている。"
+  - id: AC2
+    status: pass
+    evidence: "`MainActivity.kt:191` の `Modifier.imePadding()` と `MainActivity.kt:220-224` の `Modifier.padding(innerPadding)` が併用され、ボトムバー分の inset を content 側へ渡す構成を維持している。`./gradlew app:compileDebugKotlin` と `./gradlew app:assembleDebug` も成功した。"
+  - id: AC3
+    status: pass
+    evidence: "`git diff --name-only HEAD~1..HEAD` は `android/app/src/main/java/com/shogun/android/MainActivity.kt` 1ファイルのみ、`git diff --check HEAD~1..HEAD` も空。pinch-zoom や terminal 送信ロジックには変更が及んでいない。"
+result:
+  summary: "cmd_693 review PASS。Android ボトムナビ自動非表示の撤去は要件どおりで、レイアウト維持と既存機能非破壊もコード確認と Gradle ビルドで確認できたため、commit `b6e7352` を `origin/main` へ push 済み。"
+  details: |
+    確認結果:
+    1. `git show --stat --oneline HEAD~1..HEAD` は `MainActivity.kt` 1ファイルのみ、28 insertions / 44 deletions で task scope 内に収まっていた。
+    2. `ShogunApp()` は `Modifier.fillMaxSize()` の `Scaffold` に単純化され、bottom bar は `NavigationBar(modifier = Modifier.imePadding())` を常時描画する構成へ戻っている。
+    3. `rg -n "showBottomNavState|NestedScrollConnection|AnimatedVisibility|nestedScroll|onPreScroll|NestedScrollSource" android/app/src/main/java/com/shogun/android/MainActivity.kt` はヒット 0 件で、自動非表示コードの残骸は見当たらなかった。
+    4. `NavHost(modifier = Modifier.padding(innerPadding))` は維持されており、bottom bar 分の余白を content 側へ渡す既存レイアウトも保たれている。
+    5. `android/` で `./gradlew app:compileDebugKotlin` と `./gradlew app:assembleDebug` を実行し、いずれも `BUILD SUCCESSFUL` を確認した。
+    6. push 前に `git rev-parse HEAD` / `git ls-remote origin refs/heads/main` を照合し、`origin/main` が `c5706d6`、local HEAD が `b6e7352` であることを確認後、`git push origin main` を実行し `c5706d6..b6e7352  main -> main` で成功した。
+purpose_validation:
+  cmd_purpose: "cmd_693レビュー: 佐助の Android ボトムナビ常時表示化を検証し、PASS なら push する。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/MainActivity.kt
+verification:
+  - command: "git show --stat --oneline HEAD~1..HEAD"
+    result: pass
+    notes: "`MainActivity.kt` 1ファイルのみ。"
+  - command: "rg -n \"showBottomNavState|NestedScrollConnection|AnimatedVisibility|nestedScroll|onPreScroll|NestedScrollSource\" android/app/src/main/java/com/shogun/android/MainActivity.kt"
+    result: pass
+    notes: "ヒット 0 件で自動非表示ロジック残骸なし。"
+  - command: "git diff --check HEAD~1..HEAD"
+    result: pass
+    notes: "whitespace error なし。"
+  - command: "./gradlew app:compileDebugKotlin"
+    result: pass
+    notes: "`android/` 直下で `BUILD SUCCESSFUL in 14s`。"
+  - command: "./gradlew app:assembleDebug"
+    result: pass
+    notes: "`android/` 直下で `BUILD SUCCESSFUL in 4s`。"
+  - command: "git push origin main"
+    result: pass
+    notes: "`c5706d6..b6e7352  main -> main` を確認。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L186
+    useful: true
+    reason: "`git ls-remote origin refs/heads/main` と local HEAD 再確認を push 直前に行い、共有 main への review push を安全に実施できた。"
+  - id: L179
+    useful: true
+    reason: "impl 側が commit 済みかを `git log --oneline -5` と差分確認で先に確かめ、未 commit 報告の混入を回避した。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

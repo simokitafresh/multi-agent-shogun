@@ -1,0 +1,79 @@
+worker_id: kirimaru
+task_id: cmd_684_impl
+parent_cmd: cmd_684
+timestamp: "2026-03-09T03:48:20+0900"
+status: done
+ac_version_read: 6
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L165) で `wasAtBottomLazy` / `wasAtBottomScroll` を保持し、[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L202) の `showScrollToBottomFab` が最下部から離れた時だけ true になる。`AnimatedVisibility` により FAB は離脱時のみ表示される。"
+  - id: AC2
+    status: pass
+    evidence: "[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L291) で softWrap ON は `listState.animateScrollToItem(lines.lastIndex)`、softWrap OFF は `verticalScrollState.animateScrollTo(verticalScrollState.maxValue)` を実行する。 [AgentsScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt#L567) でも同じく `animateScrollTo(maxValue)` で最下部へ戻る。"
+  - id: AC3
+    status: pass
+    evidence: "[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L175) と [ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L183) が最下部判定を更新し、到達時は `showScrollToBottomFab` が false へ戻るため FAB は自動消失する。 [AgentsScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt#L468) も同様に `wasAtBottom` を更新し、[AgentsScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt#L479) の表示条件が解除される。"
+  - id: AC4
+    status: pass
+    evidence: "[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L190) が softWrap ON の `LazyColumn` 経路、[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L196) が softWrap OFF の `ScrollState` 経路を個別に扱っている。Agents full-screen pane は [AgentsScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt#L536) で `softWrapEnabled` を切り替えつつ、同一 `ScrollState` ベースの FAB 操作で ON/OFF どちらでも最下部復帰できる。"
+  - id: AC5
+    status: pass
+    evidence: "`android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt` と `android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt` の両方に半透明 `SmallFloatingActionButton` と `AnimatedVisibility` を追加した。将軍画面とエージェント full-screen 画面の双方で同じ導線を提供している。"
+  - id: AC6
+    status: pass
+    evidence: "`android/` で `./gradlew assembleDebug --rerun-tasks` を実行し、`BUILD SUCCESSFUL in 1m 4s` を確認した。初回の `./gradlew assembleDebug` は Kotlin build cache 欠損で失敗したが、再実行ではコード起因の compile error なく成功。"
+result:
+  summary: "Androidアプリの Shogun 画面と Agents full-screen pane に、最下部から離れた時だけ現れる『最下部へ戻る』FABを追加した。タップでアニメーション付きで最下部へ復帰し、最下部到達で自動的に消える。"
+  details: |
+    実施内容:
+    1. `android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt`
+       - `wasAtBottomLazy` / `wasAtBottomScroll` から FAB 表示条件を導出
+       - `AnimatedVisibility(fade + slide)` と半透明 `SmallFloatingActionButton` を追加
+       - softWrap ON は `LazyListState.animateScrollToItem`、OFF は `ScrollState.animateScrollTo` で最下部へ戻す
+    2. `android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt`
+       - `PaneFullScreen` に同じ視覚スタイルの FAB を追加
+       - `wasAtBottom` が false の時だけ表示し、タップで `animateScrollTo(maxValue)` を実行
+
+    検証:
+    - `android/` で `./gradlew assembleDebug --rerun-tasks` を実行し成功
+    - commit は `a82bcbb` (`feat(cmd_684): add scroll-to-bottom FAB`) を作成。push は未実施。
+purpose_validation:
+  cmd_purpose: "Androidアプリに『最下部へ戻る』フローティングボタンを実装し、ShogunScreen と AgentsScreen の両方で動作させる。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_684.yaml
+verification:
+  - command: "./gradlew assembleDebug --rerun-tasks"
+    result: pass
+    notes: "`android/` 直下で実行し、`BUILD SUCCESSFUL in 1m 4s` を確認。warning は既存の deprecated icon/unused parameter のみ。"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: false
+  - id: L063
+    useful: false
+  - id: L032
+    useful: false
+  - id: L173
+    useful: false
+  - id: L145
+    useful: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

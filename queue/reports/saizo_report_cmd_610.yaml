@@ -1,0 +1,112 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: saizo
+task_id: subtask_610_scout_b
+parent_cmd: cmd_610
+timestamp: "2026-03-06T17:32:23+0900"
+status: done
+ac_version_read: 3
+result:
+  summary: "軸2は進化、軸4は停滞と評定。cmd_586-591 と cmd_600 の修正は現行ソースへ保持され、新規HIGHは scripts 全量走査で 0 件。一方で tier/Sonnet 系の旧語・死蔵 API が 5 ファイルに残存した。"
+  details: |
+    ■ 軸2: バグ残存チェック → 評定: 進化
+    事実:
+    - cmd_586-591 / cmd_600 の主要修正は現行ソースに残存している。
+      - `scripts/cmd_complete_gate.sh:42-90` report unwrap は flock + atomic replace 化済み
+      - `scripts/cmd_complete_gate.sh:137-150` status 読み取りは Python + yaml.safe_load 化済み
+      - `scripts/ninja_monitor.sh:1051-1054` stale cmd timestamp は `date -d ... || echo "0"` フォールバック済み
+      - `scripts/ninja_monitor.sh:1391-1429`, `1441-1443` state/snapshot 書き込みはブレースグループで flock 保持
+      - `scripts/inbox_watcher.sh:419-443` special message は送信成功後のみ既読化
+      - `scripts/archive_completed.sh:233-235`, `457-465` mv 前存在確認と失敗時 FATAL 追加済み
+      - `lib/cli_adapter.sh:205-217` は tier フォールバックを廃し、デフォルト `opus` に統一
+    - `queue/reports/kotaro_report_cmd_586.yaml`, `tobisaru_report_cmd_587.yaml`, `sasuke_report_cmd_588.yaml`, `kirimaru_report_cmd_590.yaml`, `tobisaru_report_cmd_591.yaml`, `hanzo_report_cmd_600.yaml`, `kagemaru_report_cmd_600.yaml` を読んで現行ソースと突合したところ、報告内容と現コードは一致した。
+    - `scripts/*.sh` は `find scripts -type f -name '*.sh' | wc -l` で 104 本、`xargs bash -n` は全件成功。
+    - heuristic grep では `eval` / pipe-to-shell の新規危険実装は検出せず。`set -euo pipefail|set -eu` 宣言ヒットは 45 行。
+    評価:
+    - HIGH 修正群は保持され、新たな HIGH は scripts 全量走査で 0 件。残るのは MEDIUM 3 件。
+    根拠:
+    - MEDIUM-1: `scripts/archive_completed.sh:301-307` は sweep mode で `QUEUE_FILE` の親cmd状態しか見ず、`474-476` で `archive_cmds` が先行するため、完了報告が keep 側へ残留しうる。
+    - MEDIUM-2: `scripts/reset_layout.sh:298-305`, `340`, `364-372` は `genin/jonin` と `Sonnet` 色分岐を再注入する。
+    - MEDIUM-3: `scripts/model_switch_preflight.sh:148-151` は廃止済み `tier` 欠如を全 agent に警告する。
+
+    ■ 軸4: インフラ衛生 → 評定: 停滞
+    事実:
+    - raw grep 件数（対象: config / instructions / scripts）
+      - `Sonnet`: 31 hit
+      - `tier`: 22 hit
+      - `bloom_level`: 52 hit
+    - 上記を手で仕分けると、`bloom_level` は `scripts/cmd_complete_gate.sh` / `scripts/deploy_task.sh` など現行メトリクス用途が中心で、旧形式残骸とは断定できなかった。
+    - 一方、実害ある旧 terminology / dead code は 5 ファイルに残存。
+      - `scripts/reset_layout.sh` 8 hit: 旧 tier metadata + Sonnet 色分岐
+      - `scripts/model_switch_preflight.sh` 4 hit: 廃止済み tier 前提の警告
+      - `scripts/lib/cli_lookup.sh` 8 hit: `cli_tier` / `is_genin` / `is_jonin` が残存し、`rg -n "cli_tier\\(|is_genin\\(|is_jonin\\(" .` では自己定義以外の参照 0 件
+      - `scripts/backfill_task_type.sh:104-112` 1 hit: 非 Codex を `Sonnet` ラベルへ丸める旧分析ロジック
+      - `instructions/ashigaru.md:325-346`, `522-524` 6 hit: `報告書を確認されよ` / `完了でござる` の古い通知・YAML例が非 generated 本体に残存
+    - `projects/infra.yaml:6` の更新日表示は `2026-02-21` のままで、内容（Codex4/Opus4 編成）との鮮度表示がずれている。
+    - ログサイズは最大でも `logs/ninja_monitor.log=9.6M`, `logs/gist_sync.log=1.9M`, `logs/inbox_watcher_karo.log=1.9M` で、cmd_591 のローテーション導入後に 10MB 級で踏みとどまっている。
+    評価:
+    - docs/config の大半は前進したが、運用補助スクリプトと ashigaru 本体指示に旧語が残り、衛生状態は「停滞」。退化までは至っていない。
+    根拠:
+    - 実行系の本線 (`cli_adapter`, `inbox_watcher`, `ninja_monitor`, `cmd_complete_gate`) は更新済みだが、周辺ツール (`reset_layout`, `model_switch_preflight`, `cli_lookup`, `backfill_task_type`) が追随していない。
+
+    ■ 残存件数まとめ
+    - 新規 HIGH findings in scripts: 0
+    - 残存 MEDIUM findings in scripts: 3
+    - actionable stale terminology / dead code: 5 files, 27 line-hits
+    - log files > 10MB: 0
+
+ac_results:
+  - id: AC2
+    status: pass
+    evidence: "`scripts/*.sh` 104 本を全量対象化し、`bash -n` 全件成功。新規 HIGH は 0 件、残存 MEDIUM 3 件をファイル名・行番号付きで報告した。"
+  - id: AC4
+    status: pass
+    evidence: "dead code/stale config/旧 terminology の残存を件数化した。raw grep は Sonnet 31 / tier 22 / bloom_level 52、manual triage 後の actionable 残存は 5 ファイル 27 hit。"
+  - id: AC5b
+    status: pass
+    evidence: "軸2=進化、軸4=停滞を各々『事実→評価→根拠』で明示した。"
+test_results:
+  - command: "find scripts -type f -name '*.sh' | sort | wc -l"
+    result: pass
+    notes: "104"
+  - command: "find scripts -type f -name '*.sh' | sort | xargs bash -n"
+    result: pass
+    notes: "構文エラー 0"
+  - command: "rg -n -S -P 'Sonnet|\\\\btier\\\\b|bloom_level' config instructions scripts"
+    result: pass
+    notes: "Sonnet 31 / tier 22 / bloom_level 52"
+  - command: "ls -lh logs"
+    result: pass
+    notes: "最大は ninja_monitor.log 9.6M、10MB超なし"
+files_checked:
+  - /mnt/c/tools/multi-agent-shogun/scripts/cmd_complete_gate.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/ninja_monitor.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/inbox_watcher.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/archive_completed.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/reset_layout.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/model_switch_preflight.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/lib/cli_lookup.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/backfill_task_type.sh
+  - /mnt/c/tools/multi-agent-shogun/lib/cli_adapter.sh
+  - /mnt/c/tools/multi-agent-shogun/projects/infra.yaml
+  - /mnt/c/tools/multi-agent-shogun/context/infrastructure.md
+  - /mnt/c/tools/multi-agent-shogun/instructions/ashigaru.md
+purpose_validation:
+  cmd_purpose: "cmd_585総点検(連勝219時点)から50cmd以上経過した現在、システムが実際に賢くなっているか・知識が循環しているか・古いバグが残っていないかを定量的に評価する"
+  fit: true
+  purpose_gap: "知識循環そのものの効果測定(軸1/軸3)は本偵察Bの担当外で未評価。担当範囲である軸2/軸4のみを定量化した。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_610.yaml
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L171
+  - L173
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

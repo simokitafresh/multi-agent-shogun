@@ -1,0 +1,87 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: tobisaru
+task_id: cmd_908_B
+parent_cmd: cmd_908
+timestamp: "2026-03-13T14:28:12"
+status: pass
+verdict: PASS
+reviewed_by: karo
+reviewed_at: "2026-03-13T14:30:00"
+review_notes: "AC4(購入領収書PDF)+AC5(CLI)+AC6(テスト50件)完了。全93テストPASS。decision_candidate(PD-003整合)は将軍判断事項として記録"
+ac_version_read: 3
+result:
+  summary: |
+    note.com購入領収書PDF自動取得+CLIサブコマンド+ユニットテスト50件を完成。
+    AC4(領収書PDF生成)・AC5(CLI)・AC6(テスト) 全て実装済み。
+    全93テスト(既存43+新規50) PASS、SKIP=0。
+  details: |
+    ■ AC4: 購入履歴の領収書PDF自動生成
+    - 設定ページ→「購入・チップ履歴」タブへsnapshot+refで遷移
+    - 各購入の「…」→「領収書」をsnapshot+refでクリック
+    - 宛名入力（.env.noteのNOTE_RECEIPT_NAME）→確定
+    - CDP Page.printToPDFで領収書をPDF化
+    - PDF命名: {YYYY-MM}_note_有料記事_{金額}_{記事名}.pdf
+    - 保存先: data/note_receipts/YYYY-MM/
+    - 各操作間に2-3秒のwait（rate limit対策）
+    - _get_ref_context()で購入一覧から記事名・金額を抽出
+    - 領収書ページからも記事名・金額を再取得（fallback）
+    - ファイル名衝突回避（index付加）
+
+    ■ AC5: CLIインターフェース（サブコマンド方式）
+    - python3 workflows/note_pipeline.py sales --month 2026-02 → 売上CSV DL
+    - python3 workflows/note_pipeline.py receipts --month 2026-02 → 購入領収書PDF取得
+    - python3 workflows/note_pipeline.py all --month 2026-02 → 両方実行
+    - --help でサブコマンド一覧表示
+    - 共通オプション: --env-file, --cdp-port, --browser
+    - receiptsとallは--month必須、salesは省略時に前月
+
+    ■ AC6: ユニットテスト（50件新規）
+    - DotenvTests(5件): dotenv解析、認証情報バリデーション、receipt_nameオプション
+    - MonthResolutionTests(8件): 月解析、前月計算、ターゲット月解決
+    - SanitizeFilenameTests(6件): ファイル名サニタイズ（特殊文字、切り詰め、Unicode正規化）
+    - ReceiptPdfFilenameTests(4件): PDF命名規則（標準、金額なし、特殊文字、長い名前）
+    - ExtractAmountTests(4件): 金額抽出（円、カンマ、全角円記号）
+    - ExtractArticleNameTests(4件): 記事名抽出（基本、メタデータスキップ、空、金額のみ）
+    - SnapshotHelperTests(5件): _find_ref, _find_all_refs
+    - CLITests(10件): サブコマンド解析、必須引数、カスタムオプション
+    - CsvPathTests(2件): CSV/領収書パス生成
+    - LoginFlowMockTests(1件): snapshot+refモックでのログインフロー
+    - PurchaseEntryTests(1件): データクラス
+    - 既存テスト43件も全てPASS
+
+    ■ ファイル一覧
+    - 修正: /mnt/c/Python_app/auto-ops/workflows/note_pipeline.py (615→全面改修)
+    - 修正: /mnt/c/Python_app/auto-ops/.env.note.example (NOTE_RECEIPT_NAME追加)
+    - 新規: /mnt/c/Python_app/auto-ops/tests/test_note_pipeline.py (50テスト)
+purpose_validation:
+  cmd_purpose: "note.com購入領収書PDF自動取得+CLIインターフェース+ユニットテスト"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/auto-ops/workflows/note_pipeline.py (全面改修)
+  - /mnt/c/Python_app/auto-ops/.env.note.example (NOTE_RECEIPT_NAME追加)
+  - /mnt/c/Python_app/auto-ops/tests/test_note_pipeline.py (新規)
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful:
+  - id: L012
+    how: CDPポート分離の知見を踏襲。noteは9232でMFの9231と共有ポート9222から分離
+  - id: L013
+    how: f-string内のJS空オブジェクト{}の知見を意識。fetch JSではjson.dumps+文字列結合パターンを使用
+  - id: L010
+    how: note.com領収書がHTML表示方式のみという知見を踏まえ、Page.printToPDFでPDF化を実装
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "AC4はPD-003(手動DL+自動処理)と方針が異なる — CDP自動取得で実装"
+  detail: |
+    PD-003(解決済み)はnote領収書を「手動DL+自動リネーム/アップロード」と裁定。
+    本cmdのAC4はCDP自動取得での実装を指示。
+    タスクYAMLの指示に従いCDP方式で実装したが、殿の裁定との整合確認が必要。
+    context/auto-ops.mdにも「CDP自動取得は見送り。将来再検討可(L010)」と記載あり。

@@ -1,0 +1,71 @@
+worker_id: sasuke
+task_id: cmd_747_impl
+parent_cmd: cmd_747
+timestamp: "2026-03-11T02:42:30+0900"
+status: done
+ac_version_read: 7
+verdict: PASS
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`docs/research/cmd_719_720_performance-baseline.md` §2.1 #1 で『Renderコールドスタート』を『Proプランのため該当しない（偵察時の誤認）』と明記。"
+  - id: AC2
+    status: pass
+    evidence: "`docs/research/cmd_719_720_performance-baseline.md` §2.2 から『コールドスタート対策(healthz ping cron)』を除去済み。"
+  - id: AC3
+    status: pass
+    evidence: "`docs/research/cmd_719_720_performance-baseline.md` §2.3 の盲点テーブルで『uvicorn 1ワーカー』を『cmd_743で --workers 2 に修正済み』へ更新。"
+  - id: AC4
+    status: pass
+    evidence: "`docs/research/cmd_719_720_performance-baseline.md` §2.4 で旧 #3 コールドスタート項目を削除し、番号を振り直した。#2 katei CSS, #5 prefetch縮退, #6 uvicorn に完了cmdを付記。"
+  - id: AC5
+    status: pass
+    evidence: "`docs/research/cmd_719_720_performance-baseline.md` §3.1 の Infra 行は『backend は Render Pro。コールドスタート仮説は本件では不採用』へ補正済み。"
+  - id: AC6
+    status: pass
+    evidence: "`docs/research/cmd_719_720_performance-baseline.md` §4 の `uvicorn workers` は `2` に更新済み。"
+  - id: AC7
+    status: pass
+    evidence: "`context/dm-signal-frontend.md` §8 で『Renderコールドスタート15s+が最大ボトルネック』を誤認注記へ置換し、改善Top3を未完了施策ベースへ更新。"
+result:
+  summary: "cmd_747 は PASS。欠落していた `docs/research/cmd_719_720_performance-baseline.md` を現行事実ベースで再構築し、frontend context の誤認記述も補正した。"
+  details: |
+    実施内容:
+    1. `render.yaml` を確認し、backend が `plan: pro` / `healthCheckPath: /healthz` / `uvicorn --workers 2` であることを裏取り。
+    2. `queue/reports/karo_report_cmd_720.yaml` を基に、`docs/research/cmd_719_720_performance-baseline.md` を補正版として新規作成。
+    3. 研究メモではコールドスタート誤認を明記し、`cmd_733` / `cmd_741` / `cmd_743` の完了を反映。
+    4. `context/dm-signal-frontend.md` §8 を更新し、完了済み施策と未完了 Top3 を分離して記載。
+verification:
+  - command: "sed -n '1,220p' /mnt/c/Python_app/DM-signal/docs/research/cmd_719_720_performance-baseline.md"
+    result: pass
+    notes: "§2.1 / §2.2 / §2.3 / §2.4 / §3.1 / §4 の補正文言を確認。"
+  - command: "sed -n '100,120p' /mnt/c/tools/multi-agent-shogun/context/dm-signal-frontend.md"
+    result: pass
+    notes: "§8 の誤認注記、完了済み施策、改善Top3(未完了) を確認。"
+failure_analysis:
+  root_cause: ""
+  what_would_prevent: ""
+purpose_validation:
+  cmd_purpose: "2ファイルの事実誤認を修正せよ"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/docs/research/cmd_719_720_performance-baseline.md
+  - /mnt/c/tools/multi-agent-shogun/context/dm-signal-frontend.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_747.yaml
+lesson_candidate:
+  found: false
+lessons_useful:
+  - id: L218
+    useful: true
+    reason: "context の記述を鵜呑みにせず、実ファイルと完了cmdを先に突き合わせたことで誤認の再転記を防げた。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

@@ -1,0 +1,45 @@
+task_id: cmd_715_fix
+parent_cmd: cmd_715
+agent: kotaro
+status: done
+timestamp: '2026-03-10T03:55:00'
+summary: 'cmd_715レビューFAILの4問題を全て修正し、2 commitで完了。
+
+  '
+acceptance_criteria:
+  AC1:
+    status: PASS
+    detail: .gitignoreに !scripts/ci_status_check.sh を追加。git check-ignore で除外されないことを確認済み。
+  AC2:
+    status: PASS
+    detail: 'test_ntfy_ack.batsをNTFY_LISTENER_LIB_ONLY=1でsource方式にリファクタ。
+
+      coproc/timeout(0.25s)を廃止し、process_stream_lineを直接呼出。
+
+      根本原因: python3の7回起動(~700ms)に対してtimeout 0.25sが不足していた。
+
+      5回連続 --jobs 4 で8/8 PASS確認済み。
+
+      '
+  AC3:
+    status: PASS
+    detail: bash scripts/build_instructions.sh で再生成。723行の完全版を確認。
+  AC4:
+    status: PASS
+    detail: 16ファイルを1 commitにまとめた(cd5b60b)。android/context等の無関係ファイルは除外。テスト修正で追加1 commit(079d698)。
+  AC5:
+    status: PASS
+    detail: bats tests/unit/ --jobs 4 で252テスト全PASS、0 FAIL、0 SKIP。所要時間~36秒のためpre-push
+      timeoutを30→40秒に変更。
+commits:
+- hash: cd5b60b
+  message: 'fix(cmd_715): gitignore whitelist + test isolation + codex-shogun regen
+    + timeout 40s'
+- hash: 079d698
+  message: 'test: update pre-push hook test for timeout 40s'
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+decision_candidate: []

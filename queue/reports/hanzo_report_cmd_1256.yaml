@@ -1,0 +1,50 @@
+worker_id: hanzo
+task_id: cmd_1256_b
+parent_cmd: cmd_1256
+timestamp: '2026-03-22T19:08:42'
+status: done
+ac_version_read: a4770472
+result:
+  summary: gate_shogun_startup.shにdashboard.mdの[PROPOSAL]行数カウント表示追加。0件スキップ、1件以上で件数表示。情報提供のみ(overall未変更)
+  details: 'Gate 11として追加。grep -cで[PROPOSAL]カウント。0件→表示なし。1件以上→未処理PROPOSAL: N件。briefモードでは非表示。既存gateに影響なし。shellcheck
+    clean。テスト3パターンPASS(1件表示/0件非表示/briefモード非表示)'
+purpose_validation:
+  cmd_purpose: 将軍起動時に未処理PROPOSALの見落とし防止
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/gates/gate_shogun_startup.sh
+lesson_candidate:
+  found: false
+  no_lesson_reason: 単純なgrep -cによるカウント追加。新規パターンなし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: ((式))パターンは本タスクに該当せず。grep -cのみ使用
+- id: L225
+  useful: false
+  reason: MCP entity種別の教訓で本タスクに該当せず
+- id: L063
+  useful: false
+  reason: YAML構造の教訓で本タスクに該当せず
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC2:
+  - check: gate_shogun_startup.shにPROPOSALカウントロジック追加済みか
+    result: 'yes'
+  - check: PROPOSAL 0件で何も表示しないか
+    result: 'yes'
+  - check: PROPOSAL 1件以上で件数表示するか
+    result: 'yes'
+  - check: 他のgateチェックに影響しないか
+    result: 'yes'
+verdict: PASS

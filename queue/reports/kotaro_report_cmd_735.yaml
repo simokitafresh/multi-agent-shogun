@@ -1,0 +1,77 @@
+worker_id: kotaro
+task_id: cmd_735
+subtask_id: cmd_735_fix
+parent_cmd: cmd_735
+status: done
+type: impl
+project: infra
+timestamp: "2026-03-10T14:45:00+0900"
+
+ac_results:
+  AC1:
+    status: PASS
+    evidence: "既存実装維持(前回PASS)"
+  AC2:
+    status: PASS
+    evidence: "既存実装維持(前回PASS) + hashにproject含有でproject別トラッキングも正確に"
+  AC3:
+    status: PASS
+    evidence: "check_mcp_sync()をstaging vs tracker差分比較に改修。未同期[share:ninja]をentry単位で検知しWARN発火。テストデータで検証済み"
+  AC4:
+    status: PASS
+    evidence: "既存unit 252件全PASS、構文チェックPASS"
+
+ac_version_read: 4
+self_gate_check:
+  skip_count: 0
+  all_pass: true
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: LGTM
+
+implementation_details:
+  modified_files:
+    - path: scripts/gates/gate_shogun_memory.sh
+      description: |
+        check_mcp_sync()全面改修:
+        旧: logs/mcp_sync.logの最終日付のみ → 7/14日閾値判定
+        新: staging vs tracker差分比較
+        - staging内各entryのhash(project:observation)をtrackerと照合
+        - 未同期件数が1以上ならWARN発火
+        - staging不在→OK、tracker不在+staging有→WARN
+        - 補助: sync log鮮度チェック(14日超でWARN)も残存
+    - path: scripts/mcp_sync_lesson.sh
+      description: |
+        hashバグ修正:
+        旧: obs_hash = sha256(obs) — project無視
+        新: obs_hash = sha256(f"{project}:{obs}") — project含有
+        projectの読込をhash計算の前に移動
+
+test_results:
+  - command: "bash -n scripts/mcp_sync_lesson.sh scripts/gates/gate_shogun_memory.sh"
+    result: pass
+    notes: "両スクリプト構文エラーなし"
+  - command: "bash scripts/gates/gate_shogun_memory.sh"
+    result: pass
+    notes: "staging空で正常動作。MCP同期チェック: OK出力"
+  - command: "差分検知テスト(テストデータ: synced 1件 + unsynced 1件)"
+    result: pass
+    notes: "SYNCED/UNSYNCED正確に分類。RESULT:1:2出力"
+  - command: "project別hash分離テスト"
+    result: pass
+    notes: "同一observationでinfra/dm-signalで異なるhash生成確認"
+  - command: "timeout 120 bats tests/unit --jobs 4"
+    result: pass
+    notes: "252 PASS / 0 FAIL / 0 SKIP"
+
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "gate_shogun_memory.shの算術式で((PASS++))パターンを回避し、PASS=$((PASS+1))を徹底した"
+lesson_candidate:
+  found: false
+decision_candidate:
+  found: false
+summary: "佐助レビュー指摘2件を修正完了。AC3はstaging vs tracker差分比較方式に改修(未同期entry単位検知)、hashバグはproject含有方式に修正(複数PJ共有対応)。既存テスト252件全PASS"

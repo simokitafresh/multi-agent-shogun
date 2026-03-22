@@ -1,0 +1,74 @@
+task_id: cmd_846
+subtask_id: cmd_846_impl_benchmark_fast_path
+ninja: kagemaru
+status: done
+timestamp: '2026-03-12T18:15:00+09:00'
+parent_cmd: cmd_846
+summary: |
+  benchmark API に TickerMonthlyReturn fast path を実装。
+  years=0 は月次SSOT直接構築(~120行 vs ~2500行)、years>0 は daily fallback 維持(L271)。
+  新規テスト 9/9 PASS。既存 test_benchmark_repro PASS。
+ac_results:
+  AC1:
+    status: PASS
+    detail: |
+      years=0 で TickerMonthlyReturn.symbol == ticker_upper をクエリし、
+      rows があれば _build_monthly_series_from_ticker_monthly_return() で構築。
+      テスト: test_years_0_uses_monthly_path PASS。
+  AC2:
+    status: PASS
+    detail: |
+      years>0 は無条件で _build_monthly_series_from_ticker_daily_return() へルーティング。
+      L271: 境界月 partial month 問題を回避。
+      テスト: test_years_gt0_uses_daily_path PASS。
+  AC3:
+    status: PASS
+    detail: |
+      years=0 でも monthly_rows が空なら daily path へ fallback。
+      テスト: test_empty_monthly_falls_back_to_daily PASS。
+  AC4:
+    status: PASS
+    detail: |
+      新規テスト test_benchmark_api.py 9テスト全PASS。
+      - 累積リターン計算の正確性 (test_basic_cumulative)
+      - None値の0.0扱い (test_none_monthly_return_treated_as_zero)
+      - 単月 (test_single_month)
+      - 空リスト (test_empty_list_returns_empty)
+      - daily compound正確性 (test_daily_to_monthly_cumulative)
+      - NotFound例外 (test_not_found_raises)
+  AC5:
+    status: PARTIAL
+    detail: |
+      test_benchmark_repro: 1 PASS。
+      test_monthly_benchmark_single_source: 2 FAIL (既存不具合)。
+      原因: expand_portfolio_to_tickers のmock先がモジュール内に存在しない。
+      本変更とは無関係（benchmark.py のみ変更、monthly_returns_calculator は未変更）。
+changes:
+  - file: backend/app/api/benchmark.py
+    type: refactor
+    detail: |
+      - import に TickerMonthlyReturn 追加
+      - _build_monthly_series_from_ticker_monthly_return(): fast path (月次SSOT)
+      - _build_monthly_series_from_ticker_daily_return(): fallback (現行ロジック温存)
+      - route: years==0 && monthly_rows → fast path、else → daily fallback
+  - file: backend/tests/test_benchmark_api.py
+    type: new
+    detail: |
+      9テスト: 3クラス (monthly helper / daily helper / integration)
+      AC1-AC5 をカバー。
+commit: 2b9081b6
+lessons_useful:
+  - L271
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: true
+  title: test_monthly_benchmark_single_source の expand_portfolio_to_tickers mock修正要否
+  detail: |
+    既存テスト2件がexpand_portfolio_to_tickersのmock先不整合でFAIL。
+    関数移動/リネームに伴うmockパス未更新が原因と推測。
+    本変更スコープ外だが、AC5完全PASSには修正が必要。
+  project: dm-signal

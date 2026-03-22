@@ -1,0 +1,37 @@
+report:
+  task_id: cmd_1163_scripts
+  parent_cmd: cmd_1163
+  ninja: tobisaru
+  status: done
+  started_at: '2026-03-20T19:12:00'
+  completed_at: '2026-03-20T19:18:00'
+results:
+  AC1:
+    status: PASS
+    summary:
+      scripts/checklist_update.sh作成完了。flock排他制御+進捗自動再計算+atomic write。テスト: 5項目中3項目done→進捗0/5→3/5(60%)自動再計算確認
+  AC2:
+    status: PASS
+    summary:
+      scripts/checklist_progress.sh作成完了。1行サマリー出力確認。出力例: 3/5 (60%) | hanzo:2 saizo:1
+files_changed: scripts/checklist_update.sh(created), scripts/checklist_progress.sh(created)
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+lessons_useful:
+- id: L022
+  useful: false
+  reason: 新規スクリプト作成でありflock使用済み。pending_decision_write.shのリトライ教訓は直接関連なし
+verdict: PASS

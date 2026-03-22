@@ -1,0 +1,158 @@
+worker_id: sasuke
+task_id: subtask_605_scout_a
+parent_cmd: cmd_605
+timestamp: "2026-03-06T14:42:20+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+
+result:
+  summary: "レビュー運用はAC整合と差分限定確認に強いが、verdict/self_gate/TODO確認の制度強制は弱い。cmd_complete_gate.shは構造整合性を広く見る一方、内容妥当性はほぼ見ていない。直近50 CLEARの後続修正は確証3件。"
+  details: |
+    1. レビュー手順 vs 実態
+    - 規程要求:
+      - instructions/ashigaru.md L255-L266: 別忍者レビュー必須、PASS後のみpush、TODO/FIXME確認義務、構文検査報告義務。
+      - instructions/karo.md L154-L166 と L55: review担当は「実装者外が検証+push」、判定はPASS/FAIL二値。
+    - review報告は queue/archive/reports + queue/reports で6件しか存在せず、依頼上限30件には届かなかった。
+    - 定量:
+      - AC結果を構造化して記載: 5/6
+      - purpose_validation記載: 5/6
+      - verdict/review_result記載: 3/6（verdict=1, review_result=2, 残り3件は判定欄なし）
+      - self_gate_check記載: 1/6
+      - bash -n等の構文確認: 4/6
+      - git diff/show等の差分確認: 4/6
+      - 実行系確認(tmux等): 1/6
+      - TODO/FIXME確認の明記: 0/6
+    - 実際に見ているもの:
+      - AC適合
+      - 差分が対象範囲に限定されているか
+      - 既存フロー影響
+      - 構文エラー有無
+      - commit/push実施またはFAIL時見送り
+    - 実際に見ていない/弱いもの:
+      - verdict欄の統一
+      - TODO/FIXME確認
+      - self_gate_check
+      - レビュアー独立性の機械検証
+      - SKIP禁止の厳密確認
+
+    2. cmd_complete_gate.sh の検査範囲
+    - 必須ゲート: archive.done, lesson.done
+    - 条件付きゲート: report_merge.done(recon), review_gate.done(implement)
+    - preflightで自動生成/補完: archive, lesson, review_gate, report_merge
+    - BLOCK対象:
+      - 必須/条件付き done フラグ欠落
+      - context_update対象のlast_updated stale
+      - related_lessonsありでlessons_usefulが空/null
+      - ac_version mismatch
+      - lesson_candidate欠落/旧形式/構造不正/found:true未登録
+      - purpose_validation.fit=false
+      - project SSOTのdraft lesson残存
+      - context変更時のVercel phase link破損
+    - WARNまたは非BLOCK:
+      - related_lessonsキー欠落
+      - ac_version_read未記入
+      - purpose_validation未記入/不正値
+      - skill_candidate/decision_candidate構造
+      - raw grep YAML access
+      - karo inbox archive閾値
+      - pending decision context未同期
+      - recon結果の知識基盤未反映
+      - TODO/FIXME残存
+    - 見ていないもの:
+      - reportのverdict/review_result有無
+      - self_gate_check 4項目のPASS
+      - test_resultsのpass/fail/SKIP妥当性
+      - files_modifiedの真偽
+      - reviewerが実装者と別人か
+      - commit/pushの実在
+      - AC証拠の真偽
+      - review_gate/report_mergeの中身（doneファイル存在しか見ない）
+    - CLEAR条件:
+      - ALL_CLEAR=true のまま最終判定に到達すること
+      - 例外として queue/gates/<cmd>/emergency.override があれば OVERRIDE CLEAR
+
+    3. CLEAR後修正の遡及分析
+    - 対象: gate_metrics.log の直近50 CLEARを cmd単位でdedup。
+    - 後続cmdで修正が明示確認できたのは3件:
+      - cmd_564 CLEAR -> cmd_572 fix
+        - 分類: 要件反転/UX rollback
+        - 根拠: cmd_572 fixes: cmd_564
+      - cmd_594 CLEAR -> cmd_600 fix
+        - 分類: 偵察後に露出した残存HIGH修正
+        - 根拠: cmd_600 purpose が「cmd_594偵察で発見されたHIGH所見2件を修正」
+      - cmd_595 CLEAR -> cmd_598 fix
+        - 分類: 回帰/副作用
+        - 根拠: cmd_598 command が「cmd_595でモデル名をそのまま記録した結果 TSV列ズレ」と明記
+    - 下限値として 3/50 = 6.0%。
+    - ただし fixes: 明示は cmd_572 のみで、他2件は後続cmd本文参照による特定。実際の手戻り率はこれより高い可能性がある。
+  findings:
+    - category: "レビュー実態"
+      detail: "規程はPASS/FAIL二値・TODO/FIXME確認・PASS後pushを要求するが、実報告6件では verdict/review_result 記載3件、TODO/FIXME記載0件、self_gate_check記載1件に留まる。"
+    - category: "ゲート範囲"
+      detail: "cmd_complete_gate.sh は doneフラグ/lesson/ac_version/purpose_fit/draft/context freshness など構造整合を広く見る一方、verdict・self_gate_check・test skip・reviewer独立性・commit実在は未検査。"
+    - category: "品質事故"
+      detail: "直近50 CLEARのうち確証付き後続修正は3件。類型は要件反転1件、偵察露出の残存HIGH1件、回帰/副作用1件。"
+  verdict: "レビューはAC中心で一定の再現性があるが、判定欄と自己ゲートの強制が弱く、ゲートは内容品質より構造品質に偏っている。"
+  confidence: "medium"
+  blind_spots:
+    - "review報告の実在母数が6件しかなく、依頼上限30件には届かなかった。"
+    - "post-CLEAR修正の追跡は fixes: の記入不足により本文参照へ依存し、下限推計に留まる。"
+
+purpose_validation:
+  cmd_purpose: "レビュー・ゲートプロセスの品質実態を調査し、全所見を報告する"
+  fit: true
+  purpose_gap: ""
+
+files_modified:
+  - queue/tasks/sasuke.yaml
+  - queue/reports/sasuke_report_cmd_605.yaml
+
+test_results:
+  - command: "sed -n '1,260p' instructions/ashigaru.md && sed -n '1,260p' instructions/karo.md"
+    result: pass
+    notes: "レビュー規程（別忍者レビュー、PASS/FAIL二値、TODO/FIXME確認義務）を確認"
+  - command: "find queue/archive/reports queue/reports -type f | rg '_review.*\\.yaml$'"
+    result: pass
+    notes: "review報告6件を特定し全件精査"
+  - command: "sed -n '1,260p' scripts/cmd_complete_gate.sh && rg -n 'CLEAR|BLOCK|lesson_candidate|purpose_validation|TODO/FIXME' scripts/cmd_complete_gate.sh"
+    result: pass
+    notes: "ゲートのBLOCK/WARN/未検査領域を抽出"
+  - command: "tail -n 80 logs/gate_metrics.log && sed -n '1,220p' queue/archive/cmds/cmd_572_completed_20260305.yaml queue/archive/cmds/cmd_600_completed_20260306.yaml queue/archive/cmds/cmd_598_completed_20260306.yaml"
+    result: pass
+    notes: "直近50 CLEARから後続修正3件の根拠cmdを確認"
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "ashigaru/karo規程とreview報告6件の差分を件数付きで整理した。"
+  - id: AC2
+    status: pass
+    evidence: "cmd_complete_gate.sh の必須/条件付き/BLOCK/WARN/未検査領域を列挙した。"
+  - id: AC3
+    status: pass
+    evidence: "直近50 CLEARから cmd_564->572, cmd_594->600, cmd_595->598 を特定し分類した。"
+
+lesson_candidate:
+  found: false
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: true
+  summary: "後続修正率の計測を fixes: 記入依存のまま運用継続するか、archive時に cmd参照補助索引を自動生成するか裁定が必要。"
+  reason: "直近50 CLEARで fixes: 明示は cmd_572 -> cmd_564 の1件のみで、cmd_600/cmd_598 は本文参照がなければ追跡不能。現状の手戻り率は過少計測になりやすい。"
+  options:
+    - "A: karo運用で fixes: 記入を必須化する"
+    - "B: archive_completed.sh か cmd年代記生成時に cmd本文参照を補助索引化する"
+  recommendation: "B推奨。既存の記入漏れを吸収し、遡及分析の再現性を上げられる。"
+
+lessons_useful:
+  - L074
+
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

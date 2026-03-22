@@ -1,0 +1,55 @@
+worker_id: kirimaru
+task_id: subtask_577_review
+parent_cmd: cmd_575
+timestamp: "2026-03-05T20:20:37+0900"
+status: done
+ac_version_read: 1
+verdict: PASS
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`scripts/ninja_monitor.sh` の commit `8030d56` 差分で `is_task_deployed()` のstatus条件が `assigned|acknowledged|in_progress|done` に拡張され、done経路でも `check_and_update_done_task` を評価し成立時にauto_deploy発火する実装を確認。"
+  - id: AC2
+    status: pass
+    evidence: "`bats tests/unit/test_ninja_monitor_auto_deploy_done.bats tests/unit/test_ninja_monitor_stall.bats` 実行結果: 5 tests passed, 0 failed, 0 skipped。"
+  - id: AC3
+    status: pass
+    evidence: "`git push origin main` 成功: `b1f1d95..8030d56  main -> main`。"
+
+result:
+  summary: "subtask_577_fixのレビュー完了。done状態でのauto_deploy未発火バグ修正は妥当で、回帰含む指定テストPASS・SKIPなしを確認しpushまで完了。"
+  details: |
+    1. 手順1: `git pull origin main` を実行し `Already up to date` を確認。
+    2. 手順2: commit `8030d56` の `scripts/ninja_monitor.sh` 差分を確認。
+       - `status=done` を判定対象に含める修正
+       - done時に `check_and_update_done_task()` を通して auto_deploy 発火
+       - doneかつ未完了判定時は未配備扱い(return 1)維持
+    3. 手順3: `tests/unit/test_ninja_monitor_auto_deploy_done.bats` を確認。
+       - doneで完了判定trueならauto_deploy発火
+       - doneで完了判定falseならauto_deploy非発火
+    4. 手順4: 指定テスト2本を実行し、全5ケースPASS/0 SKIPを確認。
+    5. 手順5: `git push origin main` を実行し、remote mainへ反映済みを確認。
+
+verification:
+  - command: "git show --no-color 8030d56 -- scripts/ninja_monitor.sh"
+    result: pass
+    notes: "status条件拡張とdone経路のauto_deploy評価を確認"
+  - command: "bats tests/unit/test_ninja_monitor_auto_deploy_done.bats tests/unit/test_ninja_monitor_stall.bats"
+    result: pass
+    notes: "5 passed, 0 failed, 0 skipped"
+  - command: "git push origin main"
+    result: pass
+    notes: "main -> main 反映成功"
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_577.yaml
+
+lessons_useful: []
+
+lesson_candidate:
+  found: false
+
+decision_candidate:
+  found: false

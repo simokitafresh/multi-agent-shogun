@@ -1,0 +1,119 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_659
+parent_cmd: cmd_659
+timestamp: "2026-03-08T19:48:41+09:00"
+status: failed
+ac_version_read: 4
+verdict: "fail-close。AC1-3 は実装・検証・commit 済みだが、AC4 の .env.premium 実ブラウザ確認は未完。"
+result:
+  summary: "Annual/Monthly Returns の体感改善コードは commit `1e817af` まで完了したが、受入条件 AC4 の実ブラウザ速度確認を完了できていないため fail-close で提出する。"
+  details: |
+    実装:
+    1. `frontend/hooks/usePrefetch.ts`
+       - Annual Returns / Monthly Returns を Tier 1 prefetch に昇格。
+    2. `frontend/app/annual-returns/page.tsx`
+       - quick=3年 → full=12年の 2-pass loading を導入。
+       - request id/cancel guard を追加し、競合リクエストで古い結果が混ざらないよう調整。
+    3. `frontend/app/monthly-returns/page.tsx`
+       - quick=12ヶ月 → full=120ヶ月の 2-pass loading を導入。
+       - Show All 上限を 240ヶ月へ制限。
+    4. `frontend/components/annual-returns-table.tsx`
+       - `autoExpandOnCompleteData` を追加し、quick表示中に full data 扱いで即 All 展開しないよう制御。
+    5. `frontend/components/monthly-returns-table.tsx`
+       - `autoExpandOnCompleteData` を追加。
+       - partial data 中でもロード済み範囲をページ送りできるよう pagination を維持。
+    6. テスト追加:
+       - `frontend/components/__tests__/annual_returns_open_toggle.test.tsx`
+       - `frontend/components/__tests__/monthly_returns_open_toggle.test.tsx`
+       - 新分岐（autoExpand抑止 / partial pagination）を追加検証。
+
+    検証:
+    - `npm test -- --runInBand frontend/components/__tests__/annual_returns_open_toggle.test.tsx frontend/components/__tests__/monthly_returns_open_toggle.test.tsx frontend/components/__tests__/annual_returns_masking.test.tsx frontend/components/__tests__/monthly_returns_masking.test.tsx`
+      -> 4 suites / 14 tests pass
+    - `npm run build`
+      -> Next.js build 成功、Static pages 23/23 生成
+    - `git commit -m "Improve annual and monthly returns page load"`
+      -> commit `1e817af3e0f92d011a2dafa76eed738884ac843e`
+
+    未完:
+    - AC4 `.env.premium` を用いた実ブラウザでの「初期表示1秒以内 / Show All 3秒以内」確認
+    - 忍者の unit/build 範囲外のため、本報告では未検証として fail-close
+purpose_validation:
+  cmd_purpose: "Annual ReturnsとMonthly Returnsページの体感読み込み速度を改善せよ。"
+  fit: true
+  purpose_gap: "コード改善は完了したが、AC4 の実ブラウザ受入確認を本報告時点で満たしていない。"
+files_modified: []
+findings:
+  - id: F1
+    title: "受入条件 AC4 の実ブラウザ確認が未完"
+    evidence:
+      - "task acceptance criteria は `.env.premium` での初期表示 1 秒以内を要求"
+      - "本忍者が実施したのは unit test と Next build まで"
+    impact: "コードは commit 済みだが、タスク完了報告にはできない。"
+confidence: high
+blind_spots:
+  - "本番同等データでの実ブラウザ描画時間は未測定。"
+  - "Windows Chrome CDP での手動計測結果を本報告では添付していない。"
+test_results:
+  - command: "npm test -- --runInBand frontend/components/__tests__/annual_returns_open_toggle.test.tsx frontend/components/__tests__/monthly_returns_open_toggle.test.tsx frontend/components/__tests__/annual_returns_masking.test.tsx frontend/components/__tests__/monthly_returns_masking.test.tsx"
+    result: pass
+    notes: "4 suites / 14 tests pass。autoExpand 抑止と partial pagination の新規テストを含む。"
+  - command: "npm run build"
+    result: pass
+    notes: "Next.js 14.2.3 build 成功。Static pages 23/23 を生成。"
+  - command: "git commit -m \"Improve annual and monthly returns page load\""
+    result: pass
+    notes: "対象7ファイルのみを commit。HEAD=`1e817af3e0f92d011a2dafa76eed738884ac843e`。"
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`usePrefetch.ts` で `api.getMonthlyReturns(portfolioId)` と `api.getAnnualReturns(portfolioId)` を Tier 1 へ移動。"
+  - id: AC2
+    status: pass
+    evidence: "`annual-returns/page.tsx` は 3年→12年、`monthly-returns/page.tsx` は 12ヶ月→120ヶ月の 2-pass loading を実装。"
+  - id: AC3
+    status: pass
+    evidence: "`monthly-returns/page.tsx` の Show All 上限を 240ヶ月へ変更。"
+  - id: AC4
+    status: fail
+    evidence: "`.env.premium` 実ブラウザ確認を完了しておらず、1秒/3秒条件を証明できない。"
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/app/annual-returns/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/monthly-returns/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/components/annual-returns-table.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/components/monthly-returns-table.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/hooks/usePrefetch.ts
+  - /mnt/c/Python_app/DM-signal/frontend/components/__tests__/annual_returns_open_toggle.test.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/components/__tests__/monthly_returns_open_toggle.test.tsx
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_659.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L063
+    useful: true
+    reason: "report 更新時に lessons.yaml のトップレベル構造を前提にせず、既存フォーマットへ追記する意識づけに有効だった。"
+  - id: L074
+    useful: false
+    reason: "今回タスクは frontend 性能改善であり、bash の `((PASS++))` 教訓は直接使用しなかった。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "AC4 実ブラウザ確認を家老側 E2E として再実行すべき"
+  options:
+    - "案A: 家老が `.env.premium` + 本番ブラウザで Annual/Monthly 初期表示時間と Show All を計測"
+    - "案B: ひとまずコードのみ採用し、AC4 は後続 cmd で別検証"
+  recommendation: "案A"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

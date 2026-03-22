@@ -1,0 +1,43 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hanzo
+task_id: 
+parent_cmd: cmd_1046
+timestamp: "2026-03-18T16:07:37"
+status: cancelled
+ac_version_read: 3
+result:
+  summary: "才蔵が先行完了したため作業不要。idle化。"
+  details: "cmd_1046は才蔵(saizo)が4 commits push済みで完了。半蔵は差し替え配備されたが着手前にidle化。"
+purpose_validation:
+  cmd_purpose: ""
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: false
+  - id: L063
+    useful: false
+  - id: L225
+    useful: false
+  - id: L105
+    useful: false
+  - id: L240
+    useful: false
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false

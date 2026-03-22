@@ -1,0 +1,123 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: tobisaru
+task_id: cmd_1017_sub_c
+parent_cmd: cmd_1017
+timestamp: "2026-03-17T01:47:06"
+status: pass
+ac_version_read: 1
+result:
+  summary: "ハイブリッド転用を推薦。データ生成基盤(L1月次リターン36,900件/ファミリー+8指標計算済み)はそのまま転用可。判定ロジック(PBO計算・メトリクス切替・脱相関選出)は品質要件を満たさず新規構築が必要。完全新規対比で工数約60%削減。"
+  details: |
+    # AC4統合所見: シン四神適合性
+
+    ## 情報源
+    - sub_b(AC3 CPCV実装品質): kirimaru_report_cmd_1017.yaml (status: pass)
+    - sub_a(AC1+AC2): 競争投入4名全員pending → tobisaru自身が独自調査実施
+
+    ---
+
+    ## (a) そのまま使える部分
+
+    | コンポーネント | ファイル | 根拠 |
+    |---------------|---------|------|
+    | L1月次リターン生成 | run_077_*.py (6スクリプト) | 36,900パラメータ/ファミリー(DM2/3/6)、18,450(DM7+)のL1月次リターンがexperiments.dbに生成済み。193ヶ月窓でCPCV 144ヶ月要件クリア |
+    | メトリクス計算 | grid_search_metrics_v2.py | 8指標計算済み(Max Run-up/UD_Ratio/Skewness含むトリプルE候補3指標を含む) |
+    | データローダー | gs_data_loader.py | PostgreSQL直読。本番パス準拠 |
+    | experiments.db | monthly_returnsテーブル | return_open/return_close両系列。116 portfolio_id格納 |
+    | C(6,2)=15分割構造 | cmd_1013_cpcv_cat_ac/b.py | 6群×k=2のcombinatorial split骨格は再利用可 |
+
+    ## (b) 改修が必要な部分
+
+    | コンポーネント | 現状の問題 | 改修内容 | 工数 |
+    |---------------|----------|---------|------|
+    | PBO計算 | 「中央値以下率」簡略版(sub_b所見)。A/CとBで定義も不一致 | López de Prado原典の相対順位→logit(ω/(1-ω))→λ≤0確率に全面書き直し | M |
+    | Purge/Embargo | A/C=対称固定1M、B=非対称1M/2M。概念分離なし(sub_b所見) | 統一パラメータ化(purge_months, embargo_months独立指定) | S |
+    | 評価指標切替 | Sortinoハードコード(sub_b所見)。CLI引数/strategy patternなし | fold evaluatorにmetric registry導入。Max Run-upはequity curve→path-dependent計算が必要でfold evaluator構造変更を伴う | M-L |
+    | パイプライン統合 | Phase 1/3/4/5が欠損。個別スクリプト実行のみ | CPCV→PBO閾値フィルタ→脱相関選出→K体均等保有の一気通貫フロー構築 | M |
+
+    ## (c) 使えない部分
+
+    | コンポーネント | 理由 |
+    |---------------|------|
+    | cmd_1013のPBO判定ロジック全体 | 「中央値以下率」は原典PBOと数学的定義が異なる。転用では品質保証不可。新規実装が必要 |
+    | cpcv_full_validator.py | ファイル自体が存在しない(sub_b確認済み)。docs参照のみ残存 |
+    | Phase 4 perspective_evaluation.py | 存在しない。ただしシン四神はCPCV+脱相関フローのため3視点ランキング自体が不要 |
+    | 脱相関K体選出モジュール | 該当機能が既存パイプラインに存在しない。完全新規 |
+
+    ---
+
+    ## 推薦: 「既存転用」vs「新規構築」
+
+    | 観点 | 既存転用 | 新規構築 | 推薦 |
+    |------|---------|---------|------|
+    | L1月次リターン(36,900×4ファミリー) | ✅ 生成済み。即利用可 | 再生成は数時間のDB負荷 | 転用 |
+    | 8指標計算結果 | ✅ grid_search_metrics_v2.py済 | 再計算は冗長 | 転用 |
+    | CPCVフォールド分割 | △ C(6,2)骨格は流用可。purge/embargo要修正 | ○ クリーンだが差分小 | 転用+修正 |
+    | PBO計算 | ✗ 定義不一致。流用不可 | ◎ 原典準拠で新規 | 新規 |
+    | メトリクス切替 | ✗ Sortino固定。構造変更必要 | ◎ registry設計で新規 | 新規 |
+    | 脱相関選出 | ✗ 機能なし | ◎ 新規必須 | 新規 |
+    | 統合パイプライン | △ データ層は流用可 | ○ 判定層は新規 | ハイブリッド |
+
+    ### 結論: ハイブリッド転用
+
+    **メリット**: データ生成基盤(全体工数の~60%)が稼働済みで即転用可。完全新規より大幅工数削減。
+    **デメリット**: cmd_1013コードベースとの整合性管理が必要。2系統のCPCVロジックが並存する期間が生じる。
+    **工数感**: 転用部分=0(済み) + 新規部分=M-L(PBO+メトリクス+脱相関+統合) → 全体M-L。完全新規なら全体L-XL。
+
+    ### パラメータ空間ギャップ
+
+    - 設計要件: ~43Kパラメータ/ファミリー
+    - 実績: DM2/3/6=36,900、DM7+=18,450
+    - DM7+が50%不足(コンポーネント組合せ数の差異による)。bunshinの対象BB数がDM7+で少ないため構造的制約
+    - 36,900 vs 43Kは約14%の差。追加lookback/rebalanceグリッド拡張で埋められるが、殿判断事項
+
+    ### docs/DB乖離(sub_b発見)
+    - pipeline-architecture.mdはcpcv_full_validator.pyを前提とするが実体なし
+    - analysis_runs/_INDEX.mdはgrid_search_candidatesテーブル前提だがexperiments.dbに不在
+    - 実装進行前にdocs整合が望ましい(スコープ外だが記録)
+purpose_validation:
+  cmd_purpose: "シン四神適合性の総合所見(既存転用vs新規構築の推薦)"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "統合偵察で前提sub報告が未完了の場合は自力調査で速度を稼げ"
+  detail: "IF 統合タスク(sub_c)で前提報告(sub_a)が全員pending THEN stop_forで待つより自力調査を並行実行せよ BECAUSE 競争投入では速度が正義。sub_a 4名全員pending→自力AC1+AC2調査で統合報告を先に完成できた"
+  project: dm-signal
+lessons_useful: null
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify:
+    - "新規: shin_shijin_cpcv_validator.py — PBO原典準拠のCPCVバリデータ(logit変換+λ≤0確率)"
+    - "新規: shin_shijin_decorrelation.py — ペアワイズ相関→貪欲K体選出モジュール"
+    - "新規: shin_shijin_pipeline.py — CPCV→PBOフィルタ→脱相関→均等保有の統合パイプライン"
+    - "改修: cmd_1013_cpcv_cat_ac.py:145-186,393-418 — purge/embargo統一+PBOロジック(参考用。新規推奨)"
+    - "改修: cmd_1013_cpcv_cat_b.py:154-188,261-301 — 同上"
+  affected_files:
+    - "analysis_runs/docs/pipeline-architecture.md:176-208 — Phase 3記述をシン四神CPCVに合わせる整合"
+    - "analysis_runs/_INDEX.md:6-16,81-92 — experiments.db schema鮮度修正(grid_search_candidates不在)"
+    - "grid_search_metrics_v2.py — メトリクス計算は転用可だがMax Run-up equity curve対応追加の可能性"
+  related_tests:
+    - "PBO unit test必要: 玩具データで相対順位→logit→PBO期待値検証"
+    - "脱相関選出test必要: 既知相関行列でK体選出が正しいか検証"
+    - "fold split test必要: N=6,k=2で15 split、purge/embargo境界の固定検証"
+    - "Max Run-up計算test: equity curveからpath-dependent指標が正しく算出されるか"
+  edge_cases:
+    - "DM7+のパラメータ数(18,450)が他ファミリー(36,900)の50%。bunshin組合せ数の構造差"
+    - "downside deviation=0でSortino→inf/-infとなるfold(kirimaru所見)"
+    - "Max Run-upはequity curve状態を要求。月次return配列だけでは計算不可"
+    - "PBO ties扱い: 候補数が少ないfoldでmedian-based近似がぶれる"
+    - "cmd_1013 A/CとBでpurge/embargo非対称。統一時にどちらの挙動を正とするか殿判断必要"

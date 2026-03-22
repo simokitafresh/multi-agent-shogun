@@ -1,0 +1,86 @@
+worker_id: hayate
+task_id: subtask_613_review
+parent_cmd: cmd_613
+timestamp: "2026-03-06T21:22:00+09:00"
+status: done
+ac_version_read: 6
+verdict: PASS
+review_result:
+  verdict: PASS
+  reason: "cmd_613 の全 AC をコード・テスト・ビルド・push 状態まで再検証し、受け入れ可能と判断した"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`frontend/app/deterioration/page.tsx:131-141,868-876` で G1/G2/P の3列を Label 左へ配置し、PC 行で 12px 色丸を表示。"
+  - id: AC2
+    status: pass
+    evidence: "`frontend/app/deterioration/page.tsx:131-141,856-858,884` で mobileVisible を PF名+G1/G2/P のみに絞り、`!isMobile` 条件で行展開を無効化。"
+  - id: AC3
+    status: pass
+    evidence: "`frontend/app/dashboard/page.tsx:105-128,423,449` で旧 `P(det)` 表示を `DeteriorationDots` へ置換し、desktop/mobile の両方で `G1/G2/P` 色丸化。"
+  - id: AC4
+    status: pass
+    evidence: "`frontend/lib/types/compare-summary.ts:43-61,107-109` で G1/G2/P 列を型定義へ追加し、`frontend/components/compare-summary-table.tsx:24-54,81-114` で dot 列を明示分岐して `useSortableTable` のソート値を安全化。`npx jest ...compare-summary-table...` で3列ソート通過、`npm run build` でも型検査通過。"
+  - id: AC5
+    status: pass
+    evidence: "`frontend/lib/constants/deterioration-colors.ts:12-67` で 6段階ラベルを緑/黄/橙/灰へ集約し、`frontend/lib/__tests__/deterioration-colors.test.ts:14-48` で GOOD/EARLY_WARNING→緑、WATCH/MIXED→黄、DETERIORATING→橙、INSUFFICIENT_DATA→灰を検証。"
+  - id: AC6
+    status: pass
+    evidence: "`frontend/app/deterioration/page.tsx`, `frontend/app/dashboard/page.tsx`, `frontend/components/compare-summary-table.tsx` の各 dot 描画で `border-black/10 dark:border-white/20` を付与し、build 通過まで確認。"
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npx jest --runInBand components/__tests__/compare-summary-table.test.tsx lib/__tests__/deterioration-colors.test.ts --verbose"
+    result: pass
+    notes: "2 suites PASS, 8 tests PASS"
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm run build"
+    result: pass
+    notes: "Next.js build succeeded; compile/type-check/static generation completed"
+  - command: "git -C /mnt/c/Python_app/DM-signal diff -w 46dd7ef^ 46dd7ef -- frontend/contexts/signals-context.tsx"
+    result: pass
+    notes: "`signals-context.tsx` は実質改行差分のみで機能変更なし"
+  - command: "git -C /mnt/c/Python_app/DM-signal push origin main"
+    result: pass
+    notes: "Everything up-to-date（HEAD と origin/main 一致を確認）"
+result:
+  summary: "レビューPASS。Deterioration Monitor / Dashboard / Compare Summary の G1/G2/P 色丸対応は全 AC を満たし、型検査崩れも解消済み。"
+  details: |
+    実施内容:
+    - impl 3件(saizo/sasuke/kirimaru)の報告を読了
+    - 最新 main の対象コミット `46dd7ef` を精査
+    - Compare Summary の旧 TS7053 所見が stale であることを確認
+    - Jest 2 suite、Next build、origin/main 同期状態を再検証
+
+    主要所見:
+    - Deterioration Monitor は PC で Label 左に G1/G2/P の3色丸、スマホで PF名+3丸のみ表示
+    - Dashboard は desktop/mobile とも旧 `P(det)` が `G1/G2/P` 表示へ完全置換
+    - Compare Summary は旧 deterioration 列をやめ、G1/G2/P 末尾3列を独立追加。`getSortValue()` と `getCellValue()` が dot 列を明示分岐するため、以前の TS7053 は再現しない
+    - `signals-context.tsx` の巻き込みは空白無視差分が空で、機能差分なし
+purpose_validation:
+  cmd_purpose: "才蔵・佐助・霧丸のcmd_613実装を精査し、全AC充足時のみ完了判定する"
+  fit: true
+  purpose_gap: ""
+files_checked:
+  - /mnt/c/Python_app/DM-signal/frontend/app/deterioration/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/dashboard/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/compare-summary/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/components/compare-summary-table.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/lib/constants/deterioration-colors.ts
+  - /mnt/c/Python_app/DM-signal/frontend/lib/types/compare-summary.ts
+  - /mnt/c/Python_app/DM-signal/frontend/components/__tests__/compare-summary-table.test.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/lib/__tests__/deterioration-colors.test.ts
+  - /mnt/c/Python_app/DM-signal/frontend/contexts/signals-context.tsx
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_613.yaml
+lesson_candidate:
+  found: false
+lessons_useful:
+  - L074
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

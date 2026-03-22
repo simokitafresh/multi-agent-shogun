@@ -1,0 +1,78 @@
+worker_id: hayate
+task_id: subtask_583_review
+parent_cmd: cmd_583
+timestamp: "2026-03-06T13:13:33+0900"
+status: failed
+ac_version_read: 3
+review_result:
+  verdict: fail
+  reason: "push対象コミット fff75e9 に AC2 必須の model_detect.sh 修正が含まれておらず、指定された小太郎報告 YAML も未提出"
+ac_results:
+  - id: AC1
+    status: blocked
+    evidence: "指定report queue/reports/kotaro_report_cmd_583.yaml が存在せず、/new 後 fast ON の確認証跡がない。レビュー対象コミットにも実証テストは含まれない"
+  - id: AC2
+    status: fail
+    evidence: "HEAD=fff75e9 の変更ファイルは config/cli_profiles.yaml と scripts/ninja_monitor.sh のみ。git show HEAD:scripts/lib/model_detect.sh では fast 対応の tr -s ' ' が未反映（scripts/lib/model_detect.sh:85-96 相当）"
+  - id: AC3
+    status: blocked
+    evidence: "AC1/AC2未充足のため git push origin main は未実行"
+diff_check:
+  commit: "fff75e9"
+  files_in_commit:
+    - /mnt/c/tools/multi-agent-shogun/config/cli_profiles.yaml
+    - /mnt/c/tools/multi-agent-shogun/scripts/ninja_monitor.sh
+  scope_assessment: "expected=/fast自動有効化 + model_detect fast検出 / actual=monitor側のpost_clear_cmd追加のみ。model_detect変更はdirty worktree上にのみ存在しcommit未包含"
+  key_findings:
+    - "scripts/ninja_monitor.sh:697-715 に /new 後 post_clear_cmd=/fast を送るロジックは入っている"
+    - "scripts/lib/model_detect.sh の fast検出改善は working tree 差分にはあるが、push対象コミットには存在しない"
+    - "queue/reports/kotaro_report_cmd_583.yaml が存在せず、task手順3の前提を満たしていない"
+result:
+  summary: "レビューFAIL。/fast自動送信の骨格はあるが、AC2必須の model_detect 修正が commit に含まれず、報告 YAML も欠落しているため push 不可。"
+  details: |
+    主要確認:
+    - git pull --ff-only origin main: Already up to date
+    - git show --stat fff75e9:
+      - config/cli_profiles.yaml
+      - scripts/ninja_monitor.sh
+    - bash -n scripts/ninja_monitor.sh: PASS
+
+    FAIL理由:
+    - AC2未充足
+      - 現在の commit object(HEAD=fff75e9) には scripts/lib/model_detect.sh の修正が含まれない
+      - そのため push しても fast を含む model 名検出改善は origin/main に反映されない
+    - 手順前提未充足
+      - task指定の queue/reports/kotaro_report_cmd_583.yaml が存在しない
+      - 小太郎側のAC証跡を確認できず、レビュー手順3を完了できない
+
+    補足:
+    - working tree 上には scripts/lib/model_detect.sh の未コミット差分が存在する
+    - しかし git push origin main で反映されるのは commit のみであり、未コミット差分依存は不可
+purpose_validation:
+  cmd_purpose: "小太郎(subtask_583_impl)の実装をレビューし、全AC充足時のみ push する"
+  fit: true
+  purpose_gap: "レビュー目的は達成。AC未充足を検出したため FAIL 判定し push を止めた"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_583.yaml
+lesson_candidate:
+  found: true
+  title: "レビューでは dirty worktree ではなく push対象commitにAC必須差分が含まれるかを確認すべき"
+  detail: "working tree に必要修正があっても commit object に含まれなければ git push で反映されない。レビューcmdでは git show <commit> で対象ファイル一覧とAC必須差分の包含確認を明示的に行うべき。"
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "bash差分レビュー時に set -e 周辺の落とし穴確認観点を維持できた"
+  - id: L097
+    useful: true
+    reason: "YAML/スクリプト差分が commit object に乗っているかを source 単位で精査する観点が有効だった"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "cmd_583は model_detect 修正を commit 化してから再レビューに回すべき"
+  options:
+    - "案A: scripts/lib/model_detect.sh を cmd_583 fix commit に含め、小太郎report YAML提出後に再レビュー"
+    - "案B: model_detect 修正を別cmdへ切り出し、cmd_583は /fast送信のみとしてACを再定義"
+  recommendation: "案A"

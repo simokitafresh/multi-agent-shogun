@@ -1,0 +1,49 @@
+worker_id: tobisaru
+task_id: cmd_1288
+parent_cmd: cmd_1288
+timestamp: '2026-03-23T02:48:21'
+status: done
+ac_version_read: e29686ba
+result:
+  summary: GP-004 SG7完全パッケージ — 軍師LGTM時に家老後処理バンドルを出力する仕様を3ファイルに定義
+  details: 'AC1: gunshi_review_log.yaml SG7セクションにバンドル出力フォーマット仕様(5項目+運用ルール)を定義。AC2:
+    karo-operations.md §3に受領→スタンプ+ペースト6ステップ手順を追加。AC3: gunshi.md Report Reviewセクションにバンドルテンプレート+判定基準+LGTM/FAIL別通知テンプレートを追加'
+purpose_validation:
+  cmd_purpose: 軍師LGTM時に家老の後処理5ステップ→1ステップに圧縮。家老の時間をCMD分解に解放
+  fit: true
+  purpose_gap: ''
+files_modified:
+- logs/gunshi_review_log.yaml
+- context/karo-operations.md
+- instructions/gunshi.md
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: inbox_write 1行メッセージにYAML構造を埋め込むとシェル引数破壊リスクがある
+  detail: SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別ファイル出力+パス参照方式への変更を検討すべき
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bash算術演算なし
+- id: L225
+  useful: false
+  reason: MCP entity操作なし
+- id: L063
+  useful: false
+  reason: lessons.yamlパースなし
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - result: PASS
+  AC2:
+  - result: PASS
+  AC3:
+  - result: PASS
+verdict: PASS

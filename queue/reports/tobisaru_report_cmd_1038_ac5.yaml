@@ -1,0 +1,60 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: tobisaru
+task_id: cmd_1038_ac5
+parent_cmd: cmd_1038
+timestamp: "2026-03-18T01:00:00"
+status: pass
+ac_version_read: 1
+result:
+  summary: "AC1-AC3適用後の全6忍法統合ベンチマーク完了。全パリティPASS。19.2M全量: 362.4h→13.4h (26.9x)"
+  details: |
+    ■ 忍法別改善率 (best mode比較)
+    kasoku:   95.490 → 3.131 ms/pat (30.50x) | 32体: 336.2h → 11.0h
+    nukimi:   28.248 → 2.513 ms/pat (11.24x) | 32体: 25.3h → 2.3h
+    oikaze:    1.307 → 0.170 ms/pat  (7.69x) | 32体: 32.5min → 4.2min
+    kawarimi:  0.662 → 0.182 ms/pat  (3.64x) | 32体: 16.4min → 4.5min
+    yotsume:   1.067 → 0.267 ms/pat  (4.00x) | 32体: 4.4min → 1.1min
+    bunshin:   0.384 → 0.067 ms/pat  (5.73x) | 32体: 15.9s → 2.8s
+
+    ■ 19.2M全量見積り
+    Before: 362.4h (15.1日)
+    After:  13.4h
+    改善: 26.9x
+
+    ■ パリティ
+    全忍法でmd5完全一致（serial vs serial_batch vs ppe6）
+
+    ■ kasoku注記
+    RuntimeWarning (divide by zero) が出るが np.where でNaN処理済み。結果に影響なし。
+purpose_validation:
+  cmd_purpose: "AC1-AC3適用後の性能計測+改善率テーブル+19.2M見積り"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - outputs/analysis/cmd_1038_benchmark.md
+  - outputs/analysis/cmd_1038_benchmark.json
+  - outputs/analysis/cmd_1038_benchmark_bunshin.json
+  - outputs/analysis/cmd_1038_benchmark_yotsume.json
+  - outputs/analysis/cmd_1038_benchmark_oikaze.json
+  - outputs/analysis/cmd_1038_benchmark_kawarimi.json
+  - outputs/analysis/cmd_1038_benchmark_nukimi.json
+  - outputs/analysis/cmd_1038_benchmark_kasoku.json
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - L074
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false

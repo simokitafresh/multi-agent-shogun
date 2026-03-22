@@ -1,0 +1,106 @@
+worker_id: kotaro
+task_id: cmd_1197_kotaro
+parent_cmd: cmd_1197
+timestamp: '2026-03-21T12:28:49'
+status: done
+ac_version_read: 0b31a8a6
+result:
+  summary: deploy_task.shのpreflight_gate_artifacts(L2614)がgenerate_report_template(L2608)の直後に
+    archive_completed.sh $cmd_id を呼び出す。archive_completed.shはCMD_ID指定時にstatus検査をバイパスするため、生成直後のstatus:pending報告テンプレートが即座にqueue/archive/reports/に移動される。cmd_1187だけでなくcmd_1197(本タスク)でも再現を確認。アーカイブに2版(テンプレート版+忍者記入版)が存在し、忍者はreport_field_set.shのtouch
+    fallbackで新ファイルを作成して作業継続した。
+  details: '■ 時系列(cmd_1187 deploy_task.log)
+
+    02:31:53 report_template: generated (kagemaru_report_cmd_1187.yaml)
+
+    02:31:53 preflight_gate: cmd_1187 artifact事前生成開始
+
+    → archive_completed.sh cmd_1187 実行
+
+    → archive_reports(): CMD_ID=cmd_1187, parent_cmd一致, status検査バイパス
+
+    → テンプレート(status:pending)をarchive/reports/に移動
+
+    02:32:54 preflight_gate完了
+
+    02:34:24 2回目のarchive(忍者記入済み版)→archive dest衝突でHHMMSSサフィックス
+
+    02:39:03 cmd_complete_gate.sh GATE CLEAR(報告不在→多数SKIP)
+
+
+    ■ 証拠
+
+    1. queue/archive/reports/kagemaru_report_cmd_1187_20260321.yaml = テンプレート(FILL_THIS,
+    status:pending)
+
+    2. queue/archive/reports/kagemaru_report_cmd_1187_023424.yaml = 忍者記入済み(AC結果あり)
+
+    3. queue/archive/reports/kotaro_report_cmd_1197_20260321.yaml = 本タスクのテンプレート(同バグで即アーカイブ)
+
+
+    ■ コード箇所
+
+    deploy_task.sh L2608: generate_report_template → テンプレート生成
+
+    deploy_task.sh L2614: preflight_gate_artifacts → archive_completed.sh呼出
+
+    deploy_task.sh L1987: archive_completed.sh $cmd_id 実行
+
+    archive_completed.sh L584-587: CMD_ID指定時にparent_cmd一致チェックのみ(status検査なし)
+
+    archive_completed.sh L590: CMD_ID指定時にstatusチェックブロック全体がスキップ'
+purpose_validation:
+  cmd_purpose: 報告YAML消失の根本原因を偵察
+  fit: true
+files_modified: []
+lesson_candidate:
+  found: true
+  title: deploy_task.sh preflight_gateが自cmd報告テンプレートを即アーカイブする
+  detail: deploy_task.sh L2608の直後にL2614 preflight_gate_artifactsがarchive_completed.sh cmd_idを呼ぶ。CMD_ID指定時status検査バイパスでstatus:pendingテンプレートが即アーカイブされる
+  project: infra
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: null
+skill_candidate:
+  found: false
+lessons_useful: null
+binary_checks:
+  AC1:
+  - cmd_1187の消失事象に関する原因仮説を提示したか: true
+  - 仮説を裏付ける証拠（コード箇所・ログ等）を示したか: true
+  AC2:
+  - deploy_task.sh→忍者→inbox_write.sh→archive_completed.shのフローを追跡したか: true
+  - 消失ポイントの候補を絞り込んだか: true
+  AC3:
+  - WSL2 drvfs固有の問題を調査したか: true
+  - race conditionの可能性を検証したか: true
+implementation_readiness:
+  files_to_modify:
+  - scripts/deploy_task.sh:2614 (preflight_gate_artifacts呼出順序)
+  - scripts/archive_completed.sh:584-597 (CMD_ID指定時のstatus検査追加)
+  affected_files:
+  - scripts/cmd_complete_gate.sh:1550-1553 (同パターンのarchive呼出)
+  - scripts/ninja_monitor.sh:2012-2013 (AUTO-ARCHIVE呼出)
+  related_tests:
+  - tests/bats/test_archive_completed.bats — status:pending保護の新テストケース追加が必要
+  edge_cases:
+  - 再配備時に旧テンプレートが残存する場合のidempotency(generate_report_templateのL314-320で既存チェック済み)
+  - CMD_ID指定の意図は完了cmd一括掃除だが、同一cmdの未完了レポートを掃除してしまう副作用
+findings: '1. 根本原因: deploy_task.sh L2608-L2614の実行順序。報告テンプレート生成→preflight_gate→archive_completed.sh(同一cmd_id)→テンプレート即アーカイブ
+
+  2. archive_completed.shのCMD_ID指定時ロジック: L584-597でparent_cmd一致チェックのみ。L590のstatus検査ブロックはCMD_ID指定時に全スキップ
+
+  3. cmd_1187の消失はWSL2固有問題ではなく、全環境で再現する構造的バグ
+
+  4. cmd_1197(本タスク)でも同一バグを再現確認(queue/archive/reports/kotaro_report_cmd_1197_20260321.yaml)
+
+  5. 忍者はreport_field_set.shのtouch fallback(L68)で空ファイル再作成→作業継続可能だが、テンプレート情報(FILL_THIS指示等)が消失
+
+  6. WSL2 drvfs: flock動作・stat遅延の影響は副次的。主因はコード実行順序'
+verdict: PASS
+confidence: high
+blind_spots:
+- cmd_complete_gate.shのpreflight(L1550-1553)でも同様のarchive呼出があるが、archive.doneチェックで重複実行は防止されている。ただしarchive.done不在時に同一問題が発生しうる
+- ninja_monitor.shのAUTO-ARCHIVE(L2012)はgates dir不在条件付きのため影響は限定的
+- 過去のcmdで同様の消失が発生していた可能性があるが、忍者のreport_field_set.sh touch fallbackで暗黙的に回復していたため検知されなかった可能性

@@ -1,0 +1,67 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_918_R
+parent_cmd: cmd_918
+timestamp: "2026-03-13T20:47:01"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`workflows/receipt_manager.py` と `tests/test_receipt_manager.py` を精査し、review 指摘 2 件は意図どおり修正済みと判断した。`missing_required_fields()` により `extract_from_pdf()` / `extract_from_filename()` の必須 4 項目 `month/issuer/receipt_type/amount` が共通 fail-close され、unknown metadata が rename / upload 経路へ流れない。`find_or_create_subfolder()` も duplicate Drive folder を silent success せず、フォルダ名+ID付き `RuntimeError` で停止する。追加テスト 4 件は各修正点を直接再現している。"
+  - id: AC2
+    status: pass
+    evidence: "`python3 -m pytest tests/test_receipt_manager.py -q --rootdir=/mnt/c/Python_app/auto-ops` を実行し、`30 passed, 6 subtests passed` を確認した。SKIP 0。"
+  - id: AC3
+    status: pass
+    evidence: "push 前に `git ls-remote origin refs/heads/main` で remote `main` が `2607e0b`、`git rev-parse HEAD` / `git log -1 --oneline` で local HEAD が `cda014e fix receipt manager fail-close and duplicate folder detection` であることを確認し、その後 `git push origin main` を実行して `2607e0b..cda014e  main -> main` を確認した。"
+result:
+  summary: "cmd_918 review は PASS。receipt_manager の fail-close 修正と duplicate subfolder 検知は妥当で、指定 pytest は 30 PASS / SKIP 0、commit `cda014e` は `origin/main` へ push 完了。"
+  details: |
+    Review summary:
+    - `missing_required_fields()` を導入して `extract_from_pdf()` / `extract_from_filename()` の検証ロジックを共通化し、必須 metadata 欠落時は WARN + `None` に倒れることを確認。
+    - `rename_receipts()` / `upload_receipts()` では `info is None` を契機に skip する既存フローが保たれており、不完全 metadata のまま命名や Drive upload へ進まない。
+    - `find_or_create_subfolder()` は duplicate folder を first-hit 採用せず、詳細付き `RuntimeError` で停止するため、誤フォルダ upload の挙動が解消されている。
+    - `tests/test_receipt_manager.py` の追加 4 テストは unknown filename, partial extraction skip, upload fail-close, duplicate folder error をそれぞれ直接カバーしており、修正意図と一致する。
+purpose_validation:
+  cmd_purpose: "cmd_918実装(佐助)のレビュー。receipt_manager.pyのfail-close修正+Drive重複検知。commit cda014e。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_918.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful:
+  - L186
+verification:
+  - command: "python3 -m pytest tests/test_receipt_manager.py -q --rootdir=/mnt/c/Python_app/auto-ops"
+    result: pass
+    notes: "30 passed, 6 subtests passed in 0.35s。SKIP 0。"
+  - command: "git ls-remote origin refs/heads/main"
+    result: pass
+    notes: "push 前の remote main は `2607e0b9c4a1902fc4bbb658aa7711771c0e125c`。"
+  - command: "git rev-parse HEAD && git log -1 --oneline && git push origin main"
+    result: pass
+    notes: "local HEAD `cda014e4abe081932f3daaab96eaa9aa3f55332b` / `cda014e fix receipt manager fail-close and duplicate folder detection` を確認後、`2607e0b..cda014e  main -> main`。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

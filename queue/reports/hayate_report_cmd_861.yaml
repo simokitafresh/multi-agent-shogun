@@ -1,0 +1,185 @@
+worker_id: hayate
+task_id: cmd_861_recon_horizontal_C
+parent_cmd: cmd_861
+timestamp: 2026-03-12T21:24:00+0900
+status: done
+ac_version_read: 1
+verdict: PASS
+ac_results:
+- id: AC3
+  status: pass
+  evidence: |
+    PSR は Bailey/Lopez de Prado の Sharpe inference 系原典に従い、
+    `PSR(SR*) = Φ(((SR_hat - SR*) * sqrt(n-1)) / sqrt(1 - skew*SR_hat + ((kurt-1)/4)*SR_hat^2))`
+    と整理できる。`SR*=0` を置けば「Sharpe > 0 の確率」を直接出せる。ここで `skew`,`kurt` は月次 excess return の標本歪度・標本尖度。
+    DSR は同じ PSR の閾値 `SR*` を「多数試行後に偶然でも出やすい最大 Sharpe」の期待値 `SR0` に置き換える形で、
+    `DSR = PSR(SR0)` と整理できる。`SR0` は DSR 論文の極値近似
+    `E[max SR] ≈ mean_SR + sqrt(var_SR) * ((1-γ) * z(1-1/N) + γ * z(1-1/(N*e)))`
+    （γ は Euler-Mascheroni 定数、`N` は試行数または有効試行数）で実装可能。
+    DM-Signal では PSR を全PFの月次 excess return 系列に対して計算し、DSR を GS champion の Sharpe に対する multiple-testing 補正として計算する設計が自然。
+result:
+  summary: PSR は「このPFの Sharpe が基準 SR* を超える確率」、DSR は「GS で多数試した後でも champion の Sharpe が偶然ではない確率」として DM-Signal に無理なく統合できる。実装の主戦場は backend の Sharpe 出力点、`grid_search_metrics_v2.py`、および `run_077_*` 群の重複 metrics 計算である。
+  details: |
+    1. 数学的定式化
+       - PSR:
+         - 入力は月次 excess return `r_t - rf_t`。
+         - `SR_hat = mean(excess) / std(excess, ddof=1)` を月次スケールで計算し、UI表示用の annualized Sharpe は別途 `SR_hat * sqrt(12)` とするのが安全。`SR*=0` なら月次/年率のどちらでも符号は同じだが、推論核は月次で統一した方が `n` と整合する。
+         - 非正規補正は標本歪度・標本尖度を使う。DM-Signal にはレバレッジETFが多く fat tails リスクが強いので、通常 Sharpe より PSR の方が解釈一貫性が高い。
+       - DSR:
+         - PSR の benchmark threshold を `0` ではなく `SR0 = expected max Sharpe under N trials` に置く。
+         - `N=100` のような粗い grid 試行数をそのまま入れることもできるが、GS の隣接パラメータは高相関なので、v1 でも `n_trials_raw` と `n_trials_effective` を分けて持つ方が安全。
+         - champion が Sharpe 最大で選ばれている時だけ DSR を主判定に使うべき。Calmar など別 metric で champion を選ぶ場合、DSR は補助指標へ下げるのが筋。
+
+    2. DM-Signal への適用設計
+       - 全PF PSR:
+         - 第一候補は `backend/app/services/metrics_calculator.py:770-799,958-965`。
+         - ここでは既に Sharpe / Skewness / Excess Kurtosis を同じ `monthly_df` から計算しており、`monthly_excess_open = portfolio_return_open - rf_return` を使えば RULE09 に沿った open 系 PSR を追加できる。
+         - 出力例: `Sharpe > 0 probability`, `Probabilistic Sharpe Ratio (SR*>0)`, `psr_open`, `psr_close`。
+       - GS champion DSR:
+         - 共通 feature-store 側は `scripts/analysis/grid_search/grid_search_metrics_v2.py:1825-1827,1991-2013` が主入口。
+         - ここに `psr_0`, `dsr`, `n_trials_raw`, `n_trials_effective`, `expected_max_sr`, `sharpe_skewness`, `sharpe_kurtosis` を加えると SQLite enrichment と downstream ranking に使える。
+         - ただし `run_077_*` の結果CSVはこの shared path を通らないため、CSVに出したければ各 runner の `calc_metrics_fast()` / `pattern_to_row()` も更新が必要。
+
+    3. files_to_modify
+       - 数学 SSOT 候補:
+         - 新規 `backend/app/services/sharpe_inference.py`
+           - `compute_sharpe_moments(excess_returns)`
+           - `probabilistic_sharpe_ratio(sr_hat, n, skew, kurt, sr_star=0.0)`
+           - `expected_max_sr(mean_sr, var_sr, n_trials)`
+           - `deflated_sharpe_ratio(sr_hat, n, skew, kurt, sr_star_from_trials)`
+         - 理由: backend と GS で同じ数式を使い回せる。
+       - 全PF PSR 出力:
+         - `backend/app/services/metrics_calculator.py:770-799,958-965`
+       - GS feature-store / SQLite:
+         - `scripts/analysis/grid_search/grid_search_metrics_v2.py:522-630`
+         - `scripts/analysis/grid_search/grid_search_metrics_v2.py:1825-1827`
+         - `scripts/analysis/grid_search/grid_search_metrics_v2.py:1991-2013`
+         - SQLite schema を保持する migration / ALTER TABLE 系（先例: `docs/archives/future/111-enhanced-metrics-implementation.md`）
+       - 077 runner CSV:
+         - `scripts/analysis/grid_search/run_077_bunshin.py:151,465`
+         - `scripts/analysis/grid_search/run_077_oikaze.py:199,661`
+         - `scripts/analysis/grid_search/run_077_nukimi.py:187,665`
+         - `scripts/analysis/grid_search/run_077_kawarimi.py:158,635`
+         - `scripts/analysis/grid_search/run_077_kasoku.py:181,680`
+         - `scripts/analysis/grid_search/run_077_monban.py:242,759`
+
+    4. affected_files
+       - `scripts/analysis/grid_search/run_077_kawarimi_mp_exp.py`:
+         - `run_077_kawarimi.py` の metrics schema に追随。
+       - `backend/tests/test_grid_search_consistency.py`:
+         - shared kernel を backend / GS で共用するなら parity test を増やす候補。
+       - `backend/app/services/trades_calculator.py:597-606`
+       - `backend/app/jobs/generators/risk_metrics.py:125-135`
+         - compare-summary 系や stored risk metrics に PSR 表示を広げるなら波及。
+       - `outputs/grid_search/DATA_CATALOG.md:170-177`
+         - 実態と違い `template_gs_runner.py` 前提の記述が残っており、共通化方針を入れるなら更新対象。
+       - `scripts/analysis/register_285_yotsume_fof.py` など champion metric を読む downstream:
+         - DSR を ranking / champion selection に昇格させる場合のみ影響。
+
+    5. related_tests
+       - 既存あり:
+         - `backend/tests/test_right_tail_metrics.py` は formula-only テスト追加の好例。
+         - `backend/tests/test_true_cagr_metrics.py` は metric 公式検証の好例。
+         - `scripts/analysis/deterioration/test_deterioration_estimator.py` は probability estimator の edge guard テストの好例。
+       - 追加推奨:
+         - `backend/tests/test_sharpe_inference.py`
+           - 正規対称系列で `PSR(SR*=0)` が Sharpe の符号と単調整合
+           - positive skew / high kurtosis 系で denominator が正を保つ
+           - `n<3` / `std≈0` / constant series / all-NaN を NaN or insufficient に倒す
+         - `backend/tests/test_grid_search_consistency.py`
+           - shared `sharpe_inference` を backend と GS で同値確認
+         - `scripts/analysis/grid_search` 側の新規テスト
+           - `pattern_to_row()` に `psr_0`,`dsr` が出ること
+           - `grid_search_metrics_v2.py` の DB update が新カラムと整合すること
+
+    6. edge_cases
+       - 小サンプル:
+         - `n<24` では skew/kurt 推定がかなり不安定。PSR/DSR は `insufficient_data` 扱い、または `confidence_low` flag を別途返すべき。
+       - 非正規分布:
+         - レバレッジETFで尖度が大きく、PSR denominator `1 - skew*SR + ((kurt-1)/4)*SR^2` が極端に小さくなることがある。`<=0` は NaN にして clamp しない方が解釈事故が少ない。
+       - serial correlation:
+         - 原典PSRは iid/non-normal 補正が主で、自己相関補正ではない。DM-Signal は月次系列でも autocorr がありうるので、v1 は caveat 明記、v1.1 で Lo/HAC 補正版を検討。
+       - multiple testing inflation:
+         - raw grid count をそのまま `N` に入れると過度に悲観的になりうる。近傍パラメータ高相関を見て `N_effective` を導入した方が GS 実態に近い。
+       - objective mismatch:
+         - champion が Calmar 最大なのに DSR(Sharpe)だけで採否を決めると指標不整合。DSR は first gate ではなく supplementary gate に置くのが安全。
+       - risk-free consistency:
+         - backend は `rf_return` を持つ一方、077 runner は raw returns ベースの Sharpe。PSR/DSR を比較可能にするには GS 側も excess return ベースへ揃える必要がある。
+
+    7. Bonferroni / BHY 比較
+       - Bonferroni:
+         - `alpha / N` で FWER を強く抑えるが、GS の高相関候補では保守的すぎる。
+       - BHY:
+         - 任意依存下の FDR 制御として Bonferroni より実用的だが、p値補正であって Sharpe 推定量の歪度・尖度・有限標本誤差そのものは扱わない。
+       - DSR:
+         - champion Sharpe の「偶然にしては高すぎるか」を直接評価でき、Sharpe inference と multiple testing を同じ座標系で扱える。DM-Signal の GS では最も設計相性が良い。
+
+    参考一次資料:
+       - Bailey & de Prado, "The Sharpe Ratio Efficient Frontier" (PSR)
+       - Bailey & de Prado, "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting and Non-Normality" (2014)
+       - quantresearch.org lecture index（Karo inbox 追補）
+purpose_validation:
+  cmd_purpose: PSR と DSR の数式・multiple-testing 補正・DM-Signal への組込み設計を調査し、実装直結の変更箇所とテスト影響を明らかにする。
+  fit: true
+  purpose_gap: ''
+files_modified:
+- /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+- /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_861.yaml
+verification:
+- command: sed -n '1,260p' /mnt/c/Python_app/DM-signal/docs/research/cmd_860_performance-persistence.md
+  result: pass
+  notes: OOS R²は補助指標、GS上位評価層に置くべきという cmd_860 の結論と DSR の位置づけを整合確認。
+- command: sed -n '1,260p' /mnt/c/Python_app/DM-signal/docs/research/cmd_859_pdet-ninpo-design.md
+  result: pass
+  notes: GS block 追加時の files_to_modify / tests / edge cases の整理パターンを再利用。
+- command: nl -ba /mnt/c/Python_app/DM-signal/backend/app/services/metrics_calculator.py | sed -n '760,820p'
+  result: pass
+  notes: Sharpe と `rf_return` の既存出力点を確認。PSR の全PF統合先として妥当。
+- command: nl -ba /mnt/c/Python_app/DM-signal/backend/app/services/metrics_calculator.py | sed -n '950,970p'
+  result: pass
+  notes: Skewness / Excess Kurtosis が同一パイプラインで既に計算済み。PSR 用の moments 再利用が可能。
+- command: nl -ba /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/grid_search_metrics_v2.py | sed -n '1810,2035p'
+  result: pass
+  notes: shared enhanced metrics → SQLite update の主入口を確認。
+- command: nl -ba /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_oikaze.py | sed -n '190,245p'
+  result: pass
+  notes: '`calc_metrics_fast()` が per-runner 重複であることを確認。'
+- command: rg -n "def calc_metrics_fast|pattern_to_row" /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_*.py
+  result: pass
+  notes: 077 runner 群が CSV schema を個別保持しており、PSR/DSR を CSV に載せるには複数ファイル更新が必要。
+- command: sed -n '1,220p' /mnt/c/Python_app/DM-signal/backend/tests/test_right_tail_metrics.py
+  result: pass
+  notes: formula-only unit test の既存パターンを確認。
+- command: sed -n '1,260p' /mnt/c/Python_app/DM-signal/scripts/analysis/deterioration/test_deterioration_estimator.py
+  result: pass
+  notes: probability estimator の edge guard テストパターンを確認。
+lesson_candidate:
+  found: true
+  title: GS の shared metrics と runner CSV metrics を別系統のまま放置すると統計指標追加で必ず drift する
+  detail: '`grid_search_metrics_v2.py` と `run_077_*` は同じ Sharpe 系指標を別々に計算している。PSR/DSR のような統計推論指標を入れる時、片方だけ更新すると SQLite と CSV で列不一致・定義不一致が起こる。統計指標は shared kernel を先に作って両方から呼ぶべき。'
+  project: dm-signal
+lessons_useful:
+- id: L281
+  useful: true
+  reason: レバレッジETFの fat tails が正規性仮定を壊すため、PSR/DSR の non-normality 補正が必要だと再確認できた。
+- id: L286
+  useful: true
+  reason: OOS R² は GS runner 上位評価層に置くべきという教訓が、DSR も block 実装ではなく GS evaluation 層に置く設計判断を支えた。
+- id: L289
+  useful: true
+  reason: PF 間相関が高いため、多重検定の試行数は raw count ではなく effective trials を意識すべきだと判断できた。
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+decision_candidate:
+  found: true
+  title: PSR/DSR の数式 SSOT を backend service に新設し、077 runner はそこを呼ぶ構成へ寄せる
+  detail: '`grid_search_metrics_v2.py` と `run_077_*` の重複を踏まえると、新規 `backend/app/services/sharpe_inference.py` に PSR/DSR 核を作り、GS 側は sys.path 追加で再利用する案が最も drift が少ない。v1 で runner 側に局所実装すると後で backend 指標と乖離しやすい。'
+  project: dm-signal
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

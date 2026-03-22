@@ -1,0 +1,97 @@
+task_id: cmd_840_impl_signal_aggregation
+ninja: kagemaru
+status: done
+timestamp: '2026-03-12T17:55:00+09:00'
+parent_cmd: cmd_840
+summary: 'Signal.date全件取得をMIN/MAX SQL集約に置換完了。
+
+  monthly_returns_calculator.py + annual_returns_calculator.pyの2ファイル。
+
+  既存19テスト全PASS、計算結果完全不変。
+
+  '
+ac_results:
+  AC1:
+    status: PASS
+    detail: 'monthly_returns_calculator.py:615-664の_get_date_ranges_for_partial_notes()を置換。
+
+      - self.db.query(Signal.date).filter(...).order_by(...).all() → 全件Python側
+
+      を
+
+      - self.db.query(func.min(Signal.date), func.max(Signal.date)).filter(...).one()
+      → DB側集約
+
+      に変更。MTDとStartの2つの日付範囲それぞれ独立クエリで取得。
+
+      '
+  AC2:
+    status: PASS
+    detail: 'annual_returns_calculator.py:330-373の_get_date_ranges_for_partial_notes()を置換。
+
+      YTDとStartの2つの日付範囲を同様にfunc.min/max集約に変更。
+
+      '
+  AC3:
+    status: PASS
+    detail: '19テスト全PASS (0 skipped, 0 failed):
+
+      - test_monthly_returns_start_partial: 2 PASS
+
+      - test_monthly_returns_mtd: 3 PASS
+
+      - test_annual_returns_calculator: 5 PASS
+
+      - test_annual_returns_058: 9 PASS
+
+      partial_note/period_start/period_end/trading_daysの計算結果は完全不変。
+
+      '
+  AC4:
+    status: PASS
+    detail: 'signal 0件時: func.min()/func.max()はSQLで(None, None)を返す。
+
+      if mtd_min is not None で空dict {}を返す。
+
+      旧実装の if not sig_data: return result と同一動作。
+
+      '
+  AC5:
+    status: PASS
+    detail: 19 passed, 0 skipped, 0 failed in 4.07s
+changes:
+  files_modified:
+  - path: backend/app/services/monthly_returns_calculator.py
+    lines: 11(import), 627-664(method body)
+    change: sqlalchemy.func追加。Signal全件取得→MIN/MAX集約2クエリに置換
+  - path: backend/app/services/annual_returns_calculator.py
+    lines: 11(import), 340-373(method body)
+    change: sqlalchemy.func追加。Signal全件取得→MIN/MAX集約2クエリに置換
+  commit: 'a29db3ee - perf: replace Signal.date full-table scan with MIN/MAX SQL aggregation
+    (cmd_840)'
+  repo: DM-signal
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術の教訓。SQL集約実装には無関係。"
+  - id: L063
+    useful: false
+    reason: "YAML構造の教訓。SQL変更スコープ外。"
+  - id: L231
+    useful: false
+    reason: "FEフック分離の教訓。BE calculator変更には無関係。"
+  - id: L213
+    useful: false
+    reason: "CDP認証の教訓。BE変更には無関係。"
+  - id: L020
+    useful: false
+    reason: "パリティ検証の教訓。今回はSQL集約のみ。"
+lesson_candidate:
+  found: false
+decision_candidate:
+  found: false
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

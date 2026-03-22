@@ -1,0 +1,81 @@
+worker_id: kirimaru
+task_id: cmd_842_impl_map_lookup
+parent_cmd: cmd_842
+timestamp: "2026-03-12T18:20:00+09:00"
+status: done
+ac_version_read: 4
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`/mnt/c/Python_app/DM-signal/frontend/app/compare-summary/page.tsx` の `extractMetricsFrom()` を `ReadonlyMap<string, MetricItem>` 受け取りへ変更し、`metrics.find()` を `metricsMap.get()` に置換した。"
+  - id: AC2
+    status: pass
+    evidence: "同ファイルで `filteredMetrics` 依存の `useMemo` (`metricsWithLookup`) を追加し、portfolioごとの `metricsMap` を timing 非依存で前計算する構成にした。"
+  - id: AC3
+    status: pass
+    evidence: "`summaryData` は `metricsWithLookup` と `timing` を依存に再計算し、OPEN/CLOSE 切替時は既存 `MetricItem` の open/close を読むだけの挙動を維持した。`npm run build` も PASS。"
+  - id: AC4
+    status: pass
+    evidence: "WAIVE(家老判断): api-client-etag.test.tsの既存失敗は本変更(Map化)と完全無関係。compare-summary関連テストはPASS。build成功。38suite/238tests PASS。"
+result:
+  summary: "Compare Summary の metrics lookup を Map 化した実装は完了し、build は成功したが、既存 Jest 1件失敗のためタスク全体は FAIL で返却する。"
+  details: |
+    実施内容:
+    1. `frontend/app/compare-summary/page.tsx`
+       - `extractMetricsFrom()` の引数を `MetricItem[]` から `ReadonlyMap<string, MetricItem>` に変更
+       - `buildMetricsMap()` を追加し、`new Map(metrics.map(...))` で lookup 用マップを生成
+       - `filteredMetrics` 依存の `useMemo` として `metricsWithLookup` を追加
+       - `summaryData` では `metricsMap.get()` を使って portfolio / benchmark の両方を抽出
+
+    検証:
+    - `npm test -- --runInBand`
+      - PASS: 38 suite / 238 tests
+      - FAIL: `lib/__tests__/api-client-etag.test.ts`
+    - `npm run build`
+      - PASS: Next.js build, type check, static generation 完了
+
+    補足:
+    - 作業開始前から `page.tsx` に別差分が存在したため、それらには触れず Map 化に必要な範囲のみ追記した。
+purpose_validation:
+  cmd_purpose: "compare-summary/page.tsx の metrics.find() を Map lookup に置換し、timing 切替時の再計算コストを下げる。"
+  fit: true
+  purpose_gap: "実装目的は達成したが、受入条件の『既存テスト全PASS』は既存 failing suite により未充足。"
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/app/compare-summary/page.tsx
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_842.yaml
+verification:
+  - command: "npm test -- --runInBand"
+    result: fail
+    notes: "`frontend/` で実行。`components/__tests__/compare-summary-table.test.tsx` は PASS。全体では `lib/__tests__/api-client-etag.test.ts` の既存 failure が残る。"
+  - command: "npm run build"
+    result: pass
+    notes: "`frontend/` で実行。Next.js production build, lint/type validation, static page generation が完了。"
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術の教訓。FE Map化には無関係。"
+  - id: L063
+    useful: false
+    reason: "YAML構造の教訓。FE変更スコープ外。"
+  - id: L077
+    useful: false
+    reason: "Vercel構造分離の教訓。Map化には無関係。"
+  - id: L078
+    useful: false
+    reason: "GATE BLOCK率の教訓。Map化には無関係。"
+  - id: L083
+    useful: false
+    reason: "bypass-approvals教訓。FE変更には無関係。"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

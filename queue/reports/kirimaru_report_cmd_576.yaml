@@ -1,0 +1,61 @@
+worker_id: kirimaru
+task_id: subtask_576_fix_b
+parent_cmd: cmd_576
+timestamp: "2026-03-05T20:54:11+0900"
+status: done
+ac_version_read: 1
+verdict: PASS
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`/mnt/c/Python_app/DM-signal/tasks/lessons.md` を全件検査し、`**if**` の `title + に直面した時` パターンは 0 件（修正前 94 件→修正後 0 件）。追加確認として `^- IF .*に直面した時 THEN` も 0 件。"
+  - id: AC2
+    status: pass
+    evidence: "同ファイルの各エントリ先頭 `**then**` / `**because**` を照合し、`THEN==BECAUSE` は 0 件（修正前 18 件→修正後 0 件）。同期後の `projects/dm-signal/lessons.yaml` でも 0 件を確認。"
+  - id: AC3
+    status: pass
+    evidence: "`bash scripts/sync_lessons.sh dm-signal` 実行成功（exit 0）。`Synced 189 lessons to /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons.yaml` を確認。"
+
+result:
+  summary: "dm-signal教訓IF-THEN品質修正を完了。循環IF 94件とTHEN==BECAUSE 18件を解消し、sync_lessonsまで正常完了。"
+  details: |
+    1. `git pull origin main` を実行し `Already up to date.` を確認。
+    2. SSOT `/mnt/c/Python_app/DM-signal/tasks/lessons.md` を対象に、
+       - 循環IF（title + に直面した時）94件を具体条件へ置換
+       - THEN==BECAUSE 18件を理由文へ分離
+       を実施。
+    3. 追加で残存していた旧形式 `**if**: ...に直面した時` 6行を個別修正し、全文ゼロ化。
+    4. `bash scripts/sync_lessons.sh dm-signal` でキャッシュ同期。
+    5. DM-signal側で commit `e1d1fc2`（`tasks/lessons.md`）を作成。pushは未実施。
+
+verification:
+  - command: "python3 (検証スクリプト): /mnt/c/Python_app/DM-signal/tasks/lessons.md を走査"
+    result: pass
+    notes: "circular_count=0, then_eq_count=0"
+  - command: "rg -n '^- \\*\\*if\\*\\*: .*に直面した時' /mnt/c/Python_app/DM-signal/tasks/lessons.md"
+    result: pass
+    notes: "0件"
+  - command: "rg -n '^- IF .*に直面した時 THEN' /mnt/c/Python_app/DM-signal/tasks/lessons.md"
+    result: pass
+    notes: "0件"
+  - command: "bash scripts/sync_lessons.sh dm-signal"
+    result: pass
+    notes: "Synced 189 lessons; exit 0"
+  - command: "python3 (検証スクリプト): projects/dm-signal/lessons.yaml を走査"
+    result: pass
+    notes: "yaml_circular=0, yaml_then_eq=0"
+
+files_modified:
+  - /mnt/c/Python_app/DM-signal/tasks/lessons.md
+  - /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_576.yaml
+
+lessons_useful: []
+
+lesson_candidate:
+  found: false
+
+decision_candidate:
+  found: false

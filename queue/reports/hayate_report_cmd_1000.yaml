@@ -1,0 +1,116 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_1000_recon_pbar
+parent_cmd: cmd_1000
+timestamp: "2026-03-16T13:20:45+0900"
+status: done
+ac_version_read: 1
+verdict: FAIL
+ac_results:
+  - id: AC3
+    status: pass
+    evidence: "`PBarSelectionBlock` のインタフェース準拠・データ受け渡し・p̄参照経路を `backend/app/services/pipeline/blocks/p_bar_selection.py`, `backend/app/services/pipeline/base.py`, `backend/app/services/pipeline/engine.py`, `backend/app/jobs/p_average_batch.py`, `backend/app/jobs/recalculate_fast.py`, `backend/tests/test_p_bar_selection_block.py` で照合した。インタフェース準拠は確認できた一方、p̄比較は各PFの全履歴ベース事前計算であり、候補集合ごとの共通期間考慮は存在しない。"
+result:
+  summary: "PBarSelectionBlock は既存 SelectionBlock の契約には従っているが、p̄計算そのものは行わず、事前計算済み `PAverageResult` を読むだけである。したがって候補PF間の共通期間を考慮した p̄比較にはなっておらず、履歴長の異なるPFをそのまま横比較する実装になっている。"
+  details: |
+    調査結論:
+    1. インタフェース準拠: PASS
+       - `PBarSelectionBlock` は `SelectionBlock` を継承し、`execute(self, context: PipelineContext) -> None` を実装している
+         (`backend/app/services/pipeline/blocks/p_bar_selection.py:24-38`,
+          `backend/app/services/pipeline/base.py:87-107,193-206`)。
+       - `BlockType.P_BAR_SELECTION` が enum と block registry に登録され、`PipelineEngine` から他ブロック同様に解決・実行される
+         (`backend/app/schemas/pipeline.py:18-39`,
+          `backend/app/jobs/shared.py:264-288`,
+          `backend/app/services/pipeline/engine.py:90-115`)。
+       - 出力も既存 selection block と同じく `context.current_tickers` を更新し、`context.intermediate_results[self.block_id]` に詳細を保存する形で整合している
+         (`backend/app/services/pipeline/blocks/p_bar_selection.py:79-85`;
+          比較対象 `backend/app/services/pipeline/blocks/momentum_filter.py:27-37,131-145`)。
+
+    2. p̄計算時の共通期間考慮: FAIL
+       - `PBarSelectionBlock` 自体は `context.current_tickers` と `n_splits` で `PAverageResult` を読むだけで、`target_date`・価格系列・月次系列の共通期間算出ロジックを一切持たない
+         (`backend/app/services/pipeline/blocks/p_bar_selection.py:42-77`)。
+       - p̄の生成元 `run_p_average_batch()` は、active PFごとに `MonthlyReturn.monthly_return_open` を `year_month` 順に全件読み込み、そのPF単体の全履歴で `calc_p_average()` を実行して永続化している
+         (`backend/app/jobs/p_average_batch.py:18-38,79-109`,
+          `backend/app/services/p_average.py:39-72`)。
+       - このため、比較対象PFごとに開始月・サンプル長が異なっても、その差を揃えずに p̄ を比較する構造である。`projects/dm-signal.yaml` の「共通期間を先に確定」の裁定とは未整合。
+       - 最適化経路でも同じで、`recalculate_fast.py` は `date-invariant` な `_pbar_cache` を全PF分まとめて作り、当日の候補集合へそのまま適用している
+         (`backend/app/jobs/recalculate_fast.py:1052-1064,1298-1307`)。
+
+    3. 他ブロックとのデータ受け渡し: PASS（一部注意点あり）
+       - 入力は `context.current_tickers` を「構成PF ID集合」として受け取り、`db_session` で `PAverageResult` を照会するだけで、`momentum_data` や `price_data` には依存しない
+         (`backend/app/services/pipeline/blocks/p_bar_selection.py:39-52`)。
+       - 出力は `selected` を `context.current_tickers` へ戻し、engine 側はそれを通常の block result として後続 terminal に渡すため、パイプライン接続自体は整合している
+         (`backend/app/services/pipeline/engine.py:107-137`)。
+       - ただし `PAverageResult` が一部PFで欠損している場合、ブロックは「存在する行だけ」で ranking し、欠損PFを警告なく事実上脱落させる。`rows == []` または `all None` だけが警告対象で、部分欠損は未検知
+         (`backend/app/services/pipeline/blocks/p_bar_selection.py:54-77`)。
+
+    4. テスト状況
+       - 既存テストは `n_splits` 切替、同点 cutoff、all-null 時の空集合のみを確認している
+         (`backend/tests/test_p_bar_selection_block.py:50-104`)。
+       - 未カバー: 共通期間揃え、部分欠損 row、`top_n <= 0` の異常値、`recalculate_fast.py` の vectorized 経路との一致。
+purpose_validation:
+  cmd_purpose: "PBarSelectionBlockが既存ブロックと同じインタフェースに従っているか、p̄計算時に共通期間を考慮しているか、他ブロックとのデータ受け渡しが正しいかを精査して報告する。"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "候補集合間で比較する事前計算指標は共通期間かサンプル窓メタデータを必ず持たせよ"
+  detail: "PFごとに全履歴で事前計算したスカラー指標を、そのまま候補集合の ranking に使うと、開始月・サンプル長の差が比較結果へ混入する。候補集合ごとに共通期間へ揃えて再計算するか、少なくとも比較に必要な start/end/sample_count を保存して不一致を検知すべき。"
+  project: dm-signal
+lessons_useful:
+  - id: L318
+    useful: true
+    reason: "p̄ 指標が戦略DNAに強く依存する教訓であり、今回の『履歴窓まで揃っていない横比較』の危険性を補強した。"
+  - id: L320
+    useful: true
+    reason: "DM3/朱雀のようなスイッチ型戦略では p̄ の解釈自体に注意が必要で、PBarSelectionBlock の比較前提を厳しく見るべき背景知識として有効だった。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify:
+    - "backend/app/jobs/p_average_batch.py:18-38,79-109 — p̄算出窓を共通期間ベースへ揃える、または比較用メタデータを保存する主修正箇所"
+    - "backend/app/services/p_average.py:39-72 — 共通期間再計算や最少サンプル判定を変更する場合の計算本体"
+    - "backend/app/services/pipeline/blocks/p_bar_selection.py:38-85 — 欠損row検知や比較前提チェックを入れる場合の選抜ロジック"
+    - "backend/app/jobs/recalculate_fast.py:1052-1064,1298-1307 — vectorized経路を主経路と同じ仕様へ揃える必要あり"
+    - "backend/app/db/models.py:901-913 — start/end/sample_count 等の比較メタデータを保存するならスキーマ変更が必要"
+  affected_files:
+    - "backend/tests/test_p_bar_selection_block.py — 部分欠損・共通期間前提・異常configの追加テスト"
+    - "backend/tests/test_p_average_batch.py — 新しい p̄算出窓/永続化仕様に合わせて修正必要"
+    - "backend/tests/test_p_average_service.py — min_period_length や chunking 前提が変わるなら修正必要"
+    - "backend/app/api/p_average.py — メタデータ追加時はレスポンス仕様も波及"
+  related_tests:
+    - "backend/tests/test_p_bar_selection_block.py — 既存あり。共通期間揃え/partial missing row/`top_n <= 0` は未カバーのため追加必要"
+    - "backend/tests/test_p_average_batch.py — 既存あり。履歴長の異なるPFを比較するケース追加が必要"
+    - "backend/tests/test_p_average_service.py — 既存あり。共通期間切り詰め時の `min_period_length` / NaN 条件を再確認すべき"
+    - "vectorized pipeline integration test — 現状見当たらず。`recalculate_fast.py` と block 実装の一致確認用に新規テストが必要"
+  edge_cases:
+    - "候補PFごとに inception 月が異なる場合、現実装では長期PFと短期PFの p̄ を非共通窓で横比較してしまう"
+    - "一部PFだけ `PAverageResult` 欠損または `p_bar=None` の場合、そのPFは警告なく候補から消える"
+    - "`top_n <= 0` を block 層では検証しておらず、負indexにより cutoff が意図せず末尾要素になりうる"
+    - "主経路と vectorized 経路の両方を直さないと、日次再計算で選抜結果が二重仕様になる"
+findings:
+  interface_compliance:
+    status: pass
+    detail: "SelectionBlock継承・`execute(context)` シグネチャ・BlockType登録・engine解決は既存ブロックと整合。"
+  common_period_alignment:
+    status: fail
+    detail: "p̄ は候補集合ごとに再計算されず、PF単位の全履歴事前計算値をそのまま比較している。"
+  data_handoff:
+    status: pass_with_risk
+    detail: "`current_tickers` 入出力と `intermediate_results` 保存は整合するが、partial missing row を黙って落とす。"
+confidence: 0.94
+blind_spots:
+  - "本番DB中の実データ分布や、現在どの portfolio config が `PBarSelectionBlock` を使っているかまでは未確認。静的コード読解ベースの結論。"
+  - "`cmd_987` の元コミット差分は明示的に追えていない。現行実装と関連テスト・参照箇所から再構成した。"

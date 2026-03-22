@@ -1,0 +1,56 @@
+worker_id: saizo
+task_id: cmd_1289
+parent_cmd: cmd_1289
+timestamp: '2026-03-23T02:49:34'
+status: done
+ac_version_read: 27d5d03c
+result:
+  summary: 全AC PASS。gate_ninja_workaround_rate.sh作成(直近N件の忍者別WA率集計)。gate_karo_startup.shに統合済み。commit
+    8b75f03
+  details: 'AC1: スクリプト作成+実行権限付与。AC2: gate_karo_startup.sh Check 6に--quiet統合(冪等:既にdd36b6bで存在)。AC3:
+    EXIT_CODE=0確認済み'
+purpose_validation:
+  cmd_purpose: 忍者別workaround率の自動計測・startup gate表示
+  fit: true
+  purpose_gap: ''
+files_modified:
+- path: scripts/gates/gate_ninja_workaround_rate.sh
+  action: created
+- path: scripts/gates/gate_karo_startup.sh
+  action: modified
+- path: .gitignore
+  action: modified
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: karo_workarounds.yamlの混在フォーマット対応
+  detail: "karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_loadは成功するがninja名はdetail/root_causeテキストから日本語名romajiマッピングで抽出必要"
+  project: infra
+lessons_useful:
+- id: L074
+  useful: true
+  reason: PASS=$((PASS+1))形式を使用。((PASS++))回避を意識
+- id: L225
+  useful: false
+  reason: entity名義混入チェックは本タスクのスコープ外
+- id: L063
+  useful: true
+  reason: YAML構造(dict with key→list)の理解をパーサー実装に活用
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: gate_ninja_workaround_rate.sh が存在し実行可能か
+    result: 'yes'
+  AC2:
+  - check: 忍者別の名前/件数/率が出力されるか
+    result: 'yes'
+  AC3:
+  - check: エラーなく実行完了するか
+    result: 'yes'
+verdict: PASS

@@ -1,0 +1,48 @@
+worker_id: hanzo
+task_id: subtask_604_review
+parent_cmd: cmd_604
+timestamp: "2026-03-06T14:40:00"
+status: done
+ac_version_read: 6
+result:
+  summary: "cmd_604レビュー完了。疾風の19ファイル修正を全AC検証しPASS判定。"
+  verdict: PASS
+  ac_results:
+    AC1:
+      status: PASS
+      detail: "instructions/配下にtier/genin/sonnet/上忍/下忍の残存参照なし(rg検索0件)"
+    AC2:
+      status: PASS
+      detail: "全箇所で{ninja_name}_report_{cmd}.yaml形式に統一済み"
+    AC3:
+      status: PASS
+      detail: "infrastructure.md L9: Codex忍者=/new,Claude忍者=/clear修正済み。L107: 編成がsettings.yamlと一致"
+    AC4:
+      status: PASS
+      detail: "karo-operations.md=93行(<500)。karo-operations-detail.md=656行存在"
+    AC5:
+      status: PASS
+      detail: "settings.yamlの全パス参照(skills/,logs/,screenshots)が実在ディレクトリ"
+    AC6:
+      status: PASS
+      detail: "bats tests/unit/ 186テスト全PASS、SKIP=0"
+  observations:
+    - "lib/cli_adapter.sh L185: case文sonnetパターン残存。機能コードでありAC1(instructions内)スコープ外。コメント(L10)は修正済み"
+    - "docs/archive/mcas.md存在確認済み"
+  test_result: "PASS: 186/186, SKIP=0"
+purpose_validation:
+  cmd_purpose: "cmd_594偵察のdocs/config層所見を全件修正し、tier廃止残存・パス不正・ドキュメント乖離を一掃する"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L085
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

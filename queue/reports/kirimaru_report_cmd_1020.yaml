@@ -1,0 +1,88 @@
+worker_id: kirimaru
+task_id: cmd_1020_sub_a
+parent_cmd: cmd_1020
+timestamp: '2026-03-17T09:02:00+09:00'
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+- id: AC1
+  status: pass
+  evidence: '`scripts/analysis/shin_shijin_cpcv_engine.py` に OOS rank 正規化 → epsilon
+    clipping → logit(lambda) → P(lambda<=0) の完全パイプラインを実装し、markdown summary に simplified/logit
+    PBO 比較表を出力した。DM7+/DM2 実行で delta=0.0000 を確認。'
+- id: AC2
+  status: pass
+  evidence: 8メトリクスを `metric_dispatch()` に移植し、`--metrics` CLI で任意指定できる汎用設計にした。`--family
+    'DM7+' --metrics Calmar_Ratio NHF Max_Run-up` 実行で 3メトリクス同時CPCVが成功。
+- id: AC3
+  status: pass
+  evidence: meta.yaml の live common period 167ヶ月を読み、8群を contiguous `array_split` で近似均等分割して
+    `C(8,2)=28` fold を生成。purge 1M + embargo 1M を fold ごとに適用し、train/test月数・群番号・purge/embargo件数を
+    markdown に出力した。
+result:
+  summary: Phase 3 用の汎用 CPCV エンジンを追加した。wide monthly-return CSV を低オーバーヘッドで読み、logit
+    PBO、pluggable metrics、8群28fold CPCV を一つの CLI に統合した。実データ検証は DM7+ 3メトリクス、DM2 1メトリクスで完走した。
+  details: "実装要点:\n1. データ読込\n   - pandas の超wide DataFrame常駐を避けるため、CSVを行単位で読み込み `T\
+    \ x N` NumPy 行列へ変換した。\n   - `meta.yaml` の common_period と実CSV期間が一致しない場合は即エラーにしている。\n\
+    \n2. logit PBO\n   - test score の descending rank を 0..1 に正規化し、best=1 / worst=0\
+    \ になる向きで扱った。\n   - `epsilon=1e-6` で clip して `lambda = log(rank / (1-rank))` を計算。\n\
+    \   - PBO は `mean(lambda <= 0)`、比較用 simplified PBO は `mean(rank_norm <= 0.5)`\
+    \ として同一入力比較を markdown に出力した。\n\n3. pluggable metrics\n   - `shin_shijin_l1_gs.py`\
+    \ の8メトリクス定義を engine 内へ移植し、`metric_dispatch()` へ集約した。\n   - `ReturnWindow` キャッシュで\
+    \ cumulative / running_peak / running_min / sorted_desc を使い回し、fold内で複数メトリクスを評価しても再計算を抑えている。\n\
+    \n4. fold 構造\n   - live common period は 167ヶ月で 8 等分不可のため、`np.array_split` による\
+    \ contiguous 8群（21,21,21,21,21,21,21,20）を採用した。\n   - 各 test block の前1ヶ月を purge、後1ヶ月を\
+    \ embargo とし、group番号/期間/train/test月数を summary に出力した。\n\n5. 実行確認\n   - `DM7+` で\
+    \ `Calmar_Ratio NHF Max_Run-up` の 3メトリクス同時実行を確認。\n   - `DM2` で `Calmar_Ratio`\
+    \ の大規模ケースを確認し、76,680変種でもエンジンが完走することを見た。\n"
+purpose_validation:
+  cmd_purpose: シン四神Phase3 CPCVエンジン(logit完璧版)のエンジン本体構築
+  fit: true
+  purpose_gap: ''
+files_modified:
+- /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py
+- /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_cpcv_DM7P.md
+- /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_cpcv_DM2.md
+- /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+- /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_1020.yaml
+verification:
+- command: python3 -m py_compile /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py
+  result: pass
+  notes: 新規 engine スクリプトの構文チェックを通過。
+- command: python3 /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py
+    --family 'DM7+' --metrics Calmar_Ratio NHF Max_Run-up
+  result: pass
+  notes: 任意3メトリクス指定で 28 fold 実行が成功し、`outputs/analysis/shin_shijin_cpcv_DM7P.md` を出力。
+- command: python3 /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py
+    --family DM2 --metrics Calmar_Ratio
+  result: pass
+  notes: 76,680変種の大規模 family でも engine が完走し、`outputs/analysis/shin_shijin_cpcv_DM2.md`
+    を出力。
+- command: sed -n '1,80p' /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_cpcv_DM7P.md
+  result: pass
+  notes: group layout、metric summary、logit diagnostics、fold details が出力され、simplified/logit
+    PBO 比較が見えることを確認。
+lesson_candidate:
+  found: true
+  candidates:
+  - CPCV設計で live common period と group_count の割り切りを先に検証せよ。割り切れない場合は contiguous `np.array_split`
+    と最大群サイズ差の明示ログを標準化すると、設計書の『均等分割』前提崩れを安全に吸収できる。
+lessons_useful:
+- L348
+- L341
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

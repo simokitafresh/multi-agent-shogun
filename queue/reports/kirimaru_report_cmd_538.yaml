@@ -1,0 +1,96 @@
+worker_id: kirimaru
+task_id: subtask_538_impl
+parent_cmd: cmd_538
+timestamp: "2026-03-04T17:19:59+0900"
+status: done
+ac_version_read: 8
+result:
+  summary: "Signalトップ(/)を戦国告知画面へ差し替え、旧実装を_deprecatedへ退避。nav/hooks/visibility/LoginModalを新仕様へ整合し、AC1-AC8を検証PASS。"
+  details: |
+    実装内容:
+    - frontend/app/page.tsx を告知画面へ差し替え
+      - 表示: ⚔️ この街道は現在封鎖中にございます
+      - 文面: 新たな道筋が整い次第、再び通行可能となりましょう。
+      - 導線: ［本陣に戻る］ -> /dashboard
+    - 旧トップ実装を frontend/app/_deprecated/signal/page.tsx に退避（private folder化）
+    - frontend/components/sidebar.tsx から signal nav item を削除
+    - frontend/components/mobile-menu.tsx から signal menu item を削除
+    - frontend/hooks/usePortfolioParam.ts の PORTFOLIO_PARAM_PAGES から "/" を除外
+    - frontend/app/admin/visibility/page.tsx の signal 表示名を "Signal (Deprecated /)" に更新
+    - frontend/app/admin/components/LoginModal.tsx の Back to Main リンクを /dashboard に更新
+
+    検証:
+    - AC検証シェルで ac1-ac8 全PASS (TOTAL_PASS=8/8)
+    - 旧app/page.tsx(HEAD)と app/_deprecated/signal/page.tsx のSHA256一致を確認
+    - DM-signal側 commit: b690571 (push未実施)
+purpose_validation:
+  cmd_purpose: "Signalトップページ(/)をディスコン（差し替え+_deprecated退避+nav整合）する"
+  fit: true
+  purpose_gap: "なし"
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/app/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/_deprecated/signal/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/components/sidebar.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/components/mobile-menu.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/hooks/usePortfolioParam.ts
+  - /mnt/c/Python_app/DM-signal/frontend/app/admin/visibility/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/app/admin/components/LoginModal.tsx
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_538.yaml
+lesson_candidate:
+  found: false
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: "task/context/targetファイルをRead後に編集し、Write-before-Readエラーを回避した。"
+  - id: L074
+    useful: true
+    reason: "AC検証シェルで PASS=$((PASS+1)) を使用し、set -e環境の算術罠を回避した。"
+  - id: L063
+    useful: false
+    reason: "今回はPythonでlessons.yamlをパースする処理を実装していない。"
+  - id: L044
+    useful: false
+    reason: "reportスキーマの分岐実装は不要なタスクだった。"
+  - id: L097
+    useful: false
+    reason: "cmd_complete_gate.shは本タスクの変更対象外。"
+test_results:
+  - command: "AC validation shell (rg/hash checks for ac1-ac8)"
+    result: pass
+    notes: "ac1 PASS, ac2 PASS, ac3 PASS, ac4 PASS, ac5 PASS, ac6 PASS, ac7 PASS, ac8 PASS, TOTAL_PASS=8/8"
+  - command: "npx tsc --noEmit (frontend)"
+    result: fail
+    notes: "既存テストファイル app/__tests__/page-masking.test.tsx の TS2367 (4件) で失敗。今回変更起因ではない。"
+  - command: "npm run lint (frontend)"
+    result: blocked
+    notes: "next lint初回セットアップ対話プロンプトが表示され、非対話実行不可（ESLint未初期化）。"
+ac_checklist:
+  - id: ac1
+    status: pass
+    evidence: "frontend/app/page.tsx が戦国告知文面 + /dashboardリンクを表示"
+  - id: ac2
+    status: pass
+    evidence: "frontend/app/_deprecated/signal/page.tsx を作成し、旧app/page.tsx(HEAD)とSHA256一致"
+  - id: ac3
+    status: pass
+    evidence: "frontend/components/sidebar.tsx から signal項目を削除"
+  - id: ac4
+    status: pass
+    evidence: "frontend/components/mobile-menu.tsx から signal項目を削除"
+  - id: ac5
+    status: pass
+    evidence: "frontend/hooks/usePortfolioParam.ts の PORTFOLIO_PARAM_PAGES から '/' を除外"
+  - id: ac6
+    status: pass
+    evidence: "frontend/app/admin/visibility/page.tsx のsignal定義を 'Signal (Deprecated /)' に更新"
+  - id: ac7
+    status: pass
+    evidence: "frontend/app/admin/components/LoginModal.tsx の Back to Main リンク href を /dashboard へ更新"
+  - id: ac8
+    status: pass
+    evidence: "dashboard/summary等のnav項目は維持され、AC検証シェルで整合を確認"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

@@ -1,0 +1,56 @@
+worker_id: kagemaru
+task_id: cmd_1228
+parent_cmd: cmd_1228
+timestamp: '2026-03-21T23:30:28'
+status: done
+ac_version_read: 6b5a071d
+result:
+  summary: instructions/shogun.mdのIdle時自己分析手順セクション(5ステップ+行動理念)を確認し、git commitを完了した
+  details: 'AC1: Idle時自己分析手順セクション(L515-530)に行動理念+5ステップ+F009整合注記の記載を確認。AC2: git add
+    + commit完了(a392c2f)。AC3: 本報告YAML作成。'
+purpose_validation:
+  cmd_purpose: instructions/shogun.mdのIdle時自己分析手順をcommitする
+  fit: true
+  purpose_gap: ''
+files_modified:
+- instructions/shogun.md
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既存セクションの確認+commitのみ。新たな知見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bash算術演算なし。今回の作業に該当せず
+- id: L225
+  useful: false
+  reason: MCP entity操作なし。今回の作業に該当せず
+- id: L063
+  useful: false
+  reason: Python/YAML操作なし。今回の作業に該当せず
+- id: L085
+  useful: false
+  reason: 命名規則変更なし。単一ファイルの確認+commitのみ
+- id: L192
+  useful: false
+  reason: 並列impl/review操作なし。単一ファイルの確認+commitのみ
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: Idle時自己分析手順セクションに5ステップと行動理念が記載されているか
+    result: 'yes'
+  AC2:
+  - check: git commitが完了したか
+    result: 'yes'
+  AC3:
+  - check: 報告YAMLが標準フォーマットで作成されたか
+    result: 'yes'
+verdict: PASS

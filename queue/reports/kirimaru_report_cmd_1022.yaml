@@ -1,0 +1,66 @@
+worker_id: kirimaru
+task_id: cmd_1022_impl
+parent_cmd: cmd_1022
+timestamp: '2026-03-17T09:45:00+09:00'
+status: done
+ac_version_read: 4
+verdict: PASS
+ac_results:
+- id: AC1
+  status: pass
+  evidence: '`scripts/analysis/cmd_1022_family_triple_e.py` を新規作成し、`cmd_1019_ac12_results.md` + `cmd_1019_ac3_results.md` から4ファミリー独立の C1∩C3 判定を再構成した。`outputs/analysis/cmd_1022_family_triple_e.md` に各ファミリー56組テーブルと composite top3 を出力。'
+- id: AC2
+  status: pass
+  evidence: '生成レポートの summary で DM2=UD+SK+TC、DM3=SK+UW+LJ、DM6=UD+SK+TC を推薦として明記。DM7P は「メトリクスフィルタなし・全96体→Phase 4直行」と記載。'
+- id: AC3
+  status: pass
+  evidence: '`outputs/analysis/shin_shijin_design.md` §4/§5/§8 と `outputs/analysis/shin_shijin_phase2_metrics_analysis.md` §3 を family 独立 Triple-E 方針に更新し、PD-009 を設計裁定ログへ追記した。'
+- id: AC4
+  status: pass
+  evidence: '`python3 -m py_compile scripts/analysis/cmd_1022_family_triple_e.py` PASS。`python3 scripts/analysis/cmd_1022_family_triple_e.py` 実行成功。grep で生成レポートと設計書2本の推薦値/DM7P方針一致を確認。'
+result:
+  summary: family 独立 Triple-E 再評価を実装し、PD-009 を設計書2本へ反映した。DM2/DM6 は UD+SK+TC、DM3 は SK+UW+LJ、DM7P はメトリクスフィルタなしで全96体 Phase 4 直行に揃えた。
+  details: "実施内容:\n1. AC1スクリプト\n   - `scripts/analysis/cmd_1022_family_triple_e.py` を追加。\n   - `cmd_1019` upstream 出力をMarkdownパースし、C1(|rho|<0.4) と C3(正方向jump<=0.3) だけで family 別に56組を再評価。\n   - family composite を `2.0*max|rho| + 1.5*max(+jump)` として並べ替え、4ファミリーそれぞれの top3 と 56組表を出力した。\n\n2. 推薦結果\n   - DM2: UD+SK+TC (PASS 1/56)\n   - DM3: SK+UW+LJ (PASS 4/56)\n   - DM6: UD+SK+TC (PASS 3/56)\n   - DM7P: 参考出力は残すが、PD-009 に従いメトリクスフィルタなし・全96体を Phase 4 へ直行\n\n3. 文書更新\n   - `shin_shijin_design.md`: §4 を family 独立化、§5 を family 別 CPCV 入力へ更新、§8 に PD-009 行を追加\n   - `shin_shijin_phase2_metrics_analysis.md`: §3.4 を2条件へ縮約し、§3.5 に cmd_1022 結果表を追加、裁定結果セクションへ更新\n"
+purpose_validation:
+  cmd_purpose: C3符号修正後の family 別 C1∩C3 再評価、Triple-E推薦、設計書反映を完了する
+  fit: true
+  purpose_gap: ''
+files_modified:
+- /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1022_family_triple_e.py
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1022_family_triple_e.md
+- /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_design.md
+- /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_phase2_metrics_analysis.md
+- /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+- /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_1022.yaml
+verification:
+- command: python3 -m py_compile /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1022_family_triple_e.py
+  result: pass
+  notes: 新規 family 再評価スクリプトの構文チェックを通過。
+- command: python3 /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1022_family_triple_e.py
+  result: pass
+  notes: 'outputs/analysis/cmd_1022_family_triple_e.md を生成し、DM2/DM3/DM6 の推薦と DM7P 方針を出力。'
+- command: rg -n "UD \\+ SK \\+ TC|SK \\+ UW \\+ LJ|全96体.*Phase 4直行" /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1022_family_triple_e.md /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_design.md /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_phase2_metrics_analysis.md
+  result: pass
+  notes: 生成レポートと設計書2本で推薦値・DM7P運用方針が一致することを確認。
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: dm-signal
+lessons_useful:
+- L354
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

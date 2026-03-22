@@ -1,0 +1,106 @@
+worker_id: kotaro
+task_id: subtask_494_impl_pending_display_fix_r2
+parent_cmd: cmd_494
+timestamp: "2026-03-04T00:30:00+0900"
+status: done
+result:
+  summary: "tobisaru(d16be9c)が既に実装・commit済み。kotaroは検証として backendテスト再実行し 2 passed / 0 skipped を確認。全ACは tobisaru commit で達成済み。"
+  details: |
+    状況:
+    - commit d16be9c (2026-03-03 22:05) で tobisaru が実装完了済み
+    - 本タスクは再配備だが、実装は既に完了していた
+
+    検証実施:
+    1) コードレビュー
+      - backend/app/api/signals.py: _resolve_standard_display_signal() (L67-L97) 確認
+        - monthly + month_changed → sig.signal を pending表示、signal_pending=True
+        - non-monthly → holding_signal 維持、signal_pending=False
+      - frontend/components/portfolio-details.tsx: "Pending Rebalance" ラベル (L47-L49)
+      - frontend/lib/types/portfolio.ts: signal_pending フィールド (L102)
+
+    2) テスト再実行
+      - コマンド: cd /mnt/c/Python_app/DM-signal/backend && .venv/Scripts/python.exe -m pytest -q tests/test_signals_pending_projection_494.py
+      - 結果: 2 passed, 0 skipped (3.90s)
+
+    3) ドキュメント確認
+      - docs/research/cmd_494_signal-pending-display-fix.md: 存在確認済み
+      - context/dm-signal-frontend.md §14: 更新確認済み
+
+findings:
+  - id: F1
+    title: "実装は tobisaru commit d16be9c で完了済み"
+    evidence:
+      - "git log: d16be9c feat: implement pending signal projection for monthly portfolios and update frontend display"
+      - "tobisaru_report_cmd_494.yaml: status=done, AC1-5全PASS"
+    impact: "再配備は不要だった。状態同期の遅延による重複配備。"
+
+verdict: "全ACはtobisuruのcommitで達成済み。kotaroはテスト再実行による検証を完了。"
+confidence: high
+blind_spots:
+  - "frontendテスト(npm test)は実行環境の制約で未再実行。backendテストのみ再確認。"
+  - "本番環境でのE2E検証は未実施（テスト環境のみ）。"
+
+purpose_validation:
+  cmd_purpose: "Signalページmonthly pending表示を月替わりで安定化し、non-monthly回帰を防ぐ"
+  fit: true
+  purpose_gap: ""
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report_cmd_494.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+
+lesson_candidate:
+  found: true
+  title: "再配備前に先行commit/reportの存在を確認すべき"
+  detail: "cmd_494再配備時、先行忍者(tobisaru)が既にcommit+report提出済みだった。家老は再配備前にgit log + report存在を確認することで重複作業を防止できる。"
+  project: infra
+
+lessons_useful:
+  - id: L016
+    useful: true
+    reason: "signalとholdingの意味差を理解し、_resolve_standard_display_signalのロジック正当性を検証。"
+  - id: L014
+    useful: true
+    reason: "DB内のUUIDとAPI表示の整合性確認で参考。"
+  - id: L082
+    useful: false
+    reason: "今回はSQL直接操作なし。型キャスト論点は非該当。"
+  - id: L145
+    useful: false
+    reason: "FoF展開論点は今回のstandard pending修正では直接使用せず。"
+  - id: L077
+    useful: false
+    reason: "nukimiパリティは今回の表示修正では非該当。"
+  - id: L063
+    useful: true
+    reason: "テスト結果の件数確認を厳密に行い、SKIP=0を検証。"
+  - id: L031
+    useful: false
+    reason: "FoFパリティ論点は非該当。"
+  - id: L074
+    useful: false
+    reason: "quarterly初期化Cash月論点は非該当。"
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: true
+  summary: "再配備時に先行commit/report確認ゲートの追加を検討すべき。家老配備フローに `git log --oneline -1 -- {target_files}` + report Glob を前段チェックとして組込む。"
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "signals.py L67-L97 に monthly pending投影ロジック実装済み (d16be9c)"
+  - id: AC2
+    status: pass
+    evidence: "monthly→pending表示、non-monthly→holding維持。テストで確認 (test L84-L151)"
+  - id: AC3
+    status: pass
+    evidence: "backend 2 passed / 0 skipped を kotaro再実行で確認"
+  - id: AC4
+    status: pass
+    evidence: "docs/research/cmd_494_signal-pending-display-fix.md + context/dm-signal-frontend.md §14 存在確認"
+  - id: AC5
+    status: pass
+    evidence: "本報告 queue/reports/kotaro_report_cmd_494.yaml 提出"

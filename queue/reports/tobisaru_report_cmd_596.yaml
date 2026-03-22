@@ -1,0 +1,69 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: tobisaru
+task_id: subtask_596_review
+parent_cmd: cmd_596
+timestamp: "2026-03-06T14:40:00+0900"
+status: done
+ac_version_read: 6
+verdict: PASS
+result:
+  summary: "佐助のcmd_596実装(知識サイクル健全度3軸拡張)をレビュー。全6ACを独立検証し全PASS。コード品質・教訓準拠・テスト全パス確認。"
+  details: |
+    1) AC1: --json --by-project → by_projectにinfra/dm-signal/unknownの3PJが動的出力。PJ別inject_rate/effectiveness_rate/n含む。
+    2) AC2: --json --by-model → by_modelにOpus/Codex/Sonnet等7モデルが動的出力。モデル別ref_rate/effectiveness_rate/n含む。
+    3) AC3: top_helpful 5件(L074,L063,L032,L058,L079)とbottom_lessons 5件(L039,L111,L115,L120,L133)が含まれる。
+    4) AC4: --dry-run → 知識サイクル健全度に「#### PJ別」「#### モデル別」「#### 教訓ランキング」テーブル正常表示。
+    5) AC5: grep確認 → PJ名・モデル名のハードコードなし。PJ=YAML走査、モデル=gate_metrics.logユニーク値。
+    6) AC6: bats tests/unit/ → 186/186 PASS, 0 SKIP, 0 FAIL。
+    コード品質: L074準拠(((var++))未使用), L063準拠(payload.get), PyYAML不在時degrade対応。
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "by_projectにinfra(78.8%,n:156), dm-signal(64.3%,n:56), unknown(20.0%,n:5)が動的出力"
+  - id: AC2
+    status: pass
+    evidence: "by_modelにOpus(90.9%,n:124), Codex(92.9%,n:116), Sonnet(100.0%,n:37)等7モデルが動的出力"
+  - id: AC3
+    status: pass
+    evidence: "top_helpful 5件(L074:107refs)とbottom_lessons 5件(L039:0%)が含まれる"
+  - id: AC4
+    status: pass
+    evidence: "dry-run出力に#### PJ別/モデル別/教訓ランキングテーブルが正常表示"
+  - id: AC5
+    status: pass
+    evidence: "grep -E '(infra|dm-signal|Opus|Sonnet|Codex)' で両ファイル0件"
+  - id: AC6
+    status: pass
+    evidence: "bats tests/unit/ → 186/186 PASS, 0 SKIP, 0 FAIL"
+test_results:
+  - command: "bash -n scripts/knowledge_metrics.sh"
+    result: pass
+  - command: "bash -n scripts/dashboard_auto_section.sh"
+    result: pass
+  - command: "bash scripts/knowledge_metrics.sh --json --by-project --by-model"
+    result: pass
+  - command: "bash scripts/dashboard_auto_section.sh --dry-run"
+    result: pass
+  - command: "bats tests/unit/"
+    result: pass
+    notes: "186/186 PASS, 0 SKIP, 0 FAIL"
+purpose_validation:
+  cmd_purpose: "知識サイクル健全度をPJ別・モデル別・教訓別ランキングに拡張し可視化する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report_cmd_596.yaml
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L074
+  - L063
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

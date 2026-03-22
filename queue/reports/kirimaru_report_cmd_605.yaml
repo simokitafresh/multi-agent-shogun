@@ -1,0 +1,125 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: kirimaru
+task_id: subtask_605_scout_b
+parent_cmd: cmd_605
+timestamp: "2026-03-06T14:44:01+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+result:
+  summary: "直近50 CLEARのうち後続fix参照ありは5cmd/50(10%)、うち純粋な品質起因は3cmd/50(6%)。dashboardは直近10 reconの9件を掲載したが、詳細節ありは4件のみで、非HIGH所見は強く圧縮される。review報告proxyでは低CLEAR期(3/1-3/3)より高CLEAR期(3/4-3/6)の方が報告密度・AC明示が高く、モデル差はOpus優位ではなく、むしろCodex報告がやや深い。"
+  details: |
+    AC1. CLEAR後に別cmdで修正が必要になったケース
+    - データ源: `logs/gate_metrics.log` の直近50 unique CLEAR（範囲 `cmd_545`〜`cmd_600`）を、`queue/archive/cmds/*.yaml` の後続 `type: fix` で参照照合。
+    - 該当は 5cmd/50 = 10.0%。
+      - `cmd_561 -> cmd_569`
+      - `cmd_564 -> cmd_572`
+      - `cmd_585 -> cmd_587/588/589/590/591`
+      - `cmd_594 -> cmd_598/600`
+      - `cmd_595 -> cmd_598`
+    - 分類:
+      - スコープ拡張/方針変更型: 2件
+        - `cmd_561 -> cmd_569`: deterioration丸印のサイズ拡大と並び順改善。欠陥修正というよりUI改善の追撃。
+        - `cmd_564 -> cmd_572`: 矢印ナビ撤去。受け入れ後の方針変更。
+      - 見落とし/深掘り不足型: 2件
+        - `cmd_585 -> cmd_587-591`: 偵察で出たHIGH群を別fix群で回収。レビュー過程ではなく、scout後の修正計画として顕在化。
+        - `cmd_594 -> cmd_598/600`: `cmd_594` のHIGH所見と派生不整合を後続fixで回収。
+      - 前提条件変化/二次不具合型: 1件
+        - `cmd_595 -> cmd_598`: `@model_name` を生で記録した結果、モデル名スペースでTSV列崩れが発生。
+    - 解釈:
+      - 5件のうち2件は仕様変更寄りで、純粋な品質事故として強いのは `cmd_585` / `cmd_594` / `cmd_595` の3件。よって「品質起因のみ」で見ると 3cmd/50 = 6.0%。
+
+    AC2. 家老dashboardの偵察報告品質
+    - 対象: 直近10 recon cmd（`cmd_534, 540, 559, 560, 567, 568, 584, 585, 594, 601`）。
+    - 掲載有無:
+      - dashboard/archived dashboard に掲載あり: 9/10
+      - 完全未掲載: 1/10 (`cmd_560`)
+      - 現行 `dashboard.md` の dedicated 調査節あり: 5/10 (`cmd_534, 540, 584, 585, 594`)
+      - 1行要約のみ: 4/10 (`cmd_559, 567, 568, 601`)
+    - 非HIGH所見の省略実態:
+      - `cmd_585`:
+        - scout報告は `HIGH 18 / MEDIUM 22 / LOW 6`。
+        - dashboard は HIGH中心の代表例だけを明記し、MEDIUM/LOW 28件は件数表示のみに圧縮。非HIGHの itemized retention は 0/28。
+      - `cmd_594`:
+        - 半蔵報告は 16件（HIGH 3 / MEDIUM 8 / LOW 5）。
+        - dashboard詳細節は件数自体は残すが、具体列挙はHIGH中心で、少なくとも MEDIUM+LOW 13件は個別所見として未展開。
+      - `cmd_567`:
+        - 2本の scout には 34件の0%教訓判定、12件の mechanized 候補判定、構造仮説4件がある。
+        - dashboard は「効果率分析+17件自動退役+L165登録」の1行で、個別判定群は実質省略。
+      - `cmd_568`:
+        - report には 347件分類集計、IF-THEN優位差(+8.8pt)、移行3案(A/B/C)の工数比較がある。
+        - dashboard は cmd完了の1行のみで、定量所見は未掲載。
+      - `cmd_601`:
+        - report には 91PF aggregate、7PF詳細、4/7 PF の直近softening、G1/G2が既実装という分離論点がある。
+        - dashboard は「既にprod実装済、ドリフト微小、パッシブ監視継続推奨」に圧縮。
+    - 定量結論:
+      - 直近10 reconのうち 5件は「結論は載るが supporting findings が大幅圧縮」。
+      - severity付きで比較可能な `cmd_585` と `cmd_594` だけでも、非HIGH concrete findings の未itemizeは少なくとも `28 + 13 = 41件`。
+      - よって dashboard は「結論共有」には強いが、「全所見保存」には向かず、HIGH以外は高率で要約落ちしている。
+
+    AC3. CLEAR率の時期差・モデル差とレビュー品質の相関
+    - データ源:
+      - CLEAR率: `logs/gate_metrics.log`
+      - review深さproxy: 2026-02-28〜2026-03-06 の completed review reports 101本
+      - proxy指標: report本文語数、`ac_results`件数、`file:line` 参照数、FAIL検出率
+    - 期間比較:
+      - 低CLEAR期 `2026-03-01`〜`2026-03-03`: CLEAR率 55.6% (45 CLEAR / 36 BLOCK), review n=18
+        - 平均語数 48.2
+        - 平均AC件数 0.8
+        - 平均file ref 1.1
+        - FAIL率 38.9%
+      - 高CLEAR期 `2026-03-04`〜`2026-03-06`: CLEAR率 72.0% (177 CLEAR / 69 BLOCK), review n=73
+        - 平均語数 78.0
+        - 平均AC件数 4.0
+        - 平均file ref 0.5
+        - FAIL率 12.3%
+    - 期間差の解釈:
+      - 高CLEAR期は review報告が短文化したのではなく、むしろ AC明示が増え、FAIL率は低下。
+      - したがって少なくともこの proxy では「CLEAR率が高いほどレビューが浅い」は支持されない。
+      - file ref は低CLEAR期の方が多いが、これは少数の深掘りFAIL案件に引っ張られている可能性が高い。
+    - モデル比較（2026-02-28〜2026-03-06、review 100本相当のうち reporter判定可能分）:
+      - Opus reviewer n=48
+        - 平均語数 63.5
+        - 平均AC件数 2.8
+        - 平均file ref 0.3
+        - FAIL率 16.7%
+      - Codex reviewer n=52
+        - 平均語数 76.4
+        - 平均AC件数 3.3
+        - 平均file ref 0.8
+        - FAIL率 17.3%
+      - 高CLEAR期に限定しても同傾向:
+        - Opus n=36: 語数 68.2 / AC 3.6 / file ref 0.2 / FAIL 16.7%
+        - Codex n=37: 語数 84.6 / AC 4.5 / file ref 0.8 / FAIL 10.8%
+    - モデル差の解釈:
+      - report深さproxyでは Opus優位は確認できず、むしろCodexの方が長文・AC明示・参照付き報告が多い。
+      - ただし task難度の割付は統制していないため、これは「深さproxy上の差」であり、絶対的品質優劣の断定ではない。
+purpose_validation:
+  cmd_purpose: "レビュー・ゲートプロセスの品質実態を調査し、全所見を報告する"
+  fit: true
+  purpose_gap: ""
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "直近50 CLEARを後続fix cmdと照合し、5件の再修正事例と3分類を提示した。"
+  - id: AC2
+    status: pass
+    evidence: "直近10 recon cmdのdashboard掲載有無を調べ、掲載9/10・未掲載1/10・非HIGH未itemize少なくとも41件を示した。"
+  - id: AC3
+    status: pass
+    evidence: "gate_metricsとcompleted review reports 101本を用い、期間差とOpus/Codex差をproxy指標で比較した。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_605.yaml
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L074
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

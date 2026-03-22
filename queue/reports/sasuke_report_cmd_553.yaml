@@ -1,0 +1,112 @@
+worker_id: sasuke
+task_id: subtask_553_scout_a
+parent_cmd: cmd_553
+timestamp: "2026-03-05T10:08:10+09:00"
+status: done
+ac_version_read: 6
+verdict: PASS
+
+result:
+  summary: "本番404の主因は『本番backendデプロイに deterioration ルート未反映』。ローカルコード側のルーター/import/マイグレーションは正常。render.yaml には deterioration-batch cron が未定義。"
+  details: |
+    調査結果（要点）:
+    1) Render cron定義
+       - render.yaml の cron は以下5件:
+         - dm-signal-sync-prices (0 1 * * *)
+         - dm-signal-sync-tickers (5 1 * * *)
+         - dm-signal-sync-standard (10 1 * * *)
+         - dm-signal-sync-fof (40 1 * * *)
+         - dm-signal-password-rotation (0 16 1 * *)
+       - deterioration-batch cron は未定義（欠落）
+
+    2) BEルーター/importチェーン
+       - backend/app/main.py で deterioration_router の import + include_router を確認
+       - backend/app/api/deterioration.py の import 連鎖を検証
+       - .venv で import実行確認: app.api.deterioration = OK
+       - app.main.app の routes に以下が存在:
+         - /api/deterioration
+         - /api/deterioration/{portfolio_id}
+         - /admin/deterioration-batch
+
+    3) DBマイグレーション
+       - backend/app/db/migrations.py に deterioration_snapshots 作成/追設ロジックあり
+       - backend/app/db/init_db.py が run_migrations() を実行
+       - render.yaml backend startCommand は python -m app.db.init_db を含み、起動時マイグレーション実行構造
+
+    4) FE→BE接続
+       - render.yaml frontend env: NEXT_PUBLIC_API_HOST=https://dm-signal-backend.onrender.com
+       - 本番配信JSでも baseUrl が上記hostに展開済み、/api/deterioration を呼び出す実装を確認
+
+    5) 本番404の直接証跡
+       - curl https://dm-signal-backend.onrender.com/api/deterioration => 404 {"detail":"Not Found"}
+       - 本番 openapi.json に /api/deterioration と /admin/deterioration-batch が未掲載
+       - 一方、ローカルmain(HEAD)では当該ルートが存在
+       ⇒ 根本原因はコード欠陥より『本番backendが deterioration 追加コミットを未デプロイ』と判断
+
+purpose_validation:
+  cmd_purpose: "Deterioration Monitor本番404の原因を、Render/BEルーター/マイグレーション/FE接続まで横断して特定し、修正案を提示する"
+  fit: true
+  purpose_gap: "なし"
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_553.yaml
+
+lesson_referenced: []
+
+lessons_useful: []
+
+lesson_candidate:
+  found: true
+  title: "本番404切り分けはopenapi実測で『実装欠落』と『未デプロイ』を即時分離できる"
+  detail: "FastAPI系の404では、対象URL単体確認だけでなく本番 /openapi.json に当該pathが存在するかを先に見ると、コード不具合ではなくデプロイ反映漏れを短時間で確定できる。"
+  project: dm-signal
+
+test_results:
+  - command: "../.venv/Scripts/python.exe -c 'import app.api.deterioration; from app.main import app; ...'"
+    result: pass
+    notes: "import成功。/api/deterioration, /api/deterioration/{portfolio_id}, /admin/deterioration-batch の3ルート存在を確認。"
+  - command: "curl -sS https://dm-signal-backend.onrender.com/api/deterioration"
+    result: pass
+    notes: "HTTP 404 {\"detail\":\"Not Found\"} を再現。"
+  - command: "curl -sS https://dm-signal-backend.onrender.com/openapi.json | grep deterioration"
+    result: pass
+    notes: "本番OpenAPIに deterioration path未掲載を確認。"
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "render.yaml cron全件（sync-prices, sync-tickers, sync-standard, sync-fof, password-rotation）を列挙。"
+  - id: AC2
+    status: pass
+    evidence: "render.yaml に deterioration-batch cron は存在しない（欠落）と明示。"
+  - id: AC3
+    status: pass
+    evidence: "main.py の import/include_router と .venv import実行で deterioration importチェーン正常を確認。"
+  - id: AC4
+    status: pass
+    evidence: "migrations.py の deterioration_snapshots 定義と init_db/run_migrations + render startCommand 自動実行を確認。"
+  - id: AC5
+    status: pass
+    evidence: "本番API 404 + 本番openapi未掲載 + ローカルroute存在の三点一致で、未デプロイ反映を根本原因と特定。"
+  - id: AC6
+    status: pass
+    evidence: "本報告の lesson_candidate に記録。"
+
+fix_proposal:
+  immediate:
+    - "Render backend (dm-signal-backend) を最新 main (少なくとも b512813 以降、現HEAD 008d375) へ再デプロイする。"
+    - "再デプロイ後、/openapi.json に /api/deterioration と /admin/deterioration-batch が載ることを確認する。"
+    - "再デプロイ後、/api/deterioration のHTTPが404以外（通常は401/200）へ変わることを確認する。"
+  optional_hardening:
+    - "render.yaml に deterioration-batch cron を追加（sync-fof後実行、例: 50 1 * * *）。"
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: true
+  summary: "本件は実装修正より運用決裁（本番backend再デプロイ実行）が先行条件。"
+  options:
+    - "A: まず再デプロイのみ実施し404解消確認（最短復旧）"
+    - "B: 再デプロイ + deterioration-batch cron追記を同時実施（機能反映と運用整備を同時完了）"

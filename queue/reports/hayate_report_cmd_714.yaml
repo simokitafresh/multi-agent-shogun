@@ -1,0 +1,82 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_714_review_retry
+parent_cmd: cmd_714
+timestamp: "2026-03-10T02:29:04+0900"
+status: failed
+ac_version_read: 3
+result:
+  summary: "レビューFAIL。`889a467 test: isolate ninja monitor task fixtures` はローカル unit 249/249 PASS かつ push 成功だったが、origin CI run `22865773824` は E2E Tests job 失敗で全緑に到達しなかった。"
+  details: |
+    実装レビュー:
+    - `git show --stat 889a467` で変更が `tests/unit/test_ninja_monitor_auto_deploy_done.bats` と `tests/unit/test_ninja_monitor_stall.bats` の2ファイルに限定されることを確認。
+    - 差分は gitignored な `queue/tasks/*.yaml` への暗黙依存を除去し、TMP_ROOT 配下に fixture を自前生成する内容で、CI/ローカル差の根本原因に整合する。
+
+    ローカル検証:
+    - 実行コマンド: `bats tests/unit/`
+    - 結果: 249/249 PASS, 0 FAIL, 0 SKIP
+    - 問題帯域 171-176 を含む unit suite 完走を確認。
+
+    push/CI:
+    - `git push origin main` 成功: `146cf01..889a467  main -> main`
+    - origin workflow: `gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --branch main --limit 1`
+      → run `22865773824`
+    - run `22865773824` 最終結果:
+      - PASS: Build Instructions Check
+      - PASS: Unit Tests (bats)
+      - PASS: Shell Script Linting
+      - PASS: Integration Tests (Claude only)
+      - FAIL: E2E Tests
+
+    E2E失敗詳細 (`gh run view 22865773824 --repo simokitafresh/multi-agent-shogun --job 66333122546 --log`):
+    - not ok 3: `tests/e2e/e2e_bloom_routing.bats` line 25, `[ "$status" -eq 0 ]` failed
+    - not ok 7: `tests/e2e/e2e_escalation.bats` line 50, `cp "$PROJECT_ROOT/tests/e2e/fixtures/task_sasuke_basic.yaml"` failed
+    - not ok 12: `tests/e2e/e2e_parallel_tasks.bats` line 48, same missing fixture
+    - not ok 13: `tests/e2e/e2e_parallel_tasks.bats` line 90, same missing fixture
+    - not ok 14: `tests/e2e/e2e_redo.bats` line 55, same missing fixture
+    - not ok 15: `tests/e2e/e2e_redo.bats` line 110, same missing fixture
+    - 共通エラー: `cp: cannot stat '/home/runner/work/multi-agent-shogun/multi-agent-shogun/tests/e2e/fixtures/task_sasuke_basic.yaml': No such file or directory`
+purpose_validation:
+  cmd_purpose: "cmd_714のunit test CI修正(霧丸impl)をレビューし、CI全緑を確認せよ。"
+  fit: true
+  purpose_gap: "レビュー目的は達成。unit修正は妥当だが、push後CIがE2Eで赤のため PASS 判定不可。"
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`889a467` の差分は test2ファイルのみで、TMP_ROOT fixture 自前生成により gitignored runtime task file 依存を除去している。根本原因と整合。"
+  - id: AC2
+    status: fail
+    evidence: "origin workflow run `22865773824` は completed/failure。job内訳は 4 PASS / 1 FAIL で、`E2E Tests` job `66333122546` が `Run E2E tests` step failure。全5ジョブ緑は未達。"
+  - id: AC3
+    status: pass
+    evidence: "`bats tests/unit/` をローカル実行し 249/249 PASS・0 FAIL・0 SKIP を確認。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_714.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "E2E fixture参照は tests/e2e/fixtures 実在確認をCIで壊れやすい前提として先に検証すべき"
+  detail: "IF E2E test が `cp \"$PROJECT_ROOT/tests/e2e/fixtures/...\"` のように fixture ファイルを前提にする時 THEN fixture 実在をテスト開始前に明示検証するか self-contained 化せよ BECAUSE run `22865773824` では `task_sasuke_basic.yaml` 不在で 5 件が同時多発FAILし、本来の挙動確認まで到達できなかった。"
+  project: infra
+lessons_useful:
+  - id: L142
+    useful: true
+    reason: "失敗件数だけでなく job名・test名・ログ上の具体エラーを根拠付きで列挙した。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "cmd_714はunit修正を保持したままE2E fixture欠落を別修正で再度全緑化すべき"
+  options:
+    - "案A: `tests/e2e/fixtures/task_sasuke_basic.yaml` を復旧し、依存する e2e_escalation / e2e_parallel_tasks / e2e_redo を再検証する"
+    - "案B: 依存E2Eを unit同様 self-contained fixture 生成へ変更して CI file-presence 依存を除去する"
+  recommendation: "案B"
+verdict: FAIL
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

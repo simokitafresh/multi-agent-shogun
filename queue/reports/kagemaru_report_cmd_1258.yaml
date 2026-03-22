@@ -1,0 +1,49 @@
+worker_id: kagemaru
+task_id: cmd_1258
+parent_cmd: cmd_1258
+timestamp: '2026-03-22T19:57:02'
+status: completed
+ac_version_read: null
+result:
+  summary: ninja_monitor.shのダッシュボード更新トリガーにCI状態変化検知を追加。dashboard_auto_section.shのUNKNOWN時フォールバック表示を追加。
+  details: 'AC1: ninja_monitor.shにprev_ci_status変数を追加し、ci_status_check.sh --statusの結果をダッシュボード更新の状態変化検知条件に含めた。CI
+    GREEN/RED切替時にダッシュボードが自動更新される。AC2: dashboard.mdでCI RED表示を確認済み。AC3: dashboard_auto_section.shのUNKNOWNケースで「CI
+    status: check failed」を表示するよう変更。既存行は破壊しない。'
+purpose_validation:
+  cmd_purpose: dashboard CI status自動反映
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/ninja_monitor.sh
+- scripts/dashboard_auto_section.sh
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既存ci_status_check.sh --statusモードを活用した軽微な統合。新規パターンなし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful: []
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: ci_status_check.sh --statusでlatest runのconclusion取得ロジックを利用しているか
+    result: 'yes'
+  - check: CI GREEN/REDの表示ロジックが正しいか
+    result: 'yes'
+  - check: dashboard.mdのCI Statusセクションを自動更新するか
+    result: 'yes'
+  AC2:
+  - check: dashboard.mdのCI行が正しく更新されることを確認したか
+    result: 'yes'
+  AC3:
+  - check: 'gh CLIが利用不可時にCI status: check failedと表示するか'
+    result: 'yes'
+  - check: 既存のdashboard行を破壊しないか
+    result: 'yes'
+verdict: PASS

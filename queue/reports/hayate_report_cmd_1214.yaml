@@ -1,0 +1,56 @@
+worker_id: hayate
+task_id: cmd_1214
+parent_cmd: cmd_1214
+timestamp: '2026-03-21T20:10:33'
+status: done
+ac_version_read: 0fe7e013
+result:
+  summary: cmd_save.shのquality_gate BLOCK時にコピペ可能なYAMLテンプレートをstderr出力する機能を追加。全体欠落時はフルテンプレート、サブキー欠落時は欠落キーのみ出力。
+  details: 'AC1: L66付近にcat heredocで3キー全テンプレートをstderr出力。AC2: L78付近にcase文で欠落キーのみテンプレートをstderr出力。AC3:
+    3パターンテスト全PASS。'
+purpose_validation:
+  cmd_purpose: quality_gate BLOCKメッセージにテンプレートを追加し、将軍のcmd起票UXを改善
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/cmd_save.sh
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: 報告YAML作成の最適経路+insight通知の構造的欠陥
+  detail: "3発見: (1)report_field_set.shは配列/dict非対応。Python一括書込みが最適(9→3アクション) (2)cmd_save.sh L65 grepがコメント行にマッチする既存バグ (3)insight_write.shは保存のみ通知なし。忍者の気づきが構造的に死蔵される。Phase7のgate統合と同構造の解法(自動inbox_write)が有効"
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: 今回((PASS++))パターン未使用のため該当なし
+- id: L225
+  useful: false
+  reason: MCP entity名義チェックは今回の作業に無関係
+- id: L063
+  useful: false
+  reason: lessons.yaml解析は今回の作業に無関係
+- id: L079
+  useful: false
+  reason: deploy_task.shのrelated_lessons再構築問題は今回無関係
+- id: L103
+  useful: false
+  reason: skill.md配置の大文字小文字問題は今回無関係
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+    status: PASS
+    evidence: quality_gateなしYAML→BLOCK+3キー全テンプレートstderr出力確認
+  AC2:
+    status: PASS
+    evidence: q3欠落YAML→BLOCK+q3のみテンプレート表示、q1/q2非表示確認
+  AC3:
+    status: PASS
+    evidence: 3パターン(なし→BLOCK+テンプレート/完備→CLEAR/欠落→BLOCK+部分テンプレート)全PASS
+verdict: PASS

@@ -1,0 +1,162 @@
+worker_id: saizo
+task_id: cmd_1171_recon_a
+parent_cmd: cmd_1171
+timestamp: 2026-03-20 20:11:04
+status: done
+ac_version_read: 23adcd91
+result:
+  summary: Chunk A 12本精読完了。消火パターン0件。全関数が正当またはグレー(閾値ベース)に分類。
+  details: '## 判定結果一覧(12本, 消火0件)
+
+
+    ### #1 cmd_complete_gate.sh (L, ~3300行)
+
+    全関数 ✅正当。機械的判断のみ(ファイル存在/数値比較/文字列マッチ/フォーマット検証/YAML解析)。
+
+    グレー3件:
+
+    - deviation count check: ⚠️グレー L2283 — 4回以上でWARN(閾値)
+
+    - inbox archive check: ⚠️グレー L2793 — read:true 10件以上で自動archive(メンテナンス処理)
+
+    - check_project_code_stubs: ⚠️グレー L529 — diff追加行のパターンマッチ(WARNのみ)
+
+    特筆: preflight_gate_flags(L1545)はmissing_gateフラグを事前生成するが本体スクリプト実行→結果フラグ化で消火ではない。emergency.override(L1756)は人間が手動配置。
+
+
+    ### #3 gate_improvement_trigger.sh (M, 368行)
+
+    全関数 ✅正当。消火の正反対(ALERT→穴検出3問→家老inbox→改善促進)。
+
+    - process_gate/check_ci_red/check_hook_failures: 通知のみ、自動解消なし
+
+    - check_idempotent: 冪等性保証(同一ALERT状態の重複送信防止)
+
+
+    ### #4 review_gate.sh (M, 145行)
+
+    全関数 ✅正当。キーワードでコード変更/レビュータスク検出→PASS/BLOCK/SKIP判定。
+
+
+    ### #5 deploy_task.sh gate sections (M)
+
+    全関数 ✅正当。
+
+    - preflight_gate_artifacts(L1971): placeholder生成(本体が上書き)
+
+    - check_entrance_gate(L2165): reviewed:false残存→BLOCK
+
+    - check_scout_gate(L2218): impl偵察済み/scout_exempt必須→BLOCK
+
+
+    ### #8 gate_lesson_health.sh (M, 531行)
+
+    グレー5件(全て閾値ベース):
+
+    - check_project: ⚠️グレー — 未合流10件超でALERT(ALERT_THRESHOLD=10)
+
+    - check_accumulation: ⚠️グレー — 新規+10件でWARN
+
+    - check_unsorted_lessons: ⚠️グレー — 未振り分け10件超でALERT
+
+    - check_injection_count_threshold: ⚠️グレー — injection>=10かつhelpful=0でWARN
+
+    - check_lesson_effectiveness: ⚠️グレー — 効果率<30%ALERT/<50%WARN
+
+
+    ### #11 gate_yaml_status.sh (S, 68行)
+
+    ✅正当。cmd status→completedの機械的更新。yaml_field_set(flock+readback)使用。
+
+
+    ### #12 gate_vercel_phase.sh (S, 168行)
+
+    全関数 ✅正当。docs/research/参照のリンク存在チェック。ALERT=リンク切れ。
+
+
+    ### #13 gate_mcp_access.sh (S, 25行)
+
+    ✅正当。agent_id==shogun以外はexit 2(deny)。機械的アクセス制御。
+
+
+    ### #14 gate_skill_quality.sh (S, 181行)
+
+    グレー3件:
+
+    - (1) description: ⚠️グレー — 1024文字閾値
+
+    - (2) What/When/NOT When: ⚠️グレー — キーワード検出(found<2でFAIL)
+
+    - (3) 語数: ⚠️グレー — 5000語閾値
+
+    正当2件: (4)フロントマター< > (5)allowed-tools
+
+
+    ### #18 gate_field_get.sh (S, 215行)
+
+    全テスト ✅正当。field_get.shの契約テスト(8ケース)。回帰テスト。
+
+
+    ### #20 lesson_check.sh (S, 35行)
+
+    ✅正当。教訓該当なしのlesson.doneフラグ生成。reason引数必須。
+
+
+    ### #21 count_gate_metrics.sh (S, 58行)
+
+    ✅正当。gate_metrics.logの集計表示。読み取り専用、状態変更なし。
+
+
+    ## 総合サマリ
+
+    - ❌消火: 0件
+
+    - ✅正当: 大多数(機械的判断)
+
+    - ⚠️グレー: 11件(全て閾値ベース。人間設定基準による自動判断)'
+purpose_validation:
+  cmd_purpose: gate/BLOCK関連スクリプトの消火パターン偵察
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: 偵察任務のため実装変更なし。消火パターン検出ゼロは既知の設計品質の確認
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful: null
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+implementation_readiness:
+  files_to_modify: []
+  affected_files: []
+  related_tests: []
+  edge_cases: []
+agent: tobisaru
+completed_at: 2026-03-20 20:20:00+09:00
+files_changed: queue/checklists/cmd_1171.md
+summary: 9本精読完了。消火1件(gate_auto_respond.sh handle_cmd_state L115),グレー4件(閾値ベース),正当4件
+results:
+  AC1:
+    status: PASS
+    evidence: 9本全精読済み。各関数ごとに正当/グレー/消火の判定を記載。消火判定箇所はL115(handle_cmd_state内cmd_delegate.sh自動実行)を行番号付きで特定
+  AC2:
+    status: PASS
+    evidence: checklist_update.shで9件全て追記完了。進捗9/21(42%)
+recon_detail: "#2 gate_auto_respond.sh [❌消火あり]\n  should_act(L24-60) ✅正当: 冪等性比較\n\
+  \  handle_lesson_health(L65-90) ✅正当: inbox通知のみ\n  handle_cmd_state(L95-125) ❌消火:\
+  \ L115 cmd_delegate.sh自動実行。ALERT時にLLM/人間レビューなしでcmd委任\n  handle_context_freshness(L130-153)\
+  \ ✅正当: ntfy通知のみ\n  handle_p_average_freshness(L158-179) ✅正当: ntfy通知のみ\n  handle_ci_red(L184-244)\
+  \ ✅正当: ntfy+inbox通知のみ\n#6 auto_deploy_next.sh [⚠️グレー]\n  auto_deploy flag尊重=✅正当,\
+  \ Ninja選択CTX 50%閾値(L253)=⚠️グレー\n#7 auto_failure_lesson.sh [✅正当]\n  draft教訓生成(L132\
+  \ --status draft), 人間レビュー必須\n#9 gate_cmd_state.sh [✅正当] 純検知gate\n#10 gate_shogun_memory.sh\
+  \ [⚠️グレー] 閾値ベース6項目検査(150/180行,7/14日)\n#15 gate_pd_sync.sh [✅正当] context_synced機械的チェック\n\
+  #16 gate_context_freshness.sh [⚠️グレー] 14/30日閾値\n#17 gate_p_average_freshness.sh\
+  \ [⚠️グレー] 30/35日閾値\n#19 mark_no_learning.sh [✅正当] フラグファイル作成のみ"
+verdict: PASS

@@ -1,0 +1,102 @@
+worker_id: sasuke
+task_id: subtask_545_impl
+parent_cmd: cmd_545
+timestamp: "2026-03-04T23:09:22+0900"
+status: done
+ac_version_read: 6
+
+result:
+  summary: "AC1-AC6を満たして完了。busy/idle判定をlib/agent_state.shへ集約し、inbox_watcher/ninja_monitor/deploy_taskの重複ロジックを置換。関連bats 78件PASS。commit 1386d91。"
+  details: |
+    実施内容:
+    - lib/agent_state.sh を新規追加
+      - check_agent_busy(pane_target, agent_id) を実装
+      - 戻り値: 0=idle, 1=busy, 2=unknown
+      - busy/idleデフォルトパターンを1箇所に集約
+      - idle検出時に @agent_state=idle 補正 + /tmp/shogun_idle_{agent} touch を実施
+    - scripts/inbox_watcher.sh
+      - send_wakeup() の Codex busy判定ブロックを check_agent_busy() 呼び出しへ置換
+      - fp_age / inbox_busy_max_defer_sec のタイムアウト制御は既存どおり維持
+      - set -e 環境で非0戻り値を安全に扱うため if check_agent_busy ... 形式に変更
+    - scripts/ninja_monitor.sh
+      - check_idle() のcapture-pane+パターン判定を check_agent_busy() 呼び出しへ置換
+      - 既存のgrace period/unknown時の安全側判定を維持
+    - scripts/deploy_task.sh
+      - check_idle() のパターン判定を check_agent_busy() 呼び出しへ置換
+      - unknownは従来どおり安全側でBUSY扱い
+    - テスト
+      - tests/unit/test_agent_state.bats を新規作成
+      - tests/unit/test_deploy_task_ac_version.bats を更新（新規lib依存をテスト環境へコピー）
+      - 既存の関連スイートを含め 78 tests PASS
+
+purpose_validation:
+  cmd_purpose: "busy/idleパターン検出ロジックを共通関数に抽出し、3スクリプトの重複を解消する"
+  fit: true
+  purpose_gap: "なし"
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/lib/agent_state.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/inbox_watcher.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/ninja_monitor.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/unit/test_agent_state.bats
+  - /mnt/c/tools/multi-agent-shogun/tests/unit/test_deploy_task_ac_version.bats
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_545.yaml
+
+lesson_candidate:
+  found: true
+  title: "set -e環境で共通関数の非0戻り値を直接受けると即時終了する"
+  detail: "busy/unknownを1/2で返す判定関数を set -e スクリプトから `func; rc=$?` で呼ぶと即exitしうる。`if func; then rc=0; else rc=$?; fi` 形式で受けると安全に分岐できる。"
+  project: infra
+
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "set -e と算術式の非0終了で即終了する教訓を応用し、判定関数呼び出しを if 分岐で受ける実装にした。"
+  - id: L063
+    useful: false
+    reason: "Python/YAML構造の教訓であり、今回のbash実装には直接適用なし。"
+  - id: L032
+    useful: false
+    reason: "PJセクション差替え境界の教訓であり、今回のスクリプト改修には非該当。"
+  - id: L094
+    useful: false
+    reason: "model名ハードコード問題は本タスク範囲外。"
+  - id: L048
+    useful: false
+    reason: "auto-done判定誤り対策の教訓であり、今回のbusy/idle集約では未使用。"
+
+test_results:
+  - command: "bash -n lib/agent_state.sh scripts/inbox_watcher.sh scripts/ninja_monitor.sh scripts/deploy_task.sh tests/unit/test_agent_state.bats tests/unit/test_deploy_task_ac_version.bats"
+    result: pass
+    notes: "syntax check OK"
+  - command: "bats tests/unit/test_agent_state.bats tests/unit/test_deploy_task_ac_version.bats tests/unit/test_ninja_monitor_stall.bats tests/unit/test_send_wakeup.bats tests/unit/test_cli_adapter.bats"
+    result: pass
+    notes: "1..78 all PASS"
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "lib/agent_state.sh に check_agent_busy 実装（戻り値0/1/2）。"
+  - id: AC2
+    status: pass
+    evidence: "scripts/inbox_watcher.sh send_wakeup で check_agent_busy 呼び出しへ置換。"
+  - id: AC3
+    status: pass
+    evidence: "scripts/ninja_monitor.sh check_idle で check_agent_busy 呼び出しへ置換。"
+  - id: AC4
+    status: pass
+    evidence: "scripts/deploy_task.sh check_idle で check_agent_busy 呼び出しへ置換。"
+  - id: AC5
+    status: pass
+    evidence: "test_agent_state 追加 + 関連既存スイート含む bats 78件 PASS。"
+  - id: AC6
+    status: pass
+    evidence: "本報告の lesson_candidate に知見を記録。"
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: false

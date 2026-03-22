@@ -1,0 +1,75 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_706_review
+parent_cmd: cmd_706
+timestamp: "2026-03-09T20:00:40+0900"
+status: done
+ac_version_read: 3
+verdict: FAIL
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`/mnt/c/Python_app/DM-signal/auto-ops/deploy_and_measure.sh` が存在し、`stat -c '%A %a %n'` で executable(777) を確認。`bash -n /mnt/c/Python_app/DM-signal/auto-ops/deploy_and_measure.sh` も成功。"
+  - id: AC2
+    status: pass
+    evidence: "`auto-ops/deploy_and_measure.sh:50-52` で `Authorization: Bearer $RENDER_API_KEY` を付けて `https://api.render.com/v1/services/${FRONTEND_SERVICE_ID}/deploys?limit=1` を呼んでいる。service id は `RENDER_FRONTEND_SERVICE_ID` 優先、未設定時は `srv-d4ja8pp5pdvs739a5fsg`。"
+  - id: AC3
+    status: fail
+    evidence: "`INITIAL_DEPLOY_ID` を `auto-ops/deploy_and_measure.sh:56-69` で取得しているが、その後の loop (`76-119`) では一度も比較に使っていない。初回 poll で既存 deploy が `live` なら即 break するため、新しい push 由来 deploy の開始/完了を待たずに旧 commit を計測しうる。`git -C /mnt/c/Python_app/DM-signal rev-parse HEAD` は `cd9a26f...`、`origin/main` は `8b7a404...` で、まさに『新 commit 未deploy』状態を取り違える危険がある。"
+  - id: AC4
+    status: pass
+    evidence: "`auto-ops/deploy_and_measure.sh:152-174` で JSON から `total_ms/render_ms/api_count` を抽出し、`commit:${COMMIT_HASH}` を含む ntfy 文面を送る実装を確認。"
+  - id: AC5
+    status: pass
+    evidence: "`die()` による ntfy エラー通知があり、未設定 API key、初回 deploy 取得失敗、deactivated/canceled、build_failed/update_failed、timeout、CDP 実行失敗は通知対象。"
+result:
+  summary: "cmd_706 レビューは FAIL。`deploy_and_measure.sh` は新しい deploy を待つ条件を持たず、既存 `live` deploy を即採用して旧 commit を計測しうるため、AC3 を満たしていない。"
+  details: |
+    実施した確認:
+    - `git show --stat --oneline cd9a26f` と `git diff 8b7a404..cd9a26f -- auto-ops/deploy_and_measure.sh auto-ops/cdp_benchmark.py auto-ops/cdp_helper.py` で cmd_706 の変更は `auto-ops/deploy_and_measure.sh` 新規追加のみと確認。
+    - `bash -n` と `stat` で構文・実行権限を確認。
+    - `rg -n "INITIAL_DEPLOY_ID|DEPLOY_ID|COMMIT_HASH"` で変数利用箇所を追跡し、`INITIAL_DEPLOY_ID` がログ用途にしか使われていないことを確認。
+    - `git rev-parse HEAD`=`cd9a26fcae6df65cd965f7ff8b7b396be6baf2a0`, `git rev-parse origin/main`=`8b7a404798f6a8757c15cbc4f6b8c56ec0ee9bb3` を確認。現状は local HEAD が 1 commit 先なので、スクリプトを今実行すると既存 live deploy を拾って誤判定する危険が現実にある。
+
+    品質所見:
+    - `set -euo pipefail`、`mkdir -p`、`cdp_benchmark.py` の既存呼出し維持は良い。
+    - ただし deploy 監視の本質条件が欠けている。最低でも `DEPLOY_ID != INITIAL_DEPLOY_ID` を確認してから status 判定へ進めるか、push 対象 commit hash と Render deploy commit を突き合わせる必要がある。
+    - FAIL のため `git push origin main` は未実施。
+purpose_validation:
+  cmd_purpose: "cmd_706(CDP計測自動パイプライン)のレビューを実施し、PASSなら git push origin main実行"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "算術式の set -e 罠は今回のレビューポイントではない。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml の Python パースは今回扱っていない。"
+  - id: L186
+    useful: true
+    reason: "PASS 時 push 前に local HEAD/origin/main を突き合わせる観点をそのまま適用した。"
+  - id: L198
+    useful: false
+    reason: "SW/flight request 問題とは無関係。"
+  - id: L196
+    useful: false
+    reason: "Next.js 遷移証拠力の教訓であり、今回の Render deploy polling には直接関係しない。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

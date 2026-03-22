@@ -1,0 +1,35 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hanzo
+task_id: cmd_937_A
+parent_cmd: cmd_937
+timestamp: "2026-03-14T14:46:36"
+status: done
+ac_version_read: 3
+result:
+  summary: "確定申告データディレクトリ整理完了。master/からbak CSV退避、tax_receipts_2025/の2,690ファイルを_archiveに移動、31空ディレクトリ削除"
+  details: |
+    AC1: master/個人事業_2025.cmd936.bak.csv → data/archive/に移動。master/には個人事業_2025.csvのみ残存
+    AC2: CSV証票PDFカラム参照の12ファイル(note有料記事月次PDF)は全てリネームパイプライン用の計画名で物理ファイル未存在。
+         既存2,690ファイル全てが証票PDFカラムに記載なし → _archive/に移動（サブフォルダ構造維持）。
+         空ディレクトリ31個削除（Evernote/KDDI含む全サブフォルダ）
+    AC3: 検証OK。master/=1ファイル。tax_receipts_2025/=0ファイル(excl _archive)。_archive/=2,690ファイル(109MB)
+    注意: CSV証票PDFカラムの107行(12ユニーク名)は全てリンク切れ。リネーム処理未実施のため。
+purpose_validation:
+  cmd_purpose: "確定申告データディレクトリの不要ファイル退避"
+  fit: true
+acceptance_criteria:
+  AC1:
+    status: PASS
+    evidence: "master/には個人事業_2025.csvのみ。bak CSVはdata/archive/に移動済み"
+  AC2:
+    status: PASS
+    evidence: "2,690ファイルを_archive/に移動（サブフォルダ構造維持）。空ディレクトリ31個削除。証票PDFカラム基準で必要ファイル0個（計画名のため物理未存在）"
+  AC3:
+    status: PASS
+    evidence: "master/=1file, tax_receipts_2025/=0files(excl _archive), _archive/=2690files(109MB). CSV証票PDF参照107行=全12ファイル未存在（リネーム前）"
+lesson_candidate: []
+decision_candidate:
+  - id: DC1
+    description: "CSV証票PDFカラムの12ファイルは全てリネームパイプライン用の計画名で物理的に未存在。リネーム処理を実行して実ファイルを作成するか、CSVの参照を現ファイル名に更新するか判断が必要"

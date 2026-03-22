@@ -1,0 +1,102 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: sasuke
+task_id: cmd_708_review
+parent_cmd: cmd_708
+timestamp: "2026-03-09T23:34:12+0900"
+status: done
+ac_version_read: 8
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`instructions/ashigaru.md:39-55` に逸脱管理ルールと Rule 1-4 の4段階判断基準を確認。"
+  - id: AC2
+    status: pass
+    evidence: "`instructions/ashigaru.md:51-53` で Rule 1-3 を忍者裁量の修正許可として明記。"
+  - id: AC3
+    status: pass
+    evidence: "`instructions/ashigaru.md:54` で Rule 4 は `decision_candidate` へ記載して停止報告と明記。"
+  - id: AC4
+    status: pass
+    evidence: "`instructions/ashigaru.md:53,57-64` で `result.deviation` の記録義務と YAML 例を確認。"
+  - id: AC5
+    status: pass
+    evidence: "`instructions/ashigaru.md:55` に同一タスク3回超で打ち切りと残課題報告を確認。"
+  - id: AC6
+    status: pass
+    evidence: "`instructions/ashigaru.md:26,52` で F003 の positive_rule と Deviation Rule 1-3 例外条項が整合。"
+  - id: AC7
+    status: pass
+    evidence: "`instructions/ashigaru.md:295-304` に確証バイアス・アンカリング・利用可能性・サンクコストの4対策を確認。"
+  - id: AC8
+    status: pass
+    evidence: "`instructions/ashigaru.md:297` で recon 自動適用 / impl 非適用を確認し、`instructions/ashigaru.md:623-631` の分析麻痺ガード例外と棲み分けに矛盾なし。"
+result:
+  summary: "cmd_708 の実装レビューは PASS。`instructions/ashigaru.md` と generated 4種に逸脱管理ルールと認知バイアスガードが正しく反映され、`git push origin main` も完了した。"
+  details: |
+    実施した確認:
+    - `queue/tasks/sasuke.yaml` の AC1-8 と `queue/reports/saizo_report_cmd_708.yaml` を基準にレビューした。
+    - `git show --format=medium --unified=80 b80561d -- instructions/ashigaru.md` で差分を精読し、F003近傍への逸脱管理ルール追加と偵察タスク対応セクションへの認知バイアスガード追加を確認した。
+    - `rg -n "逸脱管理ルール|Rule 1-3|Rule 4|result\\.deviation|3回|認知バイアスガード|task_type: recon|implタスクには適用しない|F003\\(unauthorized_work\\)" instructions/ashigaru.md instructions/generated/*.md` で source/generated 4種に必要文言が揃っていることを確認した。
+    - `git diff --check b80561d^ b80561d -- instructions/ashigaru.md instructions/generated/ashigaru.md instructions/generated/codex-ashigaru.md instructions/generated/copilot-ashigaru.md instructions/generated/kimi-ashigaru.md` は空出力で、差分に whitespace/error がないことを確認した。
+    - `rg -n "TODO|FIXME" instructions/ashigaru.md instructions/generated/*.md` の結果、実変更で残置した TODO/FIXME はなく、ヒットは恒久ルールとしての「TODO/FIXME確認義務」記述のみだった。
+    - `git rev-parse --short HEAD`=`b80561d`、`git log -1 --oneline`=`b80561d feat(cmd_708): add deviation and recon bias rules`、`git ls-remote origin refs/heads/main` で push 前 remote=`a73c646...` を確認後、`git push origin main` を実行し remote を `b80561d` に更新した。
+
+    品質所見:
+    - Rule 1-4 の境界は「現タスクが直接引き起こした問題のみ」「既存バグ修正は対象外」で明示されており、F003 と衝突しない。
+    - `result.deviation` の YAML 例は `result:` 配下で提示され、報告スキーマの意図と整合している。
+    - 認知バイアスガードは recon 専用、分析麻痺ガードは recon 例外であり、impl/recon の棲み分けは明確。
+purpose_validation:
+  cmd_purpose: "GSD知見取込の第2弾。忍者の自律判断範囲を明文化して不要な往復を削減し、偵察品質を認知バイアス対策で向上させる。"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+verification:
+  - command: "git show --format=medium --unified=80 b80561d -- instructions/ashigaru.md"
+    result: pass
+    notes: "差分の追加位置と Rule 1-4 / 認知バイアスガード本文を精読。"
+  - command: "rg -n \"逸脱管理ルール|Rule 1-3|Rule 4|result\\.deviation|3回|認知バイアスガード|task_type: recon|implタスクには適用しない|F003\\(unauthorized_work\\)\" instructions/ashigaru.md instructions/generated/*.md"
+    result: pass
+    notes: "source と generated 4種の必要文言を照合。"
+  - command: "git diff --check b80561d^ b80561d -- instructions/ashigaru.md instructions/generated/ashigaru.md instructions/generated/codex-ashigaru.md instructions/generated/copilot-ashigaru.md instructions/generated/kimi-ashigaru.md"
+    result: pass
+    notes: "whitespace / conflict marker なし。"
+  - command: "rg -n \"TODO|FIXME\" instructions/ashigaru.md instructions/generated/*.md"
+    result: pass
+    notes: "恒久ルール文言以外の TODO/FIXME 残置なし。"
+  - command: "git rev-parse --short HEAD && git log -1 --oneline && git ls-remote origin refs/heads/main"
+    result: pass
+    notes: "push 前後の local/remote HEAD を確認し、`origin/main` も `b80561d` へ更新済み。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "今回のレビュー対象に bash 算術式はなく、該当しない。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml の解析や Python 実装を触らないレビューであり、直接の適用なし。"
+  - id: L032
+    useful: false
+    reason: "PJセクション差替え規約は今回の変更箇所と無関係。"
+  - id: L186
+    useful: true
+    reason: "push 前に local HEAD と remote HEAD を突き合わせ、fast-forward push を安全確認できた。"
+  - id: L190
+    useful: false
+    reason: "今回は impl 側が既に commit 済みで、review 配備前未コミット問題は再発していない。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

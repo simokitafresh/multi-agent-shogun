@@ -1,0 +1,67 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: sasuke
+task_id: cmd_993_review
+parent_cmd: cmd_993
+timestamp: "2026-03-16T08:42:22+09:00"
+status: done
+ac_version_read: 1
+review_result: PASS
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: PASS
+    evidence: "shellcheck scripts/dashboard_auto_section.sh 実行結果は出力なしで終了コード0。SC2034は0件。"
+diff_check:
+  changed_by_sasuke: false
+  commit_required: false
+  commit: "fa3378a61a5cfa0bb93a698f92c494b1825c5efd"
+  push: "origin/main へ push 完了"
+  note: "レビュー対象変更は既に commit 済みだったため、追加 commit は不要。対象 commit を査読し push のみ実施。"
+result:
+  summary: "cmd_993レビューPASS。scripts/dashboard_auto_section.sh のSC2034修正は妥当で、commit fa3378a は pre-push 294 tests PASS 後に origin/main へ push 完了。"
+  details: ""
+purpose_validation:
+  cmd_purpose: "cmd_993（小太郎impl）のレビュー+commit+pushを行う"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L074
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verification:
+  - command: "git show --patch fa3378a -- scripts/dashboard_auto_section.sh"
+    result: PASS
+    notes: "CLEAR_RATE/LAST_GATE削除、KM_REF_RATE/KM_DELTA_PP を未使用変数ではなく read 捨て変数へ変更、task_type 集計追加を確認。"
+  - command: "shellcheck scripts/dashboard_auto_section.sh"
+    result: PASS
+    notes: "出力なし、SC2034=0"
+  - command: "timeout 20 bash scripts/dashboard_auto_section.sh --dry-run"
+    result: PASS
+    notes: "20秒以内に完了し、dry-run 出力生成"
+  - command: "timeout 20 bash scripts/dashboard_auto_section.sh"
+    result: PASS
+    notes: "dashboard.md auto section updated (08:40)"
+  - command: "git push origin main"
+    result: PASS
+    notes: "pre-push 294 tests PASS 後、134bdb4..fa3378a main -> main"

@@ -1,0 +1,54 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_937_C
+parent_cmd: cmd_937
+timestamp: "2026-03-14T15:31:45+09:00"
+status: blocked
+ac_version_read: 2
+result:
+  summary: "安全規則により cmd_937_C の DELETE_ME 集約実行を停止。`/mnt/c/Users/...` への移動と外部ディレクトリ削除が Tier 2『project directory 外変更』に抵触するため、家老確認待ち。"
+  details: |
+    停止理由:
+    - 変更対象1の `/mnt/c/Users/simok/Documents/tax_receipts_2025/_archive/` は task `target_path=/mnt/c/Python_app/auto-ops` 外
+    - 変更対象2の `/mnt/c/Users/simok/Documents/DELETE_ME/` も同じく project directory 外
+    - 空ディレクトリ削除対象の `/mnt/c/Users/simok/Documents/tax_receipts_2025/_archive/` は `/mnt/c/Users` 配下であり、無条件安全規則より Karo/将軍の追加確認なしでは実行不可
+    - Destructive Operation Safety Tier 2 により「Task requires modifying files outside the project directory | STOP. Report the paths. Wait for confirmation.」
+
+    確認済み対象:
+    1. `/mnt/c/Users/simok/Documents/tax_receipts_2025/_archive/` (ディレクトリ、hanzo報告では 2,690 files / 109MB)
+    2. `/mnt/c/Users/simok/Documents/DELETE_ME/` (現時点では未作成)
+    3. `/mnt/c/Python_app/auto-ops/data/expense_master/archive/個人事業_2025.cmd936.bak.csv`
+    4. `/mnt/c/Python_app/auto-ops/data/expense_master/archive/` (空なら削除指示)
+
+    実施内容:
+    - task YAML / project knowledge / lessons / context / 既存 report 形式を読了
+    - `bash scripts/inbox_mark_read.sh saizo msg_20260314_153034_35d8d99d` で未読 1 件を既読化
+    - `bash scripts/inbox_write.sh karo ... blocker saizo` で停止理由を通知
+    - `realpath` 相当の確認で `/mnt/c/Users/...` が project directory 外であることを確認
+    - 移動・削除コマンドは未実行
+    - 対象ファイル・ディレクトリの内容変更なし
+purpose_validation:
+  cmd_purpose: "不要PDF 2,690件と bak CSV 1件を DELETE_ME に集約し、元の `_archive/` と `archive/` を空にして整理完了状態にする。"
+  fit: false
+  purpose_gap: "安全規則 Tier 2 が優先。`/mnt/c/Users/...` を含む project directory 外変更は確認なしで実行不可。"
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful: null
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: true
+  title: "cmd_937_C は Tier 2 destructive safety 確認が必要"
+  detail: "DELETE_ME 集約方式へ修正されても、実作業は `/mnt/c/Users/simok/Documents/...` を含む project tree 外変更。無条件安全規則を上書きできないため、家老側で明示確認の上で再配備するか、将軍裁定へ上げるか決定が必要。"

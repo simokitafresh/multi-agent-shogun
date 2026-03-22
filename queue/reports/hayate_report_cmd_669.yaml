@@ -1,0 +1,76 @@
+worker_id: hayate
+task_id: cmd_669
+parent_cmd: cmd_669
+timestamp: "2026-03-09T00:00:04+09:00"
+status: done
+ac_version_read: 5
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`android/app/src/main/java/com/shogun/android/ui/SettingsScreen.kt` に外観セクションを追加し、背景スタイルを `無地` / `画像` で切り替えられるようにした。保存先は `PrefsKeys.BACKGROUND_STYLE`。"
+  - id: AC2
+    status: pass
+    evidence: "`Defaults.BACKGROUND_STYLE` を `solid` に設定し、`ScreenBackground` で未設定時に Shikkoku 一色を返すよう統一した。Shogun/Agents/Dashboard の各画面はこの共通処理を通る。"
+  - id: AC3
+    status: pass
+    evidence: "`ScreenBackground` が `image` 選択時のみ既存の `bg_shogun` / `bg_agents` / `bg_castle` を表示するため、画像モードで現行背景を維持する。Agents 全画面詳細も同じ分岐を使う。"
+  - id: AC4
+    status: pass
+    evidence: "`android/app/src/main/java/com/shogun/android/ui/theme/Color.kt` の `TextMuted` を `#888888` へ更新した。Shikkoku 背景上のコントラスト基準を満たす指定値。"
+  - id: AC5
+    status: pass
+    evidence: "`./gradlew :app:assembleDebug` を `android/` で実行し、`BUILD SUCCESSFUL` を確認した。生成物は `android/app/build/outputs/apk/debug/app-debug.apk`。"
+result:
+  summary: "Android アプリに背景スタイル設定を追加し、無地を既定値として 3 画面へ共通適用した。併せて `TextMuted` を `#888888` へ更新し、debug APK ビルドまで通した。"
+  details: |
+    実施内容:
+    1. `android/app/src/main/java/com/shogun/android/util/Constants.kt`
+       - `PrefsKeys.BACKGROUND_STYLE` を追加
+       - `Defaults.BACKGROUND_STYLE_SOLID` / `BACKGROUND_STYLE_IMAGE` / `BACKGROUND_STYLE` を追加
+    2. `android/app/src/main/java/com/shogun/android/ui/SettingsScreen.kt`
+       - 外観セクションを追加
+       - 背景スタイルのラジオ選択 UI を追加
+       - SharedPreferences 保存に `BACKGROUND_STYLE` を追加
+    3. `android/app/src/main/java/com/shogun/android/ui/DashboardScreen.kt`
+       - `ScreenBackground` 共通Composable を実装
+    4. `android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt`
+       - 背景描画を `ScreenBackground(R.drawable.bg_shogun)` へ置換
+    5. `android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt`
+       - グリッド表示と全画面詳細の両方を `ScreenBackground(R.drawable.bg_agents)` へ置換
+    6. `android/app/src/main/java/com/shogun/android/ui/DashboardScreen.kt`
+       - 背景描画を `ScreenBackground(R.drawable.bg_castle)` へ置換
+    7. `android/app/src/main/java/com/shogun/android/ui/theme/Color.kt`
+       - `TextMuted` を `#888888` に変更
+
+    補足:
+    - 新規 helper を gitignore whitelist 外へ増やさず、既存追跡ファイル `DashboardScreen.kt` に共通Composableを吸収して commit スコープを UI 実装内に限定した。
+    - commit は `72437e5` (`feat(cmd_669): add background style preference`) を作成。忍者規約に従い push は未実施。
+purpose_validation:
+  cmd_purpose: "AndroidアプリUI改善 — 背景設定(無地/画像)+テキストコントラスト修正。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/util/Constants.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/SettingsScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/DashboardScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/theme/Color.kt
+verification:
+  - command: "./gradlew :app:assembleDebug"
+    result: pass
+    notes: "`android/` 直下で実行。`BUILD SUCCESSFUL in 10m 37s` を確認。警告は既存の deprecated icon/divider と未使用引数のみで、エラーなし。"
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+lessons_useful:
+  - L132
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

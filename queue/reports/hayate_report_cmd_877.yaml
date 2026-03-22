@@ -1,0 +1,130 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_877_recon_B
+parent_cmd: cmd_877
+timestamp: "2026-03-13T01:14:49+0900"
+status: done
+ac_version_read: 3
+result:
+  summary: "CDP persistent daemon と AXTree based `@ref` 設計偵察を完了。Pure Python HTTP server は stdlib の `ThreadingHTTPServer` で足り、CDP transport は `websocket-client` 常駐接続 + WebSocket URL cache が最小導入。ref は `Accessibility.getFullAXTree` の `AXNode(nodeId,parentId,childIds,backendDOMNodeId,frameId,role,name,properties...)` を正規化して DFS 順に `e1,e2...` を振り、URL世代一致確認で stale ref を自動排除する設計が妥当。"
+  details: |
+    【既存前提の確認】
+    - repo内の既存CDP実装は `scripts/cdp/cdp_helper.py` と `scripts/cdp/README.md` のみ。repo内 grep では他コードからの直接利用は未検出。
+    - task参照先の `memory/cdp-browser-automation.md` は repo 内に存在せず、既存知識は `scripts/cdp/cdp_helper.py` と `context/auto-ops.md` / `docs/research/cmd_816_cdp-measurement-architecture.md` で補完した。
+    - 外部実運用先 `auto-ops` 側では `cdp_send_batch()` と ws URL cache が既に有効で、daemon 化でもこの方針を踏襲すべき。
+
+    【AC1: Pure Python HTTPサーバー設計】
+    推奨構成:
+    1. `http.server.ThreadingHTTPServer` + `BaseHTTPRequestHandler`
+       - stdlibのみで足りる。`socketserver.ThreadingMixIn` 系なので request ごとに thread 分離できる。
+       - `serve_forever()` / `shutdown()` / `server_close()` が揃っており、30分 idle 停止にも適合。
+    2. `DaemonState` を1つ持つ
+       - `token`
+       - `last_activity_monotonic`
+       - `browser_port`
+       - `tab_id -> ws_url` cache
+       - `ref_generation`, `snapshot_url`, `ref_map`
+       - `fatal_error`
+       - 上記を守る `threading.RLock`
+    3. HTTP endpoint は最小6本で十分
+       - `GET /healthz` : alive/fatal/idle seconds
+       - `POST /browser/ensure` : CDP起動/接続確認
+       - `POST /cdp/command` : 単発 CDP command
+       - `POST /cdp/batch` : 複数 command を1WS接続で送信
+       - `POST /ax/snapshot` : AXTree取得 + ref生成
+       - `POST /ref/resolve` : ref -> backendDOMNodeId / AX metadata
+    Bearer認証:
+    - `self.headers.get("Authorization")` を読み、`Bearer <token>` 形式のみ許可。
+    - 比較は `hmac.compare_digest()` で定数時間比較。
+    - token未設定/不一致は常に `401`。header値はログへ出さない。
+    Idle停止:
+    - 各 request 成功前後で `last_activity_monotonic = time.monotonic()` を更新。
+    - watcher thread が 5-30秒間隔で監視し、`now - last_activity_monotonic >= 1800` なら shutdown フラグを立て、別 thread から `server.shutdown()` を呼ぶ。
+    - `shutdown()` 完了後に ws close / cache clear / `server_close()` を行い正常終了。
+    障害時即死:
+    - `websocket-client` の close / reset / timeout / malformed response は recover せず `fatal_error` に記録して `os._exit(1)` か、少なくとも non-zero で即終了する。
+    - 理由: gstack と同じく browser crash 後に半死状態で ref cache を温存すると誤操作源になる。次回呼出で clean restart させる方が安全。
+
+    【AC2: Accessibility Tree -> ref体系】
+    一次資料ベースの `Accessibility.getFullAXTree` 要点:
+    - 戻り値は `nodes[]`
+    - 各 `AXNode` に `nodeId`, `ignored`, `role`, `chromeRole`, `name`, `description`, `value`, `properties`, `parentId`, `childIds`, `backendDOMNodeId`, `frameId` などが載る
+    - `Accessibility.enable` を先に叩くと AXNodeId の安定性が増すが、navigation を跨いだ ref 永続化には使わない方が安全
+    推奨アルゴリズム:
+    1. `Accessibility.enable`, `Page.enable` を有効化
+    2. `Accessibility.getFullAXTree` を取り、`nodeId -> node` と `parentId -> children[]` を構築
+    3. root から DFS。順序は `childIds` を尊重
+    4. interactive role のみ抽出
+       - 例: `button`, `link`, `textbox`, `searchbox`, `combobox`, `checkbox`, `radio`, `switch`, `menuitem`, `tab`, `option`, `slider`, `spinbutton`
+       - `ignored=true` は除外
+    5. label は `name.value` 優先、空なら `description.value` / `value.value` を fallback
+    6. 同一 `(role,label)` の出現数を先に数え、2nd pass で global traversal order に従い `e1,e2,e3...` を割当
+    7. `ref_map[ref] = {backendDOMNodeId, axNodeId, frameId, role, label, ordinal}` を保存
+    8. 実操作は `backendDOMNodeId` 起点で `DOM.resolveNode` / `Runtime.callFunctionOn` / `Input.dispatchMouseEvent` へ接続する
+    gstackとの差分:
+    - gstack は Playwright `ariaSnapshot()` 起点だが、我が軍は CDP `getFullAXTree` で同型の snapshot を作れる
+    - ref文字列自体に意味を持たせず、metadata に ordinal を持たせる方が rename / duplicate に強い
+
+    ページ遷移時 ref クリア:
+    - 必須: `Page.navigate` / `Page.reload` を daemon 自身が呼んだ直後に `ref_generation += 1` して `ref_map` を空にする
+    - 必須: ref操作の前に `Runtime.evaluate('location.href')` で current URL を取得し、`snapshot_url` と不一致なら stale と見なして `ref_map` を即時破棄
+    - 拡張候補: 非同期 event loop を持つなら `Page.frameNavigated`, `Page.navigatedWithinDocument`, `DOM.documentUpdated` 受信でも invalidate
+    - v1推奨は「post-navigate clear + pre-action URL guard」。event-only 依存より実装が小さく、SPA pushState も拾える
+
+    【AC3: 実装直結まとめ】
+    - repo事情上、`scripts/cdp/` 新規ファイルは `.gitignore` whitelist 追加が必要
+    - CI は Bats + shellcheck 中心で、Python専用テストを増やすなら `.github/workflows/test.yml` と `Makefile` への導線追加が必要
+    - 既存 `scripts/cdp/cdp_helper.py` は launch/detect の互換レイヤとして残し、新daemonから呼ぶ構成が最小差分
+ac_results:
+  - id: AC1
+    status: PASS
+    detail: "`ThreadingHTTPServer` + Bearer認証 + idle watchdog + fatal-exit 方針まで具体化した。"
+  - id: AC2
+    status: PASS
+    detail: "`Accessibility.getFullAXTree` の主要フィールドと `e1,e2...` 付番アルゴリズム、遷移時 invalidate 方針を設計した。"
+  - id: AC3
+    status: PASS
+    detail: "files_to_modify / affected_files / related_tests / edge_cases を repo実態に合わせて整理した。"
+purpose_validation:
+  cmd_purpose: "CDPサーバー設計と ref方式の技術要件を精査し、cmd_877実装に直結する所見を報告する"
+  fit: true
+  purpose_gap: "`memory/cdp-browser-automation.md` は repo 内未検出だったため、`scripts/cdp/cdp_helper.py` と `auto-ops` 側既存実装を代替知識源として用いた。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_877.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+lesson_candidate:
+  found: true
+  title: "偵察タスクに埋め込む参照パスは deploy 時に存在確認し、不在なら代替知識源へ差し替えるべき"
+  detail: "cmd_877_recon_B では `memory/cdp-browser-automation.md` が task に記載されていたが repo 内に存在しなかった。今回の偵察は `scripts/cdp/cdp_helper.py` と `context/auto-ops.md` で代替できたが、参照先不在は初動ノイズになる。deploy 時にファイル存在確認を入れ、欠損時は task YAML の context_files / command に実在パスを埋めるべき。"
+  project: infra
+lessons_useful: null
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify:
+    - "scripts/cdp/cdp_daemon.py — HTTP entrypoint, Bearer認証, idle watchdog, health/command endpoints"
+    - "scripts/cdp/cdp_transport.py — websocket-client based CDP REST/WS client, ws_url cache, batch send, fatal detection"
+    - "scripts/cdp/ax_ref.py — AXTree正規化、interactive node抽出、ref割当、invalidate処理"
+    - "scripts/cdp/README.md — daemon API / 起動方法 / stale ref 仕様の更新"
+    - "requirements.txt — `websocket-client` 追加"
+  affected_files:
+    - "scripts/cdp/cdp_helper.py — browser起動/検出ロジックの再利用または互換shim化"
+    - ".gitignore — `scripts/cdp/` 新規ファイルの whitelist 追加"
+    - "Makefile — Python/CDP unit test 実行導線を追加する場合に更新"
+    - ".github/workflows/test.yml — Python test をCIへ載せる場合に更新"
+  related_tests:
+    - "tests/unit/test_cdp_daemon.py — Authorization header 不備/正常系、idle timeout 算定、fatal_error 遷移"
+    - "tests/unit/test_cdp_ax_ref.py — AX fixture からの DFS順 ref 付番、duplicate label の ordinal 安定性、ignored node 除外"
+    - "tests/unit/test_cdp_daemon.bats — daemon 起動/healthz/401/200/stale ref 応答の黒箱確認"
+    - "CIをBats中心で維持するなら、Batsから `python3 -m unittest` を呼ぶ薄いラッパを追加する"
+  edge_cases:
+    - "Chrome/Edge process は生きているが CDP port が死んでいるケース。`browser_running` と `cdp_alive` を分離判定すること"
+    - "tab close / browser restart で cached ws_url が stale 化する。1回だけ再resolveし、それでも失敗なら fatal 扱い"
+    - "SPAの `history.pushState` では full navigation event が来ないことがある。pre-action URL guard が必須"
+    - "`name` や `backendDOMNodeId` を持たない AXNode がある。操作対象候補から除外し、snapshot 表示は fallback label で埋める"
+    - "複数 request が同時に ref_map / last_activity を触る。lockなしだと stale ref と idle shutdown が競合する"

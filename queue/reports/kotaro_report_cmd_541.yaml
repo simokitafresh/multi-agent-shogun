@@ -1,0 +1,60 @@
+worker_id: kotaro
+task_id: subtask_541_impl_a
+parent_cmd: cmd_541
+timestamp: "2026-03-04T20:05:25"
+status: done
+ac_version_read: 2
+result:
+  summary: |
+    教訓効果率が「—」表示になるバグを修正。
+    knowledge_metrics.sh のlesson_effectiveness計算部が
+    例外時やtotal_lessons=0時にNoneを返していたため、
+    dashboard_auto_section.shが「—」と表示していた。
+    0.0フォールバックの追加で解決。
+  details: |
+    L558: total_lessons > 0条件をインライン三項式に変換。0件時は0.0を返す。
+    L570-571: bare except: pass → except with stderr warning + 0.0フォールバック。
+  ac_results:
+    ac1:
+      status: PASS
+      detail: |
+        修正後、bash scripts/dashboard_auto_section.sh --dry-run | grep 教訓効果率
+        → | 教訓効果率 | 55.2% | と実数値で表示されることを確認。
+    ac4:
+      status: PASS
+      detail: |
+        knowledge_metrics.sh --json の全フィールドが正常値を返すことを確認。
+        テキスト出力モードも正常動作を確認。
+purpose_validation:
+  cmd_purpose: "ダッシュボードの教訓効果率が実数値で表示されること"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - scripts/knowledge_metrics.sh
+commit: 3866108
+branch: main
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "((PASS++))パターンの教訓。本タスクでは該当箇所なしだが認識した。"
+  - id: L063
+    useful: false
+    reason: "lessons.yamlイテレーション操作なし"
+  - id: L032
+    useful: false
+    reason: "セクション操作なし"
+  - id: L094
+    useful: false
+    reason: "shutsujin関連なし"
+  - id: L047
+    useful: false
+    reason: "python3 -cインジェクションの教訓。本タスクでは該当パターンなし。"
+lesson_candidate:
+  found: true
+  title: "KM_JSON_CACHEの無効化条件にlessons.yaml変更が含まれない"
+  detail: "dashboard_auto_section.shのKM_JSON_CACHEはgate_metrics.logの行数変化でのみ無効化されるため、lessons.yaml変更が反映されるまでラグがある。根本対策はキャッシュ無効化条件にlessons.yamlの変更検知を追加すること。"
+  project: infra
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

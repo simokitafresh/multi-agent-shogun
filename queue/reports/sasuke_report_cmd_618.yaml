@@ -1,0 +1,47 @@
+worker_id: sasuke
+task_id: subtask_618_fix_a
+parent_cmd: cmd_618
+timestamp: "2026-03-06T22:49:30+09:00"
+status: done
+ac_version_read: 1
+result:
+  summary: "frontend/lib/faq-content.ts から admin/owner/管理画面文言を除去し、baseline で npm test を再実行して AC16 の失敗が pre-existing であることを確認した。fix は commit 98c704c に記録。"
+  files_modified:
+    - /mnt/c/Python_app/DM-signal/frontend/lib/faq-content.ts
+  notes: "L96/L708 相当の owner/admin panel 文言を削除。`git stash push -u -- <cmd_618 pathspec>` で cmd_618 対象ファイルのみ退避した baseline 状態で `frontend/npm test -- --runInBand` を実行し、review 時と同じ 7 suite fail を再現した。stash は pop 済み。"
+self_gate_check:
+  lesson_ref: "PASS"
+  lesson_candidate: "PASS"
+  status_valid: "PASS"
+  purpose_fit: "PASS"
+purpose_validation:
+  cmd_purpose: "cmd_618レビューでFAILした AC15 を修正し、AC16 の失敗が pre-existing か判定する"
+  fit: true
+  purpose_gap: ""
+ac_results:
+  - id: AC15fix
+    status: pass
+    evidence: "`rg -n \"admin panel|管理画面|owner|オーナー\" frontend/lib/faq-content.ts` は 0 件。FAQ 内の admin/owner 文言を除去した。"
+  - id: AC16check
+    status: pass
+    evidence: "cmd_618 対象ファイルのみ stash 退避後に baseline で `npm test -- --runInBand` を実行し、review と同じ 7 suite fail (`app/admin/fof/__tests__/fof_copy_reorder.test.tsx`, `app/admin/fof/components/__tests__/SelectionPipelineSection.test.tsx`, `app/admin/fof/components/__tests__/FoFEditor.test.tsx`, `components/__tests__/viewer-auth-modal.test.tsx`, `lib/__tests__/chart-utils.test.ts`, `lib/__tests__/api-client-auth.test.ts`, `lib/__tests__/admin-auth.test.ts`) を再現。FAQ/Docs 変更起因ではなく pre-existing と判定。"
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal && rg -n \"admin panel|管理画面|owner|オーナー\" frontend/lib/faq-content.ts"
+    result: pass
+    notes: "一致 0 件 (rg exit code 1) を確認。"
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm test -- --runInBand"
+    result: fail
+    notes: "baseline でも 7 failed / 26 passed / 33 total, 28 failed / 208 passed / 236 total を再現。失敗は admin/FoF/viewer-auth/chart-utils/api-client-auth/admin-auth 系のみ。SKIP 0。"
+  - command: "cd /mnt/c/Python_app/DM-signal && git rev-parse --short HEAD"
+    result: pass
+    notes: "`98c704c` (fix: remove admin wording from faq)"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful: []
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

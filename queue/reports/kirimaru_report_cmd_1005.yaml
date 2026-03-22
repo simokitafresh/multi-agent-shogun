@@ -1,0 +1,93 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_1005_review
+parent_cmd: cmd_1005
+timestamp: "2026-03-16T15:31:00+0900"
+status: done
+ac_version_read: 1
+review_result:
+  verdict: PASS
+  reason: "前回FAILの3点は解消済み。`report.md` 条件欄に tie expansion 時の実効保有数が追記され、『短窓帯の退化』節で `summary.json` 由来の `tie_expansion_months` / `selection_change_months` / `average_turnover` と退化機序(1-2サンプルfold→`p=1.0`→全選抜)が明記された。再発防止として `scripts/analysis/p_bar_window_backtest.py` 自体も同内容を生成するよう修正され、関連テスト 14 件 PASS / SKIP 0 を確認後に commit・push した。"
+verdict: PASS
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+ac_results:
+  - id: AC1
+    status: PASS
+    evidence: |
+      実施:
+      - 差分確認: `git diff --stat` / `git diff -- backend/tests/test_p_bar_backtest.py scripts/analysis/p_bar_window_backtest.py`
+      - 生成物確認: `cmd_1005_pbar_window_comparison_20260316_151408/report.md`
+      - summary 突合: `summary.json` から mpf=1/2/3 の tie_expansion / turnover / selection_change を再確認
+      - TODO/FIXME: 対象4ファイルで 0 件
+      - テスト: `./.venv/Scripts/pytest.exe backend/tests/test_p_average_service.py backend/tests/test_p_bar_backtest.py -q -r s`
+        => 14 passed, 0 skipped
+      - commit/push: `4e26f0da` を `origin/main` へ push 完了
+
+      判定:
+      - MIN_PERIOD_LENGTH 緩和は維持
+      - 16パターンBT出力の整合性は維持
+      - 共通期間メトリクス計算は既存テストで維持確認
+      - 短窓退化の記載不足は解消
+      - PASS → push 実施済み
+diff_check:
+  commit_required: true
+  method: "git diff / report.md精読 / summary.json突合 / pytest / git push"
+  files_changed:
+    - backend/app/services/p_average.py
+    - backend/tests/test_p_average_service.py
+    - backend/tests/test_p_bar_backtest.py
+    - scripts/analysis/p_bar_window_backtest.py
+  unintended_changes: false
+  notes: "pre-commit hook(repo-checks)通過済み。`fix: clarify short-window degeneration in p-bar report (cmd_1005)` を commit し push。"
+result:
+  summary: "PASS。短窓退化の説明不足は `report.md` と generator script の両方で解消され、関連テスト 14 件 PASS / SKIP 0。commit `4e26f0da` を push 済み。"
+  details: |
+    re-review で確認した点:
+    - 条件欄:
+      - `保有: 原則は選出銘柄を均等ウェイト`
+      - 通常 2銘柄(50/50)、tie expansion で保有数拡張
+      - `mpf=1` は 169/169ヶ月 tie expansion、実効保有数は 12銘柄が164ヶ月・11銘柄が5ヶ月
+    - 「短窓帯の退化」節:
+      - `mpf=1`: `tie_expansion_months=169`, `selection_change_months=1`, `average_turnover=0.0005`
+      - `mpf=2`: `tie_expansion_months=2`, `selection_change_months=134`, `average_turnover=0.5399`
+      - 退化機序として `n_splits=5` 固定下での 1-2 サンプル fold と `_calc_chunk_p_value() -> p=1.0` 正規化を記述
+    - 再発防止:
+      - `scripts/analysis/p_bar_window_backtest.py` に同じ説明を生成するロジックを実装済み
+      - pre-commit の E402 指摘も解消済み
+
+    commit / push:
+    - commit: `4e26f0da`
+    - message: `fix: clarify short-window degeneration in p-bar report (cmd_1005)`
+    - push: `origin/main` へ完了
+purpose_validation:
+  cmd_purpose: "cmd_1005（MIN_PERIOD_LENGTH=1緩和+比較期間公平化+16パターンBT）の佐助実装をレビューし、問題なければpushする"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_1005.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+lesson_candidate:
+  found: true
+  title: "生成artifactで指摘を潰したら generator script へも同修正を戻せ"
+  detail: "IF 再レビューで report artifact の文言だけを直して PASS に近づける場合 THEN その修正を出力元 script にも戻し、再生成可能な状態で commit せよ BECAUSE 今回も `report.md` 単体は直っていたが `p_bar_window_backtest.py` に未反映のままだと次回再実行で同じ欠陥が再発する。"
+  project: dm-signal
+lessons_useful:
+  - id: L324
+    useful: true
+    reason: "短窓で fold 長が極小化したときの p̄ 退化を再確認する視点として有効だった。"
+  - id: L323
+    useful: true
+    reason: "短窓帯の異常挙動は別節で明示すべきという判断に直結した。"
+  - id: L316
+    useful: true
+    reason: "WSL 上の hook/pytest 実行経路で Windows venv を使う前提整理に役立った。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

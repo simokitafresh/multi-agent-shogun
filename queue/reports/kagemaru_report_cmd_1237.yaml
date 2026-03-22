@@ -1,0 +1,109 @@
+worker_id: kagemaru
+task_id: cmd_1237
+parent_cmd: cmd_1237
+timestamp: '2026-03-22T01:34:17'
+status: done
+ac_version_read: e2d91d4c
+result:
+  summary: Simple FoF 7体パリティ検証完了。holding_signal 7/7 PASS(初月None除外)、monthly_return_open
+    7/7 PASS(max diff 1e-10レベル)。Phase 1 FAIL 6PFは7体のcomponentに含まれず影響なし。GS engineにFoF関数なし→PipelineEngine
+    + component return等重み平均で独立検証。
+  details: "■ AC1: FoFパリティ技術基盤調査\n\n  (a) ComponentPriceBlock (backend/app/services/pipeline/blocks/component_price.py)\n\
+    \    MonthlyReturn.cumulative_returnを\"close\"、cumulative_return_openを\"open\"\
+    として\n    context.price_dataに格納。後続モメンタムブロックが株価同様に処理する。\n    キャッシュ最適化あり(price_data\
+    \ populated時はDBクエリスキップ)。\n\n  (b) FoF pipeline_config構造(本番DB確認)\n    portfolios.config(JSON)内の.pipeline_configに格納。\n\
+    \    5体: blocks=[] + terminal=EqualWeight(純粋均等配分)\n    2体: blocks=[MultiViewMomentumFilter]\
+    \ or [MomentumAccelerationFilter] + terminal=EqualWeight\n    全7体: momentum_method=price_ratio,\
+    \ rebalance_trigger=monthly, top_n=1\n\n  (c) GS engine FoF関数: 存在しない\n    grid_search_metrics_v2.pyにfof/FoF関連関数なし。\n\
+    \    → FoFパリティはGS vs DBではなく、component return等重み平均 vs DB stored valueで検証。\n\n \
+    \ (d) FoF holding_signal構造\n    FoF: component PF UUIDのカンマ区切り(例: \"84a8ba93...,92188d0c...\"\
+    )\n    Standard: ticker名(例: \"TQQQ\")\n    空ブロックFoF: 全component UUIDが常に含まれる\n\
+    \    フィルタ付きFoF: 選択されたcomponentのsubset\n\n■ AC2: Phase 1 FAIL PF影響確認\n\n  Phase\
+    \ 1(cmd_1233) FAIL 6PF:\n    DM6-5, L0-M_SPXL_QQQ_15M_T1, L0-Qj_GLD_5M_2M_15D_w40_40_20_T1,\n\
+    \    L0-Qj_SPXL_QQQ_12M_T1, L0-Qm_SPXL_SPY_24M_T1, シン白虎-鉄壁\n  7体FoF component照合結果:\
+    \ 全7体CLEAN(overlap=0)\n  FAIL PFのUUIDが7体のcomponent_portfoliosに1件も含まれない。\n\n■ AC3:\
+    \ FoFパリティ検証結果(PI-009基準)\n\n  検証方法:\n    holding_signal: 空ブロックFoF=全component UUID一致、フィルタ付き=subset妥当性\n\
+    \    monthly_return_open: held component PFのmonthly_return_openの等重み平均と比較(1e-6)\n\
+    \n  PF別結果:\n    常勝-青龍(2comp,blocks=0): hs=PASS(181/182,初月None) ret=PASS(181/181)\
+    \ max_diff=5.00e-11\n    常勝-白虎(5comp,blocks=0): hs=PASS(177/178,初月None) ret=PASS(177/177)\
+    \ max_diff=8.00e-11\n    Ave-X(6comp,blocks=0): hs=PASS(168/169,初月None) ret=PASS(168/168)\
+    \ max_diff=8.33e-11\n    bam-2(7comp,MVMF): hs=PASS(161/162,初月None) ret=PASS(161/161)\
+    \ max_diff=8.00e-11\n    シン分身-鉄壁(2comp,blocks=0): hs=PASS(168/169,初月None) ret=PASS(168/168)\
+    \ max_diff=5.00e-11\n    シン加速R-鉄壁(4comp,MAF): hs=PASS(156/157,初月None) ret=PASS(156/156)\
+    \ max_diff=0.00e+00\n    劇薬DMオリジナル(3comp,blocks=0): hs=PASS(168/169,初月None) ret=PASS(168/168)\
+    \ max_diff=6.67e-11\n\n  初月holding_signal=None: 全7体共通。パイプライン未実行の初期化月。2月目以降は全月PASS。\n\
+    \n■ AC4: Phase 3推奨事項\n\n  (1) Nested FoF(22体)はFoF→FoF→Standardの2階層構造。\n      Component\
+    \ PFがfof型のため、ComponentPriceBlockは中間FoFの\n      cumulative_returnを\"価格\"として読み込む。計算パスは同一だが\n\
+    \      中間FoFのmonthly_return精度がnested計算に波及する。\n  (2) Phase 2の精度(max diff 1e-10)は極めて高い。中間FoFを経由する\n\
+    \      Nested FoFでも1e-6基準は問題ないと予測。\n  (3) ただし旧忍法(15体)のcomponentが旧四神(fof型)であるため、\n\
+    \      旧四神のholding_signalがさらにUUID群→ticker展開される。\n      展開段数が増えるほどweight計算の丸め誤差が蓄積する可能性あり。\n\
+    \  (4) Phase 3テスト推奨: 劇薬bam_solid(最小nested) → MIX1(混合) →\n      加速-鉄壁(旧忍法最小) →\
+    \ 四つ目-常勝(全comp=FoF) → 変わり身-鉄壁\n      (cmd_1234小太郎推薦の5体をそのまま採用)\n  (5) GS engine\
+    \ FoF非対応は構造的制約。Nested FoFもGS比較不可。\n      同じcomponent return平均方式で検証可能だが、nested展開の正確性は\n\
+    \      再帰的な検証が必要。"
+purpose_validation:
+  cmd_purpose: Simple FoF 7体のパリティをPI-009基準で検証し、Phase 3に向けた技術基盤を調査する
+  fit: true
+  purpose_gap: none
+files_modified: []
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: FoF holding_signalはcomponent PF UUIDカンマ区切り。GS engineはFoF非対応
+  detail: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS
+    engine(grid_search_metrics_v2.py)にはFoF用関数が一切存在しない。FoFパリティ検証はGS vs DBではなく、component
+    PFのmonthly_return等重み平均 vs DB stored valueで独立検証する。pipeline_configはportfolios.config(JSON)内の.pipeline_configに格納されている(pipeline_configカラムは存在しない)。
+  project: dm-signal
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bashスクリプトでの((PASS++))問題なし。Python直接実行のみ
+- id: L225
+  useful: false
+  reason: MCP entity操作なし。DB偵察+パリティ検証のみ
+- id: L339
+  useful: false
+  reason: download_prod_data.py未使用。本番DB直接接続で検証
+- id: L192
+  useful: false
+  reason: 並列implなし。単独での偵察+検証タスク
+- id: L101
+  useful: true
+  reason: recalculate_fast.py Phase5のComponentPriceBlock+FoF処理パスの理解に直接関連した
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: ComponentPriceBlockの累積リターン→価格変換ロジックを把握したか？
+    result: 'yes'
+  - check: FoF PFのpipeline_config構造をDBから確認したか？
+    result: 'yes'
+  - check: GS engineにFoF用計算関数が存在するか調査したか？
+    result: 'yes'
+  - check: FoFのholding_signalの意味をDBから確認したか？
+    result: 'yes'
+  AC2:
+  - check: 7体全てのcomponent PFのPhase 1結果を確認したか？
+    result: 'yes'
+  - check: Phase 1 FAIL PFが7体のcomponentに含まれるか報告したか？
+    result: 'yes'
+  AC3:
+  - check: 7体全てのholding_signalを検証したか？
+    result: 'yes'
+  - check: 7体全てのmonthly_return_openを1e-6基準で検証したか？
+    result: 'yes'
+  - check: PF別pass/fail、不一致月、max abs diffを記録したか？
+    result: 'yes'
+  AC4:
+  - check: 全結果サマリを作成したか？
+    result: 'yes'
+  - check: Phase 3への技術的推奨事項を記載したか？
+    result: 'yes'
+  - check: Nested FoFでの精度劣化予測を含めたか？
+    result: 'yes'
+verdict: PASS

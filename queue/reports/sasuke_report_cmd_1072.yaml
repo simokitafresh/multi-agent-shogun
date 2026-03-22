@@ -1,0 +1,65 @@
+task_id: cmd_1072_impl
+parent_cmd: cmd_1072
+ninja: sasuke
+status: done
+ac_version_read: e7541985
+results:
+  AC1:
+    status: PASS
+    notes: '3箇所に配備手順のYAML操作方法を明記:
+
+      (1) instructions/karo.md Deployment Checklist直下に1行要約+詳細ポインタ追加
+
+      (2) context/karo-operations.md §6に結論3行+ポインタ追加
+
+      (3) docs/research/karo-operations-detail.md §7にツール一覧表・deploy_task.sh書式・report_field_set.sh書式・具体例を追記
+
+      Vercelスタイル（索引層=結論+ポインタ、詳細層=テーブル+コード例）を遵守。
+
+      '
+  AC2:
+    status: PASS
+    notes: 'docs/research/karo-operations-detail.md §7冒頭に「yqは環境に存在しない」を警告表示で明記。
+
+      利用可能ツール4種(deploy_task.sh, report_field_set.sh, field_get.sh, yaml_field_set.sh)を
+
+      用途・コマンド書式付きのテーブルで一覧化。
+
+      context/karo-operations.md §6にも「yqは環境に存在しない」+ツール名一覧を索引として記載。
+
+      '
+files_modified:
+- instructions/karo.md
+- context/karo-operations.md
+- docs/research/karo-operations-detail.md
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+lessons_useful:
+- id: L074
+  useful: false
+  reason: 文書変更のみ
+- id: L063
+  useful: false
+  reason: 文書変更のみ
+- id: L225
+  useful: false
+  reason: 文書変更のみ
+- id: L097
+  useful: false
+  reason: 文書変更のみ
+- id: L079
+  useful: false
+  reason: 文書変更のみ
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

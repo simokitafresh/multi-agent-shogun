@@ -1,0 +1,73 @@
+worker_id: kirimaru
+task_id: subtask_531_impl_c
+parent_cmd: cmd_531
+timestamp: "2026-03-04T15:09:47+0900"
+status: done
+result:
+  summary: "gate_lesson_health.shに直近30cmd効果率閾値監視(WARN/ALERT+ntfy)を実装し、dashboard_auto_section.shへ閾値表示を接続した。"
+  details: |
+    変更点:
+    - scripts/gates/gate_lesson_health.sh
+      - logs/lesson_impact.tsv から直近30cmd(cmd_*のみ)の injected/referenced を集計
+      - 効果率 = referenced/injected*100 を算出し、<50 WARN / <30 ALERT の閾値判定を実装
+      - WARN/ALERT時に bash scripts/ntfy.sh "教訓効果率{STATUS}: {rate}%" を送信
+      - 通知重複抑制のため前回状態ファイル(queue/lesson_effectiveness_notify_state.txt)を導入
+      - ダッシュボード連携用に queue/lesson_effectiveness_status.txt へ機械可読スナップショット出力
+      - 出力行に "METRIC: lesson_effectiveness_threshold ..." を追加
+    - scripts/dashboard_auto_section.sh
+      - queue/lesson_effectiveness_status.txt を読取り
+      - 「知識サイクル健全度」に「効果率閾値」行を追加し、OK/WARN/ALERTを表示
+    - 実装時の不具合修正:
+      - pipefail環境で逆順抽出パイプがSIGPIPEで終了していたため、一時ファイル経由へ修正
+      - subtask行を除外し cmd_* のみ集計対象に限定
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_lesson_health.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/dashboard_auto_section.sh
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_531.yaml
+
+test_results:
+  - command: "bash -n scripts/gates/gate_lesson_health.sh && bash -n scripts/dashboard_auto_section.sh"
+    result: pass
+    notes: "両スクリプト構文エラーなし"
+  - command: "LESSON_EFFECT_NTFY_ENABLED=0 bash scripts/gates/gate_lesson_health.sh infra | tail -n 25"
+    result: pass
+    notes: "INFO: 教訓効果率(直近18cmd): 211/311 = 67.8%、METRIC行 status=OK を確認"
+  - command: "bash scripts/dashboard_auto_section.sh --dry-run | rg -n \"知識サイクル健全度|教訓効果率|効果率閾値\""
+    result: pass
+    notes: "知識サイクル健全度に効果率閾値行が表示されることを確認"
+
+ac_checklist:
+  - id: AC7
+    status: pass
+    evidence: "直近30cmd(cmd_*のみ)集計、50%未満WARN/30%未満ALERT判定、ntfy通知(状態遷移時)を実装"
+  - id: AC8
+    status: pass
+    evidence: "queue/lesson_effectiveness_status.txtをdashboard_auto_section.shが読取り、知識サイクル健全度へ閾値状態を表示"
+
+lessons_useful:
+  - id: L119
+    useful: true
+    reason: "一時ファイルを介したデータ受け渡しで、pipefail環境でも安全に集計結果を後段処理へ接続できた"
+  - id: L117
+    useful: true
+    reason: "gate側実装だけでなくdashboard_auto_section.sh側も同時更新し、表示連携まで完結できた"
+  - id: L074
+    useful: true
+    reason: "set -e/pipefail下でSIGPIPEが即終了要因になる点を踏まえ、パイプ構成を一時ファイル方式へ修正した"
+  - id: L063
+    useful: true
+    reason: "TSV解析時の列参照とフィルタ条件を明示し、集計対象(cmd_*のみ)を安定化できた"
+
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: false

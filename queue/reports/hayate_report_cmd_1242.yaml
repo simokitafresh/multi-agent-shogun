@@ -1,0 +1,64 @@
+ac_version_read: 72bd1604
+binary_checks:
+  AC1:
+  - check: shellcheck -x -S error scripts/cmd_complete_gate.shがエラー0か
+    result: 'yes'
+  - check: shellcheck -x -S error 全scripts/*.shがエラー0か
+    result: 'yes'
+  AC2:
+  - check: T-012がPASSするか
+    result: 'yes'
+  - check: T-001〜T-011も全PASSするか
+    result: 'yes'
+  - check: unit/test_inbox_write.batsもPASSするか
+    result: 'yes'
+  AC3:
+  - check: bats tests/*.batsが全PASSか
+    result: 'yes'
+  - check: SKIP数が0か
+    result: 'yes'
+  - check: 新規FAIL(私の変更起因)が0か
+    result: 'yes'
+decision_candidate:
+  found: false
+files_modified:
+- scripts/cmd_complete_gate.sh
+- scripts/inbox_write.sh
+hook_failures:
+  count: 0
+  details: ''
+lesson_candidate:
+  detail: cmd_1136でagent_config.shを12スクリプトに導入した際、テスト環境(INBOX_WRITE_TEST=1/ファイル不在時のgraceful
+    degradation)が未対応だった。外部依存追加時はテスト環境も確認すべき。
+  found: true
+  no_lesson_reason: ''
+  project: infra
+  title: agent_config.sh導入時にテスト環境の依存関係も更新すべき
+lessons_useful:
+- reason: 今回の修正対象に((PASS++))パターンなし
+  useful: false
+- reason: MCP entity名義混入は今回無関係
+  useful: false
+- reason: lessons.yamlデータ構造問題は今回無関係
+  useful: false
+- reason: inbox_watcherのnudge受信は今回無関係
+  useful: false
+- reason: pane-base-index問題は今回無関係
+  useful: false
+parent_cmd: cmd_1242
+purpose_validation:
+  cmd_purpose: CI赤(shellcheck SC2168 + T-012 FAIL)の修正
+  fit: true
+  purpose_gap: none
+result:
+  details: 'AC1: cmd_complete_gate.sh L3852のlocal block_notes→block_notesに修正。shellcheck全scripts
+    error0確認。AC2: inbox_write.shのagent_config.shソースをINBOX_WRITE_TEST+ファイル存在で条件分岐化。バリデーションもget_allowed_targets存在チェックで保護。T-001-T-012全PASS+unit/test_inbox_write
+    PASS。AC3: root tests 36/36 PASS SKIP0。unit tests 290/333 PASS SKIP0。43件FAILは全て既存(変更前確認済み)。'
+  summary: 'CI赤3件修正: shellcheck SC2168(local関数外使用), inbox_write.shテスト環境対応, 全inbox_writeテストPASS'
+skill_candidate:
+  found: false
+status: done
+task_id: cmd_1242
+timestamp: '2026-03-22T05:45:30'
+verdict: PASS
+worker_id: hayate

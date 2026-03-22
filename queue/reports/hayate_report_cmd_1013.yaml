@@ -1,0 +1,90 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_1013_sub_b
+parent_cmd: cmd_1013
+timestamp: "2026-03-16T22:51:30+0900"
+status: done
+ac_version_read: 1
+result:
+  summary: "`cmd_1013` AC2を完了。`scripts/analysis/cmd_1013_cpcv_cat_b.py` を実装し、`outputs/analysis/cmd_1013_cpcv_cat_b.md` に 36 archetype（3モード×12組合せ型）の PBO / IS-OOS rank correlation / OOS Sortino分布 / PBO heatmap を出力した。"
+  details: |
+    実装:
+    - `/mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1013_cpcv_cat_b.py`
+      - `cmd_1012_nidan_bt.py` の二段BTロジックを再利用し、pair別の Stage1×Stage2 candidate grid を再構築
+      - full-period candidate returns を archetype単位で cache し、15-fold CPCV では train/test slice の Sortino 再評価だけを実施
+      - PBO を「train champion の test Sortino が fold median 以下」の割合として集計
+      - IS-OOS rank correlation は candidate群の Spearman rank correlation median/p05/p95 を算出
+      - OOS Sortino 分布は fold champion の median/p05/p95 を出力
+    - `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1013_cpcv_cat_b.md`
+      - 36行 PBOサマリー
+      - 12行 mode×pair heatmap
+      - 条件欄に CPCV split 設定と purge/embargo 実装を明記
+
+    実装メモ:
+    - task記載の `cmd_1012_nidan_ranking/comparison/stability.md` は実在せず、現地成果物 `cmd_1012_nidan_bt.md` / `cmd_1012_overfit_check.md` / `cmd_1012_summary.md` と `cmd_1012_nidan_bt.py` を正本参照として使用
+    - 実現リターンは翌月 `return_open` のため usable returns は143本。144 signal months を 6×24 group とし、最終groupのみ OOS 23M
+    - Purge/Embargo は各 test interval の直前1M purge + 直後2M buffer として実装
+
+    主要結果:
+    - 最高PBO: `鉄壁 追い風→加速` = `0.867`（過適合）
+    - 最低PBO tie: `鉄壁 加速→抜き身` / `常勝 追い風→変わり身` = `0.067`（グレー）
+    - 過適合判定(>0.50): `20/36`
+    - グレー以下(<=0.20): `4/36`
+purpose_validation:
+  cmd_purpose: "cmd_1012結果のモード別上位組合せについて、Stage1×Stage2グリッドで15分割CPCVを実行し、PBO値とOOS Sortino分布を出力する。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1013_cpcv_cat_b.py
+  - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1013_cpcv_cat_b.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_1013.yaml
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal && python3 -m py_compile scripts/analysis/cmd_1013_cpcv_cat_b.py"
+    result: pass
+    notes: "構文チェック通過。"
+  - command: "cd /mnt/c/Python_app/DM-signal && python3 scripts/analysis/cmd_1013_cpcv_cat_b.py"
+    result: pass
+    notes: "`outputs/analysis/cmd_1013_cpcv_cat_b.md` を生成。highest_pbo=`鉄壁 追い風→加速 0.867`、lowest_pbo tie=`0.067` を確認。SKIP 0。"
+  - command: "python3 verification snippet on cmd_1013_cpcv_cat_b.md"
+    result: pass
+    notes: "`summary_rows=36`, `heatmap_rows=12`、`PBOサマリー`/`IS-OOS ρ_med`/`OOS Sortino med`/`PBOヒートマップ` 見出しの存在を確認。"
+lessons_useful:
+  - id: L341
+    useful: true
+    reason: "Stage1固定パラメータを deployed portfolio config 正本で扱う必要があり、`STAGE1_FIXED` と cmd_1012探索空間の再利用方針に直結した。"
+  - id: L342
+    useful: true
+    reason: "Stage1 top_n/select_n 変更が nominal_output を変え、Stage2 grid の有効候補数にも効くため、pair別 grid 再構築時の最重要制約だった。"
+  - id: L306
+    useful: true
+    reason: "ルールベースでも GS 由来の過適合検証は最優先、という教訓に従い CPCV+PBO を評価主軸に据えた。"
+  - id: L302
+    useful: true
+    reason: "PBO/CPCV は試行空間依存であるため、championだけでなく pair内の全 candidate grid を fold ごとに再評価する実装方針に結びついた。"
+  - id: L074
+    useful: false
+    reason: "quarterly_* の初期Cashスキップ教訓であり、今回の二段BT/CPCVには無関係。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml のパース形状注意であり、今回の実装では lessons ファイルを直接パースしていない。"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_results:
+  - id: AC2
+    status: pass
+    evidence: "`scripts/analysis/cmd_1013_cpcv_cat_b.py` を実装・実行し、`outputs/analysis/cmd_1013_cpcv_cat_b.md` に 36 archetype の PBOサマリー、IS-OOS rank correlation、OOS Sortino median/p05/p95、mode×pair heatmap を出力した。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

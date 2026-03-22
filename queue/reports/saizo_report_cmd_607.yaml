@@ -1,0 +1,66 @@
+worker_id: saizo
+task_id: subtask_607_impl
+parent_cmd: cmd_607
+timestamp: "2026-03-06T15:04:20+0900"
+status: done
+ac_version_read: 6
+ac_results:
+  - ac: "AC1"
+    status: "PASS"
+    note: "review task の top-level verdict が欠落または PASS/FAIL 以外なら BLOCK する review quality check を追加した。"
+  - ac: "AC2"
+    status: "PASS"
+    note: "review task の self_gate_check.lesson_ref / lesson_candidate / status_valid / purpose_fit が全て PASS でなければ BLOCK する。"
+  - ac: "AC3"
+    status: "PASS"
+    note: "同一 cmd の impl/review report の worker_id を突合し、重複時に BLOCK する。review task が無い cmd は SKIP のまま。"
+  - ac: "AC4"
+    status: "PASS"
+    note: "TODO/FIXME residual check を WARN から BLOCK に昇格した。tests/ 配下の TODO は既存探索対象外のため非対象を維持。"
+  - ac: "AC5"
+    status: "PASS"
+    note: "review task が無い recon cmd を専用テストで通し、新チェックが SKIP されることを確認した。"
+  - ac: "AC6"
+    status: "PASS"
+    note: "bats tests/unit/ を実行し 192/192 PASS, 0 SKIP, 0 FAIL を確認した。"
+result:
+  summary: "cmd_complete_gate.sh に review 品質ゲート 3件と TODO/FIXME BLOCK 化を追加し、関連 Bats を整備した。既存 fixture も新 review report 仕様へ更新済み。"
+  details: "detect_task_role() を追加して task_type/type/task_id から review・implement・recon を判定し、review report の verdict/self_gate_check と reviewer/implementer 分離を機械検査した。tests/unit/test_cmd_complete_gate_review_quality.bats を新設し、既存の test_cmd_complete_gate*.bats と test_gate_metrics_model_labels.bats の review fixture に verdict/self_gate_check を補って後方整合を取った。"
+  self_gate_check:
+    structure_preserved: "PASS"
+    lessons_useful_filled: "PASS"
+    purpose_validation_set: "PASS"
+    scope_respected: "PASS"
+purpose_validation:
+  cmd_purpose: "cmd_complete_gate.shにレビュー品質の機械的チェック4件を追加する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - scripts/cmd_complete_gate.sh
+  - tests/unit/test_cmd_complete_gate.bats
+  - tests/unit/test_cmd_complete_gate_ac_version.bats
+  - tests/unit/test_cmd_complete_gate_review_quality.bats
+  - tests/unit/test_gate_metrics_model_labels.bats
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    reason: "新カウンタや反復判定を足す際、((var++)) を避けて既存 set -e リスクを踏まえた。"
+  - id: L063
+    reason: "YAML 補助ロジックは dict 前提で扱い、 task/report の構造判定を Python で明示した。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+test_results:
+  - command: "bash -n scripts/cmd_complete_gate.sh"
+    result: pass
+  - command: "bats tests/unit/test_cmd_complete_gate.bats tests/unit/test_cmd_complete_gate_ac_version.bats tests/unit/test_cmd_complete_gate_review_quality.bats"
+    result: pass
+    notes: "12/12 PASS, 0 SKIP, 0 FAIL"
+  - command: "bats tests/unit/"
+    result: pass
+    notes: "192/192 PASS, 0 SKIP, 0 FAIL"

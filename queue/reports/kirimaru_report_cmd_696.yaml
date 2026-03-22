@@ -1,0 +1,61 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_696_review
+parent_cmd: cmd_696
+timestamp: "2026-03-09T13:07:31+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "佐助実装のAC1-AC3を再検証。`gh release view v5.0 -R simokitafresh/multi-agent-shogun --json tagName,name,assets,url` で Release v5.0 と asset `app-debug.apk`(17,870,815 bytes, state=uploaded) を確認。`rg -n \"v5\\.0/app-debug\\.apk\" README.md` で README 2箇所(338,364行)が v5.0/app-debug.apk を指すことを確認。`curl -I -L --max-time 30 .../releases/download/v5.0/app-debug.apk` と `gh release download v5.0 ... -p app-debug.apk` で URL有効・実ダウンロード成功を確認。"
+  - id: AC2
+    status: pass
+    evidence: "GitHub Release v5.0 は `name: v5.0 - Bottom Nav Always Visible`、asset `app-debug.apk` uploaded 状態、公開URL `https://github.com/simokitafresh/multi-agent-shogun/releases/tag/v5.0` を確認。"
+  - id: AC3
+    status: pass
+    evidence: "PASS 判定後、未commit だった README.md のみを `docs: update APK download link to v5.0` (dee7b50) で commit し、`git push origin main` が `bbc7224..dee7b50  main -> main` で成功。"
+result:
+  summary: "cmd_696レビューPASS。GitHub Release v5.0 と APK 配布URLは正常、README の 2リンクは v5.0/app-debug.apk を指していた。実装者側で未commitだったため、L179に従い README.md のみを commit/push 代行した。"
+  details: |
+    レビュー結果:
+    - AC1 PASS: 佐助実装の Release 作成・READMEリンク更新・URL有効性をすべて再検証し、PASS を確認。
+    - AC2 PASS: Release v5.0 に `app-debug.apk` が uploaded 状態で存在し、GitHub公開URLから取得可能。
+    - AC3 PASS: `curl -I -L` で 302→200 を確認し、`gh release download v5.0 -p app-debug.apk` でも 17,870,815 bytes の実ダウンロード成功。
+    - コード品質: `git diff -- README.md` では 2箇所の APK リンク差し替えのみで、変更内容は妥当。
+    - L179対応: 実装報告は done だったが README 変更が未commit だったため、レビュー担当として README.md のみを commit/push 代行。commit `dee7b50`。
+purpose_validation:
+  cmd_purpose: "cmd_696(GitHub Release v5.0作成+READMEリンク更新)のレビューを実施し、PASSなら git push origin main"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/README.md
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: false
+  - id: L063
+    useful: false
+  - id: L032
+    useful: false
+  - id: L179
+    useful: true
+  - id: L173
+    useful: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

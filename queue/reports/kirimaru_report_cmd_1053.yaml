@@ -1,0 +1,67 @@
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_1053_kirimaru
+parent_cmd: cmd_1053
+timestamp: "2026-03-18T19:35:00"
+status: done
+ac_version_read: 3
+verdict: PASS
+purpose_validation:
+  fit: true
+  reasoning: ac_versionをACテキスト内容のmd5ハッシュに変更し、件数同一でも内容差替えをゲートで検知可能にした
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+results:
+  AC1:
+    status: PASS
+    detail: |
+      deploy_task.sh inject_ac_version()を修正。
+      ACの各descriptionをソート→連結→md5→先頭8桁をac_versionとして設定。
+      件数が同じでも内容が変われば異なるハッシュになる。
+      変更ファイル: scripts/deploy_task.sh L156-218
+  AC2:
+    status: PASS
+    detail: |
+      cmd_complete_gate.sh ac_version照合ロジックを修正。
+      - is_legacy_numeric()関数を追加: 旧形式(数値)判定
+      - 旧形式(数値)のac_version → legacy_skip（後方互換、非BLOCK）
+      - ハッシュ文字列同士の完全一致で判定
+      - 不一致時のBLOCKメッセージにtask側・report側のハッシュ値を表示
+      変更ファイル: scripts/cmd_complete_gate.sh L2029-2103
+  AC3:
+    status: PASS
+    detail: |
+      テスト結果: 30/30 PASS, 0 SKIP, 0 FAIL
+      - test_deploy_task_ac_version.bats: 14 PASS (既存12 + 新規2)
+        - 新規: ハッシュ化による期待値更新 + AC内容変更検知テスト
+      - test_cmd_complete_gate_ac_version.bats: 4 PASS (全面改訂)
+        - (1) ハッシュ一致 → OK
+        - (2) ハッシュ不一致(内容変更) → BLOCK
+        - (3) 旧形式(数値) → legacy_skip(後方互換)
+        - (4) ハッシュ + report未記載 → 非BLOCK
+      - test_cmd_complete_gate.bats: 12 PASS (リグレッションなし)
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: bashスクリプト修正だがPASS++パターンは使用していない
+  - id: L063
+    useful: false
+    reason: Python YAML操作だがlessons.yaml構造ではない
+  - id: L225
+    useful: false
+    reason: MCP entity管理とは無関係
+  - id: L097
+    useful: true
+    reason: cmd_complete_gate.shがscripts/配下でfield_get義務対象であることを認識。今回はPython内でyaml.safe_loadを使用しているため直接影響なし
+  - id: L079
+    useful: false
+    reason: inject_related_lessonsとは無関係

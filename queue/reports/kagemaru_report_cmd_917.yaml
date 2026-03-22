@@ -1,0 +1,54 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kagemaru
+task_id: cmd_917_R
+parent_cmd: cmd_917
+timestamp: "2026-03-13T20:48:00"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "expense_csv.py L361-366: fail-close実装済み。L612-614: MONTHLY_SOURCE_STEM_REフィルタ実装済み。"
+  - id: AC2
+    status: pass
+    evidence: "9 passed, 0 skipped, 0 failed (0.24s)"
+  - id: AC3
+    status: pass
+    evidence: "cmd_914コミット時点で修正済み。push不要。疾風レビューFAIL判定の誤り可能性をdecision_candidateに記載。"
+result:
+  summary: "verdict: PASS。指摘2箇所はcmd_914コミット時点で修正済み。テスト9件全PASS/SKIP 0。push不要。"
+  details: |
+    AC1(コード検証): PASS
+      1. find_matching_receipt_pdf() L361-366: type_label=='振込手数料'分岐で
+         transfer_docs>1の場合return ''(fail-close)実装済み。
+      2. convert_all_year() L612-614: MONTHLY_SOURCE_STEM_RE(r'^\d{4}-\d{2}$')で
+         stemフィルタ。非マッチ時にstderr WARNING+continue(skip)実装済み。
+    AC2(テスト実行): PASS — 9 passed, 0 skipped, 0 failed (0.24s)
+    AC3(判定結果): cmd_914コミット時点で修正済み。追加コード変更なし。push不要。
+purpose_validation:
+  cmd_purpose: "expense_csv.pyの修正済み検証(半蔵調査結果の裏取り)"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful:
+  - id: none
+    note: "検証レビュー（コード変更なし）。注入教訓の参照機会なし"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "疾風レビュー(cmd_914_R)のFAIL判定の正誤"
+  detail: "cmd_914コミット(a9df1e1)にはL361-366のfail-closeとL612-614のMONTHLY_SOURCE_STEM_REフィルタが既に実装されていた。疾風レビューがこれらをFAIL判定したなら、そのFAIL判定は誤りだった可能性がある。半蔵(cmd_917_A)調査と本レビューで修正済みを確認。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

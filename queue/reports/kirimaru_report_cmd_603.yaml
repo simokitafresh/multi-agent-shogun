@@ -1,0 +1,61 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: kirimaru
+task_id: subtask_603_impl_b
+parent_cmd: cmd_603
+timestamp: "2026-03-06T14:30:08+09:00"
+status: done
+ac_version_read: 5
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`scripts/inbox_watcher.sh` で send timeout 時に debounce を消さず、busy defer 時に debounce を再書込みするよう修正した。"
+  - id: AC2
+    status: pass
+    evidence: "`scripts/inbox_watcher.sh` で special message を1件ずつ送信後に個別既読化し、fingerprint/retry state 更新を flock 保護した。"
+  - id: AC3
+    status: pass
+    evidence: "`scripts/deploy_task.sh` の Python heredoc で description/postcondition/impact log の改行を実 newline に修正した。"
+  - id: AC4
+    status: pass
+    evidence: "`scripts/cmd_complete_gate.sh` の `auto_unwrap_report_yaml()` を report ごとの flock 配下で実行するよう修正した。"
+  - id: AC5
+    status: pass
+    evidence: "`bats tests/unit` が 186/186 pass で完走した。"
+test_results:
+  - command: "bash -n scripts/inbox_watcher.sh scripts/deploy_task.sh scripts/cmd_complete_gate.sh"
+    result: pass
+    notes: ""
+  - command: "bats tests/unit"
+    result: pass
+    notes: "186 tests"
+result:
+  summary: "watcher の defer/retry/special 処理を安定化し、deploy_task の newline 出力と gate unwrap の排他不足を修正した。"
+  details: |
+    実装:
+    - `scripts/inbox_watcher.sh`: special message を個別処理へ変更し、成功した message のみ既読化。busy defer 時は debounce を再書込みし、timeout 時の debounce 削除を廃止。fingerprint/retry state は flock 付き helper で更新。
+    - `scripts/deploy_task.sh`: Python heredoc 内の `\\n` を実 newline に修正し、description/precondition/impact log のリテラル `\n` 混入を解消。
+    - `scripts/cmd_complete_gate.sh`: report unwrap を `${report_file}.lock` で保護。
+
+    commit:
+    - `7c66e07` fix watcher retry and unwrap locking
+purpose_validation:
+  cmd_purpose: "半蔵所見のスクリプト層MEDIUM修正（inbox_watcher.sh + deploy_task.sh + cmd_complete_gate.sh）を実装し、既存unit testを通す"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/scripts/inbox_watcher.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/cmd_complete_gate.sh
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L002
+  - L074
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

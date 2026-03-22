@@ -1,0 +1,119 @@
+worker_id: kagemaru
+task_id: cmd_1020_review
+parent_cmd: cmd_1020
+timestamp: '2026-03-17T09:30:00+09:00'
+status: done
+ac_version_read: 1
+verdict: PASS
+review_result: PASS
+ac_results:
+- id: AC_R1
+  status: pass
+  evidence: "5観点全てでPASS:\n\n1. logit PBO — Lopez de Prado (2018) 完全準拠 ✓\n   - champion_rank_and_logit()\
+    \ (L271-285): OOSでのIS championの降順rank取得\n     → 正規化(best=1.0, worst=0.0) → epsilon\
+    \ clipping(1e-6) → logit変換\n   - PBO = mean(lambda <= 0) (L460): 経験的CDF at lambda=0。標準的PBO推定方式\n\
+    \   - simplified PBO = mean(rank_norm <= 0.5) (L461): 比較用。logitとのdelta出力で透明性確保\n\
+    \   - edge case: valid_count<=1 → normalized_rank=1.0(自明の最良)。安全\n\n2. pluggable\
+    \ metrics — 汎用設計 ✓\n   - metric_dispatch() (L382-392): 8メトリクスを名前→関数のdictで集約\n\
+    \   - canonical_metric_name() (L106-112): CLI入力を正規化(大小/ハイフン耐性)\n   - ReturnWindow\
+    \ (L288-331): cumulative/running_peak/running_min/sorted_descをlazy cache\n   \
+    \  → fold内で複数メトリクス評価時に中間計算を再利用。メモリ効率的\n   - 8メトリクス計算関数の正確性:\n     Max_Run-up:\
+    \ nanmax(drawup) * 100 ✓\n     UD_Ratio: nanmedian(positive)/nanmedian(|negative|)\
+    \ ✓\n     Skewness: scipy.stats.skew(bias=False) ✓\n     Tail_Contribution: top\
+    \ 5% sum / positive sum ✓\n     NHF: fraction at peak ✓\n     Underwater_Period:\
+    \ longest consecutive underwater streak ✓\n     Calmar_Ratio: CAGR / |MaxDD| ✓\n\
+    \     Left-tail_Jumps: frequency of returns <= -10% ✓\n\n3. fold構造(8群/28fold)\
+    \ — 正しい ✓\n   - split_groups (L161-168): np.array_split → contiguous 8群(167ヶ月→21*7+20*1)\n\
+    \   - build_cpcv_folds (L171-221): C(8,2)=28 fold。各foldで:\n     test_mask: 2群分のインデックス\n\
+    \     purge_mask: 各test block前方1ヶ月\n     embargo_mask: 各test block後方1ヶ月\n    \
+    \ train_mask: 残り全て\n   - 期間はmeta.yaml準拠(L644-651で一致検証)。不一致時はValueError即発\n\n4.\
+    \ 検証テスト結果 — 妥当 ✓\n   - PBO値: Max_Run-up=0.5000, UD_Ratio=0.2143, Skewness=0.5714\
+    \ (全て[0,1]) ✓\n   - fold情報: Group Layout + 3メトリクス×Fold Details出力 ✓\n   - 設計書§5出力:\
+    \ PBOサマリー/生存者リスト/感度分析/Rank Correlation/Logit Diagnostics ✓\n   - runtime: 1.89s\
+    \ (96変種で十分高速) ✓\n\n5. コード品質 ✓\n   - vectorized: 全メトリクスがNumPy axis=0 vectorized。Underwater_Periodのみ行ループ(streak計算上不可避)\n\
+    \   - メモリ効率: CSVを行単位読込→NumPy matrix変換。pandas wide DataFrame常駐回避\n   - TODO/FIXME:\
+    \ grep確認で0件\n   - 型ヒント: 全関数に付与。frozen dataclass使用\n   - エラーハンドリング: require_file(),\
+    \ CSV幅検証, meta.yaml期間検証\n"
+- id: AC_R2
+  status: pass
+  evidence: 'DM7+ 96変種検証結果:
+
+    - 3メトリクスPBO全て[0,1]範囲 ✓
+
+    - 閾値0.05で生存者0件 — 設計書の「全変種が過適合なら正当な結論」に合致 ✓
+
+    - 出力フォーマット: Conditions/Group Layout/Metric Summary/Logit Diagnostics/Fold Details
+    ✓
+
+
+    commit + push は本報告後に実行。
+
+    '
+diff_check:
+  files_to_commit:
+  - scripts/analysis/shin_shijin_cpcv_engine.py
+  - outputs/analysis/shin_shijin_cpcv_DM7P.md
+  - outputs/analysis/cmd_1020_cpcv_engine_validation.md
+  unrelated_changes: false
+  notes: 3ファイル全てuntracked(新規追加)。既存コードの変更なし
+result:
+  summary: 'CPCVエンジンは全5レビュー観点でPASS。
+
+    logit PBOはLopez de Prado (2018)に完全準拠。
+
+    OOSランク正規化→epsilon clipping→logit変換→P(lambda<=0)=PBOの
+
+    パイプラインが正しく実装されている。
+
+    '
+  observations:
+  - id: OBS1
+    severity: info
+    detail: 'best_index()は常に最高スコアを選択する(L259-268)。
+
+      Underwater_PeriodとLeft-tail_Jumps(低い方が良い)では、
+
+      IS championが最悪の候補になる。
+
+      本検証の3メトリクス(Max_Run-up/UD_Ratio/Skewness)は全て
+
+      higher-is-betterなので問題なし。
+
+      将来これらのメトリクスをCPCVで使う場合はスコア反転が必要。
+
+      '
+  - id: OBS2
+    severity: info
+    detail: '設計書(shin_shijin_phase3_cpcv.md §3.1)は192ヶ月を想定しているが、
+
+      エンジンはmeta.yamlの167ヶ月で動作。
+
+      エンジン側はmeta.yaml準拠で正しい設計(データ駆動)。
+
+      192ヶ月への拡張は次GSフェーズのデータ更新時に自然対応。
+
+      '
+purpose_validation:
+  cmd_purpose: シン四神Phase3 CPCVエンジン(logit完璧版)のコードレビュー+検証結果確認+push
+  fit: true
+  purpose_gap: ''
+files_modified:
+- /mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report_cmd_1020.yaml
+- /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+lesson_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

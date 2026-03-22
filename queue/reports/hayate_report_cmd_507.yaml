@@ -1,0 +1,135 @@
+worker_id: hayate
+task_id: subtask_507_recon_be_data_audit
+parent_cmd: cmd_507
+timestamp: "2026-03-04T01:14:57+0900"
+status: done
+result:
+  summary: "cmd_507 偵察Aを完了。主要APIのレスポンス棚卸しとfrontend実表示の突合を実施し、cmd_494同種のpending表示契約ズレを含む高リスク不整合を特定。"
+  details: |
+    実施範囲（実装変更なし、reconのみ）:
+    - Backend API/Service:
+      - backend/app/api/{signals,monthly_trade,monthly_returns,annual_returns,history,performance,benchmark,metrics,trades,rolling_returns,drawdowns}.py
+      - backend/app/services/{monthly_trade_calculator,monthly_returns_calculator,annual_returns_calculator,trades_calculator,rolling_returns_calculator,drawdowns_calculator}.py
+    - Frontend:
+      - frontend/lib/{api-client.ts,types/*}
+      - frontend/app/{page,dashboard,compare,compare-summary,summary,monthly-trade,monthly-returns,annual-returns,metrics,trades,rolling-returns,drawdowns}/page.tsx
+      - frontend/components/*table.tsx, *chart.tsx, portfolio-details.tsx
+
+    監査結果（要旨）:
+    1) cmd_494同種（pending表示契約）の不整合を再検出:
+       - /api/signals は standard monthly のみ pending判定。
+       - /api/monthly-trade 側 pending判定は trigger固定 monthly を使用。
+       - Home/Dashboard の target month は client `new Date()` 依存。
+       → as_of基準と画面ラベル基準が分離し、月替わりで表示期待が揺れる構造が残存。
+
+    2) OPEN/CLOSEトグルの表示整合に差分:
+       - Monthly/Annual Returns table の benchmark balance が OPENでも close残高表示。
+       - Rolling summary table の benchmark列が OPEN値（*_open）を使わず close固定。
+
+    3) precomputed trades の0値処理:
+       - 0.0が truthy判定で None 化され、frontend表示上 "-" になるパスを確認。
+
+    4) API公開済みだがUI未表示の項目（例）:
+       - Monthly Trade entry: benchmark_return, in_market, calculated_return_open/close, matched_weight, component_portfolios。
+
+findings:
+  - id: F1
+    title: "[HIGH] pending表示契約がエンドポイント間で不一致（cmd_494同種）"
+    evidence:
+      - "signals.py L87: `rebalance_trigger == \"monthly\"` 条件でのみ pending"
+      - "signals.py L201/L260: FoF `signal_pending: False` 固定"
+      - "monthly_trade_calculator.py L126/L405: pending判定のsignal_date計算が `\"monthly\"` 固定"
+      - "portfolio-details.tsx L34-L35, dashboard/page.tsx L260-L261: target month が client `new Date()` 基準"
+    impact: "月初pending期間で as_of基準と画面期待（月表示）がズレ、ページ間で表示契約が揺れる。"
+
+  - id: F2
+    title: "[HIGH] OPEN/CLOSE切替で benchmark表示が混在（close固定箇所あり）"
+    evidence:
+      - "monthly-returns-table.tsx L282: benchmark balance は `entry.benchmark.balance` 固定"
+      - "annual-returns-table.tsx L231: benchmark balance は `entry.benchmark.balance` 固定"
+      - "rolling-returns-summary-table.tsx L138-L145: benchmark列は average/high/lowのみ参照（*_open未使用）"
+    impact: "OPEN選択時に portfolioはOPEN系、benchmarkはCLOSE系が混在し、比較が歪む。"
+
+  - id: F3
+    title: "[HIGH] precomputed trades の0値が None 化される"
+    evidence:
+      - "trades_calculator.py L733-L737: `if trade.<value> else None` により 0.0 が None 化"
+    impact: "0%の実値が欠損表示(\"-\")になり、取引履歴の事実とUIが不一致化。"
+
+  - id: F4
+    title: "[MEDIUM] Monthly Trade API公開項目の一部がUI非表示"
+    evidence:
+      - "monthly_trade_calculator.py L197-L198/L255/L257/L438-L444: benchmark_return, in_market, calculated_return_*, matched_weight, component_portfolios"
+      - "monthly-trade-table.tsx: 上記フィールド参照なし（grep一致なし）"
+    impact: "backendで算出済みの検証・説明情報がユーザーに届かず、調査時の可観測性が低い。"
+
+  - id: F5
+    title: "[LOW] /api/mtd の signal/raw_signal は現行UI未使用"
+    evidence:
+      - "performance.py L260-L261: `signal/raw_signal = \"MTD\"` を返却"
+      - "dashboard/page.tsx L206-L207: mtd_data利用は数値系列中心（signal/raw_signal参照なし）"
+    impact: "機能不整合ではないが、payloadの冗長化要因。"
+
+verdict: "AC1/AC2/AC3を満たして偵察完了。cmd_494同種の契約ズレを含むHIGH 3件を報告。"
+confidence: medium
+blind_spots:
+  - "コード静的監査ベース。実DBデータを用いた時点再生E2Eは未実施。"
+  - "作業再開初期に他忍者の cmd_507 調査ファイルを一度閲覧してしまったため、以降はコード再監査のみで独立性を維持した。"
+
+purpose_validation:
+  cmd_purpose: "backend起点でFE-BE不整合（表示漏れ・意図乖離）を洗い出す"
+  fit: true
+  purpose_gap: ""
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_507.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+
+test_results:
+  - command: "rg -n 'rebalance_trigger == \"monthly\"|signal_pending' backend/app/api/signals.py"
+    result: pass
+    notes: "signals pending判定の適用範囲（月次限定 + FoF false固定）を確認。"
+  - command: "rg -n 'get_last_rebalance_month_end_business\\(self.db, \"monthly\"' backend/app/services/monthly_trade_calculator.py"
+    result: pass
+    notes: "monthly_trade pending判定で trigger固定 monthly を確認。"
+  - command: "rg -n 'balance_open|entry.benchmark.balance\\)' frontend/components/{monthly-returns-table.tsx,annual-returns-table.tsx}"
+    result: pass
+    notes: "OPEN時 benchmark balance のclose固定表示箇所を確認。"
+  - command: "rg -n 'benchmarkData.average|benchmarkData.high|benchmarkData.low' frontend/components/rolling-returns-summary-table.tsx"
+    result: pass
+    notes: "rolling summary benchmark列で *_open 未使用を確認。"
+  - command: "rg -n 'if trade\\.portfolio_return_open else None|if trade\\.benchmark_return_open else None|if trade\\.excess_return_open else None' backend/app/services/trades_calculator.py"
+    result: pass
+    notes: "0.0 -> None 化の条件を確認。"
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "主要エンドポイントのレスポンス項目棚卸しとfrontend表示突合を完了（F1-F5）。"
+  - id: AC2
+    status: pass
+    evidence: "cmd_494同種（pending表示契約ズレ）を `/api/signals`・`/api/monthly-trade`・Home/Dashboard で明示確認（F1）。"
+  - id: AC3
+    status: pass
+    evidence: "本報告 `queue/reports/hayate_report_cmd_507.yaml` を提出。"
+
+lessons_useful:
+  - id: L144
+    useful: true
+    reason: "受信直後に task YAML/AC を固定し、再配備後の監査スコープ逸脱を防いだ。"
+  - id: L141
+    useful: true
+    reason: "API↔UI突合を grep で機械化し、未表示フィールドの取りこぼしを減らした。"
+
+lesson_candidate:
+  found: true
+  title: "OPEN/CLOSE切替を導入したページは『benchmark側の*_open適用』を同時チェックしないと非対称化する"
+  detail: "今回、Monthly/Annual/Rolling summary で benchmark 側だけ close固定の箇所が残り、比較表示に混在が発生した。切替導入時は portfolio/benchmark 両側の参照項目をチェックリスト化すべき。"
+  project: dm-signal
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: true
+  summary: "pending表示契約を as_of基準で統一する裁定が必要（signals/monthly-trade/home/dashboard の基準不一致をどこで吸収するか）。"

@@ -1,0 +1,53 @@
+worker_id: hayate
+task_id: null
+parent_cmd: cmd_1205
+timestamp: '2026-03-21T18:52:00'
+status: done
+ac_version_read: 442aefd6
+result:
+  summary: fetch_ac_count()のawkパターンを■AC検索→acceptance_criteria配下の- ACN:リスト項目カウントに修正。現存cmd4件で全件正確(cmd_1205=2,cmd_1133=3,cmd_1078=5,cmd_1125=5)
+  details: L160-168のawk一行を、cmdブロック検出→acceptance_criteria:セクション検出→- ACN:パターンカウントの多行awkに書換。cmd_1202はSTKアーカイブ済みのため現存cmdで検証
+purpose_validation:
+  cmd_purpose: cmd_quality_log.shのac_count抽出ロジック修正
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/cmd_quality_log.sh
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: 計測スクリプトのパターンは対象YAMLの実フォーマットを確認して作れ
+  detail: 推測パターン(■AC)はフォーマット変更で無声故障する。ac_count=0連続N回でALERT発報する仕組みが防御層になる
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: 本タスクにPASS++パターンなし。bashスクリプト修正だが((PASS++))は使用せず
+- id: L225
+  useful: false
+  reason: MCP entity混入の教訓。本タスクはawk修正のみでMCP操作なし
+- id: L063
+  useful: false
+  reason: lessons.yamlイテレーション教訓。本タスクはYAML読み込みなくawkパターン修正のみ
+- id: L192
+  useful: false
+  reason: 並列impl review教訓。本タスクは単一ファイル修正でgit diff確認不要
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: fetch_ac_countがACパターンをカウントするか
+    result: 'yes'
+  - check: cmd現存4件で正確か
+    result: yes(2,3,5,5)
+  AC2:
+  - check: ac_countが0でないか
+    result: 'yes'
+  - check: git commit成功か
+    result: yes(fd74a35)
+verdict: PASS

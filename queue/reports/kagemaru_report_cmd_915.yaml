@@ -1,0 +1,61 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kagemaru
+task_id: cmd_915_C
+parent_cmd: cmd_915
+timestamp: "2026-03-13T19:23:30"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: |
+      extract_from_pdf() L176-191: 必須4項目(issuer/receipt_type/amount/month)がunknownならmissingリスト→WARN(stderr)→None返却。確認済。
+      find_or_create_subfolder() L238-243: len(files)>1で重複検知→WARN(stderr, ID一覧)→files[0]["id"]採用。確認済。
+      tests/test_receipt_manager.py: 全7クラスがunittest.TestCase継承。tempfile.TemporaryDirectory/io.StringIO/self.subTest使用。確認済。
+  - id: AC2
+    status: pass
+    evidence: "python3 -m unittest tests/test_receipt_manager.py -v → Ran 27 tests in 0.053s — OK (SKIP 0)"
+  - id: AC3
+    status: pass
+    evidence: |
+      小太郎impl(0a85887)は既にremote push済。飛猿fix(2607e0b)を push。
+      git push origin main → a9df1e1..2607e0b main -> main 成功。
+      L186準拠: push直前にgit rev-parse HEAD + git log -1 + git ls-remote origin でlocal/remote HEAD確認済。
+      注: AC3指定のcommit message「feat(auto-ops): receipt_manager PDF rename+Drive upload pipeline (cmd_915)」は
+      既存2commitを1つにまとめる必要があるがamend/force-push禁止(D003/D004)のため既存commitをそのまま push。
+result:
+  summary: "AC1-3全PASS。飛猿修正(fail-close/重複検知/unittest互換)を検証。27テスト全PASS/SKIP0。push完了(2607e0b)。"
+  details: |
+    AC1: コード精査で3件の修正を全て確認。
+    AC2: python3 -m unittest → 27 tests OK, SKIP 0。
+    AC3: git push origin main → a9df1e1..2607e0b 成功。
+purpose_validation:
+  cmd_purpose: "cmd_915修正後の再レビュー+push"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful:
+  - L186
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

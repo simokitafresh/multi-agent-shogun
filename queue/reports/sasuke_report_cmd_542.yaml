@@ -1,0 +1,80 @@
+worker_id: sasuke
+task_id: subtask_542_impl_a
+parent_cmd: cmd_542
+timestamp: "2026-03-04T21:31:00+0900"
+status: done
+ac_version_read: 1
+
+result:
+  summary: "AC1 PASS。cmd_484補助カタログをVercelスタイル（§番号+テーブル）で再作成し、recalculate-sync/register-shijin/deploy/cron運用の4分類を反映。commit 14b1fa8。"
+  details: |
+    実施内容:
+    - DM-Signal実コードを調査:
+      - backend/app/jobs/
+      - scripts/
+      - backend/app/api/etl_trigger.py
+      - render.yaml
+    - docs/research/cmd_484_dm-signal-supplemental-catalog-2.md を再作成:
+      1) recalculate-sync関連（jobsカタログ）
+      2) register-shijin関連（scripts）
+      3) deploy関連（scripts/deploy*不在の明記 + 代替運用スクリプト）
+      4) cron運用系（sync-prices/sync-tickers/sync-standard/sync-fof）
+    - §1-§5構成、各項目を「スクリプト名 + 1行説明 + パス」テーブルで記述
+
+    コミット:
+    - 14b1fa8 docs: recreate cmd_484 supplemental script catalog
+
+purpose_validation:
+  cmd_purpose: "context/dm-signal-ops.md の参照切れを解消し、cmd_484を運用スクリプト索引として再機能化する"
+  fit: true
+  purpose_gap: "なし"
+
+files_modified:
+  - /mnt/c/Python_app/DM-signal/docs/research/cmd_484_dm-signal-supplemental-catalog-2.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_542.yaml
+
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bashカウンタ修正タスクではなく、今回のドキュメント再作成には非該当。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml構造パース実装は行っておらず、直接適用場面なし。"
+  - id: L094
+    useful: false
+    reason: "tmux/model名ハードコード課題は本タスク範囲外。"
+  - id: L047
+    useful: false
+    reason: "python3 -c補間脆弱性に該当するコード追加なし。"
+  - id: L097
+    useful: false
+    reason: "cmd_complete_gate.sh改善タスクではないため適用なし。"
+
+test_results:
+  - command: "test -f /mnt/c/Python_app/DM-signal/docs/research/cmd_484_dm-signal-supplemental-catalog-2.md"
+    result: pass
+    notes: "FILE_OK"
+  - command: "rg -n '^## §(1|2|3|4|5)' /mnt/c/Python_app/DM-signal/docs/research/cmd_484_dm-signal-supplemental-catalog-2.md"
+    result: pass
+    notes: "§1-§5存在確認"
+  - command: "git -C /mnt/c/Python_app/DM-signal show --name-only --oneline --no-patch 14b1fa8"
+    result: pass
+    notes: "対象コミット作成確認"
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "cmd_484を再作成し、4分類（recalculate-sync/register-shijin/deploy/運用cron）をテーブル化"
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: false

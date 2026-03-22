@@ -1,0 +1,54 @@
+task_id: cmd_900_A
+ninja: saizo
+status: failed
+started_at: '2026-03-13T13:12:08+0900'
+completed_at: '2026-03-13T13:40:01+0900'
+parent_cmd: cmd_900
+result:
+  summary: "auto-ops に MoneyForward CSV 取得パイプラインを実装し、live 実行で MoneyForward の email_otp 追加認証要求までは到達した。現 blocker はコードではなく人手 OTP 入力であり、AC5 の CSV DL 実証は未完了。"
+  ac_results:
+    AC1:
+      status: PASS
+      detail: ".env.moneyforward.example と .env.moneyforward を作成し、.gitignore に .env.* を追加して実ファイルを除外した。MF_GROUP_NAME=個人事業ダイヤモン三井住友VISAカード を既定値として記入済み。"
+    AC2:
+      status: PASS
+      detail: "workflows/mf_csv_pipeline.py を新規作成。https://moneyforward.com/sign_in 起点へ更新し、隔離 CDP port の通常 Chrome + native setter による email/password 入力 + 追加認証検知を実装した。CDP transport は既存 cdp_helper.py を再利用。"
+    AC3:
+      status: PASS
+      detail: "/cf へ遷移後、clickable snapshot を採取して trigger → exact text group click の順でグループ切替を行う処理を実装。対象グループ未発見時は GroupSelectionError で失敗させ、main で ntfy 通知する。"
+    AC4:
+      status: PASS
+      detail: "/cf/csv?from=YYYY/MM/01&month=M&year=YYYY 直リンクで月次 CSV を取得し、data/mf_csv/YYYY-MM.csv へ保存する処理を実装。--month YYYY-MM と --all を追加し、README に利用手順を追記した。"
+    AC5:
+      status: FAIL
+      detail: ".env.moneyforward 記入後に live 実行を再開し、python3 workflows/mf_csv_pipeline.py --month 2025-01 --cdp-port 9237 で MoneyForward 側の email_otp 追加認証要求までは実証した。ただし OTP を人手入力していないため /cf 到達と CSV 保存までは未確認。現時点の fail 理由は secrets 未投入ではなく追加認証未完了。"
+  files_changed:
+  - /mnt/c/Python_app/auto-ops/.gitignore
+  - /mnt/c/Python_app/auto-ops/.env.moneyforward.example
+  - /mnt/c/Python_app/auto-ops/workflows/mf_csv_pipeline.py
+  - /mnt/c/Python_app/auto-ops/tests/test_mf_csv_pipeline.py
+  - /mnt/c/Python_app/auto-ops/docs/kojin-jigyo/README.md
+  verification:
+  - "python3 -m unittest tests/test_cdp_preflight.py tests/test_mf_csv_pipeline.py -> 20 tests PASS"
+  - "python3 -m py_compile workflows/mf_csv_pipeline.py -> PASS"
+  - "python3 workflows/mf_csv_pipeline.py --help -> PASS"
+  - "python3 workflows/mf_csv_pipeline.py --month 2025-01 --cdp-port 9237 -> email_otp 追加認証要求を確認"
+lessons_useful:
+  - L011
+  - L012
+  - L064
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

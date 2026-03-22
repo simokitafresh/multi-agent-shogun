@@ -1,0 +1,104 @@
+task_id: cmd_896_A
+ninja: kotaro
+status: done
+started_at: '2026-03-13T12:42:00'
+completed_at: '2026-03-13T12:48:00'
+parent_cmd: cmd_896
+result:
+  summary: 個人事業_2025.csv を12列→15列にフォーマット移行完了。簡易説明・候補勘定科目・殿コメント3列をID列の後に挿入。
+  ac_results:
+    AC1:
+      status: PASS
+      detail: 'ヘッダー15列に更新: 計算対象,日付,内容,金額（円）,保有金融機関,大項目,中項目,メモ,振替,ID,簡易説明,候補勘定科目,殿コメント,証票フォルダ,証票PDF'
+    AC2:
+      status: PASS
+      detail: '既存187行の簡易説明に推定記入完了。全187行充填(推定不能行なし)。パターン: ノート→note記事購入, CLAUDE.AI→Anthropic
+        API利用料, X CORP→X Premium, TWITTER ADS→X広告費, 他17パターン'
+    AC3:
+      status: PASS
+      detail: 既存187行の候補勘定科目に推定記入完了。全187行充填。新聞図書費/通信費/広告宣伝費/研究開発費/研修費/賃借料/支払手数料の7科目に分類
+    AC4:
+      status: PASS
+      detail: 殿コメント列は全201行空欄
+    AC5:
+      status: PASS
+      detail: 'note売上手数料14行にも簡易説明・候補勘定科目記入済。例: note PF手数料 6月分→簡易説明「note売上手数料(6月分)」/候補勘定科目「支払手数料」。note振込手数料2行→「note振込手数料」/「支払手数料」'
+    AC6:
+      status: PASS
+      detail: 'Drive再アップロード完了(fileId: 1qhLn3J7AJYORu2VhvIE1mROtYIe3KsOq)。再ダウンロード検証:
+        202行(ヘッダー1+データ201)×15列、全行完全一致、ミスマッチ0件'
+  mapping_summary:
+  - pattern: ノート
+    description: note記事購入
+    account: 新聞図書費
+  - pattern: CLAUDE.AI/ANTHROPIC
+    description: Anthropic API利用料
+    account: 通信費
+  - pattern: GITHUB
+    description: GitHub利用料
+    account: 通信費
+  - pattern: RENDER
+    description: Render Webホスティング
+    account: 通信費
+  - pattern: X CORP PAID FEATURES
+    description: X Premium
+    account: 広告宣伝費
+  - pattern: TWITTER ONLINE ADS
+    description: X広告費
+    account: 広告宣伝費
+  - pattern: SUNABACO
+    description: SUNABACO研修費
+    account: 研修費
+  - pattern: SEEKINGALPH
+    description: Seeking Alpha Premium
+    account: 研究開発費
+  - pattern: BUFFER
+    description: Buffer SNS管理ツール
+    account: 広告宣伝費
+  - pattern: PYTHONANYWHERE
+    description: PythonAnywhere Webホスティング
+    account: 通信費
+  - pattern: COGNITION LABS
+    description: Devin AI開発ツール
+    account: 研究開発費
+  - pattern: DYNALISTINC
+    description: Dynalist メモツール
+    account: 通信費
+  - pattern: SRL*ANALYTICS
+    description: Portfolio Visualizer
+    account: 研究開発費
+  - pattern: キャンプファイヤー
+    description: CAMPFIRE クラウドファンディング
+    account: 研修費
+  - pattern: SUPABASE
+    description: Supabase DBホスティング
+    account: 通信費
+  - pattern: TRADINGVIEW
+    description: TradingView Pro
+    account: 研究開発費
+  - pattern: いいオフィス
+    description: コワーキングスペース利用
+    account: 賃借料
+  - pattern: note PF手数料
+    description: note売上手数料(X月分)
+    account: 支払手数料
+  - pattern: note 振込手数料
+    description: note振込手数料
+    account: 支払手数料
+lessons_useful:
+  - L009
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

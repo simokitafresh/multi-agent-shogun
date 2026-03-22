@@ -1,0 +1,66 @@
+worker_id: sasuke
+task_id: subtask_497_impl_shogun_policy
+parent_cmd: cmd_497
+timestamp: "2026-03-03T15:55:03+09:00"
+status: done
+result:
+  summary: "将軍手順2ファイルへ、追加(enhance/new)と修正(fix)を同一cmdで混在させない分離ルールを明文化し、commitまで完了。"
+  details: |
+    実施内容:
+    - related_lessons(L074/L063/L032)本文を先に確認し、task YAMLのreviewedをtrue化。
+    - instructions/shogun.md の Command Writing 節に
+      「cmd Scope Rule (Enhance vs Fix)」を追加。
+    - instructions/generated/codex-shogun.md の同位置に同等ルールを反映。
+    - commitを2件作成:
+      1) d543f3b docs: enforce single-purpose cmd scope in shogun rules
+      2) 3bdb1c1 docs: mirror cmd scope rule in codex shogun guide
+    - 補足: 1件目のcommit時に生成フックが動作し、karo系generatedファイル更新が同梱されたため、
+      codex-shogun反映を2件目で明示的に完了した。
+purpose_validation:
+  cmd_purpose: "shogun手順へ追加/修正のCMD分離原則を明文化する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - instructions/shogun.md
+  - instructions/generated/codex-shogun.md
+  - queue/tasks/sasuke.yaml
+  - queue/reports/sasuke_report_cmd_497.yaml
+test_results:
+  - command: "rg -n \"cmd Scope Rule \\(Enhance vs Fix\\)|単一目的で判定し|分割して再起票\" instructions/shogun.md instructions/generated/codex-shogun.md"
+    result: pass
+    notes: "両ファイルに同一ルール文言の存在を確認"
+  - command: "git show --name-only --pretty=format:'%h %s' d543f3b"
+    result: pass
+    notes: "instructions/shogun.md を含むcommit作成を確認"
+  - command: "git show --name-only --pretty=format:'%h %s' 3bdb1c1"
+    result: pass
+    notes: "instructions/generated/codex-shogun.md を含むcommit作成を確認"
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "set -e環境の算術式落とし穴を避け、単純で安全な更新手順を維持した"
+  - id: L063
+    useful: true
+    reason: "lessons.yamlのdict/list構造を前提に、対象ID本文を正しく抽出・確認した"
+  - id: L032
+    useful: true
+    reason: "セクション境界を見誤らず、既存文脈と矛盾しない位置へ追記できた"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "instructions/shogun.md:171-174 に分離ルールを追記"
+  - id: AC2
+    status: pass
+    evidence: "instructions/generated/codex-shogun.md:159-162 に同等ルールを追記"
+  - id: AC3
+    status: pass
+    evidence: "commit d543f3b, 3bdb1c1 を作成し、本報告に変更箇所見出しを記載"

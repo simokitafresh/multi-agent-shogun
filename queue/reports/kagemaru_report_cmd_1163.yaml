@@ -1,0 +1,61 @@
+worker_id: kagemaru
+task_id: cmd_1163_docs
+parent_cmd: cmd_1163
+timestamp: 2026-03-20 20:00:46
+status: done
+ac_version_read: af1feb1c
+result:
+  summary: AC3+AC4共に既にcommit bd5acf9で実装済み。全二値チェックPASS確認。karo.md L276-302に段取りリスト作成手順(義務化条件/S-M-L複雑度/チャンク分割指針/YAML記載例)、ashigaru.md
+    L889-924にChecklist運用手順(処理手順/checklist_update.sh使用法/clear後再開手順)が記載済み
+  details: "AC3二値チェック:\n  1. 10件以上の義務化条件がkaro.mdに記載されているか? → YES (L280)\n  2. 複雑度見積もり(S/M/L)の説明があるか?\
+    \ → YES (L285-287)\n  3. checklist:とchunk:フィールドの記載例があるか? → YES (L299-301)\n  4.\
+    \ チャンク分割指針(複雑度按分)が記載されているか? → YES (L292-294)\nAC4二値チェック:\n  1. checklist:がある場合の処理手順が記載されているか?\
+    \ → YES (L891-912)\n  2. checklist_update.shの使用手順(引数含む)が記載されているか? → YES (L899-906)\n\
+    \  3. /clear後のチェックリスト再開手順が記載されているか? → YES (L914-924)\n全7チェック PASS。commit bd5acf9で既に実装済み。"
+  self_gate_check:
+    lesson_ref: PASS
+    lesson_candidate: PASS
+    status_valid: PASS
+    purpose_fit: PASS
+purpose_validation:
+  cmd_purpose: 段取りリストの運用手順を家老・忍者の手順書に追加
+  fit: true
+  purpose_gap: ''
+files_modified:
+- instructions/karo.md
+- instructions/ashigaru.md
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既にcommit済みの内容の二値チェック検証のみ。新知見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+  '0':
+    id: L074
+    useful: false
+    reason: スクリプト変更なし。検証のみのため適用機会なし
+  '1':
+    id: L225
+    useful: false
+    reason: entity名義の正本突合は今回の作業範囲外
+  '2':
+    id: L063
+    useful: false
+    reason: YAML操作なし。検証のみのため適用機会なし
+  '3':
+    id: L223
+    useful: false
+    reason: gate/スクリプトのエラー出力設計は今回の作業範囲外
+  '4':
+    id: L085
+    useful: true
+    reason: 影響範囲の完全列挙の重要性を意識し、karo.md+ashigaru.md両方の記載内容を全行チェックした
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 1
+  details: Edit tool blocked on queue/tasks/kagemaru.yaml (yaml_field_set.sh lib/経由に変更)
+verdict: PASS

@@ -1,0 +1,58 @@
+worker_id: tobisaru
+task_id: null
+parent_cmd: cmd_1204
+timestamp: '2026-03-21T18:49:56'
+status: done
+ac_version_read: a1ed9562
+result:
+  summary: deploy_task.sh base templateにbinary_checks(空dict)+verdict(空文字)追加。review固有verdict二重追加防止。全種別(impl/recon/review)でbinary_checks/verdict含む。commit
+    79a8bdf。
+  details: 'AC1: base template(L373-374)にbinary_checks+verdict追加。AC2: review固有ブロックからverdict行除去(self_gate_checkのみ残存)。impl/reconはbase
+    templateのみ使用のため自動的に含む。git commit 79a8bdf完了。'
+purpose_validation:
+  cmd_purpose: deploy_task.sh報告テンプレートにbinary_checks/verdict追加(全種別統一)
+  fit: true
+  purpose_gap: none
+files_modified:
+- path: scripts/deploy_task.sh
+  change: base templateにbinary_checks/verdict追加+review固有verdict除去
+lesson_candidate:
+  found: false
+  no_lesson_reason: base templateへのフィールド追加+既存ブロックの重複除去のみ。新規設計判断なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: L074は((PASS++))問題。本タスクにbash算術演算なし
+- id: L225
+  useful: false
+  reason: L225はMCP entity分離問題。本タスクに無関係
+- id: L063
+  useful: false
+  reason: L063はlessons.yamlイテレーション問題。本タスクにYAMLパース操作なし
+- id: L079
+  useful: false
+  reason: L079はrelated_lessons再構築問題。本タスクはテンプレート修正のみでinject処理に触れていない
+- id: L190
+  useful: false
+  reason: L190は並列impl後のgit status問題。本タスクは単一ファイル修正
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+    '0': 'base templateにbinary_checksが追加されたか: yes'
+    1: 'base templateにverdictが追加されたか: yes'
+    2: 'review固有verdictロジックとの二重追加が防止されているか: yes'
+  AC2:
+    '0': 'implテンプレートにbinary_checks/verdictが含まれるか: yes'
+    1: 'reconテンプレートにbinary_checks/verdictが含まれるか: yes'
+    2: 'reviewテンプレートにverdictが1箇所のみか: yes'
+    3: 'git commitが成功したか: yes'
+verdict: PASS

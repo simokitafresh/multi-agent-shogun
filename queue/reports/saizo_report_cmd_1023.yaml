@@ -1,0 +1,94 @@
+worker_id: saizo
+task_id: cmd_1023_impl
+parent_cmd: cmd_1023
+timestamp: '2026-03-17T10:48:01+09:00'
+status: done
+ac_version_read: 4
+verdict: PASS
+ac_results:
+- id: AC1
+  status: pass
+  evidence: '`scripts/analysis/cmd_1023_phase3_cpcv_screening.py` を新規作成し、DM2/DM3/DM6 の Triple-E を family別設定で実行する Phase3 スクリーニング本体を実装した。DM7P は Phase3 を実行せず `cmd_1023_phase4_candidates_DM7P.csv` へ全96体を直行出力する。'
+- id: AC2
+  status: pass
+  evidence: '`outputs/analysis/cmd_1023_screening_DM2.csv` / `DM3.csv` / `DM6.csv` に全変種の候補別PBO列と 3メトリクス通過判定を出力し、`cmd_1023_survivors_DM2.csv`=6件, `DM3.csv`=0件, `DM6.csv`=3件の survivors CSV を生成した。'
+- id: AC3
+  status: pass
+  evidence: '`outputs/analysis/cmd_1023_phase3_cpcv_screening.md` に閾値0.05/0.10/0.20の感度表、candidate PBO 四分位、global logit PBO、IS-OOS rank correlation mean、runtime を family別に記録した。'
+- id: AC4
+  status: pass
+  evidence: '`python3 -m py_compile scripts/analysis/cmd_1023_phase3_cpcv_screening.py` PASS。`python3 scripts/analysis/cmd_1023_phase3_cpcv_screening.py --family DM7+` で validation 経路を先行確認し、その後 full run で DM2/DM3/DM6/DM7P 全出力を生成した。runtime は DM7P validation 0.18s、DM2 47.98s、DM3 15.33s、DM6 50.64s。'
+result:
+  summary: 'シン四神 Phase3 CPCV+PBO スクリーニングを実装し、family別 screening CSV / survivors CSV / summary md を生成した。DM2 は6件、DM3 は0件、DM6 は3件が PBO<0.05×3 を通過し、DM7P は全96体を Phase4 直行候補として出力した。'
+  details: |
+    実施内容:
+    1. `cmd_1020` CPCV engine の fold 構造・metric 実装を再利用しつつ、Phase3 orchestration を新規スクリプト化した。
+    2. DM3 の lower-is-better 指標 (`Underwater_Period`, `Left-tail_Jumps`) は L352 に従い ranking 時のみ符号反転し、CSVの生値は保持した。
+    3. 全候補CSVには parameter列 + 8 metrics + metric別 eligible_folds / candidate_pbo / candidate_lambda_mean + threshold通過フラグを保持した。
+    4. summary markdown には family別 survivors 数、感度分析、global logit PBO、candidate PBO 四分位、rank correlation、runtime を集約した。
+    5. DM7P は task 指示どおり Phase3 skip とし、engine validation 用に 96変種×3metric のみ実行して診断値を summary に載せた。
+purpose_validation:
+  cmd_purpose: シン四神 Phase3 の family別 CPCV+PBO スクリーニングを実装し、survivor 判定成果物を残す
+  fit: true
+  purpose_gap: ''
+how_it_works: |
+  - 各familyの monthly_returns wide CSV を読み、cmd_1020 engine と同じ 8群×28fold / purge1M / embargo1M を生成する。
+  - 各Triple-E metricで foldごとに train/test score を全候補へ再計算し、global champion用 logit PBO と candidate別PBOを同時集計する。
+  - candidate別PBOは「そのfoldで IS top-half に入った候補が OOS median-or-worse に落ちた割合」として集計した。
+  - 3指標すべてで threshold 未満なら `passes_pbo_005/010/020` を立て、0.05 通過行だけを survivors CSV に書き出す。
+  - DM7P は Phase3 を実行せず全96行を Phase4 candidates CSV に出力し、validation 用だけ 3metric engine 計算を走らせる。
+files_modified:
+- /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1023_phase3_cpcv_screening.py
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_phase3_cpcv_screening.md
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_screening_DM2.csv
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_screening_DM3.csv
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_screening_DM6.csv
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_survivors_DM2.csv
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_survivors_DM3.csv
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_survivors_DM6.csv
+- /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_phase4_candidates_DM7P.csv
+- /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+- /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_1023.yaml
+verification:
+- command: python3 -m py_compile /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1023_phase3_cpcv_screening.py
+  result: pass
+  notes: 新規 Phase3 スクリーニング実装の構文検証を通過。
+- command: python3 /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1023_phase3_cpcv_screening.py --family DM7+
+  result: pass
+  notes: DM7P skip経路と validation diagnostics を単独確認。`cmd_1023_phase4_candidates_DM7P.csv` と summary md を生成。
+- command: python3 /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1023_phase3_cpcv_screening.py
+  result: pass
+  notes: full run 成功。DM2/DM3/DM6 screening+survivors CSV と summary md を更新。
+- command: |
+    python3 - <<'PY'
+    import pandas as pd
+    for fam in ['DM2','DM3','DM6']:
+        df = pd.read_csv(f'/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1023_screening_{fam}.csv')
+        print(fam, len(df), int(df['passes_pbo_005'].sum()), int(df['passes_pbo_010'].sum()), int(df['passes_pbo_020'].sum()))
+    PY
+  result: pass
+  notes: survivors 件数を再確認。DM2=6/14/54、DM3=0/0/1、DM6=3/3/54。
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: dm-signal
+lessons_useful:
+- L351
+- L352
+- L346
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: true
+  title: 候補別PBO定義の正式化が必要
+  detail: '設計文書は「全変種のPBO_A/PBO_B/PBO_C」を要求する一方、cmd_1020 engine は champion単位の logit PBO のみ実装済みだった。今回の script では candidate別PBO を「IS top-half fold で OOS median-or-worse に落ちた割合」として推論実装した。Phase4 以降でこの定義を正式採用するか、別定義へ差し替えるかの裁定が必要。'
+  project: dm-signal
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

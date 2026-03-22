@@ -1,0 +1,73 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_665_review
+parent_cmd: cmd_665
+timestamp: "2026-03-08T20:37:08+09:00"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC_R1
+    status: pass
+    evidence: "`workflows/perf_measure.py`, `workflows/perf_config.yaml`, `workflows/README.md` をレビューし、AC1-5相当の実装要素が揃っていることを確認した。"
+  - id: AC_R2
+    status: pass
+    evidence: "`cdp/cdp_helper.py` の import 経路は `REPO_ROOT` 注入で正しく、`python3 -m py_compile workflows/perf_measure.py cdp/cdp_helper.py` も成功した。"
+  - id: AC_R3
+    status: pass
+    evidence: "`feat(workflows): add DM-signal perf measurement workflow (cmd_665)` を commit `7ec6b1b` で作成し、`git push origin main` 成功を確認した。"
+result:
+  summary: "cmd_665 review PASS。DM-signal体感速度計測ワークフロー3ファイルをレビューし、構文・設定・CLI経路を確認した上で commit `7ec6b1b` を `origin/main` へ push 完了。"
+  details: |
+    確認内容:
+    1. `workflows/perf_measure.py` は 16ページ設定を巡回し、JSON/Markdown 出力、baseline比較、スクリーンショット保存を実装している。
+    2. `workflows/perf_config.yaml` は 16ページ分の key/path/wait_selectors/threshold_ms を定義し、`defaults.runs` を含む設定上書き点を備える。
+    3. `workflows/README.md` は前提条件、CLI使用例、出力形式を記載している。
+    4. `cdp/cdp_helper.py` の import は `REPO_ROOT` を `sys.path` へ追加する形で整合している。
+    5. 静的検証として `python3 -m py_compile workflows/perf_measure.py cdp/cdp_helper.py` と `python3 workflows/perf_measure.py --help` を実行し成功した。
+    6. `localhost:3000` は不在だったため、全16ページの実測E2Eは未実施。タスク注記に従い、今回はコードレビュー+構文確認ベースで承認した。
+purpose_validation:
+  cmd_purpose: "DM-signal体感速度計測ワークフローのレビュー+commit+push。"
+  fit: true
+  purpose_gap: "実測対象 localhost:3000 が不在のため、全16ページの実ラン確認は未実施。ただしタスク注記どおりレビュー+構文確認で判定した。"
+files_modified:
+  - /mnt/c/Python_app/auto-ops/workflows/perf_measure.py
+  - /mnt/c/Python_app/auto-ops/workflows/perf_config.yaml
+  - /mnt/c/Python_app/auto-ops/workflows/README.md
+verification:
+  - command: "python3 -m py_compile workflows/perf_measure.py cdp/cdp_helper.py"
+    result: pass
+    notes: "Python構文検証は終了コード0。"
+  - command: "python3 workflows/perf_measure.py --help"
+    result: pass
+    notes: "CLI引数 `--config --pages --baseline --base-url --runs` を表示。"
+  - command: "python3 - <<'PY' ... yaml.safe_load('workflows/perf_config.yaml') ..."
+    result: pass
+    notes: "設定ファイルから 16ページ定義を読めることを確認。"
+  - command: "curl -I --max-time 5 http://localhost:3000"
+    result: fail
+    notes: "接続不可。実測E2E未実施の根拠。"
+  - command: "git push origin main"
+    result: pass
+    notes: "`2c9611e..7ec6b1b main -> main` を確認。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful:
+  - id: L172
+    useful: true
+    reason: "`git branch -vv` と `git rev-parse HEAD @{u}` で ahead 1 を確認してから push できた。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

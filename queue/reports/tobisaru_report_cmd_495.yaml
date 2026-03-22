@@ -1,0 +1,103 @@
+worker_id: tobisaru
+task_id: subtask_495_recon_pnl_impact
+parent_cmd: cmd_495
+timestamp: "2026-03-03T20:39:10+0900"
+status: done
+result:
+  summary: "7PFのA/B損益差分を算出。最大差分はDM-safe-2で-160.89bp（B-A）。抜き身-激攻は0bp。価格欠損は0件。"
+  details: |
+    前提:
+    - A(誤表示想定): 2026-02-27保有
+    - B(本来3月): 2026-03-02保有
+    - エントリー: 2026-03-02 open
+    - 評価: 2026-03-02 close / 最新close
+
+    実測結果（差分 B-A）:
+    - DM-safe: -80.69bp
+    - DM-safe-2: -160.89bp
+    - Ave-X: +125.09bp
+    - 裏Ave-X: +98.61bp
+    - 劇薬DMスムーズ: -61.72bp
+    - 劇薬DMオリジナル: -28.66bp
+    - 抜き身-激攻: +0.00bp
+
+    価格欠損:
+    - なし（補完発動なし）
+
+    成果物:
+    - docs/research/cmd_495_wrong-signal-impact-march.md
+    - docs/research/scripts/cmd_495_calc_pnl_diff.py
+
+findings:
+  - id: F1
+    title: "7PF全件の差分算定完了（ゼロ差分PFを含む）"
+    evidence:
+      - "docs/research/cmd_495_wrong-signal-impact-march.md §6"
+      - "抜き身-激攻は差分0.00bpを明記"
+    impact: "追達要件（PF別必須テーブル、ゼロ差分0明記、空欄禁止）を満たす。"
+  - id: F2
+    title: "価格欠損は0件"
+    evidence:
+      - "再現スクリプト出力: missing_tickers = NONE"
+      - "docs/research/cmd_495_wrong-signal-impact-march.md §4"
+    impact: "損益差分は補完なしの実値で比較可能。"
+  - id: F3
+    title: "最新引けが2026-03-02のため2軸差分が一致"
+    evidence:
+      - "calc出力 latest_close_date = 2026-03-02"
+      - "3/2寄→3/2引 と 3/2寄→最新引 の差分が全PF一致"
+    impact: "最新引け軸は追加乖離なし（本実行時点）。"
+
+verdict: "AC1-AC4を満たして偵察完了。"
+confidence: "medium-high"
+blind_spots:
+  - "A=2026-02-27保有、B=2026-03-02保有という定義で算定。A/B定義変更時は再計算が必要。"
+  - "最新引けが2026-03-02で固定されており、3/3以降の価格反映後は再評価余地がある。"
+
+purpose_validation:
+  cmd_purpose: "誤表示Aと本来Bのポジション差が、3/2建てでどの程度の損益差分を生んだかを定量化する"
+  fit: true
+  purpose_gap: ""
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/docs/research/scripts/cmd_495_calc_pnl_diff.py
+  - /mnt/c/tools/multi-agent-shogun/docs/research/cmd_495_wrong-signal-impact-march.md
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report_cmd_495.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "7PFについて A/B差分（3/2寄→3/2引、3/2寄→最新引）をbp/%で算出し、§6表へ記載"
+  - id: AC2
+    status: pass
+    evidence: "価格欠損なしを確認。補完方針（>=start open / <=target close）を§4へ明記"
+  - id: AC3
+    status: pass
+    evidence: "再実行スクリプト docs/research/scripts/cmd_495_calc_pnl_diff.py を追加し、実行手順を§3へ記載"
+  - id: AC4
+    status: pass
+    evidence: "queue/reports/tobisaru_report_cmd_495.yaml を提出"
+
+lessons_useful:
+  - id: L024
+    useful: true
+    reason: "成果物をdocs/researchへ残し、後続上書きで情報消失しない形に固定。"
+  - id: L109
+    useful: true
+    reason: "計算スクリプトを単体実行で短時間完了させ、停滞を回避。"
+  - id: L107
+    useful: true
+    reason: "データ源（prices/signals）と成果物（report/doc）を分離して記録。"
+
+lesson_candidate:
+  found: true
+  title: "比較軸に『最新引け』を含む調査は latest_close_date を先に確定すべき"
+  detail: "本件は latest_close_date=2026-03-02 で 3/2引けと同値だった。先に最新日を確定しておくと、軸が実質重複かどうかを早期判定できる。"
+  project: dm-signal
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: false

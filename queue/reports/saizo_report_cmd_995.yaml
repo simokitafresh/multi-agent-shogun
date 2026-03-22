@@ -1,0 +1,72 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_995
+parent_cmd: cmd_995
+timestamp: "2026-03-16T09:15:43+0900"
+status: failed
+ac_version_read: 2
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`.githooks/pre-push` の `timeout 120` を `300` に変更し、timeout時メッセージも `exceeded 300 seconds` に修正。`bash -n .githooks/pre-push` PASS。commit `8df3b74` 作成済み。"
+  - id: AC2
+    status: fail
+    evidence: "`git push origin main` 実行時、pre-push unit tests が `tests/unit/test_pre_push_hook.bats` の旧期待値 `^120 bats tests/unit/ --jobs 4 --timing$` で失敗。remote `origin/main` は `94f0165` のままで、`8df3b74` は未push。"
+diff_check:
+  changed_by_saizo: true
+  commit_required: false
+  note: "スコープ指示どおり `.githooks/pre-push` のみ修正して commit。push blocker は `tests/unit/test_pre_push_hook.bats` のハードコード期待値だが、当該ファイルは未変更。"
+result:
+  summary: "`.githooks/pre-push` の timeout 修正と commit は完了したが、push は pre-push unit test の旧期待値で BLOCK。"
+  details: |
+    実施:
+    - `.githooks/pre-push`
+      - `timeout 120 bats tests/unit/ --jobs 4 --timing` → `timeout 300 bats tests/unit/ --jobs 4 --timing`
+      - `BLOCKED: unit tests exceeded 40 seconds.` → `BLOCKED: unit tests exceeded 300 seconds.`
+    - `bash -n .githooks/pre-push` PASS
+    - `git commit -m "fix: pre-push hook timeout 120→300秒+メッセージ修正"` → commit `8df3b74`
+
+    push失敗の一次原因:
+    - `git push origin main` で pre-push hook が 294 tests を実行
+    - test 241 `pre-push runs bats tests/unit with timeout 120 and jobs 4` が FAIL
+    - `tests/unit/test_pre_push_hook.bats:62` が `^120 bats tests/unit/ --jobs 4 --timing$` を要求しており、修正後 hook の `300` と不一致
+    - その結果 `BLOCKED: unit tests failed. Push aborted.`
+
+    現在のgit状態:
+    - `HEAD` = `8df3b74` (pre-push timeout fix)
+    - `origin/main` = `94f0165` (cmd_995 Rate Limit修正)
+    - cmd_995本体 (`94f0165`) は remote 済み。未pushは本修正commitのみ。
+purpose_validation:
+  cmd_purpose: "pre-push hookのtimeout問題を修正し、cmd_995 commitをpushできる状態にする"
+  fit: true
+  purpose_gap: "cmd_995本体(94f0165)は影丸がpush済み。pre-push timeout修正commitは未pushだがcmd_995目的は達成。"
+files_modified:
+  - .githooks/pre-push
+  - queue/tasks/saizo.yaml
+  - queue/reports/saizo_report_cmd_995.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L220
+    useful: true
+    reason: "commit/push対象を `.githooks/pre-push` に限定し、queue系は stage しない進め方が今回も必要だった。"
+  - id: L223
+    useful: true
+    reason: "BLOCKメッセージと failing test 名から、停止位置が hook 本体ではなく unit test 側だと素早く切り分けできた。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: true
+  title: "pre-push timeout修正の正本を unit test まで広げるか判断が必要"
+  detail: "現タスクのスコープは `.githooks/pre-push` のみだが、pushを通すには `tests/unit/test_pre_push_hook.bats` の期待値 120→300 更新が必要。スコープ拡張か別cmd化の判断を願う。"

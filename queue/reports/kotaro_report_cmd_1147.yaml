@@ -1,0 +1,46 @@
+ac_version_read: unknown
+decision_candidate:
+  found: false
+files_modified: scripts/cmd_save.sh (新規作成), instructions/shogun.md (cmd起票手順追記)
+hook_failures:
+  count: 0
+  details: ''
+lesson_candidate:
+  detail: ''
+  found: false
+  no_lesson_reason: 定型スクリプト作成タスク。新たな知見なし
+  project: infra
+  title: ''
+lessons_useful:
+- id: L074
+  reason: 算術演算なし。本タスクに該当せず
+  useful: false
+parent_cmd: cmd_1147
+project: infra
+purpose_validation:
+  cmd_purpose: cmd保存スクリプト新設
+  fit: true
+  purpose_gap: ''
+results:
+  AC1:
+    evidence: "scripts/cmd_save.sh 作成完了。全binary_checks PASS。\n1. ファイル存在: yes\n2. chmod\
+      \ +x: yes\n3. cmd_id存在確認ロジック: grep -q CMD_ID shogun_to_karo.yaml\n4. 重複チェック:\
+      \ ls archive/cmds/CMD_ID_completed_*.yaml\n5. flock競合検出: flock -n 200 ノンブロッキング試行\n\
+      6. bash -n: エラーなし\nテスト結果:\n  引数なし → Usage + exit 1\n  既存cmd (1077) → 保存確認OK\n\
+      \  cmd_プレフィックス付き (cmd_1077) → 保存確認OK\n  存在しないcmd (9999) → WARN: ブロック未発見\n  アーカイブ済みcmd\
+      \ (1000) → WARN: 重複+ブロック未発見(2件)"
+    status: PASS
+  AC2:
+    status: PASS
+    evidence: 'shogun.md検証: cat>>禁止(1件), 3段階手順(3件), 学習機会(6件) — 全てgrep確認済み'
+  AC3:
+    status: PASS
+    evidence: '全6項目PASS: cmd_save.sh存在+実行可能, 重複WARN(cmd_1000), flock競合検出, cat>>禁止記載,
+      3段階手順記載, 学習機会記載'
+skill_candidate:
+  found: false
+status: done
+task_id: cmd_1147_impl
+timestamp: '2026-03-20T17:25:00'
+verdict: PASS
+worker_id: kotaro

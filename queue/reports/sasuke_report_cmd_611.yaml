@@ -1,0 +1,82 @@
+worker_id: sasuke
+task_id: subtask_611_impl_a
+parent_cmd: cmd_611
+timestamp: "2026-03-06T18:06:35+09:00"
+status: done
+ac_version_read: 4
+verdict: PASS
+
+result:
+  summary: "lesson_impact.tsv の更新停止原因は、追記側が `task_id/subtask_id` を `cmd_id` 列へ書く一方、`cmd_complete_gate.sh` の更新側が親 `cmd_id` だけで pending 行を探していた不一致でござる。`scripts/cmd_complete_gate.sh` を両形式対応へ修正し、subtask 行でも `result=CLEAR` と `referenced=yes/no` が更新される回帰テストを追加した。"
+  details: |
+    1) 原因特定
+    - `scripts/deploy_task.sh:826-841` は lesson_impact.tsv の `cmd_id` 列へ `task_id` 優先で書き込む。
+    - この形式への切替は `cmd_465`（commit `494b43e`, 2026-03-01）で入っており、実データでも最初の subtask 行は `subtask_464_push` だった。
+    - 一方 `scripts/cmd_complete_gate.sh:756-760` は親 `cmd_id` と一致する pending 行しか更新していなかったため、subtask 行が永続的に pending のまま残っていた。
+
+    2) 修正
+    - `scripts/cmd_complete_gate.sh` で、親 cmd 配下の task YAML から `task_id` / `subtask_id` / `parent_cmd` を収集し、lesson_impact.tsv 更新対象を複数 ID で照合するよう変更。
+    - 各 task に対応する report YAML の `lessons_useful` を読み、row 単位で `referenced=yes/no` を書き戻すよう補強。
+    - 旧形式の親 `cmd_id` 行も更新対象に残し、後方互換を維持。
+
+    3) 検証
+    - `bash -n scripts/cmd_complete_gate.sh` 成功。
+    - `bats tests/unit/test_cmd_complete_gate.bats` 4件 PASS。
+    - 新規追加テストで、`cmd_id=subtask_test` 行が `CLEAR/yes`・`CLEAR/no` に更新され、併せて旧形式 `cmd_999` 行も `CLEAR/no` に更新されることを確認。
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`scripts/deploy_task.sh` が `task_id/subtask_id` を書き、`scripts/cmd_complete_gate.sh` が親 `cmd_id` のみで更新していた齟齬を特定し、更新対象IDを複数照合に修正。"
+  - id: AC2
+    status: pass
+    evidence: "report YAML の `lessons_useful` を task 単位で解決し、対応 row の `referenced=yes/no` を更新する処理を追加。"
+  - id: AC3
+    status: pass
+    evidence: "`tests/unit/test_cmd_complete_gate.bats` に subtask 行の更新テストを追加し、`result=CLEAR` への更新を確認。"
+  - id: AC4
+    status: pass
+    evidence: "同テストで `lessons_useful: [L100]` から `referenced=yes/no` が正しく書き戻ることを確認。"
+
+test_results:
+  - command: "bash -n scripts/cmd_complete_gate.sh"
+    result: pass
+    notes: "構文エラーなし。"
+  - command: "bats tests/unit/test_cmd_complete_gate.bats"
+    result: pass
+    notes: "4 tests passed。追加した subtask 回帰テストを含む。"
+
+findings:
+  - file: scripts/deploy_task.sh
+    line: 826
+    severity: high
+    category: regression
+    description: "`lesson_impact.tsv` の `cmd_id` 列が実際には parent cmd ではなく `task_id/subtask_id` に切り替わっていた。"
+    fix_suggestion: "consumer 側は parent cmd だけを前提にせず、task YAML から関連 row ID を再構築して更新する。"
+  - file: scripts/cmd_complete_gate.sh
+    line: 756
+    severity: high
+    category: bug
+    description: "pending 行更新が親 `cmd_id` 一致に固定され、subtask 行が結果未反映のまま残っていた。"
+    fix_suggestion: "親 cmd 配下 task の `task_id/subtask_id/parent_cmd` をすべて更新対象に含める。"
+
+files_checked:
+  - /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/cmd_complete_gate.sh
+  - /mnt/c/tools/multi-agent-shogun/tests/unit/test_cmd_complete_gate.bats
+  - /mnt/c/tools/multi-agent-shogun/logs/lesson_impact.tsv
+  - /mnt/c/tools/multi-agent-shogun/projects/infra.yaml
+  - /mnt/c/tools/multi-agent-shogun/projects/infra/lessons.yaml
+  - /mnt/c/tools/multi-agent-shogun/context/infrastructure.md
+
+lessons_useful:
+  - L063
+
+lesson_candidate:
+  found: true
+  title: "追跡ログのキーを producer/consumer で変える時は両側同時に整合させよ"
+  detail: "IF 追跡TSVやqueueの識別子を parent_cmd から task_id/subtask_id へ変更する時 THEN 書き込み側だけでなく集計・更新・分析の consumer 全部で同じキー体系へ同期せよ because producer/consumer の識別子不一致は静かに pending 残留を生み、監視が遅れて壊れるため"
+  project: infra
+
+decision_candidate:
+  found: false

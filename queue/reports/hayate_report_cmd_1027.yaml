@@ -1,0 +1,132 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_1027_review
+parent_cmd: cmd_1027
+timestamp: "2026-03-17T15:09:45"
+status: done
+ac_version_read: 2
+verdict: FAIL
+review_result:
+  status: FAIL
+  verdict: FAIL
+  findings:
+    - severity: high
+      area: AC4
+      detail: |
+        `queue/reports/kirimaru_report_cmd_1027.yaml` は 32体の総時間を 12体既知単価から外挿しており、
+        同cmdの実測成果物 `outputs/analysis/cmd_1027_shin_ninpou_benchmark.md` と整合しない。
+        具体的には oikaze `277s` vs 実測見積 `1.75h`、kawarimi `110s` vs `2.19h`、
+        nukimi `342s` vs `3.73h`、kasoku `2256s` vs `68.17h` で、評価根拠が 22.7x / 71.6x / 39.3x / 108.8x ずれている。
+        AC4の「各選択肢の評価が妥当か」を満たさないため、全体 verdict は FAIL。
+ac_results:
+  AC_R1:
+    status: FAIL
+    detail: |
+      AC1-AC3 は PASS 相当だった。
+      - AC1: `outputs/analysis/cmd_1027_shin_ninpou_benchmark.md` のパリティ表と
+        `outputs/analysis/cmd_1027_shin_ninpou_benchmark.json` を照合し、
+        bunshin/oikaze/nukimi/kawarimi/kasoku は sampled `near_match`、yotsume は `smoke_only` で整合。
+      - AC2: JSON 内の `sample_count=150`、subset size別平均の単純平均が `mean_ms_per_pattern` と一致し、
+        32体ベンチ表の数値転記も一致。
+      - AC3: 32体総パターン数は module param grid から再計算し、
+        bunshin `41,416` / oikaze `1,490,976` / nukimi `3,230,448` /
+        kawarimi `1,490,976` / kasoku `12,673,296` / yotsume `248,496`
+        を確認。見積り合計 `75.95h`、8忍者並列 `68.17h`、理想下限 `9.49h` も JSON と一致。
+
+      ただし AC4 は FAIL。
+      `queue/reports/kirimaru_report_cmd_1027.yaml` の「32体での multiprocessing 適用可能性」は
+      実測前提ではなく 12体既知 ms/pat をそのまま使っており、同cmdの AC2/AC3 実測と矛盾する。
+      report 内の総時間見積は
+      - oikaze `277s` → 実測 `1.75h`
+      - kawarimi `110s` → 実測 `2.19h`
+      - nukimi `342s` → 実測 `3.73h`
+      - kasoku `2256s` → 実測 `68.17h`
+      で大幅に過小評価。
+      速度ボトルネックの重み付けが変わるため、選択肢評価・推奨順位を「妥当」とは判定できない。
+  AC_R2:
+    status: FAIL
+    detail: |
+      review verdict が FAIL のため commit / push は未実施。
+diff_check:
+  repo: /mnt/c/Python_app/DM-signal
+  status: FAIL
+  detail: |
+    確認対象:
+    - `queue/reports/sasuke_report_cmd_1027.yaml`
+    - `queue/reports/kirimaru_report_cmd_1027.yaml`
+    - `outputs/analysis/cmd_1027_shin_ninpou_benchmark.{md,json}`
+    - `scripts/analysis/cmd_1027_shin_ninpou_benchmark.py`
+    - `outputs/analysis/shin_shijin_design.md`
+
+    検証内容:
+    - `cmd_1027_shin_ninpou_benchmark.json` の subset平均と `mean_ms_per_pattern` 一致を確認
+    - run_077_* の param grid から 32体総パターン数を再計算し、AC3表と一致を確認
+    - `kirimaru_report_cmd_1027.yaml` の総時間見積を AC2/AC3 実測と比較し、不整合を検出
+
+    結論:
+    - sasuke成果物は妥当
+    - kirimaru成果物は speedup知見要約・選択肢列挙までは有用だが、32体総時間評価が同cmd実測と不一致
+      のため cmd 全体としては FAIL
+result:
+  summary: "FAIL。AC1-AC3 は整合したが、AC4 の時間評価が 32体実測ではなく 12体既知単価ベースで、同cmdのベンチ結果と矛盾した。"
+  details: |
+    実施内容:
+    1. `projects/dm-signal.yaml` / `projects/dm-signal/lessons.yaml` / `context/dm-signal.md` を読んで review 前提を確認。
+    2. `queue/reports/sasuke_report_cmd_1027.yaml` と `queue/reports/kirimaru_report_cmd_1027.yaml` を精読。
+    3. `scripts/analysis/cmd_1027_shin_ninpou_benchmark.py`、`outputs/analysis/cmd_1027_shin_ninpou_benchmark.md`、
+       `outputs/analysis/cmd_1027_shin_ninpou_benchmark.json` を照合し、AC1-AC3 の数値整合を確認。
+    4. run_077_* module の param grid から 32体総パターン数を再計算し、AC3 の全件数を再検算。
+    5. AC4 の総時間見積と AC2/AC3 実測見積を比較し、不整合を確認。
+
+    判定:
+    - sasuke report は PASS。パリティ結果、150 pattern/忍法ベンチ、全量見積りは整合。
+    - kirimaru report は speedup知見索引や削減案 7件自体は参照として有用。
+      ただし「32体でも総時間は oikaze 277s / kawarimi 110s / nukimi 342s / kasoku 2256s」という評価は、
+      同cmdで得た実測見積 `1.75h / 2.19h / 3.73h / 68.17h` と一致しない。
+      そのため AC4 の「評価が妥当」は満たせず、全体 verdict は FAIL。
+purpose_validation:
+  cmd_purpose: "cmd_1027の全成果物をレビューし、PASS時のみcommit+pushする"
+  fit: true
+  purpose_gap: "レビュー自体は完了したが、AC4不整合により PASS 条件未達のため commit/push は未実施。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_1027.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+verification:
+  - command: "python3 - <<'PY' ... param grid count check ... PY"
+    result: pass
+    notes: "32体総パターン数は bunshin 41,416 / oikaze 1,490,976 / nukimi 3,230,448 / kawarimi 1,490,976 / kasoku 12,673,296 / yotsume 248,496 で AC3 と一致。"
+  - command: "python3 - <<'PY' ... benchmark json consistency check ... PY"
+    result: pass
+    notes: "`sample_count=150`、subset別平均の単純平均=`mean_ms_per_pattern`、estimate totals `75.95h / 68.17h / 9.49h` を確認。"
+  - command: "nl -ba queue/reports/kirimaru_report_cmd_1027.yaml | sed -n '38,118p'"
+    result: fail
+    notes: "AC4 は 12体既知単価から 32体総時間を外挿しており、同cmd実測見積と不一致。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L357
+    useful: true
+    reason: "本番/現行データでの live 確認を優先し、旧ミラーや静的資料の推測で済ませない観点として有効だった。"
+  - id: L360
+    useful: false
+    reason: "大規模GSのチャンク運用教訓であり、今回のレビュー観点には直接関与しない。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

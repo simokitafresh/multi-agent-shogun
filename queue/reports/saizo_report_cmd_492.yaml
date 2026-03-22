@@ -1,0 +1,137 @@
+worker_id: saizo
+task_id: subtask_492_recon_a
+parent_cmd: cmd_492
+timestamp: "2026-03-02T03:12:14+09:00"
+status: done
+result:
+  summary: "docs/rule + docs/architecture と実コードの突合を完了。高優先の不一致12件を特定（critical 2 / major 7 / minor 3）。"
+  details: |
+    不一致リスト（file / line / claim / reality / severity / recommendation）:
+
+    - file: docs/rule/api-usage-guide.md
+      line: 1, 12, 69, 845-854
+      claim: DM-signalリポジトリのAPIとして /v1 系エンドポイントと app/api/v1/*.py を案内
+      reality: backend実装に /v1 ルータは存在せず、実装は /api/* と /admin/*（例: backend/app/api/signals.py, backend/app/api/etl_trigger.py, backend/app/main.py）
+      severity: critical
+      recommendation: 本ファイルを「外部Stock Data API仕様」と明示分離するか、DM-signal向け内容へ全面改訂
+
+    - file: docs/rule/trade-rule.md
+      line: 921, 934-936
+      claim: Frontendデータソースが /api/v1/signals, /api/v1/portfolios/{id}/history, /api/v1/portfolios/{id}/performance
+      reality: frontend/lib/api-client.ts は /api/signals, /api/history/{id}, /api/performance/{id} を使用（line 753, 756, 759）
+      severity: critical
+      recommendation: /api/v1 記述を現行APIパスへ修正
+
+    - file: docs/rule/shijin-pf-creation-runbook.md
+      line: 19, 28, 132, 135, 161, 164-166
+      claim: family_grid_search.py と create_dc_shijin.py/create_prod_shijin.py/rename_prod_create_cagr_shijin.py を使用
+      reality: 当該ファイルはリポジトリ内に存在しない（scripts/analysis/grid_search 配下は run_077_* と grid_search_metrics_v2.py 等のみ）
+      severity: major
+      recommendation: 現存スクリプト（run_077_* / register系）に合わせて手順を再記述
+
+    - file: docs/rule/ninpou-fof-creation-runbook.md
+      line: 476, 657
+      claim: scripts/analysis/create_dc_shijin.py を雛形として利用
+      reality: scripts/analysis/create_dc_shijin.py は存在しない
+      severity: major
+      recommendation: 雛形として使う実在スクリプトに差し替えるか、テンプレコードをドキュメント内完結に変更
+
+    - file: docs/rule/local-postgresql-guide.md
+      line: 55, 74, 77, 118, 124, 163, 166, 219, 222
+      claim: scripts/setup_local_db.py でローカルPostgreSQL初期化・状態確認
+      reality: scripts/setup_local_db.py は存在しない（backend/scripts/setup_local_data.py は存在）
+      severity: major
+      recommendation: 実在コマンドへ更新し、backend配下実行前提（cd backend など）を明記
+
+    - file: docs/rule/database-info.md
+      line: 519, 522
+      claim: クイックスタートで scripts/setup_local_db.py を実行
+      reality: 同スクリプト不在
+      severity: major
+      recommendation: local-postgresql-guide と同時に実コマンドへ修正
+
+    - file: docs/rule/return-consistency-verification.md
+      line: 55-58, 104, 194, 251
+      claim: scripts/verify_return_vs_price.py 等4スクリプトで検証
+      reality: 4スクリプトはリポジトリ内に存在しない
+      severity: major
+      recommendation: 現行の検証スクリプトへ置換、または手順をAPI/SQLベースに改訂
+
+    - file: docs/rule/local-verification-guide.md
+      line: 472-503
+      claim: scripts/verify/* や scripts/analysis/* の多数スクリプトが存在
+      reality: 多数不在（例: scripts/verify/ ディレクトリ自体なし）。また timing_utils.py は scripts/analysis/ には存在するが記載先が scripts/analysis/data_sync/ で誤り
+      severity: major
+      recommendation: 実在ファイル一覧を再生成し、パスを実構成に合わせて更新
+
+    - file: docs/rule/security-status.md
+      line: 637
+      claim: frontend/contexts/ViewerAuthContext.tsx が認証状態Context
+      reality: 実装は frontend/contexts/viewer-permissions-context.tsx（app/layout.tsx などが import）
+      severity: minor
+      recommendation: ファイル名とContext名を現行実装へ合わせる
+
+    - file: docs/architecture/Performance-001.md
+      line: 229
+      claim: フロントエンドのキャッシュロジック確認対象が lib/api.ts
+      reality: 実ファイルは frontend/lib/api-client.ts（lib/api.ts は不存在）
+      severity: minor
+      recommendation: 参照先を api-client.ts に修正
+
+    - file: docs/architecture/Performance.md
+      line: 652, 758, 915, 1048-1049
+      claim: backend/scripts/compare_precomputed.py, backend/scripts/test_trade_perf.py, profile_metrics.py, test_metrics_cache.py を使用
+      reality: 当該ファイルは存在しない
+      severity: major
+      recommendation: 再現可能な現行スクリプト/テストコマンドへ更新し、再計測手順を再作成
+
+    - file: docs/architecture/backend-deep-dive.md
+      line: 321-322, 327, 329
+      claim: scripts/verify_truth.py / scripts/verify_rebalance_comprehensive.py をそのまま実行
+      reality: 実体は backend/scripts/* 配下（backend/scripts/verify_truth.py, backend/scripts/verify_rebalance_comprehensive.py）
+      severity: minor
+      recommendation: 表記を backend/scripts/* に統一、または「cd backend」前提を明示
+purpose_validation:
+  cmd_purpose: "docs/rule/*.md と docs/architecture/*.md を実コードに突合し、不一致をseverity付きで洗い出す"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - queue/tasks/saizo.yaml
+  - queue/reports/saizo_report_cmd_492.yaml
+test_results:
+  - command: "rg --files docs/rule docs/architecture"
+    result: pass
+  - command: "rg -n (対象記述) docs/rule/*.md docs/architecture/*.md"
+    result: pass
+  - command: "rg --files scripts backend/scripts frontend/contexts frontend/lib"
+    result: pass
+  - command: "rg -n APIRouter(prefix=\"/v1|@router.../v1 backend/app/main.py backend/app/api/*.py"
+    result: pass
+lessons_useful:
+  - L107
+  - L103
+  - L112
+  - L060
+  - L042
+  - L109
+  - L074
+  - L063
+lesson_candidate:
+  found: true
+  title: "ドキュメント実在性チェックをCI化しないと運用手順が容易に陳腐化する"
+  detail: "今回、主要runbookで実在しないスクリプト参照が複数残存。docs内パスを抽出して存在確認するlint（missing-path gate）を導入すべき。"
+  project: dm-signal
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "docs/rule/*.md を全走査し、実コードとの不一致（critical/major/minor）を抽出。"
+  - id: AC2
+    status: pass
+    evidence: "docs/architecture/*.md を全走査し、実コードとの不一致を抽出。"
+  - id: AC3
+    status: pass
+    evidence: "全不一致に severity と recommendation を付与。"

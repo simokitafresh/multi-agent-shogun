@@ -1,0 +1,88 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_960
+parent_cmd: cmd_960
+timestamp: "2026-03-15T19:57:28+0900"
+status: done
+ac_version_read: 1
+verdict: PASS
+ac_results:
+  - id: AC2
+    status: pass
+    evidence: "`scripts/ntfy_batch.sh` / `scripts/ntfy_batch_flush.sh` を新規作成し、`ninja_monitor.sh` に 15 分フラッシュを追加。`archive_completed.sh` / `sync_lessons.sh` / `ci_status_check.sh` / `usage_monitor.sh` を HIGH/INFO 分類へ更新した。"
+result:
+  summary: "ntfy INFO バッチ基盤を追加し、指定 4 スクリプトの通知経路を HIGH 即時 / INFO バッチへ切り分けた。"
+  details: |
+    実施内容:
+    - `scripts/ntfy_batch.sh` を新規作成し、`queue/ntfy_batch_queue.txt` へ `timestamp|message` 形式で追記する flock 排他キューを実装。
+    - `scripts/ntfy_batch_flush.sh` を新規作成し、キュー全件を 1 通にまとめて `ntfy.sh` 経由で送信し、成功後にキューを空にする処理を実装。
+    - `scripts/ninja_monitor.sh` に `NTFY_BATCH_FLUSH_INTERVAL=900` と `check_ntfy_batch_flush()` を追加し、監視ループから 15 分ごとにフラッシュするよう接続。
+    - `scripts/archive_completed.sh` の postcondition 通知を INFO バッチへ変更。
+    - `scripts/sync_lessons.sh` の件数乖離通知を INFO バッチへ変更。
+    - `scripts/ci_status_check.sh` を run 単位の通知状態管理へ更新し、FAIL は `ntfy.sh` 即時、SUCCESS は `ntfy_batch.sh` 蓄積へ変更。
+    - `scripts/usage_monitor.sh` を HIGH/INFO 分類に寄せ、閾値超過は即時通知、alert 復帰時のみ recovery INFO をバッチ送信するよう更新。
+    - `.gitignore` に新規スクリプトと `queue/ntfy_batch_queue.txt` を追加。
+
+    補足:
+    - `cmd_complete_gate.sh` は指示どおり未変更。
+    - `ntfy.sh` のインターフェースは未変更。
+purpose_validation:
+  cmd_purpose: "cmd_960 AC2: ntfy通知バッチ化スクリプトを新規作成し、重要度分類(HIGH/INFO)による即時送信/バッチ送信の切り分けを実装する。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/.gitignore
+  - /mnt/c/tools/multi-agent-shogun/scripts/archive_completed.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/ci_status_check.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/ninja_monitor.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/sync_lessons.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/usage_monitor.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/ntfy_batch.sh
+  - /mnt/c/tools/multi-agent-shogun/scripts/ntfy_batch_flush.sh
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_960.yaml
+verification:
+  - command: bash -n scripts/ntfy_batch.sh
+    result: pass
+    notes: 新規キュースクリプトの構文確認。
+  - command: bash -n scripts/ntfy_batch_flush.sh
+    result: pass
+    notes: 新規フラッシュスクリプトの構文確認。
+  - command: bash -n scripts/ninja_monitor.sh
+    result: pass
+    notes: 15分フラッシュ統合後も monitor 全体の bash 構文が壊れていないことを確認。
+  - command: bash -n scripts/archive_completed.sh scripts/ci_status_check.sh scripts/usage_monitor.sh
+    result: pass
+    notes: 既存呼出元の更新後も構文が通ることを確認。
+  - command: bash scripts/ci_status_check.sh --status
+    result: pass
+    notes: 実行結果 `GREEN`。通知を飛ばさない確認モードで正常応答。
+  - command: bash scripts/ntfy_batch_flush.sh
+    result: pass
+    notes: 空キューで no-op 正常終了し、`queue/ntfy_batch_queue.txt` が 0 行のまま維持されることを確認。
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: monitor 側の周期処理追加時に `((var++))` を避け、既存方針どおり `$((...))` で安全に実装する判断に使った。
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

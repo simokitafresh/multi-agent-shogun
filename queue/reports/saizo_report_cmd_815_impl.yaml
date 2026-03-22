@@ -1,0 +1,99 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_815_impl
+parent_cmd: cmd_815
+timestamp: "2026-03-12T09:16:15+0900"
+status: failed
+ac_version_read: 4
+result:
+  summary: "preflight-first統合コード自体は既に実装済みで、回帰防止テスト4件を追加してAC1/AC2/AC4を再確認した。しかしブラウザ既起動かつlocalhost計測対象停止中のため、AC3の未起動→自動起動→計測完了の実証は取得できず、完了判定は不可。"
+  details: |
+    実施内容:
+    1. `projects/auto-ops.yaml` / `projects/auto-ops/lessons.yaml` / `context/auto-ops.md` を確認し、現行正規パスが `workflows/perf_measure.py` であることを再確認。
+    2. `cdp/cdp_helper.py` を確認し、`preflight_cdp_flow()` が Step1=ブラウザプロセス確認 → Step2=未起動時のみ `launch_browser()` → Step3=`preflight_cdp_check()` → Step4=計測継続 の順で統合済みであることを確認。
+    3. `workflows/perf_measure.py` を確認し、`main()` が `preflight_cdp_flow()` を先に呼び、失敗時は `_notify_browser_failure()` 後に `return 1` して `get_tab_id()` へ進まないことを確認。
+    4. 回帰防止のため `tests/test_cdp_preflight.py` を追加し、以下4件を `python3 -m unittest tests.test_cdp_preflight` でPASS確認:
+       - 未起動時は `launch_browser()` が `preflight_cdp_check()` より先に呼ばれる
+       - 自動起動失敗時は次段へ進まず `RuntimeError`
+       - 既起動時は `launch_browser()` を呼ばず `preflight_cdp_check()` へ進む
+       - `perf_measure.main()` は preflight失敗時に早期returnし、`get_tab_id()` / `enable_browser_domains()` を呼ばない
+    5. 実機検証前提を確認:
+       - Windows側 `chrome` プロセスが既に稼働中
+       - `http://localhost:9223/json/version` は応答し、Step1は「検出」、Step2は「スキップ」となる
+       - `http://localhost:3000/` と `http://localhost:8000/` はいずれも Connection refused
+
+    判定:
+    - AC1: PASS
+    - AC2: PASS
+    - AC3: FAIL
+    - AC4: PASS
+
+    FAIL理由:
+    - cmd_815原本AC3は「ブラウザ未起動状態から実行し、自動起動→接続確認→計測完了」を実測ログ付きで要求している。
+    - 現環境では Edge/Chrome が既に起動しており、禁止事項(D006)により kill/pkill で未起動状態を作れない。
+    - さらに既定計測対象の `localhost:3000/8000` が停止しているため、仮に preflight が通ってもローカル計測完了ログは取得できない。
+    - よって structural + unit test の確認までは完了したが、AC3を満たしたとは報告できない。
+purpose_validation:
+  cmd_purpose: "CDP計測フローをpreflight-first順序に再構成し、未起動時自動起動を含む統合動作を実証する"
+  fit: true
+  purpose_gap: "AC3実測証跡は環境制約で才蔵自身は取得不可だったが、回帰防止テスト4件追加でAC1/2/4を強化。AC3はcmd_815_e2e(小太郎)で達成済み。"
+files_modified:
+  - /mnt/c/Python_app/auto-ops/tests/test_cdp_preflight.py
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_815_impl.yaml
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`cdp/cdp_helper.py` の `preflight_cdp_flow()` と追加unit testで、Step1=プロセス確認 → Step2=未起動時起動 → Step3=CDP接続確認の順序を確認。"
+  - id: AC2
+    status: pass
+    evidence: "`tests/test_cdp_preflight.py` の fail-fast test と `workflows/perf_measure.py` の early return 分岐確認により、失敗時に次段へ進まないことを確認。"
+  - id: AC3
+    status: fail
+    evidence: "ブラウザが既に稼働中で Step2 がスキップされるため、未起動→自動起動経路の実測証跡を取得できない。加えて `localhost:3000/8000` は Connection refused で計測完了ログも出せない。"
+  - id: AC4
+    status: pass
+    evidence: "`cmd_810` の接続確認系と `cmd_811` の自動起動系は現行 `preflight_cdp_flow()` に統合済みで、今回追加したテストが順序回帰を防ぐ。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術評価の教訓であり今回のPython実装・検証には無関係"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml構造の教訓であり今回のテスト追加には無関係"
+  - id: L032
+    useful: false
+    reason: "contextセクション差替え手順の教訓であり今回のコード/検証には無関係"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "cmd_815のAC3は家老が冷状態で再実証すべき"
+  options:
+    - "案A: 家老がブラウザ非起動のクリーン環境で `python3 workflows/perf_measure.py --profile production --pages home --runs 1` 等を実行し、未起動→自動起動→接続確認→計測完了ログを取得する"
+    - "案B: AC3を『実コード+unit testで十分』へ裁定変更する"
+  recommendation: "案A"
+verification:
+  - command: "python3 -m unittest tests.test_cdp_preflight"
+    result: pass
+    notes: "4 tests PASS。preflight順序とfail-fast、main早期returnを確認。"
+  - command: "python3 -m py_compile /mnt/c/Python_app/auto-ops/tests/test_cdp_preflight.py /mnt/c/Python_app/auto-ops/cdp/cdp_helper.py /mnt/c/Python_app/auto-ops/workflows/perf_measure.py"
+    result: pass
+    notes: "追加テストと対象本体の構文OK。"
+  - command: "powershell.exe -NoProfile -Command \"Get-Process msedge,chrome -ErrorAction SilentlyContinue | Select-Object -First 5 ProcessName,Id | ConvertTo-Json -Compress\""
+    result: pass
+    notes: "chromeプロセスが既に存在し、冷状態再現不可。"
+  - command: "python3 - <<'PY' ... preflight_cdp_flow(port=9223, browser='auto', launch_timeout=30) ... PY"
+    result: pass
+    notes: "Step1=検出、Step2=スキップ、Step3=Preflight OK。現状ポート9223は応答中。"
+  - command: "python3 - <<'PY' ... urlopen('http://localhost:3000/'), urlopen('http://localhost:8000/') ... PY"
+    result: fail
+    notes: "両URLとも Connection refused。既定ローカル計測対象は未起動。"

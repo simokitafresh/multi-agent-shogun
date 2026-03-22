@@ -1,0 +1,71 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_928_RV
+parent_cmd: cmd_928
+timestamp: "2026-03-14T00:17:08+0900"
+status: done
+ac_version_read: 3
+verdict: FAIL
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+review_result:
+  verdict: FAIL
+  reason: "AC1 FAIL。`instructions/shogun.md` の4技法追加と front matter 整合は確認できたが、AC1/AC2が要求する `queue/shogun_to_karo.yaml` への `scope_mode` 追加が未実施。よって PASS 判定にも commit/push にも進めない。"
+ac_results:
+  - id: AC1
+    status: fail
+    evidence: "`instructions/shogun.md:153-255` で 推薦先行+WHY / Dream State Mapping / scope_mode定義 / Scope Mode Declaration / 伏兵予測 を確認。一方 `rg -n 'scope_mode' queue/shogun_to_karo.yaml` はテンプレート定義を返さず、`git diff -- queue/shogun_to_karo.yaml` も空で、task記載の『scope_modeフィールド追加』は未達。"
+  - id: AC2
+    status: pass
+    evidence: "`python3` で `instructions/shogun.md` front matter を `yaml.safe_load` し `role=shogun`, `version=2.1`, `forbidden_actions=8` を確認。`file instructions/shogun.md queue/shogun_to_karo.yaml` でも CRLF 混入は見当たらず、既存の Command Writing 構造も維持されている。"
+  - id: AC3
+    status: fail
+    evidence: "AC1 未達のため review verdict は FAIL。task条件どおり `git add + commit + push` は未実施。"
+result:
+  summary: "FAIL。`instructions/shogun.md` の4技法追加自体は概ね良好だが、`queue/shogun_to_karo.yaml` に `scope_mode` が追加されておらず AC1/AC3 未達。commit/push は実施していない。"
+  details: |
+    確認結果:
+    - `instructions/shogun.md:153-193`
+      - 「殿への報告・提案ルール」を追加。
+      - 推薦先行+WHY とメニュー禁止が明記され、gstack §2.3 の意図に沿う。
+      - Dream State Mapping の 3列表記と適用条件も記載済み。
+    - `instructions/shogun.md:201-255`
+      - Required cmd fields に `scope_mode` を追加。
+      - Scope Mode Declaration で EXPANSION / HOLD / REDUCTION と scope drift 禁止を定義。
+      - Temporal Interrogation も AC3個以上向けの `■ 伏兵予測` 形式で追記済み。
+    - `instructions/shogun.md` front matter
+      - `yaml.safe_load` で読み込み成功。YAML front matter 破損なし。
+      - F001-F008 も維持されており、新規セクションは将軍の報告形式・cmd起票ルール拡張として整合している。
+
+    blocking issue:
+    - task本文と cmd_928 AC2 は「`queue/shogun_to_karo.yaml` の cmd フォーマットに `scope_mode` フィールド追加」を要求している。
+    - しかし `queue/shogun_to_karo.yaml` にその追加は存在せず、`git diff -- queue/shogun_to_karo.yaml` も空だった。
+    - このため、実装報告の AC2 PASS とは独立に reviewer としては FAIL 判定となる。
+purpose_validation:
+  cmd_purpose: "半蔵のcmd_928_A修正をレビューし、4技法実装・front matter整合性・template反映を検証したうえで、PASS時のみ commit/push する"
+  fit: true
+  purpose_gap: "レビュー自体は完了したが、`queue/shogun_to_karo.yaml` の `scope_mode` 未反映により PASS / push 条件は満たしていない。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_928.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful: []
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false

@@ -1,0 +1,253 @@
+task_id: cmd_907_A
+ninja: kotaro
+status: done
+started_at: '2026-03-13T14:11:10+0900'
+completed_at: '2026-03-13T14:30:00+0900'
+parent_cmd: cmd_907
+result:
+  summary: "MoneyForward認証方式を5観点で調査完了。最重要発見: TOTP(Google Authenticator)設定でemail_otpが完全に置き換わる。pyotpライブラリでTOTPコードをプログラム生成可能。既存gws基盤でemail_otp自動読取も実現可能（バックアップ案）。Cookie最長30日。"
+  ac_results:
+    AC1:
+      status: PASS
+      detail: |
+        MoneyForward IDはTOTP(時間ベースワンタイムパスワード)に正式対応。
+
+        ■ 対応認証アプリ
+        - Google Authenticator
+        - Authy
+        - その他TOTP対応アプリ(RFC 6238準拠)
+
+        ■ 設定フロー
+        1. マネーフォワード ID (https://id.moneyforward.com) にログイン
+        2. 「二段階認証の設定」をクリック
+        3. 「二段階認証を有効化する」をクリック
+        4. 認証アプリでQRコードをスキャン（またはsecret keyを手入力）
+        5. 認証アプリに表示された6桁コードを入力して「次へ」
+        6. 復元コード（リカバリーコード）が表示される → 控える
+        7. 「二段階認証を有効にする」をクリックで完了
+
+        ■ secret key取得
+        - QRコード形式: otpauth://totp/... URI（標準TOTP形式）
+        - QRコード内のsecret パラメータがbase32エンコードされたsecret key
+        - 設定時にのみ表示されるため、この時点でsecretを保存する必要あり
+
+        ■ DOM構造
+        - 設定URL: https://id.moneyforward.com/security（ログイン済みセッション必要）
+        - CDP snapshotでの確認は今回未実施（ログイン試行禁止のため）
+        - 上記フローはMF公式サポートページ + bizサポートガイドから確認
+
+        ■ 情報源
+        - https://support.me.moneyforward.com/hc/ja/articles/7359917171481
+        - https://biz.moneyforward.com/support/guide/g003.html
+    AC2:
+      status: PASS
+      detail: |
+        ■ 核心発見: TOTP設定でemail_otpが完全に置き換わる
+
+        MF公式FAQ (biz.moneyforward.com/support/faq/f015.html) に明記:
+        「二段階認証の設定」後は「追加認証のお願い」画面（=email_otp）が表示されなくなる。
+
+        ■ TOTP有効時のログインフロー
+        1. メールアドレス入力
+        2. パスワード入力 → 「ログインする」
+        3. 認証コード入力（認証アプリの6桁コード）→ 「認証する」
+        ※ email_otpは出ない
+
+        ■ 新デバイスからのログイン
+        - TOTP有効時: パスワード + TOTPコードで認証完了
+        - email_otpは要求されない（TOTPが上位の認証手段として扱われる）
+
+        ■ 代替手段
+        - パスキー設定でも同様にemail_otpが不要になる
+        - SMS認証も別途設定可能（TOTPとは独立）
+        - 復元コードはTOTPアプリ紛失時のフォールバック
+
+        ■ 裏取り
+        - MF公式FAQ f015: 「パスワードに加えて、SMSやスマートフォンアプリに表示される認証コードを入力する仕組み」で「追加認証」が不要に
+        - MF公式ガイド g044: 二段階認証有効時のログイン手順（3ステップ）
+        - 2025年3月以降MFはセキュリティ強化で追加認証の対象を拡大中 → TOTP未設定だとemail_otp頻度が増加する傾向
+
+        ■ 情報源
+        - https://biz.moneyforward.com/support/faq/f015.html
+        - https://biz.moneyforward.com/support/guide/g044.html
+    AC3:
+      status: PASS
+      detail: |
+        ■ MF OTPメール仕様
+
+        | 項目 | 値 |
+        |------|-----|
+        | 送信元 | noreply@moneyforward.com |
+        | 件名 | 「マネーフォワード ID メールによる追加認証」 |
+        | コード桁数 | 6桁（推定。MF標準の認証コード形式） |
+        | 有効期限 | 公式未公開（一般的なemail OTPは5-10分） |
+
+        ■ Gmail API での自動読取実現可能性: 高
+
+        既存インフラ:
+        - gws_helper.py: gmail_search(), gmail_get_message() が既に実装済み
+        - tax_email_collector.py: Gmail検索+本文解析の実績あり（領収書収集で稼働実績）
+        - OAuth2.0認証済み（gws auth login完了済み）
+
+        実装方針:
+        1. ログインフォーム submit 後にpolling開始
+        2. Gmail検索クエリ: from:noreply@moneyforward.com subject:"追加認証" newer_than:2m
+        3. メール本文から6桁数字を正規表現で抽出: r'\b(\d{6})\b'
+        4. 抽出したコードをCDP経由でOTP入力欄に入力
+
+        コード例（既存gws_helper利用）:
+        ```python
+        from gws import gws_helper
+        import re, time
+
+        def wait_for_mf_otp(timeout=120, interval=5):
+            deadline = time.time() + timeout
+            while time.time() < deadline:
+                msgs = gws_helper.gmail_search(
+                    'from:noreply@moneyforward.com subject:"追加認証" newer_than:2m',
+                    max_results=1
+                )
+                if msgs:
+                    msg = gws_helper.gmail_get_message(msgs[0]['id'], fmt='full')
+                    # bodyからOTP抽出
+                    # ... base64デコード + regex
+                    pass
+                time.sleep(interval)
+            raise TimeoutError("MF OTP email not received")
+        ```
+
+        ■ メール到着遅延
+        - 一般的なemail OTP: 数秒〜2分
+        - Gmail受信+API反映: 追加1-5秒
+        - 推奨タイムアウト: 120秒（interval 5秒でpolling）
+
+        ■ エッジケース
+        - メールが迷惑メールに振り分けられる可能性（ドメイン許可リスト推奨）
+        - 連続ログイン試行で複数OTPメールが届く場合 → 最新メールを取得
+        - Gmail API rate limit: 250 quota units/second（十分余裕あり）
+
+        ■ 情報源
+        - https://biz.moneyforward.com/support/faq/op014.html
+        - https://zenn.dev/acn_jp_sdet/articles/f3f88523954626
+    AC4:
+      status: PASS
+      detail: |
+        ■ セッション有効期限
+
+        MF公式（support.me.moneyforward.com）に記載:
+        - デフォルト: 30日間
+        - 設定可能な範囲: 30分 / 1時間 / 3時間 / 1日 / 3日 / 7日 / 30日
+        - 設定場所: Web版 → 画面右上「設定」→「セキュリティ設定」→ 自動ログアウト時間
+
+        ■ 「ログイン状態を保持」オプション
+        - モバイル: 歯車アイコン → 設定 → セキュリティ → ログイン状態を保持 ON
+        - Web版: セキュリティ設定で期間選択（上記7段階）
+        - 最長30日でセッション維持
+
+        ■ --user-data-dir での永続化
+        - 現行パイプライン(mf_csv_pipeline.py)は --user-data-dir=$env:TEMP\cdp-chrome-{port} を使用
+        - セッションCookieはuser-data-dir内に保存される
+        - MFのセッション設定が30日なら、30日間は再ログイン不要
+        - ただし新デバイス認証（email_otp）は初回のみ発生
+        - 2回目以降は同一user-data-dirからのアクセスなら「既知デバイス」扱い
+
+        ■ Set-Cookie詳細
+        - 具体的なCookie名/max-age値はMF公式非公開
+        - CDPでの実測は今回未実施（ログイン試行禁止のため）
+        - MFサポートから推定: セッション期限 = ユーザー設定値（最大30日）
+
+        ■ re-auth頻度
+        - 30日設定 + 同一user-data-dir: 月1回の再ログイン
+        - TOTP設定済みなら再ログイン時もTOTPのみ（email_otp不要）
+        - 月次CSV取得のユースケースでは月1回のTOTP認証で十分
+
+        ■ 情報源
+        - https://support.me.moneyforward.com/hc/ja/articles/4409849991321
+    AC5:
+      status: PASS
+      detail: |
+        ■ 推奨方針: TOTP（第一推奨）+ Cookie永続化（補助）
+
+        ┌─────────────────────────────────────────────────┐
+        │ 推奨度  │ ルート          │ 理由                │
+        ├─────────┼─────────────────┼─────────────────────┤
+        │ ★★★★★ │ TOTP(pyotp)    │ 完全自動化、確実    │
+        │ ★★★☆☆ │ email_otp(Gmail)│ 遅延あり、バックアップ│
+        │ ★★☆☆☆ │ Cookie永続化    │ 補助的、単独不可    │
+        └─────────────────────────────────────────────────┘
+
+        ■ 最適ルート: TOTP + pyotp
+
+        理由:
+        1. email_otpを完全に置換（MF公式確認済み）
+        2. pyotpでプログラム的にTOTPコード生成（外部サービス依存なし）
+        3. 遅延ゼロ（email待ちなし）
+        4. 決定論的（メール未着等のエッジケースなし）
+        5. 標準ライブラリ+pyotp(4KB)のみで実現
+
+        実装ステップ:
+        1. [殿の手動操作] MF ID設定画面でTOTP有効化、QRコード内のsecretを保存
+        2. .env.moneyforward に MF_TOTP_SECRET=<base32_secret> を追加
+        3. pip install pyotp（または標準hmac+structで自前実装）
+        4. mf_csv_pipeline.py のログインフローにTOTPコード入力ステップを追加:
+           ```python
+           import pyotp
+           totp = pyotp.TOTP(os.environ['MF_TOTP_SECRET'])
+           code = totp.now()  # 6桁コード生成
+           # CDPでOTP入力欄に入力
+           ```
+        5. MFARequiredError の代わりにTOTPコード自動入力を実装
+        6. --user-data-dir は現行のまま維持（30日セッション活用）
+
+        ■ バックアップルート: email_otp via Gmail API
+
+        TOTP設定が何らかの理由で不可の場合:
+        1. ログイン submit後にGmail APIでpolling（5秒間隔、120秒タイムアウト）
+        2. 検索: from:noreply@moneyforward.com subject:"追加認証" newer_than:2m
+        3. 本文から6桁コード抽出 → CDP入力
+        4. 既存gws_helper.py + tax_email_collector.pyのパターンを流用
+
+        ■ Cookie永続化は補助的に併用
+
+        - セッション30日設定 + 同一user-data-dir → 月1回の再認証
+        - TOTP設定済みなら月1回の再認証もTOTPのみで自動突破
+        - 結果: 完全自動化パイプラインが実現
+
+        ■ エッジケース・リスク
+
+        | リスク | 対策 |
+        |--------|------|
+        | TOTP secret漏洩 | .env.moneyforwardに保存、.gitignoreで除外（既に対応済み） |
+        | MFがTOTP仕様変更 | 標準TOTP(RFC 6238)なので変更リスク低 |
+        | pyotp時刻ズレ | WSL2はNTP同期済み。TOTP許容窓は±30秒 |
+        | 復元コード紛失 | 設定時に控えて安全な場所に保管 |
+        | セッション30日超 | TOTP自動入力で再認証も自動化 |
+        | Gmail APIレート制限 | 250 quota/secで十分（polling 5秒間隔） |
+
+        ■ 実装工数見積もり
+        - TOTP統合: mf_csv_pipeline.pyへの追加 ≒ 20-30行
+        - 殿の手動操作: MF IDでTOTP有効化 + secret保存 ≒ 5分
+        - email_otp代替（バックアップ）: ≒ 50-80行（Gmail polling + OTP抽出）
+  files_changed: []
+  verification:
+  - "MFサポートページ5件 + MF bizサポート3件を調査"
+  - "既存auto-opsコード確認: mf_csv_pipeline.py, cdp_helper.py, gws_helper.py, tax_email_collector.py"
+  - "pyotp公式ドキュメント + Gmail API OTP自動化事例を確認"
+lessons_useful:
+  - L011
+  - L012
+lesson_candidate:
+  found: true
+  title: "MF TOTP設定でemail_otp完全置換 — 認証系サイト自動化はTOTP第一手段"
+  detail: "MoneyForward IDで二段階認証(TOTP)を有効化すると、「追加認証のお願い」(email_otp)が完全に不要になる。認証系サイトの自動化でemail_otpがblockerになった場合、TOTP設定+pyotpによるコード生成が最も確実な突破策。email_otp自動読取はバックアップ手段として位置づける。"
+  project: auto-ops
+decision_candidate:
+  found: true
+  title: "MF CSV自動化の認証方式選択: TOTP vs email_otp"
+  detail: "殿にMF IDのTOTP有効化を依頼するか、email_otp自動読取で進めるか。TOTP推奨だが殿のアカウント設定変更が必要。判断ポイント: (1)殿がTOTP有効化に同意するか (2)復元コード管理の負担 (3)既存の他デバイスへの影響"
+  project: auto-ops
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

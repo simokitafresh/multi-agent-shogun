@@ -1,0 +1,60 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hanzo
+task_id: cmd_742_review
+parent_cmd: cmd_742
+timestamp: "2026-03-11T02:18:00+09:00"
+status: done
+ac_version_read: 4
+result:
+  summary: "AC1-AC4 PASS。半蔵独自検証: コードレビュー+build実行+full test実行+manifest確認+push状態確認。全項目PASS。"
+  details: |
+    半蔵独自レビュー検証:
+    AC1: dashboard/page.tsx L39-42 直接確認。SignalPieChart = next/dynamic + ssr:false + loading fallback h-[150px]。静的importなし。OK。
+    AC2: npm run build 実行。/dashboard 139kB, shared by all 87.6kB。frontend/.next/react-loadable-manifest.json確認: signal-pie-chart → chunk 6693/344に分離。shared chunkに含まれない。OK。
+    AC3: npm test -- --runInBand --watch=false 実行。34 suites / 212 tests / 0 skip PASS。独自実行で確認。OK。
+    AC4: commit 0a76f42 既にpush済み。git rev-parse HEAD = git ls-remote origin refs/heads/main = 0a76f42。OK。
+    test isolation修正(api-client-auth.test.ts): L19 pendingRequests.clear() in beforeEach + L66 waitFor化。最小diff。適切。
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "コード直接確認: dashboard/page.tsx L39-42 next/dynamic + ssr:false + h-[150px] fallback。"
+  - id: AC2
+    status: pass
+    evidence: "npm run build独自実行: /dashboard 139kB, shared 87.6kB。react-loadable-manifest.json: signal-pie-chart → chunk 6693/344分離確認。"
+  - id: AC3
+    status: pass
+    evidence: "npm test --runInBand --watch=false独自実行: 34 suites / 212 tests / 0 skip PASS。"
+  - id: AC4
+    status: pass
+    evidence: "commit 0a76f42 push済み。L186準拠: git rev-parse HEAD = git ls-remote = 0a76f42一致確認。"
+verdict: PASS
+purpose_validation:
+  cmd_purpose: "signal-pie-chartをnext/dynamicでdynamic import化し、rechartsをshared bundleから除外する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/app/dashboard/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/lib/__tests__/api-client-auth.test.ts
+lesson_candidate:
+  found: true
+  title: "full Jestではapi-client singletonのpendingRequestsがtest間に残留しうる"
+  detail: "kirimaru発見。api singleton の pendingRequests を beforeEach で明示クリアし、waitFor で観測すべき。"
+  project: dm-signal
+lessons_useful:
+  - id: L186
+    useful: true
+    reason: "push前にgit rev-parse HEAD + git ls-remote で確認。並行push防止に有効。"
+  - id: L074
+    useful: false
+    reason: "Bash算術の教訓。今回のNext.js review作業では未使用。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

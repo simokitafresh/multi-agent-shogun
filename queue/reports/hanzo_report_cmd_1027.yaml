@@ -1,0 +1,109 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hanzo
+task_id: cmd_1027_re_review2
+parent_cmd: cmd_1027
+timestamp: "2026-03-17T15:36:25"
+status: done
+ac_version_read: 2
+verdict: PASS
+review_result:
+  status: PASS
+  verdict: PASS
+  findings:
+    - severity: info
+      area: AC_RR2_2
+      detail: |
+        fix2(7cbebd49)はfix_analysis.mdのみコミットし、更新済みbenchmark.json/mdをコミットしていなかった。
+        コミット済みbenchmark.json(15:03:18版, serial=75.95h)と作業ツリー版(15:12:33版, serial=100.91h)が不一致。
+        fix_analysis.mdは作業ツリー版を参照しており正しい。L188(commit漏れ)パターン。
+        レビュー担当(半蔵)がbenchmark.json/mdの追加コミット+pushを代行。
+ac_results:
+  AC_RR2_1:
+    status: PASS
+    detail: |
+      benchmark.json(SSoT)の全数値とfix_analysis.mdの整合を独立Pythonスクリプトで検証。全項目一致。
+
+      1. 基準値:
+         - serial total: 100.91h ✓ (json serial_total_sec=363278.9s)
+         - 8-way parallel: 91.45h ✓ (json parallel_8_split_sec=329229.0s)
+         - kasoku支配率: 90.6% ✓ (91.45/100.91)
+
+      2. per-ninjutsu実測値(json ms_per_pattern × patterns_32):
+         - bunshin: 0.002h ✓ / oikaze: 2.43h ✓ / nukimi: 4.39h ✓
+         - kawarimi: 2.46h ✓ / kasoku: 91.45h ✓ / yotsume: 0.17h ✓
+
+      3. 7案の削減時間・最終見積もり(全てbenchmark.json基準で算術検証PASS):
+         - k<=3: C(32,2)+C(32,3)=5456, 5456/41416=13.17%, 100.91*0.1317=13.29h ✓
+         - top_n=1: saved=4.73h, 100.91-4.73=96.18h ✓
+         - family closure: 1584/41416=3.82%, 100.91*0.0382=3.86h ✓
+         - kasoku method: 91.45/2=45.73h saved, 100.91-45.73=55.18h ✓
+         - coarse serial: 16.21h ✓
+         - coarse+parallel: max(0.65,1.17,0.66,3.41,0.10)=3.41h ✓
+         - parallel only: 91.45h ✓
+  AC_RR2_2:
+    status: PASS
+    detail: |
+      1. AC1-AC3(sasuke成果物)とfix2の整合:
+         - benchmark.md: serial 100.91h, parallel 91.45h → fix_analysis.mdと一致 ✓
+         - benchmark.json: 全6忍法のms_per_pattern/patterns/serial_sec → fix_analysis.mdと一致 ✓
+         - parity: 5忍法near_match, yotsume smoke_only → 整合 ✓
+      2. benchmark.md/json/fix_analysis.md三者整合: ✓ (作業ツリー版で完全一致)
+      3. origin/main..HEAD: 4ファイル(harness py+json+md+fix_analysis), 1304行挿入, スコープ外変更なし ✓
+      4. 追加コミット: benchmark.json/md更新分を追加コミット+push実行済み
+diff_check:
+  repo: /mnt/c/Python_app/DM-signal
+  status: PASS
+  detail: |
+    origin/main..HEAD (push前の全差分):
+    - scripts/analysis/cmd_1027_shin_ninpou_benchmark.py (747行追加) — ベンチマークharness
+    - outputs/analysis/cmd_1027_shin_ninpou_benchmark.json (386行追加) — 計測生データSSoT
+    - outputs/analysis/cmd_1027_shin_ninpou_benchmark.md (41行追加) — 計測結果サマリー
+    - outputs/analysis/cmd_1027_fix_analysis.md (130行追加) — 高速化7案分析(fix2)
+    計4ファイル。不要変更なし。
+result:
+  summary: "PASS。fix2(kotaro)がbenchmark.json SSoT(100.91h)で全7案を正確に再計算。全数値が独立検証で一致。commit+push完了。"
+  details: |
+    検証内容:
+    1. benchmark.json全数値照合 — 6忍法のms_per_pattern/patterns_32/serial_sec
+    2. fix_analysis.md全数値の独立Python算術検証 — 7案全てPASS
+    3. 三者整合(benchmark.md/json/fix_analysis.md) — 全一致
+    4. origin/main..HEAD diff — 4ファイル、スコープ外変更なし
+    5. tobisaru前回FAIL根拠(75.95h→100.91h乖離)の解消確認
+
+    前回FAILからの変更点:
+    - fix_analysis.md: 基準値を75.95h(sasuke報告)→100.91h(benchmark.json)に修正
+    - 全7案の絶対値が変更(構造・順位は不変)
+    - kasoku支配率: 89.8%→90.6%(微増、構造的結論に変化なし)
+
+    コミット漏れ対応:
+    - fix2がbenchmark.json/mdの更新分をコミットしていなかった(L188パターン)
+    - 半蔵が追加コミット+push代行
+purpose_validation:
+  cmd_purpose: "cmd_1027全成果物の最終レビュー(fix2後)+PASS時push"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1027_shin_ninpou_benchmark.json
+  - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1027_shin_ninpou_benchmark.md
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report_cmd_1027.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L188
+    useful: true
+    reason: "fix2(kotaro)がfix_analysis.mdのみコミットしbenchmark.json/mdの更新分をコミット漏れ。L188と同パターン。半蔵がcommit+push代行"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

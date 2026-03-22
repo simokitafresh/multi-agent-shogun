@@ -1,0 +1,49 @@
+worker_id: kotaro
+task_id: subtask_544_impl_a
+parent_cmd: cmd_544
+timestamp: '2026-03-04T23:10:00'
+status: done
+ac_version_read: 1
+
+summary: |
+  弱体化確率推定(P_det)の本番パイプライン設計書を作成。
+  5セクション(DBスキーマ/パイプライン/API/専用ページUI/ダッシュボードバッジ)を網羅。
+  パイロット実装(cmd_539)のコア関数、DB既存パターン、hanzo報告を参照し設計。
+
+ac_results:
+  ac4:
+    status: PASS
+    detail: |
+      docs/spec/deterioration-monitoring.md を作成。以下5セクションを含む:
+      【1】DBスキーマ設計: deterioration_snapshots テーブル(PF×month PK、3窓P_det/ラベル/G1/G2フラットカラム)、SQLAlchemy Model、UPSERT方式
+      【2】本番パイプライン仕様: 実行フロー6ステップ、cron月初03:00UTC(12:00JST)、全active PF対象、MTD月除外、性能見積り100PF≈43秒
+      【3】API設計: GET /api/deterioration(全PF一覧+前月比)、GET /api/deterioration/{id}(個別推移)、POST /admin/deterioration-batch(手動実行)、TypeScript型定義
+      【4】専用ページUI仕様(Phase 1): 全PF一覧テーブル(ラベル色分け/p6/p12/p24/前月比Trend)、6段階ステップグラフ(ラベル遷移)、P_det推移折れ線(閾値ライン)、統計テーブル
+      【5】dashboardバッジ仕様(Phase 2概要): PFカード右上バッジ(GOOD非表示)、ダッシュボード集計(健全PF数/要注意PF数/最悪PF名)
+
+files_modified:
+  - path: docs/spec/deterioration-monitoring.md
+    action: created
+    lines: 578
+
+commit: 51066d1
+
+test_results:
+  total: 0
+  passed: 0
+  failed: 0
+  skipped: 0
+  note: "設計書タスクのためテストなし"
+
+purpose_validation:
+  cmd_purpose: "弱体化確率推定の本番パイプライン設計書を作成"
+  fit: true
+  purpose_gap: ""
+lessons_useful:
+  - L074
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

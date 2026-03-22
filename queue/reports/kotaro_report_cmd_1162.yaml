@@ -1,0 +1,51 @@
+task_id: cmd_1162_metrics
+parent_cmd: cmd_1162
+ninja: kotaro
+status: done
+started_at: 2026-03-20 19:58:00
+completed_at: 2026-03-20 20:10:00
+verdict: PASS
+ac_results:
+  AC2:
+    status: PASS
+    summary: karo.mdに軍師一次→家老スタンプのレビューフロー変更を実装。新セクション「忍者報告レビューフロー」追加、レビュー品質チェックのタイトルをフォールバック限定に変更、inbox
+      type定義にreport_review/report_review_resultを追加
+    files_changed:
+    - instructions/karo.md
+    binary_checks:
+    - check: karo.mdにreport_review依頼のinbox_write手順があるか?
+      result: PASS
+    - check: 軍師LGTM時のスタンプ+教訓抽出フローが記載されているか?
+      result: PASS
+    - check: 軍師FAIL時のエスカレーション判断フローが記載されているか?
+      result: PASS
+    - check: フォールバック(軍師未完了時の家老フルレビュー)が記載されているか?
+      result: PASS
+  AC3:
+    status: PASS
+    summary: karo-operations.md §3に新レビューフロー索引テーブル+旧フローとの差分+切替条件を追記。レビュー原則を新旧共通サブセクションとして再構成
+    files_changed:
+    - context/karo-operations.md
+    binary_checks:
+    - check: karo-operations.md §3に新レビューフロー索引があるか?
+      result: PASS
+    - check: 旧フローとの差分が明確か?
+      result: PASS
+  AC4:
+    status: PASS
+    summary: gunshi_review_log.yamlにreport_review用エントリ形式を定義(スキーマヘッダ追加)。fetch_gunshi_verdict()をreview_type対応に改修し、draft→report優先順位でverdictを取得。report-onlyのcmdでLGTM/FAILが品質ログに記録可能に
+    files_changed: logs/gunshi_review_log.yaml, instructions/gunshi.md, scripts/cmd_quality_log.sh
+lesson_candidate:
+  found: true
+  no_lesson_reason: 手順書の定型追記作業であり、既知パターンの適用のみ。新たな技術的発見なし
+  description: bashのIFS read分割ではIFS文字(tab等)が先頭にある場合、先頭のIFS文字が除去される(leading delimiter stripping)。awkの出力でフィールドが空の場合にデリミタが先頭に来ると、readが正しく分割しない。空フィールドにはデフォルト値を出力すること
+decision_candidate:
+  found: false
+skill_candidate:
+  found: false
+progress: AC4 完了。全binary_checks PASS
+lessons_useful: L074:useful:true, L273:useful:true
+- id: L085
+  useful: false
+  reason: 手順書の定型追記作業であり命名規則変更なし
+ac_version: d1ae4640

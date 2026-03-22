@@ -1,0 +1,142 @@
+worker_id: sasuke
+task_id: subtask_564_scout_a
+parent_cmd: cmd_564
+timestamp: "2026-03-05T15:53:53+0900"
+status: done
+ac_version_read: 1
+verdict: PASS
+
+result:
+  summary: "frontend/app全ページのヘッダー構造を分類し、共通化ポイントとページ順序定義（矢印/ホーム導線）を行番号付きで特定。現状はSignalページがDeprecatedで、線形矢印導線はDashboard→Summary→Compare→Compare Summary→Deterioration。"
+  details: |
+    1) 全ページのヘッダー構造（分類）
+
+    A. 既に矢印ナビ + ホーム + ハンバーガーを実装済み（5ページ）
+    - frontend/app/dashboard/page.tsx:335,342,343
+    - frontend/app/summary/page.tsx:86,91,92
+    - frontend/app/compare/page.tsx:227,231,232
+    - frontend/app/compare-summary/page.tsx:309,316,317
+    - frontend/app/deterioration/page.tsx:696,700,701
+      （同ページはloading/error分岐にも同等ヘッダー重複: 655/659/660, 677/681/682）
+
+    B. 共通クラスの手書きヘッダー + MobileMenu（6ページ）
+    - frontend/app/metrics/page.tsx:94,97,100
+    - frontend/app/annual-returns/page.tsx:71,74,77
+    - frontend/app/monthly-returns/page.tsx:70,73,76
+    - frontend/app/rolling-returns/page.tsx:68,71,74
+    - frontend/app/monthly-trade/page.tsx:81,84,87
+    - frontend/app/drawdowns/page.tsx:68,71,74
+
+    C. 共通コンポーネント PageHeader 利用（2ページ）
+    - frontend/app/docs/page.tsx:35
+    - frontend/app/faq/page.tsx:326
+    - 共通実装本体: frontend/components/ui/page-header.tsx:46-66
+
+    D. 管理系の専用ヘッダー（戻る導線/操作群優先）
+    - frontend/app/admin/page.tsx:165-170
+    - frontend/app/admin/visibility/page.tsx:387-398
+    - frontend/app/admin/fof/page.tsx:237-247
+    - frontend/app/admin/folders/page.tsx:240-250
+
+    E. メンテ/封鎖ページ（通常ヘッダーなし）
+    - frontend/app/page.tsx:10
+    - frontend/app/trades/page.tsx:10
+    - frontend/app/offline/page.tsx:11
+
+    2) ハンバーガーメニュー実装箇所
+    - 実体ボタン（三本線SVG）:
+      - frontend/components/ui/dropdown-menu.tsx:111-135
+    - ページメニュー定義 + 呼び出し:
+      - frontend/components/mobile-menu.tsx:8-176, 195-196
+
+    3) ページ順序定義の場所
+    - 矢印ナビ用の線形順序（PAGE_ORDER）:
+      - frontend/components/page-navigation.tsx:5-10
+      - 現在: Dashboard → Summary → Compare Chart → Compare Summary → Deterioration
+    - サイドバー順序（navItems）:
+      - frontend/components/sidebar.tsx:10-175
+    - モバイルメニュー順序（menuItems）:
+      - frontend/components/mobile-menu.tsx:8-176
+    - Visibility管理上のページ定義（Signal deprecated表記あり）:
+      - frontend/app/admin/visibility/page.tsx:19-33
+
+    4) 仕様差分（Signalページ扱い）
+    - 本タスク要求順序: Dashboard → Summary → Compare Chart → Signal → Deterioration
+    - 実装上の有効ルートはSignalがdeprecated化され、矢印導線にはCompare Summaryが入っている
+      - frontend/components/page-navigation.tsx:5-10
+      - 旧Signal実装は frontend/app/_deprecated/signal/page.tsx
+
+    5) 共通化可能箇所（ファイル+行）
+    - 最高優先: B群6ページのヘッダー（A群とほぼ同じDOM骨格）
+      - 例: metrics 94-105 と summary 83-98 は「title + right actions + as_of」の共通骨格
+    - 次点: deteriorationの重複ヘッダー3か所を1関数化可能
+      - frontend/app/deterioration/page.tsx:655-661, 677-683, 696-702
+    - 既存再利用可能コンポーネント
+      - PageNavigation/HomeButton: frontend/components/page-navigation.tsx
+      - PageHeader（ただし矢印/Home未対応）: frontend/components/ui/page-header.tsx
+
+purpose_validation:
+  cmd_purpose: "全ページのヘッダー構造とページ順序定義を特定し、矢印ナビ+ホーム導入の実装方針を提示する"
+  fit: true
+  purpose_gap: "なし"
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_564.yaml
+
+lesson_referenced: []
+
+lessons_useful: []
+
+lesson_candidate:
+  found: true
+  title: "ページ順序のSSOTを1箇所に寄せないと矢印/サイドバー/モバイルで順序乖離が再発する"
+  detail: "PAGE_ORDER(page-navigation), navItems(sidebar), menuItems(mobile-menu)が分散している。線形ナビ導入時は共通定数へ集約し、各UIで参照する構成にすると変更漏れを防げる。"
+  project: dm-signal
+
+test_results:
+  - command: "find frontend/app -name 'page.tsx' | sort"
+    result: pass
+    notes: "全page.tsxを列挙（22件、_deprecated含む）"
+  - command: "rg -n 'PageNavigation|HomeButton|MobileMenu|PageHeader|<header|<h1' frontend/app/**/page.tsx"
+    result: pass
+    notes: "各ページのヘッダー構造を機械抽出"
+  - command: "nl -ba frontend/components/page-navigation.tsx && nl -ba frontend/components/mobile-menu.tsx && nl -ba frontend/components/ui/dropdown-menu.tsx"
+    result: pass
+    notes: "順序定義とハンバーガー実装箇所を行番号付きで確認"
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "全page.tsxのヘッダー構造をA-E分類し、共通化可能箇所をファイル+行番号で提示（例: summary 83-98, metrics 94-105, deterioration 655-702）。"
+  - id: AC2
+    status: pass
+    evidence: "ページ順序定義の実体を特定（page-navigation.tsx:5-10）。矢印+ホーム実装案を提示し、Signal deprecated差分も明示。"
+
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "ヘッダー構造の全体把握と共通化候補の明示を完了。"
+  - id: AC2
+    status: pass
+    evidence: "順序定義の場所特定と実装案提示を完了。"
+
+fix_proposal:
+  immediate:
+    - "ナビ順序SSOTを新規作成（例: frontend/lib/navigation/page-order.ts）し、page-navigation.tsx / sidebar.tsx / mobile-menu.tsxから参照させる。"
+    - "A/B群向けに共通ヘッダー部品（例: AppPageHeaderNav）を作成し、propsで title/currentPage/showTiming/homeDisabled/asOf を受ける。"
+    - "deterioration/page.tsx の3重複ヘッダーを1レンダラー関数に統合して分岐重複を除去する。"
+    - "ホームボタンSVGは既存流用（page-navigation.tsx:73-76）で新規SVG追加不要。"
+  signal_order_options:
+    - "Option A（推奨）: SignalをDashboardの別名として扱い、PAGE_ORDER上は dashboard をSignal相当として運用（最小変更）。"
+    - "Option B: /signal ルートを正式復帰（_deprecated/signal を再配置）し、要求順序どおり Dashboard→Summary→Compare→Signal→Deterioration を実装。"
+
+skill_candidate:
+  found: false
+
+decision_candidate:
+  found: true
+  summary: "Signalを要件順序に含める際、DashboardをSignal相当で運用するか、/signal復帰するかの裁定が必要。"
+  options:
+    - "A: Dashboard=Signal扱いで最小差分導入（推奨）"
+    - "B: /signalを復帰して要件表現を厳密一致"

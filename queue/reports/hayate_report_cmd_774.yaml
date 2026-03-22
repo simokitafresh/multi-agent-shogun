@@ -1,0 +1,226 @@
+worker_id: hayate
+task_id: cmd_774_recon_A
+parent_cmd: cmd_774
+timestamp: "2026-03-11T14:08:32+0900"
+status: done
+ac_version_read: 6
+result:
+  summary: |
+    `/dashboard` のFirst Load JS偵察を完了。
+    buildは2回実行した。1回目は `PageNotFoundError: /_document` で page-data 収集中に失敗。
+    2回目は compile/typecheck/static pages 生成まで成功したが、最終 export cleanup で
+    `ENOTEMPTY: ... out/_next/static/media` により失敗した。
+    ただし2回目は fresh `.next/app-build-manifest.json` / `react-loadable-manifest.json` を生成しており、
+    これを基に `/dashboard` の初期JS構成を確定できた。
+    現在の manifest-based raw initial JS では `/dashboard` が 486.9KB で全route中2位（最重は `/admin` 503.9KB）。
+    厳密な dashboard 固有 chunk は 60.4KB（`9262` 33.4KB + `app/dashboard/page` 27.0KB）で、
+    重さの大半は layout/context/api/icon を含む共有 client shell にある。
+    既存 dynamic import により `TotalReturnChart` は 12.1KB、`SignalPieChart` は 335.3KB raw
+    (`recharts` 332.9KB + wrapper 2.4KB) の lazy load へ退避済み。
+    追加の初期削減候補としては `MtdChart` / `MtdDailyTable` の遅延化と
+    `optimizePackageImports` の `lucide-react` / `date-fns` 適用が最有力。
+  details: |
+    ## Build / measurement notes
+    - Preflight: `node v20.20.0`, `npm 10.8.2`, `node_modules` present
+    - build attempt #1:
+      - `npm run build`
+      - fail: `PageNotFoundError: Cannot find module for page: /_document`
+    - build attempt #2:
+      - `npm run build`
+      - success through `✓ Generating static pages (23/23)`
+      - fail at final export cleanup:
+        `ENOTEMPTY: directory not empty, rmdir '/mnt/c/Python_app/DM-signal/frontend/out/_next/static/media'`
+    - Because the route table was not printed, the size list below is derived from the fresh
+      `.next/app-build-manifest.json` emitted during attempt #2.
+
+    ## AC1: 全ページ First Load JS 一覧（manifest-based raw JS, layout込み）
+    - `/admin`: 503.9KB
+    - `/dashboard`: 486.9KB
+    - `/admin/fof`: 471.0KB
+    - `/admin/visibility`: 464.4KB
+    - `/faq`: 455.1KB
+    - `/deterioration`: 447.2KB
+    - `/compare-summary`: 439.3KB
+    - `/rolling-returns`: 437.3KB
+    - `/drawdowns`: 431.6KB
+    - `/annual-returns`: 429.5KB
+    - `/metrics`: 427.9KB
+    - `/monthly-trade`: 426.6KB
+    - `/admin/folders`: 425.8KB
+    - `/monthly-returns`: 425.2KB
+    - `/summary`: 420.0KB
+    - `/compare`: 418.3KB
+    - `/docs`: 405.4KB
+    - `/`: 399.8KB
+    - `/trades`: 399.8KB
+    - `/offline`: 379.7KB
+
+    ## AC2/AC3: `/dashboard` chunk breakdown
+    `/dashboard` initial JS total: 486.9KB raw
+
+    1. Shared by all app routes (`/layout`由来) = 約378.9KB raw
+    - `fd9d1056-...js`: 168.8KB
+      - React/Next client runtime本体
+    - `7023-...js`: 120.9KB
+      - Next client runtime / framework層
+    - `app/layout-da3b...js`: 28.0KB
+      - ThemeProvider / SignalsProvider / ViewerPermissionsProvider / Sidebar / GlobalErrorBanner
+    - `5009-...js`: 29.5KB
+      - `lucide-react` runtime主体
+    - `5435-...js`: 21.1KB
+      - `api-client` + `api-cache` (`idb-keyval`, localStorage, AbortController)
+    - `6419-...js`: 6.2KB
+      - `SignalsProvider`
+    - `webpack-bed...js`: 3.9KB
+    - `main-app-b3fb...js`: 0.5KB
+
+    2. Shared with一部ページだが dashboard 固有ではない = 約47.0KB raw
+    - `231-...js`: 20.1KB
+      - next/link / routing系 client code
+    - `1569-...js`: 13.8KB
+      - `AuthStatus` まわり
+    - `7562-...js`: 13.1KB
+      - `TimingToggle`, `HomeButton` 等の小UI
+
+    3. Strict dashboard-specific = 約60.4KB raw
+    - `9262-...js`: 33.4KB
+      - `MtdChart` 系（`date-fns` を含む）+ dashboard向け補助UI
+    - `app/dashboard/page-41bd...js`: 27.0KB
+      - route本体, data-loading effect群, `MtdDailyTable`, dynamic import wrapper, deterioration表示
+
+    ## AC4: dynamic import 候補
+    既存:
+    - `TotalReturnChart` は dynamic import 済み
+      - lazy chunk: `8449...js` 12.1KB raw
+    - `SignalPieChart` は dynamic import 済み
+      - lazy chunks: `6693...js` 332.9KB raw + `344...js` 2.4KB raw
+      - chunk fingerprint上、実質 `recharts` ペイロード
+
+    追加候補:
+    1. `MtdChart`
+       - import箇所: `frontend/app/dashboard/page.tsx:22`, render: `:482-492`
+       - 実装ファイル: `frontend/components/mtd-chart.tsx:3-11`
+       - 根拠: below-the-fold で、`date-fns` + `next-themes` + custom chart helpers を初期JSへ残している
+       - 推定削減: 25-35KB raw
+    2. `MtdDailyTable`
+       - import箇所: `frontend/app/dashboard/page.tsx:23`, render: `:494-500`
+       - 実装ファイル: `frontend/components/mtd-daily-table.tsx:38-126`
+       - 根拠: MTD chart よりさらに後段。単体では軽いが、MTD セクションごと遅延対象にしやすい
+       - 推定削減: 3-6KB raw（単独）/ `MtdChart` と抱き合わせで section 遅延化しやすい
+    3. `MobileMenu` footer (`AuthStatus`, `ThemeToggle`) の on-open lazy化
+       - import箇所: `frontend/app/dashboard/page.tsx:16`, render: `:370-372`
+       - 実装ファイル: `frontend/components/mobile-menu.tsx:3-6,193-203`
+       - 根拠: mobile-only + interaction-only の UI を初期shellで抱えている
+       - 推定削減: 8-15KB raw
+
+    ## AC5: optimizePackageImports 候補
+    1. `lucide-react`
+       - import分布:
+         - `components/portfolio-nav-selector.tsx:4`
+         - `components/help-link.tsx:5`
+         - `components/ui/message-banner.tsx:2`
+         - `components/auth-status.tsx:4`
+         - ほか shared layout 側にも散在
+       - chunk観測:
+         - `5009...js` 29.5KB raw がほぼ icon runtime
+       - 推定削減: 8-15KB raw
+       - 工数: 低（`next.config.mjs`）
+    2. `date-fns`
+       - import:
+         - `components/mtd-chart.tsx:4`
+       - chunk観測:
+         - `9262...js` に `date-fns` fingerprint
+       - 推定削減: 2-4KB raw
+       - 工数: 低
+
+    非推奨/補足:
+    - `recharts` は optimizePackageImports の主対象というより、
+      `SignalPieChart` 自体を custom SVG へ置き換える方が効く。
+      ただしこれは initial JS ではなく post-hydration lazy payload を削る施策。
+
+    ## AC6: ROI rank
+    1. MTD section (`MtdChart` 主体) を dynamic import 化
+       - 推定削減: 25-35KB raw
+       - 工数: 中
+       - 理由: `/dashboard` 固有 60.4KB のうち大きい方を直接削れる
+    2. `next.config.mjs` に `optimizePackageImports: ['lucide-react', 'date-fns']`
+       - 推定削減: 10-19KB raw
+       - 工数: 低
+       - 理由: shared shell に効くため `/dashboard` 以外にも波及
+    3. `MobileMenu` / `AuthStatus` / `ThemeToggle` を interaction時 lazy化
+       - 推定削減: 8-15KB raw
+       - 工数: 中
+       - 理由: mobile-only / menu-open時のみ必要
+    4. `SignalPieChart` の `recharts` を custom SVG に置換
+       - 推定削減: 335.3KB raw (lazy payload)
+       - 工数: 高
+       - 理由: First Load JS ではなく hydration後ダウンロードの重さに効く
+
+purpose_validation:
+  cmd_purpose: "/dashboardのFirst Load JS内訳を分析し、shared chunk/route固有chunk/削減候補を実装直結で順位付けする"
+  fit: true
+  purpose_gap: "Next build consoleの最終 route table は export cleanup失敗で取得できなかったが、fresh manifest から同等の chunk 分解は完了。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_774.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+ac_results:
+  - id: AC1
+    status: PASS
+    detail: "fresh `.next/app-build-manifest.json` を基に全routeの initial JS 一覧を作成した。"
+  - id: AC2
+    status: PASS
+    detail: "`/dashboard` の chunk をサイズ順に分解し、route固有/共有 shell を切り分けた。"
+  - id: AC3
+    status: PASS
+    detail: "shared-all-app / shared-subset / strict dashboard-specific の3層で分析した。"
+  - id: AC4
+    status: PASS
+    detail: "`MtdChart` / `MtdDailyTable` / `MobileMenu` を追加 dynamic import 候補として特定した。"
+  - id: AC5
+    status: PASS
+    detail: "`lucide-react` と `date-fns` を `optimizePackageImports` 候補として特定した。"
+  - id: AC6
+    status: PASS
+    detail: "各候補に推定削減量と工数を付けて ROI 順位付けした。"
+lessons_useful:
+  - id: L216
+    useful: true
+    reason: "`next.config.js` ではなく `next.config.mjs` を確認する教訓に従い、設定誤読を避けた。"
+lesson_candidate:
+  found: true
+  title: "Static Export buildが cleanup 失敗でも `.next` manifest は先に生成されることがある"
+  detail: "今回 `npm run build` は `out/_next/static/media` の ENOTEMPTY で最終失敗したが、その前に `.next/app-build-manifest.json` と `react-loadable-manifest.json` は生成済みだった。bundle偵察では build console が取れなくても manifest 回収で route/chunk 分解を継続できる。"
+  project: dm-signal
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+implementation_readiness:
+  files_to_modify:
+    - "frontend/app/dashboard/page.tsx:16-23,26-42,281-310,482-500 — MTD section lazy化、または interaction/viewport連動読込"
+    - "frontend/components/mtd-chart.tsx:3-11,27-180 — date-fns/next-themes を含む eager chart を分離"
+    - "frontend/components/mtd-daily-table.tsx:38-126 — MTD chart と同一 lazy section に同梱候補"
+    - "frontend/components/mobile-menu.tsx:3-6,193-203 — menu open 時だけ footer/auth/theme を読む構成へ変更候補"
+    - "frontend/components/signal-pie-chart.tsx:3-5,103-132 — `recharts` 代替(custom SVG)を行う場合の主対象"
+    - "frontend/next.config.mjs:1-8 — `optimizePackageImports` 追加候補"
+  affected_files:
+    - "frontend/components/auth-status.tsx:3-67 — MobileMenuから分離/遅延時に影響"
+    - "frontend/components/theme-toggle.tsx:3-24 — MobileMenu footer遅延時に影響"
+    - "frontend/components/help-link.tsx:3-64 — shared icon最適化時に影響"
+    - "frontend/components/ui/message-banner.tsx:1-30 — shared icon最適化時に影響"
+    - "frontend/components/portfolio-nav-selector.tsx:3-137 — shared icon最適化時に影響"
+    - "frontend/components/page-navigation.tsx:13-31 — shared chunk整理時に影響"
+    - "frontend/contexts/signals-context.tsx:61-243 — shell共通 chunkの重さに直結"
+    - "frontend/lib/api-cache.ts:1-240 — shared shellの `idb-keyval` / localStorage chunkに直結"
+  related_tests:
+    - "frontend/contexts/__tests__/signals-context.test.tsx — shared shell/context変更時は再確認必須"
+    - "frontend/components/__tests__/spa-navigation.test.tsx — `HomeButton` / page-navigation変更時に要更新"
+    - "frontend/components/__tests__/auth-status.test.tsx — MobileMenu footer分離時に要更新"
+    - "frontend/components/__tests__/chart-props.test.ts — chart lazy化後も `TotalReturnChart` props 契約は再確認"
+    - "dashboard専用 test は現状見当たらず。`mtd-chart` / `mtd-daily-table` / `signal-pie-chart` の回帰は新規追加が望ましい"
+  edge_cases:
+    - "MTD section を遅延化しても `TimingToggle` の state/timing 反映を壊さないこと"
+    - "below-the-fold lazy化では skeleton 高さを維持しないと layout shift が出る"
+    - "`SignalPieChart` は dynamic import 済みだが above-the-fold のため hydration後すぐ lazy chunk を取りに行く。完全遅延化すると見た目仕様が変わる"
+    - "`optimizePackageImports` は import path 変換が入るため build/test 両方で確認が必要"
+    - "build失敗原因が `out/` cleanup にあるため、bundle改善後の効果測定でも export cleanup失敗と本体bundle差分を混同しないこと"

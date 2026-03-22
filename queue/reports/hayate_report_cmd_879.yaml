@@ -1,0 +1,93 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_879_B
+parent_cmd: cmd_879
+timestamp: "2026-03-13T02:24:33+0900"
+status: failed
+ac_version_read: 3
+verdict: FAIL
+result:
+  summary: "cmd_879_B検証は FAIL。ローカル static export で HomeButton の `href` が `/dashboard/` 固定となり `?portfolio=` が脱落、クリック後も `/summary/` に留まり Dashboard へ遷移しない。さらに Render live は旧commit `18cfdf4d` のままで、対象実装 `a8329b8b` は未デプロイのため AC4 は実施不能。"
+  details: |
+    実施内容:
+    - `frontend/` で `npm run build` を実行し、static export を再生成した。
+    - `npx --yes serve out -l 3000` で export を起動し、CDP (Edge port 9223) から `http://localhost:3000/summary/?portfolio=45eb0c3a-a256-48f3-b3e3-d2a9d5c3bbfa` を検証した。
+    - local origin は `http://localhost:3000` を使用した。`127.0.0.1` は backend CORS whitelist 外で maintenance fallback になるため除外。
+    - live viewer password は Render env API から取得した `VIEWER_PASS_STANDARD` を用いて browser session を bootstrap した。
+
+    AC3 FAIL 根拠:
+    - HomeButton DOM を JS eval で確認すると `hrefAttr=/dashboard/`、`hrefResolved=http://localhost:3000/dashboard/`。現在URLは `.../summary/?portfolio=45eb0c3a-a256-48f3-b3e3-d2a9d5c3bbfa` であり、`?portfolio=` が render 時点で脱落している。
+    - probe 直前の DOM でも `linkHref` は `/dashboard/`。期待値 `/dashboard/?portfolio=45eb0c3a-a256-48f3-b3e3-d2a9d5c3bbfa` を満たさない。
+    - link click 後の probe 結果は `hrefAfter`/`pathAfter` ともに `http://localhost:3000/summary/?portfolio=...` / `/summary/` のまま。Dashboard 遷移自体が成立していない。
+    - probe 中の `blankFrames=0`, `minTextLen=640` だったため白画面フラッシュは観測していないが、(b) query 維持と遷移成立が失敗した時点で AC3 は FAIL。
+
+    AC4 未実施理由:
+    - `git rev-parse HEAD` は `a8329b8b213083a2398733bfb73b0d2319e005fb`。
+    - Render frontend deploy API の最新 live は `dep-d6ojn8ffte5s73d5f3sg` / commit `18cfdf4d2331116e214168f41972c397c424daf1`。
+    - 新しい deploy は `1469b208...` / `8a5ae8aa...` の build_failed のみで、`a8329b8b` は preview/live どちらにも載っていない。対象実装が未デプロイのため AC4 は検証不能。
+
+    失敗原因の推定:
+    - `frontend/components/page-navigation.tsx` は render 時に `buildUrlWithPortfolio("/dashboard/")` を評価している。
+    - `buildUrlWithPortfolio()` は `getCurrentPortfolioId()` で `window.location.search` を参照する実装のため、SSR/初期renderでは `window` 不在により `/dashboard/` が確定し、その後再計算されていない可能性が高い。
+purpose_validation:
+  cmd_purpose: "cmd_879_Aの実装(HomeButton Link化)を検証し、ローカル+CDP本番でSPA遷移条件を満たすか判定する"
+  fit: false
+  purpose_gap: "AC3がFAILし、対象commitがRenderに未デプロイのためAC4まで到達できていない。cmd目的の『SPA遷移条件を満たす確認』は未達。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_879.yaml
+test_results:
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm run build"
+    result: pass
+    notes: "Next.js static export 完了。"
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npx --yes serve out -l 3000"
+    result: pass
+    notes: "localhost:3000 で static export 起動。"
+  - command: "CDP probe on http://localhost:3000/summary/?portfolio=45eb0c3a-a256-48f3-b3e3-d2a9d5c3bbfa"
+    result: fail
+    notes: "HomeButton href が `/dashboard/` で query 欠落。click 後も `/summary/` に留まった。"
+ac_results:
+  - id: AC3
+    status: fail
+    evidence: "DOM probe: `hrefAttr=/dashboard/`。click後 `hrefAfter`/`pathAfter` が summary のままで Dashboard 遷移不成立。"
+  - id: AC4
+    status: blocked
+    evidence: "Render live は commit `18cfdf4d`。対象commit `a8329b8b` は未デプロイのため preview/live 検証不能。"
+  - id: AC5
+    status: pass
+    evidence: "rollback は `frontend/components/page-navigation.tsx` の HomeButton を `window.location.href = buildUrlWithPortfolio('/dashboard/')` 相当に戻すだけ。他ファイル波及なし。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "window依存helperをrender時に直呼びするとSSR fallback hrefが固定化する"
+  detail: "Client Componentでも render 時に `buildUrlWithPortfolio()` のような `window.location` 依存helperを直呼びすると、SSR/初期renderでは `window` が無く base path(`/dashboard/`)が確定し、hydration後も href が再計算されないことがある。URL query 維持が要件なら `useSearchParams()`/state 経由で client-side reactive に組み立てるべき。"
+  project: dm-signal
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash算術+set -e の教訓であり、今回の React/Next.js navigation 検証には直接関係しない。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml 構造に関する教訓であり、今回の SPA navigation 検証には無関係。"
+  - id: L005
+    useful: false
+    reason: "ashigaru build生成物の教訓であり、DM-signal frontend 検証には無関係。"
+  - id: L173
+    useful: false
+    reason: "AGENTS再生成系の教訓であり、今回の task では未使用。"
+  - id: L145
+    useful: false
+    reason: "instructions build source 修正の教訓であり、今回の frontend DOM probe には関係しない。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  summary: "cmd_879_Aはこのまま deploy へ進めず差し戻すべき"
+  reason: "AC3で portfolio query 維持が明確に失敗している。live へ進めても受け入れ条件を満たせない。まず HomeButton href 生成を reactive に修正し、再build後に local→deploy→CDP の順で再検証すべき。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

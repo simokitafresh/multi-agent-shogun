@@ -1,0 +1,65 @@
+worker_id: kagemaru
+task_id: cmd_1045
+parent_cmd: cmd_1045
+timestamp: "2026-03-18T02:58:00"
+status: done
+ac_version_read: 3
+verdict: PASS
+purpose_validation:
+  fit: true
+  reason: "lessons_useful形式検証厳格化。指示通りの3チェック(dict/useful存在/bool型)を実装"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+results:
+  AC1:
+    status: PASS
+    detail: |
+      cmd_complete_gate.sh L1926-1959のPython判定を全面改修。
+      - sys.exit(0)方式→フラグ方式に変更（bare except:がSystemExitを捕捉する既存バグを修正）
+      - except: → except Exception: に変更
+      - 各要素の3重チェック: isinstance(item,dict) + item.get('useful') is not None + isinstance(useful,bool)
+      - 不正要素検出時は'invalid_format'を返却
+      - bash側にinvalid_format分岐追加。正しい形式サンプルを表示するBLOCKメッセージ
+  AC2:
+    status: PASS
+    detail: |
+      4テストケース追加(test_cmd_complete_gate.bats):
+      - string_list形式(- L028) → BLOCK確認
+      - dict_no_useful形式(id+noteのみ) → BLOCK確認
+      - proper形式(id+useful+reason) → PASS確認
+      - null → BLOCK確認(退行なし)
+      既存lesson_impactテストのlessons_usefulをstring→dict形式に修正(厳格化に伴う自然な修正)
+  AC3:
+    status: PASS
+    detail: |
+      cmd_complete_gate関連12テスト全PASS。push完了(18f73b4)。
+      deploy_task 18件のfailはpre-existing(自分のスコープ外)。
+lesson_candidate:
+  found: true
+  items:
+    - category: infra
+      description: "cmd_complete_gate.shのPython判定でsys.exit(0)がbare except:に捕捉されていた。except Exception:に変更すべき。同パターンがスクリプト内の他のPython埋込にも存在する可能性あり"
+      severity: medium
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "((PASS++))パターンは本タスクで使用していない"
+  - id: L063
+    useful: false
+    reason: "YAML/dict構造の注意喚起として関連はあるが直接適用場面なし"
+  - id: L225
+    useful: false
+    reason: "entity名義混入の教訓。本タスクとは無関係"
+  - id: L097
+    useful: false
+    reason: "cmd_complete_gate.shのfield_get移行推奨。本タスクスコープ外"
+  - id: L079
+    useful: false
+    reason: "deploy_task.shのrelated_lessons再構築問題。本タスクとは無関係"

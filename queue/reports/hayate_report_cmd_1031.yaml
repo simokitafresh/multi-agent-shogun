@@ -1,0 +1,160 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_1031_review
+parent_cmd: cmd_1031
+timestamp: "2026-03-17T19:13:12"
+status: done
+ac_version_read: 2
+verdict: FAIL
+review_result:
+  status: FAIL
+  verdict: FAIL
+  findings:
+    - severity: critical
+      area: commit_integrity
+      detail: |
+        review対象の impl_a(Grid dedup + parity harness) が commit 化されていない。
+        現在の HEAD は `db1f29f9 Add PPE to GS runners` で、
+        commit内容は `run_077_kasoku.py / run_077_kawarimi.py / run_077_nukimi.py / run_077_oikaze.py / run_077_yotsume.py`
+        の5ファイルのみ。
+        一方、worktree には `run_077_kasoku.py`, `run_077_oikaze.py`, `run_077_kawarimi.py` の未commit差分と
+        `scripts/analysis/cmd_1031_grid_dedup_parity.py` の未追跡ファイルが残っている。
+        この状態で `git push` すると Grid dedup と parity harness を含まない commit だけが remote に出るため、
+        cmd_1031 の「2名並列実装を push まで完了」が成立しない。
+ac_results:
+  AC1:
+    status: FAIL
+    detail: |
+      5観点レビュー結果:
+
+      1. Grid dedup正当性: INFORMATIONAL
+      - 現worktree上の `run_077_oikaze.py:640-669`, `run_077_kawarimi.py:602-633`,
+        `run_077_kasoku.py:643-679` は subsetごとに `seen_signatures` を持ち、
+        1M alias を canonical `1M` に寄せている。
+      - `nukimi` / `yotsume` が dedup対象外という報告内容とも整合。
+
+      2. PPE実装品質: INFORMATIONAL
+      - `run_077_kasoku.py:775-866` の PPE テンプレートに対し、
+        `run_077_oikaze.py:721-809`, `run_077_kawarimi.py:676-760`,
+        `run_077_yotsume.py:722-806` は `_worker_init/_process_chunk_fast/_build_chunks/_run_mp`
+        を同型で実装しており、subset_id 単位 chunking も維持。
+      - `run_077_nukimi.py` と `run_077_kasoku.py` の `MP_WORKERS = 6` 更新も確認。
+
+      3. パリティ検証: INFORMATIONAL
+      - `cmd_1031_grid_dedup_parity.py` は `before_baseline.json` と `after_results.json` を比較し、
+        `row_md5 / monthly_md5 / pattern_ids / representative` を一致条件にしている。
+      - `outputs/analysis/cmd_1031_after_results.json` の comparison は `zero_diff=true`。
+      - `kirimaru_report_cmd_1031.yaml` の serial vs mp md5 5忍法一致とも整合。
+
+      4. ベンチマーク妥当性: INFORMATIONAL
+      - `outputs/analysis/cmd_1031_benchmark_after_ppe.json` では kawarimi だけ
+        `ppe_speedup_vs_after_serial = 1.0946x` と低いが、
+        150 pattern sample で process overhead が大きく、他忍法より picks/selection の計算密度が低いことと整合する。
+        CRITICALとは判定しない。
+
+      5. コード品質 / commit整合性: CRITICAL
+      - `sasuke_report_cmd_1031.yaml` は impl_a の対象に
+        `scripts/analysis/cmd_1031_grid_dedup_parity.py` と dedup差分を含めているが、
+        HEAD `db1f29f9` にそれらは含まれていない。
+      - 現在の worktree でも review対象ファイルに未commit差分が残っているため、
+        「pushして問題ない commit」が存在しない。
+  AC2:
+    status: FAIL
+    detail: |
+      FAIL のため `git push` は未実施。
+      blocking修正内容:
+      - impl_a の未commit差分
+        - `scripts/analysis/grid_search/run_077_oikaze.py:640-669`
+        - `scripts/analysis/grid_search/run_077_kawarimi.py:602-633`
+        - `scripts/analysis/grid_search/run_077_kasoku.py:643-679`
+      - 未追跡の parity harness
+        - `scripts/analysis/cmd_1031_grid_dedup_parity.py`
+      - 必要なら成果物の取り扱いも整理
+        - `outputs/analysis/cmd_1031_before_baseline.json`
+        - `outputs/analysis/cmd_1031_benchmark_after_ppe.json`
+diff_check:
+  repo: /mnt/c/Python_app/DM-signal
+  status: FAIL
+  detail: |
+    検証内容:
+    - `git show --name-only db1f29f9` で HEAD commit の収録ファイルを確認
+    - `git diff` で oikaze/kawarimi/kasoku に未commitの Grid dedup 差分が残っていることを確認
+    - `git status --short` で `scripts/analysis/cmd_1031_grid_dedup_parity.py` と
+      `outputs/analysis/cmd_1031_before_baseline.json`, `outputs/analysis/cmd_1031_benchmark_after_ppe.json`
+      が未追跡であることを確認
+    - `outputs/analysis/cmd_1031_after_results.json` の `comparison.zero_diff=true` を確認
+    - `rg TODO|FIXME` は対象6ファイルで非検出
+
+    結論:
+    - 実装品質上の CRITICAL は検出していない
+    - ただし review対象成果物が commit に閉じておらず、push可能状態ではないため verdict は FAIL
+result:
+  summary: "FAIL。Grid dedup / PPE / parity / benchmark の内容自体は概ね妥当だが、impl_a の主要差分が未commitのままで HEAD `db1f29f9` に載っていない。pushすると cmd_1031 の全成果物を欠落した状態になる。"
+  details: |
+    実施内容:
+    1. `queue/reports/sasuke_report_cmd_1031.yaml` と `queue/reports/kirimaru_report_cmd_1031.yaml` を精読。
+    2. `run_077_kasoku.py` の PPE テンプレートと `oikaze/kawarimi/yotsume` の PPE 実装を比較。
+    3. `cmd_1031_grid_dedup_parity.py`、`cmd_1031_before_baseline.json`、
+       `cmd_1031_after_results.json`、`cmd_1031_benchmark_after_ppe.json` を確認。
+    4. `git show db1f29f9` と `git diff` / `git status` で commit整合性を確認。
+
+    判定:
+    - Grid dedup ロジック: 現worktree上では妥当
+    - PPE 実装: kasokuテンプレート準拠で妥当
+    - パリティ: `zero_diff=true` で妥当
+    - ベンチマーク: kawarimi 低改善は説明可能で CRITICAL ではない
+    - ただし impl_a が未commitのため、review task の PASS 条件「pushして問題ない commit」が未充足
+purpose_validation:
+  cmd_purpose: "cmd_1031の2名並列実装をレビューし、PASS時のみpushする"
+  fit: true
+  purpose_gap: "レビューは完了したが、成果物が commit に閉じていないため push には進めなかった。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_1031.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+verification:
+  - command: "git -C /mnt/c/Python_app/DM-signal show --name-only --format=fuller db1f29f9"
+    result: fail
+    notes: "HEAD commit は PPE 5ファイルのみで、impl_a の parity harness と dedup 差分を含まない。"
+  - command: "git -C /mnt/c/Python_app/DM-signal diff -- run_077_{kasoku,oikaze,kawarimi}.py"
+    result: fail
+    notes: "review対象ファイルに未commitの Grid dedup 差分が残っている。"
+  - command: "python3 - <<'PY' ... after_results comparison check ... PY"
+    result: pass
+    notes: "`outputs/analysis/cmd_1031_after_results.json` の `comparison.zero_diff=true` を確認。"
+  - command: "rg -n \"TODO|FIXME\" target files"
+    result: pass
+    notes: "対象6ファイルで TODO/FIXME は非検出。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "並列実装レビューは『内容』と『commitに閉じているか』を分離して見るべし"
+  detail: "cmd_1031では Grid dedup/PPE/parity 自体は妥当でも、impl_a が未commitのまま残っており push 判定は FAIL になった。レビューではコード品質と同じ重みで commit integrity を確認すべき。"
+  project: dm-signal
+lessons_useful:
+  - id: L362
+    useful: true
+    reason: "報告文面ではなく JSON / git 実体を SSOT として確認する観点が有効だった。"
+  - id: L363
+    useful: false
+    reason: "ボトルネック優先順位の教訓であり、今回の blocking は commit integrity だった。"
+  - id: L021
+    useful: false
+    reason: "既存スクリプト探索の観点は参考になったが、blocking の主因ではない。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: true
+  title: "cmd_1031 は impl_a を commit 化してから再レビューに回すべき"
+  detail: "現状の HEAD `db1f29f9` は impl_b のみ。oikaze/kawarimi/kasoku の dedup 差分と parity harness を commit に閉じてからでないと push 判定に進めない。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

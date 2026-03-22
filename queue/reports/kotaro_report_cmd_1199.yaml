@@ -1,0 +1,49 @@
+task_id: cmd_1199_kotaro_revert
+subtask_id: cmd_1199_kotaro_revert
+parent_cmd: cmd_1199
+agent: kotaro
+status: done
+ac_version_read: 71b4408f
+summary: 'run_077_monban.pyをPipelineEngine統合前(2549e9b2~1)の状態に復元。 simulate_pattern()内のAbsoluteMomentumBlock/PipelineContext経由計算を
+  元のNumPy直接計算に戻した。yotsume.pyの変更は維持。
+
+  '
+acceptance_criteria:
+- id: AC1
+  status: PASS
+  binary_checks:
+  - 'monban.pyがPipelineEngine統合前の状態に戻ったか: yes'
+  - 'yotsume.pyの変更は維持されているか: yes'
+  - 'commitが成功したか: yes'
+  evidence: 'diff <(git show 2549e9b2~1:...) monban.py = 空(完全一致)。 yotsume.py diff
+    HEAD = 空(未変更)。commit 27bdc1b7成功。
+
+    '
+files_modified:
+- path: scripts/analysis/grid_search/run_077_monban.py
+  action: reverted
+  detail: PipelineEngine統合(671-785行)をNumPy直接計算(671-746行)に復元。36行追加75行削除。
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+  no_lesson_reason: 単純git revertで新たな知見なし
+lessons_useful:
+- id: L074
+  useful: false
+  reason: "単純revertで無関係"
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+lessons_useful[0]:
+  id: L074
+  useful: false
+  reason: 単純revertタスクで無関係

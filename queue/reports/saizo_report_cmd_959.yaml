@@ -1,0 +1,246 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_959
+parent_cmd: cmd_959
+timestamp: "2026-03-15T19:27:57+0900"
+status: done
+ac_version_read: 1
+result:
+  summary: "136件を独立判定し、転記要93・削除可25・残留18で分類した。dm_signal_decisionsは52件が受動層未索引、shogun_lessonsは殿の哲学17件を残留、41件を運用規則として転記要とした。"
+  details: |
+    実施内容:
+    - `queue/cmd959_disputed_content.yaml` の136件を全件読了
+    - 指定された受動層のみを照合対象とした:
+      `CLAUDE.md`
+      `instructions/shogun.md`
+      `instructions/karo.md`
+      `instructions/ashigaru.md`
+      `projects/infra/lessons.yaml`
+      `projects/dm-signal/lessons.yaml`
+      `projects/auto-ops/lessons.yaml`
+      `tasks/lessons.md`
+      `context/dm-signal*.md`
+      `context/infrastructure.md`
+      `context/auto-ops.md`
+      `projects/dm-signal.yaml`
+      `projects/auto-ops.yaml`
+
+    判定基準:
+    - 削除可: 同趣旨が受動層に既に存在、または旧運用/時点スナップショットでMCP残留価値が薄い
+    - 転記要: 有用な裁定・運用知識だが受動層に未索引
+    - 残留: 殿の哲学・将来構想・未確定アイデアでMCP保持が妥当
+    - 迷いどころは残留寄りで判定
+
+    集計:
+    - 全体: 転記要93 / 削除可25 / 残留18
+    - dm_signal_decisions: 転記要52 / 削除可8 / 残留1
+    - shogun_lessons: 転記要41 / 削除可17 / 残留17
+purpose_validation:
+  cmd_purpose: "queue/cmd959_disputed_content.yaml の136件について、受動的層に正本があるかを独立判定して報告する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - queue/tasks/saizo.yaml
+  - queue/reports/saizo_report_cmd_959.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful: []
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify:
+    - "projects/dm-signal.yaml"
+    - "context/dm-signal-core.md"
+    - "context/dm-signal-research.md"
+    - "context/dm-signal-frontend.md"
+    - "context/infrastructure.md"
+    - "projects/auto-ops.yaml"
+    - "context/auto-ops.md"
+    - "instructions/shogun.md"
+    - "instructions/karo.md"
+  affected_files:
+    - "projects/infra/lessons.yaml"
+    - "projects/dm-signal/lessons.yaml"
+    - "projects/auto-ops/lessons.yaml"
+    - "tasks/lessons.md"
+  related_tests: []
+  edge_cases:
+    - "削除可25件のうち複数は『重複』だけでなく『旧運用/時点スナップショット』として削除寄りに判定した"
+    - "残留18件は殿の哲学・仙人構想・未確定アイデアに限定し、運用規則は転記要へ寄せた"
+    - "受動層未索引でも、単なる中間計画や古い next-step は転記より削除可を選んだ"
+findings: |
+  entity | obs_index | verdict | note
+  dm_signal_decisions | 1 | 転記要 | CPCV一本化/Bootstrap廃止の裁定は受動層未索引
+  dm_signal_decisions | 2 | 転記要 | HououJou廃止裁定は受動層未索引
+  dm_signal_decisions | 4 | 転記要 | open/close最終運用裁定の全体像が未索引
+  dm_signal_decisions | 5 | 転記要 | GSトレーサビリティ2軸規則が未索引
+  dm_signal_decisions | 6 | 転記要 | as-of=データ取得日の定義が未索引
+  dm_signal_decisions | 7 | 転記要 | GS metadataのDB+YAML二重保存規則が未索引
+  dm_signal_decisions | 8 | 転記要 | 戦略を絞らない哲学が未索引
+  dm_signal_decisions | 9 | 転記要 | SUSPECT自動Ban承認条件が未索引
+  dm_signal_decisions | 10 | 削除可 | projects/dm-signal.yaml calculation_integrity に本番完全一致最優先がある
+  dm_signal_decisions | 11 | 転記要 | 基盤先行主義が未索引
+  dm_signal_decisions | 12 | 転記要 | 平均は悪/最強一匹の哲学が未索引
+  dm_signal_decisions | 13 | 転記要 | TL+MRL/ショート無し/最強最弱を買う哲学が未索引
+  dm_signal_decisions | 14 | 転記要 | トレンドフォロー/自動適応/組合せ=堅牢性の結論が未索引
+  dm_signal_decisions | 15 | 転記要 | 100年後再現性の原則が未索引
+  dm_signal_decisions | 16 | 転記要 | ブロック選択自体がパラメータというFoF設計原則が未索引
+  dm_signal_decisions | 17 | 転記要 | 既存データで回答可能か先に確認する原則が未索引
+  dm_signal_decisions | 18 | 転記要 | 曖昧データ切捨て/サンクコスト排除が未索引
+  dm_signal_decisions | 26 | 転記要 | 有限時間投資哲学4指標が未索引
+  dm_signal_decisions | 29 | 転記要 | L2組合せn=2,3,4限定の一般ルールが未索引
+  dm_signal_decisions | 30 | 削除可 | cmd_160系SSOT/GFS CSV知見は context/dm-signal-research.md と lessons に存在
+  dm_signal_decisions | 31 | 転記要 | GFS CSV→mode CSV→register→PostgreSQL の血統が未索引
+  dm_signal_decisions | 32 | 転記要 | GS7本CSV直接読込統一/UUID差替禁止の裁定が未索引
+  dm_signal_decisions | 33 | 転記要 | cmd_123→160の裁定経緯が未索引
+  dm_signal_decisions | 34 | 転記要 | 家老刺青4原則が未索引
+  dm_signal_decisions | 36 | 転記要 | GS系スキル却下理由は受動層未索引
+  dm_signal_decisions | 39 | 転記要 | cmd_123完了判定(門番除外)が未索引
+  dm_signal_decisions | 40 | 転記要 | 忍法存在意義=L1最強比較ルールが未索引
+  dm_signal_decisions | 41 | 転記要 | L3 WF必須/本番登録停止の裁定詳細が未索引
+  dm_signal_decisions | 42 | 転記要 | L3反復サイクル原則が未索引
+  dm_signal_decisions | 43 | 転記要 | Q0独立性原則が未索引
+  dm_signal_decisions | 44 | 転記要 | 2026-02-20時点の層別パリティ診断が未索引
+  dm_signal_decisions | 45 | 転記要 | L0成功を踏まえたL2故障原因仮説が未索引
+  dm_signal_decisions | 69 | 削除可 | context/dm-signal-core.md に benchmark=SPY固定 がある
+  dm_signal_decisions | 70 | 転記要 | BB重ね合わせの本質/将来拡張余地が未索引
+  dm_signal_decisions | 71 | 転記要 | backups削除裁定はinfra側正本未配置
+  dm_signal_decisions | 72 | 転記要 | cmd198_delete_57pf.py削除裁定はinfra側正本未配置
+  dm_signal_decisions | 73 | 転記要 | marketing-directorコミット裁定はinfra側正本未配置
+  dm_signal_decisions | 75 | 削除可 | projects/dm-signal.yaml に outputs/charts 規則がある
+  dm_signal_decisions | 76 | 転記要 | top_n<=2哲学の裁定文が未索引
+  dm_signal_decisions | 77 | 転記要 | 機密3件削除裁定はinfra側正本未配置
+  dm_signal_decisions | 83 | 削除可 | 現行プロトコルは忍者→家老報告であり本obsは旧運用
+  dm_signal_decisions | 85 | 削除可 | cmd_276/277結果は受動層化済みで『次の3本』自体は時限情報
+  dm_signal_decisions | 89 | 転記要 | cmd_293設計裁定群が未索引
+  dm_signal_decisions | 90 | 削除可 | auto-save検討は中間メモで obs91/現行実装に上書き済み
+  dm_signal_decisions | 91 | 転記要 | auto-save破壊→復元の事実は frontend context 未索引
+  dm_signal_decisions | 93 | 転記要 | MAX_PORTFOLIOS env化の運用知識が未索引
+  dm_signal_decisions | 94 | 転記要 | cmd_304 masking裁定詳細が未索引
+  dm_signal_decisions | 95 | 転記要 | cmd_306 masking再設計詳細が未索引
+  dm_signal_decisions | 98 | 転記要 | PD-041段階的降格の裁定文が未索引
+  dm_signal_decisions | 101 | 転記要 | docs/research復旧方針A採択の裁定文が未索引
+  dm_signal_decisions | 103 | 転記要 | P_det G1+G2初版採用の具体パラメータが未索引
+  dm_signal_decisions | 104 | 転記要 | advisor詳細7点が未索引
+  dm_signal_decisions | 105 | 残留 | 未確定アイデア段階でMCP保持が妥当
+  dm_signal_decisions | 106 | 転記要 | PD-053丸印配置裁定が未索引
+  dm_signal_decisions | 107 | 転記要 | PD-054 page_views設計裁定が未索引
+  dm_signal_decisions | 115 | 削除可 | SSOT3層逆参照の着地点は context/dm-signal-core.md に反映済み
+  dm_signal_decisions | 118 | 転記要 | 事前選別禁止の研究方針が未索引
+  dm_signal_decisions | 120 | 転記要 | 投資辞書構想が未索引
+  dm_signal_decisions | 125 | 転記要 | 月次cron無し/手動指示方式はauto-ops側未索引
+  dm_signal_decisions | 130 | 転記要 | Tailscale+ローカル完結方針はauto-ops側未索引
+  dm_signal_decisions | 131 | 転記要 | 258 PDF段階修正+4名再チェック裁定はauto-ops側未索引
+  shogun_lessons | 83 | 削除可 | instructions/karo.md にモデルID+推論レベル併記規則がある
+  shogun_lessons | 84 | 残留 | 仙人構想の高位ビジョンはMCP保持が妥当
+  shogun_lessons | 85 | 残留 | 仙人=思索主体の発想はMCP保持が妥当
+  shogun_lessons | 86 | 残留 | 仙人の外部データ巡回構想はMCP保持が妥当
+  shogun_lessons | 87 | 残留 | 忍者の均質性は殿の組織哲学でMCP保持が妥当
+  shogun_lessons | 90 | 転記要 | cmd途中修正の二択ルールは運用規則として受動層向き
+  shogun_lessons | 91 | 転記要 | D006下のデーモン入替手順は受動層向き
+  shogun_lessons | 92 | 残留 | シャチの群れ原理は殿の設計哲学でMCP保持が妥当
+  shogun_lessons | 93 | 残留 | 仙人生命維持装置(記憶/heartbeat)はMCP保持が妥当
+  shogun_lessons | 94 | 残留 | 仙人soul=哲学はMCP保持が妥当
+  shogun_lessons | 95 | 残留 | soulはルールではないという哲学はMCP保持が妥当
+  shogun_lessons | 96 | 転記要 | pending cmd=発令済みの復帰原則は受動層向き
+  shogun_lessons | 97 | 削除可 | instructions/shogun.md F001 が直接実装禁止を明文化済み
+  shogun_lessons | 98 | 転記要 | 家老自己認識問題と計器盤改善論点はinfra文書向き
+  shogun_lessons | 99 | 残留 | 『最もハードな方法が効率』は殿の哲学でMCP保持が妥当
+  shogun_lessons | 100 | 転記要 | note記事ライティング2系統の運用知識は受動層向き
+  shogun_lessons | 101 | 転記要 | 34件一括淘汰裁定はlesson運用史として受動層向き
+  shogun_lessons | 102 | 転記要 | Claude Code Plugins候補/effortLevel運用はinfra文書向き
+  shogun_lessons | 103 | 転記要 | /clear同時着信でも復帰手順先行は受動層向き
+  shogun_lessons | 104 | 削除可 | instructions/shogun.md と instructions/karo.md に中立プロンプト原則がある
+  shogun_lessons | 105 | 転記要 | 偵察結果の報告責任分担は受動層向き
+  shogun_lessons | 106 | 転記要 | Agent Teams全面採用非推奨の結論はinfra文書向き
+  shogun_lessons | 107 | 転記要 | north_star原則はcmd書式/将軍手順へ転記向き
+  shogun_lessons | 108 | 転記要 | INTEG-001矛盾検出チェックリストは受動層向き
+  shogun_lessons | 109 | 転記要 | SKILL.md description要件は受動層向き
+  shogun_lessons | 110 | 転記要 | Batch Processing Protocolは受動層向き
+  shogun_lessons | 111 | 転記要 | Critical Thinking 5原則は受動層向き
+  shogun_lessons | 112 | 転記要 | cmd作成前grep確認義務は受動層向き
+  shogun_lessons | 113 | 転記要 | 計測cmdの網羅性原則は受動層向き
+  shogun_lessons | 114 | 転記要 | 計測フライホイール原則は受動層向き
+  shogun_lessons | 115 | 削除可 | instructions/shogun.md F001 が将軍直接編集禁止を包含
+  shogun_lessons | 116 | 転記要 | 稼働CLI操作/設定変更の安全原則は受動層向き
+  shogun_lessons | 117 | 削除可 | 編成事実は時限情報で受動層/設定が正本、MCP残留不要
+  shogun_lessons | 118 | 削除可 | cmd_686知見は projects/dm-signal/lessons.yaml / context にある
+  shogun_lessons | 119 | 削除可 | teire監査結果は時点スナップショットでMCP残留不要
+  shogun_lessons | 120 | 転記要 | 戦略分析は将軍の役割という運用原則は受動層向き
+  shogun_lessons | 121 | 残留 | CI/CD不在が最大ROIという戦略所見はMCP保持が妥当
+  shogun_lessons | 122 | 転記要 | GSD式4観点偵察パターンは受動層向き
+  shogun_lessons | 123 | 転記要 | 万全偵察パターンは受動層向き
+  shogun_lessons | 124 | 削除可 | cmd_732系のMCP→lessons同期知識は infra lessons/context にある
+  shogun_lessons | 126 | 削除可 | trade-rule不整合/再選定必要は context/dm-signal.md / research にある
+  shogun_lessons | 127 | 転記要 | 殿との文書突合のROI知見は受動層向き
+  shogun_lessons | 128 | 残留 | +1点の複利は殿の基本哲学でMCP保持が妥当
+  shogun_lessons | 129 | 残留 | 負の複利は殿の基本哲学でMCP保持が妥当
+  shogun_lessons | 130 | 残留 | 改善判断2問は殿の基本哲学でMCP保持が妥当
+  shogun_lessons | 131 | 転記要 | pending_decisions確認義務は受動層向き
+  shogun_lessons | 132 | 転記要 | 状態確認の順序(先に陣形図)は受動層向き
+  shogun_lessons | 133 | 転記要 | 大規模計測cmd分割原則は受動層向き
+  shogun_lessons | 134 | 転記要 | 分割粒度=1ページずつは受動層向き
+  shogun_lessons | 135 | 転記要 | 失敗を失敗として検知通知できない設計が真因という教訓は受動層向き
+  shogun_lessons | 136 | 転記要 | 神速停止=ペイン再起動は受動層向き
+  shogun_lessons | 137 | 削除可 | projects/auto-ops.yaml の preflight-first/auto-launch 規則が同趣旨
+  shogun_lessons | 138 | 削除可 | projects/auto-ops.yaml と context/auto-ops.md に preflight-first 順序がある
+  shogun_lessons | 139 | 転記要 | 計測結果だけでなく計測プロセス自体を改善対象にする原則は受動層向き
+  shogun_lessons | 140 | 削除可 | projects/auto-ops.yaml に Chrome優先 Edge fallback がある
+  shogun_lessons | 141 | 転記要 | note本文取得は note API first の規則が受動層未索引
+  shogun_lessons | 142 | 残留 | 24/365構造的優位の所見は殿の戦略認識でMCP保持が妥当
+  shogun_lessons | 143 | 転記要 | 報告済みデータを将軍が再確認するなは受動層向き
+  shogun_lessons | 145 | 転記要 | cmd送信前に陣形図再確認は受動層向き
+  shogun_lessons | 146 | 転記要 | 検証トレーサビリティ必須原則は受動層向き
+  shogun_lessons | 147 | 削除可 | gstack知見の主要要素は instructions/context へ反映済み
+  shogun_lessons | 148 | 転記要 | browse/CDP daemon+ref体系の知見はinfra文書向き
+  shogun_lessons | 149 | 削除可 | Suppressions/stop_for/推薦先行の欠点は cmd_875-876 で受動層に反映済み
+  shogun_lessons | 150 | 残留 | 仙人+QA agent統合候補は将来構想でMCP保持が妥当
+  shogun_lessons | 151 | 転記要 | 独立cmd偵察の並列配備原則は受動層向き
+  shogun_lessons | 152 | 削除可 | context/auto-ops.md に個人事業経費管理ユースケースがある
+  shogun_lessons | 153 | 転記要 | 質問前にconfig/.env確認/F008解釈は受動層向き
+  shogun_lessons | 154 | 転記要 | データ整合性検証の最低3点セットは受動層向き
+  shogun_lessons | 155 | 残留 | 不要物は削除せよは殿の判断原理でMCP保持が妥当
+  shogun_lessons | 156 | 残留 | 削除判断の本質=ユニーク性は殿の判断原理でMCP保持が妥当
+  shogun_lessons | 157 | 転記要 | 目的定義なしに実装を始めるなは受動層向き
+  shogun_lessons | 158 | 転記要 | 例外を提案するなは受動層向き
+  shogun_lessons | 159 | 転記要 | 一回限り例外でなく長期ルール変更のみ提案可は受動層向き
+  shogun_lessons | 160 | 削除可 | projects/auto-ops.yaml report_quality に曖昧・主観的表現禁止がある
+  shogun_lessons | 161 | 削除可 | projects/auto-ops.yaml に証票管理5厳命がある
+verdict: PASS
+confidence: medium
+blind_spots:
+  - "判定根拠は task 指定の受動層に限定した。`AGENTS.md` や `config/settings.yaml` は正式根拠に使っていない。"
+  - "削除可25件の一部は『重複』ではなく『旧運用/時限スナップショット』として削除寄りに判定した。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "136件を entity | obs_index | verdict | note の表で全件分類し、転記要93・削除可25・残留18を集計した。"
+test_results:
+  - command: "sed -n '1,240p' queue/cmd959_disputed_content.yaml && sed -n '1,220p' projects/infra.yaml && sed -n '1,260p' context/infrastructure.md && sed -n '1,260p' projects/infra/lessons.yaml"
+    result: pass
+    notes: "任務定義・infra知識・受動層候補を先に固定した。"
+  - command: "rg -n 'SPY|outputs/charts|preflight-first|中立プロンプト|cmd_540|cmd_539|cmd_732|cmd_686|cmd_871|曖昧・主観的' projects/dm-signal.yaml context/dm-signal*.md projects/dm-signal/lessons.yaml context/infrastructure.md projects/infra/lessons.yaml instructions/*.md projects/auto-ops.yaml context/auto-ops.md"
+    result: pass
+    notes: "既存正本がある削除可候補をキーフレーズ検索で確認した。"
+  - command: "python3 /tmp 集計（/tmp/saizo_cmd959_findings.tsv）"
+    result: pass
+    notes: "136件の verdict を集計し、dm_signal_decisions 52/8/1、shogun_lessons 41/17/17、全体 93/25/18 を確認した。"

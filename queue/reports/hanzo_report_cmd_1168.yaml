@@ -1,0 +1,16 @@
+report:
+  task_id: cmd_1168_detect
+  parent_cmd: cmd_1168
+  ninja: hanzo
+  status: done
+  started_at: 2026-03-20 19:49:30
+  completed_at: 2026-03-20 19:52:00
+  results:
+    AC1:
+      status: PASS
+      summary: detect_task_type関数(L998-1009)に_reconパターンを追加。_scoutの直後に配置。全既存パターン(scout/impl/review/design/unknown)テストPASS
+      binary_checks: [{"check": "cmd_complete_gate.shのdetect_task_type関数に_reconパターンが追加されたか", "result": "PASS", "evidence": "L1002に elif _recon in tid return recon を確認"}, {"check": "_reconサフィックスを持つタスクIDがreconと判定されるか", "result": "PASS", "evidence": "python3テストでdetect_task_type(cmd_1165_recon)=recon確認"}, {"check": "既存の_scout/_impl/_review/_designパターンが壊れていないか", "result": "PASS", "evidence": "全既存パターンがテストPASS"}]
+      changes: [{"file": "scripts/cmd_complete_gate.sh", "lines": "1001-1002", "description": "_reconサフィックス判定を追加"}]
+  lesson_candidate: []
+  decision_candidate: []
+verdict: PASS

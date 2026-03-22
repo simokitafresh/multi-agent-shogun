@@ -1,0 +1,90 @@
+worker_id: tobisaru
+task_id: subtask_544_impl_b
+parent_cmd: cmd_544
+timestamp: "2026-03-04T22:36:00"
+status: done
+ac_version_read: 3
+
+review_result: null
+
+summary: |
+  弱体化確率推定エンジンを本番DB(DATABASE_URL)で実測検証。
+  91PF全てでエラーなく動作、partial月(2026-03 MTD)でもP_detが正常に算出。
+
+ac_results:
+  ac1:
+    status: PASS
+    detail: |
+      本番PostgreSQL(Render singapore)にDATABASE_URL経由で接続。
+      既存パイロットスクリプト(7PF)がエラーなく動作し、cmd_539パイロットと同一結果を再現。
+      全PF検証スクリプト(run_full_verification.py)も91PF全てでエラー0件。
+  ac2:
+    status: PASS
+    detail: |
+      全PF数: 91体
+      総実行時間: 16.55秒 (DBロード: 16.29s, 分析: 0.20s)
+      PFあたり平均: 0.0022秒 (分析部分のみ)
+      PFあたり中央値: 0.0018秒
+      PFあたり最大: 0.0097秒 (Ave-X)
+      7PFパイロット(7.73秒)との比較: 91PFで16.55秒。
+      ボトルネックはDB I/O(16.29s)で、分析計算は0.20sと高速。
+      分析計算はPF数に線形スケール(91/7≈13倍、0.20s/0.015s≈13倍)。
+  ac3:
+    status: PASS
+    detail: |
+      2026-03-04時点で全91PFが2026-03(partial月=MTD)データを保有。
+      NaN P_det値: 0件(全窓6/12/24で計算成功)。
+      partial月のリターンは月途中の時価変動を反映(例: DM2=-1.37%, Ave-X=-1.75%)。
+      ラベル判定も正常(DETERIORATING=18, MIXED=42, GOOD=19, EARLY_WARNING=9, WATCH=3)。
+      partial月でP_detが正しく振る舞う理由: 月次リターンが存在すれば時系列長に依存するのみで、
+      月内の日数不足はP_det計算に影響しない(月次リターンはmonthly_returnsテーブルで1行1月)。
+
+timing_detail:
+  total_pfs: 91
+  total_elapsed_sec: 16.55
+  db_load_sec: 16.29
+  analysis_sec: 0.20
+  per_pf_avg_sec: 0.0022
+  per_pf_median_sec: 0.0018
+  per_pf_max_sec: 0.0097
+  per_pf_max_name: Ave-X
+  pilot_7pf_sec: 7.73
+
+label_distribution:
+  DETERIORATING: 18
+  MIXED: 42
+  GOOD: 19
+  EARLY_WARNING: 9
+  WATCH: 3
+
+purpose_validation:
+  cmd_purpose: "cmd_539パイロット実装済みの弱体化確率推定エンジンを本番DBで実測検証"
+  fit: true
+  purpose_gap: ""
+
+files_modified:
+  - path: scripts/analysis/deterioration/run_full_verification.py
+    action: created
+    lines: 178
+  - path: scripts/analysis/deterioration/output/full_verification_report.csv
+    action: created
+    lines: 274
+
+lessons_useful:
+  - L001
+  - L079
+
+lesson_candidate:
+  found: true
+  title: "弱体化確率推定のボトルネックはDB I/Oで分析計算ではない"
+  detail: |
+    91PF全体の実行時間16.55sのうち、分析計算は0.20s(1.2%)。DBロードが16.29s(98.5%)。
+    PF数がさらに増加しても分析計算のスケーリングは問題なし。
+    パイプライン統合時にDB読込を既存のデータロード処理に統合すれば、
+    追加コストは分析計算0.20sのみとなる。
+  project: dm-signal
+
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

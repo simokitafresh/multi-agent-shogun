@@ -1,0 +1,44 @@
+parent_cmd: cmd_1162
+task_id: cmd_1162_gunshi
+ninja: hanzo
+status: done
+started_at: '2026-03-20T19:12:00'
+finished_at: '2026-03-20T19:22:00'
+ac_version: 7bf3a6f0
+progress: AC1+AC4 完了
+results:
+  AC1:
+    status: PASS
+    summary: gunshi.mdに Report Review セクション(L219-280)を追加。忍者報告4観点判定基準・出力フォーマット(verdict/fail_reasons/lesson_quality/escalation_needed)・通知手順・draftレビューとの違い比較表を記載
+    files_changed: instructions/gunshi.md
+    binary_checks:
+      PASS: draftレビューとreportレビューが明確に分離されているか?
+  AC4:
+    status: PASS
+    summary: gunshi_review_log.yamlにreview_type:draft/reportのエントリ構造を追加(gunshi.md L346-361)。cmd_quality_log.shのfetch_gunshi_verdict()をgunshi_review_log.yaml優先検索に改善(unknown問題解消)
+    files_changed: 'instructions/gunshi.md
+
+      scripts/cmd_quality_log.sh'
+    binary_checks:
+      PASS: cmd_quality_log.shがgunshi_review_log.yamlからverdict取得可能か? (cmd_1158→APPROVE,
+        cmd_1162→APPROVE 取得確認済み)
+lesson_candidate:
+  found: false
+  title: ''
+  detail: gunshi_review_log.yamlは永続ストア。karo inboxはアーカイブで消失するため、計測基盤はinboxではなくログファイルを一次ソースにすべき
+  project: ''
+lessons_useful:
+- id: L271
+  useful: true
+  reason: gunshi_accuracy_log.sh未作成の教訓を意識し、スクリプト新設ではなく既存cmd_quality_log.shの検索先改善でgunshi_verdict
+    unknown問題を解消
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

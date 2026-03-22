@@ -1,0 +1,73 @@
+worker_id: tobisaru
+task_id: cmd_1250
+parent_cmd: cmd_1250
+timestamp: '2026-03-22T19:33:05'
+status: done
+ac_version_read: 98465479
+result:
+  summary: AC1 PASS(recalculate完了,errors=0)。AC2/AC3 FAIL — 全21体のholding_signalパリティ不一致。根本原因はselection_pipeline.blocksが機能していないこと
+  details: AC1 recalculate_fast.py full実行 PASS (errors=0, 1562日, 101530signals, 59FoF)。AC2
+    FoF21体holding_signalパリティ 21/21 FAIL。シン分身3体はselection_pipeline.blocks空配列。他18体はblocks有だがCash出現頻度がGS期待値(47-67%)と大幅乖離(DB
+    0-1.2%)。AC3 verdict=FAIL
+purpose_validation:
+  cmd_purpose: cmd_1249でv2正本更新後のrecalculate+holding_signalパリティ検証
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: true
+  no_lesson_reason: 
+  title: FoF recalculate時のPYTHONPATH問題とselection_pipeline動作乖離
+  detail: (1) recalculate_fast.pyをCLIから実行する場合、backend/app/services/pipeline/base.py:121のfrom
+    app.utils.data_loaderがModuleNotFoundErrorになる。sys.path.insert(0,backend)が必要。標準PFはvectorized
+    signals(Phase3.7)でこのパスを通らないため発覚が遅れた。(2) selection_pipeline.blocksが設定されていてもGS結果と大幅乖離(NHF
+    0-1% vs 47-67%)。FoF recalculateのselection判定がGSと同一エンジンを使用しているか要確認(PI-009違反の可能性)
+  project: dm-signal
+lessons_useful:
+- id: L074
+  useful: false
+  reason: recalculate/パリティ検証でbashの算術式((PASS++))パターンは未使用
+- id: L225
+  useful: false
+  reason: 本タスクはdm_signal_decisions名義の混入問題とは無関係
+- id: L346
+  useful: false
+  reason: 旧GS 5Phaseパイプラインの知識は本タスクのrecalculate+突合には不要だった
+- id: L224
+  useful: false
+  reason: api singletonのpendingRequests問題はバックエンドrecalculateとは無関係
+- id: L088
+  useful: true
+  reason: FoF検証ではNHF突合が中心。tie境界ケースは本タスクでもCSV NHFとDB NHFの比較で間接的に検証対象だった
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: recalculate_fast.pyをportfolio_id指定なしで実行したか
+    result: 'yes'
+  - check: 実行完了ログ(処理件数、エラー有無)を記録したか
+    result: 'yes'
+  - check: エラーなく全PF処理が完了したか
+    result: 'yes'
+  AC2:
+  - check: CSV正本(shin_ninpo_v2_12body_champions.csv)を読み込んだか
+    result: 'yes'
+  - check: DB recalculate後のholding_signalを全21体分取得したか
+    result: 'yes'
+  - check: 全月×全21体の突合を実行したか
+    result: 'yes'
+  - check: 不一致件数を正確にカウントしたか
+    result: 'yes'
+  AC3:
+  - check: PASS/FAIL件数を集計したか
+    result: 'yes'
+  - check: 不一致があれば詳細(PF名+月+差分)を記載したか
+    result: 'yes'
+  - check: verdict(PASS/FAIL)を二値で判定したか
+    result: 'yes'
+verdict: FAIL

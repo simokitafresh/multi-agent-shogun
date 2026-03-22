@@ -1,0 +1,96 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: sasuke
+task_id: cmd_908_B
+parent_cmd: cmd_908
+timestamp: "2026-03-13T14:30:57+0900"
+status: pass
+verdict: PASS
+reviewed_by: karo
+reviewed_at: "2026-03-13T14:33:00"
+review_notes: "AC4(振込領収書PDF)+AC5(purchase-receipts正名化)+AC6(CLI4サブコマンド)+AC7(56テストPASS)完了。飛猿成果物を活かしtransfer-receiptsを追加した堅実な実装"
+ac_version_read: 4
+ac_results:
+  - id: AC4
+    status: pass
+    evidence: "[workflows/note_pipeline.py](/mnt/c/Python_app/auto-ops/workflows/note_pipeline.py) に `transfer-receipts` 用の振込管理遷移、月別 transfer row 収集、`Page.printToPDF` 出力、`{YYYY-MM}_note_振込領収書_{金額}.pdf` 命名、`data/note_receipts/YYYY-MM/` 配下への保存を実装。"
+  - id: AC5
+    status: pass
+    evidence: "[workflows/note_pipeline.py](/mnt/c/Python_app/auto-ops/workflows/note_pipeline.py) で購入履歴 CLI を `purchase-receipts` に正名化し、宛名入力付きの購入領収書 PDF 化を維持。snapshot ref の stale 化を避けるため purchase row を再解決する処理も追加。"
+  - id: AC6
+    status: pass
+    evidence: "`python3 workflows/note_pipeline.py --help` で `sales`, `transfer-receipts`, `purchase-receipts`, `all` を確認。`all` は sales + transfer + purchase の3系統を順に実行する構成へ更新。"
+  - id: AC7
+    status: pass
+    evidence: "`PYTHONPATH=. pytest -q` が `56 passed in 2.44s`。`tests/test_note_pipeline.py` で login flow(mock), CLI parse, PDF 命名、保存パス、purchase/transfer の ref 再解決を検証。`python3 -m py_compile workflows/note_pipeline.py tests/test_note_pipeline.py` も PASS。"
+result:
+  summary: "cmd_908_B は完了。`note_pipeline.py` に振込領収書 PDF、自動化 CLI 拡張、購入領収書の ref 再解決強化を実装し、全体テスト 56 件 PASS を確認した。"
+  details: |
+    実施内容:
+    1. `queue/inbox/sasuke.yaml` の未読 `task_assigned` を既読化し、`queue/tasks/sasuke.yaml` を `in_progress` へ更新した。
+    2. `projects/auto-ops.yaml` / `projects/auto-ops/lessons.yaml` / `context/auto-ops.md` / `queue/reports/kagemaru_report_cmd_908.yaml` / `queue/reports/kagemaru_report_cmd_895.yaml` を読んで前提と既存偵察を確認した。
+    3. `workflows/note_pipeline.py` に `TransferEntry` と transfer/purchase entry の再探索ロジックを追加し、ページ往復後の stale ref で処理が止まる経路を解消した。
+    4. CLI を `sales`, `transfer-receipts`, `purchase-receipts`, `all` に拡張し、`all` で sales + transfer + purchase を順次処理するよう更新した。
+    5. 振込領収書 PDF の命名 helper と `data/note_receipts/YYYY-MM/` 保存 path helper を追加した。購入領収書も同 helper 経由へ揃えた。
+    6. `PYTHONPATH=. pytest -q tests/test_note_pipeline.py` と `PYTHONPATH=. pytest -q` を実行し、合計 56 tests PASS を確認した。`python3 workflows/note_pipeline.py --help` と `python3 -m py_compile workflows/note_pipeline.py tests/test_note_pipeline.py` も PASS。
+
+    補足:
+    - `.env.note.example` には `NOTE_RECEIPT_NAME` が既に存在していたため追加編集は不要だった。
+    - live note.com への実接続は本 task では実施していない。忍者は unit test 範囲までとし、実ブラウザ E2E は家老判断の範囲に残る。
+purpose_validation:
+  cmd_purpose: "note.com振込領収書+購入領収書PDF自動取得+CLIインターフェース+ユニットテスト"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/auto-ops/workflows/note_pipeline.py
+  - /mnt/c/Python_app/auto-ops/tests/test_note_pipeline.py
+verification:
+  - command: "cd /mnt/c/Python_app/auto-ops && PYTHONPATH=. python3 workflows/note_pipeline.py --help"
+    result: pass
+    notes: "`sales`, `transfer-receipts`, `purchase-receipts`, `all` が表示された。"
+  - command: "cd /mnt/c/Python_app/auto-ops && python3 -m py_compile workflows/note_pipeline.py tests/test_note_pipeline.py"
+    result: pass
+    notes: "構文検証 PASS。"
+  - command: "cd /mnt/c/Python_app/auto-ops && PYTHONPATH=. pytest -q tests/test_note_pipeline.py"
+    result: pass
+    notes: "13 passed in 0.17s。"
+  - command: "cd /mnt/c/Python_app/auto-ops && PYTHONPATH=. pytest -q"
+    result: pass
+    notes: "56 passed in 2.44s。SKIP 0。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash の ((PASS++)) 問題に関する教訓であり、今回の Python 実装/pytest では未使用。"
+  - id: L117
+    useful: false
+    reason: "フィールド名横断更新の教訓であり、今回のタスクは note pipeline 実装で report schema 変更を伴わなかった。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml 走査の教訓であり、今回の任務では lessons 読み取りのみで直接未使用。"
+  - id: L032
+    useful: false
+    reason: "context 差替え境界の教訓であり、今回 context 編集は行っていない。"
+  - id: L132
+    useful: false
+    reason: "dashboard_update.sh の運用教訓であり、この実装タスクでは未使用。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

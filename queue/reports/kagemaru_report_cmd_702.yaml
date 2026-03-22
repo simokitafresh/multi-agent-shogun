@@ -1,0 +1,43 @@
+worker_id: kagemaru
+task_id: cmd_702_impl
+parent_cmd: cmd_702
+timestamp: "2026-03-09T13:40:00"
+status: done
+ac_version_read: 5
+verdict: PASS
+purpose_validation:
+  fit: true
+acceptance_criteria:
+  AC1:
+    status: PASS
+    detail: "cli_profiles.yaml codex profile display_name を Codex → GPT-5.4 に更新済み。忍者配備テーブルでGPT-5.4表示確認。"
+  AC2:
+    status: PASS
+    detail: "model_analysis.sh --summary に現役モデルフィルタ追加。extract_model_family()でfamily-level matching実装。引退ラベル(Opus, Codex, Sonnet)が出力から除外され、現役6ラベル(2ファミリー: opus_4_6, gpt_5_4)のみ出力。"
+  AC3:
+    status: PASS
+    detail: "knowledge_metrics.sh --by-model にも同一方式のfamilyフィルタ追加。build_active_families_from_settings()でsettings.yaml+cli_profiles.yamlから現役familyを動的構築。引退ラベル除外確認。"
+  AC4:
+    status: PASS
+    detail: "dashboard_auto_section.sh --dry-run で検証。スコアボード6行(全て現役family)、モデル別知識4行(全て現役family)。引退ラベル0。"
+  AC5:
+    status: PASS
+    detail: "tests/unit/test_gate_metrics_model_labels.bats 更新。テスト設定にopus忍者(kagemaru)追加、codex display_nameをGPT-5.4に変更。2/2テストPASS。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful:
+  - L074
+files_modified:
+  - config/cli_profiles.yaml
+  - scripts/model_analysis.sh
+  - scripts/knowledge_metrics.sh
+  - tests/unit/test_gate_metrics_model_labels.bats

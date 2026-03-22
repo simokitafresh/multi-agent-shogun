@@ -1,0 +1,89 @@
+task_id: cmd_1183_context_reflux
+parent_cmd: cmd_1183
+ninja: kagemaru
+status: done
+started_at: '2026-03-20T23:01:00'
+completed_at: '2026-03-20T23:10:00'
+ac_version_read: d0538775
+result:
+  summary: infrastructure.mdに軍師品質管理ユニット+gate強化の索引を追記完了
+  deviation: []
+  AC1:
+    status: PASS
+    description: infrastructure.md軍師セクションにcmd_1162/1174/1181の索引追記
+    findings: '新セクション「軍師品質管理ユニット（cmd_1144〜cmd_1181）」を追加。
+
+      3件をテーブル形式で索引化。参照先: instructions/gunshi.md §Review Criteria / §5段階思考プロトコル / §Report
+      Review
+
+      '
+  AC2:
+    status: PASS
+    description: infrastructure.md gate強化セクションにcmd_1178/1179/1180の索引追記
+    findings: '新セクション「gate強化（cmd_1178〜cmd_1180）」を追加。
+
+      3件をテーブル形式で索引化。参照先: scripts/cmd_complete_gate.sh / scripts/gates/gate_dc_duplicate.sh
+
+      '
+  AC3:
+    status: PASS
+    description: 回帰確認 — infrastructure.mdの構文・リンク整合性
+    findings: '1. 既存セクション（知識サイクル、ninja_monitor、inbox_watcher等）全て無傷
+
+      2. テーブル構文（|区切り）正常
+
+      3. 参照先パス3件全て実在確認済み: instructions/gunshi.md, scripts/cmd_complete_gate.sh, scripts/gates/gate_dc_duplicate.sh
+
+      4. last_updated更新: cmd_1183
+
+      '
+binary_checks:
+- check: cmd_1174/1181/1162の3件が索引に追記されている?
+  result: PASS
+- check: 詳細はgunshi.md本体への参照になっている?
+  result: PASS
+- check: cmd_1178/1179/1180の3件が索引に追記されている?
+  result: PASS
+- check: 詳細はスクリプト本体への参照になっている?
+  result: PASS
+- check: infrastructure.mdの既存セクションに影響がないか?
+  result: PASS
+files_modified:
+- context/infrastructure.md
+lesson_candidate:
+  found: true
+  title: infrastructure.mdが570行で500行制限を超過
+  detail: '追記24行で570行に到達。元が546行で既に超過気味だった。
+
+    次回infra context圧縮cmdの際にVercelスタイルでリンク先分離(docs/research/infra-details.mdへの移動)を検討すべき。
+
+    特にInfra教訓索引(L001-L284)セクションが約260行を占めており、分離候補の筆頭。
+
+    '
+decision_candidate:
+  found: false
+skill_candidate:
+  found: false
+purpose_validation:
+  fit: true
+progress:
+  AC1: done
+  AC2: done
+  AC3: done
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bash set -eパターンはmd索引編集作業に無関係
+- id: L225
+  useful: false
+  reason: MCP entity操作は本タスクのスコープ外
+- id: L063
+  useful: false
+  reason: lessons.yamlイテレーションは本タスクに含まれない
+- id: L190
+  useful: false
+  reason: infrastructure.md索引追記のみで該当パターンなし
+- id: L283
+  useful: false
+  reason: infrastructure.md索引追記のみで該当パターンなし
+verdict: PASS

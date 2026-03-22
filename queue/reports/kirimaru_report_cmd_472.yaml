@@ -1,0 +1,50 @@
+worker_id: kirimaru
+task_id: subtask_472_impl
+parent_cmd: cmd_472
+timestamp: "2026-03-01T17:26:53+09:00"
+status: done
+result:
+  summary: "戦果タイトル欠落を修正し、gate_metrics.logへ9列目タイトルを追加する経路を実装"
+  details: "cmd_complete_gate.shでCMD_TITLEを1回取得してOVERRIDE/CLEAR/BLOCKの3記録行へ9列目追加。dashboard_auto_section.shのタイトルマップをgate_metrics.log(9列目)優先へ変更。oneshot/backfill_gate_titles.shを作成して既存8列行を9列化（18行更新、再実行で0行更新）し、.gitignore whitelistに新規oneshotを追加。"
+purpose_validation:
+  cmd_purpose: "ダッシュボード戦果で『—』表示になるタイトル欠落を解消する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - scripts/cmd_complete_gate.sh
+  - scripts/dashboard_auto_section.sh
+  - scripts/oneshot/backfill_gate_titles.sh
+  - logs/gate_metrics.log
+  - .gitignore
+test_results:
+  - command: "bash -n scripts/cmd_complete_gate.sh && bash -n scripts/dashboard_auto_section.sh && bash -n scripts/oneshot/backfill_gate_titles.sh"
+    result: pass
+  - command: "bash scripts/oneshot/backfill_gate_titles.sh"
+    result: pass
+    notes: "1回目: updated_rows 18 / remaining_nf8 0。2回目: updated_rows 0（冪等）"
+  - command: "bash scripts/dashboard_auto_section.sh --dry-run"
+    result: pass
+    notes: "戦果セクションでcmd_470/cmd_468のタイトルが表示されることを確認"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L101
+  - L098
+  - L116
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "scripts/cmd_complete_gate.sh で CMD_TITLE取得追加 + 3箇所(OVERRIDE/CLEAR/BLOCK)のgate_metrics書込みへ9列目追記"
+  - id: AC2
+    status: pass
+    evidence: "scripts/dashboard_auto_section.sh のcmd→title構築で gate_metrics.log(9列目) > active STK > archive STK done を実装（同一cmdは最後行採用）"
+  - id: AC3
+    status: pass
+    evidence: "scripts/oneshot/backfill_gate_titles.sh 作成・実行。logs/gate_metrics.log の8列行へ9列目タイトルを追記"

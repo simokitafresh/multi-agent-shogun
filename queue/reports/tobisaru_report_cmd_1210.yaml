@@ -1,0 +1,56 @@
+worker_id: tobisaru
+task_id: cmd_1210
+parent_cmd: cmd_1210
+timestamp: '2026-03-21T19:25:47'
+status: done
+ac_version_read: 283acd76
+result:
+  summary: '軍師gate_result自動還流: gunshi_gate_reflux.sh作成(AC1) + cmd_complete_gate.sh組込(AC2)。GATE
+    CLEAR時にgunshi_review_log.yamlのgate_result: null→CLEARを自動更新。同一cmd_idの複数エントリ全件対応。ベストエフォート(||
+    true)。commit 4a59b84。'
+  details: 'AC1: scripts/gunshi_gate_reflux.sh作成。awk状態機械でcmd_idマッチ→gate_result: null→CLEAR置換。単体テスト4件全PASS(3件同一cmd/1件単独/0件不一致/0件重複更新なし)。AC2:
+    cmd_complete_gate.sh L3679-3685にgunshi_gate_reflux.sh呼出追加。cmd_quality_log.sh後、exit
+    0前。|| trueで非blocking。'
+purpose_validation:
+  cmd_purpose:
+    GATE CLEAR時に軍師レビューログのgate_result: nullをCLEARに自動更新する
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/gunshi_gate_reflux.sh (new 51L)
+- scripts/cmd_complete_gate.sh (+8L)
+- .gitignore (+1L)
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既知パターンの組合せ(awk置換+gate組込)。新規発見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: true
+  reason: 'L074: ((PASS++))注意。本タスクではawk使用のため直接該当せず。ただしbashカウンタ使用時の常時参照として有用'
+- id: L225
+  useful: false
+  reason: 'L225: entity名義混入注意。本タスクではMCP操作なし'
+- id: L063
+  useful: false
+  reason: 'L063: lessons.yaml dict構造。本タスクではlessons.yaml解析なし'
+- id: L094
+  useful: false
+  reason: 'L094: shutsujinハードコード。本タスクと無関係'
+- id: L097
+  useful: true
+  reason: 'L097: cmd_complete_gate.shはscripts/配下。本タスクで同ファイル編集時にfield_get移行可能性を認識'
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 1
+  details: 'pre-write-read-tracker: report YAMLへのEdit禁止→report_field_set.sh経由に切替'
+binary_checks: 'AC1: [{check: "gunshi_gate_reflux.sh作成", result: "yes"}, {check: "null→CLEAR更新動作",
+  result: "yes"}, {check: "同一cmd_id複数エントリ全更新", result: "yes"}], AC2: [{check: "cmd_complete_gate.shに呼出追加",
+  result: "yes"}, {check: "非blocking(|| true)", result: "yes"}, {check: "git commit成功",
+  result: "yes"}]'
+verdict: PASS

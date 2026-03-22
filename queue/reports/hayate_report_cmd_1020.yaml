@@ -1,0 +1,82 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+worker_id: hayate
+task_id: cmd_1020_sub_b
+parent_cmd: cmd_1020
+timestamp: "2026-03-17T08:51:54+09:00"
+status: done
+ac_version_read: 1
+verdict: PASS
+ac_results:
+  - id: AC4
+    status: pass
+    evidence: "`python3 scripts/analysis/shin_shijin_cpcv_engine.py --family 'DM7+' --metrics Max_Run-up UD_Ratio Skewness` が exit 0 で完走し、`outputs/analysis/shin_shijin_cpcv_DM7P.md` に 8群/28fold、logit PBO 3本、fold detail を出力した。検証レポート `outputs/analysis/cmd_1020_cpcv_engine_validation.md` に PBO_A/B/C・生存者リスト・閾値感度分析(0.05/0.10/0.20)を整理した。"
+result:
+  summary: "DM7+ 96変種で CPCV エンジン検証を完了した。指定3メトリクス(Max_Run-up/UD_Ratio/Skewness)でフルパイプラインはエラーなく完走し、PBO は `0.5000 / 0.2143 / 0.5714`、閾値 `0.05/0.10/0.20` の全てで生存者 `0` 件だった。"
+  details: |
+    実施内容:
+    1. `projects/dm-signal.yaml` / `projects/dm-signal/lessons.yaml` / `context/dm-signal.md` を読んで project rule と関連教訓を確認した。
+    2. `queue/reports/kirimaru_report_cmd_1020.yaml` と `outputs/analysis/shin_shijin_phase3_cpcv.md` を読み、sub_a エンジン仕様と想定出力を確認した。
+    3. `python3 -m py_compile /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py` で preflight を通し、入力 CSV/meta の存在も確認した。
+    4. `python3 /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py --family 'DM7+' --metrics Max_Run-up UD_Ratio Skewness` を実行し、`outputs/analysis/shin_shijin_cpcv_DM7P.md` を生成した。
+    5. 補助集計で PBO 値・group size・fold count・閾値感度分析を抽出し、`outputs/analysis/cmd_1020_cpcv_engine_validation.md` に整理した。
+
+    検証結果:
+    - 実行条件: 2012-03〜2026-01 の 167ヶ月、8群(21,21,21,21,21,21,21,20)、2 test groups、28 folds、purge 1M、embargo 1M
+    - PBO: Max_Run-up=0.5000, UD_Ratio=0.2143, Skewness=0.5714
+    - 全 PBO が [0,1] 範囲内
+    - Fold 情報は 3メトリクス全てで出力
+    - 実測 runtime は 1.89s
+    - 閾値 0.05 / 0.10 / 0.20 の全てで survivor_count=0
+
+    結論:
+    - 検証タスクの目的である「DM7+ 96変種でのフルパイプライン完走確認」は達成。
+    - 0.05 固定閾値では生存者なし。検証 run としては正常動作。
+purpose_validation:
+  cmd_purpose: "シン四神Phase3 CPCVエンジンをDM7+ 96変種で検証し、PBO/生存者/感度分析を記録する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_cpcv_DM7P.md
+  - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1020_cpcv_engine_validation.md
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_1020.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+verification:
+  - command: "python3 -m py_compile /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py"
+    result: pass
+    notes: "エンジン構文チェックを通過。"
+  - command: "python3 /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py --family 'DM7+' --metrics Max_Run-up UD_Ratio Skewness"
+    result: pass
+    notes: "`outputs/analysis/shin_shijin_cpcv_DM7P.md` を生成。exit 0。"
+  - command: "/usr/bin/time -f 'elapsed_sec=%e' python3 /mnt/c/Python_app/DM-signal/scripts/analysis/shin_shijin_cpcv_engine.py --family 'DM7+' --metrics Max_Run-up UD_Ratio Skewness"
+    result: pass
+    notes: "runtime `1.89s` を確認。96変種検証 run として十分短い。"
+  - command: "python3 - <<'PY' ... evaluate_metric(Max_Run-up, UD_Ratio, Skewness) ... PY"
+    result: pass
+    notes: "PBO=`0.5000/0.2143/0.5714`、fold_count=`28`、group_sizes=`21,21,21,21,21,21,21,20`、threshold `0.05/0.10/0.20` の survivor_count は全て `0`。"
+  - command: "sed -n '1,220p' /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_cpcv_DM7P.md"
+    result: pass
+    notes: "`Metric Summary`、`Logit Diagnostics`、3本の `Fold Details` セクションを確認。"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "bash 算術更新の教訓であり、今回の Python 検証 run では直接使っていない。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml 読込構造の教訓であり、今回の主論点ではない。"
+  - id: L348
+    useful: true
+    reason: "live common period を先に固定すべき教訓が、167ヶ月/8群(21...20)で group layout を解釈する際に直接役立った。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

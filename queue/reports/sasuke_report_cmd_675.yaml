@@ -1,0 +1,65 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: sasuke
+task_id: cmd_675_review
+parent_cmd: cmd_675
+timestamp: "2026-03-09T02:57:35+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`3061af4` の4ファイル差分を確認。SettingsScreen に `テキスト折り返し` Switch、Constants.kt に `PrefsKeys.SOFT_WRAP` / `Defaults.SOFT_WRAP_DEFAULT`、ShogunScreen / AgentsScreen に SharedPreferences 読取と即時反映リスナーが入っている。"
+  - id: AC2
+    status: pass
+    evidence: "ShogunScreen は OFF 時に単一 `Text(softWrap=false)` + `verticalScroll` + `horizontalScroll`、AgentsScreen の `PaneFullScreen` は `softWrapEnabled` に応じて `horizontalScroll` を条件適用している。"
+  - id: AC3
+    status: pass
+    evidence: "SettingsScreen 保存で `putBoolean(PrefsKeys.SOFT_WRAP, softWrapEnabled)`、各画面で `getBoolean(..., Defaults.SOFT_WRAP_DEFAULT)` を使用。再起動後も既定ONで保持される。"
+  - id: AC4
+    status: pass
+    evidence: "隔離 worktree `.codex-tmp/cmd675-review` を `3061af4` で作成し、SDK 設定を補って `android/./gradlew assembleDebug` を実行。`BUILD SUCCESSFUL in 1m 58s` を確認。"
+  - id: AC5
+    status: pass
+    evidence: "`git push origin main` 実行成功。push 時点で `main` は別件 `b1467c8 feat(cmd_678): compact android command ui` を先頭に含んでおり、結果として `c1dc60d..b1467c8 main -> main` となった。"
+result:
+  summary: "cmd_675 レビューは PASS。soft wrap 設定追加・横スクロール切替・SharedPreferences 永続化を確認し、対象 commit `3061af4` の隔離 build でも assembleDebug 成功を確認した。"
+  details: |
+    実施内容:
+    1. `projects/infra.yaml` / `projects/infra/lessons.yaml` / `context/infrastructure.md` を読んで前提確認。
+    2. `queue/reports/hayate_report_cmd_675.yaml` と対象4ファイル差分を確認。
+    3. 現HEADで `./gradlew assembleDebug` を流したところ、後続変更由来の Kotlin compile error を検出したため、責任範囲を切り分けた。
+    4. `git worktree add .codex-tmp/cmd675-review 3061af4` で隔離 worktree を作成し、`android/local.properties` を補って `assembleDebug` を再実行。`cmd_675` 自体は BUILD SUCCESSFUL を確認。
+    5. `git merge-base --is-ancestor 3061af4 origin/main` で対象 commit が既存履歴に含まれることを確認。
+    6. `git ls-remote origin refs/heads/main` 実行時点では remote head は `c1dc60d` だったが、`git push origin main` 実行時にはローカル `main` が `b1467c8` に進んでおり、その commit も併せて push された。
+
+    コード品質所見:
+    - `PrefsKeys` / `Defaults` によるキー・既定値の一元管理は適切。
+    - SharedPreferences listener は `DisposableEffect` で register / unregister が対になっており、リーク回避できている。
+    - `softWrap=false` 時に `LazyColumn` ではなく単一 `Text` へ切り替える実装は、横スクロールを1本にそろえるため妥当。
+    - `PaneFullScreen` に `softWrapEnabled` の引数を追加し、既定値を持たせて後方互換を維持している。
+purpose_validation:
+  cmd_purpose: "cmd_675(Androidアプリ テキスト折り返し設定追加)のレビューを実施し、PASSならpushする。"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "共有mainへのreview push前は remote確認だけでなく local HEAD再確認も直前に行え"
+  detail: "IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin refs/heads/main` だけでなく push直前に `git rev-parse HEAD` / `git log -1 --oneline` で local HEAD も再確認せよ because 並行作業中は別忍者の commit が数十秒で main へ積まれ、意図しない別cmdを同時pushするため"
+  project: infra
+lessons_useful:
+  - id: L172
+    useful: true
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

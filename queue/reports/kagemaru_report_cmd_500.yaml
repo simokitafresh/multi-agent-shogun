@@ -1,0 +1,88 @@
+worker_id: kagemaru
+task_id: subtask_500_impl_stall_enforcement
+parent_cmd: cmd_500
+timestamp: "2026-03-03T21:08:00+0900"
+status: done
+result:
+  summary: "cmd_500実装完了。check_stallの再通知5分デバウンス化、in_progress停滞時の本人再送、codex閾値設定化、複数回停滞のstall_escalate(差し替え必須)を実装し、自動テスト3件を追加してSKIP=0で通過。"
+  details: |
+    実装変更:
+    1) scripts/ninja_monitor.sh
+      - STALL_NOTIFIEDをbool抑止からepoch時刻管理へ変更
+      - STALL_RENOTIFY_DEBOUNCE=300を導入し、同一ninja×subtaskの再通知を5分デバウンス
+      - in_progress停滞時に本人へtask_assigned再送し、STALL-RECOVERY-SENDログを追加
+      - STALL_COUNTで同一subtask停滞をカウントし、2回目以降はstall_escalate送信
+      - stall_escalate文言を「差し替え必須」に統一
+      - NINJA_MONITOR_LIB_ONLY=1時にメインループを起動しないガードを追加（unit test用）
+
+    2) config/cli_profiles.yaml
+      - profiles.codex.in_progress_stall_min を追加（未設定時はninja_monitor側で20分fallback）
+
+    3) tests/unit/test_ninja_monitor_stall.bats（新規）
+      - 5分デバウンス再通知
+      - in_progress停滞の本人再送+ログ
+      - 複数回停滞のstall_escalate(差し替え必須)
+
+    4) 文書更新
+      - docs/research/cmd_500_codex-stall-enforcement.md を新規作成
+      - context/infrastructure.md のninja_monitor節をcmd_500内容へ更新
+purpose_validation:
+  cmd_purpose: "Codex運用で発生する in_progress + idle 停滞を『検知』で終わらせず、自動復旧を強制する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/scripts/ninja_monitor.sh
+  - /mnt/c/tools/multi-agent-shogun/config/cli_profiles.yaml
+  - /mnt/c/tools/multi-agent-shogun/tests/unit/test_ninja_monitor_stall.bats
+  - /mnt/c/tools/multi-agent-shogun/docs/research/cmd_500_codex-stall-enforcement.md
+  - /mnt/c/tools/multi-agent-shogun/context/infrastructure.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report_cmd_500.yaml
+test_results:
+  - command: "bash -n scripts/ninja_monitor.sh"
+    result: pass
+    notes: "syntax check pass"
+  - command: "bats tests/unit/test_ninja_monitor_stall.bats"
+    result: pass
+    notes: "1..3 all ok, SKIP=0"
+  - command: "bats tests/test_yaml_field_set.bats"
+    result: pass
+    notes: "1..7 all ok, regression check"
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "STALL_NOTIFIED=epoch化 + STALL_RENOTIFY_DEBOUNCE=300s + STALL-DEBOUNCEログ"
+  - id: AC2
+    status: pass
+    evidence: "in_progress停滞時に本人へtask_assigned再送 + STALL-RECOVERY-SENDログ"
+  - id: AC3
+    status: pass
+    evidence: "config/cli_profiles.yaml: profiles.codex.in_progress_stall_min を参照。未設定は20分fallback"
+  - id: AC4
+    status: pass
+    evidence: "同一subtaskでSTALL_COUNT>=2時にstall_escalate送信。文言に『差し替え必須』を明記"
+  - id: AC5
+    status: pass
+    evidence: "tests/unit/test_ninja_monitor_stall.bats 3件追加・実行、SKIP=0"
+  - id: AC6
+    status: pass
+    evidence: "docs/research/cmd_500_codex-stall-enforcement.md 新規 + context/infrastructure.md 更新"
+lessons_useful:
+  - id: L112
+    useful: true
+    reason: "stall keyをsubtask_id基準で統一し、検知沈黙再発を防止"
+  - id: L074
+    useful: true
+    reason: "算術更新は ++ を避け $((...+1)) を採用"
+  - id: L063
+    useful: true
+    reason: "YAML構造前提のテスト/パースを意識して実装"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

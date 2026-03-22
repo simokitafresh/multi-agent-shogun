@@ -1,0 +1,86 @@
+worker_id: sasuke
+task_id: cmd_816_recon
+parent_cmd: cmd_816
+timestamp: "2026-03-12T05:16:47+0900"
+status: done
+ac_version_read: 4
+verdict: PASS
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`docs/research/cmd_816_cdp-measurement-architecture.md` §2 に `launch_browser()` の起動オプション（port/address/user-data-dir/new-window/about:blank）を整理した。"
+  - id: AC2
+    status: pass
+    evidence: "`docs/research/cmd_816_cdp-measurement-architecture.md` §3 に `preflight_cdp_flow()` から reload/SPA/PF switch までの計測フローを整理した。"
+  - id: AC3
+    status: pass
+    evidence: "`docs/research/cmd_816_cdp-measurement-architecture.md` §4 に `9223` の現行用途と、`9224` は現行repo/git履歴/近傍workspaceで未確認である点を明記した。"
+  - id: AC4
+    status: pass
+    evidence: "`context/auto-ops.md` と `projects/auto-ops.yaml` の両方に CDPポート・エントリポイント・preflight順序を反映した。"
+result:
+  summary: "auto-ops の CDP計測基盤を文書化し、現行知識としては `workflows/perf_measure.py` + `cdp/cdp_helper.py`、CDP port `9223`、preflight-first順序で整理した。"
+  details: |
+    実施内容:
+    1. `docs/research/cmd_816_cdp-measurement-architecture.md` を新規追加。
+       - 実体ファイル構成
+       - `launch_browser()` の起動引数
+       - `preflight_cdp_flow()` を入口とする計測順序
+       - reload / SPA / PF switch の主処理
+       - `cmd_810` / `cmd_811` / `cmd_815` の着地点
+       - `9223` / `9224` の現状整理
+    2. `context/auto-ops.md` を索引層として更新。
+       - `perf_measure.py` の実体パス
+       - port 9223 の起動オプション
+       - preflight-first順序
+       - 9224 未確認の扱い
+    3. `projects/auto-ops.yaml` に核心知識を追加。
+       - CDP計測CLI本体
+       - CDP transport
+       - browser launch args
+       - 出力先
+
+    主要な所見:
+    - task文面にある `cdp/perf_measure.py` は現行repoに存在せず、実体は `workflows/perf_measure.py`。
+    - 現行実装・git履歴では CDP計測ポートは `9223` のみ確認できた。
+    - `9224` は現行コードからは裏が取れないため、「未確認ポート」として知識化するのが安全。
+    - README は「既存CDP session前提」と読める一方、実コードは `preflight_cdp_flow()` で未起動時の自動起動まで面倒を見ている。
+
+failure_analysis:
+  root_cause: ""
+  what_would_prevent: ""
+purpose_validation:
+  cmd_purpose: "auto-ops CDP計測基盤の現状を精査し、知識文書化する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/docs/research/cmd_816_cdp-measurement-architecture.md
+  - /mnt/c/tools/multi-agent-shogun/context/auto-ops.md
+  - /mnt/c/tools/multi-agent-shogun/projects/auto-ops.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/sasuke_report_cmd_816_recon.yaml
+verification:
+  - command: "wc -l context/auto-ops.md docs/research/cmd_816_cdp-measurement-architecture.md"
+    result: pass
+    notes: "`context/auto-ops.md` は 50 行、research doc は 127 行で管理可能なサイズを維持。"
+  - command: "rg -n \"9223|9224|preflight_cdp_flow|workflows/perf_measure.py|cmd_816\" context/auto-ops.md projects/auto-ops.yaml docs/research/cmd_816_cdp-measurement-architecture.md"
+    result: pass
+    notes: "AC1-4 の主要キーワードが3ファイルへ反映済みであることを確認。"
+  - command: "git -C /mnt/c/Python_app/auto-ops log --all -S'9224' --oneline"
+    result: pass
+    notes: "`9224` を導入した履歴は検出されず、research doc §4 の根拠とした。"
+lesson_candidate:
+  found: false
+lessons_useful:
+  - id: L004
+    useful: true
+    reason: "AC文面どおりに証跡ベースで整理し、`9224` を推測で埋めず未確認として記録する判断に効いた。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

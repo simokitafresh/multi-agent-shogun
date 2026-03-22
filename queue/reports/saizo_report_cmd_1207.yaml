@@ -1,0 +1,56 @@
+worker_id: saizo
+task_id: cmd_1207
+parent_cmd: cmd_1207
+timestamp: '2026-03-21T19:06:00'
+status: done
+ac_version_read: 70f4983a
+result:
+  summary: AC1:観察報告プロトコル(4段構え)をinstructions/shogun.mdに追加完了。AC2:commit c20ce5b成功
+  details: 殿への報告・提案ルールセクション内にWhat/Why/So What/Now Whatの4段構えテーブル+NG/OK例示+適用/省略条件を記載
+purpose_validation:
+  cmd_purpose: 将軍の観察報告がWhat描写で止まる問題を4段構えルールで根本対策
+  fit: true
+  purpose_gap: none
+files_modified:
+- instructions/shogun.md
+lesson_candidate:
+  found: false
+  no_lesson_reason: 単純なドキュメント追加タスク。新たな知見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: ((PASS++))パターンは本タスクに該当なし
+- id: L225
+  useful: false
+  reason: MCP entity名義混入は本タスクに該当なし
+- id: L063
+  useful: false
+  reason: lessons.yamlイテレーションは本タスクに該当なし
+- id: L220
+  useful: false
+  reason: pre-commitフックのqueue制限は本タスクに該当なし
+- id: L085
+  useful: false
+  reason: 命名規則変更の影響範囲確認は本タスクに該当なし
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: 殿への報告・提案ルールセクション存在
+    result: 'yes'
+  - check: 観察報告プロトコルサブセクション追加
+    result: 'yes'
+  - check: 4段構えテーブル含有
+    result: 'yes'
+  AC2:
+  - check: git commit成功
+    result: 'yes'
+verdict: PASS

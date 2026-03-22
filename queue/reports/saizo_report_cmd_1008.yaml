@@ -1,0 +1,67 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: saizo
+task_id: cmd_1008_review
+parent_cmd: cmd_1008
+timestamp: "2026-03-16T20:18:00+0900"
+status: done
+verdict: PASS
+ac_version_read: 3
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`scripts/analysis/p_bar_family_backtest.py` をレビューし、4ファミリー(青龍/朱雀/白虎/玄武)×3モード(激攻/鉄壁/常勝)定義、`top_n=1` / `n_splits=5` / `months_per_fold=[1..15,None]` の16パターン実行、共通期間を `max(first_active_month)` 〜 `min(common_end_month)` で揃えて単体3行 + p̄16行の比較表を作る流れを確認した。生成済み `comparison_table.csv` / `mode_selection.csv` は各ファミリーで 19行 / 16行となり、`report.md` の section・件数・要約値も整合していた。"
+  - id: AC2
+    status: pass
+    evidence: "`rg -n 'TODO|FIXME'` で対象 script / cmd_1008 artifacts に残留なし。`PYTHONPATH=/mnt/c/Python_app/DM-signal/backend:/mnt/c/Python_app/DM-signal pytest -q backend/tests/test_p_bar_backtest.py backend/tests/test_p_bar_selection_block.py backend/tests/test_p_average_service.py backend/tests/test_fof_valid_start_lookback.py --disable-warnings -rA` 相当で合計 45 PASS / 0 SKIP を確認。レビューPASS判定後、未pushだった commit `f841cbe0` を `git push origin main` で `origin/main` へ反映した。"
+diff_check:
+  changed_by_saizo: false
+  commit_required: false
+  note: "レビュー対象の DM-Signal 実装は追加修正不要。saizo が変更したのは task/report YAML のみで、push対象は kagemaru の既存 commit `f841cbe0`。"
+result:
+  summary: "cmd_1008 実装はレビューPASS。関連pytest 45件PASS・0 SKIPを確認し、commit `f841cbe0` を push 完了。"
+  details: |
+    レビュー要点:
+    - family定義は 4ファミリー×各3モードで過不足なし。
+    - BT実行は `run_monthly_rebalance_backtest()` を 16 mpf パターンへ適用し、`months_per_fold=None` も含めている。
+    - 比較表は各ファミリーで 単体3 + p̄16 = 19行、選出表は16行で一致。
+    - `report.md` は「条件 / 比較テーブル / モード選出頻度 / p̄ vs 単体」の4 sectionを全ファミリーで保持。
+    - 白虎のみ `mpf=1 tie_expansion` は 173/178 (97%) で、実装者メモの「全ファミリー100%」とは異なるが、生成物側は正しい実数を報告しておりコード不備ではない。
+
+    実施コマンド:
+    - `pytest -q backend/tests/test_p_bar_backtest.py --disable-warnings -rA` → 8 PASS
+    - `pytest -q backend/tests/test_p_bar_selection_block.py backend/tests/test_p_average_service.py backend/tests/test_fof_valid_start_lookback.py --disable-warnings -rA` → 37 PASS
+    - `git push origin main` → `0e2ac97b..f841cbe0  main -> main`
+purpose_validation:
+  cmd_purpose: "影丸(kagemaru)のcmd_1008実装をレビューし、問題なければpushする"
+  fit: true
+  purpose_gap: "なし"
+files_modified:
+  - queue/tasks/saizo.yaml
+  - queue/reports/saizo_report_cmd_1008.yaml
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful: []
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal && PYTHONPATH=/mnt/c/Python_app/DM-signal/backend:/mnt/c/Python_app/DM-signal pytest -q backend/tests/test_p_bar_backtest.py --disable-warnings -rA"
+    result: pass
+    notes: "8 PASS, 0 SKIP, 1 warning。p̄ backtest core utility の回帰なし。"
+  - command: "cd /mnt/c/Python_app/DM-signal && PYTHONPATH=/mnt/c/Python_app/DM-signal/backend:/mnt/c/Python_app/DM-signal pytest -q backend/tests/test_p_bar_selection_block.py backend/tests/test_p_average_service.py backend/tests/test_fof_valid_start_lookback.py --disable-warnings -rA"
+    result: pass
+    notes: "37 PASS, 0 SKIP, 1 warning。selection block / p_average / FoF lookback 周辺の回帰なし。"
+  - command: "git -C /mnt/c/Python_app/DM-signal push origin main"
+    result: pass
+    notes: "review PASS 後に commit `f841cbe0` を origin/main へ反映。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

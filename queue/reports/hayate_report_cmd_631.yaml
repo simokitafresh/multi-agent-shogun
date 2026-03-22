@@ -1,0 +1,25 @@
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+# Report for subtask_631_review (hayate)
+subtask_id: subtask_631_review
+ninja: hayate
+parent_cmd: cmd_631
+type: review
+status: pending
+verdict: ''
+summary: ''
+details: ''
+ac_results:
+  AC1: null
+  AC2: null
+  AC3: null
+  AC4: null
+  AC5: null
+  AC_push: null
+issues_found: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  detail: ''
+decision_candidate:
+  found: false
+  detail: ''

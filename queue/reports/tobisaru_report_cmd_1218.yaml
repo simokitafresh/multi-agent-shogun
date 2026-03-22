@@ -1,0 +1,52 @@
+worker_id: tobisaru
+task_id: cmd_1218
+parent_cmd: cmd_1218
+timestamp: '2026-03-21T20:55:00'
+status: done
+ac_version_read: 3f1e9788
+result:
+  summary: report_field_set.shで配列インデックス付きキー(files_modified[0]等)がawk経路に入りリテラルキーになるバグを修正。USE_PYTHONチェック直後にDOT_KEYに[を含むか判定し、含む場合はPython fallbackへ強制ルーティング。
+  details: L168(USE_PYTHON==1チェック)の直後に[[ "$DOT_KEY" == *'['* ]]判定を追加。配列インデックス含むキーは全てPython fallbackで処理される。テスト3件(配列ルーティング/配列値格納/従来awk経路)全PASS。
+purpose_validation:
+  cmd_purpose: report_field_set.shで配列インデックス付きキーがawk経路でリテラルキーになるバグを修正
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/report_field_set.sh
+lesson_candidate:
+  found: false
+  no_lesson_reason: 修正は既知パターン(条件分岐追加)の適用であり新規教訓なし
+lessons_useful:
+- id: L074
+  useful: false
+  reason: 今回は((PASS++))パターンの変更なし
+- id: L225
+  useful: false
+  reason: entity名義チェックの場面なし
+- id: L063
+  useful: false
+  reason: lessons.yamlイテレーションはスコープ外
+- id: L220
+  useful: false
+  reason: pre-commit/queue stage問題は本件に該当せず
+- id: L097
+  useful: false
+  reason: field_get移行は本件スコープ外
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+    q: dot_keyに[を含む場合にPython fallbackへルーティングされるか？
+    status: PASS
+  AC2:
+    q: files_modified[0]=path/to/file が配列の0番目に正しく書き込まれるか？
+    status: PASS
+  AC3:
+    q: 配列なしキー(status=done等)が従来通りawk経路で処理されるか？
+    status: PASS
+verdict: PASS

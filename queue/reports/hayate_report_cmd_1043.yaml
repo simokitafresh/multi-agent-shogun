@@ -1,0 +1,58 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: hayate_cmd_1043
+parent_cmd: cmd_1043
+timestamp: "2026-03-18T02:30:00"
+status: PASS
+ac_version_read: 1
+result:
+  summary: "inbox_watcher.sh注入経路3件修正+ntfy_listener制御文字サニタイズ完了。batsテスト23件全PASS。機能テスト全PASS。"
+  details: |
+    ## 修正内容
+
+    ### 1. パスインジェクション修正（inbox_watcher.sh）
+    - get_unread_info(): `'$INBOX'`直埋め → `INBOX_PATH="$INBOX" python3 -c "os.environ['INBOX_PATH']"`
+    - mark_special_read(): 同上。`open('$INBOX')`/`os.path.dirname('$INBOX')`/`os.replace(tmp_path, '$INBOX')` → 全て環境変数経由
+
+    ### 2. model_switchホワイトリスト（inbox_watcher.sh）
+    - 正規表現: `^/model\s+(claude-|gpt-|o[0-9]|opus|sonnet|haiku)`
+    - 不一致時: ログ出力+既読化（リトライループ防止）、send_cli_command不実行
+
+    ### 3. clear_commandホワイトリスト（inbox_watcher.sh）
+    - シェルメタ文字検出: バッククォート, $, |, ;, &, <, > を含むcontentは拒否
+    - 正規content（日本語テキスト等）は通過
+
+    ### 4. inotifywait PID kill安全化（inbox_watcher.sh）
+    - trap cleanup_inbox_watcher EXIT 追加
+    - 子プロセスをkill -0で存在確認後にkill
+
+    ### 5. ntfy_listener制御文字サニタイズ（ntfy_listener.sh）
+    - MSG抽出直後に `tr -d '\000-\010\013-\037\177'` でNUL/制御文字除去
+    - 日本語（マルチバイト）は保持。TAB(\011)とLF(\012)も保持
+
+    ## テスト結果
+    - bats: 23テスト全PASS、0 SKIP
+      - tests/unit/test_inbox_write.bats: 1 ok
+      - tests/test_inbox_write.bats: 12 ok
+      - tests/unit/test_ntfy_listener.bats: 5 ok
+      - tests/unit/test_stop_check_inbox.bats: 5 ok
+    - 機能テスト: env var渡し、model_switchホワイトリスト(9パターン)、clear_commandホワイトリスト(7パターン)、制御文字サニタイズ 全PASS
+
+    ## 変更ファイル
+    - scripts/inbox_watcher.sh: +42行 -13行
+    - scripts/ntfy_listener.sh: +2行 -2行
+purpose_validation:
+  cmd_purpose: "inbox_watcher.shセキュリティ強化+ntfy_listener制御文字サニタイズ"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - scripts/inbox_watcher.sh
+  - scripts/ntfy_listener.sh
+lesson_candidate:
+  found: false
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

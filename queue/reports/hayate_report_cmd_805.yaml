@@ -1,0 +1,121 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_805_scout_a
+parent_cmd: cmd_805
+timestamp: "2026-03-11T21:32:59+0900"
+status: done
+ac_version_read: 6
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "ローカル uvicorn (`127.0.0.1:18000`) を production DB 接続で起動し、`/api/monthly-returns/fc5dc444-f14a-43d3-85c9-263c3220b658` を 3 回ずつ計測。`months=12` median 7841.26ms / 10158 bytes、`months=120` median 6448.66ms / 98182 bytes、`months=240` median 5379.88ms / 183765 bytes（返却225ヶ月）。"
+  - id: AC2
+    status: pass
+    evidence: "`backend/app/api/monthly_returns.py:26-112` → `MonthlyReturnsCalculator.calculate()` → `_get_precomputed_monthly_returns()` → `_build_response_from_precomputed()` → `_calculate_ticker_monthly_returns()` → `_calculate_ticker_returns_from_prices()`/`calculate_monthly_return()` の流れを追跡。DM-safe-2 months=120 の in-process profiler では `_build_response_from_precomputed` 3606.72ms、`_calculate_ticker_monthly_returns` 2642.30ms、`_get_precomputed_monthly_returns` 187.71ms、`_get_date_ranges_for_partial_notes` 249.55ms。"
+  - id: AC3
+    status: pass
+    evidence: "主ボトルネックは 1) `backend/app/services/monthly_returns_calculator.py:362-368` の `TickerMonthlyReturn` 読込が production DB では 0 rows のため常時 fallback、2) `backend/app/services/monthly_returns_calculator.py:455-470` の fallback が `Price` を期間無制限で全履歴取得、3) `backend/app/services/monthly_returns_calculator.py:222-233` → `backend/app/services/return_calculator.py:87-155` の MTD再計算。`ticker_monthly_returns total 0` を実 DB で確認済み。"
+  - id: AC4
+    status: pass
+    evidence: "最小修正案は `monthly_returns_calculator.py` の fallback に `min_year_month` を通し、`Price.date >= date(y, m, 1)` で window query 化すること。in-memory 擬似パッチで `months=12` は 8605.46ms → 994.98ms、`months=120` は 1853.40ms → 1428.07ms、かつ返却 summary 一致を確認した。"
+  - id: AC5
+    status: pass
+    evidence: "速度改善仮説: hotfix 1本目（fallback window化）のみで `months=12` は約7.6s短縮（-88%）、`months=120` は約0.43s短縮（-23%）。これに加えて `ticker_monthly_returns` を再生成して precomputed path を実際に有効化できれば、route 実測 median 6448.66ms はさらに 1-2s 規模で短縮し、おおむね 4-5s 台まで下げられると推定する。これは warm MTD 再計算が単独で約1885-1907ms残るためである。"
+  - id: AC6
+    status: pass
+    evidence: "波及先は `backend/app/services/monthly_returns_calculator.py`, `backend/app/services/return_calculator.py`, `backend/app/jobs/ticker_returns.py`, `backend/app/jobs/sync_layers.py`, `backend/tests/test_109_monthly_returns_component_signal_date.py`, `backend/tests/test_benchmark_unification_057.py`, `frontend/components/__tests__/monthly_returns_056.test.tsx`, `frontend/components/__tests__/monthly_returns_open_toggle.test.tsx`。注意点は MTD row の動的計算維持、Open/Close完全一致、`total_months` と返却windowの意味維持、FoF signal lookup date (RULE08) の不変。"
+result:
+  summary: "/api/monthly-returns の現状主因は `expanded_tickers` ではなく、production DB で `ticker_monthly_returns` が空のため fallback に落ち、しかも fallback が `Price` 全履歴を読む設計になっていることだった。`months=12` でも 7.8s 級になる根因はここにある。"
+  details: |
+    実施内容:
+    1. `projects/dm-signal.yaml` / `projects/dm-signal/lessons.yaml` / `context/dm-signal.md` / `queue/archive/reports/*cmd_775*` / `queue/archive/reports/tobisaru_report_cmd_791_20260311.yaml` を読んで先行調査との差分を確認。
+    2. `backend/app/api/monthly_returns.py` と `backend/app/services/monthly_returns_calculator.py` / `return_calculator.py` / `price_ratio_calculator.py` / `db/models.py` を精読。
+    3. ローカル uvicorn を `127.0.0.1:18000` で起動し、admin Basic Auth で `/api/monthly-returns` を実測。
+    4. SQLAlchemy event / cProfile / monkeypatch で関数別タイミングと query 実態を取得。
+    5. in-memory 擬似パッチで fallback window 化の短縮幅と返却整合を確認。
+
+    現状の処理フロー:
+    - route: `backend/app/api/monthly_returns.py:26-112`
+    - precomputed monthly rows: `backend/app/services/monthly_returns_calculator.py:98-139`
+    - response 構築: `backend/app/services/monthly_returns_calculator.py:141-318`
+    - ticker returns 取得: `backend/app/services/monthly_returns_calculator.py:341-456`
+    - fallback price scan: `backend/app/services/monthly_returns_calculator.py:458-548`
+    - current month MTD 再計算: `backend/app/services/monthly_returns_calculator.py:222-233` → `backend/app/services/return_calculator.py:53-195`
+
+    主要所見:
+    - `ticker_monthly_returns` は production DB で 0 行だった。`MonthlyReturn` は 16448 rows, DM-safe-2 は 225 rows あるが、ticker precompute だけ未投入。
+    - そのため `_calculate_ticker_monthly_returns()` は毎回 fallback へ落ち、`_calculate_ticker_returns_from_prices()` が `Price.symbol.in_(tickers)` のみで全履歴を `.all()` している。
+    - この fallback は `months` も `min_year_month` も見ていないため、quick path (`months=12`) でも全履歴読み + 全月 resample を支払う。
+    - さらに current month 1件だけ `calculate_monthly_return()` を再実行しており、warm でも約1.9s残る。
+
+    擬似diff相当:
+    ```diff
+    --- a/backend/app/services/monthly_returns_calculator.py
+    +++ b/backend/app/services/monthly_returns_calculator.py
+    @@
+    -        return self._calculate_ticker_returns_from_prices(tickers, months)
+    +        return self._calculate_ticker_returns_from_prices(
+    +            tickers,
+    +            months,
+    +            min_year_month=min_year_month,
+    +        )
+    @@
+    -    def _calculate_ticker_returns_from_prices(self, tickers, months):
+    +    def _calculate_ticker_returns_from_prices(self, tickers, months, min_year_month=None):
+             stmt = select(Price).where(Price.symbol.in_(tickers))
+    +        if min_year_month:
+    +            y, m = map(int, min_year_month.split("-"))
+    +            stmt = stmt.where(Price.date >= date(y, m, 1))
+             stmt = stmt.order_by(Price.symbol, Price.date)
+    ```
+
+    補足:
+    - `_get_date_ranges_for_partial_notes()` の `Signal.date` 全件読込は warm で約82ms。ここは secondary issue で、一次ボトルネックではなかった。
+    - `year_month` など未使用フィールド削減は payload 縮小には効くが、現状の支配項は JSON ではなく `Price` / MTD 計算である。
+purpose_validation:
+  cmd_purpose: "/api/monthly-returnsの処理フロー全体を精査し、残存ボトルネックと実装直結の修正案を定量付きで報告する。"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+verification:
+  - command: "\"/mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe\" -m uvicorn app.main:app --host 127.0.0.1 --port 18000"
+    result: pass
+    notes: "ローカル backend 起動成功。production DB 接続で route 実測に使用。"
+  - command: "python3 urllib.request script -> GET http://127.0.0.1:18000/api/monthly-returns/fc5dc444-f14a-43d3-85c9-263c3220b658?months={12,120,240}"
+    result: pass
+    notes: "months=12/120/240 を各3回測定し、median 7841.26ms / 6448.66ms / 5379.88ms を取得。"
+  - command: "python3 profiler script on MonthlyReturnsCalculator.calculate()"
+    result: pass
+    notes: "関数別 timing と top SQL を取得。`_build_response_from_precomputed` と ticker fallback が支配項。"
+  - command: "python3 DB inspection script on TickerMonthlyReturn / MonthlyReturn counts"
+    result: pass
+    notes: "`ticker_monthly_returns total 0`, `monthly_returns total 16448`, `DM-safe-2 225` を確認。"
+  - command: "python3 in-memory patched calculator benchmark"
+    result: pass
+    notes: "fallback window 化で `months=12` 8605.46ms→994.98ms、`months=120` 1853.40ms→1428.07ms。summary 一致確認。"
+lesson_candidate:
+  found: true
+  title: "ticker precompute欠落時のfallbackはmonths windowをPrice queryへ必ず伝播させる"
+  detail: "monthly-returns API は `ticker_monthly_returns` が空になると fallback に落ちるが、fallback が `Price` 全履歴を読む実装だと quick path (`months=12`) が即座に無効化される。precompute欠落は運用事故として起こりうるため、fallback 側でも `min_year_month` / `months` を query filter に通して退化を抑えるべき。"
+  project: dm-signal
+lessons_useful:
+  - id: L246
+    useful: true
+    reason: "`months` 制限は末尾sliceだけでなく下流queryまで通せ、という教訓そのものが今回の支配バグに直結した。"
+  - id: L250
+    useful: false
+    reason: "APIフィールド除去の xfail/docstring 点検教訓であり、今回の性能偵察には直接関係しない。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  summary: "修正順は 1) fallback window化 hotfix 2) `ticker_monthly_returns` 再生成/監視追加 の二段構えが妥当"
+  rationale: "現在の遅さはコード退化とデータ欠落の複合。hotfix だけでも quick path は大幅改善するが、precomputed table 0件のままでは MTD以外も毎回 Price scan に依存し続けるため、ETL/監視側の是正が必要。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

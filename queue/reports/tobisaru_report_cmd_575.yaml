@@ -1,0 +1,98 @@
+worker_id: tobisaru
+task_id: subtask_575_review
+parent_cmd: cmd_575
+timestamp: "2026-03-05T20:25:00+09:00"
+status: done
+ac_version_read: 1
+verdict: PASS
+
+result:
+  summary: "cmd_575 IF-THEN Phase1全AC検証完了。4AC全PASS。回帰テスト全PASS。push済み。auto_draft_lesson.shにスペース含む値の引数切り詰めバグを発見（AC外・lesson_candidate報告）。"
+  details: |
+    ■ レビュー結果
+
+    【AC1】if_thenフィールド付きlessons.yamlで既存スクリプトがエラーにならないか
+    - sync_lessons.sh: if/then/becauseフィールドのパース処理が正しく追加されている（L197-209）
+    - 互換テスト(test_sync_lessons_if_then_compat.bats): PASS
+    - cmd_complete_gate回帰テスト: 3件PASS
+    → PASS
+
+    【AC2】deploy_task.shのif_then注入がIF/THEN/BECAUSE形式か
+    - build_lesson_detail()関数(L365-385): if_thenあり時は「IF: → THEN: (BECAUSE:)」形式を優先
+    - 全パターン対応（if+then+because, if+then, then+because, 各単独, if_thenなし時のlegacyフォールバック）
+    - テスト(test_deploy_task_if_then.bats): 2件PASS
+    - deploy_task回帰テスト(ac_version): 2件PASS
+    → PASS
+
+    【AC3】lesson_write.sh --if/--then/--becauseで正しくif_thenが書き込まれるか
+    - フラグスキャンが正しく追加されている（L45-55）
+    - Python block内でif/then/becauseフィールドが条件付きで出力される（L226-235）
+    - 構文チェック(bash -n): PASS
+    → PASS
+
+    【AC4】ashigaru.mdにif_then説明が追記されているか
+    - lesson_candidateセクション（L373-376）にif_then任意フィールドの説明・例が追記済み
+    → PASS
+
+    ■ コード品質
+
+    - shellcheck: 構文エラーなし
+    - 後方互換: if_thenなし時のフォールバック動作が全スクリプトで維持
+    - エッジケース: build_lesson_detail()で部分的if_then（ifのみ、thenのみ等）も適切に処理
+
+    ■ push完了
+    - git push origin main: b1f1d95 (6897ae8..b1f1d95)
+
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "test_sync_lessons_if_then_compat.bats PASS + cmd_complete_gate回帰3件PASS。sync_lessons.shのif/then/becauseパース（L197-209）およびif_then辞書出力（L238-247）を実コード確認"
+  - id: AC2
+    status: pass
+    evidence: "test_deploy_task_if_then.bats 2件PASS。build_lesson_detail()関数（L365-385）がif_then辞書をIF/THEN/BECAUSE文字列に正しく変換。deploy_task回帰2件PASS"
+  - id: AC3
+    status: pass
+    evidence: "lesson_write.shのフラグスキャン（L45-55）とPython出力（L226-235）を実コード確認。bash -n PASS"
+  - id: AC4
+    status: pass
+    evidence: "ashigaru.md L373-376にif_then任意フィールド説明が追記済み"
+
+test_results:
+  - command: "bats tests/unit/test_deploy_task_if_then.bats"
+    result: pass
+    notes: "2 tests passed"
+  - command: "bats tests/unit/test_sync_lessons_if_then_compat.bats"
+    result: pass
+    notes: "1 test passed"
+  - command: "bats tests/unit/test_deploy_task_ac_version.bats"
+    result: pass
+    notes: "2 tests passed (regression)"
+  - command: "bats tests/unit/test_cmd_complete_gate.bats"
+    result: pass
+    notes: "3 tests passed (regression)"
+  - command: "bash -n scripts/lesson_write.sh"
+    result: pass
+  - command: "bash -n scripts/auto_draft_lesson.sh"
+    result: pass
+  - command: "bash -n scripts/sync_lessons.sh"
+    result: pass
+
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report_cmd_575.yaml
+
+lesson_candidate:
+  found: true
+  title: "auto_draft_lesson.shのIF-THEN引数にスペース含む値を渡すと切り詰められる"
+  detail: "IF_THEN_FLAGSをunquotedで展開しているため、lesson_write.shのfor arg in \"$@\"でword splitが発生。例: --if 'trigger condition' → IFに'trigger'のみ格納。修正案: 個別変数でquotedフラグ渡し、またはarray使用"
+  project: infra
+  if_then:
+    if: "auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時"
+    then: "IF_THEN_FLAGSの文字列結合ではなく、個別にquotedした引数として渡す"
+    because: "unquoted展開でword splitが発生し、スペース含む値の最初の単語のみが格納される"
+
+decision_candidate:
+  found: false
+
+lessons_useful:
+  - L074

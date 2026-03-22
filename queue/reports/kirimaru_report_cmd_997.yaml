@@ -1,0 +1,101 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_997_review
+parent_cmd: cmd_997
+timestamp: "2026-03-16T09:04:22+0900"
+status: done
+ac_version_read: 1
+review_result:
+  verdict: FAIL
+  reason: "修正内容自体は元の blocking findings を解消しているが、task指定の3ファイルのうち `VoiceDictionary.kt` / `MemoViewModel.kt` は current repo で未追跡(`??`)のまま、`VoiceDictionaryTest.kt` は `.gitignore` のトップレベル `*` にまだ遮られていて selective commit 前提が崩れている。さらに `./gradlew --stop` 後の `compileDebugKotlin` は `:app:compileDebugKotlin` で長時間停止し、focused test へ進める安定状態を再現できなかった。"
+verdict: FAIL
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+ac_results:
+  - id: AC1
+    status: fail
+    evidence: "コード精読では `VoiceDictionary.kt` の preset merge / `apply()` 追加、`MemoViewModel.kt` の `createMemo` / `updateMemo` 接続、`VoiceDictionaryTest.kt` の merge回帰テスト追加を確認し、元の論点2件は解消している。一方で `git status --short -- ...` では `VoiceDictionary.kt` / `MemoViewModel.kt` が `??`、`VoiceDictionaryTest.kt` は差分ゼロかつ `.gitignore` では依然 ignore 側に落ちるため、taskが要求する『cmd_997変更分のみの選択的commit』を安全に成立させられない。`./gradlew --stop` 後に `./gradlew compileDebugKotlin` を実行したが `:app:compileDebugKotlin` で長時間無応答となり、`./gradlew --status` では daemon `591665 BUSY` が残存。focused test は前提ビルド安定化前のため未実施。"
+diff_check:
+  commit_required: true
+  method: "git status --short -- <3 files> + git check-ignore -v <3 files> + 対象ファイル精読"
+  files_changed:
+    - android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt
+    - android/app/src/main/java/com/shogun/android/viewmodel/MemoViewModel.kt
+  unintended_changes: true
+  notes: "`VoiceDictionary.kt` / `MemoViewModel.kt` は current repo で untracked。`VoiceDictionaryTest.kt` は task対象だが pending diff がなく、`.gitignore:7` の `*` により ignore 側に残っている。task指定の3ファイルをそのまま selective commit できる状態ではない。"
+result:
+  summary: "FAIL。VoiceDictionary 接続・preset merge 修正はコード上妥当だが、git追跡状態の不整合と Gradle compile hang により build+test+commit+push を完遂できなかった。"
+  details: |
+    実施内容:
+    - `queue/reports/hayate_report_cmd_997.yaml` と `queue/reports/saizo_report_cmd_997_fix.yaml` を読み、前回FAIL理由と今回fix主張を照合。
+    - 対象3ファイルを精読。
+    - `./gradlew --stop` 実行。
+    - `./gradlew compileDebugKotlin` を taskどおり再実行。
+    - `git status --short -- ...` / `git check-ignore -v ...` / `git status --short --untracked-files=all` / `.gitignore` 精読で commit前提の tracking 状態を確認。
+
+    レビュー判断:
+    - `VoiceDictionary.kt`
+      - `loadInitialEntries()` で stored JSON を `presetEntries` と merge し、プリセットキーは最新値優先、custom key は保持する実装になっている。
+      - `apply()` が `applyAll()` の互換ラッパーとして追加されている。
+    - `MemoViewModel.kt`
+      - `createMemo` / `updateMemo` の両方で `normalizeVoiceInput()` を通し、その中で `VoiceDictionary(prefs).apply(trimmed)` を呼ぶため、前回レビューの「未接続」は解消している。
+    - `VoiceDictionaryTest.kt`
+      - preset merge 後に `ギットハブ` がプリセット値へ戻り、custom key が保持される回帰テストを確認。
+
+    Blocking issues:
+    - git tracking 不整合:
+      - `VoiceDictionary.kt` と `MemoViewModel.kt` は変更ではなく `??` の untracked files。
+      - `VoiceDictionaryTest.kt` は task対象だが pending diff がなく、`.gitignore` の whitelist に未登録で ignore 側に残っている。
+      - この状態では reviewer として task指定3ファイルのみの clean commit を作れない。
+    - build/test 不安定:
+      - `./gradlew --stop` 後の `compileDebugKotlin` は `:app:compileDebugKotlin` まで進んだ後、長時間無応答。
+      - `./gradlew --status` では daemon `591665 BUSY` が残存し、前回からの compile processes も複数観測された。
+      - focused test `com.shogun.android.util.VoiceDictionaryTest` は compile 前提が安定せず未実施。
+
+    結論:
+    - 修正ロジック自体は前回FAIL理由を潰している。
+    - ただし AC（ビルド+テスト+selective commit+push）は未達のため reviewer verdict は FAIL。
+    - commit / push は未実施。
+purpose_validation:
+  cmd_purpose: "cmd_997（音声辞書プリセット増強）の修正実装を検証し、ビルド+テスト+commit+pushする"
+  fit: true
+  purpose_gap: "コードレビューまでは完了したが、build/test 安定完走と selective commit 前提の tracking 状態を満たせず commit/push へ進めなかった。"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kirimaru_report_cmd_997.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "whitelist .gitignore では task対象ファイルの unignore 漏れと未追跡状態を commit 前に必ず検査せよ"
+  detail: "IF whitelist型 `.gitignore` 配下で selective commit task を受ける THEN `git status --short -- <targets>` と `git check-ignore -v <targets>` で対象ファイルが tracked/unignored かを最初に検査せよ BECAUSE 今回はロジック修正自体が妥当でも `VoiceDictionaryTest.kt` が ignore 側、他2ファイルが untracked のため commit不能だった。"
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "Bash算術更新の教訓であり、今回の Android review 論点には未関与。"
+  - id: L063
+    useful: false
+    reason: "lessons.yaml 構造注意は今回対象外。"
+  - id: L225
+    useful: true
+    reason: "task指定ファイルと current repo 実体が一致するかを先に切り分けたことで、変更内容以前に git tracking 不整合が blocking だと判断できた。"
+  - id: L188
+    useful: true
+    reason: "reviewer が commit/push まで担う前提で見たため、単にコードが良いかだけでなく clean selective commit の成立条件まで確認できた。"
+  - id: L220
+    useful: true
+    reason: "runtime-generated / tracked 状態が混じる repo では、git status clean ではなく commit対象の追跡可否を先に確認すべきという点で有効だった。"
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false

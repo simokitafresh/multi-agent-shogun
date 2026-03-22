@@ -1,0 +1,75 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kirimaru
+task_id: cmd_915_R
+parent_cmd: cmd_915
+timestamp: "2026-03-13T19:10:23"
+status: done
+ac_version_read: 3
+verdict: FAIL
+ac_results:
+  - id: AC1
+    status: fail
+    evidence: "`workflows/receipt_manager.py` と `tests/test_receipt_manager.py` を精査し、blocking issue を2件確認した。1件目は `extract_from_pdf()` が金額や種別を確定できなくても `ReceiptInfo` を返すため、`rename` / `upload` が `unknown` を含む不正なファイル名や Drive サブフォルダで処理を続行してしまうこと。2件目は `find_or_create_subfolder()` が同名サブフォルダ重複時に件数検証せず `files[0]` を採用するため、誤った Drive フォルダへアップロードしうること。"
+  - id: AC2
+    status: fail
+    evidence: "指定どおり `python3 -m unittest /mnt/c/Python_app/auto-ops/tests/test_receipt_manager.py` を実行したが `Ran 0 tests` / `NO TESTS RAN` だった。テストファイルは `pytest` スタイルで `unittest.TestCase` を継承しておらず、AC2 の「全テストPASS、SKIP 0」は未達。参考として `pytest -q /mnt/c/Python_app/auto-ops/tests/test_receipt_manager.py` は 25 passed。"
+  - id: AC3
+    status: fail
+    evidence: "AC1/AC2 が FAIL のため commit / push は未実施。"
+result:
+  summary: "cmd_915 review は FAIL。`pytest` では 25 passed だが、要求された `unittest` 実行は 0 tests で AC2 未達、かつ `receipt_manager.py` に partial PDF 抽出時の誤処理と Drive 重複サブフォルダ誤選択の blocking issue が残るため、commit / push を差し止めた。"
+  details: |
+    Blocking findings:
+    1. `/mnt/c/Python_app/auto-ops/workflows/receipt_manager.py:137-182`, `/mnt/c/Python_app/auto-ops/workflows/receipt_manager.py:241-307`
+       `extract_from_pdf()` はテキストが空でなければ、`issuer/receipt_type/amount/month` のどれかが `unknown` のままでも `ReceiptInfo` を返す。
+       その結果 `rename_receipts()` は `build_filename()` で `2026-03_note_有料記事_unknown円_raw.pdf` のような不正名へ rename し、`upload_receipts()` も `note` や `unknown` サブフォルダへ upload を続行する。
+       実測でも `領収書 + 購入日 + note株式会社` だけを含む mock PDF に対して `ReceiptInfo(month='2026-03', issuer='note', receipt_type='有料記事', amount='unknown', original_name='raw')` が返り、`build_filename(info)` は `2026-03_note_有料記事_unknown円_raw.pdf` になった。
+       レビュー観点の「PDF読取不能、金額抽出失敗」に対して fail-close になっていない。
+
+    2. `/mnt/c/Python_app/auto-ops/workflows/receipt_manager.py:211-234`
+       `find_or_create_subfolder()` は Drive query の結果が複数件でも `files[0]["id"]` を無条件採用する。
+       既に同名サブフォルダが重複している環境では、どの ID が返るかは `drive_list()` 依存で安定せず、誤ったフォルダへ証票をアップロードしうる。
+       タスクの edge case「サブフォルダ重複」を検知して停止・警告すべき箇所で silent success になっている。
+
+    Test gap:
+    - `tests/test_receipt_manager.py:29-290` はすべて `pytest` スタイルで、`python3 -m unittest ...` からは 0 件しか回らない。
+    - `unknown` フィールドを含む partial extraction の抑止テスト、`find_or_create_subfolder()` の duplicate folder テスト、`upload_receipts()` の fail-close テストがない。
+purpose_validation:
+  cmd_purpose: "cmd_915レビュー。小太郎実装のreceipt_manager.pyをレビュー+テスト実行+push。"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+verification:
+  - command: "python3 -m unittest /mnt/c/Python_app/auto-ops/tests/test_receipt_manager.py"
+    result: fail
+    notes: "Ran 0 tests in 0.000s / NO TESTS RAN。AC2未達。"
+  - command: "pytest -q /mnt/c/Python_app/auto-ops/tests/test_receipt_manager.py"
+    result: pass
+    notes: "25 passed in 0.29s。テスト内容自体は pytest では動く。"
+  - command: "python3 - <<'PY' ... mock PDF with note株式会社 + 購入日 but no amount ... PY"
+    result: fail
+    notes: "`extract_from_pdf()` が `amount='unknown'` のまま `ReceiptInfo` を返し、`build_filename()` が `2026-03_note_有料記事_unknown円_raw.pdf` を生成することを確認。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "PDF抽出結果にunknownが残る場合は rename/upload を継続せず fail-close せよ"
+  detail: "`receipt_manager.py` は `extract_from_pdf()` が partial success でも `ReceiptInfo` を返すため、`rename_receipts()` が `unknown円` を含むファイル名へ改名し、`upload_receipts()` も誤った Drive サブフォルダへ進みうる。PDF命名パイプラインは `issuer/種別/金額/月` の必須項目が欠けた時点で WARN + skip に倒すべき。"
+  project: auto-ops
+lessons_useful:
+  - L186
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

@@ -1,0 +1,144 @@
+worker_id: saizo
+task_id: cmd_749_scout_6
+parent_cmd: cmd_749
+timestamp: "2026-03-11T02:41:27+0900"
+status: done
+ac_version_read: 5
+verdict: PASS
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`frontend/app/offline/page.tsx:4-17` は静的UIのみで認証Context/API呼出を持たない。admin認証取得経路は `/admin/*` では `frontend/app/admin/layout.tsx:1-8` → `frontend/contexts/admin-auth-context.tsx:23-127`、非adminページでは `frontend/components/viewer-auth-modal.tsx:17-113` の Admin タブ → `adminAuth.login()` → `api.adminLogin()` 経由。"
+  - id: AC2
+    status: pass
+    evidence: "Cookie lifecycle は `frontend/lib/api-client.ts:275-309,492-530` と `backend/app/auth.py:168-270` で追跡できる。設定=`set_session_cookie()`, 読取=`request.cookies`, 失効= `verify_*_token()` の期限判定 or `/api/auth/logout`, 再設定=`/api/admin/login` or `/api/auth/verify-viewer`。frontend は `document.cookie` を読まず、`admin_session_active` と `dm_viewer_token` を補助状態として使う。"
+  - id: AC3
+    status: pass
+    evidence: "4 commit のうち auth 挙動へ直接影響するのは `3e515ca` のみで、`render.yaml` を `uvicorn ... --workers 2` に変更した。対して token store は `backend/app/auth.py:44-46` の process-local dict (`_viewer_tokens`, `_admin_tokens`) で共有されないため、worker A 発行 cookie を worker B が検証できず 401 化しうる。`0a76f42` は dashboard dynamic import + test修正、`ad25d51` は KaTeX/import + SignalsContext useMemo、`b488c0c` は prefetch 縮退のみ。"
+  - id: AC4
+    status: pass
+    evidence: "`AdminAuthProvider` は root layout ではなく `frontend/app/admin/layout.tsx:1-8` にのみ配置。よって `/admin`, `/admin/fof`, `/admin/folders`, `/admin/visibility` は同 Provider 配下だが、`/offline` や通常公開ページは配下外。"
+  - id: AC5
+    status: pass
+    evidence: "現行 backend に `/api/auth/test` は存在しない（コード検索結果 0 件）。viewer 系は `backend/app/api/auth.py:21-76` の `/api/auth/verify-viewer`、admin 系は `backend/app/api/auth.py:79-89` の `/api/admin/login`、logout は `backend/app/api/auth.py:92-97`。認可本体は `backend/app/auth.py:168-236` の `require_admin` / `require_viewer` / `is_admin_authenticated`。"
+result:
+  summary: |
+    AC1-5 PASS。実コード上の主因は `3e515ca` による `uvicorn --workers 2` 化である。admin/viewer セッションは `backend/app/auth.py` の in-memory dict に保持されており worker 間共有がないため、ログインを処理した worker と後続 API を処理する worker が分かれると cookie/token が未登録扱いとなり 401 化する。Static Export や `/offline` 自体は直接原因ではない。
+  details: |
+    ■ 1. フロントエンド側の認証取得経路
+
+    1) `/admin/*`
+    - `frontend/app/admin/layout.tsx:1-8` が `AdminAuthProvider` を注入。
+    - `frontend/contexts/admin-auth-context.tsx:45-87` は mount 時に `localStorage['admin_session_active']` を見て `api.getPortfolios({ includeInactive: true })` を実行し、cookie セッションの有効性を確認する。
+    - `frontend/contexts/admin-auth-context.tsx:90-102` の `login()` は `api.adminLogin()` 成功後に `refreshPortfolios()` を実行する。
+
+    2) 非adminページ
+    - `frontend/components/viewer-auth-modal.tsx:17-113` は `/admin` 以外で表示され、Admin タブから `adminAuth.login()` を叩ける。
+    - `frontend/lib/admin-auth.ts:8-17` は `api.adminLogin()` を呼び、成功時に viewer token を消す。
+    - modal 成功後は `window.location.reload()` で再読込する。
+
+    3) `/offline`
+    - `frontend/app/offline/page.tsx:4-17` は完全な静的表示のみ。
+    - `useAdminAuth`, `adminAuth`, `api-client`, `document.cookie` の参照はない。
+    - codebase 内で `/offline` へ auth failure から遷移させる Service Worker / router 経路は見当たらない。
+
+    ■ 2. Cookie / session lifecycle
+
+    A. 設定
+    - admin login: `frontend/lib/api-client.ts:275-293` が Basic Auth 付きで `/api/admin/login` を POST。
+    - backend: `backend/app/api/auth.py:79-89` が `generate_admin_token()` → `set_session_cookie(response, 'admin_session', token, expires)`。
+    - viewer login: `backend/app/api/auth.py:21-76` が tier password を検証し、`viewer_session` cookie を設定しつつ token/expires を JSON でも返す。
+
+    B. frontend 側の扱い
+    - admin は cookie を直接読めないため、成功時に `localStorage['admin_session_active']='true'` を立てる (`frontend/lib/api-client.ts:286-289`)。
+    - 後続 request は `credentials: 'include'` 付き fetch を使い (`frontend/lib/api-client.ts:525-530`)、admin active 時は Authorization header を付けない (`frontend/lib/api-client.ts:497-500`)。
+    - viewer は `dm_viewer_token` を localStorage にも保存する (`frontend/lib/viewer-auth.ts:8-18`) が、server 側では cookie / Bearer どちらでも受ける。
+
+    C. backend 側の読取
+    - admin: `backend/app/auth.py:168-189` の `require_admin()` が `request.cookies['admin_session']` を最優先で見て、なければ Basic Auth へ fallback。
+    - viewer: `backend/app/auth.py:192-211` の `require_viewer()` が admin 認証済みを先に通し、その後 `viewer_session` cookie または Bearer token を検証する。
+
+    D. 失効・削除
+    - token 失効判定は `verify_admin_token()` / `verify_viewer_token()` (`backend/app/auth.py:142-165`)。
+    - frontend 401 時は `admin_session_active` や viewer token を localStorage から消す (`frontend/lib/api-client.ts:532-550`)。
+    - server cookie 自体の削除は `/api/auth/logout` → `clear_session_cookie()` (`backend/app/api/auth.py:92-97`, `backend/app/auth.py:262-270`)。
+
+    E. Cookie 属性
+    - 名前: `admin_session`, `viewer_session`
+    - `HttpOnly=True` (`backend/app/auth.py:251-257`)
+    - `Secure=True` / `SameSite='none'` は production (`RENDER_EXTERNAL_URL` 存在時)
+    - dev は `Secure=False` / `SameSite='lax'`
+    - `domain` 指定なし = host-only cookie
+    - `path` 指定なし = framework default `/`
+    - `expires` は ISO date を UTC midnight として設定 (`backend/app/auth.py:243-257`)
+
+    ■ 3. 4 commit の影響分析
+
+    - `0a76f42`
+      - runtime 変更は dashboard の `SignalPieChart` dynamic import。
+      - auth 関連は test の `waitFor` と `pendingRequests.clear()` のみで、本番認証経路は不変。
+
+    - `3e515ca`
+      - `render.yaml` の backend 起動が `uvicorn ... --workers 2` に変化。
+      - 一方で session store は `backend/app/auth.py:44-46` の in-memory dict。
+      - 各 worker は別 process なので token store は共有されず、worker A で発行した `admin_session` / `viewer_session` を worker B が `verify_*_token()` で認識できない。
+      - これにより「ログイン直後は通るが次の API で 401」「ページによって通ったり落ちたり」がコード上で説明できる。
+
+    - `ad25d51`
+      - `frontend/app/layout.tsx` から KaTeX CSS を外し、`SignalsContext` を useMemo 化しただけ。
+      - admin layout / auth context / cookie path は未変更。
+
+    - `b488c0c`
+      - `SignalsContext` の prefetch 起動本数を 83 → selected PF 3本に削減。
+      - auth API, auth context, cookie 実装には触れていない。
+
+    ■ 4. `/api/auth/test` について
+
+    - backend / frontend ともに `/api/auth/test` 実装は存在しない。
+    - `frontend/lib/api-client.ts:702-705` の `testAuth()` は独立 endpoint ではなく `adminLogin()` を再利用して boolean を返すだけ。
+    - したがって、admin 認証確認の実体は `/api/admin/login` 再実行である。
+
+    ■ 5. 所見
+
+    中立所見として、今回の intermittent admin failure は Static Export 固有問題よりも `3e515ca` 後の multi-worker 化と in-memory session store の不整合が本命である。`/offline` は無関係、`AdminAuthProvider` 配置も `/admin/*` に限定されており構造上明快である。再現条件は「ログイン cookie 発行 worker と、後続 API 検証 worker が異なること」で、admin だけでなく viewer も同型リスクを持つ。
+  test_result: "N/A: recon only (code/test not required for this task)"
+  self_gate_check:
+    lesson_ref: PASS
+    lesson_candidate: PASS
+    status_valid: PASS
+    purpose_fit: PASS
+purpose_validation:
+  cmd_purpose: "本番で一部ページのアドミンログインが効かない事象について、/offline と認証基盤全体を横断し、Cookie/Context/BE API/直近4 commit の影響を実コードで追跡する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_749.yaml
+verification:
+  - command: "rg -n \"AdminAuthProvider|useAdminAuth|offline\" /mnt/c/Python_app/DM-signal/frontend/app /mnt/c/Python_app/DM-signal/frontend/components /mnt/c/Python_app/DM-signal/frontend/contexts"
+    result: pass
+    notes: "`AdminAuthProvider` は `/admin` 配下限定、`/offline` は静的ページのみと確認。"
+  - command: "rg -n \"admin_session_active|credentials: 'include'|_admin_tokens|_viewer_tokens|verify_admin_token|verify_viewer_token\" /mnt/c/Python_app/DM-signal/frontend/lib/api-client.ts /mnt/c/Python_app/DM-signal/frontend/contexts/admin-auth-context.tsx /mnt/c/Python_app/DM-signal/backend/app/auth.py"
+    result: pass
+    notes: "frontend は localStorage flag + cookie送信、backend は process-local token store で検証する実装を確認。"
+  - command: "git -C /mnt/c/Python_app/DM-signal show --stat --patch --unified=3 0a76f42 3e515ca ad25d51 b488c0c -- render.yaml frontend/app/dashboard/page.tsx frontend/lib/__tests__/api-client-auth.test.ts frontend/app/docs/page.tsx frontend/app/layout.tsx frontend/contexts/signals-context.tsx frontend/hooks/usePrefetch.ts"
+    result: pass
+    notes: "auth 挙動へ直接影響する runtime diff は `3e515ca` の `--workers 2` のみ。"
+lesson_candidate:
+  found: true
+  title: "in-memory session token store は multi-worker 化と両立しない"
+  detail: "DM-Signal の admin/viewer session は `backend/app/auth.py` の process-local dict で管理されている。`uvicorn --workers 2` にすると worker 間で token が共有されず、ログイン cookie/token を別 worker が検証できず intermittent 401 を生む。認証 token store は単一 worker 前提でのみ安全。"
+  project: dm-signal
+lessons_useful:
+  - id: L160
+    useful: true
+    reason: "『認証は in-memory token store 方式』という既知前提が、`3e515ca` の multi-worker 化を主因候補として絞る決め手になった。"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

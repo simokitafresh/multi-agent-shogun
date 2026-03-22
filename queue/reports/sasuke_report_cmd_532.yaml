@@ -1,0 +1,44 @@
+worker_id: sasuke
+task_id: subtask_532_review
+parent_cmd: cmd_532
+timestamp: "2026-03-04T16:27:02"
+status: done
+ac_version_read: 5
+review_result: PASS
+ac_results:
+  ac1: "PASS — generate_report_template()でworker_id/task_id/parent_cmd/ac_version_readをtask YAML(field_get)から自動記入する変更を確認"
+  ac2: "PASS — テンプレートのキー構造(キー名・順序・ネスト)は維持。値の参照元のみ変更"
+  ac3: "PASS — bash -n scripts/deploy_task.sh 成功"
+  ac4: "PASS — git push origin main 実行済み(Everything up-to-date)"
+  ac5: "PASS — lesson_candidate記録済み"
+diff_check:
+  target_commit: "3959c44"
+  files_verified:
+    - scripts/deploy_task.sh
+  details: "git showで差分確認。変更はgenerate_report_template()内に限定。"
+result:
+  summary: "cmd_532 reviewはPASS。全AC充足を確認。"
+  details: |
+    - 対象commit: 3959c44 (cmd_532)
+    - 変更範囲は scripts/deploy_task.sh のgenerate_report_template()のみ。
+    - worker_id/task_id/parent_cmd/ac_version_readがtask YAML由来に置換。
+    - task_idはsubtask_id優先、未設定時task_idフォールバック(L112整合)。
+    - テンプレート構造は維持され、構文チェックPASS。
+    - push実行結果: Everything up-to-date。
+purpose_validation:
+  cmd_purpose: "報告テンプレートの機械的フィールドを配備時にタスクYAMLから自動記入"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  found: true
+  title: "AC文言は値参照元変更以外(例: コメント追記)の許容範囲を明示すると判定ブレを防げる"
+  detail: "今回の差分にはtimestamp行コメント追記が含まれるが、機能要件への影響はない。レビューACを『機能差分の主目的』と『非機能注記』に分離すると、レビュー担当間でPASS/FAIL判定の一貫性が上がる。"
+  project: infra
+lessons_useful:
+  - id: L112
+    how: "subtask_id優先+task_idフォールバック実装の正当性確認に使用"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

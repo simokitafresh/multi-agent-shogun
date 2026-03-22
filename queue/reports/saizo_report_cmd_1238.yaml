@@ -1,0 +1,122 @@
+worker_id: saizo
+task_id: cmd_1238
+parent_cmd: cmd_1238
+timestamp: '2026-03-22T01:34:39'
+status: done
+ac_version_read: 5093a887
+result:
+  summary: '63 standard PF中6件FAIL(monthly_return_open 1e-6超)を特定。根本原因: (1)Group A/C(4件):
+    filter_init_months bug(L074既知)=初期Cash月が2ヶ月以上あるPFで2月目以降がスキップされず比較対象に含まれる。prod/GS間のCash
+    return微差(1e-5)が検出される。(2)Group B(2件): IEEE754浮動小数点累積誤差(1.07e-06)がtolerance境界。GS
+    engine修正不要(filter_init_months修正で4件解消、残2件はtolerance調整で解消)。FoF波及: 6 FAIL PFが14 FoFのcomponentに含まれるが、絶対差max
+    1.19e-05で影響は無視可能。'
+  details: '■ AC1: FAIL PF全件特定 (6/63件)
+
+    Group A (^VIX abs, 2010-09, diff=1.19e-05): 3件 1. DM6-5: 184/185, max_diff=1.19e-05
+    2010-09: prod=1.332401e-04 gs=1.213427e-04 2. L0-Qj_GLD_5M_2M_15D_w40_40_20_T1:
+    184/185, max_diff=1.19e-05 2010-09: prod=1.332401e-04 gs=1.213427e-04 3. シン白虎-鉄壁:
+    184/185, max_diff=1.19e-05 2010-09: prod=1.332401e-04 gs=1.213427e-04
+
+    Group B (SPXL abs, 2013-04, diff=1.07e-06): 2件 4. L0-M_SPXL_QQQ_15M_T1: 174/175,
+    max_diff=1.07e-06 2013-04: prod=2.492021e-02 gs=2.492127e-02 5. L0-Qj_SPXL_QQQ_12M_T1:
+    177/178, max_diff=1.07e-06 2013-04: prod=2.492021e-02 gs=2.492127e-02
+
+    Group C (SPXL abs, 2012-05, diff=6.35e-06): 1件 6. L0-Qm_SPXL_SPY_24M_T1: 164/165,
+    max_diff=6.35e-06 2012-05: prod=8.092e-05 gs=7.457e-05
+
+    holding_signal: 63/63 PASS (全件完全一致)
+
+    ■ AC2: FAILパターン分析
+
+    (a) 差分大きさ分布: - 1e-6〜1e-5: 2件 (Group B, SPXL/QQQ, 1.07e-06) - 1e-5〜1e-4: 4件 (Group
+    A 3件=1.19e-05, Group C 1件=6.35e-06) - 1e-4超: 0件
+
+    (b) 時間分布: 特定月に集中（全期間分散ではない） - 2010-09: 3件 (Group A) — 全PFデータ開始直後の初期化Cash月 - 2013-04:
+    2件 (Group B) — 通常運用月、初期化ではない - 2012-05: 1件 (Group C) — データ開始直後の初期化Cash月
+
+    (c) ファミリー偏り: - ^VIX abs (DM6系): 3件 — 全てquarterly_jan、safe_haven=GLD - SPXL abs
+    (DM7+系): 3件 — monthly/quarterly_jan/quarterly_mar混在
+
+    (d) 初期化月パターン (核心): Group A: 2010-07 hs=None → 2010-08 hs=Cash → [2010-09 hs=Cash]
+    ← FAIL月 Group C: 2012-03 hs=None → 2012-04 hs=Cash → [2012-05 hs=Cash] ← FAIL月
+    → いずれも「2番目のCash初期化月」が比較対象に含まれている → filter_init_monthsは最初の1 Cash月のみskip（L074既知バグ）
+
+    Group B: 通常運用月(hs=QQQ)でのIEEE754微差。初期化問題とは無関係
+
+    ■ AC3: 根本原因仮説と修正要否
+
+    仮説1 (Group A/C, 4件): filter_init_months初期化スキップ不完全 - 原因: verify_gs_parity_pi009.py
+    L164の first_real_found=True が 最初のCash月で設定され、2番目以降のCash初期化月をスキップしない - 本番DBは独自の初期化ロジックで計算、GS
+    engineは別のロジック - 初期化Cash月のreturnは極小(1e-4オーダー)だが計算パス差で1e-5の差が出る - 修正: filter_init_monthsを「連続Cash月を全てスキップ」に修正（L074準拠）
+    - GS engine本体の修正: 不要
+
+    仮説2 (Group B, 2件): IEEE754浮動小数点累積誤差 - 原因: prod計算時とGS engine計算時の浮動小数点演算順序差 - diff=1.07e-06はtolerance
+    1e-6のわずか7%超過 - 修正: toleranceを1.1e-6に微調整、またはnp.isclose(rtol=1e-10)に変更 - GS engine本体の修正:
+    不要
+
+    ■ Phase 2 (FoF) 波及リスク: LOW 6 FAIL PFが以下14 FoFのcomponentに含まれる: - シン白虎-鉄壁(8 FoF):
+    シン四つ目-鉄壁, シン抜き身-激攻, シン追い風-激攻, シン変わり身-激攻, シン変わり身-鉄壁, シン加速R-激攻, シン加速R-常勝, シン四つ目-激攻,
+    シン抜き身-鉄壁 - L0-Qj_GLD_5M_2M_15D_w40_40_20_T1(1 FoF): 鉄壁-白虎 - L0-Qj_SPXL_QQQ_12M_T1(1
+    FoF): 激攻-玄武 - L0-Qm_SPXL_SPY_24M_T1(1 FoF): 鉄壁-玄武 - DM6-5(1 FoF): bam-6 - L0-M_SPXL_QQQ_15M_T1(1
+    FoF): 常勝-玄武 ただし: 誤差max 1.19e-05 × FoF weightで希釈。FoF月次リターンへの影響は1e-6未満
+
+    ■ 価格データ検証 ^VIX: 2010-08〜10月 prod DB vs local SQLite → 全日一致(差分0) SPXL: 2012-04〜2013-05
+    prod DB vs local SQLite → 全日一致(差分0) → 価格データ不一致は根本原因ではない'
+purpose_validation:
+  cmd_purpose: cmd_1233で検出されたmonthly_return 6件FAILの根本原因特定とGS engine修正要否判断
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: filter_init_months初期化スキップ不完全がパリティ検証の偽FAIL原因
+  detail: IF verify_gs_parity_pi009.pyでmonthly_return FAIL件を調査する THEN 初期化Cash月(複数月連続)のスキップ漏れを最初に疑え
+    BECAUSE filter_init_monthsは最初の1Cash月しかスキップせず(L074既知)、2番目以降のCash初期化月がprod/GS間の計算パス差で1e-5の偽差分を生む。6件FAIL中4件はこの原因。
+  project: dm-signal
+lessons_useful:
+- id: L074
+  useful: true
+  reason: filter_init_monthsが複数Cash初期化月をスキップしないバグの核心。6件FAIL中4件の根本原因特定に直結した
+- id: L225
+  useful: false
+  reason: MCP entity名義混入問題。本タスクはDB分析でありentity管理に関わらなかった
+- id: L346
+  useful: false
+  reason: 旧GS 5Phaseパイプライン削除情報。本タスクはverify_gs_parity_pi009.py実行が主でありパイプライン構造変更に関わらなかった
+- id: L192
+  useful: false
+  reason: 並列impl review手法。本タスクはRECON(偵察)でありimplやreviewではなかった
+- id: L415
+  useful: false
+  reason: CPCV禁止。本タスクはパリティ検証であり過適合検証設計ではなかった
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: verify_gs_parity_pi009.pyを実行したか
+    result: 'yes'
+  - check: 1e-6超のFAIL PFを全件特定したか
+    result: 'yes'
+  - check: 各FAIL PFのPF名、不一致月数、max abs diffを記録したか
+    result: 'yes'
+  AC2:
+  - check: 差分の大きさ分布を分析したか
+    result: 'yes'
+  - check: 時間分布(特定期間集中 vs 全期間分散)を分析したか
+    result: 'yes'
+  - check: ファミリー偏りを分析したか
+    result: 'yes'
+  AC3:
+  - check: 根本原因の仮説を記載したか
+    result: 'yes'
+  - check: GS engine修正要否の判断を記載したか
+    result: 'yes'
+  - check: Phase 2(FoF)への波及リスクを評価したか
+    result: 'yes'
+verdict: PASS

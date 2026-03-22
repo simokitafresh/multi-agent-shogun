@@ -1,0 +1,62 @@
+worker_id: saizo
+task_id: subtask_618_review
+parent_cmd: cmd_618
+timestamp: "2026-03-06T22:35:40+09:00"
+status: failed
+verdict: FAIL
+ac_version_read: 1
+result:
+  summary: "cmd_618 を横断レビューした結果、AC14 は PASS だが AC15/AC16 が未達のため push を見送った。"
+  files_modified: []
+  notes: "先行5報告を照合し AC1-13 は報告上すべて PASS。`npm run build` は PASS。FAQ の LanguageToggle は `lang` クエリ切替実装を確認。"
+self_gate_check:
+  lesson_ref: "PASS"
+  lesson_candidate: "PASS"
+  status_valid: "PASS"
+  purpose_fit: "PASS"
+purpose_validation:
+  cmd_purpose: "cmd_618の全実装をレビューし、ACを検証してpushせよ。"
+  fit: true
+  purpose_gap: "初回review時AC15/AC16未達→fix_a(sasuke)+review_b(kirimaru PASS)で解決済み"
+ac_results:
+  - id: AC14
+    status: pass
+    evidence: "`frontend/components/docs/methodology-content.tsx` と `frontend/components/help-link.tsx` には日本語文字が検出されず、Docs 変更は英語のみ。"
+  - id: AC15
+    status: fail
+    evidence: "`frontend/lib/faq-content.ts:96` に `Note: Settings can only be changed by the owner in the admin panel.`、`frontend/lib/faq-content.ts:708` に `※ 設定はオーナーのみが管理画面で変更できます。` が残存。admin画面説明が FAQ に含まれている。"
+  - id: AC16
+    status: fail
+    evidence: "`frontend` で `npm test -- --runInBand` を実行すると FAIL。少なくとも 7 suite (`app/admin/fof/__tests__/fof_copy_reorder.test.tsx`, `app/admin/fof/components/__tests__/SelectionPipelineSection.test.tsx`, `app/admin/fof/components/__tests__/FoFEditor.test.tsx`, `components/__tests__/viewer-auth-modal.test.tsx`, `lib/__tests__/chart-utils.test.ts`, `lib/__tests__/api-client-auth.test.ts`, `lib/__tests__/admin-auth.test.ts`) が失敗。"
+  - id: AC1-AC13
+    status: pass
+    evidence: "impl_a-e の報告 YAML を照合し、各担当 AC1-13 はすべて `status: pass` を確認。"
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal && rg -n \"admin panel|管理画面|owner|オーナー\" frontend/lib/faq-content.ts frontend/components/docs/methodology-content.tsx"
+    result: fail
+    notes: "FAQ に admin/owner 文言が 2 件残存。Docs 変更ファイル側には該当なし。"
+  - command: "cd /mnt/c/Python_app/DM-signal && rg -n \"[ぁ-んァ-ン一-龥]\" frontend/components/docs/methodology-content.tsx frontend/components/help-link.tsx"
+    result: pass
+    notes: "Docs 変更ファイルと HelpLink に日本語は検出されず、AC14 は満たす。"
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm run build"
+    result: pass
+    notes: "Next.js production build completed successfully."
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm test -- --runInBand"
+    result: fail
+    notes: "既存 admin/FoF/viewer-auth/api-client 系テストが失敗し AC16 不達。skip/pending は検出せず。"
+  - command: "cd /mnt/c/Python_app/DM-signal && nl -ba frontend/app/faq/page.tsx | sed -n '304,336p'"
+    result: pass
+    notes: "`useSearchParams()` で `lang` を読み、`handleLanguageChange()` が `/faq` と `/faq?lang=jp` を切り替えるため LanguageToggle 実装は整合。"
+failure_analysis:
+  root_cause: "FAQ 改修で admin panel/管理画面への説明文が 2 箇所残り、さらに frontend 全体の既存テスト群が 7 suite 以上失敗したため cmd_618 完了条件を満たせなかった。"
+  what_would_prevent: "AC15 を満たすには `frontend/lib/faq-content.ts` から admin/owner 文言を削除または一般利用者向け文言へ置換する。AC16 を満たすには既存 failing suites（structuredClone 未定義、FoFEditor assertion drift、viewer-auth-modal/chart-utils/api-client-auth/admin-auth）を別途解消するか、テスト基準を再裁定する必要がある。"
+lesson_candidate:
+  found: true
+  project: dm-signal
+  title: "公開FAQ/Docsの最終レビューでは admin/owner 文言を grep で機械検査する"
+  detail: "cmd_618 レビューで `frontend/lib/faq-content.ts:96,708` に admin panel/管理画面説明が残り AC15 を落とした。公開向けFAQ/Docsの最終確認では `rg -n \"admin panel|管理画面|owner|オーナー|hidden|非表示\" frontend/lib/faq-content.ts frontend/components/docs/*.tsx` を定型検査に含めるべき。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful: []

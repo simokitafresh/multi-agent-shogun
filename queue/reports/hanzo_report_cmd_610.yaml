@@ -1,0 +1,177 @@
+subtask_id: subtask_610_scout_a
+parent_cmd: cmd_610
+ninja: hanzo
+status: done
+result: PASS
+timestamp: '2026-03-06T17:35:00'
+ac_version: 3
+files_modified: []
+summary: '全軍進化監査 偵察A — 知識循環と成長メトリクスの定量精査結果。
+
+  軸1(知識循環)は「停滞〜退化」、軸3(成長メトリクス)は「進化」と評定。
+
+  '
+acceptance_criteria:
+  AC1:
+    status: PASS
+    detail: '教訓注入率・効果率のcmd_585時点と現在の定量比較を提示済み。
+
+      注入率推移: cmd_444-499期 86% → cmd_550-585期 25% → cmd_600+期 0%。
+
+      正規化CLEAR率(Δ): 教訓あり99.4% vs 教訓なし98.3% = +1.1pp。
+
+      '
+  AC3:
+    status: PASS
+    detail: 'GATE CLEAR率・連勝・モデル別成績の推移データを提示済み。
+
+      初回CLEAR率: cmd_300-399期 37.9% → cmd_586-599期 92.9% → cmd_600-609期 70.0%。
+
+      最大連勝: 25(cmd_537到達)。直近notable streaks: 20@cmd_600, 8@cmd_607。
+
+      '
+  AC5a:
+    status: PASS
+    detail: '軸1=停滞〜退化、軸3=進化。根拠は findings セクションに記載。
+
+      '
+findings:
+  axis1_knowledge_circulation:
+    verdict: 停滞〜退化
+    facts:
+    - category: 教訓注入率の推移
+      data: "期間別注入率(lesson_impact.tsv, subtask番号ベース):\n  cmd_444-499: 756/874 = 86%\n\
+        \  cmd_500-549: 719/1686 = 43%\n  cmd_550-585: 140/564 = 25%\n  cmd_586-599:\
+        \ 30/188 = 16%\n  cmd_600+: 0/8 = 0%\n注入率は右肩下がり。cmd_531(自動退役)とcmd_576(IF-THEN変換)で\n\
+        教訓の質を上げた結果、withheldが増え注入対象が絞られている。\n"
+      source: logs/lesson_impact.tsv (3614行)
+    - category: フィードバックループの断絶
+      data: "lesson_impact.tsvの result フィールド:\n  cmd_444-499: pending=425(56%), CLEAR=232,\
+        \ BLOCK=107 → フィードバック有\n  cmd_500+: pending=889(100%), CLEAR=0, BLOCK=0 →\
+        \ フィードバック完全停止\ncmd_500以降、注入された教訓の成否(CLEAR/BLOCK)がlesson_impact.tsvに\n書き戻されていない。referenced=yesもcmd_500以降ゼロ。\n\
+        知識循環の「学習→注入→フィードバック→改善」サイクルの\nフィードバック部分が断絶している。\n"
+      source: logs/lesson_impact.tsv ($6=result列, $7=referenced列)
+    - category: 教訓効果率(normalized)
+      data: "knowledge_metrics.sh出力:\n  教訓あり CLEAR率: 99.4% (167/168)\n  教訓なし CLEAR率:\
+        \ 98.3% (58/59)\n  Δ = +1.1pp\n正規化後の差は+1.1ppと僅差。教訓注入の直接的効果は限定的だが、\nnormalized前のraw値は教訓あり59.9%\
+        \ vs 教訓なし78.1%(Δ=-18.3pp)と\n逆転しており、教訓あり=複雑cmdに集中するため見かけ上低い。\n構造BLOCK等を除外したnormalized値が実質的効果。\n"
+      source: scripts/knowledge_metrics.sh出力
+    - category: Top教訓の偏り
+      data: "効果率上位5教訓(全期間):\n  L074(infra): 注入145回, 参照115回, 効果率79.3%\n  L063(infra):\
+        \ 注入137回, 参照75回, 効果率54.7%\n  L032(infra): 注入95回, 参照46回, 効果率48.4%\n  L058(infra):\
+        \ 注入44回, 参照44回, 効果率100.0%\n  L079(infra): 注入46回, 参照25回, 効果率54.3%\n上位5教訓がinfraに集中。dm-signal教訓は上位に入っていない。\n\
+        教訓189件(dm-signal)+176件(infra)=365件中、実効的に機能しているのは\n上位10件程度に集中。\n"
+      source: scripts/knowledge_metrics.sh (Top 5 / Bottom 5)
+    - category: 退役・IF-THEN変換の効果
+      data: "infra lessons.yaml:\n  confirmed: 26件, deprecated: 3件, IF-THEN形式: 159件\n\
+        退役(deprecated)は3件のみで少ない。IF-THEN変換は159件に適用済み。\n「淘汰候補(注入5回以上・参照0回)」はゼロ = 低品質教訓の排除は成功。\n\
+        ただし lessons_useful フィールドが最近の報告YAMLでnullのケースが多く\n(例: hanzo_report_cmd_600)、忍者がフィードバックを記入していない。\n"
+      source: projects/infra/lessons.yaml, queue/archive/reports/
+    assessment: '【停滞〜退化】
+
+      根拠1: 注入率の低下(86%→0%)は、教訓の質的改善(退役・IF-THEN化)による
+
+      意図的な絞り込みの側面もあるが、cmd_600+で注入0%は過剰抑制の可能性。
+
+      根拠2: フィードバックループ(result/referenced列)がcmd_500以降完全断絶。
+
+      知識循環の「学習」部分が機能していない。これは明確な退化。
+
+      根拠3: lessons_useful=nullの報告が散見され、忍者→家老→教訓の
+
+      フィードバック経路が形骸化。
+
+      総合: 教訓の蓄積(365件)とフォーマット改善(IF-THEN)は進化だが、
+
+      フィードバックループ断絶は退化。差し引き「停滞〜退化」。
+
+      '
+  axis3_growth_metrics:
+    verdict: 進化
+    facts:
+    - category: GATE CLEAR率の推移
+      data: "gate_metrics.log全件(856エントリ):\n[生のCLEAR率(BLOCK含む全試行)]\n  cmd_158-299:\
+        \ 139/204 = 68.1%\n  cmd_300-399: 111/197 = 56.3%\n  cmd_400-499: 120/186\
+        \ = 64.5%\n  cmd_500-549: 107/151 = 70.9%\n  cmd_550-585: 50/72 = 69.4%\n\
+        \  cmd_586-599: 20/21 = 95.2%\n  cmd_600-609: 15/24 = 62.5%\n\n[初回CLEAR率(cmd単位dedup、最初の試行のみ)]\n\
+        \  cmd_158-299: 70/119 = 58.8%\n  cmd_300-399: 36/95 = 37.9%\n  cmd_400-499:\
+        \ 58/95 = 61.1%\n  cmd_500-549: 24/49 = 49.0%\n  cmd_550-585: 23/35 = 65.7%\n\
+        \  cmd_586-599: 13/14 = 92.9%\n  cmd_600-609: 7/10 = 70.0%\n\ncmd_586-599期の初回92.9%は最高値。cmd_600-609期の70.0%は\n\
+        cmd_607ゲート強化(verdict/self_gate_check必須化)の影響で\n初回BLOCKが増えた結果。最終的には全cmdがCLEARに到達。\n"
+      source: logs/gate_metrics.log (856行)
+    - category: 連勝記録
+      data: "最大連勝: 25(cmd_537到達)\n最近のnotable streaks(5以上):\n  25@cmd_537, 14@cmd_539,\
+        \ 10@cmd_549, 9@cmd_564,\n  7@cmd_584, 20@cmd_600, 8@cmd_607, 6@cmd_609\n\
+        直近で20連勝@cmd_600は健全。cmd_607以降はゲート強化により\n連勝が短くなるのは品質バー引上げの正常な反応。\n"
+      source: logs/gate_metrics.log (awk streak分析)
+    - category: モデル別CLEAR率の変化
+      data: "[cmd_348-499 (Sonnet在籍期)]\n  Codex: 99/171 = 57.9%\n  Opus: 121/212 =\
+        \ 57.1%\n  Sonnet: 45/94 = 47.9%\n\n[cmd_500-549 (Sonnet全廃後)]\n  Codex: 66/103\
+        \ = 64.1%\n  Opus: 70/109 = 64.2%\n\n[cmd_550-599 (モデル精密化)]\n  Codex: 41/58\
+        \ = 70.7%\n  Opus: 42/62 = 67.7%\n  Opus_4.6_high: 8/8 = 100.0%\n  gpt-5.4_high_fast:\
+        \ 4/4 = 100.0%\n\n[cmd_600+ (現行編成)]\n  Opus_4.6_high: 10/15 = 66.7%\n  gpt-5.4_high_fast:\
+        \ 10/14 = 71.4%\n\nSonnet全廃(47.9%→除外)によりフロア改善。\nOpus_4.6_highとgpt-5.4_high_fastは同等の水準(66-71%)。\n\
+        550-599期のOpus_4.6_high 100%(8/8)から600+期66.7%(10/15)への\n低下はcmd_607ゲート強化の品質バー引上げ効果。\n"
+      source: logs/gate_metrics.log (モデル列$6)
+    - category: レビュー品質(cmd_607後)
+      data: "cmd_607で追加されたゲートチェック:\n  - review report missing verdict field\n  - review\
+        \ report self_gate_check incomplete or not all PASS\ncmd_607以降のBLOCK理由:\n\
+        \  - verdict field missing: 6回\n  - self_gate_check incomplete: 6回\n  - empty_lessons_useful:\
+        \ 4回\n  - lesson_candidate_missing/legacy: 3回\nレビュー品質の機械的検証がBLOCKを発生させており、\n\
+        形骸化レビューの通過を実際に防止している。\n"
+      source: logs/gate_metrics.log (cmd_607+ BLOCK行)
+    - category: Sonnet全廃タイムライン
+      data: 'Sonnet最終記録: 2026-02-27 cmd_414
+
+        Opus_4.6_high初出: 2026-03-06 cmd_594
+
+        gpt-5.4_high_fast初出: 2026-03-06 cmd_595
+
+        Sonnet→(廃止)→Opus+Codex→Opus_4.6_high+gpt-5.4_high_fast
+
+        '
+      source: logs/gate_metrics.log
+    assessment: '【進化】
+
+      根拠1: 初回CLEAR率がcmd_300-399期の37.9%からcmd_586-599期の92.9%へ大幅改善。
+
+      cmd_600-609期の70.0%低下はゲート強化(cmd_607)による品質バー引上げが原因であり、
+
+      最終CLEAR率は100%(10/10 cmd全てCLEAR到達)。
+
+      根拠2: Sonnet全廃(47.9%→除外)によりモデルフロア改善。
+
+      根拠3: 連勝25を記録し、その後も20連勝@cmd_600など高水準を維持。
+
+      根拠4: cmd_607のレビュー品質ゲート(verdict/self_gate_check必須)が
+
+      形骸化レビューをBLOCKしており、品質管理の進化が確認できる。
+
+      総合: GATE通過率・連勝・モデル品質・レビューゲートの全指標で改善傾向。
+
+      明確な「進化」。
+
+      '
+lesson_candidate:
+  found: true
+  detail: 'lesson_impact.tsvのresultフィードバック(CLEAR/BLOCK書き戻し)がcmd_500以降
+
+    完全停止している。教訓の効果測定サイクルが断絶。原因特定と修復が必要。
+
+    おそらくcmd_complete_gate.shまたはlesson_impact更新処理の変更で
+
+    書き戻しロジックが無効化された。
+
+    '
+  project: infra
+lessons_useful:
+- id: null
+  detail: 本タスクは偵察であり教訓注入なし(related_lessons=[])
+decision_candidate:
+  found: false
+skill_candidate:
+  found: false
+progress:
+- 'AC1 DONE: 教訓注入率・効果率の定量比較完了'
+- 'AC3 DONE: GATE CLEAR率・連勝・モデル別成績の推移データ完了'
+- 'AC5a DONE: 軸1(停滞〜退化)・軸3(進化)の評定と根拠完了'

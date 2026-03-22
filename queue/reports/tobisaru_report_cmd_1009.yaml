@@ -1,0 +1,65 @@
+task_id: cmd_1009_review
+parent_cmd: cmd_1009
+ninja: tobisaru
+status: done
+verdict: PASS
+timestamp: '2026-03-16T20:05:00'
+review_result:
+  verdict: PASS
+  file_reviewed: scripts/analysis/p_bar_cash_gate_backtest.py
+  commit: 079073f7
+  observations:
+  - 'p̄キャッシュゲートロジック正常: p̄<0.3→hold, ≥0.3→cash, None→hold。docstring仕様と完全一致'
+  - 'rolling p̄計算正常: lookback_window=n_splits*mpf、各PF独立計算、prior monthsのみ使用(lookahead防止)'
+  - 'ゲート閾値0.3: DEFAULT_THRESHOLD=0.3、条件分岐正しい'
+  - '192パターン: 12PF×16mpf(1..15,None)=192、正しい'
+  - 'MaxDD改善判定(L252): MaxDD負値なので > raw_maxdd で「より0に近い=改善」は正しい'
+  - 'Sharpe勝判定(L251): NaN時はFalse(勝ちに数えない)で安全'
+  - '出力: report.md, cross_summary.csv, summary.json + per-PF詳細CSV。仕様通り'
+  issues_found: []
+ac_results:
+- id: AC1
+  status: PASS
+  detail: コードレビュー全観点PASS。ロジック・閾値・パターン数・出力構造すべて正常
+- id: AC2
+  status: PASS
+  detail: pytest 34 passed, 0 skipped, 0 failed。TODO/FIXME=0。push完了(079073f7→main)
+diff_check:
+  files_changed: 1
+  files:
+  - path: scripts/analysis/p_bar_cash_gate_backtest.py
+    status: A
+    lines: 535
+  pushed: true
+  push_target: origin/main
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: "本タスクにshellスクリプトのPASS++パターンなし"
+  - id: L063
+    useful: false
+    reason: "本タスクにYAMLパースなし"
+  - id: L188
+    useful: true
+    reason: "commit未実施チェックの意識づけに役立った。小太郎のcommit存在を確認した"
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+ac_version_read: 2

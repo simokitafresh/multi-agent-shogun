@@ -1,0 +1,73 @@
+task_id: subtask_627_impl_be
+parent_cmd: cmd_627
+agent: kagemaru
+status: done
+completed_at: '2026-03-07T01:05:00'
+commit: f1f62b4
+project: dm-signal
+summary: 'page_viewsテーブルにvisitor_idカラムを追加し、PV記録APIおよびanalytics summary APIを拡張した。
+
+  '
+ac_results:
+- id: AC1
+  status: PASS
+  detail: 'backend/migrations/add_visitor_id_to_page_views.py を新規作成。
+
+    ALTER TABLEでvisitor_id VARCHAR(36) NULLABLEカラム追加 + ix_page_views_visitor_idインデックス作成。
+
+    既存マイグレーションパターン（冪等性チェック付き）に準拠。
+
+    '
+- id: AC3
+  status: PASS
+  detail: 'PageViewPayloadにvisitor_id: Optional[str] = Field(default=None, max_length=36)を追加。
+
+    track_page_viewでUUID形式バリデーション（正規表現）実施。不正値はNoneに落とす。
+
+    PageViewモデルにvisitor_id = Column(String(36), nullable=True, index=True)を追加。
+
+    '
+- id: AC4
+  status: PASS
+  detail: 'get_analytics_summaryに3つのUU集計を追加:
+
+    1. unique_users_daily: 日次UU数（過去30日、visitor_id DISTINCT COUNT）
+
+    2. unique_users_by_tier: tier別UU数（日/週/月、visitor_id DISTINCT COUNT）
+
+    3. active_users_by_os: visitor_idベースに切替（tier_idベースから変更）
+
+    visitor_id=NULLのレコードはフィルタで除外。
+
+    '
+- id: AC5
+  status: PASS
+  detail: 'visitor_idはNULLABLE。全UU集計でvisitor_id.isnot(None)フィルタを適用。
+
+    既存レコード（visitor_id=NULL）はPV集計（page_views_daily, active_tiers, page_by_tier）に影響なし。
+
+    '
+files_changed:
+- path: backend/migrations/add_visitor_id_to_page_views.py
+  action: created
+- path: backend/app/db/models.py
+  action: modified
+  detail: PageViewクラスにvisitor_idカラム追加
+- path: backend/app/api/analytics.py
+  action: modified
+  detail: import re追加、UUID正規表現、PayloadにVisitor_id、track_page_viewにバリデーション+保存、summaryに3種UU集計追加
+test_results: []
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful: ["none"]  # karo補正: 忍者idle/clear済みのため確認不能
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+purpose_validation:
+  cmd_purpose: "page_viewsにvisitor_idカラム追加+PV記録API+analytics summary拡張"
+  fit: true
+  purpose_gap: ""

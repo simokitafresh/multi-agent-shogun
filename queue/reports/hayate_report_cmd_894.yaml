@@ -1,0 +1,61 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_894_B
+parent_cmd: cmd_894
+timestamp: "2026-03-13T12:26:27+0900"  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
+status: done
+ac_version_read: 1
+result:
+  summary: "Google Drive 上の生CSV `個人事業_2025.csv` に note売上手数料14件を追記し、再ダウンロードで14行の存在とローカル更新版との一致を確認した。"
+  details: |
+    実施内容:
+    - `queue/tasks/hayate.yaml`、`projects/auto-ops.yaml`、`projects/auto-ops/lessons.yaml`、`context/auto-ops.md` を読んで前提を確認した。
+    - `bash scripts/inbox_mark_read.sh hayate msg_20260313_122250_f31f3a4c` で未読 inbox を既読化した。
+    - `gws --version` と `gws auth status` を確認し、`gws drive files get --params '{"fileId":"1qhLn3J7AJYORu2VhvIE1mROtYIe3KsOq","fields":"id,name,mimeType,modifiedTime,size"}'` で対象が `text/csv` の生CSVであることを確認した。
+    - `gws drive files get --params '{"fileId":"1qhLn3J7AJYORu2VhvIE1mROtYIe3KsOq","alt":"media"}' -o /tmp/cmd_894/individual_business_2025.csv` でCSVを取得した。
+    - 既存CSVに対象14件が未登録であることを確認後、/tmp の取得ファイル末尾へ task 指定の14行を追記した。
+    - `gws drive files update --params '{"fileId":"1qhLn3J7AJYORu2VhvIE1mROtYIe3KsOq"}' --upload /tmp/cmd_894/individual_business_2025.csv` で上書きした。
+    - `gws drive files get --params '{"fileId":"1qhLn3J7AJYORu2VhvIE1mROtYIe3KsOq","alt":"media"}' -o /tmp/cmd_894/individual_business_2025.verify.csv` で再取得し、`rg -c "note_売上手数料"` が 14、`cmp -s` が exit 0 で一致することを確認した。
+
+    補足:
+    - `gws drive files download` は backendError 500 を返したため、対象が生CSV(`text/csv`)であることを踏まえ `get alt=media` に切り替えて取得した。
+purpose_validation:
+  cmd_purpose: "Google Drive上の個人事業_2025.csvにnote売上手数料14件を追記し、再ダウンロードで追記結果を確認する"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+test_results:
+  - name: "Drive metadata preflight"
+    status: pass
+    evidence: "`gws drive files get` で `mimeType=text/csv` を確認。"
+  - name: "Re-download verification"
+    status: pass
+    evidence: "`rg -c \"note_売上手数料\" /tmp/cmd_894/individual_business_2025.verify.csv` = 14、`cmp -s` exit 0。"
+ac_results:
+  - id: AC3
+    status: pass
+    evidence: "Drive上書き後の `modifiedTime=2026-03-13T03:25:08.585Z`, `size=40001`。再取得CSVに対象14行が存在し、ローカル更新版と完全一致。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "Drive上の生CSVは download/export より get alt=media が安定"
+  detail: "Drive上の `text/csv` 生ファイルでは `gws drive files download` が backendError 500 を返すことがあった。一方 `gws drive files get --params '{\"fileId\":\"...\",\"alt\":\"media\"}' -o ...` は安定して取得でき、`update --upload` で上書き後の再検証も同経路で行えた。生CSV作業は media GET/PATCH を既定にすると手戻りが減る。"
+  project: auto-ops
+lessons_useful:
+  - L074
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

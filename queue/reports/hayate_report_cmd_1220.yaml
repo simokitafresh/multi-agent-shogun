@@ -1,0 +1,56 @@
+worker_id: hayate
+task_id: cmd_1220
+parent_cmd: cmd_1220
+timestamp: '2026-03-21T21:25:00'
+status: done
+ac_version_read: d0b67915
+result:
+  summary: dm-signal.yamlの陳腐化2件更新完了。v2_pattern_count実数値記載+data_sourceパリティ検証済みに更新。
+  details: 'AC1: L717のv2_pattern_countをTBDから実数値に更新。合計361603パターン。グループ別: oikaze:28116,
+    kasoku_ratio:119493, kasoku_diff:119493, kawarimi:28116, nukimi:60918, bunshin:781,
+    yotsume:4686。データソース: cmd_1200報告YAML全7件。AC2: L788のdata_sourceを更新。変更前:本番パリティ未検証(cmd_1097/1098で検証中)
+    → 変更後:本番パリティ検証済み(cmd_1191+cmd_1194)'
+purpose_validation:
+  cmd_purpose: dm-signal.yamlシン四神v2セクションの陳腐化2件更新
+  fit: true
+  purpose_gap: ''
+files_modified:
+- path: projects/dm-signal.yaml
+  change: L717 v2_pattern_count TBD→361603(グループ別内訳付き), L788 data_source パリティ検証状態更新
+lesson_candidate:
+  found: false
+  no_lesson_reason: 単純な値更新タスク。報告YAMLから値を読み取り転記するのみ。新たな知見なし。
+  title: ''
+  detail: ''
+  project: dm-signal
+lessons_useful:
+- id: L074
+  useful: false
+  reason: quarterly Cash月問題は本タスク(YAML値更新)に無関係
+- id: L225
+  useful: false
+  reason: entity名義混入問題は本タスクに無関係
+- id: L446
+  useful: false
+  reason: 許容誤差の明示は本タスク(値転記)に無関係
+- id: L444
+  useful: false
+  reason: コアアルゴリズム差異分析は本タスクに無関係
+- id: L443
+  useful: false
+  reason: GS simulate_strategy分岐問題は本タスクに無関係
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: v2_pattern_countにグループ別実数値が記載されているか
+    result: 'yes'
+  AC2:
+  - check: data_sourceに本番パリティ検証済み(cmd_1191+cmd_1194)と記載されているか
+    result: 'yes'
+verdict: PASS

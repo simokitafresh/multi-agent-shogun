@@ -1,0 +1,43 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: tobisaru
+task_id: tobisaru_cmd_1194_recon_c
+parent_cmd: cmd_1194
+timestamp: "2026-03-21T11:21:41"
+status: done
+ac_version_read: 57cc8d97
+result:
+  summary: 垂直偵察(GSD視点C)完了。cmd_1115パリティ検証手法を精読しcmd_1194基準との差異を特定。精度差異5項目(TZ/日付/FP/resample/NaN)全調査。L427/L428修正の現存確認済み。GS側修正方針3件提案。
+  details: "AC1: cmd_1115パリティ検証は(1)holding_signal文字列完全一致(ソート正規化後)(2)monthly_return_open数値比較(許容1e-4)。シン四神v2 10体×全期間で1815件中signal100%一致/return100%一致(1e-4基準)。DTB3 Cash月に微小差(最大1.2e-5)注記あり。|AC2: cmd_1115基準vsCmd_1194基準の差異3点: D1=リターン許容誤差(1e-4vs0),D2=PFスコープ(10体vs全PF),D3=verify_all_portfolios.pyも1e-4+初月スキップ。|AC3: 精度差異5項目-TZ:差異なし(naive日付),日付丸め:L427/L428修正済み(残存リスク低),FP:差異なし(float64統一),resample:差異なし(PARITY FIX済),NaN:差異なし(同一スキップ方針)。|AC4: L427(Fix C カレンダー月末→取引日リマップ)=L1458-1468+L999-1009に現存。L428(Fix B v2 valid_start_date全シンボル包含)=L1477-1510に現存。|AC5: P1(中)DTB3 Cash月微小差解消L852-892,P2(高)PipelineEngine path全PF検証L1326-1379,P3(低)初月スキップ精緻化L93-109。|AC6: implementation_readiness下記。"
+purpose_validation:
+  cmd_purpose: GS計算エンジンと本番PipelineEngineの完全一致検証のための垂直偵察(過去パリティ報告+精度差異)
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。例: "既知のL084と同じパターン"
+  title: パリティ検証の許容誤差は要件定義時に明示せよ
+  detail: cmd_1115は1e-4許容で100%一致と報告。cmd_1194は許容0で完全一致を要求。同じ一致でも基準が異なる。偵察・検証cmdでは許容誤差を明示的にAC定義すべき。
+  project: dm-signal
+lessons_useful: null
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ""
+# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+implementation_readiness:
+  files_to_modify: "grid_search_metrics_v2.py:852-892(DTB3 Cash月完全一致化)|grid_search_metrics_v2.py:1326-1379(PipelineEngine path検証)|verify_all_portfolios.py:93-109(初月スキップ精緻化)"
+  affected_files: "cmd_1115_parity_check.py:406-412(同DTB3計算)|grid_search_metrics_v2.py:945-955(_build_dtb3_monthly_cache同一計算)"
+  related_tests: test_momentum_cache.py(本番側,修正不要)|cmd_1115_parity_check.py(E2E,許容誤差0化必要)|verify_all_portfolios.py(全PF,許容誤差0化必要)|GS側ユニットテストなし
+  edge_cases: DTB3非取引日(Good Friday等)月のCashリターンでGS/本番間データ日数差|experiments.db vs PostgreSQLの銘柄最古日差異でvalid_start_dateずれ(prod_start_dateカットオフで緩和)|PipelineEngine vs Dictベースpathの分岐(pipeline_config有無で異なるコードパス)

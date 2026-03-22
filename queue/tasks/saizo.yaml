@@ -1,52 +1,53 @@
 task:
   ac_version: d41d8cd9
   bloom_level: ''
-  deployed_at: '2026-03-23T04:01:20'
+  deployed_at: '2026-03-23T04:01:36'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  progress: AC1,AC2,AC3 complete
+  progress: ''
   related_lessons: []
-  report_filename: hanzo_report.yaml
-  report_path: queue/reports/hanzo_report.yaml
-  role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: saizo_report.yaml
+  report_path: queue/reports/saizo_report.yaml
+  role_reminder: 忍者saizo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
   stop_for: []
   task:
     ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
     ac_priority: AC1 > AC2 > AC3
-    ac_version: d104f08d
+    ac_version: f221829b
     acceptance_criteria:
     - binary_checks:
-      - check: lesson_harvest.shが存在し実行可能か
+      - check: ninja_monitor.shに git status チェックが追加されているか
         result: ''
-      - check: アーカイブ報告のスキャンが動作するか
+      - check: 未commitファイル存在時に/clearが中止されるか
         result: ''
-      description: アーカイブ済み報告のlesson_candidateをスキャンできること
+      description: ninja_monitor.shに/clear前のgit uncommittedチェックが追加されていること
       id: AC1
     - binary_checks:
-      - check: 候補0件時に「未登録候補なし」と出力されるか
+      - check: 未commitファイルなし時は通常通り/clearされるか
         result: ''
-      description: 候補0件時に正常終了すること
+      description: 未commitファイルなし時は従来通り動作すること
       id: AC2
     - binary_checks:
-      - check: bash scripts/lesson_harvest.sh がエラーなく完了するか
+      - check: 手動テストで未commit検知が動作したか
         result: ''
-      description: エラーなく実行完了すること
+      description: テストで未commitチェックが発動すること
       id: AC3
     bloom_level: ''
-    cmd_id: cmd_1300
-    command: "アーカイブ済み報告からlesson_candidate未登録候補をスキャンするスクリプトを作成せよ。\n\n■ AC1: scripts/lesson_harvest.sh\
-      \ を作成。\n       queue/archive/reports/ 配下の全報告YAMLをスキャン。\n       lesson_candidate.found=true\
-      \ かつ\n       lessons.yamlに同一titleが未登録の候補を一覧出力。\n       出力形式: cmd_id | ninja\
-      \ | title | detail(先頭60文字)\n■ AC2: 候補0件の場合「未登録候補なし」と出力して正常終了すること\n■ AC3: テスト:\
-      \ bash scripts/lesson_harvest.sh がエラーなく実行完了すること\n"
-    deployed_at: '2026-03-23T03:43:06'
+    cmd_id: cmd_1296
+    command: "ninja_monitor.shの/clear実行直前にgit uncommittedチェックを追加せよ。\n\n■ AC1: ninja_monitor.shの/clear実行直前に、該当忍者の変更ファイルを\n\
+      \       git status --porcelain で検出するチェックを追加。\n       未commitファイルが存在する場合:\n \
+      \      (a) /clearを中止\n       (b) inbox_write.shで家老に警告（忍者名+未commitファイル一覧）\n \
+      \      (c) ログ出力\n■ AC2: 未commitファイルがない場合は従来通り/clearを実行すること\n■ AC3: テスト: 未commitファイルがある状態でチェックが発動することを手動確認\n"
+    deployed_at: '2026-03-23T03:38:55'
     description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
       \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
       \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+      \  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
+      \  - L112: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT\n\
       ────────────────────────────────────────\n\n"
     engineering_preferences:
     - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -63,7 +64,7 @@ task:
     - AC1
     - AC2
     - AC3
-    parent_cmd: cmd_1300
+    parent_cmd: cmd_1296
     project: infra
     related_lessons:
     - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -77,8 +78,16 @@ task:
       id: L063
       summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
         lesson in data.get('lessons',[])が正しい形
-    report_filename: hanzo_report_cmd_1300.yaml
-    report_path: queue/reports/hanzo_report_cmd_1300.yaml
+    - detail: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
+        pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
+      id: L094
+      summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
+        pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
+    - detail: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECTEDが0件になりSTALL検知が沈黙。task_id||subtask_idフォールバック実装が必要。cmd_462偵察で疾風+才蔵が独立発見。
+      id: L112
+      summary: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECTEDが0件になりSTALL検知が沈黙。task_id||subtask_idフォールバック実装が必要。cmd_462偵察で疾風+才蔵が独立発見。
+    report_filename: saizo_report_cmd_1296.yaml
+    report_path: queue/reports/saizo_report_cmd_1296.yaml
     report_template:
       filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
       forbidden:
@@ -92,7 +101,8 @@ task:
       - files_modified
       - lesson_candidate
       - lessons_useful
-    role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+    role_reminder: 忍者saizo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
     status: done
     stop_for: []
+    target_path: scripts/ninja_monitor.sh
     task_type: implement

@@ -1,0 +1,76 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: sasuke
+task_id: cmd_680_fix_review
+parent_cmd: cmd_680
+timestamp: "2026-03-09T03:31:32+0900"
+status: done
+ac_version_read: 3
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L146) で `wasAtBottomLazy` / `wasAtBottomScroll` を保持し、[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L156) と [AgentsScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt#L449) が user scroll 時だけ bottom 状態を更新する構造へ修正されている。更新後 `lines.size` / `maxValue` を直接見て false 化する旧欠陥は解消した。"
+  - id: AC2
+    status: pass
+    evidence: "[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L171) は softWrap ON の `LazyColumn`、[ShogunScreen.kt](/mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt#L177) は softWrap OFF の `ScrollState` で、それぞれ `wasAtBottom*` が true の時だけ最下部追従する。複数行 burst 時も『更新前に最下部だったか』で判定するため、元 FAIL2/3 の条件を満たす。"
+  - id: AC3
+    status: pass
+    evidence: "`cd android && ./gradlew :app:assembleDebug` が `BUILD SUCCESSFUL in 2s`。その後 `git ls-remote origin refs/heads/main` で remote が `4af8698` のまま、local HEAD が `de8d73b` であることを再確認し、`git push origin main` 成功まで確認した。"
+result:
+  summary: "cmd_680 fixレビューは PASS。霧丸の `de8d73b` は FAIL3点を解消し、assembleDebug と push まで完了。"
+  details: |
+    実施内容:
+    1. `projects/infra.yaml` / `projects/infra/lessons.yaml` / `context/infrastructure.md` を読んで review 手順と injected lesson を確認。
+    2. `queue/reports/kirimaru_report_cmd_680.yaml` と `git diff 4af8698..de8d73b -- ...ShogunScreen.kt ...AgentsScreen.kt` で fix 差分を確認。
+    3. `ShogunScreen.kt` と `AgentsScreen.kt` の effect 順序・scroll state・zoom 制御を周辺コード込みで精読。
+    4. `cd android && ./gradlew :app:assembleDebug` を実行し、`BUILD SUCCESSFUL in 2s` を確認。
+    5. push 直前に `git ls-remote origin refs/heads/main` と `git rev-parse HEAD` / `git log -1 --oneline` を再確認し、`git push origin main` を実行。
+
+    PASS根拠:
+    - `ShogunScreen.kt` は softWrap ON/OFF の両経路で `wasAtBottom*` を更新前 state として保持し、新規出力時は保持値に基づいて scroll するため、元 FAIL1/2 を解消している。
+    - `AgentsScreen.kt` は `wasAtBottom` を導入し、`pane.index` / `softWrapEnabled` 変更時に `wasAtBottom = true` と zoom reset を先に行う。旧 `LaunchedEffect(Unit)` 初回 scroll は削除済みで、content/maxValue 更新 effect による最下部追従へ統一されているため、元 FAIL3 を解消している。
+    - remote `main` が `4af8698` のままであることを確認後、review 担当として `de8d73b` を `origin/main` へ push 済み。
+purpose_validation:
+  cmd_purpose: "cmd_680(Androidアプリ 自動スクロール抑制)のレビューを実施せよ。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt
+  - /mnt/c/tools/multi-agent-shogun/android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt
+verification:
+  - command: "git diff 4af8698..de8d73b -- android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt"
+    result: pass
+    notes: "fix commit の変更範囲が対象2ファイルのみであることを確認。"
+  - command: "./gradlew assembleDebug"
+    result: pass
+    notes: "android/ 配下で BUILD SUCCESSFUL in 2s。"
+  - command: "git ls-remote origin refs/heads/main && git push origin main"
+    result: pass
+    notes: "remote main=4af8698 を確認後、de8d73b を push 完了。"
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L028
+    useful: false
+    reason: "CI Run番号とSHA照合の教訓であり、今回の local review/push では直接使っていない。"
+  - id: L074
+    useful: false
+    reason: "bash 算術展開の教訓であり、Compose コードレビューには直接関係しない。"
+  - id: L179
+    useful: true
+    reason: "review 担当が commit 実在確認から push 完了まで責任を持つべき、という点で有効だった。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

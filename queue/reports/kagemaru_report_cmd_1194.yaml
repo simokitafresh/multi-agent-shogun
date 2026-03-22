@@ -1,0 +1,97 @@
+worker_id: kagemaru
+task_id: cmd_1194_kagemaru
+parent_cmd: cmd_1194
+timestamp: '2026-03-21T11:16:11'
+status: done
+ac_version_read: 75c75f26
+result:
+  summary: simulate_strategy_vectorized(L1238-1665)の3軸精読完了。6つの本番乖離ポイントと3つのGS修正方針を報告
+  details: "■ AC1: 3軸ロジック精読\n\n【軸1: シグナル計算 (Phase 1, L1318-1510)】\n月末ごとにモメンタムスコアを加重合計し上位N銘柄を選択。3つの実装パス:\n\
+    (A) PipelineEngine path (L1326-1379) — pipeline_config有+db_session有の場合のみ\n(B)\
+    \ NumPy matrix path (L1381-1422) — cache.momentum_matrix有の場合\n(C) Dict fallback\
+    \ path (L1423-1456) — 上記以外\n\n疑似コード:\n  for each month_end:\n    weighted_mom[ticker]\
+    \ = Σ(momentum[ticker][period] × weight)\n    abs_mom = weighted_mom[absolute_asset]\n\
+    \    top_n = select_top_n(weighted_mom[relative_assets], pf_top_n)\n    → タイブレーク均等保有(L229-251):\
+    \ top_n位と同スコア全含む\n  Fix C(L1458-1470): カレンダー月末→実最終取引日リマップ\n  Fix B v2(L1472-1510):\
+    \ valid_start_date=common_start+int(max_lookback*1.5)+10日 以前を除外\n\n主要変数: PORTFOLIO_CONFIGS(L66),\
+    \ TRADING_DAYS_PER_MONTH=21(L56),\nmonth_end_prices=resample('ME').last()(L779-787)\n\
+    \n【軸2: リバランス判定 (Phase 2, L1560-1631)】\n月初ごとにリバランス月か判定→保有銘柄(current_holdings)を更新。\n\
+    \n疑似コード:\n  current_holdings = ['Cash']  # 初期(L1573)\n  for each month:\n    if\
+    \ month in rebalance_months:\n      if use_pipeline:\n        holdings = pipeline_signal.split(\"\
+    ,\") or [safe_haven] (L1592-1603)\n      else:\n        rf_mom = Σ(dtb3_rolling[period]\
+    \ × weight) (L1604-1623)\n        if abs_mom >= rf_mom: holdings = top_n\n   \
+    \     else: holdings = [safe_haven]\n        if rf_valid=False: holdings = top_n\
+    \ (L1630) ←フォールバック\n    # else: current_holdings維持（非リバランス月）\n\n主要変数: REBALANCE_MONTHS(L290-297),\
+    \ month_last_trading_days(L1539-1548),\nmonth_to_signal_idx(L1551-1558), safe_haven_map(PORTFOLIO_CONFIGS内)\n\
+    \n【軸3: リターン計算 (Phase 2後半, L1632-1665)】\nOpen-to-Open方式。月初始値→翌月初始値。複数銘柄は均等ウェイト(単純平均)。\n\
+    \n疑似コード:\n  for each month:\n    if holdings == ['Cash']:\n      ret = dtb3_monthly_return(start,\
+    \ next_start) (L852-892)\n      # DTB3: 年率%→日次レート→対数累積, start_date除外(iloc[1:])\n\
+    \    else:\n      for h in holdings:\n        asset_ret[h] = (open_price[i+1]\
+    \ / open_price[i]) - 1\n      ret = sum(asset_ret) / len(holdings) (L254-268)\n\
+    \n主要変数: month_start_opens=resample('MS').first()(L799-807),\nticker_to_idx, month_start_array\n\
+    \n■ AC2: 本番との乖離ポイント (6件)\n\nD1[HIGH] 3パス分岐 — GS独自パス(NumPy/Dict)は本番PipelineEngineと別計算\n\
+    \  GS: L1326-1456 | 本番: pipeline_engine.py\nD2[LOW] valid_start_date計算 — 本番recalculate_fast.py\
+    \ L816-817と同一式。パリティ修正済み\n  GS: L1494-1510 | 本番: recalculate_fast.py L763-821\n\
+    D3[MEDIUM] DTB3 rolling再計算 — GS独自パス(L1604-1630)がAbsoluteMomentumBlockと一致するか未検証\n\
+    \  GS: L1604-1630 | 本番: pipeline/blocks/absolute_momentum.py\nD4[LOW] rf_valid=False時フォールバック\
+    \ — top_n採用(L1630)が本番と同一か要確認\n  GS: L1630 | 本番: pipeline/blocks/absolute_momentum.py\n\
+    D5[MEDIUM] 均等ウェイト — 単純平均(L254-268)が本番return_calculatorと一致するか(top_n>1時)\n  GS:\
+    \ L254-268 | 本番: return_calculator.py\nD6[LOW] カレンダー月末→実取引日リマップ — Fix C(L1458-1470)はキャッシュ依存。PipelineEngineパスは影響なし\n\
+    \n■ AC3: GS修正方針 (3件)\n\nP1[HIGH/大] pipeline_config必須化 — GS独自パス段階的廃止→PipelineEngine統一\n\
+    \  対象: grid_search_metrics_v2.py L1326-1456, calculate_all_metrics_vectorized\
+    \ L1745, 各run_077_*.py\n  PI-009(GS=本番同一エンジン必須)と合致\nP2[MEDIUM/小] DTB3 rolling突合テスト追加\
+    \ — P1完了までの暫定パリティ保証\n  対象: grid_search_metrics_v2.py L1604-1630\nP3[MEDIUM/小]\
+    \ top_n>1時ウェイト配分突合 — calculate_multi_asset_returnと本番return_calculatorの数値一致検証\n\
+    \  対象: grid_search_metrics_v2.py L254-268, return_calculator.py\n\n■ AC4: implementation_readiness\
+    \ — 下記セクション参照"
+purpose_validation:
+  cmd_purpose: 水平偵察 — simulate_strategy_vectorized精読、本番との乖離特定、GS修正方針提案
+  fit: true
+  purpose_gap: null
+files_modified: []
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: GS 3パス分岐がPI-009違反リスク
+  detail: GS simulate_strategy_vectorizedは3パス(PipelineEngine/NumPy/Dict)分岐で複雑度が高い。PipelineEngine
+    path統一がパリティ保証の根本解。GS独自計算パスの存在自体がPI-009(GS=本番同一エンジン必須)違反のリスク。pipeline_config必須化による段階的廃止計画が必要。
+  project: dm-signal
+lessons_useful: null
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+implementation_readiness:
+  files_to_modify:
+  - grid_search_metrics_v2.py:L1326-1456 (3パス→PipelineEngine統一)
+  - grid_search_metrics_v2.py:L1604-1630 (DTB3 rolling再計算)
+  - grid_search_metrics_v2.py:L254-268 (calculate_multi_asset_return)
+  - grid_search_metrics_v2.py:L1745 (calculate_all_metrics_vectorized pipeline_config引数追加)
+  - 各run_077_*.py (pipeline_config/db_session引数追加)
+  affected_files:
+  - full_grid_search.py (pipeline_config生成ロジック追加)
+  - MomentumCache (PipelineEngine統一時にNumPy matrix path不要化の可能性)
+  - experiments.db (pipeline_config列追加の可能性)
+  related_tests:
+  - test_grid_search_metrics_v2.py — 存在未確認(偵察スコープ外)
+  - PipelineEngine pathの数値一致テスト — 新規作成必要
+  edge_cases:
+  - DB接続不可時のGSフォールバック戦略
+  - DTB3データ欠損時のrf_valid=Falseフォールバック(L1630)が本番と一致するか
+  - カレンダー月末=非取引日時のFix C(L1458-1470)キャッシュ依存
+  - top_n位タイブレーク安定ソート順がMomentumFilterBlockと一致するか
+binary_checks:
+  AC1:
+  - '3軸全て(シグナル/リバランス/リターン)のロジック記述があるか: yes'
+  - '各軸に疑似コードを含めたか: yes'
+  - '使用変数・定数を列挙したか: yes'
+  AC2:
+  - '本番との乖離ポイントにファイル名+行番号を付けたか: yes'
+  - '乖離の根拠を記載したか: yes'
+  AC3:
+  - '修正方針にファイル名+行番号を含めたか: yes'
+  AC4:
+  - 'implementation_readiness 4要件を全て記入したか: yes'

@@ -1,0 +1,72 @@
+worker_id: kagemaru
+task_id: subtask_497_impl_ops_and_sample
+parent_cmd: cmd_497
+timestamp: "2026-03-03T15:54:43+0900"
+status: done
+result:
+  summary: "cmd受領フローにCMD分離チェックを追加し、追加系/修正系cmdを分離して起票するためのポリシー文書とサンプル2件を新規作成。"
+  details: |
+    実施内容:
+    1) context/karo-operations.md
+      - §2に「cmd受領時のCMD分離チェック（追加/修正混在検知）」を追加
+      - 受領直後に見る項目（purpose/command/acceptance_criteria/fixes）を手順表で明記
+      - 判定結果ごとの対応（追加のみ/修正のみ/混在時は2cmd分離）を明記
+
+    2) docs/research/cmd_497_cmd-splitting-policy.md
+      - 判定タイミングとチェック項目を再現可能な手順で記録
+      - 追加系cmdサンプル1件（cmd_497_add_sample）を記載
+      - 修正系cmdサンプル1件（cmd_497_fix_sample, fixes: cmd_489）を記載
+
+    commit:
+      - bf2b70d (docs: add cmd splitting check and sample cmd patterns)
+purpose_validation:
+  cmd_purpose: "cmd_497 AC3/AC4担当。受領時CMD分離チェックを文書化し、追加系/修正系サンプルを記録する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/context/karo-operations.md
+  - /mnt/c/tools/multi-agent-shogun/docs/research/cmd_497_cmd-splitting-policy.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report_cmd_497.yaml
+test_results:
+  - command: "rg -n 'cmd受領時のCMD分離チェック|追加\\+修正|fixes' context/karo-operations.md"
+    result: pass
+    notes: "分離チェック節と判定基準が存在"
+  - command: "rg -n '追加系cmdサンプル|修正系cmdサンプル|cmd_497_add_sample|cmd_497_fix_sample' docs/research/cmd_497_cmd-splitting-policy.md"
+    result: pass
+    notes: "追加系1件・修正系1件のサンプルを確認"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L035
+    useful: true
+    reason: "運用データへの副作用回避を意識し、実ファイルのみ更新して検証は読み取り系コマンドに限定"
+  - id: L074
+    useful: true
+    reason: "set -e算術罠を再確認し、スクリプト変更なしタスクでも注意事項として順守"
+  - id: L063
+    useful: true
+    reason: "lessons.yaml確認時にトップレベルdict構造を前提にID検索"
+  - id: L032
+    useful: true
+    reason: "既存セクション境界（##）を崩さずに対象節へ追記"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "context/karo-operations.md §2にCMD分離チェック節を追加"
+  - id: AC2
+    status: pass
+    evidence: "docs/research/cmd_497_cmd-splitting-policy.md を新規作成"
+  - id: AC3
+    status: pass
+    evidence: "同文書に追加系cmd例1件と修正系cmd例1件を分離記載"
+  - id: AC4
+    status: pass
+    evidence: "commit bf2b70d を作成し、本報告YAMLへ差分要約を記載"

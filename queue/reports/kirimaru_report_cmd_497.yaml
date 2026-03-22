@@ -1,0 +1,55 @@
+worker_id: kirimaru
+task_id: subtask_497_impl_karo_policy
+parent_cmd: cmd_497
+timestamp: "2026-03-03T15:53:38+09:00"
+status: done
+result:
+  summary: "karo手順に mixed_cmd_rule を追加。generated/codex-karo には同等ルール既存を確認し、AC2を充足"
+  details: |
+    cmd_497 AC2として、以下2ファイルを確認・反映。
+    - instructions/karo.md: mixed_cmd_rule を新規追加
+    - instructions/generated/codex-karo.md: 同等 mixed_cmd_rule が既存であることを確認
+
+    追記内容:
+    1) 混在検知条件を detect_when で明示
+       - acceptance_criteria に新規追加系(enhance/new/feature)と修正系(fix/bug/fixes)が同居
+       - command本文で新規開発と既存修正が同時指定
+    2) 検知時フローを flow で明示
+       - task_deploy/inbox_write を止める
+       - pending_decision_write.sh propose で将軍へ分割提案
+       - dashboard.md の 🚨要対応 へ分割案を記載
+purpose_validation:
+  cmd_purpose: "家老運用へ混在cmd検知→分割提案返却を追加し、配備前に分割判断できる状態にする"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - instructions/karo.md
+  - queue/tasks/kirimaru.yaml
+  - queue/reports/kirimaru_report_cmd_497.yaml
+test_results:
+  - command: "rg -n 'mixed_cmd_rule|detect_when|pending_decision_write.sh' instructions/karo.md"
+    result: pass
+    notes: "mixed_cmd_rule:66, detect_when:69, pending_decision_write.sh:74"
+  - command: "rg -n 'mixed_cmd_rule|detect_when|pending_decision_write.sh' instructions/generated/codex-karo.md"
+    result: pass
+    notes: "mixed_cmd_rule:65, detect_when:68, pending_decision_write.sh:73"
+lesson_candidate:
+  found: false
+lessons_useful:
+  - L074
+  - L063
+  - L032
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "instructions/karo.md:66 に mixed_cmd_rule 追加。detect_when と flow で混在検知条件/返却手順を明記。"
+  - id: AC2
+    status: pass
+    evidence: "instructions/generated/codex-karo.md:65 に同等 mixed_cmd_rule が既存であることを確認（mixed_cmd_rule:65, detect_when:68, pending_decision_write.sh:73）。"
+  - id: AC3
+    status: pass
+    evidence: "commit a2ce9c8 で instructions/karo.md を反映。報告YAML queue/reports/kirimaru_report_cmd_497.yaml に差分要約を記録。副作用修正として commit ba7bb25 を追加。"

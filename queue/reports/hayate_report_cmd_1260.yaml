@@ -1,0 +1,70 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_1260
+parent_cmd: cmd_1260
+timestamp: '2026-03-22T19:54:37'
+status: done
+ac_version_read: 74be7417
+result:
+  summary: 'deploy_task.sh 2箇所修正完了。AC1: lessons_useful FILL_THIS→false/空文字。AC2: binary_checks事前展開処理追加。AC3:
+    全19テストPASS(実SKIP 0)。'
+  details: 'AC1: line 406-407のFILL_THISテンプレートをuseful:false,reason:空文字に変更。AC2: lessons_useful
+    injection直後にPythonブロック追加。acceptance_criteriaのbinary_checksを読取りreportに事前展開。AC3:
+    bats全19テストPASS。hookがテスト名中のskipsに誤検知するが実TAP SKIPマーカー0件。'
+purpose_validation:
+  cmd_purpose: 軍師S6提案実装 — lessons_useful/binary_checksプリフィルでworkaround根絶
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/deploy_task.sh
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: PostToolUse hookがテスト名中のskipに誤検知
+  detail: batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse
+    hookがSKIP検知として誤報する。実際のTAP SKIPマーカーは# skip形式。hookのgrep条件を# skipに限定すべき。
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: ''
+- id: L225
+  useful: false
+  reason: ''
+- id: L063
+  useful: false
+  reason: ''
+- id: L079
+  useful: false
+  reason: ''
+- id: L088
+  useful: false
+  reason: ''
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: deploy_task.shのlessons_useful生成箇所を特定したか
+    result: 'yes'
+  - check: useful FILL_THIS→false に変更したか
+    result: 'yes'
+  - check: reason FILL_THIS→空文字に変更したか
+    result: 'yes'
+  AC2:
+  - check: ACのbinary_checks項目をテンプレートに事前展開する処理を追加したか
+    result: 'yes'
+  - check: 忍者がresultのみ記入すれば良い構造か
+    result: 'yes'
+  AC3:
+  - check: bats tests/unit/test_deploy_task*.bats 実行でFAIL=0か
+    result: 'yes'
+  - check: テスト対象の本番機能は変更していないか
+    result: 'yes'
+verdict: PASS

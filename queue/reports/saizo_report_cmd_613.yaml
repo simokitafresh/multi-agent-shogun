@@ -1,0 +1,70 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+worker_id: saizo
+task_id: subtask_613_impl_a
+parent_cmd: cmd_613
+timestamp: "2026-03-06T20:44:45"
+status: done
+ac_version_read: 4
+result:
+  summary: "Deterioration Monitor に G1/G2/P の3色丸列を追加し、スマホでは PF名+3丸のみ表示へ整理。共通色マッピング utilities とユニットテストも追加した。"
+  details: |
+    実装内容:
+    - `frontend/lib/constants/deterioration-colors.ts`
+      - `labelToColorDot()` を追加し、6段階ラベルを 3色(緑/黄/橙) + 灰へ集約
+      - `pValueToColorLabel()`, `g1ValueToColorLabel()`, `g2ValueToColorLabel()` を追加
+      - `g1ToColorDot()`, `g2ToColorDot()` で UI から直接使える HEX dot helper を追加
+      - G1 は backend にラベルがないため、slope の 3帯域(>=0, 0~-0.0002, <-0.0002)で直感色へ変換
+    - `frontend/app/deterioration/page.tsx`
+      - テーブル順を `Portfolio | G1 | G2 | P | Label | P6 | P12 | P24 | Trend | G1 | G2` に更新
+      - G1/G2/P を CSS 円形ドットで描画し、PC は 12px、色は inline HEX 指定
+      - 既存ソートを維持しつつ、dot 列も各基礎値に紐づけてソート可能にした
+      - モバイルでは `Portfolio | G1 | G2 | P` のみ表示になるよう `mobileVisible` を更新
+      - モバイル時は行展開を無効化し、PFDetail 展開を desktop のみへ限定
+    - `frontend/lib/__tests__/deterioration-colors.test.ts`
+      - ラベル→色、P/G1/G2 の閾値変換、dot helper をユニットテスト化
+    検証:
+    - `cd /mnt/c/Python_app/DM-signal/frontend && npm test -- --runInBand deterioration-colors.test.ts`
+    - `cd /mnt/c/Python_app/DM-signal/frontend && npm run build`
+purpose_validation:
+  cmd_purpose: "Deterioration Monitor ページに G1/G2/P 色丸を導入し、共通色マッピング utility を作成して PC/スマホ要件を満たす"
+  fit: true
+  purpose_gap: ""
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "`frontend/app/deterioration/page.tsx` の列順を `Portfolio | G1 | G2 | P | Label | P6 | P12 | P24 | Trend | G1 | G2` に更新し、PCで3色丸をLabel左へ配置。"
+  - id: AC2
+    status: pass
+    evidence: "`COLUMNS` の `mobileVisible` を name/g1Dot/g2Dot/pDot のみに設定し、`isMobile` 時は展開を無効化。"
+  - id: AC5
+    status: pass
+    evidence: "`deterioration-colors.ts` に `labelToColorDot`, `pValueToColorLabel`, `g1ValueToColorLabel`, `g2ValueToColorLabel`, dot helper 群を追加。"
+  - id: AC6
+    status: pass
+    evidence: "色丸は inline HEX + `dark:border-white/20` で描画し、`npm run build` まで通過。"
+verification:
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm test -- --runInBand deterioration-colors.test.ts"
+    result: "pass"
+    notes: "1 suite / 6 tests passed"
+  - command: "cd /mnt/c/Python_app/DM-signal/frontend && npm run build"
+    result: "pass"
+    notes: "Next.js build succeeded; `/deterioration` static page generated"
+files_modified:
+  - /mnt/c/Python_app/DM-signal/frontend/app/deterioration/page.tsx
+  - /mnt/c/Python_app/DM-signal/frontend/lib/constants/deterioration-colors.ts
+  - /mnt/c/Python_app/DM-signal/frontend/lib/__tests__/deterioration-colors.test.ts
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_613.yaml
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+lessons_useful:
+  - L063
+  - L074
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false

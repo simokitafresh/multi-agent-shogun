@@ -1,0 +1,96 @@
+task_id: cmd_1022_review
+subtask_id: cmd_1022_review
+ninja: hayate
+status: failed
+timestamp: '2026-03-17T09:43:00'
+parent_cmd: cmd_1022
+summary: 'FAIL。C3の正方向jump限定ロジック自体は script で実装・実行成功したが、
+
+  PD-009が要求する「ファミリー別C1∩C3独立再評価」と
+
+  「DM7P全量Phase 4直行」が設計書/統合ロジックに反映されていない。
+
+  commit + push は未実施。
+
+  '
+review_result:
+  status: FAIL
+  verdict: FAIL
+  findings:
+  - severity: HIGH
+    file: /mnt/c/Python_app/DM-signal/scripts/analysis/cmd_1019_phase2_metrics.py
+    line: 35
+    detail: FAMILIES に DM2/DM3/DM6/DM7P を固定し、lines 219-234 で c1_all/c3_all を「4ファミリー全体の共通通過条件」として集計している。PD-009(3)(4)
+      の「各ファミリーがC1∩C3で独立に最適Triple-Eを選定」「DM7Pは全量Phase 4直行」と不整合。
+  - severity: HIGH
+    file: /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_design.md
+    line: 199
+    detail: 「トリプルE共通」「DM7+は生存者→4パターン」「DM7+の扱い PENDING」等の旧方針が残存。PD-009解決後の家族独立方針と DM7P
+      例外処理が本文書に反映されていない。
+  - severity: HIGH
+    file: /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_phase2_metrics_analysis.md
+    line: 54
+    detail: 選定基準が依然として「4ファミリー全てで上記3条件」「ファミリー共通」を要求している。PD-009では C2/C4 廃止、家族別 C1∩C3
+      再評価へ変更済みであり、§3全体が現裁定とずれている。
+  - severity: MEDIUM
+    file: /mnt/c/Python_app/DM-signal/outputs/analysis/shin_shijin_design.md
+    line: 264
+    detail: Phase表/Statusが cmd_1022 後に更新されておらず、line 4 も「Phase 1 push待ち」のまま。成果物更新対象(§4,
+      §5, §8)の完了条件を満たしていない。
+ac_results:
+  AC_R1:
+    status: FAIL
+    detail: "5観点の検証結果:\n1. C3が正方向jumpのみで判定されているか: PASS\n   - `cmd_1019_phase2_metrics.py:154-158`\
+      \ の jump_penalty() が max(raw_jump, 0.0) を使用\n   - `cmd_1019_phase2_metrics.py:198-202`\
+      \ が c3_values に正方向jumpのみ適用\n2. C1∩C3の2条件でファミリー別に正しく再評価されているか: FAIL\n   - script\
+      \ は family別最適化ではなく 4family 同時通過を集計\n3. DM7Pが「全量Phase4直行」と明記されているか: FAIL\n  \
+      \ - design doc に「DM7+ PENDING」「生存者→4パターン」が残存\n4. 設計書がPD-009裁定内容と整合しているか: FAIL\n\
+      \   - Phase2/design doc の条件表・裁定ログが未更新\n5. py_compile + 実行成功: PASS\n   - `python3\
+      \ -m py_compile scripts/analysis/cmd_1019_phase2_metrics.py scripts/analysis/cmd_1019_ac3_dd_corr.py\
+      \ scripts/analysis/cmd_1019_ac12_family_rolling.py`\n   - `python3 scripts/analysis/cmd_1019_phase2_metrics.py`\
+      \ 実行成功、出力更新確認\n"
+  AC_R2:
+    status: FAIL
+    detail: PASS条件未達のため commit/push 未実施。
+diff_check:
+  repo: /mnt/c/Python_app/DM-signal
+  status: FAIL
+  detail: '`git status --short` 上、レビュー対象の主要成果物は未追跡ファイルとして存在。
+
+    `outputs/analysis/shin_shijin_design.md`
+
+    `outputs/analysis/shin_shijin_phase2_metrics_analysis.md`
+
+    `outputs/analysis/cmd_1019_phase2_metrics_correlation.md`
+
+    ただし内容は PD-009 反映未完であり、そのまま commit すべき状態ではない。
+
+    '
+tested:
+  py_compile: PASS
+  script_execution: PASS
+  notes:
+  - 出力: /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_1019_phase2_metrics_correlation.md
+lesson_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: dm-signal
+verdict: FAIL
+lessons_useful:
+- 'L309: 設計書のバージョン整合性確認の観点で参照。'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: dm-signal
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

@@ -1,0 +1,229 @@
+worker_id: hayate
+task_id: cmd_834_recon_signals_cache
+parent_cmd: cmd_834
+timestamp: "2026-03-12T17:08:32+0900"
+status: done
+ac_version_read: 7
+verdict: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`backend/app/api/signals.py:99-109` で visibility/settings・portfolio一覧・canonical as_of・当日 Signal 一括取得、`127-133` で pending_map 構築、`138-204` の portfolio loop で FoF 38件だけが `expand_portfolio_to_tickers()` (`178-181`) を叩く流れを確認。既報 `queue/reports/sasuke_report_cmd_830.yaml` の admin 実測3回平均では全体 38085.89ms / 473 query のうち portfolio loop が 37279.05ms / 469 query、さらに FoF 展開部分だけで 37274.26ms / 469 query を占有していた。内訳は `Portfolio` SELECT 251回、`Signal latest<=date` 218回、route先頭/末尾の固定4 query。"
+  - id: AC2
+    status: pass
+    evidence: "cache 注入点は 1) `backend/app/api/signals.py:121-124` 直後で request-scope `portfolio_cache` / `signal_cache` を構築、2) `backend/app/api/signals.py:178-181` で `expand_portfolio_to_tickers(..., signal_cache=..., portfolio_cache=...)` を渡す、3) `backend/app/services/price_ratio_calculator.py:989-1013` の `get_signal_payload_at_date()` で cache lookup + miss memoize、4) `1021-1028` と `1081-1088` の portfolio lookup を既存 `portfolio_cache` hit に乗せる、の4箇所でござる。実装方式は contextvars/middleware ではなく『route ローカル dict を関数引数で明示注入』が最適。理由は `expand_portfolio_to_tickers()` が既に `signal_cache` / `portfolio_cache` 引数を持っており、挙動差分ゼロ・テスト容易・request-scope が明確だからでござる。"
+  - id: AC3
+    status: pass
+    evidence: "473→4 の根拠は単純で、支配項 469 query がすべて FoF 展開由来だからでござる。`signals.py` の固定 query は `PortfolioDB.all()` 1本、`canonical_as_of.get_canonical_as_of()` 1本、`Signal.date == as_of_date` 一括取得 1本、`PortfolioFolder` 取得 1本の合計4本。`portfolio_cache={p.id: p for p in portfolios_db}` で 251件の `Portfolio` lookup が消え、`signal_cache[{portfolio_id}][{signal_date}] -> {signal, holding_signal, weights}` を route で共有すれば 218件の `Signal latest<=date` も in-memory hit 化する。残る exact-date 非一致ケースは `price_ratio_calculator.py:1002-1013` に miss memoize を足せば 1 pid+date につき最大1 queryへ抑制できる。現スナップショットの admin 経路では既報どおり 469 query 全消しが成立するため、473→4 と見積もれる。"
+  - id: AC4
+    status: pass
+    evidence: "admin 向け全PF一括取得 38.1秒は `/api/signals` そのものの所要であり、FoF query storm 除去後の残余時間は既報内訳の固定部分合算で約804.75ms (`PortfolioDB.all` 566.44ms + canonical_as_of 79.86ms + all_signals 81.65ms + folders 76.80ms)。したがって request-scope cache だけで 38.09s → 約0.8s、すなわち <1秒が理論的に説明できる。SignalsContext は `frontend/contexts/signals-context.tsx:190-193` で全画面共通に `/api/signals` を起動するため、admin 初回表示・全PF compare系・dashboard すべてのベースレイテンシを同時に下げる効果がある。"
+  - id: AC5
+    status: pass
+    evidence: "変更対象は `backend/app/api/signals.py:121-181`, `backend/app/services/price_ratio_calculator.py:989-1013`, `1021-1028`, `1081-1088`, `1134-1158`。関連テストは `backend/tests/test_signals_pending_projection_494.py`（pending projection/RULE08）、`backend/tests/test_price_ratio_calculator.py -k 'issue_108 or issue_122'`（FoF signal date / KalmanMeta weights）、`backend/tests/test_tier_masking.py`（viewer/admin visibility）、`backend/tests/test_067_nested_fof_signal_decomposition.py`（nested FoF 完全一致）、`backend/tests/test_get_portfolio_all_tickers.py`（ticker set 不変）。横波及ファイルは `backend/app/api/monthly_trade.py`, `backend/app/api/trades.py`, `backend/app/services/monthly_trade_calculator.py`, `backend/app/services/trades_calculator.py`, `backend/app/services/return_calculator.py`, `backend/app/jobs/generators/trade_performance.py`, `backend/app/jobs/generators/monthly_returns.py`, `backend/app/jobs/shared.py`。"
+  - id: AC6
+    status: pass
+    evidence: "`/api/signals` を直接呼ぶ backend API は見当たらず、`rg '/api/signals\\b'` では frontend client・tests・scripts が消費者だった。他APIへの横展開先は『同じ FoF helper を cache なしで呼ぶ箇所』でござる。具体的には `backend/app/api/monthly_trade.py:76-170` → `backend/app/services/monthly_trade_calculator.py:329-332,553-558,688-693`、`backend/app/api/trades.py:104-146` → `backend/app/services/trades_calculator.py:1176-1179`、`backend/app/services/return_calculator.py:129-132` が未注入組。一方で `backend/app/jobs/generators/trade_performance.py:103-121,538-543` と `backend/app/jobs/shared.py:41-119` は既に signal/portfolio preload パターンを持つため、route API 群へ同パターンを移植するのが最短でござる。"
+  - id: AC7
+    status: pass
+    evidence: "偵察品質4要件を満たした。変更対象/行番号は AC2/AC5 に記載、波及先は AC5/AC6 に列挙、関連テストは AC5 と verification に記載、エッジケースは `RULE08 component_signal_date` 維持、KalmanMeta の `momentum_data.weights` 維持、viewer/admin 差は masking 後処理なので request-scope cache key に auth を含めなくてよいこと、`expand_portfolio_to_tickers()` は `MAX_RECURSION_DEPTH=10` (`price_ratio_calculator.py:1015-1019`) を持つが visited set は無いため循環参照は深度ガード依存であること、negative cache で `{}` と `None` を混同すると Cash 化誤判定の危険があること、の5点を確認済み。"
+result:
+  summary: "`/api/signals` の A1 施策は『route で request-scope `portfolio_cache` / `signal_cache` を握り、`expand_portfolio_to_tickers()` へ明示注入する』で決まりでござる。現在の 38.1秒 / 473 query は FoF 38件ぶんの再帰展開が 469 query を浪費しているだけなので、ここを潰せば admin 全PF取得は理論上 約0.8秒まで落ちる。"
+  details: |
+    処理フロー図（admin経路）:
+    1. `backend/app/api/signals.py:99-109`
+       - `get_visibility_settings()`（adminでは実質0 query）
+       - `db.query(PortfolioDB).all()` で全 portfolio 取得
+       - `canonical_as_of.get_canonical_as_of()` で共通 as_of 決定
+       - `db.query(Signal).filter(Signal.date == as_of_date).all()` で当日 Signal 一括取得
+    2. `backend/app/api/signals.py:127-133`
+       - `canonical_as_of.build_pending_map()` で pending projection 判定
+    3. `backend/app/api/signals.py:138-204`
+       - standard 53件は整形のみ
+       - FoF 38件だけ `expand_portfolio_to_tickers()` (`178-181`) へ進む
+    4. `backend/app/services/price_ratio_calculator.py:989-1158`
+       - `get_signal_payload_at_date()` が component PF ごとに latest<=date を取りに行く
+       - `portfolio_cache` 未注入だと `Portfolio` を毎回引き直す
+       - nested FoF では 1081-1098 の再帰で同じ component を何度も舐める
+    5. `backend/app/api/signals.py:265-281`
+       - folder 一覧取得で終了
+
+    473 query の内訳:
+    - 固定 4 query:
+      - `PortfolioDB.all`
+      - `canonical_as_of.get_canonical_as_of`
+      - `Signal.date == as_of_date`
+      - `PortfolioFolder.all`
+    - 可変 469 query:
+      - `Portfolio` SELECT 251
+      - `Signal latest<=date` 218
+
+    request-scope cache 設計:
+    - 実装方式: route ローカル dict を関数引数で渡す
+      - `portfolio_cache: dict[str, Portfolio]`
+      - `signal_cache: dict[str, dict[date, dict[str, Any] | str]]`
+    - cache key:
+      - portfolio: `portfolio_id`
+      - signal: `portfolio_id + signal_lookup_date`
+    - value:
+      - standard PF: `holding_signal` 文字列でも可
+      - pipeline FoF/KalmanMeta 互換のため `{signal, holding_signal, weights}` を推奨
+    - auth/tier を key に含めない理由:
+      - cache 対象は DB 上の Signal/Portfolio 解決だけ
+      - viewer/admin 差は `signals.py:144-152` の MaskingConfig と `188-203` / `217-246` のマスキング段で後処理される
+      - visible portfolio の選別も route 側 (`139-160`) で先に済む
+
+    擬似diff:
+    ```diff
+    --- a/backend/app/api/signals.py
+    +++ b/backend/app/api/signals.py
+    @@
+         latest_created_at = max((s.created_at for s in all_signals if s.created_at), default=None)
+         calculated_at = latest_created_at.isoformat() if latest_created_at else None
+         sig_map = {s.portfolio_id: s for s in all_signals}
+    +    portfolio_cache = {str(p.id): p for p in portfolios_db}
+    +    signal_cache = {
+    +        str(s.portfolio_id): {
+    +            s.date: {
+    +                "signal": s.signal,
+    +                "holding_signal": s.holding_signal,
+    +                "weights": (
+    +                    s.momentum_data.get("weights")
+    +                    if isinstance(s.momentum_data, dict)
+    +                    else None
+    +                ),
+    +            }
+    +        }
+    +        for s in all_signals
+    +    }
+    @@
+             ticker_weights = expand_portfolio_to_tickers(
+                 db,
+                 p_db.id,
+                 as_of_date,
+    +            signal_cache=signal_cache,
+    +            portfolio_cache=portfolio_cache,
+                 component_signal_date=signal_date,
+             )
+
+    --- a/backend/app/services/price_ratio_calculator.py
+    +++ b/backend/app/services/price_ratio_calculator.py
+    @@
+    -    if signal_cache and pid in signal_cache:
+    -        pf_signals = signal_cache[pid]
+    +    if signal_cache is not None:
+    +        pf_signals = signal_cache.setdefault(pid, {})
+             if dt in pf_signals:
+                 return _extract_payload(pf_signals[dt])
+             valid_dates = [d for d in pf_signals.keys() if d <= dt]
+             if valid_dates:
+                 latest = max(valid_dates)
+                 return _extract_payload(pf_signals[latest])
+    -        return None, None
+    @@
+         sig = db.execute(sig_stmt).scalar_one_or_none()
+         if not sig:
+    +        if signal_cache is not None:
+    +            signal_cache.setdefault(pid, {})[dt] = {}
+             return None, None
+    @@
+         if isinstance(sig.momentum_data, dict):
+             weights = sig.momentum_data.get("weights")
+    +    if signal_cache is not None:
+    +        signal_cache.setdefault(pid, {})[dt] = {
+    +            "signal": getattr(sig, "signal", None),
+    +            "holding_signal": holding,
+    +            "weights": weights if isinstance(weights, dict) else None,
+    +        }
+         return holding, weights if isinstance(weights, dict) else None
+    ```
+
+    エッジケース整理:
+    - RULE08:
+      - `signals.py:177-181` の `component_signal_date=signal_date` は維持必須
+      - cache hit 時も `component_signal_date` を lookup key として扱うこと
+    - KalmanMeta:
+      - `price_ratio_calculator.py:1048-1066` は `momentum_data.weights` を使う
+      - cache value から `weights` を落とすと挙動が変わる
+    - viewer/admin:
+      - request-scope cache は masking 前の raw解決用なので安全
+      - endpoint TTL cache を後段でやるなら `tier_id/is_admin/current_date/as_of_date/calculated_at` を key に含めるべし
+    - recursion:
+      - `get_portfolio_all_tickers()` (`839-926`) は visited set + max depth
+      - `expand_portfolio_to_tickers()` は max depth のみ
+      - 今回の cache 化で悪化はしないが、循環FoF対策としては別件で visited 導入余地あり
+
+    横展開優先順位:
+    1. `/api/signals` に request-scope cache 注入
+    2. `monthly_trade_calculator` / `trades_calculator` / `return_calculator` の API 経路へ同パターン横展開
+    3. その後に必要なら endpoint-level TTL cache を検討
+verification:
+  - command: "\"/mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe\" -m pytest -q backend/tests/test_signals_pending_projection_494.py"
+    result: pass
+    notes: "4 passed, 2 warnings。pending projection/RULE08 回帰なし。SKIP なし。"
+  - command: "\"/mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe\" -m pytest -q backend/tests/test_price_ratio_calculator.py -k \"issue_108 or issue_122\""
+    result: pass
+    notes: "2 passed, 20 deselected。FoF signal date / weights 系の既存仕様を再確認。SKIP なし。"
+  - command: "rg/nl/sed で `backend/app/api/signals.py`, `backend/app/services/price_ratio_calculator.py`, `backend/app/jobs/shared.py`, `backend/app/services/monthly_trade_calculator.py`, `backend/app/services/trades_calculator.py`, `backend/app/services/return_calculator.py` を精読"
+    result: pass
+    notes: "cache 注入点・横展開先・既存 preload パターンを確認。"
+  - command: "queue/reports/sasuke_report_cmd_830.yaml と queue/reports/saizo_report_cmd_831.yaml を再読"
+    result: pass
+    notes: "38.1秒 / 473 query の実測根拠、および frontend 共通入口である点を再利用。"
+purpose_validation:
+  cmd_purpose: "/api/signals の request-scope cache 注入の深掘り実装設計を行い、473 query の内訳、注入点、473→4 根拠、admin 38秒経路、波及先、テスト、エッジケースを報告する。"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  found: true
+  title: "FoF request-scope cache の key は auth ではなく portfolio_id+signal_date に寄せ、masking は route 後段に隔離せよ"
+  detail: "FoF 展開の request-scope cache は DB上の holdings 解決専用に保ち、viewer/admin 差や masking を key に混ぜない方が安全で高速である。権限制御は route で visible portfolio を絞り、masking はレスポンス整形段で後適用するのが責務分離として正しい。"
+  project: dm-signal
+lessons_useful:
+  - id: L252
+    useful: true
+    reason: "PriceCache パターンの横展開という教訓が、そのまま route request-scope cache の設計判断に繋がった。"
+  - id: L254
+    useful: true
+    reason: "FoF 展開 helper を loop 内で cache 未注入で呼ぶと query storm 化する、という既知教訓を `/api/signals` で行番号付きに落とし込めた。"
+  - id: L262
+    useful: true
+    reason: "route 層から request-scope cache を注入しない限り recursive FoF expander は改善しない、という新しい project lesson と一致した。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  summary: "A1 の実装方式は middleware/contextvars ではなく、`signals.py` で作る request-scope dict を `expand_portfolio_to_tickers()` へ明示引数で渡す方式が最適"
+  rationale: "既存 public contract をそのまま使え、テスト差分が最小で、473→4 の支配 query を直接消せる。middleware/contextvars は可視性が下がるうえ、FoF signal lookup date の意味を見失いやすい。"
+implementation_readiness:
+  files_to_modify:
+    - "backend/app/api/signals.py:121-181"
+    - "backend/app/services/price_ratio_calculator.py:989-1013"
+    - "backend/app/services/price_ratio_calculator.py:1021-1028"
+    - "backend/app/services/price_ratio_calculator.py:1081-1088"
+    - "backend/app/services/price_ratio_calculator.py:1134-1158"
+  affected_files:
+    - "backend/tests/test_signals_pending_projection_494.py"
+    - "backend/tests/test_price_ratio_calculator.py"
+    - "backend/tests/test_tier_masking.py"
+    - "backend/tests/test_067_nested_fof_signal_decomposition.py"
+    - "backend/tests/test_get_portfolio_all_tickers.py"
+    - "frontend/contexts/signals-context.tsx"
+  related_tests:
+    - "backend/tests/test_signals_pending_projection_494.py — pending projection と as_of 互換"
+    - "backend/tests/test_price_ratio_calculator.py -k 'issue_108 or issue_122' — RULE08 / KalmanMeta weights"
+    - "backend/tests/test_tier_masking.py — viewer/admin visibility と masking"
+    - "backend/tests/test_067_nested_fof_signal_decomposition.py — nested FoF 完全一致"
+    - "backend/tests/test_get_portfolio_all_tickers.py — helper 系の ticker set 不変"
+  edge_cases:
+    - "component_signal_date を target_date に取り違えないこと"
+    - "KalmanMeta の weights を cache value から落とさないこと"
+    - "negative cache と Cash 判定を混同しないこと"
+    - "expand_portfolio_to_tickers は visited set を持たないため、循環FoFは depth=10 警告止まりであること"
+    - "endpoint TTL cache を後段追加する場合のみ tier/current_date/as_of/calculated_at を key に含めること"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

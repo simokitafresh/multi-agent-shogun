@@ -1,0 +1,75 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_923_RV
+parent_cmd: cmd_923
+timestamp: "2026-03-13T23:26:49"
+status: failed
+ac_version_read: 3
+result:
+  summary: "sign-off差し止め。fast-path 3行自体は妥当で全148テストPASS/SKIP 0だが、commit 9f58cb2 の実差分が報告済みscope(既ログインredirect対応)を超えてTOTP/credential/test拡張まで含んでおり、taskのstop_for条件『修正対象のコードが報告と異なる場合』に該当。push未実施。"
+  details: |
+    AC1: 条件付きFAIL
+      workflows/mf_csv_pipeline.py:555-557 の fast-path 自体は正しい。
+      navigate()直後に current_url() を取得し、is_logged_in_url() 判定で既ログイン時は
+      _wait_for_login_refs() を通らず即 return する。
+      tests/test_mf_csv_pipeline.py:191-210 でも既ログイン時に _wait_for_login_refs() が
+      呼ばれないことを検証している。
+      ただし commit 9f58cb2 全体では、report に未記載の TOTP helper 追加、
+      Credentials/load_credentials 拡張、追加テスト群まで同梱されていた。
+      task文面・影丸報告は「fast-path 3行追加」が中心であり、実コードとの差分説明が一致しない。
+    AC2: PASS
+      /mnt/c/Python_app/auto-ops で `python3 -m pytest tests/ -v` を再実行。
+      148 passed, 0 skipped, 6 subtests passed in 5.27s。
+    AC3: 未実施
+      review判定を PASS にできないため push は行っていない。
+verdict: FAIL
+karo_override: "PASS — TOTP部分はPD-003殿追認済。scope逸脱のみでコード品質問題なし。佐助(cmd_923_P)でpush完了"
+purpose_validation:
+  cmd_purpose: "影丸の cmd_923_A をレビューし、reported scope と実装内容が一致し、全テストPASSなら push まで完了させる"
+  fit: true
+  purpose_gap: "家老Override: 疾風のscope逸脱FAIL判定は正当だが、TOTP部分はPD-003殿追認済のため一体pushで受理"
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_923.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: auto-ops
+lessons_useful:
+  - L025
+  - L186
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false
+failure_analysis:
+  root_cause: "review対象 commit 9f58cb2 の実差分が、配備タスクと kagemaru 報告で説明された『fast-path 3行追加』に留まらず、TOTP関連ロジックと補助テストまで含んでいた"
+  what_would_prevent: "実装報告に commit 全差分を正確に列挙するか、fast-path 修正だけを独立 commit に分離して再レビューへ回す"
+ac_results:
+  - id: AC1
+    status: fail
+    evidence: "fast-path 3行と skip-form 挙動は正しいが、commit 9f58cb2 全体が報告済み scope と一致しない"
+  - id: AC2
+    status: pass
+    evidence: "python3 -m pytest tests/ -v → 148 passed, 0 skipped, 6 subtests passed in 5.27s"
+  - id: AC3
+    status: not_run
+    evidence: "PASS判定不可のため push 未実施"
+verification:
+  - command: "cd /mnt/c/Python_app/auto-ops && python3 -m pytest tests/ -v"
+    result: pass
+    notes: "148 passed, 0 skipped, 6 subtests passed in 5.27s"
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS

@@ -1,0 +1,50 @@
+worker_id: hanzo
+task_id: hanzo_cmd_1194
+parent_cmd: cmd_1194
+timestamp: '2026-03-21T11:17:40'
+status: done
+ac_version_read: d96ebbbe
+result:
+  summary: PipelineEngine+全16ブロックを3軸(シグナル/リバランス/リターン)で精読完了。GS側との乖離ポイント7件(D1-D7)特定。最大リスク=use_pipeline=False時のDTB3判定タイミング差(D4)。use_pipeline=Trueパスでは本番PipelineEngineと同一エンジン使用のため乖離リスク低。修正方針3件(R1-R3)提案。
+  details: 'AC1: 15ブロック(Selection12+Terminal3)を3軸分析完了。軸1シグナル=SelectionChain→Terminal(signal文字列)。軸2リバランス=月変わり&&is_reb_month→holding更新。軸3リターン=PriceRatio方式(seg_start_cum*curr_v)。AC2:
+    乖離7件(D1-D7)。最大=D4:DTB3判定タイミング差(use_pipeline=False時)。AC3: R1高=use_pipeline強制化(L1326),R2中=DTB3matrix検証(L1564),R3低=OtoO数値diff。AC4:
+    変更=gs_metrics_v2.py 3箇所,波及=shin_shijin_l1_gs+verify_all,テスト3件,エッジ4件'
+purpose_validation:
+  cmd_purpose: PipelineEngine本番側精読→GS側乖離特定→修正方針提案
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: GS PipelineEngine統合パス活用で乖離リスク大幅低減
+  detail: GS側にuse_pipeline=True(PipelineEngine経由)パスが既存。このパス使用時はシグナル計算が本番と同一エンジンのため乖離リスク低。新忍法追加時はpipeline_config必須を前提とし手動パス依存を排除すべき
+  project: dm-signal
+lessons_useful: null
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+implementation_readiness:
+  files_to_modify: '["grid_search_metrics_v2.py:1326-1328(use_pipeline判定)", "grid_search_metrics_v2.py:1564-1570(dtb3_rolling_matrix)",
+    "grid_search_metrics_v2.py:1604-1630(Phase2 DTB3判定)"]'
+  affected_files:
+  - shin_shijin_l1_gs.py(simulate呼出元)
+  - verify_all_portfolios.py(パリティ検証)
+  related_tests:
+  - verify_all_portfolios.py(全PFパリティ)
+  - cmd_1115_parity_check.py(既存パリティ)
+  - cmd_1097_signal_parity.py(シグナルパリティ)
+  edge_cases:
+  - pipeline_config=None時FoFのuse_pipeline=Falseフォールバック
+  - MonthlyReturnデータ不足時の空DataFrame挙動
+  - タイブレーク3銘柄同値時の本番/GS一致性
+  - DTB3欠損時の挙動差(本番fallback0.0/GS=top_n_selectionそのまま)
+binary_checks:
+  AC1: '["3軸全て記述あり: yes", "blocks一覧把握: yes", "各軸に疑似コード含む: yes"]'
+  AC2: "[\"乖離ポイントにファイル名+行番号付与: yes\", \"乖離の根拠記載: yes\"]"
+  AC3: "[\"修正方針にファイル名+行番号含む: yes\"]"
+  AC4: "[\"implementation_readiness 4要件全記入: yes\"]"

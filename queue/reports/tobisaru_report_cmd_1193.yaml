@@ -1,0 +1,62 @@
+worker_id: tobisaru
+task_id: cmd_1193_gate_format_check
+parent_cmd: cmd_1193
+timestamp: '2026-03-21T01:30:00'
+status: done
+ac_version_read: 23199000
+result:
+  summary: gate_report_format.shにkaro_workaround再発パターン2件(lesson_candidate.found=false+no_lesson_reason空→FAIL、binary_checks未存在→FAIL)を追加。既存正常報告PASS維持確認済み。commit
+    5e77f6c。
+  details: 'AC1: L36 required配列にbinary_checks追加、L49にfound=false+no_lesson_reason空のFAIL分岐追加。AC2:
+    saizo_report_cmd_1185(PASS)、kagemaru_report_cmd_1183(PASS)で既存正常報告のPASS維持確認。テスト用YAML3件で新検証の動作確認済み。AC3:
+    commit 5e77f6c完了。.gitignoreにgate_report_format.shのホワイトリスト追加も含む。'
+purpose_validation:
+  cmd_purpose: gate_report_format.shにkaro_workaround再発パターン検証追加
+  fit: true
+  purpose_gap: null
+files_modified:
+- path: scripts/gates/gate_report_format.sh
+  change: required配列にbinary_checks追加(L36)、lesson_candidate found=false+no_lesson_reason空のFAIL分岐追加(L49-50)
+- path: .gitignore
+  change: gate_report_format.shをgit追跡ホワイトリストに追加
+binary_checks:
+- check: lesson_candidate.found=falseかつno_lesson_reasonなしでFAILするか？
+  result: PASS
+- check: binary_checksフィールド未存在でFAILするか？
+  result: PASS
+- check: 正常報告YAMLでPASSが維持されるか？
+  result: PASS
+- check: git commitが完了したか？
+  result: PASS
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既存gateのrequired配列+if分岐パターンの拡張のみ。新規設計判断なし
+  title: null
+  detail: null
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: ((PASS++))パターンは本タスク対象ファイルに存在しなかった
+- id: L225
+  useful: false
+  reason: MCP正本突合タスクではない
+- id: L063
+  useful: false
+  reason: lessons.yaml直接イテレーションなし
+- id: L192
+  useful: false
+  reason: 単一ファイル変更のため並列diff問題なし
+- id: L282
+  useful: true
+  reason: 本タスクの根拠教訓。lesson_candidate/binary_checks検証の必要性を示す
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

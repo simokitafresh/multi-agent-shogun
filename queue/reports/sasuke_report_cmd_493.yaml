@@ -1,0 +1,73 @@
+worker_id: sasuke
+task_id: subtask_493_impl_research_core
+parent_cmd: cmd_493
+timestamp: "2026-03-03T15:29:00+09:00"
+status: done
+result:
+  summary: "消失していたdocs/research core系5ファイルを実コード起点で再作成し、DM-Signal側でコミット完了（e0d4843）。"
+  details: |
+    実施内容:
+    - cmd_492入力報告2本（tobisaru/sasuke）を読んで要求スコープを確定。
+    - DM-Signal実コードを走査して、以下5ファイルを新規作成:
+      1) docs/research/core-db-tables.md
+      2) docs/research/core-param-catalog.md
+      3) docs/research/core-local-analysis.md
+      4) docs/research/core-api-endpoints.md
+      5) docs/research/core-directory-structure.md
+    - 内容は `backend/app/db/models.py`, `backend/app/api/*.py`,
+      `backend/app/main.py`, `backend/app/services/pipeline/blocks/*.py`,
+      `scripts/analysis/grid_search/*.py`, `find/rg` 実測結果に基づき再構成。
+    - DM-Signalリポジトリで上記5ファイルのみをコミット:
+      commit: e0d4843
+      message: docs: recreate core research references from current code
+purpose_validation:
+  cmd_purpose: "cmd_492報告を入力として、消失した docs/research の core 系リンク先を実コードから再作成する"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/Python_app/DM-signal/docs/research/core-db-tables.md
+  - /mnt/c/Python_app/DM-signal/docs/research/core-param-catalog.md
+  - /mnt/c/Python_app/DM-signal/docs/research/core-local-analysis.md
+  - /mnt/c/Python_app/DM-signal/docs/research/core-api-endpoints.md
+  - /mnt/c/Python_app/DM-signal/docs/research/core-directory-structure.md
+  - queue/tasks/sasuke.yaml
+  - queue/reports/sasuke_report_cmd_493.yaml
+test_results:
+  - command: "ls -1 /mnt/c/Python_app/DM-signal/docs/research/core-*.md"
+    result: pass
+    notes: "対象5ファイルの存在を確認"
+  - command: "for f in core5files; do test -s $f; done"
+    result: pass
+    notes: "5ファイル全て非空"
+  - command: "rg -n \"@router\\.(get|post|put|patch|delete)\\(\" /mnt/c/Python_app/DM-signal/backend/app/api/*.py | wc -l"
+    result: pass
+    notes: "85 endpoints（core-api-endpoints.mdに反映）"
+  - command: "git -C /mnt/c/Python_app/DM-signal show --name-only --oneline e0d4843"
+    result: pass
+    notes: "コミットに対象5ファイルのみ含まれることを確認"
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "注入教訓確認を先行し、reviewed更新を先に実施"
+  - id: L063
+    useful: true
+    reason: "YAML構造を誤読せず、projects/dm-signal/lessons.yamlの該当本文を確認"
+lesson_candidate:
+  found: false
+  title: ""
+  detail: ""
+  project: dm-signal
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+ac_checklist:
+  - id: AC1
+    status: pass
+    evidence: "対象5ファイルを新規作成し、各ファイルに実コード由来情報を記載"
+  - id: AC2
+    status: pass
+    evidence: "context/dm-signal-core.md 参照先（DB/BB/local/API/directory）に対応する内容を配置"
+  - id: AC3
+    status: pass
+    evidence: "commit e0d4843 作成。報告に作成ファイル一覧と検証コマンドを記載"

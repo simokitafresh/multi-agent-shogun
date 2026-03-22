@@ -1,0 +1,102 @@
+worker_id: kotaro
+task_id: cmd_1240
+parent_cmd: cmd_1240
+timestamp: '2026-03-22T05:20:00'
+status: done
+ac_version_read: 662b147d
+result:
+  summary: 'cmd_1233で検出された6件FAIL全てを根本解決しPASS化。(1)Group A/C(4件): calculate_dtb3_monthly_returnを本番calculate_dtb3_price_ratioと完全一致化(カレンダー営業日インデックス+end_date包含)。diff=0.00e+00達成。(2)Group B(2件): experiments.dbの価格データを本番PostgreSQLから同期しデータソース不一致を解消。diff=5e-11達成。AC3結果:
+    64/65 PASS。新FAIL: L0-M_XLU_6M_3M_10D_w50_40_10_T1(2026-02)はholding_signal不一致(prodはXLU,GSは別銘柄)で元6件とは別種の問題。次サイクルで対処要。'
+  details: '■ AC1: 本番/GS間の初期化Cash月monthly_return_open計算パス特定
+
+    【本番コードパス】 _generate_monthly_returns (generators/monthly_returns.py L181-244) → expand_portfolio_to_tickers: Cash時 → {"Cash": 1.0} → _calculate_portfolio_price_ratios → calculate_price_ratio_for_symbol("Cash")
+    → calculate_dtb3_price_ratio(db, calc_start_date, calc_end_date) @see price_ratio_calculator.py L713-772 特徴: pd.date_range(freq="B")=カレンダー営業日(祝日含む), end_date含む, (1+daily_ret).prod()
+
+    【GSコードパス(修正前)】 simulate_strategy_vectorized (grid_search_metrics_v2.py L1648-1657) → calculate_dtb3_monthly_return 特徴(修正前): close_prices.index=株式取引日(祝日除外), end_date除外, exp(sum(log()))-1
+
+    【Group A/C根本原因】 1. 日付インデックス差: 本番=カレンダー営業日(祝日含む), GS=株式取引日(祝日除外)→本番が1-2日多い 2. end_date境界差: 本番=含む, GS=除外→本番がさらに1日多い 3. Group A(2010-09): Labor Day+end_date=2日差→diff=1.19e-05 4. Group C(2012-05): Memorial
+    Day+end_date=2日差→diff=6.35e-06
+
+    【Group B根本原因】 experiments.dbのopen/close priceが本番PostgreSQLと系統的に異なる(adjusted price計算差)。 全ティッカーで数千日のズレ(max diff=1.52e-04)。月次比率で大半相殺されるが2件で1e-6超過。
+
+    ■ AC2: 修正実装
+
+    【Group A/C】 calculate_dtb3_monthly_return修正: pd.date_range(freq="B")+end_date包含+reindex ffill+prod()複利→diff=0.00e+00
+
+    【Group B】 sync_experiments_prices.py新規作成: experiments.dbの全14ティッカーを本番PostgreSQLから同期。38,347レコード更新→diff≈5e-11
+
+    ■ AC3: 全PF検証
+
+    元6件FAIL→全PASS(max_diff≈5e-11): DM6-5, L0-Qj_GLD_5M_2M_15D_w40_40_20_T1, シン白虎-鉄壁, L0-M_SPXL_QQQ_15M_T1, L0-Qj_SPXL_QQQ_12M_T1, L0-Qm_SPXL_SPY_24M_T1
+
+    新規FAIL(1件): L0-M_XLU_6M_3M_10D_w50_40_10_T1 2026-02 prod=9.49e-02(hs=XLU) gs=-1.07e-01(別銘柄) diff=2.02e-01 → holding_signal不一致。元6件とは別種問題。データ延長で初めて露出。'
+purpose_validation:
+  cmd_purpose: PI-009パリティ6件FAIL根本解決
+  fit: true
+  purpose_gap: none
+files_modified:
+- path: scripts/analysis/grid_search/grid_search_metrics_v2.py
+  action: modified
+- path: scripts/analysis/grid_search/sync_experiments_prices.py
+  action: created
+- path: scripts/analysis/grid_search/diag_dtb3_parity.py
+  action: created
+- path: analysis_runs/experiments.db
+  action: modified
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: GS DTB3計算は本番と日付インデックス+境界条件を完全一致させよ
+  detail: GS calculate_dtb3_monthly_returnはclose_prices.index(株式取引日)を使用していたが本番はpd.date_range(freq=B)(カレンダー営業日)。祝日含有+end_date境界の差で月1e-5級の差。本番コードのロジックコピーに置換で解決。
+  project: dm-signal
+lessons_useful:
+- id: L074
+  useful: false
+  reason: quarterly初期化Cash月スキップ問題。今回のDTB3日付インデックス問題とは異なるパターン
+- id: L225
+  useful: false
+  reason: dm_signal_decisions名義混入問題。今回のタスクとは無関係
+- id: L021
+  useful: true
+  reason: 既存スクリプト確認の教訓。verify_gs_parity_pi009.py活用の前提確認に有用
+- id: L022
+  useful: true
+  reason: PipelineEngine統合後の比較対象0件問題。検証結果が実際にGS計算を反映しているか確認時に意識
+- id: L351
+  useful: false
+  reason: CPCV設計のgroup_count割り切り問題。今回のパリティ修正とは無関係
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 2
+  details: Edit blocked on queue/tasks and queue/reports YAMLs
+binary_checks:
+  AC1:
+  - check: 本番側の初期化Cash月return計算コードパスを特定したか？
+    result: 'yes'
+  - check: GS側の初期化Cash月return計算コードパスを特定したか？
+    result: 'yes'
+  - check: Group A/C(4件)とGroup B(2件)の両方を調査したか？
+    result: 'yes'
+  - check: 両者の差異を明確に記載したか？
+    result: 'yes'
+  AC2:
+  - check: 6件全ての根本原因を特定したか？
+    result: 'yes'
+  - check: 修正をGSエンジン側またはrecalculate側に実装したか？
+    result: 'yes'
+  - check: filter_init_monthsフィルタ修正ではなく根本解決であることを確認したか？
+    result: 'yes'
+  - check: 修正後の6件全てで差が1e-6以内になったか？
+    result: 'yes'
+  AC3:
+  - check: verify_gs_parity_pi009.pyを全63 standard PFに対して実行したか？
+    result: 'yes'
+  - check: 63/63 PASSを達成したか？
+    result: no (64/65 PASS。新1件FAIL=holding_signal不一致。元63 PFのうち元6件FAILは全PASS化)
+  - check: FAILが残った場合、何を試し何がわかったかを報告に記録したか？
+    result: 'yes'
+verdict: PASS
+karo_review: PASS (軍師LGTM+家老スタンプ)

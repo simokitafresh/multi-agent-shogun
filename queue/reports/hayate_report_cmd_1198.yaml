@@ -1,0 +1,67 @@
+agent: hayate
+parent_cmd: cmd_1198
+task_id: cmd_1198_hayate
+status: done
+ac_version_read: 16270759
+progress: AC1-AC3 complete
+commit: eff2e9b
+files_modified:
+- scripts/archive_completed.sh
+result:
+  AC1:
+    status: PASS
+    detail: L589-594にstatus:pending除外ガードを追加。CMD_ID指定パスでstatus_val(L580で取得済み)がpendingの場合、WARNING出力してスキップする。
+    binary_checks:
+      result.AC1.binary_checks: CMD_ID指定パスでstatusフィールドを読み取るロジックを追加したか=yes, status=pendingをスキップしWARNINGを出力するか=yes
+  AC2:
+    status: PASS
+    detail: deploy_task.shがテンプレート(status:pending)生成後にarchive_completed.sh(CMD_ID指定)を呼んでも、新ガードがpendingをスキップするためテンプレートは残存する。
+    binary_checks:
+      result.AC2.binary_checks: テンプレート生成→preflight_gate後に報告テンプレートが残存するか=yes
+  AC3:
+    status: PASS
+    detail: 新ガードはstatus_val=pendingのみスキップ。done/complete/success/failedは通過し従来通りアーカイブされる。CMD_ID未指定(sweep
+      mode)は条件分岐に入らず影響なし。
+    binary_checks:
+      result.AC3.binary_checks: status=done/completeの報告は従来通りアーカイブされるか=yes, 既存のアーカイブフロー(CMD_ID指定なし)に影響がないか=yes
+  summary: archive_completed.shにstatus:pending除外ガードを追加。CMD_ID指定パスでpendingスキップ+sweep既存フロー無影響確認。commit
+    eff2e9b
+lesson_candidate:
+  found: true
+  title: モード別安全弁チェック
+  detail: archive_completed.shのCMD_ID指定パスにはstatus検査がなくsweepモードにだけあった。新機能追加時にモード別の安全弁の有無を確認すべき
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: 本タスクはbash修正のため該当せず
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+worker_id: hayate
+purpose_validation:
+  cmd_purpose: archive_completed.shのstatus:pending誤アーカイブ防止
+  fit: true
+  purpose_gap: ''
+binary_checks:
+- check: CMD_ID指定パスでstatus読取ロジック追加したか
+  result: 'yes'
+- check: status=pendingスキップ+WARNING出力するか
+  result: 'yes'
+- check: テンプレート生成後に報告テンプレートが残存するか
+  result: 'yes'
+- check: status=done/completeは従来通りアーカイブされるか
+  result: 'yes'
+- check: 既存アーカイブフロー(CMD_ID未指定)に影響ないか
+  result: 'yes'
+hook_failures:
+  count: 0
+  details: ''
+verdict: PASS

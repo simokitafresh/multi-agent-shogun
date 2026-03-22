@@ -1,0 +1,79 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hayate
+task_id: cmd_815_review
+parent_cmd: cmd_815
+timestamp: "2026-03-12T04:45:52+0900"
+status: failed
+ac_version_read: 3
+result:
+  summary: "レビューFAIL。`5cd8bf6` は preflight-first 統合コードとしては妥当で `py_compile` も PASS だが、原本 AC3 の『ブラウザ未起動状態からの実証』証跡がなく、cmd_815 を完了扱いにはできない。"
+  details: |
+    実装レビュー:
+    - `git show --stat 5cd8bf6` で変更が `cdp/cdp_helper.py` と `workflows/perf_measure.py` の2ファイルに限定されることを確認。
+    - `cdp/cdp_helper.py:373-408` で `preflight_cdp_flow()` が Step1=プロセス確認 → Step2=未起動時のみ `launch_browser()` → Step3=`preflight_cdp_check()` → Step4=version返却 の順序で実装されている。
+    - Step2失敗時は `RuntimeError` を投げ、Step3失敗時も `preflight_cdp_check()` が `RuntimeError` を返すため fail-fast。
+    - `workflows/perf_measure.py:35-42` で旧個別 import を外し、`preflight_cdp_flow` 一本に統合。
+    - `workflows/perf_measure.py:1886-1891` で preflight 失敗時に `_notify_browser_failure()` を呼び `return 1` するため、通知経路も維持されている。
+
+    検証:
+    - 実行コマンド: `python3 -m py_compile /mnt/c/Python_app/auto-ops/cdp/cdp_helper.py /mnt/c/Python_app/auto-ops/workflows/perf_measure.py`
+    - 結果: PASS
+
+    FAIL理由:
+    - 原本 AC3 は「ブラウザ未起動状態から実行し、自動起動→接続確認→計測完了の一連フローを実証している」ことを要求する。
+    - 影丸報告 `queue/reports/kagemaru_report_cmd_815_impl.yaml` の AC3 は `PASS_STRUCTURAL` であり、実行ログ・コマンド・成功出力などの実証証跡は提出されていない。
+    - AGENTS.md の Test Rules では E2E テストは家老担当であり、忍者レビューとしては structural confirmation を実証完了へ格上げできない。
+
+    結論:
+    - AC1: PASS
+    - AC2: PASS
+    - AC3: FAIL
+    - AC4: PASS
+    - review verdict: FAIL
+purpose_validation:
+  cmd_purpose: "影丸のcmd_815_impl実装をレビューし、cmd_815原本AC1-4の達成状況を判定する"
+  fit: true
+  purpose_gap: "レビュー目的は達成。コード統合は妥当だが、原本 AC3 の実証証跡不足により cmd_815 完了判定は不可。"
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: "`cdp/cdp_helper.py:373-408` で Step1=プロセス確認 → Step2=未起動時自動起動 → Step3=CDP接続確認の順序を実装し、`perf_measure.py:1887` から単一入口で呼び出している。"
+  - id: AC2
+    status: pass
+    evidence: "Step2失敗時は `launch_browser()` False から `RuntimeError`、Step3失敗時は `preflight_cdp_check()` が `RuntimeError`。`perf_measure.py:1888-1891` で捕捉して `_notify_browser_failure()` 後に `return 1` しており fail-fast。"
+  - id: AC3
+    status: fail
+    evidence: "提出証跡はコード確認と `py_compile` のみ。`queue/reports/kagemaru_report_cmd_815_impl.yaml` でも AC3 は `PASS_STRUCTURAL` と明記され、ブラウザ未起動状態からの実行成功ログは存在しない。"
+  - id: AC4
+    status: pass
+    evidence: "`_has_running_browser_process()` と `launch_browser()` と `preflight_cdp_check()` を `preflight_cdp_flow()` に順序統合し、`perf_measure.py` の旧分散3段処理を置換している。"
+verdict: FAIL
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/hayate_report_cmd_815_review.yaml
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: true
+  title: "ACに『実証』がある場合、構造確認だけではPASSにしない"
+  detail: "IF acceptance criteria が『実行して実証している』を要求する THEN コード構造確認や py_compile PASS だけで完了判定してはならない BECAUSE cmd_815 では統合実装自体は妥当でも、未起動状態からの実行証跡がなく AC3 を満たせなかった。"
+  project: auto-ops
+lessons_useful:
+  - id: L138
+    useful: true
+    reason: "原本ACをそのまま判定し、構造OKだけで完了扱いにしないレビュー姿勢の維持に有効だった。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "cmd_815は家老が未起動ブラウザ状態から実動作証跡を取得して再判定すべき"
+  options:
+    - "案A: 家老が Edge/Chrome を完全停止した状態から `perf_measure.py` を実行し、自動起動→接続確認→計測完了のログを取得して再レビュー"
+    - "案B: 構造確認のみで十分とするよう AC3 自体を裁定変更する"
+  recommendation: "案A"

@@ -1,0 +1,65 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: hanzo
+task_id: cmd_926_RV
+parent_cmd: cmd_926
+timestamp: "2026-03-14T00:39:26"
+status: done
+ac_results:
+  - id: AC1
+    status: "PASS"
+    evidence: "6観点全てPASS。(1)L1585: 'ac_priority' not in task or not task.get('ac_priority')で空文字falsyを正しく捕捉 (2)L1590: not task.get('parallel_ok')で空リストfalsyを正しく捕捉 (3)extract_ac_ids(): isinstance/dict/get('id')チェーン+AC{i+1}フォールバック正常 (4)テスト4件: 空ac_priority/空parallel_ok(3AC)/空parallel_ok(2AC)/両方空の4パターン網羅 (5)既存9+2=11件回帰なし (6)karo.md L185-197: positive_rule+reason形式でac_priority/parallel_ok参照ルール追記済み"
+  - id: AC2
+    status: "PASS"
+    evidence: "bats test_deploy_task_ac_version.bats: 13 PASS / 0 SKIP / 0 FAIL。bats test_deploy_task_if_then.bats: 2 PASS / 0 SKIP / 0 FAIL。合計15 PASS, 0 SKIP。pre-push hook: 281 tests全PASS"
+  - id: AC3
+    status: "PASS"
+    evidence: "git add + commit ec598e4 + push to origin/main完了。commit message: 'feat(deploy): ac_priority/parallel_ok空sentinel補完+extract_ac_ids+テスト4件(cmd_926)'。pre-push 281 tests全PASS"
+verdict: PASS
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+ac_version_read: 3
+result:
+  summary: "tobisaruのcmd_926_B修正をレビュー。deploy_task.sh L1585/L1590の空sentinel補完条件、extract_ac_ids()関数、テスト4件追加、karo.mdルール追記、全て正しく実装。15テストPASS/0 SKIP。commit ec598e4でpush済み。"
+  details: |
+    ■ レビュー結果(6観点)
+    1. L1585 ac_priority条件: PASS - 'not in' OR 'not get' でKeyError回避+falsy捕捉
+    2. L1590 parallel_ok条件: PASS - 同上パターン、空リスト[]をfalsyとして補完
+    3. extract_ac_ids(): PASS - isinstance(list)→enumerate→dict.get('id')→AC{i+1}フォールバック
+    4. テスト4件: PASS - 空ac_priority/空parallel_ok(3AC)/空parallel_ok(2AC)/両方空
+    5. 既存11件回帰: PASS - ac_version 9件 + if_then 2件 全PASS
+    6. karo.md追記: PASS - L185-197にpositive_rule+reason形式で参照ルール追記
+    ■ テスト結果
+    - ac_version.bats: 13 PASS / 0 SKIP / 0 FAIL
+    - if_then.bats: 2 PASS / 0 SKIP / 0 FAIL
+    - pre-push: 281 tests全PASS
+  test_result: "15 PASS / 0 SKIP / 0 FAIL (ac_version: 13, if_then: 2) + pre-push 281 PASS"
+purpose_validation:
+  cmd_purpose: "cmd_926_B空sentinel補完修正のレビュー+テスト実行+commit push"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - scripts/deploy_task.sh
+  - tests/unit/test_deploy_task_ac_version.bats
+  - instructions/karo.md
+lesson_candidate:
+  # found: true/false を書け。リスト形式[] 禁止
+  found: false
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - L074
+skill_candidate:
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
+decision_candidate:
+  found: false

@@ -1,0 +1,104 @@
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
+# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+worker_id: kagemaru
+task_id: cmd_1018_re_review
+parent_cmd: cmd_1018
+timestamp: "2026-03-17T03:21:17+0900"
+status: done
+ac_version_read: 2
+verdict: PASS
+review_result: PASS
+ac_results:
+  - id: AC1
+    status: pass
+    evidence: |
+      (1) run_parity_check() L590-605: init_phase_done方式が正しく実装。
+      初期Cash月を最初の非Cash月出現まで連続スキップし、以降のCash月は含む。
+      parity_check.md: DM2(178/178) DM3(189/189) DM6(190/190) DM7+(166/166) 全mismatch 0。
+      (2) DATA_CATALOG.md L164: C-6が「191,796パターン」に更新済み。
+      L264: Active Catalogにcmd_1018/shin_shijin_l1行が存在。
+  - id: AC2
+    status: pass
+    evidence: |
+      191,796変種(76,680+38,340+76,680+96)が設計書§3.6準拠。
+      8メトリクスCSV: 全ファミリーの全メトリクス列にNaNなし。
+      (relative_choice列のみDM2/DM3/DM6でNull — 設計通り、DM7+専用フィールド)
+      py_compile通過。TODO/FIXME残存なし。whitespace/conflict marker問題なし。
+      common period: 2012-03..2026-01 (167 months)。
+      git commit成功(144ee68a)。
+      **git push失敗**: GitHub 100MBファイルサイズ制限超過。
+      monthly_returns_DM2.csv(252MB), DM3.csv(126MB), DM6.csv(254MB)。
+      Git LFS導入またはCSV圧縮が必要。
+diff_check:
+  status: pass
+  evidence: "commit 144ee68a に12ファイルが含まれる。staged内容はcmd_1018成果物のみ。"
+result:
+  summary: "Re-review PASS。霧丸FAIL2件(init_phase_done+DATA_CATALOG)の修正を検証し、全体品質確認。commit成功。pushはGitHub 100MB制限で失敗（monthly_returns CSV 3本が超過）。"
+  details: |
+    検証結果:
+    1. AC1修正検証
+       - run_parity_check(): init_phase_doneフラグ方式への変更を確認。
+         L590-605で初期Cash月を連続スキップし、最初の非Cash月で
+         init_phase_done=Trueに遷移。以降のCash月は正常に含まれる。
+         4ファミリー全てmismatch 0（parity_check.md確認済み）。
+       - DATA_CATALOG.md: C-6が191,796に更新、Active Catalogにcmd_1018行あり。
+
+    2. AC2全体品質
+       - パラメータ空間: Pythonで再生成し76,680+38,340+76,680+96=191,796を確認。
+       - CSV形状: monthly_returns 167行×{76680,38340,76680,96}列、metrics各ファミリー正行数。
+       - 8メトリクス列NaN: 0件（全ファミリー）。
+       - py_compile: PASS。TODO/FIXME: なし。git diff --check: PASS。
+
+    3. push失敗の原因
+       - monthly_returns_{DM2,DM3,DM6}.csvがGitHub 100MB制限超過。
+       - DM2: 252.50MB, DM3: 126.28MB, DM6: 253.54MB, DM7P: ~小（96パターン）。
+       - 解決策候補: (a) Git LFS導入 (b) gzip圧縮して保存 (c) outputs/をgitignoreし別管理。
+       - commitは成功済み(144ee68a)。ローカルには全ファイルあり。
+purpose_validation:
+  cmd_purpose: "cmd_1018(佐助実装+疾風修正)のre-review。修正2件の検証+全体品質確認+PASS時commit+push。"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report_cmd_1018.yaml
+lesson_candidate:
+  found: true
+  title: "GitHub 100MB制限: GS出力CSVのサイズ事前確認必須"
+  detail: "shin_shijin_l1のmonthly_returns CSV(76,680列×167行)がDM2=252MB, DM6=254MBとなりGitHub push不可。GSで大規模パターン数のmonthly returns CSVを出力する場合、push前にファイルサイズ確認+Git LFS or 圧縮対策が必要。"
+  project: dm-signal
+lessons_useful:
+  - id: L074
+    useful: true
+    reason: "init_phase_done方式の正当性検証に直接使用。quarterly_jan/quarterly_marの複数初期Cash月シナリオの理解に不可欠だった。"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: "GS出力CSVのGitHub 100MB制限対策"
+  detail: "191,796変種のmonthly_returns CSVが100MB超過しpush不可。(a)Git LFS (b)gzip圧縮 (c).gitignore+別管理 のいずれか殿裁定が必要。"
+  project: dm-signal
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verification:
+  - command: "python3 -m py_compile shin_shijin_l1_gs.py"
+    result: pass
+    notes: "構文エラーなし"
+  - command: "python3 -c 'パラメータ空間再生成+検証'"
+    result: pass
+    notes: "76,680+38,340+76,680+96=191,796 一致"
+  - command: "python3 -c 'CSV形状+メトリクスNaNチェック'"
+    result: pass
+    notes: "4ファミリー全て形状正常、8メトリクス列NaN=0"
+  - command: "rg TODO/FIXME"
+    result: pass
+    notes: "一致なし"
+  - command: "git diff --check"
+    result: pass
+    notes: "whitespace/conflict問題なし"
+  - command: "git push"
+    result: fail
+    notes: "GitHub 100MB制限。DM2=252MB, DM3=126MB, DM6=254MB"
