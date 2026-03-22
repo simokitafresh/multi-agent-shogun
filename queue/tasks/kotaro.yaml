@@ -1,97 +1,48 @@
-progress: 'AC1-3 PASS. 全binary_checks完了。verdict: PASS'
-status: idle
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: fcec304d
-  acceptance_criteria:
-  - binary_checks:
-    - check: lesson_write.sh --retire が動作するか
-      result: ''
-    - check: 退役後にlessons.yamlにretired:trueが付与されるか
-      result: ''
-    description: lesson_write.sh --retire で教訓にretired flagを付与できること
-    id: AC1
-  - binary_checks:
-    - check: deploy_task.shが retired:true 教訓をスキップするか
-      result: ''
-    description: deploy_task.shが retired:true の教訓を注入対象から除外すること
-    id: AC2
-  - binary_checks:
-    - check: テストで退役教訓がスキップされることを確認したか
-      result: ''
-    description: 退役教訓がlessons.yamlから削除されず保存されること
-    id: AC3
+  ac_version: d41d8cd9
   bloom_level: ''
-  cmd_id: cmd_1297
-  command: "教訓退役制度を実装せよ。効果率0%教訓の無駄注入を排除する。\n\n■ 対象ファイル\n- scripts/lesson_write.sh\
-    \ — --retire オプション追加\n- scripts/deploy_task.sh — 教訓注入ロジックでretired教訓スキップ\n- projects/infra/lessons.yaml\
-    \ — 構造確認（retired fieldの位置）\n\n■ AC1: lesson_write.shに --retire <lesson_id> オプション追加。\n\
-    \       指定された教訓に retired: true + retired_at: timestamp を付与。\n       retired教訓はlessons.yamlに残るがactive扱いされない\n\
-    ■ AC2: deploy_task.shの教訓注入ロジックで retired: true の教訓をスキップ。\n       related_lessonsに含めない\n\
-    ■ AC3: テスト: 退役済み教訓がdeploy_task.shの注入対象から除外されることを確認\n"
-  completed_at: '2026-03-23T04:15:20'
-  deployed_at: '2026-03-23T03:39:23'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
-    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
-    ────────────────────────────────────────\n\n"
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  deployed_at: '2026-03-23T04:32:57'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_1297
-  project: infra
-  related_lessons:
-  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-    id: L074
-    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-    id: L225
-    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-    id: L063
-    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-  - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-    id: L079
-    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-  - detail: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)。推定タグ数上限(max
-      3)の導入が必要
-    id: L088
-    summary: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)。推定タグ数上限(max
-      3)の導入が必要
-  report_filename: kotaro_report_cmd_1297.yaml
-  report_path: queue/reports/kotaro_report_cmd_1297.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - pushするな(commitまで)
-    - スコープ外改善は禁止
-    notes:
-    - TODO/FIXMEが残っていないことを確認せよ
-    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-    required_fields:
-    - ac_version_read
-    - files_modified
-    - lesson_candidate
-    - lessons_useful
+  parallel_ok: []
+  related_lessons: []
+  report_filename: kotaro_report.yaml
+  report_path: queue/reports/kotaro_report.yaml
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: assigned
   stop_for: []
-  target_path: scripts/lesson_write.sh
-  task_type: implement
+  task:
+    acceptance_criteria:
+    - binary_checks:
+      - check: ls queue/tasks/subtask_*.yaml 2>/dev/null | wc -l が0か
+        result: ''
+      description: queue/tasks/subtask_*.yamlが0件であること
+      id: AC1
+    - binary_checks:
+      - check: ls queue/archive/subtasks/*.yaml | wc -l が47か
+        result: ''
+      description: queue/archive/subtasks/に47件移動されていること
+      id: AC2
+    - binary_checks:
+      - check: queue/tasks/に忍者名.yaml 6件のみか
+        result: ''
+      description: queue/tasks/に忍者タスクファイルのみ残存
+      id: AC3
+    cmd_id: cmd_1309
+    command: '■ 作業
+
+      1. queue/archive/subtasks/ ディレクトリを作成
+
+      2. queue/tasks/subtask_*.yaml を全て queue/archive/subtasks/ に mv
+
+      3. 移動後に queue/tasks/ の中身を確認（忍者名.yaml 6件のみ残存）
+
+      4. git commit
+
+      '
+    parent_cmd: cmd_1309
+    project: infra
+    stop_for: []
+    task_type: implement

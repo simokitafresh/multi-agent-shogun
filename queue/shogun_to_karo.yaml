@@ -994,7 +994,7 @@ commands:
       q4_depth: shallow — ls確認済み。47件全てsubtask_*形式
       q5_verified_source: ls queue/tasks/subtask_*.yaml | wc -l → 47
       q6_not_hiding: no — 不要ファイル移動のみ
-    status: pending
+    status: delegated
     delegated_at: "\"2026-03-23T04:29:50\""
   cmd_1310:
     title: CI RED修正 — test_sync_lessons_injection_count_sync.bats L77 失敗
@@ -1037,5 +1037,5 @@ commands:
       q4_depth: deep — gh run view --log-failedでtest 331が唯一の失敗を特定。テストファイル名+行番号確定済み
       q5_verified_source: gh run view 23410290395 --log-failed (CI失敗ログ現物)
       q6_not_hiding: no — CI REDを正面から修正
-    status: pending
+    status: delegated
     delegated_at: "\"2026-03-23T04:31:39\""
