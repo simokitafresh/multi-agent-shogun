@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 171件 (draft:80, report:90, self_study:7) | 2026-03-20〜
+# 累計: 175件 (draft:84, report:90, self_study:8) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:72 LGTM:79 REQ_CHANGES:7 FAIL:6
+# verdict分布: APPROVE:74 LGTM:79 REQ_CHANGES:8 FAIL:6
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -474,3 +474,24 @@
   findings_summary: "サイクル11(SG8追加): cmd_1278誤APPROVE→殿指摘→SG8(自動消火チェック)をプロトコルに追加。既存SG2-5=正の検証(cmdの内容が正しいか)のみ。SG8=負の検証(cmdが何を隠すか)。SG0-5=品質の床(機械的)、SG8=品質の天井(思考)。品質インフラのパラドックスに抵触しない(1問自問するだけ、CTXコストほぼゼロ、防ぐリスクは巨大)。教訓LG010: AC整合だけでAPPROVEするな。変更が根源的問題を隠蔽し改革動機を殺すかを確認せよ"
   proposals: []
   timestamp: "2026-03-23T01:32:00"
+- cmd_id: cmd_1280
+  review_type: draft
+  verdict: REQ_CHANGES
+  gate_result: null
+  findings_summary: "lessons Vercel化。SG8:PASS(根源的構造改革)。SG2:FAIL — ACとnot_in_scopeに矛盾。retiredフラグ未存在(grep:0)で忍者実行不能。helpful>0を207件残しても最小形式で621行>500。機械的分割基準(直近100件等)+500行計算根拠が必要"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T01:48:00"
+- cmd_id: cmd_1281
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "dm-signal.yaml+shogun.md+karo.md Vercel化。SG2-8全PASS。セクション構造明確で分割判断可能。SG8:PASS(根源的構造改革)。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T01:48:00"
+- cmd_id: cmd_1282
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "運用ファイル3件Vercel化。SG2-8全PASS。直近2週間/50件の機械的基準が明確。SG8:PASS(根源的構造改革)。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-23T01:48:00"
