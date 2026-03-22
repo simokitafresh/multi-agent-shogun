@@ -1,13 +1,14 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 138件 (draft:61, report:76, self_study:1) | 2026-03-20〜
+# 累計: 146件 (draft:66, report:79, self_study:1) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:54 LGTM:69 REQ_CHANGES:6 FAIL:5
+# verdict分布: APPROVE:59 LGTM:70 REQ_CHANGES:6 FAIL:5
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
+# ★第二層ループ閉鎖確認(家老feedback 2026-03-22T20:51): workaround率63%→14%。report_yaml_format 15件→0件。構造的根絶(cmd_1254 race fix+0ccacdc AUTO-RESTART+GP-001/002 template pre-fill)
 # gate強化: cmd_1246(verdict二値)+cmd_1248(id必須/useful bool/binary_checks list)
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)
@@ -614,3 +615,71 @@
       status: pending
   lesson_candidate: ""
   timestamp: "2026-03-22T19:10:00"
+- cmd_id: cmd_1261
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。proposals構造化+自動サーフェシング。第二層学習ループ修復。confidence HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T20:20:00"
+- cmd_id: cmd_1262
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。既知パターン(冪等書込みmtime副作用)の正確適用。3行最小修正。confidence HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T20:20:00"
+- cmd_id: cmd_1262
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1262
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: OK
+  gate_result: CLEAR
+  findings_summary: "SG0:PASS。commit efe30ab確認。scope整合OK。4観点全OK。binary_checks 6件全PASS"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T20:20:00"
+- cmd_id: cmd_1261
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1261_a
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: OK
+  gate_result: null
+  findings_summary: "AC1+AC3。proposals構造化+S6移行(GP-001〜003)+instructions提案記載ルール追記。commit c2c17b1確認。scope整合OK。4観点全OK"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T20:25:00"
+- cmd_id: cmd_1261
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1261_b
+  report_verdict: LGTM
+  fail_reasons: []
+  lesson_quality: OK
+  gate_result: null
+  findings_summary: "AC2。Gate11拡張: python3でpending集計、L074準拠(count=count+1)、未存在時0件安全処理、bash -n OK。commit 3a916d6確認"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T20:25:00"
+- cmd_id: cmd_1263
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "commit_missing構造的根絶。L658挿入点正確。事前検死: git diffがper-ninja限定でなく誤検知可能性(低確率)+外部PJ検出不可(実績0)。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T20:55:00"
+- cmd_id: cmd_1264
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "gate発火100%化。L122 TASK_YAML不在時サイレントスキップが主修正対象。L159/163/177のexit 1は既存。defense-in-depth。confidence:MEDIUM(別経路の可能性排除しきれず)"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T20:55:00"
+- cmd_id: cmd_1265
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-003実現。Edit tool=hook対象/Bash=非対象の区別正確。WARN→BLOCK段階的。Write tool対応は後続拡張。confidence:HIGH"
+  lesson_candidate: ""
+  timestamp: "2026-03-22T20:55:00"

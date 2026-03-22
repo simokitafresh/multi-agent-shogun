@@ -82,9 +82,8 @@ language:
      - 家老(karo) → 「/clear Recovery (karo)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
-2.5. **将軍知識ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_memory.sh` → ALERT時ntfy通知。詳細は instructions/generated/codex-shogun.md Step 2.5
-2.57. **p̄鮮度ゲート(将軍のみ)**: `bash scripts/gates/gate_p_average_freshness.sh` → p̄計算の鮮度判定。OK=30日以内、WARN=30-35日、ALERT=35日超/null。詳細は instructions/generated/codex-shogun.md Step 2.57
-2.6. **cmd委任状態ゲート(将軍のみ)**: `bash scripts/gates/gate_cmd_state.sh` → pending cmdの委任状態判定。OK/WARN=再送不要、ALERT=委任確認。詳細は instructions/generated/codex-shogun.md Step 2.6
+2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
+2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-8の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
 3. **Read your instructions file**: shogun→`instructions/generated/codex-shogun.md`, karo→`instructions/generated/codex-karo.md`, ninja(忍者)→`instructions/generated/codex-ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
 
@@ -156,6 +155,7 @@ Forbidden after /clear: reading instructions/generated/codex-ashigaru.md (1st ta
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → karo
 Step 2: Read instructions/generated/codex-karo.md（人格・禁則・手順。省略厳禁）
 Step 2.5: Read projects/infra/lessons_karo.yaml（家老教訓の自動ロード）
+Step 2.6: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード。第二層学習ループ断絶防止）
 Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を読む
   - cmd受領→配備時: §1配備 + §2分解パターン
   - 報告受領→レビュー時: §3レビューサイクル
@@ -308,6 +308,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
+- cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 

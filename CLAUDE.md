@@ -155,6 +155,7 @@ Forbidden after /clear: reading instructions/ashigaru.md (1st task), polling (F0
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → karo
 Step 2: Read instructions/karo.md（人格・禁則・手順。省略厳禁）
 Step 2.5: Read projects/infra/lessons_karo.yaml（家老教訓の自動ロード）
+Step 2.6: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード。第二層学習ループ断絶防止）
 Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を読む
   - cmd受領→配備時: §1配備 + §2分解パターン
   - 報告受領→レビュー時: §3レビューサイクル

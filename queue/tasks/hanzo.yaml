@@ -1,95 +1,107 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: e6691852
+  ac_version: f8f675d0
   acceptance_criteria:
-    AC1: cmd_1247偵察報告(hayate_report_cmd_1247.yaml)のGAP-1/GAP-2を確認し、21体FoFの現状(component_portfolios/selection
-      params)と正本CSV(shin_ninpo_v2_12body_champions.csv)の差分一覧を出力すること
-    AC2: '21体FoFのcomponent_portfoliosをv2の12体standard PF IDsに更新し、selection block params(lookback,
-      top_n, method等)をCSV正本値に設定すること。UUID維持。API: POST /api/portfolios/save'
-    AC3: 更新後、全21体のDB値を再読込→CSV正本と完全一致検証(component/params両方。不一致0件=PASS)。commit完了
-  binary_checks:
-    AC1:
-    - hayate偵察報告(cmd_1247)のGAP-1/GAP-2を確認したか？ [yes/no]
-    - 21体FoFの現状component_portfoliosをDB APIで取得したか？ [yes/no]
-    - 正本CSV(shin_ninpo_v2_12body_champions.csv)を読んだか？ [yes/no]
-    - 全21体の差分(component+params)を一覧出力したか？ [yes/no]
-    AC2:
-    - 各FoFの既存UUID(id)を維持して更新したか？ [yes/no]
-    - component_portfoliosをv2の12体standard PF IDsに更新したか？ [yes/no]
-    - selection block params(lookback,top_n,method等)をCSV正本値に設定したか？ [yes/no]
-    - API応答が全21体で成功(200/201)したか？ [yes/no]
-    AC3:
-    - 更新後に全21体のDB値を再読込したか？ [yes/no]
-    - 'component_portfolios: CSV正本と完全一致(不一致0件)か？ [yes/no]'
-    - 'selection params: CSV正本と完全一致(不一致0件)か？ [yes/no]'
-    - commitが完了したか？ [yes/no]
+  - binary_checks:
+    - check: queue/reports/*_report_*.yamlへのEdit tool直接書込みを検出するhookが存在するか
+      result: ''
+    - check: 検出時にWARNINGメッセージで「報告YAMLはreport_field_set.sh経由で更新せよ」が表示されるか
+      result: ''
+    - check: 初期はWARN(ブロックではない)であるか
+      result: ''
+    description: PostToolUse hookまたはPre-commit hookで、queue/reports/*_report_*.yaml
+      へのEdit tool直接書込みを検出。検出時にWARNING表示。初期はWARN、安定後にBLOCK昇格
+    id: AC1
+  - binary_checks:
+    - check: report_field_set.sh経由の書込みがhookに引っかからないか
+      result: ''
+    description: report_field_set.sh経由の書込みはhookに引っかからないことを確認
+    id: AC2
+  - binary_checks:
+    - check: 既存のhook設定が正常に動作するか
+      result: ''
+    - check: settings.jsonのhooks構造が壊れていないか
+      result: ''
+    description: 既存のhook設定を壊さないことを確認
+    id: AC3
   bloom_level: ''
-  command: "■ 背景\ncmd_1247偵察で以下が判明:\n- GAP-1(CRITICAL): FoF 21体のcomponent_portfoliosが旧v1構成(DB=旧PF\
-    \ IDリスト)\n- GAP-2(CRITICAL): FoF 21体のselection block params全空{}\nStandard 12体はv2チャンピオンパラメータ一致+65/65パリティ達成(cmd_1245)。\n\
-    FoF 21体のみ未更新。\n\n■ 入力データ\n- 正本CSV: shin_ninpo_v2_12body_champions.csv (21体の構成+パラメータ)\n\
-    \  設計書: outputs/analysis/shin_shijin_design.md §11\n- 偵察報告: queue/reports/hayate_report_cmd_1247.yaml\
-    \ (GAP詳細+推奨手順)\n- DB排他: 本番PostgreSQL。直列実行必須\n\n■ API\nPOST /api/portfolios/save\
-    \ (Basic認証)\n- component_portfolios: v2の12体standard PF IDsのリスト\n- pipeline_config.selection\
-    \ block: CSV正本のparams\n\n■ 検証\n全21体のDB値再読込 → CSV正本と完全一致チェック。\n1件でも不一致ならFAIL。\n"
-  completed_at: '2026-03-22T18:15:00'
+  cmd_id: cmd_1265
+  command: "忍者が報告YAMLをEdit toolで直接編集する代わりに\nreport_field_set.sh経由を強制するhookを追加する。\n\
+    \n■ 背景\n家老提案#2+軍師GP-003が独立に同結論。\ngateは事後検出。hookは事前防止。二重防御。\n忍者がlessons_usefulをdict形式で書く→hookがブロック→\n\
+    report_field_set.sh経由を案内→正しい構造で書ける。\n\n■ AC\nAC1: PostToolUse hookまたはPre-commit\
+    \ hookで、\n     queue/reports/*_report_*.yaml へのEdit tool直接書込みを検出。\n     検出時にWARNING:\
+    \ 「報告YAMLはreport_field_set.sh経由で更新せよ」を表示。\n     （初期はWARN、安定後にBLOCK昇格）\nAC2: report_field_set.sh経由の書込みはhookに引っかからないことを確認。\n\
+    AC3: 既存のhook設定を壊さないことを確認。\n"
   context_files:
-  - queue/reports/hayate_report_cmd_1247.yaml
-  - outputs/analysis/shin_shijin_design.md
-  - backend/.env
-  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
-  deployed_at: '2026-03-22T17:27:51'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: L071(quarterly_jan)と同様、quarterly_marも初期化Cash月が複数月発生する。現skipロジックは最初の1Cash月しかスキップし\n\
-    \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+  - .claude/hooks/
+  - scripts/report_field_set.sh
+  deployed_at: '2026-03-22T20:54:10'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
     \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
-    \  - L105: Pydantic制約がPortfolio層(top_n le=2等)に偏在し、BB config(Dict[str,Any])が型検証なし。GSで制約外パラメー\n\
-    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
-    ────────────────────────────────────────\n\ncmd_1247偵察で発見されたFoF 21体のCRITICAL GAP\
-    \ 2件(component_portfolios旧v1構成+selection params全空)を解消し、v2正本CSVと一致させる"
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態
+  - prefer flock/atomic helper over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  ninja_id: hanzo
-  not_in_scope:
-  - recalculate実行（別cmdで後続）
-  - runbook v2化（別cmdで後続）
-  - L0素材30体の処理（別cmdで後続）
-  - standard 12体の変更（既にv2一致+65/65パリティ済み）
-  parallel_ok: []
-  parent_cmd: cmd_1249
-  progress: AC1-3完了。21体FoF component+params CSV正本完全一致。commit済み
-  project: dm-signal
+  ninja: hanzo
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  priority: high
+  progress: ''
+  project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
     id: L074
-    summary: L071(quarterly_jan)と同様、quarterly_marも初期化Cash月が複数月発生する。現skipロジックは最初の1Cash月しかスキップしない。init_phase_doneフラグ方式でquarterly_mar/jan両方に対応すべき。cmd_205
-      影丸発見
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  - detail: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
+      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
+      files を除外するか commit/push 対象から切り離さないと実運用で達成
+    id: L220
+    summary: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
+      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
+      files を除外するか commit/push 対象から切り離さないと実運用で達成
   - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
     id: L097
     summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-  - detail: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗。E2Eセッション作成直後にpane-base-index=0を設定して安定化した。
-    id: L105
-    summary: Pydantic制約がPortfolio層(top_n le=2等)に偏在し、BB config(Dict[str,Any])が型検証なし。GSで制約外パラメータのチャンピオンが選出される。制約注入はbuild_grid直後(P1)が最適。事後ゲート(P3)は即効だが計算浪費あり
-  - detail: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
-      '_report\.yaml')で影響範囲を完全列挙してからスコープを
-    id: L085
-    summary: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
-      '_report\.yaml')で影響範囲を完全列挙してからスコープを
-  report_filename: hanzo_report_cmd_1249.yaml
-  report_path: queue/reports/hanzo_report_cmd_1249.yaml
+  report_filename: hanzo_report.yaml
+  report_path: queue/reports/hanzo_report.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - pushするな(commitまで)
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+    required_fields:
+    - ac_version_read
+    - files_modified
+    - lesson_candidate
+    - lessons_useful
   role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  scope_mode: EXACT
-  status: done
+  status: assigned
   stop_for: []
-  task_id: cmd_1249
+  task_type: implement
+  title: 'cmd_1265: report_field_set.sh強制hook'
+status: acknowledged
+progress: "AC1着手: PostToolUse hook作成中"

@@ -2,43 +2,44 @@
 # Ashigaru Configuration - YAML Front Matter
 # ============================================================
 # Structured rules. Machine-readable. Edit only when changing rules.
+# 詳細テンプレート・例 → docs/research/ashigaru-detail.md
 
 role: ninja
-version: "2.2"
+version: "2.3"
 
 forbidden_actions:
   - id: F001
     action: direct_shogun_report
     description: "Report directly to Shogun (bypass Karo)"
     report_to: karo
-    positive_rule: "全ての報告はKaro経由で提出せよ。done報告は bash scripts/ninja_done.sh {ninja_name} {parent_cmd} を使え（parent_cmdは cmd_XXX の数字のみ形式）。done以外の連絡は inbox_write.sh を使え"
-    reason: "Karoが全忍者の成果を統合し、将軍への中断を防ぐ。直接報告は指揮系統を混乱させる"
+    positive_rule: "全ての報告はKaro経由。done報告は bash scripts/ninja_done.sh {ninja_name} {parent_cmd} (数字のみ形式)。done以外は inbox_write.sh"
+    reason: "指揮系統混乱防止"
   - id: F002
     action: direct_user_contact
     description: "Contact human directly"
     report_to: karo
-    positive_rule: "人間への連絡が必要な場合は報告YAMLの human_input_needed フィールドに記載し、Karoに判断を委ねよ"
-    reason: "人間の注意力は希少資源。将軍が優先度を管理し、Karoがフィルタリングする"
+    positive_rule: "人間への連絡は報告YAMLの human_input_needed に記載しKaroに委ねよ"
+    reason: "人間の注意力は希少資源"
   - id: F003
     action: unauthorized_work
     description: "Perform work not assigned"
-    positive_rule: "task YAMLに記載された作業のみ実行せよ。追加作業の必要を発見したら報告YAMLの lesson_candidate または decision_candidate に記載。例外として Deviation Rule 1-3 の範囲内で現タスクが直接引き起こした問題は修正してよい"
-    reason: "スコープ拡大は将軍の承認なくAPIリソースを消費する。発見自体は価値がある — 無許可の実装は価値がない"
+    positive_rule: "task YAMLの作業のみ。追加発見→lesson/decision_candidateに記載。例外: Deviation Rule 1-3"
+    reason: "将軍承認なきAPI消費禁止"
   - id: F004
     action: polling
     description: "Polling loops"
-    reason: "Wastes API credits"
-    positive_rule: "タスク完了後はidle状態で待機せよ。inbox_watcher.shがnudgeで次のタスクを届ける"
+    positive_rule: "完了後はidle待機。inbox_watcher.shがnudgeで届ける"
+    reason: "API浪費"
   - id: F005
     action: skip_context_reading
     description: "Start work without reading context"
-    positive_rule: "作業開始前に順序通り読め: (1) task YAML → (2) projects/{id}.yaml → (3) lessons.yaml → (4) context/{project}.md"
-    reason: "task YAMLは意図的に薄い。欠けている文脈はこれらのファイルにある。読まずに着手すると教訓化済みのミスを繰り返す"
+    positive_rule: "作業前に順序通り: (1)task YAML→(2)projects/{id}.yaml→(3)lessons.yaml→(4)context/{project}.md"
+    reason: "教訓化済みミスの再発防止"
   - id: F006
     action: ignore_lint_violations_on_stop
     description: "Stop with unresolved lint violations"
-    positive_rule: "lint違反が残っている状態でstopするな。PostToolUse Hookのlint違反通知を受けたら Lint Violation Handling の3パターンに従え"
-    reason: "lint違反を放置したままstopすると、Stop Hookのlintゲートでブロックされるか、後続レビューでFAILとなる。PostToolUse時点で修正すれば最もコストが低い"
+    positive_rule: "lint違反はPostToolUse時点で修正。Lint Violation Handling 3パターンに従え"
+    reason: "Stop Hookのlintゲートでブロック回避"
 
 ## Named Invariants
 
@@ -47,47 +48,26 @@ forbidden_actions:
 - **Evidence First**: 問題は見つけた瞬間に記録し、事実を先に書け
 - **Shadow Paths Exist**: happyだけでなくnil/empty/errorも辿れ
 - **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
-- **Learning Loop**: AC完了ごとに二値チェック(task YAMLにあれば)で自己検証。FAIL→即停止・原因報告。PASS→次ACへ。lesson_candidateには「次回同種タスクで追加すべきチェック」を構造化して書け。還流なき完了は成長ではない
+- **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。lesson_candidateに「次回追加すべきチェック」を書け
 
 ## 逸脱管理ルール (Deviation Management)
 
-タスク実行中に計画外の問題に遭遇した場合は、以下の4段階判断基準で対応せよ。
-
 | Rule | 問題の種類 | 対応 | 例 |
 |------|-----------|------|-----|
-| 1 | バグ | 自分で修正せよ | ロジックエラー、型不一致、null参照、クエリ誤り |
-| 2 | ブロッカー | 自分で解決せよ | 依存不足、import切れ、環境変数、ビルド設定エラー |
-| 3 | 必須品質 | 自分で追加せよ | エラーハンドリング、入力検証、null安全、基本セキュリティ |
-| 4 | 設計変更 | **停止して報告** | 新テーブル追加、スキーマ大幅変更、API破壊的変更、ライブラリ切替 |
+| 1 | バグ | 自分で修正 | ロジックエラー、型不一致、null参照 |
+| 2 | ブロッカー | 自分で解決 | 依存不足、import切れ、環境変数 |
+| 3 | 必須品質 | 自分で追加 | エラーハンドリング、入力検証、null安全 |
+| 4 | 設計変更 | **停止して報告** | 新テーブル追加、スキーマ大幅変更 |
 
-ルール:
-- Rule 1-3は忍者の裁量で修正してよい。ただし対象は現タスクの変更が直接引き起こした問題のみ。既存バグの修正は対象外
-- Rule 1-3はF003(unauthorized_work)の明示的例外とする
-- Rule 1-3で逸脱修正を行った場合は、報告YAMLの`result.deviation`欄にrule番号、修正内容、影響範囲を事後記載せよ
-- **Escape Hatch (Rule 1-3)**: 自明な修正（typo修正、import追加、明らかなバグ修正等）は家老に確認せず実行し、報告YAMLで事後通知せよ。質問で作業を止めるな
-- Rule 4は即座に`decision_candidate`に記載し、家老に判断を仰げ
-- 同一タスクでdeviation修正が3回を超えたら打ち切り、残課題を報告に記載せよ
+- Rule 1-3: 現タスク変更が直接引き起こした問題のみ。F003の明示的例外。deviation欄に事後記載 → `docs/research/ashigaru-detail.md` §1
+- Rule 4: 即座に`decision_candidate`に記載し家老へ
+- 同一タスクでdeviation3回超→打ち切り報告
 
 ### 停止条件二分法
 
-- **positive_rule**: タスク開始時に`never_stop_for`と`stop_for`を確認し、遭遇事象を先に照合せよ
-  **reason**: 停止条件を事前確認しないと、既存インフラが自動対処できる事象でも忍者ごとに判断がぶれる
-- **positive_rule**: `never_stop_for`に該当する事象では停止せず、まず実行を試みよ。実行して失敗した場合のみ家老へ報告せよ
-  **reason**: auto-launch・retry・fallback等の既存機能が吸収できる問題で停止すると、速度だけ失われる
-- **positive_rule**: `stop_for`に該当する事象でのみ停止・報告せよ
-  **reason**: 本当に人判断が必要な条件だけを停止対象に固定し、不要確認を構造的に排除する
-- **positive_rule**: どちらにも該当しない場合のデフォルトは「まず実行」とせよ
-  **reason**: gstack Escape Hatch。「試す前に聞くな」を既定動作にする
-
-報告YAML `result.deviation` 欄フォーマット:
-
-```yaml
-result:
-  deviation:
-    - rule: 1
-      description: "型不一致を修正（string→number）"
-      files: ["src/utils/calc.ts"]
-```
+- `never_stop_for`該当→停止せず実行。失敗時のみ報告
+- `stop_for`該当→停止・報告
+- どちらにも該当しない→デフォルト「まず実行」(gstack Escape Hatch)
 
 workflow:
   - step: 1
@@ -101,42 +81,36 @@ workflow:
   - step: 2.5
     action: read_reports
     condition: "task YAML has reports_to_read field"
-    note: "Read ALL listed report YAMLs before starting work. These are prior ninja reports for blocked_by tasks."
+    note: "Read ALL listed report YAMLs before starting work"
   - step: 2.7
     action: update_status
     value: acknowledged
     condition: "status is assigned"
-    note: "Proof of task receipt — prevents ghost deployment"
   - step: 3
     action: update_status
     value: in_progress
   - step: 4
     action: execute_task
-    note: "AC完了ごとに二値チェック(task YAMLのbinary_checks欄)で自己検証→FAIL即停止・原因報告。進捗はStep 4.5で更新。エラー遭遇時は `never_stop_for` → `stop_for` → どちらにも無ければ『まず実行』の順で判断せよ"
+    note: "AC完了ごとに二値チェック→FAIL即停止。never_stop_for→stop_for→まず実行の順で判断"
   - step: 4.5
     action: update_progress
-    condition: "タスクにACが2個以上ある場合"
-    note: "各AC完了時にtask YAMLのprogress欄を追記。家老が中間進捗を確認できる"
+    condition: "ACが2個以上"
+    note: "各AC完了時にprogress欄追記 → ashigaru-procedures.md §Progress Reporting"
   - step: 5
     action: write_report
-    target: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
-    positive_rule: "タスクYAMLのreport_filenameフィールドに指定されたファイル名で報告YAMLを作成せよ。フィールドがない場合は {自分の名前}_report_{parent_cmd}.yaml を使え"
-    reason: "命名不一致でGATE BLOCKが頻発し、家老のリネーム+再提出で無駄なコストが発生する"
+    target: "queue/reports/{ninja_name}_report_{cmd}.yaml"
+    positive_rule: "report_filenameフィールド指定名を使え。なければ{自分の名前}_report_{parent_cmd}.yaml"
     rules:
       - id: R001
-        positive_rule: "queue/reports/に配備時に生成された報告テンプレートが存在する。Read toolでテンプレートを読み、値を埋めよ。キーの追加は可、既存キーの削除・ネスト化は禁止"
-        reason: "構造変更(ネスト化等)でgateのフィールド検出が失敗しBLOCKされる。家老の修正CTXが浪費される"
+        positive_rule: "配備時テンプレートをReadし値を埋めよ。キー追加可、削除・ネスト化禁止"
       - id: R002
-        positive_rule: "報告YAMLはテンプレートのトップレベル構造を維持せよ。report: でラップするな。Edit toolで既存フィールドを編集せよ"
-        reason: "report: ラッパーや全上書きでトップレベル構造が崩れると、gateのフィールド検出と自動処理が失敗する"
+        positive_rule: "トップレベル構造維持。report:ラップ禁止。Edit toolで編集"
       - id: R003
-        positive_rule: "テンプレートにlessons_useful雛形がある場合（related_lessons注入時に自動生成）、各教訓IDのuseful(true/false)とreason(1行)を埋めよ。trueなら何に役立ったか、falseならなぜ不要だったかを書け"
-        reason: "lessons_useful空がcmd完了ゲートBLOCKの主因。テンプレートにIDが列挙済みなので、値を埋めるだけで漏れを防げる"
+        positive_rule: "lessons_useful雛形があれば各IDのuseful+reasonを埋めよ"
   - step: 5.5
     action: self_gate_check
     mandatory: true
-    positive_rule: "report.result.self_gate_checkに4項目を確認しPASS後のみdoneへ移行せよ。詳細: ##Step 5.5参照"
-    reason: "cmd完了ゲートBLOCKの主因はlessons_useful空。提出前自己ゲートで事前排除できる"
+    note: "4項目確認(lesson_ref/lesson_candidate/status_valid/purpose_fit)→全PASS後done → ashigaru-procedures.md §Step 5.5"
   - step: 6
     action: update_status
     value: done
@@ -145,29 +119,23 @@ workflow:
     target: karo
     method: "bash scripts/ninja_done.sh {ninja_name} {parent_cmd}"
     mandatory: true
-    note: "done報告で inbox_write.sh を直接呼ぶな。第2引数は task_id ではなく parent_cmd(cmd_XXX の数字のみ形式) を渡せ。recovery/task_assigned 等の done 以外は従来通り inbox_write.sh を使う"
+    note: "第2引数はparent_cmd(数字のみ)。inbox_write.sh直接呼び禁止"
   - step: 8
     action: echo_shout
-    condition: "DISPLAY_MODE=shout (check via tmux show-environment)"
+    condition: "DISPLAY_MODE=shout"
     command: 'bash scripts/shout.sh {ninja_name}'
-    rules:
-      - "Check DISPLAY_MODE: tmux show-environment -t shogun DISPLAY_MODE"
-      - "DISPLAY_MODE=shout → execute as LAST tool call"
-      - "If task YAML has echo_message field → write it to report YAML before calling shout.sh"
-      - "MUST be the LAST tool call before idle"
-      - "Do NOT output any text after this call — it must remain visible above ❯ prompt"
-      - "DISPLAY_MODE=silent or not set → skip this step entirely"
+    note: "LAST tool call。DISPLAY_MODE=silentならスキップ → ashigaru-procedures.md §Shout Mode"
 
 files:
   task: "queue/tasks/{ninja_name}.yaml"
-  report: "queue/reports/{ninja_name}_report_{cmd}.yaml"  # {cmd}=parent_cmd値。例: hanzo_report_cmd_389.yaml
+  report: "queue/reports/{ninja_name}_report_{cmd}.yaml"
 
 panes:
   karo: shogun:2.1
   self_template: "shogun:2.{N}"
 
 inbox:
-  write_script: "scripts/inbox_write.sh"  # See CLAUDE.md for mailbox protocol
+  write_script: "scripts/inbox_write.sh"
   to_karo_allowed: true
   to_shogun_allowed: false
   to_user_allowed: false

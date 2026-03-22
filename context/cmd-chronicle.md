@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-19 -->
+<!-- last_updated: 2026-03-22 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -544,3 +544,17 @@
 | cmd_1074 | report_field_set.shがpipe入力のYAMLリスト/dictを文字列として格納するバグを修正し、構造化データを正しく保持する | infra | 03-19 | — |
 | cmd_1073 | projects/dm-signal/lessons.yaml の全409件を精査し、本番バックエンド挙動に関する事実（PI候補）を網羅的に抽出する | dm-signal | 03-19 | — |
 | cmd_1057 | 32体シン四神ユニバースで7忍法GS全量実行し、チャンピオンパラメータを決定する | dm-signal | 03-19 | — |
+| cmd_1241 | startup gateにGate 10(idle自走トリガー)を追加し、パイプライン空+全忍者idle時に将軍が自動的にidle時自己分析手順に入る仕組みを作る | infra | 03-22 | — |
+| cmd_1242 | CI赤(run 23387382972)を修正し、全CIジョブを緑に戻す | infra | 03-22 | — |
+| cmd_1244 | commit_missing(変更ありcommitなし)をcmd_complete_gate.shでBLOCK化し、忍者のcommit漏れを構造的に防止する | infra | 03-22 | — |
+| cmd_1243 | L0-M_XLU holding_signal不一致の根本解決。^VIX/DTB3 cache汚染修正 | dm-signal | 03-22 | 64/65 PASS。PI-010追加 |
+| cmd_1245 | シン青龍-鉄壁 2024-11パリティ最後の1件。65/65 PASS目標 | dm-signal | 03-22 | — |
+| cmd_1246 | gate_report_format.shにverdict二値バリデーション追加。CONDITIONAL_PASS早期検出 | infra | 03-22 | PASS。テスト5件追加、退行なし |
+| cmd_1247 | 偵察 — 33体本番DB登録の前提条件チェック(runbook突合+GAP検出) | dm-signal | 03-22 | — |
+| cmd_1248 | gate_report_format.sh: lessons_useful/binary_checks形式バリデーション強化 | infra | 03-22 | — |
+| cmd_1249 | cmd_1247偵察で発見されたFoF 21体のCRITICAL GAP 2件(component_portfolios旧v1構成+selection params全空)を解消し、v2正本CSVと一致させる | dm-signal | 03-22 | — |
+| cmd_1252 | — | infra | 03-22 | — |
+| cmd_1257 | シン四神・シン忍法登録ランブックをv2(33体)に更新し、本番登録cmdの前提条件を整える | dm-signal | 03-22 | — |
+| cmd_1258 | dashboard CI状態の自動反映 + 陳腐化防止 | infra | 03-22 | — |
+| cmd_1259 | dm-signal.yaml pipeline flow + registration陳腐化ステータス更新 | dm-signal | 03-22 | — |
+| cmd_1260 | 軍師S6提案実装 — lessons_useful/binary_checksプリフィル + report構造強制 | infra | 03-22 | — |

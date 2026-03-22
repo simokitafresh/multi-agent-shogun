@@ -28,10 +28,33 @@ lessons:
   created_at: '2026-03-19'
 - id: LK006
   title: 状態確認なき即行動 + Stage 1ガード穴 — pending/assignedが保護対象外だった
-  detail: '殿に「佐助クリアされてる」と言われた時、確認せずに即再配備した。根本原因: ninja_monitor Stage
-    1ガードがacknowledged/in_progressのみ保護し、assigned/pendingを保護していなかった。修正:
+  detail: '殿に「佐助クリアされてる」と言われた時、確認せずに即再配備した。根本原因: ninja_monitor Stage 1ガードがacknowledged/in_progressのみ保護し、assigned/pendingを保護していなかった。修正:
     (1)ninja_monitor Stage 1にassigned/pending追加 (2)deploy_task.shでpending→assigned自動変換。二重防御で構造的に再発不可能化。'
   source_cmd: cmd_1126
   created_at: '2026-03-20'
   automated: true
   enforcement: ninja_monitor.sh L2086 + deploy_task.sh status_force
+- id: LK007
+  title: workaround個別修正=消火構造 — パターン集計→構造的解決→発火検証の3段階
+  detail: 'karo_workaroundsの同カテゴリ(report_yaml_format)が15件累積してからようやくgate化(cmd_1246/1248)された。根本原因:
+    家老が毎回手動修正→次へ進むの繰り返しでパターンを集計していなかった。deepdive Phase4と同構造(生存本能なき個別対処)。
+    さらに深い教訓: gateを作っても発火しなければ消火と同じ(将軍Phase9と同構造=参照パスバグで発火しない)。
+    3段階を完遂せよ: (1)パターン集計→3件で構造的解決cmd起票 (2)gateを作る (3)gateの発火率を計測し100%を確認する。
+    具体例: inbox_write.shのgate統合はBLOCK設定だがパス解決失敗時にサイレントスキップ→忍者の壊れた報告が素通り→家老手動修正。
+    L-VerifyAfterWrite家老版: 自動化を作ったら発火していることを計測せよ。'
+  source_cmd: cmd_selfimprovement_20260322
+  created_at: '2026-03-22'
+  automated: false
+  enforcement: 'pending — cmd起票提案済み(dashboard 2026-03-22 20:36)'
+- id: LK008
+  title: 軍師proposalの可視化必須 — パートナーの出力を消費せよ
+  detail: '軍師GP-003(report_field_set.sh強制hook)がpending放置されていた。根本原因:
+    軍師proposalの状態管理がダッシュボードに不在。パートナーの出力を消費しない=将軍がgunshi
+    REQ_CHANGESを読まずにcmd起票した教訓(MEMORY.md)の家老版。対策: 軍師proposalの
+    状態(pending/accepted/rejected)をダッシュボードの軍師セクションに常時表示し、pending
+    があれば次cmdサイクルで対処する。proposalはレビューログ(gunshi_review_log.yaml)内の
+    proposalsフィールドに格納される。'
+  source_cmd: cmd_selfimprovement_20260322
+  created_at: '2026-03-22'
+  automated: false
+  enforcement: dashboard軍師セクションにproposal状態表示を追加済み(2026-03-22)

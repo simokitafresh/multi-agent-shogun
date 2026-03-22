@@ -447,6 +447,8 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | cmd_1106 | v2パリティ分析 | 不一致95%はRC4解像度差異(L425) | partial/MTD仮説は1.5%のみ(L424) |
 | cmd_1115 | v2パリティ100% | Signal 1815/1815, Return 1815/1815一致 | resample月末修正(L427)+valid_start_date修正(L428) |
 | cmd_1116 | 追加検証 | 非決定的順序+partial-month初月(L429) | — |
+| L461 | oikaze batch | precomputed momentum_cube picks vs 本番MomentumFilterBlock選出に乖離(cmd_1200) | batch側のpick計算パスが本番と異なる |
+| L473 | ^VIX/DTB3 cache汚染 | price_data_cacheに非市場ティッカーを含めると日付インデックスリサンプルでpct_change参照ズレ(cmd_1243) | **[PI-010]** |
 
 → パリティ修正詳細: `context/dm-signal-core.md` §4 L419/L427/L428
 

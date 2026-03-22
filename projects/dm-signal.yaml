@@ -776,9 +776,9 @@ naming_convention:
       best_nhf: "変わり身-常勝 3.37"
     L2_data: "outputs/analysis/shin_ninpo_v2_champions.csv"
     registration:
-      total_pfs: 31  # 10 standard + 21 FoF
-      L0_L1_standard: 10  # シン四神（K=1のみ、L0=L1）
-      L2_fof: 21  # シン忍法（component=10体のsubset）
+      total_pfs: 33  # 12 standard + 21 FoF (DB実態。吸収2体含む)
+      L0_L1_standard: 12  # シン四神（吸収対象の朱雀-常勝/玄武-常勝含む全12体がDB登録済。FoFのcomponent元）
+      L2_fof: 21  # シン忍法（component=12体standard PFのsubset）
       L0_hidden: 0  # v2ではK=2/K=3なし→非表示素材不要
       runbook: "docs/rule/db-operations-runbook.md"  # §1-§9 統合ランブック(2026-03-19)
       runbook_v1_ref: "docs/rule/shin-shijin-registration-runbook.md"  # v1用(参考)
@@ -889,7 +889,7 @@ naming_convention:
   # 教訓サイクルで発見された不変量は /lesson-sort で自動抽出・ここに追記。
   # 根拠: 2026-03-17 殿直伝「受動的知識(0ms)が最速の防御層」
   production_invariants:
-    last_updated: "2026-03-19"
+    last_updated: "2026-03-22"
     entries:
       - id: PI-001
         fact: "本番シグナル計算は日次解像度。10D/15D/20D/1M は全て異なるlookback期間として計算される"
@@ -934,6 +934,11 @@ naming_convention:
         fact: "GSは本番と同一の結果を出さなければならない。同一の結果=全期間holding_signal完全一致(必須)+monthly_return 1e-6以内(浮動小数点演算順序差は許容)。エンジン実装は問わない"
         implication: "holding_signalが1月でも不一致ならそのGS結果は汚染データ。チャンピオン選出は無効。monthly_returnの6e-7程度のIEEE754丸め差は物理的限界として許容"
         source: "cmd_1191+cmd_1194偵察+殿裁定(2026-03-21)"
+      - id: PI-010
+        fact: "本番はprice_by_symbolに非市場ティッカー(^VIX/DTB3)を含めず、PipelineEngineがDB直接照会で固有日付インデックスを使用する"
+        implication: "GS側のprice_data_cacheにも非市場ティッカーを含めるな。stock-trading-dayリサンプルで日付情報が失われ、pct_change(N)の参照日ズレでholding_signal不一致が発生する"
+        source: "cmd_1243(L473)"
+        verified_file: "scripts/analysis/grid_search/grid_search_metrics_v2.py"
 
   data_pipeline:
     description: "DB直接読込方式(主系) + CSV互換ローダー併用"
@@ -1132,14 +1137,14 @@ asset_inventory:
         status: "完了(シン四神v2: cmd_1018 191,796パターン / シン忍法v2: cmd_1080 173,625パターン)"
       - step: 3
         name: "旧四神12体 本番DB登録+パリティ確認"
-        status: "済(cmd_205)。検証精度はcmd_1098で確認中"
+        status: "完了(cmd_205登録済。cmd_1098でL1リターン突合完了→PI-008確立)"
       - step: 4
-        name: "シン四神v2(10体) + シン忍法v2(21体) 本番DB登録"
-        detail: "計31体。L0_L1_standard=10(K=1), L2_FoF=21(7忍法×3モード)"
-        status: "未着手(cmd_1097/1098の検証完了後に実施予定)"
+        name: "シン四神v2(12体) + シン忍法v2(21体) 本番DB登録"
+        detail: "計33体。L0_L1_standard=12(吸収2体含む全12体がDB登録済), L2_FoF=21(7忍法×3モード)"
+        status: "登録済(cmd_1249: FoF 21体component+params DB更新PASS)。recalculate後パリティFAIL(cmd_1250: holding_signal 21/21不一致—selection_pipeline.blocks未機能)"
       - step: 5
         name: "シン四神v2/シン忍法v2 本番パリティ確認"
-        status: "未着手(Step 4完了後)"
+        status: "PoC 1体PASS(cmd_1251: シン分身-激攻 EqualWeight全期間完全一致)。全体パリティFAIL(cmd_1250: selection_pipeline要調査)"
       - step: 6
         name: "いったん終了"
         detail: "存在意義検証・L3は別フェーズ"

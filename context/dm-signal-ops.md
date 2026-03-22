@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-03-15 cmd_955 monthly-returns fallback window query化(既存cmd_818実装確認) -->
+<!-- last_updated: 2026-03-20 cmd_1155 verify — 全実装検証PASS+累積変更一括commit -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -17,6 +17,8 @@
 - L319: p_average_results本番テーブルが空（バッチ未実行 or cold sleep）（cmd_981）
 - L330: sync-fof API実行後の検証は60秒以上待て。locked=falseでも再計算進行中の可能性あり（cmd_1004）
 - L332: FoF of FoF partial recalculate-syncはlive dataを欠損させうる。L3正規経路で復旧（cmd_1004）
+- L474: recalculate_fast.pyの事前計算はPipelineEngineと同一データソース(df_dtb3_raw)を使え。reindex済みデータは日付ズレの原因（cmd_1245）
+- L475: Phase 3.7 DTB3リサンプル問題。DTB3をprice_datesにreindexするとrolling(N)の参照日がPipelineEngine(DTB3固有日付)と不一致。PI-010同根（cmd_1245）
 
 ## §9 性能ベースライン
 
