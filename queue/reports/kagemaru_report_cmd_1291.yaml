@@ -24,5 +24,28 @@ acceptance_criteria:
   - check: CMD_ID指定・sweep mode両方で正しく動作するか
     result: PASS
 lesson_candidate:
-- found: false
+  found: false
+  no_lesson_reason: 既存gate構造(review_gate.done)を条件分岐に利用した軽微な修正。新規パターンなし
+  title: ''
+  detail: ''
+  project: infra
 lessons_useful: []
+verdict: PASS
+result:
+  summary: archive_reports()にreview_gate.doneチェック追加。CMD_ID指定・sweep mode両方で家老レビュー前のアーカイブ防止を実現
+purpose_validation:
+  cmd_purpose: 報告YAMLが家老レビュー前にアーカイブされる問題を防止
+  fit: true
+  purpose_gap: ''
+binary_checks:
+  AC1:
+  - check: review_gate.done未存在の報告YAMLがarchive_reportsでスキップされるか
+    result: 'yes'
+  AC2:
+  - check: review_gate.done存在時は従来通りアーカイブされるか
+    result: 'yes'
+  AC3:
+  - check: CMD_ID指定で正しく動作するか
+    result: 'yes'
+  - check: sweep modeで正しく動作するか
+    result: 'yes'

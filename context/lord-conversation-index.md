@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-03-23 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-03-23T03:01:40+09:00 -->
+<!-- generated_at: 2026-03-23T03:06:50+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-03-23T03:06:50+09:00 | terminal | response | 状況: - **影丸がcmd_1291(報告YAMLアーカイブ時期修正)を作業中** — 唯一の稼働忍者 - cmd_1286(GP-014) **GATE CLEAR**。cmd_1287/1288/1289は**軍師レビュー中**。c…
+- 2026-03-23T03:02:49+09:00 | ntfy | outbound | 【monitor】将軍CTX:62%。/compactをご検討ください
 - 2026-03-23T03:01:40+09:00 | terminal | response | サイクル2完了。 **サイクル2の流れ:** 1. **気づき**: karo_workaroundsにreport_missingが2つの経路で発生 - パターン2(archive競合) → cmd_1291で対処済み - パターン1(…
 - 2026-03-23T02:57:01+09:00 | terminal | response | cmd_1291委任完了。 **問題の構造**: `cmd_complete_gate.sh` のpreflight段階で `archive_completed.sh` が走り、家老がレビューする前に報告YAMLがdiskから消える。家老…
 - 2026-03-23T02:55:18+09:00 | ntfy | outbound | 【INFOバッチ】 2026-03-23 02:53:00|cmd_1286
@@ -12,8 +14,6 @@
 - 2026-03-23T02:44:40+09:00 | ntfy | outbound | 【家老】cmd_1289 初回配備開始 (title=(untitled), ninja=saizo) GP-011 忍者別workaround率の自動計測・startup gate表示 📋 https://gist.github.com…
 - 2026-03-23T02:44:11+09:00 | ntfy | outbound | 【家老】cmd_1288 初回配備開始 (title=(untitled), ninja=tobisaru) GP-004 SG7完全パッケージ 📋 https://gist.github.com/simokitafresh/6eb495…
 - 2026-03-23T02:43:43+09:00 | ntfy | outbound | 【家老】cmd_1287 初回配備開始 (title=(untitled), ninja=hanzo) GP-012 RC修正再検証フロー実装 📋 https://gist.github.com/simokitafresh/6eb495d…
-- 2026-03-23T02:43:08+09:00 | terminal | response | 状況把握完了。直近cmd確認: - cmd_1285 GATE CLEAR（家老スタートアップゲート、影丸完遂） - cmd_1286〜1289: 4忍者が稼働中（GP-014 commit層防御, RC再検証, SG7完全パッケージ, …
-- 2026-03-23T02:40:41+09:00 | terminal | response | 全件委任完了。家老CTX:78%（auto-compact 3%前）だが、受領は可能。 **今回のパイプライン:** | cmd | GP | 内容 | 優先度 | |-----|-----|------|--------| | cmd_…
 
 ## 未解決確認事項
 - サイクル2完了。 **サイクル2の流れ:** 1. **気づき**: karo_workaroundsにreport_missingが2つの経路で発生 - パターン2(archive競合) → cmd_1291で対処済み - パターン1(report未作成→/clear) → …
@@ -39,13 +39,10 @@
 - cmd_1082
 - cmd_1186
 - cmd_1235
-- cmd_1236
 - cmd_1243
 - cmd_1249
 - cmd_1250
 - cmd_1251
-- cmd_1252
-- cmd_1253
 - cmd_1260
 - cmd_1261
 - cmd_1263
@@ -66,6 +63,9 @@
 - cmd_1278
 - cmd_1279
 - cmd_1280
+- cmd_1281
+- cmd_1282
+- cmd_1283
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
