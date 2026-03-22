@@ -1,4 +1,4 @@
-task: status
+task:
   ac_version: d41d8cd9
   bloom_level: ''
   deployed_at: '2026-03-23T05:14:07'
@@ -17,7 +17,7 @@ task: status
   report_filename: hayate_report.yaml
   report_path: queue/reports/hayate_report.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
+  status: done
   stop_for: []
   task:
     acceptance_criteria:
@@ -64,6 +64,4 @@ task: status
     - deploy_task.shの構文エラーで他の忍者配備が不能になった場合
     target_path: scripts/deploy_task.sh
     task_type: implement
-    report_filename: hayate_report.yaml
-    report_path: queue/reports/hayate_report.yaml
-status: done
+  parent_cmd: cmd_1312
