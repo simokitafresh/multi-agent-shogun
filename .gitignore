@@ -252,6 +252,8 @@
 !archive/frozen/gunshi.md
 !archive/frozen/gunshi_to_karo.yaml
 !archive/frozen/gunshi_inbox.yaml
+!archive/cmd-chronicle/
+!archive/cmd-chronicle/*.md
 # Runtime screenshots stay local-only under queue/
 queue/screenshots/
 queue/ntfy_batch_queue.txt
@@ -281,6 +283,7 @@ queue/ntfy_batch_queue.txt
 !docs/research/
 !docs/research/cmd_709_system-comparison.md
 !docs/research/gstack-deep-analysis.md
+!docs/research/infra-lessons-detail.md
 
 # Screenshots (masked — no secrets)
 !images/
