@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 234件 (draft:103, report:111, self_study:26) | 2026-03-20〜
+# 累計: 236件 (draft:103, report:111, self_study:28) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -13,7 +13,7 @@
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
 # 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
-# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)
+# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)+S48(GATE CLEAR率トレンド+教訓pipeline健全性)+S49(cmd完了速度+BLOCK原因深層:GP-026提案)
 # ─── GP追跡表(S42整理:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
@@ -1063,7 +1063,7 @@
 - cmd_id: cmd_1310
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "CI RED修正(bats L77)。6日間RED復旧。調査→修正→全テスト→push+CI GREEN。confidence:HIGH"
   lesson_candidate: ""
   timestamp: "2026-03-23T04:40:00"
@@ -1122,3 +1122,18 @@
   findings_summary: "軍師精度とインフラノイズ分離。APPROVE→BLOCK 14件中13件(93%)=archive race/timingインフラノイズ。真の見落とし=1件(cmd_1308 ac_version_mismatch=ninja report問題、draft APPROVE自体は正当)。真の軍師精度: 90%(9/10)。GP-025でインフラノイズ13件消滅→GATE CLEAR率37%→80%予測。GP-022はobsolete(忍者が自然にevidence埋込)。GP-023はGP-021効果計測後に再評価。忍者別: hayate=89%WA(最多8件)、kotaro=0%(最優秀)。GP-021のhayate改善効果が次バッチの計測ポイント"
   proposals: []
   timestamp: "2026-03-23T05:00:00"
+- cmd_id: self_study_S48
+  review_type: self_study
+  findings_summary: "GATE CLEAR率トレンド+教訓パイプライン健全性分析。(1)GATE CLEAR率推移: cmd_1000-1099=55.9%→1100-1199=65.7%→1200-1249=70.5%→1250-1299=74.6%→1300+=50.0%。1300+急落だが小N(18件)かつ7件がnever-CLEARed(全件infra issue)。(2)never-CLEARed 7件内訳: report_yaml_missing×6(cmd_1292-1296,1300)+missing_gate:archive×1(cmd_1301)=GP-024/025問題。(3)BLOCK→CLEAR所要時間: 中央値≈2分(cmd_1250-1310, N=14)。cmd_1304は3回BLOCKで7.5分。(4)教訓注入率: 全体73%(1328/1819)、直近50件54%。低下原因=infra cmd(ninja=none)に教訓注入なし。(5)top BLOCKed lessons: L074(548),L063(517),L032(203)=常時注入コア教訓。BLOCK発生時にも存在=教訓で防げないBLOCK(大半がinfra issue)。(6)lessons_gunshi.yaml: 7件(LG001-LG007)安定。新規追加候補なし。結論: GP-025実装が最優先(never-CLEARed 7件中1件+BLOCK→CLEAR時間短縮に直結)"
+  proposals: []
+  timestamp: "2026-03-23T05:10:00"
+- cmd_id: self_study_S49
+  review_type: self_study
+  findings_summary: "cmd完了速度+BLOCK原因深層分析。(1)deploy→GATE CLEAR時間: cmd_1250-1276=全て0秒(初回CLEAR)、cmd_1277-1291=中央値2分(BLOCK→retry→CLEAR)、cmd_1292-1301=never-CLEARed。3分類: instant-CLEAR 68%(30/44)、retry-CLEAR 16%(7/44)、never-CLEARed 16%(7/44)。(2)cmd type別CLEAR率: recon=100%(4/4)、unknown=78.6%(81/103)、implement=54.5%(36/66)。implement型が最もBLOCKされやすい。(3)BLOCK原因(cmd_1250+): report_yaml_missing=15件(65%)、missing_gate:archive=4件(17%)、lesson_candidate=3件(13%)、ac_version_mismatch=1件(4%)。infrastructure noise=83%(19/23)。ninja品質問題=17%(4/23)。(4)INS-042539をdone化(S42/S47で対処済み)。(5)pending insights 5件残存: dashboard重複/GP-016すり抜け/inject横展開/GP-003修正後。結論: GP-024/025実装でBLOCK原因の82%を根絶可能"
+  proposals:
+  - id: GP-026
+    title: "implement型BLOCK率改善: report_yaml_missing自動待機"
+    detail: "cmd_complete_gate.shで忍者が報告YAML作成中にgate checkが走るrace条件。report_yaml_missingは15件/23件=65%を占める。ninja task statusがin_progressの場合はgate checkを60秒遅延させることでrace回避"
+    priority: medium
+    status: pending
+  timestamp: "2026-03-23T05:15:00"

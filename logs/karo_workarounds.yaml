@@ -250,3 +250,17 @@ workarounds:
   workaround: true
   detail: 'uncommittedチェックが全repo対象。忍者固有ファイルではなく運用ファイル(dashboard.md, task YAML等)でもブロック発動し、全忍者の/clearが阻害された。3回の手動commitでunblock対応'
   root_cause: git status --porcelainがリポジトリ全体のuncommittedファイルを検出。scope限定(task YAML files_modified対象のみ or 運用ファイル除外)が必要
+  - timestamp: "2026-03-22T20:03:50Z"
+    cmd: "cmd_1304"
+    ninja: "report_yaml_format"
+    issue: "hayate報告YAMLにbinary_checks/purpose_validation/worker_id欠落。python3 yaml.dumpで全体書き直し"
+    fix: "true"
+    category: "report_yaml_format"
+    resolved_by_cmd: ""
+  - timestamp: "2026-03-22T20:03:51Z"
+    cmd: "cmd_1308"
+    ninja: "report_yaml_format"
+    issue: "saizo報告YAML旧cmd_1303データ残存。python3 yaml.dumpで全体書き直し"
+    fix: "true"
+    category: "uncategorized"
+    resolved_by_cmd: ""

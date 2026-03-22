@@ -1037,7 +1037,7 @@ commands:
       q4_depth: deep — gh run view --log-failedでtest 331が唯一の失敗を特定。テストファイル名+行番号確定済み
       q5_verified_source: gh run view 23410290395 --log-failed (CI失敗ログ現物)
       q6_not_hiding: no — CI REDを正面から修正
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T04:31:39\""
   cmd_1311:
     title: GP-003正規表現バグ修正 — report YAML hookが全忍者で未発火
@@ -1085,4 +1085,59 @@ commands:
       q4_depth: deep — 将軍がhook実ファイル読了+正規表現を実パターンでテスト実行済み。全6忍者のreport_filenameがcmd接尾辞なしパターンであることを確認
       q5_verified_source: scripts/hooks/pre-write-report-deny.sh L35(正規表現現物) + queue/tasks/*.yaml全6件(report_filename現物) + bash regex test実行結果
       q6_not_hiding: no — hookバグを正面から修正
+    status: delegated
+  cmd_1312:
+    title: deploy_task.sh report_filenameリセット — cmd切替時の残留フィールド根絶
+    task_type: implement
+    command: |
+      ■ 背景（将軍が「なぜ」6層で特定した根本原因）
+      deploy_task.shのinject_report_filename()は冪等性ガード(L1829)で
+      「report_filenameが既に存在すればスキップ」する。
+      しかしtask YAMLは忍者ごとに使い回されるため、
+      前cmdのreport_filenameが残留し、新cmdで正しいファイル名が生成されない。
+
+      ■ 影響（確認済み）
+      1. report_filename: hayate_report.yaml（接尾辞なし、全6忍者で確認）
+         期待値: hayate_report_cmd_1304.yaml（接尾辞付き）
+      2. GP-003 hookが発火しない（正規表現_report_が_report.yamlにマッチしない）
+      3. 古いcmdの報告ファイルが残留しGATEが誤読する
+      4. generate_report_templateも既存ファイルをスキップ（L314-319）→
+         前cmdの報告内容がそのまま新cmdの報告として使われるリスク
+
+      ■ 修正方針
+      deploy_task.shの配備フロー冒頭（inject系関数の前）で、
+      auto-injectフィールドをクリアするステップを追加。
+
+      対象フィールド（cmd切替時にリセットすべき）:
+      - report_filename（新cmdのparent_cmdから再生成させる）
+      - report_path（report_filenameに連動）
+
+      クリアしてはいけないフィールド（家老が設定）:
+      - parent_cmd, acceptance_criteria, command, project 等
+
+      ■ 具体的な修正箇所
+      scripts/deploy_task.sh のinject_report_filename呼出し(L2822)の直前に:
+        yaml_field_set "$TASK_FILE" "task" "report_filename" ""
+      を追加。これによりinject_report_filenameの冪等性ガードが
+      「空→注入」と判断し、現在のparent_cmdから正しいファイル名を生成。
+
+      ■ 副作用防止
+      - generate_report_template(L2860)はreport_fileが既存ならスキップ。
+        report_filenameが変わると新ファイルを生成。
+        古い{ninja}_report.yamlは残るが害はない（参照されなくなる）
+      - cmd_1311(hook regex修正)と併用で多層防御
+    acceptance_criteria:
+    - deploy_task.sh実行後、task YAMLのreport_filenameが {ninja}_report_{parent_cmd}.yaml 形式であること
+    - 全6忍者で検証（parent_cmd設定済み→接尾辞付きファイル名）
+    - 新ファイル名で報告テンプレートが正しく生成されること
+    - 既存テスト(bats)が回帰なしで全PASS
+    project: infra
+    priority: high
+    quality_gate:
+      q1_firefighting: no — 三層学習ループ3サイクル目。7つのinject関数の構造バグ横展開から特定
+      q2_learning: 奪わない — 忍者がdeploy_task.shの配備フロー理解+修正
+      q3_next_quality: 上がる — cmd切替時のフィールド残留が根絶。GP-003/GATE/report全て正常化
+      q4_depth: deep — 将軍が「なぜ」6層(hook regex→inject skip→冪等性ガード→task YAML使い回し→insert_if_not_exists→cmd切替未検知)まで掘った。全6忍者のtask YAML現物確認済み
+      q5_verified_source: scripts/deploy_task.sh L1828-1839(inject_report_filename現物) + queue/tasks/*.yaml全6件(parent_cmd vs report_filename不整合確認) + queue/reports/hayate_report.yaml(parent_cmd=cmd_1298 stale確認)
+      q6_not_hiding: no — 冪等性ガードの自動消火(問題隠蔽)を正面から修正
     status: new

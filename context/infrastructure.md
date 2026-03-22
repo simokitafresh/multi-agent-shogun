@@ -57,6 +57,11 @@ gstack Tier1-2取込(875/876): 忍者プロンプト強化+家老Two-pass Review
 - L271: gunshi_accuracy_log.sh未作成 — 軍師accuracy計測スクリプト欠落（cmd_1158）
 - L281: 軍師基準設計は実例駆動で内面化する（cmd_1174）
 
+## 忍者個別弱点自動注入（cmd_1307）
+
+deploy_task.shにinject_ninja_weak_points関数追加。karo_workarounds.yamlから忍者名でフィルタし、workaround:trueのcategory別件数をtask YAMLのninja_weak_pointsセクションに自動注入。0件忍者には注入しない。
+→ `scripts/deploy_task.sh` L2038
+
 ## gate強化（cmd_1178〜cmd_1180）
 
 cmd_1173偵察で特定した高優先gate未実装項目の構造的実装。

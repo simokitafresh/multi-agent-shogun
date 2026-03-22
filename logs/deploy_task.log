@@ -3622,3 +3622,50 @@
 [2026-03-23 04:33:15] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
 [2026-03-23 04:33:15] [DEPLOY] preflight_gate: cmd_1310 — artifact事前生成完了
 [2026-03-23 04:33:15] [DEPLOY] tobisaru: deployment complete (type=task_assigned)
+[2026-03-23 05:01:30] [DEPLOY] kagemaru: CTX=0%, idle=true, task_status=done, pane=shogun:agents.4
+[2026-03-23 05:01:30] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 05:01:31] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 05:01:31] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 05:01:31] [DEPLOY] [AC_VERSION] unchanged: d41d8cd9
+[2026-03-23 05:01:31] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 05:01:31] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 05:01:31] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 05:01:31] [DEPLOY] [ROLE_REMINDER] Already exists, skipping
+[2026-03-23 05:01:31] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 05:01:31] [DEPLOY] [REPORT_FN] Already exists, skipping
+[2026-03-23 05:01:31] [DEPLOY] [BLOOM_LVL] Already exists, skipping
+[2026-03-23 05:01:31] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 05:01:31] [DEPLOY] [NINJA_WP] kagemaru: 4 workarounds injected (top: uncategorized=1)
+[2026-03-23 05:01:32] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 05:01:32] [DEPLOY] kagemaru: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)
+[2026-03-23 05:01:43] [DEPLOY] dispatch_ntfy: SKIP already notified (cmd_1306)
+[2026-03-23 05:01:43] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml)
+[2026-03-23 05:01:43] [DEPLOY] report_path: set (queue/reports/kagemaru_report.yaml)
+[2026-03-23 05:01:43] [DEPLOY] [DEPLOYED_AT] Already exists (2026-03-23T04:24:23), skipping
+[2026-03-23 05:01:43] [DEPLOY] preflight_gate: cmd_1306 — artifact事前生成開始
+[2026-03-23 05:01:43] [DEPLOY] preflight_gate: cmd_1306 — artifact事前生成完了
+[2026-03-23 05:01:43] [DEPLOY] kagemaru: deployment complete (type=task_assigned)
+[2026-03-23 05:02:09] [DEPLOY] kagemaru: CTX=19%, idle=true, task_status=assigned, pane=shogun:agents.4
+[2026-03-23 05:02:10] [DEPLOY] entrance_gate: PASS (no unreviewed lessons)
+[2026-03-23 05:02:10] [DEPLOY] scout_gate: PASS: task_type= (not implement)
+[2026-03-23 05:02:10] [DEPLOY] inject_task_id: no subtask_id found, skipping
+[2026-03-23 05:02:10] [DEPLOY] [AC_VERSION] set: None -> d41d8cd9
+[2026-03-23 05:02:10] [DEPLOY] [INJECT] No project field, set related_lessons: []
+[2026-03-23 05:02:10] [DEPLOY] [INJECT_REPORTS] No blocked_by, skipping
+[2026-03-23 05:02:10] [DEPLOY] [INJECT_CONTEXT_UPDATE] No parent_cmd, skipping
+[2026-03-23 05:02:11] [DEPLOY] [ROLE_REMINDER] Injected for kagemaru
+[2026-03-23 05:02:11] [DEPLOY] [REPORT_TPL] No task_type, skipping
+[2026-03-23 05:02:11] [DEPLOY] [REPORT_FN] Injected report_filename=kagemaru_report.yaml
+[2026-03-23 05:02:11] [DEPLOY] [BLOOM_LVL] Injected bloom_level (empty)
+[2026-03-23 05:02:11] [DEPLOY] [EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed
+[2026-03-23 05:02:11] [DEPLOY] [NINJA_WP] kagemaru: 4 workarounds injected (top: uncategorized=1)
+[2026-03-23 05:02:11] [DEPLOY] context_freshness: OK (context/infrastructure.md updated 3 days ago)
+[2026-03-23 05:02:11] [DEPLOY] kagemaru: CTX=19%, idle. Sending inbox_write (normal nudge)
+[2026-03-23 05:02:26] [DEPLOY] dispatch_ntfy: sent (cmd_1311) title='untitled' ninja=kagemaru
+[2026-03-23 05:02:27] [DEPLOY] report_template: already exists, skipping (/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml)
+[2026-03-23 05:02:27] [DEPLOY] report_path: set (queue/reports/kagemaru_report.yaml)
+[2026-03-23 05:02:27] [DEPLOY] [DEPLOYED_AT] Recorded: 2026-03-23T05:02:27
+[2026-03-23 05:02:27] [DEPLOY] preflight_gate: cmd_1311 — artifact事前生成開始
+[2026-03-23 05:02:27] [DEPLOY] preflight_gate: review_gate.done generated (deploy_preflight)
+[2026-03-23 05:02:27] [DEPLOY] preflight_gate: cmd_1311 — artifact事前生成完了
+[2026-03-23 05:02:27] [DEPLOY] kagemaru: deployment complete (type=task_assigned)

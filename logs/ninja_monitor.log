@@ -7747,3 +7747,126 @@ OK: dashboard.md auto section updated (04:56)
 [2026-03-23 04:57:29] CLEAR-BLOCKED: karo not idle (check_idle), reason=KARO-CLEAR(check_karo_clear), will retry next cycle
 [2026-03-23 04:57:29] SHOGUN-ALERT-DEBOUNCE: shogun CTX:67% but 1422s < 1800s since last alert
 [2026-03-23 04:57:31] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (04:57)
+[2026-03-23 04:58:35] CLEAR-SKIP: hayate CTX=0%, already clean (4/10)
+[2026-03-23 04:58:36] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:58:36] CLEAR-SKIP: kagemaru CTX=0%, already clean (3/10)
+[2026-03-23 04:58:36] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:58:37] CLEAR-SKIP: hanzo CTX=0%, already clean (4/10)
+[2026-03-23 04:58:37] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 04:58:38] CLEAR-SKIP: saizo CTX=0%, already clean (4/10)
+[2026-03-23 04:58:38] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:58:38] CLEAR-SKIP: kotaro CTX=0%, already clean (5/10)
+[2026-03-23 04:58:39] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:58:39] CLEAR-SKIP: tobisaru CTX=0%, already clean (5/10)
+[2026-03-23 04:58:39] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:58:39] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:58:39] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:58:39] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:58:39] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:58:40] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:58:40] SHOGUN-ALERT-DEBOUNCE: shogun CTX:69% but 1493s < 1800s since last alert
+[2026-03-23 04:58:43] LESSON-HEALTH: all projects OK
+[2026-03-23 04:58:46] WARNING: ntfy_listener log stale (10min old). Restarting...
+[Mon Mar 23 04:58:46 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 04:58:46 JST 2026] Found existing ntfy_listener process(es): 2630768
+2700728
+2700733
+[Mon Mar 23 04:58:46 JST 2026] Killing PID 2630768 ...
+[Mon Mar 23 04:58:46 JST 2026] Killing PID 2700733 ...
+[Mon Mar 23 04:58:46 JST 2026] Killing orphan curl stream process(es): 2630801
+[Mon Mar 23 04:58:51 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 04:58:53 JST 2026] Lock file is free
+[Mon Mar 23 04:58:53 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 04:58:53 JST 2026] Launched with PID: 2701097
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 2701097
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 04:58:56] ntfy_listener restart triggered by health check
+OK: dashboard.md auto section updated (04:59)
+[2026-03-23 04:59:54] CLEAR-SKIP: hayate CTX=0%, already clean (5/10)
+[2026-03-23 04:59:55] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 04:59:55] CLEAR-SKIP: kagemaru CTX=0%, already clean (4/10)
+[2026-03-23 04:59:56] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 04:59:56] CLEAR-SKIP: hanzo CTX=0%, already clean (5/10)
+[2026-03-23 04:59:57] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 04:59:57] CLEAR-SKIP: saizo CTX=0%, already clean (5/10)
+[2026-03-23 04:59:57] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 04:59:58] CLEAR-SKIP: kotaro CTX=0%, already clean (6/10)
+[2026-03-23 04:59:58] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 04:59:58] CLEAR-SKIP: tobisaru CTX=0%, already clean (6/10)
+[2026-03-23 04:59:59] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 04:59:59] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:59:59] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:59:59] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:59:59] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:59:59] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 04:59:59] SHOGUN-ALERT-DEBOUNCE: shogun CTX:73% but 1572s < 1800s since last alert
+[2026-03-23 05:00:44] CLEAR-SKIP: hayate CTX=0%, already clean (6/10)
+[2026-03-23 05:00:44] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:00:44] CLEAR-SKIP: kagemaru CTX=0%, already clean (5/10)
+[2026-03-23 05:00:45] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:00:45] CLEAR-SKIP: hanzo CTX=0%, already clean (6/10)
+[2026-03-23 05:00:46] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:00:46] CLEAR-SKIP: saizo CTX=0%, already clean (6/10)
+[2026-03-23 05:00:46] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:00:47] CLEAR-SKIP: kotaro CTX=0%, already clean (7/10)
+[2026-03-23 05:00:47] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:00:47] CLEAR-SKIP: tobisaru CTX=0%, already clean (7/10)
+[2026-03-23 05:00:48] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 05:00:48] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:00:48] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:00:48] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:00:48] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:00:48] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:00:48] SHOGUN-ALERT-DEBOUNCE: shogun CTX:76% but 1621s < 1800s since last alert
+OK: dashboard.md auto section updated (05:01)
+[2026-03-23 05:01:50] AGENT-STATE-CORRECTION: kagemaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:01:50] SKIP_CLEAR: kagemaru has unread inbox
+[2026-03-23 05:01:56] CLEAR-SKIP: hayate CTX=0%, already clean (7/10)
+[2026-03-23 05:01:57] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:01:57] CLEAR-SKIP: hanzo CTX=0%, already clean (7/10)
+[2026-03-23 05:01:58] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:01:58] CLEAR-SKIP: saizo CTX=0%, already clean (7/10)
+[2026-03-23 05:01:59] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:01:59] CLEAR-SKIP: kotaro CTX=0%, already clean (8/10)
+[2026-03-23 05:01:59] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:02:00] CLEAR-SKIP: tobisaru CTX=0%, already clean (8/10)
+[2026-03-23 05:02:00] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 05:02:00] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:02:00] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:02:00] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:02:00] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:02:00] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:02:00] AGENT-STATE-CORRECTION: kagemaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:02:00] RENUDGE-TRANSITION: kagemaru fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:02:01] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:02:01] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:02:02] CLEAR-BLOCKED: karo not idle (check_idle), reason=KARO-CLEAR(check_karo_clear), will retry next cycle
+[2026-03-23 05:02:02] SHOGUN-ALERT-DEBOUNCE: shogun CTX:78% but 1695s < 1800s since last alert
+OK: dashboard.md auto section updated (05:02)
+[2026-03-23 05:03:10] AGENT-STATE-CORRECTION: kagemaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:03:10] STAGE1-SKIP: kagemaru idle but task_status=in_progress, /clear禁止
+[2026-03-23 05:03:16] CLEAR-SKIP: hayate CTX=0%, already clean (8/10)
+[2026-03-23 05:03:16] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:03:16] CLEAR-SKIP: hanzo CTX=0%, already clean (8/10)
+[2026-03-23 05:03:17] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:03:17] CLEAR-SKIP: saizo CTX=0%, already clean (8/10)
+[2026-03-23 05:03:18] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:03:18] CLEAR-SKIP: kotaro CTX=0%, already clean (9/10)
+[2026-03-23 05:03:18] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:03:19] CLEAR-SKIP: tobisaru CTX=0%, already clean (9/10)
+[2026-03-23 05:03:19] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 05:03:19] STALL-GHOST: kagemaru has status=in_progress but empty task_id — skipping stall detection
+[2026-03-23 05:03:19] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:03:19] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:03:19] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:03:19] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:03:19] AGENT-STATE-CORRECTION: kagemaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:03:19] RENUDGE-TRANSITION: kagemaru fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:03:20] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:03:21] CLEAR-BLOCKED: karo not idle (check_idle), reason=KARO-CLEAR(check_karo_clear), will retry next cycle
+[2026-03-23 05:03:21] SHOGUN-ALERT-DEBOUNCE: shogun CTX:79% but 1774s < 1800s since last alert

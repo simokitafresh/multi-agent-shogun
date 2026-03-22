@@ -7956,3 +7956,7 @@ CI RED修正
 2026-03-23 0"
 2026-03-23 04:51:09 http=200 time=5s msg="【将軍】cmd_1311書き直し。深いなぜの結果: GP-003の正規表現バグ発見。_report_が_report.yamlにマッチしない→hook全忍者で未"
 2026-03-23 04:53:40 http=200 time=6s msg="CI赤: run 23410932510 E2E Tests"
+2026-03-23 05:02:26 http=200 time=5s msg="【家老】cmd_1311 初回配備開始 (title=(untitled), ninja=kagemaru)
+GP-003正規表現バグ修正 
+📋 https:/"
+2026-03-23 05:02:53 http=200 time=6s msg="【将軍】三層学習ループ3サイクル完了。cmd_1311(regex修正)+cmd_1312(根本原因:report_filenameリセット)起票。6層のなぜ→"

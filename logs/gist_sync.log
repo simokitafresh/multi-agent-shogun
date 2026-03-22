@@ -1495,3 +1495,42 @@
 [2026-03-23 04:56:59] Change detected. Debouncing 3s...
 [2026-03-23 04:57:02] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
 [2026-03-23 04:57:03] Gist updated successfully (project=fixed)
+[2026-03-23 04:58:13] Change detected. Debouncing 3s...
+[2026-03-23 04:58:16] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 04:58:17] Gist updated successfully (project=fixed)
+[2026-03-23 04:58:52] Change detected. Debouncing 3s...
+[2026-03-23 04:58:55] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 04:58:56] Gist updated successfully (project=fixed)
+[2026-03-23 04:59:20] gist_sync started. Watching: /mnt/c/tools/multi-agent-shogun/dashboard.md (GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c, project=dm-signal)
+[2026-03-23 04:59:20] gh auth verified OK
+[2026-03-23 04:59:20] Once mode: executing single sync
+[2026-03-23 04:59:20] Syncing to project=dm-signal GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 04:59:21] Gist updated successfully (project=dm-signal)
+[2026-03-23 04:59:21] Once mode: finished (rc=0)
+[2026-03-23 04:59:21] Change detected. Debouncing 3s...
+[2026-03-23 04:59:24] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 04:59:25] Gist updated successfully (project=fixed)
+[2026-03-23 04:59:30] Change detected. Debouncing 3s...
+[2026-03-23 04:59:33] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 04:59:34] Gist updated successfully (project=fixed)
+[2026-03-23 05:00:24] Change detected. Debouncing 3s...
+[2026-03-23 05:00:27] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:00:28] Gist updated successfully (project=fixed)
+[2026-03-23 05:00:55] gist_sync started. Watching: /mnt/c/tools/multi-agent-shogun/dashboard.md (GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c, project=dm-signal)
+[2026-03-23 05:00:55] gh auth verified OK
+[2026-03-23 05:00:55] Once mode: executing single sync
+[2026-03-23 05:00:55] Syncing to project=dm-signal GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:00:56] Gist updated successfully (project=dm-signal)
+[2026-03-23 05:00:56] Once mode: finished (rc=0)
+[2026-03-23 05:00:58] Change detected. Debouncing 3s...
+[2026-03-23 05:01:01] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:01:02] Gist updated successfully (project=fixed)
+[2026-03-23 05:01:32] Change detected. Debouncing 3s...
+[2026-03-23 05:01:35] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:01:36] Gist updated successfully (project=fixed)
+[2026-03-23 05:02:51] Change detected. Debouncing 3s...
+[2026-03-23 05:02:54] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:02:55] Gist updated successfully (project=fixed)
+[2026-03-23 05:03:45] Change detected. Debouncing 3s...
+[2026-03-23 05:03:48] Syncing to project=fixed GIST_ID=6eb495d917fb00ba4d4333c237a4ee0c
+[2026-03-23 05:03:49] Gist updated successfully (project=fixed)
