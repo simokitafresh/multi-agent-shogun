@@ -84,6 +84,7 @@ def extract_output_text(data: dict) -> str:
         "toolUseResult",
         "tool_output",
         "toolOutput",
+        "tool_response",
         "result",
         "output",
         "stdout",
@@ -124,11 +125,12 @@ def numeric_matches(text: str, patterns):
 
 
 def _filter_tap_lines(text: str) -> str:
-    """Remove bats TAP output lines (ok N .../not ok N ...) to prevent
-    false positives in generic skip/fail regex patterns."""
+    """Remove bats TAP output lines (ok N .../not ok N ...) and pretty-format
+    lines (✓/✗) to prevent false positives in generic skip/fail regex patterns."""
     return "\n".join(
         line for line in text.splitlines()
         if not re.match(r"\s*(?:ok|not ok)\b", line)
+        and not re.match(r"\s*[✓✗]", line)
     )
 
 
@@ -145,14 +147,14 @@ def parse_skip_count(text: str) -> int:
         ),
     )
 
-    bats_skips = len(re.findall(r"(?im)^\s*(?:ok|not ok)\b.*#\s*skip\b", text))
+    bats_skips = len(re.findall(r"(?im)^\s*(?:ok|not ok)\s+\d+\b.*#\s*skip\b", text))
     if bats_skips:
         matches.append(bats_skips)
 
     if matches:
         return max(matches)
 
-    if re.search(r"\bSKIPPED\b|\bSKIP\b", non_tap_text):
+    if re.search(r"(?m)(?:^\s*SKIP(?:PED)?\b|\bSKIP(?:PED)?\s*$)", non_tap_text):
         return 1
 
     return 0
