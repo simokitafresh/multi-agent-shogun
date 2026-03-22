@@ -30,6 +30,7 @@ task:
     \       指定された教訓に retired: true + retired_at: timestamp を付与。\n       retired教訓はlessons.yamlに残るがactive扱いされない\n\
     ■ AC2: deploy_task.shの教訓注入ロジックで retired: true の教訓をスキップ。\n       related_lessonsに含めない\n\
     ■ AC3: テスト: 退役済み教訓がdeploy_task.shの注入対象から除外されることを確認\n"
+  completed_at: '2026-03-23T04:15:20'
   deployed_at: '2026-03-23T03:39:23'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
@@ -90,7 +91,7 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
+  status: done
   stop_for: []
   target_path: scripts/lesson_write.sh
   task_type: implement
