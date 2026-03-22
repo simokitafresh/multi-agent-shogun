@@ -11,6 +11,7 @@ setup_file() {
     export SRC_AGENT_STATE_LIB="$PROJECT_ROOT/lib/agent_state.sh"
     export SRC_CTX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/ctx_utils.sh"
     export SRC_PANE_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/pane_lookup.sh"
+    export SRC_AGENT_CONFIG_SCRIPT="$PROJECT_ROOT/scripts/lib/agent_config.sh"
 
     [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
     [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
@@ -19,6 +20,7 @@ setup_file() {
     [ -f "$SRC_AGENT_STATE_LIB" ] || return 1
     [ -f "$SRC_CTX_UTILS_SCRIPT" ] || return 1
     [ -f "$SRC_PANE_LOOKUP_SCRIPT" ] || return 1
+    [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -43,6 +45,7 @@ setup() {
     cp "$SRC_AGENT_STATE_LIB" "$TEST_PROJECT/lib/agent_state.sh"
     cp "$SRC_CTX_UTILS_SCRIPT" "$TEST_PROJECT/scripts/lib/ctx_utils.sh"
     cp "$SRC_PANE_LOOKUP_SCRIPT" "$TEST_PROJECT/scripts/lib/pane_lookup.sh"
+    cp "$SRC_AGENT_CONFIG_SCRIPT" "$TEST_PROJECT/scripts/lib/agent_config.sh"
 
     # Non-blocking stubs.
     cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
@@ -66,6 +69,7 @@ EOF
         "$TEST_PROJECT/lib/agent_state.sh" \
         "$TEST_PROJECT/scripts/lib/ctx_utils.sh" \
         "$TEST_PROJECT/scripts/lib/pane_lookup.sh" \
+        "$TEST_PROJECT/scripts/lib/agent_config.sh" \
         "$TEST_PROJECT/scripts/inbox_write.sh" \
         "$TEST_PROJECT/scripts/ntfy_cmd.sh" \
         "$TEST_PROJECT/scripts/lesson_check.sh"

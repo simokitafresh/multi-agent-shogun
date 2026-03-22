@@ -70,6 +70,11 @@ EOF
 #!/usr/bin/env bash
 exit 0
 EOF
+    cat > "$TEST_PROJECT/scripts/gates/gate_dc_duplicate.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "OK"
+exit 0
+EOF
 
     chmod +x \
         "$TEST_PROJECT/scripts/cmd_complete_gate.sh" \
@@ -83,7 +88,8 @@ EOF
         "$TEST_PROJECT/scripts/gist_sync.sh" \
         "$TEST_PROJECT/scripts/ntfy_cmd.sh" \
         "$TEST_PROJECT/scripts/ntfy.sh" \
-        "$TEST_PROJECT/scripts/gates/gate_yaml_status.sh"
+        "$TEST_PROJECT/scripts/gates/gate_yaml_status.sh" \
+        "$TEST_PROJECT/scripts/gates/gate_dc_duplicate.sh"
 
     cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done" <<'EOF'
 timestamp: 2026-03-10T00:00:00
@@ -163,6 +169,7 @@ result:
 ${result_block}
 lesson_candidate:
   found: false
+  no_lesson_reason: "test fixture"
 skill_candidate:
   found: false
 decision_candidate:
@@ -208,6 +215,7 @@ EOF
         cat <<'EOF'
 lesson_candidate:
   found: false
+  no_lesson_reason: "test fixture"
 skill_candidate:
   found: false
 decision_candidate:
@@ -323,6 +331,7 @@ how_it_works: |
   how_it_works があれば WARN せず通す。
 lesson_candidate:
   found: false
+  no_lesson_reason: "test fixture"
 skill_candidate:
   found: false
 decision_candidate:
@@ -377,6 +386,7 @@ test_results:
   skipped: 2
 lesson_candidate:
   found: false
+  no_lesson_reason: "test fixture"
 skill_candidate:
   found: false
 decision_candidate:
