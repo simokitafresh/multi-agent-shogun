@@ -8999,3 +8999,15 @@ OK: dashboard.md auto section updated (05:52)
   CTX:22%
   ⏵⏵ bypass permissions on (shift+tab to cycle)
 ---
+[2026-03-23 05:54:52] CLEAR-SEND: saizo confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 05:54:57] UNCOMMITTED-BLOCK: kotaro files=logs/cmd_design_quality.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_karo.log logs/inbox_watcher_saizo.log logs/ninja_monitor.log 
+[2026-03-23 05:54:57] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kotaro (kotaro:cmd_1309) — STALL検知は継続
+[pre-send capture] kotaro pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 05:55:09] CLEAR-SEND: kotaro confirmed idle, sending /clear, reason=AUTO-CLEAR
