@@ -238,13 +238,47 @@ else
     $BRIEF || echo "  karo_snapshot.txt不在 — 判定不可"
 fi
 
-# --- Gate 11: 未処理PROPOSAL (cmd_1256) ---
+# --- Gate 11: 未処理PROPOSAL (cmd_1256 + cmd_1261) ---
 DASHBOARD="$SCRIPT_DIR/dashboard.md"
+REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
+dash_proposals=0
+log_proposals=0
+
+# 11a: ダッシュボードの[PROPOSAL]
 if [ -f "$DASHBOARD" ]; then
-    proposal_count=$(grep -c '\[PROPOSAL\]' "$DASHBOARD" 2>/dev/null || echo "0")
-    if [ "$proposal_count" -gt 0 ]; then
-        $BRIEF || echo "■ 未処理PROPOSAL"
-        $BRIEF || echo "  未処理PROPOSAL: ${proposal_count}件"
+    dash_proposals=$(grep -c '\[PROPOSAL\]' "$DASHBOARD" 2>/dev/null || echo "0")
+fi
+
+# 11b: gunshi_review_log.yamlのproposals status=pending
+if [ -f "$REVIEW_LOG" ]; then
+    log_proposals=$(RLFILE="$REVIEW_LOG" python3 -c '
+import yaml, os
+try:
+    filepath = os.environ["RLFILE"]
+    with open(filepath) as f:
+        data = yaml.safe_load(f)
+    if not isinstance(data, list):
+        data = []
+    count = 0
+    for entry in data:
+        proposals = entry.get("proposals", [])
+        if proposals:
+            for p in proposals:
+                if isinstance(p, dict) and p.get("status") == "pending":
+                    count = count + 1
+    print(count)
+except Exception:
+    print(0)
+' 2>/dev/null || echo "0")
+fi
+
+proposal_total=$((dash_proposals + log_proposals))
+if [ "$proposal_total" -gt 0 ]; then
+    $BRIEF || echo "■ 未処理PROPOSAL"
+    $BRIEF || echo "  WARN: 軍師未処理提案 ${proposal_total}件 (dashboard:${dash_proposals} review_log:${log_proposals})"
+    if [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("軍師未処理提案: ${proposal_total}件")
     fi
 fi
 
