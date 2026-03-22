@@ -1,7 +1,7 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 03:20 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (04:08 自動更新)
+## 📊 リアルタイム状況 (04:10 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
@@ -11,7 +11,7 @@
 | 半蔵 | claude-opus-4-6 high | done | cmd_1300 | — |
 | 才蔵 | claude-opus-4-6 high | done | cmd_1296 | — |
 | 小太郎 | claude-opus-4-6 high | 稼働中 | cmd_1297 | — |
-| 飛猿 | claude-opus-4-6 high | 稼働中 | cmd_1295 | — |
+| 飛猿 | claude-opus-4-6 high | done | cmd_1295 | — |
 
 ### CI Status
 **CI RED: run 23410290395 — Shell Script Linting, Unit Tests (bats)**
@@ -23,7 +23,7 @@
 | 項目 | 値 |
 |------|-----|
 | cmd完了(GATE CLEAR) | 1053/1068 |
-| 稼働忍者 | 4/8 (疾風, 半蔵, 小太郎, 飛猿) |
+| 稼働忍者 | 3/8 (疾風, 小太郎, 飛猿) |
 | 連勝(CLEAR streak) | 0 |
 
 ### モデル別スコアボード

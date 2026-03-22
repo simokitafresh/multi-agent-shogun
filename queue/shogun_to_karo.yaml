@@ -771,7 +771,7 @@ commands:
       q4_depth: deep — ninja_monitor.sh line 308-318を将軍が現物確認済み。root cause=git status全repo対象
       q5_verified_source: ninja_monitor.sh(grep uncommitted/porcelainで確認) + dashboard🚨報告
       q6_not_hiding: no — 忍者/clear阻害の根本原因を修正
-    status: delegated
+    status: completed
     delegated_at: "\"2026-03-23T03:59:56\""
   cmd_1304:
     title: 削除済みスクリプト参照27ファイルのクリーンアップ
@@ -835,5 +835,5 @@ commands:
       q4_depth: medium — cmd_1280 kagemaru LCで問題報告済み。cmd_1283で一部対応済み
       q5_verified_source: dashboard将軍宛報告(cmd_1280 kagemaru LC) + cmd_1283完了記録
       q6_not_hiding: no — Vercel化の不完全な移行を修正
-    status: pending
+    status: delegated
     delegated_at: "\"2026-03-23T04:04:00\""

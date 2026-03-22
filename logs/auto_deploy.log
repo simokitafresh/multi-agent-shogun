@@ -1,0 +1,1759 @@
+[2026-02-25 23:51:40] [AUTO_DEPLOY] Start: cmd=cmd_999 completed=subtask_999_a
+[2026-02-25 23:51:40] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_999
+[2026-02-25 23:51:46] [AUTO_DEPLOY] Start: cmd=cmd_338 completed=subtask_338_scout_a
+[2026-02-25 23:51:46] [AUTO_DEPLOY] ERROR: subtask_338_scout_a not found with parent_cmd=cmd_338
+[2026-02-25 23:52:51] [AUTO_DEPLOY] Start: cmd=cmd_999 completed=subtask_999_a
+[2026-02-25 23:52:51] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_999
+[2026-02-25 23:52:51] [AUTO_DEPLOY] Start: cmd=cmd_test_001 completed=subtask_test_scout_a
+Report verified: sasuke status=done
+[2026-02-25 23:52:51] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_test_impl_a		/mnt/c/tools/multi-agent-shogun/queue/tasks/_test_impl_a.yaml	sasuke
+[2026-02-25 23:52:51] [AUTO_DEPLOY] Ninja selected: sasuke (completed ninja, CTX=0%)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/_test_impl_a.yaml
+[2026-02-25 23:52:51] [AUTO_DEPLOY] Task YAML: subtask_test_impl_a → sasuke (/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml)
+[2026-02-25 23:52:51] [AUTO_DEPLOY] Calling: deploy_task.sh sasuke
+[2026-02-25 23:52:52] [AUTO_DEPLOY] AUTO_DEPLOY_OK: sasuke ← subtask_test_impl_a (cmd=cmd_test_001)
+[2026-02-25 23:52:52] [AUTO_DEPLOY] Start: cmd=cmd_test_001 completed=subtask_test_scout_a
+Report verified: sasuke status=done
+[2026-02-25 23:52:52] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_test_scout_b	kirimaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/_test_scout_b.yaml	sasuke
+[2026-02-25 23:52:52] [AUTO_DEPLOY] Ninja selected: kirimaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/_test_scout_b.yaml
+[2026-02-25 23:52:53] [AUTO_DEPLOY] Task YAML: subtask_test_scout_b → kirimaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml)
+[2026-02-25 23:52:53] [AUTO_DEPLOY] Calling: deploy_task.sh kirimaru
+[2026-02-25 23:52:53] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kirimaru ← subtask_test_scout_b (cmd=cmd_test_001)
+[2026-02-25 23:52:54] [AUTO_DEPLOY] Start: cmd=cmd_test_002 completed=subtask_test_noad_done
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:52:54] [AUTO_DEPLOY] Analysis result: SKIP	subtask_test_noad_pending
+[2026-02-25 23:52:54] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_test_noad_pending
+[2026-02-25 23:52:54] [AUTO_DEPLOY] Start: cmd=cmd_test_003 completed=subtask_test_alldone_a
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:52:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_test_003	2
+[2026-02-25 23:52:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_test_003
+[2026-02-25 23:54:43] [AUTO_DEPLOY] Start: cmd=cmd_999 completed=subtask_999_a
+[2026-02-25 23:54:43] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_999
+[2026-02-25 23:54:43] [AUTO_DEPLOY] Start: cmd=cmd_test_010 completed=subtask_test_notdone
+[2026-02-25 23:54:43] [AUTO_DEPLOY] ERROR: subtask_test_notdone status=in_progress (expected done)
+[2026-02-25 23:54:43] [AUTO_DEPLOY] Start: cmd=cmd_test_011 completed=subtask_test_done_a
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:54:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_test_011	2
+[2026-02-25 23:54:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_test_011
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Start: cmd=cmd_test_012 completed=subtask_test_skip_done
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Analysis result: SKIP	subtask_test_skip_next
+[2026-02-25 23:54:44] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_test_skip_next
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Start: cmd=cmd_test_013 completed=subtask_test_noflg_done
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Analysis result: SKIP	subtask_test_noflg_next
+[2026-02-25 23:54:44] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_test_noflg_next
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Start: cmd=cmd_test_014 completed=subtask_test_blk_done
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Analysis result: BLOCKED	subtask_test_blk_impl	subtask_test_blk_OTHER_NOT_DONE
+[2026-02-25 23:54:44] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: subtask_test_blk_impl unresolved=subtask_test_blk_OTHER_NOT_DONE
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Start: cmd=cmd_test_015 completed=subtask_test_flow_scout
+Report verified: kotaro status=done
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_test_flow_impl	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/_test_flow_impl.yaml	kotaro
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/_test_flow_impl.yaml
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Task YAML: subtask_test_flow_impl → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-02-25 23:54:44] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-02-25 23:54:45] [AUTO_DEPLOY] ERROR: deploy_task.sh failed for kotaro
+[2026-02-25 23:55:40] [AUTO_DEPLOY] Start: cmd=cmd_999 completed=sub_a
+[2026-02-25 23:55:40] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_999
+[2026-02-25 23:55:40] [AUTO_DEPLOY] Start: cmd=cmd_test_020 completed=sub_test_st
+[2026-02-25 23:55:40] [AUTO_DEPLOY] ERROR: sub_test_st status=in_progress (expected done)
+[2026-02-25 23:55:40] [AUTO_DEPLOY] Start: cmd=cmd_test_021 completed=sub_test_ad_a
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:55:40] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_test_021	2
+[2026-02-25 23:55:40] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_test_021
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Start: cmd=cmd_test_022 completed=sub_test_sk_a
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Analysis result: SKIP	sub_test_sk_b
+[2026-02-25 23:55:41] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: sub_test_sk_b
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Start: cmd=cmd_test_023 completed=sub_test_un_a
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Analysis result: SKIP	sub_test_un_b
+[2026-02-25 23:55:41] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: sub_test_un_b
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Start: cmd=cmd_test_024 completed=sub_test_bk_a
+WARN: report status=done pcmd=cmd_test_001
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Analysis result: BLOCKED	sub_test_bk_b	sub_test_bk_MISSING
+[2026-02-25 23:55:41] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: sub_test_bk_b unresolved=sub_test_bk_MISSING
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Start: cmd=cmd_test_025 completed=sub_test_ff_s1
+Report verified: kotaro status=done
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Analysis result: DEPLOY	sub_test_ff_impl	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/_test_ff_impl.yaml	kotaro
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/_test_ff_impl.yaml
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Task YAML: sub_test_ff_impl → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-02-25 23:55:41] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-02-25 23:55:43] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kotaro ← sub_test_ff_impl (cmd=cmd_test_025)
+[2026-02-26 21:09:00] [AUTO_DEPLOY] Start: cmd=cmd_373 completed=subtask_373_impl_a
+Report verified: tobisaru status=done
+[2026-02-26 21:09:00] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_373	1
+[2026-02-26 21:09:00] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_373
+[2026-02-26 22:05:06] [AUTO_DEPLOY] Start: cmd=cmd_378 completed=subtask_378_impl_c
+Report verified: hanzo status=done
+[2026-02-26 22:05:06] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_378_review_a	tobisaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml	hanzo
+[2026-02-26 22:05:06] [AUTO_DEPLOY] Ninja selected: tobisaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+[2026-02-26 22:05:06] [AUTO_DEPLOY] Task YAML: subtask_378_review_a → tobisaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml)
+[2026-02-26 22:05:06] [AUTO_DEPLOY] Calling: deploy_task.sh tobisaru
+[2026-02-26 22:05:07] [AUTO_DEPLOY] ERROR: deploy_task.sh failed for tobisaru
+[2026-02-27 03:20:54] [AUTO_DEPLOY] Start: cmd=cmd_385 completed=subtask_385_impl_b
+Report verified: tobisaru status=done
+[2026-02-27 03:20:54] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_385_review_a	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/_subtask_385_review_a.yaml	tobisaru
+[2026-02-27 03:20:54] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/_subtask_385_review_a.yaml
+[2026-02-27 03:20:54] [AUTO_DEPLOY] Task YAML: subtask_385_review_a → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-02-27 03:20:54] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-02-27 03:20:55] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kotaro ← subtask_385_review_a (cmd=cmd_385)
+[2026-02-27 03:22:49] [AUTO_DEPLOY] Start: cmd=cmd_388 completed=subtask_388_impl_b
+Report verified: sasuke status=done
+[2026-02-27 03:22:49] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_388_review_b	kirimaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml	sasuke
+[2026-02-27 03:22:49] [AUTO_DEPLOY] Ninja selected: kirimaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+[2026-02-27 03:22:49] [AUTO_DEPLOY] Task YAML: subtask_388_review_b → kirimaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml)
+[2026-02-27 03:22:49] [AUTO_DEPLOY] Calling: deploy_task.sh kirimaru
+[2026-02-27 03:22:50] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kirimaru ← subtask_388_review_b (cmd=cmd_388)
+[2026-02-27 03:34:02] [AUTO_DEPLOY] Start: cmd=cmd_392 completed=subtask_392_impl_a
+WARN: report status= pcmd=cmd_392
+[2026-02-27 03:34:02] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_392_review_a	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/_subtask_392_review_a.yaml	sasuke
+[2026-02-27 03:34:02] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/_subtask_392_review_a.yaml
+[2026-02-27 03:34:03] [AUTO_DEPLOY] Task YAML: subtask_392_review_a → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-02-27 03:34:03] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-02-27 03:34:03] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kotaro ← subtask_392_review_a (cmd=cmd_392)
+[2026-03-01 15:06:22] [AUTO_DEPLOY] Start: cmd=cmd_467 completed=subtask_467_impl_a
+[2026-03-01 15:06:22] [AUTO_DEPLOY] Analysis result: BLOCKED		s,u,b,t,a,s,k,_,4,6,7,_,i,m,p,l,_,a
+[2026-03-01 15:06:22] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED:  unresolved=s,u,b,t,a,s,k,_,4,6,7,_,i,m,p,l,_,a
+[2026-03-01 16:42:40] [AUTO_DEPLOY] Start: cmd=cmd_468 completed=subtask_468_review
+[2026-03-01 16:42:40] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_468	2
+[2026-03-01 16:42:40] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_468
+[2026-03-03 15:29:46] [AUTO_DEPLOY] Start: cmd=cmd_493 completed=subtask_493_impl_research_ops
+[2026-03-03 15:29:46] [AUTO_DEPLOY] Analysis result: SKIP	subtask_493_impl_research_analysis
+[2026-03-03 15:29:46] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_493_impl_research_analysis
+[2026-03-03 15:52:18] [AUTO_DEPLOY] Start: cmd=cmd_496 completed=subtask_496_impl_dispatch_ntfy
+[2026-03-03 15:52:18] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_496_review	hanzo	/mnt/c/tools/multi-agent-shogun/queue/tasks/subtask_496_review.yaml	tobisaru
+[2026-03-03 15:52:18] [AUTO_DEPLOY] Ninja selected: hanzo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/subtask_496_review.yaml
+[2026-03-03 15:52:18] [AUTO_DEPLOY] Task YAML: subtask_496_review → hanzo (/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml)
+[2026-03-03 15:52:18] [AUTO_DEPLOY] Calling: deploy_task.sh hanzo
+[2026-03-03 15:52:19] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hanzo ← subtask_496_review (cmd=cmd_496)
+[2026-03-04 02:19:45] [AUTO_DEPLOY] Start: cmd=cmd_512 completed=subtask_512_impl_b
+[2026-03-04 02:19:46] [AUTO_DEPLOY] Analysis result: SKIP	subtask_512_impl_a
+[2026-03-04 02:19:46] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_512_impl_a
+[2026-03-04 11:12:04] [AUTO_DEPLOY] Start: cmd=cmd_515 completed=subtask_515_impl_b
+[2026-03-04 11:12:05] [AUTO_DEPLOY] Analysis result: SKIP	subtask_515_impl_a
+[2026-03-04 11:12:05] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_515_impl_a
+[2026-03-04 12:03:10] [AUTO_DEPLOY] Start: cmd=cmd_518 completed=subtask_518_impl_a
+[2026-03-04 12:03:10] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_518_review	None	/mnt/c/tools/multi-agent-shogun/queue/tasks/subtask_518_review.yaml	kagemaru
+[2026-03-04 12:03:10] [AUTO_DEPLOY] Ninja selected: None (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/None.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/subtask_518_review.yaml
+[2026-03-04 12:03:10] [AUTO_DEPLOY] Task YAML: subtask_518_review → None (/mnt/c/tools/multi-agent-shogun/queue/tasks/None.yaml)
+[2026-03-04 12:03:10] [AUTO_DEPLOY] Calling: deploy_task.sh None
+[2026-03-04 12:03:10] [AUTO_DEPLOY] ERROR: deploy_task.sh failed for None
+[2026-03-04 12:26:46] [AUTO_DEPLOY] Start: cmd=cmd_521 completed=subtask_521_review
+[2026-03-04 12:26:46] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_521	2
+[2026-03-04 12:26:46] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_521
+[2026-03-04 13:50:11] [AUTO_DEPLOY] Start: cmd=cmd_526 completed=subtask_526_scout_b
+[2026-03-04 13:50:12] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_526_impl_a		/mnt/c/tools/multi-agent-shogun/queue/tasks/subtask_526_impl_a.yaml	saizo
+[2026-03-04 13:50:12] [AUTO_DEPLOY] Ninja selected: saizo (completed ninja, CTX=0%)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+Source updated: /mnt/c/tools/multi-agent-shogun/queue/tasks/subtask_526_impl_a.yaml
+[2026-03-04 13:50:12] [AUTO_DEPLOY] Task YAML: subtask_526_impl_a → saizo (/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml)
+[2026-03-04 13:50:12] [AUTO_DEPLOY] Calling: deploy_task.sh saizo
+[2026-03-04 13:50:14] [AUTO_DEPLOY] AUTO_DEPLOY_OK: saizo ← subtask_526_impl_a (cmd=cmd_526)
+[2026-03-04 13:50:34] [AUTO_DEPLOY] Start: cmd=cmd_526 completed=subtask_526_scout_a
+[2026-03-04 13:50:34] [AUTO_DEPLOY] Analysis result: BLOCKED	subtask_526_impl_a	subtask_526_scout_b
+[2026-03-04 13:50:34] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: subtask_526_impl_a unresolved=subtask_526_scout_b
+[2026-03-04 14:47:16] [AUTO_DEPLOY] Start: cmd=cmd_529 completed=subtask_529_scout_a
+[2026-03-04 14:47:16] [AUTO_DEPLOY] Analysis result: SKIP	subtask_529_scout_b
+[2026-03-04 14:47:16] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_529_scout_b
+[2026-03-04 16:53:16] [AUTO_DEPLOY] Start: cmd=cmd_536 completed=subtask_536_review
+[2026-03-04 16:53:17] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_536	3
+[2026-03-04 16:53:17] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_536
+[2026-03-05 00:20:02] [AUTO_DEPLOY] Start: cmd=cmd_548 completed=subtask_548_scout_a
+[2026-03-05 00:20:02] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_548	2
+[2026-03-05 00:20:02] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_548
+[2026-03-05 09:22:28] [AUTO_DEPLOY] Start: cmd=cmd_552 completed=subtask_552_impl_c
+[2026-03-05 09:22:29] [AUTO_DEPLOY] Analysis result: SKIP	subtask_552_impl_b
+[2026-03-05 09:22:29] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_552_impl_b
+[2026-03-05 20:13:09] [AUTO_DEPLOY] Start: cmd=cmd_575 completed=subtask_575_impl_b
+[2026-03-05 20:13:09] [AUTO_DEPLOY] Analysis result: SKIP	subtask_577_fix
+[2026-03-05 20:13:09] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_577_fix
+[2026-03-06 12:43:32] [AUTO_DEPLOY] Start: cmd=cmd_584 completed=subtask_584_scout_b
+[2026-03-06 12:43:32] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_584	2
+[2026-03-06 12:43:32] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_584
+[2026-03-06 12:47:25] [AUTO_DEPLOY] Start: cmd=cmd_581 completed=subtask_581_review
+[2026-03-06 12:47:25] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_581	1
+[2026-03-06 12:47:25] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_581
+[2026-03-06 12:51:19] [AUTO_DEPLOY] Start: cmd=cmd_585 completed=subtask_585_scout_a
+[2026-03-06 12:51:20] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_585	2
+[2026-03-06 12:51:20] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_585
+[2026-03-06 12:58:54] [AUTO_DEPLOY] Start: cmd=cmd_584 completed=subtask_584_scout_b
+[2026-03-06 12:58:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_584	2
+[2026-03-06 12:58:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_584
+[2026-03-06 12:58:54] [AUTO_DEPLOY] Start: cmd=cmd_585 completed=subtask_585_scout_a
+[2026-03-06 12:58:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_585	2
+[2026-03-06 12:58:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_585
+[2026-03-06 13:14:05] [AUTO_DEPLOY] Start: cmd=cmd_587 completed=subtask_587_impl
+[2026-03-06 13:14:05] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_587	1
+[2026-03-06 13:14:05] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_587
+[2026-03-06 13:15:41] [AUTO_DEPLOY] Start: cmd=cmd_587 completed=subtask_587_impl
+[2026-03-06 13:15:41] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_587	1
+[2026-03-06 13:15:41] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_587
+[2026-03-06 13:40:27] [AUTO_DEPLOY] Start: cmd=cmd_591 completed=subtask_591_review
+[2026-03-06 13:40:28] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_591	1
+[2026-03-06 13:40:28] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_591
+[2026-03-06 14:16:29] [AUTO_DEPLOY] Start: cmd=cmd_601 completed=subtask_601_recon_a
+[2026-03-06 14:16:29] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_601	2
+[2026-03-06 14:16:29] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_601
+[2026-03-06 14:16:45] [AUTO_DEPLOY] Start: cmd=cmd_601 completed=subtask_601_recon_b
+[2026-03-06 14:16:46] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_601	2
+[2026-03-06 14:16:46] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_601
+[2026-03-06 14:19:06] [AUTO_DEPLOY] Start: cmd=cmd_600 completed=subtask_600_impl
+[2026-03-06 14:19:07] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_600	1
+[2026-03-06 14:19:07] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_600
+[2026-03-06 14:30:06] [AUTO_DEPLOY] Start: cmd=cmd_598 completed=subtask_598_review
+[2026-03-06 14:30:07] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_598	1
+[2026-03-06 14:30:07] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_598
+[2026-03-06 14:30:42] [AUTO_DEPLOY] Start: cmd=cmd_600 completed=subtask_600_review
+[2026-03-06 14:30:42] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_600	1
+[2026-03-06 14:30:42] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_600
+[2026-03-06 14:31:33] [AUTO_DEPLOY] Start: cmd=cmd_600 completed=subtask_600_review
+[2026-03-06 14:31:34] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_600	1
+[2026-03-06 14:31:34] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_600
+[2026-03-06 14:31:55] [AUTO_DEPLOY] Start: cmd=cmd_598 completed=subtask_598_review
+[2026-03-06 14:31:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_598	1
+[2026-03-06 14:31:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_598
+[2026-03-06 14:32:30] [AUTO_DEPLOY] Start: cmd=cmd_600 completed=subtask_600_review
+[2026-03-06 14:32:31] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_600	1
+[2026-03-06 14:32:31] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_600
+[2026-03-06 14:32:48] [AUTO_DEPLOY] Start: cmd=cmd_598 completed=subtask_598_review
+[2026-03-06 14:32:49] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_598	1
+[2026-03-06 14:32:49] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_598
+[2026-03-06 14:34:38] [AUTO_DEPLOY] Start: cmd=cmd_604 completed=subtask_604_impl
+[2026-03-06 14:34:38] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_604	1
+[2026-03-06 14:34:38] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_604
+[2026-03-06 14:39:49] [AUTO_DEPLOY] Start: cmd=cmd_599 completed=subtask_599_review
+[2026-03-06 14:39:49] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_599	1
+[2026-03-06 14:39:49] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_599
+[2026-03-06 14:40:10] [AUTO_DEPLOY] Start: cmd=cmd_602 completed=subtask_602_review
+[2026-03-06 14:40:11] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_602	1
+[2026-03-06 14:40:11] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_602
+[2026-03-06 14:51:50] [AUTO_DEPLOY] Start: cmd=cmd_606 completed=subtask_606_impl
+[2026-03-06 14:51:50] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_606	1
+[2026-03-06 14:51:50] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_606
+[2026-03-06 14:59:45] [AUTO_DEPLOY] Start: cmd=cmd_602 completed=subtask_602_review_b
+[2026-03-06 14:59:45] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_602	1
+[2026-03-06 14:59:45] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_602
+[2026-03-06 15:00:36] [AUTO_DEPLOY] Start: cmd=cmd_606 completed=subtask_606_review
+[2026-03-06 15:00:36] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_606	2
+[2026-03-06 15:00:36] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_606
+[2026-03-06 16:11:11] [AUTO_DEPLOY] Start: cmd=cmd_608 completed=subtask_608_scout_b
+[2026-03-06 16:11:12] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_608	2
+[2026-03-06 16:11:12] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_608
+[2026-03-06 16:57:58] [AUTO_DEPLOY] Start: cmd=cmd_609 completed=subtask_609_impl_a
+[2026-03-06 16:57:59] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_609_review	kagemaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml	hayate
+[2026-03-06 16:57:59] [AUTO_DEPLOY] Ninja selected: kagemaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+[2026-03-06 16:57:59] [AUTO_DEPLOY] Task YAML: subtask_609_review → kagemaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml)
+[2026-03-06 16:57:59] [AUTO_DEPLOY] Calling: deploy_task.sh kagemaru
+[2026-03-06 16:58:01] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kagemaru ← subtask_609_review (cmd=cmd_609)
+[2026-03-06 17:02:16] [AUTO_DEPLOY] Start: cmd=cmd_609 completed=subtask_609_review
+[2026-03-06 17:02:16] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_609	3
+[2026-03-06 17:02:16] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_609
+[2026-03-06 17:08:48] [AUTO_DEPLOY] Start: cmd=cmd_609 completed=subtask_609_push
+[2026-03-06 17:08:49] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_609	4
+[2026-03-06 17:08:49] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_609
+[2026-03-06 17:10:56] [AUTO_DEPLOY] Start: cmd=cmd_609 completed=subtask_609_impl_b
+[2026-03-06 17:10:56] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_609	4
+[2026-03-06 17:10:56] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_609
+[2026-03-06 18:07:37] [AUTO_DEPLOY] Start: cmd=cmd_612 completed=subtask_612_impl_a
+[2026-03-06 18:07:37] [AUTO_DEPLOY] Analysis result: SKIP	subtask_612_impl_b
+[2026-03-06 18:07:37] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_612_impl_b
+[2026-03-06 18:10:58] [AUTO_DEPLOY] Start: cmd=cmd_612 completed=subtask_612_impl_b
+[2026-03-06 18:10:59] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_612_review	hanzo	/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml	kagemaru
+[2026-03-06 18:10:59] [AUTO_DEPLOY] Ninja selected: hanzo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+[2026-03-06 18:10:59] [AUTO_DEPLOY] Task YAML: subtask_612_review → hanzo (/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml)
+[2026-03-06 18:10:59] [AUTO_DEPLOY] Calling: deploy_task.sh hanzo
+[2026-03-06 18:11:01] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hanzo ← subtask_612_review (cmd=cmd_612)
+[2026-03-06 18:15:04] [AUTO_DEPLOY] Start: cmd=cmd_612 completed=subtask_612_review
+[2026-03-06 18:15:05] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_612	3
+[2026-03-06 18:15:05] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_612
+[2026-03-06 20:33:10] [AUTO_DEPLOY] Start: cmd=cmd_613 completed=subtask_613_scout_a
+[2026-03-06 20:33:11] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_613	2
+[2026-03-06 20:33:11] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_613
+[2026-03-06 21:17:47] [AUTO_DEPLOY] Start: cmd=cmd_613 completed=subtask_613_fix_c
+[2026-03-06 21:17:47] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_613_review	hayate	/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml	kotaro
+[2026-03-06 21:17:47] [AUTO_DEPLOY] Ninja selected: hayate (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+[2026-03-06 21:17:47] [AUTO_DEPLOY] Task YAML: subtask_613_review → hayate (/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml)
+[2026-03-06 21:17:47] [AUTO_DEPLOY] Calling: deploy_task.sh hayate
+[2026-03-06 21:17:49] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hayate ← subtask_613_review (cmd=cmd_613)
+[2026-03-06 22:05:00] [AUTO_DEPLOY] Start: cmd=cmd_616 completed=subtask_616_impl_b
+[2026-03-06 22:05:00] [AUTO_DEPLOY] Analysis result: SKIP	subtask_616_impl_c
+[2026-03-06 22:05:00] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_616_impl_c
+[2026-03-06 22:10:17] [AUTO_DEPLOY] Start: cmd=cmd_616 completed=subtask_616_impl_a
+[2026-03-06 22:10:17] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_616	3
+[2026-03-06 22:10:17] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_616
+[2026-03-06 22:10:18] [AUTO_DEPLOY] Start: cmd=cmd_617 completed=subtask_617_impl
+[2026-03-06 22:10:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_617	1
+[2026-03-06 22:10:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_617
+[2026-03-06 22:38:19] [AUTO_DEPLOY] Start: cmd=cmd_619 completed=subtask_619_impl
+[2026-03-06 22:38:19] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_619_review	tobisaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml	kotaro
+[2026-03-06 22:38:19] [AUTO_DEPLOY] Ninja selected: tobisaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+[2026-03-06 22:38:19] [AUTO_DEPLOY] Task YAML: subtask_619_review → tobisaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml)
+[2026-03-06 22:38:19] [AUTO_DEPLOY] Calling: deploy_task.sh tobisaru
+[2026-03-06 22:38:21] [AUTO_DEPLOY] AUTO_DEPLOY_OK: tobisaru ← subtask_619_review (cmd=cmd_619)
+[2026-03-06 22:41:43] [AUTO_DEPLOY] Start: cmd=cmd_619 completed=subtask_619_review
+[2026-03-06 22:41:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_619	2
+[2026-03-06 22:41:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_619
+[2026-03-06 23:45:29] [AUTO_DEPLOY] Start: cmd=cmd_622 completed=subtask_622_impl
+[2026-03-06 23:45:30] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_622_review	saizo	/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml	kirimaru
+[2026-03-06 23:45:30] [AUTO_DEPLOY] Ninja selected: saizo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+[2026-03-06 23:45:31] [AUTO_DEPLOY] Task YAML: subtask_622_review → saizo (/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml)
+[2026-03-06 23:45:31] [AUTO_DEPLOY] Calling: deploy_task.sh saizo
+[2026-03-06 23:45:57] [AUTO_DEPLOY] AUTO_DEPLOY_OK: saizo ← subtask_622_review (cmd=cmd_622)
+[2026-03-06 23:46:27] [AUTO_DEPLOY] Start: cmd=cmd_623 completed=subtask_623_recon_b
+[2026-03-06 23:46:28] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_623_recon_a	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml	tobisaru
+[2026-03-06 23:46:28] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+[2026-03-06 23:46:28] [AUTO_DEPLOY] Task YAML: subtask_623_recon_a → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-03-06 23:46:28] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-03-06 23:46:44] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kotaro ← subtask_623_recon_a (cmd=cmd_623)
+[2026-03-06 23:50:36] [AUTO_DEPLOY] Start: cmd=cmd_623 completed=subtask_623_recon_a
+[2026-03-06 23:50:36] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_623	2
+[2026-03-06 23:50:36] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_623
+[2026-03-06 23:57:23] [AUTO_DEPLOY] Start: cmd=cmd_622 completed=subtask_622_impl_fix
+[2026-03-06 23:57:23] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_622_review_r2	saizo	/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml	kirimaru
+[2026-03-06 23:57:23] [AUTO_DEPLOY] Ninja selected: saizo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+[2026-03-06 23:57:23] [AUTO_DEPLOY] Task YAML: subtask_622_review_r2 → saizo (/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml)
+[2026-03-06 23:57:23] [AUTO_DEPLOY] Calling: deploy_task.sh saizo
+[2026-03-06 23:57:27] [AUTO_DEPLOY] AUTO_DEPLOY_OK: saizo ← subtask_622_review_r2 (cmd=cmd_622)
+[2026-03-07 00:14:20] [AUTO_DEPLOY] Start: cmd=cmd_622 completed=subtask_622_push
+[2026-03-07 00:14:21] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_622	2
+[2026-03-07 00:14:21] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_622
+[2026-03-07 00:27:08] [AUTO_DEPLOY] Start: cmd=cmd_625 completed=subtask_625_review
+[2026-03-07 00:27:09] [AUTO_DEPLOY] Analysis result: SKIP	subtask_625_impl
+[2026-03-07 00:27:09] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_625_impl
+[2026-03-07 00:41:30] [AUTO_DEPLOY] Start: cmd=cmd_622 completed=subtask_622_push
+[2026-03-07 00:41:30] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_622	2
+[2026-03-07 00:41:30] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_622
+[2026-03-07 00:41:47] [AUTO_DEPLOY] Start: cmd=cmd_625 completed=subtask_625_review
+[2026-03-07 00:41:47] [AUTO_DEPLOY] Analysis result: SKIP	subtask_625_impl
+[2026-03-07 00:41:47] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_625_impl
+[2026-03-07 00:59:53] [AUTO_DEPLOY] Start: cmd=cmd_627 completed=subtask_627_impl_fe
+[2026-03-07 00:59:53] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_627_review	saizo	/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml	hanzo
+[2026-03-07 00:59:53] [AUTO_DEPLOY] Ninja selected: saizo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+[2026-03-07 00:59:53] [AUTO_DEPLOY] Task YAML: subtask_627_review → saizo (/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml)
+[2026-03-07 00:59:53] [AUTO_DEPLOY] Calling: deploy_task.sh saizo
+[2026-03-07 00:59:56] [AUTO_DEPLOY] AUTO_DEPLOY_OK: saizo ← subtask_627_review (cmd=cmd_627)
+[2026-03-07 01:07:23] [AUTO_DEPLOY] Start: cmd=cmd_628 completed=subtask_628_scout_a
+[2026-03-07 01:07:24] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_628	2
+[2026-03-07 01:07:24] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_628
+[2026-03-07 01:10:17] [AUTO_DEPLOY] Start: cmd=cmd_627 completed=subtask_627_fix
+[2026-03-07 01:10:18] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_627_review2	kirimaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml	sasuke
+[2026-03-07 01:10:18] [AUTO_DEPLOY] Ninja selected: kirimaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+[2026-03-07 01:10:18] [AUTO_DEPLOY] Task YAML: subtask_627_review2 → kirimaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml)
+[2026-03-07 01:10:18] [AUTO_DEPLOY] Calling: deploy_task.sh kirimaru
+[2026-03-07 01:10:20] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kirimaru ← subtask_627_review2 (cmd=cmd_627)
+[2026-03-07 02:09:03] [AUTO_DEPLOY] Start: cmd=cmd_629 completed=subtask_629_impl
+[2026-03-07 02:09:03] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_629_review	kagemaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml	hayate
+[2026-03-07 02:09:03] [AUTO_DEPLOY] Ninja selected: kagemaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+[2026-03-07 02:09:03] [AUTO_DEPLOY] Task YAML: subtask_629_review → kagemaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml)
+[2026-03-07 02:09:03] [AUTO_DEPLOY] Calling: deploy_task.sh kagemaru
+[2026-03-07 02:09:05] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kagemaru ← subtask_629_review (cmd=cmd_629)
+[2026-03-07 02:11:37] [AUTO_DEPLOY] Start: cmd=cmd_628 completed=subtask_628_scout_b
+[2026-03-07 02:11:37] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_628	2
+[2026-03-07 02:11:37] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_628
+[2026-03-07 02:13:20] [AUTO_DEPLOY] Start: cmd=cmd_629 completed=subtask_629_review
+[2026-03-07 02:13:20] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_629	2
+[2026-03-07 02:13:20] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_629
+[2026-03-07 02:26:34] [AUTO_DEPLOY] Start: cmd=cmd_630 completed=subtask_630_scout_a
+[2026-03-07 02:26:35] [AUTO_DEPLOY] Analysis result: SKIP	subtask_630_scout_b
+[2026-03-07 02:26:35] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: subtask_630_scout_b
+[2026-03-07 02:27:34] [AUTO_DEPLOY] Start: cmd=cmd_630 completed=subtask_630_scout_b
+[2026-03-07 02:27:35] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_630	2
+[2026-03-07 02:27:35] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_630
+[2026-03-07 02:42:07] [AUTO_DEPLOY] Start: cmd=cmd_631 completed=subtask_631_impl_scroll
+[2026-03-07 02:42:08] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_631_review	kirimaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml	sasuke
+[2026-03-07 02:42:08] [AUTO_DEPLOY] Ninja selected: kirimaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+[2026-03-07 02:42:08] [AUTO_DEPLOY] Task YAML: subtask_631_review → kirimaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml)
+[2026-03-07 02:42:08] [AUTO_DEPLOY] Calling: deploy_task.sh kirimaru
+[2026-03-07 02:42:10] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kirimaru ← subtask_631_review (cmd=cmd_631)
+[2026-03-07 03:47:40] [AUTO_DEPLOY] Start: cmd=cmd_632 completed=cmd_632
+[2026-03-07 03:47:41] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_632	1
+[2026-03-07 03:47:41] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_632
+[2026-03-07 03:57:50] [AUTO_DEPLOY] Start: cmd=cmd_632 completed=cmd_632
+[2026-03-07 03:57:50] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_632	1
+[2026-03-07 03:57:50] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_632
+[2026-03-07 04:44:32] [AUTO_DEPLOY] Start: cmd=cmd_638 completed=cmd_638
+[2026-03-07 04:44:32] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_638	1
+[2026-03-07 04:44:32] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_638
+[2026-03-08 00:03:05] [AUTO_DEPLOY] Start: cmd=cmd_638 completed=cmd_638
+[2026-03-08 00:03:06] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_638	1
+[2026-03-08 00:03:06] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_638
+[2026-03-08 01:36:18] [AUTO_DEPLOY] Start: cmd=cmd_639 completed=cmd_639
+[2026-03-08 01:36:18] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_639	1
+[2026-03-08 01:36:18] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_639
+[2026-03-08 15:08:07] [AUTO_DEPLOY] Start: cmd=cmd_646 completed=cmd_646
+[2026-03-08 15:08:07] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_646	1
+[2026-03-08 15:08:07] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_646
+[2026-03-08 15:35:24] [AUTO_DEPLOY] Start: cmd=cmd_647 completed=subtask_647_verify_cache
+[2026-03-08 15:35:24] [AUTO_DEPLOY] Analysis result: DEPLOY	subtask_647_spa_retry	kirimaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml	sasuke
+[2026-03-08 15:35:24] [AUTO_DEPLOY] Ninja selected: kirimaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml
+[2026-03-08 15:35:24] [AUTO_DEPLOY] Task YAML: subtask_647_spa_retry → kirimaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml)
+[2026-03-08 15:35:24] [AUTO_DEPLOY] Calling: deploy_task.sh kirimaru
+[2026-03-08 15:35:27] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kirimaru ← subtask_647_spa_retry (cmd=cmd_647)
+[2026-03-08 15:54:30] [AUTO_DEPLOY] Start: cmd=cmd_647 completed=subtask_647_spa_retry
+[2026-03-08 15:54:31] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_647	2
+[2026-03-08 15:54:31] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_647
+[2026-03-08 16:05:55] [AUTO_DEPLOY] Start: cmd=cmd_647 completed=subtask_647_verify_cache
+[2026-03-08 16:05:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_647	3
+[2026-03-08 16:05:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_647
+[2026-03-08 16:05:56] [AUTO_DEPLOY] Start: cmd=cmd_647 completed=subtask_647_spa_retry
+[2026-03-08 16:05:56] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_647	3
+[2026-03-08 16:05:56] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_647
+[2026-03-08 17:12:13] [AUTO_DEPLOY] Start: cmd=cmd_654 completed=cmd_654
+[2026-03-08 17:12:13] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_654	1
+[2026-03-08 17:12:13] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_654
+[2026-03-08 19:48:43] [AUTO_DEPLOY] Start: cmd=cmd_661 completed=cmd_661
+[2026-03-08 19:48:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_661	1
+[2026-03-08 19:48:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_661
+[2026-03-08 20:21:07] [AUTO_DEPLOY] Start: cmd=cmd_662 completed=cmd_662
+[2026-03-08 20:21:07] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_662	1
+[2026-03-08 20:21:07] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_662
+[2026-03-08 20:53:36] [AUTO_DEPLOY] Start: cmd=cmd_664 completed=cmd_664
+[2026-03-08 20:53:36] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_664	1
+[2026-03-08 20:53:36] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_664
+[2026-03-08 23:28:17] [AUTO_DEPLOY] Start: cmd=cmd_668 completed=cmd_668
+WARN: kirimaru.yaml: mapping values are not allowed here
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/kirimaru.yaml", line 40, column 35
+[2026-03-08 23:28:18] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_668
+[2026-03-08 23:48:23] [AUTO_DEPLOY] Start: cmd=cmd_662 completed=cmd_662
+[2026-03-08 23:48:25] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_662	1
+[2026-03-08 23:48:25] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_662
+[2026-03-09 00:53:50] [AUTO_DEPLOY] Start: cmd=cmd_672 completed=cmd_672
+[2026-03-09 00:53:51] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_672	1
+[2026-03-09 00:53:51] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_672
+[2026-03-09 13:21:42] [AUTO_DEPLOY] Start: cmd=cmd_699 completed=cmd_699
+[2026-03-09 13:21:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_699	1
+[2026-03-09 13:21:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_699
+[2026-03-10 13:39:54] [AUTO_DEPLOY] Start: cmd=cmd_732 completed=cmd_732
+[2026-03-10 13:39:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_732	1
+[2026-03-10 13:39:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_732
+[2026-03-11 05:28:08] [AUTO_DEPLOY] Start: cmd=cmd_764 completed=cmd_764
+[2026-03-11 05:28:08] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_764	1
+[2026-03-11 05:28:08] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_764
+[2026-03-11 11:36:10] [AUTO_DEPLOY] Start: cmd=cmd_764 completed=cmd_764
+[2026-03-11 11:36:11] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_764	1
+[2026-03-11 11:36:11] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_764
+[2026-03-11 11:38:02] [AUTO_DEPLOY] Start: cmd=cmd_764 completed=cmd_764
+[2026-03-11 11:38:03] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_764	1
+[2026-03-11 11:38:03] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_764
+[2026-03-11 21:29:17] [AUTO_DEPLOY] Start: cmd=cmd_806 completed=cmd_806
+[2026-03-11 21:29:18] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_806	1
+[2026-03-11 21:29:18] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_806
+[2026-03-12 04:44:00] [AUTO_DEPLOY] Start: cmd=cmd_815 completed=cmd_815_impl
+[2026-03-12 04:44:01] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_815	1
+[2026-03-12 04:44:01] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_815
+[2026-03-12 05:16:16] [AUTO_DEPLOY] Start: cmd=cmd_808 completed=cmd_808_measure
+[2026-03-12 05:16:16] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_808	1
+[2026-03-12 05:16:16] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_808
+[2026-03-12 05:24:47] [AUTO_DEPLOY] Start: cmd=cmd_817 completed=cmd_817_fix
+[2026-03-12 05:24:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_817	1
+[2026-03-12 05:24:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_817
+[2026-03-12 05:32:58] [AUTO_DEPLOY] Start: cmd=cmd_817 completed=cmd_817_review
+[2026-03-12 05:32:58] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_817	2
+[2026-03-12 05:32:58] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_817
+[2026-03-12 09:23:44] [AUTO_DEPLOY] Start: cmd=cmd_815 completed=cmd_815_e2e
+[2026-03-12 09:23:44] [AUTO_DEPLOY] Analysis result: SKIP	cmd_815_impl
+[2026-03-12 09:23:44] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_815_impl
+[2026-03-12 14:59:38] [AUTO_DEPLOY] Start: cmd=cmd_827 completed=cmd_827_measure
+[2026-03-12 14:59:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_827	1
+[2026-03-12 14:59:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_827
+[2026-03-12 16:02:09] [AUTO_DEPLOY] Start: cmd=cmd_831 completed=cmd_831_recon_ux
+[2026-03-12 16:02:09] [AUTO_DEPLOY] Analysis result: SKIP	cmd_831_recon_dataflow
+[2026-03-12 16:02:09] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_831_recon_dataflow
+[2026-03-12 16:03:38] [AUTO_DEPLOY] Start: cmd=cmd_831 completed=cmd_831_recon_code
+[2026-03-12 16:03:38] [AUTO_DEPLOY] Analysis result: SKIP	cmd_831_recon_dataflow
+[2026-03-12 16:03:38] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_831_recon_dataflow
+[2026-03-12 16:04:33] [AUTO_DEPLOY] Start: cmd=cmd_831 completed=cmd_831_recon_dataflow
+[2026-03-12 16:04:34] [AUTO_DEPLOY] Analysis result: SKIP	cmd_831_recon_infra
+[2026-03-12 16:04:34] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_831_recon_infra
+[2026-03-12 16:04:34] [AUTO_DEPLOY] Start: cmd=cmd_831 completed=cmd_831_recon_infra
+[2026-03-12 16:04:34] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_831	4
+[2026-03-12 16:04:34] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_831
+[2026-03-12 17:12:43] [AUTO_DEPLOY] Start: cmd=cmd_836 completed=cmd_836_recon_fe_render
+[2026-03-12 17:12:44] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_836	1
+[2026-03-12 17:12:44] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_836
+[2026-03-12 18:54:18] [AUTO_DEPLOY] Start: cmd=cmd_851 completed=cmd_851_impl_tsv_ninja_fix
+[2026-03-12 18:54:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_851	1
+[2026-03-12 18:54:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_851
+[2026-03-12 18:54:38] [AUTO_DEPLOY] Start: cmd=cmd_849 completed=cmd_849_impl_prefetch_unify
+[2026-03-12 18:54:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_849	1
+[2026-03-12 18:54:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_849
+[2026-03-12 19:01:25] [AUTO_DEPLOY] Start: cmd=cmd_856 completed=cmd_856_recon_data_integrity
+[2026-03-12 19:01:26] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_856	1
+[2026-03-12 19:01:26] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_856
+[2026-03-12 19:20:47] [AUTO_DEPLOY] Start: cmd=cmd_855 completed=cmd_855_recon_cdp_group4
+[2026-03-12 19:20:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_855	1
+[2026-03-12 19:20:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_855
+[2026-03-12 19:40:56] [AUTO_DEPLOY] Start: cmd=cmd_857 completed=cmd_857_impl_cdp_stabilize
+[2026-03-12 19:40:57] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_857	1
+[2026-03-12 19:40:57] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_857
+[2026-03-12 19:47:13] [AUTO_DEPLOY] Start: cmd=cmd_857 completed=cmd_857_review_cdp_stabilize
+[2026-03-12 19:47:14] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_857	2
+[2026-03-12 19:47:14] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_857
+[2026-03-12 19:50:26] [AUTO_DEPLOY] Start: cmd=cmd_858 completed=cmd_858_impl_gitignore_cleanup
+[2026-03-12 19:50:27] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_858	1
+[2026-03-12 19:50:27] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_858
+[2026-03-12 20:04:35] [AUTO_DEPLOY] Start: cmd=cmd_859 completed=cmd_859_recon_pdet_ninpo_design
+[2026-03-12 20:04:36] [AUTO_DEPLOY] Analysis result: SKIP	cmd_859_recon_vertical_1
+[2026-03-12 20:04:36] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_859_recon_vertical_1
+[2026-03-12 20:05:41] [AUTO_DEPLOY] Start: cmd=cmd_859 completed=cmd_859_recon_vertical_1
+[2026-03-12 20:05:41] [AUTO_DEPLOY] Analysis result: SKIP	cmd_859_recon_horizontal_B
+[2026-03-12 20:05:41] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_859_recon_horizontal_B
+[2026-03-12 20:06:01] [AUTO_DEPLOY] Start: cmd=cmd_859 completed=cmd_859_recon_horizontal_B
+[2026-03-12 20:06:01] [AUTO_DEPLOY] Analysis result: SKIP	cmd_859_recon_horizontal_D
+[2026-03-12 20:06:01] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_859_recon_horizontal_D
+[2026-03-12 20:06:01] [AUTO_DEPLOY] Start: cmd=cmd_859 completed=cmd_859_recon_vertical_2
+[2026-03-12 20:06:02] [AUTO_DEPLOY] Analysis result: SKIP	cmd_859_recon_horizontal_D
+[2026-03-12 20:06:02] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_859_recon_horizontal_D
+[2026-03-12 20:07:04] [AUTO_DEPLOY] Start: cmd=cmd_859 completed=cmd_859_recon_vertical_3
+[2026-03-12 20:07:04] [AUTO_DEPLOY] Analysis result: SKIP	cmd_859_recon_horizontal_D
+[2026-03-12 20:07:04] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_859_recon_horizontal_D
+[2026-03-12 20:09:47] [AUTO_DEPLOY] Start: cmd=cmd_859 completed=cmd_859_recon_horizontal_D
+[2026-03-12 20:09:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_859	8
+[2026-03-12 20:09:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_859
+[2026-03-12 20:09:50] [AUTO_DEPLOY] Start: cmd=cmd_859 completed=cmd_859_recon_vertical_4
+[2026-03-12 20:09:50] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_859	8
+[2026-03-12 20:09:50] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_859
+[2026-03-12 20:51:03] [AUTO_DEPLOY] Start: cmd=cmd_860 completed=cmd_860_recon_vertical_4
+[2026-03-12 20:51:03] [AUTO_DEPLOY] Analysis result: SKIP	cmd_860_recon_vertical_1
+[2026-03-12 20:51:03] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_860_recon_vertical_1
+[2026-03-12 20:51:20] [AUTO_DEPLOY] Start: cmd=cmd_860 completed=cmd_860_recon_horizontal_A
+[2026-03-12 20:51:20] [AUTO_DEPLOY] Analysis result: SKIP	cmd_860_recon_vertical_1
+[2026-03-12 20:51:20] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_860_recon_vertical_1
+[2026-03-12 20:52:15] [AUTO_DEPLOY] Start: cmd=cmd_860 completed=cmd_860_recon_vertical_3
+[2026-03-12 20:52:15] [AUTO_DEPLOY] Analysis result: SKIP	cmd_860_recon_vertical_1
+[2026-03-12 20:52:15] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_860_recon_vertical_1
+[2026-03-12 20:52:32] [AUTO_DEPLOY] Start: cmd=cmd_860 completed=cmd_860_recon_horizontal_B
+[2026-03-12 20:52:32] [AUTO_DEPLOY] Analysis result: SKIP	cmd_860_recon_horizontal_D
+[2026-03-12 20:52:32] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_860_recon_horizontal_D
+[2026-03-12 20:53:25] [AUTO_DEPLOY] Start: cmd=cmd_860 completed=cmd_860_recon_horizontal_D
+[2026-03-12 20:53:25] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_860	8
+[2026-03-12 20:53:25] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_860
+[2026-03-12 20:53:43] [AUTO_DEPLOY] Start: cmd=cmd_860 completed=cmd_860_recon_vertical_2
+[2026-03-12 20:53:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_860	8
+[2026-03-12 20:53:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_860
+[2026-03-12 20:58:47] [AUTO_DEPLOY] Start: cmd=cmd_860 completed=cmd_860_recon_vertical_1
+[2026-03-12 20:58:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_860	8
+[2026-03-12 20:58:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_860
+[2026-03-12 21:16:24] [AUTO_DEPLOY] Start: cmd=cmd_861 completed=cmd_861_recon_vertical_4
+[2026-03-12 21:16:25] [AUTO_DEPLOY] Analysis result: SKIP	cmd_861_recon_vertical_1
+[2026-03-12 21:16:25] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_861_recon_vertical_1
+[2026-03-12 21:17:37] [AUTO_DEPLOY] Start: cmd=cmd_861 completed=cmd_861_recon_vertical_1
+[2026-03-12 21:17:38] [AUTO_DEPLOY] Analysis result: SKIP	cmd_861_recon_horizontal_C
+[2026-03-12 21:17:38] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_861_recon_horizontal_C
+[2026-03-12 21:17:56] [AUTO_DEPLOY] Start: cmd=cmd_861 completed=cmd_861_recon_vertical_2
+[2026-03-12 21:17:56] [AUTO_DEPLOY] Analysis result: SKIP	cmd_861_recon_horizontal_C
+[2026-03-12 21:17:56] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_861_recon_horizontal_C
+[2026-03-12 21:20:12] [AUTO_DEPLOY] Start: cmd=cmd_861 completed=cmd_861_recon_vertical_3
+[2026-03-12 21:20:12] [AUTO_DEPLOY] Analysis result: SKIP	cmd_861_recon_horizontal_D
+[2026-03-12 21:20:12] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_861_recon_horizontal_D
+[2026-03-12 21:23:38] [AUTO_DEPLOY] Start: cmd=cmd_861 completed=cmd_861_recon_horizontal_D
+[2026-03-12 21:23:38] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_861	8
+[2026-03-12 21:23:38] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_861
+[2026-03-12 22:06:26] [AUTO_DEPLOY] Start: cmd=cmd_862 completed=cmd_862_recon_horizontal_D
+[2026-03-12 22:06:26] [AUTO_DEPLOY] Analysis result: SKIP	cmd_862_recon_horizontal_E
+[2026-03-12 22:06:26] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_862_recon_horizontal_E
+[2026-03-12 22:09:16] [AUTO_DEPLOY] Start: cmd=cmd_862 completed=cmd_862_recon_horizontal_A
+[2026-03-12 22:09:16] [AUTO_DEPLOY] Analysis result: SKIP	cmd_862_recon_horizontal_G
+[2026-03-12 22:09:16] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_862_recon_horizontal_G
+[2026-03-12 22:09:17] [AUTO_DEPLOY] Start: cmd=cmd_862 completed=cmd_862_recon_horizontal_C
+[2026-03-12 22:09:17] [AUTO_DEPLOY] Analysis result: SKIP	cmd_862_recon_horizontal_G
+[2026-03-12 22:09:17] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_862_recon_horizontal_G
+[2026-03-12 22:10:12] [AUTO_DEPLOY] Start: cmd=cmd_862 completed=cmd_862_recon_horizontal_G
+[2026-03-12 22:10:12] [AUTO_DEPLOY] Analysis result: SKIP	cmd_862_recon_horizontal_H
+[2026-03-12 22:10:12] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_862_recon_horizontal_H
+[2026-03-12 22:10:31] [AUTO_DEPLOY] Start: cmd=cmd_862 completed=cmd_862_recon_horizontal_F
+[2026-03-12 22:10:31] [AUTO_DEPLOY] Analysis result: SKIP	cmd_862_recon_horizontal_H
+[2026-03-12 22:10:31] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_862_recon_horizontal_H
+[2026-03-12 22:11:23] [AUTO_DEPLOY] Start: cmd=cmd_862 completed=cmd_862_recon_horizontal_E
+[2026-03-12 22:11:23] [AUTO_DEPLOY] Analysis result: SKIP	cmd_862_recon_horizontal_H
+[2026-03-12 22:11:23] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_862_recon_horizontal_H
+[2026-03-12 22:24:19] [AUTO_DEPLOY] Start: cmd=cmd_864 completed=cmd_864_impl_A
+[2026-03-12 22:24:19] [AUTO_DEPLOY] Analysis result: SKIP	cmd_864_impl_B
+[2026-03-12 22:24:19] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_864_impl_B
+[2026-03-12 22:37:43] [AUTO_DEPLOY] Start: cmd=cmd_865 completed=cmd_865_recon_horizontal_A
+[2026-03-12 22:37:44] [AUTO_DEPLOY] Analysis result: SKIP	cmd_865_recon_horizontal_B
+[2026-03-12 22:37:44] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_865_recon_horizontal_B
+[2026-03-12 22:39:10] [AUTO_DEPLOY] Start: cmd=cmd_865 completed=cmd_865_recon_horizontal_B
+[2026-03-12 22:39:10] [AUTO_DEPLOY] Analysis result: SKIP	cmd_865_recon_horizontal_D
+[2026-03-12 22:39:10] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_865_recon_horizontal_D
+[2026-03-12 22:39:10] [AUTO_DEPLOY] Start: cmd=cmd_865 completed=cmd_865_recon_horizontal_D
+[2026-03-12 22:39:11] [AUTO_DEPLOY] Analysis result: SKIP	cmd_865_recon_vertical_combined
+[2026-03-12 22:39:11] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_865_recon_vertical_combined
+[2026-03-12 22:39:11] [AUTO_DEPLOY] Start: cmd=cmd_865 completed=cmd_865_recon_vertical_combined
+[2026-03-12 22:39:11] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_865	5
+[2026-03-12 22:39:11] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_865
+[2026-03-12 22:56:04] [AUTO_DEPLOY] Start: cmd=cmd_867 completed=cmd_867_impl_A
+[2026-03-12 22:56:04] [AUTO_DEPLOY] Analysis result: SKIP	cmd_867_impl_B
+[2026-03-12 22:56:04] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_867_impl_B
+[2026-03-12 23:00:39] [AUTO_DEPLOY] Start: cmd=cmd_866 completed=cmd_866_impl
+[2026-03-12 23:00:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_866	1
+[2026-03-12 23:00:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_866
+[2026-03-12 23:08:42] [AUTO_DEPLOY] Start: cmd=cmd_868 completed=cmd_868_recon
+[2026-03-12 23:08:42] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_868	1
+[2026-03-12 23:08:42] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_868
+[2026-03-12 23:23:50] [AUTO_DEPLOY] Start: cmd=cmd_869 completed=cmd_869_impl_B
+[2026-03-12 23:23:50] [AUTO_DEPLOY] Analysis result: SKIP	cmd_869_impl_A
+[2026-03-12 23:23:50] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_869_impl_A
+[2026-03-12 23:29:10] [AUTO_DEPLOY] Start: cmd=cmd_871 completed=cmd_871_E
+[2026-03-12 23:29:10] [AUTO_DEPLOY] Analysis result: SKIP	cmd_871_C
+[2026-03-12 23:29:10] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_871_C
+[2026-03-12 23:31:02] [AUTO_DEPLOY] Start: cmd=cmd_871 completed=cmd_871_F
+[2026-03-12 23:31:02] [AUTO_DEPLOY] Analysis result: SKIP	cmd_871_C
+[2026-03-12 23:31:02] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_871_C
+[2026-03-12 23:32:10] [AUTO_DEPLOY] Start: cmd=cmd_871 completed=cmd_871_D
+[2026-03-12 23:32:10] [AUTO_DEPLOY] Analysis result: SKIP	cmd_871_B
+[2026-03-12 23:32:10] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_871_B
+[2026-03-12 23:33:43] [AUTO_DEPLOY] Start: cmd=cmd_871 completed=cmd_871_H
+[2026-03-12 23:33:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_871	8
+[2026-03-12 23:33:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_871
+[2026-03-12 23:35:08] [AUTO_DEPLOY] Start: cmd=cmd_871 completed=cmd_871_G
+[2026-03-12 23:35:09] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_871	8
+[2026-03-12 23:35:09] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_871
+[2026-03-12 23:35:25] [AUTO_DEPLOY] Start: cmd=cmd_871 completed=cmd_871_B
+[2026-03-12 23:35:26] [AUTO_DEPLOY] Analysis result: SKIP	cmd_871_phase2
+[2026-03-12 23:35:26] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_871_phase2
+[2026-03-12 23:55:05] [AUTO_DEPLOY] Start: cmd=cmd_872 completed=cmd_872_C
+[2026-03-12 23:55:05] [AUTO_DEPLOY] Analysis result: SKIP	cmd_872_D
+[2026-03-12 23:55:05] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_872_D
+[2026-03-12 23:58:12] [AUTO_DEPLOY] Start: cmd=cmd_872 completed=cmd_872_D
+[2026-03-12 23:58:13] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_872	2
+[2026-03-12 23:58:13] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_872
+[2026-03-12 23:58:14] [AUTO_DEPLOY] Start: cmd=cmd_873 completed=cmd_873_C
+[2026-03-12 23:58:15] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_873	4
+[2026-03-12 23:58:15] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_873
+[2026-03-12 23:58:34] [AUTO_DEPLOY] Start: cmd=cmd_873 completed=cmd_873_D
+[2026-03-12 23:58:34] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_873	4
+[2026-03-12 23:58:34] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_873
+[2026-03-12 23:58:35] [AUTO_DEPLOY] Start: cmd=cmd_873 completed=cmd_873_A
+[2026-03-12 23:58:36] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_873	4
+[2026-03-12 23:58:36] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_873
+[2026-03-13 00:54:41] [AUTO_DEPLOY] Start: cmd=cmd_875 completed=cmd_875_A
+[2026-03-13 00:54:42] [AUTO_DEPLOY] Analysis result: SKIP	cmd_875_review
+[2026-03-13 00:54:42] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_875_review
+[2026-03-13 01:09:55] [AUTO_DEPLOY] Start: cmd=cmd_875 completed=cmd_875_review
+[2026-03-13 01:09:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_875	2
+[2026-03-13 01:09:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_875
+[2026-03-13 01:13:26] [AUTO_DEPLOY] Start: cmd=cmd_876 completed=cmd_876_recon_B
+[2026-03-13 01:13:27] [AUTO_DEPLOY] Analysis result: SKIP	cmd_876_recon_A
+[2026-03-13 01:13:27] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_876_recon_A
+[2026-03-13 01:15:11] [AUTO_DEPLOY] Start: cmd=cmd_876 completed=cmd_876_recon_A
+[2026-03-13 01:15:12] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_876	2
+[2026-03-13 01:15:12] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_876
+[2026-03-13 01:33:48] [AUTO_DEPLOY] Start: cmd=cmd_876 completed=cmd_876_A
+[2026-03-13 01:33:49] [AUTO_DEPLOY] Analysis result: SKIP	cmd_876_B
+[2026-03-13 01:33:49] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_876_B
+[2026-03-13 01:38:38] [AUTO_DEPLOY] Start: cmd=cmd_877 completed=cmd_877_B
+[2026-03-13 01:38:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_877	3
+[2026-03-13 01:38:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_877
+[2026-03-13 01:40:23] [AUTO_DEPLOY] Start: cmd=cmd_877 completed=cmd_877_A
+[2026-03-13 01:40:24] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_877	3
+[2026-03-13 01:40:24] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_877
+[2026-03-13 01:48:25] [AUTO_DEPLOY] Start: cmd=cmd_876 completed=cmd_876_B
+[2026-03-13 01:48:26] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_876	2
+[2026-03-13 01:48:26] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_876
+[2026-03-13 01:56:34] [AUTO_DEPLOY] Start: cmd=cmd_877 completed=cmd_877_review
+[2026-03-13 01:56:35] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_877	2
+[2026-03-13 01:56:35] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_877
+[2026-03-13 02:00:45] [AUTO_DEPLOY] Start: cmd=cmd_878 completed=cmd_878_review
+[2026-03-13 02:00:45] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_878	2
+[2026-03-13 02:00:45] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_878
+[2026-03-13 02:02:32] [AUTO_DEPLOY] Start: cmd=cmd_876 completed=cmd_876_review
+[2026-03-13 02:02:32] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_876	2
+[2026-03-13 02:02:32] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_876
+[2026-03-13 03:04:20] [AUTO_DEPLOY] Start: cmd=cmd_883 completed=cmd_883_A
+[2026-03-13 03:04:21] [AUTO_DEPLOY] Analysis result: SKIP	cmd_883_B
+[2026-03-13 03:04:21] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_883_B
+[2026-03-13 03:07:39] [AUTO_DEPLOY] Start: cmd=cmd_883 completed=cmd_883_B
+[2026-03-13 03:07:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_883	2
+[2026-03-13 03:07:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_883
+[2026-03-13 03:20:45] [AUTO_DEPLOY] Start: cmd=cmd_883 completed=cmd_883_B
+[2026-03-13 03:20:46] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_883	2
+[2026-03-13 03:20:46] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_883
+[2026-03-13 03:32:50] [AUTO_DEPLOY] Start: cmd=cmd_885 completed=cmd_885_A
+[2026-03-13 03:32:51] [AUTO_DEPLOY] Analysis result: SKIP	cmd_885_B
+[2026-03-13 03:32:51] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_885_B
+[2026-03-13 03:41:10] [AUTO_DEPLOY] Start: cmd=cmd_887 completed=cmd_887_B
+[2026-03-13 03:41:11] [AUTO_DEPLOY] Analysis result: SKIP	cmd_887_A
+[2026-03-13 03:41:11] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_887_A
+[2026-03-13 03:42:24] [AUTO_DEPLOY] Start: cmd=cmd_887 completed=cmd_887_A
+[2026-03-13 03:42:25] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_887	2
+[2026-03-13 03:42:25] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_887
+[2026-03-13 03:52:43] [AUTO_DEPLOY] Start: cmd=cmd_888 completed=cmd_888_B
+[2026-03-13 03:52:44] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_888	2
+[2026-03-13 03:52:44] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_888
+[2026-03-13 03:53:03] [AUTO_DEPLOY] Start: cmd=cmd_885 completed=cmd_885_review
+[2026-03-13 03:53:03] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_885	2
+[2026-03-13 03:53:03] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_885
+[2026-03-13 04:02:07] [AUTO_DEPLOY] Start: cmd=cmd_885 completed=cmd_885_D
+[2026-03-13 04:02:08] [AUTO_DEPLOY] Analysis result: SKIP	cmd_885_C
+[2026-03-13 04:02:08] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_885_C
+[2026-03-13 04:07:46] [AUTO_DEPLOY] Start: cmd=cmd_885 completed=cmd_885_review2
+[2026-03-13 04:07:47] [AUTO_DEPLOY] Analysis result: SKIP	cmd_885_C
+[2026-03-13 04:07:47] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_885_C
+[2026-03-13 08:29:50] [AUTO_DEPLOY] Start: cmd=cmd_886 completed=cmd_886_B
+[2026-03-13 08:29:51] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_886	1
+[2026-03-13 08:29:51] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_886
+[2026-03-13 09:37:59] [AUTO_DEPLOY] Start: cmd=cmd_891 completed=cmd_891_A
+[2026-03-13 09:37:59] [AUTO_DEPLOY] Analysis result: SKIP	cmd_891_review
+[2026-03-13 09:37:59] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_891_review
+[2026-03-13 09:56:15] [AUTO_DEPLOY] Start: cmd=cmd_890 completed=cmd_890_review
+[2026-03-13 09:56:15] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_890	2
+[2026-03-13 09:56:15] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_890
+[2026-03-13 10:29:04] [AUTO_DEPLOY] Start: cmd=cmd_891 completed=cmd_891_review
+[2026-03-13 10:29:05] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_891	2
+[2026-03-13 10:29:05] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_891
+[2026-03-13 10:33:40] [AUTO_DEPLOY] Start: cmd=cmd_892 completed=cmd_892_B
+[2026-03-13 10:33:41] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_892	2
+[2026-03-13 10:33:41] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_892
+[2026-03-13 12:30:20] [AUTO_DEPLOY] Start: cmd=cmd_895 completed=cmd_895_B
+[2026-03-13 12:30:20] [AUTO_DEPLOY] Analysis result: SKIP	cmd_895_A
+[2026-03-13 12:30:20] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_895_A
+[2026-03-13 12:33:36] [AUTO_DEPLOY] Start: cmd=cmd_895 completed=cmd_895_A
+[2026-03-13 12:33:36] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_895	2
+[2026-03-13 12:33:36] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_895
+[2026-03-13 12:55:40] [AUTO_DEPLOY] Start: cmd=cmd_897 completed=cmd_897_A
+[2026-03-13 12:55:41] [AUTO_DEPLOY] Analysis result: SKIP	cmd_897_B
+[2026-03-13 12:55:41] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_897_B
+[2026-03-13 12:56:43] [AUTO_DEPLOY] Start: cmd=cmd_897 completed=cmd_897_B
+[2026-03-13 12:56:44] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_897	2
+[2026-03-13 12:56:44] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_897
+[2026-03-13 13:01:02] [AUTO_DEPLOY] Start: cmd=cmd_898 completed=cmd_898_A
+[2026-03-13 13:01:02] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_898	2
+[2026-03-13 13:01:02] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_898
+[2026-03-13 13:14:03] [AUTO_DEPLOY] Start: cmd=cmd_899 completed=cmd_899_A
+[2026-03-13 13:14:03] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_899	1
+[2026-03-13 13:14:03] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_899
+[2026-03-13 13:54:39] [AUTO_DEPLOY] Start: cmd=cmd_901 completed=cmd_901_A
+WARN: saizo.yaml: while scanning for the next token
+found character '`' that cannot start any token
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml", line 183, column 11
+[2026-03-13 13:54:40] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_901	1
+[2026-03-13 13:54:40] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_901
+[2026-03-13 14:10:15] [AUTO_DEPLOY] Start: cmd=cmd_906 completed=cmd_906_A
+[2026-03-13 14:10:16] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_906	1
+[2026-03-13 14:10:16] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_906
+[2026-03-13 14:20:12] [AUTO_DEPLOY] Start: cmd=cmd_908 completed=cmd_908_A
+[2026-03-13 14:20:12] [AUTO_DEPLOY] Analysis result: SKIP	cmd_908_B
+[2026-03-13 14:20:12] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_908_B
+[2026-03-13 14:28:38] [AUTO_DEPLOY] Start: cmd=cmd_908 completed=cmd_908_B
+[2026-03-13 14:28:38] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_908	2
+[2026-03-13 14:28:38] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_908
+[2026-03-13 14:49:35] [AUTO_DEPLOY] Start: cmd=cmd_909 completed=cmd_909_A
+[2026-03-13 14:49:35] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_909_B	hayate	/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml	kirimaru
+[2026-03-13 14:49:35] [AUTO_DEPLOY] Ninja selected: hayate (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+[2026-03-13 14:49:35] [AUTO_DEPLOY] Task YAML: cmd_909_B → hayate (/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml)
+[2026-03-13 14:49:35] [AUTO_DEPLOY] Calling: deploy_task.sh hayate
+[2026-03-13 14:49:38] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hayate ← cmd_909_B (cmd=cmd_909)
+[2026-03-13 14:50:56] [AUTO_DEPLOY] Start: cmd=cmd_909 completed=cmd_909_A
+[2026-03-13 14:50:57] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_909_B	hayate	/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml	kirimaru
+[2026-03-13 14:50:57] [AUTO_DEPLOY] Ninja selected: hayate (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+[2026-03-13 14:50:57] [AUTO_DEPLOY] Task YAML: cmd_909_B → hayate (/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml)
+[2026-03-13 14:50:57] [AUTO_DEPLOY] Calling: deploy_task.sh hayate
+[2026-03-13 14:50:59] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hayate ← cmd_909_B (cmd=cmd_909)
+[2026-03-13 14:52:07] [AUTO_DEPLOY] Start: cmd=cmd_905 completed=cmd_905_B
+[2026-03-13 14:52:08] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_905	1
+[2026-03-13 14:52:08] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_905
+[2026-03-13 14:53:49] [AUTO_DEPLOY] Start: cmd=cmd_909 completed=cmd_909_C
+[2026-03-13 14:53:49] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_909_B	hayate	/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml	saizo
+[2026-03-13 14:53:49] [AUTO_DEPLOY] Ninja selected: hayate (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+[2026-03-13 14:53:50] [AUTO_DEPLOY] Task YAML: cmd_909_B → hayate (/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml)
+[2026-03-13 14:53:50] [AUTO_DEPLOY] Calling: deploy_task.sh hayate
+[2026-03-13 14:53:52] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hayate ← cmd_909_B (cmd=cmd_909)
+[2026-03-13 14:56:44] [AUTO_DEPLOY] Start: cmd=cmd_909 completed=cmd_909_B
+[2026-03-13 14:56:44] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_909	3
+[2026-03-13 14:56:44] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_909
+[2026-03-13 15:12:45] [AUTO_DEPLOY] Start: cmd=cmd_911 completed=cmd_911_B
+[2026-03-13 15:12:45] [AUTO_DEPLOY] Analysis result: SKIP	cmd_911_A
+[2026-03-13 15:12:45] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_911_A
+[2026-03-13 17:04:57] [AUTO_DEPLOY] Start: cmd=cmd_912 completed=cmd_912_A
+[2026-03-13 17:04:57] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_912_B	sasuke	/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml	kirimaru
+[2026-03-13 17:04:57] [AUTO_DEPLOY] Ninja selected: sasuke (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+[2026-03-13 17:04:57] [AUTO_DEPLOY] Task YAML: cmd_912_B → sasuke (/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml)
+[2026-03-13 17:04:57] [AUTO_DEPLOY] Calling: deploy_task.sh sasuke
+[2026-03-13 17:04:59] [AUTO_DEPLOY] AUTO_DEPLOY_OK: sasuke ← cmd_912_B (cmd=cmd_912)
+[2026-03-13 17:41:55] [AUTO_DEPLOY] Start: cmd=cmd_912 completed=cmd_912_B
+[2026-03-13 17:41:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_912	2
+[2026-03-13 17:41:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_912
+[2026-03-13 17:49:30] [AUTO_DEPLOY] Start: cmd=cmd_913 completed=cmd_913_B
+[2026-03-13 17:49:31] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_913	2
+[2026-03-13 17:49:31] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_913
+[2026-03-13 17:50:33] [AUTO_DEPLOY] Start: cmd=cmd_913 completed=cmd_913_A
+[2026-03-13 17:50:33] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_913	2
+[2026-03-13 17:50:33] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_913
+[2026-03-13 18:43:33] [AUTO_DEPLOY] Start: cmd=cmd_912 completed=cmd_912_B
+[2026-03-13 18:43:33] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_912	2
+[2026-03-13 18:43:33] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_912
+[2026-03-13 19:07:29] [AUTO_DEPLOY] Start: cmd=cmd_915 completed=cmd_915_A
+[2026-03-13 19:07:29] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_915	1
+[2026-03-13 19:07:29] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_915
+[2026-03-13 19:09:19] [AUTO_DEPLOY] Start: cmd=cmd_914 completed=cmd_914_A
+[2026-03-13 19:09:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_914	3
+[2026-03-13 19:09:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_914
+[2026-03-13 19:10:22] [AUTO_DEPLOY] Start: cmd=cmd_912 completed=cmd_912_B
+[2026-03-13 19:10:22] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_912	1
+[2026-03-13 19:10:22] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_912
+[2026-03-13 19:12:54] [AUTO_DEPLOY] Start: cmd=cmd_914 completed=cmd_914_C
+[2026-03-13 19:12:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_914	4
+[2026-03-13 19:12:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_914
+[2026-03-13 19:21:43] [AUTO_DEPLOY] Start: cmd=cmd_915 completed=cmd_915_B
+[2026-03-13 19:21:43] [AUTO_DEPLOY] Analysis result: SKIP	cmd_915_C
+[2026-03-13 19:21:43] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_915_C
+[2026-03-13 19:52:25] [AUTO_DEPLOY] Start: cmd=cmd_912 completed=cmd_912_C
+[2026-03-13 19:52:26] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_912	1
+[2026-03-13 19:52:26] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_912
+[2026-03-13 20:22:44] [AUTO_DEPLOY] Start: cmd=cmd_916 completed=cmd_916_A
+[2026-03-13 20:22:44] [AUTO_DEPLOY] Analysis result: SKIP	cmd_916_B
+[2026-03-13 20:22:44] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_916_B
+[2026-03-13 20:28:20] [AUTO_DEPLOY] Start: cmd=cmd_916 completed=cmd_916_B
+[2026-03-13 20:28:20] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_916	2
+[2026-03-13 20:28:20] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_916
+[2026-03-13 20:46:43] [AUTO_DEPLOY] Start: cmd=cmd_917 completed=cmd_917_R
+[2026-03-13 20:46:44] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_917	2
+[2026-03-13 20:46:44] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_917
+[2026-03-13 21:19:58] [AUTO_DEPLOY] Start: cmd=cmd_919 completed=cmd_919_A
+[2026-03-13 21:19:58] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_919_R	hayate	/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml	tobisaru
+[2026-03-13 21:19:58] [AUTO_DEPLOY] Ninja selected: hayate (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+[2026-03-13 21:19:59] [AUTO_DEPLOY] Task YAML: cmd_919_R → hayate (/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml)
+[2026-03-13 21:19:59] [AUTO_DEPLOY] Calling: deploy_task.sh hayate
+[2026-03-13 21:20:01] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hayate ← cmd_919_R (cmd=cmd_919)
+[2026-03-13 21:30:55] [AUTO_DEPLOY] Start: cmd=cmd_919 completed=cmd_919_B
+[2026-03-13 21:30:55] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_919_R2	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml	saizo
+[2026-03-13 21:30:55] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+[2026-03-13 21:30:55] [AUTO_DEPLOY] Task YAML: cmd_919_R2 → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-03-13 21:30:55] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-03-13 21:30:57] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kotaro ← cmd_919_R2 (cmd=cmd_919)
+[2026-03-13 22:21:37] [AUTO_DEPLOY] Start: cmd=cmd_919 completed=cmd_919_A
+[2026-03-13 22:21:37] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_919	4
+[2026-03-13 22:21:37] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_919
+[2026-03-13 22:21:54] [AUTO_DEPLOY] Start: cmd=cmd_919 completed=cmd_919_B
+[2026-03-13 22:21:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_919	4
+[2026-03-13 22:21:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_919
+[2026-03-13 23:12:46] [AUTO_DEPLOY] Start: cmd=cmd_921 completed=cmd_921_A
+[2026-03-13 23:12:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_921	1
+[2026-03-13 23:12:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_921
+[2026-03-13 23:15:43] [AUTO_DEPLOY] Start: cmd=cmd_922 completed=cmd_922_R2
+[2026-03-13 23:15:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_922	2
+[2026-03-13 23:15:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_922
+[2026-03-13 23:21:50] [AUTO_DEPLOY] Start: cmd=cmd_921 completed=cmd_921_RV
+[2026-03-13 23:21:51] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_921	2
+[2026-03-13 23:21:51] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_921
+[2026-03-14 00:27:05] [AUTO_DEPLOY] Start: cmd=cmd_931 completed=cmd_931_B
+[2026-03-14 00:27:06] [AUTO_DEPLOY] Analysis result: SKIP	cmd_931_D
+[2026-03-14 00:27:06] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_931_D
+[2026-03-14 00:28:53] [AUTO_DEPLOY] Start: cmd=cmd_931 completed=cmd_931_C
+[2026-03-14 00:28:53] [AUTO_DEPLOY] Analysis result: SKIP	cmd_931_D
+[2026-03-14 00:28:53] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_931_D
+[2026-03-14 00:29:11] [AUTO_DEPLOY] Start: cmd=cmd_931 completed=cmd_931_A
+[2026-03-14 00:29:12] [AUTO_DEPLOY] Analysis result: SKIP	cmd_931_D
+[2026-03-14 00:29:12] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_931_D
+[2026-03-14 00:29:13] [AUTO_DEPLOY] Start: cmd=cmd_931 completed=cmd_931_E
+[2026-03-14 00:29:13] [AUTO_DEPLOY] Analysis result: SKIP	cmd_931_D
+[2026-03-14 00:29:13] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_931_D
+[2026-03-14 00:30:34] [AUTO_DEPLOY] Start: cmd=cmd_931 completed=cmd_931_F
+[2026-03-14 00:30:34] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_931	5
+[2026-03-14 00:30:34] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_931
+[2026-03-14 00:32:18] [AUTO_DEPLOY] Start: cmd=cmd_931 completed=cmd_931_G
+[2026-03-14 00:32:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_931	5
+[2026-03-14 00:32:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_931
+[2026-03-14 00:35:33] [AUTO_DEPLOY] Start: cmd=cmd_930 completed=cmd_930_RV
+[2026-03-14 00:35:34] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_930	1
+[2026-03-14 00:35:34] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_930
+[2026-03-14 00:54:49] [AUTO_DEPLOY] Start: cmd=cmd_929 completed=cmd_929_RV
+[2026-03-14 00:54:49] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_929	2
+[2026-03-14 00:54:49] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_929
+[2026-03-14 10:24:54] [AUTO_DEPLOY] Start: cmd=cmd_920 completed=cmd_920_A
+[2026-03-14 10:24:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_920	1
+[2026-03-14 10:24:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_920
+[2026-03-14 11:07:36] [AUTO_DEPLOY] Start: cmd=cmd_933 completed=cmd_933_B
+[2026-03-14 11:07:36] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_933_RV	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml	kagemaru
+[2026-03-14 11:07:36] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+[2026-03-14 11:07:36] [AUTO_DEPLOY] Task YAML: cmd_933_RV → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-03-14 11:07:36] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-03-14 11:07:39] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kotaro ← cmd_933_RV (cmd=cmd_933)
+[2026-03-14 11:10:31] [AUTO_DEPLOY] Start: cmd=cmd_933 completed=cmd_933_RV
+[2026-03-14 11:10:31] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_933	3
+[2026-03-14 11:10:31] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_933
+[2026-03-14 11:49:32] [AUTO_DEPLOY] Start: cmd=cmd_934 completed=cmd_934_A
+[2026-03-14 11:49:33] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_934_RV	tobisaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml	sasuke
+[2026-03-14 11:49:33] [AUTO_DEPLOY] Ninja selected: tobisaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+[2026-03-14 11:49:33] [AUTO_DEPLOY] Task YAML: cmd_934_RV → tobisaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml)
+[2026-03-14 11:49:33] [AUTO_DEPLOY] Calling: deploy_task.sh tobisaru
+[2026-03-14 11:49:36] [AUTO_DEPLOY] AUTO_DEPLOY_OK: tobisaru ← cmd_934_RV (cmd=cmd_934)
+[2026-03-14 12:00:34] [AUTO_DEPLOY] Start: cmd=cmd_934 completed=cmd_934_RV
+[2026-03-14 12:00:35] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_934	2
+[2026-03-14 12:00:35] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_934
+[2026-03-14 12:49:21] [AUTO_DEPLOY] Start: cmd=cmd_936 completed=cmd_936_A
+[2026-03-14 12:49:21] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_936_RV	hayate	/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml	kirimaru
+[2026-03-14 12:49:21] [AUTO_DEPLOY] Ninja selected: hayate (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+[2026-03-14 12:49:21] [AUTO_DEPLOY] Task YAML: cmd_936_RV → hayate (/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml)
+[2026-03-14 12:49:21] [AUTO_DEPLOY] Calling: deploy_task.sh hayate
+[2026-03-14 12:49:24] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hayate ← cmd_936_RV (cmd=cmd_936)
+[2026-03-14 16:31:19] [AUTO_DEPLOY] Start: cmd=cmd_938 completed=cmd_938_RV
+[2026-03-14 16:31:20] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_938	2
+[2026-03-14 16:31:20] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_938
+[2026-03-14 16:54:01] [AUTO_DEPLOY] Start: cmd=cmd_940 completed=cmd_940_A
+[2026-03-14 16:54:01] [AUTO_DEPLOY] Analysis result: SKIP	cmd_940_B
+[2026-03-14 16:54:01] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_940_B
+[2026-03-14 17:47:32] [AUTO_DEPLOY] Start: cmd=cmd_941 completed=cmd_941_B
+[2026-03-14 17:47:32] [AUTO_DEPLOY] Analysis result: SKIP	cmd_941_C
+[2026-03-14 17:47:32] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_941_C
+[2026-03-14 17:48:52] [AUTO_DEPLOY] Start: cmd=cmd_941 completed=cmd_941_A
+[2026-03-14 17:48:53] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_941_E	hanzo	/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml	sasuke
+[2026-03-14 17:48:53] [AUTO_DEPLOY] Ninja selected: hanzo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+[2026-03-14 17:48:53] [AUTO_DEPLOY] Task YAML: cmd_941_E → hanzo (/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml)
+[2026-03-14 17:48:53] [AUTO_DEPLOY] Calling: deploy_task.sh hanzo
+[2026-03-14 17:48:54] [AUTO_DEPLOY] LOCK: cmd_941は別プロセスで処理中
+[2026-03-14 17:48:55] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hanzo ← cmd_941_E (cmd=cmd_941)
+[2026-03-14 17:52:53] [AUTO_DEPLOY] Start: cmd=cmd_941 completed=cmd_941_D
+[2026-03-14 17:52:54] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_941_G	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml	kagemaru
+[2026-03-14 17:52:54] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+[2026-03-14 17:52:54] [AUTO_DEPLOY] Task YAML: cmd_941_G → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-03-14 17:52:54] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-03-14 17:52:57] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kotaro ← cmd_941_G (cmd=cmd_941)
+[2026-03-14 17:54:30] [AUTO_DEPLOY] Start: cmd=cmd_941 completed=cmd_941_E
+[2026-03-14 17:54:31] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_941_H	tobisaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml	hanzo
+[2026-03-14 17:54:31] [AUTO_DEPLOY] Ninja selected: tobisaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+[2026-03-14 17:54:31] [AUTO_DEPLOY] Task YAML: cmd_941_H → tobisaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml)
+[2026-03-14 17:54:31] [AUTO_DEPLOY] Calling: deploy_task.sh tobisaru
+[2026-03-14 17:54:32] [AUTO_DEPLOY] LOCK: cmd_941は別プロセスで処理中
+[2026-03-14 17:54:33] [AUTO_DEPLOY] AUTO_DEPLOY_OK: tobisaru ← cmd_941_H (cmd=cmd_941)
+[2026-03-14 17:54:50] [AUTO_DEPLOY] Start: cmd=cmd_941 completed=cmd_941_F
+[2026-03-14 17:54:50] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_941_H	tobisaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml	saizo
+[2026-03-14 17:54:50] [AUTO_DEPLOY] Ninja selected: tobisaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+[2026-03-14 17:54:50] [AUTO_DEPLOY] Task YAML: cmd_941_H → tobisaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml)
+[2026-03-14 17:54:50] [AUTO_DEPLOY] Calling: deploy_task.sh tobisaru
+[2026-03-14 17:54:53] [AUTO_DEPLOY] AUTO_DEPLOY_OK: tobisaru ← cmd_941_H (cmd=cmd_941)
+[2026-03-14 17:55:54] [AUTO_DEPLOY] Start: cmd=cmd_941 completed=cmd_941_H
+[2026-03-14 17:55:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_941	8
+[2026-03-14 17:55:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_941
+[2026-03-14 18:06:42] [AUTO_DEPLOY] Start: cmd=cmd_941 completed=cmd_941_I
+[2026-03-14 18:06:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_941	8
+[2026-03-14 18:06:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_941
+[2026-03-14 18:37:44] [AUTO_DEPLOY] Start: cmd=cmd_942 completed=cmd_942_A
+[2026-03-14 18:37:44] [AUTO_DEPLOY] Analysis result: SKIP	cmd_942_B
+[2026-03-14 18:37:44] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_942_B
+[2026-03-14 18:39:02] [AUTO_DEPLOY] Start: cmd=cmd_942 completed=cmd_942_B
+[2026-03-14 18:39:03] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_942	2
+[2026-03-14 18:39:03] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_942
+[2026-03-14 19:09:20] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_B
+[2026-03-14 19:09:21] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_M
+[2026-03-14 19:09:21] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_M
+[2026-03-14 19:12:53] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_M
+[2026-03-14 19:12:54] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_E
+[2026-03-14 19:12:54] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_E
+[2026-03-14 19:13:11] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_A
+[2026-03-14 19:13:11] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_E
+[2026-03-14 19:13:11] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_E
+[2026-03-14 19:13:12] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_C
+[2026-03-14 19:13:12] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_E
+[2026-03-14 19:13:12] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_E
+[2026-03-14 19:14:18] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_H
+[2026-03-14 19:14:18] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_P
+[2026-03-14 19:14:18] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_P
+[2026-03-14 19:14:20] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_R
+[2026-03-14 19:14:20] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_P
+[2026-03-14 19:14:20] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_P
+[2026-03-14 19:14:40] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_E
+[2026-03-14 19:14:40] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_P
+[2026-03-14 19:14:40] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_P
+[2026-03-14 19:18:33] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_G
+[2026-03-14 19:18:33] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_I
+[2026-03-14 19:18:33] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_I
+[2026-03-14 19:20:26] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_D
+[2026-03-14 19:20:26] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_I
+[2026-03-14 19:20:26] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_I
+[2026-03-14 19:24:04] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_J
+[2026-03-14 19:24:04] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_I
+[2026-03-14 19:24:04] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_I
+[2026-03-14 19:24:25] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_N
+[2026-03-14 19:24:25] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_I
+[2026-03-14 19:24:25] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_I
+[2026-03-14 19:31:55] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_K
+[2026-03-14 19:31:57] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_L
+[2026-03-14 19:31:57] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_L
+[2026-03-14 19:33:12] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_S
+[2026-03-14 19:33:12] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_L
+[2026-03-14 19:33:12] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_L
+[2026-03-14 19:34:34] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_L
+[2026-03-14 19:34:34] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_I
+[2026-03-14 19:34:34] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_I
+[2026-03-14 19:34:55] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_O
+[2026-03-14 19:34:56] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_I
+[2026-03-14 19:34:56] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_I
+[2026-03-14 19:36:11] [AUTO_DEPLOY] Start: cmd=cmd_944 completed=cmd_944
+[2026-03-14 19:36:11] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_944	1
+[2026-03-14 19:36:11] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_944
+[2026-03-14 19:37:34] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_I
+[2026-03-14 19:37:34] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_F
+[2026-03-14 19:37:34] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_F
+[2026-03-14 19:44:18] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_F
+[2026-03-14 19:44:18] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_P
+[2026-03-14 19:44:18] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_P
+[2026-03-14 19:47:03] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_Q
+[2026-03-14 19:47:03] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_L_upgrade
+[2026-03-14 19:47:03] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_L_upgrade
+[2026-03-14 19:49:58] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_D_upgrade
+[2026-03-14 19:49:59] [AUTO_DEPLOY] Analysis result: SKIP	cmd_943_L_upgrade
+[2026-03-14 19:49:59] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_943_L_upgrade
+[2026-03-14 19:52:13] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_L_upgrade
+[2026-03-14 19:52:14] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_943	6
+[2026-03-14 19:52:14] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_943
+[2026-03-14 20:24:00] [AUTO_DEPLOY] Start: cmd=cmd_943 completed=cmd_943_P
+[2026-03-14 20:24:00] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_943	4
+[2026-03-14 20:24:00] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_943
+[2026-03-14 21:12:38] [AUTO_DEPLOY] Start: cmd=cmd_948 completed=cmd_948
+[2026-03-14 21:12:38] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_948	1
+[2026-03-14 21:12:38] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_948
+[2026-03-14 21:56:03] [AUTO_DEPLOY] Start: cmd=cmd_949 completed=cmd_949
+[2026-03-14 21:56:04] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_949	1
+[2026-03-14 21:56:04] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_949
+[2026-03-14 22:52:06] [AUTO_DEPLOY] Start: cmd=cmd_947 completed=cmd_947
+[2026-03-14 22:52:07] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_947	1
+[2026-03-14 22:52:07] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_947
+[2026-03-15 01:06:47] [AUTO_DEPLOY] Start: cmd=cmd_950 completed=cmd_950
+[2026-03-15 01:06:48] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_950	1
+[2026-03-15 01:06:48] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_950
+[2026-03-15 01:10:36] [AUTO_DEPLOY] Start: cmd=cmd_950 completed=cmd_950
+[2026-03-15 01:10:36] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_950	1
+[2026-03-15 01:10:36] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_950
+[2026-03-15 01:45:55] [AUTO_DEPLOY] Start: cmd=cmd_951 completed=cmd_951
+[2026-03-15 01:45:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_951	1
+[2026-03-15 01:45:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_951
+[2026-03-15 01:51:09] [AUTO_DEPLOY] Start: cmd=cmd_951 completed=cmd_951
+[2026-03-15 01:51:09] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_951	1
+[2026-03-15 01:51:09] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_951
+[2026-03-15 01:55:13] [AUTO_DEPLOY] Start: cmd=cmd_951 completed=cmd_951
+[2026-03-15 01:55:13] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_951	1
+[2026-03-15 01:55:13] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_951
+[2026-03-15 03:26:29] [AUTO_DEPLOY] Start: cmd=cmd_954 completed=cmd_954
+[2026-03-15 03:26:29] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_954	1
+[2026-03-15 03:26:29] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_954
+[2026-03-15 03:29:51] [AUTO_DEPLOY] Start: cmd=cmd_954 completed=cmd_954
+[2026-03-15 03:29:52] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_954	1
+[2026-03-15 03:29:52] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_954
+[2026-03-15 18:54:18] [AUTO_DEPLOY] Start: cmd=cmd_957 completed=cmd_957
+[2026-03-15 18:54:18] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_957	1
+[2026-03-15 18:54:18] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_957
+[2026-03-15 18:55:37] [AUTO_DEPLOY] Start: cmd=cmd_957 completed=cmd_957
+[2026-03-15 18:55:38] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_957	1
+[2026-03-15 18:55:38] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_957
+[2026-03-15 19:01:12] [AUTO_DEPLOY] Start: cmd=cmd_957 completed=cmd_957
+[2026-03-15 19:01:12] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_957	1
+[2026-03-15 19:01:12] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_957
+[2026-03-15 19:03:55] [AUTO_DEPLOY] Start: cmd=cmd_957 completed=cmd_957
+[2026-03-15 19:03:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_957	1
+[2026-03-15 19:03:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_957
+[2026-03-15 19:26:52] [AUTO_DEPLOY] Start: cmd=cmd_959 completed=cmd_959
+[2026-03-15 19:26:52] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_959	1
+[2026-03-15 19:26:52] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_959
+[2026-03-15 19:28:56] [AUTO_DEPLOY] Start: cmd=cmd_959 completed=cmd_959
+[2026-03-15 19:28:57] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_959	1
+[2026-03-15 19:28:57] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_959
+[2026-03-15 19:30:27] [AUTO_DEPLOY] Start: cmd=cmd_959 completed=cmd_959
+[2026-03-15 19:30:27] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_959	1
+[2026-03-15 19:30:27] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_959
+[2026-03-15 19:31:22] [AUTO_DEPLOY] Start: cmd=cmd_959 completed=cmd_959
+[2026-03-15 19:31:23] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_959	1
+[2026-03-15 19:31:23] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_959
+[2026-03-15 19:31:24] [AUTO_DEPLOY] Start: cmd=cmd_959 completed=cmd_959
+[2026-03-15 19:31:25] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_959	1
+[2026-03-15 19:31:25] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_959
+[2026-03-15 19:32:43] [AUTO_DEPLOY] Start: cmd=cmd_959 completed=cmd_959
+[2026-03-15 19:32:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_959	1
+[2026-03-15 19:32:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_959
+[2026-03-15 19:56:32] [AUTO_DEPLOY] Start: cmd=cmd_959 completed=cmd_959
+[2026-03-15 19:56:32] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_959	1
+[2026-03-15 19:56:32] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_959
+[2026-03-15 19:56:32] [AUTO_DEPLOY] Start: cmd=cmd_959 completed=cmd_959
+[2026-03-15 19:56:32] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_959	1
+[2026-03-15 19:56:32] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_959
+[2026-03-15 19:57:59] [AUTO_DEPLOY] Start: cmd=cmd_960 completed=cmd_960
+[2026-03-15 19:57:59] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_960	1
+[2026-03-15 19:57:59] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_960
+[2026-03-15 20:00:51] [AUTO_DEPLOY] Start: cmd=cmd_960 completed=cmd_960
+[2026-03-15 20:00:51] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_960	1
+[2026-03-15 20:00:51] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_960
+[2026-03-15 20:02:33] [AUTO_DEPLOY] Start: cmd=cmd_960 completed=cmd_960
+[2026-03-15 20:02:33] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_960	1
+[2026-03-15 20:02:33] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_960
+[2026-03-15 20:13:15] [AUTO_DEPLOY] Start: cmd=cmd_961 completed=cmd_961
+[2026-03-15 20:13:15] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_961	1
+[2026-03-15 20:13:15] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_961
+[2026-03-15 21:42:01] [AUTO_DEPLOY] Start: cmd=cmd_962 completed=cmd_962
+[2026-03-15 21:42:01] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_962	1
+[2026-03-15 21:42:01] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_962
+[2026-03-15 21:46:03] [AUTO_DEPLOY] Start: cmd=cmd_962 completed=cmd_962
+[2026-03-15 21:46:03] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_962	1
+[2026-03-15 21:46:03] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_962
+[2026-03-15 21:48:47] [AUTO_DEPLOY] Start: cmd=cmd_962 completed=cmd_962
+[2026-03-15 21:48:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_962	1
+[2026-03-15 21:48:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_962
+[2026-03-15 21:54:12] [AUTO_DEPLOY] Start: cmd=cmd_962 completed=cmd_962
+[2026-03-15 21:54:13] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_962	1
+[2026-03-15 21:54:13] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_962
+[2026-03-15 21:54:32] [AUTO_DEPLOY] Start: cmd=cmd_962 completed=cmd_962
+[2026-03-15 21:54:32] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_962	1
+[2026-03-15 21:54:32] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_962
+[2026-03-15 21:54:35] [AUTO_DEPLOY] Start: cmd=cmd_962 completed=cmd_962
+[2026-03-15 21:54:35] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_962	1
+[2026-03-15 21:54:35] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_962
+[2026-03-15 21:58:21] [AUTO_DEPLOY] Start: cmd=cmd_962 completed=cmd_962
+[2026-03-15 21:58:22] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_962	1
+[2026-03-15 21:58:22] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_962
+[2026-03-16 14:32:16] [AUTO_DEPLOY] Start: cmd=cmd_1002 completed=cmd_1002_impl
+[2026-03-16 14:32:16] [AUTO_DEPLOY] Analysis result: BLOCKED	cmd_1002_review	c,m,d,_,1,0,0,2,_,i,m,p,l
+[2026-03-16 14:32:16] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: cmd_1002_review unresolved=c,m,d,_,1,0,0,2,_,i,m,p,l
+[2026-03-16 14:38:29] [AUTO_DEPLOY] Start: cmd=cmd_1003 completed=cmd_1003_impl_monthly
+[2026-03-16 14:38:29] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1003_recon_scan
+[2026-03-16 14:38:29] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1003_recon_scan
+[2026-03-16 14:40:33] [AUTO_DEPLOY] Start: cmd=cmd_1002 completed=cmd_1002_review
+[2026-03-16 14:40:34] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1002	2
+[2026-03-16 14:40:34] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1002
+[2026-03-16 14:47:41] [AUTO_DEPLOY] Start: cmd=cmd_1003 completed=cmd_1003_review_monthly
+[2026-03-16 14:47:41] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1003	4
+[2026-03-16 14:47:41] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1003
+[2026-03-16 15:16:07] [AUTO_DEPLOY] Start: cmd=cmd_1005 completed=cmd_1005_impl
+[2026-03-16 15:16:07] [AUTO_DEPLOY] Analysis result: BLOCKED	cmd_1005_review	c,m,d,_,1,0,0,5,_,i,m,p,l
+[2026-03-16 15:16:07] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: cmd_1005_review unresolved=c,m,d,_,1,0,0,5,_,i,m,p,l
+[2026-03-16 16:05:12] [AUTO_DEPLOY] Start: cmd=cmd_1004 completed=cmd_1004_impl
+[2026-03-16 16:05:13] [AUTO_DEPLOY] Analysis result: BLOCKED	cmd_1004_review	c,m,d,_,1,0,0,4,_,i,m,p,l
+[2026-03-16 16:05:13] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: cmd_1004_review unresolved=c,m,d,_,1,0,0,4,_,i,m,p,l
+[2026-03-16 16:12:26] [AUTO_DEPLOY] Start: cmd=cmd_1004 completed=cmd_1004_review
+[2026-03-16 16:12:26] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1004	2
+[2026-03-16 16:12:26] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1004
+[2026-03-16 16:14:18] [AUTO_DEPLOY] Start: cmd=cmd_1004 completed=cmd_1004_impl
+[2026-03-16 16:14:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1004	2
+[2026-03-16 16:14:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1004
+[2026-03-16 16:39:28] [AUTO_DEPLOY] Start: cmd=cmd_1006 completed=cmd_1006_impl
+[2026-03-16 16:39:28] [AUTO_DEPLOY] Analysis result: BLOCKED	cmd_1006_review	c,m,d,_,1,0,0,6,_,i,m,p,l
+[2026-03-16 16:39:28] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: cmd_1006_review unresolved=c,m,d,_,1,0,0,6,_,i,m,p,l
+[2026-03-16 19:38:11] [AUTO_DEPLOY] Start: cmd=cmd_1007 completed=cmd_1007_review
+[2026-03-16 19:38:11] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1007	2
+[2026-03-16 19:38:11] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1007
+[2026-03-16 21:18:15] [AUTO_DEPLOY] Start: cmd=cmd_1010 completed=cmd_1010_sub_c
+WARN: sasuke.yaml: while scanning for the next token
+found character '`' that cannot start any token
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml", line 216, column 11
+[2026-03-16 21:18:16] [AUTO_DEPLOY] Analysis result: BLOCKED		cmd_1010_sub_a
+[2026-03-16 21:18:16] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED:  unresolved=cmd_1010_sub_a
+[2026-03-16 22:25:55] [AUTO_DEPLOY] Start: cmd=cmd_1011 completed=cmd_1011_impl
+[2026-03-16 22:25:55] [AUTO_DEPLOY] Analysis result: DEPLOY		sasuke	/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml	hanzo
+[2026-03-16 22:25:55] [AUTO_DEPLOY] Ninja selected: sasuke (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+[2026-03-16 22:25:55] [AUTO_DEPLOY] Task YAML:  → sasuke (/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml)
+[2026-03-16 22:25:55] [AUTO_DEPLOY] Calling: deploy_task.sh sasuke
+[2026-03-16 22:26:01] [AUTO_DEPLOY] AUTO_DEPLOY_OK: sasuke ←  (cmd=cmd_1011)
+[2026-03-16 22:59:51] [AUTO_DEPLOY] Start: cmd=cmd_1013 completed=cmd_1013_sub_c
+[2026-03-16 22:59:52] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1013	3
+[2026-03-16 22:59:52] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1013
+[2026-03-17 01:06:20] [AUTO_DEPLOY] Start: cmd=cmd_1015 completed=cmd_1015_impl
+[2026-03-17 01:06:21] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1015	1
+[2026-03-17 01:06:21] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1015
+[2026-03-17 01:30:27] [AUTO_DEPLOY] Start: cmd=cmd_1017 completed=cmd_1017_sub_b
+[2026-03-17 01:30:27] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1017_sub_a
+[2026-03-17 01:30:27] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1017_sub_a
+[2026-03-17 01:44:19] [AUTO_DEPLOY] Start: cmd=cmd_1017 completed=cmd_1017_sub_c
+[2026-03-17 01:44:19] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1017_sub_a
+[2026-03-17 01:44:19] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1017_sub_a
+[2026-03-17 01:47:41] [AUTO_DEPLOY] Start: cmd=cmd_1017 completed=cmd_1017_sub_a
+[2026-03-17 01:47:41] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1017	3
+[2026-03-17 01:47:41] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1017
+[2026-03-17 01:50:48] [AUTO_DEPLOY] Start: cmd=cmd_1017 completed=cmd_1017_sub_a
+[2026-03-17 01:50:48] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1017	3
+[2026-03-17 01:50:48] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1017
+[2026-03-17 01:56:17] [AUTO_DEPLOY] Start: cmd=cmd_1017 completed=cmd_1017_sub_a
+[2026-03-17 01:56:17] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1017	3
+[2026-03-17 01:56:17] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1017
+[2026-03-17 01:56:18] [AUTO_DEPLOY] Start: cmd=cmd_1017 completed=cmd_1017_sub_a
+[2026-03-17 01:56:18] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1017	3
+[2026-03-17 01:56:18] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1017
+[2026-03-17 01:56:19] [AUTO_DEPLOY] Start: cmd=cmd_1017 completed=cmd_1017_sub_c
+[2026-03-17 01:56:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1017	3
+[2026-03-17 01:56:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1017
+[2026-03-17 02:05:06] [AUTO_DEPLOY] Start: cmd=cmd_1017 completed=cmd_1017_sub_a
+[2026-03-17 02:05:06] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1017	3
+[2026-03-17 02:05:06] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1017
+[2026-03-17 02:58:47] [AUTO_DEPLOY] Start: cmd=cmd_1018 completed=cmd_1018
+[2026-03-17 02:58:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1018	1
+[2026-03-17 02:58:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1018
+[2026-03-17 03:31:49] [AUTO_DEPLOY] Start: cmd=cmd_1018 completed=cmd_1018_push_fix
+[2026-03-17 03:31:49] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1018	5
+[2026-03-17 03:31:49] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1018
+[2026-03-17 08:42:47] [AUTO_DEPLOY] Start: cmd=cmd_1019 completed=cmd_1019_sub_b
+[2026-03-17 08:42:47] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1019_sub_a
+[2026-03-17 08:42:47] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1019_sub_a
+[2026-03-17 08:47:04] [AUTO_DEPLOY] Start: cmd=cmd_1019 completed=cmd_1019_sub_a
+[2026-03-17 08:47:04] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1019_sub_c	tobisaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml	saizo
+[2026-03-17 08:47:04] [AUTO_DEPLOY] Ninja selected: tobisaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+[2026-03-17 08:47:04] [AUTO_DEPLOY] Task YAML: cmd_1019_sub_c → tobisaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml)
+[2026-03-17 08:47:04] [AUTO_DEPLOY] Calling: deploy_task.sh tobisaru
+[2026-03-17 08:47:07] [AUTO_DEPLOY] AUTO_DEPLOY_OK: tobisaru ← cmd_1019_sub_c (cmd=cmd_1019)
+[2026-03-17 08:55:50] [AUTO_DEPLOY] Start: cmd=cmd_1019 completed=cmd_1019_sub_c
+[2026-03-17 08:55:50] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1019_review	sasuke	/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml	tobisaru
+[2026-03-17 08:55:50] [AUTO_DEPLOY] Ninja selected: sasuke (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+[2026-03-17 08:55:50] [AUTO_DEPLOY] Task YAML: cmd_1019_review → sasuke (/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml)
+[2026-03-17 08:55:50] [AUTO_DEPLOY] Calling: deploy_task.sh sasuke
+[2026-03-17 08:55:53] [AUTO_DEPLOY] AUTO_DEPLOY_OK: sasuke ← cmd_1019_review (cmd=cmd_1019)
+[2026-03-17 09:06:06] [AUTO_DEPLOY] Start: cmd=cmd_1021 completed=cmd_1021_sub_b
+[2026-03-17 09:06:06] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1021_sub_a
+[2026-03-17 09:06:06] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1021_sub_a
+[2026-03-17 09:14:10] [AUTO_DEPLOY] Start: cmd=cmd_1019 completed=cmd_1019_fix
+[2026-03-17 09:14:10] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1019_re_review	kagemaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml	kirimaru
+[2026-03-17 09:14:10] [AUTO_DEPLOY] Ninja selected: kagemaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+[2026-03-17 09:14:10] [AUTO_DEPLOY] Task YAML: cmd_1019_re_review → kagemaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml)
+[2026-03-17 09:14:10] [AUTO_DEPLOY] Calling: deploy_task.sh kagemaru
+[2026-03-17 09:14:12] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kagemaru ← cmd_1019_re_review (cmd=cmd_1019)
+[2026-03-17 09:18:05] [AUTO_DEPLOY] Start: cmd=cmd_1019 completed=cmd_1019_re_review
+[2026-03-17 09:18:05] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1019_review	sasuke	/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml	kagemaru
+[2026-03-17 09:18:05] [AUTO_DEPLOY] Ninja selected: sasuke (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+[2026-03-17 09:18:05] [AUTO_DEPLOY] Task YAML: cmd_1019_review → sasuke (/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml)
+[2026-03-17 09:18:05] [AUTO_DEPLOY] Calling: deploy_task.sh sasuke
+[2026-03-17 09:18:08] [AUTO_DEPLOY] AUTO_DEPLOY_OK: sasuke ← cmd_1019_review (cmd=cmd_1019)
+[2026-03-17 09:18:08] [AUTO_DEPLOY] Start: cmd=cmd_1021 completed=cmd_1021_review
+[2026-03-17 09:18:08] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1021	3
+[2026-03-17 09:18:08] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1021
+[2026-03-17 09:45:42] [AUTO_DEPLOY] Start: cmd=cmd_1022 completed=cmd_1022_fix
+[2026-03-17 09:45:43] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1022_re_review	hanzo	/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml	kagemaru
+[2026-03-17 09:45:43] [AUTO_DEPLOY] Ninja selected: hanzo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+[2026-03-17 09:45:43] [AUTO_DEPLOY] Task YAML: cmd_1022_re_review → hanzo (/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml)
+[2026-03-17 09:45:43] [AUTO_DEPLOY] Calling: deploy_task.sh hanzo
+[2026-03-17 09:45:45] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hanzo ← cmd_1022_re_review (cmd=cmd_1022)
+[2026-03-17 14:34:31] [AUTO_DEPLOY] Start: cmd=cmd_1026 completed=cmd_1026_fix
+[2026-03-17 14:34:31] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1026_review	saizo	/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml	kotaro
+[2026-03-17 14:34:31] [AUTO_DEPLOY] Ninja selected: saizo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+[2026-03-17 14:34:31] [AUTO_DEPLOY] Task YAML: cmd_1026_review → saizo (/mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml)
+[2026-03-17 14:34:31] [AUTO_DEPLOY] Calling: deploy_task.sh saizo
+[2026-03-17 14:34:34] [AUTO_DEPLOY] AUTO_DEPLOY_OK: saizo ← cmd_1026_review (cmd=cmd_1026)
+[2026-03-17 14:55:09] [AUTO_DEPLOY] Start: cmd=cmd_1027 completed=cmd_1027_impl_b
+[2026-03-17 14:55:10] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1027_impl_a	sasuke	/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml	kirimaru
+[2026-03-17 14:55:10] [AUTO_DEPLOY] Ninja selected: sasuke (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml
+[2026-03-17 14:55:10] [AUTO_DEPLOY] Task YAML: cmd_1027_impl_a → sasuke (/mnt/c/tools/multi-agent-shogun/queue/tasks/sasuke.yaml)
+[2026-03-17 14:55:10] [AUTO_DEPLOY] Calling: deploy_task.sh sasuke
+[2026-03-17 14:55:13] [AUTO_DEPLOY] AUTO_DEPLOY_OK: sasuke ← cmd_1027_impl_a (cmd=cmd_1027)
+[2026-03-17 15:06:40] [AUTO_DEPLOY] Start: cmd=cmd_1027 completed=cmd_1027_impl_a
+[2026-03-17 15:06:41] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1027_review	hayate	/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml	sasuke
+[2026-03-17 15:06:41] [AUTO_DEPLOY] Ninja selected: hayate (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml
+[2026-03-17 15:06:41] [AUTO_DEPLOY] Task YAML: cmd_1027_review → hayate (/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml)
+[2026-03-17 15:06:41] [AUTO_DEPLOY] Calling: deploy_task.sh hayate
+[2026-03-17 15:06:44] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hayate ← cmd_1027_review (cmd=cmd_1027)
+[2026-03-17 15:18:59] [AUTO_DEPLOY] Start: cmd=cmd_1027 completed=cmd_1027_fix
+[2026-03-17 15:19:00] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1027_re_review
+[2026-03-17 15:19:00] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1027_re_review
+[2026-03-17 15:32:29] [AUTO_DEPLOY] Start: cmd=cmd_1027 completed=cmd_1027_fix2
+[2026-03-17 15:32:30] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1027_re_review2	hanzo	/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml	kotaro
+[2026-03-17 15:32:30] [AUTO_DEPLOY] Ninja selected: hanzo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+[2026-03-17 15:32:30] [AUTO_DEPLOY] Task YAML: cmd_1027_re_review2 → hanzo (/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml)
+[2026-03-17 15:32:30] [AUTO_DEPLOY] Calling: deploy_task.sh hanzo
+[2026-03-17 15:32:32] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hanzo ← cmd_1027_re_review2 (cmd=cmd_1027)
+[2026-03-17 15:55:34] [AUTO_DEPLOY] Start: cmd=cmd_1029 completed=cmd_1029_impl_a
+[2026-03-17 15:55:35] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1029_impl_b	kotaro	/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml	saizo
+[2026-03-17 15:55:35] [AUTO_DEPLOY] Ninja selected: kotaro (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml
+[2026-03-17 15:55:35] [AUTO_DEPLOY] Task YAML: cmd_1029_impl_b → kotaro (/mnt/c/tools/multi-agent-shogun/queue/tasks/kotaro.yaml)
+[2026-03-17 15:55:35] [AUTO_DEPLOY] Calling: deploy_task.sh kotaro
+[2026-03-17 15:55:38] [AUTO_DEPLOY] AUTO_DEPLOY_OK: kotaro ← cmd_1029_impl_b (cmd=cmd_1029)
+[2026-03-17 16:05:01] [AUTO_DEPLOY] Start: cmd=cmd_1029 completed=cmd_1029_impl_b
+[2026-03-17 16:05:01] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1029_review	tobisaru	/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml	kotaro
+[2026-03-17 16:05:01] [AUTO_DEPLOY] Ninja selected: tobisaru (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml
+[2026-03-17 16:05:01] [AUTO_DEPLOY] Task YAML: cmd_1029_review → tobisaru (/mnt/c/tools/multi-agent-shogun/queue/tasks/tobisaru.yaml)
+[2026-03-17 16:05:01] [AUTO_DEPLOY] Calling: deploy_task.sh tobisaru
+[2026-03-17 16:05:04] [AUTO_DEPLOY] AUTO_DEPLOY_OK: tobisaru ← cmd_1029_review (cmd=cmd_1029)
+[2026-03-17 16:11:56] [AUTO_DEPLOY] Start: cmd=cmd_1029 completed=cmd_1029_review
+[2026-03-17 16:11:56] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1029	3
+[2026-03-17 16:11:56] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1029
+[2026-03-17 18:30:40] [AUTO_DEPLOY] Start: cmd=cmd_1030 completed=cmd_1030_sub_v2
+[2026-03-17 18:30:41] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1030_sub_v1
+[2026-03-17 18:30:41] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1030_sub_v1
+[2026-03-17 18:33:24] [AUTO_DEPLOY] Start: cmd=cmd_1030 completed=cmd_1030_sub_h4
+[2026-03-17 18:33:24] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1030_sub_v1
+[2026-03-17 18:33:24] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1030_sub_v1
+[2026-03-17 18:34:50] [AUTO_DEPLOY] Start: cmd=cmd_1030 completed=cmd_1030_sub_v1
+[2026-03-17 18:34:50] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1030_sub_h2
+[2026-03-17 18:34:50] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1030_sub_h2
+[2026-03-17 18:36:05] [AUTO_DEPLOY] Start: cmd=cmd_1030 completed=cmd_1030_sub_h2
+[2026-03-17 18:36:05] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1030_sub_v3
+[2026-03-17 18:36:05] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1030_sub_v3
+[2026-03-17 18:37:19] [AUTO_DEPLOY] Start: cmd=cmd_1030 completed=cmd_1030_sub_v3
+[2026-03-17 18:37:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1030	8
+[2026-03-17 18:37:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1030
+[2026-03-17 19:02:46] [AUTO_DEPLOY] Start: cmd=cmd_1031 completed=cmd_1031_impl_b
+[2026-03-17 19:02:46] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1031_impl_a
+[2026-03-17 19:02:46] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1031_impl_a
+[2026-03-17 19:09:30] [AUTO_DEPLOY] Start: cmd=cmd_1031 completed=cmd_1031_impl_a
+[2026-03-17 19:09:30] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1031	2
+[2026-03-17 19:09:30] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1031
+[2026-03-17 19:18:29] [AUTO_DEPLOY] Start: cmd=cmd_1031 completed=cmd_1031_commit_fix
+[2026-03-17 19:18:30] [AUTO_DEPLOY] Analysis result: DEPLOY	cmd_1031_re_review	hanzo	/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml	kagemaru
+[2026-03-17 19:18:30] [AUTO_DEPLOY] Ninja selected: hanzo (pre-assigned)
+Written: /mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml
+[2026-03-17 19:18:30] [AUTO_DEPLOY] Task YAML: cmd_1031_re_review → hanzo (/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml)
+[2026-03-17 19:18:30] [AUTO_DEPLOY] Calling: deploy_task.sh hanzo
+[2026-03-17 19:18:32] [AUTO_DEPLOY] AUTO_DEPLOY_OK: hanzo ← cmd_1031_re_review (cmd=cmd_1031)
+[2026-03-17 20:12:01] [AUTO_DEPLOY] Start: cmd=cmd_1032 completed=cmd_1032_parity
+[2026-03-17 20:12:02] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1032_impl
+[2026-03-17 20:12:02] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1032_impl
+[2026-03-17 21:11:29] [AUTO_DEPLOY] Start: cmd=cmd_1034 completed=cmd_1034_angle2
+[2026-03-17 21:11:30] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1034_angle3
+[2026-03-17 21:11:30] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1034_angle3
+[2026-03-17 21:13:56] [AUTO_DEPLOY] Start: cmd=cmd_1034 completed=cmd_1034_angle6
+[2026-03-17 21:13:57] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1034_angle3
+[2026-03-17 21:13:57] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1034_angle3
+[2026-03-17 21:16:43] [AUTO_DEPLOY] Start: cmd=cmd_1034 completed=cmd_1034_angle3
+[2026-03-17 21:16:43] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1034_angle5
+[2026-03-17 21:16:43] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1034_angle5
+[2026-03-17 21:44:33] [AUTO_DEPLOY] Start: cmd=cmd_1034 completed=cmd_1034_angle5
+[2026-03-17 21:44:33] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1034	5
+[2026-03-17 21:44:33] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1034
+[2026-03-18 19:29:33] [AUTO_DEPLOY] Start: cmd=cmd_1052 completed=cmd_1052_tobisaru
+[2026-03-18 19:29:35] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1052_sasuke
+[2026-03-18 19:29:35] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1052_sasuke
+[2026-03-18 19:35:09] [AUTO_DEPLOY] Start: cmd=cmd_1052 completed=cmd_1052_sasuke
+[2026-03-18 19:35:09] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1052	3
+[2026-03-18 19:35:09] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1052
+[2026-03-18 19:44:52] [AUTO_DEPLOY] Start: cmd=cmd_1054 completed=cmd_1054_hayate
+[2026-03-18 19:44:53] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1054	1
+[2026-03-18 19:44:53] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1054
+[2026-03-19 01:22:54] [AUTO_DEPLOY] Start: cmd=cmd_1058 completed=cmd_1058_review
+[2026-03-19 01:22:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1058	1
+[2026-03-19 01:22:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1058
+[2026-03-19 01:24:01] [AUTO_DEPLOY] Start: cmd=cmd_1065 completed=cmd_1065_impl
+[2026-03-19 01:24:01] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1065	1
+[2026-03-19 01:24:01] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1065
+[2026-03-19 01:36:34] [AUTO_DEPLOY] Start: cmd=cmd_1057 completed=cmd_1057_oikaze
+[2026-03-19 01:36:35] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1057_kasoku
+[2026-03-19 01:36:35] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1057_kasoku
+[2026-03-19 01:36:36] [AUTO_DEPLOY] Start: cmd=cmd_1057 completed=cmd_1057_yotsume
+[2026-03-19 01:36:37] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1057_kasoku
+[2026-03-19 01:36:37] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1057_kasoku
+[2026-03-19 01:36:38] [AUTO_DEPLOY] Start: cmd=cmd_1057 completed=cmd_1057_bunshin
+[2026-03-19 01:36:39] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1057_kasoku
+[2026-03-19 01:36:39] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1057_kasoku
+[2026-03-19 01:38:06] [AUTO_DEPLOY] Start: cmd=cmd_1057 completed=cmd_1057_kawarimi
+[2026-03-19 01:38:06] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1057_kasoku
+[2026-03-19 01:38:06] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1057_kasoku
+[2026-03-19 01:39:19] [AUTO_DEPLOY] Start: cmd=cmd_1057 completed=cmd_1057_nukimi
+[2026-03-19 01:39:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1057	6
+[2026-03-19 01:39:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1057
+[2026-03-19 01:48:09] [AUTO_DEPLOY] Start: cmd=cmd_1066 completed=cmd_1066_impl
+[2026-03-19 01:48:10] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1066	1
+[2026-03-19 01:48:10] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1066
+[2026-03-19 02:14:53] [AUTO_DEPLOY] Start: cmd=cmd_1072 completed=cmd_1072_impl
+[2026-03-19 02:14:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1072	1
+[2026-03-19 02:14:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1072
+[2026-03-19 02:15:09] [AUTO_DEPLOY] Start: cmd=cmd_1070 completed=cmd_1070_impl
+[2026-03-19 02:15:09] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1070	1
+[2026-03-19 02:15:09] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1070
+[2026-03-19 02:39:58] [AUTO_DEPLOY] Start: cmd=cmd_1073 completed=cmd_1073_recon_b
+[2026-03-19 02:39:59] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1073	2
+[2026-03-19 02:39:59] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1073
+[2026-03-19 03:06:30] [AUTO_DEPLOY] Start: cmd=cmd_1073 completed=cmd_1073_recon_b
+[2026-03-19 03:06:31] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1073	2
+[2026-03-19 03:06:31] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1073
+[2026-03-19 03:35:41] [AUTO_DEPLOY] Start: cmd=cmd_1075 completed=cmd_1075_oikaze
+[2026-03-19 03:35:42] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1075_kasoku_diff
+[2026-03-19 03:35:42] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1075_kasoku_diff
+[2026-03-19 03:35:43] [AUTO_DEPLOY] Start: cmd=cmd_1075 completed=cmd_1075_nukimi
+[2026-03-19 03:35:44] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1075_kasoku_diff
+[2026-03-19 03:35:44] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1075_kasoku_diff
+[2026-03-19 03:44:46] [AUTO_DEPLOY] Start: cmd=cmd_1075 completed=cmd_1075_kasoku_diff
+[2026-03-19 03:44:46] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1075_kasoku_ratio
+[2026-03-19 03:44:46] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1075_kasoku_ratio
+[2026-03-19 03:46:51] [AUTO_DEPLOY] Start: cmd=cmd_1075 completed=cmd_1075_kasoku_ratio
+[2026-03-19 03:46:51] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1075	5
+[2026-03-19 03:46:51] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1075
+[2026-03-19 15:37:16] [AUTO_DEPLOY] Start: cmd=cmd_1080 completed=cmd_1080_gs_b
+[2026-03-19 15:37:17] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1080_gs_a
+[2026-03-19 15:37:17] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1080_gs_a
+[2026-03-19 21:09:38] [AUTO_DEPLOY] Start: cmd=cmd_1086 completed=cmd_1086_impl
+[2026-03-19 21:09:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1086	1
+[2026-03-19 21:09:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1086
+[2026-03-19 21:09:41] [AUTO_DEPLOY] Start: cmd=cmd_1087 completed=cmd_1087_impl
+[2026-03-19 21:09:41] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1087	1
+[2026-03-19 21:09:41] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1087
+[2026-03-19 23:51:45] [AUTO_DEPLOY] Start: cmd=cmd_1111 completed=cmd_1111_a
+[2026-03-19 23:51:45] [AUTO_DEPLOY] Analysis result: BLOCKED		c,m,d,_,1,1,1,1,_,a
+[2026-03-19 23:51:45] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED:  unresolved=c,m,d,_,1,1,1,1,_,a
+[2026-03-20 00:01:38] [AUTO_DEPLOY] Start: cmd=cmd_1111 completed=cmd_1111_b
+[2026-03-20 00:01:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1111	2
+[2026-03-20 00:01:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1111
+[2026-03-20 00:03:15] [AUTO_DEPLOY] Start: cmd=cmd_1113 completed=cmd_1113_b
+[2026-03-20 00:03:15] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1113	2
+[2026-03-20 00:03:15] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1113
+[2026-03-20 00:06:06] [AUTO_DEPLOY] Start: cmd=cmd_1111 completed=cmd_1111_a
+[2026-03-20 00:06:06] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1111	2
+[2026-03-20 00:06:06] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1111
+[2026-03-20 00:06:11] [AUTO_DEPLOY] Start: cmd=cmd_1113 completed=cmd_1113_b
+[2026-03-20 00:06:11] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1113	2
+[2026-03-20 00:06:11] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1113
+[2026-03-20 00:07:33] [AUTO_DEPLOY] Start: cmd=cmd_1111 completed=cmd_1111_b
+[2026-03-20 00:07:33] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1111	2
+[2026-03-20 00:07:33] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1111
+[2026-03-20 12:55:29] [AUTO_DEPLOY] Start: cmd=cmd_1126 completed=cmd_1126_impl
+[2026-03-20 12:55:29] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1126	1
+[2026-03-20 12:55:29] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1126
+[2026-03-20 12:57:56] [AUTO_DEPLOY] Start: cmd=cmd_1128 completed=cmd_1128_recon_b
+[2026-03-20 12:57:57] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1128_recon_a
+[2026-03-20 12:57:57] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1128_recon_a
+[2026-03-20 12:59:21] [AUTO_DEPLOY] Start: cmd=cmd_1129 completed=cmd_1129_recon_a
+[2026-03-20 12:59:21] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1129	2
+[2026-03-20 12:59:21] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1129
+[2026-03-20 13:00:43] [AUTO_DEPLOY] Start: cmd=cmd_1129 completed=cmd_1129_recon_b
+[2026-03-20 13:00:43] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1129	2
+[2026-03-20 13:00:43] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1129
+[2026-03-20 13:02:58] [AUTO_DEPLOY] Start: cmd=cmd_1127 completed=cmd_1127_recon_a
+[2026-03-20 13:02:59] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1127	3
+[2026-03-20 13:02:59] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1127
+[2026-03-20 13:03:01] [AUTO_DEPLOY] Start: cmd=cmd_1127 completed=cmd_1127_recon_b
+[2026-03-20 13:03:01] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1127	3
+[2026-03-20 13:03:01] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1127
+[2026-03-20 13:15:47] [AUTO_DEPLOY] Start: cmd=cmd_1128 completed=cmd_1128_recon_a
+[2026-03-20 13:15:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1128	2
+[2026-03-20 13:15:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1128
+[2026-03-20 16:17:11] [AUTO_DEPLOY] Start: cmd=cmd_1141 completed=cmd_1141_config
+[2026-03-20 16:17:12] [AUTO_DEPLOY] Analysis result: BLOCKED	cmd_1141_layout	c,m,d,_,1,1,4,1,_,c,o,n,f,i,g
+[2026-03-20 16:17:12] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: cmd_1141_layout unresolved=c,m,d,_,1,1,4,1,_,c,o,n,f,i,g
+[2026-03-20 16:40:50] [AUTO_DEPLOY] Start: cmd=cmd_1141 completed=cmd_1141_layout
+[2026-03-20 16:40:50] [AUTO_DEPLOY] Analysis result: BLOCKED	cmd_1141_verify	c,m,d,_,1,1,4,1,_,l,a,y,o,u,t
+[2026-03-20 16:40:50] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: cmd_1141_verify unresolved=c,m,d,_,1,1,4,1,_,l,a,y,o,u,t
+[2026-03-20 16:42:54] [AUTO_DEPLOY] Start: cmd=cmd_1144 completed=cmd_1144_verify
+[2026-03-20 16:42:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1144	2
+[2026-03-20 16:42:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1144
+[2026-03-20 16:44:07] [AUTO_DEPLOY] Start: cmd=cmd_1141 completed=cmd_1141_verify
+[2026-03-20 16:44:08] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1141	2
+[2026-03-20 16:44:08] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1141
+[2026-03-20 16:55:58] [AUTO_DEPLOY] Start: cmd=cmd_1145 completed=cmd_1145_flow
+[2026-03-20 16:55:58] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1145_ntfy
+[2026-03-20 16:55:58] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1145_ntfy
+[2026-03-20 16:56:56] [AUTO_DEPLOY] Start: cmd=cmd_1145 completed=cmd_1145_log
+[2026-03-20 16:56:57] [AUTO_DEPLOY] Analysis result: BLOCKED	cmd_1145_verify	c,m,d,_,1,1,4,5,_,n,t,f,y
+[2026-03-20 16:56:57] [AUTO_DEPLOY] AUTO_DEPLOY_BLOCKED: cmd_1145_verify unresolved=c,m,d,_,1,1,4,5,_,n,t,f,y
+[2026-03-20 17:01:21] [AUTO_DEPLOY] Start: cmd=cmd_1145 completed=cmd_1145_verify
+[2026-03-20 17:01:21] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1145	4
+[2026-03-20 17:01:21] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1145
+[2026-03-20 17:21:34] [AUTO_DEPLOY] Start: cmd=cmd_1149 completed=cmd_1149_docs
+[2026-03-20 17:21:34] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1149_script
+[2026-03-20 17:21:34] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1149_script
+[2026-03-20 17:22:48] [AUTO_DEPLOY] Start: cmd=cmd_1150 completed=cmd_1150_impl
+[2026-03-20 17:22:48] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1150	1
+[2026-03-20 17:22:48] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1150
+[2026-03-20 17:34:43] [AUTO_DEPLOY] Start: cmd=cmd_1146 completed=cmd_1146_karo
+[2026-03-20 17:34:43] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1146_gunshi
+[2026-03-20 17:34:43] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1146_gunshi
+[2026-03-20 17:41:44] [AUTO_DEPLOY] Start: cmd=cmd_1149 completed=cmd_1149_verify
+WARN: hanzo.yaml: mapping values are not allowed here
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml", line 42, column 16
+WARN: kagemaru.yaml: mapping values are not allowed here
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml", line 31, column 21
+[2026-03-20 17:41:45] [AUTO_DEPLOY] ERROR: cmd_1149_verify not found with parent_cmd=cmd_1149
+[2026-03-20 17:52:39] [AUTO_DEPLOY] Start: cmd=cmd_1151 completed=cmd_1151_gunshi
+[2026-03-20 17:52:39] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1151_verify
+[2026-03-20 17:52:39] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1151_verify
+[2026-03-20 17:53:47] [AUTO_DEPLOY] Start: cmd=cmd_1151 completed=cmd_1151_karo
+[2026-03-20 17:53:47] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1151	3
+[2026-03-20 17:53:47] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1151
+[2026-03-20 17:56:11] [AUTO_DEPLOY] Start: cmd=cmd_1151 completed=cmd_1151_verify
+[2026-03-20 17:56:11] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1151	3
+[2026-03-20 17:56:11] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1151
+[2026-03-20 17:58:18] [AUTO_DEPLOY] Start: cmd=cmd_1152 completed=cmd_1152_docs
+[2026-03-20 17:58:18] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1152	2
+[2026-03-20 17:58:18] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1152
+[2026-03-20 17:59:30] [AUTO_DEPLOY] Start: cmd=cmd_1152 completed=cmd_1152_impl
+[2026-03-20 17:59:30] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1152	2
+[2026-03-20 17:59:30] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1152
+[2026-03-20 18:28:04] [AUTO_DEPLOY] Start: cmd=cmd_1155 completed=cmd_1155_verify
+[2026-03-20 18:28:04] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_1155
+[2026-03-20 18:42:23] [AUTO_DEPLOY] Start: cmd=cmd_1158 completed=cmd_1158_docs
+[2026-03-20 18:42:23] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_1158
+[2026-03-20 19:00:14] [AUTO_DEPLOY] Start: cmd=cmd_1157 completed=cmd_1157_impl
+[2026-03-20 19:00:14] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_1157
+[2026-03-20 19:07:28] [AUTO_DEPLOY] Start: cmd=cmd_1148 completed=cmd_1148_recon
+[2026-03-20 19:07:29] [AUTO_DEPLOY] ERROR: no subtasks found for cmd_1148
+[2026-03-20 19:17:24] [AUTO_DEPLOY] Start: cmd=cmd_1163 completed=cmd_1163_scripts
+WARN: hayate.yaml: mapping values are not allowed here
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/hayate.yaml", line 73, column 16
+[2026-03-20 19:17:25] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1163	1
+[2026-03-20 19:17:25] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1163
+[2026-03-20 19:21:26] [AUTO_DEPLOY] Start: cmd=cmd_1163 completed=cmd_1163_docs
+[2026-03-20 19:21:26] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1163	2
+[2026-03-20 19:21:26] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1163
+[2026-03-20 19:54:19] [AUTO_DEPLOY] Start: cmd=cmd_1168 completed=cmd_1168_detect
+[2026-03-20 19:54:19] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1168_metrics
+[2026-03-20 19:54:19] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1168_metrics
+[2026-03-20 20:00:29] [AUTO_DEPLOY] Start: cmd=cmd_1168 completed=cmd_1168_metrics
+[2026-03-20 20:00:30] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1168	1
+[2026-03-20 20:00:30] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1168
+[2026-03-20 20:04:02] [AUTO_DEPLOY] Start: cmd=cmd_1164 completed=cmd_1164_gunshi
+[2026-03-20 20:04:02] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1164	1
+[2026-03-20 20:04:02] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1164
+[2026-03-20 20:04:03] [AUTO_DEPLOY] Start: cmd=cmd_1163 completed=cmd_1163_docs
+[2026-03-20 20:04:04] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1163	1
+[2026-03-20 20:04:04] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1163
+[2026-03-20 20:14:08] [AUTO_DEPLOY] Start: cmd=cmd_1162 completed=cmd_1162_gunshi
+[2026-03-20 20:14:08] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1162	1
+[2026-03-20 20:14:08] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1162
+[2026-03-20 20:16:06] [AUTO_DEPLOY] Start: cmd=cmd_1168 completed=cmd_1168_reflux
+[2026-03-20 20:16:06] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1168	1
+[2026-03-20 20:16:06] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1168
+[2026-03-20 20:20:07] [AUTO_DEPLOY] Start: cmd=cmd_1172 completed=cmd_1172_rule
+[2026-03-20 20:20:08] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1172_scan
+[2026-03-20 20:20:08] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1172_scan
+[2026-03-20 23:25:37] [AUTO_DEPLOY] Start: cmd=cmd_1184 completed=cmd_1184_rfs_fix
+[2026-03-20 23:25:38] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1184	1
+[2026-03-20 23:25:38] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1184
+[2026-03-20 23:34:59] [AUTO_DEPLOY] Start: cmd=cmd_1184 completed=ralph_L287_runbook
+[2026-03-20 23:35:00] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1184	1
+[2026-03-20 23:35:00] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1184
+[2026-03-20 23:51:26] [AUTO_DEPLOY] Start: cmd=cmd_1185 completed=cmd_1185_ninja_monitor_clear_fix
+WARN: report status=done pcmd=cmd_1178
+[2026-03-20 23:51:27] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1185	1
+[2026-03-20 23:51:27] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1185
+[2026-03-21 00:00:58] [AUTO_DEPLOY] Start: cmd=cmd_1185 completed=ralph_L288_runbook
+[2026-03-21 00:00:58] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1185	2
+[2026-03-21 00:00:58] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1185
+[2026-03-21 00:08:50] [AUTO_DEPLOY] Start: cmd=cmd_1185 completed=cmd_1185_ninja_monitor_clear_fix
+WARN: report status=done pcmd=cmd_1178
+[2026-03-21 00:08:51] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1185	2
+[2026-03-21 00:08:51] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1185
+[2026-03-21 00:08:52] [AUTO_DEPLOY] Start: cmd=cmd_1185 completed=ralph_L288_runbook
+[2026-03-21 00:08:52] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1185	2
+[2026-03-21 00:08:52] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1185
+[2026-03-21 13:30:14] [AUTO_DEPLOY] Start: cmd=cmd_1199 completed=cmd_1199_kotaro
+WARN: hayate.yaml: 'str' object has no attribute 'get'
+[2026-03-21 13:30:15] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1199_hanzo
+[2026-03-21 13:30:15] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1199_hanzo
+[2026-03-21 13:36:44] [AUTO_DEPLOY] Start: cmd=cmd_1199 completed=cmd_1199_kagemaru
+[2026-03-21 13:36:44] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1199_hanzo
+[2026-03-21 13:36:44] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1199_hanzo
+[2026-03-21 13:42:16] [AUTO_DEPLOY] Start: cmd=cmd_1199 completed=cmd_1199_tobisaru
+[2026-03-21 13:42:16] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1199_hanzo
+[2026-03-21 13:42:16] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1199_hanzo
+[2026-03-21 13:45:46] [AUTO_DEPLOY] Start: cmd=cmd_1199 completed=cmd_1199_kotaro_revert
+[2026-03-21 13:45:47] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1199_hanzo
+[2026-03-21 13:45:47] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1199_hanzo
+[2026-03-21 13:48:15] [AUTO_DEPLOY] Start: cmd=cmd_1199 completed=cmd_1199_saizo
+[2026-03-21 13:48:16] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1199_hanzo
+[2026-03-21 13:48:16] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1199_hanzo
+[2026-03-21 13:52:30] [AUTO_DEPLOY] Start: cmd=cmd_1199 completed=cmd_1199_tobisaru_revert
+[2026-03-21 13:52:30] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1199_hanzo
+[2026-03-21 13:52:30] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1199_hanzo
+[2026-03-21 14:09:17] [AUTO_DEPLOY] Start: cmd=cmd_1199 completed=cmd_1199_hanzo
+[2026-03-21 14:09:17] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1199	6
+[2026-03-21 14:09:17] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1199
+[2026-03-22 01:40:24] [AUTO_DEPLOY] Start: cmd=cmd_1237 completed=cmd_1237
+[2026-03-22 01:40:24] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1237	1
+[2026-03-22 01:40:24] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1237
+[2026-03-22 01:51:26] [AUTO_DEPLOY] Start: cmd=cmd_1238 completed=cmd_1238
+[2026-03-22 01:51:26] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1238	1
+[2026-03-22 01:51:26] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1238
+[2026-03-22 02:24:01] [AUTO_DEPLOY] Start: cmd=cmd_1239 completed=cmd_1239
+[2026-03-22 02:24:01] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1239	1
+[2026-03-22 02:24:01] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1239
+[2026-03-22 04:22:28] [AUTO_DEPLOY] Start: cmd=cmd_1237 completed=cmd_1237
+[2026-03-22 04:22:29] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1237	1
+[2026-03-22 04:22:29] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1237
+[2026-03-22 04:23:30] [AUTO_DEPLOY] Start: cmd=cmd_1237 completed=cmd_1237
+[2026-03-22 04:23:30] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1237	1
+[2026-03-22 04:23:30] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1237
+[2026-03-22 04:23:30] [AUTO_DEPLOY] Start: cmd=cmd_1239 completed=cmd_1239
+[2026-03-22 04:23:31] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1239	1
+[2026-03-22 04:23:31] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1239
+[2026-03-22 04:23:31] [AUTO_DEPLOY] Start: cmd=cmd_1238 completed=cmd_1238
+[2026-03-22 04:23:31] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1238	1
+[2026-03-22 04:23:31] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1238
+[2026-03-22 05:39:17] [AUTO_DEPLOY] Start: cmd=cmd_1238 completed=cmd_1238
+[2026-03-22 05:39:17] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1238	1
+[2026-03-22 05:39:17] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1238
+[2026-03-22 15:53:00] [AUTO_DEPLOY] Start: cmd=cmd_1246 completed=cmd_1246
+[2026-03-22 15:53:01] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1246	1
+[2026-03-22 15:53:01] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1246
+[2026-03-22 16:33:25] [AUTO_DEPLOY] Start: cmd=cmd_1247 completed=cmd_1247
+[2026-03-22 16:33:26] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1247	1
+[2026-03-22 16:33:26] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1247
+[2026-03-22 17:44:38] [AUTO_DEPLOY] Start: cmd=cmd_1249 completed=cmd_1249
+[2026-03-22 17:44:38] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1249	1
+[2026-03-22 17:44:38] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1249
+[2026-03-22 18:26:23] [AUTO_DEPLOY] Start: cmd=cmd_1249 completed=cmd_1249
+[2026-03-22 18:26:23] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1249	1
+[2026-03-22 18:26:23] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1249
+[2026-03-22 18:28:53] [AUTO_DEPLOY] Start: cmd=cmd_1252 completed=cmd_1252
+[2026-03-22 18:28:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1252	1
+[2026-03-22 18:28:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1252
+[2026-03-22 18:56:47] [AUTO_DEPLOY] Start: cmd=cmd_1245 completed=cmd_1245
+[2026-03-22 18:56:48] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1245	1
+[2026-03-22 18:56:48] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1245
+[2026-03-22 19:00:38] [AUTO_DEPLOY] Start: cmd=cmd_1245 completed=cmd_1245
+[2026-03-22 19:00:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1245	1
+[2026-03-22 19:00:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1245
+[2026-03-22 19:12:05] [AUTO_DEPLOY] Start: cmd=cmd_1256 completed=cmd_1256_a
+[2026-03-22 19:12:06] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1256	2
+[2026-03-22 19:12:06] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1256
+[2026-03-22 19:12:10] [AUTO_DEPLOY] Start: cmd=cmd_1256 completed=cmd_1256_b
+[2026-03-22 19:12:10] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1256	2
+[2026-03-22 19:12:10] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1256
+[2026-03-22 19:23:12] [AUTO_DEPLOY] Start: cmd=cmd_1255 completed=cmd_1255_b
+[2026-03-22 19:23:12] [AUTO_DEPLOY] Analysis result: SKIP	cmd_1255_a
+[2026-03-22 19:23:12] [AUTO_DEPLOY] AUTO_DEPLOY_SKIP: cmd_1255_a
+[2026-03-22 19:25:52] [AUTO_DEPLOY] Start: cmd=cmd_1251 completed=cmd_1251
+[2026-03-22 19:25:52] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1251	1
+[2026-03-22 19:25:52] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1251
+[2026-03-22 19:33:52] [AUTO_DEPLOY] Start: cmd=cmd_1257 completed=cmd_1257
+[2026-03-22 19:33:52] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1257	1
+[2026-03-22 19:33:52] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1257
+[2026-03-22 19:38:13] [AUTO_DEPLOY] Start: cmd=cmd_1250 completed=cmd_1250
+[2026-03-22 19:38:14] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1250	1
+[2026-03-22 19:38:14] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1250
+[2026-03-22 19:41:24] [AUTO_DEPLOY] Start: cmd=cmd_1255 completed=cmd_1255_a
+[2026-03-22 19:41:24] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1255	2
+[2026-03-22 19:41:25] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1255
+[2026-03-22 19:54:39] [AUTO_DEPLOY] Start: cmd=cmd_1255 completed=cmd_1255_a
+WARN: kagemaru.yaml: mapping values are not allowed here
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml", line 34, column 37
+[2026-03-22 19:54:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1255	2
+[2026-03-22 19:54:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1255
+[2026-03-22 19:54:40] [AUTO_DEPLOY] Start: cmd=cmd_1255 completed=cmd_1255_b
+WARN: kagemaru.yaml: mapping values are not allowed here
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml", line 34, column 37
+[2026-03-22 19:54:40] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1255	2
+[2026-03-22 19:54:40] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1255
+[2026-03-22 19:54:41] [AUTO_DEPLOY] Start: cmd=cmd_1250 completed=cmd_1250
+WARN: kagemaru.yaml: mapping values are not allowed here
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml", line 34, column 37
+[2026-03-22 19:54:42] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1250	1
+[2026-03-22 19:54:42] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1250
+[2026-03-22 19:57:10] [AUTO_DEPLOY] Start: cmd=cmd_1260 completed=cmd_1260
+WARN: kagemaru.yaml: mapping values are not allowed here
+  in "/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml", line 34, column 37
+[2026-03-22 19:57:12] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1260	1
+[2026-03-22 19:57:12] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1260
+[2026-03-22 20:00:55] [AUTO_DEPLOY] Start: cmd=cmd_1259 completed=cmd_1259
+[2026-03-22 20:00:55] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1259	1
+[2026-03-22 20:00:55] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1259
+[2026-03-22 20:13:26] [AUTO_DEPLOY] Start: cmd=cmd_1258 completed=cmd_1258
+[2026-03-22 20:13:26] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1258	1
+[2026-03-22 20:13:26] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1258
+[2026-03-22 20:13:26] [AUTO_DEPLOY] Start: cmd=cmd_1259 completed=cmd_1259
+[2026-03-22 20:13:27] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1259	1
+[2026-03-22 20:13:27] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1259
+[2026-03-22 20:14:40] [AUTO_DEPLOY] Start: cmd=cmd_1260 completed=cmd_1260
+[2026-03-22 20:14:41] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1260	1
+[2026-03-22 20:14:41] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1260
+[2026-03-22 20:16:52] [AUTO_DEPLOY] Start: cmd=cmd_1260 completed=cmd_1260
+[2026-03-22 20:16:52] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1260	1
+[2026-03-22 20:16:52] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1260
+[2026-03-22 20:16:53] [AUTO_DEPLOY] Start: cmd=cmd_1258 completed=cmd_1258
+[2026-03-22 20:16:53] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1258	1
+[2026-03-22 20:16:53] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1258
+[2026-03-22 20:16:54] [AUTO_DEPLOY] Start: cmd=cmd_1259 completed=cmd_1259
+[2026-03-22 20:16:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1259	1
+[2026-03-22 20:16:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1259
+[2026-03-22 20:18:24] [AUTO_DEPLOY] Start: cmd=cmd_1262 completed=cmd_1262
+[2026-03-22 20:18:24] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1262	1
+[2026-03-22 20:18:24] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1262
+[2026-03-22 20:19:37] [AUTO_DEPLOY] Start: cmd=cmd_1260 completed=cmd_1260
+[2026-03-22 20:19:39] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1260	1
+[2026-03-22 20:19:39] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1260
+[2026-03-22 20:19:39] [AUTO_DEPLOY] Start: cmd=cmd_1258 completed=cmd_1258
+[2026-03-22 20:19:40] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1258	1
+[2026-03-22 20:19:40] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1258
+[2026-03-22 20:19:40] [AUTO_DEPLOY] Start: cmd=cmd_1259 completed=cmd_1259
+[2026-03-22 20:19:40] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1259	1
+[2026-03-22 20:19:40] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1259
+[2026-03-22 20:19:41] [AUTO_DEPLOY] Start: cmd=cmd_1262 completed=cmd_1262
+[2026-03-22 20:19:41] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1262	1
+[2026-03-22 20:19:41] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1262
+[2026-03-22 20:19:42] [AUTO_DEPLOY] Start: cmd=cmd_1261 completed=cmd_1261_b
+[2026-03-22 20:19:42] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1261	2
+[2026-03-22 20:19:42] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1261
+[2026-03-22 20:20:51] [AUTO_DEPLOY] Start: cmd=cmd_1260 completed=cmd_1260
+[2026-03-22 20:20:51] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1260	1
+[2026-03-22 20:20:51] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1260
+[2026-03-22 20:20:52] [AUTO_DEPLOY] Start: cmd=cmd_1258 completed=cmd_1258
+[2026-03-22 20:20:52] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1258	1
+[2026-03-22 20:20:52] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1258
+[2026-03-22 20:20:52] [AUTO_DEPLOY] Start: cmd=cmd_1259 completed=cmd_1259
+[2026-03-22 20:20:53] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1259	1
+[2026-03-22 20:20:53] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1259
+[2026-03-22 20:20:53] [AUTO_DEPLOY] Start: cmd=cmd_1262 completed=cmd_1262
+[2026-03-22 20:20:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1262	1
+[2026-03-22 20:20:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1262
+[2026-03-22 20:20:54] [AUTO_DEPLOY] Start: cmd=cmd_1261 completed=cmd_1261_b
+[2026-03-22 20:20:54] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1261	2
+[2026-03-22 20:20:54] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1261
+[2026-03-22 20:22:04] [AUTO_DEPLOY] Start: cmd=cmd_1261 completed=cmd_1261_a
+[2026-03-22 20:22:04] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1261	2
+[2026-03-22 20:22:04] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1261
+[2026-03-22 20:58:02] [AUTO_DEPLOY] Start: cmd=cmd_1262 completed=cmd_1262
+[2026-03-22 20:58:03] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1262	1
+[2026-03-22 20:58:03] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1262
+[2026-03-22 20:58:03] [AUTO_DEPLOY] Start: cmd=cmd_1261 completed=cmd_1261_a
+[2026-03-22 20:58:04] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1261	2
+[2026-03-22 20:58:04] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1261
+[2026-03-22 20:58:04] [AUTO_DEPLOY] Start: cmd=cmd_1261 completed=cmd_1261_b
+[2026-03-22 20:58:05] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1261	2
+[2026-03-22 20:58:05] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1261
+[2026-03-22 21:02:19] [AUTO_DEPLOY] Start: cmd=cmd_1262 completed=cmd_1262
+[2026-03-22 21:02:19] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1262	1
+[2026-03-22 21:02:19] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1262
+[2026-03-22 21:02:21] [AUTO_DEPLOY] Start: cmd=cmd_1261 completed=cmd_1261_a
+[2026-03-22 21:02:21] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1261	2
+[2026-03-22 21:02:21] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1261
+[2026-03-22 21:02:22] [AUTO_DEPLOY] Start: cmd=cmd_1261 completed=cmd_1261_b
+[2026-03-22 21:02:22] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1261	2
+[2026-03-22 21:02:22] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1261
+[2026-03-22 21:32:15] [AUTO_DEPLOY] Start: cmd=cmd_1261 completed=cmd_1261_b
+[2026-03-22 21:32:16] [AUTO_DEPLOY] Analysis result: ALL_DONE	cmd_1261	1
+[2026-03-22 21:32:16] [AUTO_DEPLOY] AUTO_DEPLOY_DONE: cmd_1261
