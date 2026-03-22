@@ -403,8 +403,8 @@ try:
     lines = ["lessons_useful:"]
     for lid in ids:
         lines.append(f"  - id: {lid}")
-        lines.append(f"    useful: FILL_THIS  # true or false に書き換えよ（必須）")
-        lines.append(f"    reason: FILL_THIS  # 1行で理由を書け（必須）")
+        lines.append(f"    useful: false")
+        lines.append(f"    reason: ''")
 
     with open(report_file) as f:
         content = f.read()
@@ -420,6 +420,62 @@ LUEOF
         log "report_template: lessons_useful template injected"
     fi
     rm -f "$_lu_output"
+
+    # cmd_1260: acceptance_criteriaのbinary_checksをreportに事前展開
+    local _bc_output
+    _bc_output=$(mktemp)
+    if run_python_logged "$_bc_output" env TASK_FILE_ENV="$task_file" REPORT_FILE_ENV="$report_file" python3 - <<'BCEOF'
+import os
+import sys
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+report_file = os.environ['REPORT_FILE_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+    if not data:
+        sys.exit(1)
+    task = data.get('task', data)
+    ac_list = task.get('acceptance_criteria', [])
+    if not ac_list or not isinstance(ac_list, list):
+        sys.exit(1)
+
+    bc_dict = {}
+    for ac in ac_list:
+        if not isinstance(ac, dict):
+            continue
+        ac_id = ac.get('id', '')
+        checks = ac.get('binary_checks', [])
+        if not ac_id or not checks or not isinstance(checks, list):
+            continue
+        bc_dict[ac_id] = [{'check': c.get('check', ''), 'result': ''} for c in checks if isinstance(c, dict) and c.get('check')]
+
+    if not bc_dict:
+        sys.exit(1)
+
+    lines = ['binary_checks:']
+    for ac_id, checks in bc_dict.items():
+        lines.append(f'  {ac_id}:')
+        for c in checks:
+            lines.append(f'  - check: "{c["check"]}"')
+            lines.append(f'    result: ""')
+
+    with open(report_file) as f:
+        content = f.read()
+    content = content.replace('binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入', '\n'.join(lines))
+    with open(report_file, 'w') as f:
+        f.write(content)
+
+    print(f'binary_checks template: {len(bc_dict)} ACs injected')
+except Exception as e:
+    print(f'WARN: binary_checks inject failed: {e}', file=sys.stderr)
+BCEOF
+    then
+        log "report_template: binary_checks template injected"
+    fi
+    rm -f "$_bc_output"
 
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
     local report_task_type
