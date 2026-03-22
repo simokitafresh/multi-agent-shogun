@@ -1,108 +1,53 @@
 task:
   ac_version: d41d8cd9
   bloom_level: ''
-  deployed_at: '2026-03-23T04:01:36'
+  deployed_at: '2026-03-23T04:25:53'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  progress: ''
   related_lessons: []
   report_filename: saizo_report.yaml
   report_path: queue/reports/saizo_report.yaml
   role_reminder: 忍者saizo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: assigned
   stop_for: []
   task:
-    ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-    ac_priority: AC1 > AC2 > AC3
-    ac_version: f221829b
     acceptance_criteria:
     - binary_checks:
-      - check: ninja_monitor.shに git status チェックが追加されているか
+      - check: gate_workaround_rate.shが存在し実行可能か
         result: ''
-      - check: 未commitファイル存在時に/clearが中止されるか
+      - check: 直近10件のworkaround率が計算されるか
         result: ''
-      description: ninja_monitor.shに/clear前のgit uncommittedチェックが追加されていること
+      - check: OK/WARN/ALERTの閾値判定が正しいか
+        result: ''
+      description: gate_workaround_rate.shが直近10件のworkaround率をOK/WARN/ALERT形式で出力すること
       id: AC1
     - binary_checks:
-      - check: 未commitファイルなし時は通常通り/clearされるか
+      - check: cmd_complete_gate.shにgate_workaround_rate.shの呼び出しがあるか
         result: ''
-      description: 未commitファイルなし時は従来通り動作すること
+      - check: GATE判定に影響しない（情報表示のみ）か
+        result: ''
+      description: cmd_complete_gate.sh実行時にworkaround率が自動表示されること
       id: AC2
     - binary_checks:
-      - check: 手動テストで未commit検知が動作したか
+      - check: gate_karo_startup.shにgate_workaround_rate.shの呼び出しがあるか
         result: ''
-      description: テストで未commitチェックが発動すること
+      description: gate_karo_startup.sh実行時にworkaround率が自動表示されること
       id: AC3
-    bloom_level: ''
-    cmd_id: cmd_1296
-    command: "ninja_monitor.shの/clear実行直前にgit uncommittedチェックを追加せよ。\n\n■ AC1: ninja_monitor.shの/clear実行直前に、該当忍者の変更ファイルを\n\
-      \       git status --porcelain で検出するチェックを追加。\n       未commitファイルが存在する場合:\n \
-      \      (a) /clearを中止\n       (b) inbox_write.shで家老に警告（忍者名+未commitファイル一覧）\n \
-      \      (c) ログ出力\n■ AC2: 未commitファイルがない場合は従来通り/clearを実行すること\n■ AC3: テスト: 未commitファイルがある状態でチェックが発動することを手動確認\n"
-    deployed_at: '2026-03-23T03:38:55'
-    description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-      \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-      \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-      \  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
-      \  - L112: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT\n\
-      ────────────────────────────────────────\n\n"
-    engineering_preferences:
-    - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-    - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-    - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-    - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-    - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-    - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-    never_stop_for:
-    - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-    - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-    - 自明な修正（typo等） — 実行→事後報告
-    parallel_ok:
-    - AC1
-    - AC2
-    - AC3
-    parent_cmd: cmd_1296
+    cmd_id: cmd_1308
+    command: "■ 背景\nGP総点検で18件の構造的防御を導入した。効果計測は「次10cmd後に手動チェック」。\nしかし手動チェックは忘れる（自動化×強制の原則）。\n\
+      cmd_complete_gate.shにworkaround率を自動計算・表示する機能を追加する。\n\n■ 実装方針\n1. gate_workaround_rate.sh\
+      \ を新規作成:\n   - karo_workarounds.yamlの直近N件(デフォルト10)を読み取り\n   - workaround:true\
+      \ / workaround:false の比率を計算\n   - 閾値: OK=<15%, WARN=15-30%, ALERT=>30%\n   -\
+      \ 出力: 「WA率: XX% (Y/Z件) — category内訳: format:A, commit:B, ...」\n2. cmd_complete_gate.shの末尾にgate_workaround_rate.shを呼び出し追加\n\
+      \   （GATE結果とは独立。情報表示のみ。BLOCKしない）\n3. gate_karo_startup.shにも呼び出し追加（家老起動時に現在のWA率表示）\n\
+      \n■ 対象ファイル\n- scripts/gates/gate_workaround_rate.sh（新規）\n- scripts/cmd_complete_gate.sh（呼び出し追加）\n\
+      - scripts/gates/gate_karo_startup.sh（呼び出し追加）\n\n■ 注意\n- karo_workarounds.yamlのフォーマットが不統一（cmd:\
+      \ vs cmd_id:, inline dictあり）。\n  パーサーはworkaround: true/false/yes/noの全パターンに対応すること。\n\
+      - karo_workaround: yes/no形式のエントリもworkaround判定に含めること\n"
+    parent_cmd: cmd_1308
     project: infra
-    related_lessons:
-    - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-      id: L074
-      summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-    - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-      id: L225
-      summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-    - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-        lesson in data.get('lessons',[])が正しい形
-      id: L063
-      summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-        lesson in data.get('lessons',[])が正しい形
-    - detail: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
-        pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
-      id: L094
-      summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo
-        pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscri
-    - detail: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECTEDが0件になりSTALL検知が沈黙。task_id||subtask_idフォールバック実装が必要。cmd_462偵察で疾風+才蔵が独立発見。
-      id: L112
-      summary: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECTEDが0件になりSTALL検知が沈黙。task_id||subtask_idフォールバック実装が必要。cmd_462偵察で疾風+才蔵が独立発見。
-    report_filename: saizo_report_cmd_1296.yaml
-    report_path: queue/reports/saizo_report_cmd_1296.yaml
-    report_template:
-      filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-      forbidden:
-      - pushするな(commitまで)
-      - スコープ外改善は禁止
-      notes:
-      - TODO/FIXMEが残っていないことを確認せよ
-      - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-      required_fields:
-      - ac_version_read
-      - files_modified
-      - lesson_candidate
-      - lessons_useful
-    role_reminder: 忍者saizo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-    status: done
     stop_for: []
-    target_path: scripts/ninja_monitor.sh
     task_type: implement

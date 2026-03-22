@@ -1,109 +1,72 @@
 task:
   ac_version: d41d8cd9
   bloom_level: ''
-  deployed_at: '2026-03-23T03:59:42'
+  deployed_at: '2026-03-23T04:24:23'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  progress: ''
   related_lessons: []
   report_filename: kagemaru_report.yaml
   report_path: queue/reports/kagemaru_report.yaml
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: assigned
   stop_for: []
   task:
-    ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-    ac_priority: AC1 > AC2 > AC3
-    ac_version: cf8143de
     acceptance_criteria:
     - binary_checks:
-      - check: 3文字以下のreasonでFAILするか
+      - check: L95付近でlast_assistant_messageがcandidatesリストに追加されていないか
         result: ''
-      - check: 「特になし」等のプレースホルダでFAILするか
+      - check: lastAssistantMessageキーも同様に除外されているか
         result: ''
-      description: found:false+無意味reasonがFAIL判定されること
+      description: extract_output_textがlast_assistant_message/lastAssistantMessageをcandidatesに含めないこと
       id: AC1
     - binary_checks:
-      - check: 適切なreasonでPASSするか
+      - check: bats tests/実行で全件PASSか
         result: ''
-      description: found:true+title+detail記載がPASS判定されること
+      - check: hookのstderr/stdoutに偽SKIP警告がないか
+        result: ''
+      description: bats tests/ 実行時に全PASS・0 SKIP出力でhookが無言（偽陽性なし）であること
       id: AC2
     - binary_checks:
-      - check: found:false + 無意味reasonのYAMLでFAIL確認したか
+      - check: transcript_pathを使うfallbackロジックがコードに残っているか
         result: ''
-      description: テストでFAILが返ること
+      description: transcript_path fallbackは残存していること（削除しないこと）
       id: AC3
-    bloom_level: ''
-    cmd_id: cmd_1299
-    command: "gate_report_format.shにlesson_candidate reason品質チェックを追加せよ。\n\n■ AC1:\
-      \ gate_report_format.shのlesson_candidateチェックに以下を追加:\n       - found:false時、no_lesson_reasonが3文字以下→FAIL\n\
-      \       - found:false時、no_lesson_reasonが「なし」「特になし」「N/A」→FAIL\n       - found:true時、detail(またはsummary)が空→FAIL\n\
-      ■ AC2: found:true時、title+detail両方が記載されていればPASS（既存ロジック維持）\n■ AC3: テスト: found:false\
-      \ + no_lesson_reason:\"なし\" のYAMLでFAILが返ること\n"
-    deployed_at: '2026-03-23T03:42:36'
-    description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-      \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-      \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-      \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
-      \  - L002: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash\
-      \ tool\n────────────────────────────────────────\n\n"
-    engineering_preferences:
-    - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-    - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-    - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-    - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-    - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-    - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-    never_stop_for:
-    - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-    - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-    - 自明な修正（typo等） — 実行→事後報告
-    parallel_ok:
-    - AC1
-    - AC2
-    - AC3
-    parent_cmd: cmd_1299
+    cmd_id: cmd_1306
+    command: 'PostToolUse hookのtest_result_guard.shが、batsテスト全36件PASS（0 SKIP）でも
+
+      「ERROR: 1 test(s) SKIPPED」を出力する偽陽性バグを修正。
+
+      原因: extract_output_text()がlast_assistant_messageをtool outputと混合(L95)。
+
+      会話中に「SKIP」という語が含まれるとparse_skip_countの
+
+      generic fallback(L156: re.search(r"\bSKIP\b"))がマッチして偽陽性が発生。
+
+
+      ■ 修正方針
+
+      extract_output_text()でlast_assistant_messageをcandidatesに加えない。
+
+      last_assistant_messageはtool outputではないため、SKIP/FAIL検出の対象外にすべき。
+
+      transcript_pathのfallbackは残す（tool output不在時の最終手段として有用）。
+
+
+      ■ 対象ファイル
+
+      scripts/hooks/test_result_guard.sh L95-97を修正
+
+
+      ■ 検証方法
+
+      修正後、batsテスト（bats tests/）を実行し、hookが偽SKIPを出力しないことを確認。
+
+      '
+    parent_cmd: cmd_1306
     project: infra
-    related_lessons:
-    - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-      id: L074
-      summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-    - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-      id: L225
-      summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-    - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-        lesson in data.get('lessons',[])が正しい形
-      id: L063
-      summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-        lesson in data.get('lessons',[])が正しい形
-    - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-      id: L079
-      summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-    - detail: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash
-        toolのrun_in_background=true必須化で解決。新スクリプト不要。
-      id: L002
-      summary: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash
-        toolのrun_in_background=true必須化で解決。新スクリプト不要。
-    report_filename: kagemaru_report_cmd_1299.yaml
-    report_path: queue/reports/kagemaru_report_cmd_1299.yaml
-    report_template:
-      filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-      forbidden:
-      - pushするな(commitまで)
-      - スコープ外改善は禁止
-      notes:
-      - TODO/FIXMEが残っていないことを確認せよ
-      - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-      required_fields:
-      - ac_version_read
-      - files_modified
-      - lesson_candidate
-      - lessons_useful
-    role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-    status: done
     stop_for: []
-    target_path: scripts/gates/gate_report_format.sh
+    target_path: scripts/hooks/test_result_guard.sh
     task_type: implement

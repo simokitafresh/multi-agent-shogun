@@ -1,20 +1,22 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 03:20 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (04:14 自動更新)
+## 📊 リアルタイム状況 (04:25 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
-| 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1298 | — |
-| 影丸 | claude-opus-4-6 high | done | cmd_1299 | — |
-| 半蔵 | claude-opus-4-6 high | done | cmd_1300 | — |
-| 才蔵 | claude-opus-4-6 high | done | cmd_1296 | — |
-| 小太郎 | claude-opus-4-6 high | 稼働中 | cmd_1297 | — |
+| 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1304 | — |
+| 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1306 | — |
+| 半蔵 | claude-opus-4-6 high | 稼働中 | cmd_1307 | — |
+| 才蔵 | claude-opus-4-6 high | done | cmd_1308 | — |
+| 小太郎 | claude-opus-4-6 high | done | cmd_1297 | — |
 | 飛猿 | claude-opus-4-6 high | done | cmd_1295 | — |
 
 ### CI Status
 **CI RED: run 23410290395 — Shell Script Linting, Unit Tests (bats)**
+
+**WARN: 10件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -23,7 +25,7 @@
 | 項目 | 値 |
 |------|-----|
 | cmd完了(GATE CLEAR) | 1053/1068 |
-| 稼働忍者 | 3/8 (疾風, 小太郎, 飛猿) |
+| 稼働忍者 | 3/8 (疾風, 影丸, 半蔵) |
 | 連勝(CLEAR streak) | 0 |
 
 ### モデル別スコアボード
@@ -97,36 +99,30 @@ Bottom 5 低効果教訓
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
-## 最新更新 (03:54更新)
-- **cmd_1295**: 完了(GATE外)。飛猿PASS。軍師gate新設+archive preflight順序修正。commit cbbc98c+66b6f1b
-- **cmd_1296**: 完了(GATE外)。才蔵PASS。ninja_monitor uncommittedチェック。commit 3d244de。⚠scope問題あり(後述)
-- **cmd_1297**: 完了(GATE外)。小太郎PASS。教訓退役制度(--retire)。lesson_write.sh+deploy_task.sh
-- **cmd_1298**: 完了(GATE外)。疾風PASS。Bash reportリダイレクト検出hook(GP-016)。commit a6c5851
-- **cmd_1299**: 完了(GATE外)。影丸PASS。lesson_candidate reason品質gate(GP-019)
-- **cmd_1300**: 完了(GATE外)。半蔵PASS。lesson_harvest.sh(GP-020)。commit fd9727c
+## 最新更新 (04:26更新)
+- **cmd_1301**: 完了。影丸PASS。startup gate bash算術エラー修正(grep -c anti-pattern)
+- **cmd_1302**: 完了。半蔵PASS。archive実行タイミング修正(GATE外完了根絶)
+- **cmd_1303**: 完了。才蔵PASS。uncommittedチェックscope修正(運用ファイル除外)
+- **cmd_1305**: 完了。飛猿PASS。lesson_update_score.sh既にcmd_1283で対応済み確認
 
 ### パイプライン
-パイプライン空 — 次cmd待ち
+| cmd | 内容 | 忍者 | 状態 |
+|-----|------|------|------|
+| cmd_1304 | 削除済みスクリプト参照クリーンアップ | 疾風 | 稼働中 |
+| cmd_1306 | test_result_guard.sh偽SKIP検出修正 | 影丸 | 稼働中 |
+| cmd_1307 | GP-021 忍者別失敗パターン自動注入 | 半蔵 | 稼働中 |
+| cmd_1308 | workaround率自動計測gate | 才蔵 | 稼働中 |
 
 ### idle忍者
-全6名idle
-
-### 軍師GP総点検結果
-- GP-003: **完了**(cmd_1294)
-- GP-015: **完了**(cmd_1297 教訓退役)
-- GP-016: **完了**(cmd_1298 Bash report hook)
-- GP-017: **完了**(cmd_1293 テンプレート導線)
-- GP-018: **完了**(cmd_1296 uncommittedチェック)⚠scope問題
-- GP-019: **完了**(cmd_1299 L247 gate)
-- GP-020: **完了**(cmd_1300 lesson harvest)
+小太郎、飛猿(2名idle)
 
 ## 🚨要対応
 
-### GATE/archive タイミング競合（未解決）
-cmd_1295でpreflight flag順序修正したが、archive_completed.shがGATE中に報告をアーカイブする根本原因は未修正。cmd_1290-1300の11cmdが全てGATE外完了。**修正案**: cmd_complete_gate.sh内でarchive_completed.sh呼出しを報告存在チェック**後**に移動
+### GATE/archive タイミング競合 → **解決済み**(cmd_1302)
+archive_completed.shの呼出しをGATE CLEAR後に移動。半蔵PASS
 
-### cmd_1296 uncommittedチェックのscope問題
-git status --porcelainが全repo対象→忍者固有ファイルではなくdashboard等の運用ファイルでもブロック発動。修正案: task YAMLのfiles_modified対象のみチェック or 運用ファイル除外リスト
+### uncommittedチェックscope → **解決済み**(cmd_1303)
+grep -v運用ファイル除外フィルタ追加。才蔵PASS
 
 ## 🔧 将軍へのcmd起票提案（家老自己研鑽より）
 

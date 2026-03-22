@@ -1,23 +1,23 @@
 worker_id: kagemaru
-task_id: cmd_1301
-parent_cmd: cmd_1301
-timestamp: '2026-03-23T04:01:37'
+task_id: cmd_1306
+parent_cmd: cmd_1306
+timestamp: '2026-03-23T04:28:00'
 status: done
 ac_version_read: d41d8cd9
 result:
-  summary: gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax
-    error 0件、exit 0確認済
-  details: 'L101: ruling_count修正。L282: dash_proposals修正。grep -c 0件時のexit 1による二重出力→算術syntax
-    error根絶'
+  summary: test_result_guard.sh L95-97のlast_assistant_message混入を除去。bats 36/36 PASS、0
+    SKIP確認 error 0件、exit 0確認済
+  details: extract_output_text()がlast_assistant_message/lastAssistantMessageをcandidatesに追加していた3行を除去。コメントで除外理由を明記。transcript_path
+    fallback(L102-112)は保持。 error根絶'
 purpose_validation:
-  cmd_purpose: gate_shogun_startup.shのbash算術エラー修正
+  cmd_purpose: PostToolUse hookのSKIP偽陽性バグ修正
   fit: true
-  purpose_gap: ''
+  purpose_gap: none
 files_modified:
-- scripts/gates/gate_shogun_startup.sh
+- scripts/hooks/test_result_guard.sh
 lesson_candidate:
   found: false
-  no_lesson_reason: 既知のgrep -c anti-patternの定型修正で新規発見なし
+  no_lesson_reason: cmd指示通りの局所修正
   title: ''
   detail: ''
   project: infra
@@ -28,7 +28,7 @@ decision_candidate:
   found: false
 hook_failures:
   count: 0
-  details: ''
+  details: none
 binary_checks:
   AC1:
   - check: line 101のruling_count行が var=$(grep -c ...) || var=0 形式か

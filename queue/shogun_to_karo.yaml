@@ -837,3 +837,133 @@ commands:
       q6_not_hiding: no — Vercel化の不完全な移行を修正
     status: completed
     delegated_at: "\"2026-03-23T04:04:00\""
+  cmd_1306:
+    title: test_result_guard.sh偽陽性修正 — last_assistant_messageのSKIP誤検知除去
+    task_type: implement
+    command: |
+      ■ 背景
+      PostToolUse hookのtest_result_guard.shが、batsテスト全36件PASS（0 SKIP）でも
+      「ERROR: 1 test(s) SKIPPED」を出力する偽陽性バグ。
+      原因: extract_output_text()がlast_assistant_messageをtool outputと混合(L95)。
+      会話中に「SKIP」という語が含まれるとparse_skip_countの
+      generic fallback(L156: re.search(r"\bSKIP\b"))がマッチして偽陽性が発生。
+
+      ■ 修正方針
+      extract_output_text()でlast_assistant_messageをcandidatesに加えない。
+      last_assistant_messageはtool outputではないため、SKIP/FAIL検出の対象外にすべき。
+      transcript_pathのfallbackは残す（tool output不在時の最終手段として有用）。
+
+      ■ 対象ファイル
+      scripts/hooks/test_result_guard.sh L95-97を修正
+
+      ■ 検証方法
+      修正後、batsテスト（bats tests/）を実行し、hookが偽SKIPを出力しないことを確認。
+    acceptance_criteria:
+    - extract_output_textがlast_assistant_message/lastAssistantMessageをcandidatesに含めないこと
+    - bats tests/ 実行時に全PASS・0 SKIP出力でhookが無言（偽陽性なし）であること
+    - transcript_path fallbackは残存していること（削除しないこと）
+    project: infra
+    priority: high
+    quality_gate:
+      q1_firefighting: no — hook品質向上。全エージェントのテスト実行体験改善
+      q2_learning: 奪わない — 忍者がPython修正を実装
+      q3_next_quality: 上がる — 偽陽性によるCTX浪費と混乱が消滅
+      q4_depth: deep — 将軍がtest_result_guard.sh L80-160を現物確認。extract_output_text L95がlast_assistant_messageを混合する根本原因を特定済み
+      q5_verified_source: scripts/hooks/test_result_guard.sh 現物確認(Read tool)
+      q6_not_hiding: no — hookの誤検知バグを正面から修正
+    status: delegated
+    delegated_at: "\"2026-03-23T04:21:56\""
+  cmd_1307:
+    title: GP-021 ninja-adaptive failure injection — 忍者別過去失敗パターン自動注入
+    task_type: implement
+    command: |
+      ■ 背景
+      karo_workaroundsの分析結果:
+        疾風: report_yaml_format 6件（最多犯。report_field_set.sh不使用、dict形式常習）
+        半蔵: verdict非二値3件 + binary_checks dict形式
+        影丸: lessons_useful dict形式4件
+        才蔵: lessons_useful dict形式 + FILL_THIS残存
+
+      教訓注入(related_lessons)は「PJ全体の知見」を注入するが、
+      「お前(この忍者)の過去の失敗パターン」は注入しない。
+      /clearで記憶を失う忍者に、個別の弱点を自動で伝える仕組みが必要。
+
+      ■ 実装方針
+      deploy_task.shに忍者名ベースの失敗パターン注入機能を追加:
+      1. karo_workarounds.yamlから対象忍者名でフィルタ
+      2. category別に集計（report_yaml_format: N件、commit_missing: N件...）
+      3. task YAMLにninja_weak_points:セクションとして注入
+         例:
+         ninja_weak_points:
+           source: karo_workarounds.yaml
+           total_workarounds: 6
+           top_pattern: "report_yaml_format(6件)"
+           warning: "⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止"
+
+      ■ 対象ファイル
+      scripts/deploy_task.sh
+
+      ■ 注意
+      - karo_workarounds.yamlのninja名はroot_causeやdetailから抽出する必要あり
+        （既存workaroundエントリにninja:フィールドがないものはcmd/detail文から推測）
+      - workaround: falseのエントリは除外
+      - 0件の忍者にはninja_weak_pointsを注入しない（ノイズ防止）
+    acceptance_criteria:
+    - deploy_task.shが忍者名でkaro_workarounds.yamlをフィルタし、workaround:trueのcategory別件数を集計できること
+    - 生成されたtask YAMLにninja_weak_points:セクションが正しく注入されること（1件以上のworkaroundがある忍者のみ）
+    - workaround 0件の忍者にはninja_weak_pointsが注入されないこと
+    project: infra
+    priority: medium
+    quality_gate:
+      q1_firefighting: no — 品質向上。workaround再犯率を構造的に低減
+      q2_learning: 奪わない — 忍者がdeploy_task.shを修正
+      q3_next_quality: 上がる — 忍者が自分の弱点を知った状態で作業開始。再犯防止
+      q4_depth: deep — karo_workarounds.yaml全量分析済み。忍者別パターン特定済み(疾風6/半蔵3/影丸4/才蔵4)
+      q5_verified_source: logs/karo_workarounds.yaml 現物確認(Read tool全量)
+      q6_not_hiding: no — 忍者の再犯パターンを可視化して根本対処
+    status: delegated
+    delegated_at: "\"2026-03-23T04:23:03\""
+  cmd_1308:
+    title: workaround率自動計測gate — cmd_complete_gate統合でpost-GP効果を自動追跡
+    task_type: implement
+    command: |
+      ■ 背景
+      GP総点検で18件の構造的防御を導入した。効果計測は「次10cmd後に手動チェック」。
+      しかし手動チェックは忘れる（自動化×強制の原則）。
+      cmd_complete_gate.shにworkaround率を自動計算・表示する機能を追加する。
+
+      ■ 実装方針
+      1. gate_workaround_rate.sh を新規作成:
+         - karo_workarounds.yamlの直近N件(デフォルト10)を読み取り
+         - workaround:true / workaround:false の比率を計算
+         - 閾値: OK=<15%, WARN=15-30%, ALERT=>30%
+         - 出力: 「WA率: XX% (Y/Z件) — category内訳: format:A, commit:B, ...」
+      2. cmd_complete_gate.shの末尾にgate_workaround_rate.shを呼び出し追加
+         （GATE結果とは独立。情報表示のみ。BLOCKしない）
+      3. gate_karo_startup.shにも呼び出し追加（家老起動時に現在のWA率表示）
+
+      ■ 対象ファイル
+      - scripts/gates/gate_workaround_rate.sh（新規）
+      - scripts/gates/cmd_complete_gate.sh（呼び出し追加）
+      - scripts/gates/gate_karo_startup.sh（呼び出し追加）
+
+      ■ 注意
+      - karo_workarounds.yamlのフォーマットが不統一（cmd: vs cmd_id:, inline dictあり）。
+        パーサーはworkaround: true/false/yes/noの全パターンに対応すること。
+      - karo_workaround: yes/no形式のエントリもworkaround判定に含めること
+    acceptance_criteria:
+    - gate_workaround_rate.shが直近10件のworkaround率をOK/WARN/ALERT形式で出力すること
+    - cmd_complete_gate.sh実行時にworkaround率が自動表示されること（GATE判定には影響しない）
+    - gate_karo_startup.sh実行時にworkaround率が自動表示されること
+    - workaround率15%以下でOK、30%以上でALERTが出力されること
+    project: infra
+    priority: medium
+    quality_gate:
+      q1_firefighting: no — 品質計測の自動化。GP効果の継続的追跡
+      q2_learning: 奪わない — 忍者がgate script作成+統合を実装
+      q3_next_quality: 上がる — workaround率が常に可視化され、劣化時に即座に気づける
+      q4_depth: deep — karo_workarounds.yaml全量読了済み。フォーマット不統一(cmd/cmd_id/inline dict)を確認済み
+      q5_verified_source: logs/karo_workarounds.yaml 現物確認 + insights.yaml(INS-20260323-040210: post-GP計測要件)
+      q6_not_hiding: no — 品質計測を手動→自動に移行
+    status: delegated
+    delegated_at: "\"2026-03-23T04:24:27\""

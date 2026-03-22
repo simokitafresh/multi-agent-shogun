@@ -1,98 +1,54 @@
 task:
   ac_version: d41d8cd9
   bloom_level: ''
-  deployed_at: '2026-03-23T04:01:20'
+  deployed_at: '2026-03-23T04:24:47'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  progress: AC1,AC2,AC3 complete
   related_lessons: []
   report_filename: hanzo_report.yaml
   report_path: queue/reports/hanzo_report.yaml
   role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: acknowledged
   stop_for: []
   task:
-    ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-    ac_priority: AC1 > AC2 > AC3
-    ac_version: d104f08d
     acceptance_criteria:
     - binary_checks:
-      - check: lesson_harvest.shが存在し実行可能か
+      - check: karo_workarounds.yamlからninja名でフィルタするロジックがあるか
         result: ''
-      - check: アーカイブ報告のスキャンが動作するか
+      - check: workaround:falseが除外されるか
         result: ''
-      description: アーカイブ済み報告のlesson_candidateをスキャンできること
+      - check: category別集計が正しいか
+        result: ''
+      description: deploy_task.shが忍者名でkaro_workarounds.yamlをフィルタし、workaround:trueのcategory別件数を集計できること
       id: AC1
     - binary_checks:
-      - check: 候補0件時に「未登録候補なし」と出力されるか
+      - check: 1件以上のworkaroundがある忍者にninja_weak_pointsが注入されるか
         result: ''
-      description: 候補0件時に正常終了すること
+      - check: 注入内容にtotal_workarounds/top_pattern/warningが含まれるか
+        result: ''
+      description: 生成されたtask YAMLにninja_weak_points:セクションが正しく注入されること
       id: AC2
     - binary_checks:
-      - check: bash scripts/lesson_harvest.sh がエラーなく完了するか
+      - check: 0件忍者のtask YAMLにninja_weak_pointsがないか
         result: ''
-      description: エラーなく実行完了すること
+      description: workaround 0件の忍者にはninja_weak_pointsが注入されないこと
       id: AC3
-    bloom_level: ''
-    cmd_id: cmd_1300
-    command: "アーカイブ済み報告からlesson_candidate未登録候補をスキャンするスクリプトを作成せよ。\n\n■ AC1: scripts/lesson_harvest.sh\
-      \ を作成。\n       queue/archive/reports/ 配下の全報告YAMLをスキャン。\n       lesson_candidate.found=true\
-      \ かつ\n       lessons.yamlに同一titleが未登録の候補を一覧出力。\n       出力形式: cmd_id | ninja\
-      \ | title | detail(先頭60文字)\n■ AC2: 候補0件の場合「未登録候補なし」と出力して正常終了すること\n■ AC3: テスト:\
-      \ bash scripts/lesson_harvest.sh がエラーなく実行完了すること\n"
-    deployed_at: '2026-03-23T03:43:06'
-    description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-      \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-      \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-      ────────────────────────────────────────\n\n"
-    engineering_preferences:
-    - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-    - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-    - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-    - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-    - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-    - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-    never_stop_for:
-    - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-    - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-    - 自明な修正（typo等） — 実行→事後報告
-    parallel_ok:
-    - AC1
-    - AC2
-    - AC3
-    parent_cmd: cmd_1300
+    cmd_id: cmd_1307
+    command: "deploy_task.shに忍者名ベースの過去失敗パターン自動注入機能を追加。\n\n■ 背景\nkaro_workaroundsの分析結果:\n\
+      \  疾風: report_yaml_format 6件\n  半蔵: verdict非二値3件 + binary_checks dict形式\n  影丸:\
+      \ lessons_useful dict形式4件\n  才蔵: lessons_useful dict形式 + FILL_THIS残存\n\n■ 実装方針\n\
+      1. karo_workarounds.yamlから対象忍者名でフィルタ\n2. category別に集計（report_yaml_format: N件、commit_missing:\
+      \ N件...）\n3. task YAMLにninja_weak_points:セクションとして注入\n   例:\n   ninja_weak_points:\n\
+      \     source: karo_workarounds.yaml\n     total_workarounds: 6\n     top_pattern:\
+      \ \"report_yaml_format(6件)\"\n     warning: \"⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止\"\
+      \n\n■ 注意\n- ninja名はroot_causeやdetailから抽出（ninjaフィールドがないものはcmd/detail文から推測）\n\
+      - workaround: falseのエントリは除外\n- 0件の忍者にはninja_weak_pointsを注入しない\n\n■ 対象ファイル\n\
+      scripts/deploy_task.sh\n"
+    parent_cmd: cmd_1307
     project: infra
-    related_lessons:
-    - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-      id: L074
-      summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-    - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-      id: L225
-      summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-    - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-        lesson in data.get('lessons',[])が正しい形
-      id: L063
-      summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-        lesson in data.get('lessons',[])が正しい形
-    report_filename: hanzo_report_cmd_1300.yaml
-    report_path: queue/reports/hanzo_report_cmd_1300.yaml
-    report_template:
-      filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-      forbidden:
-      - pushするな(commitまで)
-      - スコープ外改善は禁止
-      notes:
-      - TODO/FIXMEが残っていないことを確認せよ
-      - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-      required_fields:
-      - ac_version_read
-      - files_modified
-      - lesson_candidate
-      - lessons_useful
-    role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-    status: done
     stop_for: []
+    target_path: scripts/deploy_task.sh
     task_type: implement
