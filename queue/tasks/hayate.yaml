@@ -1,93 +1,107 @@
-progress: AC1+AC2+AC3全完了。全10テストPASS。verdict=PASS
-status: idle
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 97e16509
-  acceptance_criteria:
-  - binary_checks:
-    - check: pre-bash-report-deny.shが存在し実行可能か
-      result: ''
-    - check: Bash redirect時にdeny応答が返るか
-      result: ''
-    description: Bashでqueue/reports/*.yamlへのリダイレクトがDENYされること
-    id: AC1
-  - binary_checks:
-    - check: settings.local.jsonにBash matcherエントリがあるか
-      result: ''
-    description: settings.local.jsonにPreToolUseフックが正しく追加されていること
-    id: AC2
-  - binary_checks:
-    - check: テストでdeny応答を確認したか
-      result: ''
-    description: テストでdenyが動作すること
-    id: AC3
+  ac_version: d41d8cd9
   bloom_level: ''
-  cmd_id: cmd_1298
-  command: "BashツールでのReport YAML直接書込みを防止するhookを作成せよ。\ncmd_1294(Write/Edit DENY)の防御ギャップ補完。\n\
-    \n■ AC1: scripts/hooks/pre-bash-report-deny.sh を作成。\n       - matcher: Bash\n\
-    \       - コマンド文字列内に queue/reports/.*\\.yaml への\n         リダイレクト(>, >>, tee等)を正規表現で検出\n\
-    \       - 検出時: permissionDecision=deny + 理由 + report_field_set.sh誘導\n       -\
-    \ report_field_set.sh自身のBash呼び出しは許可（環境変数REPORT_TOOL=1等で識別）\n■ AC2: settings.local.jsonのPreToolUse配列にBash\
-    \ matcher + pre-bash-report-deny.shエントリ追加\n■ AC3: テスト: echo \"test\" > queue/reports/test_report.yaml\
-    \ がdenyされることを確認\n"
-  deployed_at: '2026-03-23T03:42:02'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L215: gate_metricsテストがtmux環境依存\n  - L096: bash,variable-scope,preflight\n\
-    ────────────────────────────────────────\n\n"
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  deployed_at: '2026-03-23T04:15:02'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_1298
-  project: infra
-  related_lessons:
-  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-    id: L074
-    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-    id: L225
-    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-    id: L063
-    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-  - detail: gate_metricsテストがtmux環境依存
-    id: L215
-    summary: gate_metricsテストがtmux環境依存
-  - detail: bash,variable-scope,preflight
-    id: L096
-    summary: bash,variable-scope,preflight
-  report_filename: hayate_report_cmd_1298.yaml
-  report_path: queue/reports/hayate_report_cmd_1298.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - pushするな(commitまで)
-    - スコープ外改善は禁止
-    notes:
-    - TODO/FIXMEが残っていないことを確認せよ
-    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-    required_fields:
-    - ac_version_read
-    - files_modified
-    - lesson_candidate
-    - lessons_useful
+  parallel_ok: []
+  progress: AC1+AC2+AC3全完了。全10テストPASS。verdict=PASS
+  related_lessons: []
+  report_filename: hayate_report.yaml
+  report_path: queue/reports/hayate_report.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
+  status: idle
   stop_for: []
-  task_type: implement
+  task:
+    ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+    ac_priority: AC1 > AC2 > AC3
+    ac_version: 97e16509
+    acceptance_criteria:
+    - binary_checks:
+      - check: pre-bash-report-deny.shが存在し実行可能か
+        result: ''
+      - check: Bash redirect時にdeny応答が返るか
+        result: ''
+      description: Bashでqueue/reports/*.yamlへのリダイレクトがDENYされること
+      id: AC1
+    - binary_checks:
+      - check: settings.local.jsonにBash matcherエントリがあるか
+        result: ''
+      description: settings.local.jsonにPreToolUseフックが正しく追加されていること
+      id: AC2
+    - binary_checks:
+      - check: テストでdeny応答を確認したか
+        result: ''
+      description: テストでdenyが動作すること
+      id: AC3
+    bloom_level: ''
+    cmd_id: cmd_1298
+    command: "BashツールでのReport YAML直接書込みを防止するhookを作成せよ。\ncmd_1294(Write/Edit DENY)の防御ギャップ補完。\n\
+      \n■ AC1: scripts/hooks/pre-bash-report-deny.sh を作成。\n       - matcher: Bash\n\
+      \       - コマンド文字列内に queue/reports/.*\\.yaml への\n         リダイレクト(>, >>, tee等)を正規表現で検出\n\
+      \       - 検出時: permissionDecision=deny + 理由 + report_field_set.sh誘導\n      \
+      \ - report_field_set.sh自身のBash呼び出しは許可（環境変数REPORT_TOOL=1等で識別）\n■ AC2: settings.local.jsonのPreToolUse配列にBash\
+      \ matcher + pre-bash-report-deny.shエントリ追加\n■ AC3: テスト: echo \"test\" > queue/reports/test_report.yaml\
+      \ がdenyされることを確認\n"
+    deployed_at: '2026-03-23T03:42:02'
+    description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+      \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+      \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+      \  - L215: gate_metricsテストがtmux環境依存\n  - L096: bash,variable-scope,preflight\n\
+      ────────────────────────────────────────\n\n"
+    engineering_preferences:
+    - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+    - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+    - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+    - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+    - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+    - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+    never_stop_for:
+    - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+    - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+    - 自明な修正（typo等） — 実行→事後報告
+    parallel_ok:
+    - AC1
+    - AC2
+    - AC3
+    parent_cmd: cmd_1298
+    project: infra
+    related_lessons:
+    - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+      id: L074
+      summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+      id: L225
+      summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+        lesson in data.get('lessons',[])が正しい形
+      id: L063
+      summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+        lesson in data.get('lessons',[])が正しい形
+    - detail: gate_metricsテストがtmux環境依存
+      id: L215
+      summary: gate_metricsテストがtmux環境依存
+    - detail: bash,variable-scope,preflight
+      id: L096
+      summary: bash,variable-scope,preflight
+    report_filename: hayate_report_cmd_1298.yaml
+    report_path: queue/reports/hayate_report_cmd_1298.yaml
+    report_template:
+      filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+      forbidden:
+      - pushするな(commitまで)
+      - スコープ外改善は禁止
+      notes:
+      - TODO/FIXMEが残っていないことを確認せよ
+      - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+      required_fields:
+      - ac_version_read
+      - files_modified
+      - lesson_candidate
+      - lessons_useful
+    role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+    status: assigned
+    stop_for: []
+    task_type: implement

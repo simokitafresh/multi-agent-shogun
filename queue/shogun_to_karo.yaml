@@ -804,7 +804,7 @@ commands:
       q4_depth: medium — cmd_1275 DC(影丸報告)で27ファイルの参照残存を確認済み
       q5_verified_source: dashboard将軍宛報告(cmd_1275 kagemaru DC) + cmd_1275完了済み
       q6_not_hiding: no — 削除済みスクリプトの残存参照を適切に処理
-    status: pending
+    status: delegated
     delegated_at: "\"2026-03-23T04:03:59\""
   cmd_1305:
     title: lesson_update_score.sh書込先修正 — Vercel化後のarchive参照切替
