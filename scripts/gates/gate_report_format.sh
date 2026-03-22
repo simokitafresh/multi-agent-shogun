@@ -52,8 +52,20 @@ elif lc is not None:
             errors.append('lesson_candidate: missing \"found\" field')
         if not lc.get('found') and not lc.get('no_lesson_reason'):
             errors.append('lesson_candidate: found=false but no no_lesson_reason')
+        # --- no_lesson_reason quality check (cmd_1299) ---
+        if not lc.get('found') and lc.get('no_lesson_reason'):
+            reason = str(lc.get('no_lesson_reason', '')).strip()
+            if len(reason) <= 3:
+                errors.append(f'lesson_candidate: no_lesson_reason too short ({len(reason)} chars, need >3)')
+                hints.append('FIX (lesson_candidate): no_lesson_reasonに具体的な理由を記入せよ。例: \"既知のL084と同じパターン\"')
+            placeholder_values = ['なし', '特になし', 'N/A', 'n/a', 'none', 'None', 'no', 'No']
+            if reason in placeholder_values:
+                errors.append(f'lesson_candidate: no_lesson_reason=\"{reason}\" is placeholder (write a real reason)')
+                hints.append('FIX (lesson_candidate): プレースホルダ禁止。なぜ教訓がないのか具体的に書け')
         if lc.get('found') and not lc.get('title'):
             errors.append('lesson_candidate: found=true but no title')
+        if lc.get('found') and not lc.get('detail') and not lc.get('summary'):
+            errors.append('lesson_candidate: found=true but no detail or summary')
     else:
         errors.append(f'lesson_candidate: unexpected type {type(lc).__name__}')
 

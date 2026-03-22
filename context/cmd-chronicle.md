@@ -399,3 +399,6 @@
 | cmd_1286 | GP-014 commit層自動防御 — report完了前のgit uncommittedチェックgate | infra | 03-23 | — |
 | cmd_1290 | insightsキュー自動アーカイブ — doneエントリの残存防止 | infra | 03-23 | — |
 | cmd_1291 | 報告YAMLアーカイブ時期修正 — 家老レビュー完了前のアーカイブ防止 | infra | 03-23 | — |
+| cmd_1292 | ninja_monitor report存在チェック — report未作成での/clear防止 | infra | 03-23 | — |
+| cmd_1293 | 忍者報告テンプレート導線修復 — format workaround源流根絶(GP-017) | infra | 03-23 | — |
+| cmd_1294 | PreToolUse DENY実装 — Write/Editでの報告YAML直接作成を阻止(GP-003完遂) | infra | 03-23 | — |

@@ -54,6 +54,123 @@ for arg in "$@"; do
     prev_arg="$arg"
 done
 
+# Scan for --retire flag (retire existing lesson)
+RETIRE_ID=""
+prev_arg=""
+for arg in "$@"; do
+    if [ "$prev_arg" == "--retire" ]; then RETIRE_ID="$arg"; fi
+    prev_arg="$arg"
+done
+
+# ─── Retire mode: mark existing lesson as retired ───
+if [ -n "$RETIRE_ID" ]; then
+    if [ -z "$PROJECT_ID" ]; then
+        echo "Usage: lesson_write.sh <project_id> --retire <lesson_id>" >&2
+        exit 1
+    fi
+
+    if [[ "$PROJECT_ID" == cmd_* ]]; then
+        echo "ERROR: 第1引数はproject_id（例: infra, dm-signal）。cmd_idではない。" >&2
+        exit 1
+    fi
+
+    # Get project path from config/projects.yaml
+    PROJECT_PATH=$(python3 -c "
+import yaml
+with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+    cfg = yaml.safe_load(f)
+for p in cfg.get('projects', []):
+    if p['id'] == '$PROJECT_ID':
+        print(p['path'])
+        break
+")
+
+    if [ -z "$PROJECT_PATH" ]; then
+        echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
+        exit 1
+    fi
+
+    LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
+    LOCKFILE="${LESSONS_FILE}.lock"
+
+    if [ ! -f "$LESSONS_FILE" ]; then
+        echo "ERROR: $LESSONS_FILE not found." >&2
+        exit 1
+    fi
+
+    TIMESTAMP=$(date "+%Y-%m-%d")
+
+    # Atomic modify with flock
+    (
+        flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
+
+        export LESSONS_FILE RETIRE_ID TIMESTAMP
+        python3 << 'RETIREPY'
+import re, os, sys
+
+lessons_file = os.environ["LESSONS_FILE"]
+retire_id = os.environ["RETIRE_ID"]
+timestamp = os.environ["TIMESTAMP"]
+
+with open(lessons_file, encoding='utf-8') as f:
+    content = f.read()
+
+# Normalize lesson ID to LXXX format
+m_id = re.match(r'^L?(\d+)$', retire_id)
+if m_id:
+    num = int(m_id.group(1))
+    retire_id = f'L{num:03d}'
+
+lines = content.split('\n')
+
+# Find the lesson heading: ### LXXX: title
+heading_idx = None
+for i, line in enumerate(lines):
+    if re.match(rf'^### {re.escape(retire_id)}\s*[:：]', line):
+        heading_idx = i
+        break
+
+if heading_idx is None:
+    print(f'ERROR: {retire_id} not found in {lessons_file}', file=sys.stderr)
+    sys.exit(1)
+
+# Find the last metadata line after the heading (lines starting with - **)
+insert_idx = heading_idx + 1
+already_retired = False
+for j in range(heading_idx + 1, len(lines)):
+    stripped = lines[j].strip()
+    if stripped.startswith('- **'):
+        insert_idx = j + 1
+        if '**retired**' in stripped:
+            already_retired = True
+    elif stripped == '':
+        continue
+    else:
+        break
+
+if already_retired:
+    print(f'{retire_id} is already retired')
+    sys.exit(0)
+
+# Insert retired fields after last metadata line
+retired_lines = [f'- **retired**: true', f'- **retired_at**: {timestamp}']
+new_lines = lines[:insert_idx] + retired_lines + lines[insert_idx:]
+
+with open(lessons_file, 'w', encoding='utf-8') as f:
+    f.write('\n'.join(new_lines))
+
+print(f'{retire_id} retired in {lessons_file}')
+RETIREPY
+
+    ) 200>"$LOCKFILE"
+
+    # Re-sync YAML cache
+    bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+
+    echo "[lesson_write] $RETIRE_ID retired successfully"
+    exit 0
+fi
+
 # Validate arguments
 if [ -z "$PROJECT_ID" ] || [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
     echo "Usage: lesson_write.sh <project_id> <title> <detail> [source_cmd] [author]" >&2

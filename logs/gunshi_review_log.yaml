@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 205件 (draft:92, report:98, self_study:21) | 2026-03-20〜
+# 累計: 211件 (draft:93, report:100, self_study:24) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:80 LGTM:84 REQ_CHANGES:8 FAIL:6
+# verdict分布: APPROVE:81 LGTM:86 REQ_CHANGES:8 FAIL:6
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -12,28 +12,30 @@
 # gate強化: cmd_1246(verdict二値)+cmd_1248(id必須/useful bool/binary_checks list)
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
-# 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)
-# ─── GP追跡表(S37総点検:殿指示2026-03-23) ───
+# 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
+# ─── GP追跡表(S42整理:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
 # | 002 | bc事前生成             | ★implemented      | S6   | cmd_1260 |
-# | 003 | PreToolUse DENY昇格   | ★implemented      | S36  | cmd_1284でdeny復元済。別hook不要 |
-# | 004 | SG7完全パッケージ      | pending(再定義2回) | S18  | 家老CTX解放。設計未安定。優先3 |
-# | 005 | 配備タイムラグ計測     | ✗obsolete          | S18  | DEPLOYED_AT既存+54秒高速。計測不要 |
+# | 003 | PreToolUse DENY昇格   | ★implemented      | S36  | cmd_1284+cmd_1294 |
+# | 004 | SG7完全パッケージ      | ★implemented      | S18  | cmd_1288仕様定義+cmd_1290-1293で実運用中 |
+# | 005 | 配備タイムラグ計測     | ✗obsolete          | S18  | DEPLOYED_AT既存+54秒高速 |
 # | 006 | preflight archive除去  | ★implemented      | S20  | deploy_task.shから除去済 |
 # | 007 | 品質至上SG明示         | ★implemented      | S21  | SG protocol内 |
-# | 008 | Vercel化全量           | ✗obsolete          | S23  | cmd_1280-1282で完了。全context<500行 |
+# | 008 | Vercel化全量           | ✗obsolete          | S23  | cmd_1280-1282で完了 |
 # | 009 | SG8 4類型              | ★implemented      | S27  | SG8プロトコル内 |
-# | 010 | GP-003最優先化         | ★implemented      | S28  | 親GP-003がcmd_1284で完了 |
-# | 011 | ninja rate計測         | pending            | S28  | 低優先。workaround率14%。優先4 |
-# | 012 | RC再検証フロー         | design_complete    | S30  | 8Phase設計済。cmd待ち。優先2 |
+# | 010 | GP-003最優先化         | ★implemented      | S28  | 親GP-003完了 |
+# | 011 | ninja WA率計測         | ★implemented      | S28  | gate_ninja_workaround_rate.sh+karo_startup統合(cmd_1289) |
+# | 012 | RC再検証フロー         | ★implemented      | S30  | instructions/gunshi.md §396-457。cmd_1287で初適用 |
 # | 013 | GP追跡表構造化         | ★implemented      | S31  | S35で本ヘッダに実装 |
-# | 014 | commit層gate           | pending            | S33  | commit_missing35%根絶。優先1 |
-# | 016 | Bash report検出        | pending            | S38  | DENY hookギャップ根絶。優先1 |
-# | 017 | report_path導線修復    | pending            | S39  | CLAUDE.md Step4.5。format WA源流根絶。優先1 |
-# | 018 | /clear前commit検査    | pending            | S40  | ninja_monitor git status。commit_missing17%根絶。優先2 |
-# 集計: ★implemented:8 / ✗obsolete:2 / pending:5 / design_complete:1 / pending低:1
-# 将軍推薦順: GP-016→GP-017→GP-014→GP-018→GP-012→GP-004→GP-011
+# | 014 | commit層gate           | ★implemented      | S33  | inbox_write.sh WARNING mode(cmd_1286)。BLOCK昇格は安定後 |
+# | 016 | Bash report検出        | pending            | S38  | Write/Edit DENY(GP-003)のBashすり抜け対策。優先1 |
+# | 017 | report_path導線修復    | ★implemented      | S39  | cmd_1293(kagemaru)で実装完了 |
+# | 018 | /clear前commit検査    | pending            | S40  | ninja_monitor git status。GP-014と補完関係。優先2 |
+# | 019 | L247 gate強制          | pending            | S40  | found:false理由なし→BLOCK。教訓ループ閉鎖。優先2 |
+# | 020 | lesson候補ハーベスト   | pending            | S40  | 82.8%消失対策。定期スキャン。優先3 |
+# 集計: ★implemented:14 / ✗obsolete:2 / pending:4
+# 将軍推薦順: GP-016→GP-018→GP-019→GP-020
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -803,3 +805,51 @@
   gate_result: null
   findings_summary: "ninja_monitor report存在チェック。6観点OK。SG8 4類型: 該当なし(根本原因明確+workaround cmd_1264から直結)。report_filename={name}_report_{parent_cmd}.yamlがdeploy_task.sh命名規則と整合。confidence:HIGH"
   timestamp: "2026-03-23T03:16:00"
+- cmd_id: cmd_1292
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1292
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "ninja_monitor report存在チェック実装。SG0 PASS。commit 041dd29確認(一括commit内)。resolve_expected_report_file()再利用でStage1直後に配置。L252活用。binary_checksにcheck:記述なし(result:のみ)だがフォーマット的にgate PASS。lesson_candidate有(関数再利用パターン)"
+  lesson_quality: OK
+  sg7_bundle:
+    gate_precheck: {report_format: PASS, commit_verified: true, gate_prediction: CLEAR}
+    lesson_extraction: {has_candidate: true, summary: "resolve_expected_report_file()再利用でガード追加時の命名追従", register_recommended: false}
+    context_reflux: {needed: false}
+    dashboard_line: "cmd_1292 hayate PASS。ninja_monitor report存在チェック追加。workaround: no"
+    karo_workaround_needed: no
+  timestamp: "2026-03-23T03:25:00"
+- cmd_id: cmd_1293
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1293
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "CLAUDE.md Step4.5追加(GP-017実装)。SG0 PASS。commit cd184c8確認。deploy_task.shのreport_path:記載を現物確認(6件ヒット)。L247準拠(found:false+reason有)。binary_checks全3AC check+result記載。高品質"
+  lesson_quality: OK
+  sg7_bundle:
+    gate_precheck: {report_format: PASS, commit_verified: true, gate_prediction: CLEAR}
+    lesson_extraction: {has_candidate: false}
+    context_reflux: {needed: false}
+    dashboard_line: "cmd_1293 kagemaru PASS。CLAUDE.md Step4.5 report_path導線追加。workaround: no"
+    karo_workaround_needed: no
+    format_corrected: false
+  timestamp: "2026-03-23T03:25:00"
+- cmd_id: cmd_1294
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "PreToolUse DENY実装(GP-003完遂)。6観点OK。SG8: 4類型該当なし。S35設計完了→実装段階。自動化×強制の原則実践。confidence:HIGH"
+  timestamp: "2026-03-23T03:25:00"
+- cmd_id: self_study_S42
+  review_type: self_study
+  findings_summary: "GP追跡表整理(殿指示)。4件のstatus乖離を修正: GP-004(SG7=実運用中), GP-011(WA率スクリプト+karo_startup統合済), GP-012(RC再検証プロトコル=gunshi.md定義+初適用済), GP-014(commit gate=inbox_write.sh WARNING mode)。GP-019/020を新規追加(lesson_candidate pipeline修復)。結果: ★implemented 14/20=70%, pending 4件に集約"
+  proposals:
+    - id: GP-019
+      description: "gate_report_formatにL247強制。found:false理由なし→BLOCK。教訓ループ閉鎖"
+      status: pending
+    - id: GP-020
+      description: "lesson_candidate定期ハーベスト。82.8%消失対策。未登録候補のアーカイブスキャン"
+      status: pending
+  timestamp: "2026-03-23T03:30:00"

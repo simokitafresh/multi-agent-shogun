@@ -1,4 +1,4 @@
-progress: 'AC1-3 PASS。全完了'
+progress: AC1-3 PASS。全完了
 status: idle
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
@@ -87,7 +87,7 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: assigned
+  status: done
   stop_for: []
   target_path: scripts/gates/gate_gunshi_startup.sh
   task_type: implement

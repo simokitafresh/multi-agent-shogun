@@ -99,6 +99,8 @@ while i < len(lines):
     if_cond = None
     then_action = None
     because_reason = None
+    retired = None
+    retired_at = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -221,13 +223,23 @@ while i < len(lines):
             m_fbecause = re.match(r'- \*\*because\*\*:\s*(.+)', sline)
             if m_fbecause:
                 because_reason = m_fbecause.group(1).strip()
+        # Extract retired field
+        if retired is None:
+            m_fretired = re.match(r'- \*\*retired\*\*:\s*(.+)', sline)
+            if m_fretired:
+                retired = m_fretired.group(1).strip().lower() == 'true'
+        # Extract retired_at field
+        if retired_at is None:
+            m_fretired_at = re.match(r'- \*\*retired_at\*\*:\s*(.+)', sline)
+            if m_fretired_at:
+                retired_at = m_fretired_at.group(1).strip()
         # Get summary from **発生**/**問題**/**課題** fields or plain content
         if sline.startswith('- **発生**:') or sline.startswith('- **問題**:') or sline.startswith('- **課題**:'):
             text = re.sub(r'^- \*\*[^*]+\*\*:\s*', '', sline)
             summary_parts.append(text)
         elif sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|if|then|because|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -249,6 +261,10 @@ while i < len(lines):
         entry['merged_from'] = merged_from
     if tags:
         entry['tags'] = tags
+    if retired:
+        entry['retired'] = True
+    if retired_at:
+        entry['retired_at'] = retired_at
     # IF-THEN形式フィールド
     if if_cond or then_action or because_reason:
         if_then = {}
@@ -419,6 +435,8 @@ for l in active_lessons:
         'summary': (l.get('summary') or l.get('title', ''))[:80],
         'tags': FlowList(l.get('tags', ['universal'])),
     })
+    if l.get('retired'):
+        entry['retired'] = True
     index_entries.append(entry)
 
 index_data = {

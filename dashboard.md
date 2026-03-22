@@ -1,22 +1,22 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 03:20 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (03:28 自動更新)
+## 📊 リアルタイム状況 (03:42 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
-| 疾風 | claude-opus-4-6 high | done | cmd_1292 | — |
-| 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1293 | — |
-| 半蔵 | claude-opus-4-6 high | done | cmd_1294 | — |
-| 才蔵 | claude-opus-4-6 high | done | cmd_1289 | — |
-| 小太郎 | claude-opus-4-6 high | done | cmd_1290 | — |
-| 飛猿 | claude-opus-4-6 high | done | cmd_1288 | — |
+| 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1298 | — |
+| 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1299 | — |
+| 半蔵 | claude-opus-4-6 high | 稼働中 | cmd_1300 | — |
+| 才蔵 | claude-opus-4-6 high | 稼働中 | cmd_1296 | — |
+| 小太郎 | claude-opus-4-6 high | 稼働中 | cmd_1297 | — |
+| 飛猿 | claude-opus-4-6 high | done | cmd_1295 | — |
 
 ### CI Status
 **CI RED: run 23403709313 — E2E Tests**
 
-**WARN: 42件のcommit未push。`git push`を検討せよ**
+**WARN: 46件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,8 +24,8 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1053/1063 |
-| 稼働忍者 | 2/8 (影丸, 半蔵) |
+| cmd完了(GATE CLEAR) | 1053/1064 |
+| 稼働忍者 | 6/8 (疾風, 影丸, 半蔵, 才蔵, 小太郎, 飛猿) |
 | 連勝(CLEAR streak) | 0 |
 
 ### モデル別スコアボード
@@ -49,7 +49,7 @@
 | auto-ops | 82.1% | 100.0% | 56 |
 | google-classroom | 66.7% | 100.0% | 3 |
 | database | 0.0% | — | 1 |
-| unknown | 54.7% | 95.9% | 223 |
+| unknown | 54.9% | 95.1% | 224 |
 
 #### タスク種別別
 | task_type | 注入 | スキップ | 注入率 | N |
@@ -68,11 +68,11 @@
 Top 5 有効教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
-| L074 | infra | 385 | 549 | 70.1% |
-| L063 | infra | 263 | 508 | 51.8% |
-| L225 | infra | 138 | 148 | 93.2% |
+| L074 | infra | 386 | 550 | 70.2% |
+| L063 | infra | 263 | 509 | 51.7% |
+| L225 | infra | 139 | 149 | 93.3% |
 | L032 | infra | 87 | 215 | 40.5% |
-| L097 | infra | 79 | 113 | 69.9% |
+| L097 | infra | 79 | 114 | 69.3% |
 
 Bottom 5 低効果教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
@@ -99,18 +99,19 @@ Bottom 5 低効果教訓
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
-## 最新更新 (03:28更新)
-- **cmd_1290**: 完了。小太郎PASS。Gate8にinsights自動アーカイブ追加。workaround: no
-- **cmd_1291**: 完了。影丸PASS。archive_reportsにreview_gate.doneチェック追加。workaround: no
-- **cmd_1292**: 完了。疾風PASS。ninja_monitor report存在チェック追加。workaround: no
-- **cmd_1293**: 完了。影丸PASS(軍師APPROVE)。CLAUDE.md Step 4.5追加(GP-017)。workaround: no
-- **cmd_1294**: 完了。半蔵PASS。PreToolUse DENYフック実装(GP-003完遂)。workaround: no
+## 最新更新 (03:39更新)
+- **cmd_1295**: 配備中。飛猿→軍師gate新設+archive競合修正(検証+commit)
+- **cmd_1296**: 配備中。才蔵→GP-018 ninja_monitor uncommittedチェック
+- **cmd_1297**: 配備中。小太郎→GP-015 教訓退役制度
+- **cmd_1298**: 配備中。疾風→GP-016 Bash reportリダイレクト検出hook
+- **cmd_1299**: 配備中。影丸→GP-019 lesson_candidate reason品質gate
+- **cmd_1300**: 配備中。半蔵→GP-020 lesson候補ハーベスト
 
 ### パイプライン
-パイプライン空 — 次cmd待ち
+6cmd並列配備中(cmd_1295-1300)。全忍者フル稼働
 
 ### idle忍者
-疾風/影丸/半蔵/才蔵/小太郎/飛猿(6名idle)
+なし(6名全員稼働中)
 
 ### 軍師GP総点検結果
 - GP-003: **完了**(cmd_1284+cmd_1294 PreToolUse DENY実装)
@@ -122,8 +123,8 @@ Bottom 5 低効果教訓
 
 ## 🚨要対応
 
-### GATE/archive preflightタイミング競合
-deploy_task.shがdeploy時にreview_gate.doneを事前生成→cmd_1291のarchive_reportsがreview_gate.done存在=レビュー完了と判定→preflightで報告YAMLをアーカイブ→直後のGATEが報告不在でBLOCK。cmd_1290/1292/1293で発生。家老検証+軍師LGTMで完了処理済みだがGATE経由ではない。**修正案**: (A) review_gate.doneのdeploy時事前生成を廃止しレビュー完了時にのみ作成 or (B) cmd_complete_gate.sh内のarchive preflightを報告存在チェック後に移動
+### GATE/archive preflightタイミング競合 → cmd_1295で修正中
+cmd_1290/1292/1293/1294で発生。cmd_1295(飛猿配備中)でpreflight順序修正(review_gate→archive)
 
 ## 🔧 将軍へのcmd起票提案（家老自己研鑽より）
 
@@ -134,13 +135,11 @@ deploy_task.shがdeploy時にreview_gate.doneを事前生成→cmd_1291のarchiv
 | 1 | inbox_write.sh gate発火100%化 | **完了** | cmd_1264 |
 | 2 | report_field_set.sh強制hook | **完了** | cmd_1265 |
 | 3 | BLOCK昇格(PreToolUse deny) | **完了** | cmd_1284+1294 |
-| 4 | テンプレート導線修復(GP-017) | **完了** | cmd_1293 |
-| 5 | GATE/archive timing修正 | **要起票** | — |
+| 4 | ninja_monitor uncommittedチェック | **配備中** | cmd_1296 |
+| 5 | 教訓退役制度 | **配備中** | cmd_1297 |
 
-### deploy高速化 — 軍師GP-006
-
-| # | 内容 | 状態 | cmd |
-|---|------|------|-----|
+### 軍師利他サイクル5発見(S42)
+- lesson_candidate登録率17.2%。GP-019(L247強制)/GP-020(async harvesting)要起票
 
 ## 将軍宛報告
 - [INSIGHT] cmd_1286 hayate: LC: target_path/filesなしタスクではgit uncommittedチェックがスキップされる
