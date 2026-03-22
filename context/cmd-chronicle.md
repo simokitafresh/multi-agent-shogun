@@ -390,3 +390,5 @@
 | cmd_1275 | GS混乱候補スクリプト7本削除 — 忍法スクリプト誤用防止 | dm-signal | 03-23 | — |
 | cmd_1277 | deploy_task.sh配備高速化 — preflight_gate_artifacts()からarchive_completed.sh呼出を除去し、配備時間を50秒→5秒に短縮する | infra | 03-23 | — |
 | cmd_1279 | gate発火ログ計測基盤の構築 — gate_report_format.shの発火・結果をログに記録し、gate効果の定量的計測を可能にする | infra | 03-23 | — |
+| cmd_1280 | lessons.yaml 3ファイルのVercel化 — 索引+アーカイブ分離で500行以下に圧縮し、読込エージェントのCTX浪費を構造的に解消する | infra | 03-23 | — |
+| cmd_1282 | 運用ファイル3件のVercel化 — context/cmd-chronicle.md + context/infrastructure.md + logs/gunshi_review_log.yaml を500行以下に圧縮する | infra | 03-23 | — |
