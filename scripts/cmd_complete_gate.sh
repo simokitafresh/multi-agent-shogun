@@ -3817,6 +3817,23 @@ except:
         echo "  SKIP (gate_workaround_rate.sh not found)"
     fi
 
+    # ─── 第三層loop健全性チェック（GATE CLEAR時、自動insight起票+情報表示） ───
+    echo ""
+    echo "Loop health (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/gates/gate_loop_health.sh" ]; then
+        loop_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_loop_health.sh" 2>&1) || true
+        if echo "$loop_output" | grep -q "Auto-Insight"; then
+            echo "$loop_output" | grep -E "CREATED:|計.*件" | head -5
+        fi
+        if echo "$loop_output" | grep -q "WARNING:"; then
+            echo "  [WARN] $(echo "$loop_output" | grep 'WARNING:' | head -1)"
+        else
+            echo "  OK"
+        fi
+    else
+        echo "  SKIP (gate_loop_health.sh not found)"
+    fi
+
     # ─── archive実行（GATE CLEAR後、全チェック+ポストプロセス完了後） ───
     # cmd_1302: 報告YAMLをGATEが読み終わってからアーカイブ
     echo ""

@@ -3007,3 +3007,12 @@
 [Mon Mar 23 05:44:47 JST 2026] [NUDGE] Sending paste-buffer nudge to tobisaru
 [Mon Mar 23 05:44:48 JST 2026] Set tobisaru @agent_state to active after nudge
 [Mon Mar 23 05:44:48 JST 2026] Wake-up sent to tobisaru (1 unread via paste-buffer)
+[Mon Mar 23 05:45:50 JST 2026] [NUDGE] Sending paste-buffer nudge to tobisaru
+[Mon Mar 23 05:45:51 JST 2026] Set tobisaru @agent_state to active after nudge
+[Mon Mar 23 05:45:51 JST 2026] Wake-up sent to tobisaru (1 unread via paste-buffer)
+[Mon Mar 23 05:45:51 JST 2026] [RETRY] Nudge unacknowledged, retry 1/3 for tobisaru
+[Mon Mar 23 05:46:53 JST 2026] [RECOVERY] forcing idle flag for tobisaru after 126s unread
+[Mon Mar 23 05:46:53 JST 2026] [NUDGE] Sending paste-buffer nudge to tobisaru
+[Mon Mar 23 05:46:54 JST 2026] Set tobisaru @agent_state to active after nudge
+[Mon Mar 23 05:46:54 JST 2026] Wake-up sent to tobisaru (1 unread via paste-buffer)
+[Mon Mar 23 05:46:54 JST 2026] [RETRY] Nudge unacknowledged, retry 2/3 for tobisaru

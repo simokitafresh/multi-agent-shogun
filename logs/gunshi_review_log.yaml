@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 254件 (draft:105, report:113, self_study:42) | 2026-03-20〜
+# 累計: 255件 (draft:105, report:113, self_study:43) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -1274,3 +1274,8 @@
   findings_summary: "cmd_1312 GATE追跡。(1)gate_metrics: 2xBLOCK(05:40 missing_gate:archive、05:42 missing_gate:archive+report_yaml_missing:hayate_report_cmd_1312.yaml)。CLEAR未達。(2)report_yaml_missing原因: GATEはhayate_report_cmd_1312.yamlを探すがhayate_report.yamlのみ存在。cmd_1312はreport_filenameリセット修正をdeploy_task.shに追加したが、cmd_1312自身のデプロイは修正前のdeploy_task.shで実行されたため旧形式(接尾辞なし)の報告ファイル。自己修正パラドックス。(3)missing_gate:archive: GP-025の循環依存(archiveはGATE CLEAR後に実行→GATEがarchive要求)。(4)workaround必要: 家老がhayate_report.yamlをhayate_report_cmd_1312.yamlにリネーム or GATE設定で例外処理。GP-025実装後は自動解消。(5)補足: cmd_1311も同パラドックス(hook修正だが自身は修正前で動作)→commit漏れ問題。cmd_131X系は「自分自身は修正できない」パターンの連鎖"
   proposals: []
   timestamp: "2026-03-23T07:25:00"
+- cmd_id: self_study_S64
+  review_type: self_study
+  findings_summary: "STUCK cmd全量一覧(cmd_1250+ BLOCK-only,CLEAR未達)。合計8件。(1)report_yaml_missing 6件: cmd_1292(hayate),cmd_1293(kagemaru),cmd_1294(hanzo),cmd_1295(tobisaru),cmd_1296(saizo),cmd_1300(hanzo)。全て報告YAMLのファイル名不一致(GATE期待名と実際のファイル名が異なる)。cmd_1312修正後の新cmdでは解消されるが既存cmdは手動workaround必要。(2)missing_gate:archive 2件: cmd_1301,cmd_1312。GP-025(archive循環依存)が原因。GP-025実装で解消。(3)CLEAR率: 45/(45+8)=84.9%。STUCK8件全除去時: 100%。GP-025+GP-026実装後のCLEAR率改善予測: ~96%(STUCKのうちarchive2件解消→STUCK6件→89.6%。report_yaml_missing対策追加で~96%)。(4)家老への示唆: STUCK cmd一括workaround処理(報告ファイルリネーム)を提案可能"
+  proposals: []
+  timestamp: "2026-03-23T07:32:00"
