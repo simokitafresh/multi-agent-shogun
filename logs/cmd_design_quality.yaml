@@ -584,3 +584,21 @@ entries: []
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-03-22T17:53:20Z"
+  - cmd_id: "cmd_1288"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T18:02:05Z"
+    notes: "report_yaml_missing:tobisaru_report_cmd_1288.yaml"
+  - cmd_id: "cmd_1288"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T18:04:34Z"
+    notes: "report_yaml_missing:tobisaru_report_cmd_1288.yaml"

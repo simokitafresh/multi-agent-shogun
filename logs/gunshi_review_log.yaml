@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 196件 (draft:90, report:93, self_study:19) | 2026-03-20〜
+# 累計: 200件 (draft:91, report:96, self_study:19) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -29,16 +29,21 @@
 # | 012 | RC再検証フロー         | design_complete    | S30  | 8Phase設計済。cmd待ち。優先2 |
 # | 013 | GP追跡表構造化         | ★implemented      | S31  | S35で本ヘッダに実装 |
 # | 014 | commit層gate           | pending            | S33  | commit_missing35%根絶。優先1 |
-# 集計: ★implemented:8 / ✗obsolete:2 / pending:2 / design_complete:1 / pending低:1
-# 将軍推薦順: GP-014→GP-012→GP-004→GP-011
+# | 016 | Bash report検出        | pending            | S38  | DENY hookギャップ根絶。優先1 |
+# 集計: ★implemented:8 / ✗obsolete:2 / pending:3 / design_complete:1 / pending低:1
+# 将軍推薦順: GP-016→GP-014→GP-012→GP-004→GP-011
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
 # ─── ★報告レビュー セルフゲート(LGTMの前に必ず確認) ───
 # SG0: gate_report_format.sh実行(自動化済み。手動チェック不要)
 #   bash scripts/gates/gate_report_format.sh <report_path>
-#   → FAIL: 即FAIL verdict。内容レビュー不要
 #   → PASS: SG2へ進む
+#   → FAIL: 軍師がフォーマットを直接修正(report_field_set.sh or Edit)→再gate→PASS後SG2へ
+#     修正内容をSG7バンドルに format_corrected: true, corrections: [修正箇所] で記録
+#     目的: 家老のworkaround作業ゼロ化。LG006の精神(LGTM=GATE通過保証)は維持
+#     注意: フォーマット(機械的)のみ修正。内容(判断必要)はFAILのまま差し戻し
+#   (殿裁定 2026-03-23: 原因潰し+すり抜けフォールバック両面作戦)
 # SG2: commit確認 (LG003手順化)
 #   □ files_modifiedの各ファイルにcmd_idを含むcommitが存在するか(git log --oneline -3 -- <file>)
 #   □ verdict=PASSなのにbinary_checksが空/未回答→FAIL (LG005手順化)
@@ -696,3 +701,46 @@
       description: "教訓退役制度: lesson_write.shにretired flag追加。lessons索引から除外しつつarchiveに保存"
       status: pending
   timestamp: "2026-03-23T03:10:00"
+- cmd_id: cmd_1287
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1287
+  report_verdict: FAIL
+  fail_reasons:
+    - "SG0 FAIL: binary_checks/verdict/purpose_validation/result.summary欠落、lesson_candidate list形式"
+  gate_result: null
+  findings_summary: "GP-012 RC再検証フロー実装。コード品質良好(commit f5ea47d確認)だが報告YAML形式がgate非準拠。LG006適用"
+  lesson_quality: OK
+  timestamp: "2026-03-23T02:55:00"
+- cmd_id: cmd_1288
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1288
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "GP-004 SG7完全パッケージ仕様定義。SG0-SG4全PASS。commit dd36b6b確認。3ファイル3AC充足。lesson_candidate有り(inbox_write引数破壊リスク)"
+  lesson_quality: OK
+  timestamp: "2026-03-23T02:55:00"
+- cmd_id: cmd_1289
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1289
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "GP-011 忍者別WA率集計。SG0-SG4全PASS。commit 8b75f03確認。karo_startup統合は冪等(dd36b6b既存)。context還流推奨(infrastructure.md)"
+  lesson_quality: OK
+  timestamp: "2026-03-23T02:55:00"
+- cmd_id: cmd_1290
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "insightsキュー自動アーカイブ。6観点OK。Gate8既存パターン延長。低リスク。confidence:HIGH"
+  timestamp: "2026-03-23T02:55:00"
+- cmd_id: self_study_S38
+  review_type: self_study
+  findings_summary: "利他分析: PreToolUse DENY hookの防御ギャップ特定。Write|Editブロック済みだがBash経由(cat/echo/python)のqueue/reports/*.yaml作成がすり抜ける。cmd_1287半蔵の非標準報告の根本原因。殿裁定: 原因潰し(Bash hookにreport検出追加)+すり抜けフォールバック(軍師がフォーマット直接修正)の両面作戦。SG0プロトコル更新: FAIL時に軍師が機械的修正→再gate→内容レビュー。format_corrected=trueをSG7バンドルに追加"
+  proposals:
+    - id: GP-016
+      description: "Bash hookにqueue/reports/*.yamlへのリダイレクト検出追加。PreToolUse DENYの防御ギャップ根絶"
+      status: pending
+  timestamp: "2026-03-23T03:00:00"

@@ -593,6 +593,22 @@ archive_reports() {
             continue
         fi
 
+        # review_gate.done未存在 → 家老レビュー未完了なのでアーカイブをスキップ
+        local check_cmd_for_review=""
+        if [ -n "$CMD_ID" ]; then
+            check_cmd_for_review="$CMD_ID"
+        elif [ -n "$parent_cmd" ]; then
+            check_cmd_for_review="$parent_cmd"
+        fi
+        if [ -n "$check_cmd_for_review" ]; then
+            local review_gate_file="$PROJECT_DIR/queue/gates/${check_cmd_for_review}/review_gate.done"
+            if [ ! -f "$review_gate_file" ]; then
+                echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $(basename "$report_file")"
+                kept=$((kept + 1))
+                continue
+            fi
+        fi
+
         # CMD_ID指定なし(sweep mode): 完了報告のみ。CMD_ID指定あり: status不問で全archive
         if [ -z "$CMD_ID" ]; then
             case "$status_val" in

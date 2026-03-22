@@ -396,3 +396,4 @@
 | cmd_1283 | lesson_update_score.shのCACHE_FILE→lessons_archive.yaml切替 — Vercel化索引の再膨張防止 | infra | 03-23 | — |
 | cmd_1284 | dashboard🚨要対応セクション清掃 + report_field_set.sh BLOCK昇格 | infra | 03-23 | — |
 | cmd_1285 | 家老用スタートアップゲート作成 — deepdive必読の自動化×強制 | infra | 03-23 | — |
+| cmd_1286 | GP-014 commit層自動防御 — report完了前のgit uncommittedチェックgate | infra | 03-23 | — |

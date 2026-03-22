@@ -1,5 +1,49 @@
 task:
-  status: idle
-  cmd_id: none
-  progress: ''
-  description: "タスクなし。待機中。"
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: d41d8cd9
+  acceptance_criteria:
+  - binary_checks:
+    - check: Gate 8実行時にdone/monitoring/observation/deferredが5件以上なら自動アーカイブされるか
+      result: ''
+    description: Gate 8実行時にdone/monitoring/observation/deferredが5件以上なら自動アーカイブされること
+    id: AC1
+  - binary_checks:
+    - check: アーカイブ後insights.yamlにpendingのみ残るか
+      result: ''
+    description: アーカイブ後insights.yamlにpendingのみ残ること
+    id: AC2
+  - binary_checks:
+    - check: done6+pending2投入→gate実行→done0+pending2になるか
+      result: ''
+    description: テスト done6+pending2投入→gate実行→done0+pending2になること
+    id: AC3
+  bloom_level: ''
+  cmd_id: cmd_1290
+  command: "■ AC1: gate_shogun_startup.shのGate 8(気づきキュー)セクションに自動アーカイブ機能を追加。\n    \
+    \   status=done/monitoring/observation/deferredのエントリが合計5件以上あれば\n       queue/archive/insights_archive.yamlに自動追記し、insights.yamlからは除去する\n\
+    \n■ AC2: アーカイブ後のinsights.yamlにはstatus=pendingのエントリのみ残ること\n\n■ AC3: テスト: insights.yamlにdone\
+    \ 6件+pending 2件を入れて\n       bash scripts/gates/gate_shogun_startup.sh 実行→done\
+    \ 6件がarchiveに移動、pending 2件が残る\n"
+  deployed_at: '2026-03-23T02:55:22'
+  description: insightsキュー自動アーカイブ — doneエントリの残存防止
+  engineering_preferences:
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  never_stop_for:
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1290
+  progress: AC1-3全PASS。commit fd3ec21
+  project: infra
+  related_lessons: []
+  report_filename: kotaro_report_cmd_1290.yaml
+  report_path: queue/reports/kotaro_report_cmd_1290.yaml
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  status: done
+  stop_for: []
+  task_type: implement
