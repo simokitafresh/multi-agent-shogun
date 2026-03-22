@@ -7972,3 +7972,6 @@ deploy_task.sh report_filen"
 2026-03-23 05:21:30 http=200 time=6s msg="【INFOバッチ】
 2026-03-23 05:08:03|cmd_1311"
 2026-03-23 05:23:10 http=200 time=6s msg="【monitor】将軍CTX:51%。/compactをご検討ください"
+2026-03-23 05:55:30 http=200 time=6s msg="【INFOバッチ】
+2026-03-23 05:54:08|cmd_1312"
+2026-03-23 05:55:57 http=200 time=5s msg="【家老】cmd_1312 GATE CLEAR。疾風PASS。report_filename残留値クリア修正完了。軍師SG0 auto-fix完了、家老work"
