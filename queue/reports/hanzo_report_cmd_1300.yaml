@@ -21,12 +21,10 @@ lesson_candidate:
   detail: ''
   project: infra
 lessons_useful:
-  '0':
-    useful: true
-    reason: PASS=1形式を意識。本スクリプトはPython実装のため直接該当しないが算術評価回避の原則として有用
-  '2':
-    useful: true
-    reason: data.get('lessons',[])でlessons.yamlを正しくパース。直接イテレーション回避に役立った
+- useful: true
+  reason: PASS=1形式を意識。本スクリプトはPython実装のため直接該当しないが算術評価回避の原則として有用
+- useful: true
+  reason: data.get('lessons',[])でlessons.yamlを正しくパース。直接イテレーション回避に役立った
 skill_candidate:
   found: false
 decision_candidate:
@@ -36,14 +34,10 @@ hook_failures:
   details: ''
 binary_checks:
   AC1:
-    '0':
-      result: PASS
-    '1':
-      result: PASS
+  - result: PASS
+  - result: PASS
   AC2:
-    '0':
-      result: PASS
+  - result: PASS
   AC3:
-    '0':
-      result: PASS
+  - result: PASS
 verdict: PASS
