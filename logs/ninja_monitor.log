@@ -9485,3 +9485,25 @@ OK: dashboard.md auto section updated (06:06)
 [2026-03-23 06:08:47] LESSON-HEALTH: all projects OK
 [2026-03-23 06:08:48] LOOP-HEALTH: OK
 [2026-03-23 06:08:49] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (06:09)
+[2026-03-23 06:10:17] UNCOMMITTED-BLOCK: hayate files=dashboard.md logs/gist_sync.log logs/gunshi_review_log.yaml logs/inbox_watcher_saizo.log logs/ninja_monitor.log logs/ntfy.log logs/workaround_pattern.log 
+[2026-03-23 06:10:17] REPORT-FORMAT-PASS: hayate report=hayate_report_cmd_1312.yaml
+[2026-03-23 06:10:17] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hayate (hayate:cmd_1312) — STALL検知は継続
+[pre-send capture] hayate pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:28%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 06:10:17] IDLE confirmed: hayate
+[inbox_mark_read] Marked 1 message(s) as read for hayate
+[2026-03-23 06:10:25] CLEAR-SEND: hayate confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:10:27] CLEAR-DEBOUNCE: kagemaru idle+no_task but 151s < 300s since last /clear
+[2026-03-23 06:10:30] CLEAR-SKIP: hanzo CTX=0%, already clean (1/10)
+[inbox_mark_read] No unread messages
+[2026-03-23 06:10:39] CLEAR-SEND: saizo confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:10:41] CLEAR-DEBOUNCE: kotaro idle+no_task but 144s < 300s since last /clear
+[2026-03-23 06:10:43] CLEAR-DEBOUNCE: tobisaru idle+no_task but 136s < 300s since last /clear
+[2026-03-23 06:10:43] Batch notification sent to karo: hayate
