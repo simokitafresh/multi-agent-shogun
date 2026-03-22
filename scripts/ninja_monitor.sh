@@ -754,6 +754,14 @@ notify_idle_batch() {
     done
     details="${details%, }"  # 末尾カンマ除去
 
+    # パイプライン空チェック: pending/newのcmdが0件なら通知スキップ（cmd_1252）
+    local pipeline_count
+    pipeline_count=$(grep -cE '^\s+status:\s+(pending|new)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+    if [ "${pipeline_count:-0}" -eq 0 ]; then
+        log "Pipeline empty (pending/new cmd=0), skipping idle notification for: ${names[*]}"
+        return 0
+    fi
+
     local msg="idle(新規): ${details}。計${#names[@]}名タスク割り当て可能。"
     if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" ninja_idle ninja_monitor >> "$LOG" 2>&1; then
         log "Batch notification sent to karo: ${names[*]}"
