@@ -1,22 +1,22 @@
-# 🏯 Dashboard [dm-signal] — 2026-03-23 02:34 更新
+# 🏯 Dashboard [dm-signal] — 2026-03-23 02:37 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (02:33 自動更新)
+## 📊 リアルタイム状況 (02:47 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
-| 疾風 | claude-opus-4-6 high | done | cmd_1281 | — |
+| 疾風 | claude-opus-4-6 high | done | cmd_1286 | — |
 | 影丸 | claude-opus-4-6 high | done | cmd_1285 | — |
-| 半蔵 | claude-opus-4-6 high | done | cmd_1284 | — |
-| 才蔵 | claude-opus-4-6 high | idle | cmd_1281 | — |
+| 半蔵 | claude-opus-4-6 high | 稼働中 | cmd_1287 | — |
+| 才蔵 | claude-opus-4-6 high | 稼働中 | cmd_1289 | — |
 | 小太郎 | claude-opus-4-6 high | idle | — | — |
-| 飛猿 | claude-opus-4-6 high | done | cmd_1282 | — |
+| 飛猿 | claude-opus-4-6 high | 稼働中 | cmd_1288 | — |
 
 ### CI Status
 **CI RED: run 23403709313 — E2E Tests**
 
-**WARN: 23件のcommit未push。`git push`を検討せよ**
+**WARN: 26件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち
@@ -24,9 +24,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1049/1056 |
-| 稼働忍者 | 2/8 (影丸, 半蔵) |
-| 連勝(CLEAR streak) | 48 (cmd_1235〜cmd_1284) |
+| cmd完了(GATE CLEAR) | 1050/1057 |
+| 稼働忍者 | 3/8 (半蔵, 才蔵, 飛猿) |
+| 連勝(CLEAR streak) | 49 (cmd_1235〜cmd_1285) |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -36,8 +36,8 @@
 ### 知識サイクル健全度
 | 項目 | 値 |
 |------|-----|
-| 教訓注入率 | 75.2% |
-| 教訓効果率 | 57.2% |
+| 教訓注入率 | 75.3% |
+| 教訓効果率 | 56.5% |
 | 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
 | 問題教訓 | 0件 |
 
@@ -49,7 +49,7 @@
 | auto-ops | 82.1% | 100.0% | 56 |
 | google-classroom | 66.7% | 100.0% | 3 |
 | database | 0.0% | — | 1 |
-| unknown | 54.2% | 97.4% | 216 |
+| unknown | 54.4% | 97.5% | 217 |
 
 #### タスク種別別
 | task_type | 注入 | スキップ | 注入率 | N |
@@ -68,20 +68,20 @@
 Top 5 有効教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
-| L074 | infra | 380 | 544 | 69.9% |
-| L063 | infra | 258 | 503 | 51.3% |
-| L225 | infra | 133 | 143 | 93.0% |
+| L074 | infra | 381 | 545 | 69.9% |
+| L063 | infra | 259 | 504 | 51.4% |
+| L225 | infra | 134 | 144 | 93.1% |
 | L032 | infra | 87 | 215 | 40.5% |
-| L097 | infra | 78 | 112 | 69.6% |
+| L097 | infra | 79 | 113 | 69.9% |
 
 Bottom 5 低効果教訓
 | 教訓 | PJ | 参照回数 | 注入回数 | 効果率 |
 |------|----|----------|----------|--------|
 | L039 | dm-signal | 0 | 2 | 0.0% |
+| L113 | infra | 0 | 2 | 0.0% |
 | L115 | infra | 0 | 2 | 0.0% |
+| L263 | infra | 0 | 2 | 0.0% |
 | L027 | dm-signal | 0 | 1 | 0.0% |
-| L062 | infra | 0 | 1 | 0.0% |
-| L111 | infra | 0 | 1 | 0.0% |
 
 ### Context鮮度警告
 なし
@@ -89,39 +89,42 @@ Bottom 5 低効果教訓
 ### 戦果（直近5件）
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
+| cmd_1285 | — | GATE CLEAR | 03-23 02:37 |
 | cmd_1284 | — | GATE CLEAR | 03-23 02:33 |
 | cmd_1283 | — | GATE CLEAR | 03-23 02:29 |
 | cmd_1281 | — | GATE CLEAR | 03-23 02:17 |
 | cmd_1280 | — | GATE CLEAR | 03-23 02:04 |
-| cmd_1282 | — | GATE CLEAR | 03-23 01:55 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
-## 最新更新 (02:22更新)
-- **cmd_1284**: 完了。 — dashboard.md🚨要対応セクション清掃+pre-write-read-tracker.shのreport YAML直接Edit BLOCK復元。半蔵完遂
-- **cmd_1283**: 完了。 — lesson_update_score.shのCACHE_FILEをlessons_archive.yamlに切替え+フォールバック追加。索引(lessons.yaml)のmtime不変を検証済み。影丸完遂
-- **cmd_1281**: **GATE CLEAR**。核心知識Vercel化。二重配備(小太郎+疾風)発生もファイル破損なし
+## 最新更新 (02:45更新)
+- **cmd_1289**: 才蔵に配備。GP-011 忍者別workaround率計測
+- **cmd_1288**: 飛猿に配備。GP-004 SG7完全パッケージ
+- **cmd_1287**: 半蔵に配備。GP-012 RC修正再検証フロー
+- **cmd_1286**: 疾風完了。軍師レビュー中。GP-014 commit層自動防御
+- **cmd_1285**: **GATE CLEAR**。家老用スタートアップゲート。影丸完遂。workaround: no
+- **cmd_1284**: **GATE CLEAR**。🚨要対応清掃+BLOCK昇格。半蔵完遂。workaround: no
 
 ### パイプライン
 | cmd | 忍者 | 内容 | 状態 |
 |-----|------|------|------|
-| cmd_1283 | 影丸 | lesson_update_score.sh書込先修正 | 影丸PASS/**軍師RV中** |
-| cmd_1284 | 未配備 | 🚨要対応清掃+BLOCK昇格 | 配備準備中 |
+| cmd_1286 | 疾風 | GP-014 commit層自動防御 | 軍師RV中 |
+| cmd_1287 | 半蔵 | GP-012 RC修正再検証フロー | 作業中 |
+| cmd_1288 | 飛猿 | GP-004 SG7完全パッケージ | 作業中 |
+| cmd_1289 | 才蔵 | GP-011 忍者別workaround率計測 | 作業中 |
 
 ### idle忍者
-影丸/半蔵/飛猿/才蔵/小太郎/疾風(6名idle)
+影丸/小太郎(2名idle)
 
-### 二重配備LK009 — サイクル2完了(殿指示)
-サイクル1: 3層の穴特定。サイクル2: STALL通知=信号≠事実。検証なし即再配備=「想像するな確認せよ」違反。karo.md手順改訂済み(検証→クリア→再配備)。構造的解決(deploy_task重複ガード)はcmd待ち
-
-### 軍師分析(S27-S36)
-- **GP-003**(PreToolUse DENY): workaround48.6%の根源。実装設計完了。**cmd起票推奨**
-- GP-014(report前git status gate): commit/file層35%カバー。**cmd起票推奨**
+### 軍師GP総点検結果
+- GP-003: **完了**(cmd_1284でdeny復元)
+- GP-014: **cmd_1286完了→軍師RV中**
+- GP-012: **cmd_1287実装中**
 
 ## 🚨要対応
-（なし）
+（なし — cmd_1284で清掃済み）
 
 ## 🔧 将軍へのcmd起票提案（家老自己研鑽より）
 
@@ -139,6 +142,7 @@ Bottom 5 低効果教訓
 |---|------|------|-----|
 
 ## 将軍宛報告
+- [INSIGHT] cmd_1285 kagemaru: LC: 運用YAMLファイルはYAML構造破損を前提にfallback parser設計必須
 - [INSIGHT] cmd_1281 hayate: LC: Vercel化は分割先ファイルの既存内容と前任作業状況を先に確認せよ
 - [INSIGHT] cmd_1281 saizo: LC: Vercel分割後のcontext参照先更新
 - [INSIGHT] cmd_1280 hanzo: LC: Vercel化後の消費者スクリプトarchive参照切替が必要 / DC: 消費者スクリプトのarchive参照切替cmd

@@ -550,3 +550,20 @@ entries: []
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-03-22T17:34:42Z"
+  - cmd_id: "cmd_1285"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T17:36:40Z"
+    notes: "report_yaml_missing:kagemaru_report_cmd_1285.yaml"
+  - cmd_id: "cmd_1285"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T17:38:19Z"

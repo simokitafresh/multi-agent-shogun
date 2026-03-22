@@ -52,7 +52,7 @@ task:
   - AC2
   - AC3
   parent_cmd: cmd_1287
-  progress: AC1-3並列着手
+  progress: AC1-3全PASS。commit済み
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。

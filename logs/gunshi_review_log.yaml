@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 190件 (draft:87, report:92, self_study:18) | 2026-03-20〜
+# 累計: 195件 (draft:90, report:93, self_study:18) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:76 LGTM:81 REQ_CHANGES:8 FAIL:6
+# verdict分布: APPROVE:79 LGTM:82 REQ_CHANGES:8 FAIL:6
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -661,3 +661,30 @@
   gate_result: null
   findings_summary: "GP-014 commit層gate。inbox_write.sh既存gate構造に乗る最小実装。WARNING段階的導入。commit_missing35%構造根絶。SG8:PASS。confidence:HIGH"
   timestamp: "2026-03-23T03:00:00"
+- cmd_id: cmd_1286
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1286
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "GP-014実装。commit 88ace22確認。git uncommittedチェック追加。WARNING段階。binary_checksが[0]キー形式(非標準)。成果物OK"
+  lesson_quality: OK
+  timestamp: "2026-03-23T03:05:00"
+- cmd_id: cmd_1287
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-012 RC再検証フロー。S30設計準拠。3AC独立。type追加+手順書更新。confidence:HIGH"
+  timestamp: "2026-03-23T03:05:00"
+- cmd_id: cmd_1288
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-004 SG7完全パッケージ。S18/S21設計。CTX解放装置。3AC独立。confidence:HIGH"
+  timestamp: "2026-03-23T03:05:00"
+- cmd_id: cmd_1289
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-011 ninja rate計測。karo_workarounds集計。YAML形式3種混在注意。confidence:MEDIUM"
+  timestamp: "2026-03-23T03:05:00"
