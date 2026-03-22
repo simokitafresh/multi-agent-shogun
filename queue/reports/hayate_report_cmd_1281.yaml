@@ -1,0 +1,50 @@
+report:
+  ac_version_read: a0861965
+  cmd_id: cmd_1281
+  ninja: hayate
+  timestamp: "2026-03-23T02:15:00"
+  status: done
+  results:
+    - id: AC2
+      verdict: PASS
+      detail: |
+        instructions/shogun.md: 808行→275行にVercel化済み(前任忍者の作業確認+検証)。
+        YAML front matter+恒久ルール+§参照テーブルの索引構造。
+        詳細手順はshogun-procedures.md §1-§22を参照。
+      binary_checks:
+        - check: shogun.md が500行以下か
+          result: PASS (275行)
+    - id: AC3
+      verdict: PASS
+      detail: |
+        instructions/karo.md: 569行→367行にVercel化。
+        手順セクション(忍者報告レビューフロー、レビュー品質チェック、
+        一次データ不可侵、lesson_candidate差し戻し、全cmd軍師レビュー、
+        軍師通信プロトコル)をkaro-procedures.md §5-§10に移動。
+        karo.mdには§参照テーブル3箇所(GATE §1-§4, レビュー §5-§8, 軍師 §9-§10)。
+      binary_checks:
+        - check: karo.md が500行以下か
+          result: PASS (367行)
+  files_modified:
+    - path: instructions/karo.md
+      action: edit
+      detail: "忍者報告レビューフロー+軍師レビュー+通信プロトコルを§参照に置換(569→367行)"
+    - path: instructions/karo-procedures.md
+      action: edit
+      detail: "§5-§10追記(忍者報告レビューフロー/品質チェック/一次データ/lesson_candidate/軍師レビュー/通信プロトコル)"
+  lesson_candidate:
+    found: true
+    title: "Vercel化は分割先ファイルの存在確認から始めよ"
+    detail: "shogun.mdは前任忍者が既にVercel化済み(275行)だった。作業開始前に分割先(shogun-procedures.md/karo-procedures.md)の内容と行数を確認し、重複作業を避けるべき。karo.mdもgate詳細は既に§参照化されていた。現状確認を先にすることで作業範囲が明確になる。"
+  lessons_useful:
+    - id: L074
+      useful: false
+      reason: "シェルスクリプトの((PASS++))問題はこのタスクに該当しない(Markdownファイルの編集のみ)"
+    - id: L225
+      useful: false
+      reason: "MCP entity名義の混入問題はこのタスクに該当しない"
+    - id: L063
+      useful: false
+      reason: "YAML構造のイテレーション問題はこのタスクに該当しない"
+  decision_candidate: []
+  skill_candidate: []
