@@ -1,38 +1,39 @@
+progress: 'AC1-3 PASS。全完了'
+status: idle
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: e29686ba
+  ac_version: 09a93f75
   acceptance_criteria:
   - binary_checks:
-    - check: SG7バンドルの出力フォーマットが定義されているか
+    - check: bash scripts/gates/gate_gunshi_startup.sh がエラーなく完了するか
       result: ''
-    description: SG7バンドルの出力フォーマットが軍師SGプロトコルに定義されていること
+    description: gate_gunshi_startup.shが6項目チェックを正常出力すること
     id: AC1
   - binary_checks:
-    - check: 家老手順にバンドル受領→スタンプ手順があるか
+    - check: preflight_gate_flags()でreview_gate.doneブロックがarchive.doneブロックの前にあるか
       result: ''
-    description: 家老手順にバンドル受領→スタンプ+ペースト手順が追加されていること
+    description: cmd_complete_gate.shのpreflight順序がreview_gate→archiveであること
     id: AC2
   - binary_checks:
-    - check: 軍師LGTM出力にバンドルが含まれるか
+    - check: 3ファイルがcommitされているか
       result: ''
-    description: 軍師LGTM出力テンプレートにバンドルフォーマットが含まれること
+    description: 3ファイルがcommitされていること
     id: AC3
   bloom_level: ''
-  cmd_id: cmd_1288
-  command: '■ AC1: 軍師のSGプロトコル(gunshi_review_log.yamlヘッダのSG7)にLGTM verdictと同時に出力するバンドル情報の仕様を定義
-    — gate結果/lesson候補有無/context還流要否/dashboard行/workaround判定を1ブロックにまとめた出力フォーマット
-
-    ■ AC2: 家老手順(karo-operations.md §3レビューサイクル)に「軍師LGTMバンドルを受けたらスタンプ+ペーストで後処理完了」の手順追加
-
-    ■ AC3: 軍師gunshi.mdのLGTM出力テンプレートにバンドルフォーマットを追加
-
-    '
-  deployed_at: '2026-03-23T02:44:12'
+  cmd_id: cmd_1295
+  command: "将軍が既に以下3ファイルを変更済み。差分確認+テスト+commitせよ。\n1. scripts/gates/gate_gunshi_startup.sh（新規作成）\n\
+    2. scripts/cmd_complete_gate.sh（preflight順序: review_gate→archive）\n3. instructions/gunshi.md（/clear\
+    \ Recovery手順にgate追加）\n\n■ AC1: bash scripts/gates/gate_gunshi_startup.sh をbash実行して\n\
+    \       エラーなく6項目チェックが出力されること\n■ AC2: cmd_complete_gate.shのpreflight_gate_flags()で\n\
+    \       review_gate.doneブロックがarchive.doneブロックの前にあること（コード目視確認）\n■ AC3: 上記3ファイルをcommitすること\n"
+  deployed_at: '2026-03-23T03:38:33'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────\n\nGP-004 SG7完全パッケージ — 軍師LGTM時の家老後処理バンドル"
+    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -48,8 +49,7 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1288
-  progress: 'AC1-AC3 PASS。commit dd36b6b。報告YAML完了'
+  parent_cmd: cmd_1295
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -63,8 +63,16 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  report_filename: tobisaru_report_cmd_1288.yaml
-  report_path: queue/reports/tobisaru_report_cmd_1288.yaml
+  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+    id: L097
+    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+  - detail: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
+      '_report\.yaml')で影響範囲を完全列挙してからスコープを
+    id: L085
+    summary: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
+      '_report\.yaml')で影響範囲を完全列挙してからスコープを
+  report_filename: tobisaru_report_cmd_1295.yaml
+  report_path: queue/reports/tobisaru_report_cmd_1295.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -79,6 +87,7 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: assigned
   stop_for: []
+  target_path: scripts/gates/gate_gunshi_startup.sh
   task_type: implement
