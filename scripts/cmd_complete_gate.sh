@@ -1688,6 +1688,12 @@ except:
     echo ""
 }
 
+# ─── DEFERRED_GATES: gate check loopではスキップし、GATE CLEAR後に実行するgate ───
+# cmd_1314: archive gateの循環依存修正。archiveはGATE CLEARに報告YAMLを読み終わってから実行する必要がある。
+# gate check loop時点でarchive.doneを要求するとGATE CLEARできない→archiveが走れない→永久BLOCK。
+# shellcheck disable=SC2034  # Used in gate check loop (L1858)
+DEFERRED_GATES=("archive")
+
 # ─── 必須フラグ構築 ───
 ALWAYS_REQUIRED=("archive" "lesson")
 
@@ -1848,6 +1854,19 @@ fi
 echo ""
 
 for gate in "${ALL_GATES[@]}"; do
+    # cmd_1314: DEFERRED_GATESに含まれるgateはcheck loopでスキップ（GATE CLEAR後に実行）
+    is_deferred=false
+    for dg in "${DEFERRED_GATES[@]}"; do
+        if [ "$gate" = "$dg" ]; then
+            is_deferred=true
+            break
+        fi
+    done
+    if [ "$is_deferred" = true ]; then
+        echo "  ${gate}: DEFERRED (will run after GATE CLEAR)"
+        continue
+    fi
+
     done_file="$GATES_DIR/${gate}.done"
 
     if [ -f "$done_file" ]; then
