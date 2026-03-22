@@ -1085,7 +1085,7 @@ commands:
       q4_depth: deep — 将軍がhook実ファイル読了+正規表現を実パターンでテスト実行済み。全6忍者のreport_filenameがcmd接尾辞なしパターンであることを確認
       q5_verified_source: scripts/hooks/pre-write-report-deny.sh L35(正規表現現物) + queue/tasks/*.yaml全6件(report_filename現物) + bash regex test実行結果
       q6_not_hiding: no — hookバグを正面から修正
-    status: delegated
+    status: completed
   cmd_1312:
     title: deploy_task.sh report_filenameリセット — cmd切替時の残留フィールド根絶
     task_type: implement

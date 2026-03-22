@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 236件 (draft:103, report:111, self_study:28) | 2026-03-20〜
+# 累計: 237件 (draft:104, report:111, self_study:28) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:89 LGTM:88 REQ_CHANGES:8 FAIL:8
+# verdict分布: APPROVE:90 LGTM:88 REQ_CHANGES:8 FAIL:8
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -1137,3 +1137,16 @@
     priority: medium
     status: pending
   timestamp: "2026-03-23T05:15:00"
+- cmd_id: cmd_1311
+  review_type: draft
+  verdict: APPROVE
+  sg_checks:
+    SG0_format: PASS
+    SG2_content: "PASS — 根本原因正確: committed版の正規表現 _report_ は _report.yaml にマッチしない"
+    SG3_事前検死: "WARNING — ファイルにuncommitted変更あり。committed: _report_ → 現uncommitted: _report.* → cmd提案: _report[_.]. 影丸はgit show HEAD版と現行ファイルで差異に直面する可能性。修正前パターンが現物と一致しない"
+    SG4_AC品質: "PASS — AC1(DENYテスト)+AC2(4パターン)+AC3(bats回帰)。十分"
+    SG5_scope: "PASS — 1行修正。低リスク"
+    SG8_消火: "PASS — 根本原因修正(regex不一致)。表層対処ではない"
+  notes: "uncommitted変更(diff +2行)が存在。committed版は _report_ だが現ファイルは _report.* に修正済み(workaround?)。cmd_1311提案の [_.] はより精密。影丸に現行ファイル状態を読んでからold_stringを調整するよう注意喚起を推奨"
+  gate_precheck: "影丸はcommitted版でなく現uncommitted版から作業する。Edit toolのold_stringが _report_ なら不一致でエラーになる可能性"
+  timestamp: "2026-03-23T05:18:00"

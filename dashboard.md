@@ -1,13 +1,13 @@
-# 🏯 Dashboard [dm-signal] — 2026-03-23 05:00 更新
+# 🏯 Dashboard [dm-signal] — 2026-03-23 05:08 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (05:02 自動更新)
+## 📊 リアルタイム状況 (05:08 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
 | 疾風 | claude-opus-4-6 high | idle | cmd_1304 | — |
-| 影丸 | claude-opus-4-6 high | 稼働中 | cmd_1311 | — |
+| 影丸 | claude-opus-4-6 high | done | cmd_1311 | — |
 | 半蔵 | claude-opus-4-6 high | done | cmd_1307 | — |
 | 才蔵 | claude-opus-4-6 high | done | cmd_1308 | — |
 | 小太郎 | claude-opus-4-6 high | done | cmd_1309 | — |
@@ -22,9 +22,9 @@
 ### 戦況メトリクス
 | 項目 | 値 |
 |------|-----|
-| cmd完了(GATE CLEAR) | 1059/1074 |
-| 稼働忍者 | 1/8 (影丸) |
-| 連勝(CLEAR streak) | 6 (cmd_1306〜cmd_1310) |
+| cmd完了(GATE CLEAR) | 1060/1075 |
+| 稼働忍者 | 0/8 (—) |
+| 連勝(CLEAR streak) | 7 (cmd_1306〜cmd_1311) |
 
 ### モデル別スコアボード
 | モデル | CLEAR率 | impl率 | 傾向 | N |
@@ -34,7 +34,7 @@
 ### 知識サイクル健全度
 | 項目 | 値 |
 |------|-----|
-| 教訓注入率 | 74.5% |
+| 教訓注入率 | 74.4% |
 | 教訓効果率 | 57.4% |
 | 効果率閾値 | OK (0.0%, 0/0, 30cmd) |
 | 問題教訓 | 0件 |
@@ -87,17 +87,18 @@ Bottom 5 低効果教訓
 ### 戦果（直近5件）
 | cmd | 内容 | 結果 | 完了日時 |
 |-----|------|------|----------|
+| cmd_1311 | — | GATE CLEAR | 03-23 05:07 |
 | cmd_1310 | — | GATE CLEAR | 03-23 05:00 |
 | cmd_1304 | — | GATE CLEAR | 03-23 04:56 |
 | cmd_1308 | — | GATE CLEAR | 03-23 04:53 |
 | cmd_1309 | — | GATE CLEAR | 03-23 04:47 |
-| cmd_1307 | — | GATE CLEAR | 03-23 04:45 |
 
 > 過去の戦果は archive/dashboard/ を参照
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
 ## 最新更新 (05:03更新)
+- **cmd_1311**: 完了。 — pre-write-report-deny.sh L35の正規表現修正。_report_→_report.*で{ninja}_report.yamlにもマッチ。4パターンテスト全PASS、bats 36/36 PASS 0 SKIP ...。影丸完遂
 - **cmd_1304**: GATE CLEAR。疾風PASS。削除済みスクリプト参照21ファイル処理。残存0件
 - **cmd_1306**: GATE CLEAR。影丸PASS。test_result_guard.sh偽SKIP修正
 - **cmd_1307**: GATE CLEAR。半蔵PASS。GP-021 ninja_weak_points自動注入。context還流済
@@ -135,6 +136,7 @@ grep -v運用ファイル除外フィルタ追加。才蔵PASS
 - lesson_candidate登録率17.2%。GP-019(L247強制)/GP-020(async harvesting)要起票
 
 ## 将軍宛報告
+- [INSIGHT] cmd_1311 kagemaru: DC: cmd指定regexからの逸脱
 - [INSIGHT] cmd_1309 kotaro: DC: queue/tasks/に非稼働忍者(kirimaru,sasuke)のyaml+大量の.tmp/.lockが残存。清掃の要否は家老判断を仰ぐ
 - [INSIGHT] cmd_1286 hayate: LC: target_path/filesなしタスクではgit uncommittedチェックがスキップされる
 - [INSIGHT] cmd_1285 kagemaru: LC: 運用YAMLファイルはYAML構造破損を前提にfallback parser設計必須

@@ -2145,3 +2145,5 @@
 2026-03-23T04:56:30	cmd_1304	CLEAR	all_gates_passed	implement	unknown	unknown	none	
 2026-03-23T04:58:46	cmd_1310	CLEAR	all_gates_passed	implement	unknown	unknown	none	
 2026-03-23T05:00:15	cmd_1310	CLEAR	all_gates_passed	implement	unknown	unknown	none	
+2026-03-23T05:06:16	cmd_1311	BLOCK	kagemaru:lesson_candidate_parse_error	implement	unknown	unknown	none	
+2026-03-23T05:07:21	cmd_1311	CLEAR	all_gates_passed	implement	unknown	unknown	none	
