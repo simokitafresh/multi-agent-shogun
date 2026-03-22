@@ -1,47 +1,38 @@
 task:
-  ac_priority: AC2 > AC3
-  ac_version: a0861965
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 966cb4f4
   acceptance_criteria:
   - binary_checks:
-    - check: shogun.md が500行以下か
+    - check: inbox_write.sh内にgit uncommittedチェックが追加されているか
       result: ''
-    description: instructions/shogun.md が500行以下になっていること
+    description: inbox_write.sh type=report_received時にgit uncommittedチェックが実行されること
+    id: AC1
+  - binary_checks:
+    - check: uncommitted変更がある場合にWARNINGが表示されるか
+      result: ''
+    description: uncommitted変更がある場合にWARNINGメッセージ+未commitファイル一覧が表示されること
     id: AC2
   - binary_checks:
-    - check: karo.md が500行以下か
+    - check: 全commitされている場合に無音で通過するか
       result: ''
-    description: instructions/karo.md が500行以下になっていること
+    description: 全commit済みの場合は無音で通過すること
     id: AC3
   bloom_level: ''
-  cmd_id: cmd_1281
-  command: '■ AC2: instructions/shogun.md Vercel化
-
-    instructions/shogun.mdを「索引(500行以下) + 手順書分割」に分離:
-
-    - 索引: YAML front matter + 恒久ルール + 手順概要
-
-    - 分割先: instructions/ 配下の別ファイル（例: instructions/shogun-procedures.md）
-
-    - 索引には分割先への参照パスを記載
-
-
-    ■ AC3: instructions/karo.md Vercel化
-
-    instructions/karo.mdを同様に分離:
-
-    - 索引: YAML front matter + 恒久ルール
-
-    - 分割先: instructions/ 配下の別ファイル
-
-    '
-  context_files:
-  - instructions/shogun.md
-  - instructions/karo.md
-  deployed_at: '2026-03-23T02:01:36'
+  cmd_id: cmd_1286
+  command: "■ AC1: inbox_write.sh内のtype=report_received処理にgit uncommittedチェックを追加。\n\
+    \     忍者のtask YAMLにtarget_path/filesがあればそのパスのgit statusを確認、\n     uncommitted変更があればWARNING表示（段階的導入。安定後BLOCK化）\n\
+    ■ AC2: uncommitted検出時のWARNINGメッセージに未commitファイル一覧を表示し、\n     忍者が自分で気づいてcommitできる状態にする\n\
+    ■ AC3: 正常系テスト（全commitされている場合はWARNINGなし=無音通過）\n■ 参考: 既存 inbox_write.sh内のgate_report_format.sh呼出（type=report_received時に自動実行）。同じ箇所にgit\
+    \ uncommittedチェックを追加する構造\n"
+  deployed_at: '2026-03-23T02:38:42'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────\n\n核心知識Vercel化(2/2) — shogun.md + karo.md索引化（小太郎STALL→疾風に再配備）"
+    \  - L209: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report\
+    \ file 未作成でも \n  - L276: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit\
+    \ 1)が鉄則。WARNING+続行\n────────────────────────────────────────\n\nGP-014 commit層自動防御\
+    \ — report完了前のgit uncommittedチェックgate"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -53,15 +44,12 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  not_in_scope:
-  - CLAUDE.mdの変更（参照パスが変わらない限り不要）
-  - dm-signal.yaml（別忍者完了済み）
-  - lessons系ファイル（cmd_1280完了済み）
   parallel_ok:
+  - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1281
-  progress: ''
+  parent_cmd: cmd_1286
+  progress: "AC1-3 PASS: git uncommitted check実装+テスト完了"
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -75,8 +63,18 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  report_filename: hayate_report_cmd_1281.yaml
-  report_path: queue/reports/hayate_report_cmd_1281.yaml
+  - detail: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file
+      未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
+      側の auto-done hook は残さない。
+    id: L209
+    summary: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report
+      file 未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
+      側の auto-done hook は残さない。
+  - detail: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行は問題を検知したが無視すると同義。inbox_write.shで3箇所のサイレントスキップをBLOCKED+exit1に修正して根絶
+    id: L276
+    summary: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行は問題を検知したが無視すると同義。inbox_write.shで3箇所のサイレントスキップをBLOCKED+exit1に修正して根絶
+  report_filename: hayate_report_cmd_1286.yaml
+  report_path: queue/reports/hayate_report_cmd_1286.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -91,9 +89,6 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  scope_mode: EXACT
-  status: done
-  stop_for:
-  - CLAUDE.mdの参照パスが変わる場合
-  target_path: /mnt/c/tools/multi-agent-shogun/instructions/shogun.md
+  status: in_progress
+  stop_for: []
   task_type: implement

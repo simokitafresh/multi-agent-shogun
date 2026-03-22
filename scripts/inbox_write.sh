@@ -178,6 +178,45 @@ except:
                     exit 1
                 fi
             fi
+
+            # Git uncommitted check: target_path/filesのgit statusを確認
+            # 段階的導入: WARNING表示のみ（安定後BLOCK化予定）
+            GIT_CHECK_PATHS=$(TASK_PATH="$TASK_YAML" python3 -c "
+import yaml, os
+try:
+    with open(os.environ['TASK_PATH']) as f:
+        data = yaml.safe_load(f)
+    if not data or 'task' not in data:
+        exit(0)
+    task = data['task']
+    paths = []
+    tp = task.get('target_path', '')
+    if isinstance(tp, str) and tp:
+        paths.append(tp)
+    elif isinstance(tp, list):
+        paths.extend([p for p in tp if isinstance(p, str) and p])
+    files = task.get('files', [])
+    if isinstance(files, str) and files:
+        paths.append(files)
+    elif isinstance(files, list):
+        paths.extend([p for p in files if isinstance(p, str) and p])
+    for p in paths:
+        print(p)
+except Exception:
+    pass
+" 2>/dev/null || true)
+
+            if [ -n "$GIT_CHECK_PATHS" ]; then
+                mapfile -t _check_paths <<< "$GIT_CHECK_PATHS"
+                UNCOMMITTED=$(git -C "$SCRIPT_DIR" status --porcelain -- "${_check_paths[@]}" 2>/dev/null || true)
+                if [ -n "$UNCOMMITTED" ]; then
+                    echo "[git_uncommitted_gate] WARNING: 未commitファイルあり (ninja: ${FROM})" >&2
+                    while IFS= read -r _uline; do
+                        echo "  $_uline" >&2
+                    done <<< "$UNCOMMITTED"
+                    echo "[git_uncommitted_gate] git add + git commitを実行してから報告せよ" >&2
+                fi
+            fi
         fi
     fi
 fi
