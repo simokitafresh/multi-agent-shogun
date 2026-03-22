@@ -30,7 +30,8 @@
 # | 013 | GP追跡表構造化         | ★implemented      | S31  | S35で本ヘッダに実装 |
 # | 014 | commit層gate           | pending            | S33  | commit_missing35%根絶。優先1 |
 # | 016 | Bash report検出        | pending            | S38  | DENY hookギャップ根絶。優先1 |
-# 集計: ★implemented:8 / ✗obsolete:2 / pending:3 / design_complete:1 / pending低:1
+# | 017 | report_path導線修復    | pending            | S39  | CLAUDE.md Step4.5。format WA源流根絶。優先1 |
+# 集計: ★implemented:8 / ✗obsolete:2 / pending:4 / design_complete:1 / pending低:1
 # 将軍推薦順: GP-016→GP-014→GP-012→GP-004→GP-011
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
