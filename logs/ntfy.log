@@ -7965,3 +7965,10 @@ GP-003正規表現バグ修正
 2026-03-23 04:54:02|cmd_1308
 2026-03-23 04:56:58|cmd_1304
 2026-03-23 0"
+2026-03-23 05:09:13 http=200 time=5s msg="【家老】cmd_1311 GATE CLEAR。GP-003正規表現修正完了。全8cmd完了(1304-1311)。全6名idle。パイプライン空。"
+2026-03-23 05:14:07 http=200 time=5s msg="【家老】cmd_1312 初回配備開始 (title=(untitled), ninja=hayate)
+deploy_task.sh report_filen"
+2026-03-23 05:15:05 http=200 time=6s msg="【家老】復帰済み。cmd_1312(deploy_task.sh report_filenameリセット)を疾風に配備完了。軍師にレビュー依頼済み。GP-026"
+2026-03-23 05:21:30 http=200 time=6s msg="【INFOバッチ】
+2026-03-23 05:08:03|cmd_1311"
+2026-03-23 05:23:10 http=200 time=6s msg="【monitor】将軍CTX:51%。/compactをご検討ください"

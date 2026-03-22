@@ -2818,6 +2818,10 @@ inject_role_reminder "$TASK_FILE" "$NINJA_NAME" || true
 # report_template自動注入（cmd_384: 失敗してもデプロイは継続）
 inject_report_template "$TASK_FILE" || true
 
+# cmd_1312: auto-injectフィールドクリア（前cmdの残留値を排除）
+yaml_field_set "$TASK_FILE" "task" "report_filename" ""
+yaml_field_set "$TASK_FILE" "task" "report_path" ""
+
 # report_filename自動注入（cmd_410: 命名ミスマッチ根治）
 inject_report_filename "$TASK_FILE" || true
 

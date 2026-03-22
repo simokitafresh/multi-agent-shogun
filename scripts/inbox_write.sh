@@ -190,11 +190,53 @@ except:
 
             if [ -n "$FULL_REPORT" ]; then
                 if [ -f "$FULL_REPORT" ]; then
+                    # Phase 1: 機械的フォーマット自動修正（忍者ペインで局所免疫）
+                    AUTOFIX_RESULT=$("$SCRIPT_DIR/scripts/gates/gate_report_autofix.sh" "$FULL_REPORT" 2>&1 || true)
+                    if echo "$AUTOFIX_RESULT" | grep -q "^AUTO-FIXED"; then
+                        echo "[report_autofix] $AUTOFIX_RESULT" >&2
+                    fi
+                    # Phase 2: フォーマット検証（auto-fix後に実行）
                     GATE_RESULT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1 || true)
                     if echo "$GATE_RESULT" | grep -q "^FAIL"; then
-                        echo "[report_format_gate] BLOCKED: $GATE_RESULT" >&2
-                        echo "[report_format_gate] 報告YAMLを修正してから再送信せよ: $FULL_REPORT" >&2
-                        exit 1
+                        # Phase 3: 品質問題→軍師に自動ルーティング（第二層分離）
+                        # auto-fixで直せない = 品質判断が必要 = 軍師の仕事
+                        GUNSHI_INBOX="$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+                        ROUTE_TS=$(date -Is)
+                        ROUTE_ID="msg_$(date +%s%N | head -c 16)"
+                        GATE_ERRORS=${GATE_RESULT//\"/\\\"}
+                        (
+                            flock -w 5 200 2>/dev/null
+                            GUNSHI_INBOX="$GUNSHI_INBOX" ROUTE_ID="$ROUTE_ID" ROUTE_TS="$ROUTE_TS" \
+                            ROUTE_FROM="$FROM" REPORT_FILE="$FULL_REPORT" GATE_ERRORS="$GATE_ERRORS" \
+                            python3 -c "
+import yaml, os, sys
+inbox_path = os.environ['GUNSHI_INBOX']
+try:
+    with open(inbox_path) as f:
+        data = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    data = {}
+msgs = data.get('messages', [])
+msgs.append({
+    'id': os.environ['ROUTE_ID'],
+    'from': 'system',
+    'timestamp': os.environ['ROUTE_TS'],
+    'type': 'quality_fix_request',
+    'read': False,
+    'content': f\"忍者{os.environ['ROUTE_FROM']}の報告YAMLに品質問題。auto-fix不可のため軍師に転送。修正後にinbox_writeでkaroに送信せよ。\",
+    'report_path': os.environ['REPORT_FILE'],
+    'gate_errors': os.environ['GATE_ERRORS'],
+    'original_ninja': os.environ['ROUTE_FROM'],
+})
+data['messages'] = msgs
+with open(inbox_path, 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+" 2>/dev/null
+                        ) 200>"$GUNSHI_INBOX.lock" 2>/dev/null || true
+                        echo "[report_quality_route] 品質問題を軍師に転送: $GATE_RESULT" >&2
+                        echo "[report_quality_route] 軍師が修正→karoに再送信する。忍者${FROM}は次のタスクに進んでよい" >&2
+                        # 忍者をブロックしない — 品質問題は軍師が処理。メッセージはkaroに届けない
+                        exit 0
                     fi
                 else
                     echo "[report_format_gate] BLOCKED: 報告YAMLが見つからない: $FULL_REPORT" >&2
@@ -202,42 +244,62 @@ except:
                 fi
             fi
 
-            # Git uncommitted check: target_path/filesのgit statusを確認
-            # 段階的導入: WARNING表示のみ（安定後BLOCK化予定）
-            GIT_CHECK_PATHS=$(TASK_PATH="$TASK_YAML" python3 -c "
+            # Git uncommitted check: 報告YAMLのfiles_modified + task YAMLのtarget_pathを確認
+            # cmd_1296教訓: 全repoではなく忍者が申告したファイルのみチェック（運用ファイル誤検知防止）
+            # サイクル2: WARNING→BLOCK昇格。commit漏れは忍者ペインで止める（局所免疫）
+            GIT_CHECK_PATHS=$(REPORT_YAML="$FULL_REPORT" TASK_PATH="$TASK_YAML" python3 -c "
 import yaml, os
+paths = set()
+# Source 1: 報告YAMLのfiles_modified（auto-fix後はdict list形式）
 try:
-    with open(os.environ['TASK_PATH']) as f:
-        data = yaml.safe_load(f)
-    if not data or 'task' not in data:
-        exit(0)
-    task = data['task']
-    paths = []
-    tp = task.get('target_path', '')
-    if isinstance(tp, str) and tp:
-        paths.append(tp)
-    elif isinstance(tp, list):
-        paths.extend([p for p in tp if isinstance(p, str) and p])
-    files = task.get('files', [])
-    if isinstance(files, str) and files:
-        paths.append(files)
-    elif isinstance(files, list):
-        paths.extend([p for p in files if isinstance(p, str) and p])
-    for p in paths:
-        print(p)
+    rp = os.environ.get('REPORT_YAML', '')
+    if rp and os.path.isfile(rp):
+        with open(rp) as f:
+            rdata = yaml.safe_load(f)
+        if rdata:
+            fm = rdata.get('files_modified', [])
+            if isinstance(fm, list):
+                for item in fm:
+                    if isinstance(item, dict) and 'path' in item:
+                        paths.add(item['path'])
+                    elif isinstance(item, str):
+                        paths.add(item)
 except Exception:
     pass
+# Source 2: task YAMLのtarget_path/files（fallback）
+try:
+    tp = os.environ.get('TASK_PATH', '')
+    if tp and os.path.isfile(tp):
+        with open(tp) as f:
+            tdata = yaml.safe_load(f)
+        if tdata and 'task' in tdata:
+            task = tdata['task']
+            t = task.get('target_path', '')
+            if isinstance(t, str) and t:
+                paths.add(t)
+            elif isinstance(t, list):
+                paths.update(p for p in t if isinstance(p, str) and p)
+            files = task.get('files', [])
+            if isinstance(files, str) and files:
+                paths.add(files)
+            elif isinstance(files, list):
+                paths.update(p for p in files if isinstance(p, str) and p)
+except Exception:
+    pass
+for p in sorted(paths):
+    print(p)
 " 2>/dev/null || true)
 
             if [ -n "$GIT_CHECK_PATHS" ]; then
                 mapfile -t _check_paths <<< "$GIT_CHECK_PATHS"
                 UNCOMMITTED=$(git -C "$SCRIPT_DIR" status --porcelain -- "${_check_paths[@]}" 2>/dev/null || true)
                 if [ -n "$UNCOMMITTED" ]; then
-                    echo "[git_uncommitted_gate] WARNING: 未commitファイルあり (ninja: ${FROM})" >&2
+                    echo "[git_uncommitted_gate] BLOCKED: 未commitファイルあり (ninja: ${FROM})" >&2
                     while IFS= read -r _uline; do
                         echo "  $_uline" >&2
                     done <<< "$UNCOMMITTED"
                     echo "[git_uncommitted_gate] git add + git commitを実行してから報告せよ" >&2
+                    exit 1
                 fi
             fi
         fi

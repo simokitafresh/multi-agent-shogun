@@ -315,10 +315,39 @@ if [ "$proposal_total" -gt 0 ]; then
     fi
 fi
 
+# --- Gate 12: 三層学習ループ健全性 ---
+$BRIEF || echo "■ 三層学習ループ"
+if [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
+    loop_result=$(bash "$GATE_DIR/gate_loop_health.sh" 2>&1 || true)
+    # Extract key metrics for brief summary
+    loop_fires=$(echo "$loop_result" | grep "Total fires:" | grep -oP '\d+' || echo "0")
+    loop_fail=$(echo "$loop_result" | grep "FAIL:" | head -1 | grep -oP '\d+' | head -1 || echo "0")
+    loop_autofix=$(echo "$loop_result" | grep "AUTO-FIXED:" | grep -oP '\d+' || echo "0")
+    loop_status=$(echo "$loop_result" | grep "Loop Status" -A1 | tail -1 | sed 's/^ *//')
+    if $BRIEF; then
+        : # brief output handled in summary below
+    else
+        echo "  gate発火: ${loop_fires}件, FAIL: ${loop_fail}件, AUTO-FIX: ${loop_autofix}件"
+        echo "  $loop_status"
+        # Show maturation recommendations if any
+        echo "$loop_result" | grep -A20 "成熟提案" | grep "UPGRADE\|INVESTIGATE" | while IFS= read -r rec; do
+            echo "  $rec"
+        done
+    fi
+    if echo "$loop_status" | grep -q "WARNING"; then
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("三層ループ: $loop_status")
+        fi
+    fi
+else
+    $BRIEF || echo "  gate_loop_health.sh不在"
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ
-    PERF_BRIEF="rework:${REWORK_PCT}% workaround:${WA_COUNT}件"
+    PERF_BRIEF="rework:${REWORK_PCT}% workaround:${WA_COUNT}件 autofix:${loop_autofix:-0}件"
     if [ ${#alerts[@]} -gt 0 ]; then
         echo "startup_gate: ${overall} — $(IFS=', '; echo "${alerts[*]}") | idle_trigger:${IDLE_TRIGGER} | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
     else

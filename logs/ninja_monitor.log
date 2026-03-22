@@ -7953,3 +7953,644 @@ OK: dashboard.md auto section updated (05:06)
 [2026-03-23 05:07:44] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
 [2026-03-23 05:07:44] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
 OK: dashboard.md auto section updated (05:08)
+[2026-03-23 05:08:53] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:08:59] CLEAR-SEND: kagemaru confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 05:09:01] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:09:01] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:09:02] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:09:03] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:09:03] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 05:09:04] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:09:04] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:09:04] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:09:04] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:09:04] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:09:04] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:09:05] CLEAR-BLOCKED: karo not idle (check_idle), reason=KARO-CLEAR(check_karo_clear), will retry next cycle
+[2026-03-23 05:09:10] LESSON-HEALTH: all projects OK
+[2026-03-23 05:09:11] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:09:15] WARNING: ntfy_listener log stale (10min old). Restarting...
+[Mon Mar 23 05:09:15 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 05:09:15 JST 2026] Found existing ntfy_listener process(es): 2701097
+2776703
+2776708
+[Mon Mar 23 05:09:15 JST 2026] Killing PID 2701097 ...
+[Mon Mar 23 05:09:15 JST 2026] Killing PID 2776708 ...
+[Mon Mar 23 05:09:15 JST 2026] Killing orphan curl stream process(es): 2701130
+[Mon Mar 23 05:09:20 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 05:09:21 JST 2026] Lock file is free
+[Mon Mar 23 05:09:21 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 05:09:21 JST 2026] Launched with PID: 2776972
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 2776972
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 05:09:24] ntfy_listener restart triggered by health check
+OK: dashboard.md auto section updated (05:09)
+[2026-03-23 05:10:32] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:10:32] CLEAR-SKIP: kagemaru CTX=0%, already clean (1/10)
+[2026-03-23 05:10:32] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:10:33] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:10:34] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:10:34] CLEAR-SKIP: kotaro CTX=0%, already clean (continuous: 15)
+[2026-03-23 05:10:34] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:10:35] CLEAR-SKIP: tobisaru CTX=0%, already clean (continuous: 15)
+[2026-03-23 05:10:35] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 05:10:35] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:10:35] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:10:35] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:10:35] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:10:35] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:10:40] CLEAR-SEND: karo confirmed idle, sending /clear, reason=KARO-CLEAR(check_karo_clear)
+[2026-03-23 05:11:23] CLEAR-SKIP: hayate CTX=0%, already clean (continuous: 15)
+[2026-03-23 05:11:23] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:11:23] CLEAR-SKIP: kagemaru CTX=0%, already clean (2/10)
+[2026-03-23 05:11:24] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:11:24] CLEAR-SKIP: hanzo CTX=0%, already clean (continuous: 15)
+[2026-03-23 05:11:25] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:11:25] CLEAR-SKIP: saizo CTX=0%, already clean (continuous: 15)
+[2026-03-23 05:11:26] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:11:26] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:11:26] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 05:11:26] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:11:27] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:11:27] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:11:27] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:11:27] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:11:27] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:11:27] RENUDGE-TRANSITION: karo fingerprint changed (unread=2), sending inbox2
+[2026-03-23 05:11:29] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:12:11] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:12:11] CLEAR-SKIP: kagemaru CTX=0%, already clean (3/10)
+[2026-03-23 05:12:12] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:12:13] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:12:13] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:12:14] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:12:15] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 05:12:15] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:12:15] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:12:15] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:12:15] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:12:15] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:12:15] RENUDGE-RESET: karo unread=0, fingerprint+counter reset
+[2026-03-23 05:12:15] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:12:59] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:12:59] CLEAR-SKIP: kagemaru CTX=0%, already clean (4/10)
+[2026-03-23 05:13:00] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:13:01] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:13:01] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:13:02] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:13:02] STALL-GHOST: hayate has status=idle but empty task_id — skipping stall detection
+[2026-03-23 05:13:02] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:02] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:02] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:02] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:02] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:03] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:13:03] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:13:45] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:13:45] CLEAR-SKIP: kagemaru CTX=0%, already clean (5/10)
+[2026-03-23 05:13:46] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:13:47] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:13:48] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:13:48] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:13:49] STALL-GHOST: hayate has status=pending but empty task_id — skipping stall detection
+[2026-03-23 05:13:49] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:49] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:49] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:49] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:49] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:13:49] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (05:14)
+[2026-03-23 05:14:49] AGENT-STATE-CORRECTION: hayate @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:14:49] STAGE1-SKIP: hayate idle but task_status=assigned, /clear禁止
+[2026-03-23 05:14:55] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:14:55] CLEAR-SKIP: kagemaru CTX=0%, already clean (6/10)
+[2026-03-23 05:14:56] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:14:57] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:14:58] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:14:59] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:14:59] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:14:59] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:14:59] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:14:59] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:14:59] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:14:59] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:15:00] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (05:15)
+[2026-03-23 05:16:06] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:16:06] CLEAR-SKIP: kagemaru CTX=0%, already clean (7/10)
+[2026-03-23 05:16:07] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:16:07] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:16:08] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:16:09] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:16:09] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:16:09] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:09] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:09] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:09] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:09] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:48] AGENT-STATE-CORRECTION: hayate @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:16:48] STAGE1-SKIP: hayate idle but task_status=assigned, /clear禁止
+[2026-03-23 05:16:54] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:16:55] CLEAR-SKIP: kagemaru CTX=0%, already clean (8/10)
+[2026-03-23 05:16:55] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:16:56] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:16:57] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:16:58] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:16:58] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:16:58] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:58] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:58] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:58] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:58] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:16:58] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:16:58] RENUDGE-TRANSITION: karo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:17:32] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:17:32] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:17:32] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:17:33] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:17:33] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:17:33] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:17:33] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:17:33] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:17:33] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:17:44] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:17:45] CLEAR-SKIP: kagemaru CTX=0%, already clean (9/10)
+[2026-03-23 05:17:45] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:17:46] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:17:47] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:17:48] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:17:49] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:17:49] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:17:49] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:17:49] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:17:49] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:17:49] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:17:49] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:18:38] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:18:38] CLEAR-SKIP: kagemaru CTX=0%, already clean (10/10)
+[2026-03-23 05:18:39] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:18:40] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:18:40] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:18:41] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:18:42] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:18:42] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:18:42] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:18:42] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:18:42] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:18:42] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:18:42] RENUDGE-RESET: karo unread=0, fingerprint+counter reset
+[2026-03-23 05:18:42] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:19:29] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:19:31] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:19:32] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:19:33] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:19:34] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:19:34] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:19:34] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:19:34] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:19:34] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:19:34] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:19:34] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:19:38] LESSON-HEALTH: all projects OK
+[2026-03-23 05:19:41] WARNING: ntfy_listener log stale (10min old). Restarting...
+[Mon Mar 23 05:19:41 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 05:19:41 JST 2026] Found existing ntfy_listener process(es): 2776972
+2852835
+2852856
+[Mon Mar 23 05:19:41 JST 2026] Killing PID 2776972 ...
+[Mon Mar 23 05:19:41 JST 2026] Killing PID 2852856 ...
+[Mon Mar 23 05:19:41 JST 2026] Killing orphan curl stream process(es): 2777014
+[Mon Mar 23 05:19:46 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 05:19:47 JST 2026] Lock file is free
+[Mon Mar 23 05:19:47 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 05:19:47 JST 2026] Launched with PID: 2854440
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 2854440
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 05:19:50] ntfy_listener restart triggered by health check
+[2026-03-23 05:20:27] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:27] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:27] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:28] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:28] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:28] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:28] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:28] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:28] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:28] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:28] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:28] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:28] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:28] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:28] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:28] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:28] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:28] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:29] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:29] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:29] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:29] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:29] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:29] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:29] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:29] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:29] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:29] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:29] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:29] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:30] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:30] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:30] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:30] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:20:30] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:20:30] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:20:31] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:20:31] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:20:32] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:20:33] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:20:34] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:20:34] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:20:34] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:20:34] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:20:34] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:20:35] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:20:35] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:21:03] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:21:03] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:21:03] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:21:03] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:21:03] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:21:03] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:21:04] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:21:04] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:21:04] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:21:20] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:21:21] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:21:22] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:21:23] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:21:23] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:21:24] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:21:24] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:21:24] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:21:24] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:21:24] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:21:24] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:22:09] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:22:10] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:22:11] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:22:12] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:22:13] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:22:13] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:22:13] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:22:13] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:22:13] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:22:13] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:22:13] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:00] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:23:00] CLEAR-SKIP: kagemaru CTX=0%, already clean (continuous: 15)
+[2026-03-23 05:23:01] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:23:02] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:23:02] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:23:03] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:23:04] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:23:04] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:04] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:04] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:04] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:04] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:04] SHOGUN-ALERT: sent ntfy to lord (CTX:51%)
+[2026-03-23 05:23:53] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:23:54] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:23:55] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:55] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:55] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:55] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:23:55] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:55] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:55] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:55] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:55] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:55] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:56] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:56] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:56] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:56] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:23:56] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:56] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:56] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:56] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:56] CLEAR-SKIP: kotaro CTX=0%, already clean (continuous: 30)
+[2026-03-23 05:23:56] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:56] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:56] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:57] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:57] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:57] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:23:57] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:57] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:57] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:57] CLEAR-SKIP: tobisaru CTX=0%, already clean (continuous: 30)
+[2026-03-23 05:23:57] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:23:57] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:57] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:57] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:57] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:57] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:57] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:57] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:57] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:23:57] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:57] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:57] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:57] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:23:58] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:58] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:58] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:23:58] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:23:58] SHOGUN-ALERT-DEBOUNCE: shogun CTX:54% but 54s < 1800s since last alert
+[2026-03-23 05:23:58] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:23:58] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:23:58] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:24:20] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:24:20] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:24:20] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:24:20] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:24:20] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:24:20] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:24:20] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:24:20] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:24:20] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:24:36] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:24:36] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:24:36] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:24:36] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:24:36] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:24:36] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:24:36] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:24:36] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:24:36] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:24:40] Pane discovery: 6/6 ninja found
+[2026-03-23 05:24:41] [monitor] WARN: shogun_to_karo.yaml is 1143 lines (threshold: 500)
+[2026-03-23 05:24:41] [monitor] ALERT: 11 completed cmds in shogun_to_karo.yaml — archive may be failing
+[2026-03-23 05:24:49] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:24:50] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:24:50] CLEAR-SKIP: hanzo CTX=0%, already clean (continuous: 30)
+[2026-03-23 05:24:51] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:24:51] CLEAR-SKIP: saizo CTX=0%, already clean (continuous: 30)
+[2026-03-23 05:24:52] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:24:53] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:24:53] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:24:53] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:24:54] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:24:54] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:24:54] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:24:54] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:24:54] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:24:57] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:24:57] SHOGUN-ALERT-DEBOUNCE: shogun CTX:57% but 113s < 1800s since last alert
+[2026-03-23 05:25:46] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:25:47] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:25:48] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:25:49] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:25:50] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:25:51] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:25:51] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:25:51] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:25:51] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:25:51] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:25:51] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:25:51] SHOGUN-ALERT-DEBOUNCE: shogun CTX:59% but 167s < 1800s since last alert
+[2026-03-23 05:26:42] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:26:44] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:26:45] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:26:46] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:26:47] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:26:48] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:26:48] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:26:48] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:26:48] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:26:48] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:26:48] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:26:48] SHOGUN-ALERT-DEBOUNCE: shogun CTX:65% but 224s < 1800s since last alert
+[2026-03-23 05:27:39] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:27:40] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:40] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:40] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:40] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:27:40] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:40] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:40] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:41] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:41] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:41] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:41] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:41] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:41] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:42] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:42] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:42] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:42] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:27:42] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:42] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:42] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:42] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:42] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:42] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:43] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:27:43] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:43] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:43] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:43] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:43] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:43] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:43] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:43] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:43] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:44] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:27:44] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:44] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:44] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:44] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:44] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:44] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:44] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:27:44] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:27:44] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:27:44] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:27:44] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:27:44] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:27:45] SHOGUN-ALERT-DEBOUNCE: shogun CTX:65% but 281s < 1800s since last alert
+[2026-03-23 05:27:56] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:56] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:56] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:56] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:56] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:56] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:57] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:57] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:57] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:57] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:57] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:57] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:57] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:57] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:57] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:57] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:57] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:57] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:58] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:58] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:58] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:58] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:58] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:58] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:58] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:58] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:58] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:59] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:59] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:59] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:59] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:59] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:59] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:27:59] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:27:59] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:27:59] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:28:31] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:28:32] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:28:32] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:28:32] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:28:32] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:28:33] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:28:33] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:28:33] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:28:33] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:28:33] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:28:33] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:28:33] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:28:34] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:28:35] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:28:35] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:28:35] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:28:35] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:28:35] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:28:35] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:28:35] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:28:36] SHOGUN-ALERT-DEBOUNCE: shogun CTX:65% but 332s < 1800s since last alert
+[2026-03-23 05:29:22] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:29:23] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:29:24] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:29:24] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:29:25] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:29:26] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:29:26] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:29:26] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:29:26] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:29:26] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:29:26] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:29:26] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 05:29:26] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:29:27] CLEAR-BLOCKED: karo not idle (check_idle), reason=KARO-CLEAR(check_karo_clear), will retry next cycle
+[2026-03-23 05:29:27] SHOGUN-ALERT-DEBOUNCE: shogun CTX:67% but 383s < 1800s since last alert
+[2026-03-23 05:30:15] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:30:16] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:30:17] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:30:18] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:30:19] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:30:19] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:30:19] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:30:19] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:30:19] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:30:20] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:30:20] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:30:20] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:30:20] SHOGUN-ALERT-DEBOUNCE: shogun CTX:71% but 436s < 1800s since last alert
+[2026-03-23 05:30:25] LESSON-HEALTH: all projects OK
+[2026-03-23 05:30:28] WARNING: ntfy_listener log stale (10min old). Restarting...
+[Mon Mar 23 05:30:28 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 05:30:28 JST 2026] Found existing ntfy_listener process(es): 2854440
+3048898
+3048914
+[Mon Mar 23 05:30:28 JST 2026] Killing PID 2854440 ...
+[Mon Mar 23 05:30:28 JST 2026] Killing PID 3048914 ...
+[Mon Mar 23 05:30:28 JST 2026] Killing orphan curl stream process(es): 2854483
+[Mon Mar 23 05:30:33 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 05:30:34 JST 2026] Lock file is free
+[Mon Mar 23 05:30:34 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 05:30:34 JST 2026] Launched with PID: 3050348
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 3050348
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 05:30:37] ntfy_listener restart triggered by health check
+[2026-03-23 05:31:19] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:31:20] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:31:21] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:31:22] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:31:23] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:31:23] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:31:23] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:31:23] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:31:24] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:31:24] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:31:24] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:31:32] CLEAR-BLOCKED-UNCOMMITTED: karo has uncommitted files: context/lord-conversation-index.md queue/shogun_to_karo.yaml queue/tasks/hayate.yaml scripts/deploy_task.sh scripts/gates/gate_shogun_startup.sh scripts/inbox_write.sh  reason=KARO-CLEAR(check_karo_clear)
+[2026-03-23 05:31:32] SHOGUN-ALERT-DEBOUNCE: shogun CTX:74% but 508s < 1800s since last alert
+[2026-03-23 05:31:36] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:31:36] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:36] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:36] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:36] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:36] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:36] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:37] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:37] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:37] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:37] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:37] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:37] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:37] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:37] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:37] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:38] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:38] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:38] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:39] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:39] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:39] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:39] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:39] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:39] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:39] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:39] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:39] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:39] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:39] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:39] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:40] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:40] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:40] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:31:40] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 05:31:40] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 05:31:40] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 05:32:21] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:32:22] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:32:23] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:32:24] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:32:25] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:32:25] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:32:25] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:32:25] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:32:25] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:32:25] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:32:25] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:32:26] SHOGUN-ALERT-DEBOUNCE: shogun CTX:75% but 562s < 1800s since last alert

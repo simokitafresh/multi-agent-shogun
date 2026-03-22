@@ -1,12 +1,12 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 05:08 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (05:08 自動更新)
+## 📊 リアルタイム状況 (05:15 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
 |------|--------|------|-----|------|
-| 疾風 | claude-opus-4-6 high | idle | cmd_1304 | — |
+| 疾風 | claude-opus-4-6 high | 稼働中 | cmd_1312 | — |
 | 影丸 | claude-opus-4-6 high | done | cmd_1311 | — |
 | 半蔵 | claude-opus-4-6 high | done | cmd_1307 | — |
 | 才蔵 | claude-opus-4-6 high | done | cmd_1308 | — |
@@ -23,7 +23,7 @@
 | 項目 | 値 |
 |------|-----|
 | cmd完了(GATE CLEAR) | 1060/1075 |
-| 稼働忍者 | 0/8 (—) |
+| 稼働忍者 | 1/8 (疾風) |
 | 連勝(CLEAR streak) | 7 (cmd_1306〜cmd_1311) |
 
 ### モデル別スコアボード
@@ -97,22 +97,18 @@ Bottom 5 低効果教訓
 <!-- DASHBOARD_AUTO_END -->
 
 <!-- KARO_SECTION_START -->
-## 最新更新 (05:03更新)
-- **cmd_1311**: 完了。 — pre-write-report-deny.sh L35の正規表現修正。_report_→_report.*で{ninja}_report.yamlにもマッチ。4パターンテスト全PASS、bats 36/36 PASS 0 SKIP ...。影丸完遂
-- **cmd_1304**: GATE CLEAR。疾風PASS。削除済みスクリプト参照21ファイル処理。残存0件
-- **cmd_1306**: GATE CLEAR。影丸PASS。test_result_guard.sh偽SKIP修正
-- **cmd_1307**: GATE CLEAR。半蔵PASS。GP-021 ninja_weak_points自動注入。context還流済
-- **cmd_1308**: GATE CLEAR。才蔵PASS。gate_workaround_rate.sh新規+統合
-- **cmd_1309**: GATE CLEAR。小太郎PASS。subtask YAML 47件archive移動
-- **cmd_1310**: GATE CLEAR。飛猿PASS。CI RED修正(bats→lessons_archive.yaml読込先修正)。push済
+## 最新更新 (05:14更新)
+- **cmd_1312**: 疾風に配備。deploy_task.sh report_filenameリセット(cmd切替時残留根絶)
+- **cmd_1311**: GATE CLEAR。影丸PASS。GP-003正規表現修正(_report_→_report.*)
+- **cmd_1304-1310**: 全GATE CLEAR(7cmd連続)
 
 ### パイプライン
-| cmd | 内容 | 忍者 | 状態 |
+| cmd | 忍者 | 内容 | 状態 |
 |-----|------|------|------|
-| cmd_1311 | GP-003正規表現バグ修正(report hook) | 影丸 | 稼働中 |
+| cmd_1312 | 疾風 | deploy_task.sh report_filenameリセット | 配備済み |
 
 ### idle忍者
-疾風、半蔵、才蔵、小太郎、飛猿(5名idle)
+5名idle(影丸、半蔵、才蔵、小太郎、飛猿)
 
 ## 🚨要対応
 
@@ -131,6 +127,14 @@ grep -v運用ファイル除外フィルタ追加。才蔵PASS
 | 1 | inbox_write.sh gate発火100%化 | **完了** | cmd_1264 |
 | 2 | report_field_set.sh強制hook | **完了** | cmd_1265 |
 | 3 | BLOCK昇格(PreToolUse deny) | **完了** | cmd_1284+1294 |
+
+### 軍師提案(pending)
+| GP | 内容 | 効果見込み | 優先度 |
+|----|------|-----------|--------|
+| GP-025 | archive gate循環修正 | 初回CLEAR率37%→70%+ | 高 |
+| GP-026 | report_yaml_missing自動待機 | BLOCK原因65%根絶 | 高 |
+| GP-027 | commit漏れ検出WARN | cmd_1311類事故防止 | 中 |
+| GP-023 | cross-ninja検出 | 次世代 | 低 |
 
 ### 軍師利他サイクル5発見(S42)
 - lesson_candidate登録率17.2%。GP-019(L247強制)/GP-020(async harvesting)要起票

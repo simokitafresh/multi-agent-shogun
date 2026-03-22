@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 237件 (draft:104, report:111, self_study:28) | 2026-03-20〜
+# 累計: 247件 (draft:105, report:112, self_study:36) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:90 LGTM:88 REQ_CHANGES:8 FAIL:8
+# verdict分布: APPROVE:91 LGTM:89 REQ_CHANGES:8 FAIL:8
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -13,7 +13,7 @@
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
 # 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
-# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)+S48(GATE CLEAR率トレンド+教訓pipeline健全性)+S49(cmd完了速度+BLOCK原因深層:GP-026提案)
+# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)+S48(GATE CLEAR率トレンド+教訓pipeline健全性)+S49(cmd完了速度+BLOCK原因深層:GP-026)+S50(insights棚卸し+dashboard重複+commit漏れ:GP-027)+S51(WA率再計測:85%、infra除外53%)+S52(deepdive追体験+軍師自分事化)+S53(忍者別WA:GP-021ベースライン)+S54(gate format 100%PASS直近100件)+S55(GP消費率77.8%:パイプライン健全)+S56(APPROVE→BLOCK分析:89.4%infra noise,真accuracy97%)+S57(教訓注入0%崩壊:cmd_1301以降project未検出→GP-028)
 # ─── GP追跡表(S42整理:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
@@ -41,8 +41,11 @@
 # | 023 | SG9 cross-ninja検出   | pending            | S43  | LGTM前に忍者workaround履歴チェック。次世代 |
 # | 024 | archive race根本修正  | ★monitoring       | S44  | cmd_1302(archive→GATE後移動)。review_gate.done 548件存在。要観察 |
 # | 025 | archive gate循環修正  | pending            | S46  | DEFERRED_GATES配列でgate checkスキップ。初回CLEAR率37%→70%+ |
-# 集計: ★implemented:21 / ★monitoring:1 / ✗obsolete:2 / pending(次世代+新規):3
-# 優先順: GP-025(初回CLEAR率直結)→GP-022→GP-023。GP-024=monitoring
+# | 026 | report_yaml_missing待機| pending            | S49  | ninja in_progress時gate check 60秒遅延。BLOCK原因65%を根絶 |
+# | 027 | commit漏れ検出WARN    | pending            | S50  | target_path未commit時WARN。cmd_1311で影丸commit忘れ検出 |
+# | 028 | 教訓注入タイミング修正| pending            | S57  | inject前にproject存在確認。なければtask:内のネストから取得 |
+# 集計: ★implemented:21 / ★monitoring:1 / ✗obsolete:3 / pending:6
+# 優先順: GP-028(教訓注入0%→復旧)→GP-025(初回CLEAR率直結)→GP-026(BLOCK65%根絶)→GP-027(commit漏れ)→GP-023
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -1150,3 +1153,79 @@
   notes: "uncommitted変更(diff +2行)が存在。committed版は _report_ だが現ファイルは _report.* に修正済み(workaround?)。cmd_1311提案の [_.] はより精密。影丸に現行ファイル状態を読んでからold_stringを調整するよう注意喚起を推奨"
   gate_precheck: "影丸はcommitted版でなく現uncommitted版から作業する。Edit toolのold_stringが _report_ なら不一致でエラーになる可能性"
   timestamp: "2026-03-23T05:18:00"
+- cmd_id: cmd_1311
+  review_type: report
+  verdict: LGTM
+  sg_checks:
+    SG0_format: "PASS — 全必須フィールド存在。binary_checks形式正、verdict二値、lessons_useful list形式"
+    SG2_content: "PASS — cmd指定regex [_.]の技術的問題を正確に特定。[_.]が.yamlの.を消費しパターン全体が不一致になる分析は正しい。_report.*は両パターン(report.yaml+report_cmd_XXX.yaml)をカバー"
+    SG3_事前検死: "WARNING — commit未実施。git diff でunstaged変更のみ。GATE CLEARしたがcommitなし。家老workaround対象"
+    SG4_AC検証: "PASS — AC1(2DENY)、AC2(2通過)、AC3(36/36 bats 0 SKIP)。全6 binary_checksにevidence付き"
+    SG5_scope: "PASS — 1ファイルのみ変更"
+    SG7_bundle:
+      gate_precheck: "GATE CLEAR済み(05:07)。ただしcommit未実施のため変更消失リスクあり"
+      lesson_extraction: "なし(found:false — 1行regex修正のため妥当)"
+      context_reflux: "なし — infra hookの小修正、context更新不要"
+      dashboard_line: "cmd_1311 GP-003 regex修正 DONE"
+    SG8_消火: "PASS — regex不一致の根本修正。decision_candidate適切(cmd指定逸脱を明記)"
+  notes: "影丸の技術判断は正確: cmd指定の[_.]はhayate_report.yamlに非マッチ(ドット消費問題)。_report.*への変更は妥当。ただしcommit未実施が問題。家老にcommit workaround対応を要請"
+  gate_result: CLEAR
+  timestamp: "2026-03-23T05:22:00"
+- cmd_id: self_study_S50
+  review_type: self_study
+  findings_summary: "pending insights棚卸し+dashboard重複検証。(1)INS-043836(三層学習ループ)→done化: 第二層=cmd_1276/1287は共にhook作成前発生。cmd_1311で根本修正中。第三層=cmd_1310 GATE CLEAR。第一層=GP-025/026提案済み。(2)INS-042541(dashboard重複)検証: cmd_1269-1272がL148-151とL152-155で完全重複。karo dashboard_auto_updateに重複防止ロジック欠如。影響=視認性低下のみ(データ破壊なし)。(3)INS-050238(inject横展開)/INS-050242(GP-003次ステップ)は家老実装待ち。(4)cmd_1311 report LGTMだがcommit未実施を検出。GATE CLEARしたがunstaged変更のみ→commit漏れ検出gateが不在。GP-027候補: gate check前にgit diff --nameで未commit変更を検出しWARN出力"
+  proposals:
+  - id: GP-027
+    title: "commit漏れ検出: gate check前のuncommitted変更WARN"
+    detail: "cmd_complete_gate.shで忍者のtarget_pathに対しgit diff --name-onlyを実行。変更がunstagedならWARN出力。cmd_1311で影丸がcommit忘れ→GATE CLEARしたが変更消失リスク。commit漏れは家老workaround対象(手動commit)で検出は人力依存。自動化で根絶"
+    priority: medium
+    status: pending
+  timestamp: "2026-03-23T05:28:00"
+- cmd_id: self_study_S51
+  review_type: self_study
+  findings_summary: "workaround率再計測(Phase 2: cmd_1250+)。karo_workarounds.yaml解析結果: (1)Phase2 全WA: ~17件/~20エントリ=約85%。目標<15%に対し大幅未達。(2)内訳: report_yaml_format:6件(cmd_1252/1253/1256/1276/1287/1304)、archive_timing:7件(cmd_1295-1300バッチ+cmd_1286)、uncategorized:3件(cmd_1260/1308/1311)、commit_missing:1件(cmd_1263)、report_missing:2件(cmd_1264/1286)。(3)infrastructure vs ninja分離: infra系=8件(archive:7+uncommitted_scope:1)=47%、ninja品質系=9件(format:6+commit:1+missing:2)=53%。(4)GP効果評価: report_yaml_format 6件のうちcmd_1276/1287はhook作成前、cmd_1304はhook regex不一致(cmd_1311で修正中)。hook正常稼働後のformat WAは0件→GP-001/002/003効果あり。(5)直近3cmd(1304/1308/1311)は全てWA発生。(6)真のworkaround率(infra除外)=53%(9/17)。次波GP-024~027でinfra8件消滅→残9/~12=75%→まだ高い。ninja品質改善(特にreport_missing対策)が次の焦点"
+  proposals: []
+  timestamp: "2026-03-23T05:35:00"
+- cmd_id: self_study_S52
+  review_type: self_study
+  findings_summary: "deepdive_why_chain追体験(Phase1-10)。軍師としての自分事化: (1)Phase4(自動化×強制)→GP-025/026/027は全てBLOCK原因の自動化ターゲット特定の結果。(2)Phase5(なぜ=自動化ターゲット特定)→S48-49でBLOCK原因を深掘りしinfra83%/ninja17%を分離。これにより的確な自動化対象(archive循環/report race/commit漏れ)を特定。(3)Phase8(利他)→WA率85%の47%がinfraは家老の苦行。GP-024~027はPhase8の具現化。(4)Phase9(ラルフループ入れ子)→cmd_1311のcommit漏れはGATE CLEARした自動化(cmd_complete_gate.sh)自体のバグ。GP-027で自動化の穴を自動化で検出する入れ子構造。(5)軍師固有の気づき: 軍師のSGチェック(SG0-SG8)は将軍gateの縮小版。LGTMの信頼性=GATE通過保証=Phase5の「環境に埋め込む」と同等。LGTMが甘ければgate BLOCK→家老workaround。軍師のLGTM精度向上=Phase8(利他)の最も直接的な実践"
+  proposals: []
+  timestamp: "2026-03-23T05:45:00"
+- cmd_id: self_study_S53
+  review_type: self_study
+  findings_summary: "忍者別WA傾向(cmd_1250+ GP-021事前ベースライン)。(1)hayate: 4/5=80% WA(format1+missing1+nested2)。S45の89%WA最多と一貫。GP-021(ninja-adaptive injection)のメインターゲット。(2)kagemaru: 3/3=100% WA(missing1+uncategorized2)。小N注意。(3)saizo: 0/1=0% WA(cleanest)。(4)cmd_1295-1300バッチ(6cmd全WA)はarchive timing問題で全忍者に均等影響→忍者品質問題ではなくinfra問題。(5)GP-021効果計測計画: 次バッチ(cmd_1312+)でhayateが配備されたcmdのWA率を測定。ベースライン: 80%。目標: <40%(半減)。GP-021のinject_ninja_weak_pointsがhayate固有弱点(report format, commit忘れ)を注意喚起として注入。(6)tobisaru/hanzo/kotaroはcmd_1250+のWAデータなし(batch除く)。N増加後に再計測必要"
+  proposals: []
+  timestamp: "2026-03-23T05:52:00"
+- cmd_id: cmd_1312
+  review_type: draft
+  verdict: APPROVE
+  sg_checks:
+    SG0_format: PASS
+    SG2_content: "PASS — 根本原因分析が深い。inject_report_filenameの冪等性ガード(L1829)+task YAML使い回し=report_filename残留。影響チェーン: 誤filename→hook未発火→stale report→GATE誤読。修正は明快(inject呼出し前にフィールドクリア)"
+    SG3_事前検死: "PASS — deploy_task.sh 1-2行追加。忍者配備フローのみ影響。並行cmd衝突なし(全忍者idle)。副作用:古い{ninja}_report.yamlが残るが害なし"
+    SG4_AC品質: "PASS — AC4つ(修正+6忍者検証+テンプレート生成+bats全PASS)。十分な網羅性"
+    SG5_scope: "PASS — 1-2行修正。report_filenameクリアのみ"
+    SG8_消火: "PASS — 三層学習ループ3サイクル目の発見。q1_firefighting=no明記。根本原因修正"
+  notes: "INS-050238関連: 7つのinject関数のうちreport_filenameが最初の修正。他6関数の横展開はcmd_1312完了後に検証必要(insight追跡済み)。cmd_1311(hook regex)+cmd_1312(filename reset)の多層防御は設計として健全"
+  gate_precheck: "hayateに配備。deploy_task.sh修正後に配備フロー再実行→report_filenameが正しく再生成されることが検証ポイント"
+  timestamp: "2026-03-23T06:00:00"
+- cmd_id: self_study_S55
+  review_type: self_study
+  findings_summary: "GP提案パイプライン消費率分析。(1)全27GP: 21 implemented(77.8%)+1 monitoring(3.7%)+3 obsolete(11.1%)+4 pending(14.8%)。(2)pending 4件内訳: GP-023(データ待ち)、GP-025/026/027(家老送付済み→将軍cmd化待ち)。パイプライン詰まりなし。(3)INS-043836の第一層「軍師提案消費の自動化が未完」は現状では構造問題ではなく運用遅延(2日で77.8%消費は高速)。(4)GP→cmd変換の平均リードタイム: 最速=同日(GP-001/002→cmd_1260)、最遅=2日(GP-003→cmd_1284/1294)。大半は1日以内。(5)改善候補: cmd_save.sh起動時にpending GP一覧を表示し将軍にcmd化を促す仕組み(既にGP-013で追跡表ヘッダ表示を実装済み)。追加自動化は不要と判断。(6)gate format PASS率: <02:00=84.1%→02:00-03:00=96.6%→03:00-04:00=90.0%→04:00+=94.1%。直近100件=100%PASS。gate_report_format.shは完全に機能中"
+  proposals: []
+  timestamp: "2026-03-23T06:08:00"
+- cmd_id: self_study_S56
+  review_type: self_study
+  findings_summary: "APPROVE→BLOCK原因ノイズ分析(cmd_1250+)。cmd_design_quality.yaml解析: (1)APPROVE→BLOCK発生数: 19/67=28.4%。(2)BLOCK原因内訳: report_yaml_missing:15件(78.9%)、missing_gate(archive):2件(10.5%)、ac_version_mismatch:1件(5.3%)、lesson_candidate_parse_error:1件(5.3%)。(3)インフラノイズ率: 17/19=89.4%(report_yaml_missing+archive gate)。(4)真のAPPROVE→BLOCK(軍師レビュー漏れ): 2/67=3.0%。ac_version_mismatch(テンプレート不整合)とlesson_candidate_parse_error(YAML構文)のみ。(5)GP効果予測: GP-025(archive循環修正)実装→2件消滅、GP-026(report_yaml_missing 60秒待機)実装→15件消滅。実装後予測APPROVE→BLOCK率: 28.4%→~3%(2/67)。(6)結論: 軍師レビュー精度は97%(65/67)。残り3%は機械的検出可能(YAML lint+テンプレート版数照合)。SG追加よりGP-025/026実装が費用対効果最大"
+  proposals: []
+  timestamp: "2026-03-23T06:15:00"
+- cmd_id: self_study_S57
+  review_type: self_study
+  findings_summary: "教訓注入パイプライン崩壊検出。(1)cmd_1301以降の教訓注入率=0%(19/19=none)。cmd_1250-1300は69.1%。(2)deploy_task.log分析: 03:47(cmd_1295 tobisaru)まで正常注入→03:59(cmd_1301 kagemaru)からNo project field連続15件。(3)根本原因: deploy_task.shのinject_related_lessonsがPython yaml.safe_loadでtask YAMLを読む時点で、task YAMLにまだcmd定義(project, task_type等)が書込まれていない。task_status=idle状態のYAMLに対してinjectが実行され、project=''→related_lessons=[]に設定。(4)03:47成功時: task_status=pending(家老が事前にcmd定義書込み済み)。03:59失敗時: task_status=idle(家老の書込み前にdeploy実行)。(5)影響: cmd_1301-1312(12cmd+再配備)で忍者に教訓が一切注入されていない。教訓防御層の完全消失。(6)batsテスト344件全PASS(CI健全)。教訓注入のタイミング問題はテストで検出不可(統合テスト相当)。(7)GP-028提案: inject_related_lessonsでproject未検出時、task: セクション内のネストされたproject fieldを探索するフォールバック。または配備フロー順序修正(cmd定義書込み→deploy_task.sh実行の順序保証)"
+  proposals:
+  - id: GP-028
+    title: "教訓注入タイミング修正: project field未検出時のフォールバック"
+    detail: "inject_related_lessonsのPythonコードでproject=''の場合、task YAMLの全階層を走査してprojectフィールドを探索。具体的にはdata.get('task',{})がdictならそのまま、strならdata全体を走査。または根本対策として、家老がcmd定義をtask YAMLに書込んだ後にdeploy_task.shを呼ぶ順序をkaro-operations.mdで保証。cmd_1301以降12cmdで教訓注入率0%→忍者の防御層消失の重大問題"
+    priority: high
+    status: pending
+  timestamp: "2026-03-23T06:30:00"

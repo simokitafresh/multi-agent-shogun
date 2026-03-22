@@ -1140,4 +1140,4 @@ commands:
       q4_depth: deep — 将軍が「なぜ」6層(hook regex→inject skip→冪等性ガード→task YAML使い回し→insert_if_not_exists→cmd切替未検知)まで掘った。全6忍者のtask YAML現物確認済み
       q5_verified_source: scripts/deploy_task.sh L1828-1839(inject_report_filename現物) + queue/tasks/*.yaml全6件(parent_cmd vs report_filename不整合確認) + queue/reports/hayate_report.yaml(parent_cmd=cmd_1298 stale確認)
       q6_not_hiding: no — 冪等性ガードの自動消火(問題隠蔽)を正面から修正
-    status: new
+    status: delegated

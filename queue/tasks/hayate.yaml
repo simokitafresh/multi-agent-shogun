@@ -1,46 +1,66 @@
-task:
+task: status
   ac_version: d41d8cd9
   bloom_level: ''
-  deployed_at: '2026-03-23T04:22:44'
+  deployed_at: '2026-03-23T05:14:07'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  ninja_weak_points:
+    breakdown: report_yaml_format(3件), uncategorized(2件), commit_missing(2件)
+    source: karo_workarounds.yaml
+    top_pattern: report_yaml_format(3件)
+    total_workarounds: 7
+    warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
   parallel_ok: []
   related_lessons: []
   report_filename: hayate_report.yaml
   report_path: queue/reports/hayate_report.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: idle
+  status: assigned
   stop_for: []
   task:
     acceptance_criteria:
     - binary_checks:
-      - check: grepで7スクリプト名を検索し参照ファイル一覧を作成したか
+      - check: inject_report_filename呼出し前にreport_filenameをクリアするコードがあるか
         result: ''
-      description: 削除済み7スクリプトへの全参照をリスト化
+      - check: inject_report_filename呼出し前にreport_pathをクリアするコードがあるか
+        result: ''
+      description: deploy_task.shにreport_filename/report_pathクリアロジックを追加
       id: AC1
     - binary_checks:
-      - check: import/source参照を削除したか
+      - check: deploy_task.sh実行後にreport_filenameが{ninja}_report_{parent_cmd}.yaml形式か
         result: ''
-      - check: ドキュメント参照に注記を追加したか
+      - check: 6忍者全てで検証したか
         result: ''
-      description: 全参照を適切に処理（削除/注記/更新）
+      description: 全6忍者のtask YAMLで正しいreport_filenameが生成されることを検証
       id: AC2
     - binary_checks:
-      - check: 全7スクリプト名でgrep実行し0件か
+      - check: 新report_filenameに対応するテンプレートファイルがqueue/reports/に存在するか
         result: ''
-      - check: bash -n構文チェックでエラーがないか
-        result: ''
-      description: grep再確認で残存参照0件
+      description: 新ファイル名で報告テンプレートが正しく生成されること
       id: AC3
-    cmd_id: cmd_1304
-    command: "■ 背景\ncmd_1275でGS混乱候補スクリプト7本を削除した。\nしかし27ファイルがまだ削除済みスクリプトを参照している(cmd_1275\
-      \ 影丸DC)。\n死んだ参照は忍者の混乱を招き、将来のバグの原因になる。\n\n■ AC\nAC1: 削除済み7スクリプトのファイル名をgrepで特定し、\n\
-      \     参照している全ファイルをリスト化\nAC2: 各参照を適切に処理（削除/コメントアウト/代替パスへ更新）\n     — 参照の種類に応じて判断:\n\
-      \       - import/sourceなら削除\n       - ドキュメント参照なら「(削除済み)」注記追加\n       - テストなら関連テストごと削除\n\
-      AC3: grep再実行で残存参照が0件であることを確認\n"
-    parent_cmd: cmd_1304
+    - binary_checks:
+      - check: batsテスト全PASSか
+        result: ''
+      - check: SKIP数が0か
+        result: ''
+      description: 既存テスト(bats)が回帰なしで全PASS
+      id: AC4
+    cmd_id: cmd_1312
+    command: "■ 背景（将軍が「なぜ」6層で特定した根本原因）\ndeploy_task.shのinject_report_filename()は冪等性ガード(L1829)で\n\
+      「report_filenameが既に存在すればスキップ」する。\nしかしtask YAMLは忍者ごとに使い回されるため、\n前cmdのreport_filenameが残留し、新cmdで正しいファイル名が生成されない。\n\
+      \n■ 影響（確認済み）\n1. report_filename: hayate_report.yaml（接尾辞なし、全6忍者で確認）\n   期待値:\
+      \ hayate_report_cmd_1304.yaml（接尾辞付き）\n2. GP-003 hookが発火しない（正規表現_report_が_report.yamlにマッチしない）\n\
+      3. 古いcmdの報告ファイルが残留しGATEが誤読する\n\n■ 修正方針\ndeploy_task.shの配備フロー冒頭（inject系関数の前）で、\n\
+      auto-injectフィールド(report_filename, report_path)をクリアするステップを追加。\n\n■ 具体的な修正箇所\n\
+      scripts/deploy_task.sh のinject_report_filename呼出しの直前に:\n  yaml_field_set \"\
+      $TASK_FILE\" \"task\" \"report_filename\" \"\"\nを追加。これによりinject_report_filenameの冪等性ガードが\n\
+      「空→注入」と判断し、現在のparent_cmdから正しいファイル名を生成。\n\n■ 副作用防止\n- generate_report_template(L2860)はreport_fileが既存ならスキップ。\n\
+      \  report_filenameが変わると新ファイルを生成。\n  古い{ninja}_report.yamlは残るが害はない（参照されなくなる）\n"
+    parent_cmd: cmd_1312
     project: infra
-    stop_for: []
+    stop_for:
+    - deploy_task.shの構文エラーで他の忍者配備が不能になった場合
+    target_path: scripts/deploy_task.sh
     task_type: implement

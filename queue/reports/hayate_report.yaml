@@ -3,9 +3,9 @@
 # Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
 worker_id: hayate
 task_id: 
-parent_cmd: cmd_1298
-timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
-status: pending
+parent_cmd: cmd_1312
+timestamp: "2026-03-23T05:32:09"
+status: done
 ac_version_read: d41d8cd9
 result:
   summary: ""

@@ -498,3 +498,222 @@
 - ts: "2026-03-23T05:07:41+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
 - ts: "2026-03-23T05:07:42+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
 - ts: "2026-03-23T05:07:43+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:08:53+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:09:01+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:09:01+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:09:02+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:09:03+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:10:32+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:10:32+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:10:33+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:10:34+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:10:34+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:11:23+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:11:24+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:11:25+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:11:26+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:11:26+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:12:11+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:12:12+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:12:13+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:12:13+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:12:14+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:12:59+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:00+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:01+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:01+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:02+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:45+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:46+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:47+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:48+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:13:48+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:14:55+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:14:56+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:14:57+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:14:58+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:14:59+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:06+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:07+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:07+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:08+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:09+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:54+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:55+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:56+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:57+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:16:58+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:17:44+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:17:45+09:00", file: "/tmp/test_report_broken.yaml", result: AUTO-FIXED, fixes: "lessons_useful dict→list変換; files_modified string→dict変換"
+- ts: "2026-03-23T05:17:45+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:17:46+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:17:47+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:17:48+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:17:55+09:00", file: "/tmp/test_report_wrapped.yaml", result: AUTO-FIXED, fixes: "report:ラップ→フラット化"
+- ts: "2026-03-23T05:18:10+09:00", file: "/tmp/test_report_broken2.yaml", result: AUTO-FIXED, fixes: "lessons_useful dict→list変換; files_modified string→dict変換"
+- ts: "2026-03-23T05:18:11+09:00", file: "/tmp/test_report_broken2.yaml", result: PASS
+- ts: "2026-03-23T05:18:38+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:18:39+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:18:40+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:18:40+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:18:41+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:19:29+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:19:31+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:19:32+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:19:33+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:19:34+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:20:31+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:20:31+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:20:32+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:20:33+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:20:34+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:20:37+09:00", file: "/tmp/report_tpl.o4Iiw6/report.yaml", result: PASS
+- ts: "2026-03-23T05:20:37+09:00", file: "/tmp/report_tpl.HYTu6x/report.yaml", result: PASS
+- ts: "2026-03-23T05:20:37+09:00", file: "/tmp/report_tpl.Z2w1J2/report.yaml", result: FAIL, reasons: "binary_checks: is string (must be dict with AC entries)"
+- ts: "2026-03-23T05:20:37+09:00", file: "/tmp/report_tpl.PPN8Dw/report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null)"
+- ts: "2026-03-23T05:20:38+09:00", file: "/tmp/report_tpl.QzjxUH/report.yaml", result: FAIL, reasons: "lesson_candidate: found=true but no title"
+- ts: "2026-03-23T05:20:38+09:00", file: "/tmp/report_tpl.behisy/report.yaml", result: FAIL, reasons: "verdict: \"CONDITIONAL_PASS\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:20:38+09:00", file: "/tmp/report_tpl.01YSl6/report.yaml", result: PASS
+- ts: "2026-03-23T05:20:38+09:00", file: "/tmp/report_tpl.NBTQmh/report.yaml", result: PASS
+- ts: "2026-03-23T05:20:38+09:00", file: "/tmp/report_tpl.rp5xqt/report.yaml", result: FAIL, reasons: "verdict: \"None\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:20:38+09:00", file: "/tmp/report_tpl.Vq6Jvr/report.yaml", result: FAIL, reasons: "verdict: \"\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:20:38+09:00", file: "/tmp/report_tpl.crVhFg/report.yaml", result: FAIL, reasons: "lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists"
+- ts: "2026-03-23T05:20:39+09:00", file: "/tmp/report_tpl.moD3ME/report.yaml", result: FAIL, reasons: "lessons_useful[0]: missing \"id\" field (must have lesson ID like L074)"
+- ts: "2026-03-23T05:20:39+09:00", file: "/tmp/report_tpl.ZbSXOh/report.yaml", result: FAIL, reasons: "lessons_useful[0]: useful=yes is str (must be true or false)"
+- ts: "2026-03-23T05:20:39+09:00", file: "/tmp/report_tpl.du6mav/report.yaml", result: FAIL, reasons: "lessons_useful[0]: contains FILL_THIS (must fill actual values); lessons_useful[0]: useful=FILL_THIS is str (must be true or false)"
+- ts: "2026-03-23T05:20:39+09:00", file: "/tmp/report_tpl.yX3uwI/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is str (must be list of check items)"
+- ts: "2026-03-23T05:20:39+09:00", file: "/tmp/report_tpl.EDFteU/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is dict (must be list of check items)"
+- ts: "2026-03-23T05:20:40+09:00", file: "/tmp/report_tpl.mk8Zcl/report.yaml", result: FAIL, reasons: "lesson_candidate: found=false but no no_lesson_reason"
+- ts: "2026-03-23T05:21:20+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:21:21+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:21:22+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:21:23+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:21:23+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:22:09+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:22:10+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:22:11+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:22:12+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:22:13+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:00+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:01+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:02+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:02+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:03+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:53+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:54+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:55+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:56+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:23:57+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:24:05+09:00", file: "/tmp/report_tpl.eOhtcS/report.yaml", result: PASS
+- ts: "2026-03-23T05:24:05+09:00", file: "/tmp/report_tpl.LKnvTy/report.yaml", result: PASS
+- ts: "2026-03-23T05:24:05+09:00", file: "/tmp/report_tpl.KnulNd/report.yaml", result: FAIL, reasons: "binary_checks: is string (must be dict with AC entries)"
+- ts: "2026-03-23T05:24:06+09:00", file: "/tmp/report_tpl.NyeEbm/report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null)"
+- ts: "2026-03-23T05:24:06+09:00", file: "/tmp/report_tpl.4VwBsk/report.yaml", result: FAIL, reasons: "lesson_candidate: found=true but no title"
+- ts: "2026-03-23T05:24:06+09:00", file: "/tmp/report_tpl.DbHJmP/report.yaml", result: FAIL, reasons: "verdict: \"CONDITIONAL_PASS\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:24:06+09:00", file: "/tmp/report_tpl.dOAdrD/report.yaml", result: PASS
+- ts: "2026-03-23T05:24:06+09:00", file: "/tmp/report_tpl.INg0VY/report.yaml", result: PASS
+- ts: "2026-03-23T05:24:07+09:00", file: "/tmp/report_tpl.XZ8HfE/report.yaml", result: FAIL, reasons: "verdict: \"None\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:24:07+09:00", file: "/tmp/report_tpl.MQrAUU/report.yaml", result: FAIL, reasons: "verdict: \"\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:24:07+09:00", file: "/tmp/report_tpl.z6lHIF/report.yaml", result: FAIL, reasons: "lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists"
+- ts: "2026-03-23T05:24:07+09:00", file: "/tmp/report_tpl.ldTAYr/report.yaml", result: FAIL, reasons: "lessons_useful[0]: missing \"id\" field (must have lesson ID like L074)"
+- ts: "2026-03-23T05:24:07+09:00", file: "/tmp/report_tpl.pXfr0S/report.yaml", result: FAIL, reasons: "lessons_useful[0]: useful=yes is str (must be true or false)"
+- ts: "2026-03-23T05:24:07+09:00", file: "/tmp/report_tpl.tfzvU0/report.yaml", result: FAIL, reasons: "lessons_useful[0]: contains FILL_THIS (must fill actual values); lessons_useful[0]: useful=FILL_THIS is str (must be true or false)"
+- ts: "2026-03-23T05:24:08+09:00", file: "/tmp/report_tpl.Dp402I/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is str (must be list of check items)"
+- ts: "2026-03-23T05:24:08+09:00", file: "/tmp/report_tpl.3mrVNN/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is dict (must be list of check items)"
+- ts: "2026-03-23T05:24:08+09:00", file: "/tmp/report_tpl.vZNKwD/report.yaml", result: FAIL, reasons: "lesson_candidate: found=false but no no_lesson_reason"
+- ts: "2026-03-23T05:24:49+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:24:50+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:24:51+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:24:52+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:24:53+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:25:46+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:25:47+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:25:48+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:25:49+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:25:50+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:26:42+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:26:44+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:26:45+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:26:46+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:26:47+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:27:39+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:27:40+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:27:42+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:27:43+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:27:44+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:27:51+09:00", file: "/tmp/report_tpl.u9uH2f/report.yaml", result: PASS
+- ts: "2026-03-23T05:27:51+09:00", file: "/tmp/report_tpl.FOCgOW/report.yaml", result: PASS
+- ts: "2026-03-23T05:27:52+09:00", file: "/tmp/report_tpl.1zUlRh/report.yaml", result: FAIL, reasons: "binary_checks: is string (must be dict with AC entries)"
+- ts: "2026-03-23T05:27:52+09:00", file: "/tmp/report_tpl.0kz9ZL/report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null)"
+- ts: "2026-03-23T05:27:52+09:00", file: "/tmp/report_tpl.2Wr9NZ/report.yaml", result: FAIL, reasons: "lesson_candidate: found=true but no title"
+- ts: "2026-03-23T05:27:52+09:00", file: "/tmp/report_tpl.xIgLVP/report.yaml", result: FAIL, reasons: "verdict: \"CONDITIONAL_PASS\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:27:52+09:00", file: "/tmp/report_tpl.nQBgBi/report.yaml", result: PASS
+- ts: "2026-03-23T05:27:52+09:00", file: "/tmp/report_tpl.HES7Vd/report.yaml", result: PASS
+- ts: "2026-03-23T05:27:52+09:00", file: "/tmp/report_tpl.8uscPa/report.yaml", result: FAIL, reasons: "verdict: \"None\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:27:52+09:00", file: "/tmp/report_tpl.Av9nnL/report.yaml", result: FAIL, reasons: "verdict: \"\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:27:53+09:00", file: "/tmp/report_tpl.dwxcfm/report.yaml", result: FAIL, reasons: "lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists"
+- ts: "2026-03-23T05:27:53+09:00", file: "/tmp/report_tpl.JEpLnd/report.yaml", result: FAIL, reasons: "lessons_useful[0]: missing \"id\" field (must have lesson ID like L074)"
+- ts: "2026-03-23T05:27:53+09:00", file: "/tmp/report_tpl.s3hP5g/report.yaml", result: FAIL, reasons: "lessons_useful[0]: useful=yes is str (must be true or false)"
+- ts: "2026-03-23T05:27:53+09:00", file: "/tmp/report_tpl.ysTJL5/report.yaml", result: FAIL, reasons: "lessons_useful[0]: contains FILL_THIS (must fill actual values); lessons_useful[0]: useful=FILL_THIS is str (must be true or false)"
+- ts: "2026-03-23T05:27:53+09:00", file: "/tmp/report_tpl.6qvmfe/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is str (must be list of check items)"
+- ts: "2026-03-23T05:27:53+09:00", file: "/tmp/report_tpl.A1tsBp/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is dict (must be list of check items)"
+- ts: "2026-03-23T05:27:54+09:00", file: "/tmp/report_tpl.CbSyeD/report.yaml", result: FAIL, reasons: "lesson_candidate: found=false but no no_lesson_reason"
+- ts: "2026-03-23T05:28:06+09:00", file: "/tmp/report_tpl.5GLper/report.yaml", result: PASS
+- ts: "2026-03-23T05:28:06+09:00", file: "/tmp/report_tpl.2sXsf8/report.yaml", result: PASS
+- ts: "2026-03-23T05:28:06+09:00", file: "/tmp/report_tpl.xCtCMk/report.yaml", result: FAIL, reasons: "binary_checks: is string (must be dict with AC entries)"
+- ts: "2026-03-23T05:28:06+09:00", file: "/tmp/report_tpl.f6HZiV/report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null)"
+- ts: "2026-03-23T05:28:07+09:00", file: "/tmp/report_tpl.YjJKfT/report.yaml", result: FAIL, reasons: "lesson_candidate: found=true but no title"
+- ts: "2026-03-23T05:28:07+09:00", file: "/tmp/report_tpl.Ch7mQz/report.yaml", result: FAIL, reasons: "verdict: \"CONDITIONAL_PASS\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:28:07+09:00", file: "/tmp/report_tpl.fmoVku/report.yaml", result: PASS
+- ts: "2026-03-23T05:28:07+09:00", file: "/tmp/report_tpl.tK8qgl/report.yaml", result: PASS
+- ts: "2026-03-23T05:28:07+09:00", file: "/tmp/report_tpl.QdjQjM/report.yaml", result: FAIL, reasons: "verdict: \"None\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:28:07+09:00", file: "/tmp/report_tpl.4DO3Yg/report.yaml", result: FAIL, reasons: "verdict: \"\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:28:07+09:00", file: "/tmp/report_tpl.R5uWS3/report.yaml", result: FAIL, reasons: "lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists"
+- ts: "2026-03-23T05:28:08+09:00", file: "/tmp/report_tpl.MoAgVr/report.yaml", result: FAIL, reasons: "lessons_useful[0]: missing \"id\" field (must have lesson ID like L074)"
+- ts: "2026-03-23T05:28:08+09:00", file: "/tmp/report_tpl.F2osJ2/report.yaml", result: FAIL, reasons: "lessons_useful[0]: useful=yes is str (must be true or false)"
+- ts: "2026-03-23T05:28:08+09:00", file: "/tmp/report_tpl.flCNc9/report.yaml", result: FAIL, reasons: "lessons_useful[0]: contains FILL_THIS (must fill actual values); lessons_useful[0]: useful=FILL_THIS is str (must be true or false)"
+- ts: "2026-03-23T05:28:08+09:00", file: "/tmp/report_tpl.rMxn7Y/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is str (must be list of check items)"
+- ts: "2026-03-23T05:28:08+09:00", file: "/tmp/report_tpl.41nuSX/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is dict (must be list of check items)"
+- ts: "2026-03-23T05:28:08+09:00", file: "/tmp/report_tpl.VXoV33/report.yaml", result: FAIL, reasons: "lesson_candidate: found=false but no no_lesson_reason"
+- ts: "2026-03-23T05:28:31+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:28:32+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:28:33+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:28:34+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:28:35+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:29:22+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:29:22+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:29:24+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:29:24+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:29:25+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:30:15+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:30:16+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:30:17+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:30:18+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:30:19+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:31:19+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:31:20+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:31:21+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:31:22+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:31:23+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:31:48+09:00", file: "/tmp/report_tpl.SyuAxg/report.yaml", result: PASS
+- ts: "2026-03-23T05:31:48+09:00", file: "/tmp/report_tpl.XOKzSK/report.yaml", result: PASS
+- ts: "2026-03-23T05:31:48+09:00", file: "/tmp/report_tpl.iA2w6m/report.yaml", result: FAIL, reasons: "binary_checks: is string (must be dict with AC entries)"
+- ts: "2026-03-23T05:31:48+09:00", file: "/tmp/report_tpl.UwParB/report.yaml", result: FAIL, reasons: "lessons_useful: null (must be list of dicts, not null)"
+- ts: "2026-03-23T05:31:48+09:00", file: "/tmp/report_tpl.a0QbB1/report.yaml", result: FAIL, reasons: "lesson_candidate: found=true but no title"
+- ts: "2026-03-23T05:31:49+09:00", file: "/tmp/report_tpl.u6oEXh/report.yaml", result: FAIL, reasons: "verdict: \"CONDITIONAL_PASS\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:31:49+09:00", file: "/tmp/report_tpl.vyUzqv/report.yaml", result: PASS
+- ts: "2026-03-23T05:31:49+09:00", file: "/tmp/report_tpl.bfjHtr/report.yaml", result: PASS
+- ts: "2026-03-23T05:31:49+09:00", file: "/tmp/report_tpl.HDAVWK/report.yaml", result: FAIL, reasons: "verdict: \"None\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:31:49+09:00", file: "/tmp/report_tpl.X0jcVw/report.yaml", result: FAIL, reasons: "verdict: \"\" is not valid (must be \"PASS\" or \"FAIL\")"
+- ts: "2026-03-23T05:31:49+09:00", file: "/tmp/report_tpl.AOpnoA/report.yaml", result: FAIL, reasons: "lessons_useful: is dict (must be list). Use \"- id: L001\" not \"0: {id: L001}\". Numbered keys are not YAML lists"
+- ts: "2026-03-23T05:31:50+09:00", file: "/tmp/report_tpl.4DigV8/report.yaml", result: FAIL, reasons: "lessons_useful[0]: missing \"id\" field (must have lesson ID like L074)"
+- ts: "2026-03-23T05:31:50+09:00", file: "/tmp/report_tpl.J8rAJm/report.yaml", result: FAIL, reasons: "lessons_useful[0]: useful=yes is str (must be true or false)"
+- ts: "2026-03-23T05:31:50+09:00", file: "/tmp/report_tpl.eAt4ii/report.yaml", result: FAIL, reasons: "lessons_useful[0]: contains FILL_THIS (must fill actual values); lessons_useful[0]: useful=FILL_THIS is str (must be true or false)"
+- ts: "2026-03-23T05:31:50+09:00", file: "/tmp/report_tpl.ifXURA/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is str (must be list of check items)"
+- ts: "2026-03-23T05:31:50+09:00", file: "/tmp/report_tpl.CcLWEM/report.yaml", result: FAIL, reasons: "binary_checks.AC1: is dict (must be list of check items)"
+- ts: "2026-03-23T05:31:50+09:00", file: "/tmp/report_tpl.yasiOG/report.yaml", result: FAIL, reasons: "lesson_candidate: found=false but no no_lesson_reason"
+- ts: "2026-03-23T05:32:21+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kagemaru_report.yaml", result: PASS
+- ts: "2026-03-23T05:32:22+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/hanzo_report.yaml", result: PASS
+- ts: "2026-03-23T05:32:23+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report.yaml", result: PASS
+- ts: "2026-03-23T05:32:24+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/kotaro_report.yaml", result: PASS
+- ts: "2026-03-23T05:32:25+09:00", file: "/mnt/c/tools/multi-agent-shogun/queue/reports/tobisaru_report.yaml", result: PASS
