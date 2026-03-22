@@ -449,3 +449,37 @@ entries: []
     supplementary_cmds: 0
     timestamp: "2026-03-22T16:33:25Z"
     notes: "report_yaml_missing:kagemaru_report_cmd_1277.yaml"
+  - cmd_id: "cmd_1277"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T16:36:35Z"
+  - cmd_id: "cmd_1279"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T16:38:22Z"
+    notes: "report_yaml_missing:saizo_report_cmd_1279.yaml"
+  - cmd_id: "cmd_1279"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T16:40:01Z"
+  - cmd_id: "cmd_1282"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T16:52:32Z"
+    notes: "report_yaml_missing:hayate_report_cmd_1282.yaml|report_yaml_missing:tobisaru_report_cmd_1282.yaml"

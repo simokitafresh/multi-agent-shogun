@@ -680,14 +680,17 @@ try:
         print('[INJECT] No project field, set related_lessons: []', file=sys.stderr)
         sys.exit(0)
 
-    lessons_path = os.path.join(script_dir, 'projects', project, 'lessons.yaml')
+    # Vercel-style: archive has full data, index is slim. Try archive first, fallback to index.
+    archive_path = os.path.join(script_dir, 'projects', project, 'lessons_archive.yaml')
+    index_path = os.path.join(script_dir, 'projects', project, 'lessons.yaml')
+    lessons_path = archive_path if os.path.exists(archive_path) else index_path
     lessons = []
     if os.path.exists(lessons_path):
         with open(lessons_path) as f:
             lessons_data = yaml.safe_load(f)
         lessons = lessons_data.get('lessons', []) if lessons_data else []
     else:
-        print(f'[INJECT] WARN: lessons.yaml not found for project={project}', file=sys.stderr)
+        print(f'[INJECT] WARN: lessons not found for project={project}', file=sys.stderr)
 
     # ═══ Platform教訓の追加読み込み ═══
     projects_yaml_path = os.path.join(script_dir, 'config', 'projects.yaml')
@@ -698,7 +701,10 @@ try:
                 pdata = yaml.safe_load(pf)
             for pj in (pdata or {}).get('projects', []):
                 if pj.get('type') == 'platform' and pj.get('id') != project:
-                    plat_path = os.path.join(script_dir, 'projects', pj['id'], 'lessons.yaml')
+                    # Try archive first, fallback to index for platform lessons too
+                    plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
+                    plat_index = os.path.join(script_dir, 'projects', pj['id'], 'lessons.yaml')
+                    plat_path = plat_archive if os.path.exists(plat_archive) else plat_index
                     if os.path.exists(plat_path):
                         with open(plat_path) as plf:
                             plat_data = yaml.safe_load(plf)

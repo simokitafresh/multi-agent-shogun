@@ -389,3 +389,4 @@
 | cmd_1265 | report_field_set.sh強制hook — 忍者の直接Edit禁止で源流から構造不正防止 | infra | 03-23 | — |
 | cmd_1275 | GS混乱候補スクリプト7本削除 — 忍法スクリプト誤用防止 | dm-signal | 03-23 | — |
 | cmd_1277 | deploy_task.sh配備高速化 — preflight_gate_artifacts()からarchive_completed.sh呼出を除去し、配備時間を50秒→5秒に短縮する | infra | 03-23 | — |
+| cmd_1279 | gate発火ログ計測基盤の構築 — gate_report_format.shの発火・結果をログに記録し、gate効果の定量的計測を可能にする | infra | 03-23 | — |
