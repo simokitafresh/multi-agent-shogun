@@ -2,6 +2,29 @@
 # inbox_write.sh — メールボックスへのメッセージ書き込み（排他ロック付き）
 # Usage: bash scripts/inbox_write.sh <target_agent> <content> [type] [from]
 # Example: bash scripts/inbox_write.sh karo "半蔵、任務完了" report_received hanzo
+#
+# Supported types:
+#   wake_up              — デフォルト。汎用起動通知
+#   task_assigned        — タスク配備通知（家老→忍者）
+#   task_cancel          — タスク取消通知（家老→忍者）
+#   cmd_new              — 新cmd通知（将軍→家老）
+#   report_received      — 忍者報告完了通知（忍者→家老）※報告YAML検証+auto-done hookあり
+#   uncommitted_block    — 未commitブロック通知
+#   review_draft         — draft cmdレビュー依頼（家老→軍師）
+#   review_result        — レビュー結果（軍師→家老）
+#   review_feedback      — GATEフィードバック（家老→軍師）
+#   report_review        — 忍者報告一次レビュー依頼（家老→軍師）
+#   report_review_result — 忍者報告レビュー結果（軍師→家老）
+#   workaround_feedback  — workaround原因共有（家老→軍師）
+#   review_hint          — レビューヒント（家老→軍師）
+#   analysis_result      — idle時データ分析結果（軍師→家老）
+#   gunshi_lesson_candidate — 軍師教訓候補（軍師→家老）
+#   decomposition_feedback  — 分解フィードバック（軍師→家老）
+#   verify_request       — RC修正再検証依頼（家老→軍師）
+#   verify_result        — RC修正再検証結果（軍師→家老）
+#   clear_command        — /clear送信（特殊: inbox_watcherがCLI直接操作）
+#   model_switch         — /model切替（特殊: inbox_watcherがCLI直接操作）
+#   recovery             — 復帰通知
 
 set -e
 
