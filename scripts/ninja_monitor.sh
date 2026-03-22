@@ -686,7 +686,8 @@ is_task_deployed() {
                 gate_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
                 gate_key="${name}:${gate_parent_cmd}"
                 # ─── uncommittedチェック（cmd_1263: commit未完了検出 — gate前にBLOCK） ───
-                if [ "${UNCOMMITTED_BLOCK_SENT[$gate_key]}" != "1" ]; then
+                # done/idle状態の忍者にはcommit催促を送らない（/clear妨害防止）
+                if [ "${UNCOMMITTED_BLOCK_SENT[$gate_key]}" != "1" ] && [ "$task_status" != "done" ] && [ "$task_status" != "idle" ]; then
                     local uncommit_project_id uncommit_project_path uncommit_files
                     uncommit_project_id=$(yaml_field_get "$task_file" "project")
                     uncommit_project_path="$SCRIPT_DIR"
