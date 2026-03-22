@@ -1,0 +1,53 @@
+worker_id: saizo
+task_id: cmd_1288_AC1-3
+parent_cmd: cmd_1288
+timestamp: '2026-03-23T07:28:22'
+status: done
+ac_version_read: e29686ba
+result:
+  summary: SG7完全パッケージ全3AC検証完了。commit dd36b6bで全実装済み。gunshi_review_log.yaml(SG7プロトコル定義)、karo-operations.md(バンドル受領手順)、gunshi.md(LGTMテンプレート+バンドルフォーマット)の3ファイルに仕様・手順・テンプレートが正しく配置
+  details: 'AC1: gunshi_review_log.yaml L79-106にSG7プロトコル完全定義。5コンポーネント(gate_precheck/lesson_extraction/context_reflux/dashboard_line/karo_workaround_needed)の出力フォーマット仕様+運用ルール。AC2:
+    karo-operations.md L89-104にSG7バンドル受領→スタンプ+ペースト手順。6ステップ表+フォールバック定義。AC3: gunshi.md
+    L330-361にSG7バンドルテンプレート。L396-397にLGTM時inbox_write通知テンプレート(バンドル付き)。全てcommit dd36b6bで確定済み'
+purpose_validation:
+  cmd_purpose: 家老後処理5ステップを1バンドルに圧縮し家老CTXを解放する
+  fit: true
+  purpose_gap: ''
+files_modified:
+- logs/gunshi_review_log.yaml
+- context/karo-operations.md
+- instructions/gunshi.md
+lesson_candidate:
+  found: false
+  no_lesson_reason: 全実装がcommit dd36b6bで既に完了済み。手順定義タスクであり新規技術知見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+  '[0]':
+    reason: bash/shellスクリプト系タスクではないため該当せず
+  '[1]':
+    reason: MCP entity操作なし
+  '[2]':
+    reason: lessons.yaml操作なし
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+    '[0]':
+      result: PASS(gunshi_review_log.yaml L79-106にSG7プロトコル定義。5コンポーネント+出力フォーマット+運用ルール完備。commit
+        dd36b6bで確定)
+  AC2:
+    '[0]':
+      result: PASS(karo-operations.md L89-104にSG7バンドル受領→スタンプ+ペースト手順。6ステップ表+フォールバック定義。commit
+        dd36b6bで確定)
+  AC3:
+    '[0]':
+      result: PASS(gunshi.md L330-361にSG7バンドルテンプレート+L396-397にLGTM通知テンプレート(バンドル付き)。commit
+        dd36b6bで確定)
+verdict: PASS
