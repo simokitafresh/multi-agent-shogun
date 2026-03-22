@@ -53,6 +53,13 @@ safe_send_keys() { :; }
 safe_send_keys_atomic() { :; }
 STUB
 
+    # script_update.sh stub（ntfy_listener.sh line 23がsourceするため必要）
+    cat > "$MOCK_PROJECT/scripts/lib/script_update.sh" << 'STUB'
+#!/bin/bash
+compute_deps_hash() { echo ""; }
+check_script_update() { :; }
+STUB
+
     # ntfy_inbox初期化
     echo "inbox:" > "$MOCK_PROJECT/queue/ntfy_inbox.yaml"
 
