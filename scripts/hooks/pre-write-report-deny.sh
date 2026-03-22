@@ -31,8 +31,8 @@ if [ -z "$file_path" ]; then
     exit 0
 fi
 
-# Check if file matches report YAML pattern: queue/reports/*_report_*.yaml
-if [[ "$file_path" =~ queue/reports/.*_report_.*\.yaml$ ]]; then
+# Check if file matches report YAML pattern: queue/reports/*_report*.yaml
+if [[ "$file_path" =~ queue/reports/.*_report.*\.yaml$ ]]; then
     # Allow if called via report_field_set.sh (defensive bypass)
     if [ "${REPORT_FIELD_SET_ACTIVE:-}" = "1" ]; then
         exit 0
