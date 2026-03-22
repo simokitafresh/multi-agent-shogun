@@ -668,16 +668,7 @@ try:
         sys.exit(0)
 
     if not project:
-        task['related_lessons'] = []
-        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-        try:
-            with os.fdopen(tmp_fd, 'w') as f:
-                yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-            os.replace(tmp_path, task_file)
-        except:
-            os.unlink(tmp_path)
-            raise
-        print('[INJECT] No project field, set related_lessons: []', file=sys.stderr)
+        print('[INJECT] No project field, skipping lesson injection', file=sys.stderr)
         sys.exit(0)
 
     # Vercel-style: archive has full data, index is slim. Try archive first, fallback to index.
