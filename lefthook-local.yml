@@ -1,2 +1,0 @@
-# Local Lefthook overrides. Keep repo defaults in `lefthook.yml`.
-pre-commit: {}
