@@ -327,11 +327,48 @@ verdict判断基準:
 - **LGTM**: 4観点全てOK。家老スタンプのみで完了可能
 - **FAIL**: 1つ以上の観点でNG。fail_reasonsに具体的不備を記載
 
+### SG7バンドル（verdict=LGTM時のみ） [cmd_1288]
+
+verdict=LGTM時、inbox_writeメッセージ末尾に以下のバンドルを付与せよ。
+家老はこのバンドルをペーストするだけで後処理（教訓・context還流・dashboard）を完了できる。
+
+```
+--- SG7 bundle ---
+gate_precheck:
+  report_format: PASS        # gate_report_format.sh結果
+  commit_verified: true       # files_modifiedの各ファイルにcmd_idのcommit存在
+  gate_prediction: CLEAR      # 上記2項からGATE通過を予測(CLEAR/WARN)
+lesson_extraction:
+  has_candidate: true         # lesson_candidateが存在するか
+  summary: "{教訓の1行要約}"   # has_candidate=true時のみ
+  register_recommended: true  # 正式登録推奨か(一般論=false, 再利用可能な具体知見=true)
+context_reflux:
+  needed: false               # context索引の更新が必要か
+  target: ""                  # needed=true時のみ。更新すべきcontext/*.mdパス
+  content: ""                 # needed=true時のみ。更新内容の1行要約
+dashboard_line: "cmd_XXXX {ninja} PASS。{成果1行要約}。workaround: no"
+karo_workaround_needed: no    # yes=家老の手動修正が必要, no=スタンプのみで完了
+--- SG7 bundle end ---
+```
+
+バンドル各項の判定基準:
+- **gate_precheck**: SG2(commit確認)+gate_report_format.sh結果を記載。両方OKならCLEAR予測
+- **lesson_extraction**: 報告のlesson_candidateを読み、一般論でなく再利用可能な具体知見かを判定
+- **context_reflux**: 報告に数値・事実・設計決定が含まれる場合needed=true。対象contextと内容を特定
+- **dashboard_line**: `cmd_XXXX {ninja} {verdict}。{成果1行}。workaround: {yes/no}` 形式で事前ドラフト
+- **karo_workaround_needed**: 報告に手動修正が必要な不備があるか。LGTMの場合は通常no
+
+verdict=FAIL時はバンドル不要。fail_reasonsのみ出力せよ。
+
 ### 通知手順
 
 レビュー完了後、家老にinbox_writeで送信:
 ```bash
-bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: {LGTM/FAIL}。{findings}" report_review_result gunshi
+# LGTM時（SG7バンドル付き）
+bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: LGTM。4観点OK。--- SG7 bundle --- gate_precheck: report_format: PASS, commit_verified: true, gate_prediction: CLEAR lesson_extraction: has_candidate: {true/false}, summary: {要約}, register_recommended: {true/false} context_reflux: needed: {true/false}, target: {path}, content: {要約} dashboard_line: cmd_XXXX {ninja} PASS。{成果}。workaround: no karo_workaround_needed: no --- SG7 bundle end ---" report_review_result gunshi
+
+# FAIL時（バンドルなし）
+bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: FAIL。{fail_reasons}" report_review_result gunshi
 ```
 
 ### ログ記録
@@ -355,6 +392,72 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
 | verdict | APPROVE/REQUEST_CHANGES/REJECT | LGTM/FAIL |
 | 通知type | review_result | report_review_result |
 | review_type | draft | report |
+
+## Re-verification Protocol — RC修正再検証
+
+REQUEST_CHANGES指摘の修正が実装された後、家老からverify_request（type: verify_request）を受信した際の再検証手順。
+
+### トリガー
+
+家老がREQUEST_CHANGESの修正実装完了後にverify_requestを送信。メッセージに元のcmd_id、修正忍者名、修正概要が含まれる。
+
+### 再検証3問チェック
+
+以下の3問に対して二値（PASS/FAIL）で判定せよ。
+
+1. **指摘解消**: 元のREQUEST_CHANGESで指摘した問題が修正されたか？
+   - 元の指摘内容（`logs/gunshi_review_log.yaml`の該当エントリ）と修正結果を照合
+   - 部分修正や回避策ではなく、根本的に解消されているか確認
+
+2. **副作用不在**: 修正により新たな問題が発生していないか？
+   - 修正箇所の周辺コード・手順への影響を確認
+   - 元の指摘範囲外に波及する変更がないか検証
+
+3. **品質維持**: 修正後も元cmdの目的・品質基準を満たしているか？
+   - ACの二値チェックが全てPASSを維持しているか
+   - 修正により元の設計意図が損なわれていないか確認
+
+### 判定基準
+
+- **VERIFIED**: 3問全てPASS。修正は完全に反映済み
+- **UNVERIFIED**: 1問以上FAIL。具体的な未解消事項を明記
+
+### 出力フォーマット（verify_result）
+
+```yaml
+verify_verdict: VERIFIED / UNVERIFIED
+checks:
+  issue_resolved: PASS/FAIL
+  no_side_effects: PASS/FAIL
+  quality_maintained: PASS/FAIL
+unresolved_items:  # UNVERIFIED時のみ
+  - "{未解消事項の具体的記述}"
+round: 1  # 何回目の再検証か（max 3）
+```
+
+### 通知手順
+
+再検証完了後、家老にinbox_writeで送信:
+```bash
+bash scripts/inbox_write.sh karo "cmd_XXXX verify_result: {VERIFIED/UNVERIFIED}。{findings}" verify_result gunshi
+```
+
+### 回数制限
+
+- 再検証は最大3回まで。3回UNVERIFIEDの場合は家老にエスカレーション（家老がフルレビューに切替）
+- 各ラウンドのround番号をverify_resultに含める
+
+### ログ記録
+
+再検証完了時に `logs/gunshi_review_log.yaml` にエントリ追記:
+```yaml
+- cmd_id: cmd_XXXX
+  review_type: verify          # draft / report / verify
+  verdict: VERIFIED            # VERIFIED / UNVERIFIED
+  round: 1
+  findings_summary: "3問PASS、指摘解消確認"
+  timestamp: "2026-03-23T03:00:00"
+```
 
 ## Feedback Processing — GATEフィードバック処理
 

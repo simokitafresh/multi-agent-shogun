@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 189件 (draft:86, report:92, self_study:18) | 2026-03-20〜
+# 累計: 190件 (draft:87, report:92, self_study:18) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -13,23 +13,24 @@
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
 # 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)
-# ─── GP追跡表(S35構造化) ───
+# ─── GP追跡表(S37総点検:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
 # | 002 | bc事前生成             | ★implemented      | S6   | cmd_1260 |
-# | 003 | PreToolUse DENY昇格   | design_complete    | S36  | 設計完了。家老にcmd起票推奨済 |
-# | 004 | SG7完全パッケージ      | pending(再定義2回) | S18  | 家老CTX解放目的 |
-# | 005 | 配備タイムラグ計測     | pending            | S18  | deploy_task.sh改修 |
-# | 006 | preflight archive除去  | karo_accepted      | S20  | 配備50秒→10秒 |
+# | 003 | PreToolUse DENY昇格   | ★implemented      | S36  | cmd_1284でdeny復元済。別hook不要 |
+# | 004 | SG7完全パッケージ      | pending(再定義2回) | S18  | 家老CTX解放。設計未安定。優先3 |
+# | 005 | 配備タイムラグ計測     | ✗obsolete          | S18  | DEPLOYED_AT既存+54秒高速。計測不要 |
+# | 006 | preflight archive除去  | ★implemented      | S20  | deploy_task.shから除去済 |
 # | 007 | 品質至上SG明示         | ★implemented      | S21  | SG protocol内 |
-# | 008 | Vercel化全量           | karo_sent          | S23  | cmd_1280-1282で一部実施 |
+# | 008 | Vercel化全量           | ✗obsolete          | S23  | cmd_1280-1282で完了。全context<500行 |
 # | 009 | SG8 4類型              | ★implemented      | S27  | SG8プロトコル内 |
-# | 010 | GP-003最優先化         | →GP-003に統合      | S28  | S34でurgent再確認 |
-# | 011 | ninja rate計測         | pending            | S28  | startup gate表示 |
-# | 012 | RC再検証フロー         | design_complete    | S30  | 8Phase設計済。cmd待ち |
+# | 010 | GP-003最優先化         | ★implemented      | S28  | 親GP-003がcmd_1284で完了 |
+# | 011 | ninja rate計測         | pending            | S28  | 低優先。workaround率14%。優先4 |
+# | 012 | RC再検証フロー         | design_complete    | S30  | 8Phase設計済。cmd待ち。優先2 |
 # | 013 | GP追跡表構造化         | ★implemented      | S31  | S35で本ヘッダに実装 |
-# | 014 | commit層gate           | pending            | S33  | git status→BLOCK |
-# 集計: implemented:5 / urgent:1 / design_complete:1 / karo_sent:1 / karo_accepted:1 / pending:4 / 統合:1
+# | 014 | commit層gate           | pending            | S33  | commit_missing35%根絶。優先1 |
+# 集計: ★implemented:8 / ✗obsolete:2 / pending:2 / design_complete:1 / pending低:1
+# 将軍推薦順: GP-014→GP-012→GP-004→GP-011
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -63,6 +64,27 @@
 #     (e) karo_workaround_needed: yes/no（家老の手動修正が必要か事前判定）
 #   □ 目的: 家老の後処理5ステップ→1ステップ(stamp)に圧縮。家老の時間をCMD分解に解放
 #   □ 計測: SG7適用前後の家老CMD→配備タイムラグ変化で効果検証
+#   □ バンドル出力フォーマット仕様（verdict=LGTM時にinbox_writeメッセージ末尾に付与）:
+#     --- SG7 bundle ---
+#     gate_precheck:
+#       report_format: PASS/FAIL      # gate_report_format.sh結果
+#       commit_verified: true/false    # files_modifiedの各ファイルにcmd_idのcommit存在
+#       gate_prediction: CLEAR/WARN   # 上記2項からGATE通過を予測
+#     lesson_extraction:
+#       has_candidate: true/false      # lesson_candidateが存在するか
+#       summary: "{教訓の1行要約}"      # has_candidate=true時のみ
+#       register_recommended: true/false  # 正式登録を推奨するか(一般論=false, 再利用可能な具体知見=true)
+#     context_reflux:
+#       needed: true/false             # context索引の更新が必要か
+#       target: "{context/*.mdパス}"   # needed=true時のみ。更新すべきcontextファイル
+#       content: "{更新内容の1行要約}" # needed=true時のみ
+#     dashboard_line: "cmd_XXXX {ninja} PASS。{成果1行要約}。workaround: no"
+#     karo_workaround_needed: no       # yes=家老の手動修正が必要, no=スタンプのみで完了
+#     --- SG7 bundle end ---
+#   □ 運用ルール:
+#     - verdict=LGTM時のみ出力。FAIL時はfail_reasonsのみ（バンドル不要）
+#     - 家老はバンドルを受領→内容確認→stamp(PASS)+ペースト(dashboard/教訓/context)で完了
+#     - gate_precheck.gate_prediction=WARNの場合、家老は自らGATEを確認してから進行
 # SG8: 自動消火チェック (2026-03-23 — cmd_1278教訓 + S27遡及検証で4類型追加)
 #   □ 全draftレビュー時に以下4類型を順にチェック:
 #     TypeA(根本原因推測): 根本原因が「推測」「〜と思われる」のままAPPROVEしていないか？
@@ -612,7 +634,7 @@
 - cmd_id: cmd_1285
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "gate_karo_startup.sh作成(5項目)。参照実装(gate_shogun_startup.sh)あり。Phase4直接適用(意志依存→自動強制)。3AC/4bc。SG8:PASS(根本解消)。confidence:HIGH"
   timestamp: "2026-03-23T02:58:00"
 - cmd_id: cmd_1283
@@ -633,3 +655,9 @@
   findings_summary: "🚨要対応清掃+reports deny復元。commit 97b62e7確認。2AC全充足。report形式良好(全フィールド完備/verdict二値)"
   lesson_quality: OK
   timestamp: "2026-03-23T02:59:00"
+- cmd_id: cmd_1286
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "GP-014 commit層gate。inbox_write.sh既存gate構造に乗る最小実装。WARNING段階的導入。commit_missing35%構造根絶。SG8:PASS。confidence:HIGH"
+  timestamp: "2026-03-23T03:00:00"
