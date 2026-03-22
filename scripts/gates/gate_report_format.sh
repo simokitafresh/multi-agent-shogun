@@ -136,8 +136,23 @@ else:
 " 2>&1) || true
 
 echo "$RESULT"
+
+# --- Gate fire logging (cmd_1279) ---
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+LOG_FILE="$REPO_ROOT/logs/gate_fire_log.yaml"
+TS=$(date -Is)
+
 if echo "$RESULT" | grep -q "^PASS"; then
+    (
+        flock -w 5 200 2>/dev/null
+        printf -- '- ts: "%s", file: "%s", result: PASS\n' "$TS" "$REPORT_PATH" >> "$LOG_FILE"
+    ) 200>"$LOG_FILE.lock" 2>/dev/null || true
     exit 0
 else
+    REASONS=$(echo "$RESULT" | head -1 | sed 's/^FAIL: //' | sed 's/"/\\"/g')
+    (
+        flock -w 5 200 2>/dev/null
+        printf -- '- ts: "%s", file: "%s", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
+    ) 200>"$LOG_FILE.lock" 2>/dev/null || true
     exit 1
 fi
