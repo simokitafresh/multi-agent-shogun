@@ -21,7 +21,15 @@ if [ "$SCORE_TYPE" != "helpful" ] && [ "$SCORE_TYPE" != "harmful" ] && [ "$SCORE
     exit 1
 fi
 
-CACHE_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
+# Vercel化済みPJはlessons_archive.yaml(詳細層)に書込み、索引(lessons.yaml)を触らない
+ARCHIVE_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons_archive.yaml"
+FALLBACK_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
+
+if [ -f "$ARCHIVE_FILE" ]; then
+    CACHE_FILE="$ARCHIVE_FILE"
+else
+    CACHE_FILE="$FALLBACK_FILE"
+fi
 LOCKFILE="${CACHE_FILE}.lock"
 
 if [ ! -f "$CACHE_FILE" ]; then
