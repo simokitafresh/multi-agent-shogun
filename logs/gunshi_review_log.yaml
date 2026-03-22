@@ -37,8 +37,9 @@
 # | 021 | ninja-adaptive注入    | pending            | S43  | deploy_task.sh忍者名ベース失敗パターン注入。次世代 |
 # | 022 | bc evidence必須化     | pending            | S43  | binary_checksにevidence(出力snippet)必須。次世代 |
 # | 023 | SG9 cross-ninja検出   | pending            | S43  | LGTM前に忍者workaround履歴チェック。次世代 |
-# 集計: ★implemented:14 / ✗obsolete:2 / pending:4(cmd化済) / pending(次世代):3
-# 将軍推薦順: GP-016→GP-018→GP-019→GP-020 | 次世代: GP-021→GP-023→GP-022
+# | 024 | archive race根本修正  | pending            | S44  | review_gate.doneトリガー欠落。cmd_1291不十分。優先1 |
+# 集計: ★implemented:14 / ✗obsolete:2 / pending:4(cmd化済) / pending(次世代):4
+# 将軍推薦順: GP-024→GP-016→GP-018→GP-019→GP-020 | 次世代: GP-021→GP-023→GP-022
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -921,3 +922,11 @@
       description: "SG9 cross-ninja pattern検出 — LGTM前に当該忍者のworkaround履歴チェック"
       status: pending
   timestamp: "2026-03-23T03:45:00"
+- cmd_id: self_study_S44
+  review_type: self_study
+  findings_summary: "予測と事前対応。deepdive Phase4-5追体験→予測の目的は自動化ターゲット特定。(1)archive race再発: cmd_1295-1300全6件がreview前にarchive済み。cmd_1291修正不十分(review_gate.doneマーカー0件)。自動化ターゲット=review_gate.done作成トリガー欠落。(2)GP実装効果予測: GP-003+016でreport_yaml_format52%根絶見込み(次の非infraバッチで検証)。GP-014+018でcommit_missing17%完全根絶見込み。(3)DM-Signal切替予測: infra改善完了→本番DB登録へ。production_invariantsチェックをSGに組込む必要あり。(4)cmd_1299 commitトレーサビリティ欠落: karo一括commit吸収。(5)6件の報告を事前検証完了(SG0全PASS、commit存在確認済)→レビュー依頼到着次第即送信可能"
+  proposals:
+    - id: GP-024
+      description: "archive race根本修正 — deploy_task.shのreview_gate.done placeholderがarchive_completed.shを騙す。archive側でsource:deploy_preflightをSKIP条件に追加"
+      status: pending
+  timestamp: "2026-03-23T03:55:00"
