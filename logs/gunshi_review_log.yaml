@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 219件 (draft:99, report:101, self_study:25) | 2026-03-20〜
+# 累計: 229件 (draft:101, report:108, self_study:26) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -945,3 +945,69 @@
     dashboard_line: "cmd_1301 kagemaru PASS。gate_shogun_startup.sh grep -c修正。workaround: no"
     karo_workaround_needed: no
   timestamp: "2026-03-23T04:05:00"
+- cmd_id: cmd_1302
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "archive timing修正。preflight→deferred+GATE CLEAR後実行。commit 848b961確認。sweep modeギャップ残存(GP-024)。confidence:HIGH"
+  timestamp: "2026-03-23T04:08:00"
+- cmd_id: cmd_1303
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "uncommitted scope修正。grep -v -E 6パターン除外。porcelain形式整合。over-filtering低リスク。commit 848b961確認。confidence:HIGH"
+  timestamp: "2026-03-23T04:08:00"
+- cmd_id: cmd_1295
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1295
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "gate_gunshi_startup.sh git追跡。SG0 PASS。commit 66b6f1b確認。AC1 PASS(git ls-files出力あり)"
+  lesson_quality: N/A
+  timestamp: "2026-03-23T04:10:00"
+- cmd_id: cmd_1296
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1296
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "ninja_monitor uncommittedチェック。SG0 PASS(archive版)。commit 848b961(karo一括)。4bc全PASS。手動テスト確認済み"
+  lesson_quality: N/A
+  timestamp: "2026-03-23T04:10:00"
+- cmd_id: cmd_1297
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1297
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "教訓退役制度。SG0 PASS。commit fbaad48確認。lesson_write.sh --retire+deploy_task.sh filter+sync_lessons.sh対応。AC1-3全PASS"
+  lesson_quality: N/A
+  timestamp: "2026-03-23T04:10:00"
+- cmd_id: cmd_1298
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1298
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "Bash report検出hook。SG0 PASS。commit a6c5851確認。pre-bash-report-deny.sh+settings.local.json。10テスト全PASS。GP-016完遂"
+  lesson_quality: N/A
+  timestamp: "2026-03-23T04:10:00"
+- cmd_id: cmd_1299
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1299
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "L247 gate強制。SG0 PASS。commit ad8da00(karo一括、専用commitなし)。gate_report_format.shにfound:false reason品質チェック3件追加。7テスト全PASS"
+  lesson_quality: N/A
+  timestamp: "2026-03-23T04:10:00"
+- cmd_id: cmd_1300
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1300
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "lesson_harvest.sh。SG0 PASS(archive版)。commit fd9727c確認。archive報告2194件スキャン→未登録候補227件検出。GP-020完遂"
+  lesson_quality: N/A
+  timestamp: "2026-03-23T04:10:00"

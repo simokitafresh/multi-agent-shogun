@@ -7,12 +7,12 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  progress: 'AC1-AC2 PASS。AC3 partial FAIL: gate_gunshi_startup.shが.gitignore除外で未commit'
+  progress: 'AC1-AC3全PASS。cmd_1283で対応済み。追加コード変更なし。'
   related_lessons: []
   report_filename: tobisaru_report.yaml
   report_path: queue/reports/tobisaru_report.yaml
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: idle
+  status: done
   stop_for: []
   task:
     ac_version: f3931e7c

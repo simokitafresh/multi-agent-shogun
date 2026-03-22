@@ -3819,7 +3819,7 @@ except:
             echo "  [INFO] archive: WARN (failed, non-blocking)"
         fi
     else
-        echo "  archive: already done (skip)"
+        echo "  archive: already exists (skip)"
     fi
 
     exit 0
