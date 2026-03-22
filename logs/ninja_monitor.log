@@ -8989,3 +8989,13 @@ OK: dashboard.md auto section updated (05:52)
   ⏵⏵ bypass permissions on (shift+tab to cycle)
 ---
 [2026-03-23 05:54:38] CLEAR-SEND: hanzo confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 05:54:43] UNCOMMITTED-BLOCK: saizo files=logs/cmd_design_quality.yaml logs/inbox_watcher_hanzo.log logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/ninja_monitor.log logs/shogun_action_log.txt 
+[2026-03-23 05:54:43] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for saizo (saizo:cmd_1308) — STALL検知は継続
+[pre-send capture] saizo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
