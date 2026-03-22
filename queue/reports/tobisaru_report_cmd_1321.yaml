@@ -1,0 +1,69 @@
+worker_id: tobisaru
+task_id: cmd_1321_AC1-3
+parent_cmd: cmd_1321
+timestamp: '2026-03-23T07:10:24'
+status: done
+ac_version_read: 85a608b9
+result:
+  summary: deploy_task.shの8箇所にcmd_1312方式の冪等性ガード(inject前フィールドクリア)を横展開。Python一括クリアブロックで12フィールドを削除後、各inject関数が再注入する構造。batsテスト36/36
+    PASS。
+  details: 'L2769-2831に一括クリアPythonブロック追加。対象12フィールド: engineering_preferences, reports_to_read,
+    context_files, role_reminder, report_template, bloom_level, stop_for, never_stop_for,
+    ac_priority, ac_checkpoint, parallel_ok, ninja_weak_points。task_id, deployed_at,
+    report_filename(cmd_1312済み)は除外。'
+purpose_validation:
+  cmd_purpose: deploy_task.shの冪等性確保。前cmdの残留値が新cmdに混入する問題を防止
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/deploy_task.sh
+lesson_candidate:
+  found: false
+  no_lesson_reason: cmd_1312の既存パターンの横展開。新たな知見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: ''
+- id: L225
+  useful: false
+  reason: ''
+- id: L063
+  useful: false
+  reason: ''
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 1
+  details: 'ShellCheck: heredoc内fiの位置誤り(SC1046)。fiをheredocデリミタ後に移動して解決'
+binary_checks:
+  AC1:
+  - check: engineering_preferences inject前にクリアされるか
+    result: PASS
+  - check: reports_to_read inject前にクリアされるか
+    result: PASS
+  - check: context_files inject前にクリアされるか
+    result: PASS
+  - check: role_reminder inject前にクリアされるか
+    result: PASS
+  - check: report_template inject前にクリアされるか
+    result: PASS
+  - check: bloom_level inject前にクリアされるか
+    result: PASS
+  - check: exec_control inject前にクリアされるか
+    result: PASS
+  - check: ninja_weak_points inject前にクリアされるか
+    result: PASS
+  AC2:
+  - check: task_idがクリアされないことを確認
+    result: PASS
+  - check: deployed_atがクリアされないことを確認
+    result: PASS
+  AC3:
+  - check: bats tests/ 全テストPASSか
+    result: PASS (36/36 OK, 0 FAIL, 0 SKIP)
+verdict: PASS
