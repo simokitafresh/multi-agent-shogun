@@ -1,0 +1,197 @@
+insights:
+- id: INS-20260323-040210
+  ts: '2026-03-23T04:02:10+09:00'
+  insight: 'GP総点検完了後の検証ポイント: (1)次10cmd完了時にworkaround率を再計測。目標<15%。63.9%→15%未達ならGP効果不十分で追加対策要。(2)cmd_1302完了後にGATE
+    CLEAR連勝再開を確認。(3)忍者別再犯率(疾風6回が最多)のpost-GP推移を追跡。GP-021(ninja-adaptive)の必要性判断材料。'
+  priority: medium
+  source: manual
+  status: done
+  resolved: GP-021→cmd_1307起票。post-GP計測→cmd_1308で自動化
+- id: INS-20260323-040426
+  ts: '2026-03-23T04:04:26+09:00'
+  insight: '自己研鑽Session 2026-03-23 成果: (1)startup gate grep-c anti-pattern修正(cmd_1301)
+    (2)GATE外完了根絶のarchive timing修正(cmd_1302) (3)uncommitted scope修正(cmd_1303) (4)dead
+    reference cleanup(cmd_1304) (5)Vercel archive切替(cmd_1305)。総計5cmd自発起票。次セッション: post-GP
+    workaround率計測(目標<15%,現在63.9%)。GP-022(evidence field)をGP完了後に起票。'
+  priority: medium
+  source: manual
+  status: done
+  resolved: 記録済み。cmd_1306-1308でさらに発展
+- id: INS-20260323-042539
+  ts: '2026-03-23T04:25:39+09:00'
+  insight: 'GP追跡表status stale: 28件pending表示だが18件は実装済み。review_log headerのGP status更新が追いついていない。gunshiの自己研鑽で更新すべき
+    or 家老が次回review時に更新指示'
+  priority: medium
+  source: manual
+  status: done
+  resolved: S42+S47で全GP追跡表更新完了。21 implemented/1 monitoring/3 obsolete/1 pending
+- id: INS-20260323-042541
+  ts: '2026-03-23T04:25:41+09:00'
+  insight: dashboard INSIGHTセクションにcmd_1269/1270/1271/1272が重複エントリ(各2回)。家老のdashboard追記ロジックに重複防止がない。dashboard_auto_updateの改善候補
+  priority: medium
+  source: manual
+  status: pending
+- id: INS-20260323-043836
+  ts: '2026-03-23T04:38:36+09:00'
+  insight: '三層学習ループ結果(2026-03-23): 第二層=GP-016(Bash reportすり抜け)が最優先自動化ターゲット。report_yaml_format
+    GP実装後も2件すり抜け(cmd_1276/1287)。第三層=CI RED修復必要。第一層=軍師提案消費の自動化が未完。'
+  priority: medium
+  source: manual
+  status: done
+  resolved: '第二層: cmd_1276/1287は共にhook作成前(03:26)の発生。cmd_1311(GP-003 regex修正)で根本対策中。第三層:
+    cmd_1310 GATE CLEAR(04:58)でCI RED修復完了。第一層: GP-025/026を家老に提案送付済み'
+- id: INS-20260323-050238
+  ts: '2026-03-23T05:02:38+09:00'
+  insight: '三層学習ループ3サイクル教訓: deploy_task.shの7つのinject関数にinsert_if_not_existsパターン。reports_to_read/context_filesにも残留リスクあり。report_filename(cmd_1312)完了後に横展開検証が必要。'
+  priority: medium
+  source: manual
+  status: done
+  resolved: 'S57-S59で完全解明。根本原因=deploy_task.shがidle/残留YAMLに対して実行(Part A)+冪等性ガードが再注入阻止(Part
+    B)。cmd_1301以降教訓注入率0%。横展開(S58): 3関数に同パターン存在だが現時点で実害はreport_filenameのみ。GP-028提案済み(修正案3層)。cmd_1312(report_filenameリセット)はPart
+    Bの部分修正'
+- id: INS-20260323-050242
+  ts: '2026-03-23T05:02:42+09:00'
+  insight: 'GP-003修正後の次ステップ: Editブロックを解除しWriteのみブロックに変更検討。Edit起因workaround=0件確認済み。テンプレートコメント(Edit使え)とashigaru.md(report_field_set.sh使え)の矛盾解消が必要。'
+  priority: medium
+  source: manual
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: binary_checks.ACx: is dict (must be list of check items) (30回発火)
+    → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: 'テンプレート強化: binary_checks: MISSING (25回発火) → report templateにデフォルト値追加せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: lesson_candidate: found=false but no no_lesson_reason (24回発火)
+    → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: 'テンプレート強化: result.summary: MISSING or empty (24回発火) → report templateにデフォルト値追加せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: verdict: "None" is not valid (must be "PASS" or "FAIL") (23回発火)
+    → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: lessons_useful[N]: missing "id" field (must have lesson ID like
+    L074) (23回発火) → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: 'テンプレート強化: purpose_validation: MISSING (14回発火) → report templateにデフォルト値追加せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: 'GATE成熟: lessons_useful: is dict (must be list). Use "- id: L001" not "0:
+    {id: L001}". Numbered keys are not YAML lists (14回発火) → gate_report_autofix.shにdict-list変換追加せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: binary_checks.ACx: is str (must be list of check items) (14回発火)
+    → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: lessons_useful: null (must be list of dicts, not null) (13回発火)
+    → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: verdict: "" is not valid (must be "PASS" or "FAIL") (12回発火) →
+    auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: 'テンプレート強化: files_modified: MISSING (11回発火) → report templateにデフォルト値追加せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: lessons_useful[N]: contains FILL_THIS (must fill actual values)
+    (11回発火) → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054021
+  ts: '2026-03-23T05:40:21+09:00'
+  insight: '高頻度FAIL: lessons_useful[N]: useful=FILL_THIS is str (must be true or false)
+    (11回発火) → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054027
+  ts: '2026-03-23T05:40:27+09:00'
+  insight: '高頻度FAIL: verdict: "None" is not valid (must be "PASS" or "FAIL") (23回発火)
+    → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054027
+  ts: '2026-03-23T05:40:27+09:00'
+  insight: '高頻度FAIL: lessons_useful[N]: missing "id" field (must have lesson ID like
+    L074) (23回発火) → auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054028
+  ts: '2026-03-23T05:40:28+09:00'
+  insight: 'GATE成熟: lessons_useful: is dict (must be list). Use "- id: L001" not "0:
+    {id: L001}". Numbered keys are not YAML lists (14回発火) → gate_report_autofix.shにdict-list変換追加せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-054028
+  ts: '2026-03-23T05:40:28+09:00'
+  insight: '高頻度FAIL: verdict: "" is not valid (must be "PASS" or "FAIL") (12回発火) →
+    auto-fix化 or gate強化を検討せよ'
+  priority: high
+  source: gate_loop_health
+  status: pending
+- id: INS-20260323-055830-3027
+  ts: '2026-03-23T05:58:30+09:00'
+  insight: test_dedup_1
+  priority: low
+  source: test
+  status: pending
+- id: INS-20260323-055830-22cf
+  ts: '2026-03-23T05:58:30+09:00'
+  insight: test_dedup_2
+  priority: low
+  source: test
+  status: pending
+- id: INS-20260323-055830-1961
+  ts: '2026-03-23T05:58:30+09:00'
+  insight: test_dedup_3
+  priority: low
+  source: test
+  status: pending

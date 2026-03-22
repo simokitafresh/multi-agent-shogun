@@ -1,0 +1,5523 @@
+2026-03-21T01:42:44 [shogun→hayate type=test] pane:
+✻ Sautéed for 3m 58s
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:30%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T01:43:11 [karo→hanzo type=test] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T01:54:52 [karo→gunshi type=review_feedback] pane:
+✻ Cogitated for 1m 22s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:57%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:28:41 [shogun→karo type=cmd_new] pane:
+● 待機中。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:31:45 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:32:30 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox2
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:33:00 [karo→gunshi type=review_draft] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:59%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:33:43 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:34:41 [karo→gunshi type=review_draft] pane:
+✢ 敵味方シャッフル… (34s · ↑ 233 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:40:39 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:41:27 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:46:02 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-21T02:51:44 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:70%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:53:45 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:54:44 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:73%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  9% until auto-compact
+---
+2026-03-21T02:58:44 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T02:59:57 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:01:23 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:01:27 [shogun→karo type=cmd_new] pane:
+✶ 人質が人質先に転職してる… (4m 48s · ↓ 2.2k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:48%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:02:29 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:78%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  3% until auto-compact
+---
+2026-03-21T03:03:15 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:04:17 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:80%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  1% until auto-compact
+---
+2026-03-21T03:06:03 [karo→gunshi type=report_review] pane:
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:07:11 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:08:36 [karo→gunshi type=review_draft] pane:
+
+  ❯ inbox2
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:19:18 [karo→gunshi type=review_feedback] pane:
+✻ Baked for 7m 53s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:47%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:19:41 [karo→gunshi type=report_review] pane:
+✻ Baked for 7m 53s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:47%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:22:41 [karo→gunshi type=review_feedback] pane:
+✻ Baked for 1m 6s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:39:43 [karo→gunshi type=report_review] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:53%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:41:03 [karo→gunshi type=review_feedback] pane:
+✢ 討ち取った首がない… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:42:53 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T03:46:46 [karo→gunshi type=review_request] pane:
+✻ Brewed for 2m 27s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:60%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T04:04:52 [karo→kotaro type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:81%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  0% until auto-compact
+---
+2026-03-21T11:06:31 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:10:58 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:12:37 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:12:53 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:13:09 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:13:25 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:13:43 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:14:01 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:19:00 [karo→gunshi type=report_review] pane:
+✻ Sautéed for 1m 21s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:66%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:20:38 [karo→gunshi type=report_review] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:68%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:21:14 [karo→gunshi type=report_review] pane:
+✢ 忍者の日報が全文黒塗り… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:70%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:21:29 [karo→gunshi type=report_review] pane:
+
+  ❯ inbox2
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:70%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:22:43 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:75%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  7% until auto-compact
+---
+2026-03-21T11:23:53 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:79%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  1% until auto-compact
+---
+2026-03-21T11:32:32 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:28%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:38:00 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:40:51 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:41:32 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T11:41:42 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:05:58 [karo→gunshi type=report_review] pane:
+✻ Cogitated for 1m 12s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:10:02 [karo→gunshi type=report_review] pane:
+✻ Crunched for 1m 24s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:16:04 [shogun→karo type=cmd_new] pane:
+✽ 焼け城に水… (4m 2s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:48%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:21:04 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:22:32 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:23:30 [karo→gunshi type=review_draft] pane:
+✻ Baked for 35s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:30:38 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:36:27 [karo→gunshi type=review_feedback] pane:
+✻ Brewed for 51s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:58:30 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T12:59:34 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:00:28 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:01:09 [shogun→karo type=cmd_new] pane:
+✻ Brewed for 2m 26s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:03:41 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:04:32 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:04:49 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:05:12 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:05:33 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:05:55 [karo→gunshi type=review_draft] pane:
+✻ Crunched for 58s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:53%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:06:39 [karo→gunshi type=report_review] pane:
+✻ Crunched for 58s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:53%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:18:58 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:24:26 [karo→kotaro type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:80%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  1% until auto-compact
+---
+2026-03-21T13:24:27 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:78%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  0% until auto-compact
+---
+2026-03-21T13:25:09 [karo→kagemaru type=task_assigned] pane:
+✻ 陣痛報告… (21m 27s · ↓ 5.8k tokens)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:63%
+  ⏵⏵ bypass permissions on · 1 bash
+---
+2026-03-21T13:25:10 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:76%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  6% until auto-compact
+---
+2026-03-21T13:25:12 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:80%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  0% until auto-compact
+---
+2026-03-21T13:28:06 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:31:07 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:32:16 [karo→gunshi type=report_review] pane:
+● 未読なし。inbox1 nudgeは重複通知。待機する。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:59%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:34:50 [karo→gunshi type=report_review] pane:
+✻ Crunched for 46s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:60%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:35:26 [shogun→karo type=cmd_update] pane:
+  影丸の軍師レビュー結果を待つ。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:36:17 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:38:45 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:45:06 [karo→gunshi type=report_review] pane:
+✻ Cooked for 44s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:64%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:45:07 [karo→gunshi type=report_review] pane:
+✻ Cooked for 44s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:64%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:45:09 [shogun→karo type=cmd_update] pane:
+✻ 敵味方シャッフル… (2m 52s · ↑ 697 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:47:22 [karo→gunshi type=report_review] pane:
+✻ Churned for 54s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:66%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:48:09 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:48:25 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T13:53:39 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:68%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T14:03:30 [karo→gunshi type=review_feedback] pane:
+✻ Sautéed for 46s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:70%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T14:54:13 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T14:58:18 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T14:59:28 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T14:59:44 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T14:59:58 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:00:18 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:00:46 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:01:18 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T15:09:02 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:11:32 [karo→gunshi type=report_review] pane:
+✻ Worked for 1m 12s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:14:39 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:17:53 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:25:05 [karo→tobisaru type=task_assigned] pane:
+✶ 兜で枕… (24m 17s · thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:28:07 [karo→gunshi type=report_review] pane:
+✻ Baked for 50s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T15:31:59 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T16:04:14 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:60%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T17:18:41 [shogun→karo type=cmd_new] pane:
+
+---
+2026-03-21T17:21:25 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T17:22:47 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T17:23:08 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T17:25:12 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T17:28:11 [karo→gunshi type=report_review] pane:
+✻ Churned for 3m 50s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T17:28:43 [karo→gunshi type=report_review] pane:
+✻ Churned for 3m 50s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T17:38:24 [shogun→karo type=info] pane:
+✢ 殿が筆を持ったまま寝てる… (8m 8s · ↓ 3.4k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T17:38:26 [karo→gunshi type=review_feedback] pane:
+✻ Brewed for 1m 58s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:58%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T17:38:56 [karo→gunshi type=report_review] pane:
+✻ Brewed for 1m 58s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:58%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:25:11 [shogun→karo type=cmd_new] pane:
+* 刀が鞘に帰りたい… (4m 33s · ↓ 1.8k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:25:12 [shogun→karo type=cmd_new] pane:
+· 刀が鞘に帰りたい… (4m 34s · ↑ 1.9k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ inbox1
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:27:48 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:28:47 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:29:52 [karo→gunshi type=review_draft] pane:
+· 書状のCCに敵将が入ってる… (9m 39s · ↑ 4.1k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:29:53 [karo→gunshi type=review_draft] pane:
+✢ 書状のCCに敵将が入ってる… (9m 40s · ↑ 4.1k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:32:02 [karo→gunshi type=analysis_result] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:57%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:43:33 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:44:18 [karo→kagemaru type=task_cancel] pane:
+✻ 降伏は損切り… (44s · thought for 1s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:19%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:44:38 [shogun→karo type=cmd_new] pane:
+✻ 忍者の名札… (2m 57s · ↑ 1.2k tokens · thought for 7s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:44:50 [karo→gunshi type=report_review] pane:
+  ❯ 自分のログが長くて読むのが大変では？verclスタイルは徹底
+  されているか考えてみよ。答えが見つかるはずだ
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:57%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:44:51 [karo→gunshi type=report_review] pane:
+  ❯ 自分のログが長くて読むのが大変では？verclスタイルは徹底
+  されているか考えてみよ。答えが見つかるはずだ
+───────────────────────────────────────────────────────────────
+❯ inbox1
+───────────────────────────────────────────────────────────────
+  CTX:57%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:45:17 [shogun→karo type=cmd_new] pane:
+✢ 忍者の名札… (3m 37s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:71%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:45:43 [karo→tobisaru type=task_assigned] pane:
+* 弓と矢が破局… (thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:46:38 [karo→gunshi type=review_draft] pane:
+✢ 鎧で満員電車… (11m 45s · ↑ 4.9k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:59%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:47:19 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T18:49:07 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:76%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  6% until auto-compact
+---
+2026-03-21T18:54:11 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:80%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  1% until auto-compact
+---
+2026-03-21T18:54:58 [shogun→karo type=cmd_new] pane:
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:82%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  0% until auto-compact
+---
+2026-03-21T19:02:06 [karo→hanzo type=task_assigned] pane:
+✶ 是非に及ばずの是非を問い中… (thought for 1s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:04:43 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:05:37 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:06:33 [shogun→karo type=cmd_new] pane:
+✢ 馬の転職先… (24m 53s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:47%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:08:38 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:11:31 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:78%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  4% until auto-compact
+---
+2026-03-21T19:16:45 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:18:23 [karo→gunshi type=report_review] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:18:30 [shogun→karo type=cmd_new] pane:
+✽ 全角切腹… (36m 49s · ↓ 5.6k tokens · thought for 3s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:60%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:21:29 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:24:03 [karo→gunshi type=report_review] pane:
+
+---
+2026-03-21T19:25:40 [shogun→karo type=cmd_new] pane:
+* 殿の命令が「命令するな」… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:26:23 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:27:17 [karo→gunshi type=report_review] pane:
+✶ 天下布武のタイポ… (2m 7s · ↑ 852 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:28%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:34:33 [karo→gunshi type=report_review] pane:
+
+---
+2026-03-21T19:40:45 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:44:27 [shogun→karo type=cmd_new] pane:
+· 是非もなし予算もなし… (7m 15s · thought for 2s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:45:40 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:46:27 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T19:48:38 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:49:50 [karo→gunshi type=report_review] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:50:47 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:51:30 [karo→gunshi type=review_draft] pane:
+✶ 飛脚のいない書状… (3m 57s · ↓ 969 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:41%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:53:37 [karo→gunshi type=review_feedback] pane:
+· 飛脚のいない書状… (6m 4s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:47%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:58:44 [karo→gunshi type=review_feedback] pane:
+✻ Churned for 7m 27s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T19:59:48 [karo→gunshi type=report_review] pane:
+
+---
+2026-03-21T20:03:30 [karo→gunshi type=review_feedback] pane:
+✻ Sautéed for 2m 5s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:07:28 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:08:39 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:09:23 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:27%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:12:24 [karo→gunshi type=report_review] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:38%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:15:24 [karo→gunshi type=review_feedback] pane:
+✻ Churned for 3m 9s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:42%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:22:37 [shogun→karo type=cmd_new] pane:
+
+---
+2026-03-21T20:23:11 [shogun→karo type=cmd_new] pane:
+· 城サブスク… (33s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:27%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:23:56 [shogun→karo type=cmd_new] pane:
+· 城サブスク… (1m 17s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:24:04 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:24:50 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T20:25:52 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:26:34 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:27:26 [karo→gunshi type=review_draft] pane:
+· 裏切りの事前告知中… (1m 30s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:27:27 [karo→gunshi type=review_draft] pane:
+✢ 裏切りの事前告知中… (1m 30s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:28:35 [karo→gunshi type=report_review] pane:
+
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:38%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:29:12 [karo→gunshi type=report_review] pane:
+✢ 陣キャン… (3m 15s · ↓ 745 tokens · thought for 11s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:41%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:41:02 [karo→gunshi type=report_review] pane:
+
+---
+2026-03-21T20:41:15 [karo→gunshi type=review_feedback] pane:
+
+---
+2026-03-21T20:41:16 [karo→gunshi type=review_feedback] pane:
+
+---
+2026-03-21T20:45:15 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:27%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:52:13 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:53:02 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:53:41 [karo→gunshi type=review_draft] pane:
+✽ 真田不幸村…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:55:53 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox2
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:55:58 [karo→gunshi type=report_review] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T20:56:54 [shogun→karo type=cmd_new] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:01:04 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:02:06 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:02:59 [karo→hanzo type=task_assigned] pane:
+✽ 辞世の句をXに投稿… (thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:19%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:03:29 [karo→gunshi type=review_draft] pane:
+● accuracy 100%維持。レビュー待ち。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:07:54 [karo→gunshi type=report_review] pane:
+✻ Cogitated for 1m 49s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:48%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:12:11 [karo→gunshi type=review_feedback] pane:
+✻ Sautéed for 1m 36s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:13:22 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:20:03 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:20:55 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T21:25:24 [karo→gunshi type=report_review] pane:
+✶ 軍議の冒頭30分が前回の復習… (3m 24s · thought for 2s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:31:56 [karo→gunshi type=review_feedback] pane:
+✻ Baked for 5m 56s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:48%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:56:31 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:57:48 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T21:58:40 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T22:01:15 [karo→gunshi type=report_review] pane:
+· 腹を割れない… (1m 29s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:04:57 [karo→gunshi type=review_feedback] pane:
+
+---
+2026-03-21T22:13:36 [karo→gunshi type=lesson_feedback] pane:
+✶ 天下布武が天下布団… (7m 34s · thought for 3s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:20:07 [karo→gunshi type=lesson_feedback] pane:
+✻ Worked for 3m 28s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:29:59 [shogun→karo type=cmd_new] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:30:04 [shogun→karo type=cmd_new] pane:
+✻ 二兎を追う者二城を失う…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:31:06 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:31:36 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:32:38 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:67%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:32:39 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:67%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:33:34 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:67%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:34:11 [karo→gunshi type=report_review] pane:
+* 穏やかな暴動… (35s · ↑ 77 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:42:39 [karo→gunshi type=review_feedback] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:75%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  7% until auto-compact
+---
+2026-03-21T22:44:34 [karo→gunshi type=review_feedback] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:76%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  7% until auto-compact
+---
+2026-03-21T22:49:17 [shogun→karo type=cmd_new] pane:
+✻ 城の地図に載ってない部屋がある… (1m 38s · thinking)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:49:22 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:50:50 [shogun→karo type=cmd_new] pane:
+  ナー化)の2件受領。殿直伝の第二層学習ループ完成cmdなり。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:38%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:51:25 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:52:21 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:53:15 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T22:53:18 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T22:54:02 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:54:58 [karo→gunshi type=review_draft] pane:
+* 軍議の後に本当の軍議… (35s · ↑ 131 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:56:08 [karo→gunshi type=report_review] pane:
+✻ 鎧の上から鎧… (1m 45s · ↑ 388 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:56:52 [karo→gunshi type=report_review] pane:
+✢ 鎧の上から鎧… (2m 29s · ↓ 683 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T22:59:02 [karo→gunshi type=report_review] pane:
+✻ 殿、それ昨日も言った… (4m 39s · thought for 2s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:03:05 [karo→gunshi type=review_feedback] pane:
+✻ Cogitated for 5m 59s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:53%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:03:05 [karo→gunshi type=review_feedback] pane:
+✻ Cogitated for 5m 59s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:53%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:04:39 [karo→gunshi type=review_feedback] pane:
+  idle状態。次のレビュー依頼を待つ。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:06:45 [shogun→karo type=cmd_new] pane:
+
+---
+2026-03-21T23:06:51 [shogun→karo type=cmd_new] pane:
+
+---
+2026-03-21T23:06:56 [shogun→karo type=cmd_new] pane:
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:10:05 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:11:01 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:11:57 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:12:03 [shogun→karo type=cmd_new] pane:
+  ❯ inbox1
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:12:08 [shogun→karo type=cmd_new] pane:
+  ❯ inbox1
+  ❯ inbox2
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:13:05 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-21T23:14:45 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:15:54 [karo→gunshi type=review_draft] pane:
+✽ 有給「戦時中は無効」… (1m 43s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:16:06 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  You've used 82% of your weekly limit · resets Mar 25, 1am …
+---
+2026-03-21T23:17:48 [karo→gunshi type=report_review] pane:
+✽ 謀反は起業… (3m 37s · ↑ 1.8k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:26:26 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:28:26 [karo→gunshi type=review_feedback] pane:
+
+---
+2026-03-21T23:29:22 [karo→kagemaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:30:32 [karo→gunshi type=report_review] pane:
+· 伝令が来る前に内容を知ってる殿… (59s · thinking)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:30:49 [shogun→karo type=cmd_new] pane:
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:76%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  6% until auto-compact
+---
+2026-03-21T23:32:42 [karo→gunshi type=review_feedback] pane:
+✶ 偵察の偵察に行き中… (3m 9s · ↑ 685 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:33:09 [karo→gunshi type=report_review] pane:
+✻ 偵察の偵察に行き中… (3m 35s · ↑ 687 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:34:47 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:36:09 [karo→gunshi type=review_draft] pane:
+✻ Sautéed for 6m 11s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:36:11 [karo→gunshi type=review_feedback] pane:
+✻ Sautéed for 6m 11s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:40:56 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:42:06 [karo→gunshi type=workaround_feedback] pane:
+✻ Sautéed for 1m 52s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:42:07 [karo→gunshi type=workaround_feedback] pane:
+✻ Sautéed for 1m 52s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:42:08 [karo→gunshi type=workaround_feedback] pane:
+✻ Sautéed for 1m 52s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:44:27 [karo→gunshi type=report_review] pane:
+✻ Brewed for 36s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-21T23:46:03 [karo→gunshi type=review_feedback] pane:
+✻ 首が長すぎて邪魔… (thought for 4s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:29:37 [shogun→karo type=cmd_new] pane:
+
+---
+2026-03-22T00:31:30 [karo→hanzo type=task_assigned] pane:
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:32:20 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-22T00:34:31 [karo→gunshi type=review_feedback] pane:
+* 降伏が先着順… (2m 7s · ↓ 824 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:38:20 [karo→hanzo type=task_supplement] pane:
+✽ 殿の副業… (6m 48s · thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:47%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:38:45 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:39:36 [karo→kotaro type=task_assigned] pane:
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:40:00 [karo→gunshi type=review_draft] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:43:31 [shogun→karo type=cmd_new] pane:
+● 待機中。半蔵(cmd_1233)・小太郎(cmd_1234)の報告到着を待つ。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:44:13 [karo→tobisaru type=task_assigned] pane:
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:44:37 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:52:45 [shogun→karo type=cmd_new] pane:
+* 三顧の礼がLINE3通… (4m 33s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:58:28 [karo→hayate type=task_assigned] pane:
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T00:59:24 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:58%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:11:46 [karo→gunshi type=review_feedback] pane:
+✻ Worked for 2m 24s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:18:46 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:22:11 [karo→kagemaru type=task_assigned] pane:
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:22:43 [karo→saizo type=task_assigned] pane:
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:23:15 [karo→kagemaru type=in_progress] pane:
+* 城バレ… (1m 3s · thought for 14s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:29%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:23:36 [karo→kagemaru type=AC1着手 - FoFパリティ検証の技術基盤調査] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────
+  CTX:29%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:23:47 [karo→saizo type=in_progress] pane:
+* 落武者の同窓会… (thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:23:53 [karo→gunshi type=review_draft] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:66%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:24:06 [shogun→karo type=cmd_update] pane:
+✽ 天下統一後の月曜… (5m 24s · ↓ 2.1k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:24:08 [karo→saizo type=AC1開始 - verify_gs_parity_pi009.py実行中] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:24:53 [karo→kagemaru type=task_halt] pane:
+
+  ❯ inbox2
+───────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:26:29 [shogun→karo type=cmd_update] pane:
+✶ 殿のダブルブッキング…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:61%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:28:46 [karo→kagemaru type=task_assigned] pane:
+· 城バレ… (6m 34s · ↑ 4.7k tokens)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:42%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:37:04 [karo→saizo type=全AC完了。報告YAML記入済み。] pane:
+✻ 落武者の同窓会… (14m 19s · thought for 6s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:37:20 [karo→saizo type=done] pane:
+
+  ❯ inbox3
+───────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:37:34 [karo→kagemaru type=cmd_1237完了。全AC PASS。家老報告済み。] pane:
+✶ 城バレ… (15m 22s · thought for 3s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:66%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:41:47 [shogun→karo type=cmd_new] pane:
+✢ 看板持ちの忍者… (4m 23s · ↓ 1.4k tokens · thought for 3s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:43:11 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:46:53 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T01:56:52 [karo→gunshi type=review_feedback] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-22T01:56:53 [karo→gunshi type=review_feedback] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-22T02:24:01 [karo→hanzo type=report_format_fix] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:68%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T02:29:47 [karo→gunshi type=workaround_feedback] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:73%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  10% until auto-compact
+---
+2026-03-22T03:45:51 [shogun→karo type=cmd_new] pane:
+● 待機中。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T03:50:32 [shogun→karo type=cmd_update] pane:
+● 待機中。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T04:06:26 [shogun→karo type=cmd_new] pane:
+● 待機中。
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:58%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T04:26:29 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T04:27:40 [karo→gunshi type=review_draft] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:73%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  9% until auto-compact
+---
+2026-03-22T05:07:27 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:48%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:23:00 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:23:47 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:23:53 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:24:44 [karo→tobisaru type=task_assigned] pane:
+✢ 誰も上げてない狼煙が上がってる… (56s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:25:33 [shogun→karo type=cmd_ruling] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:27:49 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+❯ inbox1
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:28:10 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:28:40 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:29:09 [shogun→karo type=cmd_new] pane:
+* 友好的な宣戦布告… (1m 20s · ↓ 732 tokens · thought for 2s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:29:31 [karo→gunshi type=review_draft] pane:
+· 落城フラグ…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:41%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:30:23 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:30:32 [karo→tobisaru type=report_format_fix] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:30:44 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:59%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:31:02 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:59%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:31:16 [karo→gunshi type=review_draft] pane:
+✻ 落城フラグ… (2m 4s · ↓ 256 tokens · thought for 21s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:32:36 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:33:30 [karo→gunshi type=review_draft] pane:
+✻ 落城フラグ… (4m 17s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:39:54 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:58%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:45:59 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:51:18 [karo→gunshi type=report_review] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:63%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:54:14 [karo→hanzo type=report_format_fix] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:56:12 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:66%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T05:56:22 [karo→gunshi type=workaround_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:66%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T08:58:09 [karo→gunshi type=review_request] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:18:49 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:23:31 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:24:26 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:29:27 [karo→saizo type=task_assigned] pane:
+· 馬が帰りたがってる… (5m 54s · ↑ 4.1k tokens)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:43:16 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:29%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:43:42 [shogun→karo type=cmd_new] pane:
+✻ 灯台下暗すぎ… (thought for 8s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:43:47 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:47:26 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:50:37 [shogun→karo type=cmd_new] pane:
+✻ のろしが降りてきた…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T15:55:30 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:01:15 [shogun→karo type=correction] pane:
+✻ Worked for 1m 19s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:17:04 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:17:57 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:20:01 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:20:08 [shogun→karo type=cmd_new] pane:
+✶ 洗濯機が靴下を1枚隠す… (3m 2s · thought for 6s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:20:55 [karo→hayate type=in_progress] pane:
+✽ 矢文のCC… (53s · thought for 6s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:21:59 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:30:08 [karo→hayate type=task_assigned] pane:
+✽ 矢文のCC… (10m 6s · thought for 44s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:57%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:30:09 [karo→kotaro type=task_assigned] pane:
+     ◼ AC3: 全65 standard PFで65/65 PASS確…
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:46%
+  1 shell · ⏵⏵ bypass permissions on
+---
+2026-03-22T16:30:42 [karo→hayate type=done] pane:
+· 矢文のCC… (10m 40s · thought for 44s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:58%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:39:39 [shogun→karo type=urgent] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:47%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:39:51 [karo→kotaro type=urgent] pane:
+     ◼ AC3: 全65 standard PFで65/65 PASS確…
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:49%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:49:52 [karo→gunshi type=lesson_registered] pane:
+· 三方よしの四方目… (3m 19s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T16:56:31 [shogun→saizo type=direct_order] pane:
+✶ 馬が帰りたがってる…     32  59s · thinking)
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:52%
+  1 shell · ⏵⏵ bypass permissions on
+---
+2026-03-22T16:56:32 [shogun→kotaro type=direct_order] pane:
+     ◼ AC3: 全65 standard PFで65/65 PASS確…
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:52%
+  1 shell · ⏵⏵ bypass permissions on
+---
+2026-03-22T17:22:50 [shogun→karo type=cmd_new] pane:
+✽ 全員の辞世の句が同じ筆跡… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:28%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T17:27:35 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T17:29:18 [karo→gunshi type=review_draft] pane:
+───────────────────────────────────────────────────────────────
+  CTX:68%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T17:32:40 [shogun→karo type=cmd_new] pane:
+· 寝てた武将が賛成… (1m 4s · ↑ 300 tokens · thought for 6s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:25%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T17:43:45 [karo→gunshi type=review_request] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:77%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  5% until auto-compact
+---
+2026-03-22T17:54:23 [shogun→karo type=cmd_new] pane:
+· 矢が飛びたくない… (1m 0s · ↑ 455 tokens · thought for 2s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T17:57:11 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T17:58:13 [karo→gunshi type=cmd_review] pane:
+
+---
+2026-03-22T17:58:30 [karo→gunshi type=review_feedback] pane:
+
+---
+2026-03-22T18:16:15 [shogun→karo type=cmd_new] pane:
+✶ 影武者が影武者を引き連れてる… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:17:56 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:19:09 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-22T18:22:56 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:42%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:23:41 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:24:59 [karo→gunshi type=review_draft] pane:
+  1: Bad    2: Fine   3: Good   0: Dismiss
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:28:53 [karo→kagemaru type=report_format_fix] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:27%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:31:55 [karo→gunshi type=workaround_feedback] pane:
+* 影武者のほうが人気…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:17%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:32:00 [karo→gunshi type=review_feedback] pane:
+✶ 影武者のほうが人気… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:17%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:41:19 [karo→gunshi type=review_feedback] pane:
+✶ 影武者のほうが人気… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:50:10 [karo→gunshi type=lesson_registered] pane:
+✻ Brewed for 1m 50s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:67%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:54:00 [shogun→karo type=cmd_new] pane:
+· 同盟国への宣戦布告… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:54:02 [shogun→karo type=cmd_new] pane:
+✶ 同盟国への宣戦布告… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ inbox1
+───────────────────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:56:10 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:56:47 [shogun→karo type=cmd_new] pane:
+✶ 同盟国への宣戦布告… (2m 30s · ↓ 1.5k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:57:01 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:57:19 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T18:58:04 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:01:34 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:03:02 [shogun→karo type=cmd_new] pane:
+✶ 同盟国への宣戦布告… (8m 45s · thought for 1s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:03:18 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:03:40 [karo→gunshi type=review_draft] pane:
+· 切腹の介錯人が有給で不在… (1m 22s · ↑ 222 tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:04:02 [karo→gunshi type=report_review] pane:
+✢ 切腹の介錯人が有給で不在… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:04:56 [karo→kagemaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:29%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:06:35 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:07:02 [karo→gunshi type=review_draft] pane:
+  ❯ inbox2
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:42%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:08:16 [shogun→karo type=cmd_new] pane:
+✶ 同盟国への宣戦布告… (42s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:19%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:11:16 [karo→hayate type=cmd_1257] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:13:14 [karo→kagemaru type=cmd_1257] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:23:35 [karo→hanzo type=cmd_1257] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:31:22 [karo→saizo type=cmd_1255_a] pane:
+✻ 旗持ちが旗に巻かれてる… (thought for 141s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:31:49 [karo→tobisaru type=cmd_1250] pane:
+· 馬が帰りたがってる… (1h 34m 36s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:25%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:32:04 [shogun→karo type=redeploy] pane:
+✽ 同盟国への宣戦布告… (24m 31s · thought for 11s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:66%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:32:39 [karo→gunshi type=report_review] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:82%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  0% until auto-compact
+---
+2026-03-22T19:37:12 [karo→gunshi type=workaround_feedback] pane:
+✢ 走る渋滞… (7m 23s · ↑ 2.5k tokens · thought for 7s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:38:32 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:80%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  1% until auto-compact
+---
+2026-03-22T19:39:47 [shogun→karo type=cmd_new] pane:
+  ❯ inbox6
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:81%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  0% until auto-compact
+---
+2026-03-22T19:45:38 [shogun→karo type=cmd_new] pane:
+  ❯ inbox14
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:38%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:47:45 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:47:49 [shogun→karo type=cmd_new] pane:
+✢ 同盟国への宣戦布告… (40m 15s · ↓ 10.1k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:48:48 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:49:35 [karo→kagemaru type=acknowledged] pane:
+✽ 全員影武者… (46s · thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:21%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:50:06 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:51:36 [karo→gunshi type=review_draft] pane:
+✻ Sautéed for 1m 6s
+
+───────────────────────────────────────────────────────────────
+❯ なぜ家老にinboxが20件もたまるのだろうか？
+───────────────────────────────────────────────────────────────
+  CTX:61%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T19:59:01 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:79%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  2% until auto-compact
+---
+2026-03-22T20:01:44 [shogun→karo type=cmd_new] pane:
+✽ 二階から目薬が命中… (5m 4s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:11:29 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:13:20 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:14:26 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:14:49 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-22T20:16:29 [karo→gunshi type=report_review] pane:
+✻ まーごめ… (34s · ↑ 65 tokens · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:17%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:22:01 [karo→gunshi type=report_review] pane:
+
+---
+2026-03-22T20:49:26 [shogun→karo type=cmd_new] pane:
+
+---
+2026-03-22T20:51:59 [karo→gunshi type=feedback] pane:
+
+---
+2026-03-22T20:54:05 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:54:07 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:54:10 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:54:12 [karo→gunshi type=review_draft] pane:
+✽ 鳴かぬなら進捗なし… (1m 8s · thought for 11s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:58:15 [karo→gunshi type=report_review] pane:
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:59:23 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:59:25 [karo→kotaro type=uncommitted_block] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T20:59:29 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:05:13 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:50%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:06:56 [shogun→karo type=feedback] pane:
+
+---
+2026-03-22T21:08:26 [karo→gunshi type=workaround_feedback] pane:
+✶ 切腹の労災… (2m 8s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:08:51 [shogun→karo type=cmd_new] pane:
+✶ 刀で段ボールを開封中… (1m 54s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:38%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:12:54 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:12:56 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:13:03 [karo→saizo type=task_assigned] pane:
+* 殿がエプロン…
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:13:04 [karo→kotaro type=task_assigned] pane:
+· 奇襲の事前告知…
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:13:06 [karo→gunshi type=review_draft] pane:
+✻ Sautéed for 49s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:58%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:15:51 [karo→gunshi type=review_feedback] pane:
+✢ 兜を前後逆にかぶってる… (1m 38s · thought for 2s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:15:53 [karo→gunshi type=workaround_feedback] pane:
+✢ 兜を前後逆にかぶってる… (1m 41s · thought for 2s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:17:36 [shogun→karo type=cmd_cancel] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:17:58 [karo→saizo type=task_cancel] pane:
+     ◼ AC3: 修正方針推薦（コード根拠付き）
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:47%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:17:58 [karo→kotaro type=task_cancel] pane:
+✽ 奇襲の事前告知… (thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:24:25 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:25:16 [karo→gunshi type=review_feedback] pane:
+✻ Sautéed for 31s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:25:35 [karo→gunshi type=workaround_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:26:50 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:26:54 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:27:00 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:66%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:29:31 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:32:27 [karo→kotaro type=task_cancelled] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:35:19 [shogun→karo type=cmd_new] pane:
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  1 shell · ⏵⏵ bypass permissions on
+---
+2026-03-22T21:39:19 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-22T21:39:34 [karo→tobisaru type=task_assigned] pane:
+· 馬が帰りたがってる… (1m 19s · thinking)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:39:49 [karo→gunshi type=review_feedback] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-22T21:42:42 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T21:42:42 [karo→tobisaru type=report_format_fix] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:00:13 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:06:16 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:06:21 [shogun→karo type=cmd_new] pane:
+✻ 首が長すぎて邪魔…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:06:25 [shogun→karo type=cmd_new] pane:
+✻ 首が長すぎて邪魔… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:08:32 [karo→gunshi type=review_draft] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:75%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  7% until auto-compact
+---
+2026-03-22T22:12:14 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:12:46 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:13:17 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:16:47 [shogun→karo type=cmd_new] pane:
+
+---
+2026-03-22T22:17:38 [shogun→karo type=cmd_new] pane:
+✻ 刀折れ矢尽き充電切れ… (49s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:26%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:22:38 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:23:39 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:24:23 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:24:35 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-22T22:24:36 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-22T22:25:10 [karo→gunshi type=report_review] pane:
+
+---
+2026-03-22T22:25:12 [karo→gunshi type=report_review] pane:
+
+---
+2026-03-22T22:25:23 [shogun→karo type=cmd_update] pane:
+* 刀折れ矢尽き充電切れ… (8m 35s · thought for 7s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:57%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:26:02 [karo→gunshi type=report_review] pane:
+✻ 狼煙が上がったが誰も上げてない… (50s · thinking)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:25%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:26:06 [karo→kagemaru type=task_update] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:27:31 [karo→gunshi type=report_review] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:27:32 [karo→gunshi type=report_review] pane:
+* 狼煙が上がったが誰も上げてない… (2m 20s · thought for 1s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:27:51 [karo→gunshi type=report_review] pane:
+✻ 狼煙が上がったが誰も上げてない… (2m 39s · thought for 1s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:28:18 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:29:43 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:29:49 [karo→kotaro type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T22:43:43 [karo→gunshi type=review_request] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:41%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T23:39:19 [shogun→karo type=cmd_new] pane:
+✽ 空気正座… (8m 51s · ↓ 929 tokens · thought for 26s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T23:42:23 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T23:43:21 [karo→gunshi type=review_draft] pane:
+
+---
+2026-03-22T23:54:00 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:38%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T23:54:08 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-22T23:58:34 [shogun→karo type=cmd_new] pane:
+✻ 敗戦予報… (1m 6s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T00:02:59 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T00:03:46 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:45%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T00:08:48 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T00:11:41 [karo→gunshi type=review_feedback] pane:
+
+---
+2026-03-23T00:25:52 [karo→gunshi type=analysis_ack] pane:
+· 降伏の書状が合戦の前日に届いてた… (1m 53s · thinking)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:62%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T00:33:29 [karo→gunshi type=analysis_ack] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:77%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  4% until auto-compact
+---
+2026-03-23T00:57:56 [shogun→karo type=cmd_new] pane:
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:01:13 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:01:15 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:01:18 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:01:22 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:01:26 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:01:30 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:01:45 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:75%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  7% until auto-compact
+---
+2026-03-23T01:21:38 [shogun→karo type=cmd_new] pane:
+✻ Worked for 1m 17s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:21:42 [shogun→karo type=cmd_new] pane:
+✻ 自信満々の降参…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:21:49 [shogun→karo type=cmd_new] pane:
+✻ 自信満々の降参…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:22:15 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:22:18 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:22:24 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:22:41 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:22:49 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:25:05 [karo→kagemaru type=task_assigned] pane:
+✻ 城のオートロック… (thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:25%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:25:07 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:25:10 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:28:30 [karo→kagemaru type=task_assigned] pane:
+✢ 城のオートロック… (6m 14s · thought for 2s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:28:51 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:29:16 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:30:59 [shogun→karo type=cmd_cancel] pane:
+* 三顧の礼がLINE3通…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:53%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:31:20 [karo→hanzo type=task_cancel] pane:
+· 殿の声が二方向から… (2m 27s · thinking)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:29%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:32:50 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:32:56 [shogun→karo type=cmd_new] pane:
+  ❯ inbox3
+  ❯ inbox4
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:33:01 [shogun→karo type=cmd_new] pane:
+  ❯ inbox3
+  ❯ inbox4
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:33:18 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:36:01 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:36:03 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:29%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:41:59 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:42:18 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:42:35 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:43:01 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:43:22 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:43:54 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:44:18 [karo→gunshi type=review_draft] pane:
+✻ Sautéed for 1m 19s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:63%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:50:47 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:52:28 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:63%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:53:11 [karo→kagemaru type=task_assigned] pane:
+· 殿の命令が「命令するな」… (thought for 3s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:58%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:54:06 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:48%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T01:55:14 [karo→kagemaru type=task_assigned] pane:
+✢ 殿の命令が「命令するな」… (13m 14s · thinking)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:60%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:00:28 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:01:23 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:01:44 [karo→hayate type=task_assigned] pane:
+· 帰ってきた偵察隊が1人多い… (thought for 1s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:07:55 [shogun→karo type=cmd_new] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:75%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  7% until auto-compact
+---
+2026-03-23T02:08:52 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:12:41 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:70%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:15:14 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:18:30 [shogun→karo type=cmd_new] pane:
+  ❯ inbox2
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:23:41 [shogun→karo type=cmd_new] pane:
+✶ 出陣のドタキャン… (15m 44s · thought for 4s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:54%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:24:57 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:25:35 [karo→hanzo type=task_assigned] pane:
+✽ 風林火山のWi-Fiパスワード… (36s · thinking)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:21%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:26:15 [karo→hanzo type=task_assigned] pane:
+✻ 風林火山のWi-Fiパスワード… (1m 17s · thinking)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:23%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:26:39 [karo→gunshi type=review_request] pane:
+
+---
+2026-03-23T02:27:21 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:27:43 [karo→gunshi type=review_request] pane:
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:28:09 [karo→gunshi type=report_review] pane:
+✶ 本能時の変… (thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:31:08 [karo→gunshi type=report_review] pane:
+✻ 本能時の変… (1m 29s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:31:55 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:32:27 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:68%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:34:50 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:38:26 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:38:52 [karo→gunshi type=review_request] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:40:27 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:78%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  4% until auto-compact
+---
+2026-03-23T02:40:31 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:78%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  3% until auto-compact
+---
+2026-03-23T02:40:32 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:78%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  3% until auto-compact
+---
+2026-03-23T02:43:29 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:43:53 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:44:23 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:45:16 [karo→gunshi type=review_request] pane:
+✻ Cooked for 2m 19s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:45:27 [karo→gunshi type=review_request] pane:
+✻ Cooked for 2m 19s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:45:28 [karo→gunshi type=review_request] pane:
+✻ Cooked for 2m 19s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:45:30 [karo→gunshi type=review_request] pane:
+✻ Cooked for 2m 19s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:45:58 [karo→gunshi type=review_request] pane:
+✻ Cooked for 2m 19s
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:65%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:46:55 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:52:28 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:52:30 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox6
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:47%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:52:32 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:38%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:53:52 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:54:54 [karo→gunshi type=report_review] pane:
+✶ 殿の顔も三度まで… (2m 57s · thought for 14s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:54:55 [karo→gunshi type=report_review] pane:
+✢ 殿の顔も三度まで… (2m 58s · thought for 14s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:54:56 [karo→gunshi type=report_review] pane:
+* 殿の顔も三度まで… (2m 59s · thought for 14s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:55:22 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:55:34 [karo→gunshi type=review_request] pane:
+✻ 殿の顔も三度まで… (3m 37s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:56:51 [shogun→karo type=cmd_new] pane:
+
+---
+2026-03-23T02:57:36 [karo→kotaro type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:19%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:58:14 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T02:58:56 [karo→kagemaru type=task_assigned] pane:
+✽ 早馬だけ来た… (thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:21%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:01:09 [shogun→karo type=cmd_new] pane:
+* 刀が退職届… (14m 9s · ↓ 5.2k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:01:27 [shogun→karo type=cmd_new] pane:
+✶ 刀が退職届… (14m 27s · ↓ 5.2k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:04:22 [karo→kotaro type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:33%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:08:25 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:11:39 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:11:55 [karo→hayate type=task_assigned] pane:
+✽ 正座で逃走中… (thought for 2s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:11:56 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:76%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  6% until auto-compact
+---
+2026-03-23T03:12:09 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox2
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:51%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:12:22 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:77%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  5% until auto-compact
+---
+2026-03-23T03:12:57 [karo→kagemaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:20%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:13:20 [karo→kagemaru type=task_assigned] pane:
+✻ 桶狭間のバーゲン… (thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:20%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:15:46 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:15:50 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:15:54 [karo→kotaro type=uncommitted_block] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:15:57 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:17:04 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:57%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:21:22 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:22:38 [karo→gunshi type=report_review] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:23:10 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:23:28 [karo→hanzo type=task_assigned] pane:
+✻ 忍者の足音… (thought for 2s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:23:30 [karo→gunshi type=review_draft] pane:
+✽ 刀折れ矢尽き充電切れ…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:28:52 [karo→gunshi type=report_review] pane:
+· 刀折れ矢尽き充電切れ… (5m 51s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:43%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:29:26 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:36:04 [shogun→karo type=cmd_new] pane:
+· まーちゃんごめんね… (5m 10s · ↑ 1.3k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:48%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:38:17 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:38:40 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:39:04 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:39:31 [karo→gunshi type=review_draft] pane:
+✻ ごめんねまーちゃん… (50s · ↓ 19 tokens · thought for 38s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:39:32 [karo→gunshi type=review_draft] pane:
+· ごめんねまーちゃん… (51s · ↓ 19 tokens · thought for 38s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:39:32 [karo→gunshi type=review_draft] pane:
+✽ ごめんねまーちゃん… (52s · ↓ 89 tokens · thought for 38s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:40:36 [shogun→karo type=cmd_new] pane:
+✽ まーちゃんごめんね… (9m 42s · thought for 9s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:60%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:41:40 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:42:12 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:42:46 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:43:14 [karo→gunshi type=review_draft] pane:
+  ❯ inbox3
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:43:14 [karo→gunshi type=review_draft] pane:
+  ❯ inbox3
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:43:15 [karo→gunshi type=review_draft] pane:
+  ❯ inbox3
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:56%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:43:55 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:45:56 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:47:11 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:49:27 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:29%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:54:48 [karo→hanzo type=uncommitted_block] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:31%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:56:47 [shogun→karo type=cmd_new] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:80%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  2% until auto-compact
+---
+2026-03-23T03:59:32 [karo→kagemaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:30%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:59:50 [karo→gunshi type=review_request] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:61%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:59:55 [shogun→karo type=cmd_new] pane:
+· 殿が銅像を磨き中… (2m 53s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:41%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T03:59:56 [shogun→karo type=cmd_new] pane:
+* 殿が銅像を磨き中… (2m 54s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:41%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:01:07 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:01:22 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:01:45 [karo→gunshi type=review_request] pane:
+✶ 盾の自己肯定感が低い… (1m 48s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:67%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:03:19 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:03:59 [shogun→karo type=cmd_new] pane:
+✢ 殿が銅像を磨き中… (6m 57s · thought for 3s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  1 shell · ⏵⏵ bypass permissions on
+---
+2026-03-23T04:04:00 [shogun→karo type=cmd_new] pane:
+✽ 殿が銅像を磨き中… (6m 58s · thought for 3s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:49%
+  1 shell · ⏵⏵ bypass permissions on
+---
+2026-03-23T04:05:41 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:20%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:05:58 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:37%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:08:03 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:09:39 [karo→hanzo type=uncommitted_block] pane:
+· 馬の転職先… (8m 31s · thought for 12s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:12:40 [karo→tobisaru type=report_format_fix] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:14:52 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:15:10 [karo→gunshi type=review_request] pane:
+* 全員大将… (2m 14s · ↓ 5.2k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:44%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:15:22 [karo→kotaro type=uncommitted_block] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:21:44 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:32%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:21:55 [shogun→karo type=cmd_new] pane:
+✻ 引き継ぎゼロの討死… (4m 34s · thought for 5s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:53%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:22:29 [karo→hayate type=task_assigned] pane:
+✶ 殿がレジ打ち… (44s · thought for 6s)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:35%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:23:03 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:55%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:23:09 [karo→hayate type=task_supplement] pane:
+
+  ❯ inbox1
+───────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:24:04 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:24:26 [karo→hanzo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:24:27 [shogun→karo type=cmd_new] pane:
+· 引き継ぎゼロの討死… (7m 5s · thought for 8s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:59%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:24:55 [karo→gunshi type=review_draft] pane:
+✻ 全員大将… (7m 39s · ↓ 6.0k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:59%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:24:56 [karo→gunshi type=review_draft] pane:
+✻ 全員大将… (7m 40s · ↓ 6.0k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:59%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:25:34 [karo→saizo type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:25:59 [karo→gunshi type=review_draft] pane:
+✶ 陣太鼓が二度寝…
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:61%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:27:36 [karo→gunshi type=review_report] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:64%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:29:25 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:26%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:29:50 [shogun→karo type=cmd_new] pane:
+
+  ❯ inbox3
+───────────────────────────────────────────────────────────────
+❯ Press up to edit queued messages
+───────────────────────────────────────────────────────────────
+  CTX:68%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:31:39 [shogun→karo type=cmd_new] pane:
+✻ 引き継ぎゼロの討死… (4m 36s · thought for 3s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:69%
+  1 shell · ⏵⏵ bypass permissions on
+---
+2026-03-23T04:32:41 [karo→kotaro type=task_assigned] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:33:00 [karo→tobisaru type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:33:23 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-23T04:33:23 [karo→gunshi type=review_draft] pane:
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:72%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+  11% until auto-compact
+---
+2026-03-23T04:34:45 [karo→gunshi type=review_report] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:34:46 [karo→gunshi type=review_report] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:34:46 [karo→gunshi type=review_report] pane:
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:18%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:35:12 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:42%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:35:46 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:36%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:40:49 [karo→kotaro type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:41:20 [shogun→karo type=cmd_new] pane:
+✽ 引き継ぎゼロの討死… (14m 18s · ↓ 4.7k tokens)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:40%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:46:12 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:34%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T04:50:59 [shogun→karo type=cmd_new] pane:
+✢ 引き継ぎゼロの討死… (23m 56s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:52%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:01:32 [karo→kagemaru type=task_assigned] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:02:12 [karo→kagemaru type=task_assigned] pane:
+✽ 合戦のゲネプロ… (thinking with high effort)
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:20%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:02:32 [shogun→karo type=cmd_new] pane:
+✽ 引き継ぎゼロの討死… (35m 29s · thinking with high effort)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:67%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:02:35 [karo→gunshi type=review_request] pane:
+
+---
+2026-03-23T05:05:40 [karo→gunshi type=report_review] pane:
+✶ 本能寺のリノベーション… (23m 6s · thought for 8s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:46%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:07:32 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:29%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:13:54 [karo→hayate type=task_assigned] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:14:08 [karo→gunshi type=review_draft] pane:
+✢ 本能寺のリノベーション… (31m 33s · thought for 21s)
+
+───────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────
+  CTX:68%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:37:54 [karo→hayate type=uncommitted_block] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:37:54 [karo→hayate type=report_format_fix] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:39%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:44:22 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:44:27 [karo→kagemaru type=uncommitted_block] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:44:31 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:44:38 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:44:41 [karo→kotaro type=uncommitted_block] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:44:46 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:54:04 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:23%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:54:15 [karo→kagemaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:54:29 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:54:43 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:54:58 [karo→kotaro type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:24%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T05:55:13 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:22%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:37 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:41 [karo→kagemaru type=uncommitted_block] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:45 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:51 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:55 [karo→kotaro type=uncommitted_block] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:04:00 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
