@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 200件 (draft:91, report:96, self_study:19) | 2026-03-20〜
+# 累計: 203件 (draft:92, report:98, self_study:19) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:79 LGTM:82 REQ_CHANGES:8 FAIL:6
+# verdict分布: APPROVE:80 LGTM:84 REQ_CHANGES:8 FAIL:6
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -752,3 +752,39 @@
       description: "CLAUDE.md /clear Recovery(ninja)にStep4.5追加: report_path:テンプレート使用誘導。format workaround構造的根絶"
       status: pending
   timestamp: "2026-03-23T03:15:00"
+- cmd_id: cmd_1290
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1290
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "Gate8にinsights自動アーカイブ追加。SG0 PASS。commit fd3ec21確認。done/monitoring/observation/deferred合計5件以上→archive。テスト確認済。定型ロジック追加、品質良好"
+  lesson_quality: N/A
+  sg7_bundle:
+    gate_precheck: {report_format: PASS, commit_verified: true, gate_prediction: CLEAR}
+    lesson_extraction: {has_candidate: false}
+    context_reflux: {needed: false}
+    dashboard_line: "cmd_1290 kotaro PASS。Gate8にinsights自動アーカイブ追加。workaround: no"
+    karo_workaround_needed: no
+  timestamp: "2026-03-23T03:16:00"
+- cmd_id: cmd_1291
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1291
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "archive_reportsにreview_gate.doneチェック追加。SG0 PASS。commit ab57508確認。CMD_ID指定+sweep mode両方で動作確認済。家老レビュー前アーカイブ防止の構造修正"
+  lesson_quality: N/A
+  sg7_bundle:
+    gate_precheck: {report_format: PASS, commit_verified: true, gate_prediction: CLEAR}
+    lesson_extraction: {has_candidate: false}
+    context_reflux: {needed: false}
+    dashboard_line: "cmd_1291 kagemaru PASS。archive_reportsにreview_gate.doneチェック追加。workaround: no"
+    karo_workaround_needed: no
+  timestamp: "2026-03-23T03:16:00"
+- cmd_id: cmd_1292
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "ninja_monitor report存在チェック。6観点OK。SG8 4類型: 該当なし(根本原因明確+workaround cmd_1264から直結)。report_filename={name}_report_{parent_cmd}.yamlがdeploy_task.sh命名規則と整合。confidence:HIGH"
+  timestamp: "2026-03-23T03:16:00"
