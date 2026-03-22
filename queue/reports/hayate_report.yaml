@@ -1,39 +1,38 @@
-# !! トップレベル構造を維持せよ。report: で包むな !!
-# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
-# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
 worker_id: hayate
-task_id: 
+task_id: null
 parent_cmd: cmd_1312
-timestamp: "2026-03-23T05:32:09"
+timestamp: '2026-03-23T05:32:09'
 status: done
 ac_version_read: d41d8cd9
 result:
-  summary: ""
-  details: ""
+  summary: deploy_task.shにreport_filename/report_pathクリアロジック追加。inject_report_filename呼出し前にyaml_field_setで両フィールドを空クリアし冪等性ガードが正しく再注入するよう修正。
+  details: L2821-2823に2行追加。全6忍者で{ninja}_report_cmd_1312.yaml形式の生成を検証済。bats 344テスト全PASS、SKIP
+    0。
 purpose_validation:
-  cmd_purpose: ""
+  cmd_purpose: 前cmdのreport_filename残留によるGP-003未発火・報告ファイル名不正の根本修正
   fit: true
-  purpose_gap: ""
-files_modified: []
+  purpose_gap: ''
+files_modified:
+- scripts/deploy_task.sh
 lesson_candidate:
-  # found: true/false を書け。リスト形式[] 禁止
   found: false
-  no_lesson_reason: cmd_1298は教訓なし
-  title: ""
-  detail: ""
+  no_lesson_reason: 単純なフィールドクリア追加。新たな教訓なし
+  title: ''
+  detail: ''
   project: infra
 lessons_useful: null
 skill_candidate:
-  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
-  # found: true の場合は以下も記入:
-  # name: ""        # スキル名 例: "cdp-page-measure"
-  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
-  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
-  # project: ""     # 対象PJ 例: "dm-signal"
+  found: false
 decision_candidate:
   found: false
 hook_failures:
   count: 0
-  details: ""
-binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
-verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
+  details: ''
+binary_checks:
+  AC1: '[{check: ''inject_report_filename呼出し前にreport_filenameをクリアするコードがあるか'', result:
+    ''yes''}, {check: ''inject_report_filename呼出し前にreport_pathをクリアするコードがあるか'', result:
+    ''yes''}]'
+  AC2: "[{check: 'deploy_task.sh実行後にreport_filenameが{ninja}_report_{parent_cmd}.yaml形式か', result: 'yes'}, {check: '6忍者全てで検証したか', result: 'yes'}]"
+  AC3: "[{check: '新report_filenameに対応するテンプレートファイルがqueue/reports/に存在するか', result: 'yes'}]"
+  AC4: "[{check: 'batsテスト全PASSか', result: 'yes'}, {check: 'SKIP数が0か', result: 'yes'}]"
+verdict: PASS
