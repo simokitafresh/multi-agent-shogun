@@ -98,7 +98,7 @@ fi
 LORD_INDEX="$SCRIPT_DIR/context/lord-conversation-index.md"
 $BRIEF || echo "■ 前セッション裁定"
 if [ -f "$LORD_INDEX" ]; then
-    ruling_count=$(grep -c "^- " <(sed -n '/殿の直近裁定・方針/,/^## /p' "$LORD_INDEX") 2>/dev/null || echo "0")
+    ruling_count=$(grep -c "^- " <(sed -n '/殿の直近裁定・方針/,/^## /p' "$LORD_INDEX") 2>/dev/null) || ruling_count=0
     if [ "$ruling_count" -gt 0 ]; then
         $BRIEF || echo "  前セッション裁定${ruling_count}件あり。projects/*.yamlへの反映を確認せよ"
     else
@@ -279,7 +279,7 @@ log_proposals=0
 
 # 11a: ダッシュボードの[PROPOSAL]
 if [ -f "$DASHBOARD" ]; then
-    dash_proposals=$(grep -c '\[PROPOSAL\]' "$DASHBOARD" 2>/dev/null || echo "0")
+    dash_proposals=$(grep -c '\[PROPOSAL\]' "$DASHBOARD" 2>/dev/null) || dash_proposals=0
 fi
 
 # 11b: gunshi_review_log.yamlのproposals status=pending
