@@ -1,5 +1,5 @@
 progress: AC1+AC2+AC3全完了。全10テストPASS。verdict=PASS
-status: done
+status: idle
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
