@@ -113,6 +113,14 @@ QG_TEMPLATE
         echo '  例: q5_verified_source: "engine.py L107-137 + 本番FoF API GET応答で構造確認"' >&2
         exit 1
     fi
+
+    # q6_not_hiding: SG8自動消火チェック（段階的導入 — BLOCKではなくWARNING）
+    # 目的: 表面的対処で根源的問題を隠し改革動機を殺すcmdを防止
+    # 起源: cmd_1278事件 — lessons.yaml読込削除が7,552行の構造問題を隠蔽
+    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "q6_not_hiding:"; then
+        echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
+        echo '  例: q6_not_hiding: "no — Vercel化は構造改革であり表面的対処ではない"' >&2
+    fi
 fi
 
 # --- Check 4: flock競合検出 ---

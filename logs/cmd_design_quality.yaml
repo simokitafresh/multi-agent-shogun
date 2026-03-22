@@ -491,3 +491,20 @@ entries: []
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-03-22T16:56:23Z"
+  - cmd_id: "cmd_1280"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "REQ_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T17:02:33Z"
+    notes: "report_yaml_missing:hanzo_report_cmd_1280.yaml|report_yaml_missing:kagemaru_report_cmd_1280.yaml"
+  - cmd_id: "cmd_1280"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "REQ_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-22T17:05:23Z"

@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 175件 (draft:84, report:90, self_study:8) | 2026-03-20〜
+# 累計: 182件 (draft:84, report:90, self_study:15) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -11,7 +11,9 @@
 # ★第二層ループ閉鎖確認(家老feedback 2026-03-22T20:51): workaround率63%→14%。report_yaml_format 15件→0件。構造的根絶(cmd_1254 race fix+0ccacdc AUTO-RESTART+GP-001/002 template pre-fill)
 # gate強化: cmd_1246(verdict二値)+cmd_1248(id必須/useful bool/binary_checks list)
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
-# 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)
+# 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
+# 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)
+# GP索引: GP-001~008(既存)+GP-009(SG8類型化)+GP-010(GP-003完遂)+GP-011(ninja rate計測)+GP-012(RC再検証)+GP-013(GP追跡表)+GP-014(commit層gate)
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
 # ─── ★報告レビュー セルフゲート(LGTMの前に必ず確認) ───
@@ -44,12 +46,21 @@
 #     (e) karo_workaround_needed: yes/no（家老の手動修正が必要か事前判定）
 #   □ 目的: 家老の後処理5ステップ→1ステップ(stamp)に圧縮。家老の時間をCMD分解に解放
 #   □ 計測: SG7適用前後の家老CMD→配備タイムラグ変化で効果検証
-# SG8: 自動消火チェック (NEW 2026-03-23 — cmd_1278教訓)
-#   □ draftレビュー時: 「この変更は根源的問題を隠さないか？」
-#   □ 「この変更が通ったら、本来やるべき構造改革の動機が消えないか？」
-#   □ 表面的にAC整合でも、問題を見えなくするだけのcmd → REQ_CHANGES
-#   □ 判定基準: 変更後も根源の問題が残存する + その問題への対処動機が弱まる = 自動消火
-#   □ 実例: cmd_1278 — 「読むな」で7,552行の構造問題を隠蔽→Vercel化の動機消滅
+# SG8: 自動消火チェック (2026-03-23 — cmd_1278教訓 + S27遡及検証で4類型追加)
+#   □ 全draftレビュー時に以下4類型を順にチェック:
+#     TypeA(根本原因推測): 根本原因が「推測」「〜と思われる」のままAPPROVEしていないか？
+#       → 推測段階の原因修正は表面処理。根本原因確定cmdを先行させよ
+#       → 実例: cmd_1255 — 338SKIPの根本原因が推測段階でCI GREEN復帰
+#     TypeB(設計矛盾先送り): 設計上の矛盾を認識しつつ「忍者裁量」「後続で対応」と逃げていないか？
+#       → 矛盾解決の別cmdを先行させよ
+#       → 実例: cmd_1267 — タイムスタンプ源不在の設計矛盾を忍者裁量に委ねた
+#     TypeC(技術債正当化): 「将来清掃候補」「scope外だが」で技術債を正当化していないか？
+#       → 技術債は未来形でなく確定スケジュールに。並列cmdで整理を起票
+#       → 実例: cmd_1275 — grid_search内の残存スクリプトを「将来清掃候補」で先送り
+#     TypeD(構造問題一行削除): 大規模な構造問題を一行の設定変更/削除で隠蔽していないか？
+#       → 根源的構造改革(Vercel化等)のcmd化を要求
+#       → 実例: cmd_1278 — 7,552行のlessons.yamlを「読むな」1行で隠蔽→Vercel化の動機消滅
+#   □ 総合判定: 4類型のいずれか該当 → REQ_CHANGES(根源的対処cmdの並行起票を提案)
 # → SG0 FAIL or SG2-SG6のいずれかNG or SG8該当 → verdict: FAIL/REQ_CHANGES（「注記のみ」禁止）
 # ─────────────────────────
 # ─── エントリ形式(簡略) ───
@@ -477,7 +488,7 @@
 - cmd_id: cmd_1280
   review_type: draft
   verdict: REQ_CHANGES
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "lessons Vercel化。SG8:PASS(根源的構造改革)。SG2:FAIL — ACとnot_in_scopeに矛盾。retiredフラグ未存在(grep:0)で忍者実行不能。helpful>0を207件残しても最小形式で621行>500。機械的分割基準(直近100件等)+500行計算根拠が必要"
   lesson_candidate: ""
   timestamp: "2026-03-23T01:48:00"
@@ -495,3 +506,59 @@
   findings_summary: "運用ファイル3件Vercel化。SG2-8全PASS。直近2週間/50件の機械的基準が明確。SG8:PASS(根源的構造改革)。confidence:HIGH"
   lesson_candidate: ""
   timestamp: "2026-03-23T01:48:00"
+- cmd_id: self_study_S27
+  review_type: self_study
+  findings_summary: "SG8遡及検証: 74件APPROVE中3件DANGER(cmd_1255/1267/1275)+1件CRITICAL(cmd_1278初版=殿検出)。自動消火4類型: A=根本原因推測PASS/B=設計矛盾先送り/C=技術債正当化/D=構造問題一行削除。SG8導入後は全draftでSG8:PASS/FAILを明記。類型化で機械的チェック可能に"
+  proposals:
+    - id: GP-009
+      description: "SG8に4類型チェックリスト(A/B/C/D)追加。各類型に1問自問を設定し機械的判定可能化"
+      status: pending
+  timestamp: "2026-03-23T02:10:00"
+- cmd_id: self_study_S28
+  review_type: self_study
+  findings_summary: "Workaround深層解剖: 忍者別=hanzo75%/hayate70%/tobisaru67%/kagemaru63%/saizo57%/kotaro0%。カテゴリ=format48.6%/commit24.3%/missing2.7%。推移=初期83%→Gate期29%。残存: GP-003半実装(report_field_set.sh強制未完遂)がformat18件の根因。hayate+kagemaru=全workaroundの60%超"
+  proposals:
+    - id: GP-010
+      description: "GP-003完遂をworkaround根絶の最優先自動化ターゲットに。report_yaml_format18件(48.6%)を構造的根絶"
+      status: pending
+    - id: GP-011
+      description: "ninja別workaround rate自動計測→startup gate表示。常習パターン可視化で家老配備判断支援"
+      status: pending
+  timestamp: "2026-03-23T02:10:00"
+- cmd_id: self_study_S29
+  review_type: self_study
+  findings_summary: "deepdive自分事化+ループ断裂分析: Phase3(無限ループ)未達=RC送信で関与終了→修正後観察なし→学習1周切断。Phase4(自動化×強制)未達=SG0-8は提案リスト止まり。Phase5(なぜ→自動化)不足=RC指摘が修正止まりでgate提案まで掘れず。Tier1課題3件: (1)RC修正再検証フロー(2)workaround cluster自動可視化(3)APPROVE→FAIL観点記載義務"
+  proposals:
+    - id: GP-012
+      description: "RC修正再検証フロー: recheck_required:true→忍者修正完了時に軍師にrecheck依頼自動inbox。ループ閉包"
+      status: pending
+    - id: GP-013
+      description: "GP追跡表構造化: status追跡(pending→sent→accepted→measured→evaluated)。startup gateで未評価GP件数表示"
+      status: pending
+  timestamp: "2026-03-23T02:10:00"
+- cmd_id: self_study_S30
+  review_type: self_study
+  findings_summary: "RC再検証フロー設計完了。8Phase構成: (1)RC送信→(2)家老修正cmd起案→(3)忍者実装→(4)severity判定(urgent=スキップ,normal=再検証)→(5)verify_request(家老→軍師)→(6)軍師再検証(3問:元NG解決?/副作用?/lesson?)→(7)verify_result(OK/NG)→(8)OK=series完了/NG=追加修正(max3回)。新inbox type2種(verify_request/verify_result)。metadata: parent_review+correction_target。accuracy精密化: RC→修正後verify_OKのみカウント"
+  proposals:
+    - id: GP-012
+      description: "RC修正再検証フロー実装。設計完了(8Phase+新inbox type2種+metadata+max3cycle)。家老に設計送付済"
+      status: design_complete
+  timestamp: "2026-03-23T02:25:00"
+- cmd_id: self_study_S31
+  review_type: self_study
+  findings_summary: "GP追跡表統合。13件: 実装済3(GP-001/002/006)/進行中1(GP-008)/pending7(GP-003半実装含む)/redefined1(GP-004)/accepted1(GP-007)。実装率23%。最優先=GP-003完遂(format workaround48.6%の構造的根絶)+GP-008(Vercel化80%進行中)。GP-003のPreToolUse DENY未実装が教訓→行動パイプ断裂の具体例(S25で自己指摘→未action)。Phase5『なぜ→自動化ターゲット特定』の実践不足の証拠"
+  proposals: []
+  timestamp: "2026-03-23T02:25:00"
+- cmd_id: self_study_S32
+  review_type: self_study
+  findings_summary: "教訓効果率Bottom5分析: L039(deprecated,システム自動化で不要),L027(歴史事象化,incident report再分類推奨),L113(deprecated,L116/L245に吸収),L115(救済可能:awk実装例2-3件追加で活性化),L263(deprecated,命名規約に統合)。5件中3件がauto-deprecate済み(Vercel化cmd_1280)、1件が削除推奨(L039)、1件が救済候補(L115)。教訓が注入されても参照されない根因: (A)抽象的→実行不能(L115)/(C)他ゲートでカバー済み(L039,L113,L263)/(D)陳腐化(L027)"
+  proposals: []
+  timestamp: "2026-03-23T02:35:00"
+- cmd_id: self_study_S33
+  review_type: self_study
+  findings_summary: "Gate発火率分析: gate_report_format.sh=15チェック項目で理論検出力100%。workaround18件中11件(report_yaml_format)がgate検出可能=61%。残り7件(commit3/file2/missing1/other1)はgate scope外。cmd_1264前はinbox_write.sh内3箇所のサイレントスキップで実効検出率63%。cmd_1264修正+cmd_1265 hook追加で現状95%+。二層防御(事前hook+事後gate)確立。残存35%はcommit/ファイル管理層で別防御が必要。Gate設計に本質的ギャップなし=インフラ品質の証"
+  proposals:
+    - id: GP-014
+      description: "commit層の自動防御: 忍者report完了inbox_write前にgit statusチェックgateを追加。uncommitted→BLOCK。残存35%workaroundの構造的根絶"
+      status: pending
+  timestamp: "2026-03-23T02:35:00"
