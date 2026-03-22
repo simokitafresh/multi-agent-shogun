@@ -305,6 +305,19 @@ safe_send_clear() {
         return 1
     fi
 
+    # cmd_1296: /clear前のgit uncommittedチェック
+    local _uncommitted
+    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain 2>/dev/null)
+    if [ -n "$_uncommitted" ]; then
+        local _file_list
+        _file_list=$(echo "$_uncommitted" | sed 's/^...//' | tr '\n' ' ')
+        log "CLEAR-BLOCKED-UNCOMMITTED: $agent_name has uncommitted files: $_file_list reason=$reason"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+          "未commitファイルあり: ${_file_list}。${agent_name}の/clearを中止した。git add + git commitを実行せよ。" \
+          uncommitted_block ninja_monitor >> "$LOG" 2>&1 &
+        return 1
+    fi
+
     local clear_cmd
     clear_cmd=$(cli_profile_get "$agent_name" "clear_cmd")
     clear_cmd=${clear_cmd:-"/clear"}
