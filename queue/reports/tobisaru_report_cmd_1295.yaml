@@ -24,21 +24,16 @@ lesson_candidate:
   detail: ''
   project: infra
 lessons_useful:
-  '[0]':
-    useful: false
-    reason: ((PASS++))パターンは本タスクに該当なし
-  '[1]':
-    useful: false
-    reason: entity名義確認は本タスクに該当なし
-  '[2]':
-    useful: false
-    reason: YAML構造操作は本タスクに該当なし
-  '[3]':
-    useful: false
-    reason: field_get移行は本タスクのスコープ外
-  '[4]':
-    useful: false
-    reason: 影響範囲列挙は本タスクに該当なし
+- useful: false
+  reason: ((PASS++))パターンは本タスクに該当なし
+- useful: false
+  reason: entity名義確認は本タスクに該当なし
+- useful: false
+  reason: YAML構造操作は本タスクに該当なし
+- useful: false
+  reason: field_get移行は本タスクのスコープ外
+- useful: false
+  reason: 影響範囲列挙は本タスクに該当なし
 skill_candidate:
   found: false
 decision_candidate:
@@ -48,12 +43,9 @@ hook_failures:
   details: ''
 binary_checks:
   AC1:
-    '[0]':
-      result: PASS
+  - result: PASS
   AC2:
-    '[0]':
-      result: PASS
+  - result: PASS
   AC3:
-    '[0]':
-      result: PASS
+  - result: PASS
 verdict: PASS
