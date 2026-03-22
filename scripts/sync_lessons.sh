@@ -24,8 +24,10 @@ if [ -z "$PROJECT_PATH" ]; then
 fi
 
 SSOT_FILE="$PROJECT_PATH/tasks/lessons.md"
-CACHE_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
+INDEX_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
 ARCHIVE_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons_archive.yaml"
+# CACHE_FILE kept as alias for backward compat (lesson_update_score.sh etc. use same lockfile)
+CACHE_FILE="$INDEX_FILE"
 LOCKFILE="${CACHE_FILE}.lock"
 
 if [ ! -f "$SSOT_FILE" ]; then
@@ -40,7 +42,7 @@ mkdir -p "$(dirname "$CACHE_FILE")"
 (
     flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
 
-    export SSOT_FILE CACHE_FILE ARCHIVE_FILE SCRIPT_DIR PROJECT_ID
+    export SSOT_FILE INDEX_FILE ARCHIVE_FILE SCRIPT_DIR PROJECT_ID
     python3 << 'PYEOF'
 import csv
 import re, yaml, os, tempfile, sys, subprocess
@@ -48,7 +50,7 @@ from datetime import datetime
 from collections import defaultdict
 
 ssot_file = os.environ["SSOT_FILE"]
-cache_file = os.environ["CACHE_FILE"]
+index_file = os.environ["INDEX_FILE"]
 archive_file = os.environ["ARCHIVE_FILE"]
 project_id = os.environ["PROJECT_ID"]
 impact_file = os.path.join(os.environ["SCRIPT_DIR"], "logs", "lesson_impact.tsv")
@@ -302,7 +304,7 @@ if os.path.exists(impact_file):
 score_data = {}
 old_data = None
 try:
-    score_source = archive_file if os.path.exists(archive_file) else cache_file
+    score_source = archive_file if os.path.exists(archive_file) else index_file
     with open(score_source, encoding='utf-8') as cf:
         old_data = yaml.safe_load(cf)
     for old_lesson in (old_data or {}).get('lessons', []):
@@ -383,7 +385,7 @@ except Exception:
 # Write INDEX (active lessons only, compact Vercel-style)
 active_lessons = [l for l in lessons if str(l.get('status', 'confirmed')).lower() != 'deprecated']
 index_ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-tmp_fd2, tmp_path2 = tempfile.mkstemp(dir=os.path.dirname(cache_file), suffix='.tmp')
+tmp_fd2, tmp_path2 = tempfile.mkstemp(dir=os.path.dirname(index_file), suffix='.tmp')
 try:
     with os.fdopen(tmp_fd2, 'w', encoding='utf-8') as f:
         f.write('# Index — full data: see archive_path\n')
@@ -398,12 +400,12 @@ try:
             title = l['title'].replace("'", "''").replace('\n', ' ')
             summary = (l.get('summary') or l['title'])[:120].replace("'", "''").replace('\n', ' ')
             f.write(f"- {{id: {eid}, title: '{title}', summary: '{summary}'}}\n")
-    os.replace(tmp_path2, cache_file)
+    os.replace(tmp_path2, index_file)
 except Exception:
     os.unlink(tmp_path2)
     raise
 
-print(f'Synced {len(lessons)} lessons: archive={archive_file}, index={cache_file} ({len(active_lessons)} active)')
+print(f'Synced {len(lessons)} lessons: archive={archive_file}, index={index_file} ({len(active_lessons)} active)')
 
 # Category summary
 cat_stats = defaultdict(lambda: {'total': 0, 'confirmed': 0, 'deprecated': 0, 'draft': 0})
