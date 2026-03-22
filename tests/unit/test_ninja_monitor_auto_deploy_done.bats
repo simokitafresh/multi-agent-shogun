@@ -24,6 +24,8 @@ LOG="$TEST_LOG"
 CALLED=0
 PANE_TARGETS[saizo]=""
 AUTO_DEPLOY_DONE["saizo:subtask_575_impl_a"]=""
+UNCOMMITTED_BLOCK_SENT["saizo:cmd_575"]=""
+REPORT_GATE_SENT["saizo:cmd_575"]=""
 
 cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
 task:
