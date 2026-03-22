@@ -107,6 +107,12 @@ if isinstance(result, dict):
 else:
     errors.append('result: not a dict')
 
+# --- verdict must be PASS or FAIL (strict binary) ---
+verdict = data.get('verdict')
+if not isinstance(verdict, str) or verdict not in ('PASS', 'FAIL'):
+    errors.append(f'verdict: \"{verdict}\" is not valid (must be \"PASS\" or \"FAIL\")')
+    hints.append('verdictはPASS/FAILの二値のみ。binary_checks全yes→PASS、1つでもno→FAIL')
+
 # --- Output ---
 if errors:
     print('FAIL: ' + '; '.join(errors))
