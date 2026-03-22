@@ -5476,3 +5476,48 @@
   CTX:22%
   ⏵⏵ bypass permissions on (shift+tab to cycle)
 ---
+2026-03-23T06:03:37 [karo→hayate type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:41 [karo→kagemaru type=uncommitted_block] pane:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:45 [karo→hanzo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:51 [karo→saizo type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:03:55 [karo→kotaro type=uncommitted_block] pane:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+2026-03-23T06:04:00 [karo→tobisaru type=uncommitted_block] pane:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---

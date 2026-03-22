@@ -9048,3 +9048,189 @@ OK: dashboard.md auto section updated (05:55)
 [2026-03-23 05:56:57] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
 [2026-03-23 05:56:57] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
 OK: dashboard.md auto section updated (05:57)
+[2026-03-23 05:58:07] REPORT-FORMAT-PASS: hayate report=hayate_report_cmd_1312.yaml
+[2026-03-23 05:58:07] CLEAR-DEBOUNCE: hayate idle+no_task but 243s < 300s since last /clear
+[2026-03-23 05:58:09] IDLE confirmed: kagemaru
+[2026-03-23 05:58:09] CLEAR-DEBOUNCE: kagemaru idle+no_task but 234s < 300s since last /clear
+[2026-03-23 05:58:11] CLEAR-DEBOUNCE: hanzo idle+no_task but 222s < 300s since last /clear
+[2026-03-23 05:58:13] CLEAR-DEBOUNCE: saizo idle+no_task but 210s < 300s since last /clear
+[2026-03-23 05:58:14] IDLE confirmed: kotaro
+[2026-03-23 05:58:14] CLEAR-DEBOUNCE: kotaro idle+no_task but 197s < 300s since last /clear
+[2026-03-23 05:58:16] CLEAR-DEBOUNCE: tobisaru idle+no_task but 182s < 300s since last /clear
+[2026-03-23 05:58:16] Batch notification sent to karo: kagemaru kotaro
+[2026-03-23 05:58:16] CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)
+[cdp_cleanup] 2026-03-23 05:58:16 Starting CDP Chrome cleanup scan...
+[cdp_cleanup] 2026-03-23 05:58:16 No PID files found. Nothing to clean.
+[cdp_cleanup] 2026-03-23 05:58:16 Done.
+[2026-03-23 05:58:16] CDP-CLEANUP: Completed successfully
+[2026-03-23 05:58:16] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:58:16] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:58:16] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:58:16] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:58:16] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:58:16] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:58:17] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:58:17] RENUDGE-TRANSITION: karo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 05:58:20] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (05:58)
+[2026-03-23 05:59:21] REPORT-FORMAT-PASS: hayate report=hayate_report_cmd_1312.yaml
+[2026-03-23 05:59:26] CLEAR-BLOCKED-UNCOMMITTED: hayate has uncommitted files: context/lord-conversation-index.md  reason=AUTO-CLEAR
+[2026-03-23 05:59:32] CLEAR-BLOCKED-UNCOMMITTED: kagemaru has uncommitted files: context/lord-conversation-index.md  reason=AUTO-CLEAR
+[2026-03-23 05:59:40] CLEAR-BLOCKED-UNCOMMITTED: hanzo has uncommitted files: context/lord-conversation-index.md  reason=AUTO-CLEAR
+[2026-03-23 05:59:47] CLEAR-BLOCKED-UNCOMMITTED: saizo has uncommitted files: context/lord-conversation-index.md  reason=AUTO-CLEAR
+[2026-03-23 05:59:49] CLEAR-DEBOUNCE: kotaro idle+no_task but 292s < 300s since last /clear
+[2026-03-23 05:59:50] CLEAR-DEBOUNCE: tobisaru idle+no_task but 277s < 300s since last /clear
+[2026-03-23 05:59:50] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:59:50] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:59:50] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:59:50] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:59:50] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:59:50] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:59:51] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:59:51] RENUDGE-TRANSITION: karo fingerprint changed (unread=2), sending inbox2
+[2026-03-23 05:59:51] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 05:59:52] CLEAR-BLOCKED: karo not idle (check_idle), reason=KARO-CLEAR(check_karo_clear), will retry next cycle
+[2026-03-23 05:59:54] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+OK: dashboard.md auto section updated (06:00)
+[2026-03-23 06:00:57] REPORT-FORMAT-PASS: hayate report=hayate_report_cmd_1312.yaml
+[2026-03-23 06:01:01] CLEAR-SEND: hayate confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:01:08] CLEAR-SEND: kagemaru confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:01:15] CLEAR-SEND: hanzo confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:01:21] CLEAR-SEND: saizo confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:01:27] CLEAR-SEND: kotaro confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:01:34] CLEAR-SEND: tobisaru confirmed idle, sending /clear, reason=AUTO-CLEAR
+[2026-03-23 06:01:34] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:01:34] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:01:34] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:01:34] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:01:34] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:01:34] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:01:35] RENUDGE-RESET: karo unread=0, fingerprint+counter reset
+[2026-03-23 06:01:35] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 06:01:41] CLEAR-SEND: karo confirmed idle, sending /clear, reason=KARO-CLEAR(check_karo_clear)
+[2026-03-23 06:02:25] REPORT-FORMAT-PASS: hayate report=hayate_report_cmd_1312.yaml
+[2026-03-23 06:02:25] CLEAR-SKIP: hayate CTX=0%, already clean (1/10)
+[2026-03-23 06:02:28] CLEAR-SKIP: kagemaru CTX=0%, already clean (1/10)
+[2026-03-23 06:02:30] CLEAR-SKIP: hanzo CTX=0%, already clean (1/10)
+[2026-03-23 06:02:32] CLEAR-SKIP: saizo CTX=0%, already clean (1/10)
+[2026-03-23 06:02:34] CLEAR-SKIP: kotaro CTX=0%, already clean (1/10)
+[2026-03-23 06:02:35] CLEAR-SKIP: tobisaru CTX=0%, already clean (1/10)
+[2026-03-23 06:02:35] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:02:35] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:02:36] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:02:36] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:02:36] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:02:36] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:02:36] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:02:36] SHOGUN-ALERT: sent ntfy to lord (CTX:52%)
+[2026-03-23 06:02:39] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:02:43] WARNING: ntfy_listener log stale (10min old). Restarting...
+[Mon Mar 23 06:02:43 JST 2026] === ntfy_listener restart initiated ===
+[Mon Mar 23 06:02:43 JST 2026] Found existing ntfy_listener process(es): 3232662
+3298441
+3298446
+[Mon Mar 23 06:02:43 JST 2026] Killing PID 3232662 ...
+[Mon Mar 23 06:02:43 JST 2026] Killing PID 3298446 ...
+[Mon Mar 23 06:02:43 JST 2026] Killing orphan curl stream process(es): 3232695
+[Mon Mar 23 06:02:48 JST 2026] WARNING: Old process still running after 5s, sending SIGKILL
+[Mon Mar 23 06:02:49 JST 2026] Lock file is free
+[Mon Mar 23 06:02:49 JST 2026] Starting new ntfy_listener.sh ...
+[Mon Mar 23 06:02:49 JST 2026] Launched with PID: 3298547
+
+=== Restart Result ===
+STATUS: SUCCESS
+  Listener PID: 3298547
+  Curl stream:  active
+  Log file:     /mnt/c/tools/multi-agent-shogun/logs/ntfy_listener.log
+[2026-03-23 06:02:52] ntfy_listener restart triggered by health check
+[2026-03-23 06:03:07] AUTO-RESTART: Change detected (script) [script:cab4e2c9e16093cc0b3154ea3d595c61→e0f3afae4bad282aca9a4c918bcfa0ae deps:1390f7261a536ae5b300e6faa683c97a→1390f7261a536ae5b300e6faa683c97a], restarting...
+[2026-03-23 06:03:07] ninja_monitor started. Monitoring 6 ninja.
+[2026-03-23 06:03:07] Poll interval: 20s, Confirm wait: 5s
+[2026-03-23 06:03:07] CLI profiles loaded from cli_profiles.yaml via cli_lookup.sh
+[2026-03-23 06:03:07] Pane discovery: 6/6 ninja found
+[2026-03-23 06:03:37] UNCOMMITTED-BLOCK: hayate files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/hook_violations.jsonl logs/inbox_watcher_karo.log logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy.log logs/ntfy_listener.log logs/usage_statusbar_loop.log queue/insights.yaml scripts/ninja_monitor.sh 
+[2026-03-23 06:03:37] REPORT-FORMAT-PASS: hayate report=hayate_report_cmd_1312.yaml
+[2026-03-23 06:03:37] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hayate (hayate:cmd_1312) — STALL検知は継続
+[pre-send capture] hayate pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 06:03:37] CLEAR-SKIP: hayate CTX=0%, already clean (1/10)
+[2026-03-23 06:03:41] UNCOMMITTED-BLOCK: kagemaru files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/hook_violations.jsonl logs/inbox_watcher_hayate.log logs/inbox_watcher_karo.log logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log queue/insights.yaml scripts/ninja_monitor.sh 
+[2026-03-23 06:03:41] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kagemaru (kagemaru:cmd_1311) — STALL検知は継続
+[pre-send capture] kagemaru pane state BEFORE message:
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 06:03:41] CLEAR-SKIP: kagemaru CTX=0%, already clean (1/10)
+[2026-03-23 06:03:45] UNCOMMITTED-BLOCK: hanzo files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/hook_violations.jsonl logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log queue/insights.yaml scripts/insight_write.sh scripts/ninja_monitor.sh 
+[2026-03-23 06:03:45] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for hanzo (hanzo:cmd_1307) — STALL検知は継続
+[pre-send capture] hanzo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 06:03:45] CLEAR-SKIP: hanzo CTX=0%, already clean (1/10)
+[2026-03-23 06:03:51] UNCOMMITTED-BLOCK: saizo files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/hook_violations.jsonl logs/inbox_watcher_hanzo.log logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log queue/insights.yaml 
+[2026-03-23 06:03:51] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for saizo (saizo:cmd_1308) — STALL検知は継続
+[pre-send capture] saizo pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 06:03:51] CLEAR-SKIP: saizo CTX=0%, already clean (1/10)
+[2026-03-23 06:03:55] UNCOMMITTED-BLOCK: kotaro files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/hook_violations.jsonl logs/inbox_watcher_hanzo.log logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/inbox_watcher_saizo.log logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log queue/insights.yaml 
+[2026-03-23 06:03:55] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for kotaro (kotaro:cmd_1309) — STALL検知は継続
+[pre-send capture] kotaro pane state BEFORE message:
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 06:03:55] CLEAR-SKIP: kotaro CTX=0%, already clean (1/10)
+[2026-03-23 06:04:00] UNCOMMITTED-BLOCK: tobisaru files=dashboard.md logs/gate_fire_log.yaml logs/gist_sync.log logs/gunshi_review_log.yaml logs/hook_violations.jsonl logs/inbox_watcher_hanzo.log logs/inbox_watcher_hayate.log logs/inbox_watcher_kagemaru.log logs/inbox_watcher_karo.log logs/inbox_watcher_kotaro.log logs/inbox_watcher_saizo.log logs/lord_conversation_archive/2026-03-23.jsonl logs/ninja_monitor.log logs/ntfy.log logs/ntfy_listener.log logs/shogun_action_log.txt logs/usage_statusbar_loop.log queue/insights.yaml 
+[2026-03-23 06:04:00] [AUTO_DEPLOY] SKIPPED: gate_report_format FAIL for tobisaru (tobisaru:cmd_1310) — STALL検知は継続
+[pre-send capture] tobisaru pane state BEFORE message:
+
+───────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────
+  CTX:0%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+---
+[2026-03-23 06:04:01] CLEAR-SKIP: tobisaru CTX=0%, already clean (1/10)
+[2026-03-23 06:04:01] STALL-GHOST: hayate has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:04:01] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:04:01] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:04:01] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:04:01] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:04:01] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 06:04:02] AGENT-STATE-CORRECTION: hayate @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:04:02] RENUDGE-TRANSITION: hayate fingerprint changed (unread=1), sending inbox1
+[2026-03-23 06:04:02] AGENT-STATE-CORRECTION: kagemaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:04:02] RENUDGE-TRANSITION: kagemaru fingerprint changed (unread=1), sending inbox1
+[2026-03-23 06:04:03] AGENT-STATE-CORRECTION: hanzo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:04:03] RENUDGE-TRANSITION: hanzo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 06:04:04] AGENT-STATE-CORRECTION: saizo @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:04:04] RENUDGE-TRANSITION: saizo fingerprint changed (unread=1), sending inbox1
+[2026-03-23 06:04:05] AGENT-STATE-CORRECTION: kotaro @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:04:05] RENUDGE-TRANSITION: kotaro fingerprint changed (unread=1), sending inbox1
+[2026-03-23 06:04:06] AGENT-STATE-CORRECTION: tobisaru @agent_state=active but idle prompt detected, corrected to idle
+[2026-03-23 06:04:06] RENUDGE-TRANSITION: tobisaru fingerprint changed (unread=1), sending inbox1
+[2026-03-23 06:04:06] GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip
+[2026-03-23 06:04:07] SHOGUN-ALERT: sent ntfy to lord (CTX:53%)
+[2026-03-23 06:04:12] LESSON-HEALTH: all projects OK
+[2026-03-23 06:04:12] LOOP-HEALTH: OK

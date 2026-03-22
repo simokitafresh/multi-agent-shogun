@@ -1,7 +1,7 @@
 # 🏯 Dashboard [dm-signal] — 2026-03-23 05:54 更新
 
 <!-- DASHBOARD_AUTO_START -->
-## 📊 リアルタイム状況 (05:58 自動更新)
+## 📊 リアルタイム状況 (06:00 自動更新)
 
 ### 忍者配備
 | 忍者 | モデル | 状態 | cmd | 内容 |
@@ -16,7 +16,7 @@
 ### CI Status
 **CI RED: run 23410932510 — E2E Tests**
 
-**WARN: 28件のcommit未push。`git push`を検討せよ**
+**WARN: 30件のcommit未push。`git push`を検討せよ**
 
 ### パイプライン
 パイプライン空 — 次cmd待ち

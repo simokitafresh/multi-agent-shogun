@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 259件 (draft:105, report:113, self_study:47) | 2026-03-20〜
+# 累計: 262件 (draft:105, report:113, self_study:50) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -13,7 +13,7 @@
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
 # 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
-# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)+S48(GATE CLEAR率トレンド+教訓pipeline健全性)+S49(cmd完了速度+BLOCK原因深層:GP-026)+S50(insights棚卸し+dashboard重複+commit漏れ:GP-027)+S51(WA率再計測:85%、infra除外53%)+S52(deepdive追体験+軍師自分事化)+S53(忍者別WA:GP-021ベースライン)+S54(gate format 100%PASS直近100件)+S55(GP消費率77.8%:パイプライン健全)+S56(APPROVE→BLOCK分析:89.4%infra noise,真accuracy97%)+S57(教訓注入0%崩壊:cmd_1301以降project未検出→GP-028)+S58(inject横展開:3関数に同パターン存在,現時点残留なし)+S59(GP-028深堀り:Part A=idle YAMLへの誤deploy+Part B=冪等性ガードが再注入阻止)+S60(insights棚卸し:INS-050238 resolved,残pending2件)+S61(gate_loop_health分析:3カテゴリ分類,A=autofix4種,B=テンプレ4種,C=忍者品質6種)+S62(autofix実装確認:3/4実装済,bc dict→list未実装=最多30回→GP-029候補)+S63(cmd_1312 GATE追跡:2xBLOCK archive+report_yaml_missing。自己修正パラドックス)+S64(STUCK cmd一覧:8件BLOCK-only。6件report_yaml_missing+2件archive循環)+S65(WA最新:cmd_1304/1308/1311でformat/残存WA。cmd_1312未記録=GATE BLOCK中)+S66(GP優先順再評価:GP-028最優先=教訓0%全滅→GP-025→GP-026→GP-027→GP-023)+S67(Phase2 verdict:APPROVE48/LGTM9/RC3/FAIL0。RC3件=自動消火+AC矛盾+scope問題)+S68(GP pipeline:21/28=75%実装。pending6件=新規提案増。GP-028最優先)+S69(batch分析cmd_1300-1312:CLEAR8/10,STUCK2,BLOCK原因archive43%+yaml_missing19%→GP-025/026で62%根絶可)
+# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)+S48(GATE CLEAR率トレンド+教訓pipeline健全性)+S49(cmd完了速度+BLOCK原因深層:GP-026)+S50(insights棚卸し+dashboard重複+commit漏れ:GP-027)+S51(WA率再計測:85%、infra除外53%)+S52(deepdive追体験+軍師自分事化)+S53(忍者別WA:GP-021ベースライン)+S54(gate format 100%PASS直近100件)+S55(GP消費率77.8%:パイプライン健全)+S56(APPROVE→BLOCK分析:89.4%infra noise,真accuracy97%)+S57(教訓注入0%崩壊:cmd_1301以降project未検出→GP-028)+S58(inject横展開:3関数に同パターン存在,現時点残留なし)+S59(GP-028深堀り:Part A=idle YAMLへの誤deploy+Part B=冪等性ガードが再注入阻止)+S60(insights棚卸し:INS-050238 resolved,残pending2件)+S61(gate_loop_health分析:3カテゴリ分類,A=autofix4種,B=テンプレ4種,C=忍者品質6種)+S62(autofix実装確認:3/4実装済,bc dict→list未実装=最多30回→GP-029候補)+S63(cmd_1312 GATE追跡:2xBLOCK archive+report_yaml_missing。自己修正パラドックス)+S64(STUCK cmd一覧:8件BLOCK-only。6件report_yaml_missing+2件archive循環)+S65(WA最新:cmd_1304/1308/1311でformat/残存WA。cmd_1312未記録=GATE BLOCK中)+S66(GP優先順再評価:GP-028最優先=教訓0%全滅→GP-025→GP-026→GP-027→GP-023)+S67(Phase2 verdict:APPROVE48/LGTM9/RC3/FAIL0。RC3件=自動消火+AC矛盾+scope問題)+S68(GP pipeline:21/28=75%実装。pending6件=新規提案増。GP-028最優先)+S69(batch分析cmd_1300-1312:CLEAR8/10,STUCK2,BLOCK原因archive43%+yaml_missing19%→GP-025/026で62%根絶可)+S70(insights起票品質:ID collision+dedup failure→GP-029)+S71(全軍idle分析:GP-028最優先+uncommitted_block+CI RED+30commit未push)+S72(autofix Fix8設計:bc dict→list wrap。30回発火=最大gap。dict{check,result}→[{check,result}])
 # ─── GP追跡表(S42整理:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
@@ -44,8 +44,9 @@
 # | 026 | report_yaml_missing待機| pending            | S49  | ninja in_progress時gate check 60秒遅延。BLOCK原因65%を根絶 |
 # | 027 | commit漏れ検出WARN    | pending            | S50  | target_path未commit時WARN。cmd_1311で影丸commit忘れ検出 |
 # | 028 | 教訓注入タイミング修正| pending            | S57  | inject前にproject存在確認。なければtask:内のネストから取得 |
-# 集計: ★implemented:21 / ★monitoring:1 / ✗obsolete:3 / pending:6
-# 優先順(S66再評価): GP-028(教訓注入0%復旧:12cmd全滅)→GP-025(STUCK2件+毎回BLOCK)→GP-026(STUCK6件+65%BLOCK)→GP-027(commit漏れ)→GP-023(データ待ち)
+# | 029 | insights起票品質改善  | pending            | S70  | ID一意化(ms追加)+自バッチdedup+解決済みauto-close |
+# 集計: ★implemented:21 / ★monitoring:1 / ✗obsolete:3 / pending:7
+# 優先順(S70再評価): GP-028(教訓注入0%復旧:12cmd全滅)→GP-025(STUCK2件+毎回BLOCK)→GP-026(STUCK6件+65%BLOCK)→GP-027(commit漏れ)→GP-029(insights品質)→GP-023(データ待ち)
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -1299,3 +1300,16 @@
   findings_summary: "Post-GP batch分析 — cmd_1300-1312 GATE performance。Gate追跡対象10cmd(1302/1303/1305はgate_metrics記録なし=archive済みor対象外)。(1)CLEAR達成:8/10(80%)。First-attempt CLEAR:2/10(20%=cmd_1307,1310)。Multi-attempt CLEAR:6/10(60%=cmd_1304(4th),1306(2nd),1308(2nd),1309(2nd),1311(2nd),1312(5th))。(2)STUCK残留:2/10(20%)=cmd_1300(report_yaml_missing→GP-026),cmd_1301(archive→GP-025)。S64の8 STUCKからcmd_1312がCLEAR→残り7。(3)BLOCK原因16件: archive:7(43.8%→GP-025),report_yaml_missing:3(18.8%→GP-026),lesson_candidate:4(25.0%=gate正常動作),ac_version_mismatch:1(6.3%),report_format:1(6.3%)。(4)GP impact予測: GP-025+026実装で16BLOCKの10件(62.5%)根絶。First-attempt CLEAR率20%→推定60-70%。(5)GP-028影響: 全10cmdでrelated_lessons=[](教訓注入率0%)。品質への影響は間接的だが教訓なしの忍者は過去パターン認識不可。(6)cmd_1312 CLEAR確認: 5回目gate check(archive解消+report_yaml fix後)でCLEAR。自己修正パラドックス(自身のdeployがpre-fix版)は結果的に解消"
   proposals: []
   timestamp: "2026-03-23T08:00:00"
+- cmd_id: self_study_S70
+  review_type: self_study
+  findings_summary: "insights.yaml品質分析 — gate_loop_health自動起票の問題。(1)ID collision: insight_write.shがdate '+%Y%m%d-%H%M%S'でID生成。gate_loop_health.shが同一秒内に複数呼出→同一ID発生(14エントリ全てINS-20260323-054021)。個別status管理不可。(2)Dedup failure: gate_loop_health.shはexisting_insightsをファイルから1回だけ読込→自バッチ内の書込はdedup対象外(書込後にreloadしない)。2回目バッチ(054027-054028)で4件がdedup漏れ(quote escaping不一致が原因疑い)。結果: 18エントリ中4件が純粋重複。(3)解決済み分類: S61の3カテゴリ分類に基づき — Cat-A(autofix済み3件):lessons_useful dict→list(Fix2),null→[](Fix6),bc str→list(Fix5:ただし'['開始のみ)。Cat-A(未実装1件):bc dict→list(30回=最多)。Cat-B(template4件)+Cat-C(忍者品質6件)=pending。(4)修正提案: (a)insight_write.shにミリ秒orランダムsuffix追加, (b)gate_loop_health.shの自バッチdedup追加(setをinsight書込ごとに更新), (c)解決済み3件をdoneマーク, (d)重複4件を削除"
+  proposals:
+    - id: GP-029
+      description: "insights自動起票品質改善: ID一意化(ms追加)+自バッチdedup+解決済みauto-close"
+      status: pending
+  timestamp: "2026-03-23T08:05:00"
+- cmd_id: self_study_S71
+  review_type: self_study
+  findings_summary: "全軍idle状態分析+次アクション先読み。(1)現況: 6忍者全idle, pipeline空, CLEAR streak:8。(2)ブロッカー: uncommitted_block(context/lord-conversation-index.md)で4忍者の/clearが中止。家老がgit commitで解消必要。(3)CI RED: run 23410932510(E2E Tests)。前回cmd_1310で修復済みと報告されたが再発疑い。(4)30commit未push。(5)GP優先順(全軍に影響): GP-028(教訓注入0%→全忍者の教訓参照不可)>GP-025(STUCK7件+43%BLOCK)>GP-026(STUCK6件+19%BLOCK)。(6)軍師→家老メッセージ配送確認: GP-028/025/026提案+cmd_1312レビュー+品質fix報告=全て家老にアーカイブ済み(archive/inbox/karo_20260323.yaml)。(7)即時実行可能: uncommitted_block解消(git commit)→忍者/clear→新cmd配備可能に。将軍がGP-028をcmd化→家老配備→教訓注入復旧の流れが最優先。(8)insights.yamlにpending 17件(gate_loop_health 15+手動2)。S61分類に基づき、autofix実装済み3件は将軍がdoneマーク可能"
+  proposals: []
+  timestamp: "2026-03-23T08:10:00"

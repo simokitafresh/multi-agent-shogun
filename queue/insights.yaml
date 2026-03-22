@@ -177,3 +177,21 @@ insights:
   priority: high
   source: gate_loop_health
   status: pending
+- id: INS-20260323-055830-3027
+  ts: '2026-03-23T05:58:30+09:00'
+  insight: test_dedup_1
+  priority: low
+  source: test
+  status: pending
+- id: INS-20260323-055830-22cf
+  ts: '2026-03-23T05:58:30+09:00'
+  insight: test_dedup_2
+  priority: low
+  source: test
+  status: pending
+- id: INS-20260323-055830-1961
+  ts: '2026-03-23T05:58:30+09:00'
+  insight: test_dedup_3
+  priority: low
+  source: test
+  status: pending
