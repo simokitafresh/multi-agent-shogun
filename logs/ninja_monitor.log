@@ -8594,3 +8594,18 @@ STATUS: SUCCESS
 [2026-03-23 05:32:25] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
 [2026-03-23 05:32:25] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
 [2026-03-23 05:32:26] SHOGUN-ALERT-DEBOUNCE: shogun CTX:75% but 562s < 1800s since last alert
+OK: dashboard.md auto section updated (05:32)
+[2026-03-23 05:33:54] REPORT-FORMAT-PASS: kagemaru report=kagemaru_report.yaml
+[2026-03-23 05:33:55] REPORT-FORMAT-PASS: hanzo report=hanzo_report.yaml
+[2026-03-23 05:33:56] REPORT-FORMAT-PASS: saizo report=saizo_report.yaml
+[2026-03-23 05:33:56] REPORT-FORMAT-PASS: kotaro report=kotaro_report.yaml
+[2026-03-23 05:33:57] REPORT-FORMAT-PASS: tobisaru report=tobisaru_report.yaml
+[2026-03-23 05:33:58] STALL-GHOST: hayate has status=assigned but empty task_id — skipping stall detection
+[2026-03-23 05:33:58] STALL-GHOST: kagemaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:33:58] STALL-GHOST: hanzo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:33:58] STALL-GHOST: saizo has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:33:58] STALL-GHOST: kotaro has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:33:58] STALL-GHOST: tobisaru has status=done but empty task_id — skipping stall detection
+[2026-03-23 05:34:06] CLEAR-BLOCKED-UNCOMMITTED: karo has uncommitted files: queue/tasks/hayate.yaml scripts/inbox_write.sh  reason=KARO-CLEAR(check_karo_clear)
+[2026-03-23 05:34:06] SHOGUN-ALERT-DEBOUNCE: shogun CTX:77% but 662s < 1800s since last alert
+[2026-03-23 05:34:10] AGENT-STATE-CORRECTION: karo @agent_state=active but idle prompt detected, corrected to idle

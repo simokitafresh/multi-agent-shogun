@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 247件 (draft:105, report:112, self_study:36) | 2026-03-20〜
+# 累計: 248件 (draft:105, report:112, self_study:37) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -13,7 +13,7 @@
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
 # 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
-# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)+S48(GATE CLEAR率トレンド+教訓pipeline健全性)+S49(cmd完了速度+BLOCK原因深層:GP-026)+S50(insights棚卸し+dashboard重複+commit漏れ:GP-027)+S51(WA率再計測:85%、infra除外53%)+S52(deepdive追体験+軍師自分事化)+S53(忍者別WA:GP-021ベースライン)+S54(gate format 100%PASS直近100件)+S55(GP消費率77.8%:パイプライン健全)+S56(APPROVE→BLOCK分析:89.4%infra noise,真accuracy97%)+S57(教訓注入0%崩壊:cmd_1301以降project未検出→GP-028)
+# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)+S48(GATE CLEAR率トレンド+教訓pipeline健全性)+S49(cmd完了速度+BLOCK原因深層:GP-026)+S50(insights棚卸し+dashboard重複+commit漏れ:GP-027)+S51(WA率再計測:85%、infra除外53%)+S52(deepdive追体験+軍師自分事化)+S53(忍者別WA:GP-021ベースライン)+S54(gate format 100%PASS直近100件)+S55(GP消費率77.8%:パイプライン健全)+S56(APPROVE→BLOCK分析:89.4%infra noise,真accuracy97%)+S57(教訓注入0%崩壊:cmd_1301以降project未検出→GP-028)+S58(inject横展開:3関数に同パターン存在,現時点残留なし)
 # ─── GP追跡表(S42整理:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
@@ -1229,3 +1229,8 @@
     priority: high
     status: pending
   timestamp: "2026-03-23T06:30:00"
+- cmd_id: self_study_S58
+  review_type: self_study
+  findings_summary: "INS-050238(inject横展開)事前分析。deploy_task.shの冪等性ガード付きinject関数7つ中、cmd_1312修正対象のreport_filenameと同パターン(既存値→スキップ)が3関数に存在: (1)inject_engineering_preferences(L1122): PJ固有設定。同PJなら影響なし、PJ切替時に残留リスク。(2)inject_reports_to_read(L1202): blocked_by依存。cmd間で異なるため残留リスク高。(3)inject_context_files(L1336): project依存。同PJなら同じcontext。残留リスク低。現在の全忍者task YAMLを確認: report_filename以外のフィールド残留なし(cmd完了時にクリアされた可能性)。結論: cmd_1312完了後に再検証必要だが、現時点ではreport_filenameが唯一の実害ケース。batsテスト: 344件全PASS(CI GREEN)。INS-050238はpending維持。GP-028(教訓注入タイミング)が最優先"
+  proposals: []
+  timestamp: "2026-03-23T06:38:00"

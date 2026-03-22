@@ -128,6 +128,86 @@ if [ "$FROM" = "shogun" ] || [ "$FROM" = "karo" ]; then
     fi
 fi
 
+# Lesson injection safety net: type=task_assigned → 教訓注入チェック
+# 目的: deploy_task.sh未使用時でも教訓が忍者に届くことを保証（ラルフループ断絶防止）
+if [ "$TYPE" = "task_assigned" ]; then
+    NINJA_TASK="$SCRIPT_DIR/queue/tasks/${TARGET}.yaml"
+    if [ -f "$NINJA_TASK" ]; then
+        LESSON_CHECK=$(TASK_PATH="$NINJA_TASK" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
+import yaml, os, sys, tempfile
+task_path = os.environ['TASK_PATH']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+try:
+    with open(task_path) as f:
+        data = yaml.safe_load(f)
+    if not data or 'task' not in data:
+        sys.exit(0)
+    task = data['task']
+    existing = task.get('related_lessons', [])
+    if existing:
+        print(f'OK: {len(existing)} lessons already injected')
+        sys.exit(0)
+    # related_lessons is empty — inject universal lessons as safety net
+    project = task.get('project', 'infra')
+    lessons_paths = [
+        os.path.join(script_dir, 'projects', project, 'lessons_archive.yaml'),
+        os.path.join(script_dir, 'projects', project, 'lessons.yaml'),
+    ]
+    all_lessons = []
+    for lp in lessons_paths:
+        if os.path.exists(lp):
+            with open(lp) as f:
+                ld = yaml.safe_load(f)
+            all_lessons = (ld or {}).get('lessons', [])
+            if all_lessons:
+                break
+    # Also load platform lessons
+    pj_yaml = os.path.join(script_dir, 'config', 'projects.yaml')
+    if os.path.exists(pj_yaml):
+        with open(pj_yaml) as f:
+            pdata = yaml.safe_load(f)
+        for pj in (pdata or {}).get('projects', []):
+            if pj.get('type') == 'platform' and pj.get('id') != project:
+                for suffix in ['lessons_archive.yaml', 'lessons.yaml']:
+                    pp = os.path.join(script_dir, 'projects', pj['id'], suffix)
+                    if os.path.exists(pp):
+                        with open(pp) as f:
+                            pd = yaml.safe_load(f)
+                        all_lessons.extend((pd or {}).get('lessons', []))
+                        break
+    if not all_lessons:
+        print('WARN: no lessons found')
+        sys.exit(0)
+    # Filter: universal + confirmed only
+    universal = []
+    for l in all_lessons:
+        if l.get('retired') or str(l.get('status','')).lower() == 'deprecated':
+            continue
+        tags = l.get('tags', [])
+        if isinstance(tags, str):
+            tags = [tags]
+        if 'universal' in [str(t).lower() for t in tags]:
+            universal.append({
+                'id': l.get('id',''),
+                'summary': str(l.get('summary','') or l.get('title','')),
+                'detail': str(l.get('detail','') or l.get('content','')),
+            })
+    task['related_lessons'] = universal[:10]
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix='.tmp')
+    with os.fdopen(tmp_fd, 'w') as f:
+        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+    os.replace(tmp_path, task_path)
+    print(f'INJECTED: {len(universal[:10])} universal lessons (safety net)')
+except Exception as e:
+    print(f'WARN: lesson inject failed: {e}', file=sys.stderr)
+    sys.exit(0)
+" 2>&1 || true)
+        if [ -n "$LESSON_CHECK" ]; then
+            echo "[lesson_safety_net] $LESSON_CHECK" >&2
+        fi
+    fi
+fi
+
 # Report format gate: type=report_received → 報告YAMLのフォーマット検証
 # 目的: 家老の手動修正作業を根絶（karo_workarounds 5件連続同一問題を自動化×強制で解消）
 if [ "$TYPE" = "report_received" ]; then

@@ -64,4 +64,6 @@ task: status
     - deploy_task.shの構文エラーで他の忍者配備が不能になった場合
     target_path: scripts/deploy_task.sh
     task_type: implement
+    report_filename: hayate_report.yaml
+    report_path: queue/reports/hayate_report.yaml
 status: done
