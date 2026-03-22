@@ -1,0 +1,28 @@
+ninja: kagemaru
+parent_cmd: cmd_1291
+status: done
+ac_version_read: d41d8cd9
+files_modified:
+- scripts/archive_completed.sh
+acceptance_criteria:
+- id: AC1
+  result: PASS
+  evidence: review_gate.done未存在時、CMD_ID指定でSKIPログ出力+報告YAML保持を確認
+  binary_checks:
+  - check: review_gate.done未存在の報告YAMLがarchive_reportsでスキップされるか
+    result: PASS
+- id: AC2
+  result: PASS
+  evidence: review_gate.done存在時、報告YAMLが正常アーカイブされることを確認。sweep modeでもreview_gate.done未存在でスキップ確認
+  binary_checks:
+  - check: review_gate.done存在時は従来通りアーカイブされるか
+    result: PASS
+- id: AC3
+  result: PASS
+  evidence: CMD_ID指定・sweep mode両方で動作確認済み。エラーなし
+  binary_checks:
+  - check: CMD_ID指定・sweep mode両方で正しく動作するか
+    result: PASS
+lesson_candidate:
+- found: false
+lessons_useful: []
