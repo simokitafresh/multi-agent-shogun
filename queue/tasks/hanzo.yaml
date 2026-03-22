@@ -1,41 +1,38 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: 142c2b8d
+  ac_version: 6d6ef3c2
   acceptance_criteria:
   - binary_checks:
-    - check: inbox_write.shでverify_request/verify_resultが受付可能か
+    - check: pre-write-report-deny.shが存在しqueue/reports/*_report_*.yamlパターンをDENYするか
       result: ''
-    description: inbox_write.shでtype=verify_request/verify_resultが正常動作すること
+    description: Write/Editでqueue/reports/*_report_*.yamlへの直接書き込みがDENYされること
     id: AC1
   - binary_checks:
-    - check: gunshi.mdに再検証手順が記載されているか
+    - check: settings.local.jsonにpre-write-report-deny.shのエントリが追加されているか
       result: ''
-    description: 軍師手順に再検証3問チェックが記載されていること
+    description: settings.local.jsonにPreToolUseフックが正しく追加されていること
     id: AC2
   - binary_checks:
-    - check: 家老手順にseverity判定+verify_request送信があるか
+    - check: テストでWrite toolのDENY応答が返るか
       result: ''
-    description: 家老手順にseverity判定+verify_request送信が記載されていること
+    description: report_field_set.sh経由の書き込みは許可されること
     id: AC3
   bloom_level: ''
-  cmd_id: cmd_1287
-  command: '■ AC1: inbox_write.shにtype=verify_request/verify_resultを追加（既存type追加と同じ構造。メッセージ配信のみ）
-
-    ■ AC2: 軍師instructions(gunshi.md)のレビュー手順に再検証フロー記載を追加 — verify_requestを受けたら3問チェック→verify_resultで返信
-
-    ■ AC3: 家老instructions(karo.md or karo-operations.md)のレビューサイクルにseverity判定+verify_request送信手順を追加
-
-    ■ 設計(軍師S30): 8Phase(RC→修正cmd→実装→severity判定→verify_request→軍師再検証3問→verify_result→完了/追加修正max3回)
-
-    '
-  deployed_at: '2026-03-23T02:43:44'
+  cmd_id: cmd_1294
+  command: "■ AC1: scripts/hooks/pre-write-report-deny.sh を作成。\n       - matcher:\
+    \ Write|Edit\n       - パターン: queue/reports/.*_report_.*\\.yaml$\n       - 出力:\
+    \ permissionDecision=deny + 理由 + report_field_set.sh誘導メッセージ\n       - report_field_set.sh経由の書き込みは許可(環境変数等で識別)\n\
+    ■ AC2: settings.local.json のPreToolUse配列に\n       Write|Edit matcher + pre-write-report-deny.sh\
+    \ エントリを追加\n■ AC3: テスト: Write toolでqueue/reports/test_report_cmd_test.yamlを作成しようとすると\n\
+    \       deny応答が返ること\n"
+  deployed_at: '2026-03-23T03:23:24'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L209: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report\
-    \ file 未作成でも \n  - L276: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit\
-    \ 1)が鉄則。WARNING+続行\n────────────────────────────────────────\n\nGP-012 RC修正再検証フロー実装"
+    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    \  - L289: SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別\n\
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -44,15 +41,13 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   parallel_ok:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1287
-  progress: AC1-3全PASS。commit済み
+  parent_cmd: cmd_1294
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -66,18 +61,14 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  - detail: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file
-      未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
-      側の auto-done hook は残さない。
-    id: L209
-    summary: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report
-      file 未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
-      側の auto-done hook は残さない。
-  - detail: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行は問題を検知したが無視すると同義。inbox_write.shで3箇所のサイレントスキップをBLOCKED+exit1に修正して根絶
-    id: L276
-    summary: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行は問題を検知したが無視すると同義。inbox_write.shで3箇所のサイレントスキップをBLOCKED+exit1に修正して根絶
-  report_filename: hanzo_report_cmd_1287.yaml
-  report_path: queue/reports/hanzo_report_cmd_1287.yaml
+  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+    id: L097
+    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+  - detail: SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別ファイル出力+パス参照方式への変更を検討すべき
+    id: L289
+    summary: SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別ファイル出力+パス参照方式への変更を検討すべき
+  report_filename: hanzo_report_cmd_1294.yaml
+  report_path: queue/reports/hanzo_report_cmd_1294.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -92,6 +83,8 @@ task:
     - lesson_candidate
     - lessons_useful
   role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: assigned
   stop_for: []
+  target_path: scripts/hooks/pre-write-report-deny.sh
   task_type: implement
+status: done
