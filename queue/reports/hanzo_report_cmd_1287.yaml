@@ -2,28 +2,25 @@ cmd_id: cmd_1287
 ninja: hanzo
 status: done
 ac_version_read: 142c2b8d
+verdict: PASS
 
-acceptance_criteria:
-  - id: AC1
-    result: PASS
-    binary_checks:
-      - check: inbox_write.shでverify_request/verify_resultが受付可能か
-        result: PASS
-    evidence: "INBOX_WRITE_TEST=1で両typeテスト実行→メッセージ配信成功確認。サポートtype一覧コメントにも追記済み"
+result:
+  summary: "GP-012 RC修正再検証フロー実装完了。inbox_write.sh type追加+gunshi.md再検証手順+karo-procedures.md §11フロー追加"
 
-  - id: AC2
-    result: PASS
-    binary_checks:
-      - check: gunshi.mdに再検証手順が記載されているか
-        result: PASS
-    evidence: "Re-verification Protocolセクション追加。再検証3問チェック(指摘解消/副作用不在/品質維持)+verify_result出力フォーマット+ログ記録手順記載"
+purpose_validation:
+  fit: true
+  reason: "REQUEST_CHANGES修正後の再検証フローを構造化し、軍師の品質ゲートを強化"
 
-  - id: AC3
-    result: PASS
-    binary_checks:
-      - check: 家老手順にseverity判定+verify_request送信があるか
-        result: PASS
-    evidence: "karo-procedures.md §11追加。8Phase全体フロー+severity判定表+verify_request送信コマンド+verify_result処理表。karo-operations.md §3にも索引参照追加"
+binary_checks:
+  AC1:
+    - check: "inbox_write.shでverify_request/verify_resultが受付可能か"
+      result: "yes"
+  AC2:
+    - check: "gunshi.mdに再検証手順が記載されているか"
+      result: "yes"
+  AC3:
+    - check: "家老手順にseverity判定+verify_request送信があるか"
+      result: "yes"
 
 files_modified:
   - scripts/inbox_write.sh
@@ -41,10 +38,17 @@ lessons_useful:
   - id: L209
     useful: true
     reason: "旧手順残存リスクを意識し、karo-operations.mdの索引にも再検証フロー参照を追加"
+  - id: L225
+    useful: false
+    reason: "entity名義混入は今回該当せず"
+  - id: L063
+    useful: false
+    reason: "YAML構造操作は今回該当せず"
 
 lesson_candidate:
-  - title: "正本ファイルと索引ファイルの同時更新"
-    detail: "手順の正本(karo-procedures.md)を追加する際、索引層(karo-operations.md)への参照追加を同時に行わないと、索引からの到達不能になる。正本追記と索引更新はセットで実施すべき"
+  found: true
+  title: "正本ファイルと索引ファイルの同時更新"
+  detail: "手順の正本(karo-procedures.md)を追加する際、索引層(karo-operations.md)への参照追加を同時に行わないと、索引からの到達不能になる。正本追記と索引更新はセットで実施すべき"
 
 decision_candidate: []
 
