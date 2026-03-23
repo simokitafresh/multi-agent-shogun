@@ -188,8 +188,8 @@ check_ci_red() {
     local output
     local exit_code=0
 
-    # gh run list で最新runの結論を取得
-    output=$(gh run list --limit 3 --json conclusion,name,headBranch \
+    # gh run list で最新runの結論を取得（originリポジトリを明示指定）
+    output=$(gh run list --repo simokitafresh/multi-agent-shogun --limit 3 --json conclusion,name,headBranch \
         --jq '.[] | select(.headBranch=="main") | .conclusion' 2>&1) || exit_code=$?
 
     if [ "$exit_code" -ne 0 ]; then
