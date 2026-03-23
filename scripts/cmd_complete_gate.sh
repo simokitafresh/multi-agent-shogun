@@ -1736,11 +1736,21 @@ except Exception:
             if [ ! -d "$tp_proj_path" ]; then
                 continue
             fi
-            if (cd "$tp_proj_path" && git diff --name-only -- "$tp_file" 2>/dev/null | grep -q .) || \
-               (cd "$tp_proj_path" && git diff --cached --name-only -- "$tp_file" 2>/dev/null | grep -q .); then
-                echo "    [WARN] uncommitted: $tp_file"
+            # Get uncommitted files under target_path (staged + unstaged, deduplicated)
+            local tp_uncommitted
+            tp_uncommitted=$(cd "$tp_proj_path" && {
+                git diff --name-only -- "$tp_file" 2>/dev/null
+                git diff --cached --name-only -- "$tp_file" 2>/dev/null
+            } | sort -u)
+            [ -z "$tp_uncommitted" ] && continue
+            # Exclude operational files: logs/, queue/, dashboard.md, *.log
+            local tp_filtered
+            tp_filtered=$(echo "$tp_uncommitted" | grep -v -E '^logs/|^queue/|^dashboard\.md$|\.log$' || true)
+            [ -z "$tp_filtered" ] && continue
+            while IFS= read -r tp_uf; do
+                echo "    [WARN] uncommitted: $tp_uf"
                 tp_warn_count=$((tp_warn_count + 1))
-            fi
+            done <<< "$tp_filtered"
         done <<< "$tp_info"
     done
     if [ "$tp_warn_count" -gt 0 ]; then
