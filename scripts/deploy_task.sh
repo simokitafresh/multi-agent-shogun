@@ -3070,3 +3070,6 @@ RR_LOCK_FILE="/tmp/rr_pointer.lock"
 ) 201>"$RR_LOCK_FILE" 2>/dev/null || log "WARN: rr_pointer update failed (non-fatal)"
 
 log "${NINJA_NAME}: deployment complete (type=${TYPE})"
+
+# cmd_1337: ダッシュボード自動更新（配備完了時、バックグラウンド実行）
+bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" &
