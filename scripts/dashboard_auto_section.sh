@@ -38,6 +38,23 @@ TASKS_DIR="$PROJECT_DIR/queue/tasks"
 SETTINGS="$PROJECT_DIR/config/settings.yaml"
 ARCHIVE_CMD_DIR="$PROJECT_DIR/queue/archive/cmds"
 LESSON_EFFECT_STATUS_FILE="$PROJECT_DIR/queue/lesson_effectiveness_status.txt"
+GATE_FIRE_LOG="$PROJECT_DIR/logs/gate_fire_log.yaml"
+
+# ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
+compute_first_fire_rate() {
+    [[ ! -f "$GATE_FIRE_LOG" ]] && { echo "—"; return; }
+    # /tmp/を除外し、実報告のPASS/FAILを集計
+    local pass_count fail_count
+    pass_count=$(grep -v '/tmp/' "$GATE_FIRE_LOG" | grep -c 'result: PASS' 2>/dev/null || echo 0)
+    fail_count=$(grep -v '/tmp/' "$GATE_FIRE_LOG" | grep -c 'result: FAIL' 2>/dev/null || echo 0)
+    local total=$((pass_count + fail_count))
+    if [[ $total -eq 0 ]]; then
+        echo "—"
+    else
+        awk "BEGIN { printf \"%.1f%%\", ($pass_count / $total) * 100 }"
+    fi
+}
+FIRST_FIRE_RATE=$(compute_first_fire_rate)
 KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
 KM_MODEL_CACHE="/tmp/dashboard_km_model_cache.txt"
 KM_CACHE_LINES="/tmp/dashboard_km_cache_lines.txt"
@@ -722,6 +739,7 @@ fi
     echo "|------|-----|"
     echo "| cmd完了(GATE CLEAR) | ${CLEAR_COUNT:-0}/${TOTAL_CMDS} |"
     echo "| 稼働忍者 | ${ACTIVE_COUNT}/8 (${ACTIVE_NAMES}) |"
+    echo "| 初回CLEAR率(gate_fire) | ${FIRST_FIRE_RATE} |"
     if [[ -n "$STREAK_START" ]] && [[ -n "$STREAK_END" ]]; then
         echo "| 連勝(CLEAR streak) | ${STREAK} (${STREAK_START}〜${STREAK_END}) |"
     else
@@ -920,6 +938,29 @@ fi
 
 mv "${DASHBOARD}.tmp" "$DASHBOARD"
 echo "OK: dashboard.md auto section updated (${NOW})"
+
+# ─── ntfy notification (cmd_1359) ───
+if [[ "$DRY_RUN" == "false" ]]; then
+    if [[ "${TOTAL_CMDS:-0}" -gt 0 ]]; then
+        _ntfy_clear_pct=$((CLEAR_COUNT * 100 / TOTAL_CMDS))
+    else
+        _ntfy_clear_pct=0
+    fi
+    _ntfy_summary="📊 Dashboard更新: 稼働${ACTIVE_COUNT}名 CLEAR率${_ntfy_clear_pct}% 連勝${STREAK}"
+
+    # AC2: Dedup — skip if same as last sent
+    _ntfy_last_file="/tmp/mas-dashboard-ntfy-last.txt"
+    _ntfy_skip=false
+    if [[ -f "$_ntfy_last_file" ]] && [[ "$(cat "$_ntfy_last_file")" == "$_ntfy_summary" ]]; then
+        _ntfy_skip=true
+    fi
+
+    if [[ "$_ntfy_skip" == "false" ]]; then
+        # AC3: Non-blocking — || true ensures dashboard update is not interrupted
+        bash "$SCRIPT_DIR/ntfy.sh" "$_ntfy_summary" || true
+        echo "$_ntfy_summary" > "$_ntfy_last_file"
+    fi
+fi
 
 # ─── Remove strikethrough entries from 将軍宛報告 section ───
 if grep -q '^## 将軍宛報告' "$DASHBOARD"; then
