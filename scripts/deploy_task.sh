@@ -311,6 +311,22 @@ generate_report_template() {
 
     mkdir -p "$SCRIPT_DIR/queue/reports"
 
+    # cmd_1323: STALL再配備時の旧報告テンプレート自動cleanup
+    if [[ -n "$parent_cmd" && "$parent_cmd" == cmd_* ]]; then
+        local stale_basename
+        for stale_report in "$SCRIPT_DIR/queue/reports/"*"_report_${parent_cmd}.yaml"; do
+            [ -f "$stale_report" ] || continue
+            stale_basename=$(basename "$stale_report")
+            # 自分の報告はスキップ
+            if [[ "$stale_basename" == "${ninja_name}_report_"* ]]; then
+                continue
+            fi
+            mkdir -p "$SCRIPT_DIR/archive/reports"
+            mv "$stale_report" "$SCRIPT_DIR/archive/reports/"
+            log "report_template: stale report archived (${stale_basename})"
+        done
+    fi
+
     # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
     if [ -f "$report_file" ]; then
         log "report_template: already exists, skipping (${report_file})"
@@ -1527,6 +1543,94 @@ try:
 
 except Exception as e:
     print(f'[INJECT_CRED] ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+PY
+        return 1
+    fi
+}
+
+# ─── target_path存在検査WARN注入（cmd_1322: 設定済みだが実在しないtarget_pathを警告） ───
+inject_target_path_check() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_target_path_check: task file not found: $task_file"
+        return 0
+    fi
+
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+import os
+import sys
+import tempfile
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+
+try:
+    with open(task_file) as f:
+        data = yaml.safe_load(f)
+
+    if not data or 'task' not in data:
+        sys.exit(0)
+
+    task = data['task']
+
+    # target_pathフィールドを取得（リストまたは文字列）
+    target_path = task.get('target_path', None)
+    if not target_path:
+        # 空/未設定 → 正常（何もしない）
+        sys.exit(0)
+
+    # リストの場合はそのまま、文字列の場合はリスト化
+    if isinstance(target_path, str):
+        paths = [target_path]
+    elif isinstance(target_path, list):
+        paths = [p for p in target_path if p]
+    else:
+        sys.exit(0)
+
+    if not paths:
+        sys.exit(0)
+
+    # 存在しないパスを検出
+    missing = [p for p in paths if not os.path.exists(p)]
+
+    if not missing:
+        # 全パス存在 → 正常（何もしない）
+        sys.exit(0)
+
+    # WARN注入: target_path_warningフィールドに警告文追加
+    warn_msg = '⚠ target_pathが存在しない: ' + ', '.join(missing)
+    task['target_path_warning'] = warn_msg
+
+    # Atomic write
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, task_file)
+    except:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[INJECT_TARGET_PATH] WARN: target_path does not exist: {", ".join(missing)}', file=sys.stderr)
+
+    # gate_fire_log.yamlに記録
+    gate_log = os.path.join(script_dir, 'logs', 'gate_fire_log.yaml')
+    from datetime import datetime
+    ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+    entry = f'- ts: "{ts}", gate: inject_target_path_check, result: WARN, detail: "{warn_msg}"\n'
+    try:
+        with open(gate_log, 'a') as f:
+            f.write(entry)
+    except Exception as e:
+        print(f'[INJECT_TARGET_PATH] gate_fire_log write failed: {e}', file=sys.stderr)
+
+except Exception as e:
+    print(f'[INJECT_TARGET_PATH] ERROR: {e}', file=sys.stderr)
     sys.exit(1)
 PY
         return 1
