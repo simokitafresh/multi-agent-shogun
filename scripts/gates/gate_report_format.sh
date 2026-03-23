@@ -135,6 +135,16 @@ if not isinstance(verdict, str) or verdict not in ('PASS', 'FAIL'):
     errors.append(f'verdict: \"{verdict}\" is not valid (must be \"PASS\" or \"FAIL\")')
     hints.append('verdictはPASS/FAILの二値のみ。binary_checks全yes→PASS、1つでもno→FAIL')
 
+# --- stale_report check (GP-036): filename cmd vs parent_cmd field ---
+import re
+filename = os.path.basename(report_path)
+fname_match = re.search(r'cmd_(\d+)', filename)
+parent_cmd = data.get('parent_cmd', '')
+if fname_match and parent_cmd:
+    fname_cmd = f'cmd_{fname_match.group(1)}'
+    if fname_cmd != str(parent_cmd):
+        errors.append(f'stale_report: filename has {fname_cmd} but parent_cmd={parent_cmd} (cmd_id mismatch)')
+
 # --- Output ---
 if errors:
     print('FAIL: ' + '; '.join(errors))
