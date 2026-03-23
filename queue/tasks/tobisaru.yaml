@@ -1,57 +1,29 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 85a608b9
+  ac_version: 89d8ba4e
   acceptance_criteria:
-  - binary_checks:
-    - check: engineering_preferences inject前にクリアされるか
-      result: ''
-    - check: reports_to_read inject前にクリアされるか
-      result: ''
-    - check: context_files inject前にクリアされるか
-      result: ''
-    - check: role_reminder inject前にクリアされるか
-      result: ''
-    - check: report_template inject前にクリアされるか
-      result: ''
-    - check: bloom_level inject前にクリアされるか
-      result: ''
-    - check: exec_control inject前にクリアされるか
-      result: ''
-    - check: ninja_weak_points inject前にクリアされるか
-      result: ''
-    description: 対象8箇所でinject前フィールドクリアが実装されていること
-    id: AC1
-  - binary_checks:
-    - check: task_idがクリアされないことを確認
-      result: ''
-    - check: deployed_atがクリアされないことを確認
-      result: ''
-    description: task_idとdeployed_atはクリア対象外であること
-    id: AC2
-  - binary_checks:
-    - check: bats tests/ 全テストPASSか
-      result: ''
-    description: batsテスト全PASSすること
-    id: AC3
-  assigned_to: tobisaru
+    AC2:
+      binary_checks:
+      - 'L1296付近の照合ロジックにprefix照合が追加されているか: yes/no'
+      - 'row_cmd_id.startswith(cmd_id + ''_'') のようなprefix照合があるか: yes/no'
+      - 'row_cmd_id == cmd_id の完全一致照合も維持されているか: yes/no'
+      - 'cmd_XXXX指定でcmd_XXXX_AC1-3行が照合成功するか(テスト実行で確認): yes/no'
+      description: update_lesson_impact_tsvのL1296がprefix照合に対応。cmd_XXXX_AC1-3形式のTSV行がcmd_XXXX指定でも照合成功すること
+    AC3:
+      binary_checks:
+      - 'L3553-3557付近にupdated件数検証が追加されているか: yes/no'
+      - 'updated=0時にERROR行が出力されるか: yes/no'
+      - 'ERRORメッセージに「LESSON_IMPACT_VERIFY」プレフィックスが含まれるか: yes/no'
+      - 'updated>0時はERRORが出力されないか: yes/no'
+      description: 更新後のverifyログ出力が存在。updated=0時にERROR行が出力されること
   bloom_level: ''
-  command: 'deploy_task.sh冪等性ガード横展開。cmd_1312方式(inject前にフィールドクリア→再inject)を
-
-    以下8箇所に適用: engineering_preferences(L1123), reports_to_read(L1203),
-
-    context_files(L1337), role_reminder(L1700), report_template(L316,L1758),
-
-    bloom_level(L1893), exec_control(L2014), ninja_weak_points(L2195)。
-
-    除外: task_id(L202), deployed_at(L2304), report_filename(cmd_1312済み)。
-
-    '
-  deployed_at: '2026-03-23T07:02:16'
+  command: cmd_complete_gate.shのupdate_lesson_impact_tsv関数(L1296付近)の照合ロジックにprefix照合を追加せよ。さらにL3553-3557付近の非ブロッキングwrapperに更新件数検証を追加し、updated=0時にERROR行を出力せよ。
+  deployed_at: '2026-03-23T10:30:40'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────\n\n"
+    \  - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは\n\
+    \  - L271: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks\
+    \ string形式のバリデー\n────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -69,11 +41,9 @@ task:
     top_pattern: commit_missing(1件)
     total_workarounds: 1
     warning: ⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_1321
+  parallel_ok: []
+  parent_cmd: cmd_1325
+  progress: AC2+AC3完了。commit済み(3b18400)
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -87,8 +57,16 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  report_filename: tobisaru_report_cmd_1321.yaml
-  report_path: queue/reports/tobisaru_report_cmd_1321.yaml
+  - detail: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shはCMD_IDが空だとlesson.doneフラグを生成しない(L339条件)。本preflight実装で補完しているが、根本的にはauto_draft_lesson.shにCMD_IDを伝搬する修正が望ましい。
+    id: L086
+    summary: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shはCMD_IDが空だとlesson.doneフラグを生成しない(L339条件)。本preflight実装で補完しているが、根本的にはauto_draft_lesson.shにCMD_IDを伝搬する修正が望ましい。
+  - detail: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate
+      BLOCKで差し戻すのが正規フロー
+    id: L271
+    summary: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate
+      BLOCKで差し戻すのが正規フロー
+  report_filename: tobisaru_report_cmd_1325.yaml
+  report_path: queue/reports/tobisaru_report_cmd_1325.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -104,10 +82,9 @@ task:
     - lessons_useful
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   scope_mode: EXACT
-  status: in_progress
-  stop_for:
-  - inject関数のクリアパターンがcmd_1312方式と異なる場合
-  target_path:
-  - scripts/deploy_task.sh
-  task_id: cmd_1321_AC1-3
+  status: done
+  stop_for: []
+  target_path: scripts/cmd_complete_gate.sh
   task_type: implement
+  version: 3
+  worker_id: tobisaru
