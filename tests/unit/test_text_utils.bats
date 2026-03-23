@@ -6,7 +6,7 @@ setup_file() {
 }
 
 @test "print_padded pads ASCII text to requested width" {
-    run bash -lc '
+    run bash -c '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
 source "$PROJECT_ROOT/scripts/lib/text_utils.sh"
 print_padded "agent" 8
@@ -16,7 +16,7 @@ print_padded "agent" 8
 }
 
 @test "print_padded pads Japanese text using display width" {
-    run bash -lc '
+    run bash -c '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
 source "$PROJECT_ROOT/scripts/lib/text_utils.sh"
 print_padded "忍者" 5
@@ -26,7 +26,7 @@ print_padded "忍者" 5
 }
 
 @test "print_padded pads mixed ASCII and Japanese text" {
-    run bash -lc '
+    run bash -c '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
 source "$PROJECT_ROOT/scripts/lib/text_utils.sh"
 print_padded "A忍B" 6
