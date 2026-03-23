@@ -2968,6 +2968,9 @@ inject_context_files "$TASK_FILE" || true
 # credential_files自動注入（cmd_949: 認証タスクに.envを自動追加）
 inject_credential_files "$TASK_FILE" || true
 
+# target_path存在検査WARN注入（cmd_1322: 設定済みだが実在しないtarget_pathを警告）
+inject_target_path_check "$TASK_FILE" || true
+
 # context_update自動注入（失敗してもデプロイは継続）
 inject_context_update "$TASK_FILE" || true
 
