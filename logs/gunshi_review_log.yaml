@@ -52,15 +52,15 @@
 # | 032 | YAML parse prevention | pending            | S78  | PostToolUse hookでYAML構文検証。パース不能報告を忍者ペインで即検出 |
 # | 033 | verdict autofix Fix9  | pending            | S79  | binary_checks結果からPASS/FAIL推定。37FAIL根絶。2行追加 |
 # | 034 | no_lesson_reason自動補完| pending            | S81  | found:false+reason空→'N/A(auto-filled)'。24FAIL根絶 |
-# | 035 | gunshi self-gate       | pending            | S83  | レビュー品質セルフgate。SG7完全性+verdict整合+WA check確認 |
+# | 035 | gunshi self-gate       | ★implemented      | S102 | SG10として実装。5項目送信前チェック。軍師直接修正 |
 # | 036 | stale_report検出       | ★implemented      | S102 | gate_report_format.shにcmd_id不一致FAIL追加。軍師直接修正。テスト検証済 |
 # | 037 | recon教訓注入          | pending            | S94  | deploy_task.sh L634スキップ→条件付き注入。偵察特化教訓のみフィルタ |
 # | 038 | bulk report submit     | ★implemented      | S102 | report_field_set.sh JSON/YAML構造体自動検出→Pythonフォールバック。軍師直接修正。テスト検証済 |
 # | 039 | python3直書きブロック  | ★implemented      | S101 | pre-bash-report-deny.sh open()パターン検出追加。軍師直接修正。hook動作検証済 |
 # | 040 | テンプレート指示修正   | ★implemented      | S101 | deploy_task.sh L353-354 Edit tool→report_field_set.sh。軍師直接修正 |
-# 集計(S102更新): ★implemented:31 / ★monitoring:1 / ✗obsolete:3 / ☆karo送信済:2(032,035) / pending:3(031,033,034 cmd済結果待ち) / cmd配備済:1(037=cmd_1340)
-# 優先順(S102改訂): GP-032(PostToolUse hook安全網)→GP-035(self-gate)
-# S102行動: GP-036+038+040+039を軍師直接修正。4件×(気づき→修正→テスト→commit)のdeepdiveサイクル
+# 集計(S102更新): ★implemented:32 / ★monitoring:1 / ✗obsolete:3 / ☆karo送信済:1(032) / pending:3(031,033,034 cmd済結果待ち) / cmd配備済:1(037=cmd_1340)
+# 優先順(S102改訂): GP-032(PostToolUse hook安全網。karo送信済。工数大のため家老経由)
+# S102行動: GP-035+036+038+040+039の5件を軍師直接修正。deepdiveスタイル実証
 # パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
@@ -136,6 +136,15 @@
 #       → 実例: cmd_1278 — 7,552行のlessons.yamlを「読むな」1行で隠蔽→Vercel化の動機消滅
 #   □ 総合判定: 4類型のいずれか該当 → REQ_CHANGES(根源的対処cmdの並行起票を提案)
 # → SG0 FAIL or SG2-SG6のいずれかNG or SG8該当 → verdict: FAIL/REQ_CHANGES（「注記のみ」禁止）
+# SG10: 送信前セルフゲート (GP-035 — S102実装)
+#   □ report review完了時、inbox_write送信前に全項目確認:
+#     (1) SG0実行済み: gate_report_format.sh PASSか？ 未実行なら今すぐ実行
+#     (2) SG2実行済み: files_modifiedの各ファイルにcmd_idのcommit存在確認済みか？
+#     (3) verdict整合: binary_checks全yes→LGTM / 1つでもno→FAIL か？ 矛盾があればverdictを修正
+#     (4) SG7完全性(LGTM時のみ): バンドル全フィールド(gate_precheck/lesson/context/dashboard/wa)記入済みか？
+#     (5) WA予測: ninja_weak_pointsのtop_patternが今回の報告に該当していないか？ 該当→重点確認済みか？
+#   □ 1つでも未完了 → 送信前に完了させよ。送信後の気づきは遅い
+#   □ 目的: 「家老がworkaroundなしで処理できるか」の最終確認。LG006の精神を送信段階で保証
 # ─────────────────────────
 # ─── エントリ形式(簡略) ───
 # draft: cmd_id, verdict, gate_result, findings_summary(1行), timestamp, proposals(optional)
@@ -1734,3 +1743,26 @@
   analysis: "GP-040修正前に配備されたタスク。テンプレート指示がまだEdit tool指示のまま。次回配備以降は改善見込み。しかし根本問題: テンプレートコメントは忍者の「読む意思」に依存。GP-039(python3ブロック)+GP-038(bulk mode)が補完層として必要"
   observation: "GP-040の効果測定: 次のcmd配備後にbinary_checks string形式WA率を計測せよ。改善なし→テンプレートコメント方式の限界→GP-032(PostToolUse hook)が必要"
   timestamp: "2026-03-23T14:30:00"
+- type: self_study
+  id: S103
+  topic: "WHY Chain: なぜ経験を積むべきか + GP-035/038直接実装"
+  trigger: "殿「もう1サイクル回して経験を積むのはどうだ？なぜ経験を積むべきか深掘ってみろ」"
+  why_chain:
+    why1: "なぜ経験を積むべきか → 品質が上がる"
+    why2: "なぜ経験で品質が上がるか → 行動→結果→学び→改善のループ"
+    why3: "LLMは/clearで忘れる。なぜ消える経験に価値？ → 経験はコードに残る。環境が賢くなる"
+    why4: "分析だけで十分では？ → ならない。S98でGP-038を「bulk mode」設計→実体験で「JSON構造体自動検出」に校正。分析と実装は別物"
+    why5: "なぜ分析と実体験で結果が違うか → 分析は抽象。抽象は詳細を切り捨てる。体験は現実の詳細に触れる"
+    why6: "原理抽出 → 体験は抽象を校正する。分析=方向、体験=精度。両方必要"
+    why7: "三層学習ループ: 第一層=軍師自身の行動校正、第二層=karo WA率計測、第三層=GATE CLEAR率向上"
+    why8: "/clear後にどう残るか → ラルフループ。経験はコード(gate/hook/script)に外部化。強くてニューゲーム"
+    why9: "究極系原則適用: 実装体験=忍者の現実理解。なぜ忍者がYAMLを壊すか、体験でしか分からない"
+    why10: "最深部: 経験=理解を環境に正確に変換する行為。変換精度は体験でしか校正できない"
+  actions_taken:
+    - "GP-038: report_field_set.sh JSON/YAML構造体自動検出。7行追加。テスト検証済み+commit"
+    - "GP-035: SG10(送信前セルフゲート)5項目をレビューログヘッダに実装"
+  theory_vs_practice:
+    gp038: "S98設計: 'bulk mode stdin一括set' → 実装: 'VALUE引数の[/{検出→Pythonフォールバック'。設計より簡潔。体験が校正した"
+    gp035: "S83設計: '3項目(SG7完全性+verdict整合+WA check)' → 実装: '5項目(SG0/SG2/verdict/SG7/WA予測)。実際のSGプロトコル読了で具体化。体験が校正した"
+  session_total: "本セッションGP直接実装: 5件(035,036,038,039,040)。implemented 27→32。pending GP実質1件(032のみ)"
+  timestamp: "2026-03-23T14:45:00"
