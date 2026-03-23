@@ -24,12 +24,15 @@ lesson_candidate:
   detail: ''
   project: infra
 lessons_useful:
-  '[0]':
-    reason: bash/shellスクリプト系タスクではないため該当せず
-  '[1]':
-    reason: MCP entity操作なし
-  '[2]':
-    reason: lessons.yaml操作なし
+- id: L074
+  useful: false
+  reason: bash/shellスクリプト系タスクではないため該当せず
+- id: L225
+  useful: false
+  reason: MCP entity操作なし
+- id: L063
+  useful: false
+  reason: lessons.yaml操作なし
 skill_candidate:
   found: false
 decision_candidate:
@@ -39,15 +42,15 @@ hook_failures:
   details: ''
 binary_checks:
   AC1:
-    '[0]':
-      result: PASS(gunshi_review_log.yaml L79-106にSG7プロトコル定義。5コンポーネント+出力フォーマット+運用ルール完備。commit
-        dd36b6bで確定)
+  - check: SG7バンドルの出力フォーマットが定義されているか
+    result: PASS(gunshi_review_log.yaml L79-106にSG7プロトコル定義。5コンポーネント+出力フォーマット+運用ルール完備。commit
+      dd36b6bで確定)
   AC2:
-    '[0]':
-      result: PASS(karo-operations.md L89-104にSG7バンドル受領→スタンプ+ペースト手順。6ステップ表+フォールバック定義。commit
-        dd36b6bで確定)
+  - check: 家老手順にバンドル受領→スタンプ手順があるか
+    result: PASS(karo-operations.md L89-104にSG7バンドル受領→スタンプ+ペースト手順。6ステップ表+フォールバック定義。commit
+      dd36b6bで確定)
   AC3:
-    '[0]':
-      result: PASS(gunshi.md L330-361にSG7バンドルテンプレート+L396-397にLGTM通知テンプレート(バンドル付き)。commit
-        dd36b6bで確定)
+  - check: 軍師LGTM出力にバンドルが含まれるか
+    result: PASS(gunshi.md L330-361にSG7バンドルテンプレート+L396-397にLGTM通知テンプレート(バンドル付き)。commit
+      dd36b6bで確定)
 verdict: PASS
