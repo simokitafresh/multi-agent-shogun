@@ -139,6 +139,21 @@ if m_last:
         arr.append(None)
     arr[idx] = value
 else:
+    # --- GP-053 cycle 3: binary_checks check項目保護 ---
+    # テンプレートで事前展開されたcheck項目を忍者の上書きから保護。
+    # 忍者はresultのみ更新可能。check項目はテンプレートのまま維持。
+    if keys[0] == 'binary_checks' and len(keys) == 2 and isinstance(value, list):
+        existing = current.get(last_key, [])
+        if isinstance(existing, list) and existing:
+            protected = 0
+            for i, ex_item in enumerate(existing):
+                if i < len(value) and isinstance(ex_item, dict) and isinstance(value[i], dict):
+                    ex_check = ex_item.get('check', '')
+                    if ex_check and isinstance(ex_check, str) and len(ex_check.strip()) > 5:
+                        value[i]['check'] = ex_check
+                        protected += 1
+            if protected > 0:
+                print(f'[report_field_set] binary_checks保護: {protected}個のcheck項目をテンプレートから維持', file=sys.stderr)
     current[last_key] = value
 
 dir_name = os.path.dirname(report_path) or '.'
@@ -257,3 +272,46 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     fi
     sleep 0.5
 done
+
+# --- GP-053: binary_checks書込み直後のsemantic check ---
+# 忍者がcheck="PASS"やresult=自由記述を書いた瞬間にフィードバック。
+# gateは事後(cmd完了時)。ここは即時検出。品質の起点を早くする。
+if [[ "$DOT_KEY" == binary_checks* ]]; then
+    _bc_check=$(REPORT_PATH="$REPORT_PATH" python3 -c "
+import yaml, os, sys
+rp = os.environ['REPORT_PATH']
+try:
+    with open(rp) as f:
+        data = yaml.safe_load(f)
+except Exception:
+    sys.exit(0)
+if not isinstance(data, dict):
+    sys.exit(0)
+bc = data.get('binary_checks')
+if not isinstance(bc, dict):
+    sys.exit(0)
+verdict_words = {'PASS','FAIL','OK','NG','yes','no','YES','NO','true','false','True','False','pass','fail','ok','ng'}
+issues = []
+for ac_key, ac_val in bc.items():
+    if not isinstance(ac_val, list):
+        continue
+    for j, ci in enumerate(ac_val):
+        if not isinstance(ci, dict):
+            continue
+        ck = str(ci.get('check','')).strip()
+        rs = str(ci.get('result','')).strip()
+        if ck in verdict_words:
+            issues.append(f'{ac_key}[{j}].check=\"{ck}\" — 確認項目ではなく判定値。何を確認したかを書け')
+        if rs and rs.lower() not in ('yes','no',''):
+            issues.append(f'{ac_key}[{j}].result=\"{rs[:30]}\" — yes/noのみ。自由記述はdetailに書け')
+if issues:
+    print('\\n'.join(issues))
+" 2>/dev/null) || true
+    if [ -n "$_bc_check" ]; then
+        echo "" >&2
+        echo "⚠ binary_checks品質問題検出 ⚠" >&2
+        echo "$_bc_check" >&2
+        echo "FIX: check=「確認した内容」 result=\"yes\" or \"no\"" >&2
+        echo "例: bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1 '[{check: \"変数が除去されたか\", result: \"yes\"}]'" >&2
+    fi
+fi

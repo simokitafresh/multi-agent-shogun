@@ -112,6 +112,26 @@ elif isinstance(bc, dict):
         if not isinstance(ac_val, list):
             errors.append(f'binary_checks.{ac_key}: is {type(ac_val).__name__} (must be list of check items)')
             hints.append(f'FIX (binary_checks.{ac_key}): list形式で記入せよ:\\n  binary_checks:\\n    {ac_key}:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
+        else:
+            # --- GP-053: binary_checks semantic quality check ---
+            # 形式だけでなく中身の品質を検証。check=verdict値やresult=自由記述を検出。
+            # 品質の起点: binary_checksが機能しなければ第一層学習ループが空回りする。
+            verdict_words = {'PASS', 'FAIL', 'OK', 'NG', 'yes', 'no', 'YES', 'NO', 'true', 'false', 'True', 'False', 'pass', 'fail', 'ok', 'ng'}
+            for j, check_item in enumerate(ac_val):
+                if not isinstance(check_item, dict):
+                    continue
+                ck = check_item.get('check', '')
+                rs = check_item.get('result', '')
+                # check field: must describe WHAT was verified, not a verdict
+                if isinstance(ck, str) and ck.strip() in verdict_words:
+                    errors.append(f'binary_checks.{ac_key}[{j}].check: \"{ck}\" は確認項目ではない。PASS/FAILではなく「何を確認したか」を書け')
+                    hints.append(f'FIX (binary_checks.{ac_key}[{j}]): check に確認内容を書け。result に yes/no を書け。\\n  例: {{check: \"_pane_offset変数が除去されたか\", result: \"yes\"}}')
+                elif isinstance(ck, str) and 0 < len(ck.strip()) < 5:
+                    errors.append(f'binary_checks.{ac_key}[{j}].check: \"{ck}\" が短すぎる(確認内容を具体的に書け)')
+                # result field: must be yes/no, not free-form text
+                if isinstance(rs, str) and rs.strip() and rs.strip().lower() not in ('yes', 'no'):
+                    errors.append(f'binary_checks.{ac_key}[{j}].result: \"{rs[:40]}\" は不正。\"yes\" または \"no\" のみ')
+                    hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): \"yes\" or \"no\" のみ。自由記述は acceptance_criteria.detail に書け')
 elif isinstance(bc, list) and not bc:
     errors.append('binary_checks: empty list (must have at least one entry)')
 
