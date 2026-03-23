@@ -1,57 +1,83 @@
 task:
-  ac_version: 89d8ba4e
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: fc23f278
   acceptance_criteria:
-    AC2:
-      binary_checks:
-      - 'L1296付近の照合ロジックにprefix照合が追加されているか: yes/no'
-      - 'row_cmd_id.startswith(cmd_id + ''_'') のようなprefix照合があるか: yes/no'
-      - 'row_cmd_id == cmd_id の完全一致照合も維持されているか: yes/no'
-      - 'cmd_XXXX指定でcmd_XXXX_AC1-3行が照合成功するか(テスト実行で確認): yes/no'
-      description: update_lesson_impact_tsvのL1296がprefix照合に対応。cmd_XXXX_AC1-3形式のTSV行がcmd_XXXX指定でも照合成功すること
-    AC3:
-      binary_checks:
-      - 'L3553-3557付近にupdated件数検証が追加されているか: yes/no'
-      - 'updated=0時にERROR行が出力されるか: yes/no'
-      - 'ERRORメッセージに「LESSON_IMPACT_VERIFY」プレフィックスが含まれるか: yes/no'
-      - 'updated>0時はERRORが出力されないか: yes/no'
-      description: 更新後のverifyログ出力が存在。updated=0時にERROR行が出力されること
+  - binary_checks:
+    - 'fof_config_retrieved: 本番DBから5体の構成情報を取得できたか? yes/no'
+    description: 本番DBから5体(四つ目-常勝/激攻/鉄壁, bam-2, bam-6)のUUID・selection config・component構成を取得し報告
+    id: AC1
+  - binary_checks:
+    - 'all_five_verified: 5体全ての検証が完了したか? yes/no'
+    description: verify_fof_parity_batch.pyで全5体の全期間holding_signal+monthly_returnを本番DB比較
+    id: AC2
+  - binary_checks:
+    - 'results_reported: PASS/FAIL結果が明確に報告されているか? yes/no'
+    description: PASS/FAIL+不一致件数+知見を報告
+    id: AC3
   bloom_level: ''
-  command: cmd_complete_gate.shのupdate_lesson_impact_tsv関数(L1296付近)の照合ロジックにprefix照合を追加せよ。さらにL3553-3557付近の非ブロッキングwrapperに更新件数検証を追加し、updated=0時にERROR行を出力せよ。
-  deployed_at: '2026-03-23T10:30:40'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+  command: 'Phase F — MultiViewMomentumFilter 5体パリティ検証。
+
+    verify_fof_parity_batch.pyを使用し、MultiViewMomentumFilter選別ブロックを持つ
+
+    既存FoF 5体（四つ目-常勝/激攻/鉄壁, bam-2, bam-6）の全期間holding_signal+monthly_returnを
+
+    本番DBと比較し、PASS/FAILを報告せよ。
+
+    '
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  deployed_at: '2026-03-23T21:09:28'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: L071(quarterly_jan)と同様、quarterly_marも初期化Cash月が複数月発生する。現skipロジックは最初の1Cash月しかスキップし\n\
     \  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは\n\
-    \  - L271: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks\
-    \ string形式のバリデー\n────────────────────────────────────────\n\n"
+    \  - L086: GS側top_n選出は本番MonthlyReturnMomentumFilterBlockのcutoff_score全包含方式に統一する。同スコア銘柄は全て選出\n\
+    \  - L213: DM-signal本番の公開ページ検証は、先に/api/auth/verify-viewerでviewer session+dm_viewer_tokenを確立\n\
+    \  - L090: kawarimi N4_0500(10D/sel_n=2)で3月FAIL(max255bp)。GS: monthly_return dropna→reindex\n\
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  ninja: tobisaru
   ninja_weak_points:
-    breakdown: commit_missing(1件)
+    breakdown: commit_missing(1件), report_yaml_format(1件)
     source: karo_workarounds.yaml
     top_pattern: commit_missing(1件)
-    total_workarounds: 1
+    total_workarounds: 2
     warning: ⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁
-  parallel_ok: []
-  parent_cmd: cmd_1325
-  progress: AC2+AC3完了。commit済み(3b18400)
-  project: infra
+  notes: '- PI-002: 本番PostgreSQL必須
+
+    - PI-008: monthly_return_open列で比較
+
+    - 初月hs_cross不一致は既知パターンL485
+
+    - 5体を一括でverify_fof_parity_batch.pyに渡してよい
+
+    - スクリプト: scripts/analysis/grid_search/verify_fof_parity_batch.py
+
+    - 参照: scripts/analysis/grid_search/run_077_yotsume.py
+
+    '
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1347
+  project: dm-signal
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
     id: L074
-    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-    id: L225
-    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    summary: L071(quarterly_jan)と同様、quarterly_marも初期化Cash月が複数月発生する。現skipロジックは最初の1Cash月しかスキップしない。init_phase_doneフラグ方式でquarterly_mar/jan両方に対応すべき。cmd_205
+      影丸発見
   - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
     id: L063
@@ -59,32 +85,20 @@ task:
       lesson in data.get('lessons',[])が正しい形
   - detail: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shはCMD_IDが空だとlesson.doneフラグを生成しない(L339条件)。本preflight実装で補完しているが、根本的にはauto_draft_lesson.shにCMD_IDを伝搬する修正が望ましい。
     id: L086
-    summary: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shはCMD_IDが空だとlesson.doneフラグを生成しない(L339条件)。本preflight実装で補完しているが、根本的にはauto_draft_lesson.shにCMD_IDを伝搬する修正が望ましい。
-  - detail: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate
-      BLOCKで差し戻すのが正規フロー
-    id: L271
-    summary: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate
-      BLOCKで差し戻すのが正規フロー
-  report_filename: tobisaru_report_cmd_1325.yaml
-  report_path: queue/reports/tobisaru_report_cmd_1325.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - pushするな(commitまで)
-    - スコープ外改善は禁止
-    notes:
-    - TODO/FIXMEが残っていないことを確認せよ
-    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
-    required_fields:
-    - ac_version_read
-    - files_modified
-    - lesson_candidate
-    - lessons_useful
+    summary: GS側top_n選出は本番MonthlyReturnMomentumFilterBlockのcutoff_score全包含方式に統一する。同スコア銘柄は全て選出し均等配分。strict
+      top_nでは短lookback(1M/6M等)でtie切り捨て→パリティFAILする。oikaze/nukimi/kasokuで修正・検証済み(全0bp完全一致)。kawarimiはTrendReversalFi
+  - detail: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capability(tools/mode/isolation)で強制可能な制約とbehavior(prompt/hook)でしか縛れない制約を分離し、まずcapabilityを最小化する設計順序が必須。起動条件は5ファイル以上横断のrecon前段Read
+    id: L213
+    summary: DM-signal本番の公開ページ検証は、先に/api/auth/verify-viewerでviewer session+dm_viewer_tokenを確立してからCDP計測すべき。未認証状態ではDashboard
+      shellだけ描画され、PF selector不在・動的API未実行のため性能/回帰を誤ってPASS/FAIL判定しうる。
+  - detail: copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生成されず、build_instructions.shの手動実行が必要。レビューACもgit
+      diff外ファイルを検証対象に含めるべき
+    id: L090
+    summary: 'kawarimi N4_0500(10D/sel_n=2)で3月FAIL(max255bp)。GS: monthly_return dropna→reindex→NaN復活→momentum
+      NaN→コンポーネント除外(3体)。本番: cumulative_return→pct_change→有効値→コンポーネント含む(4体)。選出数差異→均等配分リターン乖離。L087(初期化期間)とは別の根本原'
+  report_filename: tobisaru_report_cmd_1347.yaml
+  report_path: queue/reports/tobisaru_report_cmd_1347.yaml
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  scope_mode: EXACT
-  status: done
+  status: completed
   stop_for: []
-  target_path: scripts/cmd_complete_gate.sh
-  task_type: implement
-  version: 3
-  worker_id: tobisaru
+  task_type: impl
