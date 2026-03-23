@@ -2068,6 +2068,7 @@ REPORT_FORMAT_FAILED=0
 for report_file in "$SCRIPT_DIR/queue/reports/"*_report_${CMD_ID}.yaml; do
     [ -f "$report_file" ] || continue
     REPORT_FORMAT_CHECKED=$((REPORT_FORMAT_CHECKED + 1))
+    "$SCRIPT_DIR/scripts/gates/gate_report_autofix.sh" "$report_file" 2>/dev/null || true
     GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1 || true)
     if echo "$GATE_OUTPUT" | grep -q "^FAIL"; then
         REPORT_FORMAT_FAILED=$((REPORT_FORMAT_FAILED + 1))
@@ -4036,6 +4037,9 @@ except:
     else
         echo "  archive: already exists (skip)"
     fi
+
+    # cmd_1337: ダッシュボード自動更新（GATE CLEAR時のみ、バックグラウンド実行）
+    bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" &
 
     exit 0
 else

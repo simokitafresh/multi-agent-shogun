@@ -121,6 +121,38 @@ if 'acceptance_criteria' in data and 'binary_checks' not in data:
         # 構造が不明確なためauto-fixしない（品質に関わる）
         pass
 
+# === Fix 9: verdict空/欠落 → binary_checksから推定 ===
+# パターン: 忍者がverdictを空のまま提出するがbinary_checksは記入済み
+verdict_val = data.get('verdict')
+if not verdict_val or (isinstance(verdict_val, str) and verdict_val.strip() == ''):
+    bc = data.get('binary_checks')
+    if isinstance(bc, dict) and bc:
+        pass_count = 0
+        fail_count = 0
+        for ac_key, ac_val in bc.items():
+            checks = ac_val if isinstance(ac_val, list) else []
+            for chk in checks:
+                if isinstance(chk, dict):
+                    r = str(chk.get('result', '')).upper()
+                    if r == 'PASS':
+                        pass_count = pass_count + 1
+                    elif r == 'FAIL':
+                        fail_count = fail_count + 1
+        if pass_count + fail_count > 0:
+            data['verdict'] = 'FAIL' if fail_count > 0 else 'PASS'
+            fixes.append(f'verdict推定({pass_count}PASS/{fail_count}FAIL)')
+
+# === Fix 10: lesson_candidate.found=false + no_lesson_reason空 → N/A ===
+# パターン: 忍者がfound=falseにしたがno_lesson_reasonを空のまま提出
+lc = data.get('lesson_candidate')
+if isinstance(lc, dict):
+    found_val = lc.get('found')
+    if found_val is False or (isinstance(found_val, str) and found_val.strip().lower() == 'false'):
+        nlr = lc.get('no_lesson_reason')
+        if not nlr or (isinstance(nlr, str) and nlr.strip() in ('', '""')):
+            lc['no_lesson_reason'] = 'N/A'
+            fixes.append('no_lesson_reason空→N/A')
+
 # === Write back if changed ===
 if fixes:
     with open(report_path, 'w') as f:
