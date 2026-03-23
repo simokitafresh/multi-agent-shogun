@@ -50,7 +50,8 @@ TMP_METRICS=$(mktemp)
 TMP_PIPELINE=$(mktemp)
 TMP_RESULTS=$(mktemp)
 TMP_TITLES=$(mktemp)
-trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES"' EXIT
+TMP_RECENT=$(mktemp)
+trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT"' EXIT
 
 NOW=$(TZ=Asia/Tokyo date '+%H:%M')
 
@@ -377,6 +378,183 @@ if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
     ' "$LESSON_IMPACT_FILE" | sort -t'|' -k6 -rn)
 fi
 
+# ─── Recent 30 cmd metrics (from lesson_impact.tsv) ───
+declare -A RECENT_PJ_IR=() RECENT_PJ_ER=() RECENT_PJ_WARN=()
+declare -A RECENT_TT_INJ=() RECENT_TT_SKIP=() RECENT_TT_RATE=() RECENT_TT_WARN=()
+declare -A RECENT_MDL_RR=() RECENT_MDL_ER=() RECENT_MDL_WARN=()
+
+if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
+    python3 - "$LESSON_IMPACT_FILE" "$GATE_LOG" > "$TMP_RECENT" 2>/dev/null <<'RECENT_PY'
+import sys
+from collections import defaultdict
+import re
+
+tsv_path = sys.argv[1]
+gate_path = sys.argv[2] if len(sys.argv) > 2 else ""
+
+rows = []
+with open(tsv_path, encoding="utf-8") as f:
+    header = f.readline().strip().split("\t")
+    for line in f:
+        parts = line.strip().split("\t")
+        if len(parts) < 9:
+            continue
+        row = dict(zip(header, parts))
+        # L217: exclude PENDING
+        if (row.get("result") or "").strip().upper() == "PENDING":
+            continue
+        action = row.get("action", "").strip()
+        if action not in ("injected", "skipped"):
+            continue
+        rows.append(row)
+
+# Last 30 unique cmd_ids (reverse chronological)
+seen = set()
+recent_cmds = []
+for row in reversed(rows):
+    cid = row["cmd_id"]
+    if cid not in seen:
+        seen.add(cid)
+        recent_cmds.append(cid)
+    if len(recent_cmds) >= 30:
+        break
+recent_set = set(recent_cmds)
+
+# cmd -> model mapping from gate_metrics.log
+cmd_models = {}
+if gate_path:
+    try:
+        with open(gate_path, encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split("\t")
+                if len(parts) >= 6:
+                    cmd_models[parts[1]] = parts[5]
+    except Exception:
+        pass
+
+def extract_family(label):
+    low = label.lower().replace("-", " ").replace("_", " ")
+    if "opus" in low and ("4.6" in low or "4 6" in low):
+        return "opus_4_6"
+    if "gpt" in low and ("5.4" in low or "5 4" in low):
+        return "gpt_5_4"
+    if "codex" in low and ("5.4" in low or "5 4" in low):
+        return "gpt_5_4"
+    return re.sub(r"[^a-z0-9]+", "_", low).strip("_") or "unknown"
+
+def calc(data):
+    pj = defaultdict(lambda: {"inj": 0, "skip": 0, "ref": 0})
+    tt = defaultdict(lambda: {"inj": 0, "skip": 0})
+    mdl_raw = defaultdict(lambda: {"inj": 0, "total": 0, "ref": 0})
+    for r in data:
+        p = (r.get("project") or "unknown").strip() or "unknown"
+        t = (r.get("task_type") or "unknown").strip() or "unknown"
+        cid = r["cmd_id"]
+        ms = [m.strip() for m in (cmd_models.get(cid, "unknown")).split(",") if m.strip()] or ["unknown"]
+        if r["action"] == "injected":
+            pj[p]["inj"] += 1
+            if r.get("referenced", "").strip() == "yes":
+                pj[p]["ref"] += 1
+            tt[t]["inj"] += 1
+            for m in ms:
+                mdl_raw[m]["inj"] += 1
+                mdl_raw[m]["total"] += 1
+                if r.get("referenced", "").strip() == "yes":
+                    mdl_raw[m]["ref"] += 1
+        elif r["action"] == "skipped":
+            pj[p]["skip"] += 1
+            tt[t]["skip"] += 1
+            for m in ms:
+                mdl_raw[m]["total"] += 1
+    # Aggregate models by family
+    fam = defaultdict(lambda: {"inj": 0, "total": 0, "ref": 0, "label": "", "max_n": 0})
+    for model, stats in mdl_raw.items():
+        family = extract_family(model)
+        if family == "unknown":
+            continue
+        fam[family]["inj"] += stats["inj"]
+        fam[family]["total"] += stats["total"]
+        fam[family]["ref"] += stats["ref"]
+        if stats["total"] > fam[family]["max_n"]:
+            fam[family]["max_n"] = stats["total"]
+            fam[family]["label"] = model
+    return pj, tt, fam
+
+def pct(n, d):
+    return round(n / d * 100, 1) if d > 0 else None
+
+def fmt(v):
+    return f"{v:.1f}%" if v is not None else "—"
+
+o_pj, o_tt, o_fam = calc(rows)
+recent_rows = [r for r in rows if r["cmd_id"] in recent_set]
+r_pj, r_tt, r_fam = calc(recent_rows)
+
+# PJ output
+for p in sorted(set(list(o_pj.keys()) + list(r_pj.keys()))):
+    o = o_pj.get(p, {"inj": 0, "skip": 0, "ref": 0})
+    r = r_pj.get(p, {"inj": 0, "skip": 0, "ref": 0})
+    o_ir = pct(o["inj"], o["inj"] + o["skip"])
+    o_er = pct(o["ref"], o["inj"])
+    r_ir = pct(r["inj"], r["inj"] + r["skip"])
+    r_er = pct(r["ref"], r["inj"])
+    w = "N"
+    if o_ir is not None and r_ir is not None and abs(o_ir - r_ir) >= 10:
+        w = "Y"
+    if o_er is not None and r_er is not None and abs(o_er - r_er) >= 10:
+        w = "Y"
+    print(f"PJ\t{p}\t{fmt(r_ir)}\t{fmt(r_er)}\t{r['inj']+r['skip']}\t{w}")
+
+# TT output
+for t in sorted(set(list(o_tt.keys()) + list(r_tt.keys()))):
+    o = o_tt.get(t, {"inj": 0, "skip": 0})
+    r = r_tt.get(t, {"inj": 0, "skip": 0})
+    o_rate = pct(o["inj"], o["inj"] + o["skip"])
+    r_rate = pct(r["inj"], r["inj"] + r["skip"])
+    w = "N"
+    if o_rate is not None and r_rate is not None and abs(o_rate - r_rate) >= 10:
+        w = "Y"
+    print(f"TT\t{t}\t{r['inj']}\t{r['skip']}\t{fmt(r_rate)}\t{r['inj']+r['skip']}\t{w}")
+
+# MODEL output (keyed by lowercase display name)
+for fam_key in sorted(set(list(o_fam.keys()) + list(r_fam.keys()))):
+    o = o_fam.get(fam_key, {"inj": 0, "total": 0, "ref": 0, "label": ""})
+    r = r_fam.get(fam_key, {"inj": 0, "total": 0, "ref": 0, "label": ""})
+    label = r.get("label") or o.get("label") or fam_key
+    display = label.replace("_", " ").strip().lower()
+    o_rr = pct(o["ref"], o["inj"])
+    r_rr = pct(r["ref"], r["inj"])
+    w = "N"
+    if o_rr is not None and r_rr is not None and abs(o_rr - r_rr) >= 10:
+        w = "Y"
+    print(f"MODEL\t{display}\t{fmt(r_rr)}\t{fmt(r_rr)}\t{r['total']}\t{w}")
+RECENT_PY
+
+    while IFS=$'\t' read -r _rtype _rkey _rv1 _rv2 _rv3 _rv4 _rv5; do
+        case "$_rtype" in
+            PJ)
+                RECENT_PJ_IR[$_rkey]="$_rv1"
+                RECENT_PJ_ER[$_rkey]="$_rv2"
+                # _rv3=N (not displayed), _rv4=warn
+                RECENT_PJ_WARN[$_rkey]="$_rv4"
+                ;;
+            TT)
+                RECENT_TT_INJ[$_rkey]="$_rv1"
+                RECENT_TT_SKIP[$_rkey]="$_rv2"
+                RECENT_TT_RATE[$_rkey]="$_rv3"
+                # _rv4=N (not displayed), _rv5=warn
+                RECENT_TT_WARN[$_rkey]="$_rv5"
+                ;;
+            MODEL)
+                RECENT_MDL_RR[$_rkey]="$_rv1"
+                RECENT_MDL_ER[$_rkey]="$_rv2"
+                # _rv3=N (not displayed), _rv4=warn
+                RECENT_MDL_WARN[$_rkey]="$_rv4"
+                ;;
+        esac
+    done < "$TMP_RECENT"
+fi
+
 # ─── Build cmd→title map (for 戦果 section) ───
 # Priority: gate_metrics.log(9列目) > active STK > archive STK done
 if [[ -f "$GATE_LOG" ]]; then
@@ -575,32 +753,64 @@ fi
 
     echo ""
     echo "#### PJ別"
-    echo "| PJ | 注入率 | 効果率 | N |"
-    echo "|----|--------|--------|---|"
+    echo "| PJ | 注入率 | 効果率 | N | 直近30cmd注入率 | 直近30cmd効果率 |"
+    echo "|----|--------|--------|---|----------------|----------------|"
     if [[ -n "$KM_PROJECT_ROWS" ]]; then
-        printf "%s" "$KM_PROJECT_ROWS"
+        while IFS= read -r _row; do
+            [[ -z "$_row" ]] && continue
+            _pj=$(echo "$_row" | awk -F'|' '{gsub(/^ +| +$/, "", $2); print $2}')
+            _ri="${RECENT_PJ_IR[$_pj]:-—}"
+            _re="${RECENT_PJ_ER[$_pj]:-—}"
+            _warn="${RECENT_PJ_WARN[$_pj]:-N}"
+            if [[ "$_warn" == "Y" ]]; then
+                _row="${_row/| ${_pj} |/| ⚠ ${_pj} |}"
+            fi
+            echo "${_row% |} | ${_ri} | ${_re} |"
+        done <<< "$KM_PROJECT_ROWS"
     else
-        echo "| — | — | — | — |"
+        echo "| — | — | — | — | — | — |"
     fi
 
     echo ""
     echo "#### タスク種別別"
-    echo "| task_type | 注入 | スキップ | 注入率 | N |"
-    echo "|-----------|------|---------|--------|---|"
+    echo "| task_type | 注入 | スキップ | 注入率 | N | 直近30cmd注入 | 直近30cmdスキップ | 直近30cmd注入率 |"
+    echo "|-----------|------|---------|--------|---|--------------|------------------|----------------|"
     if [[ -n "$KM_TASK_TYPE_ROWS" ]]; then
-        printf "%s\n" "$KM_TASK_TYPE_ROWS"
+        while IFS= read -r _row; do
+            [[ -z "$_row" ]] && continue
+            _tt=$(echo "$_row" | awk -F'|' '{gsub(/^ +| +$/, "", $2); print $2}')
+            _tinj="${RECENT_TT_INJ[$_tt]:-0}"
+            _tskip="${RECENT_TT_SKIP[$_tt]:-0}"
+            _trate="${RECENT_TT_RATE[$_tt]:-—}"
+            _twarn="${RECENT_TT_WARN[$_tt]:-N}"
+            if [[ "$_twarn" == "Y" ]]; then
+                _row="${_row/| ${_tt} |/| ⚠ ${_tt} |}"
+            fi
+            echo "${_row% |} | ${_tinj} | ${_tskip} | ${_trate} |"
+        done <<< "$KM_TASK_TYPE_ROWS"
     else
-        echo "| — | — | — | — | — |"
+        echo "| — | — | — | — | — | — | — | — |"
     fi
 
     echo ""
     echo "#### モデル別"
-    echo "| モデル | 参照率 | 効果率 | N |"
-    echo "|--------|--------|--------|---|"
+    echo "| モデル | 参照率 | 効果率 | N | 直近30cmd参照率 | 直近30cmd効果率 |"
+    echo "|--------|--------|--------|---|----------------|----------------|"
     if [[ -n "$KM_KNOWLEDGE_MODEL_ROWS" ]]; then
-        printf "%s" "$KM_KNOWLEDGE_MODEL_ROWS"
+        while IFS= read -r _row; do
+            [[ -z "$_row" ]] && continue
+            _mdl=$(echo "$_row" | awk -F'|' '{gsub(/^ +| +$/, "", $2); print $2}')
+            _mdl_key=$(echo "$_mdl" | tr '[:upper:]' '[:lower:]' | tr -s ' ')
+            _mrr="${RECENT_MDL_RR[$_mdl_key]:-—}"
+            _mer="${RECENT_MDL_ER[$_mdl_key]:-—}"
+            _mwarn="${RECENT_MDL_WARN[$_mdl_key]:-N}"
+            if [[ "$_mwarn" == "Y" ]]; then
+                _row="${_row/| ${_mdl} |/| ⚠ ${_mdl} |}"
+            fi
+            echo "${_row% |} | ${_mrr} | ${_mer} |"
+        done <<< "$KM_KNOWLEDGE_MODEL_ROWS"
     else
-        echo "| — | — | — | — |"
+        echo "| — | — | — | — | — | — |"
     fi
 
     echo ""
