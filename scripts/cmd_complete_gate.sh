@@ -1932,6 +1932,15 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  SKIP (lesson_deprecation_scan.sh not found)"
     fi
 
+    # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
+    echo ""
+    echo "Git push (post-GATE CLEAR - emergency override):"
+    if git -C "$PROJECT_DIR" push 2>&1; then
+        echo "  git push: OK"
+    else
+        echo "  [INFO] git push: WARN (push failed, non-blocking)"
+    fi
+
     exit 0
 fi
 
@@ -4036,6 +4045,15 @@ except:
         fi
     else
         echo "  archive: already exists (skip)"
+    fi
+
+    # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
+    echo ""
+    echo "Git push (post-GATE CLEAR):"
+    if git -C "$PROJECT_DIR" push 2>&1; then
+        echo "  git push: OK"
+    else
+        echo "  [INFO] git push: WARN (push failed, non-blocking)"
     fi
 
     # cmd_1337: ダッシュボード自動更新（GATE CLEAR時のみ、バックグラウンド実行）
