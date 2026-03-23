@@ -133,10 +133,10 @@ if not verdict_val or (isinstance(verdict_val, str) and verdict_val.strip() == '
             checks = ac_val if isinstance(ac_val, list) else []
             for chk in checks:
                 if isinstance(chk, dict):
-                    r = str(chk.get('result', '')).upper()
-                    if r == 'PASS':
+                    r = str(chk.get('result', '')).strip().upper()
+                    if r in ('PASS', 'YES'):
                         pass_count = pass_count + 1
-                    elif r == 'FAIL':
+                    elif r in ('FAIL', 'NO'):
                         fail_count = fail_count + 1
         if pass_count + fail_count > 0:
             data['verdict'] = 'FAIL' if fail_count > 0 else 'PASS'
