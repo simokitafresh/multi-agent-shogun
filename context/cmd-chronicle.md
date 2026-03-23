@@ -413,3 +413,35 @@
 | cmd_1309 | queue/tasks/subtask_*.yaml 47件をarchive移動 — 旧アーキテクチャ残骸清掃 | infra | 03-23 | — |
 | cmd_1310 | CI RED修正 — test_sync_lessons_injection_count_sync.bats L77 失敗 | infra | 03-23 | — |
 | cmd_1311 | GP-003正規表現バグ修正 — report YAML hookが全忍者で未発火 | infra | 03-23 | — |
+| cmd_1289 | GP-011 忍者別workaround率の自動計測・startup gate表示 | infra | 03-23 | — |
+| cmd_1322 | GP-032 target_path存在検査WARN注入 | infra | 03-23 | — |
+| cmd_1323 | STALL再配備時の旧報告テンプレート自動cleanup | infra | 03-23 | — |
+| cmd_1324 | fix: lesson_impact.tsv タブ文字エスケープバグ修正+既存データ復旧 | infra | 03-23 | — |
+| cmd_1326 | feat: cmd_complete_gate.sh GATE CLEAR後処理のpost-write verify横展開 | infra | 03-23 | — |
+| cmd_1327 | fix: CI RED修復 — E2Eテスト2ファイルを現行編成に適合 | infra | 03-23 | — |
+| cmd_1329 | fix: insights.yaml棚卸し — pending 25件の分類・重複削除・resolved更新 | infra | 03-23 | — |
+| cmd_1328 | recon: GP-026実装設計 — report_yaml_missing BLOCK自動待機メカニズム | infra | 03-23 | — |
+| cmd_1330 | feat: GP-027実装 — commit漏れ検出WARN(gate check前) | infra | 03-23 | — |
+| cmd_1331 | fix: CI Unit Test FAIL — test_text_utils.bats bash -lc を bash -c に修正 | infra | 03-23 | — |
+| cmd_1334 | feat: GP-029実装 — insights自動起票品質改善(dedup+ID一意化) | infra | 03-23 | — |
+| cmd_1332 | feat: GP-026実装(B案) — CLEAR済みcmd再check防止+全non-done WAIT | infra | 03-23 | — |
+| cmd_1333 | feat: GP-028実装 — 教訓注入projectフィールドフォールバック | infra | 03-23 | — |
+| cmd_1335 | feat: GP-023実装 — 軍師レビュー時cross-ninja WA率チェック | infra | 03-23 | — |
+| cmd_1336 | CLEAR率65→85%向上、WA率53→27%半減。autofix→format check順序でrace condition根絶 | infra | 03-23 | — |
+| cmd_1337 | ダッシュボード更新の意志依存を排除。イベント駆動で即時更新し将軍の判断速度を向上 | infra | 03-23 | — |
+| cmd_1338 | GATE時にautofixを再実行しrace condition根絶。verdict/no_lesson_reason自動補完で61 FAIL根絶。CLEAR率65→85%。家老workaround構造的根絶 | infra | 03-23 | — |
+| cmd_1339 | 将軍のcmd重複起票を構造的に防止。今日のcmd_1338重複事故(家老cmd_1336と同内容)のwhy chain分析から特定した自動化ターゲット | infra | 03-23 | — |
+| cmd_1340 | 偵察教訓注入率0%(cmd_513全スキップ)を解消。偵察固有教訓が偵察タスクに伝わらず改善ループが断絶している。偵察は全cmdの前段であり品質の起点 | infra | 03-23 | — |
+| cmd_1341 | LLMには時系列の概念がない(殿指摘)。累積値は安心を与えるが因果を隠す。直近値は変化のシグナルを示す。recon注入率36%(実質0%)の誤認を構造的に防止 | infra | 03-23 | — |
+| cmd_1342 | Step 2 Phase B — 既存追い風FoFパリティ検証（MomentumFilter） | dm-signal | 03-23 | — |
+| cmd_1343 | Step 2 Phase C — 既存抜き身FoFパリティ検証（SingleViewMomentumFilter） | dm-signal | 03-23 | — |
+| cmd_1344 | Step 2 Phase D — 既存変わり身FoFパリティ検証（TrendReversalFilter） | dm-signal | 03-23 | — |
+| cmd_1346 | Step 2 Phase E2 — 既存加速D FoFパリティ検証（MomentumAccelerationFilter diff） | dm-signal | 03-23 | — |
+| cmd_1345 | Step 2 Phase E1 — 既存加速R FoFパリティ検証（MomentumAccelerationFilter ratio） | dm-signal | 03-23 | — |
+| cmd_1347 | Step 2 Phase F — 既存FoFパリティ検証（MultiViewMomentumFilter 5体） | dm-signal | 03-23 | — |
+| cmd_1350 | Step 1やり直し — numpy快速パスの本番パリティ検証 | dm-signal | 03-23 | — |
+| cmd_1349 | Step 3 — シン四神v2 12体作成（shin_shijin_l1_gs.py）【中止】 | dm-signal | 03-23 | — |
+| cmd_1348 | Step 2 Phase G — 既存ネステッドFoFパリティ検証（7体） | dm-signal | 03-23 | — |
+| cmd_1351 | Step 1補強 — 本番standard PF全65体のnumpy快速パスパリティ検証 | dm-signal | 03-23 | — |
+| cmd_1352 | 全standard PF numpy快速パス完全パリティ（hs+ret両方）+ L0-M_XLU原因特定 | dm-signal | 03-24 | — |
+| cmd_1353 | numpy快速パス 53/53完全一致達成 — ^VIX grid汚染修正+hs順序一致 | dm-signal | 03-24 | — |

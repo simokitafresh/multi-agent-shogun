@@ -203,7 +203,7 @@ with open(chronicle_path, "w", encoding="utf-8") as f:
 
 print(action)
 PY
-    ) 200>"$CHRONICLE_FILE.lock"
+    ) 200>"/tmp/mas-chronicle.lock"
 
     echo "[chronicle] synced: $cmd_id"
 }
@@ -276,7 +276,7 @@ write_yaml(pending_path, build_doc(kept))
 write_yaml(archive_path, build_doc(archive_decisions))
 print(len(matched))
 PY
-        ) 200>"$PENDING_DECISIONS_FILE.lock" 201>"$PENDING_DECISIONS_ARCHIVE.lock"
+        ) 200>"/tmp/mas-pending-decisions.lock" 201>"/tmp/mas-pending-decisions-archive.lock"
     )
 
     if [ "${archived_count:-0}" -gt 0 ]; then
@@ -416,7 +416,7 @@ if archived > 0:
 
 print(f"{synced} {archived}")
 PY
-        ) 200>"$QUEUE_FILE.lock"
+        ) 200>"/tmp/mas-stk.lock"
     )
 
     local synced archived
@@ -531,7 +531,7 @@ archive_cmds() {
             # S06修正: mv前にtmpファイル存在確認
             [ -f "$tmp_active" ] || { echo "[archive] FATAL: tmp_active not found: $tmp_active" >&2; exit 1; }
             mv "$tmp_active" "$QUEUE_FILE" || { echo "[archive] FATAL: mv failed: $tmp_active → $QUEUE_FILE" >&2; exit 1; }
-        ) 200>"$QUEUE_FILE.lock"
+        ) 200>"/tmp/mas-stk.lock"
         echo "[archive] cmds: archived=$archived kept=$kept"
     else
         rm -f "$tmp_active"
@@ -763,7 +763,7 @@ archive_karo_section() {
             !(NR in del) { print }
         ' "$DASHBOARD" > "/tmp/dash_karo_trim_$$.md"
         mv "/tmp/dash_karo_trim_$$.md" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: karo trim → $DASHBOARD" >&2; exit 1; }
-    ) 200>"$DASHBOARD.lock"
+    ) 200>"/tmp/mas-dashboard.lock"
 
     echo "[archive] karo_updates: archived=$archived_count kept=3"
 }
@@ -808,7 +808,7 @@ archive_dashboard() {
             exit 1
         fi
         mv "$tmp_dash" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: $tmp_dash → $DASHBOARD" >&2; exit 1; }
-    ) 200>"$DASHBOARD.lock"
+    ) 200>"/tmp/mas-dashboard.lock"
 
     echo "[archive] dashboard: archived=$archived_count kept=$KEEP_RESULTS"
 }
@@ -940,7 +940,7 @@ with open(chronicle_path, "w", encoding="utf-8") as f:
 
 print(f"trimmed: archived={total_archived}")
 PY
-    ) 200>"$CHRONICLE_FILE.lock"
+    ) 200>"/tmp/mas-chronicle.lock"
 
     echo "[chronicle-trim] done"
 }
@@ -1074,7 +1074,7 @@ except Exception:
 
 print(f"trimmed: archived={archived_count} kept={len(keep)}")
 PY
-    ) 200>"$QUEUE_FILE.lock"
+    ) 200>"/tmp/mas-stk.lock"
 
     echo "[stk-trim] done"
 }
