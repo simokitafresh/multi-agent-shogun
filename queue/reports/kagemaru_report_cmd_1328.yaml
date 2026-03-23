@@ -76,36 +76,36 @@ lesson_candidate:
   detail: ''
   project: infra
 lessons_useful:
-  '0':
-    useful: false
-    reason: batsテスト名関連。本タスクはbatsテスト実行なし
-  '1':
-    useful: false
-    reason: set -e関連。本タスクはスクリプト実装なし
-  '2':
-    useful: false
-    reason: ログ肥大関連。本タスクはログ設計なし
-  '3':
-    useful: false
-    reason: usage_status.sh関連。対象外
-  '4':
-    useful: true
-    reason: Stop Hookで全batsフル実行の教訓。gate実行コストの観点でB案のsleep180秒上限設計に影響
-  '5':
-    useful: false
-    reason: MCP entity名義混入。対象外
-  '6':
-    useful: false
-    reason: 教訓ID集計のPJ汚染。対象外
-  '7':
-    useful: false
-    reason: IF Compose minScale関連。対象外
-  '8':
-    useful: false
-    reason: watchdog活動時刻関連。対象外
-  '9':
-    useful: false
-    reason: flock単一起動ロック関連。対象外
+- useful: false
+  reason: batsテスト名関連。本タスクはbatsテスト実行なし
+  id: UNKNOWN_0
+- useful: false
+  reason: set -e関連。本タスクはスクリプト実装なし
+  id: UNKNOWN_1
+- useful: false
+  reason: ログ肥大関連。本タスクはログ設計なし
+  id: UNKNOWN_2
+- useful: false
+  reason: usage_status.sh関連。対象外
+  id: UNKNOWN_3
+- useful: true
+  reason: Stop Hookで全batsフル実行の教訓。gate実行コストの観点でB案のsleep180秒上限設計に影響
+  id: UNKNOWN_4
+- useful: false
+  reason: MCP entity名義混入。対象外
+  id: UNKNOWN_5
+- useful: false
+  reason: 教訓ID集計のPJ汚染。対象外
+  id: UNKNOWN_6
+- useful: false
+  reason: IF Compose minScale関連。対象外
+  id: UNKNOWN_7
+- useful: false
+  reason: watchdog活動時刻関連。対象外
+  id: UNKNOWN_8
+- useful: false
+  reason: flock単一起動ロック関連。対象外
+  id: UNKNOWN_9
 skill_candidate:
   found: false
 decision_candidate:
@@ -114,12 +114,23 @@ hook_failures:
   count: 0
   details: ''
 binary_checks:
-  AC1: '[{"check": "gate check loopの起動トリガー(関数名+行番号)を特定したか", "result": "yes"}, {"check":
-    "task status各状態でgateが走る条件を列挙したか", "result": "yes"}]'
-  AC2: '[{"check": "直近50件のMISSINGエントリを抽出したか", "result": "yes"}, {"check": "発生パターンを統計的に分析したか",
-    "result": "yes"}]'
-  AC3: '[{"check": "3案の比較表を作成したか", "result": "yes"}, {"check": "推奨案に変更対象ファイル・行番号を明記したか",
-    "result": "yes"}, {"check": "エッジケースを洗い出したか", "result": "yes"}]'
+  AC1:
+  - check: gate check loopの起動トリガー(関数名+行番号)を特定したか
+    result: 'yes'
+  - check: task status各状態でgateが走る条件を列挙したか
+    result: 'yes'
+  AC2:
+  - check: 直近50件のMISSINGエントリを抽出したか
+    result: 'yes'
+  - check: 発生パターンを統計的に分析したか
+    result: 'yes'
+  AC3:
+  - check: 3案の比較表を作成したか
+    result: 'yes'
+  - check: 推奨案に変更対象ファイル・行番号を明記したか
+    result: 'yes'
+  - check: エッジケースを洗い出したか
+    result: 'yes'
 verdict: PASS
 implementation_readiness:
   files_to_modify: '["scripts/cmd_complete_gate.sh:25-32(CLEAR済みcmd早期exit追加)", "scripts/cmd_complete_gate.sh:1978-2003(status判定拡張)"]'
