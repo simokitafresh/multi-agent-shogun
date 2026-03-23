@@ -1293,7 +1293,13 @@ with open(impact_file, "r", newline="", encoding="utf-8") as f:
 
     for row in reader:
         row_cmd_id = (row.get("cmd_id") or "").strip()
-        if row_cmd_id in tracked_row_ids and row.get("result") == "pending":
+        matched = row_cmd_id in tracked_row_ids
+        if not matched:
+            for tid in tracked_row_ids:
+                if row_cmd_id.startswith(tid + "_"):
+                    matched = True
+                    break
+        if matched and row.get("result") == "pending":
             row["result"] = gate_result
             if row.get("action") != "withheld":
                 row_refs = referenced_by_row_id.get(row_cmd_id, referenced_ids)
@@ -3550,9 +3556,13 @@ if [ "$ALL_CLEAR" = true ]; then
     else
         echo "  [INFO] append_lesson_tracking failed (non-blocking)"
     fi
-    if update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1; then
-        true
+    if impact_output=$(update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1); then
+        echo "$impact_output"
+        if echo "$impact_output" | grep -q "no pending rows"; then
+            echo "  [ERROR] LESSON_IMPACT_VERIFY: updated=0 for $CMD_ID"
+        fi
     else
+        echo "$impact_output"
         echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
     fi
     bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
