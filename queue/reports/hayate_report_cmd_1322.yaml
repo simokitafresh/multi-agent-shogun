@@ -12,7 +12,8 @@ purpose_validation:
   fit: true
   purpose_gap: ''
 files_modified:
-- scripts/deploy_task.sh
+- path: scripts/deploy_task.sh
+  change: modified
 lesson_candidate:
   found: false
   no_lesson_reason: 既存inject関数パターンの踏襲。新規教訓なし。
@@ -44,16 +45,16 @@ hook_failures:
   details: ''
 binary_checks:
   AC1:
-    '0':
+  - '0':
       result: PASS
     '1':
       result: PASS
   AC2:
-    '0':
+  - '0':
       result: PASS
     '1':
       result: PASS
   AC3:
-    '0':
+  - '0':
       result: PASS(342pass,2fail既存,0skip)
 verdict: PASS
