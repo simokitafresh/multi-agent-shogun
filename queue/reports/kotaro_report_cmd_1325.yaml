@@ -1,0 +1,43 @@
+worker_id: kotaro
+task_id: cmd_1325_AC1
+parent_cmd: cmd_1325
+timestamp: '2026-03-23T10:34:39'
+status: done
+ac_version_read: d04f6366
+result:
+  summary: backfill_lesson_impact.sh作成・実行完了。pending 22,545→0件。CLEAR 17,097/BLOCK 498/skipped
+    4,950。referenced pending 6,785→0件(yes 5,079/no 1,706)
+  details: gate_metrics.logから1096個のunique cmd最終結果を取得。prefix照合(cmd_1316→cmd_1316_AC1-3)で22545件更新。報告ファイル存在チェック(queue/reports+queue/archive/reports)でreferenced列6785件を更新。atomic
+    write使用
+purpose_validation:
+  cmd_purpose: lesson_impact.tsvのpending行をgate_metricsから一括backfill
+  fit: true
+  purpose_gap: ''
+files_modified:
+- scripts/backfill_lesson_impact.sh
+- logs/lesson_impact.tsv
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既存パターンの新規スクリプト作成。gate_metrics+TSV操作は既知手法
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+  '0':
+    useful: true
+    reason: PASS=1形式を意識してPython実装のためbash算術トラップ回避
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1: '[{check: ''scripts/backfill_lesson_impact.shが存在するか'', result: ''yes''}, {check:
+    ''gate_metrics.logからcmd別最終resultを正しく取得しているか'', result: ''yes''}, {check: ''pending行がprefix照合で更新されるか(cmd_1316→cmd_1316_AC1-3)'',
+    result: ''yes''}, {check: ''referenced列は報告ファイル存在チェックで更新されるか'', result: ''yes''},
+    {check: ''gate_metricsに結果がないcmdはresult=skippedになるか'', result: ''yes''}, {check:
+    ''実行前後に行数カウントが表示されるか'', result: ''yes''}, {check: ''実行後にpending行が0件になるか'', result:
+    ''yes''}]'
+verdict: PASS
