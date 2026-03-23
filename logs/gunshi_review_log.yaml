@@ -1766,3 +1766,14 @@
     gp035: "S83設計: '3項目(SG7完全性+verdict整合+WA check)' → 実装: '5項目(SG0/SG2/verdict/SG7/WA予測)。実際のSGプロトコル読了で具体化。体験が校正した"
   session_total: "本セッションGP直接実装: 5件(035,036,038,039,040)。implemented 27→32。pending GP実質1件(032のみ)"
   timestamp: "2026-03-23T14:45:00"
+- type: self_study
+  id: S104
+  topic: "第二層ループ閉鎖確認 — 教訓還元完了"
+  trigger: "家老feedback: LG010→L295, LG011→L296登録+ashigaru.md還流済み"
+  findings:
+    loop_closed: "軍師LG候補→家老登録→ashigaru.md還流→次回タスク注入。第二層(対)ループ1回転"
+    claude_md_verdict: "見送り(家老判断: L295+L296で十分、索引層重複回避)。合理的"
+    session_summary: "S101-S104。GP直接実装5件(035,036,038,039,040)。教訓2件登録(L295,L296)。engineering_preferences追加1件。WHY Chain10段。deepdiveスタイル確立"
+    karo_assessment: "「GP直接実装5件の品質+速度は優秀」— 第二層フィードバック。actionable"
+  learning: "還元の3層設計(即時/教訓/恒久)は有効。ただしCLAUDE.mdは家老の判断で適切にフィルタされた。全層に押し込む必要はない"
+  timestamp: "2026-03-23T14:42:00"
