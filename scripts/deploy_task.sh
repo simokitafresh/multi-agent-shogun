@@ -684,8 +684,38 @@ try:
         sys.exit(0)
 
     if not project:
-        print('[INJECT] No project field, skipping lesson injection', file=sys.stderr)
-        sys.exit(0)
+        # GP-028: 3段フォールバック (task→cmd→current_project)
+        fallback_source = None
+        parent_cmd = str(task.get('parent_cmd', '') or '').strip()
+        if parent_cmd:
+            stk_path = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
+            if os.path.exists(stk_path):
+                try:
+                    with open(stk_path) as stk_f:
+                        stk_data = yaml.safe_load(stk_f)
+                    cmd_entry = (stk_data or {}).get('commands', {}).get(parent_cmd, {})
+                    fallback_project = str(cmd_entry.get('project', '') or '').strip()
+                    if fallback_project:
+                        project = fallback_project
+                        fallback_source = f'shogun_to_karo.yaml ({parent_cmd})'
+                except Exception as e:
+                    print(f'[INJECT] WARN: shogun_to_karo.yaml read failed: {e}', file=sys.stderr)
+        if not project:
+            proj_yaml_path = os.path.join(script_dir, 'config', 'projects.yaml')
+            if os.path.exists(proj_yaml_path):
+                try:
+                    with open(proj_yaml_path) as pf:
+                        proj_data = yaml.safe_load(pf)
+                    cp = str((proj_data or {}).get('current_project', '') or '').strip()
+                    if cp:
+                        project = cp
+                        fallback_source = 'current_project'
+                except Exception as e:
+                    print(f'[INJECT] WARN: projects.yaml read failed: {e}', file=sys.stderr)
+        if not project:
+            print('[INJECT] No project field, all fallbacks exhausted, skipping lesson injection', file=sys.stderr)
+            sys.exit(0)
+        print(f'[INJECT] WARN: project field missing, fallback to {fallback_source} (project={project})', file=sys.stderr)
 
     # Vercel-style: archive has full data, index is slim. Try archive first, fallback to index.
     archive_path = os.path.join(script_dir, 'projects', project, 'lessons_archive.yaml')
