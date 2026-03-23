@@ -174,6 +174,13 @@ for attempt in $(seq 1 $MAX_RETRIES); do
             exit $?
         fi
 
+        # JSON/YAML structure value (starts with [ or {) → Python fallback (GP-038)
+        # awk経路は構造体をリテラル文字列として書くためYAML破壊の原因になる
+        if [[ "$VALUE" == '['* ]] || [[ "$VALUE" == '{'* ]]; then
+            _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "-" "$VALUE"
+            exit $?
+        fi
+
         tmp_file="$(mktemp "${REPORT_PATH}.tmp.XXXXXX")"
         rc=0
 
