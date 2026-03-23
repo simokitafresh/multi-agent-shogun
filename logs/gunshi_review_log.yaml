@@ -53,14 +53,14 @@
 # | 033 | verdict autofix Fix9  | pending            | S79  | binary_checks結果からPASS/FAIL推定。37FAIL根絶。2行追加 |
 # | 034 | no_lesson_reason自動補完| pending            | S81  | found:false+reason空→'N/A(auto-filled)'。24FAIL根絶 |
 # | 035 | gunshi self-gate       | pending            | S83  | レビュー品質セルフgate。SG7完全性+verdict整合+WA check確認 |
-# | 036 | stale_report検出       | pending            | S92  | gate_report_format.shでcmd_id不一致WARN。uncategorized根絶 |
+# | 036 | stale_report検出       | ★implemented      | S102 | gate_report_format.shにcmd_id不一致FAIL追加。軍師直接修正。テスト検証済 |
 # | 037 | recon教訓注入          | pending            | S94  | deploy_task.sh L634スキップ→条件付き注入。偵察特化教訓のみフィルタ |
 # | 038 | bulk report submit     | pending            | S98  | report_field_set.sh JSON stdin一括set。安全な最短経路(WHY-6解) |
 # | 039 | python3直書きブロック  | ★implemented      | S101 | pre-bash-report-deny.sh open()パターン検出追加。軍師直接修正。hook動作検証済 |
 # | 040 | テンプレート指示修正   | ★implemented      | S101 | deploy_task.sh L353-354 Edit tool→report_field_set.sh。軍師直接修正 |
-# 集計(S101更新): ★implemented:29 / ★monitoring:1 / ✗obsolete:3 / ☆karo送信済:4(032,035,036,038) / pending:3(031,033,034 cmd済結果待ち) / cmd配備済:1(037=cmd_1340)
-# 優先順(S101改訂): GP-038(bulk mode:最大効果)→GP-032(安全網)→036→035
-# S101行動: GP-040+039を軍師が直接修正+検証。残pending4件karo送信。INS-050242/132246080 resolve。INS-042541もcmd推薦送信
+# 集計(S102更新): ★implemented:30 / ★monitoring:1 / ✗obsolete:3 / ☆karo送信済:3(032,035,038) / pending:3(031,033,034 cmd済結果待ち) / cmd配備済:1(037=cmd_1340)
+# 優先順(S102改訂): GP-038(bulk mode:最大効果)→GP-032(安全網)→035
+# S102行動: GP-036を軍師直接修正+テスト検証+commit。deepdiveスタイル=気づき→修正→検証→報告の連続サイクル
 # パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
@@ -1728,3 +1728,9 @@
   new_question: "GP-041を自分で実装するか？gate_karo_startup.shはinfraスクリプト。軍師が直接修正して良い範囲か？"
   action: "殿の言葉に従い、気づいたら直す。gate_karo_startup.shの構造を確認し、追加可能なら実装する"
   timestamp: "2026-03-23T14:28:00"
+- type: review_feedback_analysis
+  cmd_id: cmd_1341
+  feedback: "GATE CLEAR + workaround(binary_checks string→list手動修正)。飛猿"
+  analysis: "GP-040修正前に配備されたタスク。テンプレート指示がまだEdit tool指示のまま。次回配備以降は改善見込み。しかし根本問題: テンプレートコメントは忍者の「読む意思」に依存。GP-039(python3ブロック)+GP-038(bulk mode)が補完層として必要"
+  observation: "GP-040の効果測定: 次のcmd配備後にbinary_checks string形式WA率を計測せよ。改善なし→テンプレートコメント方式の限界→GP-032(PostToolUse hook)が必要"
+  timestamp: "2026-03-23T14:30:00"
