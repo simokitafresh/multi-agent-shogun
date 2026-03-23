@@ -1876,8 +1876,11 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
 
     # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
-    if bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1; then
+    if gist_output=$(bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once 2>&1); then
         echo "  gist_sync: OK"
+        if echo "$gist_output" | grep -qi "error\|fail"; then
+            echo "  [ERROR] GIST_SYNC_VERIFY: success exit but output contains error: $gist_output"
+        fi
     else
         echo "  [INFO] gist_sync: WARN (sync failed, non-blocking)" >&2
     fi
@@ -3544,16 +3547,40 @@ if [ "$ALL_CLEAR" = true ]; then
     echo "GATE CLEAR: cmd完了許可"
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
     # gate_yaml_status: YAML status更新（WARNING only）
-    if bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1; then
-        true
+    if gate_yaml_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1); then
+        echo "$gate_yaml_output"
+        if ! echo "$gate_yaml_output" | grep -qE "UPDATED|ALREADY_OK"; then
+            echo "  [ERROR] GATE_YAML_STATUS_VERIFY: expected UPDATED/ALREADY_OK but got: $gate_yaml_output"
+        fi
     else
+        echo "$gate_yaml_output"
         echo "  [INFO] gate_yaml_status.sh failed (non-blocking)"
     fi
-    update_status "$CMD_ID" || echo "  [INFO] update_status failed (non-blocking)"
-    append_changelog "$CMD_ID" || echo "  [INFO] append_changelog failed (non-blocking)"
-    if append_lesson_tracking "$CMD_ID" "CLEAR" 2>&1; then
-        true
+    if status_output=$(update_status "$CMD_ID" 2>&1); then
+        echo "$status_output"
+        if ! echo "$status_output" | grep -qE "STATUS UPDATED|STATUS ALREADY COMPLETED"; then
+            echo "  [ERROR] UPDATE_STATUS_VERIFY: expected STATUS UPDATED/ALREADY COMPLETED but got: $status_output"
+        fi
     else
+        echo "$status_output"
+        echo "  [INFO] update_status failed (non-blocking)"
+    fi
+    if changelog_output=$(append_changelog "$CMD_ID" 2>&1); then
+        echo "$changelog_output"
+        if ! grep -q "$CMD_ID" "$SCRIPT_DIR/queue/completed_changelog.yaml" 2>/dev/null; then
+            echo "  [ERROR] APPEND_CHANGELOG_VERIFY: $CMD_ID entry not found in completed_changelog.yaml"
+        fi
+    else
+        echo "$changelog_output"
+        echo "  [INFO] append_changelog failed (non-blocking)"
+    fi
+    if tracking_output=$(append_lesson_tracking "$CMD_ID" "CLEAR" 2>&1); then
+        echo "$tracking_output"
+        if ! echo "$tracking_output" | grep -q "LESSON_TRACKING:"; then
+            echo "  [ERROR] APPEND_LESSON_TRACKING_VERIFY: expected LESSON_TRACKING: in output but got: $tracking_output"
+        fi
+    else
+        echo "$tracking_output"
         echo "  [INFO] append_lesson_tracking failed (non-blocking)"
     fi
     if impact_output=$(update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1); then
@@ -3565,7 +3592,15 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "$impact_output"
         echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
     fi
-    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
+    if sync_output=$(bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1); then
+        echo "$sync_output"
+        if echo "$sync_output" | grep -qi "error"; then
+            echo "  [ERROR] SYNC_COUNTERS_VERIFY: sync-counters output contains error: $sync_output"
+        fi
+    else
+        echo "$sync_output"
+        echo "  [INFO] sync-counters failed (non-blocking)"
+    fi
 
     echo ""
     echo "Context freshness nudge (GATE CLEAR):"
