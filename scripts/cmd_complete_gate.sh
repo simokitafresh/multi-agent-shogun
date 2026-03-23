@@ -24,12 +24,29 @@ if [[ "$CMD_ID" != cmd_* ]]; then
     exit 1
 fi
 
+# --force フラグ検出
+FORCE_MODE=false
+for arg in "$@"; do
+    if [ "$arg" = "--force" ]; then
+        FORCE_MODE=true
+    fi
+done
+
 GATES_DIR="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 LOG_DIR="$SCRIPT_DIR/logs"
 GATE_METRICS_LOG="$LOG_DIR/gate_metrics.log"
 mkdir -p "$GATES_DIR" "$LOG_DIR"
+
+# ─── CLEAR済みcmd早期exit（GP-026 B案: cmd_1332） ───
+# gate_metrics.logに当該cmd_idのCLEAR記録があれば再検査をスキップ
+if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ]; then
+    if grep -qP "^[^\t]+\t${CMD_ID}\tCLEAR\t" "$GATE_METRICS_LOG"; then
+        echo "[gate] ${CMD_ID}: Already CLEARED (gate_metrics.logにCLEAR記録あり。--forceで再検査可能)"
+        exit 0
+    fi
+fi
 
 # ─── 報告YAML解決関数（L085: 新命名規則対応、cmd_410: report_filename最優先） ───
 # 優先順位: 1. タスクYAMLのreport_filename  2. 新形式  3. 旧形式
@@ -1985,11 +2002,11 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
         echo "  ${ninja_name}: OK ($(basename "$report_file"))"
     else
-        # GP-026: in_progress忍者はWAIT、done/complete忍者は即BLOCK
+        # GP-026 B案(cmd_1332): done以外の全状態(assigned/acknowledged/in_progress)でWAIT
         ninja_status=$(grep -E '^\s+status:' "$task_file" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
-        if [ "$ninja_status" = "in_progress" ]; then
+        if [ "$ninja_status" != "done" ] && [ "$ninja_status" != "complete" ]; then
             REPORT_WAIT_NINJAS+=("$ninja_name")
-            echo "  [WAIT] ${ninja_name}: 報告YAML未着（status=in_progress、60秒後に再チェック）"
+            echo "  [WAIT] ${ninja_name}: 報告YAML未着（status=${ninja_status}、リトライ待ち）"
         else
             REPORT_MISSING_FILES+=("$(basename "$report_file")")
             echo "  [CRITICAL] ${ninja_name}: MISSING ← 報告YAML不在(status=${ninja_status}): $(basename "$report_file")"
@@ -1997,19 +2014,34 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     fi
 done
 
-# GP-026: WAIT忍者がいる場合は60秒待機→再チェック
+# GP-026 B案(cmd_1332): WAIT忍者がいる場合はretry 3回×60秒=最大180秒
 if [ "${#REPORT_WAIT_NINJAS[@]}" -gt 0 ]; then
-    echo "  [WAIT] ${#REPORT_WAIT_NINJAS[@]}名のin_progress忍者の報告待ち。60秒後に再チェック..."
-    sleep 60
-    for ninja_name in "${REPORT_WAIT_NINJAS[@]}"; do
-        report_file=$(resolve_report_file "$ninja_name")
-        if [ -f "$report_file" ]; then
-            REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
-            echo "  ${ninja_name}: OK (再チェックで発見: $(basename "$report_file"))"
-        else
-            REPORT_MISSING_FILES+=("$(basename "$report_file")")
-            echo "  [CRITICAL] ${ninja_name}: MISSING ← 再チェック後も報告YAML不在: $(basename "$report_file")"
-        fi
+    WAIT_MAX_RETRIES=3
+    WAIT_INTERVAL=60
+    for wait_retry in $(seq 1 $WAIT_MAX_RETRIES); do
+        # 未解決WAIT忍者がいるか確認
+        STILL_WAITING=()
+        for ninja_name in "${REPORT_WAIT_NINJAS[@]}"; do
+            report_file=$(resolve_report_file "$ninja_name")
+            if [ ! -f "$report_file" ]; then
+                STILL_WAITING+=("$ninja_name")
+            fi
+        done
+        [ "${#STILL_WAITING[@]}" -eq 0 ] && break
+
+        echo "  [WAIT] retry ${wait_retry}/${WAIT_MAX_RETRIES}: ${#STILL_WAITING[@]}名の報告待ち。${WAIT_INTERVAL}秒後に再チェック..."
+        sleep "$WAIT_INTERVAL"
+
+        for ninja_name in "${STILL_WAITING[@]}"; do
+            report_file=$(resolve_report_file "$ninja_name")
+            if [ -f "$report_file" ]; then
+                REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
+                echo "  ${ninja_name}: OK (retry ${wait_retry}で発見: $(basename "$report_file"))"
+            elif [ "$wait_retry" -eq "$WAIT_MAX_RETRIES" ]; then
+                REPORT_MISSING_FILES+=("$(basename "$report_file")")
+                echo "  [CRITICAL] ${ninja_name}: MISSING ← retry ${WAIT_MAX_RETRIES}回後も報告YAML不在: $(basename "$report_file")"
+            fi
+        done
     done
 fi
 
