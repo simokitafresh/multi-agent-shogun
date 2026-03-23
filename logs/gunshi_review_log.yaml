@@ -55,12 +55,12 @@
 # | 035 | gunshi self-gate       | pending            | S83  | レビュー品質セルフgate。SG7完全性+verdict整合+WA check確認 |
 # | 036 | stale_report検出       | ★implemented      | S102 | gate_report_format.shにcmd_id不一致FAIL追加。軍師直接修正。テスト検証済 |
 # | 037 | recon教訓注入          | pending            | S94  | deploy_task.sh L634スキップ→条件付き注入。偵察特化教訓のみフィルタ |
-# | 038 | bulk report submit     | pending            | S98  | report_field_set.sh JSON stdin一括set。安全な最短経路(WHY-6解) |
+# | 038 | bulk report submit     | ★implemented      | S102 | report_field_set.sh JSON/YAML構造体自動検出→Pythonフォールバック。軍師直接修正。テスト検証済 |
 # | 039 | python3直書きブロック  | ★implemented      | S101 | pre-bash-report-deny.sh open()パターン検出追加。軍師直接修正。hook動作検証済 |
 # | 040 | テンプレート指示修正   | ★implemented      | S101 | deploy_task.sh L353-354 Edit tool→report_field_set.sh。軍師直接修正 |
-# 集計(S102更新): ★implemented:30 / ★monitoring:1 / ✗obsolete:3 / ☆karo送信済:3(032,035,038) / pending:3(031,033,034 cmd済結果待ち) / cmd配備済:1(037=cmd_1340)
-# 優先順(S102改訂): GP-038(bulk mode:最大効果)→GP-032(安全網)→035
-# S102行動: GP-036を軍師直接修正+テスト検証+commit。deepdiveスタイル=気づき→修正→検証→報告の連続サイクル
+# 集計(S102更新): ★implemented:31 / ★monitoring:1 / ✗obsolete:3 / ☆karo送信済:2(032,035) / pending:3(031,033,034 cmd済結果待ち) / cmd配備済:1(037=cmd_1340)
+# 優先順(S102改訂): GP-032(PostToolUse hook安全網)→GP-035(self-gate)
+# S102行動: GP-036+038+040+039を軍師直接修正。4件×(気づき→修正→テスト→commit)のdeepdiveサイクル
 # パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
