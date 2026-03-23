@@ -380,14 +380,28 @@ bash scripts/gates/gate_ninja_workaround_rate.sh --ninja {ninja_name}
     - cmd_1287: report_yaml_format
 ```
 
+ninja_weak_points参照:
+- タスクYAMLの `ninja_weak_points` フィールド（deploy_task.shが自動注入）を確認せよ
+- `ninja_weak_points.breakdown` に弱点パターンの内訳が記載されている
+- `ninja_weak_points.top_pattern` が今回の報告内容と同パターンなら、該当箇所を入念にチェック
+- 情報取得元: タスクYAML `ninja_weak_points` フィールド（一次情報は `logs/karo_workarounds.yaml`）
+
 活用方法:
 - WA率が高い忍者 → その忍者の弱点パターン（report_yaml_format等）に該当する不備がないか重点確認
 - WA率0%の忍者 → 通常レビューで十分
 - 履歴の`category`が今回の報告内容と同パターンなら、該当箇所を入念にチェック
 
+WA率>50%時の追加チェック:
+- gate_ninja_workaround_rate.shの出力でWA率が50%を超えた忍者の報告には、以下の追加チェックを実施せよ:
+  1. binary_checks全項目について、check/resultだけでなく**evidence（根拠）が具体的に記載されているか**を確認
+  2. ninja_weak_pointsのtop_patternに該当する箇所を重点的に再検証
+  3. files_modifiedの各ファイルが実際にcommitに含まれているか `git log --oneline -1 -- {file}` で確認
+- WA率≤50%の忍者には追加チェック不要（通常の4観点レビューで十分）
+
 注意:
 - SG9はexit 0固定。スクリプトエラー時もレビューを止めるな
 - verdictはSG9の結果に関係なく4観点のみで決定する
+- WA率>50%追加チェックはverdictを変更するものではなく、レビューの深度を高める補助手段
 
 ### 通知手順
 
