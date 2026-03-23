@@ -165,6 +165,8 @@
 !scripts/lib/pane_lookup.sh
 !scripts/lib/script_update.sh
 !scripts/lib/agent_config.sh
+!scripts/lib/normalize_report.sh
+!scripts/lib/text_utils.sh
 !scripts/inbox_archive.sh
 !scripts/inbox_mark_read.sh
 !scripts/model_switch_preflight.sh
