@@ -1,0 +1,118 @@
+task:
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  ac_version: 38bfe946
+  acceptance_criteria:
+    AC1:
+      binary_checks:
+      - gate check loopの起動トリガー(関数名+行番号)を特定したか？
+      - task status各状態(assigned/acknowledged/in_progress/done)でgateが走る条件を列挙したか？
+      description: gate check loop起動条件と忍者task status遷移の完全マッピング(行番号付き)
+    AC2:
+      binary_checks:
+      - 直近50件のMISSINGエントリを抽出したか？
+      - 発生パターン(タイミング・忍者別・cmd種別)を統計的に分析したか？
+      description: gate_fire_log.yamlから直近50件のreport_yaml_missing分析
+    AC3:
+      binary_checks:
+      - 3案の比較表(長所/短所/副作用)を作成したか？
+      - 推奨案に変更対象ファイル・行番号を明記したか？
+      - エッジケース(複数忍者同時完了等)を洗い出したか？
+      description: 実装A/B/C案の比較表+推奨案+変更対象ファイル・行番号+エッジケース
+  bloom_level: ''
+  command: "GP-026実装設計偵察。GATE BLOCK原因65%のreport_yaml_missing解消メカニズムを設計せよ。\n\n■ 調査項目\n\
+    1. cmd_complete_gate.shのgate check loop起動タイミングとトリガー条件(L1924付近)\n2. 忍者のtask status遷移:\
+    \ assigned→acknowledged→in_progress→done の各状態でgateが走る条件\n3. report_yaml_missingの発生パターン:\
+    \ gate_fire_log.yamlから直近50件のMISSING事例を分析\n4. 実装案の比較:\n   A案: gate check前にtask\
+    \ status確認、in_progress時は60秒sleep後retry\n   B案: gate checkにreport_file存在チェック追加、不在時はWAIT(retry前提)\n\
+    \   C案: 忍者report commit→inbox→gate triggerの順序保証\n5. 各案の副作用(GATE CLEAR遅延、偽陽性、既存gate競合)\n\
+    \n出力: 推奨案+変更対象ファイル・行番号+テスト方法+エッジケース\n"
+  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
+  deployed_at: '2026-03-23T11:06:45'
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  files:
+  - scripts/cmd_complete_gate.sh
+  - logs/gate_fire_log.yaml
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  ninja: kagemaru
+  ninja_weak_points:
+    breakdown: uncategorized(1件), file_disappearance(1件), commit_missing(1件), report_yaml_format(1件),
+      stale_report(1件)
+    source: karo_workarounds.yaml
+    top_pattern: uncategorized(1件)
+    total_workarounds: 5
+    warning: ⚠ 過去5件のworkaround発生。品質に注意
+  not_in_scope:
+  - 実装(偵察のみ)
+  - gate本体の修正
+  - 他のGP提案の調査
+  parallel_ok: []
+  parent_cmd: cmd_1328
+  project: infra
+  related_lessons:
+  - detail: ''
+    id: L283
+    summary: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の ok N (hash)
+      skip パターンのみをカウントすべき。
+  - detail: ''
+    id: L246
+    summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
+      0が正しい。
+  - detail: ''
+    id: L243
+    summary: field_get.shの_field_get_log()がfield_deps.tsvに無条件追記し続け5.3MB/40K行に肥大。 ログ系ファイルを新設する際は、初期実装時にサイズ上限+ローテーションを組込む設計を標準とすべき。
+      rotate_log.sh(10MB/5世代)のパターンが既に存在するため流用可能。
+  - detail: ''
+    id: L238
+    summary: usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる
+  - detail: ''
+    id: L229
+    summary: 'cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追加した。結果:
+      (1)22分ハングで全エージェントが停止不能 (2)将軍・家老も巻き込まれた (3)既存のcmd_complete_gate.shと完全に重複。**外部記事の推奨を取り込む前に「既存インフラで同じことをやっていないか」を確認'
+  - detail: ''
+    id: L225
+    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  - detail: ''
+    id: L214
+    summary: 教訓IDをproject非考慮で集計すると注入回数・有効率・退役判定が別PJ間で相互污染する。cmd_874で検出:同一IDの20組が両PJで同一退役理由。file_missing判定もinfra
+      root基準固定で外部PJパスを誤判定。自動淘汰ロジックでは特に致命的
+  - detail: ''
+    id: L187
+    summary: IF Compose で terminal の pinch-zoom `minScale` を `contentWidth` から算出する時
+      THEN `Text.onTextLayout` の viewport 制約済み幅ではなく `TextMeasurer` などの非制約測定を使え BECAUSE
+      viewport 幅に丸められると `minScale=1.0` に固定され、実機で deskt
+  - detail: ''
+    id: L174
+    summary: watchdogの活動時刻は『read成功』ではなく『意味のあるイベント処理成功』で更新すべし
+  - detail: ''
+    id: L166
+    summary: IF ストリーミング受信デーモンを新規実装する時 THEN 受信側にもflock/pidfileによる単一起動ロックを持たせよ
+  report_filename: kagemaru_report_cmd_1328.yaml
+  report_path: queue/reports/kagemaru_report_cmd_1328.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
+    notes:
+    - 他の忍者の報告を参照するな（並行偵察の独立性）
+    required_fields:
+    - findings
+    - verdict
+    - confidence
+    - blind_spots
+  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  scope_mode: EXACT
+  status: done
+  stop_for: []
+  target_path: scripts/cmd_complete_gate.sh
+  task_type: recon
+  version: 3

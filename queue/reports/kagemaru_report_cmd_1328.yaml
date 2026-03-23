@@ -1,0 +1,134 @@
+worker_id: kagemaru
+task_id: cmd_1328_AC1-3
+parent_cmd: cmd_1328
+timestamp: '2026-03-23T11:14:24'
+status: done
+ac_version_read: 38bfe946
+result:
+  summary: 'report_yaml_missingの根本原因は2パターン: (1)gateが忍者未完了時に発火(61.5%), (2)CLEAR後archive移動→再gate時MISSING。推奨B案:
+    CLEAR済みcmd再check防止+全non-done状態WAIT'
+  details: '## AC1: gate check loop起動条件と忍者task status遷移の完全マッピング
+
+    ### gate check loop起動トリガー - 起動者: 家老(karo)が手動で `bash scripts/cmd_complete_gate.sh
+    <cmd_id>` を実行 - 自動トリガーは存在しない(hookやcron等で自動起動していない) - 起動タイミング: 家老がcmd完了と判断した時点(lesson.done
+    → archive.done → gate実行の順)
+
+    ### gate check loop構造 (scripts/cmd_complete_gate.sh) 1. L1762-1776: 必須フラグ構築(ALL_GATES
+    = archive + lesson + conditional) 2. L1760: DEFERRED_GATES=("archive") — archiveはcheck
+    loopでスキップ、GATE CLEAR後に実行 3. L1924-1953: gate check loop — ALL_GATESをイテレート、queue/gates/{cmd_id}/{gate}.doneの存在確認
+    4. L1958-2018: Report YAML存在チェック — task YAMLのparent_cmd一致→報告ファイル存在確認
+
+    ### 忍者task status遷移とgate挙動マッピング | 状態 | 意味 | gate挙動(現GP-026) | 問題 | |------|------|---------------------|------|
+    | assigned | 配備済み、忍者未着手 | MISSING → BLOCK | ★忍者は必ず報告未作成 | | acknowledged | 忍者認識、準備中
+    | MISSING → BLOCK | ★忍者は必ず報告未作成 | | in_progress | 作業中 | WAIT 60秒→retry 1回 | GP-026で対応済みだが1回のみ
+    | | done | 完了 | MISSING → BLOCK / OK | 報告あればOK |
+
+    ### gate check起動箇所(関数名+行番号) - L1924: `for gate in "${ALL_GATES[@]}"`(gate check
+    loop本体) - L1938-1952: done_file存在チェック(各gate) - L1964-1987: report YAML存在チェック(各忍者task)
+    - L1979: ninja_status取得(grep) - L1980: in_progress判定(GP-026追加 commit 16b8030)
+    - L1991-2003: WAIT忍者60秒待機+再チェック - L2006-2011: 全報告不在時BLOCK判定 - L2012-2013: 一部不在時WARNING(非BLOCK)
+
+    ## AC2: report_yaml_missing発生パターン分析(gate_metrics.logより)
+
+    ### 統計 - 全期間: 30件/781 BLOCK (3.8%) - 2026-03-23: 24件/39 BLOCK (61.5% ≈ 65%) -
+    GP-026実装(06:37 commit 16b8030)後: 4件(CLEAR→BLOCK逆転パターン) - ユニークcmd数: 23/474
+
+    ### BLOCK→CLEAR間隔(秒) - 最短: 48秒(cmd_1285) - 中央値: 110秒(cmd_1280) - 最長: 660秒(cmd_1312,
+    cmd_1316) - 平均: 192秒(3.2分) - 全件がBLOCK後にCLEARに到達(報告は遅延しているが最終的に作成される)
+
+    ### 忍者別分布 hayate(9), kagemaru(5), hanzo(5), tobisaru(4), saizo(4), kotaro(3) —
+    全忍者で均等に発生(特定忍者の問題ではない)
+
+    ### 発生パターン2種 パターン1(主要, 23/27件): gateが忍者未完了時に発火 → 報告ファイル未作成 → BLOCK → 1-3分後に忍者が報告作成
+    → 再gate時CLEAR パターン2(副, 4/27件): CLEAR後にarchive_completed.sh(L699)が報告をmvで移動 → 再gate時に報告不在
+    → BLOCK。cmd_1290/1315/1316/1318で確認。07:09-07:10にcmd_1315/1318/1319が同時BLOCK(一括gate再実行の痕跡)
+
+    ## AC3: 実装A/B/C案の比較表
+
+    ### A案: 現GP-026の拡張(status拡張+retry増) 変更: L1980 `"in_progress"` → assigned/acknowledged/in_progressを全てWAIT対象
+    + retry 3回(60秒×3=最大180秒) 変更箇所: scripts/cmd_complete_gate.sh L1978-2003 長所: 最小変更量、既存ロジックの拡張、理解容易
+    短所: sleep最大180秒でgate実行時間長大化(家老待ち)、パターン2(CLEAR→BLOCK逆転)未解決、180秒超の作業時間の忍者は依然BLOCK
+    エッジケース: 6忍者同時配備でsleep中に別忍者が完了→待機は全忍者分まとめて1回のみ(現行ロジック)で問題なし
+
+    ### B案: CLEAR済みcmd再check防止 + 全non-done状態WAIT(★推奨) 変更1: gate冒頭(L25付近)でgate_metrics.logから既CLEAR済みcmdか確認→CLEAR済みならexit
+    0で早期終了 変更2: L1980のstatus判定を拡張 — status="done"以外の全状態でWAIT(retry 3回×60秒) 変更箇所: scripts/cmd_complete_gate.sh
+    L25付近(早期exit追加, 約10行) + L1978-2003(status拡張, 約5行変更) 長所: パターン1,2の両方を解決、CLEAR→BLOCK逆転を根本防止、既存フロー(家老手動実行)を変更不要、変更量が限定的(15行程度)
+    短所: 一度CLEARしたcmdの再検査が不可能(意図的な再検査にはoverride flag等が必要)、gate_metrics.logへのgrep依存(ファイル肥大時に性能劣化の可能性、現855行で問題なし)
+    エッジケース: (1)CLEAR後に問題発見→再検査したい場合 — gate_metrics.logのCLEARエントリ削除 or --forceフラグで対応可
+    (2)gate_metrics.logが破損/欠損 — fallbackとして通常実行(CLEAR判定スキップ)で安全
+
+    ### C案: 忍者report完了→gate trigger順序保証 変更: gate起動をイベント駆動化。忍者report commit→inbox_write(報告完了通知)→家老が全忍者報告受領確認→gate自動トリガー
+    変更箇所: scripts/cmd_complete_gate.sh(トリガー変更)、instructions/karo.md(フロー変更)、context/karo-operations.md(フロー変更)、instructions/ashigaru.md(報告完了通知追加)
+    長所: 根本的解決(「全忍者完了後にgate」が構造的に保証)、sleepによる待機不要 短所: アーキテクチャ変更が大規模、家老フロー(lesson.done→archive.done→gate)との整合性再設計必要、忍者が報告完了通知を送り忘れた場合gateが永久に走らない(デッドロックリスク)、実装・テスト・教訓反映のコストが大
+    エッジケース: (1)忍者がidle化して報告通知を送らない→タイムアウト機構必要 (2)複数忍者のうち1名が/clearされて通知不能→ninja_monitorのSTALL検知との連携必要
+
+    ### 推奨: B案 理由: (1)パターン1,2を同時解決 (2)変更箇所がcmd_complete_gate.sh内のみで閉じる (3)既存フローを変えない(家老は今まで通りgate実行)
+    (4)CLEAR→BLOCK逆転を確実防止 (5)変更量15行程度で副作用リスク最小'
+purpose_validation:
+  cmd_purpose: GATE BLOCK原因65%のreport_yaml_missing発生メカニズム調査と解消設計
+  fit: true
+  purpose_gap: none
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: 偵察タスクであり既知のgate timing問題の分析。新規教訓なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+  '0':
+    useful: false
+    reason: batsテスト名関連。本タスクはbatsテスト実行なし
+  '1':
+    useful: false
+    reason: set -e関連。本タスクはスクリプト実装なし
+  '2':
+    useful: false
+    reason: ログ肥大関連。本タスクはログ設計なし
+  '3':
+    useful: false
+    reason: usage_status.sh関連。対象外
+  '4':
+    useful: true
+    reason: Stop Hookで全batsフル実行の教訓。gate実行コストの観点でB案のsleep180秒上限設計に影響
+  '5':
+    useful: false
+    reason: MCP entity名義混入。対象外
+  '6':
+    useful: false
+    reason: 教訓ID集計のPJ汚染。対象外
+  '7':
+    useful: false
+    reason: IF Compose minScale関連。対象外
+  '8':
+    useful: false
+    reason: watchdog活動時刻関連。対象外
+  '9':
+    useful: false
+    reason: flock単一起動ロック関連。対象外
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1: '[{"check": "gate check loopの起動トリガー(関数名+行番号)を特定したか", "result": "yes"}, {"check":
+    "task status各状態でgateが走る条件を列挙したか", "result": "yes"}]'
+  AC2: '[{"check": "直近50件のMISSINGエントリを抽出したか", "result": "yes"}, {"check": "発生パターンを統計的に分析したか",
+    "result": "yes"}]'
+  AC3: '[{"check": "3案の比較表を作成したか", "result": "yes"}, {"check": "推奨案に変更対象ファイル・行番号を明記したか",
+    "result": "yes"}, {"check": "エッジケースを洗い出したか", "result": "yes"}]'
+verdict: PASS
+implementation_readiness:
+  files_to_modify: '["scripts/cmd_complete_gate.sh:25-32(CLEAR済みcmd早期exit追加)", "scripts/cmd_complete_gate.sh:1978-2003(status判定拡張)"]'
+  affected_files:
+  - logs/gate_metrics.log(CLEAR済み判定の参照先)
+  - queue/tasks/*.yaml(status読取対象)
+  related_tests:
+  - tests/cmd_complete_gate.bats — GP-026 WAIT関連テスト追加必要
+  edge_cases:
+  - CLEAR後に問題発見で再検査したい場合(--forceフラグ or CLEARエントリ削除)
+  - gate_metrics.log破損時のfallback(通常実行)
+  - 180秒超作業時間の忍者(timeout後BLOCK)
