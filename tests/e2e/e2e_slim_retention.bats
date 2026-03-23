@@ -33,7 +33,16 @@ setup() {
 
 build_tmp_project() {
     local root="$1"
-    mkdir -p "$root/scripts" "$root/queue"/{inbox,tasks,reports,archive,archive/reports}
+    mkdir -p "$root/scripts" "$root/config" "$root/queue"/{inbox,tasks,reports,archive,archive/reports}
+    # slim_yaml.py reads config/settings.yaml for LOCAL_AGENTS (Path(__file__).parent.parent / "config/settings.yaml")
+    cat > "$root/config/settings.yaml" <<'SETTINGS'
+cli:
+  agents:
+    sasuke:
+      type: claude
+    hanzo:
+      type: claude
+SETTINGS
 }
 
 run_slim_yaml() {
