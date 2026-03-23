@@ -105,6 +105,7 @@ language:
   FAIL→即停止・原因報告。PASS→次ACへ。
   lesson_candidateには「次回追加すべきチェック」を書け。
   計測して止まるだけでは品質管理。還流して初めて成長。
+  分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 3.5. **Load project knowledge** (role-based):
    - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
@@ -138,6 +139,7 @@ Lightweight recovery using only CLAUDE.md (auto-loaded). Do NOT read instruction
   FAIL→即停止・原因報告。PASS→次ACへ。
   lesson_candidateには「次回追加すべきチェック」を書け。
   計測して止まるだけでは品質管理。還流して初めて成長。
+  分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
 Step 2: 将軍のみ MEMORY.md（自動ロード済み）を信頼。read_graphしない。家老・忍者はスキップ。
