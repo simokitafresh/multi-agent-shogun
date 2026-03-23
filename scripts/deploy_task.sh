@@ -350,8 +350,8 @@ generate_report_template() {
 
     cat > "$report_file" <<EOF
 # !! トップレベル構造を維持せよ。report: で包むな !!
-# !! Edit toolで既存フィールドを編集せよ。Write toolで全上書きするな !!
-# Step1: Read this file → Step2: Edit tool で各フィールドを埋めよ → Write禁止
+# !! report_field_set.sh で各フィールドを設定せよ。直接Edit/Write禁止 !!
+# Step1: Read this file → Step2: bash scripts/report_field_set.sh <this_file> <key> <value> で各フィールドを埋めよ
 worker_id: ${worker_id}
 task_id: ${resolved_task_id}
 parent_cmd: ${resolved_parent_cmd}

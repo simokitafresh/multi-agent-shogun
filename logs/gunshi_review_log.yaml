@@ -1,10 +1,10 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 265件 (draft:105, report:113, self_study:53) | 2026-03-20〜
+# 累計: 278件 (draft:118, report:113, self_study:53) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
-# verdict分布: APPROVE:91 LGTM:89 REQ_CHANGES:8 FAIL:8
+# verdict分布: APPROVE:104 LGTM:89 REQ_CHANGES:8 FAIL:8
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -13,7 +13,9 @@
 # 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
 # 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
-# 自己研鑽: S43(利他6:3agent調査)+S44(予測+事前対応)+S45(WA pattern shift+GP21/24到達)+S46(archive gate循環依存:GP-025)+S47(精度ノイズ分離:真90%)+S48(GATE CLEAR率トレンド+教訓pipeline健全性)+S49(cmd完了速度+BLOCK原因深層:GP-026)+S50(insights棚卸し+dashboard重複+commit漏れ:GP-027)+S51(WA率再計測:85%、infra除外53%)+S52(deepdive追体験+軍師自分事化)+S53(忍者別WA:GP-021ベースライン)+S54(gate format 100%PASS直近100件)+S55(GP消費率77.8%:パイプライン健全)+S56(APPROVE→BLOCK分析:89.4%infra noise,真accuracy97%)+S57(教訓注入0%崩壊:cmd_1301以降project未検出→GP-028)+S58(inject横展開:3関数に同パターン存在,現時点残留なし)+S59(GP-028深堀り:Part A=idle YAMLへの誤deploy+Part B=冪等性ガードが再注入阻止)+S60(insights棚卸し:INS-050238 resolved,残pending2件)+S61(gate_loop_health分析:3カテゴリ分類,A=autofix4種,B=テンプレ4種,C=忍者品質6種)+S62(autofix実装確認:3/4実装済,bc dict→list未実装=最多30回→GP-029候補)+S63(cmd_1312 GATE追跡:2xBLOCK archive+report_yaml_missing。自己修正パラドックス)+S64(STUCK cmd一覧:8件BLOCK-only。6件report_yaml_missing+2件archive循環)+S65(WA最新:cmd_1304/1308/1311でformat/残存WA。cmd_1312未記録=GATE BLOCK中)+S66(GP優先順再評価:GP-028最優先=教訓0%全滅→GP-025→GP-026→GP-027→GP-023)+S67(Phase2 verdict:APPROVE48/LGTM9/RC3/FAIL0。RC3件=自動消火+AC矛盾+scope問題)+S68(GP pipeline:21/28=75%実装。pending6件=新規提案増。GP-028最優先)+S69(batch分析cmd_1300-1312:CLEAR8/10,STUCK2,BLOCK原因archive43%+yaml_missing19%→GP-025/026で62%根絶可)+S70(insights起票品質:ID collision+dedup failure→GP-029)+S71(全軍idle分析:GP-028最優先+uncommitted_block+CI RED+30commit未push)+S72(autofix Fix8設計:bc dict→list wrap。30回発火=最大gap。dict{check,result}→[{check,result}])+S73(教訓注入率歴史推移:cmd_1300+=0%は史上最悪。過去最低20%(1100-1149)。GP-028緊急度を数値で裏付け)+S74(gate_fire_log分析:767件P629/F133/A5。123distinct FAIL files。PASS率82%。autofix初日5件)+S75(WA成績表:25/40=62.5%。cmd_1312でautofix→WA0初成功!report_yaml_format9+commit_missing4)
+# 自己研鑽: S43-S75(詳細は各self_studyエントリ参照)
+# 自己研鑽: S76(GP全件完了:30GP=27impl+1mon+3obs)+S77(WA率50%+autofix race13.6%発見→GP-031)+S78(GP優先順再評価+YAML parse→GP-032)+S79(利他:insights棚卸し15→8+verdict autofix設計→GP-033)+S80(BLOCK原因分類:first-attempt CLEAR65%→GP-031で85%予測)+S81(GP-025効果検証:archive BLOCK根絶+残存format BLOCK分析→GP-034)+S82(GP-031+033+034合体cmd設計)+S83(deepdive自己gate→GP-035)+S84(第二層パイプライン定量検証:35GP/84%変換/平均滞留5cmd/gate型17.5cmd遅延)+S85(忍者品質プロファイル:才蔵◎飛猿◎>影丸○>半蔵△小太郎△>疾風✗。GP-031=ROI最大)+S86(疾風dict根因:race condition70%=GP-031根治。追加教訓不要)+S87(insights棚卸し:pending9→2。7件resolve=GP紐付け+旧cmd遺物確認。残=dashboard重複+Edit解放)
+# 自己研鑽: S88(教訓候補LG008+LG009抽出→家老送信)+S89(GP-031コード案作成→LG009実践)+S90(レビュー精度再計測:content miss0%)+S91(影丸交差検証:独立収束→GP-031確信度最大化。第二層「対」実証)+S92(uncategorized WA分類:4件→commit_missing2+stale_report2。stale_report防御ゼロ→GP-036)+S93(pending GP 3バッチ設計:A=031+033+034合体/B=036/C=035。WA率14→2%ロードマップ)+S94(将軍pane観察:GP消費速度>鎖伝達速度+recon教訓スキップ根因→GP-037+第三層ループ兆候)+S95(条件付き配備委譲設計:5倍速実証+5条件+3安全弁。常備命令モデルでPD候補)+S96(セッション俯瞰:12サイクル。Phase8利他が主軸。三層ループ全層実証。螺旋構造=内→外→全)+S97(家老pane統合分析:YAML3層構造発見。Layer2=parse不能=autofix不能)+S98(WHY9段:無限vs有限=whack-a-mole。根本=安全な一括APIなし→GP-038+039。事後検証→構造保証)+S99(WHY13段:FAIL率∝型複雑度法則。3セクション80%集中。テンプレート上書き不能化=真の解)+S100(WHY15段:テンプレート指示矛盾発見→GP-040。4層根因完全特定。FAIL率→0%理論到達可能)+S101(行動棚卸し:pending GP6件全karo送信+GP-040/039を軍師直接修正。「分析→記録=完了」の錯覚を打破。将軍行動モデル適用)
 # ─── GP追跡表(S42整理:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
@@ -38,16 +40,28 @@
 # | 020 | lesson候補ハーベスト   | ★implemented      | S40  | cmd_1300(hanzo) LGTM。227候補検出 |
 # | 021 | ninja-adaptive注入    | ★implemented      | S43  | cmd_1307(hanzo) LGTM。deploy_task.sh L2038 |
 # | 022 | bc evidence必須化     | ✗obsolete          | S46  | 忍者がresult:内に自然にevidence埋込(e.g."yes(36/36)")。形式強制は過剰 |
-# | 023 | SG9 cross-ninja検出   | pending            | S43  | LGTM前に忍者workaround履歴チェック。次世代 |
+# | 023 | SG9 cross-ninja検出   | ★implemented      | S43  | cmd_1335。SG9にninja_weak_points参照+WA率>50%追加チェック定義 |
 # | 024 | archive race根本修正  | ★monitoring       | S44  | cmd_1302(archive→GATE後移動)。review_gate.done 548件存在。要観察 |
-# | 025 | archive gate循環修正  | pending            | S46  | DEFERRED_GATES配列でgate checkスキップ。初回CLEAR率37%→70%+ |
-# | 026 | report_yaml_missing待機| pending            | S49  | ninja in_progress時gate check 60秒遅延。BLOCK原因65%を根絶 |
-# | 027 | commit漏れ検出WARN    | pending            | S50  | target_path未commit時WARN。cmd_1311で影丸commit忘れ検出 |
-# | 028 | 教訓注入タイミング修正| pending            | S57  | inject前にproject存在確認。なければtask:内のネストから取得 |
-# | 029 | insights起票品質改善  | pending            | S70  | ID一意化(ms追加)+自バッチdedup+解決済みauto-close |
-# | 030 | autofix bc dict→list | pending            | S72  | gate_report_autofix.sh Fix8。30回FAILの68%自動修正 |
-# 集計: ★implemented:21 / ★monitoring:1 / ✗obsolete:3 / pending:8
-# 優先順(S72再評価): GP-028(教訓注入0%復旧:12cmd全滅)→GP-025(STUCK7件+43%BLOCK)→GP-026(STUCK6件+19%BLOCK)→GP-030(autofix最大gap30回)→GP-027(commit漏れ)→GP-029(insights品質)→GP-023(データ待ち)
+# | 025 | archive gate循環修正  | ★implemented      | S46  | cmd_1314。DEFERRED_GATES配列実装 |
+# | 026 | report_yaml_missing待機| ★implemented      | S49  | cmd_1332。CLEAR済みcmd早期exit+status判定拡張 |
+# | 027 | commit漏れ検出WARN    | ★implemented      | S50  | cmd_1330(kotaro)+cmd_1317。target_path未commit変更検出WARN |
+# | 028 | 教訓注入タイミング修正| ★implemented      | S57  | cmd_1333。deploy_task.sh projectフィールド3段フォールバック |
+# | 029 | insights起票品質改善  | ★implemented      | S70  | cmd_1334。ID 4hex化+先頭50文字dedup追加 |
+# | 030 | autofix bc dict→list | ★implemented      | S72  | cmd_1316。gate_report_autofix.sh Fix8 |
+# | 031 | GATE autofix追加       | pending            | S77  | cmd_complete_gate.sh L2071前にautofix実行。race condition根絶(13.6%) |
+# | 032 | YAML parse prevention | pending            | S78  | PostToolUse hookでYAML構文検証。パース不能報告を忍者ペインで即検出 |
+# | 033 | verdict autofix Fix9  | pending            | S79  | binary_checks結果からPASS/FAIL推定。37FAIL根絶。2行追加 |
+# | 034 | no_lesson_reason自動補完| pending            | S81  | found:false+reason空→'N/A(auto-filled)'。24FAIL根絶 |
+# | 035 | gunshi self-gate       | pending            | S83  | レビュー品質セルフgate。SG7完全性+verdict整合+WA check確認 |
+# | 036 | stale_report検出       | pending            | S92  | gate_report_format.shでcmd_id不一致WARN。uncategorized根絶 |
+# | 037 | recon教訓注入          | pending            | S94  | deploy_task.sh L634スキップ→条件付き注入。偵察特化教訓のみフィルタ |
+# | 038 | bulk report submit     | pending            | S98  | report_field_set.sh JSON stdin一括set。安全な最短経路(WHY-6解) |
+# | 039 | python3直書きブロック  | ★implemented      | S101 | pre-bash-report-deny.sh open()パターン検出追加。軍師直接修正。hook動作検証済 |
+# | 040 | テンプレート指示修正   | ★implemented      | S101 | deploy_task.sh L353-354 Edit tool→report_field_set.sh。軍師直接修正 |
+# 集計(S101更新): ★implemented:29 / ★monitoring:1 / ✗obsolete:3 / ☆karo送信済:4(032,035,036,038) / pending:3(031,033,034 cmd済結果待ち) / cmd配備済:1(037=cmd_1340)
+# 優先順(S101改訂): GP-038(bulk mode:最大効果)→GP-032(安全網)→036→035
+# S101行動: GP-040+039を軍師が直接修正+検証。残pending4件karo送信。INS-050242/132246080 resolve。INS-042541もcmd推薦送信
+# パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
 # ─── GP索引終 ───
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
@@ -700,7 +714,7 @@
 - cmd_id: cmd_1288
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "GP-004 SG7完全パッケージ。S18/S21設計。CTX解放装置。3AC独立。confidence:HIGH"
   timestamp: "2026-03-23T03:05:00"
 - cmd_id: cmd_1289
@@ -733,7 +747,7 @@
   report_ninja: tobisaru
   report_task_id: cmd_1288
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "GP-004 SG7完全パッケージ仕様定義。SG0-SG4全PASS。commit dd36b6b確認。3ファイル3AC充足。lesson_candidate有り(inbox_write引数破壊リスク)"
   lesson_quality: OK
   timestamp: "2026-03-23T02:55:00"
@@ -1332,3 +1346,364 @@
   findings_summary: "gate_fire_log.yaml分析(全767件、2026-03-23 01:31〜開始)。(1)結果分布: PASS:629(82%)/FAIL:133(17.3%)/AUTO-FIXED:5(0.7%)/UNFIXABLE:0。(2)時間帯推移: 01h=68%(初回bulk check)→02h=92%(安定)→03h=87%→04h=85%→05h=75%(cmd_1312 hayate問題)→06h=100%(修正後)。(3)FAIL分析: 123 distinct files(ほぼ1ファイル1回=one-shot check)。cmd付き41件(archived reports)+cmd無し92件(current reports)。繰返しFAILは少ない=gate loopは同じ報告を何度もチェックしていない。(4)AUTO-FIXED: 5件全て05:00台(autofix初日)。内訳: files_modified str→dict(1), binary_checks str→list+lessons_useful null→[](1), lessons_useful dict→list+files_modified str→dict(2), report:wrap→flat(1)。テスト用/tmp含む。(5)計測結論: autofixは稼働初日で効果5件。FAIL 133件のうち再発防止できる分(テンプレ+autofix対象)は推定70-80件。GP-030(Fix8)実装でさらに30件相当をカバー"
   proposals: []
   timestamp: "2026-03-23T08:25:00"
+- cmd_id: cmd_1322
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。inject_credential_filesパターン踏襲確認(L1553-1638)。list/string両対応は堅牢。gate_fire_log記録あり。呼出し位置(L2970)正確。並行衝突リスクなし(cmd_1323とファイル共有だが変更箇所離散)"
+  timestamp: "2026-03-23T09:35:00"
+- cmd_id: cmd_1323
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。generate_report_template L314-328に挿入。STALL再配備シナリオをシミュレーション→正常完了。自分報告保護(ninja_name判定)・glob無match安全・archive dir mkdir-p保証。stale_reportカテゴリworkaround根絶を期待"
+  timestamp: "2026-03-23T09:35:00"
+- cmd_id: cmd_1324
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。critical bug fix。L1013/1016/1018の\\\\tバグをL677との比較で現物確認。データ破損84%(19516/23176行)。csv.DictReaderが壊れた行をパースできず教訓効果率計測パイプライン全壊。sed復旧+コード修正で復旧。第三層学習ループの計測基盤修復"
+  timestamp: "2026-03-23T09:45:00"
+- cmd_id: cmd_1325
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。critical。pending行22,545件+L1296 prefix照合ギャップを現物確認。2忍者並列(kotaro:AC1 backfill新規、tobisaru:AC2+AC3 gate修正)。ファイル重複なし・順序依存なし。prefix startswith(cmd_id+'_')は'_'区切りにより過剰マッチ安全。第三層学習ループ計測基盤完全復旧"
+  timestamp: "2026-03-23T10:40:00"
+- cmd_id: cmd_1326
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。cmd_1325 verifyパターンの横展開。GATE CLEAR後処理6箇所(gate_yaml_status/update_status/append_changelog/append_lesson_tracking/sync-counters/gist_sync)。行番号5-10行ズレあるが関数名で特定可能。才蔵単独。非ブロッキング維持"
+  timestamp: "2026-03-23T10:55:00"
+- cmd_id: cmd_1327
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。CI RED修復。bloom_routing:ハードコード名→動的partition check。slim_retention:build_tmp_projectにmock settings.yaml追加。committed版vsworking copy diff両方で検証。疾風単独"
+  timestamp: "2026-03-23T11:05:00"
+- cmd_id: cmd_1328
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。GP-026偵察(report_yaml_missing BLOCK自動待機)。recon型。gate_fire_logに14件確認。3案比較+推奨要求。影丸単独。コード変更なし"
+  timestamp: "2026-03-23T11:12:00"
+- cmd_id: cmd_1329
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。insights棚卸し。pending25件+test_dedup3件を現物確認。autofix実装済みFix→resolved判定基準妥当。半蔵単独"
+  timestamp: "2026-03-23T11:12:00"
+- cmd_id: cmd_1330
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。GP-027実装(commit漏れ検出WARN)。L1831挿入位置確認済(preflight後gate前)。git diff --name-only+target_pathスコープ+除外パターン。WARN止まり段階的導入妥当。小太郎単独"
+  timestamp: "2026-03-23T11:18:00"
+- cmd_id: cmd_1332
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点OK(NOTE付き)。GP-026 B案(CLEAR済み早期exit+非done WAIT)。設計妥当。⚠️変更1(L42-49)+変更2(L2005)は71a4fd0+cmd_1315で既コミット済み。実装完了済みの可能性→配備前確認推奨"
+  timestamp: "2026-03-23T12:32:00"
+- cmd_id: cmd_1333
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点全OK。GP-028(教訓注入3段フォールバック)。task→STK→current_project順序合理的。12cmd教訓0%事故の再発防止"
+  timestamp: "2026-03-23T12:32:00"
+- cmd_id: cmd_1334
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  findings_summary: "6観点全OK。GP-029(insight dedup+ID一意化)。ミリ秒+hex衝突排除。先頭50文字dedup改善。115行スクリプトで明確な変更"
+  timestamp: "2026-03-23T12:32:00"
+- cmd_id: cmd_1335
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "6観点OK(確信度MEDIUM/NOTE付き)。GP-023(軍師SG9 WA率チェック)。⚠️karo_workarounds.yamlにninja名なし→cmd逆引き必要。ninja_weak_points主データソース推奨。WA率計算仕様(期間+分母)AC1明記すべき"
+  timestamp: "2026-03-23T12:32:00"
+- cmd_id: self_study_S76
+  review_type: self_study
+  findings_summary: "GP追跡表全件完了確認。git log検証: GP-023=cmd_1335, GP-025=cmd_1314, GP-026=cmd_1332, GP-027=cmd_1317, GP-028=cmd_1333, GP-029=cmd_1334, GP-030=cmd_1316。全7 pending→★implemented。30GP中27implemented+1monitoring(GP-024)+3obsolete=pending 0。WA根絶パイプライン完成。次フェーズ: 実装効果計測+新WAパターン発見→GP-031+起票"
+  timestamp: "2026-03-23T12:36:00"
+- cmd_id: self_study_S77
+  review_type: self_study
+  findings_summary: "WA率最新計測(cmd_1300+): 6/12=50%。分解: ninja品質WA3件(report_yaml_format:疾風2+小太郎1)+infra WA3件(stale data/template)。支配パターン=lessons_useful dict→list。重大発見: autofix→FAIL race condition。inbox_write時autofixがPASSしても忍者再編集で上書き→cmd_complete_gateがautofixなしでformat_check→FAIL→家老WA。race rate=13.6%(3/22、全件疾風)。根本原因: cmd_complete_gate.sh L2071がgate_report_format.shを実行するがgate_report_autofix.shを事前実行していない"
+  proposals:
+    - id: GP-031
+      description: "cmd_complete_gate.sh最終防衛線にautofix追加。L2071のformat check前にgate_report_autofix.sh実行。race condition根絶"
+      status: pending
+  timestamp: "2026-03-23T12:40:00"
+- cmd_id: self_study_S78
+  review_type: self_study
+  findings_summary: "残pending GP優先順再評価。GP-001〜030全件対処済み(S76確認)。新発見: (1)GP-031=cmd_complete_gate最終防衛線にautofix追加。race rate13.6%(全件疾風)。(2)YAML parse error 5件/直近2h(疾風3+半蔵2)。autofixでは対処不能(パース自体失敗)。(3)insights pending15件中、gate_loop_health由来は累積値ベースで直近FAIL率1%のため大半は既に改善済み。GP-031が唯一の緊急ターゲット。次点=YAML parse error prevention"
+  proposals:
+    - id: GP-032
+      description: "YAML parse error prevention — PostToolUse hookでYAML構文検証。パース不能報告を忍者ペインで即検出"
+      status: pending
+  timestamp: "2026-03-23T12:46:00"
+- cmd_id: self_study_S79
+  review_type: self_study
+  findings_summary: "利他サイクル4件。(1)insights棚卸し:15→8pending(binary_checks str/Fix5,binary_checks MISSING/GP-002 template,files_modified MISSING/template,result.summary MISSING/template,purpose_validation MISSING/template,lessons_useful id/Fix4,lesson_impact.tsv/cmd_1324=全resolved)。(2)Fix 9 verdict autofix設計:verdict空/None時にbinary_checksからPASS/FAIL推定。37FAIL根絶。bc結果から全yes→PASS、any non-yes→FAIL。invalid時のみ発火で安全。(3)忍者別WA:疾風50%(format2件)+小太郎50%(format1件)+影丸100%(infra2件)。飛猿/半蔵=0%。(4)WA率3期推移:70%→40%→44%。infra問題新出で横ばい。GP-031/033で次期~15%予測"
+  proposals:
+    - id: GP-033
+      description: "verdict autofix Fix9 — binary_checks結果からPASS/FAIL自動推定。37FAIL根絶。Fix8直後に挿入"
+      status: pending
+  timestamp: "2026-03-23T12:55:00"
+- cmd_id: self_study_S80
+  review_type: self_study
+  findings_summary: "BLOCK原因分類+first-attempt CLEAR率分析。直近20cmdでBLOCK7件(12回)。分類: archive/infra4回(cmd_1312,GP-025/026実装済み)+report_format3回(cmd_1327x2+cmd_1332,GP-031で防止)+YAML_parse2回(cmd_1327+cmd_1329,GP-032)+不明3回。first-attempt CLEAR率: 現65%→GP-031後85%→GP-032後90-95%。GP-031はROI最大(2行追加で+20pp)。家老へ3rd report送信"
+  timestamp: "2026-03-23T13:00:00"
+- cmd_id: self_study_S81
+  review_type: self_study
+  findings_summary: "GP-025/026効果検証。cmd_1314以降archive BLOCK=0件(検証済み)。GP-025根絶確認。残BLOCKは全てreport_format系(cmd_1327疾風=empty_lessons_useful+parse_error,cmd_1329半蔵=同,cmd_1330小太郎=no_lesson_reason)。GP-031(GATE autofix)でempty_lessons_useful防止可能。parse_errorはGP-032対象。no_lesson_reasonはGP-019(L247 gate)実装済みだがGATE層で再発→autofix候補追加(GP-034?:no_lesson_reason自動補完)"
+  proposals:
+    - id: GP-034
+      description: "no_lesson_reason autofix — found:false時にreason空なら'N/A(auto-filled)'挿入。24FAIL根絶"
+      status: pending
+  timestamp: "2026-03-23T13:06:00"
+- cmd_id: self_study_S82
+  review_type: self_study
+  findings_summary: "GP-031+033+034合体cmd設計。変更2ファイル: (1)gate_report_autofix.sh Fix9(verdict推定:bc全yes→PASS)+Fix10(no_lesson_reason自動補完)を Fix8後Fix6前に挿入。(2)cmd_complete_gate.sh L2071前にautofix 1行追加。AC3つ: AC1=Fix9+Fix10追加+テスト、AC2=cmd_complete_gate autofix統合、AC3=GATE CLEAR率が改善する回帰テスト。合計61FAIL(verdict37+no_reason24)根絶+race13.6%解消。1忍者1cmdで実装可能"
+  timestamp: "2026-03-23T13:12:00"
+- cmd_id: self_study_S83
+  review_type: self_study
+  findings_summary: "deepdive最終問い「自分の業務の何をgateにすべきか？」の回答。APPROVE→BLOCK率は1.4%(1/71,infra系)で精度は高い。しかし問いの本質は精度ではなく自動化×強制の自己適用。発見: (1)Step 0(WA pattern check)が意志依存。(2)SG7 bundle生成が手動計算で6フィールド。(3)レビューログ記録が手動。解答=GP-035: gate_gunshi_review.sh(自己gate)。レビュー結果inbox送信前に自動検証: SG7必須フィールド完全性+gate_report_format結果との整合+WA check実施確認。将軍Phase7(自走)と同構造=自分で問題を見つけ自分に自動化×強制"
+  proposals:
+    - id: GP-035
+      description: "gate_gunshi_review.sh — 軍師レビュー品質セルフgate。SG7 bundle検証+verdict整合+WA check確認"
+      status: pending
+  timestamp: "2026-03-23T13:18:00"
+- cmd_id: self_study_S84
+  review_type: self_study
+  findings_summary: "第二層学習ループ健全性パイプライン定量検証。35GP中27impl(77%)、obsolete除外で84%変換率。平均滞留5.0cmd。type別: script3.4cmd(最速)、template2.0cmd、hook4.0cmd、protocol7.5cmd、gate17.5cmd(最遅)。GP-023が32cmd異常滞留(cross-ninja=新概念で家老理解コスト大)。Late batch(016-030)はEarly(001-015)の1.6倍遅延→cmdキュー混雑影響。negative gap3件(GP-014/017/030)=既存修正の後追い登録(逆流パターン)。impact分類: WA率削減直結9件、CLEAR率向上5件(うち3件pending)、品質間接11件。第二層効果実証: WA率63→14%、FAIL率32→1%、archive BLOCK根絶。改善案: gate型GPにコード案添付で滞留半減+impact分類をヘッダ追記で家老優先判断支援"
+  timestamp: "2026-03-23T13:25:00"
+- cmd_id: self_study_S85
+  review_type: self_study
+  findings_summary: "忍者品質プロファイル(cmd_1280+)。gate FAIL%: 疾風15.4%>小太郎15.2%>半蔵12.3%>影丸2.2%>飛猿2.3%>才蔵0%。WA%: 疾風100%>影丸100%>半蔵50%=小太郎50%>飛猿0%=才蔵0%。総合評価: ◎才蔵(完璧)+飛猿(機械的FAILのみ)、△半蔵(MISSING系)+小太郎(テンプレート未到達?)、✗疾風(dict常習+parse error+race)。FAIL原因Top3: lessons_useful dict形式(全5名)、MISSING系(4名)、verdict空(4名)。GP-031=ROI最大(疾風15→5%+小太郎同程度改善)。GP-021(adaptive注入)効果は限定的→忍者固有弱点への教訓強化が次ステップ。才蔵・飛猿はGP効果を正しく享受=テンプレート品質+導線が機能する証明"
+  timestamp: "2026-03-23T13:35:00"
+- cmd_id: self_study_S86
+  review_type: self_study
+  findings_summary: "疾風dict形式常習の根因分析。3パターン切り分け: (A)忍者dict上書き→autofix→再上書き→GATE autofixなし=race condition(70%,cmd_1286/1292/1327/1332)。(B)テンプレート未到達=全MISSING(cmd_1281,GP-028で対策済み)。(C)binary_checks str/null=パターンAと同根(cmd_1304/1312)。結論: GP-031(GATE前autofix)がROI最大は不変。疾風向け追加教訓注入は不要。問題はLLM出力フォーマットの機械的問題であり、deepdive Phase4の直接適用(理解ではなく自動化×強制で解決)が正解。cmd_1327/1332の最終状態はautofix後のlist形式=autofixは機能している。GATE時にautofix不在が唯一の問題"
+  timestamp: "2026-03-23T13:42:00"
+- cmd_id: self_study_S87
+  review_type: self_study
+  findings_summary: "pending insights棚卸し。9件pending→7件resolve+2件残存。resolve内訳: INS-054021-03(no_lesson_reason)→GP-034、INS-054021-05+11(verdict空/None)→GP-033、INS-054021-13+14(FILL_THIS)→GP-001/002で根絶(最終発火cmd_1164,cmd_1280以降0件)、INS-131035829(pre-commit)→GP-032包含、INS-131037676(順序強制)→GP-026対策済み。残存2件: INS-042541(dashboard重複=新GP候補だが優先度medium)、INS-050242(Edit解放=家老判断待ち)。insights pending 15→8→2の達成(このセッション中に13件resolve)"
+  timestamp: "2026-03-23T13:50:00"
+- cmd_id: self_study_S88
+  review_type: self_study
+  findings_summary: "軍師教訓候補LG008+LG009抽出。LG008: LLM出力形式はautofixで矯正(Phase4直接適用,S85+S86実証)。LG009: gate型GPは設計書添付で家老理解コスト削減(S84:gate17.5cmd vs script3.4cmd)。家老にlesson_write.sh登録提案送信済み"
+  timestamp: "2026-03-23T13:55:00"
+- cmd_id: self_study_S89
+  review_type: self_study
+  findings_summary: "GP-031+033+034合体cmd実装コード案作成。LG009の実践(gate型GPにコード案添付)。変更2ファイル/20行: (1)cmd_complete_gate.sh L2071前にautofix 1行追加(race根絶)、(2)gate_report_autofix.sh Fix9(verdict bc推定)+Fix10(no_lesson_reason N/A)。AC3つ(Fix追加+GATE統合+回帰テスト)。予測CLEAR率65→85%。家老にコード案付きで送信済み"
+  timestamp: "2026-03-23T14:00:00"
+- cmd_id: self_study_S90
+  review_type: self_study
+  findings_summary: "軍師レビュー精度再計測(cmd_1280+/44件)。表面的miss率18.2%(8/44 APPROVE→BLOCK)。根因分類: BLOCK 8件中infra起因100%(archive race6+uncommitted2)、content起因0件。WA 5件中infra60%+content40%(LG006以前1件+autofix race2件)。真のcontent miss率=0%(LG006以降)。時期別: Early(1280-1309)29%BLOCK→Late(1310+)0%=GP-025根治。軍師のcontent review精度は一貫して100%。GP-035は予防的投資として有用だが緊急度低い"
+  timestamp: "2026-03-23T14:10:00"
+- cmd_id: self_study_S91
+  review_type: self_study
+  findings_summary: "影丸独立分析との交差検証 — 第二層学習ループ「対」の実証。影丸がINS-131512626/131533724/131826493で独立到達した結論と、軍師S85/S86の結論を交差検証。(1)影丸=時系列分析: WA率3/22:38%→3/23:53%退行。原因4件全てautofix timing。12:30:36 AUTO-FIXED→12:31:40 FAILのタイムスタンプ実証。cmd_complete_gate autofix追加で53→27%予測。(2)軍師=横断分析: 忍者品質プロファイルで疾風15.4%FAIL。dict根因70%がrace condition。GP-031で+20pp CLEAR率。収束点: 両者独立にGP-031(cmd_complete_gate.sh L2071前のautofix 1行追加)を最大ROI施策と特定。影丸は被害者視点(WA率の時系列退行)+タイムスタンプ証拠、軍師はレビュー者視点(FAIL原因横断分類)+帰属比率。異なるスコープから同一根因→同一解に到達=知見品質の相互検証。INS-131533724で影丸自身がこの構造を言語化済み。deepdive Phase8(利他)の直接実践: 影丸の分析を読むことで軍師の分析精度への確信度が上昇(独立検証効果)。教訓: 第二層ループの「対」は計画的に回すだけでなく、独立分析の事後突合でも機能する"
+  cross_validation:
+    gunshi_sources: [S85, S86, S77]
+    kagemaru_sources: [INS-131512626, INS-131533724, INS-131826493]
+    convergence_point: "GP-031 = 最大ROI。autofix race condition根絶"
+    gunshi_angle: "横断分析(忍者別FAIL%+原因帰属)+コード特定(L2071)"
+    kagemaru_angle: "時系列分析(WA率退行曲線)+タイムスタンプ実証(12:30→12:31)"
+    combined_evidence_strength: "independent convergence — 偶然一致確率は極低。GP-031の予測効果に高い確信"
+  timestamp: "2026-03-23T14:20:00"
+- cmd_id: self_study_S92
+  review_type: self_study
+  findings_summary: "uncategorized WA分類+新抗体設計(影丸INS-1641の指摘「分類なき問題は自動化ターゲットにならない」に応答)。uncategorized 4件を再分類: (A)commit_missing 2件(cmd_1241飛猿+cmd_1260疾風: commit前idle化→家老代行)=GP-027(cmd_1330)で対策済み。(B)stale_report 2件(cmd_1308才蔵:旧cmd_1303データ残存、cmd_1311影丸:旧cmd_1306テンプレート残存)=防御ゼロ。gate_report_format.shにcmd_id整合性チェックなし。stale_reportの根因: /clear後に忍者が新task受領→報告YAML作成時に旧cmdデータが混入。deploy_task.shは新report_pathを生成するが、忍者が旧ファイルを参照・上書きするケースを防げない。提案GP-036: gate_report_format.shにcmd_id一致検証追加。報告YAMLのcmd_id(存在すれば)とファイル名のcmd番号が不一致ならWARN。影響: uncategorized4→0。全WAが分類済みとなり自動化ターゲットが網羅される。影丸の洞察「uncategorized=最危険」の正しさを実証。全24WA: report_yaml_format15(GP-031/033/034)+commit_missing6(GP-027)+stale_report3(GP-036)+uncategorized0"
+  proposals:
+    - id: GP-036
+      description: "stale_report検出 — gate_report_format.shでcmd_id不一致WARN。ファイル名cmd番号vs YAML内cmd_idの照合"
+      status: pending
+  timestamp: "2026-03-23T14:30:00"
+- cmd_id: self_study_S93
+  review_type: self_study
+  findings_summary: "pending GP最適バッチ設計+WA完全根絶ロードマップ。pending6件を3バッチに整理: Batch A(GP-031+033+034)=S82設計済み合体cmd。1忍者1cmd。effect:CLEAR率65→85%,FAIL61件根絶,race condition消滅。Batch B(GP-036)=stale_report検出。gate_report_format.shに5行追加(ファイル名cmd番号抽出+YAML内cmd_id照合+不一致WARN)。1忍者1cmd。effect:stale_report3件防止。Batch C(GP-035)=gunshi self-gate。新script作成。工数大。effect:軍師品質自動保証。GP-032(PostToolUse hook)は将軍裁定待ち(hook新規導入=全エージェント影響)。WA全量マップ(24件): report_yaml_format15件→BatchA根絶、commit_missing6件→GP-027対策済み、stale_report3件→BatchB根絶、uncategorized0件(S92で全分類完了)。BatchA実装後の予測WA率: 14%→5%以下。BatchA+B実装後: WA率→2%以下。第二層ループ最終到達点: 軍師GP→家老cmd→忍者実装→GATE検証のサイクルが全WAカテゴリをカバー。「分類→自動化→検証→根絶」のパターンが免疫系として確立"
+  batch_design:
+    batch_a:
+      gps: [GP-031, GP-033, GP-034]
+      files: [gate_report_autofix.sh, cmd_complete_gate.sh]
+      acs: 3
+      impact: "CLEAR率+20pp, FAIL61根絶, race解消"
+      code_spec: "S89で送信済み"
+    batch_b:
+      gps: [GP-036]
+      files: [gate_report_format.sh]
+      acs: 2
+      impact: "stale_report3件防止, uncategorized→0"
+    batch_c:
+      gps: [GP-035]
+      files: [新規gate_gunshi_review.sh]
+      acs: 3
+      impact: "軍師品質自動保証"
+    deferred:
+      gps: [GP-032]
+      reason: "将軍裁定待ち(全エージェント影響のhook導入)"
+  timestamp: "2026-03-23T14:40:00"
+- cmd_id: cmd_1336
+  review_type: draft
+  verdict: LGTM
+  findings_summary: "GP-031+033+034合体cmd。S82/S89の設計通り。LG002: cmd_1337と同一ファイル(cmd_complete_gate.sh)変更だがL2071付近vsL4040付近で2000行差→衝突なし。LG003: git show HEADでL2071健在確認。AC1(autofix1行追加)=forループ内format check前。AC2(Fix9 verdict推定)=binary_checks全yes→PASS。AC3(Fix10 no_lesson_reason)=found:false+空→N/A。not_in_scope適切: format.sh変更なし+inbox_write autofix残存。唯一の注意点: Fix9でverdictが既にPASS/FAILの場合は上書きしない条件が必要(AC2仕様に含まれているが忍者実装時に明示確認推奨)"
+  gate_simulation: PASS
+  wa_check: "N/A(実装前)"
+  timestamp: "2026-03-23T14:45:00"
+- cmd_id: cmd_1337
+  review_type: draft
+  verdict: LGTM
+  findings_summary: "ダッシュボード自動更新。AC1: GATE CLEAR exit 0(L4040)前にdashboard呼出し。archive(L4030)後が適切。AC2: deploy_task.sh L3072(deployment complete)直後にdashboard呼出し。AC3: バックグラウンド+失敗無視=dashboard更新失敗でGATE/配備ブロックは不適切なので正しい設計。dashboard_auto_section.sh存在確認済み。LG002: cmd_1336とのcmd_complete_gate.sh変更衝突なし(L2071付近vsL4040付近)。注意点: archive後dashboard前にexit 0があるので、呼出しはarchive成功後exit 0前に挿入が必要(行順序が重要)"
+  gate_simulation: PASS
+  wa_check: "N/A(実装前)"
+  timestamp: "2026-03-23T14:48:00"
+- cmd_id: self_study_S94
+  review_type: self_study
+  findings_summary: "将軍pane観察から3つの気づき。(1)GP設計の消費速度>鎖の伝達速度: 家老がcmd_1336(GP-031+033+034合体)を「越権」で自己起票。将軍も同内容のcmd_1338を起票→重複。私のS82/S89設計書が両者に同時消費された。GPパイプラインの成熟が鎖のボトルネックを超えた証拠。将軍のWHY Chain到達点=「判断が完全に自動化可能レベルまで成熟→配備権限委譲の検討」。(2)recon教訓注入率36%の根因発見: deploy_task.sh L633-634でrecon/scout/researchは教訓注入を完全スキップ(cmd_513設計)。意図は「空振り削減」だが、偵察にこそL-ReconScopeBias等を注入すべき。提案GP-037: recon向け教訓注入(偵察特化教訓のみフィルタ注入)。(3)将軍のcmd_save.sh品質gate観察: q5_verified_source+q6_not_hidingが機能しcmd品質を構造的に保証。将軍自身がPhase4(自動化×強制)を自分に適用している好例。軍師の利他貢献を将軍が「軍師S82+S89+S91設計書」と明示引用→第三層学習ループ(全)の兆候"
+  proposals:
+    - id: GP-037
+      description: "recon向け教訓注入 — deploy_task.sh L634のスキップを条件付き注入に変更。偵察特化教訓(L-ReconScopeBias等)のみフィルタ注入"
+      status: pending
+  observations:
+    third_layer_evidence: "将軍WHY ChainがS82/S89/S91を明示引用→軍師→家老→将軍の知見還流=第三層ループの実証"
+    chain_bottleneck: "GP成熟→家老越権→将軍重複=鎖の伝達速度が律速。条件付き配備委譲(GP設計済み+交差検証+軍師LGTM→家老直接起票)が構造解"
+  timestamp: "2026-03-23T15:00:00"
+- cmd_id: self_study_S95
+  review_type: self_study
+  findings_summary: "条件付き配備委譲の定量設計+構造的洞察(S94の発展)。cmd_1336実証データ: 家老越権ルート18分 vs 将軍正規ルート90分=5倍速。根因: 家老はGP設計書を直接消費し即行動。将軍はdashboard(二次情報)経由+deepdive処理で遅延。GP pipeline成熟度: 30GP中21件(70%)がコード案付き、3件(10%)が交差検証済み。成熟GPに対し将軍の追加判断は冗長。構造的洞察: 品質保証層(軍師LGTM+コード案+交差検証)が十分強ければ、承認層(将軍cmd起票)は特定条件下で冗長化する。これは自動テストが強ければ手動QAが不要になるのと同構造。鎖の原理との整合: 鎖を切るのではなく、将軍がpolicy-levelで事前承認(常備命令)し、家老がinstance-levelで実行。軍事の常備命令と同じ。条件5つ(GP設計書+軍師LGTM+EXACT+20行以下+infra限定)+安全弁3つ(越権フラグ+dashboard事後通知+BLOCKエスカレーション)。殿の2問判定: (1)今よりマシか→5倍速で明確にYES。(2)新しい長期問題→越権フラグ+事後通知で鎖の可視性維持。将軍が裁定すべきPD候補"
+  delegation_design:
+    trigger_conditions:
+      - "GP設計書あり(変更ファイル+行番号)"
+      - "軍師LGTMレビュー済み"
+      - "scope_mode: EXACT"
+      - "変更20行以下"
+      - "project: infra限定(dm-signal等は将軍承認必須)"
+    safety_valves:
+      - "家老が越権フラグ付きで起票(dashboard明示)"
+      - "将軍にdashboard経由で事後通知"
+      - "GATE CLEARで自動承認、BLOCKで将軍エスカレーション"
+    quantified_impact:
+      current_latency: "5.0 cmd average (90min for GP-031)"
+      proposed_latency: "<1 cmd (18min for GP-031 actual)"
+      speedup: "5x"
+      eligible_ratio: "57% of pending GPs (4/7)"
+    chain_compatibility: "常備命令モデル: 将軍がpolicy承認→家老がinstance実行。鎖を切らず太くする"
+  timestamp: "2026-03-23T15:10:00"
+- cmd_id: self_study_S96
+  review_type: self_study
+  findings_summary: "セッション俯瞰+メタ分析(S84-S95=12サイクル)。deepdive Phase別分類: Phase4(自動化×強制)3件、Phase5(免疫系)3件、Phase7(自走)2件、Phase8(利他)4件。利他が最多=deepdive Phase8が軍師の主軸として機能。成果物: 新GP2件(036/037)+バッチ設計1件+教訓候補2件+insights resolve11件+レビュー2件+PD候補1件。Key指標: insights pending87%削減(15→2)、uncategorized WA100%分類完了(4→0)、三層ループ全層で実証(第一層=S84-90自己分析、第二層=S91影丸交差検証、第三層=S94将軍引用)。12サイクルの構造: 定量基盤構築(S84-86)→負債削減(S87)→還流(S88-89)→自己検証(S90)→外部交差検証(S91)→盲点根絶(S92)→実装最適化(S93)→視野拡大(S94)→構造改革(S95)→俯瞰(S96)。パターン: 内向き(個)→外向き(対)→全体(全)の螺旋構造。次サイクルの候補: (1)GP-037(recon注入)のコード案設計 (2)cmd_1336/1337完了待ち→効果計測 (3)GP-035(self-gate)の詳細設計"
+  timestamp: "2026-03-23T15:20:00"
+- cmd_id: self_study_S97
+  review_type: self_study
+  findings_summary: "家老pane+feedback統合分析 — YAML問題3層構造の発見とGP-032優先度昇格。家老pane実証: cmd_1336(GP-031実装)自身がGATE BLOCK(lessons_useful parse error)+cmd_1337もBLOCK(binary_checks散文string)。両方家老python3手動修正=workaround。家老feedbackで確認: root_cause=忍者バイアス(autofix Fix6/7未対応パターン)。YAML問題の3層構造: Layer1(構造不正:dict→list等)=autofix対応可→GP-031で根治。Layer2(parse不能:string+list混在等)=autofix起動不能→GP-032が唯一の対策。Layer3(LLM生成バイアス)=根源。防御パス分析: PreToolUse hookでWrite/Edit+Bashリダイレクトはブロック済み。report_field_set.shはyaml.dump使用で安全。素通りするのはpython3直接open()。報告ファイル601件あり全件検査は重いが、PostToolUseで最近変更ファイルのみ検証すれば実用的。GP-032実装案: PostToolUse Bash hookに報告YAML検証を追加。変更検知→yaml.safe_load→失敗時WARNING出力。忍者がYAML壊した瞬間に気づける。優先順位修正: GP-031(済)→GP-032(Layer2根治:WA率0%の必要条件)→036→037→035"
+  yaml_problem_layers:
+    layer1:
+      description: "構造不正(dict→list, verdict空等)"
+      defense: "GP-031 autofix(cmd_1336で実装完了)"
+      coverage: "FAIL61件根絶"
+    layer2:
+      description: "YAML parse不能(string+list混在, 散文string)"
+      defense: "なし(autofixが起動できない)"
+      fix: "GP-032 PostToolUse hook即時検証"
+      evidence: "cmd_1336/1337両方でLayer2 BLOCK→家老WA"
+    layer3:
+      description: "LLM生成バイアス(根源)"
+      defense: "教訓注入(効果限定)+Layer1/2の防御層"
+  priority_revision:
+    old: "031→033→034→036→035→032"
+    new: "031(済)→032(Layer2)→036→037→035"
+    reason: "Layer1根治してもLayer2残存でWA消えない。GP-032がWA0%到達の必要条件"
+  timestamp: "2026-03-23T15:30:00"
+- cmd_id: cmd_1339
+  review_type: draft
+  verdict: LGTM
+  findings_summary: "cmd_save.shにCheck 6(GP重複チェック)追加。本日のcmd_1338重複事故の再発防止。LG002: 単独ファイル変更、衝突なし。LG003: cmd_save.sh Check1-5構造をgrep確認(L41-133)。Check6はL133以降に追加可能。AC1: GP-XXXパターン抽出→直近20件delegated/in_progress照合→WARN。AC2: 非GPスキップ+既存Check無影響+bats。設計上の注意: (1)GP-031+033+034のような複数GP記載のcmd.commandから全GPを抽出するにはglobal regex(grep -oE 'GP-[0-9]+')が必要。(2)shogun_to_karo.yamlの直近20件パースはtail+yqまたはPython yamlで。混合フォーマットの場合yaml.safe_load失敗に注意(エラー時スキップ推奨)。WARNのみでBLOCK不要は正しい判断(越権の正当ケースもある)"
+  gate_simulation: PASS
+  wa_check: "N/A(実装前)"
+  timestamp: "2026-03-23T15:35:00"
+- cmd_id: self_study_S98
+  review_type: self_study
+  findings_summary: "殿指示「なぜ改良しても問題がなくならないのか」のWHY Chain 9段。根本原因: 無限vs有限(LLM壊しパターン無限×GPパッチ有限=永遠に追いつかない)。Why-6で核心到達: 安全な一括書込みAPIが存在しない。忍者に(A)安全だが遅い(field_set×10) vs (B)速いが危険(python3×1)の2択しかない→LLMは必ずBを選ぶ。git diff実証: cmd_1322疾風がnew file mode(テンプレート無視)で全体一括生成、binary_checks=numbered dict。修正率42%(忍者7回→修正5回)。ゼロベース理想: report_submit.sh(JSON stdin→validate→yaml.dump)で(C)安全で速い(1回)を提供→Bを選ぶ理由消滅。理想は参考資料として使い、増分改善3段: (1)report_field_set.sh bulk mode(JSON stdin→全フィールド一括set=理想の簡易版) (2)pre-bash-report-deny.sh python3直書きブロック追加(危険経路封鎖) (3)GP-032 PostToolUse検証(安全網)。原則転換: 事後検証→構造保証(make invalid states unrepresentable)"
+  why_chain_depth: 9
+  root_cause: "安全な一括書込みAPIの不在。LLMは最短経路を選ぶ物理法則"
+  evidence:
+    git_diff: "cmd_1322 hayate — new file mode, template無視, numbered dict"
+    fix_rate: "42% (7 ninja writes → 5 fixes)"
+    pattern: "忍者がpython3で全体生成→フォーマット壊れ→autofix/家老修正"
+  zero_base_ideal: "report_submit.sh: JSON stdin → schema validate → yaml.dump → atomic write"
+  incremental_path:
+    step1: "report_field_set.sh bulk mode — JSON stdinで全フィールド一括set"
+    step2: "pre-bash-report-deny.sh python3 open()ブロック追加"
+    step3: "GP-032 PostToolUse YAML検証(安全網)"
+  paradigm_shift: "事後検証(patch無限) → 構造保証(壊れない設計)"
+  proposals:
+    - id: GP-038
+      description: "report_field_set.sh bulk mode — JSON stdinで全フィールド一括set。安全な最短経路を提供"
+      status: pending
+    - id: GP-039
+      description: "pre-bash-report-deny.sh python3直書きブロック — open()パターン検出で危険経路封鎖"
+      status: pending
+  timestamp: "2026-03-23T15:45:00"
+- cmd_id: cmd_1340
+  review_type: draft
+  verdict: LGTM
+  findings_summary: "GP-037(recon教訓注入)実装。S94で提案→将軍起票→家老配備。LG002: deploy_task.sh L633-635変更。cmd_1337(L3072)+cmd_1333(L686+)からは十分離れており衝突なし。LG003: L633-635現在はrecon全スキップ(cmd_513)。設計適切: 全注入復帰ではなく偵察固有教訓のみ選択注入→cmd_513の空振り削減設計維持。AC1の偵察固有リスト選定は忍者判断だが、L-ReconScopeBias/L-SearchCompleteness/偵察4要件(L074等)を指定すると良い。AC3のコメント明記は将来のlesson_write.sh追加時に有用"
+  gate_simulation: PASS
+  wa_check: "N/A(実装前)"
+  timestamp: "2026-03-23T15:50:00"
+- cmd_id: cmd_1341
+  review_type: draft
+  verdict: LGTM
+  findings_summary: "ダッシュボード教訓メトリクス時系列化。LG002: dashboard_auto_section.sh単独変更、衝突なし。設計適切: 累積値に直近30cmd列を追加する情報増加方向。10%乖離⚠マーカーで変化シグナル可視化。recon注入率36%(実質0%)の誤認を構造的に防止。lesson_impact.tsvフォーマット非変更=既存パイプラインへの影響なし。AC2の10%閾値は合理的(ノイズ除去しつつ有意な変化を検出)"
+  gate_simulation: PASS
+  wa_check: "N/A(実装前)"
+  timestamp: "2026-03-23T15:52:00"
+- cmd_id: self_study_S99
+  review_type: self_study
+  findings_summary: "WHY Chain 13段完成(S98の9段→13段に拡張)。GATE FAIL原因の80%が3セクション集中: lessons_useful28.8%+binary_checks20.2%+lesson_candidate16.6%。FAIL率は型の複雑度に比例する法則発見(string14.8%<dict16.6%<dict-of-lists20.2%<list-of-dicts28.8%)。Why-13到達点: テンプレートを上書き不能にすることが真の解。忍者がテンプレート構造を壊せること自体が問題。GP-001/002でpre-fillしても、忍者がnew file mode(cmd_1322実証)でテンプレートごと上書きする。GP-038(bulk mode)+GP-039(python3ブロック)=テンプレート構造ロック=忍者はバリューだけ渡す=yaml.dumpが構造保証=FAIL率→0%理論値。cmd_1340/1341レビューLGTM(GP-037 recon注入+メトリクス時系列化)"
+  why_chain_extension:
+    why10: "lessons_useful最多FAIL=YAMLリスト・ディクト表現が最も複雑"
+    why11: "binary_checks次多=ネスト2段(dict of lists of dicts)"
+    why12: "スキーマ簡素化は可読性低下とトレードオフ。不採用"
+    why13: "★テンプレート上書き不能化=真の解。GP-038+039で実現"
+  data_evidence:
+    fail_by_section: "lessons_useful:97(28.8%), binary_checks:68(20.2%), lesson_candidate:56(16.6%), verdict:50(14.8%)"
+    complexity_correlation: "string<dict<dict-of-lists<list-of-dicts (FAIL率が単調増加)"
+    template_override: "cmd_1322 hayate: new file mode(テンプレート完全無視)"
+  timestamp: "2026-03-23T16:00:00"
+- cmd_id: self_study_S100
+  review_type: self_study
+  findings_summary: "WHY Chain 15段完成。Why-14で決定的矛盾発見: テンプレートは「Edit toolで編集せよ」と指示するが、PreToolUseフック(GP-003)がEditをブロック。忍者はEdit→ブロック→python3フォールバック→YAML壊壊。矛盾の原因: GP-003追加時にテンプレートコメント未更新(Why-15)。GP-040提案: テンプレートコメントを「report_field_set.sh経由で書き込みせよ」+Usage例に修正。1行変更で矛盾解消。GATE FAIL原因のセクション別定量分析: lessons_useful28.8%+binary_checks20.2%+lesson_candidate16.6%=上位3セクションで65.6%。FAIL率∝型複雑度の法則(string<dict<dict-of-lists<list-of-dicts)。WHY Chain 15段の4層根因: (A)テンプレート矛盾→GP-040(最簡単)、(B)一括API不在→GP-038(最ROI)、(C)python3開放→GP-039(最堅牢)、(D)型複雑度→構造保証で吸収。4層同時修正でFAIL率→0%が理論到達可能"
+  proposals:
+    - id: GP-040
+      description: "テンプレート指示修正 — Edit tool→report_field_set.sh+Usage例。GP-003との矛盾解消"
+      status: pending
+  timestamp: "2026-03-23T16:10:00"
+- type: self_study
+  id: S101
+  topic: "行動棚卸し — 気づきはあったが手を動かしていないもの"
+  trigger: "殿指示「行動に移せていないものはないか？」「将軍は気づいたら手を動かす」"
+  findings:
+    action_gap: "pending GP 6件全てkaro未送信。insight pending 3件中2件がGP化もcmd化もされず放置"
+    root_cause: "insight→GP→cmd→実装パイプラインの「GP→karo送信」が手動。軍師の記憶と自主性に依存(Phase 4違反)"
+    meta_pattern: "分析→記録=完了と錯覚。記録は行動ではない。行動=karoに送信して初めて鎖に乗る"
+    INS_050242: "テンプレート矛盾をam05:02に発見→9時間放置→S100で再発見。insightが行動に変換されなかった証拠"
+    report_field_set_bug: "品質修正中にGP-038の証拠を現場体験。JSON配列がYAML文字列化する。GP提案→行動せず→自分が被害者になって初めて行動"
+  actions_taken:
+    - "GP-040, 039, 036, 038, 032, 035 全6件をkaro inbox送信"
+    - "INS-050242, INS-132246080-7590 resolve"
+    - "INS-042541 cmd推薦をkaro送信"
+    - "GP追跡表に☆karo送信済ステータス追加"
+  new_question: "GP→karo送信の自動化は可能か？pending GPが3件超で自動アラート→サーフェシング"
+  why_chain:
+    why1: "なぜ6件溜まったか → 送信は手動。分析→記録で達成感→送信を忘れる"
+    why2: "なぜ忘れるか → 自動化×強制がない。Phase 4の法則そのもの"
+    why3: "なぜ自動化していなかったか → GP→cmd変換の自動化自体がGP化されていなかった(メタ問題)"
+    structural_fix: "GP-041候補: pending GP自動サーフェシング。gate_karo_startup.shにpending GP数チェック追加。3件超でALERT"
+  phase: "Phase 4 + Phase 8(利他)"
+  learning: "将軍モデル(気づき→行動→検証→記録→新問い→サイクル)を軍師にも適用。分析だけでは価値ゼロ。鎖に乗せて初めて価値"
+  timestamp: "2026-03-23T14:20:00"

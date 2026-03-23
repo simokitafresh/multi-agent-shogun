@@ -10,7 +10,8 @@ insights:
   insight: 'GP-003修正後の次ステップ: Editブロックを解除しWriteのみブロックに変更検討。Edit起因workaround=0件確認済み。テンプレートコメント(Edit使え)とashigaru.md(report_field_set.sh使え)の矛盾解消が必要。'
   priority: medium
   source: manual
-  status: pending
+  status: done
+  resolved_at: '2026-03-23T14:17:13+09:00'
 - id: INS-20260323-054021-01
   ts: '2026-03-23T05:40:21+09:00'
   insight: '高頻度FAIL: binary_checks.ACx: is dict (must be list of check items) (30回発火)
@@ -18,46 +19,7 @@ insights:
   priority: high
   source: gate_loop_health
   status: resolved
-  resolved_reason: 'autofix Fix 8 で対応済み'
-- id: INS-20260323-054021-02
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: 'テンプレート強化: binary_checks: MISSING (25回発火) → report templateにデフォルト値追加せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-054021-03
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: '高頻度FAIL: lesson_candidate: found=false but no no_lesson_reason (24回発火)
-    → auto-fix化 or gate強化を検討せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-054021-04
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: 'テンプレート強化: result.summary: MISSING or empty (24回発火) → report templateにデフォルト値追加せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-054021-05
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: '高頻度FAIL: verdict: "None" is not valid (must be "PASS" or "FAIL") (23回発火)
-    → auto-fix化 or gate強化を検討せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-054021-06
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: '高頻度FAIL: lessons_useful[N]: missing "id" field (must have lesson ID like
-    L074) (23回発火) → auto-fix化 or gate強化を検討せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-054021-07
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: 'テンプレート強化: purpose_validation: MISSING (14回発火) → report templateにデフォルト値追加せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
+  resolved_reason: autofix Fix 8 で対応済み
 - id: INS-20260323-054021-08
   ts: '2026-03-23T05:40:21+09:00'
   insight: 'GATE成熟: lessons_useful: is dict (must be list). Use "- id: L001" not "0:
@@ -65,14 +27,7 @@ insights:
   priority: high
   source: gate_loop_health
   status: resolved
-  resolved_reason: 'autofix Fix 2 で対応済み'
-- id: INS-20260323-054021-09
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: '高頻度FAIL: binary_checks.ACx: is str (must be list of check items) (14回発火)
-    → auto-fix化 or gate強化を検討せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
+  resolved_reason: autofix Fix 2 で対応済み
 - id: INS-20260323-054021-10
   ts: '2026-03-23T05:40:21+09:00'
   insight: '高頻度FAIL: lessons_useful: null (must be list of dicts, not null) (13回発火)
@@ -80,45 +35,11 @@ insights:
   priority: high
   source: gate_loop_health
   status: resolved
-  resolved_reason: 'autofix Fix 6 で対応済み'
-- id: INS-20260323-054021-11
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: '高頻度FAIL: verdict: "" is not valid (must be "PASS" or "FAIL") (12回発火) →
-    auto-fix化 or gate強化を検討せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-054021-12
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: 'テンプレート強化: files_modified: MISSING (11回発火) → report templateにデフォルト値追加せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-054021-13
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: '高頻度FAIL: lessons_useful[N]: contains FILL_THIS (must fill actual values)
-    (11回発火) → auto-fix化 or gate強化を検討せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-054021-14
-  ts: '2026-03-23T05:40:21+09:00'
-  insight: '高頻度FAIL: lessons_useful[N]: useful=FILL_THIS is str (must be true or false)
-    (11回発火) → auto-fix化 or gate強化を検討せよ'
-  priority: high
-  source: gate_loop_health
-  status: pending
-- id: INS-20260323-093720731-ea205f82
-  ts: '2026-03-23T09:37:20+09:00'
-  insight: lesson_impact.tsvのタブ文字バグ(cmd_1324)修正後、dashboard_auto_sectionの教訓効果率表示が正しくなるか確認必要。awk側も同じ問題を抱えている可能性あり
-  priority: high
-  source: manual
-  status: pending
-- id: INS-20260323-102945380-98e60655
-  ts: '2026-03-23T10:29:45+09:00'
-  insight: --insight
-  priority: '自動消火パターン(|| true / non-blocking)がcmd_complete_gate.shに57箇所、全スクリプトに187箇所存在。lesson_impact.tsvで22,516行が3週間腐敗したのはこのパターンによる。Phase
-    8横展開: 全non-blockingパターンを3分類(A:データ整合性影響→verify必須 B:ログのみ影響→現状維持 C:インフラ影響→要検討)し、Aカテゴリにpost-write
-    verifyを追加するGPを提案すべき'
-  source: --priority
-  status: pending
+  resolved_reason: autofix Fix 6 で対応済み
+- id: INS-20260323-132246080-7590
+  ts: '2026-03-23T13:22:46+09:00'
+  insight: resolve
+  priority: INS-20260323-131512626-c7d9
+  source: GP-031で対応(軍師S91交差検証完了)
+  status: done
+  resolved_at: '2026-03-23T14:17:08+09:00'

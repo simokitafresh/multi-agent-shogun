@@ -39,8 +39,15 @@ fi
 redirect_pattern='>+[[:space:]]*[^ ]*queue/reports/[^ ]*\.yaml'
 tee_pattern='tee[[:space:]].*queue/reports/[^ ]*\.yaml'
 
+# Detect python3 open() targeting report YAML files (GP-039)
+python3_pattern='python3.*open.*queue/reports/.*\.yaml'
+
 if [[ "$command" =~ $redirect_pattern ]] || [[ "$command" =~ $tee_pattern ]]; then
     emit_deny "報告YAMLへのBashリダイレクト(>/>>/ tee)は禁止。report_field_set.sh経由で書き込みせよ。Usage: bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>"
+fi
+
+if [[ "$command" =~ $python3_pattern ]]; then
+    emit_deny "報告YAMLへのpython3 open()直接書込みは禁止。report_field_set.sh経由で書き込みせよ。Usage: bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>"
 fi
 
 exit 0
