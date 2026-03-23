@@ -52,29 +52,31 @@ field_get() {
     fi
   else
     # YAML: L070対策 — ^\s+ で任意インデント対応（2sp固定禁止）
-    # 最浅マッチ: 全マッチからインデント幅最小の行を選択（cmd_1185 AC1修正）
+    # cmd_1355修正: トップレベル(^field:)を先に検索。なければインデント付きにフォールバック
     local field_line=""
-    field_line=$(grep -E "^\s+${field}:" "$file" 2>/dev/null | awk '{
-      match($0, /[^ \t]/)
-      indent = RSTART - 1
-      if (NR == 1 || indent < min_indent) {
-        min_indent = indent
-        best = $0
-      }
-    } END { if (NR > 0) print best }')
+
+    # 1. トップレベル(インデントなし)を優先検索
+    field_line=$(grep -E "^${field}:" "$file" 2>/dev/null | head -1)
     if [[ -n "$field_line" ]]; then
-      # 最初のコロンでのみ分割（フィールド名にregex特殊文字があっても安全）
       result=$(echo "$field_line" \
-        | sed 's/^[[:space:]]*[^:]*:[[:space:]]*//' \
+        | sed 's/^[^:]*:[[:space:]]*//' \
         | sed "s/^['\"]//;s/['\"]$//")
     fi
 
-    # トップレベル(インデントなし)もフォールバック検索
+    # 2. トップレベルになければインデント付き(最浅マッチ)にフォールバック
     if [[ -z "$result" && -z "$field_line" ]]; then
-      field_line=$(grep -E "^${field}:" "$file" 2>/dev/null | head -1)
+      field_line=$(grep -E "^\s+${field}:" "$file" 2>/dev/null | awk '{
+        match($0, /[^ \t]/)
+        indent = RSTART - 1
+        if (NR == 1 || indent < min_indent) {
+          min_indent = indent
+          best = $0
+        }
+      } END { if (NR > 0) print best }')
       if [[ -n "$field_line" ]]; then
+        # 最初のコロンでのみ分割（フィールド名にregex特殊文字があっても安全）
         result=$(echo "$field_line" \
-          | sed 's/^[^:]*:[[:space:]]*//' \
+          | sed 's/^[[:space:]]*[^:]*:[[:space:]]*//' \
           | sed "s/^['\"]//;s/['\"]$//")
       fi
     fi
