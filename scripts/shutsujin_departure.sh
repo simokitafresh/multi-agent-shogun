@@ -18,6 +18,10 @@ if [ -f "$SCRIPT_DIR/scripts/lib/model_detect.sh" ]; then
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 fi
+if [ -f "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]; then
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+fi
 
 # 互換ターゲット解決（window名優先、なければ従来index）
 resolve_window_target() {
@@ -44,6 +48,14 @@ resolve_first_pane_target() {
 
 SHOGUN_WINDOW_TARGET=$(resolve_window_target "shogun:main" "shogun:1")
 AGENTS_WINDOW_TARGET=$(resolve_window_target "shogun:agents" "shogun:2")
+
+# ─── agentsウィンドウ自動作成 (cmd_1357) ───
+# ウィンドウ不在時に自動作成し、ターゲットを再解決
+if ! tmux list-windows -t shogun -F '#{window_name}' | grep -q '^agents$'; then
+    tmux new-window -t shogun -n agents
+    AGENTS_WINDOW_TARGET=$(resolve_window_target "shogun:agents" "shogun:2")
+fi
+
 SHOGUN_PANE_TARGET=$(resolve_first_pane_target "$SHOGUN_WINDOW_TARGET")
 
 # ─── remain-on-exit (cmd_183) ───
@@ -95,33 +107,6 @@ tmux set-option -t shogun status-right "#[fg=#cdd6f4]%Y-%m-%d %H:%M"
 
 echo "[shutsujin] status-right: datetime only"
 
-# ─── 全エージェント pane variables (cmd_1136: saizo固有→全エージェント汎用化) ───
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
-AGENTS_PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo "1")
-_pane_offset=1  # karo=+0, 以降+1,+2,...
-for _agent_name in $(get_all_agents); do
-    if [[ "$_agent_name" == "karo" ]]; then
-        continue  # karo is handled separately (pane 1, already set above)
-    fi
-    _agent_pane_idx=$((AGENTS_PANE_BASE + _pane_offset))
-    _agent_pane_target="${AGENTS_WINDOW_TARGET}.${_agent_pane_idx}"
-    tmux set-option -p -t "$_agent_pane_target" @agent_id "$_agent_name" 2>/dev/null
-    _agent_cli="claude"
-    _agent_model=""
-    if declare -F cli_type >/dev/null 2>&1; then
-        _agent_cli=$(cli_type "$_agent_name" 2>/dev/null || echo "claude")
-    fi
-    if declare -F cli_profile_get >/dev/null 2>&1; then
-        _agent_model=$(cli_profile_get "$_agent_name" "display_name" 2>/dev/null || echo "")
-    fi
-    _agent_model="${_agent_model:-Unknown}"
-    tmux set-option -p -t "$_agent_pane_target" @agent_cli "$_agent_cli" 2>/dev/null
-    tmux set-option -p -t "$_agent_pane_target" @model_name "$_agent_model" 2>/dev/null
-    echo "[shutsujin] ${_agent_name} pane variables set (${_agent_pane_target}, model=${_agent_model}, cli=${_agent_cli})"
-    ((_pane_offset++)) || true
-done
-unset _pane_offset _agent_name _agent_pane_idx _agent_pane_target _agent_cli _agent_model
 
 # ─── Prefix+v: clipboard screenshot capture (cmd_551) ───
 tmux bind-key v run-shell "bash ${SCRIPT_DIR}/scripts/capture_clipboard_image.sh"
@@ -132,3 +117,8 @@ for agent in $(get_all_agents); do
     touch "${STATE_DIR}/shogun_idle_${agent}"
 done
 echo "[shutsujin] idle flags: created for all agents"
+
+# ─── レイアウト正規化 (agents window) ───
+# ペイン配置・サイズを正規状態に復元（再起動後にレイアウトが崩れる問題の根本対策）
+bash "$SCRIPT_DIR/scripts/reset_layout.sh"
+echo "[shutsujin] layout: reset_layout.sh applied"
