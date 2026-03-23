@@ -196,7 +196,8 @@ EOF
     run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
     [ "$status" -eq 0 ]
 
+    # cmd_1321: FIELD_CLEAR→再inject設計により、既存値はクリアされプロジェクトデフォルトで再注入
     run read_task_engineering_preferences
     [ "$status" -eq 0 ]
-    [ "$output" = "manual override" ]
+    [ "$output" = "prefer parity over speed" ]
 }

@@ -242,6 +242,7 @@ EOF
     [[ "$output" == *"sasuke: SKIP (result.deviation not present)"* ]]
 
     write_report "  deviation: invalid"
+    rm -f "$TEST_PROJECT/logs/gate_metrics.log"
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *"sasuke: SKIP (result.deviation not a list)"* ]]
@@ -254,6 +255,7 @@ EOF
     [[ "$output" == *"sasuke: OK (deviation count 3 <= 3)"* ]]
 
     write_report_with_deviation_count 4
+    rm -f "$TEST_PROJECT/logs/gate_metrics.log"
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *"[INFO] sasuke: deviation count 4 >= 4: 逸脱管理ルール(3回超過)に抵触"* ]]
@@ -433,6 +435,7 @@ exit 0
 EOF
     chmod +x "$TEST_PROJECT/scripts/ntfy_batch.sh"
 
+    rm -f "$TEST_PROJECT/logs/gate_metrics.log"
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     grep -q "ntfy_batch:$TEST_CMD_ID:GATE CLEAR — $TEST_CMD_ID 完了" "$notify_log"
