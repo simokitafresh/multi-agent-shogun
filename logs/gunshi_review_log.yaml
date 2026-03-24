@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 305件 (draft:126, report:117, self_study:68) | 2026-03-20〜
+# 累計: 323件 (draft:133, report:127, self_study:69) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -50,7 +50,7 @@
 # | 028 | 教訓注入タイミング修正| ★implemented      | S57  | cmd_1333。deploy_task.sh projectフィールド3段フォールバック |
 # | 029 | insights起票品質改善  | ★implemented      | S70  | cmd_1334。ID 4hex化+先頭50文字dedup追加 |
 # | 030 | autofix bc dict→list | ★implemented      | S72  | cmd_1316。gate_report_autofix.sh Fix8 |
-# | 031 | GATE autofix追加       | pending            | S77  | cmd_complete_gate.sh L2071前にautofix実行。race condition根絶(13.6%)。将軍がFix5拡張で一部対応 |
+# | 031 | GATE autofix追加       | ★implemented      | S77  | cmd_complete_gate.sh L2080にgate_report_autofix.sh呼出あり。S125で現物確認。race condition防止済み |
 # | 032 | YAML parse prevention | ★implemented      | S103 | PostToolUse hookでYAML構文検証。post-edit-report-guard.shに追加。テスト検証済。GP品質ゲート初適用 |
 # | 033 | verdict autofix Fix9  | ★将軍解決         | S79  | 将軍Phase15: boolバグ修正+TRUE/FALSEマッチ追加。私の方向性は正→将軍が現物でbugfix |
 # | 034 | no_lesson_reason自動補完| ★将軍解決(除去)   | S81  | 将軍Phase15: gateがN/Aをplaceholder reject→Fix10除去。私の提案は誤り(end-to-end未検証) |
@@ -72,7 +72,19 @@
 # | 050 | WA cleanモード         | ★implemented      | S112 | karo_workaround_log.sh --clean追加。workaround:null根絶。テスト4/4 PASS |
 # | 051 | 二重配備BLOCK昇格      | ★implemented      | S116 | deploy_task.sh GP-042 WARN→exit 1。cmd_1342/1350再発防止 |
 # | 052 | WAデータ品質ゲート     | ★implemented      | S118 | karo_workaround_log.sh detail⇔WA矛盾検出+double_deployカテゴリ追加。テスト3/3 PASS |
-# 集計(S118更新): ★implemented:46(+GP-052) / ★将軍解決:2(GP-033,034) / ★monitoring:1 / ✗obsolete:3 / pending:1(GP-031 race) / cmd配備済:1(GP-037=cmd_1340) = 計53GP
+# | 072 | pre-write値検証BLOCK  | ★implemented      | S123 | report_field_set.sh _validate_field_value。14/14テスト。post-GP-047 WA5/7パターン防止(71%) |
+# | 073 | PASSキャッシュ追加     | ★implemented      | S124 | ninja_monitor.sh L717 REPORT_GATE_SENT。PASS報告の無限再チェック根絶(60秒×13回→1回) |
+# | 074 | gate実行時間最適化     | ★implemented      | S125 | dashboard並列化+context_freshness高速化。32秒→17秒(47%)。commit 3a062d5 |
+# | 075 | deprecation scan高速化 | ★implemented      | S126 | cmd_project_mapキャッシュ+差分スキャン。7.3秒→0.7秒(90%)。commit 157f15d |
+# | 076 | metrics共有キャッシュ  | ★implemented      | S126 | GP-075キャッシュ共有。9.5秒→0.44秒(95%)。commit 5f72064 |
+# | 077 | archive報告スキャン廃止| ★implemented      | S127 | Source 3(2827報告全量yaml.safe_load)無効化。21.8秒→3.8秒(83%)。commit f185266 |
+# | 078 | dashboard二重呼出防止 | ★implemented      | S127 | SKIP_AUTO_SECTION+ファイル名フィルタ。15.7秒→0.54秒(97%)。commit 6d17dbb |
+# | 079 | ralph gawk統合パス    | ★implemented      | S128 | Section E+F→単一gawk BEGINFILE/ENDFILE。14.3秒→3.3秒(77%)。commit ddfca4c |
+# | 080 | archive共有キャッシュ  | ★implemented      | S129 | field_get×194→gawk+連想配列。3.5秒→2.0秒(43%)。commit e2574fe |
+# | 081 | dashboard archive gawk | ★implemented      | S130 | 1178個awk→単一gawk+get_model一括化。16.1秒→10.2秒(37%)。commit d17f88c |
+# | 082 | 統合gawk+CFC共有       | ★implemented      | S130 | archive I/O 1回統合+context_freshness cache共有。10.2秒→5.85秒(42%)。commit 8f9cea6 |
+# | 083 | CI check並列化         | ★implemented      | S130 | ci_status_check.shバックグラウンド起動。5.85秒→3.38秒(42%,累計79%)。commit 9849931 |
+# 集計(S130更新): ★implemented:61(+GP-079〜083) / ★将軍解決:2(GP-033,034) / ★monitoring:1 / ✗obsolete:3 / pending:1(GP-067 GS手順) / cmd配備済:2(GP-037=cmd_1340,GP-071=cmd_1380) = 計67GP
 # 優先順(S118改訂): GP-031(race condition) > 遡及データ補正(既存false positive 2件+null 10件)
 # S118行動: GP-047補正WA率33%(1/3)。唯一のreal WAはdouble_deploy(GP-051対処済)。GP-047+GP-051稼働時の理論WA率=0%
 # パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
@@ -2237,3 +2249,496 @@
   lesson_candidate: ''
   lesson_quality: OK
   timestamp: '2026-03-24T02:58:00'
+# --- cmd_1361 draft review ---
+- cmd_id: cmd_1361
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "autofixフィードバック可視化(autofix_applied追加)。3AC構成。AC1は作業コピーL360に既実装(未コミット)。AC2は既存AUTO-FIXED:出力で十分。GP-066(Fix15)競合なし。忍者学習ナラティブは機構未整備だが真の価値=レビュー可視化で正当。SG9:kotaro WA率66.7%(2/3)"
+  timestamp: "2026-03-24T13:00:00"
+# --- cmd_1361 report review ---
+- cmd_id: cmd_1361
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "AC1/AC2 PASS。AC3 FAIL(pre-existing: GP-066でgate_report_format.shに空lu拒否追加後test_report_template_gate_compat.bats test1,7,8未追従。git stash検証済み)。軍師がテスト3件修正済み(test1→FAIL期待/test7,8→filled lu)。388テスト全PASS確認。GATE CLEAR推奨"
+  lesson_candidate: "小太郎提案: GP-066テスト未追従。有効だが修正は軍師で完了済み。教訓登録不要"
+  lesson_quality: OK
+  timestamp: "2026-03-24T13:10:00"
+# --- cmd_1362 draft review ---
+- cmd_id: cmd_1362
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "dashboardラベル衝突修正(教訓効果率→教訓活用率, PJ別効果率→注入CLEAR率)。3AC。AC1/AC2は作業コピーに既実装(未コミット)。L815(モデル別)+L837/847(教訓ランキング)にも同名ラベル残存→follow-up cmd候補として指摘。低リスク高価値"
+  timestamp: "2026-03-24T13:15:00"
+# --- cmd_1363 draft review ---
+- cmd_id: cmd_1363
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "シン四神v2 GS実行+チャンピオン選出(Step 3+3.5)。3AC順序依存。Step 1(53/53)+Step 2(FoFパリティ)の土台上に正当。Step 3↔3.5間の停止点はcmd結合しているが不可逆操作なし(DB登録はStep 6で除外)。OOM対策+PipelineEngine禁止指示あり。SG9:hanzo WA率33.3%(1/3)"
+  timestamp: "2026-03-24T13:20:00"
+# --- cmd_1362 report feedback + GP-068 ---
+- cmd_id: cmd_1362
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "GATE CLEAR(家老WA後)。WA原因: self_gate_checkに'ok'記入(正しくはPASS)。gate_report_format.shにself_gate_check検証なし→防御ギャップ。GP-068=Fix16実装: self_gate_check値正規化autofix(ok/yes→PASS, ng/no→FAIL)。テスト検証済み"
+  lesson_candidate: ''
+  lesson_quality: OK
+  timestamp: "2026-03-24T13:35:00"
+  proposals:
+    - id: GP-068
+      description: "self_gate_check値正規化autofix(Fix16)"
+      status: implemented
+# --- cmd_1363 report review ---
+- cmd_id: cmd_1363
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "全3AC PASS。GS 191,796パターン完了+12体チャンピオン確定。GP-066初本番発火(lu空list再注入5件)。WA=1件(lesson_candidate JSON文字列化+bc flat→家老修正)。半蔵report_yaml_format系継続。STOP_FOR:10/12変更→殿裁定要。INS-8ff3:JSON文字列パターン監視中"
+  lesson_candidate: "半蔵: allow_numpy=True。内容はPI-009/cmd_1349と重複可能性。家老で判断"
+  lesson_quality: OK
+  timestamp: "2026-03-24T13:45:00"
+# --- cmd_1364 report review ---
+- cmd_id: cmd_1364
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "全3AC PASS。cmd_save.sh q7_failure_prediction BLOCKチェック+shogun.mdテンプレート追加+352テスト全PASS。autofix5件発火(lu dict→list, id UNKNOWN解決, fm string→dict, bc dict→list, bc正規化)→家老WA 0件。autofixインフラ価値実証。bc AC1/AC2にcheck説明文欠落(番号キーのみ)"
+  lesson_candidate: "なし(才蔵: q5踏襲で新規教訓なし。妥当)"
+  lesson_quality: OK
+  timestamp: "2026-03-24T13:58:00"
+# --- cmd_1325 report review ---
+- cmd_id: cmd_1325
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "全3AC PASS。review task: backfill_lesson_impact.sh実装レビュー+push。影丸のAC1コードレビュー詳細は優秀(git show検証,pipefail,prefix照合,atomic write各確認)。autofix1件(fm string→dict)。lessons_useful全5件reason空→影丸の教訓評価reason品質が低い傾向"
+  lesson_candidate: "なし(影丸: 既存実装適切。妥当)"
+  lesson_quality: OK
+  timestamp: "2026-03-24T14:05:00"
+# --- cmd_1365 draft review ---
+- cmd_id: cmd_1365
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "シン四神v2 Step4前準備。4ファミリーGS出力CSVから12体チャンピオン抽出→結合CSV+universe YAML source_type:csv更新。3AC順序依存。AC3のgs_data_loader検証が忍法実ロードパステスト→優秀。12体マッピング明示的。cmd_1366-1372全7cmdがdepends_on→クリティカルパス。懸念なし"
+  timestamp: "2026-03-24T14:35:00"
+# --- cmd_1373 draft review ---
+- cmd_id: cmd_1373
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "cmd_1365修正(critical)。青龍-鉄壁pattern_id L0070→L0034+YAML families構造化(gs_data_loader互換)。3AC(CSV差替→YAML書換→フルパス検証)。Phase A-G全ブロック解除の前提条件。depends_on chain注意(cmd_1366-1372はcmd_1365依存のまま、cmd_1373が暗黙前提)。懸念なし"
+  timestamp: "2026-03-24T14:42:00"
+# --- cmd_1373 report review ---
+- cmd_id: cmd_1373
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "全3AC PASS。CSV L0034差替+原本突合(他11カラム無変更確認)。YAML families構造化。フルパス検証12体×167mo×NaN=0。bc7項目全yes、check説明文適切(飛猿品質改善)。autofix1件(fm string→dict)。WA不要見込み"
+  lesson_candidate: "なし(飛猿: 既知手順。妥当)"
+  lesson_quality: OK
+  timestamp: "2026-03-24T14:46:00"
+# --- cmd_1369 report review ---
+- cmd_id: cmd_1369
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "シン加速R Phase D。119,493パターンGS 87.7秒。3体生成(常勝CAGR41.7%/激攻CAGR78.9%/鉄壁MaxDD-18.4%)。内部検証3段(batch-seq md5/global_scores md5/本番パリティ0.0)全PASS。bc5項目全yes。fm string→autofix対応。WA不要見込み"
+  lesson_candidate: "なし(才蔵: 定型GS作業。妥当)"
+  lesson_quality: OK
+  timestamp: "2026-03-24T15:44:00"
+# --- cmd_1368 quality_fix (report missing) ---
+- cmd_id: cmd_1368
+  review_type: self_study
+  verdict: N/A
+  gate_result: CLEAR
+  findings_summary: "quality_fix_request受領→hanzo_report_cmd_1368.yaml消失(.lockのみ)。修正不可。GS結果CSV存在(kawarimi 3体成功)。hayateがcmd_1368にre-assigned中。家老に状況報告"
+  timestamp: "2026-03-24T16:25:00"
+# --- cmd_1368 report review (hayate re-assigned) ---
+- cmd_id: cmd_1368
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "シン変わり身 Phase C。28,116パターンGS。3体生成(常勝CAGR56.7%NHF0.65/激攻CAGR62.5%/鉄壁MaxDD-17.3%Calmar3.06)。bc5項目全yes。autofix2件(bc dict→list+name正規化)。files_modified空(CSV gitignored)。半蔵→疾風re-assign後の報告"
+  lesson_candidate: "なし(疾風: 定型GS。妥当)"
+  lesson_quality: OK
+  timestamp: "2026-03-24T16:55:00"
+# --- cmd_1371 report review ---
+- cmd_id: cmd_1371
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "シン分身 Phase F。781パターン14.6秒。3体(常勝CAGR38.4%MaxDD-56.7%/激攻CAGR45.8%/鉄壁CAGR39.4%)。EqualWeight(選択ブロックなし)→低パフォは想定通り。autofix3件(fm+bc2件)。bc5項目全yes"
+  lesson_candidate: "なし(飛猿: 標準実行。妥当)"
+  lesson_quality: OK
+  timestamp: "2026-03-24T16:55:00"
+# --- cmd_1374 draft review ---
+- cmd_id: cmd_1374
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "四つ目GS serial/batch md5不一致調査+修正。cmd_1372事前検証FAIL起因。4原因仮説(浮動小数点/行順序/コードパス/SHM)が明示的・体系的。3AC(特定→分類→修正)。影丸STALL→疾風再配備。懸念なし"
+  timestamp: "2026-03-24T17:13:00"
+# --- cmd_1374 report review ---
+- cmd_id: cmd_1374
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "四つ目md5不一致調査。42/500不一致→原因(c)precomputed_picks tolerance=1e-12が本番exact比較と不一致(2ULP差)。修正3箇所→500パターン×4方式全md5一致。lesson_candidate有効(tolerance過剰)。影丸のlu reason品質高い(全5件記入)。autofix1件(fm)。優秀な調査報告"
+  lesson_candidate: "影丸提案: tolerance過剰→serial/batch不一致。有効。他忍法波及確認推奨"
+  lesson_quality: GOOD
+  timestamp: "2026-03-24T17:28:00"
+# --- cmd_1372 draft review ---
+- cmd_id: cmd_1372
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "シン四つ目 Phase G(7/7最後)。cmd_1373(YAML)+cmd_1374(tolerance)両完了後の再実行。他Phase同一構造。懸念なし"
+  timestamp: "2026-03-24T17:36:00"
+# --- cmd_1375 draft review ---
+- cmd_id: cmd_1375
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "四つ目フルGS(4686パターン)。cmd_1374修正(7ccdc5a3)確認済。tolerance=0.0。前提・数値・時系列・事前検死全OK。confidence HIGH"
+  timestamp: "2026-03-24T19:25:00"
+# --- cmd_1376 draft review ---
+- cmd_id: cmd_1376
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  findings_summary: "oikaze tolerance横展開。L397修正+float_format確認+grep水平確認。cmd_1374と同パターン。confidence HIGH"
+  timestamp: "2026-03-24T19:25:00"
+# --- cmd_1376 report review ---
+- cmd_id: cmd_1376
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "3箇所修正(cutoff/tolerance/float_format)+28116パターン事前検証PASS。DC:batch vs PE md5不一致残存を適切報告。WA率66.7%追加チェック実施→問題なし"
+  lesson_quality: OK
+  timestamp: "2026-03-24T20:05:00"
+# --- self_study S120: deepdive monitoring cycle ---
+- cmd_id: self_study_S120
+  review_type: self_study
+  findings_summary: "cmd_1375/1376監視→3摩擦根因分析(WHYチェーン)。(1)report_field_set.sh知識がninja /clear recovery pathに不在→CLAUDE.md修正案を家老送信。(2)GS cmdにチャンピオン選出手順欠落→忍者記憶なし原則の適用漏れ。(3)長時間計算=事前計測なし→殿指摘で根因修正(timeout記載→事前計測原則)。追加発見: files_modified型検証なし→GP-065実装(dict/null FAIL。4テスト検証済み)"
+  proposals:
+    - id: GP-065
+      description: "gate_report_format.shにfiles_modified型検証追加(dict/null→FAIL)"
+      status: implemented
+    - id: GP-066
+      description: "CLAUDE.md ninja /clear recovery Step4.5にreport_field_set.sh記載追加"
+      status: implemented
+      note: "検証済み: CLAUDE.md L160に既存記載あり。追加不要"
+    - id: GP-067
+      description: "GS Phase G cmdにチャンピオン選出手順明記(忍者記憶なし原則適用)"
+      status: pending
+    - id: GP-068
+      description: "重い計算の事前計測原則(小チャンクで計測→全体推定→分割実行)"
+      status: pending
+  timestamp: "2026-03-24T20:20:00"
+# --- cmd_1377 draft review ---
+- cmd_id: cmd_1377
+  review_type: draft
+  verdict: REQ_CHANGES
+  gate_result: CLEAR
+  findings_summary: "AC4欠落: cmdは4AC(AC1-AC4)だがタスクYAMLは3AC(AC1-AC3)のみ配備。AC4=PEフォールバック撤去(oikaze+kawarimi, PI-012直結)が欠落。not_in_scope差異: cmdは'oikaze/kawarimi以外'だがタスクは'他の忍法スクリプト'でkawarimi.pyが除外される可能性。depends_on cmd_1376 CLEAR済み。quality_gate q4_depth=deep適切。target_path WARNING(WSL2パス問題、忍者側では問題なし)"
+  SG7:
+    gate_precheck: "FAIL — AC数不一致(cmd:4, task:3)。AC4(PEフォールバック撤去)未配備。not_in_scope差異あり"
+    lesson_extraction: "cmd_1376で発見した108パターン不一致+PEフォールバック問題の根本修正。batch path本番一致の最終工程"
+    context_reflux: "PI-012(GS探索でPE使用禁止)が確立すればcontext/dm-signal-core.mdに反映必要"
+    dashboard_line: "cmd_1377: oikaze batch md5根本修正+PEフォールバック撤去 [tobisaru] REQ_CHANGES(AC4欠落)"
+    karo_workaround_needed: "HIGH — AC4未配備のままtobisaruが作業完了→後続cmdが必要になる。今修正すれば手戻りなし"
+  karo_response: "対応完了。AC4追加+not_in_scope修正(kawarimi含む)。飛猿未着手のため手戻りなし"
+  gate_result: CLEAR
+  timestamp: "2026-03-24T20:35:00"
+# --- self_study S121: deepdive WAパターン系統分析+GP-065/069実装 ---
+- cmd_id: self_study_S121
+  review_type: self_study
+  findings_summary: "karo_workarounds.yaml全81件を系統分析。38件report_yaml_format(大半autofix済み), 22件clean(WA=false), 7件commit_missing(GP-048 hook既設), 3件stale(GP-036/062既設), 2件double_deploy(未自動化→GP-069新設)。GP-065(files_modified型検証gate+autofix+3テスト)は前回実装済み。GP-069: deploy_task.shにin_progressチェック追加→二重配備BLOCK。ロジックテスト5/5+既存gateテスト20/20 PASS"
+  proposals:
+    - id: GP-065
+      description: "gate_report_format.shにfiles_modified型検証追加(dict/null→FAIL)+autofix"
+      status: implemented
+    - id: GP-069
+      description: "deploy_task.shにin_progress忍者への二重配備防止BLOCK追加"
+      status: implemented
+  timestamp_end: "2026-03-24T20:45:00"
+# --- cmd_1377 report review ---
+- cmd_id: cmd_1377
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_wa: "WA=1: 影丸AC4 report_yaml_format(lessons_useful dict+ac_version_read欠落)。飛猿AC1-3はWA=0(予測通り)"
+  findings_summary: "AC1-AC3高品質完了。根本原因=MomentumFilterBlock fill_value=0.0 vs batch NaN保持。np.nan_to_num修正で500パターンmd5一致。AC4は配備タイミング遅延で未実行(家老認識済み)。lesson_candidate有用(kasoku/nukimi横展開可能性)。autofix: files_modified string→dict(GP-065稼働確認)"
+  lesson_quality: "GOOD — 横展開候補を具体的に指摘"
+  timestamp: "2026-03-24T20:50:00"
+# --- self_study S121 (continued) ---
+- cmd_id: self_study_S121
+  review_type: self_study
+  findings_summary: "karo_workarounds.yaml全81件を系統分析。38件report_yaml_format(大半autofix済み), 22件clean(WA=false), 7件commit_missing(GP-048 hook既設), 3件stale(GP-036/062既設), 2件double_deploy(未自動化→GP-069新設)。GP-065(files_modified型検証gate+autofix+3テスト)は前回実装済み。GP-069: deploy_task.shにin_progressチェック追加→二重配備BLOCK。ロジックテスト5/5+既存gateテスト20/20 PASS"
+  proposals:
+    - id: GP-065
+      description: "gate_report_format.shにfiles_modified型検証追加(dict/null→FAIL)+autofix"
+      status: implemented
+    - id: GP-069
+      description: "deploy_task.shにin_progress忍者への二重配備防止BLOCK追加"
+      status: implemented
+  metrics:
+    wa_total: 81
+    wa_true: 59
+    wa_false_clean: 22
+    remaining_uncovered: "double_deploy→GP-069で解決。残存: YAML構造破損(1件,稀),uncategorized(3件),report_missing(3件,行動問題)"
+  additional_implementations:
+    - id: GP-070
+      description: "gate_report_autofix.shにac_version_read欠落時のタスクYAML自動補完追加"
+      status: implemented
+      trigger: "cmd_1377影丸WA(ac_version_read欠落)→家老feedback→autofix Fix17追加→テスト2/2 PASS"
+  timestamp: "2026-03-24T21:05:00"
+# --- self_study S122: quality_fix_request race condition + GP-066 verified ---
+- cmd_id: self_study_S122
+  review_type: self_study
+  findings_summary: "cmd_1379半蔵quality_fix_request受信→報告YAML未生成(lockのみ)。半蔵pane=CTX:51%応答待ち7分+。system quality_fix_requestが報告未完成時点で発火するrace condition。家老に状況報告済み。GP-066(CLAUDE.md ninja recovery report_field_set.sh記載)はStep4.5 L160に既存→implemented確認。GP-067/068はpending維持(project-specific)。"
+  proposals:
+    - id: GP-066
+      description: "CLAUDE.md ninja /clear recovery Step4.5にreport_field_set.sh記載追加"
+      status: implemented
+      note: "CLAUDE.md L160に既存記載。追加不要"
+    - id: GP-071
+      description: "quality_fix_requestの発火条件に報告YAML存在チェック追加(未生成時はスキップ)"
+      status: implemented
+      implemented_by: cmd_1380
+  timestamp: "2026-03-24T23:15:00"
+# --- cmd_1379 report review (kagemaru) ---
+- cmd_id: cmd_1379
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "3スクリプト(nukimi/kawarimi/kasoku_ratio)影響なし。NaN→None→除外設計でoikazeと異なり修正不要。AC2 N/A→yes(gate二値)は家老WA認識済み。lesson_candidate:deploy_task.sh template overwrite(infra改善候補)。GP-062/PI-012 WARN正当。files_modified空→commit不要"
+  lesson_quality: OK
+  timestamp: "2026-03-24T23:20:00"
+# --- self_study S123: deepdive自走 WHY chain → GP-072設計 ---
+- cmd_id: self_study_S123
+  review_type: self_study
+  findings_summary: "deepdive Phase7実践(自走)。post-GP-047 WA率50%→WHY 4段掘削。根本原因=report_field_set.shに値フォーマット検証なし(Level1事後検出のみ)。GP-072設計: _validate_field_value関数でpre-write BLOCK。対象4フィールド(lessons_useful dict/binary_checks result/self_gate_check ok/lesson_candidate string)。7WA中6件(86%)予防可能。実装未完了(殿/clear指示で中断)→insight INS-20260324-232517253-6843に保存"
+  proposals:
+    - id: GP-072
+      description: "report_field_set.shにpre-write値フォーマット検証BLOCK追加(Level4昇格)"
+      status: implemented
+      implemented_by: gunshi_autonomous
+      design: "_validate_field_value(): lessons_useful dict→BLOCK, bc result非yes/no→BLOCK, self_gate_check非PASS/FAIL→BLOCK, lesson_candidate string→BLOCK"
+      impact_estimate: "post-GP-047 WA率50%→理論14%(1/7のみ残存=behavioral報告未作成)"
+  timestamp: "2026-03-24T23:25:00"
+# --- cmd_1378 report review (hayate) ---
+- cmd_id: cmd_1378
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "28116パターンGS新旧完全一致(差分0.0)。NaN修正oikazeブロック影響なし(momentum_cubeにNaN未発生)。AC1-3全yes。lesson_candidate有用(ブロック固有NaN影響)。SG9:hayate WA率85.7%だが今回format問題なし。GP-062/PI-012 WARN正当"
+  lesson_quality: OK
+  timestamp: "2026-03-24T23:30:00"
+# --- cmd_1378 saizo quality_fix_request ---
+- cmd_id: cmd_1378_saizo_qfr
+  review_type: report
+  report_ninja: saizo
+  verdict: FAIL
+  gate_result: null
+  findings_summary: "報告YAML実質空(125bytes)。binary_checks/lessons_useful/result/verdict全欠落。忍者/clear前に報告未完成。フォーマット修正不可→家老に再配備or補完を報告"
+  lesson_quality: MISSING
+  timestamp: "2026-03-24T23:30:00"
+# --- cmd_1378 feedback: GATE CLEAR ---
+- cmd_id: cmd_1378
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_wa: "WA=1: deploy_task.sh才蔵idle化時に疾風報告誤アーカイブ(cmd_1342同一パターン)"
+  findings_summary: "LGTM正確。28116パターンGS新旧完全一致。L492登録済み"
+  timestamp: "2026-03-24T23:37:00"
+# --- cmd_1379 hanzo quality_fix ---
+- cmd_id: cmd_1379_hanzo_qfr
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "quality_fix完了: AC2 binary_checks N/A→yes修正(影響なし=条件充足)。gate PASS。AC定義とgate二値制約の矛盾は根本問題(GP-072対象外)"
+  timestamp: "2026-03-24T23:38:00"
+# --- cmd_1379 feedback: GATE CLEAR ---
+- cmd_id: cmd_1379
+  review_type: report
+  report_ninja: kagemaru+hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_wa: "WA: なし"
+  findings_summary: "LGTM正確。6スクリプト全て影響なし(NaN→0.0修正不要)。影丸+半蔵ともPASS"
+  timestamp: "2026-03-24T23:46:00"
+# --- cmd_1380 draft review ---
+- cmd_id: cmd_1380
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "GP-071: quality_fix_request race condition修正。inbox_write.sh L280-319でFILL_THIS/verdict空のテンプレート状態検出→スキップ。AC3件明確。not_in_scope適切"
+  timestamp: "2026-03-24T23:40:00"
+# --- cmd_1380 report review (tobisaru) ---
+- cmd_id: cmd_1380
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: pending
+  findings_summary: "GP-071実装正確。inbox_write.sh L284-315テンプレート検出ロジック。既存20+新規5テスト全PASS(25/25)。scope内変更のみ。commit cfb169b確認"
+  lesson_quality: OK
+  gate_result: CLEAR
+  gate_wa: "WA: no(clean)"
+  timestamp: "2026-03-24T23:50:00"
+# --- cmd_1381 draft review ---
+- cmd_id: cmd_1381
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "Step 4.5: シン忍法v2 20体パフォーマンス8指標一覧作成。quality_gate適切(q4=medium, q5=5件現物確認)。AC2件(計算+gist共有)。scope明確"
+  timestamp: "2026-03-24T23:53:00"
+# --- cmd_1382 draft review ---
+- cmd_id: cmd_1382
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "deploy_task.sh stale report archive誤削除防御。3回再発(cmd_1342/1350/1378)の構造的防御。q6_not_hiding明示。AC3件で正/負ケース両面カバー。修正対象L317-327明確"
+  timestamp: "2026-03-24T23:57:00"
+# --- self_study S124: WHY chain gate繰り返し → GP-073実装 ---
+- cmd_id: self_study_S124
+  review_type: self_study
+  findings_summary: "殿の「cmd_complete_gate.sh長時間」報告を起点にWHY chain。gate_fire_log分析: hayate_report_cmd_1378が11分間に13回PASS判定繰り返し(60秒間隔)。WHY4段: 繰り返し→ninja_monitor→PASSキャッシュ未設定→REPORT_GATE_SENTがFAIL時のみ。GP-073: PASS分岐にもREPORT_GATE_SENT[$gate_key]=1を追加(ninja_monitor.sh L717)。PASS報告の無限再チェック根絶"
+  proposals:
+    - id: GP-073
+      description: "ninja_monitor.sh PASS結果キャッシュ追加(REPORT_GATE_SENT)"
+      status: implemented
+      impact_estimate: "gate_report_format.sh呼び出し回数を報告あたり~13回→1回に削減"
+  timestamp: "2026-03-24T23:52:00"
+# --- self_study S125: cmd_complete_gate.sh 99秒問題ボトルネック分析 ---
+- cmd_id: self_study_S125
+  review_type: self_study
+  findings_summary: "殿の「cmd_complete_gate.sh長時間」根因分析。--force実測: 99秒(cmd_1380)〜221秒(cmd_1379)。real>>user+sys→I/O待ちが主因。ボトルネック: dashboard_auto_section.sh=32秒(32%)+lesson_deprecation_scan.sh=13秒(13%)+その他30+チェック=54秒(55%)。gate_report_format.sh=0.07秒で無視可能。Python起動39回×50ms=2秒で非主因。lesson_impact.tsv=27K行だが解析0.17秒。dashboard_auto_section内部は忍者ごとPython起動(get_model)+複数YAML解析が累積。GP-073(PASSキャッシュ)はninja_monitor側改善済み。cmd_complete_gate自体の改善はGP-074として記録"
+  proposals:
+    - id: GP-074
+      description: "cmd_complete_gate.sh性能最適化(dashboard_auto_section 32秒+deprecation_scan 13秒)"
+      status: pending
+      impact_estimate: "99秒→50秒以下(dashboard並列化orPython統合)。GATE CLEAR待ち時間50%削減"
+  timestamp: "2026-03-25T00:03:00"
+# --- self_study S126: GP-075 lesson_deprecation_scan.sh WHY chain最適化 ---
+- cmd_id: self_study_S126
+  review_type: self_study
+  findings_summary: "GP-074に続くdeepdiveサイクル第2弾。lesson_deprecation_scan.sh 7.3秒の根因: load_cmd_metadata()がarchive 1176 YAMLをyaml.safe_load(5.26秒)。GP-074と同一パターン(不変archive×yaml.safe_load)。解決: 永続キャッシュ(TSV)+差分スキャン(新規ファイルのみ)+テキストスキャン(regex抽出)。cold cache: 4.5秒(38%改善)、warm cache: 0.7秒(90%改善)。deepdiveスタイル完走: 分析→改良設計→実装(157f15d)→検証(3回計測)→報告(家老送信)"
+  proposals:
+    - id: GP-075
+      description: "lesson_deprecation_scan.sh cmd_project_map永続キャッシュ+差分スキャン"
+      status: implemented
+      impact_estimate: "7.3秒→0.7秒(warm cache)。cmd_complete_gate.sh全体で6.6秒削減"
+  timestamp: "2026-03-25T00:30:00"
+# --- self_study S127: GP-077/078 archive+dashboard WHY chain最適化 ---
+- cmd_id: self_study_S127
+  review_type: self_study
+  findings_summary: "deepdiveサイクル第3-4弾。(1)archive_completed.sh 21.8秒: archive/reports 2827ファイル全量yaml.safe_load(11.7秒I/O+解析)。Source 1(archive/cmds/ファイル名)で完了cmd_id十分カバー→Source 3無効化→3.8秒(83%削減)(f185266)。(2)dashboard_update.sh 15.7秒: dashboard_auto_section.sh内部呼出(16秒)がcmd_complete_gateのL4060バックグラウンド実行と二重→SKIP_AUTO_SECTION=1で防止+find_matchesファイル名フィルタ(95→1-6件)→0.54秒(97%削減)(6d17dbb)。累積5GP(074-078)でcmd_complete_gate.sh: 99秒→推定40秒。"
+  proposals:
+    - id: GP-077
+      description: "archive_completed.sh Source 3 archive報告全量スキャン無効化"
+      status: implemented
+      impact_estimate: "21.8秒→3.8秒(83%削減)"
+    - id: GP-078
+      description: "dashboard_update.sh二重auto_section防止+報告ファイル名フィルタ"
+      status: implemented
+      impact_estimate: "15.7秒→0.54秒(97%削減)"
+  timestamp: "2026-03-25T00:50:00"
+# --- cmd_1384 draft review ---
+- cmd_id: cmd_1384
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  findings_summary: "archive_completed.sh baseline崩壊: 27.6秒→実測2.85秒(GP-077 f185266で最適化済み。delegation 5分前commit)。計69秒→44秒。AC1期待値調整推奨。severity:normal"
+  timestamp: "2026-03-25T01:06:00"
+# --- cmd_1381 report review (hayate+saizo, post-hoc) ---
+- cmd_id: cmd_1381
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "二重配備(hayate+saizo)。両報告ともテンプレート未記入状態(result/binary_checks/verdict全空)。家老WA(ac_version_read/lc.found欠落補完)でGATE CLEAR。post-hocレビュー"
+  lesson_quality: MISSING
+  timestamp: "2026-03-25T01:08:00"
+# --- cmd_1384 report review (hayate) ---
+- cmd_id: cmd_1384
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: pending
+  fail_reasons:
+    - "ac_version_read欠落"
+    - "files_modified欠落"
+    - "lessons_useful欠落"
+    - "binary_checks.AC1 dict形式(list必須)"
+    - "binary_checks.AC2 dict形式(list必須)"
+  findings_summary: "gate_report_format FAIL 5項。内容良好(6ボトルネック+計測値+最適化提案)。SG9: hayate WA率62.5%、top_pattern=report_yaml_format再発。LG006適用FAIL"
+  lesson_quality: OK
+  timestamp: "2026-03-25T01:18:00"
+# --- self_study S128: GP-079 ralph_loop_metrics.sh gawk統合最適化 ---
+- cmd_id: self_study_S128
+  review_type: self_study
+  findings_summary: "deepdive自走サイクル。hayate cmd_1384偵察データを起点に最大ボトルネック(Section(E) 9.6秒+Section(F) 3秒)を単一gawk BEGINFILE/ENDFILEパスに統合。14.3秒→3.3秒(77%削減)。検証: start_times 921件一致、lesson_counts 4件追加検出(gawkがより正確)。commit ddfca4c"
+  proposals:
+    - id: GP-079
+      description: "ralph_loop_metrics.sh Section(E)+(F) gawk統合パス"
+      status: implemented
+      impact_estimate: "14.3秒→3.3秒(77%削減)。archive I/O 1回で2セクション完了"
+  timestamp: "2026-03-25T01:25:00"
+# --- self_study S129: GP-080 archive_completed.sh gawk共有キャッシュ ---
+- cmd_id: self_study_S129
+  review_type: self_study
+  findings_summary: "deepdive自走サイクル2。archive_completed.sh archive_reports()のfield_get×194回+sync_stk Source 2のyaml.safe_load×97件を、Main先頭のgawk一括抽出+TSVキャッシュで統合。3.5秒→2.0秒(43%削減)。commit e2574fe"
+  proposals:
+    - id: GP-080
+      description: "archive_completed.sh gawk共有キャッシュ+field_get排除"
+      status: implemented
+      impact_estimate: "3.5秒→2.0秒(43%削減)。field_get 194回→0回"
+  timestamp: "2026-03-25T01:35:00"
+# --- cmd_1385 draft review ---
+- cmd_id: cmd_1385
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "resolve_dispatch_title L2744。grep前置+単一awk。8.1s→0.3s推定。LG002: cmd_1386(才蔵)と並行。関数1000行離間+scope EXACT。衝突LOW。confidence: HIGH"
+  timestamp: "2026-03-25T01:38:00"
+# --- self_study S130: GP-081/082/083 dashboard_auto_section.sh 79%削減 ---
+- cmd_id: self_study_S130
+  review_type: self_study
+  findings_summary: "deepdive自走サイクル4-5。dashboard_auto_section.sh 3段階最適化: (1)GP-081 archive forループ1178awk→単一gawk+get_model 8xpython→1x一括(16.1→10.2s), (2)GP-082 統合gawkパスでtitles+project/status/date同時抽出+context_freshness_check.shにキャッシュ共有(10.2→5.85s), (3)GP-083 ci_status_check.shバックグラウンド並列化(5.85→3.38s)。キャッシュヒット時2.9s。累計79%削減"
+  proposals:
+    - id: GP-081
+      description: "dashboard archive gawk+get_model一括化"
+      status: implemented
+      impact_estimate: "16.1→10.2秒(37%)"
+    - id: GP-082
+      description: "統合gawkパス+CFC cache共有"
+      status: implemented
+      impact_estimate: "10.2→5.85秒(42%)"
+    - id: GP-083
+      description: "ci_status_check.shバックグラウンド並列化"
+      status: implemented
+      impact_estimate: "5.85→3.38秒(42%,累計79%)"
+  timestamp: "2026-03-25T01:58:00"
+# --- cmd_1386 draft review ---
+- cmd_id: cmd_1386
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "inject_context_update+inject_related_lessons高速化。2.8s→0.8s推定。LG002: cmd_1385と並行。not_in_scopeで統合検討除外。confidence: HIGH"
+  timestamp: "2026-03-25T01:38:00"
