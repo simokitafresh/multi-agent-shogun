@@ -258,10 +258,68 @@ KM_TOP_LESSON_ROWS=""
 KM_BOTTOM_LESSON_ROWS=""
 KM_TASK_TYPE_ROWS=""
 MODEL_SCOREBOARD_ROWS=""
-# GP-074: 3外部スクリプトを並列実行 (35秒直列→~17秒並列)
+# GP-082: Unified gawk archive scan (titles + project/status/date in one pass)
+# GP-083: archiveファイル数キャッシュ（不変ファイルの再スキャン防止）
 _TMP_CTX_WARN=$(mktemp)
-trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT" "$_TMP_CTX_WARN"' EXIT
-bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings > "$_TMP_CTX_WARN" 2>/dev/null &
+_CFC_CACHE=$(mktemp)
+_ARCH_TITLES_CACHE="/tmp/dashboard_arch_titles_cache.txt"
+_ARCH_CFC_CACHE="/tmp/dashboard_arch_cfc_cache.txt"
+_ARCH_COUNT_CACHE="/tmp/dashboard_arch_count_cache.txt"
+trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT" "$_TMP_CTX_WARN" "$_CFC_CACHE"' EXIT
+if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
+    shopt -s nullglob
+    _arch_files=("$ARCHIVE_CMD_DIR"/cmd_*.yaml)
+    shopt -u nullglob
+    _arch_count=${#_arch_files[@]}
+    _cached_arch_count=$(cat "$_ARCH_COUNT_CACHE" 2>/dev/null || echo "0")
+    if (( _arch_count > 0 )); then
+        if [[ "$_arch_count" == "$_cached_arch_count" ]] && [[ -f "$_ARCH_TITLES_CACHE" ]] && [[ -f "$_ARCH_CFC_CACHE" ]]; then
+            # キャッシュヒット: アーカイブファイル数未変更
+            cat "$_ARCH_TITLES_CACHE" >> "$TMP_TITLES"
+            cat "$_ARCH_CFC_CACHE" > "$_CFC_CACHE"
+        else
+            # キャッシュミス: フルスキャン+キャッシュ更新
+            gawk -v titles_out="$TMP_TITLES" -v cfc_out="$_CFC_CACHE" '
+                BEGINFILE {
+                    fname = FILENAME; sub(/.*\//, "", fname)
+                    cid = ""; tit = ""; proj = ""; st = ""; dt = ""
+                }
+                /^ *- id: cmd_/ {
+                    sub(/.*- id: */, ""); gsub(/["\047[:space:]]/, "")
+                    cid = $0
+                }
+                /^    title:/ && cid != "" {
+                    sub(/.*title: */, "")
+                    gsub(/^["\047]|["\047]$/, "")
+                    if (length($0) > 50) $0 = substr($0, 1, 47) "..."
+                    tit = $0
+                }
+                /project:/ {
+                    v = $0; sub(/.*project: */, "", v); gsub(/["\047\t ]/, "", v)
+                    if (v != "" && proj == "") proj = v
+                }
+                /^status:/ {
+                    v = $0; sub(/.*status: */, "", v); gsub(/["\047\t ]/, "", v)
+                    if (v != "") st = v
+                }
+                dt == "" && /_(at|date):/ {
+                    if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/))
+                        dt = substr($0, RSTART, RLENGTH)
+                }
+                ENDFILE {
+                    if (cid != "" && tit != "") print cid "\t" tit > titles_out
+                    if (proj != "") print fname "|" proj "|" st "|" dt > cfc_out
+                }
+            ' "${_arch_files[@]}" 2>/dev/null
+            # キャッシュ保存
+            cp "$TMP_TITLES" "$_ARCH_TITLES_CACHE" 2>/dev/null || true
+            cp "$_CFC_CACHE" "$_ARCH_CFC_CACHE" 2>/dev/null || true
+            echo "$_arch_count" > "$_ARCH_COUNT_CACHE"
+        fi
+    fi
+fi
+# Launch context_freshness_check with pre-computed cache (zero archive I/O)
+CFC_ARCHIVE_CACHE="$_CFC_CACHE" bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings > "$_TMP_CTX_WARN" 2>/dev/null &
 _PID_CTX=$!
 
 _gate_signature="missing"
@@ -613,28 +671,7 @@ fi
 if [[ -s "$TMP_PIPELINE" ]]; then
     awk -F'\t' '{print $1"\t"$2}' "$TMP_PIPELINE" >> "$TMP_TITLES"
 fi
-if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
-    # GP-081: single gawk pass replaces ~1178 individual awk calls
-    shopt -s nullglob
-    _arch_files=("$ARCHIVE_CMD_DIR"/cmd_*.yaml)
-    shopt -u nullglob
-    if (( ${#_arch_files[@]} > 0 )); then
-        gawk '
-            BEGINFILE { cid = "" }
-            /^ *- id: cmd_/ {
-                sub(/.*- id: */, ""); gsub(/["\047[:space:]]/, "")
-                cid=$0
-            }
-            /^    title:/ && cid!="" {
-                sub(/.*title: */, "")
-                gsub(/^["\047]|["\047]$/, "")
-                if (length($0)>50) $0=substr($0,1,47)"..."
-                print cid"\t"$0
-                cid=""
-            }
-        ' "${_arch_files[@]}" >> "$TMP_TITLES"
-    fi
-fi
+# GP-082: archive titles already written to TMP_TITLES by unified gawk pass above
 
 # ─── Get last 5 CLEAR cmds for battle results ───
 if [[ -s "$TMP_METRICS" ]]; then

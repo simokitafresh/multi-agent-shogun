@@ -29,7 +29,12 @@ case "$MODE" in
         ;;
 esac
 
-python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" <<'PY'
+# GP-082: Accept pre-computed archive cache via env var CFC_ARCHIVE_CACHE
+# When called from dashboard_auto_section.sh, the cache is already generated
+# by the shared gawk pass (zero extra I/O). Standalone calls fall back to Python scan.
+_ARCHIVE_CACHE="${CFC_ARCHIVE_CACHE:-}"
+
+python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" <<'PY'
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -44,6 +49,7 @@ root = sys.argv[1]
 mode = sys.argv[2]
 cmd_id = sys.argv[3]
 threshold_days = int(sys.argv[4])
+archive_cache_path = sys.argv[5] if len(sys.argv) > 5 else ""
 cutoff_date = date.today() - timedelta(days=threshold_days)
 
 
@@ -164,72 +170,79 @@ def last_updated_days(abs_path: str) -> int | None:
 
 
 _recent_cmd_cache: dict[str, bool] = {}
-_archive_project_index: dict[str, list[str]] | None = None
+_archive_entries: list[tuple[str, str, str, str]] | None = None
 
-def _build_archive_index() -> dict[str, list[str]]:
-    """Build project→files index from archive dir (one-time scan per run)."""
-    global _archive_project_index
-    if _archive_project_index is not None:
-        return _archive_project_index
+def _load_archive_entries() -> list[tuple[str, str, str, str]]:
+    """Load archive entries from gawk cache (GP-082) or fallback to file scan."""
+    global _archive_entries
+    if _archive_entries is not None:
+        return _archive_entries
+    _archive_entries = []
+
+    # GP-082: Use pre-computed gawk cache if available
+    if archive_cache_path and os.path.isfile(archive_cache_path):
+        with open(archive_cache_path, encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split("|", 3)
+                if len(parts) < 4:
+                    continue
+                fname, proj, status, dt = parts
+                _archive_entries.append((fname, proj, status, dt))
+        return _archive_entries
+
+    # Fallback: direct scan (for --cmd-warnings or standalone use)
     archive_dir = os.path.join(root, "queue", "archive", "cmds")
-    _archive_project_index = {}
     if not os.path.isdir(archive_dir):
-        return _archive_project_index
-    # GP-074: scan only recent files (last 14 days by filename date)
+        return _archive_entries
     cutoff_14d = date.today() - timedelta(days=14)
     for fname in os.listdir(archive_dir):
         if not fname.endswith(".yaml"):
             continue
-        fpath = os.path.join(archive_dir, fname)
-        # Quick date check from filename first
         fdate = extract_date(fname)
         if fdate and fdate < cutoff_14d:
             continue
-        # If no date in filename, include it (conservative)
+        fpath = os.path.join(archive_dir, fname)
         try:
             with open(fpath, encoding="utf-8") as f:
-                text = f.read(4096)  # First 4KB is enough for metadata
+                text = f.read(4096)
         except Exception:
             continue
+        proj = ""
         for pid in ACTIVE_PROJECT_IDS:
             if f"project: {pid}" in text or f"project: '{pid}'" in text:
-                _archive_project_index.setdefault(pid, []).append(fpath)
-    return _archive_project_index
+                proj = pid
+                break
+        if not proj:
+            continue
+        status = ""
+        if "status: completed" in text:
+            status = "completed"
+        elif "status: done" in text:
+            status = "done"
+        dt = ""
+        for date_field in ("completed_at:", "archived_at:", "updated_at:"):
+            idx = text.find(date_field)
+            if idx >= 0:
+                d = extract_date(text[idx:idx+60])
+                if d:
+                    dt = str(d)
+                    break
+        _archive_entries.append((fname, proj, status, dt))
+    return _archive_entries
 
 def project_has_recent_completed_cmd(project_id: str) -> bool:
     if project_id in _recent_cmd_cache:
         return _recent_cmd_cache[project_id]
-    # GP-074: pre-indexed scan, no yaml.safe_load
-    index = _build_archive_index()
-    candidate_paths = index.get(project_id, [])
-
-    for path in candidate_paths:
-        # Quick text scan: check project, status, and date without full YAML parse
-        try:
-            with open(path, encoding="utf-8") as f:
-                text = f.read()
-        except Exception:
+    entries = _load_archive_entries()
+    for fname, proj, status, dt in entries:
+        if proj != project_id:
             continue
-        if f"project: {project_id}" not in text and f"project: '{project_id}'" not in text:
+        if status not in ("completed", "done", "complete", "success"):
             continue
-        if "status: completed" not in text and "status: done" not in text:
-            continue
-        # Extract date from text (any date in the file near completed_at/archived_at)
-        for date_field in ("completed_at:", "archived_at:", "updated_at:", "delegated_at:", "created_at:"):
-            idx = text.find(date_field)
-            if idx < 0:
-                continue
-            snippet = text[idx:idx+60]
-            d = extract_date(snippet)
-            if d and d >= cutoff_date:
-                _recent_cmd_cache[project_id] = True
-                return True
-        # Fallback: date from filename
-        d = extract_date(os.path.basename(path))
+        d = extract_date(dt) if dt else extract_date(fname)
         if d and d >= cutoff_date:
             _recent_cmd_cache[project_id] = True
             return True
-
     _recent_cmd_cache[project_id] = False
     return False
 
