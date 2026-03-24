@@ -350,8 +350,10 @@ def check_reports_dir(rdir):
 
 check_reports_dir(reports_dir)
 
-# Source 3: アーカイブ済み報告
-check_reports_dir(archive_report_dir)
+# Source 3: アーカイブ済み報告 — GP-077: スキップ
+# archive/reportsの全量yaml.safe_load(2827件, 11.7秒)は冗長。
+# Source 1(archive/cmds/ファイル名)で完了cmd_idは十分カバー済み。
+# check_reports_dir(archive_report_dir)  # GP-077: disabled for performance
 
 # === Phase 2: STK読み込み+status同期+退避 ===
 
