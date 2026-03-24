@@ -278,6 +278,42 @@ except:
                     # Phase 2: フォーマット検証（auto-fix後に実行）
                     GATE_RESULT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1 || true)
                     if echo "$GATE_RESULT" | grep -q "^FAIL"; then
+                        # GP-071: テンプレート状態検出 — 忍者がまだ記入中ならquality_fix_requestスキップ
+                        # FILL_THIS残存 or verdict未記入 → テンプレート状態（忍者が書いている途中）
+                        # verdict記入済み + FAIL → 本物の品質問題 → 軍師に転送
+                        IS_TEMPLATE=$(REPORT_YAML="$FULL_REPORT" python3 -c "
+import yaml, os, sys
+try:
+    with open(os.environ['REPORT_YAML']) as f:
+        data = yaml.safe_load(f)
+    if not data or not isinstance(data, dict):
+        print('yes')
+        sys.exit(0)
+    # Check 1: verdict is empty or missing
+    verdict = data.get('verdict', '')
+    if not verdict or str(verdict).strip() == '':
+        print('yes')
+        sys.exit(0)
+    # Check 2: FILL_THIS in binary_checks result fields
+    bc = data.get('binary_checks', {})
+    if isinstance(bc, dict):
+        for ac_val in bc.values():
+            if isinstance(ac_val, list):
+                for item in ac_val:
+                    if isinstance(item, dict) and 'FILL_THIS' in str(item.get('result', '')):
+                        print('yes')
+                        sys.exit(0)
+    print('no')
+except Exception:
+    print('yes')
+" 2>/dev/null || echo "yes")
+
+                        if [ "$IS_TEMPLATE" = "yes" ]; then
+                            echo "[report_quality_route] GP-071: テンプレート状態検出 — quality_fix_requestスキップ (ninja: ${FROM})" >&2
+                            echo "[report_quality_route] verdict未記入 or FILL_THIS残存 → 忍者がまだ記入中。報告完了後に再送信せよ" >&2
+                            exit 0
+                        fi
+
                         # Phase 3: 品質問題→軍師に自動ルーティング（第二層分離）
                         # auto-fixで直せない = 品質判断が必要 = 軍師の仕事
                         GUNSHI_INBOX="$SCRIPT_DIR/queue/inbox/gunshi.yaml"

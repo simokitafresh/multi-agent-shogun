@@ -321,3 +321,176 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"no_lesson_reason"* ]]
 }
+
+# --- GP-065: files_modified type validation ---
+@test "files_modified as dict is rejected by gate (GP-065)" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['files_modified'] = {0: 'path/to/file.py'}
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"files_modified"* ]]
+    [[ "$output" == *"dict"* ]]
+}
+
+@test "files_modified as null is rejected by gate (GP-065)" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['files_modified'] = None
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"files_modified"* ]]
+}
+
+@test "files_modified as string passes gate (GP-065)" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
+# --- GP-071: Template state detection (quality_fix_request skip) ---
+# inbox_write.sh内のテンプレート状態検出Pythonロジックを直接テスト
+
+# Helper: run the template detection logic extracted from inbox_write.sh
+_detect_template_state() {
+    local report_file="$1"
+    REPORT_YAML="$report_file" python3 -c "
+import yaml, os, sys
+try:
+    with open(os.environ['REPORT_YAML']) as f:
+        data = yaml.safe_load(f)
+    if not data or not isinstance(data, dict):
+        print('yes')
+        sys.exit(0)
+    verdict = data.get('verdict', '')
+    if not verdict or str(verdict).strip() == '':
+        print('yes')
+        sys.exit(0)
+    bc = data.get('binary_checks', {})
+    if isinstance(bc, dict):
+        for ac_val in bc.values():
+            if isinstance(ac_val, list):
+                for item in ac_val:
+                    if isinstance(item, dict) and 'FILL_THIS' in str(item.get('result', '')):
+                        print('yes')
+                        sys.exit(0)
+    print('no')
+except Exception:
+    print('yes')
+" 2>/dev/null
+}
+
+# Helper: generate a template-state report (as deploy_task.sh produces)
+_generate_template_report() {
+    local outfile="$1"
+    cat > "$outfile" <<'EOF'
+worker_id: test_ninja
+task_id: ""
+parent_cmd: cmd_test
+timestamp: ""
+status: pending
+ac_version_read: abc12345
+result:
+  summary: ""
+  details: ""
+purpose_validation:
+  cmd_purpose: ""
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: ""
+  title: ""
+  detail: ""
+  project: infra
+lessons_useful:
+  - id: L074
+    useful: false
+    reason: ''
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ""
+binary_checks:
+  AC1:
+  - check: "FILL_THIS残存時にquality_fix_requestが発火しないことを確認したか"
+    result: ""
+verdict: ""
+EOF
+}
+
+@test "GP-071: template state detected when verdict is empty" {
+    _generate_template_report "$TEST_TMPDIR/report.yaml"
+    run _detect_template_state "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" = "yes" ]
+}
+
+@test "GP-071: template state detected when FILL_THIS in binary_checks result" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # Replace binary_checks result with FILL_THIS
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['binary_checks'] = {'AC1': [{'check': 'test check', 'result': 'FILL_THIS'}]}
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run _detect_template_state "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" = "yes" ]
+}
+
+@test "GP-071: non-template detected when verdict=PASS and no FILL_THIS" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    run _detect_template_state "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" = "no" ]
+}
+
+@test "GP-071: non-template detected when verdict=FAIL and no FILL_THIS" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+content = open('$TEST_TMPDIR/report.yaml').read()
+content = content.replace('verdict: PASS', 'verdict: FAIL')
+open('$TEST_TMPDIR/report.yaml', 'w').write(content)
+"
+    run _detect_template_state "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" = "no" ]
+}
+
+@test "GP-071: template state when verdict is null" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['verdict'] = None
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run _detect_template_state "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" = "yes" ]
+}
