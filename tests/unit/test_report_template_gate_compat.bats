@@ -88,8 +88,18 @@ EOF
 }
 
 @test "filled report with empty lessons_useful is rejected by gate (GP-064)" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    # GP-088: gate checks task YAML for related_lessons — create one so empty [] is rejected
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/test_ninja.yaml" <<'TASK'
+task:
+  related_lessons:
+    - id: L074
+      summary: "test lesson"
+TASK
+    # Place report under queue/reports/ so dirname(dirname(report)) finds tasks/
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+    _generate_filled_report "$TEST_TMPDIR/queue/reports/report.yaml" "empty"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/queue/reports/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"lessons_useful"* ]]

@@ -86,7 +86,7 @@ commands:
 - id: cmd_test
   project: $project_id
   status: completed
-  delegated_at: "$recent_date"
+  completed_at: "$recent_date"
 EOF
 }
 

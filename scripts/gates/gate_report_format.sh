@@ -39,6 +39,16 @@ for field in required:
     if field not in data:
         errors.append(f'{field}: MISSING')
 
+# --- files_modified must be string or list, not null/dict (GP-065) ---
+fm = data.get('files_modified')
+if fm is None and 'files_modified' in data:
+    errors.append('files_modified: null (must be string or list of file paths)')
+elif isinstance(fm, dict):
+    errors.append('files_modified: is dict (must be string or list of file paths)')
+    hints.append('FIX (files_modified): 文字列またはリスト形式で記入せよ:\\n  files_modified: path/to/file.py\\n  または\\n  files_modified:\\n    - path/to/file1.py\\n    - path/to/file2.py')
+elif isinstance(fm, bool):
+    errors.append(f'files_modified: is bool ({fm}), must be string or list of file paths')
+
 # --- lesson_candidate must be dict with 'found' (null = FAIL) ---
 lc = data.get('lesson_candidate')
 if lc is None and 'lesson_candidate' in data:
@@ -77,11 +87,24 @@ elif lu is not None:
     if isinstance(lu, str):
         errors.append('lessons_useful: is string (must be list of dicts)')
     elif isinstance(lu, list):
-        # --- GP-064: empty list detection ---
-        # テンプレートには教訓5件注入済み。空リストは忍者による上書きの兆候。
+        # --- GP-064+GP-088: empty list detection (related_lessons考慮) ---
         if len(lu) == 0:
-            errors.append('lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)')
-            hints.append('FIX (lessons_useful): report_field_set.sh経由でuseful/reasonを各教訓に記入せよ')
+            # GP-088: related_lessonsがないcmdでは[]が正当。task YAMLを確認。
+            _worker = data.get('worker_id', '')
+            _task_path = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker}.yaml')
+            _has_related = False
+            try:
+                if os.path.exists(_task_path):
+                    with open(_task_path) as _tf:
+                        _tdata = yaml.safe_load(_tf)
+                    _task = (_tdata or {}).get('task', _tdata or {})
+                    _rel = _task.get('related_lessons', [])
+                    _has_related = bool(_rel and isinstance(_rel, list) and len(_rel) > 0)
+            except Exception:
+                pass
+            if _has_related:
+                errors.append('lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)')
+                hints.append('FIX (lessons_useful): report_field_set.sh経由でuseful/reasonを各教訓に記入せよ')
         for i, item in enumerate(lu):
             if isinstance(item, dict):
                 if 'FILL_THIS' in str(item.get('useful', '')) or 'FILL_THIS' in str(item.get('reason', '')):
@@ -95,6 +118,9 @@ elif lu is not None:
                     hints.append(f'FIX (lessons_useful[{i}]): useful: true または useful: false を指定せよ（文字列やnullは不可）')
                 if 'reason' not in item:
                     errors.append(f'lessons_useful[{i}]: missing \"reason\" field')
+                elif isinstance(item.get('reason'), str) and not item['reason'].strip():
+                    errors.append(f'lessons_useful[{i}]: reason is empty (教訓が有用/無用な理由を具体的に書け)')
+                    hints.append(f'FIX (lessons_useful[{i}]): reason: \"L070のパターンと同一で参考にならなかった\" など具体的に記述')
             else:
                 errors.append(f'lessons_useful[{i}]: is {type(item).__name__} (must be dict)')
     elif isinstance(lu, dict):
@@ -125,6 +151,11 @@ elif isinstance(bc, dict):
             for j, check_item in enumerate(ac_val):
                 if not isinstance(check_item, dict):
                     continue
+                # GP-088: check/resultフィールド欠落検出（[N]キー形式等の残骸）
+                if 'check' not in check_item:
+                    errors.append(f'binary_checks.{ac_key}[{j}]: missing \"check\" field')
+                if 'result' not in check_item:
+                    errors.append(f'binary_checks.{ac_key}[{j}]: missing \"result\" field')
                 ck = check_item.get('check', '')
                 rs = check_item.get('result', '')
                 # check field: must describe WHAT was verified, not a verdict
@@ -181,6 +212,17 @@ if other_cmds and parent_cmd:
     if stale_cmds:
         hints.append(f'GP-062 WARN: 報告内に別cmdの参照あり: {sorted(stale_cmds)} — staleコンテンツの可能性を確認せよ')
 
+# --- PI-012: GS探索でのPE使用検出 ---
+# 忍法スクリプト(run_077_*)のGS結果にPEフォールバックが使われた場合をWARN
+# 自動消火装置の検出: PEフォールバックは問題を隠す
+if result and isinstance(result, dict):
+    details_text = str(result.get('details', '')) + ' ' + str(result.get('summary', ''))
+    pe_indicators = ['PE経由', 'PE fallback', 'PEフォールバック', 'PE経由でフル実行', 'use_pe_mode']
+    for indicator in pe_indicators:
+        if indicator in details_text:
+            hints.append(f'PI-012 WARN: 報告にPE使用の痕跡あり(\"{indicator}\")。GS探索でPE使用は禁止(cmd_1349)。batch pathの修正が必要')
+            break
+
 # --- Output ---
 if errors:
     print('FAIL: ' + '; '.join(errors))
@@ -190,6 +232,9 @@ if errors:
     sys.exit(1)
 else:
     print('PASS')
+    if hints:
+        for h in hints:
+            print(h)
     sys.exit(0)
 " 2>&1) || true
 

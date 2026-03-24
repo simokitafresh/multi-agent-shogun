@@ -32,6 +32,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
+# shellcheck disable=SC2034  # Used by lord_conversation.sh
 LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
 # ntfy_auth.sh読み込み
@@ -64,14 +65,14 @@ NTFY_ENDPOINT="${NTFY_ENDPOINT:-https://ntfy.sh/$TOPIC}"
 _ntfy_send() {
   local payload="$1"
   local http_code start end elapsed
-  start=$(date +%s)
+  start=$EPOCHSECONDS
   http_code=$(curl -s -o /dev/null -w "%{http_code}" \
     --max-time 30 --connect-timeout 15 \
     "${AUTH_ARGS[@]}" -H "Tags: outbound" -d "$payload" \
     "$NTFY_ENDPOINT" 2>/dev/null)
-  end=$(date +%s)
+  end=$EPOCHSECONDS
   elapsed=$((end - start))
-  echo "$(date '+%Y-%m-%d %H:%M:%S') http=$http_code time=${elapsed}s msg=\"${payload:0:80}\"" >> "$LOGFILE"
+  printf '%(%Y-%m-%d %H:%M:%S)T http=%s time=%ss msg="%s"\n' -1 "$http_code" "$elapsed" "${payload:0:80}" >> "$LOGFILE"
   echo "$http_code"
 }
 
@@ -89,7 +90,7 @@ send_with_retry() {
   # HTTP 500 etc. means the server received the request — message likely
   # already delivered. Retrying would cause duplicate notifications.
   if [ "$http_code" != "000" ]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') NO_RETRY http=$http_code (server responded)" >> "$LOGFILE"
+    printf '%(%Y-%m-%d %H:%M:%S)T NO_RETRY http=%s (server responded)\n' -1 "$http_code" >> "$LOGFILE"
     return 1
   fi
 
@@ -97,11 +98,11 @@ send_with_retry() {
   http_code=$(_ntfy_send "$payload")
   if [ "$http_code" = "200" ]; then
     append_lord_conversation "$payload" "outbound" "${AGENT_ID:-unknown}" "ntfy" || true
-    echo "$(date '+%Y-%m-%d %H:%M:%S') RETRY_OK" >> "$LOGFILE"
+    printf '%(%Y-%m-%d %H:%M:%S)T RETRY_OK\n' -1 >> "$LOGFILE"
     return 0
   fi
 
-  echo "$(date '+%Y-%m-%d %H:%M:%S') FAILED after retry msg=\"${payload:0:80}\"" >> "$LOGFILE"
+  printf '%(%Y-%m-%d %H:%M:%S)T FAILED after retry msg="%s"\n' -1 "${payload:0:80}" >> "$LOGFILE"
   return 1
 }
 
