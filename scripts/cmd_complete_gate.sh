@@ -1896,7 +1896,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     echo "Auto-notification (GATE CLEAR - emergency override):"
 
     # dashboard_update（最初に実行。dashboard.mdを更新）
-    if bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
+    if SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
         echo "  dashboard_update: OK ($CMD_ID)"
     else
         echo "  [INFO] dashboard_update: WARN (failed, continuing)" >&2
@@ -3798,7 +3798,7 @@ except:
     echo "Auto-notification (GATE CLEAR):"
 
     # dashboard_update（最初に実行。dashboard.mdを更新）
-    if bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
+    if SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
         echo "  dashboard_update: OK ($CMD_ID)"
     else
         echo "  [INFO] dashboard_update: WARN (failed, continuing)" >&2
