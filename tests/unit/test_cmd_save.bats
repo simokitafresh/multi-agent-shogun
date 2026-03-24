@@ -52,7 +52,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
   cmd_1002:
     id: cmd_1002
     command: "GP-031+GP-033統合修正"
@@ -62,7 +61,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
 YAML
 
     run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
@@ -84,7 +82,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
   cmd_1010:
     id: cmd_1010
     command: "inbox_write.shのリファクタリング"
@@ -94,7 +91,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
 YAML
 
     run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1010
@@ -117,7 +113,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
   cmd_1002:
     id: cmd_1002
     command: "GP-031の追加修正"
@@ -127,7 +122,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
 YAML
 
     run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
@@ -149,7 +143,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
   cmd_1002:
     id: cmd_1002
     command: "GP-042の再実装"
@@ -159,7 +152,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
 YAML
 
     run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
@@ -181,7 +173,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
   cmd_1002:
     id: cmd_1002
     command: "GP-031+GP-033+GP-034統合"
@@ -191,7 +182,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
 YAML
 
     run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
@@ -213,7 +203,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
   cmd_1002:
     id: cmd_1002
     command: "GP-031の再実装"
@@ -223,7 +212,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
 YAML
 
     run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
@@ -245,7 +233,6 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
-      q7_failure_prediction: "影響なし"
 YAML
 
     run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_9999
