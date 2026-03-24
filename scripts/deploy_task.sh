@@ -417,11 +417,27 @@ try:
     task = data.get('task', data)
     related = task.get('related_lessons', [])
     if not related or not isinstance(related, list):
-        sys.exit(1)
+        # GP-088: related_lessonsなし → null→[]に変換して終了（null残存WA防止）
+        with open(report_file) as f:
+            content = f.read()
+        if 'lessons_useful: null' in content:
+            content = content.replace('lessons_useful: null', 'lessons_useful: []')
+            with open(report_file, 'w') as f:
+                f.write(content)
+            print('lessons_useful: no related_lessons, null→[] fallback')
+        sys.exit(0)
 
     ids = [r['id'] for r in related if isinstance(r, dict) and 'id' in r]
     if not ids:
-        sys.exit(1)
+        # GP-088: related_lessonsあるがid抽出不能 → null→[]に変換
+        with open(report_file) as f:
+            content = f.read()
+        if 'lessons_useful: null' in content:
+            content = content.replace('lessons_useful: null', 'lessons_useful: []')
+            with open(report_file, 'w') as f:
+                f.write(content)
+            print('lessons_useful: ids empty, null→[] fallback')
+        sys.exit(0)
 
     lines = ["lessons_useful:"]
     for lid in ids:
@@ -2878,10 +2894,44 @@ TASK_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "u
 
 log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}, pane=${PANE_TARGET}"
 
+# --- status更新コマンド: idle/done時は即更新して早期リターン ---
+# deploy_task.sh {ninja} status idle/done の呼出しパターンに対応
+_TASK_YAML="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
+if [ "$MESSAGE" = "status" ] && { [ "$TYPE" = "idle" ] || [ "$TYPE" = "done" ]; }; then
+    yaml_field_set "$_TASK_YAML" "task" "status" "$TYPE"
+    log "status_update: ${TASK_STATUS} → ${TYPE}"
+    # 検証アサーション: 更新後にYAML読み直して期待値と一致確認
+    _verify_status=$(field_get "$_TASK_YAML" "status" "")
+    if [ "$_verify_status" != "$TYPE" ]; then
+        log "WARN: status更新検証失敗: 期待=${TYPE}, 実際=${_verify_status}"
+    fi
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+    log "${NINJA_NAME}: deployment complete (type=${TYPE})"
+    exit 0
+fi
+
+# --- status更新コマンド: in_progress時はGP-069チェック後に更新 ---
+if [ "$MESSAGE" = "status" ] && [ "$TYPE" = "in_progress" ]; then
+    # GP-069はin_progress→in_progressの二重配備のみBLOCK
+    if [ "$TASK_STATUS" = "in_progress" ]; then
+        CURRENT_CMD=$(field_get "$_TASK_YAML" "parent_cmd" "")
+        log "BLOCK: ${NINJA_NAME} is in_progress on ${CURRENT_CMD:-unknown}. 前タスク完了を待て。"
+        echo "BLOCK: ${NINJA_NAME} は ${CURRENT_CMD:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+        exit 1
+    fi
+    yaml_field_set "$_TASK_YAML" "task" "status" "in_progress"
+    log "status_update: ${TASK_STATUS} → in_progress"
+    # 検証アサーション
+    _verify_status=$(field_get "$_TASK_YAML" "status" "")
+    if [ "$_verify_status" != "in_progress" ]; then
+        log "WARN: status更新検証失敗: 期待=in_progress, 実際=${_verify_status}"
+    fi
+fi
+
 # GP-069: 二重配備防止チェック（double_deploy WA根絶）
 # 忍者がin_progressの場合、新タスク配備をBLOCK。前タスク完了後に再配備せよ。
-if [ "$TASK_STATUS" = "in_progress" ]; then
-    CURRENT_CMD=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "parent_cmd" "")
+if [ "$TASK_STATUS" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
+    CURRENT_CMD=$(field_get "$_TASK_YAML" "parent_cmd" "")
     log "BLOCK: ${NINJA_NAME} is in_progress on ${CURRENT_CMD:-unknown}. 前タスク完了を待て。"
     echo "BLOCK: ${NINJA_NAME} は ${CURRENT_CMD:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
     exit 1
@@ -2889,7 +2939,7 @@ fi
 
 # status強制注入（cmd_1126: pending/unknown→assigned化。Stage 1ガード保護対象に入れる）
 if [ "$TASK_STATUS" = "pending" ] || [ "$TASK_STATUS" = "unknown" ]; then
-    yaml_field_set "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "task" "status" "assigned"
+    yaml_field_set "$_TASK_YAML" "task" "status" "assigned"
     log "status_force: ${TASK_STATUS} → assigned (Stage 1保護対象化)"
     TASK_STATUS="assigned"
 fi

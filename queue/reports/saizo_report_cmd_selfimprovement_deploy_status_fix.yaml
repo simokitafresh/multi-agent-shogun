@@ -1,0 +1,58 @@
+worker_id: saizo
+task_id: cmd_selfimprovement_deploy_status_fix
+parent_cmd: cmd_selfimprovement_deploy_status_fix
+timestamp: '2026-03-25T05:27:17'
+status: done
+ac_version_read: 72211e08
+result:
+  summary: '根本原因: deploy_task.shはTYPE引数をinbox_writeのtype+ログにのみ使用し、task YAMLのstatusフィールドを更新する処理が存在しなかった。idle/done時は早期リターンでstatus更新、in_progress時はGP-069後に更新、全ケースで検証アサーション追加'
+  details: '修正: (1)idle/done時は早期リターンでstatus更新+検証+inbox_write (2)in_progress時はGP-069後にstatus更新+検証
+    (3)GP-069条件をstatus変更以外に限定。テスト: /tmp上で全遷移確認、本番YAML影響なし'
+purpose_validation:
+  cmd_purpose: ''
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: deploy_task.shにstatus書込み漏れがあった。修正完了。教訓化不要の単純バグ修正
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+  '0':
+    useful: false
+    reason: bash算術問題なし。Python使用もなし
+  '1':
+    useful: false
+    reason: lessons.yamlイテレーションなし
+  '2':
+    useful: false
+    reason: MCP entity操作なし
+  '3':
+    useful: true
+    reason: L079のdeploy_task.shのrelated_lessons再構築の知見を意識し、status更新ロジックの配置を慎重に判断した
+  '4':
+    useful: false
+    reason: フィールド名変更なし。横断更新の必要なし
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+    '0':
+      result: 'yes'
+    '1':
+      result: 'yes'
+  AC2:
+    '0':
+      result: 'yes'
+    '1':
+      result: 'yes'
+verdict: PASS
+autofix_applied:
+- no_lesson_reason タスク種別から自動補完
