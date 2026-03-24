@@ -765,13 +765,13 @@ fi
     echo "| 項目 | 値 |"
     echo "|------|-----|"
     echo "| 教訓注入率 | ${KM_INJECT_RATE} |"
-    echo "| 教訓効果率 | ${KM_LESSON_EFFECT} |"
+    echo "| 教訓活用率(helpful>0) | ${KM_LESSON_EFFECT} |"
     echo "| 効果率閾値 | ${KM_LESSON_THRESHOLD} |"
     echo "| 問題教訓 | ${KM_PROBLEM_LESSONS}件 |"
 
     echo ""
     echo "#### PJ別"
-    echo "| PJ | 注入率 | 効果率 | N | 直近30cmd注入率 | 直近30cmd効果率 |"
+    echo "| PJ | 注入率 | 注入CLEAR率 | N | 直近30cmd注入率 | 直近30cmd注入CLEAR率 |"
     echo "|----|--------|--------|---|----------------|----------------|"
     if [[ -n "$KM_PROJECT_ROWS" ]]; then
         while IFS= read -r _row; do
