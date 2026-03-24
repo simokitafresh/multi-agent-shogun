@@ -107,8 +107,10 @@ cli:
     sasuke:
       type: codex
       model_name: gpt-5.4 high fast
+      role: ninja
     kagemaru:
       model_name: claude-opus-4-6
+      role: ninja
 effort: ""
 EOF
 
