@@ -2686,39 +2686,17 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     fi
 
     ANALYSIS_PARALYSIS_CHECKED=true
-    analysis_status=$(REPORT_FILE_ENV="$report_file" python3 - <<'PY'
-import os
-import yaml
-
-report_file = os.environ["REPORT_FILE_ENV"]
-
-try:
-    with open(report_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    print("error\tparse_error")
-    raise SystemExit(0)
-
-if not isinstance(data, dict):
-    print("error\treport_not_dict")
-    raise SystemExit(0)
-
-result = data.get("result")
-if not isinstance(result, dict):
-    print("skip\tresult missing or not a mapping")
-    raise SystemExit(0)
-
-value = result.get("analysis_paralysis_triggered")
-if value is True:
-    print("warn\tanalysis paralysis was triggered during this task")
-elif value is False:
-    print("ok\tanalysis_paralysis_triggered=false")
-elif value is None:
-    print("skip\tanalysis_paralysis_triggered not present")
-else:
-    print("skip\tanalysis_paralysis_triggered not boolean")
-PY
-)
+    if ! grep -q '^\s*result:' "$report_file" 2>/dev/null; then
+        analysis_status=$'skip\tresult missing or not a mapping'
+    else
+        ap_val=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "analysis_paralysis_triggered" "")
+        case "$ap_val" in
+            true)  analysis_status=$'warn\tanalysis paralysis was triggered during this task' ;;
+            false) analysis_status=$'ok\tanalysis_paralysis_triggered=false' ;;
+            "")    analysis_status=$'skip\tanalysis_paralysis_triggered not present' ;;
+            *)     analysis_status=$'skip\tanalysis_paralysis_triggered not boolean' ;;
+        esac
+    fi
 
     analysis_kind=$(printf '%s\n' "$analysis_status" | cut -f1)
     analysis_detail=$(printf '%s\n' "$analysis_status" | cut -f2-)
@@ -2761,26 +2739,13 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     SC_CHECKED=true
 
-    sc_status=$(python3 -c "
-import yaml, sys
-try:
-    with open('$report_file') as f:
-        data = yaml.safe_load(f)
-    if not data:
-        print('missing')
-        sys.exit(0)
-    sc = data.get('skill_candidate')
-    if sc is None:
-        print('missing')
-    elif not isinstance(sc, dict):
-        print('malformed')
-    elif 'found' not in sc:
-        print('no_found')
-    else:
-        print('ok')
-except:
-    print('error')
-" 2>/dev/null)
+    if ! grep -q 'skill_candidate:' "$report_file" 2>/dev/null; then
+        sc_status="missing"
+    elif grep -A5 'skill_candidate:' "$report_file" 2>/dev/null | grep -q 'found:'; then
+        sc_status="ok"
+    else
+        sc_status="no_found"
+    fi
 
     case "$sc_status" in
         ok)
@@ -2823,26 +2788,13 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     DC_CHECKED=true
 
-    dc_status=$(python3 -c "
-import yaml, sys
-try:
-    with open('$report_file') as f:
-        data = yaml.safe_load(f)
-    if not data:
-        print('missing')
-        sys.exit(0)
-    dc = data.get('decision_candidate')
-    if dc is None:
-        print('missing')
-    elif not isinstance(dc, dict):
-        print('malformed')
-    elif 'found' not in dc:
-        print('no_found')
-    else:
-        print('ok')
-except:
-    print('error')
-" 2>/dev/null)
+    if ! grep -q 'decision_candidate:' "$report_file" 2>/dev/null; then
+        dc_status="missing"
+    elif grep -A5 'decision_candidate:' "$report_file" 2>/dev/null | grep -q 'found:'; then
+        dc_status="ok"
+    else
+        dc_status="no_found"
+    fi
 
     case "$dc_status" in
         ok)
@@ -3005,15 +2957,12 @@ elif [ "$IMPLEMENTER_IDS" = "|" ]; then
 elif [ "$REVIEWER_IDS" = "|" ]; then
     echo "  reviewer/implementer split: SKIP (no review worker_id)"
 else
-    overlapping_workers=$(python3 - "$IMPLEMENTER_IDS" "$REVIEWER_IDS" <<'PY'
-import sys
-
-implementers = {item for item in sys.argv[1].strip("|").split("|") if item}
-reviewers = {item for item in sys.argv[2].strip("|").split("|") if item}
-overlap = sorted(implementers & reviewers)
-print(",".join(overlap))
-PY
-)
+    overlapping_workers=$(
+        comm -12 \
+            <(printf '%s\n' "$IMPLEMENTER_IDS" | tr '|' '\n' | sed '/^$/d' | sort -u) \
+            <(printf '%s\n' "$REVIEWER_IDS" | tr '|' '\n' | sed '/^$/d' | sort -u) \
+        | paste -sd, -
+    )
     if [ -n "$overlapping_workers" ]; then
         echo "  [CRITICAL] NG ← reviewer and implementer overlap: ${overlapping_workers}"
         record_block_reason "reviewer is same as implementer"
@@ -3033,15 +2982,10 @@ CMD_PROJECT=$(awk -v cmd="${CMD_ID}" '
 
 if [ -n "$CMD_PROJECT" ]; then
     # projectのSSOTパスを取得
-    DRAFT_SSOT_PATH=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == '$CMD_PROJECT':
-        print(p['path'])
-        break
-" 2>/dev/null)
+    DRAFT_SSOT_PATH=$(awk -v proj="$CMD_PROJECT" '
+        /^\s*- id:/ { id=$0; sub(/.*id:\s*/, "", id); gsub(/[" \t]/, "", id); found=(id==proj) }
+        found && /^\s*path:/ { sub(/^\s*path:\s*/, ""); gsub(/["'"'"' \t]/, ""); print; exit }
+    ' "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null)
 
     if [ -n "$DRAFT_SSOT_PATH" ]; then
         DRAFT_LESSONS_FILE="$DRAFT_SSOT_PATH/tasks/lessons.md"
@@ -3127,19 +3071,18 @@ fi
 level_heading "[L3]" "Pending decision context sync check:"
 PD_FILE="$SCRIPT_DIR/queue/pending_decisions.yaml"
 if [ -f "$PD_FILE" ]; then
-    unsynced_pds=$(python3 -c "
-import yaml, sys
-try:
-    with open('$PD_FILE') as f:
-        data = yaml.safe_load(f)
-    if not data or not data.get('decisions'):
-        sys.exit(0)
-    for d in data['decisions']:
-        if d.get('source_cmd') == '${CMD_ID}' and d.get('status') == 'resolved' and d.get('context_synced') == False:
-            print(d.get('id', '???'))
-except:
-    pass
-" 2>/dev/null)
+    unsynced_pds=$(awk -v cmd="${CMD_ID}" '
+        /^[[:space:]]*- id:/ {
+            if (did != "" && scmd == cmd && stat == "resolved" && synced == "false") print did
+            did = $0; sub(/.*- id:[[:space:]]*/, "", did); gsub(/[" \t]/, "", did)
+            scmd = ""; stat = ""; synced = ""
+            next
+        }
+        /^[[:space:]]+source_cmd:/ { scmd = $0; sub(/.*source_cmd:[[:space:]]*/, "", scmd); gsub(/[" \t]/, "", scmd) }
+        /^[[:space:]]+status:/ { stat = $0; sub(/.*status:[[:space:]]*/, "", stat); gsub(/[" \t]/, "", stat) }
+        /^[[:space:]]+context_synced:/ { synced = $0; sub(/.*context_synced:[[:space:]]*/, "", synced); gsub(/[" \t]/, "", synced) }
+        END { if (did != "" && scmd == cmd && stat == "resolved" && synced == "false") print did }
+    ' "$PD_FILE" 2>/dev/null)
 
     if [ -n "$unsynced_pds" ]; then
         while IFS= read -r pd_id; do
@@ -3352,55 +3295,32 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     fi
 
     TEST_SKIP_CHECKED=true
-    test_skip_status=$(REPORT_FILE_ENV="$report_file" python3 - <<'PY'
-import os
-import yaml
-
-report_file = os.environ["REPORT_FILE_ENV"]
-
-try:
-    with open(report_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    print("error\tparse_error")
-    raise SystemExit(0)
-
-if not isinstance(data, dict):
-    print("error\treport_not_dict")
-    raise SystemExit(0)
-
-# test_skip_count (top-level) を優先検索
-skip_count = data.get("test_skip_count")
-
-# フォールバック: test_results.skipped
-if skip_count is None:
-    test_results = data.get("test_results")
-    if test_results is None:
-        print("warn\ttest_results not present")
-        raise SystemExit(0)
-    elif isinstance(test_results, dict):
-        skip_count = test_results.get("skipped")
-        if skip_count is None:
-            print("warn\ttest_results.skipped not present")
-            raise SystemExit(0)
-    else:
-        print("warn\ttest_results not a mapping")
-        raise SystemExit(0)
-
-try:
-    count = int(skip_count)
-except (ValueError, TypeError):
-    print(f"warn\ttest_skip_count not a number: {skip_count}")
-    raise SystemExit(0)
-
-if count > 0:
-    print(f"block\t{count}")
-elif count == 0:
-    print(f"ok\t{count}")
-else:
-    print(f"warn\ttest_skip_count negative: {count}")
-PY
-)
+    # test_skip_count取得 (top-level優先 → test_results.skippedフォールバック)
+    skip_val=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "test_skip_count" "")
+    test_skip_status=""
+    if [ -z "$skip_val" ]; then
+        if ! grep -q '^\s*test_results:' "$report_file" 2>/dev/null; then
+            test_skip_status=$'warn\ttest_results not present'
+        else
+            skip_val=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "skipped" "")
+            if [ -z "$skip_val" ]; then
+                test_skip_status=$'warn\ttest_results.skipped not present'
+            fi
+        fi
+    fi
+    if [ -z "$test_skip_status" ] && [ -n "$skip_val" ]; then
+        if [[ "$skip_val" =~ ^-?[0-9]+$ ]]; then
+            if [ "$skip_val" -gt 0 ]; then
+                test_skip_status=$(printf 'block\t%s' "$skip_val")
+            elif [ "$skip_val" -eq 0 ]; then
+                test_skip_status=$(printf 'ok\t%s' "$skip_val")
+            else
+                test_skip_status=$(printf 'warn\ttest_skip_count negative: %s' "$skip_val")
+            fi
+        else
+            test_skip_status=$(printf 'warn\ttest_skip_count not a number: %s' "$skip_val")
+        fi
+    fi
 
     test_skip_kind=$(printf '%s\n' "$test_skip_status" | cut -f1)
     test_skip_detail=$(printf '%s\n' "$test_skip_status" | cut -f2-)
@@ -3467,28 +3387,8 @@ if [ "$CI_PUSH_DETECTED" = true ]; then
     if command -v gh >/dev/null 2>&1; then
         ci_result=$(gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --branch main --limit 1 --json conclusion,databaseId 2>/dev/null || true)
         if [ -n "$ci_result" ]; then
-            ci_conclusion=$(printf '%s' "$ci_result" | python3 -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    if data and isinstance(data, list) and len(data) > 0:
-        print(data[0].get('conclusion', ''))
-    else:
-        print('')
-except:
-    print('')
-" 2>/dev/null)
-            ci_run_id=$(printf '%s' "$ci_result" | python3 -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    if data and isinstance(data, list) and len(data) > 0:
-        print(data[0].get('databaseId', ''))
-    else:
-        print('')
-except:
-    print('')
-" 2>/dev/null)
+            ci_conclusion=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then .[0].conclusion // "" else "" end' 2>/dev/null)
+            ci_run_id=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then .[0].databaseId // "" else "" end' 2>/dev/null)
             case "$ci_conclusion" in
                 success)
                     echo "  OK (CI green, run ${ci_run_id})"
@@ -3744,19 +3644,7 @@ except:
     if [ -f "$SCRIPT_DIR/scripts/knowledge_metrics.sh" ] && [ -f "$SCRIPT_DIR/scripts/lesson_deprecate.sh" ]; then
         UNUSED_DEPRECATE_COUNT=0
         if metrics_json=$(bash "$SCRIPT_DIR/scripts/knowledge_metrics.sh" --json 2>/dev/null); then
-            elimination_ids=$(echo "$metrics_json" | python3 -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    for c in data.get('elimination_candidates', []):
-        lid = c.get('lesson_id', '')
-        project = c.get('project', '')
-        inject = c.get('inject_count', 0)
-        if lid and project:
-            print(f'{lid}\t{project}\t{inject}')
-except:
-    pass
-" 2>/dev/null)
+            elimination_ids=$(echo "$metrics_json" | jq -r '.elimination_candidates[]? | select(.lesson_id != "" and .lesson_id != null and .project != "" and .project != null) | [.lesson_id, .project, (.inject_count // 0 | tostring)] | join("\t")' 2>/dev/null)
             if [ -n "$elimination_ids" ]; then
                 while IFS=$'\t' read -r lid project injected; do
                     [ -z "$lid" ] && continue
@@ -3826,27 +3714,24 @@ except:
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
 
-        insight_line=$(REPORT_FILE="$report_file" python3 -c "
-import yaml, os, sys
-try:
-    with open(os.environ['REPORT_FILE']) as f:
-        data = yaml.safe_load(f) or {}
-    lc = data.get('lesson_candidate', {})
-    dc = data.get('decision_candidate', {})
-    lc_found = isinstance(lc, dict) and lc.get('found') is True
-    dc_found = isinstance(dc, dict) and dc.get('found') is True
-    parts = []
-    if lc_found:
-        title = str(lc.get('title', lc.get('summary', '')))[:80]
-        parts.append('LC: ' + title if title else 'LC: (untitled)')
-    if dc_found:
-        title = str(dc.get('title', dc.get('summary', dc.get('question', ''))))[:80]
-        parts.append('DC: ' + title if title else 'DC: (untitled)')
-    if parts:
-        print(' / '.join(parts))
-except:
-    pass
-" 2>/dev/null)
+        insight_line=$(awk '
+            /lesson_candidate:/{sec="lc"; next}
+            /decision_candidate:/{sec="dc"; next}
+            /^[^ ]/ && sec!=""{sec=""}
+            sec=="lc" && /found: true/{lc_found=1}
+            sec=="lc" && /title:/ && !lc_title{t=$0; sub(/.*title:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); lc_title=t}
+            sec=="lc" && /summary:/ && !lc_title{t=$0; sub(/.*summary:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); lc_title=t}
+            sec=="dc" && /found: true/{dc_found=1}
+            sec=="dc" && /title:/ && !dc_title{t=$0; sub(/.*title:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); dc_title=t}
+            sec=="dc" && /summary:/ && !dc_title{t=$0; sub(/.*summary:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); dc_title=t}
+            sec=="dc" && /question:/ && !dc_title{t=$0; sub(/.*question:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); dc_title=t}
+            END{
+                out=""
+                if(lc_found){t=substr(lc_title,1,80); out="LC: " (t?t:"(untitled)")}
+                if(dc_found){t=substr(dc_title,1,80); if(out) out=out " / "; out=out "DC: " (t?t:"(untitled)")}
+                if(out) print out
+            }
+        ' "$report_file" 2>/dev/null)
 
         if [ -n "$insight_line" ]; then
             INSIGHT_COUNT=$((INSIGHT_COUNT + 1))
@@ -3858,32 +3743,19 @@ except:
     if [ "$INSIGHT_COUNT" -gt 0 ]; then
         DASHBOARD="$SCRIPT_DIR/dashboard.md"
         if [ -f "$DASHBOARD" ]; then
-            DASHBOARD_FILE="$DASHBOARD" CMD_ID_ENV="$CMD_ID" INSIGHT_FILE="$INSIGHT_TMP" python3 -c "
-import os, sys
-dashboard = os.environ['DASHBOARD_FILE']
-cmd_id = os.environ['CMD_ID_ENV']
-insight_file = os.environ['INSIGHT_FILE']
-try:
-    with open(insight_file, 'r', encoding='utf-8') as f:
-        notes = [line.strip() for line in f if line.strip()]
-    if not notes:
-        sys.exit(0)
-    with open(dashboard, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-    insert_idx = None
-    for i, line in enumerate(lines):
-        if line.strip() == '## 将軍宛報告':
-            insert_idx = i + 1
-            break
-    if insert_idx is not None:
-        for note in notes:
-            lines.insert(insert_idx, f'- [INSIGHT] {cmd_id} {note}\n')
-            insert_idx += 1
-        with open(dashboard, 'w', encoding='utf-8') as f:
-            f.writelines(lines)
-except Exception as e:
-    print(f'  [INFO] dashboard insight append failed: {e}', file=sys.stderr)
-" 2>/dev/null || echo "  [INFO] dashboard insight append failed (non-blocking)"
+            # Build insert text from INSIGHT_TMP
+            _insight_insert=""
+            while IFS= read -r _note; do
+                [ -z "$_note" ] && continue
+                _insight_insert="${_insight_insert}- [INSIGHT] ${CMD_ID} ${_note}\n"
+            done < "$INSIGHT_TMP"
+            if [ -n "$_insight_insert" ]; then
+                awk -v ins="$_insight_insert" '
+                    { print }
+                    /^## 将軍宛報告[[:space:]]*$/ { printf "%s", ins }
+                ' "$DASHBOARD" > "${DASHBOARD}.tmp" && mv "${DASHBOARD}.tmp" "$DASHBOARD" 2>/dev/null \
+                    || echo "  [INFO] dashboard insight append failed (non-blocking)"
+            fi
             echo "  Notified: ${INSIGHT_COUNT} insight candidate(s) → dashboard 将軍宛セクション"
         fi
     else
@@ -3904,19 +3776,13 @@ except Exception as e:
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
 
-        lc_warn=$(REPORT_FILE="$report_file" python3 -c "
-import yaml, os
-try:
-    with open(os.environ['REPORT_FILE']) as f:
-        data = yaml.safe_load(f) or {}
-    lc = data.get('lesson_candidate', {})
-    if isinstance(lc, dict) and lc.get('found') is True:
-        title = str(lc.get('title', '')).strip()
-        if title:
-            print(title[:80])
-except:
-    pass
-" 2>/dev/null)
+        lc_warn=$(awk '
+            /lesson_candidate:/ { sec=1; next }
+            sec && /^[^ ]/ { exit }
+            sec && /found: true/ { found=1 }
+            sec && /title:/ && !title { t=$0; sub(/.*title:[[:space:]]*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); title=t }
+            END { if (found && title) print substr(title, 1, 80) }
+        ' "$report_file" 2>/dev/null)
 
         if [ -n "$lc_warn" ]; then
             LC_WARN_COUNT=$((LC_WARN_COUNT + 1))
