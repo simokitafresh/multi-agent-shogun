@@ -356,10 +356,25 @@ with open(inbox_path, 'w') as f:
     yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 " 2>/dev/null
                         ) 200>"$GUNSHI_INBOX.lock" 2>/dev/null || true
-                        echo "[report_quality_route] 品質問題を軍師に転送: $GATE_RESULT" >&2
-                        echo "[report_quality_route] 軍師が修正→karoに再送信する。忍者${FROM}は次のタスクに進んでよい" >&2
-                        # 忍者をブロックしない — 品質問題は軍師が処理。メッセージはkaroに届けない
-                        exit 0
+                        echo "[report_quality_route] 品質問題を軍師にも転送済み" >&2
+                        # BLOCK: verdict記入済み+gate FAIL → 忍者が修正して再送信するまでkaroに届けない
+                        echo "" >&2
+                        echo "==============================" >&2
+                        echo "[report_format_gate] BLOCKED: 報告YAML品質問題 (ninja: ${FROM})" >&2
+                        echo "[report_format_gate] FAIL理由:" >&2
+                        while IFS= read -r _gate_line; do
+                            echo "  $_gate_line" >&2
+                        done <<< "$GATE_RESULT"
+                        echo "" >&2
+                        echo "[report_format_gate] 修正方法: bash scripts/report_field_set.sh <report_path> <key> <value>" >&2
+                        echo "[report_format_gate] 修正例:" >&2
+                        echo "  bash scripts/report_field_set.sh $REPORT_PATH verdict PASS" >&2
+                        echo "  bash scripts/report_field_set.sh $REPORT_PATH lesson_candidate.found false" >&2
+                        echo "  bash scripts/report_field_set.sh $REPORT_PATH lesson_candidate.no_lesson_reason '既知のL084と同じパターン'" >&2
+                        echo "  bash scripts/report_field_set.sh $REPORT_PATH result.summary '実装完了'" >&2
+                        echo "==============================" >&2
+                        echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
+                        exit 1
                     fi
                 else
                     echo "[report_format_gate] BLOCKED: 報告YAMLが見つからない: $FULL_REPORT" >&2
