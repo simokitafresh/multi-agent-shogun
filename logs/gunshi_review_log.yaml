@@ -84,7 +84,8 @@
 # | 081 | dashboard archive gawk | ★implemented      | S130 | 1178個awk→単一gawk+get_model一括化。16.1秒→10.2秒(37%)。commit d17f88c |
 # | 082 | 統合gawk+CFC共有       | ★implemented      | S130 | archive I/O 1回統合+context_freshness cache共有。10.2秒→5.85秒(42%)。commit 8f9cea6 |
 # | 083 | CI check並列化         | ★implemented      | S130 | ci_status_check.shバックグラウンド起動。5.85秒→3.38秒(42%,累計79%)。commit 9849931 |
-# 集計(S130更新): ★implemented:61(+GP-079〜083) / ★将軍解決:2(GP-033,034) / ★monitoring:1 / ✗obsolete:3 / pending:1(GP-067 GS手順) / cmd配備済:2(GP-037=cmd_1340,GP-071=cmd_1380) = 計67GP
+# | 084 | deploy_task python一括化| pending            | S130 | 22回python3起動→YAML事前パース+env渡し。3.49s→推定1.5s(57%) |
+# 集計(S130更新): ★implemented:61(+GP-079〜083) / ★将軍解決:2(GP-033,034) / ★monitoring:1 / ✗obsolete:3 / pending:2(GP-067,084) / cmd配備済:2(GP-037=cmd_1340,GP-071=cmd_1380) = 計68GP
 # 優先順(S118改訂): GP-031(race condition) > 遡及データ補正(既存false positive 2件+null 10件)
 # S118行動: GP-047補正WA率33%(1/3)。唯一のreal WAはdouble_deploy(GP-051対処済)。GP-047+GP-051稼働時の理論WA率=0%
 # パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
