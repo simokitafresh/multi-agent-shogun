@@ -130,6 +130,7 @@ DLコマンド: `download_all_prices.py grid-search`(価格) | `download_prod_da
 シン忍法v2(21体)はこの10体を材料として構築。
 
 確定パラメータ・DNA制約根拠・データ分析 → `context/dm-signal-research.md` §27
+⚠ 登録進捗はチェックリスト参照→`context/checklist-shin-v2-registration.md`
 
 ### 命名規則（殿裁定 2026-02-20）
 
@@ -400,6 +401,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L283 | FoFパイプラインのsnapshot参照はleakage-free設計必須。当月snapshot参照=データリーク | cmd_860 |
 | L431 | 既存PF更新時はUUID維持でFoF参照を保護 | cmd_1126 |
 | L478 | 吸収(absorption)はGS概念。DB物理では独立PFとして全体が登録される | cmd_1259 |
+| L481 | standard PF登録時のmomentum_methodデフォルトはprice_ratio。明示指定必須 | cmd_1272 |
 
 ### 19.5 GS運用・config
 

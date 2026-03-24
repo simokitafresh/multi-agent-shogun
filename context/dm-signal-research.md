@@ -450,6 +450,9 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | cmd_1116 | 追加検証 | 非決定的順序+partial-month初月(L429) | — |
 | L461 | oikaze batch | precomputed momentum_cube picks vs 本番MomentumFilterBlock選出に乖離(cmd_1200) | batch側のpick計算パスが本番と異なる |
 | L473 | ^VIX/DTB3 cache汚染 | price_data_cacheに非市場ティッカーを含めると日付インデックスリサンプルでpct_change参照ズレ(cmd_1243) | **[PI-010]** |
+| L479 | selection FoF init月検証不可 | selection付きFoFのinit月はholding_signal=Noneで独立検証不可(cmd_1270) | — |
+| L480 | selection FoF初月holding_signal=NULL | selection-based FoF初月のmonthly_returns.holding_signal=NULL問題(cmd_1271) | — |
+| L482 | selection-block FoF本番検証可 | selection-block FoFは本番holding_signalベースで検証可。Cash月はスキップ(cmd_1269) | — |
 
 → パリティ修正詳細: `context/dm-signal-core.md` §4 L419/L427/L428
 
@@ -462,3 +465,5 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L354 | L1フルデータ(191K変種)では全ペア相関が時間的に不安定 | cmd_1019 |
 | L355 | DM7+ファミリーPASS候補全4体がGLD系でXLU系全滅 | cmd_1024 |
 | L356 | 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1% | cmd_1026 |
+
+⚠ 登録進捗管理はチェックリストに移行済み→`context/checklist-shin-v2-registration.md`

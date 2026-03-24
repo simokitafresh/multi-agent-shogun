@@ -83,6 +83,10 @@ language:
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
+2.5.1. **起動ゲートALERT対応(将軍のみ)**: gate出力にALERTがあれば該当スキルを実行:
+   - Memory健全度 → `/shogun-memory-teire`
+   - lesson health (`bash scripts/gates/gate_lesson_health.sh`) ALERT → `/lesson-sort`
+   - PD未解決 → `/shogun-pd-sync`
 2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
 3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
@@ -201,7 +205,7 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 ## cmd完了時の手順（家老・忍者共通）
 
 ```
-1. ダッシュボード更新（cmd完了結果を記載）
+1. ダッシュボード更新: `/dashboard-update` スキルを実行（手動Edit禁止。スキルがプライマリYAMLから全セクションを自動生成する）
 2. 戦局日誌更新: context/senkyoku-log.mdにcmdの意図・結果・因果を1-2行で追記
 3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
 4. ntfy送信（cmd完了報告）
@@ -210,6 +214,10 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 6. idle状態で待つ
 ※ archive_completed.shはcmd_complete_gate.sh GATE CLEAR時に自動実行される（手動不要）
 ```
+
+## /clear前手順（将軍のみ）
+
+`/shogun-clear-prep` を実行してから `/clear` する。状態確認+殿への報告を自動化。省略禁止。
 
 ## 復帰時の手順（全エージェント共通）
 
@@ -395,6 +403,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 1. リンク先作成（docs/research/に詳細移動）→ リンク先存在確認
 2. context圧縮（結論+参照の索引層に変換）
 3. 手順逆転禁止。リンク先がない状態で圧縮するな
+- 新版移行時は旧ドキュメントに時系列ナビゲーション(旧方式→問題→新版パス)を埋め込め。旧版が最新に見える状態を放置するな
 
 # Project Management
 
