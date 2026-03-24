@@ -81,50 +81,69 @@ name_jp() {
     get_japanese_name "$1"
 }
 
-# ─── GP-081: Pre-compute all ninja models in single python3 call ───
+# ─── GP-081: Pre-compute all ninja models (cmd_1392: python3→gawk) ───
 declare -A _MODEL_CACHE=()
 _profiles_yaml="$PROJECT_DIR/config/cli_profiles.yaml"
 if [[ -f "$SETTINGS" && -f "$_profiles_yaml" ]]; then
     _model_tmp=$(mktemp)
     # shellcheck disable=SC2086
-    python3 - "$SETTINGS" "$_profiles_yaml" $ALL_NINJAS > "$_model_tmp" <<'PY'
-import sys, yaml
-settings_path, profiles_path = sys.argv[1], sys.argv[2]
-ninjas = sys.argv[3:]
-try:
-    with open(settings_path, encoding="utf-8") as f:
-        settings = yaml.safe_load(f) or {}
-    with open(profiles_path, encoding="utf-8") as f:
-        profiles_data = yaml.safe_load(f) or {}
-except Exception:
-    for n in ninjas:
-        print(f"{n}|unknown")
-    raise SystemExit(0)
-cli = settings.get("cli", {}) if isinstance(settings, dict) else {}
-agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
-default_cli = str(cli.get("default", "claude") or "claude")
-effort = str(settings.get("effort", "") or "").strip()
-profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
-for ninja in ninjas:
-    agent_cfg = agents.get(ninja, {})
-    cli_type = default_cli
-    model_label = ""
-    has_explicit_model = False
-    if isinstance(agent_cfg, str):
-        cli_type = str(agent_cfg or default_cli).strip() or default_cli
-    elif isinstance(agent_cfg, dict):
-        cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
-        model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
-        has_explicit_model = bool(model_label)
-    if not model_label:
-        profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
-        model_label = " ".join(str(profile.get("display_name") or cli_type or "").split())
-    parts = [model_label]
-    if has_explicit_model and effort and effort not in model_label.split():
-        parts.append(effort)
-    result = " ".join(part for part in parts if part).strip()
-    print(f"{ninja}|{result or 'unknown'}")
-PY
+    # GP-081 + cmd_1392: Python→gawk化 (YAML flat parse)
+    gawk -v all_ninjas="$ALL_NINJAS" '
+BEGIN {
+    n = split(all_ninjas, ninja_list, " ")
+    for (i = 1; i <= n; i++) ninja_set[ninja_list[i]] = 1
+    default_cli = "claude"; effort = ""; cur = ""; cur_profile = ""
+    file_num = 0
+}
+FNR == 1 { file_num++; cur = ""; cur_profile = "" }
+file_num == 1 {
+    if (/^effort:/) {
+        v = $0; sub(/.*effort:[ \t]*/, "", v); sub(/#.*/, "", v)
+        gsub(/["\047\t \r]/, "", v); effort = v; next
+    }
+    if (/^  default:/) {
+        v = $0; sub(/.*default:[ \t]*/, "", v); sub(/#.*/, "", v)
+        gsub(/["\047\t \r]/, "", v); if (v != "") default_cli = v; next
+    }
+    if (/^    [a-z][a-z_0-9]*:[ \t]*$/) {
+        cur = $0; sub(/^[ \t]+/, "", cur); sub(/:.*/, "", cur)
+        if (!(cur in ninja_set)) cur = ""; next
+    }
+    if (cur != "" && /^      type:/) {
+        v = $0; sub(/.*type:[ \t]*/, "", v); sub(/#.*/, "", v)
+        gsub(/["\047\t \r]/, "", v); if (v != "") type_of[cur] = v; next
+    }
+    if (cur != "" && /^      model_name:/) {
+        v = $0; sub(/.*model_name:[ \t]*/, "", v); sub(/#.*/, "", v)
+        gsub(/["\047\t \r]/, "", v); if (v != "") model_of[cur] = v; next
+    }
+    if (cur != "" && !/^      / && !/^[ \t]*$/) cur = ""
+}
+file_num == 2 {
+    if (/^  [a-z][a-z_0-9]*:[ \t]*$/) {
+        cur_profile = $0; sub(/^[ \t]+/, "", cur_profile); sub(/:.*/, "", cur_profile); next
+    }
+    if (cur_profile != "" && /display_name:/) {
+        v = $0; sub(/.*display_name:[ \t]*/, "", v)
+        gsub(/["\047]/, "", v); gsub(/^[ \t]+|[ \t]+$/, "", v)
+        if (v != "") dn[cur_profile] = v; next
+    }
+}
+END {
+    for (i = 1; i <= n; i++) {
+        name = ninja_list[i]; model = ""; has_explicit = 0
+        if (name in model_of && model_of[name] != "") { model = model_of[name]; has_explicit = 1 }
+        if (!has_explicit) { t = (name in type_of) ? type_of[name] : default_cli; model = (t in dn) ? dn[t] : t }
+        result = model
+        if (has_explicit && effort != "") {
+            m_cnt = split(model, mparts, " "); found = 0
+            for (j = 1; j <= m_cnt; j++) if (mparts[j] == effort) found = 1
+            if (!found) result = model " " effort
+        }
+        if (result == "") result = "unknown"
+        print name "|" result
+    }
+}' "$SETTINGS" "$_profiles_yaml" > "$_model_tmp"
     while IFS='|' read -r _mn _mv; do
         _MODEL_CACHE["$_mn"]="$_mv"
     done < "$_model_tmp"
@@ -348,38 +367,18 @@ CONTEXT_WARNINGS="$(cat "$_TMP_CTX_WARN" 2>/dev/null || true)"
 
 # Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp + knowledge breakdown rows)
 if [[ -f "$KM_JSON_CACHE" ]] && [[ -s "$KM_JSON_CACHE" ]]; then
-    _km_parsed=$(python3 -c "
-import json, sys
-def fmt_pct(value):
-    return f'{value:.1f}%' if value is not None else '—'
-def safe_text(value):
-    return str(value if value is not None else '—').replace('|', '/').replace('\n', ' ').strip() or '—'
-try:
-    data = json.load(sys.stdin)
-    ir = data.get('inject_rate')
-    rr = data.get('ref_rate')
-    nd = data.get('normalized_delta', {})
-    dp = nd.get('delta_pp')
-    le = data.get('lesson_effectiveness')
-    pl = data.get('problem_lessons', 0)
-    ir_s = f'{ir:.1f}%' if ir is not None else '—'
-    rr_s = f'{rr:.1f}%' if rr is not None else '—'
-    dp_s = f'{dp:+.1f}pp' if dp is not None else '—'
-    le_s = f'{le:.1f}%' if le is not None else '—'
-    pl_s = str(pl) if pl is not None else '0'
-    print(f'summary={ir_s}\t{rr_s}\t{dp_s}\t{le_s}\t{pl_s}')
-    for row in data.get('by_project', []):
-        print(f'project_row=| {safe_text(row.get(\"project\"))} | {fmt_pct(row.get(\"inject_rate\"))} | {fmt_pct(row.get(\"effectiveness_rate\"))} | {row.get(\"n\", \"—\")} |')
-    for row in data.get('by_model', []):
-        label = row.get('display_name') or row.get('model') or 'unknown'
-        print(f'knowledge_model_row=| {safe_text(label)} | {fmt_pct(row.get(\"ref_rate\"))} | {fmt_pct(row.get(\"effectiveness_rate\"))} | {row.get(\"n\", \"—\")} |')
-    for row in data.get('top_helpful', []):
-        print(f'top_lesson_row=| {safe_text(row.get(\"id\"))} | {safe_text(row.get(\"project\"))} | {row.get(\"reference_count\", 0)} | {row.get(\"injection_count\", 0)} | {fmt_pct(row.get(\"effectiveness_rate\"))} |')
-    for row in data.get('bottom_lessons', []):
-        print(f'bottom_lesson_row=| {safe_text(row.get(\"id\"))} | {safe_text(row.get(\"project\"))} | {row.get(\"reference_count\", 0)} | {row.get(\"injection_count\", 0)} | {fmt_pct(row.get(\"effectiveness_rate\"))} |')
-except Exception:
-    print('summary=—\t—\t—\t—\t0')
-" < "$KM_JSON_CACHE" 2>/dev/null || echo "summary=—	—	—	—	0")
+    # cmd_1392: Python→jq化 (JSON parse)
+    _km_parsed=$(jq -r '
+def fmt1: . * 10 | round | . / 10 | tostring | if test("[.]") then . else . + ".0" end;
+def fmt_pct: if . == null then "—" elif type == "number" then "\(fmt1)%" else "—" end;
+def safe_text: if . == null then "—" else tostring | gsub("\\|"; "/") | gsub("\n"; " ") | gsub("^\\s+|\\s+$"; "") | if . == "" then "—" else . end end;
+def fmt_delta: if . == null then "—" elif type == "number" then (if . >= 0 then "+\(fmt1)pp" else "\(fmt1)pp" end) else "—" end;
+"summary=\(.inject_rate | fmt_pct)\t\(.ref_rate | fmt_pct)\t\(.normalized_delta.delta_pp | fmt_delta)\t\(.lesson_effectiveness | fmt_pct)\t\(.problem_lessons // 0)",
+(.by_project // [] | .[] | "project_row=| \(.project | safe_text) | \(.inject_rate | fmt_pct) | \(.effectiveness_rate | fmt_pct) | \(.n // "—") |"),
+(.by_model // [] | .[] | "knowledge_model_row=| \((.display_name // .model // "unknown") | safe_text) | \(.ref_rate | fmt_pct) | \(.effectiveness_rate | fmt_pct) | \(.n // "—") |"),
+(.top_helpful // [] | .[] | "top_lesson_row=| \(.id | safe_text) | \(.project | safe_text) | \(.reference_count // 0) | \(.injection_count // 0) | \(.effectiveness_rate | fmt_pct) |"),
+(.bottom_lessons // [] | .[] | "bottom_lesson_row=| \(.id | safe_text) | \(.project | safe_text) | \(.reference_count // 0) | \(.injection_count // 0) | \(.effectiveness_rate | fmt_pct) |")
+' < "$KM_JSON_CACHE" 2>/dev/null || echo "summary=—	—	—	—	0")
     while IFS= read -r _line; do
         case "$_line" in
             summary=*)
@@ -477,151 +476,99 @@ declare -A RECENT_TT_INJ=() RECENT_TT_SKIP=() RECENT_TT_RATE=() RECENT_TT_WARN=(
 declare -A RECENT_MDL_RR=() RECENT_MDL_ER=() RECENT_MDL_WARN=()
 
 if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
-    python3 - "$LESSON_IMPACT_FILE" "$GATE_LOG" > "$TMP_RECENT" 2>/dev/null <<'RECENT_PY'
-import sys
-from collections import defaultdict
-import re
-
-tsv_path = sys.argv[1]
-gate_path = sys.argv[2] if len(sys.argv) > 2 else ""
-
-rows = []
-with open(tsv_path, encoding="utf-8") as f:
-    header = f.readline().strip().split("\t")
-    for line in f:
-        parts = line.strip().split("\t")
-        if len(parts) < 9:
-            continue
-        row = dict(zip(header, parts))
-        # L217: exclude PENDING
-        if (row.get("result") or "").strip().upper() == "PENDING":
-            continue
-        action = row.get("action", "").strip()
-        if action not in ("injected", "skipped"):
-            continue
-        rows.append(row)
-
-# Last 30 unique cmd_ids (reverse chronological)
-seen = set()
-recent_cmds = []
-for row in reversed(rows):
-    cid = row["cmd_id"]
-    if cid not in seen:
-        seen.add(cid)
-        recent_cmds.append(cid)
-    if len(recent_cmds) >= 30:
-        break
-recent_set = set(recent_cmds)
-
-# cmd -> model mapping from gate_metrics.log
-cmd_models = {}
-if gate_path:
-    try:
-        with open(gate_path, encoding="utf-8") as f:
-            for line in f:
-                parts = line.strip().split("\t")
-                if len(parts) >= 6:
-                    cmd_models[parts[1]] = parts[5]
-    except Exception:
-        pass
-
-def extract_family(label):
-    low = label.lower().replace("-", " ").replace("_", " ")
-    if "opus" in low and ("4.6" in low or "4 6" in low):
-        return "opus_4_6"
-    if "gpt" in low and ("5.4" in low or "5 4" in low):
-        return "gpt_5_4"
-    if "codex" in low and ("5.4" in low or "5 4" in low):
-        return "gpt_5_4"
-    return re.sub(r"[^a-z0-9]+", "_", low).strip("_") or "unknown"
-
-def calc(data):
-    pj = defaultdict(lambda: {"inj": 0, "skip": 0, "ref": 0})
-    tt = defaultdict(lambda: {"inj": 0, "skip": 0})
-    mdl_raw = defaultdict(lambda: {"inj": 0, "total": 0, "ref": 0})
-    for r in data:
-        p = (r.get("project") or "unknown").strip() or "unknown"
-        t = (r.get("task_type") or "unknown").strip() or "unknown"
-        cid = r["cmd_id"]
-        ms = [m.strip() for m in (cmd_models.get(cid, "unknown")).split(",") if m.strip()] or ["unknown"]
-        if r["action"] == "injected":
-            pj[p]["inj"] += 1
-            if r.get("referenced", "").strip() == "yes":
-                pj[p]["ref"] += 1
-            tt[t]["inj"] += 1
-            for m in ms:
-                mdl_raw[m]["inj"] += 1
-                mdl_raw[m]["total"] += 1
-                if r.get("referenced", "").strip() == "yes":
-                    mdl_raw[m]["ref"] += 1
-        elif r["action"] == "skipped":
-            pj[p]["skip"] += 1
-            tt[t]["skip"] += 1
-            for m in ms:
-                mdl_raw[m]["total"] += 1
-    # Aggregate models by family
-    fam = defaultdict(lambda: {"inj": 0, "total": 0, "ref": 0, "label": "", "max_n": 0})
-    for model, stats in mdl_raw.items():
-        family = extract_family(model)
-        if family == "unknown":
-            continue
-        fam[family]["inj"] += stats["inj"]
-        fam[family]["total"] += stats["total"]
-        fam[family]["ref"] += stats["ref"]
-        if stats["total"] > fam[family]["max_n"]:
-            fam[family]["max_n"] = stats["total"]
-            fam[family]["label"] = model
-    return pj, tt, fam
-
-def pct(n, d):
-    return round(n / d * 100, 1) if d > 0 else None
-
-def fmt(v):
-    return f"{v:.1f}%" if v is not None else "—"
-
-o_pj, o_tt, o_fam = calc(rows)
-recent_rows = [r for r in rows if r["cmd_id"] in recent_set]
-r_pj, r_tt, r_fam = calc(recent_rows)
-
-# PJ output
-for p in sorted(set(list(o_pj.keys()) + list(r_pj.keys()))):
-    o = o_pj.get(p, {"inj": 0, "skip": 0, "ref": 0})
-    r = r_pj.get(p, {"inj": 0, "skip": 0, "ref": 0})
-    o_ir = pct(o["inj"], o["inj"] + o["skip"])
-    o_er = pct(o["ref"], o["inj"])
-    r_ir = pct(r["inj"], r["inj"] + r["skip"])
-    r_er = pct(r["ref"], r["inj"])
-    w = "N"
-    if o_ir is not None and r_ir is not None and abs(o_ir - r_ir) >= 10:
-        w = "Y"
-    if o_er is not None and r_er is not None and abs(o_er - r_er) >= 10:
-        w = "Y"
-    print(f"PJ\t{p}\t{fmt(r_ir)}\t{fmt(r_er)}\t{r['inj']+r['skip']}\t{w}")
-
-# TT output
-for t in sorted(set(list(o_tt.keys()) + list(r_tt.keys()))):
-    o = o_tt.get(t, {"inj": 0, "skip": 0})
-    r = r_tt.get(t, {"inj": 0, "skip": 0})
-    o_rate = pct(o["inj"], o["inj"] + o["skip"])
-    r_rate = pct(r["inj"], r["inj"] + r["skip"])
-    w = "N"
-    if o_rate is not None and r_rate is not None and abs(o_rate - r_rate) >= 10:
-        w = "Y"
-    print(f"TT\t{t}\t{r['inj']}\t{r['skip']}\t{fmt(r_rate)}\t{r['inj']+r['skip']}\t{w}")
-
-# MODEL output (keyed by lowercase display name)
-for fam_key in sorted(set(list(o_fam.keys()) + list(r_fam.keys()))):
-    o = o_fam.get(fam_key, {"inj": 0, "total": 0, "ref": 0, "label": ""})
-    r = r_fam.get(fam_key, {"inj": 0, "total": 0, "ref": 0, "label": ""})
-    label = r.get("label") or o.get("label") or fam_key
-    display = label.replace("_", " ").strip().lower()
-    o_rr = pct(o["ref"], o["inj"])
-    r_rr = pct(r["ref"], r["inj"])
-    w = "N"
-    if o_rr is not None and r_rr is not None and abs(o_rr - r_rr) >= 10:
-        w = "Y"
-    print(f"MODEL\t{display}\t{fmt(r_rr)}\t{fmt(r_rr)}\t{r['total']}\t{w}")
-RECENT_PY
+    # cmd_1392: Python→gawk化 (TSV集計: Recent 30 cmd metrics)
+    gawk -v gate_path="$GATE_LOG" '
+BEGIN { FS="\t"; OFS="\t" }
+FILENAME == gate_path { if (NF >= 6) cmd_model[$2] = $6; next }
+FNR == 1 { for (i = 1; i <= NF; i++) col[$i] = i; next }
+{
+    if (NF < 9) next
+    result = toupper($col["result"]); gsub(/^[ \t]+|[ \t]+$/, "", result)
+    if (result == "PENDING") next
+    action = $col["action"]; gsub(/^[ \t]+|[ \t]+$/, "", action)
+    if (action != "injected" && action != "skipped") next
+    row_n++
+    row_cmd[row_n] = $col["cmd_id"]; row_action[row_n] = action
+    row_project[row_n] = $col["project"]; row_tasktype[row_n] = $col["task_type"]
+    row_referenced[row_n] = $col["referenced"]
+}
+END {
+    rc = 0
+    for (i = row_n; i >= 1 && rc < 30; i--) {
+        cid = row_cmd[i]
+        if (!(cid in recent_seen)) { recent_seen[cid] = 1; rc++ }
+    }
+    for (i = 1; i <= row_n; i++) {
+        p = row_project[i]; gsub(/^[ \t]+|[ \t]+$/, "", p); if (p == "") p = "unknown"
+        t = row_tasktype[i]; gsub(/^[ \t]+|[ \t]+$/, "", t); if (t == "") t = "unknown"
+        cid = row_cmd[i]; ref = row_referenced[i]; gsub(/^[ \t]+|[ \t]+$/, "", ref)
+        is_recent = (cid in recent_seen) ? 1 : 0
+        mdl = (cid in cmd_model) ? cmd_model[cid] : "unknown"
+        mn = split(mdl, mdl_arr, ",")
+        for (mi = 1; mi <= mn; mi++) {
+            m = mdl_arr[mi]; gsub(/^[ \t]+|[ \t]+$/, "", m); if (m == "") continue
+            low = tolower(m); gsub(/[-_]/, " ", low); fam = "unknown"
+            if (index(low, "opus") && (index(low, "4.6") || index(low, "4 6"))) fam = "opus_4_6"
+            else if (index(low, "gpt") && (index(low, "5.4") || index(low, "5 4"))) fam = "gpt_5_4"
+            else if (index(low, "codex") && (index(low, "5.4") || index(low, "5 4"))) fam = "gpt_5_4"
+            else { fam = low; gsub(/[^a-z0-9]+/, "_", fam); gsub(/^_|_$/, "", fam); if (fam == "") fam = "unknown" }
+            if (row_action[i] == "injected") {
+                o_mdl_inj[fam]++; o_mdl_total[fam]++
+                if (ref == "yes") o_mdl_ref[fam]++
+                if (is_recent) { r_mdl_inj[fam]++; r_mdl_total[fam]++; if (ref == "yes") r_mdl_ref[fam]++ }
+            } else {
+                o_mdl_total[fam]++; if (is_recent) r_mdl_total[fam]++
+            }
+            if (o_mdl_total[fam] > o_mdl_maxn[fam]+0) { o_mdl_maxn[fam] = o_mdl_total[fam]; o_mdl_label[fam] = m }
+            if (is_recent && r_mdl_total[fam] > r_mdl_maxn[fam]+0) { r_mdl_maxn[fam] = r_mdl_total[fam]; r_mdl_label[fam] = m }
+            if (fam != "unknown") all_fam[fam] = 1
+        }
+        if (row_action[i] == "injected") {
+            o_pj_inj[p]++; if (ref == "yes") o_pj_ref[p]++; o_tt_inj[t]++
+            if (is_recent) { r_pj_inj[p]++; if (ref == "yes") r_pj_ref[p]++; r_tt_inj[t]++ }
+        } else {
+            o_pj_skip[p]++; o_tt_skip[t]++
+            if (is_recent) { r_pj_skip[p]++; r_tt_skip[t]++ }
+        }
+        all_pj[p] = 1; all_tt[t] = 1
+    }
+    n_pj = asorti(all_pj, sorted_pj)
+    for (i = 1; i <= n_pj; i++) {
+        p = sorted_pj[i]
+        oi = o_pj_inj[p]+0; os = o_pj_skip[p]+0; or_ = o_pj_ref[p]+0
+        ri = r_pj_inj[p]+0; rs = r_pj_skip[p]+0; rr = r_pj_ref[p]+0
+        o_ir = (oi+os > 0) ? oi/(oi+os)*100 : -1; o_er = (oi > 0) ? or_/oi*100 : -1
+        r_ir = (ri+rs > 0) ? ri/(ri+rs)*100 : -1; r_er = (ri > 0) ? rr/ri*100 : -1
+        w = "N"
+        if (o_ir >= 0 && r_ir >= 0 && (o_ir-r_ir > 10 || r_ir-o_ir > 10)) w = "Y"
+        if (o_er >= 0 && r_er >= 0 && (o_er-r_er > 10 || r_er-o_er > 10)) w = "Y"
+        r_ir_s = (r_ir >= 0) ? sprintf("%.1f%%", r_ir) : "\xe2\x80\x94"
+        r_er_s = (r_er >= 0) ? sprintf("%.1f%%", r_er) : "\xe2\x80\x94"
+        printf "PJ\t%s\t%s\t%s\t%d\t%s\n", p, r_ir_s, r_er_s, ri+rs, w
+    }
+    n_tt = asorti(all_tt, sorted_tt)
+    for (i = 1; i <= n_tt; i++) {
+        t = sorted_tt[i]
+        oi = o_tt_inj[t]+0; os = o_tt_skip[t]+0; ri = r_tt_inj[t]+0; rs = r_tt_skip[t]+0
+        o_rate = (oi+os > 0) ? oi/(oi+os)*100 : -1; r_rate = (ri+rs > 0) ? ri/(ri+rs)*100 : -1
+        w = "N"
+        if (o_rate >= 0 && r_rate >= 0 && (o_rate-r_rate > 10 || r_rate-o_rate > 10)) w = "Y"
+        r_rate_s = (r_rate >= 0) ? sprintf("%.1f%%", r_rate) : "\xe2\x80\x94"
+        printf "TT\t%s\t%d\t%d\t%s\t%d\t%s\n", t, ri, rs, r_rate_s, ri+rs, w
+    }
+    n_fam = asorti(all_fam, sorted_fam)
+    for (i = 1; i <= n_fam; i++) {
+        fam = sorted_fam[i]
+        label = r_mdl_label[fam]; if (label == "") label = o_mdl_label[fam]; if (label == "") label = fam
+        display = tolower(label); gsub(/_/, " ", display); gsub(/^[ \t]+|[ \t]+$/, "", display)
+        o_rr_val = (o_mdl_inj[fam]+0 > 0) ? (o_mdl_ref[fam]+0)/o_mdl_inj[fam]*100 : -1
+        r_rr_val = (r_mdl_inj[fam]+0 > 0) ? (r_mdl_ref[fam]+0)/r_mdl_inj[fam]*100 : -1
+        w = "N"
+        if (o_rr_val >= 0 && r_rr_val >= 0 && (o_rr_val-r_rr_val > 10 || r_rr_val-o_rr_val > 10)) w = "Y"
+        r_rr_s = (r_rr_val >= 0) ? sprintf("%.1f%%", r_rr_val) : "\xe2\x80\x94"
+        printf "MODEL\t%s\t%s\t%s\t%d\t%s\n", display, r_rr_s, r_rr_s, r_mdl_total[fam]+0, w
+    }
+}' "$GATE_LOG" "$LESSON_IMPACT_FILE" > "$TMP_RECENT" 2>/dev/null
 
     while IFS=$'\t' read -r _rtype _rkey _rv1 _rv2 _rv3 _rv4 _rv5; do
         case "$_rtype" in
