@@ -121,6 +121,12 @@ QG_TEMPLATE
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
         echo '  例: q6_not_hiding: "no — Vercel化は構造改革であり表面的対処ではない"' >&2
     fi
+
+    # q7_failure_prediction: cmdが途中で失敗した場合の影響と分割・中間保存の設計（BLOCK）
+    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "q7_failure_prediction:"; then
+        echo "BLOCK: q7_failure_prediction未記入。このcmdが途中で失敗した場合の影響と、分割・中間保存の設計を記載せよ" >&2
+        exit 1
+    fi
 fi
 
 # --- Check 4: flock競合検出 ---
