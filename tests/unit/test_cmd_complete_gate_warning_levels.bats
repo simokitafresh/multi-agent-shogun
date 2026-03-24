@@ -245,7 +245,7 @@ EOF
     rm -f "$TEST_PROJECT/logs/gate_metrics.log"
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"sasuke: SKIP (result.deviation not a list)"* ]]
+    [[ "$output" == *"sasuke: SKIP (result.deviation empty (count 0))"* ]]
 }
 
 @test "deviation threshold uses 3 as OK boundary and 4 as warning threshold" {

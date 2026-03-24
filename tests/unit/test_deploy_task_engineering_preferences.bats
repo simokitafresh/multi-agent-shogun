@@ -12,6 +12,7 @@ setup_file() {
     export SRC_CTX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/ctx_utils.sh"
     export SRC_PANE_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/pane_lookup.sh"
     export SRC_AGENT_CONFIG_SCRIPT="$PROJECT_ROOT/scripts/lib/agent_config.sh"
+    export SRC_INJECT_TASK_MODIFIERS="$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
 
     [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
     [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
@@ -21,6 +22,7 @@ setup_file() {
     [ -f "$SRC_CTX_UTILS_SCRIPT" ] || return 1
     [ -f "$SRC_PANE_LOOKUP_SCRIPT" ] || return 1
     [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
+    [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -47,6 +49,7 @@ setup() {
     cp "$SRC_CTX_UTILS_SCRIPT" "$TEST_PROJECT/scripts/lib/ctx_utils.sh"
     cp "$SRC_PANE_LOOKUP_SCRIPT" "$TEST_PROJECT/scripts/lib/pane_lookup.sh"
     cp "$SRC_AGENT_CONFIG_SCRIPT" "$TEST_PROJECT/scripts/lib/agent_config.sh"
+    cp "$SRC_INJECT_TASK_MODIFIERS" "$TEST_PROJECT/scripts/lib/inject_task_modifiers.py"
 
     cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -80,6 +83,8 @@ cli:
   agents:
     sasuke:
       type: codex
+      role: ninja
+      japanese_name: 佐助
 EOF
 
     cat > "$TEST_PROJECT/config/cli_profiles.yaml" <<'EOF'

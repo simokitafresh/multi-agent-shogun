@@ -60,11 +60,11 @@ EOF
 write_karo_snapshot
 
 snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
-grep "^ninja|sasuke|cmd_634|in_progress|infra$" "$snapshot"
-grep "^ninja|kirimaru|cmd_635|acknowledged|infra$" "$snapshot"
-grep "^ninja|hayate|cmd_636|assigned|infra$" "$snapshot"
-grep "^ninja|saizo|cmd_637|done|infra$" "$snapshot"
-grep "^ninja|kagemaru|none|idle|none$" "$snapshot"
+grep "^ninja|sasuke|cmd_634|in_progress|infra|CTX:" "$snapshot"
+grep "^ninja|kirimaru|cmd_635|acknowledged|infra|CTX:" "$snapshot"
+grep "^ninja|hayate|cmd_636|assigned|infra|CTX:" "$snapshot"
+grep "^ninja|saizo|cmd_637|done|infra|CTX:" "$snapshot"
+grep "^ninja|kagemaru|none|idle|none|CTX:" "$snapshot"
 grep "^idle|saizo,kagemaru$" "$snapshot"
 '
     [ "$status" -eq 0 ]
