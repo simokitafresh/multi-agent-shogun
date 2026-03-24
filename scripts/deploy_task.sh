@@ -682,16 +682,45 @@ try:
             sys.exit(0)
         print(f'[INJECT] WARN: project field missing, fallback to {fallback_source} (project={project})', file=sys.stderr)
 
+    # GP-080: 教訓キャッシュ (/tmp/deploy_lesson_cache_{project}_{mtime}.json)
+    # YAML解析は遅い(WSL2+大ファイル)。mtimeが同じなら/tmpのJSONキャッシュを使う
+    import hashlib
+    import json
+
+    def load_lessons_cached(yaml_path):
+        """YAMLをJSONキャッシュ経由でロード。mtime不変ならキャッシュヒット"""
+        if not os.path.exists(yaml_path):
+            return []
+        try:
+            mtime = os.path.getmtime(yaml_path)
+        except OSError:
+            return []
+        cache_key = hashlib.md5(yaml_path.encode()).hexdigest()[:12]
+        cache_path = f'/tmp/deploy_lesson_cache_{cache_key}_{mtime}.json'
+        # キャッシュヒット
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path) as cf:
+                    return json.load(cf)
+            except Exception:
+                pass
+        # キャッシュミス: YAML解析 → JSONキャッシュ保存
+        try:
+            with open(yaml_path) as f:
+                data = yaml.safe_load(f)
+            lessons = data.get('lessons', []) if data else []
+            with open(cache_path, 'w') as cf:
+                json.dump(lessons, cf)
+            return lessons
+        except Exception:
+            return []
+
     # Vercel-style: archive has full data, index is slim. Try archive first, fallback to index.
     archive_path = os.path.join(script_dir, 'projects', project, 'lessons_archive.yaml')
     index_path = os.path.join(script_dir, 'projects', project, 'lessons.yaml')
     lessons_path = archive_path if os.path.exists(archive_path) else index_path
-    lessons = []
-    if os.path.exists(lessons_path):
-        with open(lessons_path) as f:
-            lessons_data = yaml.safe_load(f)
-        lessons = lessons_data.get('lessons', []) if lessons_data else []
-    else:
+    lessons = load_lessons_cached(lessons_path)
+    if not lessons and not os.path.exists(lessons_path):
         print(f'[INJECT] WARN: lessons not found for project={project}', file=sys.stderr)
 
     # ═══ Platform教訓の追加読み込み ═══
@@ -703,16 +732,12 @@ try:
                 pdata = yaml.safe_load(pf)
             for pj in (pdata or {}).get('projects', []):
                 if pj.get('type') == 'platform' and pj.get('id') != project:
-                    # Try archive first, fallback to index for platform lessons too
                     plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
                     plat_index = os.path.join(script_dir, 'projects', pj['id'], 'lessons.yaml')
                     plat_path = plat_archive if os.path.exists(plat_archive) else plat_index
-                    if os.path.exists(plat_path):
-                        with open(plat_path) as plf:
-                            plat_data = yaml.safe_load(plf)
-                        plat_lessons = plat_data.get('lessons', []) if plat_data else []
-                        platform_count += len(plat_lessons)
-                        lessons.extend(plat_lessons)
+                    plat_lessons = load_lessons_cached(plat_path)
+                    platform_count += len(plat_lessons)
+                    lessons.extend(plat_lessons)
         except Exception as pe:
             print(f'[INJECT] WARN: platform lessons load failed: {pe}', file=sys.stderr)
 
@@ -1700,30 +1725,39 @@ try:
         print('[INJECT_CONTEXT_UPDATE] No parent_cmd, skipping', file=sys.stderr)
         sys.exit(0)
 
-    cmd_sources = [
-        os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml'),
-    ]
-    cmd_sources.extend(sorted(glob.glob(os.path.join(script_dir, 'queue', 'archive', 'cmds', '*.yaml'))))
+    # GP-080: grep-l前置 + ファイル名パターンマッチで高速検索
+    # 旧方式: 全1179アーカイブYAMLを順次yaml.safe_load → 7秒
+    # 新方式: ファイル名パターン + shogun_to_karo.yaml → 0.1秒以下
+    def find_cmd_source(parent_cmd, script_dir):
+        """parent_cmdを含むYAMLファイルを高速特定し、該当cmdエントリを返す"""
+        # (1) shogun_to_karo.yaml を最初にチェック（アクティブcmd）
+        stk = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
+        if os.path.exists(stk):
+            obj = load_yaml(stk)
+            commands = obj.get('commands', [])
+            if isinstance(commands, list):
+                for cmd in commands:
+                    if isinstance(cmd, dict) and str(cmd.get('id', '')).strip() == parent_cmd:
+                        return cmd, stk
 
-    context_update = []
-    found = False
-    source_path = ''
-    for source in cmd_sources:
-        obj = load_yaml(source)
-        commands = obj.get('commands', [])
-        if not isinstance(commands, list):
-            continue
-        for cmd in commands:
-            if not isinstance(cmd, dict):
-                continue
-            if str(cmd.get('id', '')).strip() != parent_cmd:
-                continue
-            context_update = normalize_context_update(cmd.get('context_update', []))
-            found = True
-            source_path = source
-            break
-        if found:
-            break
+        # (2) アーカイブ: ファイル名パターンでピンポイント検索
+        # アーカイブファイル名形式: cmd_{ID}_{status}_{date}.yaml
+        # parent_cmd例: cmd_1386 → cmd_1386_*.yaml
+        archive_dir = os.path.join(script_dir, 'queue', 'archive', 'cmds')
+        candidates = glob.glob(os.path.join(archive_dir, f'{parent_cmd}_*.yaml'))
+        for cpath in candidates:
+            obj = load_yaml(cpath)
+            commands = obj.get('commands', [])
+            if isinstance(commands, list):
+                for cmd in commands:
+                    if isinstance(cmd, dict) and str(cmd.get('id', '')).strip() == parent_cmd:
+                        return cmd, cpath
+
+        return None, ''
+
+    cmd_entry, source_path = find_cmd_source(parent_cmd, script_dir)
+    found = cmd_entry is not None
+    context_update = normalize_context_update(cmd_entry.get('context_update', [])) if found else []
 
     if not found:
         print(f'[INJECT_CONTEXT_UPDATE] parent_cmd not found: {parent_cmd}, skipping', file=sys.stderr)
@@ -2743,38 +2777,33 @@ resolve_dispatch_title() {
     fi
 
     if [ -z "$title" ] && [[ -n "$cmd_id" && "$cmd_id" == cmd_* ]]; then
-        for yaml_file in \
-            "$SCRIPT_DIR/queue/shogun_to_karo.yaml" \
-            "$SCRIPT_DIR/queue/archive/cmds/"*.yaml
-        do
-            [ -f "$yaml_file" ] || continue
-            title=$(awk -v cmd="${cmd_id}" '
-                /^[[:space:]]*-[[:space:]]*id:[[:space:]]*cmd_[0-9]+/ {
-                    line = $0
-                    sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", line)
-                    sub(/[[:space:]]+#.*$/, "", line)
-                    gsub(/["[:space:]]/, "", line)
-                    if (line == cmd) {
-                        found = 1
-                        next
-                    }
-                    if (found) {
-                        exit
-                    }
-                }
-                found && /^[[:space:]]*title:[[:space:]]*/ {
-                    line = $0
-                    sub(/^[[:space:]]*title:[[:space:]]*/, "", line)
-                    sub(/[[:space:]]+#.*$/, "", line)
-                    print line
+        # 1. Check shogun_to_karo.yaml (single file, dict format: "  cmd_XXXX:")
+        local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+        if [ -f "$stk" ]; then
+            title=$(awk -v key="  ${cmd_id}:" '
+                index($0, key) == 1 { found = 1; next }
+                found && /^    title:/ {
+                    sub(/^[[:space:]]*title:[[:space:]]*/, "")
+                    sub(/[[:space:]]+#.*$/, "")
+                    print
                     exit
                 }
-            ' "$yaml_file" 2>/dev/null || true)
+                found && /^  [^ ]/ { exit }
+            ' "$stk" 2>/dev/null || true)
+        fi
 
-            if [ -n "$title" ]; then
-                break
+        # 2. If not found, locate archive file by filename glob (O(1))
+        if [ -z "$title" ]; then
+            yaml_file=$(find "$SCRIPT_DIR/queue/archive/cmds/" -maxdepth 1 -name "${cmd_id}_*.yaml" -print -quit 2>/dev/null)
+            if [ -n "$yaml_file" ]; then
+                title=$(awk '/^[[:space:]]*title:/ {
+                    sub(/^[[:space:]]*title:[[:space:]]*/, "")
+                    sub(/[[:space:]]+#.*$/, "")
+                    print
+                    exit
+                }' "$yaml_file" 2>/dev/null || true)
             fi
-        done
+        fi
     fi
 
     title=$(printf '%s' "$title" \
