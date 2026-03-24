@@ -2141,6 +2141,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
                     if (fill_this) { print "fill_this_remaining"; exit }
                     if (null_useful || non_bool) { print "invalid_format"; exit }
                     if (bool_count > 0) { print "ok"; exit }
+                    if (item_count > 0) { print "invalid_format"; exit }
                     print "empty"
                 }
             ' "$report_file" 2>/dev/null)
