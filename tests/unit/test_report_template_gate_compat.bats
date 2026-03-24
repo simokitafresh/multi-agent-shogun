@@ -87,11 +87,13 @@ verdict: PASS
 EOF
 }
 
-@test "filled report with empty lessons_useful passes gate" {
+@test "filled report with empty lessons_useful is rejected by gate (GP-064)" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS"* ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"lessons_useful"* ]]
+    [[ "$output" == *"empty list"* ]]
 }
 
 @test "filled report with populated lessons_useful passes gate" {
@@ -160,15 +162,14 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 }
 
 @test "verdict PASS passes gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    # Template already has verdict: PASS
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
 
 @test "verdict FAIL passes gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     python3 -c "
 content = open('$TEST_TMPDIR/report.yaml').read()
 content = content.replace('verdict: PASS', 'verdict: FAIL')
