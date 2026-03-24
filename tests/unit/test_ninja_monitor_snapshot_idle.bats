@@ -5,7 +5,7 @@ setup() {
 }
 
 @test "write_karo_snapshot: assigned系タスクはidle行から除外し done/未配備のみ残す" {
-    run bash -lc '
+    run bash -c '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
 export NINJA_MONITOR_LIB_ONLY=1
