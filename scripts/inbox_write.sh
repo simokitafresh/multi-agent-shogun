@@ -118,6 +118,13 @@ if [ "$FROM" = "shogun" ] || [ "$FROM" = "karo" ]; then
         _capture=$(tmux capture-pane -t "shogun:agents.${_pane_idx}" -p 2>/dev/null | tail -8 || true)
         echo "[pre-send capture] ${TARGET} pane state BEFORE message:"
         echo "$_capture"
+        # CTX:0%検知 — task_assigned送信先がCTX:0%なら反応しない可能性を警告
+        if [ "$TYPE" = "task_assigned" ]; then
+            _ctx_val=$(echo "$_capture" | grep -oP 'CTX:\K[0-9]+' | tail -1)
+            if [ "${_ctx_val:-99}" = "0" ]; then
+                echo "⚠⚠⚠ WARNING: ${TARGET} CTX:0% — STALL高リスク。30秒後にペイン確認せよ ⚠⚠⚠"
+            fi
+        fi
         echo "---"
         # Persistent log (survives /clear, enables post-mortem)
         _logdir="$SCRIPT_DIR/logs"

@@ -49,7 +49,9 @@ STALE_CMD_THRESHOLD=14400 # stale cmd検知しきい値（秒）— pending+subt
 NTFY_HEALTH_THRESHOLD_MIN=10 # ntfy_listenerヘルスチェックしきい値（分）— ログが古ければゾンビ判定
 NTFY_RESTART_COOLDOWN_MIN=5  # ntfy_listener連続再起動防止クールダウン（分）
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
-KARO_PANE="shogun:2.1"  # 家老ペインターゲット（EH6: ハードコード排除）
+# 家老ペインターゲット（@agent_idから動的解決。EH6: ハードコード排除完了）
+KARO_PANE=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},karo}' 2>/dev/null | head -1)
+KARO_PANE="${KARO_PANE:-shogun:agents.1}"  # fallback
 NTFY_BATCH_FLUSH_INTERVAL=900 # INFOバッチ通知フラッシュ間隔（秒）
 
 # Self-restart on script change (inbox_watcher.shから移植)
@@ -174,8 +176,8 @@ discover_panes() {
 # 期待される忍者ペインと実ペインを比較し、消失を検知して家老に通知
 check_pane_survival() {
     local actual_agents
-    if ! actual_agents=$(tmux list-panes -t shogun:2 -F '#{@agent_id}' 2>/dev/null) || [ -z "$actual_agents" ]; then
-        log "PANE-CHECK: Failed to list panes for shogun:2"
+    if ! actual_agents=$(tmux list-panes -t shogun:agents -F '#{@agent_id}' 2>/dev/null) || [ -z "$actual_agents" ]; then
+        log "PANE-CHECK: Failed to list panes for shogun:agents"
         return
     fi
 
@@ -206,7 +208,7 @@ check_pane_survival() {
     fi
 
     log "PANE-LOST: ${missing_str} (${#missing[@]}名消失)"
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "ペイン消失: ${missing_str} (${#missing[@]}名)。OOM Kill等の可能性。tmux list-panes -t shogun:2 で確認されたし" pane_lost ninja_monitor >> "$LOG" 2>&1
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "ペイン消失: ${missing_str} (${#missing[@]}名)。OOM Kill等の可能性。tmux list-panes -t shogun:agents で確認されたし" pane_lost ninja_monitor >> "$LOG" 2>&1
     PREV_PANE_MISSING="$missing_str"
 }
 
@@ -1580,7 +1582,7 @@ update_all_context_pct() {
     while read -r pane_idx agent_id; do
         [ -z "$pane_idx" ] && continue
         update_context_pct "shogun:$pane_idx" "${agent_id:-}"
-    done < <(tmux list-panes -t shogun:2 -F '2.#{pane_index} #{@agent_id}' 2>/dev/null)
+    done < <(tmux list-panes -t shogun:agents -F '2.#{pane_index} #{@agent_id}' 2>/dev/null)
 }
 
 # ─── STEP 1: ninja_states.yaml 自動生成 ───
@@ -1728,17 +1730,27 @@ write_karo_snapshot() {
                     ' "$cmd_file"
                 fi
 
-                # 忍者task状態
+                # 忍者task状態 + ペインCTX%
                 for name in "${NINJA_NAMES[@]}"; do
                     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+                    # ペインCTX%を取得
+                    local _ctx="?"
+                    local _pidx=""
+                    _pidx=$(tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id}' 2>/dev/null \
+                        | awk -v n="$name" '$2==n{print $1}')
+                    if [ -n "$_pidx" ]; then
+                        _ctx=$(tmux capture-pane -t "shogun:2.$_pidx" -p 2>/dev/null \
+                            | grep -oP 'CTX:\K[0-9]+' | tail -1)
+                        _ctx="${_ctx:-?}%"
+                    fi
                     if [ -f "$task_file" ]; then
                         local task_id status project
                         task_id=$(yaml_field_get "$task_file" "task_id")
                         status=$(yaml_field_get "$task_file" "status")
                         project=$(yaml_field_get "$task_file" "project")
-                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}"
+                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}"
                     else
-                        echo "ninja|${name}|none|idle|none"
+                        echo "ninja|${name}|none|idle|none|CTX:${_ctx}"
                     fi
                 done
 
