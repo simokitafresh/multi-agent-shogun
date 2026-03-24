@@ -654,7 +654,7 @@ fi
             snap_line=$(grep "^ninja|${ninja}|" "$SNAPSHOT" | head -1 || true)
             if [[ -n "$snap_line" ]]; then
                 snap_status=$(echo "$snap_line" | cut -d'|' -f4)
-                [[ "$snap_status" == "done" ]] && status="done"
+                [[ "$snap_status" == "done" || "$snap_status" == "completed" ]] && status="done"
             fi
         fi
 
