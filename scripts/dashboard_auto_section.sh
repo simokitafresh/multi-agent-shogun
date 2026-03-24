@@ -265,7 +265,7 @@ _CFC_CACHE=$(mktemp)
 _ARCH_TITLES_CACHE="/tmp/dashboard_arch_titles_cache.txt"
 _ARCH_CFC_CACHE="/tmp/dashboard_arch_cfc_cache.txt"
 _ARCH_COUNT_CACHE="/tmp/dashboard_arch_count_cache.txt"
-trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT" "$_TMP_CTX_WARN" "$_CFC_CACHE"' EXIT
+trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT" "$_TMP_CTX_WARN" "$_CFC_CACHE" "${_TMP_CI_STATUS:-}"' EXIT
 if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     shopt -s nullglob
     _arch_files=("$ARCHIVE_CMD_DIR"/cmd_*.yaml)
@@ -321,6 +321,10 @@ fi
 # Launch context_freshness_check with pre-computed cache (zero archive I/O)
 CFC_ARCHIVE_CACHE="$_CFC_CACHE" bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings > "$_TMP_CTX_WARN" 2>/dev/null &
 _PID_CTX=$!
+# GP-083: ci_status_check.sh parallel launch (2.3s network call)
+_TMP_CI_STATUS=$(mktemp)
+bash "$SCRIPT_DIR/ci_status_check.sh" --status > "$_TMP_CI_STATUS" 2>/dev/null &
+_PID_CI=$!
 
 _gate_signature="missing"
 if [[ -f "$GATE_LOG" ]]; then
@@ -731,7 +735,10 @@ fi
     echo ""
 
     # ─── CI Status (cmd_715) ───
-    _ci_status=$(bash "$SCRIPT_DIR/ci_status_check.sh" --status 2>/dev/null || echo "UNKNOWN")
+    # GP-083: collect pre-launched background result
+    wait "$_PID_CI" 2>/dev/null || true
+    _ci_status=$(cat "$_TMP_CI_STATUS" 2>/dev/null || echo "UNKNOWN")
+    [[ -z "$_ci_status" ]] && _ci_status="UNKNOWN"
     case "$_ci_status" in
         GREEN)
             echo "### CI Status"
