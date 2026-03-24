@@ -544,276 +544,269 @@ collect_cmd_title() {
 }
 
 # ─── project code stub detection（WARN only, cmd diff added lines only） ───
+# cmd_1387: Python→bash/awk化。yaml.safe_load→awk, subprocess→direct git, regex→awk
 check_project_code_stubs() {
     local cmd_id="$1"
     local cmd_project="$2"
 
-    SCRIPT_DIR_ENV="$SCRIPT_DIR" CMD_ID_ENV="$cmd_id" CMD_PROJECT_ENV="$cmd_project" python3 - <<'PY'
-import os
-import re
-import subprocess
-import sys
+    # --- Early exit: no project ---
+    if [[ -z "$cmd_project" ]]; then
+        printf 'SKIP\tproject not found in cmd\n'
+        return 0
+    fi
+    # Strip quotes
+    cmd_project="${cmd_project//\'/}"
+    cmd_project="${cmd_project//\"/}"
 
-import yaml
+    # --- resolve_project_path (awk on YAML, no python/yaml.safe_load) ---
+    local project_path=""
+    local pj_yaml="$SCRIPT_DIR/projects/${cmd_project}.yaml"
+    if [[ -f "$pj_yaml" ]]; then
+        # Try project.path first, then top-level path
+        project_path=$(awk '
+            /^project:/ { in_proj=1; next }
+            in_proj && /^  path:/ { $1=""; gsub(/^[[:space:]]+|[[:space:]]+$|["'"'"']/, ""); print; exit }
+            in_proj && /^[^ ]/ { in_proj=0 }
+            !in_proj && /^path:/ { $1=""; gsub(/^[[:space:]]+|[[:space:]]+$|["'"'"']/, ""); print; exit }
+        ' "$pj_yaml")
+    fi
+    if [[ -z "$project_path" ]]; then
+        local config_yaml="$SCRIPT_DIR/config/projects.yaml"
+        if [[ -f "$config_yaml" ]]; then
+            project_path=$(awk -v target="$cmd_project" '
+                /^  - id:/ { cur=$3; gsub(/["'"'"']/, "", cur) }
+                /^    path:/ && cur == target { $1=""; gsub(/^[[:space:]]+|[[:space:]]+$|["'"'"']/, ""); print; exit }
+            ' "$config_yaml")
+        fi
+    fi
 
-script_dir = os.environ["SCRIPT_DIR_ENV"]
-cmd_id = os.environ["CMD_ID_ENV"].strip()
-cmd_project = os.environ["CMD_PROJECT_ENV"].strip().strip("'\"")
+    if [[ -z "$project_path" ]]; then
+        printf 'SKIP\tproject path not found for: %s\n' "$cmd_project"
+        return 0
+    fi
+    if [[ ! -d "$project_path" ]]; then
+        printf 'SKIP\tproject path missing: %s\n' "$project_path"
+        return 0
+    fi
+    if ! git -C "$project_path" rev-parse --git-dir >/dev/null 2>&1; then
+        printf 'SKIP\tgit repo not found: %s\n' "$project_path"
+        return 0
+    fi
 
-DEFAULT_EXTS = ["py", "ts", "tsx", "js", "jsx", "kt", "java"]
-LANGUAGE_ALIASES = {
-    "python": ["py"],
-    "py": ["py"],
-    "typescript": ["ts", "tsx"],
-    "ts": ["ts"],
-    "tsx": ["tsx"],
-    "javascript": ["js", "jsx"],
-    "js": ["js"],
-    "jsx": ["jsx"],
-    "kotlin": ["kt"],
-    "kt": ["kt"],
-    "java": ["java"],
-}
-TOKEN_RE = re.compile(r"\b(?:TODO|FIXME|XXX|HACK|PLACEHOLDER)\b", re.IGNORECASE)
-RETURN_RE = re.compile(r"\breturn\s+(?:null|None)\b|\breturn\s*\{\s*\}|\breturn\s*\[\s*\]")
-PASS_RE = re.compile(r"^\s*pass(?:\s*#.*)?\s*$")
-EXCEPT_RE = re.compile(r"^\s*except\b.*:\s*(?:pass(?:\s*#.*)?\s*)?$")
-HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+    # --- cmd_1244: uncommitted変更検出 — commit漏れをBLOCKで構造的に防止 ---
+    local uncommitted
+    uncommitted=$({ git -C "$project_path" diff --name-only 2>/dev/null; git -C "$project_path" diff --cached --name-only 2>/dev/null; } | sed '/^$/d')
+    if [[ -n "$uncommitted" ]]; then
+        local ucount
+        ucount=$(printf '%s\n' "$uncommitted" | wc -l)
+        printf 'BLOCK\tcommit_missing: %d uncommitted file(s) in %s\n' "$ucount" "$project_path"
+        printf '%s\n' "$uncommitted" | head -10
+        return 1
+    fi
 
+    # --- detect_cmd_commit_count (git log + awk, no python subprocess) ---
+    local log_output
+    log_output=$(git -C "$project_path" log --format="%H%x1f%s%x1f%b%x1e" -n 100 2>/dev/null)
+    if [[ $? -ne 0 ]]; then
+        printf 'ERR\tgit log failed for %s\n' "$project_path"
+        return 0
+    fi
 
-def emit(kind: str, message: str, details: list[str] | None = None) -> None:
-    print(f"{kind}\t{message}")
-    for line in details or []:
-        print(line)
+    local commit_count
+    commit_count=$(printf '%s' "$log_output" | awk -F'\x1f' -v cmd="$cmd_id" '
+        BEGIN { RS="\x1e"; count=0; started=0 }
+        {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+            if ($0 == "") next
+            haystack = $2 "\n" $3
+            if (index(haystack, cmd) > 0) {
+                count++
+                started=1
+            } else if (started) {
+                exit
+            }
+        }
+        END { print count }
+    ')
 
+    if [[ "$commit_count" -le 0 ]]; then
+        printf 'SKIP\tno contiguous HEAD commits mention %s in %s\n' "$cmd_id" "$project_path"
+        return 0
+    fi
 
-def load_yaml(path: str) -> dict:
-    if not os.path.exists(path):
-        return {}
-    with open(path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-    return data if isinstance(data, dict) else {}
+    local base_ref="HEAD~${commit_count}"
+    if ! git -C "$project_path" rev-parse --verify "$base_ref" >/dev/null 2>&1; then
+        printf 'SKIP\t%s not available in %s\n' "$base_ref" "$project_path"
+        return 0
+    fi
 
+    # --- resolve_extensions (awk on YAML) ---
+    local raw_langs=""
+    if [[ -f "$pj_yaml" ]]; then
+        # Try top-level languages: then project.languages:
+        raw_langs=$(awk '
+            /^languages:/ { found=1; next }
+            found && /^  *- / { val=$2; gsub(/["'"'"']/, "", val); gsub(/^\./, "", val); print tolower(val); next }
+            found && /^[^ ]/ { exit }
+        ' "$pj_yaml")
+        if [[ -z "$raw_langs" ]]; then
+            raw_langs=$(awk '
+                /^project:/ { in_proj=1; next }
+                in_proj && /^[^ ]/ { exit }
+                in_proj && /^  languages:/ { found=1; next }
+                found && /^    *- / { val=$2; gsub(/["'"'"']/, "", val); gsub(/^\./, "", val); print tolower(val); next }
+                found && !/^    / { exit }
+            ' "$pj_yaml")
+        fi
+    fi
 
-def resolve_project_path(project_id: str) -> str:
-    project_yaml = load_yaml(os.path.join(script_dir, "projects", f"{project_id}.yaml"))
-    for candidate in (
-        project_yaml.get("project", {}).get("path"),
-        project_yaml.get("path"),
-    ):
-        if isinstance(candidate, str) and candidate.strip():
-            return candidate.strip()
+    # Map language aliases → file extensions
+    local exts_str=""
+    if [[ -n "$raw_langs" ]]; then
+        exts_str=$(printf '%s\n' "$raw_langs" | while IFS= read -r lang; do
+            case "$lang" in
+                python)     echo "py" ;;
+                typescript) echo "ts"; echo "tsx" ;;
+                javascript) echo "js"; echo "jsx" ;;
+                kotlin)     echo "kt" ;;
+                py|ts|tsx|js|jsx|kt|java) echo "$lang" ;;
+                *)          echo "$lang" ;;
+            esac
+        done | sort -u | paste -sd, -)
+    fi
+    if [[ -z "$exts_str" ]]; then
+        exts_str="java,js,jsx,kt,py,ts,tsx"
+    fi
 
-    config_yaml = load_yaml(os.path.join(script_dir, "config", "projects.yaml"))
-    for project in config_yaml.get("projects", []):
-        if not isinstance(project, dict):
-            continue
-        if str(project.get("id", "")).strip() != project_id:
-            continue
-        candidate = str(project.get("path", "")).strip()
-        if candidate:
-            return candidate
-    return ""
+    # --- Diff parsing + stub detection (single awk pass, no python) ---
+    local diff_output diff_rc
+    diff_output=$(git -C "$project_path" diff --unified=1 --no-color "$base_ref" HEAD -- . 2>&1)
+    diff_rc=$?
+    if [[ $diff_rc -ne 0 ]]; then
+        printf 'ERR\tgit diff failed for %s: %s\n' "$project_path" "$(printf '%s\n' "$diff_output" | head -1)"
+        return 0
+    fi
 
+    local awk_result
+    awk_result=$(printf '%s\n' "$diff_output" | gawk -v exts="$exts_str" -v max_show=10 '
+        BEGIN {
+            matches = 0; file_count = 0
+            n = split(exts, ea, ",")
+            for (i = 1; i <= n; i++) ext_set[ea[i]] = 1
+        }
 
-def resolve_extensions(project_id: str) -> set[str]:
-    project_yaml = load_yaml(os.path.join(script_dir, "projects", f"{project_id}.yaml"))
-    raw = project_yaml.get("languages")
-    if raw is None and isinstance(project_yaml.get("project"), dict):
-        raw = project_yaml["project"].get("languages")
+        /^\+\+\+ b\// {
+            file = substr($0, 7)
+            # Extract extension: last dot-delimited segment
+            ext = ""
+            if (match(file, /\.([^.\/]+)$/, m)) ext = tolower(m[1])
+            last_sig = ""
+            next
+        }
 
-    values: list[str] = []
-    if isinstance(raw, str):
-        values = [raw]
-    elif isinstance(raw, list):
-        values = [item for item in raw if isinstance(item, str)]
+        /^@@/ {
+            # Extract +lineno from hunk header
+            if (match($0, /\+([0-9]+)/, m))
+                lineno = m[1] - 1
+            else
+                lineno = 0
+            last_sig = ""
+            next
+        }
 
-    extensions: set[str] = set()
-    for value in values:
-        normalized = value.strip().lower().lstrip(".")
-        if not normalized:
-            continue
-        mapped = LANGUAGE_ALIASES.get(normalized)
-        if mapped:
-            extensions.update(mapped)
-        else:
-            extensions.add(normalized)
+        # Skip if no file tracked or extension not in allowed set
+        file == "" || !(ext in ext_set) { next }
 
-    if not extensions:
-        extensions.update(DEFAULT_EXTS)
-    return extensions
+        # Skip deletion lines
+        /^-/ && !/^---/ { next }
 
+        # Context lines (space prefix)
+        /^ / {
+            lineno++
+            content = substr($0, 2)
+            stripped = content
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", stripped)
+            if (stripped != "" && substr(stripped, 1, 1) != "#")
+                last_sig = stripped
+            next
+        }
 
-def git(repo_path: str, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", "-C", repo_path, *args],
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+        # Blank lines in diff (no prefix)
+        /^$/ { next }
 
+        # Added lines
+        /^\+/ && !/^\+\+\+/ {
+            lineno++
+            line = substr($0, 2)
+            trimmed = line
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", trimmed)
 
-def detect_cmd_commit_count(repo_path: str, target_cmd_id: str) -> int:
-    log_proc = git(repo_path, "log", "--format=%H%x1f%s%x1f%b%x1e", "-n", "100")
-    if log_proc.returncode != 0:
-        return -1
+            # --- return_stub: return null/None/{}/[] ---
+            if (match(line, /(^|[^a-zA-Z0-9_])return[[:space:]]+(null|None)([^a-zA-Z0-9_]|$)/) ||
+                match(line, /(^|[^a-zA-Z0-9_])return[[:space:]]*\{[[:space:]]*\}/) ||
+                match(line, /(^|[^a-zA-Z0-9_])return[[:space:]]*\[[[:space:]]*\]/)) {
+                if (matches < max_show)
+                    details[matches] = file ":" lineno ": [return_stub] " trimmed
+                matches++
+                if (!(file in seen)) { seen[file] = 1; file_count++ }
+            }
 
-    count = 0
-    for record in log_proc.stdout.split("\x1e"):
-        record = record.strip()
-        if not record:
-            continue
-        parts = record.split("\x1f", 2)
-        if len(parts) != 3:
-            continue
-        _commit_hash, subject, body = parts
-        haystack = f"{subject}\n{body}"
-        if target_cmd_id in haystack:
-            count += 1
-        elif count > 0:
-            break
+            # --- marker_stub: TODO/FIXME/XXX/HACK/PLACEHOLDER (not in test/spec files) ---
+            upper_line = toupper(line)
+            if (match(upper_line, /(^|[^A-Z0-9_])(TODO|FIXME|XXX|HACK|PLACEHOLDER)([^A-Z0-9_]|$)/)) {
+                lower_file = tolower(file)
+                if (index(lower_file, "test") == 0 && index(lower_file, "spec") == 0) {
+                    if (matches < max_show)
+                        details[matches] = file ":" lineno ": [marker_stub] " trimmed
+                    matches++
+                    if (!(file in seen)) { seen[file] = 1; file_count++ }
+                }
+            }
 
-    return count
+            # --- pass_stub: bare pass in Python (except:pass is allowed) ---
+            if (ext == "py" && match(line, /^[[:space:]]*pass([[:space:]]*#.*)?[[:space:]]*$/)) {
+                allowed = 0
+                # Check if last significant line is an except line
+                if (last_sig != "" && match(last_sig, /^except([[:space:]]|[:(])/)) {
+                    if (index(last_sig, ":") > 0) allowed = 1
+                }
+                if (!allowed) {
+                    if (matches < max_show)
+                        details[matches] = file ":" lineno ": [pass_stub] " trimmed
+                    matches++
+                    if (!(file in seen)) { seen[file] = 1; file_count++ }
+                }
+            }
 
+            # Update last significant line for except:pass tracking
+            if (trimmed != "" && substr(trimmed, 1, 1) != "#")
+                last_sig = trimmed
+        }
 
-def is_test_file(path: str) -> bool:
-    lowered = path.lower()
-    return "test" in lowered or "spec" in lowered
+        END {
+            if (matches == 0) {
+                print "0"
+            } else {
+                printf "%d %d\n", matches, file_count
+                for (i = 0; i < matches && i < max_show; i++)
+                    print details[i]
+                if (matches > max_show)
+                    printf "... (%d hits across %d file(s), first %d shown)\n", matches, file_count, max_show
+            }
+        }
+    ')
 
-
-def classify_line(file_path: str, ext: str, line: str, prior_lines: list[str]) -> list[str]:
-    findings: list[str] = []
-    if RETURN_RE.search(line):
-        findings.append("return_stub")
-
-    if TOKEN_RE.search(line) and not is_test_file(file_path):
-        findings.append("marker_stub")
-
-    if ext == "py" and PASS_RE.match(line):
-        allowed = False
-        for previous in reversed(prior_lines):
-            stripped = previous.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
-            if EXCEPT_RE.match(stripped):
-                allowed = True
-            break
-        if not allowed:
-            findings.append("pass_stub")
-
-    return findings
-
-
-if not cmd_project:
-    emit("SKIP", "project not found in cmd")
-    raise SystemExit(0)
-
-project_path = resolve_project_path(cmd_project)
-if not project_path:
-    emit("SKIP", f"project path not found for: {cmd_project}")
-    raise SystemExit(0)
-
-if not os.path.isdir(project_path):
-    emit("SKIP", f"project path missing: {project_path}")
-    raise SystemExit(0)
-
-git_dir_proc = git(project_path, "rev-parse", "--git-dir")
-if git_dir_proc.returncode != 0:
-    emit("SKIP", f"git repo not found: {project_path}")
-    raise SystemExit(0)
-
-# cmd_1244: uncommitted変更検出 — commit漏れをBLOCKで構造的に防止
-unstaged = git(project_path, "diff", "--name-only")
-staged = git(project_path, "diff", "--cached", "--name-only")
-uncommitted_files: list[str] = []
-if unstaged.returncode == 0 and unstaged.stdout.strip():
-    uncommitted_files.extend(unstaged.stdout.strip().splitlines())
-if staged.returncode == 0 and staged.stdout.strip():
-    uncommitted_files.extend(staged.stdout.strip().splitlines())
-if uncommitted_files:
-    emit("BLOCK", f"commit_missing: {len(uncommitted_files)} uncommitted file(s) in {project_path}", uncommitted_files[:10])
-    raise SystemExit(1)
-
-commit_count = detect_cmd_commit_count(project_path, cmd_id)
-if commit_count < 0:
-    emit("ERR", f"git log failed for {project_path}")
-    raise SystemExit(0)
-if commit_count == 0:
-    emit("SKIP", f"no contiguous HEAD commits mention {cmd_id} in {project_path}")
-    raise SystemExit(0)
-
-base_ref = f"HEAD~{commit_count}"
-base_check = git(project_path, "rev-parse", "--verify", base_ref)
-if base_check.returncode != 0:
-    emit("SKIP", f"{base_ref} not available in {project_path}")
-    raise SystemExit(0)
-
-extensions = resolve_extensions(cmd_project)
-diff_proc = git(project_path, "diff", "--unified=1", "--no-color", base_ref, "HEAD", "--", ".")
-if diff_proc.returncode != 0:
-    emit("ERR", f"git diff failed for {project_path}: {diff_proc.stderr.strip()}")
-    raise SystemExit(0)
-
-current_file = ""
-current_ext = ""
-current_line = 0
-prior_lines: list[str] = []
-matches: list[tuple[str, int, str, str]] = []
-seen_files: set[str] = set()
-
-for raw in diff_proc.stdout.splitlines():
-    if raw.startswith("+++ b/"):
-        current_file = raw[6:]
-        current_ext = os.path.splitext(current_file)[1].lstrip(".").lower()
-        prior_lines = []
-        continue
-
-    if raw.startswith("@@"):
-        match = HUNK_RE.match(raw)
-        current_line = int(match.group(1)) - 1 if match else 0
-        prior_lines = []
-        continue
-
-    if not current_file or current_ext not in extensions:
-        continue
-
-    if raw.startswith("-") and not raw.startswith("---"):
-        continue
-
-    if raw.startswith(" ") or raw == "":
-        if raw.startswith(" "):
-            current_line += 1
-            prior_lines.append(raw[1:])
-        continue
-
-    if raw.startswith("+") and not raw.startswith("+++"):
-        current_line += 1
-        line = raw[1:]
-        for finding in classify_line(current_file, current_ext, line, prior_lines):
-            matches.append((current_file, current_line, finding, line.strip()))
-            seen_files.add(current_file)
-        prior_lines.append(line)
-
-if not matches:
-    emit(
-        "OK",
-        f"no stub patterns in added lines (base={base_ref}, commits={commit_count}, ext={','.join(sorted(extensions))})",
-    )
-    raise SystemExit(0)
-
-details = []
-for file_path, line_no, finding, snippet in matches[:10]:
-    details.append(f"{file_path}:{line_no}: [{finding}] {snippet}")
-
-if len(matches) > 10:
-    details.append(f"... ({len(matches)} hits across {len(seen_files)} file(s), first 10 shown)")
-
-emit(
-    "WARN",
-    f"{len(matches)} stub-like added line(s) across {len(seen_files)} file(s) (base={base_ref}, commits={commit_count})",
-    details,
-)
-PY
+    if [[ "$awk_result" == "0" ]]; then
+        printf 'OK\tno stub patterns in added lines (base=%s, commits=%d, ext=%s)\n' \
+            "$base_ref" "$commit_count" "$exts_str"
+    else
+        local match_count file_count_out
+        match_count=$(printf '%s\n' "$awk_result" | head -1 | cut -d' ' -f1)
+        file_count_out=$(printf '%s\n' "$awk_result" | head -1 | cut -d' ' -f2)
+        printf 'WARN\t%d stub-like added line(s) across %d file(s) (base=%s, commits=%d)\n' \
+            "$match_count" "$file_count_out" "$base_ref" "$commit_count"
+        printf '%s\n' "$awk_result" | tail -n +2
+    fi
 }
 
 # ─── wiring verification（WARN only, existence != integration） ───
