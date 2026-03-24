@@ -60,6 +60,178 @@ sys.exit(0 if isinstance(data, (list, dict)) else 1)
     fi
 fi
 
+# --- GP-072: Pre-write field value validation (Level 4 BLOCK) ---
+# 書込み前にフィールド値の妥当性を検証。不正値はBLOCKして忍者に即フィードバック。
+# GP-072c2: per-item writes, dict→list conversion, verdict pre-conditions
+# GP-072c3: lessons_useful id UNKNOWN/null BLOCK, template mandatory fields
+# GP-072c4: binary_checks all-result-empty verdict BLOCK
+_validate_field_value() {
+    local dot_key="$1"
+    local val="$2"
+    local field="${dot_key%%.*}"
+
+    case "$field" in
+        lessons_useful)
+            # Full field write: must be YAML list, not dict/string/empty
+            if [[ "$dot_key" == "lessons_useful" ]]; then
+                python3 -c "
+import yaml, sys
+data = yaml.safe_load(sys.stdin.read())
+if not isinstance(data, list):
+    print(f'BLOCK: lessons_useful はリスト形式必須。受信: {type(data).__name__}', file=sys.stderr)
+    sys.exit(1)
+for i, item in enumerate(data):
+    if not isinstance(item, dict):
+        print(f'BLOCK: lessons_useful[{i}] はdict必須。受信: {type(item).__name__}', file=sys.stderr)
+        sys.exit(1)
+    if 'id' not in item or not str(item['id']).strip():
+        print(f'BLOCK: lessons_useful[{i}].id が空。テンプレート注入済みIDを使え', file=sys.stderr)
+        sys.exit(1)
+    id_val = str(item['id']).strip()
+    if id_val in ('UNKNOWN', 'unknown', 'null', 'FILL_THIS'):
+        print(f'BLOCK: lessons_useful[{i}].id=\"{id_val}\" は不正。L074等の実IDを使え', file=sys.stderr)
+        sys.exit(1)
+    if 'useful' in item and not isinstance(item['useful'], bool):
+        print(f'BLOCK: lessons_useful[{i}].useful はbool必須。受信: {item[\"useful\"]}', file=sys.stderr)
+        sys.exit(1)
+" <<< "$val" || return 1
+            # GP-072c3: Per-item id write (e.g., lessons_useful.0.id)
+            elif [[ "$dot_key" =~ ^lessons_useful\.[0-9]+\.id$ ]]; then
+                local id_val
+                id_val=$(echo "$val" | xargs)
+                id_val="${id_val//\"/}"
+                if [[ -z "$id_val" ]] || [[ "$id_val" == "UNKNOWN" ]] || [[ "$id_val" == "unknown" ]] || [[ "$id_val" == "null" ]]; then
+                    echo "BLOCK: lessons_useful id=\"$val\" は不正。テンプレートに注入済みのID(L074等)を使え。UNKNOWNは禁止。" >&2
+                    return 1
+                fi
+            fi
+            ;;
+        binary_checks)
+            # Full-field write validation
+            if [[ "$dot_key" == "binary_checks" ]]; then
+                python3 -c "
+import yaml, sys
+data = yaml.safe_load(sys.stdin.read())
+if not isinstance(data, dict):
+    print(f'BLOCK: binary_checks はdict形式必須。受信: {type(data).__name__}', file=sys.stderr)
+    sys.exit(1)
+for ac_key, ac_val in data.items():
+    if not isinstance(ac_val, list):
+        continue
+    for j, item in enumerate(ac_val):
+        if not isinstance(item, dict):
+            continue
+        r = str(item.get('result', '')).strip()
+        if r and r.lower() not in ('yes', 'no', ''):
+            print(f'BLOCK: {ac_key}[{j}].result=\"{r}\" — yes/noのみ許可', file=sys.stderr)
+            sys.exit(1)
+" <<< "$val" || return 1
+            # GP-072c2: Per-AC write (e.g., binary_checks.AC1) — only 2-level depth
+            elif [[ "$dot_key" == binary_checks.AC* ]] && [[ "$dot_key" != *.*.* ]]; then
+                python3 -c "
+import yaml, sys
+data = yaml.safe_load(sys.stdin.read())
+if not isinstance(data, list):
+    sys.exit(0)
+for j, item in enumerate(data):
+    if not isinstance(item, dict):
+        continue
+    r = str(item.get('result', '')).strip()
+    if r and r.lower() not in ('yes', 'no', ''):
+        print(f'BLOCK: [{j}].result=\"{r}\" — yes/noのみ許可', file=sys.stderr)
+        sys.exit(1)
+" <<< "$val" || return 1
+            fi
+            ;;
+        self_gate_check)
+            if [[ "$val" != "PASS" ]] && [[ "$val" != "FAIL" ]]; then
+                echo "BLOCK: self_gate_check は PASS/FAIL のみ。受信: $val" >&2
+                return 1
+            fi
+            ;;
+        lesson_candidate)
+            if [[ "$dot_key" == "lesson_candidate" ]]; then
+                python3 -c "
+import yaml, sys
+data = yaml.safe_load(sys.stdin.read())
+if not isinstance(data, dict):
+    print(f'BLOCK: lesson_candidate はdict形式必須。受信: {type(data).__name__}', file=sys.stderr)
+    sys.exit(1)
+" <<< "$val" || return 1
+            fi
+            ;;
+        verdict)
+            # GP-072c2+c3+c4: verdict書込み時に前提条件チェック
+            if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" ]]; then
+                REPORT_PATH="$REPORT_PATH" python3 -c "
+import yaml, sys, os
+rp = os.environ.get('REPORT_PATH', '')
+if not rp or not os.path.exists(rp):
+    sys.exit(0)
+with open(rp) as f:
+    data = yaml.safe_load(f) or {}
+issues = []
+# GP-072c3: Template mandatory fields
+for mf in ('worker_id', 'parent_cmd', 'ac_version_read'):
+    v = data.get(mf)
+    if not v or str(v).strip() in ('', 'null', 'None'):
+        issues.append(f'{mf} が空。テンプレートの値を保持せよ')
+# GP-072c2: result.summary not empty
+result = data.get('result', {})
+if isinstance(result, dict):
+    s = str(result.get('summary', '')).strip()
+    if not s:
+        issues.append('result.summary が空。作業内容を記述せよ')
+# GP-072c2: lesson_candidate.found=false requires no_lesson_reason
+lc = data.get('lesson_candidate', {})
+if isinstance(lc, dict) and str(lc.get('found', '')).lower() == 'false':
+    nlr = str(lc.get('no_lesson_reason', '')).strip()
+    if not nlr:
+        issues.append('lesson_candidate.found=false だが no_lesson_reason が空')
+# GP-072c2: lessons_useful items must have non-empty reason
+lu = data.get('lessons_useful', [])
+if isinstance(lu, list):
+    for i, item in enumerate(lu):
+        if isinstance(item, dict):
+            r = str(item.get('reason', '')).strip()
+            if not r:
+                issues.append(f'lessons_useful[{i}].reason が空')
+# GP-072c4: binary_checks results must not be all empty
+bc = data.get('binary_checks', {})
+if isinstance(bc, dict) and bc:
+    total_checks = 0
+    empty_results = 0
+    for ac_key, ac_val in bc.items():
+        if isinstance(ac_val, list):
+            for item in ac_val:
+                if isinstance(item, dict) and 'check' in item:
+                    total_checks += 1
+                    r = str(item.get('result', '')).strip()
+                    if not r or r == '\"\"':
+                        empty_results += 1
+    if total_checks > 0 and empty_results == total_checks:
+        issues.append(f'binary_checks {total_checks}件全てのresultが空。yes/noを記入してからverdictを書け')
+if issues:
+    for iss in issues:
+        print(f'BLOCK: {iss}', file=sys.stderr)
+    sys.exit(1)
+" || return 1
+            fi
+            ;;
+    esac
+    return 0
+}
+
+# Execute pre-write validation
+_val_input="$VALUE"
+if [ -n "$STDIN_VALUE" ]; then
+    _val_input="$STDIN_VALUE"
+fi
+if ! _validate_field_value "$DOT_KEY" "$_val_input"; then
+    echo "[report_field_set] BLOCKED: 値フォーマット不正。上記メッセージに従い修正せよ。" >&2
+    exit 1
+fi
+
 # Parse dot notation
 IFS='.' read -ra KEYS <<< "$DOT_KEY"
 NUM_KEYS=${#KEYS[@]}
@@ -124,9 +296,24 @@ for key in keys[:-1]:
             arr[idx] = {}
         current = arr[idx]
     else:
-        if key not in current or not isinstance(current.get(key), dict):
-            current[key] = {}
-        current = current[key]
+        # GP-072c2: If current is a list and key is numeric, use list index
+        if isinstance(current, list) and key.isdigit():
+            idx = int(key)
+            while len(current) <= idx:
+                current.append({})
+            if not isinstance(current[idx], dict):
+                current[idx] = {}
+            current = current[idx]
+        elif isinstance(current, dict):
+            existing = current.get(key)
+            if isinstance(existing, (dict, list)):
+                # GP-072c2: preserve list for next iteration's numeric index handling
+                current = existing
+            else:
+                current[key] = {}
+                current = current[key]
+        else:
+            current = {}
 
 last_key = keys[-1]
 m_last = re.match(r'^(.+)\[(\d+)\]$', last_key)
@@ -272,6 +459,47 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     fi
     sleep 0.5
 done
+
+# --- GP-072c2: Post-write dict→list auto-conversion ---
+# per-item書込み(lessons_useful.0.id等)後に数値キーdictをリストに変換
+if [[ "$DOT_KEY" == lessons_useful.* ]] || [[ "$DOT_KEY" == binary_checks.*.* ]]; then
+    python3 -c "
+import yaml, sys, os, tempfile
+rp = sys.argv[1]
+dk = sys.argv[2]
+if not os.path.exists(rp):
+    sys.exit(0)
+with open(rp) as f:
+    data = yaml.safe_load(f) or {}
+if not isinstance(data, dict):
+    sys.exit(0)
+changed = False
+# Convert numeric-keyed dicts to lists
+for field in ('lessons_useful',):
+    val = data.get(field)
+    if isinstance(val, dict) and all(str(k).isdigit() for k in val.keys()):
+        max_idx = max(int(k) for k in val.keys())
+        new_list = [val.get(i, val.get(str(i))) for i in range(max_idx + 1)]
+        data[field] = new_list
+        changed = True
+# binary_checks per-AC: convert numeric-keyed dicts within each AC
+bc = data.get('binary_checks')
+if isinstance(bc, dict):
+    for ac_key, ac_val in bc.items():
+        if isinstance(ac_val, dict) and all(str(k).isdigit() for k in ac_val.keys()):
+            max_idx = max(int(k) for k in ac_val.keys())
+            new_list = [ac_val.get(i, ac_val.get(str(i))) for i in range(max_idx + 1)]
+            bc[ac_key] = new_list
+            changed = True
+if changed:
+    dir_name = os.path.dirname(rp) or '.'
+    fd, tmp = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
+    with os.fdopen(fd, 'w') as f:
+        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    os.replace(tmp, rp)
+    print(f'[report_field_set] dict→list auto-conversion applied for {dk}', file=sys.stderr)
+" "$REPORT_PATH" "$DOT_KEY" 2>&1 || true
+fi
 
 # --- GP-053: binary_checks書込み直後のsemantic check ---
 # 忍者がcheck="PASS"やresult=自由記述を書いた瞬間にフィードバック。
