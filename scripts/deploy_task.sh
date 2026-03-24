@@ -334,6 +334,33 @@ generate_report_template() {
         done
     fi
 
+    # cmd_selfimprovement: 同忍者の別cmdテンプレート残存(stale report)の自動検知・アーカイブ
+    local stale_own_basename stale_own_pcmd stale_own_verdict
+    for stale_own_report in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_"*.yaml; do
+        [ -f "$stale_own_report" ] || continue
+        stale_own_basename=$(basename "$stale_own_report")
+        # 今回のターゲット報告はスキップ
+        if [[ "$stale_own_report" == "$report_file" ]]; then
+            continue
+        fi
+        # 既存報告のparent_cmdを取得
+        stale_own_pcmd=$(FIELD_GET_NO_LOG=1 field_get "$stale_own_report" "parent_cmd" "")
+        # parent_cmdが同じならスキップ（同cmdの報告）
+        if [[ "$stale_own_pcmd" == "$parent_cmd" ]]; then
+            continue
+        fi
+        # 別cmdの報告: verdict確認
+        stale_own_verdict=$(FIELD_GET_NO_LOG=1 field_get "$stale_own_report" "verdict" "")
+        if [[ -n "$stale_own_verdict" && "$stale_own_verdict" != "null" && "$stale_own_verdict" != '""' ]]; then
+            log "report_template: completed own report preserved (${stale_own_basename}, verdict=${stale_own_verdict})"
+            continue
+        fi
+        # verdict空のテンプレート → staleアーカイブ
+        mkdir -p "$SCRIPT_DIR/archive/reports/stale"
+        mv "$stale_own_report" "$SCRIPT_DIR/archive/reports/stale/"
+        log "report_template: stale own report archived (${stale_own_basename}, old_cmd=${stale_own_pcmd})"
+    done
+
     # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
     if [ -f "$report_file" ]; then
         log "report_template: already exists, skipping (${report_file})"
