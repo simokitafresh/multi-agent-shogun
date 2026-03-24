@@ -5,8 +5,7 @@
 #
 # Mode: WARN (初期)。安定後にBLOCK昇格（PreToolUse deny化）。
 # cmd_1265
-
-set -eu
+# GP-095: crash耐性 — PostToolUse hookは非ゼロ終了禁止
 
 payload="$(cat 2>/dev/null || true)"
 if [ -z "${payload//[[:space:]]/}" ]; then
@@ -79,3 +78,4 @@ msg = (
 )
 emit_context(msg)
 PY
+exit 0

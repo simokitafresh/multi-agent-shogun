@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-set -eu
+# PostToolUse hook — WARN mode. Must NEVER exit non-zero (GP-095: crash耐性).
+_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || true
 
 payload="$(cat 2>/dev/null || true)"
 if [ -z "${payload//[[:space:]]/}" ]; then
     exit 0
 fi
 
-HOOK_PAYLOAD="$payload" PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)" python3 - <<'PY'
+HOOK_PAYLOAD="$payload" PROJECT_ROOT="${_PROJECT_ROOT:-/mnt/c/tools/multi-agent-shogun}" python3 - <<'PY'
 import json
 import os
 import subprocess
@@ -116,3 +117,8 @@ msg = (
 )
 emit_context(msg)
 PY
+_py_exit=$?
+if [ "${_py_exit:-0}" -ne 0 ]; then
+    echo "{\"timestamp\":\"$(date -uIs 2>/dev/null || date)\",\"hook\":\"post-write-shellcheck.sh\",\"crash_exit\":${_py_exit}}" >> "${_PROJECT_ROOT}/logs/hook_violations.jsonl" 2>/dev/null || true
+fi
+exit 0
