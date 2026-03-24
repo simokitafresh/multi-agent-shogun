@@ -126,6 +126,7 @@ declare -A REPORT_GATE_SENT      # 報告フォーマットgate FAIL送信済み
 declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ — key: "ninja:cmd_id", value: "1"
 declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "ninja:subtask_id", value: count
 declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key: agent_name, value: epoch秒
+declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時刻 — key: "ninja:cmd_id", value: epoch秒
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
@@ -140,6 +141,7 @@ STALL_ESCALATE_THRESHOLD=2  # 同一taskでのstall_escalate発火閾値
 KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
+REPORT_DONE_MISMATCH_DEBOUNCE=300  # report done+status未idleの同一ninja×cmd再通知抑制（5分=300秒）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
 LAST_KARO_CLEAR=0           # 家老の最終/clear送信時刻（epoch秒）
@@ -1226,6 +1228,53 @@ check_stall() {
     fi
 }
 
+# ─── report done + task status未idle 検知 (cmd_selfimprovement_monitor_report_done) ───
+# karo_snapshot.txt の report行で status=done の忍者を抽出し、
+# 同忍者の task YAML で status が idle/done でなければ家老にアラート。
+# デバウンス: 同一ninja×cmd_idで5分以内の再通知を抑止。
+check_report_done_idle_mismatch() {
+    local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
+    [ -f "$snapshot_file" ] || return
+
+    local now
+    now=$(date +%s)
+
+    while IFS='|' read -r _type name _summary report_status; do
+        [ "$_type" = "report" ] || continue
+        [ "$report_status" = "done" ] || continue
+        [ -z "$name" ] && continue
+
+        local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+        [ -f "$task_file" ] || continue
+
+        local task_status
+        task_status=$(yaml_field_get "$task_file" "status")
+
+        # idle/done は正常状態 → スキップ
+        case "$task_status" in
+            idle|done) continue ;;
+        esac
+
+        # parent_cmd取得（デバウンスキーに使用）
+        local parent_cmd
+        parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "unknown")
+        local mismatch_key="${name}:${parent_cmd}"
+
+        # デバウンス: 5分以内の再通知を抑止
+        local last_notified=${REPORT_DONE_MISMATCH_NOTIFIED[$mismatch_key]:-0}
+        local since_last=$(( now - last_notified ))
+        if [ "$last_notified" -gt 0 ] && [ "$since_last" -lt "$REPORT_DONE_MISMATCH_DEBOUNCE" ]; then
+            continue
+        fi
+
+        log "REPORT-DONE-MISMATCH: ${name} report=done but task status=${task_status} (${parent_cmd})"
+        send_inbox_message karo \
+            "【REPORT-DONE-MISMATCH】${name}: report=done だが task status=${task_status}（${parent_cmd}）。idle化が必要。" \
+            report_done_mismatch
+        REPORT_DONE_MISMATCH_NOTIFIED[$mismatch_key]=$now
+    done < "$snapshot_file"
+}
+
 # ─── stale cmd検知（pending+4時間超+subtask未配備） ───
 # queue/shogun_to_karo.yaml から pending cmd を抽出し、
 # queue/tasks/*.yaml に parent_cmd が存在しないまま4時間超過したcmdを家老に通知
@@ -1736,10 +1785,10 @@ write_karo_snapshot() {
                     # ペインCTX%を取得
                     local _ctx="?"
                     local _pidx=""
-                    _pidx=$(tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id}' 2>/dev/null \
+                    _pidx=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null \
                         | awk -v n="$name" '$2==n{print $1}')
                     if [ -n "$_pidx" ]; then
-                        _ctx=$(tmux capture-pane -t "shogun:2.$_pidx" -p 2>/dev/null \
+                        _ctx=$(tmux capture-pane -t "shogun:agents.$_pidx" -p 2>/dev/null \
                             | grep -oP 'CTX:\K[0-9]+' | tail -1)
                         _ctx="${_ctx:-?}%"
                     fi
@@ -2443,6 +2492,9 @@ while true; do
     for name in "${NINJA_NAMES[@]}"; do
         check_stall "$name"
     done
+
+    # ═══ report done + status未idle 検知 ═══
+    check_report_done_idle_mismatch
 
     # ═══ 破壊コマンド検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
