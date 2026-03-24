@@ -271,6 +271,29 @@ show_gunshi_recent_issues() {
 
 show_gunshi_recent_issues
 
+# --- 軍師ペイン活動状況表示（informational — WARN_COUNTに加算しない） ---
+show_gunshi_pane_status() {
+    local PANE_TARGET="shogun:2.2"
+
+    # ペイン存在確認（tmux未起動 or ペインなし → スキップ）
+    if ! tmux capture-pane -t "$PANE_TARGET" -p >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # 最終3行をキャプチャ（空行を除去してから末尾3行）
+    local PANE_CONTENT
+    PANE_CONTENT=$(tmux capture-pane -t "$PANE_TARGET" -p 2>/dev/null | sed '/^$/d' | tail -n 3) || return 0
+
+    if [[ -n "$PANE_CONTENT" ]]; then
+        echo "軍師ペイン(最終3行):"
+        while IFS= read -r line; do
+            echo "  $line"
+        done <<< "$PANE_CONTENT"
+    fi
+}
+
+show_gunshi_pane_status
+
 # --- 結果出力 ---
 if [[ "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"
