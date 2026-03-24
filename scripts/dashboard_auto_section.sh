@@ -255,7 +255,11 @@ KM_TOP_LESSON_ROWS=""
 KM_BOTTOM_LESSON_ROWS=""
 KM_TASK_TYPE_ROWS=""
 MODEL_SCOREBOARD_ROWS=""
-CONTEXT_WARNINGS="$(bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings 2>/dev/null || true)"
+# GP-074: 3外部スクリプトを並列実行 (35秒直列→~17秒並列)
+_TMP_CTX_WARN=$(mktemp)
+trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT" "$_TMP_CTX_WARN"' EXIT
+bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings > "$_TMP_CTX_WARN" 2>/dev/null &
+_PID_CTX=$!
 
 _gate_signature="missing"
 if [[ -f "$GATE_LOG" ]]; then
@@ -265,10 +269,17 @@ _cached_signature=""
 [[ -f "$KM_CACHE_LINES" ]] && _cached_signature=$(tr -d '[:space:]' < "$KM_CACHE_LINES" 2>/dev/null)
 
 if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || ! grep -q '^model_row=' "$KM_MODEL_CACHE" 2>/dev/null; then
-    bash "$SCRIPT_DIR/knowledge_metrics.sh" --json --by-project --by-model > "$KM_JSON_CACHE" 2>/dev/null || true
-    bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null || true
+    bash "$SCRIPT_DIR/knowledge_metrics.sh" --json --by-project --by-model > "$KM_JSON_CACHE" 2>/dev/null &
+    _PID_KM=$!
+    bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null &
+    _PID_MA=$!
+    wait "$_PID_KM" 2>/dev/null || true
+    wait "$_PID_MA" 2>/dev/null || true
     echo "$_gate_signature" > "$KM_CACHE_LINES"
 fi
+
+wait "$_PID_CTX" 2>/dev/null || true
+CONTEXT_WARNINGS="$(cat "$_TMP_CTX_WARN" 2>/dev/null || true)"
 
 # Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp + knowledge breakdown rows)
 if [[ -f "$KM_JSON_CACHE" ]] && [[ -s "$KM_JSON_CACHE" ]]; then

@@ -163,35 +163,74 @@ def last_updated_days(abs_path: str) -> int | None:
     return (date.today() - updated_at).days
 
 
-def project_has_recent_completed_cmd(project_id: str) -> bool:
-    archive_glob = os.path.join(root, "queue", "archive", "cmds", "*.yaml")
-    for path in sorted(glob.glob(archive_glob)):
-        data = load_yaml(path)
-        commands = data.get("commands", []) if isinstance(data, dict) else []
-        if not isinstance(commands, list):
+_recent_cmd_cache: dict[str, bool] = {}
+_archive_project_index: dict[str, list[str]] | None = None
+
+def _build_archive_index() -> dict[str, list[str]]:
+    """Build project→files index from archive dir (one-time scan per run)."""
+    global _archive_project_index
+    if _archive_project_index is not None:
+        return _archive_project_index
+    archive_dir = os.path.join(root, "queue", "archive", "cmds")
+    _archive_project_index = {}
+    if not os.path.isdir(archive_dir):
+        return _archive_project_index
+    # GP-074: scan only recent files (last 14 days by filename date)
+    cutoff_14d = date.today() - timedelta(days=14)
+    for fname in os.listdir(archive_dir):
+        if not fname.endswith(".yaml"):
             continue
+        fpath = os.path.join(archive_dir, fname)
+        # Quick date check from filename first
+        fdate = extract_date(fname)
+        if fdate and fdate < cutoff_14d:
+            continue
+        # If no date in filename, include it (conservative)
+        try:
+            with open(fpath, encoding="utf-8") as f:
+                text = f.read(4096)  # First 4KB is enough for metadata
+        except Exception:
+            continue
+        for pid in ACTIVE_PROJECT_IDS:
+            if f"project: {pid}" in text or f"project: '{pid}'" in text:
+                _archive_project_index.setdefault(pid, []).append(fpath)
+    return _archive_project_index
 
-        for command in commands:
-            if not isinstance(command, dict):
-                continue
-            if str(command.get("project", "")).strip() != project_id:
-                continue
-            if str(command.get("status", "")).strip() not in {"completed", "done"}:
-                continue
+def project_has_recent_completed_cmd(project_id: str) -> bool:
+    if project_id in _recent_cmd_cache:
+        return _recent_cmd_cache[project_id]
+    # GP-074: pre-indexed scan, no yaml.safe_load
+    index = _build_archive_index()
+    candidate_paths = index.get(project_id, [])
 
-            completed_at = (
-                command.get("completed_at")
-                or command.get("archived_at")
-                or command.get("updated_at")
-                or command.get("delegated_at")
-                or command.get("created_at")
-            )
-            completed_date = extract_date(str(completed_at or ""))
-            if completed_date is None:
-                completed_date = extract_date(os.path.basename(path))
-            if completed_date and completed_date >= cutoff_date:
+    for path in candidate_paths:
+        # Quick text scan: check project, status, and date without full YAML parse
+        try:
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+        except Exception:
+            continue
+        if f"project: {project_id}" not in text and f"project: '{project_id}'" not in text:
+            continue
+        if "status: completed" not in text and "status: done" not in text:
+            continue
+        # Extract date from text (any date in the file near completed_at/archived_at)
+        for date_field in ("completed_at:", "archived_at:", "updated_at:", "delegated_at:", "created_at:"):
+            idx = text.find(date_field)
+            if idx < 0:
+                continue
+            snippet = text[idx:idx+60]
+            d = extract_date(snippet)
+            if d and d >= cutoff_date:
+                _recent_cmd_cache[project_id] = True
                 return True
+        # Fallback: date from filename
+        d = extract_date(os.path.basename(path))
+        if d and d >= cutoff_date:
+            _recent_cmd_cache[project_id] = True
+            return True
 
+    _recent_cmd_cache[project_id] = False
     return False
 
 
