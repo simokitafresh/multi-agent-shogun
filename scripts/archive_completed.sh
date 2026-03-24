@@ -11,7 +11,9 @@
 set -euo pipefail
 
 # tmpファイルの後始末
-cleanup() { rm -f /tmp/stk_active_$$.yaml /tmp/dash_karo_trim_$$.md /tmp/lord_conv_trim_$$.yaml; }
+TMP=$(mktemp -d)
+export TMP  # GP-080: PythonのENVIRON参照用
+cleanup() { rm -rf "$TMP" /tmp/stk_active_$$.yaml /tmp/dash_karo_trim_$$.md /tmp/lord_conv_trim_$$.yaml; }
 trap cleanup EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -325,30 +327,21 @@ if os.path.isdir(archive_cmd_dir):
             if len(parts) >= 2:
                 completed_ids.add(f"{parts[0]}_{parts[1]}")
 
-# Source 2: 現行報告 (status: done/completed)
-def check_reports_dir(rdir):
-    if not os.path.isdir(rdir):
-        return
-    for fname in os.listdir(rdir):
-        if not fname.endswith(".yaml"):
-            continue
-        path = os.path.join(rdir, fname)
-        try:
-            with open(path, encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-        except Exception:
-            continue
-        if not isinstance(data, dict):
-            continue
-        status = str(data.get("status", "")).strip()
-        if status in ("done", "completed", "complete", "success"):
-            parent = str(data.get("parent_cmd", "")).strip()
-            if parent.startswith("cmd_"):
-                # parent_cmd → cmd_id (cmd_1136 from cmd_1136_impl_b)
-                cid = "_".join(parent.split("_")[:2])
-                completed_ids.add(cid)
-
-check_reports_dir(reports_dir)
+# Source 2: 現行報告 (status: done/completed) — GP-080: TSVキャッシュから読取り
+# 旧: yaml.safe_load×97ファイル(457ms)
+# 新: gawk生成TSV 1回読取り(<1ms)
+cache_path = os.path.join(os.environ.get("TMP", "/tmp"), "report_fields_cache.tsv")
+if os.path.isfile(cache_path):
+    with open(cache_path, encoding="utf-8") as cf:
+        for line in cf:
+            parts = line.strip().split("|", 2)
+            if len(parts) < 3:
+                continue
+            fname, status, parent = parts
+            if status in ("done", "completed", "complete", "success"):
+                if parent.startswith("cmd_"):
+                    cid = "_".join(parent.split("_")[:2])
+                    completed_ids.add(cid)
 
 # Source 3: アーカイブ済み報告 — GP-077: スキップ
 # archive/reportsの全量yaml.safe_load(2827件, 11.7秒)は冗長。
@@ -575,12 +568,40 @@ archive_reports() {
         return 0
     fi
 
+    # GP-080: 共有キャッシュTSVから連想配列ロード (gawk実行は Main で1回のみ)
+    declare -A _rpt_status _rpt_parent
+    if [ -f "$_REPORT_CACHE" ]; then
+        while IFS='|' read -r _rf _rs _rp; do
+            _rpt_status["$_rf"]="$_rs"
+            _rpt_parent["$_rf"]="$_rp"
+        done < "$_REPORT_CACHE"
+    fi
+
+    # task files キャッシュ (L667-669のfield_get置換)
+    declare -A _task_parent _task_status
+    local _task_glob=("$PROJECT_DIR/queue/tasks"/*.yaml)
+    if [ -f "${_task_glob[0]}" ]; then
+        while IFS='|' read -r _tf _ts _tp; do
+            _task_status["$_tf"]="$_ts"
+            _task_parent["$_tf"]="$_tp"
+        done < <(gawk '
+            BEGINFILE {
+                fname = FILENAME; sub(/.*\//, "", fname)
+                st = ""; pc = ""
+            }
+            /status:/ && !/^#/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", st) }
+            /parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", pc) }
+            ENDFILE { print fname "|" st "|" pc }
+        ' "${_task_glob[@]}" 2>/dev/null)
+    fi
+
     for report_file in "${report_files[@]}"; do
         [ -f "$report_file" ] || continue
 
         local status_val parent_cmd base_name target_name dest_path
-        status_val=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "status" "" 2>/dev/null | tr -d '[:space:]')
-        parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "parent_cmd" "" 2>/dev/null | tr -d '[:space:]')
+        local _bname; _bname="$(basename "$report_file")"
+        status_val="${_rpt_status[$_bname]}"
+        parent_cmd="${_rpt_parent[$_bname]}"
 
         # cmd指定時は該当cmdの報告のみを対象化
         if [ -n "$CMD_ID" ] && [ -n "$parent_cmd" ] && [ "$parent_cmd" != "$CMD_ID" ]; then
@@ -664,9 +685,10 @@ archive_reports() {
                         for task_file_check in "$PROJECT_DIR/queue/tasks"/*.yaml; do
                             [ -f "$task_file_check" ] || continue
                             local t_parent t_status
-                            t_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file_check" "parent_cmd" "" 2>/dev/null | tr -d '[:space:]')
+                            local _tbname; _tbname="$(basename "$task_file_check")"
+                            t_parent="${_task_parent[$_tbname]}"
                             [ "$t_parent" = "$parent_cmd" ] || continue
-                            t_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file_check" "status" "" 2>/dev/null | tr -d '[:space:]')
+                            t_status="${_task_status[$_tbname]}"
                             case "$t_status" in
                                 done|completed|complete|success|failed|"") ;;
                                 *)
@@ -1085,6 +1107,22 @@ PY
 # Main
 # ============================================================
 echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
+
+# GP-080: 報告ファイルのstatus/parent_cmdを一括抽出 (共有キャッシュ)
+# sync_stk Source 2 + archive_reports L582-583 の両方が消費
+_REPORT_CACHE="$TMP/report_fields_cache.tsv"
+if compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$REPORTS_DIR/subtask_*.yaml" > /dev/null 2>&1; then
+    gawk '
+        BEGINFILE {
+            fname = FILENAME; sub(/.*\//, "", fname)
+            st = ""; pc = ""
+        }
+        /^status:/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
+        /^parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
+        ENDFILE { print fname "|" st "|" pc }
+    ' "$REPORTS_DIR"/*.yaml 2>/dev/null > "$_REPORT_CACHE"
+fi
+
 archive_cmds
 sync_stk_status_from_archive
 trim_cmd_chronicle
