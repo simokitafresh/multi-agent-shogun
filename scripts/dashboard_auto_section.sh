@@ -81,54 +81,57 @@ name_jp() {
     get_japanese_name "$1"
 }
 
-# ─── Helper: Get model for a ninja from settings.yaml ───
-get_model() {
-    local ninja="$1"
-    local profiles_yaml="$PROJECT_DIR/config/cli_profiles.yaml"
-    [[ ! -f "$SETTINGS" || ! -f "$profiles_yaml" ]] && { echo "unknown"; return; }
-    python3 - "$SETTINGS" "$profiles_yaml" "$ninja" <<'PY'
-import sys
-import yaml
-
-settings_path, profiles_path, ninja = sys.argv[1], sys.argv[2], sys.argv[3]
-
+# ─── GP-081: Pre-compute all ninja models in single python3 call ───
+declare -A _MODEL_CACHE=()
+_profiles_yaml="$PROJECT_DIR/config/cli_profiles.yaml"
+if [[ -f "$SETTINGS" && -f "$_profiles_yaml" ]]; then
+    _model_tmp=$(mktemp)
+    # shellcheck disable=SC2086
+    python3 - "$SETTINGS" "$_profiles_yaml" $ALL_NINJAS > "$_model_tmp" <<'PY'
+import sys, yaml
+settings_path, profiles_path = sys.argv[1], sys.argv[2]
+ninjas = sys.argv[3:]
 try:
     with open(settings_path, encoding="utf-8") as f:
         settings = yaml.safe_load(f) or {}
     with open(profiles_path, encoding="utf-8") as f:
         profiles_data = yaml.safe_load(f) or {}
 except Exception:
-    print("unknown")
+    for n in ninjas:
+        print(f"{n}|unknown")
     raise SystemExit(0)
-
 cli = settings.get("cli", {}) if isinstance(settings, dict) else {}
 agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
-agent_cfg = agents.get(ninja, {})
 default_cli = str(cli.get("default", "claude") or "claude")
 effort = str(settings.get("effort", "") or "").strip()
 profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
-
-cli_type = default_cli
-model_label = ""
-has_explicit_model = False
-if isinstance(agent_cfg, str):
-    cli_type = str(agent_cfg or default_cli).strip() or default_cli
-elif isinstance(agent_cfg, dict):
-    cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
-    model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
-    has_explicit_model = bool(model_label)
-
-if not model_label:
-    profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
-    model_label = " ".join(str(profile.get("display_name") or cli_type or "").split())
-
-parts = [model_label]
-if has_explicit_model and effort and effort not in model_label.split():
-    parts.append(effort)
-
-result = " ".join(part for part in parts if part).strip()
-print(result or "unknown")
+for ninja in ninjas:
+    agent_cfg = agents.get(ninja, {})
+    cli_type = default_cli
+    model_label = ""
+    has_explicit_model = False
+    if isinstance(agent_cfg, str):
+        cli_type = str(agent_cfg or default_cli).strip() or default_cli
+    elif isinstance(agent_cfg, dict):
+        cli_type = str(agent_cfg.get("type") or default_cli).strip() or default_cli
+        model_label = " ".join(str(agent_cfg.get("model_name") or "").split())
+        has_explicit_model = bool(model_label)
+    if not model_label:
+        profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
+        model_label = " ".join(str(profile.get("display_name") or cli_type or "").split())
+    parts = [model_label]
+    if has_explicit_model and effort and effort not in model_label.split():
+        parts.append(effort)
+    result = " ".join(part for part in parts if part).strip()
+    print(f"{ninja}|{result or 'unknown'}")
 PY
+    while IFS='|' read -r _mn _mv; do
+        _MODEL_CACHE["$_mn"]="$_mv"
+    done < "$_model_tmp"
+    rm -f "$_model_tmp"
+fi
+get_model() {
+    echo "${_MODEL_CACHE[$1]:-unknown}"
 }
 
 # ─── Build cmd→ninjas mapping (from task YAMLs) ───
@@ -611,25 +614,26 @@ if [[ -s "$TMP_PIPELINE" ]]; then
     awk -F'\t' '{print $1"\t"$2}' "$TMP_PIPELINE" >> "$TMP_TITLES"
 fi
 if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
+    # GP-081: single gawk pass replaces ~1178 individual awk calls
     shopt -s nullglob
-    for archive_file in "$ARCHIVE_CMD_DIR"/cmd_*.yaml; do
-        [[ -f "$archive_file" ]] || continue
-        awk '
+    _arch_files=("$ARCHIVE_CMD_DIR"/cmd_*.yaml)
+    shopt -u nullglob
+    if (( ${#_arch_files[@]} > 0 )); then
+        gawk '
+            BEGINFILE { cid = "" }
             /^ *- id: cmd_/ {
                 sub(/.*- id: */, ""); gsub(/["\047[:space:]]/, "")
-                cid=$0; tit=""
+                cid=$0
             }
             /^    title:/ && cid!="" {
                 sub(/.*title: */, "")
                 gsub(/^["\047]|["\047]$/, "")
                 if (length($0)>50) $0=substr($0,1,47)"..."
-                tit=$0
-                print cid"\t"tit
+                print cid"\t"$0
                 cid=""
             }
-        ' "$archive_file" >> "$TMP_TITLES"
-    done
-    shopt -u nullglob
+        ' "${_arch_files[@]}" >> "$TMP_TITLES"
+    fi
 fi
 
 # ─── Get last 5 CLEAR cmds for battle results ───
