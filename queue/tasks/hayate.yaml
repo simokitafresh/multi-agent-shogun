@@ -1,56 +1,27 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4 > AC5
-  ac_version: a565e9ea
+  ac_version: 0030aa7e
   acceptance_criteria:
   - binary_checks:
-    - 'CLAUDE.md禁則セクション末尾にルールが追加されたか: yes/no'
-    - '追加ルールに「時系列ナビゲーション」「旧方式→問題→新版パス」が含まれるか: yes/no'
-    description: 'CLAUDE.md Vercelスタイル禁則セクション(L397-405付近)の末尾に以下のルールを追加: 「新版移行時は旧ドキュメントに時系列ナビゲーション(旧方式→問題→新版パス)を埋め込め。旧版が最新に見える状態を放置するな」'
+    - check: ボトルネック3箇所の行番号と関数名と所要時間が明記されているか
+      result: FILL_THIS
+    - check: 各箇所に対する具体的な最適化手法が提案されているか
+      result: FILL_THIS
+    description: archive_completed.shのボトルネック上位3箇所を特定し各箇所の所要時間(秒)と最適化手法を報告
     id: AC1
   - binary_checks:
-    - 'L106付近の本番登録計画行が更新されたか: yes/no'
-    - '更新後にcmd_1082言及+checklist-shin-v2-registration.mdパス参照があるか: yes/no'
-    description: context/dm-signal.md L106の本番登録計画行を更新。現状「31体。手順書v2更新必要」→「事故歴(cmd_1082)→段階的チェックリストで進行中→context/checklist-shin-v2-registration.md」
+    - check: ボトルネック3箇所の行番号と関数名と所要時間が明記されているか
+      result: FILL_THIS
+    - check: 各箇所に対する具体的な最適化手法が提案されているか
+      result: FILL_THIS
+    description: ralph_loop_metrics.shのボトルネック上位3箇所を特定し各箇所の所要時間(秒)と最適化手法を報告
     id: AC2
-  - binary_checks:
-    - '§27末尾に登録進捗チェックリスト参照行が追加されたか: yes/no'
-    - '追加行にchecklist-shin-v2-registration.mdパスが含まれるか: yes/no'
-    description: 'context/dm-signal-research.md §27末尾(L467付近)に1行追加: 「⚠ 登録進捗管理はチェックリストに移行済み→context/checklist-shin-v2-registration.md」'
-    id: AC3
-  - binary_checks:
-    - 'シン四神v2セクション末尾に参照行が追加されたか: yes/no'
-    - '追加行にchecklist-shin-v2-registration.mdパスが含まれるか: yes/no'
-    description: 'context/dm-signal-core.md シン四神v2セクション(L124-132付近)末尾に1行追加: 「⚠ 登録進捗はチェックリスト参照→context/checklist-shin-v2-registration.md」'
-    id: AC4
-  - binary_checks:
-    - 'frontmatter直後に警告ブロックが追加されたか: yes/no'
-    - '警告ブロックにcmd_1082言及+チェックリストパスがあるか: yes/no'
-    - '既存ランブック内容が変更されていないか(追加のみ): yes/no'
-    description: '/mnt/c/Python_app/DM-signal/docs/rule/shin-shijin-registration-runbook.md冒頭(frontmatter直後、L17付近)に警告ブロック追加:
-      「⚠ このランブックは手順の参考資料。実際の登録進捗管理はチェックリストに移行済み→/mnt/c/tools/multi-agent-shogun/context/checklist-shin-v2-registration.md
-      理由: cmd_1082で一括登録が事故を起こしたため段階的チェックリストで管理する方式に変更」'
-    id: AC5
   bloom_level: ''
-  command: 'ドキュメント移行時に旧版へ時系列ストーリー(なぜ移行→新版パス)を埋め込むルールを恒久化し、
+  command: '高頻度スクリプト2本のボトルネックを特定し最適化手法を報告せよ。 cd /mnt/c/tools/multi-agent-shogun。 対象スクリプト(1)
+    scripts/archive_completed.sh (1133行 27.6秒) (2) scripts/ralph_loop_metrics.sh (539行
+    20.8秒)。 調査方法は bash -x プロファイリング、サブシェルfork数計測、 直列ループ内I/O特定、並列化可能ブロック特定。
 
-    シン四神v2チェックリストへの誘導を関連5ファイルに追加する。
-
-
-    ■ 背景
-
-    殿の指摘: ストーリーと時系列がないドキュメントは、書いてあっても正しいものを開かない。
-
-    旧方式→問題→新方式という流れが各ドキュメントに埋まっていれば、
-
-    どのドキュメントを開いても間違いに気づき最新に辿り着ける。'
-  deployed_at: '2026-03-24T11:38:30'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L058: hayate(subtask_340_impl_a)\n────────────────────────────────────────\n\
-    \n"
+    '
+  deployed_at: '2026-03-25T00:52:19'
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -59,69 +30,30 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  gunshi_memo: '軍師事前調査メモ: 各ACの正確な編集位置を確認済み。
-
-    AC1=CLAUDE.md L397-405 Vercelスタイル禁則セクション末尾に1ルール追加。
-
-    AC2=context/dm-signal.md L106 本番登録計画行。
-
-    AC3=context/dm-signal-research.md §27末尾=L467付近。
-
-    AC4=context/dm-signal-core.md L124-132 シン四神v2セクション末尾。
-
-    AC5=/mnt/c/Python_app/DM-signal/docs/rule/shin-shijin-registration-runbook.md
-    L17(frontmatter直後)。
-
-    4ファイル全てでchecklist-shin-v2-registration.md参照なし確認済み。'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  ninja: hayate
   ninja_weak_points:
-    breakdown: report_yaml_format(9件), commit_missing(3件), report_missing(1件), double_deploy(1件),
+    breakdown: report_yaml_format(11件), commit_missing(3件), double_deploy(2件), report_missing(1件),
       uncategorized(1件)
     source: karo_workarounds.yaml
-    top_pattern: report_yaml_format(9件)
-    total_workarounds: 15
+    top_pattern: report_yaml_format(11件)
+    total_workarounds: 18
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
   not_in_scope:
-  - チェックリスト本体(checklist-shin-v2-registration.md)の内容変更
-  - MEMORY.mdの更新
-  - memory/project_shin_shijin_pipeline.mdの更新
+  - 最適化の実装は本タスク対象外
+  - deploy_task.shは別忍者が担当
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  - AC4
-  - AC5
-  parent_cmd: cmd_1360
+  parent_cmd: cmd_1384
   project: infra
-  related_lessons:
-  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-    id: L074
-    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-    id: L063
-    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-    id: L225
-    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
-      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
-      files を除外するか commit/push 対象から切り離さないと実運用で達成
-    id: L220
-    summary: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
-      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
-      files を除外するか commit/push 対象から切り離さないと実運用で達成
-  - detail: hayate(subtask_340_impl_a)
-    id: L058
-    summary: hayate(subtask_340_impl_a)
-  report_filename: hayate_report_cmd_1360.yaml
-  report_path: queue/reports/hayate_report_cmd_1360.yaml
+  related_lessons: []
+  report_filename: hayate_report_cmd_1384.yaml
+  report_path: queue/reports/hayate_report_cmd_1384.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  scope_mode: EXACT
-  status: done
+  status: idle
   stop_for: []
-  target_path: CLAUDE.md
+  type: recon
