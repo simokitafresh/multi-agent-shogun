@@ -278,6 +278,7 @@ python3 - "$TSV_FILE" "$LESSONS_DIR" "$THRESHOLD" "$SINCE" "$JSON_OUTPUT" "$BY_P
 import sys
 import json
 import os
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -326,43 +327,89 @@ def dedup_cmd_rows(items):
             final[cmd_id] = item
     return list(final.values())
 
+# GP-076: Shared cache with lesson_deprecation_scan.sh (GP-075)
+_ID_PAT = re.compile(r'id:\s+(cmd_\d+)')
+_PROJ_PAT = re.compile(r'project:\s+[\x27"]?([a-zA-Z0-9_-]+)')
+
+
 def load_cmd_metadata(root_dir):
     metadata = {}
-    candidates = [root_dir / "queue" / "shogun_to_karo.yaml"]
-    archive_dir = root_dir / "queue" / "archive" / "cmds"
-    if archive_dir.is_dir():
-        candidates.extend(sorted(archive_dir.glob("*.yaml")))
+    cache_path = root_dir / "queue" / "cmd_project_map_cache.tsv"
 
-    if _yaml is None:
+    # Always re-scan shogun_to_karo.yaml (active commands)
+    stk = root_dir / "queue" / "shogun_to_karo.yaml"
+    if stk.is_file() and _yaml:
+        try:
+            data = _yaml.safe_load(stk.read_text(encoding="utf-8")) or {}
+        except Exception:
+            data = {}
+        if isinstance(data, dict):
+            for key, cmd in data.items():
+                if isinstance(cmd, dict):
+                    cid = str(cmd.get("id", "")).strip()
+                    pid = str(cmd.get("project", "unknown") or "unknown").strip() or "unknown"
+                    if cid:
+                        metadata[cid] = {"project": pid, "title": ""}
+
+    archive_dir = root_dir / "queue" / "archive" / "cmds"
+    if not archive_dir.is_dir():
         return metadata
 
-    for path in candidates:
-        if not path.is_file():
-            continue
+    # Try loading from GP-075 shared cache
+    cached = {}
+    cached_files = set()
+    if cache_path.is_file():
+        with open(cache_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.rstrip("\n")
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split("\t")
+                if len(parts) == 3 and parts[0] == "F":
+                    cached_files.add(parts[1])
+                elif len(parts) == 2:
+                    cached[parts[0]] = parts[1]
+
+    all_archive_files = {fn for fn in os.listdir(archive_dir) if fn.endswith(".yaml")}
+    new_files = all_archive_files - cached_files
+
+    if not new_files:
+        # Cache fully covers archive: use cached data
+        for cid, pid in cached.items():
+            metadata[cid] = {"project": pid, "title": ""}
+        return metadata
+
+    # Scan new files with text scan + update cache
+    new_entries = {}
+    for fname in new_files:
+        path = archive_dir / fname
         try:
-            data = _yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            with open(path, encoding="utf-8") as f:
+                text = f.read(8192)
         except Exception:
             continue
+        ids = list(_ID_PAT.finditer(text))
+        if len(ids) == 1:
+            projs = _PROJ_PAT.findall(text)
+            if projs:
+                new_entries[ids[0].group(1)] = projs[0]
+        else:
+            for m in ids:
+                pm = _PROJ_PAT.search(text, m.end())
+                if pm and (pm.start() - m.end()) < 500:
+                    new_entries[m.group(1)] = pm.group(1)
 
-        commands = []
-        if isinstance(data, dict):
-            if isinstance(data.get("commands"), list):
-                commands = data.get("commands", [])
-            elif "id" in data:
-                commands = [data]
-        elif isinstance(data, list):
-            commands = data
+    merged = {**cached, **new_entries}
+    for cid, pid in merged.items():
+        metadata[cid] = {"project": pid, "title": ""}
 
-        for command in commands:
-            if not isinstance(command, dict):
-                continue
-            cmd_id = str(command.get("id", "")).strip()
-            if not cmd_id:
-                continue
-            metadata[cmd_id] = {
-                "project": str(command.get("project", "unknown") or "unknown").strip() or "unknown",
-                "title": str(command.get("title", "") or "").strip(),
-            }
+    # Persist updated cache (shared with lesson_deprecation_scan.sh)
+    with open(cache_path, "w", encoding="utf-8") as f:
+        f.write("# cmd_project_map_cache (auto-generated)\n")
+        for cid in sorted(merged):
+            f.write(f"{cid}\t{merged[cid]}\n")
+        for fname in sorted(all_archive_files):
+            f.write(f"F\t{fname}\t1\n")
     return metadata
 
 def load_gate_rows(gate_log_path):
