@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 323件 (draft:133, report:127, self_study:69) | 2026-03-20〜
+# 累計: 329件 (draft:135, report:128, self_study:72) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -2743,3 +2743,14 @@
   verdict: APPROVE
   findings_summary: "inject_context_update+inject_related_lessons高速化。2.8s→0.8s推定。LG002: cmd_1385と並行。not_in_scopeで統合検討除外。confidence: HIGH"
   timestamp: "2026-03-25T01:38:00"
+# --- cmd_1384 kagemaru report review ---
+- cmd_id: cmd_1384
+  review_type: report
+  ninja: kagemaru
+  verdict: LGTM
+  findings_summary: "AC3(deploy_task 3ボトルネック:resolve_dispatch_title 8.1s/inject_context 1.7s/inject_lessons 1.1s)+AC4(9箇所統合優先順位表/合計24.3s)。偵察データがcmd_1385(28ms)+1386(0.8s)の設計根拠。lesson_candidate承認(archive逐次I/O共通パターン)"
+  gate_precheck: PASS
+  lesson_extraction: "LK承認:archive逐次スキャンは共通ボトルネックパターン(gawk BEGINFILE/ENDFILEで根治)"
+  context_reflux: "GP-081/082/083で実証済み。context/infrastructure.mdの最適化パターンセクションに追記不要(CLAUDE.md索引済)"
+  dashboard_line: "cmd_1384 kagemaru偵察LGTM — deploy_task 9箇所プロファイリング完了"
+  timestamp: "2026-03-25T02:10:00"
