@@ -210,6 +210,7 @@ inject_task_id() {
 # ─── ac_version自動注入（cmd_530: stale作業検知, cmd_1053: ハッシュ化） ───
 # acceptance_criteriaの各descriptionをソート→連結→md5先頭8桁をtask.ac_versionとして保持。
 # 件数が同じでも内容が変われば異なるハッシュになる。再配備時に再計算される。
+# cmd_1393: Python→awk+md5sum置換
 inject_ac_version() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -217,71 +218,56 @@ inject_ac_version() {
         return 0
     fi
 
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
-import hashlib
-import os
-import sys
-import tempfile
+    # acceptance_criteria内のdescriptionを抽出→sort→|結合→md5先頭8桁
+    local concat
+    concat=$(awk '
+        BEGIN { in_ac=0; in_item=0; desc=""; n=0 }
+        /^[[:space:]]*acceptance_criteria:/ {
+            ac_indent = match($0, /[^ ]/) - 1
+            in_ac=1; next
+        }
+        !in_ac { next }
+        {
+            if (match($0, /[^ ]/)) ci = RSTART - 1; else next
+            if (ci <= ac_indent && $0 !~ /^[[:space:]]*-/) {
+                if (in_item) { descs[n++]=desc; desc=""; in_item=0 }
+                in_ac=0; next
+            }
+            if ($0 ~ /^[[:space:]]*- /) {
+                if (in_item) { descs[n++]=desc; desc="" }
+                in_item=1; next
+            }
+            if (in_item) {
+                line=$0; sub(/^[[:space:]]+/,"",line)
+                if (line ~ /^description:/) {
+                    sub(/^description:[[:space:]]*/,"",line)
+                    sub(/[[:space:]]*$/,"",line)
+                    gsub(/^["'"'"']|["'"'"']$/,"",line)
+                    desc=line
+                }
+            }
+        }
+        END {
+            if (in_item) descs[n++]=desc
+            for(i=0;i<n;i++) for(j=i+1;j<n;j++) if(descs[i]>descs[j]){t=descs[i];descs[i]=descs[j];descs[j]=t}
+            r=""
+            for(i=0;i<n;i++){if(i>0)r=r"|"; r=r descs[i]}
+            printf "%s",r
+        }
+    ' "$task_file" 2>/dev/null)
 
-import yaml
+    local ac_version
+    ac_version=$(printf '%s' "$concat" | md5sum | cut -c1-8)
 
-task_file = os.environ['TASK_FILE_ENV']
+    local prev
+    prev=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_version" "")
 
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
+    yaml_field_set "$task_file" "task" "ac_version" "$ac_version"
 
-    if not data or 'task' not in data:
-        print('[AC_VERSION] No task section, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-    ac = task.get('acceptance_criteria', [])
-
-    descriptions = []
-    if isinstance(ac, list):
-        for item in ac:
-            if isinstance(item, dict):
-                descriptions.append(str(item.get('description', '')).strip())
-            else:
-                descriptions.append(str(item).strip())
-    elif isinstance(ac, str):
-        descriptions.append(ac.strip())
-    elif isinstance(ac, dict):
-        for key in sorted(ac.keys()):
-            descriptions.append(str(ac[key]).strip() if ac[key] else str(key))
-
-    if descriptions:
-        descriptions.sort()
-        concat = '|'.join(descriptions)
-        ac_version = hashlib.md5(concat.encode('utf-8')).hexdigest()[:8]
-    else:
-        ac_version = hashlib.md5(b'').hexdigest()[:8]
-
-    prev = task.get('ac_version')
-    task['ac_version'] = ac_version
-
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
-
-    if str(prev) == str(ac_version):
-        print(f'[AC_VERSION] unchanged: {ac_version}', file=sys.stderr)
-    else:
-        print(f'[AC_VERSION] set: {prev} -> {ac_version}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[AC_VERSION] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
+    if [ "$prev" = "$ac_version" ]; then
+        log "[AC_VERSION] unchanged: $ac_version"
+    else
+        log "[AC_VERSION] set: $prev -> $ac_version"
     fi
 }
 
@@ -424,124 +410,81 @@ binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "ye
 verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
 EOF
 
-    # cmd_1131: related_lessonsが存在する場合、lessons_usefulを記入用雛形に差替え
-    local _lu_output
-    _lu_output=$(mktemp)
-    if run_python_logged "$_lu_output" env TASK_FILE_ENV="$task_file" REPORT_FILE_ENV="$report_file" python3 - <<'LUEOF'
-import os
-import sys
+    # cmd_1131+cmd_1393: related_lessonsが存在する場合、lessons_usefulを記入用雛形に差替え（Python→bash/awk）
+    local _lu_ids
+    _lu_ids=$(awk '
+        /^  related_lessons:/ { in_rl=1; next }
+        in_rl && /^  [a-z]/ { exit }
+        in_rl && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print }
+    ' "$task_file" 2>/dev/null)
 
-import yaml
+    if [ -z "$_lu_ids" ]; then
+        # GP-088: related_lessonsなし or id抽出不能 → null→[]に変換
+        if grep -q 'lessons_useful: null' "$report_file" 2>/dev/null; then
+            sed -i 's/lessons_useful: null/lessons_useful: []/' "$report_file"
+            log "report_template: lessons_useful null→[] fallback"
+        fi
+    else
+        # IDリストからlessons_useful雛形を生成
+        local _lu_block="lessons_useful:"
+        local _lu_count=0
+        while IFS= read -r _lid; do
+            [ -z "$_lid" ] && continue
+            _lu_block="${_lu_block}
+  - id: ${_lid}
+    useful: false
+    reason: ''"
+            _lu_count=$((_lu_count + 1))
+        done <<< "$_lu_ids"
 
-task_file = os.environ['TASK_FILE_ENV']
-report_file = os.environ['REPORT_FILE_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-    if not data:
-        sys.exit(1)
-    task = data.get('task', data)
-    related = task.get('related_lessons', [])
-    if not related or not isinstance(related, list):
-        # GP-088: related_lessonsなし → null→[]に変換して終了（null残存WA防止）
-        with open(report_file) as f:
-            content = f.read()
-        if 'lessons_useful: null' in content:
-            content = content.replace('lessons_useful: null', 'lessons_useful: []')
-            with open(report_file, 'w') as f:
-                f.write(content)
-            print('lessons_useful: no related_lessons, null→[] fallback')
-        sys.exit(0)
-
-    ids = [r['id'] for r in related if isinstance(r, dict) and 'id' in r]
-    if not ids:
-        # GP-088: related_lessonsあるがid抽出不能 → null→[]に変換
-        with open(report_file) as f:
-            content = f.read()
-        if 'lessons_useful: null' in content:
-            content = content.replace('lessons_useful: null', 'lessons_useful: []')
-            with open(report_file, 'w') as f:
-                f.write(content)
-            print('lessons_useful: ids empty, null→[] fallback')
-        sys.exit(0)
-
-    lines = ["lessons_useful:"]
-    for lid in ids:
-        lines.append(f"  - id: {lid}")
-        lines.append(f"    useful: false")
-        lines.append(f"    reason: ''")
-
-    with open(report_file) as f:
-        content = f.read()
-    content = content.replace('lessons_useful: null', '\n'.join(lines))
-    with open(report_file, 'w') as f:
-        f.write(content)
-
-    print(f'lessons_useful template: {len(ids)} entries injected')
-except Exception as e:
-    print(f'WARN: lessons_useful inject failed: {e}', file=sys.stderr)
-LUEOF
-    then
-        log "report_template: lessons_useful template injected"
+        # report内のlessons_useful: nullを差し替え
+        if grep -q 'lessons_useful: null' "$report_file" 2>/dev/null; then
+            awk -v repl="$_lu_block" '
+                /lessons_useful: null/ { print repl; next }
+                { print }
+            ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
+            log "lessons_useful template: ${_lu_count} entries injected"
+            log "report_template: lessons_useful template injected"
+        fi
     fi
-    rm -f "$_lu_output"
 
-    # cmd_1260: acceptance_criteriaのbinary_checksをreportに事前展開
-    local _bc_output
-    _bc_output=$(mktemp)
-    if run_python_logged "$_bc_output" env TASK_FILE_ENV="$task_file" REPORT_FILE_ENV="$report_file" python3 - <<'BCEOF'
-import os
-import sys
-import yaml
+    # cmd_1260+cmd_1393: acceptance_criteriaのbinary_checksをreportに事前展開（Python→bash/awk）
+    local _bc_block
+    _bc_block=$(awk '
+        /^  acceptance_criteria:/ { in_ac=1; next }
+        in_ac && /^  [a-z]/ { exit }
+        in_ac && /^  - / {
+            if (cur_id != "" && cc > 0) {
+                printf "  %s:\n", cur_id
+                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"\n", chk[i] }
+            }
+            cur_id=""; cc=0
+        }
+        in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
+        in_ac && /    - check:/ { sub(/.*- check:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cc++; chk[cc]=$0 }
+        END {
+            if (cur_id != "" && cc > 0) {
+                printf "  %s:\n", cur_id
+                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"\n", chk[i] }
+            }
+        }
+    ' "$task_file" 2>/dev/null)
 
-task_file = os.environ['TASK_FILE_ENV']
-report_file = os.environ['REPORT_FILE_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-    if not data:
-        sys.exit(1)
-    task = data.get('task', data)
-    ac_list = task.get('acceptance_criteria', [])
-    if not ac_list or not isinstance(ac_list, list):
-        sys.exit(1)
-
-    bc_dict = {}
-    for ac in ac_list:
-        if not isinstance(ac, dict):
-            continue
-        ac_id = ac.get('id', '')
-        checks = ac.get('binary_checks', [])
-        if not ac_id or not checks or not isinstance(checks, list):
-            continue
-        bc_dict[ac_id] = [{'check': c.get('check', ''), 'result': ''} for c in checks if isinstance(c, dict) and c.get('check')]
-
-    if not bc_dict:
-        sys.exit(1)
-
-    lines = ['binary_checks:']
-    for ac_id, checks in bc_dict.items():
-        lines.append(f'  {ac_id}:')
-        for c in checks:
-            lines.append(f'  - check: "{c["check"]}"')
-            lines.append(f'    result: ""')
-
-    with open(report_file) as f:
-        content = f.read()
-    content = content.replace('binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入', '\n'.join(lines))
-    with open(report_file, 'w') as f:
-        f.write(content)
-
-    print(f'binary_checks template: {len(bc_dict)} ACs injected')
-except Exception as e:
-    print(f'WARN: binary_checks inject failed: {e}', file=sys.stderr)
-BCEOF
-    then
-        log "report_template: binary_checks template injected"
+    if [ -n "$_bc_block" ]; then
+        local _bc_full="binary_checks:
+${_bc_block}"
+        local _bc_placeholder='binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入'
+        if grep -qF "$_bc_placeholder" "$report_file" 2>/dev/null; then
+            awk -v repl="$_bc_full" -v placeholder="$_bc_placeholder" '
+                index($0, placeholder) { print repl; next }
+                { print }
+            ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
+            local _bc_ac_count
+            _bc_ac_count=$(echo "$_bc_block" | grep -c '^\s\s[A-Z]')
+            log "binary_checks template: ${_bc_ac_count} ACs injected"
+            log "report_template: binary_checks template injected"
+        fi
     fi
-    rm -f "$_bc_output"
 
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
     local report_task_type
@@ -1098,528 +1041,28 @@ PY
     fi
 }
 
-# ─── Engineering Preferences自動注入（task YAMLにengineering_preferencesを挿入） ───
-inject_engineering_preferences() {
-    local task_file="$1"
-    if [ ! -f "$task_file" ]; then
-        log "inject_engineering_preferences: task file not found: $task_file"
-        return 0
-    fi
-
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-script_dir = os.environ['SCRIPT_DIR_ENV']
+# ─── Engineering Preferences自動注入 ───
+# cmd_1393: inject_task_modifiers.py に統合済み（stub）
+inject_engineering_preferences() { log "inject_engineering_preferences: merged into inject_task_modifiers (no-op)"; }
 
 
-def is_empty(value):
-    if value is None:
-        return True
-    if isinstance(value, str):
-        return not value.strip()
-    if isinstance(value, (list, dict)):
-        return len(value) == 0
-    return False
+# ─── 偵察報告自動注入 ───
+# cmd_1393: inject_task_modifiers.py に統合済み（stub）
+inject_reports_to_read() { log "[INJECT_REPORTS] merged into inject_task_modifiers (no-op)"; }
 
-
-def flatten_preferences(value):
-    flattened = []
-    if isinstance(value, str):
-        text = value.strip()
-        if text:
-            flattened.append(text)
-    elif isinstance(value, list):
-        for item in value:
-            flattened.extend(flatten_preferences(item))
-    elif isinstance(value, dict):
-        for nested in value.values():
-            flattened.extend(flatten_preferences(nested))
-    return flattened
-
-
-def dedupe_keep_order(values):
-    seen = set()
-    result = []
-    for value in values:
-        if value not in seen:
-            seen.add(value)
-            result.append(value)
-    return result
-
-
-def extract_preferences_from_text(raw_text):
-    lines = raw_text.splitlines()
-    body = []
-    capture = False
-
-    for line in lines:
-        stripped = line.strip()
-        if not capture:
-            if stripped == 'engineering_preferences:':
-                capture = True
-            continue
-
-        if stripped.startswith('#'):
-            break
-        if not stripped:
-            body.append(line)
-            continue
-        if line.startswith((' ', '\t')):
-            body.append(line)
-            continue
-        break
-
-    if not body:
-        return []
-
-    try:
-        section = yaml.safe_load('engineering_preferences:\n' + '\n'.join(body) + '\n') or {}
-    except Exception:
-        return []
-
-    return flatten_preferences(section.get('engineering_preferences'))
-
-
-try:
-    with open(task_file, encoding='utf-8') as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        sys.exit(0)
-
-    task = data['task']
-    existing = task.get('engineering_preferences')
-    if not is_empty(existing):
-        print('[INJECT_PREFS] engineering_preferences already exists, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    project = str(task.get('project', '') or '').strip()
-    if not project:
-        sys.exit(0)
-
-    project_file = os.path.join(script_dir, 'projects', f'{project}.yaml')
-    if not os.path.exists(project_file):
-        task['engineering_preferences'] = []
-        print(f'[INJECT_PREFS] WARN: project file not found for {project}', file=sys.stderr)
-    else:
-        with open(project_file, encoding='utf-8') as f:
-            raw_text = f.read()
-
-        preferences = []
-        try:
-            project_data = yaml.safe_load(raw_text)
-        except Exception:
-            project_data = None
-
-        if isinstance(project_data, dict):
-            preferences = flatten_preferences(project_data.get('engineering_preferences'))
-
-        if not preferences:
-            preferences = extract_preferences_from_text(raw_text)
-
-        task['engineering_preferences'] = dedupe_keep_order(preferences)
-        print(f'[INJECT_PREFS] project={project} injected={len(task["engineering_preferences"])}', file=sys.stderr)
-
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
-
-except Exception as e:
-    print(f'[INJECT_PREFS] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
-}
-
-# ─── 偵察報告自動注入（task YAMLにreports_to_readを挿入） ───
-inject_reports_to_read() {
-    local task_file="$1"
-    if [ ! -f "$task_file" ]; then
-        log "inject_reports: task file not found: $task_file"
-        return 0
-    fi
-
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
-import glob
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-script_dir = os.environ['SCRIPT_DIR_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        print('[INJECT_REPORTS] No task section in YAML, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-
-    # 既にreports_to_readが設定済みなら上書きしない
-    if task.get('reports_to_read'):
-        print('[INJECT_REPORTS] reports_to_read already exists, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    blocked_by = task.get('blocked_by', [])
-    if not blocked_by:
-        print('[INJECT_REPORTS] No blocked_by, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    # blocked_byの各タスクIDから忍者名を解決
-    tasks_dir = os.path.join(script_dir, 'queue', 'tasks')
-    reports_dir = os.path.join(script_dir, 'queue', 'reports')
-    report_paths = []
-
-    for blocked_task_id in blocked_by:
-        # queue/tasks/*.yamlを検索してtask_idが一致するものを見つける
-        if not os.path.isdir(tasks_dir):
-            continue
-        for fname in os.listdir(tasks_dir):
-            if not fname.endswith('.yaml'):
-                continue
-            fpath = os.path.join(tasks_dir, fname)
-            try:
-                with open(fpath) as f:
-                    tdata = yaml.safe_load(f)
-                if not tdata or 'task' not in tdata:
-                    continue
-                t = tdata['task']
-                if t.get('task_id') == blocked_task_id:
-                    assigned_to = t.get('assigned_to', '')
-                    if assigned_to:
-                        blocked_parent_cmd = t.get('parent_cmd', '')
-                        new_report = ''
-
-                        if isinstance(blocked_parent_cmd, str) and blocked_parent_cmd.startswith('cmd_'):
-                            new_report = os.path.join(reports_dir, f'{assigned_to}_report_{blocked_parent_cmd}.yaml')
-
-                        legacy_report = os.path.join(reports_dir, f'{assigned_to}_report.yaml')
-
-                        if new_report and os.path.exists(new_report):
-                            report_paths.append(f'queue/reports/{os.path.basename(new_report)}')
-                        elif os.path.exists(legacy_report):
-                            report_paths.append(f'queue/reports/{assigned_to}_report.yaml')
-                        else:
-                            # 後方互換: cmd指定報告がなければ最新のcmd付き報告を探索
-                            alt = sorted(
-                                glob.glob(os.path.join(reports_dir, f'{assigned_to}_report_cmd*.yaml')),
-                                key=os.path.getmtime,
-                                reverse=True
-                            )
-                            if alt:
-                                report_paths.append(f"queue/reports/{os.path.basename(alt[0])}")
-                            else:
-                                print(f'[INJECT_REPORTS] WARN: report not found: {new_report or legacy_report}', file=sys.stderr)
-                    break
-            except Exception:
-                continue
-
-    if not report_paths:
-        print('[INJECT_REPORTS] No report files found for blocked_by tasks', file=sys.stderr)
-        sys.exit(0)
-
-    # deduplicate while preserving order
-    seen = set()
-    unique_paths = []
-    for p in report_paths:
-        if p not in seen:
-            seen.add(p)
-            unique_paths.append(p)
-
-    task['reports_to_read'] = unique_paths
-
-    # description冒頭に参照報告を挿入
-    desc = task.get('description', '')
-    marker = '【参照報告】'
-    if marker not in str(desc):
-        lines = [marker + ' 以下の報告を読んでからレビューせよ']
-        for rp in unique_paths:
-            lines.append(f'  - {rp}')
-        lines.append('─' * 40)
-        prefix = '\\n'.join(lines) + '\\n\\n'
-        task['description'] = prefix + str(desc or '')
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[INJECT_REPORTS] Injected {len(unique_paths)} reports: {unique_paths}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[INJECT_REPORTS] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
-}
 
 # ─── context_files自動注入（cmd_280: 分割context選択的読込） ───
-inject_context_files() {
-    local task_file="$1"
-    if [ ! -f "$task_file" ]; then
-        log "inject_context_files: task file not found: $task_file"
-        return 0
-    fi
-
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-script_dir = os.environ['SCRIPT_DIR_ENV']
-projects_yaml = os.path.join(script_dir, 'config', 'projects.yaml')
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        sys.exit(0)
-
-    task = data['task']
-
-    # 既にcontext_filesが設定済みなら上書きしない（家老が手動指定した場合）
-    if task.get('context_files'):
-        print('[INJECT_CTX] context_files already exists, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    project = task.get('project', '')
-    if not project:
-        sys.exit(0)
-
-    if not os.path.exists(projects_yaml):
-        sys.exit(0)
-
-    with open(projects_yaml) as f:
-        pdata = yaml.safe_load(f)
-
-    # プロジェクトのcontext_files定義を探す
-    ctx_files = None
-    ctx_index = None
-    for p in pdata.get('projects', []):
-        if p.get('id') == project:
-            ctx_files = p.get('context_files', [])
-            ctx_index = p.get('context_file', '')
-            break
-
-    if not ctx_files:
-        sys.exit(0)
-
-    # 索引ファイルは常に含める
-    result = []
-    if ctx_index:
-        result.append(ctx_index)
-
-    # タスクのtask_typeやdescriptionからタグをマッチング
-    task_type = str(task.get('task_type', '')).lower()
-    description = str(task.get('description', '')).lower()
-    title = str(task.get('title', '')).lower()
-    task_text = f'{task_type} {description} {title}'
-
-    for cf in ctx_files:
-        tags = cf.get('tags', [])
-        filepath = cf.get('file', '')
-        if not filepath:
-            continue
-        # タグがタスクテキストに含まれるか、タグなしなら常に含める
-        if not tags:
-            result.append(filepath)
-        elif any(tag.lower() in task_text for tag in tags):
-            result.append(filepath)
-
-    # フォールバック: タグマッチが索引のみの場合、全ファイルを含める
-    if len(result) <= 1:
-        result = [ctx_index] if ctx_index else []
-        for cf in ctx_files:
-            filepath = cf.get('file', '')
-            if filepath:
-                result.append(filepath)
-
-    task['context_files'] = result
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[INJECT_CTX] Injected {len(result)} context files for project={project}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[INJECT_CTX] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
-}
+# ─── context_files自動注入 ───
+# cmd_1393: inject_task_modifiers.py に統合済み（stub）
+inject_context_files() { log "[INJECT_CTX] merged into inject_task_modifiers (no-op)"; }
 
 # ─── credential_files自動注入（cmd_949: 認証タスクに.envを自動追加） ───
-inject_credential_files() {
-    local task_file="$1"
-    if [ ! -f "$task_file" ]; then
-        log "inject_credentials: task file not found: $task_file"
-        return 0
-    fi
-
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
-import os
-import sys
-import glob
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        sys.exit(0)
-
-    task = data['task']
-
-    # 認証関連キーワードの検出
-    auth_keywords = ['cdp', 'login', 'ログイン', '認証', 'credential', 'chrome', 'edge',
-                     'note.com', 'moneyforward', 'mf_', 'receipt', '領収書', 'selenium',
-                     'browser', 'preflight_cdp', '.env']
-
-    # タスク全テキストを結合して検索
-    task_text = ' '.join([
-        str(task.get('command', '')),
-        str(task.get('description', '')),
-        str(task.get('context', '')),
-        str(task.get('title', '')),
-    ]).lower()
-
-    if not any(kw.lower() in task_text for kw in auth_keywords):
-        sys.exit(0)
-
-    # target_pathから.envファイルを探す
-    target_path = task.get('target_path', '')
-    if not target_path or not os.path.isdir(target_path):
-        # target_pathがないが認証キーワードが検出された → 警告注入
-        warn = task.get('credential_warning', '')
-        if not warn:
-            task['credential_warning'] = (
-                '⚠ 認証が必要なタスクだがtarget_pathが未設定。'
-                '認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。'
-            )
-            changed = True
-        else:
-            changed = False
-        if changed:
-            tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-            try:
-                with os.fdopen(tmp_fd, 'w') as f:
-                    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-                os.replace(tmp_path, task_file)
-            except:
-                os.unlink(tmp_path)
-                raise
-            print('[INJECT_CRED] WARN: auth task but no target_path', file=sys.stderr)
-        sys.exit(0)
-
-    env_files = glob.glob(os.path.join(target_path, '.env.*'))
-    env_base = os.path.join(target_path, '.env')
-    if os.path.exists(env_base):
-        env_files.append(env_base)
-
-    # .example ファイルは除外
-    all_env = [f for f in env_files if not f.endswith('.example')]
-
-    if not all_env:
-        # 認証キーワードあり + target_pathあり + .envなし → 警告注入
-        warn = task.get('credential_warning', '')
-        if not warn:
-            task['credential_warning'] = (
-                f'⚠ 認証が必要なタスクだが{target_path}に.envファイルが見つからない。'
-                '認証情報の準備が必要。家老に即報告せよ。'
-            )
-            tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-            try:
-                with os.fdopen(tmp_fd, 'w') as f:
-                    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-                os.replace(tmp_path, task_file)
-            except:
-                os.unlink(tmp_path)
-                raise
-            print(f'[INJECT_CRED] WARN: auth task but no .env in {target_path}', file=sys.stderr)
-        sys.exit(0)
-
-    # context_filesに追加（重複排除）
-    existing = task.get('context_files', []) or []
-    existing_set = set(existing)
-    added = []
-    for ef in sorted(all_env):
-        if ef not in existing_set:
-            existing.append(ef)
-            added.append(ef)
-
-    if not added:
-        sys.exit(0)
-
-    task['context_files'] = existing
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[INJECT_CRED] Added {len(added)} credential files: {added}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[INJECT_CRED] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
-}
+# ─── credential_files自動注入 ───
+# cmd_1393: inject_task_modifiers.py に統合済み（stub）
+inject_credential_files() { log "[INJECT_CRED] merged into inject_task_modifiers (no-op)"; }
 
 # ─── target_path存在検査WARN注入（cmd_1322: 設定済みだが実在しないtarget_pathを警告） ───
+# cmd_1393: Python→bash置換
 inject_target_path_check() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -1627,217 +1070,77 @@ inject_target_path_check() {
         return 0
     fi
 
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-script_dir = os.environ['SCRIPT_DIR_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        sys.exit(0)
-
-    task = data['task']
-
-    # target_pathフィールドを取得（リストまたは文字列）
-    target_path = task.get('target_path', None)
-    if not target_path:
-        # 空/未設定 → 正常（何もしない）
-        sys.exit(0)
-
-    # リストの場合はそのまま、文字列の場合はリスト化
-    if isinstance(target_path, str):
-        paths = [target_path]
-    elif isinstance(target_path, list):
-        paths = [p for p in target_path if p]
-    else:
-        sys.exit(0)
-
-    if not paths:
-        sys.exit(0)
-
-    # 存在しないパスを検出
-    missing = [p for p in paths if not os.path.exists(p)]
-
-    if not missing:
-        # 全パス存在 → 正常（何もしない）
-        sys.exit(0)
-
-    # WARN注入: target_path_warningフィールドに警告文追加
-    warn_msg = '⚠ target_pathが存在しない: ' + ', '.join(missing)
-    task['target_path_warning'] = warn_msg
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[INJECT_TARGET_PATH] WARN: target_path does not exist: {", ".join(missing)}', file=sys.stderr)
-
-    # gate_fire_log.yamlに記録
-    gate_log = os.path.join(script_dir, 'logs', 'gate_fire_log.yaml')
-    from datetime import datetime
-    ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-    entry = f'- ts: "{ts}", gate: inject_target_path_check, result: WARN, detail: "{warn_msg}"\n'
-    try:
-        with open(gate_log, 'a') as f:
-            f.write(entry)
-    except Exception as e:
-        print(f'[INJECT_TARGET_PATH] gate_fire_log write failed: {e}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[INJECT_TARGET_PATH] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
-}
-
-# ─── context_update自動注入（cmd_543: 親cmdの更新対象contextをタスクへ伝播） ───
-inject_context_update() {
-    local task_file="$1"
-    if [ ! -f "$task_file" ]; then
-        log "inject_context_update: task file not found: $task_file"
+    # target_pathフィールドを取得
+    local target_path
+    target_path=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "")
+    if [ -z "$target_path" ]; then
         return 0
     fi
 
+    # リスト形式の場合: "- /path1\n- /path2" → 各行のパスを抽出
+    # 文字列形式の場合: そのまま使用
+    local -a paths=()
+    if echo "$target_path" | grep -q '^- '; then
+        while IFS= read -r line; do
+            local p="${line#- }"
+            p="${p#[[:space:]]}"
+            p="${p%[[:space:]]}"
+            [ -n "$p" ] && paths+=("$p")
+        done <<< "$target_path"
+    else
+        paths+=("$target_path")
+    fi
+
+    [ ${#paths[@]} -eq 0 ] && return 0
+
+    # 存在しないパスを検出
+    local -a missing=()
+    for p in "${paths[@]}"; do
+        [ ! -e "$p" ] && missing+=("$p")
+    done
+
+    [ ${#missing[@]} -eq 0 ] && return 0
+
+    # WARN注入
+    local missing_str
+    missing_str=$(IFS=', '; echo "${missing[*]}")
+    local warn_msg="⚠ target_pathが存在しない: ${missing_str}"
+    yaml_field_set "$task_file" "task" "target_path_warning" "$warn_msg"
+    log "[INJECT_TARGET_PATH] WARN: target_path does not exist: ${missing_str}"
+
+    # gate_fire_log.yamlに記録
+    local gate_log="$SCRIPT_DIR/logs/gate_fire_log.yaml"
+    local ts
+    ts=$(date '+%Y-%m-%dT%H:%M:%S')
+    echo "- ts: \"${ts}\", gate: inject_target_path_check, result: WARN, detail: \"${warn_msg}\"" >> "$gate_log" 2>/dev/null || true
+}
+
+# ─── inject_task_modifiers: 7関数統合ラッパー（cmd_1393） ───
+# inject_engineering_preferences, inject_reports_to_read, inject_context_files,
+# inject_credential_files, inject_context_update, inject_report_template,
+# inject_execution_controls を1つのPython呼び出しに統合
+inject_task_modifiers() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_task_modifiers: task file not found: $task_file"
+        return 0
+    fi
     local py_output
     py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
-import glob
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-script_dir = os.environ['SCRIPT_DIR_ENV']
-
-def load_yaml(path):
-    try:
-        with open(path) as f:
-            return yaml.safe_load(f) or {}
-    except Exception:
-        return {}
-
-def normalize_context_update(value):
-    if isinstance(value, list):
-        result = []
-        for item in value:
-            text = str(item).strip()
-            if text:
-                result.append(text)
-        return result
-    if isinstance(value, str):
-        text = value.strip()
-        return [text] if text else []
-    return []
-
-def normalize_existing(value):
-    if isinstance(value, list):
-        return [str(v).strip() for v in value if str(v).strip()]
-    if isinstance(value, str):
-        text = value.strip()
-        return [text] if text else []
-    return []
-
-try:
-    data = load_yaml(task_file)
-    if not data or 'task' not in data:
-        print('[INJECT_CONTEXT_UPDATE] No task section, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-    parent_cmd = str(task.get('parent_cmd', '') or '').strip()
-    if not parent_cmd:
-        print('[INJECT_CONTEXT_UPDATE] No parent_cmd, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    # GP-080: grep-l前置 + ファイル名パターンマッチで高速検索
-    # 旧方式: 全1179アーカイブYAMLを順次yaml.safe_load → 7秒
-    # 新方式: ファイル名パターン + shogun_to_karo.yaml → 0.1秒以下
-    def find_cmd_source(parent_cmd, script_dir):
-        """parent_cmdを含むYAMLファイルを高速特定し、該当cmdエントリを返す"""
-        # (1) shogun_to_karo.yaml を最初にチェック（アクティブcmd）
-        stk = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
-        if os.path.exists(stk):
-            obj = load_yaml(stk)
-            commands = obj.get('commands', [])
-            if isinstance(commands, list):
-                for cmd in commands:
-                    if isinstance(cmd, dict) and str(cmd.get('id', '')).strip() == parent_cmd:
-                        return cmd, stk
-
-        # (2) アーカイブ: ファイル名パターンでピンポイント検索
-        # アーカイブファイル名形式: cmd_{ID}_{status}_{date}.yaml
-        # parent_cmd例: cmd_1386 → cmd_1386_*.yaml
-        archive_dir = os.path.join(script_dir, 'queue', 'archive', 'cmds')
-        candidates = glob.glob(os.path.join(archive_dir, f'{parent_cmd}_*.yaml'))
-        for cpath in candidates:
-            obj = load_yaml(cpath)
-            commands = obj.get('commands', [])
-            if isinstance(commands, list):
-                for cmd in commands:
-                    if isinstance(cmd, dict) and str(cmd.get('id', '')).strip() == parent_cmd:
-                        return cmd, cpath
-
-        return None, ''
-
-    cmd_entry, source_path = find_cmd_source(parent_cmd, script_dir)
-    found = cmd_entry is not None
-    context_update = normalize_context_update(cmd_entry.get('context_update', [])) if found else []
-
-    if not found:
-        print(f'[INJECT_CONTEXT_UPDATE] parent_cmd not found: {parent_cmd}, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    if not context_update:
-        print(f'[INJECT_CONTEXT_UPDATE] No context_update for {parent_cmd}, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    existing = normalize_existing(task.get('context_update', []))
-    if existing == context_update:
-        print('[INJECT_CONTEXT_UPDATE] context_update unchanged, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task['context_update'] = context_update
-
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
-
-    rel_source = os.path.relpath(source_path, script_dir) if source_path else source_path
-    print(f'[INJECT_CONTEXT_UPDATE] Injected {len(context_update)} entries from {rel_source}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[INJECT_CONTEXT_UPDATE] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
+    if ! run_python_logged "$py_output" env \
+        TASK_FILE_ENV="$task_file" \
+        SCRIPT_DIR_ENV="$SCRIPT_DIR" \
+        python3 "$SCRIPT_DIR/scripts/lib/inject_task_modifiers.py"; then
+        log "WARN: inject_task_modifiers failed (non-fatal)"
         return 1
     fi
 }
 
+# inject_context_update: cmd_1393で inject_task_modifiers.py に統合（stub）
+inject_context_update() { log "inject_context_update: merged into inject_task_modifiers (no-op)"; }
+
 # ─── role_reminder自動注入（cmd_384: 忍者スコープ制限リマインダ） ───
+# cmd_1393: Python→bash変換（field_get+yaml_field_set）
 inject_role_reminder() {
     local task_file="$1"
     local ninja_name="$2"
@@ -1846,129 +1149,22 @@ inject_role_reminder() {
         return 0
     fi
 
-    # L047: 環境変数経由でPythonに値を渡す（直接補間はインジェクション危険）
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" NINJA_NAME_ENV="$ninja_name" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-ninja_name = os.environ['NINJA_NAME_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        print('[ROLE_REMINDER] No task section, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-
-    # 既にrole_reminderが存在する場合は上書きしない
-    if task.get('role_reminder'):
-        print('[ROLE_REMINDER] Already exists, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task['role_reminder'] = f'忍者{ninja_name}。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ'
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[ROLE_REMINDER] Injected for {ninja_name}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[ROLE_REMINDER] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
-}
-
-# ─── report_template自動注入（cmd_384: タスク種別別レポート雛形） ───
-inject_report_template() {
-    local task_file="$1"
-    if [ ! -f "$task_file" ]; then
-        log "inject_report_template: task file not found: $task_file"
+    local existing
+    existing=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "role_reminder" "")
+    if [ -n "$existing" ]; then
+        log "[ROLE_REMINDER] Already exists, skipping"
         return 0
     fi
 
-    # L047: 環境変数経由でPythonに値を渡す
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-script_dir = os.environ['SCRIPT_DIR_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        print('[REPORT_TPL] No task section, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-
-    # 既にreport_templateが存在する場合は上書きしない
-    if task.get('report_template'):
-        print('[REPORT_TPL] Already exists, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task_type = str(task.get('task_type', '')).lower()
-    if not task_type:
-        print('[REPORT_TPL] No task_type, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    template_path = os.path.join(script_dir, 'templates', f'report_{task_type}.yaml')
-    if not os.path.exists(template_path):
-        print(f'[REPORT_TPL] WARN: template not found: {template_path}', file=sys.stderr)
-        sys.exit(0)
-
-    with open(template_path) as f:
-        template_data = yaml.safe_load(f)
-
-    if template_data:
-        task['report_template'] = template_data
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[REPORT_TPL] Injected {task_type} template', file=sys.stderr)
-
-except Exception as e:
-    print(f'[REPORT_TPL] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
+    yaml_field_set "$task_file" "task" "role_reminder" "忍者${ninja_name}。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ"
+    log "[ROLE_REMINDER] Injected for ${ninja_name}"
 }
 
+# inject_report_template: cmd_1393で inject_task_modifiers.py に統合（stub）
+inject_report_template() { log "inject_report_template: merged into inject_task_modifiers (no-op)"; }
+
 # ─── report_filename自動注入（cmd_410: 命名ミスマッチ根治） ───
+# cmd_1393: Python→bash変換（field_get+yaml_field_set）
 inject_report_filename() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -1976,63 +1172,27 @@ inject_report_filename() {
         return 0
     fi
 
-    # L047: 環境変数経由でPythonに値を渡す
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" NINJA_NAME_ENV="$NINJA_NAME" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-ninja_name = os.environ['NINJA_NAME_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        print('[REPORT_FN] No task section, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-
-    # 既にreport_filenameが存在する場合は上書きしない
-    if task.get('report_filename'):
-        print('[REPORT_FN] Already exists, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    parent_cmd = str(task.get('parent_cmd', '') or '')
-    if parent_cmd:
-        report_filename = f'{ninja_name}_report_{parent_cmd}.yaml'
-    else:
-        report_filename = f'{ninja_name}_report.yaml'
-
-    task['report_filename'] = report_filename
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[REPORT_FN] Injected report_filename={report_filename}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[REPORT_FN] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
+    local existing
+    existing=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_filename" "")
+    if [ -n "$existing" ]; then
+        log "[REPORT_FN] Already exists, skipping"
+        return 0
     fi
+
+    local parent_cmd report_filename
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
+    if [ -n "$parent_cmd" ]; then
+        report_filename="${NINJA_NAME}_report_${parent_cmd}.yaml"
+    else
+        report_filename="${NINJA_NAME}_report.yaml"
+    fi
+
+    yaml_field_set "$task_file" "task" "report_filename" "$report_filename"
+    log "[REPORT_FN] Injected report_filename=${report_filename}"
 }
 
 # ─── bloom_level自動注入（cmd_434: タスク複雑度メタデータ） ───
+# cmd_1393: Python→bash変換（grep+yaml_field_set）
 inject_bloom_level() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -2040,172 +1200,18 @@ inject_bloom_level() {
         return 0
     fi
 
-    # L047: 環境変数経由でPythonに値を渡す
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        print('[BLOOM_LVL] No task section, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-
-    # 既にbloom_levelが存在する場合は上書きしない
-    if 'bloom_level' in task:
-        print('[BLOOM_LVL] Already exists, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task['bloom_level'] = ''
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print('[BLOOM_LVL] Injected bloom_level (empty)', file=sys.stderr)
-
-except Exception as e:
-    print(f'[BLOOM_LVL] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
-}
-
-# ─── task execution controls注入（cmd_875: gstack停止条件/優先順位/並列許可） ───
-inject_execution_controls() {
-    local task_file="$1"
-    if [ ! -f "$task_file" ]; then
-        log "inject_execution_controls: task file not found: $task_file"
+    # bloom_level:が既に存在する場合は上書きしない（空文字でも存在扱い）
+    if grep -q '^\s*bloom_level:' "$task_file" 2>/dev/null; then
+        log "[BLOOM_LVL] Already exists, skipping"
         return 0
     fi
 
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-
-
-def ac_count(value):
-    if isinstance(value, list):
-        return len(value)
-    if value is None:
-        return 0
-    if isinstance(value, str):
-        return 1 if value.strip() else 0
-    if isinstance(value, dict):
-        return len(value.keys())
-    return 0
-
-
-def extract_ac_ids(ac_list):
-    if not isinstance(ac_list, list):
-        return []
-    ids = []
-    for i, ac in enumerate(ac_list):
-        if isinstance(ac, dict):
-            ac_id = ac.get('id', '')
-            if ac_id:
-                ids.append(str(ac_id))
-            else:
-                ids.append(f'AC{i+1}')
-        else:
-            ids.append(f'AC{i+1}')
-    return ids
-
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        print('[EXEC_CTRL] No task section, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-    changed = False
-
-    NEVER_STOP_DEFAULTS = [
-        "CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ",
-        "既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告",
-        "自明な修正（typo等） — 実行→事後報告",
-    ]
-
-    if 'stop_for' not in task or task.get('stop_for') is None:
-        task['stop_for'] = []
-        changed = True
-
-    if 'never_stop_for' not in task or task.get('never_stop_for') is None:
-        task['never_stop_for'] = NEVER_STOP_DEFAULTS
-        changed = True
-
-    ac_list = task.get('acceptance_criteria', [])
-    ac_ids = extract_ac_ids(ac_list)
-    num_acs = ac_count(ac_list)
-
-    # ac_priority: AC3個以上で未設定/空文字 → "AC1 > AC2 > AC3" 形式のデフォルト生成
-    if num_acs >= 3 and ('ac_priority' not in task or not task.get('ac_priority')):
-        task['ac_priority'] = ' > '.join(ac_ids) if ac_ids else ''
-        changed = True
-
-    # ac_checkpoint: AC3個以上で未設定/空文字 → 各AC後のチェックポイント指示を注入
-    if num_acs >= 3 and ('ac_checkpoint' not in task or not task.get('ac_checkpoint')):
-        task['ac_checkpoint'] = '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-        changed = True
-
-    # parallel_ok: AC2個以上で未設定/None/空リスト → 全AC IDリストをデフォルト生成
-    if 'parallel_ok' not in task or not task.get('parallel_ok'):
-        if num_acs >= 2 and ac_ids:
-            task['parallel_ok'] = ac_ids
-        else:
-            task['parallel_ok'] = []
-        changed = True
-
-    if not changed:
-        print('[EXEC_CTRL] Already present, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
-
-    print('[EXEC_CTRL] Injected stop_for/never_stop_for/parallel_ok/ac_priority/ac_checkpoint as needed', file=sys.stderr)
-
-except Exception as e:
-    print(f'[EXEC_CTRL] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
-    fi
+    yaml_field_set "$task_file" "task" "bloom_level" ""
+    log "[BLOOM_LVL] Injected bloom_level (empty)"
 }
+
+# inject_execution_controls: cmd_1393で inject_task_modifiers.py に統合（stub）
+inject_execution_controls() { log "inject_execution_controls: merged into inject_task_modifiers (no-op)"; }
 
 # ─── ninja_weak_points自動注入（cmd_1307: 忍者別過去失敗パターン注入） ───
 # karo_workarounds.yamlから忍者名でフィルタし、category別件数をtask YAMLに注入
@@ -2442,6 +1448,7 @@ EOF
 }
 
 # ─── deployed_at自動記録（cmd_387: 配備タイムスタンプ） ───
+# cmd_1393: Python→bash変換（field_get+yaml_field_set）
 # 既にdeployed_atが存在する場合は上書きしない（再配備時の元タイムスタンプ保持）
 record_deployed_at() {
     local task_file="$1"
@@ -2451,56 +1458,19 @@ record_deployed_at() {
         return 0
     fi
 
-    local py_output
-    py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" TIMESTAMP_ENV="$timestamp" python3 - <<'PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-timestamp = os.environ['TIMESTAMP_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        print('[DEPLOYED_AT] No task section, skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task = data['task']
-
-    # 既にdeployed_atが存在する場合は上書きしない
-    if task.get('deployed_at'):
-        print(f'[DEPLOYED_AT] Already exists ({task["deployed_at"]}), skipping', file=sys.stderr)
-        sys.exit(0)
-
-    task['deployed_at'] = timestamp
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[DEPLOYED_AT] Recorded: {timestamp}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[DEPLOYED_AT] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
-        return 1
+    local existing
+    existing=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "deployed_at" "")
+    if [ -n "$existing" ]; then
+        log "[DEPLOYED_AT] Already exists (${existing}), skipping"
+        return 0
     fi
+
+    yaml_field_set "$task_file" "task" "deployed_at" "$timestamp"
+    log "[DEPLOYED_AT] Recorded: ${timestamp}"
 }
 
 # ─── context鮮度チェック（穴2対策: cmd_239） ───
+# cmd_1393: Python2箇所→awk+date変換
 check_context_freshness() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -2520,24 +1490,20 @@ check_context_freshness() {
         return 0
     fi
 
+    # Python→awk: projects.yamlからproject IDに対応するcontext_fileを取得
     local context_file
-    context_file=$(
-        PROJECTS_YAML_ENV="$projects_yaml" PROJECT_ENV="$project" python3 - <<'PY' 2>/dev/null
-import os
-
-import yaml
-
-try:
-    with open(os.environ['PROJECTS_YAML_ENV']) as f:
-        data = yaml.safe_load(f)
-    for p in data.get('projects', []):
-        if p.get('id') == os.environ['PROJECT_ENV']:
-            print(p.get('context_file', ''))
-            break
-except Exception:
-    pass
-PY
-    )
+    context_file=$(awk -v proj="$project" '
+        /^[[:space:]]*- id:/ { sub(/.*- id:[[:space:]]*/, ""); gsub(/[[:space:]]*$/, ""); cur_id = $0 }
+        /^[[:space:]]*context_file:/ {
+            if (cur_id == proj) {
+                sub(/.*context_file:[[:space:]]*/, "")
+                gsub(/[[:space:]]*$/, "")
+                gsub(/^["'"'"']|["'"'"']$/, "")
+                print
+                exit
+            }
+        }
+    ' "$projects_yaml" 2>/dev/null)
 
     if [ -z "$context_file" ]; then
         log "context_freshness: SKIP (no context_file for project=$project)"
@@ -2560,19 +1526,14 @@ PY
         return 0
     fi
 
-    local days_old
-    days_old=$(
-        LAST_UPDATED_ENV="$last_updated" python3 - <<'PY' 2>/dev/null
-from datetime import date
-import os
-
-try:
-    lu = date.fromisoformat(os.environ['LAST_UPDATED_ENV'])
-    print((date.today() - lu).days)
-except Exception:
-    print(-1)
-PY
-    )
+    # Python→date: 日付差分計算
+    local days_old=-1
+    local lu_epoch today_epoch
+    lu_epoch=$(date -d "$last_updated" +%s 2>/dev/null) || true
+    today_epoch=$(date +%s)
+    if [ -n "$lu_epoch" ]; then
+        days_old=$(( (today_epoch - lu_epoch) / 86400 ))
+    fi
 
     if [ "$days_old" -ge 14 ] 2>/dev/null; then
         log "context_freshness: ⚠️ WARNING: $context_file last updated ${days_old} days ago"
@@ -2585,6 +1546,7 @@ PY
 }
 
 # ─── 入口門番: 前タスクの教訓未消化チェック ───
+# cmd_1393: Python→awk変換
 check_entrance_gate() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -2592,42 +1554,24 @@ check_entrance_gate() {
         return 0
     fi
 
+    # awk: related_lessonsセクション内でreviewed: falseを持つエントリのIDを収集
     local result
-    local exit_code=0
-    result=$(
-        TASK_FILE_ENV="$task_file" python3 - <<'PY' 2>/dev/null
-import os
-import sys
+    result=$(awk '
+        BEGIN { in_rl=0; cur_id=""; rev_false=0 }
+        /^  related_lessons:/ { in_rl=1; next }
+        in_rl && /^  [a-z_]/ && !/^  -/ { in_rl=0 }
+        in_rl && /^  - / {
+            if (rev_false && cur_id!="") printf "%s, ",cur_id
+            cur_id=""; rev_false=0
+        }
+        in_rl && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
+        in_rl && /    reviewed:[[:space:]]*false/ { rev_false=1 }
+        END { if (rev_false && cur_id!="") printf "%s",cur_id }
+    ' "$task_file" 2>/dev/null)
 
-import yaml
-
-try:
-    with open(os.environ['TASK_FILE_ENV']) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        sys.exit(0)
-
-    task = data['task']
-    related = task.get('related_lessons', [])
-
-    if not related:
-        sys.exit(0)
-
-    unreviewed = [r['id'] for r in related if isinstance(r, dict) and r.get('reviewed') is False]
-
-    if unreviewed:
-        print(', '.join(unreviewed))
-        sys.exit(1)
-
-    sys.exit(0)
-except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
-    sys.exit(0)  # パース失敗時はブロックしない
-PY
-    ) || exit_code=$?
-
-    if [ "$exit_code" -ne 0 ]; then
+    if [ -n "$result" ]; then
+        # trailing ", " を除去
+        result="${result%, }"
         log "BLOCK: ${NINJA_NAME}の前タスクにreviewed:false残存 [${result}]。教訓を消化してから再配備せよ"
         echo "BLOCK: ${NINJA_NAME}の前タスクにreviewed:false残存 [${result}]。教訓を消化してから再配備せよ" >&2
         exit 1
@@ -2638,6 +1582,7 @@ PY
 }
 
 # ─── 偵察ゲート: implタスクは偵察済みorscout_exempt必須 ───
+# cmd_1393: check_scout_gate Python→bash/awk化
 check_scout_gate() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -2645,111 +1590,72 @@ check_scout_gate() {
         return 0
     fi
 
-    local result
-    local exit_code=0
-    result=$(
-        TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY' 2>&1
-import glob
-import os
-import sys
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-script_dir = os.environ['SCRIPT_DIR_ENV']
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        sys.exit(0)
-
-    task = data['task']
-
-    # 1. task_typeがimplement以外ならPASS（scout/recon/review等はゲート対象外）
-    task_type = str(task.get('task_type', '')).lower()
-    if task_type != 'implement':
-        print(f'PASS: task_type={task_type} (not implement)', file=sys.stderr)
-        sys.exit(0)
-
-    parent_cmd = task.get('parent_cmd', '')
-    if not parent_cmd:
-        print('PASS: no parent_cmd', file=sys.stderr)
-        sys.exit(0)
-
-    # 2. shogun_to_karo.yaml + archive でscout_exemptを確認
-    stk_paths = [
-        os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml'),
-    ]
-    for stk_path in stk_paths:
-        if not os.path.exists(stk_path):
-            continue
-        with open(stk_path) as f:
-            stk = yaml.safe_load(f)
-        for cmd in (stk or {}).get('commands', []):
-            if cmd.get('id') == parent_cmd:
-                if cmd.get('scout_exempt') is True:
-                    reason = cmd.get('scout_exempt_reason', '(no reason)')
-                    print(f'PASS: scout_exempt=true for {parent_cmd} ({reason})', file=sys.stderr)
-                    sys.exit(0)
-                break
-
-    # 2.5. report_merge.doneチェック（偵察が統合済みならPASS）
-    gate_dir = os.path.join(script_dir, 'queue', 'gates', parent_cmd)
-    merge_done = os.path.join(gate_dir, 'report_merge.done')
-    if os.path.exists(merge_done):
-        print(f'PASS: report_merge.done exists for {parent_cmd}', file=sys.stderr)
-        sys.exit(0)
-
-    # 3. queue/tasks/*.yamlからscout/reconタスクのdone数をカウント
-    tasks_dir = os.path.join(script_dir, 'queue', 'tasks')
-    done_count = 0
-    if os.path.isdir(tasks_dir):
-        for fname in os.listdir(tasks_dir):
-            if not fname.endswith('.yaml'):
-                continue
-            fpath = os.path.join(tasks_dir, fname)
-            try:
-                with open(fpath) as f:
-                    tdata = yaml.safe_load(f)
-                if not tdata or 'task' not in tdata:
-                    continue
-                t = tdata['task']
-                if t.get('parent_cmd') != parent_cmd:
-                    continue
-                tid = str(t.get('task_id', '')).lower()
-                if 'scout' in tid or 'recon' in tid:
-                    t_status = str(t.get('status', '')).lower()
-                    if t_status == 'done':
-                        done_count += 1
-            except Exception:
-                continue
-
-    if done_count >= 2:
-        print(f'PASS: {done_count} scout/recon tasks done for {parent_cmd}', file=sys.stderr)
-        sys.exit(0)
-
-    # BLOCK
-    print(f'BLOCK: {parent_cmd} — scout done={done_count}/2, scout_exempt=false')
-    sys.exit(1)
-
-except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
-    sys.exit(0)  # パース失敗時はブロックしない
-PY
-    ) || exit_code=$?
-
-    if [ "$exit_code" -ne 0 ]; then
-        log "BLOCK(scout_gate): ${result}"
-        echo "BLOCK(scout_gate): 偵察未完了。scout_reportsが2件未満かつscout_exemptなし。将軍にscout_exempt申請するか、先に偵察を配備せよ" >&2
-        echo "詳細: ${result}" >&2
-        exit 1
+    # 1. task_typeがimplement以外ならPASS（typeフィールドではなくtask_typeのみ参照）
+    local task_type
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
+    if [ "$task_type" != "implement" ]; then
+        log "scout_gate: PASS: task_type=${task_type} (not implement)"
+        return 0
     fi
 
-    # stderrの出力をログに記録
-    log "scout_gate: ${result}"
-    return 0
+    # 2. parent_cmd取得
+    local parent_cmd
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
+    if [ -z "$parent_cmd" ]; then
+        log "scout_gate: PASS: no parent_cmd"
+        return 0
+    fi
+
+    # 3. shogun_to_karo.yamlでscout_exempt確認
+    local stk_path="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    if [ -f "$stk_path" ]; then
+        local _se
+        _se=$(awk -v cmd="$parent_cmd" '
+            /^[[:space:]]*- id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
+            cur_id == cmd && /scout_exempt:[[:space:]]*true/ { print "true"; exit }
+        ' "$stk_path" 2>/dev/null)
+        if [ "$_se" = "true" ]; then
+            log "scout_gate: PASS: scout_exempt=true for ${parent_cmd}"
+            return 0
+        fi
+    fi
+
+    # 4. report_merge.doneチェック
+    if [ -f "$SCRIPT_DIR/queue/gates/${parent_cmd}/report_merge.done" ]; then
+        log "scout_gate: PASS: report_merge.done exists for ${parent_cmd}"
+        return 0
+    fi
+
+    # 5. scout/reconタスクのdone数カウント
+    local done_count=0
+    local _tf
+    for _tf in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
+        [ -f "$_tf" ] || continue
+        local _pcmd _tid _tst
+        _pcmd=$(awk '/^  parent_cmd:/ { sub(/.*parent_cmd:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print; exit }' "$_tf" 2>/dev/null)
+        [ "$_pcmd" = "$parent_cmd" ] || continue
+        _tid=$(awk '/^  task_id:/ { sub(/.*task_id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print; exit }' "$_tf" 2>/dev/null)
+        _tid=$(echo "$_tid" | tr '[:upper:]' '[:lower:]')
+        case "$_tid" in
+            *scout*|*recon*)
+                _tst=$(awk '/^  status:/ { sub(/.*status:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print; exit }' "$_tf" 2>/dev/null)
+                if [ "$_tst" = "done" ]; then
+                    done_count=$((done_count + 1))
+                fi
+                ;;
+        esac
+    done
+
+    if [ "$done_count" -ge 2 ]; then
+        log "scout_gate: PASS: ${done_count} scout/recon tasks done for ${parent_cmd}"
+        return 0
+    fi
+
+    # BLOCK
+    log "BLOCK(scout_gate): ${parent_cmd} — scout done=${done_count}/2, scout_exempt=false"
+    echo "BLOCK(scout_gate): 偵察未完了。scout_reportsが2件未満かつscout_exemptなし。将軍にscout_exempt申請するか、先に偵察を配備せよ" >&2
+    echo "詳細: ${parent_cmd} — scout done=${done_count}/2, scout_exempt=false" >&2
+    exit 1
 }
 
 # ─── 教訓注入postcondition（cmd_378: 事後不変条件） ───
@@ -2989,69 +1895,40 @@ inject_related_lessons "$TASK_FILE" || true
 
 # cmd_1321: auto-injectフィールド一括クリア（前cmdの残留値を排除）
 # cmd_1312方式を8箇所に横展開: inject前にフィールド削除→再inject
-_clear_py_output=$(mktemp)
-if ! run_python_logged "$_clear_py_output" env TASK_FILE_ENV="$TASK_FILE" python3 - <<'CLEAR_PY'; then
-import os
-import sys
-import tempfile
-
-import yaml
-
-task_file = os.environ['TASK_FILE_ENV']
-
-# 8箇所のinject対象フィールド + exec_controlのサブフィールド
-FIELDS_TO_CLEAR = [
-    'engineering_preferences',
-    'reports_to_read',
-    'context_files',
-    'role_reminder',
-    'report_template',
-    'bloom_level',
-    'stop_for',
-    'never_stop_for',
-    'ac_priority',
-    'ac_checkpoint',
-    'parallel_ok',
-    'ninja_weak_points',
-]
-
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-
-    if not data or 'task' not in data:
-        sys.exit(0)
-
-    task = data['task']
-    cleared = []
-    for field in FIELDS_TO_CLEAR:
-        if field in task:
-            del task[field]
-            cleared.append(field)
-
-    if not cleared:
-        print('[FIELD_CLEAR] No fields to clear', file=sys.stderr)
-        sys.exit(0)
-
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[FIELD_CLEAR] Cleared {len(cleared)} fields: {", ".join(cleared)}', file=sys.stderr)
-
-except Exception as e:
-    print(f'[FIELD_CLEAR] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-CLEAR_PY
+# cmd_1393: Python→awk置換
+_CLEAR_FIELDS="engineering_preferences|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points"
+_clear_tmp=$(mktemp)
+if awk -v fields="$_CLEAR_FIELDS" '
+    BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
+    {
+        if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
+        if (skip) {
+            if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
+            else { next }
+        }
+        if (indent == 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) {
+            key = $0; sub(/^  /, "", key); sub(/:.*$/, "", key)
+            if (key in fset) { skip = 1; cleared++; next }
+        }
+        print
+    }
+    END { if (cleared > 0) printf "[FIELD_CLEAR] Cleared %d fields\n", cleared > "/dev/stderr"
+          else printf "[FIELD_CLEAR] No fields to clear\n" > "/dev/stderr" }
+' "$TASK_FILE" > "$_clear_tmp" 2>/dev/null; then
+    if [ -s "$_clear_tmp" ]; then
+        mv "$_clear_tmp" "$TASK_FILE"
+    else
+        rm -f "$_clear_tmp"
+    fi
+else
     log "WARN: auto-inject field clear failed (non-fatal)"
+    rm -f "$_clear_tmp"
 fi
 
-# Engineering Preferences自動注入（失敗してもデプロイは継続）
+# cmd_1393: 7関数統合（eng_prefs/reports_to_read/ctx_files/cred_files/ctx_update/report_tpl/exec_controls）
+inject_task_modifiers "$TASK_FILE" || true
+
+# Engineering Preferences自動注入（inject_task_modifiersで処理済み・後方互換stub）
 inject_engineering_preferences "$TASK_FILE" || true
 
 # 教訓注入postcondition（失敗してもデプロイは継続）
