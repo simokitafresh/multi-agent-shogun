@@ -1,0 +1,43 @@
+task_id: cmd_1388
+timestamp: '2026-03-25T04:57:10'
+status: done
+result:
+  summary: 'AC1: gate_loop_health.shに/tmpフィルタ追加(672件除外,FAIL率22%→4%)。AC2: GP-047→accepted,GP-074→in_progress更新完了'
+  details: 'AC1: entries集計前に/tmp/パスエントリをフィルタ除外。除外件数を参考表示(除外: テストN件)。実行結果: Total=2141,除外672件,FAIL率4%。AC2:
+    gunshi_review_log.yaml L2094 GP-047 proposed→accepted(理由:pre-edit-report-deny.sh実装済み)、L2646
+    GP-074 pending→in_progress(理由:cmd_1387で対応中)'
+files_modified:
+- scripts/gates/gate_loop_health.sh
+- logs/gunshi_review_log.yaml
+purpose_validation:
+  cmd_purpose: gate_loop_health.shのFAIL率正常化とGP status更新
+lesson_candidate:
+  found: false
+  no_lesson_reason: 指示通りのフィルタ追加とYAML更新。既知パターン
+lessons_useful:
+  '0':
+    useful: true
+    reason: L074はbash算術の教訓。今回はPython内のため直接適用なしだが、set -eスクリプト内の注意点として意識した
+  '1':
+    useful: false
+    reason: AC内容にlessons.yamlイテレーションなし
+  '2':
+    useful: false
+    reason: MCP entity関連なし
+  '3':
+    useful: true
+    reason: L275通りgunshi_review_log.yamlをlimit付きReadした。全量読みを回避
+binary_checks:
+  AC1:
+    '0':
+      result: 'yes'
+    '1':
+      result: 'yes'
+    '2':
+      result: 'yes'
+  AC2:
+    '0':
+      result: 'yes'
+    '1':
+      result: 'yes'
+verdict: PASS

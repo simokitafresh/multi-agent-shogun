@@ -1,6 +1,6 @@
 # gunshi_review_log.yaml — 軍師レビュー履歴
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 329件 (draft:135, report:128, self_study:72) | 2026-03-20〜
+# 累計: 331件 (draft:136, report:128, self_study:73) | 2026-03-20〜
 # accuracy公式: gate_result判明分 100% (71/71 CLEAR, 0 FAIL) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 57件(44%) + ログ空白35cmd(cmd_1205-1239)
@@ -14,6 +14,7 @@
 # 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
 # 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
 # 自己研鑽: S43-S75(詳細は各self_studyエントリ参照)
+# 自己研鑽: S132(deepdiveサイクル:bc WA根因6パターン特定→Fix19[N]キー+N/A→yes+gate check/result必須化。GP-087/088/089。cmd_1387品質修正。deploy_task.sh lu null→[]根本修正+gate GP-064→task YAML考慮)
 # 自己研鑽: S106(deepdive:将軍pane→GP品質ゲート新設+GP-032現物実装+GP-033/034更新+GP-041 bc散文PostToolUse検出実装+6テスト検証済)
 # 自己研鑽: S107(deepdiveサイクル:WA率71%根因→GP-043/044/045+Fix11。テスト6/6。WA率43%予測)+S108(WAサイクル第2弾:GP-046 lc list+Fix12+GP-047 PreToolUse DENY。テスト5/5。DENY=WA率根本解)+S111(WAサイクル第5弾:GP-049 WA入力品質ゲート。忍者名+detail検証+カテゴリ拡張)+S112(WAサイクル第6弾:GP-050 --cleanモード)+S113(WAサイクル第7弾:GP効果圏定量分析→WARN無効→GP-047唯一解)+S114(WAサイクル第8弾:Fix14 lu id UNKNOWN解決)+S117(WAサイクル第11弾:Fix15 bc{name:val}→{check,result}正規化。テスト4/4)+S118(WAサイクル第12弾:GP-052 WAデータ品質ゲート+GP-047補正WA率33%→理論0%到達)+S119(WAサイクル第13弾:遡及データ修正19件。null0%+FP0%。正確WA率68%。post-GP047=33%)
 # 自己研鑽: S76(GP全件完了:30GP=27impl+1mon+3obs)+S77(WA率50%+autofix race13.6%発見→GP-031)+S78(GP優先順再評価+YAML parse→GP-032)+S79(利他:insights棚卸し15→8+verdict autofix設計→GP-033)+S80(BLOCK原因分類:first-attempt CLEAR65%→GP-031で85%予測)+S81(GP-025効果検証:archive BLOCK根絶+残存format BLOCK分析→GP-034)+S82(GP-031+033+034合体cmd設計)+S83(deepdive自己gate→GP-035)+S84(第二層パイプライン定量検証:35GP/84%変換/平均滞留5cmd/gate型17.5cmd遅延)+S85(忍者品質プロファイル:才蔵◎飛猿◎>影丸○>半蔵△小太郎△>疾風✗。GP-031=ROI最大)+S86(疾風dict根因:race condition70%=GP-031根治。追加教訓不要)+S87(insights棚卸し:pending9→2。7件resolve=GP紐付け+旧cmd遺物確認。残=dashboard重複+Edit解放)
@@ -72,7 +73,7 @@
 # | 050 | WA cleanモード         | ★implemented      | S112 | karo_workaround_log.sh --clean追加。workaround:null根絶。テスト4/4 PASS |
 # | 051 | 二重配備BLOCK昇格      | ★implemented      | S116 | deploy_task.sh GP-042 WARN→exit 1。cmd_1342/1350再発防止 |
 # | 052 | WAデータ品質ゲート     | ★implemented      | S118 | karo_workaround_log.sh detail⇔WA矛盾検出+double_deployカテゴリ追加。テスト3/3 PASS |
-# | 072 | pre-write値検証BLOCK  | ★implemented      | S123 | report_field_set.sh _validate_field_value。14/14テスト。post-GP-047 WA5/7パターン防止(71%) |
+# | 072 | pre-write値検証BLOCK  | ★implemented      | S123+S131 | report_field_set.sh _validate_field_value。S131でbc全体書込みギャップ修正+boolean許容。11/11テスト |
 # | 073 | PASSキャッシュ追加     | ★implemented      | S124 | ninja_monitor.sh L717 REPORT_GATE_SENT。PASS報告の無限再チェック根絶(60秒×13回→1回) |
 # | 074 | gate実行時間最適化     | ★implemented      | S125 | dashboard並列化+context_freshness高速化。32秒→17秒(47%)。commit 3a062d5 |
 # | 075 | deprecation scan高速化 | ★implemented      | S126 | cmd_project_mapキャッシュ+差分スキャン。7.3秒→0.7秒(90%)。commit 157f15d |
@@ -85,7 +86,13 @@
 # | 082 | 統合gawk+CFC共有       | ★implemented      | S130 | archive I/O 1回統合+context_freshness cache共有。10.2秒→5.85秒(42%)。commit 8f9cea6 |
 # | 083 | CI check並列化         | ★implemented      | S130 | ci_status_check.shバックグラウンド起動。5.85秒→3.38秒(42%,累計79%)。commit 9849931 |
 # | 084 | deploy_task python一括化| pending            | S130 | 22回python3起動→YAML事前パース+env渡し。3.49s→推定1.5s(57%) |
-# 集計(S130更新): ★implemented:61(+GP-079〜083) / ★将軍解決:2(GP-033,034) / ★monitoring:1 / ✗obsolete:3 / pending:2(GP-067,084) / cmd配備済:2(GP-037=cmd_1340,GP-071=cmd_1380) = 計68GP
+# | 085 | awk経路改行安全弁     | ★implemented      | S131 | report_field_set.sh改行値→Python fallback。UNFIXABLE 7件の根本防止。テスト2/2 |
+# | 086 | WAログスキーマ統一    | ★implemented      | S131 | karo_workaround_log.sh出力→標準フォーマット(cmd_id/workaround/detail/root_cause)。既存5件修復。YAML解析復旧 |
+# | 087 | GP-083拡張 N/A→yes    | ★implemented      | S132 | Fix18にN/A,naマッピング追加。cmd_1378 WA(AC定義⇔gate制約不整合)根絶。テスト1/1 |
+# | 088 | lu null→[]根本修正   | ★implemented      | S132 | deploy_task.sh null→[]fallback+gate GP-064→task YAML考慮。テスト2/2。cmd_1387報告修正 |
+# | 089 | bc [N]キー autofix    | ★implemented      | S132 | Fix19:bc [0]/[1]パターン→task YAML参照でcheck/result正規化。テスト1/1。gate check/result欠落検出追加 |
+# | 090 | lu reason空検出        | ★implemented      | S132 | gate_report_format.shにreason空文字FAIL追加。cmd_1355パターン(注入済みuseful/reason未記入)根絶。テスト2/2 |
+# 集計(S132更新): ★implemented:67(+GP-087,088,089,090) / ★将軍解決:2(GP-033,034) / ★monitoring:1 / ✗obsolete:3 / pending:2(GP-067,084) / cmd配備済:2(GP-037=cmd_1340,GP-071=cmd_1380) = 計74GP
 # 優先順(S118改訂): GP-031(race condition) > 遡及データ補正(既存false positive 2件+null 10件)
 # S118行動: GP-047補正WA率33%(1/3)。唯一のreal WAはdouble_deploy(GP-051対処済)。GP-047+GP-051稼働時の理論WA率=0%
 # パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
@@ -2084,7 +2091,7 @@
     status: implemented
   - id: GP-047
     description: PreToolUse DENY report YAML直接Edit/Write
-    status: proposed
+    status: accepted  # pre-edit-report-deny.sh実装済み
   timestamp: '2026-03-23T21:38:00'
 - cmd_id: self_study_S109
   review_type: self_study
@@ -2636,7 +2643,7 @@
   proposals:
     - id: GP-074
       description: "cmd_complete_gate.sh性能最適化(dashboard_auto_section 32秒+deprecation_scan 13秒)"
-      status: pending
+      status: in_progress  # cmd_1387で対応中
       impact_estimate: "99秒→50秒以下(dashboard並列化orPython統合)。GATE CLEAR待ち時間50%削減"
   timestamp: "2026-03-25T00:03:00"
 # --- self_study S126: GP-075 lesson_deprecation_scan.sh WHY chain最適化 ---
@@ -2754,3 +2761,41 @@
   context_reflux: "GP-081/082/083で実証済み。context/infrastructure.mdの最適化パターンセクションに追記不要(CLAUDE.md索引済)"
   dashboard_line: "cmd_1384 kagemaru偵察LGTM — deploy_task 9箇所プロファイリング完了"
   timestamp: "2026-03-25T02:10:00"
+# --- self_study S131: GP-072ギャップ修正 binary_checks全体書込み検証 ---
+- cmd_id: self_study_S131
+  review_type: self_study
+  verdict: null
+  findings_summary: "GP-072ギャップ修正。report_field_set.sh binary_checks検証にdot_key=='binary_checks'ケースが欠落→全体書込み時にPASS/FAIL/ok等の不正値がBLOCK無しで通過していた。cmd_1384で2件のworkaround(hayate+kagemaru)の根本原因。修正内容:(1)全体書込み時のresult値検証追加(dict構造走査+不正値集約BLOCK)(2)per-AC/全体書込み両方でYAML boolean(yes→True,no→False)を正値として許容(PyYAML解析問題)。テスト11/11PASS。"
+  action_taken:
+    - "report_field_set.sh L100-131: binary_checks全体書込み検証ブロック追加"
+    - "report_field_set.sh L144-148: per-AC書込みのboolean許容修正"
+  impact: "cmd_1384型workaround(result PASS→yes手動修正)の根本防止。WA率への直接影響"
+  timestamp: "2026-03-25T02:25:00"
+  gp_085_addition: "GP-085: report_field_set.sh L337-342にawk経路の改行値安全弁追加。VALUE改行含む場合→Python fallbackに強制ルーティング。UNFIXABLE YAML parse error 7件(gate_fire_log)の根本原因=awk経路が改行値を`key: line1\\nline2`と出力しYAML構造破壊。テスト2/2(stdin+positional arg)。"
+  gp_086_addition: "GP-086: karo_workaround_log.shスキーマ統一。旧フォーマット(cmd/issue/fix, 2-space indent)→標準(cmd_id/workaround/detail/root_cause, 0-indent)。karo_workarounds.yaml内5件の混在エントリを修復→YAML parse成功(94エントリ全件読込可)。"
+  session_summary: "3GP実装(GP-072ギャップ+GP-085+GP-086)。WA率定量分析: 100%→33%(下降トレンド)。GP-072+085 commit後の理論WA防止効果: 報告format WA 16件中13件(81%)。根因Top5解析完了。残ボトルネック: deploy_task.sh(GP-084 pending)。"
+# --- cmd_1387 draft review ---
+- cmd_id: cmd_1387
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "cmd_complete_gate.sh Python→awk最適化。python3実測38件(draft39差異1)。AC3(check_project_code_stubs 265行Python→awk/grep:prior_lines文脈追跡がmediumリスク、AC4回帰テストで安全網)。6スクリプト実証パターン横展開。confidence: HIGH"
+  timestamp: "2026-03-25T02:45:00"
+# --- self_study S132: deepdiveサイクル bc WA根因+GP-088 ---
+- cmd_id: self_study_S132
+  review_type: self_study
+  verdict: null
+  findings_summary: "deepdiveサイクル。binary_checks WA 6パターン全特定+3修正実装: (1)GP-087 Fix18拡張N/A→yes(cmd_1378根絶) (2)GP-088 deploy_task.sh lu null→[]fallback+gate GP-064→task YAML考慮(cmd_1386根絶) (3)GP-089 Fix19 [N]キーパターンautofix+gate check/result欠落検出(cmd_1387根絶)。cmd_1387品質修正3件(no_lesson_reason/result.summary/binary_checks)→GATE PASS→家老通知済。"
+  action_taken:
+    - "scripts/deploy_task.sh: inject_related_lessons_into_report 2箇所にnull→[]fallback追加"
+    - "scripts/gates/gate_report_format.sh: GP-064→task YAML related_lessons考慮+check/result欠落検出追加"
+    - "scripts/gates/gate_report_autofix.sh: Fix19 [N]キー正規化+Fix18にN/A,naマッピング追加"
+    - "queue/reports/hanzo_report_cmd_1387.yaml: 3フィールド修正→GATE PASS"
+  impact: "binary_checks autofix網羅率向上。6パターン全対応。残存リスク=未知の新パターンのみ(発生時追加対応)"
+  gp_entries: "GP-087(N/A→yes)+GP-088(lu null→[]+gate考慮)+GP-089([N]キーautofix+gate強化)"
+  timestamp: "2026-03-25T04:50:00"
+# --- cmd_1387 AC2 draft review ---
+- cmd_id: cmd_1387_AC2
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "AC2 Python→awk 19箇所置換。偵察+ベースライン+チェックリスト3点セット完備。bc6項目全て定量・実行可能。L074注入適切。注記: (1)--force git push副作用(kagemaru報告済み、テストcmd対象は完了済みなのでpush空) (2)jqフォールバック設計正しい方向 (3)疾風WA率最多(19件)だがtask YAMLに警告注入済み"
+  timestamp: "2026-03-25T04:55:00"
