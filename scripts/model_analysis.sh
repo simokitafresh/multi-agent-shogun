@@ -66,6 +66,202 @@ fi
 
 export GATE_LOG SETTINGS TRACKING NINJA_MONITOR DEPLOY_LOG ARCHIVE_DIR MODE CMP_MODEL1 CMP_MODEL2
 
+# ═══════════════════════════════════════════════════════
+# Fast path: --summary mode (pure bash/awk, no Python)
+# ═══════════════════════════════════════════════════════
+if [[ "$MODE" == "summary" ]]; then
+    PROFILES_YAML="$SCRIPT_DIR/config/cli_profiles.yaml"
+
+    # Step 1: Determine active model families from settings.yaml + cli_profiles.yaml
+    DEFAULT_CLI=$(awk '/^  default:/{print $2}' "$SETTINGS")
+    DEFAULT_CLI="${DEFAULT_CLI:-claude}"
+    EFFORT=$(awk '/^effort:/{print $2}' "$SETTINGS")
+
+    # Parse cli_profiles.yaml for display_name per cli type
+    declare -A PROFILE_DN
+    while IFS=$'\t' read -r ptype pdn; do
+        [[ -n "$ptype" ]] && PROFILE_DN["$ptype"]="$pdn"
+    done < <(awk '
+    /^  [a-z][a-z_]*:$/ { pname=$1; sub(/:$/,"",pname) }
+    /^    display_name:/ { dn=$0; sub(/.*display_name:[[:space:]]*/,"",dn); gsub(/["'"'"']/,"",dn); print pname "\t" dn }
+    ' "$PROFILES_YAML" 2>/dev/null)
+
+    # Parse settings.yaml for ninja model labels → compute families
+    declare -A ACTIVE_FAM_MAP
+    while IFS=$'\t' read -r _name _type _mn; do
+        [[ -z "$_name" ]] && continue
+        _type="${_type:-$DEFAULT_CLI}"
+        _dn="${PROFILE_DN[$_type]:-}"
+        _label="${_mn:-${_dn:-$_type}}"
+        if [[ -n "$_mn" && -n "$EFFORT" ]]; then
+            case " $_label " in
+                *" $EFFORT "*) ;;
+                *) _label="$_label $EFFORT" ;;
+            esac
+        fi
+        _label="${_label//_/ }"
+        _low=$(echo "$_label" | tr '[:upper:]' '[:lower:]' | tr '-' ' ')
+        if [[ "$_low" == *opus* ]] && [[ "$_low" == *4.6* || "$_low" == *4\ 6* ]]; then
+            ACTIVE_FAM_MAP["opus_4_6"]=1
+        elif [[ "$_low" == *gpt* || "$_low" == *codex* ]] && [[ "$_low" == *5.4* || "$_low" == *5\ 4* ]]; then
+            ACTIVE_FAM_MAP["gpt_5_4"]=1
+        else
+            _slug=$(echo "$_label" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g; s/^_\+//; s/_\+$//')
+            ACTIVE_FAM_MAP["${_slug:-unknown}"]=1
+        fi
+    done < <(awk '
+    /^    [a-z][a-z_]*:$/ { name=$1; sub(/:$/,"",name); type=""; mn="" }
+    /^      type:/ { type=$2 }
+    /^      model_name:/ { mn=$0; sub(/.*model_name:[[:space:]]*/,"",mn); gsub(/["'"'"']/,"",mn) }
+    /^      role:/ { role=$2; if(role=="ninja" && name!="") print name "\t" type "\t" mn }
+    ' "$SETTINGS" 2>/dev/null)
+
+    ACTIVE_FAMILIES=$(IFS=,; echo "${!ACTIVE_FAM_MAP[*]}")
+
+    # Step 2: Process gate_metrics.log with awk (column 6 models only, matching Python behavior)
+    awk -F'\t' -v active_fams="$ACTIVE_FAMILIES" '
+    function normalize(raw,   r) {
+        r = raw; gsub(/_/, " ", r); gsub(/  +/, " ", r); gsub(/^ +| +$/, "", r)
+        return (r == "" ? "unknown" : r)
+    }
+    function get_family(label,   low) {
+        low = tolower(label); gsub(/-/, " ", low); gsub(/_/, " ", low)
+        if (low ~ /opus/ && (low ~ /4\.6/ || low ~ /4 6/)) return "opus_4_6"
+        if ((low ~ /gpt/ || low ~ /codex/) && (low ~ /5\.4/ || low ~ /5 4/)) return "gpt_5_4"
+        low = tolower(normalize(label)); gsub(/[^a-z0-9]+/, "_", low); gsub(/^_+|_+$/, "", low)
+        return (low == "" ? "unknown" : low)
+    }
+    function get_slug(label,   r) {
+        r = tolower(normalize(label)); gsub(/[^a-z0-9]+/, "_", r); gsub(/^_+|_+$/, "", r)
+        return (r == "" ? "unknown" : r)
+    }
+    BEGIN {
+        n_af = split(active_fams, af_arr, /[, ]/)
+        for (i = 1; i <= n_af; i++) active[af_arr[i]] = 1
+    }
+    {
+        cmd = $2
+        if (tolower(cmd) ~ /^cmd_?test/) next
+        # Dedup: keep last entry per cmd_id
+        cmd_ts[cmd] = $1
+        cmd_result[cmd] = $3
+        cmd_type[cmd] = (NF >= 5 ? $5 : "unknown")
+        cmd_models[cmd] = (NF >= 6 ? $6 : "unknown")
+        # Preserve insertion order for trend calculation
+        if (!(cmd in cmd_seen)) {
+            cmd_seen[cmd] = 1
+            cmd_order[++n_cmds] = cmd
+        }
+    }
+    END {
+        # Sort deduped entries by timestamp for trend calculation
+        n_sorted = 0
+        for (i = 1; i <= n_cmds; i++) {
+            c = cmd_order[i]
+            n_sorted++
+            sorted_ts[n_sorted] = cmd_ts[c]
+            sorted_cmd[n_sorted] = c
+        }
+        # Simple insertion sort by timestamp (data is mostly sorted already)
+        for (i = 2; i <= n_sorted; i++) {
+            t = sorted_ts[i]; sc = sorted_cmd[i]
+            j = i - 1
+            while (j >= 1 && sorted_ts[j] > t) {
+                sorted_ts[j+1] = sorted_ts[j]
+                sorted_cmd[j+1] = sorted_cmd[j]
+                j--
+            }
+            sorted_ts[j+1] = t; sorted_cmd[j+1] = sc
+        }
+
+        # Process each deduped entry
+        for (idx = 1; idx <= n_sorted; idx++) {
+            c = sorted_cmd[idx]
+            result = cmd_result[c]
+            ttype = cmd_type[c]
+            models_str = cmd_models[c]
+
+            n_m = split(models_str, m_arr, /,/)
+            for (mi = 1; mi <= n_m; mi++) {
+                m = m_arr[mi]; gsub(/^ +| +$/, "", m)
+                if (m == "") continue
+                m_norm = normalize(m)
+                fam = get_family(m)
+                if (fam == "unknown" || !(fam in active)) continue
+
+                # Section A: CLEAR rate per family
+                fam_total[fam]++
+                if (result == "CLEAR") fam_clear[fam]++
+
+                # Track best label (most samples)
+                fam_label_n[fam][m_norm]++
+                if (fam_label_n[fam][m_norm] > fam_best_n[fam]) {
+                    fam_best_n[fam] = fam_label_n[fam][m_norm]
+                    fam_best_label[fam] = m_norm
+                }
+
+                # Section C: implement type
+                if (ttype == "implement") {
+                    fam_impl_total[fam]++
+                    if (result == "CLEAR") fam_impl_clear[fam]++
+                }
+
+                # Section E: trend (collect results in order per family)
+                fam_trend_n[fam]++
+                fam_trend_results[fam][fam_trend_n[fam]] = result
+            }
+        }
+
+        # Output per family
+        for (fam in fam_total) {
+            total = fam_total[fam]
+            clear = fam_clear[fam] + 0
+            rate = (total > 0) ? (clear / total * 100) : 0.0
+            label = fam_best_label[fam]
+            slug = get_slug(label)
+
+            # Impl rate
+            impl_rate = "—"
+            impl_t = fam_impl_total[fam] + 0
+            if (impl_t >= 5) {
+                impl_c = fam_impl_clear[fam] + 0
+                impl_rate = sprintf("%.1f", (impl_t > 0) ? (impl_c / impl_t * 100) : 0.0)
+            }
+
+            # Trend: last 20 vs prev 20
+            trend = "stable"
+            tn = fam_trend_n[fam]
+            if (tn >= 2) {
+                window = (tn < 20) ? tn : 20
+                recent_clear = 0
+                for (ri = tn - window + 1; ri <= tn; ri++) {
+                    if (fam_trend_results[fam][ri] == "CLEAR") recent_clear++
+                }
+                recent_rate = recent_clear / window * 100
+
+                remaining = tn - window
+                if (remaining >= 5) {
+                    prev_win = (remaining < 20) ? remaining : 20
+                    prev_start = remaining - prev_win + 1
+                    prev_clear = 0
+                    for (pi = prev_start; pi <= remaining; pi++) {
+                        if (fam_trend_results[fam][pi] == "CLEAR") prev_clear++
+                    }
+                    prev_rate = prev_clear / prev_win * 100
+                    delta = recent_rate - prev_rate
+                    if (delta > 2) trend = "up"
+                    else if (delta < -2) trend = "down"
+                    else trend = "stable"
+                }
+            }
+
+            printf "model_row=%s\t%s\t%.1f\t%s\t%s\t%d\n", slug, label, rate, impl_rate, trend, total
+        }
+    }
+    ' "$GATE_LOG"
+    exit 0
+fi
+
 python3 << 'PYEOF'
 import os, sys, json, re
 from collections import defaultdict, OrderedDict
