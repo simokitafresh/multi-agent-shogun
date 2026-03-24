@@ -309,7 +309,7 @@ safe_send_clear() {
     # cmd_1303: 運用ファイル除外フィルタ（自動更新される運用ファイルで/clearをブロックしない）
     # 改善: BLOCKせず自動commit → /clearを続行（忍者を起こさない）
     local _uncommitted
-    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain 2>/dev/null \
+    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain -uno 2>/dev/null \
         | grep -v -E '^.. (dashboard\.md|logs/|queue/inbox/|queue/karo_snapshot\.txt|queue/insights\.yaml|queue/reports/|\.claude/)')
     if [ -n "$_uncommitted" ]; then
         local _file_list
@@ -2352,9 +2352,11 @@ while true; do
                 _s1_now=$(date +%s)
                 _s1_age=$((_s1_now - _s1_mtime))
                 if [ "$_s1_age" -lt 120 ]; then
-                    log "SKIP_CLEAR: $name recent task update (${_s1_age}s ago)"
-                    PREV_STATE[$name]="busy"
-                    continue
+                    if [ "$_s1_task_status" = "assigned" ] || [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ] || [ "$_s1_task_status" = "pending" ]; then
+                        log "SKIP_CLEAR: $name recent task update (${_s1_age}s ago), status=$_s1_task_status"
+                        PREV_STATE[$name]="busy"
+                        continue
+                    fi
                 fi
             fi
             # Stage 1通過 → Stage 2（Phase 2）へ
