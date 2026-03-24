@@ -1670,35 +1670,43 @@ preflight_gate_flags() {
             continue
         fi
         local tp_info
-        tp_info=$(TASK_FILE="$tp_task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
-import yaml, os
-script_dir = os.environ['SCRIPT_DIR_ENV']
-try:
-    with open(os.environ['TASK_FILE']) as f:
-        data = yaml.safe_load(f) or {}
-    task = data.get('task', {})
-    project_id = task.get('project', '')
-    target_paths = task.get('target_path', [])
-    if isinstance(target_paths, str):
-        target_paths = [target_paths]
-    if not target_paths:
-        raise SystemExit(0)
-    # resolve project path
-    project_path = script_dir  # default: infra
-    if project_id and project_id != 'infra':
-        pj_file = os.path.join(script_dir, 'projects', f'{project_id}.yaml')
-        if os.path.exists(pj_file):
-            with open(pj_file) as f:
-                pj = yaml.safe_load(f) or {}
-            for candidate in (pj.get('project', {}).get('path'), pj.get('path')):
-                if isinstance(candidate, str) and candidate.strip():
-                    project_path = candidate.strip()
-                    break
-    for tp in target_paths:
-        print(f'{project_path}\t{tp}')
-except Exception:
-    pass
-" 2>/dev/null)
+        # task.project と task.target_path を取得
+        local _tp_project_id _tp_target_raw _tp_project_path
+        _tp_project_id=$(FIELD_GET_NO_LOG=1 field_get "$tp_task_file" "project" "")
+        # target_path: string or list
+        _tp_target_raw=$(awk '
+            /^[[:space:]]+target_path:/ {
+                # inline value (string)
+                val = $0; sub(/.*target_path:[[:space:]]*/, "", val); gsub(/^["'"'"']+|["'"'"']+$/, "", val)
+                if (val != "" && val !~ /^\[/) { print val; exit }
+                in_tp = 1; next
+            }
+            in_tp && /^[[:space:]]+- / { val = $0; sub(/^[[:space:]]+- [[:space:]]*/, "", val); gsub(/^["'"'"']+|["'"'"']+$/, "", val); print val; next }
+            in_tp && /^[[:space:]]+[^ -]/ { exit }
+            in_tp && /^[^ ]/ { exit }
+        ' "$tp_task_file" 2>/dev/null)
+        [ -z "$_tp_target_raw" ] && continue
+        # resolve project path
+        _tp_project_path="$SCRIPT_DIR"
+        if [ -n "$_tp_project_id" ] && [ "$_tp_project_id" != "infra" ]; then
+            local _tp_pj_file="$SCRIPT_DIR/projects/${_tp_project_id}.yaml"
+            if [ -f "$_tp_pj_file" ]; then
+                local _tp_resolved
+                _tp_resolved=$(awk '
+                    /^[[:space:]]*path:/ { v=$0; sub(/.*path:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v); if (v != "") { print v; exit } }
+                    /project:/ { sec=1; next }
+                    sec && /^[[:space:]]+path:/ { v=$0; sub(/.*path:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v); if (v != "") { print v; exit } }
+                    sec && /^[^ ]/ { sec=0 }
+                ' "$_tp_pj_file" 2>/dev/null)
+                [ -n "$_tp_resolved" ] && _tp_project_path="$_tp_resolved"
+            fi
+        fi
+        tp_info=""
+        while IFS= read -r _tp_one; do
+            [ -z "$_tp_one" ] && continue
+            tp_info="${tp_info}${_tp_project_path}	${_tp_one}
+"
+        done <<< "$_tp_target_raw"
         [ -z "$tp_info" ] && continue
         while IFS=$'\t' read -r tp_proj_path tp_file; do
             [ -z "$tp_file" ] && continue
@@ -2095,52 +2103,47 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         report_file=$(resolve_report_file "$ninja_name")
 
         if [ -f "$report_file" ]; then
-            # Python判定: lessons_usefulが非空リスト+各要素の形式チェック（cmd_536 null検知 + cmd_1045 形式厳格化）
-            lr_status=$(python3 -c "
-import yaml
-result = 'error'
-try:
-    with open('$report_file') as f:
-        data = yaml.safe_load(f)
-    if not data:
-        result = 'empty'
-    elif 'lessons_useful' in data and data['lessons_useful'] is None:
-        # cmd_536 AC4: lessons_useful=null(明示的未記入)を検出
-        result = 'null'
-    else:
-        lr = data.get('lessons_useful')
-        if lr is None:
-            lr = data.get('lesson_referenced')
-        if lr and isinstance(lr, list) and len(lr) > 0:
-            # cmd_1045: 各要素の形式検証（dict + useful:bool 必須）
-            valid = True
-            fill_this = False
-            for item in lr:
-                if not isinstance(item, dict):
-                    valid = False
-                    break
-                # cmd_1180: FILL_THIS検出（invalid_formatより先にチェック）
-                if item.get('useful') == 'FILL_THIS' or item.get('reason') == 'FILL_THIS':
-                    fill_this = True
-                    break
-                if item.get('useful') is None:
-                    valid = False
-                    break
-                if not isinstance(item.get('useful'), bool):
-                    valid = False
-                    break
-            if fill_this:
-                result = 'fill_this_remaining'
-            elif valid:
-                result = 'ok'
-            else:
-                result = 'invalid_format'
-        else:
-            result = 'empty'
-except Exception:
-    result = 'error'
-print(result)
-" 2>/dev/null)
+            # lessons_useful検証: null/空/FILL_THIS/形式不正/ok (cmd_536+cmd_1045+cmd_1180)
+            lr_status=$(awk '
+                # lessons_useful: または lesson_referenced: セクション検出
+                /^lessons_useful:/ {
+                    val = $0; sub(/.*lessons_useful:[[:space:]]*/, "", val)
+                    if (val == "null" || val == "~") { result = "null"; exit }
+                    if (val == "" || val == "[]") { sec = "lu" }
+                    else { sec = "lu" }
+                    lu_found = 1; next
+                }
+                /^lesson_referenced:/ && !lu_found {
+                    sec = "lr"; next
+                }
+                (sec == "lu" || sec == "lr") && /^[a-zA-Z]/ { sec = "" }
+                # リスト要素 (- id: ...) を検出
+                (sec == "lu" || sec == "lr") && /^[[:space:]]*- / {
+                    item_count++
+                    # FILL_THIS検出 (useful/reason)
+                    if ($0 ~ /useful:[[:space:]]*FILL_THIS/ || $0 ~ /reason:[[:space:]]*FILL_THIS/) {
+                        fill_this = 1
+                    }
+                }
+                # useful: フィールド（リスト要素の子）
+                (sec == "lu" || sec == "lr") && /^[[:space:]]+useful:/ {
+                    u = $0; sub(/.*useful:[[:space:]]*/, "", u); gsub(/^["'"'"']+|["'"'"']+$/, "", u)
+                    if (u == "FILL_THIS") { fill_this = 1 }
+                    else if (u == "true" || u == "false") { bool_count++ }
+                    else if (u == "" || u == "null" || u == "~") { null_useful = 1 }
+                    else { non_bool = 1 }
+                }
+                # reason: FILL_THIS検出
+                (sec == "lu" || sec == "lr") && /^[[:space:]]+reason:[[:space:]]*FILL_THIS/ { fill_this = 1 }
+                END {
+                    if (result != "") { print result; exit }
+                    if (item_count == 0) { print "empty"; exit }
+                    if (fill_this) { print "fill_this_remaining"; exit }
+                    if (null_useful || non_bool) { print "invalid_format"; exit }
+                    if (bool_count > 0) { print "ok"; exit }
+                    print "empty"
+                }
+            ' "$report_file" 2>/dev/null)
 
             if [ "$lr_status" = "ok" ]; then
                 echo "  ${ninja_name}: OK (lessons_useful present and non-empty)"
@@ -2203,58 +2206,24 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         continue
     fi
 
-    acv_status=$(python3 -c "
-import yaml, sys
-
-def is_legacy_numeric(v):
-    # Legacy numeric ac_version check
-    if v is None:
-        return False
-    if isinstance(v, bool):
-        return False
-    if isinstance(v, (int, float)):
-        return True
-    s = str(v).strip()
-    try:
-        int(s)
-        return True
-    except (ValueError, TypeError):
-        return False
-
-def normalize(v):
-    if v is None:
-        return None
-    s = str(v).strip()
-    if s == '' or s.lower() in ('none', 'null'):
-        return None
-    return s
-
-try:
-    with open('$task_file') as tf:
-        tdata = yaml.safe_load(tf) or {}
-    with open('$report_file') as rf:
-        rdata = yaml.safe_load(rf) or {}
-
-    task = tdata.get('task', {}) if isinstance(tdata, dict) else {}
-    raw_task_ac = task.get('ac_version')
-    raw_read_ac = rdata.get('ac_version_read')
-    task_ac = normalize(raw_task_ac)
-    read_ac = normalize(raw_read_ac)
-
-    if task_ac is None:
-        print('task_missing')
-    elif is_legacy_numeric(raw_task_ac):
-        _r = read_ac or '-'
-        print(f'legacy_skip\\t{task_ac}\\t{_r}')
-    elif read_ac is None:
-        print(f'report_missing\\t{task_ac}\\t-')
-    elif task_ac == read_ac:
-        print(f'ok\\t{task_ac}\\t{read_ac}')
-    else:
-        print(f'mismatch\\t{task_ac}\\t{read_ac}')
-except Exception:
-    print('error')
-" 2>/dev/null)
+    # ac_version照合: field_getで取得→比較
+    _acv_task=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_version" "")
+    _acv_read=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "ac_version_read" "")
+    # normalize: 空/null/none → empty
+    case "${_acv_task,,}" in ""|null|none|"~") _acv_task="" ;; esac
+    case "${_acv_read,,}" in ""|null|none|"~") _acv_read="" ;; esac
+    if [ -z "$_acv_task" ]; then
+        acv_status="task_missing"
+    elif [[ "$_acv_task" =~ ^[0-9]+$ ]]; then
+        # legacy numeric → skip
+        acv_status=$(printf 'legacy_skip\t%s\t%s' "$_acv_task" "${_acv_read:--}")
+    elif [ -z "$_acv_read" ]; then
+        acv_status=$(printf 'report_missing\t%s\t-' "$_acv_task")
+    elif [ "$_acv_task" = "$_acv_read" ]; then
+        acv_status=$(printf 'ok\t%s\t%s' "$_acv_task" "$_acv_read")
+    else
+        acv_status=$(printf 'mismatch\t%s\t%s' "$_acv_task" "$_acv_read")
+    fi
 
     acv_kind=$(echo "$acv_status" | cut -f1)
     acv_task=$(echo "$acv_status" | cut -f2)
@@ -2306,47 +2275,56 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     LC_CHECKED=true
 
-    # lesson_candidateフィールドの検証
-    lc_status=$(python3 -c "
-import yaml, sys
-try:
-    with open('$report_file') as f:
-        data = yaml.safe_load(f)
-    if not data:
-        print('missing')
-        sys.exit(0)
-    lc = data.get('lesson_candidate')
-    if lc is None:
-        print('missing')
-    elif isinstance(lc, list):
-        print('legacy_list')
-    elif not isinstance(lc, dict):
-        print('malformed')
-    elif 'found' not in lc:
-        print('found_missing')
-    elif lc['found'] == False:
-        nlr = lc.get('no_lesson_reason', '')
-        if not nlr or not str(nlr).strip():
-            print('ok_false_no_reason')
-        else:
-            print('ok_false')
-    elif lc['found'] == True:
-        title = lc.get('title', '')
-        detail = lc.get('detail', '')
-        missing = []
-        if not title or not str(title).strip():
-            missing.append('title')
-        if not detail or not str(detail).strip():
-            missing.append('detail')
-        if missing:
-            print('found_true_empty:' + ','.join(missing))
-        else:
-            print('found_true')
-    else:
-        print('malformed')
-except:
-    print('error')
-" 2>/dev/null)
+    # lesson_candidateフィールドの検証 (awk: cmd_536+cmd_776+cmd_1180)
+    lc_status=$(awk '
+        /^lesson_candidate:/ {
+            # inline list check (legacy_list: "lesson_candidate: [...]" or next line is "- ")
+            val = $0; sub(/.*lesson_candidate:[[:space:]]*/, "", val)
+            if (val == "null" || val == "~" || val == "") { in_lc = 1 }
+            else if (val ~ /^\[/) { result = "legacy_list" }
+            else { result = "malformed" }
+            next
+        }
+        in_lc && /^[a-zA-Z]/ { in_lc = 0 }
+        # list形式の検出 (legacy_list)
+        in_lc && /^[[:space:]]*- / && !has_found_key { result = "legacy_list"; in_lc = 0 }
+        in_lc && /^[[:space:]]+found:/ {
+            has_found_key = 1
+            v = $0; sub(/.*found:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v)
+            found_val = v
+        }
+        in_lc && /^[[:space:]]+no_lesson_reason:/ {
+            v = $0; sub(/.*no_lesson_reason:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+            nlr = v
+        }
+        in_lc && /^[[:space:]]+title:/ {
+            v = $0; sub(/.*title:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+            lc_title = v
+        }
+        in_lc && /^[[:space:]]+detail:/ {
+            v = $0; sub(/.*detail:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+            lc_detail = v
+        }
+        END {
+            if (result != "") { print result; exit }
+            if (!in_lc && !has_found_key) { print "missing"; exit }
+            if (!has_found_key) { print "found_missing"; exit }
+            if (found_val == "false") {
+                if (nlr == "") print "ok_false_no_reason"
+                else print "ok_false"
+                exit
+            }
+            if (found_val == "true") {
+                miss = ""
+                if (lc_title == "") { miss = "title" }
+                if (lc_detail == "") { if (miss != "") miss = miss ","; miss = miss "detail" }
+                if (miss != "") print "found_true_empty:" miss
+                else print "found_true"
+                exit
+            }
+            print "malformed"
+        }
+    ' "$report_file" 2>/dev/null)
 
     case "$lc_status" in
         ok_false)
@@ -2449,36 +2427,35 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     BC_CHECKED=true
 
-    bc_status=$(python3 -c "
-import yaml, sys
-try:
-    with open('$report_file') as f:
-        data = yaml.safe_load(f)
-    if not data:
-        print('missing')
-        sys.exit(0)
-    bc = data.get('binary_checks')
-    if bc is None:
-        print('missing')
-    elif not isinstance(bc, list):
-        print('malformed')
-    else:
-        fails = []
-        for i, item in enumerate(bc):
-            if not isinstance(item, dict):
-                fails.append(f'item_{i}:not_dict')
-                continue
-            result = item.get('result', '')
-            if str(result).strip().upper() != 'PASS':
-                check_name = item.get('check', f'item_{i}')
-                fails.append(str(check_name))
-        if fails:
-            print('fail:' + '|'.join(fails))
-        else:
-            print('ok')
-except:
-    print('error')
-" 2>/dev/null)
+    # binary_checks: リスト形式の全check→result=PASS確認
+    bc_status=$(awk '
+        /^binary_checks:/ {
+            val = $0; sub(/.*binary_checks:[[:space:]]*/, "", val)
+            if (val == "null" || val == "~") { print "missing"; exit }
+            in_bc = 1; next
+        }
+        # セクション終了: 行頭が英字(新キー)の場合のみ (- で始まるリスト項目は含めない)
+        in_bc && /^[a-zA-Z]/ { in_bc = 0 }
+        # dict形式(AC_id: の行)→malformed (python互換: 即判定)
+        in_bc && /^[[:space:]]+[A-Za-z_][A-Za-z_0-9]*:/ && !/^[[:space:]]+check:/ && !/^[[:space:]]+result:/ { print "malformed"; exit }
+        in_bc && /[[:space:]]*- check:/ { item_count++; cur_check = $0; sub(/.*- check:[[:space:]]*/, "", cur_check); gsub(/^["'"'"']+|["'"'"']+$/, "", cur_check) }
+        in_bc && /[[:space:]]+result:/ {
+            r = $0; sub(/.*result:[[:space:]]*/, "", r); gsub(/^["'"'"']+|["'"'"']+$/, "", r)
+            upper_r = toupper(r)
+            if (upper_r != "PASS") {
+                _name = (cur_check != "" ? cur_check : "item_" item_count)
+                if (fails != "") fails = fails "|" _name
+                else fails = _name
+            }
+        }
+        END {
+            if (!in_bc && item_count == 0 && !is_dict) { print "missing"; exit }
+            if (is_dict && item_count == 0) { print "malformed"; exit }
+            if (item_count == 0) { print "missing"; exit }
+            if (fails != "") print "fail:" fails
+            else print "ok"
+        }
+    ' "$report_file" 2>/dev/null)
 
     case "$bc_status" in
         ok)
@@ -2610,41 +2587,29 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     fi
 
     DEVIATION_CHECKED=true
-    deviation_status=$(REPORT_FILE_ENV="$report_file" python3 - <<'PY'
-import os
-import yaml
-
-report_file = os.environ["REPORT_FILE_ENV"]
-
-try:
-    with open(report_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    print("error\tparse_error")
-    raise SystemExit(0)
-
-if not isinstance(data, dict):
-    print("error\treport_not_dict")
-    raise SystemExit(0)
-
-result = data.get("result")
-if not isinstance(result, dict):
-    print("skip\tresult missing or not a mapping")
-    raise SystemExit(0)
-
-deviation = result.get("deviation")
-if deviation is None:
-    print("skip\tresult.deviation not present")
-elif not isinstance(deviation, list):
-    print("skip\tresult.deviation not a list")
-elif len(deviation) == 0:
-    print("skip\tresult.deviation empty (count 0)")
-elif len(deviation) >= 4:
-    print(f"warn\t{len(deviation)}")
-else:
-    print(f"ok\t{len(deviation)}")
-PY
-)
+    # result:セクション内のdeviation:リスト要素数を数える
+    deviation_status=$(awk '
+        /^result:/ { in_result=1; next }
+        in_result && /^[^ ]/ { in_result=0 }
+        in_result && /^[[:space:]]+deviation:/ {
+            has_dev=1; in_dev=1
+            match($0, /^[[:space:]]+/)
+            dev_indent = RLENGTH
+            if ($0 ~ /\[\]/) { has_dev=2 }
+            next
+        }
+        in_dev && NF > 0 {
+            match($0, /^[[:space:]]*/); ci = RLENGTH
+            if (ci <= dev_indent) { in_dev=0; next }
+        }
+        in_dev && /^[[:space:]]+- / { count++ }
+        END {
+            if (!has_dev && count==0) { printf "skip\tresult.deviation not present"; exit }
+            if (has_dev==2 || count==0) { printf "skip\tresult.deviation empty (count 0)"; exit }
+            if (count >= 4) printf "warn\t%d", count
+            else printf "ok\t%d", count
+        }
+    ' "$report_file" 2>/dev/null)
 
     deviation_kind=$(printf '%s\n' "$deviation_status" | cut -f1)
     deviation_detail=$(printf '%s\n' "$deviation_status" | cut -f2-)
@@ -2888,40 +2853,26 @@ for task_file in "$TASKS_DIR"/*.yaml; do
                 continue
             fi
 
-            review_status=$(REPORT_FILE_ENV="$report_file" python3 - <<'PY'
-import os
-import yaml
-
-report_file = os.environ["REPORT_FILE_ENV"]
-
-try:
-    with open(report_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    print("parse_error\tparse_error\t")
-    raise SystemExit(0)
-
-if not isinstance(data, dict):
-    print("parse_error\tparse_error\t")
-    raise SystemExit(0)
-
-verdict = data.get("verdict")
-if isinstance(verdict, str) and verdict in ("PASS", "FAIL"):
-    verdict_status = "ok"
-else:
-    verdict_status = "ng"
-
-self_gate = data.get("self_gate_check")
-required = ("lesson_ref", "lesson_candidate", "status_valid", "purpose_fit")
-if isinstance(self_gate, dict) and all(str(self_gate.get(key, "")).strip() == "PASS" for key in required):
-    gate_status = "ok"
-else:
-    gate_status = "ng"
-
-worker_id = str(data.get("worker_id", "")).strip()
-print(f"{verdict_status}\t{gate_status}\t{worker_id}")
-PY
-)
+            # verdict判定: PASS/FAILのいずれかならok
+            _rv_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "")
+            _rv_verdict_status="ng"
+            [ "$_rv_verdict" = "PASS" ] || [ "$_rv_verdict" = "FAIL" ] && _rv_verdict_status="ok"
+            # self_gate_check判定: 4項目全てPASSならok
+            _rv_gate_status="ng"
+            if grep -q 'self_gate_check:' "$report_file" 2>/dev/null; then
+                _rv_sg_pass=$(awk '
+                    /self_gate_check:/ { sec=1; next }
+                    sec && /^[^ ]/ { exit }
+                    sec && /lesson_ref:.*PASS/ { c++ }
+                    sec && /lesson_candidate:.*PASS/ { c++ }
+                    sec && /status_valid:.*PASS/ { c++ }
+                    sec && /purpose_fit:.*PASS/ { c++ }
+                    END { print c+0 }
+                ' "$report_file" 2>/dev/null)
+                [ "${_rv_sg_pass:-0}" -eq 4 ] && _rv_gate_status="ok"
+            fi
+            _rv_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "worker_id" "")
+            review_status=$(printf '%s\t%s\t%s' "$_rv_verdict_status" "$_rv_gate_status" "$_rv_worker_id")
 
             verdict_status=$(printf '%s\n' "$review_status" | cut -f1)
             self_gate_status=$(printf '%s\n' "$review_status" | cut -f2)
@@ -3516,80 +3467,37 @@ if [ "$ALL_CLEAR" = true ]; then
             ninja_name=$(basename "$task_file" .yaml)
             report_file=$(resolve_report_file "$ninja_name")
             if [ -f "$report_file" ]; then
-                score_entries=$(python3 -c "
-import yaml, sys
-import re
-
-def parse_yaml(path):
-    try:
-        with open(path, encoding='utf-8') as f:
-            data = yaml.safe_load(f)
-        if isinstance(data, dict):
-            return data
-    except Exception:
-        pass
-    return {}
-
-def normalize_lesson_ids(raw):
-    out = []
-    seen = set()
-    if isinstance(raw, list):
-        for item in raw:
-            lid = ''
-            if isinstance(item, str):
-                lid = item.strip()
-            elif isinstance(item, dict):
-                lid = str(item.get('id', '')).strip()
-            if lid and lid not in seen:
-                seen.add(lid)
-                out.append(lid)
-    return out
-
-try:
-    report_data = parse_yaml('$report_file')
-    task_data = parse_yaml('$task_file')
-    task = task_data.get('task', {}) if isinstance(task_data, dict) else {}
-
-    if not report_data:
-        sys.exit(0)
-
-    lr = report_data.get('lessons_useful')
-    if lr is None:
-        lr = report_data.get('lesson_referenced', [])
-
-    explicit_ids = normalize_lesson_ids(lr)
-    explicit_set = set(explicit_ids)
-    for lid in explicit_ids:
-        print(f'explicit\t{lid}')
-
-    related_ids = []
-    related_seen = set()
-    related_lessons = task.get('related_lessons', [])
-    if isinstance(related_lessons, list):
-        for lesson in related_lessons:
-            if not isinstance(lesson, dict):
-                continue
-            lid = str(lesson.get('id', '')).strip()
-            if lid and lid not in related_seen:
-                related_seen.add(lid)
-                related_ids.append(lid)
-
-    report_text = ''
-    try:
-        with open('$report_file', encoding='utf-8') as rf:
-            report_text = rf.read()
-    except Exception:
-        report_text = ''
-
-    for lid in related_ids:
-        if lid in explicit_set:
-            continue
-        pattern = rf'(?<![A-Za-z0-9_]){re.escape(lid)}(?![A-Za-z0-9_])'
-        if re.search(pattern, report_text):
-            print(f'auto\t{lid}')
-except:
-    pass
-" 2>/dev/null)
+                # lessons_useful/lesson_referenced からexplicit IDs抽出
+                _se_explicit=$(awk '
+                    /^lessons_useful:/ || /^lesson_referenced:/ { sec=1; next }
+                    sec && /^[a-zA-Z]/ { sec=0 }
+                    sec && /id:/ { v=$0; sub(/.*id:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v); gsub(/[[:space:]]/, "", v); if (v != "" && !seen[v]++) print v }
+                ' "$report_file" 2>/dev/null)
+                # related_lessons から IDs抽出
+                _se_related=$(awk '
+                    /^[[:space:]]+related_lessons:/ { sec=1; next }
+                    sec && /^[[:space:]]+[^ -]/ && !/^[[:space:]]+- / { sec=0 }
+                    sec && /id:/ { v=$0; sub(/.*id:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v); gsub(/[[:space:]]/, "", v); if (v != "" && !seen[v]++) print v }
+                ' "$task_file" 2>/dev/null)
+                score_entries=""
+                # explicit entries
+                while IFS= read -r _se_lid; do
+                    [ -z "$_se_lid" ] && continue
+                    score_entries="${score_entries}explicit	${_se_lid}
+"
+                done <<< "$_se_explicit"
+                # auto entries: related IDs not in explicit, found in report text
+                _se_explicit_list="|${_se_explicit//$'\n'/|}|"
+                while IFS= read -r _se_rlid; do
+                    [ -z "$_se_rlid" ] && continue
+                    # skip if already explicit
+                    case "$_se_explicit_list" in *"|${_se_rlid}|"*) continue ;; esac
+                    # word-boundary check in report text
+                    if grep -qP "(?<![A-Za-z0-9_])$(printf '%s' "$_se_rlid" | sed 's/[.[\*^$()+?{|\\]/\\&/g')(?![A-Za-z0-9_])" "$report_file" 2>/dev/null; then
+                        score_entries="${score_entries}auto	${_se_rlid}
+"
+                    fi
+                done <<< "$_se_related"
                 while IFS=$'\t' read -r score_type lid; do
                     [ -z "$score_type" ] && continue
                     [ -z "$lid" ] && continue
@@ -3960,35 +3868,24 @@ else
         DEPRECATE_LESSONS_FILE="$SCRIPT_DIR/projects/${CMD_PROJECT}/lessons.yaml"
         if [ -f "$DEPRECATE_LESSONS_FILE" ]; then
             # harmful_count >= 5 かつ harmful_count > helpful_count の教訓を検出
-            deprecate_targets=$(DEPRECATE_LESSONS_FILE="$DEPRECATE_LESSONS_FILE" python3 -c "
-import yaml, sys, os
-lessons_file = os.environ['DEPRECATE_LESSONS_FILE']
-try:
-    with open(lessons_file, encoding='utf-8') as f:
-        data = yaml.safe_load(f)
-    if not data or not isinstance(data.get('lessons'), list):
-        sys.exit(0)
-    for lesson in data['lessons']:
-        if not isinstance(lesson, dict):
-            continue
-        lid = str(lesson.get('id', ''))
-        if not lid:
-            continue
-        harmful = int(lesson.get('harmful_count', 0))
-        helpful = int(lesson.get('helpful_count', 0))
-        # 既にdeprecated済みならスキップ（冪等性）
-        if lesson.get('deprecated') is True:
-            continue
-        if str(lesson.get('status', '')) == 'deprecated':
-            continue
-        if lesson.get('deprecated_by'):
-            continue
-        # 閾値チェック
-        if harmful >= 5 and harmful > helpful:
-            print(f'{lid}\t{harmful}\t{helpful}')
-except Exception:
-    pass
-" 2>/dev/null)
+            deprecate_targets=$(awk '
+                /^[[:space:]]*- id:/ {
+                    if (lid != "" && !deprecated && harmful >= 5 && harmful > helpful)
+                        printf "%s\t%d\t%d\n", lid, harmful, helpful
+                    lid = $0; sub(/.*- id:[[:space:]]*/, "", lid); gsub(/[" \t]/, "", lid)
+                    harmful = 0; helpful = 0; deprecated = 0
+                    next
+                }
+                /^[[:space:]]+harmful_count:/ { v=$0; sub(/.*harmful_count:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); harmful = v + 0 }
+                /^[[:space:]]+helpful_count:/ { v=$0; sub(/.*helpful_count:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); helpful = v + 0 }
+                /^[[:space:]]+deprecated: true/ { deprecated = 1 }
+                /^[[:space:]]+status:[[:space:]]*deprecated/ { deprecated = 1 }
+                /^[[:space:]]+deprecated_by:/ { v=$0; sub(/.*deprecated_by:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); if (v != "") deprecated = 1 }
+                END {
+                    if (lid != "" && !deprecated && harmful >= 5 && harmful > helpful)
+                        printf "%s\t%d\t%d\n", lid, harmful, helpful
+                }
+            ' "$DEPRECATE_LESSONS_FILE" 2>/dev/null)
 
             if [ -n "$deprecate_targets" ]; then
                 while IFS=$'\t' read -r lid harmful helpful; do
