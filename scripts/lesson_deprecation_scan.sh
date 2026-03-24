@@ -67,37 +67,105 @@ for project in all_projects:
     project_root_map[project_id] = Path(str(project.get("path", SCRIPT_DIR))).expanduser()
 
 
+# GP-075: cmd_project_map with persistent cache + incremental scan
+_ID_PAT = re.compile(r'id:\s+(cmd_\d+)')
+_PROJ_PAT = re.compile(r'project:\s+[\x27"]?([a-zA-Z0-9_-]+)')
+_CACHE_PATH = SCRIPT_DIR / "queue" / "cmd_project_map_cache.tsv"
+
+
+def _load_cache():
+    """Load cached cmd→project map and set of processed archive filenames."""
+    cached = {}
+    cached_files = set()
+    if not _CACHE_PATH.is_file():
+        return cached, cached_files
+    with open(_CACHE_PATH, encoding="utf-8") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) == 3 and parts[0] == "F":
+                cached_files.add(parts[1])
+            elif len(parts) == 2:
+                cached[parts[0]] = parts[1]
+    return cached, cached_files
+
+
+def _save_cache(metadata, all_archive_files):
+    """Persist cmd→project map + archive file list."""
+    with open(_CACHE_PATH, "w", encoding="utf-8") as f:
+        f.write("# cmd_project_map_cache (auto-generated)\n")
+        for cid in sorted(metadata):
+            f.write(f"{cid}\t{metadata[cid]}\n")
+        for fname in sorted(all_archive_files):
+            f.write(f"F\t{fname}\t1\n")
+
+
+def _text_scan_cmd_metadata(path):
+    """Extract (cmd_id, project_id) pairs via text scan (no yaml.safe_load)."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read(8192)
+    except Exception:
+        return {}
+    result = {}
+    ids = list(_ID_PAT.finditer(text))
+    if len(ids) == 1:
+        projs = _PROJ_PAT.findall(text)
+        if projs:
+            result[ids[0].group(1)] = projs[0]
+    else:
+        for m in ids:
+            pm = _PROJ_PAT.search(text, m.end())
+            if pm and (pm.start() - m.end()) < 500:
+                result[m.group(1)] = pm.group(1)
+    return result
+
+
 def load_cmd_metadata(root_dir):
     metadata = {}
-    candidates = [root_dir / "queue" / "shogun_to_karo.yaml"]
-    archive_dir = root_dir / "queue" / "archive" / "cmds"
-    if archive_dir.is_dir():
-        candidates.extend(sorted(archive_dir.glob("*.yaml")))
 
-    for path in candidates:
-        if not path.is_file():
-            continue
+    # Always re-scan shogun_to_karo.yaml (active commands, changes frequently)
+    stk = root_dir / "queue" / "shogun_to_karo.yaml"
+    if stk.is_file():
         try:
-            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            data = yaml.safe_load(stk.read_text(encoding="utf-8")) or {}
         except Exception:
-            continue
-
-        commands = []
+            data = {}
         if isinstance(data, dict):
-            if isinstance(data.get("commands"), list):
-                commands = data.get("commands", [])
-            elif "id" in data:
-                commands = [data]
-        elif isinstance(data, list):
-            commands = data
+            for key, cmd in data.items():
+                if isinstance(cmd, dict):
+                    cid = str(cmd.get("id", "")).strip()
+                    pid = str(cmd.get("project", "")).strip()
+                    if cid and pid:
+                        metadata[cid] = pid
 
-        for command in commands:
-            if not isinstance(command, dict):
-                continue
-            cmd_id = str(command.get("id", "")).strip()
-            project_id = str(command.get("project", "")).strip()
-            if cmd_id and project_id:
-                metadata[cmd_id] = project_id
+    # Archive: load cache + scan only new files
+    archive_dir = root_dir / "queue" / "archive" / "cmds"
+    if not archive_dir.is_dir():
+        return metadata
+
+    cached, cached_files = _load_cache()
+    all_archive_files = {f for f in os.listdir(archive_dir) if f.endswith(".yaml")}
+    new_files = all_archive_files - cached_files
+
+    if not new_files:
+        metadata.update(cached)
+        return metadata
+
+    # Scan only new files with text scan (no yaml.safe_load)
+    new_entries = {}
+    for fname in new_files:
+        path = archive_dir / fname
+        new_entries.update(_text_scan_cmd_metadata(path))
+
+    # Merge: cache + new
+    merged_archive = {**cached, **new_entries}
+    metadata.update(merged_archive)
+
+    # Persist updated cache
+    _save_cache(merged_archive, all_archive_files)
     return metadata
 
 
