@@ -167,6 +167,7 @@
 !scripts/lib/agent_config.sh
 !scripts/lib/normalize_report.sh
 !scripts/lib/text_utils.sh
+!scripts/lib/inject_task_modifiers.py
 !scripts/inbox_archive.sh
 !scripts/inbox_mark_read.sh
 !scripts/model_switch_preflight.sh
