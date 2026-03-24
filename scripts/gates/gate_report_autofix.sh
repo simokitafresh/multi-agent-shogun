@@ -357,6 +357,7 @@ if not verdict_val or (isinstance(verdict_val, str) and verdict_val.strip() == '
 
 # === Write back if changed ===
 if fixes:
+    data['autofix_applied'] = fixes
     with open(report_path, 'w') as f:
         yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
     print('AUTO-FIXED: ' + '; '.join(fixes))

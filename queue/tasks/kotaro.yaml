@@ -85,3 +85,4 @@ task:
   task_type: implement
   version: 3
   worker_id: kotaro
+status: done

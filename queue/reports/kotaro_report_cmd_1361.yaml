@@ -1,0 +1,70 @@
+worker_id: kotaro
+task_id: null
+parent_cmd: cmd_1361
+timestamp: '2026-03-24T12:59:04'
+status: done
+ac_version_read: 0a504109
+result:
+  summary: gate_report_autofix.shのPythonセクションにdata['autofix_applied']=fixes追加(fixes非空時のみ)。yaml.dump前に挿入。stdout出力は既に十分な詳細あり変更不要。
+  details: 'AC1: L360にdata[''autofix_applied'']=fixes追加。if fixes:ブロック内のためfixes空時は追加されない。AC2:
+    stdout出力は''AUTO-FIXED: ''+セミコロン区切りfix詳細で家老レビューに十分。変更不要。AC3: 388テスト中3件FAIL(test_report_template_gate_compat.bats:
+    test1,7,8)。全てgate_report_format.shのテストでpre-existing(GP-066で空lessons_useful拒否追加後のテスト未更新)。git
+    stashで私の変更除去しても同一3件FAIL確認済み。'
+purpose_validation:
+  cmd_purpose: AUTO-FIX発動時に報告YAMLへautofix_appliedフィールドを追加し、忍者が次回報告時に自分の形式ミスを確認できるフィードバック経路を構築
+  fit: true
+  purpose_gap: ''
+files_modified:
+- path: scripts/gates/gate_report_autofix.sh
+  change: 'L360: data[''autofix_applied'']=fixes追加(Write backセクション、yaml.dump前)'
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: test_report_template_gate_compat.batsがGP-066(空lessons_useful拒否)に未追従
+  detail: GP-066でgate_report_format.shに空lessons_useful拒否ルール追加後、test_report_template_gate_compat.batsの3テスト(test1,7,8)がlessons_useful:[]でgate
+    PASSを期待するが実際はFAIL。テスト側の期待値更新が必要。
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bashスクリプト変更なし。((PASS++))パターンは今回の変更箇所に存在しない
+- id: L063
+  useful: false
+  reason: Python dictイテレーションは今回の変更に無関係。1行追加のみ
+- id: L225
+  useful: false
+  reason: 名義混入問題は今回のスコープ外
+- id: L105
+  useful: false
+  reason: tmux pane-base-indexは今回のスコープ外
+- id: L240
+  useful: false
+  reason: 正規表現パース問題は今回のスコープ外
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: gate_report_autofix.shのPythonセクション内でdata['autofix_applied']=fixesが追加されているか
+    result: 'yes'
+  - check: yaml.dump(data,...)の前にautofix_applied代入が実行されるか
+    result: 'yes'
+  - check: fixesが空の場合はautofix_appliedが追加されないか
+    result: 'yes'
+  AC2:
+  - check: AUTO-FIXED行に修正内容の詳細が含まれているか
+    result: 'yes'
+  - check: 家老レビュー時にautofix発動を把握できる情報がstdoutに出力されているか
+    result: 'yes'
+  AC3:
+  - check: bash tests/run_tests.shの結果が全てPASSか
+    result: 'no'
+  - check: SKIP数が0か
+    result: 'yes'
+  - check: FAILが0か
+    result: 'no'
+verdict: FAIL
