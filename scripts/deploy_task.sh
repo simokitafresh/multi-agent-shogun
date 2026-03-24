@@ -321,6 +321,13 @@ generate_report_template() {
             if [[ "$stale_basename" == "${ninja_name}_report_"* ]]; then
                 continue
             fi
+            # cmd_1382: 完了済み報告(verdict=PASS/FAIL)はアーカイブしない
+            local stale_verdict
+            stale_verdict=$(FIELD_GET_NO_LOG=1 field_get "$stale_report" "verdict" "")
+            if [[ "$stale_verdict" == "PASS" || "$stale_verdict" == "FAIL" ]]; then
+                log "report_template: completed report preserved (${stale_basename}, verdict=${stale_verdict})"
+                continue
+            fi
             mkdir -p "$SCRIPT_DIR/archive/reports"
             mv "$stale_report" "$SCRIPT_DIR/archive/reports/"
             log "report_template: stale report archived (${stale_basename})"
@@ -2841,6 +2848,15 @@ normalize_task_yaml "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" || true
 TASK_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "unknown")
 
 log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}, pane=${PANE_TARGET}"
+
+# GP-069: 二重配備防止チェック（double_deploy WA根絶）
+# 忍者がin_progressの場合、新タスク配備をBLOCK。前タスク完了後に再配備せよ。
+if [ "$TASK_STATUS" = "in_progress" ]; then
+    CURRENT_CMD=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "parent_cmd" "")
+    log "BLOCK: ${NINJA_NAME} is in_progress on ${CURRENT_CMD:-unknown}. 前タスク完了を待て。"
+    echo "BLOCK: ${NINJA_NAME} は ${CURRENT_CMD:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+    exit 1
+fi
 
 # status強制注入（cmd_1126: pending/unknown→assigned化。Stage 1ガード保護対象に入れる）
 if [ "$TASK_STATUS" = "pending" ] || [ "$TASK_STATUS" = "unknown" ]; then
