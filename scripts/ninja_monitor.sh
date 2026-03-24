@@ -1795,7 +1795,7 @@ write_karo_snapshot() {
                     local _ctx="?"
                     local _pidx=""
                     _pidx=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null \
-                        | awk -v n="$name" '$2==n{print $1}')
+                        | awk -v n="$name" '$2==n{print $1}' || true)
                     if [ -n "$_pidx" ]; then
                         _ctx=$(tmux capture-pane -t "shogun:agents.$_pidx" -p 2>/dev/null \
                             | grep -oP 'CTX:\K[0-9]+' | tail -1)
