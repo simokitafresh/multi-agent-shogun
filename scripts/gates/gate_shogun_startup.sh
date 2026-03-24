@@ -352,6 +352,24 @@ else
     $BRIEF || echo "  gate_loop_health.sh不在"
 fi
 
+# --- Gate 13: 教訓健全度 (lesson_sort trigger) ---
+$BRIEF || echo "■ 教訓健全度"
+if [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then
+    lesson_result=$(bash "$GATE_DIR/gate_lesson_health.sh" 2>&1 | tail -1)
+    $BRIEF || echo "  $lesson_result"
+    if echo "$lesson_result" | grep -q "ALERT"; then
+        overall="ALERT"
+        alerts+=("教訓健全度: ALERT → /lesson-sort実行せよ")
+    elif echo "$lesson_result" | grep -q "WARN"; then
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("教訓健全度: WARN")
+        fi
+    fi
+else
+    $BRIEF || echo "  gate_lesson_health.sh不在"
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ

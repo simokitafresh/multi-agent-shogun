@@ -77,6 +77,11 @@ elif lu is not None:
     if isinstance(lu, str):
         errors.append('lessons_useful: is string (must be list of dicts)')
     elif isinstance(lu, list):
+        # --- GP-064: empty list detection ---
+        # テンプレートには教訓5件注入済み。空リストは忍者による上書きの兆候。
+        if len(lu) == 0:
+            errors.append('lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)')
+            hints.append('FIX (lessons_useful): report_field_set.sh経由でuseful/reasonを各教訓に記入せよ')
         for i, item in enumerate(lu):
             if isinstance(item, dict):
                 if 'FILL_THIS' in str(item.get('useful', '')) or 'FILL_THIS' in str(item.get('reason', '')):
@@ -164,6 +169,17 @@ if fname_match and parent_cmd:
     fname_cmd = f'cmd_{fname_match.group(1)}'
     if fname_cmd != str(parent_cmd):
         errors.append(f'stale_report: filename has {fname_cmd} but parent_cmd={parent_cmd} (cmd_id mismatch)')
+
+# --- GP-062: stale content detection ---
+# 報告YAML内にparent_cmd以外のcmd_XXXXが存在→前cmdテンプレート残骸の可能性
+import json
+report_text = json.dumps(data, ensure_ascii=False, default=str)
+other_cmds = set(re.findall(r'cmd_\d+', report_text)) - {str(parent_cmd)}
+if other_cmds and parent_cmd:
+    # parent_cmdのサブcmd(例: cmd_1311内でcmd_1311_sub)は除外
+    stale_cmds = [c for c in other_cmds if not c.startswith(str(parent_cmd))]
+    if stale_cmds:
+        hints.append(f'GP-062 WARN: 報告内に別cmdの参照あり: {sorted(stale_cmds)} — staleコンテンツの可能性を確認せよ')
 
 # --- Output ---
 if errors:
