@@ -16,6 +16,7 @@
 # 自己研鑽: S43-S75(詳細は各self_studyエントリ参照)
 # 自己研鑽: S132(deepdiveサイクル:bc WA根因6パターン特定→Fix19[N]キー+N/A→yes+gate check/result必須化。GP-087/088/089。cmd_1387品質修正。deploy_task.sh lu null→[]根本修正+gate GP-064→task YAML考慮)
 # 自己研鑽: S133(deepdiveサイクル2:Fix9条件拡張GP-092。pane観察→半蔵Fix20並行実装確認+学習ループ断絶発見。inbox_write.sh→gate FAIL→軍師のみ転送=忍者フィードバック不在。76GP/69implemented)
+# 自己研鑽: S134(deepdiveサイクル3:pane観察→影丸hook crash発見(Phase9実証)。cmd_1390 BLOCK実装確認(d1ce88a 05:22)→半蔵報告(05:14)は実装前=タイムラグ。hook crash耐性GP-095。直近5WA全件→autofix+BLOCK理論WA率0%到達。79GP/71implemented)
 # 自己研鑽: S106(deepdive:将軍pane→GP品質ゲート新設+GP-032現物実装+GP-033/034更新+GP-041 bc散文PostToolUse検出実装+6テスト検証済)
 # 自己研鑽: S107(deepdiveサイクル:WA率71%根因→GP-043/044/045+Fix11。テスト6/6。WA率43%予測)+S108(WAサイクル第2弾:GP-046 lc list+Fix12+GP-047 PreToolUse DENY。テスト5/5。DENY=WA率根本解)+S111(WAサイクル第5弾:GP-049 WA入力品質ゲート。忍者名+detail検証+カテゴリ拡張)+S112(WAサイクル第6弾:GP-050 --cleanモード)+S113(WAサイクル第7弾:GP効果圏定量分析→WARN無効→GP-047唯一解)+S114(WAサイクル第8弾:Fix14 lu id UNKNOWN解決)+S117(WAサイクル第11弾:Fix15 bc{name:val}→{check,result}正規化。テスト4/4)+S118(WAサイクル第12弾:GP-052 WAデータ品質ゲート+GP-047補正WA率33%→理論0%到達)+S119(WAサイクル第13弾:遡及データ修正19件。null0%+FP0%。正確WA率68%。post-GP047=33%)
 # 自己研鑽: S76(GP全件完了:30GP=27impl+1mon+3obs)+S77(WA率50%+autofix race13.6%発見→GP-031)+S78(GP優先順再評価+YAML parse→GP-032)+S79(利他:insights棚卸し15→8+verdict autofix設計→GP-033)+S80(BLOCK原因分類:first-attempt CLEAR65%→GP-031で85%予測)+S81(GP-025効果検証:archive BLOCK根絶+残存format BLOCK分析→GP-034)+S82(GP-031+033+034合体cmd設計)+S83(deepdive自己gate→GP-035)+S84(第二層パイプライン定量検証:35GP/84%変換/平均滞留5cmd/gate型17.5cmd遅延)+S85(忍者品質プロファイル:才蔵◎飛猿◎>影丸○>半蔵△小太郎△>疾風✗。GP-031=ROI最大)+S86(疾風dict根因:race condition70%=GP-031根治。追加教訓不要)+S87(insights棚卸し:pending9→2。7件resolve=GP紐付け+旧cmd遺物確認。残=dashboard重複+Edit解放)
@@ -97,7 +98,8 @@
 # | 092 | verdict非標準値拡張   | ★implemented      | S133 | Fix9条件拡張:空/None→PASS/FAIL以外全値。None文字列/CONDITIONAL_PASS自動導出。テスト4/4 |
 # | 093 | no_lesson_reason補完  | ★implemented      | S133 | Fix10復活:N/A→タスク種別理由文(implement/recon/default)。placeholder回避。テスト4/4 |
 # | 094 | lu reason空自動補完   | ★implemented      | S133 | Fix21:useful=false+reason空→教訓ID付き理由自動生成。直近14FAIL→10FAILに削減(PASS率50→64%)。テスト3/3 |
-# 集計(S132更新): ★implemented:68(+GP-087~091) / ★将軍解決:2(GP-033,034) / ★monitoring:1 / ✗obsolete:3 / pending:2(GP-067,084) / cmd配備済:2(GP-037=cmd_1340,GP-071=cmd_1380) = 計75GP
+# | 095 | hook crash耐性+ログ   | pending            | S134 | pane観察:影丸PostToolUse:Edit hook error×3(全hook同時crash)。hook_violations.jsonlにcrashログなし。set -eu→graceful fallback+crash logging |
+# 集計(S134更新): ★implemented:71(+GP-092~094) / ★将軍解決:2(GP-033,034) / ★monitoring:1 / ✗obsolete:3 / pending:3(GP-037,084,095) / cmd配備済:2(GP-037=cmd_1340,GP-071=cmd_1380) = 計79GP
 # 優先順(S118改訂): GP-031(race condition) > 遡及データ補正(既存false positive 2件+null 10件)
 # S118行動: GP-047補正WA率33%(1/3)。唯一のreal WAはdouble_deploy(GP-051対処済)。GP-047+GP-051稼働時の理論WA率=0%
 # パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
@@ -1604,7 +1606,7 @@
   proposals:
   - id: GP-031
     description: cmd_complete_gate.sh最終防衛線にautofix追加。L2071のformat check前にgate_report_autofix.sh実行。race condition根絶
-    status: pending
+    status: implemented
   timestamp: '2026-03-23T12:40:00'
 - cmd_id: self_study_S78
   review_type: self_study
@@ -2459,10 +2461,10 @@
       note: "検証済み: CLAUDE.md L160に既存記載あり。追加不要"
     - id: GP-067
       description: "GS Phase G cmdにチャンピオン選出手順明記(忍者記憶なし原則適用)"
-      status: pending
+      status: obsolete
     - id: GP-068
       description: "重い計算の事前計測原則(小チャンクで計測→全体推定→分割実行)"
-      status: pending
+      status: accepted
   timestamp: "2026-03-24T20:20:00"
 # --- cmd_1377 draft review ---
 - cmd_id: cmd_1377

@@ -58,13 +58,7 @@ fi
 $BRIEF || echo "■ inbox未読"
 inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
 if [ -f "$inbox_file" ]; then
-    unread=$(python3 -c "
-import yaml
-with open('$inbox_file') as f:
-    data = yaml.safe_load(f)
-msgs = data.get('messages', []) if data else []
-print(sum(1 for m in msgs if not m.get('read', False)))
-" 2>/dev/null || echo "0")
+    unread=$(grep -c 'read: false' "$inbox_file" 2>/dev/null) || unread=0
     _d_inbox=$unread
     $BRIEF || echo "  未読: ${unread}件"
     if [ "$unread" -gt 0 ] && [ "$overall" != "ALERT" ]; then
@@ -120,7 +114,13 @@ INSIGHTS_ARCHIVE="$SCRIPT_DIR/queue/archive/insights_archive.yaml"
 $BRIEF || echo "■ 気づきキュー"
 if [ -f "$INSIGHTS_FILE" ]; then
     # Auto-archive: done/monitoring/observation/deferred が合計5件以上なら自動アーカイブ
-    archive_result=$(IFILE="$INSIGHTS_FILE" AFILE="$INSIGHTS_ARCHIVE" python3 -c '
+    # 高速パス: grepで先にarchivable件数チェック（閾値未満ならPythonスキップ）
+    archivable_count=$(grep -cE 'status: (done|monitoring|observation|deferred)' "$INSIGHTS_FILE" 2>/dev/null) || archivable_count=0
+    total_status=$(grep -cE 'status: ' "$INSIGHTS_FILE" 2>/dev/null) || total_status=0
+    remaining_count=$((total_status - archivable_count))
+    if [ "$archivable_count" -ge 5 ]; then
+        # 閾値到達時のみPythonで実際のアーカイブ実行
+        archive_result=$(IFILE="$INSIGHTS_FILE" AFILE="$INSIGHTS_ARCHIVE" python3 -c '
 import yaml, os
 ifile = os.environ["IFILE"]
 afile = os.environ["AFILE"]
@@ -130,34 +130,28 @@ items = data.get("insights", [])
 archivable_statuses = {"done", "monitoring", "observation", "deferred"}
 archivable = [i for i in items if i.get("status") in archivable_statuses]
 remaining = [i for i in items if i.get("status") not in archivable_statuses]
-if len(archivable) >= 5:
-    if os.path.exists(afile):
-        with open(afile) as f:
-            archive_data = yaml.safe_load(f) or {}
-    else:
-        archive_data = {}
-    archive_list = archive_data.get("insights", [])
-    archive_list.extend(archivable)
-    archive_data["insights"] = archive_list
-    with open(afile, "w") as f:
-        yaml.dump(archive_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-    data["insights"] = remaining
-    with open(ifile, "w") as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-    print(f"ARCHIVED {len(archivable)}件→insights_archive.yaml, 残{len(remaining)}件")
+if os.path.exists(afile):
+    with open(afile) as f:
+        archive_data = yaml.safe_load(f) or {}
 else:
-    print(f"アーカイブ対象{len(archivable)}件(閾値5未満), pending{len(remaining)}件")
+    archive_data = {}
+archive_list = archive_data.get("insights", [])
+archive_list.extend(archivable)
+archive_data["insights"] = archive_list
+with open(afile, "w") as f:
+    yaml.dump(archive_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+data["insights"] = remaining
+with open(ifile, "w") as f:
+    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+print(f"ARCHIVED {len(archivable)}件→insights_archive.yaml, 残{len(remaining)}件")
 ' 2>/dev/null || echo "ERROR: アーカイブ処理失敗")
+    else
+        archive_result="アーカイブ対象${archivable_count}件(閾値5未満), pending${remaining_count}件"
+    fi
     $BRIEF || echo "  $archive_result"
 
     # Count pending (after potential archive)
-    pending_count=$(python3 -c "
-import yaml
-with open('$INSIGHTS_FILE') as f:
-    data = yaml.safe_load(f) or {}
-items = data.get('insights', [])
-print(sum(1 for i in items if i.get('status') == 'pending'))
-" 2>/dev/null || echo "0")
+    pending_count=$(grep -c "status: pending" "$INSIGHTS_FILE" 2>/dev/null) || pending_count=0
     _d_insights=$pending_count
     if [ "$pending_count" -gt 0 ]; then
         $BRIEF || echo "  未処理: ${pending_count}件（idle時に確認推奨）"
@@ -178,24 +172,21 @@ WA_COUNT=0
 
 # 9a: cmd設計品質 (直近10件)
 if [ -f "$DESIGN_QUALITY" ]; then
-    dq_result=$(DQFILE="$DESIGN_QUALITY" python3 -c '
-import yaml, os
-try:
-    filepath = os.environ["DQFILE"]
-    with open(filepath) as f:
-        data = yaml.safe_load(f) or {}
-    entries = data.get("entries", [])
-    last10 = entries[-10:] if len(entries) >= 10 else entries
-    total = len(last10)
-    if total == 0:
-        print("N/A N/A")
-    else:
-        rework = sum(1 for e in last10 if str(e.get("karo_rework", "no")).lower() in ("yes", "true"))
-        block = sum(1 for e in last10 if e.get("gate_result") == "BLOCK")
-        print(f"{int(rework*100/total)} {int(block*100/total)}")
-except Exception:
-    print("N/A N/A")
-' 2>/dev/null || echo "N/A N/A")
+    dq_result=$(awk '
+/karo_rework:/ { rw[++n] = ($2 ~ /yes|true/) }
+/gate_result:.*BLOCK/ { bl[n] = 1 }
+END {
+    start = (n > 10) ? n - 9 : 1
+    total = n - start + 1
+    rc = 0; bc = 0
+    for (i = start; i <= n; i++) {
+        if (rw[i]) rc++
+        if (bl[i]) bc++
+    }
+    if (total == 0) print "N/A N/A"
+    else printf "%d %d\n", int(rc*100/total), int(bc*100/total)
+}
+' "$DESIGN_QUALITY" 2>/dev/null || echo "N/A N/A")
     read -r REWORK_PCT BLOCK_PCT <<< "$dq_result"
     $BRIEF || echo "  直近10件: rework率=${REWORK_PCT}% blocker率=${BLOCK_PCT}%"
 else
@@ -204,48 +195,26 @@ fi
 
 # 9b: 家老workaround (直近5件)
 if [ -f "$WORKAROUNDS_FILE" ]; then
-    wa_result=$(WAFILE="$WORKAROUNDS_FILE" python3 -c '
-import yaml, re, os
-try:
-    filepath = os.environ["WAFILE"]
-    items = []
-    try:
-        with open(filepath) as f:
-            data = yaml.safe_load(f)
-        items = data.get("workarounds", [])
-    except yaml.YAMLError:
-        with open(filepath) as f:
-            lines = f.readlines()
-        current = None
-        for line in lines:
-            s = line.rstrip()
-            if re.match(r"^- cmd:", s):
-                if current is not None:
-                    items.append(current)
-                current = {}
-            elif current is not None and s.startswith("  ") and ":" in s and not s.strip().startswith("- "):
-                key, _, val = s.strip().partition(":")
-                key = key.strip()
-                val = val.strip()
-                if key == "workaround":
-                    current["workaround"] = val.lower() in ("true", "yes")
-                elif key == "category":
-                    current["category"] = val
-        if current is not None:
-            items.append(current)
-    last5 = items[-5:] if len(items) >= 5 else items
-    wa_count = sum(1 for i in last5 if i.get("workaround", False))
-    cats = {}
-    for i in last5:
-        if i.get("workaround", False):
-            cat = i.get("category", "uncategorized")
-            cats[cat] = cats.get(cat, 0) + 1
-    parts = [f"{k}:{v}" for k, v in sorted(cats.items(), key=lambda x: -x[1])]
-    cat_str = ", ".join(parts) if parts else "none"
-    print(f"{wa_count} {len(last5)} {cat_str}")
-except Exception:
-    print("0 0 error")
-' 2>/dev/null || echo "0 0 error")
+    wa_result=$(awk '
+/^- cmd_id:/ { n++; wa[n] = 0; cat[n] = "uncategorized" }
+/^  workaround: true/ { wa[n] = 1 }
+/^  category:/ { sub(/^  category: /, ""); cat[n] = $0 }
+END {
+    start = (n > 5) ? n - 4 : 1
+    total = n - start + 1
+    wc = 0
+    for (i = start; i <= n; i++) {
+        if (wa[i]) { wc++; cats[cat[i]]++ }
+    }
+    cat_str = ""
+    for (c in cats) {
+        if (cat_str != "") cat_str = cat_str ", "
+        cat_str = cat_str c ":" cats[c]
+    }
+    if (cat_str == "") cat_str = "none"
+    printf "%d %d %s\n", wc, total, cat_str
+}
+' "$WORKAROUNDS_FILE" 2>/dev/null || echo "0 0 error")
     read -r WA_COUNT WA_TOTAL WA_CATS <<< "$wa_result"
     $BRIEF || echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件 (${WA_CATS})"
 else
@@ -290,36 +259,26 @@ if [ -f "$DASHBOARD" ]; then
 fi
 
 # 11b: gunshi_review_log.yamlのproposals status=pending
+pending_gp_ids=""
 if [ -f "$REVIEW_LOG" ]; then
-    log_proposals=$(RLFILE="$REVIEW_LOG" python3 -c '
-import yaml, os
-try:
-    filepath = os.environ["RLFILE"]
-    with open(filepath) as f:
-        data = yaml.safe_load(f)
-    if not isinstance(data, list):
-        data = []
-    count = 0
-    for entry in data:
-        proposals = entry.get("proposals", [])
-        if proposals:
-            for p in proposals:
-                if isinstance(p, dict) and p.get("status") == "pending":
-                    count = count + 1
-    print(count)
-except Exception:
-    print(0)
-' 2>/dev/null || echo "0")
+    log_proposals=$(grep -v '^#' "$REVIEW_LOG" 2>/dev/null | grep -c 'status: pending' 2>/dev/null) || log_proposals=0
+    if [ "$log_proposals" -gt 0 ]; then
+        pending_gp_ids=$(awk '/^[[:space:]]*- id: GP-/{id=$NF} /^[[:space:]]*status: pending/{if(id!="") print id; id=""}' "$REVIEW_LOG" 2>/dev/null | paste -sd, -)
+    fi
 fi
 
 proposal_total=$((dash_proposals + log_proposals))
 _d_proposals=$proposal_total
 if [ "$proposal_total" -gt 0 ]; then
     $BRIEF || echo "■ 未処理PROPOSAL"
-    $BRIEF || echo "  WARN: 軍師未処理提案 ${proposal_total}件 (dashboard:${dash_proposals} review_log:${log_proposals})"
+    gp_list_suffix=""
+    if [ -n "$pending_gp_ids" ]; then
+        gp_list_suffix=" ($pending_gp_ids)"
+    fi
+    $BRIEF || echo "  WARN: 軍師未処理提案 ${proposal_total}件${gp_list_suffix} (dashboard:${dash_proposals} review_log:${log_proposals})"
     if [ "$overall" != "ALERT" ]; then
         overall="WARN"
-        alerts+=("軍師未処理提案: ${proposal_total}件")
+        alerts+=("軍師未処理提案: ${proposal_total}件${gp_list_suffix}")
     fi
 fi
 
