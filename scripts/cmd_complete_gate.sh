@@ -1357,73 +1357,50 @@ level_heading() {
 detect_task_role() {
     local task_file="$1"
 
-    TASK_FILE_ENV="$task_file" python3 - <<'PY'
-import os
-import yaml
+    local tokens="" val
+    for key in task_type type task_id subtask_id; do
+        val=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "$key" "")
+        [ -n "$val" ] && tokens="$tokens $(printf '%s' "$val" | tr '[:upper:]' '[:lower:]')"
+    done
 
-task_file = os.environ["TASK_FILE_ENV"]
+    case "$tokens" in
+        *review*) echo "review" ;;
+        *implement*|*impl*) echo "implement" ;;
+        *recon*|*scout*) echo "recon" ;;
+        *) echo "unknown" ;;
+    esac
+}
 
-try:
-    with open(task_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    print("unknown")
-    raise SystemExit(0)
-
-task = data.get("task", {}) if isinstance(data, dict) else {}
-if not isinstance(task, dict):
-    print("unknown")
-    raise SystemExit(0)
-
-tokens = []
-for key in ("task_type", "type", "task_id", "subtask_id"):
-    value = task.get(key)
-    if value is not None:
-        tokens.append(str(value).strip().lower())
-
-text = " ".join(tokens)
-if "review" in text:
-    print("review")
-elif "implement" in text or "impl" in text:
-    print("implement")
-elif "recon" in text or "scout" in text:
-    print("recon")
-else:
-    print("unknown")
-PY
+# Helper: check lesson_candidate.found=true in report YAML (#3,#4共通関数 cmd_1387)
+_check_lc_found() {
+    local rfile="$1"
+    if grep -A5 'lesson_candidate:' "$rfile" 2>/dev/null | grep -q 'found: true'; then
+        echo "true"
+    else
+        echo "false"
+    fi
 }
 
 check_how_it_works_status() {
     local report_file="$1"
 
-    REPORT_FILE_ENV="$report_file" python3 - <<'PY'
-import os
-import yaml
+    if [ ! -f "$report_file" ]; then
+        echo "error"
+        return
+    fi
 
-report_file = os.environ["REPORT_FILE_ENV"]
+    if ! grep -q 'how_it_works' "$report_file" 2>/dev/null; then
+        echo "missing"
+        return
+    fi
 
-try:
-    with open(report_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    print("error")
-    raise SystemExit(0)
-
-if not isinstance(data, dict):
-    print("error")
-    raise SystemExit(0)
-
-value = data.get("how_it_works")
-if value is None:
-    print("missing")
-elif isinstance(value, str):
-    print("ok" if value.strip() else "empty")
-elif isinstance(value, list):
-    has_text = any(isinstance(item, str) and item.strip() for item in value)
-    print("ok" if has_text else "empty")
-else:
-    print("empty")
-PY
+    local value
+    value=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "how_it_works" "")
+    if [ -z "$value" ]; then
+        echo "empty"
+    else
+        echo "ok"
+    fi
 }
 
 # ─── context_update freshness check (cmd_543 AC2) ───
@@ -1613,16 +1590,7 @@ preflight_gate_flags() {
             pf_ninja_name=$(basename "$pf_task_file" .yaml)
             pf_report_file=$(resolve_report_file "$pf_ninja_name")
             if [ -f "$pf_report_file" ]; then
-                pf_lc_found=$(REPORT_FILE="$pf_report_file" python3 -c "
-import yaml, os
-try:
-    with open(os.environ['REPORT_FILE']) as f:
-        data = yaml.safe_load(f)
-    lc = data.get('lesson_candidate', {}) if data else {}
-    print('true' if isinstance(lc, dict) and lc.get('found') is True else 'false')
-except:
-    print('false')
-" 2>/dev/null)
+                pf_lc_found=$(_check_lc_found "$pf_report_file")
                 [ "$pf_lc_found" = "true" ] && has_found_true=true
             fi
         done
@@ -1656,16 +1624,7 @@ except:
             pf_ninja_name=$(basename "$pf_task_file" .yaml)
             pf_report_file=$(resolve_report_file "$pf_ninja_name")
             if [ -f "$pf_report_file" ]; then
-                pf_lc_found=$(REPORT_FILE="$pf_report_file" python3 -c "
-import yaml, os
-try:
-    with open(os.environ['REPORT_FILE']) as f:
-        data = yaml.safe_load(f)
-    lc = data.get('lesson_candidate', {}) if data else {}
-    print('true' if isinstance(lc, dict) and lc.get('found') is True else 'false')
-except:
-    print('false')
-" 2>/dev/null)
+                pf_lc_found=$(_check_lc_found "$pf_report_file")
                 [ "$pf_lc_found" = "true" ] && has_found_true=true
             fi
         done
@@ -2099,16 +2058,11 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     RL_CHECKED=true
     ninja_name=$(basename "$task_file" .yaml)
 
-    has_rl_key=$(python3 -c "
-import yaml, sys
-try:
-    with open('$task_file') as f:
-        data = yaml.safe_load(f)
-    task = data.get('task', {}) if data else {}
-    print('yes' if 'related_lessons' in task else 'no')
-except:
-    print('error')
-" 2>/dev/null)
+    if grep -q '^\s*related_lessons:' "$task_file" 2>/dev/null; then
+        has_rl_key="yes"
+    else
+        has_rl_key="no"
+    fi
 
     if [ "$has_rl_key" = "yes" ]; then
         echo "  ${ninja_name}: OK (related_lessons present)"
@@ -2132,17 +2086,8 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     fi
 
     # related_lessonsの有無をチェック（空リスト[]やnullは除外）
-    has_lessons=$(python3 -c "
-import yaml, sys
-try:
-    with open('$task_file') as f:
-        data = yaml.safe_load(f)
-    task = data.get('task', {}) if data else {}
-    rl = task.get('related_lessons', [])
-    print('yes' if rl and len(rl) > 0 else 'no')
-except:
-    print('no')
-" 2>/dev/null)
+    rl_count=$(awk '/related_lessons:/,/^[^ ]/{if(/^\s*- /)c++} END{print c+0}' "$task_file" 2>/dev/null)
+    has_lessons=$([ "${rl_count:-0}" -gt 0 ] && echo "yes" || echo "no")
 
     if [ "$has_lessons" = "yes" ]; then
         LESSON_CHECKED=true
@@ -2220,18 +2165,8 @@ print(result)
                 ALL_CLEAR=false
             else
                 # related_lessonsからlesson IDを抽出してメッセージに表示
-                rl_ids=$(python3 -c "
-import yaml
-try:
-    with open('$task_file') as f:
-        data = yaml.safe_load(f)
-    task = data.get('task', {}) if data else {}
-    rl = task.get('related_lessons', [])
-    ids = [str(l.get('id', '?')) for l in rl if isinstance(l, dict)]
-    print(','.join(ids) if ids else '(unknown)')
-except:
-    print('(parse_error)')
-" 2>/dev/null)
+                rl_ids=$(awk '/related_lessons:/,/^[^ ]/{if(/id:/){val=$0; sub(/.*id:\s*/, "", val); gsub(/[" \t]/, "", val); if(c++) printf ","; printf "%s", val}}' "$task_file" 2>/dev/null)
+                [ -z "$rl_ids" ] && rl_ids="(parse_error)"
                 echo "  [CRITICAL] ${ninja_name}: NG ← lessons_useful空。related_lessons [${rl_ids}] のうち実際に役立った教訓を報告に記載せよ"
                 record_block_reason "${ninja_name}:empty_lessons_useful:related=[${rl_ids}]"
                 ALL_CLEAR=false
@@ -2458,19 +2393,11 @@ except:
                 echo "  [INFO] ${ninja_name}: lesson_candidate旧形式を自動修正: ${a_normalize_output}"
                 echo "$(date '+%Y-%m-%dT%H:%M:%S') [A層] ${CMD_ID} ${ninja_name}: ${a_normalize_output}" >> "$SCRIPT_DIR/logs/normalize_report.log"
                 # 修正成功 → 再検証
-                lc_recheck=$(python3 -c "
-import yaml, sys
-try:
-    with open('$report_file') as f:
-        data = yaml.safe_load(f)
-    lc = data.get('lesson_candidate')
-    if isinstance(lc, dict) and 'found' in lc:
-        print('ok')
-    else:
-        print('ng')
-except:
-    print('ng')
-" 2>/dev/null)
+                if grep -A10 'lesson_candidate:' "$report_file" 2>/dev/null | grep -q 'found:'; then
+                    lc_recheck="ok"
+                else
+                    lc_recheck="ng"
+                fi
                 if [ "$lc_recheck" != "ok" ]; then
                     echo "  [CRITICAL] ${ninja_name}: NG ← 自動修正後も構造不正"
                     record_block_reason "${ninja_name}:lesson_candidate_normalize_failed"
