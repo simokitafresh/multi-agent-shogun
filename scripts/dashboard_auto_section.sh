@@ -298,7 +298,7 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
                     v = $0; sub(/.*project: */, "", v); gsub(/["\047\t ]/, "", v)
                     if (v != "" && proj == "") proj = v
                 }
-                /^status:/ {
+                /status:/ {
                     v = $0; sub(/.*status: */, "", v); gsub(/["\047\t ]/, "", v)
                     if (v != "") st = v
                 }
