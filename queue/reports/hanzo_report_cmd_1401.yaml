@@ -1,0 +1,65 @@
+worker_id: hanzo
+task_id: cmd_1401
+parent_cmd: cmd_1401
+timestamp: '2026-03-26T02:20:55'
+status: completed
+ac_version_read: 85c79cb9
+result:
+  summary: RateLimitContentパース全null時rawTextフォールバック表示追加+execRateLimitCheck SSH空結果1回リトライ追加。ビルドPASS
+  details: 'AC1: RateLimitContent(L753-764)でclaudeMax/codexQuota全null+codexEntries空の場合rawTextをMonospaceで表示。既存パースロジック不変。AC2:
+    AgentsViewModel.kt execRateLimitCheck(L211-213)でresult.getOrNull()?.isBlank()==true時にSSH再実行。AC3:
+    gradlew assembleDebug BUILD SUCCESSFUL'
+purpose_validation:
+  cmd_purpose: rate limit画面の空白表示バグ修正
+  fit: true
+  purpose_gap: none
+files_modified:
+- path: android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt
+  change: modified
+- path: android/app/src/main/java/com/shogun/android/viewmodel/AgentsViewModel.kt
+  change: modified
+lesson_candidate:
+  found: false
+  no_lesson_reason: 標準的なnullフォールバック+リトライ実装で既知パターン
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: Kotlin/Android開発でbash算術式の教訓は該当なし
+- id: L063
+  useful: false
+  reason: YAML構造の教訓でAndroid実装とは無関係
+- id: L225
+  useful: false
+  reason: MCP entity管理の教訓でAndroid実装とは無関係
+- id: L220
+  useful: false
+  reason: git hookの教訓でAndroid実装とは無関係
+- id: L117
+  useful: false
+  reason: フィールド名変更横断更新の教訓で今回は既存フィールド不変のため無関係
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  detail: AgentsScreen.ktとAgentsViewModel.ktが.gitignoreのwhitelistに未登録。git add -fでコミットしたが、.gitignoreへの!パス追加が必要か家老判断を仰ぐ
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: パース全null時にrawTextが表示されるか
+    result: 'yes'
+  - check: 既存パースロジックを変更していないか
+    result: 'yes'
+  AC2:
+  - check: 空文字列時にリトライロジックが追加されているか
+    result: 'yes'
+  AC3:
+  - check: gradlew assembleDebugがPASSするか
+    result: 'yes'
+verdict: PASS
+autofix_applied:
+- files_modified string→dict変換

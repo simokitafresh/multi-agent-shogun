@@ -1,24 +1,54 @@
 task:
-  ac_version: 30e88e8f
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 85c79cb9
   acceptance_criteria:
   - binary_checks:
-    - check: 品質ゲートq1-q6の全判定条件とBLOCK/WARNING閾値を記載したか
+    - check: パース全null時にrawTextが表示されるか
       result: ''
-    - check: 軍師レビュー指摘の自動表示機能を記載したか
+    - check: 既存パースロジックを変更していないか
       result: ''
-    - check: 報告YAMLをbash scripts/gates/gate_report_format.shで自己検証しPASSしたか
-      result: ''
-    description: ntfy.shの通知フロー・topic設定・エラーハンドリングを精査し報告せよ
+    description: RateLimitContent — パース結果が全フィールドnullの場合、rawTextをフォールバック表示すること
     id: AC1
+  - binary_checks:
+    - check: 空文字列時にリトライロジックが追加されているか
+      result: ''
+    description: execRateLimitCheck — SSH結果が空文字列の場合、1回リトライすること
+    id: AC2
+  - binary_checks:
+    - check: gradlew assembleDebugがPASSするか
+      result: ''
+    description: アプリビルドが成功すること（gradlew assembleDebug PASS）
+    id: AC3
   bloom_level: null
-  command: '【修行Level 1 第4回】scripts/ntfy.shを精査し報告せよ。 ■ 対象ファイル: scripts/ntfy.sh ■ 修行の本質:
-    報告YAMLを一発でgate PASSさせること。gate_report_format.shで自己検証せよ: bash scripts/gates/gate_report_format.sh
-    <自分の報告パス> BLOCKされたら自力で修正し再提出。一発PASSが目標。'
+  command: 'Androidアプリのrate limit checkで内容が空白表示になる問題を修正せよ。
+
+
+    ■ 修正1: AgentsScreen.kt RateLimitContent関数(L742-860付近)
+
+    パース結果が全フィールドnullの場合、rawTextをフォールバック表示する。
+
+    既存パースロジックは変更するな。フォールバック追加のみ。
+
+
+    ■ 修正2: AgentsViewModel.kt execRateLimitCheck関数(L198-215付近)
+
+    SSH結果が空文字列の場合、1回リトライする。
+
+
+    ■ コミットせよ。
+
+
+    報告YAMLを一発でgate PASSさせること。bash scripts/gates/gate_report_format.sh <自分の報告パス> で自己検証。
+
+    '
+  deployed_at: null
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L169: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、\"\
-    を含むログでYAMLが壊れ\n────────────────────────────────────────\n\n"
+    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+    \  - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re\n\
+    ────────────────────────────────────────\n\nrate limit空白表示修正(フォールバック+リトライ)"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -34,12 +64,24 @@ task:
   ninja_weak_points:
     breakdown: report_yaml_format(4件), commit_missing(1件), stale_report(1件), double_deploy(1件),
       uncategorized(1件)
+    gate_fail_top3:
+    - count: 56
+      pattern: field_missing
+    - count: 19
+      pattern: verdict_invalid
+    - count: 14
+      pattern: no_lesson_reason
+    gate_warning: '⚠ gate頻出FAIL: 必須フィールド(binary_checks/files_modified/result.summary)を省略するな;
+      verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入'
     source: karo_workarounds.yaml
     top_pattern: report_yaml_format(4件)
     total_workarounds: 8
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
-  parallel_ok: []
-  parent_cmd: cmd_training_L1_021
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1401
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -53,17 +95,19 @@ task:
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れる。append系は
-      flock + parse + dump の原子トランザクションに統一すべし。
-    id: L169
-    summary: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れる。append系は
-      flock + parse + dump の原子トランザクションに統一すべし。
-  report_filename: hanzo_report_cmd_training_L1_021.yaml
-  report_path: queue/reports/hanzo_report_cmd_training_L1_021.yaml
+  - detail: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
+      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
+      files を除外するか commit/push 対象から切り離さないと実運用で達成
+    id: L220
+    summary: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
+      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
+      files を除外するか commit/push 対象から切り離さないと実運用で達成
+  - detail: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/report_implement.yaml、cmd_complete_gate.sh内の全Python判定コード、deploy_task.sh報告テンプレート等の横断更新が必須。後方互換フォールバックも各箇所に必要。impl_bが全箇所カバーし
+    id: L117
+    summary: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/report_implement.yaml、cmd_complete_gate.sh内の全Python判定コード、deploy_task.sh報告テンプレート等の横断更新が必須。後方互換フォールバックも各箇所に必要。impl_bが全箇所カバーし
+  report_filename: hanzo_report_cmd_1401.yaml
+  report_path: queue/reports/hanzo_report_cmd_1401.yaml
   role_reminder: 忍者hanzo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
   stop_for: []
-  target_path: scripts/ntfy.sh
-  task_type: impl
-  type: impl
-  deployed_at: "2026-03-25T23:55:47"
+  target_path: android/app/src/main/java/com/shogun/android/ui/AgentsScreen.kt
