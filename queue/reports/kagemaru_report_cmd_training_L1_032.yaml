@@ -1,0 +1,119 @@
+worker_id: kagemaru
+task_id: cmd_training_L1_032
+parent_cmd: cmd_training_L1_032
+timestamp: '2026-03-26T00:51:09'
+status: completed
+ac_version_read: 99827b47
+result:
+  summary: ninja_monitor.sh全ロジック精査完了。idle検知(二段階:@agent_state+capture-pane+pstree)、Phase1/2二段階確認、STALL検知(閾値+ESCALATE)、auto-clear(報告ゲート+uncommitted)、CTX管理(多重ソース+全ペイン更新+将軍/家老アラート)、REPORT-DONE-MISMATCH検知の全ロジック網羅。
+  details: '## ninja_monitor.sh 全ロジック精査報告
+
+
+    ### 1. 基本構造
+
+    バックグラウンドデーモン。20秒間隔メインループ。LIB_ONLYモード(テスト用)。settings.yamlから忍者名動的取得。自己再起動(md5sum変更検知)。依存10ライブラリ。
+
+
+    ### 2. idle検知(check_idle L231-303)
+
+    二段階: (1)Primary=@agent_state変数(idle→grace15秒+pstree cross-check、bash_running→BUSY/30分超crash補正、active→BUSY)
+    (2)Fallback=check_agent_busy(capture-pane、BUSYパターン:esc to interrupt/Running/Streaming)
+
+
+    ### 3. Phase1/2二段階確認(L2417-2555)
+
+    Phase1高速スキャン→BUSY/maybe-idle。Stage1:active task→/clear禁止(TIMEOUT:15分/IP30分超+report存在チェック後idle化)。Stage1.5:Guard1(inbox未読→SKIP)+Guard2(task2分以内更新→SKIP)。Phase2:CONFIRM_WAIT5秒後再確認。2a:Claude
+    Code即チェック/2b:Codex追加待機。
+
+
+    ### 4. handle_confirmed_idle(L1051-1063)
+
+    4サブ関数: (1)post_clear_pending(/clear後post_clear_cmd) (2)deploy_stall(配備済+idle→/clear+再送+ESCALATE2回以上)
+    (3)idle_notify(busy→idle遷移デバウンス通知) (4)auto_clear(idle+タスクなし→/clear、CTX=0%スキップ+報告ゲート+uncommittedチェック)
+
+
+    ### 5. STALL検知(check_stall L1131-1243)
+
+    対象:assigned/acknowledged/in_progressのidle忍者。Ghost Filter(task_id空排除)。in_progress:progress_updated_at20分以内→スキップ。閾値:assigned=10分/ack=10分/IP=20分。DEBOUNCE5分。ESCALATE2回以上→差替え必須。IP-STALL時task_assigned再送。
+
+
+    ### 6. auto-clear(safe_send_clear L310-357)
+
+    check_idle一本化。uncommittedチェック(運用ファイル除外)+自動commit。/clear前inbox既読化。clear_cmd動的取得。safe_send_keys_atomic送信。idle
+    flag削除。
+
+
+    ### 7. CTX管理
+
+    (1)get_context_pct:@context_pct→capture-pane(usage/remainingモード) (2)update_all_context_pct:将軍+家老+忍者全ペイン
+    (3)check_shogun_ctx:CTX>50%ntfy(30分DB) (4)check_karo_clear:CTX>70%/clear(現在無効化)
+    (5)send_karo_clear:陣形図更新→safe_send_clear→復帰nudge
+
+
+    ### 8. REPORT-DONE-MISMATCH(L1245-1290)
+
+    snapshot report=done+task非idle/done→家老アラート(5分DB)
+
+
+    ### 9. 報告完了判定+自動done(check_and_update_done_task L573-687)
+
+    parent_cmd+task_id一致報告探索。TOCTOU防止(flock後再検証)。Flat YAML fallback。報告gate FAIL→auto_deploy
+    BLOCK。PASS→auto_deploy_next.sh(二重呼出防止)。
+
+
+    ### 10. その他監視(21機能)
+
+    (a)pane_survival:消失検知→家老通知 (b)destructive_commands:危険コマンド検知 (c)inbox_renudge:fingerprint遷移駆動(L029)
+    (d)stale_cmds:4h+subtask未配備 (e)karo_pending_cmd:新規pending遷移通知 (f)ntfy_listener_health:ゾンビ検知再起動
+    (g)inbox_watcher_health:死亡検知再起動 (h)karo_snapshot:陣形図生成 (i)state_file:ninja_states.yaml
+    (j)lesson_health:10分間隔gate (k)loop_health:30分間隔gate (l)workaround_pattern:10分間隔
+    (m)gate_improvement:5分間隔 (n)ntfy_batch_flush:15分間隔 (o)auto_archive:completed退避
+    (p)yaml_size:肥大化監視 (q)cdp_cleanup:Chrome idle連動 (r)model_names:@model_name整合性
+    (s)inbox_counts:未読数ペイン変数 (t)cleanup_stale_keys:メモリリーク防止 (u)dashboard_auto_section:状態変化時更新
+
+
+    ### 11. メインループ順序(L2390-2664)
+
+    毎20秒:pane_survival→Phase1/2→stall→REPORT-DONE-MISMATCH→destructive→renudge→stale_cmds→shogun_ctx→context_pct→inbox_counts→state_file→snapshot→health_checks→dashboard→cleanup→self_restart'
+purpose_validation:
+  cmd_purpose: ninja_monitor.shの全ロジックを精査し報告する修行タスク
+  fit: true
+  purpose_gap: none
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: 精査タスクのため新規教訓なし。既知のL029/L074/L094の適用箇所を確認
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: true
+  reason: check_stall等の算術演算でset -eリスクを意識。STALL_COUNTは安全な$((var+1))形式を使用
+- id: L063
+  useful: false
+  reason: bashスクリプトのためPythonイテレーションパターンは精査対象外
+- id: L225
+  useful: false
+  reason: MCP observation操作は含まれずentity名義混入は対象外
+- id: L094
+  useful: true
+  reason: check_model_names(L2027)でハードコード排除設計を確認。detect_real_model失敗時のcli_profiles.yamlフォールバック
+- id: L029
+  useful: true
+  reason: check_inbox_renudge(L1519)でL029実装済み。get_unread_fingerprint(L1484)でunread
+    ID集合sort後hash使用し二重経路増幅抑止
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: ninja_monitor.shのidle検知・STALL検知・auto-clearの全ロジックを記載したか
+    result: 'yes'
+  - check: CTX管理とREPORT-DONE-MISMATCH検知の仕組みを記載したか
+    result: 'yes'
+verdict: PASS
