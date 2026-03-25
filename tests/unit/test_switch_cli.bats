@@ -183,30 +183,6 @@ PYEOF
     [[ "$result" == *"--dangerously-skip-permissions"* ]]
 }
 
-# SKIPPED: 機能未実装 — ローカルのbuild_cli_commandにthinking/MAX_THINKING_TOKENS処理なし
-#
-# @test "update_settings: thinking:false後のbuild_cli_commandにMAX_THINKING_TOKENS=0" {
-#     cp "${TEST_TMP}/settings.yaml" "${TEST_TMP}/settings_update3.yaml"
-#
-#     python3 << PYEOF
-# import yaml
-#
-# path = "${TEST_TMP}/settings_update3.yaml"
-# with open(path, 'r') as f:
-#     data = yaml.safe_load(f) or {}
-#
-# data['cli']['agents']['karo']['thinking'] = False
-#
-# with open(path, 'w') as f:
-#     yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
-# PYEOF
-#
-#     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_update3.yaml"
-#     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
-#
-#     result=$(build_cli_command "karo")
-#     [[ "$result" == MAX_THINKING_TOKENS=0* ]]
-# }
 
 # =============================================================================
 # switch_cli_mode.sh 引数パーステスト（--help, バリデーション）
@@ -235,67 +211,3 @@ PYEOF
     [ "$status" -ne 0 ]
 }
 
-# =============================================================================
-# get_model_display_name 統合テスト
-# =============================================================================
-
-# SKIPPED: 機能未実装 — get_model_display_name関数がローカルのcli_adapter.shに存在しない。
-# ローカルの表示名はcli_profiles.yamlのdisplay_nameフィールドで管理(Opus/Codex等)。
-# thinking flag (+T) による表示名変更は未実装。
-#
-# @test "display_name: 切替前後で表示名が正しく変わる" {
-#     result=$(get_model_display_name "karo")
-#     [ "$result" = "Opus+T" ]
-#
-#     cat > "${TEST_TMP}/settings_switched.yaml" << 'YAML'
-# cli:
-#   default: claude
-#   agents:
-#     karo:
-#       type: claude
-#       model: claude-haiku-4-5
-#       thinking: true
-# YAML
-#     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_switched.yaml"
-#     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
-#
-#     result=$(get_model_display_name "karo")
-#     [ "$result" = "Haiku+T" ]
-# }
-#
-# @test "display_name: Codex → Claude切替で表示名更新" {
-#     result=$(get_model_display_name "sasuke")
-#     [ "$result" = "Codex" ]
-#
-#     cat > "${TEST_TMP}/settings_codex_to_claude.yaml" << 'YAML'
-# cli:
-#   default: claude
-#   agents:
-#     sasuke:
-#       type: claude
-#       model: claude-opus-4-6
-#       thinking: true
-# YAML
-#     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_codex_to_claude.yaml"
-#     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
-#
-#     result=$(get_model_display_name "sasuke")
-#     [ "$result" = "Opus+T" ]
-# }
-#
-# @test "display_name: thinking:false で +T が消える" {
-#     cat > "${TEST_TMP}/settings_no_thinking.yaml" << 'YAML'
-# cli:
-#   default: claude
-#   agents:
-#     karo:
-#       type: claude
-#       model: claude-opus-4-6
-#       thinking: false
-# YAML
-#     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_no_thinking.yaml"
-#     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
-#
-#     result=$(get_model_display_name "karo")
-#     [ "$result" = "Opus" ]
-# }

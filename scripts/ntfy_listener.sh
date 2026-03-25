@@ -283,7 +283,7 @@ process_stream_line() {
 
     # MSG_ID dedup check — 同一IDが既に記録済みならスキップ（二重起動・再接続対策）
     MSG_ID=$(echo "$line" | parse_json id)
-    if [ -n "$MSG_ID" ] && grep -q "id: \"$MSG_ID\"" "$INBOX" 2>/dev/null; then
+    if [ -n "$MSG_ID" ] && grep -qE "id: ['\"]?${MSG_ID}['\"]?" "$INBOX" 2>/dev/null; then
         echo "[$(date)] Duplicate MSG_ID: $MSG_ID, skipping" >&2
         return 0
     fi

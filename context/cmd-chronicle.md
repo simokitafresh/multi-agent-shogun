@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-23 -->
+<!-- last_updated: 2026-03-26 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -445,3 +445,13 @@
 | cmd_1351 | Step 1補強 — 本番standard PF全65体のnumpy快速パスパリティ検証 | dm-signal | 03-23 | — |
 | cmd_1352 | 全standard PF numpy快速パス完全パリティ（hs+ret両方）+ L0-M_XLU原因特定 | dm-signal | 03-24 | — |
 | cmd_1353 | numpy快速パス 53/53完全一致達成 — ^VIX grid汚染修正+hs順序一致 | dm-signal | 03-24 | — |
+| cmd_1394 | — | infra | 03-25 | — |
+| cmd_1392 | dashboard_auto_section.sh 高速化 — 22.5秒→5秒以下 | infra | 03-25 | — |
+| cmd_1391 | CI RED修正 — simokitafresh/multi-agent-shogun 15テスト失敗 | infra | 03-25 | — |
+| cmd_1397 | シン四神v2(12体standard) + シン忍法v2(20体FoF)を本番DBに登録する。チェックリストStep 6 | dm-signal | 03-25 | — |
+| cmd_1398 | — | dm-signal | 03-26 | — |
+| cmd_1399 | — | dm-signal | 03-26 | — |
+| cmd_1400 | — | infra | 03-26 | — |
+| cmd_1401 | — | infra | 03-26 | — |
+| cmd_1402 | — | infra | 03-26 | — |
+| cmd_1403 | — | infra | 03-26 | — |

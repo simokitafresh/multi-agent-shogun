@@ -1,101 +1,14 @@
 #!/usr/bin/env bats
-# test_deploy_task_ac_version.bats - cmd_530 ac_version injection behavior
+# test_deploy_task_ac_version.bats - ac_version injection + if_then lesson detail behavior
+
+load '../helpers/deploy_task_scaffold'
 
 setup_file() {
-    export PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    export SRC_DEPLOY_SCRIPT="$PROJECT_ROOT/scripts/deploy_task.sh"
-    export SRC_CLI_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/cli_lookup.sh"
-    export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
-    export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
-    export SRC_AGENT_STATE_LIB="$PROJECT_ROOT/lib/agent_state.sh"
-    export SRC_CTX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/ctx_utils.sh"
-    export SRC_PANE_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/pane_lookup.sh"
-    export SRC_AGENT_CONFIG_SCRIPT="$PROJECT_ROOT/scripts/lib/agent_config.sh"
-    export SRC_INJECT_TASK_MODIFIERS="$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
-
-    [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
-    [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
-    [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
-    [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
-    [ -f "$SRC_AGENT_STATE_LIB" ] || return 1
-    [ -f "$SRC_CTX_UTILS_SCRIPT" ] || return 1
-    [ -f "$SRC_PANE_LOOKUP_SCRIPT" ] || return 1
-    [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
-    [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
-    command -v python3 >/dev/null 2>&1 || return 1
+    deploy_task_setup_file
 }
 
 setup() {
-    export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/deploy_acv.XXXXXX")"
-    export TEST_PROJECT="$TEST_TMPDIR/project"
-
-    mkdir -p \
-        "$TEST_PROJECT/lib" \
-        "$TEST_PROJECT/scripts/lib" \
-        "$TEST_PROJECT/queue/tasks" \
-        "$TEST_PROJECT/queue/reports" \
-        "$TEST_PROJECT/queue/inbox" \
-        "$TEST_PROJECT/logs" \
-        "$TEST_PROJECT/config"
-
-    cp "$SRC_DEPLOY_SCRIPT" "$TEST_PROJECT/scripts/deploy_task.sh"
-    cp "$SRC_CLI_LOOKUP_SCRIPT" "$TEST_PROJECT/scripts/lib/cli_lookup.sh"
-    cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
-    cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
-    cp "$SRC_AGENT_STATE_LIB" "$TEST_PROJECT/lib/agent_state.sh"
-    cp "$SRC_CTX_UTILS_SCRIPT" "$TEST_PROJECT/scripts/lib/ctx_utils.sh"
-    cp "$SRC_PANE_LOOKUP_SCRIPT" "$TEST_PROJECT/scripts/lib/pane_lookup.sh"
-    cp "$SRC_AGENT_CONFIG_SCRIPT" "$TEST_PROJECT/scripts/lib/agent_config.sh"
-    cp "$SRC_INJECT_TASK_MODIFIERS" "$TEST_PROJECT/scripts/lib/inject_task_modifiers.py"
-
-    # Non-blocking stubs.
-    cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
-#!/usr/bin/env bash
-exit 0
-EOF
-    cat > "$TEST_PROJECT/scripts/ntfy_cmd.sh" <<'EOF'
-#!/usr/bin/env bash
-exit 0
-EOF
-    cat > "$TEST_PROJECT/scripts/lesson_check.sh" <<'EOF'
-#!/usr/bin/env bash
-exit 0
-EOF
-
-    chmod +x \
-        "$TEST_PROJECT/scripts/deploy_task.sh" \
-        "$TEST_PROJECT/scripts/lib/cli_lookup.sh" \
-        "$TEST_PROJECT/scripts/lib/field_get.sh" \
-        "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
-        "$TEST_PROJECT/lib/agent_state.sh" \
-        "$TEST_PROJECT/scripts/lib/ctx_utils.sh" \
-        "$TEST_PROJECT/scripts/lib/pane_lookup.sh" \
-        "$TEST_PROJECT/scripts/lib/agent_config.sh" \
-        "$TEST_PROJECT/scripts/inbox_write.sh" \
-        "$TEST_PROJECT/scripts/ntfy_cmd.sh" \
-        "$TEST_PROJECT/scripts/lesson_check.sh"
-
-    # Minimal config for cli_lookup defaults.
-    cat > "$TEST_PROJECT/config/settings.yaml" <<'EOF'
-cli:
-  default: codex
-  agents:
-    sasuke:
-      type: codex
-      role: ninja
-      japanese_name: 佐助
-EOF
-
-    cat > "$TEST_PROJECT/config/cli_profiles.yaml" <<'EOF'
-profiles:
-  codex:
-    ctx_pattern: ""
-    ctx_mode: used
-    busy_patterns: []
-    idle_pattern: ""
-EOF
+    deploy_task_scaffold "deploy_acv"
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
@@ -109,7 +22,7 @@ EOF
 }
 
 teardown() {
-    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+    deploy_task_teardown
 }
 
 read_task_ac_version() {
@@ -569,4 +482,146 @@ EOF
     [[ "$output" == *"cannot be empty/None"* ]]
     [ ! -e "$TEST_PROJECT/queue/tasks/None.yaml" ]
     [ ! -e "$TEST_PROJECT/queue/tasks/None.yaml.lock" ]
+}
+
+# =============================================================================
+# if_then lesson detail injection tests (merged from test_deploy_task_if_then.bats)
+# =============================================================================
+
+read_related_detail() {
+    local lesson_id="$1"
+    TASK_FILE_ENV="$TEST_PROJECT/queue/tasks/sasuke.yaml" LESSON_ID_ENV="$lesson_id" python3 -c "
+import os, yaml
+with open(os.environ['TASK_FILE_ENV'], encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+related = (data.get('task') or {}).get('related_lessons') or []
+target = os.environ['LESSON_ID_ENV']
+for entry in related:
+    if str(entry.get('id', '')) == target:
+        print(str(entry.get('detail', '')))
+        break
+"
+}
+
+@test "deploy_task formats if_then lesson detail as IF/THEN/BECAUSE" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L900
+    title: if_then lesson
+    summary: if_then summary
+    detail: legacy detail should be ignored
+    status: confirmed
+    tags: [universal]
+    helpful_count: 10
+    if_then:
+      if: trigger condition
+      then: take action
+      because: expected effect
+  - id: L901
+    title: legacy lesson
+    summary: legacy summary
+    detail: legacy detail text
+    status: confirmed
+    tags: [universal]
+    helpful_count: 9
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "if_then injection"
+  description: "validate if_then detail output"
+  task_type: review
+  project: testproj
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_related_detail L900
+    [ "$status" -eq 0 ]
+    [ "$output" = "IF: trigger condition → THEN: take action (BECAUSE: expected effect)" ]
+}
+
+# === GP-105: stale report reassignment detection ===
+# STALL再配備時に旧忍者のテンプレート(verdict空)がアーカイブされることを確認
+
+@test "GP-105: stale other ninja template archived on reassignment (verdict empty)" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "stale report test"
+  task_type: impl
+  parent_cmd: cmd_stale_test
+  acceptance_criteria:
+    - id: AC1
+      description: "test"
+EOF
+    # Simulate stale template from another ninja (STALL reassignment)
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_stale_test.yaml" <<'EOF'
+worker_id: hanzo
+parent_cmd: cmd_stale_test
+verdict:
+status: pending
+EOF
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+    # Stale template should be archived
+    [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_stale_test.yaml" ]
+    [ -f "$TEST_PROJECT/archive/reports/stale/hanzo_report_cmd_stale_test.yaml" ]
+}
+
+@test "GP-105: completed other ninja report preserved on reassignment (verdict PASS)" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "preserve completed report"
+  task_type: impl
+  parent_cmd: cmd_preserve_test
+  acceptance_criteria:
+    - id: AC1
+      description: "test"
+EOF
+    # Simulate completed report from another ninja
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_preserve_test.yaml" <<'EOF'
+worker_id: hanzo
+parent_cmd: cmd_preserve_test
+verdict: PASS
+status: done
+EOF
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+    # Completed report should be preserved (not archived)
+    [ -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_preserve_test.yaml" ]
+}
+
+@test "deploy_task keeps legacy detail fallback when if_then is absent" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L901
+    title: legacy lesson
+    summary: legacy summary
+    detail: legacy detail text
+    status: confirmed
+    tags: [universal]
+    helpful_count: 9
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "legacy detail"
+  description: "validate legacy detail fallback"
+  task_type: review
+  project: testproj
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run read_related_detail L901
+    [ "$status" -eq 0 ]
+    [ "$output" = "legacy detail text" ]
 }

@@ -658,3 +658,159 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
+
+# === GP-103撤去テスト: Fix5 Step3 散文推定がautofixされないことを確認 ===
+# 消火パターン: 散文binary_checksを自動でYES/NO推定→構造化(忍者が正しい形式を学ばない)
+# 期待: autofixは散文を変換しない → gate FAILで忍者が修正
+
+@test "GP-103撤去: binary_checks散文 → autofixせず → gate FAIL" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # binary_checksを散文テキストに置き換え
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['binary_checks'] = {'AC1': 'API接続確認済み、全てPASS、問題なし'}
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    # autofix should NOT convert free-form text to structured data
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    # Verify the value is still a string (not converted to list)
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+bc = data.get('binary_checks', {}).get('AC1')
+print('string' if isinstance(bc, str) else 'converted')
+"
+    [[ "$output" == *"string"* ]]
+    # gate should catch it
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+}
+
+# === GP-104撤去テスト: GP-091 YAML parse修復がautofixされないことを確認 ===
+# 消火パターン: YAML parse errorをダミーコンテンツで修復(壊れたYAMLを偽装)
+# 期待: autofixはUNFIXABLEで終了
+
+# === GP-106撤去テスト: ac_version_read自動補完がautofixされないことを確認 ===
+# 消火パターン: ac_version_read欠落→タスクYAMLから自動補完(attestation無力化)
+# 期待: autofixは補完せず、ac_version_readは空のまま
+
+@test "GP-106撤去: ac_version_read欠落 → autofixせず → gate FAIL" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # ac_version_readを消去
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+if 'ac_version_read' in data:
+    del data['ac_version_read']
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    # autofixが補完しないことを確認
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+print('MISSING' if not data.get('ac_version_read') else 'FILLED')
+"
+    [[ "$output" == *"MISSING"* ]]
+    # format gateがBLOCKすることを確認
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+}
+
+@test "GP-104撤去: YAML parse error → autofix UNFIXABLE (ダミーコンテンツ生成なし)" {
+    # 意図的にYAML parse errorを起こす(lesson_candidate scalar + orphaned children)
+    cat > "$TEST_TMPDIR/broken.yaml" <<'BROKEN'
+worker_id: test_ninja
+parent_cmd: cmd_test
+lesson_candidate: "some string value"
+  found: true
+  title: "orphaned"
+verdict: PASS
+BROKEN
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/broken.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"UNFIXABLE"* ]]
+    [[ "$output" == *"YAML parse error"* ]]
+}
+
+# === GP-108テスト: FIXヒント完全化+重複排除 ===
+
+@test "GP-108: lesson_candidate found=false no_reason → FIX hint表示" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['lesson_candidate'] = {'found': False}
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"no_lesson_reason"* ]]
+    [[ "$output" == *"FIX (lesson_candidate)"* ]]
+}
+
+@test "GP-108: self_gate_check as string → FIX hint表示" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    echo 'self_gate_check: "all good"' >> "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"self_gate_check: is str"* ]]
+    [[ "$output" == *"FIX (self_gate_check)"* ]]
+}
+
+@test "GP-108: lessons_useful null → FIX hint表示" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['lessons_useful'] = None
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"lessons_useful: null"* ]]
+    [[ "$output" == *"FIX (lessons_useful)"* ]]
+}
+
+@test "GP-108: ヒント重複排除 — 3つのreason emptyで1つのFIX hint" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['lessons_useful'] = [
+    {'id': 'L001', 'useful': True, 'reason': ''},
+    {'id': 'L002', 'useful': True, 'reason': ''},
+    {'id': 'L003', 'useful': False, 'reason': ''},
+]
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    # 3つのエラーがセミコロン区切りで1行に出る
+    local error_count
+    error_count=$(echo "$output" | grep -o "reason is empty" | wc -l)
+    [ "$error_count" -ge 3 ]
+    # FIXヒントは1つだけ（[N]で正規化）
+    local hint_count
+    hint_count=$(echo "$output" | grep -c "FIX (lessons_useful" || true)
+    [ "$hint_count" -eq 1 ]
+    # ヒントに[N]が含まれる
+    [[ "$output" == *"lessons_useful[N]"* ]]
+}

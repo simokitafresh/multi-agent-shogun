@@ -390,6 +390,21 @@ generate_report_template() {
 # !! トップレベル構造を維持せよ。report: で包むな !!
 # !! report_field_set.sh で各フィールドを設定せよ。直接Edit/Write禁止 !!
 # Step1: Read this file → Step2: bash scripts/report_field_set.sh <this_file> <key> <value> で各フィールドを埋めよ
+# ━━━ report_field_set.sh ドット記法クイックリファレンス ━━━
+# RFS="bash scripts/report_field_set.sh <このファイル>"
+# \$RFS result.summary "要約文"
+# \$RFS result.details "詳細文"
+# \$RFS lesson_candidate.found "false"
+# \$RFS lesson_candidate.no_lesson_reason "既知パターンL084"
+# \$RFS verdict "PASS"
+# echo '[{check: "内容", result: "yes"}]' | \$RFS binary_checks.AC1 -
+# !! スペース区切り(lesson_candidate found false)は不可 → ドット記法必須 !!
+# ━━━ 提出手順（番号順に実行せよ）━━━
+# 1. 内容記入: result.summary/details, purpose_validation, lesson_candidate, files_modified
+# 2. 構造記入: binary_checks全result→yes/no, lessons_useful全reason記入, verdict→PASS/FAIL, status→completed
+# 3. gate実行: bash scripts/gates/gate_report_format.sh <このファイル>
+# 4. PASS確認後: inbox_writeで家老に報告
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 worker_id: ${worker_id}
 task_id: ${resolved_task_id}
 parent_cmd: ${resolved_parent_cmd}
@@ -426,6 +441,12 @@ hook_failures:
   details: ""
 binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
 verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
+# ━━━ 提出前最終確認（gate実行前に全項目を確認せよ）━━━
+# □ binary_checks: 全ACの全result欄に "yes" or "no" を記入したか（"PASS"不可）
+# □ lessons_useful: 全reason欄に有用/無用の具体的理由を記入したか
+# □ verdict: "PASS" or "FAIL" を記入したか
+# □ status: completed に変更したか
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
 
     # cmd_1131+cmd_1393: related_lessonsが存在する場合、lessons_usefulを記入用雛形に差替え（Python→bash/awk）
@@ -451,7 +472,7 @@ EOF
             _lu_block="${_lu_block}
   - id: ${_lid}
     useful: false
-    reason: ''"
+    reason: ''  # 有用/無用の理由を具体的に書け"
             _lu_count=$((_lu_count + 1))
         done <<< "$_lu_ids"
 
@@ -474,7 +495,7 @@ EOF
         in_ac && /^  - / {
             if (cur_id != "" && cc > 0) {
                 printf "  %s:\n", cur_id
-                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"\n", chk[i] }
+                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", chk[i] }
             }
             cur_id=""; cc=0
         }
@@ -483,7 +504,7 @@ EOF
         END {
             if (cur_id != "" && cc > 0) {
                 printf "  %s:\n", cur_id
-                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"\n", chk[i] }
+                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", chk[i] }
             }
         }
     ' "$task_file" 2>/dev/null)
@@ -746,11 +767,22 @@ try:
             print(f'[INJECT] WARN: platform lessons load failed: {pe}', file=sys.stderr)
 
     if not lessons:
-        task['related_lessons'] = []
+        # Insert empty related_lessons via text manipulation (avoid yaml.dump on full file)
+        with open(task_file, encoding='utf-8') as f:
+            raw = f.read()
+        import re
+        raw = re.sub(r'\n  related_lessons:.*?(?=\n  [a-z]|\Z)', '', raw, flags=re.DOTALL)
+        # Append before end of task block
+        task_end = re.search(r'\n[a-z]', raw[raw.index('task:'):])
+        if task_end:
+            pos = raw.index('task:') + task_end.start()
+            raw = raw[:pos] + '\n  related_lessons: []' + raw[pos:]
+        else:
+            raw = raw.rstrip() + '\n  related_lessons: []\n'
         tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
         try:
-            with os.fdopen(tmp_fd, 'w') as f:
-                yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+            with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+                f.write(raw)
             os.replace(tmp_path, task_file)
         except:
             os.unlink(tmp_path)
@@ -1400,6 +1432,72 @@ try:
         'breakdown': breakdown,
         'warning': warning,
     }
+
+    # --- GP-110: gate_fire_logからper-ninja FAILパターンTop3を追加 ---
+    gate_log_path = os.path.join(os.path.dirname(workarounds_file), 'gate_fire_log.yaml')
+    if os.path.exists(gate_log_path):
+        fail_cats = {}
+        GATE_FAIL_WARNING = {
+            'lu_reason_empty': 'lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止',
+            'bc_result_empty': 'binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止',
+            'verdict_invalid': 'verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止',
+            'status_pending': '完了後にstatusを"completed"に更新。"pending"のまま報告禁止',
+            'field_missing': '必須フィールド(binary_checks/files_modified/result.summary)を省略するな',
+            'type_error': 'YAML型注意。dict({0:{},1:{}})禁止→list([{},{},{}])形式',
+            'no_lesson_reason': 'lesson_candidate.found=false時はno_lesson_reasonに理由記入',
+            'bc_result_invalid': 'binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値',
+            'lu_structure_error': 'lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな',
+            'yaml_parse_error': 'YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ',
+            'fill_this_remaining': 'FILL_THISが残存。全テンプレート値を実際の値に置換せよ',
+        }
+        try:
+            with open(gate_log_path) as gf:
+                for gline in gf:
+                    gline = gline.strip()
+                    if not gline.startswith('- ') or f'/{ninja_name}_report' not in gline:
+                        continue
+                    if '/tmp/' in gline:
+                        continue
+                    if 'result: FAIL' not in gline:
+                        continue
+                    rm = re.search(r'reasons:\s*"(.*)"$', gline)
+                    if not rm:
+                        continue
+                    for reason in rm.group(1).split('; '):
+                        if 'reason is empty' in reason:
+                            fail_cats['lu_reason_empty'] = fail_cats.get('lu_reason_empty', 0) + 1
+                        elif 'result: 空文字' in reason or 'result: ""' in reason:
+                            fail_cats['bc_result_empty'] = fail_cats.get('bc_result_empty', 0) + 1
+                        elif 'verdict' in reason:
+                            fail_cats['verdict_invalid'] = fail_cats.get('verdict_invalid', 0) + 1
+                        elif 'status' in reason and 'pending' in reason:
+                            fail_cats['status_pending'] = fail_cats.get('status_pending', 0) + 1
+                        elif 'MISSING' in reason:
+                            fail_cats['field_missing'] = fail_cats.get('field_missing', 0) + 1
+                        elif 'is dict' in reason or 'is str' in reason:
+                            fail_cats['type_error'] = fail_cats.get('type_error', 0) + 1
+                        elif 'no_lesson_reason' in reason:
+                            fail_cats['no_lesson_reason'] = fail_cats.get('no_lesson_reason', 0) + 1
+                        elif '不正' in reason:
+                            fail_cats['bc_result_invalid'] = fail_cats.get('bc_result_invalid', 0) + 1
+                        elif 'YAML parse error' in reason:
+                            fail_cats['yaml_parse_error'] = fail_cats.get('yaml_parse_error', 0) + 1
+                        elif 'FILL_THIS' in reason:
+                            fail_cats['fill_this_remaining'] = fail_cats.get('fill_this_remaining', 0) + 1
+                        elif ('missing' in reason and 'field' in reason) or \
+                             'null (must be' in reason or \
+                             'empty list' in reason or 'unexpected type' in reason or \
+                             'empty dict' in reason or 'found=true but no' in reason:
+                            fail_cats['lu_structure_error'] = fail_cats.get('lu_structure_error', 0) + 1
+            if fail_cats:
+                sorted_cats = sorted(fail_cats.items(), key=lambda x: -x[1])[:3]
+                top3 = [{'pattern': p, 'count': c} for p, c in sorted_cats]
+                gate_warnings = [GATE_FAIL_WARNING.get(p, p) for p, _ in sorted_cats]
+                task['ninja_weak_points']['gate_fail_top3'] = top3
+                task['ninja_weak_points']['gate_warning'] = '⚠ gate頻出FAIL: ' + '; '.join(gate_warnings)
+                print(f'[NINJA_WP] {ninja_name}: gate FAIL top3 injected: {sorted_cats}', file=sys.stderr)
+        except Exception as ge:
+            print(f'[NINJA_WP] gate_fire_log parse warning: {ge}', file=sys.stderr)
 
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
     try:

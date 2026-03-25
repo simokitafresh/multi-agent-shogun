@@ -44,6 +44,7 @@ EOF
 
     export PATH="$TEST_BIN:$PATH"
     export TMUX_PANE="%1"
+    export STOP_HOOK_INOTIFY_TIMEOUT=1  # テスト高速化: 55秒→1秒
     rm -f "$TEST_IDLE_FLAG"
     : > "$TMUX_LOG"
     : > "$INBOX_WRITE_LOG"
@@ -128,7 +129,43 @@ EOF
     [[ "$output" == *"[shogun/cmd_new] 追加の指示を確認せよ"* ]]
 }
 
-@test "T-SCI-005: error message triggers async error_report notification" {
+@test "T-SCI-005: inotifywait blocks when message arrives during wait" {
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
+
+    # バックグラウンドで0.5秒後に未読メッセージを書き込む
+    (
+        sleep 0.5
+        cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+  - id: msg_late
+    from: karo
+    type: task_assigned
+    content: 待機中に届いたタスク
+    read: false
+YAML
+    ) &
+    local bg_pid=$!
+
+    run_hook '{"stop_hook_active":false}'
+    wait "$bg_pid" 2>/dev/null || true
+    [ "$status" -eq 0 ]
+    echo "$output" | jq -e '.decision == "block"' >/dev/null
+    [[ "$output" == *"待機中に到着"* ]]
+}
+
+@test "T-SCI-006: no unread after inotifywait timeout exits cleanly" {
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
+
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_IDLE_FLAG" ]
+    # block出力がないことを確認
+    if [[ -n "$output" ]]; then
+        ! echo "$output" | jq -e '.decision == "block"' >/dev/null 2>&1 || false
+    fi
+}
+
+@test "T-SCI-007: error message triggers async error_report notification" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
     run_hook '{"stop_hook_active":false,"last_assistant_message":"エラーのため中断する"}'

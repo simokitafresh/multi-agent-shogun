@@ -37,6 +37,15 @@
         ]
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-yaml-dump-guard.sh"
+          }
+        ]
+      },
+      {
         "matcher": "Write|Edit",
         "hooks": [
           {
@@ -142,6 +151,11 @@
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/stop-lint-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/stop_check_inbox.sh",
+            "timeout": 60000
           }
         ]
       }

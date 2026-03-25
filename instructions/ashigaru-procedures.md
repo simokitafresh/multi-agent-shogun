@@ -438,7 +438,7 @@ Act without waiting for Karo's instruction:
 **On task completion** (in this order):
 1. Self-review deliverables (re-read your output)
 2. **Purpose validation**: Read `parent_cmd` in `queue/shogun_to_karo.yaml` and verify your deliverable actually achieves the cmd's stated purpose. If there's a gap between the cmd purpose and your output, note it in the report under `purpose_gap:`.
-3. Write report YAML
+3. Update report YAML (`bash scripts/lib/report_field_set.sh` — Edit/Write直接禁止)
 4. Notify Karo via inbox_write
 5. (No delivery verification needed — inbox_write guarantees persistence)
 
@@ -448,7 +448,7 @@ Act without waiting for Karo's instruction:
 - If modifying instructions → check for contradictions
 
 **Anomaly handling:**
-- Context below 30% → write progress to report YAML, tell Karo "context running low"
+- Context below 30% → update progress via `report_field_set.sh`, tell Karo "context running low"
 - Task larger than expected → include split proposal in report
 
 ## Shout Mode (echo_message)
@@ -459,6 +459,6 @@ After task completion, check whether to shout a battle cry:
 2. **When DISPLAY_MODE=shout**:
    - Execute `bash scripts/shout.sh {ninja_name}` as the **FINAL tool call** after task completion
    - shout.sh reads your report YAML and generates a battle cry automatically
-   - If task YAML has an `echo_message` field → write it to report YAML before calling shout.sh
+   - If task YAML has an `echo_message` field → `report_field_set.sh` で report に書き込んでから shout.sh を呼べ
    - Do NOT output any text after the shout — it must remain directly above the ❯ prompt
 3. **When DISPLAY_MODE=silent or not set**: Do NOT shout. Skip silently.

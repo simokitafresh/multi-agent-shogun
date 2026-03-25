@@ -198,3 +198,82 @@ grep -q "screenshot_received" "$INBOX_WRITE_LOG"
 '
     [ "$status" -eq 0 ]
 }
+
+@test "T-NTFY-006: corrupt YAML triggers backup and recovery" {
+    export CORRUPT_DIR_TEST="$TEST_TMPDIR/corrupt"
+    mkdir -p "$CORRUPT_DIR_TEST"
+
+    # 壊れたYAMLをinboxに書き込む
+    printf 'inbox:\n  - {id: ok1\n  BROKEN LINE <<<\n' > "$INBOX_FILE"
+
+    run bash -lc '
+set -euo pipefail
+LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
+TEST_PROJECT="'"$TEST_PROJECT"'"
+INBOX_FILE="'"$INBOX_FILE"'"
+SCREENSHOT_DIR_TEST="'"$SCREENSHOT_DIR_TEST"'"
+CORRUPT_DIR_TEST="'"$CORRUPT_DIR_TEST"'"
+
+export NTFY_LISTENER_LIB_ONLY=1
+source "$LISTENER_SCRIPT"
+unset NTFY_LISTENER_LIB_ONLY
+
+SCRIPT_DIR="$TEST_PROJECT"
+INBOX="$INBOX_FILE"
+SCREENSHOT_DIR="$SCREENSHOT_DIR_TEST"
+CORRUPT_DIR="$CORRUPT_DIR_TEST"
+AUTH_ARGS=()
+tmux() { return 1; }
+
+append_ntfy_inbox "msg-corrupt-1" "1711111111" "recovery test message" "pending"
+'
+    [ "$status" -eq 0 ]
+
+    # バックアップファイルが生成されたことを確認
+    backup_count=$(find "$CORRUPT_DIR_TEST" -name "ntfy_inbox_corrupt_*.yaml" -type f | wc -l)
+    [ "$backup_count" -ge 1 ]
+
+    # 復旧後のinboxに新メッセージが正常に書き込まれたことを確認
+    grep -q "recovery test message" "$INBOX_FILE"
+    grep -q "msg-corrupt-1" "$INBOX_FILE"
+
+    # 壊れたデータが新inboxに残っていないことを確認
+    ! grep -q "BROKEN LINE" "$INBOX_FILE"
+}
+
+@test "T-NTFY-007: corrupt backup preserves original broken content" {
+    export CORRUPT_DIR_TEST="$TEST_TMPDIR/corrupt2"
+    mkdir -p "$CORRUPT_DIR_TEST"
+
+    # 特徴的な壊れたYAMLを書き込む
+    printf 'inbox:\n  - {id: sentinel_abc123\n  !!!CORRUPT_MARKER!!!\n' > "$INBOX_FILE"
+
+    run bash -lc '
+set -euo pipefail
+LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
+TEST_PROJECT="'"$TEST_PROJECT"'"
+INBOX_FILE="'"$INBOX_FILE"'"
+SCREENSHOT_DIR_TEST="'"$SCREENSHOT_DIR_TEST"'"
+CORRUPT_DIR_TEST="'"$CORRUPT_DIR_TEST"'"
+
+export NTFY_LISTENER_LIB_ONLY=1
+source "$LISTENER_SCRIPT"
+unset NTFY_LISTENER_LIB_ONLY
+
+SCRIPT_DIR="$TEST_PROJECT"
+INBOX="$INBOX_FILE"
+SCREENSHOT_DIR="$SCREENSHOT_DIR_TEST"
+CORRUPT_DIR="$CORRUPT_DIR_TEST"
+AUTH_ARGS=()
+tmux() { return 1; }
+
+append_ntfy_inbox "msg-after-corrupt" "1711111222" "after corrupt" "pending"
+'
+    [ "$status" -eq 0 ]
+
+    # バックアップに壊れた元データが保存されていることを確認
+    backup_file=$(find "$CORRUPT_DIR_TEST" -name "ntfy_inbox_corrupt_*.yaml" -type f | head -n 1)
+    [ -n "$backup_file" ]
+    grep -q "CORRUPT_MARKER" "$backup_file"
+    grep -q "sentinel_abc123" "$backup_file"
+}

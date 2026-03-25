@@ -221,6 +221,48 @@ YAML
     [[ "$output" == *"保存確認OK"* ]]
 }
 
+@test "Check3.7: チェックリスト参照cmdでWARNING出力" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2001:
+    id: cmd_2001
+    command: "チェックリストStep6実行 — 本番DB登録"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_2001
+    echo "$output" >&2
+    [[ "$output" == *"チェックリスト参照cmd"* ]]
+    [[ "$output" == *"隣接Step"* ]]
+    # WARNINGだが非BLOCKなので保存OK
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check3.7: チェックリスト参照なしcmdはWARNなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2002:
+    id: cmd_2002
+    command: "inbox_write.shのリファクタリング"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_2002
+    echo "$output" >&2
+    [[ "$output" != *"チェックリスト参照cmd"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
 @test "Check1-5: 既存チェックに影響なし（正常系）" {
     create_queue_file << 'YAML'
 commands:

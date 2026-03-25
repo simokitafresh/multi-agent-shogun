@@ -54,6 +54,7 @@ for field in required:
 fm = data.get('files_modified')
 if fm is None and 'files_modified' in data:
     errors.append('files_modified: null (must be string or list of file paths)')
+    hints.append('FIX (files_modified): nullではなく変更ファイルパスを記入せよ:\\n  files_modified:\\n    - path/to/file.py')
 elif isinstance(fm, dict):
     errors.append('files_modified: is dict (must be string or list of file paths)')
     hints.append('FIX (files_modified): 文字列またはリスト形式で記入せよ:\\n  files_modified: path/to/file.py\\n  または\\n  files_modified:\\n    - path/to/file1.py\\n    - path/to/file2.py')
@@ -73,6 +74,7 @@ elif lc is not None:
             errors.append('lesson_candidate: missing \"found\" field')
         if not lc.get('found') and not lc.get('no_lesson_reason'):
             errors.append('lesson_candidate: found=false but no no_lesson_reason')
+            hints.append('FIX (lesson_candidate): found: falseの場合はno_lesson_reasonが必須:\\n  lesson_candidate:\\n    found: false\\n    no_lesson_reason: \"既知のL084と同じパターンで新規教訓なし\"')
         # --- no_lesson_reason quality check (cmd_1299) ---
         if not lc.get('found') and lc.get('no_lesson_reason'):
             reason = str(lc.get('no_lesson_reason', '')).strip()
@@ -94,6 +96,7 @@ elif lc is not None:
 lu = data.get('lessons_useful')
 if lu is None and 'lessons_useful' in data:
     errors.append('lessons_useful: null (must be list of dicts, not null)')
+    hints.append('FIX (lessons_useful): nullではなくリスト形式で記入せよ。テンプレート注入済み教訓を上書きするな:\\n  lessons_useful:\\n    - id: L074\\n      useful: true\\n      reason: \"具体的な理由\"')
 elif lu is not None:
     if isinstance(lu, str):
         errors.append('lessons_useful: is string (must be list of dicts)')
@@ -122,13 +125,16 @@ elif lu is not None:
                     errors.append(f'lessons_useful[{i}]: contains FILL_THIS (must fill actual values)')
                 if 'id' not in item:
                     errors.append(f'lessons_useful[{i}]: missing \"id\" field (must have lesson ID like L074)')
+                    hints.append(f'FIX (lessons_useful[{i}]): id フィールド必須。テンプレート注入済みの教訓IDを確認せよ:\\n  - id: L074\\n    useful: true\\n    reason: \"理由\"')
                 if 'useful' not in item:
                     errors.append(f'lessons_useful[{i}]: missing \"useful\" field')
+                    hints.append(f'FIX (lessons_useful[{i}]): useful: true or false を記入せよ')
                 elif not isinstance(item['useful'], bool):
                     errors.append(f'lessons_useful[{i}]: useful={item[\"useful\"]} is {type(item[\"useful\"]).__name__} (must be true or false)')
                     hints.append(f'FIX (lessons_useful[{i}]): useful: true または useful: false を指定せよ（文字列やnullは不可）')
                 if 'reason' not in item:
                     errors.append(f'lessons_useful[{i}]: missing \"reason\" field')
+                    hints.append(f'FIX (lessons_useful[{i}]): reason フィールド必須。教訓が有用/無用な理由を具体的に記入せよ')
                 elif isinstance(item.get('reason'), str) and not item['reason'].strip():
                     errors.append(f'lessons_useful[{i}]: reason is empty (教訓が有用/無用な理由を具体的に書け)')
                     hints.append(f'FIX (lessons_useful[{i}]): reason: \"L070のパターンと同一で参考にならなかった\" など具体的に記述')
@@ -144,6 +150,7 @@ elif lu is not None:
 bc = data.get('binary_checks')
 if bc is None and 'binary_checks' in data:
     errors.append('binary_checks: null (must be dict with AC entries)')
+    hints.append('FIX (binary_checks): nullではなくdict形式で記入せよ:\\n  binary_checks:\\n    AC1:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
 elif isinstance(bc, str):
     errors.append('binary_checks: is string (must be dict with AC entries)')
     hints.append('FIX (binary_checks): dict形式で再記入せよ:\\n  binary_checks:\\n    AC1:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
@@ -218,6 +225,7 @@ sgc = data.get('self_gate_check')
 if sgc is not None:
     if not isinstance(sgc, dict):
         errors.append(f'self_gate_check: is {type(sgc).__name__} (must be dict)')
+        hints.append('FIX (self_gate_check): dict形式で記入せよ:\\n  self_gate_check:\\n    lesson_ref: PASS\\n    format_compliance: PASS\\n  各項目はPASS/FAILの二値')
     else:
         valid_sgc_values = {'PASS', 'FAIL'}
         for sgc_key, sgc_val in sgc.items():
@@ -225,6 +233,7 @@ if sgc is not None:
             if sgc_str == '':
                 # 空文字はテンプレート初期値 — 未記入
                 errors.append(f'self_gate_check.{sgc_key}: empty (must be PASS or FAIL)')
+                hints.append(f'FIX: self_gate_check.{sgc_key} に PASS or FAIL を記入せよ')
             elif sgc_str not in valid_sgc_values:
                 errors.append(f'self_gate_check.{sgc_key}: \"{sgc_str}\" is not valid (must be \"PASS\" or \"FAIL\")')
                 hints.append(f'FIX: Change self_gate_check.{sgc_key} from \"{sgc_str}\" to \"PASS\" or \"FAIL\"')
@@ -261,7 +270,18 @@ if result and isinstance(result, dict):
             hints.append(f'PI-012 WARN: 報告にPE使用の痕跡あり(\"{indicator}\")。GS探索でPE使用は禁止(cmd_1349)。batch pathの修正が必要')
             break
 
-# --- Output ---
+# --- Output (GP-108: hint dedup) ---
+# 同一パターンのヒントが複数回出力されると忍者にとってノイズ。
+# インデックス[N]を正規化して重複排除し、1パターンにつき1回だけ表示
+seen_bases = set()
+deduped = []
+for h in hints:
+    base = re.sub(r'\[\d+\]', '[*]', h)
+    if base not in seen_bases:
+        seen_bases.add(base)
+        deduped.append(re.sub(r'\[\d+\]', '[N]', h))
+hints = deduped
+
 if errors:
     print('FAIL: ' + '; '.join(errors))
     if hints:

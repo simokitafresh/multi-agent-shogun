@@ -83,6 +83,10 @@ language:
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
+2.5.1. **起動ゲートALERT対応(将軍のみ)**: gate出力にALERTがあれば該当スキルを実行:
+   - Memory健全度 → `/shogun-memory-teire`
+   - lesson health (`bash scripts/gates/gate_lesson_health.sh`) ALERT → `/lesson-sort`
+   - PD未解決 → `/shogun-pd-sync`
 2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
 3. **Read your instructions file**: shogun→`instructions/generated/codex-shogun.md`, karo→`instructions/generated/codex-karo.md`, ninja(忍者)→`instructions/generated/codex-ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
@@ -105,6 +109,7 @@ language:
   FAIL→即停止・原因報告。PASS→次ACへ。
   lesson_candidateには「次回追加すべきチェック」を書け。
   計測して止まるだけでは品質管理。還流して初めて成長。
+  分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 3.5. **Load project knowledge** (role-based):
    - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
@@ -138,6 +143,7 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
   FAIL→即停止・原因報告。PASS→次ACへ。
   lesson_candidateには「次回追加すべきチェック」を書け。
   計測して止まるだけでは品質管理。還流して初めて成長。
+  分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → {your_ninja_name} (e.g., sasuke, hanzo)
 Step 2: 将軍のみ MEMORY.md（自動ロード済み）を信頼。read_graphしない。家老・忍者はスキップ。
@@ -199,7 +205,7 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 ## cmd完了時の手順（家老・忍者共通）
 
 ```
-1. ダッシュボード更新（cmd完了結果を記載）
+1. ダッシュボード更新: `/dashboard-update` スキルを実行（手動Edit禁止。スキルがプライマリYAMLから全セクションを自動生成する）
 2. 戦局日誌更新: context/senkyoku-log.mdにcmdの意図・結果・因果を1-2行で追記
 3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
 4. ntfy送信（cmd完了報告）
@@ -208,6 +214,10 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 6. idle状態で待つ
 ※ archive_completed.shはcmd_complete_gate.sh GATE CLEAR時に自動実行される（手動不要）
 ```
+
+## /clear前手順（将軍のみ）
+
+`/shogun-clear-prep` を実行してから `/clear` する。状態確認+殿への報告を自動化。省略禁止。
 
 ## 復帰時の手順（全エージェント共通）
 
@@ -283,6 +293,14 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 ## File Operation Rule
 
 **Always Read before Write/Edit.** Opus rejects Write/Edit on unread files.
+
+## YAML書込み安全規則（全エージェント必読）
+
+**`yaml.dump` / `yaml.safe_dump` で運用YAMLを上書きすることは禁止。** データ消失が発生する（cmd_1399事故: yaml.dumpがcmd_1397-1399を丸ごと消失）。
+- 対象: `queue/`, `tasks/`, `inbox/`, `reports/`, `shogun_to_karo`, `karo_snapshot`
+- 代替手段: `bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>`
+- Hook `pre-bash-yaml-dump-guard.sh` が自動ブロック（PreToolUse）
+- **Why**: yaml.dumpは複雑なマルチライン文字列をround-tripできず、エントリごと消える
 
 # Knowledge Map
 
@@ -393,6 +411,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 1. リンク先作成（docs/research/に詳細移動）→ リンク先存在確認
 2. context圧縮（結論+参照の索引層に変換）
 3. 手順逆転禁止。リンク先がない状態で圧縮するな
+- 新版移行時は旧ドキュメントに時系列ナビゲーション(旧方式→問題→新版パス)を埋め込め。旧版が最新に見える状態を放置するな
 
 # Project Management
 

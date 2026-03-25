@@ -71,3 +71,44 @@ lessons:
     cmd完了時にkaro_workaroundsの直近5件をカテゴリ分析→3件同一なら構造的解決cmd提案。'
   source_cmd: cmd_selfimprovement_20260323
   created_at: '2026-03-23'
+- id: LK011
+  title: 代筆禁止原則 — gateがBLOCKした報告は忍者に差し戻せ
+  detail: 'gate BLOCKされた報告をpython3で代筆して通すのは消火=免疫応答を妨げる(deepdive Phase5)。WA率66%(39/43がreport_yaml_format)の根本原因。将軍のautofix消火撤去(Fix22-28,10,21)+軍師のFIX
+    hints追加で、MISSINGフィールドはgateがBLOCKし忍者に行動可能な修正ガイドが表示される。家老がやるべきこと: (1)BLOCK報告はinbox_writeで忍者に差し戻す
+    (2)代筆しない (3)差し戻し=WA:false(正しい対応)、代筆=WA:true(消火)。LK007の具体適用。'
+  source_cmd: cmd_selfimprovement_20260325
+  created_at: '2026-03-25'
+- id: LK012
+  title: 配備前に現物コード確認必須 — 履歴データだけで配備するな
+  detail: 'karo_workaroundsの履歴(WA率66%/39件report_yaml_format)を見て6忍者に改善タスクを配備→軍師REQ_CHANGES:
+    6件全て既実装(GP-072/GP-069等)。根本原因: 過去のworkaround件数から問題がまだ存在すると想像し、対象コードの現物確認をせず配備した。deepdive
+    Phase1-2(観察スキップ)と同構造。殿の想像するな確認せよ原則に違反。対策: タスク設計前にgrep/readで対象コードの現在状態を確認せよ。workaround件数は過去の事実であり現在の状態ではない。'
+  source_cmd: cmd_cycle_001
+  created_at: '2026-03-25'
+- id: LK013
+  title: 修行L1環境改善サイクル — なぜ分析→1行変更→計測の6ラウンドで0%→100%
+  detail: '修行L1を6ラウンド回し、First-Pass PASS率を0%から100%に改善した。毎ラウンドgate_fire_logでFAILパターンを分析し、テンプレートに1行の環境変更を入れて次ラウンドで検証。改善:
+    R3 inline hints, R4 header checklist, R5 bc循環依存除去, R6 status追記。核心: データを見て具体的に何がなぜ空かを掘ることが自動化ターゲット特定の精度を決める。大きな設計変更ではなく、1行の変更を繰り返し積んで複利で効かせる。LK012(現物確認)の応用版。'
+  source_cmd: cmd_training_L1
+  created_at: '2026-03-26'
+- id: LK014
+  title: 配備技術の段階的進化 — テンプレート設計+一括配備+レベル間設計
+  detail: 'L1-L3修行で配備技術が3軸で進化。(1)テンプレート設計: 忍者の作業動線(上→下)に合わせたヒント配置。ヘッダー(開始時)とフッター(提出前)の挟撃構造で認知負荷に耐える。(2)一括配備:
+    bashスクリプトで6名同時配備。ローテーション(L3レビュー相手)も変数で制御。(3)レベル間設計: 前レベルの環境改善が次レベルの土台。L2でL1基礎が回帰→フッター1件で即回復。弱点:
+    self_gate_checkのような新フィールドはsed後付けではなくdeploy_task.shのテンプレート生成に組み込むべき。修行で見つかった実バグの即時修正も配備作業の一部として統合すべき。'
+  source_cmd: cmd_training_L1_L2_L3
+  created_at: '2026-03-26'
+- id: LK015
+  title: 修行は訓練と品質改善の二重効果 — L2で実バグ3件発見・2件即修正
+  detail: '忍者がスクリプトを精査する修行タスクは、報告書作成の訓練であると同時に、コードの品質監査でもある。L2 R1-R2で発見された実バグ: ntfy_listener.sh
+    grep dedup不一致、inbox_write.sh yaml.dump禁則違反、gate_karo_startup.sh set -eフォールバック欠落。殿の指示「実バグが見つかったときは都度直そう」により修行と修正が一体化。修行タスクのtarget_pathにinfraスクリプトを割り当てることで、6名の目がコードベース全体を巡回する効果がある。'
+  source_cmd: cmd_training_L2
+  created_at: '2026-03-26'
+- id: LK016
+  title: LK016
+  detail: pane直接観察→自動化ターゲット特定 — gate_fire_logでは見えない摩擦の発見
+  source_cmd: '殿の指示「忍者のpane見てるか？学べ」により、gate_fire_log(PASS/FAIL二値)では見えない忍者の作業プロセス上の摩擦を発見。疾風cmd_1404で観察:
+    コード修正は迅速正確だが、/clear後の報告YAML作成でreport_field_set.shのドット記法を知らず3回BLOCKされYAML破損まで至った。根本原因:
+    テンプレートにドット記法の具体例がなかった。即対策: deploy_task.shの報告テンプレートにクイックリファレンス(ドット記法例+アンチパターン警告)を追加。gate_fire_logはPASS/FAILの二値しか見せないが、paneはなぜFAILかどこで詰まるかを見せる。deepdive
+    Phase5(なぜの目的=自動化ターゲット特定)の家老実践版。'
+  created_at: '2026-03-26'

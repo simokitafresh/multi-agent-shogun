@@ -294,6 +294,14 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 **Always Read before Write/Edit.** Claude Code rejects Write/Edit on unread files.
 
+## YAML書込み安全規則（全エージェント必読）
+
+**`yaml.dump` / `yaml.safe_dump` で運用YAMLを上書きすることは禁止。** データ消失が発生する（cmd_1399事故: yaml.dumpがcmd_1397-1399を丸ごと消失）。
+- 対象: `queue/`, `tasks/`, `inbox/`, `reports/`, `shogun_to_karo`, `karo_snapshot`
+- 代替手段: `bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>`
+- Hook `pre-bash-yaml-dump-guard.sh` が自動ブロック（PreToolUse）
+- **Why**: yaml.dumpは複雑なマルチライン文字列をround-tripできず、エントリごと消える
+
 # Knowledge Map
 
 ## 情報保存先（6箇所）

@@ -44,33 +44,57 @@ agent_id = os.environ['AGENT_ID']
 
 try:
     with open(inbox_path, encoding='utf-8') as f:
-        data = yaml.safe_load(f)
+        raw_text = f.read()
 
+    data = yaml.safe_load(raw_text)
     if not data or not data.get('messages'):
         print('[inbox_mark_read] No messages in inbox')
         sys.exit(0)
 
-    changed = 0
+    # Identify target message IDs
+    target_ids = set()
     for m in data['messages']:
         if m.get('read', False):
             continue
-        if msg_id and m.get('id') != msg_id:
+        if msg_id and str(m.get('id', '')) != msg_id:
             continue
-        m['read'] = True
-        changed += 1
+        target_ids.add(str(m.get('id', '')))
 
-    if changed == 0:
+    if not target_ids:
         if msg_id:
             print(f'[inbox_mark_read] msg_id={msg_id} not found or already read')
         else:
             print('[inbox_mark_read] No unread messages')
         sys.exit(0)
 
-    # Atomic write: tmp file + rename (same pattern as inbox_write.sh)
+    # Text-based replacement: find each target ID block, flip read: false -> read: true
+    # This preserves original YAML formatting (no yaml.dump round-trip)
+    lines = raw_text.split('\n')
+    in_target = False
+    changed = 0
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith('- '):
+            in_target = False
+        if stripped.startswith('id:'):
+            val = stripped.split(':', 1)[1].strip().strip(\"'\\\"\")
+            if val in target_ids:
+                in_target = True
+        if in_target and 'read: false' in line:
+            lines[i] = line.replace('read: false', 'read: true')
+            in_target = False
+            changed += 1
+
+    if changed == 0:
+        print('[inbox_mark_read] No changes made')
+        sys.exit(0)
+
+    # Atomic write: preserve original text formatting
+    new_text = '\n'.join(lines)
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
     try:
         with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+            f.write(new_text)
         os.replace(tmp_path, inbox_path)
     except:
         os.unlink(tmp_path)

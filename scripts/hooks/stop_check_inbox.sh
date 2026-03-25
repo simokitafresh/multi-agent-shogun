@@ -6,6 +6,7 @@ readonly COMPLETE_PATTERN='任務完了|完了でござる|報告YAML.*更新|ta
 readonly ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop'
 readonly SUMMARY_LIMIT=5
 readonly SUMMARY_SNIPPET_LEN=80
+readonly INOTIFY_TIMEOUT="${STOP_HOOK_INOTIFY_TIMEOUT:-55}"
 
 payload="$(cat 2>/dev/null || true)"
 if [[ -z "$payload" ]]; then
@@ -107,6 +108,23 @@ import os
 print(json.dumps({"decision": "block", "reason": os.environ["REASON_TEXT"]}, ensure_ascii=False))
 PY
 else
+  # inotifywait待機: 未読0件でも55秒間新メッセージ到着を待つ（おしお殿知見）
+  # WSL2 /mnt/c/ では inotify が不発の場合があるが、timeout 55秒が安全網
+  if command -v inotifywait >/dev/null 2>&1; then
+    inotifywait -qq -e close_write -e moved_to --timeout "$INOTIFY_TIMEOUT" "$inbox_file" &>/dev/null || true
+    # 待機後に再チェック
+    recheck_count="$(awk '/^[[:space:]]*read:[[:space:]]*false[[:space:]]*$/{c++} END{print c+0}' "$inbox_file" 2>/dev/null || echo 0)"
+    if [[ "$recheck_count" =~ ^[0-9]+$ ]] && (( recheck_count > 0 )); then
+      touch "$idle_flag"
+      reason_text="inbox未読${recheck_count}件あり(待機中に到着)"
+      REASON_TEXT="$reason_text" python3 - <<'PY'
+import json
+import os
+print(json.dumps({"decision": "block", "reason": os.environ["REASON_TEXT"]}, ensure_ascii=False))
+PY
+      exit 0
+    fi
+  fi
   touch "$idle_flag"
 fi
 

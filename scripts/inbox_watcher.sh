@@ -121,39 +121,7 @@ except Exception:
 mark_special_read() {
     local message_id="$1"
     [ -n "$message_id" ] || return 1
-
-    (
-        flock -w 5 200 || { echo "[mark_special_read] WARN: flock timeout" >&2; exit 1; }
-
-        INBOX_PATH="$INBOX" MESSAGE_ID="$message_id" python3 -c "
-import yaml, sys, os, tempfile
-try:
-    inbox_path = os.environ['INBOX_PATH']
-    with open(inbox_path) as f:
-        data = yaml.safe_load(f)
-    if not data or 'messages' not in data:
-        sys.exit(0)
-    target_id = os.environ['MESSAGE_ID']
-    changed = False
-    for m in data['messages']:
-        if not m.get('read', False) and str(m.get('id', '')) == target_id:
-            m['read'] = True
-            changed = True
-            break
-    if changed:
-        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
-        try:
-            with os.fdopen(tmp_fd, 'w') as f:
-                yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-            os.replace(tmp_path, inbox_path)
-        except:
-            os.unlink(tmp_path)
-            raise
-except Exception as e:
-    print(f'[mark_specials_read] error: {e}', file=sys.stderr)
-" 2>/dev/null
-
-    ) 200>"$LOCKFILE"
+    bash "$SCRIPT_DIR/scripts/inbox_mark_read.sh" "$AGENT_ID" "$message_id" 2>/dev/null || true
 }
 
 write_state_file() {

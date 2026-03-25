@@ -199,12 +199,44 @@ try:
                 'summary': str(l.get('summary','') or l.get('title','')),
                 'detail': str(l.get('detail','') or l.get('content','')),
             })
-    task['related_lessons'] = universal[:10]
+    # Build related_lessons YAML block as text (avoid yaml.dump on full file)
+    selected = universal[:10]
+    if not selected:
+        print('WARN: no universal lessons to inject')
+        sys.exit(0)
+    rl_lines = ['  related_lessons:']
+    for lesson in selected:
+        rl_lines.append(f\"  - id: {lesson['id']}\")
+        summary = str(lesson['summary']).replace(\"'\", \"''\")
+        detail = str(lesson['detail']).replace(\"'\", \"''\")
+        rl_lines.append(f\"    summary: '{summary}'\")
+        rl_lines.append(f\"    detail: '{detail}'\")
+    rl_block = '\\n'.join(rl_lines)
+
+    # Read raw text, remove existing related_lessons block, insert new one
+    with open(task_path, encoding='utf-8') as f:
+        raw = f.read()
+    import re
+    # Remove existing related_lessons block (indented under task:)
+    raw = re.sub(r'\\n  related_lessons:.*?(?=\\n  [a-z]|\\Z)', '', raw, flags=re.DOTALL)
+    # Insert before the last line of task block (append at end of task: section)
+    if '\\ntask:\\n' in raw:
+        # Find the end of the task block (next top-level key or EOF)
+        task_end = re.search(r'\\n[a-z]', raw[raw.index('\\ntask:\\n')+6:])
+        if task_end:
+            insert_pos = raw.index('\\ntask:\\n') + 6 + task_end.start()
+        else:
+            insert_pos = len(raw.rstrip())
+        raw = raw[:insert_pos] + '\\n' + rl_block + raw[insert_pos:]
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix='.tmp')
-    with os.fdopen(tmp_fd, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-    os.replace(tmp_path, task_path)
-    print(f'INJECTED: {len(universal[:10])} universal lessons (safety net)')
+    try:
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+            f.write(raw)
+        os.replace(tmp_path, task_path)
+    except:
+        os.unlink(tmp_path)
+        raise
+    print(f'INJECTED: {len(selected)} universal lessons (safety net)')
 except Exception as e:
     print(f'WARN: lesson inject failed: {e}', file=sys.stderr)
     sys.exit(0)
@@ -585,36 +617,20 @@ except:
                         (
                             flock -w 5 201 || exit 0  # Lock failure is non-fatal
 
-                            TASK_PATH="$TASK_YAML" python3 -c "
-import yaml, tempfile, os, sys
-
-task_path = os.environ['TASK_PATH']
+                            # Check current status — don't overwrite terminal states
+                            CURRENT_STATUS=$(TASK_PATH="$TASK_YAML" python3 -c "
+import yaml, os, sys
 try:
-    with open(task_path) as f:
+    with open(os.environ['TASK_PATH']) as f:
         data = yaml.safe_load(f)
+    print(data.get('task',{}).get('status','') if data else '')
+except: pass
+" 2>/dev/null)
+                            case "$CURRENT_STATUS" in
+                                done|failed|blocked) exit 0 ;;
+                            esac
 
-    if not data or 'task' not in data:
-        sys.exit(0)
-
-    current_status = data['task'].get('status', '')
-    # done/failed/blocked — do not overwrite (idempotent)
-    if current_status in ('done', 'failed', 'blocked'):
-        sys.exit(0)
-
-    # assigned/in_progress → done
-    data['task']['status'] = 'done'
-
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_path)
-    except:
-        os.unlink(tmp_path)
-        raise
-except Exception as e:
-    print(f'[inbox_write] task-auto-done WARN: {e}', file=sys.stderr)
-"
+                            bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$TASK_YAML" task status "done" 2>&1 || true
                         ) 201>"$TASK_LOCKFILE"
                     fi
                 fi

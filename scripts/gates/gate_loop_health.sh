@@ -151,7 +151,7 @@ for pattern, count in reason_counter.most_common():
     elif 'MISSING' in pattern and count >= 10:
         msg = f'テンプレート強化: {pattern} ({count}回発火) → report templateにデフォルト値追加せよ'
     elif count >= 10:
-        msg = f'高頻度FAIL: {pattern} ({count}回発火) → auto-fix化 or gate強化を検討せよ'
+        msg = f'高頻度FAIL: {pattern} ({count}回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり'
     else:
         continue
     # Deduplicate: normalize quotes then check substring match
@@ -208,10 +208,10 @@ except Exception:
 print()
 print('=== Loop Status ===')
 if fail_count > 0 and autofix_count == 0:
-    print('  WARNING: FAIL発生中だがAUTO-FIX未稼働。auto-fix対象拡大を検討せよ')
+    print('  WARNING: FAIL発生中だがAUTO-FIX未稼働。GP-107(消火4問)で判定後にauto-fix対象拡大を検討せよ')
     sys.exit(1)
 elif fail_count > pass_count * 0.2:
-    print('  WARNING: FAIL率20%超。gate強化または新auto-fixパターン追加を検討せよ')
+    print('  WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須')
     sys.exit(1)
 else:
     print('  OK: 第三層は健全')
