@@ -1,16 +1,13 @@
 package com.shogun.android
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -73,7 +70,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        NotificationHelper.initChannels(this)
         setContent {
             val context = LocalContext.current.applicationContext
             val themePreferences = remember(context) { ThemePreferences(context) }
@@ -84,19 +80,6 @@ class MainActivity : ComponentActivity() {
             }
         }
         handleShareIntent(intent)
-        // Only start NtfyService if notification permission is granted (Android 13+)
-        val hasNotifPerm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-        } else true
-        if (hasNotifPerm && getSharedPreferences(PrefsKeys.PREFS_NAME, MODE_PRIVATE)
-                .getBoolean(PrefsKeys.NOTIFICATION_ENABLED, true)) {
-            try {
-                startForegroundService(Intent(this, NtfyService::class.java))
-            } catch (_: Exception) {
-                // Foreground service start blocked by system — skip silently
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -133,14 +116,30 @@ class MainActivity : ComponentActivity() {
             .takeUnless { it.isNullOrEmpty() }
             ?: com.shogun.android.util.Defaults.NTFY_TOPIC
 
-        val total = imageUris.size
+        data class ImageData(val bytes: ByteArray, val mimeType: String, val filename: String)
+        val images = mutableListOf<ImageData>()
+        for (uri in imageUris) {
+            try {
+                val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: throw Exception("Cannot open image")
+                val mimeType = contentResolver.getType(uri) ?: "image/png"
+                val filename = getFilenameFromUri(uri)
+                    ?: "screenshot_${System.currentTimeMillis()}.png"
+                images.add(ImageData(bytes, mimeType, filename))
+            } catch (e: Exception) {
+                Toast.makeText(this, "画像読み取り失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+        if (images.isEmpty()) return
+
+        val total = images.size
         Toast.makeText(this, "ntfy送信中... (${total}件)", Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             var success = 0
             var failed = 0
-            for (uri in imageUris) {
+            for (image in images) {
                 try {
-                    sendImageToNtfy(uri, topic)
+                    sendImageToNtfy(image.bytes, image.mimeType, image.filename, topic)
                     success++
                 } catch (_: Exception) {
                     failed++
@@ -152,13 +151,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private suspend fun sendImageToNtfy(uri: Uri, topic: String) = withContext(Dispatchers.IO) {
-        val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            ?: throw Exception("Cannot open image")
-        val mimeType = contentResolver.getType(uri) ?: "image/png"
-        val filename = getFilenameFromUri(uri)
-            ?: "screenshot_${System.currentTimeMillis()}.png"
-
+    private suspend fun sendImageToNtfy(bytes: ByteArray, mimeType: String, filename: String, topic: String) = withContext(Dispatchers.IO) {
         val client = OkHttpClient()
         val requestBody = bytes.toRequestBody(mimeType.toMediaType())
         val request = Request.Builder()
