@@ -1,0 +1,66 @@
+worker_id: hayate
+task_id: cmd_training_L1_013
+parent_cmd: cmd_training_L1_013
+timestamp: '2026-03-25T23:47:51'
+status: done
+ac_version_read: 340ffaa1
+result:
+  summary: inbox_write.shの全4引数(TARGET,CONTENT,TYPE,FROM)の仕様、22種のメッセージtype、flock排他ロック+atomic
+    write+3回リトライの配信メカニズム、inotifywait連携のウェイクアップ二層構造、10種のエラー処理(引数バリデーション/パストラバーサル防止/忍者→将軍直送禁止/報告YAML
+    gate検証/git uncommitチェック等)を精査完了
+  details: '■引数仕様(4引数): $1=TARGET(必須,宛先エージェント名。cmd_*開始はエラー), $2=CONTENT(必須,メッセージ内容),
+    $3=TYPE(任意,デフォルトwake_up,22種), $4=FROM(任意,デフォルトunknown)。■メッセージtype一覧(22種): wake_up/task_assigned/task_cancel/cmd_new/report_received/uncommitted_block/review_draft/review_result/review_feedback/report_review/report_review_result/workaround_feedback/review_hint/analysis_result/gunshi_lesson_candidate/decomposition_feedback/verify_request/verify_result/clear_command(特殊:CLI直接操作)/model_switch(特殊:CLI直接操作)/recovery/quality_monitor(内部生成)。■配信メカニズム(二層構造):
+    第1層=メッセージ永続化(inbox_write.sh): flock -w 5でロック取得→Python3でYAML読込→メッセージ追加→tempfile+os.replaceでatomic
+    write。ロック失敗時3回リトライ(1秒間隔)、全失敗でntfy通知+exit 1。環境変数経由でPython3にデータ渡し(HIGH-1:インジェクション防止)。50メッセージ超過時オーバーフロー保護(未読全保持+既読最新30件)。第2層=ウェイクアップ(inbox_watcher.sh):
+    inotifywaitでinboxファイル変更検知→send-keysで短いnudge(inboxN)送信。エージェントは自分でinboxファイルを読む。■エラー処理(10種):
+    (1)引数空チェック→exit 1, (2)TARGET=cmd_*パターン検出→引数順序間違い防止, (3)ALLOWED_TARGETS照合→パストラバーサル防止,
+    (4)忍者→将軍直接送信禁止, (5)ninja_monitor送信先制限(karo/shogunのみ), (6)flock 3回リトライ+ntfy通知,
+    (7)report_received時gate_report_autofix.sh+gate_report_format.sh検証→FAIL時BLOCK,
+    (8)テンプレート状態検出(verdict未記入/FILL_THIS残存)→BLOCK, (9)git uncommittedチェック(忍者申告ファイル+target_path)→BLOCK,
+    (10)報告YAML存在確認→auto-done BLOCK。■特殊処理: Pre-action auto-capture(FROM=shogun/karo時に送信先ペインtmux
+    capture→shogun_action_log.txt記録,CTX:0%警告)、Lesson injection safety net(task_assigned時にrelated_lessons空なら自動注入)、Auto-done
+    hook(report_received+忍者→報告YAML確認後task status=done化)'
+purpose_validation:
+  cmd_purpose: inbox_write.shの全引数・配信メカニズム・エラー処理を精査し報告する修行
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: 精査対象の読解タスクであり、コード変更や新発見はなし。既存教訓L018(flock問題)とL209(report_received手順)が本スクリプトの設計に反映済みであることを確認
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: true
+  reason: 'L074: 本スクリプトには((PASS++))パターンはないが、set -eと算術評価の相互作用を意識するきっかけになった'
+- id: L063
+  useful: false
+  reason: 'L063: inbox_write.shはlessons.yamlのdict構造を正しく処理済み(L159-170のget lessons)。精査時の確認ポイントにはならなかった'
+- id: L225
+  useful: false
+  reason: 'L225: entity名義の混入問題は本タスクの対象外(inbox_write.shにMCP操作なし)'
+- id: L209
+  useful: true
+  reason: 'L209: report_received手順の旧式問題を理解した上で、inbox_write.sh内のreport_received処理(報告YAML検証+auto-done
+    hook)を精査できた'
+- id: L018
+  useful: true
+  reason: 'L018: flock排他ロックの重要性を理解した上で、本スクリプトのflock実装(L466-528)とatomic writeの設計意図を深く理解できた'
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: inbox_write.shの全引数と使い方を正確に記載したか
+    result: 'yes'
+  - check: メッセージ配信の仕組み(flock+inotifywait)を記載したか
+    result: 'yes'
+  - check: 報告YAMLをbash scripts/gates/gate_report_format.shで自己検証しPASSしたか
+    result: 'yes'
+verdict: PASS
