@@ -1,31 +1,33 @@
 task:
-  ac_version: 1c63e786
+  ac_version: 54dd64ce
   acceptance_criteria:
   - binary_checks:
-    - check: scripts/cmd_save.shの主要ロジック（関数構成・判定条件・入出力）を記載したか
+    - check: self_gate_checkを5項目dict形式でPASS/FAILを記入したか
       result: ''
-    - check: エラーハンドリングと例外ケースの処理を記載したか
+    - check: 非準拠箇所を具体的に指摘したか（result.detailsに記載）
       result: ''
-    description: scripts/cmd_save.shを精査し報告せよ
+    description: 指定報告YAMLのgate準拠度を精査しself_gate_checkに結果記入せよ
     id: AC1
   - binary_checks:
     - check: lesson_candidateにfound=trueと具体的なtitle+detailを記載したか（発見なしならfound=false+no_lesson_reasonに3文字以上の具体的理由）
       result: ''
     - check: lesson_candidateのprojectフィールドにinfraを記載したか
       result: ''
-    description: 精査で発見した教訓候補を正しい構造で報告せよ
+    description: レビューで得た教訓候補を正しい構造で報告せよ
     id: AC2
   bloom_level: null
-  command: '【修行Level 2 第2回】scripts/cmd_save.shを精査し、教訓候補を含めて報告せよ。 ■ 対象ファイル: scripts/cmd_save.sh
-    ■ L2の本質: lesson_candidateを正しい構造で書くこと。発見があればfound:true+title+detail+project。なければfound:false+no_lesson_reason(具体的理由3文字以上)。
-    報告YAMLを一発でgate PASSさせること。bash scripts/gates/gate_report_format.sh <自分の報告パス> で自己検証。
+  command: '【修行Level 3 第2回】queue/reports/hanzo_report_cmd_training_L2_003.yamlをレビューし、gate準拠度を評価して報告せよ。
+    ■ レビュー対象: queue/reports/hanzo_report_cmd_training_L2_003.yaml（他忍者のL2修行報告） ■ L3の本質:
+    (1)self_gate_checkをdict形式で正しく記入すること (2)レビューで得た教訓候補を報告すること ■ self_gate_check項目:
+    verdict_valid / bc_structure / lu_structure / lc_structure / field_complete の5項目をPASS/FAILで記入
+    ■ 判定基準: verdict_valid=PASS/FAILの二値か、bc_structure=全result欄yes/noか、lu_structure=全reason非空か、lc_structure=found+title/detail
+    or no_lesson_reasonか、field_complete=必須フィールド全充填か 報告YAMLを一発でgate PASSさせること。bash
+    scripts/gates/gate_report_format.sh <自分の報告パス> で自己検証。
 
     '
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
-    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
     ────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -47,10 +49,10 @@ task:
       pattern: type_error
     - count: 13
       pattern: field_missing
-    - count: 4
-      pattern: verdict_invalid
+    - count: 12
+      pattern: lu_structure_error
     gate_warning: '⚠ gate頻出FAIL: YAML型注意。dict({0:{},1:{}})禁止→list([{},{},{}])形式; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな;
-      verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+      lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
     source: karo_workarounds.yaml
     top_pattern: report_yaml_format(11件)
     total_workarounds: 19
@@ -58,7 +60,7 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_training_L2_007
+  parent_cmd: cmd_training_L3_018
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -72,16 +74,10 @@ task:
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-    id: L079
-    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-    id: L097
-    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-  report_filename: hayate_report_cmd_training_L2_007.yaml
-  report_path: queue/reports/hayate_report_cmd_training_L2_007.yaml
+  report_filename: hayate_report_cmd_training_L3_018.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L3_018.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: in_progress
   stop_for: []
-  target_path: scripts/cmd_save.sh
-  deployed_at: "2026-03-26T01:13:24"
+  target_path: queue/reports/hanzo_report_cmd_training_L2_003.yaml
+  deployed_at: "2026-03-26T01:44:06"
