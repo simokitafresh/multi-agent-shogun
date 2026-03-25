@@ -5,6 +5,14 @@
 # Usage: bash scripts/gates/gate_report_autofix.sh <report_yaml_path>
 # Exit: 0=修正完了(or修正不要), 1=auto-fix不可(要エージェント判断)
 # Stdout: AUTO-FIXED: ... / NO-FIX-NEEDED / UNFIXABLE: ...
+#
+# === GP-107: 消火検出4問ゲート ===
+# 新Fixを追加する前に4問で判定。1つでもNOなら消火構造 → BLOCKに切替えよ。
+#   Q1: 内容不変か？ (構造変換: YES / 値の推定・補完: NO)
+#   Q2: 忍者の判断を代行していないか？ (機械的変換: YES / 思考の代替: NO)
+#   Q3: BLOCKで代替可能か？ (可能ならBLOCKを選べ)
+#   Q4: 撤去しても忍者の学習ループは回るか？ (YES: 合法 / NO: 消火)
+# 撤去実績: GP-091,093,094,103,104,106 (全て上記Q1-Q4でNO判定→BLOCK化)
 
 set -e
 
@@ -25,50 +33,11 @@ try:
         raw = f.read()
     data = yaml.safe_load(raw)
 except Exception as e:
-    # === GP-091: YAML parse error raw text repair ===
-    # lesson_candidate: scalar + orphaned child keys → parse error
-    import json as _json91
-    _DQ = chr(34)
-    _NL = chr(10)
-    lines = raw.split(_NL)
-    repaired_lines = []
-    _did_repair = False
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        if line.startswith('lesson_candidate:') and (_DQ in line or chr(39) in line):
-            _colon_pos = line.index(chr(58))
-            _val = line[_colon_pos+1:].strip().strip(_DQ).strip(chr(39))
-            repaired_lines.append('lesson_candidate:')
-            repaired_lines.append('  found: true')
-            repaired_lines.append('  no_lesson_reason: ' + _DQ + _DQ)
-            repaired_lines.append('  title: ' + _DQ + 'lesson candidate auto-repaired' + _DQ)
-            repaired_lines.append('  detail: ' + _json91.dumps(_val, ensure_ascii=False))
-            repaired_lines.append('  project: infra')
-            _did_repair = True
-            i += 1
-            while i < len(lines) and lines[i].startswith('  ') and chr(58) in lines[i]:
-                _key = lines[i].strip().split(chr(58))[0]
-                if _key in ('found', 'no_lesson_reason', 'title', 'detail', 'project'):
-                    i += 1
-                else:
-                    break
-            continue
-        repaired_lines.append(line)
-        i += 1
-    if _did_repair:
-        repaired = _NL.join(repaired_lines)
-        try:
-            data = yaml.safe_load(repaired)
-            with open(report_path, 'w') as f:
-                f.write(repaired)
-            fixes = ['YAML parse error raw repair (lesson_candidate string->dict)']
-        except Exception as e2:
-            print(f'UNFIXABLE: YAML parse error repair failed: {e2}')
-            sys.exit(1)
-    else:
-        print(f'UNFIXABLE: YAML parse error: {e}')
-        sys.exit(1)
+    # === GP-091: 撤去(2026-03-25 消火→品質向上改修) ===
+    # 旧: YAML parse errorを自動修復しダミーコンテンツを捏造(消火構造)
+    # 新: YAML parse errorはそのままFAIL → 忍者がYAMLを正しく書き直す
+    print(f'UNFIXABLE: YAML parse error: {e}')
+    sys.exit(1)
 
 if not data or not isinstance(data, dict):
     print('UNFIXABLE: report is empty or not a dict')
@@ -76,35 +45,11 @@ if not data or not isinstance(data, dict):
 
 fixes = []
 
-# === Fix 22: binary_checks MISSING → empty dict ===
-# パターン: 忍者がbinary_checksキーを完全に省略。既存Fixの前に配置(Fix 5,8,9等がbcを参照)
-if 'binary_checks' not in data:
-    data['binary_checks'] = {}
-    fixes.append('binary_checks MISSING→{}復元')
-
-# === Fix 23: verdict MISSING → empty string ===
-# パターン: 忍者がverdictキーを完全に省略。Fix 9(verdict推定)の前に配置
-if 'verdict' not in data:
-    data['verdict'] = ''
-    fixes.append('verdict MISSING→空文字復元')
-
-# === Fix 24: purpose_validation MISSING → default structure ===
-# パターン: 忍者がpurpose_validationキーを完全に省略
-if 'purpose_validation' not in data:
-    data['purpose_validation'] = {'cmd_purpose': '', 'fit': True, 'purpose_gap': ''}
-    fixes.append('purpose_validation MISSING→デフォルト構造復元')
-
-# === Fix 25: files_modified MISSING → empty list ===
-# パターン: 忍者がfiles_modifiedキーを完全に省略
-if 'files_modified' not in data:
-    data['files_modified'] = []
-    fixes.append('files_modified MISSING→[]復元')
-
-# === Fix 26: result MISSING → default structure ===
-# パターン: 忍者がresultキーを完全に省略
-if 'result' not in data:
-    data['result'] = {'summary': '', 'details': ''}
-    fixes.append('result MISSING→デフォルト構造復元')
+# === Fix 22-28: 撤去(2026-03-25 消火→品質向上改修) ===
+# 旧: MISSINGフィールドにデフォルト値を挿入 → gateがPASS → 家老workaround発生(消火構造)
+# 新: MISSINGはautofixしない → gate_report_format.shがBLOCK → 忍者が修正 → 学習ループ回転
+# deepdive Phase 5: 消火=免疫応答を妨げる=抗体が生まれない
+# 下流Fix(5,8,9等)は.get()で安全にスキップされる
 
 # === Fix 1: report: wrapper → flatten ===
 # パターン: 忍者が report: の下に全フィールドをネストする旧形式
@@ -235,22 +180,9 @@ if isinstance(lu, list):
             item['id'] = f'UNKNOWN_{i}'
             fixes.append(f'lessons_useful[{i}]: id=UNKNOWN_{i}仮付番')
 
-# === Fix 21: lessons_useful reason空 + useful=false → 自動補完 (GP-094) ===
-# パターン: autofix再注入(GP-066)がreason=''で生成 → 忍者がuseful=falseだけ設定しreason省略
-# useful=false時の理由は「未適用」で十分(消火ではない。評価済みの理由補完)
-lu = data.get('lessons_useful')
-if isinstance(lu, list):
-    _reason_filled = False
-    for _item in lu:
-        if isinstance(_item, dict):
-            _useful = _item.get('useful')
-            _reason = str(_item.get('reason', '')).strip()
-            if _useful is False and not _reason:
-                _lid21 = str(_item.get('id', ''))
-                _item['reason'] = f'{_lid21}は今回のタスクでは直接適用なし' if _lid21 else '今回のタスクでは直接適用なし'
-                _reason_filled = True
-    if _reason_filled:
-        fixes.append('lessons_useful reason空(useful=false)→自動補完')
+# === Fix 21: 撤去(2026-03-25 消火→品質向上改修) ===
+# 旧: lessons_useful reason空を自動補完 → 忍者の評価放棄を隠す(消火構造)
+# 新: reason空のままgate_report_format.shがBLOCK → 忍者が自分で評価理由を書く
 
 # === Fix 5: binary_checks AC values string → list (拡張) ===
 # パターン: 忍者がAC値を文字列で記入。複数パターンを捕捉:
@@ -279,50 +211,13 @@ if isinstance(bc, dict):
                 m = _re.search(r'check:\s*(.+?)\s*,\s*result:\s*(.+)', ac_val)
                 if m:
                     converted = [{'check': m.group(1).strip(), 'result': m.group(2).strip()}]
-            # Step 3: タスクYAML参照型キーワード抽出(Fix 13: 散文からYES/NO推定)
-            # 注意: \bは日英混在テキストで誤動作する(全PASS等)。containment検索を使用。
-            if converted is None:
-                # 散文中のYES/NO/PASS/FAILキーワードでresult推定
-                _positive = bool(_re.search(r'(?i)(yes|pass|ok|成功|取得|完了|できた|確認済)', ac_val))
-                _negative = bool(_re.search(r'(?i)(fail|失敗|不可|できな|エラー)', ac_val))
-                if _positive and not _negative:
-                    _result = 'yes'
-                elif _negative and not _positive:
-                    _result = 'no'
-                else:
-                    _result = None
-                if _result is not None:
-                    # タスクYAMLから本来のcheck名を取得
-                    _task_checks = []
-                    try:
-                        _worker = data.get('worker_id', '')
-                        if _worker:
-                            _tpath = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker}.yaml')
-                            if os.path.exists(_tpath):
-                                with open(_tpath) as _tf:
-                                    _tdata = yaml.safe_load(_tf)
-                                _task = _tdata if not isinstance(_tdata, dict) or 'task' not in _tdata else _tdata.get('task', {})
-                                _acs = _task.get('acceptance_criteria', [])
-                                if isinstance(_acs, list):
-                                    for _ac_item in _acs:
-                                        if isinstance(_ac_item, dict) and _ac_item.get('id') == ac_key:
-                                            _bc_list = _ac_item.get('binary_checks', [])
-                                            if isinstance(_bc_list, list):
-                                                _task_checks = _bc_list
-                    except Exception:
-                        pass
-                    if _task_checks:
-                        converted = []
-                        for _tc in _task_checks:
-                            if isinstance(_tc, str):
-                                _check_name = _tc.split(':')[0].strip() if ':' in _tc else _tc
-                                converted.append({'check': _check_name, 'result': _result})
-                        if not converted:
-                            converted = None
-                    else:
-                        # タスクYAML参照不可→散文要約+result推定
-                        _summary = ac_val[:50].replace('\n', ' ').strip()
-                        converted = [{'check': _summary, 'result': _result}]
+            # === Fix 5 Step 3: 撤去(2026-03-25 消火→品質向上改修) ===
+            # 旧: 散文テキストからYES/NO/PASS/FAILキーワードを推定して構造化
+            # 問題: 忍者のフォーマット不備を自動変換で隠す(消火構造)
+            #   - 散文→YES/NO推定は情報を捏造する可能性がある
+            #   - 忍者は正しいフォーマットを学ばない（BLOCKされないため）
+            # 新: 散文のままgate_report_format.shがBLOCK → 忍者がcheck/result形式で書き直す
+            # deepdive Phase 5: 消火=免疫応答を妨げる。BLOCKこそが学習の起点。
             if converted is not None:
                 bc[ac_key] = converted
                 bc_fixed = True
@@ -413,30 +308,11 @@ if 'lessons_useful' in data and data['lessons_useful'] is None:
     data['lessons_useful'] = []
     fixes.append('lessons_useful null→空list')
 
-# === Fix 15: lessons_useful empty list → task YAML再注入 (GP-066) ===
-# 忍者がGP-001テンプレートを上書き(空リスト化) → タスクYAMLのrelated_lessonsから再注入
-# Level 1(BLOCK) → Level 3(autofix)昇格。家老workaround排除。
-lu = data.get('lessons_useful')
-if isinstance(lu, list) and len(lu) == 0:
-    try:
-        _worker = data.get('worker_id', '')
-        if _worker:
-            _tpath = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker}.yaml')
-            if os.path.exists(_tpath):
-                with open(_tpath) as _tf:
-                    _tdata = yaml.safe_load(_tf)
-                _task = _tdata if not isinstance(_tdata, dict) or 'task' not in _tdata else _tdata.get('task', {})
-                _rl = _task.get('related_lessons', [])
-                if isinstance(_rl, list) and _rl:
-                    _reinject = []
-                    for r in _rl:
-                        if isinstance(r, dict) and r.get('id'):
-                            _reinject.append({'id': str(r['id']), 'useful': False, 'reason': ''})
-                    if _reinject:
-                        data['lessons_useful'] = _reinject
-                        fixes.append(f'lessons_useful 空list→タスクYAML再注入({len(_reinject)}件)')
-    except Exception:
-        pass
+# === Fix 15: 撤去(2026-03-25 消火→品質向上改修) ===
+# 旧: lessons_useful空list→task YAMLから再注入(useful:False,reason:''のデフォルト値)
+# 問題: 忍者のlesson評価放棄を体裁だけ復元(消火構造)。reason空で品質ゼロ
+# 新: 空listのままgate_report_format.shがBLOCK → 忍者がlesson評価を自分で記入
+# 軍師gate hint: テンプレートに注入済みの教訓にuseful/reasonを記入せよ。空リストで上書きするな
 
 # === Fix 7: acceptance_criteria wrapper → flatten ===
 # パターン: 忍者がacceptance_criteriaの下に結果を入れる独自形式
@@ -450,9 +326,11 @@ if 'acceptance_criteria' in data and 'binary_checks' not in data:
 # === Fix 9: verdict非標準値 → binary_checksから推定 (GP-092拡張) ===
 # パターン: 忍者がverdictを空/None/None文字列/CONDITIONAL_PASS等の非標準値で提出
 # PASS/FAIL以外の全値でbinary_checksから機械的に導出を試みる
+# NOTE: verdict MISSING(キー不在)の場合は推定しない(消火防止 2026-03-25)
+#   → gate_report_format.shがBLOCK → 忍者が自分でverdictを記入
 verdict_val = data.get('verdict')
 _is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ('PASS', 'FAIL')
-if not _is_valid_verdict:
+if not _is_valid_verdict and 'verdict' in data:
     bc = data.get('binary_checks')
     if isinstance(bc, dict) and bc:
         pass_count = 0
@@ -478,31 +356,9 @@ if not _is_valid_verdict:
             data['verdict'] = 'FAIL' if fail_count > 0 else 'PASS'
             fixes.append(f'verdict推定({pass_count}PASS/{fail_count}FAIL)')
 
-# === Fix 10: no_lesson_reason自動補完 (GP-093 復活) ===
-# 旧Fix10はN/Aを入れてgate placeholderチェックでFAILした(除去: 2026-03-23)
-# GP-093: タスク種別から実質的な理由文を生成。placeholder検出を回避。
-# found=false時のno_lesson_reasonは低価値(真に重要なのはfound=true教訓)
-lc = data.get('lesson_candidate')
-if isinstance(lc, dict) and not lc.get('found') and not str(lc.get('no_lesson_reason', '')).strip():
-    _task_type = ''
-    try:
-        _worker = data.get('worker_id', '')
-        if _worker:
-            _tpath10 = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker}.yaml')
-            if os.path.exists(_tpath10):
-                with open(_tpath10) as _tf10:
-                    _tdata10 = yaml.safe_load(_tf10)
-                _task10 = _tdata10 if not isinstance(_tdata10, dict) or 'task' not in _tdata10 else _tdata10.get('task', {})
-                _task_type = str(_task10.get('type', ''))
-    except Exception:
-        pass
-    _reason_map = {
-        'implement': 'AC指示通りの実装変更。新規教訓なし',
-        'recon': '偵察報告完了。追加教訓なし',
-        'review': 'レビュー完了。新規教訓なし',
-    }
-    lc['no_lesson_reason'] = _reason_map.get(_task_type, 'タスク完了。新規教訓なし')
-    fixes.append('no_lesson_reason タスク種別から自動補完')
+# === Fix 10: 撤去(2026-03-25 消火→品質向上改修) ===
+# 旧: no_lesson_reasonをタスク種別から自動補完 → 忍者の思考放棄を隠す(消火構造)
+# 新: 空理由のままgate_report_format.shがBLOCK → 忍者が自分で理由を考える
 
 # === Fix 16: self_gate_check value normalization (GP-068) ===
 sgc = data.get('self_gate_check')
@@ -523,24 +379,12 @@ if isinstance(sgc, dict):
         data['self_gate_check'] = sgc
         fixes.append('self_gate_check値正規化(ok/yes→PASS)')
 
-# === Fix 17: ac_version_read欠落 → タスクYAMLから補完 (GP-070) ===
-# 忍者がac_version_readを記入し忘れるパターン(影丸WA頻発)。
-# タスクYAMLのac_versionから補完。gate_report_format.shのrequiredチェックで事前BLOCKを回避。
-if 'ac_version_read' not in data or not data.get('ac_version_read'):
-    try:
-        _worker = data.get('worker_id', '')
-        if _worker:
-            _tpath = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker}.yaml')
-            if os.path.exists(_tpath):
-                with open(_tpath) as _tf:
-                    _tdata = yaml.safe_load(_tf)
-                _task = _tdata if not isinstance(_tdata, dict) or 'task' not in _tdata else _tdata.get('task', {})
-                _acv = _task.get('ac_version', '')
-                if _acv:
-                    data['ac_version_read'] = str(_acv)
-                    fixes.append(f'ac_version_read タスクYAMLから補完({_acv})')
-    except Exception:
-        pass
+# === Fix 17: 撤去(2026-03-25 消火→品質向上改修) ===
+# 旧: ac_version_read欠落→タスクYAMLから自動補完 → gate PASS(消火構造)
+# 問題: ac_version_readの目的は忍者がACを実際に読んだことの証明(attestation)
+#   autofixが補完すると忍者はACを読まなくても通る → attestation機能が無意味化
+# 新: ac_version_read欠落のままgate_report_format.shがBLOCK → 忍者がACを読んでハッシュをコピー
+# deepdive Phase 5: 証明を代行する自動化=免疫応答の無力化
 
 # === Fix 19: binary_checks [N] key pattern → proper check/result (GP-088) ===
 # パターン: 忍者がbcを [{[0]: {result: PASS}, [1]: {result: PASS}}] の番号キーdict形式で記入。
