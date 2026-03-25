@@ -1,0 +1,70 @@
+worker_id: saizo
+task_id: null
+parent_cmd: cmd_training_L1_028
+timestamp: '2026-03-26T00:35:30'
+status: completed
+ac_version_read: d5dadae3
+result:
+  summary: inbox_write.sh(638行)の全ロジックを精査完了。メッセージtype21種定義、5段gate統合(sender/target制約→pre-send
+    capture→教訓注入safety net→報告format gate→git uncommitted check)、flock排他3箇所(inbox書込み/auto-done/軍師通知)+atomic
+    write(tempfile→os.replace)、inotifywait連携(watcher側がファイル変更を検知→nudge送信、WSL2はstatポーリング代替)の全構造を記載
+  details: '■全メッセージtype定義(21種): wake_up(デフォルト汎用), task_assigned(家老→忍者), task_cancel(取消),
+    cmd_new(将軍→家老), report_received(忍者→家老/検証+auto-done hook付き), uncommitted_block(未commit通知),
+    review_draft(家老→軍師), review_result(軍師→家老), review_feedback(GATEフィードバック), report_review(報告一次レビュー),
+    report_review_result(レビュー結果), workaround_feedback(workaround原因共有), review_hint(レビューヒント),
+    analysis_result(idle時分析結果), gunshi_lesson_candidate(軍師教訓候補), decomposition_feedback(分解FB),
+    verify_request(RC再検証依頼), verify_result(RC再検証結果), clear_command(CLI直接/clear), model_switch(CLI直接/model切替),
+    recovery(復帰通知)。■gate統合ロジック5段: (1)L58-91 パストラバーサル防止+sender/target制約: agent_config.shからget_allowed_targetsで有効ターゲット一覧取得、忍者→将軍直接送信禁止(家老経由強制)、ninja_monitor→karo/shogunのみ許可。INBOX_WRITE_TEST=1でテスト時スキップ。(2)L106-136
+    Pre-action auto-capture: 将軍/家老からの送信時に送信先ペイン状態を自動キャプチャ+logs/shogun_action_log.txtに永続記録。task_assigned時CTX:0%なら警告(STALL高リスク)。(3)L138-216
+    Lesson injection safety net: task_assigned時にtask YAMLのrelated_lessonsが空なら、PJ+platform教訓からuniversalタグ付き教訓を最大10件自動注入(deploy_task.sh未使用時のラルフループ断絶防止)。(4)L218-458
+    Report format gate(report_received+忍者送信者のみ): Phase1=gate_report_autofix.sh(機械的自動修正)→Phase2=gate_report_format.sh(フォーマット検証)→GP-071テンプレート状態検出(verdict未記入orFILL_THIS残存→BLOCK)→品質問題(verdict記入済+FAIL→軍師に監視通知quality_monitor+BLOCK)→Phase3=git
+    uncommitted check(報告YAMLのfiles_modified+task YAMLのtarget_pathで対象ファイル特定→未commitあればBLOCK)。(5)L531-621
+    Auto-done hook: report_received+忍者→task YAML statusをdoneに自動遷移。report YAML存在検証(cmd_813教訓)でファイル未存在時はdone遷移BLOCK。冪等性確保(done/failed/blockedは上書きしない)。■flock排他とinotifywait連携:
+    flock排他3箇所: (a)inbox YAML書込み flock -w 5 200>LOCKFILE(L466-528、3回リトライ+失敗時ntfy通知)(b)軍師inbox書込み
+    flock -w 5 200>GUNSHI_INBOX.lock(L345-372)(c)auto-done task更新 flock -w 5 201>TASK_LOCKFILE(L585-618)。全書込みでatomic
+    write(python3 tempfile.mkstemp→os.replace)。inotifywait連携: inbox_write.shがatomic
+    writeでinboxファイルを更新→inbox_watcher.shのinotifywait(CLOSE_WRITE監視)が変更検知→短いnudge(inboxN)をtmux
+    send-keys送信。WSL2の/mnt/c上ではinotifyが効かないためstatポーリングで代替。watcher側の責務であり本スクリプト内にinotifywait呼出はない。■Overflow
+    protection: メッセージ50件超で古い既読メッセージを刈込み(全未読+直近30既読を保持)'
+purpose_validation:
+  cmd_purpose: inbox_write.shの全ロジックを精査し、type定義・gate統合・flock排他・inotifywait連携の全体像を把握する修行課題
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: inbox_write.shの構造は教訓L018(flock+Edit競合)やL209(auto-done hook)で既知。新規発見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: true
+  reason: 'L074: ((PASS++))問題は本スクリプトに直接該当しないが、set -e環境でのexit code意識を強化。inbox_write.shもset
+    -eで動作しておりexit codeの理解に有用'
+- id: L063
+  useful: false
+  reason: 'L063: lessons.yamlのdict構造知識。本タスクはinbox_write.sh精査であり、lessons.yamlパース部分(L163-184)でdata.get(''lessons'',[])の正しい形を確認できたが、直接の作業影響なし'
+- id: L225
+  useful: false
+  reason: 'L225: entity名義の混入検出知識。inbox_write.sh精査では該当場面なし'
+- id: L209
+  useful: true
+  reason: 'L209: inbox_write側のauto-done hookの問題を教訓として記載。本タスクでauto-done hook(L531-621)の報告YAML存在検証(cmd_813)を精査する際の文脈理解に直結した'
+- id: L018
+  useful: true
+  reason: 'L018: flock+Edit toolの競合問題。inbox_write.shのflock排他(3箇所)+atomic writeの設計理由を理解する上で最も重要な教訓。なぜflock+tempfile+os.replaceが必要かの根拠'
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: inbox_write.shの全メッセージtype定義とgate統合ロジックを記載したか
+    result: 'yes'
+  - check: flock排他とinotifywait連携の仕組みを記載したか
+    result: 'yes'
+verdict: PASS
