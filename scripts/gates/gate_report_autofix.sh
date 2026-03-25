@@ -76,6 +76,36 @@ if not data or not isinstance(data, dict):
 
 fixes = []
 
+# === Fix 22: binary_checks MISSING → empty dict ===
+# パターン: 忍者がbinary_checksキーを完全に省略。既存Fixの前に配置(Fix 5,8,9等がbcを参照)
+if 'binary_checks' not in data:
+    data['binary_checks'] = {}
+    fixes.append('binary_checks MISSING→{}復元')
+
+# === Fix 23: verdict MISSING → empty string ===
+# パターン: 忍者がverdictキーを完全に省略。Fix 9(verdict推定)の前に配置
+if 'verdict' not in data:
+    data['verdict'] = ''
+    fixes.append('verdict MISSING→空文字復元')
+
+# === Fix 24: purpose_validation MISSING → default structure ===
+# パターン: 忍者がpurpose_validationキーを完全に省略
+if 'purpose_validation' not in data:
+    data['purpose_validation'] = {'cmd_purpose': '', 'fit': True, 'purpose_gap': ''}
+    fixes.append('purpose_validation MISSING→デフォルト構造復元')
+
+# === Fix 25: files_modified MISSING → empty list ===
+# パターン: 忍者がfiles_modifiedキーを完全に省略
+if 'files_modified' not in data:
+    data['files_modified'] = []
+    fixes.append('files_modified MISSING→[]復元')
+
+# === Fix 26: result MISSING → default structure ===
+# パターン: 忍者がresultキーを完全に省略
+if 'result' not in data:
+    data['result'] = {'summary': '', 'details': ''}
+    fixes.append('result MISSING→デフォルト構造復元')
+
 # === Fix 1: report: wrapper → flatten ===
 # パターン: 忍者が report: の下に全フィールドをネストする旧形式
 if 'report' in data and isinstance(data['report'], dict):

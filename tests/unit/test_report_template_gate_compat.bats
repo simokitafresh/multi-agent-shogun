@@ -490,6 +490,157 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
     [ "$output" = "no" ]
 }
 
+# --- Fix 22-26: MISSING field restoration via autofix ---
+
+@test "Fix22: binary_checks MISSING → autofix restores empty dict" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # Remove binary_checks key entirely
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+del data['binary_checks']
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"binary_checks MISSING"* ]]
+    # Verify restored
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+bc = data.get('binary_checks')
+assert isinstance(bc, dict), f'Expected dict, got {type(bc)}'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "OK" ]
+}
+
+@test "Fix23: verdict MISSING → autofix restores key" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # Remove verdict key entirely
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+del data['verdict']
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    # Debug: show file content and autofix output
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    echo "status=$status output=$output" >&3
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"verdict MISSING"* ]]
+    # Verify verdict key exists after autofix (Fix 9 may override '' to PASS/FAIL)
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+assert 'verdict' in data, 'verdict key missing'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "OK" ]
+}
+
+@test "Fix24: purpose_validation MISSING → autofix restores default structure" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # Remove purpose_validation key entirely
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+del data['purpose_validation']
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"purpose_validation MISSING"* ]]
+    # Verify restored structure
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+pv = data.get('purpose_validation')
+assert isinstance(pv, dict), f'Expected dict, got {type(pv)}'
+assert 'cmd_purpose' in pv, 'cmd_purpose missing'
+assert 'fit' in pv, 'fit missing'
+assert 'purpose_gap' in pv, 'purpose_gap missing'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "OK" ]
+}
+
+@test "Fix25: files_modified MISSING → autofix restores empty list" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # Remove files_modified key entirely
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+del data['files_modified']
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"files_modified MISSING"* ]]
+    # Verify restored
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+fm = data.get('files_modified')
+assert isinstance(fm, list), f'Expected list, got {type(fm)}'
+assert len(fm) == 0, f'Expected empty list, got {fm}'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "OK" ]
+}
+
+@test "Fix26: result MISSING → autofix restores summary+details structure" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # Remove result key entirely
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+del data['result']
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"result MISSING"* ]]
+    # Verify restored structure
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+r = data.get('result')
+assert isinstance(r, dict), f'Expected dict, got {type(r)}'
+assert 'summary' in r, 'summary missing'
+assert 'details' in r, 'details missing'
+assert r['summary'] == '', f'Expected empty string, got {repr(r[\"summary\"])}'
+assert r['details'] == '', f'Expected empty string, got {repr(r[\"details\"])}'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "OK" ]
+}
+
 @test "GP-071: template state when verdict is null" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     python3 -c "
