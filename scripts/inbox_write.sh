@@ -333,8 +333,10 @@ except Exception:
                             exit 1
                         fi
 
-                        # Phase 3: 品質問題→軍師に自動ルーティング（第二層分離）
-                        # auto-fixで直せない = 品質判断が必要 = 軍師の仕事
+                        # Phase 3: 品質問題→軍師に監視通知（第二層分離）
+                        # GP-102: 修正指示→監視通知に変更(消火→品質向上)
+                        # 旧: 軍師に修正を指示 → 軍師が代行修正 = 消火の移転(忍者が学ばない)
+                        # 新: 軍師に監視通知のみ → 忍者がBLOCKエラーを見て自分で修正 → 学習ループ回転
                         GUNSHI_INBOX="$SCRIPT_DIR/queue/inbox/gunshi.yaml"
                         ROUTE_TS=$(date -Is)
                         ROUTE_ID="msg_$(date +%s%N | head -c 16)"
@@ -356,9 +358,9 @@ msgs.append({
     'id': os.environ['ROUTE_ID'],
     'from': 'system',
     'timestamp': os.environ['ROUTE_TS'],
-    'type': 'quality_fix_request',
+    'type': 'quality_monitor',
     'read': False,
-    'content': f\"忍者{os.environ['ROUTE_FROM']}の報告YAMLに品質問題。auto-fix不可のため軍師に転送。修正後にinbox_writeでkaroに送信せよ。\",
+    'content': f\"【監視通知】忍者{os.environ['ROUTE_FROM']}の報告YAMLにgate FAIL。忍者にBLOCK済み。忍者が自分で修正して再送信する。軍師は直接修正するな(消火行為)。パターン分析用の記録。\",
     'report_path': os.environ['REPORT_FILE'],
     'gate_errors': os.environ['GATE_ERRORS'],
     'original_ninja': os.environ['ROUTE_FROM'],
@@ -368,7 +370,7 @@ with open(inbox_path, 'w') as f:
     yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 " 2>/dev/null
                         ) 200>"$GUNSHI_INBOX.lock" 2>/dev/null || true
-                        echo "[report_quality_route] 品質問題を軍師にも転送済み" >&2
+                        echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2
                         # BLOCK: verdict記入済み+gate FAIL → 忍者が修正して再送信するまでkaroに届けない
                         echo "" >&2
                         echo "==============================" >&2
