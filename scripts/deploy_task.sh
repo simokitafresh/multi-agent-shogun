@@ -324,8 +324,17 @@ generate_report_template() {
             if [[ "$stale_basename" == "${ninja_name}_report_"* ]]; then
                 continue
             fi
-            # 他忍者の報告: 無条件で保護
-            log "report_template: PROTECTED other ninja report (${stale_basename})"
+            # GP-105: 他忍者の報告: verdict判定でstale検出(STALL再配備対応)
+            # 旧: 無条件保護 → STALL時にテンプレートが残留 → gate BLOCK → 家老手動移動(WA)
+            # 新: verdict空=テンプレート(stale)→アーカイブ、verdict有=完了報告→保護
+            local _other_verdict="${_rpt_verdict["$stale_report"]:-}"
+            if [[ -n "$_other_verdict" && "$_other_verdict" != "null" && "$_other_verdict" != '""' ]]; then
+                log "report_template: PROTECTED other ninja report (${stale_basename}, verdict=${_other_verdict})"
+            else
+                mkdir -p "$SCRIPT_DIR/archive/reports/stale"
+                mv "$stale_report" "$SCRIPT_DIR/archive/reports/stale/"
+                log "report_template: stale other ninja template archived (${stale_basename}, reassignment detected)"
+            fi
         done
     fi
 
