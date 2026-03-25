@@ -1,23 +1,31 @@
 task:
-  ac_version: 8b8d733f
+  ac_version: 40ed4b45
   acceptance_criteria:
   - binary_checks:
-    - check: ntfy_listener.shのメッセージ受信・inbox連携・watchdog全体を記載したか
+    - check: cmd_complete_gate.shの主要ロジック（関数構成・判定条件・入出力）を記載したか
       result: ''
-    - check: dual watchdog構成とWSL2環境での制約対応を記載したか
+    - check: エラーハンドリングと例外ケースの処理を記載したか
       result: ''
-    description: ntfy_listener.shの全ロジックを精査し報告せよ
+    description: cmd_complete_gate.shを精査し報告せよ
     id: AC1
+  - binary_checks:
+    - check: lesson_candidateにfound=trueと具体的なtitle+detailを記載したか（発見なしならfound=false+no_lesson_reasonに3文字以上の具体的理由）
+      result: ''
+    - check: lesson_candidateのprojectフィールドにinfraを記載したか
+      result: ''
+    description: 精査で発見した教訓候補を正しい構造で報告せよ
+    id: AC2
   bloom_level: null
-  command: '【修行Level 1 第6回】scripts/ntfy_listener.shを精査し報告せよ。 ■ 対象ファイル: scripts/ntfy_listener.sh
-    ■ 修行の本質: 報告YAMLを一発でgate PASSさせること。gate_report_format.shで自己検証せよ: bash scripts/gates/gate_report_format.sh
-    <自分の報告パス> BLOCKされたら自力で修正し再提出。一発PASSが目標。'
-  deployed_at: '2026-03-26T00:43:14'
+  command: '【修行Level 2 第1回】scripts/cmd_complete_gate.shを精査し、教訓候補を含めて報告せよ。 ■ 対象ファイル:
+    scripts/cmd_complete_gate.sh ■ L2の本質: lesson_candidateを正しい構造で書くこと。発見があればfound:true+title+detail+project。なければfound:false+no_lesson_reason(具体的理由3文字以上)。
+    報告YAMLを一発でgate PASSさせること。bash scripts/gates/gate_report_format.sh <自分の報告パス> で自己検証。'
+  deployed_at: '2026-03-26T00:58:41'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L169: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、\"\
-    を含むログでYAMLが壊れ\n────────────────────────────────────────\n\n"
+    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -36,8 +44,10 @@ task:
     top_pattern: report_yaml_format(7件)
     total_workarounds: 11
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
-  parallel_ok: []
-  parent_cmd: cmd_training_L1_034
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_training_L2_004
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -51,16 +61,19 @@ task:
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れる。append系は
-      flock + parse + dump の原子トランザクションに統一すべし。
-    id: L169
-    summary: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れる。append系は
-      flock + parse + dump の原子トランザクションに統一すべし。
-  report_filename: saizo_report_cmd_training_L1_034.yaml
-  report_path: queue/reports/saizo_report_cmd_training_L1_034.yaml
+  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+    id: L097
+    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
+  - detail: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
+      '_report\.yaml')で影響範囲を完全列挙してからスコープを
+    id: L085
+    summary: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
+      '_report\.yaml')で影響範囲を完全列挙してからスコープを
+  report_filename: saizo_report_cmd_training_L2_004.yaml
+  report_path: queue/reports/saizo_report_cmd_training_L2_004.yaml
   role_reminder: 忍者saizo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
   stop_for: []
-  target_path: scripts/ntfy_listener.sh
+  target_path: scripts/cmd_complete_gate.sh
   task_type: impl
   type: impl
