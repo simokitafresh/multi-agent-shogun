@@ -121,6 +121,14 @@ QG_TEMPLATE
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
         echo '  例: q6_not_hiding: "no — Vercel化は構造改革であり表面的対処ではない"' >&2
     fi
+
+    # --- Check 3.7: チェックリスト制約転写確認（WARNING） ---
+    # cmd_1397事故: チェックリストStep7(再計算禁止)がcmdに転写されず忍者が再計算実行
+    # cmdにチェックリスト参照がある場合、隣接Step制約の転写を促す
+    if echo "$CMD_BLOCK" | grep -qiE 'チェックリスト|checklist-'; then
+        echo "WARNING: チェックリスト参照cmdです。隣接Stepの🛑制約(禁止事項)をACまたは制約欄に転写しましたか？" >&2
+        echo "  (cmd_1397教訓: Step7再計算禁止がcmd未記載→忍者が再計算実行)" >&2
+    fi
 fi
 
 # --- Check 4: flock競合検出 ---
