@@ -1,0 +1,49 @@
+worker_id: tobisaru
+task_id: cmd_training_L1_024
+parent_cmd: cmd_training_L1_024
+timestamp: '2026-03-26T00:01:00'
+status: done
+ac_version_read: 21824465
+result:
+  summary: cmd_save.shは将軍のcmd保存前安全チェック。6段チェック+3情報表示。品質ゲートq1-q3+q5=BLOCK(exit1)、q4+q6=WARNING(段階的導入)。WARN_COUNT>0でexit1。軍師直近指摘の自動表示はshow_gunshi_recent_issues()で実装済み。
+  details: '6段チェック構成: Check1(L41-48)=cmdブロック存在WARN, Check2(L50-57)=アーカイブ重複WARN, Check3(L59-132)=品質ゲート(q1消火/q2学習/q3品質/q5一次情報源=BLOCK,
+    q4深堀り度/q6自動消火=WARNING, Check3.7チェックリスト制約転写WARNING), Check4(L134-139)=flock競合WARN,
+    Check5(L141-148)=未コミット変更WARN, Check6(L150-178)=GP重複WARN表示のみ。情報表示: show_quality_summary(L181-234)直近10件統計+5件パターン警告,
+    show_gunshi_recent_issues(L237-280)直近3件REQ_CHANGES/FAIL, show_gunshi_pane_status(L283-303)軍師ペイン最終3行。'
+purpose_validation:
+  cmd_purpose: 将軍のcmd保存前に品質ゲート(q1-q6)+競合+重複+未コミットをチェックし低品質cmdの家老委任を防止
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既に安定稼働中のスクリプト。新規教訓に値する発見なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: cmd_save.shに((PASS++))パターンなし。WARN_COUNT=$((WARN_COUNT+1))で安全に記述済み
+- id: L063
+  useful: false
+  reason: bashスクリプトでありPythonのYAMLパース処理なし。lessons.yaml構造知識は不要
+- id: L225
+  useful: false
+  reason: MCP entity名義混入の教訓。cmd_save.sh精査にMCP操作は関係しない
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: 品質ゲートq1-q6の全判定条件とBLOCK/WARNING閾値を記載したか
+    result: 'yes'
+  - check: 軍師レビュー指摘の自動表示機能を記載したか
+    result: 'yes'
+  - check: 報告YAMLをbash scripts/gates/gate_report_format.shで自己検証しPASSしたか
+    result: 'yes'
+verdict: PASS
