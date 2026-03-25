@@ -26,29 +26,34 @@ if [ "${1:-}" = "--resolve" ]; then
       exit 1
     fi
 
-    python3 -c "
-import yaml, sys
+    INSIGHTS_FILE_ENV="$INSIGHTS_FILE" RESOLVE_ID_ENV="$resolve_id" TS_ENV="$ts" \
+    python3 - <<'PYEOF'
+import yaml, sys, os
 
-with open('$INSIGHTS_FILE', 'r') as f:
+insights_file = os.environ['INSIGHTS_FILE_ENV']
+resolve_id = os.environ['RESOLVE_ID_ENV']
+ts = os.environ['TS_ENV']
+
+with open(insights_file, 'r') as f:
     data = yaml.safe_load(f) or {}
 
 insights = data.get('insights', [])
 found = False
 for item in insights:
-    if item.get('id') == '$resolve_id':
+    if item.get('id') == resolve_id:
         item['status'] = 'done'
-        item['resolved_at'] = '$ts'
+        item['resolved_at'] = ts
         found = True
         break
 
 if not found:
-    print('ERROR: id not found: $resolve_id', file=sys.stderr)
+    print(f'ERROR: id not found: {resolve_id}', file=sys.stderr)
     sys.exit(1)
 
-with open('$INSIGHTS_FILE', 'w') as f:
+with open(insights_file, 'w') as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-print('RESOLVED: $resolve_id')
-"
+print(f'RESOLVED: {resolve_id}')
+PYEOF
   ) 200>"$INSIGHTS_FILE.lock"
   exit 0
 fi
@@ -71,44 +76,53 @@ id="INS-$(date '+%Y%m%d-%H%M%S%3N')-$(cut -c1-4 /proc/sys/kernel/random/uuid)"
   fi
 
   # Append entry via Python (safe YAML handling + dedup check)
-  result=$(python3 -c "
-import yaml, sys
+  # Pass values via env vars to prevent shell injection (cmd_1407 AC1)
+  result=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" MSG_ENV="$msg" PRIORITY_ENV="$priority" \
+           SOURCE_INFO_ENV="$source_info" ID_ENV="$id" TS_ENV="$ts" \
+           python3 - <<'PYEOF'
+import yaml, sys, os
 
-with open('$INSIGHTS_FILE', 'r') as f:
+insights_file = os.environ['INSIGHTS_FILE_ENV']
+msg = os.environ['MSG_ENV']
+priority = os.environ['PRIORITY_ENV']
+source_info = os.environ['SOURCE_INFO_ENV']
+entry_id = os.environ['ID_ENV']
+ts = os.environ['TS_ENV']
+
+with open(insights_file, 'r') as f:
     data = yaml.safe_load(f) or {}
 
 if 'insights' not in data or not isinstance(data['insights'], list):
     data['insights'] = []
 
-new_msg = '''$msg'''
-
 # Dedup: skip if same insight text exists with status=pending (exact match)
 for existing in data['insights']:
-    if existing.get('insight') == new_msg and existing.get('status') == 'pending':
+    if existing.get('insight') == msg and existing.get('status') == 'pending':
         print('SKIP:' + existing['id'])
         sys.exit(0)
 
 # Dedup: skip if first 50 chars match with status=pending
 for existing in data['insights']:
     ex_text = existing.get('insight', '')
-    if existing.get('status') == 'pending' and len(new_msg) > 0 and ex_text[:50] == new_msg[:50]:
+    if existing.get('status') == 'pending' and len(msg) > 0 and ex_text[:50] == msg[:50]:
         print('SKIP:' + existing['id'] + ' (first-50-char dedup)', file=sys.stderr)
         print('SKIP:' + existing['id'])
         sys.exit(0)
 
 data['insights'].append({
-    'id': '$id',
-    'ts': '$ts',
-    'insight': '''$msg''',
-    'priority': '$priority',
-    'source': '$source_info',
+    'id': entry_id,
+    'ts': ts,
+    'insight': msg,
+    'priority': priority,
+    'source': source_info,
     'status': 'pending'
 })
 
-with open('$INSIGHTS_FILE', 'w') as f:
+with open(insights_file, 'w') as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-print('$id')
-")
+print(entry_id)
+PYEOF
+)
 
   echo "$result"
 
