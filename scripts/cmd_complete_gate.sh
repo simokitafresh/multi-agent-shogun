@@ -3147,7 +3147,8 @@ fi
 
 # ─── プロジェクトコードのスタブ検出（WARNのみ、cmd差分の追加行のみ） ───
 level_heading "[L2]" "Project code stub check:"
-STUB_CHECK_OUTPUT=$(check_project_code_stubs "$CMD_ID" "$CMD_PROJECT" 2>/dev/null || true)
+STUB_CHECK_RC=0
+STUB_CHECK_OUTPUT=$(check_project_code_stubs "$CMD_ID" "$CMD_PROJECT" 2>&1) || STUB_CHECK_RC=$?
 STUB_CHECK_STATUS=$(printf '%s\n' "$STUB_CHECK_OUTPUT" | head -1 | cut -f1)
 STUB_CHECK_MESSAGE=$(printf '%s\n' "$STUB_CHECK_OUTPUT" | head -1 | cut -f2-)
 
@@ -3165,11 +3166,25 @@ case "$STUB_CHECK_STATUS" in
     SKIP)
         echo "  SKIP (${STUB_CHECK_MESSAGE})"
         ;;
+    BLOCK)
+        echo "  BLOCK (${STUB_CHECK_MESSAGE})"
+        printf '%s\n' "$STUB_CHECK_OUTPUT" | tail -n +2 | while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            echo "    ${line}"
+        done
+        ;;
     ERR)
         echo "  [INFO] ${STUB_CHECK_MESSAGE}"
         ;;
     *)
-        echo "  [INFO] project code stub check returned no result"
+        if [[ $STUB_CHECK_RC -ne 0 ]]; then
+            echo "  [ERROR] check_project_code_stubs failed (rc=$STUB_CHECK_RC)"
+            printf '%s\n' "$STUB_CHECK_OUTPUT" | head -3 | while IFS= read -r line; do
+                echo "    ${line}"
+            done
+        else
+            echo "  [INFO] project code stub check returned no result"
+        fi
         ;;
 esac
 

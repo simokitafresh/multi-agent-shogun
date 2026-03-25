@@ -49,6 +49,9 @@ if [ -z "$TOPIC" ]; then
   exit 1
 fi
 
+# Validate topic name security (warn-only; do not block send)
+ntfy_validate_topic "$TOPIC" || true
+
 # 認証引数を取得（設定がなければ空 = 後方互換）
 AUTH_ARGS=()
 while IFS= read -r line; do

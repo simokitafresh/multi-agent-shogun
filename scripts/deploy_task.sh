@@ -766,6 +766,20 @@ try:
         except Exception as pe:
             print(f'[INJECT] WARN: platform lessons load failed: {pe}', file=sys.stderr)
 
+    # Deduplicate lessons by ID — last wins (後勝ち: 同一IDで内容が異なる場合は後の値を採用)
+    _id_to_lesson = {}
+    _no_id = []
+    for _l in lessons:
+        _lid = _l.get('id', '')
+        if _lid:
+            _id_to_lesson[_lid] = _l
+        else:
+            _no_id.append(_l)
+    _pre_dedup = len(lessons)
+    lessons = list(_id_to_lesson.values()) + _no_id
+    if len(lessons) < _pre_dedup:
+        print(f'[INJECT] lesson_id dedup: {_pre_dedup} → {len(lessons)} (removed {_pre_dedup - len(lessons)} duplicate IDs)', file=sys.stderr)
+
     if not lessons:
         # Insert empty related_lessons via text manipulation (avoid yaml.dump on full file)
         with open(task_file, encoding='utf-8') as f:
@@ -1018,6 +1032,7 @@ try:
     task['related_lessons'] = related
 
     # (A) description冒頭に教訓要約を挿入（忍者が即座に目にする）
+    desc_modified = False
     if related:
         desc = task.get('description', '')
         marker = '【注入教訓】'
@@ -1028,12 +1043,45 @@ try:
             lines.append('─' * 40)
             prefix = '\n'.join(lines) + '\n\n'
             task['description'] = prefix + str(desc or '')
+            desc_modified = True
 
-    # Atomic write
+    # --- Safe targeted write (avoid full yaml.dump — cmd_1407 AC2) ---
+    with open(task_file, 'r', encoding='utf-8') as f:
+        raw = f.read()
+
+    def _safe_section_replace(text, section_name, new_value):
+        """Replace a 2-space-indented section under task: without full yaml.dump"""
+        frag = yaml.safe_dump(
+            {section_name: new_value},
+            default_flow_style=False, allow_unicode=True, sort_keys=False,
+        ).rstrip('\n')
+        indented = '\n'.join('  ' + line for line in frag.split('\n'))
+        pat = re.compile(
+            r'^  ' + re.escape(section_name) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
+            re.MULTILINE | re.DOTALL,
+        )
+        m = pat.search(text)
+        if m:
+            text = text[:m.start()] + indented + text[m.end():]
+        else:
+            task_idx = text.index('task:')
+            rest = text[task_idx + 5:]
+            top_m = re.search(r'^\S', rest, re.MULTILINE)
+            if top_m:
+                pos = task_idx + 5 + top_m.start()
+                text = text[:pos] + indented + '\n' + text[pos:]
+            else:
+                text = text.rstrip('\n') + '\n' + indented + '\n'
+        return text
+
+    raw = _safe_section_replace(raw, 'related_lessons', related)
+    if desc_modified:
+        raw = _safe_section_replace(raw, 'description', task['description'])
+
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
     try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+            f.write(raw)
         os.replace(tmp_path, task_file)
     except:
         os.unlink(tmp_path)
@@ -1499,10 +1547,41 @@ try:
         except Exception as ge:
             print(f'[NINJA_WP] gate_fire_log parse warning: {ge}', file=sys.stderr)
 
+    # --- Safe targeted write (avoid full yaml.dump — cmd_1407 AC2) ---
+    with open(task_file, 'r', encoding='utf-8') as f:
+        raw = f.read()
+
+    def _safe_section_replace(text, section_name, new_value):
+        """Replace a 2-space-indented section under task: without full yaml.dump"""
+        frag = yaml.safe_dump(
+            {section_name: new_value},
+            default_flow_style=False, allow_unicode=True, sort_keys=False,
+        ).rstrip('\n')
+        indented = '\n'.join('  ' + line for line in frag.split('\n'))
+        pat = re.compile(
+            r'^  ' + re.escape(section_name) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
+            re.MULTILINE | re.DOTALL,
+        )
+        m = pat.search(text)
+        if m:
+            text = text[:m.start()] + indented + text[m.end():]
+        else:
+            task_idx = text.index('task:')
+            rest = text[task_idx + 5:]
+            top_m = re.search(r'^\S', rest, re.MULTILINE)
+            if top_m:
+                pos = task_idx + 5 + top_m.start()
+                text = text[:pos] + indented + '\n' + text[pos:]
+            else:
+                text = text.rstrip('\n') + '\n' + indented + '\n'
+        return text
+
+    raw = _safe_section_replace(raw, 'ninja_weak_points', task['ninja_weak_points'])
+
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
     try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+            f.write(raw)
         os.replace(tmp_path, task_file)
     except Exception:
         os.unlink(tmp_path)
