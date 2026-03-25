@@ -88,6 +88,8 @@ fi
 # Returns TAB-separated: count \t has_specials \t fingerprint \t specials_tsv
 # specials_tsv: newline-separated "id\ttype\tbase64_content" lines (base64-encoded as whole)
 # Single python3 call replaces previous 5 calls (107ms → 39ms per cycle)
+# IMPORTANT: Empty fields use placeholder '-' to prevent bash IFS='\t' read
+# from merging consecutive tabs (tab is IFS-whitespace → adjacent tabs collapse)
 get_unread_info() {
     INBOX_PATH="$INBOX" python3 -c "
 import yaml, sys, json, os, base64
@@ -96,14 +98,14 @@ try:
     with open(inbox_path) as f:
         data = yaml.safe_load(f)
     if not data or 'messages' not in data or not data['messages']:
-        print('0\tfalse\t\t')
+        print('0\tfalse\t-\t-')
         sys.exit(0)
     unread = [m for m in data['messages'] if not m.get('read', False)]
     special_types = ('clear_command', 'model_switch')
     specials = [m for m in unread if m.get('type') in special_types]
     normal = [m for m in unread if m.get('type') not in special_types]
-    normal_ids = ','.join(sorted([m.get('id', '') for m in normal]))
-    specials_tsv = ''
+    normal_ids = ','.join(sorted([m.get('id', '') for m in normal])) or '-'
+    specials_tsv = '-'
     if specials:
         lines = []
         for s in specials:
@@ -112,7 +114,7 @@ try:
         specials_tsv = base64.b64encode('\n'.join(lines).encode('utf-8')).decode('ascii')
     print(f\"{len(normal)}\t{'true' if specials else 'false'}\t{normal_ids}\t{specials_tsv}\")
 except Exception:
-    print('0\tfalse\t\t')
+    print('0\tfalse\t-\t-')
 " 2>/dev/null
 }
 
@@ -427,7 +429,7 @@ process_unread() {
 
     # Handle special CLI commands first (/clear, /model)
     local specials=""
-    if [ "$has_specials" = "true" ] && [ -n "$specials_b64" ]; then
+    if [ "$has_specials" = "true" ] && [ -n "$specials_b64" ] && [ "$specials_b64" != "-" ]; then
         specials=$(printf '%s' "$specials_b64" | base64 -d 2>/dev/null || true)
     fi
 
@@ -617,9 +619,13 @@ INOTIFY_TIMEOUT="${INOTIFY_TIMEOUT:-60}"
 while true; do
     # Block until file is modified OR timeout (safety net for WSL2)
     # set +e: inotifywait returns 2 on timeout, which would kill script under set -e
+    # outer timeout: WSL2 DrvFs bug — when inbox_write.sh atomically replaces the file
+    #   (os.replace = rename), inotifywait loses the inode and its -t timeout can hang
+    #   indefinitely. The outer `timeout` command provides an OS-level safety net.
     set +e
-    inotifywait -q -t "$INOTIFY_TIMEOUT" -e modify -e close_write "$INBOX" 2>/dev/null
+    timeout "$((INOTIFY_TIMEOUT + 2))" inotifywait -q -t "$INOTIFY_TIMEOUT" -e modify -e close_write "$INBOX" 2>/dev/null
     # rc=0: event, rc=1: watch invalidated (atomic write), rc=2: timeout
+    # rc=124: outer timeout killed inotifywait (WSL2 DrvFs inode-replace hang)
     # All cases handled identically: check unread then re-watch
     set -e
 

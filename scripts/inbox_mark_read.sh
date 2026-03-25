@@ -76,7 +76,13 @@ try:
         stripped = line.lstrip()
         if stripped.startswith('- '):
             in_target = False
-        if stripped.startswith('id:'):
+            # Handle '- id: xxx' (id as first field of list item)
+            inner = stripped[2:].lstrip()
+            if inner.startswith('id:'):
+                val = inner.split(':', 1)[1].strip().strip(\"'\\\"\")
+                if val in target_ids:
+                    in_target = True
+        elif stripped.startswith('id:'):
             val = stripped.split(':', 1)[1].strip().strip(\"'\\\"\")
             if val in target_ids:
                 in_target = True
