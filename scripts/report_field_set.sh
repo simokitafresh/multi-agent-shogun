@@ -60,6 +60,12 @@ sys.exit(0 if isinstance(data, (list, dict)) else 1)
     fi
 fi
 
+# Direct argument multiline detection (non-stdin path)
+if [[ "$VALUE" == *$'\n'* ]] && [ "$USE_PYTHON" -eq 0 ]; then
+    USE_PYTHON=1
+    STDIN_VALUE="$VALUE"
+fi
+
 # --- GP-072: Pre-write field value validation (Level 4 BLOCK) ---
 # 書込み前にフィールド値の妥当性を検証。不正値はBLOCKして忍者に即フィードバック。
 # GP-072c2: per-item writes, dict→list conversion, verdict pre-conditions
