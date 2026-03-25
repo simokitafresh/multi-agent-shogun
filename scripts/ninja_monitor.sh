@@ -57,6 +57,9 @@ REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
 # 家老ペインターゲット（@agent_idから動的解決。EH6: ハードコード排除完了）
 KARO_PANE=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},karo}' 2>/dev/null | head -1)
 KARO_PANE="${KARO_PANE:-shogun:agents.1}"  # fallback
+# 軍師ペインターゲット（@agent_idから動的解決）
+GUNSHI_PANE=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},gunshi}' 2>/dev/null | head -1)
+GUNSHI_PANE="${GUNSHI_PANE:-}"  # 軍師不在時は空（処理スキップ）
 NTFY_BATCH_FLUSH_INTERVAL=900 # INFOバッチ通知フラッシュ間隔（秒）
 
 # Self-restart on script change (inbox_watcher.shから移植)
@@ -77,6 +80,8 @@ WATCHED_DEPS=(
 )
 DEPS_HASH="$(compute_deps_hash)"
 LAST_NTFY_RESTART=0  # ntfy_listener最終再起動時刻（epoch秒）
+LAST_WATCHER_RESTART=0  # inbox_watcher最終再起動時刻（epoch秒）
+WATCHER_RESTART_COOLDOWN_MIN=3  # inbox_watcher連続再起動防止クールダウン（分）
 LAST_BATCH_FLUSH=0   # ntfy_batch_flush最終実行時刻（epoch秒）
 CDP_CLEANUP_SCRIPT="$SCRIPT_DIR/scripts/cdp_chrome_cleanup.sh"
 CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
@@ -1512,7 +1517,7 @@ count_unread_messages() {
 }
 
 check_inbox_renudge() {
-    local all_agents=("karo" "${NINJA_NAMES[@]}")
+    local all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
     local now
     now=$EPOCHSECONDS
 
@@ -1546,6 +1551,8 @@ check_inbox_renudge() {
         local target
         if [ "$name" = "karo" ]; then
             target="$KARO_PANE"
+        elif [ "$name" = "gunshi" ]; then
+            target="$GUNSHI_PANE"
         else
             target="${PANE_TARGETS[$name]}"
         fi
@@ -1745,6 +1752,66 @@ check_ntfy_listener_health() {
     log "ntfy_listener restart triggered by health check"
 }
 
+# ─── inbox_watcher生死監視+自動再起動 (おしお殿知見) ───
+# watcher_supervisor.sh相当。プロセス生存をpgrepで確認、死亡→個別再起動。
+check_inbox_watcher_health() {
+    # クールダウン期間内ならスキップ
+    local now=$EPOCHSECONDS
+    local cooldown_sec=$((WATCHER_RESTART_COOLDOWN_MIN * 60))
+    if [ $((now - LAST_WATCHER_RESTART)) -lt "$cooldown_sec" ]; then
+        return 0
+    fi
+
+    # shogun + karo + 全忍者/軍師のwatcherを確認
+    local all_agents=("shogun" "karo" "${NINJA_NAMES[@]}")
+    local dead=()
+
+    for agent in "${all_agents[@]}"; do
+        if ! pgrep -f "inbox_watcher\\.sh ${agent} " >/dev/null 2>&1; then
+            dead+=("$agent")
+        fi
+    done
+
+    if [ ${#dead[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    log "WARNING: inbox_watcher dead for: ${dead[*]}. Restarting..."
+
+    for agent in "${dead[@]}"; do
+        local pane_target=""
+        if [ "$agent" = "shogun" ]; then
+            pane_target="shogun:main"
+        else
+            pane_target=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' \
+                -f "#{==:#{@agent_id},${agent}}" 2>/dev/null | head -1)
+        fi
+
+        if [ -z "$pane_target" ]; then
+            log "WARNING: cannot find pane for ${agent}, skipping watcher restart"
+            continue
+        fi
+
+        local _cli
+        _cli=$(tmux show-options -p -t "$pane_target" -v @agent_cli 2>/dev/null || echo "claude")
+
+        local log_file="$SCRIPT_DIR/logs/inbox_watcher_${agent}.log"
+
+        if [ "$agent" = "shogun" ]; then
+            nohup env ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 \
+                bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$_cli" \
+                &>> "$log_file" &
+        else
+            nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$_cli" \
+                &>> "$log_file" &
+        fi
+        disown
+        log "inbox_watcher for ${agent} restarted (PID $!, pane=${pane_target})"
+    done
+
+    LAST_WATCHER_RESTART=$EPOCHSECONDS
+}
+
 # ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───
 write_karo_snapshot() {
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
@@ -1916,8 +1983,8 @@ check_karo_clear() {
     # CTX取得
     local ctx_num
     ctx_num=$(get_context_pct "$KARO_PANE" "karo")
-    if [ -z "$ctx_num" ] || [ "$ctx_num" -le 50 ] 2>/dev/null; then
-        return  # CTX <= 50% → skip
+    if [ -z "$ctx_num" ] || [ "$ctx_num" -le 70 ] 2>/dev/null; then
+        return  # CTX <= 70% → skip
     fi
 
     # 共通関数でデバウンス付き送信
@@ -1958,12 +2025,14 @@ check_shogun_ctx() {
 # cmd_320改修: CLIの実モデル値を検出し、@model_nameと比較。不整合があれば自動修正。
 # 実モデル検出失敗時はsettings.yaml/cli_profiles.yamlにフォールバック（AC3）。
 check_model_names() {
-    local all_agents=("karo" "${NINJA_NAMES[@]}")
+    local all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
 
     for name in "${all_agents[@]}"; do
         local target
         if [ "$name" = "karo" ]; then
             target="$KARO_PANE"
+        elif [ "$name" = "gunshi" ]; then
+            target="$GUNSHI_PANE"
         else
             target="${PANE_TARGETS[$name]}"
         fi
@@ -2013,7 +2082,7 @@ check_model_names() {
 # tmuxペイン変数 @inbox_count に設定。pane-border-formatで参照される。
 # 未読0: 空文字（非表示）、未読1以上: " 📨N"
 update_inbox_counts() {
-    local all_agents=("karo" "${NINJA_NAMES[@]}")
+    local all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
     local inbox_dir="$SCRIPT_DIR/queue/inbox"
 
     for name in "${all_agents[@]}"; do
@@ -2021,6 +2090,8 @@ update_inbox_counts() {
         local target
         if [ "$name" = "karo" ]; then
             target="$KARO_PANE"
+        elif [ "$name" = "gunshi" ]; then
+            target="$GUNSHI_PANE"
         else
             target="${PANE_TARGETS[$name]}"
         fi
@@ -2534,8 +2605,8 @@ while true; do
     # ═══ INFOバッチ通知フラッシュ（15分間隔 cmd_960 AC2） ═══
     check_ntfy_batch_flush
 
-    # ═══ STEP 2: 家老の外部/clearチェック ═══
-    check_karo_clear
+    # ═══ STEP 2: 家老の外部/clearチェック（無効化: 殿裁定2026-03-25 家老はAUTOCOMPACTのみ） ═══
+    # check_karo_clear
 
     # ═══ STEP 3: 将軍CTXアラート ═══
     check_shogun_ctx
@@ -2562,6 +2633,7 @@ while true; do
     write_state_file
     write_karo_snapshot   # 家老陣形図更新（毎サイクル）
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
+    check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)
 
     # ═══ STEP 2: ダッシュボード自動更新 (cmd_404) ═══
     # 状態変化時のみ呼び出す（コスト最適化）
