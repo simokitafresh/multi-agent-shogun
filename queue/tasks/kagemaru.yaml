@@ -1,32 +1,36 @@
 task:
-  ac_version: 0c81e4eb
+  ac_version: 9e976218
   acceptance_criteria:
   - binary_checks:
-    - check: scripts/gates/gate_karo_startup.shの主要ロジック（関数構成・判定条件・入出力）を記載したか
+    - check: 直接引数にマルチライン値を渡してもYAML構造が壊れないか
       result: ''
-    - check: エラーハンドリングと例外ケースの処理を記載したか
+    - check: 既存のstdin経路の動作に影響がないか
       result: ''
-    description: scripts/gates/gate_karo_startup.shを精査し報告せよ
+    description: report_field_set.sh L61直後にnon-stdinマルチライン検出を追加し、Python fallbackに誘導する修正をコミットせよ
     id: AC1
   - binary_checks:
-    - check: lesson_candidateにfound=trueと具体的なtitle+detailを記載したか（発見なしならfound=false+no_lesson_reasonに3文字以上の具体的理由）
+    - check: テストがPASSするか
       result: ''
-    - check: lesson_candidateのprojectフィールドにinfraを記載したか
+    - check: 既存テスト(あれば)が全てPASSするか
       result: ''
-    description: 精査で発見した教訓候補を正しい構造で報告せよ
+    description: batsテストでマルチライン直接引数のYAML構造保持を検証せよ
     id: AC2
   bloom_level: null
-  command: '【修行Level 2 第2回】scripts/gates/gate_karo_startup.shを精査し、教訓候補を含めて報告せよ。 ■
-    対象ファイル: scripts/gates/gate_karo_startup.sh ■ L2の本質: lesson_candidateを正しい構造で書くこと。発見があればfound:true+title+detail+project。なければfound:false+no_lesson_reason(具体的理由3文字以上)。
-    報告YAMLを一発でgate PASSさせること。bash scripts/gates/gate_report_format.sh <自分の報告パス> で自己検証。
-
-    '
+  command: "report_field_set.shのマルチライン値YAML構造破壊バグを修正せよ。\n\n■ バグ: 直接引数(stdin以外)でマルチライン値が渡された場合、\n\
+    awk経路に流れてYAML構造が壊れる。\nstdin経路(VALUE=\"-\")ではL54でマルチライン検出→Python fallbackが動くが、\n\
+    直接引数経路では検出がない。\n\n■ 修正箇所: scripts/report_field_set.sh\nL61(fi)の直後に、非stdinマルチライン検出を追加:\n\
+    ```\n# Direct argument multiline detection (non-stdin path)\nif [[ \"$VALUE\"\
+    \ == *$'\\n'* ]] && [ \"$USE_PYTHON\" -eq 0 ]; then\n    USE_PYTHON=1\nfi\n```\n\
+    \n■ テスト: tests/unit/ に既存のreport_field_set batsテストがあれば追記、\nなければ新規作成。マルチライン直接引数でYAMLが壊れないことを検証。\n\
+    \n報告YAMLを一発でgate PASSさせること。bash scripts/gates/gate_report_format.sh <自分の報告パス>\
+    \ で自己検証。\n"
+  deployed_at: null
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
-    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
-    ────────────────────────────────────────\n\n"
+    \  - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re\n\
+    \  - L170: `scripts/log_terminal_response.sh` の `head -c 500` が多バイト文字を途中切断し、`queue/lord_con\n\
+    ────────────────────────────────────────\n\nreport_field_set.shマルチライン値バグ修正+テスト"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -58,7 +62,7 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_training_L2_008
+  parent_cmd: cmd_fix_report_field_set_multiline
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -72,16 +76,17 @@ task:
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-    id: L079
-    summary: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
-  - detail: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-    id: L097
-    summary: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
-  report_filename: kagemaru_report_cmd_training_L2_008.yaml
-  report_path: queue/reports/kagemaru_report_cmd_training_L2_008.yaml
+  - detail: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/report_implement.yaml、cmd_complete_gate.sh内の全Python判定コード、deploy_task.sh報告テンプレート等の横断更新が必須。後方互換フォールバックも各箇所に必要。impl_bが全箇所カバーし
+    id: L117
+    summary: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/report_implement.yaml、cmd_complete_gate.sh内の全Python判定コード、deploy_task.sh報告テンプレート等の横断更新が必須。後方互換フォールバックも各箇所に必要。impl_bが全箇所カバーし
+  - detail: '`scripts/log_terminal_response.sh` の `head -c 500` が多バイト文字を途中切断し、`queue/lord_conversation.yaml`
+      に `\udce2\udc94` の壊れた文字列を発生させた。文字数切り詰めはPython等でコードポイント単位に実施すべき。'
+    id: L170
+    summary: '`scripts/log_terminal_response.sh` の `head -c 500` が多バイト文字を途中切断し、`queue/lord_conversation.yaml`
+      に `\udce2\udc94` の壊れた文字列を発生させた。文字数切り詰めはPython等でコードポイント単位に実施すべき。'
+  report_filename: kagemaru_report_cmd_fix_report_field_set_multiline.yaml
+  report_path: queue/reports/kagemaru_report_cmd_fix_report_field_set_multiline.yaml
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: acknowledged
   stop_for: []
-  target_path: scripts/gates/gate_karo_startup.sh
-  deployed_at: "2026-03-26T01:13:37"
+  target_path: scripts/report_field_set.sh
