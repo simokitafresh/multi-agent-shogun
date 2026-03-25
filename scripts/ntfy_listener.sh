@@ -23,6 +23,7 @@ source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
 INBOX="$SCRIPT_DIR/queue/ntfy_inbox.yaml"
+CORRUPT_DIR="$SCRIPT_DIR/logs/ntfy_inbox_corrupt"
 
 # ntfy_auth.sh読み込み
 # shellcheck source=../lib/ntfy_auth.sh
@@ -114,10 +115,12 @@ append_ntfy_inbox() {
             flock -w 5 200 || exit 1
 
             INBOX_PATH="$INBOX" NTFY_MSG_ID="$msg_id" NTFY_TIMESTAMP="$timestamp" \
-            NTFY_MESSAGE="$message" NTFY_STATUS="$status" python3 <<'PYEOF'
+            NTFY_MESSAGE="$message" NTFY_STATUS="$status" NTFY_CORRUPT_DIR="$CORRUPT_DIR" python3 <<'PYEOF'
 import os
+import shutil
 import sys
 import tempfile
+from datetime import datetime
 
 import yaml
 
@@ -126,10 +129,33 @@ msg_id = os.environ.get("NTFY_MSG_ID", "")
 timestamp = os.environ["NTFY_TIMESTAMP"]
 message = os.environ["NTFY_MESSAGE"]
 status = os.environ["NTFY_STATUS"]
+corrupt_dir = os.environ.get("NTFY_CORRUPT_DIR", "")
 
 try:
-    with open(inbox_path, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
+    parse_error = False
+    data = {}
+    if os.path.exists(inbox_path):
+        try:
+            with open(inbox_path, encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+        except (yaml.YAMLError, ValueError):
+            parse_error = True
+        except Exception:
+            parse_error = True
+
+    if parse_error and os.path.exists(inbox_path):
+        try:
+            if corrupt_dir:
+                os.makedirs(corrupt_dir, exist_ok=True)
+                backup = os.path.join(
+                    corrupt_dir,
+                    f"ntfy_inbox_corrupt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml",
+                )
+                shutil.copy2(inbox_path, backup)
+                print(f"corrupt_backup:{backup}", file=sys.stderr)
+        except Exception:
+            pass
+        data = {}
 
     inbox_entries = data.get("inbox")
     if not isinstance(inbox_entries, list):
