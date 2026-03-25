@@ -78,7 +78,10 @@ _validate_field_value() {
 import yaml, sys
 data = yaml.safe_load(sys.stdin.read())
 if not isinstance(data, list):
-    print(f'BLOCK: lessons_useful はリスト形式必須。受信: {type(data).__name__}', file=sys.stderr)
+    print('ERROR: lessons_useful must be YAML list format.', file=sys.stderr)
+    print(\"  Correct: - {id: L001, useful: true, reason: '理由'}\", file=sys.stderr)
+    print(\"  Wrong:   {0: {id: L001}, 1: {id: L002}}\", file=sys.stderr)
+    print(\"  Wrong:   'L001をreviewで使用した'\", file=sys.stderr)
     sys.exit(1)
 for i, item in enumerate(data):
     if not isinstance(item, dict):
@@ -107,38 +110,65 @@ for i, item in enumerate(data):
             fi
             ;;
         binary_checks)
-            # Full-field write validation
+            # Full-field write validation (GP-072 binary_checks型バリデーション)
+            # BaseLoader使用: yes/noを文字列として保持し true/falseと区別する
             if [[ "$dot_key" == "binary_checks" ]]; then
                 python3 -c "
 import yaml, sys
-data = yaml.safe_load(sys.stdin.read())
+err = '''ERROR: binary_checks must be YAML list of dicts with result: yes/no.
+  Correct: - {check: 'テスト全PASS', result: yes}
+  Wrong:   'AC1: YES, AC2: NO'
+  Wrong:   result: true (use 'yes' not true)
+  Wrong:   result: PASS (use 'yes' not 'PASS')'''
+try:
+    data = yaml.load(sys.stdin.read(), Loader=yaml.BaseLoader)
+except yaml.YAMLError:
+    print(err, file=sys.stderr)
+    sys.exit(1)
+if isinstance(data, str):
+    print(err, file=sys.stderr)
+    sys.exit(1)
 if not isinstance(data, dict):
-    print(f'BLOCK: binary_checks はdict形式必須。受信: {type(data).__name__}', file=sys.stderr)
+    print(err, file=sys.stderr)
     sys.exit(1)
 for ac_key, ac_val in data.items():
     if not isinstance(ac_val, list):
-        continue
+        print(err, file=sys.stderr)
+        sys.exit(1)
     for j, item in enumerate(ac_val):
         if not isinstance(item, dict):
             continue
         r = str(item.get('result', '')).strip()
         if r and r.lower() not in ('yes', 'no', ''):
-            print(f'BLOCK: {ac_key}[{j}].result=\"{r}\" — yes/noのみ許可', file=sys.stderr)
+            print(err, file=sys.stderr)
             sys.exit(1)
 " <<< "$val" || return 1
             # GP-072c2: Per-AC write (e.g., binary_checks.AC1) — only 2-level depth
             elif [[ "$dot_key" == binary_checks.AC* ]] && [[ "$dot_key" != *.*.* ]]; then
                 python3 -c "
 import yaml, sys
-data = yaml.safe_load(sys.stdin.read())
+err = '''ERROR: binary_checks must be YAML list of dicts with result: yes/no.
+  Correct: - {check: 'テスト全PASS', result: yes}
+  Wrong:   'AC1: YES, AC2: NO'
+  Wrong:   result: true (use 'yes' not true)
+  Wrong:   result: PASS (use 'yes' not 'PASS')'''
+try:
+    data = yaml.load(sys.stdin.read(), Loader=yaml.BaseLoader)
+except yaml.YAMLError:
+    print(err, file=sys.stderr)
+    sys.exit(1)
+if isinstance(data, str):
+    print(err, file=sys.stderr)
+    sys.exit(1)
 if not isinstance(data, list):
-    sys.exit(0)
+    print(err, file=sys.stderr)
+    sys.exit(1)
 for j, item in enumerate(data):
     if not isinstance(item, dict):
         continue
     r = str(item.get('result', '')).strip()
     if r and r.lower() not in ('yes', 'no', ''):
-        print(f'BLOCK: [{j}].result=\"{r}\" — yes/noのみ許可', file=sys.stderr)
+        print(err, file=sys.stderr)
         sys.exit(1)
 " <<< "$val" || return 1
             fi
