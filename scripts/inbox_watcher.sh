@@ -51,7 +51,7 @@ RETRY_COUNT_FILE="${STATE_DIR}/inbox_watcher_retry_${AGENT_ID}"
 BACKOFF_SEC="${BACKOFF_SEC:-120}"  # 2 minutes — safety net re-notification for stale unread (was 600)
 STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
 FIRST_UNREAD_SEEN="${FIRST_UNREAD_SEEN:-${STATE_DIR}/first_unread_seen_${AGENT_ID}}"
-FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-15}"
+FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-60}"
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -85,35 +85,35 @@ if ! command -v inotifywait &>/dev/null; then
 fi
 
 # ─── Extract unread message info (lock-free read) ───
-# Returns JSON lines: {"count": N, "has_special": true/false, "specials": [...]}
+# Returns TAB-separated: count \t has_specials \t fingerprint \t specials_tsv
+# specials_tsv: newline-separated "id\ttype\tbase64_content" lines (base64-encoded as whole)
+# Single python3 call replaces previous 5 calls (107ms → 39ms per cycle)
 get_unread_info() {
-    # Phase 1: Lock-free read to check for unread messages
-    local info
-    info=$(INBOX_PATH="$INBOX" python3 -c "
-import yaml, sys, json, os
+    INBOX_PATH="$INBOX" python3 -c "
+import yaml, sys, json, os, base64
 try:
     inbox_path = os.environ['INBOX_PATH']
     with open(inbox_path) as f:
         data = yaml.safe_load(f)
     if not data or 'messages' not in data or not data['messages']:
-        print(json.dumps({'count': 0, 'specials': [], 'has_specials': False}))
+        print('0\tfalse\t\t')
         sys.exit(0)
     unread = [m for m in data['messages'] if not m.get('read', False)]
     special_types = ('clear_command', 'model_switch')
     specials = [m for m in unread if m.get('type') in special_types]
     normal = [m for m in unread if m.get('type') not in special_types]
-    normal_ids = sorted([m.get('id', '') for m in normal])
-    print(json.dumps({
-        'count': len(normal),
-        'normal_ids': normal_ids,
-        'specials': [{'id': m.get('id',''), 'type': m.get('type',''), 'content': m.get('content','')} for m in specials],
-        'has_specials': len(specials) > 0
-    }))
-except Exception as e:
-    print(json.dumps({'count': 0, 'specials': [], 'has_specials': False}))
-" 2>/dev/null)
-
-    echo "$info"
+    normal_ids = ','.join(sorted([m.get('id', '') for m in normal]))
+    specials_tsv = ''
+    if specials:
+        lines = []
+        for s in specials:
+            content_b64 = base64.b64encode(str(s.get('content', '')).encode('utf-8')).decode('ascii')
+            lines.append(f\"{s.get('id', '')}\t{s.get('type', '')}\t{content_b64}\")
+        specials_tsv = base64.b64encode('\n'.join(lines).encode('utf-8')).decode('ascii')
+    print(f\"{len(normal)}\t{'true' if specials else 'false'}\t{normal_ids}\t{specials_tsv}\")
+except Exception:
+    print('0\tfalse\t\t')
+" 2>/dev/null
 }
 
 # ─── Mark one special message as read (flock + atomic write) ───
@@ -406,11 +406,9 @@ send_wakeup() {
         echo "[$(date)] WARNING: failed to update debounce file: $DEBOUNCE_FILE" >&2
     fi
 
-    # Pre-clear: Enter to flush any partial input in the pane
-    safe_send_keys "$PANE_TARGET" Enter 2>/dev/null || true
-    sleep 0.3
-
     # Send nudge via paste-buffer + Enter (atomic lock)
+    # Note: Pre-clear Enter was removed — idle flag guarantees empty prompt,
+    # and Enter risked submitting partial input in race conditions.
     local lock
     lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
     if ! (
@@ -445,12 +443,13 @@ send_wakeup() {
 
 # ─── Process cycle ───
 process_unread() {
-    local info
-    info=$(get_unread_info)
-    local normal_count
-    normal_count=$(echo "$info" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count',0))" 2>/dev/null)
-    local has_specials
-    has_specials=$(echo "$info" | python3 -c "import sys,json; print('true' if json.load(sys.stdin).get('has_specials') else 'false')" 2>/dev/null)
+    # Single python3 call: TAB-separated "count \t has_specials \t fingerprint \t specials_b64"
+    local raw_info
+    raw_info=$(get_unread_info)
+    local normal_count has_specials _current_fp specials_b64
+    IFS=$'\t' read -r normal_count has_specials _current_fp specials_b64 <<< "$raw_info"
+    normal_count="${normal_count:-0}"
+    has_specials="${has_specials:-false}"
 
     if [ "$normal_count" -gt 0 ] 2>/dev/null || [ "$has_specials" = "true" ]; then
         mark_first_unread_seen
@@ -459,14 +458,10 @@ process_unread() {
     fi
 
     # Handle special CLI commands first (/clear, /model)
-    local specials
-    specials=$(echo "$info" | python3 -c "
-import base64, sys, json
-data = json.load(sys.stdin)
-for s in data.get('specials', []):
-    content = base64.b64encode(str(s.get('content', '')).encode('utf-8')).decode('ascii')
-    print(f\"{s.get('id', '')}\\t{s.get('type', '')}\\t{content}\")
-" 2>/dev/null)
+    local specials=""
+    if [ "$has_specials" = "true" ] && [ -n "$specials_b64" ]; then
+        specials=$(printf '%s' "$specials_b64" | base64 -d 2>/dev/null || true)
+    fi
 
     if [ -n "$specials" ]; then
         while IFS= read -r special_line; do
@@ -554,9 +549,8 @@ for s in data.get('specials', []):
 
     # Send wake-up nudge for normal messages (fingerprint dedup)
     if [ "$normal_count" -gt 0 ] 2>/dev/null; then
-        # Build fingerprint from sorted unread normal message IDs
-        local current_fp
-        current_fp=$(echo "$info" | python3 -c "import sys,json; ids=json.load(sys.stdin).get('normal_ids',[]); print(','.join(ids))" 2>/dev/null)
+        # Fingerprint already extracted from single python3 call above
+        local current_fp="$_current_fp"
 
         local prev_fp=""
         if [ -f "$FINGERPRINT_FILE" ]; then
