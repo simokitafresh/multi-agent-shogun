@@ -1,27 +1,50 @@
 task:
-  ac_version: 0030aa7e
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 3c94630e
   acceptance_criteria:
   - binary_checks:
-    - check: ボトルネック3箇所の行番号と関数名と所要時間が明記されているか
-      result: FILL_THIS
-    - check: 各箇所に対する具体的な最適化手法が提案されているか
-      result: FILL_THIS
-    description: archive_completed.shのボトルネック上位3箇所を特定し各箇所の所要時間(秒)と最適化手法を報告
+    - check: dict形式入力でexit 1が返るか
+      result: ''
+    - check: string形式入力でexit 1が返るか
+      result: ''
+    - check: 正しいlist形式入力でexit 0が返るか
+      result: ''
+    - check: エラーメッセージに正しい形式の例が表示されるか
+      result: ''
+    description: report_field_set.shにlessons_useful型バリデーションを実装
     id: AC1
   - binary_checks:
-    - check: ボトルネック3箇所の行番号と関数名と所要時間が明記されているか
-      result: FILL_THIS
-    - check: 各箇所に対する具体的な最適化手法が提案されているか
-      result: FILL_THIS
-    description: ralph_loop_metrics.shのボトルネック上位3箇所を特定し各箇所の所要時間(秒)と最適化手法を報告
+    - check: test_report_field_set_validation.batsが存在し全PASSか
+      result: ''
+    - check: 既存batsテスト(bats tests/unit/)にSKIP/FAILがないか
+      result: ''
+    description: batsテスト作成+全テスト回帰なし確認
     id: AC2
-  bloom_level: ''
-  command: '高頻度スクリプト2本のボトルネックを特定し最適化手法を報告せよ。 cd /mnt/c/tools/multi-agent-shogun。 対象スクリプト(1)
-    scripts/archive_completed.sh (1133行 27.6秒) (2) scripts/ralph_loop_metrics.sh (539行
-    20.8秒)。 調査方法は bash -x プロファイリング、サブシェルfork数計測、 直列ループ内I/O特定、並列化可能ブロック特定。
-
-    '
-  deployed_at: '2026-03-25T00:52:19'
+  - binary_checks:
+    - check: git addで変更ファイルをstageしたか
+      result: ''
+    - check: commitメッセージにlessons_useful型バリデーション追加と記載したか
+      result: ''
+    description: 変更をcommitする
+    id: AC3
+  bloom_level: null
+  command: "■ 目的\nreport_field_set.shにlessons_useful型バリデーションを追加。\n不正な型（dict/string）をBLOCKし、正しい形式（list）を強制する。\n\
+    \n■ 背景\n忍者がlessons_usefulをdict形式(0:{},1:{})やstring形式で記入→家老が毎回手動変換。\nkaro_workarounds.yamlで27件。全忍者で発生するシステム構造欠陥。\n\
+    \n■ 対象ファイル\n- scripts/lib/field_get.sh（read側の参照。変更対象ではない）\n- scripts/lib/report_field_set.sh（本丸。ここにバリデーション追加）\n\
+    \n■ 実装指示\nreport_field_set.shのlessons_useful書込み処理に以下を追加:\n1. 値がdict形式（\"0:\" or\
+    \ \"1:\" で始まる行がある）ならエラー終了\n2. 値がstring形式（\"- \"で始まらない1行テキスト）ならエラー終了\n3. エラー時のメッセージ:\n\
+    \   \"ERROR: lessons_useful must be YAML list format.\"\n   \"  Correct: - {id:\
+    \ L001, useful: true, reason: '理由'}\"\n   \"  Wrong:   {0: {id: L001}, 1: {id:\
+    \ L002}}\"\n   \"  Wrong:   'L001をreviewで使用した'\"\n4. exit 1でBLOCK\n\n■ テスト\ntests/unit/test_report_field_set_validation.bats\
+    \ を新規作成。\n- dict形式入力→exit 1\n- string形式入力→exit 1\n- 正しいlist形式入力→exit 0\n- 空list入力→exit\
+    \ 0（空は別gateが検出）\n\n■ 制約\n- 既存のreport_field_set.shの他フィールド処理を壊すな\n- bats tests/unit/\
+    \ 全テスト回帰なしを確認\n"
+  deployed_at: '2026-03-25T17:22:56'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -36,24 +59,34 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   ninja: hayate
   ninja_weak_points:
-    breakdown: report_yaml_format(11件), commit_missing(3件), double_deploy(2件), report_missing(1件),
-      uncategorized(1件)
+    breakdown: report_yaml_format(11件), commit_missing(3件), double_deploy(2件), uncategorized(2件),
+      report_missing(1件)
     source: karo_workarounds.yaml
     top_pattern: report_yaml_format(11件)
-    total_workarounds: 18
+    total_workarounds: 19
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
-  not_in_scope:
-  - 最適化の実装は本タスク対象外
-  - deploy_task.shは別忍者が担当
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1384
+  - AC3
+  parent_cmd: cmd_cycle_001
   project: infra
-  related_lessons: []
-  report_filename: hayate_report_cmd_1384.yaml
-  report_path: queue/reports/hayate_report_cmd_1384.yaml
+  related_lessons:
+  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    id: L074
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+    id: L225
+    summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
+  report_filename: hayate_report_cmd_cycle_001.yaml
+  report_path: queue/reports/hayate_report_cmd_cycle_001.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: idle
+  status: done
   stop_for: []
-  type: recon
+  target_path: scripts/lib/report_field_set.sh
+  target_path_warning: '⚠ target_pathが存在しない: scripts/lib/report_field_set.sh'
