@@ -1,22 +1,31 @@
 task:
-  ac_version: bb330fe9
+  ac_version: 8d93538d
   acceptance_criteria:
   - binary_checks:
-    - check: gate_karo_startup.shの5項目チェック内容と各ALERT条件を記載したか
+    - check: inbox_write.shの主要ロジック（関数構成・判定条件・入出力）を記載したか
       result: ''
-    - check: deepdive必読チェックとworkaround傾向分析の仕組みを記載したか
+    - check: エラーハンドリングと例外ケースの処理を記載したか
       result: ''
-    description: gate_karo_startup.shの全ロジックを精査し報告せよ
+    description: inbox_write.shを精査し報告せよ
     id: AC1
+  - binary_checks:
+    - check: lesson_candidateにfound=trueと具体的なtitle+detailを記載したか（発見なしならfound=false+no_lesson_reasonに3文字以上の具体的理由）
+      result: ''
+    - check: lesson_candidateのprojectフィールドにinfraを記載したか
+      result: ''
+    description: 精査で発見した教訓候補を正しい構造で報告せよ
+    id: AC2
   bloom_level: null
-  command: '【修行Level 1 第5回】scripts/gates/gate_karo_startup.shを精査し報告せよ。 ■ 対象ファイル: scripts/gates/gate_karo_startup.sh
-    ■ 修行の本質: 報告YAMLを一発でgate PASSさせること。gate_report_format.shで自己検証せよ: bash scripts/gates/gate_report_format.sh
-    <自分の報告パス> BLOCKされたら自力で修正し再提出。一発PASSが目標。'
-  deployed_at: '2026-03-26T00:33:17'
+  command: '【修行Level 2 第1回】scripts/inbox_write.shを精査し、教訓候補を含めて報告せよ。 ■ 対象ファイル: scripts/inbox_write.sh
+    ■ L2の本質: lesson_candidateを正しい構造で書くこと。発見があればfound:true+title+detail+project。なければfound:false+no_lesson_reason(具体的理由3文字以上)。
+    報告YAMLを一発でgate PASSさせること。bash scripts/gates/gate_report_format.sh <自分の報告パス> で自己検証。'
+  deployed_at: '2026-03-26T00:58:41'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    ────────────────────────────────────────\n\n"
+    \  - L209: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report\
+    \ file 未作成でも \n  - L018: Claude Code Edit toolはファイルロック(flock)を使わない。inbox_write.shがflock付きで書込む同ファイルにEdit\
+    \ t\n────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -35,8 +44,10 @@ task:
     top_pattern: report_yaml_format(2件)
     total_workarounds: 4
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
-  parallel_ok: []
-  parent_cmd: cmd_training_L1_029
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_training_L2_005
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -50,11 +61,23 @@ task:
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  report_filename: kotaro_report_cmd_training_L1_029.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_L1_029.yaml
+  - detail: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file
+      未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
+      側の auto-done hook は残さない。
+    id: L209
+    summary: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report
+      file 未作成でも task を done 化できる。done 通知は `ninja_done.sh` のような検証付きラッパに一本化し、inbox_write
+      側の auto-done hook は残さない。
+  - detail: 'Claude Code Edit toolはファイルロック(flock)を使わない。inbox_write.shがflock付きで書込む同ファイルにEdit
+      toolで書き戻すと、inbox_write.shの書込み内容が失われる(Lost Update)。対策: flock+atomic writeを行うシェルスクリプト(inbox_mark_read.sh)で代替。同様の問題は他のflock付'
+    id: L018
+    summary: 'Claude Code Edit toolはファイルロック(flock)を使わない。inbox_write.shがflock付きで書込む同ファイルにEdit
+      toolで書き戻すと、inbox_write.shの書込み内容が失われる(Lost Update)。対策: flock+atomic writeを行うシェルスクリプト(inbox_mark_read.sh)で代替。同様の問題は他のflock付'
+  report_filename: kotaro_report_cmd_training_L2_005.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_L2_005.yaml
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  status: done
+  status: in_progress
   stop_for: []
-  target_path: scripts/gates/gate_karo_startup.sh
+  target_path: scripts/inbox_write.sh
   task_type: impl
   type: impl
