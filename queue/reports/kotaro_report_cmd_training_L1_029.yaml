@@ -1,0 +1,48 @@
+worker_id: kotaro
+task_id: cmd_training_L1_029
+parent_cmd: cmd_training_L1_029
+timestamp: '2026-03-26T00:38:23'
+status: completed
+ac_version_read: bb330fe9
+result:
+  summary: gate_karo_startup.sh精査完了。7チェック項目の全ロジックとALERT/WARN条件、deepdive強制表示、workaround傾向分析の仕組みを網羅報告
+  details: Check1:deepdive必読(ALERT:ファイル不在/常時リマインダ表示) Check2:陣形図鮮度(WARN:30分超or不在) Check2.5:忍者CTX実態(ALERT:STALL疑い=assigned+CTX0%)
+    Check3:inbox未読(INFO) Check4:PD未解決(INFO) Check5:WA傾向(awk直近5件分析:件数+カテゴリ+root_cause)
+    Check6:全体WA率(gate_workaround_rate.sh委譲) Check7:忍者別WA率(gate_ninja_workaround_rate.sh委譲)
+    overall=OK/WARN/ALERT(降格防止制御) deepdive強制=Check1無条件リマインダ+CLAUDE.md Step2.85/2.9二重強制
+    WA傾向=awk+外部gate多角可視化 L074安全:stall_count算術は安全パターン使用
+purpose_validation:
+  cmd_purpose: 家老起動時ゲートの全ロジック精査と報告
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既知の構造(gate_shogun_startup.sh踏襲)。L074パターンは安全に回避済み
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: true
+  reason: 本スクリプトはstall_count算術でL074安全パターンを使用。精査時の確認観点として有用
+- id: L063
+  useful: false
+  reason: 本スクリプトはYAML解析にawkを使用しPython不使用。該当しないが認知として有用
+- id: L225
+  useful: false
+  reason: 本スクリプトはMCP操作を含まない。該当しない
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: gate_karo_startup.shの5項目チェック内容と各ALERT条件を記載したか
+    result: 'yes'
+  - check: deepdive必読チェックとworkaround傾向分析の仕組みを記載したか
+    result: 'yes'
+verdict: PASS

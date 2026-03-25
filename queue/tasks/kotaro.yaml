@@ -1,19 +1,18 @@
 task:
-  ac_version: dd66df7e
+  ac_version: bb330fe9
   acceptance_criteria:
   - binary_checks:
-    - check: gate_report_autofix.shの全autofix対象パターンを記載したか
+    - check: gate_karo_startup.shの5項目チェック内容と各ALERT条件を記載したか
       result: ''
-    - check: 各autofixのトリガー条件と修正内容を正確に記載したか
+    - check: deepdive必読チェックとworkaround傾向分析の仕組みを記載したか
       result: ''
-    - check: 報告YAMLをbash scripts/gates/gate_report_format.shで自己検証しPASSしたか
-      result: ''
-    description: gate_report_autofix.shの全autofix対象パターン・トリガー条件・修正内容を精査し報告せよ
+    description: gate_karo_startup.shの全ロジックを精査し報告せよ
     id: AC1
   bloom_level: null
-  command: '【修行Level 1 第3回】gate_report_autofix.shを精査し、全autofix対象パターン・トリガー条件・修正内容を報告せよ。
-    ■ 対象ファイル: scripts/gates/gate_report_autofix.sh ■ 修行の本質: 報告YAMLを一発でgate PASSさせること。gate_report_format.shで自己検証せよ:
-    bash scripts/gates/gate_report_format.sh <自分の報告パス> BLOCKされたら自力で修正し再提出。一発PASSが目標。'
+  command: '【修行Level 1 第5回】scripts/gates/gate_karo_startup.shを精査し報告せよ。 ■ 対象ファイル: scripts/gates/gate_karo_startup.sh
+    ■ 修行の本質: 報告YAMLを一発でgate PASSさせること。gate_report_format.shで自己検証せよ: bash scripts/gates/gate_report_format.sh
+    <自分の報告パス> BLOCKされたら自力で修正し再提出。一発PASSが目標。'
+  deployed_at: '2026-03-26T00:33:17'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
@@ -37,7 +36,7 @@ task:
     total_workarounds: 4
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
   parallel_ok: []
-  parent_cmd: cmd_training_L1_017
+  parent_cmd: cmd_training_L1_029
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -51,12 +50,11 @@ task:
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  report_filename: kotaro_report_cmd_training_L1_017.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_L1_017.yaml
+  report_filename: kotaro_report_cmd_training_L1_029.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_L1_029.yaml
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
   stop_for: []
-  target_path: scripts/gates/gate_report_autofix.sh
+  target_path: scripts/gates/gate_karo_startup.sh
   task_type: impl
   type: impl
-  deployed_at: "2026-03-25T23:47:29"
