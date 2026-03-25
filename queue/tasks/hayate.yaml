@@ -1,50 +1,30 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 3c94630e
+  ac_version: f50c9cfb
   acceptance_criteria:
   - binary_checks:
-    - check: dict形式入力でexit 1が返るか
+    - check: gate_report_format.shの全FAIL条件を12種以上特定したか
       result: ''
-    - check: string形式入力でexit 1が返るか
+    - check: 各FAIL条件について「NGパターン」と「正しいパターン」の両方を記載したか
       result: ''
-    - check: 正しいlist形式入力でexit 0が返るか
+    - check: 報告YAMLをbash scripts/gates/gate_report_format.shで自己検証しPASSしたか
       result: ''
-    - check: エラーメッセージに正しい形式の例が表示されるか
-      result: ''
-    description: report_field_set.shにlessons_useful型バリデーションを実装
+    description: 'gate_report_format.shの全FAIL条件（12種以上）を特定し、 各条件の「何がBLOCKされるか」「正しい書き方は何か」を
+      報告のresult.summaryとresult.detailsに記載せよ
+
+      '
     id: AC1
-  - binary_checks:
-    - check: test_report_field_set_validation.batsが存在し全PASSか
-      result: ''
-    - check: 既存batsテスト(bats tests/unit/)にSKIP/FAILがないか
-      result: ''
-    description: batsテスト作成+全テスト回帰なし確認
-    id: AC2
-  - binary_checks:
-    - check: git addで変更ファイルをstageしたか
-      result: ''
-    - check: commitメッセージにlessons_useful型バリデーション追加と記載したか
-      result: ''
-    description: 変更をcommitする
-    id: AC3
   bloom_level: null
-  command: "■ 目的\nreport_field_set.shにlessons_useful型バリデーションを追加。\n不正な型（dict/string）をBLOCKし、正しい形式（list）を強制する。\n\
-    \n■ 背景\n忍者がlessons_usefulをdict形式(0:{},1:{})やstring形式で記入→家老が毎回手動変換。\nkaro_workarounds.yamlで27件。全忍者で発生するシステム構造欠陥。\n\
-    \n■ 対象ファイル\n- scripts/lib/field_get.sh（read側の参照。変更対象ではない）\n- scripts/lib/report_field_set.sh（本丸。ここにバリデーション追加）\n\
-    \n■ 実装指示\nreport_field_set.shのlessons_useful書込み処理に以下を追加:\n1. 値がdict形式（\"0:\" or\
-    \ \"1:\" で始まる行がある）ならエラー終了\n2. 値がstring形式（\"- \"で始まらない1行テキスト）ならエラー終了\n3. エラー時のメッセージ:\n\
-    \   \"ERROR: lessons_useful must be YAML list format.\"\n   \"  Correct: - {id:\
-    \ L001, useful: true, reason: '理由'}\"\n   \"  Wrong:   {0: {id: L001}, 1: {id:\
-    \ L002}}\"\n   \"  Wrong:   'L001をreviewで使用した'\"\n4. exit 1でBLOCK\n\n■ テスト\ntests/unit/test_report_field_set_validation.bats\
-    \ を新規作成。\n- dict形式入力→exit 1\n- string形式入力→exit 1\n- 正しいlist形式入力→exit 0\n- 空list入力→exit\
-    \ 0（空は別gateが検出）\n\n■ 制約\n- 既存のreport_field_set.shの他フィールド処理を壊すな\n- bats tests/unit/\
-    \ 全テスト回帰なしを確認\n"
-  deployed_at: '2026-03-25T17:22:56'
+  command: '【修行Level 1 — 報告書基礎修行】 gate_report_format.shを読み、全FAIL条件を網羅的にリスト化して報告せよ。
+    ■ 対象ファイル: scripts/gates/gate_report_format.sh ■ 目的: gate検証の全FAIL条件を理解し、正しい報告YAMLの書き方を体得する
+    ■ 修行の本質: 作業内容は簡単（ファイルを読むだけ）。報告YAMLを正しく書けるかが修行の本番。 gate_report_format.shで自分の報告を事前検証せよ:
+    bash scripts/gates/gate_report_format.sh <自分の報告パス> BLOCKされたら自力で修正し再提出。一発PASSが目標。
+
+    '
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    ────────────────────────────────────────\n\n"
+    \  - L271: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks\
+    \ string形式のバリデー\n────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -65,11 +45,8 @@ task:
     top_pattern: report_yaml_format(11件)
     total_workarounds: 19
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_cycle_001
+  parallel_ok: []
+  parent_cmd: cmd_training_L1_001
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -83,10 +60,15 @@ task:
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  report_filename: hayate_report_cmd_cycle_001.yaml
-  report_path: queue/reports/hayate_report_cmd_cycle_001.yaml
+  - detail: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate
+      BLOCKで差し戻すのが正規フロー
+    id: L271
+    summary: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate
+      BLOCKで差し戻すのが正規フロー
+  report_filename: hayate_report_cmd_training_L1_001.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L1_001.yaml
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
   stop_for: []
-  target_path: scripts/lib/report_field_set.sh
-  target_path_warning: '⚠ target_pathが存在しない: scripts/lib/report_field_set.sh'
+  target_path: scripts/gates/gate_report_format.sh
+  deployed_at: "2026-03-25T22:50:43"
