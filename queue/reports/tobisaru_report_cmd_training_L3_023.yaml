@@ -1,0 +1,59 @@
+worker_id: tobisaru
+task_id: cmd_training_L3_023
+parent_cmd: cmd_training_L3_023
+timestamp: '2026-03-26T01:50:10'
+status: completed
+ac_version_read: 54dd64ce
+result:
+  summary: 'kotaro_report_cmd_training_L2_010.yaml gate準拠度レビュー完了。self_gate_check 4項目PASS/1項目FAIL。field_complete=FAIL:
+    task_idがnull(未充填)。他4項目(verdict_valid/bc_structure/lu_structure/lc_structure)は全てPASS。'
+  details: '【self_gate_check】verdict_valid: PASS(verdict: PASSで二値記入済み) / bc_structure:
+    PASS(AC1x2+AC2x2=全4項目result欄にyes記入済み) / lu_structure: PASS(L074,L063,L225,L079,L097の全5項目にid/useful/reason記入済み、reason全て非空で具体的)
+    / lc_structure: PASS(found:false+no_lesson_reasonにGP-107消火検出等の具体的理由記載) / field_complete:
+    FAIL(task_id: nullが未充填。worker_id/parent_cmd/timestamp/status/ac_version_read/result/purpose_validation/lesson_candidate/lessons_useful/binary_checks/verdictは充填済みだがtask_idのみnull)。【非準拠箇所】L2:task_id=null。本来cmd_training_L2_010が記入されるべき。テンプレート生成時のデフォルト値が残存した可能性。'
+purpose_validation:
+  cmd_purpose: kotaro_report_cmd_training_L2_010.yamlのgate準拠度を5項目で精査し、self_gate_checkに結果記入+教訓候補報告
+  fit: true
+  purpose_gap: ''
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: task_id未充填は個別の記入漏れであり構造的教訓ではない。gate_report_format.shがtask_idをチェックするかは別問題(gateの検査範囲拡張は既存の改善提案経路で扱うべき)
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: L3レビュータスクはコード精査ではなく報告YAML構造検証のため、((PASS++))パターンは直接関係しない
+- id: L063
+  useful: false
+  reason: L3レビュータスクはPython/lessons.yaml操作を含まないためdict/listイテレーション問題は該当しない
+- id: L225
+  useful: false
+  reason: L3レビュータスクはMCP entity操作を含まないため名義混入リスクは該当しない
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+self_gate_check:
+  verdict_valid: PASS
+  bc_structure: PASS
+  lu_structure: PASS
+  lc_structure: PASS
+  field_complete: FAIL
+binary_checks:
+  AC1:
+  - check: self_gate_checkを5項目dict形式でPASS/FAILを記入したか
+    result: 'yes'
+  - check: 非準拠箇所を具体的に指摘したか（result.detailsに記載）
+    result: 'yes'
+  AC2:
+  - check: lesson_candidateにfound=trueと具体的なtitle+detailを記載したか（発見なしならfound=false+no_lesson_reasonに3文字以上の具体的理由）
+    result: 'yes'
+  - check: lesson_candidateのprojectフィールドにinfraを記載したか
+    result: 'yes'
+verdict: PASS
