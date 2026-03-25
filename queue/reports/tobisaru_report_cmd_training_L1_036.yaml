@@ -1,0 +1,57 @@
+worker_id: tobisaru
+task_id: null
+parent_cmd: cmd_training_L1_036
+timestamp: "2026-03-26T00:47:11"
+status: completed
+ac_version_read: 7ac500f2
+result:
+  summary: gate_report_format.shの全ロジックを精査完了。FAIL判定条件14種、WARNING条件2種、ユーザビリティ機能2種を特定・分類した。
+  details: 【FAIL判定条件(14種)】(1)ファイル存在チェック:パス空orファイル不在(L12-14) (2)YAMLパースエラー:safe_load例外(L26-30)
+    (3)空/非dict:dataがNoneまたは非dict(L32-34) (4)必須フィールド欠落:worker_id,parent_cmd,ac_version_read,binary_checks,files_modified,lesson_candidate,lessons_usefulの7フィールド(L37-51)
+    (5)files_modified型不正:null,dict,bool(L54-63) (6)lesson_candidate不正:null/string/unexpected型,dict時:found欠落/found=false+no_lesson_reason欠落/no_lesson_reason短すぎ(3字以下)/プレースホルダ値(なし,特になし,N/A等)/found=true+title欠落/found=true+detail&summary両方欠落(L65-93)
+    (7)lessons_useful不正:null/string/dict型,list時:空list(taskにrelated_lessons有時)/FILL_THIS残存/id欠落/useful欠落/useful非bool/reason欠落/reason空文字/要素が非dict(L96-147)
+    (8)binary_checks不正:null/string/空dict,dict時:AC値が非list/check欠落/result欠落/check値がverdict語(PASS,FAIL,OK,NG,yes,no等)/check短すぎ(5字未満)/result空文字/result非yes-no,空list(L150-193)
+    (9)purpose_validation欠落orNull(L196-200) (10)status=pending(L203-206) (11)result.summary欠落/空orresult非dict(L209-214)
+    (12)verdict非PASS/FAIL(L217-220) (13)self_gate_check不正(存在時):非dict/空文字/PASS-FAIL以外(L224-239)
+    (14)stale_report:ファイル名cmd_idとparent_cmd不一致(L242-249) 【WARNING条件(2種)】(15)GP-062:parent_cmd以外のcmd_XXXX参照→staleコンテンツ警告(L253-260)
+    (16)PI-012:PE使用痕跡→GS探索PE禁止警告(L264-271) 【ユーザビリティ機能(2種)】(17)FIX hints:全FAILに具体的修正手順ヒント。missing_hintsテーブルで必須フィールド用ヒント一括定義(L38-46)
+    (18)GP-108 hint dedup:インデックス[N]正規化+重複排除で同一パターンのヒントを1回だけ表示(L273-283)
+purpose_validation:
+  cmd_purpose: gate_report_format.shの全ロジック精査と報告
+  fit: true
+  purpose_gap: ''
+files_modified: なし(精査のみ、コード変更なし)
+lesson_candidate:
+  found: false
+  no_lesson_reason: gate_report_format.shの構造は既知のgateパターンと同一。注入教訓L271がgate強化経緯を説明済みで新規教訓なし
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: 本gateにPASS++パターンは不在。bash部分ではなくPython内で処理。今回の精査対象外
+- id: L063
+  useful: false
+  reason: 本gateはlessons.yamlを直接パースしない。報告YAMLのlessons_usefulフィールド(list of dict)を検証するため対象外
+- id: L225
+  useful: false
+  reason: entity名義の混入はMCP Memory固有の問題。本gateは報告YAMLフォーマット検証のため対象外
+- id: L271
+  useful: true
+  reason: 直接有用。L271はこのgateがcmd_1248で強化された経緯を説明。lessons_useful dict形式+binary_checks
+    string形式の検証ロジック(L96-147,L150-193)を理解する背景知識として役立った
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  AC1:
+  - check: gate_report_format.shの全FAIL判定条件とWARNING条件を記載したか
+    result: 'yes'
+  - check: FIX hintsとGP-108 dedup等のユーザビリティ機能を記載したか
+    result: 'yes'
+verdict: PASS
