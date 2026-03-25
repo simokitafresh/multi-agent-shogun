@@ -316,9 +316,21 @@ except Exception:
 " 2>/dev/null || echo "yes")
 
                         if [ "$IS_TEMPLATE" = "yes" ]; then
-                            echo "[report_quality_route] GP-071: テンプレート状態検出 — quality_fix_requestスキップ (ninja: ${FROM})" >&2
-                            echo "[report_quality_route] verdict未記入 or FILL_THIS残存 → 忍者がまだ記入中。報告完了後に再送信せよ" >&2
-                            exit 0
+                            # GP-071改: テンプレート状態でreport_received = 報告未完了のまま完了報告 = BLOCK
+                            # 旧: exit 0でバイパス → 不完全報告がkaroに届く → workaround（消火構造）
+                            # 新: exit 1でBLOCK → 忍者がフィールドを埋めてから再送信（品質向上）
+                            echo "" >&2
+                            echo "==============================" >&2
+                            echo "[report_format_gate] BLOCKED: 報告が未完了 (ninja: ${FROM})" >&2
+                            echo "[report_format_gate] verdict未記入 or FILL_THIS残存。フィールドを全て埋めてから再送信せよ" >&2
+                            echo "[report_format_gate] FAIL理由:" >&2
+                            while IFS= read -r _gate_line; do
+                                echo "  $_gate_line" >&2
+                            done <<< "$GATE_RESULT"
+                            echo "" >&2
+                            echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
+                            echo "==============================" >&2
+                            exit 1
                         fi
 
                         # Phase 3: 品質問題→軍師に自動ルーティング（第二層分離）
