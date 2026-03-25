@@ -1,42 +1,30 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 79048422
+  ac_version: f50c9cfb
   acceptance_criteria:
   - binary_checks:
-    - check: result=okでFAIL+BLOCKされるか
-      result: 'yes'
-    - check: result=PASSでPASS通過するか
-      result: 'yes'
-    - check: result=FAILでPASS通過するか（FAILは有効値）
-      result: 'yes'
-    - check: self_gate_check未存在時はスキップされるか
-      result: 'yes'
-    description: gate_report_format.shにself_gate_check値バリデーション追加
+    - check: report_field_set.shの全コマンドと使い方を網羅したか
+      result: ''
+    - check: 各フィールドの型制約（list/dict/string/bool）を明記したか
+      result: ''
+    - check: 報告YAMLをbash scripts/gates/gate_report_format.shで自己検証しPASSしたか
+      result: ''
+    description: 'report_field_set.shの全コマンド（usage）、対応フィールド、 型制約（list/dict/string等）、エラー時の挙動を報告せよ
+
+      '
     id: AC1
-  - binary_checks:
-    - check: 追加テストが全PASSか
-      result: 'yes'
-    - check: 既存batsテスト回帰なしか
-      result: 'yes'
-    description: batsテスト追加+全テスト回帰なし確認
-    id: AC2
-  - binary_checks:
-    - check: git addで対象ファイルをstageしたか
-      result: 'yes'
-    - check: commitメッセージにself_gate_check値標準化と記載したか
-      result: 'yes'
-    description: 変更をcommitする
-    id: AC3
   bloom_level: null
-  command: "■ 目的\ngate_report_format.shにself_gate_check値の標準化バリデーションを追加。\nPASS/FAIL以外の値（ok, OK, pass等）をBLOCKする。\n\n■ 背景\ncmd_1362で疾風がself_gate_checkにok(小文字)を記入→cmd_complete_gate.shがBLOCK。\n家老が手動でok→PASSに修正。gate_report_format.shにこの検証がない。\n\
-    \n■ 対象ファイル\n- scripts/gates/gate_report_format.sh（self_gate_check検証追加）\n\n■ 実装指示\ngate_report_format.shの検証項目に追加:\n1. self_gate_checkフィールドが存在する場合（reviewタスクのみ）:\n   - 各項目のresult値がPASSまたはFAILのみ許容\n   -\
-    \ ok, OK, pass, fail, yes, no, true, false等はFAIL\n2. FAIL時のメッセージ:\n   \"FAIL: self_gate_check: result must be 'PASS' or 'FAIL' (got 'ok')\"\n   \"FIX: Change 'ok' to 'PASS' in self_gate_check results\"\
-    \n3. exit 1でBLOCK\n\n■ テスト\ntests/unit/test_report_template_gate_compat.bats に追加:\n- self_gate_check result=ok→FAIL\n- self_gate_check result=PASS→PASS\n- self_gate_check result=FAIL→PASS（FAILは有効な値）\n\
-    - self_gate_checkが存在しない場合→SKIP（implタスクでは不要）\n\n■ 制約\n- 既存テスト回帰なし\n- reviewタスク以外ではself_gate_checkは不要。存在チェックを条件にせよ\n"
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n  - L271: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデー\n────────────────────────────────────────\n\
-    \n"
+  command: '【修行Level 1 — 報告書基礎修行】 report_field_set.shを読み、報告YAML操作の全コマンド・使い方・制約を報告せよ。
+    ■ 対象ファイル: scripts/report_field_set.sh ■ 目的: 報告YAML操作ツールの正しい使い方を理解し、手動Edit禁止の理由を把握する
+    ■ 修行の本質: 作業内容は簡単（ファイルを読むだけ）。報告YAMLを正しく書けるかが修行の本番。 gate_report_format.shで自分の報告を事前検証せよ:
+    bash scripts/gates/gate_report_format.sh <自分の報告パス> BLOCKされたら自力で修正し再提出。一発PASSが目標。
+
+    '
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L271: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks\
+    \ string形式のバリデー\n  - L169: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、\"\
+    を含むログでYAMLが壊れ\n────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -56,29 +44,35 @@ task:
     top_pattern: report_yaml_format(2件)
     total_workarounds: 4
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_cycle_001
+  parallel_ok: []
+  parent_cmd: cmd_training_L1_005
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
     id: L074
     summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for lesson in data.get('lessons',[])が正しい形
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
     id: L063
-    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for lesson in data.get('lessons',[])が正しい形
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
   - detail: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
     id: L225
     summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
-  - detail: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate BLOCKで差し戻すのが正規フロー
+  - detail: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate
+      BLOCKで差し戻すのが正規フロー
     id: L271
-    summary: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate BLOCKで差し戻すのが正規フロー
-  report_filename: kotaro_report_cmd_cycle_001.yaml
-  report_path: queue/reports/kotaro_report_cmd_cycle_001.yaml
+    summary: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデーション追加済み。影丸がこのgate強化後もdict/string形式で提出。自動修正で対応したがgate
+      BLOCKで差し戻すのが正規フロー
+  - detail: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れる。append系は
+      flock + parse + dump の原子トランザクションに統一すべし。
+    id: L169
+    summary: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れる。append系は
+      flock + parse + dump の原子トランザクションに統一すべし。
+  report_filename: kotaro_report_cmd_training_L1_005.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_L1_005.yaml
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   status: done
   stop_for: []
-  target_path: scripts/gates/gate_report_format.sh
-  deployed_at: '2026-03-25T17:23:25'
+  target_path: scripts/report_field_set.sh
+  deployed_at: "2026-03-25T22:53:12"
