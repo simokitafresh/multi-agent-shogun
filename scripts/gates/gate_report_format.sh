@@ -34,10 +34,21 @@ if not data or not isinstance(data, dict):
     sys.exit(1)
 
 # --- Required top-level fields ---
-required = ['ac_version_read', 'binary_checks', 'files_modified', 'lesson_candidate', 'lessons_useful']
+required = ['worker_id', 'parent_cmd', 'ac_version_read', 'binary_checks', 'files_modified', 'lesson_candidate', 'lessons_useful']
+missing_hints = {
+    'worker_id': 'FIX (worker_id): テンプレートに生成済み。上書きで消すな。report_field_set.sh経由で記入:\\n  bash scripts/report_field_set.sh <report> worker_id <your_name>',
+    'parent_cmd': 'FIX (parent_cmd): テンプレートに生成済み。上書きで消すな。report_field_set.sh経由で記入:\\n  bash scripts/report_field_set.sh <report> parent_cmd cmd_XXXX',
+    'binary_checks': 'FIX (binary_checks): report_field_set.shで記入せよ:\\n  binary_checks:\\n    AC1:\\n      - check: \"確認内容\"\\n        result: \"yes\"',
+    'files_modified': 'FIX (files_modified): 変更したファイルパスを記入せよ:\\n  files_modified:\\n    - path/to/file.py',
+    'lesson_candidate': 'FIX (lesson_candidate): report_field_set.shで記入せよ:\\n  lesson_candidate:\\n    found: false\\n    no_lesson_reason: \"理由を具体的に書け\"',
+    'lessons_useful': 'FIX (lessons_useful): テンプレートに注入済みの教訓にuseful/reasonを記入せよ。空リストで上書きするな',
+    'ac_version_read': 'FIX (ac_version_read): task YAMLのac_versionハッシュ値をコピーせよ',
+}
 for field in required:
     if field not in data:
         errors.append(f'{field}: MISSING')
+        if field in missing_hints:
+            hints.append(missing_hints[field])
 
 # --- files_modified must be string or list, not null/dict (GP-065) ---
 fm = data.get('files_modified')
@@ -164,8 +175,11 @@ elif isinstance(bc, dict):
                     hints.append(f'FIX (binary_checks.{ac_key}[{j}]): check に確認内容を書け。result に yes/no を書け。\\n  例: {{check: \"_pane_offset変数が除去されたか\", result: \"yes\"}}')
                 elif isinstance(ck, str) and 0 < len(ck.strip()) < 5:
                     errors.append(f'binary_checks.{ac_key}[{j}].check: \"{ck}\" が短すぎる(確認内容を具体的に書け)')
-                # result field: must be yes/no, not free-form text
-                if isinstance(rs, str) and rs.strip() and rs.strip().lower() not in ('yes', 'no'):
+                # result field: must be yes/no, not free-form text or empty
+                if isinstance(rs, str) and not rs.strip():
+                    errors.append(f'binary_checks.{ac_key}[{j}].result: 空文字。\"yes\" または \"no\" を記入せよ')
+                    hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): 確認結果を \"yes\" or \"no\" で記入せよ')
+                elif isinstance(rs, str) and rs.strip().lower() not in ('yes', 'no'):
                     errors.append(f'binary_checks.{ac_key}[{j}].result: \"{rs[:40]}\" は不正。\"yes\" または \"no\" のみ')
                     hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): \"yes\" or \"no\" のみ。自由記述は acceptance_criteria.detail に書け')
 elif isinstance(bc, list) and not bc:
@@ -174,8 +188,15 @@ elif isinstance(bc, list) and not bc:
 # --- purpose_validation should exist and not be null ---
 if 'purpose_validation' not in data:
     errors.append('purpose_validation: MISSING')
+    hints.append('FIX (purpose_validation): cmdの目的との適合を記入せよ:\\n  purpose_validation:\\n    cmd_purpose: \"cmdの目的\"\\n    fit: true\\n    purpose_gap: \"\"')
 elif data.get('purpose_validation') is None:
     errors.append('purpose_validation: null (must be dict with fit/reason)')
+
+# --- status must not be pending (template default = unfinished) ---
+status_val = data.get('status', '')
+if isinstance(status_val, str) and status_val.strip().lower() == 'pending':
+    errors.append('status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ')
+    hints.append('FIX (status): bash scripts/report_field_set.sh <report> status completed')
 
 # --- result.summary should exist ---
 result = data.get('result', {})
@@ -190,6 +211,23 @@ verdict = data.get('verdict')
 if not isinstance(verdict, str) or verdict not in ('PASS', 'FAIL'):
     errors.append(f'verdict: \"{verdict}\" is not valid (must be \"PASS\" or \"FAIL\")')
     hints.append('verdictはPASS/FAILの二値のみ。binary_checks全yes→PASS、1つでもno→FAIL')
+
+# --- self_gate_check value validation (cmd_cycle_001) ---
+# reviewタスクのself_gate_check: 各項目のresultはPASS/FAILのみ許容
+sgc = data.get('self_gate_check')
+if sgc is not None:
+    if not isinstance(sgc, dict):
+        errors.append(f'self_gate_check: is {type(sgc).__name__} (must be dict)')
+    else:
+        valid_sgc_values = {'PASS', 'FAIL'}
+        for sgc_key, sgc_val in sgc.items():
+            sgc_str = str(sgc_val).strip() if sgc_val is not None else ''
+            if sgc_str == '':
+                # 空文字はテンプレート初期値 — 未記入
+                errors.append(f'self_gate_check.{sgc_key}: empty (must be PASS or FAIL)')
+            elif sgc_str not in valid_sgc_values:
+                errors.append(f'self_gate_check.{sgc_key}: \"{sgc_str}\" is not valid (must be \"PASS\" or \"FAIL\")')
+                hints.append(f'FIX: Change self_gate_check.{sgc_key} from \"{sgc_str}\" to \"PASS\" or \"FAIL\"')
 
 # --- stale_report check (GP-036): filename cmd vs parent_cmd field ---
 import re

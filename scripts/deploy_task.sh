@@ -297,26 +297,35 @@ generate_report_template() {
 
     mkdir -p "$SCRIPT_DIR/queue/reports"
 
+    # GP-084改: gawk BEGINFILE/ENDFILE一括でverdict+parent_cmdを抽出（field_get逐次→一括化）
+    # 報告ファイルが増えてもI/O 1回で済む（旧: N×field_get, 新: 1×gawk）
+    declare -A _rpt_verdict _rpt_pcmd
+    local _gawk_output
+    _gawk_output=$(gawk '
+        BEGINFILE { pcmd=""; verd="" }
+        /^parent_cmd:/ { sub(/^parent_cmd:[[:space:]]*/, ""); sub(/^["'"'"']/, ""); sub(/["'"'"']$/, ""); sub(/[[:space:]]*$/, ""); pcmd=$0 }
+        /^verdict:/ { sub(/^verdict:[[:space:]]*/, ""); sub(/^["'"'"']/, ""); sub(/["'"'"']$/, ""); sub(/[[:space:]]*$/, ""); verd=$0 }
+        ENDFILE { printf "%s\t%s\t%s\n", FILENAME, pcmd, verd }
+    ' "$SCRIPT_DIR/queue/reports/"*_report_*.yaml 2>/dev/null) || true
+    while IFS=$'\t' read -r _rpt_file _rpt_p _rpt_v; do
+        [ -z "$_rpt_file" ] && continue
+        _rpt_verdict["$_rpt_file"]="$_rpt_v"
+        _rpt_pcmd["$_rpt_file"]="$_rpt_p"
+    done <<< "$_gawk_output"
+
     # cmd_1323: STALL再配備時の旧報告テンプレート自動cleanup
+    # cmd_cycle_001: 他忍者の報告は絶対にアーカイブしない（配備対象の忍者名の報告のみ対象）
     if [[ -n "$parent_cmd" && "$parent_cmd" == cmd_* ]]; then
         local stale_basename
         for stale_report in "$SCRIPT_DIR/queue/reports/"*"_report_${parent_cmd}.yaml"; do
             [ -f "$stale_report" ] || continue
             stale_basename=$(basename "$stale_report")
-            # 自分の報告はスキップ
+            # 自分の報告はスキップ（下のown-reportブロックで処理）
             if [[ "$stale_basename" == "${ninja_name}_report_"* ]]; then
                 continue
             fi
-            # cmd_1382: 完了済み報告(verdict=PASS/FAIL)はアーカイブしない
-            local stale_verdict
-            stale_verdict=$(FIELD_GET_NO_LOG=1 field_get "$stale_report" "verdict" "")
-            if [[ "$stale_verdict" == "PASS" || "$stale_verdict" == "FAIL" ]]; then
-                log "report_template: completed report preserved (${stale_basename}, verdict=${stale_verdict})"
-                continue
-            fi
-            mkdir -p "$SCRIPT_DIR/archive/reports"
-            mv "$stale_report" "$SCRIPT_DIR/archive/reports/"
-            log "report_template: stale report archived (${stale_basename})"
+            # 他忍者の報告: 無条件で保護
+            log "report_template: PROTECTED other ninja report (${stale_basename})"
         done
     fi
 
@@ -329,14 +338,14 @@ generate_report_template() {
         if [[ "$stale_own_report" == "$report_file" ]]; then
             continue
         fi
-        # 既存報告のparent_cmdを取得
-        stale_own_pcmd=$(FIELD_GET_NO_LOG=1 field_get "$stale_own_report" "parent_cmd" "")
+        # 既存報告のparent_cmdを取得（gawkキャッシュから）
+        stale_own_pcmd="${_rpt_pcmd["$stale_own_report"]:-}"
         # parent_cmdが同じならスキップ（同cmdの報告）
         if [[ "$stale_own_pcmd" == "$parent_cmd" ]]; then
             continue
         fi
-        # 別cmdの報告: verdict確認
-        stale_own_verdict=$(FIELD_GET_NO_LOG=1 field_get "$stale_own_report" "verdict" "")
+        # 別cmdの報告: verdict確認（gawkキャッシュから）
+        stale_own_verdict="${_rpt_verdict["$stale_own_report"]:-}"
         if [[ -n "$stale_own_verdict" && "$stale_own_verdict" != "null" && "$stale_own_verdict" != '""' ]]; then
             log "report_template: completed own report preserved (${stale_own_basename}, verdict=${stale_own_verdict})"
             continue
@@ -1868,6 +1877,29 @@ if [ "$TASK_STATUS" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
     log "BLOCK: ${NINJA_NAME} is in_progress on ${CURRENT_CMD:-unknown}. 前タスク完了を待て。"
     echo "BLOCK: ${NINJA_NAME} は ${CURRENT_CMD:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
     exit 1
+fi
+
+# cmd_cycle_001: 同一cmd別忍者二重配備防止ガード
+# 同じparent_cmdが別の忍者にassigned/acknowledged/in_progressで存在する場合BLOCK
+# 背景: 二重配備事故3件(cmd_1281, cmd_1342, cmd_1350)。grepベースで軽量スキャン。
+DEPLOY_PARENT_CMD=$(field_get "$_TASK_YAML" "parent_cmd" "")
+if [ -n "$DEPLOY_PARENT_CMD" ]; then
+    for _dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
+        [ -f "$_dd_task" ] || continue
+        _dd_ninja=$(basename "$_dd_task" .yaml)
+        [ "$_dd_ninja" = "$NINJA_NAME" ] && continue
+        _dd_pcmd=$(grep -m1 '^\s*parent_cmd:' "$_dd_task" 2>/dev/null | sed "s/.*parent_cmd:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
+        [ "$_dd_pcmd" != "$DEPLOY_PARENT_CMD" ] && continue
+        _dd_status=$(grep -m1 '^\s*status:' "$_dd_task" 2>/dev/null | sed "s/.*status:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
+        case "$_dd_status" in
+            assigned|acknowledged|in_progress)
+                log "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status})"
+                echo "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status})" >&2
+                echo "Clear the existing task first: bash scripts/lib/yaml_field_set.sh queue/tasks/${_dd_ninja}.yaml task status idle" >&2
+                exit 1
+                ;;
+        esac
+    done
 fi
 
 # status強制注入（cmd_1126: pending/unknown→assigned化。Stage 1ガード保護対象に入れる）

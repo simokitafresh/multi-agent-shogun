@@ -492,9 +492,12 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 
 # --- Fix 22-26: MISSING field restoration via autofix ---
 
-@test "Fix22: binary_checks MISSING → autofix restores empty dict" {
+# === Fix22-28: 消火撤去テスト (2026-03-25) ===
+# 旧: autofixがMISSINGフィールドにデフォルト値挿入(消火) → gateがPASS → 家老workaround
+# 新: autofixはMISSINGを放置 → gate_report_format.shがBLOCK → 忍者が修正 → 品質向上
+
+@test "Fix22-28撤去: binary_checks MISSING → autofixせず残存 → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # Remove binary_checks key entirely
     python3 -c "
 import yaml
 with open('$TEST_TMPDIR/report.yaml') as f:
@@ -503,26 +506,19 @@ del data['binary_checks']
 with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 "
+    # autofix does NOT restore MISSING fields
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"binary_checks MISSING"* ]]
-    # Verify restored
-    run python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-bc = data.get('binary_checks')
-assert isinstance(bc, dict), f'Expected dict, got {type(bc)}'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [ "$output" = "OK" ]
+    [[ "$output" != *"binary_checks MISSING"* ]]
+    # gate catches it
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"binary_checks"* ]]
 }
 
-@test "Fix23: verdict MISSING → autofix restores key" {
+@test "Fix22-28撤去: verdict MISSING → autofixせず残存 → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # Remove verdict key entirely
     python3 -c "
 import yaml
 with open('$TEST_TMPDIR/report.yaml') as f:
@@ -531,58 +527,16 @@ del data['verdict']
 with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 "
-    # Debug: show file content and autofix output
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
-    echo "status=$status output=$output" >&3
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"verdict MISSING"* ]]
-    # Verify verdict key exists after autofix (Fix 9 may override '' to PASS/FAIL)
-    run python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-assert 'verdict' in data, 'verdict key missing'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [ "$output" = "OK" ]
-}
-
-@test "Fix24: purpose_validation MISSING → autofix restores default structure" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # Remove purpose_validation key entirely
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-del data['purpose_validation']
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"purpose_validation MISSING"* ]]
-    # Verify restored structure
-    run python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-pv = data.get('purpose_validation')
-assert isinstance(pv, dict), f'Expected dict, got {type(pv)}'
-assert 'cmd_purpose' in pv, 'cmd_purpose missing'
-assert 'fit' in pv, 'fit missing'
-assert 'purpose_gap' in pv, 'purpose_gap missing'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [ "$output" = "OK" ]
+    [[ "$output" != *"verdict MISSING"* ]]
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
 }
 
-@test "Fix25: files_modified MISSING → autofix restores empty list" {
+@test "Fix22-28撤去: files_modified MISSING → autofixせず → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # Remove files_modified key entirely
     python3 -c "
 import yaml
 with open('$TEST_TMPDIR/report.yaml') as f:
@@ -593,52 +547,49 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 "
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"files_modified MISSING"* ]]
-    # Verify restored
-    run python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-fm = data.get('files_modified')
-assert isinstance(fm, list), f'Expected list, got {type(fm)}'
-assert len(fm) == 0, f'Expected empty list, got {fm}'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [ "$output" = "OK" ]
+    [[ "$output" != *"files_modified MISSING"* ]]
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"files_modified"* ]]
 }
 
-@test "Fix26: result MISSING → autofix restores summary+details structure" {
+@test "Fix22-28撤去: lessons_useful MISSING → autofixせず → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # Remove result key entirely
     python3 -c "
 import yaml
 with open('$TEST_TMPDIR/report.yaml') as f:
     data = yaml.safe_load(f)
-del data['result']
+del data['lessons_useful']
 with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 "
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"result MISSING"* ]]
-    # Verify restored structure
-    run python3 -c "
+    [[ "$output" != *"lessons_useful MISSING"* ]]
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"lessons_useful"* ]]
+}
+
+@test "Fix22-28撤去: lesson_candidate MISSING → autofixせず → gate FAIL" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
 import yaml
 with open('$TEST_TMPDIR/report.yaml') as f:
     data = yaml.safe_load(f)
-r = data.get('result')
-assert isinstance(r, dict), f'Expected dict, got {type(r)}'
-assert 'summary' in r, 'summary missing'
-assert 'details' in r, 'details missing'
-assert r['summary'] == '', f'Expected empty string, got {repr(r[\"summary\"])}'
-assert r['details'] == '', f'Expected empty string, got {repr(r[\"details\"])}'
-print('OK')
+del data['lesson_candidate']
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 "
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    [ "$output" = "OK" ]
+    [[ "$output" != *"lesson_candidate MISSING"* ]]
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"lesson_candidate"* ]]
 }
 
 @test "GP-071: template state when verdict is null" {
@@ -654,4 +605,56 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     run _detect_template_state "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "yes" ]
+}
+
+# === self_gate_check value validation (cmd_cycle_001) ===
+
+# Helper: add self_gate_check to a filled report
+_add_self_gate_check() {
+    local outfile="$1"
+    local lesson_ref="${2:-PASS}"
+    local lesson_candidate="${3:-PASS}"
+    local status_valid="${4:-PASS}"
+    local purpose_fit="${5:-PASS}"
+    cat >> "$outfile" <<EOF
+self_gate_check:
+  lesson_ref: "${lesson_ref}"
+  lesson_candidate: "${lesson_candidate}"
+  status_valid: "${status_valid}"
+  purpose_fit: "${purpose_fit}"
+EOF
+}
+
+@test "self_gate_check result=ok is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _add_self_gate_check "$TEST_TMPDIR/report.yaml" "ok" "PASS" "PASS" "PASS"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"self_gate_check.lesson_ref"* ]]
+    [[ "$output" == *"ok"* ]]
+}
+
+@test "self_gate_check result=PASS passes gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _add_self_gate_check "$TEST_TMPDIR/report.yaml" "PASS" "PASS" "PASS" "PASS"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
+@test "self_gate_check result=FAIL passes gate (FAIL is valid value)" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _add_self_gate_check "$TEST_TMPDIR/report.yaml" "PASS" "FAIL" "PASS" "PASS"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
+@test "self_gate_check absent does not cause gate failure (impl tasks)" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # No self_gate_check added — simulates impl task
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
 }
