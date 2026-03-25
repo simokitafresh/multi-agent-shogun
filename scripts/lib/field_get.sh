@@ -8,7 +8,6 @@
 #
 # 関数:
 #   field_get <file> <field> [default]  — フィールド値を取得
-#   field_get_deps <file>               — 指定ファイルに依存するスクリプト一覧
 #
 # 教訓L071: SCRIPT_DIR はリポルート基準 (多数派方式)
 # 教訓L073: scripts/lib/ は ../.. でリポルートに到達
@@ -176,25 +175,6 @@ _field_get_log() {
 
     printf '%s\t%s\t%s\t%s\n' "$caller" "$file" "$field" "$ts" >> "$_FIELD_DEPS_TSV"
   ) 200>"$lock_file" 2>/dev/null
-}
-
-# ──────────────────────────────────────────────────────
-# field_get_deps <file>
-#   field_deps.tsv から指定ファイルに依存するスクリプト一覧を返す
-# ──────────────────────────────────────────────────────
-field_get_deps() {
-  local file="$1"
-  if [[ -z "$file" ]]; then
-    echo "[field_get_deps] ERROR: usage: field_get_deps <file>" >&2
-    return 1
-  fi
-
-  if [[ ! -f "$_FIELD_DEPS_TSV" ]]; then
-    echo "[field_get_deps] INFO: field_deps.tsv not found" >&2
-    return 0
-  fi
-
-  grep -F "$file" "$_FIELD_DEPS_TSV" | cut -f1 | sort -u
 }
 
 # ══════════════════════════════════════════════════════
