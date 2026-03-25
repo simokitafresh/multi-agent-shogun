@@ -208,7 +208,10 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
             val scriptPath = "$projectPath/scripts/usage_status.sh".replace("'", "'\\''")
             val prov = provider ?: _rateLimitProvider.value
             val provArg = if (prov == "openai") "codex" else "claude"
-            val result = sshManager.execCommand("bash '$scriptPath' $provArg")
+            var result = sshManager.execCommand("bash '$scriptPath' $provArg")
+            if (result.getOrNull()?.isBlank() == true) {
+                result = sshManager.execCommand("bash '$scriptPath' $provArg")
+            }
             _rateLimitLoading.value = false
             _rateLimitResult.value = result.getOrElse { "取得失敗: ${it.message}" }
         }
