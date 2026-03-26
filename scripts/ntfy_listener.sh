@@ -37,8 +37,8 @@ fi
 # トピック名セキュリティ検証
 ntfy_validate_topic "$TOPIC" || true
 
-# Initialize inbox if not exists
-if [ ! -f "$INBOX" ]; then
+# Initialize inbox if not exists (skip in lib-only mode — CI has no queue/ dir)
+if [ "$NTFY_LISTENER_LIB_ONLY" != "1" ] && [ ! -f "$INBOX" ]; then
     echo "inbox:" > "$INBOX"
 fi
 
@@ -66,8 +66,11 @@ else
     SCREENSHOT_DIR="$SCRIPT_DIR/$SCREENSHOT_PATH"
 fi
 
-mkdir -p "$SCREENSHOT_DIR" 2>/dev/null || \
-    echo "[$(date)] WARNING: Failed to create screenshot dir: $SCREENSHOT_DIR" >&2
+# Skip dir creation in lib-only mode (CI has no queue/screenshots/)
+if [ "$NTFY_LISTENER_LIB_ONLY" != "1" ]; then
+    mkdir -p "$SCREENSHOT_DIR" 2>/dev/null || \
+        echo "[$(date)] WARNING: Failed to create screenshot dir: $SCREENSHOT_DIR" >&2
+fi
 
 STREAM_WATCHDOG_SECS=1800
 STREAM_READ_WATCHDOG_SECS=120
