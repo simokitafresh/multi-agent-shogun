@@ -1250,3 +1250,11 @@ entries: []
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-03-26T23:38:47Z"
+  - cmd_id: "cmd_1427"
+    ac_count: 4
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-03-26T23:49:07Z"
