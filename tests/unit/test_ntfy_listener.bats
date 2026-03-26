@@ -62,7 +62,7 @@ teardown() {
 }
 
 @test "T-NTFY-001: keepalive/open events do not update LAST_MESSAGE_ACTIVITY" {
-    run bash -lc '
+    run bash -c '
 set -euo pipefail
 LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
 TEST_PROJECT="'"$TEST_PROJECT"'"
@@ -89,7 +89,7 @@ process_stream_line "{\"event\":\"keepalive\"}"
 }
 
 @test "T-NTFY-002: inbound message updates LAST_MESSAGE_ACTIVITY only after processing" {
-    run bash -lc '
+    run bash -c '
 set -euo pipefail
 LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
 TEST_PROJECT="'"$TEST_PROJECT"'"
@@ -115,7 +115,7 @@ grep -q "hello from ntfy" "$INBOX"
 }
 
 @test "T-NTFY-003: message watchdog triggers reconnect even when stream bytes are recent" {
-    run bash -lc '
+    run bash -c '
 set -euo pipefail
 LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
 
@@ -137,7 +137,7 @@ echo "$WATCHDOG_LOG_MSG" | grep -q "no inbound messages"
 }
 
 @test "T-NTFY-004: attachment download curl is bounded by --max-time 30" {
-    run bash -lc '
+    run bash -c '
 set -euo pipefail
 LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
 TEST_PROJECT="'"$TEST_PROJECT"'"
@@ -163,7 +163,7 @@ grep -q -- "--max-time 30" "$CURL_LOG"
 }
 
 @test "T-NTFY-005: image attachment is saved with timestamped original name and notifies shogun" {
-    run bash -lc '
+    run bash -c '
 set -euo pipefail
 LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
 TEST_PROJECT="'"$TEST_PROJECT"'"
@@ -206,7 +206,7 @@ grep -q "screenshot_received" "$INBOX_WRITE_LOG"
     # 壊れたYAMLをinboxに書き込む
     printf 'inbox:\n  - {id: ok1\n  BROKEN LINE <<<\n' > "$INBOX_FILE"
 
-    run bash -lc '
+    run bash -c '
 set -euo pipefail
 LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
 TEST_PROJECT="'"$TEST_PROJECT"'"
@@ -248,7 +248,7 @@ append_ntfy_inbox "msg-corrupt-1" "1711111111" "recovery test message" "pending"
     # 特徴的な壊れたYAMLを書き込む
     printf 'inbox:\n  - {id: sentinel_abc123\n  !!!CORRUPT_MARKER!!!\n' > "$INBOX_FILE"
 
-    run bash -lc '
+    run bash -c '
 set -euo pipefail
 LISTENER_SCRIPT="'"$LISTENER_SCRIPT"'"
 TEST_PROJECT="'"$TEST_PROJECT"'"

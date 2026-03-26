@@ -42,6 +42,21 @@ exit 0
 EOF
     chmod +x "$TEST_BIN/tmux"
 
+    # inotifywait不在環境(CI等)用mock: timeout分sleepして終了
+    cat > "$TEST_BIN/inotifywait" <<'EOF'
+#!/bin/bash
+timeout_val=1
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --timeout) timeout_val="$2"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+sleep "$timeout_val"
+exit 0
+EOF
+    chmod +x "$TEST_BIN/inotifywait"
+
     export PATH="$TEST_BIN:$PATH"
     export TMUX_PANE="%1"
     export STOP_HOOK_INOTIFY_TIMEOUT=1  # テスト高速化: 55秒→1秒
@@ -57,7 +72,7 @@ teardown() {
 
 run_hook() {
     local payload="$1"
-    PAYLOAD="$payload" TEST_PROJECT_PATH="$TEST_PROJECT" run bash -lc '
+    PAYLOAD="$payload" TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
 set -euo pipefail
 printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
 '
@@ -98,7 +113,7 @@ EOF
     export TMUX_AGENT_ID="shogun"
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
 
-    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"task completed"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -lc '
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"task completed"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
 set -euo pipefail
 TMUX_AGENT_ID="shogun"
 printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
