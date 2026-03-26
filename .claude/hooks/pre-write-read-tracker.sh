@@ -47,7 +47,7 @@ case "$tool_name" in
         # queue/reports/*.yaml → 無条件deny（report_field_set.shを使え）(cmd_1284でBLOCK復元)
         case "$file_path" in
             */queue/tasks/*.yaml)
-                printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"queue/tasks/*.yamlはWrite/Editで直接書くな。deploy_task.shを使え。"}}\n'
+                printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"queue/tasks/*.yamlはWrite/Editで直接書くな。状態更新→bash scripts/lib/yaml_field_set.sh queue/tasks/{name}.yaml task {field} {value}。新規配備→deploy_task.sh。"}}\n'
                 exit 1
                 ;;
             */queue/reports/*.yaml)

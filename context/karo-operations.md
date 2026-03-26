@@ -9,6 +9,7 @@
 | 作業フェーズ | まず見る結論 | 詳細参照 |
 |------|------|------|
 | cmd受領〜配備 | 五問チェック→Pattern Selection Flow→deploy | `docs/research/karo-operations-detail.md` §1-2 |
+| **idle時（パイプライン空）** | **改善サイクル起動 → §7** | — |
 | 報告受領〜レビュー | review/pass-fail/WAIVE/再配備 | `docs/research/karo-operations-detail.md` §3 |
 | 難問・失敗対応 | 1名失敗後は2名独立配備 | `docs/research/karo-operations-detail.md` §4 |
 | cmd完了後の知識処理 | draft教訓査読→GATE | `docs/research/karo-operations-detail.md` §5 |
@@ -326,3 +327,21 @@ retry_policy: |
   parallel_count: 3     # 同時配備数。省略時1（直列）
   assign_to_model: opus  # 省略時は通常配備ルール
 ```
+
+## §7 idle時改善サイクル（殿厳命: 止まるな）
+
+パイプライン空+全忍者idle = **改善サイクルを回す時間**。待つな。
+
+### 優先順（上から順に消化）
+1. `queue/insights.yaml` のstatus: pending → 分析+行動+resolve
+2. `logs/karo_workarounds.yaml` 直近10件 → パターン分析→予防策設計(gate/hook/テンプレート)
+3. `bash scripts/gates/gate_lesson_health.sh` → ALERT時は教訓整理
+4. 忍者品質プロファイル（gate_karo_startup.sh出力の忍者別WA率）→ 高WA忍者の根因深掘り
+5. deepdive再読 → 「自分の業務の何をgateにすべきか？」を1つ見つけて行動
+
+### サイクルの回し方
+```
+データを見る → 問いを見つける → なぜを掘る → 自動化ターゲット特定
+→ 行動（直接修正 or insight記録 or cmd提案）→ 次のデータを見る
+```
+考えて進む、考えて進む。止まったらPhase 3を読め。

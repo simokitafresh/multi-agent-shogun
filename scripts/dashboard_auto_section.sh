@@ -954,17 +954,23 @@ if [[ "$DRY_RUN" == "false" ]]; then
     fi
     _ntfy_summary="📊 Dashboard更新: 稼働${ACTIVE_COUNT}名 CLEAR率${_ntfy_clear_pct}% 連勝${STREAK}"
 
-    # AC2: Dedup — skip if same as last sent
-    _ntfy_last_file="/tmp/mas-dashboard-ntfy-last.txt"
+    # AC2: Dedup — only send when CLEAR_COUNT increases (= new cmd completed)
+    # Old logic checked exact string match, but active ninja count changes
+    # caused 72 sends/day. Now tracks CLEAR_COUNT only.
+    _ntfy_last_file="/tmp/mas-dashboard-ntfy-last-clear.txt"
     _ntfy_skip=false
-    if [[ -f "$_ntfy_last_file" ]] && [[ "$(cat "$_ntfy_last_file")" == "$_ntfy_summary" ]]; then
+    _last_clear_count=0
+    if [[ -f "$_ntfy_last_file" ]]; then
+        _last_clear_count=$(cat "$_ntfy_last_file" 2>/dev/null || echo 0)
+    fi
+    if [[ "${CLEAR_COUNT:-0}" -le "$_last_clear_count" ]]; then
         _ntfy_skip=true
     fi
 
     if [[ "$_ntfy_skip" == "false" ]]; then
         # AC3: Non-blocking — || true ensures dashboard update is not interrupted
         bash "$SCRIPT_DIR/ntfy.sh" "$_ntfy_summary" || true
-        echo "$_ntfy_summary" > "$_ntfy_last_file"
+        echo "${CLEAR_COUNT:-0}" > "$_ntfy_last_file"
     fi
 fi
 

@@ -476,7 +476,19 @@ for p in sorted(paths):
 
             if [ -n "$GIT_CHECK_PATHS" ]; then
                 mapfile -t _check_paths <<< "$GIT_CHECK_PATHS"
-                UNCOMMITTED=$(git -C "$SCRIPT_DIR" status --porcelain -- "${_check_paths[@]}" 2>/dev/null || true)
+                # プロジェクトリポジトリの解決: task YAMLのproject:からprojects/{project}.yamlのpath:を参照
+                # cmd_1412教訓: SCRIPT_DIR(multi-agent-shogun)でDM-signalファイルをチェックしても検出不能
+                GIT_REPO_DIR="$SCRIPT_DIR"
+                if [ -n "$TASK_YAML" ] && [ -f "$TASK_YAML" ]; then
+                    _proj=$(grep -m1 '^\s*project:' "$TASK_YAML" 2>/dev/null | sed 's/.*project:[[:space:]]*//' | sed "s/['\"]//g" | tr -d '[:space:]' || true)
+                    if [ -n "$_proj" ] && [ -f "$SCRIPT_DIR/projects/${_proj}.yaml" ]; then
+                        _proj_path=$(grep -m1 '^\s*path:' "$SCRIPT_DIR/projects/${_proj}.yaml" 2>/dev/null | sed 's/.*path:[[:space:]]*//' | sed "s/['\"]//g" | sed 's/[[:space:]]*$//' || true)
+                        if [ -n "$_proj_path" ] && [ -d "$_proj_path/.git" ]; then
+                            GIT_REPO_DIR="$_proj_path"
+                        fi
+                    fi
+                fi
+                UNCOMMITTED=$(git -C "$GIT_REPO_DIR" status --porcelain -- "${_check_paths[@]}" 2>/dev/null || true)
                 if [ -n "$UNCOMMITTED" ]; then
                     echo "[git_uncommitted_gate] BLOCKED: 未commitファイルあり (ninja: ${FROM})" >&2
                     while IFS= read -r _uline; do

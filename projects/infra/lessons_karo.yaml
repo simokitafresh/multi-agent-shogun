@@ -105,10 +105,15 @@ lessons:
   source_cmd: cmd_training_L2
   created_at: '2026-03-26'
 - id: LK016
-  title: LK016
-  detail: pane直接観察→自動化ターゲット特定 — gate_fire_logでは見えない摩擦の発見
-  source_cmd: '殿の指示「忍者のpane見てるか？学べ」により、gate_fire_log(PASS/FAIL二値)では見えない忍者の作業プロセス上の摩擦を発見。疾風cmd_1404で観察:
+  title: pane直接観察→自動化ターゲット特定 — gate_fire_logでは見えない摩擦の発見
+  detail: '殿の指示「忍者のpane見てるか？学べ」により、gate_fire_log(PASS/FAIL二値)では見えない忍者の作業プロセス上の摩擦を発見。疾風cmd_1404で観察:
     コード修正は迅速正確だが、/clear後の報告YAML作成でreport_field_set.shのドット記法を知らず3回BLOCKされYAML破損まで至った。根本原因:
     テンプレートにドット記法の具体例がなかった。即対策: deploy_task.shの報告テンプレートにクイックリファレンス(ドット記法例+アンチパターン警告)を追加。gate_fire_logはPASS/FAILの二値しか見せないが、paneはなぜFAILかどこで詰まるかを見せる。deepdive
     Phase5(なぜの目的=自動化ターゲット特定)の家老実践版。'
+  source_cmd: cmd_1404
+  created_at: '2026-03-26'
+- id: LK017
+  title: 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す
+  detail: 殿の指示「全てはつながって回っている。忍者の品質向上にはCMDの品質向上、タスク配備の品質向上が必要だ」。品質は鎖で、各環の品質が下流に伝搬する。cmdが曖昧→タスクYAMLが曖昧→忍者が迷う→報告が不完全→教訓が浅い。家老の配備品質が忍者の作業品質を決める。テンプレート改善(LK016ドット記法ヒント)は報告環の品質向上。タスクYAML構築の精度(binary_checks/constraints/target_path)は作業環の品質向上。効率や速度は品質向上の結果であり目的ではない(殿厳命)。品質を損なう可能性がある行為は全て悪。
+  source_cmd: cmd_1406
   created_at: '2026-03-26'

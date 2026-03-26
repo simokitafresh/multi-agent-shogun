@@ -54,7 +54,7 @@ projects:
     path: "/mnt/c/Python_app/google_classroom"
     repo: "https://github.com/simokitafresh/google_classroom"
     priority: high
-    status: archived
+    status: active
 
   - id: mcas
     name: "Multi-Claude Account Switcher"

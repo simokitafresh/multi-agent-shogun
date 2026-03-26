@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-26 -->
+<!-- last_updated: 2026-03-27 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -234,43 +234,43 @@
 | cmd_937 | 整理 — 確定申告データの不要ファイル削除+ディレクトリ浄化 | auto-ops | 03-14 | cancelled |
 | cmd_939 | 実装 — note売上CSVのGoogle Drive upload機能追加 | auto-ops | 03-14 | 実装 — note売上CSVのGoogle Drive upload機能追加 |
 | cmd_938 | 修正+整理 — 確定申告データの出力先修正+Drive upload+確認後ローカル削除 | auto-ops | 03-14 | 修正+整理 — 確定申告データの出力先修正+Drive upload+確認後ローカル削除 |
-| cmd_940 | | | auto-ops | 03-14 | — |
-| cmd_942 | | | auto-ops | 03-14 | — |
-| cmd_944 | | | auto-ops | 03-14 | — |
-| cmd_945 | | | auto-ops | 03-14 | — |
-| cmd_946 | | | auto-ops | 03-14 | — |
-| cmd_943 | | | auto-ops | 03-14 | — |
-| cmd_949 | | | auto-ops | 03-15 | — |
-| cmd_948 | | | auto-ops | 03-15 | — |
-| cmd_947 | | | auto-ops | 03-15 | — |
-| cmd_950 | | | auto-ops | 03-15 | — |
-| cmd_951 | | | auto-ops | 03-15 | — |
-| cmd_952 | | | auto-ops | 03-15 | 経費マスターSpreadsheetの既存パターンを調査し、4 |
-| cmd_955 | | | dm-signal | 03-15 | — |
-| cmd_956 | | | dm-signal | 03-15 | — |
-| cmd_957 | | | infra | 03-15 | — |
-| cmd_959 | | | infra | 03-15 | — |
-| cmd_960 | | | infra | 03-15 | — |
-| cmd_961 | | | infra | 03-15 | — |
-| cmd_962 | | | dm-signal | 03-15 | — |
-| cmd_964 | | | dm-signal | 03-15 | — |
-| cmd_963 | | | dm-signal | 03-15 | — |
-| cmd_967 | | | dm-signal | 03-15 | trade-rule.md §7.3aの逆参照注記を強化。既 |
-| cmd_968 | | | dm-signal | 03-15 | 金融ML知識辞書 ID予約済み5エントリの辞書化完了。 全フ |
-| cmd_965 | | | dm-signal | 03-15 | Recharts/KaTeX dynamic import強 |
-| cmd_966 | | | dm-signal | 03-16 | — |
-| cmd_958 | | | infra | 03-16 | — |
-| cmd_969 | | | dm-signal | 03-16 | — |
-| cmd_971 | | | dm-signal | 03-16 | DM-Signal FE Biome導入+PostToolU |
-| cmd_974 | | | infra | 03-16 | — |
-| cmd_975 | | | dm-signal | 03-16 | — |
-| cmd_970 | | | infra | 03-16 | — |
-| cmd_972 | | | infra | 03-16 | — |
-| cmd_973 | | | infra | 03-16 | — |
-| cmd_976 | | | dm-signal | 03-16 | — |
-| cmd_978 | | | infra | 03-16 | — |
-| cmd_980 | | | infra | 03-16 | — |
-| cmd_979 | | | infra | 03-16 | — |
+| cmd_940 | 偵察+整備 — Drive確定申告フォルダの整合性検証+チェックリスト恒久化 | | auto-ops | 03-14 | — |
+| cmd_942 | 偵察 — 確定申告証票PDFの重複・有効性調査 | | auto-ops | 03-14 | — |
+| cmd_944 | 修正 — マスターCSV更新（MFクレカ追加反映） | | auto-ops | 03-14 | — |
+| cmd_945 | 修正 — PayPal公式レシートPDFでDrive既存PDFを差し替え | | auto-ops | 03-14 | — |
+| cmd_946 | 実装 — マスターCSV列16「使用カード」追加 | | auto-ops | 03-14 | — |
+| cmd_943 | 修正+整備 — 確定申告証票PDF浄化 | | auto-ops | 03-14 | — |
+| cmd_949 | 修正 — CDP修復+note領収書DL試行 | | auto-ops | 03-15 | — |
+| cmd_948 | 修正 — Anthropic領収書アップロード+[OK]格上げ | | auto-ops | 03-15 | — |
+| cmd_947 | 修正 — note.com領収書DL（売上手数料2件+振込手数料11件） | | auto-ops | 03-15 | — |
+| cmd_950 | 偵察 — 欠損領収書6商号Gmail調査+取得可能性判定 | | auto-ops | 03-15 | — |
+| cmd_951 | 修正 — 全Driveフォルダ Invoice/Receipt混在是正 | | auto-ops | 03-15 | — |
+| cmd_952 | 修正 — 経費マスター未登録4商号の補完 | auto-ops | 03-15 | 経費マスターSpreadsheetの既存パターンを調査し、4 |
+| cmd_955 | 最適化 — monthly-returns fallback window query化（-88%改善） | | dm-signal | 03-15 | — |
+| cmd_956 | 最適化 — monthly_trade N+1クエリ修正（170→3 queries） | | dm-signal | 03-15 | — |
+| cmd_957 | 偵察 — MCP obs正本突合（Vercel原則適用） | | infra | 03-15 | — |
+| cmd_959 | 偵察 — MCP判定割れobs万全偵察（8名独立判定） | | infra | 03-15 | — |
+| cmd_960 | 強化 — 逆瀬川記事知見4点取込 | | infra | 03-15 | — |
+| cmd_961 | 強化 — tdd-guard型Hook＋Gate（テストSKIP/FAIL機械強制） | | infra | 03-15 | — |
+| cmd_962 | 万全偵察 — DM-signal UX快適性の現況再調査 | | dm-signal | 03-15 | — |
+| cmd_964 | 修正 — FEキャッシュ整合性修復（ETag孤児/SWR不統一） | | dm-signal | 03-15 | — |
+| cmd_963 | 修正 — BE N+1クエリ修正High3件 | | dm-signal | 03-15 | — |
+| cmd_967 | 修正 — trade-rule.md §7.3aに§2.1 SSOT 3層への逆参照追加 | | dm-signal | 03-15 | trade-rule.md §7.3aの逆参照注記を強化。既 |
+| cmd_968 | 強化 — 金融ML知識辞書 ID予約済み5エントリの辞書化 | | dm-signal | 03-15 | 金融ML知識辞書 ID予約済み5エントリの辞書化完了。 全フ |
+| cmd_965 | 最適化 — Recharts/KaTeX dynamic import強化（バンドル27%削減） | | dm-signal | 03-15 | Recharts/KaTeX dynamic import強 |
+| cmd_966 | 修正 — FEテスト5件FAIL修復（現行コードへの追随） | | dm-signal | 03-16 | — |
+| cmd_958 | 修正 — MCP Vercel原則適用（構造改革） | | infra | 03-16 | — |
+| cmd_969 | 強化 — DM-Signal Ruff導入 + PostToolUse Hook品質ループ構築 | | dm-signal | 03-16 | — |
+| cmd_971 | 強化 — DM-Signal FE Biome PostToolUse Hook + Hurl API E2Eテスト | | dm-signal | 03-16 | DM-Signal FE Biome導入+PostToolU |
+| cmd_974 | 偵察 — Codex忍者のアイデンティティ認識状況調査 | | infra | 03-16 | — |
+| cmd_975 | 偵察 — DM-Signal PF健全性・現在ポジション・実績の定量調査 | | dm-signal | 03-16 | — |
+| cmd_970 | 強化 — infra shellcheck PostToolUse Hook + リンター設定保全 | | infra | 03-16 | — |
+| cmd_972 | 強化 — Stop Hook完了ゲート + エラーメッセージ修正 | | infra | 03-16 | — |
+| cmd_973 | 強化 — AIアンチパターン検出 + ast-grepアーキテクチャ | | infra | 03-16 | — |
+| cmd_976 | 偵察 — 殿の哲学から導くDM-Signal診断指標の再設計 | | dm-signal | 03-16 | — |
+| cmd_978 | 衛生 — 全プロジェクト .gitignore整備 + 未プッシュ一覧 | | infra | 03-16 | — |
+| cmd_980 | 偵察 — 教訓注入率低下の原因精査と改善提案 | | infra | 03-16 | — |
+| cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_981 | 'p̄（p平均法）をFoFレイヤーのコーディングブロックとして忍法パイプラインに組み込み、 | dm-signal | 03-16 | — |
 | cmd_982 | 'Render BEデプロイが2連続update_failed。 | dm-signal | 03-16 | — |
 | cmd_983 | 'p̄の複合PK化・複数n_splits事前計算・パイプラインブロック・FE表示について、 | dm-signal | 03-16 | — |
@@ -299,7 +299,7 @@
 | cmd_1004 | 'FoFの計算開始日(fof_valid_start_date)が構成PFのシグナル開始日しか見ておらず、 | dm-signal | 03-16 | — |
 | cmd_1007 | 'cmd_1005のPBar BTをtop_n=1で再実行し、毎月p̄最良1体に集中した場合の | dm-signal | 03-16 | — |
 | cmd_1008 | '各ファミリー（青龍/朱雀/白虎/玄武）内の3モード（激攻/鉄壁/常勝）から | dm-signal | 03-16 | — |
-| cmd_1010 | | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
+| cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1014 | Max Run-upと直交する2メトリクスをL1レベルで特定し、シン四神CPCVスクリーニング用トリプルEを確定する | dm-signal | 03-17 | シン四神Phase1: L1ファミリー別メトリクス相関分析を |
 | cmd_1016 | trade-ruleパリティ修正前に生成された汚染GS結果データを特定し完全削除する | dm-signal | 03-17 | — |
 | cmd_1015 | run_077正規計算でL1フルGS月次リターンを生成し、Max Run-upと直交する2メトリクスをL1レベルで特定する | dm-signal | 03-17 | — |
@@ -455,3 +455,19 @@
 | cmd_1401 | — | infra | 03-26 | — |
 | cmd_1402 | — | infra | 03-26 | — |
 | cmd_1403 | — | infra | 03-26 | — |
+| cmd_1414 | Auto-dreamを超える5 Phase Memory Consolidation。殿の原理(タイムスタンプ=因果推論/免疫系=進化)を実装。12システム調査の車輪(Zep二重タイムスタンプ/Audrey矛盾管理/Mnemosyne秒精度)を統合。Phase | infra | 03-27 | — |
+| cmd_1077 | シン四神・シン忍法の本番DB登録手順書を作成し、忍者が即実行できる状態にする | dm-signal | 03-27 | — |
+| cmd_1078 | シン玄武(DM7+)をXLU固定でPhase 3+Phase 4やり直し。DNA準拠の4体を再選定する | dm-signal | 03-27 | — |
+| cmd_1079 | FE MAX_PORTFOLIOS を120→200に修正。BE(cmd_1076)との整合 | dm-signal | 03-27 | — |
+| cmd_1084 | シン四神10体のpipeline_config欠落を修正し、full recalculateを再実行して正常なシグナル・月次リターンを生成する | dm-signal | 03-27 | — |
+| cmd_1085 | LookbackPeriodスキーマのmonths上限を24→36に引き上げ、忍法FoFの長期lookbackを許容する | dm-signal | 03-27 | — |
+| cmd_1101 | cmd_1096の診断結果に基づきFoF BBの不具合を修正し、シン忍法21体を再recalculateする | dm-signal | 03-27 | — |
+| cmd_1133 | 家老の学習ループを構築する。karo.mdのレビュー・配備・GATE処理の各フェーズに品質チェックを組み込み、家老自身の判断を二値計測→還流する仕組みを作る | infra | 03-27 | — |
+| cmd_1404 | — | infra | 03-27 | — |
+| cmd_1405 | — | infra | 03-27 | — |
+| cmd_1406 | — | infra | 03-27 | — |
+| cmd_1407 | — | infra | 03-27 | — |
+| cmd_1408 | — | infra | 03-27 | — |
+| cmd_1411 | — | dm-signal | 03-27 | — |
+| cmd_1412 | ネステッドFoFのR4(Half-Kelly)実装+外部レジーム(DTB3/VIX/SPY)分析。R1(63.8%)→R2(74.5%)→R4→R6_extの進化を検証し、最終ルールを決定する | dm-signal | 03-27 | — |
+| cmd_1413 | R2(CAGR74.5%/Sharpe1.92/パラメータ0)を超えるか？最もシンプルな改善3手法(逆ボラ/絶対モメンタム/連続VIX)でテスト。R6_extルックアヘッドバイアス修正を含む。高度さではなくシンプルさで勝負 | dm-signal | 03-27 | — |

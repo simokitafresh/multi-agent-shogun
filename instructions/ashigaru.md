@@ -236,6 +236,7 @@ task YAMLに`project:`があれば、実装前に3ファイル読め:
 
 - **Read-only Default**: reviewは読取専用。修正はfindings/recommendationに記載→別impl taskで
 - commit→push禁止→レビュー忍者PASS後にpush。一人で書いて一人で通すのは禁止
+- **git commit排他制御**: 並列忍者のindex.lock衝突防止。commitは必ず `flock /tmp/git-commit.lock git commit ...` で実行せよ
 - 例外: 構文修正・typo等の機械的変更は家老判断で省略可
 - **TODO/FIXME確認義務**: 修正対象ファイル内のTODO/FIXMEが全解消か確認
 

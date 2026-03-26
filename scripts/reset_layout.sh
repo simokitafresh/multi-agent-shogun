@@ -35,13 +35,15 @@ for _ea in "${EXPECTED_AGENTS[@]}"; do
     esac
 done
 unset _ea
-LAYOUT_STRING='1a7c,167x49,0,0{71x49,0,0[71x25,0,0,1,71x11,0,26,2,71x11,0,38,3],47x49,72,0[47x16,72,0,4,47x16,72,17,5,47x15,72,34,6],47x49,120,0[47x16,120,0,7,47x16,120,17,8,47x15,120,34,9]}'
+NUM_AGENTS=${#EXPECTED_AGENTS[@]}
 
 # ═══════════════════════════════════════════════════════════════
-# CLI Adapter読み込み
+# CLI Adapter・レイアウト生成読み込み
 # ═══════════════════════════════════════════════════════════════
 source "$SCRIPT_DIR/lib/cli_adapter.sh"
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
 
 # シェル設定
 SHELL_SETTING=$(grep '^shell:' config/settings.yaml 2>/dev/null | awk '{print $2}')
@@ -139,7 +141,7 @@ var_fix_count=0
 
 # 復活ペイン追跡
 declare -a RESPAWNED
-for i in {0..8}; do RESPAWNED[$i]=0; done
+for ((i=0; i<NUM_AGENTS; i++)); do RESPAWNED[i]=0; done
 
 # ═══════════════════════════════════════════════════════════════
 # Step 1: 前提確認
@@ -149,16 +151,16 @@ log "Step 1: 前提確認"
 PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
 log "  pane-base-index=$PANE_BASE"
 
-# shogun:agents に9ペイン存在するか確認。不足なら自動追加。
+# shogun:agents にNUM_AGENTSペイン存在するか確認。不足なら自動追加。
 PANE_COUNT=$(tmux list-panes -t shogun:agents -F '#{pane_index}' 2>/dev/null | wc -l)
-if [[ "$PANE_COUNT" -gt 9 ]]; then
-    log_err "agentsウィンドウに${PANE_COUNT}ペイン（期待: 9）。余剰ペインの手動削除が必要"
+if [[ "$PANE_COUNT" -gt "$NUM_AGENTS" ]]; then
+    log_err "agentsウィンドウに${PANE_COUNT}ペイン（期待: ${NUM_AGENTS}）。余剰ペインの手動削除が必要"
     exit 1
 fi
 
 pane_add_count=0
-if [[ "$PANE_COUNT" -lt 9 ]]; then
-    missing=$((9 - PANE_COUNT))
+if [[ "$PANE_COUNT" -lt "$NUM_AGENTS" ]]; then
+    missing=$((NUM_AGENTS - PANE_COUNT))
     log "  ${PANE_COUNT}ペイン検出。${missing}ペイン追加"
     for ((m=0; m<missing; m++)); do
         if [[ "$DRY_RUN" == true ]]; then
@@ -195,15 +197,16 @@ if [[ "$PANE_COUNT" -lt 9 ]]; then
         done
     fi
 fi
-log_ok "9ペイン確認済み（追加: ${pane_add_count}件）"
+log_ok "${NUM_AGENTS}ペイン確認済み（追加: ${pane_add_count}件）"
 
 # ═══════════════════════════════════════════════════════════════
 # Step 2: ペイン配置修正（swap検出+修正）
-# 前方走査: i=0から8まで順に、各ステップで1つ確定
+# 前方走査: i=0からNUM_AGENTS-1まで順に、各ステップで1つ確定
 # ═══════════════════════════════════════════════════════════════
 log "Step 2: ペイン配置修正"
 
-for i in {0..8}; do
+LAST_IDX=$((NUM_AGENTS - 1))
+for i in $(seq 0 "$LAST_IDX"); do
     target_pane=$((PANE_BASE + i))
     expected="${EXPECTED_AGENTS[$i]}"
     actual=$(tmux show-options -p -t "shogun:agents.${target_pane}" -v @agent_id 2>/dev/null || echo "")
@@ -211,7 +214,7 @@ for i in {0..8}; do
     if [[ "$actual" != "$expected" ]]; then
         # 期待するエージェントが実際にどのペインにいるか探索
         found_pane=""
-        for j in $(seq $((i + 1)) 8); do
+        for j in $(seq $((i + 1)) "$LAST_IDX"); do
             check_pane=$((PANE_BASE + j))
             check_id=$(tmux show-options -p -t "shogun:agents.${check_pane}" -v @agent_id 2>/dev/null || echo "")
             if [[ "$check_id" == "$expected" ]]; then
@@ -243,7 +246,7 @@ log "Step 3: 死亡ペイン検出・復活"
 # 全ペインの死亡状態を一括取得
 DEAD_MAP=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_dead}')
 
-for i in {0..8}; do
+for i in $(seq 0 "$LAST_IDX"); do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
     is_dead=$(echo "$DEAD_MAP" | awk -v p="$p" '$1==p {print $2}')
@@ -266,7 +269,7 @@ for i in {0..8}; do
 
             log "  respawn: agents.${p} (${agent_id})"
         fi
-        RESPAWNED[$i]=1
+        RESPAWNED[i]=1
         ((respawn_count++)) || true
     fi
 done
@@ -281,7 +284,7 @@ log "Step 3.5: CLI起動確認"
 cli_start_count=0
 PANE_PIDS=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_pid}')
 
-for i in {0..8}; do
+for i in $(seq 0 "$LAST_IDX"); do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
 
@@ -327,7 +330,7 @@ log_ok "CLI起動: ${cli_start_count}件"
 # ═══════════════════════════════════════════════════════════════
 log "Step 4: 全ペイン変数の正規化"
 
-for i in {0..8}; do
+for i in $(seq 0 "$LAST_IDX"); do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
 
@@ -405,8 +408,9 @@ fi
 # ═══════════════════════════════════════════════════════════════
 # Step 5: レイアウト適用
 # ═══════════════════════════════════════════════════════════════
-log "Step 5: レイアウト適用"
+log "Step 5: レイアウト適用（動的LAYOUT_STRING生成）"
 
+LAYOUT_STRING=$(generate_layout_string "shogun:agents" "$PANE_BASE")
 if [[ "$DRY_RUN" == true ]]; then
     log_dry "  tmux select-layout -t shogun:agents '${LAYOUT_STRING}'"
 else
@@ -447,7 +451,7 @@ echo "  最終ペイン一覧:"
 echo "  ────────────────────────────────────────────────────"
 printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "Pane" "AgentID" "Dead" "Group" "CLI" "Model" "BG"
 echo "  ──────────────────────────────────────────────────────────"
-for i in {0..8}; do
+for i in $(seq 0 "$LAST_IDX"); do
     p=$((PANE_BASE + i))
     _id=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_id 2>/dev/null || echo "?")
     _dead=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_dead}' | awk -v p="$p" '$1==p {print $2}')

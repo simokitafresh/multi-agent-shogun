@@ -59,10 +59,12 @@ sleep 1
 count=$(ps aux | grep inbox_watcher | grep -v grep | grep -v restart_watchers | wc -l)
 echo "  稼働中: ${count} プロセス"
 
-if [ "$count" -eq 10 ]; then
-    echo "=== 再起動完了 (10/10) ==="
+# 期待プロセス数: shogun(1) + get_all_agents全員のwatcher
+expected=$((1 + $(get_all_agents | wc -w)))
+if [ "$count" -eq "$expected" ]; then
+    echo "=== 再起動完了 (${count}/${expected}) ==="
 else
-    echo "=== 警告: 期待10だが${count}プロセスのみ ==="
+    echo "=== 警告: 期待${expected}だが${count}プロセスのみ ==="
 fi
 
 # ペイン変数同期

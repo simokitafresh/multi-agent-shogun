@@ -2428,7 +2428,8 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     BC_CHECKED=true
 
-    # binary_checks: リスト形式の全check→result=PASS確認
+    # binary_checks: リスト形式(フラット or ACグループ化)の全check→result確認
+    # ネストされたdict形式(AC3:/AC4:見出し配下にcheck/result)もサポート
     bc_status=$(awk '
         /^binary_checks:/ {
             val = $0; sub(/.*binary_checks:[[:space:]]*/, "", val)
@@ -2437,21 +2438,19 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         }
         # セクション終了: 行頭が英字(新キー)の場合のみ (- で始まるリスト項目は含めない)
         in_bc && /^[a-zA-Z]/ { in_bc = 0 }
-        # dict形式(AC_id: の行)→malformed (python互換: 即判定)
-        in_bc && /^[[:space:]]+[A-Za-z_][A-Za-z_0-9]*:/ && !/^[[:space:]]+check:/ && !/^[[:space:]]+result:/ { print "malformed"; exit }
+        # ACグループ見出し(AC1:/AC2:/AC3:等)→スキップして内部のcheck/resultを読む
+        in_bc && /^[[:space:]]+[A-Za-z_][A-Za-z_0-9]*:/ && !/^[[:space:]]+check:/ && !/^[[:space:]]+result:/ { next }
         in_bc && /[[:space:]]*- check:/ { item_count++; cur_check = $0; sub(/.*- check:[[:space:]]*/, "", cur_check); gsub(/^["'"'"']+|["'"'"']+$/, "", cur_check) }
         in_bc && /[[:space:]]+result:/ {
             r = $0; sub(/.*result:[[:space:]]*/, "", r); gsub(/^["'"'"']+|["'"'"']+$/, "", r)
             upper_r = toupper(r)
-            if (upper_r != "PASS") {
+            if (upper_r != "PASS" && upper_r != "YES" && upper_r != "TRUE") {
                 _name = (cur_check != "" ? cur_check : "item_" item_count)
                 if (fails != "") fails = fails "|" _name
                 else fails = _name
             }
         }
         END {
-            if (!in_bc && item_count == 0 && !is_dict) { print "missing"; exit }
-            if (is_dict && item_count == 0) { print "malformed"; exit }
             if (item_count == 0) { print "missing"; exit }
             if (fails != "") print "fail:" fails
             else print "ok"

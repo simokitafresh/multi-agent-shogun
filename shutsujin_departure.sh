@@ -486,7 +486,7 @@ echo ""
 PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 5.1: agents ウィンドウ追加（9ペイン：karo + ninja1-8）
+# STEP 5.1: agents ウィンドウ追加（家老+軍師+忍者6名 = 8ペイン）
 # ═══════════════════════════════════════════════════════════════════════════════
 _deploy_count=$(get_all_agents | wc -w)
 log_war "⚔️ 家老・忍者の陣を構築中（${_deploy_count}名配備）..."
@@ -515,8 +515,12 @@ else
     tmux set-environment -t shogun DISPLAY_MODE "shout"
 fi
 
-# 3列動的レイアウト作成（agent_config.shから動的取得・ハードコード禁止）
-# 列割当: 忍者を列2,3に3名ずつ → 残り(karo+非忍者+余り忍者)を列1
+# 3列 2-3-3 レイアウト作成（ペイン番号=エージェント順の連続番号）
+# ペインを先に全数作成し、select-layoutで3列配置を適用する。
+# これによりペイン番号がget_all_agents順と一致(karo=PB, gunshi=PB+1, hayate=PB+2, ...)
+# → pane_lookup静的フォールバック・reset_layoutのswapが不要
+
+# 列割当（表示位置の決定。split順序には影響しない）
 read -ra _ALL_AG <<< "$(get_all_agents)"
 _ninja_ci=0; _COL1=(); _COL2=(); _COL3=()
 for _ag in "${_ALL_AG[@]}"; do
@@ -531,61 +535,39 @@ for _ag in "${_ALL_AG[@]}"; do
         _COL1+=("$_ag")
     fi
 done
-_COL1_N=${#_COL1[@]}; _COL2_N=${#_COL2[@]}; _COL3_N=${#_COL3[@]}
 
-# 3列作成: split-window -h ×2
-tmux split-window -h -t "shogun:agents.${PANE_BASE}"
-tmux split-window -h -t "shogun:agents.$((PANE_BASE+1))"
+# 8ペイン作成（連続番号: PB〜PB+7）
+# Step 1: 上下2行に分割
+tmux split-window -v -t "shogun:agents.${PANE_BASE}"
 
-# 各列の縦分割（均等分割: -l で比率指定）
-_nxt=$((PANE_BASE + 3))
-
-# 列1
-_cur=${PANE_BASE}
-for ((r=1; r<_COL1_N; r++)); do
-    _rem=$((_COL1_N - r + 1)); _pct=$((100 * (_COL1_N - r) / _rem))
-    tmux split-window -v -t "shogun:agents.${_cur}" -l "${_pct}%"
-    _cur=${_nxt}; _nxt=$((_nxt + 1))
+# Step 2: 上段を水平分割3回（PB, PB+2, PB+3, PB+4）
+_target=${PANE_BASE}
+for ((s=0; s<3; s++)); do
+    tmux split-window -h -t "shogun:agents.${_target}"
+    _target=$((PANE_BASE + 2 + s))
 done
 
-# 列2
-_cur=$((PANE_BASE + 1))
-for ((r=1; r<_COL2_N; r++)); do
-    _rem=$((_COL2_N - r + 1)); _pct=$((100 * (_COL2_N - r) / _rem))
-    tmux split-window -v -t "shogun:agents.${_cur}" -l "${_pct}%"
-    _cur=${_nxt}; _nxt=$((_nxt + 1))
+# Step 3: 下段を水平分割3回（PB+1, PB+5, PB+6, PB+7）
+_target=$((PANE_BASE + 1))
+for ((s=0; s<3; s++)); do
+    tmux split-window -h -t "shogun:agents.${_target}"
+    _target=$((PANE_BASE + 5 + s))
 done
 
-# 列3
-_cur=$((PANE_BASE + 2))
-for ((r=1; r<_COL3_N; r++)); do
-    _rem=$((_COL3_N - r + 1)); _pct=$((100 * (_COL3_N - r) / _rem))
-    tmux split-window -v -t "shogun:agents.${_cur}" -l "${_pct}%"
-    _cur=${_nxt}; _nxt=$((_nxt + 1))
-done
+# select-layout で3列 2-3-3 に配置（動的LAYOUT_STRING）
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
+_layout=$(generate_layout_string "shogun:agents" "$PANE_BASE")
+tmux select-layout -t "shogun:agents" "$_layout"
 
-# 列幅: get_layout_col1_width_pctで列1幅を設定、列2,3は残りを等分
-_col1_pct=$(get_layout_col1_width_pct)
-_win_w=$(tmux display-message -t "shogun:agents" -p '#{window_width}')
-_col1_w=$((_win_w * _col1_pct / 100))
-tmux resize-pane -t "shogun:agents.${PANE_BASE}" -x "${_col1_w}"
-
-# karoペイン高さ: get_layout_karo_heightで設定
-_karo_h=$(get_layout_karo_height)
-tmux resize-pane -t "shogun:agents.${PANE_BASE}" -y "${_karo_h}"
-
-# PANE_IDS: エージェント順(列1→列2→列3)からペインインデックスへのマッピング
-# ペイン作成順: col1-top(PB), col2-top(PB+1), col3-top(PB+2), col1-v(PB+3..), col2-v(..), col3-v(..)
+# PANE_IDS: 連続番号（ペイン番号=エージェント順）
 PANE_IDS=()
-PANE_IDS+=("${PANE_BASE}"); _p=$((PANE_BASE + 3))
-for ((r=1; r<_COL1_N; r++)); do PANE_IDS+=("$_p"); _p=$((_p + 1)); done
-PANE_IDS+=("$((PANE_BASE + 1))")
-for ((r=1; r<_COL2_N; r++)); do PANE_IDS+=("$_p"); _p=$((_p + 1)); done
-PANE_IDS+=("$((PANE_BASE + 2))")
-for ((r=1; r<_COL3_N; r++)); do PANE_IDS+=("$_p"); _p=$((_p + 1)); done
-
-# ペインラベル・色・IDを動的構築（列順で再構築）
 AGENT_IDS=("${_COL1[@]}" "${_COL2[@]}" "${_COL3[@]}")
+for ((i=0; i<${#AGENT_IDS[@]}; i++)); do
+    PANE_IDS+=("$((PANE_BASE + i))")
+done
+
+# ペインラベル・色を動的構築
 PANE_LABELS=("${AGENT_IDS[@]}")
 # 色設定: role判定で動的生成（karo=red, gunshi=cyan, ninja=yellow）
 PANE_COLORS=()

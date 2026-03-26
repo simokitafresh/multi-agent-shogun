@@ -2008,9 +2008,22 @@ check_shogun_ctx() {
     local last=$LAST_SHOGUN_ALERT
     local elapsed=$((now - last))
 
+    # CTX帯dedup: 同じ10%帯(50-59,60-69,70-79...)なら再送しない
+    local ctx_band=$(( ctx_num / 10 * 10 ))
+    local _ctx_band_file="/tmp/mas-shogun-ctx-band-last.txt"
+    local _last_band=0
+    if [[ -f "$_ctx_band_file" ]]; then
+        _last_band=$(cat "$_ctx_band_file" 2>/dev/null || echo 0)
+    fi
+    if [ "$ctx_band" -le "$_last_band" ] 2>/dev/null && [ $elapsed -lt $SHOGUN_ALERT_DEBOUNCE ]; then
+        log "SHOGUN-ALERT-BAND-DEDUP: CTX:${ctx_num}% band=${ctx_band}% same as last (${_last_band}%)"
+        return
+    fi
+
     if [ $elapsed -ge $SHOGUN_ALERT_DEBOUNCE ]; then
         local msg="【monitor】将軍CTX:${ctx_num}%。/compactをご検討ください"
         if bash "$SCRIPT_DIR/scripts/ntfy.sh" "$msg" >> "$LOG" 2>&1; then
+            echo "$ctx_band" > "$_ctx_band_file"
             log "SHOGUN-ALERT: sent ntfy to lord (CTX:${ctx_num}%)"
             LAST_SHOGUN_ALERT=$now
         else
