@@ -124,12 +124,14 @@ check_settings_schema() {
 
     # settings.yaml の全agentを検証
     local check_result
-    check_result=$(python3 -c "
+    check_result=$(python3 - "$settings_file" "$profiles_file" 2>&1 <<'PYEOF'
 import yaml, sys
 
-with open('${settings_file}') as f:
+settings_path, profiles_path = sys.argv[1], sys.argv[2]
+
+with open(settings_path) as f:
     settings = yaml.safe_load(f) or {}
-with open('${profiles_file}') as f:
+with open(profiles_path) as f:
     profiles_cfg = yaml.safe_load(f) or {}
 
 cli = settings.get('cli', {})
@@ -148,7 +150,7 @@ for name, cfg in agents.items():
     # type チェック（省略時はdefault使用 — 正当）
     agent_type = cfg.get('type', default_type)
     if agent_type not in valid_profiles:
-        errors.append(f'{name}: type \"{agent_type}\" は cli_profiles.yaml に未定義 (有効: {valid_profiles})')
+        errors.append(f'{name}: type "{agent_type}" は cli_profiles.yaml に未定義 (有効: {valid_profiles})')
 
 if errors:
     for e in errors:
@@ -158,7 +160,8 @@ if warnings:
         print(f'WARN:{w}')
 if not errors and not warnings:
     print('OK:全agent定義が正常')
-" 2>&1)
+PYEOF
+)
 
     while IFS= read -r line; do
         if [[ "$line" == ERROR:* ]]; then
@@ -191,13 +194,14 @@ check_task_status() {
         fi
 
         local status
-        status=$(python3 -c "
-import yaml
-with open('${task_file}') as f:
+        status=$(python3 - "$task_file" 2>/dev/null <<'PYEOF'
+import yaml, sys
+with open(sys.argv[1]) as f:
     data = yaml.safe_load(f) or {}
 task = data.get('task', data)
 print(task.get('status', 'unknown'))
-" 2>/dev/null || echo "parse_error")
+PYEOF
+) || status="parse_error"
 
         case "$status" in
             idle|done|completed)
