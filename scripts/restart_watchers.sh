@@ -14,8 +14,16 @@ pkill -f "inbox_watcher.sh" 2>/dev/null || true
 pkill -f "inotifywait.*queue/inbox" 2>/dev/null || true
 sleep 1
 
-remaining=$(ps aux | grep inbox_watcher | grep -v grep | grep -v restart_watchers | wc -l)
+remaining=$(pgrep -fc "inbox_watcher\.sh" 2>/dev/null) || remaining=0
 echo "  残存プロセス: $remaining"
+
+if [ "$remaining" -gt 0 ]; then
+    echo "  残存あり。SIGKILL送信..."
+    pkill -9 -f "inbox_watcher\.sh" 2>/dev/null || true
+    sleep 1
+    remaining=$(pgrep -fc "inbox_watcher\.sh" 2>/dev/null) || remaining=0
+    echo "  SIGKILL後残存: $remaining"
+fi
 
 # 2. PANE_BASEを取得
 # pane_base: pane_lookup()が内部で解決するため直接参照は不要
@@ -56,7 +64,7 @@ done
 
 echo "[3/3] 起動確認..."
 sleep 1
-count=$(ps aux | grep inbox_watcher | grep -v grep | grep -v restart_watchers | wc -l)
+count=$(pgrep -fc "inbox_watcher\.sh" 2>/dev/null) || count=0
 echo "  稼働中: ${count} プロセス"
 
 # 期待プロセス数: shogun(1) + get_all_agents全員のwatcher
