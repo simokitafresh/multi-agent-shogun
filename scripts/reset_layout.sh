@@ -169,7 +169,7 @@ if [[ "$PANE_COUNT" -lt "$NUM_AGENTS" ]]; then
             tmux split-window -t shogun:agents -h
             sleep 0.3
         fi
-        ((pane_add_count++)) || true
+        pane_add_count=$((pane_add_count+1))
     done
 
     if [[ "$DRY_RUN" != true ]]; then
@@ -230,7 +230,7 @@ for i in $(seq 0 "$LAST_IDX"); do
                 tmux swap-pane -s "shogun:agents.${target_pane}" -t "shogun:agents.${found_pane}"
                 log "  swap: agents.${target_pane}(${actual}) <-> agents.${found_pane}(${expected})"
             fi
-            ((swap_count++)) || true
+            swap_count=$((swap_count+1))
         else
             log_warn "  ${expected} がどのペインにも見つかりません（@agent_id未設定の可能性）"
         fi
@@ -270,7 +270,7 @@ for i in $(seq 0 "$LAST_IDX"); do
             log "  respawn: agents.${p} (${agent_id})"
         fi
         RESPAWNED[i]=1
-        ((respawn_count++)) || true
+        respawn_count=$((respawn_count+1))
     fi
 done
 log_ok "respawn完了: ${respawn_count}件"
@@ -317,7 +317,7 @@ for i in $(seq 0 "$LAST_IDX"); do
 
             log "  CLI起動: agents.${p} (${agent_id})"
         fi
-        ((cli_start_count++)) || true
+        cli_start_count=$((cli_start_count+1))
     fi
 done
 log_ok "CLI起動: ${cli_start_count}件"
@@ -363,7 +363,7 @@ for i in $(seq 0 "$LAST_IDX"); do
         if [[ "${RESPAWNED[$i]}" == "1" ]]; then
             log_dry "  agents.${p} (${agent_id}): @context_pct,@current_task を初期化"
         fi
-        ((var_fix_count++)) || true
+        var_fix_count=$((var_fix_count+1))
     else
         # 常に再設定（ずれ防止）
         tmux set-option -p -t "shogun:agents.${p}" @agent_id "$agent_id"
@@ -384,7 +384,7 @@ for i in $(seq 0 "$LAST_IDX"); do
             tmux set-option -p -t "shogun:agents.${p}" @current_task ""
         fi
 
-        ((var_fix_count++)) || true
+        var_fix_count=$((var_fix_count+1))
     fi
 done
 log_ok "変数正規化: ${var_fix_count}ペイン処理"
