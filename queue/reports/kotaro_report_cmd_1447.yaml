@@ -1,0 +1,188 @@
+task_id: cmd_1447_recon_fof
+parent_cmd: cmd_1447
+ninja: kotaro
+status: complete
+completed_at: '2026-03-28T04:15:00'
+AC2:
+  status: PASS
+  daily_loops:
+  - loop_id: LOOP-1
+    location: recalculate_fof.py L590-L868
+    code_pattern: 'for idx, target_dt in enumerate(valid_dates_sorted):'
+    loop_target: 全営業日（common_index = 全構成PFのシグナルが揃う日付範囲）
+    calculation_content: '毎営業日に以下を実行:
+
+      1. リバランス判定 (L602-L608): is_month_start AND is_rebalance_month()
+
+      2. リバランス日のみ: pipeline_engine.execute_pipeline() (L654-L660) → シグナル生成
+
+      3. 非リバランス日: prev_signal/prev_holding_signal をキャリーフォワード (L692-L702)
+
+      4. holding_signal更新判定: should_update_holding_signal() (L681-L690)
+
+      5. enhanced_momentum_data構築 (L734-L786): block_results, correlations等
+
+      6. signals_batch.append() (L798-L805): 毎日Signal DBレコードを蓄積
+
+      7. pipeline_logs_batch.append() (L808-L817): 毎日パイプラインログ蓄積
+
+      8. rebalance_decisions_batch.append() (L829-L849): 毎日リバランス判定履歴蓄積
+
+      9. component_weights_batch.append() (L852-L860): ウェイトデータ蓄積（存在時のみ）
+
+      '
+    daily_required_or_monthly_possible: 大部分は月次でまとめ可能。詳細はAC2.analysisを参照
+  - loop_id: PREP-1
+    location: recalculate_fof.py L297-L993
+    code_pattern: 'for pf_idx, portfolio in enumerate(fof_portfolios):'
+    loop_target: 全FoFポートフォリオ（13-26体程度）
+    calculation_content: FoFごとのシグナル計算+DB書込み+MonthlyReturn生成の外側ループ
+    daily_required_or_monthly_possible: 日次ループではない。FoFポートフォリオ単位の反復
+  - loop_id: PREP-2
+    location: recalculate_fof.py L503-L508
+    code_pattern: 'for dt in valid_dates_sorted:'
+    loop_target: 全営業日（月グルーピング用）
+    calculation_content: dates_by_month辞書の構築（月初判定に使用）
+    daily_required_or_monthly_possible: 軽量な辞書構築。最適化不要
+  analysis: '既存最適化: Phase 4A (L638-L641) でパイプライン実行(最重量処理)は月初のみに限定済み。月中はprev_signalキャリーフォワードのみ。
+
+
+    【日次必須の理由（現状）】
+
+    - Signalテーブルは(portfolio_id, date)がPK。日次レコードが前提の設計
+
+    - _generate_monthly_returns() (L964) がSignalテーブルから日付リストを取得し、resample("MS")で月初を特定
+    (monthly_returns.py L85)。日次Signalが存在しないと月初・月末の特定が破綻する
+
+    - signals API (signals.py L111) は as_of_date（当日）のSignalを参照。日次Signalがないと「No Data」表示になる
+
+
+    【月次でまとめ可能な部分】
+
+    (a) enhanced_momentum_data (L734-L786): 非リバランス日はskipped=True+キャリーフォワード値のみ。月中データは冗長→momentum_dataをNullにして月初のみ完全版を書けばDB書込み量95%削減
+
+    (b) pipeline_logs_batch (L808-L817): ENABLE_FOF_DEBUG_LOGS=true時のみ書込み。月中は空の定型値。月初のみで十分
+
+    (c) rebalance_decisions_batch (L829-L849): 月中は全てshould_rebalance=False, rebalance_reason="hold"。月初のみで情報量同等
+
+    (d) component_weights_batch (L852-L860): リバランス日のウェイトのみ意味がある。非リバランス日はprev_ward_weightsのキャリーフォワード
+
+
+    【日次必須（変更不可）】
+
+    (e) signals_batch.append() (L798-L805): 日次Signalレコードは下流依存。ただしmomentum_dataフィールドを月中はNull/最小限に縮小可能
+
+    (f) fof_signals[target_date] (L705): 日次holding_signalマップ。087最適化でDrift Calcループ削除後、消費者がいないdead
+    code候補。_generate_monthly_returns()はSignalテーブルから直接読む
+
+
+    【L232制約確認】
+
+    recalculate_fof.py L606-L608 + L681-L690 + rebalance.py L180-L224: holding_signal更新は「月変わりANDリバランス月」の2条件で制御。L232準拠'
+binary_checks:
+  AC2:
+  - check: recalculate_fof.py内の日次ループを全て列挙したか
+    result: 'yes'
+  - check: 各ループに行番号・ループ対象・計算内容を記載したか
+    result: 'yes'
+  - check: 日次必須/月次可能の判定と根拠を記載したか
+    result: 'yes'
+  AC3:
+  - check: UIのAPIエンドポイントと日次計算結果の対応表を作成したか
+    result: 'yes'
+  - check: 月次でしか変わらない値の日次再計算箇所を特定したか
+    result: 'yes'
+  - check: frontend/src/のAPI呼び出し箇所を確認したか
+    result: 'yes'
+AC3:
+  status: PASS
+  api_to_ui_mapping:
+  - api: GET /api/signals
+    backend: signals.py L88-L200
+    consumed_tables: Signal (as_of_dateの1日分のみ参照)
+    frontend_consumers: signals-context.tsx, dashboard/page.tsx, page-shell.tsx
+    daily_data: as_of_date(当日)の1レコードのみ。holding_signal, signal, momentum_data.weightsを使用。FoFはexpand_portfolio_to_tickers()でticker展開
+    monthly_waste: 無駄なし。最新1日分のみ参照。日次Signalの存在自体が必要（当日レコードがないとNo Data表示）
+  - api: GET /api/monthly-returns/{portfolio_id}
+    backend: monthly_returns.py L26
+    consumed_tables: MonthlyReturn (月次集計済みテーブル。recalculate_fof.pyの日次ループ出力ではない)
+    frontend_consumers: monthly-returns/page.tsx, compare/page.tsx, compare-summary/page.tsx,
+      rolling-returns/page.tsx, drawdowns/page.tsx, annual-returns/page.tsx, metrics/page.tsx,
+      summary/page.tsx, monthly-trade/page.tsx
+    daily_data: MonthlyReturnテーブルを直接参照。_generate_monthly_returns()がSignalテーブルの日付リストからresample(MS)で月初を特定し、月次リターン計算
+    monthly_waste: MonthlyReturn自体は月次データ。ただし_generate_monthly_returns()がSignalの日付一覧に依存。Signalに日次レコードが存在することで月初・月末の特定が可能
+  - api: GET /admin/debug/fof-component-signals/{portfolio_id}
+    backend: debug.py L50
+    consumed_tables: Signal (構成PFの日次シグナルデータ)
+    frontend_consumers: admin/fof/page.tsx (管理者専用)
+    daily_data: 構成PFの日次シグナルを可視化
+    monthly_waste: 管理者デバッグ用。月次化影響は軽微
+  - api: GET /admin/debug/fof-pipeline-log/{portfolio_id}
+    backend: debug.py L606
+    consumed_tables: fof_pipeline_logs (ENABLE_FOF_DEBUG_LOGS=true時のみ)
+    frontend_consumers: なし（API直接呼び出しのみ）
+    daily_data: パイプライン実行ログ（デバッグ時のみ有効）
+    monthly_waste: 既にENABLE_FOF_DEBUG_LOGS=falseで無効化可能
+  - api: GET /admin/debug/fof-rebalance-decisions/{portfolio_id}
+    backend: debug.py L820
+    consumed_tables: fof_rebalance_decisions (ENABLE_FOF_DEBUG_LOGS=true時のみ)
+    frontend_consumers: なし（API直接呼び出しのみ）
+    daily_data: リバランス判定履歴。月中は全てshould_rebalance=False
+    monthly_waste: 月中レコードは全て'hold'。月初のみで情報量同等
+  monthly_waste_summary: '月次でしか変わらない値を日次で再計算している箇所:
+
+
+    1. momentum_data構築 (L734-L786): 月中はskipped=True,signal=キャリーフォワード,weightsもキャリーフォワード。月初のみ完全なblock_results/component_momentum/correlationsが有意。UIは最新1日のmomentum_data.weightsのみ参照。推定:
+    26FoF x 20日/月 x 300ヶ月 = 156,000レコードのうち月初のみ有意なのは7,800(5%)。95%が冗長。
+
+
+    2. pipeline_logs_batch (L808-L817): ENABLE_FOF_DEBUG_LOGS=true時のみDB書込みされるが、月中は空のblock_results/execution_time_ms=0の定型レコード。月初のみ記録すれば十分。
+
+
+    3. rebalance_decisions_batch (L829-L849): 月中は全てshould_rebalance=False, rebalance_reason="hold"。月初のみ記録すれば十分。
+
+
+    4. component_weights_batch (L852-L860): 非リバランス日はprev_ward_weightsのキャリーフォワード。リバランス日のみ記録すれば十分。
+
+
+    日次が必須の箇所:
+
+    - signals_batch (L798-L805): Signalテーブルの日次レコード。_generate_monthly_returns()の月初/月末特定とsignals
+    APIの当日参照が依存。ただしmomentum_dataフィールドを月中は最小限に縮小可能。'
+optimization_opportunities:
+- id: OPT-A
+  title: momentum_data月中縮小
+  impact: DB書込み量95%削減（momentum_data JSON）
+  difficulty: low
+  description: '月中(is_rebalance_day=False)のSignalレコードでenhanced_momentum_dataの代わりに最小限のdict
+    {signal: current_signal, skipped: True}のみ格納。月初のみ完全版保存。signals APIはmomentum_data.weightsのみ参照するため月中レコード影響なし'
+- id: OPT-B
+  title: デバッグログの月初限定
+  impact: pipeline_logs/rebalance_decisions書込み~95%削減
+  difficulty: low
+  description: pipeline_logs_batch/rebalance_decisions_batchのappendをis_rebalance_day条件内に移動。月中の定型レコード排除。メモリ消費も削減
+- id: OPT-C
+  title: fof_signalsマップ削除（dead code候補）
+  impact: メモリ削減（日次holding_signalマップ不要化）
+  difficulty: low
+  description: fof_signals[target_date] (L705)は087最適化でDrift Calcループ削除後、消費者がいない可能性が高い。_generate_monthly_returns()はSignalテーブルから直接読むため不要。確認の上削除可能
+- id: OPT-D
+  title: Signalテーブル依存の構造的解消（大規模・将来）
+  impact: 日次ループそのものを月次化（最大の高速化）
+  difficulty: high
+  description: _generate_monthly_returns()がSignalテーブルの日付リストに依存する設計を改修。月初営業日リストをPriceテーブルから直接取得すればSignalの日次レコード不要。ただしsignals
+    APIが当日のSignalレコードを前提としており日次ETL(sync-fof)との整合性確保必要。影響範囲大
+decision_candidate: []
+progress:
+  AC2: complete
+  AC3: complete
+result:
+  summary: recalculate_fof.pyの日次ループ全量分析+UIマッピング完了。唯一の日次ループ(L590-L868)はPhase4Aで月初のみパイプライン実行済みだが、momentum_data等の付帯データが月中も毎日DB書込みされている。OPT-A(momentum_data月中縮小)で95%削減可能。fof_signalsマップはdead
+    code候補
+lesson_candidate:
+  momentum_data_monthly_shrink: recalculate_fof.pyのLOOP-1(L590-L868)はPhase 4A最適化で月初のみパイプライン実行済みだが、Signal
+    DB書込みは毎日実行。月中のmomentum_dataフィールドを最小限にするだけでDB書込み量95%削減可能(OPT-A)
+  fof_signals_dead_code: fof_signals辞書(L705)は087最適化のDrift Calcループ削除後にdead code候補。_generate_monthly_returns()はSignalテーブルから直接読むためこのin-memoryマップは不要の可能性が高い
+worker_id: kotaro
+ac_version_read: cmd_1447_v1
+verdict: PASS
