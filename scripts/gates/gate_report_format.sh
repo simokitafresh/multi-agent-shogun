@@ -219,6 +219,26 @@ if not isinstance(verdict, str) or verdict not in ('PASS', 'FAIL'):
     errors.append(f'verdict: \"{verdict}\" is not valid (must be \"PASS\" or \"FAIL\")')
     hints.append('verdictはPASS/FAILの二値のみ。binary_checks全yes→PASS、1つでもno→FAIL')
 
+# --- assumption_invalidation structure check (cmd_1433) ---
+ai = data.get('assumption_invalidation')
+if ai is None and 'assumption_invalidation' in data:
+    errors.append('assumption_invalidation: null (must be dict with found/affected_cmds/detail)')
+elif ai is not None:
+    if not isinstance(ai, dict):
+        errors.append(f'assumption_invalidation: is {type(ai).__name__} (must be dict)')
+    else:
+        for ai_field in ['found', 'affected_cmds', 'detail']:
+            if ai_field not in ai:
+                errors.append(f'assumption_invalidation: missing \"{ai_field}\" field')
+        ai_found = ai.get('found')
+        ai_cmds = ai.get('affected_cmds')
+        if ai_found is True and isinstance(ai_cmds, list) and len(ai_cmds) == 0:
+            errors.append('assumption_invalidation: found=true but affected_cmds is empty (影響cmdを列挙せよ)')
+            hints.append('FIX (assumption_invalidation): found:trueの場合、affected_cmdsに影響を受けるcmd_IDを列挙せよ')
+elif 'assumption_invalidation' not in data:
+    errors.append('assumption_invalidation: MISSING')
+    hints.append('FIX (assumption_invalidation): テンプレートに生成済み。上書きで消すな:\\n  assumption_invalidation:\\n    found: false\\n    affected_cmds: []\\n    detail: \"\"')
+
 # --- self_gate_check value validation (cmd_cycle_001) ---
 # reviewタスクのself_gate_check: 各項目のresultはPASS/FAILのみ許容
 sgc = data.get('self_gate_check')

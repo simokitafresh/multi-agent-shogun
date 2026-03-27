@@ -436,6 +436,10 @@ skill_candidate:
   # project: ""     # 対象PJ 例: "dm-signal"
 decision_candidate:
   found: false
+assumption_invalidation:
+  found: false  # この結果は過去のどのcmdの前提を変更するか？ true/false
+  affected_cmds: []  # found:true時、前提が変わるcmd_IDリスト 例: [cmd_1400, cmd_1410]
+  detail: ""  # 何がどう変わるか。found:false時は空文字でよい
 hook_failures:
   count: 0
   details: ""
