@@ -81,6 +81,13 @@ name_jp() {
     get_japanese_name "$1"
 }
 
+# ─── Helper: Extract parent_cmd from task YAML ───
+get_task_parent_cmd() {
+    local tf="$1"
+    [[ ! -f "$tf" ]] && return
+    grep -E '^\s*parent_cmd:' "$tf" | head -1 | sed 's/.*parent_cmd:[[:space:]]*//' | sed "s/['\"]//g" | tr -d '[:space:]'
+}
+
 # ─── GP-081: Pre-compute all ninja models (cmd_1392: python3→gawk) ───
 declare -A _MODEL_CACHE=()
 _profiles_yaml="$PROJECT_DIR/config/cli_profiles.yaml"
@@ -158,7 +165,7 @@ declare -A CMD_NINJAS=()
 for n in $ALL_NINJAS; do
     tf="$TASKS_DIR/${n}.yaml"
     [[ ! -f "$tf" ]] && continue
-    pcmd=$(grep -E '^\s*parent_cmd:' "$tf" | head -1 | sed 's/.*parent_cmd:[[:space:]]*//' | sed "s/['\"]//g" | tr -d '[:space:]' || true)
+    pcmd=$(get_task_parent_cmd "$tf" || true)
     [[ -z "$pcmd" ]] && continue
     jp=$(name_jp "$n")
     if [[ -n "${CMD_NINJAS[$pcmd]:-}" ]]; then
@@ -665,7 +672,7 @@ fi
         cmd="—"
         tf="$TASKS_DIR/${ninja}.yaml"
         if [[ -f "$tf" ]]; then
-            _cmd=$(grep -E '^\s*parent_cmd:' "$tf" | head -1 | sed 's/.*parent_cmd:[[:space:]]*//' | sed "s/['\"]//g" | tr -d '[:space:]' || true)
+            _cmd=$(get_task_parent_cmd "$tf" || true)
             [[ -n "$_cmd" ]] && cmd="$_cmd"
         fi
 
