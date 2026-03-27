@@ -73,6 +73,10 @@ skill_candidate:
   found: false
 decision_candidate:
   found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
 hook_failures:
   count: 0
   details: ""
@@ -437,6 +441,10 @@ skill_candidate:
   found: false
 decision_candidate:
   found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
 hook_failures:
   count: 0
   details: ""
