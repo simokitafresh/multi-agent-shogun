@@ -8,9 +8,10 @@
 
 ## §6-7 recalculate_fast.py + OPT-E
 
-6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。
+6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。最新本番: **349s/124PF**(2026-03-28 cmd_1444)。
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
-詳細アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
+詳細アーキ全量解析(2026-03-28コード全文読了) → `docs/research/fullrecalculate-architecture-2026-03-28.md`
+旧アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
 - L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）
 - L157: pending判定は『存在チェック』より先にrebalance月 gatingを入れないと非月次triggerで誤表示する（cmd_525）
 - L268: managed DBではpool_pre_ping=True必須。workerごと独立キャッシュはヒット率低下する（cmd_831）
@@ -20,16 +21,25 @@
 - L474: recalculate_fast.pyの事前計算はPipelineEngineと同一データソース(df_dtb3_raw)を使え。reindex済みデータは日付ズレの原因（cmd_1245）
 - L475: Phase 3.7 DTB3リサンプル問題。DTB3をprice_datesにreindexするとrolling(N)の参照日がPipelineEngine(DTB3固有日付)と不一致。PI-010同根（cmd_1245）
 - L477: FoF recalculate時のPYTHONPATH問題。CLIからrecalculate_fast.py実行時にsys.path.insert(0,backend)必要。selection_pipeline動作乖離も確認（cmd_1250）
+- L502: momentum_data月中縮小でDB書込み95%削減可能。LOOP-1 Signal DB書込みは月変わり以外は差分なし（cmd_1447）
 
 ## §9 性能ベースライン
 
-| 段階 | 全体 | signal_calc |
-|------|------|-------------|
-| 初回 | 11,818s | — |
-| OPT-A/D/F | 2,397s | 2,007s |
-| OPT-E | 389s | 0.53s |
+| 段階 | 全体 | L2(Standard) | L3(FoF) | signal_calc |
+|------|------|-------------|---------|-------------|
+| 初回 | 11,818s | — | — | — |
+| OPT-A/D/F | 2,397s | — | — | 2,007s |
+| OPT-E | 389s | — | — | 0.53s |
+| OPT-1/2(cmd_1448) | 564s(本番) | — | — | 0.53s |
+| ローカル(cmd_1444) | **349s** | — | — | 0.53s |
+| **OPT-A/6/perf_calc除去(cmd_1454)** | **260s(本番)** | **155s** | **62s** | 0.53s |
 
-ボトルネック: trade_perf(58.7s) > L3 FoF(~89s) > signal_calc(0.53s)
+本番ボトルネック(cmd_1454後260s): monthly_returns_gen > trade_perf(OPT-4/5で対処中,cmd_1455) > db_query
+pipeline_exec 626sはリソース競合anomaly(正常42s, cmd_1456飛猿偵察で判明)。Wardキャッシュ効果0%
+初回→現在: **97.8%削減(11,818s→260s)**。⚠ 軍師分析の2665sはリソース競合anomaly run
+- L503: DM-SignalリポジトリにGitHub Actionsワークフロー未設定(.github/workflows/不在)（cmd_1448）
+- L504: 性能異常値はリソース競合を先に疑え。pipeline_exec 626sは同時実行run起因のanomaly（cmd_1456）
+詳細: `docs/research/gunshi-opt12-fullrecalc-analysis.md` §本番内訳 参照
 補助参照: `docs/research/cmd_484_dm-signal-supplemental-catalog-2.md` AC1-2（scripts一覧）
 | 項目 | 結論 | 参照 |
 |---|---|---|

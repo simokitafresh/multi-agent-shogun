@@ -329,6 +329,70 @@ else
     $BRIEF || echo "  gate_lesson_health.sh不在"
 fi
 
+# --- Gate 14: 軍師分析状態（知識循環チェック） ---
+# 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに将軍が偵察cmd重複起票
+# 目的: 起動時に軍師の最新分析テーマを表示し、cmd起票前の情報基盤を整える
+$BRIEF || echo "■ 軍師分析状態"
+GUNSHI_CONTEXT_FILES=$(find "$SCRIPT_DIR/context" -name "gunshi-*.md" -type f 2>/dev/null)
+if [ -n "$GUNSHI_CONTEXT_FILES" ]; then
+    _gunshi_info=""
+    while IFS= read -r gfile; do
+        [ -z "$gfile" ] || [ ! -f "$gfile" ] && continue
+        _g_title=$(head -5 "$gfile" | grep -m1 '^#' | sed 's/^# *//')
+        _g_mtime=$(date -r "$gfile" '+%m-%d %H:%M' 2>/dev/null || echo "?")
+        _gunshi_info="${_gunshi_info}  $(basename "$gfile") [${_g_mtime}] — ${_g_title}\n"
+    done <<< "$GUNSHI_CONTEXT_FILES"
+    if [ -n "$_gunshi_info" ]; then
+        $BRIEF || echo -e "$_gunshi_info"
+        $BRIEF || echo "  → cmd起票前にこれらを確認せよ（cmd_1451重複防止）"
+    fi
+else
+    $BRIEF || echo "  軍師分析ファイルなし"
+fi
+
+# --- Gate 15: 進化検知（知識循環の上流検知） ---
+# 起源: cmd_1451→なぜなぜ5段 — 失敗は検知するが進化(新能力・新出力)は検知しない
+# 目的: context/に知識マップ(CLAUDE.md/MEMORY.md/instructions/config/dashboard)から
+#        参照されていないファイルがあれば、進化シグナルとしてフラグ。知識循環を自動促進
+# 高速版: 核心ファイルをcatして一括grepで判定(WSL2 /mnt/c でのfull-repo scan回避)
+$BRIEF || echo "■ 進化検知（孤立context）"
+_evo_orphans=""
+_evo_count=0
+# 知識マップの核心ファイルを結合（context/自体は含めない = 自己参照除外）
+_KMAP_TMP=$(mktemp)
+# MEMORY.mdはClaude homeにある（リポジトリ内ではない）
+_MEMORY_MD="$HOME/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md"
+cat "$SCRIPT_DIR"/CLAUDE.md \
+    "$_MEMORY_MD" \
+    "$SCRIPT_DIR"/instructions/*.md \
+    "$SCRIPT_DIR"/config/projects.yaml \
+    "$SCRIPT_DIR"/dashboard.md \
+    > "$_KMAP_TMP" 2>/dev/null
+for cfile in "$SCRIPT_DIR"/context/*.md; do
+    [ ! -f "$cfile" ] && continue
+    _cbase=$(basename "$cfile")
+    [ "$_cbase" = "README.md" ] && continue
+    # 知識マップにファイル名の参照があるか？
+    if ! grep -q "$_cbase" "$_KMAP_TMP" 2>/dev/null; then
+        _c_title=$(head -5 "$cfile" | grep -m1 '^#' | sed 's/^# *//')
+        _c_mtime=$(date -r "$cfile" '+%m-%d %H:%M' 2>/dev/null || echo "?")
+        _c_author=$(cd "$SCRIPT_DIR" && git log -1 --format='%an' -- "context/$_cbase" 2>/dev/null || echo "?")
+        _evo_orphans="${_evo_orphans}  ${_cbase} [${_c_mtime}] by ${_c_author} — ${_c_title}\n"
+        _evo_count=$((_evo_count + 1))
+    fi
+done
+rm -f "$_KMAP_TMP"
+if [ "$_evo_count" -gt 0 ]; then
+    $BRIEF || echo -e "$_evo_orphans"
+    $BRIEF || echo "  → ${_evo_count}件: 知識マップ(CLAUDE.md/MEMORY.md/instructions/config)に未参照。進化シグナルか確認し統合せよ"
+    if [ "$_evo_count" -ge 3 ]; then
+        alerts+=("進化検知: context/に孤立ファイル${_evo_count}件")
+        overall="ALERT"
+    fi
+else
+    $BRIEF || echo "  孤立context/ファイルなし（知識マップ完全同期）"
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ

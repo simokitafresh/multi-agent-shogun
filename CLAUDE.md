@@ -345,6 +345,9 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 
+## Cross-Project Context
+- `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md`
+
 ## Agents
 
 | 役割 | 名前(pane) | CLI |
@@ -362,8 +365,10 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 ## Current Project
 
 - id: dm-signal | path: `/mnt/c/Python_app/DM-signal`
-- context: `context/dm-signal.md` | projects: `projects/dm-signal.yaml`
-- repo: DM-Signal (private)
+- context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md`
+- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md`
+- チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md`
+- projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)
 
 ## Skills
 - 配置|`~/.claude/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨

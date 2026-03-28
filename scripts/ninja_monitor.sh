@@ -273,6 +273,27 @@ check_idle() {
             fi
             return 1  # bash_running中はBUSY
         fi
+        # ─── 全non-idle hook状態: hooksを信頼しBUSY扱い ───
+        # 真因: active等のhook状態がSECONDARY(pane判定)に落ちると、API呼び出し間の
+        # 一瞬のidle promptを誤検知→AGENT-STATE-CORRECTIONが作業中の忍者を/clearした
+        # (cmd_1445事故: saizoが作業中に2回/clearされた根因)
+        # 設計: hook状態が存在する場合は常にPRIMARYで完結。SECONDARYはhookなし時のみ
+        local _ht_last_active _ht_now _ht_elapsed
+        _ht_last_active=$(tmux display-message -t "$pane_target" -p '#{@last_active}' 2>/dev/null)
+        _ht_now=$EPOCHSECONDS
+        _ht_elapsed=0
+        if [ -n "$_ht_last_active" ] && [ "$_ht_last_active" -gt 0 ] 2>/dev/null; then
+            _ht_elapsed=$((_ht_now - _ht_last_active))
+        fi
+        # stale補正: @last_activeから5分(300秒)以上→hooks stuck判断→idle補正
+        if [ "$_ht_elapsed" -ge 300 ]; then
+            log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=${agent_state} stale (last_active=${_ht_last_active}, ${_ht_elapsed}s ago), corrected to idle"
+            tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
+            [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
+            return 0  # stale hook → idle
+        fi
+        log "HOOK-TRUST: ${agent_name} @agent_state=${agent_state}, hooks trusted as BUSY (last_active=${_ht_elapsed}s ago)"
+        return 1  # hooks say non-idle → BUSY
     fi
 
     local busy_rc
@@ -829,8 +850,9 @@ notify_idle_batch() {
     local -a names=("$@")
     if [ ${#names[@]} -eq 0 ]; then return 0; fi
 
-    # 各忍者のCTX%と最終タスクIDを収集
+    # 各忍者のCTX%と最終タスクIDとpane状態を収集
     local details=""
+    local pane_evidence=""
     for name in "${names[@]}"; do
         local target="${PANE_TARGETS[$name]}"
         local ctx
@@ -838,6 +860,12 @@ notify_idle_batch() {
         local last_task
         last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
         details="${details}${name}(CTX:${ctx}%,last:${last_task}), "
+        # pane最終3行を添付（家老がidle判断の直接証拠として使う）
+        local pane_tail
+        pane_tail=$(tmux capture-pane -t "$target" -p 2>/dev/null | grep -v '^$' | tail -3 | tr '\n' '|' | sed 's/|$//')
+        if [ -n "$pane_tail" ]; then
+            pane_evidence="${pane_evidence}[pane:${name}] ${pane_tail} "
+        fi
     done
     details="${details%, }"  # 末尾カンマ除去
 
@@ -849,7 +877,7 @@ notify_idle_batch() {
         return 0
     fi
 
-    local msg="idle(新規): ${details}。計${#names[@]}名タスク割り当て可能。"
+    local msg="idle(新規): ${details}。計${#names[@]}名タスク割り当て可能。${pane_evidence:+ pane証拠: ${pane_evidence}}"
     if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" ninja_idle ninja_monitor >> "$LOG" 2>&1; then
         log "Batch notification sent to karo: ${names[*]}"
         local now

@@ -94,6 +94,9 @@ binary_checks:
     result: 'yes'
   - check: frontend/src/のAPI呼び出し箇所を確認したか
     result: 'yes'
+  AC5:
+  - check: git commitしたか
+    result: 'yes'
 AC3:
   status: PASS
   api_to_ui_mapping:
@@ -172,17 +175,39 @@ optimization_opportunities:
   difficulty: high
   description: _generate_monthly_returns()がSignalテーブルの日付リストに依存する設計を改修。月初営業日リストをPriceテーブルから直接取得すればSignalの日次レコード不要。ただしsignals
     APIが当日のSignalレコードを前提としており日次ETL(sync-fof)との整合性確保必要。影響範囲大
-decision_candidate: []
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
 progress:
   AC2: complete
   AC3: complete
+  AC5: complete
 result:
   summary: recalculate_fof.pyの日次ループ全量分析+UIマッピング完了。唯一の日次ループ(L590-L868)はPhase4Aで月初のみパイプライン実行済みだが、momentum_data等の付帯データが月中も毎日DB書込みされている。OPT-A(momentum_data月中縮小)で95%削減可能。fof_signalsマップはdead
     code候補
 lesson_candidate:
-  momentum_data_monthly_shrink: recalculate_fof.pyのLOOP-1(L590-L868)はPhase 4A最適化で月初のみパイプライン実行済みだが、Signal
-    DB書込みは毎日実行。月中のmomentum_dataフィールドを最小限にするだけでDB書込み量95%削減可能(OPT-A)
-  fof_signals_dead_code: fof_signals辞書(L705)は087最適化のDrift Calcループ削除後にdead code候補。_generate_monthly_returns()はSignalテーブルから直接読むためこのin-memoryマップは不要の可能性が高い
+  found: true
+  title: momentum_data月中縮小でDB書込み95%削減可能
+  detail: recalculate_fof.pyのLOOP-1(L590-L868)はPhase4A最適化済みだがSignal DB書込みは毎日実行。月中のmomentum_dataを最小限にするだけで95%削減。fof_signalsマップは087最適化後dead
+    code候補
+  project: dm-signal
 worker_id: kotaro
 ac_version_read: cmd_1447_v1
 verdict: PASS
+files_modified: []
+lessons_useful: []
+purpose_validation:
+  cmd_purpose: recalculate_fof.py日次ループ分析+UIマッピング。fullrecalculate高速化の設計材料となる偵察
+  fit: true
+  purpose_gap: ''
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''

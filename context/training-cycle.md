@@ -317,9 +317,49 @@ R1のFAILパターン(self_gate_check空文字)に対し、スキャフォール
 3. **修行=訓練+品質監査の二重効果**: 忍者がスクリプトを精査するため実バグ5件発見
 4. **家老の配備技術も向上**: テンプレート設計/一括配備/ローテーション/レベル間設計
 
-## §14 次のアクション
+## §14 L4設計 — 総合（3AC・全BLOCKパターン複合）
 
-1. **L4検討**: 総合(3AC, FILL_THIS罠)。殿判断待ち
+### L4の目的
+
+L1-L3は各スキルを個別に修行。L4は**全スキルを同時に要求する実戦シナリオ**。
+本番cmdと同等の認知負荷で、報告書を一発PASSで作成できるか検証する。
+
+### L4タスク設計
+
+**3AC構造（impl型）**:
+- AC1: 指定スクリプトの改善点を3つ特定し報告（分析系）
+- AC2: 改善点の1つを実装しgit commit（実装系）
+- AC3: lesson_candidate found=true + 他2ACのbinary_checks全記入 + verdict（総合系）
+
+### L4の罠要素（FILL_THIS + 構造崩壊誘因）
+
+1. テンプレートに`FILL_THIS`を3箇所仕込む（purpose_validation.cmd_purpose, result.details, lesson_candidate.detail）
+2. AC3のbinary_checksが7項目（L1-L3最多は5項目）→ 認知負荷で記入漏れ誘発
+3. related_lessonsを5件注入（理由記入5件必須）
+4. files_modifiedがlist形式であることのテスト（AC2で実ファイル変更あり）
+
+### L4 配備対象スクリプト候補
+
+| スクリプト | 改善余地 | 難易度 |
+|-----------|---------|--------|
+| reset_layout.sh | エラーハンドリング弱 | 低 |
+| dashboard_auto_section.sh | 可読性改善 | 中 |
+| restart_watchers.sh | プロセス検出改善 | 中 |
+| model_switch_preflight.sh | edge case | 中 |
+
+### L4 完了基準
+
+L1-L3と同一: 3+忍者がFirst-Pass PASS。
+
+### L4 予測
+
+L1-L3パターン「レベルアップ→回帰→環境改善→100%」に従い:
+- R1: 50-67%予測（3AC+7bc+5lu+FILL_THIS罠の複合負荷）
+- R2: 90-100%予測（R1のFAILパターンに応じた環境改善1-2件）
+
+## §15 次のアクション
+
+1. **L4 R1配備**: 家老に配備指示を送り、idle忍者に配備
 2. **yaml.dump撲滅**: deploy_task.sh L1016/L1485の大規模リファクタ（別タスク）
 3. **kotaro R1発見検証**: report_field_setマルチライン値YAML構造破壊の確認
 4. 本番cmdが来たら修行は中断し本番優先

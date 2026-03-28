@@ -436,6 +436,14 @@ skill_candidate:
   # project: ""     # 対象PJ 例: "dm-signal"
 decision_candidate:
   found: false
+knowledge_candidate:
+  found: false  # タスク中に新たな事実データ(DBカラム名/API仕様/設定値等)を発見したか？
+  # found: true の場合は以下も記入:
+  # items:
+  #   - fact: "発見した事実を1文で"  # 例: "recalculation_timingsのカラム名はfinished_at(completed_atは不在)"
+  #     source: "確認元ファイル/行"  # 例: "backend/app/db/models.py L601"
+  # ★ lesson_candidateとの違い: lessonは行動ルール(「推測するな」)、knowledgeは事実データ(「正しいカラム名はX」)
+  # ★ 家老がknowledge_candidateをprojects/{id}.yamlに還流させる
 assumption_invalidation:
   found: false  # この結果は過去のどのcmdの前提を変更するか？ true/false
   affected_cmds: []  # found:true時、前提が変わるcmd_IDリスト 例: [cmd_1400, cmd_1410]
@@ -970,13 +978,14 @@ try:
     pre_dedup_count = len(scored)
     scored = greedy_dedup(scored, lessons_by_id)
 
-    # cmd_531: AC2 — helpful_count降順でソート（同値はkeyword scoreで副次順序）
+    # cmd_1457: keyword_score(関連度)をprimary sort、helpful_countをtiebreaker
+    # 根因: helpful_count最終決定でL074(hc=1086)/L063(hc=1013)等が常に枠占拠(マシュー効果)
     scored_with_helpful = []
     for score, lid, summary in scored:
         lesson = lessons_by_id.get(lid, {})
         helpful = lesson.get('helpful_count', 0) or 0
         scored_with_helpful.append((helpful, score, lid, summary))
-    scored_with_helpful.sort(key=lambda x: (-x[0], -x[1]))
+    scored_with_helpful.sort(key=lambda x: (-x[1], -x[0]))
     scored = [(s, lid, summ) for _, s, lid, summ in scored_with_helpful]
 
     # AC4: スコア0時のフォールバック = 注入なし（無関連教訓のCTX浪費防止）
@@ -984,54 +993,61 @@ try:
     # cmd_531: AC1 — MAX_INJECT=5 総合注入上限（universalは内数）
     MAX_INJECT = 5
 
-    # universal教訓の準備（max 3、helpful_count上位）
+    # cmd_1457: universal教訓の準備（max 2、helpful_count上位）— task-specificに最低3枠確保
+    MAX_UNIVERSAL = 2
     universal_total_count = len(universal_lessons)
     universal_lessons.sort(key=lambda l: -(l.get('helpful_count', 0) or 0))
-    universal_lessons = universal_lessons[:3]
+    universal_lessons = universal_lessons[:MAX_UNIVERSAL]
 
-    # 全候補を統合: universal + task-specific → helpful_count順で選択
-    all_candidates = []
-    seen_ids = set()
-    for ul in universal_lessons:
-        ul_id = ul.get('id', '')
-        if ul_id not in seen_ids:
-            all_candidates.append({
-                'id': ul_id,
-                'summary': ul.get('summary', '') or ul.get('title', ''),
-                'helpful_count': ul.get('helpful_count', 0) or 0,
-                'is_universal': True
-            })
-            seen_ids.add(ul_id)
-    for _, lid, summary in scored:
-        if lid not in seen_ids:
-            lesson = lessons_by_id.get(lid, {})
-            all_candidates.append({
-                'id': lid,
-                'summary': summary,
-                'helpful_count': lesson.get('helpful_count', 0) or 0,
-                'is_universal': False
-            })
-            seen_ids.add(lid)
-
-    # helpful_count降順で再ソート（統合後）
-    all_candidates.sort(key=lambda x: -x['helpful_count'])
-
-    # AC1/AC3: MAX_INJECT上限適用、超過分はwithheld
+    # cmd_1457: universal/task-specific枠分離（universalがtask-specificの枠を奪えない構造）
+    # universal: 先頭に配置、最大MAX_UNIVERSAL(2)枠
+    # task-specific: 残り枠（最低 MAX_INJECT - MAX_UNIVERSAL = 3枠確保）
     related = []
     withheld = []
     universal_added = 0
-    for c in all_candidates:
-        if len(related) < MAX_INJECT:
-            lesson = lessons_by_id.get(c['id'], {})
-            detail = build_lesson_detail(lesson)[:200]
-            entry = {'id': c['id'], 'summary': c['summary']}
-            if detail:
-                entry['detail'] = detail
-            related.append(entry)
-            if c['is_universal']:
-                universal_added += 1
-        else:
-            withheld.append({'id': c['id'], 'summary': c['summary']})
+    seen_ids_final = set()
+
+    # Phase 1: Universal枠（最大MAX_UNIVERSAL）
+    for ul in universal_lessons:
+        ul_id = ul.get('id', '')
+        if ul_id in seen_ids_final:
+            continue
+        if universal_added >= MAX_UNIVERSAL:
+            break
+        lesson = lessons_by_id.get(ul_id, {})
+        detail = build_lesson_detail(lesson)[:200]
+        entry = {'id': ul_id, 'summary': ul.get('summary', '') or ul.get('title', '')}
+        if detail:
+            entry['detail'] = detail
+        related.append(entry)
+        seen_ids_final.add(ul_id)
+        universal_added += 1
+
+    # Phase 2: Task-specific枠（残り全て — universalが不足すれば繰上げ）
+    task_specific_slots = MAX_INJECT - len(related)
+    task_specific_added = 0
+    for _, lid, summary in scored:
+        if task_specific_added >= task_specific_slots:
+            break
+        if lid in seen_ids_final:
+            continue
+        lesson = lessons_by_id.get(lid, {})
+        detail = build_lesson_detail(lesson)[:200]
+        entry = {'id': lid, 'summary': summary}
+        if detail:
+            entry['detail'] = detail
+        related.append(entry)
+        seen_ids_final.add(lid)
+        task_specific_added += 1
+
+    # Withheld: 枠外の教訓
+    for ul in universal_lessons:
+        ul_id = ul.get('id', '')
+        if ul_id not in seen_ids_final:
+            withheld.append({'id': ul_id, 'summary': ul.get('summary', '') or ul.get('title', '')})
+    for _, lid, summary in scored:
+        if lid not in seen_ids_final:
+            withheld.append({'id': lid, 'summary': summary})
 
     task['related_lessons'] = related
 

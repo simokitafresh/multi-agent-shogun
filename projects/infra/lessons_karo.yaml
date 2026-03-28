@@ -117,3 +117,15 @@ lessons:
   detail: 殿の指示「全てはつながって回っている。忍者の品質向上にはCMDの品質向上、タスク配備の品質向上が必要だ」。品質は鎖で、各環の品質が下流に伝搬する。cmdが曖昧→タスクYAMLが曖昧→忍者が迷う→報告が不完全→教訓が浅い。家老の配備品質が忍者の作業品質を決める。テンプレート改善(LK016ドット記法ヒント)は報告環の品質向上。タスクYAML構築の精度(binary_checks/constraints/target_path)は作業環の品質向上。効率や速度は品質向上の結果であり目的ではない(殿厳命)。品質を損なう可能性がある行為は全て悪。
   source_cmd: cmd_1406
   created_at: '2026-03-26'
+- id: LK018
+  title: 信号を事実として扱うな — idle/STALL通知受信時はpane現物確認必須
+  detail: 'ninja_monitorのidle通知を事実として受け取りpane確認なしで再配備に動いた(cmd_1445才蔵STALL)。LK009に信号であり事実ではないと自分で書き引用までしたのに行動では飛ばした=理解と行動の乖離=deepdive
+    Phase4。根本原因: pane確認が手順に具体的stepとして外部化されていなかった(意志依存)。対策: (1)ninja_monitor.shのidle通知にpane最終3行を自動添付(自動化)
+    (2)karo.md STALL手順にcapture-paneコマンドを明記(強制)。二重防御。'
+  source_cmd: cmd_1445
+  created_at: '2026-03-28'
+- id: LK019
+  title: deploy_task.shの重複ガードがrecon並列配備をブロックする
+  detail: deploy_task.shの同一parent_cmd重複チェックが偵察パターン(2名並列)の正当な配備をBLOCKした(cmd_1447)。手動inbox_writeで回避したが、deploy_task.shにrecon例外(同一parent_cmdでtask_idが異なる場合はOK)を追加すべき
+  source_cmd: cmd_1447
+  created_at: '2026-03-28'

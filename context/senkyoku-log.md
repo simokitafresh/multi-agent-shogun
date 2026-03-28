@@ -6,6 +6,60 @@
 
 ---
 
+## 2026-03-28
+
+**🔥 焦点: fullrecalculate高速化** — OPT-1/2(trade_perf -159s)+OPT-A(db_write -137s)+OPT-6(monthly_gen -120s)=計4cmd進行中。軍師が先行分析でOPT-6設計完了。本番793s→推定~420s(47%削減)目標。研究全文: `docs/research/fullrecalculate-architecture-2026-03-28.md`
+
+| cmd | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_1444 | 旧忍法15体を構成PFとする新Ward FoFを本番DB新規作成+既存123体完全不変証明 | GATE CLEAR。旧忍法-Ward(0012f956)登録成功。weights=k5クラスタ二段EW(0.05/0.0667/0.10)。fullrecalculate349s+冪等性PASS。月次リターン3ヶ月検算一致 | 半蔵単独(db_exclusive直列)。DC: fullrecalculate(portfolio_id=None)でWard FoFのsignals/monthly_returns=0件→個別recalculateでは正常。日次ETL影響要調査 |
+| cmd_1445 | Ward FoFのsignals/monthly_returns 0件バグ修正(cmd_1444 DC) | GATE CLEAR。根因特定(9d845ad4 is_custom_weight分離不足)+修正確認。Ward FoF signals=2999,monthly_returns=144。WA:yes(構造的制約2件リフレーム) | 才蔵。AC2の15分制約(PD-002)+差異検証(進行中)は構造的制約。軍師LGTM。L501登録済み |
+| cmd_1446 | sync-fof(日次ETL)でWard FoFデータ消失しないか検証 | GATE CLEAR。sync-fof=fullrecalculateと同一コードパス。Ward FoF signals=2999,monthly_returns=144(ベースライン同値)。既存123体ハッシュ完全一致 | 疾風完遂。cmd_1445のis_custom_weight修正はsync-fofもカバー済み。sync-fof実行時間470s |
+| cmd_1447 | fullrecalculate日次ループ偵察(fast.py+fof.py。高速化設計材料) | GATE CLEAR。影丸: fast.py 6ループ特定。Phase4 perf_calc(L1497-1621)=orphaned code疑惑(40-60%削減見込み)。小太郎: fof.py OPT-A(momentum_data月中縮小)でDB書込み95%削減。L502登録 | 影丸+小太郎2名偵察。PD-002(15分制約)解消の設計材料揃った |
+| cmd_1448 | OPT-1/2本番デプロイ(trade_perf 53K DBクエリ除去) | GATE CLEAR。本番118s(旧3324s, 96.4%削減)。trade_perf 0.73s(旧4627s)。monthly_query=0, get_first_bday≈0確認。WA: no | 疾風完遂。commit f3b66500 push成功。CI未設定(GH Actions不在)はL503登録。Ward FoF sig=3000 mr=144確認 |
+| cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日)。速度97倍(19.3s→0.2s) | 影丸完遂。WA:なし。dead code除去で安全にPhase 4高速化 |
+| cmd_1450 | FoF OPT-A(momentum_data月中縮小→L3 db_write削減) | GATE CLEAR。db_write 53.3%削減(5.56s/FoF→2.60s/FoF)。signals.py weightsフォールバック追加。テスト34件全通過。WA: no | 半蔵完遂。cmd_1452(OPT-6)のブロック解除 |
+| cmd_1451 | FoF MonthlyReturn生成偵察 | **吸収→cmd_1452** | 軍師OPT-6分析で偵察完了済み。起票直後に吸収 |
+| cmd_1452 | OPT-6: FoF MRキャッシュ共有(signal_cache/portfolio_cache等を_generate_monthly_returnsに渡す) | GATE CLEAR。4パラメータ追加+共有キャッシュ構築+flush後signal_cache追加。テスト1242件PASS。本番fullrecalculate未実行(別途) | 小太郎完遂。AC3 fullrecalculate=本番DB接続不可で環境制約FAIL→リフレーム。軍師LGTM(karo_workaround: no) |
+| cmd_1453 | 知識循環の構造的漏れ3点修正(PI-016/軍師保存先ルール/startup手順) | GATE CLEAR。PI-016追加+gunshi.md保存先ルール+CLAUDE.md startup更新。commit 82d8281 | 疾風完遂。初回PI-015番号衝突→PI-016修正で再配備。軍師cmd_support情報が有効 |
+| cmd_1454 | OPT-A/OPT-6/perf_calc除去の3コミットpush+本番fullrecalculate一括検証 | GATE CLEAR。**本番260s(旧564s, 54%削減)**。L2=155s(66%減),L3=62s(9%減)。AC3データ整合性=既存問題(reframe) | 半蔵完遂。Ward FoF zero-data+68PF zero-sig=既存問題(cmd_1443才蔵も同一報告)。DC: FoFデータ不整合要調査 |
+| cmd_1456 | Ward scipy L3 626sキャッシュ設計偵察 | GATE CLEAR。**前提覆し**: 626s=リソース競合anomaly(正常42s)。キャッシュ効果=0%(Ward 1体+月窓シフト)。assumption_invalidation=true | 飛猿完遂。軍師OPT-12分析の前提(Ward scipy O(n3)主因)が否定。L3ボトルネック=monthly_returns_gen(127s)に転換。L504登録 |
+| cmd_1455 | OPT-4/5 Trade Perf Signal+Portfolio一括ロード+Phase4.5 OPT-6適用 | GATE CLEAR。commit 1efce04f push済み。テスト80件全通過。AC3 fullrecalculate検証はcmd_1458 PASS待ち保留 | 小太郎完遂。WA:なし。signal_preload+portfolio_preload+fof_shared_signal_cache構築。trade_performance.pyに3パラメータ追加(後方互換) |
+| cmd_1457 | deploy_task.sh教訓注入マシュー効果修正(ソート反転+枠分離) | GATE CLEAR。keyword_score primary sort+universal max2+枠分離。3パターンBefore/After検証PASS | 疾風完遂。WA:なし。L074/L063/L225の3枠独占解消。task-specific3枠確保 |
+| cmd_1459 | 68PF zero-signal根因偵察(cmd_1454/1443 DC) | GATE CLEAR。現在23PF zero-sig(全FoF)。当初68→45件は部分recalcで修復済み。根因3仮説: (1)ネステッドFoF signal visibility(20件,PI-015) (2)lookback超過(シン抜き身-常勝) (3)bam-6/bam-2処理順序問題 | 影丸完遂。KC: WardTwoStageEW=1件のみ、total_mr=5155(当初9975と相違)。assumption_invalidation=true |
+| cmd_1460 | OPT holding signal本番Render比較検証(b2183fff vs 1efce04f) | **PASS。holding_signal差分ゼロ。OPT安全確定。** 296,144組の共通ペアで完全一致。signal列も一致 | 家老直接実行(karo_direct)。Render deploy×2+fullrecalculate×2。baseline recalculate部分完了(296K/453K)だが全行がOPT側に包含されholding_signal差分ゼロ |
+| cmd_1461 | zero-signal根因検証(タイムアウト仮説) | **PASS。zero-signal=0安定(2回再現)。根因特定+重大副次発見。** | 家老直接実行(karo_direct)。AC1: uvicorn直接起動・タイムアウト設定なし・recalculate-syncはasyncio background(129対策)。AC2: デプロイ中断パターン確認+3/25 Pydanticバリデーションエラーでfofs=0。AC3: 再実行zero-signal=0、453,663sig、639.79s。**重大発見: threading.Lock(プロセス内)がuvicorn --workers 2(マルチプロセス)で排他制御不能。同時2実行可能。軍師分析も同一結論(中断耐性構造不在)** |
+| cmd_1462 | 日次/月次計算使用箇所マッピング+ドキュメント更新 | **GATE CLEAR**。統合ドキュメント作成+context索引更新。commit 6d393210 | 半蔵(AC1日次)+才蔵(AC2月次)+小太郎(AC3統合)。軍師LGTM。成果物: docs/research/fullrecalculate-calculation-map.md |
+| cmd_1463 | crash-safety Level 0a(shutdown警告)+0b(DB永続化) | **GATE CLEAR** | 疾風(AC1: main.py shutdown警告, cbf347ba)+影丸(AC2: recalculation_statusテーブル+DB永続化, cf90126a)。軍師LGTM。構造的防御の第一歩 |
+| cmd_1464 | OPT-3 business_days pure版化(DB fallbackクエリ除去) | **GATE CLEAR**。commit cc0830a2。43テスト全PASS | 才蔵完遂。3箇所pure版分岐(signal_date/position_start_date/position_end_date)+透過呼出し。後方互換維持。軍師注記: cmd仕様パス(generators/monthly_returns.py)≠実体(services/return_calculator.py) |
+| cmd_1465 | recalc_status排他制御pg_advisory_lock化 | **GATE CLEAR**。commit 457dd72d。テスト15件全通過 | 半蔵完遂。2層排他: threading.Lock(プロセス内高速)+pg_try_advisory_lock(key=8675309,プロセス間原子的)。セッション保持方式。fail-open(DB障害時非ブロック)。SIGKILL時PostgreSQL自動解放。軍師LGTM |
+| cmd_1466 | 全OPT累積効果計測+crash-safety動作確認 | **GATE CLEAR**。全4AC PASS | 疾風。**637.80s(pre-OPT 3566s→5.6x高速化)**。L2:240.66s(11.2x),L3:362.27s(2.0x)。crash-safety正常(recalculation_status completed記録)。signal=453,663件,zero-sig=0。ボトルネック転換: L2 trade_perf 142.78s+L3 db_write 130.64s+L3 unmeasured 74.64s |
+| cmd_1467 | L3 FoF profiling gap特定(unmeasured+db_write内訳) | **GATE CLEAR** | 影丸偵察。unmeasured 74s最大=N+1クエリL374-382(shared_portfolio_cache未使用,30-60s)+gc.collect×59(5-15s)。db_write 130s最大=signals_flush(59K行UPSERT+大JSON,80-100s)+component_weights(20-40s)。軍師LGTM。LC: N+1クエリ+dw_component_weights返却漏れ |
+| cmd_1468 | cmd_save.shファイルパス存在チェック追加 | **GATE CLEAR** | 才蔵。Check 10追加。全65テストPASS。LC: Check 8にpipefailバグ(grep空マッチexit 1)発見。自動化×強制: cmd_1464事故の構造的再発防止 |
+| cmd_1469 | FoF N+1 query bulk化(L374-382) | **GATE CLEAR** | 疾風完遂。shared_portfolio_cache.get()で300-900個別→0クエリ。commit 7fef9f70。軍師LGTM。初回GATE BLOCK(CI赤=Check 8 pipefailバグ)→家老修正(5a3a250)→GATE CLEAR。LC: cache構築→利用箇所網羅確認 |
+| cmd_1470 | L3 signals_flush最適化 | **GATE CLEAR** | 半蔵完遂。per-FoF UPSERT×59commits→deferred INSERT×1commit+5000/batch。3ファイル。55テスト全通過。commit 27e39f37。軍師LGTM。LC: L2もcleanup_mode=True適用可能 |
+| cmd_1471 | L2 trade_perf 142.78s profiling偵察 | **GATE CLEAR** | 影丸完遂。ボトルネック3点: load_business_days N+1(21-36s)+fallback monthly_return(14-29s)+per-PF write(7-14s)。軍師LGTM。LC: del price_cacheがfallback阻害 |
+| cmd_1472 | L2 trade_perf N+1除去+バッチcommit | **GATE CLEAR** | 疾風完遂。load_business_days引数化(Phase 5b前1回load→全PF配布)+20PFバッチcommit。84テスト全PASS。軍師LGTM |
+| cmd_1473 | trade_perf fallback price_cache保持 | **GATE CLEAR** | 影丸完遂。del price_cache除去+calculate_monthly_returnにprice_cache引数追加。missing tickerのみmerge load。56テスト全PASS。軍師LGTM |
+| cmd_1474 | 第2サイクル計測(4新OPTデプロイ+fullrecalculate) | **verdict: FAIL** | 半蔵完遂。380.53s(baseline 637.80s, -40.3%)。L2 trade_perf 142→0s、L3 db_write 130→32s。**AC3 FAIL: ネステッドFoF 15体ゼロ信号**(signal 406,988 vs 453,663)。59→44体処理。cmd_1469/1470がスコープ変更→15体未処理=見かけ上速い可能性。assumption_invalidation=true |
+
+**軍師直接実装(殿指示)**: OPT-12 — gc.collect削減(59→5回)+fof_signals dead code除去+profiling改善。commit 00fd5257。
+**軍師根因特定+修正**: OPT-13 — cmd_1474 FAIL根因=cmd_1470 deferred flushでDB未commitのシグナル→nested FoF DB query空→15体スキップ。修正: signal_cache(OPT-6)からDB結果を自動補完。commit f3ff64a7。要再計測(380.53s+15体分加算)。
+**軍師OPT-14**: Standard PF signals flush cleanup_mode=True化(commit 79663eda)。cmd_1470半蔵LC実装。INSERT化。2-5s削減。
+**軍師OPT-15**: component_weights commit集約(commit 1e3401fd)。per-FoF 59回→10FoFごと6回。5-10s削減。Tier 1全項目完了+3件push。再計測推奨。
+
+**将軍直轄: 知識循環なぜなぜ→6件修正**（殿指示「サイクルを回そう」）
+
+| 修正 | 内容 | 因果 |
+|------|------|------|
+| Gate 15(進化検知) | gate_shogun_startup.shに新gate追加。context/に知識マップ未参照ファイルがあればフラグ | なぜなぜ5段: 進化は検知しない→孤立context→知識マップ断絶→循環不全。CLAUDE.md参照追加で0孤立達成 |
+| Check 8(PI衝突) | cmd_save.shにPI番号衝突チェック追加。既存PI-0XXと重複時WARNING+次番号提案 | cmd_1453事故(PI-015衝突)の再発防止。自動化×強制 |
+| Check 9(insights表面化) | cmd_save.sh起票時にpending insights数+直近3件を表示 | insights 18件死蔵発見→書込み専用で消費者不在→起票時に将軍の目に入れる |
+| archive_completed.sh修正 | nested_result.summary抽出追加。chronicle空欄35件バックフィル | なぜなぜ: 218空欄→field名不一致(summary→result.summary) |
+| insights整理 | 9件resolved(解決済みパターン+Gate15で対処済み) | pending 18→9件に半減 |
+| gate_loop_health.sh時系列化 | insight生成を直近100件のみに制限(表示は全期間維持) | なぜなぜ: 解決済みパターン再起票→累積カウント→時系列原則違反→INSIGHT_WINDOW導入 |
+| cmd_1443 | Ward二段EW weight pipeline修正: weightsが計算されるが下流に伝わらないバグ4箇所+軍師発見1箇所=計5箇所修正 | GATE CLEAR。AC1(final_weights設定)+AC2(is_kalman_meta条件除去5箇所+carry-forward+test fixture修正)+AC3(fullrecalculate 58FoF×9509行完全一致)。後方互換確認済み | 疾風AC1+影丸AC2+半蔵AC3。軍師がline862の5箇所目発見(REQUEST_CHANGES)。AC2初回FAIL→PD-001(scope拡張)→将軍裁定→PASS。テストfixtureのweights=None修正(本番一致) |
+
 ## 2026-03-27
 
 | cmd | 意図 | 結果 | 因果 |
@@ -17,6 +71,20 @@
 | cmd_1424 | R16 lookback感度分析(18-60ヶ月): K感度と直交する軸で36ヶ月の妥当性検証 | GATE CLEAR。LB*=36ヶ月(Sharpe2.1756)=cmd_1422一致。broad peak=頑健。データスヌーピング兆候なし | 影丸完遂。共通期間(2020-03~2026-01)でもLB36最適。Calmar6.06最良。LB48のみやや低下 |
 | cmd_1425 | R17 2次元グリッド(K×LB=30通り): 十字型では不可視の交互作用を可視化 | GATE CLEAR。最適(K*,LB*)=(5,36) Sharpe=2.133。peak_ratio=1.073=頑健。K=5,LB=36は最適そのもの | 半蔵完遂。交互作用発見: LB短→K=4最適、LB中→K=5最適。R15-R17でパラメータ頑健性完全確認 |
 | cmd_1427 | R19 拡張2Dグリッド(K=2-12×LB=12-60、99通り): R17の粗い30通りを密に拡張 | GATE CLEAR。最適(K=4,LB=30) Sharpe=2.1869。K=5,LB=36=97.5%。peak_ratio=1.12=頑健 | 疾風完遂。R17からK=5→K=4に最適移動(2.5%差=プラトー内)。K≥9/LB≥48低下。殿判断用データ完成 |
+| cmd_1428 | R20 評価期間ローリング頑健性テスト: 最適パラメータの時間安定性を3メトリクスで検証 | GATE CLEAR。Sharpe: K=3-6最適68.8%,K=4-5最適54.2%。3メトリクスK一致度0% | 疾風完遂。Sharpeベースの最適帯は時間安定。ただしCAGR→K=2,MaxDD→K=3でメトリクス依存性あり |
+| cmd_1429 | R21 BestCAGR vs ランダム×100: Ward vs モメンタム因果切り分け | GATE CLEAR。Ward寄与97.2%(Sharpe)、モメンタム2.8%。Sortino版Ward106.1%(モメンタム微負) | 影丸完遂。BestCAGR Sharpe=2.13、ランダム平均=2.07。Ward構造が支配的価値源泉。BestCAGR選択の付加価値は統計的にわずか |
+| cmd_1430 | R22 3方式統一比較: BestCAGR vs 二段EW vs ランダムEW | GATE CLEAR。二段EW Sharpe=2.1228=BestCAGRの99.5%。MaxDD/Calmar二段EW優位 | 半蔵完遂。モメンタム仮定ゼロでも99.5%のSharpe維持。リスク面(MaxDD-13.5% vs -14.9%)で二段EW優位。BB化候補として有力 |
+| cmd_1431 | R23 3方式行動メトリクスローリング(W=24ヶ月×48窓) | GATE CLEAR。二段EWとBestCAGRは46-48/48窓同値。連敗全窓同値 | 才蔵完遂。行動面でもBestCAGRとほぼ同等。NHF微差-0.4%のみ。純粋構造は行動メトリクスでも遜色なし |
+| cmd_1432 | R24 二段EW2Dグリッド99通り(K=2-12×LB=12-60) | GATE CLEAR。最適(K=4,LB=30)=BestCAGRと同一。Sharpe73/99優位、MaxDD86/99優位 | 小太郎完遂。CAGRのみBestCAGR優位(34/99)。二段EWはSharpe/リスクで広範優位。peak_ratio=1.09頑健 |
+| cmd_1433 | 後方伝播検証の仕組み化(テンプレート+gate+karo-ops) | GATE CLEAR。4テストPASS。CI green | 飛猿完遂。assumption_invalidation欄追加。忍者→家老→gateの三重網。螺旋原則の外部化 |
+| cmd_1434 | R25 シン四神v2 12体×二段EW2Dグリッド90通り | GATE CLEAR。最適(K=3,LB=24)Sharpe=1.4785。TwoStageEW優位83.3%>R24(73.7%) | 疾風完遂。12体でも二段EW構造ロバスト。最適点移動あり(K=4→3,LB=30→24)。R24比較で優位率向上 |
+| cmd_1435 | R26 全PF65体×二段EW2Dグリッド171通り | GATE CLEAR。最適(K=6,LB=18)Sharpe=1.492。Sharpe優位70.8%、MaxDD優位95.9% | 半蔵完遂。65体でも構造ロバスト。最適K:4→3→6(体数増でK増)、LB:30→24→18(体数増でLB短縮)。三段階全て二段EW優位一貫 |
+| cmd_1436 | R27 Ward+二段EWビルディングブロック汎用モジュール | GATE CLEAR。WardTwoStageEWクラス実装+R24/R25/R26全3データセット検証8/8 PASS | 飛猿完遂。R1-R26研究結論をbuilding_block.pyに汎用化。内部K×LBグリッドサーチで最適パラメータ自動決定。コールドスタート1/N EW+k_max自動クランプ |
+| cmd_1437 | WardTwoStageEWBlock本番パイプライン実装+登録+テスト | GATE CLEAR。TerminalBlock継承。テスト19項目全PASS(K=4,LB=30一致1e-6以内+cold start+エッジ) | 疾風(AC1+AC2実装+登録)+影丸(AC3+AC4テスト+commit)。building_block.py→パイプライン忠実移植。奥義系ネステッドFoF本番登録の基盤完成 |
+| cmd_1439 | 汚染データ一括削除(ninpo21 CSV+R1-R24出力+偽スクリプト) | GATE CLEAR。outputs93件+scripts5件+__pycache__削除。保全対象(all_pf,r25_*,r26_*,building_block)全て無傷 | 才蔵完遂。commit 45dd018f。cmd_1441(旧PF分析)の前提条件=クリーンanalysis環境確保 |
+| cmd_1440 | 汚染事故の教訓L499登録+PI-014追記 | GATE CLEAR。L499(データ出自検証必須)+PI-014(outputs/CSVはパリティ未検証=未検証)登録 | 小太郎完遂。commit 2cc464d。事故→教訓→PI=免疫系獲得。cmd_1439と並列完了 |
+| cmd_1442 | ネオ五神候補absolute偵察(GLD/USO/TIP+既存4absolute相関) | GATE CLEAR。全7銘柄StockData取得成功(203ヶ月共通期間)。GLD最有力(max|r|=0.343)、USO次点(0.378)、TIP不適(LQD冗長r=0.769) | 半蔵完遂。commit 3abdede9。五神5番目候補=GLD有力。Phase2(哲学設計)は別cmd |
+| cmd_1441 | 旧忍法+旧四神のWard+二段EW 2Dグリッド分析(本番DBデータ) | GATE CLEAR。旧忍法15体K*=4,LB*=24,Sharpe=2.01。旧四神12体K*=4,LB*=12,Sharpe=1.55,TwoStageEW優位率76.7%。合計27体K*=12,LB*=24,Sharpe=1.75 | 疾風完遂。R25(1.48)/R26(1.49)より高Sharpe。旧四神type混在(fof10+standard2)=制約との矛盾発見。ヒートマップ18枚+CSV3本+YAML3本 |
 
 ## 2026-03-26
 
@@ -253,3 +321,18 @@
 - **定量**: gate_startup 3.8→1.3s(-66%), cmd_save 4.8→1.3s(-73%), dashboard_auto 10.5→3.0s(-71%), agent_config 200→10ms(-95%/13スクリプト波及)。日次~23分節約
 - **根因**: WSL2 /mnt/cのPython起動コスト(200-300ms/回)とgit status全ファイルstat(5.7s)が主犯。awk/grepへの置換とキャッシュが定型解
 - cmd_1390: GATE CLEAR(05:30)。inbox_write WARN→BLOCK昇格。WA率根因対策。小太郎完遂。+自走改善L296/L297/L298タスク化→全忍者配備
+
+### 2026-03-28 fullrecalculate最適化 + 知識循環分析
+
+**OPT Push & 本番検証**
+- **cmd_1454** (hanzo): OPT-A/OPT-6/perf_calc除去 3コミットpush成功。本番fullrecalculate 260s(旧564s→54%削減)。L2=155s, L3=62s。Ward FoF signals=0は既存問題
+- **cmd_1449** (kagemaru): perf_calc除去 作業中(CTX:65%)
+- **cmd_1456** (tobisaru): Ward scipy偵察 作業中(CTX:56%)
+- **cmd_1455**: OPT-4/5設計済み、cmd_1454完了待ち
+
+**知識循環ボトルネック分析(将軍自走)**
+- **問い**: 教訓注入は3段階(将軍CMD→家老配備→忍者作業)のどこがボトルネックか？
+- **計測結果**: 将軍CMD lesson参照率20% / 家老配備injection率62%(avg5件) / **忍者useful=true率13%**
+- **根因特定**: deploy_task.sh L1024-1025のhelpful_count降順ソートが**マシュー効果**を生成。L074(bash,hc=1086)/L063(YAML,hc=1013)/L225(MCP,hc=380)が常にMAX_INJECT 5枠中3枠占拠。Python最適化タスクにbash教訓を注入
+- **第二根因**: dm-signal universal教訓101件中、真にドメイン非依存=0件。universalタグ希釈
+- **cmd_1457起票**: ソート優先順序反転(keyword_score優先)+universal/task-specific枠分離。家老に委任済み

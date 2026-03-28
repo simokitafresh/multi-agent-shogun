@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-27 -->
+<!-- last_updated: 2026-03-28 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -234,7 +234,7 @@
 | cmd_937 | 整理 — 確定申告データの不要ファイル削除+ディレクトリ浄化 | auto-ops | 03-14 | cancelled |
 | cmd_939 | 実装 — note売上CSVのGoogle Drive upload機能追加 | auto-ops | 03-14 | 実装 — note売上CSVのGoogle Drive upload機能追加 |
 | cmd_938 | 修正+整理 — 確定申告データの出力先修正+Drive upload+確認後ローカル削除 | auto-ops | 03-14 | 修正+整理 — 確定申告データの出力先修正+Drive upload+確認後ローカル削除 |
-| cmd_940 | 偵察+整備 — Drive確定申告フォルダの整合性検証+チェックリスト恒久化 | | auto-ops | 03-14 | — |
+| cmd_940 | 偵察+整備 — Drive確定申告フォルダの整合性検証+チェックリスト恒久化 | | auto-ops | 03-14 | Drive「2026確定申告 個人事業」フォルダの完全性・整合性チェック完了。 3AC全て調査完了。ローカルCSVとDrive版の間に体系的な差異を検出。 |
 | cmd_942 | 偵察 — 確定申告証票PDFの重複・有効性調査 | | auto-ops | 03-14 | — |
 | cmd_944 | 修正 — マスターCSV更新（MFクレカ追加反映） | | auto-ops | 03-14 | — |
 | cmd_945 | 修正 — PayPal公式レシートPDFでDrive既存PDFを差し替え | | auto-ops | 03-14 | — |
@@ -303,7 +303,7 @@
 | cmd_1014 | Max Run-upと直交する2メトリクスをL1レベルで特定し、シン四神CPCVスクリーニング用トリプルEを確定する | dm-signal | 03-17 | シン四神Phase1: L1ファミリー別メトリクス相関分析を |
 | cmd_1016 | trade-ruleパリティ修正前に生成された汚染GS結果データを特定し完全削除する | dm-signal | 03-17 | — |
 | cmd_1015 | run_077正規計算でL1フルGS月次リターンを生成し、Max Run-upと直交する2メトリクスをL1レベルで特定する | dm-signal | 03-17 | — |
-| cmd_1017 | analysis_runs/docs/に定義された既存GSパイプライン(5 Phase, 56,556候補/ファミリー)がシン四神のL1 CPCVスクリーニング基盤として使えるか、精査し所見を報告する | dm-signal | 03-17 | — |
+| cmd_1017 | analysis_runs/docs/に定義された既存GSパイプライン(5 Phase, 56,556候補/ファミリー)がシン四神のL1 CPCVスクリーニング基盤として使えるか、精査し所見を報告する | dm-signal | 03-17 | 指定対象 `scripts/analysis/grid_search/cpcv_full_validator.py` は現working treeに存在しない。 |
 | cmd_1018 | シン四神設計書(outputs/analysis/shin_shijin_design.md §3)に定義された191,796変種のL1パラメータ空間をGS実行し、全変種の月次リターン+8メトリクスを算出する。GSエンジンは本番PipelineEngineと計算完全一致であること | dm-signal | 03-17 | — |
 | cmd_1019 | cmd_1018出力の191,796変種×8メトリクスを3手法(全期間/ローリング/DD条件付き)で相関分析し、トリプルE候補を殿に推薦する | dm-signal | 03-17 | — |
 | cmd_1020 | Phase 2(トリプルE確定)と並行してCPCV+PBO完璧版エンジンを構築する。メトリクス名はパラメータ化し、Phase 2完了後に即実行可能な状態にする | dm-signal | 03-17 | — |
@@ -320,11 +320,11 @@
 | cmd_1031 | cmd_1030偵察結果の高速化#1(Grid dedup)+#2(PPE全忍法)+#5(worker 4→6)を実装。23h→2.8hを目指す。本番パリティ完全一致が絶対条件。 | dm-signal | 03-17 | — |
 | cmd_1032 | cmd_1031のGrid dedupを差し戻す。本番は日次解像度でシグナル計算するため10D/15D/20D/1Mは全て異なる値を生む。月次GS内のbefore/after比較は本番パリティではない。PPE導入部分は残す。 | dm-signal | 03-17 | — |
 | cmd_1033 | kawarimiのPPE効率が1.09x（他忍法2.5-3.75x）である原因を特定し、改善可能か判定する | dm-signal | 03-17 | — |
-| cmd_1034 | kasoku GS(12.6Mパターン, PPE6で6.6h)のさらなる高速化余地を6観点から調査し、次の実装cmdの設計根拠を確立する | dm-signal | 03-17 | — |
+| cmd_1034 | kasoku GS(12.6Mパターン, PPE6で6.6h)のさらなる高速化余地を6観点から調査し、次の実装cmdの設計根拠を確立する | dm-signal | 03-17 | WAIVED — sasuke stall後、hayate(疾風)がangle1を完了 |
 | cmd_1035 | Phase 5(シン忍法GS 19.2Mパターン)実行前に、cmd_1034実証済み高速化をkasokuに組込み、他忍法にも横展開し、全7忍法スクリプトの本番パリティを再検証する | dm-signal | 03-17 | yotsume+bunshinベンチマーク計測完了。 yot |
 | cmd_1037 | cmd_1035で各忍法に適用した高速化手法を横断分析し、忍法間の知見転用でさらなる高速化余地を定量的に特定する | dm-signal | 03-18 | — |
 | cmd_1036 | 全忍法のGSベンチマークを1本の共通スクリプトで統一し、計測方法のブレ・重複実装・ミスを排除する | dm-signal | 03-18 | — |
-| cmd_1039 | ninja_monitorの/clear判定を三段階化し、作業中(acknowledged/in_progress)の忍者を/clearしない | infra | 03-18 | — |
+| cmd_1039 | ninja_monitorの/clear判定を三段階化し、作業中(acknowledged/in_progress)の忍者を/clearしない | infra | 03-18 | AC1(5観点レビューPASS)+AC2(3テスト全PASS)完了。commit済み(3961379)。pushが既存テスト失敗でブロック。 |
 | cmd_1038 | cmd_1037偵察で実証済みの3高速化手法+tiebreakバグ修正を並列実装し、19.2M GS実行時間を20-30分から10-15分圏内に短縮する | dm-signal | 03-18 | — |
 | cmd_1040 | cmd_1039の実装が殿の三段階仕様と不一致。正しい三段階（Stage 1: YAML確認→Stage 2: 再確認→Stage 3: /clear）に再実装 | infra | 03-18 | — |
 | cmd_1041 | hooks・ninja_monitor・CI/テスト・通信基盤のバグ・エラーを網羅的に洗い出す | infra | 03-18 | — |
@@ -402,9 +402,9 @@
 | cmd_1292 | ninja_monitor report存在チェック — report未作成での/clear防止 | infra | 03-23 | — |
 | cmd_1293 | 忍者報告テンプレート導線修復 — format workaround源流根絶(GP-017) | infra | 03-23 | — |
 | cmd_1294 | PreToolUse DENY実装 — Write/Editでの報告YAML直接作成を阻止(GP-003完遂) | infra | 03-23 | — |
-| cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | — |
-| cmd_1302 | cmd_complete_gate.sh archive実行タイミング修正 — GATE外完了の根絶 | infra | 03-23 | — |
-| cmd_1303 | ninja_monitor uncommittedチェック scope修正 — 運用ファイル除外 | infra | 03-23 | — |
+| cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
+| cmd_1302 | cmd_complete_gate.sh archive実行タイミング修正 — GATE外完了の根絶 | infra | 03-23 | cmd_complete_gate.sh内のarchive_completed.sh呼出しをpreflight(L1581)からGATE CLEAR後(L381 |
+| cmd_1303 | ninja_monitor uncommittedチェック scope修正 — 運用ファイル除外 | infra | 03-23 | git uncommittedチェックにgrep -v運用ファイル除外フィルタ追加。dashboard.md/logs/queue/inbox/.claude/ |
 | cmd_1304 | 削除済みスクリプト参照27ファイルのクリーンアップ | infra | 03-23 | — |
 | cmd_1305 | lesson_update_score.sh書込先修正 — Vercel化後のarchive参照切替 | infra | 03-23 | cmd_1283で既に対応済み。lesson_update_ |
 | cmd_1306 | test_result_guard.sh偽陽性修正 — last_assistant_messageのSKIP誤検知除去 | infra | 03-23 | — |
@@ -414,13 +414,13 @@
 | cmd_1310 | CI RED修正 — test_sync_lessons_injection_count_sync.bats L77 失敗 | infra | 03-23 | — |
 | cmd_1311 | GP-003正規表現バグ修正 — report YAML hookが全忍者で未発火 | infra | 03-23 | — |
 | cmd_1289 | GP-011 忍者別workaround率の自動計測・startup gate表示 | infra | 03-23 | — |
-| cmd_1322 | GP-032 target_path存在検査WARN注入 | infra | 03-23 | — |
+| cmd_1322 | GP-032 target_path存在検査WARN注入 | infra | 03-23 | inject_target_path_check関数をdeploy_task.shに追加。inject_credential_files直後に呼び出し。存在しな |
 | cmd_1323 | STALL再配備時の旧報告テンプレート自動cleanup | infra | 03-23 | — |
 | cmd_1324 | fix: lesson_impact.tsv タブ文字エスケープバグ修正+既存データ復旧 | infra | 03-23 | — |
 | cmd_1326 | feat: cmd_complete_gate.sh GATE CLEAR後処理のpost-write verify横展開 | infra | 03-23 | — |
 | cmd_1327 | fix: CI RED修復 — E2Eテスト2ファイルを現行編成に適合 | infra | 03-23 | — |
 | cmd_1329 | fix: insights.yaml棚卸し — pending 25件の分類・重複削除・resolved更新 | infra | 03-23 | — |
-| cmd_1328 | recon: GP-026実装設計 — report_yaml_missing BLOCK自動待機メカニズム | infra | 03-23 | — |
+| cmd_1328 | recon: GP-026実装設計 — report_yaml_missing BLOCK自動待機メカニズム | infra | 03-23 | report_yaml_missingの根本原因は2パターン: (1)gateが忍者未完了時に発火(61.5%), (2)CLEAR後archive移動→再ga |
 | cmd_1330 | feat: GP-027実装 — commit漏れ検出WARN(gate check前) | infra | 03-23 | — |
 | cmd_1331 | fix: CI Unit Test FAIL — test_text_utils.bats bash -lc を bash -c に修正 | infra | 03-23 | — |
 | cmd_1334 | feat: GP-029実装 — insights自動起票品質改善(dedup+ID一意化) | infra | 03-23 | — |
@@ -431,9 +431,9 @@
 | cmd_1337 | ダッシュボード更新の意志依存を排除。イベント駆動で即時更新し将軍の判断速度を向上 | infra | 03-23 | — |
 | cmd_1338 | GATE時にautofixを再実行しrace condition根絶。verdict/no_lesson_reason自動補完で61 FAIL根絶。CLEAR率65→85%。家老workaround構造的根絶 | infra | 03-23 | — |
 | cmd_1339 | 将軍のcmd重複起票を構造的に防止。今日のcmd_1338重複事故(家老cmd_1336と同内容)のwhy chain分析から特定した自動化ターゲット | infra | 03-23 | — |
-| cmd_1340 | 偵察教訓注入率0%(cmd_513全スキップ)を解消。偵察固有教訓が偵察タスクに伝わらず改善ループが断絶している。偵察は全cmdの前段であり品質の起点 | infra | 03-23 | — |
+| cmd_1340 | 偵察教訓注入率0%(cmd_513全スキップ)を解消。偵察固有教訓が偵察タスクに伝わらず改善ループが断絶している。偵察は全cmdの前段であり品質の起点 | infra | 03-23 | recon/scout/researchの教訓全スキップを偵察固有7教訓(L219,L211,L213,L159,L104,L129,L128)のみ注入に変更。 |
 | cmd_1341 | LLMには時系列の概念がない(殿指摘)。累積値は安心を与えるが因果を隠す。直近値は変化のシグナルを示す。recon注入率36%(実質0%)の誤認を構造的に防止 | infra | 03-23 | — |
-| cmd_1342 | Step 2 Phase B — 既存追い風FoFパリティ検証（MomentumFilter） | dm-signal | 03-23 | — |
+| cmd_1342 | Step 2 Phase B — 既存追い風FoFパリティ検証（MomentumFilter） | dm-signal | 03-23 | 追い風FoF 3体(常勝/激攻/鉄壁)全期間パリティ検証完了。monthly_return(close/open)全月PASS。hs_cross_checkは各 |
 | cmd_1343 | Step 2 Phase C — 既存抜き身FoFパリティ検証（SingleViewMomentumFilter） | dm-signal | 03-23 | — |
 | cmd_1344 | Step 2 Phase D — 既存変わり身FoFパリティ検証（TrendReversalFilter） | dm-signal | 03-23 | — |
 | cmd_1346 | Step 2 Phase E2 — 既存加速D FoFパリティ検証（MomentumAccelerationFilter diff） | dm-signal | 03-23 | — |
@@ -445,17 +445,17 @@
 | cmd_1351 | Step 1補強 — 本番standard PF全65体のnumpy快速パスパリティ検証 | dm-signal | 03-23 | — |
 | cmd_1352 | 全standard PF numpy快速パス完全パリティ（hs+ret両方）+ L0-M_XLU原因特定 | dm-signal | 03-24 | — |
 | cmd_1353 | numpy快速パス 53/53完全一致達成 — ^VIX grid汚染修正+hs順序一致 | dm-signal | 03-24 | — |
-| cmd_1394 | — | infra | 03-25 | — |
-| cmd_1392 | dashboard_auto_section.sh 高速化 — 22.5秒→5秒以下 | infra | 03-25 | — |
-| cmd_1391 | CI RED修正 — simokitafresh/multi-agent-shogun 15テスト失敗 | infra | 03-25 | — |
-| cmd_1397 | シン四神v2(12体standard) + シン忍法v2(20体FoF)を本番DBに登録する。チェックリストStep 6 | dm-signal | 03-25 | — |
-| cmd_1398 | — | dm-signal | 03-26 | — |
-| cmd_1399 | — | dm-signal | 03-26 | — |
-| cmd_1400 | — | infra | 03-26 | — |
-| cmd_1401 | — | infra | 03-26 | — |
-| cmd_1402 | — | infra | 03-26 | — |
-| cmd_1403 | — | infra | 03-26 | — |
-| cmd_1414 | Auto-dreamを超える5 Phase Memory Consolidation。殿の原理(タイムスタンプ=因果推論/免疫系=進化)を実装。12システム調査の車輪(Zep二重タイムスタンプ/Audrey矛盾管理/Mnemosyne秒精度)を統合。Phase | infra | 03-27 | — |
+| cmd_1394 | — | infra | 03-25 | テスト4件全PASS。修正不要。awk実装はinvalid_lessons_useful_format/形式が不正を正しく出力しており、テスト期待値と整合済み。 |
+| cmd_1392 | dashboard_auto_section.sh 高速化 — 22.5秒→5秒以下 | infra | 03-25 | model_analysis.sh --summaryをPython→bash/awkに置換。6.4s→0.8s(WSL2)。2秒以下達成 |
+| cmd_1391 | CI RED修正 — simokitafresh/multi-agent-shogun 15テスト失敗 | infra | 03-25 | 担当テスト(ninja_monitor 9件)は他忍者(tobisaru+kotaro)のcommitで解決済み。追加作業不要 |
+| cmd_1397 | シン四神v2(12体standard) + シン忍法v2(20体FoF)を本番DBに登録する。チェックリストStep 6 | dm-signal | 03-25 | シン四神v2 12体(standard)+シン忍法v2 20体(FoF)を本番DBに登録完了。全32体がAPI GET存在確認+フォルダー所属+pipeline |
+| cmd_1398 | — | dm-signal | 03-26 | 全65 active standard PF ALL PASS (hs=完全一致, ret=完全一致)。シン四神v2 12体+既存53 PF全てパリティ検証完了 |
+| cmd_1399 | — | dm-signal | 03-26 | シン忍法v2 20体パリティ検証完了。PASS=2体、FAIL=18体。18体のFAILは全てL485既知パターン（初月hs_cross不一致のみ）。構造的FA |
+| cmd_1400 | — | infra | 03-26 | AgentsViewModel.kt L115の capture-pane -S パラメータを -50 から -500 に変更。assembleDebug BU |
+| cmd_1401 | — | infra | 03-26 | RateLimitContentパース全null時rawTextフォールバック表示追加+execRateLimitCheck SSH空結果1回リトライ追加。ビル |
+| cmd_1402 | — | infra | 03-26 | VoiceDictionarySection.ktをAnimatedVisibilityでアコーディオン化(デフォルト折りたたみ、タップ展開)。Constant |
+| cmd_1403 | — | infra | 03-26 | Androidアプリからntfy通知機能を完全削除。3ファイル削除(NtfyService.kt/NotificationHelper.kt/NtfySetti |
+| cmd_1414 | Auto-dreamを超える5 Phase Memory Consolidation。殿の原理(タイムスタンプ=因果推論/免疫系=進化)を実装。12システム調査の車輪(Zep二重タイムスタンプ/Audrey矛盾管理/Mnemosyne秒精度)を統合。Phase | infra | 03-27 | Dream-skill SKILL.md作成完了。設計書§2の全文を~/.claude/skills/dream/SKILL.mdに忠実配置。232行。diff |
 | cmd_1077 | シン四神・シン忍法の本番DB登録手順書を作成し、忍者が即実行できる状態にする | dm-signal | 03-27 | — |
 | cmd_1078 | シン玄武(DM7+)をXLU固定でPhase 3+Phase 4やり直し。DNA準拠の4体を再選定する | dm-signal | 03-27 | — |
 | cmd_1079 | FE MAX_PORTFOLIOS を120→200に修正。BE(cmd_1076)との整合 | dm-signal | 03-27 | — |
@@ -463,11 +463,27 @@
 | cmd_1085 | LookbackPeriodスキーマのmonths上限を24→36に引き上げ、忍法FoFの長期lookbackを許容する | dm-signal | 03-27 | — |
 | cmd_1101 | cmd_1096の診断結果に基づきFoF BBの不具合を修正し、シン忍法21体を再recalculateする | dm-signal | 03-27 | — |
 | cmd_1133 | 家老の学習ループを構築する。karo.mdのレビュー・配備・GATE処理の各フェーズに品質チェックを組み込み、家老自身の判断を二値計測→還流する仕組みを作る | infra | 03-27 | — |
-| cmd_1404 | — | infra | 03-27 | — |
-| cmd_1405 | — | infra | 03-27 | — |
-| cmd_1406 | — | infra | 03-27 | — |
-| cmd_1407 | — | infra | 03-27 | — |
-| cmd_1408 | — | infra | 03-27 | — |
-| cmd_1411 | — | dm-signal | 03-27 | — |
-| cmd_1412 | ネステッドFoFのR4(Half-Kelly)実装+外部レジーム(DTB3/VIX/SPY)分析。R1(63.8%)→R2(74.5%)→R4→R6_extの進化を検証し、最終ルールを決定する | dm-signal | 03-27 | — |
-| cmd_1413 | R2(CAGR74.5%/Sharpe1.92/パラメータ0)を超えるか？最もシンプルな改善3手法(逆ボラ/絶対モメンタム/連続VIX)でテスト。R6_extルックアヘッドバイアス修正を含む。高度さではなくシンプルさで勝負 | dm-signal | 03-27 | — |
+| cmd_1404 | — | infra | 03-27 | handleShareIntent内でURI→ByteArray読み取りをコルーチン外(同期)に移動。sendImageToNtfyの引数をUri→ByteAr |
+| cmd_1405 | — | infra | 03-27 | E2Eテスト4件のタイムアウト失敗を修正。根本原因: get_unread_info()のPython出力で空normal_idsフィールドが連続タブを生成し、 |
+| cmd_1406 | — | infra | 03-27 | gitignoreホワイトリスト整理完了。運用ファイル70件をgit rm --cachedで追跡解除、新規hooks4件+tests5件をgit add、co |
+| cmd_1407 | — | infra | 03-27 | insight_write.sh環境変数サニタイズ(AC1)+deploy_task.sh安全書込み(AC2)+新規テスト14件全PASS(AC3)。既存36テ |
+| cmd_1408 | — | infra | 03-27 | 防御的コーディング4件修正完了: (1)cmd_complete_gate.sh || true除去+エラー適切ログ (2)ntfy.sh ntfy_valid |
+| cmd_1411 | — | dm-signal | 03-27 | AC3 PASS: R2(74.5%)>R1(63.8%) CAGR, R2(1.92)>R1(1.79) Sharpe。AC4: N=2-10全9パターン完了 |
+| cmd_1412 | ネステッドFoFのR4(Half-Kelly)実装+外部レジーム(DTB3/VIX/SPY)分析。R1(63.8%)→R2(74.5%)→R4→R6_extの進化を検証し、最終ルールを決定する | dm-signal | 03-27 | R4 Half-Kelly実装完了。全出力ファイル生成済み。R4 CAGR=69.9% Sharpe=1.79 vs R2 CAGR=74.5% Sharpe= |
+| cmd_1413 | R2(CAGR74.5%/Sharpe1.92/パラメータ0)を超えるか？最もシンプルな改善3手法(逆ボラ/絶対モメンタム/連続VIX)でテスト。R6_extルックアヘッドバイアス修正を含む。高度さではなくシンプルさで勝負 | dm-signal | 03-27 | R9(lag-1 VIX連続スケーリング)+R6_ext_lag1(離散lag-1)実装完了。全4出力ファイル生成済み。R9 CAGR=54.9% Sharpe |
+| cmd_1436 | R1-R26の研究結論をビルディングブロック化する。Ward+二段EWの構造が構成PF非依存でワークすることを3段階（12体/21体/65体）で確認済み。内部グリッドサーチでK/LBを自動決定する汎用モジュールを実装し、R24/R25/R26の既知結果で検証する。 | dm-signal | 03-27 | PASS。building_block.py WardTwoStageEWクラス+共通関数3本。R24/R25/R26全検証8/8 PASS |
+| cmd_1437 | WardTwoStageEWBlock実装。building_block.pyのWard+二段EWロジックをTerminalBlockとして本番パイプラインに移植 | dm-signal | 03-27 | PASS。ward_two_stage_ew.py実装。BlockType enum/registry/__init__.py登録。import+スキーマ検証全PASS |
+| cmd_1443 | Ward二段EW weight pipeline修正。weightsが下流に伝わらないバグ5箇所修正+後方互換検証 | dm-signal | 03-27 | PASS。AC1(final_weights)+AC2(is_kalman_meta除去5箇所)+AC3(58FoF×9509行完全一致)。performance fix別途(9d845ad4) |
+| cmd_1444 | 旧忍法15体を構成PFとする新Ward FoFを本番DB新規作成+既存123体完全不変証明 | dm-signal | 03-28 | PASS。旧忍法-Ward(0012f956)登録。k=5クラスタ二段EW(0.05/0.0667/0.10)。349s。既存123体差異0 |
+| cmd_1446 | Ward FoF日次ETL(sync-fof)動作検証。cmd_1445修正がsync-fofコードパスもカバーしているか確認し、日次ETL後にWard FoFデータが消失しないことを証明する | dm-signal | 03-28 | sync-fofはfullrecalculateと同一コードパス(_recalculate_fof_history in recalculate_fof.py) |
+| cmd_1451 | FoF MonthlyReturn生成(本番120.8s/15%)のボトルネック特定偵察。116 Optimization(Shared PriceCache)実装済みなのに120.8s — 何が遅いか | dm-signal | 03-28 | — |
+| cmd_1447 | fullrecalculate内部の日次ループ（1日ずつ回す計算）がボトルネック。recalculate_fast.py / recalculate_fof.py のコードを分析し、日次ループしている処理を特定。月次単位にまとめられる処理と、どうしても日次が必要な処理を分類し、高速化の設計材料を作る | dm-signal | 03-28 | recalculate_fast.pyの日次ループを6箇所特定。Phase4のperf_calc(L1497-1621)が最大の月次化候補。累積リターンを毎日計 |
+| cmd_1445 | fullrecalculate(portfolio_id=None)でWard FoFのsignals/monthly_returnsが生成されないバグを修正。日次ETL(sync-fof)でも同様の問題が起きる可能性あり | dm-signal | 03-28 | 根因はcommit 9d845ad4(cmd_1443)のis_custom_weight分離不足。d49a9174がis_kalman_metaガードを除去し |
+| cmd_1448 | trade_perfの53K DBクエリを除去するOPT-1/2をcommit+push+本番検証。ローカル実証済み: trade_perf 4627s→242s(94.8%削減) | dm-signal | 03-28 | OPT-1/2 commit f3b66500 push成功。本番fullrecalculate 118s完了(旧3324s→96.4%削減)。trade_pe |
+| cmd_1450 | FoF日次ループのmomentum_data月中縮小(OPT-A)。本番L3 db_write 144.5sのうち月中冗長データ95%を削除。cmd_1447小太郎偵察で実証済み | dm-signal | 03-28 | recalculate_fof.py momentum_data月中縮小(OPT-A)実装完了。リバランス日のみ完全版、月中は{skipped:True}に最小 |
+| cmd_1454 | OPT-A/OPT-6/perf_calc除去の3コミットを本番push+fullrecalculate一括検証。118s(OPT-1/2後)からの追加削減を実測 | dm-signal | 03-28 | 3コミット(OPT-A/OPT-6/perf_calc除去) |
+| cmd_1456 | L3 pipeline_exec 626s(Ward scipy)の相関行列キャッシュ実現可能性偵察。fullrecalculate最大残存ボトルネック | dm-signal | 03-28 | Ward FoF=1体(旧忍法-Ward)。pipeline |
+| cmd_1449 | Phase 4 perf_calc(L1497-1622)がorphaned codeであることを実証し除去。cmd_1447偵察でprev_perf_cacheがDB/signals未出力と判明。除去でPhase | dm-signal | 03-28 | Phase 4 perf_calc(L1498-1622, |
+| cmd_1457 | deploy_task.sh教訓注入のマシュー効果を修正。helpful_count優先ソートがkeyword_score(関連度)を上書きし、有用率13%。ソート優先順序を反転+universal/task-specific枠分離で注入精度を改善 | infra | 03-28 | inject_related_lessonsのソート優先順序 |
+| cmd_1460 | — | dm-signal | 03-28 | — |
+| cmd_1461 | — | dm-signal | 03-28 | — |

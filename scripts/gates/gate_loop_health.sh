@@ -58,6 +58,12 @@ if not entries:
 tmp_entries = [e for e in entries if e.get('file', '').startswith('/tmp/')]
 entries = [e for e in entries if not e.get('file', '').startswith('/tmp/')]
 
+# --- 時系列原則: 直近エントリのみでinsight生成 ---
+# 累積カウントは解決済みパターンのノイズを生む(殿指摘2026-03-23)
+# 全体統計は全entries、insight生成用は直近WINDOW件のみ
+INSIGHT_WINDOW = 100  # 直近100エントリ
+recent_entries = entries[-INSIGHT_WINDOW:] if len(entries) > INSIGHT_WINDOW else entries
+
 # --- Aggregate ---
 total = len(entries)
 pass_count = sum(1 for e in entries if e.get('result') == 'PASS')
@@ -72,8 +78,11 @@ print(f'  AUTO-FIXED: {autofix_count}')
 print()
 
 # --- Extract individual error reasons from FAIL entries ---
+# 全体統計用(reason_counter_all)とinsight生成用(reason_counter)を分離
+reason_counter_all = Counter()
 reason_counter = Counter()
 reason_files = defaultdict(list)
+recent_set = set(id(e) for e in recent_entries)
 
 for e in entries:
     if e.get('result') != 'FAIL':
@@ -89,13 +98,16 @@ for e in entries:
         pattern = reason
         pattern = re.sub(r'lessons_useful\[\d+\]', 'lessons_useful[N]', pattern)
         pattern = re.sub(r'binary_checks\.\w+', 'binary_checks.ACx', pattern)
-        reason_counter[pattern] += 1
+        reason_counter_all[pattern] += 1
+        # insight生成用カウンタは直近エントリのみ(時系列原則)
+        if id(e) in recent_set:
+            reason_counter[pattern] += 1
         fname = e.get('file', '')
         reason_files[pattern].append(fname)
 
-if reason_counter:
-    print('=== Recurring FAIL Patterns (成熟候補) ===')
-    for pattern, count in reason_counter.most_common(10):
+if reason_counter_all:
+    print('=== Recurring FAIL Patterns (成熟候補・全期間) ===')
+    for pattern, count in reason_counter_all.most_common(10):
         # Determine if auto-fixable
         auto_fixable = False
         if 'is dict (must be list)' in pattern:
@@ -112,8 +124,8 @@ if reason_counter:
 print('=== 成熟提案 ===')
 recommendations = []
 
-# Check for patterns that fire > 5 times and are auto-fixable
-for pattern, count in reason_counter.most_common():
+# Check for patterns that fire > 5 times and are auto-fixable (全期間)
+for pattern, count in reason_counter_all.most_common():
     if count >= 5:
         if 'is dict (must be list)' in pattern:
             recommendations.append(f'UPGRADE: \"{pattern}\" ({count}回) → gate_report_autofix.shにdict→list変換追加')
@@ -142,6 +154,7 @@ except Exception:
     pass
 
 new_insights = []
+# 時系列原則: insight生成は直近INSIGHT_WINDOWエントリのみ(解決済みパターンの再起票防止)
 for pattern, count in reason_counter.most_common():
     if count < 5:
         continue

@@ -593,15 +593,19 @@ check_project_code_stubs() {
         return 0
     fi
 
-    # --- cmd_1244: uncommitted変更検出 — commit漏れをBLOCKで構造的に防止 ---
-    local uncommitted
-    uncommitted=$({ git -C "$project_path" diff --name-only 2>/dev/null; git -C "$project_path" diff --cached --name-only 2>/dev/null; } | sed '/^$/d')
+    # --- cmd_1244+cmd_1293: uncommitted変更検出 — commit漏れをBLOCKで構造的に防止 ---
+    # cmd_1293修正: 運用ファイル(queue/logs/dashboard等)を除外し誤爆BLOCK防止
+    local uncommitted uncommitted_filtered
+    uncommitted=$({ git -C "$project_path" diff --name-only 2>/dev/null; git -C "$project_path" diff --cached --name-only 2>/dev/null; } | sort -u | sed '/^$/d')
     if [[ -n "$uncommitted" ]]; then
-        local ucount
-        ucount=$(printf '%s\n' "$uncommitted" | wc -l)
-        printf 'BLOCK\tcommit_missing: %d uncommitted file(s) in %s\n' "$ucount" "$project_path"
-        printf '%s\n' "$uncommitted" | head -10
-        return 1
+        uncommitted_filtered=$(printf '%s\n' "$uncommitted" | grep -v -E '^queue/|^logs/|^dashboard\.md$|^context/lord-conversation-index\.md$|^context/senkyoku-log\.md$|^context/cmd-chronicle\.md$|^context/dm-signal-research\.md$|\.log$' || true)
+        if [[ -n "$uncommitted_filtered" ]]; then
+            local ucount
+            ucount=$(printf '%s\n' "$uncommitted_filtered" | wc -l)
+            printf 'BLOCK\tcommit_missing: %d uncommitted file(s) in %s\n' "$ucount" "$project_path"
+            printf '%s\n' "$uncommitted_filtered" | head -10
+            return 1
+        fi
     fi
 
     # --- detect_cmd_commit_count (git log + awk, no python subprocess) ---
@@ -3331,7 +3335,7 @@ else
     echo "  SKIP (no context/*.md changes detected since HEAD~1)"
 fi
 
-# ─── CI status check（push済みcmdでCI赤を検知 — WARNのみ） ───
+# ─── CI status check（push済みcmdでCI赤を検知 — failure時BLOCK） ───
 level_heading "[L3]" "CI status check:"
 CI_PUSH_DETECTED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
@@ -3360,7 +3364,8 @@ if [ "$CI_PUSH_DETECTED" = true ]; then
                     echo "  OK (CI green, run ${ci_run_id})"
                     ;;
                 failure)
-                    echo "  [INFO] CI赤 (run ${ci_run_id})"
+                    echo "  FAIL: CI赤 (run ${ci_run_id}) — push後にCI失敗。修正必要"
+                    ALL_CLEAR=false
                     ;;
                 "")
                     echo "  [INFO] CI結果取得不可（進行中またはデータなし）"
@@ -3640,6 +3645,7 @@ if [ "$ALL_CLEAR" = true ]; then
         insight_line=$(awk '
             /lesson_candidate:/{sec="lc"; next}
             /decision_candidate:/{sec="dc"; next}
+            /knowledge_candidate:/{sec="kc"; next}
             /^[^ ]/ && sec!=""{sec=""}
             sec=="lc" && /found: true/{lc_found=1}
             sec=="lc" && /title:/ && !lc_title{t=$0; sub(/.*title:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); lc_title=t}
@@ -3648,10 +3654,13 @@ if [ "$ALL_CLEAR" = true ]; then
             sec=="dc" && /title:/ && !dc_title{t=$0; sub(/.*title:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); dc_title=t}
             sec=="dc" && /summary:/ && !dc_title{t=$0; sub(/.*summary:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); dc_title=t}
             sec=="dc" && /question:/ && !dc_title{t=$0; sub(/.*question:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); dc_title=t}
+            sec=="kc" && /found: true/{kc_found=1}
+            sec=="kc" && /fact:/ && !kc_fact{t=$0; sub(/.*fact:\s*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); kc_fact=t}
             END{
                 out=""
                 if(lc_found){t=substr(lc_title,1,80); out="LC: " (t?t:"(untitled)")}
                 if(dc_found){t=substr(dc_title,1,80); if(out) out=out " / "; out=out "DC: " (t?t:"(untitled)")}
+                if(kc_found){t=substr(kc_fact,1,80); if(out) out=out " / "; out=out "KC: " (t?t:"(new fact)")}
                 if(out) print out
             }
         ' "$report_file" 2>/dev/null)

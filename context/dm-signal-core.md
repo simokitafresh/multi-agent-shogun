@@ -27,6 +27,8 @@
 
 本番: Render.com — PostgreSQL + FastAPI + Next.js。StockData API毎日01:00 UTC自動同期。viewer/admin認証は in-memory dict ではなく DB-backed token (`viewer_tokens`/`admin_tokens`) + HttpOnly Cookie (`viewer_session`/`admin_session`) が正で、Cookie期限は JST 期限日 23:59:59 を UTC に変換して設定する。参照: `/mnt/c/Python_app/DM-signal/backend/app/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/api/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/db/models.py`
 ローカル: WSL2 — dm_signal.db(本番ミラー) + experiments.db(分析用ground truth)。
+- L500: ガード条件(is_kalman_meta等)除去時は保護していた全変数のスコープと副作用を確認（cmd_1445）
+- L501: is_custom_weightガード除去でEqualWeight PFにカスタムweight計算パスが発動する副作用（cmd_1445）
 
 | Layer | 時刻(UTC) | ジョブ | 内容 |
 |-------|-----------|--------|------|
@@ -199,6 +201,7 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 | 採用 | ReversalFilter → **逆風**(cmd_249採用決定) / MultiViewMomentumFilter → **四つ目**(cmd_284フルGS完了) | シン忍法v2で7忍法体制確定 |
 | 採用 | PBarSelectionBlock → **p̄選別**(cmd_977-987) | p̄ベースFoF材料選別。月次戦術運用は無効(cmd_1009) |
 | 偵察中 | RelativeMomentumFilter(cmd_250) | 新忍法候補 |
+| 採用 | WardTwoStageEW → **Ward二段EW**(cmd_1437/1443/1444) | ネステッドFoF terminal。Ward階層クラスタリング+二段均等加重。本番稼働中(旧忍法-Ward) |
 | 未採用 | ComponentPrice / CashTerminal / KalmanMeta | インフラ/スケルトン |
 
 - L151: OPEN/CLOSE切替導入時はbenchmark側の*_open適用も同時チェック必須（cmd_507）
@@ -273,6 +276,7 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 - L264: precomputedテーブル存在時はraw再計算APIを残さずfast pathを導入せよ（cmd_830）
 - L271: years付きmonthly fast pathは境界月だけdaily fallbackを残すと完全一致と高速化を両立できる（cmd_833）
 - L317: MetricsCalculator右尾4指標は実装済みだがFE未露出（cmd_976）
+- L497: R2 Ward selection reuse via compute_monthly_selections。存在しない関数をimportするな（cmd_1413）
 
 ## 8. APIエンドポイント概要
 
@@ -318,6 +322,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 
 エンドポイント: `stockdata-api-6xok.onrender.com` | クライアント: `backend/app/client.py`
 環境変数: `STOCK_API_BASE_URL` | リトライ3回(指数バックオフ) | タイムアウト60秒 | ローカルDL: `download_all_prices.py grid-search`
+- L496: /v1/economic/{symbol}は1リクエスト最大1000件。長期経済データ取得時にページネーション必須（cmd_1412）[PI-017]
 
 ## 15. 殿の個人PF保護リスト（絶対ルール — cmd_198）
 

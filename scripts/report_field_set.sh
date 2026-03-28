@@ -196,6 +196,34 @@ if not isinstance(data, dict):
 " <<< "$val" || return 1
             fi
             ;;
+        knowledge_candidate)
+            # GP-126: knowledge_candidate validation (事実データ循環)
+            if [[ "$dot_key" == "knowledge_candidate" ]]; then
+                python3 -c "
+import yaml, sys
+data = yaml.safe_load(sys.stdin.read())
+if not isinstance(data, dict):
+    print(f'BLOCK: knowledge_candidate はdict形式必須。受信: {type(data).__name__}', file=sys.stderr)
+    sys.exit(1)
+found = data.get('found', False)
+if found is True:
+    items = data.get('items', [])
+    if not isinstance(items, list) or len(items) == 0:
+        print('BLOCK: knowledge_candidate.found=true だがitemsが空。発見した事実を記入せよ', file=sys.stderr)
+        print('  items:', file=sys.stderr)
+        print(\"    - fact: '発見した事実を1文で'\", file=sys.stderr)
+        print(\"      source: '確認元ファイル/行'\", file=sys.stderr)
+        sys.exit(1)
+    for i, item in enumerate(items):
+        if not isinstance(item, dict):
+            print(f'BLOCK: knowledge_candidate.items[{i}] はdict必須', file=sys.stderr)
+            sys.exit(1)
+        if not str(item.get('fact', '')).strip():
+            print(f'BLOCK: knowledge_candidate.items[{i}].fact が空', file=sys.stderr)
+            sys.exit(1)
+" <<< "$val" || return 1
+            fi
+            ;;
         verdict)
             # GP-072c2+c3+c4: verdict書込み時に前提条件チェック
             if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" ]]; then

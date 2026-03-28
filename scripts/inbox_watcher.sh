@@ -383,6 +383,14 @@ send_wakeup() {
     lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
     if ! (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
+        # Force-exit copy-mode if active (mouse scroll → copy-mode → nudge配信失敗を防止)
+        local in_mode
+        in_mode=$(tmux display-message -t "$PANE_TARGET" -p '#{pane_in_mode}' 2>/dev/null || echo "0")
+        if [ "$in_mode" = "1" ]; then
+            tmux send-keys -t "$PANE_TARGET" -X cancel 2>/dev/null || true
+            sleep 0.3
+            echo "[$(date)] [COPY-MODE] Exited copy-mode for $AGENT_ID before nudge" >&2
+        fi
         tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
             echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2

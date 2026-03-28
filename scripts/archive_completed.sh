@@ -106,7 +106,8 @@ for pattern in patterns:
         if parent_cmd and parent_cmd != cmd_id:
             continue
         nested_report = data.get("report") if isinstance(data.get("report"), dict) else {}
-        for candidate in (data.get("summary"), nested_report.get("summary")):
+        nested_result = data.get("result") if isinstance(data.get("result"), dict) else {}
+        for candidate in (data.get("summary"), nested_report.get("summary"), nested_result.get("summary")):
             text = normalize(candidate)
             if text and text != "|":
                 print(text[:30])

@@ -14,6 +14,16 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     exit 1
 fi
 
+# --- PASS cache: skip redundant re-checks on unmodified files (GP-073) ---
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PASS_CACHE="$REPO_ROOT/logs/.gate_pass_cache"
+_CANON=$(realpath "$REPORT_PATH" 2>/dev/null || echo "$REPORT_PATH")
+_MTIME=$(stat -c %Y "$REPORT_PATH" 2>/dev/null || echo "")
+if [ -n "$_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF "${_CANON} ${_MTIME}" "$PASS_CACHE" 2>/dev/null; then
+    echo "PASS"
+    exit 0
+fi
+
 # Python validation — checks all known failure patterns from karo_workarounds
 RESULT=$(REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, os, sys
@@ -156,6 +166,7 @@ elif isinstance(bc, str):
     hints.append('FIX (binary_checks): dict形式で再記入せよ:\\n  binary_checks:\\n    AC1:\\n      - check: \"確認内容\"\\n        result: \"yes\"')
 elif isinstance(bc, dict) and not bc:
     errors.append('binary_checks: empty dict (must have at least one AC entry)')
+    hints.append('FIX (binary_checks): AC完了ごとに二値チェックを記入せよ:\\n  binary_checks:\\n    AC1:\\n      - check: \"確認内容を具体的に\"\\n        result: \"yes\"')
 elif isinstance(bc, dict):
     for ac_key, ac_val in bc.items():
         if not isinstance(ac_val, list):
@@ -219,6 +230,26 @@ if not isinstance(verdict, str) or verdict not in ('PASS', 'FAIL'):
     errors.append(f'verdict: \"{verdict}\" is not valid (must be \"PASS\" or \"FAIL\")')
     hints.append('verdictはPASS/FAILの二値のみ。binary_checks全yes→PASS、1つでもno→FAIL')
 
+# --- GP-128: verdict ↔ binary_checks consistency (SG7自動化) ---
+if isinstance(verdict, str) and verdict in ('PASS', 'FAIL') and isinstance(bc, dict) and bc:
+    bc_has_no = False
+    bc_results_found = False
+    for _ac_key, _ac_val in bc.items():
+        if isinstance(_ac_val, list):
+            for _item in _ac_val:
+                if isinstance(_item, dict) and 'result' in _item:
+                    bc_results_found = True
+                    r = str(_item['result']).strip().lower()
+                    if r in ('no', 'false', 'fail', 'ng'):
+                        bc_has_no = True
+    if bc_results_found:
+        if verdict == 'PASS' and bc_has_no:
+            errors.append('verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)')
+            hints.append('FIX (verdict): binary_checksにno/fail/ngがある場合はverdict: FAILにせよ')
+        elif verdict == 'FAIL' and not bc_has_no:
+            # WARN only — FAIL with all-yes may have valid external reasons
+            hints.append('GP-128 WARN: verdict=FAIL but all binary_checks are \"yes\" — 外部制約によるFAILか確認せよ')
+
 # --- assumption_invalidation structure check (cmd_1433) ---
 ai = data.get('assumption_invalidation')
 if ai is None and 'assumption_invalidation' in data:
@@ -238,6 +269,24 @@ elif ai is not None:
 elif 'assumption_invalidation' not in data:
     errors.append('assumption_invalidation: MISSING')
     hints.append('FIX (assumption_invalidation): テンプレートに生成済み。上書きで消すな:\\n  assumption_invalidation:\\n    found: false\\n    affected_cmds: []\\n    detail: \"\"')
+
+# --- GP-126: knowledge_candidate structure check ---
+kc = data.get('knowledge_candidate')
+if kc is not None:
+    if not isinstance(kc, dict):
+        errors.append(f'knowledge_candidate: is {type(kc).__name__} (must be dict)')
+    else:
+        kc_found = kc.get('found')
+        if kc_found is True:
+            kc_items = kc.get('items', [])
+            if not isinstance(kc_items, list) or len(kc_items) == 0:
+                errors.append('knowledge_candidate: found=true but items is empty')
+                hints.append('FIX (knowledge_candidate): found:true時はitemsに事実データを列挙せよ:\\n  knowledge_candidate:\\n    found: true\\n    items:\\n      - fact: \"発見した事実\"\\n        source: \"確認元\"')
+            elif isinstance(kc_items, list):
+                for ki, kitem in enumerate(kc_items):
+                    if isinstance(kitem, dict):
+                        if not str(kitem.get('fact', '')).strip():
+                            errors.append(f'knowledge_candidate.items[{ki}].fact: empty')
 
 # --- self_gate_check value validation (cmd_cycle_001) ---
 # reviewタスクのself_gate_check: 各項目のresultはPASS/FAILのみ許容
@@ -319,7 +368,6 @@ else:
 echo "$RESULT"
 
 # --- Gate fire logging (cmd_1279) ---
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG_FILE="$REPO_ROOT/logs/gate_fire_log.yaml"
 TS=$(date -Is)
 
@@ -328,6 +376,11 @@ if echo "$RESULT" | grep -q "^PASS"; then
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", result: PASS\n' "$TS" "$REPORT_PATH" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    # Update PASS cache (GP-073)
+    if [ -n "$_MTIME" ]; then
+        sed -i "\|^${_CANON} |d" "$PASS_CACHE" 2>/dev/null || true
+        echo "${_CANON} ${_MTIME}" >> "$PASS_CACHE"
+    fi
     exit 0
 else
     REASONS=$(echo "$RESULT" | head -1 | sed 's/^FAIL: //' | sed 's/"/\\"/g')
