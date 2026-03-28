@@ -225,12 +225,12 @@ check_pi_number_collision() {
 
     # cmdブロックからPI-0XX番号を抽出
     local PI_NUMS
-    PI_NUMS=$(echo "$CMD_BLOCK" | grep -oE 'PI-[0-9]{3}' | sort -u)
+    PI_NUMS=$(echo "$CMD_BLOCK" | grep -oE 'PI-[0-9]{3}' | sort -u || true)
     [[ -z "$PI_NUMS" ]] && return 0
 
     # 全projects/*.yamlから既存PI番号を収集
     local EXISTING_PIS
-    EXISTING_PIS=$(grep -ohE 'PI-[0-9]{3}' "$PROJECT_DIR"/projects/*.yaml 2>/dev/null | sort -u)
+    EXISTING_PIS=$(grep -ohE 'PI-[0-9]{3}' "$PROJECT_DIR"/projects/*.yaml 2>/dev/null | sort -u || true)
     [[ -z "$EXISTING_PIS" ]] && return 0
 
     # 衝突検出
