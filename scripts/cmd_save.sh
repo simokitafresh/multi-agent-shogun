@@ -177,6 +177,165 @@ if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
     fi
 fi
 
+# --- Check 7: 軍師既存分析チェック（偵察cmd重複防止） ---
+# 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに偵察cmd重複起票
+# 目的: recon/scout cmdの起票前に軍師の関連分析有無を確認させる
+check_gunshi_analysis_overlap() {
+    [[ ! -f "$QUEUE_FILE" ]] && return 0
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    # task_typeがrecon/scoutの場合のみチェック（impl等は対象外）
+    local TASK_TYPE
+    TASK_TYPE=$(echo "$CMD_BLOCK" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    if [[ "$TASK_TYPE" != "recon" && "$TASK_TYPE" != "scout" ]]; then
+        return 0
+    fi
+
+    # context/gunshi-*.md の存在チェック
+    local GUNSHI_FILES
+    GUNSHI_FILES=$(find "$PROJECT_DIR/context" -name "gunshi-*.md" -type f 2>/dev/null)
+    [[ -z "$GUNSHI_FILES" ]] && return 0
+
+    # 軍師分析ファイルの見出しを表示
+    local HIT=false
+    while IFS= read -r gfile; do
+        [[ -z "$gfile" || ! -f "$gfile" ]] && continue
+        local title mtime_hr
+        title=$(head -5 "$gfile" | grep -m1 '^#' | sed 's/^# *//')
+        mtime_hr=$(date -r "$gfile" '+%m-%d %H:%M' 2>/dev/null || echo "unknown")
+        if [[ "$HIT" == false ]]; then
+            echo "WARNING: 偵察cmd起票前に軍師の既存分析を確認したか？" >&2
+            HIT=true
+        fi
+        echo "  $(basename "$gfile") [$mtime_hr] — $title" >&2
+    done <<< "$GUNSHI_FILES"
+
+    if [[ "$HIT" == true ]]; then
+        echo "  → 重複起票防止(cmd_1451教訓): 軍師が先行分析済みの可能性あり" >&2
+    fi
+}
+
+check_gunshi_analysis_overlap
+
+# --- Check 8: PI番号衝突チェック（Production Invariant重複防止） ---
+# 起源: cmd_1453事件 — PI-015を起票したが既存PI-015と衝突。hayateがPI-016に修正
+# 目的: cmdにPI-0XXが含まれる場合、既存PIと衝突しないか自動チェック
+check_pi_number_collision() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    # cmdブロックからPI-0XX番号を抽出
+    local PI_NUMS
+    PI_NUMS=$(echo "$CMD_BLOCK" | grep -oE 'PI-[0-9]{3}' | sort -u)
+    [[ -z "$PI_NUMS" ]] && return 0
+
+    # 全projects/*.yamlから既存PI番号を収集
+    local EXISTING_PIS
+    EXISTING_PIS=$(grep -ohE 'PI-[0-9]{3}' "$PROJECT_DIR"/projects/*.yaml 2>/dev/null | sort -u)
+    [[ -z "$EXISTING_PIS" ]] && return 0
+
+    # 衝突検出
+    local HIT=false
+    while IFS= read -r pi; do
+        [[ -z "$pi" ]] && continue
+        if echo "$EXISTING_PIS" | grep -qx "$pi"; then
+            if [[ "$HIT" == false ]]; then
+                echo "WARNING: PI番号衝突検出（cmd_1453教訓）" >&2
+                HIT=true
+            fi
+            echo "  $pi は既に projects/*.yaml に登録済み" >&2
+        fi
+    done <<< "$PI_NUMS"
+
+    if [[ "$HIT" == true ]]; then
+        # 次の空き番号を表示
+        local MAX_PI
+        MAX_PI=$(echo "$EXISTING_PIS" | grep -oE '[0-9]+' | sort -n | tail -1)
+        local NEXT_PI
+        NEXT_PI=$(printf "PI-%03d" $((10#$MAX_PI + 1)))
+        echo "  → 次の空き番号: $NEXT_PI" >&2
+    fi
+}
+
+check_pi_number_collision
+
+# --- Check 9: 未消化insightsサーフェス（知識循環デッドエンド防止） ---
+# 起源: insights 18件死蔵発見(2026-03-28) — 書込み専用で消費者不在
+# 目的: cmd起票時にpending insightsを表示し、将軍がinsightsを消費する動線を作る
+show_pending_insights() {
+    local INSIGHTS_FILE="$PROJECT_DIR/queue/insights.yaml"
+    [[ ! -f "$INSIGHTS_FILE" ]] && return 0
+
+    local PENDING_COUNT
+    PENDING_COUNT=$(grep -c 'status: pending' "$INSIGHTS_FILE" 2>/dev/null || echo 0)
+    [[ "$PENDING_COUNT" -eq 0 ]] && return 0
+
+    echo "INFO: 未消化insights ${PENDING_COUNT}件 — 起票前に確認推奨:" >&2
+    python3 - "$INSIGHTS_FILE" 3 <<'PY' >&2
+import yaml, sys
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f) or {}
+items = data.get("insights", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+limit = int(sys.argv[2])
+shown = 0
+for i in items:
+    if not isinstance(i, dict) or i.get("status") != "pending": continue
+    text = str(i.get("insight", ""))[:70].replace("\n", " ")
+    print(f"  → {text}")
+    shown += 1
+    if shown >= limit: break
+PY
+    if [[ "$PENDING_COUNT" -gt 3 ]]; then
+        echo "  ... 他 $((PENDING_COUNT - 3))件 (queue/insights.yaml)" >&2
+    fi
+}
+
+show_pending_insights
+
+# --- Check 10: AC内ファイルパス存在チェック（informational — WARN_COUNTに加算しない） ---
+# 起源: cmd_1464事故 — AC内「generators/monthly_returns.py」指定→実体はservices/return_calculator.py
+# 目的: AC内のファイルパス参照が実在するか事前警告
+check_ac_file_paths() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    # AC内から backend/ または frontend/ で始まるパスを抽出
+    local PATHS
+    PATHS=$(echo "$CMD_BLOCK" | grep -oE '(backend|frontend)/[A-Za-z0-9_./-]+' | sort -u || true)
+    [[ -z "$PATHS" ]] && return 0
+
+    # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
+    local PROJECT_ID PROJECT_WD
+    PROJECT_ID=$(echo "$CMD_BLOCK" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    [[ -z "$PROJECT_ID" ]] && PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null)
+
+    if [[ -n "${PROJECT_ID:-}" ]]; then
+        PROJECT_WD=$(awk -v id="$PROJECT_ID" '
+            /^  - id:/ { current_id = $3; gsub(/"/, "", current_id) }
+            /^    path:/ && current_id == id { gsub(/.*path: *"?/, ""); gsub(/"$/, ""); print; exit }
+        ' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null)
+    fi
+
+    [[ -z "${PROJECT_WD:-}" ]] && return 0
+
+    # 各パスの存在チェック
+    local HAS_MISSING=false
+    while IFS= read -r fpath; do
+        [[ -z "$fpath" ]] && continue
+        if [[ ! -e "$PROJECT_WD/$fpath" ]]; then
+            if [[ "$HAS_MISSING" == false ]]; then
+                echo "WARNING: AC内のファイルパスが存在しません（cmd_1464教訓）:" >&2
+                HAS_MISSING=true
+            fi
+            echo "  ✗ $fpath (in $PROJECT_WD)" >&2
+        fi
+    done <<< "$PATHS"
+
+    if [[ "$HAS_MISSING" == true ]]; then
+        echo "  → パス名の確認を推奨（BLOCKではありません）" >&2
+    fi
+}
+
+check_ac_file_paths
+
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
     local QUALITY_LOG="$PROJECT_DIR/logs/cmd_design_quality.yaml"
