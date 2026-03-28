@@ -545,12 +545,13 @@ ${_bc_block}"
     fi
     if [ "$report_task_type" = "recon" ] || [ "$report_task_type" = "scout" ]; then
         cat >> "$report_file" <<'RECON_EOF'
-# ─── 偵察 実装直結4要件（cmd_754: 必須。空欄でWARN） ───
+# ─── 偵察 実装直結5要件（cmd_754+cmd_1476: 必須。空欄でWARN） ───
 implementation_readiness:
   files_to_modify: []   # 変更対象ファイルと行番号 例: ["src/api/auth.py:45-60"]
   affected_files: []    # 変更が波及する他ファイル 例: ["tests/test_auth.py"]
   related_tests: []     # 関連テストの有無と修正要否 例: ["tests/test_auth.py — 修正必要"]
   edge_cases: []        # エッジケース・副作用 例: ["トークン期限切れ時の再認証フロー"]
+  dependency_constraints: []  # 依存関係・順序制約 例: ["AC1完了後にAC2着手", "DB migration先行必須"]
 RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
     fi

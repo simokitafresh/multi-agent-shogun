@@ -217,7 +217,7 @@ task YAMLに`project:`があれば、実装前に3ファイル読め:
 
 `task_type: recon`のタスクは偵察モード。報告フォーマット・recon_aspect・Suppressions(S1-S12)・認知バイアスガード → `instructions/ashigaru-recon.md`
 
-### 実装直結4要件（殿厳命 cmd_754）
+### 実装直結5要件（殿厳命 cmd_754, cmd_1476で第5要件追加）
 
 報告YAMLの`implementation_readiness`欄(deploy_task.shが自動生成)に必須記入:
 
@@ -227,6 +227,7 @@ task YAMLに`project:`があれば、実装前に3ファイル読め:
 | 2 | affected_files | 波及先ファイル |
 | 3 | related_tests | 関連テスト有無と修正要否 |
 | 4 | edge_cases | エッジケース・副作用 |
+| 5 | dependency_constraints | 依存関係・順序制約（実装順序、前提条件、他タスクとの依存） |
 
 ## 一次データ不可侵原則 (Primary Data Immutability)
 
