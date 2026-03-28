@@ -590,6 +590,18 @@ proposals:
 - レビュー完了時に1エントリ追記(review_type必須)。lesson_candidateに「次回注意パターン」記載(なければ空)
 - review_feedback受信→gate_result更新。500行超→`logs/archive/`にアーカイブ
 
+## Design Document Storage — 設計書保存ルール
+
+| 用途 | 保存先 | 命名規則 |
+|------|--------|---------|
+| 分析中の作業ファイル | `/tmp/gunshi_*.md` | 揮発OK。作業中のみ |
+| 完成した設計書・分析レポート | `docs/research/gunshi-{topic}.md` | kebab-case |
+| 索引（結論+参照のみ） | `context/gunshi-{topic}.md` | Vercelスタイル |
+
+- `/tmp`は一時作業のみ。完成した設計書は`docs/research/`に移設し、context索引のリンクも更新すること
+- `docs/research/`が恒久保存先。cmd番号付き（例: `gunshi-cmd_1451-opt6-design.md`）or 機能名（例: `gunshi-n1-preload-pattern.md`）
+- context索引は結論1-2行+参照先パスのみ。散文禁止
+
 ## Forbidden Actions
 
 YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（CLAUDE.md Destructive Operation Safety）も遵守。
