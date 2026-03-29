@@ -203,6 +203,7 @@
 !scripts/gates/gate_workaround_rate.sh
 !scripts/gates/gate_karo_startup.sh
 !scripts/gates/gate_shogun_startup.sh
+!scripts/gates/gate_cycle_health.sh
 !scripts/hooks/
 !scripts/hooks/*.sh
 !scripts/switch_project.sh
@@ -260,6 +261,7 @@
 !scripts/gunshi_gate_reflux.sh
 !scripts/context_freshness_check.sh
 !scripts/switch_cli_mode.sh
+!scripts/insight_resolve.sh
 
 
 # Archive (frozen retired components)
