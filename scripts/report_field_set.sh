@@ -286,11 +286,200 @@ if issues:
     return 0
 }
 
-# Execute pre-write validation
+# --- Pre-validation autofix: 機械的フォーマットエラーを自動正規化 ---
+# Phase 4原理: 忍者は/clearで記憶を失う。BLOCKでCTX浪費するより構文正規化で通す。
+# 意味的エラー(空フィールド等)はBLOCK維持。構文エラー(true→yes, list→dict)のみautofix。
+_autofix_field_value() {
+    local dot_key="$1"
+    local val="$2"
+    local field="${dot_key%%.*}"
+
+    case "$field" in
+        binary_checks)
+            # result: true/True/PASS/Pass/pass → yes, false/False/FAIL/Fail/fail → no
+            if [[ "$dot_key" == "binary_checks" ]] || [[ "$dot_key" == binary_checks.AC* ]]; then
+                local fixed
+                fixed=$(python3 -c "
+import yaml, sys, json
+raw = sys.stdin.read()
+try:
+    data = yaml.load(raw, Loader=yaml.BaseLoader)
+except yaml.YAMLError:
+    print(raw, end='')
+    sys.exit(0)
+changed = False
+true_aliases = {'true','True','TRUE','PASS','Pass','pass','OK','ok','Ok','YES'}
+false_aliases = {'false','False','FALSE','FAIL','Fail','fail','NG','ng','Ng','NO'}
+def fix_items(items):
+    global changed
+    if not isinstance(items, list):
+        return items
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        r = str(item.get('result','')).strip()
+        if r in true_aliases:
+            item['result'] = 'yes'
+            changed = True
+        elif r in false_aliases:
+            item['result'] = 'no'
+            changed = True
+    return items
+if isinstance(data, dict):
+    for k, v in data.items():
+        data[k] = fix_items(v)
+elif isinstance(data, list):
+    data = fix_items(data)
+if changed:
+    print('[autofix] binary_checks result正規化(true/PASS→yes, false/FAIL→no)', file=sys.stderr)
+print(yaml.dump(data, default_flow_style=False, allow_unicode=True), end='')
+" <<< "$val" 2>&1)
+                local autofix_msg=""
+                if [[ "$fixed" == *"[autofix]"* ]]; then
+                    autofix_msg=$(echo "$fixed" | grep '^\[autofix\]' | head -1)
+                    fixed=$(echo "$fixed" | grep -v '^\[autofix\]')
+                    echo "$autofix_msg" >&2
+                fi
+                echo "$fixed"
+                return 0
+            fi
+            ;;
+        files_modified)
+            # string/string-list → dict-list (忍者がパス文字列だけを書く頻出パターン)
+            if [[ "$dot_key" == "files_modified" ]]; then
+                local fixed
+                fixed=$(python3 -c "
+import yaml, sys
+raw = sys.stdin.read()
+try:
+    data = yaml.safe_load(raw)
+except yaml.YAMLError:
+    print(raw, end='')
+    sys.exit(0)
+if isinstance(data, str) and data.strip():
+    print('[autofix] files_modified string→dict変換(単一ファイル)', file=sys.stderr)
+    print(yaml.dump([{'path': data.strip(), 'change': 'modified'}], default_flow_style=False, allow_unicode=True), end='')
+elif isinstance(data, list) and all(isinstance(x, str) for x in data):
+    items = [{'path': x.strip(), 'change': 'modified'} for x in data if x.strip()]
+    if items:
+        print('[autofix] files_modified string list→dict list変換', file=sys.stderr)
+        print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
+    else:
+        print(raw, end='')
+else:
+    print(raw, end='')
+" <<< "$val" 2>&1)
+                local autofix_msg=""
+                if [[ "$fixed" == *"[autofix]"* ]]; then
+                    autofix_msg=$(echo "$fixed" | grep '^\[autofix\]' | head -1)
+                    fixed=$(echo "$fixed" | grep -v '^\[autofix\]')
+                    echo "$autofix_msg" >&2
+                fi
+                echo "$fixed"
+                return 0
+            fi
+            ;;
+        lessons_useful)
+            # dict → list of 1 dict (忍者がlistでなくdictで書く頻出パターン)
+            if [[ "$dot_key" == "lessons_useful" ]]; then
+                local fixed
+                fixed=$(python3 -c "
+import yaml, sys
+raw = sys.stdin.read()
+try:
+    data = yaml.safe_load(raw)
+except yaml.YAMLError:
+    print(raw, end='')
+    sys.exit(0)
+if isinstance(data, dict) and ('id' in data or 'useful' in data or 'reason' in data):
+    print('[autofix] lessons_useful dict→list変換(単体dictをlistに包む)', file=sys.stderr)
+    print(yaml.dump([data], default_flow_style=False, allow_unicode=True), end='')
+elif isinstance(data, dict) and all(isinstance(v, dict) for v in data.values()):
+    # {0: {id:..}, 1: {id:..}} 形式 → list化
+    items = [v for k, v in sorted(data.items(), key=lambda x: str(x[0]))]
+    print('[autofix] lessons_useful 数値キーdict→list変換', file=sys.stderr)
+    print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
+else:
+    print(raw, end='')
+" <<< "$val" 2>&1)
+                local autofix_msg=""
+                if [[ "$fixed" == *"[autofix]"* ]]; then
+                    autofix_msg=$(echo "$fixed" | grep '^\[autofix\]' | head -1)
+                    fixed=$(echo "$fixed" | grep -v '^\[autofix\]')
+                    echo "$autofix_msg" >&2
+                fi
+                echo "$fixed"
+                return 0
+            fi
+            ;;
+        lesson_candidate)
+            # list of 1 dict → dict (忍者がdictをlistで包む頻出パターン)
+            if [[ "$dot_key" == "lesson_candidate" ]]; then
+                local fixed
+                fixed=$(python3 -c "
+import yaml, sys
+raw = sys.stdin.read()
+try:
+    data = yaml.safe_load(raw)
+except yaml.YAMLError:
+    print(raw, end='')
+    sys.exit(0)
+if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict):
+    print('[autofix] lesson_candidate list→dict変換(要素1のlistからdict抽出)', file=sys.stderr)
+    print(yaml.dump(data[0], default_flow_style=False, allow_unicode=True), end='')
+elif isinstance(data, list) and len(data) >= 1:
+    # 複数要素listの場合: 全要素をキー統合してdictに
+    merged = {}
+    for item in data:
+        if isinstance(item, dict):
+            merged.update(item)
+    if merged:
+        print('[autofix] lesson_candidate list→dict変換(複数要素を統合)', file=sys.stderr)
+        print(yaml.dump(merged, default_flow_style=False, allow_unicode=True), end='')
+    else:
+        print(raw, end='')
+else:
+    print(raw, end='')
+" <<< "$val" 2>&1)
+                local autofix_msg=""
+                if [[ "$fixed" == *"[autofix]"* ]]; then
+                    autofix_msg=$(echo "$fixed" | grep '^\[autofix\]' | head -1)
+                    fixed=$(echo "$fixed" | grep -v '^\[autofix\]')
+                    echo "$autofix_msg" >&2
+                fi
+                echo "$fixed"
+                return 0
+            fi
+            ;;
+    esac
+    echo "$val"
+    return 0
+}
+
+# Execute pre-write autofix + validation
 _val_input="$VALUE"
 if [ -n "$STDIN_VALUE" ]; then
     _val_input="$STDIN_VALUE"
 fi
+# Autofix: 機械的正規化
+_fixed_input=$(_autofix_field_value "$DOT_KEY" "$_val_input")
+if [ "$_fixed_input" != "$_val_input" ]; then
+    # Autofixed — update the value for downstream processing
+    if [ -n "$STDIN_VALUE" ]; then
+        STDIN_VALUE="$_fixed_input"
+    fi
+    VALUE="$_fixed_input"
+    _val_input="$_fixed_input"
+    # Autofix may have converted scalar→structure (e.g., string→YAML list)
+    # Re-check if Python fallback is needed
+    if [ "$USE_PYTHON" -eq 0 ]; then
+        if [[ "$VALUE" == *$'\n'* ]] || [[ "$VALUE" == '['* ]] || [[ "$VALUE" == '{'* ]]; then
+            USE_PYTHON=1
+            STDIN_VALUE="$VALUE"
+        fi
+    fi
+fi
+# Validate: 意味的エラーはBLOCK
 if ! _validate_field_value "$DOT_KEY" "$_val_input"; then
     echo "[report_field_set] BLOCKED: 値フォーマット不正。上記メッセージに従い修正せよ。" >&2
     exit 1
