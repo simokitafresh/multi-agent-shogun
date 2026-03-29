@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 # test_deploy_task_stale_field_reset.bats - 再配備時のstale field清掃テスト
-# 真因: resolve_cmd_to_taskが前cmdの残留フィールドをクリアしない(cmd_1519-1522実被害)
+# なぜなぜ3層: (1)resolve_cmd_to_taskリセット漏れ (2)yaml_field_setリスト非対応
+# (3)inject_task_modifiers.py存在チェック不整合 → Python一括クリアで根治
 
 setup() {
     export TEST_TMPDIR
@@ -10,9 +11,9 @@ setup() {
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/logs" "$TEST_TMPDIR/scripts/lib"
 
     # yaml_field_set.sh実体をコピー
+    cp "$PWD/scripts/lib/yaml_field_set.sh" "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh" 2>/dev/null || \
     cp "$(cd "$(dirname "$BATS_TEST_FILENAME")/../../scripts/lib/yaml_field_set.sh" && pwd)" \
-        "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh" 2>/dev/null || \
-    cp "$PWD/scripts/lib/yaml_field_set.sh" "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh"
+        "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh"
 
     # shogun_to_karo.yaml（新cmd: cmd_9999）
     cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
@@ -29,7 +30,7 @@ commands:
     status: pending
 EOF
 
-    # task YAML（前cmd: cmd_8888の残留フィールドあり）
+    # task YAML（前cmd: cmd_8888の残留フィールドあり — スカラー+リスト両方）
     cat > "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" <<'EOF'
 task:
   parent_cmd: cmd_8888
@@ -39,11 +40,34 @@ task:
   status: completed
   purpose: '前cmdの古いpurpose'
   target_path: /mnt/c/Python_app/DM-signal/backend/old_file.py
-  constraints: 'DM-signal制約'
+  constraints:
+  - 'DM-signal制約1'
+  - 'DM-signal制約2'
   progress: 'AC1-3全完了。PASS'
   description: '前cmdの説明'
   deployed_at: '2026-03-29T10:00:00'
   worker_id: tobisaru
+  engineering_preferences:
+  - 'prefer old approach'
+  - 'prefer another old approach'
+  context_files:
+  - 'context/dm-signal.md'
+  - 'context/dm-signal-core.md'
+  stop_for:
+  - 'old stop condition 1'
+  - 'old stop condition 2'
+  never_stop_for:
+  - 'old never stop 1'
+  ac_priority: 'AC1 > AC2 > AC3'
+  ac_checkpoint: '旧チェックポイント'
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  scout_exempt: true
+  AC1: '旧AC1: SF LOW偵察のAC1'
+  AC2: '旧AC2: SF LOW偵察のAC2'
+  AC3: '旧AC3: git commit'
   acceptance_criteria:
     AC1:
       description: '前cmdのAC1'
@@ -66,7 +90,6 @@ run_resolve_cmd_to_task() {
 
     log() { echo "$*" >> "$log_file"; }
 
-    # yaml_field_set
     yaml_field_set() {
         bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$@"
     }
@@ -101,13 +124,40 @@ RESOLVE_PY
 
     local task_id="${cmd_id}_${task_type}"
 
-    # ─── 前cmd残留フィールド清掃 ───
-    yaml_field_set "$task_file" "task" "purpose" ""
-    yaml_field_set "$task_file" "task" "target_path" ""
-    yaml_field_set "$task_file" "task" "constraints" ""
-    yaml_field_set "$task_file" "task" "progress" ""
-    yaml_field_set "$task_file" "task" "description" ""
-    yaml_field_set "$task_file" "task" "deployed_at" ""
+    # Python一括stale fieldクリア（deploy_task.shと同一ロジック）
+    python3 - "$task_file" <<'STALE_FIELD_RESET_PY'
+import os, sys, tempfile, re
+
+task_file = sys.argv[1]
+STALE_FIELDS = [
+    'purpose', 'target_path', 'constraints', 'progress', 'description', 'deployed_at',
+    'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
+    'ac_priority', 'ac_checkpoint', 'parallel_ok',
+    'AC1', 'AC2', 'AC3', 'scout_exempt',
+]
+
+with open(task_file, 'r', encoding='utf-8') as f:
+    raw = f.read()
+
+for field in STALE_FIELDS:
+    pat = re.compile(
+        r'^  ' + re.escape(field) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
+        re.MULTILINE | re.DOTALL,
+    )
+    raw = pat.sub('', raw)
+
+raw = re.sub(r'\n{3,}', '\n\n', raw)
+
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+try:
+    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+        f.write(raw)
+    os.replace(tmp_path, task_file)
+except Exception:
+    try: os.unlink(tmp_path)
+    except OSError: pass
+    raise
+STALE_FIELD_RESET_PY
 
     # 中核フィールド設定
     yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id"
@@ -124,15 +174,23 @@ RESOLVE_PY
 get_field() {
     local file="$1" field="$2"
     python3 -c "
-import yaml, sys
+import yaml
 with open('$file') as f:
     d = yaml.safe_load(f) or {}
 t = d.get('task', {})
-print(t.get('$field', '') or '')
+v = t.get('$field')
+if v is None:
+    print('')
+elif isinstance(v, list):
+    print('LIST:' + str(len(v)))
+elif isinstance(v, bool):
+    print(str(v).lower())
+else:
+    print(str(v))
 "
 }
 
-# ─── テスト ───
+# ─── スカラーフィールドのテスト ───
 
 @test "再配備でparent_cmdが新cmdに更新される" {
     run_resolve_cmd_to_task cmd_9999 tobisaru
@@ -149,12 +207,6 @@ print(t.get('$field', '') or '')
 @test "再配備でtarget_pathがクリアされる" {
     run_resolve_cmd_to_task cmd_9999 tobisaru
     result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "target_path")
-    [ -z "$result" ]
-}
-
-@test "再配備でconstraintsがクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "constraints")
     [ -z "$result" ]
 }
 
@@ -180,4 +232,88 @@ print(t.get('$field', '') or '')
     run_resolve_cmd_to_task cmd_9999 tobisaru
     result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "project")
     [ "$result" = "infra" ]
+}
+
+# ─── リスト型フィールドのテスト（yaml_field_setでは不可能→Python一括クリアで解決） ───
+
+@test "再配備でconstraints(リスト)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "constraints")
+    [ -z "$result" ]
+}
+
+@test "再配備でengineering_preferences(リスト)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "engineering_preferences")
+    [ -z "$result" ]
+}
+
+@test "再配備でcontext_files(リスト)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "context_files")
+    [ -z "$result" ]
+}
+
+@test "再配備でstop_for(リスト)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "stop_for")
+    [ -z "$result" ]
+}
+
+@test "再配備でnever_stop_for(リスト)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "never_stop_for")
+    [ -z "$result" ]
+}
+
+@test "再配備でparallel_ok(リスト)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "parallel_ok")
+    [ -z "$result" ]
+}
+
+# ─── 忍者書込み+per-cmdフラグのテスト ───
+
+@test "再配備でAC1(忍者書込み)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "AC1")
+    [ -z "$result" ]
+}
+
+@test "再配備でAC2(忍者書込み)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "AC2")
+    [ -z "$result" ]
+}
+
+@test "再配備でAC3(忍者書込み)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "AC3")
+    [ -z "$result" ]
+}
+
+@test "再配備でscout_exempt(per-cmd)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "scout_exempt")
+    [ -z "$result" ]
+}
+
+@test "再配備でac_priority(スカラー)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "ac_priority")
+    [ -z "$result" ]
+}
+
+@test "再配備でac_checkpoint(スカラー)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "ac_checkpoint")
+    [ -z "$result" ]
+}
+
+# ─── 保持されるべきフィールドのテスト ───
+
+@test "再配備でworker_idが保持される" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "worker_id")
+    [ "$result" = "tobisaru" ]
 }

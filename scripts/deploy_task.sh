@@ -185,15 +185,53 @@ RESOLVE_PY
     local task_id="${cmd_id}_${task_type}"
 
     # ─── 前cmd残留フィールド清掃（再配備時のstale field汚染防止） ───
-    # resolve_cmd_to_taskは中核フィールドのみ設定するが、前cmdが残した
-    # purpose/target_path/constraints/progress/description/deployed_atは
-    # 明示的にクリアしないと次の忍者に誤情報が渡る（cmd_1519-1522で実被害確認）
-    yaml_field_set "$task_file" "task" "purpose" ""
-    yaml_field_set "$task_file" "task" "target_path" ""
-    yaml_field_set "$task_file" "task" "constraints" ""
-    yaml_field_set "$task_file" "task" "progress" ""
-    yaml_field_set "$task_file" "task" "description" ""
-    yaml_field_set "$task_file" "task" "deployed_at" ""
+    # task YAMLは使い回しモデル。yaml_field_setは行ベース置換のためリスト型フィールドを
+    # クリアできない(子行が残る)。Python一括クリアで全フィールド型を確実に処理。
+    # なぜなぜ3層: (1)resolve_cmd_to_taskのリセット漏れ → (2)yaml_field_setのリスト非対応
+    # → (3)inject_task_modifiers.pyの「存在チェック」で前cmdのリスト値が残留
+    python3 - "$task_file" <<'STALE_FIELD_RESET_PY'
+import os, sys, tempfile, yaml, re
+
+task_file = sys.argv[1]
+# スカラー+リスト両方を確実にクリアするフィールド一覧
+STALE_FIELDS = [
+    # 第1層: cmd固有メタデータ(スカラー)
+    'purpose', 'target_path', 'constraints', 'progress', 'description', 'deployed_at',
+    # 第2層: inject_task_modifiers.pyが「存在チェック」するフィールド(リスト含む)
+    'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
+    'ac_priority', 'ac_checkpoint', 'parallel_ok',
+    # 第3層: 忍者書込み+per-cmdフラグ
+    'AC1', 'AC2', 'AC3', 'scout_exempt',
+]
+
+with open(task_file, 'r', encoding='utf-8') as f:
+    raw = f.read()
+
+for field in STALE_FIELDS:
+    # フィールド行+その下の子行(インデントが深い行)を一括削除
+    # task:ブロック内の2スペースインデントフィールドを対象
+    pat = re.compile(
+        r'^  ' + re.escape(field) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
+        re.MULTILINE | re.DOTALL,
+    )
+    raw = pat.sub('', raw)
+
+# 空行の連続を整理
+raw = re.sub(r'\n{3,}', '\n\n', raw)
+
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+try:
+    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+        f.write(raw)
+    os.replace(tmp_path, task_file)
+except Exception:
+    try: os.unlink(tmp_path)
+    except OSError: pass
+    raise
+
+print(f'[STALE_RESET] Cleared {len(STALE_FIELDS)} stale fields from {os.path.basename(task_file)}', file=sys.stderr)
+STALE_FIELD_RESET_PY
+    log "[STALE_RESET] Python stale field reset completed for ${ninja_name}"
 
     # task YAMLの中核フィールドを自動設定
     yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id"
