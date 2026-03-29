@@ -170,6 +170,10 @@
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/log_terminal_input.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/prompt_state_inject.sh"
           }
         ]
       }
