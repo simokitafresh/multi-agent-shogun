@@ -206,6 +206,8 @@ STALE_FIELDS = [
     'command', 'reports_to_read', 'credential_warning', 'context_update',
     # 第5層: task_typeと重複するレガシーフィールド(修行001 hayate発見)
     'type', 'report_template',
+    # 第6層: ネスト残留+旧メタデータ(cmd_1527発見: 前cmdの全task:ブロックが残留)
+    'task', 'worker_id', 'timestamp',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:
