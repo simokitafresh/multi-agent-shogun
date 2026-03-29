@@ -387,17 +387,17 @@ inject_ac_version() {
     local prev
     prev=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_version" "")
 
-    # cmd_1493: 再配備検出 — ac_version同一でもtask_id/worker_idが変わっていればAC上書き
+    # cmd_1493+家老修正: 再配備/新規配備検出 — task_idが異なれば常にAC上書き
+    # 旧: _ac_task_idが空だとスキップ（新規配備でACが前cmdから残存するバグ）
+    # 新: curr_task_id != prev_ac_task_id で判定（空→新も含む）
     local curr_task_id curr_worker_id
     curr_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "")
     curr_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "worker_id" "")
-    local prev_ac_task_id prev_ac_worker_id
+    local prev_ac_task_id
     prev_ac_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
-    prev_ac_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_worker_id" "")
 
-    if [ "$prev" = "$ac_version" ] && [ -n "$prev_ac_task_id" ] && \
-       { [ "$curr_task_id" != "$prev_ac_task_id" ] || [ "$curr_worker_id" != "$prev_ac_worker_id" ]; }; then
-        log "[AC_VERSION] redeploy detected (task_id: ${prev_ac_task_id}→${curr_task_id}, worker: ${prev_ac_worker_id}→${curr_worker_id}). Overwriting ACs from cmd source."
+    if [ "$curr_task_id" != "$prev_ac_task_id" ]; then
+        log "[AC_VERSION] deploy detected (task_id: ${prev_ac_task_id:-empty}→${curr_task_id}). Overwriting ACs from cmd source."
         if _overwrite_ac_from_cmd "$task_file"; then
             ac_version=$(_compute_ac_hash "$task_file")
             log "[AC_VERSION] recomputed after AC overwrite: $ac_version"
