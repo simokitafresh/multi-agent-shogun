@@ -222,6 +222,10 @@ for field in STALE_FIELDS:
     )
     raw = pat.sub('', raw)
 
+# ルートレベルstaleフィールド除去（task:以外の0-indentフィールドを全削除）
+# 根因: flat YAML fallback(ninja_monitor L652)等がroot-levelに書込む→normalize後も残留
+raw = re.sub(r'^(?!task:)[a-zA-Z_][a-zA-Z0-9_]*:.*\n?', '', raw, flags=re.MULTILINE)
+
 # 空行の連続を整理
 raw = re.sub(r'\n{3,}', '\n\n', raw)
 
@@ -235,7 +239,7 @@ except Exception:
     except OSError: pass
     raise
 
-print(f'[STALE_RESET] Cleared {len(STALE_FIELDS)} stale fields from {os.path.basename(task_file)}', file=sys.stderr)
+print(f'[STALE_RESET] Cleared {len(STALE_FIELDS)} stale fields + root-level orphans from {os.path.basename(task_file)}', file=sys.stderr)
 STALE_FIELD_RESET_PY
     log "[STALE_RESET] Python stale field reset completed for ${ninja_name}"
 

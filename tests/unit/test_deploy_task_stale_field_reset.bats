@@ -81,6 +81,7 @@ task:
       description: '前cmdのAC1'
   _ac_task_id: cmd_8888_impl
   _ac_worker_id: tobisaru
+status: in_progress
 EOF
 }
 
@@ -156,6 +157,8 @@ for field in STALE_FIELDS:
         re.MULTILINE | re.DOTALL,
     )
     raw = pat.sub('', raw)
+
+raw = re.sub(r'^(?!task:)[a-zA-Z_][a-zA-Z0-9_]*:.*\n?', '', raw, flags=re.MULTILINE)
 
 raw = re.sub(r'\n{3,}', '\n\n', raw)
 
@@ -401,4 +404,14 @@ with open('$task_file', 'w') as f:
     # After deploy, nested task: should be removed
     nested_after=$(grep -c '^\s*task:' "$task_file")
     [ "$nested_after" -eq 1 ]
+}
+
+@test "再配備でルートレベルのstaleフィールドがクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    # Root-level status: should be removed (only task: should remain at root)
+    root_fields=$(grep -c '^[a-zA-Z_]' "$TEST_TMPDIR/queue/tasks/tobisaru.yaml")
+    [ "$root_fields" -eq 1 ]
+    # The remaining root-level field should be "task:"
+    root_field_name=$(grep '^[a-zA-Z_]' "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" | head -1)
+    [[ "$root_field_name" == task:* ]]
 }
