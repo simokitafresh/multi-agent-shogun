@@ -1875,7 +1875,7 @@ preflight_gate_artifacts() {
     # (2) review_gate.done — implement時のみ。配備時点でreview未実施のためplaceholder生成
     local task_type
     task_type=$(field_get "$task_file" "task_type" "")
-    if [ "$task_type" = "implement" ] && [ ! -f "$gates_dir/review_gate.done" ]; then
+    if [ "$task_type" = "impl" ] && [ ! -f "$gates_dir/review_gate.done" ]; then
         cat > "$gates_dir/review_gate.done" <<EOF
 timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
 source: deploy_preflight
@@ -2040,11 +2040,11 @@ check_scout_gate() {
         return 0
     fi
 
-    # 1. task_typeがimplement以外ならPASS（typeフィールドではなくtask_typeのみ参照）
+    # 1. task_typeがimpl以外ならPASS（typeフィールドではなくtask_typeのみ参照）
     local task_type
     task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
-    if [ "$task_type" != "implement" ]; then
-        log "scout_gate: PASS: task_type=${task_type} (not implement)"
+    if [ "$task_type" != "impl" ]; then
+        log "scout_gate: PASS: task_type=${task_type} (not impl)"
         return 0
     fi
 
