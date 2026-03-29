@@ -625,11 +625,18 @@ archive_reports() {
             check_cmd_for_review="$parent_cmd"
         fi
         if [ -n "$check_cmd_for_review" ]; then
-            local review_gate_file="$PROJECT_DIR/queue/gates/${check_cmd_for_review}/review_gate.done"
-            if [ ! -f "$review_gate_file" ]; then
-                echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $(basename "$report_file")"
-                kept=$((kept + 1))
-                continue
+            # 修練cmd例外: training/cycle/selfimprovementはGATEフロー外のためreview_gate.doneチェック不要
+            local is_training_cmd=false
+            case "$check_cmd_for_review" in
+                cmd_training_*|cmd_cycle_*|cmd_selfimprovement_*) is_training_cmd=true ;;
+            esac
+            if [ "$is_training_cmd" = "false" ]; then
+                local review_gate_file="$PROJECT_DIR/queue/gates/${check_cmd_for_review}/review_gate.done"
+                if [ ! -f "$review_gate_file" ]; then
+                    echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $(basename "$report_file")"
+                    kept=$((kept + 1))
+                    continue
+                fi
             fi
         fi
 

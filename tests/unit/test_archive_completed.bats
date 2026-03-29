@@ -245,3 +245,100 @@ YAML
     run grep -q "cmd_554" "$TEST_PROJECT/context/cmd-chronicle.md"
     [ "$status" -eq 1 ]
 }
+
+# ============================================================
+# training/cycle/selfimprovement cmd exemption tests (cmd_1522)
+# ============================================================
+
+@test "report archive: training cmd reports skip review_gate.done check" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_training_001
+    status: completed
+    purpose: "training cycle test"
+    project: infra
+YAML
+
+    # Create a completed report with parent_cmd=cmd_training_001
+    cat > "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml" <<'YAML'
+parent_cmd: cmd_training_001
+status: done
+result:
+  summary: "training report"
+YAML
+
+    # NO review_gate.done — training cmd should still be archived
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+
+    # report should be archived (moved out of queue/reports/)
+    [ ! -f "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml" ]
+}
+
+@test "report archive: cycle cmd reports skip review_gate.done check" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_cycle_002
+    status: completed
+    purpose: "cycle test"
+    project: infra
+YAML
+
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml" <<'YAML'
+parent_cmd: cmd_cycle_002
+status: done
+result:
+  summary: "cycle report"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+
+    [ ! -f "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml" ]
+}
+
+@test "report archive: selfimprovement cmd reports skip review_gate.done check" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_selfimprovement_003
+    status: completed
+    purpose: "selfimprovement test"
+    project: infra
+YAML
+
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_selfimprovement_003.yaml" <<'YAML'
+parent_cmd: cmd_selfimprovement_003
+status: done
+result:
+  summary: "selfimprovement report"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+
+    [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_selfimprovement_003.yaml" ]
+}
+
+@test "report archive: regular cmd still requires review_gate.done" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_999
+    status: completed
+    purpose: "regular cmd"
+    project: infra
+YAML
+
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_999.yaml" <<'YAML'
+parent_cmd: cmd_999
+status: done
+result:
+  summary: "regular report"
+YAML
+
+    # NO review_gate.done — regular cmd should NOT be archived
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+
+    # report should still be in queue/reports/ (not archived)
+    [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_999.yaml" ]
+}
