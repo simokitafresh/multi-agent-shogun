@@ -17,6 +17,19 @@ task:
   acceptance_criteria:
     - ac1: investigate target
 EOF
+
+    # CMD_ID regex拡張(cmd_[a-zA-Z0-9_]+)によりcmd_testがCMD_IDとして検出される
+    # → resolve_cmd_to_taskがSTK必須。STKにcmd_testエントリを追加
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_test:
+    id: cmd_test
+    title: 'recon template test'
+    project: infra
+    type: recon
+    purpose: 'test purpose'
+    status: delegated
+EOF
 }
 
 teardown() {
