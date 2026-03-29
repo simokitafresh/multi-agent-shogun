@@ -25,7 +25,9 @@ purpose_validation:
   cmd_purpose: gate_fire初回CLEAR率69.0%改善のためBLOCK原因分析+改善提案
   fit: true
   purpose_gap: none
-files_modified: []
+files_modified:
+- change: modified
+  path: 分析のみ(コード変更なし)
 lesson_candidate:
   found: true
   no_lesson_reason: ''
