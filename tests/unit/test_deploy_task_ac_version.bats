@@ -817,3 +817,126 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "legacy detail text" ]
 }
+
+@test "resolve_cmd_to_task: cmd_id引数でtask YAMLのparent_cmd/task_id/projectが自動設定される" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_600:
+    acceptance_criteria:
+    - 'AC1: New task AC'
+    - 'AC2: Second AC'
+    project: testproj
+    type: impl
+    purpose: test resolve
+    title: resolve test
+    status: pending
+EOF
+
+    # 旧cmdのtask YAMLが残っている状態
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "old task"
+  task_type: recon
+  parent_cmd: cmd_OLD
+  task_id: cmd_OLD_recon
+  worker_id: sasuke
+  status: done
+  acceptance_criteria:
+  - 'AC1: Stale old AC'
+  _ac_task_id: cmd_OLD_recon
+  _ac_worker_id: sasuke
+EOF
+
+    # cmd_id引数付きで配備
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_600
+    [ "$status" -eq 0 ]
+
+    # parent_cmd/task_id/projectが新cmdに更新されたか
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
+    data = yaml.safe_load(f)
+task = data.get('task', {})
+print(task.get('parent_cmd', ''))
+print(task.get('task_id', ''))
+print(task.get('project', ''))
+print(task.get('task_type', ''))
+"
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "cmd_600" ]
+    [ "${lines[1]}" = "cmd_600_impl" ]
+    [ "${lines[2]}" = "testproj" ]
+    [ "${lines[3]}" = "impl" ]
+
+    # ACが新cmdのものに上書きされたか
+    run grep "New task AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "Stale old AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "resolve_cmd_to_task: cmd_id未指定時は既存動作維持（後方互換）" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_700:
+    acceptance_criteria:
+    - 'AC1: cmd_700 AC'
+    project: testproj
+    purpose: test
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "existing task"
+  parent_cmd: cmd_700
+  task_id: cmd_700_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Already set AC'
+  _ac_task_id: cmd_700_impl
+  _ac_worker_id: sasuke
+EOF
+
+    # cmd_id無し（レガシー呼び出し）
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke "配備メッセージ" task_assigned karo
+    [ "$status" -eq 0 ]
+
+    # parent_cmdは変更されない
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
+    data = yaml.safe_load(f)
+print(data.get('task', {}).get('parent_cmd', ''))
+"
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "cmd_700" ]
+
+    # ACも変更されない（同一task_id → overwriteトリガーなし）
+    run grep "Already set AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "resolve_cmd_to_task: 存在しないcmd_idでBLOCK" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_800:
+    acceptance_criteria:
+    - 'AC1: exists'
+    project: testproj
+    purpose: test
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "test"
+  parent_cmd: cmd_800
+  task_id: cmd_800_impl
+  worker_id: sasuke
+  status: done
+EOF
+
+    # 存在しないcmd_idで配備試行
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_999
+    [ "$status" -eq 1 ]
+}

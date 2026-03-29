@@ -1,8 +1,9 @@
 #!/bin/bash
 # shellcheck disable=SC1091
 # deploy_task.sh — タスク配備ヘルパー（忍者状態自動検知付き）
-# Usage: bash scripts/deploy_task.sh <ninja_name> [message] [type] [from]
-# Example: bash scripts/deploy_task.sh hanzo "タスクYAMLを読んで作業開始せよ" task_assigned karo
+# Usage: bash scripts/deploy_task.sh <ninja_name> [cmd_id] [message] [type] [from]
+# Example: bash scripts/deploy_task.sh hanzo cmd_1510 "タスクYAMLを読んで作業開始せよ" task_assigned karo
+# Legacy:  bash scripts/deploy_task.sh hanzo "タスクYAMLを読んで作業開始せよ" task_assigned karo
 #
 # 機能:
 #   1. 対象忍者のCTX%とidle状態を自動検知
@@ -28,9 +29,19 @@ source "$SCRIPT_DIR/lib/agent_state.sh"
 
 NINJA_NAME="${1:-}"
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
-MESSAGE="${2:-$DEFAULT_MESSAGE}"
-TYPE="${3:-task_assigned}"
-FROM="${4:-karo}"
+
+# cmd_id自動検出: $2がcmd_で始まればcmd_id、そうでなければmessage（後方互換）
+CMD_ID=""
+if [[ "${2:-}" == cmd_* ]]; then
+    CMD_ID="$2"
+    MESSAGE="${3:-$DEFAULT_MESSAGE}"
+    TYPE="${4:-task_assigned}"
+    FROM="${5:-karo}"
+else
+    MESSAGE="${2:-$DEFAULT_MESSAGE}"
+    TYPE="${3:-task_assigned}"
+    FROM="${4:-karo}"
+fi
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -124,6 +135,65 @@ check_idle() {
     return 1  # デフォルト: BUSY（安全側）
 }
 
+
+# ─── cmd_id→task YAML自動解決（なぜなぜL5根因対策: 家老の手動ステップ排除） ───
+# cmd_id指定時、shogun_to_karo.yamlからメタデータを取得しtask YAMLの中核フィールドを自動設定。
+# これにより「task YAML更新 → deploy_task.sh」の2ステップが原子的操作になる。
+resolve_cmd_to_task() {
+    local cmd_id="$1"
+    local ninja_name="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+
+    if [ ! -f "$stk" ]; then
+        log "resolve_cmd: ERROR shogun_to_karo.yaml not found"
+        return 1
+    fi
+
+    # shogun_to_karo.yamlからcmdメタデータ抽出
+    local _resolve_output
+    _resolve_output=$(python3 - "$stk" "$cmd_id" <<'RESOLVE_PY'
+import sys
+import yaml
+
+stk_path = sys.argv[1]
+cmd_id = sys.argv[2]
+with open(stk_path, encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+cmd = (data.get('commands') or {}).get(cmd_id)
+if not cmd:
+    print(f"ERROR: {cmd_id} not found", file=sys.stderr)
+    sys.exit(1)
+print(f"project={cmd.get('project', '')}")
+print(f"task_type={cmd.get('type', 'impl')}")
+print(f"title={cmd.get('title', '')}")
+RESOLVE_PY
+    ) || {
+        log "resolve_cmd: ${cmd_id} not found in shogun_to_karo.yaml"
+        return 1
+    }
+
+    local project task_type title
+    project=$(echo "$_resolve_output" | grep '^project=' | cut -d= -f2-)
+    task_type=$(echo "$_resolve_output" | grep '^task_type=' | cut -d= -f2-)
+    title=$(echo "$_resolve_output" | grep '^title=' | cut -d= -f2-)
+    [ -z "$task_type" ] && task_type="impl"
+
+    local task_id="${cmd_id}_${task_type}"
+
+    # task YAMLの中核フィールドを自動設定
+    yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id"
+    yaml_field_set "$task_file" "task" "task_id" "$task_id"
+    yaml_field_set "$task_file" "task" "task_type" "$task_type"
+    [ -n "$project" ] && yaml_field_set "$task_file" "task" "project" "$project"
+    yaml_field_set "$task_file" "task" "status" "assigned"
+    # _ac_task_id/worker_idクリア → inject_ac_versionでAC上書きトリガー
+    yaml_field_set "$task_file" "task" "_ac_task_id" ""
+    yaml_field_set "$task_file" "task" "_ac_worker_id" ""
+
+    log "resolve_cmd: ${cmd_id} → ninja=${ninja_name}, task_id=${task_id}, project=${project:-none}, type=${task_type}, title=${title}"
+    return 0
+}
 
 # ─── cmd_1157: flat→nested YAML正規化 ───
 # flat形式(task:ブロックなし)のtask YAMLをnested形式に変換する。
@@ -2200,6 +2270,17 @@ check_idle "$PANE_TARGET" && IS_IDLE=true
 
 # cmd_1157: flat→nested YAML正規化（status強制注入の前に実行）
 normalize_task_yaml "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" || true
+
+# cmd_id指定時: shogun_to_karo.yamlからtask YAML中核フィールドを自動設定
+if [ -n "$CMD_ID" ]; then
+    if resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+        log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
+    else
+        log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
+        echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
+        exit 1
+    fi
+fi
 
 # タスクステータス確認
 TASK_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "unknown")
