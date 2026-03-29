@@ -204,6 +204,8 @@ STALE_FIELDS = [
     'AC1', 'AC2', 'AC3', 'scout_exempt',
     # 第4層: 旧版由来の残留フィールド(現在の配備パイプラインでは設定されないが使い回しで残る)
     'command', 'reports_to_read', 'credential_warning', 'context_update',
+    # 第5層: task_typeと重複するレガシーフィールド(修行001 hayate発見)
+    'type', 'report_template',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:

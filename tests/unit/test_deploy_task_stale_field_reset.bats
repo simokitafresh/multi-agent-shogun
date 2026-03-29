@@ -70,6 +70,8 @@ task:
   - 'queue/reports/old_report.yaml'
   credential_warning: '⚠ 認証が必要なタスク'
   context_update: '前cmdのcontext更新情報'
+  type: impl
+  report_template: '旧テンプレートデータ'
   AC1: '旧AC1: SF LOW偵察のAC1'
   AC2: '旧AC2: SF LOW偵察のAC2'
   AC3: '旧AC3: git commit'
@@ -140,6 +142,7 @@ STALE_FIELDS = [
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
     'AC1', 'AC2', 'AC3', 'scout_exempt',
     'command', 'reports_to_read', 'credential_warning', 'context_update',
+    'type', 'report_template',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:
@@ -339,6 +342,20 @@ else:
 @test "再配備でcontext_update(スカラー)がクリアされる" {
     run_resolve_cmd_to_task cmd_9999 tobisaru
     result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "context_update")
+    [ -z "$result" ]
+}
+
+# ─── 第5層: レガシー重複フィールドのテスト(修行001 hayate発見) ───
+
+@test "再配備でtype(task_type重複)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "type")
+    [ -z "$result" ]
+}
+
+@test "再配備でreport_template(レガシー)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "report_template")
     [ -z "$result" ]
 }
 
