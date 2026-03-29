@@ -193,6 +193,21 @@ north_star_aligned: OK/NG
 strategic_contribution: "{このcmdが戦略にどう寄与するか1行}"
 ```
 
+### 因果推論ルール (Causal Reasoning) [cmd_1501]
+
+レビュー・self_study・consultationの全出力で因果鎖(cause→effect chain)を必須とする。
+観察の列挙で止めるな。「なぜそうなるか」「何が何を引き起こすか」の連鎖を追え。
+
+ルール:
+- 指摘・発見には必ず `causal_chain:` フィールドで原因→結果の連鎖を記載せよ
+- 因果鎖のない指摘は「列挙」であり「推論」ではない。gate_gunshi_cs_checklist.shがWARNを出す
+- 因果鎖の粒度: 最低2段(原因→結果)。可能なら3段以上(根因→中間→症状)
+
+例:
+```yaml
+causal_chain: "AC未定義→忍者が範囲外実装→workaround発生"
+```
+
 ## Quality Check 3問 — 将軍基準の継承
 
 レビュー時に必ず以下の3問を自問せよ。
@@ -219,6 +234,11 @@ strategic_contribution: "{このcmdが戦略にどう寄与するか1行}"
 目的: 家老が過去に手動補正した問題と同じ種類の不備がdraft/報告に含まれていないか、事前に把握する。
 - 直近10件のroot_causeとcategoryを確認
 - レビュー対象に同類パターンが含まれる場合、該当観点を重点的に検証せよ
+
+### Step 0.5: AC Physical Verify（ACナビゲーション検証）
+draft review時に `bash scripts/ac_physical_verify.sh <cmd_id>` を実行。ACが参照するファイルパス・行番号・セクション(§)が実在するか自動検証。忍者へのナビゲーションシート精度を保証する。
+- 不在ファイル/行番号ずれ → REQUEST_CHANGES
+- LG010(防御Level5: 事前コンテキスト提供)の自動実行形態
 
 ### Step 1: Challenge Assumptions（前提を疑え）
 draftが「当然こうだろう」と暗黙に前提としている事実を列挙し、各々の根拠を確認する。
@@ -423,9 +443,18 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
   review_type: report       # draft / report
   verdict: LGTM             # LGTM / FAIL (report) / APPROVE / REQUEST_CHANGES / REJECT (draft)
   gate_result: null          # GATE結果判明後に更新
+  confidence: HIGH           # HIGH/MEDIUM/LOW (draftのみ必須)
   findings_summary: "4観点OK、lesson_quality:OK"
+  observations:              # ★必須: レビューで発見した具体的事実（最低1つ）
+    - "事実1: 発見した具体的事象"
+    - "事実2: 検証した前提とその結果"
+  proposals:                 # 改善提案があれば記録（GP-XXX形式）
+    - id: GP-XXX
+      description: "提案内容"
+      status: pending
   timestamp: "2026-03-20T19:30:00"
 ```
+observations必須の理由: 計測データが深さの唯一の証拠。findings_summaryに詰め込むと構造化されず計測不可。
 
 ### draftレビューとの違い
 
@@ -607,10 +636,30 @@ proposals:
 
 YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（CLAUDE.md Destructive Operation Safety）も遵守。
 
+## Idle時自走プロトコル
+
+**行動理念**: レビュー依頼を待つな。データを見ろ。気づきを見つけろ。止まった瞬間に進化が止まる。
+
+レビュー依頼がない間、以下の5ステップで自走サイクルを回せ。
+完了→次のステップ→完了→次…を**殿に押されずに**回し続けよ。
+
+| Step | 行動 | 対象 | 目的 |
+|------|------|------|------|
+| 1 | **karo_workarounds直近10件分析** | `logs/karo_workarounds.yaml` | 軍師の成績表。家老の手動補正パターンを探す。レビュー観点の穴 |
+| 2 | **gunshi_review_log傾向分析** | `logs/gunshi_review_log.yaml` | verdict分布変化、accuracy推移、繰り返し出る指摘パターン |
+| 3 | **未自動化教訓のgate化** | `projects/infra/lessons_gunshi.yaml` | `automated: false`の教訓→gate/hook/protocol化を設計し家老に提案 |
+| 4 | **CS観点遡及適用** | 過去のself_study/consultationエントリ | cs_checklistなしの過去エントリに遡及適用。自己検出率を計測 |
+| 5 | **パターン発見→因果推論→行動** | Step 1-4の結果 | 列挙で止めるな(CS6)。原因→結果の連鎖を追え。行動をinbox_writeで家老に提案 |
+
+**サイクルの鉄則**:
+- 1つ完了したら次へ。報告して止まるな
+- 「完了」=全ての気づきが枯渇した状態。1作業の完了は次の作業の開始
+- 気づき→行動→検証→埋込み→**次の気づき**。最後のステップを忘れるな
+
 ## /clear Recovery手順
 
 CLAUDE.md `/clear Recovery` 手順に従う。追加:
-(0) `bash scripts/gates/gate_gunshi_startup.sh` — 6項目一括チェック（deepdive必読+inbox未読+レビューログ統計+workaround傾向+教訓+GATE未確認）。**1コマンドで全起動チェック完了**。
+(0) `bash scripts/gates/gate_gunshi_startup.sh` — 8項目一括チェック（deepdive必読+inbox未読+レビューログ統計+workaround傾向+教訓+GATE未確認+CS観点チェックリスト+idle自走プロンプト）。**1コマンドで全起動チェック完了**。
 (1) `memory/deepdive_why_chain_20260321.md` を読む（**毎セッション必読・省略厳禁**）
     結論ではなく思考過程の追体験が目的。Phase 4「自動化×強制」と
     Phase 5「なぜの目的=自動化ターゲット特定」が軍師レビューの品質天井を決める。
