@@ -93,17 +93,72 @@ if not data.get('parent_cmd'):
             except Exception:
                 pass
 
-# === Fix 2: lessons_useful dict → list ===
-# パターン: 忍者が 0: {}, 1: {} のdict形式で記入(YAML listではなく)
+# === Fix 2: lessons_useful dict → list (3パターン網羅 cmd_1535) ===
+# Pattern A: 数値キーdict {0: {...}, 1: {...}} → [{...}, {...}] (既存)
+# Pattern B: 単一教訓dict {id: L074, useful: true, reason: ...} → [{id: L074, ...}]
+# Pattern C: 教訓IDキーdict {L074: {...}, L063: {...}} → [{id: L074, ...}, {id: L063, ...}]
+import re as _re2
 lu = data.get('lessons_useful')
 if isinstance(lu, dict):
-    # キーが数値的(0,1,2...)ならlist化
-    try:
-        sorted_keys = sorted(lu.keys(), key=lambda k: int(k) if str(k).isdigit() else k)
-    except (ValueError, TypeError):
-        sorted_keys = sorted(lu.keys())
-    data['lessons_useful'] = [lu[k] for k in sorted_keys]
-    fixes.append('lessons_useful dict→list変換')
+    _lu_keys_str = {str(k) for k in lu.keys()}
+    _known_fields = {'id', 'useful', 'reason'}
+    _lesson_id_re = _re2.compile(r'^L\d+$')
+
+    _converted = None
+    _fix_label = ''
+
+    if not lu:
+        # 空dict → 空list
+        _converted = []
+        _fix_label = 'lessons_useful 空dict→空list変換'
+    elif _lu_keys_str & _known_fields:
+        # Pattern B: 単一教訓dict → list wrap
+        _converted = [dict(lu)]
+        _fix_label = 'lessons_useful 単一dict→list wrap'
+        # Assertion: 全フィールドが保持されていること
+        if not all(_converted[0].get(k) == v for k, v in lu.items()):
+            _converted = None  # 安全側: 変換せずBLOCKに回す
+    elif all(_lesson_id_re.match(str(k)) for k in lu.keys()):
+        # Pattern C: 教訓IDキーdict → id注入+list化
+        _new_list = []
+        for k in sorted(lu.keys(), key=str):
+            val = lu[k]
+            if isinstance(val, dict):
+                entry = dict(val)
+                if 'id' not in entry:
+                    entry['id'] = str(k)
+                _new_list.append(entry)
+            else:
+                _new_list.append({'id': str(k)})
+        _converted = _new_list
+        _fix_label = 'lessons_useful LessonIDキーdict→list変換(id注入)'
+        # Assertion: 要素数一致+元の値dictフィールドが全て保持
+        _ok = len(_converted) == len(lu)
+        if _ok:
+            for _item in _converted:
+                _lid = _item.get('id', '')
+                if _lid in lu and isinstance(lu[_lid], dict):
+                    if not all(_item.get(fk) == fv for fk, fv in lu[_lid].items()):
+                        _ok = False
+                        break
+        if not _ok:
+            _converted = None
+    else:
+        # Pattern A: 数値キーdict → 値のリスト化
+        # ソートキー: 数値は(0,N)、文字列は(1,str)でTypeError回避
+        try:
+            sorted_keys = sorted(lu.keys(), key=lambda k: (0, int(str(k))) if str(k).isdigit() else (1, str(k)))
+        except (ValueError, TypeError):
+            sorted_keys = sorted(lu.keys(), key=str)
+        _converted = [lu[k] for k in sorted_keys]
+        _fix_label = 'lessons_useful dict→list変換'
+        # Assertion: 要素数一致
+        if len(_converted) != len(lu):
+            _converted = None
+
+    if _converted is not None:
+        data['lessons_useful'] = _converted
+        fixes.append(_fix_label)
 
 # === Fix 14: lessons_useful id UNKNOWN/欠落 → タスクYAML参照解決 ===
 # パターン: 忍者がid欠落やUNKNOWN_Nで記入。タスクYAMLのrelated_lessonsから正しいidを取得。

@@ -387,3 +387,113 @@ print('OK')
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+# === Test 13: lessons_useful 単一教訓dict → list wrap (Pattern B) ===
+@test "lessons_useful single lesson dict is wrapped in list" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: tobisaru
+parent_cmd: cmd_999
+verdict: PASS
+lessons_useful:
+  id: L074
+  useful: true
+  reason: helpful for debugging
+binary_checks:
+  AC1:
+    - check: test
+      result: yes
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"単一dict→list wrap"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+lu = d['lessons_useful']
+assert isinstance(lu, list), f'Expected list, got {type(lu)}'
+assert len(lu) == 1, f'Expected 1 item, got {len(lu)}'
+assert lu[0]['id'] == 'L074', f'Expected L074, got {lu[0].get(\"id\")}'
+assert lu[0]['useful'] == True, f'Expected True, got {lu[0].get(\"useful\")}'
+assert lu[0]['reason'] == 'helpful for debugging'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+# === Test 14: lessons_useful 教訓IDキーdict → list変換 (Pattern C) ===
+@test "lessons_useful lesson-ID-keyed dict converts to list with id injection" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: tobisaru
+parent_cmd: cmd_999
+verdict: PASS
+lessons_useful:
+  L074:
+    useful: true
+    reason: helped avoid trap
+  L063:
+    useful: false
+    reason: not relevant
+binary_checks:
+  AC1:
+    - check: test
+      result: yes
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"LessonIDキーdict→list"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+lu = d['lessons_useful']
+assert isinstance(lu, list), f'Expected list, got {type(lu)}'
+assert len(lu) == 2, f'Expected 2 items, got {len(lu)}'
+ids = {item['id'] for item in lu}
+assert ids == {'L074', 'L063'}, f'Expected L074,L063, got {ids}'
+for item in lu:
+    if item['id'] == 'L074':
+        assert item['useful'] == True
+        assert item['reason'] == 'helped avoid trap'
+    elif item['id'] == 'L063':
+        assert item['useful'] == False
+        assert item['reason'] == 'not relevant'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+# === Test 15: lessons_useful 空dict → 空list変換 ===
+@test "lessons_useful empty dict converts to empty list" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: tobisaru
+parent_cmd: cmd_999
+verdict: PASS
+lessons_useful: {}
+binary_checks:
+  AC1:
+    - check: test
+      result: yes
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+lu = d['lessons_useful']
+assert isinstance(lu, list), f'Expected list, got {type(lu)}'
+assert len(lu) == 0, f'Expected empty list, got {len(lu)}'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
