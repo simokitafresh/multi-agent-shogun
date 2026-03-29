@@ -3436,6 +3436,7 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "$impact_output"
         echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
     fi
+    bash "$SCRIPT_DIR/scripts/lesson_impact_rotate.sh" 2>/dev/null || true
     if sync_output=$(bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1); then
         echo "$sync_output"
         if echo "$sync_output" | grep -qi "error"; then
