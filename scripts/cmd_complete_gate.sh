@@ -3366,6 +3366,7 @@ if [ "$CI_PUSH_DETECTED" = true ]; then
                 failure)
                     echo "  FAIL: CI赤 (run ${ci_run_id}) — push後にCI失敗。修正必要"
                     ALL_CLEAR=false
+                    record_block_reason "ci_failure:run_${ci_run_id}"
                     ;;
                 "")
                     echo "  [INFO] CI結果取得不可（進行中またはデータなし）"
