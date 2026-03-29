@@ -188,6 +188,7 @@
 !scripts/lesson_edit.sh
 !scripts/clear_prep_check.sh
 !scripts/backfill_knowledge_debt.sh
+!scripts/backfill_review_gate_done.sh
 !scripts/gates/
 !scripts/gates/gate_yaml_status.sh
 !scripts/gates/gate_pd_sync.sh
