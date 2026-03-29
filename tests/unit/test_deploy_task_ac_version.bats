@@ -595,6 +595,195 @@ EOF
     [ -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_preserve_test.yaml" ]
 }
 
+# =============================================================================
+# cmd_1493: redeploy AC overwrite tests
+# =============================================================================
+
+@test "cmd_1493: redeploy with different task_id overwrites ACs from cmd source" {
+    # Setup: shogun_to_karo.yaml with cmd_200's correct ACs
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_200:
+    acceptance_criteria:
+    - 'AC1: New correct AC for cmd_200'
+    - 'AC2: Second AC for cmd_200'
+    project: testproj
+    purpose: test
+EOF
+
+    # Setup: task YAML with STALE ACs from a previous cmd + tracking fields
+    # ac_version must match what _compute_ac_hash produces from these ACs
+    # Simple string list ACs have no description: field → awk extracts nothing → md5("")=d41d8cd9
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "redeploy test"
+  task_type: impl
+  parent_cmd: cmd_200
+  task_id: cmd_200_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Old stale AC from previous cmd'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_100_impl
+  _ac_worker_id: hayate
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    # Verify: ACs overwritten with cmd_200's ACs
+    run grep "New correct AC for cmd_200" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "Second AC for cmd_200" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    # Old AC should be gone
+    run grep "Old stale AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "cmd_1493: redeploy with different worker_id overwrites ACs from cmd source" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_300:
+    acceptance_criteria:
+    - 'AC1: Correct AC for cmd_300'
+    project: testproj
+    purpose: test
+EOF
+
+    # Same task_id but different worker_id (re-assigned to different ninja)
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "worker change test"
+  task_type: impl
+  parent_cmd: cmd_300
+  task_id: cmd_300_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Stale AC from when hayate had this task'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_300_impl
+  _ac_worker_id: hayate
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run grep "Correct AC for cmd_300" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "Stale AC from when hayate" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "cmd_1493: same task_id and worker_id does NOT trigger AC overwrite" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_400:
+    acceptance_criteria:
+    - 'AC1: cmd source AC'
+    project: testproj
+    purpose: test
+EOF
+
+    # Same task_id and worker_id — no redeploy, ACs should stay
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "no redeploy test"
+  task_type: impl
+  parent_cmd: cmd_400
+  task_id: cmd_400_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Already correct local AC'
+  ac_version: some_hash
+  _ac_task_id: cmd_400_impl
+  _ac_worker_id: sasuke
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    # ACs should remain unchanged (no overwrite)
+    run grep "Already correct local AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_1493: first deploy (no tracking fields) does NOT trigger AC overwrite" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_500:
+    acceptance_criteria:
+    - 'AC1: cmd source AC'
+    project: testproj
+    purpose: test
+EOF
+
+    # Fresh deploy — no _ac_task_id/_ac_worker_id yet
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "first deploy"
+  task_type: impl
+  parent_cmd: cmd_500
+  task_id: cmd_500_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Karo-written AC for first deploy'
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    # ACs should remain as karo wrote them (no overwrite)
+    run grep "Karo-written AC for first deploy" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+
+    # Tracking fields should be set after first deploy
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
+    data = yaml.safe_load(f)
+task = data.get('task', {})
+print(task.get('_ac_task_id', ''))
+print(task.get('_ac_worker_id', ''))
+"
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "cmd_500_impl" ]
+    [ "${lines[1]}" = "sasuke" ]
+}
+
+@test "cmd_1493: tracking fields updated after every deploy" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "tracking test"
+  task_type: review
+  task_id: my_task_123
+  worker_id: sasuke
+  acceptance_criteria:
+  - ac1: first
+  - ac2: second
+  - ac3: third
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
+    data = yaml.safe_load(f)
+task = data.get('task', {})
+print(task.get('_ac_task_id', ''))
+print(task.get('_ac_worker_id', ''))
+"
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "my_task_123" ]
+    [ "${lines[1]}" = "sasuke" ]
+}
+
 @test "deploy_task keeps legacy detail fallback when if_then is absent" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'

@@ -207,18 +207,15 @@ inject_task_id() {
     log "inject_task_id: set task_id=$subtask_id"
 }
 
-# ─── ac_version自動注入（cmd_530: stale作業検知, cmd_1053: ハッシュ化） ───
+# ─── ac_version自動注入（cmd_530: stale作業検知, cmd_1053: ハッシュ化, cmd_1493: 再配備AC上書き） ───
 # acceptance_criteriaの各descriptionをソート→連結→md5先頭8桁をtask.ac_versionとして保持。
 # 件数が同じでも内容が変われば異なるハッシュになる。再配備時に再計算される。
+# cmd_1493: ac_version同一でもtask_id/worker_id変更時はcmdソースからAC上書き
 # cmd_1393: Python→awk+md5sum置換
-inject_ac_version() {
-    local task_file="$1"
-    if [ ! -f "$task_file" ]; then
-        log "inject_ac_version: task file not found: $task_file"
-        return 0
-    fi
 
-    # acceptance_criteria内のdescriptionを抽出→sort→|結合→md5先頭8桁
+# ─── _compute_ac_hash: ACハッシュ計算ヘルパー ───
+_compute_ac_hash() {
+    local task_file="$1"
     local concat
     concat=$(awk '
         BEGIN { in_ac=0; in_item=0; desc=""; n=0 }
@@ -255,12 +252,159 @@ inject_ac_version() {
             printf "%s",r
         }
     ' "$task_file" 2>/dev/null)
+    printf '%s' "$concat" | md5sum | cut -c1-8
+}
+
+# ─── _overwrite_ac_from_cmd: cmdソースからAC上書き（cmd_1493） ───
+# shogun_to_karo.yaml → archive/cmds/ の順でparent_cmdのACを探し、task YAMLに上書き。
+# 教訓マーカー(【注入教訓】)もクリアして再注入を促す。
+_overwrite_ac_from_cmd() {
+    local task_file="$1"
+    local parent_cmd
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
+    [ -z "$parent_cmd" ] && return 1
+
+    local py_output
+    py_output=$(mktemp)
+    if python3 - "$task_file" "$parent_cmd" "$SCRIPT_DIR" <<'OVERWRITE_AC_PY' > "$py_output" 2>&1; then
+import glob
+import os
+import re
+import sys
+import tempfile
+
+import yaml
+
+task_file = sys.argv[1]
+parent_cmd = sys.argv[2]
+script_dir = sys.argv[3]
+
+def find_cmd_acs(pcmd, sdir):
+    # 1. shogun_to_karo.yaml (dict format: commands.cmd_XXX.acceptance_criteria)
+    stk_path = os.path.join(sdir, 'queue', 'shogun_to_karo.yaml')
+    if os.path.exists(stk_path):
+        try:
+            with open(stk_path, encoding='utf-8') as f:
+                stk = yaml.safe_load(f) or {}
+            cmds = stk.get('commands', {})
+            if isinstance(cmds, dict):
+                cmd = cmds.get(pcmd, {})
+                if isinstance(cmd, dict):
+                    acs = cmd.get('acceptance_criteria')
+                    if acs:
+                        return acs
+        except Exception:
+            pass
+    # 2. Archive fallback
+    archive_dir = os.path.join(sdir, 'queue', 'archive', 'cmds')
+    if os.path.isdir(archive_dir):
+        for cpath in sorted(glob.glob(os.path.join(archive_dir, f'{pcmd}_*.yaml')), reverse=True):
+            try:
+                with open(cpath, encoding='utf-8') as f:
+                    adata = yaml.safe_load(f) or {}
+                cmds = adata.get('commands', {})
+                if isinstance(cmds, dict):
+                    cmd = cmds.get(pcmd, {})
+                    if isinstance(cmd, dict):
+                        acs = cmd.get('acceptance_criteria')
+                        if acs:
+                            return acs
+            except Exception:
+                continue
+    return None
+
+cmd_acs = find_cmd_acs(parent_cmd, script_dir)
+if not cmd_acs:
+    print(f'[AC_OVERWRITE] WARN: No ACs found for {parent_cmd} in cmd source', file=sys.stderr)
+    sys.exit(1)
+
+with open(task_file, 'r', encoding='utf-8') as f:
+    raw = f.read()
+
+# Build replacement block
+frag = yaml.safe_dump(
+    {'acceptance_criteria': cmd_acs},
+    default_flow_style=False, allow_unicode=True, sort_keys=False,
+).rstrip('\n')
+indented = '\n'.join('  ' + line for line in frag.split('\n'))
+
+# Replace acceptance_criteria section
+pat = re.compile(
+    r'^  acceptance_criteria:.*?(?=\n  [a-zA-Z_]|\Z)',
+    re.MULTILINE | re.DOTALL,
+)
+m = pat.search(raw)
+if m:
+    raw = raw[:m.start()] + indented + raw[m.end():]
+else:
+    task_match = re.search(r'^task:', raw, re.MULTILINE)
+    if task_match:
+        rest = raw[task_match.end():]
+        top_m = re.search(r'^\S', rest, re.MULTILINE)
+        if top_m:
+            pos = task_match.end() + top_m.start()
+            raw = raw[:pos] + indented + '\n' + raw[pos:]
+        else:
+            raw = raw.rstrip('\n') + '\n' + indented + '\n'
+
+# Clear lesson injection marker so inject_related_lessons re-injects with new ACs
+raw = re.sub(r'【注入教訓】.*?─{10,}\n\n?', '', raw, flags=re.DOTALL)
+
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+try:
+    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+        f.write(raw)
+    os.replace(tmp_path, task_file)
+except Exception:
+    try:
+        os.unlink(tmp_path)
+    except OSError:
+        pass
+    raise
+
+print(f'[AC_OVERWRITE] Overwrote {len(cmd_acs)} ACs from cmd source ({parent_cmd})', file=sys.stderr)
+OVERWRITE_AC_PY
+        log "$(cat "$py_output")"
+        rm -f "$py_output"
+        return 0
+    else
+        log "WARN: _overwrite_ac_from_cmd failed: $(cat "$py_output")"
+        rm -f "$py_output"
+        return 1
+    fi
+}
+
+inject_ac_version() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_ac_version: task file not found: $task_file"
+        return 0
+    fi
 
     local ac_version
-    ac_version=$(printf '%s' "$concat" | md5sum | cut -c1-8)
+    ac_version=$(_compute_ac_hash "$task_file")
 
     local prev
     prev=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_version" "")
+
+    # cmd_1493: 再配備検出 — ac_version同一でもtask_id/worker_idが変わっていればAC上書き
+    local curr_task_id curr_worker_id
+    curr_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "")
+    curr_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "worker_id" "")
+    local prev_ac_task_id prev_ac_worker_id
+    prev_ac_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
+    prev_ac_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_worker_id" "")
+
+    if [ "$prev" = "$ac_version" ] && [ -n "$prev_ac_task_id" ] && \
+       { [ "$curr_task_id" != "$prev_ac_task_id" ] || [ "$curr_worker_id" != "$prev_ac_worker_id" ]; }; then
+        log "[AC_VERSION] redeploy detected (task_id: ${prev_ac_task_id}→${curr_task_id}, worker: ${prev_ac_worker_id}→${curr_worker_id}). Overwriting ACs from cmd source."
+        if _overwrite_ac_from_cmd "$task_file"; then
+            ac_version=$(_compute_ac_hash "$task_file")
+            log "[AC_VERSION] recomputed after AC overwrite: $ac_version"
+        else
+            log "[AC_VERSION] WARN: AC overwrite failed, keeping existing ACs"
+        fi
+    fi
 
     yaml_field_set "$task_file" "task" "ac_version" "$ac_version"
 
@@ -269,6 +413,10 @@ inject_ac_version() {
     else
         log "[AC_VERSION] set: $prev -> $ac_version"
     fi
+
+    # cmd_1493: 追跡フィールド更新（次回再配備検出に使用）
+    yaml_field_set "$task_file" "task" "_ac_task_id" "$curr_task_id"
+    yaml_field_set "$task_file" "task" "_ac_worker_id" "$curr_worker_id"
 }
 
 # ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
@@ -2086,10 +2234,12 @@ if [ "$TASK_STATUS" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
     exit 1
 fi
 
-# cmd_cycle_001: 同一cmd別忍者二重配備防止ガード
-# 同じparent_cmdが別の忍者にassigned/acknowledged/in_progressで存在する場合BLOCK
-# 背景: 二重配備事故3件(cmd_1281, cmd_1342, cmd_1350)。grepベースで軽量スキャン。
+# cmd_cycle_001: 同一cmd二重配備防止ガード
+# 同じparent_cmd+同じtask_idが別忍者にassigned/acknowledged/in_progressならBLOCK
+# 同じparent_cmd+異なるtask_id（分割配備）は許可
+# 背景: 二重配備事故3件(cmd_1281, cmd_1342, cmd_1350)。分割配備はcmd_1484以降で常用パターン。
 DEPLOY_PARENT_CMD=$(field_get "$_TASK_YAML" "parent_cmd" "")
+DEPLOY_TASK_ID=$(field_get "$_TASK_YAML" "task_id" "")
 if [ -n "$DEPLOY_PARENT_CMD" ]; then
     for _dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
         [ -f "$_dd_task" ] || continue
@@ -2097,10 +2247,15 @@ if [ -n "$DEPLOY_PARENT_CMD" ]; then
         [ "$_dd_ninja" = "$NINJA_NAME" ] && continue
         _dd_pcmd=$(grep -m1 '^\s*parent_cmd:' "$_dd_task" 2>/dev/null | sed "s/.*parent_cmd:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
         [ "$_dd_pcmd" != "$DEPLOY_PARENT_CMD" ] && continue
+        _dd_tid=$(grep -m1 '^\s*task_id:' "$_dd_task" 2>/dev/null | sed "s/.*task_id:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
+        if [ -n "$DEPLOY_TASK_ID" ] && [ -n "$_dd_tid" ] && [ "$DEPLOY_TASK_ID" != "$_dd_tid" ]; then
+            log "split_deploy: ${DEPLOY_PARENT_CMD} peer ${_dd_ninja} (task_id: ${_dd_tid}) — different task_id, allowing"
+            continue
+        fi
         _dd_status=$(grep -m1 '^\s*status:' "$_dd_task" 2>/dev/null | sed "s/.*status:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
         case "$_dd_status" in
             assigned|acknowledged|in_progress)
-                log "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status})"
+                log "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status}, task_id: ${_dd_tid})"
                 echo "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status})" >&2
                 echo "Clear the existing task first: bash scripts/lib/yaml_field_set.sh queue/tasks/${_dd_ninja}.yaml task status idle" >&2
                 exit 1
