@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @source: cmd_1298 (Bash redirect/teeによるreport YAML直接書込み防止hook)
 # PreToolUse hook: deny Bash redirect/tee to report YAML files.
 # Reports must be written via scripts/report_field_set.sh (flock排他制御付き).
 # cmd_1294(Write/Edit DENY)の防御ギャップ補完。
