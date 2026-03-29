@@ -51,44 +51,45 @@ teardown() {
     [[ "$output" == *"ERROR: binary_checks must be YAML list of dicts"* ]]
 }
 
-# --- AC1: result boolean(true/false) → exit 1 ---
+# --- AC1: result boolean(true/false) → autofix(yes/no)でexit 0 ---
+# autofixがtrue→yes, false→no に自動変換するため、BLOCKではなく成功する
 
-@test "full-field: result true でexit 1" {
+@test "full-field: result true → autofix yes でexit 0" {
     run bash -c 'echo "{AC1: [{check: test, result: true}]}" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - 2>&1'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"ERROR: binary_checks must be YAML list of dicts"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[autofix]"* ]]
 }
 
-@test "full-field: result false でexit 1" {
+@test "full-field: result false → autofix no でexit 0" {
     run bash -c 'echo "{AC1: [{check: test, result: false}]}" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - 2>&1'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"ERROR: binary_checks must be YAML list of dicts"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[autofix]"* ]]
 }
 
-@test "per-AC: result true でexit 1" {
+@test "per-AC: result true → autofix yes でexit 0" {
     run bash -c 'echo "[{check: test, result: true}]" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks.AC1 - 2>&1'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"ERROR: binary_checks must be YAML list of dicts"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[autofix]"* ]]
 }
 
-# --- AC1: result PASS/FAIL文字列 → exit 1 ---
+# --- AC1: result PASS/FAIL文字列 → autofix(yes/no)でexit 0 ---
 
-@test "full-field: result PASS でexit 1" {
+@test "full-field: result PASS → autofix yes でexit 0" {
     run bash -c 'echo "{AC1: [{check: test, result: PASS}]}" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - 2>&1'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"ERROR: binary_checks must be YAML list of dicts"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[autofix]"* ]]
 }
 
-@test "full-field: result FAIL でexit 1" {
+@test "full-field: result FAIL → autofix no でexit 0" {
     run bash -c 'echo "{AC1: [{check: test, result: FAIL}]}" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - 2>&1'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"ERROR: binary_checks must be YAML list of dicts"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[autofix]"* ]]
 }
 
-@test "per-AC: result PASS でexit 1" {
+@test "per-AC: result PASS → autofix yes でexit 0" {
     run bash -c 'echo "[{check: test, result: PASS}]" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks.AC1 - 2>&1'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"ERROR: binary_checks must be YAML list of dicts"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[autofix]"* ]]
 }
 
 # --- AC1: 正しい形式(result yes/no list) → exit 0 ---
