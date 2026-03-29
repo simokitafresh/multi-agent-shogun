@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @source: cmd_452 (破壊的コマンドブロックhook)
 # PreToolUse hook: block destructive Bash commands (D001-D008).
 set -euo pipefail
 

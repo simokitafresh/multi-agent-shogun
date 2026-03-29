@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @source: cmd_452 (SessionStart context注入hook)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

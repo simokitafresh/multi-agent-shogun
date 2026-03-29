@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @source: cmd_972 (Stop Hook完了ゲート+テスト結果ガード)
 # PostToolUse hook: inject context when Bash test commands report SKIP/FAIL.
 set -eu
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @source: cmd_1294 (報告YAML直接Write/Edit拒否hook)
 # PreToolUse hook: deny direct Write/Edit to report YAML files.
 # Reports must be written via scripts/report_field_set.sh (flock排他制御付き).
 # report_field_set.shはBash経由で実行されるためこのhookは発火しない。

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @source: cmd_451 (inbox未読チェックstop防止hook)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

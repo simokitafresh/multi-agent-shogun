@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @source: cmd_781 (PreToolUse/PostToolUse STALL誤判定防御hook)
 # bash_state_hook.sh - PreToolUse/PostToolUse hook for Bash tool
 # Sets @agent_state=bash_running on pre, restores to active on post.
 # This prevents ninja_monitor from misdetecting idle during long bash runs.
