@@ -48,6 +48,45 @@ else
     fi
 fi
 
+# --- AC1(cmd_1542): ninja_id validation ---
+validate_ninja_id() {
+    local ninja_id="$1"
+    local settings_file="$REPO_ROOT/config/settings.yaml"
+    local tasks_dir="$REPO_ROOT/queue/tasks"
+    local valid_names=()
+
+    # Source 1: config/settings.yaml agents section
+    if [[ -f "$settings_file" ]]; then
+        while IFS= read -r name; do
+            [[ -n "$name" ]] && valid_names+=("$name")
+        done < <(awk '
+            /^  agents:/ { in_agents=1; next }
+            in_agents && /^    [a-z][a-z0-9_]*:$/ { name=$0; gsub(/^ +|:$/, "", name); print name }
+            in_agents && /^[^ ]/ { in_agents=0 }
+            in_agents && /^  [a-z]/ { in_agents=0 }
+        ' "$settings_file")
+    fi
+
+    # Source 2: queue/tasks/ yaml files
+    if [[ -d "$tasks_dir" ]]; then
+        for f in "$tasks_dir"/*.yaml; do
+            [[ -f "$f" ]] && valid_names+=("$(basename "$f" .yaml)")
+        done
+    fi
+
+    # Include karo (caller agent)
+    valid_names+=("karo")
+
+    for name in "${valid_names[@]}"; do
+        [[ "$name" == "$ninja_id" ]] && return 0
+    done
+    return 1
+}
+
+if ! validate_ninja_id "$NINJA_NAME"; then
+    echo "[karo_workaround_log] WARN: ninja_id '$NINJA_NAME' は有効なエージェント名ではない。config/settings.yaml・queue/tasks/を確認せよ" >&2
+fi
+
 # --- Category auto-classification (AC2: cmd_1211) ---
 classify_category() {
     local issue="$1"
@@ -76,9 +115,13 @@ if [[ "$CLEAN_MODE" != true && "$CATEGORY" == "uncategorized" ]]; then
     echo "[karo_workaround_log] WARN: categoryが未分類(uncategorized)。5番目の引数で明示的にcategoryを指定せよ: $CMD_ID/$NINJA_NAME" >&2
 fi
 
-# AC2(cmd_1538): WARN when root_cause is empty
-if [[ "$CLEAN_MODE" != true && -z "$FIX" ]]; then
-    echo "[karo_workaround_log] WARN: root_causeが空。分析可能な根因を記録せよ: $CMD_ID/$NINJA_NAME" >&2
+# AC2(cmd_1538+cmd_1542): root_cause validation (empty/null/short)
+if [[ "$CLEAN_MODE" != true ]]; then
+    if [[ -z "$FIX" || "$FIX" == "null" || "$FIX" == "None" || "$FIX" == "NULL" || "$FIX" == "none" ]]; then
+        echo "[karo_workaround_log] WARN: root_causeが無効値('$FIX')。意味のある修正説明を記録せよ: $CMD_ID/$NINJA_NAME" >&2
+    elif [[ ${#FIX} -lt 3 ]]; then
+        echo "[karo_workaround_log] WARN: root_causeが短すぎる(${#FIX}文字, 最小3文字)。意味のある修正説明を記録せよ: $CMD_ID/$NINJA_NAME" >&2
+    fi
 fi
 
 # --- Count category entries excluding resolved (AC1+AC3: cmd_1211, GP-084: Python→awk) ---
