@@ -20,7 +20,10 @@ if [ -z "$AGENT_ID" ]; then
 fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
-LOCKFILE="${INBOX}.lock"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
+    || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
+LOCKFILE="$(lock_path "$INBOX")"
 
 if [ ! -f "$INBOX" ]; then
     echo "[inbox_mark_read] No inbox file for $AGENT_ID" >&2

@@ -91,7 +91,10 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ] && type get_allowed_targets &>/dev/null; t
 fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
-LOCKFILE="${INBOX}.lock"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
+    || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
+LOCKFILE="$(lock_path "$INBOX")"
 
 # Initialize inbox if not exists
 if [ ! -f "$INBOX" ]; then
@@ -401,7 +404,7 @@ data['messages'] = msgs
 with open(inbox_path, 'w') as f:
     yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 " 2>/dev/null
-                        ) 200>"$GUNSHI_INBOX.lock" 2>/dev/null || true
+                        ) 200>"$(lock_path "$GUNSHI_INBOX")" 2>/dev/null || true
                         echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2
                         # BLOCK: verdict記入済み+gate FAIL → 忍者が修正して再送信するまでkaroに届けない
                         echo "" >&2

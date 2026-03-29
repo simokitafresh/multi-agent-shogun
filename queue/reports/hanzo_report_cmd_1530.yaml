@@ -1,0 +1,83 @@
+worker_id: hanzo
+task_id: cmd_1530_impl
+parent_cmd: cmd_1530
+timestamp: '2026-03-30T03:56:22'
+status: in_progress
+ac_version_read: 7d010443
+result:
+  summary: karo_workarounds.yaml全130件分析完了。WA率60.8%(79/130)。Top1=report_yaml_format(41WA/45件,91.1%)。根因=lessons_useful
+    dict→list(16件)+RFS未使用(9件)+必須フィールド欠落。後半改善傾向(29→12)だが依然最大。uncategorized急増(1→16)が新問題。改善3件提案
+  details: '【AC1集計】130件=WA79(60.8%)+clean51(39.2%)。category別WA: report_yaml_format=41,
+    uncategorized=17, commit_missing=7, double_deploy=3, stale_report=3, task_redeploy=3,
+    report_missing=2, archive_race=1, binary_check_reframe=1, file_disappearance=1。傾向:
+    report_yaml_format前半29→後半12(↓改善)、commit_missing解消(7→0)、uncategorized急増(1→16,↑悪化)、task_redeploy新出(0→3)。直近10件WA5/10(50%)。【AC2
+    Top3根因】(1)report_yaml_format: lessons_useful dict→list(16件,忍者が0:{}/1:{}で書くYAML構文罠)+RFS未使用直接書込み(9件)+root_cause未記録(7件)+binary_checks形式問題(3件)。再発理由=事前防止なし+autofixパターン不網羅+CLAUDE.mdルールだけでは強制力不足
+    (2)uncategorized: 分類漏れ急増。root_cause未記録8件で分析不能。記録品質問題 (3)commit_missing: git_uncommitted_gate導入で完全解消。gate強制が有効な実証例。【AC3提案】(1)autofix
+    dict→list全パターン網羅(gate強化,-16件/130期待,-12.3pt) (2)uncategorized記録のcategory必須化+gate
+    WARN(テンプレート改善,分析精度向上) (3)report YAML直接編集hookブロック(hook追加,RFS使用強制,-9件+波及効果)'
+purpose_validation:
+  cmd_purpose: karo_workarounds.yaml workaround率60%(79/130)の根因パターン分析と構造的対策設計
+  fit: true
+  purpose_gap: ''
+files_modified:
+- change: modified
+  path: queue/reports/hanzo_report_cmd_1530.yaml
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: 'WA率60.8%の3構造問題: autofix不網羅+uncategorized分類漏れ+事前防止hook欠如'
+  detail: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし。commit_missing(7→0)はgate導入で完全解消=gateの有効性実証。提案:
+    (A)autofix dict→list全パターン網羅で-16件(gate強化) (B)uncategorized記録のcategory必須化(テンプレート改善)
+    (C)report直接編集hookブロック(hook追加,RFS強制)。gate強制>ルール記述の原則がcommit_missing解消で証明済み。同原則をreport_yaml_formatにも適用すべき'
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: bashスクリプトのset -e+((var++))パターンなし。Python分析スクリプトのみ使用
+- id: L063
+  useful: false
+  reason: Python YAML dict直接イテレーションなし。yaml.safe_load後はdata直接リスト操作
+- id: L102
+  useful: false
+  reason: karo_workarounds.yamlを参照データとして読取のみ。タスク仕様のデータソース誤記なし(L102パターンに該当せず)
+- id: L220
+  useful: false
+  reason: queue/ファイルのstage操作なし。報告YAMLはreport_field_set.sh経由
+- id: L028
+  useful: false
+  reason: gh run listでのデータ確認不要。ローカルファイル分析タスク
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: ''
+  AC1:
+  - check: karo_workarounds.yaml全件をcategory別に集計したか
+    result: 'yes'
+  - check: 直近10件での発生頻度(改善/悪化傾向)を算出したか
+    result: 'yes'
+  AC2:
+  - check: Top3 categoryのroot_cause共通パターンを抽出したか
+    result: 'yes'
+  - check: 再発理由を1段深掘りしたか
+    result: 'yes'
+  AC3:
+  - check: 対策3件提案したか
+    result: 'yes'
+  - check: 各提案に対象category/対策種別/期待削減件数を記載したか
+    result: 'yes'
+  - check: git commitを実施したか
+    result: 'no'
+verdict: ''

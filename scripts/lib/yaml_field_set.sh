@@ -14,6 +14,11 @@
 # - Uses flock -w 10 for exclusive writes.
 # - Verifies written value by re-reading; exits 1 with FATAL on mismatch.
 
+# Source lock_path helper for /tmp/-based lock files (WSL2 NTFS flock stability)
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/lock_path.sh" 2>/dev/null \
+    || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
+
 _yaml_field_set_trim() {
     local s="$1"
     s="${s#"${s%%[![:space:]]*}"}"
@@ -461,7 +466,8 @@ yaml_field_set() {
         return 1
     fi
 
-    local lock_file="${yaml_file}.lock"
+    local lock_file
+    lock_file="$(lock_path "$yaml_file")"
     local tmp_file
     tmp_file="$(mktemp "${yaml_file}.tmp.XXXXXX")" || {
         echo "FATAL: yaml_field_set: failed to create temp file for $yaml_file" >&2
