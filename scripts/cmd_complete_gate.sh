@@ -182,15 +182,18 @@ try:
         data = yaml.safe_load(f)
     if not data:
         sys.exit(0)
-    entries = data if isinstance(data, list) else data.get('commands', data.get('cmds', []))
-    if not isinstance(entries, list):
-        sys.exit(0)
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        if entry.get('id') == cmd_id:
+    cmds = data.get('commands', data.get('cmds', data))
+    if isinstance(cmds, dict):
+        entry = cmds.get(cmd_id, {})
+        if isinstance(entry, dict):
             print(entry.get('status', ''))
-            break
+    elif isinstance(cmds, list):
+        for entry in cmds:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get('id') == cmd_id:
+                print(entry.get('status', ''))
+                break
 except Exception as e:
     print(f'parse_error: {e}', file=sys.stderr)
 " 2>/dev/null || true)
@@ -206,12 +209,12 @@ except Exception as e:
             ;;
     esac
 
-    if ! yaml_field_set "$YAML_FILE" "$cmd_id" "status" "completed"; then
+    if ! yaml_field_set "$YAML_FILE" "$cmd_id" "status" "done"; then
         echo "ERROR: yaml_field_set failed (${cmd_id})" >&2
         return 1
     fi
 
-    echo "STATUS UPDATED: ${cmd_id} → completed"
+    echo "STATUS UPDATED: ${cmd_id} → done"
 }
 
 # ─── changelog自動記録関数 ───
