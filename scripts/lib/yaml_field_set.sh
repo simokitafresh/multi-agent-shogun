@@ -490,6 +490,12 @@ yaml_field_set() {
             rm -f "$tmp_file"
             if [ "$rc" -eq 2 ]; then
                 echo "FATAL: yaml_field_set: block_id not found and no root-level fields: $block_id ($yaml_file)" >&2
+                # Hint: suggest available top-level block keys
+                local _hint_blocks
+                _hint_blocks=$(awk '/^[a-zA-Z_][a-zA-Z0-9_.-]*:[[:space:]]*$/{sub(/:[[:space:]]*$/,"");print}' "$yaml_file" 2>/dev/null | head -5 | tr '\n' ', ' | sed 's/,$//')
+                if [ -n "$_hint_blocks" ]; then
+                    echo "Hint: available block_id: $_hint_blocks (例: yaml_field_set <file> task <field> <value>)" >&2
+                fi
             else
                 echo "FATAL: yaml_field_set: failed to rewrite file: $yaml_file" >&2
             fi
