@@ -1925,7 +1925,7 @@ try:
                         if matched_ninja:
                             continue
                         # Pattern 2: report_format:{ninja}_report... or report_yaml_missing:{ninja}_report...
-                        if f'_{ninja_name}_report' in reason or f'/{ninja_name}_report' in reason:
+                        if f':{ninja_name}_report' in reason or f'_{ninja_name}_report' in reason or f'/{ninja_name}_report' in reason:
                             cat = reason.split(':')[0] if ':' in reason else 'report_issue'
                             block_cats[cat] = block_cats.get(cat, 0) + 1
             if block_cats:
