@@ -173,7 +173,8 @@
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/prompt_state_inject.sh"
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/prompt_state_inject.sh",
+            "timeout": 10000
           }
         ]
       }
