@@ -2407,6 +2407,12 @@ if [ -n "$DEPLOY_PARENT_CMD" ]; then
         case "$_dd_status" in
             assigned|acknowledged|in_progress)
                 log "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status}, task_id: ${_dd_tid})"
+                # Rollback: resolve_cmd_to_taskが既にtask YAMLを書き換えているため、
+                # BLOCK時にidle状態に戻す。放置すると忍者がassigned状態で滞留する。
+                yaml_field_set "$_TASK_YAML" "task" "status" "idle" 2>/dev/null || true
+                yaml_field_set "$_TASK_YAML" "task" "parent_cmd" "" 2>/dev/null || true
+                yaml_field_set "$_TASK_YAML" "task" "task_id" "" 2>/dev/null || true
+                log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after duplicate deploy BLOCK"
                 echo "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status})" >&2
                 echo "Clear the existing task first: bash scripts/lib/yaml_field_set.sh queue/tasks/${_dd_ninja}.yaml task status idle" >&2
                 exit 1
