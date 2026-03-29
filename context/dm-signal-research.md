@@ -579,3 +579,5 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - R11 M4とR2の差分: 追い風-鉄壁(M4) vs 追い風-激攻(R2)のみ。MaxDD大差(-11.5% vs -16.7%)
 - TO(月次入替率): Ward K=5=19.6%, Greedy K=4=22.6%。Ward低回転で実運用有利
 - R27結論(cmd_1436): **WardTwoStageEWビルディングブロック実装**。R1-R26研究結論を汎用モジュール化(`scripts/analysis/nested_fof/building_block.py`)。内部K×LBグリッドサーチで最適パラメータ自動決定。R24/R25/R26の3データセット(21体/12体/65体)で既知最適(K*,LB*)再現確認+Sharpe 1e-4以内一致。コールドスタート(データ不足時1/N EW)・k_max自動クランプ実装済み
+- R27-旧PF結論(cmd_1441): **旧忍法15体+旧四神12体のWard+TwoStageEW 2Dグリッド分析**。旧忍法: K*=4,LB*=24,Sharpe=2.01,TwoStageEW優位率49.6%。旧四神: K*=4,LB*=12,Sharpe=1.55,TwoStageEW優位率76.7%。合計27体: K*=12,LB*=24,Sharpe=1.75。R25(12体,1.48)/R26(65体,1.49)より高Sharpe → `queue/archive/reports/hayate_report_cmd_1441_20260330.yaml`
+- ネオ五神偵察(cmd_1442): **GLD/USO/TIPの既存4absolute資産との相関偵察**。候補-既存max|r|: GLD=0.343(最有力), USO=0.378(次点), TIP=0.769(LQD冗長→不適)。危機時: GLD=利上げ時独立(全<0.17)、USO=COVID時VIX連動(0.719)、TIP=両危機でLQD完全連動。GLD独自ドライバー(中銀/地政学/インフレ) → `queue/archive/reports/hanzo_report_cmd_1442_20260330.yaml`
