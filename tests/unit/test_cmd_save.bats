@@ -7,6 +7,7 @@ setup() {
 
     mkdir -p "${TEST_TMP}/queue/archive/cmds"
     mkdir -p "${TEST_TMP}/scripts"
+    mkdir -p "${TEST_TMP}/context"
 
     # cmd_save.sh をコピーし、パスをテスト用に差し替え
     sed \
@@ -281,6 +282,190 @@ YAML
     echo "$output" >&2
     [[ "$status" -eq 0 ]]
     [[ "$output" == *"保存確認OK: cmd_9999"* ]]
+}
+
+# --- Check 11: impl cmd post-deploy verification AC検出 ---
+
+@test "Check11: dm-signal+impl ACにpush/deploy無しでWARN" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3001:
+    id: cmd_3001
+    acceptance_criteria:
+    - "AC1: engine.pyのcalculate関数を修正"
+    - "AC2: テスト実行+git commit"
+    project: dm-signal
+    task_type: impl
+    command: "engine.py修正"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3001
+    echo "$output" >&2
+    # push/deploy/verify/本番確認がACにない → WARN
+    [[ "$output" == *"デプロイ後の本番動作確認"* ]]
+    [[ "$output" == *"ACN: git push後"* ]]
+    [[ "$output" == *"cmd_1491"* ]]
+    # 非BLOCKなので保存OK
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check11: dm-signal+impl ACにpush有りでWARNなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3002:
+    id: cmd_3002
+    acceptance_criteria:
+    - "AC1: engine.pyのcalculate関数を修正"
+    - "AC2: git push後、本番確認"
+    project: dm-signal
+    task_type: impl
+    command: "engine.py修正+push"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3002
+    echo "$output" >&2
+    # ACにpushがある → WARNなし
+    [[ "$output" != *"デプロイ後の本番動作確認"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check11: dm-signal+impl ACにデプロイ有りでWARNなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3003:
+    id: cmd_3003
+    acceptance_criteria:
+    - "AC1: engine.pyの修正"
+    - "AC2: Renderデプロイ完了を確認"
+    project: dm-signal
+    task_type: impl
+    command: "engine.py修正"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3003
+    echo "$output" >&2
+    [[ "$output" != *"デプロイ後の本番動作確認"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check11: dm-signal+impl ACに本番動作確認有りでWARNなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3004:
+    id: cmd_3004
+    acceptance_criteria:
+    - "AC1: engine.pyの修正+テスト"
+    - "AC2: 本番動作確認。エンドポイントにアクセスし変更反映を確認"
+    project: dm-signal
+    task_type: impl
+    command: "engine.py修正"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3004
+    echo "$output" >&2
+    [[ "$output" != *"デプロイ後の本番動作確認"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check11: project=infraのimplはスキップ" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3005:
+    id: cmd_3005
+    acceptance_criteria:
+    - "AC1: gate追加"
+    - "AC2: テスト+commit"
+    project: infra
+    task_type: impl
+    command: "gate追加"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3005
+    echo "$output" >&2
+    # infraはCheck11対象外
+    [[ "$output" != *"デプロイ後の本番動作確認"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check11: dm-signal+reconはスキップ" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3006:
+    id: cmd_3006
+    acceptance_criteria:
+    - "AC1: コード調査"
+    project: dm-signal
+    task_type: recon
+    command: "調査"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3006
+    echo "$output" >&2
+    # reconはCheck11対象外
+    [[ "$output" != *"デプロイ後の本番動作確認"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check11: commandにpushがあってもACに無ければWARN" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3007:
+    id: cmd_3007
+    acceptance_criteria:
+    - "AC1: engine.py修正"
+    - "AC2: テスト+commit"
+    project: dm-signal
+    task_type: impl
+    command: "engine.py修正してgit push"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3007
+    echo "$output" >&2
+    # commandにpushがあるがACにはない → WARN出力
+    [[ "$output" == *"デプロイ後の本番動作確認"* ]]
+    [[ "$status" -eq 0 ]]
 }
 
 @test "Check1-5: quality_gate未記入でBLOCK" {

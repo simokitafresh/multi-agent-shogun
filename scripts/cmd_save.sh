@@ -358,8 +358,9 @@ check_ac_file_paths() {
 
 check_ac_file_paths
 
-# --- Check 11: impl cmd push/deploy AC検出（informational — WARN_COUNTに加算しない） ---
-# 目的: project=dm-signal + type=impl のcmdにpush/deploy ACがない場合に警告
+# --- Check 11: impl cmd post-deploy verification AC検出（informational — WARN_COUNTに加算しない） ---
+# 目的: project=dm-signal + type=impl のcmdのacceptance_criteria内にデプロイ後検証ACがない場合に警告
+# 起源: cmd_1491でpush漏れ→cmd_1492で後追い発生
 check_impl_push_ac() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
@@ -373,9 +374,26 @@ check_impl_push_ac() {
     TASK_TYPE=$(echo "$CMD_BLOCK" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
     [[ "$TASK_TYPE" != "impl" ]] && return 0
 
-    # CMD_BLOCK内のpush/deploy関連キーワード検索
-    if ! echo "$CMD_BLOCK" | grep -qiE 'push|deploy|デプロイ|Render|本番反映'; then
-        echo "WARNING: project=dm-signal + type=impl にpush/deploy関連ACがありません。本番反映手順の追加を検討してください" >&2
+    # acceptance_criteria セクションを抽出
+    local AC_SECTION
+    AC_SECTION=$(echo "$CMD_BLOCK" | awk '
+        /acceptance_criteria:/ { found=1; next }
+        found && /^    - / { print; next }
+        found && /^      / { print; next }
+        found { exit }
+    ')
+
+    # acceptance_criteriaがない場合はCMD_BLOCK全体にフォールバック
+    if [[ -z "$AC_SECTION" ]]; then
+        AC_SECTION="$CMD_BLOCK"
+    fi
+
+    # AC内にpush/deploy/verify/本番確認関連キーワードがあるか
+    if ! echo "$AC_SECTION" | grep -qiE 'push|deploy|デプロイ|verify|本番確認|本番反映|本番動作|Render'; then
+        echo "WARNING: project=dm-signal + type=impl のACにデプロイ後の本番動作確認が含まれていません" >&2
+        echo "  デプロイ後の本番動作確認ACを追加せよ。例:" >&2
+        echo '  - "ACN: git push後、Render自動デプロイ完了を確認。本番エンドポイントで変更反映を目視確認"' >&2
+        echo "  (cmd_1491教訓: push漏れ→cmd_1492で後追い発生)" >&2
     fi
 }
 
