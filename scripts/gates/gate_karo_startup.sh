@@ -180,6 +180,33 @@ else
     echo "  SKIP: gate_ninja_workaround_rate.sh が存在しないか実行権限なし"
 fi
 
+# --- Check 8: idle自走プロンプト ---
+echo ""
+echo "■ 自走チェック"
+# 全忍者がidle or completedか確認
+active_ninjas=0
+for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+    task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+    if [ -f "$task_file" ]; then
+        ninja_status=$(awk '/^  status:/{print $2; exit}' "$task_file" 2>/dev/null)
+        if [[ "$ninja_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
+            active_ninjas=$((active_ninjas + 1))
+        fi
+    fi
+done
+if [ "$active_ninjas" -eq 0 ] && [ "$unread" -eq 0 ]; then
+    echo "  全忍者idle + inbox未読=0。cmd待ち状態。"
+    echo "  ★★★ idle時自走プロトコルを実行せよ（instructions/karo.md参照） ★★★"
+    echo "  Step 1: workaroundパターン分析(直近10件)"
+    echo "  Step 2: 忍者品質プロファイル(個別WA率)"
+    echo "  Step 3: 教訓有効性監査(有用率0%→deprecated)"
+    echo "  Step 4: deploy_task.sh注入品質(教訓使用実態)"
+    echo "  Step 5: パターン発見→なぜなぜ→行動"
+    echo "  → 止まるな。1つ完了したら次へ"
+else
+    echo "  active忍者: ${active_ninjas}名 / inbox未読: ${unread}件"
+fi
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="
