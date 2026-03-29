@@ -2387,6 +2387,12 @@ inject_ninja_weak_points "$TASK_FILE" "$NINJA_NAME" || true
 # context鮮度チェック（失敗してもデプロイは継続）
 check_context_freshness "$TASK_FILE" || true
 
+# 報告YAML雛形生成（inbox_writeより前に実行: 忍者がnudge受信後に即report_field_set.shで書込めるよう順序保証）
+TASK_ID=$(field_get "$TASK_FILE" "task_id" "")
+PARENT_CMD=$(field_get "$TASK_FILE" "parent_cmd" "")
+PROJECT=$(field_get "$TASK_FILE" "project" "")
+generate_report_template "$NINJA_NAME" "$TASK_ID" "$PARENT_CMD" "$PROJECT"
+
 # 状態に応じた処理
 if [ "$CTX_PCT" -le 0 ] 2>/dev/null; then
     # CTX:0% — /clear済み、またはフレッシュセッション
@@ -2406,12 +2412,6 @@ fi
 
 # 初回配備開始通知（cmd_496: 同一cmdで1回のみ、失敗時non-blocking）
 notify_initial_deploy_ntfy_once "$TASK_FILE" "$NINJA_NAME" || true
-
-# 報告YAML雛形生成（配備完了ログの直前）
-TASK_ID=$(field_get "$TASK_FILE" "task_id" "")
-PARENT_CMD=$(field_get "$TASK_FILE" "parent_cmd" "")
-PROJECT=$(field_get "$TASK_FILE" "project" "")
-generate_report_template "$NINJA_NAME" "$TASK_ID" "$PARENT_CMD" "$PROJECT"
 
 # deployed_at自動記録（cmd_387: 初回配備時のみ記録、再配備時は保持）
 record_deployed_at "$TASK_FILE" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
