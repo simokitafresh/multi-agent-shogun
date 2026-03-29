@@ -264,6 +264,48 @@ EOF
     echo "CHANGELOG: ${cmd_id} recorded (project=${project})"
 }
 
+# ─── 軍師自動レビュー通知（cmd_1527: L3自動化） ───
+# 忍者reportのstatus:completedを検知 → gunshi inboxに自動通知
+# training/修行cmdはスキップ（AC2）
+notify_gunshi_for_report() {
+    local ninja_name="$1"
+    local report_path="$2"
+    local cmd_id="$3"
+
+    # AC2: training/修行cmdはスキップ
+    if [[ "$cmd_id" == cmd_training_* ]] || [[ "$cmd_id" == cmd_cycle_* ]]; then
+        echo "  gunshi_notify: SKIP (training cmd: ${cmd_id})"
+        return 0
+    fi
+
+    # 重複通知防止（フラグファイル）
+    local gates_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
+    mkdir -p "$gates_dir"
+    local flag_file="${gates_dir}/gunshi_notify_${ninja_name}.done"
+    if [ -f "$flag_file" ]; then
+        return 0
+    fi
+
+    # レポート内のstatus確認（completed or done）
+    local report_status
+    report_status=$(grep -E '^\s*status:' "$report_path" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
+    if [ "$report_status" != "completed" ] && [ "$report_status" != "done" ]; then
+        return 0
+    fi
+
+    # 軍師にinbox通知
+    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
+        "${ninja_name}報告完了。レビュー依頼: ${cmd_id} report=$(basename "$report_path")" \
+        report_review karo 2>/dev/null; then
+        echo "  gunshi_notify: SENT (${ninja_name} → gunshi)"
+        echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$flag_file"
+        echo "ninja: ${ninja_name}" >> "$flag_file"
+        echo "report: $(basename "$report_path")" >> "$flag_file"
+    else
+        echo "  gunshi_notify: WARN (inbox_write failed for ${ninja_name})"
+    fi
+}
+
 # ─── task_type検出: タスクYAMLからparent_cmd一致のtask_typeを収集 ───
 detect_task_types() {
     local cmd_id="$1"
@@ -1974,6 +2016,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     if [ -f "$report_file" ]; then
         REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
         echo "  ${ninja_name}: OK ($(basename "$report_file"))"
+        notify_gunshi_for_report "$ninja_name" "$report_file" "$CMD_ID"
     else
         # GP-026 B案(cmd_1332): done以外の全状態(assigned/acknowledged/in_progress)でWAIT
         ninja_status=$(grep -E '^\s+status:' "$task_file" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
@@ -2010,6 +2053,7 @@ if [ "${#REPORT_WAIT_NINJAS[@]}" -gt 0 ]; then
             if [ -f "$report_file" ]; then
                 REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
                 echo "  ${ninja_name}: OK (retry ${wait_retry}で発見: $(basename "$report_file"))"
+                notify_gunshi_for_report "$ninja_name" "$report_file" "$CMD_ID"
             elif [ "$wait_retry" -eq "$WAIT_MAX_RETRIES" ]; then
                 REPORT_MISSING_FILES+=("$(basename "$report_file")")
                 echo "  [CRITICAL] ${ninja_name}: MISSING ← retry ${WAIT_MAX_RETRIES}回後も報告YAML不在: $(basename "$report_file")"
