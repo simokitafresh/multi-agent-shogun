@@ -2541,7 +2541,7 @@ inject_related_lessons "$TASK_FILE" || true
 # cmd_1321: auto-injectフィールド一括クリア（前cmdの残留値を排除）
 # cmd_1312方式を8箇所に横展開: inject前にフィールド削除→再inject
 # cmd_1393: Python→awk置換
-_CLEAR_FIELDS="engineering_preferences|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points"
+_CLEAR_FIELDS="engineering_preferences|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
 _clear_tmp=$(mktemp)
 if awk -v fields="$_CLEAR_FIELDS" '
     BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
