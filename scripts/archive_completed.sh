@@ -682,7 +682,7 @@ archive_reports() {
                 )
 
                 case "$cmd_status" in
-                    pending|in_progress|acknowledged)
+                    pending|delegated|in_progress|acknowledged)
                         kept=$((kept + 1))
                         continue
                         ;;
@@ -712,6 +712,18 @@ archive_reports() {
                         # No active children — safe to archive
                         ;;
                 esac
+            fi
+
+            # archive.doneチェック: GATE未完了cmdの報告をsweepから保護
+            # archive.doneはcmd_complete_gate.shのGATE CLEAR最終ステップで作成される。
+            # これがない=GATEの全処理未完了→報告退避は早すぎる(cmd_1519-1522レース事故の再発防止)
+            if [ -n "$parent_cmd" ]; then
+                local archive_done_flag="$PROJECT_DIR/queue/gates/${parent_cmd}/archive.done"
+                if [ ! -f "$archive_done_flag" ]; then
+                    echo "[archive] SKIP(sweep): archive.done not found for ${parent_cmd}: $(basename "$report_file")"
+                    kept=$((kept + 1))
+                    continue
+                fi
             fi
         fi
 
