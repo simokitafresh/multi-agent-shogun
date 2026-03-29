@@ -719,11 +719,18 @@ archive_reports() {
             # archive.doneはcmd_complete_gate.shのGATE CLEAR最終ステップで作成される。
             # これがない=GATEの全処理未完了→報告退避は早すぎる(cmd_1519-1522レース事故の再発防止)
             if [ -n "$parent_cmd" ]; then
-                local archive_done_flag="$PROJECT_DIR/queue/gates/${parent_cmd}/archive.done"
-                if [ ! -f "$archive_done_flag" ]; then
-                    echo "[archive] SKIP(sweep): archive.done not found for ${parent_cmd}: $(basename "$report_file")"
-                    kept=$((kept + 1))
-                    continue
+                # 修練cmd例外: training/cycle/selfimprovementはGATEフロー外のためarchive.doneチェック不要
+                local skip_archive_done=false
+                case "$parent_cmd" in
+                    cmd_training_*|cmd_cycle_*|cmd_selfimprovement_*) skip_archive_done=true ;;
+                esac
+                if [ "$skip_archive_done" = "false" ]; then
+                    local archive_done_flag="$PROJECT_DIR/queue/gates/${parent_cmd}/archive.done"
+                    if [ ! -f "$archive_done_flag" ]; then
+                        echo "[archive] SKIP(sweep): archive.done not found for ${parent_cmd}: $(basename "$report_file")"
+                        kept=$((kept + 1))
+                        continue
+                    fi
                 fi
             fi
         fi

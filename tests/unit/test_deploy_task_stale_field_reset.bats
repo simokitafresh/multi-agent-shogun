@@ -65,6 +65,11 @@ task:
   - AC2
   - AC3
   scout_exempt: true
+  command: 'gate_fire_log書込み箇所にgate名フィールドを追加せよ'
+  reports_to_read:
+  - 'queue/reports/old_report.yaml'
+  credential_warning: '⚠ 認証が必要なタスク'
+  context_update: '前cmdのcontext更新情報'
   AC1: '旧AC1: SF LOW偵察のAC1'
   AC2: '旧AC2: SF LOW偵察のAC2'
   AC3: '旧AC3: git commit'
@@ -134,6 +139,7 @@ STALE_FIELDS = [
     'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
     'AC1', 'AC2', 'AC3', 'scout_exempt',
+    'command', 'reports_to_read', 'credential_warning', 'context_update',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:
@@ -307,6 +313,32 @@ else:
 @test "再配備でac_checkpoint(スカラー)がクリアされる" {
     run_resolve_cmd_to_task cmd_9999 tobisaru
     result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "ac_checkpoint")
+    [ -z "$result" ]
+}
+
+# ─── 第4層: 旧版由来の残留フィールドのテスト ───
+
+@test "再配備でcommand(旧版残留)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "command")
+    [ -z "$result" ]
+}
+
+@test "再配備でreports_to_read(リスト)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "reports_to_read")
+    [ -z "$result" ]
+}
+
+@test "再配備でcredential_warning(スカラー)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "credential_warning")
+    [ -z "$result" ]
+}
+
+@test "再配備でcontext_update(スカラー)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "context_update")
     [ -z "$result" ]
 }
 

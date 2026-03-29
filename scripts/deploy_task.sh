@@ -202,6 +202,8 @@ STALE_FIELDS = [
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
     # 第3層: 忍者書込み+per-cmdフラグ
     'AC1', 'AC2', 'AC3', 'scout_exempt',
+    # 第4層: 旧版由来の残留フィールド(現在の配備パイプラインでは設定されないが使い回しで残る)
+    'command', 'reports_to_read', 'credential_warning', 'context_update',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:
