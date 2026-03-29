@@ -86,6 +86,8 @@ LAST_BATCH_FLUSH=0   # ntfy_batch_flush最終実行時刻（epoch秒）
 CDP_CLEANUP_SCRIPT="$SCRIPT_DIR/scripts/cdp_chrome_cleanup.sh"
 CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
 LAST_CDP_CLEANUP=0        # CDP cleanup最終実行時刻（epoch秒）
+KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
+LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
 
 # 監視対象の忍者名リスト（karoと将軍は対象外）
 # settings.yamlから動的取得（cmd_1136: ハードコード全廃）
@@ -2415,6 +2417,48 @@ run_cdp_cleanup() {
     LAST_CDP_CLEANUP=$now
 }
 
+# ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
+# 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
+check_karo_idle_cycle() {
+    local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
+    [ ! -f "$snapshot_file" ] && return
+
+    # 条件1: 全忍者がidle/completed/doneか確認
+    local ninja_total
+    ninja_total=$(grep -c "^ninja|" "$snapshot_file" || true)
+    [ "${ninja_total:-0}" -eq 0 ] && return
+
+    local active_count
+    active_count=$(awk -F'|' '/^ninja\|/ && $4 !~ /^(idle|completed|done)$/' "$snapshot_file" | wc -l)
+    if [ "${active_count:-0}" -gt 0 ]; then
+        return
+    fi
+
+    # 条件2: パイプラインに未処理cmdがないか確認
+    local pending_count
+    pending_count=$(grep -cE '^\s+status:\s*(pending|new)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+    if [ "${pending_count:-0}" -gt 0 ]; then
+        return
+    fi
+
+    # クールダウンチェック（30分）
+    local now
+    now=$EPOCHSECONDS
+    local elapsed=$(( now - LAST_KARO_IDLE_NUDGE ))
+    if [ "$elapsed" -lt "$KARO_IDLE_COOLDOWN" ]; then
+        return
+    fi
+
+    # 全条件成立: 家老に改善サイクル起動を通知
+    log "KARO-IDLE-CYCLE: All ${ninja_total} ninjas idle/completed/done + pipeline empty → nudging karo"
+    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "全忍者idle+パイプライン空。改善サイクルを回せ。" karo_idle_cycle ninja_monitor >> "$LOG" 2>&1; then
+        LAST_KARO_IDLE_NUDGE=$now
+        log "KARO-IDLE-CYCLE: Sent improvement cycle nudge to karo"
+    else
+        log "ERROR: KARO-IDLE-CYCLE inbox_write failed"
+    fi
+}
+
 # ─── 初期ペイン探索 ───
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
     # shellcheck disable=SC2317
@@ -2673,6 +2717,7 @@ while true; do
     # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
     write_state_file
     write_karo_snapshot   # 家老陣形図更新（毎サイクル）
+    check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)
 
