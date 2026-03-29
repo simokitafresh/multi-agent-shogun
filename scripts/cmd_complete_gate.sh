@@ -1736,7 +1736,7 @@ preflight_gate_flags() {
     done
     if [ "$tp_warn_count" -gt 0 ]; then
         echo "    -> ${tp_warn_count} file(s) with uncommitted changes (WARN, non-blocking)"
-        echo "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${cmd_id} target_path_uncommitted: ${tp_warn_count} file(s)" >> "$LOG_DIR/gate_fire_log.yaml"
+        echo "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${cmd_id} gate: \"cmd_complete_gate\" target_path_uncommitted: ${tp_warn_count} file(s)" >> "$LOG_DIR/gate_fire_log.yaml"
     else
         echo "    all target_path committed (OK)"
     fi

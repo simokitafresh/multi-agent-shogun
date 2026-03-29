@@ -486,7 +486,7 @@ if echo "$RESULT" | grep -q "^AUTO-FIXED"; then
     FIXED_ITEMS=$(echo "$RESULT" | sed 's/^AUTO-FIXED: //' | sed 's/"/\\"/g')
     (
         flock -w 5 200 2>/dev/null
-        printf -- '- ts: "%s", file: "%s", result: AUTO-FIXED, fixes: "%s"\n' "$TS" "$REPORT_PATH" "$FIXED_ITEMS" >> "$LOG_FILE"
+        printf -- '- ts: "%s", file: "%s", gate: "gate_report_autofix", result: AUTO-FIXED, fixes: "%s"\n' "$TS" "$REPORT_PATH" "$FIXED_ITEMS" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
     exit 0
 elif echo "$RESULT" | grep -q "^NO-FIX-NEEDED"; then
@@ -496,7 +496,7 @@ else
     REASON=${RESULT//\"/\\\"}
     (
         flock -w 5 200 2>/dev/null
-        printf -- '- ts: "%s", file: "%s", result: UNFIXABLE, reason: "%s"\n' "$TS" "$REPORT_PATH" "$REASON" >> "$LOG_FILE"
+        printf -- '- ts: "%s", file: "%s", gate: "gate_report_autofix", result: UNFIXABLE, reason: "%s"\n' "$TS" "$REPORT_PATH" "$REASON" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
     exit 1
 fi
