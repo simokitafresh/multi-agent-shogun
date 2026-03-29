@@ -418,7 +418,7 @@ check_lesson_effectiveness() {
     local reversed_file
     reversed_file="$(mktemp)"
 
-    awk '{rows[NR]=$0} END{for(i=NR;i>=1;i--) print rows[i]}' "$LESSON_IMPACT_FILE" > "$reversed_file"
+    tail -2000 "$LESSON_IMPACT_FILE" | tac > "$reversed_file"
 
     awk -F'\t' -v limit="$LESSON_EFFECT_WINDOW_CMDS" -v project="$target_project" '
         $1 == "timestamp" { next }
