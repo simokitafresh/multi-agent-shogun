@@ -11,6 +11,7 @@
 #   2. archive/cmds/配下の完了済みcmd_idとの重複チェック
 #   3. quality_gateフィールド検査（q1_firefighting, q2_learning, q3_next_quality, q4_depth[WARNING]）
 #   4. flock競合検出（家老との同時書き込み防止）
+#   12. 内容重複チェック（直近20件のtitle+purposeとの類似度比較）
 # ============================================================
 set -euo pipefail
 
@@ -398,6 +399,83 @@ check_impl_push_ac() {
 }
 
 check_impl_push_ac
+
+# --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
+# 起源: 重複cmd起票の構造的防止
+# 目的: 新cmdのtitle+purposeと直近20件の類似度を比較しWARN（50%以上）
+check_content_duplicate() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+    [[ ! -f "$QUEUE_FILE" ]] && return 0
+
+    python3 - "$QUEUE_FILE" "$CMD_ID" <<'PY' 2>&1 | cat >&2
+import sys, re, yaml
+
+def tokenize(text):
+    """title+purposeをトークン集合に変換。ASCII単語+日本語2gramで混合テキスト対応"""
+    if not text:
+        return set()
+    tokens = set()
+    for t in re.findall(r'[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9]|[a-zA-Z0-9]{2,}', text.lower()):
+        tokens.add(t)
+    jp_chars = re.sub(r'[\x00-\x7f\s]', '', text)
+    for i in range(len(jp_chars) - 1):
+        tokens.add(jp_chars[i:i+2])
+    return tokens
+
+def similarity(s1, s2):
+    """共通単語数/全単語数(Jaccard)"""
+    if not s1 or not s2:
+        return 0.0
+    union = s1 | s2
+    return len(s1 & s2) / len(union) * 100 if union else 0.0
+
+queue_file, current_cmd = sys.argv[1], sys.argv[2]
+
+try:
+    with open(queue_file) as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    sys.exit(0)
+
+cmds = data.get("commands", {})
+if not isinstance(cmds, dict) or current_cmd not in cmds:
+    sys.exit(0)
+
+current = cmds[current_cmd]
+if not isinstance(current, dict):
+    sys.exit(0)
+
+new_title = str(current.get("title", "") or "")
+new_purpose = str(current.get("purpose", "") or "")
+new_words = tokenize(new_title) | tokenize(new_purpose)
+if not new_words:
+    sys.exit(0)
+
+cmd_ids = sorted(cmds.keys())
+cmd_ids = [c for c in cmd_ids if c != current_cmd][-20:]
+
+hits = []
+for cid in cmd_ids:
+    entry = cmds[cid]
+    if not isinstance(entry, dict):
+        continue
+    t = str(entry.get("title", "") or "")
+    p = str(entry.get("purpose", "") or "")
+    other_words = tokenize(t) | tokenize(p)
+    sim = similarity(new_words, other_words)
+    if sim >= 50:
+        hits.append((cid, t[:50], sim))
+
+if hits:
+    hits.sort(key=lambda x: -x[2])
+    print("WARNING: 内容重複の可能性を検出（類似度50%以上）", file=sys.stderr)
+    for cid, title, sim in hits:
+        print(f"  {cid}: {title} — 類似度{sim:.0f}%", file=sys.stderr)
+    print("  → 重複起票でないか確認してください（BLOCKではありません）", file=sys.stderr)
+PY
+}
+
+check_content_duplicate
 
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
