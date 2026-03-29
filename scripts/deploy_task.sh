@@ -30,9 +30,10 @@ source "$SCRIPT_DIR/lib/agent_state.sh"
 NINJA_NAME="${1:-}"
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
 
-# cmd_id自動検出: $2がcmd_で始まればcmd_id、そうでなければmessage（後方互換）
+# cmd_id自動検出: $2がcmd_+数字で始まればcmd_id、そうでなければmessage（���方互換）
+# cmd_testのようなテスト用識別子は除外（数字のみマッチ）
 CMD_ID=""
-if [[ "${2:-}" == cmd_* ]]; then
+if [[ "${2:-}" =~ ^cmd_[0-9]+ ]]; then
     CMD_ID="$2"
     MESSAGE="${3:-$DEFAULT_MESSAGE}"
     TYPE="${4:-task_assigned}"

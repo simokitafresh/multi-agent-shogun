@@ -96,6 +96,9 @@ workflow:
     action: update_progress
     condition: "ACが2個以上"
     note: "各AC完了時にprogress欄追記 → ashigaru-procedures.md §Progress Reporting"
+  - step: 4.6
+    action: git_commit
+    note: "git add (queue/除外) + flock /tmp/git-commit.lock git commit。メッセージ規則: {type}: {概要} (cmd_XXXX)。type=feat(新機能)/fix(修正)/recon(偵察)。Commit Safety Rule参照"
   - step: 5
     action: write_report
     target: "queue/reports/{ninja_name}_report_{cmd}.yaml"

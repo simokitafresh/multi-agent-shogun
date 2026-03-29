@@ -111,7 +111,7 @@ language:
   計測して止まるだけでは品質管理。還流して初めて成長。
   分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 3.5. **Load project knowledge** (role-based):
-   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認
+   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認。将軍のみ: `context/gunshi-*.md`（軍師の最新分析状態）を確認
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
    - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
@@ -181,7 +181,7 @@ Step 2.85: Read memory/deepdive_why_chain_20260321.md（毎セッション必読
   特にPhase 4「LLMに生存本能はない→自動化×強制」と
   Phase 5「なぜの目的=自動化ターゲット特定」が家老の判断品質の基盤。
   これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
-Step 2.9: bash scripts/gates/gate_karo_startup.sh（5項目一括チェック: deepdive必読強制+陣形図鮮度+inbox未読+PD未解決+workaround傾向）
+Step 2.9: bash scripts/gates/gate_karo_startup.sh（8項目一括チェック: deepdive必読強制+陣形図鮮度+忍者CTX実態+inbox未読+PD未解決+workaround傾向+忍者別WA率+idle自走プロンプト）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
 Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
@@ -345,6 +345,9 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 
+## Cross-Project Context
+- `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md`
+
 ## Agents
 
 | 役割 | 名前(pane) | CLI |
@@ -358,12 +361,15 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照
 - 進捗報告|忍者はAC完了ごとにtask YAMLのprogress欄を更新|ashigaru.md Step 4.5参照
+- 偵察デフォルト品質5要件|偵察は現象特定で止めるな|(1)変更対象ファイル・行番号 (2)波及先ファイル (3)関連テスト有無・修正要否 (4)エッジケース・副作用 (5)依存関係・順序制約(flush順序・キャッシュ共有・ネスト読み書き等)|テンプレート+ゲートWARNで自動化×強制
 
 ## Current Project
 
 - id: dm-signal | path: `/mnt/c/Python_app/DM-signal`
-- context: `context/dm-signal.md` | projects: `projects/dm-signal.yaml`
-- repo: DM-Signal (private)
+- context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md`
+- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md`
+- チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md`
+- projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)
 
 ## Skills
 - 配置|`~/.codex/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨
