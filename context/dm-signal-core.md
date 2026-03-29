@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-03-20 cmd_1123 PI制度導入+FoF flush修正(cmd_1096)+resample修正(cmd_1115)+PBarSelectionBlock+p̄バッチ -->
+<!-- last_updated: 2026-03-29 cmd_1480 鮮度確認(実質変更なし。cmd_1463-1478はops領域) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

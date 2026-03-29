@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-03-20 cmd_1155 verify — 全実装検証PASS+累積変更一括commit -->
+<!-- last_updated: 2026-03-29 cmd_1480 context鮮度更新(357.28s+OPT-12~15+GP-124+crash-safety) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -8,8 +8,10 @@
 
 ## §6-7 recalculate_fast.py + OPT-E
 
-6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。最新本番: **349s/124PF**(2026-03-28 cmd_1444)。
+6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。最新本番: **357.28s/124PF**(2026-03-29 cmd_1478, OPT-12~15全反映)。
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
+crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテーブルDB永続化+pg_advisory_lock排他制御(key=8675309, セッション保持方式, fail-open)。SIGKILL時PostgreSQL自動解放。
+GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_integrity)。zero-signal自動検知WARN+signal COUNT記録。OPT-13(修正)+GP-124(検知)=二重防御。
 詳細アーキ全量解析(2026-03-28コード全文読了) → `docs/research/fullrecalculate-architecture-2026-03-28.md`
 旧アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
 - L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）
@@ -31,12 +33,30 @@
 | OPT-A/D/F | 2,397s | — | — | 2,007s |
 | OPT-E | 389s | — | — | 0.53s |
 | OPT-1/2(cmd_1448) | 564s(本番) | — | — | 0.53s |
-| ローカル(cmd_1444) | **349s** | — | — | 0.53s |
-| **OPT-A/6/perf_calc除去(cmd_1454)** | **260s(本番)** | **155s** | **62s** | 0.53s |
+| ローカル(cmd_1444) | 349s | — | — | 0.53s |
+| OPT-A/6/perf_calc除去(cmd_1454) | 260s(本番) | 155s | 62s | 0.53s |
+| Cycle 1 baseline(cmd_1466) | 637.80s | 240.66s | 362.27s | 1.06s |
+| Cycle 2(cmd_1474) ※FAIL | 380.53s※ | 109.65s | 235.37s | — |
+| **Cycle 3(cmd_1478) OPT-12~15全反映** | **357.28s** | **109.47s** | **214.01s** | 1.10s |
 
-本番ボトルネック(cmd_1454後260s): monthly_returns_gen > trade_perf(OPT-4/5で対処中,cmd_1455) > db_query
-pipeline_exec 626sはリソース競合anomaly(正常42s, cmd_1456飛猿偵察で判明)。Wardキャッシュ効果0%
-初回→現在: **97.8%削減(11,818s→260s)**。⚠ 軍師分析の2665sはリソース競合anomaly run
+※cmd_1474はネステッドFoF 15体未処理(FAIL)のため無効値。cmd_1466 637.80sとcmd_1454 260sの乖離=計測範囲+データ量差。
+
+OPT一覧(1-15):
+| OPT | 内容 | 状態 | cmd |
+|-----|------|------|-----|
+| OPT-1/2 | Signal+Portfolio一括ロード | ✅本番適用 | cmd_1448 |
+| OPT-3 | business_days pure版化 | ✅本番適用 | cmd_1464 |
+| OPT-4/5 | Trade Perf一括ロード+Phase4.5 OPT-6適用 | ✅本番適用 | cmd_1455 |
+| OPT-6 | signal_cache共有(MR gen 512→56s) | ✅本番適用 | cmd_1455 |
+| OPT-12 | gc.collect削減(59→5回)+fof_signals dead code除去+profiling改善 | ✅本番適用 | 軍師直接 |
+| OPT-13 | ネステッドFoF回帰修正(signal_cache→DB補完) | ✅本番適用 | 軍師直接 |
+| OPT-14 | Standard PF signals flush INSERT化(cleanup_mode=True) | ✅本番適用 | 軍師直接 |
+| OPT-15 | component_weights commit集約(59→6) | ✅本番適用 | 軍師直接 |
+
+本番ボトルネック(cmd_1478後357s): L2 trade_perf推定~100-105s(28%) > L3 daily_loop 67.88s(19%) > L3 mr_gen 55.21s(15%) > L2 db_write 44.89s(13%) > L3 dw_signals_flush 41.93s(12%)
+初回→現在: **97.0%削減(11,818s→357.28s)**。Cycle 1→Cycle 3: **-44.0%**
+残改善ターゲット: L2 trade_perf残(whileループNumPy化)、L3 daily_loop(部分batch化)
+軍師詳細分析: `context/gunshi-fullrecalc-speed-analysis.md` (3サイクル比較・ボトルネック構造・予測精度検証)
 - L503: DM-SignalリポジトリにGitHub Actionsワークフロー未設定(.github/workflows/不在)（cmd_1448）
 - L504: 性能異常値はリソース競合を先に疑え。pipeline_exec 626sは同時実行run起因のanomaly（cmd_1456）
 詳細: `docs/research/gunshi-opt12-fullrecalc-analysis.md` §本番内訳 参照

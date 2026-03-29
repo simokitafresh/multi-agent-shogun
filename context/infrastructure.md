@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-03-20 cmd_1183 軍師+gate強化索引反映 -->
+<!-- last_updated: 2026-03-29 cmd_1480 偵察5要件追加+cmd_1476反映 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -56,6 +56,18 @@ gstack Tier1-2取込(875/876): 忍者プロンプト強化+家老Two-pass Review
 → `instructions/gunshi.md` §Review Criteria / §5段階思考プロトコル / §Report Review
 - L271: gunshi_accuracy_log.sh未作成 — 軍師accuracy計測スクリプト欠落（cmd_1158）
 - L281: 軍師基準設計は実例駆動で内面化する（cmd_1174）
+
+## 偵察デフォルト品質5要件（cmd_754+cmd_1476）
+
+偵察は現象特定で止めるな。以下5要件をデフォルト品質として自動化×強制:
+1. 変更対象ファイル・行番号
+2. 波及先ファイル
+3. 関連テスト有無・修正要否
+4. エッジケース・副作用
+5. **依存関係・順序制約**(flush順序・キャッシュ共有・ネスト読み書き等) ← cmd_1476追加
+
+テンプレート(deploy_task.sh)+ゲートWARN(cmd_design_quality.yaml)で強制。cmd_754で4要件導入、cmd_1476で第5要件追加(DC裁定)。
+→ `instructions/ashigaru.md` 偵察テンプレート / `logs/cmd_design_quality.yaml` q4_depth
 
 ## 忍者個別弱点自動注入（cmd_1307）
 

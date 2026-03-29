@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-03-20 cmd_1123 Biome導入(cmd_971)+304 cache修正(cmd_1011)+表示バグ修正(cmd_1003) -->
+<!-- last_updated: 2026-03-29 cmd_1480 鮮度確認(実質変更なし。cmd_1463-1478��ops領���) -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
