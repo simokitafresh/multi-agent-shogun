@@ -132,6 +132,8 @@
 !context/senkyoku-log.md
 !context/training-cycle.md
 !context/oshio-comparison.md
+!context/archive/
+!context/archive/*.md
 
 # Scripts
 !scripts/

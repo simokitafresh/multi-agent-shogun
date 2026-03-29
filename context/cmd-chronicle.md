@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-30 -->
+<!-- last_updated: 2026-03-30 (cmd_1551: 03-09分割+cmd_1535-1550追記) -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -7,49 +7,7 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_666 | PF切り替え+ページ遷移の7.5秒遅延の根本原因を特定し、10倍速(750ms以内)を実現する | dm-signal | 03-09 | PF切替遅延偵察+改善 — 7.5秒→750ms目標 |
-| cmd_668 | Dashboardはyears=0(全期間)で取得するが、prefetchはyears=3/20しか取得しない。prefetch側にyears=0を追加しキャッシュヒットさせる | dm-signal | 03-09 | prefetch側へ performance 0 / |
-| cmd_669 | 背景画像で文字コントラストが不安定。無地背景をデフォルトにし、TextMutedのWCAG不合格を修正する | infra | 03-09 | Android アプリに背景ス |
-| cmd_662 | WSL2からEdge/Chromeを自動操作するCDPヘルパーをライブラリ化し、忍者が毎回インラインで書く無駄を排除する | auto-ops | 03-09 | 全AC PASS。11関数レビュ |
-| cmd_670 | cmd_668(prefetchにyears=0追加)デプロイ後のPF切り替え速度を本番で計測し、改善効果を定量確認する | dm-signal | 03-09 | PF切替高速化 効果計測 — cmd_668デプロイ後 |
-| cmd_671 | PCターミナル出力をそのまま表示しているため小画面で読みにくい。フォントサイズ調整とピンチズームで各デバイスに最適化する | infra | 03-09 | AC1-7全PASS。フォントサ |
-| cmd_673 | Google Classroomダッシュボードのクラウド完全自動化に向け、現行スクレイピング構成を解明し、Render上ヘッドレスChromeで過去に取得できなかった情報の原因を特定する | google-classroom | 03-09 | Google Classroomスクレイ |
-| cmd_663 | Google Workspace CLI(gws)をインストールし、Gmail検索・Drive操作が動作する状態を確立する | auto-ops | 03-09 | AC1-5全PASS。gws 0.8.0更新 |
-| cmd_674 | cmd_671で追加したピンチズーム(0.5x-3.0x)が不要と殿が判断。フォントサイズ4段階設定で可読性は十分。ピンチズーム関連コードを削除してコードをシンプルに保つ | infra | 03-09 | PASS。AC1-4全て満足。ピンチズーム関連コード(state/modi… |
-| cmd_672 | cmd_668のyears=0 prefetch追加はBG prefetch量増加で逆効果(7.5s→9.4s)。revert後、Semaphore優先度制御を導入しユーザー操作をBGより優先する | dm-signal | 03-09 | ローカル実装は完了。`609558a` で cmd_668 を rever… |
-| cmd_675 | ターミナル出力の折り返し表示をユーザーが切替可能にする。コードを見る時は折り返しなし、長文を読む時は折り返しありが便利 | infra | 03-09 | cmd_675 soft wrap設定実装 |
-| cmd_677 | PCターミナルの全幅をスマホ画面にフィットさせる「縮小表示」と、細部確認の「拡大表示」を両立する。PDFビューアと同じ自然なピンチズームUX | infra | 03-09 | AC1-5 PASS。ShogunScreen と |
-| cmd_678 | ターミナル表示エリアを最大化する。キーボード表示時に送信ボタンが隠れる致命的バグも修正 | infra | 03-09 | cmd_678 の Android UI 省ス |
-| cmd_679 | cmd_677で導入した1.0x-3.0x拡大のみのピンチズームを拡張し、softWrap OFFモードでPC端末の全幅をスマホ画面にフィットさせる縮小表示を追加する | infra | 03-09 | cmd_679 ピンチズーム全 |
-| cmd_680 | ターミナル出力更新時にユーザーが上にスクロールして読んでいると強制的に最下部に飛ばされるバグを修正する | infra | 03-09 | cmd_680 自動スクロール |
-| cmd_681 | cmd_676 Phase2計測でDashboard warm cacheがAPI9本/合計19秒と判明。他ページの10倍以上遅い最大ボトルネック。9本のAPIの内訳を特定し、改善策を提示する | dm-signal | 03-09 | Dashboard API 19秒ボトルネック解析+改善 |
-| cmd_676 | cmd_672でPF切替は-78%改善を確認したが、計測対象がPF切替+3ページのみ。全19ページの性能ベースラインを網羅計測し、次の最適化対象を特定する | dm-signal | 03-09 | AC1 PASS(18ページcold cache |
-| cmd_682 | cmd_678で実装した接続バー圧縮とボトムナビ自動非表示に殿から2点の指摘。(1)接続バー「●」は意味がない→正常時は非表示に (2)ボトムナビが下にずれただけでターミナル表示が広がっていない→実装修正 | infra | 03-09 | cmd_682 review は FAIL。実 |
-| cmd_684 | cmd_680で上スクロール中の強制復帰を抑止したが、大量にスクロールした後に最下部(最新出力+入力欄)に戻る手段がない。フローティングボタンでワンタップ復帰を実現する | infra | 03-09 | Androidアプリの Shogun 画 |
-| cmd_685 | Dashboard高速化 Step1 — performance(years=0) prefetchキー不一致修正 | dm-signal | 03-09 | Dashboard高速化 Step1 — perfor... |
-| cmd_683 | cmd_679のピンチズームが「スマホ表示を縮小するだけ」で全幅表示にならない。ブラウザの「PC版サイトを表示」のように、PCターミナルの全幅をスマホ画面に収める表示を実現する | infra | 03-09 | cmd_683 review PASS。対象3 |
-| cmd_687 | Androidアプリ APKビルド+配布 | infra | 03-09 | Androidアプリ APKビルド+配布 |
-| cmd_688 | ダッシュボード清掃 — 完了済み偵察結果5件+将軍宛報告の整理 | infra | 03-09 | ダッシュボード清掃 — 完了済み偵察結果5件+将軍宛報... |
-| cmd_689 | fix — Androidアプリ「デスクトップ表示」ピンチズームが実機で動作しない | infra | 03-09 | fix — Androidアプリ「デスクトップ表示」ピ... |
-| cmd_686 | DM-signal Dashboard高速化 Step2 — deterioration冗長取得の最適化 | dm-signal | 03-09 | DM-signal Dashboard高速化 Step... |
-| cmd_690 | fix — DM-signalローカル開発環境復旧 + cmd_686 CDP検証完了 | dm-signal | 03-09 | fix — DM-signalローカル開発環境復旧 +... |
-| cmd_691 | fix — requirements.txt欠落によるvenv再作成時のpip install静黙失敗 | infra | 03-09 | fix — requirements.txt欠落による... |
-| cmd_693 | Androidアプリ ボトムナビゲーション常時表示化 | infra | 03-09 | Androidアプリ ボトムナビゲーション常時表示化 |
-| cmd_694 | Androidアプリ APKビルド + バージョン管理 | infra | 03-09 | Androidアプリ APKビルド + バージョン管理 |
-| cmd_696 | GitHub Release v5.0作成 + READMEダウンロードリンク更新 | infra | 03-09 | GitHub Release v5.0作成 + REA... |
-| cmd_701 | 知識基盤の衛生維持。Vercel整合性リンク切れ修復+context追跡漏れ解消 | infra | 03-09 | teire修復完了。死参照 |
-| cmd_700 | 偵察 — gws CLIでGmailメール件数取得の実現可能性検証 | auto-ops | 03-09 | 偵察 — gws CLIでGmailメール件数取得の実... |
-| cmd_698 | fix — CI test_stop_hook.bats setup_file失敗の修正 | infra | 03-09 | fix — CI test_stop_hook.bat... |
-| cmd_697 | CDP標準計測スクリプトの型化 — 誰がやっても同一結果 | dm-signal | 03-09 | CDP標準計測スクリプトの型化 — 誰がやっても同一結果 |
-| cmd_692 | Dashboard高速化 Step3 — Dashboard非必須API即時発火の抑制 | dm-signal | 03-09 | Dashboard高速化 Step3 — Dashbo... |
-| cmd_703 | 殿がダッシュボードを見た時にcmd番号だけでなく何の作業かが一目でわかる状態にする（殿裁定A案） | infra | 03-09 | 全AC PASS。5列テーブル |
-| cmd_702 | 殿がダッシュボードを見た時に現役モデルのスコアだけが見える状態にする。古いモデルや思考の深さが違うデータは参考にならない（殿裁定） | infra | 03-09 | PASS — 全AC(1-5)検証完 |
-| cmd_699 | 偵察 — CDPでGmailアクセスの実現可能性検証 | auto-ops | 03-09 | 偵察 — CDPでGmailアクセスの実現可能性検証 |
-| cmd_705 | 偵察 — Render CLIインストール手順+デプロイ完了検知の実現可能性 | dm-signal | 03-09 | 偵察 — Render CLIインストール手順+デプロ... |
-| cmd_704 | 確定申告Phase1 — Gmail請求メールリスト作成（殿選別用） | auto-ops | 03-09 | 確定申告Phase1 — Gmail請求メールリスト作... |
-| cmd_695 | CDP計測のviewer認証自動化 — 人間待ちの排除 | dm-signal | 03-09 | CDP計測のviewer認証自動化 — 人間待ちの排除 |
-| cmd_706 | CDP計測自動パイプライン — デプロイ完了検知→計測→ntfy通知 | dm-signal | 03-09 | CDP計測自動パイプライン — デプロイ完了検知→計測... |
-| cmd_707 | GSD知見取込Phase1 — スタブ検出ゲート+分析麻痺ガード+偵察4観点並行偵察 | infra | 03-09 | GSD知見取込Phase1 — スタブ検出ゲート+分析... |
+| — | → 3月前半(03-09, cmd_662-707)は `context/archive/cmd-chronicle-2026-03-early.md` 参照 | — | 03-09 | 43件 |
 | cmd_709 | 偵察 — おしお殿(yohey-w)最新システム深掘り+5大システム対比分析 | infra | 03-10 | 偵察 — おしお殿(yohey-w)最新システム深掘り... |
 | cmd_708 | GSD知見取込Phase2 — 逸脱管理ルール(Deviation Management)+認知バイアスガード | infra | 03-10 | GSD知見取込Phase2 — 逸脱管理ルール(Dev... |
 | cmd_710 | GSD知見取込Phase3 — 検証パイプライン拡張（配線検証+ゴール逆算+スコープ適正） | infra | 03-10 | GSD知見取込Phase3 — 検証パイプライン拡張（... |
@@ -503,3 +461,31 @@
 | cmd_1513 | 'Stop hookで毎ターン発火するlog_terminal_response.shが418ms。4回のpython3起動(各50-80ms)が主因。1回に統合して累積時間を70%以上削減する' | infra | 03-30 | log_terminal_response.shの5つのpy |
 | cmd_1514 | '最も遅いゲート(9.4s)。find+ファイル毎のgrepループがWSL2の/mnt/c I/Oペナルティで遅い。grep -rnの1パス検索に変更しI/O回数を激減させる' | infra | 03-30 | gate_silent_fallback.shをgrep - |
 | cmd_1515 | '2番目に遅いゲート(6.0s)。context mdからresearch参照を抽出し各参照のファイル存在確認。find+個別-fチェックのWSL2 I/Oペナルティが主因。既存ファイル一覧を先に取得してメモリ内照合に変更' | infra | 03-30 | gate_vercel_phase.shの個別ファイル存在チ |
+| cmd_1516 | '起動ゲート(3.2s)の内部でGate 1(211ms), Gate 12(206ms), Gate 13(1873ms)を逐次実行→並列実行に変更。加えてgate_cycle_health.shのreportファイルループ(stat+grep逐次)をfindバッチに変更' | infra | 03-30 | Gate1/12/13並列化(background+tmpf |
+| cmd_1517 | 'deploy_task.sh L1878が task_type="implement"を期待するがtask YAMLは"impl"。この不一致でreview_gate.doneが生成されず、archive_completed.shが報告をスキップ。CLEAR済み182件が滞留中' | infra | 03-30 | deploy_task.shのtask_type比較を'im |
+| cmd_1518 | 'lesson_impact.tsv(29K行/2.5MB)にローテーション機構なし。3月だけで29K行に爆発。gate_lesson_health.shのawk全量reverse(259ms)をtail+tac(10ms)に最適化。古いデータはarchive TSVに退避' | infra | 03-30 | AC1: gate_lesson_health.sh awk |
+| cmd_1526 | 'WSL2 /mnt/c(NTFS)上のflockが不安定。yaml_field_set.sh/inbox_write.sh/inbox_mark_read.shのlockファイルパスを/tmp/(ext4)に移動し排他制御を安定化' | infra | 03-30 | — |
+| cmd_1527 | 'cmd_1144設計のL3未実装。忍者が報告完了→家老が手動でgunshi inboxに通知→軍師レビュー、の手動ステップを自動化。家老のレビュー配備負荷を削減' | infra | 03-30 | — |
+| cmd_1528 | '軍師提案GP-113〜GP-126が17件(重複含む)pending。重複除去+要否判定→実行推奨リスト+却下理由を提出し、将軍のcmd起票材料とする' | infra | 03-30 | — |
+| cmd_1529 | 'gate_fire初回CLEAR率69.0%=31%がBLOCKで家老rework発生。直近50cmdのBLOCK原因を分析し、忍者教育 or gate改善で初回CLEAR率80%以上を目指す' | infra | 03-30 | — |
+| cmd_1530 | 'karo_workarounds.yaml workaround率60%(79/130)。最大category=report_yaml_format(41件)。根因パターン分析→構造的対策3件提案' | infra | 03-30 | — |
+| cmd_1531 | '将軍がルール（既存裁定の文字面）で判断し殿に持っていく依存パターンを構造的に解消。原則で判断する力=自立を instructions/shogun.md に明文化' | infra | 03-30 | — |
+| cmd_1533 | '報告テンプレート(report_field_set.sh)のコメントにTop5 BLOCK原因パターンの具体的FIX hintを追加。特にlesson_candidate(found:true/false両パターンの記入例)とbinary_checks(yes/no限定)を明示し、report_format BLOCK(32%・最多)を構造的に削減する' | infra | 03-30 | — |
+| cmd_1532 | 'cmd_complete_gate.sh L3832のunknown_block_reasonフォールバックを修正。BLOCK_REASONSとMISSING_GATES両方空のelse分岐で各gate個別結果をblock_reasonに含めることで、直近50BLOCKの17.7%(11件)のRCA不能状態を解消する' | infra | 03-30 | — |
+| cmd_1534 | 'deploy_task.shのninja_weak_points生成ロジックにgate_metrics.logのBLOCKパターン集計を追加。忍者別の頻出BLOCK原因をtask YAMLに注入し、忍者が自分の弱点を認識した上で作業開始できるようにする' | infra | 03-30 | — |
+| cmd_1535 | autofix lessons_useful dict→list変換パターン網羅 | infra | 03-30 | WA率Top1のdict→list 16件を構造変換autofixで根絶。全15テストPASS |
+| cmd_1536 | report YAML直接編集hookブロック(RFS使用強制) | infra | 03-30 | 既存hookがAC1-3カバー。偵察不足で重複cmd判明 |
+| cmd_1537 | typeフィールドSTALE_FIELDS追加+残留清掃 | infra | 03-30 | _CLEAR_FIELDSにtype追加。修行001発見のtype残留バグ修正 |
+| cmd_1538 | karo_workaround_log.shにcategory必須化+gate WARN | infra | 03-30 | uncategorized急増(1→16件)対策。WARN表示で分類品質向上 |
+| cmd_1539 | GP-114 Production Branch Coverage Check実装 | infra | 03-30 | cmd_save.shにq7追加。条件分岐変更cmdで本番実データ突合漏れ防止 |
+| cmd_1540 | GP-117 fullrecalculate baseline自動保存+差分比較 | infra | 03-30 | fullrecalculate.sh新規作成。変更の正当性を数値証明 |
+| cmd_1541 | GP-115 post-deploy verification AC自動提案 | infra | 03-30 | cmd_save.shにWARN追加。デプロイ後検証AC構造的リマインド |
+| cmd_1542 | GP-125b karo_workaround_log.shバリデーション強化 | infra | 03-30 | ninja_id検証+root_cause最小長チェック追加。WA計測データ品質向上 |
+| cmd_1543 | 本セッション改善効果の計測検証 | infra | 03-30 | CLEAR率62.7%→84.6%(+21.9pt)。unknown_block_reason 9→0件(-100%) |
+| cmd_1544 | 今セッション変更の結合テスト一括実行 | infra | 03-30 | 592テスト全PASS。deploy_task.sh並列修正3件の相互作用バグなし |
+| cmd_1545 | GP-126c cmd_save.sh内容重複チェック実装 | infra | 03-30 | Check12追加(Jaccard類似度50%超でWARN)。テスト5件PASS |
+| cmd_1546 | 本セッション全改善commitのpush+CI green確認 | infra | 03-30 | CI GREEN(全5ジョブPASS)。本セッション20+commitの一括検証 |
+| cmd_1547 | context/infrastructure.md 本セッション改善の索引還流 | infra | 03-30 | cmd_1532-1543改善セクション追加。CLEAR率84.6%更新 |
+| cmd_1548 | gate_metrics.logローテーション実装 | infra | 03-30 | 1000行超で自動アーカイブ実装。ログ無制限成長防止 |
+| cmd_1549 | GP実装済みステータス更新 | infra | 03-30 | cmd_1528トリアージ結果+本セッション実装GP還流 |
+| cmd_1550 | batsテスト構造マップ作成 | infra | 03-30 | 58bats/593テスト+未テスト131スクリプト分類。カバレッジ盲点可視化 |
