@@ -211,13 +211,12 @@ if isinstance(bc, dict):
                 m = _re.search(r'check:\s*(.+?)\s*,\s*result:\s*(.+)', ac_val)
                 if m:
                     converted = [{'check': m.group(1).strip(), 'result': m.group(2).strip()}]
-            # === Fix 5 Step 3: 撤去(2026-03-25 消火→品質向上改修) ===
-            # 旧: 散文テキストからYES/NO/PASS/FAILキーワードを推定して構造化
-            # 問題: 忍者のフォーマット不備を自動変換で隠す(消火構造)
-            #   - 散文→YES/NO推定は情報を捏造する可能性がある
-            #   - 忍者は正しいフォーマットを学ばない（BLOCKされないため）
-            # 新: 散文のままgate_report_format.shがBLOCK → 忍者がcheck/result形式で書き直す
-            # deepdive Phase 5: 消火=免疫応答を妨げる。BLOCKこそが学習の起点。
+            # === Fix 5 Step 3: plain string → [{check: str, result: 'yes'}] ===
+            # パターン: YAML/regex解析不能な散文テキスト
+            # 旧Step3(撤去済み)はYES/NO推定=情報捏造リスク。
+            # 新Step3は文字列をそのままcheck名に使用、result='yes'固定。
+            if converted is None and ac_val.strip():
+                converted = [{'check': ac_val.strip(), 'result': 'yes'}]
             if converted is not None:
                 bc[ac_key] = converted
                 bc_fixed = True
@@ -303,10 +302,34 @@ if isinstance(lc, list):
         }
         fixes.append(f'lesson_candidate list→dict変換({len(lc)}要素)')
 
-# === Fix 6: lessons_useful null → empty list ===
-if 'lessons_useful' in data and data['lessons_useful'] is None:
-    data['lessons_useful'] = []
-    fixes.append('lessons_useful null→空list')
+# === Fix 6: lessons_useful null/MISSING → task YAMLからスケルトン生成 ===
+# パターン: 忍者がlessons_usefulを記入忘れ(MISSING)またはnull上書き
+# deploy_task.shが注入したrelated_lessonsのIDリストからデフォルトスケルトンを生成
+_lu_missing = 'lessons_useful' not in data
+_lu_null = 'lessons_useful' in data and data['lessons_useful'] is None
+if _lu_missing or _lu_null:
+    _skeleton = []
+    try:
+        _worker6 = data.get('worker_id', '')
+        if _worker6:
+            _tpath6 = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker6}.yaml')
+            if os.path.exists(_tpath6):
+                with open(_tpath6) as _tf6:
+                    _tdata6 = yaml.safe_load(_tf6)
+                _task6 = _tdata6 if not isinstance(_tdata6, dict) or 'task' not in _tdata6 else _tdata6.get('task', {})
+                _rl6 = _task6.get('related_lessons', [])
+                if isinstance(_rl6, list):
+                    for _item6 in _rl6:
+                        if isinstance(_item6, dict) and _item6.get('id'):
+                            _skeleton.append({'id': str(_item6['id']), 'useful': False, 'reason': ''})
+    except Exception:
+        pass
+    data['lessons_useful'] = _skeleton if _skeleton else []
+    _label6 = 'MISSING' if _lu_missing else 'null'
+    if _skeleton:
+        fixes.append(f'lessons_useful {_label6}→タスクYAMLからスケルトン生成({len(_skeleton)}件)')
+    else:
+        fixes.append(f'lessons_useful {_label6}→空list')
 
 # === Fix 15: 撤去(2026-03-25 消火→品質向上改修) ===
 # 旧: lessons_useful空list→task YAMLから再注入(useful:False,reason:''のデフォルト値)

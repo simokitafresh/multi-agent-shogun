@@ -3,6 +3,7 @@
 # GP-073(PASSキャッシュ)、GP-128(verdict整合性)を含む主要チェックのテスト
 
 GATE="scripts/gates/gate_report_format.sh"
+AUTOFIX="scripts/gates/gate_report_autofix.sh"
 TMPDIR_BATS=""
 
 setup() {
@@ -148,4 +149,99 @@ YAML
         run grep "$(realpath "$report")" "logs/.gate_pass_cache"
         [ "$status" -ne 0 ]
     fi
+}
+
+# --- T-011: Autofix binary_checks str→list conversion ---
+@test "T-011: autofix converts binary_checks string to list" {
+    local report="$TMPDIR_BATS/report.yaml"
+    cat > "$report" << 'YAML'
+worker_id: testninja
+parent_cmd: cmd_test
+ac_version_read: abc12345
+status: completed
+binary_checks:
+  AC1: "テスト対象の確認項目を詳細に記載"
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: "既知パターンのため新規教訓なし"
+lessons_useful: []
+purpose_validation:
+  cmd_purpose: "テスト用途の確認タスク"
+  fit: true
+  purpose_gap: ""
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+result:
+  summary: "テスト結果のサマリ"
+verdict: PASS
+YAML
+    # Run autofix — should convert string to [{check: str, result: yes}]
+    run bash "$AUTOFIX" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"binary_checks"* ]]
+    # Verify format gate passes after autofix
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+}
+
+# --- T-012: Autofix lessons_useful MISSING→skeleton generation ---
+@test "T-012: autofix generates lessons_useful skeleton from task YAML" {
+    # Setup directory structure matching report→task path resolution
+    mkdir -p "$TMPDIR_BATS/tasks" "$TMPDIR_BATS/reports"
+    cat > "$TMPDIR_BATS/tasks/testninja.yaml" << 'YAML'
+task:
+  related_lessons:
+    - id: L001
+      summary: "テスト教訓1"
+    - id: L002
+      summary: "テスト教訓2"
+YAML
+    local report="$TMPDIR_BATS/reports/testninja_report_cmd_test.yaml"
+    # Report WITHOUT lessons_useful key
+    cat > "$report" << 'YAML'
+worker_id: testninja
+parent_cmd: cmd_test
+ac_version_read: abc12345
+status: completed
+binary_checks:
+  AC1:
+    - check: "テスト対象の確認項目を詳細に記載"
+      result: "yes"
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: "既知パターンのため新規教訓なし"
+purpose_validation:
+  cmd_purpose: "テスト用途の確認タスク"
+  fit: true
+  purpose_gap: ""
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+result:
+  summary: "テスト結果のサマリ"
+verdict: PASS
+YAML
+    # Run autofix — should generate skeleton from task YAML
+    run bash "$AUTOFIX" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"lessons_useful"* ]]
+    # Verify skeleton has 2 entries matching task YAML related_lessons
+    run python3 -c "
+import yaml
+d = yaml.safe_load(open('$report'))
+lu = d.get('lessons_useful', [])
+assert len(lu) == 2, f'Expected 2, got {len(lu)}'
+assert lu[0]['id'] == 'L001'
+assert lu[1]['id'] == 'L002'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
 }
