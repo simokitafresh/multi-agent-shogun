@@ -47,6 +47,7 @@ task:
   description: '前cmdの説明'
   deployed_at: '2026-03-29T10:00:00'
   worker_id: tobisaru
+  timestamp: '2026-03-29T10:00:00'
   engineering_preferences:
   - 'prefer old approach'
   - 'prefer another old approach'
@@ -143,6 +144,7 @@ STALE_FIELDS = [
     'AC1', 'AC2', 'AC3', 'scout_exempt',
     'command', 'reports_to_read', 'credential_warning', 'context_update',
     'type', 'report_template',
+    'task', 'worker_id', 'timestamp',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:
@@ -359,10 +361,44 @@ else:
     [ -z "$result" ]
 }
 
-# ─── 保持されるべきフィールドのテスト ───
+# ─── 第6層: ネスト残留+旧メタデータのテスト(cmd_1527発見) ───
 
-@test "再配備でworker_idが保持される" {
+@test "再配備でworker_id(旧メタ)がクリアされる" {
     run_resolve_cmd_to_task cmd_9999 tobisaru
     result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "worker_id")
-    [ "$result" = "tobisaru" ]
+    [ -z "$result" ]
+}
+
+@test "再配備でtimestamp(旧メタ)がクリアされる" {
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "timestamp")
+    [ -z "$result" ]
+}
+
+@test "再配備でネストされたtask:ブロックがクリアされる" {
+    # Setup: Add nested task: block to initial YAML
+    local task_file="$TEST_TMPDIR/queue/tasks/tobisaru.yaml"
+    python3 -c "
+import re
+with open('$task_file') as f:
+    raw = f.read()
+# Insert nested task: block before task_id line
+insertion = '''  task:
+    _ac_task_id: cmd_old_impl
+    status: completed
+    type: impl
+'''
+raw = raw.replace('  task_id:', insertion + '  task_id:')
+with open('$task_file', 'w') as f:
+    f.write(raw)
+"
+    # Verify nested task exists before deploy
+    nested_before=$(grep -c '^\s*task:' "$task_file")
+    [ "$nested_before" -eq 2 ]
+
+    run_resolve_cmd_to_task cmd_9999 tobisaru
+
+    # After deploy, nested task: should be removed
+    nested_after=$(grep -c '^\s*task:' "$task_file")
+    [ "$nested_after" -eq 1 ]
 }
