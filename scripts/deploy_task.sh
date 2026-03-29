@@ -168,19 +168,32 @@ if not cmd:
 print(f"project={cmd.get('project', '')}")
 print(f"task_type={cmd.get('type', 'impl')}")
 print(f"title={cmd.get('title', '')}")
+print(f"purpose={cmd.get('purpose', '')}")
 RESOLVE_PY
     ) || {
         log "resolve_cmd: ${cmd_id} not found in shogun_to_karo.yaml"
         return 1
     }
 
-    local project task_type title
+    local project task_type title purpose
     project=$(echo "$_resolve_output" | grep '^project=' | cut -d= -f2-)
     task_type=$(echo "$_resolve_output" | grep '^task_type=' | cut -d= -f2-)
     title=$(echo "$_resolve_output" | grep '^title=' | cut -d= -f2-)
+    purpose=$(echo "$_resolve_output" | grep '^purpose=' | cut -d= -f2-)
     [ -z "$task_type" ] && task_type="impl"
 
     local task_id="${cmd_id}_${task_type}"
+
+    # ─── 前cmd残留フィールド清掃（再配備時のstale field汚染防止） ───
+    # resolve_cmd_to_taskは中核フィールドのみ設定するが、前cmdが残した
+    # purpose/target_path/constraints/progress/description/deployed_atは
+    # 明示的にクリアしないと次の忍者に誤情報が渡る（cmd_1519-1522で実被害確認）
+    yaml_field_set "$task_file" "task" "purpose" ""
+    yaml_field_set "$task_file" "task" "target_path" ""
+    yaml_field_set "$task_file" "task" "constraints" ""
+    yaml_field_set "$task_file" "task" "progress" ""
+    yaml_field_set "$task_file" "task" "description" ""
+    yaml_field_set "$task_file" "task" "deployed_at" ""
 
     # task YAMLの中核フィールドを自動設定
     yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id"
@@ -188,6 +201,8 @@ RESOLVE_PY
     yaml_field_set "$task_file" "task" "task_type" "$task_type"
     [ -n "$project" ] && yaml_field_set "$task_file" "task" "project" "$project"
     yaml_field_set "$task_file" "task" "status" "assigned"
+    # cmdソースからpurpose注入
+    [ -n "$purpose" ] && yaml_field_set "$task_file" "task" "purpose" "$purpose"
     # _ac_task_id/worker_idクリア → inject_ac_versionでAC上書きトリガー
     yaml_field_set "$task_file" "task" "_ac_task_id" ""
     yaml_field_set "$task_file" "task" "_ac_worker_id" ""
