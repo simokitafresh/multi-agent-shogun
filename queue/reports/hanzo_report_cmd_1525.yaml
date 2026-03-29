@@ -1,0 +1,87 @@
+worker_id: hanzo
+task_id: cmd_1525_impl
+parent_cmd: cmd_1525
+timestamp: '2026-03-30T03:48:44'
+status: in_progress
+ac_version_read: 7d010443
+result:
+  summary: 直近30cmd(1496-1525)の教訓活用率分析完了。146注入中useful:true=9(6.2%)。根因=タグ粒度不足+負帰還欠如。L063(universal誤分類,0/29)とL074(3.3%)が枠を常時占拠。改善3件提案
+  details: '【AC1集計結果】30報告/146注入/31教訓ID。useful:true率6.2%。false理由: 操作対象不一致41.6%, タスク種別不一致35.0%,
+    その他19.7%, 空3.6%。Top活用: L171(25%,2/8), L188(25%,1/4), L186(20%,1/5)。Top死蔵: L063(0/29),
+    L079(0/11), L220(0/7)。【AC2構造差異】活用教訓=広い適用範囲(L074:bash算術)OR精密注入(L257:1回注入1回活用=100%)。死蔵教訓=狭い操作範囲なのに広いタグ(L063:Python
+    YAML iteration→universalタグ), ファイル固有知識(L079:deploy_task.sh専用→deployタグ), 負帰還なし(L063:false29回でもhelpful_count=1072で常に選出)。根因:
+    注入選択がtag+keywordの話題類似性で判断するが、実際に必要なのは「このタスクで当該ファイル/操作に触れるか」のファイルレベルマッチング。76.6%のfalse理由が操作対象/タスク種別の不一致。【AC3改善提案】(1)L063のuniversalタグ除去→python,yamlに変更(即時,1行変更,期待-27注入/30cmd)
+    (2)target_filesフィールド追加(L079→deploy_task.sh等の狭い教訓にファイルマッチング導入,20行,期待-15注入/30cmd)
+    (3)useful_rate decay(lesson_impact.tsvの活用率<15%で注入スコア半減,負帰還ループ構築,30行,最高インパクト)'
+purpose_validation:
+  cmd_purpose: 教訓301件中272件(90.4%)がuseful:true 0回。注入はされているが活用されない構造問題の根因特定と改善設計
+  fit: true
+  purpose_gap: ''
+files_modified:
+- change: modified
+  path: queue/reports/hanzo_report_cmd_1525.yaml
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: '教訓注入の3構造問題: universalタグ誤分類+ファイルレベルマッチング欠如+負帰還ループ欠如'
+  detail: '教訓活用率6.2%(146注入中9活用)の根因は3つ: (1)L063等がuniversalタグだが実際は極めて狭い操作範囲(Python YAMLイテレーション)→全タスクに注入されるが99%無関係
+    (2)L079/L230等はファイル固有知識だがタグは汎用(deploy)→タスクが当該ファイルに触れるかの判定が不在 (3)useful:false蓄積が注入優先度に反映されない(helpful_countは増加のみ)→死蔵教訓が永久に枠を占拠。改善:
+    (A)universalタグの再分類(B)target_filesフィールド導入(C)useful_rate decay。76.6%のfalse理由が操作対象/種別不一致であり、tag→fileレベルへの粒度引上げが最大インパクト'
+  project: infra
+lessons_useful:
+- id: L074
+  useful: false
+  reason: 本タスクにset -eの((PASS++))パターンなし。分析スクリプトはPython一時コード
+- id: L063
+  useful: false
+  reason: 本タスクにPython YAML dict直接イテレーション処理なし。yaml.safe_loadは使用したがdata.get('lessons',[])パターンで正しく処理
+- id: L220
+  useful: false
+  reason: queue/ファイルのstage操作なし。報告YAML書込みはreport_field_set.sh経由
+- id: L102
+  useful: false
+  reason: lesson_tracking.tsvは参照対象だが本タスクの仕様誤記には遭遇せず
+- id: L179
+  useful: false
+  reason: 本タスクにcommit+報告の順序問題なし。分析完了後にcommit予定
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: ''
+  AC1:
+  - check: 直近30cmdの報告YAMLからlessons_useful全件を集計したか
+    result: 'yes'
+  - check: useful:true率をlesson ID別に算出したか
+    result: 'yes'
+  - check: useful:false時のreason内容を分類したか
+    result: 'yes'
+  AC2:
+  - check: 高活用Top5と死蔵Top5を特定したか
+    result: 'yes'
+  - check: 記述内容・汎用性・PJ依存度等で比較分析したか
+    result: 'yes'
+  - check: 構造的差異の根因を特定したか
+    result: 'yes'
+  AC3:
+  - check: 改善アクション3件以内を提案したか
+    result: 'yes'
+  - check: 各提案に期待効果を記載したか
+    result: 'yes'
+  - check: 各提案に実装コストを記載したか
+    result: 'yes'
+  - check: git commitを実施したか
+    result: 'no'
+verdict: ''
