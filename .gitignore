@@ -256,6 +256,7 @@
 !scripts/cdp/cdp_cli.sh
 !scripts/cdp/README.md
 !scripts/post_recalculate_checks.sh
+!scripts/fullrecalculate.sh
 !scripts/parity_check.sh
 !scripts/gate_auto_respond.sh
 !scripts/gate_improvement_trigger.sh
@@ -298,6 +299,8 @@ queue/ntfy_batch_queue.txt
 !outputs/analysis/
 !outputs/analysis/cmd_1092_failure_patterns.csv
 !outputs/analysis/cmd_1094_runbook_audit.csv
+!outputs/baselines/
+!outputs/baselines/.gitkeep
 
 # Docs
 !docs/
