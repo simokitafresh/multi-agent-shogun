@@ -642,8 +642,9 @@ archive_reports() {
 
         # CMD_ID指定なし(sweep mode): 完了報告のみ。CMD_ID指定あり: status不問で全archive
         if [ -z "$CMD_ID" ]; then
-            case "$status_val" in
-                done|completed|complete|success|failed) ;;
+            local status_lower="${status_val,,}"
+            case "$status_lower" in
+                done|completed|complete|success|failed|pass|fail|blocked|waived|stop_for) ;;
                 *)
                     kept=$((kept + 1))
                     continue
