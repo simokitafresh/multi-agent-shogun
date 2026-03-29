@@ -2,7 +2,7 @@ worker_id: hanzo
 task_id: cmd_1525_impl
 parent_cmd: cmd_1525
 timestamp: '2026-03-30T03:48:44'
-status: in_progress
+status: completed
 ac_version_read: 7d010443
 result:
   summary: 直近30cmd(1496-1525)の教訓活用率分析完了。146注入中useful:true=9(6.2%)。根因=タグ粒度不足+負帰還欠如。L063(universal誤分類,0/29)とL074(3.3%)が枠を常時占拠。改善3件提案
@@ -60,7 +60,7 @@ hook_failures:
 binary_checks:
   commit:
   - check: git commitが完了したか(untracked/modified=0)
-    result: ''
+    result: 'yes'
   AC1:
   - check: 直近30cmdの報告YAMLからlessons_useful全件を集計したか
     result: 'yes'
@@ -83,5 +83,5 @@ binary_checks:
   - check: 各提案に実装コストを記載したか
     result: 'yes'
   - check: git commitを実施したか
-    result: 'no'
-verdict: ''
+    result: 'yes'
+verdict: PASS
