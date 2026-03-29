@@ -670,20 +670,34 @@ EOF
         }
     ' "$task_file" 2>/dev/null)
 
+    # cmd_1512: Standard commit check - always injected alongside AC checks
+    local _commit_bc='  commit:
+  - check: "git commitが完了したか(untracked/modified=0)"
+    result: ""  # yes or no'
+    local _bc_placeholder='binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入'
+
     if [ -n "$_bc_block" ]; then
         local _bc_full="binary_checks:
-${_bc_block}"
-        local _bc_placeholder='binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入'
-        if grep -qF "$_bc_placeholder" "$report_file" 2>/dev/null; then
-            awk -v repl="$_bc_full" -v placeholder="$_bc_placeholder" '
-                index($0, placeholder) { print repl; next }
-                { print }
-            ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
+${_bc_block}
+${_commit_bc}"
+    else
+        local _bc_full="binary_checks:
+${_commit_bc}"
+    fi
+
+    if grep -qF "$_bc_placeholder" "$report_file" 2>/dev/null; then
+        awk -v repl="$_bc_full" -v placeholder="$_bc_placeholder" '
+            index($0, placeholder) { print repl; next }
+            { print }
+        ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
+        if [ -n "$_bc_block" ]; then
             local _bc_ac_count
             _bc_ac_count=$(echo "$_bc_block" | grep -c '^\s\s[A-Z]')
-            log "binary_checks template: ${_bc_ac_count} ACs injected"
-            log "report_template: binary_checks template injected"
+            log "binary_checks template: ${_bc_ac_count} ACs + commit check injected"
+        else
+            log "binary_checks template: standard commit check injected"
         fi
+        log "report_template: binary_checks template injected"
     fi
 
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
