@@ -704,8 +704,16 @@ purpose_validation:
 files_modified: []
 lesson_candidate:
   # found: true/false を書け。リスト形式[] 禁止
+  # ── found:true の場合（title/detail/project 全て必須）──
+  # \$RFS lesson_candidate.found "true"
+  # \$RFS lesson_candidate.title "教訓タイトル"
+  # \$RFS lesson_candidate.detail "何が起きて何を学んだか"
+  # \$RFS lesson_candidate.project "${project}"
+  # ── found:false の場合（no_lesson_reason 必須）──
+  # \$RFS lesson_candidate.found "false"
+  # \$RFS lesson_candidate.no_lesson_reason "既知のL084と同じパターン"
   found: false
-  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。例: "既知のL084と同じパターン"
+  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。理由なきfalseは家老差し戻し(L247)
   title: ""
   detail: ""
   project: ${project}
@@ -735,6 +743,8 @@ hook_failures:
   count: 0
   details: ""
 binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
+# ⚠ result値は "yes" or "no" のみ。true/false/PASS/FAIL/OK等はBLOCKされる
+# 例: echo '[{check: "コメント追加済みか", result: "yes"}]' | \$RFS binary_checks.AC1 -
 verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
 # ━━━ 提出前最終確認（gate実行前に全項目を確認せよ）━━━
 # □ binary_checks: 全ACの全result欄に "yes" or "no" を記入したか（"PASS"不可）
@@ -1865,6 +1875,72 @@ try:
         except Exception as ge:
             print(f'[NINJA_WP] gate_fire_log parse warning: {ge}', file=sys.stderr)
 
+    # --- cmd_1534: gate_metrics.logからBLOCKパターンを忍者別集計 ---
+    gate_metrics_path = os.path.join(os.path.dirname(workarounds_file), 'gate_metrics.log')
+    if os.path.exists(gate_metrics_path):
+        BLOCK_HINT_MAP = {
+            'empty_lessons_useful': 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止',
+            'lesson_done_source': 'lesson_candidate登録後にlesson_done確認が必要。lesson_write.sh経由で正式登録',
+            'lesson_candidate_missing': 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止',
+            'lesson_candidate_legacy_list': 'lesson_candidateはdict形式(found/title/detail)。リスト[]形式禁止',
+            'lesson_done_missing': 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認',
+            'lesson_candidate_parse_error': 'lesson_candidateのYAML構文エラー。インデント・引用符を確認',
+            'ac_version_mismatch': 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込',
+            'invalid_lessons_useful_format': 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止',
+            'lesson_candidate_no_reason_empty': 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須',
+            'purpose_validation_fit_false': 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認',
+            'empty_lesson_referenced': 'related_lessonsの参照教訓が空。タスクで指定された教訓を確認',
+            'null_lessons_useful': 'lessons_usefulがnull。テンプレートのリスト構造を維持せよ',
+            'fill_this_remaining': 'FILL_THISが残存。全テンプレート値を実際の値に置換せよ',
+            'binary_checks_fail': 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認',
+            'unreviewed_lessons': '未レビューのlessonが残存。lesson確認を完了させよ',
+            'lesson_candidate_found_missing': 'lesson_candidate.found欄がない。true/falseを明記',
+            'report_format': 'report YAMLのフォーマットエラー。report_field_set.sh使用必須',
+            'report_yaml_missing': 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ',
+        }
+        NINJA_NAMES = {'kagemaru', 'hanzo', 'hayate', 'tobisaru', 'saizo', 'kotaro', 'sasuke', 'kirimaru'}
+        try:
+            block_cats = {}
+            with open(gate_metrics_path, encoding='utf-8') as gmf:
+                for line in gmf:
+                    cols = line.rstrip('\n').split('\t')
+                    if len(cols) < 4 or cols[2] != 'BLOCK':
+                        continue
+                    reasons = cols[3].split('|')
+                    for reason in reasons:
+                        reason = reason.strip()
+                        # Pattern 1: {ninja_name}:{category}... (e.g. kagemaru:empty_lessons_useful:...)
+                        matched_ninja = False
+                        for nn in NINJA_NAMES:
+                            if reason.startswith(nn + ':'):
+                                if nn == ninja_name:
+                                    # Extract category: take the part after ninja_name:
+                                    rest = reason[len(nn)+1:]
+                                    # Category is the first segment before : or =
+                                    cat = re.split(r'[:=]', rest)[0]
+                                    if cat:
+                                        block_cats[cat] = block_cats.get(cat, 0) + 1
+                                matched_ninja = True
+                                break
+                        if matched_ninja:
+                            continue
+                        # Pattern 2: report_format:{ninja}_report... or report_yaml_missing:{ninja}_report...
+                        if f'_{ninja_name}_report' in reason or f'/{ninja_name}_report' in reason:
+                            cat = reason.split(':')[0] if ':' in reason else 'report_issue'
+                            block_cats[cat] = block_cats.get(cat, 0) + 1
+            if block_cats:
+                sorted_blocks = sorted(block_cats.items(), key=lambda x: -x[1])
+                gate_blocks = [
+                    {'reason': cat, 'count': cnt, 'hint': BLOCK_HINT_MAP.get(cat, f'gate BLOCK: {cat}')}
+                    for cat, cnt in sorted_blocks
+                ]
+                task['ninja_weak_points']['gate_blocks'] = gate_blocks
+                print(f'[NINJA_WP] {ninja_name}: gate_metrics BLOCK {len(gate_blocks)} categories injected', file=sys.stderr)
+            else:
+                print(f'[NINJA_WP] {ninja_name}: no gate_metrics BLOCKs found', file=sys.stderr)
+        except Exception as gme:
+            print(f'[NINJA_WP] gate_metrics parse warning: {gme}', file=sys.stderr)
+
     # --- Safe targeted write (avoid full yaml.dump — cmd_1407 AC2) ---
     with open(task_file, 'r', encoding='utf-8') as f:
         raw = f.read()
@@ -2334,6 +2410,16 @@ check_idle "$PANE_TARGET" && IS_IDLE=true
 # cmd_1157: flat→nested YAML正規化（status強制注入の前に実行）
 normalize_task_yaml "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" || true
 
+# GP-069 早期チェック: resolve_cmd_to_taskがstatus=assigned上書きする前に実行
+# (resolve後ではTASK_STATUSが常にassignedになりGP-069がデッドコード化する — gunshi構造監視で検出)
+_PRE_RESOLVE_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "unknown")
+if [ "$_PRE_RESOLVE_STATUS" = "in_progress" ] && [ -n "$CMD_ID" ]; then
+    _PRE_RESOLVE_CMD=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "parent_cmd" "")
+    log "BLOCK(GP-069): ${NINJA_NAME} is in_progress on ${_PRE_RESOLVE_CMD:-unknown}. 前タスク完了を待て。"
+    echo "BLOCK: ${NINJA_NAME} は ${_PRE_RESOLVE_CMD:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+    exit 1
+fi
+
 # cmd_id指定時: shogun_to_karo.yamlからtask YAML中核フィールドを自動設定
 if [ -n "$CMD_ID" ]; then
     if resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
@@ -2384,8 +2470,8 @@ if [ "$MESSAGE" = "status" ] && [ "$TYPE" = "in_progress" ]; then
     fi
 fi
 
-# GP-069: 二重配備防止チェック（double_deploy WA根絶）
-# 忍者がin_progressの場合、新タスク配備をBLOCK。前タスク完了後に再配備せよ。
+# GP-069 後方互換: CMD_ID未指定の配備パターン用（status直接更新等）
+# 主要ガードはL2336の早期チェックに移動済み（gunshi構造監視）
 if [ "$TASK_STATUS" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
     CURRENT_CMD=$(field_get "$_TASK_YAML" "parent_cmd" "")
     log "BLOCK: ${NINJA_NAME} is in_progress on ${CURRENT_CMD:-unknown}. 前タスク完了を待て。"
