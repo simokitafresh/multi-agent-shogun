@@ -584,8 +584,6 @@ except Exception as e:
 
             if [ "$is_ninja" -eq 1 ]; then
                 TASK_YAML="$SCRIPT_DIR/queue/tasks/${FROM}.yaml"
-                TASK_LOCKFILE="${TASK_YAML}.lock"
-
                 if [ -f "$TASK_YAML" ]; then
                     # Report YAML existence verification before done transition (cmd_813)
                     REPORT_FILENAME=$(TASK_PATH="$TASK_YAML" NINJA_NAME="$FROM" python3 -c "
@@ -626,11 +624,8 @@ except:
                     if [ "$report_found" -eq 0 ]; then
                         echo "[inbox_write] auto-done BLOCKED: report YAML not found: ${REPORT_FILENAME:-unknown} (ninja: $FROM)" >&2
                     else
-                        (
-                            flock -w 5 201 || exit 0  # Lock failure is non-fatal
-
-                            # Check current status — don't overwrite terminal states
-                            CURRENT_STATUS=$(TASK_PATH="$TASK_YAML" python3 -c "
+                        # Check current status — don't overwrite terminal states
+                        CURRENT_STATUS=$(TASK_PATH="$TASK_YAML" python3 -c "
 import yaml, os, sys
 try:
     with open(os.environ['TASK_PATH']) as f:
@@ -638,12 +633,18 @@ try:
     print(data.get('task',{}).get('status','') if data else '')
 except: pass
 " 2>/dev/null)
-                            case "$CURRENT_STATUS" in
-                                done|failed|blocked) exit 0 ;;
-                            esac
-
-                            bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$TASK_YAML" task status "done" 2>&1 || true
-                        ) 201>"$TASK_LOCKFILE"
+                        case "$CURRENT_STATUS" in
+                            done|failed|blocked) ;;
+                            *)
+                                # yaml_field_set.sh has its own flock on ${yaml_file}.lock.
+                                # Outer flock on same lockfile via different fd = self-deadlock
+                                # on WSL2/DrvFs (POSIX flock treats different open file descriptions
+                                # independently; same-process exclusive vs exclusive = blocked).
+                                if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$TASK_YAML" task status "done" 2>/dev/null; then
+                                    echo "[inbox_write] auto-done: task status更新失敗（非致命的。メッセージ送信は成功済み）" >&2
+                                fi
+                                ;;
+                        esac
                     fi
                 fi
             fi
