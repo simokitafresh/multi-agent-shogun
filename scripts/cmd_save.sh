@@ -114,6 +114,15 @@ QG_TEMPLATE
         exit 1
     fi
 
+    # q5検証レベル分類（段階的導入 — WARN_COUNTに加算しない）
+    # cmd_1481教訓: code_readingをproduction_verifiedに見せかけた。忍者に信頼度を正直に伝える(利他)
+    q5_val=$(echo "$CMD_BLOCK" | grep "q5_verified_source:" | head -1)
+    if echo "$q5_val" | grep -qiE "code_reading|コード読み|読んだだけ"; then
+        echo "INFO: q5=code_reading。根因仮説は未実行検証。忍者は独自検証が必要" >&2
+    elif ! echo "$q5_val" | grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行"; then
+        echo "WARNING: q5に検証方法が不明確。レベル明記推奨: code_reading(コード読み) / isolated_test(単体実行) / pipeline_test(結合実行) / production_verified(本番確認)" >&2
+    fi
+
     # q6_not_hiding: SG8自動消火チェック（段階的導入 — BLOCKではなくWARNING）
     # 目的: 表面的対処で根源的問題を隠し改革動機を殺すcmdを防止
     # 起源: cmd_1278事件 — lessons.yaml読込削除が7,552行の構造問題を隠蔽
@@ -297,9 +306,9 @@ show_pending_insights
 check_ac_file_paths() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
-    # AC内から backend/ または frontend/ で始まるパスを抽出
+    # AC内からファイルパス(拡張子付き)を抽出
     local PATHS
-    PATHS=$(echo "$CMD_BLOCK" | grep -oE '(backend|frontend)/[A-Za-z0-9_./-]+' | sort -u || true)
+    PATHS=$(echo "$CMD_BLOCK" | grep -oE '[A-Za-z0-9_-]+(/[A-Za-z0-9_.+-]+)+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
@@ -335,6 +344,29 @@ check_ac_file_paths() {
 }
 
 check_ac_file_paths
+
+# --- Check 11: impl cmd push/deploy AC検出（informational — WARN_COUNTに加算しない） ---
+# 目的: project=dm-signal + type=impl のcmdにpush/deploy ACがない場合に警告
+check_impl_push_ac() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    # project取得
+    local PROJECT_ID
+    PROJECT_ID=$(echo "$CMD_BLOCK" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
+
+    # task_type取得
+    local TASK_TYPE
+    TASK_TYPE=$(echo "$CMD_BLOCK" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    [[ "$TASK_TYPE" != "impl" ]] && return 0
+
+    # CMD_BLOCK内のpush/deploy関連キーワード検索
+    if ! echo "$CMD_BLOCK" | grep -qiE 'push|deploy|デプロイ|Render|本番反映'; then
+        echo "WARNING: project=dm-signal + type=impl にpush/deploy関連ACがありません。本番反映手順の追加を検討してください" >&2
+    fi
+}
+
+check_impl_push_ac
 
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
