@@ -47,6 +47,40 @@
 **軍師根因特定+修正**: OPT-13 — cmd_1474 FAIL根因=cmd_1470 deferred flushでDB未commitのシグナル→nested FoF DB query空→15体スキップ。修正: signal_cache(OPT-6)からDB結果を自動補完。commit f3ff64a7。要再計測(380.53s+15体分加算)。
 **軍師OPT-14**: Standard PF signals flush cleanup_mode=True化(commit 79663eda)。cmd_1470半蔵LC実装。INSERT化。2-5s削減。
 **軍師OPT-15**: component_weights commit集約(commit 1e3401fd)。per-FoF 59回→10FoFごと6回。5-10s削減。Tier 1全項目完了+3件push。再計測推奨。
+| cmd_1475 | OPT-13修正検証(ネステッドFoF回帰修正確認) | **GATE CLEAR** | 疾風完遂。根因確認: cmd_1470 deferred flush→DB未commit→nested FoF query空。OPT-13 signal_cache補完で解消。261 FoFテストPASS。追加修正不要
+
+## 2026-03-29
+
+| cmd_1476 | 偵察デフォルト品質に第5要件追加(依存関係・順序制約) | **GATE CLEAR** | 才蔵完遂。ashigaru.md+deploy_task.sh+テスト2件。CLAUDE.md記述不在→家老補完。DC解決 |
+| cmd_1477 | GP-124 fullrecalculate後signal整合性チェック | **GATE CLEAR** | 半蔵完遂。_check_signal_integrity()追加。zero-signal WARN+signal COUNT記録。テスト5件PASS。OPT-13(修正)+GP-124(検知)=二重防御完成 |
+| cmd_1478 | 第3サイクル計測(OPT-12/13/14/15全反映) | **GATE CLEAR** | 疾風完遂。**357.28s**(baseline 637.80s→-44%、pre-OPT 3566s→10.0x)。signal=453,663完全一致。zero-signal=0。L3 db_write 130→18s(-86%)。L3 unmeasured 74→3s(-96%)。trade_perf=0.00s(profiling未発火継続、真値推定~6s)。LC: Render再デプロイ直後のbackground task中断 |
+| cmd_1480 | context鮮度更新(9日未更新の7ファイル) | **GATE CLEAR** | 小太郎完遂。ops(357.28s+OPT1-15+crash-safety+GP-124)+dm-signal(§29追加)+infrastructure(偵察5要件)+core/frontend/research(last_updatedのみ)。定型作業 |
+| cmd_1479 | trade_perf profiling 0.00s根因特定+修正 | **GATE CLEAR** | 影丸完遂。根因: cmd_1472がportfolio_preloadをsession-boundで再定義→cmd_1455のexpunged版上書き→Phase5b commit後失効→trade_perf+risk_mgmt例外で0.00s。重複10行除去(f87e39e4)。**重要**: 3サイクル全てのtrade_perfは例外スキップだった。次回recalcで初めて実時間計測(予測100-140s)。L506登録 |
+| cmd_1481 | Monthly Trade FoF Cash表示バグ修正 | **GATE CLEAR** | 疾風完遂。根因: signal_cache forward-fillがlazy-loadedキャッシュで古いシグナル(Cash含む)を全後続月に伝播。修正: forward-fill廃止→exact-match。L1106 or Cash除去→WARNING+skip。本番: 激攻-青龍Cash 175→1(正当Cash)。Show24/All一致。L507登録 |
+| cmd_1482 | 第4サイクル計測(trade_perf+risk_mgmt初実測) | **GATE CLEAR** | 影丸完遂。**479.94s**(trade_perf=126.46s+risk_mgmt=2.86s初実測)。pre-OPT 3566s→480s(**86.5%削減, 7.4x**)。L3=210s安定。signal=453,663。Cash=0件。LC: multi-worker recalculate-status null返却 |
+| cmd_1483 | silent fallback偵察(or Cash/except Exception) | **GATE CLEAR** | 半蔵完遂。38箇所(高11/中10/低17)。CRITICAL: SF-001(Pipeline例外→Cash永続化)+SF-003(lock失敗→True)。Cash8箇所連鎖。PD-003起票(Cash撲滅+lock修正=殿判断待ち) |
+| cmd_1484 | Silent Fallback撲滅(1): SF-003+SF-001最重要2件修正 | **GATE CLEAR** | 飛猿(SF-003)+才蔵(SF-001)並列。SF-003: lock fail-open→fail-closed(L227+L245 return True→False)。SF-001: pipeline例外Cash差替え廃止→例外日スキップ+エラー集約。テスト各2件追加。WA:なし |
+| cmd_1485 | Silent Fallback撲滅(2): SF-002(MDD→0.0)+SF-025(or 1.0) | **GATE CLEAR** | 疾風(SF-002)+影丸(SF-025)並列。SF-002: MDD例外→0.0をNone+logger.error+Calmar Noneガード。SF-025: cumulative_return or 1.0除去→None透過。KC: performance APIパス=api/performance.py(utils/ではない)。WA:なし |
+| cmd_1486 | Silent Fallback免疫系構築: PI-018+軍師レビュー項目+教訓L508 | **GATE CLEAR** | 半蔵完遂。PI-018(fallback返却禁止)+gunshi.md §4にsilent fallbackチェック追加+L508教訓登録。構造的防止の3層防御。LC: RUNBOOK還流漏れ(別cmd推奨)。WA:なし |
+| cmd_1487 | Silent Fallback撲滅(3): Cash chain 5箇所(SF-023/SF-024/SF-035) | **GATE CLEAR** | 小太郎(SF-024/SF-035)+才蔵(SF-023)並列。SF-024/SF-035: price_ratio_calculator.py 4箇所or Cash除去+Noneハンドリング+テスト3件。SF-023: recalculate_fof.py L766 or Cash除去+None処理+signals_batchスキップ+テスト6件。同一commit(3454b123)。KC: Signal.signal=NOT NULL制約。WA:なし |
+| cmd_1488 | Silent Fallback撲滅(4): SSOT定数化(SPY 6箇所+rebalance 6箇所) | **GATE CLEAR** | 疾風(SF-022 SPY)+飛猿(SF-026 rebalance)並列。SPY: constants.pyにDEFAULT_BENCHMARK_TICKER定義+6箇所統一+L305コメント。rebalance: utils/rebalance_trigger.py新規+6箇所ヘルパー統一+17テスト。KC: L168にスコープ外SPYパターンあり。LC: target_path services/jobs不一致。WA:なし |
+| cmd_1489 | Silent Fallback撲滅(5): MonthlyReturn耐障害性+一括push+本番検証 | **GATE CLEAR** | 半蔵完遂。SF-006: monthly_trade_calculator.py L274 logger.warning追加(最危険silent解消)。SF-004/005: 失敗PFカウント集計+サマリーログ追加。AC3: cmd_1484-1489一括push+Render deploy+fullrecalculate→**signal=453,663(baseline完全一致)、zero-signal=0、MR正常**。**HIGH 11/11完遂**。WA:なし |
+| cmd_1490 | UserPromptSubmit snapshot注入(将軍状態把握自動化) | **GATE CLEAR** | 半蔵完遂(3回目配備)。影丸AC1完了→idle化、疾風も報告空で失敗。原因: deploy_task.shがac_version同一時にAC未更新。WA:task_redeploy。prompt_state_inject.sh+settings.json登録+テスト。commit fc3a05d |
+
+| cmd_1491 | Silent Fallback Medium掃討(ログなし5件+偽データ2件+SSOT1件) | **GATE CLEAR** | 才蔵完遂。AC1: 5箇所logger.warning追加(recalc_statusは既実装で変更不要)。AC2: SF-014 return 0→None+main.pyハンドリング、OPT-E Cash→skip+continue。AC3: DTB3→DEFAULT_RISK_FREE_ASSET定数化。WA:なし |
+| cmd_1492 | SF-010失敗カウント+cmd_1491 push+Render deploy | **GATE CLEAR** | 小太郎完遂。recalculate_fast.py precompute失敗PFリスト蓄積+サマリーログ。4commit一括push。Render deploy live確認。fullrecalculate不要(logger/count追加のみ計算不変)。WA:なし |
+
+**Silent Fallback掃討結果(2026-03-29)**: cmd_1483偵察→HIGH 11件→cmd_1484-1489の6cmdで全修正+cmd_1491でMedium 8件修正。本番fullrecalculate検証済み(signal=453,663一致、zero-sig=0)。免疫系(PI-018+軍師§4+L508)で再発防止。連勝51に更新。
+
+**将軍直轄: CoDD→heartbeat構築+PI全昇華**（殿指示「サイクルを回せ」→「自走せよ」）
+
+| 成果 | 内容 | 因果 |
+|------|------|------|
+| gate_cycle_health.sh | heartbeat 4チェック+自動強制(nudge/ntfy)+zero-target表示。/loop 10m登録 | CoDDなぜなぜ→判断ギャップ→意志依存→自動化×強制。殿5回介入で完成 |
+| PI昇華 20/20 | 全PI原理化(30%→100%)。fact(具体)→implication(原理)の二端構造 | heartbeatが検知→将軍行動→殿「抽象と具象のレンジの幅」 |
+| cmd_1496-1502 | 7件infra改善cmd(gate/hook/ninja_monitor/deploy_task/cmd_save/gunshi/test) | heartbeatでinsights 23→4に削減。CoDD気づきから即cmd化 |
+| cmd_1503-1507 | 5件DM-Signal+infra cmd(trade_perf偵察/Cash修正/5th cycle計測/L3偵察/context更新) | idle 5名→全員分起票。heartbeat→行動のサイクル |
+| insights 23→0 | 19件resolve(cmd対応)+4件dream resolve | insightsキュー完全消化 |
 
 **将軍直轄: 知識循環なぜなぜ→6件修正**（殿指示「サイクルを回そう」）
 
@@ -336,3 +370,35 @@
 - **根因特定**: deploy_task.sh L1024-1025のhelpful_count降順ソートが**マシュー効果**を生成。L074(bash,hc=1086)/L063(YAML,hc=1013)/L225(MCP,hc=380)が常にMAX_INJECT 5枠中3枠占拠。Python最適化タスクにbash教訓を注入
 - **第二根因**: dm-signal universal教訓101件中、真にドメイン非依存=0件。universalタグ希釈
 - **cmd_1457起票**: ソート優先順序反転(keyword_score優先)+universal/task-specific枠分離。家老に委任済み
+
+### 2026-03-29 Silent Fallback掃討 + Cash修正検証
+
+**Monthly Trade Cash表示バグ修正+Silent Fallback偵察**
+
+| cmd | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_1479 | trade_perf 0.00s根因修正(cmd_1472 duplicate portfolio_preload除去) | PASS。影丸。f87e39e4。session-bound objects expire_on_commit=Trueで例外→except Exceptionで握り潰し | ←cmd_1466計測でtrade_perf=0.00sだったのはバグ(計測修正ではなく計算自体が例外) |
+| cmd_1480 | context鮮度一括更新(7ファイル) | 完了。小太郎 | ←知識基盤の鮮度維持 |
+| cmd_1481 | Monthly Trade FoF Cash表示バグ修正。激攻-青龍 Show All Cash175件→正常化 | PASS。疾風。4c13c7e9+618ae6fd。根因=signal_cache forward-fill(lazy-loaded cache stale伝播)。forward-fill廃止→exact-match+or Cash→None+WARNING | ←殿報告「Cash表示おかしい」。軍師が独立検証でbackend正常データを確認→根因はキャッシュ層。L480(FoF初月NULL)が手がかり |
+| cmd_1482 | 第4サイクルfullrecalculate計測(trade_perf/risk_mgmt初実測+Cash修正検証) | PASS。影丸。479.94s(cmd_1478比+128s=trade_perf/risk_mgmt計測修正が主因)。trade_perf=126.46s,risk_mgmt=2.86s。signal=453,663(baseline一致)。Cash=0件 | ←cmd_1479修正後の正確な計測+cmd_1481 Cash修正の本番検証 |
+| cmd_1483 | Silent fallbackパターン偵察(backend全体) | PASS。半蔵。38箇所(高11/中10/低17)。最重要: SF-001(pipeline例外→Cash), SF-003(lock失敗→True) | ←殿原則「フォールバックでハードコードを返す=嘘をつく行為」→backend全体スキャン。Cash fallback連鎖8箇所、SPY fallback4箇所発見 |
+
+**教訓**: cmd_1481で3名(将軍/軍師/忍者)が異なる結論に到達。検証スコープが結論精度を決定する(code_reading < isolated_test < pipeline_test < production_verified)。cmd_save.shにq5検証レベル分類を追加(段階的導入)。
+
+## 2026-03-29
+
+| cmd | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_1494 | CoDD分析+1改善: gate_fire_logトレーサビリティ(gate名追加)+hookスクリプト出自追跡(@sourceコメント) | PASS。疾風(AC1)+影丸(AC2)。f0f1ebd+6b150d4。gate_fire_log 3ファイル5箇所にgate名挿入、hook 8件に@source追記 | ←軍師CoDD分析4サイクルで自システムと外部ツール比較→「問題は存在しない」結論+定量データ裏付け(4239件gate名なし/追跡率11%)→将軍が+1改善としてcmd化 |
+| cmd_1495 | precompute integrity check追加(GP-124横展開)+Phase4.5/5失敗数stats記録 | PASS。半蔵。stats[phase45/precompute_failures]追加+integrity拡張(precompute_warn)+テスト3件追加(全8PASS) | ←CoDD→なぜなぜ7段で発見: cmd_1479のtrade_perf=0.00sが3サイクル検知不能。GP-124(signal)だけ防御ありprecomputeは片翼飛行→対称化 |
+| cmd_1496 | gate_report_autofix.sh強化: Fix5 Step3(binary_checks str→list)+Fix6(lessons_useful MISSING→skeleton) | PASS。才蔵。ae1dbbe相当。12テスト全PASS | ←report_yaml_format WA51件の構造対策。忍者の書式ミスをautofix→gateパス率向上 |
+| cmd_1498 | ninja_monitor家老idle自走サイクル起動検知 | PASS。小太郎。check_karo_idle_cycle追加。30分クールダウン | ←殿厳命「自走を自動化×強制にせよ」→全忍者idle+パイプライン空時にkaro inbox通知 |
+| cmd_1499 | deploy_task.sh GP-051分割配備ガード+テンプレート欠損防止 | PASS。疾風。テスト11件全PASS | ←分割配備時のcmd_cycle_001ガード動作確認+generate_report_template順序修正 |
+| cmd_1500 | cmd_save.sh Check10拡張(ファイルパス存在)+Check11追加(impl push AC検出) | PASS。影丸。7テスト全PASS | ←cmd_1464事故(存在しないファイルパスAC)+impl cmdのpush AC漏れ防止 |
+| cmd_1502 | heartbeatテスト4件+insight_resolve.sh作成 | PASS。飛猿。全6テストPASS | ←heartbeat(gate_cycle_health.sh)回帰テスト不在+insight解決の手動作業効率化 |
+| (家老) | CI赤修正: テスト3件更新(cmd_1496 autofix復活反映)+GATE unknown_block_reason修正(record_block_reason追加) | commit febb4ce。push済み。CI green | ←cmd_1496がFix5/6復活→撤去前提テスト矛盾+cmd_complete_gate.sh CI failure時block_reason未記録 |
+| cmd_1503 | trade_perf whileループ偵察(NumPy化ターゲット特定) | 配備中(疾風) | ←479.94s→300s目標。trade_perf=126s(26%)が最大ボトルネック |
+| cmd_1504 | Cash fallback 3箇所修正(PI-018違反) | 配備中(影丸) | ←SF掃討残件。signal不在時のCash偽装排除 |
+| cmd_1506 | L3 FoF daily_loop偵察(batch化ターゲット) | 配備中(半蔵) | ←daily_loop=68s(14%)。第2ボトルネック偵察 |
+| cmd_1507 | CLAUDE.md+senkyoku-log鮮度更新 | 配備中(才蔵) | ←PI昇華+SF完了+heartbeat成果のcontext未反映 |
+| cmd_1508 | SF LOW偵察+分類(残17件) | 配備中(小太郎) | ←LOW17件未分析。修正計画作成 |

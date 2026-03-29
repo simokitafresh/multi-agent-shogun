@@ -38,8 +38,10 @@ GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_in
 | Cycle 1 baseline(cmd_1466) | 637.80s | 240.66s | 362.27s | 1.06s |
 | Cycle 2(cmd_1474) ※FAIL | 380.53s※ | 109.65s | 235.37s | — |
 | **Cycle 3(cmd_1478) OPT-12~15全反映** | **357.28s** | **109.47s** | **214.01s** | 1.10s |
+| **Cycle 4(cmd_1482) trade_perf/risk_mgmt初実測** | **479.94s** | **~239s** | **210.27s** | — |
 
 ※cmd_1474はネステッドFoF 15体未処理(FAIL)のため無効値。cmd_1466 637.80sとcmd_1454 260sの乖離=計測範囲+データ量差。
+※Cycle 4の+123s=trade_perf(126.46s)+risk_mgmt(2.86s)初実測が主因(cmd_1479バグ修正後)。性能劣化なし。L3安定(214→210s)。
 
 OPT一覧(1-15):
 | OPT | 内容 | 状態 | cmd |
@@ -53,9 +55,9 @@ OPT一覧(1-15):
 | OPT-14 | Standard PF signals flush INSERT化(cleanup_mode=True) | ✅本番適用 | 軍師直接 |
 | OPT-15 | component_weights commit集約(59→6) | ✅本番適用 | 軍師直接 |
 
-本番ボトルネック(cmd_1478後357s): L2 trade_perf推定~100-105s(28%) > L3 daily_loop 67.88s(19%) > L3 mr_gen 55.21s(15%) > L2 db_write 44.89s(13%) > L3 dw_signals_flush 41.93s(12%)
-初回→現在: **97.0%削減(11,818s→357.28s)**。Cycle 1→Cycle 3: **-44.0%**
-残改善ターゲット: L2 trade_perf残(whileループNumPy化)、L3 daily_loop(部分batch化)
+本番ボトルネック(cmd_1482後480s): L2 trade_perf **126.46s(26%)実測確定** > L3 daily_loop 67.88s(14%) > L3 mr_gen 55.21s(12%) > L2 db_write 44.89s(9%) > L3 dw_signals_flush 41.93s(9%)
+初回→現在: **95.9%削減(11,818s→479.94s)**。Cycle 1→Cycle 4: **-24.8%**。※Cycle 3(357s)→4(480s)はtrade_perf計測修正(+129s)であり劣化ではない
+残改善ターゲット: L2 trade_perf残(whileループNumPy化, cmd_1503偵察中)、L3 daily_loop(部分batch化, cmd_1506偵察中)
 軍師詳細分析: `context/gunshi-fullrecalc-speed-analysis.md` (3サイクル比較・ボトルネック構造・予測精度検証)
 - L503: DM-SignalリポジトリにGitHub Actionsワークフロー未設定(.github/workflows/不在)（cmd_1448）
 - L504: 性能異常値はリソース競合を先に疑え。pipeline_exec 626sは同時実行run起因のanomaly（cmd_1456）
