@@ -1878,6 +1878,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tOVERRIDE\temergency_override\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
+    bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     if append_lesson_tracking "$CMD_ID" "OVERRIDE" 2>&1; then
         true
     else
@@ -3434,6 +3435,7 @@ echo ""
 if [ "$ALL_CLEAR" = true ]; then
     echo "GATE CLEAR: cmd完了許可"
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
+    bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     # gate_yaml_status: YAML status更新（WARNING only）
     if gate_yaml_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1); then
         echo "$gate_yaml_output"
@@ -3843,6 +3845,7 @@ else
         block_reason="fallback_gate_status:$(IFS='|'; echo "${_gate_details[*]}")"
     fi
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
+    bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     if append_lesson_tracking "$CMD_ID" "BLOCK" 2>&1; then
         true
