@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # karo_workaround_log.sh — 家老ワークアラウンド記録スクリプト
-# Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>"
+# Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>" [category]
 #
 # AC1(cmd_1211): カテゴリ別件数カウント。2件目WARN、3件目以上ALERT(ntfy+insight_write)
 # AC2(cmd_1211): classify_category改善(report_yaml_format/file_disappearance/uncategorized)
@@ -15,6 +15,7 @@ LOCK_FILE="/tmp/karo_workarounds.lock"
 
 # --- Argument validation ---
 CLEAN_MODE=false
+EXPLICIT_CATEGORY=""
 if [[ "${1:-}" = "--clean" ]]; then
     CLEAN_MODE=true
     shift
@@ -31,8 +32,8 @@ if [[ "${1:-}" = "--clean" ]]; then
         exit 1
     fi
 else
-    if [[ $# -ne 4 ]]; then
-        echo "[karo_workaround_log] Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> \"<issue>\" \"<fix>\"" >&2
+    if [[ $# -lt 4 || $# -gt 5 ]]; then
+        echo "[karo_workaround_log] Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> \"<issue>\" \"<fix>\" [category]" >&2
         echo "  --clean mode: bash scripts/karo_workaround_log.sh --clean <cmd_id> <ninja_name>" >&2
         exit 1
     fi
@@ -40,8 +41,9 @@ else
     NINJA_NAME="$2"
     ISSUE="$3"
     FIX="$4"
-    if [[ -z "$CMD_ID" || -z "$NINJA_NAME" || -z "$ISSUE" || -z "$FIX" ]]; then
-        echo "[karo_workaround_log] Error: All arguments must be non-empty" >&2
+    EXPLICIT_CATEGORY="${5:-}"  # optional 5th arg for category
+    if [[ -z "$CMD_ID" || -z "$NINJA_NAME" || -z "$ISSUE" ]]; then
+        echo "[karo_workaround_log] Error: cmd_id, ninja_name, issue must be non-empty" >&2
         exit 1
     fi
 fi
@@ -62,10 +64,22 @@ classify_category() {
 
 if [[ "$CLEAN_MODE" = true ]]; then
     CATEGORY="clean"
+elif [[ -n "$EXPLICIT_CATEGORY" ]]; then
+    CATEGORY="$EXPLICIT_CATEGORY"
 else
     CATEGORY=$(classify_category "$ISSUE")
 fi
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# AC1(cmd_1538): WARN when category is uncategorized
+if [[ "$CLEAN_MODE" != true && "$CATEGORY" == "uncategorized" ]]; then
+    echo "[karo_workaround_log] WARN: categoryが未分類(uncategorized)。5番目の引数で明示的にcategoryを指定せよ: $CMD_ID/$NINJA_NAME" >&2
+fi
+
+# AC2(cmd_1538): WARN when root_cause is empty
+if [[ "$CLEAN_MODE" != true && -z "$FIX" ]]; then
+    echo "[karo_workaround_log] WARN: root_causeが空。分析可能な根因を記録せよ: $CMD_ID/$NINJA_NAME" >&2
+fi
 
 # --- Count category entries excluding resolved (AC1+AC3: cmd_1211, GP-084: Python→awk) ---
 count_category_entries() {
