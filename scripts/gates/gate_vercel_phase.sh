@@ -18,6 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 DM_SIGNAL_DIR="/mnt/c/Python_app/DM-signal"
 
 declare -A SEEN_REFS=()
+# shellcheck disable=SC2034  # FIRST_ORIGIN: kept for debugging broken refs
 declare -A FIRST_ORIGIN=()
 declare -a BROKEN_DETAILS=()
 TOTAL_REFS=0
@@ -39,13 +40,25 @@ is_glob_ref() {
     [[ "$ref" == *"*"* || "$ref" == *"?"* || "$ref" == *"["* ]]
 }
 
+declare -A FILE_CACHE=()
+
+build_file_cache() {
+    local filepath
+    for base in "$SCRIPT_DIR" "$DM_SIGNAL_DIR"; do
+        [ -d "${base}/docs/research" ] || continue
+        while IFS= read -r filepath; do
+            FILE_CACHE["$filepath"]=1
+        done < <(find "${base}/docs/research" -type f 2>/dev/null)
+    done
+}
+
 ref_exists_in_base() {
     local base_dir="$1"
     local ref="$2"
     if is_glob_ref "$ref"; then
         compgen -G "${base_dir}/${ref}" > /dev/null
     else
-        [ -f "${base_dir}/${ref}" ]
+        [[ -n "${FILE_CACHE[${base_dir}/${ref}]:-}" ]]
     fi
 }
 
@@ -65,7 +78,7 @@ resolve_context_bases() {
 display_path() {
     local file="$1"
     if [[ "$file" == "$SCRIPT_DIR/"* ]]; then
-        printf '%s' "${file#$SCRIPT_DIR/}"
+        printf '%s' "${file#"$SCRIPT_DIR"/}"
     else
         printf '%s' "$file"
     fi
@@ -88,6 +101,7 @@ check_context_file() {
             continue
         fi
         SEEN_REFS["$key"]=1
+        # shellcheck disable=SC2034
         FIRST_ORIGIN["$key"]="${file_display}:${line_no}"
         TOTAL_REFS=$((TOTAL_REFS + 1))
 
@@ -141,6 +155,7 @@ collect_context_files() {
 }
 
 main() {
+    build_file_cache
     local context_file
     local scanned=0
     while IFS= read -r context_file; do
