@@ -138,6 +138,7 @@ blocking_reason: "{理由}"         # NG時のみ
 - 最も起こりやすい失敗モードは何か（3つ以上列挙）
 - 失敗時の影響範囲（blast radius）はどこまで及ぶか
 - 失敗を検知する仕組み（gate、テスト、二値チェック）が設計に含まれているか
+- 新規/変更コードにexcept Exception→データ値返却(silent fallback)パターンがないか？ 例: except→return 0.0, except→signal=Cash, except→return True。エラーを正常値で偽装するコードは全てNG(PI-018)
 
 判定基準:
 - OK: 主要な失敗モードに対する検知・回復手段が設計に含まれている
