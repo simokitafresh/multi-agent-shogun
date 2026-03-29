@@ -14,8 +14,8 @@ INFOS=()
 
 # --- 1. 未消化insights aging check (resolved除外) ---
 if [ -f queue/insights.yaml ]; then
-    TOTAL_INSIGHTS=$(grep -c "^- " queue/insights.yaml 2>/dev/null || echo 0)
-    RESOLVED=$(grep -c "status: resolved" queue/insights.yaml 2>/dev/null || echo 0)
+    TOTAL_INSIGHTS=$(grep -c "^- " queue/insights.yaml 2>/dev/null) || TOTAL_INSIGHTS=0
+    RESOLVED=$(grep -c "status: resolved" queue/insights.yaml 2>/dev/null) || RESOLVED=0
     INSIGHT_COUNT=$((TOTAL_INSIGHTS - RESOLVED))
     if [ "$INSIGHT_COUNT" -gt 15 ]; then
         ALERTS+=("insights: ${INSIGHT_COUNT}件未消化(閾値15, resolved除外)。気づきが行動に変わっていない")
@@ -29,7 +29,7 @@ if [ -f queue/karo_snapshot.txt ]; then
     IDLE_LINE=$(grep "^idle|" queue/karo_snapshot.txt 2>/dev/null || echo "")
     if [ -n "$IDLE_LINE" ]; then
         IDLE_NAMES=$(echo "$IDLE_LINE" | cut -d'|' -f2)
-        IDLE_COUNT=$(echo "$IDLE_NAMES" | tr ',' '\n' | grep -c . 2>/dev/null || echo 0)
+        IDLE_COUNT=$(echo "$IDLE_NAMES" | tr ',' '\n' | grep -c . 2>/dev/null) || IDLE_COUNT=0
         if [ "$IDLE_COUNT" -ge 4 ]; then
             ALERTS+=("idle忍者: ${IDLE_COUNT}名(${IDLE_NAMES})。手が遊んでいる=進化が止まっている")
         elif [ "$IDLE_COUNT" -ge 2 ]; then
@@ -38,19 +38,27 @@ if [ -f queue/karo_snapshot.txt ]; then
     fi
 fi
 
-# --- 3. 完了報告GATE未処理 check (24h以内のみ) ---
+# --- 3. 完了報告GATE未処理 check (24h以内, CLEAR済み除外) ---
 PENDING_REPORTS=0
 NOW=$(date +%s)
-for report in queue/reports/*_report_*.yaml; do
-    [ -f "$report" ] || continue
-    MTIME=$(stat -c %Y "$report" 2>/dev/null || echo 0)
-    AGE_H=$(( (NOW - MTIME) / 3600 ))
-    [ "$AGE_H" -gt 24 ] && continue
-    STATUS=$(grep "^status:" "$report" 2>/dev/null | head -1 | awk '{print $2}' || true)
-    if [ -n "$STATUS" ] && [ "$STATUS" = "completed" ]; then
+GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
+# Optimized: find -newer + bulk grep (per-file stat+grepループ排除, cmd_1516)
+_REF_FILE=$(mktemp)
+touch -d '24 hours ago' "$_REF_FILE"
+_COMPLETED=$(find queue/reports/ -name "*_report_*.yaml" -newer "$_REF_FILE" -exec grep -l "^status: completed" {} + 2>/dev/null || true)
+rm -f "$_REF_FILE"
+if [ -n "$_COMPLETED" ]; then
+    _CLEAR_LIST=""
+    [ -f "$GATE_LOG" ] && _CLEAR_LIST=$(grep "	CLEAR" "$GATE_LOG" 2>/dev/null || true)
+    while IFS= read -r report; do
+        [ -z "$report" ] && continue
+        CMD_ID=$(basename "$report" | sed 's/.*_report_//;s/\.yaml//;s/_[a-z]*$//')
+        if [ -n "$_CLEAR_LIST" ] && echo "$_CLEAR_LIST" | grep -q "	${CMD_ID}	"; then
+            continue
+        fi
         PENDING_REPORTS=$((PENDING_REPORTS + 1))
-    fi
-done
+    done <<< "$_COMPLETED"
+fi
 if [ "$PENDING_REPORTS" -gt 3 ]; then
     ALERTS+=("GATE未処理報告: ${PENDING_REPORTS}件(24h以内)。成果が還流されていない")
 elif [ "$PENDING_REPORTS" -gt 0 ]; then

@@ -22,9 +22,20 @@ _d_idle_trigger=""
 $BRIEF || echo "=== 将軍起動チェック $(date '+%H:%M:%S') ==="
 $BRIEF || echo ""
 
+# --- Parallel launch: Gate 1, 12, 13 (独立サブスクリプト並列化 cmd_1516) ---
+_TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp)
+trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13"' EXIT
+"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
+_PID_G1=$!
+bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
+_PID_G12=$!
+bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
+_PID_G13=$!
+
 # --- Gate 1: Memory健全度 (Step 2.5) ---
 $BRIEF || echo "■ Memory健全度"
-result1=$("$GATE_DIR/gate_shogun_memory.sh" 2>&1 | tail -1)
+wait $_PID_G1 || true
+result1=$(tail -1 "$_TMP_G1")
 $BRIEF || echo "  $result1"
 if echo "$result1" | grep -q "ALERT"; then
     overall="ALERT"
@@ -285,7 +296,8 @@ fi
 # --- Gate 12: 三層学習ループ健全性 ---
 $BRIEF || echo "■ 三層学習ループ"
 if [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
-    loop_result=$(bash "$GATE_DIR/gate_loop_health.sh" 2>&1 || true)
+    wait $_PID_G12 || true
+    loop_result=$(cat "$_TMP_G12")
     # Extract key metrics for brief summary
     loop_fires=$(echo "$loop_result" | grep "Total fires:" | grep -oP '\d+' || echo "0")
     loop_fail=$(echo "$loop_result" | grep "FAIL:" | head -1 | grep -oP '\d+' | head -1 || echo "0")
@@ -314,7 +326,8 @@ fi
 # --- Gate 13: 教訓健全度 (lesson_sort trigger) ---
 $BRIEF || echo "■ 教訓健全度"
 if [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then
-    lesson_result=$(bash "$GATE_DIR/gate_lesson_health.sh" 2>&1 | tail -1)
+    wait $_PID_G13 || true
+    lesson_result=$(tail -1 "$_TMP_G13")
     $BRIEF || echo "  $lesson_result"
     if echo "$lesson_result" | grep -q "ALERT"; then
         overall="ALERT"
