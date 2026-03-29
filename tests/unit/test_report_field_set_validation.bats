@@ -26,9 +26,10 @@ teardown() {
     rm -rf "$TEST_TMPDIR"
 }
 
-@test "lessons_useful: dict形式入力はexit 1" {
+@test "lessons_useful: dict形式入力はautofix→exit 0" {
     run bash -c "echo '{0: {id: L001, useful: true}, 1: {id: L002, useful: false}}' | bash '$SCRIPT' '$TEST_REPORT' lessons_useful - 2>&1"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[autofix]"* ]]
 }
 
 @test "lessons_useful: string形式入力はexit 1" {
@@ -41,11 +42,10 @@ teardown() {
     [ "$status" -eq 0 ]
 }
 
-@test "lessons_useful: エラーメッセージにCorrect/Wrong例が表示される" {
+@test "lessons_useful: dict形式はautofixメッセージ表示" {
     run bash -c "echo '{0: {id: L001}}' | bash '$SCRIPT' '$TEST_REPORT' lessons_useful - 2>&1"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"Correct:"* ]]
-    [[ "$output" == *"Wrong:"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[autofix]"* ]]
 }
 
 @test "lessons_useful: 空list入力はexit 0" {
