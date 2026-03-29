@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-28 -->
+<!-- last_updated: 2026-03-30 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -487,3 +487,19 @@
 | cmd_1457 | deploy_task.sh教訓注入のマシュー効果を修正。helpful_count優先ソートがkeyword_score(関連度)を上書きし、有用率13%。ソート優先順序を反転+universal/task-specific枠分離で注入精度を改善 | infra | 03-28 | inject_related_lessonsのソート優先順序 |
 | cmd_1460 | — | dm-signal | 03-28 | — |
 | cmd_1461 | — | dm-signal | 03-28 | — |
+| cmd_1493 | — | infra | 03-29 | deploy_task.sh再配備時AC上書きスキップバグ修 |
+| cmd_1494 | — | infra | 03-29 | 3ファイルのgate_fire_log書込み箇所にgate名 |
+| cmd_1495 | — | dm-signal | 03-29 | Phase4.5/5 precompute失敗数をstats |
+| cmd_1496 | gate_report_autofix.sh強化 — binary_checks str→list自動変換 + lessons_useful MISSING時デフォルト注入 | infra | 03-29 | Fix5 str→list変換+Fix6 MISSING/null→スケルトン生成。テスト12件PASS |
+| cmd_1498 | ninja_monitorに家老idle検知追加 — パイプライン空+全忍者idle時にkaro自走サイクル起動 | infra | 03-29 | 家老idle検知→自走サイクル起動の自動化 |
+| cmd_1499 | deploy_task.sh改善 — GP-051分割配備対応 + テンプレート欠損防止 | infra | 03-29 | 分割配備+テンプレート欠損防止 |
+| cmd_1500 | cmd_save.sh改善 — AC内ファイルパス存在チェック + impl push AC検知 | infra | 03-29 | AC内パス存在チェック+push AC検知 |
+| cmd_1502 | gate_cycle_health.sh heartbeatテスト追加 + insight_resolve.shヘルパー作成 | infra | 03-29 | heartbeatテスト+insight解決ヘルパー |
+| cmd_1506 | 'L3 daily_loop=67.88s(全体の14%)。trade_perfに次ぐ第2ボトルネック。batch化の余地を特定する偵察' | dm-signal | 03-29 | _recalculate_fof_history(L114- |
+| cmd_1505 | ローカルに2件未push(docs L508/509 + precompute integrity check)。加えてcmd_1504のCash修正後に一括push→Render | dm-signal | 03-30 | git push 3コミット→Render deploy l |
+| cmd_1510 | 'cmd_1503偵察でwhileループがreturn_calculator.py L319-364(calculate_trade_period_return)と特定。月次リターン複利合成をNumPyプレフィックスプロダクトに置換しtrade_perf 142.78sを削減' | dm-signal | 03-30 | calculate_trade_period_returnの |
+| cmd_1511 | 'cmd_1508偵察でSF LOW 17箇所中Group A(ログ追加のみ)5箇所を特定。Group C 12箇所は無害。残る修正対象5箇所にlogger追加' | dm-signal | 03-30 | Group A 5箇所にlogger.warning(exc |
+| cmd_1512 | 'GP-116。commit_missing 7件の構造的原因=ashigaru.md Step4→Step5間にgit commit手順未定義。Step 4.6を追加しcommit漏れを構造的に予防' | infra | 03-30 | ashigaru.mdにStep 4.6(git add+c |
+| cmd_1513 | 'Stop hookで毎ターン発火するlog_terminal_response.shが418ms。4回のpython3起動(各50-80ms)が主因。1回に統合して累積時間を70%以上削減する' | infra | 03-30 | log_terminal_response.shの5つのpy |
+| cmd_1514 | '最も遅いゲート(9.4s)。find+ファイル毎のgrepループがWSL2の/mnt/c I/Oペナルティで遅い。grep -rnの1パス検索に変更しI/O回数を激減させる' | infra | 03-30 | gate_silent_fallback.shをgrep - |
+| cmd_1515 | '2番目に遅いゲート(6.0s)。context mdからresearch参照を抽出し各参照のファイル存在確認。find+個別-fチェックのWSL2 I/Oペナルティが主因。既存ファイル一覧を先に取得してメモリ内照合に変更' | infra | 03-30 | gate_vercel_phase.shの個別ファイル存在チ |

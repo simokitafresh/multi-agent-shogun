@@ -558,6 +558,9 @@ task:
     - id: AC1
       description: "test"
 EOF
+    # Scout gate bypass (this test is for report archival, not scout_gate)
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_stale_test"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_stale_test/report_merge.done"
     # Simulate stale template from another ninja (STALL reassignment)
     cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_stale_test.yaml" <<'EOF'
 worker_id: hanzo
@@ -582,6 +585,9 @@ task:
     - id: AC1
       description: "test"
 EOF
+    # Scout gate bypass (this test is for report preservation, not scout_gate)
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_preserve_test"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_preserve_test/report_merge.done"
     # Simulate completed report from another ninja
     cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_preserve_test.yaml" <<'EOF'
 worker_id: hanzo
@@ -610,6 +616,9 @@ commands:
     project: testproj
     purpose: test
 EOF
+    # Scout gate bypass (this test is for AC overwrite, not scout_gate)
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_200"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_200/report_merge.done"
 
     # Setup: task YAML with STALE ACs from a previous cmd + tracking fields
     # ac_version must match what _compute_ac_hash produces from these ACs
@@ -651,6 +660,9 @@ commands:
     project: testproj
     purpose: test
 EOF
+    # Scout gate bypass
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_300"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_300/report_merge.done"
 
     # Same task_id but different worker_id (re-assigned to different ninja)
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -686,6 +698,9 @@ commands:
     project: testproj
     purpose: test
 EOF
+    # Scout gate bypass
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_400"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_400/report_merge.done"
 
     # Same task_id and worker_id — no redeploy, ACs should stay
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -720,6 +735,9 @@ commands:
     project: testproj
     purpose: test
 EOF
+    # Scout gate bypass
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_500"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_500/report_merge.done"
 
     # Fresh deploy — no _ac_task_id/_ac_worker_id yet
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -831,6 +849,9 @@ commands:
     title: resolve test
     status: pending
 EOF
+    # Scout gate bypass
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_600"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_600/report_merge.done"
 
     # 旧cmdのtask YAMLが残っている状態
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
