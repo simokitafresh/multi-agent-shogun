@@ -1608,7 +1608,7 @@ NINJA_JP_MAP = {
 
 def match_ninja(entry, target_name):
     """エントリが対象忍者に属するか判定"""
-    ninja_field = entry.get('ninja', '')
+    ninja_field = str(entry.get('ninja', '') or '')
     if ninja_field and ninja_field.lower() == target_name.lower():
         return True
     jp_name = NINJA_JP_MAP.get(target_name.lower(), '')
@@ -2245,12 +2245,9 @@ notify_initial_deploy_ntfy_once() {
 
     message="初回配備開始 (title=${title:-(untitled)}, ninja=${ninja_name})"
 
-    if NTFY_SYNC=1 bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$cmd_id" "$message"; then
-        log "dispatch_ntfy: sent (${cmd_id}) title='${title:-untitled}' ninja=${ninja_name}"
-    else
-        # non-blocking要件: deployフローは継続
-        log "dispatch_ntfy: WARN send failed (${cmd_id}) ninja=${ninja_name}"
-    fi
+    bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$cmd_id" "$message" &
+    local ntfy_pid=$!
+    log "dispatch_ntfy: sent (${cmd_id}) title='${title:-untitled}' ninja=${ninja_name} [bg:${ntfy_pid}]"
 
     return 0
 }
