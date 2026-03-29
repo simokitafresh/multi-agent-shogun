@@ -367,6 +367,11 @@ else:
 
 echo "$RESULT"
 
+# --- GATE_NO_LOG guard: skip fire_log writing ---
+if [[ "${GATE_NO_LOG:-}" = "1" ]]; then
+    echo "$RESULT" | grep -q "^PASS" && exit 0 || exit 1
+fi
+
 # --- Gate fire logging (cmd_1279) ---
 LOG_FILE="$REPO_ROOT/logs/gate_fire_log.yaml"
 TS=$(date -Is)

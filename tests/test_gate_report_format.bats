@@ -151,6 +151,32 @@ YAML
     fi
 }
 
+# --- T-NOLOG-1: GATE_NO_LOG=1 PASS時にgate_fire_logに書込みなし ---
+@test "T-NOLOG-1: GATE_NO_LOG=1 skips fire_log on PASS" {
+    local report=$(create_valid_report)
+    rm -f logs/gate_fire_log.yaml
+    GATE_NO_LOG=1 run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    # fire_log should not exist or not contain this report
+    if [ -f "logs/gate_fire_log.yaml" ]; then
+        run grep "gate_report_format" "logs/gate_fire_log.yaml"
+        [ "$status" -ne 0 ]
+    fi
+}
+
+# --- T-NOLOG-2: GATE_NO_LOG未設定で通常書込み確認 ---
+@test "T-NOLOG-2: without GATE_NO_LOG fire_log is written" {
+    local report=$(create_valid_report)
+    rm -f logs/gate_fire_log.yaml
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    # fire_log should contain an entry
+    [ -f "logs/gate_fire_log.yaml" ]
+    run grep "gate_report_format" "logs/gate_fire_log.yaml"
+    [ "$status" -eq 0 ]
+}
+
 # --- T-011: Autofix binary_checks str→list conversion ---
 @test "T-011: autofix converts binary_checks string to list" {
     local report="$TMPDIR_BATS/report.yaml"
