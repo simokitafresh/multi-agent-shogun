@@ -393,11 +393,12 @@ inject_ac_version() {
     local curr_task_id curr_worker_id
     curr_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "")
     curr_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "worker_id" "")
-    local prev_ac_task_id
+    local prev_ac_task_id prev_ac_worker_id
     prev_ac_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
+    prev_ac_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_worker_id" "")
 
-    if [ "$curr_task_id" != "$prev_ac_task_id" ]; then
-        log "[AC_VERSION] deploy detected (task_id: ${prev_ac_task_id:-empty}→${curr_task_id}). Overwriting ACs from cmd source."
+    if [ "$curr_task_id" != "$prev_ac_task_id" ] || [ "$curr_worker_id" != "${prev_ac_worker_id:-}" ]; then
+        log "[AC_VERSION] deploy detected (task_id: ${prev_ac_task_id:-empty}→${curr_task_id}, worker: ${prev_ac_worker_id:-empty}→${curr_worker_id}). Overwriting ACs from cmd source."
         if _overwrite_ac_from_cmd "$task_file"; then
             ac_version=$(_compute_ac_hash "$task_file")
             log "[AC_VERSION] recomputed after AC overwrite: $ac_version"

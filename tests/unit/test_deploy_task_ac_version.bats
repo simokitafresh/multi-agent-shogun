@@ -711,7 +711,7 @@ EOF
     [ "$status" -eq 0 ]
 }
 
-@test "cmd_1493: first deploy (no tracking fields) does NOT trigger AC overwrite" {
+@test "cmd_1493: first deploy (no tracking fields) DOES trigger AC overwrite (bug fix)" {
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_500:
@@ -737,9 +737,12 @@ EOF
     run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
     [ "$status" -eq 0 ]
 
-    # ACs should remain as karo wrote them (no overwrite)
-    run grep "Karo-written AC for first deploy" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    # cmd_1493 bug fix: first deploy SHOULD overwrite ACs from cmd source
+    # (旧バグ: _ac_task_idが空→スキップ→前cmdのACが残存)
+    run grep "cmd source AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
+    run grep "Karo-written AC for first deploy" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
 
     # Tracking fields should be set after first deploy
     run python3 -c "
