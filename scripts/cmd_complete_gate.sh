@@ -3831,7 +3831,16 @@ else
     elif [ -n "$missing_list" ]; then
         block_reason="missing_gates:${missing_list}"
     else
-        block_reason="unknown_block_reason"
+        # ALL_CLEAR=false だがBLOCK_REASONS/MISSING_GATES両方空: 各gate個別結果を収集
+        _gate_details=()
+        for _g in "${ALL_GATES[@]}"; do
+            if [ -f "$GATES_DIR/${_g}.done" ]; then
+                _gate_details+=("${_g}:PASS")
+            else
+                _gate_details+=("${_g}:FAIL")
+            fi
+        done
+        block_reason="fallback_gate_status:$(IFS='|'; echo "${_gate_details[*]}")"
     fi
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
