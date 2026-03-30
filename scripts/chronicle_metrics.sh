@@ -75,16 +75,22 @@ def parse_row(raw_line: str, lineno: int) -> tuple[str, str, str, str, str]:
     normalized = raw_line if raw_line.rstrip().endswith("|") else f"{raw_line} |"
     cells = [cell.strip() for cell in normalized.split("|")[1:-1]]
 
-    if len(cells) == 5:
-        cmd_id, title, project, mm_dd, key_result = cells
-        return cmd_id, title, project, mm_dd, key_result
+    date_idx = None
+    for i, cell in enumerate(cells):
+        if re.fullmatch(r"\d{2}-\d{2}", cell):
+            date_idx = i
+            break
 
-    if len(cells) == 6 and cells[1] == "" and cells[2] == "":
-        cmd_id, _blank_title, _legacy_blank, project, mm_dd, key_result = cells
-        return cmd_id, "", project, mm_dd, key_result
+    if date_idx is None or date_idx < 2:
+        print(f"ERROR: malformed chronicle row at line {lineno}: {raw_line}", file=sys.stderr)
+        sys.exit(1)
 
-    print(f"ERROR: malformed chronicle row at line {lineno}: {raw_line}", file=sys.stderr)
-    sys.exit(1)
+    cmd_id = cells[0]
+    mm_dd = cells[date_idx]
+    project = cells[date_idx - 1]
+    title = " ".join(c for c in cells[1 : date_idx - 1] if c)
+    key_result = " ".join(c for c in cells[date_idx + 1 :] if c)
+    return cmd_id, title, project, mm_dd, key_result
 
 
 chronicle_path = Path(sys.argv[1])
