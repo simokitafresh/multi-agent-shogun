@@ -114,7 +114,7 @@ if [ -f "$SNAPSHOT_FILE" ]; then
       split($2, names, ",")
       for (i in names) {
         gsub(/^[[:space:]]+|[[:space:]]+$/, "", names[i])
-        if (names[i] != "") {
+        if (names[i] != "" && names[i] != "none") {
           idle++
         }
       }
