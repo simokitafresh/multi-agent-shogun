@@ -451,15 +451,13 @@ echo "  最終ペイン一覧:"
 echo "  ────────────────────────────────────────────────────"
 printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "Pane" "AgentID" "Dead" "Group" "CLI" "Model" "BG"
 echo "  ──────────────────────────────────────────────────────────"
-for i in $(seq 0 "$LAST_IDX"); do
-    p=$((PANE_BASE + i))
-    _id=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_id 2>/dev/null || echo "?")
-    _dead=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_dead}' | awk -v p="$p" '$1==p {print $2}')
-    _group=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_group 2>/dev/null || echo "?")
-    _cli=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_cli 2>/dev/null || echo "?")
-    _model=$(tmux show-options -p -t "shogun:agents.${p}" -v @model_name 2>/dev/null || echo "?")
-    _display=$(_resolve_model_display "$_id" "$p")
-    _bg=$(resolve_bg_color "$_id" "$_display")
-    printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "$p" "$_id" "$_dead" "$_group" "$_cli" "$_model" "$_bg"
-done
+# Batch-query: 1 tmux call for all pane data (was 48+ per-pane calls)
+_summary=$(tmux list-panes -t shogun:agents \
+    -F '#{pane_index}	#{@agent_id}	#{pane_dead}	#{@agent_group}	#{@agent_cli}	#{@model_name}')
+while IFS=$'\t' read -r _p _id _dead _group _cli _model; do
+    [[ -z "$_p" ]] && continue
+    _model="${_model:-Opus}"
+    _bg=$(resolve_bg_color "$_id" "$_model")
+    printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "$_p" "$_id" "$_dead" "$_group" "$_cli" "$_model" "$_bg"
+done <<< "$_summary"
 echo "=========================================="
