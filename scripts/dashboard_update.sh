@@ -111,7 +111,7 @@ def summarize_ac(ac_val):
     """AC情報を短縮文字列に変換。"""
     if isinstance(ac_val, dict):
         pass_n = sum(1 for v in ac_val.values()
-                     if isinstance(v, str) and 'PASS' in v.upper())
+                     if isinstance(v, str) and bool(re.search(r'\bPASS\b', v.upper())))
         fail_n = sum(1 for v in ac_val.values()
                      if isinstance(v, str) and bool(re.search(r'\bFAIL\b', v.upper())))
         total = len(ac_val)
@@ -123,7 +123,7 @@ def summarize_ac(ac_val):
         return ac_val[:80]
     elif isinstance(ac_val, list):
         pass_n = sum(1 for v in ac_val
-                     if isinstance(v, str) and 'PASS' in str(v).upper())
+                     if isinstance(v, str) and bool(re.search(r'\bPASS\b', str(v).upper())))
         total = len(ac_val)
         if total > 0:
             return f'AC:{pass_n}/{total} PASS'
