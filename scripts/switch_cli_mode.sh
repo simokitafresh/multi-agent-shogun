@@ -168,7 +168,7 @@ find_agent_pane() {
             _found=1
             break
         fi
-        ((_offset++)) || true
+        _offset=$((_offset + 1))
     done
     [[ "$_found" -eq 0 ]] && return 1
     return 0
