@@ -95,16 +95,15 @@ with open(insights_file, 'r') as f:
 if 'insights' not in data or not isinstance(data['insights'], list):
     data['insights'] = []
 
-# Dedup: skip if same insight text exists with status=pending (exact match)
+# Dedup: skip if exact match or first-50-char match with status=pending (single pass)
 for existing in data['insights']:
-    if existing.get('insight') == msg and existing.get('status') == 'pending':
+    if existing.get('status') != 'pending':
+        continue
+    ex_text = existing.get('insight', '')
+    if ex_text == msg:
         print('SKIP:' + existing['id'])
         sys.exit(0)
-
-# Dedup: skip if first 50 chars match with status=pending
-for existing in data['insights']:
-    ex_text = existing.get('insight', '')
-    if existing.get('status') == 'pending' and len(msg) > 0 and ex_text[:50] == msg[:50]:
+    if len(msg) > 0 and ex_text[:50] == msg[:50]:
         print('SKIP:' + existing['id'] + ' (first-50-char dedup)', file=sys.stderr)
         print('SKIP:' + existing['id'])
         sys.exit(0)
