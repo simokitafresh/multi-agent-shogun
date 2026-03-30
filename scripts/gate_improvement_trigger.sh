@@ -21,7 +21,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 GATES_DIR="$SCRIPT_DIR/scripts/gates"
 ALERTS_FILE="$SCRIPT_DIR/logs/gate_alerts.yaml"
-STATE_DIR="/tmp"
+STATE_DIR="$SCRIPT_DIR/logs/gate_state"
+mkdir -p "$STATE_DIR"
 
 # --- alert_id連番管理 ---
 get_next_alert_id() {
