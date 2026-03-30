@@ -1,15 +1,14 @@
 task:
-  _ac_task_id: cmd_1577_recon
+  _ac_task_id: cmd_1583_recon
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - 'AC1: 本番DBからWard FoF(0012f956)のmonthly_returns全141ヶ月を取得。旧忍法15体単体のmonthly_returnsも取得し、15体均等加重の1/N
-    EW系列を再計算'
-  - 'AC2: Ward FoFと1/N EWの年率Sharpe ratio/Max Drawdown(%)/月次標準偏差/Sortino ratio/Calmar
-    ratioを計算。旧忍法15体単体Top5/Bottom5も同指標で計算し比較表を作成'
-  - 'AC3: Ward FoFが1/N EWよりリスク調整後指標で優位かを判定。特にMaxDD(R-seriesでは86-96%優位)に注目。結論を二値(優位/非優位)で報告'
+  - 'AC1: 旧忍法15体の各月リターンの自己相関(lag 1-6ヶ月)を計算。15体平均と各体個別の自己相関を報告。正の自己相関=momentum有効、負=mean
+    reversion'
+  - 'AC2: 各月のクロスセクショナルmomentum持続性を検証。今月トップK体が翌月もトップK体に留まる確率(hit rate)をK=3,4,5で計算。ランダム選出の期待値と比較'
+  - 'AC3: 12ヶ月/6ヶ月/3ヶ月の異なるlookbackでmomentum持続性を比較。短期vs長期momentumの予測力差を定量化。R28の最適lookback推奨'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -31,11 +30,12 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1577
+  parent_cmd: cmd_1583
   project: dm-signal
-  purpose: cmd_1570は12ヶ月累積リターンのみ比較(Ward+54.93%,EW+54.69%,差+0.25%)。リスク調整後指標で比較すればWardの分散効果が見える可能性がある(R24-R26ではMaxDD優位率86-96%)。本番141ヶ月全期間でSharpe/MaxDD/Sortino/月次Volatilityを計算
-  report_filename: kotaro_report_cmd_1577.yaml
-  report_path: queue/reports/kotaro_report_cmd_1577.yaml
+  purpose: R28のWard Cluster Selectionはmomentum(過去リターン)で次月の保有PFを選出する。もし旧忍法のリターンに平均回帰(mean
+    reversion)が働くなら、momentum strategyは逆効果になる。R28の理論的前提(momentum持続性)を統計的に検証する
+  report_filename: kotaro_report_cmd_1583.yaml
+  report_path: queue/reports/kotaro_report_cmd_1583.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -47,9 +47,9 @@ task:
     - verdict
     - confidence
     - blind_spots
-  status: completed
+  status: in_progress
   stop_for: []
-  task_id: cmd_1577_recon
+  task_id: cmd_1583_recon
   task_type: recon
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -84,4 +84,4 @@ task:
     - reason: binary_checks_fail
       count: 1
       hint: binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認
-  deployed_at: "2026-03-30T13:55:03"
+  deployed_at: "2026-03-30T14:36:57"
