@@ -31,8 +31,9 @@ fi
 # 3. 全watcherを再起動
 echo "[2/3] 新プロセスを起動..."
 
-# 起動カウンタ（期待プロセス数の正確な追跡用）
-started=0
+# PID追跡（個別watcher起動検証用）
+declare -a LAUNCHED_AGENTS=()
+declare -a LAUNCHED_PIDS=()
 
 # 将軍
 _cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
@@ -40,7 +41,8 @@ nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_cli" \
     &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" &
 disown
 echo "  shogun → shogun:main ($!)"
-started=$((started + 1))
+LAUNCHED_AGENTS+=("shogun")
+LAUNCHED_PIDS+=("$!")
 
 # 家老
 _cli=$(tmux show-options -p -t "shogun:agents.1" -v @agent_cli 2>/dev/null || echo "claude")
@@ -48,7 +50,8 @@ nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.1" "$_cli"
     &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" &
 disown
 echo "  karo → shogun:agents.1 ($!)"
-started=$((started + 1))
+LAUNCHED_AGENTS+=("karo")
+LAUNCHED_PIDS+=("$!")
 
 # 忍者+軍師（settings.yamlから動的取得 — cmd_1136）
 # shellcheck source=/dev/null
@@ -65,19 +68,32 @@ for name in $(get_all_agents); do
         &>> "$SCRIPT_DIR/logs/inbox_watcher_${name}.log" &
     disown
     echo "  ${name} → ${pane} ($!)"
-    started=$((started + 1))
+    LAUNCHED_AGENTS+=("${name}")
+    LAUNCHED_PIDS+=("$!")
 done
 
 echo "[3/3] 起動確認..."
 sleep 1
-count=$(pgrep -fc "inbox_watcher\.sh" 2>/dev/null) || count=0
-echo "  稼働中: ${count} プロセス"
+failed_agents=()
+for i in "${!LAUNCHED_AGENTS[@]}"; do
+    if ! kill -0 "${LAUNCHED_PIDS[$i]}" 2>/dev/null; then
+        failed_agents+=("${LAUNCHED_AGENTS[$i]}")
+    fi
+done
 
-# 期待プロセス数: 実際に起動したwatcher数(pane未解決でスキップされた分を除く)
-if [ "$count" -eq "$started" ]; then
-    echo "=== 再起動完了 (${count}/${started}) ==="
+total=${#LAUNCHED_AGENTS[@]}
+failed=${#failed_agents[@]}
+ok=$((total - failed))
+
+if [ "$failed" -eq 0 ]; then
+    echo "  稼働中: ${ok}/${total} プロセス"
+    echo "=== 再起動完了 (${ok}/${total}) ==="
 else
-    echo "=== 警告: 起動${started}だが稼働${count}プロセス ==="
+    echo "  稼働中: ${ok}/${total} プロセス"
+    for agent in "${failed_agents[@]}"; do
+        echo "  FAIL: ${agent}"
+    done
+    echo "=== 警告: ${failed}/${total} watcherが起動失敗 ==="
 fi
 
 # ペイン変数同期
