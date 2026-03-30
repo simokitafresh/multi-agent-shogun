@@ -53,6 +53,8 @@ fi
 parse_lesson_list() {
     local report="$1"
     local in_section=""
+    local current_lid=""
+    local current_useful=""
     while IFS= read -r line; do
         if [[ "$line" =~ ^lessons_useful: ]] || [[ "$line" =~ ^lesson_referenced: ]]; then
             # lessons_useful: [] → empty, skip
@@ -60,18 +62,50 @@ parse_lesson_list() {
             # lessons_useful: false → skip
             [[ "$line" =~ false ]] && continue
             in_section="yes"
+            current_lid=""
+            current_useful=""
             continue
         fi
         if [[ "$in_section" == "yes" ]]; then
-            if [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(L[0-9]+) ]]; then
-                local lid="${BASH_REMATCH[1]}"
-                useful_count[$lid]=$((${useful_count[$lid]:-0} + 1))
-                all_lessons[$lid]=1
-            elif [[ ! "$line" =~ ^[[:space:]]*- ]]; then
+            # Section ends at next top-level key (letter/underscore at column 0)
+            if [[ "$line" =~ ^[a-zA-Z_] ]]; then
+                if [[ -n "$current_lid" && "$current_useful" == "true" ]]; then
+                    useful_count[$current_lid]=$((${useful_count[$current_lid]:-0} + 1))
+                    all_lessons[$current_lid]=1
+                fi
                 in_section=""
+                current_lid=""
+                current_useful=""
+                continue
+            fi
+            # New list item: "- id: LXXX" or "  - id: LXXX" (both indent levels)
+            if [[ "$line" =~ ^[[:space:]]*-[[:space:]]+id:[[:space:]]*(L[0-9]+) ]]; then
+                # Flush previous entry
+                if [[ -n "$current_lid" && "$current_useful" == "true" ]]; then
+                    useful_count[$current_lid]=$((${useful_count[$current_lid]:-0} + 1))
+                    all_lessons[$current_lid]=1
+                fi
+                current_lid="${BASH_REMATCH[1]}"
+                current_useful=""
+            # Legacy flat format: "- LXXX" or "  - LXXX" (no id: prefix)
+            elif [[ "$line" =~ ^[[:space:]]*-[[:space:]]+(L[0-9]+)[[:space:]]*$ ]]; then
+                if [[ -n "$current_lid" && "$current_useful" == "true" ]]; then
+                    useful_count[$current_lid]=$((${useful_count[$current_lid]:-0} + 1))
+                    all_lessons[$current_lid]=1
+                fi
+                current_lid="${BASH_REMATCH[1]}"
+                current_useful="true"  # Legacy format has no useful field, assume true
+            # Sub-field: useful: true/false
+            elif [[ "$line" =~ [[:space:]]*useful:[[:space:]]*(true|false) ]]; then
+                current_useful="${BASH_REMATCH[1]}"
             fi
         fi
     done < "$report"
+    # Flush at EOF if still in section
+    if [[ "$in_section" == "yes" && -n "$current_lid" && "$current_useful" == "true" ]]; then
+        useful_count[$current_lid]=$((${useful_count[$current_lid]:-0} + 1))
+        all_lessons[$current_lid]=1
+    fi
 }
 
 for report in "$REPORTS_DIR"/*_report_*.yaml; do
