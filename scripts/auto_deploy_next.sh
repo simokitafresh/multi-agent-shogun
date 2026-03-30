@@ -177,7 +177,7 @@ print(f'DEPLOY\t{next_st[\"task_id\"]}\t{next_st[\"assigned_to\"]}\t{next_st[\"f
 " 2>> "$LOG") || ANALYSIS_EXIT=$?
 
 if [ "$ANALYSIS_EXIT" -ne 0 ]; then
-    DETAIL=$(echo "$ANALYSIS" | sed 's/^ERROR\t//')
+    DETAIL="${ANALYSIS#ERROR$'\t'}"
     log "ERROR: $DETAIL"
     echo "ERROR: $DETAIL" >&2
     exit 1
@@ -263,13 +263,17 @@ else
         STATES_FILE="$SCRIPT_DIR/logs/ninja_states.yaml"
         RR_POINTER_FILE="$SCRIPT_DIR/queue/rr_pointer.txt"
         if [ -f "$STATES_FILE" ]; then
-            IDLE_NINJA=$(RR_FILE="$RR_POINTER_FILE" python3 -c "
+            IDLE_NINJA=$(STATES_FILE="$STATES_FILE" SCRIPT_DIR="$SCRIPT_DIR" \
+                RR_FILE="$RR_POINTER_FILE" python3 -c "
 import yaml, sys, os
 
+states_file = os.environ['STATES_FILE']
+script_dir = os.environ['SCRIPT_DIR']
+
 # Read ninja names from settings.yaml (cmd_1136)
-import yaml as _y
-with open(os.path.join(os.path.dirname('$STATES_FILE'), '..', 'config', 'settings.yaml')) as _sf:
-    _sdata = _y.safe_load(_sf)
+settings_path = os.path.join(script_dir, 'config', 'settings.yaml')
+with open(settings_path) as _sf:
+    _sdata = yaml.safe_load(_sf)
 NINJA_NAMES = [n for n, c in (_sdata or {}).get('cli', {}).get('agents', {}).items()
                if isinstance(c, dict) and c.get('role') == 'ninja']
 
@@ -286,7 +290,7 @@ if rr_last in NINJA_NAMES:
     rotated = NINJA_NAMES[idx+1:] + NINJA_NAMES[:idx+1]
 
 try:
-    with open('$STATES_FILE') as f:
+    with open(states_file) as f:
         data = yaml.safe_load(f)
     ninjas = data.get('ninjas', {})
     for name in rotated:
@@ -296,7 +300,7 @@ try:
         if state == 'idle' and ctx < 50:
             print(name)
             sys.exit(0)
-except:
+except Exception:
     pass
 " 2>/dev/null || true)
 

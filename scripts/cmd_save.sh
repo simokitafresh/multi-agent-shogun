@@ -63,7 +63,10 @@ if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
     # cmdブロックを抽出（cmd_id行の次行から、次のcmd_行の直前まで）
     CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
 
-    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "quality_gate:"; then
+    # コメント行を事前除去（Check 3内で7回の重複grep -v削減）
+    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+
+    if ! echo "$CMD_BLOCK_NC" | grep -q "quality_gate:"; then
         echo "BLOCK: quality_gate未記入。3問に答えてからcmd_save.shを実行せよ" >&2
         cat >&2 <<'QG_TEMPLATE'
 ---
@@ -78,7 +81,7 @@ QG_TEMPLATE
 
     MISSING_KEYS=()
     for _QG_KEY in q1_firefighting q2_learning q3_next_quality; do
-        if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "${_QG_KEY}:"; then
+        if ! echo "$CMD_BLOCK_NC" | grep -q "${_QG_KEY}:"; then
             MISSING_KEYS+=("$_QG_KEY")
         fi
     done
@@ -102,13 +105,13 @@ QG_TEMPLATE
     fi
 
     # q4_depth: 段階的導入のためBLOCKではなくWARNING（WARN_COUNTに加算しない）
-    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "q4_depth:"; then
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q4_depth:"; then
         echo "WARNING: q4_depth未記入。深堀り度を記入推奨: q4_depth: \"shallow/medium/deep — 理由\"" >&2
     fi
 
     # q5_verified_source: cmdの前提を一次情報源で確認したか（BLOCK）
     # 一次情報源 = コード/本番DB/API応答。前cmdの報告は一次情報源ではない
-    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "q5_verified_source:"; then
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q5_verified_source:"; then
         echo "BLOCK: q5_verified_source未記入。cmdの前提を何で確認したか記載せよ" >&2
         echo "  一次情報源 = コード/本番DB/API応答。前cmdの報告は一次情報源ではない" >&2
         echo '  例: q5_verified_source: "engine.py L107-137 + 本番FoF API GET応答で構造確認"' >&2
@@ -127,7 +130,7 @@ QG_TEMPLATE
     # q6_not_hiding: SG8自動消火チェック（段階的導入 — BLOCKではなくWARNING）
     # 目的: 表面的対処で根源的問題を隠し改革動機を殺すcmdを防止
     # 起源: cmd_1278事件 — lessons.yaml読込削除が7,552行の構造問題を隠蔽
-    if ! echo "$CMD_BLOCK" | grep -v '^\s*#' | grep -q "q6_not_hiding:"; then
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q6_not_hiding:"; then
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
         echo '  例: q6_not_hiding: "no — Vercel化は構造改革であり表面的対処ではない"' >&2
     fi
