@@ -58,7 +58,7 @@ MSG="PJフォーカス切替: ${OLD_PROJECT_NAME} → ${NEW_PROJECT_NAME}。次�
 sent=0
 for agent in "${AGENTS[@]}"; do
     bash "$SCRIPT_DIR/inbox_write.sh" "$agent" "$MSG" project_switch shogun
-    ((sent++))
+    sent=$((sent + 1))
 done
 
 echo "[switch_project] ${sent}名に通知送信完了 (${OLD_PROJECT_NAME} → ${NEW_PROJECT_NAME})"
