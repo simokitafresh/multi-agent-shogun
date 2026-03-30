@@ -243,13 +243,16 @@ log_ok "swap完了: ${swap_count}件"
 # ═══════════════════════════════════════════════════════════════
 log "Step 3: 死亡ペイン検出・復活"
 
-# 全ペインの死亡状態を一括取得
-DEAD_MAP=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_dead}')
+# 全ペインの死亡状態を一括取得 → 連想配列化（ループ内awk排除）
+declare -A DEAD_MAP
+while read -r _pi _dead; do
+    [[ -n "$_pi" ]] && DEAD_MAP["$_pi"]="$_dead"
+done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_dead}')
 
 for i in $(seq 0 "$LAST_IDX"); do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
-    is_dead=$(echo "$DEAD_MAP" | awk -v p="$p" '$1==p {print $2}')
+    is_dead="${DEAD_MAP[$p]:-0}"
 
     if [[ "$is_dead" == "1" ]]; then
         if [[ "$DRY_RUN" == true ]]; then
@@ -282,7 +285,11 @@ log_ok "respawn完了: ${respawn_count}件"
 log "Step 3.5: CLI起動確認"
 
 cli_start_count=0
-PANE_PIDS=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_pid}')
+# ペインPIDを連想配列化（ループ内awk排除）
+declare -A PANE_PID_MAP
+while read -r _pi _pid; do
+    [[ -n "$_pi" ]] && PANE_PID_MAP["$_pi"]="$_pid"
+done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_pid}')
 
 for i in $(seq 0 "$LAST_IDX"); do
     p=$((PANE_BASE + i))
@@ -292,11 +299,11 @@ for i in $(seq 0 "$LAST_IDX"); do
     [[ "${RESPAWNED[$i]}" == "1" ]] && continue
 
     # 死亡ペインはStep 3で処理済み（respawnされなかった=ありえないがガード）
-    is_dead=$(echo "$DEAD_MAP" | awk -v p="$p" '$1==p {print $2}')
+    is_dead="${DEAD_MAP[$p]:-0}"
     [[ "$is_dead" == "1" ]] && continue
 
     # ペインのPIDを取得
-    pane_pid=$(echo "$PANE_PIDS" | awk -v p="$p" '$1==p {print $2}')
+    pane_pid="${PANE_PID_MAP[$p]:-}"
     [[ -z "$pane_pid" ]] && continue
 
     # CLI プロセスが子プロセスに存在するか確認
