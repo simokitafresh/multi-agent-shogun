@@ -70,6 +70,8 @@ elif isinstance(fm, dict):
     hints.append('FIX (files_modified): 文字列またはリスト形式で記入せよ:\\n  files_modified: path/to/file.py\\n  または\\n  files_modified:\\n    - path/to/file1.py\\n    - path/to/file2.py')
 elif isinstance(fm, bool):
     errors.append(f'files_modified: is bool ({fm}), must be string or list of file paths')
+elif isinstance(fm, list) and len(fm) == 0 and data.get('status') == 'completed':
+    hints.append('GP-127 WARN: files_modified: [] (空リスト) — 変更ファイルを記入せよ。偵察のみの場合は文字列で \"偵察のみ\" と記入')
 
 # --- lesson_candidate must be dict with 'found' (null = FAIL) ---
 lc = data.get('lesson_candidate')
@@ -310,10 +312,11 @@ if sgc is not None:
 # --- stale_report check (GP-036): filename cmd vs parent_cmd field ---
 import re
 filename = os.path.basename(report_path)
-fname_match = re.search(r'cmd_(\d+)', filename)
+# Support both numeric (cmd_1234) and non-numeric (cmd_cycle_L4_006) cmd IDs
+fname_match = re.search(r'_report_(.+?)\.ya?ml', filename)
 parent_cmd = data.get('parent_cmd', '')
 if fname_match and parent_cmd:
-    fname_cmd = f'cmd_{fname_match.group(1)}'
+    fname_cmd = fname_match.group(1)
     if fname_cmd != str(parent_cmd):
         errors.append(f'stale_report: filename has {fname_cmd} but parent_cmd={parent_cmd} (cmd_id mismatch)')
 
@@ -321,7 +324,7 @@ if fname_match and parent_cmd:
 # 報告YAML内にparent_cmd以外のcmd_XXXXが存在→前cmdテンプレート残骸の可能性
 import json
 report_text = json.dumps(data, ensure_ascii=False, default=str)
-other_cmds = set(re.findall(r'cmd_\d+', report_text)) - {str(parent_cmd)}
+other_cmds = set(re.findall(r'cmd_(?:[a-zA-Z_]*\d)[a-zA-Z0-9_]*', report_text)) - {str(parent_cmd)}
 if other_cmds and parent_cmd:
     # parent_cmdのサブcmd(例: cmd_1311内でcmd_1311_sub)は除外
     stale_cmds = [c for c in other_cmds if not c.startswith(str(parent_cmd))]
