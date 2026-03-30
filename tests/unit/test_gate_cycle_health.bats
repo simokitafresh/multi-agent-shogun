@@ -1,12 +1,17 @@
 #!/usr/bin/env bats
-# test_gate_cycle_health.bats — gate_cycle_health.sh unit tests
+# test_gate_cycle_health.bats — gate_cycle_health.sh + insight_resolve.sh unit tests
 # cmd_1553: サイクル停滞検知heartbeatのテスト可能分岐を検証
+# cmd_1565: tests/版(cmd_1502)のinsight_resolve.shテストを統合
 
 setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_cycle_health.sh"
+    export SRC_RESOLVE="$PROJECT_ROOT/scripts/insight_resolve.sh"
+    export SRC_YAML_FIELD_SET="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
+    [ -f "$SRC_RESOLVE" ] || return 1
+    [ -f "$SRC_YAML_FIELD_SET" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -19,9 +24,17 @@ setup() {
              "$TEST_TMPDIR/projects" \
              "$TEST_TMPDIR/logs"
 
-    # Copy the gate script
+    # Copy the gate script and helpers
     cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_cycle_health.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_cycle_health.sh"
+
+    cp "$SRC_RESOLVE" "$TEST_TMPDIR/scripts/insight_resolve.sh"
+    chmod +x "$TEST_TMPDIR/scripts/insight_resolve.sh"
+
+    mkdir -p "$TEST_TMPDIR/scripts/lib"
+    cp "$SRC_YAML_FIELD_SET" "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh"
+
+    export TEST_RESOLVE="$TEST_TMPDIR/scripts/insight_resolve.sh"
 
     # Mock inbox_write.sh (no-op, record calls)
     cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'MOCK'
@@ -62,11 +75,15 @@ production_invariants:
       implication: "任意のティッカーの信頼境界を検証"
 EOF
 
+    # Clear cooldown to prevent test interference
+    rm -f /tmp/cycle_health_cooldown
+
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_cycle_health.sh"
 }
 
 teardown() {
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+    rm -f /tmp/cycle_health_cooldown
 }
 
 # === Test 1: 全忍者稼働+GATE未処理0 → HEALTHY ===
@@ -228,4 +245,44 @@ EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"GATE未処理報告: 1件"* ]]
+}
+
+# ============================================================
+# insight_resolve.sh tests (merged from tests/test_gate_cycle_health.bats)
+# ============================================================
+
+# --- Test 10: 既存insightのresolve → status確認 ---
+@test "resolve: sets status=resolved and resolved_reason" {
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-TEST-001
+  ts: '2026-03-29T00:00:00+09:00'
+  insight: test insight
+  priority: medium
+  source: manual
+  status: pending
+EOF
+
+    run bash "$TEST_RESOLVE" INS-TEST-001 "fixed by cmd_1502"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+
+    run grep "status: resolved" "$TEST_TMPDIR/queue/insights.yaml"
+    [ "$status" -eq 0 ]
+
+    run grep "resolved_reason" "$TEST_TMPDIR/queue/insights.yaml"
+    [ "$status" -eq 0 ]
+}
+
+# --- Test 11: 存在しないID → エラー ---
+@test "resolve: errors on non-existing insight ID" {
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-TEST-001
+  status: pending
+EOF
+
+    run bash "$TEST_RESOLVE" INS-NONEXISTENT "some reason"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"not found"* ]]
 }

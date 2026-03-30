@@ -2,6 +2,7 @@
 # test_yaml_field_set.bats
 # Purpose: scripts/lib/yaml_field_set.sh の関数テスト
 # Origin: cmd_cycle_002
+# cmd_1565: tests/版(flock並行/indent保存/task_id追加)を統合
 # 教訓L074: ((PASS++))禁止 → PASS=$((PASS+1))
 # 教訓L283: テスト名に"skip"を含めない（hook誤検知防止）
 
@@ -216,4 +217,75 @@ EOF
     run bash "$YFS" "$TEST_TMPDIR/test.yaml" nonexistent_block field value
     [ "$status" -ne 0 ]
     [[ "$output" == *"FATAL"* ]]
+}
+
+# --- 7. flock並行書込みテスト (tests/版から統合) ---
+
+@test "flock serialization allows concurrent writes without corruption" {
+    local yaml="$TEST_TMPDIR/concurrent.yaml"
+    cat > "$yaml" <<'YAML'
+commands:
+  - id: cmd_200
+    status: pending
+YAML
+
+    bash "$YFS" "$yaml" "cmd_200" "status" "in_progress" &
+    local pid1=$!
+    bash "$YFS" "$yaml" "cmd_200" "status" "completed" &
+    local pid2=$!
+
+    wait "$pid1"
+    local rc1=$?
+    wait "$pid2"
+    local rc2=$?
+
+    [ "$rc1" -eq 0 ]
+    [ "$rc2" -eq 0 ]
+
+    local count
+    count=$(grep -c "^    status:" "$yaml")
+    [ "$count" -eq 1 ]
+
+    local final
+    final=$(awk '/^    status:/ {print $2}' "$yaml")
+    [[ "$final" == "in_progress" || "$final" == "completed" ]]
+}
+
+# --- 8. 4スペースリストスタイルのindent保存 (tests/版から統合) ---
+
+@test "preserves indent level for 4-space list style" {
+    local yaml="$TEST_TMPDIR/indent.yaml"
+    cat > "$yaml" <<'YAML'
+commands:
+    - id: cmd_300
+      status: pending
+      project: infra
+YAML
+
+    run bash "$YFS" "$yaml" "cmd_300" "status" "done"
+    [ "$status" -eq 0 ]
+
+    run grep -n "^      status: done$" "$yaml"
+    [ "$status" -eq 0 ]
+}
+
+# --- 9. task_idフィールド追加 (tests/版から統合, cmd_465回帰テスト) ---
+
+@test "adds task_id field from subtask_id (cmd_465: STALL検知キー統一)" {
+    local yaml="$TEST_TMPDIR/task_id.yaml"
+    cat > "$yaml" <<'YAML'
+task:
+  subtask_id: subtask_465_impl
+  parent_cmd: cmd_465
+  status: pending
+YAML
+
+    run bash "$YFS" "$yaml" "task" "task_id" "subtask_465_impl"
+    [ "$status" -eq 0 ]
+
+    run grep -n "^  task_id: subtask_465_impl$" "$yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -c "^  task_id:" "$yaml"
+    [ "$output" = "1" ]
 }
