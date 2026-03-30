@@ -181,6 +181,7 @@ refresh_account() {
     flock -w 10 200 || { log_error "[${account_name}] Failed to acquire lock"; exit 1; }
 
     TR_TMP="${credentials_file}.tmp.$$"
+    trap 'rm -f "$TR_TMP"' EXIT
     jq \
       --arg at  "$new_access_token" \
       --arg rt  "$new_refresh_token" \
@@ -189,6 +190,12 @@ refresh_account() {
        .claudeAiOauth.refreshToken = $rt |
        .claudeAiOauth.expiresAt = $ea' \
       "$credentials_file" > "$TR_TMP"
+
+    # 改善: 上書き前にJSON妥当性+必須キー存在を検証（credential破損防止）
+    if ! jq -e '.claudeAiOauth.accessToken' "$TR_TMP" >/dev/null 2>&1; then
+      log_error "[${account_name}] Validation failed: tmp file missing accessToken. Aborting overwrite."
+      exit 1
+    fi
 
     mv "$TR_TMP" "$credentials_file"
 
