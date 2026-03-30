@@ -185,6 +185,7 @@ for entry in entries:
 
 overflow_entries: list[dict[str, Any]] = []
 if len(recent_entries) > MAX_ENTRIES:
+    recent_entries.sort(key=entry_sort_key)
     overflow_entries = recent_entries[:-MAX_ENTRIES]
     recent_entries = recent_entries[-MAX_ENTRIES:]
 
