@@ -14,53 +14,44 @@ DETAIL="${3:-}"
 SOURCE_CMD="${4:-}"
 AUTHOR="${5:-karo}"
 CMD_ID="${6:-""}"
-STRATEGIC="${7:-""}"
 
-# Scan for --force flag (bypasses duplicate check)
-FORCE=0
-for arg in "$@"; do
-    if [ "$arg" == "--force" ]; then FORCE=1; fi
-done
+# ── Argument parsing helpers ──
+# Parse --flag <value> pairs from "$@"
+parse_named_arg() {
+    local flag="$1"; shift
+    local prev=""
+    for arg in "$@"; do
+        if [ "$prev" == "$flag" ]; then echo "$arg"; return; fi
+        prev="$arg"
+    done
+}
 
-# Scan for --status flag (draft/confirmed, default: confirmed)
-STATUS="confirmed"
-prev_arg=""
-for arg in "$@"; do
-    if [ "$prev_arg" == "--status" ]; then STATUS="$arg"; fi
-    prev_arg="$arg"
-done
+# Check boolean flags (e.g. --force, --strategic)
+has_flag() {
+    local flag="$1"; shift
+    for arg in "$@"; do
+        if [ "$arg" == "$flag" ]; then return 0; fi
+    done
+    return 1
+}
+
+# ── Parse all flags ──
+if has_flag --force "$@"; then FORCE=1; else FORCE=0; fi
+# Fix: --strategic was positional ($7) — now scanned like other flags
+if has_flag --strategic "$@"; then STRATEGIC="--strategic"; else STRATEGIC=""; fi
+
+STATUS=$(parse_named_arg --status "$@")
+STATUS="${STATUS:-confirmed}"
 if [ "$STATUS" != "draft" ] && [ "$STATUS" != "confirmed" ]; then
     echo "ERROR: --status must be 'draft' or 'confirmed' (got: $STATUS)" >&2
     exit 1
 fi
 
-# Scan for --tags flag (comma-separated, e.g. "db,api,deploy". Default: auto-infer or universal)
-TAGS=""
-prev_arg=""
-for arg in "$@"; do
-    if [ "$prev_arg" == "--tags" ]; then TAGS="$arg"; fi
-    prev_arg="$arg"
-done
-
-# Scan for --if/--then/--because flags (IF-THEN形式教訓, all optional)
-IF_COND=""
-THEN_ACTION=""
-BECAUSE_REASON=""
-prev_arg=""
-for arg in "$@"; do
-    if [ "$prev_arg" == "--if" ]; then IF_COND="$arg"; fi
-    if [ "$prev_arg" == "--then" ]; then THEN_ACTION="$arg"; fi
-    if [ "$prev_arg" == "--because" ]; then BECAUSE_REASON="$arg"; fi
-    prev_arg="$arg"
-done
-
-# Scan for --retire flag (retire existing lesson)
-RETIRE_ID=""
-prev_arg=""
-for arg in "$@"; do
-    if [ "$prev_arg" == "--retire" ]; then RETIRE_ID="$arg"; fi
-    prev_arg="$arg"
-done
+TAGS=$(parse_named_arg --tags "$@")
+IF_COND=$(parse_named_arg --if "$@")
+THEN_ACTION=$(parse_named_arg --then "$@")
+BECAUSE_REASON=$(parse_named_arg --because "$@")
+RETIRE_ID=$(parse_named_arg --retire "$@")
 
 # ─── Retire mode: mark existing lesson as retired ───
 if [ -n "$RETIRE_ID" ]; then
