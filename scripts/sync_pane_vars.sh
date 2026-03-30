@@ -33,62 +33,54 @@ unset _sp_idx _sp_agent
 
 changed=0
 
-# ── 将軍ペイン（shogun:main）の @model_name / @agent_cli 同期 ──
-shogun_target="shogun:main"
-shogun_model=$(detect_real_model "shogun" "$shogun_target" 2>/dev/null) || shogun_model=""
-if [[ -z "$shogun_model" ]]; then
-    shogun_model=$(cli_profile_get "shogun" "display_name")
-fi
-shogun_model="${shogun_model:-Unknown}"
-shogun_cli=$(cli_type "shogun")
-shogun_cli="${shogun_cli:-claude}"
-shogun_current=$(tmux show-options -p -t "$shogun_target" -v @model_name 2>/dev/null || echo "")
-if [[ "$shogun_current" != "$shogun_model" ]]; then
-    tmux set-option -p -t "$shogun_target" @model_name "$shogun_model"
-    echo "  [sync] shogun (main): @model_name = ${shogun_model}"
-    ((changed++)) || true
-fi
-shogun_cli_current=$(tmux show-options -p -t "$shogun_target" -v @agent_cli 2>/dev/null || echo "")
-if [[ "$shogun_cli_current" != "$shogun_cli" ]]; then
-    tmux set-option -p -t "$shogun_target" @agent_cli "$shogun_cli"
-    echo "  [sync] shogun (main): @agent_cli = ${shogun_cli}"
-    ((changed++)) || true
-fi
+# ── sync_one_pane: 1ペインの @model_name / @agent_cli を同期 ──
+# Usage: sync_one_pane <agent_name> <tmux_target> <pane_label>
+sync_one_pane() {
+    local agent="$1"
+    local target="$2"
+    local pane_label="$3"
 
-for agent in "${!AGENT_PANES[@]}"; do
-    pane="${AGENT_PANES[$agent]}"
-    target="shogun:agents.${pane}"
-
-    # cli_lookup.sh 経由で display_name を取得（フォールバック値）
+    # 実モデル検出 → display_name → cli_type → "Unknown" のフォールバックチェーン
+    local real_model display_name effective_model
+    real_model=$(detect_real_model "$agent" "$target" 2>/dev/null) || real_model=""
     display_name=$(cli_profile_get "$agent" "display_name")
-
     if [[ -z "$display_name" ]]; then
         display_name=$(cli_type "$agent")
     fi
+    effective_model="${real_model:-${display_name:-Unknown}}"
 
-    # 実モデル検出を試行（AC1: /model切替後のリアルタイム同期）
-    real_model=$(detect_real_model "$agent" "$target" 2>/dev/null) || real_model=""
-
-    # 優先順位: 実モデル値 > settings.yaml/cli_profiles.yaml定義値（AC3: フォールバック）
-    effective_model="${real_model:-$display_name}"
-
-    # 現在の値と比較
-    current=$(tmux show-options -p -t "$target" -v @model_name 2>/dev/null || echo "")
-    current_cli=$(tmux show-options -p -t "$target" -v @agent_cli 2>/dev/null || echo "")
+    # CLI種別
+    local effective_cli
     effective_cli=$(cli_type "$agent")
     effective_cli="${effective_cli:-claude}"
 
+    # @model_name 同期
+    local current
+    current=$(tmux show-options -p -t "$target" -v @model_name 2>/dev/null || echo "")
     if [[ "$current" != "$effective_model" ]]; then
         tmux set-option -p -t "$target" @model_name "$effective_model"
-        source_label="${real_model:+detected}"; source_label="${source_label:-fallback}"
-        echo "  [sync] ${agent} (agents.${pane}): @model_name = ${effective_model} (${source_label})"
+        local source_label="${real_model:+detected}"; source_label="${source_label:-fallback}"
+        echo "  [sync] ${agent} (${pane_label}): @model_name = ${effective_model} (${source_label})"
         ((changed++)) || true
     fi
+
+    # @agent_cli 同期
+    local current_cli
+    current_cli=$(tmux show-options -p -t "$target" -v @agent_cli 2>/dev/null || echo "")
     if [[ "$current_cli" != "$effective_cli" ]]; then
         tmux set-option -p -t "$target" @agent_cli "$effective_cli"
-        echo "  [sync] ${agent} (agents.${pane}): @agent_cli = ${effective_cli}"
+        echo "  [sync] ${agent} (${pane_label}): @agent_cli = ${effective_cli}"
         ((changed++)) || true
     fi
+}
+
+# ── 将軍ペイン（shogun:main）──
+sync_one_pane "shogun" "shogun:main" "main"
+
+# ── エージェントペイン（shogun:agents.*）──
+for agent in "${!AGENT_PANES[@]}"; do
+    pane="${AGENT_PANES[$agent]}"
+    sync_one_pane "$agent" "shogun:agents.${pane}" "agents.${pane}"
 done
 
 if [[ $changed -eq 0 ]]; then
