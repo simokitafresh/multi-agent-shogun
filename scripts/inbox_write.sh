@@ -375,11 +375,10 @@ except Exception:
                         GUNSHI_INBOX="$SCRIPT_DIR/queue/inbox/gunshi.yaml"
                         ROUTE_TS=$(date -Is)
                         ROUTE_ID="msg_$(date +%s%N | head -c 16)"
-                        GATE_ERRORS=${GATE_RESULT//\"/\\\"}
                         (
                             flock -w 5 200 2>/dev/null
                             GUNSHI_INBOX="$GUNSHI_INBOX" ROUTE_ID="$ROUTE_ID" ROUTE_TS="$ROUTE_TS" \
-                            ROUTE_FROM="$FROM" REPORT_FILE="$FULL_REPORT" GATE_ERRORS="$GATE_ERRORS" \
+                            ROUTE_FROM="$FROM" REPORT_FILE="$FULL_REPORT" GATE_ERRORS="$GATE_RESULT" \
                             python3 -c "
 import yaml, os, sys
 inbox_path = os.environ['GUNSHI_INBOX']
