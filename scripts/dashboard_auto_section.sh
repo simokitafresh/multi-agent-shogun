@@ -790,7 +790,7 @@ fi
     if [[ -n "$KM_PROJECT_ROWS" ]]; then
         while IFS= read -r _row; do
             [[ -z "$_row" ]] && continue
-            _pj=$(echo "$_row" | awk -F'|' '{gsub(/^ +| +$/, "", $2); print $2}')
+            IFS='|' read -ra _f <<< "$_row"; read -r _pj <<< "${_f[1]}"
             _ri="${RECENT_PJ_IR[$_pj]:-—}"
             _re="${RECENT_PJ_ER[$_pj]:-—}"
             _warn="${RECENT_PJ_WARN[$_pj]:-N}"
@@ -810,7 +810,7 @@ fi
     if [[ -n "$KM_TASK_TYPE_ROWS" ]]; then
         while IFS= read -r _row; do
             [[ -z "$_row" ]] && continue
-            _tt=$(echo "$_row" | awk -F'|' '{gsub(/^ +| +$/, "", $2); print $2}')
+            IFS='|' read -ra _f <<< "$_row"; read -r _tt <<< "${_f[1]}"
             _tinj="${RECENT_TT_INJ[$_tt]:-0}"
             _tskip="${RECENT_TT_SKIP[$_tt]:-0}"
             _trate="${RECENT_TT_RATE[$_tt]:-—}"
@@ -831,7 +831,7 @@ fi
     if [[ -n "$KM_KNOWLEDGE_MODEL_ROWS" ]]; then
         while IFS= read -r _row; do
             [[ -z "$_row" ]] && continue
-            _mdl=$(echo "$_row" | awk -F'|' '{gsub(/^ +| +$/, "", $2); print $2}')
+            IFS='|' read -ra _f <<< "$_row"; read -r _mdl <<< "${_f[1]}"
             _mdl_key=$(echo "$_mdl" | tr '[:upper:]' '[:lower:]' | tr -s ' ')
             _mrr="${RECENT_MDL_RR[$_mdl_key]:-—}"
             _mer="${RECENT_MDL_ER[$_mdl_key]:-—}"
