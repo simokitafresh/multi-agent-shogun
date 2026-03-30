@@ -67,7 +67,9 @@ def parse_gate_metrics():
     """gate_metrics.logをパースし、cmd_idごとの最終結果をdedupして返す"""
     if not os.path.exists(GATE_METRICS_LOG):
         return []
-    entries = []
+    # cmd_idごとに最終結果のみ残す(dedup: L087教訓準拠)
+    # 中間リスト不要 — 直接dictに投入(1パス)
+    last_by_cmd = {}
     with open(GATE_METRICS_LOG, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -76,15 +78,12 @@ def parse_gate_metrics():
             parts = line.split("\t")
             if len(parts) < 3:
                 continue
-            entries.append({
+            entry = {
                 "timestamp": parts[0],
                 "cmd_id": parts[1],
                 "result": parts[2],
-            })
-    # cmd_idごとに最終結果のみ残す(dedup: L087教訓準拠)
-    last_by_cmd = {}
-    for e in entries:
-        last_by_cmd[e["cmd_id"]] = e
+            }
+            last_by_cmd[entry["cmd_id"]] = entry
     return sorted(last_by_cmd.values(), key=lambda x: x["timestamp"])
 
 
