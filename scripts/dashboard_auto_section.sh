@@ -75,7 +75,7 @@ NOW=$(TZ=Asia/Tokyo date '+%H:%M')
 # shellcheck source=/dev/null
 source "$(dirname "$SCRIPT_DIR")/scripts/lib/agent_config.sh"
 ALL_NINJAS=$(get_ninja_names)
-TOTAL_NINJAS=$(echo $ALL_NINJAS | wc -w | tr -d ' ')
+TOTAL_NINJAS=$(echo "$ALL_NINJAS" | wc -w | tr -d ' ')
 
 # ─── Helper: Japanese name (settings.yamlから動的取得) ───
 name_jp() {
@@ -752,7 +752,7 @@ fi
     echo "| 項目 | 値 |"
     echo "|------|-----|"
     echo "| cmd完了(GATE CLEAR) | ${CLEAR_COUNT:-0}/${TOTAL_CMDS} |"
-    echo "| 稼働忍者 | ${ACTIVE_COUNT}/8 (${ACTIVE_NAMES}) |"
+    echo "| 稼働忍者 | ${ACTIVE_COUNT}/${TOTAL_NINJAS} (${ACTIVE_NAMES}) |"
     echo "| 初回CLEAR率(gate_fire) | ${FIRST_FIRE_RATE} |"
     if [[ -n "$STREAK_START" ]] && [[ -n "$STREAK_END" ]]; then
         echo "| 連勝(CLEAR streak) | ${STREAK} (${STREAK_START}〜${STREAK_END}) |"
