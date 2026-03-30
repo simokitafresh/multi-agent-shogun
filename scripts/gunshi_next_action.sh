@@ -67,8 +67,8 @@ if [[ -n "$latest_reports" ]]; then
         fm_paths=$(grep -A1 'path:' "$rpt" 2>/dev/null | grep 'path:' | sed 's/.*path: *//' | tr -d "'" || true)
         if [[ -n "$fm_paths" ]]; then
             while IFS= read -r fpath; do
-                if [[ -n "$fpath" ]] && cd "$proj_dir" 2>/dev/null; then
-                    gst=$(git status --porcelain -- "$fpath" 2>/dev/null || true)
+                if [[ -n "$fpath" ]]; then
+                    gst=$(git -C "$proj_dir" status --porcelain -- "$fpath" 2>/dev/null || true)
                     if [[ "$gst" == "??"* ]]; then
                         if (( commit_issues == 0 )); then
                             echo "■ P2.5: ★commit未完了ファイル検出（SG2自動チェック）"
@@ -76,7 +76,6 @@ if [[ -n "$latest_reports" ]]; then
                         commit_issues=$((commit_issues + 1))
                         echo "    ?? $fpath ($(basename "$rpt"))"
                     fi
-                    cd "$REPO_ROOT"
                 fi
             done <<< "$fm_paths"
         fi
