@@ -45,8 +45,8 @@ compute_first_fire_rate() {
     [[ ! -f "$GATE_FIRE_LOG" ]] && { echo "—"; return; }
     # /tmp/を除外し、実報告のPASS/FAILを集計
     local pass_count fail_count
-    pass_count=$(grep -v '/tmp/' "$GATE_FIRE_LOG" | grep -c 'result: PASS' 2>/dev/null || echo 0)
-    fail_count=$(grep -v '/tmp/' "$GATE_FIRE_LOG" | grep -c 'result: FAIL' 2>/dev/null || echo 0)
+    pass_count=$(grep -v '/tmp/' "$GATE_FIRE_LOG" | grep -c 'result: PASS' 2>/dev/null) || pass_count=0
+    fail_count=$(grep -v '/tmp/' "$GATE_FIRE_LOG" | grep -c 'result: FAIL' 2>/dev/null) || fail_count=0
     local total=$((pass_count + fail_count))
     if [[ $total -eq 0 ]]; then
         echo "—"
@@ -75,6 +75,7 @@ NOW=$(TZ=Asia/Tokyo date '+%H:%M')
 # shellcheck source=/dev/null
 source "$(dirname "$SCRIPT_DIR")/scripts/lib/agent_config.sh"
 ALL_NINJAS=$(get_ninja_names)
+TOTAL_NINJAS=$(echo $ALL_NINJAS | wc -w | tr -d ' ')
 
 # ─── Helper: Japanese name (settings.yamlから動的取得) ───
 name_jp() {
@@ -183,7 +184,7 @@ IDLE_LIST=""
 ACTIVE_COUNT=0
 ACTIVE_NAMES=""
 for _an in $ALL_NINJAS; do
-    if ! echo ",$IDLE_LIST," | grep -q ",${_an}," 2>/dev/null; then
+    if [[ ",$IDLE_LIST," != *",${_an},"* ]]; then
         ACTIVE_COUNT=$((ACTIVE_COUNT + 1))
         _jp_an=$(name_jp "$_an")
         if [[ -n "$ACTIVE_NAMES" ]]; then
@@ -655,7 +656,7 @@ fi
 
         # Status from idle list
         status="稼働中"
-        if echo ",$IDLE_LIST," | grep -q ",${ninja}," 2>/dev/null; then
+        if [[ ",$IDLE_LIST," == *",${ninja},"* ]]; then
             status="idle"
         fi
 
