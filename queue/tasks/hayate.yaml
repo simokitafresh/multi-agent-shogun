@@ -1,26 +1,30 @@
 task:
-  _ac_task_id: cmd_1574_recon
+  _ac_task_id: cmd_cycle_L4_035_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: 7d010443
+  ac_version: 88572c76
   acceptance_criteria:
-  - 'AC1: experiments.dbの全FoF(type=fof)のmonthly_returnsから12ヶ月累積パフォーマンスランキングを作成。全期間累積も併記'
-  - 'AC2: 全standard PF(type=standard)の同期間ランキングも作成。FoF vs 単体のクロス比較表'
-  - 'AC3: Ward FoF(+54.93%)を上回るFoF/PFを全列挙し、殿の記憶する好成績候補を特定。analysis_runs/配下にWard関連のバックテスト結果があれば併記'
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  - checks:
+    - check: scripts/lesson_edit.shの改善点を3つ特定し、各改善点の理由・変更箇所(行番号)・期待効果を報告に記載
+    id: AC1
+  - checks:
+    - check: 3つの改善点のうち1つを実装しgit commit。変更前後の動作差を説明
+    id: AC2
+  - checks:
+    - check: lesson_candidate found=true(スクリプト精査で発見した知見をtitle+detail+projectで記録)。全ACのbinary_checksをyes/noで記入。verdictをPASS/FAILで記入
+    id: AC3
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    ────────────────────────────────────────\n\n"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -29,45 +33,41 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1574
-  project: dm-signal
-  purpose: 殿が「もっといい結果のシミュレーションなかったっけ」と報告。experiments.dbに格納されている全FoF/PFの累積パフォーマンスを12ヶ月・全期間で比較し、Ward
-    FoF(+54.93%)を上回る結果を全列挙する。殿の記憶にある好成績シミュレーションの正体を特定する
-  report_filename: hayate_report_cmd_1574.yaml
-  report_path: queue/reports/hayate_report_cmd_1574.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
-    notes:
-    - 他の忍者の報告を参照するな（並行偵察の独立性）
-    required_fields:
-    - findings
-    - verdict
-    - confidence
-    - blind_spots
-  status: in_progress
+  parent_cmd: cmd_cycle_L4_035
+  project: infra
+  related_lessons:
+  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+    id: L074
+    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+    id: L063
+    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
+      lesson in data.get('lessons',[])が正しい形
+  report_filename: hayate_report_cmd_cycle_L4_035.yaml
+  report_path: queue/reports/hayate_report_cmd_cycle_L4_035.yaml
+  status: done
   stop_for: []
-  task_id: cmd_1574_recon
-  task_type: recon
+  task_id: cmd_cycle_L4_035_impl
+  task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: karo_workarounds.yaml
-    total_workarounds: 22
+    total_workarounds: 23
     top_pattern: report_yaml_format(12件)
     breakdown: report_yaml_format(12件), commit_missing(3件), uncategorized(3件), double_deploy(2件),
-      report_missing(1件), task_redeploy(1件)
+      report_missing(1件), task_redeploy(1件), ac_injection_failure(1件)
     warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
     gate_fail_top3:
     - pattern: lu_reason_empty
       count: 5
     - pattern: bc_result_empty
       count: 4
-    - pattern: verdict_invalid
-      count: 2
+    - pattern: field_missing
+      count: 4
     gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止;
-      verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+      必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: report_format
       count: 15
@@ -79,7 +79,7 @@ task:
       count: 7
       hint: lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止
     - reason: ac_version_mismatch
-      count: 5
+      count: 6
       hint: ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込
     - reason: lesson_candidate_no_reason_empty
       count: 3
@@ -99,4 +99,4 @@ task:
     - reason: lesson_candidate_missing
       count: 1
       hint: lesson_candidate.found欄を必ず記入(true/false)。省略禁止
-  deployed_at: "2026-03-30T13:52:22"
+  deployed_at: "2026-03-31T05:47:40"

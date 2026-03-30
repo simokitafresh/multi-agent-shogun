@@ -5,6 +5,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 
 if [ "$#" -lt 1 ]; then
     echo "Usage: bash scripts/lesson_status_migration.sh <ssot_path> [<ssot_path> ...]" >&2
@@ -53,7 +55,7 @@ migrate_one_file() {
         return 1
     fi
 
-    lockfile="${ssot_path}.lock"
+    lockfile="$(lock_path "$ssot_path")"
 
     while [ "$attempt" -lt "$max_attempts" ]; do
         if inserted="$(
