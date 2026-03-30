@@ -150,36 +150,29 @@ is_wsl_drvfs() {
     esac
 }
 
-if is_wsl_drvfs; then
-    # ═══ ポーリングモード（WSL2 /mnt/c/ 用） ═══
-    log "Mode: polling (WSL2 drvfs detected: $DASHBOARD)"
-    log "Poll interval: ${POLL_INTERVAL}s, Debounce: ${DEBOUNCE}s"
-
+# ─── ポーリングループ（WSL2 drvfs + inotifywait未検出時の共通処理） ───
+poll_loop() {
     LAST_MTIME=$(stat -c %Y "$DASHBOARD" 2>/dev/null || echo "0")
-
     while true; do
         sleep "$POLL_INTERVAL"
-
         CURRENT_MTIME=$(stat -c %Y "$DASHBOARD" 2>/dev/null || echo "0")
-
         if [ "$CURRENT_MTIME" != "$LAST_MTIME" ]; then
             sync_gist
             # LAST_MTIME is updated inside sync_gist after debounce
         fi
     done
+}
+
+if is_wsl_drvfs; then
+    # ═══ ポーリングモード（WSL2 /mnt/c/ 用） ═══
+    log "Mode: polling (WSL2 drvfs detected: $DASHBOARD)"
+    log "Poll interval: ${POLL_INTERVAL}s, Debounce: ${DEBOUNCE}s"
+    poll_loop
 else
     # ═══ inotifywaitモード（Linux FS用 — 高速） ═══
     if ! command -v inotifywait &>/dev/null; then
         log "WARNING: inotifywait not found, falling back to polling mode"
-        # Fallback to polling even on Linux FS
-        LAST_MTIME=$(stat -c %Y "$DASHBOARD" 2>/dev/null || echo "0")
-        while true; do
-            sleep "$POLL_INTERVAL"
-            CURRENT_MTIME=$(stat -c %Y "$DASHBOARD" 2>/dev/null || echo "0")
-            if [ "$CURRENT_MTIME" != "$LAST_MTIME" ]; then
-                sync_gist
-            fi
-        done
+        poll_loop
     fi
 
     log "Mode: inotifywait (Linux FS detected: $DASHBOARD)"
