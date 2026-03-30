@@ -58,6 +58,28 @@ if [ -n "$existing_delegated" ]; then
     exit 0
 fi
 
+# Step 2.5: 家老inboxに既にcmd_idが存在するかチェック（別経路委任の検出）
+KARO_INBOX="$PROJECT_DIR/queue/inbox/karo.yaml"
+if [ -f "$KARO_INBOX" ] && grep -Fqw "$CMD_ID" "$KARO_INBOX" 2>/dev/null; then
+    echo "WARN: $CMD_ID is already mentioned in karo inbox (previously sent via another path)" >&2
+    echo "BLOCK: Refusing to send duplicate. If re-delegation is intended, remove existing inbox entry first." >&2
+    exit 1
+fi
+
+# Step 2.6: dashboardパイプラインに既にcmd_idが載っているかチェック
+DASHBOARD="$PROJECT_DIR/dashboard.md"
+if [ -f "$DASHBOARD" ] && grep -Fqw "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
+    echo "WARN: $CMD_ID is already listed in dashboard.md (karo already aware)" >&2
+    echo "BLOCK: Refusing to send duplicate. Verify dashboard pipeline status first." >&2
+    exit 1
+fi
+
+# Step 2.7: archiveに完了済みとして存在するかチェック
+if find "$PROJECT_DIR/queue/archive/cmds/" -maxdepth 1 -name "${CMD_ID}_*" -print -quit 2>/dev/null | grep -q .; then
+    echo "BLOCK: $CMD_ID is already archived (completed). Cannot re-delegate." >&2
+    exit 1
+fi
+
 # Step 3: inbox_write.sh で家老に通知
 bash "$SCRIPT_DIR/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
     echo "ERROR: inbox_write.sh failed for $CMD_ID" >&2
