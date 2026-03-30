@@ -20,7 +20,7 @@ fi
 # Extract failure info from report YAML
 export REPORT_PATH SCRIPT_DIR
 extract_result=$(python3 << 'PYEOF'
-import yaml, os, sys, json, re
+import yaml, os, sys, json
 
 report_path = os.environ["REPORT_PATH"]
 script_dir = os.environ["SCRIPT_DIR"]
@@ -111,21 +111,35 @@ print(json.dumps({
 PYEOF
 )
 
-# Parse JSON result
-action=$(echo "$extract_result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('action','skip'))")
+# Validate extraction result
+if [ -z "$extract_result" ]; then
+    echo "[auto_failure] Error: extraction produced empty output (${REPORT_PATH})" >&2
+    exit 1
+fi
+
+# Parse all JSON fields in a single python3 call (was 6 separate invocations)
+action="" reason="" PROJECT="" TITLE="" DETAIL="" SOURCE_CMD="" AUTHOR=""
+eval "$(echo "$extract_result" | python3 -c "
+import json, sys, shlex
+d = json.load(sys.stdin)
+mapping = [
+    ('action', 'action', 'skip'),
+    ('reason', 'reason', ''),
+    ('project', 'PROJECT', 'unknown'),
+    ('title', 'TITLE', 'unknown'),
+    ('detail', 'DETAIL', ''),
+    ('source_cmd', 'SOURCE_CMD', 'unknown'),
+    ('author', 'AUTHOR', 'unknown'),
+]
+for json_key, var_name, default in mapping:
+    v = d.get(json_key, default)
+    print(f'{var_name}={shlex.quote(str(v))}')
+")"
 
 if [ "$action" = "skip" ]; then
-    reason=$(echo "$extract_result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('reason',''))")
     echo "[auto_failure] Skipped: ${reason} (${REPORT_PATH})"
     exit 0
 fi
-
-# Extract fields
-PROJECT=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('project','unknown'))")
-TITLE=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('title','unknown'))")
-DETAIL=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('detail',''))")
-SOURCE_CMD=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('source_cmd','unknown'))")
-AUTHOR=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('author','unknown'))")
 
 # Call lesson_write.sh with --status draft
 echo "[auto_failure] Registering draft lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
