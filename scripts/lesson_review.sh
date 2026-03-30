@@ -14,13 +14,17 @@ if [ -z "$PROJECT_ID" ]; then
     exit 0
 fi
 
-# Get project path from config/projects.yaml
+# Get project path from config/projects.yaml (env var to avoid shell injection)
+export PROJECT_ID
+export SCRIPT_DIR
 PROJECT_PATH=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+import os, yaml
+script_dir = os.environ['SCRIPT_DIR']
+project_id = os.environ['PROJECT_ID']
+with open(os.path.join(script_dir, 'config/projects.yaml'), encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
+    if p['id'] == project_id:
         print(p['path'])
         break
 ")
