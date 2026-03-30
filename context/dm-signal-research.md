@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-03-29 cmd_1480 鮮度確認(実質変更なし。cmd_1463-1478はops領域) -->
+<!-- last_updated: 2026-03-31 cmd_1604/1608/1609 R29g+R30結果追記 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -350,6 +350,35 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - L494: 将軍予備分析と忍者独立検証で数値が乖離。独立実装間の差異は想定内（cmd_1411）
 - L495: 将軍先行分析とのCAGR差異は独立実装間の想定差（cmd_1411）
 - L498: ローリングSharpe選抜は遅行指標でWardクラスタ構造選抜に劣後する（cmd_1417）
+- L514: Ward Two-Stage EW(k=5,lookback=36mo)のクラスタが141リバランス日(12年)完全固定。1/N EWとの差+0.25%。パフォーマンスに寄与していない定量的証拠（cmd_1570）
+- Ward固定化根因(cmd_1578): 相関距離の構造的狭さ(separability=0.33<0.5全期間全k、全ペア距離mean=0.61)。シンv2は旧より高相関(距離26%狭)でWardさらに不安定(ARI安定性45.5%vs旧63.6%)
+- K=5/LB=36 vs K=4/LB=24比較(cmd_1576): Sharpe差0.1%未満(2.0801 vs 2.0793)で実質同等。R19(99セルGS)真最適はK=4/LB=30。後方伝播検証不在が根因だがパラメータズレは軽微
+- **R28 Ward Cluster Selection(cmd_1579): Ward改善不可の最終根拠**。クラスタ内momentum top1選出+K体EW保有→全K(3,4,5)で現行Ward FoF(全員保有)に全指標劣後。ClSel(K=5) Sharpe1.77<1/N EW1.78。超越条件3つ全FAIL(CAGR:60.6%vs80.6%/Calmar:2.72vs4.18)。**ウェイト変更でもselection変更でもWard改善不可能**
+- **R28-シン ClSel逆転(cmd_1581): シン素材で有効に逆転**。シンClSel_K3がCAGR74.6%/Sharpe1.75/Calmar4.60/MaxDD-16.2%/UWP3mで全方式中最良。超越条件B(Calmar4.60>3.90×0.95)PASS+C(UWP3m<5m)PASS。旧忍法では全FAIL→シンで逆転=素材依存性が明確。集中投資リスク(20体中3体)が残課題。cmd_1578(ARI45.5%=クラスタが動く)と整合
+- **R28-OOS 過適合なし(cmd_1580): WF-OOS 7窓で旧忍法Ward ClSel過適合フラグなし**。劣化率<30%全K。Ward K=4がOOS最良(CAGR74.0%/Sharpe2.02/Calmar3.57)。Ward vs Simple Momentum: 全KでWard優位(Sharpe差+0.28〜0.49)。Ward vs 1/N EW: K=4,5がEW(Sharpe1.89)上回る。**OOSでクラスタリング付加価値確認**
+- R28-K2端点検証(cmd_1584): K=2は全K中CAGR最高(旧61.3%/シン75.8%)だがMaxDD最悪(旧-32.2%/シン-20.4%)。旧は超越条件全FAIL。シンは条件Bのみ辛うじてPASS(Calmar3.72≥3.705)。**K=2は集中リスク許容範囲外。K=3-5が最適帯域**
+- R28-指標感度分析(cmd_1582): 4指標(Momentum/Sharpe/Calmar/Sortino)×K=3,4,5=12パターン全てWardFoF全員保有(Sharpe1.85)に劣後。Sharpe選抜K=5が1.80で最高。Sortino-Momentum間ランク相関0.49で最も独立。**指標空間でもWard改善不可**
+- R28-Momentum持続性(cmd_1583): 個別自己相関は全lag非有意。クロスセクショナルhit rateはK=3,4で高度有意(短期1ヶ月)だが長期lookbackで減衰。**R28のmomentum前提は弱い。12ヶ月lookbackの理論的根拠は薄い**
+- **R28-シンOOS(cmd_1585): K=3 Calmar41.6%劣化=OVERFIT**。K=4はCalmar28.1%劣化でOK。CAGR劣化は全K7%以内。Ward vs SimpleMom付加価値は旧忍法比半減。**cmd_1581のK=3超越条件B+C PASSはOOSで過適合の可能性。シンでもK=4がOOS最良**。L516登録
+- R28-シン指標感度(cmd_1586): シンClSel 4指標(Momentum/Sharpe/Calmar/Sortino)×K=3,4,5=12パターン完了。Sortino K=3がCAGR75.3%/Sharpe1.81/Calmar5.29/MaxDD-14.2%で全方式最高。**超越条件ではmomentum最優(2/3 PASS)。Sortino1/3(Bのみ)、Sharpe/Calmar0/3**。momentumはUWP3m(最短)で条件C PASS。指標変更で超越条件改善せず
+- R28-回転率(cmd_1587): ClSel K=3は低回転率。シン平均入替0.77体/月(26%/月)、全入替(3体全交代)は0.9%。入替月vs非入替月リターン差は非有意(p=0.91)。**ローテーション自体はリターンに寄与していない。取引コストは限定的**。シン加速R-激攻が最頻選出(44.7%)
+- R28-耐性(cmd_1588): ClSel K=3下落月(EW<-5%,11回)平均-9.76%でEW(-9.52%)微劣後だが最悪月-15.37%はEW(-18.67%)より3.3pp浅。**MaxDD-16.22%は3手法最浅**(EW-22.74%/Ward-20.78%)。COVID暴落2ヶ月底→翌月回復(計3ヶ月)。集中投資リスクは上昇月超過リターン(+0.69pp vs EW)で補完
+- **R28-統合(cmd_1589): 全26方式統合比較+推奨**。CAGR TOP3: シンK2_Mom(75.8%)>K3_Sortino(75.3%)>K3_Mom(74.6%)。Calmar TOP3: K3_Sortino(5.29)>K3_Mom(4.60)>K3_Sharpe(4.49)。**3条件全PASS(超越+OOS劣化<30%+Turnover)はシンClSel K=4 Momentumのみ**。K=3 MomはCalmar劣化41.6%FAIL(CAGR劣化7.2%は閾値内)。K=3 SortinoはOOS未検証。**素材効果(シン>旧)が方式選択より支配的。旧ではClSel<FoF<EWだがシンではClSel>EW>FoF(逆転)** → `outputs/analysis/nested_fof/r28_unified_comparison.md`
+- **⚠️R28-β分離(cmd_1591): ClSel K=3のCAGR向上95.8%はβ由来、α寄与わずか4.2%**。選出PF平均β=1.105 vs全体1.000(spread+0.105,p<0.0001)。β調整後: CAGR3.14%/Sharpe0.34/Calmar0.15/MaxDD-20.5%/UWP24m。**β調整後超越条件A/B/C全FAIL**。momentum選出は構造的に高βPFを掴む(最頻:シン加速R-激攻β1.233)。OOS: α寄与6.1%だが6窓中2窓でα負。**cmd_1581/1586の超越条件PASSはβ露出込み=αとしての付加価値は確認できない**(assumption_invalidation)。L517登録
+- R28-SortinoOOS(cmd_1590): Sortino選出WF-OOS(8窓90m)。K=3: CAGR70.1%/MaxDD-29.0%(full-sample-14.2%から倍増)/Calmar劣化54.4%=**OVERFIT**。K=4: Calmar劣化31.1%=OVERFIT。K=5: 全指標30%未満OK。CAGR/Sharpe劣化率はSortino<Momentum(信頼性高)だがMaxDD劣化はSortino>Momentum(K=3: -103.9% vs -58.7%)。**OOS超越条件は全K全FAIL(0/3)**。**full-sampleのMaxDD優位はIS全体の選出バイアスでOOS消滅**(assumption_invalidation cmd_1586)。L518登録
+- **R28-OOS超越(cmd_1592): OOS同士比較で超越条件全方式FAIL**。OOS個体ベスト>full-sample(CAGR96.8%vs92.2%、Calmar4.71vs3.90)。Momentum K=3/4/5全0/3FAIL、**Sortino K=3/4/5全0/3FAIL**、1/N EWのみ条件C PASS(1/3)。原因: (1)OOS個体ベスト上昇で閾値上昇 (2)ClSel OOS性能劣化の二重効果。**選出指標(momentum/Sortino)に関わらずOOSで超越条件未達**。L519登録
+- **R28-IS感度(cmd_1593): IS長は結論を変えない。OVERFIT確定**。IS=36/48/60全てCalmar劣化>30%(46.4%/42.6%/41.6%)。MaxDD=-25.7%は全IS長で同一。CAGR/Sharpe劣化7-15%。Cross-metric CV=1-4%。**CLUSTER_LOOKBACK=36が律速**: IS≥36では末尾36ヶ月のみ使用されるためIS長を変えても銘柄選択は変化しない。最適IS=60(最小劣化)。L520登録
+- **⚠️R28-4指標β調整(cmd_1596): 全4指標でβ調整後超越条件全FAIL(12判定全FAIL)**。α ranking: Sortino(10.0%)>Sharpe(8.5%)>Calmar(7.9%)>Momentum(4.2%)。βプロファイル: Momentum=高β(1.105,p<0.0001)、Sharpe=低β(0.938,p=0.0003)、Calmar/Sortino=中立(~1.0)。β調整後水準: 最良Sortino(adj CAGR7.5%/Sharpe0.73)でもUWP24m。**ClSel K=3のCAGR向上は全指標でβ露出に依存、αとしての付加価値(超越条件)は確認不能**。L521登録
+- R28-Sortino β分離+OOS補完(cmd_1595): **Sortino選出はlow-β(avg β=0.98,市場中立)でα2.4倍**(α share10.0% vs momentum4.2%)。momentum=高β(1.11)は構造的。**選出指標の数学的性質がβプロファイルを構造的に決定**。OOS超越条件はSortino全K0/3 FAIL(momentum同様)。L522登録
+- **R28-LB感度(cmd_1594): 最適LB=2ヶ月**。旧忍法K3 t=4.04、シンK4 t=3.75でLB=2が全K一貫最大。標準12M(旧t=2.75/シンt=1.48)は最適でない。**4-5m/10-11mピーク仮説否定**。Spearman rank相関は全LB非有意(ランキング全体の連続相関なし)。assumption_invalidation: cmd_1579/1583。L523登録
+- **R28-K値β検証(cmd_1597): K=2-5全水準でβ調整後超越条件全FAIL(16判定全FAIL)**。α share: K=2(6.5%)→K=3(4.2%)→K=4(1.3%)→K=5(1.0%)。**K増加でα効率単調減少**。K=4の3条件唯一PASSはβ主導(assumption_invalidation: cmd_1589)。L525登録
+- **R28-統合v2(cmd_1598): 全19cmd最終統合レポート** → `outputs/analysis/nested_fof/r28_final_unified_comparison.md`。β調整後超越12/12 FAIL、OOS全方式FAIL、IS感度OVERFIT確定。3選択肢: (A)ClSel不採用(α不在、EWで十分) (B)Sortino+短期LBで改良版検証 (C)ClSel概念保持+別α源泉探索
+- **R28-短期LB BT(cmd_1599): LB=2mは全K全指標でLB=12mに劣後。R28結論覆らず**。β緩和あり(K=3: 1.105→1.021)でα share4.2%→9.2%倍増だがraw CAGR/Sharpe/Calmar/MaxDD(-29.3%)全悪化。**超越条件0/3**。LB短縮で持続性(t統計量)は改善してもBTパフォーマンスは低下。L526登録
+- **⚠️R28-短期LB OOS(cmd_1600): LB=2mでOOS劇的改善。Calmar劣化41.5%→逆転-23.5%**。K=3: OOS CAGR82.6%/Sharpe1.78/Calmar3.11/MaxDD-26.6%。LB=12m OOS(K=3 Calmar劣化41.6%=OVERFIT)が**LB=2mで解消**。α寄与7.5%。**full-sampleではLB=12m優位だがOOSではLB=2m優位** — 過適合に強い
+
+- R28-Sortino LB=2m BT(cmd_1601): **Sortino×LB=2mは全K全指標でLB=12mに劣後。α share3.4%**(LB=12m α10%の1/3)。β=0.951(low-β)で鉄壁/常勝モードに偏向。信号安定性STABLE(CV1.58<2.0)だが6m/12mより大幅不安定。momentum LB=2m(α9.2%)よりα低い。**Sortino×短期LBの組み合わせはα効率を悪化させる**
+- **R28-LB=2m OOS超越(cmd_1602): raw超越条件C PASS(1/3)**。K=3/K=4ともUWP≤5でC PASS。**LB=2mが唯一ClSelでOOS超越条件Cを通す方式**。ただし**β調整後は0/3 FAIL**。LB=12m ClSel全方式0/3 FAILとの明確な差
+- R28-Sortino LB=2m OOS(cmd_1603): **Calmar劣化56.9%=OVERFIT**(LB=12m54.4%と同水準)。momentum LB=2m(-23.5%)とは対照的。**Sortino過適合はLBでなく指標特性(下方偏差推定不安定性)に起因**。momentum LB=2mが最もα効率の高い方式(α7.5%)。L527登録
 
 ### 確定パラメータ（殿裁定 2026-03-19）
 
@@ -575,6 +604,11 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - R23結論: 3方式行動メトリクスローリング(W=24ヶ月×48窓)。**二段EWとBestCAGRは46-48/48窓で同値**。最大連敗は全窓同値。BestCAGRが微差で優位(NHF:-0.4%, underwater:+0.4%)。ランダム平均は両方式より劣位。**純粋構造(二段EW)は行動面でもBestCAGRとほぼ同等**
 - R24結論: 二段EW2Dグリッド99通り(K=2-12×LB=12-60)。**最適(K*,LB*)=(4,30)=BestCAGR(R19)と同一(移動なし)**。Sharpe73/99セル(73.7%)で二段EW優位。**MaxDD86/99セル(86.9%)で二段EW優位(浅いDD)**。ただしCAGR34/99(34.3%)で二段EW劣後。peak_ratio=1.09=頑健。**二段EWはSharpe/リスク面で広範に優位、リターン(CAGR)ではBestCAGR優位**
 - R25結論: シン四神v2 12体2Dグリッド90通り(K=2-11×LB=12-60)。**最適(K*,LB*)=(3,24) Sharpe=1.4785**。BestCAGR最適(K=11,LB=36) Sharpe=1.4705。**最適点移動あり(R24:K=4,LB=30→R25:K=3,LB=24)**。TwoStageEW優位83.3%(Sharpe)>R24(73.7%)。共通期間=2017-04~2026-02(107ヶ月)。**12体でも二段EW構造はロバスト、かつ優位率がR24(21体)より向上**
+- R29f-shin結論(cmd_1606): **シン忍法v2 20体 LB×4指標2Dグリッド ClSel WF-OOS**。48セル全実行。**BEST: LB=6 Momentum CAGR=88.5%, Calmar劣化=-5.1%(OOS>FS)**。R28ベスト(LB=2 Mom 82.6%)を+5.9pp上回る。EW20(72.3%)を+16.2pp上回る。殿基準全PASS=2/48(MaxDD>SPYがボトルネック)。Calmar劣化<30%=33/48。Momentum指標がCAGRトップ3独占 → `queue/reports/tobisaru_report_cmd_1606.yaml`
+- R29f-kyu結論(cmd_1607): **旧忍法15体 LB×4指標2Dグリッド ClSel WF-OOS**。48セル全実行。**BEST: LB=2 Calmar CAGR=77.4%, 劣化9.2%**。殿基準PASS=38/48。Calmar劣化<30%=48/48(全セル、過適合なし)。Momentum列がCAGR最高値独占(LB5:71.9%,LB2:71.3%)。**旧忍法は殿基準PASS率が大幅に高い(38/48 vs shin 2/48)=MaxDDが浅い** → `queue/reports/kotaro_report_cmd_1607.yaml`
+- R29g-shin結論(cmd_1608): **シン忍法v2 20体 NewHigh+UWP追加2指標×12LB=24セルWF-OOS**。殿基準20/24 PASS。6指標統合BEST=LB6 Momentum(CAGR 88.5%, Degrad -5.1%)が依然最強。**NewHigh/UWPはLB1-4で同一体を選出(差別化不可)、LB5+で分岐**。NewHigh LB=11最高CAGR(71.6%)、UWP安定64-69% CAGR。既存4指標より低CAGRだが低MaxDD(-20~-23%)/低UWP(3-7m)で安定性優位 → `queue/reports/hayate_report_cmd_1608.yaml`
+- R29g-kyu結論(cmd_1609): **旧忍法15体 NewHigh+UWP追加24セルWF-OOS**。殿基準14/24 PASS。6指標統合最適LB=2 Calmar(CAGR 77.4%, 劣化9.2%)。**R29f-kyu(4指標48セル)とマージして6指標統合ヒートマップ出力** → `queue/reports/kagemaru_report_cmd_1609.yaml`
+- R30-shin結論(cmd_1604): **20体全個体WF-OOS(IS=60m,OOS=12m,step=12m,8窓)+buy&holdベンチマーク**。面: CAGR>TQQQ&TECL=20/20、過適合SUSTAIN=20/OVERFIT=0(全体OOS≥FS)。殿基準ALL_PASS=7/21(**MaxDD>SPYがボトルネック**: 6/20のみ)。点: CAGR1位=加速D-常勝(96.8%)、alpha>0=8/20。**ClSel K=3 LB=2m: CAGR75th(rank6/20)/Sharpe95th(rank2/20)**。EW20 OOS: CAGR72.3%/Sharpe1.77/Calmar3.18 → `queue/reports/hanzo_report_cmd_1604.yaml`
 - R26結論: 全PF65体2Dグリッド171通り(K=2-20×LB=12-60)。**最適(K*,LB*)=(6,18) Sharpe=1.492**。**Sharpe優位70.8%(121/171)、CAGR優位67.3%、MaxDD優位95.9%(164/171)**。mean Sharpe=1.402, std=0.048, peak_ratio=1.064=頑健。R24(21体)overlap99セルでR26全敗(65体=分散でSharpe水準低下。構造は頑健)。**最適K: R24=4→R25=3→R26=6（体数増でK増加傾向）。LB: R24=30→R25=24→R26=18（体数増でLB短縮傾向）。三段階(12→21→65体)全てで二段EWのSharpe/MaxDD優位構造は一貫**
 - R11 M4とR2の差分: 追い風-鉄壁(M4) vs 追い風-激攻(R2)のみ。MaxDD大差(-11.5% vs -16.7%)
 - TO(月次入替率): Ward K=5=19.6%, Greedy K=4=22.6%。Ward低回転で実運用有利
