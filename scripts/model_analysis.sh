@@ -732,10 +732,20 @@ def section_c_detail():
                 "total": model_total_all,
                 "rate": round(model_total_clear / model_total_all * 100, 1),
             }
+    # raw_matrix: section_c()と同等の全モデル×全タスク種別(rate計算済み)
+    raw_matrix = {}
+    for m in sorted(matrix.keys()):
+        type_stats = {}
+        for t in sorted(matrix[m].keys()):
+            s = matrix[m][t]
+            rate = (s["clear"] / s["total"] * 100) if s["total"] > 0 else 0.0
+            type_stats[t] = {"clear": s["clear"], "total": s["total"], "rate": rate}
+        raw_matrix[m] = type_stats
     return {
         "data_quality": data_quality,
         "known_types": known_types,
         "model_type_matrix": model_type_matrix,
+        "raw_matrix": raw_matrix,
     }
 
 # ═══════════════════════════════════════════════════════
@@ -897,7 +907,7 @@ def output_detail():
             row += "| %-*s" % (col_w, ov_cell)
             print(row)
     # Also print legacy full table (including unknown) as sub-section
-    c = section_c()
+    c = cd["raw_matrix"]
     print()
     print("  [C-full] 全種別(unknown含む)")
     all_types = sorted(set(t for m_data in c.values() for t in m_data.keys()))
