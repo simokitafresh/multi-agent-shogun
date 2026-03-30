@@ -30,6 +30,16 @@ reason: "$reason"
 EOF2
 }
 
+write_done_flag() {
+    local cmd_id="$1" result="$2"
+    local done_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
+    mkdir -p "$done_dir"
+    cat > "$done_dir/report_merge.done" <<EOF3
+timestamp: $(date +%Y-%m-%dT%H:%M:%S)
+result: $result
+EOF3
+}
+
 # ─── 引数バリデーション ───
 if [ -z "$CMD_ID" ]; then
     echo "Usage: report_merge.sh <cmd_id>" >&2
@@ -88,10 +98,7 @@ if [ "$TOTAL" -eq 0 ]; then
     echo "INFO: ${CMD_ID}に偵察タスクなし"
     write_gate_flag "$CMD_ID" "report_merge" "skip" "偵察タスクなし"
     # cmd_108: Write .done flag for cmd_complete_gate
-    local_gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
-    mkdir -p "$local_gates_dir"
-    echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$local_gates_dir/report_merge.done"
-    echo "result: SKIP" >> "$local_gates_dir/report_merge.done"
+    write_done_flag "$CMD_ID" "SKIP"
     exit 0
 fi
 
@@ -124,10 +131,7 @@ if [ "$DONE_COUNT" -eq "$TOTAL" ]; then
     echo "READY: 並行偵察${TOTAL}件完了。統合分析(Step 1.5)を実施せよ"
     write_gate_flag "$CMD_ID" "report_merge" "pass" "偵察${DONE_COUNT}件完了"
     # cmd_108: Write .done flag for cmd_complete_gate
-    local_gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
-    mkdir -p "$local_gates_dir"
-    echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$local_gates_dir/report_merge.done"
-    echo "result: READY" >> "$local_gates_dir/report_merge.done"
+    write_done_flag "$CMD_ID" "READY"
     exit 0
 elif [ "$DONE_COUNT" -gt 0 ]; then
     pending_names=$(IFS=,; echo "${PENDING_NINJAS[*]}")
