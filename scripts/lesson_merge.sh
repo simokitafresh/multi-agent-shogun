@@ -6,6 +6,11 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Source lock_path helper for /tmp/-based lock files (WSL2 NTFS flock stability)
+# shellcheck source=scripts/lib/lock_path.sh
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
+    || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
 PROJECT_ID="${1:-}"
 SOURCE_ID_1="${2:-}"
 SOURCE_ID_2="${3:-}"
@@ -49,7 +54,7 @@ if [ -z "$PROJECT_PATH" ]; then
 fi
 
 LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
-LOCKFILE="${LESSONS_FILE}.lock"
+LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
 if [ ! -f "$LESSONS_FILE" ]; then
     echo "ERROR: $LESSONS_FILE not found." >&2
@@ -281,7 +286,7 @@ if changed:
 else:
     print(f"[lesson_merge] context: no changes needed")
 CTXEOF
-                    ) 201>"${CONTEXT_FULL_PATH}.lock"
+                    ) 201>"$(lock_path "$CONTEXT_FULL_PATH")"
                 fi
             fi
         fi
