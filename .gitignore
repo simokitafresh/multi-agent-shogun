@@ -160,6 +160,7 @@
 !scripts/cmd_absorb.sh
 !scripts/cmd_delegate.sh
 !scripts/sync_lessons.sh
+!scripts/mcp_sync_lesson.sh
 !scripts/lesson_status_migration.sh
 !scripts/lib/
 !scripts/lib/cli_lookup.sh
