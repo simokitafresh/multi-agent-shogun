@@ -333,13 +333,7 @@ elif isinstance(data, list):
 if changed:
     print('[autofix] binary_checks result正規化(true/PASS→yes, false/FAIL→no)', file=sys.stderr)
 print(yaml.dump(data, default_flow_style=False, allow_unicode=True), end='')
-" <<< "$val" 2>&1)
-                local autofix_msg=""
-                if [[ "$fixed" == *"[autofix]"* ]]; then
-                    autofix_msg=$(echo "$fixed" | grep '^\[autofix\]' | head -1)
-                    fixed=$(echo "$fixed" | grep -v '^\[autofix\]')
-                    echo "$autofix_msg" >&2
-                fi
+" <<< "$val")
                 echo "$fixed"
                 return 0
             fi
@@ -368,13 +362,7 @@ elif isinstance(data, list) and all(isinstance(x, str) for x in data):
         print(raw, end='')
 else:
     print(raw, end='')
-" <<< "$val" 2>&1)
-                local autofix_msg=""
-                if [[ "$fixed" == *"[autofix]"* ]]; then
-                    autofix_msg=$(echo "$fixed" | grep '^\[autofix\]' | head -1)
-                    fixed=$(echo "$fixed" | grep -v '^\[autofix\]')
-                    echo "$autofix_msg" >&2
-                fi
+" <<< "$val")
                 echo "$fixed"
                 return 0
             fi
@@ -401,13 +389,7 @@ elif isinstance(data, dict) and all(isinstance(v, dict) for v in data.values()):
     print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
 else:
     print(raw, end='')
-" <<< "$val" 2>&1)
-                local autofix_msg=""
-                if [[ "$fixed" == *"[autofix]"* ]]; then
-                    autofix_msg=$(echo "$fixed" | grep '^\[autofix\]' | head -1)
-                    fixed=$(echo "$fixed" | grep -v '^\[autofix\]')
-                    echo "$autofix_msg" >&2
-                fi
+" <<< "$val")
                 echo "$fixed"
                 return 0
             fi
@@ -440,13 +422,7 @@ elif isinstance(data, list) and len(data) >= 1:
         print(raw, end='')
 else:
     print(raw, end='')
-" <<< "$val" 2>&1)
-                local autofix_msg=""
-                if [[ "$fixed" == *"[autofix]"* ]]; then
-                    autofix_msg=$(echo "$fixed" | grep '^\[autofix\]' | head -1)
-                    fixed=$(echo "$fixed" | grep -v '^\[autofix\]')
-                    echo "$autofix_msg" >&2
-                fi
+" <<< "$val")
                 echo "$fixed"
                 return 0
             fi
