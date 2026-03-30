@@ -50,7 +50,16 @@ def load_cmds(path):
     try:
         data = yaml.safe_load(content)
         if data and isinstance(data, dict):
-            return data.get('commands', []) or []
+            cmds_val = data.get('commands', []) or []
+            if isinstance(cmds_val, dict):
+                # shogun_to_karo.yaml: commands がdict形式(キー=cmd_id)
+                result = []
+                for cmd_id, cmd_data in cmds_val.items():
+                    if isinstance(cmd_data, dict):
+                        cmd_data.setdefault('id', cmd_id)
+                        result.append(cmd_data)
+                return result
+            return cmds_val
         if data and isinstance(data, list):
             return data
         return []
