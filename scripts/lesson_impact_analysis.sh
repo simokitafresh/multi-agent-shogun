@@ -393,7 +393,7 @@ def main():
         sync_counters(rows, root, opts["dry_run"])
     elif opts["mode"] == "detail":
         stats = build_stats(rows)
-        summaries = load_lesson_summaries(os.path.dirname(data_file))
+        summaries = load_lesson_summaries(os.path.dirname(os.path.dirname(data_file)))
         print_detail(opts["detail_id"], stats, summaries)
     else:
         stats = build_stats(rows)
