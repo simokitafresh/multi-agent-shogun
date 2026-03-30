@@ -19,6 +19,12 @@ if [ -z "$AGENT_ID" ]; then
     exit 1
 fi
 
+# Validate agent_id: only lowercase letters and underscores allowed (path traversal prevention)
+if [[ ! "$AGENT_ID" =~ ^[a-z_]+$ ]]; then
+    echo "ERROR: Invalid agent_id '$AGENT_ID'. Only lowercase letters and underscores allowed." >&2
+    exit 1
+fi
+
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
@@ -105,7 +111,7 @@ try:
         with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
             f.write(new_text)
         os.replace(tmp_path, inbox_path)
-    except:
+    except Exception:
         os.unlink(tmp_path)
         raise
 
