@@ -191,8 +191,6 @@ if TRACKING_TSV.exists():
             if not m:
                 continue
             cmd_num = int(m.group(1))
-            if cmd_num >= 900:  # skip test cmds (cmd_999 etc.)
-                continue
             project_id = cmd_project_map.get(cmd_id)
             if not project_id:
                 continue
