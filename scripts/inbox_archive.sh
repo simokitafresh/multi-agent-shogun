@@ -6,6 +6,9 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
+    || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
 AGENT="$1"
 
 if [ -z "$AGENT" ]; then
@@ -14,7 +17,7 @@ if [ -z "$AGENT" ]; then
 fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT}.yaml"
-LOCKFILE="${INBOX}.lock"
+LOCKFILE="$(lock_path "$INBOX")"
 
 if [ ! -f "$INBOX" ]; then
     echo "[inbox_archive] No inbox file for $AGENT" >&2
