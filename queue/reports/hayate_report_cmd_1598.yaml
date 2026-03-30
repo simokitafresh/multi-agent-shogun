@@ -1,0 +1,90 @@
+worker_id: hayate
+task_id: cmd_1598_recon
+parent_cmd: cmd_1598
+timestamp: '2026-03-30T18:11:15'
+status: completed
+ac_version_read: 7d010443
+result:
+  summary: 'R28全19cmd(18完了+cmd_1597未完了)統合比較レポート完成。全方式の統合比較テーブル(§1-§4)、主要知見5点(§6)、3選択肢(§7)を構造化。結論:
+    (1)β調整後超越条件=全4指標x3条件=12/12 FAIL、α不足が構造的(cmd_1591/1595/1596)。(2)OOS超越条件=全ClSel方式0/3
+    FAIL、1/N EWのみ1/3 PASS(cmd_1592)。(3)IS感度=全IS長OVERFIT確定(cmd_1593)。(4)最適LB=2ヶ月、現行12-36Mは最適でない(cmd_1594)。(5)Sortino
+    α効率最高(10.0%)だがOOS MaxDD倍増で不安定(cmd_1590/1595)。詳細→outputs/analysis/nested_fof/r28_final_unified_comparison.md'
+  details: '【AC1:統合比較テーブル】§1 FS Raw全方式(シン10+旧10パターン)、§2 WF-OOS+劣化率(シン6+旧7パターン)+IS感度3水準、§3
+    β調整後4指標(K=3)、§4 超越条件3テーブル(FS raw/OOS raw/β-adj)。→outputs/analysis/nested_fof/r28_final_unified_comparison.md。【AC2:主要知見5点】(1)β問題:momentum
+    α4.2%/Sortino10.0%。全指標β調整後超越FAIL。momentum選出=高βPF選出(p<0.0001)(2)OOS:全方式超越FAIL。OOS個体ベスト高+ClSel劣化の二重効果(3)IS感度:3水準全OVERFIT。MaxDD共通-25.7%。CLUSTER_LB=36律速(4)LB:最適2m。12M/36Mは非最適。LB増→予測力減。殿仮説4-5m/10-11mピーク不在(5)Sortino:α最高10%だがOOS
+    MaxDD倍増(-14.2→-29.0%)。CAGR劣化<Momentumで信頼性高。【AC3:3選択肢】A=ClSel不採用(α不在。EW/WardFoFで十分。OOSでEW>全ClSel)。B=Sortino+LB2mで改良版検証(α最高指標×最適LB。K=4
+    Sortino OOS CAGR劣化-5.7%=改善。追加2-3cmd)。C=ClSel概念保持+非リターン系α源泉探索(regime/vol/corr変化等。成果保証なし。5-10cmd)。欠損:
+    cmd_1597未完了(K=2-5 β分離)+cmd_1582旧Sharpeのみ+Sortino OOS β未分析'
+purpose_validation:
+  cmd_purpose: cmd_1589(統合v1)はcmd_1579-1588の10cmdのみ。その後cmd_1590-1597で殿指摘のβ分離・OOS超越・IS感度・LB感度・4指標β比較が完了。全19cmdの結果を1つの最終統合レポートにまとめ、殿がR28の本番採用判断を行えるようにする
+  fit: true
+  purpose_gap: cmd_1597(K=2-5 β分離)が未完了のためK=3以外のα寄与率テーブルは不完全。ただしK=3が最重要(超越条件最多PASS)であり判断材料として十分
+files_modified:
+- path: outputs/analysis/nested_fof/r28_final_unified_comparison.md
+  change: created
+lesson_candidate:
+  found: false
+  no_lesson_reason: 統合分析タスク。各cmd個別の教訓はそれぞれの報告で提出済み(cmd_1585/1590/1591/1593/1594/1595/1596にlesson_candidate有)。統合作業自体に新規教訓なし
+  title: ''
+  detail: ''
+  project: dm-signal
+lessons_useful: []
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'yes'
+  AC1:
+  - check: cmd_1579-1597の全19報告YAMLを読み込んだか(18完了+1未完了を確認)
+    result: 'yes'
+  - check: 全方式の統合比較テーブルを作成したか(FS raw/OOS/β-adj/超越条件)
+    result: 'yes'
+  - check: 列にCAGR/Sharpe/Calmar/MaxDD/UWP+β調整後指標+OOS指標+超越条件を含むか
+    result: 'yes'
+  AC2:
+  - check: β問題(全指標でα不足)の知見を構造化しcmd番号で根拠を紐付けたか
+    result: 'yes'
+  - check: OOS全方式超越FAILの知見をcmd番号で根拠を紐付けたか
+    result: 'yes'
+  - check: IS感度OVERFIT確定の知見をcmd番号で根拠を紐付けたか
+    result: 'yes'
+  - check: LB最適2mの知見をcmd番号で根拠を紐付けたか
+    result: 'yes'
+  - check: Sortino α効率最高だが不十分の知見をcmd番号で根拠を紐付けたか
+    result: 'yes'
+  AC3:
+  - check: 選択肢A(ClSel不採用)のpros/consを提示したか
+    result: 'yes'
+  - check: 選択肢B(Sortino+短期LBで改良版検証)のpros/consを提示したか
+    result: 'yes'
+  - check: 選択肢C(ClSel概念保持+別α源泉探索)のpros/consを提示したか
+    result: 'yes'
+  - check: 各選択肢にファクトベースの根拠を紐付けたか
+    result: 'yes'
+verdict: PASS
+implementation_readiness:
+  files_to_modify:
+  - path: outputs/analysis/nested_fof/r28_final_unified_comparison.md(新規作成)
+  affected_files:
+  - cmd_1579-1597の各報告YAML(参照のみ変更なし)
+  - outputs/analysis/nested_fof/r28_unified_comparison.md(cmd_1589版。本報告は拡張版)
+  related_tests:
+  - 統合分析のみ。テスト対象なし
+  edge_cases:
+  - cmd_1597(K=2-5 β分離)未完了のためK=3以外のα寄与率テーブル不完全
+  - cmd_1582旧忍法指標感度はSharpe値のみ(CAGR/Calmar/MaxDD/UWP欠損)
+  dependency_constraints:
+  - 全18完了報告(cmd_1579-1596)が前提
+  - cmd_1597完了後にK値別α寄与率テーブル更新が必要
