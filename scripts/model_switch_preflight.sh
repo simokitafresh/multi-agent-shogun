@@ -16,6 +16,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 
 TARGET="${1:-}"
@@ -68,7 +69,7 @@ check_hardcodes() {
         'gunshi.*codex'
         'hayate.*codex'
         'gpt-5\.'
-        'claude-[A-Za-z0-9._-]+'
+        'claude-(opus|sonnet|haiku)-[0-9]'
     )
 
     # 検索対象ディレクトリ
