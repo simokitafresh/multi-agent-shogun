@@ -25,7 +25,9 @@ purpose_validation:
   cmd_purpose: R28のWard Cluster Selectionがmomentum(過去リターン)で次月保有PFを選出する前提(momentum持続性)を統計的に検証する
   fit: true
   purpose_gap: ''
-files_modified: []
+files_modified:
+- change: modified
+  path: 偵察のみ
 lesson_candidate:
   found: false
   no_lesson_reason: 既知の統計分析手法を適用。新規教訓なし。R28前提の弱さはcmd_1579結果と整合(既知)
@@ -43,14 +45,15 @@ assumption_invalidation:
   found: true
   affected_cmds:
   - cmd_1579
-  detail: cmd_1579のR28 Ward Cluster SelectionはLB=36Mのmomentumで月次selection。本検証でlookback 12M/6Mのmomentum持続性は非有意〜弱有意。36Mはさらに弱い可能性大。momentum以外のselection指標を検討すべき根拠
+  detail: cmd_1579のR28 Ward Cluster SelectionはLB=36Mのmomentumで月次selection。本検証でlookback
+    12M/6Mのmomentum持続性は非有意〜弱有意。36Mはさらに弱い可能性大。momentum以外のselection指標を検討すべき根拠
 hook_failures:
   count: 0
   details: ''
 binary_checks:
   commit:
   - check: git commitが完了したか(untracked/modified=0)
-    result: ''
+    result: 'yes'
   AC1:
   - check: 15体平均+各体個別の自己相関(lag1-6)を計算し報告したか
     result: 'yes'
