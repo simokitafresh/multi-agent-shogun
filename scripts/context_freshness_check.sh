@@ -208,8 +208,8 @@ def _load_archive_entries() -> list[tuple[str, str, str, str]]:
         except Exception:
             continue
         proj = ""
-        for pid in ACTIVE_PROJECT_IDS:
-            if f"project: {pid}" in text or f"project: '{pid}'" in text:
+        for pid in sorted(ACTIVE_PROJECT_IDS, key=len, reverse=True):
+            if re.search(rf"^project:\s*['\"]?{re.escape(pid)}['\"]?\s*$", text, re.MULTILINE):
                 proj = pid
                 break
         if not proj:
