@@ -1,0 +1,127 @@
+worker_id: hayate
+task_id: cmd_1566_recon
+parent_cmd: cmd_1566
+timestamp: '2026-03-30T13:04:33'
+status: completed
+ac_version_read: 2edf2958
+result:
+  summary: FoF管理画面(admin/fof)は構成PF名・数・パイプライン設定テキストを表示するが、実際のWardクラスタリング結果ウェイト(momentum_data[weights])は一切表示していない。Ward
+    PF(旧忍法-Ward)の本番データは不均等ウェイト(k=5, 3クラスタサイズ:8/3/4, ウェイト5%/6.7%/10%)。既存debug API(/api/debug/fof-weights/{id})がfof_component_weightsテーブルを返すため、新規APIなしで実装可能。
+  details: "## AC1: フロントエンド FoF管理画面の表示項目\n\nページ: /admin/fof (frontend/app/admin/fof/page.tsx)\n\
+    \n### List View表示項目:\n1. FoF名 (fof.name)\n2. 構成PF数と名前 (component_portfolios→名前解決)\n\
+    3. アロケーション戦略テキスト (getPipelineAllocationDescription() — pipeline_configから静的生成。例:\
+    \ \"Top 2 by Mom → 50.0% each\")\n4. 操作ボタン: Edit, Copy, Delete, Move Up/Down,\
+    \ Recalculate\n\n### Editor View表示項目:\n5. Portfolio Name\n6. Benchmark Ticker\n\
+    7. Rebalance Frequency\n8. 構成ポートフォリオ選択(ドロップダウン)\n9. Composition Preview: **単純な100/N均等ウェイト表示**\
+    \ (\"Equal Weight: X% each\")\n10. Selection Pipeline設定(ブロック追加/編集)\n11. Terminal\
+    \ Block設定(EqualWeight/KalmanMeta/CashTerminal選択)\n\n### ウェイト情報の表示状態:\n- getPipelineAllocationDescription()が静的アロケーション戦略テキストを返すのみ\
+    \ (frontend/lib/types/pipeline.ts:278)\n- **DB上の実際のウェイト(momentum_data[\"weights\"\
+    ])は一切表示されていない**\n- Editorの\"Equal Weight: X% each\"は100/validCountの単純計算で、Ward結果とは無関係\n\
+    \n---\n\n## AC2: バックエンドAPIのウェイト関連エンドポイント\n\n### 1. /api/signals (backend/app/api/signals.py)\n\
+    - FoFの場合: expand_portfolio_to_tickers()でticker×weightに展開し、表示用文字列として返す\n- signal_cache内でmomentum_data[\"\
+    weights\"]を使用(L132-162)\n- **コンポーネントPF名→ウェイト対応は返さない**(tickerレベルまで展開される)\n- 非リバランス日はweights=Noneのため、直近リバランス日までフォールバック(L152-162)\n\
+    \n### 2. /api/debug/fof-weights/{portfolio_id} (backend/app/api/debug.py:686)\n\
+    - fof_component_weightsテーブルからコンポーネント別のtarget_weight/actual_weight/driftを返す\n-\
+    \ **Admin認証必須のdebug API**\n- 日付範囲フィルタ(start_date, end_date)、limit(default:30日分)あり\n\
+    - 既にコンポーネントPF→ウェイト対応を保持\n- **最も可視化に適したデータソース**\n\n### 3. /api/portfolios/get (backend/app/api/portfolios.py:147)\n\
+    - portfolioのconfig(pipeline_config含む)を返す\n- 実際のウェイト計算結果(signals/momentum_data)は含まない\n\
+    - pipeline_configのterminal_block.typeでWardTwoStageEW等を判別可能\n\n### momentum_data[\"\
+    weights\"]の保存場所:\n- signalsテーブル.momentum_data JSONカラム内\n- リバランス日のみ{\"weights\"\
+    : {\"component_id\": weight_value, ...}}を保存\n- 非リバランス日は{\"skipped\": true}で最小化(cmd_1450最適化)\n\
+    \n---\n\n## AC3: Ward PF本番データ\n\n### Ward PF特定:\n- 名前: 旧忍法-Ward\n- ID: 0012f956-123d-4e15-84c5-7731ca00ecde\n\
+    - Terminal Block: WardTwoStageEW (k=5, lookback_months=36)\n- **全59 FoF中、Ward\
+    \ terminal使用は1体のみ**（他は全てEqualWeight）\n\n### 最新シグナル(2026-03-27):\n- momentum_data\
+    \ = {\"skipped\": true}\n- weights: **なし**（非リバランス日最適化）\n\n### リバランス日シグナル(2026-03-02):\n\
+    - momentum_data[\"weights\"] **あり** — 不均等ウェイト（Ward k=5クラスタリング結果）\n- **3つの異なるウェイト値**\
+    \ (Two-Stage EW: (1/k) * (1/|cluster|)):\n  - Cluster A (5.0% each, 8 PFs): 加速-常勝,\
+    \ 加速-鉄壁, 四つ目-鉄壁, 変わり身-激攻, 変わり身-鉄壁, 抜き身-鉄壁, 追い風-常勝, 追い風-鉄壁\n  - Cluster B (6.7%\
+    \ each, 3 PFs): 加速-激攻, 四つ目-激攻, 追い風-激攻\n  - Cluster C (10.0% each, 4 PFs): 四つ目-常勝,\
+    \ 変わり身-常勝, 抜き身-常勝, 抜き身-激攻\n- Weight sum: 1.0001 (丸め誤差)\n- コンポーネント数: 15体\n\n###\
+    \ fof_component_weightsテーブル:\n- Ward PFのレコードあり（2026-03-27付き15件確認）\n- target_weight:\
+    \ 実際のWardウェイト値あり（0.05/0.0667/0.1）\n- actual_weight: None, drift: None（未計算状態）\n\
+    - 全FoF合計: 514,998レコード\n\n---\n\n## AC4: ビルディングブロック可視化の実装仕様案\n\n### (1) 表示すべきデータ項目:\n\
+    - コンポーネントPF名\n- 各コンポーネントのtarget_weight(目標ウェイト %)\n- Ward PFの場合: クラスタ帰属(同一ウェイト=同一クラスタとして表示可能)\n\
+    - terminal_block.type(EqualWeight/WardTwoStageEW/KalmanMeta)\n\n### (2) データ取得元:\n\
+    - **推奨**: /api/debug/fof-weights/{portfolio_id} を正式API化（debugから昇格）\n  - 理由: fof_component_weightsテーブルにコンポーネントPF→ウェイト対応が既にある\n\
+    \  - limit=1(直近1日分)で最新ウェイトを取得\n- **代替**: signalsテーブルのmomentum_data[\"weights\"\
+    ]を新規APIで返す\n  - 理由: fof_component_weightsが空の場合のフォールバック\n- **不適**: /api/signals\
+    \ — tickerレベルまで展開されるためコンポーネントPF粒度を失う\n\n### (3) フロントエンド変更箇所:\n- frontend/app/admin/fof/page.tsx:273-351\
+    \ — List Viewのカード内にウェイト表示追加\n- frontend/app/admin/fof/components/FoFEditor.tsx:282-298\
+    \ — Composition Previewを実際のウェイトで置換\n- 新規コンポーネント: frontend/app/admin/fof/components/WeightBreakdown.tsx\
+    \ — PF名×ウェイトテーブル（Ward時はクラスタ色分け）\n- frontend/lib/api-client.ts — getFoFWeights()メソッド追加（debug\
+    \ APIコール）\n\n### (4) 変更行数の概算:\n- バックエンドAPI: debug→正式化=約30行移動+ルーター登録(既存コードの移動が主)\n\
+    - 新規FEコンポーネント(WeightBreakdown.tsx): 約80-120行\n- page.tsx修正: 約20-30行(ウェイトfetch+表示挿入)\n\
+    - FoFEditor.tsx修正: 約20-30行(Preview置換)\n- api-client.ts修正: 約15-20行(新メソッド追加)\n-\
+    \ 合計: 約165-230行"
+purpose_validation:
+  cmd_purpose: admin画面のFoF managementでWard PFの内部ウェイト可視化に必要なデータフローを特定する
+  fit: true
+  purpose_gap: ''
+files_modified:
+- change: modified
+  path: 偵察のみ
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: fof_component_weightsのactual_weight/driftが未計算状態
+  detail: Ward PFのfof_component_weightsテーブルにtarget_weightは記録されているがactual_weight=None,
+    drift=Noneの状態。recalculate実装でドリフト計算が未実装か、ENABLE_FOF_DEBUG_LOGS依存で部分的にしか記録されていない可能性。可視化実装時にactual/drift表示を計画する場合はこの点の確認が必要
+  project: dm-signal
+lessons_useful: []
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: true
+  items:
+  - fact: fof_component_weightsテーブルのactual_weightとdriftは全FoFでNone(未計算)
+    source: '本番DB直接クエリ: SELECT actual_weight, drift FROM fof_component_weights WHERE
+      portfolio_id=Ward_PF_ID LIMIT 20'
+  - fact: /api/debug/fof-weights/{id}がfof_component_weightsのCRUD APIとして既存(debug.py:686)
+    source: backend/app/api/debug.py:686-779
+  - fact: 全59 FoF中WardTwoStageEW terminal使用は旧忍法-Ward(0012f956...)の1体のみ
+    source: '本番DB: SELECT name,config->pipeline_config->terminal_block->>type FROM
+      portfolios WHERE type=fof'
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+  details: ''
+binary_checks:
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'yes'
+  AC1234:
+  - check: 'AC1: FE FoF管理画面の表示項目を全列挙しウェイト表示状態を確認したか'
+    result: 'yes'
+  - check: 'AC2: BE APIのFoF関連エンドポイントとウェイト情報の返却状況を特定したか'
+    result: 'yes'
+  - check: 'AC3: Ward PF本番シグナルからmomentum_data[weights]の実値を確認したか'
+    result: 'yes'
+  - check: 'AC4: 可視化の実装仕様案(表示項目/データ取得元/変更箇所/行数概算)を報告したか'
+    result: 'yes'
+verdict: PASS
+implementation_readiness:
+  files_to_modify:
+  - frontend/app/admin/fof/page.tsx:273-351 — List Viewカード内ウェイト表示追加
+  - frontend/app/admin/fof/components/FoFEditor.tsx:282-298 — Composition Preview置換
+  - frontend/lib/api-client.ts — getFoFWeights()メソッド追加
+  - 'backend/app/api/debug.py:686-765 → 正式API化(移動先候補: backend/app/api/portfolios.py)'
+  affected_files:
+  - frontend/app/admin/fof/components/SelectionPipelineSection.tsx — pipeline設定変更UI(既存、変更不要)
+  - frontend/app/admin/fof/components/TerminalBlockSection.tsx — terminal block選択UI(既存、変更不要)
+  - frontend/lib/types/pipeline.ts — getPipelineAllocationDescription(既存、変更不要)
+  related_tests:
+  - frontend/app/admin/fof/components/__tests__/FoFEditor.test.tsx — Preview表示変更に伴う修正必要
+  - '新規テスト: WeightBreakdown.test.tsx — 新コンポーネントのユニットテスト必要'
+  edge_cases:
+  - fof_component_weightsテーブルが空のFoF(recalculate未実行)の場合はフォールバック表示(N/AまたはEqual Weight表示)が必要
+  - Ward PFのweightsは非リバランス日にNullのため、最新のリバランス日のウェイトを表示する必要あり(signals APIのフォールバックロジックL152-162と同等)
+  - 59 FoF中Ward使用は1体のみ — Ward固有UI(クラスタ色分け等)のコスト対効果を検討要
+  dependency_constraints:
+  - fof_component_weightsはENABLE_FOF_DEBUG_LOGS=true時にrecalculateで生成される。debug logsが無効だとデータなし
+  - debug API昇格時はルーター登録順序に注意(portfolios router内に配置する場合、/api/portfolios/{id}とのパス競合)
+  - api-client.tsのgetFoFWeights()はadmin認証が必要(useAdminAuth contextから取得)
