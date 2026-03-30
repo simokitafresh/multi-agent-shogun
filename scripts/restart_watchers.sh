@@ -98,4 +98,4 @@ fi
 
 # ペイン変数同期
 echo "[+] ペイン変数同期..."
-bash "$(dirname "$0")/sync_pane_vars.sh"
+bash "$SCRIPT_DIR/scripts/sync_pane_vars.sh"
