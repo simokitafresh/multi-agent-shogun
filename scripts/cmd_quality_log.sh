@@ -204,7 +204,10 @@ EOF
 
     # Append notes field only when provided (optional 5th argument)
     if [[ -n "$NOTES" ]]; then
-        echo "    notes: \"$NOTES\"" >> "$LOG_FILE"
+        # Escape backslashes first, then double quotes to prevent YAML corruption
+        escaped_notes="${NOTES//\\/\\\\}"
+        escaped_notes="${escaped_notes//\"/\\\"}"
+        echo "    notes: \"$escaped_notes\"" >> "$LOG_FILE"
     fi
 
     echo "[cmd_quality_log] Logged: $CMD_ID | AC:$AC_COUNT | gate:$GATE_RESULT | rework:$KARO_REWORK | gunshi:$GUNSHI_VERDICT | blockers:$NINJA_BLOCKERS | supp_cmds:$SUPPLEMENTARY_CMDS${NOTES:+ | notes:$NOTES}"
