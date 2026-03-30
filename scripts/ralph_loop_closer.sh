@@ -44,6 +44,14 @@ PI_STATUS=$(echo "$REFLUX_LINE" | sed -n 's/.*PI=\([A-Z]*\).*/\1/p')
 RUNBOOK_STATUS=$(echo "$REFLUX_LINE" | sed -n 's/.*RUNBOOK=\([A-Z]*\).*/\1/p')
 INSTRUCTIONS_STATUS=$(echo "$REFLUX_LINE" | sed -n 's/.*INSTRUCTIONS=\([A-Z]*\).*/\1/p')
 
+# Validate — empty status means parse failure (silent failure prevention)
+if [ -z "$PI_STATUS" ] || [ -z "$RUNBOOK_STATUS" ] || [ -z "$INSTRUCTIONS_STATUS" ]; then
+    echo "ERROR: ralph_loop_closer.sh: status extraction failed from REFLUX_LINE" >&2
+    echo "  REFLUX_LINE: $REFLUX_LINE" >&2
+    echo "  PI=${PI_STATUS:-<empty>} RUNBOOK=${RUNBOOK_STATUS:-<empty>} INSTRUCTIONS=${INSTRUCTIONS_STATUS:-<empty>}" >&2
+    exit 1
+fi
+
 # Extract lesson ID from output (e.g., "L123 added to ...")
 LESSON_ID=$(echo "$INPUT" | grep -oP '^L\d+' | head -1 || true)
 
