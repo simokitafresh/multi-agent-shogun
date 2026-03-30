@@ -898,7 +898,9 @@ inject_related_lessons() {
     local py_output
     py_output=$(mktemp)
     if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+import csv
 import datetime
+import fnmatch
 import os
 import random
 import re
@@ -911,6 +913,8 @@ task_file = os.environ['TASK_FILE_ENV']
 script_dir = os.environ['SCRIPT_DIR_ENV']
 
 DEDUP_THRESHOLD = 0.25
+USEFUL_RATE_THRESHOLD = 0.15  # useful_rate below this → score decay
+USEFUL_RATE_DECAY = 0.5       # multiplier for low useful_rate lessons
 
 def tech_terms(text):
     '''技術用語のみ抽出（日本語テキスト対応）'''
@@ -947,6 +951,31 @@ def greedy_dedup(scored_list, all_lessons, threshold=DEDUP_THRESHOLD):
     if deduped_count > 0:
         print(f'[INJECT] dedup: removed {deduped_count} similar lessons (threshold={threshold})', file=sys.stderr)
     return accepted
+
+def compute_useful_rates(script_dir):
+    """lesson_impact.tsvからlesson別useful_rateを算出。useful_rate = referenced_count / injection_count"""
+    impact_path = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
+    if not os.path.exists(impact_path):
+        return {}
+    counts = {}  # lesson_id -> [useful_true, injection_count]
+    try:
+        with open(impact_path, 'r', encoding='utf-8', newline='') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                lid = (row.get('lesson_id') or '').strip()
+                action = (row.get('action') or '').strip().lower()
+                result = (row.get('result') or '').strip().upper()
+                if not lid or action != 'injected' or result == 'PENDING':
+                    continue
+                if lid not in counts:
+                    counts[lid] = [0, 0]
+                counts[lid][1] += 1
+                ref = (row.get('referenced') or '').strip().lower()
+                if ref in ('yes', 'true', '1', 'y'):
+                    counts[lid][0] += 1
+    except Exception:
+        return {}
+    return {lid: vals[0] / vals[1] if vals[1] > 0 else 0.0 for lid, vals in counts.items()}
 
 def build_lesson_detail(lesson):
     if_then = lesson.get('if_then')
@@ -1222,6 +1251,56 @@ try:
         confirmed_lessons = recon_filtered
         print(f'[INJECT] recon_mode: {len(confirmed_lessons)} recon-specific lessons selected (skipped {recon_skipped_count} non-recon)', file=sys.stderr)
 
+    # ═══ target_filesマッチング: ファイルレベルフィルタ (cmd_1563) ═══
+    # 教訓にtarget_files指定がある場合、タスクのtarget_pathまたはfiles_modifiedとマッチ時のみ注入
+    task_target_path = task.get('target_path', '')
+    task_files_modified = task.get('files_modified', [])
+    if isinstance(task_target_path, str):
+        _ttp_list = [task_target_path] if task_target_path else []
+    elif isinstance(task_target_path, list):
+        _ttp_list = [str(p) for p in task_target_path if p]
+    else:
+        _ttp_list = []
+    if isinstance(task_files_modified, str):
+        task_files_modified = [task_files_modified] if task_files_modified else []
+    elif isinstance(task_files_modified, list):
+        task_files_modified = [str(p) for p in task_files_modified if p]
+    else:
+        task_files_modified = []
+    _all_task_files = _ttp_list + task_files_modified
+
+    def _target_files_match(lesson_target_files, task_files):
+        """教訓のtarget_filesパターンがタスクファイルのいずれかにマッチするか判定"""
+        for pattern in lesson_target_files:
+            pattern = str(pattern).strip()
+            if not pattern:
+                continue
+            for tf in task_files:
+                if fnmatch.fnmatch(tf, pattern) or fnmatch.fnmatch(os.path.basename(tf), pattern):
+                    return True
+                if fnmatch.fnmatch(os.path.basename(tf), os.path.basename(pattern)):
+                    return True
+        return False
+
+    if _all_task_files:
+        _pre_tf = len(confirmed_lessons)
+        _tf_filtered = []
+        _tf_skipped = 0
+        for _l in confirmed_lessons:
+            _ltf = _l.get('target_files', [])
+            if not _ltf:
+                _tf_filtered.append(_l)
+                continue
+            if isinstance(_ltf, str):
+                _ltf = [_ltf]
+            if _target_files_match(_ltf, _all_task_files):
+                _tf_filtered.append(_l)
+            else:
+                _tf_skipped += 1
+        confirmed_lessons = _tf_filtered
+        if _tf_skipped > 0:
+            print(f'[INJECT] target_files filter: removed {_tf_skipped}/{_pre_tf} lessons (task files: {[os.path.basename(f) for f in _all_task_files[:3]]})', file=sys.stderr)
+
     # ═══ タグマッチ: 教訓をフィルタ ═══
     # universal教訓は別管理（常に注入）
     universal_lessons = []
@@ -1277,6 +1356,22 @@ try:
 
         if score > 0:
             scored.append((score, lid, l_summary or l_title))
+
+    # cmd_1564: useful_rate decay — 活用率が低い教訓のスコアを減衰
+    useful_rates = compute_useful_rates(script_dir)
+    if useful_rates:
+        new_scored = []
+        decayed_count = 0
+        for score, lid, summary in scored:
+            rate = useful_rates.get(lid)
+            if rate is not None and rate < USEFUL_RATE_THRESHOLD:
+                new_scored.append((score * USEFUL_RATE_DECAY, lid, summary))
+                decayed_count += 1
+            else:
+                new_scored.append((score, lid, summary))
+        scored = new_scored
+        if decayed_count > 0:
+            print(f'[INJECT] useful_rate decay: {decayed_count} lessons below {USEFUL_RATE_THRESHOLD*100:.0f}% threshold (score *= {USEFUL_RATE_DECAY})', file=sys.stderr)
 
     # Sort by score descending, take top 7 (AC5: task-specific max 7)
     scored.sort(key=lambda x: -x[0])
