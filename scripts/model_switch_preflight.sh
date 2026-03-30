@@ -207,6 +207,9 @@ PYEOF
             idle|done|completed)
                 result_pass "${ninja}: status=${status}（安全）"
                 ;;
+            acknowledged)
+                result_warn "${ninja}: status=${status}（タスク認知済み・未着手 — 切替前に完了または中止を確認）"
+                ;;
             assigned|in_progress)
                 result_warn "${ninja}: status=${status}（タスク実行中 — 切替前に完了を待て）"
                 ;;
