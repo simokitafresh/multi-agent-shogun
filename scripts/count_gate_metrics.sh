@@ -28,9 +28,14 @@ awk -F'\t' '
     }
 ' "$LOG_FILE" > "$TMP_FILE"
 
-total_count=$(wc -l < "$TMP_FILE")
-clear_count=$(awk -F'\t' '$2=="CLEAR" { c++ } END { print c+0 }' "$TMP_FILE")
-block_count=$(awk -F'\t' '$2=="BLOCK" { c++ } END { print c+0 }' "$TMP_FILE")
+read -r total_count clear_count block_count < <(
+    awk -F'\t' '
+        { total++ }
+        $2=="CLEAR" { clear++ }
+        $2=="BLOCK" { block++ }
+        END { printf "%d %d %d\n", total+0, clear+0, block+0 }
+    ' "$TMP_FILE"
+)
 
 if [ "$total_count" -gt 0 ]; then
     block_rate=$(awk -v block="$block_count" -v total="$total_count" 'BEGIN { printf "%.2f", (block / total) * 100 }')

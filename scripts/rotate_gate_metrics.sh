@@ -29,6 +29,16 @@ fi
 
 mkdir -p "$ARCHIVE_DIR"
 
+# Acquire exclusive lock to prevent concurrent rotation / write races
+exec 200>"${GATE_METRICS_LOG}.lock"
+flock -w 10 200 || { echo "[rotate_gate_metrics] Error: Failed to acquire lock" >&2; exit 1; }
+
+# Re-check line count under lock (another process may have rotated already)
+line_count=$(wc -l < "$GATE_METRICS_LOG")
+if [[ "$line_count" -le "$MAX_LINES" ]]; then
+    exit 0
+fi
+
 # Calculate how many lines to archive
 archive_lines=$((line_count - KEEP_LINES))
 
@@ -39,5 +49,7 @@ head -n "$archive_lines" "$GATE_METRICS_LOG" >> "$archive_file"
 # Keep only the last KEEP_LINES
 tail -n "$KEEP_LINES" "$GATE_METRICS_LOG" > "${GATE_METRICS_LOG}.tmp"
 mv "${GATE_METRICS_LOG}.tmp" "$GATE_METRICS_LOG"
+
+# Lock is released automatically when fd 200 closes at script exit
 
 echo "[rotate_gate_metrics] Archived ${archive_lines} lines -> $(basename "$archive_file"), kept ${KEEP_LINES} lines"
