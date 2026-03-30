@@ -8,7 +8,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOG_FILE="$REPO_ROOT/logs/cmd_friction.yaml"
-LOCK_FILE="/tmp/cmd_friction.lock"
+LOCK_DIR="$REPO_ROOT/.locks"
+mkdir -p "$LOCK_DIR"
+LOCK_FILE="$LOCK_DIR/cmd_friction.lock"
 
 # --- Argument validation ---
 if [[ $# -ne 3 ]]; then
