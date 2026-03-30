@@ -462,8 +462,10 @@ fi
 
 echo ""
 echo "  注: related_lessons機能はcmd_158で導入。"
-echo "      archived cmds $(wc -l < "$TMP/all_cmds.txt")件中、"
-echo "      related_lessonsフィールドを持つのは$(wc -l < "$TMP/has_lessons.tsv")件のみ。"
+total_cmds=$(wc -l < "$TMP/lesson_counts.tsv" 2>/dev/null || echo 0)
+cmds_with_lessons=$(awk -F'|' '$2+0 > 0' "$TMP/lesson_counts.tsv" 2>/dev/null | wc -l)
+echo "      archived cmds ${total_cmds}件中、"
+echo "      related_lessonsフィールドを持つのは${cmds_with_lessons}件のみ。"
 echo "      大部分のcmdは教訓注入記録なし(0件扱い)。"
 echo ""
 
