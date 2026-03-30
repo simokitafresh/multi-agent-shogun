@@ -271,6 +271,7 @@
 !scripts/insight_resolve.sh
 !scripts/gunshi_next_action.sh
 !scripts/rotate_gate_metrics.sh
+!scripts/statusline.sh
 
 
 # Archive (frozen retired components)
