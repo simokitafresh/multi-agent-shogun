@@ -1,15 +1,13 @@
 task:
-  _ac_task_id: cmd_1566_recon
+  _ac_task_id: cmd_1574_recon
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 2edf2958
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 7d010443
   acceptance_criteria:
-  - 'AC1: フロントエンド(Next.js)のFoF management画面コードを読み、現在表示されている項目を全列挙。ウェイト情報が表示されているか確認'
-  - 'AC2: バックエンドAPIのFoF関連エンドポイントを読み、ウェイト情報を返しているエンドポイントを特定。特にmomentum_data["weights"]がどのAPIから取得可能か'
-  - 'AC3: Ward PFの本番シグナル1件をDBから取得し、momentum_data["weights"]の実際の値を確認。均等か非均等か事実で報告'
-  - 'AC4: ビルディングブロック可視化の実装仕様案を報告。(1)表示すべきデータ項目 (2)データ取得元(既存API or 新規API) (3)フロントエンド変更箇所
-    (4)変更行数の概算'
+  - 'AC1: experiments.dbの全FoF(type=fof)のmonthly_returnsから12ヶ月累積パフォーマンスランキングを作成。全期間累積も併記'
+  - 'AC2: 全standard PF(type=standard)の同期間ランキングも作成。FoF vs 単体のクロス比較表'
+  - 'AC3: Ward FoF(+54.93%)を上回るFoF/PFを全列挙し、殿の記憶する好成績候補を特定。analysis_runs/配下にWard関連のバックテスト結果があれば併記'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -31,12 +29,12 @@ task:
   - AC1
   - AC2
   - AC3
-  - AC4
-  parent_cmd: cmd_1566
+  parent_cmd: cmd_1574
   project: dm-signal
-  purpose: admin画面のFoF managementでWard PFの内部ウェイト(クラスタリング結果・各構成PFへのウェイト配分)が可視化されておらず、FoF構築時にブラックボックスになっている。現状のadmin画面表示内容と、可視化に必要なデータフローを特定する
-  report_filename: hayate_report_cmd_1566.yaml
-  report_path: queue/reports/hayate_report_cmd_1566.yaml
+  purpose: 殿が「もっといい結果のシミュレーションなかったっけ」と報告。experiments.dbに格納されている全FoF/PFの累積パフォーマンスを12ヶ月・全期間で比較し、Ward
+    FoF(+54.93%)を上回る結果を全列挙する。殿の記憶にある好成績シミュレーションの正体を特定する
+  report_filename: hayate_report_cmd_1574.yaml
+  report_path: queue/reports/hayate_report_cmd_1574.yaml
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -50,7 +48,7 @@ task:
     - blind_spots
   status: in_progress
   stop_for: []
-  task_id: cmd_1566_recon
+  task_id: cmd_1574_recon
   task_type: recon
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -101,4 +99,4 @@ task:
     - reason: lesson_candidate_missing
       count: 1
       hint: lesson_candidate.found欄を必ず記入(true/false)。省略禁止
-  deployed_at: "2026-03-30T12:59:03"
+  deployed_at: "2026-03-30T13:52:22"
