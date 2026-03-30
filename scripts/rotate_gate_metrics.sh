@@ -50,6 +50,9 @@ head -n "$archive_lines" "$GATE_METRICS_LOG" >> "$archive_file"
 tail -n "$KEEP_LINES" "$GATE_METRICS_LOG" > "${GATE_METRICS_LOG}.tmp"
 mv "${GATE_METRICS_LOG}.tmp" "$GATE_METRICS_LOG"
 
+# Clean up archives older than 90 days
+find "$ARCHIVE_DIR" -name "gate_metrics_*.log" -mtime +90 -delete 2>/dev/null || true
+
 # Lock is released automatically when fd 200 closes at script exit
 
 echo "[rotate_gate_metrics] Archived ${archive_lines} lines -> $(basename "$archive_file"), kept ${KEEP_LINES} lines"
