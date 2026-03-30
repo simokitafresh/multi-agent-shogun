@@ -45,7 +45,10 @@ done
 extract_field() {
     local file="$1"
     local field="$2"
-    grep -m1 "^[[:space:]]*${field}:" "$file" 2>/dev/null \
+    local line
+    line=$(grep -m1 "^[[:space:]]*${field}:" "$file" 2>/dev/null) || true
+    [[ -z "$line" ]] && return 0
+    echo "$line" \
         | sed "s/^[[:space:]]*${field}:[[:space:]]*//" \
         | sed 's/^["'"'"']\(.*\)["'"'"']$/\1/' \
         | sed 's/[[:space:]]*$//'
@@ -68,7 +71,7 @@ ROW_COUNT=0
 for yaml_file in "$TASKS_DIR"/*.yaml; do
     [[ ! -f "$yaml_file" ]] && continue
 
-    ninja=$(extract_field "$yaml_file" "assigned_to")
+    ninja=$(basename "$yaml_file" .yaml)
     task_id=$(extract_field "$yaml_file" "task_id")
     status=$(extract_field "$yaml_file" "status")
     parent_cmd=$(extract_field "$yaml_file" "parent_cmd")
