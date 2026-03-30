@@ -83,6 +83,10 @@ if [ "${#js_files[@]}" -gt 0 ]; then
 fi
 
 if [ "${#shell_files[@]}" -gt 0 ]; then
+    if ! command -v shellcheck >/dev/null 2>&1; then
+        echo "ERROR: shellcheck not found. Install it before committing shell scripts." >&2
+        exit 1
+    fi
     (
         cd "$ROOT_DIR"
         shellcheck -- "${shell_files[@]}"
