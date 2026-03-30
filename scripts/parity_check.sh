@@ -244,6 +244,8 @@ def main():
         print("=" * 60)
 
         overall_fail = False
+        check_count = 0
+        skip_count = 0
 
         for pf_id, pf_name, pf_type in portfolios:
             print(f"\n--- {pf_name} [{pf_type}] ({pf_id[:8]}...) ---")
@@ -254,12 +256,15 @@ def main():
             )
             if ret_status == "SKIP":
                 print(f"  Returns: SKIP — {ret_detail}")
+                skip_count += 1
             elif ret_status == "PASS":
                 print(f"  Returns: PASS ({ret_match}/{ret_total} months match)")
+                check_count += 1
             else:
                 print(f"  Returns: FAIL ({ret_match}/{ret_total} months match)")
                 print(ret_detail)
                 overall_fail = True
+                check_count += 1
 
             # Signal parity (standard PFs only)
             if pf_type != "fof":
@@ -268,22 +273,28 @@ def main():
                 )
                 if sig_status == "SKIP":
                     print(f"  Signals: SKIP — {sig_detail}")
+                    skip_count += 1
                 elif sig_status == "PASS":
                     print(f"  Signals: PASS ({sig_match}/{sig_total} months match)")
+                    check_count += 1
                 else:
                     print(f"  Signals: FAIL ({sig_match}/{sig_total} months match)")
                     print(sig_detail)
                     overall_fail = True
+                    check_count += 1
             else:
                 print("  Signals: N/A (FoF)")
 
         print()
         print("=" * 60)
         if overall_fail:
-            print("OVERALL: FAIL")
+            print(f"OVERALL: FAIL (checked={check_count}, skipped={skip_count})")
+            sys.exit(1)
+        elif check_count == 0:
+            print(f"OVERALL: WARN — no checks performed (all {skip_count} skipped)")
             sys.exit(1)
         else:
-            print("OVERALL: PASS")
+            print(f"OVERALL: PASS (checked={check_count}, skipped={skip_count})")
             sys.exit(0)
 
     finally:
