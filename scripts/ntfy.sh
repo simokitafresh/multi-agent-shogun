@@ -94,6 +94,7 @@ send_with_retry() {
   # already delivered. Retrying would cause duplicate notifications.
   if [ "$http_code" != "000" ]; then
     printf '%(%Y-%m-%d %H:%M:%S)T NO_RETRY http=%s (server responded)\n' -1 "$http_code" >> "$LOGFILE"
+    echo "ERROR: ntfy send failed (HTTP $http_code)" >&2
     return 1
   fi
 
@@ -106,6 +107,7 @@ send_with_retry() {
   fi
 
   printf '%(%Y-%m-%d %H:%M:%S)T FAILED after retry msg="%s"\n' -1 "${payload:0:80}" >> "$LOGFILE"
+  echo "ERROR: ntfy send failed after retry (HTTP $http_code)" >&2
   return 1
 }
 
