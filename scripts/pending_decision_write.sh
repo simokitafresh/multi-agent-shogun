@@ -162,15 +162,15 @@ cmd_create() {
             (
             flock -w 5 200 || exit 1
 
-            python3 -c "
+            python3 - "$DATA_FILE" "$SUMMARY" "$SOURCE_CMD" "$TYPE" "$CREATED_BY" "$TIMESTAMP" <<'PY' || exit 1
 import yaml, sys, os, tempfile
 
-data_path = '$DATA_FILE'
-summary = '''$SUMMARY'''
-source_cmd = '$SOURCE_CMD'
-pd_type = '$TYPE'
-created_by = '$CREATED_BY'
-timestamp = '$TIMESTAMP'
+data_path = sys.argv[1]
+summary = sys.argv[2]
+source_cmd = sys.argv[3]
+pd_type = sys.argv[4]
+created_by = sys.argv[5]
+timestamp = sys.argv[6]
 
 try:
     with open(data_path) as f:
@@ -226,7 +226,7 @@ try:
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" || exit 1
+PY
 
             ) 200>"$LOCKFILE"
         ); then
@@ -284,14 +284,16 @@ cmd_resolve() {
             (
             flock -w 5 200 || exit 1
 
-            python3 -c "
+            python3 - "$DATA_FILE" "$PD_ID" "$RESOLVED_CONTENT" "$RESOLVED_BY" "$TIMESTAMP" "$NO_CONTEXT_SYNC" "$SCRIPT_DIR/config/projects.yaml" <<'PY' || exit 1
 import yaml, sys, os, tempfile
 
-data_path = '$DATA_FILE'
-pd_id = '$PD_ID'
-resolved_content = '''$RESOLVED_CONTENT'''
-resolved_by = '$RESOLVED_BY'
-timestamp = '$TIMESTAMP'
+data_path = sys.argv[1]
+pd_id = sys.argv[2]
+resolved_content = sys.argv[3]
+resolved_by = sys.argv[4]
+timestamp = sys.argv[5]
+no_context_sync_str = sys.argv[6]
+projects_yaml_path = sys.argv[7]
 
 try:
     with open(data_path) as f:
@@ -313,10 +315,10 @@ try:
             d['resolved_by'] = resolved_by
             # context_synced: False unless exempted
             # Exempt: (1)reconcile (2)source_cmd/resolved_by contains 'test' (3)direct+archived PJ (4)--no-context-sync
-            no_context_sync = '$NO_CONTEXT_SYNC' == 'true'
+            no_context_sync = no_context_sync_str == 'true'
             proj_archived = False
             try:
-                with open('$SCRIPT_DIR/config/projects.yaml') as _pf:
+                with open(projects_yaml_path) as _pf:
                     proj_data = yaml.safe_load(_pf) or {}
                 for _p in (proj_data.get('projects') or []):
                     if isinstance(_p, dict) and _p.get('id') == d.get('project', '') and _p.get('status') == 'archived':
@@ -364,7 +366,7 @@ try:
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" || exit 1
+PY
 
             ) 200>"$LOCKFILE"
         ); then
@@ -381,11 +383,11 @@ except Exception as e:
 
             # Determine context_file from PD's project field
             local CONTEXT_FILE
-            CONTEXT_FILE=$(python3 -c "
+            CONTEXT_FILE=$(python3 - "$DATA_FILE" "$PD_ID" 2>/dev/null <<'PY' || echo "unknown"
 import yaml, sys
 
-data_path = '$DATA_FILE'
-pd_id = '$PD_ID'
+data_path = sys.argv[1]
+pd_id = sys.argv[2]
 
 PROJECT_MAP = {
     'infra': 'context/infrastructure.md',
@@ -412,7 +414,8 @@ try:
     print('unknown')
 except Exception:
     print('unknown')
-" 2>/dev/null || echo "unknown")
+PY
+)
 
             local TODO_TIMESTAMP
             TODO_TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
@@ -446,11 +449,11 @@ cmd_list() {
 
     init_data_file
 
-    python3 -c "
+    python3 - "$DATA_FILE" "$STATUS_FILTER" <<'PY'
 import yaml, sys
 
-data_path = '$DATA_FILE'
-status_filter = '$STATUS_FILTER'
+data_path = sys.argv[1]
+status_filter = sys.argv[2]
 
 try:
     with open(data_path) as f:
@@ -472,7 +475,7 @@ try:
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-"
+PY
 }
 
 # ── main dispatch ───────────────────────────────
