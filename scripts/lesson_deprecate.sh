@@ -74,7 +74,7 @@ try:
 
     # Append-only metadata: keep existing lesson content and add deprecation fields.
     target["deprecated"] = True
-    target["deprecated_at"] = datetime.now().replace(microsecond=0).isoformat()
+    target["deprecated_at"] = datetime.now().astimezone().replace(microsecond=0).isoformat()
     target["deprecated_reason"] = reason
     if cmd_id:
         target["deprecated_by"] = cmd_id
