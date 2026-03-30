@@ -87,6 +87,12 @@ if ! validate_ninja_id "$NINJA_NAME"; then
     echo "[karo_workaround_log] WARN: ninja_id '$NINJA_NAME' は有効なエージェント名ではない。config/settings.yaml・queue/tasks/を確認せよ" >&2
 fi
 
+# --- YAML single-quote escaping (cmd_cycle_L4_026: injection防止) ---
+yaml_escape_sq() {
+    # YAML single-quoted strings: ' → '' でエスケープ
+    printf '%s' "${1//\'/\'\'}"
+}
+
 # --- Category auto-classification (AC2: cmd_1211) ---
 classify_category() {
     local issue="$1"
@@ -182,14 +188,16 @@ EOF
 
         # GP-086: Append entry in standard flat-list format (matches manual karo entries)
         # Old format used nested "entries:" + 2-space indent → YAML structure conflict with manual entries
+        SAFE_ISSUE=$(yaml_escape_sq "$ISSUE")
+        SAFE_FIX=$(yaml_escape_sq "$FIX")
         cat >> "$LOG_FILE" <<EOF
 - cmd_id: $CMD_ID
   timestamp: '$TIMESTAMP'
   ninja: $NINJA_NAME
   workaround: true
   category: $CATEGORY
-  detail: '$ISSUE'
-  root_cause: '$FIX'
+  detail: '$SAFE_ISSUE'
+  root_cause: '$SAFE_FIX'
   resolved_by_cmd: ''
 EOF
 
