@@ -274,6 +274,7 @@
 !scripts/rotate_gate_metrics.sh
 !scripts/statusline.sh
 !scripts/workaround_pattern_resolve.sh
+!scripts/checklist_update.sh
 
 
 # Archive (frozen retired components)
