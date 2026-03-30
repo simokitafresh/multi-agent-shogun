@@ -296,8 +296,9 @@ monitor_status() {
     # Tab-separated structured output (4 fields)
     printf '%s\t%s\t%s\t%s\n' "$d_pct" "$d_reset" "$w_pct" "$w_reset"
 
-    # Alerts (Day bucket)
+    # Alerts (Day + Week buckets)
     send_alert "5h" "$d_pct" "primary_5h"
+    send_alert "7d" "$w_pct" "primary_7d"
 }
 
 monitor_watch() {
