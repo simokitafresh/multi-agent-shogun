@@ -19,7 +19,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 REPO="simokitafresh/multi-agent-shogun"
 WORKFLOW="test.yml"
@@ -43,8 +42,7 @@ if [[ -z "$run_json" ]] || [[ "$run_json" == "[]" ]]; then
     exit 1
 fi
 
-conclusion=$(echo "$run_json" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0].get('conclusion') or '')" 2>/dev/null || true)
-run_id=$(echo "$run_json" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0].get('databaseId') or '')" 2>/dev/null || true)
+read -r conclusion run_id <<< "$(echo "$run_json" | python3 -c "import json,sys; d=json.load(sys.stdin)[0]; print(d.get('conclusion') or '', d.get('databaseId') or '')" 2>/dev/null || true)"
 
 if [[ -z "$conclusion" ]] || [[ "$conclusion" == "None" ]]; then
     # Still in progress
