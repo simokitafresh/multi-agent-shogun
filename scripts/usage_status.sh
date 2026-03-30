@@ -80,7 +80,12 @@ cache_valid() {
 # =============================================================================
 progress_bar() {
     local pct="$1"
-    if [[ "$pct" == "ERR" || "$pct" == "--" ]]; then
+    if [[ "$pct" == "ERR" || "$pct" == "--" || -z "$pct" ]]; then
+        echo "-----"
+        return
+    fi
+    # Guard: non-integer input → fallback bar (prevents arithmetic crash under set -e)
+    if ! [[ "$pct" =~ ^[0-9]+$ ]]; then
         echo "-----"
         return
     fi
