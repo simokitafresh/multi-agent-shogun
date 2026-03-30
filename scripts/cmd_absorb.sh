@@ -210,12 +210,14 @@ check_stale_lessons() {
 
         # config/projects.yamlからproject pathを取得
         local project_path
-        project_path=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+        project_path=$(SCRIPT_DIR="$SCRIPT_DIR" PROJECT_ID="$project_id" python3 -c "
+import os, yaml
+script_dir = os.environ['SCRIPT_DIR']
+project_id = os.environ['PROJECT_ID']
+with open(os.path.join(script_dir, 'config', 'projects.yaml'), encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 for p in cfg.get('projects', []):
-    if p['id'] == '$project_id':
+    if p['id'] == project_id:
         print(p['path'])
         break
 " 2>/dev/null)
