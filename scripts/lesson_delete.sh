@@ -19,12 +19,15 @@ fi
 LESSON_ID=$(echo "$LESSON_ID" | sed -E 's/^L0*([0-9]+)$/L\1/')
 
 # Get project path from config/projects.yaml
-PROJECT_PATH=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+# Note: env vars prevent shell interpolation code injection (cf. flock section L56-57)
+PROJECT_PATH=$(SCRIPT_DIR="$SCRIPT_DIR" PROJECT_ID="$PROJECT_ID" python3 -c "
+import yaml, os
+script_dir = os.environ['SCRIPT_DIR']
+project_id = os.environ['PROJECT_ID']
+with open(f'{script_dir}/config/projects.yaml', encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
+    if p['id'] == project_id:
         print(p['path'])
         break
 ")
