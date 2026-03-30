@@ -63,19 +63,26 @@ if len(active) < 2:
     print("Not enough active lessons to compare.", file=sys.stderr)
     sys.exit(0)
 
-# Compare all pairs
+# Pre-compute text strings (avoid re-computation in O(n^2) inner loop)
+texts = []
+titles = []
+for lesson in active:
+    t = (lesson.get("title") or "")
+    s = (lesson.get("summary") or "")
+    texts.append(str(t) + " " + str(s))
+    titles.append(str(t)[:60])
+
+# Compare all pairs (quick_ratio pre-filter: O(n+m) upper bound skips expensive O(n*m) ratio)
 pairs = []
+sm = SequenceMatcher()
 for i in range(len(active)):
+    sm.set_seq1(texts[i])
     for j in range(i + 1, len(active)):
-        a = active[i]
-        b = active[j]
-        text_a = str(a.get("title", "")) + " " + str(a.get("summary", ""))
-        text_b = str(b.get("title", "")) + " " + str(b.get("summary", ""))
-        ratio = SequenceMatcher(None, text_a, text_b).ratio()
-        if ratio >= threshold:
-            title_a = str(a.get("title", ""))[:60]
-            title_b = str(b.get("title", ""))[:60]
-            pairs.append((ratio, a.get("id", "?"), title_a, b.get("id", "?"), title_b))
+        sm.set_seq2(texts[j])
+        if sm.quick_ratio() >= threshold:
+            ratio = sm.ratio()
+            if ratio >= threshold:
+                pairs.append((ratio, active[i].get("id", "?"), titles[i], active[j].get("id", "?"), titles[j]))
 
 if not pairs:
     print("No similar pairs found (threshold >= 0.5).", file=sys.stderr)
