@@ -44,6 +44,18 @@ if not tag_rules:
     print("[ERROR] No tag_rules found in tag dictionary", file=sys.stderr)
     sys.exit(1)
 
+# Precompile regex patterns: performance + early invalid-pattern detection
+for rule in tag_rules:
+    compiled = []
+    for pat in rule.get("patterns", []):
+        try:
+            compiled.append(re.compile(pat))
+        except re.error as e:
+            tag_name = rule.get("tag", "")
+            print(f"[ERROR] Invalid regex in tag {tag_name}: {pat} ({e})", file=sys.stderr)
+            sys.exit(1)
+    rule["_compiled"] = compiled
+
 # Load projects
 with open(projects_path, "r", encoding="utf-8") as f:
     projects_data = yaml.safe_load(f)
@@ -91,19 +103,15 @@ for project in active_projects:
         summary = str(lesson.get("summary", ""))
         text = title + " " + summary
 
-        # タグルールでマッチング
+        # タグルールでマッチング（プリコンパイル済み正規表現を使用）
         matched_tags = []
         for rule in tag_rules:
             tag = rule.get("tag", "")
-            patterns = rule.get("patterns", [])
-            for pat in patterns:
-                try:
-                    if re.search(pat, text):
-                        if tag not in matched_tags:
-                            matched_tags.append(tag)
-                        break
-                except re.error:
-                    pass
+            for cpat in rule.get("_compiled", []):
+                if cpat.search(text):
+                    if tag not in matched_tags:
+                        matched_tags.append(tag)
+                    break
 
         if not matched_tags:
             matched_tags = ["universal"]
