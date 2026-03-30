@@ -1,0 +1,1253 @@
+{
+  "analysis_date": "2026-03-30T13:58:59.729231",
+  "task": "cmd_1578_recon",
+  "old_ninpo": {
+    "names": [
+      "加速-常勝",
+      "加速-激攻",
+      "加速-鉄壁",
+      "四つ目-常勝",
+      "四つ目-激攻",
+      "四つ目-鉄壁",
+      "変わり身-常勝",
+      "変わり身-激攻",
+      "変わり身-鉄壁",
+      "抜き身-常勝",
+      "抜き身-激攻",
+      "抜き身-鉄壁",
+      "追い風-常勝",
+      "追い風-激攻",
+      "追い風-鉄壁"
+    ],
+    "count": 15,
+    "data_period": "2012-02 to 2026-03",
+    "months": 170,
+    "frobenius_norms": [
+      {
+        "date": "2025-05",
+        "frobenius_norm": 1.011846,
+        "max_abs_change": 0.174979,
+        "mean_abs_change": 0.052624
+      },
+      {
+        "date": "2025-06",
+        "frobenius_norm": 0.791943,
+        "max_abs_change": 0.166216,
+        "mean_abs_change": 0.038497
+      },
+      {
+        "date": "2025-07",
+        "frobenius_norm": 0.244223,
+        "max_abs_change": 0.03754,
+        "mean_abs_change": 0.013417
+      },
+      {
+        "date": "2025-08",
+        "frobenius_norm": 0.511368,
+        "max_abs_change": 0.102003,
+        "mean_abs_change": 0.021892
+      },
+      {
+        "date": "2025-09",
+        "frobenius_norm": 0.705941,
+        "max_abs_change": 0.164515,
+        "mean_abs_change": 0.032981
+      },
+      {
+        "date": "2025-10",
+        "frobenius_norm": 0.501802,
+        "max_abs_change": 0.113134,
+        "mean_abs_change": 0.023124
+      },
+      {
+        "date": "2025-11",
+        "frobenius_norm": 0.341012,
+        "max_abs_change": 0.071456,
+        "mean_abs_change": 0.015972
+      },
+      {
+        "date": "2025-12",
+        "frobenius_norm": 1.085006,
+        "max_abs_change": 0.210918,
+        "mean_abs_change": 0.053691
+      },
+      {
+        "date": "2026-01",
+        "frobenius_norm": 0.710226,
+        "max_abs_change": 0.126886,
+        "mean_abs_change": 0.031807
+      },
+      {
+        "date": "2026-02",
+        "frobenius_norm": 1.392285,
+        "max_abs_change": 0.409546,
+        "mean_abs_change": 0.052719
+      },
+      {
+        "date": "2026-03",
+        "frobenius_norm": 0.687086,
+        "max_abs_change": 0.133763,
+        "mean_abs_change": 0.032355
+      }
+    ],
+    "distance_stats": {
+      "2025-04": {
+        "mean": 0.712045,
+        "std": 0.305993,
+        "min": 0.026853,
+        "max": 1.431874,
+        "median": 0.710255,
+        "q25": 0.461539,
+        "q75": 0.933467,
+        "iqr": 0.471928,
+        "n_pairs": 105
+      },
+      "2025-05": {
+        "mean": 0.68217,
+        "std": 0.311112,
+        "min": 0.029635,
+        "max": 1.453957,
+        "median": 0.69016,
+        "q25": 0.464219,
+        "q75": 0.906145,
+        "iqr": 0.441926,
+        "n_pairs": 105
+      },
+      "2025-06": {
+        "mean": 0.649833,
+        "std": 0.301644,
+        "min": 0.024776,
+        "max": 1.4246,
+        "median": 0.618192,
+        "q25": 0.427996,
+        "q75": 0.890901,
+        "iqr": 0.462905,
+        "n_pairs": 105
+      },
+      "2025-07": {
+        "mean": 0.663451,
+        "std": 0.302756,
+        "min": 0.024891,
+        "max": 1.431575,
+        "median": 0.623437,
+        "q25": 0.443133,
+        "q75": 0.896244,
+        "iqr": 0.453111,
+        "n_pairs": 105
+      },
+      "2025-08": {
+        "mean": 0.64922,
+        "std": 0.305132,
+        "min": 0.025755,
+        "max": 1.406695,
+        "median": 0.621757,
+        "q25": 0.420441,
+        "q75": 0.873718,
+        "iqr": 0.453277,
+        "n_pairs": 105
+      },
+      "2025-09": {
+        "mean": 0.62864,
+        "std": 0.299755,
+        "min": 0.027792,
+        "max": 1.3601,
+        "median": 0.611587,
+        "q25": 0.373816,
+        "q75": 0.84261,
+        "iqr": 0.468794,
+        "n_pairs": 105
+      },
+      "2025-10": {
+        "mean": 0.613706,
+        "std": 0.289448,
+        "min": 0.026618,
+        "max": 1.298457,
+        "median": 0.575833,
+        "q25": 0.377201,
+        "q75": 0.837322,
+        "iqr": 0.460121,
+        "n_pairs": 105
+      },
+      "2025-11": {
+        "mean": 0.601079,
+        "std": 0.282597,
+        "min": 0.026911,
+        "max": 1.272407,
+        "median": 0.563573,
+        "q25": 0.342062,
+        "q75": 0.831303,
+        "iqr": 0.489242,
+        "n_pairs": 105
+      },
+      "2025-12": {
+        "mean": 0.550795,
+        "std": 0.250189,
+        "min": 0.029194,
+        "max": 1.15885,
+        "median": 0.52072,
+        "q25": 0.35592,
+        "q75": 0.712778,
+        "iqr": 0.356858,
+        "n_pairs": 105
+      },
+      "2026-01": {
+        "mean": 0.532279,
+        "std": 0.245143,
+        "min": 0.029102,
+        "max": 1.215103,
+        "median": 0.491431,
+        "q25": 0.35605,
+        "q75": 0.683962,
+        "iqr": 0.327912,
+        "n_pairs": 105
+      },
+      "2026-02": {
+        "mean": 0.495583,
+        "std": 0.227078,
+        "min": 0.021641,
+        "max": 1.022418,
+        "median": 0.493063,
+        "q25": 0.301669,
+        "q75": 0.65779,
+        "iqr": 0.356121,
+        "n_pairs": 105
+      },
+      "2026-03": {
+        "mean": 0.501401,
+        "std": 0.209593,
+        "min": 0.022179,
+        "max": 1.005324,
+        "median": 0.508605,
+        "q25": 0.321726,
+        "q75": 0.673535,
+        "iqr": 0.351809,
+        "n_pairs": 105
+      }
+    },
+    "separability": {
+      "2025-04_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.356088,
+        "intra_max": 1.090259,
+        "separability_ratio": 0.326609,
+        "cluster_sizes": [
+          7,
+          8
+        ]
+      },
+      "2025-04_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.269464,
+        "intra_max": 0.898081,
+        "separability_ratio": 0.300044,
+        "cluster_sizes": [
+          7,
+          4,
+          4
+        ]
+      },
+      "2025-04_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.260321,
+        "intra_max": 0.898081,
+        "separability_ratio": 0.289863,
+        "cluster_sizes": [
+          4,
+          3,
+          4,
+          4
+        ]
+      },
+      "2025-05_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.385353,
+        "intra_max": 0.966566,
+        "separability_ratio": 0.398682,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2025-05_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.208707,
+        "intra_max": 0.673616,
+        "separability_ratio": 0.30983,
+        "cluster_sizes": [
+          6,
+          2,
+          7
+        ]
+      },
+      "2025-05_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.208707,
+        "intra_max": 0.670742,
+        "separability_ratio": 0.311158,
+        "cluster_sizes": [
+          6,
+          2,
+          4,
+          3
+        ]
+      },
+      "2025-06_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.317244,
+        "intra_max": 0.929448,
+        "separability_ratio": 0.341325,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2025-06_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.20459,
+        "intra_max": 0.640176,
+        "separability_ratio": 0.319584,
+        "cluster_sizes": [
+          6,
+          2,
+          7
+        ]
+      },
+      "2025-06_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.20459,
+        "intra_max": 0.592105,
+        "separability_ratio": 0.345529,
+        "cluster_sizes": [
+          6,
+          2,
+          4,
+          3
+        ]
+      },
+      "2025-07_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.321899,
+        "intra_max": 0.964081,
+        "separability_ratio": 0.333892,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2025-07_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.206872,
+        "intra_max": 0.665428,
+        "separability_ratio": 0.310885,
+        "cluster_sizes": [
+          6,
+          2,
+          7
+        ]
+      },
+      "2025-07_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.206872,
+        "intra_max": 0.608907,
+        "separability_ratio": 0.339743,
+        "cluster_sizes": [
+          6,
+          2,
+          4,
+          3
+        ]
+      },
+      "2025-08_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.315563,
+        "intra_max": 0.954714,
+        "separability_ratio": 0.330531,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2025-08_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.206128,
+        "intra_max": 0.642172,
+        "separability_ratio": 0.320986,
+        "cluster_sizes": [
+          6,
+          2,
+          7
+        ]
+      },
+      "2025-08_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.206128,
+        "intra_max": 0.610165,
+        "separability_ratio": 0.337824,
+        "cluster_sizes": [
+          6,
+          2,
+          5,
+          2
+        ]
+      },
+      "2025-09_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.28581,
+        "intra_max": 0.883393,
+        "separability_ratio": 0.323536,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2025-09_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.243232,
+        "intra_max": 0.602302,
+        "separability_ratio": 0.403837,
+        "cluster_sizes": [
+          6,
+          7,
+          2
+        ]
+      },
+      "2025-09_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.243232,
+        "intra_max": 0.518078,
+        "separability_ratio": 0.469489,
+        "cluster_sizes": [
+          2,
+          4,
+          7,
+          2
+        ]
+      },
+      "2025-10_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.285905,
+        "intra_max": 0.892753,
+        "separability_ratio": 0.320251,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2025-10_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.213756,
+        "intra_max": 0.591253,
+        "separability_ratio": 0.36153,
+        "cluster_sizes": [
+          6,
+          2,
+          7
+        ]
+      },
+      "2025-10_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.213756,
+        "intra_max": 0.505355,
+        "separability_ratio": 0.422982,
+        "cluster_sizes": [
+          5,
+          1,
+          2,
+          7
+        ]
+      },
+      "2025-11_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.288985,
+        "intra_max": 0.87081,
+        "separability_ratio": 0.331857,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2025-11_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.205788,
+        "intra_max": 0.562715,
+        "separability_ratio": 0.365706,
+        "cluster_sizes": [
+          6,
+          2,
+          7
+        ]
+      },
+      "2025-11_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.205788,
+        "intra_max": 0.494163,
+        "separability_ratio": 0.416438,
+        "cluster_sizes": [
+          5,
+          1,
+          2,
+          7
+        ]
+      },
+      "2025-12_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.265197,
+        "intra_max": 0.680487,
+        "separability_ratio": 0.389717,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2025-12_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.202556,
+        "intra_max": 0.594321,
+        "separability_ratio": 0.340819,
+        "cluster_sizes": [
+          6,
+          5,
+          4
+        ]
+      },
+      "2025-12_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.202556,
+        "intra_max": 0.594321,
+        "separability_ratio": 0.340819,
+        "cluster_sizes": [
+          5,
+          1,
+          5,
+          4
+        ]
+      },
+      "2026-01_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.287024,
+        "intra_max": 0.904705,
+        "separability_ratio": 0.317257,
+        "cluster_sizes": [
+          4,
+          11
+        ]
+      },
+      "2026-01_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.199414,
+        "intra_max": 0.707676,
+        "separability_ratio": 0.281787,
+        "cluster_sizes": [
+          4,
+          4,
+          7
+        ]
+      },
+      "2026-01_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.199414,
+        "intra_max": 0.576763,
+        "separability_ratio": 0.345746,
+        "cluster_sizes": [
+          4,
+          4,
+          2,
+          5
+        ]
+      },
+      "2026-02_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.27719,
+        "intra_max": 0.866142,
+        "separability_ratio": 0.320028,
+        "cluster_sizes": [
+          4,
+          11
+        ]
+      },
+      "2026-02_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.232133,
+        "intra_max": 0.703324,
+        "separability_ratio": 0.330052,
+        "cluster_sizes": [
+          4,
+          7,
+          4
+        ]
+      },
+      "2026-02_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.232133,
+        "intra_max": 0.703324,
+        "separability_ratio": 0.330052,
+        "cluster_sizes": [
+          4,
+          7,
+          3,
+          1
+        ]
+      },
+      "2026-03_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.227048,
+        "intra_max": 0.660969,
+        "separability_ratio": 0.343508,
+        "cluster_sizes": [
+          6,
+          9
+        ]
+      },
+      "2026-03_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.150709,
+        "intra_max": 0.581918,
+        "separability_ratio": 0.258986,
+        "cluster_sizes": [
+          6,
+          2,
+          7
+        ]
+      },
+      "2026-03_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.150709,
+        "intra_max": 0.52465,
+        "separability_ratio": 0.287255,
+        "cluster_sizes": [
+          2,
+          4,
+          2,
+          7
+        ]
+      }
+    }
+  },
+  "shin_ninpo": {
+    "names": [
+      "シン分身-常勝",
+      "シン分身-激攻",
+      "シン分身-鉄壁",
+      "シン加速D-常勝",
+      "シン加速D-激攻",
+      "シン加速D-鉄壁",
+      "シン加速R-常勝",
+      "シン加速R-激攻",
+      "シン加速R-鉄壁",
+      "シン四つ目-激攻",
+      "シン四つ目-鉄壁",
+      "シン変わり身-常勝",
+      "シン変わり身-激攻",
+      "シン変わり身-鉄壁",
+      "シン抜き身-常勝",
+      "シン抜き身-激攻",
+      "シン抜き身-鉄壁",
+      "シン追い風-常勝",
+      "シン追い風-激攻",
+      "シン追い風-鉄壁"
+    ],
+    "count": 20,
+    "data_period": "2011-07 to 2026-03",
+    "months": 177,
+    "frobenius_norms": [
+      {
+        "date": "2025-05",
+        "frobenius_norm": 0.993262,
+        "max_abs_change": 0.140234,
+        "mean_abs_change": 0.034043
+      },
+      {
+        "date": "2025-06",
+        "frobenius_norm": 0.875956,
+        "max_abs_change": 0.146188,
+        "mean_abs_change": 0.030601
+      },
+      {
+        "date": "2025-07",
+        "frobenius_norm": 0.39888,
+        "max_abs_change": 0.086519,
+        "mean_abs_change": 0.013738
+      },
+      {
+        "date": "2025-08",
+        "frobenius_norm": 0.420602,
+        "max_abs_change": 0.080116,
+        "mean_abs_change": 0.013079
+      },
+      {
+        "date": "2025-09",
+        "frobenius_norm": 0.617921,
+        "max_abs_change": 0.118821,
+        "mean_abs_change": 0.017615
+      },
+      {
+        "date": "2025-10",
+        "frobenius_norm": 0.560021,
+        "max_abs_change": 0.103323,
+        "mean_abs_change": 0.020944
+      },
+      {
+        "date": "2025-11",
+        "frobenius_norm": 0.178762,
+        "max_abs_change": 0.022516,
+        "mean_abs_change": 0.006601
+      },
+      {
+        "date": "2025-12",
+        "frobenius_norm": 0.543898,
+        "max_abs_change": 0.104505,
+        "mean_abs_change": 0.018832
+      },
+      {
+        "date": "2026-01",
+        "frobenius_norm": 1.146762,
+        "max_abs_change": 0.204814,
+        "mean_abs_change": 0.03936
+      },
+      {
+        "date": "2026-02",
+        "frobenius_norm": 1.223672,
+        "max_abs_change": 0.1915,
+        "mean_abs_change": 0.043072
+      },
+      {
+        "date": "2026-03",
+        "frobenius_norm": 1.113214,
+        "max_abs_change": 0.14468,
+        "mean_abs_change": 0.044799
+      }
+    ],
+    "distance_stats": {
+      "2025-04": {
+        "mean": 0.473002,
+        "std": 0.192271,
+        "min": 0.043966,
+        "max": 0.974078,
+        "median": 0.462211,
+        "q25": 0.345514,
+        "q75": 0.613013,
+        "iqr": 0.267499,
+        "n_pairs": 190
+      },
+      "2025-05": {
+        "mean": 0.444797,
+        "std": 0.180696,
+        "min": 0.043949,
+        "max": 0.902529,
+        "median": 0.437198,
+        "q25": 0.315242,
+        "q75": 0.56973,
+        "iqr": 0.254488,
+        "n_pairs": 190
+      },
+      "2025-06": {
+        "mean": 0.441981,
+        "std": 0.174648,
+        "min": 0.034262,
+        "max": 0.894712,
+        "median": 0.442183,
+        "q25": 0.33418,
+        "q75": 0.556995,
+        "iqr": 0.222815,
+        "n_pairs": 190
+      },
+      "2025-07": {
+        "mean": 0.451774,
+        "std": 0.174776,
+        "min": 0.047586,
+        "max": 0.905845,
+        "median": 0.453551,
+        "q25": 0.34535,
+        "q75": 0.573679,
+        "iqr": 0.228329,
+        "n_pairs": 190
+      },
+      "2025-08": {
+        "mean": 0.44154,
+        "std": 0.177159,
+        "min": 0.038301,
+        "max": 0.902943,
+        "median": 0.43902,
+        "q25": 0.327419,
+        "q75": 0.557141,
+        "iqr": 0.229722,
+        "n_pairs": 190
+      },
+      "2025-09": {
+        "mean": 0.42669,
+        "std": 0.1765,
+        "min": 0.04045,
+        "max": 0.9045,
+        "median": 0.403607,
+        "q25": 0.313906,
+        "q75": 0.539859,
+        "iqr": 0.225953,
+        "n_pairs": 190
+      },
+      "2025-10": {
+        "mean": 0.446314,
+        "std": 0.185727,
+        "min": 0.041352,
+        "max": 0.986187,
+        "median": 0.419984,
+        "q25": 0.325229,
+        "q75": 0.572845,
+        "iqr": 0.247616,
+        "n_pairs": 190
+      },
+      "2025-11": {
+        "mean": 0.444423,
+        "std": 0.184618,
+        "min": 0.042014,
+        "max": 0.993906,
+        "median": 0.410567,
+        "q25": 0.330256,
+        "q75": 0.572649,
+        "iqr": 0.242393,
+        "n_pairs": 190
+      },
+      "2025-12": {
+        "mean": 0.436275,
+        "std": 0.181134,
+        "min": 0.031084,
+        "max": 1.000223,
+        "median": 0.40704,
+        "q25": 0.320553,
+        "q75": 0.552218,
+        "iqr": 0.231665,
+        "n_pairs": 190
+      },
+      "2026-01": {
+        "mean": 0.465428,
+        "std": 0.190718,
+        "min": 0.033381,
+        "max": 1.034576,
+        "median": 0.428644,
+        "q25": 0.336503,
+        "q75": 0.585422,
+        "iqr": 0.248918,
+        "n_pairs": 190
+      },
+      "2026-02": {
+        "mean": 0.460939,
+        "std": 0.192068,
+        "min": 0.03442,
+        "max": 0.977968,
+        "median": 0.426196,
+        "q25": 0.309769,
+        "q75": 0.599172,
+        "iqr": 0.289403,
+        "n_pairs": 190
+      },
+      "2026-03": {
+        "mean": 0.507667,
+        "std": 0.204559,
+        "min": 0.036926,
+        "max": 1.028106,
+        "median": 0.477596,
+        "q25": 0.352697,
+        "q75": 0.653844,
+        "iqr": 0.301147,
+        "n_pairs": 190
+      }
+    },
+    "separability": {
+      "2025-04_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.191619,
+        "intra_max": 0.850785,
+        "separability_ratio": 0.225226,
+        "cluster_sizes": [
+          12,
+          8
+        ]
+      },
+      "2025-04_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.191619,
+        "intra_max": 0.830797,
+        "separability_ratio": 0.230645,
+        "cluster_sizes": [
+          12,
+          3,
+          5
+        ]
+      },
+      "2025-04_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.191619,
+        "intra_max": 0.534832,
+        "separability_ratio": 0.358279,
+        "cluster_sizes": [
+          2,
+          10,
+          3,
+          5
+        ]
+      },
+      "2025-05_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.242806,
+        "intra_max": 0.840635,
+        "separability_ratio": 0.288837,
+        "cluster_sizes": [
+          6,
+          14
+        ]
+      },
+      "2025-05_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.235126,
+        "intra_max": 0.840635,
+        "separability_ratio": 0.2797,
+        "cluster_sizes": [
+          6,
+          9,
+          5
+        ]
+      },
+      "2025-05_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.235126,
+        "intra_max": 0.632745,
+        "separability_ratio": 0.371596,
+        "cluster_sizes": [
+          2,
+          4,
+          9,
+          5
+        ]
+      },
+      "2025-06_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.22776,
+        "intra_max": 0.842878,
+        "separability_ratio": 0.270217,
+        "cluster_sizes": [
+          6,
+          14
+        ]
+      },
+      "2025-06_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.188727,
+        "intra_max": 0.842878,
+        "separability_ratio": 0.223908,
+        "cluster_sizes": [
+          6,
+          5,
+          9
+        ]
+      },
+      "2025-06_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.188727,
+        "intra_max": 0.5734,
+        "separability_ratio": 0.329137,
+        "cluster_sizes": [
+          2,
+          4,
+          5,
+          9
+        ]
+      },
+      "2025-07_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.232164,
+        "intra_max": 0.805347,
+        "separability_ratio": 0.288278,
+        "cluster_sizes": [
+          6,
+          14
+        ]
+      },
+      "2025-07_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.194679,
+        "intra_max": 0.805347,
+        "separability_ratio": 0.241734,
+        "cluster_sizes": [
+          6,
+          8,
+          6
+        ]
+      },
+      "2025-07_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.194679,
+        "intra_max": 0.500402,
+        "separability_ratio": 0.389046,
+        "cluster_sizes": [
+          2,
+          4,
+          8,
+          6
+        ]
+      },
+      "2025-08_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.233103,
+        "intra_max": 0.809596,
+        "separability_ratio": 0.287925,
+        "cluster_sizes": [
+          6,
+          14
+        ]
+      },
+      "2025-08_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.194206,
+        "intra_max": 0.809596,
+        "separability_ratio": 0.23988,
+        "cluster_sizes": [
+          6,
+          5,
+          9
+        ]
+      },
+      "2025-08_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.194206,
+        "intra_max": 0.557251,
+        "separability_ratio": 0.348507,
+        "cluster_sizes": [
+          2,
+          4,
+          5,
+          9
+        ]
+      },
+      "2025-09_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.225443,
+        "intra_max": 0.813795,
+        "separability_ratio": 0.277026,
+        "cluster_sizes": [
+          14,
+          6
+        ]
+      },
+      "2025-09_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.225443,
+        "intra_max": 0.614228,
+        "separability_ratio": 0.367034,
+        "cluster_sizes": [
+          14,
+          2,
+          4
+        ]
+      },
+      "2025-09_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.189618,
+        "intra_max": 0.519302,
+        "separability_ratio": 0.36514,
+        "cluster_sizes": [
+          8,
+          6,
+          2,
+          4
+        ]
+      },
+      "2025-10_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.230803,
+        "intra_max": 0.847634,
+        "separability_ratio": 0.272291,
+        "cluster_sizes": [
+          14,
+          6
+        ]
+      },
+      "2025-10_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.230803,
+        "intra_max": 0.626556,
+        "separability_ratio": 0.368368,
+        "cluster_sizes": [
+          14,
+          2,
+          4
+        ]
+      },
+      "2025-10_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.192933,
+        "intra_max": 0.561587,
+        "separability_ratio": 0.343549,
+        "cluster_sizes": [
+          6,
+          8,
+          2,
+          4
+        ]
+      },
+      "2025-11_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.231529,
+        "intra_max": 0.847775,
+        "separability_ratio": 0.273101,
+        "cluster_sizes": [
+          14,
+          6
+        ]
+      },
+      "2025-11_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.231529,
+        "intra_max": 0.623319,
+        "separability_ratio": 0.371445,
+        "cluster_sizes": [
+          14,
+          2,
+          4
+        ]
+      },
+      "2025-11_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.190695,
+        "intra_max": 0.572828,
+        "separability_ratio": 0.332902,
+        "cluster_sizes": [
+          6,
+          8,
+          2,
+          4
+        ]
+      },
+      "2025-12_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.237652,
+        "intra_max": 0.843576,
+        "separability_ratio": 0.28172,
+        "cluster_sizes": [
+          15,
+          5
+        ]
+      },
+      "2025-12_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.237652,
+        "intra_max": 0.742978,
+        "separability_ratio": 0.319865,
+        "cluster_sizes": [
+          15,
+          2,
+          3
+        ]
+      },
+      "2025-12_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.181956,
+        "intra_max": 0.742978,
+        "separability_ratio": 0.244901,
+        "cluster_sizes": [
+          4,
+          11,
+          2,
+          3
+        ]
+      },
+      "2026-01_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.264342,
+        "intra_max": 0.848669,
+        "separability_ratio": 0.311479,
+        "cluster_sizes": [
+          15,
+          5
+        ]
+      },
+      "2026-01_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.264342,
+        "intra_max": 0.752463,
+        "separability_ratio": 0.351302,
+        "cluster_sizes": [
+          15,
+          2,
+          3
+        ]
+      },
+      "2026-01_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.212099,
+        "intra_max": 0.643806,
+        "separability_ratio": 0.329446,
+        "cluster_sizes": [
+          5,
+          10,
+          2,
+          3
+        ]
+      },
+      "2026-02_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.206165,
+        "intra_max": 0.847398,
+        "separability_ratio": 0.243291,
+        "cluster_sizes": [
+          5,
+          15
+        ]
+      },
+      "2026-02_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.194833,
+        "intra_max": 0.744815,
+        "separability_ratio": 0.261586,
+        "cluster_sizes": [
+          5,
+          6,
+          9
+        ]
+      },
+      "2026-02_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.158969,
+        "intra_max": 0.570203,
+        "separability_ratio": 0.278794,
+        "cluster_sizes": [
+          5,
+          6,
+          4,
+          5
+        ]
+      },
+      "2026-03_k2": {
+        "n_clusters": 2,
+        "inter_min": 0.242397,
+        "intra_max": 0.955142,
+        "separability_ratio": 0.253781,
+        "cluster_sizes": [
+          5,
+          15
+        ]
+      },
+      "2026-03_k3": {
+        "n_clusters": 3,
+        "inter_min": 0.21418,
+        "intra_max": 0.770195,
+        "separability_ratio": 0.278086,
+        "cluster_sizes": [
+          5,
+          6,
+          9
+        ]
+      },
+      "2026-03_k4": {
+        "n_clusters": 4,
+        "inter_min": 0.21418,
+        "intra_max": 0.647366,
+        "separability_ratio": 0.330849,
+        "cluster_sizes": [
+          5,
+          6,
+          3,
+          6
+        ]
+      }
+    }
+  }
+}
