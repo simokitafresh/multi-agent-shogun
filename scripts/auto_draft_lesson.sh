@@ -83,16 +83,23 @@ if [ "$action" = "skip" ]; then
     exit 0
 fi
 
-# Extract fields
-PROJECT=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('project','unknown'))")
-TITLE=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('title','unknown'))")
-DETAIL=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('detail',''))")
-SOURCE_CMD=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('source_cmd','unknown'))")
-AUTHOR=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('author','unknown'))")
-TAGS=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tags',''))")
-IF_COND=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('if_cond',''))")
-THEN_ACTION=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('then_action',''))")
-BECAUSE_REASON=$(echo "$extract_result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('because_reason',''))")
+# Extract all fields in a single python3 call (9→1 process spawn)
+eval "$(echo "$extract_result" | python3 -c "
+import json, sys, shlex
+d = json.load(sys.stdin)
+for name, key, default in [
+    ('PROJECT', 'project', 'unknown'),
+    ('TITLE', 'title', 'unknown'),
+    ('DETAIL', 'detail', ''),
+    ('SOURCE_CMD', 'source_cmd', 'unknown'),
+    ('AUTHOR', 'author', 'unknown'),
+    ('TAGS', 'tags', ''),
+    ('IF_COND', 'if_cond', ''),
+    ('THEN_ACTION', 'then_action', ''),
+    ('BECAUSE_REASON', 'because_reason', ''),
+]:
+    print(f'{name}={shlex.quote(str(d.get(key, default)))}')
+")"
 
 # Duplicate check: same title + source_cmd in SSOT (L006対応)
 PROJECT_PATH=$(python3 -c "
@@ -155,20 +162,19 @@ fi
 
 # Call lesson_write.sh with --status confirmed
 echo "[auto_draft] Registering confirmed lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
-TAGS_FLAG=""
+EXTRA_FLAGS=()
 if [ -n "$TAGS" ]; then
-    TAGS_FLAG="--tags $TAGS"
+    EXTRA_FLAGS+=(--tags "$TAGS")
 fi
-IF_THEN_FLAGS=""
 if [ -n "$IF_COND" ]; then
-    IF_THEN_FLAGS="$IF_THEN_FLAGS --if $IF_COND"
+    EXTRA_FLAGS+=(--if "$IF_COND")
 fi
 if [ -n "$THEN_ACTION" ]; then
-    IF_THEN_FLAGS="$IF_THEN_FLAGS --then $THEN_ACTION"
+    EXTRA_FLAGS+=(--then "$THEN_ACTION")
 fi
 if [ -n "$BECAUSE_REASON" ]; then
-    IF_THEN_FLAGS="$IF_THEN_FLAGS --because $BECAUSE_REASON"
+    EXTRA_FLAGS+=(--because "$BECAUSE_REASON")
 fi
-bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed $TAGS_FLAG $IF_THEN_FLAGS
+bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed "${EXTRA_FLAGS[@]}"
 
 echo "[auto_draft] Confirmed lesson registered successfully"
