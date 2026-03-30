@@ -502,10 +502,10 @@ archive_cmds() {
                 echo "[archive] WARN: failed to parse cmd_id at lines ${s}-${e}" >&2
             fi
 
-            ((archived++)) || true
+            archived=$((archived + 1))
         else
             printf '%s\n' "$entry" >> "$tmp_active"
-            ((kept++)) || true
+            kept=$((kept + 1))
         fi
     done
 
