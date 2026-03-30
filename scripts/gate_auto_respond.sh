@@ -197,31 +197,23 @@ handle_ci_red() {
         return 0
     fi
 
-    local ci_conclusion
-    ci_conclusion=$(printf '%s' "$ci_result" | python3 -c "
+    local ci_parsed
+    ci_parsed=$(printf '%s' "$ci_result" | python3 -c "
 import json, sys
 try:
     data = json.load(sys.stdin)
     if data and isinstance(data, list) and len(data) > 0:
-        print(data[0].get('conclusion') or '')
+        conclusion = data[0].get('conclusion') or ''
+        run_id = data[0].get('databaseId') or ''
+        print(f'{conclusion}\t{run_id}')
     else:
-        print('')
+        print('\t')
 except:
-    print('')
+    print('\t')
 " 2>/dev/null)
 
-    local ci_run_id
-    ci_run_id=$(printf '%s' "$ci_result" | python3 -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    if data and isinstance(data, list) and len(data) > 0:
-        print(data[0].get('databaseId') or '')
-    else:
-        print('')
-except:
-    print('')
-" 2>/dev/null)
+    local ci_conclusion ci_run_id
+    IFS=$'\t' read -r ci_conclusion ci_run_id <<< "$ci_parsed"
 
     if [ "$ci_conclusion" = "failure" ]; then
         state="ALERT"
