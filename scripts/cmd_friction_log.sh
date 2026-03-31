@@ -36,6 +36,11 @@ fi
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# --- Escape YAML special characters in DETAIL ---
+# Double quotes and backslashes must be escaped to prevent YAML corruption
+DETAIL_ESCAPED="${DETAIL//\\/\\\\}"   # escape backslashes first
+DETAIL_ESCAPED="${DETAIL_ESCAPED//\"/\\\"}"  # then escape double quotes
+
 # --- Append entry with flock ---
 (
     flock -w 10 200 || { echo "[cmd_friction_log] Error: Failed to acquire lock" >&2; exit 1; }
@@ -49,7 +54,7 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     cat >> "$LOG_FILE" <<EOF
   - cmd_id: "$CMD_ID"
     friction_type: "$FRICTION_TYPE"
-    detail: "$DETAIL"
+    detail: "$DETAIL_ESCAPED"
     timestamp: "$TIMESTAMP"
 EOF
 
