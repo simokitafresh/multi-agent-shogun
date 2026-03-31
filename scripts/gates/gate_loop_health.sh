@@ -247,14 +247,34 @@ sc_pct = (sc_corrected * 100 // sc_total) if sc_total > 0 else 0
 print(f'=== Self-correction: {sc_corrected}/{sc_total} ({sc_pct}%) ===')
 print()
 
+# Classify recent FAIL patterns: format(auto-fixable) vs quality(品質判断)
+quality_fail_recent = 0
+format_fail_recent = 0
+for pattern, count in reason_counter.items():
+    af = False
+    if 'is dict (must be list)' in pattern:
+        af = True
+    elif 'is string' in pattern and 'lesson_candidate' not in pattern:
+        af = True
+    if af:
+        format_fail_recent += count
+    else:
+        quality_fail_recent += count
+
 print('=== Loop Status ===')
 if fail_count > 0 and autofix_count == 0:
     if sc_total > 0 and sc_pct >= 80:
         print(f'  OK: 免疫系正常（自己修正率{sc_pct}%）')
         sys.exit(0)
-    else:
-        print('  WARNING: FAIL発生中だがAUTO-FIX未稼働。GP-107(消火4問)で判定後にauto-fix対象拡大を検討せよ')
+    elif format_fail_recent > 0:
+        print(f'  WARNING: フォーマット系FAIL {format_fail_recent}件が未auto-fix。新フォーマットパターンの成熟提案を確認せよ')
         sys.exit(1)
+    elif quality_fail_recent > 0:
+        print(f'  INFO: 品質系FAIL {quality_fail_recent}件は意図的BLOCK(GP-107撤去済み)。修行サイクルで対応')
+        sys.exit(0)
+    else:
+        print('  OK: 直近のFAILパターンなし')
+        sys.exit(0)
 elif fail_count > pass_count * 0.2:
     print('  WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須')
     sys.exit(1)
