@@ -78,13 +78,37 @@ if not archive_data.get('messages'):
 
 archive_data['messages'].extend(read_msgs)
 
+# yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
+def _sv(v):
+    if isinstance(v, bool): return str(v).lower()
+    s = str(v)
+    if '\n' in s:
+        return '|-\n' + '\n'.join('    ' + ln for ln in s.split('\n'))
+    sq = chr(39)
+    return sq + s.replace(sq, sq+sq) + sq
+
+def _write_messages(f, messages):
+    if not messages:
+        f.write('messages: []\n')
+    else:
+        f.write('messages:\n')
+        for m in messages:
+            keys = ['content', 'from', 'id', 'read', 'timestamp', 'type']
+            extra = sorted(k for k in m if k not in keys)
+            first = True
+            for k in keys + extra:
+                if k not in m: continue
+                p = '- ' if first else '  '
+                first = False
+                f.write(f'{p}{k}: {_sv(m[k])}\n')
+
 # Write archive (atomic)
 tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(archive_path), suffix='.tmp')
 try:
     with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-        yaml.dump(archive_data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        _write_messages(f, archive_data['messages'])
     os.replace(tmp_path, archive_path)
-except:
+except Exception:
     os.unlink(tmp_path)
     raise
 
@@ -93,9 +117,9 @@ new_data = {'messages': unread} if unread else {'messages': []}
 tmp_fd2, tmp_path2 = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
 try:
     with os.fdopen(tmp_fd2, 'w', encoding='utf-8') as f:
-        yaml.dump(new_data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        _write_messages(f, new_data['messages'])
     os.replace(tmp_path2, inbox_path)
-except:
+except Exception:
     os.unlink(tmp_path2)
     raise
 
