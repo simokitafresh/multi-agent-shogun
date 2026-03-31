@@ -84,7 +84,7 @@ language:
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
 2.5.1. **起動ゲートALERT対応(将軍のみ)**: gate出力にALERTがあれば該当スキルを実行:
-   - Memory健全度 → `/shogun-memory-teire`
+   - Memory健全度 → `/dream`
    - lesson health (`bash scripts/gates/gate_lesson_health.sh`) ALERT → `/lesson-sort`
    - PD未解決 → `/shogun-pd-sync`
 2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
@@ -181,7 +181,7 @@ Step 2.85: Read memory/deepdive_why_chain_20260321.md（毎セッション必読
   特にPhase 4「LLMに生存本能はない→自動化×強制」と
   Phase 5「なぜの目的=自動化ターゲット特定」が家老の判断品質の基盤。
   これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
-Step 2.9: bash scripts/gates/gate_karo_startup.sh（5項目一括チェック: deepdive必読強制+陣形図鮮度+inbox未読+PD未解決+workaround傾向）
+Step 2.9: bash scripts/gates/gate_karo_startup.sh（8項目一括チェック: deepdive必読強制+陣形図鮮度+忍者CTX実態+inbox未読+PD未解決+workaround傾向+忍者別WA率+idle自走プロンプト）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
 Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
 Step 4: Read queue/inbox/karo.yaml（未読メッセージ処理）
@@ -361,12 +361,13 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照
 - 進捗報告|忍者はAC完了ごとにtask YAMLのprogress欄を更新|ashigaru.md Step 4.5参照
+- 偵察デフォルト品質5要件|偵察は現象特定で止めるな|(1)変更対象ファイル・行番号 (2)波及先ファイル (3)関連テスト有無・修正要否 (4)エッジケース・副作用 (5)依存関係・順序制約(flush順序・キャッシュ共有・ネスト読み書き等)|テンプレート+ゲートWARNで自動化×強制
 
 ## Current Project
 
 - id: dm-signal | path: `/mnt/c/Python_app/DM-signal`
 - context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md`
-- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md`
+- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md`
 - チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md`
 - projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)
 
@@ -383,7 +384,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 3. projects/{id}.yaml — PJ核心知識(ルール要約/UUID/DBルール)。家老が管理
 4. projects/{id}/lessons.yaml — PJ教訓。忍者はlesson_candidate報告→家老がlesson_write.shで正式登録
 5. context/*.md — 詳細コンテキスト。CLAUDE.mdには結論だけ書け。根拠と手順はここへ
-6. Memory MCP — 殿の好み+将軍教訓のみ(将軍専用)。事実・ポインタ・PJ詳細を入れるな。MCP書込み時は同一ターンでMEMORY.md索引も必ずペア更新せよ。週1で `/shogun-memory-teire` にて突合
+6. Memory MCP — 殿の好み+将軍教訓のみ(将軍専用)。事実・ポインタ・PJ詳細を入れるな。MCP書込み時は同一ターンでMEMORY.md索引も必ずペア更新せよ。週1で `/dream` にて突合
 7. 原則: 受動的(自動ロード,判断0回) > 能動的(Memory MCP,判断2回)
 8. ルール追記時はpositive_rule（代わりにやるべきこと）+ reason（なぜダメか）形式で書け（PD-038準拠）
 
