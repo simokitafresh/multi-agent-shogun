@@ -400,8 +400,35 @@ msgs.append({
     'original_ninja': os.environ['ROUTE_FROM'],
 })
 data['messages'] = msgs
-with open(inbox_path, 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+# yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
+import tempfile
+def _sv(v):
+    if isinstance(v, bool): return str(v).lower()
+    s = str(v)
+    if '\n' in s:
+        return '|-\n' + '\n'.join('    ' + ln for ln in s.split('\n'))
+    sq = chr(39)
+    return sq + s.replace(sq, sq+sq) + sq
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
+try:
+    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+        if not data.get('messages'):
+            f.write('messages: []\n')
+        else:
+            f.write('messages:\n')
+            for m in data['messages']:
+                keys = ['content', 'from', 'id', 'read', 'timestamp', 'type']
+                extra = sorted(k for k in m if k not in keys)
+                first = True
+                for k in keys + extra:
+                    if k not in m: continue
+                    p = '- ' if first else '  '
+                    first = False
+                    f.write(f'{p}{k}: {_sv(m[k])}\n')
+    os.replace(tmp_path, inbox_path)
+except:
+    os.unlink(tmp_path)
+    raise
 " 2>/dev/null
                         ) 200>"$(lock_path "$GUNSHI_INBOX")" 2>/dev/null || true
                         echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2
@@ -555,12 +582,31 @@ try:
         # Keep all unread + newest 30 read messages
         data['messages'] = unread + read[-30:]
 
-    # Atomic write: tmp file + rename (prevents partial reads)
+    # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止(atomic write維持)
     import tempfile
+    def _sv(v):
+        if isinstance(v, bool): return str(v).lower()
+        s = str(v)
+        if '\n' in s:
+            return '|-\n' + '\n'.join('    ' + ln for ln in s.split('\n'))
+        sq = chr(39)
+        return sq + s.replace(sq, sq+sq) + sq
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
     try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+            if not data.get('messages'):
+                f.write('messages: []\n')
+            else:
+                f.write('messages:\n')
+                for m in data['messages']:
+                    keys = ['content', 'from', 'id', 'read', 'timestamp', 'type']
+                    extra = sorted(k for k in m if k not in keys)
+                    first = True
+                    for k in keys + extra:
+                        if k not in m: continue
+                        p = '- ' if first else '  '
+                        first = False
+                        f.write(f'{p}{k}: {_sv(m[k])}\n')
         os.replace(tmp_path, inbox_path)
     except:
         os.unlink(tmp_path)
