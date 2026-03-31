@@ -32,6 +32,11 @@ if [[ -z "$OLD_PROJECT_ID" ]]; then
     exit 1
 fi
 
+if [[ "$NEW_PROJECT_ID" == "$OLD_PROJECT_ID" ]]; then
+    echo "[switch_project] SKIP: already on project '$OLD_PROJECT_ID'. No switch needed." >&2
+    exit 0
+fi
+
 # 旧PJ名を取得（id行の次のname行）
 OLD_PROJECT_NAME=$(awk -v id="$OLD_PROJECT_ID" '
     /^  - id:/ { found = ($3 == id) }
