@@ -71,9 +71,18 @@ fi
     fi
 
     _pr_now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    # 2行を個別のsed呼び出しで挿入（GNU sed依存の\nマルチライン挿入を回避）
-    sed -i "${_pr_notified_line}a\\    resolved_at: \"${_pr_now}\"" "$PATTERNS_FILE"
-    sed -i "$((_pr_notified_line + 1))a\\    fix_cmd_id: \"${FIX_CMD_ID}\"" "$PATTERNS_FILE"
+    # 原子的挿入: awk単一パスでtemp fileに書き、mvで置換（2回sed -iの非原子性+メタ文字注入を解消）
+    _pr_tmpfile="${PATTERNS_FILE}.tmp.$$"
+    awk -v insert_after="${_pr_notified_line}" \
+        -v resolved_val="${_pr_now}" \
+        -v fix_val="${FIX_CMD_ID}" \
+        '{ print }
+         NR == insert_after {
+           printf "    resolved_at: \"%s\"\n", resolved_val
+           printf "    fix_cmd_id: \"%s\"\n", fix_val
+         }' \
+        "$PATTERNS_FILE" > "$_pr_tmpfile"
+    mv "$_pr_tmpfile" "$PATTERNS_FILE"
 
     echo "[workaround_pattern_resolve] Resolved: ${PATTERN_ID} by ${FIX_CMD_ID} at ${_pr_now}"
 

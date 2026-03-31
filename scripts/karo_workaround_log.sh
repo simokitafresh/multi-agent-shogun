@@ -96,12 +96,27 @@ yaml_escape_sq() {
 # --- Category auto-classification (AC2: cmd_1211) ---
 classify_category() {
     local issue="$1"
-    local pattern_report="lessons_useful|binary_checks|dict|list|string|フォーマット|lesson_candidate"
-    local pattern_disappear="消失|missing|not found"
+    local pattern_report="lessons_useful|binary_checks|dict|list|string|フォーマット|lesson_candidate|report.*フォーマット|report_field_set|verdict|ac_version"
+    local pattern_disappear="消失|missing|not found|消失|不在"
+    local pattern_commit="commit|コミット|git commit|untracked|modified"
+    local pattern_stale="stale|古い|残骸|旧cmd|残存"
+    local pattern_double="二重|double|重複配備|二重配備"
+    local pattern_redeploy="再配備|redeploy|task_redeploy"
+    local pattern_report_missing="報告.*未作成|report.*未作成|報告YAML.*未|report_yaml_missing"
     if [[ "$issue" =~ $pattern_report ]]; then
         echo "report_yaml_format"
+    elif [[ "$issue" =~ $pattern_report_missing ]]; then
+        echo "report_missing"
     elif [[ "$issue" =~ $pattern_disappear ]]; then
         echo "file_disappearance"
+    elif [[ "$issue" =~ $pattern_commit ]]; then
+        echo "commit_missing"
+    elif [[ "$issue" =~ $pattern_stale ]]; then
+        echo "stale_report"
+    elif [[ "$issue" =~ $pattern_double ]]; then
+        echo "double_deploy"
+    elif [[ "$issue" =~ $pattern_redeploy ]]; then
+        echo "task_redeploy"
     else
         echo "uncategorized"
     fi
