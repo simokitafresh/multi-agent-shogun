@@ -21,7 +21,8 @@ fi
 
 # 方針: awkで状態機械。cmd_idマッチ中にgate_result: nullを見つけたら置換
 TMPFILE=$(mktemp)
-trap 'rm -f "$TMPFILE"' EXIT
+COUNT_TMPFILE=$(mktemp)
+trap 'rm -f "$TMPFILE" "$COUNT_TMPFILE"' EXIT
 
 awk -v cmd_id="$CMD_ID" -v gate_result="$GATE_RESULT" '
 BEGIN { in_entry = 0; match_cmd = 0 }
@@ -40,10 +41,9 @@ match_cmd && /^  gate_result: null/ {
 }
 { print }
 END { print updated+0 > "/dev/stderr" }
-' "$LOG_FILE" > "$TMPFILE" 2>/tmp/gunshi_reflux_count
+' "$LOG_FILE" > "$TMPFILE" 2>"$COUNT_TMPFILE"
 
-UPDATE_COUNT=$(cat /tmp/gunshi_reflux_count 2>/dev/null || echo "0")
-rm -f /tmp/gunshi_reflux_count
+UPDATE_COUNT=$(cat "$COUNT_TMPFILE" 2>/dev/null || echo "0")
 
 if [ "$UPDATE_COUNT" -gt 0 ]; then
     cp "$TMPFILE" "$LOG_FILE"
