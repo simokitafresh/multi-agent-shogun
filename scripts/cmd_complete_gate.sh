@@ -75,7 +75,8 @@ report_file = os.environ["REPORT_FILE"]
 
 try:
     with open(report_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
+        raw = f.read()
+    data = yaml.safe_load(raw) or {}
 except Exception:
     print("parse_error")
     raise SystemExit(0)
@@ -85,11 +86,37 @@ if not isinstance(data, dict):
     raise SystemExit(0)
 
 if len(data) == 1 and "report" in data and isinstance(data.get("report"), dict):
+    # yaml.dump禁止(CLAUDE.md): テキストベースでreport:ラッパーを除去
+    lines = raw.split('\n')
+    out = []
+    found = False
+    for line in lines:
+        s = line.strip()
+        if not found:
+            if s == '' or s.startswith('#'):
+                out.append(line)
+                continue
+            if s == 'report:':
+                found = True
+                continue
+            print("skip")
+            raise SystemExit(0)
+        else:
+            if line.startswith('  '):
+                out.append(line[2:])
+            else:
+                out.append(line)
+    if not found:
+        print("skip")
+        raise SystemExit(0)
+    result = '\n'.join(out)
+    if not result.endswith('\n'):
+        result += '\n'
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(report_file), suffix=".tmp")
     os.close(tmp_fd)
     try:
         with open(tmp_path, "w", encoding="utf-8") as f:
-            yaml.safe_dump(data["report"], f, allow_unicode=True, sort_keys=False)
+            f.write(result)
         os.replace(tmp_path, report_file)
         print("unwrapped")
     finally:

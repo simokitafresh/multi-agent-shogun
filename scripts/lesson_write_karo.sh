@@ -82,20 +82,31 @@ for lesson in lessons:
         print(f'重複を確認して再実行せよ', file=sys.stderr)
         sys.exit(1)
 
-# Append new lesson
-new_lesson = {
-    'id': new_id_str,
-    'title': title,
-    'detail': detail,
-    'source_cmd': source_cmd,
-    'created_at': timestamp,
-}
+# yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
+# 既存データを書き換えず、新エントリを末尾に追記
+sq = chr(39)
+def _sv(v):
+    s = str(v)
+    if '\n' in s:
+        return '|-\n' + '\n'.join('    ' + ln for ln in s.split('\n'))
+    return sq + s.replace(sq, sq+sq) + sq
 
-lessons.append(new_lesson)
-data['lessons'] = lessons
+with open(lessons_file, 'rb') as f:
+    f.seek(0, 2)
+    size = f.tell()
+    needs_nl = False
+    if size > 0:
+        f.seek(-1, 2)
+        needs_nl = f.read(1) != b'\n'
 
-with open(lessons_file, 'w', encoding='utf-8') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+with open(lessons_file, 'a', encoding='utf-8') as f:
+    if needs_nl:
+        f.write('\n')
+    f.write(f'- id: {_sv(new_id_str)}\n')
+    f.write(f'  title: {_sv(title)}\n')
+    f.write(f'  detail: {_sv(detail)}\n')
+    f.write(f'  source_cmd: {_sv(source_cmd)}\n')
+    f.write(f'  created_at: {_sv(timestamp)}\n')
 
 print(f'{new_id_str} added to {lessons_file}')
 PYEOF
