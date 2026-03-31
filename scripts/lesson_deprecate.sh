@@ -94,14 +94,46 @@ try:
         with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
             if header:
                 f.write(header)
-            yaml.dump(
-                data,
-                f,
-                default_flow_style=False,
-                allow_unicode=True,
-                indent=2,
-                sort_keys=False,
-            )
+            # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
+            def _sv(v):
+                if isinstance(v, bool): return str(v).lower()
+                if isinstance(v, (int, float)): return str(v)
+                s = str(v)
+                if '\n' in s:
+                    return '|-\n' + '\n'.join('      ' + ln for ln in s.split('\n'))
+                sq = chr(39)
+                return sq + s.replace(sq, sq+sq) + sq
+
+            top_scalars = ['ssot_path', 'last_synced', 'archive_path', 'lesson_count']
+            for k in top_scalars:
+                if k in data:
+                    f.write(f'{k}: {_sv(data[k])}\n')
+            for k in data:
+                if k not in top_scalars and k != 'lessons':
+                    f.write(f'{k}: {_sv(data[k])}\n')
+
+            lessons = data.get('lessons', [])
+            if not lessons:
+                f.write('lessons: []\n')
+            else:
+                f.write('lessons:\n')
+                l_keys = ['id', 'title', 'summary', 'tags',
+                          'deprecated', 'deprecated_at', 'deprecated_reason', 'deprecated_by',
+                          'helpful_count', 'harmful_count', 'last_referenced', 'retired']
+                for lesson in lessons:
+                    first = True
+                    for k in l_keys + sorted(k2 for k2 in lesson if k2 not in l_keys):
+                        if k not in lesson:
+                            continue
+                        p = '- ' if first else '  '
+                        first = False
+                        v = lesson[k]
+                        if isinstance(v, list):
+                            f.write(f'{p}{k}:\n')
+                            for item in v:
+                                f.write(f'  - {_sv(item)}\n')
+                        else:
+                            f.write(f'{p}{k}: {_sv(v)}\n')
         os.replace(tmp_path, lessons_file)
     except Exception:
         os.unlink(tmp_path)

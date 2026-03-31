@@ -116,27 +116,12 @@ else
             echo "  STALE: ${cmd_id} | current=${cmd_status} | should_be=completed | gates=[${all_gates[*]}] all done"
 
             if [ "$MODE" = "--execute" ]; then
-                # flock使用でstatus書き換え
-                lock_file="${YAML_FILE}.lock"
-                (
-                    flock -w 10 200 || { echo "    ERROR: flock取得失敗 (${cmd_id})" >&2; exit 1; }
-                    # statusをcompletedに書き換え
-                    python3 -c "
-import yaml, sys
-with open('$YAML_FILE', encoding='utf-8') as f:
-    content = f.read()
-    data = yaml.safe_load(content)
-if not data or 'commands' not in data:
-    sys.exit(1)
-for cmd in data['commands']:
-    if cmd.get('id') == '${cmd_id}':
-        cmd['status'] = 'completed'
-        break
-with open('$YAML_FILE', 'w', encoding='utf-8') as f:
-    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-"
+                # yaml.dump禁止(CLAUDE.md): yaml_field_set.shでフィールド単体更新
+                if bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "${cmd_id}" "status" "completed"; then
                     echo "    FIXED: ${cmd_id} → completed"
-                ) 200>"$lock_file"
+                else
+                    echo "    ERROR: yaml_field_set失敗 (${cmd_id})" >&2
+                fi
             fi
         fi
     done <<< "$cmd_entries"
@@ -180,24 +165,12 @@ except Exception as e:
             echo "  UNTRACKED: ${pd_id} | status=resolved | context_synced=missing → false"
 
             if [ "$MODE" = "--execute" ]; then
-                lock_file="${PD_FILE}.lock"
-                (
-                    flock -w 10 200 || { echo "    ERROR: flock取得失敗 (${pd_id})" >&2; exit 1; }
-                    python3 -c "
-import yaml, sys
-with open('$PD_FILE', encoding='utf-8') as f:
-    data = yaml.safe_load(f)
-if not data or 'decisions' not in data:
-    sys.exit(1)
-for d in data['decisions']:
-    if d.get('id') == '${pd_id}' and d.get('status') == 'resolved' and 'context_synced' not in d:
-        d['context_synced'] = False
-        break
-with open('$PD_FILE', 'w', encoding='utf-8') as f:
-    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-"
+                # yaml.dump禁止(CLAUDE.md): yaml_field_set.shでフィールド単体更新
+                if bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$PD_FILE" "${pd_id}" "context_synced" "false"; then
                     echo "    FIXED: ${pd_id} → context_synced: false"
-                ) 200>"$lock_file"
+                else
+                    echo "    ERROR: yaml_field_set失敗 (${pd_id})" >&2
+                fi
             fi
         done <<< "$untracked_pds"
     fi
