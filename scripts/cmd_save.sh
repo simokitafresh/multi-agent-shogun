@@ -11,7 +11,7 @@
 #   2. archive/cmds/配下の完了済みcmd_idとの重複チェック
 #   3. quality_gateフィールド検査（q1_firefighting, q2_learning, q3_next_quality, q4_depth[WARNING]）
 #   4. flock競合検出（家老との同時書き込み防止）
-#   12. 内容重複チェック（直近20件のtitle+purposeとの類似度比較）
+#   12. 内容重複チェック（キュー直近20件+archive直近20ファイルのtitle+purposeとの類似度比較）
 # ============================================================
 set -euo pipefail
 
@@ -405,13 +405,13 @@ check_impl_push_ac
 
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止
-# 目的: 新cmdのtitle+purposeと直近20件の類似度を比較しWARN（50%以上）
+# 目的: 新cmdのtitle+purposeと直近20件(キュー+archive)の類似度を比較しWARN（50%以上）
 check_content_duplicate() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
     [[ ! -f "$QUEUE_FILE" ]] && return 0
 
-    python3 - "$QUEUE_FILE" "$CMD_ID" <<'PY' 2>&1 | cat >&2
-import sys, re, yaml
+    python3 - "$QUEUE_FILE" "$CMD_ID" "${ARCHIVE_CMD_DIR:-}" <<'PY' 2>&1 | cat >&2
+import sys, re, yaml, os, glob
 
 def tokenize(text):
     """title+purposeをトークン集合に変換。ASCII単語+日本語2gramで混合テキスト対応"""
@@ -432,7 +432,7 @@ def similarity(s1, s2):
     union = s1 | s2
     return len(s1 & s2) / len(union) * 100 if union else 0.0
 
-queue_file, current_cmd = sys.argv[1], sys.argv[2]
+queue_file, current_cmd, archive_dir = sys.argv[1], sys.argv[2], sys.argv[3]
 
 try:
     with open(queue_file) as f:
@@ -454,6 +454,7 @@ new_words = tokenize(new_title) | tokenize(new_purpose)
 if not new_words:
     sys.exit(0)
 
+# Phase 1: キュー内の直近20件と比較
 cmd_ids = sorted(cmds.keys())
 cmd_ids = [c for c in cmd_ids if c != current_cmd][-20:]
 
@@ -475,6 +476,37 @@ if hits:
     for cid, title, sim in hits:
         print(f"  {cid}: {title} — 類似度{sim:.0f}%", file=sys.stderr)
     print("  → 重複起票でないか確認してください（BLOCKではありません）", file=sys.stderr)
+
+# Phase 2: archive/cmds/の直近20ファイルと比較
+if os.path.isdir(archive_dir):
+    archive_files = sorted(glob.glob(os.path.join(archive_dir, "*.yaml")),
+                           key=os.path.getmtime, reverse=True)[:20]
+    archive_hits = []
+    for af in archive_files:
+        try:
+            with open(af) as f:
+                adata = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        acmds = adata.get("commands", {})
+        if not isinstance(acmds, dict):
+            continue
+        for acid, aentry in acmds.items():
+            if not isinstance(aentry, dict):
+                continue
+            t = str(aentry.get("title", "") or "")
+            p = str(aentry.get("purpose", "") or "")
+            other_words = tokenize(t) | tokenize(p)
+            sim = similarity(new_words, other_words)
+            if sim >= 50:
+                archive_hits.append((acid, t[:50], sim))
+
+    if archive_hits:
+        archive_hits.sort(key=lambda x: -x[2])
+        print("WARNING: archive内に類似cmdを検出（類似度50%以上）(archive)", file=sys.stderr)
+        for cid, title, sim in archive_hits:
+            print(f"  (archive) {cid}: {title} — 類似度{sim:.0f}%", file=sys.stderr)
+        print("  → 過去の完了cmdとの重複でないか確認してください（BLOCKではありません）", file=sys.stderr)
 PY
 }
 
