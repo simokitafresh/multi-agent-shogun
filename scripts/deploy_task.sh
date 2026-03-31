@@ -512,11 +512,62 @@ if not cmd_acs:
 with open(task_file, 'r', encoding='utf-8') as f:
     raw = f.read()
 
-# Build replacement block
-frag = yaml.safe_dump(
-    {'acceptance_criteria': cmd_acs},
-    default_flow_style=False, allow_unicode=True, sort_keys=False,
-).rstrip('\n')
+# yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
+def _sv(v):
+    if v is None: return 'null'
+    if isinstance(v, bool): return str(v).lower()
+    if isinstance(v, (int, float)): return str(v)
+    s = str(v)
+    if '\n' in s:
+        return '|-\n' + '\n'.join('  ' + ln for ln in s.split('\n'))
+    sq = chr(39)
+    return sq + s.replace(sq, sq + sq) + sq
+def _yaml_lines(key, val, ind=0):
+    p = ' ' * ind
+    if not isinstance(val, (dict, list)):
+        s = _sv(val)
+        if '\n' in s:
+            parts = s.split('\n')
+            return [p + key + ': ' + parts[0]] + [p + x for x in parts[1:]]
+        return [p + key + ': ' + s]
+    if not val:
+        return [p + key + ': ' + ('[]' if isinstance(val, list) else '{}')]
+    r = [p + key + ':']
+    if isinstance(val, dict):
+        for k, v in val.items():
+            r.extend(_yaml_lines(k, v, ind + 2))
+    else:
+        for item in val:
+            r.extend(_list_item(item, ind))
+    return r
+def _list_item(item, ind):
+    p = ' ' * ind
+    if not isinstance(item, (dict, list)):
+        s = _sv(item)
+        if '\n' in s:
+            parts = s.split('\n')
+            return [p + '- ' + parts[0]] + [p + '  ' + x for x in parts[1:]]
+        return [p + '- ' + s]
+    if isinstance(item, dict) and item:
+        lines = []
+        first = True
+        for k, v in item.items():
+            tag = '- ' if first else '  '
+            first = False
+            if isinstance(v, (dict, list)) and v:
+                lines.append(p + tag + k + ':')
+                if isinstance(v, list):
+                    for sub in v:
+                        lines.extend(_list_item(sub, ind + 2))
+                else:
+                    for dk, dv in v.items():
+                        lines.extend(_yaml_lines(dk, dv, ind + 4))
+            else:
+                sv = _sv(v) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
+                lines.append(p + tag + k + ': ' + sv)
+        return lines
+    return [p + '- ' + ('[]' if isinstance(item, list) else '{}')]
+frag = '\n'.join(_yaml_lines('acceptance_criteria', cmd_acs))
 indented = '\n'.join('  ' + line for line in frag.split('\n'))
 
 # Replace acceptance_criteria section
@@ -1658,12 +1709,64 @@ try:
     with open(task_file, 'r', encoding='utf-8') as f:
         raw = f.read()
 
+    # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
+    def _sv(v):
+        if v is None: return 'null'
+        if isinstance(v, bool): return str(v).lower()
+        if isinstance(v, (int, float)): return str(v)
+        s = str(v)
+        if '\n' in s:
+            return '|-\n' + '\n'.join('  ' + ln for ln in s.split('\n'))
+        sq = chr(39)
+        return sq + s.replace(sq, sq + sq) + sq
+    def _yaml_lines(key, val, ind=0):
+        p = ' ' * ind
+        if not isinstance(val, (dict, list)):
+            s = _sv(val)
+            if '\n' in s:
+                parts = s.split('\n')
+                return [p + key + ': ' + parts[0]] + [p + x for x in parts[1:]]
+            return [p + key + ': ' + s]
+        if not val:
+            return [p + key + ': ' + ('[]' if isinstance(val, list) else '{}')]
+        r = [p + key + ':']
+        if isinstance(val, dict):
+            for k, v in val.items():
+                r.extend(_yaml_lines(k, v, ind + 2))
+        else:
+            for item in val:
+                r.extend(_list_item(item, ind))
+        return r
+    def _list_item(item, ind):
+        p = ' ' * ind
+        if not isinstance(item, (dict, list)):
+            s = _sv(item)
+            if '\n' in s:
+                parts = s.split('\n')
+                return [p + '- ' + parts[0]] + [p + '  ' + x for x in parts[1:]]
+            return [p + '- ' + s]
+        if isinstance(item, dict) and item:
+            lines = []
+            first = True
+            for k, v in item.items():
+                tag = '- ' if first else '  '
+                first = False
+                if isinstance(v, (dict, list)) and v:
+                    lines.append(p + tag + k + ':')
+                    if isinstance(v, list):
+                        for sub in v:
+                            lines.extend(_list_item(sub, ind + 2))
+                    else:
+                        for dk, dv in v.items():
+                            lines.extend(_yaml_lines(dk, dv, ind + 4))
+                else:
+                    sv = _sv(v) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
+                    lines.append(p + tag + k + ': ' + sv)
+            return lines
+        return [p + '- ' + ('[]' if isinstance(item, list) else '{}')]
     def _safe_section_replace(text, section_name, new_value):
         """Replace a 2-space-indented section under task: without full yaml.dump"""
-        frag = yaml.safe_dump(
-            {section_name: new_value},
-            default_flow_style=False, allow_unicode=True, sort_keys=False,
-        ).rstrip('\n')
+        frag = '\n'.join(_yaml_lines(section_name, new_value))
         indented = '\n'.join('  ' + line for line in frag.split('\n'))
         pat = re.compile(
             r'^  ' + re.escape(section_name) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
@@ -2226,12 +2329,64 @@ try:
     with open(task_file, 'r', encoding='utf-8') as f:
         raw = f.read()
 
+    # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
+    def _sv(v):
+        if v is None: return 'null'
+        if isinstance(v, bool): return str(v).lower()
+        if isinstance(v, (int, float)): return str(v)
+        s = str(v)
+        if '\n' in s:
+            return '|-\n' + '\n'.join('  ' + ln for ln in s.split('\n'))
+        sq = chr(39)
+        return sq + s.replace(sq, sq + sq) + sq
+    def _yaml_lines(key, val, ind=0):
+        p = ' ' * ind
+        if not isinstance(val, (dict, list)):
+            s = _sv(val)
+            if '\n' in s:
+                parts = s.split('\n')
+                return [p + key + ': ' + parts[0]] + [p + x for x in parts[1:]]
+            return [p + key + ': ' + s]
+        if not val:
+            return [p + key + ': ' + ('[]' if isinstance(val, list) else '{}')]
+        r = [p + key + ':']
+        if isinstance(val, dict):
+            for k, v in val.items():
+                r.extend(_yaml_lines(k, v, ind + 2))
+        else:
+            for item in val:
+                r.extend(_list_item(item, ind))
+        return r
+    def _list_item(item, ind):
+        p = ' ' * ind
+        if not isinstance(item, (dict, list)):
+            s = _sv(item)
+            if '\n' in s:
+                parts = s.split('\n')
+                return [p + '- ' + parts[0]] + [p + '  ' + x for x in parts[1:]]
+            return [p + '- ' + s]
+        if isinstance(item, dict) and item:
+            lines = []
+            first = True
+            for k, v in item.items():
+                tag = '- ' if first else '  '
+                first = False
+                if isinstance(v, (dict, list)) and v:
+                    lines.append(p + tag + k + ':')
+                    if isinstance(v, list):
+                        for sub in v:
+                            lines.extend(_list_item(sub, ind + 2))
+                    else:
+                        for dk, dv in v.items():
+                            lines.extend(_yaml_lines(dk, dv, ind + 4))
+                else:
+                    sv = _sv(v) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
+                    lines.append(p + tag + k + ': ' + sv)
+            return lines
+        return [p + '- ' + ('[]' if isinstance(item, list) else '{}')]
     def _safe_section_replace(text, section_name, new_value):
         """Replace a 2-space-indented section under task: without full yaml.dump"""
-        frag = yaml.safe_dump(
-            {section_name: new_value},
-            default_flow_style=False, allow_unicode=True, sort_keys=False,
-        ).rstrip('\n')
+        frag = '\n'.join(_yaml_lines(section_name, new_value))
         indented = '\n'.join('  ' + line for line in frag.split('\n'))
         pat = re.compile(
             r'^  ' + re.escape(section_name) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
