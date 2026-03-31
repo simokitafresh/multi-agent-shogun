@@ -137,7 +137,8 @@ recent_rows: list[list[str]] = []
 for days in (7, 30):
     start = today - timedelta(days=days - 1)
     count = sum(1 for record in records if start <= record["date"] <= today)
-    recent_rows.append([f"last_{days}_days", start.isoformat(), today.isoformat(), str(count)])
+    avg = f"{count / days:.1f}"
+    recent_rows.append([f"last_{days}_days", start.isoformat(), today.isoformat(), str(count), avg])
 
 project_counts = Counter(str(record["project"]) for record in records)
 project_rows = [[project, str(count)] for project, count in sorted(project_counts.items(), key=lambda item: (-item[1], item[0]))]
@@ -145,7 +146,7 @@ project_rows = [[project, str(count)] for project, count in sorted(project_count
 type_counts = Counter(str(record["type"]) for record in records)
 type_rows = [[type_name, str(count)] for type_name, count in sorted(type_counts.items(), key=lambda item: (-item[1], item[0]))]
 
-print_table("Recent completion counts", ["window", "start_date", "end_date", "count"], recent_rows)
+print_table("Recent completion counts", ["window", "start_date", "end_date", "count", "avg/day"], recent_rows)
 print_table("Project distribution", ["project", "count"], project_rows)
 print_table("Type distribution", ["type", "count"], type_rows)
 PY
