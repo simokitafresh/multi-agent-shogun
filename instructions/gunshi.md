@@ -58,7 +58,7 @@ accuracy（自分のレビュー精度）は自己参照に過ぎない。家老
 | 指標 | 意味 | 計測源 |
 |------|------|--------|
 | workaround率低下 | 家老の手動補正が減っている | `logs/karo_workarounds.yaml` |
-| accuracy | レビュー判定の正確さ（補助指標） | `logs/gunshi_review_log.yaml` |
+| accuracy | レビュー判定の正確さ（補助指標） | `logs/gunshi_stats.yaml` |
 
 accuracyが高くてもworkaroundが減らなければ、レビューの観点がズレている。
 workaroundの根本原因パターンを分析し、レビュー観点に還流せよ。
@@ -452,9 +452,11 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
     - id: GP-XXX
       description: "提案内容"
       status: pending
+  causal_chain: "原因→中間→結果"  # ★必須(cmd_1501): 因果鎖なき指摘は列挙であり推論ではない
   timestamp: "2026-03-20T19:30:00"
 ```
 observations必須の理由: 計測データが深さの唯一の証拠。findings_summaryに詰め込むと構造化されず計測不可。
+causal_chain必須の理由: 観察の列挙で止めず「なぜそうなるか」の連鎖を追跡。gate_gunshi_cs_checklist.shが自動検証。
 
 ### draftレビューとの違い
 
@@ -594,7 +596,7 @@ bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunsh
 
 ### エントリ構造
 
-ログの索引層ヘッダーに統計を維持。エントリ形式:
+統計は `logs/gunshi_stats.yaml`、GP追跡は `logs/gunshi_gp_tracker.yaml` に分離。エントリ形式:
 - **draft**: cmd_id, review_type:draft, verdict(APPROVE/REQUEST_CHANGES/REJECT), gate_result, findings_summary(1行), lesson_candidate, timestamp, proposals(optional)
 - **report**: + report_ninja, report_task_id, report_verdict, fail_reasons, lesson_quality(OK/WEAK/MISSING), proposals(optional)
 - **self_study**: cmd_id(self_study_SXX), review_type:self_study, findings_summary, proposals, timestamp
@@ -646,7 +648,7 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 | Step | 行動 | 対象 | 目的 |
 |------|------|------|------|
 | 1 | **karo_workarounds直近10件分析** | `logs/karo_workarounds.yaml` | 軍師の成績表。家老の手動補正パターンを探す。レビュー観点の穴 |
-| 2 | **gunshi_review_log傾向分析** | `logs/gunshi_review_log.yaml` | verdict分布変化、accuracy推移、繰り返し出る指摘パターン |
+| 2 | **gunshi_review_log傾向分析** | `logs/gunshi_stats.yaml` + `logs/gunshi_review_log.yaml` | verdict分布変化、accuracy推移、繰り返し出る指摘パターン |
 | 3 | **未自動化教訓のgate化** | `projects/infra/lessons_gunshi.yaml` | `automated: false`の教訓→gate/hook/protocol化を設計し家老に提案 |
 | 4 | **CS観点遡及適用** | 過去のself_study/consultationエントリ | cs_checklistなしの過去エントリに遡及適用。自己検出率を計測 |
 | 5 | **パターン発見→因果推論→行動** | Step 1-4の結果 | 列挙で止めるな(CS6)。原因→結果の連鎖を追え。行動をinbox_writeで家老に提案 |
@@ -664,5 +666,5 @@ CLAUDE.md `/clear Recovery` 手順に従う。追加:
     結論ではなく思考過程の追体験が目的。Phase 4「自動化×強制」と
     Phase 5「なぜの目的=自動化ターゲット特定」が軍師レビューの品質天井を決める。
     これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
-(2) `logs/gunshi_review_log.yaml` を読む(accuracy把握)
+(2) `logs/gunshi_stats.yaml` を読む(accuracy把握)
 (3) `projects/infra/lessons_gunshi.yaml` を読む(レビュー教訓)

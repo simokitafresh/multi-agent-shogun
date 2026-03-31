@@ -1,0 +1,135 @@
+# gunshi_gp_tracker.yaml — GP追跡表+自己研鑽サマリ
+# source: gunshi_review_log.yamlヘッダーから分離 (cmd_1626)
+# 自己研鑽: S1-3(03-21-22)+S4-5(SG進化+race+SG6)+S6-12(利他:教訓4層改善)+S13(bc pre-pop)+S14(自己評価)+S15(verdict100%確認)+S16(workaround解剖:S7+S13で92%根絶予測)+S17(ninja_monitor inbox flood根因特定:AUTO-DONE×Guard2カスケード)+S18-22(SG7完全パッケージ+利他4-8)+S23-26(Vercel違反分析+SG8追加)
+# 自己研鑽: S27(SG8遡及検証:4類型)+S28(workaround深層解剖)+S29(deepdive自分事化)+S30(RC再検証フロー設計)+S31(GP追跡表統合)+S32(教訓Bottom5分析)+S33(Gate発火率分析)+S34(cmd_1276防御ギャップ根因:GP-003緊急再確認)+S35(GP追跡表ヘッダ実装:GP-013完遂)+S36(GP-003 PreToolUse DENY設計完了)+S38-39(hookギャップ+template導線断裂)+S40(教訓効果:gate>lesson10倍)+S41(タスクYAML品質)+S42(GP追跡表整理:14/20implemented)
+# 自己研鑽: S43-S75(詳細は各self_studyエントリ参照)
+# 自己研鑽: S132(deepdiveサイクル:bc WA根因6パターン特定→Fix19[N]キー+N/A→yes+gate check/result必須化。GP-087/088/089。cmd_1387品質修正。deploy_task.sh lu null→[]根本修正+gate GP-064→task YAML考慮)
+# 自己研鑽: S133(deepdiveサイクル2:Fix9条件拡張GP-092。pane観察→半蔵Fix20並行実装確認+学習ループ断絶発見。inbox_write.sh→gate FAIL→軍師のみ転送=忍者フィードバック不在。76GP/69implemented)
+# 自己研鑽: S134(deepdiveサイクル3:pane観察→影丸hook crash発見(Phase9実証)。cmd_1390 BLOCK実装確認(d1ce88a 05:22)→半蔵報告(05:14)は実装前=タイムラグ。hook crash耐性GP-095。直近5WA全件→autofix+BLOCK理論WA率0%到達。79GP/71implemented)
+# 自己研鑽: S135(deepdiveサイクル4:GP-096~101。MISSING FIX hints+bc result空+wid/pcmd必須+status pending+GP-100消火exit0→1+pv hint。6GP実装。テスト30/30)
+# 自己研鑽: S136(消火撤去サイクル4-10周目:GP-103散文推定+GP-104 YAML修復+GP-106 acv補完=3消火撤去。GP-102 qfr→monitor。GP-105 stale template。GP-107消火4問ゲート。実動確認3件。499テスト全PASS。gate_fire_log2234件+karo_workarounds100件定量分析。全レイヤー消火ゼロ確認。91GP/84impl)
+# 自己研鑽: S137(FIXヒント完全化+insight清掃+loop_health改修サイクル:gate_fire_log FAIL頻度Top20分析→10パターンhintless特定(top3:85+71+70件)。全10パターンFIX hint追加。ヒント重複排除[N]正規化(GP-108)。retry基線確立:89%初回PASS/retry平均1.2回。GP-108テスト4件追加(41テストPASS)。503テスト全PASS。per-ninja品質プロファイル更新(saizo5.3%>kagemaru6.8%>tobisaru10.3%>hayate15.6%>hanzo22.0%>kotaro23.2%)。GP-108推定効果:FAIL29%対象→9-14retry削減。insights pipeline清掃:pending15→4(11件GP番号付き解決)。gate_loop_health.sh消火盲推奨防止(GP-109)。93GP/86impl)
+# 自己研鑽: S138(修行サイクル分析:143fires→GP-110設計)+S139(GP-110実装+カテゴリ網羅性強化:7→11カテゴリ,99.8%。bats44PASS。GP-111 L3設計)+S140(全量定量分析:58タスク。L3完了実証。GP-112効果確認。507テスト全PASS)
+# 自己研鑽: S106(deepdive:将軍pane→GP品質ゲート新設+GP-032現物実装+GP-033/034更新+GP-041 bc散文PostToolUse検出実装+6テスト検証済)
+# 自己研鑽: S107(deepdiveサイクル:WA率71%根因→GP-043/044/045+Fix11。テスト6/6。WA率43%予測)+S108(WAサイクル第2弾:GP-046 lc list+Fix12+GP-047 PreToolUse DENY。テスト5/5。DENY=WA率根本解)+S111(WAサイクル第5弾:GP-049 WA入力品質ゲート。忍者名+detail検証+カテゴリ拡張)+S112(WAサイクル第6弾:GP-050 --cleanモード)+S113(WAサイクル第7弾:GP効果圏定量分析→WARN無効→GP-047唯一解)+S114(WAサイクル第8弾:Fix14 lu id UNKNOWN解決)+S117(WAサイクル第11弾:Fix15 bc{name:val}→{check,result}正規化。テスト4/4)+S118(WAサイクル第12弾:GP-052 WAデータ品質ゲート+GP-047補正WA率33%→理論0%到達)+S119(WAサイクル第13弾:遡及データ修正19件。null0%+FP0%。正確WA率68%。post-GP047=33%)
+# 自己研鑽: S76(GP全件完了:30GP=27impl+1mon+3obs)+S77(WA率50%+autofix race13.6%発見→GP-031)+S78(GP優先順再評価+YAML parse→GP-032)+S79(利他:insights棚卸し15→8+verdict autofix設計→GP-033)+S80(BLOCK原因分類:first-attempt CLEAR65%→GP-031で85%予測)+S81(GP-025効果検証:archive BLOCK根絶+残存format BLOCK分析→GP-034)+S82(GP-031+033+034合体cmd設計)+S83(deepdive自己gate→GP-035)+S84(第二層パイプライン定量検証:35GP/84%変換/平均滞留5cmd/gate型17.5cmd遅延)+S85(忍者品質プロファイル:才蔵◎飛猿◎>影丸○>半蔵△小太郎△>疾風✗。GP-031=ROI最大)+S86(疾風dict根因:race condition70%=GP-031根治。追加教訓不要)+S87(insights棚卸し:pending9→2。7件resolve=GP紐付け+旧cmd遺物確認。残=dashboard重複+Edit解放)
+# 自己研鑽: S88(教訓候補LG008+LG009抽出→家老送信)+S89(GP-031コード案作成→LG009実践)+S90(レビュー精度再計測:content miss0%)+S91(影丸交差検証:独立収束→GP-031確信度最大化。第二層「対」実証)+S92(uncategorized WA分類:4件→commit_missing2+stale_report2。stale_report防御ゼロ→GP-036)+S93(pending GP 3バッチ設計:A=031+033+034合体/B=036/C=035。WA率14→2%ロードマップ)+S94(将軍pane観察:GP消費速度>鎖伝達速度+recon教訓スキップ根因→GP-037+第三層ループ兆候)+S95(条件付き配備委譲設計:5倍速実証+5条件+3安全弁。常備命令モデルでPD候補)+S96(セッション俯瞰:12サイクル。Phase8利他が主軸。三層ループ全層実証。螺旋構造=内→外→全)+S97(家老pane統合分析:YAML3層構造発見。Layer2=parse不能=autofix不能)+S98(WHY9段:無限vs有限=whack-a-mole。根本=安全な一括APIなし→GP-038+039。事後検証→構造保証)+S99(WHY13段:FAIL率∝型複雑度法則。3セクション80%集中。テンプレート上書き不能化=真の解)+S100(WHY15段:テンプレート指示矛盾発見→GP-040。4層根因完全特定。FAIL率→0%理論到達可能)+S101(行動棚卸し:pending GP6件全karo送信+GP-040/039を軍師直接修正。「分析→記録=完了」の錯覚を打破。将軍行動モデル適用)
+# ─── GP追跡表(S42整理:殿指示2026-03-23) ───
+# | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
+# | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
+# | 002 | bc事前生成             | ★implemented      | S6   | cmd_1260 |
+# | 003 | PreToolUse DENY昇格   | ★implemented      | S36  | cmd_1284+cmd_1294 |
+# | 004 | SG7完全パッケージ      | ★implemented      | S18  | cmd_1288仕様定義+cmd_1290-1293で実運用中 |
+# | 005 | 配備タイムラグ計測     | ✗obsolete          | S18  | DEPLOYED_AT既存+54秒高速 |
+# | 006 | preflight archive除去  | ★implemented      | S20  | deploy_task.shから除去済 |
+# | 007 | 品質至上SG明示         | ★implemented      | S21  | SG protocol内 |
+# | 008 | Vercel化全量           | ✗obsolete          | S23  | cmd_1280-1282で完了 |
+# | 009 | SG8 4類型              | ★implemented      | S27  | SG8プロトコル内 |
+# | 010 | GP-003最優先化         | ★implemented      | S28  | 親GP-003完了 |
+# | 011 | ninja WA率計測         | ★implemented      | S28  | gate_ninja_workaround_rate.sh+karo_startup統合(cmd_1289) |
+# | 012 | RC再検証フロー         | ★implemented      | S30  | instructions/gunshi.md §396-457。cmd_1287で初適用 |
+# | 013 | GP追跡表構造化         | ★implemented      | S31  | S35で本ヘッダに実装 |
+# | 014 | commit層gate           | ★implemented      | S33  | inbox_write.sh WARNING mode(cmd_1286)。BLOCK昇格は安定後 |
+# | 015 | 教訓退役制度           | ★implemented      | S37  | cmd_1297(kotaro) LGTM。lesson_write.sh --retire+deploy filter |
+# | 016 | Bash report検出        | ★implemented      | S38  | cmd_1298(hayate) LGTM。pre-bash-report-deny.sh |
+# | 017 | report_path導線修復    | ★implemented      | S39  | cmd_1293(kagemaru) LGTM |
+# | 018 | /clear前commit検査    | ★implemented      | S40  | cmd_1296(saizo) LGTM。scope修正=cmd_1303 |
+# | 019 | L247 gate強制          | ★implemented      | S40  | cmd_1299(kagemaru) LGTM |
+# | 020 | lesson候補ハーベスト   | ★implemented      | S40  | cmd_1300(hanzo) LGTM。227候補検出 |
+# | 021 | ninja-adaptive注入    | ★implemented      | S43  | cmd_1307(hanzo) LGTM。deploy_task.sh L2038 |
+# | 022 | bc evidence必須化     | ✗obsolete          | S46  | 忍者がresult:内に自然にevidence埋込(e.g."yes(36/36)")。形式強制は過剰 |
+# | 023 | SG9 cross-ninja検出   | ★implemented      | S43  | cmd_1335。SG9にninja_weak_points参照+WA率>50%追加チェック定義 |
+# | 024 | archive race根本修正  | ★monitoring       | S44  | cmd_1302(archive→GATE後移動)。review_gate.done 548件存在。要観察 |
+# | 025 | archive gate循環修正  | ★implemented      | S46  | cmd_1314。DEFERRED_GATES配列実装 |
+# | 026 | report_yaml_missing待機| ★implemented      | S49  | cmd_1332。CLEAR済みcmd早期exit+status判定拡張 |
+# | 027 | commit漏れ検出WARN    | ★implemented      | S50  | cmd_1330(kotaro)+cmd_1317。target_path未commit変更検出WARN |
+# | 028 | 教訓注入タイミング修正| ★implemented      | S57  | cmd_1333。deploy_task.sh projectフィールド3段フォールバック |
+# | 029 | insights起票品質改善  | ★implemented      | S70  | cmd_1334。ID 4hex化+先頭50文字dedup追加 |
+# | 030 | autofix bc dict→list | ★implemented      | S72  | cmd_1316。gate_report_autofix.sh Fix8 |
+# | 031 | GATE autofix追加       | ★implemented      | S77  | cmd_complete_gate.sh L2080にgate_report_autofix.sh呼出あり。S125で現物確認。race condition防止済み |
+# | 032 | YAML parse prevention | ★implemented      | S103 | PostToolUse hookでYAML構文検証。post-edit-report-guard.shに追加。テスト検証済。GP品質ゲート初適用 |
+# | 033 | verdict autofix Fix9  | ★将軍解決         | S79  | 将軍Phase15: boolバグ修正+TRUE/FALSEマッチ追加。私の方向性は正→将軍が現物でbugfix |
+# | 034 | no_lesson_reason自動補完| ★将軍解決(除去)   | S81  | 将軍Phase15: gateがN/Aをplaceholder reject→Fix10除去。私の提案は誤り(end-to-end未検証) |
+# | 035 | gunshi self-gate       | ★implemented      | S102 | SG10として実装。5項目送信前チェック。軍師直接修正 |
+# | 036 | stale_report検出       | ★implemented      | S102 | gate_report_format.shにcmd_id不一致FAIL追加。軍師直接修正。テスト検証済 |
+# | 037 | recon教訓注入          | ★implemented      | S94  | deploy_task.sh L666: recon_mode条件付きフィルタ(RECON_LESSON_IDS固定リスト)実装済み |
+# | 038 | bulk report submit     | ★implemented      | S102 | report_field_set.sh JSON/YAML構造体自動検出→Pythonフォールバック。軍師直接修正。テスト検証済 |
+# | 039 | python3直書きブロック  | ★implemented      | S101 | pre-bash-report-deny.sh open()パターン検出追加。軍師直接修正。hook動作検証済 |
+# | 040 | テンプレート指示修正   | ★implemented      | S101 | deploy_task.sh L353-354 Edit tool→report_field_set.sh。軍師直接修正 |
+# | 041 | bc散文PostToolUse検出  | ★implemented      | S106 | post-edit-report-guard.shにbinary_checks string値検出追加。6テストPASS。GP品質ゲート通過 |
+# | 042 | 二重配備ガード         | ★implemented      | S106 | deploy_task.sh L2859-2872。他忍者に同cmd配備済みならWARN。LK009構造的解決。2テストPASS |
+# | 043 | lu dict PostToolUse    | ★implemented      | S107 | post-edit-report-guard.sh lessons_useful dict形式検出。テスト検証済 |
+# | 044 | bc bool PostToolUse    | ★implemented      | S107 | post-edit-report-guard.sh binary_checks boolean result検出。テスト検証済 |
+# | 045 | summary空 PostToolUse  | ★implemented      | S107 | post-edit-report-guard.sh result.summary空検出。テスト検証済 |
+# | 046 | lc list PostToolUse    | ★implemented      | S108 | post-edit-report-guard.sh lesson_candidate list形式検出+autofix Fix12。テスト5/5 PASS |
+# | 047 | PreToolUse DENY report | ★implemented      | S108 | pre-edit-report-deny.sh settings.json L62登録済み(殿承認)。report YAML直接Edit/Writeブロック |
+# | 048 | commit漏れ PostToolUse | ★implemented      | S110 | post-bash-commit-reminder.sh report_received時uncommitted警告。settings.json登録済み。テスト3/3 |
+# | 049 | WA入力品質ゲート       | ★implemented      | S111 | karo_workaround_log.sh忍者名検証+detail品質+カテゴリ拡張。テスト5/5 PASS |
+# | 050 | WA cleanモード         | ★implemented      | S112 | karo_workaround_log.sh --clean追加。workaround:null根絶。テスト4/4 PASS |
+# | 051 | 二重配備BLOCK昇格      | ★implemented      | S116 | deploy_task.sh GP-042 WARN→exit 1。cmd_1342/1350再発防止 |
+# | 052 | WAデータ品質ゲート     | ★implemented      | S118 | karo_workaround_log.sh detail⇔WA矛盾検出+double_deployカテゴリ追加。テスト3/3 PASS |
+# | 072 | pre-write値検証BLOCK  | ★implemented      | S123+S131 | report_field_set.sh _validate_field_value。S131でbc全体書込みギャップ修正+boolean許容。11/11テスト |
+# | 073 | PASSキャッシュ二層     | ★implemented      | S124+S147 | L1:ninja_monitor REPORT_GATE_SENT(S124) + L2:gate_report_format.sh mtimeキャッシュ(S147)。冗長62%排除+75%高速化 |
+# | 074 | gate実行時間最適化     | ★implemented      | S125 | dashboard並列化+context_freshness高速化。32秒→17秒(47%)。commit 3a062d5 |
+# | 075 | deprecation scan高速化 | ★implemented      | S126 | cmd_project_mapキャッシュ+差分スキャン。7.3秒→0.7秒(90%)。commit 157f15d |
+# | 076 | metrics共有キャッシュ  | ★implemented      | S126 | GP-075キャッシュ共有。9.5秒→0.44秒(95%)。commit 5f72064 |
+# | 077 | archive報告スキャン廃止| ★implemented      | S127 | Source 3(2827報告全量yaml.safe_load)無効化。21.8秒→3.8秒(83%)。commit f185266 |
+# | 078 | dashboard二重呼出防止 | ★implemented      | S127 | SKIP_AUTO_SECTION+ファイル名フィルタ。15.7秒→0.54秒(97%)。commit 6d17dbb |
+# | 079 | ralph gawk統合パス    | ★implemented      | S128 | Section E+F→単一gawk BEGINFILE/ENDFILE。14.3秒→3.3秒(77%)。commit ddfca4c |
+# | 080 | archive共有キャッシュ  | ★implemented      | S129 | field_get×194→gawk+連想配列。3.5秒→2.0秒(43%)。commit e2574fe |
+# | 081 | dashboard archive gawk | ★implemented      | S130 | 1178個awk→単一gawk+get_model一括化。16.1秒→10.2秒(37%)。commit d17f88c |
+# | 082 | 統合gawk+CFC共有       | ★implemented      | S130 | archive I/O 1回統合+context_freshness cache共有。10.2秒→5.85秒(42%)。commit 8f9cea6 |
+# | 083 | CI check並列化         | ★implemented      | S130 | ci_status_check.shバックグラウンド起動。5.85秒→3.38秒(42%,累計79%)。commit 9849931 |
+# | 084 | deploy_task一括化      | ★将軍解決         | S130 | 元提案(python22回→一括)は先行cmdで3回に激減し前提崩壊。将軍なぜなぜ→真ボトルネック=field_get逐次→gawk BEGINFILE/ENDFILE一括化。81件10.5倍速(955ms→91ms)。テスト7/7+突合10/10 |
+# | 085 | awk経路改行安全弁     | ★implemented      | S131 | report_field_set.sh改行値→Python fallback。UNFIXABLE 7件の根本防止。テスト2/2 |
+# | 086 | WAログスキーマ統一    | ★implemented      | S131 | karo_workaround_log.sh出力→標準フォーマット(cmd_id/workaround/detail/root_cause)。既存5件修復。YAML解析復旧 |
+# | 087 | GP-083拡張 N/A→yes    | ★implemented      | S132 | Fix18にN/A,naマッピング追加。cmd_1378 WA(AC定義⇔gate制約不整合)根絶。テスト1/1 |
+# | 088 | lu null→[]根本修正   | ★implemented      | S132 | deploy_task.sh null→[]fallback+gate GP-064→task YAML考慮。テスト2/2。cmd_1387報告修正 |
+# | 089 | bc [N]キー autofix    | ★implemented      | S132 | Fix19:bc [0]/[1]パターン→task YAML参照でcheck/result正規化。テスト1/1。gate check/result欠落検出追加 |
+# | 090 | lu reason空検出        | ★implemented      | S132 | gate_report_format.shにreason空文字FAIL追加。cmd_1355パターン(注入済みuseful/reason未記入)根絶。テスト2/2 |
+# | 091 | YAML parse error修復  | ✗撤去(消火)       | S132 | GP-104で撤去(2026-03-25)。YAML parse errorをダミーコンテンツで修復=壊れたYAMLを偽装する消火構造 |
+# | 092 | verdict非標準値拡張   | ★implemented      | S133 | Fix9条件拡張:空/None→PASS/FAIL以外全値。None文字列/CONDITIONAL_PASS自動導出。テスト4/4 |
+# | 093 | no_lesson_reason補完  | ✗撤去(消火)       | S133 | Fix10復活→将軍撤去(2026-03-25)。忍者の思考放棄を隠す消火パターン。gateがBLOCK→忍者が自分で理由を書く |
+# | 094 | lu reason空自動補完   | ✗撤去(消火)       | S133 | Fix21→将軍撤去(2026-03-25)。忍者の評価放棄を隠す消火パターン。gateがBLOCK→忍者が自分で理由を書く |
+# | 095 | hook crash耐性+ログ   | ★implemented      | S134 | 3 PostToolUse hookからset -eu除去+exit 0保証+crashログ。テスト:crash→exit 0/正常→JSON+exit 0 |
+# | 096 | MISSING hints追加    | ★implemented      | S135 | gate_report_format.shに5フィールドMISSING用FIX hints追加。消火(代入)→教育(書き方を教える) |
+# | 097 | bc result空検出      | ★implemented      | S135 | gate_report_format.sh L177条件バグ修正。空文字→FAIL+hint。テスト30/30 |
+# | 098 | wid/pcmd必須化        | ★implemented      | S135 | gate_report_format.sh required配列にworker_id/parent_cmd追加。cmd_1388パターン根絶 |
+# | 099 | status pending検出   | ★implemented      | S135 | gate_report_format.sh テンプレート初期値pending→BLOCK。cmd_1387パターン根絶 |
+# | 100 | GP-071消火撤去        | ★implemented      | S135 | inbox_write.sh GP-071テンプレート状態exit 0→exit 1。不完全報告の黙認消火を廃止 |
+# | 101 | pv MISSING hint       | ★implemented      | S135 | gate_report_format.sh purpose_validation MISSING時FIX hint追加 |
+# | 102 | qfr監視通知化         | ★implemented      | S136 | inbox_write.sh quality_fix_request→quality_monitor。軍師代行修正=消火の移転。忍者がBLOCKで学ぶ |
+# | 103 | Fix5散文推定撤去      | ★implemented      | S136 | autofix Fix5 Step3(散文→YES/NO推定)撤去。忍者のフォーマット不備を推定で隠す消火構造 |
+# | 104 | GP-091修復撤去        | ★implemented      | S136 | autofix GP-091(YAML parse error→ダミーコンテンツ)撤去。壊れたYAMLを偽装する消火構造 |
+# | 105 | stale report再配備    | ★implemented      | S136 | deploy_task.sh他忍者テンプレートのverdict判定追加。STALL再配備時にstaleアーカイブ |
+# | 106 | acv自動補完撤去       | ★implemented      | S136 | autofix Fix17(ac_version_read→タスクYAML補完)撤去。attestation無力化の消火構造。37テストPASS |
+# | 107 | 消火検出4問ゲート     | ★implemented      | S136 | autofix.shヘッダーに4問診断基準明記。新Fix追加前にQ1-Q4判定必須。消火構造の再発防止。撤去実績6件をリファレンス |
+# | 108 | FIXヒント完全化+dedup | ★implemented      | S137 | 10パターンのhintless FAIL→FIX hint追加(85+71+70+9=235件影響)。ヒント重複排除[N]正規化。37テストPASS |
+# | 109 | loop_health消火防止  | ★implemented      | S137 | gate_loop_health.shの成熟提案に消火4問(GP-107)参照追加。auto-fix盲推奨→GP-107判定必須に変更。insights再生成防止 |
+# | 110 | weak_points粒度改善 | ★implemented      | S138-S139 | ninja_weak_pointsにgate_fire_log per-ninja FAILパターンTop3追加。11カテゴリ99.8%カバレッジ。bats40PASS |
+# | 111 | L3修行タスク設計    | ★karo_applied      | S139 | review型タスク(他者報告レビュー+self_gate_check)。家老が即採用・L3配備済み |
+# | 112 | L3テンプレートヒント | ★karo_applied      | S140 | self_gate_checkにインラインヒント(# PASS or FAIL)。R1:67%→R2:100%で効果実証 |
+# | 113 | L4修行タスク設計    | ✗rejected          | S140 | 却下(cmd_1549)。問題不在 |
+# | 114 | 自走サイクル自動化   | ★resolved          | S141 | 軍師直接実装。gunshi_next_action.sh作成+gate_startup統合(cmd_1549 resolved) |
+# | 115 | GATE_NO_LOGガード   | ★resolved          | S142 | 軍師直接実装(b845a1e)。テスト時gate_fire_logスキップ(cmd_1549 resolved) |
+# | 117 | baseline自動保存    | ★resolved          | S141b | cmd_1540。fullrecalculate前のbaseline保存+差分比較(cmd_1549 resolved) |
+# | 119 | DBスキーマcmd警告   | ✗rejected          | S142 | 却下(cmd_1549)。GP-122(DBスキーマ直接追記)で代替済み |
+# | 122 | DBスキーマ追記       | ★resolved          | S143 | 軍師直接実装。projects/dm-signal.yamlにdb_schema_quick_ref(cmd_1549 resolved) |
+# | 124 | データ完全性チェック | ★resolved          | S143 | 軍師直接(S143)+cmd_1477(signal整合性)+cmd_1495(横展開)(cmd_1549 resolved) |
+# | 125 | WA入力品質ゲート    | in_progress        | S142d+S153 | GP-125b: cmd_1542進行中。ninja_id検証+root_cause最小長チェック |
+# | 126 | KC欄追加+gateチェック | ★resolved          | S144 | 軍師直接実装+cmd_1447初使用。knowledge_candidate構造検証(cmd_1549 resolved) |
+# | 127 | report_format根本対策 | ✗obsolete          | S145 | 既存インフラ(autofix+BLOCK+消火撤去)で3/26以降0件達成。追加対策不要 |
+# | 128 | SG7 verdict整合自動化 | ★implemented      | S148-S149 | verdict↔bc整合性チェック。PASS+no→FAIL/FAIL+全yes→WARN。遡及検証:196件中5件(2.6%)不整合検出 |
+# | 129 | cmd内容重複検出       | proposed           | S153 | cmd_save.sh Check2はID重複のみ→内容重複未検出(cmd_1497≒cmd_1494)。家老送信済み |
+# | 130 | files_modified空WARN | ★implemented      | S154 | gate_report_format.sh: status=completed+files_modified:[]→WARN。280報告中18件が不整合。テスト14/14PASS |
+# 集計: ★implemented:89(+GP-130) / ★resolved:6(GP-114,115,117,122,124,126) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:3 / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:1(GP-129) / in_progress:1(GP-125) / cmd配備済:2 = 計108GP
+# ─── GP品質ゲート(S105新設) ───
+# GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
+# 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
+# 2. 現物実行: テストデータでコード/hookを動かし結果を確認
+# 3. End-to-end検証: 上流出力→下流入力の接合点を通過テスト（例: autofix出力→gate入力）
+# 4. 副作用確認: 正常系での非発火を確認
+# 根拠: GP-034はend-to-end未検証でN/A補完→gate即reject→提案無意味だった
+# 根拠: Fix5ギャップは fresh observation(gate_fire_log生データ)で将軍が発見。catalog信頼では見えない
+# 自動化: GP proposalsフォーマットに verified: true/false を追加。falseは hypothesis マーク
+# ─── GP索引終 ───

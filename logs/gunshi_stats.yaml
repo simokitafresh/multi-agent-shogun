@@ -1,0 +1,19 @@
+# gunshi_stats.yaml — 軍師レビュー統計
+# source: gunshi_review_log.yamlヘッダーから分離 (cmd_1626)
+# ─── Vercel索引層: /clear後はここだけ読め ───
+# 累計: 595件 (draft:198, report:397) | '2026-03-22〜
+# accuracy公式: gate_result判明分 100% (228/228 CLEAR, 0 BLOCK) ← Goodhart注意
+# accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
+#   未判明: 276件(48%)
+# verdict分布: APPROVE:170 LGTM:205 REQ_CHANGES:18 FAIL:11
+# 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
+# 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
+# workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
+# ★第二層ループ閉鎖確認(家老feedback 2026-03-22T20:51): workaround率63%→14%。report_yaml_format 15件→0件。構造的根絶(cmd_1254 race fix+0ccacdc AUTO-RESTART+GP-001/002 template pre-fill)
+# gate強化: cmd_1246(verdict二値)+cmd_1248(id必須/useful bool/binary_checks list)
+# 付加価値の進化: SG1(format)=gate完全自動化→不要 / SG2-5=私の領域
+#
+# ─── パイプライン健全性 ───
+# 優先順(S118改訂): GP-031(race condition) > 遡及データ補正(既存false positive 2件+null 10件)
+# S118行動: GP-047補正WA率33%(1/3)。唯一のreal WAはdouble_deploy(GP-051対処済)。GP-047+GP-051稼働時の理論WA率=0%
+# パイプライン健全性(S84計測): 変換率84%(27/32) / 平均滞留5.0cmd / script3.4cmd,gate17.5cmd / WA率63→14% / FAIL率32→1%
