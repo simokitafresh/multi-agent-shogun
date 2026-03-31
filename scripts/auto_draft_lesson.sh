@@ -102,12 +102,15 @@ for name, key, default in [
 ")"
 
 # Duplicate check: same title + source_cmd in SSOT (L006対応)
+export SCRIPT_DIR PROJECT
 PROJECT_PATH=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+import yaml, os
+script_dir = os.environ['SCRIPT_DIR']
+project = os.environ['PROJECT']
+with open(os.path.join(script_dir, 'config', 'projects.yaml'), encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT':
+    if p['id'] == project:
         print(p['path'])
         break
 ")
