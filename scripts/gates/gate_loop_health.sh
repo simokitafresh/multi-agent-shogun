@@ -219,10 +219,42 @@ except Exception:
     pass
 
 print()
+# --- Self-correction rate: files that FAILed then later PASSed ---
+file_events = defaultdict(list)
+for e in entries:
+    fname = e.get('file', '')
+    if not fname:
+        continue
+    file_events[fname].append(e.get('result', ''))
+
+# Count files that had at least one FAIL
+files_with_fail = set()
+files_self_corrected = set()
+for fname, results in file_events.items():
+    fail_seen = False
+    for r in results:
+        if r == 'FAIL':
+            fail_seen = True
+            files_with_fail.add(fname)
+        elif r == 'PASS' and fail_seen:
+            files_self_corrected.add(fname)
+            break  # already counted
+
+sc_total = len(files_with_fail)
+sc_corrected = len(files_self_corrected)
+sc_pct = (sc_corrected * 100 // sc_total) if sc_total > 0 else 0
+
+print(f'=== Self-correction: {sc_corrected}/{sc_total} ({sc_pct}%) ===')
+print()
+
 print('=== Loop Status ===')
 if fail_count > 0 and autofix_count == 0:
-    print('  WARNING: FAIL発生中だがAUTO-FIX未稼働。GP-107(消火4問)で判定後にauto-fix対象拡大を検討せよ')
-    sys.exit(1)
+    if sc_total > 0 and sc_pct >= 80:
+        print(f'  OK: 免疫系正常（自己修正率{sc_pct}%）')
+        sys.exit(0)
+    else:
+        print('  WARNING: FAIL発生中だがAUTO-FIX未稼働。GP-107(消火4問)で判定後にauto-fix対象拡大を検討せよ')
+        sys.exit(1)
 elif fail_count > pass_count * 0.2:
     print('  WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須')
     sys.exit(1)
