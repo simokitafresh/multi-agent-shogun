@@ -181,9 +181,16 @@ YAML
     run grep -q "^## ${year_month}$" "$TEST_PROJECT/context/cmd-chronicle.md"
     [ "$status" -eq 0 ]
 
-    # old month section should still exist (within 30-day retention)
-    run grep -q "^## ${prev_ym}$" "$TEST_PROJECT/context/cmd-chronicle.md"
-    [ "$status" -eq 0 ]
+    # old month section should still exist if within 30-day retention.
+    # Edge case: on day 31 of months following shorter months (e.g., March 31),
+    # the last day of the previous month (Feb 28) can exceed the 30-day cutoff.
+    local cutoff_date prev_day
+    cutoff_date="$(date -d '30 days ago' '+%Y-%m-%d')"
+    prev_day="${prev_date##*-}"
+    if [[ ! "${prev_ym}-${prev_day}" < "$cutoff_date" ]]; then
+        run grep -q "^## ${prev_ym}$" "$TEST_PROJECT/context/cmd-chronicle.md"
+        [ "$status" -eq 0 ]
+    fi
 
     # new entry should be present
     run grep -q "cmd_551" "$TEST_PROJECT/context/cmd-chronicle.md"
