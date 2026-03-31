@@ -201,7 +201,7 @@ STALE_FIELDS = [
     'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
     # 第3層: 忍者書込み+per-cmdフラグ
-    'AC1', 'AC2', 'AC3', 'scout_exempt',
+    'AC1', 'AC2', 'AC3', 'scout_exempt', 'binary_checks',
     # 第4層: 旧版由来の残留フィールド(現在の配備パイプラインでは設定されないが使い回しで残る)
     'command', 'reports_to_read', 'credential_warning', 'context_update',
     # 第5層: task_typeと重複するレガシーフィールド(修行001 hayate発見)
@@ -413,8 +413,65 @@ task_file = sys.argv[1]
 parent_cmd = sys.argv[2]
 script_dir = sys.argv[3]
 
+def _convert_nested_ac(ac_dict):
+    """ac: {AC1: {title, criteria}} → acceptance_criteria: [{id, title, checks}] 変換。
+    cmd_1604+のネスト形式を、task YAML+binary_checks awk互換のリスト形式に変換する。"""
+    if not isinstance(ac_dict, dict):
+        return None
+    result = []
+    for ac_id, ac_body in ac_dict.items():
+        if not isinstance(ac_body, dict):
+            continue
+        entry = {'id': ac_id}
+        if 'title' in ac_body:
+            entry['title'] = ac_body['title']
+        criteria = ac_body.get('criteria', [])
+        if isinstance(criteria, list):
+            entry['checks'] = [{'check': str(c)} for c in criteria]
+        result.append(entry)
+    return result if result else None
+
+def _convert_flat_ac_dict(ac_dict):
+    """acceptance_criteria: {AC1: "string", AC2: "string"} → [{id, checks}] 変換。
+    cmd_1610型のAC-ID→文字列dictを、binary_checks awk互換リスト形式に変換。"""
+    if not isinstance(ac_dict, dict):
+        return None
+    result = []
+    for ac_id, ac_text in ac_dict.items():
+        if isinstance(ac_text, str):
+            result.append({'id': ac_id, 'checks': [{'check': ac_text}]})
+        elif isinstance(ac_text, dict):
+            # ac: {AC1: {title, criteria}} がacceptance_criteriaキーで書かれたケース
+            converted = _convert_nested_ac({ac_id: ac_text})
+            if converted:
+                result.extend(converted)
+    return result if result else None
+
+def _extract_acs_from_cmd(cmd):
+    """cmdデータからACを抽出。3形式対応:
+    1. acceptance_criteria: ['AC1: ...'] (flat list, ≤cmd_1603)
+    2. acceptance_criteria: {AC1: "..."} (flat dict, cmd_1610型)
+    3. ac: {AC1: {title, criteria}} (nested dict, cmd_1604+)
+    リスト形式はそのまま返す。dict形式はbinary_checks awk互換リストに変換。"""
+    acs = cmd.get('acceptance_criteria')
+    if acs:
+        if isinstance(acs, list):
+            return acs  # 旧形式: flat list → そのまま
+        if isinstance(acs, dict):
+            converted = _convert_flat_ac_dict(acs)
+            if converted:
+                return converted
+            return acs  # 変換失敗時はそのまま返す
+    # 新形式: ac (nested dict, cmd_1604+)
+    ac_nested = cmd.get('ac')
+    if ac_nested and isinstance(ac_nested, dict):
+        converted = _convert_nested_ac(ac_nested)
+        if converted:
+            return converted
+    return None
+
 def find_cmd_acs(pcmd, sdir):
-    # 1. shogun_to_karo.yaml (dict format: commands.cmd_XXX.acceptance_criteria)
+    # 1. shogun_to_karo.yaml (dict format: commands.cmd_XXX.acceptance_criteria or .ac)
     stk_path = os.path.join(sdir, 'queue', 'shogun_to_karo.yaml')
     if os.path.exists(stk_path):
         try:
@@ -424,7 +481,7 @@ def find_cmd_acs(pcmd, sdir):
             if isinstance(cmds, dict):
                 cmd = cmds.get(pcmd, {})
                 if isinstance(cmd, dict):
-                    acs = cmd.get('acceptance_criteria')
+                    acs = _extract_acs_from_cmd(cmd)
                     if acs:
                         return acs
         except Exception:
@@ -440,7 +497,7 @@ def find_cmd_acs(pcmd, sdir):
                 if isinstance(cmds, dict):
                     cmd = cmds.get(pcmd, {})
                     if isinstance(cmd, dict):
-                        acs = cmd.get('acceptance_criteria')
+                        acs = _extract_acs_from_cmd(cmd)
                         if acs:
                             return acs
             except Exception:
@@ -552,6 +609,135 @@ inject_ac_version() {
     # cmd_1493: 追跡フィールド更新（次回再配備検出に使用）
     yaml_field_set "$task_file" "task" "_ac_task_id" "$curr_task_id"
     yaml_field_set "$task_file" "task" "_ac_worker_id" "$curr_worker_id"
+}
+
+# ─── verify_ac_consistency: task YAML vs cmdソースのAC件数・ID突合（cmd_1619） ───
+# inject_ac_version後に実行。不一致時はWARNING。BLOCKではない（配備続行）。
+verify_ac_consistency() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        return 0
+    fi
+
+    local parent_cmd
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
+    [ -z "$parent_cmd" ] && return 0
+
+    local py_output
+    py_output=$(mktemp)
+    python3 - "$task_file" "$parent_cmd" "$SCRIPT_DIR" <<'VERIFY_AC_PY' > "$py_output" 2>&1 || true
+import glob
+import os
+import sys
+
+import yaml
+
+task_file = sys.argv[1]
+parent_cmd = sys.argv[2]
+script_dir = sys.argv[3]
+
+def extract_ac_id(entry):
+    """AC entryからIDを抽出。'AC1: desc' → 'AC1', {id: 'AC1'} → 'AC1'"""
+    if isinstance(entry, str):
+        colon_idx = entry.find(':')
+        if colon_idx > 0:
+            return entry[:colon_idx].strip()
+        return entry.strip()
+    if isinstance(entry, dict):
+        if 'id' in entry:
+            return str(entry['id'])
+        for k in entry:
+            return str(k)
+    return str(entry)
+
+def _extract_acs_from_cmd(cmd):
+    acs = cmd.get('acceptance_criteria')
+    if acs:
+        if isinstance(acs, (list, dict)):
+            return acs
+    ac_nested = cmd.get('ac')
+    if ac_nested and isinstance(ac_nested, dict):
+        return list(ac_nested.keys())
+    return None
+
+def find_cmd_acs(pcmd, sdir):
+    stk_path = os.path.join(sdir, 'queue', 'shogun_to_karo.yaml')
+    if os.path.exists(stk_path):
+        try:
+            with open(stk_path, encoding='utf-8') as f:
+                stk = yaml.safe_load(f) or {}
+            cmds = stk.get('commands', {})
+            if isinstance(cmds, dict):
+                cmd = cmds.get(pcmd, {})
+                if isinstance(cmd, dict):
+                    acs = _extract_acs_from_cmd(cmd)
+                    if acs:
+                        return acs
+        except Exception:
+            pass
+    archive_dir = os.path.join(sdir, 'queue', 'archive', 'cmds')
+    if os.path.isdir(archive_dir):
+        for cpath in sorted(glob.glob(os.path.join(archive_dir, f'{pcmd}_*.yaml')), reverse=True):
+            try:
+                with open(cpath, encoding='utf-8') as f:
+                    adata = yaml.safe_load(f) or {}
+                cmds = adata.get('commands', {})
+                if isinstance(cmds, dict):
+                    cmd = cmds.get(pcmd, {})
+                    if isinstance(cmd, dict):
+                        acs = _extract_acs_from_cmd(cmd)
+                        if acs:
+                            return acs
+            except Exception:
+                continue
+    return None
+
+def to_list(acs):
+    if isinstance(acs, dict):
+        return [{'id': k, 'value': v} for k, v in acs.items()]
+    if isinstance(acs, list):
+        return acs
+    return []
+
+# Load task YAML
+with open(task_file, encoding='utf-8') as f:
+    task_data = yaml.safe_load(f) or {}
+task = task_data.get('task', task_data)
+task_acs = to_list(task.get('acceptance_criteria', []))
+
+# Load cmd source ACs
+cmd_acs_raw = find_cmd_acs(parent_cmd, script_dir)
+if cmd_acs_raw is None:
+    print(f'[AC_VERIFY] SKIP: No cmd source found for {parent_cmd}', file=sys.stderr)
+    sys.exit(0)
+cmd_acs = to_list(cmd_acs_raw)
+
+task_count = len(task_acs)
+cmd_count = len(cmd_acs)
+
+# AC1: Count comparison
+if task_count != cmd_count:
+    print(f'[AC_VERIFY] WARNING: AC count mismatch — task={task_count} cmd_source={cmd_count} (parent_cmd={parent_cmd})', file=sys.stderr)
+
+# AC2: ID comparison
+task_ids = [extract_ac_id(a) for a in task_acs]
+cmd_ids = [extract_ac_id(a) for a in cmd_acs]
+
+if task_count == cmd_count:
+    mismatched = []
+    for i, (tid, cid) in enumerate(zip(task_ids, cmd_ids)):
+        if tid != cid:
+            mismatched.append(f'{i}: task={tid} cmd={cid}')
+    if mismatched:
+        print(f'[AC_VERIFY] WARNING: AC id mismatch — {"; ".join(mismatched)} (parent_cmd={parent_cmd})', file=sys.stderr)
+    elif task_count > 0:
+        print(f'[AC_VERIFY] OK: AC count={task_count} ids match (parent_cmd={parent_cmd})', file=sys.stderr)
+else:
+    print(f'[AC_VERIFY] WARNING: AC ids — task={task_ids} cmd_source={cmd_ids} (parent_cmd={parent_cmd})', file=sys.stderr)
+VERIFY_AC_PY
+    log "$(cat "$py_output")"
+    rm -f "$py_output"
+    return 0
 }
 
 # ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
@@ -2629,6 +2815,9 @@ inject_task_id "$TASK_FILE" || true
 
 # ac_version自動注入（cmd_530: AC変更時の再計算）
 inject_ac_version "$TASK_FILE" || true
+
+# AC整合性検証（cmd_1619: task YAML vs cmdソースの件数・ID突合。WARNのみ）
+verify_ac_consistency "$TASK_FILE" || true
 
 # 教訓自動注入（失敗してもデプロイは継続）
 inject_related_lessons "$TASK_FILE" || true
