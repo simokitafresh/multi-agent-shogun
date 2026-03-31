@@ -5630,3 +5630,22 @@
     - "hanzo ninja_weak_points: report_yaml_missing gate_blocks 10件。top_pattern: report_yaml_format(4件)"
   causal_chain: "半蔵がコード実装+commitまで完了→報告YAML作成ステップをスキップ→gate_report_format以前にファイル不在→レビュー不可"
   timestamp: "2026-03-31T19:15:00"
+  correction: "FAIL→LGTM。原因はGP-133(review_gate.done placeholder→早期アーカイブ)。半蔵に非なし"
+- cmd_id: cmd_1623
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1623_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。Ward K=3(raw)がOPTICS(denoised)を7/9 LBで上回る。lesson_candidate有意(N=20 OPTICS退化)。GP-133修正後の訂正レビュー"
+  observations:
+    - "commit 257a7e40: building_block.py+254, r30比較スクリプト+361, 結果YAML+528=計1143行"
+    - "Ward Sharpe勝利7/9(LB=24-60全勝)。LB=12,18のみOPTICS微優位(Sharpe差<0.1)"
+    - "OPTICS LB>=24退化: reachability同一化→単一クラスタ→事実上top-1 momentum選択"
+    - "GP-133根因特定+修正: deploy_preflight placeholder→archive早期実行→報告消失。3層修正(archive拒否+deploy注釈+inbox_write LGTM上書き)"
+  proposals:
+    - id: GP-133
+      description: "review_gate.done placeholder早期アーカイブ防止。archive_completed.sh+deploy_task.sh+inbox_write.sh 3層修正"
+      status: implemented
+  causal_chain: "deploy_preflight placeholder→cmd_complete_gate CLEAR→archive_completed.sh報告移動→軍師レビュー時ファイル不在→FAIL誤判定。GP-133で3層修正"
+  timestamp: "2026-03-31T19:30:00"
