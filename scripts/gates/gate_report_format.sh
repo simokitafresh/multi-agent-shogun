@@ -205,6 +205,34 @@ elif isinstance(bc, dict):
 elif isinstance(bc, list) and not bc:
     errors.append('binary_checks: empty list (must have at least one entry)')
 
+# --- GP-131: binary_checks item count comparison with task YAML template ---
+if isinstance(bc, dict) and bc:
+    _rpt_bc_count = 0
+    for _rbc_key, _rbc_val in bc.items():
+        if isinstance(_rbc_val, list):
+            _rpt_bc_count += len(_rbc_val)
+    _w2 = data.get('worker_id', '')
+    _tp2 = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_w2}.yaml')
+    _task_bc_count = 0
+    try:
+        if os.path.exists(_tp2):
+            with open(_tp2) as _tf2:
+                _td2 = yaml.safe_load(_tf2)
+            _tk2 = (_td2 or {}).get('task', _td2 or {})
+            _tbc = _tk2.get('binary_checks', {})
+            if isinstance(_tbc, dict):
+                for _tbc_key, _tbc_val in _tbc.items():
+                    if isinstance(_tbc_val, list):
+                        _task_bc_count += len(_tbc_val)
+    except Exception:
+        pass
+    if _task_bc_count > 0:
+        if _rpt_bc_count < _task_bc_count * 0.5:
+            errors.append(f'binary_checks: item count {_rpt_bc_count}/{_task_bc_count} (<50% of task template)')
+            hints.append(f'FIX (binary_checks): task YAMLに{_task_bc_count}件の確認項目がある。全項目にresultを記入せよ')
+        elif _rpt_bc_count < _task_bc_count:
+            hints.append(f'GP-131 WARN: binary_checks item count {_rpt_bc_count}/{_task_bc_count} (task templateより少ない)')
+
 # --- purpose_validation should exist and not be null ---
 if 'purpose_validation' not in data:
     errors.append('purpose_validation: MISSING')
