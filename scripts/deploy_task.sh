@@ -1062,8 +1062,21 @@ EOF
 ${_bc_block}
 ${_commit_bc}"
     else
-        local _bc_full="binary_checks:
+        # GP-133: AC IDからスタブセクション生成（check項目なしでもAC欄を確保）
+        local _ac_stubs
+        _ac_stubs=$(awk '
+            /^  acceptance_criteria:/ { in_ac=1; next }
+            in_ac && /^  [a-z]/ { exit }
+            in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); printf "  %s:\n  - check: \"FILL: AC要件を確認した内容を書け\"\n    result: \"\"  # yes or no\n", $0 }
+        ' "$task_file" 2>/dev/null)
+        if [ -n "$_ac_stubs" ]; then
+            local _bc_full="binary_checks:
+${_ac_stubs}
 ${_commit_bc}"
+        else
+            local _bc_full="binary_checks:
+${_commit_bc}"
+        fi
     fi
 
     if grep -qF "$_bc_placeholder" "$report_file" 2>/dev/null; then
