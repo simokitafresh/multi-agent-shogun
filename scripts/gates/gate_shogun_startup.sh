@@ -6,8 +6,10 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 GATE_DIR="$SCRIPT_DIR/scripts/gates"
+
+run_gate_shogun_startup() {
 BRIEF=false
 [ "${1:-}" = "--brief" ] && BRIEF=true
 
@@ -563,4 +565,9 @@ else
     echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
     echo ""
     echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
+fi
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" && "${SHOGUN_STARTUP_LIB_ONLY:-0}" != "1" ]]; then
+    run_gate_shogun_startup "$@"
 fi

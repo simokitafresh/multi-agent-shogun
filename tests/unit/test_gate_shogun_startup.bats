@@ -6,6 +6,8 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh"
+    export REAL_GIT_BIN
+    REAL_GIT_BIN="$(command -v git)"
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
 }
 
@@ -19,10 +21,6 @@ setup() {
              "$TEST_TMPDIR/context" \
              "$TEST_TMPDIR/config" \
              "$TEST_TMPDIR/instructions"
-
-    # Copy the gate script
-    cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_shogun_startup.sh"
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_shogun_startup.sh"
 
     # --- Default fixtures: all checks pass ---
 
@@ -135,26 +133,32 @@ if [ "$1" = "rev-list" ]; then
     echo "0"
 elif [ "$1" = "log" ]; then
     echo "unknown"
+elif [ "$1" = "status" ]; then
+    exit 0
 else
-    command git "$@"
+    "$REAL_GIT_BIN" "$@"
 fi
 MOCK
     chmod +x "$TEST_TMPDIR/bin/git"
 
-    export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_shogun_startup.sh"
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
+    export SHOGUN_STARTUP_ROOT="$TEST_TMPDIR"
+    export SHOGUN_STARTUP_LIB_ONLY=1
+    source "$SRC_GATE_SCRIPT"
 }
 
 teardown() {
     export PATH="$ORIG_PATH"
     export HOME="$ORIG_HOME"
+    unset SHOGUN_STARTUP_ROOT
+    unset SHOGUN_STARTUP_LIB_ONLY
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
 # === Test 1: 全項目正常 → 総合判定OK ===
 @test "all checks pass → 総合判定: OK" {
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"総合判定: OK"* ]]
 }
@@ -167,7 +171,7 @@ echo "Memory健全度: ALERT — MCP obs超過"
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"Memory健全度"* ]]
@@ -182,7 +186,7 @@ echo "p̄鮮度: ALERT — 7日超過"
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
@@ -196,7 +200,7 @@ echo "cmd委任状態: ALERT — 長期滞留"
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_cmd_state.sh"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"cmd委任状態"* ]]
@@ -212,7 +216,7 @@ MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh"
     rm -f "$TEST_TMPDIR/memory/deepdive_why_chain_20260321.md"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"Memory健全度"* ]]
     [[ "$output" == *"必読ファイル不在"* ]]
@@ -234,7 +238,7 @@ messages:
   id: msg_3
 EOF
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"未読: 2件"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
@@ -244,7 +248,7 @@ EOF
 @test "snapshot missing → WARN 陣形図不在" {
     rm -f "$TEST_TMPDIR/queue/karo_snapshot.txt"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARNING: karo_snapshot.txt不在"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
@@ -254,7 +258,7 @@ EOF
 @test "deepdive missing → 総合判定: ALERT" {
     rm -f "$TEST_TMPDIR/memory/deepdive_why_chain_20260321.md"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"必読ファイル不在"* ]]
@@ -271,7 +275,7 @@ ninja|kagemaru|cmd_101_impl|idle|infra|CTX:0%
 ninja|hanzo|cmd_102_impl|done|infra|CTX:0%
 EOF
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"全忍者idle"* ]]
     [[ "$output" == *"idle時自己分析に入れ"* ]]
@@ -279,7 +283,7 @@ EOF
 
 # === Test 10: active忍者あり → idle trigger OFF ===
 @test "active ninjas → no idle trigger" {
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" != *"全忍者idle"* ]]
     [[ "$output" == *"稼働中cmd"* ]]
@@ -287,7 +291,7 @@ EOF
 
 # === Test 11: --brief モード → 一行サマリ出力 ===
 @test "--brief mode → single line summary with startup_gate" {
-    run bash "$TEST_GATE" --brief
+    run run_gate_shogun_startup --brief
     [ "$status" -eq 0 ]
     [[ "$output" == *"startup_gate: OK"* ]]
     [[ "$output" == *"idle_trigger:"* ]]
@@ -304,7 +308,7 @@ echo "教訓健全度: ALERT — 未振り分け10件"
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"教訓健全度"* ]]
@@ -319,7 +323,7 @@ echo "p̄鮮度: WARN — 3日超過"
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
@@ -329,7 +333,7 @@ MOCK
 @test "pending proposals → WARN with proposal count" {
     echo "# Dashboard [PROPOSAL] item1 [PROPOSAL] item2" > "$TEST_TMPDIR/dashboard.md"
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"未処理PROPOSAL"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
@@ -343,7 +347,7 @@ echo "Memory健全度: ALERT"
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh"
 
-    run bash "$TEST_GATE" --brief
+    run run_gate_shogun_startup --brief
     [ "$status" -eq 0 ]
     [[ "$output" == *"startup_gate: ALERT"* ]]
     [[ "$output" == *"Memory健全度"* ]]
@@ -375,7 +379,7 @@ commands:
         description: "test ac2"
 EOF
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"AC注入検証"* ]]
     [[ "$output" != *"WARNING: AC不一致"* ]]
@@ -407,7 +411,7 @@ commands:
         description: "test3"
 EOF
 
-    run bash "$TEST_GATE"
+    run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARNING: AC不一致"* ]]
     [[ "$output" == *"hayate(cmd_100)"* ]]

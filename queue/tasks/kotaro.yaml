@@ -1,21 +1,21 @@
 task:
-  task_id: cmd_training_L4_R12_kotaro
-  parent_cmd: cmd_training_L4_R12
+  task_id: cmd_training_L4_R13_kotaro
+  parent_cmd: cmd_training_L4_R13
   task_type: impl
   project: infra
-  status: completed
-  target_path: tests/unit/test_lesson_write.bats
+  status: assigned
+  target_path: tests/unit/test_cli_adapter.bats
   command: |
-    テスト速度最適化: test_lesson_write.batsを高速化せよ。
-    【パターン】lesson_write.shフル実行→関数抽出+source→単体テスト化
+    テスト速度最適化: test_cli_adapter.batsを高速化せよ。
+    【パターン】cli_adapter.shフル実行→関数抽出+source→単体テスト化
     AC1: 現在の実行時間計測+ボトルネック関数特定
-    AC2: 関数抽出+source方式書き換え+10倍以上高速化
+    AC2: 関数抽出+source方式書き換え。30秒超→10倍目標、10秒未満→3倍目標
     AC3: 全テストPASS(SKIP=0)+LC+BC+verdict
     ★ bc構造(AC1:/AC2:/AC3:)維持。bats全量禁止(OOM)。対象ファイルのみ実行。
     参考: docs/research/test-optimization-journal.md
   acceptance_criteria:
     - ac: "AC1: ボトルネック特定+実行時間計測"
-    - ac: "AC2: 関数抽出+source方式+10倍以上高速化"
+    - ac: "AC2: 関数抽出+source方式+高速化達成"
     - ac: "AC3: 全テストPASS(SKIP=0)+LC+BC+verdict"
   ac_priority: AC1 > AC2 > AC3
   parallel_ok: [AC1, AC2, AC3]
@@ -25,4 +25,4 @@ task:
     - bats全量禁止(OOM)
     - bc AC構造を消すな
   role_reminder: "忍者kotaro。このタスクのみ実行せよ。"
-  deployed_at: "2026-04-02T05:28:51+09:00"
+  deployed_at: "2026-04-02T08:29:55+09:00"

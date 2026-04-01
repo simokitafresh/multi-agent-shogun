@@ -348,6 +348,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 ## Cross-Project Context
 - `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md`
+- 修行サイクル: `context/training-cycle.md` — L1-L4全実績+モデル別FP率(§24-25: mixed編成Opus100%/Sonnet0-50%/GPT0-100%)+環境改善履歴。idle忍者配備時に参照
 
 ## Agents
 
