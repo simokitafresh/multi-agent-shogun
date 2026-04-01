@@ -1040,6 +1040,7 @@ EOF
                 for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", chk[i] }
             }
             cur_id=""; cc=0
+            if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
         }
         in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
         in_ac && /    - check:/ { sub(/.*- check:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cc++; chk[cc]=$0 }
@@ -2666,6 +2667,16 @@ check_scout_gate() {
         return 0
     fi
 
+    # 0. 完了済みタスクはscout_gate再検査不要 — PASS
+    local task_status
+    task_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")
+    case "$task_status" in
+        done|idle|completed)
+            log "scout_gate: PASS: status=${task_status} (completed task, skip re-check)"
+            return 0
+            ;;
+    esac
+
     # 1. task_typeがimpl以外ならPASS（typeフィールドではなくtask_typeのみ参照）
     local task_type
     task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
@@ -2688,7 +2699,7 @@ check_scout_gate() {
         local _se
         _se=$(awk -v cmd="$parent_cmd" '
             /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
-            /^[[:space:]]*id:[[:space:]]/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
+            /^[[:space:]]*id:[[:space:]]/ { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); if (s ~ /^cmd_/) cur_id=s }
             cur_id == cmd && /scout_exempt:[[:space:]]*true/ { print "true"; exit }
         ' "$stk_path" 2>/dev/null)
         if [ "$_se" = "true" ]; then
