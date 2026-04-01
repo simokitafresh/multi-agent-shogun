@@ -46,15 +46,60 @@ notify() {
 }
 
 RESTARTED=0
+RESTART_STATE_DIR="/tmp/daemon_watchdog_state"
+RESTART_THROTTLE_WINDOW=600  # 10 minutes
+RESTART_THROTTLE_MAX=3       # max restarts within window
+mkdir -p "$RESTART_STATE_DIR"
+
+# 再起動ストーム防止: 直近N分間でM回以上再起動された場合はスロットル
+# Returns 0 if restart is allowed, 1 if throttled
+check_restart_throttle() {
+    local daemon_name="$1"
+    local state_file="$RESTART_STATE_DIR/${daemon_name}.restarts"
+    local now
+    now=$(date +%s)
+    local cutoff=$((now - RESTART_THROTTLE_WINDOW))
+
+    # Prune old entries and count recent restarts
+    local recent_count=0
+    if [[ -f "$state_file" ]]; then
+        local tmp="${state_file}.tmp"
+        while IFS= read -r ts; do
+            if (( ts > cutoff )); then
+                echo "$ts"
+                recent_count=$((recent_count + 1))
+            fi
+        done < "$state_file" > "$tmp"
+        mv "$tmp" "$state_file"
+    fi
+
+    if (( recent_count >= RESTART_THROTTLE_MAX )); then
+        return 1  # throttled
+    fi
+    return 0
+}
+
+# Record a restart event
+record_restart() {
+    local daemon_name="$1"
+    local state_file="$RESTART_STATE_DIR/${daemon_name}.restarts"
+    date +%s >> "$state_file"
+}
 
 # =============================================================================
 # ninja_monitor.sh — 忍者idle検知デーモン
 # =============================================================================
 check_ninja_monitor() {
     if ! pgrep -f "[n]inja_monitor\.sh" > /dev/null 2>&1; then
+        if ! check_restart_throttle "ninja_monitor"; then
+            log "THROTTLED: ninja_monitor.sh — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
+            notify "【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要"
+            return
+        fi
         log "RESTART: ninja_monitor.sh not found, restarting..."
         nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
         disown
+        record_restart "ninja_monitor"
         notify "【watchdog】ninja_monitor.shを自動再起動しました"
         RESTARTED=$((RESTARTED + 1))
     fi
@@ -65,9 +110,15 @@ check_ninja_monitor() {
 # =============================================================================
 check_ntfy_listener() {
     if ! pgrep -f "[n]tfy_listener\.sh" > /dev/null 2>&1; then
+        if ! check_restart_throttle "ntfy_listener"; then
+            log "THROTTLED: ntfy_listener.sh — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
+            notify "【watchdog/CRITICAL】ntfy_listener.shが再起動ストーム。手動確認必要"
+            return
+        fi
         log "RESTART: ntfy_listener.sh not found, restarting..."
         nohup bash "$SCRIPT_DIR/scripts/ntfy_listener.sh" &>> "$SCRIPT_DIR/logs/ntfy_listener_watchdog.log" &
         disown
+        record_restart "ntfy_listener"
         notify "【watchdog】ntfy_listener.shを自動再起動しました"
         RESTARTED=$((RESTARTED + 1))
     fi
@@ -109,6 +160,12 @@ check_inbox_watchers() {
         local cli_type
         cli_type=$(tmux show-options -p -t "$pane_target" -v @agent_cli 2>/dev/null) || cli_type="claude"
 
+        if ! check_restart_throttle "inbox_watcher_${agent}"; then
+            log "THROTTLED: inbox_watcher(${agent}) — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
+            notify "【watchdog/CRITICAL】inbox_watcher(${agent})が再起動ストーム。手動確認必要"
+            continue
+        fi
+
         log "RESTART: inbox_watcher(${agent}) not found, restarting (pane=${pane_target}, cli=${cli_type})..."
 
         if [[ "$agent" == "shogun" ]]; then
@@ -121,6 +178,7 @@ check_inbox_watchers() {
         fi
         disown
 
+        record_restart "inbox_watcher_${agent}"
         notify "【watchdog】inbox_watcher(${agent})を自動再起動しました"
         RESTARTED=$((RESTARTED + 1))
     done
