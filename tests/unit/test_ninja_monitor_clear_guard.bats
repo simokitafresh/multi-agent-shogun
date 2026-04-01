@@ -143,3 +143,113 @@ fi
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: no task YAML → passes Stage 1"* ]]
 }
+
+# verdict非空チェック: report存在+verdict空→return 1(clearブロック)
+@test "report_gate: verdict empty blocks clear" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts"
+touch "$LOG"
+
+# inbox_write.shスタブ
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "\$LOG"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<INNEREOF
+task:
+  status: done
+  task_id: cmd_test_verdict
+  parent_cmd: cmd_test_verdict
+  report_filename: kagemaru_report_cmd_test_verdict.yaml
+INNEREOF
+
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_verdict.yaml" <<INNEREOF
+worker_id: kagemaru
+task_id: cmd_test_verdict
+parent_cmd: cmd_test_verdict
+verdict: ""
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+result=0
+can_send_clear_with_report_gate kagemaru "test_trigger" || result=$?
+wait 2>/dev/null
+
+if [ "$result" -eq 1 ]; then
+    echo "PASS: verdict empty → return 1 (blocked)"
+else
+    echo "FAIL: expected return 1, got $result"
+    exit 1
+fi
+
+if grep -q "VERDICT-EMPTY-BLOCK" "$LOG"; then
+    echo "PASS: log message present"
+else
+    echo "FAIL: VERDICT-EMPTY-BLOCK not logged"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: verdict empty → return 1 (blocked)"* ]]
+    [[ "$output" == *"PASS: log message present"* ]]
+}
+
+# verdict非空チェック: report存在+verdict非空→return 0(clear許可)
+@test "report_gate: verdict present allows clear" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<INNEREOF
+task:
+  status: done
+  task_id: cmd_test_verdict
+  parent_cmd: cmd_test_verdict
+  report_filename: kagemaru_report_cmd_test_verdict.yaml
+INNEREOF
+
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_verdict.yaml" <<INNEREOF
+worker_id: kagemaru
+task_id: cmd_test_verdict
+parent_cmd: cmd_test_verdict
+verdict: PASS
+INNEREOF
+
+log() { echo "$1" >> "'"$TMP_ROOT"'/test.log"; }
+
+can_send_clear_with_report_gate kagemaru "test_trigger"
+result=$?
+
+if [ "$result" -eq 0 ]; then
+    echo "PASS: verdict present → return 0 (allowed)"
+else
+    echo "FAIL: expected return 0, got $result"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: verdict present → return 0 (allowed)"* ]]
+}
