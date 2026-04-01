@@ -55,6 +55,16 @@ if [[ "$payload" == *'queue/reports/'* ]]; then
     fi
 fi
 
+# === Guard 5: bats full-run block (test_optimization_journal) ===
+if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* ]]; then
+    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
+    if [[ "$command" =~ bats[[:space:]]+tests/unit/?[[:space:]]*$ ]] || \
+       [[ "$command" =~ bats[[:space:]]+tests/unit/\* ]]; then
+        emit_deny "BLOCK: bats tests/unit/ 全量実行は禁止。変更対象のテストファイルのみ指定せよ(見込み12分超)。"
+        exit 1
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \
