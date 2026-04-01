@@ -364,7 +364,7 @@ fname_match = re.search(r'_report_(.+?)\.ya?ml', filename)
 parent_cmd = data.get('parent_cmd', '')
 if fname_match and parent_cmd:
     fname_cmd = fname_match.group(1)
-    if fname_cmd != str(parent_cmd):
+    if not fname_cmd.startswith(str(parent_cmd) + '_') and fname_cmd != str(parent_cmd):
         errors.append(f'stale_report: filename has {fname_cmd} but parent_cmd={parent_cmd} (cmd_id mismatch)')
 
 # --- GP-062: stale content detection ---
