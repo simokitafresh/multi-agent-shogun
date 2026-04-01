@@ -469,17 +469,18 @@ STEP68_PY
     }
     _step68_postcondition || true
 
-) 200>"$LOCK_FILE"
+    # ─── Step 7: Update header timestamps (skip in dry-run) ───
+    # flock内で実行: 並行呼出し時のdashboard.md書込み競合を防止
+    if [[ "$DRY_RUN" != true ]]; then
+        NOW_DATE=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M')
+        NOW_TIME=$(TZ=Asia/Tokyo date '+%H:%M')
+        # 現行ヘッダー: "# 🏯 Dashboard [project] — YYYY-MM-DD HH:MM 更新"
+        sed -E -i "1s|^(# 🏯 Dashboard \\[[^]]+\\] — )[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}( 更新)$|\\1${NOW_DATE}\\2|" "$DASHBOARD"
+        # 旧テンプレート互換（残存環境向け）
+        sed -i "s/忍者配備状況（[0-9]\{2\}:[0-9]\{2\}更新）/忍者配備状況（${NOW_TIME}更新）/" "$DASHBOARD"
+    fi
 
-# ─── Step 7: Update header timestamps (skip in dry-run) ───
-if [[ "$DRY_RUN" != true ]]; then
-    NOW_DATE=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M')
-    NOW_TIME=$(TZ=Asia/Tokyo date '+%H:%M')
-    # 現行ヘッダー: "# 🏯 Dashboard [project] — YYYY-MM-DD HH:MM 更新"
-    sed -E -i "1s|^(# 🏯 Dashboard \\[[^]]+\\] — )[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}( 更新)$|\\1${NOW_DATE}\\2|" "$DASHBOARD"
-    # 旧テンプレート互換（残存環境向け）
-    sed -i "s/忍者配備状況（[0-9]\{2\}:[0-9]\{2\}更新）/忍者配備状況（${NOW_TIME}更新）/" "$DASHBOARD"
-fi
+) 200>"$LOCK_FILE"
 
 # ─── validate_dashboard: テンプレート駆動の整合性検証（WARN出力のみ） ───
 validate_dashboard() {
