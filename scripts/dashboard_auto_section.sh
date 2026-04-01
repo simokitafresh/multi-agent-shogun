@@ -43,16 +43,18 @@ GATE_FIRE_LOG="$PROJECT_DIR/logs/gate_fire_log.yaml"
 # ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
 compute_first_fire_rate() {
     [[ ! -f "$GATE_FIRE_LOG" ]] && { echo "—"; return; }
-    # /tmp/を除外し、実報告のPASS/FAILを集計
-    local pass_count fail_count
-    pass_count=$(grep -v '/tmp/' "$GATE_FIRE_LOG" | grep -c 'result: PASS' 2>/dev/null) || pass_count=0
-    fail_count=$(grep -v '/tmp/' "$GATE_FIRE_LOG" | grep -c 'result: FAIL' 2>/dev/null) || fail_count=0
-    local total=$((pass_count + fail_count))
-    if [[ $total -eq 0 ]]; then
-        echo "—"
-    else
-        awk "BEGIN { printf \"%.1f%%\", ($pass_count / $total) * 100 }"
-    fi
+    # /tmp/を除外し、実報告のPASS/FAILを1パスで集計 (L074: ((var++))回避済み)
+    awk '
+        !/\/tmp\// {
+            if (/result: PASS/) pass++
+            if (/result: FAIL/) fail++
+        }
+        END {
+            total = pass + fail
+            if (total == 0) print "\xe2\x80\x94"
+            else printf "%.1f%%\n", (pass / total) * 100
+        }
+    ' "$GATE_FIRE_LOG"
 }
 FIRST_FIRE_RATE=$(compute_first_fire_rate)
 KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
