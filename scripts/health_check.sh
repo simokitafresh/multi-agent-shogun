@@ -47,7 +47,7 @@ try:
     task = data.get('task', {})
     status = task.get('status', 'idle')
     task_id = task.get('task_id', 'unknown')
-    ts = task.get('timestamp', '')
+    ts = task.get('deployed_at', '') or task.get('timestamp', '')
     age = 0
     if ts:
         dt = datetime.fromisoformat(str(ts).replace('Z', '+00:00'))
