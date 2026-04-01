@@ -38,6 +38,21 @@ for p in profiles:
 }
 
 # ============================================================
+# Helper: Prefer a specific CLI type, fallback to first non-default
+# ============================================================
+select_profile_type() {
+    local preferred_type="$1"
+    local profile_types="$2"
+
+    if printf '%s\n' "$profile_types" | grep -qx "$preferred_type"; then
+        printf '%s\n' "$preferred_type"
+        return 0
+    fi
+
+    printf '%s\n' "$profile_types" | grep -vx "$DEFAULT_CLI" | head -1
+}
+
+# ============================================================
 # Helper function: Build a complete instruction file
 # ============================================================
 build_instruction_file() {
@@ -153,9 +168,9 @@ transform_claude_md() {
 # CLAUDE.mdを正本とし、Claude固有部分をCodex固有に置換して生成。
 generate_agents_md() {
     # AGENTS.md = Codex CLI auto-load file
-    # cli_type derived from profile, not hardcoded
+    # Prefer codex explicitly; "first non-default" is order-dependent.
     local cli_type
-    cli_type=$(echo "$PROFILE_TYPES" | grep -v "^${DEFAULT_CLI}$" | head -1)
+    cli_type=$(select_profile_type "codex" "$PROFILE_TYPES")
     if [[ -z "$cli_type" ]]; then
         echo "  ⚠️  No non-default CLI profile found. Skipping AGENTS.md generation."
         return 1
@@ -164,7 +179,7 @@ generate_agents_md() {
     local output_path="$SCRIPT_DIR/AGENTS.md"
     local claude_md="$SCRIPT_DIR/CLAUDE.md"
     local cli_display
-    cli_display=$(cli_profile_get "$cli_type" "display_name")
+    cli_display=$(cli_profile_get_for_type "$cli_type" "display_name")
     [[ -z "$cli_display" ]] && cli_display="${cli_type^} CLI"
 
     echo "Generating: AGENTS.md (${cli_type} auto-load)"

@@ -194,6 +194,68 @@ setup() {
     [ -f "$PROJECT_ROOT/AGENTS.md" ] && grep -qi "codex\|agent" "$PROJECT_ROOT/AGENTS.md"
 }
 
+@test "agents: AGENTS.md prefers codex profile over first non-default profile" {
+    local temp_repo
+    temp_repo="$(mktemp -d)"
+
+    mkdir -p \
+        "$temp_repo/scripts/lib" \
+        "$temp_repo/config" \
+        "$temp_repo/instructions/roles" \
+        "$temp_repo/instructions/common" \
+        "$temp_repo/instructions/cli_specific"
+
+    cp "$PROJECT_ROOT/scripts/build_instructions.sh" "$temp_repo/scripts/build_instructions.sh"
+    cp "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$temp_repo/scripts/lib/cli_lookup.sh"
+
+    cat > "$temp_repo/CLAUDE.md" <<'EOF'
+---
+role: root
+---
+Auto-load file for Claude Code.
+EOF
+
+    cat > "$temp_repo/config/settings.yaml" <<'EOF'
+cli:
+  default: claude
+EOF
+
+    cat > "$temp_repo/config/cli_profiles.yaml" <<'EOF'
+profiles:
+  claude:
+    display_name: "Claude Display"
+  copilot:
+    display_name: "Copilot Display"
+  codex:
+    display_name: "Codex Display"
+EOF
+
+    for role in shogun karo ashigaru; do
+        cat > "$temp_repo/instructions/${role}.md" <<EOF
+---
+role: ${role}
+---
+EOF
+        printf '%s role\n' "$role" > "$temp_repo/instructions/roles/${role}_role.md"
+    done
+
+    printf 'protocol\n' > "$temp_repo/instructions/common/protocol.md"
+    printf 'task flow\n' > "$temp_repo/instructions/common/task_flow.md"
+    printf 'forbidden\n' > "$temp_repo/instructions/common/forbidden_actions.md"
+    printf 'claude tools\n' > "$temp_repo/instructions/cli_specific/claude_tools.md"
+    printf 'codex tools\n' > "$temp_repo/instructions/cli_specific/codex_tools.md"
+    printf 'copilot tools\n' > "$temp_repo/instructions/cli_specific/copilot_tools.md"
+    printf 'kimi tools\n' > "$temp_repo/instructions/cli_specific/kimi_tools.md"
+
+    run bash "$temp_repo/scripts/build_instructions.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Generating: AGENTS.md (codex auto-load)"* ]]
+    grep -q "Codex Display" "$temp_repo/AGENTS.md"
+    ! grep -q "Copilot Display" "$temp_repo/AGENTS.md"
+
+    rm -rf "$temp_repo"
+}
+
 # =============================================================================
 # copilot-instructions.md 生成テスト (Phase 2+3 受入基準)
 # =============================================================================
