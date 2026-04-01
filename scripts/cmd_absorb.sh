@@ -240,7 +240,7 @@ check_stale_lessons() {
 
         # cmd_idをlessons.mdからgrep
         local matches
-        matches=$(grep -n "$cmd_id" "$ssot_file" 2>/dev/null || true)
+        matches=$(grep -Fwn "$cmd_id" "$ssot_file" 2>/dev/null || true)
         if [ -n "$matches" ]; then
             echo "WARNING: ${cmd_id}由来の教訓が残存 (project=${project_id}):"
             echo "$matches" | while IFS= read -r line; do
