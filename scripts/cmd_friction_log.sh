@@ -45,9 +45,16 @@ DETAIL_ESCAPED="${DETAIL_ESCAPED//\"/\\\"}"  # then escape double quotes
 (
     flock -w 10 200 || { echo "[cmd_friction_log] Error: Failed to acquire lock" >&2; exit 1; }
 
-    # Initialize file if it doesn't exist
-    if [[ ! -f "$LOG_FILE" ]]; then
+    # Initialize file if it doesn't exist or is empty
+    if [[ ! -f "$LOG_FILE" ]] || [[ ! -s "$LOG_FILE" ]]; then
+        mkdir -p "$(dirname "$LOG_FILE")"
         echo "entries:" > "$LOG_FILE"
+    else
+        # Fix: 'entries: []' is invalid when appending list items — normalize to 'entries:'
+        IFS= read -r _first_line < "$LOG_FILE"
+        if [[ "$_first_line" == "entries: []" ]]; then
+            sed -i '1s/^entries: \[\]$/entries:/' "$LOG_FILE"
+        fi
     fi
 
     # Append entry
