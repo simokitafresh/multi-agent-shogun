@@ -9,11 +9,13 @@ cmd_gate_setup_file() {
     export SRC_CONTEXT_FRESHNESS_SCRIPT="$PROJECT_ROOT/scripts/context_freshness_check.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    export SRC_GUNSHI_NOTIFY_SCRIPT="$PROJECT_ROOT/scripts/lib/gunshi_notify.sh"
 
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
     [ -f "$SRC_CONTEXT_FRESHNESS_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
+    [ -f "$SRC_GUNSHI_NOTIFY_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -40,6 +42,7 @@ cmd_gate_scaffold() {
     cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
     cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
+    cp "$SRC_GUNSHI_NOTIFY_SCRIPT" "$TEST_PROJECT/scripts/lib/gunshi_notify.sh"
 
     # Non-blocking script stubs required by cmd_complete_gate.sh
     local stubs=(auto_draft_lesson inbox_archive lesson_impact_analysis dashboard_update gist_sync ntfy_cmd ntfy)
