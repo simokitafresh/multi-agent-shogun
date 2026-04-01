@@ -1,87 +1,32 @@
 task:
-  _ac_task_id: cmd_1583_recon
-  _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 7d010443
+  task_id: cmd_training_L4_R7_kotaro
+  parent_cmd: cmd_training_L4_R7
+  task_type: impl
+  project: infra
+  status: completed
+  target_path: scripts/ac_physical_verify.sh
+  command: |
+    ac_physical_verify.shを精査し、改善点を特定・実装・報告せよ。
+
+    AC1: ac_physical_verify.shのコードを精査し、改善点を3つ特定して報告せよ
+      （バグ・DRY違反・エラーハンドリング・性能・可読性いずれも可）
+    AC2: 最もインパクトの大きい1つを実装しgit commitせよ
+      ★ bats tests/unit/ 全量実行禁止（OOM Kill実績あり）。対象テストファイルを個別指定して実行せよ
+    AC3: lesson_candidate found=true + 全ACのbinary_checks記入 + verdict
   acceptance_criteria:
-  - 'AC1: 旧忍法15体の各月リターンの自己相関(lag 1-6ヶ月)を計算。15体平均と各体個別の自己相関を報告。正の自己相関=momentum有効、負=mean
-    reversion'
-  - 'AC2: 各月のクロスセクショナルmomentum持続性を検証。今月トップK体が翌月もトップK体に留まる確率(hit rate)をK=3,4,5で計算。ランダム選出の期待値と比較'
-  - 'AC3: 12ヶ月/6ヶ月/3ヶ月の異なるlookbackでmomentum持続性を比較。短期vs長期momentumの予測力差を定量化。R28の最適lookback推奨'
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
+    - ac: "AC1: ac_physical_verify.shの改善点を3つ特定し報告"
+    - ac: "AC2: 最高インパクト1件を実装+git commit（bats全量実行禁止）"
+    - ac: "AC3: lesson_candidate found=true + binary_checks全記入 + verdict"
+  ac_priority: AC1 > AC2 > AC3
   parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_1583
-  project: dm-signal
-  purpose: R28のWard Cluster Selectionはmomentum(過去リターン)で次月の保有PFを選出する。もし旧忍法のリターンに平均回帰(mean
-    reversion)が働くなら、momentum strategyは逆効果になる。R28の理論的前提(momentum持続性)を統計的に検証する
-  report_filename: kotaro_report_cmd_1583.yaml
-  report_path: queue/reports/kotaro_report_cmd_1583.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
-    notes:
-    - 他の忍者の報告を参照するな（並行偵察の独立性）
-    required_fields:
-    - findings
-    - verdict
-    - confidence
-    - blind_spots
-  status: in_progress
+    - AC1
+    - AC2
+    - AC3
   stop_for: []
-  task_id: cmd_1583_recon
-  task_type: recon
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  bloom_level: 
-  ninja_weak_points:
-    source: karo_workarounds.yaml
-    total_workarounds: 7
-    top_pattern: uncategorized(4件)
-    breakdown: uncategorized(4件), report_yaml_format(3件)
-    warning: ⚠ 過去7件のworkaround発生。品質に注意
-    gate_fail_top3:
-    - pattern: bc_result_empty
-      count: 6
-    - pattern: verdict_invalid
-      count: 1
-    - pattern: status_pending
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止;
-      verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 完了後にstatusを"completed"に更新。"pending"のまま報告禁止'
-    gate_blocks:
-    - reason: report_format
-      count: 8
-      hint: report YAMLのフォーマットエラー。report_field_set.sh使用必須
-    - reason: report_yaml_missing
-      count: 3
-      hint: report YAMLが存在しない。report_pathのファイルを作成・記入せよ
-    - reason: lesson_candidate_no_reason_empty
-      count: 2
-      hint: lesson_candidate.found=false時はno_lesson_reasonに理由記入必須
-    - reason: empty_lessons_useful
-      count: 1
-      hint: lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止
-    - reason: binary_checks_fail
-      count: 1
-      hint: binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認
-  deployed_at: "2026-03-30T14:36:57"
+  never_stop_for:
+    - 自明な修正 — 実行→事後報告
+    - bats全量実行禁止 — 個別テストファイルで実行せよ(OOM防止)
+  report_path: queue/reports/kotaro_report_cmd_training_L4_R7.yaml
+  report_filename: kotaro_report_cmd_training_L4_R7.yaml
+  role_reminder: "忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ"
+  deployed_at: "2026-04-02T02:33:44+09:00"
