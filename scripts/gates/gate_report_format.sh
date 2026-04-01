@@ -431,10 +431,13 @@ if echo "$RESULT" | grep -q "^PASS"; then
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: PASS\n' "$TS" "$REPORT_PATH" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
-    # Update PASS cache (GP-073)
+    # Update PASS cache (GP-073) — flock for concurrent gate runs
     if [ -n "$_MTIME" ]; then
-        sed -i "\|^${_CANON} |d" "$PASS_CACHE" 2>/dev/null || true
-        echo "${_CANON} ${_MTIME} ${_GATE_MTIME}" >> "$PASS_CACHE"
+        (
+            flock -w 5 201 2>/dev/null
+            sed -i "\|^${_CANON} |d" "$PASS_CACHE" 2>/dev/null || true
+            echo "${_CANON} ${_MTIME} ${_GATE_MTIME}" >> "$PASS_CACHE"
+        ) 201>"$PASS_CACHE.lock" 2>/dev/null || true
     fi
     exit 0
 else
