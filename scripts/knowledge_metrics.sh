@@ -274,7 +274,7 @@ if [ "$DATA_LINES" -eq 0 ]; then
 fi
 
 # Python3でTSV解析+集計
-python3 - "$TSV_FILE" "$LESSONS_DIR" "$THRESHOLD" "$SINCE" "$JSON_OUTPUT" "$BY_PROJECT_OUTPUT" "$BY_MODEL_BREAKDOWN_OUTPUT" "$SCRIPT_DIR" <<'PYEOF'
+python3 - "$TSV_FILE" "$LESSONS_DIR" "$THRESHOLD" "$SINCE" "$JSON_OUTPUT" "$BY_PROJECT_OUTPUT" "$BY_MODEL_BREAKDOWN_OUTPUT" "$SCRIPT_DIR" "$MODEL_OUTPUT" <<'PYEOF'
 import sys
 import json
 import os
@@ -290,6 +290,7 @@ json_output = sys.argv[5] == "true"
 by_project_output = sys.argv[6] == "true"
 by_model_output = sys.argv[7] == "true"
 base_dir = Path(sys.argv[8])
+model_output = sys.argv[9] == "true"
 
 try:
     import yaml as _yaml
@@ -477,6 +478,28 @@ def load_lesson_catalog(root_dir):
                 "deprecated": is_deprecated,
             }
     return lesson_catalog, deprecated
+
+def load_ninja_model_map(settings_path):
+    """settings.yamlからninja→model(opus/codex/haiku)マッピングを構築"""
+    ninja_model = {}
+    if _yaml is None:
+        return ninja_model
+    try:
+        settings = _yaml.safe_load(Path(settings_path).read_text(encoding="utf-8")) or {}
+    except Exception:
+        return ninja_model
+    agents = settings.get("cli", {}).get("agents", {}) if isinstance(settings, dict) else {}
+    for ninja, cfg in agents.items():
+        if not isinstance(cfg, dict):
+            continue
+        model_name = str(cfg.get("model_name", "")).lower()
+        if cfg.get("type") == "codex":
+            ninja_model[ninja] = "codex"
+        elif "haiku" in model_name:
+            ninja_model[ninja] = "haiku"
+        else:
+            ninja_model[ninja] = "opus"
+    return ninja_model
 
 # === lesson ID → metadata 逆引きマップ構築 + deprecated集合 ===
 lesson_catalog, deprecated_lessons = load_lesson_catalog(lessons_dir)
@@ -888,6 +911,26 @@ for family, agg in family_agg.items():
     })
 by_model.sort(key=lambda item: (item["model"] == "unknown", -(item["n"] or 0), item["display_name"].lower()))
 
+# === --model モード: ninja→model直接マッピングによるCLEAR率集計 ===
+ninja_model_map = load_ninja_model_map(base_dir / "config" / "settings.yaml") if model_output else {}
+model_clear_stats = defaultdict(lambda: {"clear": 0, "block": 0})
+model_type_clear_stats = defaultdict(lambda: defaultdict(lambda: {"clear": 0, "block": 0}))
+if model_output:
+    for row in rows:
+        ninja_names = [n.strip() for n in row["ninja"].split(",") if n.strip()]
+        for ninja_name in ninja_names:
+            model = ninja_model_map.get(ninja_name, "opus")
+            if row["gate_result"] == "CLEAR":
+                model_clear_stats[model]["clear"] += 1
+            elif row["gate_result"] == "BLOCK":
+                model_clear_stats[model]["block"] += 1
+            tt = row["task_type"]
+            if tt != "unknown":
+                if row["gate_result"] == "CLEAR":
+                    model_type_clear_stats[model][tt]["clear"] += 1
+                elif row["gate_result"] == "BLOCK":
+                    model_type_clear_stats[model][tt]["block"] += 1
+
 # === 出力 ===
 if json_output:
     result = {
@@ -1017,149 +1060,43 @@ else:
             )
     else:
         print("(低効果教訓なし)")
-PYEOF
 
-# ─── --model モード: モデル別CLEAR率集計 ───
-if [ "$MODEL_OUTPUT" = true ]; then
-    if [ ! -f "$SETTINGS_FILE" ]; then
-        echo "ERROR: settings.yaml not found: $SETTINGS_FILE" >&2
-        exit 1
-    fi
-
-    python3 - "$TSV_FILE" "$SETTINGS_FILE" "$SINCE" <<'MODEL_PYEOF'
-import sys
-import os
-
-tsv_file = sys.argv[1]
-settings_file = sys.argv[2]
-since = sys.argv[3] if sys.argv[3] else None
-
-# === settings.yaml読み込み: ninja→model マッピング ===
-ninja_model = {}
-try:
-    import yaml
-    with open(settings_file, encoding="utf-8") as f:
-        settings = yaml.safe_load(f)
-    agents = settings.get("cli", {}).get("agents", {})
-    for name, cfg in agents.items():
-        if not isinstance(cfg, dict):
-            continue
-        model_name = str(cfg.get("model_name", "")).lower()
-        if cfg.get("type") == "codex":
-            ninja_model[name] = "codex"
-        elif "haiku" in model_name:
-            ninja_model[name] = "haiku"
-        else:
-            ninja_model[name] = "opus"
-except ImportError:
-    # yaml未使用時フォールバック: grep+awk
-    import subprocess
-    result = subprocess.run(
-        ["awk", "/^    [a-z]+:/{name=$1; gsub(/:/, \"\", name)} "
-         "/type: codex/{m[name]=\"codex\"} "
-         "/model_name:.*haiku/{m[name]=\"haiku\"} "
-         "END{for(n in m) print n, m[n]}", settings_file],
-        capture_output=True, text=True
-    )
-    for line in result.stdout.strip().split("\n"):
-        parts = line.split()
-        if len(parts) == 2:
-            ninja_model[parts[0]] = parts[1]
-
-def get_model(ninja_name):
-    return ninja_model.get(ninja_name, "opus")
-
-# === TSVデータ読み込み ===
-from collections import defaultdict
-
-rows = []
-with open(tsv_file, "r") as f:
-    for line in f:
-        line = line.strip()
-        if not line or line.startswith("#") or line.startswith("timestamp"):
-            continue
-        parts = line.split("\t")
-        if len(parts) < 6:
-            continue
-        timestamp, cmd_id, ninja_str, gate_result = parts[0], parts[1], parts[2], parts[3]
-        task_type = parts[6] if len(parts) >= 7 else "unknown"
-        if since and timestamp < since:
-            continue
-        # ninjaフィールドはカンマ区切り（複数名）
-        ninja_names = [n.strip() for n in ninja_str.split(",") if n.strip()]
-        for ninja_name in ninja_names:
-            model = get_model(ninja_name)
-            rows.append({
-                "model": model,
-                "gate_result": gate_result,
-                "task_type": task_type,
-            })
-
-if not rows:
-    print("データ不足: モデル別集計に十分なデータなし")
-    sys.exit(0)
-
-# === テーブル1: モデル別CLEAR率 ===
-model_stats = defaultdict(lambda: {"clear": 0, "block": 0})
-for r in rows:
-    if r["gate_result"] == "CLEAR":
-        model_stats[r["model"]]["clear"] += 1
-    elif r["gate_result"] == "BLOCK":
-        model_stats[r["model"]]["block"] += 1
-
-print("=== モデル別CLEAR率 ===")
-print(f"{'モデル':<10}{'CLEAR':<8}{'BLOCK':<8}{'CLEAR率':<12}{'N':<6}")
-for model in ["opus", "codex", "haiku"]:
-    s = model_stats.get(model, {"clear": 0, "block": 0})
-    n = s["clear"] + s["block"]
-    if n == 0:
-        print(f"{model:<10}{'0':<8}{'0':<8}{'---':<12}{'0':<6}")
-    elif n < 10:
-        rate = s["clear"] / n * 100
-        print(f"{model:<10}{s['clear']:<8}{s['block']:<8}{rate:.1f}% ⚠データ不足  {n:<6}")
-    else:
-        rate = s["clear"] / n * 100
-        print(f"{model:<10}{s['clear']:<8}{s['block']:<8}{rate:.1f}%{'':7}{n:<6}")
-
-# === テーブル2: モデル×種別CLEAR率 ===
-print()
-print("=== モデル×種別CLEAR率 ===")
-model_type_stats = defaultdict(lambda: defaultdict(lambda: {"clear": 0, "block": 0}))
-for r in rows:
-    tt = r["task_type"]
-    if tt == "unknown":
-        continue
-    if r["gate_result"] == "CLEAR":
-        model_type_stats[r["model"]][tt]["clear"] += 1
-    elif r["gate_result"] == "BLOCK":
-        model_type_stats[r["model"]][tt]["block"] += 1
-
-# 存在する種別を収集
-all_types = sorted({r["task_type"] for r in rows if r["task_type"] != "unknown"})
-if not all_types:
-    print("(task_typeデータなし — 将来データで蓄積)")
-else:
-    header = f"{'モデル':<10}" + "".join(f"{t:<12}" for t in all_types)
-    print(header)
-    for model in ["opus", "codex", "haiku"]:
-        cells = []
-        for tt in all_types:
-            s = model_type_stats[model][tt]
+    if model_output:
+        print()
+        print("=== モデル別CLEAR率 ===")
+        print(f"{'モデル':<10}{'CLEAR':<8}{'BLOCK':<8}{'CLEAR率':<12}{'N':<6}")
+        for model in ["opus", "codex", "haiku"]:
+            s = model_clear_stats.get(model, {"clear": 0, "block": 0})
             n = s["clear"] + s["block"]
             if n == 0:
-                cells.append(f"{'---':<12}")
+                print(f"{model:<10}{'0':<8}{'0':<8}{'---':<12}{'0':<6}")
             elif n < 10:
                 rate = s["clear"] / n * 100
-                cells.append(f"{rate:.0f}%(N={n})⚠  ")
+                print(f"{model:<10}{s['clear']:<8}{s['block']:<8}{rate:.1f}% ⚠データ不足  {n:<6}")
             else:
                 rate = s["clear"] / n * 100
-                cells.append(f"{rate:.0f}%(N={n})    ")
-        print(f"{model:<10}" + "".join(cells))
+                print(f"{model:<10}{s['clear']:<8}{s['block']:<8}{rate:.1f}%{'':7}{n:<6}")
 
-# === 所要時間 ===
-print()
-print("=== 所要時間 ===")
-print("所要時間: データ蓄積中（deployed_at/completed_atの記録整備後に算出可能）")
-
-MODEL_PYEOF
-fi
+        print()
+        print("=== モデル×種別CLEAR率 ===")
+        all_types_model = sorted({r["task_type"] for r in rows if r["task_type"] != "unknown"})
+        if not all_types_model:
+            print("(task_typeデータなし — 将来データで蓄積)")
+        else:
+            header = f"{'モデル':<10}" + "".join(f"{t:<12}" for t in all_types_model)
+            print(header)
+            for model in ["opus", "codex", "haiku"]:
+                cells = []
+                for tt in all_types_model:
+                    s = model_type_clear_stats[model][tt]
+                    n = s["clear"] + s["block"]
+                    if n == 0:
+                        cells.append(f"{'---':<12}")
+                    elif n < 10:
+                        rate = s["clear"] / n * 100
+                        cells.append(f"{rate:.0f}%(N={n})⚠  ")
+                    else:
+                        rate = s["clear"] / n * 100
+                        cells.append(f"{rate:.0f}%(N={n})    ")
+                print(f"{model:<10}" + "".join(cells))
+PYEOF
