@@ -6,6 +6,14 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# 並行実行ガード（flock排他）
+LOCK_FILE="/tmp/restart_watchers.lock"
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+    echo "ERROR: restart_watchers.sh is already running. Aborting."
+    exit 1
+fi
+
 echo "=== inbox_watcher 再起動 ==="
 
 # 1. 既存プロセスを停止
