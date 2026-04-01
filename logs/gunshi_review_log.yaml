@@ -5649,3 +5649,444 @@
       status: implemented
   causal_chain: "deploy_preflight placeholder→cmd_complete_gate CLEAR→archive_completed.sh報告移動→軍師レビュー時ファイル不在→FAIL誤判定。GP-133で3層修正"
   timestamp: "2026-03-31T19:30:00"
+- cmd_id: cmd_1624
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1624_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。M14 Gerber(237行)+M15 Shrinkage(299行)辞書追加+索引更新。文書タスク低リスク"
+  observations:
+    - "commit be9edf8a: 4ファイル変更(gerber-statistic.md,shrinkage-estimators.md,index.md,denoising-detoning.md)"
+    - "shrinkage-estimators.md 299行<500行制限。LW/OAS/NLS 3手法を1ファイルに統合"
+    - "GP-133影響: 報告ファイルもアーカイブ済みだったため復元してレビュー"
+  causal_chain: "知識辞書拡充cmd→文書作成→索引相互参照更新→知識基盤強化"
+  timestamp: "2026-03-31T19:35:00"
+- cmd_id: cmd_1625
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1625_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。M16 OPTICS辞書+D07共分散解釈層。M14/M15は一次知識未作成のため理論推定ベース"
+  observations:
+    - "commit 2744ddd3: 4ファイル変更(optics-clustering.md,covariance-preprocessing-interpretations.md,index.md,denoising-detoning.md)"
+    - "D07解釈層: M13-M16の2層適用設計+手法選択判定フロー(Q1-Q5)+R28 Ward方式との関係を記載"
+    - "files_modifiedのパスが相対パス(hayateは絶対パス)。フォーマット不統一だが内容問題なし"
+  causal_chain: "OPTICSクラスタリング知識+共分散前処理解釈層→研究基盤整備→次段階のClSel改善判断に寄与"
+  timestamp: "2026-03-31T19:35:00"
+- cmd_id: cmd_1622
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1622_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。FoFループDB query→二層cache(signal_cache+holding_signal_raw)置換。59FoF×483920完全一致。117テストPASS"
+  observations:
+    - "commit 53a3043b: recalculate_fof.py 1ファイル変更。sqlalchemy.select import削除"
+    - "holding_signal_raw二層cache: build_signal_cache_valueの変換済み値とDB生値の差異を正しく認識"
+    - "lesson_candidate有意: cache代替時のholding_signal生値(NULL含む)保持要件"
+  causal_chain: "N+1 query除去→FoFループ性能向上→fullrecalculate高速化の継続的改善"
+  timestamp: "2026-03-31T19:40:00"
+- cmd_id: cmd_1626
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1626_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。review_log→stats(19行)+gp_tracker(135行)分離。gunshi.md 4箇所+gate 3箇所パス更新。61テストPASS"
+  observations:
+    - "commit d9e0522: 5ファイル変更(stats.yaml,gp_tracker.yaml,review_log.yaml,gunshi.md,gate_gunshi_startup.sh)"
+    - "L085実践: grepで参照箇所を完全列挙してからスコープ確定。全パス更新漏れなし"
+    - "review_logエントリ5629行は保持。ヘッダーのみ外出し"
+  causal_chain: "review_log肥大化(10000token超)→/clear後読込コスト→3分離で索引層最適化→CTX効率向上"
+  timestamp: "2026-03-31T19:40:00"
+- cmd_id: cmd_1627
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察cmd。パス修正済み(jobs/building_blocks→services/pipeline/blocks)。3BBファイル実在確認。class名差異あるがtarget_path正確で支障なし"
+  observations:
+    - "パス検証: backend/app/services/pipeline/blocks/に3ファイル(absolute_momentum.py 13KB, momentum_acceleration_filter.py 6KB, momentum_filter.py 6KB)実在確認"
+    - "class名差異: cmd記載AbsoluteMomentumFilter→実際AbsoluteMomentumBlock。Block接尾辞パターン。偵察で自動発見される範囲"
+    - "並行配備: kagemaru(recon_a:データフロー)+hanzo(recon_b:アルゴリズム)。読取専用で衝突リスクなし"
+  causal_chain: "standard PF前処理研究→BB実装精読で既存機能把握→重複排除した研究設計→DM-Signal動的ローテーション品質向上"
+  timestamp: "2026-03-31T20:35:00"
+- cmd_id: cmd_1627
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1627_recon_b
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。3BB精読(MomentumFilter/AbsoluteMomentum/MomentumAcceleration)共通基盤発見。前処理注入5ポイント(A-E)特定。研究仮説3件(EWMA/Gerber/対数リターン)"
+  observations:
+    - "全モメンタムBBが共通基盤calculate_composite_momentum_vectorizedを使用。前処理は一切存在しない(生close→pct_change直接)"
+    - "加速BBは短期/長期モメンタムの比率/差分であり、平滑化とは構造的に異なるレイヤー。組合せ可能"
+    - "knowledge_candidate 3件: 前処理不在確認、加速BBの2階層cache構造、AbsoluteMomentumのゲート判定(全通過or全排除)"
+  causal_chain: "BB実装精読→前処理不在確認→注入ポイント特定→研究設計提案→standard PF前処理研究の基盤構築"
+  timestamp: "2026-03-31T20:38:00"
+- cmd_id: cmd_1627
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1627_recon_a
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。3BB精読+注入6箇所+仮説3件。hanzoと独立に共通基盤発見。追加: MonthlyReturn独立性、recalculate_fast Phase2 cache整合、skip_months/Gerber重複分析"
+  observations:
+    - "GSD式偵察効果: kagemaru(データフロー)はrecalculate_fast.py Phase2のmomentum_cache生成パスへの影響を指摘(hanzoにない重要発見)"
+    - "MonthlyReturnMomentumFilterがDB直接読込で前処理影響範囲外であることを確認(波及分析の精度向上)"
+    - "skip_monthsとGerber閾値の部分重複分析(時間ベースvs振幅ベース)はhanzoにない独自観点"
+  causal_chain: "2角度偵察→データフロー視点でcache生成パス(Phase2)の前処理整合要件を発見→前処理導入時の実装漏れリスク低減"
+  timestamp: "2026-03-31T20:40:00"
+- cmd_id: cmd_1628
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。研究cmd。cmd_1627偵察参照正確(L123/L150実コード検証済み)。Gerber閾値をモメンタム差分レベルに適用する設計意図が明記。k=0.0サニティチェックで複製乖離を検知"
+  observations:
+    - "absolute_momentum.py L123(fixed: val>threshold)とL150(reference: abs_mom>=ref_mom)を実コードで検証。cmdの行番号参照が正確"
+    - "Gerber閾値適用レベル: 伝統的Gerber(個別日次リターン)ではなくモメンタム差分レベル。cmdが明記しており設計意図として妥当"
+    - "binary_checksにk=0.0パリティ検証+backend無変更チェック含む。研究スクリプトの安全性を二重に担保"
+  causal_chain: "cmd_1627偵察でBB実装・注入ポイント特定→cmd_1628で初の定量検証→結果が前処理導入の判断材料→standard PF品質向上"
+  timestamp: "2026-03-31T20:56:00"
+- cmd_id: cmd_1629
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。研究cmd。cmd_1628と対称構造(EMA平滑化)。vectorized_momentum.py L7-24注入ポイント実コード確認。LG002並行衝突なし(別ファイル名)"
+  observations:
+    - "vectorized_momentum.py L7-24: df['close'].pct_change(periods=lookback_days)。EMA注入はpct_change前のclose列に適用。コード現物で確認"
+    - "並行配備: hayate(cmd_1629 EMA)+saizo(cmd_1628 Gerber)。同一ディレクトリだが別ファイル(ema_smoothing_study.py vs gerber_threshold_study.py)で衝突なし"
+    - "実験設計: 同一PF群・同一期間でGerber/EMAを並列検証。変数分離による効果切り分けが可能"
+  causal_chain: "cmd_1627偵察→cmd_1628/1629並列研究→同一条件でGerber/EMA効果比較→前処理導入の定量的判断基盤構築"
+  timestamp: "2026-03-31T21:03:00"
+- cmd_id: cmd_1630
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: MEDIUM
+  findings_summary: "6観点OK。研究cmd(LW shrinkage 3アプローチ)。MomentumFilter L95-123/AbsoluteMomentum L190-209実コード確認。3並列研究(1628/1629/1630)の包括設計。MEDIUM理由:3アプローチ複合実装の複雑さ"
+  observations:
+    - "MomentumFilter L94-129: for ticker loop内でmomentum計算→val取得。Approach A/Bの注入はval取得後のランキング段階"
+    - "AbsoluteMomentum L190-209: _calculate_asset_momentum内。Approach CはL150(abs_mom>=ref_mom)のgate判定にLW σを適用"
+    - "Approach Cとcmd_1628 Gerberは構造類似(σ推定方法の違い: rolling std vs LW shrinkage)。意図的な比較設計"
+    - "cmdがshrinkage効果限定の可能性を正直に記載(standard PF次元5-15で小さい)。negative resultも研究価値として明記"
+  causal_chain: "cmd_1627偵察→cmd_1628/1629/1630三並列研究→同一PF群でGerber/EMA/LWの効果を定量比較→前処理導入の最適アプローチ選定基盤"
+  timestamp: "2026-03-31T21:10:00"
+- cmd_id: cmd_1628
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1628_impl
+  report_verdict: FAIL
+  lesson_quality: WEAK
+  findings_summary: "実装アプローチがcmd仕様と乖離。cmd=momentum差分レベル閾値、saizo=日次リターンレベルGerber GS1。binary_checks簡略化。walkforward結果なし"
+  observations:
+    - "apply_gerber_filter(L268-310): |r_t|<k*σ→r_t=0+価格再構築。伝統的Gerber GS1。cmd指定のmom_asset-mom_DTB3>k*σ_diffとは異なるレベルの前処理"
+    - "production block直接使用(ProdMF/ProdAbsMom import): PI-009準拠。ゲート判定(L150)は未修正→cmd指定の閾値変更は未実装"
+    - "task YAML binary_checks 6項目(k=0.0パリティ/DTB3変換/reference_asset確認等)が報告で2項目に簡略化"
+  causal_chain: "cmd研究設計(gate-level threshold)と知識辞書M14(return-level GS1)の両方を参照→忍者がM14寄りのGS1アプローチを採用→cmd指定の研究仮説と異なる実装→結果の解釈がcmd意図と乖離"
+  timestamp: "2026-03-31T21:13:00"
+- cmd_id: cmd_1629
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1629_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。EMA研究5PF×5span完了。cmd仕様完全準拠。DM3 span=42 CAGR2倍。binary_checks 10項目全yes(task YAML準拠)"
+  observations:
+    - "commit 802904f2: ema_smoothing_study.py(630行)+results.yaml(176行)。backend/app/変更なし"
+    - "span=0 baseline match率92-98%: リバランスタイミング簡易実装差。研究スクリプトとしては許容範囲だがDM2で8%乖離は留意"
+    - "EMA効果のlookback依存性: 短期(DM3/21D)=顕著改善, 超短期(DM6/15D)=劣化, 長期(DM7+/504D)=不変。これ自体が重要な研究知見"
+  causal_chain: "EMA平滑化→短期ノイズ除去→lookback短いPFでSNR向上→CAGR/Sharpe改善。ただし超短期lookbackではEMA遅延がシグナル遅れを誘発→劣化"
+  timestamp: "2026-03-31T21:15:00"
+- cmd_id: cmd_1631
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1631_impl
+  report_verdict: FAIL
+  lesson_quality: WEAK
+  findings_summary: "binary_checks 14項目中13欠落。FFD構造的発見(price level→AbsMom常時通過)がknowledge_candidate未報告。結果解釈深度不足"
+  observations:
+    - "binary_checks: task YAML 14項目(AC1:8+AC2:4+AC3:2)→報告1項目(commit)。AC1/AC2のサニティチェック・DTB3処理・ADF検定等13項目が全て未回答"
+    - "FFD構造的特性: FFD(log(close),d)はprice level成分を保持→stock FFD>>DTB3 FFD→AbsMom gate常時通過→Whipsaw=0=全期間ロング。これ自体が重要な研究知見だがknowledge_candidate:false"
+    - "d_opt値: VIX=0.00(既定常), DTB3=1.00(完全差分必要)は理論的に妥当。TQQQ/TECL=0.25も高ボラETFとして合理的"
+  causal_chain: "FFD(log price)にprice level成分残存→absolute momentum比較でstock側が常に圧倒→gate無効化→研究結果がmomentum filterの効果のみ反映(AbsMom gate不在)→結果の解釈枠組みがcmd意図と乖離"
+  timestamp: "2026-03-31T21:39:00"
+- cmd_id: cmd_1631
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1631_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "再レビュー。前回FAIL3点修正済み。binary_checks 14項目全記入。knowledge_candidate FFD×AbsMom構造的非機能。結論明示。karo_workaround: yes(binary_checks/knowledge_candidate家老修正)"
+  observations:
+    - "修正(1): binary_checks 1項目→14項目。task YAMLテンプレート準拠に復帰"
+    - "修正(2): knowledge_candidate false→true。FFD×AbsMom構造的非機能を定量的根拠付きで記載(L108-140参照)"
+    - "修正(3): summary冒頭に結論明記。研究の否定的結果を明確に位置づけ"
+    - "karo workaround: 報告の3箇所を家老が直接修正。忍者自身による修正ではない"
+  causal_chain: "忍者がbinary_checksテンプレート無視+研究知見をknowledge_candidateに分類できず→FAIL→家老修正→LGTM。根因は忍者の報告品質(テンプレート遵守+知見分類)の課題"
+  timestamp: "2026-03-31T21:44:00"
+- cmd_id: cmd_1628
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1628_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。才蔵FAIL修正版。gate-level threshold(diff>k*σ)実装確認(L493)。65PF×5k=325件walkforward。lesson_candidate: Gerber適用レベル確認の教訓(才蔵FAIL根因)"
+  observations:
+    - "commit 6d694b88: gerber_threshold_study.py全面書換(498→540行)+結果yaml(5604行)。return-level GS1→gate-level thresholdに修正"
+    - "L493: gate_passed = diff_val > gerber_k * sigma_val。cmd仕様(momentum差分>k*σ)を正確に実装"
+    - "lesson_candidate: cmd仕様のGerber適用レベル(gate vs return)確認の教訓。才蔵FAIL→半蔵修正の学習ループが報告内で完結"
+  causal_chain: "才蔵return-level GS1実装→軍師FAIL→半蔵がgate-level修正→cmd仕様通りの研究結果→知識辞書vsCmd仕様の優先順位問題が教訓として記録"
+  timestamp: "2026-03-31T21:50:00"
+- cmd_id: self_study_S155
+  review_type: self_study
+  findings_summary: "idle自走Step1-5。karo_workarounds直近10件分析→deploy_task.shバグ4/10件(AC注入/stale field)が支配的。binary_checks項目数整合チェック不在を発見(cmd_1631 tobisaru: 14→1)。gate_report_format.shにtask YAMLテンプレートとの項目数比較追加を提案"
+  observations:
+    - "WA主因: deploy_task.shバグ(ネストAC変換不能+STALE_RESETクリア漏れ+LK021再発)が10件中4件。cmd_1622は同一cmdで3WA連鎖"
+    - "散発パターン: binary_checks欠落(tobisaru cmd_1631), 仕様理解ミス(saizo cmd_1628), 報告未記入(hayate cmd_1557)"
+    - "gate_report_format.shはbinary_checks形式チェック(dict/list/check+result)あるが項目数整合なし。task YAML読込インフラはL119-130に既存(related_lessons用)"
+    - "軍師レビュー品質: 直近12件でAPPROVE→CLEAR全一致。FAIL2件(saizo仕様乖離/tobisaru BC欠落)は正当検出"
+  proposals:
+    - id: GP-131
+      description: "binary_checks項目数整合チェック。gate_report_format.shにtask YAML binary_checksテンプレートとの項目数比較を追加。report<task*0.5→FAIL、report<task→WARN"
+      status: proposed
+  causal_chain: "テンプレート無視→gate形式チェック通過(項目数未検証)→軍師FAIL→家老workaround→GP-131で項目数整合をLevel4(フロー内BLOCK)で強制すれば検出を忍者送信時点に前倒し"
+  cs_checklist:
+    CS1_source_coverage: "karo_workarounds全量(970行)+gunshi_review_log直近12件+gate_report_format.sh全文"
+    CS2_self_system_verification: "cmd_1631 tobisaru実データ: task 14項目, 報告初回1項目。gate_report_format.shにgrep binary_checksで既存チェック内容確認済み"
+    CS3_code_comparison: "gate_report_format.sh L119-130: task YAML読込インフラ確認。related_lessonsと同パターンで拡張可能"
+    CS4_action_conversion: "GP-131提案→家老inbox送信"
+    CS5_unchecked_angles: "deploy_task.shバグ自体の修正状態は未確認(家老領域)"
+    CS6_causal_reasoning: "因果鎖記載済み"
+  timestamp: "2026-03-31T22:00:00"
+- cmd_id: cmd_1630
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1630_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。LW shrinkage研究65PF×8config=520runs完了。3アプローチ比較(A:リスク調整/B:shrinkage/C:ノイズゲート)。binary_checks 12/12 yes。行数記述誤り(530→943)は実装無影響"
+  observations:
+    - "commit 9529e010: ledoit_wolf_study.py(943行)+results.yaml(10288行)。backend/app/無変更"
+    - "行数乖離: 報告530行 vs 実943行(1.78倍)。記述上の数値誤りだが研究結果・実装品質に影響なし"
+    - "binary_checks: task YAML 12項目=報告12項目。GP-131(項目数整合チェック)で検出する必要がないパターン(正常)"
+    - "knowledge_candidate:false妥当。研究結果はresults.yaml(10288行)に全量保存済み"
+  causal_chain: "cmd_1627偵察→cmd_1628/1629/1630三並列研究→LW shrinkage効果定量評価→context_reflux(dm-signal-research.md)で次の研究設計判断に還流"
+  timestamp: "2026-03-31T22:10:00"
+- cmd_id: cmd_1631
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  findings_summary: "3点指摘。(1)パス不在: vectorized_momentum.pyはpipeline/blocks/に存在せずservices/直下 (2)L7-24はcalculate_momentum_vectorized、composite版はL26 (3)fractional_diff_study.py(798行)が既存(tobisaru成果物)。上書き/新規の指示なし"
+  observations:
+    - "パス検証: backend/app/services/pipeline/blocks/vectorized_momentum.py不在。実体はbackend/app/services/vectorized_momentum.py"
+    - "L7-24=calculate_momentum_vectorized(df,lookback_days)→pct_change。L26=calculate_composite_momentum_vectorized(df,lookback_periods)→加重平均"
+    - "fractional_diff_study.py(798行)がscripts/analysis/standard_pf_preprocessing/に既存。tobisaru cmd_1631で作成・commit済み(研究結果: FFD×AbsMom構造的非機能)"
+  causal_chain: "偵察参照パスの不正確→忍者がファイル探索で時間浪費。既存ファイル未考慮→上書き/新規の判断を忍者が独断→scope drift or 意図せぬ変更"
+  severity: normal
+  timestamp: "2026-03-31T22:25:00"
+- cmd_id: cmd_1631
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1631_impl
+  report_verdict: LGTM
+  lesson_quality: WEAK
+  findings_summary: "4観点OK(研究結果有効)。二重配備検出: commit 92895db7(21:36)はtobisaru。kotaro(22:22)は再報告。knowledge_candidate false→true推奨(FFD不適はnegative finding)"
+  observations:
+    - "二重配備: git log fractional_diff_study.pyにcommit 1件のみ(92895db7 21:36)。tobisaru cmd_1631完了後にkotaroに同cmd配備。成果物はtobisauの作成物"
+    - "files_modified 'change: created'は不正確。kotaroが作成したのではなくtobisaruが作成済み"
+    - "binary_checks: task YAMLテンプレートはLW研究(cmd_1630)のstale items(12項目)。kotaroは正しくFD用の5項目を独自記入。GP-131検出時の偽陽性パターン"
+    - "knowledge_candidate: false。しかし「FFD不適(全PFでbaseline未超越+低dでシグナル固定化)」は重要なnegative finding"
+  causal_chain: "deploy_task.shが同cmd_1631を2忍者(tobisaru→kotaro)に配備→kotaroは既完了の作業を再実行/再報告→家老が2報告をレビュー→CTX浪費。根因: cmd_id衝突防止機構の不在"
+  timestamp: "2026-03-31T22:40:00"
+- cmd_id: self_study_S156
+  review_type: self_study
+  findings_summary: "殿指示のなぜなぜサイクル。忍者品質×家老ボトルネック分析。WA(non-clean)82%忍者起因→format問題はgate解決済み→残存: BC欠落(GP-131)/仕様ミス/二重配備(GP-132)。deploy_task.sh関連12WA: binary_checksはreportのみ自動注入、task YAMLは家老手動(GP-133提案)"
+  observations:
+    - "WA root cause: 忍者起因76/92(82%)、インフラ起因15/92(16%)、家老起因1/92(1%)"
+    - "Per-ninja WA: hayate:24>kagemaru:19>saizo:12>kotaro:8>tobisaru:7=hanzo:7"
+    - "deploy_task.sh binary_checks注入: 報告テンプレート(L1034-1083)のみ自動。task YAML注入はinject_task_modifiers.pyにもdeploy_task.shにも存在しない"
+    - "cmd_1631二重配備: tobisaru(commit 92895db7, 21:36)→kotaro(報告22:22)。git logにcommit1件のみ。kotaroは再報告"
+    - "STALE_FIELDSにacceptance_criteriaはcmd_1622事故後に追加済み。report_filename/report_pathはL3077-3078で別途クリア"
+  proposals:
+    - id: GP-132
+      description: "deploy_task.shに配備前cmd_id衝突チェック。active task(status!=idle)に同cmd_idがあればBLOCK"
+      status: proposed
+    - id: GP-133
+      description: "binary_checksのtask YAML自動注入。報告テンプレート注入ロジック(L1034-1083)をtask YAMLにも適用。家老の手動注入作業を根絶"
+      status: proposed
+  causal_chain: "忍者品質問題→家老WA(82%)→format問題はgate解決→残存問題(BC欠落/二重配備)→deploy_task.shのBC自動注入不在+cmd_id衝突未検出→家老が手動でBC注入+二重報告処理→CTX浪費→ボトルネック"
+  cs_checklist:
+    CS1_source_coverage: "karo_workarounds全量(140件)+deploy_task.sh全文+inject_task_modifiers.py+report template injection(L1034-1083)"
+    CS2_self_system_verification: "kotaro task YAML実データ: cmd_1630 LW binary_checks残留確認。git log: fractional_diff_study.pyにcommit 1件(tobisaru)"
+    CS3_code_comparison: "deploy_task.sh L197-225(STALE_FIELDS)+L1034-1083(report BC injection)+L3077-3081(report_filename reset)。inject_task_modifiers.pyにbinary_checksなし"
+    CS4_action_conversion: "GP-131(提案済み、saizo実装中)+GP-132(提案)+GP-133(提案)→家老inbox送信3件"
+    CS5_unchecked_angles: "inject_task_modifiers.pyのフル読込は未実施(binary_checks grepのみ)。STALE_RESET regexのエッジケーステストは未実施"
+    CS6_causal_reasoning: "因果鎖記載済み"
+  timestamp: "2026-03-31T22:50:00"
+- cmd_id: cmd_1632
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1632_impl
+  report_verdict: LGTM
+  lesson_quality: WEAK
+  findings_summary: "4観点OK。EMA研究65PF全数評価(325件walkforward)。precheck全PASS。binary_checksはcommit 1項目のみ(AC1/AC2自己検証欠落)。task YAMLにBCテンプレートなし(GP-133対象)"
+  observations:
+    - "precheck効果: 機械的検証7項目が30秒で完了。commit bd88221d(cmd_1632一致)+backend無変更+二重配備なし+gate PASS"
+    - "binary_checks: commit 1項目のみ。AC1(65PF自動検出)/AC2(results_full+5指標)の自己検証が欠落。task YAMLにBCテンプレートなし"
+    - "疾風WA率100%(4/4): cmd_1557(報告未記入), cmd_1622×3(karo/stale_report)。今回もBC最小化パターン"
+    - "GP-133(BC task YAML自動注入)が稼働すれば、テンプレート提供で自己検証の意志依存が解消"
+  causal_chain: "BCテンプレート未注入(GP-133不在)→疾風がcommitチェックのみ記入→AC1/AC2自己検証スキップ→報告品質WEAK。根因はBCの意志依存(テンプレートなし=忍者の自発性に依存)"
+  timestamp: "2026-03-31T23:08:00"
+- cmd_id: cmd_1635
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1635_impl
+  report_verdict: FAIL
+  lesson_quality: WEAK
+  findings_summary: "cmd仕様との5パラメータ乖離(理由未記載)。m=5→3、window日→月(21/42/63→12/24/36/48)、threshold[no_gate/0.7/0.8/0.9]→[0.6/0.7/0.8]。cmd_1628同根パターン"
+  observations:
+    - "precheck効果: 機械的検証7項目30秒PASS。4観点の判断に集中できた"
+    - "パラメータ乖離5箇所: (1)m=5→3 (2)window単位:日→月 (3)window値:3つ→4つ (4)no_gate欠落 (5)threshold 0.9→0.6入替。報告に乖離理由の記載なし"
+    - "cmd_1628と同根: 才蔵がcmd仕様と異なるアプローチを選択し乖離理由を報告しないパターン。cmd_1628=gate-level→return-level GS1、cmd_1635=m5/日→m3/月"
+    - "月次データ(monthly_return)に日数窓は直接適用不能のため月数変換は合理的判断の可能性あるが、m=5→3やthreshold変更は別の判断"
+  causal_chain: "cmd仕様の日数パラメータと実データ(monthly_return)の粒度不一致→才蔵が暗黙に月数変換+パラメータ変更→乖離理由を報告せず→レビュアーが仕様突合で検出。根因: 仕様逸脱時の判断理由報告の義務がbinary_checksに含まれていない"
+  timestamp: "2026-03-31T23:15:00"
+- cmd_id: cmd_1635
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1635_impl
+  report_verdict: FAIL
+  lesson_quality: WEAK
+  findings_summary: "同一commit(ad09b384=才蔵)。パラメータ修正未実施。no_gate/m=5未修正。cmd仕様window日数は月次データに不適合(2忍者独立同乖離で証明)"
+  observations:
+    - "precheck SG-PRE3: commit ad09b384=才蔵と同一。SG-PRE7: m=5/window=[21パラメータ検出。SG-PRE8: 二重配備(saizo)検出"
+    - "パラメータ乖離正当性: window日→月=正当(monthly_return)、m=5→3=不当(embedding dimension≠データ粒度)、no_gate欠落=不当(ベースライン必須)、threshold変更=一部不当"
+    - "cmd仕様側の問題: window=[21,42,63]日は月次リターンデータに物理的不適合。2忍者が独立して同じ月数変換→cmd仕様の誤り。月数窓に修正すべき"
+    - "才蔵FAIL→小太郎再配備だがパラメータ修正なし。同一commitの再報告"
+  causal_chain: "cmd仕様のwindow日数が月次データに不適合→忍者が暗黙変換→m/threshold/no_gateも同時に変更→理由未記載→FAIL。根因の半分はcmd仕様、半分は忍者の仕様逸脱報告欠落"
+  timestamp: "2026-03-31T23:22:00"
+- cmd_id: cmd_1635
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1635_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。才蔵FAIL修正版。m=5✓/threshold含no_gate✓/window月数適合。新commit 59175e4b。lesson_candidate: m=5 PE閾値到達問題(高品質)。BC 7項目"
+  observations:
+    - "precheck全項目活用: SG-PRE3新commit確認、SG-PRE7でm=5/window=[21表示→報告のm=5/window=[12,24,36,48]月と突合、SG-PRE8で二重配備(saizo+kotaro)検出"
+    - "才蔵版修正差分明記: EMBEDDING_DIM=3→5、PE_THRESHOLDS=[0.6,0.7,0.8]→[None,0.7,0.8,0.9]。no_gate=常時hold(gate無効)として実装"
+    - "lesson_candidate高品質: m=5(120パターン)はm=3(6パターン)比でPE低傾向。99ヶ月×window12ではn_patterns=8で分布疎→PE<閾値→gate無効"
+    - "cmd_1635サイクル: saizo FAIL(パラメータ乖離)→kotaro FAIL(同一commit/未修正)→hayate LGTM(全修正)。3配備で到達"
+  causal_chain: "cmd仕様window日数不適合→2忍者独立乖離→軍師FAIL×2→cmd仕様修正(window月数)+パラメータ修正指示→疾風が全修正実装→LGTM。学習ループが3サイクルで閉じた"
+  timestamp: "2026-03-31T23:32:00"
+- cmd_id: cmd_1634
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1634_impl
+  report_verdict: LGTM
+  lesson_quality: WEAK
+  findings_summary: "4観点OK。Kalman Filter研究65PF×4mode=260件。auto EM=0.3386<fixed best qr_0.1=0.3516。BC commit 1項目のみ(AC自己検証欠落、cmd_1632同パターン)"
+  observations:
+    - "precheck SG-PRE1〜6 PASS。SG-PRE7でスクリプトバグ(cmd_1634がshogun_to_karoにない→grep空→set -e crash)。要修正"
+    - "binary_checks: commit 1項目のみ。3レビュー連続(cmd_1632疾風/cmd_1635疾風修正前/cmd_1634半蔵)で同パターン。BCテンプレート未注入(GP-133)が根因"
+    - "研究結果: auto EM推定Q/R比4-7(高応答)。fixed qr_0.1が最良。autoは2番目(-0.013)。Benhamou(2018)準拠"
+  causal_chain: "BCテンプレート未注入→忍者がcommitチェックのみ記入→AC自己検証スキップ。3忍者で反復確認→個人ではなく構造の問題(GP-133で解決)"
+  timestamp: "2026-03-31T23:35:00"
+- cmd_id: cmd_1633
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1633_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。L1 Trend Filter研究65PF×5lambda=325件。Universal best lambda=10(CAGR34.62%)。BC 8項目全AC網羅。22PF overfit警告。files_modified非標準形式(id:でpath:なし)"
+  observations:
+    - "commit 9785acf3 verified(cmd_1633一致)。backend無変更。2ファイル(script+results)"
+    - "数値検算: per-PF best分布14+17+8+12+14=65PF✓。325=65×5✓"
+    - "BC 8項目(commit:1+AC1:2+AC2:4+AC3:1)。hayate/hanzoのcommit-onlyパターンと対照的に良好"
+    - "files_modified非標準: {id: filename, action: created}形式。precheck SG-PRE3/6がSKIP。正しくは{path: scripts/analysis/.../filename, change: created}"
+  causal_chain: "cvxpy L1 Filter→65PF全数検証→lambda=10が平均最良だが22PF(34%)にoverfit懸念→選択時にneighbor gap確認が必要"
+  timestamp: "2026-03-31T23:52:00"
+- cmd_id: cmd_1636
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1636_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。methods/4ファイル(M21-M24)+index更新。BC7項目全AC網羅。SG9:WA率83%追加チェック実施、evidence具体的"
+  observations:
+    - "BC 7項目(commit:1+AC1:3+AC2:2+AC3:1)。AC自己検証が全て具体的(テンプレート準拠/数式省略なし/純度)。SG9 WA率83%の追加チェックPASS"
+    - "files_modified 5件(4 methods + index.md)。正規パス形式。gate_report_format PASS"
+    - "M番号: cmd仕様M17-M20→報告ではM21-M24。前cmdが既にM17-M20使用のため繰上げ。衝突回避として妥当"
+  causal_chain: "テンプレート準拠の定型ドキュメント作成→BC全AC網羅→学習ループ機能確認→LGTM"
+  timestamp: "2026-04-01T03:30:00"
+- cmd_id: cmd_1637
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1637_impl
+  report_verdict: FAIL
+  lesson_quality: WEAK
+  findings_summary: "FAIL: binary_checksがcommit:1のみ。AC1/AC2自己検証完全欠落。GP-131がBCテンプレート不在で検出不能"
+  observations:
+    - "BC 1項目(commit:1のみ)。AC1(4ファイル+テンプレート+純度)とAC2(index更新+既存変更なし)の自己検証が0項目"
+    - "成果物内容は問題なし(4ファイル作成+index更新+commit完了)。プロセス品質の問題"
+    - "GP-131はtask YAMLにBCテンプレートがない場合チェックをスキップ。構造的ギャップ"
+  causal_chain: "BCテンプレート未注入(GP-133未実装)→忍者がcommitチェックのみ記入→AC自己検証不在→第一層学習ループ空回り"
+  timestamp: "2026-04-01T03:30:00"
+- cmd_id: cmd_1638
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1638_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。methods/4ファイル(M29,M30,M33,M34)+index更新。BC6項目全AC網羅。files_modified連結形式(軽微)"
+  observations:
+    - "BC 6項目(commit:1+AC1:3+AC2:2)。AC自己検証具体的"
+    - "files_modified: 5ファイルが1エントリにpath連結。フォーマット非標準だがgate PASS。内容影響なし"
+    - "M番号が非連番(M29,M30,M33,M34)。M31,M32はkotaro(cmd_1640)担当。並列配備での番号分割"
+  causal_chain: "テンプレート準拠+BC全AC網羅→LGTM。files_modified連結は半蔵のYAML記述パターン(非構造的問題)"
+  timestamp: "2026-04-01T03:30:00"
+- cmd_id: cmd_1639
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1639_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。methods/4ファイル(M17-M20)+index既存。BC7項目全AC網羅。L192 useful=true"
+  observations:
+    - "BC 7項目(commit:1+AC1:4+AC2:2)。AC1は4項目と最も詳細(ファイル存在/セクション/数式/純度)"
+    - "index.md M17-M20は前commit済みで才蔵は変更不要と判断。AC2のBC'既存変更なし=yes'で整合"
+    - "L192 useful=true: 他忍者のstagedファイル存在時の判断に役立った→並列配備の実践知見"
+  causal_chain: "テンプレート準拠+BC最多7項目+index既存確認→LGTM。才蔵のBC品質は6忍者中最高"
+  timestamp: "2026-04-01T03:30:00"
+- cmd_id: cmd_1640
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1640_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。methods/4ファイル(M31,M32,M35,M36)+index更新。BC6項目全AC網羅。files_modified短縮パス(軽微)"
+  observations:
+    - "BC 6項目(commit:1+AC1:3+AC2:2)。AC自己検証具体的"
+    - "files_modified: ディレクトリパスなし短縮形(例:dynamic-momentum-learning.md)。正しくはdocs/research/knowledge-base/methods/接頭辞必要。フォーマット軽微不備"
+    - "M番号: M31,M32,M35,M36。非連番だが全体設計の番号割当通り"
+  causal_chain: "テンプレート準拠+BC全AC網羅→LGTM。files_modified短縮パスは小太郎のYAML記述パターン"
+  timestamp: "2026-04-01T03:30:00"
+- cmd_id: cmd_1641
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1641_impl
+  report_verdict: FAIL
+  lesson_quality: WEAK
+  findings_summary: "FAIL: binary_checksがcommit:1のみ。AC1/AC2自己検証完全欠落。SG9:WA率100%、cmd_1631と同パターン再発"
+  observations:
+    - "BC 1項目(commit:1のみ)。cmd_1631でもbinary_checks_failでWA発生。完全な再発パターン"
+    - "成果物: sources/4件+validation/1件+index更新。change:createdと正しく記載(唯一)。内容問題なし"
+    - "SG9: WA率100%(4/4)。top_pattern=binary_checks_fail。飛猿のBCテンプレート遵守に構造的課題"
+  causal_chain: "BCテンプレート未注入→飛猿がcommitのみ記入(cmd_1631再発)→WA率100%維持→GP-133実装が飛猿の改善に直結"
+  timestamp: "2026-04-01T03:30:00"
