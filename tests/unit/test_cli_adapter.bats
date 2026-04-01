@@ -275,10 +275,18 @@ load_adapter_with() {
 # build_cli_command テスト
 # =============================================================================
 
-@test "build_cli_command: claude + model → claude --model opus --dangerously-skip-permissions" {
+@test "build_cli_command: claude + opus → --modelなし (素claude=1Mコンテキスト)" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
     result=$(build_cli_command "shogun")
-    [ "$result" = "claude --model opus --dangerously-skip-permissions" ]
+    [[ "$result" != *"--model"* ]]
+    [[ "$result" == *"--dangerously-skip-permissions"* ]]
+}
+
+@test "build_cli_command: claude + haiku → --model haiku付き" {
+    load_adapter_with "${TEST_TMP}/settings_with_models.yaml"
+    result=$(build_cli_command "sasuke")
+    [[ "$result" == *"--model haiku"* ]]
+    [[ "$result" == *"--dangerously-skip-permissions"* ]]
 }
 
 @test "build_cli_command: codex → codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen" {
@@ -287,16 +295,16 @@ load_adapter_with() {
     [ "$result" = "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen" ]
 }
 
-@test "build_cli_command: cliセクションなし → claude フォールバック" {
+@test "build_cli_command: cliセクションなし → pinned claude フォールバック" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     result=$(build_cli_command "sasuke")
-    [[ "$result" == claude*--dangerously-skip-permissions ]]
+    [[ "$result" == */bin/claude*--dangerously-skip-permissions ]]
 }
 
-@test "build_cli_command: settings読取失敗 → claude フォールバック" {
+@test "build_cli_command: settings読取失敗 → pinned claude フォールバック" {
     load_adapter_with "/nonexistent/settings.yaml"
     result=$(build_cli_command "sasuke")
-    [[ "$result" == claude*--dangerously-skip-permissions ]]
+    [[ "$result" == */bin/claude*--dangerously-skip-permissions ]]
 }
 
 # =============================================================================

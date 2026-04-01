@@ -85,7 +85,7 @@ build_cli_command() {
     # cli_profiles.yamlのlaunch_cmdをベースに、モデル指定を追加
     case "$ct" in
         claude)
-            if [[ -n "$model" ]]; then
+            if [[ -n "$model" && "$model" != "opus" ]]; then
                 echo "$claude_bin --model $model $base_flags"
             else
                 echo "$base_cmd"
