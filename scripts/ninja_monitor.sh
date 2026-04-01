@@ -1864,11 +1864,37 @@ check_inbox_watcher_health() {
         fi
     done
 
+    # GP-139 層3: デーモン鮮度チェック — スクリプトmtime > プロセス起動時刻 → 自動再起動
+    # 根因: ninja_monitorがMar31版で稼働し続けcmd_1671修正未反映。inbox_watcherも同リスク
+    local stale=()
+    local watcher_script="$SCRIPT_DIR/scripts/inbox_watcher.sh"
+    local script_mtime
+    script_mtime=$(stat -c %Y "$watcher_script" 2>/dev/null || echo 0)
+    for agent in "${all_agents[@]}"; do
+        local watcher_pid
+        watcher_pid=$(pgrep -f "inbox_watcher\\.sh ${agent} " 2>/dev/null | head -1 || true)
+        if [ -n "$watcher_pid" ]; then
+            local proc_start
+            proc_start=$(stat -c %Y "/proc/${watcher_pid}" 2>/dev/null || echo 0)
+            if [ "$script_mtime" -gt "$proc_start" ] 2>/dev/null; then
+                stale+=("$agent")
+                dead+=("$agent")  # staleもdead扱いで再起動対象に追加
+                log "STALE-DAEMON: inbox_watcher for ${agent} (PID ${watcher_pid}) is outdated — script updated after process start. Scheduling restart."
+            fi
+        fi
+    done
+
     if [ ${#dead[@]} -eq 0 ]; then
         return 0
     fi
 
-    log "WARNING: inbox_watcher dead for: ${dead[*]}. Restarting..."
+    log "WARNING: inbox_watcher dead/stale for: ${dead[*]}. Restarting..."
+    # staleプロセスをkillしてからrestart
+    for agent in "${stale[@]}"; do
+        local stale_pid
+        stale_pid=$(pgrep -f "inbox_watcher\\.sh ${agent} " 2>/dev/null | head -1)
+        [ -n "$stale_pid" ] && kill "$stale_pid" 2>/dev/null && log "Killed stale watcher for ${agent} (PID ${stale_pid})"
+    done
 
     for agent in "${dead[@]}"; do
         local pane_target=""

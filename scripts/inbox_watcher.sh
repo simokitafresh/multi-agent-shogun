@@ -339,8 +339,17 @@ send_wakeup() {
     # Codex/other: fallback to @agent_state for compatibility
     local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
     if [[ "$effective_cli" == "claude" ]] && [ ! -f "$idle_flag" ] && ! maybe_force_idle_flag "$effective_cli"; then
-        echo "[$(date)] [BUSY] Agent $AGENT_ID is busy (no idle flag), Stop hook will deliver" >&2
-        return 2
+        # GP-139: FP-CHANGE連続時にBACKOFF到達不能 → first_unread_ageで独立安全弁
+        # 根因: 複数agent同時送信→FP毎回変化→FP-SAME/BACKOFF不到達→RECOVERY不能
+        local _unread_age_override
+        _unread_age_override=$(get_first_unread_age)
+        if [ "$_unread_age_override" -ge "$FORCE_IDLE_AFTER_SEC" ] 2>/dev/null; then
+            echo "[$(date)] [BUSY-OVERRIDE] Agent $AGENT_ID busy but unread for ${_unread_age_override}s >= ${FORCE_IDLE_AFTER_SEC}s, forcing nudge (GP-139)" >&2
+            touch "$idle_flag"
+        else
+            echo "[$(date)] [BUSY] Agent $AGENT_ID is busy (no idle flag), Stop hook will deliver" >&2
+            return 2
+        fi
     fi
 
     if [[ "$effective_cli" != "claude" ]]; then

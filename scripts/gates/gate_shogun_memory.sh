@@ -346,6 +346,45 @@ PYEOF
 }
 
 # ============================================================
+# (7) MEMORY.md参照ファイル実在チェック
+#     索引内の全 `memory/*.md` パスが実ファイルとして存在するか検証
+#     ハードコードなし。索引が増えれば自動的にチェック対象が増える
+# ============================================================
+check_referenced_files() {
+    if [ ! -f "$MEMORY_FILE" ]; then
+        return
+    fi
+
+    local memory_dir
+    memory_dir="$(dirname "$MEMORY_FILE")"
+
+    local missing=()
+    local checked=0
+
+    while IFS= read -r ref_path; do
+        [ -z "$ref_path" ] && continue
+        local basename_ref
+        basename_ref="${ref_path#memory/}"
+        local full_path="$memory_dir/$basename_ref"
+        # project-repo memory/ もチェック
+        local alt_path="$SCRIPT_DIR/memory/$basename_ref"
+        checked=$((checked + 1))
+        if [ ! -f "$full_path" ] && [ ! -f "$alt_path" ]; then
+            missing+=("$ref_path")
+        fi
+    done < <(grep -oE 'memory/[a-zA-Z0-9_-]+\.md' "$MEMORY_FILE" 2>/dev/null | sort -u)
+
+    if [ ${#missing[@]} -gt 0 ]; then
+        emit_actionable \
+            "ALERT: 参照ファイル不在: ${#missing[@]}件 — ${missing[*]}" \
+            "MEMORY.md が参照するファイルが存在しない。配置するか索引を修正せよ。"
+        HAS_ALERT=1
+    else
+        echo "OK: 参照ファイル実在: ${checked}件全て存在"
+    fi
+}
+
+# ============================================================
 # メイン処理
 # ============================================================
 check_line_count
@@ -354,6 +393,7 @@ check_duplication
 check_mcp
 check_last_curated
 check_mcp_sync
+check_referenced_files
 
 # 総合判定
 if [ "$HAS_ALERT" -gt 0 ]; then
