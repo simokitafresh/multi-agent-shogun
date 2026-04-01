@@ -191,6 +191,30 @@ if ninja_filter:
             print(f"  workaroundなし: clean")
     sys.exit(0)
 
+# --- ALERT threshold logic (gate_workaround_rate.sh pattern) ---
+# 個人閾値: ALERT>50%, WARN>30% (サンプル2件以上の忍者のみ判定)
+ALERT_THRESHOLD = 50
+WARN_THRESHOLD = 30
+MIN_SAMPLE = 2
+
+alert_ninjas = []
+warn_ninjas = []
+for ninja, s in stats.items():
+    if ninja == "unknown" or s["total"] < MIN_SAMPLE:
+        continue
+    rate = s["workaround"] / s["total"] * 100
+    if rate > ALERT_THRESHOLD:
+        alert_ninjas.append((ninja, rate, s["workaround"], s["total"]))
+    elif rate > WARN_THRESHOLD:
+        warn_ninjas.append((ninja, rate, s["workaround"], s["total"]))
+
+if alert_ninjas:
+    gate_level = "ALERT"
+elif warn_ninjas:
+    gate_level = "WARN"
+else:
+    gate_level = "OK"
+
 # --- Output ---
 if quiet:
     # gate_karo_startup.sh統合用: 1行サマリ + workaround多い忍者
@@ -203,6 +227,13 @@ if quiet:
         print(f"  忍者別workaround(直近{total}件): " + ", ".join(parts))
     else:
         print(f"  忍者別workaround(直近{total}件): 全員clean")
+    # ALERT/WARN行 (gate_karo_startup.sh連携)
+    if alert_ninjas:
+        names = ", ".join(f"{n}({r:.0f}%)" for n, r, _, _ in alert_ninjas)
+        print(f"  ALERT: WA率50%超 — {names}")
+    elif warn_ninjas:
+        names = ", ".join(f"{n}({r:.0f}%)" for n, r, _, _ in warn_ninjas)
+        print(f"  WARN: WA率30%超 — {names}")
 else:
     print(f"=== 忍者別workaround率 (直近{total}件) ===")
     print("")
@@ -216,16 +247,14 @@ else:
     print("-" * 38)
     print(f"{'合計':<12} {total_wa:>7} {total:>8} {total_wa/total*100:>6.1f}%")
     print("")
-    # Top offenders
-    worst = sorted(
-        [(n, s) for n, s in stats.items() if s["workaround"] > 0],
-        key=lambda x: -x[1]["workaround"]
-    )
-    if worst:
-        print("要注意忍者:")
-        for n, s in worst[:3]:
-            rate = s["workaround"] / s["total"] * 100
-            print(f"  {n}: {s['workaround']}件 ({rate:.0f}%)")
-    else:
-        print("全員clean: workaroundなし")
+    # ALERT判定セクション
+    print(f"判定: {gate_level}")
+    if alert_ninjas:
+        for n, r, wc, tc in alert_ninjas:
+            print(f"  ALERT: {n} — WA率{r:.0f}% ({wc}/{tc}件) [閾値50%超]")
+    if warn_ninjas:
+        for n, r, wc, tc in warn_ninjas:
+            print(f"  WARN: {n} — WA率{r:.0f}% ({wc}/{tc}件) [閾値30%超]")
+    if not alert_ninjas and not warn_ninjas:
+        print("  全員clean: 閾値超過なし (サンプル2件未満の忍者は除外)")
 PYEOF
