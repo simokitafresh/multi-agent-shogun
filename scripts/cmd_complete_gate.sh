@@ -1440,6 +1440,156 @@ check_how_it_works_status() {
     fi
 }
 
+cmd_task_matches() {
+    local task_file="$1"
+    local cmd_id="${2:-$CMD_ID}"
+    grep -q "parent_cmd: ${cmd_id}" "$task_file" 2>/dev/null
+}
+
+evaluate_review_report_status() {
+    local report_file="$1"
+    local _rv_verdict _rv_verdict_status _rv_gate_status _rv_sg_pass _rv_worker_id
+
+    _rv_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "")
+    _rv_verdict_status="ng"
+    [ "$_rv_verdict" = "PASS" ] || [ "$_rv_verdict" = "FAIL" ] && _rv_verdict_status="ok"
+
+    _rv_gate_status="ng"
+    if grep -q 'self_gate_check:' "$report_file" 2>/dev/null; then
+        _rv_sg_pass=$(awk '
+            /self_gate_check:/ { sec=1; next }
+            sec && /^[^ ]/ { exit }
+            sec && /lesson_ref:.*PASS/ { c++ }
+            sec && /lesson_candidate:.*PASS/ { c++ }
+            sec && /status_valid:.*PASS/ { c++ }
+            sec && /purpose_fit:.*PASS/ { c++ }
+            END { print c+0 }
+        ' "$report_file" 2>/dev/null)
+        [ "${_rv_sg_pass:-0}" -eq 4 ] && _rv_gate_status="ok"
+    fi
+
+    _rv_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "worker_id" "")
+    printf '%s\t%s\t%s\n' "$_rv_verdict_status" "$_rv_gate_status" "$_rv_worker_id"
+}
+
+find_overlapping_workers() {
+    local implementer_ids="$1"
+    local reviewer_ids="$2"
+
+    comm -12 \
+        <(printf '%s\n' "$implementer_ids" | tr '|' '\n' | sed '/^$/d' | sort -u) \
+        <(printf '%s\n' "$reviewer_ids" | tr '|' '\n' | sed '/^$/d' | sort -u) \
+        | paste -sd, -
+}
+
+run_review_quality_check() {
+    local review_task_found=false
+    local implementer_ids="|"
+    local reviewer_ids="|"
+    local task_file task_role ninja_name report_file impl_worker_id review_status
+    local verdict_status self_gate_status review_worker_id overlapping_workers
+
+    level_heading "[L2]" "Review quality check:"
+
+    for task_file in "$TASKS_DIR"/*.yaml; do
+        [ -f "$task_file" ] || continue
+        cmd_task_matches "$task_file" "$CMD_ID" || continue
+
+        task_role=$(detect_task_role "$task_file")
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+
+        case "$task_role" in
+            implement)
+                if [ -f "$report_file" ]; then
+                    impl_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "worker_id" "")
+                    if [ -n "$impl_worker_id" ] && [[ "$implementer_ids" != *"|$impl_worker_id|"* ]]; then
+                        implementer_ids="${implementer_ids}${impl_worker_id}|"
+                    fi
+                fi
+                ;;
+            review)
+                review_task_found=true
+
+                if [ ! -f "$report_file" ]; then
+                    echo "  ${ninja_name}: SKIP (review report not found)"
+                    continue
+                fi
+
+                review_status=$(evaluate_review_report_status "$report_file")
+                verdict_status=$(printf '%s\n' "$review_status" | cut -f1)
+                self_gate_status=$(printf '%s\n' "$review_status" | cut -f2)
+                review_worker_id=$(printf '%s\n' "$review_status" | cut -f3)
+
+                if [ "$verdict_status" = "ok" ]; then
+                    echo "  ${ninja_name}: OK (verdict=PASS/FAIL)"
+                else
+                    echo "  [CRITICAL] ${ninja_name}: NG ← verdict欠落または不正値（PASS/FAIL必須）"
+                    record_block_reason "review report missing verdict field"
+                    ALL_CLEAR=false
+                fi
+
+                if [ "$self_gate_status" = "ok" ]; then
+                    echo "  ${ninja_name}: OK (self_gate_check all PASS)"
+                else
+                    echo "  [CRITICAL] ${ninja_name}: NG ← self_gate_check 4項目が不足またはPASS以外"
+                    record_block_reason "review report self_gate_check incomplete or not all PASS"
+                    ALL_CLEAR=false
+                fi
+
+                if [ -n "$review_worker_id" ] && [[ "$reviewer_ids" != *"|$review_worker_id|"* ]]; then
+                    reviewer_ids="${reviewer_ids}${review_worker_id}|"
+                fi
+                ;;
+        esac
+    done
+
+    if [ "$review_task_found" = false ]; then
+        echo "  SKIP (no review reports for this cmd)"
+    elif [ "$implementer_ids" = "|" ]; then
+        echo "  reviewer/implementer split: SKIP (no implementer reports)"
+    elif [ "$reviewer_ids" = "|" ]; then
+        echo "  reviewer/implementer split: SKIP (no review worker_id)"
+    else
+        overlapping_workers=$(find_overlapping_workers "$implementer_ids" "$reviewer_ids")
+        if [ -n "$overlapping_workers" ]; then
+            echo "  [CRITICAL] NG ← reviewer and implementer overlap: ${overlapping_workers}"
+            record_block_reason "reviewer is same as implementer"
+            ALL_CLEAR=false
+        else
+            echo "  reviewer/implementer split: OK"
+        fi
+    fi
+}
+
+run_todo_fixme_residual_check() {
+    local cmd_id="${1:-$CMD_ID}"
+    local cmd_num todo_hits_cmd todo_hits_sub todo_hits todo_count
+
+    level_heading "[L2]" "TODO/FIXME residual check:"
+
+    cmd_num="${cmd_id#cmd_}"
+    todo_hits_cmd=$(grep -rn "TODO.*${cmd_id}\|FIXME.*${cmd_id}" "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" 2>/dev/null || true)
+    todo_hits_sub=$(grep -rn "TODO.*subtask_${cmd_num}\|FIXME.*subtask_${cmd_num}" "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" 2>/dev/null || true)
+    todo_hits=$(printf '%s\n%s' "$todo_hits_cmd" "$todo_hits_sub" | sort -u | grep -v '^$' || true)
+    todo_count=$(printf '%s' "$todo_hits" | grep -c '.' 2>/dev/null || true)
+    todo_count=${todo_count:-0}
+
+    if [ "$todo_count" -gt 0 ]; then
+        echo "  [CRITICAL] NG ← ${todo_count}件のTODO/FIXMEが残存:"
+        printf '%s\n' "$todo_hits" | head -10 | while IFS= read -r line; do
+            echo "    ${line}"
+        done
+        if [ "$todo_count" -gt 10 ]; then
+            echo "    ... (${todo_count}件中10件表示)"
+        fi
+        record_block_reason "todo/fixme residual found"
+        ALL_CLEAR=false
+    else
+        echo "  TODO check: OK (0 remaining)"
+    fi
+}
+
 # ─── context_update freshness check (cmd_543 AC2) ───
 # cmdにcontext_updateが定義されている場合のみ、context/* の last_updated を検証。
 # last_updated(YYYY-MM-DD) < cmd timestamp/delegated_at の日付 なら BLOCK。
@@ -2863,105 +3013,7 @@ if [ "$HOW_IT_WORKS_CHECKED" = false ]; then
     echo "  (no implement tasks found for this cmd)"
 fi
 
-# ─── review品質機械検査（cmd_607） ───
-level_heading "[L2]" "Review quality check:"
-REVIEW_TASK_FOUND=false
-IMPLEMENTER_IDS="|"
-REVIEWER_IDS="|"
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
-
-    task_role=$(detect_task_role "$task_file")
-    ninja_name=$(basename "$task_file" .yaml)
-    report_file=$(resolve_report_file "$ninja_name")
-
-    case "$task_role" in
-        implement)
-            if [ -f "$report_file" ]; then
-                impl_worker_id=$(field_get "$report_file" "worker_id" "")
-                if [ -n "$impl_worker_id" ] && [[ "$IMPLEMENTER_IDS" != *"|$impl_worker_id|"* ]]; then
-                    IMPLEMENTER_IDS="${IMPLEMENTER_IDS}${impl_worker_id}|"
-                fi
-            fi
-            ;;
-        review)
-            REVIEW_TASK_FOUND=true
-
-            if [ ! -f "$report_file" ]; then
-                echo "  ${ninja_name}: SKIP (review report not found)"
-                continue
-            fi
-
-            # verdict判定: PASS/FAILのいずれかならok
-            _rv_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "")
-            _rv_verdict_status="ng"
-            [ "$_rv_verdict" = "PASS" ] || [ "$_rv_verdict" = "FAIL" ] && _rv_verdict_status="ok"
-            # self_gate_check判定: 4項目全てPASSならok
-            _rv_gate_status="ng"
-            if grep -q 'self_gate_check:' "$report_file" 2>/dev/null; then
-                _rv_sg_pass=$(awk '
-                    /self_gate_check:/ { sec=1; next }
-                    sec && /^[^ ]/ { exit }
-                    sec && /lesson_ref:.*PASS/ { c++ }
-                    sec && /lesson_candidate:.*PASS/ { c++ }
-                    sec && /status_valid:.*PASS/ { c++ }
-                    sec && /purpose_fit:.*PASS/ { c++ }
-                    END { print c+0 }
-                ' "$report_file" 2>/dev/null)
-                [ "${_rv_sg_pass:-0}" -eq 4 ] && _rv_gate_status="ok"
-            fi
-            _rv_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "worker_id" "")
-            review_status=$(printf '%s\t%s\t%s' "$_rv_verdict_status" "$_rv_gate_status" "$_rv_worker_id")
-
-            verdict_status=$(printf '%s\n' "$review_status" | cut -f1)
-            self_gate_status=$(printf '%s\n' "$review_status" | cut -f2)
-            review_worker_id=$(printf '%s\n' "$review_status" | cut -f3)
-
-            if [ "$verdict_status" = "ok" ]; then
-                echo "  ${ninja_name}: OK (verdict=PASS/FAIL)"
-            else
-                echo "  [CRITICAL] ${ninja_name}: NG ← verdict欠落または不正値（PASS/FAIL必須）"
-                record_block_reason "review report missing verdict field"
-                ALL_CLEAR=false
-            fi
-
-            if [ "$self_gate_status" = "ok" ]; then
-                echo "  ${ninja_name}: OK (self_gate_check all PASS)"
-            else
-                echo "  [CRITICAL] ${ninja_name}: NG ← self_gate_check 4項目が不足またはPASS以外"
-                record_block_reason "review report self_gate_check incomplete or not all PASS"
-                ALL_CLEAR=false
-            fi
-
-            if [ -n "$review_worker_id" ] && [[ "$REVIEWER_IDS" != *"|$review_worker_id|"* ]]; then
-                REVIEWER_IDS="${REVIEWER_IDS}${review_worker_id}|"
-            fi
-            ;;
-    esac
-done
-
-if [ "$REVIEW_TASK_FOUND" = false ]; then
-    echo "  SKIP (no review reports for this cmd)"
-elif [ "$IMPLEMENTER_IDS" = "|" ]; then
-    echo "  reviewer/implementer split: SKIP (no implementer reports)"
-elif [ "$REVIEWER_IDS" = "|" ]; then
-    echo "  reviewer/implementer split: SKIP (no review worker_id)"
-else
-    overlapping_workers=$(
-        comm -12 \
-            <(printf '%s\n' "$IMPLEMENTER_IDS" | tr '|' '\n' | sed '/^$/d' | sort -u) \
-            <(printf '%s\n' "$REVIEWER_IDS" | tr '|' '\n' | sed '/^$/d' | sort -u) \
-        | paste -sd, -
-    )
-    if [ -n "$overlapping_workers" ]; then
-        echo "  [CRITICAL] NG ← reviewer and implementer overlap: ${overlapping_workers}"
-        record_block_reason "reviewer is same as implementer"
-        ALL_CLEAR=false
-    else
-        echo "  reviewer/implementer split: OK"
-    fi
-fi
+run_review_quality_check
 
 # ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
 level_heading "[L3]" "Draft lesson check:"
@@ -3255,33 +3307,7 @@ else
     done <<< "$WIRING_OUTPUT"
 fi
 
-# ─── TODO/FIXME残存チェック（BLOCK） ───
-level_heading "[L2]" "TODO/FIXME residual check:"
-CMD_NUM="${CMD_ID#cmd_}"
-TODO_HITS=""
-# cmd_IDパターン検索
-TODO_HITS_CMD=$(grep -rn "TODO.*${CMD_ID}\|FIXME.*${CMD_ID}" "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" 2>/dev/null || true)
-# subtaskパターン検索
-TODO_HITS_SUB=$(grep -rn "TODO.*subtask_${CMD_NUM}\|FIXME.*subtask_${CMD_NUM}" "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" 2>/dev/null || true)
-
-# 結合（重複除去）
-TODO_HITS=$(printf '%s\n%s' "$TODO_HITS_CMD" "$TODO_HITS_SUB" | sort -u | grep -v '^$' || true)
-TODO_COUNT=$(printf '%s' "$TODO_HITS" | grep -c '.' 2>/dev/null || true)
-TODO_COUNT=${TODO_COUNT:-0}
-
-if [ "$TODO_COUNT" -gt 0 ]; then
-    echo "  [CRITICAL] NG ← ${TODO_COUNT}件のTODO/FIXMEが残存:"
-    printf '%s\n' "$TODO_HITS" | head -10 | while IFS= read -r line; do
-        echo "    ${line}"
-    done
-    if [ "$TODO_COUNT" -gt 10 ]; then
-        echo "    ... (${TODO_COUNT}件中10件表示)"
-    fi
-    record_block_reason "todo/fixme residual found"
-    ALL_CLEAR=false
-else
-    echo "  TODO check: OK (0 remaining)"
-fi
+run_todo_fixme_residual_check "$CMD_ID"
 
 # ─── テストSKIP検査（skip_count > 0 で BLOCK） ───
 level_heading "[L2]" "Test skip count check:"
