@@ -129,7 +129,7 @@ if [ -f "$SNAPSHOT_FILE" ]; then
   ninja_blocked="${rest#*|}"
 fi
 
-echo "=== clear_prep_check ==="
+echo "=== clear_prep_check $(date '+%Y-%m-%dT%H:%M:%S%z') ==="
 echo "[PD未決] ${pd_count}件: ${pd_ids}"
 echo "[cmd pending] ${cmd_count}件: ${cmd_ids}"
 echo "[🚨要対応] ${alert_count}件"
@@ -141,4 +141,33 @@ else
   echo "  - なし"
 fi
 echo "[忍者] 稼働${ninja_active} / idle${ninja_idle} / blocked${ninja_blocked}"
+
+# ALERT/OK判定
+issues=0
+issue_reasons=()
+if [ "$pd_count" -gt 0 ]; then
+  issues=$((issues + pd_count))
+  issue_reasons+=("PD未決${pd_count}")
+fi
+if [ "$cmd_count" -gt 0 ]; then
+  issues=$((issues + cmd_count))
+  issue_reasons+=("cmd_pending${cmd_count}")
+fi
+if [ "$alert_count" -gt 0 ]; then
+  issues=$((issues + alert_count))
+  issue_reasons+=("要対応${alert_count}")
+fi
+if [ "$ninja_blocked" -gt 0 ]; then
+  issues=$((issues + ninja_blocked))
+  issue_reasons+=("blocked${ninja_blocked}")
+fi
+
+if [ "$issues" -gt 0 ]; then
+  reason_str=$(IFS=','; echo "${issue_reasons[*]}")
+  echo "[STATUS] ALERT (${reason_str})"
+else
+  echo "[STATUS] OK"
+fi
 echo "========================"
+
+exit "$( [ "$issues" -gt 0 ] && echo 1 || echo 0 )"
