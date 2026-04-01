@@ -136,6 +136,12 @@ for json_key, var_name, default in mapping:
     print(f'{var_name}={shlex.quote(str(v))}')
 ")"
 
+# Validate that eval properly populated action (guard against JSON parse failure)
+if [ -z "$action" ]; then
+    echo "[auto_failure] Error: JSON parse failed — extraction result unparseable (${REPORT_PATH})" >&2
+    exit 1
+fi
+
 if [ "$action" = "skip" ]; then
     echo "[auto_failure] Skipped: ${reason} (${REPORT_PATH})"
     exit 0
