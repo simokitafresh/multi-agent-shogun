@@ -43,10 +43,20 @@ NOW=$(date +%s)
 for name in "${AGENT_ORDER[@]}"; do
     pane=$(pane_lookup "$name")
 
-    # tmux変数を一括読取り（4回→1回のtmux呼出し）
-    _tmux_raw=$(tmux display-message -t "$pane" -p '#{@agent_id}|#{@agent_state}|#{@last_active}|#{@context_pct}' 2>/dev/null) || _tmux_raw="|||"
-    # shellcheck disable=SC2034  # agent_idはフォーマット分解で必要（将来の拡張用に保持）
-    IFS='|' read -r agent_id agent_state last_active context_pct <<< "$_tmux_raw"
+    if [ -z "$pane" ]; then
+        printf "%-10s %-9s %-5s %-12s %s\n" "$name" "missing" "—" "—" "—"
+        continue
+    fi
+
+    # pane存在確認+tmux変数を一括読取り（4回→1回のtmux呼出し）
+    _tmux_raw=$(tmux display-message -t "$pane" -p '#{pane_id}|#{@agent_id}|#{@agent_state}|#{@last_active}|#{@context_pct}' 2>/dev/null) || _tmux_raw=""
+    if [ -z "$_tmux_raw" ]; then
+        printf "%-10s %-9s %-5s %-12s %s\n" "$name" "missing" "—" "—" "—"
+        continue
+    fi
+
+    # shellcheck disable=SC2034  # pane_id/agent_idはフォーマット分解で必要（将来の拡張用に保持）
+    IFS='|' read -r pane_id agent_id agent_state last_active context_pct <<< "$_tmux_raw"
 
     # STATE判定
     if [ -z "$agent_state" ]; then
