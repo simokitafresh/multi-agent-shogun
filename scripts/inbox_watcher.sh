@@ -156,7 +156,7 @@ refresh_debounce_file() {
 get_first_unread_age() {
     if [ -f "$FIRST_UNREAD_SEEN" ]; then
         local first_seen
-        first_seen=$(cat "$FIRST_UNREAD_SEEN" 2>/dev/null || echo "")
+        read -r first_seen < "$FIRST_UNREAD_SEEN" 2>/dev/null || first_seen=""
         if [[ "$first_seen" =~ ^[0-9]+$ ]]; then
             echo $(( $(date +%s) - first_seen ))
             return
@@ -378,7 +378,7 @@ send_wakeup() {
 
     # Tier 1.5: Debounce repeated nudge storms (normal messages only)
     if [ -f "$DEBOUNCE_FILE" ]; then
-        last="$(cat "$DEBOUNCE_FILE" 2>/dev/null || true)"
+        read -r last < "$DEBOUNCE_FILE" 2>/dev/null || last=""
         if [[ "$last" =~ ^[0-9]+$ ]]; then
             now="$(date +%s)"
             elapsed=$((now - last))
@@ -553,7 +553,7 @@ process_unread() {
 
         local prev_fp=""
         if [ -f "$FINGERPRINT_FILE" ]; then
-            prev_fp=$(cat "$FINGERPRINT_FILE" 2>/dev/null || true)
+            read -r prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || prev_fp=""
         fi
 
         if [ "$current_fp" != "$prev_fp" ]; then
@@ -572,8 +572,7 @@ process_unread() {
             # Improvement A: immediate retries before BACKOFF fallback
             local retry_count=0
             if [ -f "$RETRY_COUNT_FILE" ]; then
-                retry_count=$(cat "$RETRY_COUNT_FILE" 2>/dev/null || echo 0)
-                retry_count=${retry_count:-0}
+                read -r retry_count < "$RETRY_COUNT_FILE" 2>/dev/null || retry_count=0
             fi
 
             if [ "$retry_count" -lt "$RETRY_MAX" ] 2>/dev/null; then
