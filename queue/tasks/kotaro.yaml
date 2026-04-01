@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R10
   task_type: impl
   project: infra
-  status: acknowledged
+  status: completed
   target_path: scripts/inbox_mark_read.sh
   command: |
     inbox_mark_read.shを精査し改善点を特定・実装・報告せよ。
