@@ -33,8 +33,16 @@ if [[ -f "$TASK_FILE" ]]; then
     REPORT_FILE="$SCRIPT_DIR/queue/reports/${rf}"
   fi
 fi
+if [[ -z "$REPORT_FILE" || ! -f "$REPORT_FILE" ]] && [[ -f "$TASK_FILE" ]]; then
+  # parent_cmdからレポートファイル名を構築（stale report防止）
+  pcmd=$(grep -m1 '^\s*parent_cmd:' "$TASK_FILE" 2>/dev/null | sed 's/^[^:]*:\s*//' | sed "s/^[\"']\|[\"']$//g" || true)
+  if [[ -n "$pcmd" ]]; then
+    candidate="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${pcmd}.yaml"
+    [[ -f "$candidate" ]] && REPORT_FILE="$candidate"
+  fi
+fi
 if [[ -z "$REPORT_FILE" || ! -f "$REPORT_FILE" ]]; then
-  # glob最新: cmd番号付きレポートの最新ファイル
+  # glob最新: cmd番号付きレポートの最新ファイル（最終フォールバック）
   latest=$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -name "${ninja_name}_report_*.yaml" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
   if [[ -n "$latest" ]]; then
     REPORT_FILE="$latest"
