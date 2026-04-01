@@ -133,8 +133,8 @@ elif lu is not None:
                 hints.append('FIX (lessons_useful): report_field_set.sh経由でuseful/reasonを各教訓に記入せよ')
         for i, item in enumerate(lu):
             if isinstance(item, dict):
-                if 'FILL_THIS' in str(item.get('useful', '')) or 'FILL_THIS' in str(item.get('reason', '')):
-                    errors.append(f'lessons_useful[{i}]: contains FILL_THIS (must fill actual values)')
+                if str(item.get('useful', '')).strip() == 'FILL_THIS' or str(item.get('reason', '')).strip() == 'FILL_THIS':
+                    errors.append(f'lessons_useful[{i}]: value is FILL_THIS placeholder (must fill actual values)')
                 if 'id' not in item:
                     errors.append(f'lessons_useful[{i}]: missing \"id\" field (must have lesson ID like L074)')
                     hints.append(f'FIX (lessons_useful[{i}]): id フィールド必須。テンプレート注入済みの教訓IDを確認せよ:\\n  - id: L074\\n    useful: true\\n    reason: \"理由\"')
@@ -232,6 +232,23 @@ if isinstance(bc, dict) and bc:
             hints.append(f'FIX (binary_checks): task YAMLに{_task_bc_count}件の確認項目がある。全項目にresultを記入せよ')
         elif _rpt_bc_count < _task_bc_count:
             hints.append(f'GP-131 WARN: binary_checks item count {_rpt_bc_count}/{_task_bc_count} (task templateより少ない)')
+    else:
+        # GP-131b: task YAMLにBC templateがなくてもAC数からBC網羅性をチェック
+        _ac_count = 0
+        try:
+            _ac_list = _tk2.get('acceptance_criteria', [])
+            if isinstance(_ac_list, list):
+                _ac_count = len(_ac_list)
+        except Exception:
+            pass
+        if _ac_count > 0:
+            # report BCのキー数(commit除く)がAC数未満ならエラー
+            _rpt_ac_keys = [k for k in bc.keys() if k.upper().startswith('AC')]
+            if len(_rpt_ac_keys) == 0:
+                errors.append(f'binary_checks: AC self-verification missing (0/{_ac_count} ACs). 全ACの二値チェックを記入せよ')
+                hints.append(f'FIX (binary_checks): task YAMLに{_ac_count}件のACがある。AC1, AC2, ... のセクションを追加し各result=yes/noを記入')
+            elif len(_rpt_ac_keys) < _ac_count:
+                hints.append(f'GP-131b WARN: binary_checks has {len(_rpt_ac_keys)} AC sections but task has {_ac_count} ACs')
 
 # --- purpose_validation should exist and not be null ---
 if 'purpose_validation' not in data:
