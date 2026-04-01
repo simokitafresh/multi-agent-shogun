@@ -142,7 +142,7 @@ with open(insights_file, 'a') as f:
     f.write(f'- id: {entry_id}\n')
     f.write(f'  ts: {yaml_escape(ts)}\n')
     f.write(f'  insight: {yaml_escape(msg)}\n')
-    f.write(f'  priority: {priority}\n')
+    f.write(f'  priority: {yaml_escape(priority)}\n')
     f.write(f'  source: {yaml_escape(source_info)}\n')
     f.write(f'  status: pending\n')
 
