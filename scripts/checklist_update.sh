@@ -41,8 +41,8 @@ attempt=0
 max_attempts=3
 
 while [ $attempt -lt $max_attempts ]; do
-    if (
-        flock -w 10 200 || exit 1
+    (
+        flock -w 10 200 || exit 100
 
         CHECKLIST_PATH="$CHECKLIST_FILE" \
         ITEM_NUMBER="$ITEM_NUMBER" \
@@ -133,15 +133,25 @@ except Exception:
 
 print(f'[checklist_update] Updated item {item_number}: status={status} result={result} ninja={ninja_name} progress={done_count}/{total_count} ({pct}%)')
 "
-    ) 200>"$LOCKFILE"; then
+    ) 200>"$LOCKFILE"
+    exit_code=$?
+
+    if [ $exit_code -eq 0 ]; then
         exit 0
+    fi
+
+    # exit 100 = flock timeout (transient, worth retrying)
+    # other codes = Python error (non-transient, fail immediately)
+    if [ $exit_code -ne 100 ]; then
+        exit $exit_code
     fi
 
     attempt=$((attempt + 1))
     if [ $attempt -lt $max_attempts ]; then
+        echo "[checklist_update] flock timeout, retrying ($attempt/$max_attempts)..." >&2
         sleep 1
     fi
 done
 
-echo "FATAL: checklist_update: failed after $max_attempts attempts" >&2
+echo "FATAL: checklist_update: flock failed after $max_attempts attempts" >&2
 exit 1
