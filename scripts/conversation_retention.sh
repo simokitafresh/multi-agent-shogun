@@ -199,10 +199,12 @@ if archived_entries:
             f.write(json.dumps(entry, ensure_ascii=False))
             f.write("\n")
 
-with jsonl_path.open("w", encoding="utf-8", errors="replace") as f:
+tmp_jsonl = jsonl_path.parent / (jsonl_path.name + ".tmp")
+with tmp_jsonl.open("w", encoding="utf-8", errors="replace") as f:
     for entry in recent_entries:
         f.write(json.dumps(entry, ensure_ascii=False))
         f.write("\n")
+os.replace(str(tmp_jsonl), str(jsonl_path))
 
 index_body = f"""# Lord Conversation Index
 <!-- last_updated: {now_utc.astimezone().date().isoformat()} auto-generated -->
@@ -226,7 +228,9 @@ index_body = f"""# Lord Conversation Index
 - `logs/lord_conversation_archive/*.jsonl`（24h超過・200件超過の退避先）
 """
 
-index_path.write_text(index_body, encoding="utf-8", errors="replace")
+tmp_index = index_path.parent / (index_path.name + ".tmp")
+tmp_index.write_text(index_body, encoding="utf-8", errors="replace")
+os.replace(str(tmp_index), str(index_path))
 
 print(
     f"[conversation_retention] total={len(entries)} kept={len(recent_entries)} "
