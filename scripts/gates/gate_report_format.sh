@@ -19,7 +19,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PASS_CACHE="$REPO_ROOT/logs/.gate_pass_cache"
 _CANON=$(realpath "$REPORT_PATH" 2>/dev/null || echo "$REPORT_PATH")
 _MTIME=$(stat -c %Y "$REPORT_PATH" 2>/dev/null || echo "")
-if [ -n "$_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF "${_CANON} ${_MTIME}" "$PASS_CACHE" 2>/dev/null; then
+_GATE_MTIME=$(stat -c %Y "${BASH_SOURCE[0]}" 2>/dev/null || echo "")
+if [ -n "$_MTIME" ] && [ -n "$_GATE_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF "${_CANON} ${_MTIME} ${_GATE_MTIME}" "$PASS_CACHE" 2>/dev/null; then
     echo "PASS"
     exit 0
 fi
@@ -432,7 +433,7 @@ if echo "$RESULT" | grep -q "^PASS"; then
     # Update PASS cache (GP-073)
     if [ -n "$_MTIME" ]; then
         sed -i "\|^${_CANON} |d" "$PASS_CACHE" 2>/dev/null || true
-        echo "${_CANON} ${_MTIME}" >> "$PASS_CACHE"
+        echo "${_CANON} ${_MTIME} ${_GATE_MTIME}" >> "$PASS_CACHE"
     fi
     exit 0
 else
