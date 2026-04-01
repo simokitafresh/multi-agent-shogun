@@ -366,8 +366,8 @@ if id_file:
 PYEOF
 
     ) 200>"$LOCKFILE"; then
-        # AC3: Auto-call sync_lessons.sh after write
-        bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+        # AC3: Auto-call sync_lessons.sh after write (non-blocking: 失敗しても後続処理を続行)
+        bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID" || echo "WARN: sync_lessons.sh failed (non-blocking — lesson is written)" >&2
         # Context索引自動追記 (cmd_300)
         NEW_LESSON_ID=""
         if [ -f "$LESSON_ID_FILE" ]; then
