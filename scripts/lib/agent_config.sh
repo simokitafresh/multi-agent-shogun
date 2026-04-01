@@ -27,12 +27,23 @@ _agent_config_load() {
         return 0
     fi
 
-    _AGENT_CONFIG_RAW=$(SETTINGS_PATH="$_AGENT_CONFIG_SETTINGS" python3 -c "
+    if [[ ! -f "$_AGENT_CONFIG_SETTINGS" ]]; then
+        echo "agent_config: settings.yaml not found: $_AGENT_CONFIG_SETTINGS" >&2
+        return 1
+    fi
+
+    local _ac_errfile
+    _ac_errfile=$(mktemp)
+
+    _AGENT_CONFIG_RAW=$( SETTINGS_PATH="$_AGENT_CONFIG_SETTINGS" python3 -c "
 import yaml, os, sys
 try:
     with open(os.environ['SETTINGS_PATH']) as f:
         data = yaml.safe_load(f)
     agents = data.get('cli', {}).get('agents', {})
+    if not agents:
+        print('ERROR: no agents found in settings.yaml', file=sys.stderr)
+        sys.exit(1)
     for name, conf in agents.items():
         if not isinstance(conf, dict):
             continue
@@ -42,7 +53,21 @@ try:
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
     sys.exit(1)
-" 2>/dev/null)
+" 2>"$_ac_errfile" )
+    local _ac_exit=$?
+
+    if [[ $_ac_exit -ne 0 ]]; then
+        echo "agent_config: failed to parse settings.yaml: $(cat "$_ac_errfile")" >&2
+        rm -f "$_ac_errfile"
+        _AGENT_CONFIG_RAW=""
+        return 1
+    fi
+    rm -f "$_ac_errfile"
+
+    if [[ -z "$_AGENT_CONFIG_RAW" ]]; then
+        echo "agent_config: no agent entries parsed from settings.yaml" >&2
+        return 1
+    fi
 
     local ninjas=()
     local all_names=()
@@ -60,12 +85,12 @@ except Exception as e:
 }
 
 get_ninja_names() {
-    _agent_config_load
+    _agent_config_load || return 1
     echo "$_AGENT_CONFIG_NINJA_NAMES"
 }
 
 get_all_agents() {
-    _agent_config_load
+    _agent_config_load || return 1
     echo "karo $_AGENT_CONFIG_ALL_NAMES"
 }
 
@@ -75,7 +100,7 @@ get_agent_role() {
         echo "karo"
         return 0
     fi
-    _agent_config_load
+    _agent_config_load || return 1
     local role
     role=$(echo "$_AGENT_CONFIG_RAW" | awk -F'\t' -v n="$name" '$1==n{print $2; exit}')
     echo "${role:-ninja}"
@@ -87,13 +112,13 @@ get_japanese_name() {
         echo "家老"
         return 0
     fi
-    _agent_config_load
+    _agent_config_load || return 1
     local jp
     jp=$(echo "$_AGENT_CONFIG_RAW" | awk -F'\t' -v n="$name" '$1==n{print $3; exit}')
     echo "${jp:-$name}"
 }
 
 get_allowed_targets() {
-    _agent_config_load
+    _agent_config_load || return 1
     echo "karo $_AGENT_CONFIG_ALL_NAMES shogun"
 }
