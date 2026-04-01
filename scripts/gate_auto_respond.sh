@@ -187,30 +187,17 @@ handle_ci_red() {
         return 0
     fi
 
-    local ci_result
-    ci_result=$(gh run list --repo simokitafresh/multi-agent-shogun \
+    local ci_parsed
+    ci_parsed=$(gh run list --repo simokitafresh/multi-agent-shogun \
         --workflow test.yml --branch main --limit 1 \
-        --json conclusion,databaseId 2>/dev/null || true)
+        --json conclusion,databaseId \
+        --jq '.[0] | ((.conclusion // "") + "\t" + ((.databaseId // 0) | tostring))' \
+        2>/dev/null || true)
 
-    if [ -z "$ci_result" ]; then
+    if [ -z "$ci_parsed" ]; then
         echo "OK: ci_red (no CI data)"
         return 0
     fi
-
-    local ci_parsed
-    ci_parsed=$(printf '%s' "$ci_result" | python3 -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    if data and isinstance(data, list) and len(data) > 0:
-        conclusion = data[0].get('conclusion') or ''
-        run_id = data[0].get('databaseId') or ''
-        print(f'{conclusion}\t{run_id}')
-    else:
-        print('\t')
-except:
-    print('\t')
-" 2>/dev/null)
 
     local ci_conclusion ci_run_id
     IFS=$'\t' read -r ci_conclusion ci_run_id <<< "$ci_parsed"
