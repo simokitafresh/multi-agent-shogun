@@ -449,6 +449,13 @@ setup_git_test_env() {
     # Unset INBOX_WRITE_TEST so the script sources agent_config.sh
     unset INBOX_WRITE_TEST
 
+    # setup()がscripts/lib→実体symlinkを作るが、mkdir -pはsymlink存在時no-op
+    # → 後続のcat >がsymlink経由で本物のagent_config.shを上書きする(破壊的)
+    # symlinkを実コピーに置換し、他のlibファイル(write_inbox_yaml.py等)へのアクセスを維持
+    if [ -L "$TEST_TMPDIR/scripts/lib" ]; then
+        rm -f "$TEST_TMPDIR/scripts/lib"
+        cp -r "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    fi
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/scripts/gates"
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
 
