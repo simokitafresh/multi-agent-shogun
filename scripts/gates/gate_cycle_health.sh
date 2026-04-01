@@ -11,6 +11,10 @@ cd "$SCRIPT_DIR"
 
 ALERTS=()
 INFOS=()
+INSIGHT_COUNT=0
+IDLE_COUNT=0
+IDLE_NAMES=""
+PI_RATIO="?"
 
 # --- 1. 未消化insights aging check (resolved除外) ---
 if [ -f queue/insights.yaml ]; then
@@ -113,7 +117,7 @@ FORCED=()
 MANUAL=()
 
 # 強制: idle忍者+GATE未処理 → 家老に自動nudge(クールダウン付き)
-if [ "${IDLE_COUNT:-0}" -ge 4 ] && [ "$PENDING_REPORTS" -gt 3 ]; then
+if [ "$IDLE_COUNT" -ge 4 ] && [ "$PENDING_REPORTS" -gt 3 ]; then
     if can_nudge "karo_idle_gate"; then
         if bash scripts/inbox_write.sh karo \
             "【自動】heartbeat ALERT: idle忍者${IDLE_COUNT}名+GATE未処理${PENDING_REPORTS}件。報告処理→配備を急げ。" \
@@ -129,7 +133,7 @@ fi
 # 強制: ntfy通知(殿に状況を伝える)
 if [ ${#ALERTS[@]} -ge 3 ]; then
     if can_nudge "ntfy_alert"; then
-        if bash scripts/ntfy.sh "heartbeat: ${#ALERTS[@]}件ALERT(idle${IDLE_COUNT:-0}/insights${INSIGHT_COUNT:-0}/reports${PENDING_REPORTS:-0}/PI${PI_RATIO:-?}%)" 2>/dev/null; then
+        if bash scripts/ntfy.sh "heartbeat: ${#ALERTS[@]}件ALERT(idle${IDLE_COUNT}/insights${INSIGHT_COUNT}/reports${PENDING_REPORTS}/PI${PI_RATIO}%)" 2>/dev/null; then
             mark_nudge "ntfy_alert"
             FORCED+=("ntfy通知送信済み")
         fi
@@ -137,16 +141,16 @@ if [ ${#ALERTS[@]} -ge 3 ]; then
 fi
 
 # 将軍判断が必要なもの(0が目標。0でない限り表示し続ける=閾値で満足させない)
-if [ "${INSIGHT_COUNT:-0}" -gt 0 ]; then
+if [ "$INSIGHT_COUNT" -gt 0 ]; then
     MANUAL+=("insights ${INSIGHT_COUNT}→0へ: queue/insights.yamlの未解決を処理 or cmd起票")
 fi
-if [ "${IDLE_COUNT:-0}" -gt 0 ]; then
+if [ "$IDLE_COUNT" -gt 0 ]; then
     MANUAL+=("idle忍者 ${IDLE_COUNT}→0へ: cmdを起票して全員稼働させろ")
 fi
 if [ "$PENDING_REPORTS" -gt 0 ]; then
     MANUAL+=("GATE未処理 ${PENDING_REPORTS}→0へ: 家老の処理を加速させろ")
 fi
-if [ "$PI_RATIO" != "?" ] && [ "${PI_RATIO:-0}" -lt 100 ] 2>/dev/null; then
+if [ "$PI_RATIO" != "?" ] && [ "$PI_RATIO" -lt 100 ] 2>/dev/null; then
     MANUAL+=("PI原理率 ${PI_RATIO}→100%へ: 個別PIを原理PIに昇華せよ")
 fi
 
