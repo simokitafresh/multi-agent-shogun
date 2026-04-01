@@ -22,7 +22,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 REPO="simokitafresh/multi-agent-shogun"
 WORKFLOW="test.yml"
-LAST_ALERT_FILE="/tmp/last_ci_alert_run_id"
 LAST_NOTIFY_FILE="/tmp/last_ci_notify_state"
 STATUS_MODE=false
 
@@ -83,7 +82,6 @@ if [[ "$conclusion" == "failure" ]]; then
         exit 0
     fi
     bash "$SCRIPT_DIR/ntfy.sh" "CI赤: run ${run_id} ${failed_jobs}"
-    echo "$run_id" > "$LAST_ALERT_FILE"
     echo "failure:${run_id}" > "$LAST_NOTIFY_FILE"
     exit 0
 fi
