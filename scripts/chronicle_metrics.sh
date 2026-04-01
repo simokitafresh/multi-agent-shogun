@@ -132,27 +132,37 @@ for lineno, raw_line in enumerate(chronicle_path.read_text(encoding="utf-8").spl
 
 
 today = date.today()
+start_7 = today - timedelta(days=6)
+start_30 = today - timedelta(days=29)
 
-recent_rows: list[list[str]] = []
-for days in (7, 30):
-    start = today - timedelta(days=days - 1)
-    count = sum(1 for record in records if start <= record["date"] <= today)
-    avg = f"{count / days:.1f}"
-    recent_rows.append([f"last_{days}_days", start.isoformat(), today.isoformat(), str(count), avg])
+count_7 = 0
+count_30 = 0
+project_counts: Counter[str] = Counter()
+type_counts: Counter[str] = Counter()
+recent_project_counts: Counter[str] = Counter()
+recent_type_counts: Counter[str] = Counter()
 
-project_counts = Counter(str(record["project"]) for record in records)
-project_rows = [[project, str(count)] for project, count in sorted(project_counts.items(), key=lambda item: (-item[1], item[0]))]
+for record in records:
+    d = record["date"]
+    proj = record["project"]
+    rtype = record["type"]
+    project_counts[proj] += 1
+    type_counts[rtype] += 1
+    if start_30 <= d <= today:
+        count_30 += 1
+        recent_project_counts[proj] += 1
+        recent_type_counts[rtype] += 1
+        if d >= start_7:
+            count_7 += 1
 
-type_counts = Counter(str(record["type"]) for record in records)
-type_rows = [[type_name, str(count)] for type_name, count in sorted(type_counts.items(), key=lambda item: (-item[1], item[0]))]
+recent_rows = [
+    ["last_7_days", start_7.isoformat(), today.isoformat(), str(count_7), f"{count_7 / 7:.1f}"],
+    ["last_30_days", start_30.isoformat(), today.isoformat(), str(count_30), f"{count_30 / 30:.1f}"],
+]
 
-recent_30_start = today - timedelta(days=29)
-recent_records = [r for r in records if recent_30_start <= r["date"] <= today]
-
-recent_project_counts = Counter(str(r["project"]) for r in recent_records)
+project_rows = [[p, str(c)] for p, c in sorted(project_counts.items(), key=lambda x: (-x[1], x[0]))]
+type_rows = [[t, str(c)] for t, c in sorted(type_counts.items(), key=lambda x: (-x[1], x[0]))]
 recent_project_rows = [[p, str(c)] for p, c in sorted(recent_project_counts.items(), key=lambda x: (-x[1], x[0]))]
-
-recent_type_counts = Counter(str(r["type"]) for r in recent_records)
 recent_type_rows = [[t, str(c)] for t, c in sorted(recent_type_counts.items(), key=lambda x: (-x[1], x[0]))]
 
 print_table("Recent completion counts", ["window", "start_date", "end_date", "count", "avg/day"], recent_rows)
