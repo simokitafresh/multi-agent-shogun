@@ -63,14 +63,20 @@ check_hardcodes() {
     # grep --exclude はWSL2環境で不安定なため、パイプフィルタで確実に除外
     local exclude_filter='cli_lookup\.sh|cli_profiles\.yaml|settings\.yaml|model_switch_preflight\.sh|cli_specific/|generated/'
 
-    # 検索パターン
+    # 検索パターン（静的: モデル名・旧関数名の直書き検出）
     local patterns=(
         'is_codex'
-        'gunshi.*codex'
-        'hayate.*codex'
         'gpt-5\.'
         'claude-(opus|sonnet|haiku)-[0-9]'
     )
+
+    # 動的パターン: 全エージェント×非デフォルトCLI種別の直書き検出
+    # settings.yaml/cli_profiles.yamlはexclude_filterで除外済み
+    local _all_agents_arr
+    read -ra _all_agents_arr <<< "$(get_all_agents)"
+    for _agent in "${_all_agents_arr[@]}"; do
+        patterns+=("${_agent}.*codex")
+    done
 
     # 検索対象ディレクトリ
     local search_dirs=(
