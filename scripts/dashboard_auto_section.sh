@@ -641,6 +641,15 @@ if [[ -s "$TMP_TITLES" ]]; then
     mv "${TMP_TITLES}.dedup" "$TMP_TITLES"
 fi
 
+# GP-XXX: Load TMP_TITLES into associative array for O(1) lookups
+# Eliminates repeated grep calls in ninja loop (L662) and 戦果 section (L896)
+declare -A TITLE_MAP=()
+if [[ -s "$TMP_TITLES" ]]; then
+    while IFS=$'\t' read -r _tid _ttitle; do
+        [[ -n "$_tid" ]] && TITLE_MAP["$_tid"]="$_ttitle"
+    done < "$TMP_TITLES"
+fi
+
 # ─── Get last 5 CLEAR cmds for battle results ───
 if [[ -s "$TMP_METRICS" ]]; then
     awk -F'\t' '$3=="CLEAR"' "$TMP_METRICS" | tail -5 > "$TMP_RESULTS"
@@ -686,11 +695,10 @@ fi
             [[ -n "$_cmd" ]] && cmd="$_cmd"
         fi
 
-        # cmd title from TMP_TITLES (50 char limit already applied)
+        # cmd title from TITLE_MAP (O(1) lookup, GP-XXX)
         title="—"
-        if [[ "$cmd" != "—" ]] && [[ -s "$TMP_TITLES" ]]; then
-            _title=$(grep "^${cmd}"$'\t' "$TMP_TITLES" | head -1 | cut -f2 || true)
-            [[ -n "$_title" ]] && title="$_title"
+        if [[ "$cmd" != "—" ]] && [[ -n "${TITLE_MAP[$cmd]:-}" ]]; then
+            title="${TITLE_MAP[$cmd]}"
         fi
 
         echo "| ${jp} | ${model} | ${status} | ${cmd} | ${title} |"
@@ -894,9 +902,8 @@ fi
         echo "|-----|------|------|----------|"
         # Reverse order (newest first)
         tac "$TMP_RESULTS" | while IFS=$'\t' read -r _ts _cmd _result; do
-            # Look up title
-            _title=$(grep "^${_cmd}"$'\t' "$TMP_TITLES" | head -1 | cut -f2 || true)
-            [[ -z "$_title" ]] && _title="—"
+            # Look up title from TITLE_MAP (O(1) lookup, GP-XXX)
+            _title="${TITLE_MAP[$_cmd]:-—}"
             # Format timestamp (2026-02-27T12:26:56 → 02-27 12:26)
             _date="—"
             if [[ "$_ts" =~ ([0-9]{4}-([0-9]{2}-[0-9]{2})T([0-9]{2}:[0-9]{2})) ]]; then
