@@ -92,6 +92,44 @@ parse_attachment_field() {
     python3 -c "import sys,json; k=sys.argv[1]; a=json.load(sys.stdin).get('attachment') or {}; print(a.get(k,'') if isinstance(a,dict) else '')" "$1" 2>/dev/null
 }
 
+# Batch JSON extractor — 1回のpython3起動で全フィールドを抽出（7回→1回に削減）
+# Output: 7行（event, tags, message, attachment_type, attachment_url, attachment_name, id）
+parse_all_fields() {
+    python3 -c '
+import json
+import re
+import sys
+
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    for _ in range(7):
+        print("")
+    sys.exit(0)
+
+event = data.get("event", "")
+tags = ",".join(data.get("tags", []))
+msg = data.get("message", "")
+# Sanitize control characters (preserve Japanese/multibyte)
+msg = re.sub(r"[\x00-\x08\x0b-\x1f\x7f]", "", msg)
+att = data.get("attachment") or {}
+if not isinstance(att, dict):
+    att = {}
+att_type = att.get("type", "")
+att_url = att.get("url", "")
+att_name = att.get("name", "")
+msg_id = data.get("id", "")
+
+print(event)
+print(tags)
+print(msg)
+print(att_type)
+print(att_url)
+print(att_name)
+print(msg_id)
+' 2>/dev/null
+}
+
 sanitize_attachment_name() {
     python3 -c '
 import os
@@ -263,19 +301,31 @@ should_restart_stream() {
 process_stream_line() {
     local line="$1"
 
+    # Batch extract all fields in a single python3 invocation (7→1 process spawn)
+    local _paf_event _paf_tags _paf_msg _paf_att_type _paf_att_url _paf_att_name _paf_msg_id
+    {
+        IFS= read -r _paf_event
+        IFS= read -r _paf_tags
+        IFS= read -r _paf_msg
+        IFS= read -r _paf_att_type
+        IFS= read -r _paf_att_url
+        IFS= read -r _paf_att_name
+        IFS= read -r _paf_msg_id
+    } < <(echo "$line" | parse_all_fields)
+
+    EVENT="$_paf_event"
+    TAGS="$_paf_tags"
+    MSG="$_paf_msg"
+    ATTACHMENT_TYPE="$_paf_att_type"
+    ATTACHMENT_URL="$_paf_att_url"
+    ATTACHMENT_NAME="$_paf_att_name"
+    MSG_ID="$_paf_msg_id"
+
     # Skip keepalive pings and non-message events
-    EVENT=$(echo "$line" | parse_json event)
     [ "$EVENT" != "message" ] && return 0
 
     # Skip outbound messages (sent by our own scripts/ntfy.sh)
-    TAGS=$(echo "$line" | parse_tags)
     echo "$TAGS" | grep -q "outbound" && return 0
-
-    # Extract payload (sanitize control characters from external input, preserve Japanese)
-    MSG=$(echo "$line" | parse_json message | tr -d '\000-\010\013-\037\177')
-    ATTACHMENT_TYPE=$(echo "$line" | parse_attachment_field type)
-    ATTACHMENT_URL=$(echo "$line" | parse_attachment_field url)
-    ATTACHMENT_NAME=$(echo "$line" | parse_attachment_field name)
 
     HAS_IMAGE_ATTACHMENT=0
     if [[ "$ATTACHMENT_TYPE" == image/* ]] && [ -n "$ATTACHMENT_URL" ]; then
@@ -285,7 +335,6 @@ process_stream_line() {
     [ -z "$MSG" ] && [ "$HAS_IMAGE_ATTACHMENT" -eq 0 ] && return 0
 
     # MSG_ID dedup check — 同一IDが既に記録済みならスキップ（二重起動・再接続対策）
-    MSG_ID=$(echo "$line" | parse_json id)
     if [ -n "$MSG_ID" ] && grep -qE "^[[:space:]]*id: ['\"]?${MSG_ID}['\"]?" "$INBOX" 2>/dev/null; then
         echo "[$(date)] Duplicate MSG_ID: $MSG_ID, skipping" >&2
         return 0
