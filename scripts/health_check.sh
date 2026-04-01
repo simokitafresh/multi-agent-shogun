@@ -18,9 +18,28 @@ source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 INTERVAL=60          # チェック間隔（秒）
 TASK_TIMEOUT=45      # タスク停滞閾値（分）
 INBOX_TIMEOUT=10     # 未読メッセージ滞留閾値（分）
+ALERT_COOLDOWN=600   # 同一アラート再送抑止（秒）— 10分
 
 # 監視対象: 全忍者（settings.yamlから動的取得 — cmd_1136）
 read -ra MONITORED_AGENTS <<< "$(get_ninja_names)"
+
+# --- アラートcooldown管理 ---
+declare -A LAST_ALERT_TIME
+
+# should_alert: cooldown期間内の重複アラートを抑止
+# 引数: $1=チェック種別_エージェント名（例: task_stalled_hanzo）
+# 戻り値: 0=送信可、1=cooldown中（抑止）
+should_alert() {
+    local key="$1"
+    local now
+    now=$(date +%s)
+    local last=${LAST_ALERT_TIME[$key]:-0}
+    if (( now - last < ALERT_COOLDOWN )); then
+        return 1
+    fi
+    LAST_ALERT_TIME[$key]=$now
+    return 0
+}
 
 # --- ログ関数 ---
 log() {
@@ -66,10 +85,12 @@ except Exception:
     fi
 
     if [ "$age_minutes" -ge "$TASK_TIMEOUT" ]; then
-        log "ALERT: ${agent} task stalled (${age_minutes}min, task: ${task_id})"
-        bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
-            "health_alert: ${agent} task stalled (${age_minutes}min, task: ${task_id}). Investigate pane and YAML status." \
-            health_alert health_check
+        if should_alert "task_stalled_${agent}"; then
+            log "ALERT: ${agent} task stalled (${age_minutes}min, task: ${task_id})"
+            bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
+                "health_alert: ${agent} task stalled (${age_minutes}min, task: ${task_id}). Investigate pane and YAML status." \
+                health_alert health_check
+        fi
     fi
 }
 
@@ -113,10 +134,12 @@ except:
 " 2>/dev/null || echo "0")
 
     if [ "$unread_age" -ge "$INBOX_TIMEOUT" ]; then
-        log "ALERT: ${agent} inbox backlog (oldest unread: ${unread_age}min)"
-        bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
-            "health_alert: ${agent} inbox backlog (oldest unread: ${unread_age}min). Agent may be unresponsive." \
-            health_alert health_check
+        if should_alert "inbox_backlog_${agent}"; then
+            log "ALERT: ${agent} inbox backlog (oldest unread: ${unread_age}min)"
+            bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
+                "health_alert: ${agent} inbox backlog (oldest unread: ${unread_age}min). Agent may be unresponsive." \
+                health_alert health_check
+        fi
     fi
 }
 
@@ -125,6 +148,9 @@ check_watcher_alive() {
     local agent="$1"
 
     if ! pgrep -f "inbox_watcher.sh ${agent}" > /dev/null 2>&1; then
+        if ! should_alert "watcher_dead_${agent}"; then
+            return 0
+        fi
         log "ALERT: inbox_watcher for ${agent} is dead. Attempting restart..."
 
         # 自動再起動を試みる
@@ -173,10 +199,12 @@ check_pane_alive() {
 
     if [ -z "$pane_id" ]; then
         # Pane not found at all
-        log "ALERT: pane for ${agent} not found"
-        bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
-            "health_alert: pane for ${agent} not found in tmux. Agent may need manual restart." \
-            health_alert health_check
+        if should_alert "pane_missing_${agent}"; then
+            log "ALERT: pane for ${agent} not found"
+            bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
+                "health_alert: pane for ${agent} not found in tmux. Agent may need manual restart." \
+                health_alert health_check
+        fi
         return 0
     fi
 
@@ -196,10 +224,12 @@ check_pane_alive() {
             last_line=$(tmux capture-pane -t "shogun:agents.${pane_id}" -p -J 2>/dev/null | grep -v '^$' | tail -1)
 
             if echo "$last_line" | grep -qE '[\$#>] *$'; then
-                log "ALERT: CLI process for ${agent} appears dead (shell prompt visible)"
-                bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
-                    "health_alert: CLI process for ${agent} appears dead. Shell prompt visible. May need restart." \
-                    health_alert health_check
+                if should_alert "cli_dead_${agent}"; then
+                    log "ALERT: CLI process for ${agent} appears dead (shell prompt visible)"
+                    bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
+                        "health_alert: CLI process for ${agent} appears dead. Shell prompt visible. May need restart." \
+                        health_alert health_check
+                fi
             fi
         fi
     fi
