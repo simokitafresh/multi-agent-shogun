@@ -1,22 +1,17 @@
 task:
-  _ac_task_id: cmd_cycle_L4_035_impl
+  _ac_task_id: ci_fix_insight_sanitize
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 88572c76
+  ac_version: b99834bc
   acceptance_criteria:
-  - checks:
-    - check: scripts/lesson_edit.shの改善点を3つ特定し、各改善点の理由・変更箇所(行番号)・期待効果を報告に記載
-    id: AC1
-  - checks:
-    - check: 3つの改善点のうち1つを実装しgit commit。変更前後の動作差を説明
-    id: AC2
-  - checks:
-    - check: lesson_candidate found=true(スクリプト精査で発見した知見をtitle+detail+projectで記録)。全ACのbinary_checksをyes/noで記入。verdictをPASS/FAILで記入
-    id: AC3
+  - ac: 'AC1: insight_write.sh L145のpriorityフィールドにyaml_escape()が適用され、YAMLメタ文字を含むpriority値が安全に書込まれる'
+  - ac: 'AC2: bats tests/test_insight_sanitize.bats 全テスト(T-001〜T-008)がPASS、SKIP=0'
+  command: 'CI RED修正。scripts/insight_write.sh L145のpriority書込みにyaml_escape()が未適用。f.write(f''  priority:
+    {priority}\n'')をf.write(f''  priority: {yaml_escape(priority)}\n'')に変更せよ。yaml_escape関数はL137-139で定義済み(json.dumps)。テスト:
+    bats tests/test_insight_sanitize.bats のT-006がPASSすること。全テストもPASSすること。'
+  deployed_at: '2026-04-02T00:43:00'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────\n\n"
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -32,8 +27,8 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  parent_cmd: cmd_cycle_L4_035
+  parent_cmd: ci_fix
+  progress: ''
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -44,59 +39,58 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  report_filename: hayate_report_cmd_cycle_L4_035.yaml
-  report_path: queue/reports/hayate_report_cmd_cycle_L4_035.yaml
+  report_filename: hayate_report_ci_fix.yaml
+  report_path: queue/reports/hayate_report_ci_fix.yaml
+  scout_exempt: true
   status: done
   stop_for: []
-  task_id: cmd_cycle_L4_035_impl
+  target_path: scripts/insight_write.sh
+  task_id: ci_fix_insight_sanitize
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
-    source: karo_workarounds.yaml
-    total_workarounds: 23
-    top_pattern: report_yaml_format(12件)
-    breakdown: report_yaml_format(12件), commit_missing(3件), uncategorized(3件), double_deploy(2件),
-      report_missing(1件), task_redeploy(1件), ac_injection_failure(1件)
-    warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 29
+    top_pattern: 'report_yaml_format(12件)'
+    breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), double_deploy(2件), karo(2件), report_missing(1件), task_redeploy(1件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
-    - pattern: lu_reason_empty
-      count: 5
-    - pattern: bc_result_empty
-      count: 4
-    - pattern: field_missing
-      count: 4
-    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止;
-      必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
-    gate_blocks:
-    - reason: report_format
-      count: 15
-      hint: report YAMLのフォーマットエラー。report_field_set.sh使用必須
-    - reason: report_yaml_missing
-      count: 9
-      hint: report YAMLが存在しない。report_pathのファイルを作成・記入せよ
-    - reason: empty_lessons_useful
-      count: 7
-      hint: lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止
-    - reason: ac_version_mismatch
+    - pattern: 'bc_result_empty'
       count: 6
-      hint: ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込
-    - reason: lesson_candidate_no_reason_empty
+    - pattern: 'field_missing'
       count: 3
-      hint: lesson_candidate.found=false時はno_lesson_reasonに理由記入必須
-    - reason: lesson_candidate_parse_error
+    - pattern: 'lu_structure_error'
       count: 2
-      hint: lesson_candidateのYAML構文エラー。インデント・引用符を確認
-    - reason: binary_checks_fail
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 16
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'report_yaml_missing'
+      count: 12
+      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+    - reason: 'empty_lessons_useful'
+      count: 7
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'ac_version_mismatch'
+      count: 6
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+    - reason: 'lesson_candidate_no_reason_empty'
+      count: 3
+      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
+    - reason: 'binary_checks_fail'
+      count: 3
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'lesson_candidate_parse_error'
       count: 2
-      hint: binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認
-    - reason: lesson_candidate_fields_empty
+      hint: 'lesson_candidateのYAML構文エラー。インデント・引用符を確認'
+    - reason: 'lesson_candidate_fields_empty'
       count: 1
       hint: 'gate BLOCK: lesson_candidate_fields_empty'
-    - reason: invalid_lessons_useful_format
+    - reason: 'invalid_lessons_useful_format'
       count: 1
-      hint: lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止
-    - reason: lesson_candidate_missing
+      hint: 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止'
+    - reason: 'lesson_candidate_missing'
       count: 1
-      hint: lesson_candidate.found欄を必ず記入(true/false)。省略禁止
-  deployed_at: "2026-03-31T05:47:40"
+      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
