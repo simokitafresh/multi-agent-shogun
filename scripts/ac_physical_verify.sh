@@ -81,7 +81,7 @@ line_refs = re.findall(r'L(\d+)', cmd_text)
 section_refs = re.findall(r'§(\d+)', cmd_text)
 
 # Extract AC blocks
-ac_blocks = re.findall(r'(AC\d+[^A]*?)(?=AC\d+|$)', cmd_text, re.DOTALL)
+ac_blocks = re.findall(r'(AC\d+.*?)(?=AC\d+|$)', cmd_text, re.DOTALL)
 
 print('=== AC Physical Verification ===')
 print()
