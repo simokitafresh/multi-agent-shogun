@@ -6,35 +6,73 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_FILE="$SCRIPT_DIR/logs/gate_metrics.log"
-TMP_FILE="$(mktemp)"
-trap 'rm -f "$TMP_FILE"' EXIT
 
 if [ ! -f "$LOG_FILE" ]; then
     echo "gate metrics log not found: $LOG_FILE"
     exit 0
 fi
 
-# 履歴累積ではなく「cmdごとの最新1件」を対象にする
-awk -F'\t' '
-    NF >= 4 {
-        cmd = $2
-        last_status[cmd] = $3
-        last_reason[cmd] = $4
-    }
-    END {
-        for (cmd in last_status) {
-            printf "%s\t%s\t%s\n", cmd, last_status[cmd], last_reason[cmd]
-        }
-    }
-' "$LOG_FILE" > "$TMP_FILE"
+total_count=0
+clear_count=0
+block_count=0
+reason_rows=()
 
-read -r total_count clear_count block_count < <(
+# 履歴累積ではなく「cmdごとの最新1件」を対象にし、BLOCK理由は複合理由を分解して集計する
+while IFS=$'\t' read -r row_type col2 col3 col4; do
+    case "$row_type" in
+        SUMMARY)
+            total_count="$col2"
+            clear_count="$col3"
+            block_count="$col4"
+            ;;
+        REASON)
+            reason_rows+=("${col2}"$'\t'"${col3}")
+            ;;
+    esac
+done < <(
     awk -F'\t' '
-        { total++ }
-        $2=="CLEAR" { clear++ }
-        $2=="BLOCK" { block++ }
-        END { printf "%d %d %d\n", total+0, clear+0, block+0 }
-    ' "$TMP_FILE"
+        function trim(s) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+            return s
+        }
+        NF >= 4 {
+            cmd = $2
+            last_status[cmd] = $3
+            last_reason[cmd] = $4
+        }
+        END {
+            for (cmd in last_status) {
+                total++
+                if (last_status[cmd] == "CLEAR") {
+                    clear++
+                    continue
+                }
+                if (last_status[cmd] != "BLOCK") {
+                    continue
+                }
+
+                block++
+                reason_text = last_reason[cmd]
+                if (reason_text == "") {
+                    reason_count["(empty)"]++
+                    continue
+                }
+
+                split(reason_text, parts, /\|/)
+                for (i = 1; i <= length(parts); i++) {
+                    part = trim(parts[i])
+                    if (part != "") {
+                        reason_count[part]++
+                    }
+                }
+            }
+
+            printf "SUMMARY\t%d\t%d\t%d\n", total+0, clear+0, block+0
+            for (reason in reason_count) {
+                printf "REASON\t%d\t%s\n", reason_count[reason], reason
+            }
+        }
+    ' "$LOG_FILE"
 )
 
 if [ "$total_count" -gt 0 ]; then
@@ -55,7 +93,7 @@ if [ "$block_count" -eq 0 ]; then
     exit 0
 fi
 
-awk -F'\t' '$2=="BLOCK" { reason[$3]++ } END { for (r in reason) printf "%d\t%s\n", reason[r], r }' "$TMP_FILE" \
+printf '%s\n' "${reason_rows[@]}" \
     | sort -rn \
     | while IFS=$'\t' read -r count reason; do
         echo "  ${reason}: ${count}件"
