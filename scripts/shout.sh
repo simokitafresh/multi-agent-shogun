@@ -60,21 +60,18 @@ if [[ -f "$TASK_FILE" ]]; then
   fi
 fi
 
-# 優先2: 報告YAMLの result.summary 最初の行
+# 優先2: 報告YAMLの result.summary（yaml.safe_loadで全形式対応）
 if [[ -f "$REPORT_FILE" ]]; then
-  # summary: | の次の行（インデント付き）を取得
-  summary=$(sed -n '/^\s*summary:\s*|/,/^[^ ]/{/^\s*summary:/d;/^[^ ]/d;p;}' "$REPORT_FILE" \
-    | head -1 \
-    | sed 's/^\s*//' \
-    | sed 's/\s*$//' || true)
-
-  # summary: "inline" 形式のフォールバック
-  if [[ -z "$summary" ]]; then
-    summary=$(grep -m1 '^\s*summary:' "$REPORT_FILE" 2>/dev/null \
-      | sed 's/^[^:]*:\s*//' \
-      | sed 's/^["'\'']\|["'\''"]$//g' \
-      | sed 's/^\s*|$//' || true)
-  fi
+  summary=$(python3 -c "
+import yaml, sys
+try:
+    with open(sys.argv[1]) as f:
+        d = yaml.safe_load(f)
+    s = (d or {}).get('result', {}).get('summary', '') or ''
+    print(s.split('\n')[0].strip())
+except Exception:
+    pass
+" "$REPORT_FILE" 2>/dev/null || true)
 
   if [[ -n "$summary" ]]; then
     # 40文字で切る（bash substring = マルチバイト安全）
