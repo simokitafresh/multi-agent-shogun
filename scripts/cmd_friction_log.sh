@@ -37,9 +37,12 @@ fi
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # --- Escape YAML special characters in DETAIL ---
-# Double quotes and backslashes must be escaped to prevent YAML corruption
-DETAIL_ESCAPED="${DETAIL//\\/\\\\}"   # escape backslashes first
-DETAIL_ESCAPED="${DETAIL_ESCAPED//\"/\\\"}"  # then escape double quotes
+# YAML double-quoted strings require escaping: \ " and control characters
+DETAIL_ESCAPED="${DETAIL//\\/\\\\}"           # escape backslashes first
+DETAIL_ESCAPED="${DETAIL_ESCAPED//\"/\\\"}"   # escape double quotes
+DETAIL_ESCAPED="${DETAIL_ESCAPED//$'\n'/\\n}" # escape newlines
+DETAIL_ESCAPED="${DETAIL_ESCAPED//$'\t'/\\t}" # escape tabs
+DETAIL_ESCAPED="${DETAIL_ESCAPED//$'\r'/\\r}" # escape carriage returns
 
 # --- Append entry with flock ---
 (
