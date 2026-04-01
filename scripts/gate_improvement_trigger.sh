@@ -82,6 +82,34 @@ check_idempotent() {
     return 0  # 状態遷移 → 送信する
 }
 
+# --- 共通アラート送信パイプライン ---
+# 冪等性チェック → alert_id発行 → 3問組立て → inbox送信 → 記録 → ntfy通知
+# Returns: 0=sent, 1=skipped (idempotent)
+send_alert() {
+    local gate_name="$1"
+    local alert_lines="$2"
+
+    if ! check_idempotent "$gate_name" "$alert_lines"; then
+        echo "SKIP: ${gate_name} — 前回と同一ALERT状態。送信済み。"
+        return 1
+    fi
+
+    local alert_id
+    alert_id=$(get_next_alert_id)
+
+    local supplement
+    supplement=$(get_gate_supplement "$gate_name")
+    local message
+    message=$(build_three_questions "$gate_name" "$alert_id" "$alert_lines" "$supplement")
+
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_alert gate_improvement_trigger
+    record_alert "$alert_id" "$gate_name" "$alert_lines"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "【改善トリガー】${gate_name} ALERT (${alert_id})" || true
+
+    echo "SENT: ${gate_name} → ${alert_id}"
+    return 0
+}
+
 # --- 穴検出3問テンプレート + gate固有補足 ---
 build_three_questions() {
     local gate_name="$1"
@@ -133,46 +161,38 @@ get_gate_supplement() {
 process_gate() {
     local gate_name="$1"
     local gate_script="$2"
+    local extra_alert_exit="${3:-}"    # 追加ALERTとするexit code (e.g., "2")
+    local extra_alert_pattern="${4:-}" # 追加ALERTとするgrepパターン (e.g., "WARN:")
     local output
     local exit_code=0
 
     output=$($gate_script 2>&1) || exit_code=$?
 
     # ALERT判定: exit_code=1 または出力に "ALERT:" を含む
+    local is_alert=false
     if [ "$exit_code" -eq 1 ] || echo "$output" | grep -q "^ALERT:"; then
+        is_alert=true
+    fi
+    if [ -n "$extra_alert_exit" ] && [ "$exit_code" -eq "$extra_alert_exit" ]; then
+        is_alert=true
+    fi
+    if [ -n "$extra_alert_pattern" ] && echo "$output" | grep -q "^${extra_alert_pattern}"; then
+        is_alert=true
+    fi
+
+    if [ "$is_alert" = true ]; then
         # ALERT行を抽出（複数あり得る）
         local alert_lines
-        alert_lines=$(echo "$output" | grep "^ALERT:" | head -5)
+        if [ -n "$extra_alert_pattern" ]; then
+            alert_lines=$(echo "$output" | grep -E "^(ALERT|${extra_alert_pattern})" | head -5)
+        else
+            alert_lines=$(echo "$output" | grep "^ALERT:" | head -5)
+        fi
         if [ -z "$alert_lines" ]; then
             alert_lines="exit_code=$exit_code (ALERT detail not captured)"
         fi
 
-        # 冪等性チェック
-        if ! check_idempotent "$gate_name" "$alert_lines"; then
-            echo "SKIP: ${gate_name} — 前回と同一ALERT状態。送信済み。"
-            return 0
-        fi
-
-        # alert_id発行
-        local alert_id
-        alert_id=$(get_next_alert_id)
-
-        # 3問メッセージ組立て
-        local supplement
-        supplement=$(get_gate_supplement "$gate_name")
-        local message
-        message=$(build_three_questions "$gate_name" "$alert_id" "$alert_lines" "$supplement")
-
-        # 家老inboxに送信
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_alert gate_improvement_trigger
-
-        # gate_alerts.yaml記録
-        record_alert "$alert_id" "$gate_name" "$alert_lines"
-
-        # ntfy通知
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【改善トリガー】${gate_name} ALERT (${alert_id})" || true
-
-        echo "SENT: ${gate_name} → ${alert_id}"
+        send_alert "$gate_name" "$alert_lines" || true
     else
         # ALERT解消時: 状態ファイルをクリア（次回ALERTで再送可能にする）
         local state_file="${STATE_DIR}/gate_improvement_last_state_${gate_name}"
@@ -205,24 +225,7 @@ check_ci_red() {
     if [ "$latest_conclusion" = "failure" ]; then
         local alert_lines="ALERT: CI赤 — 最新mainブランチのCIが失敗"
 
-        if ! check_idempotent "$gate_name" "$alert_lines"; then
-            echo "SKIP: ${gate_name} — 前回と同一ALERT状態。送信済み。"
-            return 0
-        fi
-
-        local alert_id
-        alert_id=$(get_next_alert_id)
-
-        local supplement
-        supplement=$(get_gate_supplement "$gate_name")
-        local message
-        message=$(build_three_questions "$gate_name" "$alert_id" "$alert_lines" "$supplement")
-
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_alert gate_improvement_trigger
-        record_alert "$alert_id" "$gate_name" "$alert_lines"
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【改善トリガー】CI赤 ALERT (${alert_id})" || true
-
-        echo "SENT: ${gate_name} → ${alert_id}"
+        send_alert "$gate_name" "$alert_lines" || true
     else
         local state_file="${STATE_DIR}/gate_improvement_last_state_${gate_name}"
         if [ -f "$state_file" ]; then
@@ -245,50 +248,8 @@ process_gate "lesson_health" "bash $GATES_DIR/gate_lesson_health.sh"
 # (2) gate_cmd_state
 process_gate "cmd_state" "bash $GATES_DIR/gate_cmd_state.sh"
 
-# (3) gate_context_freshness (WARN/ALERT両方をトリガー対象)
-# context_freshnessはexit=2(WARN)もトリガー対象のため、専用処理
-process_gate_context_freshness() {
-    local gate_name="context_freshness"
-    local output
-    local exit_code=0
-
-    output=$(bash "$GATES_DIR/gate_context_freshness.sh" 2>&1) || exit_code=$?
-
-    # WARN(exit=2) または ALERT(exit=1)
-    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 2 ] || echo "$output" | grep -qE "^(ALERT|WARN):"; then
-        local alert_lines
-        alert_lines=$(echo "$output" | grep -E "^(ALERT|WARN):" | head -5)
-        if [ -z "$alert_lines" ]; then
-            alert_lines="exit_code=$exit_code"
-        fi
-
-        if ! check_idempotent "$gate_name" "$alert_lines"; then
-            echo "SKIP: ${gate_name} — 前回と同一状態。送信済み。"
-            return 0
-        fi
-
-        local alert_id
-        alert_id=$(get_next_alert_id)
-
-        local supplement
-        supplement=$(get_gate_supplement "$gate_name")
-        local message
-        message=$(build_three_questions "$gate_name" "$alert_id" "$alert_lines" "$supplement")
-
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_alert gate_improvement_trigger
-        record_alert "$alert_id" "$gate_name" "$alert_lines"
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【改善トリガー】${gate_name} (${alert_id})" || true
-
-        echo "SENT: ${gate_name} → ${alert_id}"
-    else
-        local state_file="${STATE_DIR}/gate_improvement_last_state_${gate_name}"
-        if [ -f "$state_file" ]; then
-            rm -f "$state_file"
-        fi
-        echo "OK: ${gate_name} — no ALERT/WARN"
-    fi
-}
-process_gate_context_freshness
+# (3) gate_context_freshness (WARN/ALERT両方をトリガー対象 — exit=2もALERT扱い)
+process_gate "context_freshness" "bash $GATES_DIR/gate_context_freshness.sh" "2" "WARN:"
 
 # (4) gate_p_average_freshness
 process_gate "p_average_freshness" "bash $GATES_DIR/gate_p_average_freshness.sh"
