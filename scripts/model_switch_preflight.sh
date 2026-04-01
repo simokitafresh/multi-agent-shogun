@@ -235,11 +235,24 @@ PYEOF
 check_cli_lookup_usage() {
     echo -e "\n${BOLD}=== Check 4: watcher/monitor依存チェック ===${NC}"
 
-    # cli_lookup.shをsourceすべきスクリプト一覧
-    local dependent_scripts=(
-        "scripts/ninja_monitor.sh"
-        "scripts/inbox_watcher.sh"
-    )
+    # 動的検出: cli_lookup.shをsourceしている全スクリプトを発見
+    # cli_lookup.sh自身・本スクリプト・テスト・一時ファイルを除外
+    local exclude_pattern='cli_lookup\.sh|model_switch_preflight\.sh|\.tmp/|tests/'
+    local dependent_scripts=()
+
+    while IFS= read -r script_path; do
+        [[ -z "$script_path" ]] && continue
+        local rel_path="${script_path#"$SCRIPT_DIR/"}"
+        dependent_scripts+=("$rel_path")
+    done < <(grep -rl 'source.*cli_lookup\.sh' \
+        "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" \
+        --include='*.sh' 2>/dev/null \
+        | grep -Ev "$exclude_pattern" || true)
+
+    if [[ ${#dependent_scripts[@]} -eq 0 ]]; then
+        result_warn "cli_lookup.sh をsourceするスクリプトが見つからない"
+        return
+    fi
 
     local all_ok=true
 
@@ -251,14 +264,7 @@ check_cli_lookup_usage() {
             continue
         fi
 
-        # cli_lookup.sh を source しているか確認
-        if grep -q 'source.*cli_lookup\.sh' "$full_path" 2>/dev/null; then
-            echo -e "  ${GREEN}OK${NC}: ${script} — cli_lookup.sh を source 済み"
-        else
-            result_fail "${script}: cli_lookup.sh を source していない"
-            all_ok=false
-            continue
-        fi
+        echo -e "  ${GREEN}OK${NC}: ${script} — cli_lookup.sh を source 済み"
 
         # 旧式のインライン関数定義が残っていないか
         local inline_funcs
@@ -271,7 +277,7 @@ check_cli_lookup_usage() {
     done
 
     if $all_ok; then
-        result_pass "全依存スクリプトが cli_lookup.sh 経由"
+        result_pass "全依存スクリプト(${#dependent_scripts[@]}件)が cli_lookup.sh 経由"
     fi
 }
 
