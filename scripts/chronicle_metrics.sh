@@ -71,7 +71,7 @@ def print_table(title: str, headers: list[str], rows: list[list[str]]) -> None:
     print()
 
 
-def parse_row(raw_line: str, lineno: int) -> tuple[str, str, str, str, str]:
+def parse_row(raw_line: str, lineno: int) -> tuple[str, str, str, str, str] | None:
     normalized = raw_line if raw_line.rstrip().endswith("|") else f"{raw_line} |"
     cells = [cell.strip() for cell in normalized.split("|")[1:-1]]
 
@@ -82,8 +82,8 @@ def parse_row(raw_line: str, lineno: int) -> tuple[str, str, str, str, str]:
             break
 
     if date_idx is None or date_idx < 2:
-        print(f"ERROR: malformed chronicle row at line {lineno}: {raw_line}", file=sys.stderr)
-        sys.exit(1)
+        print(f"WARNING: skipping malformed chronicle row at line {lineno}: {raw_line}", file=sys.stderr)
+        return None
 
     cmd_id = cells[0]
     mm_dd = cells[date_idx]
@@ -110,14 +110,18 @@ for lineno, raw_line in enumerate(chronicle_path.read_text(encoding="utf-8").spl
         print(f"ERROR: row encountered before month heading at line {lineno}", file=sys.stderr)
         sys.exit(1)
 
-    cmd_id, title, project, mm_dd, key_result = parse_row(raw_line, lineno)
+    parsed = parse_row(raw_line, lineno)
+    if parsed is None:
+        continue
+
+    cmd_id, title, project, mm_dd, key_result = parsed
 
     month, day = (int(piece) for piece in mm_dd.split("-", 1))
     try:
         record_date = date(current_year, month, day)
     except ValueError as exc:
-        print(f"ERROR: invalid date at line {lineno}: {mm_dd} ({exc})", file=sys.stderr)
-        sys.exit(1)
+        print(f"WARNING: skipping invalid date at line {lineno}: {mm_dd} ({exc})", file=sys.stderr)
+        continue
 
     records.append(
         {
