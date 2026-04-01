@@ -110,10 +110,14 @@ QG_TEMPLATE
     if ! echo "$CMD_BLOCK_NC" | grep -q "q4_depth:"; then
         echo "WARNING: q4_depth未記入。深堀り度を記入推奨: q4_depth: \"shallow/medium/deep — 理由\"" >&2
     else
-        # q4_depth値チェック: deep/mediumは時間コスト大。確認を促す（WARN_COUNTに加算しない）
+        # q4_depth値チェック: deep/mediumは時間コスト大。概算表示で確認を促す（WARN_COUNTに加算しない）
         _Q4_VAL=$(echo "$CMD_BLOCK_NC" | grep "q4_depth:" | head -1)
         if echo "$_Q4_VAL" | grep -qiE '\b(deep|medium)\b'; then
-            echo "WARNING: q4_depth=deep/medium — 時間コストが大きいcmdです。分割・並列化を検討しましたか？" >&2
+            if echo "$_Q4_VAL" | grep -qiE '\bdeep\b'; then
+                echo "WARNING: q4_depth=deep/medium — 時間コスト概算: 30-60分(全忍者投入)。時間は最も高価な資源。分割・並列化を検討せよ" >&2
+            else
+                echo "WARNING: q4_depth=deep/medium — 時間コスト概算: 15-30分(2-3忍者)。分割で時間短縮を検討せよ" >&2
+            fi
         fi
     fi
 
