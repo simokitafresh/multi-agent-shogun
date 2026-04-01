@@ -15,16 +15,46 @@ show_usage() {
     exit 1
 }
 
+show_fetch_error() {
+    local title="$1"
+    local message="$2"
+
+    cat <<MD
+# ${title}
+
+> ${message}
+MD
+}
+
+read_usage_status() {
+    local provider="$1"
+    local raw=""
+
+    if [[ "$provider" == "codex" ]]; then
+        raw=$(PROVIDER=codex "${SCRIPT_DIR}/usage_monitor.sh" --status 2>/dev/null) || true
+    else
+        raw=$("${SCRIPT_DIR}/usage_monitor.sh" --status 2>/dev/null) || true
+    fi
+
+    [[ -z "$raw" ]] && return 1
+
+    local slot_pct slot_reset week_pct week_reset
+    IFS=$'\t' read -r slot_pct slot_reset week_pct week_reset <<< "$raw"
+
+    [[ -z "${slot_pct:-}" ]] && return 1
+    [[ -z "${slot_reset:-}" ]] && return 1
+    [[ -z "${week_pct:-}" ]] && return 1
+    [[ -z "${week_reset:-}" ]] && return 1
+
+    printf '%s\t%s\t%s\t%s\n' "$slot_pct" "$slot_reset" "$week_pct" "$week_reset"
+}
+
 format_claude() {
     local raw
-    raw=$("${SCRIPT_DIR}/usage_monitor.sh" --status 2>/dev/null) || true
+    raw=$(read_usage_status claude) || true
 
     if [[ -z "$raw" ]]; then
-        cat <<'MD'
-# Claude Usage
-
-> データ取得に失敗しました
-MD
+        show_fetch_error "Claude Usage" "データ取得に失敗しました"
         return
     fi
 
@@ -61,12 +91,13 @@ MD
 
 format_openai() {
     local codex_db="${HOME}/.codex/state_5.sqlite"
-    if [[ ! -f "$codex_db" ]]; then
-        cat <<'MD'
-# OpenAI (Codex) Usage
+    if ! command -v sqlite3 >/dev/null 2>&1; then
+        show_fetch_error "OpenAI (Codex) Usage" "sqlite3 が見つかりません"
+        return
+    fi
 
-> Codex CLIデータが見つかりません
-MD
+    if [[ ! -f "$codex_db" ]]; then
+        show_fetch_error "OpenAI (Codex) Usage" "Codex CLIデータが見つかりません"
         return
     fi
 
@@ -101,6 +132,17 @@ MD
     local active
     active=$(sqlite3 "$codex_db" "SELECT COUNT(*) FROM threads WHERE model_provider='openai' AND updated_at > $((now - 1800));" 2>/dev/null) || active=0
 
+    local status_raw h5_left h5_reset d7_left d7_reset
+    status_raw=$(read_usage_status codex) || true
+    if [[ -n "$status_raw" ]]; then
+        IFS=$'\t' read -r h5_left h5_reset d7_left d7_reset <<< "$status_raw"
+    else
+        h5_left="--"
+        h5_reset="--"
+        d7_left="--"
+        d7_reset="--"
+    fi
+
     cat <<MD
 # OpenAI (Codex) Usage
 
@@ -113,9 +155,11 @@ MD
 | 7日間 | ${d7_fmt} | ${d7_sessions} |
 
 ## ステータス
+- **5時間残量**: ${h5_left}% (リセット: ${h5_reset})
+- **7日間残量**: ${d7_left}% (リセット: ${d7_reset})
 - **アクティブセッション** (30分内): ${active}
 - **認証モード**: ChatGPT (Pro)
-- **データソース**: Codex CLI ローカルDB
+- **データソース**: Codex CLI ローカルDB + usage_monitor.sh
 MD
 }
 
