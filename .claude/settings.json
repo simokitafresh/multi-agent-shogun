@@ -14,43 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/block_destructive.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-no-verify-guard.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/pre-bash-report-deny.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-yaml-dump-guard.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-config-guard.sh"
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-combined.sh"
           }
         ]
       },
@@ -68,25 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-read-tracker.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-edit-report-deny.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-edit-workaround-deny.sh"
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-edit-combined.sh"
           }
         ]
       }
@@ -97,16 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/test_result_guard.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-bash-commit-reminder.sh"
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-bash-combined.sh"
           }
         ]
       },
@@ -124,15 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-write-shellcheck.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-edit-report-guard.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-edit-instruction-hook-consistency.sh"
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-write-edit-combined.sh"
           }
         ]
       }

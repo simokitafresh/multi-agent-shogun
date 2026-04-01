@@ -2,78 +2,32 @@
 set -eu
 
 payload="$(cat 2>/dev/null || true)"
-if [ -z "${payload//[[:space:]]/}" ]; then
-    exit 0
-fi
+[[ -z "${payload//[[:space:]]/}" ]] && exit 0
 
-HOOK_PAYLOAD="$payload" python3 - <<'PY'
-import json
-import os
-import sys
+# Fast-path: skip if not Bash tool
+[[ "$payload" != *'"Bash"'* ]] && exit 0
+# Fast-path: skip if no yaml.dump keyword
+[[ "$payload" != *'yaml.dump'* && "$payload" != *'yaml.safe_dump'* ]] && exit 0
 
+# Extract command with jq
+command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)" || exit 0
+[[ -z "$command" ]] && exit 0
 
-def load_payload(raw: str) -> dict:
-    try:
-        data = json.loads(raw)
-    except Exception:
-        return {}
-    return data if isinstance(data, dict) else {}
+# Check all 3 conditions: python invocation + yaml.dump + operational target
+invokes_python=false
+[[ "$command" == *'python3'* || "$command" == *'python '* || "$command" == *'python	'* || "$command" == *'python -'* ]] && invokes_python=true
+[[ "$invokes_python" == "false" ]] && exit 0
 
+has_yaml_dump=false
+[[ "$command" == *'yaml.dump'* || "$command" == *'yaml.safe_dump'* ]] && has_yaml_dump=true
+[[ "$has_yaml_dump" == "false" ]] && exit 0
 
-def extract_tool_name(data: dict) -> str:
-    value = data.get("tool_name") or data.get("toolName") or ""
-    return value if isinstance(value, str) else ""
+targets_operational=false
+for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/"; do
+    [[ "$command" == *"$pattern"* ]] && { targets_operational=true; break; }
+done
+[[ "$targets_operational" == "false" ]] && exit 0
 
-
-def extract_command(data: dict) -> str:
-    tool_input = data.get("tool_input") or data.get("toolInput") or {}
-    if not isinstance(tool_input, dict):
-        return ""
-    value = tool_input.get("command") or tool_input.get("cmd") or ""
-    return value if isinstance(value, str) else ""
-
-
-def emit_deny(reason: str) -> None:
-    payload = {
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "deny",
-            "permissionDecisionReason": reason,
-        }
-    }
-    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
-
-
-data = load_payload(os.environ.get("HOOK_PAYLOAD", ""))
-if extract_tool_name(data) != "Bash":
-    raise SystemExit(0)
-
-command = extract_command(data)
-if not command:
-    raise SystemExit(0)
-
-# Detect yaml.dump / yaml.safe_dump in Python execution targeting operational YAML files
-# Only block when Python is being invoked (not when yaml.dump appears as text in bash args)
-invokes_python = any(tok in command for tok in ["python3", "python ", "python\t", "python -"])
-has_yaml_dump = "yaml.dump" in command or "yaml.safe_dump" in command
-targets_operational = any(
-    pattern in command
-    for pattern in [
-        "queue/",
-        "tasks/",
-        "shogun_to_karo",
-        "karo_snapshot",
-        "inbox/",
-        "reports/",
-    ]
-)
-
-if invokes_python and has_yaml_dump and targets_operational:
-    emit_deny(
-        "BLOCKED: yaml.dump on operational YAML is forbidden (data loss risk). "
-        "Use: bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>"
-    )
-    raise SystemExit(1)
-
-raise SystemExit(0)
-PY
+# All 3 conditions met → DENY
+printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"BLOCKED: yaml.dump on operational YAML is forbidden (data loss risk). Use: bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>"}}\n'
+exit 1

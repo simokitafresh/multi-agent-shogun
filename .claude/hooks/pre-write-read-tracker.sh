@@ -6,36 +6,23 @@ set -eu
 # - PreToolUse Write|Edit: tmpにfile_pathがあるか確認 → 未Read+既存ファイル → deny
 
 payload="$(cat 2>/dev/null || true)"
-if [ -z "${payload//[[:space:]]/}" ]; then
-    exit 0
-fi
+[[ -z "${payload//[[:space:]]/}" ]] && exit 0
+
+# Fast-path: only process Read/Write/Edit
+[[ "$payload" != *'"Read"'* && "$payload" != *'"Write"'* && "$payload" != *'"Edit"'* ]] && exit 0
+
+# Extract tool_name and file_path with single jq call
+_parsed="$(printf '%s' "$payload" | jq -r '[(.tool_name // .toolName // ""), ((.tool_input // .toolInput // {}) | .file_path // .filePath // .path // "")] | @tsv' 2>/dev/null)" || exit 0
+tool_name="${_parsed%%	*}"
+file_path="${_parsed#*	}"
+
+[[ -z "$file_path" ]] && exit 0
 
 # Get agent_id from tmux (fallback to 'unknown' on failure)
 agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo 'unknown')"
-if [ -z "$agent_id" ]; then
-    agent_id="unknown"
-fi
+[[ -z "$agent_id" ]] && agent_id="unknown"
 
 LOG_FILE="/tmp/claude_read_log_${agent_id}.txt"
-
-# Extract tool_name and file_path from JSON payload
-tool_name="$(printf '%s' "$payload" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print(d.get('tool_name', d.get('toolName', '')))" 2>/dev/null || true)"
-
-file_path="$(printf '%s' "$payload" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-ti = d.get('tool_input', d.get('toolInput', {}))
-if isinstance(ti, dict):
-    print(ti.get('file_path', ti.get('filePath', ti.get('path', ''))))
-else:
-    print('')" 2>/dev/null || true)"
-
-if [ -z "$file_path" ]; then
-    exit 0
-fi
 
 case "$tool_name" in
     Read)

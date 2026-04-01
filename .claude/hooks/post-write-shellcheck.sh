@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # PostToolUse hook — WARN mode. Must NEVER exit non-zero (GP-095: crash耐性).
-_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || true
 
 payload="$(cat 2>/dev/null || true)"
-if [ -z "${payload//[[:space:]]/}" ]; then
-    exit 0
-fi
+[[ -z "${payload//[[:space:]]/}" ]] && exit 0
+
+# Fast-path: skip if not Write/Edit
+[[ "$payload" != *'"Write"'* && "$payload" != *'"Edit"'* ]] && exit 0
+# Fast-path: skip if no .sh or .bash file extension in payload
+[[ "$payload" != *'.sh"'* && "$payload" != *'.sh'* && "$payload" != *'.bash"'* && "$payload" != *'.bash'* ]] && exit 0
+
+# Defer PROJECT_ROOT computation to after fast-path checks
+_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || true
 
 HOOK_PAYLOAD="$payload" PROJECT_ROOT="${_PROJECT_ROOT:-/mnt/c/tools/multi-agent-shogun}" python3 - <<'PY'
 import json

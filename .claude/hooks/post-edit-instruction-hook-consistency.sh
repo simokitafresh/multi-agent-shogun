@@ -12,10 +12,14 @@
 # GP-095: crash耐性 — PostToolUse hookは非ゼロ終了禁止
 
 payload="$(cat 2>/dev/null || true)"
-if [ -z "${payload//[[:space:]]/}" ]; then
-    exit 0
-fi
+[[ -z "${payload//[[:space:]]/}" ]] && exit 0
 
+# Fast-path: skip if not Edit/Write
+[[ "$payload" != *'"Edit"'* && "$payload" != *'"Write"'* ]] && exit 0
+# Fast-path: skip if file is not an instruction or hook file
+[[ "$payload" != *'CLAUDE.md'* && "$payload" != *'instructions/'* && "$payload" != *'.claude/hooks/'* ]] && exit 0
+
+# Defer PROJECT_ROOT to after fast-path
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 HOOK_PAYLOAD="$payload" PROJECT_ROOT="$PROJECT_ROOT" python3 - <<'PY'

@@ -11,77 +11,20 @@
 set -eu
 
 payload="$(cat 2>/dev/null || true)"
-if [ -z "${payload//[[:space:]]/}" ]; then
-    exit 0
+[[ -z "${payload//[[:space:]]/}" ]] && exit 0
+
+# Fast-path: skip if not Edit/Write or not workaround file
+[[ "$payload" != *'"Edit"'* && "$payload" != *'"Write"'* ]] && exit 0
+[[ "$payload" != *'karo_workarounds.yaml'* ]] && exit 0
+
+# Extract file_path with jq
+file_path="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .file_path // .filePath // .path // empty' 2>/dev/null)" || exit 0
+[[ -z "$file_path" ]] && exit 0
+
+# Pattern: logs/karo_workarounds.yaml
+if [[ "$file_path" == *'logs/karo_workarounds.yaml' ]]; then
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"BLOCKED: karo_workarounds.yamlへの直接Edit/Write禁止。\\nWHY: karo_workaround_log.sh経由でのみ記録可。ALERTメカニズム(3件同一カテゴリでntfy通知)が発火するために必須。\\nWA記録: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> <修正内容> <根本原因>"}}\n'
+    exit 1
 fi
 
-HOOK_PAYLOAD="$payload" python3 - <<'PY'
-import json
-import os
-import re
-import sys
-
-
-def load_payload(raw: str) -> dict:
-    try:
-        data = json.loads(raw)
-    except Exception:
-        return {}
-    return data if isinstance(data, dict) else {}
-
-
-def extract_tool_name(data: dict) -> str:
-    value = data.get("tool_name") or data.get("toolName") or ""
-    return value if isinstance(value, str) else ""
-
-
-def extract_file_path(data: dict) -> str:
-    tool_input = data.get("tool_input") or data.get("toolInput") or {}
-    if not isinstance(tool_input, dict):
-        return ""
-    for key in ("file_path", "filePath", "path"):
-        value = tool_input.get(key)
-        if isinstance(value, str) and value:
-            return value
-    return ""
-
-
-def emit_deny(file_path: str):
-    payload = {
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "deny",
-            "permissionDecisionReason": (
-                f"BLOCKED: karo_workarounds.yamlへの直接Edit/Write禁止。\n"
-                f"対象: {file_path}\n"
-                f"WHY: karo_workaround_log.sh経由でのみ記録可。"
-                f"ALERTメカニズム(3件同一カテゴリでntfy通知)が発火するために必須。\n"
-                f"WA記録: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "
-                f'"<修正内容>" "<根本原因>"\n'
-                f"CLEAN記録: bash scripts/karo_workaround_log.sh --clean <cmd_id> <ninja_name> "
-                f'"<詳細>"'
-            ),
-        }
-    }
-    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
-
-
-data = load_payload(os.environ.get("HOOK_PAYLOAD", ""))
-tool_name = extract_tool_name(data)
-
-# Edit/Write のみ対象
-if tool_name not in ("Edit", "Write"):
-    raise SystemExit(0)
-
-file_path = extract_file_path(data)
-if not file_path:
-    raise SystemExit(0)
-
-# パターン: logs/karo_workarounds.yaml
-if not re.search(r"logs/karo_workarounds\.yaml$", file_path):
-    raise SystemExit(0)
-
-# DENY: 直接Edit/Writeを拒否
-emit_deny(file_path)
-raise SystemExit(1)
-PY
+exit 0

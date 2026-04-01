@@ -4,9 +4,14 @@
 set -eu
 
 payload="$(cat 2>/dev/null || true)"
-if [ -z "${payload//[[:space:]]/}" ]; then
-    exit 0
-fi
+[[ -z "${payload//[[:space:]]/}" ]] && exit 0
+
+# Fast-path: skip if not Bash tool
+[[ "$payload" != *'"Bash"'* ]] && exit 0
+# Fast-path: skip if no test-related keywords in payload
+[[ "$payload" != *'pytest'* && "$payload" != *'bats'* && "$payload" != *'jest'* && \
+   "$payload" != *'npm test'* && "$payload" != *'pnpm test'* && "$payload" != *'yarn test'* && \
+   "$payload" != *'bun test'* && "$payload" != *'py.test'* ]] && exit 0
 
 HOOK_PAYLOAD="$payload" python3 - <<'PY'
 import json

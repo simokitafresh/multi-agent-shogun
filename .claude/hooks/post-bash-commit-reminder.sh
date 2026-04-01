@@ -7,9 +7,12 @@
 set -eu
 
 payload="$(cat 2>/dev/null || true)"
-if [ -z "${payload//[[:space:]]/}" ]; then
-    exit 0
-fi
+[[ -z "${payload//[[:space:]]/}" ]] && exit 0
+
+# Fast-path: skip if not Bash or no inbox_write+report_received keywords
+[[ "$payload" != *'"Bash"'* ]] && exit 0
+[[ "$payload" != *'inbox_write'* ]] && exit 0
+[[ "$payload" != *'report_received'* ]] && exit 0
 
 HOOK_PAYLOAD="$payload" SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)" python3 - <<'PY'
 import json
