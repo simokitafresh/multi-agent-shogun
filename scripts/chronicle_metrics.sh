@@ -146,7 +146,18 @@ project_rows = [[project, str(count)] for project, count in sorted(project_count
 type_counts = Counter(str(record["type"]) for record in records)
 type_rows = [[type_name, str(count)] for type_name, count in sorted(type_counts.items(), key=lambda item: (-item[1], item[0]))]
 
+recent_30_start = today - timedelta(days=29)
+recent_records = [r for r in records if recent_30_start <= r["date"] <= today]
+
+recent_project_counts = Counter(str(r["project"]) for r in recent_records)
+recent_project_rows = [[p, str(c)] for p, c in sorted(recent_project_counts.items(), key=lambda x: (-x[1], x[0]))]
+
+recent_type_counts = Counter(str(r["type"]) for r in recent_records)
+recent_type_rows = [[t, str(c)] for t, c in sorted(recent_type_counts.items(), key=lambda x: (-x[1], x[0]))]
+
 print_table("Recent completion counts", ["window", "start_date", "end_date", "count", "avg/day"], recent_rows)
-print_table("Project distribution", ["project", "count"], project_rows)
-print_table("Type distribution", ["type", "count"], type_rows)
+print_table("Project distribution (all time)", ["project", "count"], project_rows)
+print_table("Project distribution (last 30 days)", ["project", "count"], recent_project_rows)
+print_table("Type distribution (all time)", ["type", "count"], type_rows)
+print_table("Type distribution (last 30 days)", ["type", "count"], recent_type_rows)
 PY
