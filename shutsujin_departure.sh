@@ -753,7 +753,7 @@ if [ "$SETUP_ONLY" = false ]; then
 
     # 将軍: CLI Adapter経由でコマンド構築
     _shogun_cli_type="claude"
-    _shogun_cmd="claude --model opus --dangerously-skip-permissions"
+    _shogun_cmd="claude --dangerously-skip-permissions"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _shogun_cli_type=$(get_cli_type "shogun")
         _shogun_cmd=$(build_cli_command "shogun")
@@ -775,7 +775,7 @@ if [ "$SETUP_ONLY" = false ]; then
     # 家老（pane 0）: CLI Adapter経由でコマンド構築
     p=${PANE_IDS[0]}
     _karo_cli_type="claude"
-    _karo_cmd="claude --model opus --dangerously-skip-permissions"
+    _karo_cmd="claude --dangerously-skip-permissions"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _karo_cli_type=$(get_cli_type "karo")
         _karo_cmd=$(build_cli_command "karo")
@@ -792,12 +792,12 @@ if [ "$SETUP_ONLY" = false ]; then
             p=${PANE_IDS[$i]}
             ninja_name="${AGENT_IDS[$i]}"
             _ashi_cli_type="claude"
-            _ashi_cmd="claude --model opus --dangerously-skip-permissions"
+            _ashi_cmd="claude --dangerously-skip-permissions"
             if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _ashi_cli_type=$(get_cli_type "${ninja_name}")
                 if [ "$_ashi_cli_type" = "claude" ]; then
                     # 決戦モード: claudeは全員Opus強制
-                    _ashi_cmd="claude --model opus --dangerously-skip-permissions"
+                    _ashi_cmd="claude --dangerously-skip-permissions"
                 else
                     _ashi_cmd=$(build_cli_command "${ninja_name}")
                 fi
@@ -813,7 +813,7 @@ if [ "$SETUP_ONLY" = false ]; then
             p=${PANE_IDS[$i]}
             ninja_name="${AGENT_IDS[$i]}"
             _ashi_cli_type="claude"
-            _ashi_cmd="claude --model opus --dangerously-skip-permissions"
+            _ashi_cmd="claude --dangerously-skip-permissions"
             if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _ashi_cli_type=$(get_cli_type "${ninja_name}")
                 _ashi_cmd=$(build_cli_command "${ninja_name}")
