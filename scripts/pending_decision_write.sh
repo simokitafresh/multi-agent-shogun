@@ -152,7 +152,7 @@ cmd_create() {
     init_data_file
 
     local TIMESTAMP
-    TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
+    TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
 
     attempt=0
     max_attempts=3
@@ -274,7 +274,7 @@ cmd_resolve() {
     init_data_file
 
     local TIMESTAMP
-    TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
+    TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
 
     attempt=0
     max_attempts=3
@@ -418,7 +418,7 @@ PY
 )
 
             local TODO_TIMESTAMP
-            TODO_TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
+            TODO_TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
             echo "$TODO_TIMESTAMP  $PD_ID → $CONTEXT_FILE に反映必要" >> "$TODO_LOG"
             echo "[pending_decision] TODO追記: $PD_ID → $CONTEXT_FILE"
 
