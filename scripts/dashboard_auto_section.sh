@@ -226,6 +226,7 @@ STREAK=0
 STREAK_START=""
 STREAK_END=""
 TOTAL_CMDS=0
+declare -A CLEARED_CMDS=()
 
 if [[ -f "$GATE_LOG" ]]; then
     # Cmd-latest dedup (exclude test cmds), sorted by timestamp
@@ -256,6 +257,7 @@ if [[ -f "$GATE_LOG" ]]; then
             fi
             STREAK=$((STREAK + 1))
             STREAK_END="$_cmd"
+            CLEARED_CMDS[$_cmd]=1
         else
             STREAK=0
             STREAK_START=""
@@ -266,13 +268,7 @@ if [[ -f "$GATE_LOG" ]]; then
     # Last GATE time (informational only, not rendered in dashboard)
 fi
 
-# Build CLEAR'd cmd set for pipeline filtering (must be outside subshell blocks)
-declare -A CLEARED_CMDS=()
-if [[ -s "$TMP_METRICS" ]]; then
-    while IFS=$'\t' read -r _ts _cmd _result; do
-        [[ "$_result" == "CLEAR" ]] && CLEARED_CMDS[$_cmd]=1
-    done < "$TMP_METRICS"
-fi
+# CLEARED_CMDS is now populated in the streak loop above (single-pass optimization)
 
 # ─── Knowledge metrics (cached — only re-run when gate_metrics.log changes) ───
 KM_INJECT_RATE="—"
