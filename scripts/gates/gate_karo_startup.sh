@@ -73,8 +73,8 @@ for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
     if [ -n "$pane_idx" ]; then
         ctx=$(tmux capture-pane -t "shogun:2.$pane_idx" -p 2>/dev/null | grep -oP 'CTX:\K[0-9]+%' | tail -1)
         task_status=$(awk '/^  status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
-        if [[ "$task_status" =~ ^(assigned|in_progress)$ && "$ctx" == "0%" ]]; then
-            echo "  ⚠ $ninja: CTX=$ctx status=$task_status → STALL疑い"
+        if [[ "$task_status" =~ ^(assigned|in_progress)$ && ( "$ctx" == "0%" || -z "$ctx" ) ]]; then
+            echo "  ⚠ $ninja: CTX=${ctx:-EMPTY} status=$task_status → STALL疑い"
             stall_count=$((stall_count + 1))
         else
             echo "  $ninja: CTX=${ctx:-?} status=${task_status:-?}"
