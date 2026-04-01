@@ -9,6 +9,7 @@ PD_FILE="$ROOT_DIR/queue/pending_decisions.yaml"
 CMD_FILE="$ROOT_DIR/queue/shogun_to_karo.yaml"
 DASHBOARD_FILE="$ROOT_DIR/dashboard.md"
 SNAPSHOT_FILE="$ROOT_DIR/queue/karo_snapshot.txt"
+SNAPSHOT_STALE_THRESHOLD=600  # 10分（秒）
 
 pd_count=0
 pd_ids="なし"
@@ -129,6 +130,19 @@ if [ -f "$SNAPSHOT_FILE" ]; then
   ninja_blocked="${rest#*|}"
 fi
 
+# 陣形図の鮮度チェック
+snapshot_stale=false
+snapshot_age_min=0
+if [ -f "$SNAPSHOT_FILE" ]; then
+  snapshot_mtime=$(stat -c %Y "$SNAPSHOT_FILE" 2>/dev/null || echo 0)
+  now=$(date +%s)
+  snapshot_age_sec=$((now - snapshot_mtime))
+  snapshot_age_min=$((snapshot_age_sec / 60))
+  if [ "$snapshot_age_sec" -gt "$SNAPSHOT_STALE_THRESHOLD" ]; then
+    snapshot_stale=true
+  fi
+fi
+
 echo "=== clear_prep_check $(date '+%Y-%m-%dT%H:%M:%S%z') ==="
 echo "[PD未決] ${pd_count}件: ${pd_ids}"
 echo "[cmd pending] ${cmd_count}件: ${cmd_ids}"
@@ -141,6 +155,9 @@ else
   echo "  - なし"
 fi
 echo "[忍者] 稼働${ninja_active} / idle${ninja_idle} / blocked${ninja_blocked}"
+if [ "$snapshot_stale" = true ]; then
+  echo "  ⚠ 陣形図が古い (${snapshot_age_min}分前更新)"
+fi
 
 # ALERT/OK判定
 issues=0
@@ -160,6 +177,10 @@ fi
 if [ "$ninja_blocked" -gt 0 ]; then
   issues=$((issues + ninja_blocked))
   issue_reasons+=("blocked${ninja_blocked}")
+fi
+if [ "$snapshot_stale" = true ]; then
+  issues=$((issues + 1))
+  issue_reasons+=("陣形図stale_${snapshot_age_min}min")
 fi
 
 if [ "$issues" -gt 0 ]; then
