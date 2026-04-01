@@ -40,14 +40,28 @@ fi
     declare -A category_counts
 
     while IFS= read -r _wpc_line; do
-        # issue行を抽出
-        if [[ "$_wpc_line" =~ issue:\ \"?\'?([^\"\'[:space:]]+) ]]; then
+        # issue行を抽出（double-quoted → single-quoted → unquoted の順で試行）
+        _wpc_issue=""
+        if [[ "$_wpc_line" =~ issue:\ +\"([^\"]+)\" ]]; then
             _wpc_issue="${BASH_REMATCH[1]}"
+        elif [[ "$_wpc_line" =~ issue:\ +\'([^\']+)\' ]]; then
+            _wpc_issue="${BASH_REMATCH[1]}"
+        elif [[ "$_wpc_line" =~ issue:\ +([^[:space:]\'\"]+) ]]; then
+            _wpc_issue="${BASH_REMATCH[1]}"
+        fi
+        if [[ -n "$_wpc_issue" ]]; then
             issue_counts["$_wpc_issue"]=$(( ${issue_counts["$_wpc_issue"]:-0} + 1 ))
         fi
-        # category行を抽出
-        if [[ "$_wpc_line" =~ category:\ \"?\'?([^\"\'[:space:]]+) ]]; then
+        # category行を抽出（double-quoted → single-quoted → unquoted の順で試行）
+        _wpc_cat=""
+        if [[ "$_wpc_line" =~ category:\ +\"([^\"]+)\" ]]; then
             _wpc_cat="${BASH_REMATCH[1]}"
+        elif [[ "$_wpc_line" =~ category:\ +\'([^\']+)\' ]]; then
+            _wpc_cat="${BASH_REMATCH[1]}"
+        elif [[ "$_wpc_line" =~ category:\ +([^[:space:]\'\"]+) ]]; then
+            _wpc_cat="${BASH_REMATCH[1]}"
+        fi
+        if [[ -n "$_wpc_cat" ]]; then
             category_counts["$_wpc_cat"]=$(( ${category_counts["$_wpc_cat"]:-0} + 1 ))
         fi
     done < "$LOG_FILE"
