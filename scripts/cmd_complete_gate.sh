@@ -294,47 +294,10 @@ EOF
     echo "CHANGELOG: ${cmd_id} recorded (project=${project})"
 }
 
-# ─── 軍師自動レビュー通知（cmd_1527: L3自動化） ───
-# 忍者reportのstatus:completedを検知 → gunshi inboxに自動通知
-# training/修行cmdはスキップ（AC2）
-notify_gunshi_for_report() {
-    local ninja_name="$1"
-    local report_path="$2"
-    local cmd_id="$3"
-
-    # AC2: training/修行cmdはスキップ
-    if [[ "$cmd_id" == cmd_training_* ]] || [[ "$cmd_id" == cmd_cycle_* ]]; then
-        echo "  gunshi_notify: SKIP (training cmd: ${cmd_id})"
-        return 0
-    fi
-
-    # 重複通知防止（フラグファイル）
-    local gates_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
-    mkdir -p "$gates_dir"
-    local flag_file="${gates_dir}/gunshi_notify_${ninja_name}.done"
-    if [ -f "$flag_file" ]; then
-        return 0
-    fi
-
-    # レポート内のstatus確認（completed or done）
-    local report_status
-    report_status=$(grep -E '^\s*status:' "$report_path" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
-    if [ "$report_status" != "completed" ] && [ "$report_status" != "done" ]; then
-        return 0
-    fi
-
-    # 軍師にinbox通知
-    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
-        "${ninja_name}報告完了。レビュー依頼: ${cmd_id} report=$(basename "$report_path")" \
-        report_review karo 2>/dev/null; then
-        echo "  gunshi_notify: SENT (${ninja_name} → gunshi)"
-        echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$flag_file"
-        echo "ninja: ${ninja_name}" >> "$flag_file"
-        echo "report: $(basename "$report_path")" >> "$flag_file"
-    else
-        echo "  gunshi_notify: WARN (inbox_write failed for ${ninja_name})"
-    fi
-}
+# ─── 軍師自動レビュー通知（cmd_1527: L3自動化, cmd_1665: 関数抽出） ───
+# source可能な独立関数に抽出済み。PROJECT_ROOT=$SCRIPT_DIR で互換性維持。
+export PROJECT_ROOT="$SCRIPT_DIR"
+source "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh"
 
 # ─── task_type検出: タスクYAMLからparent_cmd一致のtask_typeを収集 ───
 detect_task_types() {
@@ -345,7 +308,7 @@ detect_task_types() {
     for task_file in "$TASKS_DIR"/*.yaml; do
         [ -f "$task_file" ] || continue
         # parent_cmdが一致するか確認
-        if grep -q "parent_cmd: ${cmd_id}" "$task_file" 2>/dev/null; then
+        if is_cmd_task "$task_file"; then
             local ttype
             ttype=$(field_get "$task_file" "task_type" "")
             case "$ttype" in
@@ -479,9 +442,7 @@ collect_gate_metrics_extra() {
 
     for task_file in "$TASKS_DIR"/*.yaml; do
         [ -f "$task_file" ] || continue
-        if ! grep -q "parent_cmd: ${cmd_id}" "$task_file" 2>/dev/null; then
-            continue
-        fi
+        is_cmd_task "$task_file" || continue
 
         # task_type収集
         local ttype
@@ -1659,9 +1620,7 @@ preflight_gate_flags() {
         local pf_task_file
         for pf_task_file in "$TASKS_DIR"/*.yaml; do
             [ -f "$pf_task_file" ] || continue
-            if ! grep -q "parent_cmd: ${cmd_id}" "$pf_task_file" 2>/dev/null; then
-                continue
-            fi
+            is_cmd_task "$pf_task_file" || continue
             local pf_report_file pf_lc_found pf_ninja_name
             pf_ninja_name=$(basename "$pf_task_file" .yaml)
             pf_report_file=$(resolve_report_file "$pf_ninja_name")
@@ -1693,9 +1652,7 @@ preflight_gate_flags() {
         local pf_task_file
         for pf_task_file in "$TASKS_DIR"/*.yaml; do
             [ -f "$pf_task_file" ] || continue
-            if ! grep -q "parent_cmd: ${cmd_id}" "$pf_task_file" 2>/dev/null; then
-                continue
-            fi
+            is_cmd_task "$pf_task_file" || continue
             local pf_report_file pf_lc_found pf_ninja_name
             pf_ninja_name=$(basename "$pf_task_file" .yaml)
             pf_report_file=$(resolve_report_file "$pf_ninja_name")
@@ -1742,9 +1699,7 @@ preflight_gate_flags() {
     local tp_task_file
     for tp_task_file in "$TASKS_DIR"/*.yaml; do
         [ -f "$tp_task_file" ] || continue
-        if ! grep -q "parent_cmd: ${cmd_id}" "$tp_task_file" 2>/dev/null; then
-            continue
-        fi
+        is_cmd_task "$tp_task_file" || continue
         local tp_info
         # task.project と task.target_path を取得
         local _tp_project_id _tp_target_raw _tp_project_path
@@ -1822,6 +1777,19 @@ preflight_gate_flags() {
 # shellcheck disable=SC2034  # Used in gate check loop (L1858)
 DEFERRED_GATES=("archive")
 
+# ─── parent_cmd一致タスクファイルのキャッシュ（grep×26回→連想配列O(1)ルックアップ） ───
+declare -A _CMD_TASK_MAP
+MATCHING_TASK_FILES=()
+for _cache_tf in "$TASKS_DIR"/*.yaml; do
+    [ -f "$_cache_tf" ] || continue
+    if grep -q "parent_cmd: ${CMD_ID}" "$_cache_tf" 2>/dev/null; then
+        _CMD_TASK_MAP["$_cache_tf"]=1
+        MATCHING_TASK_FILES+=("$_cache_tf")
+    fi
+done
+# O(1) lookup: is_cmd_task "$task_file" → 0 if matching, 1 otherwise
+is_cmd_task() { [[ "${_CMD_TASK_MAP["$1"]+_}" ]]; }
+
 # ─── 必須フラグ構築 ───
 ALWAYS_REQUIRED=("archive" "lesson")
 
@@ -1848,9 +1816,7 @@ NORMALIZE_LOG="$SCRIPT_DIR/logs/normalize_report.log"
 echo "Normalize report candidates (B層):"
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -1872,9 +1838,7 @@ echo ""
 echo "Auto-draft lesson candidates:"
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -2036,9 +2000,7 @@ REPORT_MISSING_FILES=()
 REPORT_WAIT_NINJAS=()
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     REPORT_TASK_COUNT=$((REPORT_TASK_COUNT + 1))
     ninja_name=$(basename "$task_file" .yaml)
@@ -2138,9 +2100,7 @@ level_heading "[L1]" "Related lessons injection check:"
 RL_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     RL_CHECKED=true
     ninja_name=$(basename "$task_file" .yaml)
@@ -2168,9 +2128,7 @@ level_heading "[L2]" "Lessons useful check:"
 LESSON_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     # related_lessonsの有無をチェック（空リスト[]やnullは除外）
     rl_count=$(awk '/related_lessons:/,/^[^ ]/{if(/^\s*- /)c++} END{print c+0}' "$task_file" 2>/dev/null)
@@ -2273,9 +2231,7 @@ level_heading "[L3]" "AC version check:"
 AC_VERSION_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     AC_VERSION_CHECKED=true
     ninja_name=$(basename "$task_file" .yaml)
@@ -2341,9 +2297,7 @@ level_heading "[L1]" "Lesson candidate check:"
 LC_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2493,9 +2447,7 @@ level_heading "[L1]" "Binary checks validation:"
 BC_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2566,9 +2518,7 @@ level_heading "[L2]" "Purpose validation check:"
 PV_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2611,9 +2561,7 @@ else
     DC_DUP_CHECKED=false
     for task_file in "$TASKS_DIR"/*.yaml; do
         [ -f "$task_file" ] || continue
-        if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-            continue
-        fi
+        is_cmd_task "$task_file" || continue
 
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
@@ -2653,9 +2601,7 @@ level_heading "[L2]" "Deviation count check:"
 DEVIATION_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2717,9 +2663,7 @@ level_heading "[L2]" "Analysis paralysis check:"
 ANALYSIS_PARALYSIS_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2769,9 +2713,7 @@ level_heading "[L1]" "Skill candidate check:"
 SC_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2818,9 +2760,7 @@ level_heading "[L1]" "Decision candidate check:"
 DC_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2867,9 +2807,7 @@ level_heading "[L2]" "Implementation walkthrough check:"
 HOW_IT_WORKS_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     task_role=$(detect_task_role "$task_file")
     [ "$task_role" = "implement" ] || continue
@@ -2907,9 +2845,7 @@ IMPLEMENTER_IDS="|"
 REVIEWER_IDS="|"
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     task_role=$(detect_task_role "$task_file")
     ninja_name=$(basename "$task_file" .yaml)
@@ -3327,9 +3263,7 @@ level_heading "[L2]" "Test skip count check:"
 TEST_SKIP_CHECKED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3415,9 +3349,7 @@ level_heading "[L3]" "CI status check:"
 CI_PUSH_DETECTED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
-    if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-        continue
-    fi
+    is_cmd_task "$task_file" || continue
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -3559,9 +3491,7 @@ if [ "$ALL_CLEAR" = true ]; then
         SCORE_UPDATED=0
         for task_file in "$TASKS_DIR"/*.yaml; do
             [ -f "$task_file" ] || continue
-            if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-                continue
-            fi
+            is_cmd_task "$task_file" || continue
             ninja_name=$(basename "$task_file" .yaml)
             report_file=$(resolve_report_file "$ninja_name")
             if [ -f "$report_file" ]; then
@@ -3713,9 +3643,7 @@ if [ "$ALL_CLEAR" = true ]; then
     INSIGHT_COUNT=0
     for task_file in "$TASKS_DIR"/*.yaml; do
         [ -f "$task_file" ] || continue
-        if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-            continue
-        fi
+        is_cmd_task "$task_file" || continue
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
@@ -3779,9 +3707,7 @@ if [ "$ALL_CLEAR" = true ]; then
     LC_WARN_COUNT=0
     for task_file in "$TASKS_DIR"/*.yaml; do
         [ -f "$task_file" ] || continue
-        if ! grep -q "parent_cmd: ${CMD_ID}" "$task_file" 2>/dev/null; then
-            continue
-        fi
+        is_cmd_task "$task_file" || continue
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
