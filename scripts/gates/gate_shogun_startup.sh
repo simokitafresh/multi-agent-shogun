@@ -130,32 +130,55 @@ if [ -f "$INSIGHTS_FILE" ]; then
     total_status=$(grep -cE 'status: ' "$INSIGHTS_FILE" 2>/dev/null) || total_status=0
     remaining_count=$((total_status - archivable_count))
     if [ "$archivable_count" -ge 5 ]; then
-        # 閾値到達時のみPythonで実際のアーカイブ実行
-        archive_result=$(IFILE="$INSIGHTS_FILE" AFILE="$INSIGHTS_ARCHIVE" python3 -c '
-import yaml, os
-ifile = os.environ["IFILE"]
-afile = os.environ["AFILE"]
-with open(ifile) as f:
-    data = yaml.safe_load(f) or {}
-items = data.get("insights", [])
-archivable_statuses = {"done", "monitoring", "observation", "deferred"}
-archivable = [i for i in items if i.get("status") in archivable_statuses]
-remaining = [i for i in items if i.get("status") not in archivable_statuses]
-if os.path.exists(afile):
-    with open(afile) as f:
-        archive_data = yaml.safe_load(f) or {}
-else:
-    archive_data = {}
-archive_list = archive_data.get("insights", [])
-archive_list.extend(archivable)
-archive_data["insights"] = archive_list
-with open(afile, "w") as f:
-    yaml.dump(archive_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-data["insights"] = remaining
-with open(ifile, "w") as f:
-    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-print(f"ARCHIVED {len(archivable)}件→insights_archive.yaml, 残{len(remaining)}件")
-' 2>/dev/null || echo "ERROR: アーカイブ処理失敗")
+        # 閾値到達時のみテキストベースでアーカイブ実行（yaml.dump禁止準拠 cmd_training_L4_R7）
+        # gawkでinsightsブロックをstatus別に分離→テキスト追記/書戻し
+        _ins_tmp_archive=$(mktemp)
+        _ins_tmp_remain=$(mktemp)
+        _ins_counts=$(gawk -v arc_file="$_ins_tmp_archive" -v rem_file="$_ins_tmp_remain" '
+        BEGIN { in_item=0; buf=""; status="" }
+        /^insights:/ { next }
+        /^- / {
+            if (in_item && buf != "") { flush_item() }
+            in_item=1; buf=$0; status=""; next
+        }
+        /^[^ -]/ {
+            if (in_item && buf != "") { flush_item() }
+            in_item=0; buf=""; next
+        }
+        in_item {
+            buf = buf "\n" $0
+            if (/^  status: /) { s=$0; sub(/^  status: /, "", s); status=s }
+        }
+        function flush_item() {
+            if (status == "done" || status == "monitoring" || status == "observation" || status == "deferred") {
+                print buf > arc_file; arc++
+            } else {
+                print buf > rem_file; rem++
+            }
+        }
+        END {
+            if (in_item && buf != "") { flush_item() }
+            print arc+0, rem+0
+        }
+        ' "$INSIGHTS_FILE")
+        read -r _ins_archived _ins_remaining <<< "$_ins_counts"
+        # アーカイブ追記（既存ファイルの末尾に追記。ヘッダなければ追加）
+        if [ -s "$_ins_tmp_archive" ]; then
+            mkdir -p "$(dirname "$INSIGHTS_ARCHIVE")"
+            if [ ! -f "$INSIGHTS_ARCHIVE" ] || [ ! -s "$INSIGHTS_ARCHIVE" ]; then
+                echo "insights:" > "$INSIGHTS_ARCHIVE"
+            fi
+            cat "$_ins_tmp_archive" >> "$INSIGHTS_ARCHIVE"
+        fi
+        # メインファイル書戻し（残留分のみ）
+        {
+            echo "insights:"
+            if [ -s "$_ins_tmp_remain" ]; then
+                cat "$_ins_tmp_remain"
+            fi
+        } > "${INSIGHTS_FILE}.tmp" && mv "${INSIGHTS_FILE}.tmp" "$INSIGHTS_FILE"
+        rm -f "$_ins_tmp_archive" "$_ins_tmp_remain"
+        archive_result="ARCHIVED ${_ins_archived}件→insights_archive.yaml, 残${_ins_remaining}件"
     else
         archive_result="アーカイブ対象${archivable_count}件(閾値5未満), pending${remaining_count}件"
     fi
