@@ -96,7 +96,7 @@ yaml_escape_sq() {
 # --- Category auto-classification (AC2: cmd_1211) ---
 classify_category() {
     local issue="$1"
-    local pattern_report="lessons_useful|binary_checks|dict|list|string|フォーマット|lesson_candidate|report.*フォーマット|report_field_set|verdict|ac_version"
+    local pattern_report="lessons_useful|binary_checks|lesson_candidate|report_field_set|verdict|ac_version|report.*フォーマット|フォーマット|(dict|list|string).*(→|変換|形式)"
     local pattern_disappear="消失|missing|not found|消失|不在"
     local pattern_commit="commit|コミット|git commit|untracked|modified"
     local pattern_stale="stale|古い|残骸|旧cmd|残存"
@@ -164,7 +164,7 @@ count_category_entries() {
     }
     # Auto-classify entries without category from detail/issue
     /^  (detail|issue):/ && cat == "" {
-        if ($0 ~ /lessons_useful|binary_checks|dict|list|string|lesson_candidate/) cat="report_yaml_format"
+        if ($0 ~ /lessons_useful|binary_checks|lesson_candidate|report_field_set|verdict|ac_version|(dict|list|string).*(→|変換|形式)/) cat="report_yaml_format"
         else if ($0 ~ /missing|not found/) cat="file_disappearance"
         else cat="uncategorized"
     }
