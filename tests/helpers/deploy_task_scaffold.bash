@@ -83,3 +83,66 @@ EOF
 deploy_task_teardown() {
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
+
+deploy_task_fast() {
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+
+        parse_deploy_task_args "$@"
+        cleanup_none_task_files
+        deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
+
+        local task_file="$TEST_PROJECT/queue/tasks/${NINJA_NAME}.yaml"
+        normalize_task_yaml "$task_file" || true
+
+        if [ -n "$CMD_ID" ]; then
+            if [ "$DIRECT_MODE" = true ]; then
+                log "direct_mode(test): skipping resolve_cmd_to_task for ${CMD_ID}"
+            elif ! resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+                echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
+                return 1
+            fi
+        fi
+
+        inject_task_id "$task_file" || true
+        inject_ac_version "$task_file" || true
+        inject_related_lessons "$task_file" || true
+
+        local clear_fields clear_tmp
+        clear_fields="stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok"
+        clear_tmp=$(mktemp)
+        if awk -v fields="$clear_fields" '
+            BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0 }
+            {
+                if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
+                if (skip) {
+                    if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
+                    else { next }
+                }
+                if (indent == 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) {
+                    key = $0; sub(/^  /, "", key); sub(/:.*$/, "", key)
+                    if (key in fset) { skip = 1; next }
+                }
+                print
+            }
+        ' "$task_file" > "$clear_tmp" 2>/dev/null; then
+            mv "$clear_tmp" "$task_file"
+        else
+            rm -f "$clear_tmp"
+            return 1
+        fi
+
+        inject_task_modifiers "$task_file" || true
+        yaml_field_set "$task_file" "task" "report_filename" ""
+        yaml_field_set "$task_file" "task" "report_path" ""
+        inject_report_filename "$task_file" || true
+
+        local task_id parent_cmd project
+        task_id=$(field_get "$task_file" "task_id" "")
+        parent_cmd=$(field_get "$task_file" "parent_cmd" "")
+        project=$(field_get "$task_file" "project" "")
+        generate_report_template "$NINJA_NAME" "$task_id" "$parent_cmd" "$project"
+    )
+}

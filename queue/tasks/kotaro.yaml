@@ -1,35 +1,28 @@
 task:
-  task_id: cmd_training_L4_R11_kotaro
-  parent_cmd: cmd_training_L4_R11
+  task_id: cmd_training_L4_R12_kotaro
+  parent_cmd: cmd_training_L4_R12
   task_type: impl
   project: infra
-  status: done
-  target_path: tests/unit/test_cmd_save.bats
+  status: acknowledged
+  target_path: tests/unit/test_lesson_write.bats
   command: |
-    テスト速度最適化: test_cmd_save.batsを高速化せよ。
-
-    【確立済みパターン(チャンク1/4/5で実証: 48倍/16倍/21倍)】
-    1. cmd_save.shフル実行が遅い根因を特定
-    2. テスト対象の関数をcmd_save.shからsed -nで抽出+source
-    3. 関数を直接呼び出す単体テストに書き換え
-    4. cmd_save.shフル実行を排除
-
-    AC1: 現在の実行時間を計測し、ボトルネック関数を特定
-    AC2: 関数抽出+source方式に書き換え、実行時間を1/10以下に削減
-    AC3: 全テストPASS(SKIP=0)+lesson_candidate+binary_checks+verdict
-    ★ binary_checksはAC別セクション(AC1:/AC2:/AC3:)を維持して記入せよ
-    ★ bats tests/unit/全量実行禁止(OOM防止)。対象ファイルのみ実行
+    テスト速度最適化: test_lesson_write.batsを高速化せよ。
+    【パターン】lesson_write.shフル実行→関数抽出+source→単体テスト化
+    AC1: 現在の実行時間計測+ボトルネック関数特定
+    AC2: 関数抽出+source方式書き換え+10倍以上高速化
+    AC3: 全テストPASS(SKIP=0)+LC+BC+verdict
+    ★ bc構造(AC1:/AC2:/AC3:)維持。bats全量禁止(OOM)。対象ファイルのみ実行。
     参考: docs/research/test-optimization-journal.md
   acceptance_criteria:
-    - ac: "AC1: ボトルネック特定+現在の実行時間計測"
-    - ac: "AC2: 関数抽出+source方式書き換え+10倍以上高速化"
+    - ac: "AC1: ボトルネック特定+実行時間計測"
+    - ac: "AC2: 関数抽出+source方式+10倍以上高速化"
     - ac: "AC3: 全テストPASS(SKIP=0)+LC+BC+verdict"
   ac_priority: AC1 > AC2 > AC3
   parallel_ok: [AC1, AC2, AC3]
   stop_for:
-    - テスト対象関数がcmd_save.shのグローバル変数に強く依存し抽出不可能な場合→報告
+    - 関数がグローバル変数に強く依存し抽出不可能→報告
   never_stop_for:
-    - bats全量実行禁止(OOM防止)
-    - binary_checksのAC1/AC2/AC3セクション構造を消すな
+    - bats全量禁止(OOM)
+    - bc AC構造を消すな
   role_reminder: "忍者kotaro。このタスクのみ実行せよ。"
-  deployed_at: "2026-04-02T04:13:29+09:00"
+  deployed_at: "2026-04-02T05:28:51+09:00"

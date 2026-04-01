@@ -28,30 +28,13 @@ source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 
-# --direct: shogun_to_karo.yaml不要モード（修行タスク等、task YAML事前設定済み前提）
-# resolve_cmd_to_taskをスキップし、report template生成+stale cleanup+教訓注入のみ実行
-DIRECT_MODE=false
-if [[ "${1:-}" == "--direct" ]]; then
-    DIRECT_MODE=true
-    shift
-fi
-
-NINJA_NAME="${1:-}"
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
-
-# cmd_id自動検出: $2がcmd_+数字で始まればcmd_id、そうでなければmessage（後方互換）
-# 数字cmd(cmd_1234)、修行cmd(cmd_training_*)、サイクルcmd(cmd_cycle_*)等を全て検出
+DIRECT_MODE=false
+NINJA_NAME=""
 CMD_ID=""
-if [[ "${2:-}" =~ ^cmd_[a-zA-Z0-9_]+ ]]; then
-    CMD_ID="$2"
-    MESSAGE="${3:-$DEFAULT_MESSAGE}"
-    TYPE="${4:-task_assigned}"
-    FROM="${5:-karo}"
-else
-    MESSAGE="${2:-$DEFAULT_MESSAGE}"
-    TYPE="${3:-task_assigned}"
-    FROM="${4:-karo}"
-fi
+MESSAGE="$DEFAULT_MESSAGE"
+TYPE="task_assigned"
+FROM="karo"
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -92,25 +75,57 @@ cleanup_none_task_files() {
     done
 }
 
-cleanup_none_task_files
+parse_deploy_task_args() {
+    DIRECT_MODE=false
+    NINJA_NAME=""
+    CMD_ID=""
+    MESSAGE="$DEFAULT_MESSAGE"
+    TYPE="task_assigned"
+    FROM="karo"
 
-if [ -z "$NINJA_NAME" ] || [ "${NINJA_NAME,,}" = "none" ]; then
-    echo "ERROR: ninja_name is required and cannot be empty/None." >&2
-    echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
-    echo "例1: deploy_task.sh hanzo" >&2
-    echo "例2: deploy_task.sh hanzo \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
-    echo "受け取った引数: $*" >&2
-    exit 1
-fi
+    if [[ "${1:-}" == "--direct" ]]; then
+        DIRECT_MODE=true
+        shift
+    fi
 
-if [[ "$NINJA_NAME" == cmd_* ]]; then
-    echo "ERROR: 第1引数はninja_name（例: hanzo, hayate）。cmd_idではない。" >&2
-    echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
-    echo "例1: deploy_task.sh hanzo" >&2
-    echo "例2: deploy_task.sh hanzo \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
-    echo "受け取った引数: $*" >&2
-    exit 1
-fi
+    NINJA_NAME="${1:-}"
+
+    # cmd_id自動検出: $2がcmd_+数字で始まればcmd_id、そうでなければmessage（後方互換）
+    # 数字cmd(cmd_1234)、修行cmd(cmd_training_*)、サイクルcmd(cmd_cycle_*)等を全て検出
+    if [[ "${2:-}" =~ ^cmd_[a-zA-Z0-9_]+ ]]; then
+        CMD_ID="$2"
+        MESSAGE="${3:-$DEFAULT_MESSAGE}"
+        TYPE="${4:-task_assigned}"
+        FROM="${5:-karo}"
+    else
+        MESSAGE="${2:-$DEFAULT_MESSAGE}"
+        TYPE="${3:-task_assigned}"
+        FROM="${4:-karo}"
+    fi
+}
+
+deploy_task_validate_cli_target() {
+    local ninja_name="$1"
+    shift || true
+
+    if [ -z "$ninja_name" ] || [ "${ninja_name,,}" = "none" ]; then
+        echo "ERROR: ninja_name is required and cannot be empty/None." >&2
+        echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
+        echo "例1: deploy_task.sh hanzo" >&2
+        echo "例2: deploy_task.sh hanzo \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+        echo "受け取った引数: $*" >&2
+        return 1
+    fi
+
+    if [[ "$ninja_name" == cmd_* ]]; then
+        echo "ERROR: 第1引数はninja_name（例: hanzo, hayate）。cmd_idではない。" >&2
+        echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
+        echo "例1: deploy_task.sh hanzo" >&2
+        echo "例2: deploy_task.sh hanzo \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+        echo "受け取った引数: $*" >&2
+        return 1
+    fi
+}
 
 # ─── ペインターゲット解決 → lib/pane_lookup.sh に統合済み（pane_lookup関数） ───
 resolve_pane() {
@@ -2899,299 +2914,246 @@ notify_initial_deploy_ntfy_once() {
     return 0
 }
 
+deploy_task_apply_task_mutations() {
+    local ninja_name="${1:-$NINJA_NAME}"
+    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local task_status
+
+    task_status=$(field_get "$task_file" "status" "unknown")
+
+    if [ "$task_status" = "pending" ] || [ "$task_status" = "unknown" ]; then
+        yaml_field_set "$task_file" "task" "status" "assigned"
+        log "status_force: ${task_status} → assigned (Stage 1保護対象化)"
+        task_status="assigned"
+    fi
+
+    check_entrance_gate "$task_file"
+    check_scout_gate "$task_file"
+
+    inject_task_id "$task_file" || true
+    inject_ac_version "$task_file" || true
+    verify_ac_consistency "$task_file" || true
+    inject_related_lessons "$task_file" || true
+
+    local clear_fields clear_tmp
+    clear_fields="engineering_preferences|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
+    clear_tmp=$(mktemp)
+    if awk -v fields="$clear_fields" '
+        BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
+        {
+            if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
+            if (skip) {
+                if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
+                else { next }
+            }
+            if (indent == 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) {
+                key = $0; sub(/^  /, "", key); sub(/:.*$/, "", key)
+                if (key in fset) { skip = 1; cleared++; next }
+            }
+            print
+        }
+        END { if (cleared > 0) printf "[FIELD_CLEAR] Cleared %d fields\n", cleared > "/dev/stderr"
+              else printf "[FIELD_CLEAR] No fields to clear\n" > "/dev/stderr" }
+    ' "$task_file" > "$clear_tmp" 2>/dev/null; then
+        if [ -s "$clear_tmp" ]; then
+            mv "$clear_tmp" "$task_file"
+        else
+            rm -f "$clear_tmp"
+        fi
+    else
+        log "WARN: auto-inject field clear failed (non-fatal)"
+        rm -f "$clear_tmp"
+    fi
+
+    inject_task_modifiers "$task_file" || true
+    inject_engineering_preferences "$task_file" || true
+    postcondition_lesson_inject "$task_file" || true
+
+    local pc_file inj_project inj_ids lid
+    pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
+    if [ -f "$pc_file" ]; then
+        inj_project=$(grep '^project=' "$pc_file" | cut -d= -f2)
+        inj_ids=$(grep '^injected_ids=' "$pc_file" | cut -d= -f2)
+        if [ -n "$inj_ids" ] && [ -n "$inj_project" ]; then
+            for lid in $inj_ids; do
+                bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$inj_project" "$lid" inject 2>/dev/null || true
+            done
+            if [ "$inj_project" != "infra" ]; then
+                for lid in $inj_ids; do
+                    bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" infra "$lid" inject 2>/dev/null || true
+                done
+            fi
+            log "injection_count: incremented for ${inj_ids}"
+        fi
+    fi
+
+    inject_reports_to_read "$task_file" || true
+    inject_context_files "$task_file" || true
+    inject_credential_files "$task_file" || true
+    inject_target_path_check "$task_file" || true
+    inject_context_update "$task_file" || true
+    inject_role_reminder "$task_file" "$ninja_name" || true
+    inject_report_template "$task_file" || true
+
+    yaml_field_set "$task_file" "task" "report_filename" ""
+    yaml_field_set "$task_file" "task" "report_path" ""
+
+    inject_report_filename "$task_file" || true
+    inject_bloom_level "$task_file" || true
+    inject_execution_controls "$task_file" || true
+    inject_ninja_weak_points "$task_file" "$ninja_name" || true
+    check_context_freshness "$task_file" || true
+
+    local task_id parent_cmd project
+    task_id=$(field_get "$task_file" "task_id" "")
+    parent_cmd=$(field_get "$task_file" "parent_cmd" "")
+    project=$(field_get "$task_file" "project" "")
+    generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project"
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
+deploy_task_main() {
+    parse_deploy_task_args "$@"
+    cleanup_none_task_files
+    deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
 
-PANE_TARGET=$(resolve_pane "$NINJA_NAME")
-if [ -z "$PANE_TARGET" ]; then
-    log "ERROR: Unknown ninja: $NINJA_NAME"
-    exit 1
-fi
-
-CTX_PCT=$(get_ctx_pct "$PANE_TARGET" "$NINJA_NAME")
-IS_IDLE=false
-check_idle "$PANE_TARGET" && IS_IDLE=true
-
-# cmd_1157: flat→nested YAML正規化（status強制注入の前に実行）
-normalize_task_yaml "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" || true
-
-# GP-069 早期チェック: resolve_cmd_to_taskがstatus=assigned上書きする前に実行
-# (resolve後ではTASK_STATUSが常にassignedになりGP-069がデッドコード化する — gunshi構造監視で検出)
-_PRE_RESOLVE_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "unknown")
-if [ "$_PRE_RESOLVE_STATUS" = "in_progress" ] && [ -n "$CMD_ID" ]; then
-    _PRE_RESOLVE_CMD=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "parent_cmd" "")
-    log "BLOCK(GP-069): ${NINJA_NAME} is in_progress on ${_PRE_RESOLVE_CMD:-unknown}. 前タスク完了を待て。"
-    echo "BLOCK: ${NINJA_NAME} は ${_PRE_RESOLVE_CMD:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
-    exit 1
-fi
-
-# cmd_id指定時: shogun_to_karo.yamlからtask YAML中核フィールドを自動設定
-if [ -n "$CMD_ID" ]; then
-    if [ "$DIRECT_MODE" = true ]; then
-        # direct mode: task YAML事前設定済み前提。resolve_cmd_to_taskをスキップし
-        # 後続サービス(report template生成+stale cleanup+教訓注入)のみ実行する
-        log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
-    elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
-        log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
-    else
-        log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
-        echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
-        exit 1
+    local pane_target ctx_pct
+    local is_idle=false
+    pane_target=$(resolve_pane "$NINJA_NAME")
+    if [ -z "$pane_target" ]; then
+        log "ERROR: Unknown ninja: $NINJA_NAME"
+        return 1
     fi
-fi
 
-# タスクステータス確認
-TASK_STATUS=$(field_get "$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml" "status" "unknown")
+    ctx_pct=$(get_ctx_pct "$pane_target" "$NINJA_NAME")
+    check_idle "$pane_target" && is_idle=true
 
-log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle=${IS_IDLE}, task_status=${TASK_STATUS}, pane=${PANE_TARGET}"
+    local task_yaml pre_resolve_status pre_resolve_cmd task_status verify_status current_cmd
+    local deploy_parent_cmd deploy_task_id dd_task dd_ninja dd_pcmd dd_tid dd_status
+    task_yaml="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 
-# --- status更新コマンド: idle/done時は即更新して早期リターン ---
-# deploy_task.sh {ninja} status idle/done の呼出しパターンに対応
-_TASK_YAML="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
-if [ "$MESSAGE" = "status" ] && { [ "$TYPE" = "idle" ] || [ "$TYPE" = "done" ]; }; then
-    yaml_field_set "$_TASK_YAML" "task" "status" "$TYPE"
-    log "status_update: ${TASK_STATUS} → ${TYPE}"
-    # 検証アサーション: 更新後にYAML読み直して期待値と一致確認
-    _verify_status=$(field_get "$_TASK_YAML" "status" "")
-    if [ "$_verify_status" != "$TYPE" ]; then
-        log "WARN: status更新検証失敗: 期待=${TYPE}, 実際=${_verify_status}"
+    normalize_task_yaml "$task_yaml" || true
+
+    pre_resolve_status=$(field_get "$task_yaml" "status" "unknown")
+    if [ "$pre_resolve_status" = "in_progress" ] && [ -n "$CMD_ID" ]; then
+        pre_resolve_cmd=$(field_get "$task_yaml" "parent_cmd" "")
+        log "BLOCK(GP-069): ${NINJA_NAME} is in_progress on ${pre_resolve_cmd:-unknown}. 前タスク完了を待て。"
+        echo "BLOCK: ${NINJA_NAME} は ${pre_resolve_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+        return 1
     fi
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
-    log "${NINJA_NAME}: deployment complete (type=${TYPE})"
-    exit 0
-fi
 
-# --- status更新コマンド: in_progress時はGP-069チェック後に更新 ---
-if [ "$MESSAGE" = "status" ] && [ "$TYPE" = "in_progress" ]; then
-    # GP-069はin_progress→in_progressの二重配備のみBLOCK
-    if [ "$TASK_STATUS" = "in_progress" ]; then
-        CURRENT_CMD=$(field_get "$_TASK_YAML" "parent_cmd" "")
-        log "BLOCK: ${NINJA_NAME} is in_progress on ${CURRENT_CMD:-unknown}. 前タスク完了を待て。"
-        echo "BLOCK: ${NINJA_NAME} は ${CURRENT_CMD:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
-        exit 1
-    fi
-    yaml_field_set "$_TASK_YAML" "task" "status" "in_progress"
-    log "status_update: ${TASK_STATUS} → in_progress"
-    # 検証アサーション
-    _verify_status=$(field_get "$_TASK_YAML" "status" "")
-    if [ "$_verify_status" != "in_progress" ]; then
-        log "WARN: status更新検証失敗: 期待=in_progress, 実際=${_verify_status}"
-    fi
-fi
-
-# GP-069 後方互換: CMD_ID未指定の配備パターン用（status直接更新等）
-# 主要ガードはL2336の早期チェックに移動済み（gunshi構造監視）
-if [ "$TASK_STATUS" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
-    CURRENT_CMD=$(field_get "$_TASK_YAML" "parent_cmd" "")
-    log "BLOCK: ${NINJA_NAME} is in_progress on ${CURRENT_CMD:-unknown}. 前タスク完了を待て。"
-    echo "BLOCK: ${NINJA_NAME} は ${CURRENT_CMD:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
-    exit 1
-fi
-
-# cmd_cycle_001: 同一cmd二重配備防止ガード
-# 同じparent_cmd+同じtask_idが別忍者にassigned/acknowledged/in_progressならBLOCK
-# 同じparent_cmd+異なるtask_id（分割配備）は許可
-# 背景: 二重配備事故3件(cmd_1281, cmd_1342, cmd_1350)。分割配備はcmd_1484以降で常用パターン。
-DEPLOY_PARENT_CMD=$(field_get "$_TASK_YAML" "parent_cmd" "")
-DEPLOY_TASK_ID=$(field_get "$_TASK_YAML" "task_id" "")
-if [ -n "$DEPLOY_PARENT_CMD" ]; then
-    for _dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
-        [ -f "$_dd_task" ] || continue
-        _dd_ninja=$(basename "$_dd_task" .yaml)
-        [ "$_dd_ninja" = "$NINJA_NAME" ] && continue
-        _dd_pcmd=$(FIELD_GET_NO_LOG=1 field_get "$_dd_task" "parent_cmd" "")
-        [ "$_dd_pcmd" != "$DEPLOY_PARENT_CMD" ] && continue
-        _dd_tid=$(FIELD_GET_NO_LOG=1 field_get "$_dd_task" "task_id" "")
-        if [ -n "$DEPLOY_TASK_ID" ] && [ -n "$_dd_tid" ] && [ "$DEPLOY_TASK_ID" != "$_dd_tid" ]; then
-            log "split_deploy: ${DEPLOY_PARENT_CMD} peer ${_dd_ninja} (task_id: ${_dd_tid}) — different task_id, allowing"
-            continue
+    if [ -n "$CMD_ID" ]; then
+        if [ "$DIRECT_MODE" = true ]; then
+            log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
+        elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+            log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
+        else
+            log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
+            echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
+            return 1
         fi
-        _dd_status=$(FIELD_GET_NO_LOG=1 field_get "$_dd_task" "status" "")
-        case "$_dd_status" in
-            assigned|acknowledged|in_progress)
-                log "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status}, task_id: ${_dd_tid})"
-                # Rollback: resolve_cmd_to_taskが既にtask YAMLを書き換えているため、
-                # BLOCK時にidle状態に戻す。放置すると忍者がassigned状態で滞留する。
-                yaml_field_set "$_TASK_YAML" "task" "status" "idle" 2>/dev/null || true
-                yaml_field_set "$_TASK_YAML" "task" "parent_cmd" "" 2>/dev/null || true
-                yaml_field_set "$_TASK_YAML" "task" "task_id" "" 2>/dev/null || true
-                log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after duplicate deploy BLOCK"
-                echo "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status})" >&2
-                echo "Clear the existing task first: bash scripts/lib/yaml_field_set.sh queue/tasks/${_dd_ninja}.yaml task status idle" >&2
-                exit 1
-                ;;
-        esac
-    done
-fi
-
-# status強制注入（cmd_1126: pending/unknown→assigned化。Stage 1ガード保護対象に入れる）
-if [ "$TASK_STATUS" = "pending" ] || [ "$TASK_STATUS" = "unknown" ]; then
-    yaml_field_set "$_TASK_YAML" "task" "status" "assigned"
-    log "status_force: ${TASK_STATUS} → assigned (Stage 1保護対象化)"
-    TASK_STATUS="assigned"
-fi
-
-# 入口門番: 前タスクの教訓未消化チェック（reviewed:false残存ならブロック）
-TASK_FILE="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
-check_entrance_gate "$TASK_FILE"
-
-# 偵察ゲート: implタスクは偵察済みorscout_exempt必須（BLOCKならexit 1）
-check_scout_gate "$TASK_FILE"
-
-# task_id自動注入（cmd_465: subtask_id→task_idエイリアス。STALL検知に必須）
-inject_task_id "$TASK_FILE" || true
-
-# ac_version自動注入（cmd_530: AC変更時の再計算）
-inject_ac_version "$TASK_FILE" || true
-
-# AC整合性検証（cmd_1619: task YAML vs cmdソースの件数・ID突合。WARNのみ）
-verify_ac_consistency "$TASK_FILE" || true
-
-# 教訓自動注入（失敗してもデプロイは継続）
-inject_related_lessons "$TASK_FILE" || true
-
-# cmd_1321: auto-injectフィールド一括クリア（前cmdの残留値を排除）
-# cmd_1312方式を8箇所に横展開: inject前にフィールド削除→再inject
-# cmd_1393: Python→awk置換
-_CLEAR_FIELDS="engineering_preferences|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
-_clear_tmp=$(mktemp)
-if awk -v fields="$_CLEAR_FIELDS" '
-    BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
-    {
-        if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
-        if (skip) {
-            if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
-            else { next }
-        }
-        if (indent == 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) {
-            key = $0; sub(/^  /, "", key); sub(/:.*$/, "", key)
-            if (key in fset) { skip = 1; cleared++; next }
-        }
-        print
-    }
-    END { if (cleared > 0) printf "[FIELD_CLEAR] Cleared %d fields\n", cleared > "/dev/stderr"
-          else printf "[FIELD_CLEAR] No fields to clear\n" > "/dev/stderr" }
-' "$TASK_FILE" > "$_clear_tmp" 2>/dev/null; then
-    if [ -s "$_clear_tmp" ]; then
-        mv "$_clear_tmp" "$TASK_FILE"
-    else
-        rm -f "$_clear_tmp"
     fi
-else
-    log "WARN: auto-inject field clear failed (non-fatal)"
-    rm -f "$_clear_tmp"
-fi
 
-# cmd_1393: 7関数統合（eng_prefs/reports_to_read/ctx_files/cred_files/ctx_update/report_tpl/exec_controls）
-inject_task_modifiers "$TASK_FILE" || true
+    task_status=$(field_get "$task_yaml" "status" "unknown")
+    log "${NINJA_NAME}: CTX=${ctx_pct}%, idle=${is_idle}, task_status=${task_status}, pane=${pane_target}"
 
-# Engineering Preferences自動注入（inject_task_modifiersで処理済み・後方互換stub）
-inject_engineering_preferences "$TASK_FILE" || true
+    if [ "$MESSAGE" = "status" ] && { [ "$TYPE" = "idle" ] || [ "$TYPE" = "done" ]; }; then
+        yaml_field_set "$task_yaml" "task" "status" "$TYPE"
+        log "status_update: ${task_status} → ${TYPE}"
+        verify_status=$(field_get "$task_yaml" "status" "")
+        if [ "$verify_status" != "$TYPE" ]; then
+            log "WARN: status更新検証失敗: 期待=${TYPE}, 実際=${verify_status}"
+        fi
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+        log "${NINJA_NAME}: deployment complete (type=${TYPE})"
+        return 0
+    fi
 
-# 教訓注入postcondition（失敗してもデプロイは継続）
-postcondition_lesson_inject "$TASK_FILE" || true
+    if [ "$MESSAGE" = "status" ] && [ "$TYPE" = "in_progress" ]; then
+        if [ "$task_status" = "in_progress" ]; then
+            current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
+            log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
+            echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+            return 1
+        fi
+        yaml_field_set "$task_yaml" "task" "status" "in_progress"
+        log "status_update: ${task_status} → in_progress"
+        verify_status=$(field_get "$task_yaml" "status" "")
+        if [ "$verify_status" != "in_progress" ]; then
+            log "WARN: status更新検証失敗: 期待=in_progress, 実際=${verify_status}"
+        fi
+    fi
 
-# 教訓injection_countカウント加算（cmd_470: 注入回数トラッキング）
-_pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
-if [ -f "$_pc_file" ]; then
-    _inj_project=$(grep '^project=' "$_pc_file" | cut -d= -f2)
-    _inj_ids=$(grep '^injected_ids=' "$_pc_file" | cut -d= -f2)
-    if [ -n "$_inj_ids" ] && [ -n "$_inj_project" ]; then
-        for _lid in $_inj_ids; do
-            bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$_inj_project" "$_lid" inject 2>/dev/null || true
+    if [ "$task_status" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
+        current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
+        log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
+        echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+        return 1
+    fi
+
+    deploy_parent_cmd=$(field_get "$task_yaml" "parent_cmd" "")
+    deploy_task_id=$(field_get "$task_yaml" "task_id" "")
+    if [ -n "$deploy_parent_cmd" ]; then
+        for dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
+            [ -f "$dd_task" ] || continue
+            dd_ninja=$(basename "$dd_task" .yaml)
+            [ "$dd_ninja" = "$NINJA_NAME" ] && continue
+            dd_pcmd=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "parent_cmd" "")
+            [ "$dd_pcmd" != "$deploy_parent_cmd" ] && continue
+            dd_tid=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "task_id" "")
+            if [ -n "$deploy_task_id" ] && [ -n "$dd_tid" ] && [ "$deploy_task_id" != "$dd_tid" ]; then
+                log "split_deploy: ${deploy_parent_cmd} peer ${dd_ninja} (task_id: ${dd_tid}) — different task_id, allowing"
+                continue
+            fi
+            dd_status=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "status" "")
+            case "$dd_status" in
+                assigned|acknowledged|in_progress)
+                    log "BLOCK: ${deploy_parent_cmd} is already assigned to ${dd_ninja} (status: ${dd_status}, task_id: ${dd_tid})"
+                    yaml_field_set "$task_yaml" "task" "status" "idle" 2>/dev/null || true
+                    yaml_field_set "$task_yaml" "task" "parent_cmd" "" 2>/dev/null || true
+                    yaml_field_set "$task_yaml" "task" "task_id" "" 2>/dev/null || true
+                    log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after duplicate deploy BLOCK"
+                    echo "BLOCK: ${deploy_parent_cmd} is already assigned to ${dd_ninja} (status: ${dd_status})" >&2
+                    echo "Clear the existing task first: bash scripts/lib/yaml_field_set.sh queue/tasks/${dd_ninja}.yaml task status idle" >&2
+                    return 1
+                    ;;
+            esac
         done
-        # platform教訓はinfra PJに属するため、project!=infraの場合はinfraも走査
-        if [ "$_inj_project" != "infra" ]; then
-            for _lid in $_inj_ids; do
-                bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" infra "$_lid" inject 2>/dev/null || true
-            done
-        fi
-        log "injection_count: incremented for ${_inj_ids}"
     fi
+
+    deploy_task_apply_task_mutations "$NINJA_NAME"
+
+    if [ "$ctx_pct" -le 0 ] 2>/dev/null; then
+        log "${NINJA_NAME}: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+    elif [ "$is_idle" = "true" ]; then
+        log "${NINJA_NAME}: CTX=${ctx_pct}%, idle. Sending inbox_write (normal nudge)"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+    else
+        log "${NINJA_NAME}: CTX=${ctx_pct}%, busy. Sending inbox_write (queued, watcher will nudge later)"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+    fi
+
+    notify_initial_deploy_ntfy_once "$task_yaml" "$NINJA_NAME" || true
+    record_deployed_at "$task_yaml" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
+    preflight_gate_artifacts "$task_yaml" || true
+
+    local rr_pointer_file rr_lock_file
+    rr_pointer_file="$SCRIPT_DIR/queue/rr_pointer.txt"
+    rr_lock_file="/tmp/rr_pointer.lock"
+    (
+        flock -w 5 201
+        echo "$NINJA_NAME" > "$rr_pointer_file"
+    ) 201>"$rr_lock_file" 2>/dev/null || log "WARN: rr_pointer update failed (non-fatal)"
+
+    log "${NINJA_NAME}: deployment complete (type=${TYPE})"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
+    deploy_task_main "$@"
 fi
-
-# 偵察報告自動注入（失敗してもデプロイは継続）
-inject_reports_to_read "$TASK_FILE" || true
-
-# context_files自動注入（失敗してもデプロイは継続）
-inject_context_files "$TASK_FILE" || true
-
-# credential_files自動注入（cmd_949: 認証タスクに.envを自動追加）
-inject_credential_files "$TASK_FILE" || true
-
-# target_path存在検査WARN注入（cmd_1322: 設定済みだが実在しないtarget_pathを警告）
-inject_target_path_check "$TASK_FILE" || true
-
-# context_update自動注入（失敗してもデプロイは継続）
-inject_context_update "$TASK_FILE" || true
-
-# role_reminder自動注入（cmd_384: 失敗してもデプロイは継続）
-inject_role_reminder "$TASK_FILE" "$NINJA_NAME" || true
-
-# report_template自動注入（cmd_384: 失敗してもデプロイは継続）
-inject_report_template "$TASK_FILE" || true
-
-# cmd_1312: auto-injectフィールドクリア（前cmdの残留値を排除）
-yaml_field_set "$TASK_FILE" "task" "report_filename" ""
-yaml_field_set "$TASK_FILE" "task" "report_path" ""
-
-# report_filename自動注入（cmd_410: 命名ミスマッチ根治）
-inject_report_filename "$TASK_FILE" || true
-
-# bloom_level自動注入（cmd_434: タスク複雑度メタデータ）
-inject_bloom_level "$TASK_FILE" || true
-
-# task execution controls注入（cmd_875: 停止条件/優先順位/並列許可）
-inject_execution_controls "$TASK_FILE" || true
-
-# ninja_weak_points自動注入（cmd_1307: 忍者別過去失敗パターン）
-inject_ninja_weak_points "$TASK_FILE" "$NINJA_NAME" || true
-
-# context鮮度チェック（失敗してもデプロイは継続）
-check_context_freshness "$TASK_FILE" || true
-
-# 報告YAML雛形生成（inbox_writeより前に実行: 忍者がnudge受信後に即report_field_set.shで書込めるよう順序保証）
-TASK_ID=$(field_get "$TASK_FILE" "task_id" "")
-PARENT_CMD=$(field_get "$TASK_FILE" "parent_cmd" "")
-PROJECT=$(field_get "$TASK_FILE" "project" "")
-generate_report_template "$NINJA_NAME" "$TASK_ID" "$PARENT_CMD" "$PROJECT"
-
-# 状態に応じた処理
-if [ "$CTX_PCT" -le 0 ] 2>/dev/null; then
-    # CTX:0% — /clear済み、またはフレッシュセッション
-    log "${NINJA_NAME}: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)"
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
-
-elif [ "$IS_IDLE" = "true" ]; then
-    # CTX>0% + idle — 通常idle、nudge可能
-    log "${NINJA_NAME}: CTX=${CTX_PCT}%, idle. Sending inbox_write (normal nudge)"
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
-
-else
-    # CTX>0% + busy — 稼働中、メッセージはキューに入る
-    log "${NINJA_NAME}: CTX=${CTX_PCT}%, busy. Sending inbox_write (queued, watcher will nudge later)"
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
-fi
-
-# 初回配備開始通知（cmd_496: 同一cmdで1回のみ、失敗時non-blocking）
-notify_initial_deploy_ntfy_once "$TASK_FILE" "$NINJA_NAME" || true
-
-# deployed_at自動記録（cmd_387: 初回配備時のみ記録、再配備時は保持）
-record_deployed_at "$TASK_FILE" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
-
-# preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減）
-preflight_gate_artifacts "$TASK_FILE" || true
-
-# round-robin回転ポインタ更新（cmd_519: 配備偏り解消）
-RR_POINTER_FILE="$SCRIPT_DIR/queue/rr_pointer.txt"
-RR_LOCK_FILE="/tmp/rr_pointer.lock"
-(
-    flock -w 5 201
-    echo "$NINJA_NAME" > "$RR_POINTER_FILE"
-) 201>"$RR_LOCK_FILE" 2>/dev/null || log "WARN: rr_pointer update failed (non-fatal)"
-
-log "${NINJA_NAME}: deployment complete (type=${TYPE})"
 
 # cmd_1337: ダッシュボード自動更新（配備完了時、バックグラウンド実行）
 bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" &

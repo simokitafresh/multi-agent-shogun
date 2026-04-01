@@ -1,22 +1,25 @@
 #!/usr/bin/env bats
 # test_deploy_task_stale_field_reset.bats - 再配備時のstale field清掃テスト
-# なぜなぜ3層: (1)resolve_cmd_to_taskリセット漏れ (2)yaml_field_setリスト非対応
-# (3)inject_task_modifiers.py存在チェック不整合 → Python一括クリアで根治
+# Optimized: deploy_task.sh から resolve_cmd_to_task を抽出して source し、
+# 共通の再配備結果を setup_file で一度だけ生成する。
 
-setup() {
-    export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/stale_reset.XXXXXX")"
+extract_function() {
+    local name="$1"
+    local start end
 
-    export SCRIPT_DIR="$TEST_TMPDIR"
-    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/logs" "$TEST_TMPDIR/scripts/lib"
+    start=$(awk -v name="$name" '$0 ~ "^" name "\\(\\) \\{" { print NR; exit }' "$SRC_DEPLOY_SCRIPT")
+    [ -n "$start" ] || return 1
 
-    # yaml_field_set.sh実体をコピー
-    cp "$PWD/scripts/lib/yaml_field_set.sh" "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh" 2>/dev/null || \
-    cp "$(cd "$(dirname "$BATS_TEST_FILENAME")/../../scripts/lib/yaml_field_set.sh" && pwd)" \
-        "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh"
+    end=$(awk -v start="$start" '
+        NR > start && /^[A-Za-z0-9_]+\(\) \{/ { print NR - 1; found = 1; exit }
+        END { if (!found) print NR }
+    ' "$SRC_DEPLOY_SCRIPT")
+    sed -n "${start},${end}p" "$SRC_DEPLOY_SCRIPT"
+}
 
-    # shogun_to_karo.yaml（新cmd: cmd_9999）
-    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+write_shogun_to_karo_fixture() {
+    local root="$1"
+    cat > "$root/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_9999:
     id: cmd_9999
@@ -29,9 +32,11 @@ commands:
     timestamp: '2026-03-30T02:00:00+09:00'
     status: pending
 EOF
+}
 
-    # task YAML（前cmd: cmd_8888の残留フィールドあり — スカラー+リスト両方）
-    cat > "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" <<'EOF'
+write_task_fixture() {
+    local root="$1"
+    cat > "$root/queue/tasks/tobisaru.yaml" <<'EOF'
 task:
   parent_cmd: cmd_8888
   task_id: cmd_8888_impl
@@ -85,333 +90,148 @@ status: in_progress
 EOF
 }
 
-teardown() {
-    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+prepare_source_fixture() {
+    local root="$1"
+    mkdir -p "$root/queue/tasks" "$root/logs"
+    write_shogun_to_karo_fixture "$root"
+    write_task_fixture "$root"
 }
 
-# ─── Helper: resolve_cmd_to_taskロジック抽出 ───
-run_resolve_cmd_to_task() {
-    local cmd_id="$1"
-    local ninja_name="$2"
-    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
-    local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
-    local log_file="$SCRIPT_DIR/logs/test.log"
+resolve_fixture_task() {
+    local root="$1"
+    local cmd_id="$2"
+    local ninja_name="$3"
 
-    log() { echo "$*" >> "$log_file"; }
+    SCRIPT_DIR="$root"
+
+    log() { :; }
 
     yaml_field_set() {
-        bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$@"
+        bash "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"
     }
 
-    # Python resolve
-    local _resolve_output
-    _resolve_output=$(python3 - "$stk" "$cmd_id" <<'RESOLVE_PY'
+    eval "$(extract_function resolve_cmd_to_task)"
+    resolve_cmd_to_task "$cmd_id" "$ninja_name"
+}
+
+get_task_values() {
+    local file="$1"
+    shift
+    python3 - "$file" "$@" <<'PY'
 import sys
 import yaml
 
-stk_path = sys.argv[1]
-cmd_id = sys.argv[2]
-with open(stk_path, encoding='utf-8') as f:
+with open(sys.argv[1], encoding="utf-8") as f:
     data = yaml.safe_load(f) or {}
-cmd = (data.get('commands') or {}).get(cmd_id)
-if not cmd:
-    print(f"ERROR: {cmd_id} not found", file=sys.stderr)
-    sys.exit(1)
-print(f"project={cmd.get('project', '')}")
-print(f"task_type={cmd.get('type', 'impl')}")
-print(f"title={cmd.get('title', '')}")
-print(f"purpose={cmd.get('purpose', '')}")
-RESOLVE_PY
-    ) || return 1
+task = data.get("task", {})
 
-    local project task_type title purpose
-    project=$(echo "$_resolve_output" | grep '^project=' | cut -d= -f2-)
-    task_type=$(echo "$_resolve_output" | grep '^task_type=' | cut -d= -f2-)
-    title=$(echo "$_resolve_output" | grep '^title=' | cut -d= -f2-)
-    purpose=$(echo "$_resolve_output" | grep '^purpose=' | cut -d= -f2-)
-    [ -z "$task_type" ] && task_type="impl"
+for field in sys.argv[2:]:
+    value = task.get(field)
+    if value is None:
+        rendered = "<missing>"
+    elif isinstance(value, list):
+        rendered = f"<list:{len(value)}>"
+    elif isinstance(value, dict):
+        rendered = f"<dict:{len(value)}>"
+    elif isinstance(value, bool):
+        rendered = str(value).lower()
+    else:
+        rendered = str(value)
+    print(f"{field}={rendered}")
+PY
+}
 
-    local task_id="${cmd_id}_${task_type}"
+assert_missing_fields() {
+    local file="$1"
+    shift
+    local output field
+    output="$(get_task_values "$file" "$@")"
 
-    # Python一括stale fieldクリア（deploy_task.shと同一ロジック）
-    python3 - "$task_file" <<'STALE_FIELD_RESET_PY'
-import os, sys, tempfile, re
+    for field in "$@"; do
+        [[ "$output" == *"${field}=<missing>"* ]]
+    done
+}
+
+setup_file() {
+    export REAL_PROJECT_ROOT
+    REAL_PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export SRC_DEPLOY_SCRIPT="$REAL_PROJECT_ROOT/scripts/deploy_task.sh"
+
+    [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
+    [ -f "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" ] || return 1
+    command -v python3 >/dev/null 2>&1 || return 1
+
+    export SOURCE_FIXTURE_ROOT
+    SOURCE_FIXTURE_ROOT="$(mktemp -d "$BATS_TMPDIR/stale_reset_source.XXXXXX")"
+    export RESOLVED_FIXTURE_ROOT
+    RESOLVED_FIXTURE_ROOT="$(mktemp -d "$BATS_TMPDIR/stale_reset_resolved.XXXXXX")"
+    export NESTED_RESOLVED_FIXTURE_ROOT
+    NESTED_RESOLVED_FIXTURE_ROOT="$(mktemp -d "$BATS_TMPDIR/stale_reset_nested.XXXXXX")"
+
+    prepare_source_fixture "$SOURCE_FIXTURE_ROOT"
+    cp -R "$SOURCE_FIXTURE_ROOT"/. "$RESOLVED_FIXTURE_ROOT"/
+    resolve_fixture_task "$RESOLVED_FIXTURE_ROOT" "cmd_9999" "tobisaru"
+
+    cp -R "$SOURCE_FIXTURE_ROOT"/. "$NESTED_RESOLVED_FIXTURE_ROOT"/
+    python3 - "$NESTED_RESOLVED_FIXTURE_ROOT/queue/tasks/tobisaru.yaml" <<'PY'
+import sys
 
 task_file = sys.argv[1]
-STALE_FIELDS = [
-    'purpose', 'target_path', 'constraints', 'progress', 'description', 'deployed_at',
-    'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
-    'ac_priority', 'ac_checkpoint', 'parallel_ok',
-    'AC1', 'AC2', 'AC3', 'scout_exempt',
-    'command', 'reports_to_read', 'credential_warning', 'context_update',
-    'type', 'report_template',
-    'task', 'worker_id', 'timestamp',
-]
-
-with open(task_file, 'r', encoding='utf-8') as f:
+with open(task_file, encoding="utf-8") as f:
     raw = f.read()
 
-for field in STALE_FIELDS:
-    pat = re.compile(
-        r'^  ' + re.escape(field) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
-        re.MULTILINE | re.DOTALL,
-    )
-    raw = pat.sub('', raw)
-
-raw = re.sub(r'^(?!task:)[a-zA-Z_][a-zA-Z0-9_]*:.*\n?', '', raw, flags=re.MULTILINE)
-
-raw = re.sub(r'\n{3,}', '\n\n', raw)
-
-tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-try:
-    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-        f.write(raw)
-    os.replace(tmp_path, task_file)
-except Exception:
-    try: os.unlink(tmp_path)
-    except OSError: pass
-    raise
-STALE_FIELD_RESET_PY
-
-    # 中核フィールド設定
-    yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id"
-    yaml_field_set "$task_file" "task" "task_id" "$task_id"
-    yaml_field_set "$task_file" "task" "task_type" "$task_type"
-    [ -n "$project" ] && yaml_field_set "$task_file" "task" "project" "$project"
-    yaml_field_set "$task_file" "task" "status" "assigned"
-    [ -n "$purpose" ] && yaml_field_set "$task_file" "task" "purpose" "$purpose"
-    yaml_field_set "$task_file" "task" "_ac_task_id" ""
-    yaml_field_set "$task_file" "task" "_ac_worker_id" ""
-}
-
-# ─── field値取得ヘルパー ───
-get_field() {
-    local file="$1" field="$2"
-    python3 -c "
-import yaml
-with open('$file') as f:
-    d = yaml.safe_load(f) or {}
-t = d.get('task', {})
-v = t.get('$field')
-if v is None:
-    print('')
-elif isinstance(v, list):
-    print('LIST:' + str(len(v)))
-elif isinstance(v, bool):
-    print(str(v).lower())
-else:
-    print(str(v))
-"
-}
-
-# ─── スカラーフィールドのテスト ───
-
-@test "再配備でparent_cmdが新cmdに更新される" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "parent_cmd")
-    [ "$result" = "cmd_9999" ]
-}
-
-@test "再配備でpurposeが新cmdのpurposeに更新される" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "purpose")
-    [ "$result" = "新しいpurpose" ]
-}
-
-@test "再配備でtarget_pathがクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "target_path")
-    [ -z "$result" ]
-}
-
-@test "再配備でprogressがクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "progress")
-    [ -z "$result" ]
-}
-
-@test "再配備でdescriptionがクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "description")
-    [ -z "$result" ]
-}
-
-@test "再配備でdeployed_atがクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "deployed_at")
-    [ -z "$result" ]
-}
-
-@test "再配備でprojectが新cmdのprojectに更新される" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "project")
-    [ "$result" = "infra" ]
-}
-
-# ─── リスト型フィールドのテスト（yaml_field_setでは不可能→Python一括クリアで解決） ───
-
-@test "再配備でconstraints(リスト)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "constraints")
-    [ -z "$result" ]
-}
-
-@test "再配備でengineering_preferences(リスト)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "engineering_preferences")
-    [ -z "$result" ]
-}
-
-@test "再配備でcontext_files(リスト)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "context_files")
-    [ -z "$result" ]
-}
-
-@test "再配備でstop_for(リスト)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "stop_for")
-    [ -z "$result" ]
-}
-
-@test "再配備でnever_stop_for(リスト)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "never_stop_for")
-    [ -z "$result" ]
-}
-
-@test "再配備でparallel_ok(リスト)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "parallel_ok")
-    [ -z "$result" ]
-}
-
-# ─── 忍者書込み+per-cmdフラグのテスト ───
-
-@test "再配備でAC1(忍者書込み)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "AC1")
-    [ -z "$result" ]
-}
-
-@test "再配備でAC2(忍者書込み)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "AC2")
-    [ -z "$result" ]
-}
-
-@test "再配備でAC3(忍者書込み)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "AC3")
-    [ -z "$result" ]
-}
-
-@test "再配備でscout_exempt(per-cmd)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "scout_exempt")
-    [ -z "$result" ]
-}
-
-@test "再配備でac_priority(スカラー)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "ac_priority")
-    [ -z "$result" ]
-}
-
-@test "再配備でac_checkpoint(スカラー)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "ac_checkpoint")
-    [ -z "$result" ]
-}
-
-# ─── 第4層: 旧版由来の残留フィールドのテスト ───
-
-@test "再配備でcommand(旧版残留)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "command")
-    [ -z "$result" ]
-}
-
-@test "再配備でreports_to_read(リスト)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "reports_to_read")
-    [ -z "$result" ]
-}
-
-@test "再配備でcredential_warning(スカラー)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "credential_warning")
-    [ -z "$result" ]
-}
-
-@test "再配備でcontext_update(スカラー)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "context_update")
-    [ -z "$result" ]
-}
-
-# ─── 第5層: レガシー重複フィールドのテスト(修行001 hayate発見) ───
-
-@test "再配備でtype(task_type重複)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "type")
-    [ -z "$result" ]
-}
-
-@test "再配備でreport_template(レガシー)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "report_template")
-    [ -z "$result" ]
-}
-
-# ─── 第6層: ネスト残留+旧メタデータのテスト(cmd_1527発見) ───
-
-@test "再配備でworker_id(旧メタ)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "worker_id")
-    [ -z "$result" ]
-}
-
-@test "再配備でtimestamp(旧メタ)がクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    result=$(get_field "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" "timestamp")
-    [ -z "$result" ]
-}
-
-@test "再配備でネストされたtask:ブロックがクリアされる" {
-    # Setup: Add nested task: block to initial YAML
-    local task_file="$TEST_TMPDIR/queue/tasks/tobisaru.yaml"
-    python3 -c "
-import re
-with open('$task_file') as f:
-    raw = f.read()
-# Insert nested task: block before task_id line
-insertion = '''  task:
+insertion = """  task:
     _ac_task_id: cmd_old_impl
     status: completed
     type: impl
-'''
-raw = raw.replace('  task_id:', insertion + '  task_id:')
-with open('$task_file', 'w') as f:
+"""
+raw = raw.replace("  task_id:", insertion + "  task_id:")
+
+with open(task_file, "w", encoding="utf-8") as f:
     f.write(raw)
-"
-    # Verify nested task exists before deploy
-    nested_before=$(grep -c '^\s*task:' "$task_file")
-    [ "$nested_before" -eq 2 ]
-
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-
-    # After deploy, nested task: should be removed
-    nested_after=$(grep -c '^\s*task:' "$task_file")
-    [ "$nested_after" -eq 1 ]
+PY
+    resolve_fixture_task "$NESTED_RESOLVED_FIXTURE_ROOT" "cmd_9999" "tobisaru"
 }
 
-@test "再配備でルートレベルのstaleフィールドがクリアされる" {
-    run_resolve_cmd_to_task cmd_9999 tobisaru
-    # Root-level status: should be removed (only task: should remain at root)
-    root_fields=$(grep -c '^[a-zA-Z_]' "$TEST_TMPDIR/queue/tasks/tobisaru.yaml")
+teardown_file() {
+    [ -d "$SOURCE_FIXTURE_ROOT" ] && rm -rf "$SOURCE_FIXTURE_ROOT"
+    [ -d "$RESOLVED_FIXTURE_ROOT" ] && rm -rf "$RESOLVED_FIXTURE_ROOT"
+    [ -d "$NESTED_RESOLVED_FIXTURE_ROOT" ] && rm -rf "$NESTED_RESOLVED_FIXTURE_ROOT"
+}
+
+@test "再配備でstale field群とネスト汚染を清掃し必要フィールドを保持する" {
+    local file="$RESOLVED_FIXTURE_ROOT/queue/tasks/tobisaru.yaml"
+    local nested_file="$NESTED_RESOLVED_FIXTURE_ROOT/queue/tasks/tobisaru.yaml"
+    local output nested_after root_fields root_field_name
+
+    output="$(get_task_values "$file" parent_cmd task_id task_type project status purpose _ac_task_id _ac_worker_id)"
+
+    [[ "$output" == *"parent_cmd=cmd_9999"* ]]
+    [[ "$output" == *"task_id=cmd_9999_impl"* ]]
+    [[ "$output" == *"task_type=impl"* ]]
+    [[ "$output" == *"project=infra"* ]]
+    [[ "$output" == *"status=assigned"* ]]
+    [[ "$output" == *"purpose=新しいpurpose"* ]]
+    [[ "$output" == *$'_ac_task_id='* ]]
+    [[ "$output" == *$'_ac_worker_id='* ]]
+
+    assert_missing_fields \
+        "$file" \
+        target_path progress description deployed_at \
+        constraints engineering_preferences context_files stop_for never_stop_for parallel_ok \
+        AC1 AC2 AC3 scout_exempt ac_priority ac_checkpoint \
+        command reports_to_read credential_warning context_update type report_template \
+        worker_id timestamp
+
+    output="$(get_task_values "$file" acceptance_criteria)"
+    [[ "$output" == *"acceptance_criteria=<dict:1>"* ]]
+
+    nested_after=$(grep -c '^\s*task:' "$nested_file")
+    [ "$nested_after" -eq 1 ]
+
+    root_fields=$(grep -c '^[a-zA-Z_]' "$nested_file")
     [ "$root_fields" -eq 1 ]
-    # The remaining root-level field should be "task:"
-    root_field_name=$(grep '^[a-zA-Z_]' "$TEST_TMPDIR/queue/tasks/tobisaru.yaml" | head -1)
+
+    root_field_name=$(grep '^[a-zA-Z_]' "$nested_file" | head -1)
     [[ "$root_field_name" == task:* ]]
 }

@@ -62,7 +62,7 @@ else:
 }
 
 @test "deploy_task injects ac_version and report ac_version_read on first deploy" {
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_ac_version
@@ -99,7 +99,7 @@ else:
 }
 
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -115,7 +115,7 @@ task:
   ac_version: 7d010443
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_ac_version
@@ -138,7 +138,7 @@ task:
       description: "third"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
     run read_task_ac_version
     [ "$status" -eq 0 ]
@@ -160,7 +160,7 @@ task:
   ac_version: 519485d7
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
     run read_task_ac_version
     [ "$status" -eq 0 ]
@@ -178,7 +178,7 @@ task:
     - ac2: second
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -213,7 +213,7 @@ task:
   ac_priority: "AC2 > AC1 > AC3"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     # cmd_1321: FIELD_CLEAR→再inject設計により、既存値はクリアされデフォルト再注入される
@@ -249,7 +249,7 @@ task:
     - ac1: first
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -290,7 +290,7 @@ task:
       description: "third"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -315,7 +315,7 @@ task:
       description: "second"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -338,7 +338,7 @@ task:
       description: "the only one"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field parallel_ok
@@ -370,7 +370,7 @@ task:
     - AC3
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -400,7 +400,7 @@ task:
   parallel_ok: []
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field parallel_ok
@@ -427,7 +427,7 @@ task:
   parallel_ok: []
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field parallel_ok
@@ -457,7 +457,7 @@ task:
   parallel_ok: []
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -477,7 +477,7 @@ task:
 EOF
     : > "$TEST_PROJECT/queue/tasks/None.yaml.lock"
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" None
+    run deploy_task_fast None
     [ "$status" -eq 1 ]
     [[ "$output" == *"cannot be empty/None"* ]]
     [ ! -e "$TEST_PROJECT/queue/tasks/None.yaml" ]
@@ -537,7 +537,7 @@ task:
     - AC1
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_related_detail L900
@@ -568,7 +568,7 @@ parent_cmd: cmd_stale_test
 verdict:
 status: pending
 EOF
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
     # Stale template should be archived
     [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_stale_test.yaml" ]
@@ -595,7 +595,7 @@ parent_cmd: cmd_preserve_test
 verdict: PASS
 status: done
 EOF
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
     # Completed report should be preserved (not archived)
     [ -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_preserve_test.yaml" ]
@@ -638,7 +638,7 @@ task:
   _ac_worker_id: hayate
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     # Verify: ACs overwritten with cmd_200's ACs
@@ -680,7 +680,7 @@ task:
   _ac_worker_id: hayate
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run grep "Correct AC for cmd_300" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
@@ -718,7 +718,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     # ACs should remain unchanged (no overwrite)
@@ -752,7 +752,7 @@ task:
   - 'AC1: Karo-written AC for first deploy'
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     # cmd_1493 bug fix: first deploy SHOULD overwrite ACs from cmd source
@@ -789,7 +789,7 @@ task:
   - ac3: third
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run python3 -c "
@@ -828,7 +828,7 @@ task:
     - AC1
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_related_detail L901
@@ -869,7 +869,7 @@ task:
 EOF
 
     # cmd_id引数付きで配備
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_600
+    run deploy_task_fast sasuke cmd_600
     [ "$status" -eq 0 ]
 
     # parent_cmd/task_id/projectが新cmdに更新されたか
@@ -920,7 +920,7 @@ task:
 EOF
 
     # cmd_id無し（レガシー呼び出し）
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke "配備メッセージ" task_assigned karo
+    run deploy_task_fast sasuke "配備メッセージ" task_assigned karo
     [ "$status" -eq 0 ]
 
     # parent_cmdは変更されない
@@ -958,7 +958,7 @@ task:
 EOF
 
     # 存在しないcmd_idで配備試行
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_999
+    run deploy_task_fast sasuke cmd_999
     [ "$status" -eq 1 ]
 }
 
@@ -1002,7 +1002,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     # Nested ac: should be converted and injected
@@ -1058,7 +1058,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_1611
+    run deploy_task_fast sasuke cmd_1611
     [ "$status" -eq 0 ]
 
     # parent_cmd updated
@@ -1117,7 +1117,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     # Report template should have binary_checks extracted from nested ac: format
@@ -1163,7 +1163,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     # Flat dict should be converted with id: fields
@@ -1212,7 +1212,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     # ACs from archive should be converted and injected
