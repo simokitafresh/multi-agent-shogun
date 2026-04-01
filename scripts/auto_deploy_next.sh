@@ -125,7 +125,11 @@ if completed_task['status'] != 'done':
 # ─── Report verification (non-blocking) ───
 completed_ninja = completed_task['assigned_to']
 if completed_ninja:
-    rpath = os.path.join(reports_dir, f'{completed_ninja}_report.yaml')
+    rpath = os.path.join(reports_dir, f'{completed_ninja}_report_{cmd_id}.yaml')
+    if not os.path.exists(rpath):
+        # Fallback: glob for variant naming patterns
+        _matches = sorted(glob.glob(os.path.join(reports_dir, f'{completed_ninja}_report*{cmd_id}*.yaml')))
+        rpath = _matches[-1] if _matches else rpath
     if os.path.exists(rpath):
         try:
             with open(rpath) as f:
