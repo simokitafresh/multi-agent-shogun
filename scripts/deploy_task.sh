@@ -1062,12 +1062,50 @@ EOF
 ${_bc_block}
 ${_commit_bc}"
     else
-        # GP-133: AC IDからスタブセクション生成（check項目なしでもAC欄を確保）
+        # GP-133 enhanced: AC descriptionから。分割でcheck項目を自動生成（description空→FILLフォールバック）
         local _ac_stubs
         _ac_stubs=$(awk '
             /^  acceptance_criteria:/ { in_ac=1; next }
             in_ac && /^  [a-z]/ { exit }
-            in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); printf "  %s:\n  - check: \"<<REPLACE: この%sで何を確認したか具体的に書け>>\"\n    result: \"\"  # yes or no\n", $0, $0 }
+            in_ac && /^  - / {
+                if (cur_id != "") {
+                    printf "  %s:\n", cur_id
+                    if (desc != "") {
+                        n = split(desc, parts, "。")
+                        for (i=1; i<=n; i++) {
+                            gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
+                            if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", parts[i]
+                        }
+                    } else {
+                        printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", cur_id
+                    }
+                }
+                cur_id=""; desc=""
+                if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
+                if (/description:/) { s=$0; sub(/.*description:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); sub(/^"/, "", s); sub(/"$/, "", s); desc=s }
+                next
+            }
+            in_ac && /^    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0; next }
+            in_ac && /^    description:/ {
+                sub(/.*description:[[:space:]]*/, ""); sub(/[[:space:]]*$/, "")
+                sub(/^"/, ""); sub(/"$/, "")
+                desc=$0
+                next
+            }
+            END {
+                if (cur_id != "") {
+                    printf "  %s:\n", cur_id
+                    if (desc != "") {
+                        n = split(desc, parts, "。")
+                        for (i=1; i<=n; i++) {
+                            gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
+                            if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", parts[i]
+                        }
+                    } else {
+                        printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", cur_id
+                    }
+                }
+            }
         ' "$task_file" 2>/dev/null)
         if [ -n "$_ac_stubs" ]; then
             local _bc_full="binary_checks:
