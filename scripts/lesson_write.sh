@@ -35,18 +35,30 @@ has_flag() {
     return 1
 }
 
-# Resolve project_id → project path from config/projects.yaml
-resolve_project_path() {
+# Resolve project_id → field value from config/projects.yaml (pure bash, no python3)
+# Usage: resolve_project_field <project_id> [field]  (default field: path)
+resolve_project_field() {
     local proj_id="$1"
-    python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == '$proj_id':
-        print(p['path'])
-        break
-"
+    local field="${2:-path}"
+    local config_file="$SCRIPT_DIR/config/projects.yaml"
+    awk -v id="$proj_id" -v field="$field" '
+        /^[[:space:]]*- id:/ {
+            val = $NF
+            gsub(/"/, "", val)
+            found = (val == id)
+        }
+        found && $0 ~ "^[[:space:]]*" field ":" {
+            sub(/^[[:space:]]*[^:]+:[[:space:]]*/, "")
+            gsub(/"/, "")
+            print
+            exit
+        }
+    ' "$config_file"
+}
+
+# Backward-compat wrapper
+resolve_project_path() {
+    resolve_project_field "$1" "path"
 }
 
 # ── Parse all flags ──
@@ -362,15 +374,7 @@ PYEOF
             NEW_LESSON_ID=$(cat "$LESSON_ID_FILE")
         fi
         if [ -n "$NEW_LESSON_ID" ]; then
-            CONTEXT_FILE=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
-        print(p.get('context_file', ''))
-        break
-")
+            CONTEXT_FILE=$(resolve_project_field "$PROJECT_ID" "context_file")
             if [ -n "$CONTEXT_FILE" ]; then
                 CONTEXT_FULL_PATH="$SCRIPT_DIR/$CONTEXT_FILE"
                 if [ -f "$CONTEXT_FULL_PATH" ]; then
