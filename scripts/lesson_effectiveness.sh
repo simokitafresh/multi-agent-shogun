@@ -108,16 +108,6 @@ parse_lesson_list() {
     fi
 }
 
-for report in "$REPORTS_DIR"/*_report_*.yaml; do
-    [[ -f "$report" ]] || continue
-    # Project filtering
-    if [[ -n "$PROJECT_FILTER" ]]; then
-        local_project=$(awk '/^[[:space:]]*project:/{print $2; exit}' "$report")
-        [[ "${local_project:-}" != "$PROJECT_FILTER" ]] && continue
-    fi
-    parse_lesson_list "$report"
-done
-
 # --- 3. preventable_by from report YAMLs (future manual tag) ---
 parse_preventable_by() {
     local report="$1"
@@ -140,12 +130,14 @@ parse_preventable_by() {
     done < "$report"
 }
 
+# Single pass over report files: parse both lesson_list and preventable_by
 for report in "$REPORTS_DIR"/*_report_*.yaml; do
     [[ -f "$report" ]] || continue
     if [[ -n "$PROJECT_FILTER" ]]; then
         local_project=$(awk '/^[[:space:]]*project:/{print $2; exit}' "$report")
         [[ "${local_project:-}" != "$PROJECT_FILTER" ]] && continue
     fi
+    parse_lesson_list "$report"
     parse_preventable_by "$report"
 done
 
