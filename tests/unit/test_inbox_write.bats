@@ -46,6 +46,9 @@ setup() {
         "$PROJECT_ROOT/scripts/inbox_write.sh" > "$TEST_SCRIPT_DIR/inbox_write.sh"
     chmod +x "$TEST_SCRIPT_DIR/inbox_write.sh"
 
+    # lib/ディレクトリをシンボリックリンク（write_inbox_yaml.py等の共通モジュール参照用）
+    ln -s "$PROJECT_ROOT/scripts/lib" "$TEST_SCRIPT_DIR/lib"
+
     export TEST_INBOX_WRITE="$TEST_SCRIPT_DIR/inbox_write.sh"
 }
 

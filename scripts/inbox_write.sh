@@ -379,8 +379,11 @@ except Exception:
                             flock -w 5 200 2>/dev/null
                             GUNSHI_INBOX="$GUNSHI_INBOX" ROUTE_ID="$ROUTE_ID" ROUTE_TS="$ROUTE_TS" \
                             ROUTE_FROM="$FROM" REPORT_FILE="$FULL_REPORT" GATE_ERRORS="$GATE_RESULT" \
+                            SCRIPT_DIR_LIB="$SCRIPT_DIR/scripts/lib" \
                             python3 -c "
 import yaml, os, sys
+sys.path.insert(0, os.environ['SCRIPT_DIR_LIB'])
+from write_inbox_yaml import write_inbox
 inbox_path = os.environ['GUNSHI_INBOX']
 try:
     with open(inbox_path) as f:
@@ -400,35 +403,7 @@ msgs.append({
     'original_ninja': os.environ['ROUTE_FROM'],
 })
 data['messages'] = msgs
-# yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
-import tempfile
-def _sv(v):
-    if isinstance(v, bool): return str(v).lower()
-    s = str(v)
-    if '\n' in s:
-        return '|-\n' + '\n'.join('    ' + ln for ln in s.split('\n'))
-    sq = chr(39)
-    return sq + s.replace(sq, sq+sq) + sq
-tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
-try:
-    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-        if not data.get('messages'):
-            f.write('messages: []\n')
-        else:
-            f.write('messages:\n')
-            for m in data['messages']:
-                keys = ['content', 'from', 'id', 'read', 'timestamp', 'type']
-                extra = sorted(k for k in m if k not in keys)
-                first = True
-                for k in keys + extra:
-                    if k not in m: continue
-                    p = '- ' if first else '  '
-                    first = False
-                    f.write(f'{p}{k}: {_sv(m[k])}\n')
-    os.replace(tmp_path, inbox_path)
-except:
-    os.unlink(tmp_path)
-    raise
+write_inbox(inbox_path, data)
 " 2>/dev/null
                         ) 200>"$(lock_path "$GUNSHI_INBOX")" 2>/dev/null || true
                         echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2
@@ -542,8 +517,11 @@ while [ $attempt -lt $max_attempts ]; do
         # Add message via python3 — HIGH-1: 全変数を環境変数経由で渡す（インジェクション防止）
         INBOX_PATH="$INBOX" MSG_ID="$MSG_ID" MSG_FROM="$FROM" \
         MSG_TIMESTAMP="$TIMESTAMP" MSG_TYPE="$TYPE" MSG_CONTENT="$CONTENT" \
+        SCRIPT_DIR_LIB="$SCRIPT_DIR/scripts/lib" \
         python3 -c "
 import yaml, sys, os
+sys.path.insert(0, os.environ['SCRIPT_DIR_LIB'])
+from write_inbox_yaml import write_inbox
 
 try:
     inbox_path  = os.environ['INBOX_PATH']
@@ -582,35 +560,7 @@ try:
         # Keep all unread + newest 30 read messages
         data['messages'] = unread + read[-30:]
 
-    # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止(atomic write維持)
-    import tempfile
-    def _sv(v):
-        if isinstance(v, bool): return str(v).lower()
-        s = str(v)
-        if '\n' in s:
-            return '|-\n' + '\n'.join('    ' + ln for ln in s.split('\n'))
-        sq = chr(39)
-        return sq + s.replace(sq, sq+sq) + sq
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-            if not data.get('messages'):
-                f.write('messages: []\n')
-            else:
-                f.write('messages:\n')
-                for m in data['messages']:
-                    keys = ['content', 'from', 'id', 'read', 'timestamp', 'type']
-                    extra = sorted(k for k in m if k not in keys)
-                    first = True
-                    for k in keys + extra:
-                        if k not in m: continue
-                        p = '- ' if first else '  '
-                        first = False
-                        f.write(f'{p}{k}: {_sv(m[k])}\n')
-        os.replace(tmp_path, inbox_path)
-    except:
-        os.unlink(tmp_path)
-        raise
+    write_inbox(inbox_path, data)
 
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
@@ -694,6 +644,26 @@ except: pass
                                 ;;
                         esac
                     fi
+                fi
+            fi
+        fi
+
+        # GP-133: report_review_result from gunshi → review_gate.done placeholder上書き
+        # 軍師のLGTM verdict受信時にplaceholderを正式版に上書きし、archive_completed.shが報告をアーカイブ可能にする
+        if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ]; then
+            # メッセージからcmd_idとverdictを抽出
+            _rr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_\d+' | head -1 || true)
+            _rr_verdict=$(echo "$CONTENT" | grep -oP 'verdict: \K(LGTM|FAIL)' | head -1 || true)
+            if [ -n "$_rr_cmd_id" ] && [ "$_rr_verdict" = "LGTM" ]; then
+                _rr_gate_file="$SCRIPT_DIR/queue/gates/${_rr_cmd_id}/review_gate.done"
+                if [ -f "$_rr_gate_file" ] && grep -q "source: deploy_preflight" "$_rr_gate_file" 2>/dev/null; then
+                    cat > "$_rr_gate_file" <<REVIEWEOF
+timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
+source: gunshi_review
+result: LGTM
+note: 軍師レビュー完了。placeholderから上書き(GP-133)。
+REVIEWEOF
+                    echo "[inbox_write] review_gate.done updated: ${_rr_cmd_id} (placeholder→gunshi_review LGTM)" >&2
                 fi
             fi
         fi
