@@ -34,35 +34,35 @@ _cli_lookup_settings_get() {
     local agent="$1"
     local field="$2"
     local default="$3"
-    python3 -c "
+    python3 - "$_CLI_LOOKUP_SETTINGS" "$agent" "$field" "$default" <<'PYEOF' 2>/dev/null
 import yaml, sys
+settings_path, agent, field, default = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 try:
-    with open('${_CLI_LOOKUP_SETTINGS}') as f:
+    with open(settings_path) as f:
         cfg = yaml.safe_load(f) or {}
     cli = cfg.get('cli', {})
     agents = cli.get('agents', {}) if isinstance(cli, dict) else {}
-    agent_cfg = agents.get('${agent}', {})
+    agent_cfg = agents.get(agent, {})
     if isinstance(agent_cfg, str):
-        # 文字列形式: 'hanzo: codex' → type=codex として扱う
-        if '${field}' == 'type':
+        if field == 'type':
             print(agent_cfg)
             sys.exit(0)
         else:
-            print('${default}')
+            print(default)
             sys.exit(0)
     elif isinstance(agent_cfg, dict):
-        val = agent_cfg.get('${field}', '')
+        val = agent_cfg.get(field, '')
         if val:
             print(val)
             sys.exit(0)
-    default_val = cli.get('default', '${default}') if isinstance(cli, dict) else '${default}'
-    if '${field}' == 'type':
+    default_val = cli.get('default', default) if isinstance(cli, dict) else default
+    if field == 'type':
         print(default_val)
     else:
-        print('${default}')
+        print(default)
 except Exception:
-    print('${default}')
-" 2>/dev/null
+    print(default)
+PYEOF
 }
 
 # _cli_lookup_profile_get <cli_type> <key>
@@ -70,14 +70,15 @@ except Exception:
 _cli_lookup_profile_get() {
     local cli_type="$1"
     local key="$2"
-    python3 -c "
+    python3 - "$_CLI_LOOKUP_PROFILES" "$cli_type" "$key" <<'PYEOF' 2>/dev/null
 import yaml, sys
+profiles_path, cli_type, key = sys.argv[1], sys.argv[2], sys.argv[3]
 try:
-    with open('${_CLI_LOOKUP_PROFILES}') as f:
+    with open(profiles_path) as f:
         cfg = yaml.safe_load(f) or {}
     profiles = cfg.get('profiles', {})
-    profile = profiles.get('${cli_type}', {})
-    val = profile.get('${key}', '')
+    profile = profiles.get(cli_type, {})
+    val = profile.get(key, '')
     if isinstance(val, list):
         print('|'.join(str(v) for v in val))
     elif isinstance(val, bool):
@@ -86,7 +87,7 @@ try:
         print(val if val is not None else '')
 except Exception:
     print('')
-" 2>/dev/null
+PYEOF
 }
 
 # --- 公開API ---
