@@ -86,9 +86,9 @@ build_cli_command() {
     case "$ct" in
         claude)
             if [[ -n "$model" && "$model" != "opus" ]]; then
-                echo "$claude_bin --model $model $base_flags"
+                echo "$claude_bin --model $model --effort high $base_flags"
             else
-                echo "$base_cmd"
+                echo "$claude_bin --effort high $base_flags"
             fi
             ;;
         kimi)
