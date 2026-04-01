@@ -120,7 +120,7 @@ QG_TEMPLATE
 
     # q5検証レベル分類（段階的導入 — WARN_COUNTに加算しない）
     # cmd_1481教訓: code_readingをproduction_verifiedに見せかけた。忍者に信頼度を正直に伝える(利他)
-    q5_val=$(echo "$CMD_BLOCK" | grep "q5_verified_source:" | head -1)
+    q5_val=$(echo "$CMD_BLOCK_NC" | grep "q5_verified_source:" | head -1)
     if echo "$q5_val" | grep -qiE "code_reading|コード読み|読んだだけ"; then
         echo "INFO: q5=code_reading。根因仮説は未実行検証。忍者は独自検証が必要" >&2
     elif ! echo "$q5_val" | grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行"; then

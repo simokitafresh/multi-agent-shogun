@@ -66,6 +66,49 @@ if [[ "$VALUE" == *$'\n'* ]] && [ "$USE_PYTHON" -eq 0 ]; then
     STDIN_VALUE="$VALUE"
 fi
 
+# --- binary_checks共通バリデーション (DRY: full/per-AC統合) ---
+# mode="full": binary_checks全体(dict of lists) / mode="per_ac": 単一AC(list of dicts)
+_validate_binary_checks() {
+    local mode="$1"
+    local val="$2"
+    python3 -c "
+import yaml, sys
+err = '''ERROR: binary_checks must be YAML list of dicts with result: yes/no.
+  Correct: - {check: 'テスト全PASS', result: yes}
+  Wrong:   'AC1: YES, AC2: NO'
+  Wrong:   result: true (use 'yes' not true)
+  Wrong:   result: PASS (use 'yes' not 'PASS')'''
+mode = sys.argv[1]
+try:
+    data = yaml.load(sys.stdin.read(), Loader=yaml.BaseLoader)
+except yaml.YAMLError:
+    print(err, file=sys.stderr)
+    sys.exit(1)
+if isinstance(data, str):
+    print(err, file=sys.stderr)
+    sys.exit(1)
+def check_items(items):
+    if not isinstance(items, list):
+        print(err, file=sys.stderr)
+        sys.exit(1)
+    for j, item in enumerate(items):
+        if not isinstance(item, dict):
+            continue
+        r = str(item.get('result', '')).strip()
+        if r and r.lower() not in ('yes', 'no', ''):
+            print(err, file=sys.stderr)
+            sys.exit(1)
+if mode == 'full':
+    if not isinstance(data, dict):
+        print(err, file=sys.stderr)
+        sys.exit(1)
+    for ac_key, ac_val in data.items():
+        check_items(ac_val)
+else:
+    check_items(data)
+" "$mode" <<< "$val" || return 1
+}
+
 # --- GP-072: Pre-write field value validation (Level 4 BLOCK) ---
 # 書込み前にフィールド値の妥当性を検証。不正値はBLOCKして忍者に即フィードバック。
 # GP-072c2: per-item writes, dict→list conversion, verdict pre-conditions
@@ -119,64 +162,10 @@ for i, item in enumerate(data):
             # Full-field write validation (GP-072 binary_checks型バリデーション)
             # BaseLoader使用: yes/noを文字列として保持し true/falseと区別する
             if [[ "$dot_key" == "binary_checks" ]]; then
-                python3 -c "
-import yaml, sys
-err = '''ERROR: binary_checks must be YAML list of dicts with result: yes/no.
-  Correct: - {check: 'テスト全PASS', result: yes}
-  Wrong:   'AC1: YES, AC2: NO'
-  Wrong:   result: true (use 'yes' not true)
-  Wrong:   result: PASS (use 'yes' not 'PASS')'''
-try:
-    data = yaml.load(sys.stdin.read(), Loader=yaml.BaseLoader)
-except yaml.YAMLError:
-    print(err, file=sys.stderr)
-    sys.exit(1)
-if isinstance(data, str):
-    print(err, file=sys.stderr)
-    sys.exit(1)
-if not isinstance(data, dict):
-    print(err, file=sys.stderr)
-    sys.exit(1)
-for ac_key, ac_val in data.items():
-    if not isinstance(ac_val, list):
-        print(err, file=sys.stderr)
-        sys.exit(1)
-    for j, item in enumerate(ac_val):
-        if not isinstance(item, dict):
-            continue
-        r = str(item.get('result', '')).strip()
-        if r and r.lower() not in ('yes', 'no', ''):
-            print(err, file=sys.stderr)
-            sys.exit(1)
-" <<< "$val" || return 1
+                _validate_binary_checks "full" "$val" || return 1
             # GP-072c2: Per-AC write (e.g., binary_checks.AC1) — only 2-level depth
             elif [[ "$dot_key" == binary_checks.AC* ]] && [[ "$dot_key" != *.*.* ]]; then
-                python3 -c "
-import yaml, sys
-err = '''ERROR: binary_checks must be YAML list of dicts with result: yes/no.
-  Correct: - {check: 'テスト全PASS', result: yes}
-  Wrong:   'AC1: YES, AC2: NO'
-  Wrong:   result: true (use 'yes' not true)
-  Wrong:   result: PASS (use 'yes' not 'PASS')'''
-try:
-    data = yaml.load(sys.stdin.read(), Loader=yaml.BaseLoader)
-except yaml.YAMLError:
-    print(err, file=sys.stderr)
-    sys.exit(1)
-if isinstance(data, str):
-    print(err, file=sys.stderr)
-    sys.exit(1)
-if not isinstance(data, list):
-    print(err, file=sys.stderr)
-    sys.exit(1)
-for j, item in enumerate(data):
-    if not isinstance(item, dict):
-        continue
-    r = str(item.get('result', '')).strip()
-    if r and r.lower() not in ('yes', 'no', ''):
-        print(err, file=sys.stderr)
-        sys.exit(1)
-" <<< "$val" || return 1
+                _validate_binary_checks "per_ac" "$val" || return 1
             fi
             ;;
         self_gate_check)
