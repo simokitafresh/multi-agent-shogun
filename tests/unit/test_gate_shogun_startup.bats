@@ -348,3 +348,68 @@ MOCK
     [[ "$output" == *"startup_gate: ALERT"* ]]
     [[ "$output" == *"Memory健全度"* ]]
 }
+
+# === Test 16: AC注入一致 → WARNING無し (cmd_1668) ===
+@test "AC injection match → OK, no WARNING" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  status: in_progress
+  parent_cmd: cmd_100
+  acceptance_criteria:
+  - id: AC1
+    description: "test ac1"
+    criteria: "test criteria1"
+  - id: AC2
+    description: "test ac2"
+    criteria: "test criteria2"
+EOF
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_100:
+    status: pending
+    acceptance_criteria:
+      - id: AC1
+        description: "test ac1"
+      - id: AC2
+        description: "test ac2"
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AC注入検証"* ]]
+    [[ "$output" != *"WARNING: AC不一致"* ]]
+    [[ "$output" == *"OK: 稼働中1件のAC整合確認"* ]]
+}
+
+# === Test 17: AC注入不一致(件数差) → WARNING出力 (cmd_1668) ===
+@test "AC injection count mismatch → WARNING" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  status: in_progress
+  parent_cmd: cmd_100
+  acceptance_criteria:
+  - id: AC1
+    description: "test"
+    criteria: "test"
+EOF
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_100:
+    status: pending
+    acceptance_criteria:
+      - id: AC1
+        description: "test"
+      - id: AC2
+        description: "test2"
+      - id: AC3
+        description: "test3"
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: AC不一致"* ]]
+    [[ "$output" == *"hayate(cmd_100)"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}

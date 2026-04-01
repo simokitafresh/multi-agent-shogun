@@ -429,6 +429,83 @@ else
     $BRIEF || echo "  孤立context/ファイルなし（知識マップ完全同期）"
 fi
 
+# --- Gate 16: AC注入検証（配備済みタスク vs cmdソース, cmd_1668） ---
+# 起源: AC注入失敗WA 6件 — _overwrite_ac_from_cmdのネスト形式未対応/stale AC残留
+# 目的: 起動時に稼働中タスクのACがcmdソースと一致するか検証。不一致時WARNING（BLOCK不要）
+$BRIEF || echo "■ AC注入検証"
+_ac16_warn_msgs=()
+_ac16_checked=0
+_AC16_STK="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+_AC16_TDIR="$SCRIPT_DIR/queue/tasks"
+
+if [ -d "$_AC16_TDIR" ] && [ -f "$_AC16_STK" ]; then
+    for _ac16_tf in "$_AC16_TDIR"/*.yaml; do
+        [ ! -f "$_ac16_tf" ] && continue
+        _ac16_st=$(awk '/^  status:/{print $2; exit}' "$_ac16_tf")
+        case "$_ac16_st" in
+            assigned|acknowledged|in_progress) ;;
+            *) continue ;;
+        esac
+        _ac16_pcmd=$(awk '/^  parent_cmd:/{print $2; exit}' "$_ac16_tf")
+        [ -z "$_ac16_pcmd" ] && continue
+
+        # Task YAML: AC IDs (sorted). [- ]* handles both "  - id:" and "    id:" formats
+        _ac16_tids=$(awk '
+            /^  acceptance_criteria:/ { f=1; next }
+            f && /^  [a-zA-Z_]/ { exit }
+            f && /^  [- ]*id: / { sub(/.*id: */, ""); gsub(/[" ]/, ""); if ($0!="") print }
+        ' "$_ac16_tf" | sort)
+
+        # STK: AC IDs from acceptance_criteria list (sorted)
+        _ac16_cids=$(awk -v cmd="$_ac16_pcmd" '
+            BEGIN { t="  "cmd":" }
+            $0==t { c=1; next }
+            c && /^  [a-zA-Z_]/ { exit }
+            c && /^    acceptance_criteria:/ { a=1; next }
+            a && /^    [a-zA-Z_]/ { exit }
+            a && /^      [- ]*id: / { sub(/.*id: */, ""); gsub(/[" ]/, ""); if ($0!="") print }
+        ' "$_AC16_STK" | sort)
+
+        # Fallback: ac: nested format (AC1:, AC2: as keys)
+        if [ -z "$_ac16_cids" ]; then
+            _ac16_cids=$(awk -v cmd="$_ac16_pcmd" '
+                BEGIN { t="  "cmd":" }
+                $0==t { c=1; next }
+                c && /^  [a-zA-Z_]/ { exit }
+                c && /^    ac:$/ { a=1; next }
+                a && /^    [a-zA-Z_]/ { exit }
+                a && /^      AC[0-9]/ { sub(/:.*/, ""); gsub(/[[:space:]]/, ""); if ($0!="") print }
+            ' "$_AC16_STK" | sort)
+        fi
+
+        [ -z "$_ac16_cids" ] && continue
+        _ac16_checked=$((_ac16_checked + 1))
+        _ac16_nn=$(basename "$_ac16_tf" .yaml)
+
+        if [ "$_ac16_tids" != "$_ac16_cids" ]; then
+            _ac16_tc=$(printf '%s\n' "$_ac16_tids" | awk 'NF{n++}END{print n+0}')
+            _ac16_cc=$(printf '%s\n' "$_ac16_cids" | awk 'NF{n++}END{print n+0}')
+            _ac16_tcsv=$(echo "$_ac16_tids" | paste -sd, -)
+            _ac16_ccsv=$(echo "$_ac16_cids" | paste -sd, -)
+            _ac16_warn_msgs+=("${_ac16_nn}(${_ac16_pcmd}): task=[${_ac16_tcsv}](${_ac16_tc}) cmd=[${_ac16_ccsv}](${_ac16_cc})")
+        fi
+    done
+
+    if [ ${#_ac16_warn_msgs[@]} -gt 0 ]; then
+        for _ac16_wm in "${_ac16_warn_msgs[@]}"; do
+            $BRIEF || echo "  WARNING: AC不一致 — $_ac16_wm"
+        done
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+        fi
+        alerts+=("AC注入不一致: ${#_ac16_warn_msgs[@]}/${_ac16_checked}件")
+    else
+        $BRIEF || echo "  OK: 稼働中${_ac16_checked}件のAC整合確認"
+    fi
+else
+    $BRIEF || echo "  SKIP: task/cmd不在"
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ
