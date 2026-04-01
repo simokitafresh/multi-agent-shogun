@@ -230,6 +230,56 @@ check_pane_survival() {
     PREV_PANE_MISSING="$missing_str"
 }
 
+# ─── 長時間bashプロセス判定（cmd_1671: pstree永久BUSY化修正） ───
+# CLI配下の全bashプロセスが閾値(デフォルト30分)以上実行中かチェック
+# 戻り値: 0=全て長時間(閾値以上), 1=短時間プロセスあり or プロセスなし
+PSTREE_LONGRUN_THRESHOLD=1800  # 30分（秒）
+_all_subprocesses_long_running() {
+    local pane_target="$1"
+    local threshold="${2:-$PSTREE_LONGRUN_THRESHOLD}"
+    local pane_pid
+    pane_pid=$(tmux display-message -t "$pane_target" -p '#{pane_pid}' 2>/dev/null) || return 1
+    [ -n "$pane_pid" ] || return 1
+
+    local tree
+    tree=$(pstree -A -p "$pane_pid" 2>/dev/null) || return 1
+
+    local cli_pids
+    cli_pids=$(_agent_state_extract_cli_pids "$tree") || return 1
+
+    local found_any=false
+    local cli_pid
+    for cli_pid in $cli_pids; do
+        local bash_pids
+        bash_pids=$(_collect_bash_descendants "$cli_pid")
+        local bpid
+        for bpid in $bash_pids; do
+            found_any=true
+            local etime
+            etime=$(ps -p "$bpid" -o etimes= 2>/dev/null | tr -d ' ')
+            if [ -z "$etime" ] || [ "$etime" -lt "$threshold" ] 2>/dev/null; then
+                return 1  # 短時間bashあり → まだBUSY
+            fi
+        done
+    done
+
+    $found_any && return 0 || return 1
+}
+
+_collect_bash_descendants() {
+    local parent_pid="$1"
+    local children child child_name
+    children=$(pgrep -P "$parent_pid" 2>/dev/null || true)
+    [ -n "$children" ] || return 0
+    for child in $children; do
+        child_name=$(ps -p "$child" -o comm= 2>/dev/null | awk 'NR==1 {print $1}')
+        if [ "$child_name" = "bash" ]; then
+            echo "$child"
+        fi
+        _collect_bash_descendants "$child"
+    done
+}
+
 # ─── idle検出（単一チェック） ───
 # 戻り値: 0=IDLE, 1=BUSY, 2=ERROR
 # $1: pane_target, $2: agent_name（省略時はフォールバックパターン使用）
@@ -253,9 +303,14 @@ check_idle() {
                 return 1  # grace period内はBUSY扱い（thinking中の誤判定防止）
             fi
             # pstree cross-check: @agent_state=idleでも子プロセス存在時はBUSY
+            # cmd_1671: 30分以上実行中のプロセスは除外（永久BUSY化防止）
             if _agent_state_has_busy_subprocess "$pane_target"; then
-                log "PSTREE-OVERRIDE: ${agent_name} @agent_state=idle but bash subprocess detected, treating as BUSY"
-                return 1
+                if _all_subprocesses_long_running "$pane_target"; then
+                    log "PSTREE-LONGRUN: ${agent_name} bash subprocess detected but all running >=${PSTREE_LONGRUN_THRESHOLD}s, treating as IDLE"
+                else
+                    log "PSTREE-OVERRIDE: ${agent_name} @agent_state=idle but bash subprocess detected, treating as BUSY"
+                    return 1
+                fi
             fi
             return 0  # IDLE確定（grace period経過）
         fi
@@ -878,15 +933,15 @@ notify_idle_batch() {
     done
     details="${details%, }"  # 末尾カンマ除去
 
-    # パイプライン空チェック: pending/newのcmdが0件なら通知スキップ（cmd_1252）
+    # cmd_1671: pipeline空でもidle通知を送る（頻度制限は維持）
     local pipeline_count
     pipeline_count=$(grep -cE '^\s+status:\s+(pending|new)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+    local pipeline_info=""
     if [ "${pipeline_count:-0}" -eq 0 ]; then
-        log "Pipeline empty (pending/new cmd=0), skipping idle notification for: ${names[*]}"
-        return 0
+        pipeline_info="(pipeline空)"
     fi
 
-    local msg="idle(新規): ${details}。計${#names[@]}名タスク割り当て可能。${pane_evidence:+ pane証拠: ${pane_evidence}}"
+    local msg="idle(新規): ${details}${pipeline_info}。計${#names[@]}名タスク割り当て可能。${pane_evidence:+ pane証拠: ${pane_evidence}}"
     if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" ninja_idle ninja_monitor >> "$LOG" 2>&1; then
         log "Batch notification sent to karo: ${names[*]}"
         local now
