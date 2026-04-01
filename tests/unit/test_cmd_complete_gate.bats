@@ -276,3 +276,65 @@ EOF
 # ─── cmd_1045 lessons_useful形式検証テスト ───
 # 削除(2026-04-01): gate_report_format.shで同等テスト59件存在(test_report_template_gate_compat+test_gate_report_autofix)
 # 復元: git log --all -- tests/unit/test_cmd_complete_gate.bats
+
+@test "custom report_filename is included in direct report format validation" {
+    write_cmd_yaml "without_context"
+
+    cat > "$TEST_PROJECT/scripts/gates/gate_report_autofix.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$TEST_PROJECT/scripts/gates/gate_report_format.sh" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == *"custom_gate_target.yaml" ]]; then
+    echo "FAIL: custom report hit formatter"
+    exit 1
+fi
+echo "PASS"
+EOF
+    chmod +x "$TEST_PROJECT/scripts/gates/gate_report_autofix.sh" "$TEST_PROJECT/scripts/gates/gate_report_format.sh"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: review
+  report_filename: custom_gate_target.yaml
+  ac_version: 2
+  related_lessons: []
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/custom_gate_target.yaml" <<EOF
+worker_id: sasuke
+task_id: subtask_test
+parent_cmd: $TEST_CMD_ID
+timestamp: "2026-03-04T00:00:00"
+status: done
+ac_version_read: 2
+verdict: PASS
+purpose_validation:
+  fit: true
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+result:
+  summary: "custom report"
+lesson_candidate:
+  found: false
+  no_lesson_reason: "test fixture"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful: []
+binary_checks:
+  AC1:
+    - check: "custom report validated"
+      result: "yes"
+EOF
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"custom_gate_target.yaml: FAIL: custom report hit formatter"* ]]
+}

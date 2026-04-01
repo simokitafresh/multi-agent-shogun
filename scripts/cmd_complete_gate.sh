@@ -2070,13 +2070,24 @@ else
 fi
 
 # ─── 報告YAMLフォーマット検証（cmd_1202: タスクYAML非依存・ディレクトリ直接スキャン） ───
-# バイパス経路防止: タスクYAMLは忍者再配備で上書きされるため、
-# 報告ディレクトリを直接スキャンしてgate_report_format.shを実行する（最終防衛線）
+# バイパス経路防止:
+#   1. タスクYAMLに明示されたreport_filename（custom名含む）
+#   2. 慣例名 *_report_${CMD_ID}.yaml の直接スキャン
+# の両方を検証対象に含める。片側だけでは custom report_filename が素通りする。
 level_heading "[L1]" "Report format validation (direct scan):"
 REPORT_FORMAT_CHECKED=0
 REPORT_FORMAT_FAILED=0
-for report_file in "$SCRIPT_DIR/queue/reports/"*_report_${CMD_ID}.yaml; do
-    [ -f "$report_file" ] || continue
+declare -A REPORT_FORMAT_SEEN=()
+validate_report_format_file() {
+    local report_file="$1"
+
+    [ -n "$report_file" ] || return
+    [ -f "$report_file" ] || return
+    if [ -n "${REPORT_FORMAT_SEEN["$report_file"]+x}" ]; then
+        return
+    fi
+
+    REPORT_FORMAT_SEEN["$report_file"]=1
     REPORT_FORMAT_CHECKED=$((REPORT_FORMAT_CHECKED + 1))
     "$SCRIPT_DIR/scripts/gates/gate_report_autofix.sh" "$report_file" 2>/dev/null || true
     GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1 || true)
@@ -2088,6 +2099,20 @@ for report_file in "$SCRIPT_DIR/queue/reports/"*_report_${CMD_ID}.yaml; do
     else
         echo "  $(basename "$report_file"): PASS"
     fi
+}
+
+for task_file in "$TASKS_DIR"/*.yaml; do
+    [ -f "$task_file" ] || continue
+    is_cmd_task "$task_file" || continue
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+    validate_report_format_file "$report_file"
+done
+
+for report_file in "$SCRIPT_DIR/queue/reports/"*_report_${CMD_ID}.yaml; do
+    [ -f "$report_file" ] || continue
+    validate_report_format_file "$report_file"
 done
 if [ "$REPORT_FORMAT_CHECKED" -eq 0 ]; then
     echo "  (no report files found for ${CMD_ID})"
