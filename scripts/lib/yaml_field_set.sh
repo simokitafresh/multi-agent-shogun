@@ -65,8 +65,15 @@ function regex_escape(str,    out,i,c) {
     }
     return out
 }
-function yaml_safe(v,    out,i,c) {
-    if (index(v, ":") > 0) {
+function yaml_safe(v,    out,i,c,needs_quote) {
+    needs_quote = 0
+    if (index(v, ":") > 0) needs_quote = 1
+    if (index(v, "#") > 0) needs_quote = 1
+    if (index(v, "[") > 0) needs_quote = 1
+    if (index(v, "]") > 0) needs_quote = 1
+    if (index(v, "{") > 0) needs_quote = 1
+    if (index(v, "}") > 0) needs_quote = 1
+    if (needs_quote) {
         out = ""
         for (i = 1; i <= length(v); i++) {
             c = substr(v, i, 1)
@@ -132,7 +139,10 @@ BEGIN { found = 0 }
     if (!found && $0 ~ field_re) {
         value = $0
         sub(field_re, "", value)
-        sub(/[[:space:]]+#.*$/, "", value)
+        value = trim(value)
+        if (substr(value, 1, 1) != "\"" && substr(value, 1, 1) != "'"'"'") {
+            sub(/[[:space:]]+#.*$/, "", value)
+        }
         value = trim(unquote(value))
         print value
         found = 1
@@ -242,8 +252,15 @@ function is_boundary(line,    indent,t) {
     if (indent <= block_indent) return 1
     return 0
 }
-function yaml_safe(v,    out,i,c) {
-    if (index(v, ":") > 0) {
+function yaml_safe(v,    out,i,c,needs_quote) {
+    needs_quote = 0
+    if (index(v, ":") > 0) needs_quote = 1
+    if (index(v, "#") > 0) needs_quote = 1
+    if (index(v, "[") > 0) needs_quote = 1
+    if (index(v, "]") > 0) needs_quote = 1
+    if (index(v, "{") > 0) needs_quote = 1
+    if (index(v, "}") > 0) needs_quote = 1
+    if (needs_quote) {
         out = ""
         for (i = 1; i <= length(v); i++) {
             c = substr(v, i, 1)
@@ -436,7 +453,10 @@ BEGIN {
     if (!field_found && $0 ~ field_re) {
         value = $0
         sub(field_re, "", value)
-        sub(/[[:space:]]+#.*$/, "", value)
+        value = trim(value)
+        if (substr(value, 1, 1) != "\"" && substr(value, 1, 1) != "'"'"'") {
+            sub(/[[:space:]]+#.*$/, "", value)
+        }
         value = trim(unquote(value))
         print value
         field_found = 1
