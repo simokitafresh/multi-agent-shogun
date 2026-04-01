@@ -143,7 +143,10 @@ fi
 if [ "$TYPE" = "task_assigned" ]; then
     NINJA_TASK="$SCRIPT_DIR/queue/tasks/${TARGET}.yaml"
     if [ -f "$NINJA_TASK" ]; then
-        LESSON_CHECK=$(TASK_PATH="$NINJA_TASK" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
+        TASK_LOCKFILE="$(lock_path "$NINJA_TASK")"
+        LESSON_CHECK=$(
+            flock -w 5 "$TASK_LOCKFILE" \
+            env TASK_PATH="$NINJA_TASK" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
 import yaml, os, sys, tempfile
 task_path = os.environ['TASK_PATH']
 script_dir = os.environ['SCRIPT_DIR_ENV']
