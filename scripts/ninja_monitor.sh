@@ -1895,13 +1895,11 @@ write_karo_snapshot() {
                 # 忍者task状態 + ペインCTX%
                 for name in "${NINJA_NAMES[@]}"; do
                     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-                    # ペインCTX%を取得
+                    # ペインCTX%を取得（PANE_TARGETSから解決。tmux list-panes N回呼出し排除）
                     local _ctx="?"
-                    local _pidx=""
-                    _pidx=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null \
-                        | awk -v n="$name" '$2==n{print $1}' || true)
-                    if [ -n "$_pidx" ]; then
-                        _ctx=$(tmux capture-pane -t "shogun:agents.$_pidx" -p 2>/dev/null \
+                    local _pane_target="${PANE_TARGETS[$name]:-}"
+                    if [ -n "$_pane_target" ]; then
+                        _ctx=$(tmux capture-pane -t "$_pane_target" -p 2>/dev/null \
                             | grep -oP 'CTX:\K[0-9]+' | tail -1)
                         _ctx="${_ctx:-?}%"
                     fi
