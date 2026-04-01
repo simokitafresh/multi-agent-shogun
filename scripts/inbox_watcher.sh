@@ -52,6 +52,7 @@ BACKOFF_SEC="${BACKOFF_SEC:-120}"  # 2 minutes — safety net re-notification fo
 STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
 FIRST_UNREAD_SEEN="${FIRST_UNREAD_SEEN:-${STATE_DIR}/first_unread_seen_${AGENT_ID}}"
 FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-60}"
+BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: idle_flag force-creation)
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -181,6 +182,26 @@ maybe_force_idle_flag() {
     local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
     [ -f "$idle_flag" ] && return 1
 
+    # AC2: bash subprocess running → genuinely busy, skip timeout
+    if _agent_state_has_busy_subprocess "$PANE_TARGET"; then
+        return 1
+    fi
+
+    # AC1: @last_active based timeout — idle_flagなし+30秒以上前→強制生成
+    local last_active
+    last_active=$(tmux display-message -t "$PANE_TARGET" -p '#{@last_active}' 2>/dev/null || echo "")
+    if [[ "$last_active" =~ ^[0-9]+$ ]] && [ "$last_active" -gt 0 ]; then
+        local now elapsed
+        now=$(date +%s)
+        elapsed=$((now - last_active))
+        if [ "$elapsed" -ge "$BUSY_TIMEOUT_SEC" ]; then
+            echo "[$(date)] [RECOVERY] forcing idle flag for $AGENT_ID: @last_active ${elapsed}s ago (>= ${BUSY_TIMEOUT_SEC}s)" >&2
+            touch "$idle_flag"
+            return 0
+        fi
+    fi
+
+    # Fallback: first_unread_seen based timeout (defense in depth)
     local unread_age
     unread_age=$(get_first_unread_age)
     if [ "$unread_age" -lt "$FORCE_IDLE_AFTER_SEC" ]; then
