@@ -632,6 +632,15 @@ if [[ -s "$TMP_PIPELINE" ]]; then
 fi
 # GP-082: archive titles already written to TMP_TITLES by unified gawk pass above
 
+# ─── Deduplicate TMP_TITLES: keep last occurrence per cmd_id ───
+# Write order: archive(L305) → gate_metrics(L627) → pipeline(L631)
+# Priority: gate_metrics > pipeline > archive (comment L607)
+# tac→dedup→tac ensures later (higher-priority) entries win over earlier ones
+if [[ -s "$TMP_TITLES" ]]; then
+    tac "$TMP_TITLES" | awk -F'\t' '!seen[$1]++' | tac > "${TMP_TITLES}.dedup"
+    mv "${TMP_TITLES}.dedup" "$TMP_TITLES"
+fi
+
 # ─── Get last 5 CLEAR cmds for battle results ───
 if [[ -s "$TMP_METRICS" ]]; then
     awk -F'\t' '$3=="CLEAR"' "$TMP_METRICS" | tail -5 > "$TMP_RESULTS"
