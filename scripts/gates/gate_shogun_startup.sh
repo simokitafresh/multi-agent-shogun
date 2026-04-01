@@ -398,12 +398,27 @@ _evo_count=0
 _KMAP_TMP=$(mktemp)
 # MEMORY.mdはClaude homeにある（リポジトリ内ではない）
 _MEMORY_MD="$HOME/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md"
-cat "$SCRIPT_DIR"/CLAUDE.md \
-    "$_MEMORY_MD" \
-    "$SCRIPT_DIR"/instructions/*.md \
-    "$SCRIPT_DIR"/config/projects.yaml \
-    "$SCRIPT_DIR"/dashboard.md \
-    > "$_KMAP_TMP" 2>/dev/null
+: > "$_KMAP_TMP"
+_KMAP_MISSING=()
+_append_kmap_source() {
+    local _kmap_src="$1"
+    if [ -f "$_kmap_src" ]; then
+        cat "$_kmap_src" >> "$_KMAP_TMP"
+    else
+        _KMAP_MISSING+=("$(basename "$_kmap_src")")
+    fi
+}
+_append_kmap_source "$SCRIPT_DIR/CLAUDE.md"
+_append_kmap_source "$_MEMORY_MD"
+for _kmap_src in "$SCRIPT_DIR"/instructions/*.md; do
+    [ -f "$_kmap_src" ] || continue
+    _append_kmap_source "$_kmap_src"
+done
+_append_kmap_source "$SCRIPT_DIR/config/projects.yaml"
+_append_kmap_source "$SCRIPT_DIR/dashboard.md"
+if [ ${#_KMAP_MISSING[@]} -gt 0 ]; then
+    $BRIEF || echo "  INFO: 知識マップ参照元欠落: $(printf '%s, ' "${_KMAP_MISSING[@]}" | sed 's/, $//')"
+fi
 for cfile in "$SCRIPT_DIR"/context/*.md; do
     [ ! -f "$cfile" ] && continue
     _cbase=$(basename "$cfile")
