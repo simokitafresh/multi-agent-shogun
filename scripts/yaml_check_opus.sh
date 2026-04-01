@@ -143,37 +143,36 @@ validate_task() {
     check_field '^\s+parent_cmd:' "task.parent_cmd"
     check_field '^\s+task_type:' "task.task_type"
     check_field '^\s+status:' "task.status"
-    check_field '^\s+assigned_to:' "task.assigned_to"
-    check_field '^\s+title:' "task.title"
+    check_field '^\s+command:' "task.command"
 
     # 準必須スカラーフィールド (存在しなければwarning)
-    if ! grep -qE '^\s+bloom_level:' "$TARGET"; then
-        add_warning "Optional field missing: task.bloom_level"
-    fi
-    if ! grep -qE '^\s+timestamp:' "$TARGET"; then
-        add_warning "Optional field missing: task.timestamp"
-    fi
     if ! grep -qE '^\s+project:' "$TARGET"; then
         add_warning "Optional field missing: task.project"
     fi
-    if ! grep -qE '^\s+description:' "$TARGET"; then
-        add_warning "Optional field missing: task.description"
+    if ! grep -qE '^\s+target_path:' "$TARGET"; then
+        add_warning "Optional field missing: task.target_path"
     fi
 
     # 配列フィールド
     check_array_field '^\s+acceptance_criteria:' "task.acceptance_criteria"
-    check_array_field '^\s+blocked_by:' "task.blocked_by"
-    check_array_field '^\s+related_lessons:' "task.related_lessons"
+
+    # 準必須配列フィールド (存在しなければwarning)
+    if ! grep -qE '^\s+related_lessons:' "$TARGET"; then
+        add_warning "Optional array field missing: task.related_lessons"
+    fi
+    if ! grep -qE '^\s+constraints:' "$TARGET"; then
+        add_warning "Optional array field missing: task.constraints"
+    fi
 
     # task_type の値チェック
     local task_type
     task_type=$(grep -E '^\s+task_type:' "$TARGET" | head -1 | sed "s/.*task_type:\s*//" | tr -d '[:space:]"'"'"'')
     if [[ -n "$task_type" ]]; then
         case "$task_type" in
-            implement|review|recon|test|fix|design|refactor|deploy)
+            impl|implement|review|recon|test|fix|design|refactor|deploy)
                 ;;
             *)
-                add_warning "Unusual task_type value: '$task_type' (expected: implement/review/recon/test/fix/design/refactor/deploy)"
+                add_warning "Unusual task_type value: '$task_type' (expected: impl/implement/review/recon/test/fix/design/refactor/deploy)"
                 ;;
         esac
     fi
@@ -183,10 +182,10 @@ validate_task() {
     status=$(grep -E '^\s+status:' "$TARGET" | head -1 | sed "s/.*status:\s*//" | tr -d '[:space:]"'"'"'')
     if [[ -n "$status" ]]; then
         case "$status" in
-            assigned|acknowledged|in_progress|done|blocked|cancelled)
+            assigned|acknowledged|in_progress|done|blocked|cancelled|pending)
                 ;;
             *)
-                add_warning "Unusual status value: '$status' (expected: assigned/acknowledged/in_progress/done/blocked/cancelled)"
+                add_warning "Unusual status value: '$status' (expected: assigned/acknowledged/in_progress/done/blocked/cancelled/pending)"
                 ;;
         esac
     fi
