@@ -39,6 +39,21 @@ emit_actionable() {
     echo "action: $action"
 }
 
+# ─── 非deprecated教訓IDを出力（数値のみ、Lプレフィックスなし、1行1ID） ───
+_active_lesson_ids() {
+    local file="$1"
+    awk '
+        /^- id: L/ {
+            if (current_id != "" && !is_deprecated) print current_id
+            current_id = $3; sub(/^L/, "", current_id)
+            is_deprecated = 0
+        }
+        /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
+        /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
+        END { if (current_id != "" && !is_deprecated) print current_id }
+    ' "$file"
+}
+
 # 単一projectの健全性チェック
 # $1: project_id
 check_project() {
@@ -74,16 +89,7 @@ check_project() {
     # deprecated教訓を除外してIDを収集 (L034: 固定インデント非依存)
     # deprecated: true AND status: deprecated 両方を除外 (cmd_414)
     local -a all_ids
-    mapfile -t all_ids < <(awk '
-        /^- id: L/ {
-            if (current_id != "" && !is_deprecated) print current_id
-            current_id = $3; sub(/^L/, "", current_id)
-            is_deprecated = 0
-        }
-        /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
-        /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
-        END { if (current_id != "" && !is_deprecated) print current_id }
-    ' "$lessons_file" | sort -rn)
+    mapfile -t all_ids < <(_active_lesson_ids "$lessons_file" | sort -rn)
 
     # deprecated件数をログ出力 (status: deprecated OR deprecated: true, per-lesson)
     local deprecated_count
@@ -161,16 +167,7 @@ check_accumulation() {
             if [ "$id_num" -gt "$max_id" ] 2>/dev/null; then
                 max_id="$id_num"
             fi
-        done < <(awk '
-            /^- id: L/ {
-                if (current_id != "" && !is_deprecated) print current_id
-                current_id = $3; sub(/^L/, "", current_id)
-                is_deprecated = 0
-            }
-            /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
-            /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
-            END { if (current_id != "" && !is_deprecated) print current_id }
-        ' "$lessons_file")
+        done < <(_active_lesson_ids "$lessons_file")
     done
 
     if [ "$max_id" -eq 0 ]; then
@@ -198,16 +195,7 @@ check_accumulation() {
             if [ "$id_num" -gt "$checkpoint" ] 2>/dev/null; then
                 new_count=$((new_count + 1))
             fi
-        done < <(awk '
-            /^- id: L/ {
-                if (current_id != "" && !is_deprecated) print current_id
-                current_id = $3; sub(/^L/, "", current_id)
-                is_deprecated = 0
-            }
-            /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
-            /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
-            END { if (current_id != "" && !is_deprecated) print current_id }
-        ' "$lessons_file")
+        done < <(_active_lesson_ids "$lessons_file")
     done
 
     if [ "$new_count" -ge "$ACCUMULATION_THRESHOLD" ]; then
