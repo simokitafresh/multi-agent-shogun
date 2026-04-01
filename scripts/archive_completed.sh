@@ -497,12 +497,9 @@ archive_cmds() {
         local entry
         entry="$(sed -n "${s},${e}p" "$QUEUE_FILE")"
 
-        # statusフィールドを取得（L070対策: field_getでインデント変動に追従）
+        # statusフィールドを取得（インメモリ抽出: temp file I/O排除）
         local status_val
-        local entry_tmp="$TMP/stk_entry_${i}.yaml"
-        printf '%s\n' "$entry" > "$entry_tmp"
-        status_val=$(FIELD_GET_NO_LOG=1 field_get "$entry_tmp" "status" "" 2>/dev/null | tr -d '[:space:]')
-        rm -f "$entry_tmp"
+        status_val=$(printf '%s\n' "$entry" | grep -m1 '^ *status:' | sed 's/^ *status: *//; s/["'"'"']//g; s/[[:space:]]*$//' || true)
 
         # cmd_idを取得（退避先ファイル名に利用。リスト形式 + マッピング形式の両対応）
         local cmd_id
