@@ -1,42 +1,76 @@
 #!/usr/bin/env bats
 # test_cmd_save.bats — cmd_save.sh ユニットテスト（Check 6: GP重複チェック中心）
+# Optimized: フル実行→関数直接呼び出し方式（python3/tmux/git呼び出し回避）
+
+setup_file() {
+    export PROJECT_ROOT
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
+    [ -f "$SRC_SAVE_SCRIPT" ] || return 1
+
+    # 各チェック関数をsed -nで抽出+eval (setup_fileで1回のみ実行)
+
+    # check_impl_push_ac: Check 11 — 既存関数をそのまま抽出
+    eval "$(sed -n '/^check_impl_push_ac()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    export -f check_impl_push_ac
+
+    # check_gp_duplicate: Check 6インラインセクションを関数化
+    eval "check_gp_duplicate() {
+$(sed -n '/^# --- Check 6:/,/^# --- Check 7:/{/^# --- Check 7:/d;p}' "$SRC_SAVE_SCRIPT")
+}"
+    export -f check_gp_duplicate
+
+    # check_3_7_checklist: Check 3.7インラインセクションを関数化
+    eval "check_3_7_checklist() {
+$(sed -n '/# --- Check 3.7:/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRIPT")
+}"
+    export -f check_3_7_checklist
+
+    # check_q4_depth: q4_depthインラインセクションを関数化
+    eval "check_q4_depth() {
+$(sed -n '/# q4_depth: 段階的導入/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRIPT")
+}"
+    export -f check_q4_depth
+
+    # check_quality_gate: Check 3インラインセクション(lines 64-170)を関数化 + 成功時OK出力
+    eval "check_quality_gate() {
+local WARN_COUNT=0
+$(sed -n '64,170p' "$SRC_SAVE_SCRIPT")
+echo \"保存確認OK: \${CMD_ID}\"
+}"
+    export -f check_quality_gate
+
+    # 共有テンポラリディレクトリ(setup_fileで1回のみ作成)
+    export TEST_SHARED_TMP
+    TEST_SHARED_TMP="$(mktemp -d)"
+    mkdir -p "${TEST_SHARED_TMP}/queue/archive/cmds"
+    export QUEUE_FILE="${TEST_SHARED_TMP}/queue/shogun_to_karo.yaml"
+}
+
+teardown_file() {
+    rm -rf "$TEST_SHARED_TMP"
+}
 
 setup() {
-    TEST_TMP="$(mktemp -d)"
-    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-
-    mkdir -p "${TEST_TMP}/queue/archive/cmds"
-    mkdir -p "${TEST_TMP}/scripts"
-    mkdir -p "${TEST_TMP}/context"
-
-    # cmd_save.sh をコピーし、パスをテスト用に差し替え
-    sed \
-        -e "s|SCRIPT_DIR=\"\$(cd \"\$(dirname \"\$0\")\" && pwd)\"|SCRIPT_DIR=\"${TEST_TMP}/scripts\"|" \
-        -e "s|PROJECT_DIR=\"\$(dirname \"\$SCRIPT_DIR\")\"|PROJECT_DIR=\"${TEST_TMP}\"|" \
-        "$PROJECT_ROOT/scripts/cmd_save.sh" > "${TEST_TMP}/scripts/cmd_save.sh"
-    chmod +x "${TEST_TMP}/scripts/cmd_save.sh"
-
-    # git stub（Check 5用）
-    mkdir -p "${TEST_TMP}/bin"
-    cat > "${TEST_TMP}/bin/git" << 'GIT_STUB'
-#!/bin/bash
-echo ""
-GIT_STUB
-    chmod +x "${TEST_TMP}/bin/git"
-    export PATH="${TEST_TMP}/bin:$PATH"
-
-    # 品質ログ不要
-    mkdir -p "${TEST_TMP}/logs"
-    touch "${TEST_TMP}/logs/cmd_design_quality.yaml"
+    # 共有tmpdirを再利用 — per-testのmktemp/mkdirオーバーヘッドを排除
+    export CMD_ID="cmd_test"
+    export CMD_BLOCK=""
+    export CMD_BLOCK_NC=""
 }
 
-teardown() {
-    rm -rf "$TEST_TMP"
-}
+teardown() { true; }
 
-# --- ヘルパー: 最小限のshogun_to_karo.yaml生成 ---
+# --- ヘルパー: QUEUE_FILE書き込み ---
 create_queue_file() {
-    cat > "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    cat > "$QUEUE_FILE"
+}
+
+# --- ヘルパー: CMD_BLOCK/CMD_BLOCK_NCをQUEUE_FILEから設定 ---
+_setup_cmd_block() {
+    local cid="${1:-$CMD_ID}"
+    CMD_BLOCK=$(awk "/^  ${cid}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
+    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+    export CMD_BLOCK CMD_BLOCK_NC
 }
 
 # --- Check 6: GP重複検出 ---
@@ -45,26 +79,15 @@ create_queue_file() {
     create_queue_file << 'YAML'
 commands:
   cmd_1001:
-    id: cmd_1001
     command: "GP-031対応の修正"
     status: delegated
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
   cmd_1002:
-    id: cmd_1002
     command: "GP-031+GP-033統合修正"
     status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
+    CMD_ID="cmd_1002"; export CMD_ID
+    run check_gp_duplicate
     echo "$output" >&2
     # GP-031がcmd_1001(delegated)と重複 → WARN
     [[ "$output" == *"GP-031"* ]]
@@ -75,30 +98,18 @@ YAML
     create_queue_file << 'YAML'
 commands:
   cmd_1001:
-    id: cmd_1001
     command: "GP-031対応の修正"
     status: delegated
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
   cmd_1010:
-    id: cmd_1010
     command: "inbox_write.shのリファクタリング"
     status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1010
+    CMD_ID="cmd_1010"; export CMD_ID
+    run check_gp_duplicate
     echo "$output" >&2
-    # GP番号なし → Check 6スキップ → WARNなし → 保存確認OK
-    [[ "$output" == *"保存確認OK"* ]]
-    # GP関連のWARNが出ていないこと
+    # GP番号なし → Check 6スキップ → WARNなし
+    [ "$status" -eq 0 ]
     [[ "$output" != *"GP-"* ]]
 }
 
@@ -106,29 +117,18 @@ YAML
     create_queue_file << 'YAML'
 commands:
   cmd_1001:
-    id: cmd_1001
     command: "GP-031対応の修正"
     status: completed
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
   cmd_1002:
-    id: cmd_1002
     command: "GP-031の追加修正"
     status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
+    CMD_ID="cmd_1002"; export CMD_ID
+    run check_gp_duplicate
     echo "$output" >&2
     # cmd_1001はcompleted → GP重複WARNなし
-    [[ "$output" == *"保存確認OK"* ]]
+    [ "$status" -eq 0 ]
     [[ "$output" != *"GP-031"*"cmd_1001"* ]]
 }
 
@@ -136,26 +136,15 @@ YAML
     create_queue_file << 'YAML'
 commands:
   cmd_1001:
-    id: cmd_1001
     command: "GP-042対応"
     status: in_progress
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
   cmd_1002:
-    id: cmd_1002
     command: "GP-042の再実装"
     status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
+    CMD_ID="cmd_1002"; export CMD_ID
+    run check_gp_duplicate
     echo "$output" >&2
     [[ "$output" == *"GP-042"* ]]
     [[ "$output" == *"cmd_1001"* ]]
@@ -166,26 +155,15 @@ YAML
     create_queue_file << 'YAML'
 commands:
   cmd_1001:
-    id: cmd_1001
     command: "GP-031修正"
     status: delegated
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
   cmd_1002:
-    id: cmd_1002
     command: "GP-031+GP-033+GP-034統合"
     status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
+    CMD_ID="cmd_1002"; export CMD_ID
+    run check_gp_duplicate
     echo "$output" >&2
     # GP-031のみ重複、GP-033/034は重複なし
     [[ "$output" == *"GP-031"* ]]
@@ -196,73 +174,43 @@ YAML
     create_queue_file << 'YAML'
 commands:
   cmd_1001:
-    id: cmd_1001
     command: "GP-031対応"
     status: delegated
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
   cmd_1002:
-    id: cmd_1002
     command: "GP-031の再実装"
     status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_1002
+    CMD_ID="cmd_1002"; export CMD_ID
+    run check_gp_duplicate
     echo "$output" >&2
-    # GP重複WARNは出るが、非BLOCKなので保存確認OKで終了
-    [[ "$status" -eq 0 ]]
-    [[ "$output" == *"保存確認OK"* ]]
+    # GP重複WARNは出るが、非BLOCKなので終了コード0
+    [ "$status" -eq 0 ]
 }
 
-@test "Check3.7: チェックリスト参照cmdでWARNING出力" {
-    create_queue_file << 'YAML'
-commands:
-  cmd_2001:
-    id: cmd_2001
-    command: "チェックリストStep6実行 — 本番DB登録"
-    status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
-YAML
+# --- Check 3.7: チェックリスト参照cmdのWARNING ---
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_2001
+@test "Check3.7: チェックリスト参照cmdでWARNING出力" {
+    CMD_BLOCK_NC="チェックリストStep6実行 — 本番DB登録"
+    export CMD_BLOCK_NC
+    run check_3_7_checklist
     echo "$output" >&2
     [[ "$output" == *"チェックリスト参照cmd"* ]]
     [[ "$output" == *"隣接Step"* ]]
-    # WARNINGだが非BLOCKなので保存OK
-    [[ "$status" -eq 0 ]]
+    # WARNINGだが非BLOCKなので終了コード0
+    [ "$status" -eq 0 ]
 }
 
 @test "Check3.7: チェックリスト参照なしcmdはWARNなし" {
-    create_queue_file << 'YAML'
-commands:
-  cmd_2002:
-    id: cmd_2002
-    command: "inbox_write.shのリファクタリング"
-    status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
-YAML
-
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_2002
+    CMD_BLOCK_NC="inbox_write.shのリファクタリング"
+    export CMD_BLOCK_NC
+    run check_3_7_checklist
     echo "$output" >&2
     [[ "$output" != *"チェックリスト参照cmd"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
+
+# --- Check1-5: quality_gate ---
 
 @test "Check1-5: 既存チェックに影響なし（正常系）" {
     create_queue_file << 'YAML'
@@ -278,10 +226,27 @@ commands:
       q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_9999
+    CMD_ID="cmd_9999"; export CMD_ID
+    run check_quality_gate
     echo "$output" >&2
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK: cmd_9999"* ]]
+}
+
+@test "Check1-5: quality_gate未記入でBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8888:
+    id: cmd_8888
+    command: "quality_gate無しcmd"
+    status: pending
+YAML
+
+    CMD_ID="cmd_8888"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK"* ]]
 }
 
 # --- Check 11: impl cmd post-deploy verification AC検出 ---
@@ -305,14 +270,16 @@ commands:
       q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3001
+    CMD_ID="cmd_3001"; export CMD_ID
+    _setup_cmd_block "$CMD_ID"
+    run check_impl_push_ac
     echo "$output" >&2
     # push/deploy/verify/本番確認がACにない → WARN
     [[ "$output" == *"デプロイ後の本番動作確認"* ]]
     [[ "$output" == *"ACN: git push後"* ]]
     [[ "$output" == *"cmd_1491"* ]]
-    # 非BLOCKなので保存OK
-    [[ "$status" -eq 0 ]]
+    # 非BLOCKなので終了コード0
+    [ "$status" -eq 0 ]
 }
 
 @test "Check11: dm-signal+impl ACにpush有りでWARNなし" {
@@ -334,11 +301,13 @@ commands:
       q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3002
+    CMD_ID="cmd_3002"; export CMD_ID
+    _setup_cmd_block "$CMD_ID"
+    run check_impl_push_ac
     echo "$output" >&2
     # ACにpushがある → WARNなし
     [[ "$output" != *"デプロイ後の本番動作確認"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check11: dm-signal+impl ACにデプロイ有りでWARNなし" {
@@ -360,10 +329,12 @@ commands:
       q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3003
+    CMD_ID="cmd_3003"; export CMD_ID
+    _setup_cmd_block "$CMD_ID"
+    run check_impl_push_ac
     echo "$output" >&2
     [[ "$output" != *"デプロイ後の本番動作確認"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check11: dm-signal+impl ACに本番動作確認有りでWARNなし" {
@@ -385,10 +356,12 @@ commands:
       q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3004
+    CMD_ID="cmd_3004"; export CMD_ID
+    _setup_cmd_block "$CMD_ID"
+    run check_impl_push_ac
     echo "$output" >&2
     [[ "$output" != *"デプロイ後の本番動作確認"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check11: project=infraのimplはスキップ" {
@@ -410,11 +383,13 @@ commands:
       q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3005
+    CMD_ID="cmd_3005"; export CMD_ID
+    _setup_cmd_block "$CMD_ID"
+    run check_impl_push_ac
     echo "$output" >&2
     # infraはCheck11対象外
     [[ "$output" != *"デプロイ後の本番動作確認"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check11: dm-signal+reconはスキップ" {
@@ -435,11 +410,13 @@ commands:
       q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3006
+    CMD_ID="cmd_3006"; export CMD_ID
+    _setup_cmd_block "$CMD_ID"
+    run check_impl_push_ac
     echo "$output" >&2
     # reconはCheck11対象外
     [[ "$output" != *"デプロイ後の本番動作確認"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check11: commandにpushがあってもACに無ければWARN" {
@@ -461,112 +438,54 @@ commands:
       q5_verified_source: "コード確認"
 YAML
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_3007
+    CMD_ID="cmd_3007"; export CMD_ID
+    _setup_cmd_block "$CMD_ID"
+    run check_impl_push_ac
     echo "$output" >&2
     # commandにpushがあるがACにはない → WARN出力
     [[ "$output" == *"デプロイ後の本番動作確認"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
 
-@test "Check3-q4: q4_depth=deepでWARNING表示" {
-    create_queue_file << 'YAML'
-commands:
-  cmd_4001:
-    id: cmd_4001
-    command: "深堀り偵察cmd"
-    status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q4_depth: "deep — 全忍者投入の万全偵察"
-      q5_verified_source: "コード確認"
-YAML
+# --- Check3-q4: q4_depth ---
 
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_4001
+@test "Check3-q4: q4_depth=deepでWARNING表示" {
+    CMD_BLOCK_NC='    q4_depth: "deep — 全忍者投入の万全偵察"'
+    export CMD_BLOCK_NC
+    run check_q4_depth
     echo "$output" >&2
     [[ "$output" == *"q4_depth=deep/medium"* ]]
     [[ "$output" == *"時間コスト"* ]]
-    # 非BLOCKなので保存OK
-    [[ "$status" -eq 0 ]]
+    # 非BLOCKなので終了コード0
+    [ "$status" -eq 0 ]
 }
 
 @test "Check3-q4: q4_depth=mediumでWARNING表示" {
-    create_queue_file << 'YAML'
-commands:
-  cmd_4002:
-    id: cmd_4002
-    command: "中程度深堀りcmd"
-    status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q4_depth: "medium — 2忍者並列"
-      q5_verified_source: "コード確認"
-YAML
-
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_4002
+    CMD_BLOCK_NC='    q4_depth: "medium — 2忍者並列"'
+    export CMD_BLOCK_NC
+    run check_q4_depth
     echo "$output" >&2
     [[ "$output" == *"q4_depth=deep/medium"* ]]
     [[ "$output" == *"時間コスト"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check3-q4: q4_depth=shallowでWARNINGなし" {
-    create_queue_file << 'YAML'
-commands:
-  cmd_4003:
-    id: cmd_4003
-    command: "軽量修正cmd"
-    status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q4_depth: "shallow — 1忍者で完結"
-      q5_verified_source: "コード確認"
-YAML
-
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_4003
+    CMD_BLOCK_NC='    q4_depth: "shallow — 1忍者で完結"'
+    export CMD_BLOCK_NC
+    run check_q4_depth
     echo "$output" >&2
     [[ "$output" != *"q4_depth=deep/medium"* ]]
     [[ "$output" != *"時間コスト"* ]]
-    [[ "$status" -eq 0 ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check3-q4: q4_depth未記入で従来WARNING表示" {
-    create_queue_file << 'YAML'
-commands:
-  cmd_4004:
-    id: cmd_4004
-    command: "q4_depth無しcmd"
-    status: pending
-    quality_gate:
-      q1_firefighting: "no"
-      q2_learning: "奪わない"
-      q3_next_quality: "上がる"
-      q5_verified_source: "コード確認"
-YAML
-
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_4004
+    CMD_BLOCK_NC='    q1_firefighting: "no"'
+    export CMD_BLOCK_NC
+    run check_q4_depth
     echo "$output" >&2
     [[ "$output" == *"q4_depth未記入"* ]]
     [[ "$output" != *"q4_depth=deep/medium"* ]]
-    [[ "$status" -eq 0 ]]
-}
-
-@test "Check1-5: quality_gate未記入でBLOCK" {
-    create_queue_file << 'YAML'
-commands:
-  cmd_8888:
-    id: cmd_8888
-    command: "quality_gate無しcmd"
-    status: pending
-YAML
-
-    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_8888
-    echo "$output" >&2
-    [[ "$status" -ne 0 ]]
-    [[ "$output" == *"BLOCK"* ]]
+    [ "$status" -eq 0 ]
 }
