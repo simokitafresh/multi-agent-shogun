@@ -377,15 +377,15 @@ else:
 with open(dashboard_path) as f:
     content = f.read()
 
-# Split on 要対応 heading
-parts = re.split(r'(## 要対応[^\n]*\n)', content, maxsplit=1)
-if len(parts) < 3:
+# Split on 要対応 heading (emoji/prefix/suffix tolerant)
+heading_match = re.search(r'^(## [^\n]*要対応[^\n]*\n)', content, re.MULTILINE)
+if not heading_match:
     print('WARN: 要対応セクションが見つかりません', file=sys.stderr)
     sys.exit(0)
 
-before = parts[0]
-heading = parts[1]
-rest = parts[2]
+before = content[:heading_match.start()]
+heading = heading_match.group(1)
+rest = content[heading_match.end():]
 
 # Find the next ## heading in rest
 next_heading = re.search(r'^## ', rest, re.MULTILINE)
@@ -446,11 +446,11 @@ if not os.path.exists(dashboard_path):
 try:
     with open(dashboard_path) as f:
         content = f.read()
-    parts = re.split(r'## 要対応[^\n]*\n', content, maxsplit=1)
-    if len(parts) < 2:
+    heading_match = re.search(r'^## [^\n]*要対応[^\n]*\n', content, re.MULTILINE)
+    if not heading_match:
         print('[dashboard] WARN: postcondition: 要対応セクション未発見', file=sys.stderr)
         sys.exit(0)
-    rest = parts[1]
+    rest = content[heading_match.end():]
     next_heading = re.search(r'^## ', rest, re.MULTILINE)
     section_body = rest[:next_heading.start()] if next_heading else rest
     if '（なし）' in section_body:
