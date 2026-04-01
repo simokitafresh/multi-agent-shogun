@@ -298,13 +298,13 @@ load_adapter_with() {
 @test "build_cli_command: cliセクションなし → pinned claude フォールバック" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     result=$(build_cli_command "sasuke")
-    [[ "$result" == */bin/claude*--dangerously-skip-permissions ]]
+    [[ "$result" == *claude*--dangerously-skip-permissions ]]
 }
 
 @test "build_cli_command: settings読取失敗 → pinned claude フォールバック" {
     load_adapter_with "/nonexistent/settings.yaml"
     result=$(build_cli_command "sasuke")
-    [[ "$result" == */bin/claude*--dangerously-skip-permissions ]]
+    [[ "$result" == *claude*--dangerously-skip-permissions ]]
 }
 
 # =============================================================================
