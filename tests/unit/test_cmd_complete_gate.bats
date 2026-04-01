@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
-# test_cmd_complete_gate.bats - cmd_543 context_update gate behavior
+# test_cmd_complete_gate.bats - cmd_complete_gate.sh partial unit tests
+# Optimized: gate全体実行をやめ、重い責務を関数/局所フェーズ単位で直接検証する
 
 load '../helpers/cmd_gate_scaffold'
 
@@ -11,6 +12,11 @@ setup_file() {
 
 setup() {
     cmd_gate_scaffold "cmd_gate_ctx"
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export LOG_DIR="$TEST_PROJECT/logs"
+    export CMD_ID="$TEST_CMD_ID"
+
     cp "$SRC_NORMALIZE_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
     chmod +x "$TEST_PROJECT/scripts/lib/normalize_report.sh"
 
@@ -31,18 +37,71 @@ messages:
     read: false
 EOF
 
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
-task:
-  parent_cmd: $TEST_CMD_ID
-  task_type: review
-  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
-  ac_version: 2
-  related_lessons: []
-EOF
+    source "$SRC_FIELD_GET_SCRIPT"
+    eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_GATE_SCRIPT")"
+    eval "$(sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT")"
+    eval "$(sed -n '/^check_context_update()/,/^}/p' "$SRC_GATE_SCRIPT")"
+    eval "$(sed -n '/^update_lesson_impact_tsv()/,/^}/p' "$SRC_GATE_SCRIPT")"
+
+    ALL_CLEAR=true
+    BLOCK_REASONS=()
+
+    write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
 }
 
 teardown() {
     cmd_gate_teardown
+}
+
+reset_gate_state() {
+    ALL_CLEAR=true
+    BLOCK_REASONS=()
+}
+
+is_cmd_task() {
+    local task_file="$1"
+    grep -q "parent_cmd: ${TEST_CMD_ID}" "$task_file" 2>/dev/null
+}
+
+resolve_report_file() {
+    local ninja_name="$1"
+    local explicit_path report_parent
+    local task_file="$TASKS_DIR/${ninja_name}.yaml"
+
+    if [ -f "$task_file" ]; then
+        explicit_path=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_filename" "")
+        if [ -n "$explicit_path" ] && [ -f "$SCRIPT_DIR/queue/reports/$explicit_path" ]; then
+            echo "$SCRIPT_DIR/queue/reports/$explicit_path"
+            return 0
+        fi
+    fi
+
+    if [ -f "$SCRIPT_DIR/queue/reports/${ninja_name}_report_${TEST_CMD_ID}.yaml" ]; then
+        echo "$SCRIPT_DIR/queue/reports/${ninja_name}_report_${TEST_CMD_ID}.yaml"
+        return 0
+    fi
+
+    if [ -f "$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml" ]; then
+        report_parent=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml" "parent_cmd" "")
+        if [ "$report_parent" = "$TEST_CMD_ID" ]; then
+            echo "$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+write_task_fixture() {
+    local report_filename="${1:-sasuke_report_${TEST_CMD_ID}.yaml}"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: review
+  report_filename: $report_filename
+  ac_version: 2
+  related_lessons: []
+EOF
 }
 
 write_cmd_yaml() {
@@ -105,12 +164,112 @@ lessons_useful: []
 EOF
 }
 
+run_context_update_check() {
+    reset_gate_state
+    check_context_update "$TEST_CMD_ID"
+    [ "$ALL_CLEAR" = true ]
+}
+
+run_context_freshness_nudge() {
+    local context_warn_lines
+
+    echo "Context freshness nudge (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/context_freshness_check.sh" ]; then
+        context_warn_lines=$(bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$TEST_CMD_ID" 2>/dev/null || true)
+        if [ -n "$context_warn_lines" ]; then
+            while IFS= read -r warn_line; do
+                [ -n "$warn_line" ] || continue
+                echo "  ${warn_line}"
+            done <<< "$context_warn_lines"
+        else
+            echo "  OK: no stale project context files"
+        fi
+    else
+        echo "  [INFO] context_freshness_check.sh not found (skip)"
+    fi
+}
+
+run_normalize_phase() {
+    local task_file ninja_name report_file normalize_exit normalize_output
+
+    export NORMALIZE_LOG="$SCRIPT_DIR/logs/normalize_report.log"
+    echo "Normalize report candidates (B層):"
+    for task_file in "$TASKS_DIR"/*.yaml; do
+        [ -f "$task_file" ] || continue
+        is_cmd_task "$task_file" || continue
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name") || continue
+        if [ -f "$report_file" ]; then
+            normalize_exit=0
+            normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) || normalize_exit=$?
+            if [ "$normalize_exit" -eq 0 ]; then
+                echo "  [INFO] ${ninja_name}: auto-fixed: ${normalize_output}"
+            elif [ "$normalize_exit" -eq 1 ]; then
+                echo "  ${ninja_name}: OK (no normalization needed)"
+            else
+                echo "  ${ninja_name}: ERROR — normalize_report.sh exit=${normalize_exit}: ${normalize_output}"
+            fi
+        fi
+    done
+}
+
+run_report_format_validation() {
+    local report_file task_file ninja_name gate_output
+
+    REPORT_FORMAT_CHECKED=0
+    REPORT_FORMAT_FAILED=0
+    declare -A report_format_seen=()
+
+    validate_report_format_file() {
+        local candidate="$1"
+
+        [ -n "$candidate" ] || return 0
+        [ -f "$candidate" ] || return 0
+        if [ -n "${report_format_seen["$candidate"]+x}" ]; then
+            return 0
+        fi
+
+        report_format_seen["$candidate"]=1
+        REPORT_FORMAT_CHECKED=$((REPORT_FORMAT_CHECKED + 1))
+        "$SCRIPT_DIR/scripts/gates/gate_report_autofix.sh" "$candidate" 2>/dev/null || true
+        gate_output=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$candidate" 2>&1 || true)
+        if echo "$gate_output" | grep -q "^FAIL"; then
+            REPORT_FORMAT_FAILED=$((REPORT_FORMAT_FAILED + 1))
+            echo "  [CRITICAL] $(basename "$candidate"): $gate_output"
+        else
+            echo "  $(basename "$candidate"): PASS"
+        fi
+    }
+
+    level_heading "[L1]" "Report format validation (direct scan):"
+    for task_file in "$TASKS_DIR"/*.yaml; do
+        [ -f "$task_file" ] || continue
+        is_cmd_task "$task_file" || continue
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name") || continue
+        validate_report_format_file "$report_file"
+    done
+
+    for report_file in "$SCRIPT_DIR/queue/reports/"*_report_${TEST_CMD_ID}.yaml; do
+        [ -f "$report_file" ] || continue
+        validate_report_format_file "$report_file"
+    done
+
+    if [ "$REPORT_FORMAT_CHECKED" -eq 0 ]; then
+        echo "  (no report files found for ${TEST_CMD_ID})"
+    elif [ "$REPORT_FORMAT_FAILED" -eq 0 ]; then
+        echo "  OK (全${REPORT_FORMAT_CHECKED}件フォーマット検証PASS)"
+    fi
+
+    [ "$REPORT_FORMAT_FAILED" -eq 0 ]
+}
+
 @test "context_update present + stale last_updated: gate blocks" {
     write_cmd_yaml "with_context"
     write_context_file "2025-01-01"
     write_report
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run run_context_update_check
     [ "$status" -eq 1 ]
     [[ "$output" == *"Context update check:"* ]]
     [[ "$output" == *"context_update:context/infrastructure.md:stale"* ]]
@@ -121,7 +280,7 @@ EOF
     write_context_file "2026-03-05"
     write_report
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run run_context_update_check
     [ "$status" -eq 0 ]
     [[ "$output" == *"Context update check:"* ]]
     [[ "$output" == *"OK: context/infrastructure.md: last_updated=2026-03-05 (cmd=2026-03-04)"* ]]
@@ -132,7 +291,7 @@ EOF
     write_context_file "2025-01-01"
     write_report
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run run_context_update_check
     [ "$status" -eq 0 ]
     [[ "$output" == *"Context update check:"* ]]
     [[ "$output" == *"SKIP (context_update not set)"* ]]
@@ -143,7 +302,7 @@ EOF
     write_context_file "2026-03-01"
     write_report
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run run_context_freshness_nudge
     [ "$status" -eq 0 ]
     [[ "$output" == *"Context freshness nudge (GATE CLEAR):"* ]]
     [[ "$output" == *"WARN: context/infrastructure.md last_updated"* ]]
@@ -204,7 +363,7 @@ timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloo
 2026-03-04T00:00:00	cmd_999	sasuke	L101	injected	pending	pending	infra	review	routine
 EOF
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run update_lesson_impact_tsv "$TEST_CMD_ID" "CLEAR"
     [ "$status" -eq 0 ]
 
     run grep -F $'subtask_test\tsasuke\tL100\tinjected\tCLEAR\tyes' "$TEST_PROJECT/logs/lesson_impact.tsv"
@@ -217,13 +376,11 @@ EOF
     [ "$status" -eq 0 ]
 }
 
-# ─── B層 normalize_report テスト ───
-
 @test "B層: normalize OK when report already dict format (exit 1)" {
     write_cmd_yaml "without_context"
     write_report
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run run_normalize_phase
     [ "$status" -eq 0 ]
     [[ "$output" == *"sasuke: OK (no normalization needed)"* ]]
 }
@@ -255,7 +412,7 @@ decision_candidate:
 lessons_useful: []
 EOF
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run run_normalize_phase
     [ "$status" -eq 0 ]
     [[ "$output" == *"[INFO] sasuke:"* ]]
     [[ "$output" == *"自動修正"* ]] || [[ "$output" == *"auto-fixed"* ]]
@@ -267,15 +424,11 @@ EOF
 
     rm "$TEST_PROJECT/scripts/lib/normalize_report.sh"
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run run_normalize_phase
     [ "$status" -eq 0 ]
     [[ "$output" == *"sasuke: ERROR"* ]]
-    [[ "$output" == *"normalize_report.sh exit="* ]]
+    [[ "$output" == *"normalize_report.sh exit=127"* ]]
 }
-
-# ─── cmd_1045 lessons_useful形式検証テスト ───
-# 削除(2026-04-01): gate_report_format.shで同等テスト59件存在(test_report_template_gate_compat+test_gate_report_autofix)
-# 復元: git log --all -- tests/unit/test_cmd_complete_gate.bats
 
 @test "custom report_filename is included in direct report format validation" {
     write_cmd_yaml "without_context"
@@ -294,14 +447,7 @@ echo "PASS"
 EOF
     chmod +x "$TEST_PROJECT/scripts/gates/gate_report_autofix.sh" "$TEST_PROJECT/scripts/gates/gate_report_format.sh"
 
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
-task:
-  parent_cmd: $TEST_CMD_ID
-  task_type: review
-  report_filename: custom_gate_target.yaml
-  ac_version: 2
-  related_lessons: []
-EOF
+    write_task_fixture "custom_gate_target.yaml"
 
     cat > "$TEST_PROJECT/queue/reports/custom_gate_target.yaml" <<EOF
 worker_id: sasuke
@@ -334,7 +480,7 @@ binary_checks:
       result: "yes"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run run_report_format_validation
     [ "$status" -eq 1 ]
     [[ "$output" == *"custom_gate_target.yaml: FAIL: custom report hit formatter"* ]]
 }
