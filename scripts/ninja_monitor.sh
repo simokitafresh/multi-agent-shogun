@@ -1389,8 +1389,8 @@ check_stale_cmds() {
             continue
         fi
 
-        # subtask存在確認: queue/tasks/*.yaml の parent_cmd を照合
-        if grep -l "parent_cmd:.*${cmd_id}" "$SCRIPT_DIR/queue/tasks/"*.yaml >/dev/null 2>&1; then
+        # subtask存在確認: queue/tasks/*.yaml の parent_cmd を照合 (L335: -Fw必須)
+        if grep -Fwl "parent_cmd: ${cmd_id}" "$SCRIPT_DIR/queue/tasks/"*.yaml >/dev/null 2>&1; then
             continue
         fi
 
