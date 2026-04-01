@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R12
   task_type: impl
   project: infra
-  status: in_progress
+  status: completed
   target_path: tests/unit/test_lesson_write.bats
   command: |
     テスト速度最適化: test_lesson_write.batsを高速化せよ。
