@@ -81,9 +81,9 @@ code_tasks = []
 review_tasks = []
 
 for task in all_tasks:
-    title = (task.get('title') or '').lower()
-    desc = (task.get('description') or '').lower()
-    search_text = title + ' ' + desc
+    command = (task.get('command') or '').lower()
+    purpose = (task.get('purpose') or '').lower()
+    search_text = command + ' ' + purpose
     task_type = (task.get('task_type') or '').lower()
 
     is_code = any(kw.lower() in search_text for kw in code_keywords)
