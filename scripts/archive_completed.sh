@@ -290,6 +290,38 @@ PY
 }
 
 # ============================================================
+# 0.85 STK安全書込みヘルパー (yaml.dump禁止対策)
+#   dict形式STKからcmd_idブロックをテキストベースで除去する。
+#   yaml.dumpのround-trip問題(マルチライン文字列消失)を回避。
+# ============================================================
+stk_remove_cmd_blocks() {
+    local file="$1" cmd_csv="$2"
+    [ -z "$cmd_csv" ] && return 0
+
+    local tmp_file="$TMP/stk_safe_rewrite.yaml"
+    gawk -v ids="$cmd_csv" '
+        BEGIN {
+            n = split(ids, arr, ",")
+            for (i = 1; i <= n; i++) remove[arr[i]] = 1
+            skip = 0
+        }
+        /^  cmd_[0-9a-zA-Z_]+:/ {
+            id = $0
+            sub(/^  /, "", id)
+            sub(/:.*/, "", id)
+            if (id in remove) { skip = 1; next }
+            skip = 0
+            print; next
+        }
+        skip && (/^    / || /^$/) { next }
+        skip { skip = 0 }
+        { print }
+    ' "$file" > "$tmp_file"
+
+    mv "$tmp_file" "$file"
+}
+
+# ============================================================
 # 0.9 STK dict形式status同期+アーカイブ退避
 #   1. archive/cmds/ + 完了報告 から完了cmd_idを収集
 #   2. STK内delegated→doneに更新
@@ -396,28 +428,28 @@ for cmd_id, entry in cmds.items():
 
     keep[cmd_id] = entry
 
-# STK書き戻し（keepのみ）
-if archived > 0:
-    trimmed_data = {"commands": keep}
-    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(stk_path), suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            yaml.dump(trimmed_data, f, default_flow_style=False,
-                      allow_unicode=True, indent=2, sort_keys=False)
-        os.replace(tmp_path, stk_path)
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
-
+# yaml.dump禁止: 退避対象cmd_idリストをbash側に出力（テキストベース処理）
+removed_ids = [cid for cid in cmds if cid not in keep and isinstance(cmds[cid], dict)]
 print(f"{synced} {archived}")
+if removed_ids:
+    print(f"REMOVE:{','.join(removed_ids)}")
 PY
         ) 200>"/tmp/mas-stk.lock"
     )
 
+    # yaml.dump禁止: テキストベースでSTKからcmdブロックを除去
+    local remove_csv
+    remove_csv=$(echo "$result" | grep '^REMOVE:' | sed 's/^REMOVE://' || true)
+    if [ -n "$remove_csv" ]; then
+        (
+            flock -w 10 200 || { echo "[stk-sync] WARN: flock timeout on rewrite" >&2; return 1; }
+            stk_remove_cmd_blocks "$QUEUE_FILE" "$remove_csv"
+        ) 200>"/tmp/mas-stk.lock"
+    fi
+
     local synced archived
-    synced=$(echo "$result" | awk '{print $1}')
-    archived=$(echo "$result" | awk '{print $2}')
+    synced=$(echo "$result" | head -1 | awk '{print $1}')
+    archived=$(echo "$result" | head -1 | awk '{print $2}')
     echo "[stk-sync] delegated→done: ${synced:-0}, archived: ${archived:-0}"
 }
 
@@ -1012,10 +1044,12 @@ STK_ARCHIVE_DIR="$PROJECT_DIR/archive/shogun_to_karo"
 trim_stk_old_entries() {
     [ -f "$QUEUE_FILE" ] || return 0
 
-    (
-        flock -w 10 200 || { echo "[stk-trim] WARN: flock timeout on QUEUE_FILE" >&2; return 1; }
+    local _trim_result
+    _trim_result=$(
+        (
+            flock -w 10 200 || { echo "[stk-trim] WARN: flock timeout on QUEUE_FILE" >&2; return 1; }
 
-        python3 - "$QUEUE_FILE" "$STK_ARCHIVE_DIR" <<'PY'
+            python3 - "$QUEUE_FILE" "$STK_ARCHIVE_DIR" <<'PY'
 import os
 import sys
 import tempfile
@@ -1118,24 +1152,29 @@ for ym, entries in to_archive.items():
             os.unlink(tmp_path)
         raise
 
-# Phase 3: 元ファイルを更新 (keep のみ残す)
-trimmed_data = {"commands": keep}
-fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(stk_path), suffix=".tmp")
-try:
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        yaml.dump(trimmed_data, f, default_flow_style=False,
-                  allow_unicode=True, indent=2, sort_keys=False)
-    os.replace(tmp_path, stk_path)
-except Exception:
-    if os.path.exists(tmp_path):
-        os.unlink(tmp_path)
-    raise
+# yaml.dump禁止: 退避対象cmd_idリストをbash側に出力（テキストベース処理）
+all_archived_ids = []
+for ym_key, entries in to_archive.items():
+    all_archived_ids.extend(entries.keys())
 
 print(f"trimmed: archived={archived_count} kept={len(keep)}")
+if all_archived_ids:
+    print(f"REMOVE:{','.join(all_archived_ids)}")
 PY
-    ) 200>"/tmp/mas-stk.lock"
+        ) 200>"/tmp/mas-stk.lock"
+    )
 
-    echo "[stk-trim] done"
+    # yaml.dump禁止: テキストベースでSTKからcmdブロックを除去
+    local remove_csv
+    remove_csv=$(echo "$_trim_result" | grep '^REMOVE:' | sed 's/^REMOVE://' || true)
+    if [ -n "$remove_csv" ]; then
+        (
+            flock -w 10 200 || { echo "[stk-trim] WARN: flock timeout on rewrite" >&2; return 1; }
+            stk_remove_cmd_blocks "$QUEUE_FILE" "$remove_csv"
+        ) 200>"/tmp/mas-stk.lock"
+    fi
+
+    echo "[stk-trim] $(echo "$_trim_result" | head -1 || echo 'done')"
 }
 
 # ============================================================
