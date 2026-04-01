@@ -61,86 +61,87 @@ while [ $attempt -lt $max_attempts ]; do
         python3 << 'PYEOF'
 import re, os, sys, tempfile
 
-lessons_file = os.environ["LESSONS_FILE"]
-lesson_id_raw = os.environ["LESSON_ID"]
-py_exit_file = os.environ["PY_EXIT_FILE"]
+def _write_exit(code):
+    with open(os.environ["PY_EXIT_FILE"], 'w') as f:
+        f.write(str(code))
 
-# Parse numeric part for matching
-m_id = re.match(r'L(\d+)', lesson_id_raw)
-if not m_id:
-    print(f'ERROR: Invalid lesson ID format: {lesson_id_raw}', file=sys.stderr)
-    with open(py_exit_file, 'w') as f:
-        f.write('1')
-    sys.exit(0)  # Exit 0 from python so flock doesn't retry (L022)
-
-target_num = int(m_id.group(1))
-
-with open(lessons_file, encoding='utf-8') as f:
-    content = f.read()
-
-lines = content.split('\n')
-found = False
-already_confirmed = False
-modified = False
-
-i = 0
-while i < len(lines):
-    m = re.match(r'^### L(\d+):', lines[i])
-    if m and int(m.group(1)) == target_num:
-        found = True
-        # Scan for status line within this entry
-        j = i + 1
-        status_line_idx = None
-        entry_end = len(lines)
-        while j < len(lines):
-            if lines[j].strip().startswith('## ') or lines[j].strip().startswith('### '):
-                entry_end = j
-                break
-            m_status = re.match(r'^- \*\*status\*\*:\s*(.+)', lines[j])
-            if m_status:
-                status_line_idx = j
-                current_status = m_status.group(1).strip()
-                if current_status == 'confirmed':
-                    already_confirmed = True
-                elif current_status == 'draft':
-                    lines[j] = '- **status**: confirmed'
-                    modified = True
-            j += 1
-        break
-    i += 1
-
-if not found:
-    print(f'ERROR: Lesson {lesson_id_raw} not found in {lessons_file}', file=sys.stderr)
-    with open(py_exit_file, 'w') as f:
-        f.write('1')
-    sys.exit(0)
-
-if already_confirmed:
-    print(f'ERROR: Lesson {lesson_id_raw} is already confirmed', file=sys.stderr)
-    with open(py_exit_file, 'w') as f:
-        f.write('1')
-    sys.exit(0)
-
-if not modified:
-    print(f'ERROR: Lesson {lesson_id_raw} has no status field or is not draft', file=sys.stderr)
-    with open(py_exit_file, 'w') as f:
-        f.write('1')
-    sys.exit(0)
-
-# Atomic write
-new_content = '\n'.join(lines)
-tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(lessons_file), suffix='.tmp')
 try:
-    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-        f.write(new_content)
-    os.replace(tmp_path, lessons_file)
-except Exception:
-    os.unlink(tmp_path)
-    raise
+    lessons_file = os.environ["LESSONS_FILE"]
+    lesson_id_raw = os.environ["LESSON_ID"]
 
-print(f'[lesson_confirm] {lesson_id_raw} status changed: draft → confirmed')
-with open(py_exit_file, 'w') as f:
-    f.write('0')
+    # Parse numeric part for matching
+    m_id = re.match(r'L(\d+)', lesson_id_raw)
+    if not m_id:
+        print(f'ERROR: Invalid lesson ID format: {lesson_id_raw}', file=sys.stderr)
+        _write_exit(1)
+        sys.exit(0)  # Exit 0 from python so flock doesn't retry (L022)
+
+    target_num = int(m_id.group(1))
+
+    with open(lessons_file, encoding='utf-8') as f:
+        content = f.read()
+
+    lines = content.split('\n')
+    found = False
+    already_confirmed = False
+    modified = False
+
+    i = 0
+    while i < len(lines):
+        m = re.match(r'^### L(\d+):', lines[i])
+        if m and int(m.group(1)) == target_num:
+            found = True
+            # Scan for status line within this entry
+            j = i + 1
+            while j < len(lines):
+                if lines[j].strip().startswith('## ') or lines[j].strip().startswith('### '):
+                    break
+                m_status = re.match(r'^- \*\*status\*\*:\s*(.+)', lines[j])
+                if m_status:
+                    current_status = m_status.group(1).strip()
+                    if current_status == 'confirmed':
+                        already_confirmed = True
+                    elif current_status == 'draft':
+                        lines[j] = '- **status**: confirmed'
+                        modified = True
+                    break
+                j += 1
+            break
+        i += 1
+
+    if not found:
+        print(f'ERROR: Lesson {lesson_id_raw} not found in {lessons_file}', file=sys.stderr)
+        _write_exit(1)
+        sys.exit(0)
+
+    if already_confirmed:
+        print(f'ERROR: Lesson {lesson_id_raw} is already confirmed', file=sys.stderr)
+        _write_exit(1)
+        sys.exit(0)
+
+    if not modified:
+        print(f'ERROR: Lesson {lesson_id_raw} has no status field or is not draft', file=sys.stderr)
+        _write_exit(1)
+        sys.exit(0)
+
+    # Atomic write
+    new_content = '\n'.join(lines)
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(lessons_file), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        os.replace(tmp_path, lessons_file)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+    print(f'[lesson_confirm] {lesson_id_raw} status changed: draft → confirmed')
+    _write_exit(0)
+
+except Exception as e:
+    print(f'ERROR: Unhandled exception in lesson_confirm: {e}', file=sys.stderr)
+    _write_exit(1)
+    sys.exit(0)  # Exit 0 so flock subshell doesn't retry non-transient error
 PYEOF
 
     ) 200>"$LOCKFILE"; then
