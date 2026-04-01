@@ -146,7 +146,7 @@ touch_state_file() {
 }
 
 refresh_debounce_file() {
-    if ! date +%s > "$DEBOUNCE_FILE"; then
+    if ! write_state_file "$DEBOUNCE_FILE" "$(date +%s)" "debounce"; then
         echo "[$(date)] WARNING: failed to refresh debounce file: $DEBOUNCE_FILE" >&2
         return 1
     fi
