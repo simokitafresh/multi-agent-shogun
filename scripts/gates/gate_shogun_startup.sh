@@ -506,6 +506,23 @@ else
     $BRIEF || echo "  SKIP: task/cmd不在"
 fi
 
+# --- Gate 17: scripts/未コミット変更チェック (cmd_1675) ---
+# 起源: scripts/配下に未コミットの変更があると気付かずに消失するリスク
+# 目的: 起動時にscripts/の変更をWARNして把握漏れを防止。変更なしなら無音通過
+_scripts_dirty=$(cd "$SCRIPT_DIR" && git status --porcelain -- scripts/ 2>/dev/null) || _scripts_dirty=""
+if [ -n "$_scripts_dirty" ]; then
+    _sd_count=$(echo "$_scripts_dirty" | wc -l)
+    $BRIEF || echo "■ scripts/未コミット変更"
+    while IFS= read -r _sd_line; do
+        [ -z "$_sd_line" ] && continue
+        $BRIEF || echo "  WARN: $_sd_line"
+    done <<< "$_scripts_dirty"
+    if [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+    fi
+    alerts+=("scripts/未コミット変更: ${_sd_count}件")
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ
