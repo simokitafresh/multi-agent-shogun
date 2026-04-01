@@ -830,3 +830,61 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     # ヒントに[N]が含まれる
     [[ "$output" == *"lessons_useful[N]"* ]]
 }
+
+# --- GP-163: verdict=PASS + empty binary_checks result contradiction (cmd_1663) ---
+
+@test "GP-163: verdict=PASS with empty BC result is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # AC2のresultを空にしてverdict=PASSのまま → 矛盾検出
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['binary_checks']['AC2'] = [{'check': '矛盾検出確認', 'result': ''}]
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"verdict: PASS but binary_checks contain empty result"* ]]
+}
+
+@test "GP-163: verdict=PASS with null BC result is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['binary_checks']['AC1'] = [{'check': 'テスト確認', 'result': None}]
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"verdict: PASS but binary_checks contain empty result"* ]]
+}
+
+@test "GP-163: verdict=PASS with all results filled passes gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
+@test "GP-163: verdict=FAIL with empty BC result does not trigger contradiction error" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['binary_checks']['AC2'] = [{'check': '矛盾検出確認', 'result': ''}]
+data['verdict'] = 'FAIL'
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    # verdict=FAILなので矛盾エラーは出ない（ただし空resultの個別エラーは出る）
+    [[ "$output" != *"verdict: PASS but binary_checks contain empty result"* ]]
+}

@@ -283,15 +283,24 @@ if not isinstance(verdict, str) or verdict not in ('PASS', 'FAIL'):
 # --- GP-128: verdict ↔ binary_checks consistency (SG7自動化) ---
 if isinstance(verdict, str) and verdict in ('PASS', 'FAIL') and isinstance(bc, dict) and bc:
     bc_has_no = False
+    bc_has_empty = False
     bc_results_found = False
     for _ac_key, _ac_val in bc.items():
         if isinstance(_ac_val, list):
             for _item in _ac_val:
-                if isinstance(_item, dict) and 'result' in _item:
-                    bc_results_found = True
-                    r = str(_item['result']).strip().lower()
-                    if r in ('no', 'false', 'fail', 'ng'):
-                        bc_has_no = True
+                if isinstance(_item, dict):
+                    _r_val = _item.get('result')
+                    if _r_val is None or (isinstance(_r_val, str) and not _r_val.strip()):
+                        bc_has_empty = True
+                    if 'result' in _item:
+                        bc_results_found = True
+                        r = str(_item['result']).strip().lower()
+                        if r in ('no', 'false', 'fail', 'ng'):
+                            bc_has_no = True
+    # --- GP-163: verdict=PASS + empty result contradiction (cmd_1663) ---
+    if verdict == 'PASS' and bc_has_empty:
+        errors.append('verdict: PASS but binary_checks contain empty result(s) (全result記入後にverdictを設定せよ)')
+        hints.append('FIX (verdict-BC矛盾): verdict=PASSの前にbinary_checksの全result欄を\"yes\"/\"no\"で埋めよ')
     if bc_results_found:
         if verdict == 'PASS' and bc_has_no:
             errors.append('verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)')
