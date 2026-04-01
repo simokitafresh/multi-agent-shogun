@@ -209,18 +209,25 @@ check_stale_lessons() {
         project_id=$(basename "$project_dir")
 
         # config/projects.yamlからproject pathを取得
-        local project_path
-        project_path=$(SCRIPT_DIR="$SCRIPT_DIR" PROJECT_ID="$project_id" python3 -c "
-import os, yaml
-script_dir = os.environ['SCRIPT_DIR']
-project_id = os.environ['PROJECT_ID']
-with open(os.path.join(script_dir, 'config', 'projects.yaml'), encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == project_id:
-        print(p['path'])
-        break
-" 2>/dev/null)
+        local project_path=""
+        local pj_yaml="$SCRIPT_DIR/projects/${project_id}.yaml"
+        if [ -f "$pj_yaml" ]; then
+            project_path=$(awk '
+                /^project:/ { in_proj=1; next }
+                in_proj && /^  path:/ { $1=""; gsub(/^[[:space:]]+|[[:space:]]+$|["'"'"']/, ""); print; exit }
+                in_proj && /^[^ ]/ { in_proj=0 }
+                !in_proj && /^path:/ { $1=""; gsub(/^[[:space:]]+|[[:space:]]+$|["'"'"']/, ""); print; exit }
+            ' "$pj_yaml")
+        fi
+        if [ -z "$project_path" ]; then
+            local config_yaml="$SCRIPT_DIR/config/projects.yaml"
+            if [ -f "$config_yaml" ]; then
+                project_path=$(awk -v target="$project_id" '
+                    /^  - id:/ { cur=$3; gsub(/["'"'"']/, "", cur) }
+                    /^    path:/ && cur == target { $1=""; gsub(/^[[:space:]]+|[[:space:]]+$|["'"'"']/, ""); print; exit }
+                ' "$config_yaml")
+            fi
+        fi
 
         if [ -z "$project_path" ]; then
             continue
