@@ -7,7 +7,7 @@
 #   build_cli_command(agent_id)             → 完全なコマンド文字列
 #   get_instruction_file(agent_id [,cli_type]) → 指示書パス
 #   validate_cli_availability(cli_type)     → 0=OK, 1=NG
-#   get_agent_model(agent_id)               → "opus" | "codex" | "k2.5"
+#   get_agent_model(agent_id)               → "opus" | "sonnet" | "codex" | "k2.5"
 
 # プロジェクトルートを基準にsettings.yamlのパスを解決
 CLI_ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -74,15 +74,19 @@ build_cli_command() {
 
     # cli_launch_cmdが空の場合のフォールバック
     if [[ -z "$base_cmd" ]]; then
-        base_cmd="claude --dangerously-skip-permissions"
+        base_cmd="$HOME/bin/claude --dangerously-skip-permissions"
     fi
+
+    # launch_cmdからバイナリパスを抽出（最初のトークン）
+    local claude_bin="${base_cmd%% *}"
+    local base_flags="${base_cmd#* }"
+    [[ "$base_flags" == "$base_cmd" ]] && base_flags=""
 
     # cli_profiles.yamlのlaunch_cmdをベースに、モデル指定を追加
     case "$ct" in
         claude)
             if [[ -n "$model" ]]; then
-                # "claude --flags..." → "claude --model X --flags..."
-                echo "claude --model $model ${base_cmd#claude }"
+                echo "$claude_bin --model $model $base_flags"
             else
                 echo "$base_cmd"
             fi
@@ -182,6 +186,7 @@ get_agent_model() {
         # フルモデル名→ショート名変換
         case "$model_from_yaml" in
             claude-opus*|*opus*)       model_from_yaml="opus" ;;
+            claude-sonnet*|*sonnet*)   model_from_yaml="sonnet" ;;
             claude-haiku*|*haiku*)     model_from_yaml="haiku" ;;
             claude-*)                  model_from_yaml="opus" ;;
         esac
