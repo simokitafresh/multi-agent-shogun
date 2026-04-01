@@ -35,6 +35,20 @@ has_flag() {
     return 1
 }
 
+# Resolve project_id → project path from config/projects.yaml
+resolve_project_path() {
+    local proj_id="$1"
+    python3 -c "
+import yaml
+with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
+    cfg = yaml.safe_load(f)
+for p in cfg.get('projects', []):
+    if p['id'] == '$proj_id':
+        print(p['path'])
+        break
+"
+}
+
 # ── Parse all flags ──
 if has_flag --force "$@"; then FORCE=1; else FORCE=0; fi
 # Fix: --strategic was positional ($7) — now scanned like other flags
@@ -65,16 +79,7 @@ if [ -n "$RETIRE_ID" ]; then
         exit 1
     fi
 
-    # Get project path from config/projects.yaml
-    PROJECT_PATH=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
-        print(p['path'])
-        break
-")
+    PROJECT_PATH=$(resolve_project_path "$PROJECT_ID")
 
     if [ -z "$PROJECT_PATH" ]; then
         echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
@@ -183,16 +188,7 @@ if [ "$DETAIL_LEN" -lt 10 ]; then
     exit 1
 fi
 
-# Get project path from config/projects.yaml
-PROJECT_PATH=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
-        print(p['path'])
-        break
-")
+PROJECT_PATH=$(resolve_project_path "$PROJECT_ID")
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
