@@ -368,11 +368,12 @@ PYEOF
     ) 200>"$LOCKFILE"; then
         # AC3: Auto-call sync_lessons.sh after write (non-blocking: 失敗しても後続処理を続行)
         bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID" || echo "WARN: sync_lessons.sh failed (non-blocking — lesson is written)" >&2
-        # Context索引自動追記 (cmd_300)
+        # Read lesson ID once — reuse for context/strategic/reflux (was: 3x cat fork)
         NEW_LESSON_ID=""
         if [ -f "$LESSON_ID_FILE" ]; then
-            NEW_LESSON_ID=$(cat "$LESSON_ID_FILE")
+            read -r NEW_LESSON_ID < "$LESSON_ID_FILE" || true
         fi
+        # Context索引自動追記 (cmd_300)
         if [ -n "$NEW_LESSON_ID" ]; then
             CONTEXT_FILE=$(resolve_project_field "$PROJECT_ID" "context_file")
             if [ -n "$CONTEXT_FILE" ]; then
@@ -454,10 +455,6 @@ CTXEOF
         fi
         # --strategic: Register as pending decision (replaces direct dashboard.md editing)
         if [ "$STRATEGIC" == "--strategic" ]; then
-            NEW_LESSON_ID=""
-            if [ -f "$LESSON_ID_FILE" ]; then
-                NEW_LESSON_ID=$(cat "$LESSON_ID_FILE")
-            fi
             if [ -n "$NEW_LESSON_ID" ]; then
                 if [ -f "$SCRIPT_DIR/scripts/pending_decision_write.sh" ]; then
                     bash "$SCRIPT_DIR/scripts/pending_decision_write.sh" create \
@@ -477,11 +474,7 @@ CTXEOF
         fi
         # REFLUX_CHECK: 穴検出3問チェック (cmd_1088)
         # 教訓登録=一回失敗=周辺に穴。キーワードでPI/ランブック/instructionsをgrep、還流漏れを検出
-        REFLUX_LESSON_ID=""
-        if [ -f "$LESSON_ID_FILE" ]; then
-            REFLUX_LESSON_ID=$(cat "$LESSON_ID_FILE")
-        fi
-        if [ -n "$REFLUX_LESSON_ID" ]; then
+        if [ -n "$NEW_LESSON_ID" ]; then
             REFLUX_KEYWORDS=$(TITLE="$TITLE" DETAIL="$DETAIL" python3 << 'REFLUX_KWEOF'
 import re, os
 title = os.environ.get("TITLE", "")
