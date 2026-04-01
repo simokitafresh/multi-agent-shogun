@@ -94,6 +94,7 @@ else
         echo "  FAIL: ${agent}"
     done
     echo "=== 警告: ${failed}/${total} watcherが起動失敗 ==="
+    exit 1
 fi
 
 # ペイン変数同期
