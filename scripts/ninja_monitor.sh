@@ -412,9 +412,10 @@ safe_send_clear() {
         _file_list=$(echo "$_uncommitted" | sed 's/^...//' | tr '\n' ' ')
         log "AUTO-COMMIT-BEFORE-CLEAR: $agent_name uncommitted files: $_file_list"
         # 忍者を起こさず自動commit（運用ファイルのみ）
+        # NOTE: xargs -d '\n'で各ファイルを個別引数として渡す（"$_file_list"は単一引数になりgit addが失敗するため）
         (
             cd "$SCRIPT_DIR" || exit
-            git add "$_file_list" 2>/dev/null || true
+            echo "$_uncommitted" | sed 's/^...//' | xargs -d '\n' git add -- 2>/dev/null || true
             git commit -m "chore: auto-commit before /clear ($agent_name) — 運用ファイル" 2>/dev/null || true
         )
     fi
