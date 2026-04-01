@@ -119,6 +119,34 @@ for cli_type in copilot kimi; do
 done
 
 # ============================================================
+# Helper: Transform CLAUDE.md to CLI-specific auto-load file
+# ============================================================
+# Centralizes sed substitution patterns used by all generate_* functions.
+# Args: cli_type autoload_md autoload_local_md config_path mcp_path display_name input output
+transform_claude_md() {
+    local cli_type="$1"
+    local autoload_md="$2"
+    local autoload_local_md="$3"
+    local config_path="$4"
+    local mcp_path="$5"
+    local display_name="$6"
+    local input_file="$7"
+    local output_file="$8"
+
+    sed \
+        -e "s|CLAUDE\\.md|${autoload_md}|g" \
+        -e "s|CLAUDE\\.local\\.md|${autoload_local_md}|g" \
+        -e "s|instructions/shogun\\.md|instructions/generated/${cli_type}-shogun.md|g" \
+        -e "s|instructions/karo\\.md|instructions/generated/${cli_type}-karo.md|g" \
+        -e "s|instructions/ashigaru\\.md|instructions/generated/${cli_type}-ashigaru.md|g" \
+        -e "s|~/\\.claude/|~/.${cli_type}/|g" \
+        -e "s|\\.claude\\.json|${config_path}|g" \
+        -e "s|\\.mcp\\.json|${mcp_path}|g" \
+        -e "s|Claude Code|${display_name}|g" \
+        "$input_file" > "$output_file"
+}
+
+# ============================================================
 # AGENTS.md generation (Codex auto-load file)
 # ============================================================
 # Codex CLIはリポジトリルートのAGENTS.mdを自動読み込みする。
@@ -146,17 +174,10 @@ generate_agents_md() {
         return 1
     fi
 
-    sed \
-        -e 's|CLAUDE\.md|AGENTS.md|g' \
-        -e 's|CLAUDE\.local\.md|AGENTS.override.md|g' \
-        -e "s|instructions/shogun\\.md|instructions/generated/${cli_type}-shogun.md|g" \
-        -e "s|instructions/karo\\.md|instructions/generated/${cli_type}-karo.md|g" \
-        -e "s|instructions/ashigaru\\.md|instructions/generated/${cli_type}-ashigaru.md|g" \
-        -e "s|~/\\.claude/|~/.${cli_type}/|g" \
-        -e "s|\\.claude\\.json|.${cli_type}/config.toml|g" \
-        -e 's|\.mcp\.json|config.toml (mcp_servers section)|g' \
-        -e "s|Claude Code|${cli_display}|g" \
-        "$claude_md" > "$output_path"
+    transform_claude_md "$cli_type" \
+        "AGENTS.md" "AGENTS.override.md" \
+        ".${cli_type}/config.toml" "config.toml (mcp_servers section)" \
+        "$cli_display" "$claude_md" "$output_path"
 
     echo "  ✅ Created: AGENTS.md"
 }
@@ -180,17 +201,10 @@ generate_copilot_instructions() {
 
     mkdir -p "$github_dir"
 
-    sed \
-        -e 's|CLAUDE\.md|copilot-instructions.md|g' \
-        -e 's|CLAUDE\.local\.md|copilot-instructions.local.md|g' \
-        -e 's|instructions/shogun\.md|instructions/generated/copilot-shogun.md|g' \
-        -e 's|instructions/karo\.md|instructions/generated/copilot-karo.md|g' \
-        -e 's|instructions/ashigaru\.md|instructions/generated/copilot-ashigaru.md|g' \
-        -e 's|~/.claude/|~/.copilot/|g' \
-        -e 's|\.claude\.json|.copilot/config.json|g' \
-        -e 's|\.mcp\.json|.copilot/mcp-config.json|g' \
-        -e 's|Claude Code|GitHub Copilot CLI|g' \
-        "$claude_md" > "$output_path"
+    transform_claude_md "copilot" \
+        "copilot-instructions.md" "copilot-instructions.local.md" \
+        ".copilot/config.json" ".copilot/mcp-config.json" \
+        "GitHub Copilot CLI" "$claude_md" "$output_path"
 
     echo "  ✅ Created: .github/copilot-instructions.md"
 }
@@ -215,18 +229,10 @@ generate_kimi_instructions() {
 
     mkdir -p "$agents_dir"
 
-    # Generate system.md (CLAUDE.md → Kimi版)
-    sed \
-        -e 's|CLAUDE\.md|agents/default/system.md|g' \
-        -e 's|CLAUDE\.local\.md|agents/default/system.local.md|g' \
-        -e 's|instructions/shogun\.md|instructions/generated/kimi-shogun.md|g' \
-        -e 's|instructions/karo\.md|instructions/generated/kimi-karo.md|g' \
-        -e 's|instructions/ashigaru\.md|instructions/generated/kimi-ashigaru.md|g' \
-        -e 's|~/.claude/|~/.kimi/|g' \
-        -e 's|\.claude\.json|.kimi/config.json|g' \
-        -e 's|\.mcp\.json|.kimi/mcp.json|g' \
-        -e 's|Claude Code|Kimi K2 CLI|g' \
-        "$claude_md" > "$system_md_path"
+    transform_claude_md "kimi" \
+        "agents/default/system.md" "agents/default/system.local.md" \
+        ".kimi/config.json" ".kimi/mcp.json" \
+        "Kimi K2 CLI" "$claude_md" "$system_md_path"
 
     echo "  ✅ Created: agents/default/system.md"
 
