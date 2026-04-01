@@ -13,7 +13,7 @@ set -euo pipefail
 # tmpファイルの後始末
 TMP=$(mktemp -d)
 export TMP  # GP-080: PythonのENVIRON参照用
-cleanup() { rm -rf "$TMP" /tmp/stk_active_$$.yaml /tmp/dash_karo_trim_$$.md /tmp/lord_conv_trim_$$.yaml; }
+cleanup() { rm -rf "$TMP"; }
 trap cleanup EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -427,7 +427,7 @@ PY
 archive_cmds() {
     [ -f "$QUEUE_FILE" ] || return 0
 
-    local tmp_active="/tmp/stk_active_$$.yaml"
+    local tmp_active="$TMP/stk_active.yaml"
     local archived=0 kept=0
     local date_stamp
     date_stamp="$(date '+%Y%m%d')"
@@ -467,7 +467,7 @@ archive_cmds() {
 
         # statusフィールドを取得（L070対策: field_getでインデント変動に追従）
         local status_val
-        local entry_tmp="/tmp/stk_entry_${$}_${i}.yaml"
+        local entry_tmp="$TMP/stk_entry_${i}.yaml"
         printf '%s\n' "$entry" > "$entry_tmp"
         status_val=$(FIELD_GET_NO_LOG=1 field_get "$entry_tmp" "status" "" 2>/dev/null | tr -d '[:space:]')
         rm -f "$entry_tmp"
@@ -634,6 +634,14 @@ archive_reports() {
                 local review_gate_file="$PROJECT_DIR/queue/gates/${check_cmd_for_review}/review_gate.done"
                 if [ ! -f "$review_gate_file" ]; then
                     echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $(basename "$report_file")"
+                    kept=$((kept + 1))
+                    continue
+                fi
+                # GP-133: deploy_preflightのplaceholderはレビュー未完了。アーカイブ禁止。
+                # 根因: deploy_task.shがimpl配備時にreview_gate.doneをplaceholder生成 → archive_completed.shが
+                # ファイル存在のみチェック → レビュー完了前に報告がアーカイブされ軍師レビューFAIL(cmd_1623事故)
+                if grep -q "source: deploy_preflight" "$review_gate_file" 2>/dev/null; then
+                    echo "[archive] SKIP: review_gate.done is placeholder (deploy_preflight) for ${check_cmd_for_review}: $(basename "$report_file")"
                     kept=$((kept + 1))
                     continue
                 fi
@@ -813,8 +821,8 @@ archive_karo_section() {
                 }
             }
             !(NR in del) { print }
-        ' "$DASHBOARD" > "/tmp/dash_karo_trim_$$.md"
-        mv "/tmp/dash_karo_trim_$$.md" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: karo trim → $DASHBOARD" >&2; exit 1; }
+        ' "$DASHBOARD" > "$TMP/dash_karo_trim.md"
+        mv "$TMP/dash_karo_trim.md" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: karo trim → $DASHBOARD" >&2; exit 1; }
     ) 200>"/tmp/mas-dashboard.lock"
 
     echo "[archive] karo_updates: archived=$archived_count kept=3"
@@ -852,8 +860,7 @@ archive_dashboard() {
     (
         flock -w 10 200 || { echo "[archive] WARN: flock timeout on DASHBOARD"; return 1; }
         # S07修正: mktempで安全なtmp生成 + sed成功確認後にmv
-        local tmp_dash
-        tmp_dash=$(mktemp /tmp/dash_trim_XXXXXXXX.md)
+        local tmp_dash="$TMP/dash_trim.md"
         if ! sed "${archive_first_line},${last_data_line}d" "$DASHBOARD" > "$tmp_dash"; then
             echo "[archive] FATAL: sed failed for dashboard trim" >&2
             rm -f "$tmp_dash"
