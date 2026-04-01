@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R12
   task_type: impl
   project: infra
-  status: in_progress
+  status: idle
   target_path: tests/unit/test_deploy_task_ac_version.bats
   command: |
     テスト速度最適化: test_deploy_task_ac_version.batsを高速化せよ。
