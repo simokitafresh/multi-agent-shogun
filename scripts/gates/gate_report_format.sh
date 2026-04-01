@@ -105,6 +105,18 @@ elif lc is not None:
     else:
         errors.append(f'lesson_candidate: unexpected type {type(lc).__name__}')
 
+# --- Shared: Read task YAML once (DRY — was parsed twice: GP-088 + GP-131) ---
+_worker_id = data.get('worker_id', '')
+_task_yaml_path = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker_id}.yaml')
+_task_data = {}
+try:
+    if _worker_id and os.path.exists(_task_yaml_path):
+        with open(_task_yaml_path) as _tf:
+            _raw = yaml.safe_load(_tf)
+        _task_data = (_raw or {}).get('task', _raw or {})
+except Exception:
+    pass
+
 # --- lessons_useful must be list of dicts (null = FAIL) ---
 lu = data.get('lessons_useful')
 if lu is None and 'lessons_useful' in data:
@@ -116,19 +128,9 @@ elif lu is not None:
     elif isinstance(lu, list):
         # --- GP-064+GP-088: empty list detection (related_lessons考慮) ---
         if len(lu) == 0:
-            # GP-088: related_lessonsがないcmdでは[]が正当。task YAMLを確認。
-            _worker = data.get('worker_id', '')
-            _task_path = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker}.yaml')
-            _has_related = False
-            try:
-                if os.path.exists(_task_path):
-                    with open(_task_path) as _tf:
-                        _tdata = yaml.safe_load(_tf)
-                    _task = (_tdata or {}).get('task', _tdata or {})
-                    _rel = _task.get('related_lessons', [])
-                    _has_related = bool(_rel and isinstance(_rel, list) and len(_rel) > 0)
-            except Exception:
-                pass
+            # GP-088: related_lessonsがないcmdでは[]が正当。共有_task_dataを参照。
+            _rel = _task_data.get('related_lessons', [])
+            _has_related = bool(_rel and isinstance(_rel, list) and len(_rel) > 0)
             if _has_related:
                 errors.append('lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)')
                 hints.append('FIX (lessons_useful): report_field_set.sh経由でuseful/reasonを各教訓に記入せよ')
@@ -214,21 +216,12 @@ if isinstance(bc, dict) and bc:
     for _rbc_key, _rbc_val in bc.items():
         if isinstance(_rbc_val, list):
             _rpt_bc_count += len(_rbc_val)
-    _w2 = data.get('worker_id', '')
-    _tp2 = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_w2}.yaml')
     _task_bc_count = 0
-    try:
-        if os.path.exists(_tp2):
-            with open(_tp2) as _tf2:
-                _td2 = yaml.safe_load(_tf2)
-            _tk2 = (_td2 or {}).get('task', _td2 or {})
-            _tbc = _tk2.get('binary_checks', {})
-            if isinstance(_tbc, dict):
-                for _tbc_key, _tbc_val in _tbc.items():
-                    if isinstance(_tbc_val, list):
-                        _task_bc_count += len(_tbc_val)
-    except Exception:
-        pass
+    _tbc = _task_data.get('binary_checks', {})
+    if isinstance(_tbc, dict):
+        for _tbc_key, _tbc_val in _tbc.items():
+            if isinstance(_tbc_val, list):
+                _task_bc_count += len(_tbc_val)
     if _task_bc_count > 0:
         if _rpt_bc_count < _task_bc_count * 0.5:
             errors.append(f'binary_checks: item count {_rpt_bc_count}/{_task_bc_count} (<50% of task template)')
@@ -238,12 +231,9 @@ if isinstance(bc, dict) and bc:
     else:
         # GP-131b: task YAMLにBC templateがなくてもAC数からBC網羅性をチェック
         _ac_count = 0
-        try:
-            _ac_list = _tk2.get('acceptance_criteria', [])
-            if isinstance(_ac_list, list):
-                _ac_count = len(_ac_list)
-        except Exception:
-            pass
+        _ac_list = _task_data.get('acceptance_criteria', [])
+        if isinstance(_ac_list, list):
+            _ac_count = len(_ac_list)
         if _ac_count > 0:
             # report BCのキー数(commit除く)がAC数未満ならエラー
             _rpt_ac_keys = [k for k in bc.keys() if k.upper().startswith('AC')]
