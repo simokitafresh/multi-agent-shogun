@@ -8,8 +8,6 @@
 # type: lord_decision | skill_candidate | escalation | action_required
 # Atomic write with flock + python3 + tempfile + os.replace (same as inbox_write.sh)
 
-set -e
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATA_FILE="$SCRIPT_DIR/queue/pending_decisions.yaml"
 LOCKFILE="${DATA_FILE}.lock"
@@ -35,53 +33,29 @@ dashboard_add_pending() {
         return 0
     fi
 
-    if ! python3 - "$DASHBOARD_FILE" "$PD_ID" "$SUMMARY" "$SOURCE_CMD" <<'PY'
-import sys
-
-dashboard_path = sys.argv[1]
-pd_id = sys.argv[2]
-summary = sys.argv[3]
-source_cmd = sys.argv[4]
-entry = f"- **{pd_id}**: {summary}（{source_cmd}）"
-
-with open(dashboard_path, encoding="utf-8") as f:
-    lines = f.read().splitlines()
-
-start = next((i for i, line in enumerate(lines) if line.startswith("## 要対応")), -1)
-if start < 0:
-    print("WARN: 要対応 section not found", file=sys.stderr)
-    sys.exit(1)
-
-end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
-section = lines[start + 1:end]
-
-section = [line for line in section if line.strip() and line.strip() != "（なし）"]
-section = [line for line in section if f"- **{pd_id}**:" not in line]
-section.append(entry)
-
-new_lines = lines[:start + 1] + section + lines[end:]
-with open(dashboard_path, "w", encoding="utf-8") as f:
-    f.write("\n".join(new_lines) + "\n")
-PY
-    then
-        echo "[pending_decision] WARN: dashboard create sync failed for $PD_ID" >&2
-    fi
+    local entry="- **${PD_ID}**: ${SUMMARY}（${SOURCE_CMD}）"
+    local tmpfile
+    tmpfile=$(mktemp "${DASHBOARD_FILE}.XXXXXX.tmp")
+    { awk -v pd_id="$PD_ID" -v entry="$entry" '
+        /^## 要対応/{in_sec=1; print; next}
+        in_sec && /^## /{
+            if (!added) {print entry; added=1}
+            in_sec=0; print; next
+        }
+        in_sec && /^（なし）/{next}
+        in_sec && $0 ~ ("- \\*\\*" pd_id "\\*\\*:"){next}
+        {print}
+        END{if(in_sec && !added) print entry}
+    ' "$DASHBOARD_FILE" > "$tmpfile" && mv "$tmpfile" "$DASHBOARD_FILE"; } \
+    || { rm -f "$tmpfile"; echo "[pending_decision] WARN: dashboard create sync failed for $PD_ID" >&2; }
 }
 
 get_pending_decision_count() {
-    python3 - "$DATA_FILE" <<'PY'
-import sys, yaml
-
-data_path = sys.argv[1]
-try:
-    with open(data_path, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    decisions = data.get("decisions") or []
-    pending = sum(1 for d in decisions if isinstance(d, dict) and d.get("status") == "pending")
-    print(pending)
-except Exception:
-    print(0)
-PY
+    if [ ! -f "$DATA_FILE" ]; then
+        echo 0
+        return 0
+    fi
+    grep -c "^  status: pending" "$DATA_FILE" 2>/dev/null || echo 0
 }
 
 dashboard_remove_pending() {
@@ -100,29 +74,19 @@ dashboard_remove_pending() {
     local PENDING_COUNT
     PENDING_COUNT=$(get_pending_decision_count 2>/dev/null || echo 0)
     if [ "$PENDING_COUNT" = "0" ]; then
-        if ! python3 - "$DASHBOARD_FILE" <<'PY'
-import sys
-
-dashboard_path = sys.argv[1]
-with open(dashboard_path, encoding="utf-8") as f:
-    lines = f.read().splitlines()
-
-start = next((i for i, line in enumerate(lines) if line.startswith("## 要対応")), -1)
-if start < 0:
-    print("WARN: 要対応 section not found", file=sys.stderr)
-    sys.exit(1)
-
-end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
-section = [line for line in lines[start + 1:end] if line.strip()]
-
-if not section:
-    section = ["（なし）"]
-
-new_lines = lines[:start + 1] + section + lines[end:]
-with open(dashboard_path, "w", encoding="utf-8") as f:
-    f.write("\n".join(new_lines) + "\n")
-PY
-        then
+        local tmpfile
+        tmpfile=$(mktemp "${DASHBOARD_FILE}.XXXXXX.tmp")
+        if ! { awk '
+            /^## 要対応/{in_sec=1; print; next}
+            in_sec && /^## /{
+                if (!has_entry) print "（なし）"
+                in_sec=0; print; next
+            }
+            in_sec && /^- /{has_entry=1}
+            {print}
+            END{if(in_sec && !has_entry) print "（なし）"}
+        ' "$DASHBOARD_FILE" > "$tmpfile" && mv "$tmpfile" "$DASHBOARD_FILE"; }; then
+            rm -f "$tmpfile"
             echo "[pending_decision] WARN: dashboard none-placeholder sync failed" >&2
         fi
     fi
@@ -381,41 +345,21 @@ PY
             local TODO_LOG="$SCRIPT_DIR/queue/alerts/pd_context_todo.log"
             mkdir -p "$(dirname "$TODO_LOG")"
 
-            # Determine context_file from PD's project field
+            # Determine context_file from PD's project field (bash case — no python3)
+            local _project
+            _project=$(awk -v id="$PD_ID" '
+                /^- id: /{in_block=0}
+                $0 == "- id: " id {in_block=1; next}
+                in_block && /^  project: /{sub(/^  project: /, ""); print; exit}
+            ' "$DATA_FILE" 2>/dev/null || echo "")
             local CONTEXT_FILE
-            CONTEXT_FILE=$(python3 - "$DATA_FILE" "$PD_ID" 2>/dev/null <<'PY' || echo "unknown"
-import yaml, sys
-
-data_path = sys.argv[1]
-pd_id = sys.argv[2]
-
-PROJECT_MAP = {
-    'infra': 'context/infrastructure.md',
-    'dm-signal': 'context/dm-signal.md',
-    'dm-signal-frontend': 'context/dm-signal-frontend.md',
-}
-
-try:
-    with open(data_path) as f:
-        data = yaml.safe_load(f)
-    if not data or not data.get('decisions'):
-        print('unknown')
-        sys.exit(0)
-    for d in data['decisions']:
-        if d.get('id') == pd_id:
-            project = d.get('project', '')
-            if project and project in PROJECT_MAP:
-                print(PROJECT_MAP[project])
-            elif project:
-                print(f'context/{project}.md')
-            else:
-                print('unknown')
-            sys.exit(0)
-    print('unknown')
-except Exception:
-    print('unknown')
-PY
-)
+            case "$_project" in
+                infra)             CONTEXT_FILE="context/infrastructure.md" ;;
+                dm-signal)         CONTEXT_FILE="context/dm-signal.md" ;;
+                dm-signal-frontend) CONTEXT_FILE="context/dm-signal-frontend.md" ;;
+                "")                CONTEXT_FILE="unknown" ;;
+                *)                 CONTEXT_FILE="context/${_project}.md" ;;
+            esac
 
             local TODO_TIMESTAMP
             TODO_TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
@@ -478,27 +422,31 @@ except Exception as e:
 PY
 }
 
-# ── main dispatch ───────────────────────────────
-case "$SUBCMD" in
-    create)
-        shift
-        cmd_create "$@"
-        ;;
-    resolve)
-        shift
-        cmd_resolve "$@"
-        ;;
-    list)
-        shift
-        cmd_list "$@"
-        ;;
-    *)
-        echo "Usage: pending_decision_write.sh <create|resolve|list> [args...]" >&2
-        echo "" >&2
-        echo "Subcommands:" >&2
-        echo "  create  <summary> <source_cmd> <type> <created_by>" >&2
-        echo "  resolve <id> <resolved_content> [resolved_by_cmd] [--no-context-sync]" >&2
-        echo "  list    [--status pending|resolved|all]" >&2
-        exit 1
-        ;;
-esac
+# ── main dispatch (source guard) ─────────────────
+# Allow `source pending_decision_write.sh` for unit tests without triggering dispatch
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    set -e
+    case "$SUBCMD" in
+        create)
+            shift
+            cmd_create "$@"
+            ;;
+        resolve)
+            shift
+            cmd_resolve "$@"
+            ;;
+        list)
+            shift
+            cmd_list "$@"
+            ;;
+        *)
+            echo "Usage: pending_decision_write.sh <create|resolve|list> [args...]" >&2
+            echo "" >&2
+            echo "Subcommands:" >&2
+            echo "  create  <summary> <source_cmd> <type> <created_by>" >&2
+            echo "  resolve <id> <resolved_content> [resolved_by_cmd] [--no-context-sync]" >&2
+            echo "  list    [--status pending|resolved|all]" >&2
+            exit 1
+            ;;
+    esac
+fi
