@@ -66,12 +66,10 @@ if [ -f "$KARO_INBOX" ] && grep -Fqw "$CMD_ID" "$KARO_INBOX" 2>/dev/null; then
     exit 1
 fi
 
-# Step 2.6: dashboardパイプラインに既にcmd_idが載っているかチェック
+# Step 2.6: dashboardパイプラインに既にcmd_idが載っているかチェック（WARN only — secondary data）
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 if [ -f "$DASHBOARD" ] && grep -Fqw "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
-    echo "WARN: $CMD_ID is already listed in dashboard.md (karo already aware)" >&2
-    echo "BLOCK: Refusing to send duplicate. Verify dashboard pipeline status first." >&2
-    exit 1
+    echo "WARN: $CMD_ID is already listed in dashboard.md (karo may already be aware). Proceeding — dashboard is secondary data." >&2
 fi
 
 # Step 2.7: archiveに完了済みとして存在するかチェック
