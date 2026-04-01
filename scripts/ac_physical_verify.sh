@@ -137,7 +137,6 @@ if line_refs:
 if section_refs:
     print(f'\n--- Section References ---')
     for sec in section_refs:
-        sec_pat = f'§{sec}'
         for p in sorted(paths):
             full_path = os.path.join(repo_root, p) if not p.startswith('/') else p
             if not os.path.exists(full_path):
@@ -145,10 +144,10 @@ if section_refs:
             try:
                 with open(full_path) as f:
                     for i, line in enumerate(f, 1):
-                        if sec_pat in line or f'## §{sec}' in line or f'§{sec} ' in line:
+                        if re.search(r'§' + re.escape(sec) + r'(?!\d)', line):
                             print(f'  {p} L{i}: \"{line.rstrip()[:100]}\"')
                             break
-            except:
+            except Exception:
                 pass
 
 # Navigation sheet for ninja
