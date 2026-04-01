@@ -275,6 +275,7 @@
 !scripts/statusline.sh
 !scripts/workaround_pattern_resolve.sh
 !scripts/checklist_update.sh
+!scripts/checklist_progress.sh
 
 
 # Archive (frozen retired components)
