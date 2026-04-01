@@ -194,7 +194,7 @@ def _load_archive_entries() -> list[tuple[str, str, str, str]]:
     archive_dir = os.path.join(root, "queue", "archive", "cmds")
     if not os.path.isdir(archive_dir):
         return _archive_entries
-    cutoff_14d = date.today() - timedelta(days=14)
+    cutoff_14d = date.today() - timedelta(days=max(threshold_days * 2, 14))
     for fname in os.listdir(archive_dir):
         if not fname.endswith(".yaml"):
             continue
