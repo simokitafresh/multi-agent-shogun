@@ -40,27 +40,81 @@ done_count = 0
 total_count = 0
 ninja_counts = OrderedDict()
 
+def is_separator(s):
+    return bool(re.match(r'^\|[-:\s|]+\$', s)) and '---' in s
+
+def flush_table(rows):
+    if not rows:
+        return 0, 0, OrderedDict()
+    is_checklist = False
+    done = 0
+    nc = OrderedDict()
+    for row_text in rows:
+        cells = row_text.split('|')
+        row_done = False
+        if '\u2705' in row_text:
+            row_done = True
+            is_checklist = True
+        for c in cells[1:]:
+            cu = c.strip().upper()
+            if re.search(r'\bPASS\b', cu) or cu in ('DONE', 'O', 'OK'):
+                row_done = True
+                is_checklist = True
+            elif re.search(r'\bFAIL\b', cu) or cu in ('NG', 'TODO', 'PENDING', 'SKIP'):
+                is_checklist = True
+        if row_done:
+            done += 1
+            if len(cells) >= 9:
+                cell_ninja = cells[7].strip()
+                if cell_ninja:
+                    nc[cell_ninja] = nc.get(cell_ninja, 0) + 1
+    if is_checklist:
+        return done, len(rows), nc
+    return 0, 0, OrderedDict()
+
+in_table = False
+table_rows = []
+
 for line in lines:
     stripped = line.strip()
-    # Format 1: Pipe-delimited table rows (| 1 | ... | status | ... | ninja | ... |)
-    m = re.match(r'^\|\s*(\d+)\s*\|', stripped)
-    if m:
-        cells = stripped.split('|')
-        if len(cells) >= 9:
-            total_count += 1
-            cell_status = cells[5].strip()
-            cell_ninja = cells[7].strip()
-            if cell_status in ('done', 'DONE', 'PASS', 'pass', 'o', 'OK', 'ok'):
-                done_count += 1
-                if cell_ninja:
-                    ninja_counts[cell_ninja] = ninja_counts.get(cell_ninja, 0) + 1
+
+    if is_separator(stripped):
+        if table_rows:
+            d, t, nc = flush_table(table_rows)
+            done_count += d
+            total_count += t
+            for n, c in nc.items():
+                ninja_counts[n] = ninja_counts.get(n, 0) + c
+        in_table = True
+        table_rows = []
         continue
+
+    if in_table:
+        if stripped.startswith('|') and stripped.endswith('|'):
+            table_rows.append(stripped)
+            continue
+        else:
+            d, t, nc = flush_table(table_rows)
+            done_count += d
+            total_count += t
+            for n, c in nc.items():
+                ninja_counts[n] = ninja_counts.get(n, 0) + c
+            in_table = False
+            table_rows = []
+
     # Format 2: Markdown checkbox (- [ ] not done, - [x] done)
     cm = re.match(r'^-\s+\[([ xX])\]', stripped)
     if cm:
         total_count += 1
         if cm.group(1) in ('x', 'X'):
             done_count += 1
+
+if table_rows:
+    d, t, nc = flush_table(table_rows)
+    done_count += d
+    total_count += t
+    for n, c in nc.items():
+        ninja_counts[n] = ninja_counts.get(n, 0) + c
 
 pct = int(done_count * 100 / total_count) if total_count > 0 else 0
 
