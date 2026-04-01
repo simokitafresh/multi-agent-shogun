@@ -26,32 +26,55 @@ if [ "${1:-}" = "--resolve" ]; then
       exit 1
     fi
 
+    # Line-by-line edit: avoids full-file YAML rewrite data loss
     INSIGHTS_FILE_ENV="$INSIGHTS_FILE" RESOLVE_ID_ENV="$resolve_id" TS_ENV="$ts" \
     python3 - <<'PYEOF'
-import yaml, sys, os
+import sys, os
 
 insights_file = os.environ['INSIGHTS_FILE_ENV']
 resolve_id = os.environ['RESOLVE_ID_ENV']
 ts = os.environ['TS_ENV']
 
 with open(insights_file, 'r') as f:
-    data = yaml.safe_load(f) or {}
+    lines = f.readlines()
 
-insights = data.get('insights', [])
 found = False
-for item in insights:
-    if item.get('id') == resolve_id:
-        item['status'] = 'done'
-        item['resolved_at'] = ts
+modified = []
+i = 0
+while i < len(lines):
+    line = lines[i]
+    # Detect target entry by id field
+    if not found and 'id:' in line and resolve_id in line:
         found = True
-        break
+        modified.append(line)
+        i += 1
+        # Process fields within this entry block
+        while i < len(lines):
+            line = lines[i]
+            # New list entry at column 0 = end of current block
+            if line.startswith('- '):
+                break
+            # Top-level key (not indented, not comment) = end of block
+            if line[0:1] and not line[0:1].isspace() and not line.lstrip().startswith('#'):
+                break
+            if line.strip().startswith('status:'):
+                indent = line[:len(line) - len(line.lstrip())]
+                modified.append(f'{indent}status: done\n')
+                modified.append(f'{indent}resolved_at: "{ts}"\n')
+                i += 1
+                continue
+            modified.append(line)
+            i += 1
+        continue
+    modified.append(line)
+    i += 1
 
 if not found:
     print(f'ERROR: id not found: {resolve_id}', file=sys.stderr)
     sys.exit(1)
 
 with open(insights_file, 'w') as f:
-    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    f.writelines(modified)
 print(f'RESOLVED: {resolve_id}')
 PYEOF
   ) 200>"$INSIGHTS_FILE.lock"
@@ -75,12 +98,12 @@ id="INS-$(date '+%Y%m%d-%H%M%S%3N')-$(cut -c1-4 /proc/sys/kernel/random/uuid)"
     echo "insights: []" > "$INSIGHTS_FILE"
   fi
 
-  # Append entry via Python (safe YAML handling + dedup check)
+  # Dedup check + raw YAML append (avoids full-file YAML rewrite data loss)
   # Pass values via env vars to prevent shell injection (cmd_1407 AC1)
   result=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" MSG_ENV="$msg" PRIORITY_ENV="$priority" \
            SOURCE_INFO_ENV="$source_info" ID_ENV="$id" TS_ENV="$ts" \
            python3 - <<'PYEOF'
-import yaml, sys, os
+import yaml, json, sys, os
 
 insights_file = os.environ['INSIGHTS_FILE_ENV']
 msg = os.environ['MSG_ENV']
@@ -92,11 +115,8 @@ ts = os.environ['TS_ENV']
 with open(insights_file, 'r') as f:
     data = yaml.safe_load(f) or {}
 
-if 'insights' not in data or not isinstance(data['insights'], list):
-    data['insights'] = []
-
 # Dedup: skip if exact match or first-50-char match with status=pending (single pass)
-for existing in data['insights']:
+for existing in data.get('insights', []):
     if existing.get('status') != 'pending':
         continue
     ex_text = existing.get('insight', '')
@@ -108,17 +128,24 @@ for existing in data['insights']:
         print('SKIP:' + existing['id'])
         sys.exit(0)
 
-data['insights'].append({
-    'id': entry_id,
-    'ts': ts,
-    'insight': msg,
-    'priority': priority,
-    'source': source_info,
-    'status': 'pending'
-})
+# Handle empty insights: rewrite file header for append compatibility
+if not data.get('insights'):
+    with open(insights_file, 'w') as f:
+        f.write('insights:\n')
 
-with open(insights_file, 'w') as f:
-    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+# Append raw YAML entry (no full-file rewrite — preserves existing multiline strings)
+def yaml_escape(s):
+    """JSON double-quoted strings are valid YAML double-quoted scalars."""
+    return json.dumps(s, ensure_ascii=False)
+
+with open(insights_file, 'a') as f:
+    f.write(f'- id: {entry_id}\n')
+    f.write(f'  ts: {yaml_escape(ts)}\n')
+    f.write(f'  insight: {yaml_escape(msg)}\n')
+    f.write(f'  priority: {priority}\n')
+    f.write(f'  source: {yaml_escape(source_info)}\n')
+    f.write(f'  status: pending\n')
+
 print(entry_id)
 PYEOF
 )
