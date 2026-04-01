@@ -38,6 +38,8 @@ else
 fi
 
 WARN_COUNT=0
+CMD_BLOCK=""
+CMD_BLOCK_NC=""
 
 # --- Check 1: cmdブロック存在確認 ---
 if [[ ! -f "$QUEUE_FILE" ]]; then
@@ -107,6 +109,12 @@ QG_TEMPLATE
     # q4_depth: 段階的導入のためBLOCKではなくWARNING（WARN_COUNTに加算しない）
     if ! echo "$CMD_BLOCK_NC" | grep -q "q4_depth:"; then
         echo "WARNING: q4_depth未記入。深堀り度を記入推奨: q4_depth: \"shallow/medium/deep — 理由\"" >&2
+    else
+        # q4_depth値チェック: deep/mediumは時間コスト大。確認を促す（WARN_COUNTに加算しない）
+        _Q4_VAL=$(echo "$CMD_BLOCK_NC" | grep "q4_depth:" | head -1)
+        if echo "$_Q4_VAL" | grep -qiE '\b(deep|medium)\b'; then
+            echo "WARNING: q4_depth=deep/medium — 時間コストが大きいcmdです。分割・並列化を検討しましたか？" >&2
+        fi
     fi
 
     # q5_verified_source: cmdの前提を一次情報源で確認したか（BLOCK）
@@ -138,9 +146,9 @@ QG_TEMPLATE
     # q7_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正
     # 目的: type=impl + 条件分岐キーワード検出時に、本番での分岐実行頻度確認ACの追加を提案
-    _Q7_TASK_TYPE=$(echo "$CMD_BLOCK" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    _Q7_TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
     if [[ "${_Q7_TASK_TYPE:-}" == "impl" ]]; then
-        _Q7_FIELDS=$(echo "$CMD_BLOCK" | grep -E '^\s*(purpose|title):' || true)
+        _Q7_FIELDS=$(echo "$CMD_BLOCK_NC" | grep -E '^\s*(purpose|title):' || true)
         if echo "$_Q7_FIELDS" | grep -qiE '\bif\b|\bcase\b|条件|分岐|フラグ|\bflag\b|\belif\b|\bswitch\b'; then
             echo "WARNING: q7_branch_coverage — 条件分岐変更を含むimpl cmdです。本番データでの分岐実行頻度確認ACの追加を検討してください" >&2
             echo "  推奨アクション: 本番DBで該当条件がtrue/falseになるレコード数を確認せよ" >&2
@@ -151,7 +159,7 @@ QG_TEMPLATE
     # --- Check 3.7: チェックリスト制約転写確認（WARNING） ---
     # cmd_1397事故: チェックリストStep7(再計算禁止)がcmdに転写されず忍者が再計算実行
     # cmdにチェックリスト参照がある場合、隣接Step制約の転写を促す
-    if echo "$CMD_BLOCK" | grep -qiE 'チェックリスト|checklist-'; then
+    if echo "$CMD_BLOCK_NC" | grep -qiE 'チェックリスト|checklist-'; then
         echo "WARNING: チェックリスト参照cmdです。隣接Stepの🛑制約(禁止事項)をACまたは制約欄に転写しましたか？" >&2
         echo "  (cmd_1397教訓: Step7再計算禁止がcmd未記載→忍者が再計算実行)" >&2
     fi
@@ -212,7 +220,7 @@ check_gunshi_analysis_overlap() {
 
     # task_typeがrecon/scoutの場合のみチェック（impl等は対象外）
     local TASK_TYPE
-    TASK_TYPE=$(echo "$CMD_BLOCK" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
     if [[ "$TASK_TYPE" != "recon" && "$TASK_TYPE" != "scout" ]]; then
         return 0
     fi
@@ -251,7 +259,7 @@ check_pi_number_collision() {
 
     # cmdブロックからPI-0XX番号を抽出
     local PI_NUMS
-    PI_NUMS=$(echo "$CMD_BLOCK" | grep -oE 'PI-[0-9]{3}' | sort -u || true)
+    PI_NUMS=$(echo "$CMD_BLOCK_NC" | grep -oE 'PI-[0-9]{3}' | sort -u || true)
     [[ -z "$PI_NUMS" ]] && return 0
 
     # 全projects/*.yamlから既存PI番号を収集
@@ -325,12 +333,12 @@ check_ac_file_paths() {
 
     # AC内からファイルパス(拡張子付き)を抽出
     local PATHS
-    PATHS=$(echo "$CMD_BLOCK" | grep -oE '[A-Za-z0-9_-]+(/[A-Za-z0-9_.+-]+)+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
+    PATHS=$(echo "$CMD_BLOCK_NC" | grep -oE '[A-Za-z0-9_-]+(/[A-Za-z0-9_.+-]+)+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
     local PROJECT_ID PROJECT_WD
-    PROJECT_ID=$(echo "$CMD_BLOCK" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
     [[ -z "$PROJECT_ID" ]] && PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null)
 
     if [[ -n "${PROJECT_ID:-}" ]]; then
@@ -370,26 +378,26 @@ check_impl_push_ac() {
 
     # project取得
     local PROJECT_ID
-    PROJECT_ID=$(echo "$CMD_BLOCK" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
 
     # task_type取得
     local TASK_TYPE
-    TASK_TYPE=$(echo "$CMD_BLOCK" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
     [[ "$TASK_TYPE" != "impl" ]] && return 0
 
     # acceptance_criteria セクションを抽出
     local AC_SECTION
-    AC_SECTION=$(echo "$CMD_BLOCK" | awk '
+    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
         /acceptance_criteria:/ { found=1; next }
         found && /^    - / { print; next }
         found && /^      / { print; next }
         found { exit }
     ')
 
-    # acceptance_criteriaがない場合はCMD_BLOCK全体にフォールバック
+    # acceptance_criteriaがない場合はCMD_BLOCK_NC全体にフォールバック
     if [[ -z "$AC_SECTION" ]]; then
-        AC_SECTION="$CMD_BLOCK"
+        AC_SECTION="$CMD_BLOCK_NC"
     fi
 
     # AC内にpush/deploy/verify/本番確認関連キーワードがあるか
