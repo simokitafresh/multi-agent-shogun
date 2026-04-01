@@ -402,3 +402,203 @@
 | cmd_1506 | L3 FoF daily_loop偵察(batch化ターゲット) | 配備中(半蔵) | ←daily_loop=68s(14%)。第2ボトルネック偵察 |
 | cmd_1507 | CLAUDE.md+senkyoku-log鮮度更新 | 配備中(才蔵) | ←PI昇華+SF完了+heartbeat成果のcontext未反映 |
 | cmd_1508 | SF LOW偵察+分類(残17件) | 配備中(小太郎) | ←LOW17件未分析。修正計画作成 |
+
+## 2026-03-30
+
+| cmd | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_1516 | gate_shogun_startup.sh Gate1/12/13並列化+cycle_health find-newer最適化 | GATE CLEAR。飛猿。225480d。WSL2 DrvFs I/O制約で並列化逆効果(3.3s→5.5s)→直列が最速 | ←startup gate 32→17s(47%削減,GP-074)のさらなる最適化。WSL2カーネル直列化が物理限界 |
+| cmd_1517 | deploy_task.sh task_type比較'implement'→'impl'修正(L1878+L2046) | GATE CLEAR。半蔵。scout_gate+preflight_gateの2箇所修正。CIテスト7件修正(report_merge.doneバイパス追加) | ←task_type正規化後の残存不整合。修正によりscout_gateがimplタスクで正常発火 |
+| cmd_1518 | lesson_impact.tsvローテーション+awk全量reverse→tail -2000&#124;tac最適化 | GATE CLEAR。才蔵。6fa89c3+4f14899。lesson_impact_rotate.sh新規+cmd_complete_gate統合 | ←29K行無限膨張の構造予防。awk 259ms→10ms(26x高速化)。Vercel型索引/詳細分離
+| cmd_1519 | review_gate.doneバックフィル+archive掃討 | GATE BLOCK(FAIL)。疾風。AC1:PASS(213件)、AC2:FAIL(290→33,目標<30) | ←修練cmd報告蓄積問題。AC2で並列cmd報告をsweepするレースコンディション発覚→家老直接修正(archive.done二重防御) |
+| cmd_1520 | ntfy async化(ntfy.sh→バックグラウンド実行) | GATE CLEAR。半蔵。055a7a1。bats57全PASS | ←ntfy同期呼出しがCTXブロック。async化でlatency解消 |
+| cmd_1521 | NINJA_WP bool型バグ修正(match_ninja str()変換) | GATE CLEAR。才蔵。bbaf1d7。テスト8件追加 | ←NINJA_WP注入で型不整合。str()変換で正規化 |
+| cmd_1522 | archive_completed.sh修練cmd対応(training/cycle報告退避) | GATE CLEAR。小太郎。66db2ac。テスト4件 | ←修練サイクル報告78件がqueue/reports/に永久蓄積→例外条件追加 |
+| karo_direct | deploy_task.sh stale field清掃+archive sweep race防止 | 26c8692+05fc3c7+5f5070d。テスト20件。3層構造問題根治 | ←なぜなぜ3層: (1)16フィールドリセット漏れ (2)yaml_field_setリスト非対応 (3)inject_task_modifiers存在チェック不整合。Python一括クリアで根治 |
+| cmd_1523 | DM-signal context還流3件+fixture修復 | GATE CLEAR。影丸。AC1-4全PASS。push 5f5070d | ←WardTwoStageEW索引+cmd_1441/1442結果索引+ninpo21 CSV修復。要修正事項3件解消 |
+| cmd_1524 | archive terminal status拡張(pass/FAIL/blocked/waived対応) | GATE BLOCK(CI赤→修正push済b38c736)。疾風完了。reports 33→23件 | ←cmd_1519 DC: 残33件の非標準status16件対応 |
+| karo_direct | CMD_ID regex拡張+stale command field(第4層)追加+archive修練例外 | f64a03e+b38c736。テスト24件+CI赤3件修正 | ←修行配備時に発見: (1)^cmd_[0-9]+が修行cmdを検出不可 (2)commandフィールドがSTALE_FIELDS漏れ (3)archive.doneが修練cmdをブロック |
+| cmd_1525 | 教訓死蔵率90.4%根因偵察+改善設計 | GATE CLEAR。半蔵。useful:true=9/146(6.2%) | ←L063/L074が枠を常時占拠。タグ粒度不足+負帰還欠如 |
+| training_001-005 | 構造問題発見修行(5テーマ) | 全5名完了。type+report_template STALE漏れ発見(hayate) | ←殿指示「構造的な問題がないか修行で知見を得る」 |
+| karo_direct | STALE_FIELDS第5層+CI赤修正+scout_gate awk修正 | 3603a19+8aac436。テスト修正+awk dict形式対応 | ←(1)修行001 type/report_template漏れ (2)CMD_ID regex拡張がテスト破損 (3)STK dict形式にawk未対応 |
+| cmd_1526 | GP-131 flock NTFS問題修正(lock→/tmp ext4移動) | GATE CLEAR。疾風。lock_path.sh新設+3ファイル共通化 | ←WSL2 NTFS上のflock不安定→status更新失敗→ninja_monitor誤検知 |
+| cmd_1527 | 軍師レビュー自動ルーティング(cmd_complete_gate統合) | GATE CLEAR。影丸。テスト3件追加 | ←cmd_1144設計L3未実装。家老手動通知→自動化 |
+| cmd_1528 | GP提案トリアージ(17件→重複除去11件) | GATE CLEAR。小太郎。実行推奨5/保留4/却下2 | ←GP蓄積17件の整理。GP-125 ID重複発見 |
+| cmd_1529 | gate_fire直近50BLOCK根因分析 | GATE CLEAR。飛猿。Top5パターン特定+改善3件提案 | ←report_format 20件32%が最多。unknown_block_reason 11件18% |
+| cmd_1530 | WA率60.8%根因偵察(karo_workarounds全130件) | GATE CLEAR。半蔵。dict→list変換16件+RFS未使用9件 | ←report_yaml_format 41/45件(91.1%)が支配的。commit_missing 7→0でgate有効性実証 |
+| cmd_1531 | 将軍判断基準明文化(ルール vs 原則の自立判断) | GATE CLEAR。才蔵。instructions/shogun.md追記 | ←将軍が殿依存パターン→原則判断で自立へ |
+| cmd_1532 | unknown_block_reason diagnostics改善 | GATE CLEAR。疾風。gate個別結果に置換 | ←RCA不能なフォールバック文字列→gate名:PASS/FAILで診断可能に |
+| cmd_1533 | 報告テンプレートFIX hint強化 | GATE CLEAR。小太郎。lesson_candidate両パターン例+bc制限警告 | ←忍者がfound:true/false記入例を見れず迷う→テンプレートに明記 |
+| cmd_1534 | BLOCKパターン忍者別集計注入 | GATE CLEAR。影丸。gate_blocks欄追加 | ←gate_metrics.logのBLOCK頻度を忍者別にtask YAML注入→弱点事前認識 |
+| cmd_1535 | autofix dict→list変換パターン網羅 | GATE CLEAR。半蔵。全15テストPASS | ←WA率Top1のdict→list 16件を構造変換autofixで根絶 |
+| cmd_1536 | report直接編集hookブロック(RFS強制) | GATE CLEAR。才蔵。既存hookで全AC充足(新規作成不要) | ←GP-047既存hookがAC1-3カバー。偵察不足で重複cmd |
+| cmd_1537 | typeフィールドSTALE_FIELDS追加 | GATE CLEAR。疾風。_CLEAR_FIELDSにtype追加 | ←修行001発見: type残留→task_typeと矛盾リスク |
+| cmd_1538 | WA記録category必須化 | GATE CLEAR。小太郎 | ←uncategorized急増(1→16件)。WARN表示で分類品質向上 |
+| cmd_1539 | GP-114 Branch Coverage Check | GATE CLEAR。影丸。cmd_save.shにq7追加 | ←条件分岐変更cmdで本番実データ突合漏れ防止 |
+| cmd_1540 | GP-117 fullrecalculate baseline保存 | GATE CLEAR。半蔵。fullrecalculate.sh新規作成 | ←変更の正当性を数値証明する仕組み |
+| cmd_1541 | GP-115 post-deploy verification提案 | GATE CLEAR。才蔵。cmd_save.shにWARN追加 | ←デプロイ後検証ACがないcmdへの構造的リマインド |
+| karo_direct | CI RED修正(report_field_set.sh autofix未commit+テスト修正) | 897ed62+d68bd53 | ←(1)autofix実装が未commitでテストがFAIL (2)dict→list autofixでlessons_useful BLOCK期待テストも修正 |
+| cmd_1542 | GP-125b WAログバリデーション強化 | GATE CLEAR。小太郎。AC1+AC2実装(8b6a85d)+テスト15件PASS(f037a4c) | ←ninja_id照合+FIX最小長+null拒否でWA計測データ品質向上 |
+| cmd_1543 | **改善効果計測** | **GATE CLEAR。疾風。CLEAR率62.7%→84.6%(+21.9pt)** | ←**unknown_block_reason 9→0件(-100%)。gate品質BLOCK 12→0件(-100%)**。学習ループ閉鎖 |
+| cmd_1544 | 結合テスト一括実行 | GATE CLEAR。半蔵。592テスト全PASS | ←deploy_task.sh並列修正3件の相互作用バグ検出。修正不要 |
+| cmd_1545 | GP-126c 重複チェック | GATE CLEAR。才蔵。Check12追加+テスト5件PASS | ←cmd_save.shにJaccard類似度50%以上でWARN出力 |
+| cmd_1546 | push+CI確認 | GATE CLEAR。飛猿。CI GREEN(全5ジョブPASS) | ←本セッション20+commitのCI一括検証。問題なし |
+| cmd_1547 | context/infrastructure.md索引還流 | GATE CLEAR。疾風。CLEAR率84.6%更新 | ←cmd_1532-1543改善セクション追加。永続化完了 |
+| cmd_1548 | gate_metrics.logローテーション | GATE CLEAR。影丸 | ←ログ無制限成長→1000行超で自動アーカイブ実装 |
+| cmd_1549 | GP実装済みステータス更新 | 配備中。影丸 | ←cmd_1528トリアージ結果+本セッション実装GP還流 |
+| cmd_1550 | batsテスト構造マップ | GATE CLEAR。疾風。58bats/593テスト+未テスト131スクリプト分類 | ←テストカバレッジ盲点可視化 |
+| cmd_1551 | cmd-chronicle更新+500行分割 | GATE CLEAR。才蔵。16件追記+03-09分割。本体491行 | ←cmd_1535-1550追記+500行超過分割 |
+| cmd_1552 | 最終push+CI確認 | GATE CLEAR。飛猿。CI GREEN(全同期済み) | ←cmd_1546以降の追加commitなし。run 23718431414 success |
+| cmd_1553 | gate_cycle_health.shテスト作成 | GATE CLEAR。飛猿。9テスト全PASS | ←cmd_1550発見(未テスト131件)→将軍最重要gateから着手 |
+| cmd_1554 | gate_karo_startup.shテスト作成 | GATE CLEAR。才蔵。10テストPASS | ←**ただしCI RED(test333/334)。cmd_1558で修正** |
+| cmd_1555 | push+CI確認(第2回) | FAIL。小太郎。CI RED検知 | ←cmd_1554テスト2件がCI環境でFAIL。626中624PASS |
+| cmd_1556 | gate_shogun_startup.shテスト | 進行中。飛猿 | ←cmd_1550 HIGH優先度 |
+| cmd_1557 | pending_decision_write.shテスト | 進行中。疾風 | ←cmd_1550 HIGH優先度 |
+| cmd_1558 | **CI RED修正** | GATE CLEAR。疾風。test333/334修正 | ←gate_karo_startup.shにCheck 8追加+期待文字列修正→CI GREEN復旧 |
+| cmd_1559 | context_freshness_check.shテスト | GATE CLEAR。影丸。ユニットテスト追加 | ←cmd_1550 HIGH優先度テスト追加 |
+| cmd_1560 | cmd_delegate.shテスト | GATE CLEAR。小太郎 | ←cmd_1550未テストスクリプト対応 |
+| cmd_1561 | STK status done更新+mapping形式対応 | GATE CLEAR。半蔵 | ←GATE CLEAR時にSTK statusをdoneに自動更新 |
+| cmd_1562 | テスト771件必要性仕分け偵察(2名分割) | 進行中。疾風(前半)+影丸(後半完了:全27件必要) | ←殿指摘「必要性のないテストは負債」→全テストの3基準仕分け |
+| cmd_1563 | universalタグ20件再分類+target_filesテスト | GATE CLEAR。才蔵 | ←教訓タグ精度向上 |
+| cmd_1564 | useful_rate decay実装(15%未満→0.5倍) | GATE CLEAR。小太郎 | ←低効果教訓の自動減衰 |
+| cmd_1565 | 重複テスト3組統合 | GATE CLEAR。飛猿。CI 723件PASS | ←テスト整理。3組の重複テストを統合 |
+| L4-R1 | **修行サイクルR1**(comprehensive演習×6) | GATE CLEAR×6。全忍者完遂。L322-L327自動登録 | ←idle活用。分析→実装→報告の総合演習 |
+| cmd_1566 | FoF管理画面Wardウェイト可視化偵察 | GATE CLEAR。疾風。Ward PF1/59体のみ。debug API昇格で実装可能 | ←admin画面にウェイト非表示。L511登録(actual_weight/drift未計算) |
+| cmd_1567 | シミュvs本番DB乖離偵察 | GATE CLEAR。影丸。根因=experiments.db鮮度差(DL 3/16 vs 本番 3/27)。完了月diff=0 | ←L512登録。Ward FoF+四つ目3PFがexperiments.dbに不在 |
+| cmd_1569 | pipeline_config本番vsローカル突合 | GATE CLEAR。才蔵。差異なし(DB直読、ハードコードなし) | ←cmd_1567のDLタイミング差根因を補強。config起因を仮説排除 |
+| cmd_1568 | **Ward→expandウェイト伝達Silent Failure検証** | GATE CLEAR。半蔵。**Silent Failure確認**: OPT-A(cmd_1450)で非リバランス月weightsキー消失→EWフォールバック | ←修正=recalculate_fof.py:866のみ。月次FoF影響なし。L513登録 |
+| cmd_1570 | **Ward FoFパフォーマンス低下因果特定** | GATE CLEAR。影丸。Ward vs EW差+0.25%。クラスタ12年間完全固定。付加価値ほぼゼロ | ←殿「記憶よりショボい」→構造的制約確認。L514登録(クラスタ固定化問題) |
+| cmd_1571 | Silent Failure修正(非リバランス日weightsキー保持) | GATE CLEAR。半蔵。テスト7件PASS | ←cmd_1568偵察結果に基づくimpl。recalculate_fof.py:866修正 |
+| cmd_1572 | experiments.dbスコープ拡張(APIフィールド名バグ修正+ティッカー5種追加) | GATE CLEAR。才蔵。PF124(+8),ティッカー23(+9),本番18種完全カバー | ←cmd_1567偵察で発見。download_prices()のフィールド名不整合(relative_momentum_tickers→relative_assets等)。L515登録 |
+| cmd_1574 | experiments.db全FoFランキング+Ward好成績シミュ特定 | GATE CLEAR。疾風。Ward超12Mで21体 | ←殿「もっといい結果あったはず」→全量ランキング |
+| cmd_1577 | Ward vs EW リスク調整後指標比較 | GATE CLEAR。小太郎。Ward非優位(Sharpeのみ微優位、MaxDD/Sortino/CalmarはEW優位) | ←cmd_1570(+0.25%)の補強。全期間141ヶ月。PD-004判断材料追加 |
+| cmd_1578 | 旧忍法15体の相関構造安定性分析 | GATE CLEAR。飛猿。クラスタ固定根因=相関距離の狭さ(sep<0.5)。シンは旧より高相関(距離26%狭) | ←なぜ12年間不変か。シン忍法v2ではWardさらに不安定(安定性45.5%vs63.6%) |
+| cmd_1573 | FoFウェイト可視化impl(debug API正式化+WeightBreakdown) | GATE CLEAR。影丸。BE:fof-weightsエンドポイント正式化。FE:WeightBreakdown.tsx新規+Ward色分け | ←cmd_1566偵察結果。admin画面でWardクラスタ別ウェイト確認可能に |
+| cmd_1575 | experiments.db再DL(cmd_1572スコープ拡張後初回) | GATE CLEAR。半蔵。PF124/ティッカー23確認。Ward FoF monthly_returns 141件取得成功 | ←cmd_1572のAPIフィールド名修正+ティッカー追加後の初回DL実行 |
+| cmd_1576 | 本番Ward K=5/LB=36 vs 研究最適K=4/LB=24比較 | GATE CLEAR。才蔵。Sharpe差0.1%未満(2.0801 vs 2.0793)で実質同等。R19(99セル)真最適はK=4/LB=30 | ←後方伝播検証不在が根因。パラメータズレは軽微だがWardの付加価値自体がほぼゼロ |
+| cmd_1579 | R28: Ward Cluster Selection(クラスタ内top1選出+EW) | GATE CLEAR。半蔵。超越条件3つ全FAIL。現行Ward FoF(全員保有)が全指標優位。動的ローテーションは分散効果を犠牲にする | ←殿の新設計。Wardをウェイト→selectionに転用。結果:選抜は保有数減少でリスク増 |
+| cmd_1581 | R28-シン: シン忍法v2 20体でWard Cluster Selection | GATE CLEAR。疾風。ClSel_K3がCAGR74.6%/Calmar4.60で全方式中最良。超越条件B+C PASS | ←cmd_1579(旧:全FAIL)→シンで逆転。素材依存性が明確化。集中投資リスク(20体中3体)が残課題 |
+| cmd_1580 | R28-OOS: Walk-Forward過適合検証(旧忍法15体) | GATE CLEAR。影丸。WF-OOS 7窓で過適合フラグなし(劣化率<30%)。Ward K=4がOOS最良(Sharpe2.02)。Ward vs Simple Mom: 全KでWard優位(+0.28〜0.49) | ←cmd_1579のfull-sample結果がOOSでも再現。クラスタリングの付加価値をOOS確認 |
+| cmd_1584 | R28-K2: K=2極端ケース検証 | GATE CLEAR。飛猿。旧忍法K=2超越条件全FAIL(MaxDD-32.2%)。シンK=2はCAGR75.8%だが条件Bのみ辛うじてPASS。集中リスク許容範囲外 | ←K=2は全K中CAGR最高だがリスク最悪。K=3-5が最適帯域 |
+| cmd_1582 | R28-指標: 選択指標感度分析(Sharpe/Calmar/Sortino) | GATE CLEAR。才蔵。4指標×K3値=12パターン全てWardFoF全員保有(Sharpe1.85)に劣後。Sharpe選抜K=5が1.80で最高。指標変更でもWard改善不可 | ←Sortino-Momentum間ランク相関0.49で最も独立。指標空間でも改善余地なし |
+| cmd_1583 | R28-持続性: Momentum持続性+平均回帰検定 | GATE CLEAR。小太郎。個別自己相関は全lag非有意。クロスセクショナルはK=3,4で高度有意(短期1ヶ月)だが長期lookbackで減衰 | ←R28のmomentum前提は弱い。短期では機能するが長期lookback(12ヶ月)の根拠薄い |
+| cmd_1585 | R28-シンOOS: シン忍法v2 Walk-Forward過適合検証 | GATE CLEAR。疾風。**K=3 Calmar41.6%劣化=OVERFIT**。K=4は28.1%でOK。CAGR劣化は全K7%以内。Ward付加価値は旧忍法比半減。L516登録 | ←cmd_1581(K=3超越条件B+C PASS)が**OOSで過適合**。K=4がシンでもOOS最良 |
+| cmd_1586 | R28-シン指標: シンClSel 4指標感度分析 | GATE CLEAR。半蔵。Sortino K=3がCAGR75.3%/Calmar5.29で全方式最高。しかし超越条件ではmomentum最優(2/3PASS vs Sortino1/3)。指標変更で超越条件改善せず | ←cmd_1582(旧:全劣後)→シンでもSortino最高だが超越条件はmomentum優位。UWP3m(momentum)vs6m(sortino)が決定差 |
+| cmd_1587 | R28-回転率: シンClSel K=3 Turnover分析 | GATE CLEAR。才蔵。平均入替0.77体/月(26%)。全入替(3体全交代)は0.9%。入替月vsの非入替月リターン差は非有意(p=0.91) | ←ローテーション自体はリターン寄与せず。取引コストは限定的(低回転率)。本番採用に好材料 |
+| cmd_1588 | R28-耐性: シンClSel K=3 ストレステスト | GATE CLEAR。飛猿。下落月微劣後(-0.24pp)だが最悪月は3.3pp良い。MaxDD-16.22%は3手法最浅。COVID暴落2ヶ月底→翌月回復 | ←集中投資のストレス耐性確認。下落月微劣後を上昇月超過(+0.69pp)で補完 |
+| cmd_1589 | R28-統合: 全研究結果の統合レポート | GATE CLEAR。疾風。全26方式統合比較。3条件全PASSはシンClSel K=4 Momのみ。K=3 Sortino(Calmar5.29最高)はOOS未検証 | ←素材効果(シン>旧)が方式選択より支配的。旧ClSel<FoF<EWがシンで逆転。K=4 Momが現時点唯一の全条件クリア候補 |
+| cmd_1591 | R28-β分離: ベータ調整アルファ分析 | GATE CLEAR。半蔵。**CAGR向上の95.8%はβ由来、α寄与4.2%のみ**。β調整後超越条件は全FAIL。momentum選出は構造的高βバイアス(p<0.0001) | ←⚠️cmd_1581/1586の前提変更(assumption_invalidation)。ClSelの「改善」は市場露出増=αではなくβ。L517登録 |
+| cmd_1590 | R28-SortinoOOS: Sortino選出WF-OOS | GATE CLEAR。影丸。K=3 Calmar劣化54.4%=OVERFIT。MaxDD-14.2%→-29.0%(倍増)。CAGR/Sharpe劣化はMomentumより小さいがMaxDD劣化は大きい | ←full-sampleのMaxDD優位はIS全体の選出バイアス。OOS超越条件全K全FAIL。L518登録 |
+| cmd_1592 | R28-OOS超越: OOS期間での超越条件再判定 | GATE CLEAR。小太郎。OOS個体ベスト>full-sample(Calmar4.71vs3.90)。**全方式OOS超越条件FAIL**: Momentum全K0/3、Sortino全K0/3。1/N EWのみ条件C 1/3 | ←full-sampleの超越条件2/3PASSはOOS同士比較で0/3に反転。選出指標に関わらずOOS超越未達。L519登録 |
+| cmd_1593 | R28-IS感度: WF-OOS IS長感度分析 | GATE CLEAR。才蔵。IS=36/48/60全てCalmar劣化>30%(46.4%/42.6%/41.6%)→**OVERFIT確定**。MaxDD同一。CLUSTER_LOOKBACK=36が律速 | ←IS長は結論を変えない構造的問題。IS≥36では末尾36ヶ月のみ使用→銘柄選択不変。L520登録 |
+| cmd_1594 | R28-LB感度: Momentum LB 1-12ヶ月網羅的持続性分析 | GATE CLEAR。疾風。**最適LB=2ヶ月**(旧K3 t=4.04/シンK4 t=3.75)。標準12Mは最適でない。4-5m/10-11mピーク仮説否定 | ←assumption_invalidation(cmd_1579/1583)。LB短縮でClSel予測力向上の可能性。Spearman全LB非有意。L523登録 |
+| cmd_1595 | R28-Sortino β分離+OOS超越補完 | GATE CLEAR。影丸。Sortino選出はlow-β(0.98)でα share10.0%(momentum4.2%の2.4倍)。OOS超越条件は全方式FAIL | ←選出指標の数学的性質がβプロファイルを構造的に決定。Sortino=α特化だがOOSでは超越未達。L522登録 |
+| cmd_1596 | R28-4指標β調整: 全選出指標β調整後比較 | GATE CLEAR。半蔵。α ranking: Sortino(10.0%)>Momentum(4.2%)。**β調整後超越条件は全4指標×3条件=12判定全FAIL** | ←ClSel K=3のCAGR向上は全指標でβ露出に依存。αとしての付加価値は確認不能。L521登録 |
+| cmd_1597 | R28-K値β検証: K=2-5全水準β調整α検証 | GATE CLEAR。小太郎。**K=2-5全水準で16判定全FAIL**。α share K=2(6.5%)→K=5(1.0%)単調減少。K増加でα効率悪化 | ←cmd_1589のK=4唯一3条件PASSはβ主導(invalidation)。ClSel momentum方式でK大はα寄与ゼロ収束。L525登録 |
+| cmd_1598 | R28-統合v2: 全19cmd最終統合レポート | GATE CLEAR。疾風。β調整後超越12/12FAIL、OOS全FAIL、OVERFIT確定。3選択肢提示(A不採用/B改良版/C別α源泉) | ←R28研究シリーズ集大成。殿の本番採用判断材料 |
+| cmd_1599 | R28-短期LB: Momentum LB=2mでClSel再BT+β分離 | GATE CLEAR。影丸。LB=2m全K全指標でLB=12m劣後。β緩和(1.105→1.021)でα倍増だがMaxDD-29.3%で超越0/3 | ←LB短縮はR28結論覆さず。持続性(t値)改善≠BTパフォーマンス改善。L526登録 |
+| cmd_1600 | R28-短期LB OOS: LB=2m ClSel WF-OOS過適合検証 | GATE CLEAR。半蔵。**LB=2mでOOS劇的改善**。K=3 Calmar劣化41.5%→逆転-23.5%。α寄与7.5% | ←⚠️full-sampleではLB=12m優位だがOOSではLB=2m優位。LB=2mは過適合に強い。R28で初のOOS改善結果 |
+| cmd_1601 | R28-Sortino LB=2m: Sortino×短期LB BT+β分離 | GATE CLEAR。疾風。Sortino×LB=2m全K全指標でLB=12mに劣後。α3.4%(LB=12m10%の1/3)。β=0.951 | ←Sortino×短期LBはα効率悪化。momentum LB=2m(α9.2%)よりも低い。最有望組み合わせが期待外れ |
+| cmd_1602 | R28-LB=2m OOS超越条件正式判定 | GATE CLEAR。影丸。**raw超越条件C PASS(1/3)**。K=3/K=4ともUWP≤5。β調整後は0/3 FAIL | ←LB=2mが唯一ClSelでOOS超越条件Cを通す方式。LB=12m全方式0/3 FAILとの明確な差 |
+| cmd_1603 | R28-Sortino LB=2m OOS過適合検証 | GATE CLEAR。半蔵。Calmar劣化56.9%=OVERFIT。momentum LB=2m(-23.5%)とは対照的 | ←Sortino過適合はLBでなく指標特性に起因。momentum LB=2m=最もα効率高い方式(α7.5%)。L527登録 |
+| cmd_1604 | **20体全個体WF-OOS+buy&holdベンチマークα検証** | GATE CLEAR。半蔵。**α存在証明**: 全20体OOS CAGR>TQQQ/TECL(20/20)、Calmar劣化全負=過適合ゼロ、alpha>0=8/20体 | ←殿指示「面でいいと点を探さないのは怠慢」。EW20 CAGR=72.3%/Calmar=3.18 vs TQQQ=22.5%。ClSel K=3 LB=2m=Sharpe 95th pct。WA:AC注入失敗(3忍者stale AC→4回目半蔵で正常完了)。L528登録 |
+| cmd_1605 | **20体個体WF-OOS再挑戦(r29e新規作成必須)** | GATE CLEAR。疾風。殿基準全PASS=6/20体。EW20 CAGR=0.723。過適合なし | ←cmd_1604と同一内容の将軍再起票。疾風がr29eを新規作成。結果はcmd_1604(半蔵r30)と整合=交差検証完了 |
+| cmd_1606 | **シン忍法v2 20体 LB×4指標2Dグリッド ClSel WF-OOS** | GATE CLEAR。飛猿。BEST: LB=6 Mom CAGR=88.5% Calmar劣化=-5.1%。R28+5.9pp EW20+16.2pp。殿基準2/48 Calmar劣化<30%=33/48 | ←R28ベスト(LB=2 Mom)をLB最適化で超越。Momentumが全指標中最優位。MaxDD>SPYが殿基準ボトルネック(2/48のみ) |
+| cmd_1607 | **旧忍法15体 LB×4指標2Dグリッド ClSel WF-OOS** | GATE CLEAR。小太郎。BEST: LB=2 Calmar CAGR=77.4% 劣化9.2%。殿基準38/48 Calmar劣化<30%=48/48(全セル) | ←旧忍法は殿基準PASS率大幅高(38/48 vs シン2/48)=MaxDD浅い。過適合ゼロ。Momentum列がCAGR独占 |
+| cmd_1608 | **シン忍法v2 ClSel 2Dグリッド追加2指標(NewHigh+UWP)** | GATE CLEAR。疾風。殿基準20/24 PASS。6指標統合BEST=LB6 Mom(88.5%)変わらず。NewHigh/UWP低CAGR(64-72%)だが低MaxDD(-20~-23%)で安定性優位 | ←殿指示「newhigh+UWP足せ」。4→6指標完全グリッド化。LB短(1-4)で差別化力弱(LC) |
+| cmd_1609 | **旧忍法 ClSel 2Dグリッド追加2指標(NewHigh+UWP)** | GATE CLEAR。影丸。殿基準14/24 PASS。統合最適LB=2 Calmar(77.4%)変わらず | ←cmd_1607+追加2指標。6指標統合で旧忍法もグリッド完成 |
+| cmd_1610 | **FoF管理画面ビルディングブロック可視化** | GATE CLEAR。疾風。AC1/3/4既存実装済み、AC2(List View表示)のみ追加。page.tsx 1ファイル変更 | ←殿指示。cmd_1566偵察で構成把握済み。AC1(API)/AC3(Ward色分け)/AC4(フォールバック)は既にWeightBreakdownコンポーネントとして存在。統合のみ |
+| cmd_1611 | **旧忍法15体個体WF-OOSベンチマーク(R30-kyu)** | GATE CLEAR。影丸。全15体CAGR>TQQQ&TECL。殿基準ALL PASS=8/15+EW15。過適合ゼロ(全SUSTAIN)。alpha>0=6/15 | ←殿指示。cmd_1604(シン版R30)と同一手法。旧忍法15体OOS CAGR 1位=抜き身-激攻(92.96%)。EW15=68.2% |
+| cmd_1612 | **R29研究成果context索引更新** | GATE CLEAR。疾風。3cmd索引化(R29g-shin/kyu+R30-shin)。commit f35b34b | ←cmd_1608/1609/1604の結論をdm-signal-research.mdに還流。Vercelスタイル(結論+参照パス) |
+| cmd_1613 | **ClSel本番化偵察** | GATE CLEAR。半蔵。研究3層構造+本番4箇所+変更7ファイルリスト。偵察5要件完全準拠 | ←研究スクリプト(building_block→r29f→r29g)→本番(ClusterSelectionBlock新規+enum/registry/recalculate_fof変更)。DB migration不要 |
+| L4修行R1+R2 | **修行L4(総合3AC)全10cmd** | GATE CLEAR×10。全6忍者R1+R2連続一発PASS(100%)。L328-L337登録 | ←R1:4名(疾風/才蔵/小太郎/飛猿)+2名(影丸/半蔵)、R2:6名全員。L1-L3環境改善が完全定着。連勝110達成。修行で実バグ修正(chronicle_metrics parse_row/yaml_check_opus壊れたパイプ/shout.shレポートパス/cmd_delegate grep誤マッチ/archive_completed L074違反/gate_report_format非数値ID) |
+| L4修行R3+R4 | **修行L4(総合3AC)全12cmd** | GATE CLEAR×12。R3:6/6(影丸CTX reset再配備1件)、R4:6/6全員一発PASS。L338-L350登録 | ←連勝122達成。R4実バグ修正: report_field_set.sh traceback混入(L4_018)/lesson_write.sh --strategic検出漏れ(L4_020)/rework_rate.sh dict形式クラッシュ(L4_022)/ci_status_check.sh python3二重起動(L4_021)。DC: ninja_done.sh gitignoreホワイトリスト未登録(hanzo L4_019) |
+| L4修行R5+R6 | **修行L4(総合3AC)全12cmd** | GATE CLEAR×12。R5:6/6、R6:6/6全員一発PASS。L351-L362登録 | ←連勝134達成。R5重大: ロックパス不整合=排他制御無効(L4_023)/workaround_pattern_check正規表現バグ=パターン検出完全非機能(L4_028)/YAML injection(L4_026)。R6重大: eval脆弱性(L4_031)/idle|none偽陽性(L4_033)/sed無音失敗(L4_034)。高速化: lesson_find_duplicates 3.4-3.6x(L4_030) |
+| L4修行R7 | **修行L4(総合3AC)全6cmd** | GATE CLEAR×6。全員一発PASS。L363-L367登録(5教訓) | ←連勝140達成。R7重大: lesson_review.sh Python文字列注入脆弱性(L4_036 kagemaru)/auto_failure_lesson.sh python3多重起動6→1統合(L4_039 kotaro)。lock_path未適用スクリプト発見(L4_035 hayate, L4_040 tobisaru) |
+| L4修行R8 | **修行L4(総合3AC)全6cmd** | GATE CLEAR×6。全員一発PASS。L368-L373登録(6教訓) | ←連勝146達成。R8対象: sync_pane_vars/usage_monitor/cmd_save/ac_physical_verify/auto_deploy_next/agent_status。usage_monitor.sh 7dバケットアラート欠落修正(L4_042 kagemaru) |
+| L4修行R9 | **修行L4(総合3AC)全6cmd** | GATE CLEAR×6。全員一発PASS。L374-L379登録(6教訓) | ←連勝152達成。R9対象: lesson_health_report/rotate_gate_metrics/count_gate_metrics/gate_auto_respond/clipboard_watcher/lesson_deprecate。gate_auto_respond.sh CI二重Python統合(L4_050 saizo)/lesson_deprecate.sh yaml.dump禁止+TZ欠落(L4_052 tobisaru) |
+| L4修行R10 | **修行L4(総合3AC) 5/6cmd** | GATE CLEAR×5。半蔵L4_055パーミッション停止→/clear回復中。L380-L384登録(5教訓) | ←連勝157(R9+5)。R10対象: model_analysis/statusline/inbox_mark_read/lesson_delete/workaround_pattern_resolve/daemon_watchdog。Python変数注入2件(saizo L383/kotaro L384)。statusline gitignore未登録(kagemaru L382) |
+| L4修行R11 | **修行L4(総合3AC) 4/5cmd+1 BLOCK** | GATE CLEAR×4、BLOCK×1(kotaro L4_062)。L385-L389登録(5教訓) | ←小太郎BLOCK=usage_compare.sh gitignore未登録でcommit不可。連勝160→BLOCK。R11対象: conversation_retention/token_refresh/cmd_absorb/usage_compare/parity_check。SKIP=PASS偽陰性パターン発見(tobisaru L389) |
+| L4修行R12 | **修行L4(総合3AC)全6cmd** | GATE CLEAR×6。L390-L395登録(6教訓) | ←R12対象: review_gate/gist_sync/mcp_sync_lesson/lesson_confirm/usage_status/build_instructions。半蔵L4_055(R10)回復後CLEAR。bare except隠蔽(L390)/get()フィールド名突合(L391)/ポーリングループ関数化(L392) |
+| L4修行R13 | **修行L4(総合3AC)全6cmd** | GATE CLEAR×6(CI赤修正後再GATE)。L396-L401登録(6教訓) | ←CI赤=build_instructions.sh未再生成。家老が再生成+commit+push。R13対象: lesson_impact_analysis/pending_decision_write/sync_lessons/ralph_loop_metrics/dashboard_update。Python変数注入横断残存(L398)/リファクタ遺物参照(L399)/python3 -cインジェクション(L401) |
+| L4修行R14 | **修行L4(総合3AC)全6cmd** | GATE CLEAR×6。飛猿パーミッション停止回復。L402-L407登録(6教訓) | ←R14対象: lesson_deprecation_scan/gate_improvement_trigger/switch_cli_mode/gunshi_next_action/checklist_update/api_usage。L406重大バグ(cmd_num>=900フィルタが正規cmd全除外)。パーミッション停止2件目(R10半蔵に続き飛猿)。git index.lock問題の構造的対策要 |
+| L4修行R15 | **修行L4(総合3AC) 3cmd** | GATE CLEAR×3。L412-L413登録(2教訓) | ←R15対象: inbox_prune(半蔵)/task_queue_status(小太郎)/usage_compare再(小太郎FAIL:gitignore)。半蔵yaml.dump違反発見+手動YAML構築に置換。小太郎ninja名取得重大バグ修正(出力0行→7行正常化)+pipefail安全化。R11 BLOCK L4_062はGATE CLEAR(verdict FAILだがGATE構造は通過) |
+
+## 2026-03-31
+
+| cmd | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_1614 | gate_loop_health.shに自己修正率計測追加+WARNING条件改善。FAIL>0+autofix==0でも自己修正率80%以上ならOK判定に変更 | GATE CLEAR。才蔵impl。全61テストPASS。WA:0 | 消火4問判定でAUTO-FIX導入は消火と確定→代わりに自己修正率という計測軸を追加。実データ33/38(86%)で免疫系正常稼働を可視化 |
+| cmd_1615 | inbox_write.sh(L404,L563)+inbox_archive.sh(L85,L96)のyaml.dump排除。cmd_1399事故と同種リスク根本排除 | GATE CLEAR。半蔵(inbox_write)+飛猿(inbox_archive)並列。テスト15/15 PASS。WA:0 | yaml.dump→手動YAML構築(_sv関数)で通信基盤の信頼性を構造保証。軍師誤検知(delegated後commit→既修正と誤判定)のLG001拡張議論も発生 |
+| cmd_1616 | cmd_complete_gate.sh+lesson_write_karo.sh+lesson_deprecate.sh+backfill_knowledge_debt.shのyaml.dump排除。yaml.dump実行コード残存ゼロ達成 | GATE CLEAR。小太郎(AC1)+疾風(AC2)並列。テスト37/37 PASS。WA:0。L414登録 | cmd_1615と合わせ**yaml.dump実行コード全プロジェクトゼロ**達成。CLAUDE.md禁止ルール完全充足。L414: 置換2パターン(全体→手動構築/単一→yaml_field_set.sh)の使い分け |
+| cmd_1617 | cmd_save.sh Check12拡張。archive済みcmdとの内容重複検出追加(GP-129軍師提案) | GATE CLEAR。影丸impl。batsテスト3件+既存5件全PASS。WA:0 | Check12がqueue内のみ比較→archive直近20件も比較に拡張。cmd_1497重複事故の恒久防止。Jaccard類似度50%閾値で(archive)マーカー付きWARNING |
+| cmd_1618 | deploy_task.sh内yaml.safe_dump 3箇所(L516/L1663/L2102)を手動YAML構築に置換。yaml.dump運用コード完全撲滅の最終ピース | GATE CLEAR。半蔵impl。全31テストPASS。WA:0 | cmd_1614-1616で6スクリプト掃討→cmd_1618でdeploy_task.sh最後の3箇所置換。AC上書き・タスク修飾子注入・弱点注入の3関数。並列衝突なし(軍師確認) |
+| cmd_1619 | deploy_task.sh配備後AC一致検証ゲート追加。inject_ac_version後にtask YAMLとcmdソースのAC件数・ID突合。不一致時WARNING(配備続行) | GATE CLEAR。疾風impl。全31テストPASS。WA:0 | ac_injection_failure WA 6件の免疫系対策。根本修正ではなく検知自動化アプローチ。verify_ac_consistency関数追加 |
+| L4修行R16 | **修行L4(総合3AC)全6cmd** | GATE CLEAR×6。一発PASS率6/6=100% | ←R16対象: chronicle_metrics/auto_draft_lesson/karo_workaround_log/workaround_pattern_resolve/cmd_friction_log/gunshi_gate_reflux。将軍指摘の本番回帰3パターン(lu_reason空/summary空/no_lesson_reason欠落)ゼロ。飛猿バウンス解消。実バグ修正多数(Shell injection/YAML injection//tmp race condition等) |
+| cmd_1620 | gate_loop_health.shのLoop Status出力修正。品質系FAILは意図的BLOCK(GP-107)であることを明記し消火誘導メッセージ除去 | GATE CLEAR。疾風impl。WA:0 | 品質系→INFO(exit 0)/フォーマット系→WARNING(exit 1)の4分岐判定。次の将軍の誤解を構造的に防止 |
+| cmd_1621 | スキル棚卸し: writer系名称統一+memory-teire廃止。note-article→note-writer、weekly-report→weekly-report-writer、shogun-memory-teire削除 | GATE CLEAR。影丸AC3+4、半蔵AC5、家老AC1+2(SKILL.md復元)。WA:1(SKILL.md 0バイト破損→file-history復元) | Edit toolとスキルスキャンの競合でSKILL.md破損発生。教訓: ~/.claude/skills/配下はBash sed必須。scout_gate awk bugも発見(report_merge.done回避) |
+| cmd_1622 | FoFループ内DB query除去。signal_cache直接参照化(N+1 query除去) | GATE CLEAR。影丸impl。59FoF×483,920レコード完全一致。117テストPASS。WA:0 | holding_signal_raw二層cache必要(signal_cacheはbuild_signal_cache_valueで変換済みのためDB生値と不一致)。L531登録 |
+| cmd_1623 | OPTICS密度ベースClSel + MP法denoised相関 vs Ward K=3(raw)比較 | GATE CLEAR。半蔵impl。9LB値比較。Ward 7/9優位。OPTICS LB>=24で単一クラスタ退化(N=20小集団)。L530登録 | 密度ベースClSelはN>=50以上で有効。小集団にはWard K指定が適切。β調整後alpha両手法とも負 |
+| cmd_1624 | 知識辞書M14 Gerber Statistic + M15 Shrinkage Estimators | GATE CLEAR。疾風impl。M14(237行)+M15(299行)。索引+相互参照更新。WA:0 | GS0/GS1/GS2定式化+LW/OAS/NLS 3手法。数式省略なし |
+| cmd_1625 | 知識辞書M16 OPTICS Clustering + D07共分散前処理解釈層 | GATE CLEAR。才蔵impl。OPTICS辞書+DM-Signal適用設計(M13-M16 2層)+手法選択判定フロー。WA:0 | M14/M15は一次知識層未作成のため理論推定ベース記載 |
+| cmd_1626 | 軍師review_log 3分離(stats.yaml+gp_tracker.yaml+log本体) | GATE CLEAR。疾風impl。61テスト全PASS。gunshi.md+gate参照更新。WA:0 | review_log肥大(5778行)対策。/clear後読込コスト削減 |
+| cmd_1627 | 偵察: standard PF前処理BB精読(AbsoluteMomentum/MomentumFilter/MomentumAcceleration) | GATE CLEAR。recon 2名(影丸+半蔵)。3BB全前処理不在確認+注入5ポイント+研究仮説3件。WA:0 | 全BB共通基盤=calculate_composite_momentum_vectorized。加速BBは平滑化と構造的に重複しない(組合せ可)。Phase2 cache整合要件発見。context/dm-signal-research.md還流済み |
+| cmd_1628 | 研究: Gerber gate-level threshold効果検証 | GATE CLEAR。才蔵FAIL→半蔵修正。65PF×5k=325件walkforward。WA:1(全面書換え) | 才蔵return-level GS1(FAIL)→半蔵gate-level threshold(diff>k*σ)に修正。L532登録(適用レベル照合)。context還流済み |
+| cmd_1629 | 研究: EMA平滑化効果検証(5PF×5span) | GATE CLEAR。疾風impl。**DM3 span=42でCAGR2倍(0.11→0.23)/Sharpe45%改善**。WA:0 | EMA効果はlookback依存: 短期PF恩恵/超短期劣化/長期不変。context/dm-signal-research.md還流済み |
+| cmd_1630 | 研究: Ledoit-Wolf shrinkage効果検証(65PF×8config=520runs) | GATE CLEAR。影丸impl。3アプローチ(A:リスク調整,B:shrinkage,C:ノイズゲート)比較。WA:0 | Approach C threshold≥0.5で有意差。単一ticker PFでは全アプローチ同一(共分散なし)。context還流済み |
+| cmd_1631 | 研究: Fractional Differentiation効果検証(5PF×5variant) | GATE CLEAR。飛猿+小太郎impl。**FFD×AbsMom構造的非機能(price level残存→gate常時通過)**。WA:1(archive race→報告復元) | FFDはAbsMomゲートとして原理的に無効。MomentumFilterランキングには影響するがゲートフィルタ機能なし。context還流済み |
+| cmd_1632 | 研究: EMA平滑化65PF全数評価 | GATE CLEAR。疾風impl。65PF×5span=325件walkforward。WA:0 | cmd_1629(5PFのみ)を65PF拡張。pipeline_configからstandard PF自動検出。ema_smoothing_results_full.yaml出力。context還流済み |
+| cmd_1634 | 研究: Kalman Filter 65PF検証 | GATE CLEAR。半蔵impl。65PF×4mode=260件。WA:0 | auto EM(0.3386)<fixed best qr_0.1(0.3516)。Q/R比4-7収束(軽い平滑化)。context還流済み |
+| cmd_1633 | 研究: L1 Trend Filter 65PF検証 | GATE CLEAR。影丸impl。65PF×5lambda=325件。WA:0 | Universal best lambda=10(CAGR34.62%)。22PF(34%)にoverfit警告。per-PF best分布均等→lambda選択に注意要。context還流済み |
+| cmd_1635 | 研究: Entropy Gate PE 65PF検証 | GATE CLEAR。才蔵FAIL→小太郎FAIL→疾風CLEAR(3回目)。WA:1(仕様不適合+再配備2回) | m=5 PEは月次データでgate大部分未発火。実用的に無効。L533登録。cmd仕様にwindow日数/月数齟齬あり。context還流済み |
+
+## 2026-04-01
+
+| cmd | 目的 | 結果 | 因果・知見 |
+|-----|------|------|-----------|
+| cmd_1636 | 知識辞書: 平滑化・信号抽出系4手法(M21-M24) | GATE CLEAR。疾風impl。WA:0 | L1 Trend/Kalman/FDA/Adaptive Kalman MS。guide.mdテンプレート準拠。一次知識層純度OK |
+| cmd_1637 | 知識辞書: エントロピー・ノイズ検出系4手法(M25-M28) | GATE CLEAR。影丸impl。WA:0 | PE/Jump Detection/Shannon Entropy/Transfer Entropy |
+| cmd_1638 | 知識辞書: 分解・フィルタ系4手法(M29/M30/M33/M34) | GATE CLEAR。半蔵impl(3回目配備)。WA:0 | SSA/VMD/Savitzky-Golay/Band-Pass CF。初回・2回目はninja_monitorに/clearされ作業未完了 |
+| cmd_1639 | 知識辞書: リスク・PF関連4手法(M17-M20既存更新) | GATE CLEAR。才蔵impl。WA:0 | SJM/Vol Scaling/Median Momentum/Network Momentum |
+| cmd_1640 | 知識辞書: 適応的・レジーム系4手法(M31/M32/M35/M36) | GATE CLEAR。小太郎impl。WA:0 | Dynamic Momentum/Greedy Online/Breaking Bad/Slow Momentum CPD |
+| cmd_1641 | 知識辞書: メタ知見sources/validation 5件 | GATE CLEAR。飛猿impl。WA:0 | S02-S05(Valeyre/Trend Premia/Shi-Lian/Zakamulin)+V04(Overfit Detection) |
+| L4_R1 | 修行L4総合R1(3AC×6名) | FP=4/6(67%) | 実バグ5件修正。saizo/hanzo/hayate/kotaro=FP YES。kagemaru/tobisaru=bc空でNO。gate coverage gap発見 |
+| L4_R2 | 修行L4総合R2(環境改善:FILL_YES_OR_NO) | FP=4/6(67%) | 初の「R2で100%未到達」。実バグ6件追加修正(計11件)。kagemaru NO→YES改善。saizo YES→NO(FILL_YES_OR_NO逆効果)+tobisaru gate偽陽性 |
+| L4_R3 | 修行L4総合R3(inline hint回帰) | FP=5/6(83%,真100%) | **L4完了**。実バグ6件追加(L4計17件)。gate偽陽性1件(kotaro L225 reason)除外で全員FP=YES。gate FILL_THIS検出を完全一致に修正 |
+| L4_R4 | 修行L4品質監査R4(通信・運用系6スクリプト) | FP=6/6(100%) | 実バグ6件(L4計23件)。inbox_write DRY/inbox_watcher flock/ntfy_listener py3 7→1/PD TZ欠落/gate_improvement DRY/cmd_absorb py3依存。軍師GP-134(AWKバグ)+GP-133(BCスタブ)並行完了 |
+| cmd_1642 | 知識辞書Wave2: モメンタム正典3手法(M51-M53) | GATE CLEAR。疾風impl。WA:0 | TSMOM/Cross-Sectional/Dual Momentum。commit a679a4d9 |
+| cmd_1643 | 知識辞書Wave2: モメンタムリスク3手法(M40/M41/M54) | **ゴースト完了**。影丸: task完了報告あるがDM-Signalコミットなし | /clear後に報告YAML未記入のまま。cmd_1648で穴埋め |
+| cmd_1644 | 知識辞書Wave2: PF構築正典3手法(M42 MVO/M43 Ward/M44 Risk Parity) | GATE CLEAR。半蔵impl。WA:0 | WebSearch原論文確認済み。commit 5dda8575 |
+| cmd_1645 | 知識辞書Wave2: PF構築+サイジング3手法(M45 BL/M46 MaxDiv/M47 Kelly) | GATE CLEAR。才蔵impl。WA:0 | commit 52169868 |
+| cmd_1646 | 知識辞書Wave2: ボラティリティ・リスク計測3手法(M48 GARCH/M49 CVaR/M50 EWMA) | GATE CLEAR。小太郎impl。WA:0 | LC: EWMA=IGARCH特殊ケース階層関係。commit 81982dd0 |
+| cmd_1647 | 知識辞書Wave2: ML基盤3手法(M37-M39) | GATE CLEAR。飛猿impl。WA:0 | commit b89c9636 |
+| cmd_1648 | 知識辞書Wave3: モメンタムリスク+レジーム(M40/M41/M60) — cmd_1643穴埋め | GATE CLEAR。疾風impl。WA:0 | DC: M54重複→M60変更。commit 1da59310 |
+| cmd_1649 | 知識辞書Wave3: 資産価格モデルA(M57 CAPM/M58 FF3/M59 Carhart) | GATE CLEAR。影丸impl。WA:0 | commit 411611a9 |
+| cmd_1650 | 知識辞書Wave3: 資産価格モデルB+時系列(M54 FF5/M55 APT/M56 ARIMA) | GATE CLEAR。半蔵impl。WA:0 | commit d27756da |
+| cmd_1651 | 知識辞書Wave3: 診断検定A(V05 ADF/V06 KPSS/V07 Ljung-Box) | GATE CLEAR。才蔵impl。WA:0 | commit 56ebd336 |
+| cmd_1652 | 知識辞書Wave3: 診断検定B+因果(V08 JB/M61 Granger/M62 Cointegration) | GATE CLEAR。小太郎impl。WA:0 | commit fe940498 |
+| cmd_1653 | 知識辞書Wave3: 時系列+マイクロ(M63 VAR/M64 Amihud/M65 VPIN) | GATE CLEAR。飛猿impl。WA:0 | 品質ベンチマーク準拠 |
+| cmd_1654 | pending月のexpanded_tickersがholding_signal(stale)→signal(新)を使用するよう修正 | GATE CLEAR。半蔵偵察+才蔵impl+影丸検証。WA:0 | commit 873c22f4。DM2=TECL正常、激攻-青龍=GLD66.7%/XLU33.3%。use_raw_signalパラメータ追加 |
+| cmd_1655 | cmd_1654リグレッション修正 — FoFのuse_raw_signal伝播がsignalテーブル不在で破綻 | GATE CLEAR。才蔵fix+影丸verify。WA:0 | commit 5007adf8。FoFコンポーネント再帰時use_raw_signal=Falseフォールバック。旧忍法15FoF全復活+全FoF pending行復活。fullrecalculate 375s |
+| cmd_1659 | 研究日誌(Gist)をDM-Signalリポジトリに配置 | GATE CLEAR。影丸impl。WA:0 | commit 1a257779。`docs/research/standard-pf-preprocessing-journal.md` 944行。最重要研究文書の恒久保存 |
+| cmd_1660 | EMA/L1 OOS検証(IS/OOS split + PBO/CSCV) | 完了(GATE BLOCK: CI赤+commit未完)。才蔵impl | Stage1: EMA universal span=5/L1 lambda=1共にROBUST。Stage2 PBO: 全体OVERFIT(EMA=0.71,L1=0.54)だがDM3は例外的ROBUST。使用量枯渇でcommit未完了 |
+| cmd_1664 | cmd_save.shに時間コスト概算チェック追加 | 完了(GATE BLOCK: CI赤)。小太郎impl | deep=30-60分/medium=15-30分表示。将軍の確認強制gate |
+| cmd_1668 | gate_shogun_startup.shにAC注入検証Gate16追加 + lesson_write.sh cat3重→read統合 | 完了(GATE未実行)。半蔵+飛猿impl | 半蔵: AC数/ID不一致WARNING。飛猿: 3fork削減。教訓L429登録 |
+| cmd_training_L4_R7 | deploy_task.sh精査 + gate_lesson_health.sh精査 | GATE BLOCK(CI赤)。疾風+影丸impl | 疾風: grep+sed→field_get統一(L428)。影丸: _active_lesson_ids()未使用→3箇所DRY化(L429) |
+| cmd_1669 | FoF monthly-trade UUID露出バグ修正 | 完了(GATE BLOCK: CI赤)。飛猿impl | monthly_trade.py L144-155にFoF UUID解決処理追加。30テストPASS。commit eb1b592b |
+| cmd_1670 | CI RED修正(test_cmd_save_ac_paths.bats CMD_BLOCK_NC未設定) | 完了(GATE BLOCK: CI赤)。半蔵impl | T-001〜T-005全PASS。ただしCI全体41件FAILは別原因(テストhelper未push)。家老が直接3commit pushで修正 |
+| L4_R5 | 修行R5: 6忍者品質監査(gate_report_format/dashboard_auto_section/review_gate/workaround_pattern_check/lesson_effectiveness/insight_write) | 6/6 FP100%, 実バグ6件(L4通算29件) | 半蔵: review_gate.shフィールド参照バグ(**ゲート完全無効化**)発見。飛猿: insight_write.sh yaml.dump違反(Critical)。旧報告84件archive済み |
+| cmd_1671 | ninja_monitor.sh 2バグ修正(pstree永久BUSY+pipeline空スキップ) | GATE CLEAR。疾風impl。WA:0 | 61行追加/6行削除。30分超bash=IDLE扱い+pipeline空info付与 |
+| cmd_1672 | deploy_task.sh direct mode追加(GP-138) | GATE CLEAR。影丸impl。WA:0 | --directフラグでresolve_cmd_to_taskスキップ→修行タスク配備正常化。DC: stale_report suffix問題→PD-005 |
+| ci_fix | insight_write.sh priority yaml_escape修正 | 完了。疾風impl | L145 priority書込みにyaml_escape()適用。T-006含む全テストPASS。CI GREEN復帰 |
+
+## 2026-04-02
+
+| cmd | 目的 | 結果 | 因果・知見 |
+|-----|------|------|-----------|
+| cmd_1673 | /henseiスキル構築(モデル混成切替) | GATE CLEAR | 半蔵AC1(sonnet mapping)+才蔵AC2-4(SKILL.md+hensei_apply.sh)。LC: テスト時model_switch本番副作用→L431登録 |
+| ci_fix | insight_write.sh priority yaml_escape漏れ修正 | GATE CLEAR | 疾風。CI RED復帰。T-006 PASS |
+| ci_fix_200k | cli_adapter.sh opus時--modelスキップ(200K→1M) | GATE CLEAR | 疾風。build_cli_command()でopus時base_cmdそのまま返却。56テストPASS。L432登録。全忍者再起動で1M化 |
+| cmd_1674 | /henseiスキルrespawn方式修正+mixed割当変更+全忍者1M化 | GATE CLEAR | 疾風AC1-3。SKILL.mdから--model opus除去→build_cli_command()利用。Claude同士切替をrespawn統一。mixed割当を殿指名反映(GPT5.4×2+Sonnet×2+Opus×2)。AC4家老直接実行(6忍者respawn確認1M+high) |
+| cmd_1675 | startup gateにscripts/未コミット変更WARN追加 | GATE CLEAR | 影丸。Gate 17追加。git status --porcelainでscripts/の未コミット変更検出→WARN+ファイル一覧表示。deepdive Phase4直接適用(自動化×強制) |
+| cmd_1676 | gate_report_format.sh stale_reportサフィックス修正(PD-005) | GATE CLEAR | 小太郎。L367 fname_cmd厳密一致→startswith比較。task_id/cmd_id空間差の根因修正。stale_report WA根絶。PD-005解決 |

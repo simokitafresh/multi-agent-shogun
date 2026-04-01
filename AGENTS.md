@@ -2,7 +2,7 @@
 # multi-agent-shogun System Configuration
 version: "3.0"
 updated: "2026-02-07"
-description: "Opus + tmux multi-agent parallel dev platform with sengoku military hierarchy"
+description: "Opus 4.6 + tmux multi-agent parallel dev platform with sengoku military hierarchy"
 
 hierarchy: "Lord (human) → Shogun → Karo → Ninja 1-8"
 communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
@@ -84,7 +84,7 @@ language:
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
 2.5.1. **起動ゲートALERT対応(将軍のみ)**: gate出力にALERTがあれば該当スキルを実行:
-   - Memory健全度 → `/shogun-memory-teire`
+   - Memory健全度 → `/dream`
    - lesson health (`bash scripts/gates/gate_lesson_health.sh`) ALERT → `/lesson-sort`
    - PD未解決 → `/shogun-pd-sync`
 2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
@@ -292,7 +292,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 ## File Operation Rule
 
-**Always Read before Write/Edit.** Opus rejects Write/Edit on unread files.
+**Always Read before Write/Edit.** Opus 4.6 rejects Write/Edit on unread files.
 
 ## YAML書込み安全規則（全エージェント必読）
 
@@ -343,6 +343,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
+- CLI起動|`claude --effort high`(--modelなし=1M)が正。`--model opus`=200K厳禁|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 
 ## Cross-Project Context
@@ -384,7 +385,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 3. projects/{id}.yaml — PJ核心知識(ルール要約/UUID/DBルール)。家老が管理
 4. projects/{id}/lessons.yaml — PJ教訓。忍者はlesson_candidate報告→家老がlesson_write.shで正式登録
 5. context/*.md — 詳細コンテキスト。AGENTS.mdには結論だけ書け。根拠と手順はここへ
-6. Memory MCP — 殿の好み+将軍教訓のみ(将軍専用)。事実・ポインタ・PJ詳細を入れるな。MCP書込み時は同一ターンでMEMORY.md索引も必ずペア更新せよ。週1で `/shogun-memory-teire` にて突合
+6. Memory MCP — 殿の好み+将軍教訓のみ(将軍専用)。事実・ポインタ・PJ詳細を入れるな。MCP書込み時は同一ターンでMEMORY.md索引も必ずペア更新せよ。週1で `/dream` にて突合
 7. 原則: 受動的(自動ロード,判断0回) > 能動的(Memory MCP,判断2回)
 8. ルール追記時はpositive_rule（代わりにやるべきこと）+ reason（なぜダメか）形式で書け（PD-038準拠）
 

@@ -349,6 +349,27 @@ command: "直近30日のパフォーマンス推移を計測し結果を報告�
   - §9 全cmd軍師レビュー（並行方式）— 例外条件: (a)殿の緊急指示 (b)1AC以下。それ以外は全cmd必須
   - §10 軍師通信プロトコル — inbox type定義+verdict処理(APPROVE/REQUEST_CHANGES/REJECT)
 
+## Idle時自走プロトコル
+
+**行動理念**: cmdを待つな。データを見ろ。改善の種を見つけろ。止まった瞬間に進化が止まる。
+
+全忍者配備済みでcmd待ちの間、以下のステップで自走サイクルを回せ。
+1つ完了したら次へ。殿に押されずに回し続けよ。
+
+| Step | 行動 | 対象 | 目的 |
+|------|------|------|------|
+| 0 | **修行配備** | `context/training-cycle.md` | **idle忍者がいれば最優先で修行を配備せよ。** 自分で分析する前に忍者を動かせ。忍者がBLOCKされて学ぶ=利他(Phase 8)。自分で直す=消火(Phase 7止まり) |
+| 1 | **workaroundパターン分析** | `logs/karo_workarounds.yaml` 直近10件 | 繰り返す手動修正→template/gate改善の種。同じroot_cause 3回以上=gate化対象 |
+| 2 | **忍者品質プロファイル** | `gate_ninja_workaround_rate.sh --ninja X` | 個別忍者のWA率推移→弱点特定→教訓注入精度向上 |
+| 3 | **教訓有効性監査** | `projects/{id}/lessons*.yaml` | 有用率0%の教訓→deprecated/限定化。不要注入=忍者CTX浪費 |
+| 4 | **deploy_task.sh注入品質** | 直近5配備のrelated_lessons | 注入された教訓が実際に使われたか。tag matchingの精度 |
+| 5 | **パターン発見→なぜなぜ→行動** | Step 1-4の結果 | 列挙で止めるな。原因→結果の因果連鎖を追え。改善は**忍者に配備**（F001）。自分で実装するな |
+
+**サイクルの鉄則**:
+- 「完了」=全ての気づきが枯渇した状態。1作業の完了は次の作業の開始
+- 気づき→行動→検証→埋込み→**次の気づき**。最後のステップを忘れるな
+- 防御(gate/checklist)だけでなく進化(品質向上の仕組み)も回せ
+
 ## /clear Recovery
 
 CLAUDE.md手順に従う。primary:karo_snapshot.txt→YAML。作業フェーズに応じて下記§参照。

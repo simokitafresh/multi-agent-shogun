@@ -129,3 +129,44 @@ lessons:
   detail: deploy_task.shの同一parent_cmd重複チェックが偵察パターン(2名並列)の正当な配備をBLOCKした(cmd_1447)。手動inbox_writeで回避したが、deploy_task.shにrecon例外(同一parent_cmdでtask_idが異なる場合はOK)を追加すべき
   source_cmd: cmd_1447
   created_at: '2026-03-28'
+- id: LK020
+  title: PI登録時の原理抽出ステップ — 個別事実→共通根→原理PI昇華
+  detail: 'PIをlesson→PIに昇格する際: (1)個別事実→そのまま登録 (2)複数PIに共通の根があれば原理PIに昇華(例:PI-020はPI-004/007/009/013/014/019の共通根)
+    (3)原理PIは具体例を残しつつ上位原則を記述。目的: PI74%が個別事実→原理レベルPIが増えれば未知パターンに自動対抗。将軍CoDD→なぜなぜサイクルで発見'
+  source_cmd: cmd_1494
+  created_at: '2026-03-29'
+- id: LK021
+  title: deploy_task.sh再配備時stale field汚染
+  detail: 'resolve_cmd_to_taskは中核7フィールドしか設定しない。purpose/target_path/constraints/progress/description/deployed_atは前cmdから残留し、忍者に誤情報が渡る。cmd_1519-1522並列配備で小太郎が前cmdのAC/purposeで混乱(実被害)。修正:
+    再配備前に6フィールドを明示クリア+cmdソースからpurpose注入。教訓: 新機能追加時に既存フィールドの初期化漏れを確認せよ'
+  source_cmd: karo_direct_stale_fix
+  created_at: '2026-03-30'
+- id: LK022
+  title: archive sweep並列配備レースコンディション
+  detail: 'archive_completed.sh sweep modeがdelegatedステータスを保護対象に含まず、GATE未完了cmdの報告をアーカイブ。cmd_1519のAC2がsweep実行→cmd_1520/1522の報告消失。修正:
+    (1)delegatedを保護ステータスに追加 (2)archive.doneフラグチェック(GATEの最終ステップでのみ作成)を二重防御として追加。教訓:
+    並列配備時はsweep系操作のタイミングに注意。保護ステータスの網羅性を確認'
+  source_cmd: karo_direct_archive_race
+  created_at: '2026-03-30'
+- id: LK023
+  title: yaml_field_setはリスト型フィールドをクリアできない
+  detail: 'yaml_field_set.shのawkは行ベース置換。スカラー(purpose: old)は1行差替で消えるが、リスト(stop_for:\n-
+    item1\n- item2)はキー行のみ差替、子行(- item)が残留。inject_task_modifiers.pyの存在チェック(not in task
+    or is None)と組み合わせると、空文字設定(""≠None)でも前cmdのリスト値が汚染し続ける。対策: フィールド削除はregex一括(キー行+子行パターン)で行え。yaml_field_setの""は万能クリアではない'
+  source_cmd: karo_direct_yaml_list_limitation
+  created_at: '2026-03-30'
+- id: 'LK024'
+  title: 'spec_mismatch防止はengineering_preferencesが最小コスト'
+  detail: 'spec_mismatch_redeploy(cmd_1628+1635)のなぜなぜで自動化ターゲット特定。忍者が仕様と知識辞書の矛盾時に自己判断する根因=task YAMLに優先順位が未明示。projects/{id}.yaml engineering_preferencesに1行追加で全配備に自動注入される。Phase5(なぜの目的=自動化ターゲット特定)の家老実践。コード変更なし、設定1行で構造的防御'
+  source_cmd: 'karo_direct_self_drive'
+  created_at: '2026-04-01'
+- id: 'LK025'
+  title: 'bats全量実行OOM — テスト指示は個別ファイルまたは件数制限で'
+  detail: 'bats tests/unit/全量実行(134テスト)がメモリ4.3GB消費→OOM Kill。半蔵2回連続クラッシュ。タスクYAMLでテスト実行を指示する場合、(1)対象テストファイルを個別指定 (2)全量実行が必要なら分割(bats tests/unit/test_a*.bats && bats tests/unit/test_b*.bats等) (3)never_stop_forにOOM追加不可(プロセス死亡)。根因: WSL2のメモリ上限+batsのfork量'
+  source_cmd: 'karo_direct_uncommitted_scripts'
+  created_at: '2026-04-02'
+- id: 'LK026'
+  title: 'mixed編成は弱点パターンがモデルごとに異なる — テンプレート改善は全モデル共通FAILに効くが個別弱点には効かない'
+  detail: 'R7(テンプレートなし)+R8(テンプレートあり)の比較。Opus両ラウンド100%FP。GPTはテンプレートで0%→100%改善(assumption_invalidation→解消)。Sonnetは50%→0%悪化(FAILパターンがassumption_invalidation→bc AC欠落に移動)。テンプレートは共通FAILパターンを潰すが、モデル固有の弱点は別のフィールドに現れる。mixed編成の環境改善はモデル別FAILパターン分析→モデル別対策が必要'
+  source_cmd: 'cmd_training_L4_R7_R8'
+  created_at: '2026-04-02'

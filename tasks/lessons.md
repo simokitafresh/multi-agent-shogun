@@ -2382,3 +2382,924 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [git]
 - set -euo pipefailスクリプトでgrep -oE ... | sort -uを使うと、grepマッチなし時にexit 1がpipefailで伝播しスクリプトが即終了する。|| trueが必須。cmd_1468のCheck 10は正しく付与されていたがCheck 8で漏れ→CI失敗(6テスト)。同一commit内で正解パターンと不正パターンが共存した事例。
+
+### L303: RUNBOOK還流漏れ検出
+- **日付**: 2026-03-29
+- **出典**: cmd_1486
+- **記録者**: hanzo
+- **tags**: [lesson]
+- lesson_write.shのREFLUX_CHECKでRUNBOOK=MISSINGが検出された。silent fallbackパターンのランブック反映が未実施。別cmdでの対応を提案
+
+### L304: grep -c || echo 0 二重出力バグ
+- **日付**: 2026-03-29
+- **出典**: cmd_1502
+- **記録者**: tobisaru
+- **tags**: [gate]
+- gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo 0が追加実行→変数に0改行0が入り算術エラー。対策: grep -c ... || true でexit codeを無視するか、変数代入後にトリムするか
+
+### L305: deploy_task.sh cmd_id引数なし→task YAML手動更新忘れで旧cmd配備
+- **日付**: 2026-03-30
+- **出典**: cmd_1493
+- **記録者**: karo
+- **tags**: [deploy, yaml]
+- IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510) BECAUSE cmd_id未指定時はtask YAMLのparent_cmd/task_idが更新されず旧cmdのまま配備される。resolve_cmd_to_taskが自動設定。
+
+### L306: WSL2 DrvFs並列I/Oは逆効果 — backgroundプロセスでの先行I/Oはカーネル直列化で悪化する
+- **日付**: 2026-03-30
+- **出典**: cmd_1516
+- **記録者**: karo
+- **tags**: [gate, wsl2]
+- WSL2 /mnt/cではDrvFs/9Pプロトコルの制約でカーネルがI/Oを直列化する。並行ファイルI/O(backgroundプロセスでの先行読込等)は逆効果(3.3s→5.5s)。並列化はプロセス起動の重複排除(background launch+wait)のみ有効。並行I/O増加は避けるべき。gate最適化時はI/O並行度ではなくプロセス起動コスト削減に注力せよ。
+
+### L307: WSL2 /mnt/cでは並列I/Oが逆効果になる
+- **日付**: 2026-03-30
+- **出典**: cmd_1516
+- **記録者**: tobisaru
+- **tags**: [gate, wsl2]
+- WSL2 DrvFs/9Pでは並行ファイルI/Oがカーネル直列化で逆効果。Gate14/15先行計算(Gate13 wait中にI/O実行)は5.5sに悪化(3.3sから)。並列化はプロセス起動の重複排除(background launch+wait)のみ有効で、並行I/O増加は避けるべき。
+
+### L308: AC前提と実データの乖離確認
+- **日付**: 2026-03-30
+- **出典**: cmd_1518
+- **記録者**: saizo
+- **tags**: [testing]
+- AC1の前提(1cmdあたり最大15行)が実データ(約55行/cmd)と大幅に乖離。500行では30cmd分に不足。ACの結果一致制約を満たすためtail -2000に調整。ACの前提が数値を含む場合は実データで検証すべき。
+
+### L309: 教訓注入の3構造問題: universalタグ誤分類+ファイルレベルマッチング欠如+負帰還ループ欠如
+- **日付**: 2026-03-30
+- **出典**: cmd_1525
+- **記録者**: hanzo
+- **tags**: [deploy, yaml]
+- 教訓活用率6.2%(146注入中9活用)の根因は3つ: (1)L063等がuniversalタグだが実際は極めて狭い操作範囲(Python YAMLイテレーション)→全タスクに注入されるが99%無関係 (2)L079/L230等はファイル固有知識だがタグは汎用(deploy)→タスクが当該ファイルに触れるかの判定が不在 (3)useful:false蓄積が注入優先度に反映されない(helpful_countは増加のみ)→死蔵教訓が永久に枠を占拠。改善: (A)universalタグの再分類(B)target_filesフィールド導入(C)useful_rate decay。76.6%のfalse理由が操作対象/種別不一致であり、tag→fileレベルへの粒度引上げが最大インパクト
+
+### L310: STALE_FIELDSリストは新フィールド追加時に更新漏れが起きやすい。deploy_task.shにフィールド追加する際はSTALE_FIELDSとテストも同時更新必須
+- **日付**: 2026-03-30
+- **出典**: cmd_training_structural_001
+- **記録者**: karo
+- **tags**: [deploy, reporting]
+- 修行001-005で発見: type/report_template/commandが漏れていた。inject_task_modifiers.pyが設定するフィールドとSTALE_FIELDSの差分を定期チェックすべき
+
+### L311: WA率60.8%の3構造問題: autofix不網羅+uncategorized分類漏れ+事前防止hook欠如
+- **日付**: 2026-03-30
+- **出典**: cmd_1530
+- **記録者**: hanzo
+- **tags**: [gate, yaml, git, lesson, reporting]
+- 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし。commit_missing(7→0)はgate導入で完全解消=gateの有効性実証。提案: (A)autofix dict→list全パターン網羅で-16件(gate強化) (B)uncategorized記録のcategory必須化(テンプレート改善) (C)report直接編集hookブロック(hook追加,RFS強制)。gate強制>ルール記述の原則がcommit_missing解消で証明済み。同原則をreport_yaml_formatにも適用すべき
+
+### L312: report_templateがSTALE_FIELDSに未登録 — stale残留リスク
+- **日付**: 2026-03-30
+- **出典**: cmd_training_structural_002
+- **記録者**: saizo
+- **tags**: [deploy, yaml, reporting]
+- inject_report_template()がtask['report_template']を設定するが、deploy_task.shのSTALE_FIELDSリストに含まれていない。タスクYAML使い回し時に前cmdのreport_templateが残留し、task_typeが異なる場合に旧テンプレートがスキップ条件(truthy判定)で注入をブロックする。STALE_FIELDSへの追加が必要。
+
+### L313: GP ID重複問題: 同一IDに異なる提案が混在するとトリアージが困難
+- **日付**: 2026-03-30
+- **出典**: cmd_1528
+- **記録者**: kotaro
+- **tags**: [universal]
+- GP-125がFoFログ詳細化とWAバリデーション強化の完全別提案を同一IDで共有。GP-113/GP-114/GP-126も進化・派生で複数エントリ。GP採番時にIDユニーク性を保証する仕組み(例: gunshi_log_append.shで既存ID重複チェック)が必要
+
+### L314: unknown_block_reasonはgate diagnostics改善で排除可能
+- **日付**: 2026-03-30
+- **出典**: cmd_1529
+- **記録者**: tobisaru
+- **tags**: [gate, lesson]
+- cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のfallback。直近50BLOCKの17.7%(11件)がRCA不能。各gate個別結果をblock_reasonに含める修正で解消。加えてテンプレートFIX hint強化(lesson_candidate分岐パターン+binary_checks値制限)とBLOCKパターン忍者注入も有効
+
+### L315: テストとテスト対象は同一コミットに含めよ
+- **日付**: 2026-03-30
+- **出典**: cmd_1558
+- **記録者**: saizo
+- **tags**: [gate, bash]
+- cmd_1554でテストのみコミットされgate scriptの変更が未コミットだったためCI FAIL。テストとテスト対象の変更は必ず同一コミットに含めること
+
+### L316: emit_deny後のexit 1欠落でDENYが無効化
+- **日付**: 2026-03-30
+- **出典**: hook,bash,deny,exit-code
+- **記録者**: karo
+- **tags**: [bash, reporting]
+- pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude Code hooksはexit codeでdeny判定するため、deny JSONを出力してもexit 0ではブロックされない。hookスクリプト作成時は必ずdeny出力後にexit 1を入れること
+
+### L317: 教訓注入のuseful:false 81.7%はタスク種別不一致。タグマッチ精度向上と死蔵教訓の抽象度昇格が必要
+- **日付**: 2026-03-30
+- **出典**: lessons,deploy,injection,useful-rate
+- **記録者**: karo
+- **tags**: [deploy, recon, lesson]
+- 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコープ教訓が全タスクに注入される。死蔵教訓は個別事象レベルで再発条件が極めて限定的。改善: 適用頻度閾値による自動dormant化+教訓の原理レベルへの昇格リライト+空理由の自動ブロック
+
+### L318: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
+- **日付**: 2026-03-30
+- **出典**: test,infra,recon,test-necessity
+- **記録者**: karo
+- **tags**: [deploy, testing]
+- test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間短縮には並列度向上やテスト粒度最適化が代替策
+
+### L319: テスト重複統合候補3組: tests/とtests/unit/に同名テストが並存
+- **日付**: 2026-03-30
+- **出典**: cmd_1562
+- **記録者**: hayate
+- **tags**: [testing, communication, gate, yaml, inbox]
+- gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファイルが存在。内容は補完的(異なるテストケース)だが、同一ファイルに統合すればCI実行時のsetup/teardownオーバーヘッドを削減可能。削除ではなく統合を推奨。
+
+### L320: infraテストは全件必要と判定（後半27テスト）
+- **日付**: 2026-03-30
+- **出典**: cmd_1562
+- **記録者**: kagemaru
+- **tags**: [deploy, testing]
+- test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間短縮には並列度向上やテスト粒度最適化が代替策。
+
+### L321: INBOX_WRITE_TEST=1でreport_received検証がスキップされる
+- **日付**: 2026-03-30
+- **出典**: cmd_1565
+- **記録者**: tobisaru
+- **tags**: [testing, communication, git, inbox, reporting]
+- INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキップされる。git uncommittedチェック等のreport_received依存テストでは必ずunset INBOX_WRITE_TESTが必要。
+
+### L322: case文のステータス網羅性を実行結果で検証せよ
+- **日付**: 2026-03-30
+- **出典**: cmd_training_comprehensive_004
+- **記録者**: saizo
+- **tags**: [testing, review, bash, lesson]
+- model_switch_preflight.shのcase文がacknowledgedを未処理のまま長期放置されていた。静的コードレビューだけでは気付きにくい。実際にスクリプトを実行して出力を確認することで、case文のワイルドカード(*)に落ちる有効ステータスを即座に検出できた。bashスクリプトの改善タスクでは必ず実行結果を確認し、case文やif分岐の網羅性を出力から検証すべき。
+
+### L323: プロセス数検証は実際の起動数を追跡せよ。外部計算の期待値はスキップ条件を反映しない
+- **日付**: 2026-03-30
+- **出典**: cmd_training_comprehensive_003
+- **記録者**: hanzo
+- **tags**: [testing, inbox, tmux]
+- restart_watchers.shでexpected=1+全エージェント数としていたが、ループ内でpane未解決エージェントをスキップするため、期待値と実際の起動数が乖離し偽警告が常時発生。起動時にカウンタをインクリメントし、実測値で比較することで解消。一般原則: 期待値を外部から計算するより、実行パスに沿って実測する方が正確
+
+### L324: bashスクリプトでのsubprocess削減: echo|grepよりbashパターンマッチ
+- **日付**: 2026-03-30
+- **出典**: cmd_training_comprehensive_002
+- **記録者**: kagemaru
+- **tags**: [process, bash, reporting]
+- echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマッチングが可能。ループ内で繰り返す場合は性能差が顕著。dashboard_auto_section.shで8忍者×2箇所=32fork削減の実例。
+
+### L325: tmux変数の一括取得にはlist-panes -Fを使え
+- **日付**: 2026-03-30
+- **出典**: cmd_training_comprehensive_001
+- **記録者**: hayate
+- **tags**: [tmux]
+- reset_layout.shサマリ表示でshow-optionsをペインごとに個別呼出していた(8ペイン×6呼出=48+サブプロセス)。tmux list-panesの-Fフォーマットは#{@user_var}でユーザ変数も取得可能。タブ区切りで1回のクエリに統合し48+→1に削減。ループ内でtmux呼出が3回以上あればバッチクエリ化を検討すべし
+
+### L326: nohup+disownプロセスの起動検証はPID配列追跡+kill -0が確実
+- **日付**: 2026-03-30
+- **出典**: cmd_training_comprehensive_006
+- **記録者**: tobisaru
+- **tags**: [testing, communication, reporting]
+- pgrep -fcによる集計カウントは誤検知(vim等)で不正確かつ障害時に個別特定不可。各起動時に$!をPID配列に蓄積し、sleep後にkill -0で個別生存確認する方式が確実。失敗エージェントを名前で報告できるため障害切り分けが即座に完了する
+
+### L327: ハードコード値は動的取得済みデータの活用漏れを疑え
+- **日付**: 2026-03-30
+- **出典**: cmd_training_comprehensive_005
+- **記録者**: kotaro
+- **tags**: [review, reporting]
+- dashboard_auto_section.shで忍者総数が8にハードコードされていたが、ALL_NINJASはL77でget_ninja_namesにより動的取得済みだった。編成変更(8名→6名)で既に不正確な表示になっていた実害あり。動的取得済みのデータがあるのにハードコードが残る場合、レビューで見落としやすい。スクリプト内で既に動的取得されている値のハードコード残存は、grepで定数検索する習慣で早期検出できる。
+
+### L328: tmux一括取得データのawk-in-loop参照は連想配列で排除せよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_002
+- **記録者**: saizo
+- **tags**: [bash, tmux]
+- tmux list-panes出力を文字列変数に格納しループ内でecho|awkで毎回パースするパターンは、declare -Aで連想配列に1回パースすればO(1)参照になる。サブシェルfork排除+ShellCheck SC2128(配列の非添字展開)警告も同時解消
+
+### L329: IFS=| read -ra分割+read -rトリムでawk forkを削減
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_001
+- **記録者**: hayate
+- **tags**: [bash]
+- パイプ区切り文字列からフィールド抽出する場合、echo|awk -F| パイプはfork+execを伴う。IFS=| read -ra _f <<<で配列分割し、read -r var <<< で前後空白トリムすれば純bash完結でfork0回。ダッシュボード生成等ループ内で繰り返す場合に有効
+
+### L330: パス解決は/bin/bashより解決済み変数を再利用せよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_003
+- **記録者**: kotaro
+- **tags**: [bash, inbox]
+- restart_watchers.shのL7で${BASH_SOURCE[0]}から$SCRIPT_DIRを解決済みだが、L101は$(dirname $0)で再解決していた。$0はsource時にスクリプトパスと異なる値を返す。解決済みの変数があるなら再利用が堅牢。
+
+### L331: grepベース検出パターンは偽陽性率を計測して調整せよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_004
+- **記録者**: tobisaru
+- **tags**: [process]
+- model_switch_preflight.shのclaude-[A-Za-z0-9._-]+パターンは8件中5件(62.5%)が偽陽性。ディレクトリ名・UA文字列・PJ名を誤検出。パターン設計時は対象ファイルの実際の内容を確認し、検出すべきもの(モデルID)と検出すべきでないもの(固有名詞)を分けた上でパターンを設計すべき。設計後にdry runで偽陽性率を確認する手順が必要。
+
+### L332: Markdownテーブルのパイプ区切りパースはセル数固定でなく日付等の不変パターンをアンカーにすべき
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_005
+- **記録者**: kagemaru
+- **tags**: [universal]
+- chronicle_metrics.shのparse_rowが5/6セル固定分岐で39行クラッシュ。タイトル/key_result内のパイプ文字(||)がセル数を増やすため。MM-DD形式の日付セルをアンカーに前後をスライスする方式に変更し全537行解析成功。構造化テキストのパースではセル数依存より不変パターン検出が堅牢。
+
+### L333: grep -qのパイプはstdout抑制でデッドコードになる
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_008
+- **記録者**: saizo
+- **tags**: [bash]
+- grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッドコードになる。論理結合はパイプでなくシェルの&&演算子を使うべき。bashのパイプはstdoutを流す前提であり、-qとは相性が悪い。
+
+### L334: shout.shのREPORT_FILEパス解決が固定名でレポート参照不能
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_007
+- **記録者**: hayate
+- **tags**: [yaml, reporting]
+- shout.shがninja_report.yaml固定名でレポートを探すが、実際のレポートはcmd番号付き(ninja_report_cmd_XXX.yaml)。task YAMLのreport_filenameフィールドを参照するか、find最新で解決すべき。ファイル命名パターンの乖離がスクリプトの機能不全を引き起こす典型例
+
+### L335: grep重複検出は-Fqw必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_009
+- **記録者**: kotaro
+- **tags**: [yaml]
+- grep -q でYAML/md内のcmd_idを検索する際、substring matchによりcmd_5がcmd_539等に誤マッチする。-F(固定文字列)と-w(単語境界)を常に付与すべき。特にcmd_XXX形式のIDは数字プレフィックスが共通するため発生しやすい。
+
+### L336: report_field_set.shのawkバックスラッシュエスケープ問題
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_006
+- **記録者**: hanzo
+- **tags**: [yaml, reporting]
+- report_field_set.sh経由でregex表記(バックスラッシュd等)を含むテキストを書込むとawkがエスケープシーケンスとして処理し文字が消失する。stdin経由(-指定)でもYAMLコロン解釈問題が残る。regex記法を含むテキストはreport_field_setに適さない
+
+### L337: bashループ内sed/awk繰り返しはO(N*M)→一発パス化でO(M)に
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_010
+- **記録者**: tobisaru
+- **tags**: [bash, reporting]
+- archive_karo_section L800-802でsed -n line_nop DASHBOARDをN回呼出し。awkのNR in del判定で1パスに書換え可能。同パターンはarchive_cmds L466のsed切出しにもある。
+
+### L338: Pythonインラインスクリプトで同一ファイルを複数回開く場合は1回に統合せよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_015
+- **記録者**: kotaro
+- **tags**: [yaml, monitor]
+- health_check.shのcheck_task_stalledが同一YAMLを3回別python3プロセスで開いていた。パイプ区切りで複数値を返し、IFS='|' read -r で分解すれば1回で済む。python3起動コスト(数百ms)×チェック対象エージェント数が毎分発生するため、デーモンスクリプトでは特にインパクト大
+
+### L339: archive scan内のYAML fieldマッチはsubstring禁止—正規表現+長さ優先ソート必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_014
+- **記録者**: saizo
+- **tags**: [yaml]
+- context_freshness_check.shのarchive scanでproject IDをf-string in textで検出していたが、短いID(例:dm)が長いID(dm-signal)の行にもマッチする。infer_project_idは既にsorted(key=len,reverse=True)で防御済みだったが、archive scanには同じ防御がなかった。YAML field値の検出はsubstringマッチではなく行頭行末アンカー正規表現+長さ優先ソートを使う
+
+### L340: YAML書込み時のダブルクォート・バックスラッシュ未エスケープはYAML構造を破壊する
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_013
+- **記録者**: hanzo
+- **tags**: [bash, yaml]
+- cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo notes: NOTES のパターンは全てのbash YAML書込みスクリプトで同様のリスクがある。bash YAML書込み時はダブルクォート→バックスラッシュ→引用符の順でエスケープ必須
+
+### L341: heredoc一括書込みでファイル中間状態を排除
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_011
+- **記録者**: hayate
+- **tags**: [gate, yaml]
+- echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat heredocなら一括書込みで中間状態が発生しない。gate flagや.doneファイル等の構造化データ書込みにはheredoc方式を使うべき
+
+### L342: ホワイトリスト.gitignoreではscriptsディレクトリ内の新規ファイルもgit add -f必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_016
+- **記録者**: tobisaru
+- **tags**: [bash, git]
+- ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要。コミット漏れの根因になりうる
+
+### L343: bash YAMLパーサの正規表現はインデント0とN両方+id:プレフィックス対応が必要。セクション終了はtop-level keyのみで判定せよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_012
+- **記録者**: kagemaru
+- **tags**: [communication, bash, yaml, lesson, reporting]
+- lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:space:]]+-が先頭空白必須でインデント0のリストアイテムを見落とし、(L[0-9]+)がid:プレフィックスなしを前提、さらにセクション終了がサブフィールド行で誤発火。bashでYAMLリストをパースする場合は^[[:space:]]*-で0-indent対応し、セクション終了は^[a-zA-Z_]でtop-level keyのみ検出すべき
+
+### L344: テスト教訓
+- **日付**: 2026-03-31
+- **出典**: test_cmd
+- **記録者**: saizo
+- **status**: draft
+- **tags**: [universal]
+- **retired**: true
+- **retired_at**: 2026-03-31
+- これは十分に長い詳細テキストです
+
+### L345: 環境変数経由のPython連携では手動エスケープは不要かつ有害
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_017
+- **記録者**: hayate
+- **tags**: [communication, gate, bash, inbox]
+- bash変数展開でクォート文字をエスケープしてから環境変数でPythonに渡すと二重エスケープになる。環境変数はバイナリセーフであり、os.environで取得すれば元の値がそのまま渡る。手動エスケープは文字列破損の原因になる。inbox_write.sh行378で実際にgate_errorsメッセージが破損していた
+
+### L346: stderr/stdout混合キャプチャは値汚染バグの温床
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_018
+- **記録者**: kagemaru
+- **tags**: [bash, inbox]
+- Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外時にtracebackが値に混入する潜在バグを生む。stderrはpass-through、stdoutのみキャプチャが安全な設計
+
+### L347: ninja_done.shは.gitignoreホワイトリスト未登録
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_019
+- **記録者**: hanzo
+- **tags**: [process, communication, bash, git, monitor, inbox]
+- ninja_done.shは.gitignoreのホワイトリスト(Step3: !scripts/xxx.sh)に未登録。類似の運用スクリプト(inbox_write.sh, ninja_monitor.sh等)は全て登録済み。git add -fで回避可能だが、ホワイトリスト追加が正規対応
+
+### L348: --strategicフラグ検出は位置引数ではなくスキャン方式にすべき
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_020
+- **記録者**: saizo
+- **tags**: [lesson]
+- lesson_write.shで--strategicだけが$7位置引数固定で検出されていた。他の全フラグ(--force/--status/--tags等)はforループスキャン。引数順が変わると--strategicが検出漏れする。フラグ検出は全て同一方式(スキャン)に統一すべき
+
+### L349: シェルスクリプトの書込み専用ファイル変数はデッドコードの兆候
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_021
+- **記録者**: kotaro
+- **tags**: [bash]
+- ci_status_check.shでLAST_ALERT_FILEは書込み(L88)のみで読込みゼロ。LAST_NOTIFY_FILEで重複通知防止が完結しており完全なデッドコード。シェルスクリプト精査時は書込み先変数が実際に読込まれるか追跡すべし。ファイルパス変数の定義→grep writeパターン→grep readパターンの3点確認が有効
+
+### L350: load_cmds系関数はcommands値がlist/dict両形式を想定すべき
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_022
+- **記録者**: tobisaru
+- **tags**: [yaml]
+- shogun_to_karo.yamlのcommands値はdict(キー=cmd_id)だがアーカイブはlist。yaml.safe_loadの返値をisinstance(list)前提で使うとdict時にAttributeError。パターン: data.get(key,[])の返値型を検査してからextend/appendする
+
+### L351: insight_write.shがyaml.dumpでqueue/ファイルを書き戻しておりポリシー違反
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_025
+- **記録者**: hanzo
+- **tags**: [yaml]
+- insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CLAUDE.mdのyaml.dump禁止ポリシー(cmd_1399事故由来)に該当。マルチライン文字列を含むinsightが破損する可能性あり。appendはyaml文字列手動構築+ファイル末尾追記、resolveはsed/yaml_field_set.sh代替を検討すべき
+
+### L352: ntfy.shのsend_with_retryは失敗時にstderrへ何も出さず呼び出し元が原因不明
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_024
+- **記録者**: kagemaru
+- **tags**: [inbox]
+- send_with_retryの非200/非000パス(L95-98)とリトライ後失敗パス(L108)はログファイルにのみ記録しstderrに出力しない。sync mode(NTFY_SYNC=1)の呼び出し元はexit code 1のみ受け取り、401(auth失敗)か429(rate limit)か000(接続不可)か区別できない。エラーメッセージにHTTPコードを含めてstderrに出力することで即座に原因把握可能になる。fire-and-forgetモードでも将来stderr→logリダイレクトすれば診断情報が保全される
+
+### L353: heredocによるYAML生成時のquote injection
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_026
+- **記録者**: saizo
+- **tags**: [bash, yaml, security]
+- bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様ではシングルクォート2連でエスケープする。bashパラメータ展開で対応可能。karo_workaround_log.shのdetail/root_causeフィールドで発見
+
+### L354: 同一リソースを操作する複数スクリプトのロックパス一致確認必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_023
+- **記録者**: hayate
+- **tags**: [communication, inbox]
+- inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>.lock)を使用しており排他制御が無効だった。同一ファイルを操作するスクリプト群はlock_path()を統一利用し、ロックファイルの一致を保証すべき
+
+### L355: YAML正規表現はクォートなし/単引用/二重引用の3形式に対応すべし
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_028
+- **記録者**: tobisaru
+- **tags**: [bash, yaml]
+- workaround_pattern_check.shの正規表現がダブルクォートのみ対応で、実データ127件全て非クォートのためパターン検出が完全に非機能だった。bash正規表現でYAML値をパースする際は3形式対応必須
+
+### L356: YAML文字列化dictのパースにast.literal_evalは使えない(不完全文字列で失敗)
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_027
+- **記録者**: kotaro
+- **tags**: [yaml, lesson]
+- lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.literal_evalは完全な構文が必要で不完全文字列には失敗する。正規表現でキー値ペアを抽出する方がrobust。YAML保存時の型不整合(dict→str)が根本原因。
+
+### L357: yaml.dumpを使用する自動タグ付けスクリプトはCLAUDE.md安全規則に違反
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_029
+- **記録者**: hayate
+- **tags**: [process, yaml, lesson]
+- lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.md明記のyaml.dump禁止規則に抵触。マルチライン文字列(detail等)のround-trip失敗でデータ消失リスクがある。修正方針: ruamel.yamlによるフォーマット保持書込みか、tagsフィールドのみを行ベースで挿入するアプローチ
+
+### L358: sedパースの無音失敗パターン: 空文字をデフォルト値扱いすると無音でロジックバイパス
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_034
+- **記録者**: tobisaru
+- **tags**: [universal]
+- sed -nで抽出した値が空文字の場合、後段の比較(==MISSING)に静かに不一致し処理がスキップされる。抽出直後に空文字チェック+exit1が必須。set -euoでは防げない(sedが正常終了するため)
+
+### L359: eval出力パースはホワイトリスト付きwhile readで代替すべき
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_031
+- **記録者**: hanzo
+- **tags**: [testing, bash]
+- awk出力をeval展開するパターンは、入力データ経由のインジェクションリスクがある。declare -Aで許可キーリストを定義し、while IFS= readでキー検証するパターンが安全。bashの連想配列でO(1)検証可能
+
+### L360: decision_write.shのPython内変数参照がexport/os.environ方式と直接補間で不整合
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_032
+- **記録者**: saizo
+- **tags**: [bash]
+- 同一スクリプト内でPython呼出しが2箇所あり、flock内(L60-70)はexport+os.environ[]で安全だが、PJ検索(L26-31)はシェル変数を直接補間。スクリプト精査時は同一パターンの複数箇所で方式が統一されているか確認すべき。不整合は片方が修正漏れの証拠
+
+### L361: idle|noneのsentinel値はawk split+空文字チェックを素通りする
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_033
+- **記録者**: kotaro
+- **tags**: [communication, gate, monitor, reporting]
+- clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し偽陽性idle=1を報告する。sentinel値(none等)はデータ層(ninja_monitor)の設計意図を理解し、消費側(clear_prep)で明示フィルタ必須。
+
+### L362: SequenceMatcher.quick_ratio()前段フィルタで大量ペア比較を高速化
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_030
+- **記録者**: kagemaru
+- **tags**: [frontend]
+- O(n²)ペア比較でSequenceMatcherを毎回新規生成していた。quick_ratio() O(n+m)で閾値未満を早期排除+テキスト事前計算で、352件13.3s→3.9s(3.4x)、526件35.6s→9.9s(3.6x)の高速化を達成。set_seq1/set_seq2による再利用も効果あり。
+
+### L363: lesson_edit.shはlock_path未使用の唯一のflock使用スクリプト
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_035
+- **記録者**: hayate
+- **tags**: [communication, yaml, wsl2, inbox, lesson]
+- lesson_edit.shのLOCKFILEはNTFS上に直接配置されており、WSL2環境でflock不安定の原因になりうる。他の全flock使用スクリプト(decision_write/inbox_write/inbox_mark_read/inbox_archive/yaml_field_set)は既にlock_path()で/tmp配置済み。新規スクリプト追加時もlock_path()使用を確認すべき
+
+### L364: bash変数のPythonインライン展開はインジェクションリスク。環境変数経由(export+os.environ)が安全
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_036
+- **記録者**: kagemaru
+- **tags**: [review, bash, lesson]
+- lesson_review.shでPROJECT_IDをPythonリテラルに直接展開(p['id']=='$VAR')していた。クォート含む入力でSyntaxError。LESSONS_FILEは既にexport+os.environ方式だったため、同一スクリプト内でパターンが不統一だった。環境変数方式に統一することで安全性と一貫性を確保
+
+### L365: lock_path()未適用スクリプトがまだ残存する(NTFS flock不安定パターン)
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_037
+- **記録者**: hanzo
+- **tags**: [git, lesson]
+- decision_write.shをlock_path()修正した際、同パターンのlesson_merge.shは未修正のまま残った。flock+NTFSの既知問題修正時は、全スクリプトを横断検索し同パターンの取りこぼしを一括修正すべき。
+
+### L366: eval+shlex.quoteパターンでbash-python3間の多重起動を統合できる
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_039
+- **記録者**: kotaro
+- **tags**: [bash]
+- bashスクリプトから同一JSONに対しpython3を複数回起動するパターンは、shlex.quote()でシェル安全にエスケープしeval代入する1回呼出しに統合すべき。ShellCheck SC2154対策として事前変数宣言が必要
+
+### L367: python3多重起動パターンはshlex.quote+eval一括抽出で9→1に統合可能
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_038
+- **記録者**: saizo
+- **tags**: [bash, lesson]
+- auto_draft_lesson.shで同一JSONから9フィールドを各1回のpython3起動で抽出していた。shlex.quoteで安全なシェル変数代入文字列を生成しevalで一括代入することで、プロセス起動9回→1回に削減。同パターンは他スクリプトにも存在する可能性あり。
+
+### L368: send_alertの呼び出し漏れパターン: 計算済み値の未消費
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_042
+- **記録者**: kagemaru
+- **tags**: [monitor]
+- usage_monitor.shでw_pct(7dバケット使用率)を計算・表示していたがsend_alertに渡していなかった。値を計算したら全消費箇所で使われているか確認すべき。類似パターン: 変数を定義したが一部の分岐でのみ使用。
+
+### L369: ac_physical_verify.shのAC抽出正規表現にリテラル文字除外バグ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_044
+- **記録者**: saizo
+- **tags**: [api, yaml]
+- [^A]*?は文字Aをリテラルに除外するため、ACブロック記述にAPIやyAml等のA含有文字列があると途中切れする。.*?にすべき。正規表現の文字クラス[^X]は否定集合であり、Xをリテラル除外する点に注意。
+
+### L370: DRY関数抽出時はフォールバックチェーンの統一も同時に行え
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_041
+- **記録者**: hayate
+- **tags**: [tmux]
+- sync_pane_vars.shで将軍セクションとエージェントループが20行の重複コード。DRY統合時にフォールバックチェーンの不整合(将軍のみUnknownあり)も発見。関数抽出=チェーン統一の好機。重複コードは動作差異を隠すため、統合時に全分岐を比較せよ
+
+### L371: Python内シェル変数展開は環境変数経由に統一せよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_045
+- **記録者**: kotaro
+- **tags**: [deploy, bash]
+- auto_deploy_next.shの第2Pythonブロックでドル記号VAR形式のシェル変数展開を使用していた。同スクリプト内の第1ブロックはos.environ経由で安全に実装済み。パスに特殊文字が含まれると壊れるため、環境変数経由に統一すべき。bash内Pythonブロックの変数渡しはos.environ一択。
+
+### L372: tmux display-messageはフォーマット文字列で複数変数を一括取得可能
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_046
+- **記録者**: tobisaru
+- **tags**: [tmux]
+- tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS readで分解すれば、N変数取得のtmux呼出しをN回→1回に削減。agent_status.sh等のループ内で顕著な効果
+
+### L373: シェルスクリプトの中間結果繰り返し前処理はキャッシュ変数で一括化せよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_043
+- **記録者**: hanzo
+- **tags**: [gate, bash]
+- cmd_save.sh Check3内でecho CMD_BLOCK|grep -v comment|grep -q keyのパターンが7箇所に重複。各回3サブプロセス×7=21生成。中間結果(コメント除去済み文字列)を変数CMD_BLOCK_NCにキャッシュすることで7回のgrep -vを1回に削減。原理: 同一データの繰り返し前処理は変数キャッシュで一括化。プロファイル前に構造的重複を排除すべし
+
+### L374: ファイルストリーム処理での中間リスト排除パターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_047
+- **記録者**: hayate
+- **tags**: [gate]
+- gate_metrics.logパーサが全行を中間list→dedup dictの2パスで処理していた。ストリーム処理ではcmd_id→最終結果dictに直接投入する1パスが正しい。中間リストはメモリ倍増+コード冗長の二重デメリット。ファイル行処理で最終値のみ必要な場合は中間list収集を避け直接dict投入せよ
+
+### L375: 同一ファイル多段読取りパターンは単一awkパスに統合せよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_049
+- **記録者**: hanzo
+- **tags**: [gate]
+- wc -l + awk×N で同一ファイルを複数回読むパターンが複数スクリプトに散在。単一awkパスで全カウントを同時実行すればプロセス数・I/O削減。count_gate_metrics.shで3→1に改善実証
+
+### L376: should_actの状態保存タイミングでALERT消失リスク
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_050
+- **記録者**: saizo
+- **tags**: [communication, inbox]
+- should_act関数(L38)でアクション実行前に状態ファイルを書く設計。inbox_write/ntfy失敗時に次回ALERT→ALERT再送抑止でALERTが消失する。状態保存はアクション成功後に行うべき
+
+### L377: lesson_deprecate.shもyaml.dump禁止パターンに該当
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_052
+- **記録者**: tobisaru
+- **tags**: [bash, yaml, lesson]
+- lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyaml.dumpパターンだが、bashコマンド直接実行ではないためpre-bash-yaml-dump-guard.shで検出されない可能性がある。スクリプト内のyaml.dump使用も禁止パターンの対象として認識すべき。
+
+### L378: ログローテーションスクリプトはflock+再チェックパターンで並行安全にせよ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_048
+- **記録者**: kagemaru
+- **tags**: [communication, gate, inbox]
+- rotate_gate_metrics.shがflock無しで実装されており、cmd_complete_gate.shの3箇所から並行呼出しされるとhead-tail-mv間で書込みが入りログ行消失する。flock取得後にline_countを再チェックする二重チェックパターン(DCLP的)で、先行プロセスがローテーション済みの場合のearly exitも実現。同じパターンはinbox_write.sh等プロジェクト内の他のファイル操作でも使用されている。
+
+### L379: gitignore whitelist方式ではgit add -fが必要な場合がある
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_051
+- **記録者**: kotaro
+- **tags**: [git, inbox]
+- clipboard_watcher.shはwhitelist方式の.gitignoreで許可リストに未登録だった。git addが拒否されgit add -fで強制追加した。未追跡ファイルの改善タスクでは事前にgit ls-filesで追跡状態を確認すべき
+
+### L380: daemon_watchdog.shのログ出力先にローテーション不在で肥大化リスク
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_058
+- **記録者**: tobisaru
+- **tags**: [pipeline]
+- cronで毎分実行されるwatchdogスクリプトのlog()がappend-onlyでサイズチェックなし。10分毎のOKログだけでも月1440行、再起動イベント含めると際限なく成長。rotate_log()を冒頭で実行し1MB超過時にtail -n 500で切り詰める方式で対処。他のcron系スクリプトにも同様のリスクがないか横展開確認が望ましい
+
+### L381: section関数の内部matrix再利用パターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_053
+- **記録者**: hayate
+- **tags**: [universal]
+- section_c_detail()がsection_c()と同一matrixを内部構築していたが返却せず、呼出し元で再計算が必要だった。内部データをraw_matrixとして返却する設計により重複計算を除去。他のsection関数群(section_a等)でも同パターン適用可能
+
+### L382: statusline.shはgitignoreホワイトリスト未登録だった
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_054
+- **記録者**: kagemaru
+- **tags**: [git]
+- statusline.shは全エージェントが毎出力で使用するインフラスクリプトだがgit未追跡だった。改善コミット時に発覚。ホワイトリスト追加で解決。インフラ改善対象スクリプトが追跡されていない可能性がある
+
+### L383: Python埋込コードのシェル変数展開はコードインジェクション源
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_056
+- **記録者**: saizo
+- **tags**: [bash, lesson]
+- lesson_delete.shでSCRIPT_DIR/PROJECT_IDをPythonヒアドク内にシェル展開で直接埋込していた。シングルクォート含む入力で任意コード実行リスク。同ファイル内にenv vars方式(export+os.environ)の安全パターンが既にあった。bashスクリプト内のPythonインライン実行では常にenv vars経由で値を渡すべき
+
+### L384: report_field_set.shに長文detailsを渡すとバックスラッシュnがリテラル改行に展開されYAML破損する
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_057
+- **記録者**: kotaro
+- **tags**: [yaml, reporting]
+- result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_set.shへの入力値にバックスラッシュnを含めないか、短い値を使うべき。
+
+### L385: リスト切り捨て前にソートすべき:ファイル内順序≠論理順序
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_059
+- **記録者**: hayate
+- **tags**: [universal]
+- conversation_retention.shのoverflow切り捨てがファイル内位置順で行われていた。JSONLへの追記順が時系列と一致する保証はなく、手動編集や非同期追記で新エントリがアーカイブされ古エントリが残るケースがある。MAX_ENTRIESで切り捨てる前にtimestampでソートすることで常に最新エントリの保持を保証。一般原則:位置ベースのスライスは論理順序と一致するか確認せよ。
+
+### L386: credentials書き戻しは検証→mv の2段階にすべき
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_060
+- **記録者**: kagemaru
+- **tags**: [testing, security, oauth]
+- token_refresh.shでjq出力を無検証でmv上書きしていた。jqが空出力や不正JSONを生成した場合credentials破損→認証不能に直結する。書き戻し前にjq -eで必須キー存在検証を入れるべき。trap追加でtmpファイル清掃も必須。
+
+### L387: python3 -cへの変数注入パターンはcmd_absorb.shにも存在した
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_061
+- **記録者**: saizo
+- **tags**: [bash, lesson]
+- lesson_delete.shで修正済み(6f37bcb)の同一パターンがcmd_absorb.shのcheck_stale_lessons()にも残存。python3 -c内でbash変数を直接展開するコードは横展開チェックが必要。grep -r "python3 -c" scripts/で全スクリプト横断検索可能。
+
+### L388: gitignoreホワイトリスト方式でのcommit不可パターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_062
+- **記録者**: kotaro
+- **tags**: [git]
+- 修行サイクルの対象ファイルがgitignoreホワイトリスト(デフォルト全除外)に未登録の場合、改善を実装してもgit commitできない。対象ファイルのcommit可能性を作業前に確認すべき。
+
+### L389: パリティチェックの全SKIP=PASS偽陰性パターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_063
+- **記録者**: tobisaru
+- **tags**: [testing]
+- 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数(check_count)を追跡し、check_count==0の場合は合格としてはならない。
+
+### L390: embedded PythonのベアexceptはKeyboardInterrupt/SystemExitを隠す
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_055
+- **記録者**: hanzo
+- **tags**: [communication, bash, inbox]
+- bash埋込みPythonのtmpファイルcleanupでexcept:を使うとKeyboardInterrupt時にも不要なunlink処理が走る。except Exception:に限定すべき。inbox_mark_read.sh L114で発見。PEP8 E722にも該当
+
+### L391: get()参照フィールド名はYAML定義と突合必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_064
+- **記録者**: hayate
+- **tags**: [review, gate, yaml]
+- review_gate.shがtask.get('type')でフィールド参照していたが実際のYAMLキーはtask_type。結果、task_typeによるレビュー検出が完全に不能で長期間バグ潜伏。スクリプトがYAMLフィールドを参照する際はYAML定義側のキー名と突合確認せよ
+
+### L392: デーモンスクリプトのポーリングループは関数化必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_065
+- **記録者**: kagemaru
+- **tags**: [wsl2]
+- gist_sync.shでWSL2 drvfsモードとinotifywaitフォールバックが同一ポーリングループを複製していた。デーモンスクリプトでは同一パターンのループが条件分岐で複数箇所に書かれやすい。早期に関数抽出しDRY化すべき。
+
+### L393: yaml.dumpをqueue/配下で使用するスクリプトは.gitignoreのホワイトリスト外で潜伏しうる
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_066
+- **記録者**: saizo
+- **tags**: [bash, yaml, git, lesson]
+- mcp_sync_lesson.shはscripts/配下にあったが.gitignoreのホワイトリストに未登録→git追跡外で安全規則違反が検出されなかった。新規スクリプト追加時はホワイトリスト登録を忘れるな
+
+### L394: progress_barの入力バリデーション: ERR/--以外の非整数も考慮すべし
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_068
+- **記録者**: tobisaru
+- **tags**: [bash]
+- usage_status.shのprogress_barは'ERR'と'--'のみガードしていたが、upstreamから空文字・浮動小数・非整数文字列が渡される可能性があり、bash arithmetic比較がset -eでスクリプトを即終了させる。整数正規表現ガード(^[0-9]+$)で防御層を追加。L074(((PASS++))のexit code問題)と同根のbash arithmetic安全性パターン
+
+### L395: awkのYAML front matter抽出は開始・終了デリミタの非対称出力に注意
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_069
+- **記録者**: hanzo
+- **tags**: [yaml]
+- awkで---区間を抽出する際、n==1のnextで開始---をスキップしつつn==2で終了---をprintする非対称パターンが使われていた。生成ファイルのfront matterが不完全になるが、下流のパーサが寛容だと気づきにくい。グループコマンド{ echo '---'; awk ...; }でペア出力を保証する。
+
+### L396: Python heredocのexport+os.environ統一パターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_067
+- **記録者**: kotaro
+- **tags**: [git]
+- 同一スクリプト内でpython3 -c(直接展開)とheredoc(env vars)が混在していた。直接展開はパス内の特殊文字で破壊される。新規python呼出しは全てexport+os.environ+quoted heredocパターンで統一すべき。cmd_absorb.shでも同パターン修正済み(commit 0dd7cab)。
+
+### L397: load_lesson_summariesのroot path導出がモード間で不統一
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_070
+- **記録者**: hayate
+- **tags**: [lesson]
+- detailモード(L396)はos.path.dirname(data_file)でroot=logs/、syncモード(L392)はos.path.dirname(os.path.dirname(data_file))でroot=repo_root。同一関数に渡すrootの導出が呼出箇所ごとに異なり、detailモードでは常にsummary not foundだった。1つの関数を複数箇所から呼ぶ場合、共通の引数導出ロジックを統一(定数化or共通関数化)することでモード追加時の同種バグを防止できる。
+
+### L398: Python変数注入パターンは複数スクリプトに横断的に残存する
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_072
+- **記録者**: saizo
+- **tags**: [bash, lesson]
+- lesson_confirm.sh(22a8c8a)で修正されたPython変数注入パターンがsync_lessons.shにも残存していた。python3 -cブロックでshell変数を直接展開する旧パターンは、同一リポジトリ内の複数スクリプトに散在しやすい。1件修正時に同パターンのgrep横断チェック(grep -rn 'python3 -c' scripts/)を行えば一括修正できた
+
+### L399: ralph_loop_metrics.sh統合リファクタ時の遺物参照が残存
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_073
+- **記録者**: hanzo
+- **tags**: [lesson]
+- Section(E)+(F)をgawk1パスに統合した際、旧コードで生成していた中間ファイル(all_cmds.txt,has_lessons.tsv)の参照がL465-466に残り、set -euoでスクリプト即終了。統合リファクタ時は旧中間ファイル名をgrepして全参照箇所を更新すべき
+
+### L400: summarize_acのsubstring matchは誤検出リスク
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_074
+- **記録者**: tobisaru
+- **tags**: [reporting]
+- dashboard_update.shのsummarize_ac関数でPASSをsubstring match(in演算子)で検出していたが、FAILはword boundary(正規表現)で検出しており非対称だった。BYPASSやCOMPASS等に誤マッチするリスク。文字列一致検出はword boundary matchで統一すべき。
+
+### L401: python3 -cのシェル変数展開はインジェクション源。heredoc+sys.argvパターン統一必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_071
+- **記録者**: kagemaru
+- **tags**: [bash]
+- pending_decision_write.shで同一ファイル内にsys.argv方式(安全)とpython3 -c展開方式(危険)が混在。新規追加時に危険パターンをコピーするリスク。bashスクリプト内のPython呼び出しはheredoc+sys.argvをデフォルトとし、python3 -c内での変数展開パターンを禁止すべき。
+
+### L402: gate状態ファイルを/tmpに置くと再起動で冪等性喪失
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_076
+- **記録者**: kagemaru
+- **tags**: [gate, git, wsl2]
+- gate_improvement_trigger.shの冪等性チェック用状態ファイルが/tmpに配置されていた。WSL再起動で/tmpが消去されるため、再起動後に同一ALERTが再送される。ランタイム状態ファイルは永続パス(logs/等)に配置すべき。ホワイトリスト方式の.gitignoreでは自動的に追跡外になるため追加設定不要。
+
+### L403: agent_pane_targetのset -e即死パターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_077
+- **記録者**: saizo
+- **tags**: [tmux]
+- restart_agent_cliでagent_pane_targetが失敗(return 1)するとset -eでスクリプト即死。後続のtmux list-panesチェック(graceful skip)に到達しない。外部関数呼出しは || true ガードで受けてから戻り値判定すべき。
+
+### L404: cd副作用をgit -Cで排除するパターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_078
+- **記録者**: hanzo
+- **tags**: [bash, git]
+- ループ内でcd dir+cd backするパターンはset -e下で途中失敗時にディレクトリが戻らないバグリスクがある。git -C dirを使えばディレクトリ変更なしにgit操作可能。シェルスクリプト内のcdは原則避けgit -Cや絶対パス指定を優先すべき。
+
+### L405: checklist_update.shのステータス判定は大文字小文字混在に脆弱
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_079
+- **記録者**: kotaro
+- **tags**: [security]
+- cell_statusを明示的な文字列タプルで比較すると、Done/Pass/Ok等の混在ケースを見落とす。.lower()で正規化してから比較するパターンが安全。同様のステータス文字列比較が他スクリプトにも存在する可能性あり
+
+### L406: lesson_deprecation_scanのcmd_num>=900フィルタは全正規cmd(900+)を除外する重大バグ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_075
+- **記録者**: hayate
+- **tags**: [lesson]
+- cmd_num>=900をテストcmd除外フィルタとして実装したが、cmd番号は1613まで連番で正規使用。1200レコードが黙殺されmax_cmd_numが固定、最終参照追跡が全て不正確。マジックナンバーフィルタは実データ範囲を超えた時点で静かに壊れる。実データ確認なしにフィルタ閾値を設定してはならない
+
+### L407: L074適用対象の拡張: 境界値チェックはset -e環境の安全弁
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_080
+- **記録者**: tobisaru
+- **tags**: [universal]
+- make_barのpctが100超/負の場合にfilled/emptyが範囲外になり、forループの挙動が不正になる。set -euo pipefail環境では算術異常がスクリプト即終了に繋がるリスクもある。外部入力を受ける算術パラメータには必ず境界値クランプを入れるべき
+
+### L408: switch_project.shのL074パターン: ((sent++))がset -e環境で初回即死
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_082
+- **記録者**: kagemaru
+- **tags**: [universal]
+- switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set -e即死で、PJ切替通知が最初の1エージェントしか届かない潜伏バグ。((var++))のgrepスキャンを定期実行すべき
+
+### L409: precommitスクリプトの外部ツール依存チェックは全ツールで統一すべき
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_084
+- **記録者**: saizo
+- **tags**: [bash, git]
+- run_precommit_checks.shでruffは5段階フォールバック(resolve_ruff_cmd)、biomeはnpx自動取得だが、shellcheckは存在チェックなしで不統一。外部ツール呼出し前にcommand -vでの存在確認を統一パターンにすべき。
+
+### L410: timezone-aware/naive比較のサイレント失敗パターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_086
+- **記録者**: tobisaru
+- **tags**: [universal]
+- datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive dtを解析すると、比較時にTypeErrorが発生。except (ValueError, TypeError)で握り潰されるため、TZなしエントリは永久にアーカイブされないサイレントバグとなる。aware/naive混在を許さない設計が必要。
+
+### L411: /tmpロックファイルは揮発性で信頼できない
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_081
+- **記録者**: hayate
+- **tags**: [gate]
+- cmd_friction_log.shのLOCK_FILEが/tmpにあった。/tmpはOS再起動やクリーンアップで消失する。gate_improvement_trigger.sh(9734f68)でも同パターンを修正済み。ロックファイルは$REPO_ROOT/.locks/に配置すべき。プロジェクト内の他スクリプトでも/tmp使用箇所を点検すべき
+
+### L412: inbox_prune.shもyaml.dump禁止規則の対象漏れ
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_083
+- **記録者**: hanzo
+- **tags**: [communication, bash, yaml, inbox]
+- inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_1399事故)の対象。pre-bash-yaml-dump-guard hookは新規コマンドをブロックするが既存スクリプト内のyaml.dumpは検出しない。inbox_write.sh(L563)にも同様のyaml.dump使用が残存しており同様の修正が必要
+
+### L413: extract_fieldのpipefail即終了パターン
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_085
+- **記録者**: kotaro
+- **tags**: [universal]
+- set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全
+
+### L414: yaml.dump置換の2パターン使い分け
+- **日付**: 2026-03-31
+- **出典**: cmd_1616
+- **記録者**: karo
+- **tags**: [testing, communication, yaml, inbox]
+- 全ファイル書換えが必要な場合は_sv関数パターン(inbox_prune.sh参照)で手動YAML構築。単一フィールド変更のみの場合はyaml_field_set.sh(flock+検証付き)が最適。変更範囲で使い分ける
+
+### L415: Python heredoc内のbash変数展開はinjection脆弱性。export+os.environ使用必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_088
+- **記録者**: kagemaru
+- **tags**: [communication, bash, yaml, security, lesson, reporting]
+- auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開されていた。シングルクォート含有時にPython構文エラーまたは任意コード実行の可能性。同一ファイルのL20-74は正しくexport+os.environ方式を使用していた。パターン: bash heredoc内のPython/Ruby等にbash変数を埋め込む場合、シングルクォートheredoc(<<'EOF')でbash展開を抑止し、環境変数経由で値を渡すこと。
+
+### L416: awkのstderr出力を/tmp固定パスで受け取るとrace condition
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_092
+- **記録者**: tobisaru
+- **tags**: [universal]
+- awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。
+
+### L417: heredocでYAML追記するスクリプトは変数のYAML特殊文字エスケープ必須
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_091
+- **記録者**: kotaro
+- **tags**: [process, bash, yaml]
+- cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがYAML構造を壊す。bash parameter expansion(${var//pattern/replacement})で書込み前にエスケープせよ。yaml.dumpが禁止されている運用YAMLでは特に重要
+
+### L418: classify_categoryの自動分類は実データのカテゴリ分布に基づいて拡張すべき
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_089
+- **記録者**: hanzo
+- **tags**: [deploy, yaml, reporting]
+- karo_workaroundsの実データではuncategorized17件中にreport_yaml_format/double_deploy/stale_report等に分類可能なエントリが多数混在。自動分類パターンの設計時は既存ログデータのカテゴリ分布を確認し、頻出カテゴリからパターンを追加するアプローチが有効
+
+### L419: sed -iの連続呼出しは非原子的: partial-writeで冪等チェックが永久ブロック
+- **日付**: 2026-03-31
+- **出典**: cmd_cycle_L4_090
+- **記録者**: saizo
+- **tags**: [universal]
+- workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則: 複数行の追記が1レコードを構成する場合、個別sed -iではなく単一パス(awk/perl)+mvで原子性を確保すべき
+
+### L420: Edit toolとClaude Codeスキルスキャンの競合によるSKILL.mdファイル破損
+- **日付**: 2026-03-31
+- **出典**: cmd_1621
+- **記録者**: saizo
+- **tags**: [bash, git]
+- Edit toolでSKILL.mdのname:フィールドを更新しようとしたところ、2ファイルとも0バイトに破損。推定原因: Edit toolのtruncate-then-write処理とClaude Codeのスキルファイル自動スキャンが競合。対策: SKILL.mdの編集はsedコマンド(Bash tool)で行うべき。Edit toolはスキルスキャンとの競合リスクがある。さらに~/.claude/skills/はgit管理外のため復元不可能。重要スキルファイルはgit管理下にバックアップを持つべき
+
+### L421: ~/.claude/skills/配下のファイル編集はEdit tool禁止、Bash sed必須
+- **日付**: 2026-03-31
+- **出典**: cmd_1621
+- **記録者**: hayate
+- **tags**: [gate, bash]
+- Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合で0バイト破損のリスク。Bash sedを使えば両方回避できる
+
+### L422: テスト教訓(削除予定)
+- **日付**: 2026-04-01
+- **出典**: cmd_training_L4_003
+- **記録者**: kagemaru
+- **status**: draft
+- **tags**: [testing]
+- **retired**: true
+- **retired_at**: 2026-04-01
+- dry-run検証用の教訓エントリ。削除予定。
+
+### L423: exit code不整合はサイレント障害の温床 — 失敗パスでexit 0は呼出元条件分岐を無効化
+- **日付**: 2026-04-01
+- **出典**: cmd_training_L4_R2
+- **記録者**: karo
+- **tags**: [inbox]
+- スクリプトが失敗パスでexit 0を返すと呼び出し元の条件分岐が全て無効化される。set -eのスクリプトでは特に、明示的exit 1を全失敗ブランチに配置する習慣が必要。restart_watchers.shで発見・修正。
+
+### L424: WSL2 python3→awk汎用関数パターン
+- **日付**: 2026-04-01
+- **出典**: cmd_training_L4_R3
+- **記録者**: karo
+- **tags**: [yaml, wsl2, lesson]
+- WSL2でpython3起動コスト(~200ms/回)を回避するawk汎用関数化パターン。resolve_project_field()のように第2引数でフィールド名指定する汎用YAML lookup関数を作れば、同一スクリプト内の複数python3呼出を1行ずつ置換可能。lesson_write.sh/sync_lessons.shに横展開可。
+
+### L425: grep繰返しパターンをO(1)連想配列に置換する定石
+- **日付**: 2026-04-01
+- **出典**: cmd_training_L4_R3
+- **記録者**: kotaro
+- **tags**: [universal]
+- ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい
+
+### L426: heredoc内Python yaml.dumpはpre-bash hookで検出不可 — grepパターン追加必要
+- **日付**: 2026-04-01
+- **出典**: cmd_training_L4_R3
+- **記録者**: karo
+- **tags**: [gate, bash, yaml]
+- CLAUDE.mdでyaml.dump禁止が明記されているが、archive_completed.sh内のheredoc Pythonでのdump呼出はpre-bashフックの検出範囲外。heredoc内Python経由のdump呼出もgrepパターンで検出するgate強化が必要
+
+### L427: 既存の状態マッピングを活用せよ(N+1クエリ排除)
+- **日付**: 2026-04-01
+- **出典**: cmd_training_L4_R10
+- **記録者**: kotaro
+- **tags**: [db, tmux]
+- discover_panes()がPANE_TARGETS連想配列を構築済みなのにwrite_karo_snapshot()がループ内でtmux list-panesを再呼出し。既存キャッシュ/マッピングの存在を確認してから新規呼出しを書け。N+1クエリパターンはDB以外でも発生する
+
+### L428: deploy_task.sh内のPython utility関数が3箇所に重複(約180行)
+- **日付**: 2026-04-01
+- **出典**: cmd_training_L4_R7
+- **記録者**: hayate
+- **tags**: [deploy, bash, yaml]
+- _sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Python heredocに独立定義。共有モジュール化(scripts/lib/yaml_safe_write.py)でDRY化+バグ修正の伝播保証が必要。effort Mのため今回は未実装。
+
+### L429: 定義済み関数の未使用放置はDRY違反の温床
+- **日付**: 2026-04-01
+- **出典**: cmd_training_L4_R7
+- **記録者**: kagemaru
+- **tags**: [gate, lesson]
+- gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同時実施しないと、コピペが蓄積し保守コストが増大する。関数追加時は既存インラインの置換をACに含めよ。
+
+### L430: テスト時にinbox_write model_switchを実行すると本番環境に影響する
+- **日付**: 2026-04-02
+- **出典**: cmd_1673
+- **記録者**: saizo
+- **tags**: [deploy, testing, communication, yaml, inbox]
+- hensei_apply.shのmixedプリセットテスト時、inbox_writeでhanzo/saizoにmodel_switch送信が実行され、実際にモデルが切り替わった。テスト時はsettings.yaml更新のみの検証に留め、inbox_write送信はskipすべき。dry-runモード追加が望ましい。
+
+### L431: hensei_apply.shテスト時にinbox_write model_switchが本番忍者に送信され実際にモデル切替が発生する副作用あり
+- **日付**: 2026-04-02
+- **出典**: cmd_1673
+- **記録者**: saizo
+- **tags**: [deploy, testing, communication, yaml, inbox]
+- テスト環境でinbox_write model_switchを実行すると本番忍者のCLI状態が変わる。hensei_apply.shにdry-runモード追加推奨。テスト時はsettings.yaml更新のみ検証し、inbox_write送信はスキップすべき
+
+### L432: claude --model opus=200K制限。デフォルト起動(--modelなし)=1M+Max effort利用可。build_cli_command修正済み(b3f55d9)
+- **日付**: 2026-04-02
+- **記録者**: karo
+- **tags**: [frontend]
+- Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max effort。cli_adapter.sh build_cli_command()でopus時は--modelスキップに修正(ci_fix_200k)。/henseiスキルもデフォルト選択が正しい挙動。
+
+### L433: モデル切替は/modelではなくrespawn(CLI再起動)が正しい手順。/model opusは200K化、respawnなら1M+CLAUDE.md再読込保証
+- **日付**: 2026-04-02
+- **記録者**: karo
+- **tags**: [process]
+- 殿裁定: Claude CLIのモデル切替はrespawn方式が正解。(1)/model opusは200Kコンテキストに縮退 (2)claude↔codexは/modelで切替不可 (3)respawnならCLAUDE.md/instructions再読込が保証される (4)引数なしclaude起動で1M確保。/henseiスキルのmodel_switchもrespawn方式に再設計必要。

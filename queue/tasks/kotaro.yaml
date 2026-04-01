@@ -1,32 +1,23 @@
 task:
-  task_id: cmd_training_L4_R7_kotaro
-  parent_cmd: cmd_training_L4_R7
+  task_id: cmd_training_L4_R10_kotaro
+  parent_cmd: cmd_training_L4_R10
   task_type: impl
   project: infra
-  status: completed
-  target_path: scripts/ac_physical_verify.sh
+  status: acknowledged
+  target_path: scripts/inbox_mark_read.sh
   command: |
-    ac_physical_verify.shを精査し、改善点を特定・実装・報告せよ。
-
-    AC1: ac_physical_verify.shのコードを精査し、改善点を3つ特定して報告せよ
-      （バグ・DRY違反・エラーハンドリング・性能・可読性いずれも可）
-    AC2: 最もインパクトの大きい1つを実装しgit commitせよ
-      ★ bats tests/unit/ 全量実行禁止（OOM Kill実績あり）。対象テストファイルを個別指定して実行せよ
-    AC3: lesson_candidate found=true + 全ACのbinary_checks記入 + verdict
+    inbox_mark_read.shを精査し改善点を特定・実装・報告せよ。
+    AC1: 改善点3つ特定  AC2: 最高1件実装+commit(bats全量禁止)  AC3: LC+BC+verdict
+    ★ binary_checksはAC別セクション(AC1:/AC2:/AC3:)を維持して記入せよ。構造を壊すな。
   acceptance_criteria:
-    - ac: "AC1: ac_physical_verify.shの改善点を3つ特定し報告"
-    - ac: "AC2: 最高インパクト1件を実装+git commit（bats全量実行禁止）"
-    - ac: "AC3: lesson_candidate found=true + binary_checks全記入 + verdict"
+    - ac: "AC1: 改善点3つ特定"
+    - ac: "AC2: 最高インパクト1件実装+commit"
+    - ac: "AC3: lesson_candidate+binary_checks+verdict完全記入"
   ac_priority: AC1 > AC2 > AC3
-  parallel_ok:
-    - AC1
-    - AC2
-    - AC3
+  parallel_ok: [AC1, AC2, AC3]
   stop_for: []
   never_stop_for:
-    - 自明な修正 — 実行→事後報告
-    - bats全量実行禁止 — 個別テストファイルで実行せよ(OOM防止)
-  report_path: queue/reports/kotaro_report_cmd_training_L4_R7.yaml
-  report_filename: kotaro_report_cmd_training_L4_R7.yaml
-  role_reminder: "忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ"
-  deployed_at: "2026-04-02T02:33:44+09:00"
+    - bats全量実行禁止(OOM防止)
+    - binary_checksのAC1/AC2/AC3セクション構造を消すな
+  role_reminder: "忍者kotaro。このタスクのみ実行せよ。"
+  deployed_at: "2026-04-02T04:01:24+09:00"

@@ -90,6 +90,34 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 
 → 完了履歴: `context/cmd-chronicle.md` 03-30 / `scripts/cmd_save.sh` / `scripts/cmd_complete_gate.sh` / `scripts/deploy_task.sh` / `scripts/karo_workaround_log.sh`
 
+## deploy_task.sh --direct mode（cmd_1672）
+
+deploy_task.shにdirect mode(`--direct`)追加。修行タスク等shogun_to_karo.yaml不在のタスク配備時に、report template生成+stale cleanup+教訓注入を実行可能に。GP-138実装。
+使用法: `bash scripts/deploy_task.sh --direct <ninja> <task_id>`
+→ `scripts/deploy_task.sh` L31(フラグ解析), L2935(DIRECT_MODE分岐)
+
+## /henseiスキル（cmd_1673）
+
+モデル編成一括切替スキル。`~/.claude/skills/hensei/SKILL.md` + `~/.claude/skills/hensei/scripts/hensei_apply.sh`。
+プリセット: `opus-all`(全忍者Opus統一), `mixed`(GPT2+Sonnet2+Opus2混成)。
+idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(settings.yaml更新のみ→次回clear反映)。
+⚠ **dry-run未実装(L431)**: テスト時にmodel_switchが本番送信される。テスト時注意。
+→ `~/.claude/skills/hensei/`
+
+## Claude CLIモデル指定とコンテキスト（ci_fix_200k）
+
+| 起動方法 | コンテキスト | effort | コスト |
+|----------|-------------|--------|--------|
+| `claude`(デフォルト、--modelなし) | **1M** | Max利用可 | 1x |
+| `claude --model opus` | 200K | Highまで | 1x |
+| `claude --model sonnet` | 200K | — | 0.2x |
+
+**修正(b3f55d9)**: `build_cli_command()`でopus時は`--model`スキップ → デフォルト1M起動。sonnet/haikuのみ`--model`指定。
+**殿裁定**: high effortで十分(Max=3-10xコスト、レートリミットリスク)。
+**モデル切替はrespawn方式**(殿裁定): `/model`コマンドではなくCLI再起動(respawn)が正しい手順。理由: (1)/model opusは200Kになる (2)claude↔codexは/modelで切替不可 (3)respawnならCLAUDE.md/instructions再読込が保証される。/henseiスキルもrespawn方式に再設計要。
+**codex CLI**: デフォルト272K。1Mには`~/.codex/config.toml`に`model_context_window=1000000`+`model_auto_compact_token_limit=900000`必要。デフォルトモデル=gpt-5.4(旧gpt-5は廃止名)。effort=config.tomlの`model_reasoning_effort=high`。
+→ `lib/cli_adapter.sh` L88 | 詳細: `docs/research/gunshi-cli-model-context.md`（respawn手順/セレクタの罠/effort優先順位/codex config設定方法）
+
 ## 忍者個別弱点自動注入（cmd_1307）
 
 deploy_task.shにinject_ninja_weak_points関数追加。karo_workarounds.yamlから忍者名でフィルタし、workaround:trueのcategory別件数をtask YAMLのninja_weak_pointsセクションに自動注入。0件忍者には注入しない。
@@ -276,7 +304,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L314 -->
+<!-- last_synced_lesson: L433 -->
 <!-- lesson-sort 2026-03-28: L298-L301の4件を振り分け。ntfy(L298), gate強化(L299/L300), WSL2(L301) -->
 <!-- lesson-sort 2026-03-22: L256-L284の29件を振り分け(27件移動+2件重複削除)。§メインセクション: ninja_monitor(L259), ログローテーション(L258), tmux(L265/268), 軍師(L271/281)。サブセクション: bash(L263/269/270/272/277), deploy(L256/284), 報告(L264), 教訓(L257/260/266/273/275/276), gate(L262/280/282), テスト(L261), 知識(L274), レビュー(L267/283)。L278/L279重複削除 -->
 <!-- lesson-sort 2026-03-26: L285-L297の13件を振り分け(12件移動+1件重複削除)。bash(L287/289/290/295/297), deploy(L288), 報告(L291), 教訓(L285), git(L292), 知識(L286/293/294)。L296はL297重複→削除 -->
@@ -312,6 +340,123 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L312: report_templateがSTALE_FIELDSに未登録 — stale残留リスク（cmd_training_structural_002）
 - L313: GP ID重複問題: 同一IDに異なる提案が混在するとトリアージが困難（cmd_1528）
 - L314: unknown_block_reasonはgate diagnostics改善で排除可能（cmd_1529）
+- L315: テストとテスト対象は同一コミットに含めよ（cmd_1558）
+- L317: 教訓注入のuseful:false 81.7%はタスク種別不一致。タグマッチ精度向上と死蔵教訓の抽象度昇格が必要（lessons,deploy,injection,useful-rate）
+- L318: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）（test,infra,recon,test-necessity）
+- L319: テスト重複統合候補3組: tests/とtests/unit/に同名テストが並存（cmd_1562）
+- L320: infraテストは全件必要と判定（後半27テスト）（cmd_1562）
+- L321: INBOX_WRITE_TEST=1でreport_received検証がスキップされる（cmd_1565）
+- L322: case文のステータス網羅性を実行結果で検証せよ（cmd_training_comprehensive_004）
+- L323: プロセス数検証は実際の起動数を追跡せよ。外部計算の期待値はスキップ条件を反映しない（cmd_training_comprehensive_003）
+- L324: bashスクリプトでのsubprocess削減: echo|grepよりbashパターンマッチ（cmd_training_comprehensive_002）
+- L325: tmux変数の一括取得にはlist-panes -Fを使え（cmd_training_comprehensive_001）
+- L326: nohup+disownプロセスの起動検証はPID配列追跡+kill -0が確実（cmd_training_comprehensive_006）
+- L327: ハードコード値は動的取得済みデータの活用漏れを疑え（cmd_training_comprehensive_005）
+- L328: tmux一括取得データのawk-in-loop参照は連想配列で排除せよ（cmd_cycle_L4_002）
+- L329: IFS=| read -ra分割+read -rトリムでawk forkを削減（cmd_cycle_L4_001）
+- L330: パス解決は/bin/bashより解決済み変数を再利用せよ（cmd_cycle_L4_003）
+- L331: grepベース検出パターンは偽陽性率を計測して調整せよ（cmd_cycle_L4_004）
+- L332: Markdownテーブルのパイプ区切りパースはセル数固定でなく日付等の不変パターンをアンカーにすべき（cmd_cycle_L4_005）
+- L333: grep -qのパイプはstdout抑制でデッドコードになる（cmd_cycle_L4_008）
+- L334: shout.shのREPORT_FILEパス解決が固定名でレポート参照不能（cmd_cycle_L4_007）
+- L335: grep重複検出は-Fqw必須（cmd_cycle_L4_009）
+- L336: report_field_set.shのawkバックスラッシュエスケープ問題（cmd_cycle_L4_006）
+- L337: bashループ内sed/awk繰り返しはO(N*M)→一発パス化でO(M)に（cmd_cycle_L4_010）
+- L338: Pythonインラインスクリプトで同一ファイルを複数回開く場合は1回に統合せよ（cmd_cycle_L4_015）
+- L339: archive scan内のYAML fieldマッチはsubstring禁止—正規表現+長さ優先ソート必須（cmd_cycle_L4_014）
+- L340: YAML書込み時のダブルクォート・バックスラッシュ未エスケープはYAML構造を破壊する（cmd_cycle_L4_013）
+- L341: heredoc一括書込みでファイル中間状態を排除（cmd_cycle_L4_011）
+- L342: ホワイトリスト.gitignoreではscriptsディレクトリ内の新規ファイルもgit add -f必須（cmd_cycle_L4_016）
+- L343: bash YAMLパーサの正規表現はインデント0とN両方+id:プレフィックス対応が必要。セクション終了はtop-level keyのみで判定せよ（cmd_cycle_L4_012）
+- L344: テスト教訓（test_cmd）
+- L345: 環境変数経由のPython連携では手動エスケープは不要かつ有害（cmd_cycle_L4_017）
+- L346: stderr/stdout混合キャプチャは値汚染バグの温床（cmd_cycle_L4_018）
+- L347: ninja_done.shは.gitignoreホワイトリスト未登録（cmd_cycle_L4_019）
+- L348: --strategicフラグ検出は位置引数ではなくスキャン方式にすべき（cmd_cycle_L4_020）
+- L349: シェルスクリプトの書込み専用ファイル変数はデッドコードの兆候（cmd_cycle_L4_021）
+- L350: load_cmds系関数はcommands値がlist/dict両形式を想定すべき（cmd_cycle_L4_022）
+- L351: insight_write.shがyaml.dumpでqueue/ファイルを書き戻しておりポリシー違反（cmd_cycle_L4_025）
+- L352: ntfy.shのsend_with_retryは失敗時にstderrへ何も出さず呼び出し元が原因不明（cmd_cycle_L4_024）
+- L353: heredocによるYAML生成時のquote injection（cmd_cycle_L4_026）
+- L354: 同一リソースを操作する複数スクリプトのロックパス一致確認必須（cmd_cycle_L4_023）
+- L355: YAML正規表現はクォートなし/単引用/二重引用の3形式に対応すべし（cmd_cycle_L4_028）
+- L356: YAML文字列化dictのパースにast.literal_evalは使えない(不完全文字列で失敗)（cmd_cycle_L4_027）
+- L357: yaml.dumpを使用する自動タグ付けスクリプトはCLAUDE.md安全規則に違反（cmd_cycle_L4_029）
+- L358: sedパースの無音失敗パターン: 空文字をデフォルト値扱いすると無音でロジックバイパス（cmd_cycle_L4_034）
+- L359: eval出力パースはホワイトリスト付きwhile readで代替すべき（cmd_cycle_L4_031）
+- L360: decision_write.shのPython内変数参照がexport/os.environ方式と直接補間で不整合（cmd_cycle_L4_032）
+- L361: idle|noneのsentinel値はawk split+空文字チェックを素通りする（cmd_cycle_L4_033）
+- L362: SequenceMatcher.quick_ratio()前段フィルタで大量ペア比較を高速化（cmd_cycle_L4_030）
+- L363: lesson_edit.shはlock_path未使用の唯一のflock使用スクリプト（cmd_cycle_L4_035）
+- L364: bash変数のPythonインライン展開はインジェクションリスク。環境変数経由(export+os.environ)が安全（cmd_cycle_L4_036）
+- L365: lock_path()未適用スクリプトがまだ残存する(NTFS flock不安定パターン)（cmd_cycle_L4_037）
+- L366: eval+shlex.quoteパターンでbash-python3間の多重起動を統合できる（cmd_cycle_L4_039）
+- L367: python3多重起動パターンはshlex.quote+eval一括抽出で9→1に統合可能（cmd_cycle_L4_038）
+- L368: send_alertの呼び出し漏れパターン: 計算済み値の未消費（cmd_cycle_L4_042）
+- L369: ac_physical_verify.shのAC抽出正規表現にリテラル文字除外バグ（cmd_cycle_L4_044）
+- L370: DRY関数抽出時はフォールバックチェーンの統一も同時に行え（cmd_cycle_L4_041）
+- L371: Python内シェル変数展開は環境変数経由に統一せよ（cmd_cycle_L4_045）
+- L372: tmux display-messageはフォーマット文字列で複数変数を一括取得可能（cmd_cycle_L4_046）
+- L373: シェルスクリプトの中間結果繰り返し前処理はキャッシュ変数で一括化せよ（cmd_cycle_L4_043）
+- L374: ファイルストリーム処理での中間リスト排除パターン（cmd_cycle_L4_047）
+- L375: 同一ファイル多段読取りパターンは単一awkパスに統合せよ（cmd_cycle_L4_049）
+- L376: should_actの状態保存タイミングでALERT消失リスク（cmd_cycle_L4_050）
+- L377: lesson_deprecate.shもyaml.dump禁止パターンに該当（cmd_cycle_L4_052）
+- L378: ログローテーションスクリプトはflock+再チェックパターンで並行安全にせよ（cmd_cycle_L4_048）
+- L379: gitignore whitelist方式ではgit add -fが必要な場合がある（cmd_cycle_L4_051）
+- L380: daemon_watchdog.shのログ出力先にローテーション不在で肥大化リスク（cmd_cycle_L4_058）
+- L381: section関数の内部matrix再利用パターン（cmd_cycle_L4_053）
+- L382: statusline.shはgitignoreホワイトリスト未登録だった（cmd_cycle_L4_054）
+- L383: Python埋込コードのシェル変数展開はコードインジェクション源（cmd_cycle_L4_056）
+- L384: report_field_set.shに長文detailsを渡すとバックスラッシュnがリテラル改行に展開されYAML破損する（cmd_cycle_L4_057）
+- L385: リスト切り捨て前にソートすべき:ファイル内順序≠論理順序（cmd_cycle_L4_059）
+- L386: credentials書き戻しは検証→mv の2段階にすべき（cmd_cycle_L4_060）
+- L387: python3 -cへの変数注入パターンはcmd_absorb.shにも存在した（cmd_cycle_L4_061）
+- L388: gitignoreホワイトリスト方式でのcommit不可パターン（cmd_cycle_L4_062）
+- L389: パリティチェックの全SKIP=PASS偽陰性パターン（cmd_cycle_L4_063）
+- L390: embedded PythonのベアexceptはKeyboardInterrupt/SystemExitを隠す（cmd_cycle_L4_055）
+- L391: get()参照フィールド名はYAML定義と突合必須（cmd_cycle_L4_064）
+- L392: デーモンスクリプトのポーリングループは関数化必須（cmd_cycle_L4_065）
+- L393: yaml.dumpをqueue/配下で使用するスクリプトは.gitignoreのホワイトリスト外で潜伏しうる（cmd_cycle_L4_066）
+- L394: progress_barの入力バリデーション: ERR/--以外の非整数も考慮すべし（cmd_cycle_L4_068）
+- L395: awkのYAML front matter抽出は開始・終了デリミタの非対称出力に注意（cmd_cycle_L4_069）
+- L396: Python heredocのexport+os.environ統一パターン（cmd_cycle_L4_067）
+- L397: load_lesson_summariesのroot path導出がモード間で不統一（cmd_cycle_L4_070）
+- L398: Python変数注入パターンは複数スクリプトに横断的に残存する（cmd_cycle_L4_072）
+- L399: ralph_loop_metrics.sh統合リファクタ時の遺物参照が残存（cmd_cycle_L4_073）
+- L400: summarize_acのsubstring matchは誤検出リスク（cmd_cycle_L4_074）
+- L401: python3 -cのシェル変数展開はインジェクション源。heredoc+sys.argvパターン統一必須（cmd_cycle_L4_071）
+- L402: gate状態ファイルを/tmpに置くと再起動で冪等性喪失（cmd_cycle_L4_076）
+- L403: agent_pane_targetのset -e即死パターン（cmd_cycle_L4_077）
+- L404: cd副作用をgit -Cで排除するパターン（cmd_cycle_L4_078）
+- L405: checklist_update.shのステータス判定は大文字小文字混在に脆弱（cmd_cycle_L4_079）
+- L406: lesson_deprecation_scanのcmd_num>=900フィルタは全正規cmd(900+)を除外する重大バグ（cmd_cycle_L4_075）
+- L407: L074適用対象の拡張: 境界値チェックはset -e環境の安全弁（cmd_cycle_L4_080）
+- L408: switch_project.shのL074パターン: ((sent++))がset -e環境で初回即死（cmd_cycle_L4_082）
+- L409: precommitスクリプトの外部ツール依存チェックは全ツールで統一すべき（cmd_cycle_L4_084）
+- L410: timezone-aware/naive比較のサイレント失敗パターン（cmd_cycle_L4_086）
+- L411: /tmpロックファイルは揮発性で信頼できない（cmd_cycle_L4_081）
+- L412: inbox_prune.shもyaml.dump禁止規則の対象漏れ（cmd_cycle_L4_083）
+- L413: extract_fieldのpipefail即終了パターン（cmd_cycle_L4_085）
+- L414: yaml.dump置換の2パターン使い分け（cmd_1616）
+- L415: Python heredoc内のbash変数展開はinjection脆弱性。export+os.environ使用必須（cmd_cycle_L4_088）
+- L416: awkのstderr出力を/tmp固定パスで受け取るとrace condition（cmd_cycle_L4_092）
+- L417: heredocでYAML追記するスクリプトは変数のYAML特殊文字エスケープ必須（cmd_cycle_L4_091）
+- L419: sed -iの連続呼出しは非原子的: partial-writeで冪等チェックが永久ブロック（cmd_cycle_L4_090）
+- L420: Edit toolとClaude Codeスキルスキャンの競合によるSKILL.mdファイル破損（cmd_1621）
+- L421: ~/.claude/skills/配下のファイル編集はEdit tool禁止、Bash sed必須（cmd_1621）
+- L422: テスト教訓(削除予定)（cmd_training_L4_003）
+- L423: exit code不整合はサイレント障害の温床 — 失敗パスでexit 0は呼出元条件分岐を無効化（cmd_training_L4_R2）
+- L424: WSL2 python3→awk汎用関数パターン（cmd_training_L4_R3）
+- L425: grep繰返しパターンをO(1)連想配列に置換する定石（cmd_training_L4_R3）
+- L426: heredoc内Python yaml.dumpはpre-bash hookで検出不可 — grepパターン追加必要（cmd_training_L4_R3）
+- L427: 既存の状態マッピングを活用せよ(N+1クエリ排除)（cmd_training_L4_R10）
+- L428: deploy_task.sh内のPython utility関数が3箇所に重複(約180行)（cmd_training_L4_R7）
+- L429: 定義済み関数の未使用放置はDRY違反の温床（cmd_training_L4_R7）
+- L430: テスト時にinbox_write model_switchを実行すると本番環境に影響する（cmd_1673）
+- L431: hensei_apply.shテスト時にinbox_write model_switchが本番忍者に送信され実際にモデル切替が発生する副作用あり（cmd_1673）
+- L432: claude --model opus=200K制限。デフォルト起動(--modelなし)=1M+Max effort利用可。build_cli_command修正済み(b3f55d9)
+- L433: モデル切替は/modelではなくrespawn(CLI再起動)が正しい手順。/model opusは200K化、respawnなら1M+CLAUDE.md再読込保証
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

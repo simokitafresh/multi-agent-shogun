@@ -41,12 +41,28 @@
 p̄バッチ: `p_average_results`テーブルに事前計算結果を格納。バッチ未実行 or cold sleepで空(L319)。p̄ゲート: `gate_p_average_freshness.sh`で鮮度監視。
 - L232: recalculate_fast.pyのholding_signal更新は「月変わりANDリバランス月」の2条件で制御される（cmd_764）
 
+### §1.5 Phase間クリティカルデータフロー（OPT変更時必読）
+<!-- added: 2026-03-29 cmd_1474/1479のデータフロー依存バグから抽出。検証元: docs/research/fullrecalculate-architecture-2026-03-28.md §2/§6/§7 -->
+
+Phase構成全量 → `docs/research/fullrecalculate-architecture-2026-03-28.md` §2。ここには**OPT変更時に壊れやすい依存**のみ記載。
+
+| 上流Phase | 下流Phase | 共有データ | 危険パターン | 事故実績 |
+|-----------|-----------|------------|-------------|---------|
+| Phase 2 | Phase 3.7/4 | `signal_cache` dict(OPT-6) | in-memory共有。参照のみなら安全 | — |
+| Phase 4/4.5 | **Phase 5 FoF** | **DB上のSignalレコード** | flush遅延/deferred→FoF DB queryが空→ゼロ信号 | **cmd_1474**(OPT-13: deferred flush) |
+| Phase 2 | **Phase 5 FoF** | `signal_cache`+`holding_signal_raw`(OPT-15) | signal_cacheはbuild_signal_cache_value変換済み(holding_signal or signal)でDB生値と不一致。holding_signal_raw二層cacheが必要(L531) | **cmd_1622**(N+1 query除去) |
+| Phase 5 FoF | **Phase 5 precompute** | **SQLAlchemy session** | session-bound preload→commit後expire→下流例外→silent skip(PI-018) | **cmd_1479**(portfolio_preload expire) |
+| Phase 5 FoF | **monthly_returns** | **momentum_data[weights]** | OPT-A(cmd_1450)で非リバランス日={skipped:true}→weightsキー消失→EWフォールバック(L1067-1070) | **cmd_1568**(Ward/KalmanMeta bimonthly/quarterly。月次FoFは影響なし) |
+
+**原理(PI-019)**: データの見え方(可視性)や生存期間を変える修正では、**全ての下流消費者が新状態を参照できるか**検証せよ。flush/commit/session/cacheの全てに適用。具体例: deferred flush→FoF空(cmd_1474), session expire→precompute失敗(cmd_1479), skipped最適化→weights消失(cmd_1568)
+
 ## 2. DB地図
 
 核心ルール(接続先/書込禁止等) → `projects/dm-signal.yaml` (c) database
 テーブル詳細(全DB) → `docs/research/core-db-tables.md`
 
 要点: experiments.db=価格ground truth(daily_prices 414K行) | dm_signal.db=本番ミラー(PF設定用) | 本番PostgreSQL=SSOT
+- **experiments.db進行中月乖離**(cmd_1567偵察): DL日(3/16)で凍結→本番は日次更新(3/27)。完了月diff=0(計算ロジック同一証明)、進行中月のみ乖離(4.4-7.4%)。Ward FoF+四つ目3PFがexperiments.dbに不在(L512)
 
 ### SSOT 3層階層（殿確定 2026-03-11 §25）
 
@@ -359,10 +375,15 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L119 | DATA_CATALOG 86銘柄は本番PostgreSQL側。`experiments.db`は実際14銘柄のみ(ETF12+DTB3+VIX) | cmd_282 |
 | L124 | DB JSONカラムのstr型防御: `isinstance(value, str)+json.loads()`。`or {}`はtruthy文字列で発火しない | cmd_296 |
 | L128 | `experiments.db`はスナップショットでありSSOTではない | cmd_222 |
+| L511 | fof_component_weightsのactual_weight/driftがNULL(未計算状態)。Admin画面ウェイト未表示の根因 | cmd_1566 |
+| L512 | experiments.db進行中月データは日次更新本番と構造的に乖離する(完了月diff=0、進行中月のみ4-7%差) | cmd_1567 |
 
 ### 19.2 実装パターン
 - L258: try/exceptフォールバックでbulk preload+mock DB両立。bulk_loaded flagで本番最適化/テストmock分岐（cmd_820）
 - L259: try/exceptフォールバックパターンでmock DB互換性とN+1最適化を両立（cmd_820）
+- L506: OPT変更時は既存preloadのexpunge戦略を確認せよ（cmd_1479）
+- L507: lazy-loaded cache forward-fillは危険。OOM/データ汚染の原因（cmd_1481）
+- L508: silent fallbackパターン禁止(PI-018)。例外→デフォルト値フォールバックは問題を隠蔽する（cmd_1483）
 
 ### 19.2 BB仕様・バグ修正
 
@@ -380,6 +401,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L438 | MomentumAccelerationFilterのnumerator/denominator_periodはLookbackPeriodスキーマ準拠必須 | cmd_1190 |
 | L445 | DTB3を株式用momentum関数で処理してはならない | cmd_1194 |
 | L447 | nukimiのみ`_run_mp`関数不在で構造差異 | cmd_1196 |
+| L513 | OPT-A(cmd_1450)で非リバランス日momentum_data={skipped:true}→weightsキー消失→EWフォールバック。Ward/KalmanMetaのみ影響 | cmd_1568 |
 
 ### 19.3 GS-本番パリティ
 

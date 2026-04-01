@@ -326,6 +326,75 @@ YAML
     [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_selfimprovement_003.yaml" ]
 }
 
+@test "GP-133: report archive skips when review_gate.done is deploy_preflight placeholder" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_1623
+    status: completed
+    purpose: "GP-133 placeholder test"
+    project: dm-signal
+YAML
+
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1623.yaml" <<'YAML'
+parent_cmd: cmd_1623
+status: completed
+result:
+  summary: "placeholder test report"
+YAML
+
+    # Create placeholder review_gate.done (simulates deploy_task.sh behavior)
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_1623"
+    cat > "$TEST_PROJECT/queue/gates/cmd_1623/review_gate.done" <<'GATE'
+timestamp: 2026-03-31T18:57:33
+source: deploy_preflight
+note: 配備時placeholder。軍師レビュー完了時に上書きされる。
+GATE
+
+    # Create archive.done to allow sweep mode to proceed past that check
+    touch "$TEST_PROJECT/queue/gates/cmd_1623/archive.done"
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+
+    # Report should NOT be archived (placeholder = review not complete)
+    [ -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1623.yaml" ]
+}
+
+@test "GP-133: report archive proceeds when review_gate.done is gunshi_review" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_1624
+    status: completed
+    purpose: "GP-133 real review test"
+    project: dm-signal
+YAML
+
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1624.yaml" <<'YAML'
+parent_cmd: cmd_1624
+status: completed
+result:
+  summary: "real review test report"
+YAML
+
+    # Create real review_gate.done (simulates gunshi LGTM update)
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_1624"
+    cat > "$TEST_PROJECT/queue/gates/cmd_1624/review_gate.done" <<'GATE'
+timestamp: 2026-03-31T19:20:00
+source: gunshi_review
+result: LGTM
+note: 軍師レビュー完了。placeholderから上書き(GP-133)。
+GATE
+
+    # Create archive.done
+    touch "$TEST_PROJECT/queue/gates/cmd_1624/archive.done"
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+
+    # Report SHOULD be archived (real review = complete)
+    [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1624.yaml" ]
+}
+
 @test "report archive: regular cmd still requires review_gate.done" {
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
 commands:

@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-03-31 cmd_1604/1608/1609 R29g+R30結果追記 -->
+<!-- last_updated: 2026-03-31 cmd_1627 BB前処理偵察+注入ポイント追記 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -358,6 +358,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - **R28-OOS 過適合なし(cmd_1580): WF-OOS 7窓で旧忍法Ward ClSel過適合フラグなし**。劣化率<30%全K。Ward K=4がOOS最良(CAGR74.0%/Sharpe2.02/Calmar3.57)。Ward vs Simple Momentum: 全KでWard優位(Sharpe差+0.28〜0.49)。Ward vs 1/N EW: K=4,5がEW(Sharpe1.89)上回る。**OOSでクラスタリング付加価値確認**
 - R28-K2端点検証(cmd_1584): K=2は全K中CAGR最高(旧61.3%/シン75.8%)だがMaxDD最悪(旧-32.2%/シン-20.4%)。旧は超越条件全FAIL。シンは条件Bのみ辛うじてPASS(Calmar3.72≥3.705)。**K=2は集中リスク許容範囲外。K=3-5が最適帯域**
 - R28-指標感度分析(cmd_1582): 4指標(Momentum/Sharpe/Calmar/Sortino)×K=3,4,5=12パターン全てWardFoF全員保有(Sharpe1.85)に劣後。Sharpe選抜K=5が1.80で最高。Sortino-Momentum間ランク相関0.49で最も独立。**指標空間でもWard改善不可**
+- **PD-004裁定(2026-03-31殿裁定): Ward FoFはkeep(継続)**。R28-R30研究で付加価値ほぼゼロ+β調整後超越条件全FAIL確定だが、殿判断で維持
 - R28-Momentum持続性(cmd_1583): 個別自己相関は全lag非有意。クロスセクショナルhit rateはK=3,4で高度有意(短期1ヶ月)だが長期lookbackで減衰。**R28のmomentum前提は弱い。12ヶ月lookbackの理論的根拠は薄い**
 - **R28-シンOOS(cmd_1585): K=3 Calmar41.6%劣化=OVERFIT**。K=4はCalmar28.1%劣化でOK。CAGR劣化は全K7%以内。Ward vs SimpleMom付加価値は旧忍法比半減。**cmd_1581のK=3超越条件B+C PASSはOOSで過適合の可能性。シンでもK=4がOOS最良**。L516登録
 - R28-シン指標感度(cmd_1586): シンClSel 4指標(Momentum/Sharpe/Calmar/Sortino)×K=3,4,5=12パターン完了。Sortino K=3がCAGR75.3%/Sharpe1.81/Calmar5.29/MaxDD-14.2%で全方式最高。**超越条件ではmomentum最優(2/3 PASS)。Sortino1/3(Bのみ)、Sharpe/Calmar0/3**。momentumはUWP3m(最短)で条件C PASS。指標変更で超越条件改善せず
@@ -379,6 +380,23 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - R28-Sortino LB=2m BT(cmd_1601): **Sortino×LB=2mは全K全指標でLB=12mに劣後。α share3.4%**(LB=12m α10%の1/3)。β=0.951(low-β)で鉄壁/常勝モードに偏向。信号安定性STABLE(CV1.58<2.0)だが6m/12mより大幅不安定。momentum LB=2m(α9.2%)よりα低い。**Sortino×短期LBの組み合わせはα効率を悪化させる**
 - **R28-LB=2m OOS超越(cmd_1602): raw超越条件C PASS(1/3)**。K=3/K=4ともUWP≤5でC PASS。**LB=2mが唯一ClSelでOOS超越条件Cを通す方式**。ただし**β調整後は0/3 FAIL**。LB=12m ClSel全方式0/3 FAILとの明確な差
 - R28-Sortino LB=2m OOS(cmd_1603): **Calmar劣化56.9%=OVERFIT**(LB=12m54.4%と同水準)。momentum LB=2m(-23.5%)とは対照的。**Sortino過適合はLBでなく指標特性(下方偏差推定不安定性)に起因**。momentum LB=2mが最もα効率の高い方式(α7.5%)。L527登録
+
+### R28 研究教訓（cmd_1579-1603）
+
+| ID | 結論(1行) | 出典 |
+|----|----------|------|
+| L516 | WF-OOS Calmar劣化はMaxDD悪化とCAGR劣化を分離評価すべし | cmd_1585 |
+| L517 | momentum選出は高β構造バイアス(p<0.0001)。CAGR向上の95.8%はβ由来 | cmd_1591 |
+| L518 | Sortino選出はfull-sample MaxDD優位がOOSで倍増し消滅する | cmd_1590 |
+| L519 | OOS個体ベスト≠full-sample。超越条件の閾値はOOS固有値で再計算必須 | cmd_1592 |
+| L520 | CLUSTER_LOOKBACK=IS長のときIS増加は選択に影響しない | cmd_1593 |
+| L521 | β中立指標(Sortino/Calmar)のα効率はmomentumの2倍以上だが超越条件は不十分 | cmd_1596 |
+| L522 | Sortino選出はlow-β PFを選びα成分2.4倍。選出指標がβプロファイルを構造的に決定 | cmd_1595 |
+| L523 | overlapping-window mechanical correlation trap。LB>1でt統計量が桁違いに膨れる | cmd_1594 |
+| L525 | ClSel K値増加でα効率単調減少(K=2:6.5%→K=5:1.0%)。分散はβ希釈+α希釈 | cmd_1597 |
+| L526 | 短LB momentum選出はβ緩和するがリスク指標(MaxDD/UWP)を大幅悪化 | cmd_1599 |
+| L527 | Sortino過適合はLB短縮で解消しない。指標特性(下方偏差推定不安定)に起因 | cmd_1603 |
+| L529 | NewHigh/UWP選出指標はLB短区間(1-4m)で差別化力が弱い | cmd_1608 |
 
 ### 確定パラメータ（殿裁定 2026-03-19）
 
@@ -608,6 +626,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - R29f-kyu結論(cmd_1607): **旧忍法15体 LB×4指標2Dグリッド ClSel WF-OOS**。48セル全実行。**BEST: LB=2 Calmar CAGR=77.4%, 劣化9.2%**。殿基準PASS=38/48。Calmar劣化<30%=48/48(全セル、過適合なし)。Momentum列がCAGR最高値独占(LB5:71.9%,LB2:71.3%)。**旧忍法は殿基準PASS率が大幅に高い(38/48 vs shin 2/48)=MaxDDが浅い** → `queue/reports/kotaro_report_cmd_1607.yaml`
 - R29g-shin結論(cmd_1608): **シン忍法v2 20体 NewHigh+UWP追加2指標×12LB=24セルWF-OOS**。殿基準20/24 PASS。6指標統合BEST=LB6 Momentum(CAGR 88.5%, Degrad -5.1%)が依然最強。**NewHigh/UWPはLB1-4で同一体を選出(差別化不可)、LB5+で分岐**。NewHigh LB=11最高CAGR(71.6%)、UWP安定64-69% CAGR。既存4指標より低CAGRだが低MaxDD(-20~-23%)/低UWP(3-7m)で安定性優位 → `queue/reports/hayate_report_cmd_1608.yaml`
 - R29g-kyu結論(cmd_1609): **旧忍法15体 NewHigh+UWP追加24セルWF-OOS**。殿基準14/24 PASS。6指標統合最適LB=2 Calmar(CAGR 77.4%, 劣化9.2%)。**R29f-kyu(4指標48セル)とマージして6指標統合ヒートマップ出力** → `queue/reports/kagemaru_report_cmd_1609.yaml`
+- R30-OPTICS denoise(cmd_1623): **MP法denoised相関+OPTICS密度ベースClSel vs Ward K=3(raw)**。9LB値比較。Ward 7/9 LB値でSharpe/CAGR/MaxDD優位。OPTICS LB>=24でxi抽出が単一クラスタに退化(N=20小集団でreachability同一化)。LB=18: OPTICS Sharpe=1.836微優位だがMaxDD-0.27(Ward-0.21)劣位。β調整: 両手法ともalpha負。**密度ベースClSelはN>=50以上で有効。小集団にはWard K指定が適切(L530)** → `outputs/analysis/nested_fof/r30_denoised_optics_vs_ward.yaml`
 - R30-shin結論(cmd_1604): **20体全個体WF-OOS(IS=60m,OOS=12m,step=12m,8窓)+buy&holdベンチマーク**。面: CAGR>TQQQ&TECL=20/20、過適合SUSTAIN=20/OVERFIT=0(全体OOS≥FS)。殿基準ALL_PASS=7/21(**MaxDD>SPYがボトルネック**: 6/20のみ)。点: CAGR1位=加速D-常勝(96.8%)、alpha>0=8/20。**ClSel K=3 LB=2m: CAGR75th(rank6/20)/Sharpe95th(rank2/20)**。EW20 OOS: CAGR72.3%/Sharpe1.77/Calmar3.18 → `queue/reports/hanzo_report_cmd_1604.yaml`
 - R26結論: 全PF65体2Dグリッド171通り(K=2-20×LB=12-60)。**最適(K*,LB*)=(6,18) Sharpe=1.492**。**Sharpe優位70.8%(121/171)、CAGR優位67.3%、MaxDD優位95.9%(164/171)**。mean Sharpe=1.402, std=0.048, peak_ratio=1.064=頑健。R24(21体)overlap99セルでR26全敗(65体=分散でSharpe水準低下。構造は頑健)。**最適K: R24=4→R25=3→R26=6（体数増でK増加傾向）。LB: R24=30→R25=24→R26=18（体数増でLB短縮傾向）。三段階(12→21→65体)全てで二段EWのSharpe/MaxDD優位構造は一貫**
 - R11 M4とR2の差分: 追い風-鉄壁(M4) vs 追い風-激攻(R2)のみ。MaxDD大差(-11.5% vs -16.7%)
@@ -615,3 +634,63 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - R27結論(cmd_1436): **WardTwoStageEWビルディングブロック実装**。R1-R26研究結論を汎用モジュール化(`scripts/analysis/nested_fof/building_block.py`)。内部K×LBグリッドサーチで最適パラメータ自動決定。R24/R25/R26の3データセット(21体/12体/65体)で既知最適(K*,LB*)再現確認+Sharpe 1e-4以内一致。コールドスタート(データ不足時1/N EW)・k_max自動クランプ実装済み
 - R27-旧PF結論(cmd_1441): **旧忍法15体+旧四神12体のWard+TwoStageEW 2Dグリッド分析**。旧忍法: K*=4,LB*=24,Sharpe=2.01,TwoStageEW優位率49.6%。旧四神: K*=4,LB*=12,Sharpe=1.55,TwoStageEW優位率76.7%。合計27体: K*=12,LB*=24,Sharpe=1.75。R25(12体,1.48)/R26(65体,1.49)より高Sharpe → `queue/archive/reports/hayate_report_cmd_1441_20260330.yaml`
 - ネオ五神偵察(cmd_1442): **GLD/USO/TIPの既存4absolute資産との相関偵察**。候補-既存max|r|: GLD=0.343(最有力), USO=0.378(次点), TIP=0.769(LQD冗長→不適)。危機時: GLD=利上げ時独立(全<0.17)、USO=COVID時VIX連動(0.719)、TIP=両危機でLQD完全連動。GLD独自ドライバー(中銀/地政学/インフレ) → `queue/archive/reports/hanzo_report_cmd_1442_20260330.yaml`
+- **Standard PF前処理研究日誌**: 思考・判断・結果の時系列記録。候補8手法の選別経緯、本命2つ(Gerber+LW)の研究設計、結果記入欄 → `docs/research/standard-pf-preprocessing-journal.md`
+- BB前処理偵察(cmd_1627): **モメンタム系3BB+全7BB前処理不在確認+注入ポイント特定**。全BB共通基盤=calculate_composite_momentum_vectorized、生close直接pct_change(前処理なし)。注入ポイント5箇所: (A)ブロック内price取得後(副作用小・推奨), (B)base.py load_ticker_prices共通層, (C)vectorized_momentum.py計算基盤層, (D)ティッカー選出ロジック内(Gerber相関), (E)新規SelectionBlock(Gerber独立BB)。加速BBは短期/長期ratio/diffで平滑化と構造的に重複しない(組合せ可)。MonthlyReturnMomentumFilterはDB直接読込で独立。recalculate_fast.py Phase2 momentum_cache生成パスは前処理導入時に整合要件あり。研究仮説3件: H1-EWMA平滑化SNR改善, H2-Gerber閾値低相関選出, H3-対数リターン頑健性 → `queue/reports/hanzo_report_cmd_1627.yaml` / `queue/reports/kagemaru_report_cmd_1627.yaml`
+- EMA平滑化研究(cmd_1629): **5PF×5span(0/5/10/21/42)=25条件。close→EMA(span)→pct_change→momentum**。**DM3 span=42でCAGR2倍(0.11→0.23)/Sharpe45%改善**が注目結果。DM7+(504D lookback)はEMA影響ほぼなし。DM6(15D短期lookback)はEMA劣化(遅延が有害)。**EMA効果はlookback依存: 短期PFに恩恵、超短期に有害、長期に不変**。span=0 baseline誤差2-8%(リバランスタイミング簡易実装差) → `queue/archive/reports/hayate_report_cmd_1629_20260331.yaml`
+- Gerber gate-level threshold研究(cmd_1628): **65PF×5k(0.0/0.25/0.5/0.75/1.0)=325件。gate判定: diff=mom(asset)-mom(DTB3)>k*σ(diff)→BUY**。k=0.0=本番一致(match率85-97%、リバランス簡易実装差)。才蔵return-level GS1(FAIL)→半蔵gate-level修正。L532: cmd仕様の適用レベル(gate vs return)を実装前にコード注入ポイントと照合確認すべし → `queue/archive/reports/hanzo_report_cmd_1628_20260331.yaml`
+- LW shrinkage研究(cmd_1630): **65PF×8config(baseline+ApproachA/B/C×5閾値)=520 walkforward runs**。3アプローチ比較: A(リスク調整momentum/σ)=多ticker PFで最大乖離、B(shrinkage α*mean+(1-α)*momentum)=α小で効果微小、C(z-score threshold gate)=**threshold≥0.5で有意差、≥1.0で顕著**。単一ticker PFでは全アプローチ同一(共分散shrink対象なし)。sklearn LedoitWolf使用 → `queue/reports/kagemaru_report_cmd_1630.yaml` / `outputs/analysis/standard_pf_preprocessing/ledoit_wolf_study_results.yaml`
+- FFD研究(cmd_1631): **5PF×5variant(baseline/d_opt/0.3/0.5/0.7)。結論: FFD×AbsoluteMomentumは構造的に非機能**。FFD値にprice level成分が残存→stock FFD>>DTB3 FFD→AbsMom判定が常時通過→Whipsaw=0で全期間ロング固定。FFDは入力前処理としてMomentumFilterランキングには影響するが、AbsMomゲートとしては原理的に無効。d_opt: TQQQ/TECL/XLU=0.25, GLD/LQD/SPXL=0.20, TMF=0.15, TMV=0.05, VIX=0.00(既定常), DTB3=1.00 → `queue/archive/reports/tobisaru_report_cmd_1631_20260331.yaml`
+- EMA 65PF全数評価(cmd_1632): **65PF×5span(0/5/10/21/42)=325件walkforward**。cmd_1629(5PFのみ)を65PF全数に拡張。pipeline_configからreference_assetモードstandard PFを自動検出。シン四神12体含む全PFに5指標(CAGR/Sharpe/MaxDD/whipsaw_count/match_rate_vs_span0)算出。ema_smoothing_results_full.yaml出力。commit bd88221d → `outputs/analysis/standard_pf_preprocessing/ema_smoothing_results_full.yaml`
+- Kalman Filter研究(cmd_1634): **65PF×4mode(auto_EM/fixed_qr0.01/0.1/1.0)=260件walkforward**。1D random walk+noise KF。auto EM推定(B3)平均CAGR=0.3386、fixed最良qr_0.1(B1)=0.3516。**auto推定はbest fixedより-0.013(やや劣る)**。auto推定のQ/R比は大半4-7に収束(高応答=軽い平滑化)。Benhamou(2018)準拠。半蔵impl → `outputs/analysis/standard_pf_preprocessing/kalman_filter_results.yaml`
+- L1 Trend Filter研究(cmd_1633): **65PF×5lambda(0/1/10/100/1000)=325件walkforward**。cvxpy凸最適化でL1区分線形トレンド抽出。**ユニバーサル最良lambda=10(mean CAGR=34.62%)**。per-PF best分布: lam0=14,lam1=17,lam10=8,lam100=12,lam1000=14(均等→overfitリスク)。**22/65PF(34%)に>5pp neighbor gapのoverfit警告**。影丸impl → `outputs/analysis/standard_pf_preprocessing/l1_trend_filter_results.yaml`
+- PE gate研究(cmd_1635): **65PF×16configs(4window[12,24,36,48M]×4threshold[no_gate,0.7,0.8,0.9])=1040件walkforward**。Bandt&Pompe(2002)準拠PE(m=5,τ=1)。**m=5ではPE値が低くgate大部分未発火**。window=12/24はPE<全閾値(ベースラインと同一)。window=36/t=0.7のみ発火(CAGR win率21.5%)。window=48/t=0.7発火(win率7.7%)。**PE gateは月次リターンのm=5では実用的に無効**。L533: m=5は120パターンの疎分布→低閾値(0.3-0.5)検討要。疾風impl(才蔵・小太郎FAIL→3回目) → `outputs/analysis/standard_pf_preprocessing/entropy_gate_pe_results.yaml`
+
+## §29. 金融ML知識辞書 拡充 (cmd_1636-1653, 2026-04-01)
+
+前処理研究(§28)の文献サーベイ30+論文の知見が辞書に未記録だったことを契機に、一次知識層の大規模拡充を3波で実施。
+guide.mdに純度ルール（一次知識層汚染防止）を追加後、全忍者6名並列投入×3波。
+
+| Wave | cmd | エントリ数 | 領域 |
+|------|-----|----------|------|
+| 1 | cmd_1636-1641 | 25件 | トレンド推定(L1TF/Kalman/FDA/AdaptiveKalman)、エントロピー(PE/Jump/Shannon/Transfer)、信号分解(SSA/VMD/SG/CF)、適応的(DML/GOC/BBT/SlowMom+CPD)、リスク(JumpModel/VolScale/MedianMom/NetworkMom)、メタ知見(S02-S05/V04) |
+| 2 | cmd_1642-1647 | 18件 | モメンタム正典(TSMOM/XSMOM/DualMom)、PF構築(MVO/Ward/RiskParity/BL/MaxDiv/Kelly)、ボラティリティ(GARCH/CVaR/EWMA)、ML基盤(Bootstrap/FeatImp/SeqBoot)。**cmd_1643(Crash/LifeCycle/RegimeSw)ファイル未作成** |
+| 3 | cmd_1648-1653 | 18件 | cmd_1643穴埋め(M40/M41/M54)、資産価格(CAPM/FF3/Carhart/FF5/APT)、時系列(ARIMA/VAR/Cointegration)、統計検定(ADF/KPSS/Ljung-Box/Jarque-Bera/Granger) 、マイクロストラクチャー(Amihud/VPIN) |
+
+**累計61エントリ**(methods/47 + validation/8 + portfolio/6 + sources/5 + pitfalls/3)。純度検証PASS（プロジェクト固有データ混入0件）。
+
+残課題 → `docs/research/research-todo.md`
+
+## §29. Standard PF FDA Smoothing研究 (cmd_1666)
+<!-- last_updated: 2026-04-01 -->
+
+FDA(Functional Data Analysis) B-spline smoothingの5PFリトマス紙検証。Boubaker et al.(2021) FRL準拠。
+
+| 条件 | K={4,8,16,32} × λ={0,1e-4,1e-2,1} = 16条件 × 5PF = 80件walkforward |
+|------|------|
+| 実装 | `scripts/analysis/standard_pf_preprocessing/fda_smoothing_study.py` (790行) |
+| 結果 | `outputs/analysis/standard_pf_preprocessing/fda_smoothing_results.yaml` |
+
+**DM3リトマス結果** (baseline: CAGR=0.109, Sharpe=0.456, MaxDD=-0.788):
+- Best性能(K=32,λ=0): CAGR+232%, Sharpe+88%, MaxDD+31% — **ただしMatch49.5%(シグナル大幅乖離)**
+- バランス(K=8,λ=0.01): CAGR+158%, Match41%
+- 高Match(K=4,λ=0): CAGR+49%, Sharpe+23%, Match50.8%
+
+**知見**: K増大は性能向上とMatch率低下のトレードオフ。DM7+のみK=32でMatch98.4%と例外的高整合。PFごとにK感度が大きく異なり一律パラメータ選択は不適。OOS検証(cmd_1660)で判定完了 → 下記§30参照。
+
+## §30. EMA/L1 OOS検証 — overfit定量判定 (cmd_1660)
+<!-- last_updated: 2026-04-01 -->
+
+EMA平滑化(cmd_1632)とL1 Trend Filter(cmd_1633)のパラメータ選択がoverfitか本物かを2段階検証。
+
+| Stage | 手法 | EMA結果 | L1結果 |
+|-------|------|---------|--------|
+| Stage1 IS/OOS split | 65PF×5params。劣化率<30%=ROBUST | universal span=5 **ROBUST**(median deg=-3.6%) | universal lambda=1 **ROBUST**(median deg=-7.7%) |
+| Stage1 分布 | OVERFIT/SUSPECT/ROBUST | 4/18/43 | 7/14/44 |
+| Stage2 PBO(CSCV 70組合せ) | Probability of Backtest Overfitting | **PBO=0.71 OVERFIT** | **PBO=0.54 OVERFIT** |
+| DM3リトマス紙 | Stage1+Stage2 | EMA PBO=0.26 **ROBUST**(span=42, IS Sharpe=0.66→OOS=0.67) | L1 PBO=0.00 **ROBUST**(lambda=1000, IS=1.01→OOS=1.23) |
+
+**結論**: 全体PFレベルではパラメータ選択にoverfit傾向あり(PBO>0.5)。ただしDM3は例外的にROBUST。assumption_invalidation: cmd_1632/1633の「overfit不明」前提を解消。
+
+**性能知見**: L1 cvxpy計算で(ticker,lambda)キャッシュ適用 → 650→65回に削減、実行時間4h→1h(10倍高速化)。LC登録推奨。
+
+→ `queue/reports/saizo_report_cmd_1660.yaml` | `outputs/analysis/standard_pf_preprocessing/oos_verification_results.yaml`

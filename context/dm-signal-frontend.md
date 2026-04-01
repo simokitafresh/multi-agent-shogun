@@ -47,7 +47,7 @@ UIライブラリなし（全13コンポーネント手製）。
 | Rolling Returns | `/rolling-returns` | RollingReturns |
 | Docs/FAQ | `/docs`, `/faq` | 静的 |
 | Admin | `/admin` | Portfolios, DB status |
-| Admin FoF | `/admin/fof` | Portfolios |
+| Admin FoF | `/admin/fof` | Portfolios — **WeightBreakdown実装済み**(cmd_1573: debug API→`/api/portfolios/{id}/fof-weights`正式化。WeightBreakdown.tsx新規。Wardクラスタ別色分け表示) |
 | Admin Visibility | `/admin/visibility` | Tiers, Visibility |
 
 → 詳細資料: `docs/research/frontend-components.md` §2

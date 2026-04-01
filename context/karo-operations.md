@@ -97,6 +97,7 @@ friction_type: `ambiguous_scope` | `missing_context` | `too_many_acs` | `unclear
 | 1 | スタンプ(PASS) | — | verdict=LGTM=PASS確定。家老独自レビュー不要 |
 | 2 | GATE判定 | `gate_precheck.gate_prediction` | CLEAR→そのまま進行。WARN→家老がGATE手動確認 |
 | 3 | 教訓処理 | `lesson_extraction` | `register_recommended: true`→`lesson_write.sh`で登録。`false`→スキップ |
+| 3.5 | PI昇華チェック | — | 教訓登録時に問う: (1)この教訓はPI昇格候補か？ (2)既存PIと共通の根はあるか？→あれば原理PIに統合(PI-020参照)。個別=1対1防御、原理=1対N防御 |
 | 4 | Context還流 | `context_reflux` | `needed: true`→`target`のcontextファイルを`content`で更新 |
 | 5 | Dashboard更新 | `dashboard_line` | バンドルの行をdashboard.mdにそのままペースト |
 | 6 | Workaround判定 | `karo_workaround_needed` | `no`→追加作業なし。`yes`→通常のworkaround対応フローへ |

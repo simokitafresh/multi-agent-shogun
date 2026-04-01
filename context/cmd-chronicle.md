@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-03-30 (cmd_1551: 03-09分割+cmd_1535-1550追記) -->
+<!-- last_updated: 2026-04-02 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -489,3 +489,117 @@
 | cmd_1548 | gate_metrics.logローテーション実装 | infra | 03-30 | 1000行超で自動アーカイブ実装。ログ無制限成長防止 |
 | cmd_1549 | GP実装済みステータス更新 | infra | 03-30 | cmd_1528トリアージ結果+本セッション実装GP還流 |
 | cmd_1550 | batsテスト構造マップ作成 | infra | 03-30 | 58bats/593テスト+未テスト131スクリプト分類。カバレッジ盲点可視化 |
+| cmd_1560 | shogun_to_karo.yamlが1937行に肥大化。旧セッションcmd(cmd_1082-1524)をqueue/archive/cmds/に個別YAML退避し、本体をcmd_1525以降のみに軽量化 | infra | 03-30 | shogun_to_karo.yamlからcmd_1525よ |
+| cmd_1561 | 'なぜ分析(殿指摘): shogun_to_karo.yamlが肥大化する根因=cmd完了時にstatusがdelegatedのまま更新されない→archive_completed.shが退避できない。cmd_complete_gate.sh | infra | 03-30 | GATE CLEAR時にSTK statusをdoneに更新 |
+| cmd_training_structural_001 | 自身のtask YAMLを精査し、deploy_task.shの配備フローで設定されるフィールドと残留しうるフィールドを全列挙。構造的な問題があれば報告 | infra | 03-30 | STALE_FIELDS(21)とinject_task_m |
+| cmd_training_structural_002 | inject_task_modifiers.pyの全フィールド注入ロジックを精査。存在チェック(not in task/is None)パターンを全列挙し、stale | infra | 03-30 | inject_task_modifiers.pyの全7関数を |
+| cmd_training_structural_003 | archive_completed.shのsweep modeにおけるreport保護条件(status/archive.done/review_gate.done)を全列���し、レースコンディションが残っていないか検証 | infra | 03-30 | archive_completed.sh sweep mod |
+| cmd_training_structural_004 | cmd_complete_gate.shのGATEチェック全項目を列挙し、GATE CLEAR後のアーカイブ・教訓同期フローの構造的問題がないか検証 | infra | 03-30 | cmd_complete_gate.sh(3937行)の全G |
+| cmd_training_structural_005 | yaml_field_set.shの内部ロジック(AWK flush_block)を���査し、リスト型・ネスト型フィールドの処理制約を全列挙。flock | infra | 03-30 | flush_block(AWK)はスカラー値・空値・コロン含 |
+| cmd_1525 | 教訓301件中272件(90.4%)がuseful:true 0回。注入はされているが活用されない構造問題。根因を特定し改善アクションを設計する | infra | 03-30 | 直近30cmd(1527-1561)の報告YAML202件を |
+| cmd_1562 | 現在771テスト(root:80 + unit:673 + e2e:18)がCI毎回実行。殿指摘「必要性のないテストは負債」。3基準(リグレッション実績/変更頻度/コスト見合い)で全テストを仕分け、削除候補を特定する | infra | 03-30 | 全77テスト監査完了。削除候補(非本番フロー+変更頻度ゼロ) |
+| cmd_1564 | cmd_1525偵察の改善提案3。活用率15%未満の教訓の注入スコアを半減させ、死蔵教訓が永久に枠を占拠する問題を解消する | infra | 03-30 | deploy_task.shの教訓注入スコアにuseful_ |
+| cmd_1563 | cmd_1525偵察で判明した教訓注入useful:false 76.6%の根因（タグ粒度不足+ファイルレベルマッチング欠如）を解消し、教訓活用率を6.2%から大幅改善する | infra | 03-30 | AC1: infra lessons.yamlの全20件un |
+| cmd_1565 | cmd_1562偵察で発見された重複テスト3組(gate_cycle_health/inbox_write/yaml_field_set)をtests/unit/に統合し、CI setup/teardownオーバーヘッドを削減する | infra | 03-30 | 重複テスト3組(gate_cycle_health/inbo |
+| cmd_training_comprehensive_004 | model_switch_preflight.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習 | infra | 03-30 | model_switch_preflight.shを精査し改 |
+| cmd_training_comprehensive_003 | restart_watchers.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習 | infra | 03-30 | restart_watchers.shを精査し改善点3つ特定 |
+| cmd_training_comprehensive_002 | dashboard_auto_section.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習 | infra | 03-30 | dashboard_auto_section.shを精査し改 |
+| cmd_training_comprehensive_001 | reset_layout.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習 | infra | 03-30 | reset_layout.sh Step 7サマリループを最 |
+| cmd_training_comprehensive_006 | restart_watchers.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習。003とは異なる観点で改善点を発見すること | infra | 03-30 | restart_watchers.shを精査し改善点3つ特定 |
+| cmd_training_comprehensive_005 | dashboard_auto_section.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習。002とは異なる観点で改善点を発見すること | infra | 03-30 | dashboard_auto_section.shを精査し改 |
+| cmd_1566 | admin画面のFoF managementでWard PFの内部ウェイト(クラスタリング結果・各構成PFへのウェイト配分)が可視化されておらず、FoF構築時にブラックボックスになっている。現状のadmin画面表示内容と、可視化に必要なデータフローを特定する | dm-signal | 03-30 | FoF管理画面(admin/fof)は構成PF名・数・パイプ |
+| cmd_1567 | シミュレーション(ローカルexperiments.db/fullrecalculate)のパフォーマンス結果と本番DB(Render PostgreSQL)のパフォーマンス結果が乖離している。乖離の原因を特定する | dm-signal | 03-30 | Ward FoF本番vsローカル乖離の根因=experime |
+| cmd_1569 | WardFoFのpipeline_configが本番DBとローカル(fullrecalculate時)で同一か検証。configの差異がパフォーマンス乖離の原因となりうる | dm-signal | 03-30 | Ward FoF pipeline_config本番DB v |
+| cmd_1568 | 'Ward PFのウェイトがmomentum_data["weights"]経由でexpand_portfolio_to_tickersに正しく伝達されているか検証。price_ratio_calculator.py:1067-1070のEWフォールバックが本番で意図せず発動している可能性がある(Silent Failure仮説)' | dm-signal | 03-30 | Ward PFのウェイト伝達パスにSilent Failur |
+| cmd_1570 | 殿がWard FoFのパフォーマンスを「記憶よりショボい」と報告。Ward Two-Stage EW(k=5)の構造的制約、素材(旧忍法15体)の性能、k値の最適性を検証し、パフォーマンス低下の因果を特定する | dm-signal | 03-30 | Ward FoF(旧忍法-Ward)の12ヶ月パフォーマンス |
+| cmd_1571 | 'cmd_1568偵察で発見。recalculate_fof.py:866で非リバランス日のenhanced_momentum_dataが{skipped:true}のみとなり、weightsキーが消失する。bimonthly/quarterly Ward/KalmanMeta FoFでexpand_portfolio_to_tickersのEWフォールバック(price_ratio_calculator.py:1067-1070)が意図せず発動する時限爆弾。現在の月次Wardは影響なしだが予防的に修正' | dm-signal | 03-30 | 非リバランス日のenhanced_momentum_data |
+| cmd_1572 | cmd_1567偵察で発見。experiments.dbにWard FoF自体(0件)、四つ目3PF(常勝/激攻/鉄壁)、ティッカー4種が欠損。download_prod_data.pyの対象スコープを拡張し再DLでデータ完全性を確保する | dm-signal | 03-30 | download_prod_data.pyのdownload |
+| cmd_1577 | cmd_1570は12ヶ月累積リターンのみ比較(Ward+54.93%,EW+54.69%,差+0.25%)。リスク調整後指標で比較すればWardの分散効果が見える可能性がある(R24-R26ではMaxDD優位率86-96%)。本番141ヶ月全期間でSharpe/MaxDD/Sortino/月次Volatilityを計算 | dm-signal | 03-30 | Ward FoFは1/N EWに対しリスク調整後指標で非優位 |
+| cmd_1579 | 殿の新設計。現行Ward FoFは全15体保有(ウェイト調整のみ)で動的ローテーションがゼロ。Ward clusteringの役割をウェイト決定からselection scope定義に変更する。K個のクラスタに分割→各クラスタ内momentum top 1体を選出→K体EW保有→毎月リバランス。building_block.pyの既存Ward+EWロジックを改変し、旧忍法15体でバックテスト | dm-signal | 03-30 | Ward Cluster Selection(K=3,4,5 |
+| cmd_1581 | cmd_1579は旧忍法15体。シン忍法v2(20体)は相関構造が異なり(cmd_1578:距離26%狭,separability11%悪化)、Wardクラスタが動的(ARI安定性45.5%)。異なる素材プールでWard Cluster Selectionの頑健性を検証。シンのトップ(96.5%)は旧の倍以上で超越条件を満たしやすい可能性 | dm-signal | 03-30 | シンWard Cluster Selection(K=3)は |
+| cmd_1580 | cmd_1579のバックテスト結果が良くても過適合の可能性がある。Walk-Forward OOS(in-sample 60ヶ月→OOS 12ヶ月ローリング)で検証し、OOS期間でもselection ruleの予測力が維持されるか確認する。殿指示「やってみて過適合ではないか検証する」 | dm-signal | 03-30 | Walk-Forward OOS(IS=60m,OOS=12 |
+| cmd_1584 | 殿はN=2-5が現実的と指定。cmd_1579はK=3,4,5をカバー。K=2(2クラスタ→各top1→2体EW)は最小保有数で管理最容易だが集中リスク最大。K=2の特性を独立検証し超越条件を満たすか判定する | dm-signal | 03-30 | 旧忍法15体K=2: CAGR=61.3%,Sharpe=1 |
+| cmd_1582 | cmd_1579はmomentum(12ヶ月累積リターン)で各クラスタtop1を選出。しかしmomentumが最適な選択指標とは限らない。Sharpe/Calmar/Sortinoなど他のリスク調整指標で選出した場合の結果を比較し、R28の最適な選択指標を特定する | dm-signal | 03-30 | Ward Cluster Selection 4指標×K=3 |
+| cmd_1583 | R28のWard Cluster Selectionはmomentum(過去リターン)で次月の保有PFを選出する。もし旧忍法のリターンに平均回帰(mean reversion)が働くなら、momentum strategyは逆効果になる。R28の理論的前提(momentum持続性)を統計的に検証する | dm-signal | 03-30 | 旧忍法15体のmomentum持続性を3観点で検証。AC1: |
+| cmd_1585 | cmd_1581でシンWard ClSel K=3がCalmar4.60/UWP3mで超越条件B+C PASSという重大成果。しかしfull-sample結果のみで過適合未検証。cmd_1580(旧忍法OOS)と同じWalk-Forwardフレームワークでシン素材のOOS検証を実施し、超越条件が過適合でないことを確認する | dm-signal | 03-30 | ShinWardClSel WF-OOS(IS=60m,OO |
+| cmd_1586 | cmd_1581でシンClSel K=3がmomentumでCAGR74.6%。cmd_1582は旧忍法で指標感度分析するが、超越条件PASSしたシン素材での指標感度がより重要。Sharpe/Calmar/Sortinoで選出した場合にCalmar4.60/UWP3mを超える組み合わせがあるか検証 | dm-signal | 03-30 | シンWard ClSel K=3,4,5 x 4指標(mom |
+| cmd_1588 | シンClSel K=3のMaxDD -16.2%は全体統計。実運用では市場暴落時にどう振る舞うかが重要。下落期での月次リターンを個別分析し、ストレス時の耐性を評価する | dm-signal | 03-30 | シンClSel K=3のストレス耐性分析完了。市場下落月(E |
+| cmd_1587 | シンClSel K=3は月次ローテーションだが、実際にどの程度入替が発生するか未知。毎月3体入替なら取引コスト大、同一PF連続選出が多ければ低コスト。本番採用判断に取引コスト/安定性の情報が必須 | dm-signal | 03-30 | Ward ClSel K=3(LB=36m,momentum |
+| cmd_1589 | R28研究シリーズ(cmd_1579-1588)の全結果を1つの統合比較表+推奨にまとめる。殿が本番採用の意思決定を1ファイルで行えるようにする | dm-signal | 03-30 | R28研究シリーズ(cmd_1579-1588)全10報告統 |
+| cmd_1591 | 殿指摘。R28の全分析はraw returnでありベータ未制御。momentum選出は高ベータPFを構造的に掴むバイアスがある。CAGR向上がアルファ(選別の巧さ)なのかベータ(市場露出)なのかを分離し、ClSelの真の付加価値を定量化する | dm-signal | 03-30 | ClSel K=3(momentum)のCAGR向上はほぼ全 |
+| cmd_1590 | cmd_1586でSortino K=3がCalmar5.29/MaxDD-14.2%と全指標最良。cmd_1585ではmomentum K=3のCalmar劣化41.6%(MaxDD-16.2→-25.7)で過適合フラグ。SortinoのMaxDDが元々良好(-14.2%)ならOOS劣化幅が小さい可能性。Sortino選出のOOS信頼性を検証する | dm-signal | 03-30 | Sortino選出Ward ClSel WF-OOS(IS= |
+| cmd_1592 | 殿指摘。超越条件はfull-sampleでのみ判定しておりOOS期間での判定が未実施。OOS同士で比較しなければ公正ではない。OOS期間で個体ベストを再計算し超越条件を判定する | dm-signal | 03-30 | OOS期間(2018-10~2026-03)個体ベスト再計算 |
+| cmd_1593 | 殿指摘。IS=60ヶ月は保守的すぎる可能性。IS長を変えるとOOS結合期間・窓数・結論が変わるか検証する。IS=36(LB=36mちょうど)/48(LB36+momentum12)/60(現行)の3水準でOOS結果を比較し、IS長への結論の頑健性を確認する | dm-signal | 03-30 | シン忍法v2 20体のWard ClSel K=3(mome |
+| cmd_1596 | cmd_1591でmomentumのα寄与4.2%と判明。しかし他3指標(Sortino/Sharpe/Calmar)のβ調整後パフォーマンスは未検証。4指標全てのβ調整後比較テーブルを作成し、真にα効率が高い選出指標を特定する。β露出に頼らない方式の有無を確認 | dm-signal | 03-30 | 4指標(momentum/Sharpe/Calmar/Sor |
+| cmd_1595 | cmd_1591でmomentum選出のα寄与が4.2%と判明(95.8%はβ)。Sortino選出のβプロファイルが異なるか検証する。またcmd_1592がSortino OOS超越条件未完(FAIL)だったが、cmd_1590完了により補完可能。2つの残課題を1cmdで解決 | dm-signal | 03-30 | Sortino選出βプロファイルはmomentumと構造的に |
+| cmd_1594 | 殿指摘。cmd_1583は3/6/12ヶ月の3点しか検証しておらず、過去データで有効とされた4-5ヶ月・10-11ヶ月の隙間期間が未検証。1-12ヶ月の全12水準でクロスセクショナル持続性(hit rate + t検定)を算出し、最適lookback期間を特定する。標準LB(3/6/12)が最適とは限らない | dm-signal | 03-30 | 旧忍法15体+シン忍法v2 20体のクロスセクショナルmom |
+| cmd_1597 | cmd_1589統合レポートで3条件(超越PASS+OOS劣化<30%+Turnover)全PASSはシンClSel K=4 momentum唯一。しかしcmd_1591のβ分離はK=3のみでα4.2%。K=4でもβ主導なら、R28で本番採用に値する方式はゼロとなる。3条件唯一PASSの方式の真の付加価値を最終検証 | dm-signal | 03-30 | K=2-5全水準でβ調整後超越条件全FAIL(16判定全FA |
+| cmd_1599 | cmd_1594でLB=2mが最適momentum持続性と判明(t=4.04)。しかし全ClSelバックテスト(cmd_1581等)はLB=12mで実行。LB短縮で(a)momentum予測力向上→CAGR改善(b)高β | dm-signal | 03-30 | LB=2mはLB=12m対比で全K(3,4,5)でCAGR/ |
+| cmd_1600 | cmd_1599でLB=2mのfull-sample結果を取得後、OOSで過適合検証が必要。LB=12m(cmd_1585)ではCalmar劣化41.6%でOVERFIT。LB=2mは持続性が強い(t=4.04)ためOOS劣化が小さい可能性。LB変更がOOS安定性を改善するか検証 | dm-signal | 03-30 | LB=2m WF-OOS(IS=60m,OOS=12m,st |
+| cmd_1601 | cmd_1600でLB=2m momentumのOOS劣化が-23.5%(改善方向)と判明。cmd_1595でSortinoがα最高効率(10%)と判明。最も有望な組み合わせ=Sortino×LB=2mは未検証。ただしSortinoは下方偏差計算に十分なデータが必要→LB=2mでSortino ratioが安定するか含め検証 | dm-signal | 03-30 | Sortino LB=2mはLB=12m対比で全K全指標劣後 |
+| cmd_1604 | > | dm-signal | 03-30 | 20体全個体WF-OOS(8窓,90m)+buy&holdベ |
+| cmd_1605 | > | dm-signal | 03-30 | 20体個体WF-OOS(IS=60m,OOS=12m,ste |
+| cmd_1606 | > | dm-signal | 03-30 | シン忍法v2 LB×4指標 2DグリッドClSel WF-O |
+| cmd_1608 | > | dm-signal | 03-30 | r29g_shin_clsel_2d_grid_extra. |
+| cmd_1612 | R29研究成果のcontext索引更新（R29f-kyu/R29g-shin/R29g-kyu/R30-shin/cmd_1610の結論還流） | dm-signal | 03-31 | R29g-shin(cmd_1608)+R29g-kyu(c |
+| cmd_1611 | 旧忍法15体の個体WF-OOSベンチマーク（R30-kyu: cmd_1604と同一手法で旧版比較データ作成） | dm-signal | 03-31 | 旧忍法15体個体WF-OOS(7窓84m)完了。全15体CA |
+| cmd_1613 | ClSel本番化偵察: 研究スクリプト→本番パイプライン移行に必要な変更箇所の特定 | dm-signal | 03-31 | ClSel(Cluster Selection)ロジック偵察 |
+| cmd_1610 | FoF管理画面にビルディングブロック可視化を実装（コンポーネントPF×ウェイト表示+Wardクラスタ表示） | dm-signal | 03-31 | — |
+| cmd_1615 | — | infra | 03-31 | inbox_write.sh内のyaml.dump2箇所(L |
+| cmd_1617 | > | infra | 03-31 | cmd_save.sh Check12のcheck_cont |
+| cmd_1619 | > | infra | 03-31 | deploy_task.shのinject_ac_versi |
+| cmd_1620 | 'gate_loop_health.shのWARNINGメッセージ「FAIL発生中だがAUTO-FIX未稼働。auto-fix対象拡大を検討せよ」が | infra | 03-31 | gate_loop_health.shのLoop Statu |
+| cmd_1621 | スキル棚卸し: writer系名称統一+memory-teire廃止 | infra | 03-31 | MEMORY.md L109のスキル参照名をweekly-r |
+| cmd_1622 | L3 FoF Per-FoF Signal query除去(signal_cache直接参照化) | dm-signal | 03-31 | — |
+| cmd_1623 | ClSel研究: MP denoising + OPTICS密度ベースクラスタリング | dm-signal | 03-31 | building_block.pyにdenoise_corr |
+| cmd_1624 | 知識辞書拡充: Gerber Statistic + Shrinkage Estimators | dm-signal | 03-31 | M14 Gerber Statistic (237行) + |
+| cmd_1625 | 知識辞書拡充: OPTICS Clustering + 共分散前処理DM-Signal解釈 | dm-signal | 03-31 | — |
+| cmd_1626 | 軍師review_log 3分離: stats/gp_tracker/log本体 | infra | 03-31 | — |
+| cmd_1627 | 偵察: standard PF前処理適用ポイント特定(AbsoluteMomentum+加速BB実装精読) | dm-signal | 03-31 | 3ブロック(MomentumFilter/AbsoluteM |
+| cmd_1628 | 研究: standard PF Gerber閾値フィルタ効果検証 | dm-signal | 03-31 | — |
+| cmd_1629 | 研究: standard PF リターン平滑化(EMA)効果検証 | dm-signal | 03-31 | — |
+| cmd_1630 | 研究: standard PF Ledoit-Wolf shrinkage効果検証 | dm-signal | 03-31 | — |
+| cmd_1631 | 研究: standard PF Fractional Differentiation効果検証 | dm-signal | 03-31 | — |
+| cmd_1632 | 研究: standard PF EMA平滑化 65PF拡張再実行 | dm-signal | 03-31 | ema_smoothing_study.pyを65PF対応に |
+| cmd_1633 | 研究: standard PF L1 Trend Filter 65PF検証 | dm-signal | 03-31 | L1 Trend Filter 65PF study完了。c |
+| cmd_1634 | 研究: standard PF Kalman Filter 65PF検証 | dm-signal | 03-31 | Kalman Filter study完了。65PF×4mo |
+| cmd_1635 | 研究: standard PF Entropy Gate (Permutation Entropy) 65PF検証 | dm-signal | 03-31 | PE gate study完了。m=5, window=[1 |
+
+## 2026-04
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| cmd_1636 | 知識辞書: 平滑化・信号抽出系4手法(M17-M20/M33) | dm-signal | 04-01 | — |
+| cmd_1637 | 知識辞書: エントロピー・ノイズ検出系4手法(M19/M21/M22/M23) | dm-signal | 04-01 | — |
+| cmd_1638 | 知識辞書: 分解・フィルタ系4手法(M24/M25/M28/M30) | dm-signal | 04-01 | methods/に4ファイル(ssa.md,vmd.md,s |
+| cmd_1639 | 知識辞書: リスク・PF関連4手法(M26/M27/M29/M34) | dm-signal | 04-01 | methods/にM17-M20の4ファイル(stochas |
+| cmd_1640 | 知識辞書: 適応的・レジーム系4手法(M31/M32/M35/M36) | dm-signal | 04-01 | methods/に4ファイル(dynamic-momentu |
+| cmd_1641 | 知識辞書: メタ知見sources/validation 5件(S02-S05/V04) | dm-signal | 04-01 | sources/4件(S02-S05: Valeyre ch |
+| cmd_1642 | 知識辞書: モメンタム正典3件(TSMOM/CS-Mom/Dual Mom) | dm-signal | 04-01 | — |
+| cmd_1643 | 知識辞書: モメンタムリスク+レジーム3件(Crash/LifeCycle/RegimeSw) | dm-signal | 04-01 | — |
+| cmd_1644 | 知識辞書: PF構築正典A 3件(MVO/Ward/RiskParity) | dm-signal | 04-01 | — |
+| cmd_1645 | 知識辞書: PF構築正典B 3件(BL/MaxDiv/Kelly) | dm-signal | 04-01 | — |
+| cmd_1646 | 知識辞書: ボラティリティ・リスク基盤3件(GARCH/CVaR/EWMA) | dm-signal | 04-01 | — |
+| cmd_1647 | 知識辞書: 統計・ML基盤3件(Bootstrap/FeatImp/SeqBoot) | dm-signal | 04-01 | — |
+| cmd_1648 | 知識辞書: モメンタムリスク+レジーム3件(M40 Crash/M41 LifeCycle/M54 RegimeSw) — cmd_1643穴埋め | dm-signal | 04-01 | methods/に3ファイル(momentum-crashe |
+| cmd_1649 | 知識辞書: 資産価格モデルA 3件(M55 CAPM/M56 FF3/M57 Carhart) | dm-signal | 04-01 | methods/に資産価格モデル3ファイル(capm.md, |
+| cmd_1650 | 知識辞書: 資産価格モデルB+時系列基盤(M58 FF5/M59 APT/M60 ARIMA) | dm-signal | 04-01 | methods/に3ファイル(fama-french-5-f |
+| cmd_1651 | 知識辞書: 診断的統計検定A 3件(V05 ADF/V06 KPSS/V07 Ljung-Box) | dm-signal | 04-01 | validation/に診断的統計検定3ファイル(adf-u |
+| cmd_1652 | 知識辞書: 診断検定B+因果検定(V08 JB/M61 Granger/M62 Cointegration) | dm-signal | 04-01 | validation/jarque-bera.md, met |
+| cmd_1653 | 知識辞書: 時系列+マイクロストラクチャー3件(M63 VAR/M64 Amihud/M65 VPIN) | dm-signal | 04-01 | methods/に3ファイル(var.md, amihud- |
+| cmd_1655 | cmd_1654リグレッション修正 — FoFのuse_raw_signal伝播がsignalテーブル不在で破綻 | dm-signal | 04-01 | fullrecalculate完了(375s)。旧忍法15F |
+| cmd_1654 | pending月の保有シグナル表示がstale — signal(新)からexpanded_tickers/holding_signal表示を構築 | dm-signal | 04-01 | pending月のexpanded_tickersがhold |
+| cmd_1657 | CI RED修正 — Unit Tests (bats) FAIL (run 23832408726) | infra | 04-01 | — |
+| cmd_1658 | ClSel研究: 共分散前処理4条件比較 (raw/MP/Gerber GS1/Ledoit-Wolf) × Ward K=3 | dm-signal | 04-01 | — |
+| cmd_1659 | 研究日誌をリポジトリに配置 + context参照修正 | dm-signal | 04-01 | Gist aa7d9a9fの内容をdocs/research |
+| cmd_1662 | deploy_task.shに配備前cmd_id衝突チェック追加(GP-132) | infra | 04-01 | 二重配備検出ロジックはdeploy_task.sh L297 |
+| cmd_1663 | gate_report_format.shにverdict-BC矛盾検出追加(GP-132/LG005) | infra | 04-01 | GP-163: gate_report_format.shに |
+| cmd_1661 | Hook最適化 — 毎ツールコールオーバーヘッド半減(修行兼務) | infra | 04-01 | hook処理時間93%削減。python3→bash+jq変 |
+| cmd_1656 | deploy_task.sh AWK id:パターン修正 — 手書きYAML形式対応(explicit check抽出 + scout_gate) | infra | 04-01 | deploy_task.sh 2箇所修正完了: (1)AC1 |
+| cmd_1667 | inbox_watcher BUSY判定タイムアウト追加 — idle_flag遅延によるnudgeフリーズ修正 | infra | 04-01 | inbox_watcher BUSY判定に@last_act |
+| cmd_1666 | 研究: Standard PF FDA Smoothing 5PFリトマス紙検証 | dm-signal | 04-01 | fda_smoothing_study.py実装。5PF×1 |
+| cmd_1670 | CI RED修正 — test_cmd_save_ac_paths.bats 3テストFAIL (CMD_BLOCK_NC未設定) | infra | 04-01 | test_cmd_save_ac_paths.batsのラッ |
+| cmd_1671 | ninja_monitor.sh 2バグ修正 — pstree永久BUSY化 + pipeline空idle通知スキップ | infra | 04-02 | ninja_monitor.sh 2バグ修正完了。AC1: |
+| cmd_1672 | deploy_task.sh direct mode追加 — 修行タスク配備パイプライン正常化(GP-138) | infra | 04-02 | deploy_task.shに--direct mode追加 |
+| cmd_1673 | 編成切替スキル /hensei 構築 — 稼働中モデル混成切替+Opus全戻し | infra | 04-02 | get_agent_model()にclaude-sonne |
+| cmd_1676 | gate_report_format.sh stale_reportチェック修正 — task_id/cmd_idサフィックス不一致(PD-005) | infra | 04-02 | gate_report_format.sh L367のsta |

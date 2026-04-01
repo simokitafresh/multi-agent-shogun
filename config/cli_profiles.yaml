@@ -13,7 +13,7 @@ profiles:
     # 表示名 (sync_pane_vars.sh → tmux @model_name)
     display_name: "Opus"
     # 起動コマンド (lib/cli_adapter.sh L137-138)
-    launch_cmd: "claude --dangerously-skip-permissions"
+    launch_cmd: "/home/simokitafresh/bin/claude --dangerously-skip-permissions"
     # CTXパース正規表現 (ninja_monitor.sh L181, L518)
     ctx_pattern: "CTX:[0-9]+%"
     # CTX解釈モード: "usage"=使用率(Claude), "remaining"=残量(Codex)

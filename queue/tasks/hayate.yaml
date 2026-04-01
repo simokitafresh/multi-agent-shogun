@@ -1,96 +1,23 @@
 task:
-  _ac_task_id: ci_fix_insight_sanitize
-  _ac_worker_id: null
-  ac_version: b99834bc
-  acceptance_criteria:
-  - ac: 'AC1: insight_write.sh L145のpriorityフィールドにyaml_escape()が適用され、YAMLメタ文字を含むpriority値が安全に書込まれる'
-  - ac: 'AC2: bats tests/test_insight_sanitize.bats 全テスト(T-001〜T-008)がPASS、SKIP=0'
-  command: 'CI RED修正。scripts/insight_write.sh L145のpriority書込みにyaml_escape()が未適用。f.write(f''  priority:
-    {priority}\n'')をf.write(f''  priority: {yaml_escape(priority)}\n'')に変更せよ。yaml_escape関数はL137-139で定義済み(json.dumps)。テスト:
-    bats tests/test_insight_sanitize.bats のT-006がPASSすること。全テストもPASSすること。'
-  deployed_at: '2026-04-02T00:43:00'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────"
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: ci_fix
-  progress: ''
-  project: infra
-  related_lessons:
-  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-    id: L074
-    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-    id: L063
-    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-  report_filename: hayate_report_ci_fix.yaml
-  report_path: queue/reports/hayate_report_ci_fix.yaml
-  scout_exempt: true
-  status: done
-  stop_for: []
-  target_path: scripts/insight_write.sh
-  task_id: ci_fix_insight_sanitize
+  task_id: cmd_training_L4_R10_hayate
+  parent_cmd: cmd_training_L4_R10
   task_type: impl
-  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 29
-    top_pattern: 'report_yaml_format(12件)'
-    breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), double_deploy(2件), karo(2件), report_missing(1件), task_redeploy(1件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 6
-    - pattern: 'field_missing'
-      count: 3
-    - pattern: 'lu_structure_error'
-      count: 2
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 16
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'report_yaml_missing'
-      count: 12
-      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
-    - reason: 'empty_lessons_useful'
-      count: 7
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'ac_version_mismatch'
-      count: 6
-      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
-    - reason: 'lesson_candidate_no_reason_empty'
-      count: 3
-      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
-    - reason: 'binary_checks_fail'
-      count: 3
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'lesson_candidate_parse_error'
-      count: 2
-      hint: 'lesson_candidateのYAML構文エラー。インデント・引用符を確認'
-    - reason: 'lesson_candidate_fields_empty'
-      count: 1
-      hint: 'gate BLOCK: lesson_candidate_fields_empty'
-    - reason: 'invalid_lessons_useful_format'
-      count: 1
-      hint: 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止'
-    - reason: 'lesson_candidate_missing'
-      count: 1
-      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
+  project: infra
+  status: done
+  target_path: scripts/cmd_complete_gate.sh
+  command: |
+    cmd_complete_gate.shを精査し改善点を特定・実装・報告せよ。
+    AC1: 改善点3つ特定  AC2: 最高1件実装+commit(bats全量禁止)  AC3: LC+BC+verdict
+    ★ binary_checksはAC別セクション(AC1:/AC2:/AC3:)を維持して記入せよ。構造を壊すな。
+  acceptance_criteria:
+    - ac: "AC1: 改善点3つ特定"
+    - ac: "AC2: 最高インパクト1件実装+commit"
+    - ac: "AC3: lesson_candidate+binary_checks+verdict完全記入"
+  ac_priority: AC1 > AC2 > AC3
+  parallel_ok: [AC1, AC2, AC3]
+  stop_for: []
+  never_stop_for:
+    - bats全量実行禁止(OOM防止)
+    - binary_checksのAC1/AC2/AC3セクション構造を消すな
+  role_reminder: "忍者hayate。このタスクのみ実行せよ。"
+  deployed_at: "2026-04-02T04:01:24+09:00"

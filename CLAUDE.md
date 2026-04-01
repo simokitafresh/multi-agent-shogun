@@ -343,10 +343,12 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
+- CLI起動|`claude --effort high`(--modelなし=1M)が正。`--model opus`=200K厳禁|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 
 ## Cross-Project Context
 - `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md`
+- 修行サイクル: `context/training-cycle.md` — L1-L4全実績+モデル別FP率(§24-25: mixed編成Opus100%/Sonnet0-50%/GPT0-100%)+環境改善履歴。idle忍者配備時に参照
 
 ## Agents
 

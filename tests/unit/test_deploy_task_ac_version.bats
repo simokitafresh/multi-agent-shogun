@@ -961,3 +961,263 @@ EOF
     run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_999
     [ "$status" -eq 1 ]
 }
+
+# =============================================================================
+# LK021: nested ac: format support (cmd_1604+)
+# =============================================================================
+
+@test "LK021: nested ac format (ac: {AC1: {title,criteria}}) is converted and overwrites task ACs" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_1610:
+    project: testproj
+    purpose: test nested ac
+    ac:
+      AC1:
+        title: "NewHigh+UWP実行"
+        criteria:
+          - "新規スクリプト作成"
+          - "入力: 20体"
+          - "K=3, CLUSTER_LOOKBACK=36m"
+      AC2:
+        title: "統合ヒートマップ"
+        criteria:
+          - "6x12ヒートマップ出力"
+          - "最適ペア特定"
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_1610"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_1610/report_merge.done"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "old task"
+  task_type: impl
+  parent_cmd: cmd_1610
+  task_id: cmd_1610_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Stale old AC'
+  _ac_task_id: cmd_OLD_impl
+  _ac_worker_id: sasuke
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    # Nested ac: should be converted and injected
+    run grep "NewHigh+UWP" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "統合ヒートマップ" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    # Old AC should be gone
+    run grep "Stale old AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+    # id: fields should exist for binary_checks extraction
+    run grep "id: AC1" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "id: AC2" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    # check: fields should exist for binary_checks extraction
+    run grep "check:" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "LK021: nested ac format via resolve_cmd_to_task (cmd_id arg)" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_1611:
+    project: testproj
+    type: impl
+    purpose: test nested resolve
+    title: nested resolve test
+    ac:
+      AC1:
+        title: "First task"
+        criteria:
+          - "Do something"
+      AC2:
+        title: "Second task"
+        criteria:
+          - "Do something else"
+          - "Verify result"
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_1611"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_1611/report_merge.done"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "old"
+  parent_cmd: cmd_OLD
+  task_id: cmd_OLD_impl
+  worker_id: sasuke
+  status: done
+  acceptance_criteria:
+  - 'AC1: Old'
+  _ac_task_id: cmd_OLD_impl
+  _ac_worker_id: sasuke
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_1611
+    [ "$status" -eq 0 ]
+
+    # parent_cmd updated
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
+    data = yaml.safe_load(f)
+task = data.get('task', {})
+print(task.get('parent_cmd', ''))
+print(task.get('task_id', ''))
+"
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "cmd_1611" ]
+    [ "${lines[1]}" = "cmd_1611_impl" ]
+
+    # ACs from nested ac: format
+    run grep "First task" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "Do something else" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "Old" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "LK021: nested ac format generates binary_checks in report template" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_1612:
+    project: testproj
+    purpose: test bc extraction
+    ac:
+      AC1:
+        title: "Build feature"
+        criteria:
+          - "Create new file"
+          - "Add tests"
+      AC2:
+        title: "Deploy feature"
+        criteria:
+          - "Run deploy script"
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_1612"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_1612/report_merge.done"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "bc test"
+  task_type: impl
+  parent_cmd: cmd_1612
+  task_id: cmd_1612_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Stale'
+  _ac_task_id: cmd_OLD_impl
+  _ac_worker_id: sasuke
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    # Report template should have binary_checks extracted from nested ac: format
+    local report_file="$TEST_PROJECT/queue/reports/sasuke_report_cmd_1612.yaml"
+    [ -f "$report_file" ]
+    # AC1 and AC2 sections should exist in binary_checks
+    run grep "AC1:" "$report_file"
+    [ "$status" -eq 0 ]
+    run grep "AC2:" "$report_file"
+    [ "$status" -eq 0 ]
+    # Check items from criteria should be present
+    run grep "Create new file" "$report_file"
+    [ "$status" -eq 0 ]
+    run grep "Run deploy script" "$report_file"
+    [ "$status" -eq 0 ]
+}
+
+@test "LK021: flat dict ac format (acceptance_criteria: {AC1: string}) is converted" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_1620:
+    project: testproj
+    purpose: test flat dict ac
+    acceptance_criteria:
+      AC1: "APIエンドポイント作成"
+      AC2: "FE表示実装"
+      AC3: "フォールバック表示"
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_1620"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_1620/report_merge.done"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "old"
+  task_type: impl
+  parent_cmd: cmd_1620
+  task_id: cmd_1620_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Stale'
+  _ac_task_id: cmd_OLD_impl
+  _ac_worker_id: sasuke
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    # Flat dict should be converted with id: fields
+    run grep "id: AC1" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "id: AC2" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "APIエンドポイント作成" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "Stale" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "LK021: archive fallback also handles nested ac format" {
+    # Empty shogun_to_karo
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands: {}
+EOF
+    # Archive with nested ac format
+    mkdir -p "$TEST_PROJECT/queue/archive/cmds"
+    cat > "$TEST_PROJECT/queue/archive/cmds/cmd_1613_done_20260330.yaml" <<'EOF'
+commands:
+  cmd_1613:
+    project: testproj
+    purpose: test archive fallback
+    ac:
+      AC1:
+        title: "Archive AC"
+        criteria:
+          - "Archived criterion"
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_1613"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_1613/report_merge.done"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "archive test"
+  task_type: impl
+  parent_cmd: cmd_1613
+  task_id: cmd_1613_impl
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria:
+  - 'AC1: Stale'
+  _ac_task_id: cmd_OLD_impl
+  _ac_worker_id: sasuke
+EOF
+
+    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    [ "$status" -eq 0 ]
+
+    # ACs from archive should be converted and injected
+    run grep "Archive AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep "Archived criterion" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}

@@ -468,6 +468,94 @@ YAML
     [[ "$status" -eq 0 ]]
 }
 
+@test "Check3-q4: q4_depth=deepでWARNING表示" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_4001:
+    id: cmd_4001
+    command: "深堀り偵察cmd"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "deep — 全忍者投入の万全偵察"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_4001
+    echo "$output" >&2
+    [[ "$output" == *"q4_depth=deep/medium"* ]]
+    [[ "$output" == *"時間コスト"* ]]
+    # 非BLOCKなので保存OK
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check3-q4: q4_depth=mediumでWARNING表示" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_4002:
+    id: cmd_4002
+    command: "中程度深堀りcmd"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "medium — 2忍者並列"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_4002
+    echo "$output" >&2
+    [[ "$output" == *"q4_depth=deep/medium"* ]]
+    [[ "$output" == *"時間コスト"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check3-q4: q4_depth=shallowでWARNINGなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_4003:
+    id: cmd_4003
+    command: "軽量修正cmd"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — 1忍者で完結"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_4003
+    echo "$output" >&2
+    [[ "$output" != *"q4_depth=deep/medium"* ]]
+    [[ "$output" != *"時間コスト"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
+@test "Check3-q4: q4_depth未記入で従来WARNING表示" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_4004:
+    id: cmd_4004
+    command: "q4_depth無しcmd"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_save.sh" cmd_4004
+    echo "$output" >&2
+    [[ "$output" == *"q4_depth未記入"* ]]
+    [[ "$output" != *"q4_depth=deep/medium"* ]]
+    [[ "$status" -eq 0 ]]
+}
+
 @test "Check1-5: quality_gate未記入でBLOCK" {
     create_queue_file << 'YAML'
 commands:

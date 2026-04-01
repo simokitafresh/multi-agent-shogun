@@ -198,6 +198,11 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L347 | 統合偵察で前提sub報告未完了時は自力調査で速度を稼げ | 運用手順 | cmd_1017 |
 | L349 | GitHub 100MB制限: GS出力CSVのサイズ事前確認必須 | 運用プロセス | cmd_1018 |
 | L350 | サブディレクトリCSVはgitignoreの*.csvでは除外されない | 運用プロセス | cmd_1018 |
+| L505 | Render再デプロイ直後のbackground taskクラッシュとmulti-worker status不整合 | deploy | cmd_1478 |
+| L509 | target_pathのservices/jobs不一致に注意(実際のパスと指定の食い違い) | ツール | cmd_1488 |
+| L510 | inbox_write.sh report_received auto-doneのflock deadlock | ツール | cmd_1508 |
+| L515 | download_prod_data.pyのAPIフィールド名不整合(relative_momentum_tickers→relative_assets) | ツール | cmd_1572 |
+| L528 | Windows環境YAMLファイル読み書きにはencoding=utf-8が必須(cp932デコードエラー防止) | ツール | cmd_1604 |
 
 ## §17 現在の全体ステータス（2026-03-11）
 
