@@ -1,8 +1,9 @@
 #!/bin/bash
 # shellcheck disable=SC1091
 # deploy_task.sh — タスク配備ヘルパー（忍者状態自動検知付き）
-# Usage: bash scripts/deploy_task.sh <ninja_name> [cmd_id] [message] [type] [from]
+# Usage: bash scripts/deploy_task.sh [--direct] <ninja_name> [cmd_id] [message] [type] [from]
 # Example: bash scripts/deploy_task.sh hanzo cmd_1510 "タスクYAMLを読んで作業開始せよ" task_assigned karo
+# Direct:  bash scripts/deploy_task.sh --direct kagemaru cmd_training_L4_R5_kagemaru
 # Legacy:  bash scripts/deploy_task.sh hanzo "タスクYAMLを読んで作業開始せよ" task_assigned karo
 #
 # 機能:
@@ -27,10 +28,18 @@ source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 
+# --direct: shogun_to_karo.yaml不要モード（修行タスク等、task YAML事前設定済み前提）
+# resolve_cmd_to_taskをスキップし、report template生成+stale cleanup+教訓注入のみ実行
+DIRECT_MODE=false
+if [[ "${1:-}" == "--direct" ]]; then
+    DIRECT_MODE=true
+    shift
+fi
+
 NINJA_NAME="${1:-}"
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
 
-# cmd_id自動検出: $2がcmd_+数字で始まればcmd_id、そうでなければmessage（���方互換）
+# cmd_id自動検出: $2がcmd_+数字で始まればcmd_id、そうでなければmessage（後方互換）
 # 数字cmd(cmd_1234)、修行cmd(cmd_training_*)、サイクルcmd(cmd_cycle_*)等を全て検出
 CMD_ID=""
 if [[ "${2:-}" =~ ^cmd_[a-zA-Z0-9_]+ ]]; then
@@ -2919,7 +2928,11 @@ fi
 
 # cmd_id指定時: shogun_to_karo.yamlからtask YAML中核フィールドを自動設定
 if [ -n "$CMD_ID" ]; then
-    if resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+    if [ "$DIRECT_MODE" = true ]; then
+        # direct mode: task YAML事前設定済み前提。resolve_cmd_to_taskをスキップし
+        # 後続サービス(report template生成+stale cleanup+教訓注入)のみ実行する
+        log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
+    elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
         log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
     else
         log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
