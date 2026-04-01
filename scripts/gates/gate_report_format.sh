@@ -196,6 +196,8 @@ elif isinstance(bc, dict):
                     hints.append(f'FIX (binary_checks.{ac_key}[{j}]): check に確認内容を書け。result に yes/no を書け。\\n  例: {{check: \"_pane_offset変数が除去されたか\", result: \"yes\"}}')
                 elif isinstance(ck, str) and 0 < len(ck.strip()) < 5:
                     errors.append(f'binary_checks.{ac_key}[{j}].check: \"{ck}\" が短すぎる(確認内容を具体的に書け)')
+                elif isinstance(ck, str) and ('<<REPLACE' in ck or 'FILL:' in ck):
+                    errors.append(f'binary_checks.{ac_key}[{j}].check: プレースホルダ残存。具体的な確認内容に書き換えよ')
                 # result field: must be yes/no, not free-form text or empty
                 if isinstance(rs, str) and not rs.strip():
                     errors.append(f'binary_checks.{ac_key}[{j}].result: 空文字。\"yes\" または \"no\" を記入せよ')

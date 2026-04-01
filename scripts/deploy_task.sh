@@ -1067,7 +1067,7 @@ ${_commit_bc}"
         _ac_stubs=$(awk '
             /^  acceptance_criteria:/ { in_ac=1; next }
             in_ac && /^  [a-z]/ { exit }
-            in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); printf "  %s:\n  - check: \"FILL: AC要件を確認した内容を書け\"\n    result: \"\"  # yes or no\n", $0 }
+            in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); printf "  %s:\n  - check: \"<<REPLACE: この%sで何を確認したか具体的に書け>>\"\n    result: \"\"  # yes or no\n", $0, $0 }
         ' "$task_file" 2>/dev/null)
         if [ -n "$_ac_stubs" ]; then
             local _bc_full="binary_checks:
