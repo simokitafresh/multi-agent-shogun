@@ -68,7 +68,7 @@ TMP_PIPELINE=$(mktemp)
 TMP_RESULTS=$(mktemp)
 TMP_TITLES=$(mktemp)
 TMP_RECENT=$(mktemp)
-trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT"' EXIT
+trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT" "${_TMP_CTX_WARN:-}" "${_CFC_CACHE:-}" "${_TMP_CI_STATUS:-}"' EXIT
 
 NOW=$(TZ=Asia/Tokyo date '+%H:%M')
 
@@ -292,7 +292,7 @@ _CFC_CACHE=$(mktemp)
 _ARCH_TITLES_CACHE="/tmp/dashboard_arch_titles_cache.txt"
 _ARCH_CFC_CACHE="/tmp/dashboard_arch_cfc_cache.txt"
 _ARCH_COUNT_CACHE="/tmp/dashboard_arch_count_cache.txt"
-trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT" "$_TMP_CTX_WARN" "$_CFC_CACHE" "${_TMP_CI_STATUS:-}"' EXIT
+# trap統合済み（L71に一本化）— ここでの再定義は不要
 if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     shopt -s nullglob
     _arch_files=("$ARCHIVE_CMD_DIR"/cmd_*.yaml)
