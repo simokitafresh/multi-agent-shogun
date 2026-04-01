@@ -2987,14 +2987,14 @@ if [ -n "$DEPLOY_PARENT_CMD" ]; then
         [ -f "$_dd_task" ] || continue
         _dd_ninja=$(basename "$_dd_task" .yaml)
         [ "$_dd_ninja" = "$NINJA_NAME" ] && continue
-        _dd_pcmd=$(grep -m1 '^\s*parent_cmd:' "$_dd_task" 2>/dev/null | sed "s/.*parent_cmd:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
+        _dd_pcmd=$(FIELD_GET_NO_LOG=1 field_get "$_dd_task" "parent_cmd" "")
         [ "$_dd_pcmd" != "$DEPLOY_PARENT_CMD" ] && continue
-        _dd_tid=$(grep -m1 '^\s*task_id:' "$_dd_task" 2>/dev/null | sed "s/.*task_id:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
+        _dd_tid=$(FIELD_GET_NO_LOG=1 field_get "$_dd_task" "task_id" "")
         if [ -n "$DEPLOY_TASK_ID" ] && [ -n "$_dd_tid" ] && [ "$DEPLOY_TASK_ID" != "$_dd_tid" ]; then
             log "split_deploy: ${DEPLOY_PARENT_CMD} peer ${_dd_ninja} (task_id: ${_dd_tid}) — different task_id, allowing"
             continue
         fi
-        _dd_status=$(grep -m1 '^\s*status:' "$_dd_task" 2>/dev/null | sed "s/.*status:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
+        _dd_status=$(FIELD_GET_NO_LOG=1 field_get "$_dd_task" "status" "")
         case "$_dd_status" in
             assigned|acknowledged|in_progress)
                 log "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status}, task_id: ${_dd_tid})"
