@@ -1,39 +1,32 @@
 #!/usr/bin/env bats
 # test_lesson_write.bats - lesson_write.sh unit tests
-# Created by: kotaro (cmd_cycle_002)
+# Optimized: python3フル実行→bash native+ENV変数+共有setup方式
 
 setup_file() {
-    export PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    export SRC_LESSON_WRITE="$PROJECT_ROOT/scripts/lesson_write.sh"
+    export REAL_PROJECT_ROOT
+    REAL_PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export SRC_LESSON_WRITE="$REAL_PROJECT_ROOT/scripts/lesson_write.sh"
     [ -f "$SRC_LESSON_WRITE" ] || return 1
-    command -v python3 >/dev/null 2>&1 || return 1
-}
 
-setup() {
-    export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/lesson_write.XXXXXX")"
-    export TEST_PROJECT="$TEST_TMPDIR/project"
-    export EXT_PROJECT="$TEST_TMPDIR/extproj"
+    # 共有ベースディレクトリ（setup_fileで1回のみ作成）
+    export SHARED_DIR
+    SHARED_DIR="$(mktemp -d "$BATS_TMPDIR/lw_shared.XXXXXX")"
 
-    mkdir -p \
-        "$TEST_PROJECT/scripts" \
-        "$TEST_PROJECT/config" \
-        "$TEST_PROJECT/logs" \
-        "$TEST_PROJECT/projects/testproj" \
-        "$TEST_PROJECT/context" \
-        "$EXT_PROJECT/tasks"
+    # scripts/ — no-op sync_lessons.sh込み
+    mkdir -p "$SHARED_DIR/scripts"
+    cp "$SRC_LESSON_WRITE" "$SHARED_DIR/scripts/lesson_write.sh"
+    printf '#!/bin/bash\nexit 0\n' > "$SHARED_DIR/scripts/sync_lessons.sh"
+    chmod +x "$SHARED_DIR/scripts/sync_lessons.sh"
 
-    # Copy lesson_write.sh and its dependency sync_lessons.sh
-    cp "$SRC_LESSON_WRITE" "$TEST_PROJECT/scripts/lesson_write.sh"
-    chmod +x "$TEST_PROJECT/scripts/lesson_write.sh"
+    # 固定EXT_PROJECT（lessons.mdはtestごとにコピーで上書き）
+    export EXT_PROJECT="$SHARED_DIR/extproj"
+    mkdir -p "$EXT_PROJECT/tasks"
 
-    if [ -f "$PROJECT_ROOT/scripts/sync_lessons.sh" ]; then
-        cp "$PROJECT_ROOT/scripts/sync_lessons.sh" "$TEST_PROJECT/scripts/sync_lessons.sh"
-        chmod +x "$TEST_PROJECT/scripts/sync_lessons.sh"
-    fi
+    # 固定TEST_PROJECT（config.yamlは固定パスで1回作成）
+    export TEST_PROJECT="$SHARED_DIR/project"
+    mkdir -p "$TEST_PROJECT/config" "$TEST_PROJECT/context" "$TEST_PROJECT/projects/testproj" "$TEST_PROJECT/logs"
+    ln -s "$SHARED_DIR/scripts" "$TEST_PROJECT/scripts"
 
-    # Create minimal projects.yaml pointing to EXT_PROJECT
     cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
 projects:
   - id: testproj
@@ -41,8 +34,9 @@ projects:
     context_file: context/test-context.md
 EOF
 
-    # Create initial lessons.md with one existing lesson
-    cat > "$EXT_PROJECT/tasks/lessons.md" <<'LESSONSEOF'
+    # lessons.mdテンプレート（各テストでここからコピー）
+    export LESSONS_TEMPLATE="$SHARED_DIR/lessons_template.md"
+    cat > "$LESSONS_TEMPLATE" <<'LESSONSEOF'
 ---
 title: Test Lessons
 ---
@@ -57,8 +51,9 @@ title: Test Lessons
 - これは既存の教訓です。テスト用のサンプルエントリ。
 LESSONSEOF
 
-    # Create context file for context append testing
-    cat > "$TEST_PROJECT/context/test-context.md" <<'CTXEOF'
+    # context.mdテンプレート
+    export CONTEXT_TEMPLATE="$SHARED_DIR/context_template.md"
+    cat > "$CONTEXT_TEMPLATE" <<'CTXEOF'
 # Test Context
 
 ## 教訓索引
@@ -69,38 +64,30 @@ LESSONSEOF
 CTXEOF
 }
 
-teardown() {
-    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+teardown_file() {
+    [ -d "$SHARED_DIR" ] && rm -rf "$SHARED_DIR"
 }
 
-# Helper: run lesson_write.sh from the test project directory
+setup() {
+    # テンプレートからのコピーのみ（mktemp/mkdir不要）
+    cp "$LESSONS_TEMPLATE" "$EXT_PROJECT/tasks/lessons.md"
+    cp "$CONTEXT_TEMPLATE" "$TEST_PROJECT/context/test-context.md"
+}
+
+teardown() { true; }
+
+# Helper: run lesson_write.sh via ENV (no sed patch)
 run_lesson_write() {
-    # Override SCRIPT_DIR by running from within the test project
-    cd "$TEST_PROJECT"
-    # Patch the script to use TEST_PROJECT as SCRIPT_DIR
-    local patched="$TEST_TMPDIR/lesson_write_patched.sh"
-    sed "s|SCRIPT_DIR=.*|SCRIPT_DIR=\"$TEST_PROJECT\"|" "$TEST_PROJECT/scripts/lesson_write.sh" > "$patched"
-    chmod +x "$patched"
-    run bash "$patched" "$@"
+    LESSON_WRITE_SCRIPT_DIR="$TEST_PROJECT" \
+    LESSON_WRITE_SKIP_SYNC=1 \
+    run bash "$SHARED_DIR/scripts/lesson_write.sh" "$@"
 }
 
-# Helper: run lesson_write.sh with sync_lessons.sh also patched
+# Helper: retire tests
 run_lesson_write_with_sync() {
-    cd "$TEST_PROJECT"
-    # Patch lesson_write.sh
-    local patched="$TEST_TMPDIR/lesson_write_patched.sh"
-    sed "s|SCRIPT_DIR=.*|SCRIPT_DIR=\"$TEST_PROJECT\"|" "$TEST_PROJECT/scripts/lesson_write.sh" > "$patched"
-    chmod +x "$patched"
-
-    # Patch sync_lessons.sh
-    if [ -f "$TEST_PROJECT/scripts/sync_lessons.sh" ]; then
-        local sync_patched="$TEST_TMPDIR/sync_lessons_patched.sh"
-        sed "s|SCRIPT_DIR=.*|SCRIPT_DIR=\"$TEST_PROJECT\"|" "$TEST_PROJECT/scripts/sync_lessons.sh" > "$sync_patched"
-        chmod +x "$sync_patched"
-        cp "$sync_patched" "$TEST_PROJECT/scripts/sync_lessons.sh"
-    fi
-
-    run bash "$patched" "$@"
+    LESSON_WRITE_SCRIPT_DIR="$TEST_PROJECT" \
+    LESSON_WRITE_SKIP_SYNC=1 \
+    run bash "$SHARED_DIR/scripts/lesson_write.sh" "$@"
 }
 
 # ============================================================
@@ -111,7 +98,6 @@ run_lesson_write_with_sync() {
     run_lesson_write testproj "テスト教訓タイトル" "テスト教訓の詳細内容。10文字以上必要。" "cmd_100" "kotaro"
     [ "$status" -eq 0 ]
 
-    # Verify L002 was added to lessons.md
     run grep "### L002:" "$EXT_PROJECT/tasks/lessons.md"
     [ "$status" -eq 0 ]
     [[ "$output" == *"テスト教訓タイトル"* ]]
@@ -121,7 +107,6 @@ run_lesson_write_with_sync() {
     run_lesson_write testproj "メタデータ確認テスト" "メタデータが正しく書き込まれるかの確認テストです" "cmd_200" "hanzo"
     [ "$status" -eq 0 ]
 
-    # Check metadata fields exist in lessons.md
     run grep -A5 "### L002:" "$EXT_PROJECT/tasks/lessons.md"
     [ "$status" -eq 0 ]
     [[ "$output" == *"**日付**"* ]]
@@ -137,7 +122,6 @@ run_lesson_write_with_sync() {
     run_lesson_write testproj "追記テスト" "lessons.mdファイルに教訓が追記されることを確認するテスト" "cmd_300"
     [ "$status" -eq 0 ]
 
-    # File should now contain both L001 and L002
     run grep -c "^### L" "$EXT_PROJECT/tasks/lessons.md"
     [ "$status" -eq 0 ]
     [ "$output" -ge 2 ]
@@ -156,11 +140,9 @@ run_lesson_write_with_sync() {
 }
 
 @test "auto-generates L003 when L001 and L002 exist" {
-    # Add L002 first
     run_lesson_write testproj "二番目" "二番目の教訓詳細内容。テスト用データです。" "cmd_500"
     [ "$status" -eq 0 ]
 
-    # Add L003
     run_lesson_write testproj "三番目" "三番目の教訓詳細内容。連番の確認テストです。" "cmd_501"
     [ "$status" -eq 0 ]
 
@@ -269,12 +251,7 @@ run_lesson_write_with_sync() {
 # ============================================================
 
 @test "retire mode marks existing lesson as retired" {
-    # Patch sync_lessons.sh to no-op for retire test
-    echo '#!/bin/bash' > "$TEST_PROJECT/scripts/sync_lessons.sh"
-    echo 'exit 0' >> "$TEST_PROJECT/scripts/sync_lessons.sh"
-    chmod +x "$TEST_PROJECT/scripts/sync_lessons.sh"
-
-    run_lesson_write testproj --retire L001
+    run_lesson_write_with_sync testproj --retire L001
     [ "$status" -eq 0 ]
 
     run grep "retired.*true" "$EXT_PROJECT/tasks/lessons.md"
@@ -282,12 +259,7 @@ run_lesson_write_with_sync() {
 }
 
 @test "retire mode fails for nonexistent lesson ID" {
-    # Patch sync_lessons.sh to no-op
-    echo '#!/bin/bash' > "$TEST_PROJECT/scripts/sync_lessons.sh"
-    echo 'exit 0' >> "$TEST_PROJECT/scripts/sync_lessons.sh"
-    chmod +x "$TEST_PROJECT/scripts/sync_lessons.sh"
-
-    run_lesson_write testproj --retire L999
+    run_lesson_write_with_sync testproj --retire L999
     [ "$status" -eq 1 ]
     [[ "$output" == *"not found"* ]]
 }

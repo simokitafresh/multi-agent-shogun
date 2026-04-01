@@ -7,7 +7,7 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="${LESSON_WRITE_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 PROJECT_ID="${1:-}"
 TITLE="${2:-}"
 DETAIL="${3:-}"
@@ -230,144 +230,65 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 10 200 || exit 1
 
-        # Find max ID and append new entry
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD AUTHOR FORCE LESSON_ID_FILE STATUS TAGS SCRIPT_DIR IF_COND THEN_ACTION BECAUSE_REASON
-        python3 << 'PYEOF'
-import re, os, sys, yaml
-from difflib import SequenceMatcher
+        # Find max ID and append new entry (bash native — no python3)
+        _lw_max_id=0
+        while IFS= read -r _lw_line; do
+            if [[ "$_lw_line" =~ ^##[[:space:]]([0-9]+)\. ]]; then
+                _lw_n=$(( 10#${BASH_REMATCH[1]} ))
+                (( _lw_n > _lw_max_id )) && _lw_max_id=$_lw_n
+            elif [[ "$_lw_line" =~ ^###[[:space:]]L([0-9]+): ]]; then
+                _lw_n=$(( 10#${BASH_REMATCH[1]} ))
+                (( _lw_n > _lw_max_id )) && _lw_max_id=$_lw_n
+            fi
+        done < "$LESSONS_FILE"
+        _lw_new_id=$(( _lw_max_id + 1 ))
+        printf -v _lw_new_id_str 'L%03d' "$_lw_new_id"
 
-lessons_file = os.environ["LESSONS_FILE"]
-timestamp = os.environ["TIMESTAMP"]
-title = os.environ["TITLE"]
-detail = os.environ["DETAIL"]
-source_cmd = os.environ["SOURCE_CMD"]
-author = os.environ["AUTHOR"]
+        # Duplicate title check (bash native: exact match)
+        if [ "${FORCE:-0}" != "1" ]; then
+            while IFS= read -r _lw_line; do
+                if [[ "$_lw_line" =~ ^###[[:space:]]L([0-9]+):[[:space:]](.+)$ ]]; then
+                    _lw_eid="L$(printf '%03d' $(( 10#${BASH_REMATCH[1]} )))"
+                    _lw_etitle="${BASH_REMATCH[2]}"
+                    if [ "$TITLE" = "$_lw_etitle" ]; then
+                        printf 'ERROR: 類似教訓あり: %s: %s (類似度: 100%%)\n' "$_lw_eid" "$_lw_etitle" >&2
+                        printf '強制登録: --force フラグを追加\n' >&2
+                        echo "duplicate_error" > "${LESSON_ID_FILE}.err" 2>/dev/null || true
+                        exit 1
+                    fi
+                fi
+            done < "$LESSONS_FILE"
+        fi
 
-with open(lessons_file, encoding='utf-8') as f:
-    content = f.read()
+        # Tag processing (bash native)
+        if [ -n "${TAGS:-}" ]; then
+            _lw_tags_yaml="[$(echo "${TAGS}" | sed 's/,/, /g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')]"
+        else
+            _lw_tags_yaml="[universal]"
+        fi
 
-# Find max numeric ID from:
-#   ## N. pattern → N
-#   ### L{N}: pattern → N
-max_id = 0
+        # Build and append new entry
+        {
+            printf '\n### %s: %s\n' "$_lw_new_id_str" "$TITLE"
+            printf -- '- **日付**: %s\n' "$TIMESTAMP"
+            [ -n "${SOURCE_CMD:-}" ] && printf -- '- **出典**: %s\n' "$SOURCE_CMD"
+            printf -- '- **記録者**: %s\n' "${AUTHOR:-karo}"
+            [ "${STATUS:-confirmed}" = "draft" ] && printf -- '- **status**: draft\n'
+            printf -- '- **tags**: %s\n' "$_lw_tags_yaml"
+            [ -n "${IF_COND:-}" ] && printf -- '- **if**: %s\n' "$IF_COND"
+            [ -n "${THEN_ACTION:-}" ] && printf -- '- **then**: %s\n' "$THEN_ACTION"
+            [ -n "${BECAUSE_REASON:-}" ] && printf -- '- **because**: %s\n' "$BECAUSE_REASON"
+            printf -- '- %s\n' "$DETAIL"
+        } >> "$LESSONS_FILE"
 
-for m in re.finditer(r'^## (\d+)\.', content, re.MULTILINE):
-    num = int(m.group(1))
-    if num > max_id:
-        max_id = num
-
-for m in re.finditer(r'^### L(\d+):', content, re.MULTILINE):
-    num = int(m.group(1))
-    if num > max_id:
-        max_id = num
-
-new_id = max_id + 1
-new_id_str = f'L{new_id:03d}'
-
-# Duplicate title check (bypass with --force)
-existing = []
-for m in re.finditer(r'^### L(\d+): (.+)$', content, re.MULTILINE):
-    existing.append((f'L{int(m.group(1)):03d}', m.group(2)))
-
-# Tag inference (AC1: config/lesson_tags.yaml辞書参照)
-tags_str = os.environ.get("TAGS", "")
-if not tags_str:
-    # (AC1-a) config/lesson_tags.yaml から辞書読み込み
-    script_dir = os.environ.get("SCRIPT_DIR", "")
-    tags_yaml_path = os.path.join(script_dir, "config", "lesson_tags.yaml") if script_dir else ""
-    tag_rules = []
-    if tags_yaml_path and os.path.exists(tags_yaml_path):
-        try:
-            with open(tags_yaml_path, encoding='utf-8') as tf:
-                tdata = yaml.safe_load(tf)
-            for rule in (tdata or {}).get("tag_rules", []):
-                tag = rule.get("tag", "")
-                patterns = rule.get("patterns", [])
-                if tag and patterns:
-                    for pat in patterns:
-                        tag_rules.append((pat, tag))
-        except Exception:
-            tag_rules = []
-
-    # Fallback: YAML不在または空の場合、従来のハードコード値
-    if not tag_rules:
-        tag_rules = [
-            (r'(?i)db|database|SQL|PostgreSQL', 'db'),
-            (r'(?i)api|endpoint|http|rest', 'api'),
-            (r'(?i)frontend|react|component|ui|visibility|dashboard', 'frontend'),
-            (r'(?i)deploy|production|本番|render', 'deploy'),
-            (r'(?i)pipeline|recalculate|signal|momentum|parity|パリティ', 'pipeline'),
-            (r'(?i)test|parity|verify|検証|パリティ', 'testing'),
-            (r'(?i)review|レビュー', 'review'),
-            (r'(?i)偵察|scout|調査|investigation', 'recon'),
-            (r'(?i)process|workflow|フロー|手順', 'process'),
-            (r'(?i)inbox|ntfy|notification|通知', 'communication'),
-            (r'(?i)gate|ゲート', 'gate'),
-        ]
-
-    text = " " + (title + " " + detail).lower() + " "
-    inferred = []
-    for pat, tag in tag_rules:
-        if tag not in inferred and re.search(pat, text):
-            inferred.append(tag)
-    tags = inferred if inferred else ["universal"]
-else:
-    # (AC1-b) --tags引数が指定されていればそのまま使用
-    tags = [t.strip() for t in tags_str.split(",") if t.strip()]
-    if not tags:
-        tags = ["universal"]
-tags_yaml = "[" + ", ".join(tags) + "]"
-
-force = os.environ.get("FORCE", "") == "1"
-if not force:
-    for eid, etitle in existing:
-        ratio = SequenceMatcher(None, title, etitle).ratio()
-        if ratio > 0.75:
-            print(f'ERROR: 類似教訓あり: {eid}: {etitle} (類似度: {ratio:.0%})', file=sys.stderr)
-            print(f'強制登録: --force フラグを追加', file=sys.stderr)
-            sys.exit(1)
-
-# Build new entry
-status = os.environ.get("STATUS", "confirmed")
-entry = f'\n### {new_id_str}: {title}\n'
-entry += f'- **日付**: {timestamp}\n'
-if source_cmd:
-    entry += f'- **出典**: {source_cmd}\n'
-entry += f'- **記録者**: {author}\n'
-if status == "draft":
-    entry += f'- **status**: draft\n'
-entry += f'- **tags**: {tags_yaml}\n'
-
-# IF-THEN形式フィールド（指定されたもののみ追記）
-if_cond = os.environ.get("IF_COND", "")
-then_action = os.environ.get("THEN_ACTION", "")
-because_reason = os.environ.get("BECAUSE_REASON", "")
-if if_cond or then_action or because_reason:
-    if if_cond:
-        entry += f'- **if**: {if_cond}\n'
-    if then_action:
-        entry += f'- **then**: {then_action}\n'
-    if because_reason:
-        entry += f'- **because**: {because_reason}\n'
-
-entry += f'- {detail}\n'
-
-# Append to file
-with open(lessons_file, 'a', encoding='utf-8') as f:
-    f.write(entry)
-
-print(f'{new_id_str} added to {lessons_file}')
-
-# Write lesson ID to temp file for post-flock --strategic processing
-id_file = os.environ.get("LESSON_ID_FILE", "")
-if id_file:
-    with open(id_file, 'w') as f:
-        f.write(new_id_str)
-PYEOF
+        printf '%s' "$_lw_new_id_str" > "${LESSON_ID_FILE:-/dev/null}"
+        echo "$_lw_new_id_str added to $LESSONS_FILE"
 
     ) 200>"$LOCKFILE"; then
         # AC3: Auto-call sync_lessons.sh after write (non-blocking: 失敗しても後続処理を続行)
-        bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID" || echo "WARN: sync_lessons.sh failed (non-blocking — lesson is written)" >&2
+        if [ "${LESSON_WRITE_SKIP_SYNC:-0}" != "1" ]; then
+            bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID" || echo "WARN: sync_lessons.sh failed (non-blocking — lesson is written)" >&2
+        fi
         # Read lesson ID once — reuse for context/strategic/reflux (was: 3x cat fork)
         NEW_LESSON_ID=""
         if [ -f "$LESSON_ID_FILE" ]; then
@@ -475,24 +396,7 @@ CTXEOF
         # REFLUX_CHECK: 穴検出3問チェック (cmd_1088)
         # 教訓登録=一回失敗=周辺に穴。キーワードでPI/ランブック/instructionsをgrep、還流漏れを検出
         if [ -n "$NEW_LESSON_ID" ]; then
-            REFLUX_KEYWORDS=$(TITLE="$TITLE" DETAIL="$DETAIL" python3 << 'REFLUX_KWEOF'
-import re, os
-title = os.environ.get("TITLE", "")
-detail = os.environ.get("DETAIL", "")
-text = title + " " + detail
-# Extract meaningful tokens: English words (3+ chars), Kanji chunks (2+), Katakana chunks (2+)
-tokens = re.findall(r'[a-zA-Z_]{3,}|[\u4e00-\u9fff]{2,}|[\u30a0-\u30ff]{2,}', text)
-seen = set()
-unique = []
-for t in tokens:
-    tl = t.lower()
-    if tl not in seen:
-        seen.add(tl)
-        unique.append(t)
-# Output top 3 keywords as grep -E alternation pattern
-print("|".join(unique[:3]))
-REFLUX_KWEOF
-            ) || true
+            REFLUX_KEYWORDS=$(echo "${TITLE} ${DETAIL}" | grep -oE '[a-zA-Z_]{3,}' | tr '[:upper:]' '[:lower:]' | awk '!seen[$0]++' | head -3 | tr '\n' '|' | sed 's/|$//') || true
 
             REFLUX_PI="MISSING"
             REFLUX_RUNBOOK="MISSING"
@@ -525,6 +429,11 @@ REFLUX_KWEOF
         fi
         exit 0
     else
+        # Check if failure was a validation error (not a lock timeout) — skip retry
+        if [ -f "${LESSON_ID_FILE}.err" ]; then
+            rm -f "${LESSON_ID_FILE}.err"
+            exit 1
+        fi
         attempt=$((attempt + 1))
         if [ $attempt -lt $max_attempts ]; then
             echo "[lesson_write] Lock timeout (attempt $attempt/$max_attempts), retrying..." >&2
