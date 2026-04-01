@@ -95,10 +95,11 @@ try:
             val = stripped.split(':', 1)[1].strip().strip(\"'\\\"\")
             if val in target_ids:
                 in_target = True
-        if in_target and stripped.startswith('read:') and 'false' in stripped:
-            lines[i] = line.replace('read: false', 'read: true')
+        if in_target and stripped.startswith('read:'):
+            if 'false' in stripped:
+                lines[i] = line.replace('read: false', 'read: true')
+                changed += 1
             in_target = False
-            changed += 1
 
     if changed == 0:
         print('[inbox_mark_read] No changes made')
