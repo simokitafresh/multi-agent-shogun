@@ -12,6 +12,7 @@
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
 crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテーブルDB永続化+pg_advisory_lock排他制御(key=8675309, セッション保持方式, fail-open)。SIGKILL時PostgreSQL自動解放。
 GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_integrity)。zero-signal自動検知WARN+signal COUNT記録。OPT-13(修正)+GP-124(検知)=二重防御。
+Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal日<当月かつリバランス月PF存在時、前月末signalをforward-fillした月初signal行を自動生成。月初Pending最大24h表示→即時解消。
 詳細アーキ全量解析(2026-03-28コード全文読了) → `docs/research/fullrecalculate-architecture-2026-03-28.md`
 旧アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
 - L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）

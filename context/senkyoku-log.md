@@ -602,3 +602,4 @@
 | cmd_1674 | /henseiスキルrespawn方式修正+mixed割当変更+全忍者1M化 | GATE CLEAR | 疾風AC1-3。SKILL.mdから--model opus除去→build_cli_command()利用。Claude同士切替をrespawn統一。mixed割当を殿指名反映(GPT5.4×2+Sonnet×2+Opus×2)。AC4家老直接実行(6忍者respawn確認1M+high) |
 | cmd_1675 | startup gateにscripts/未コミット変更WARN追加 | GATE CLEAR | 影丸。Gate 17追加。git status --porcelainでscripts/の未コミット変更検出→WARN+ファイル一覧表示。deepdive Phase4直接適用(自動化×強制) |
 | cmd_1676 | gate_report_format.sh stale_reportサフィックス修正(PD-005) | GATE CLEAR | 小太郎。L367 fname_cmd厳密一致→startswith比較。task_id/cmd_id空間差の根因修正。stale_report WA根絶。PD-005解決 |
+| cmd_1680 | 月初Pendingバグ修正(Phase4.1 signal行自動作成) | GATE CLEAR(CI WARN) | 半蔵。Phase4完了後に月初signal行をforward-fill自動作成。月初最大24h Pending表示→即時解消。テスト8件全PASS。context/dm-signal-ops.md還流済み |
