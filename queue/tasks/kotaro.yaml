@@ -1,27 +1,29 @@
 task:
-  task_id: cmd_training_L4_R31_kotaro_impl
-  parent_cmd: cmd_training_L4_R31_kotaro
+  task_id: cmd_training_L4_R34_kotaro_impl
+  parent_cmd: cmd_training_L4_R34_kotaro
   status: done
   project: dm-signal
   task_type: impl
   command: |
-    research_engine.py(scripts/analysis/standard_pf_preprocessing/research_engine.py)を高速化せよ。
-    最大ボトルネック: calculate_monthly_returns L477-479。
-    月次リターン計算で次月初日を全日付線形探索O(months×total_days)。
-    修正: 月初日マップ事前構築→O(1)ルックアップ。
-    1箇所改善+commitで終了。長引くなら途中commitで終了。
-    AC1: 計測+ボトルネック確認
-    AC2: その1箇所を改善+commit
-    AC3: 対象テストPASS(既存一致検証で回帰なし確認)+LC+BC+verdict
+    research_engine.py高速化修行(R33の続き)。R33で196s→1.58s(124x)達成済み。
+    残存最大ボトルネック: load_all_standard_pf_configs(7.96s)。
+    DB接続+65PF設定取得が毎回走る。キャッシュ化で削減せよ。
+    
+    AC0: cProfile実測で現在のload_all_standard_pf_configsの内訳確認。
+    AC1: load_all_standard_pf_configsを最適化+commit。候補: (1)結果のファイルキャッシュ(JSON/pickle) (2)SQLクエリ最適化(N+1排除等)。1箇所改善+commitで終了。
+    AC2: 65PF×EMA span=5で速度比較(改善前vs後)。ema_smoothing_results_full.yamlと全セルCAGR 1e-6一致確認+commit。
   acceptance_criteria:
-    - ac: "AC1: 計測+最大ボトルネック1箇所特定"
-    - ac: "AC2: その1箇所を改善+commit"
-    - ac: "AC3: 対象テストPASS(SKIP=0)+LC+BC+verdict"
+    - ac: "AC0: cProfile実測+load_all_standard_pf_configs内訳報告"
+    - ac: "AC1: load_all_standard_pf_configs最適化+commit"
+    - ac: "AC2: 速度比較+CAGR 1e-6一致確認+commit"
   stop_for: []
   never_stop_for:
     - 自明な修正
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。段階的検証: 1つ最適化→計測→次。一括適用禁止。
   related_lessons:
+  - id: 'L536'
+    summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
+    detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
   - id: 'L535'
     summary: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
     detail: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
@@ -49,6 +51,3 @@ task:
   - id: 'L518'
     summary: 'Sortino選出K=3はfull-sampleでMaxDD-14.2%と最浅だがOOSで-29.0%に倍増(劣化-103.9%)。同条件のmomentum(-16.2%→-25.7%,劣化-58.7%)より悪化幅が大きい。full-sampleでMaxDDが特に良い指標は選出バイアスによるドローダウン回避の可能性があり、OOSでそのバイアスが消えるとMaxDDが激しく劣化する。一方CAGR/Sh'
     detail: 'Sortino選出K=3はfull-sampleでMaxDD-14.2%と最浅だがOOSで-29.0%に倍増(劣化-103.9%)。同条件のmomentum(-16.2%→-25.7%,劣化-58.7%)より悪化幅が大きい。full-sampleでMaxDDが特に良い指標は選出バイアスによるドローダウン回避の可能性があり、OOSでそのバイアスが消えるとMaxDDが激しく劣化する。一方CAGR/Sh'
-  - id: 'L517'
-    summary: 'R28 ClSel K=3のmomentum選出は統計的に有意な高βバイアス(p<0.0001)を持ち、CAGR向上の95.8%はβ由来。α寄与は4.2%のみ。β調整後に超越条件が全FAILに反転。raw'
-    detail: 'R28 ClSel K=3のmomentum選出は統計的に有意な高βバイアス(p<0.0001)を持ち、CAGR向上の95.8%はβ由来。α寄与は4.2%のみ。β調整後に超越条件が全FAILに反転。raw'
