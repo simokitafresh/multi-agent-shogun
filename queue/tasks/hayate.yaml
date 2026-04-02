@@ -1,13 +1,13 @@
 task:
-  task_id: cmd_training_L4_R17_hayate
-  parent_cmd: cmd_training_L4_R17
+  task_id: cmd_training_L4_R18_hayate
+  parent_cmd: cmd_training_L4_R18
   task_type: impl
   project: infra
-  status: idle
-  target_path: tests/unit/test_deploy_task_recon_template.bats
+  status: assigned
+  target_path: tests/unit/test_deploy_task_engineering_preferences.bats
   command: |
-    テスト速度改善: test_deploy_task_recon_template.batsを高速化(現在3.2s/2t)。
-    ボトルネック1-2箇所の改善でよい。一部改善で十分。長引くなら途中commitで終了。
+    テスト速度改善: test_deploy_task_engineering_preferences.bats(4.0s/3t→0.5s目標)。
+    ボトルネック改善。一部改善で十分。長引くなら途中commitで終了。
     AC1: 計測+ボトルネック特定  AC2: 改善+commit  AC3: PASS+LC+BC+verdict
     ★ bc構造(AC1:/AC2:/AC3:)維持。bats全量禁止。
   acceptance_criteria:
@@ -19,4 +19,4 @@ task:
   stop_for: []
   never_stop_for: [bats全量禁止]
   role_reminder: "忍者hayate。このタスクのみ実行せよ。"
-  deployed_at: "2026-04-02T10:41:09+09:00"
+  deployed_at: "2026-04-02T11:00:53+09:00"
