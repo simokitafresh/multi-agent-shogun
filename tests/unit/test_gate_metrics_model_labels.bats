@@ -200,6 +200,9 @@ EOF
     mkdir -p "$TEST_TMPDIR/bin"
     printf '#!/bin/sh\nexit 1\n' > "$TEST_TMPDIR/bin/tmux"
     chmod +x "$TEST_TMPDIR/bin/tmux"
+    # Stub git push to avoid ~6s real push to remote (bottleneck: AC1 identified)
+    printf '#!/bin/sh\nfor a in "$@"; do [ "$a" = "push" ] && { echo "Everything up-to-date"; exit 0; }; done\nexec /usr/bin/git "$@"\n' > "$TEST_TMPDIR/bin/git"
+    chmod +x "$TEST_TMPDIR/bin/git"
     run env PATH="$TEST_TMPDIR/bin:$PATH" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
 
