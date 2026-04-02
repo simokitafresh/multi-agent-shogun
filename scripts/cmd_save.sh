@@ -148,14 +148,20 @@ QG_TEMPLATE
     # q5検証レベル分類（cmd_1692: code_readingのみはBLOCK）
     # cmd_1481教訓: code_readingをproduction_verifiedに見せかけた。忍者に信頼度を正直に伝える(利他)
     # cmd_1692: code_readingのみでは前提未検証のためBLOCK。追加検証(isolated_test等)があれば通過
+    # 除外条件: scope_mode=SCOUT OR scout_exempt=true（偵察cmdは実行前確認が目的のためcode_readingでも可）
+    _q5_scope_mode=$(echo "$CMD_BLOCK_NC" | grep "scope_mode:" | head -1 | sed 's/.*scope_mode: *//' | tr -d '"')
+    _q5_scout_exempt=$(echo "$CMD_BLOCK_NC" | grep "scout_exempt:" | head -1 | sed 's/.*scout_exempt: *//' | tr -d '"')
     q5_val=$(echo "$CMD_BLOCK_NC" | grep "q5_verified_source:" | head -1)
     if echo "$q5_val" | grep -qiE "code_reading|コード読み|読んだだけ"; then
-        if ! echo "$q5_val" | grep -qiE "isolated_test|structure_verified|production_verified|pipeline_test|実行|execute|本番|production|API応答|DB確認|テスト実行"; then
+        if [[ "${_q5_scope_mode:-}" == "SCOUT" || "${_q5_scout_exempt:-}" == "true" ]]; then
+            echo "INFO: q5=code_reading。scope_mode=SCOUTまたはscout_exempt=trueのため除外。OK" >&2
+        elif ! echo "$q5_val" | grep -qiE "isolated_test|structure_verified|production_verified|pipeline_test|実行|execute|本番|production|API応答|DB確認|テスト実行"; then
             echo "BLOCK: q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ" >&2
             echo '  例: q5_verified_source: "engine.py L107 code_reading + isolated_test(スクリプト実行確認)"' >&2
             exit 1
+        else
+            echo "INFO: q5にcode_readingを含むが追加検証あり。OK" >&2
         fi
-        echo "INFO: q5にcode_readingを含むが追加検証あり。OK" >&2
     elif ! echo "$q5_val" | grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行"; then
         echo "WARNING: q5に検証方法が不明確。レベル明記推奨: code_reading(コード読み) / isolated_test(単体実行) / pipeline_test(結合実行) / production_verified(本番確認)" >&2
     fi

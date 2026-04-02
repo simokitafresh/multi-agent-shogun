@@ -128,3 +128,42 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"BLOCK: q5=code_readingのみ"* ]]
 }
+
+# ---- 除外条件: scope_mode=SCOUT OR scout_exempt=true ----
+
+_make_cmd_exempt() {
+    local q5_val="$1"
+    local extra_field="$2"  # "scope_mode: SCOUT" or "scout_exempt: true"
+    cat > "$QUEUE_FILE" <<YAML
+commands:
+  cmd_q5test:
+    id: cmd_q5test
+    command: "q5除外条件テスト用cmd"
+    status: pending
+    ${extra_field}
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "${q5_val}"
+YAML
+    CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
+    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+    export CMD_ID CMD_BLOCK CMD_BLOCK_NC
+}
+
+@test "Q5-T009: scope_mode=SCOUT + code_readingのみ → BLOCKなし(除外)" {
+    _make_cmd_exempt "code_reading" "scope_mode: SCOUT"
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK: q5=code_readingのみ"* ]]
+}
+
+@test "Q5-T010: scout_exempt=true + code_readingのみ → BLOCKなし(除外)" {
+    _make_cmd_exempt "code_reading" "scout_exempt: true"
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK: q5=code_readingのみ"* ]]
+}
