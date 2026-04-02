@@ -210,3 +210,8 @@ lessons:
   detail: '修行の最適化cmdで終了条件が曖昧(ボトルネック1-2箇所改善)だと忍者が無限改良を続け時間がかかる(殿指摘)。改善: AC2を1箇所改善+commitに絞り明確な終了とする。長引くなら途中commitではなく1箇所で終了が正'
   source_cmd: 'karo_self_drive_R24_feedback'
   created_at: '2026-04-02'
+- id: 'LK035'
+  title: 'idle通知standbyモード — パイプライン空時は状態変化ベース通知に切替'
+  detail: 'ninja_monitorのidle通知が同一忍者に1-2分おきに無限反復。根因: PREV_STATEがGuard1等で毎サイクルbusyにリセット→次サイクルで状態変化と誤判定→再通知。殿のなぜなぜ+モード切替提案で到達: (1)idle通知は正しい圧力だが常時ではない (2)パイプライン空=待機すべき状態→繰り返し不要 (3)パイプライン有=仕事あり→圧力必要。IDLE_NOTIFY_SENT配列+パイプライン状態自動判定で実装。standby(空)=初回のみ、active(有)=5分cooldown。1時間10分idle通知ゼロで検証OK'
+  source_cmd: 'karo_direct_idle_standby'
+  created_at: '2026-04-02'
