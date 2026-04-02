@@ -1567,14 +1567,13 @@ run_review_quality_check() {
 
 run_todo_fixme_residual_check() {
     local cmd_id="${1:-$CMD_ID}"
-    local cmd_num todo_hits_cmd todo_hits_sub todo_hits todo_count
+    local cmd_num todo_hits todo_count
 
     level_heading "[L2]" "TODO/FIXME residual check:"
 
     cmd_num="${cmd_id#cmd_}"
-    todo_hits_cmd=$(grep -rn "TODO.*${cmd_id}\|FIXME.*${cmd_id}" "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" 2>/dev/null || true)
-    todo_hits_sub=$(grep -rn "TODO.*subtask_${cmd_num}\|FIXME.*subtask_${cmd_num}" "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" 2>/dev/null || true)
-    todo_hits=$(printf '%s\n%s' "$todo_hits_cmd" "$todo_hits_sub" | sort -u | grep -v '^$' || true)
+    # 2回のgrep -rn → 1回のgrep -rEn に統合（WSL2 filesystem walk コスト半減）
+    todo_hits=$(grep -rEn "(TODO|FIXME).*(${cmd_id}|subtask_${cmd_num})" "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" 2>/dev/null | sort -u || true)
     todo_count=$(printf '%s' "$todo_hits" | grep -c '.' 2>/dev/null || true)
     todo_count=${todo_count:-0}
 
