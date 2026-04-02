@@ -80,7 +80,7 @@ task:
       キーをproject-prefixed IDにするかID体系自体を分離'
   report_filename: kotaro_report_cmd_training_L4_R21_kotaro.yaml
   report_path: queue/reports/kotaro_report_cmd_training_L4_R21_kotaro.yaml
-  status: done
+  status: completed
   stop_for: []
   target_path: tests/unit/test_deploy_task_ac_version.bats
   task_id: cmd_training_L4_R21_kotaro_impl

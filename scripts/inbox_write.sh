@@ -72,6 +72,367 @@ report_yaml_is_template() {
     echo "no"
 }
 
+inbox_yaml_strip_quotes() {
+    local value="$1"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+        value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+        value="${value:1:${#value}-2}"
+        value="${value//\'\'/\'}"
+    fi
+    printf '%s' "$value"
+}
+
+inbox_yaml_emit_field() {
+    local first="$1"
+    local key="$2"
+    local value="$3"
+    local prefix="  "
+    [[ "$first" == "1" ]] && prefix="- "
+
+    if [[ "$value" == "true" || "$value" == "false" ]]; then
+        printf '%s%s: %s\n' "$prefix" "$key" "$value"
+        return 0
+    fi
+
+    if [[ "$value" == *$'\n'* ]]; then
+        printf '%s%s: |-\n' "$prefix" "$key"
+        while IFS= read -r _line || [[ -n "$_line" ]]; do
+            printf '    %s\n' "$_line"
+        done <<< "$value"
+        return 0
+    fi
+
+    value="${value//\'/\'\'}"
+    printf "%s%s: '%s'\n" "$prefix" "$key" "$value"
+}
+
+inbox_build_message_block() {
+    local output="" first=1
+    while [[ $# -ge 2 ]]; do
+        output+="$(inbox_yaml_emit_field "$first" "$1" "$2")"
+        first=0
+        shift 2
+    done
+    printf '%s' "$output"
+}
+
+inbox_collect_records() {
+    local inbox_file="$1"
+    INBOX_RECORDS=()
+    INBOX_RECORD_READS=()
+    [[ -f "$inbox_file" ]] || return 0
+
+    while IFS= read -r -d '' _record_item; do
+        INBOX_RECORD_READS+=("${_record_item%%$'\034'*}")
+        INBOX_RECORDS+=("${_record_item#*$'\034'}")
+    done < <(
+        awk '
+            BEGIN { started = 0; rec = ""; read_state = "false"; }
+            /^messages:[[:space:]]*\[\][[:space:]]*$/ { next }
+            /^messages:[[:space:]]*$/ { next }
+            /^- / {
+                if (started) {
+                    printf "%s\034%s\0", read_state, rec
+                }
+                rec = $0 "\n"
+                read_state = "false"
+                started = 1
+                next
+            }
+            started {
+                rec = rec $0 "\n"
+                if ($0 ~ /^  read:[[:space:]]*/) {
+                    read_state = $0
+                    sub(/^  read:[[:space:]]*/, "", read_state)
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", read_state)
+                }
+            }
+            END {
+                if (started) {
+                    printf "%s\034%s\0", read_state, rec
+                }
+            }
+        ' "$inbox_file"
+    )
+}
+
+inbox_write_records() {
+    local inbox_file="$1"
+    shift
+    local tmp_file
+    tmp_file=$(mktemp "${inbox_file}.XXXXXX.tmp")
+    if [[ $# -eq 0 ]]; then
+        printf 'messages: []\n' > "$tmp_file"
+    else
+        printf 'messages:\n' > "$tmp_file"
+        local _record
+        for _record in "$@"; do
+            printf '%s' "$_record" >> "$tmp_file"
+        done
+    fi
+    mv "$tmp_file" "$inbox_file"
+}
+
+inbox_append_message_locked() {
+    local inbox_file="$1"
+    local message_block="$2"
+    local -a unread_records=() read_records=() kept_records=()
+    local i start_idx=0
+
+    inbox_collect_records "$inbox_file"
+    INBOX_RECORDS+=("$message_block")
+    INBOX_RECORD_READS+=("false")
+
+    if (( ${#INBOX_RECORDS[@]} > 50 )); then
+        for ((i=0; i<${#INBOX_RECORDS[@]}; i++)); do
+            if [[ "${INBOX_RECORD_READS[$i],,}" == "true" ]]; then
+                read_records+=("${INBOX_RECORDS[$i]}")
+            else
+                unread_records+=("${INBOX_RECORDS[$i]}")
+            fi
+        done
+        if (( ${#read_records[@]} > 30 )); then
+            start_idx=$(( ${#read_records[@]} - 30 ))
+        fi
+        kept_records=("${unread_records[@]}" "${read_records[@]:start_idx}")
+        inbox_write_records "$inbox_file" "${kept_records[@]}"
+        return 0
+    fi
+
+    inbox_write_records "$inbox_file" "${INBOX_RECORDS[@]}"
+}
+
+inbox_extract_report_paths() {
+    local report_path="$1"
+    [[ -f "$report_path" ]] || return 0
+
+    awk '
+        BEGIN { in_files = 0 }
+        /^files_modified:[[:space:]]*$/ { in_files = 1; next }
+        in_files {
+            if ($0 ~ /^  - path:[[:space:]]*/) {
+                line = $0
+                sub(/^  - path:[[:space:]]*/, "", line)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+                print line
+                next
+            }
+            if ($0 ~ /^  - [^[:space:]][^:]*$/) {
+                line = $0
+                sub(/^  - /, "", line)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+                print line
+                next
+            }
+            if ($0 ~ /^  [^[:space:]-][^:]*:/ || $0 !~ /^  /) {
+                exit
+            }
+        }
+    ' "$report_path" | while IFS= read -r _path; do
+        inbox_yaml_strip_quotes "$_path"
+        printf '\n'
+    done
+}
+
+inbox_extract_task_paths() {
+    local task_path="$1"
+    local raw_values="" raw_entry=""
+    [[ -f "$task_path" ]] || return 0
+
+    for _field_name in target_path files; do
+        raw_values=$(inbox_yaml_field_get "$task_path" "$_field_name" "")
+        [[ -z "${raw_values//[[:space:]]/}" ]] && continue
+        IFS=',' read -ra _value_list <<< "$raw_values"
+        for raw_entry in "${_value_list[@]}"; do
+            raw_entry="$(inbox_yaml_strip_quotes "$raw_entry")"
+            [[ -n "${raw_entry//[[:space:]]/}" ]] && printf '%s\n' "$raw_entry"
+        done
+    done
+}
+
+task_has_related_lessons() {
+    local task_path="$1"
+    awk '
+        BEGIN { in_block = 0 }
+        /^  related_lessons:[[:space:]]*$/ { in_block = 1; next }
+        in_block {
+            if ($0 ~ /^  - id:[[:space:]]*/) {
+                found = 1
+                exit
+            }
+            if ($0 ~ /^  [^[:space:]-][^:]*:/ || $0 !~ /^  /) {
+                exit
+            }
+        }
+        END { exit(found ? 0 : 1) }
+    ' "$1"
+}
+
+extract_universal_lessons() {
+    local lessons_file="$1"
+    [[ -f "$lessons_file" ]] || return 0
+
+    awk '
+        function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+        function unquote(s) {
+            s = trim(s)
+            if (s ~ /^'\''.*'\''$/) {
+                sub(/^'\''/, "", s)
+                sub(/'\''$/, "", s)
+                gsub(/'\'''\''/, "'\''", s)
+            } else if (s ~ /^".*"$/) {
+                sub(/^"/, "", s)
+                sub(/"$/, "", s)
+            }
+            return s
+        }
+        function flush() {
+            if (lesson_id != "" && universal == 1 && retired == 0 && status != "deprecated") {
+                out_summary = summary
+                out_detail = detail
+                if (out_summary == "") out_summary = title
+                if (out_detail == "") out_detail = content
+                if (out_detail == "") out_detail = out_summary
+                print lesson_id "\t" out_summary "\t" out_detail
+            }
+            lesson_id = title = summary = detail = content = status = ""
+            universal = retired = in_tags = 0
+        }
+        /^lessons:[[:space:]]*$/ { in_lessons = 1; next }
+        !in_lessons { next }
+        /^- id:[[:space:]]*/ {
+            flush()
+            line = $0
+            sub(/^- id:[[:space:]]*/, "", line)
+            lesson_id = unquote(line)
+            next
+        }
+        lesson_id == "" { next }
+        /^  title:[[:space:]]*/ {
+            line = $0
+            sub(/^  title:[[:space:]]*/, "", line)
+            title = unquote(line)
+            next
+        }
+        /^  summary:[[:space:]]*/ {
+            line = $0
+            sub(/^  summary:[[:space:]]*/, "", line)
+            summary = unquote(line)
+            next
+        }
+        /^  detail:[[:space:]]*/ {
+            line = $0
+            sub(/^  detail:[[:space:]]*/, "", line)
+            detail = unquote(line)
+            next
+        }
+        /^  content:[[:space:]]*/ {
+            line = $0
+            sub(/^  content:[[:space:]]*/, "", line)
+            content = unquote(line)
+            next
+        }
+        /^  status:[[:space:]]*/ {
+            line = $0
+            sub(/^  status:[[:space:]]*/, "", line)
+            status = tolower(unquote(line))
+            next
+        }
+        /^  retired:[[:space:]]*true([[:space:]]|$)/ {
+            retired = 1
+            next
+        }
+        /^  tags:[[:space:]]*$/ {
+            in_tags = 1
+            next
+        }
+        in_tags && /^  - / {
+            line = $0
+            sub(/^  - /, "", line)
+            if (tolower(unquote(line)) == "universal") {
+                universal = 1
+            }
+            next
+        }
+        in_tags && !/^  - / { in_tags = 0 }
+        !/^  / {
+            flush()
+            in_lessons = 0
+        }
+        END { flush() }
+    ' "$lessons_file"
+}
+
+inject_universal_lessons_if_missing() {
+    local task_path="$1"
+    local project_id="$2"
+    local stripped_file="" tmp_file="" lessons_file=""
+    local -a lesson_sources=() selected_lessons=()
+    local -A seen_lessons=()
+    local lesson_id="" lesson_summary="" lesson_detail=""
+
+    task_has_related_lessons "$task_path" && {
+        echo "OK: related_lessons already injected"
+        return 0
+    }
+
+    lesson_sources+=("$SCRIPT_DIR/projects/${project_id}/lessons_archive.yaml")
+    lesson_sources+=("$SCRIPT_DIR/projects/${project_id}/lessons.yaml")
+    if [[ "$project_id" != "infra" ]]; then
+        lesson_sources+=("$SCRIPT_DIR/projects/infra/lessons_archive.yaml")
+        lesson_sources+=("$SCRIPT_DIR/projects/infra/lessons.yaml")
+    fi
+
+    for lessons_file in "${lesson_sources[@]}"; do
+        [[ -f "$lessons_file" ]] || continue
+        while IFS=$'\t' read -r lesson_id lesson_summary lesson_detail; do
+            [[ -z "$lesson_id" || -n "${seen_lessons[$lesson_id]:-}" ]] && continue
+            seen_lessons["$lesson_id"]=1
+            selected_lessons+=("$lesson_id"$'\t'"$lesson_summary"$'\t'"$lesson_detail")
+            (( ${#selected_lessons[@]} >= 10 )) && break 2
+        done < <(extract_universal_lessons "$lessons_file")
+    done
+
+    if (( ${#selected_lessons[@]} == 0 )); then
+        echo "WARN: no universal lessons found"
+        return 0
+    fi
+
+    stripped_file=$(mktemp "${task_path}.strip.XXXXXX")
+    awk '
+        BEGIN { skip = 0 }
+        /^  related_lessons:[[:space:]]*$/ {
+            skip = 1
+            next
+        }
+        skip {
+            if ($0 ~ /^  [^[:space:]-][^:]*:/ || $0 !~ /^  /) {
+                skip = 0
+            } else {
+                next
+            }
+        }
+        { print }
+    ' "$task_path" > "$stripped_file"
+
+    tmp_file=$(mktemp "${task_path}.XXXXXX.tmp")
+    cat "$stripped_file" > "$tmp_file"
+    rm -f "$stripped_file"
+    printf '  related_lessons:\n' >> "$tmp_file"
+    local lesson_entry
+    for lesson_entry in "${selected_lessons[@]}"; do
+        IFS=$'\t' read -r lesson_id lesson_summary lesson_detail <<< "$lesson_entry"
+        printf "  - id: '%s'\n" "${lesson_id//\'/\'\'}" >> "$tmp_file"
+        printf "    summary: '%s'\n" "${lesson_summary//\'/\'\'}" >> "$tmp_file"
+        printf "    detail: '%s'\n" "${lesson_detail//\'/\'\'}" >> "$tmp_file"
+    done
+    mv "$tmp_file" "$task_path"
+    echo "INJECTED: ${#selected_lessons[@]} universal lessons (safety net)"
+}
+
 TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"

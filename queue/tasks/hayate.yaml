@@ -1,5 +1,5 @@
 task:
-  _ac_task_id: cmd_training_L4_R21_impl
+  _ac_task_id: cmd_training_L4_R22_test_hayate_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
@@ -37,7 +37,7 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_L4_R21
+  parent_cmd: cmd_training_L4_R22_test_hayate
   project: infra
   related_lessons:
   - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
@@ -48,14 +48,26 @@ task:
     id: L063
     summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
       lesson in data.get('lessons',[])が正しい形
-  status: done
+  - detail: 'IF: lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 → THEN: KM_JSON_CACHEの無効化条件にlessons.yaml変更検知を追加すべき
+      (BECAUSE: 現行のキャッシュ無効化はgate_metrics.logの行数変化のみで判定しており、lessons.yaml変更が反映されるまでラグがあるため)'
+    id: L152
+    summary: IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条件にlessons.yaml変更検知を追加すべき
+  - detail: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_karo.yaml(42k)は全カテゴリ共通Redで定期アーカイブが全エージェントに効く。構造的ファイルは圧縮限界あり。単調増加型5件は定期パージで制御可能。cmd_1121で計測'
+    id: L255
+    summary: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_karo.yaml(42k)は全カテゴリ共通Redで定期アーカイブが全エージェントに効く。構造的ファイルは圧縮限界あり。単調増加型5件は定期パージで制御可能。cmd_1121で計測'
+  - detail: 'IF: deploy_task.shがproject+platform教訓をlessons_by_idに統合する時 → THEN: dictキーをproject-prefixed
+      IDにして名前空間を分離せよ (BECAUSE: 同一IDのproject教訓がplatform教訓で静かに上書きされ、dm-signal固有教訓227件が注入不能になっていた)'
+    id: L230
+    summary: 'lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227件のproject固有教訓が静かに消失。対策:
+      キーをproject-prefixed IDにするかID体系自体を分離'
+  report_filename: hayate_report_cmd_training_L4_R22_test_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L4_R22_test_hayate.yaml
+  status: acknowledged
   stop_for: []
-  target_path: tests/unit/test_inbox_write.bats
-  task_id: cmd_training_L4_R21_impl
+  target_path: tests/unit/test_ntfy_auth.bats
+  task_id: cmd_training_L4_R22_test_hayate_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_training_L4_R21.yaml
-  report_path: queue/reports/hayate_report_cmd_training_L4_R21.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -63,6 +75,14 @@ task:
     top_pattern: 'report_yaml_format(12件)'
     breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), double_deploy(2件), karo(2件), report_missing(1件), task_redeploy(1件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'lu_reason_empty'
+      count: 2
+    - pattern: 'no_lesson_reason'
+      count: 1
+    - pattern: 'bc_result_empty'
+      count: 1
+    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 16

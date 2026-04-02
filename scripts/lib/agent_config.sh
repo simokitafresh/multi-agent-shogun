@@ -21,6 +21,19 @@ _AGENT_CONFIG_RAW=""
 _AGENT_CONFIG_NINJA_NAMES=""
 _AGENT_CONFIG_ALL_NAMES=""
 
+_agent_config_unquote() {
+    local value="$1"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+        value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+        value="${value:1:${#value}-2}"
+        value="${value//\'\'/\'}"
+    fi
+    printf '%s' "$value"
+}
+
 _agent_config_load() {
     # Guard: already loaded in this process
     if [[ -n "$_AGENT_CONFIG_RAW" ]]; then
@@ -32,39 +45,74 @@ _agent_config_load() {
         return 1
     fi
 
-    local _ac_errfile
-    _ac_errfile=$(mktemp)
+    local _ac_raw="" _ac_line="" _ac_name="" _ac_role="" _ac_jp=""
+    local _in_cli=0 _in_agents=0 _seen_agents=0
+    local _line_value=""
 
-    _AGENT_CONFIG_RAW=$( SETTINGS_PATH="$_AGENT_CONFIG_SETTINGS" python3 -c "
-import yaml, os, sys
-try:
-    with open(os.environ['SETTINGS_PATH']) as f:
-        data = yaml.safe_load(f)
-    agents = data.get('cli', {}).get('agents', {})
-    if not agents:
-        print('ERROR: no agents found in settings.yaml', file=sys.stderr)
-        sys.exit(1)
-    for name, conf in agents.items():
-        if not isinstance(conf, dict):
+    _flush_agent_row() {
+        if [[ -n "$_ac_name" ]]; then
+            _ac_raw+="${_ac_name}"$'\t'"${_ac_role:-ninja}"$'\t'"${_ac_jp:-$_ac_name}"$'\n'
+        fi
+        _ac_name=""
+        _ac_role=""
+        _ac_jp=""
+    }
+
+    while IFS= read -r _ac_line || [[ -n "$_ac_line" ]]; do
+        if [[ $_in_cli -eq 0 ]]; then
+            [[ "$_ac_line" == "cli:" ]] && _in_cli=1
             continue
-        role = conf.get('role', 'ninja')
-        jp = conf.get('japanese_name', name)
-        print(f'{name}\t{role}\t{jp}')
-except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-" 2>"$_ac_errfile" )
-    local _ac_exit=$?
+        fi
 
-    if [[ $_ac_exit -ne 0 ]]; then
-        echo "agent_config: failed to parse settings.yaml: $(cat "$_ac_errfile")" >&2
-        rm -f "$_ac_errfile"
-        _AGENT_CONFIG_RAW=""
-        return 1
-    fi
-    rm -f "$_ac_errfile"
+        if [[ $_in_agents -eq 0 ]]; then
+            if [[ "$_ac_line" == "  agents:" ]]; then
+                _in_agents=1
+                continue
+            fi
+            [[ ! "$_ac_line" =~ ^[[:space:]] ]] && _in_cli=0
+            continue
+        fi
 
-    if [[ -z "$_AGENT_CONFIG_RAW" ]]; then
+        if [[ "$_ac_line" =~ ^[[:space:]]{4}([^:#[:space:]][^:]*):[[:space:]]*(.*)$ ]]; then
+            _flush_agent_row
+            _ac_name="$(_agent_config_unquote "${BASH_REMATCH[1]}")"
+            _line_value="${BASH_REMATCH[2]}"
+            _seen_agents=1
+            if [[ -n "${_line_value//[[:space:]]/}" ]]; then
+                _flush_agent_row
+            fi
+            continue
+        fi
+
+        if [[ -z "$_ac_name" ]]; then
+            if [[ ! "$_ac_line" =~ ^[[:space:]] ]]; then
+                break
+            fi
+            continue
+        fi
+
+        if [[ "$_ac_line" =~ ^[[:space:]]{6}role:[[:space:]]*(.*)$ ]]; then
+            _ac_role="$(_agent_config_unquote "${BASH_REMATCH[1]}")"
+            continue
+        fi
+
+        if [[ "$_ac_line" =~ ^[[:space:]]{6}japanese_name:[[:space:]]*(.*)$ ]]; then
+            _ac_jp="$(_agent_config_unquote "${BASH_REMATCH[1]}")"
+            continue
+        fi
+
+        if [[ ! "$_ac_line" =~ ^[[:space:]]{6} ]]; then
+            _flush_agent_row
+            [[ ! "$_ac_line" =~ ^[[:space:]] ]] && break
+        fi
+    done < "$_AGENT_CONFIG_SETTINGS"
+
+    _flush_agent_row
+    unset -f _flush_agent_row
+
+    _AGENT_CONFIG_RAW="${_ac_raw%$'\n'}"
+
+    if [[ $_seen_agents -eq 0 || -z "$_AGENT_CONFIG_RAW" ]]; then
         echo "agent_config: no agent entries parsed from settings.yaml" >&2
         return 1
     fi
