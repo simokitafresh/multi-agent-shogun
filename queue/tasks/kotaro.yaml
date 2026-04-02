@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R20
   task_type: impl
   project: infra
-  status: idle
+  status: done
   target_path: scripts/dashboard_auto_section.sh
   command: |
     スクリプト速度改善: dashboard_auto_section.sh。S5: 子プロセス最適化。3.0s→1.5s目標。
