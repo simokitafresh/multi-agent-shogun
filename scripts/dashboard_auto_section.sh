@@ -738,7 +738,11 @@ fi
 
     # ─── CI Status (cmd_715) ───
     # GP-083: collect pre-launched background result
-    wait "$_PID_CI" 2>/dev/null || true
+    if [[ -n "$_PID_CI" ]]; then
+        wait "$_PID_CI" 2>/dev/null || true
+        cp "$_TMP_CI_STATUS" "$CI_STATUS_CACHE" 2>/dev/null || true
+        date +%s > "$CI_STATUS_CACHE_TS" 2>/dev/null || true
+    fi
     _ci_status=$(cat "$_TMP_CI_STATUS" 2>/dev/null || echo "UNKNOWN")
     [[ -z "$_ci_status" ]] && _ci_status="UNKNOWN"
     case "$_ci_status" in
