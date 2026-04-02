@@ -80,6 +80,20 @@ task:
 YAML
     done
 
+    # Check 9: shogun_to_karo.yaml with all delegated (no orphan)
+    mkdir -p "$TEST_TMPDIR/queue"
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_100:
+    title: "test cmd"
+    status: delegated
+    created_at: "2026-04-01T00:00:00"
+  cmd_101:
+    title: "test cmd 2"
+    status: completed
+    created_at: "2026-04-01T00:00:00"
+EOF
+
     # Mock tmux (Check 2.5: return empty so all ninjas show "ペイン不在")
     mkdir -p "$TEST_TMPDIR/bin"
     cat > "$TEST_TMPDIR/bin/tmux" <<'MOCK'
@@ -242,4 +256,31 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"workaround=2件"* ]]
     [[ "$output" == *"report_yaml_format"* ]]
+}
+
+# === Test 11: cmd配備漏れ(pending+delegated_at残存) → ALERT ===
+@test "pending cmd with delegated_at → ALERT cmd配備漏れ" {
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_200:
+    title: "normal cmd"
+    status: delegated
+    created_at: "2026-04-01T00:00:00"
+  cmd_201:
+    title: "orphan cmd"
+    status: pending
+    delegated_at: "2026-04-02T13:29:28"
+    created_at: "2026-04-02T13:25:00"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: 1件のcmdがpending+delegated_at残存: cmd_201"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+# === Test 12: 全cmd delegated/completed → 配備漏れなし ===
+@test "all cmds delegated or completed → OK 配備漏れなし" {
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 配備漏れcmdなし"* ]]
 }

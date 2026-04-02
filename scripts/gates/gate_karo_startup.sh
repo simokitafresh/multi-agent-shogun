@@ -207,6 +207,54 @@ else
     echo "  active忍者: ${active_ninjas}名 / inbox未読: ${unread}件"
 fi
 
+# --- Check 9: cmd配備漏れ検出(pending+delegated_at残存) ---
+echo "■ cmd配備漏れチェック"
+stk_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+if [ -f "$stk_file" ]; then
+    orphan_result=$(awk '
+    /^  [^ ][^ ]*:[[:space:]]*$/ {
+        if (cmd != "" && status == "pending" && has_da) {
+            found++
+            cmds = cmds (cmds != "" ? ", " : "") cmd
+        }
+        cmd = $0
+        sub(/^  /, "", cmd)
+        sub(/:.*/, "", cmd)
+        status = ""
+        has_da = 0
+        next
+    }
+    /^    status:/ {
+        s = $0
+        sub(/.*status: */, "", s)
+        gsub(/["'"'"']/, "", s)
+        gsub(/ /, "", s)
+        status = s
+    }
+    /^    delegated_at:/ {
+        has_da = 1
+    }
+    END {
+        if (cmd != "" && status == "pending" && has_da) {
+            found++
+            cmds = cmds (cmds != "" ? ", " : "") cmd
+        }
+        printf "%d|%s\n", found + 0, cmds
+    }
+    ' "$stk_file" 2>/dev/null || echo "0|")
+    IFS='|' read -r ORPHAN_COUNT ORPHAN_CMDS <<< "$orphan_result"
+    if [ "$ORPHAN_COUNT" -gt 0 ]; then
+        echo "  ALERT: ${ORPHAN_COUNT}件のcmdがpending+delegated_at残存: ${ORPHAN_CMDS}"
+        overall="ALERT"
+        alerts+=("cmd配備漏れ${ORPHAN_COUNT}件: ${ORPHAN_CMDS}")
+    else
+        echo "  OK: 配備漏れcmdなし"
+    fi
+else
+    echo "  SKIP: shogun_to_karo.yaml不在"
+fi
+echo ""
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="
