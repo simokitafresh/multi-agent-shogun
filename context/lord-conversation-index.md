@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-03 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-03T01:48:29+09:00 -->
+<!-- generated_at: 2026-04-03T01:49:23+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-03T01:49:23+09:00 | terminal | response | ## cmd進行状況 **研究系**: | cmd | 内容 | 状態 | |-----|------|------| | cmd_1691 | 研究WF共通エンジン | **半蔵in_progress**(CTX:12%) — 道具作り…
 - 2026-04-03T01:48:29+09:00 | terminal | response | sync_pane_vars.shが3ペイン更新: **影丸/小太郎/将軍がSonnet 4.6 highに修正された**。 だが陣形図はまだ古い(01:46:35生成)。ninja_monitor再起動直後でまだ次の更新サイクルが回って…
 - 2026-04-03T01:48:11+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-03T01:47:24+09:00 | terminal | response | ninja_monitor再起動完了(PID 2091937)。最新コードで稼働中。次の陣形図更新で影丸のモデル名がSonnetに修正されるはず。 [meta] stop_reason=end_turn
@@ -13,7 +14,6 @@
 - 2026-04-03T01:42:12+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-03T01:41:14+09:00 | terminal | response | insightに記録した。**即行動**: 修正cmdを起票する。scout_exemptで回避中だが根因修正が必要。 殿、cmd_save.sh L152-153の`|| true`追加を修行cmdの次バッチか、独立cmdで起票するか。…
 - 2026-04-03T01:41:08+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
-- 2026-04-03T01:37:59+09:00 | ntfy | outbound | 【家老】cmd_1696 初回配備開始 (title=fix — model_detect.shのSonnetモデル検出漏れ修正+陣形図モデル列追加, ninja=tobisaru) fix 📋 https://gist.github.c…
 
 ## 未解決確認事項
 - cmd_1697委任完了。cmd_save.sh→cmd_delegate.sh自動実行(cmd_1694)が正常動作し、保存確認OKの後に委任された。 問題発見→確認→検証→なぜなぜ→穴特定→修正→cmd起票→委任。サイクル完了。 [meta] stop_reason=end…
