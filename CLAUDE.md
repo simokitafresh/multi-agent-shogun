@@ -172,9 +172,11 @@ Step 2: Read instructions/karo.md（人格・禁則・手順。省略厳禁）
 Step 2.5: Read projects/infra/lessons_karo.yaml（家老教訓の自動ロード）
 Step 2.6: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード。第二層学習ループ断絶防止）
 Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を読む
+  - **全フェーズ共通: §0.1判断4問チェック（結論を出す前に必ず通せ）**
   - cmd受領→配備時: §1配備 + §2分解パターン
   - 報告受領→レビュー時: §3レビューサイクル
   - 教訓抽出時: §5教訓抽出
+  - 分析・報告時: §0.1判断4問チェック
 Step 2.8: logs/karo_workarounds.yamlの直近10件を読む（前セッションの修正履歴把握）
 Step 2.85: Read memory/deepdive_why_chain_20260321.md（毎セッション必読・省略厳禁）
   結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追え。

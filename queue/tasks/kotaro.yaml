@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_1677
   task_type: impl
   project: infra
-  status: assigned
+  status: completed
   target_path: scripts/gates/gate_report_format.sh
   command: |
     gate_report_format.shのbinary_checks result不正検出メッセージにYAML引用符ヒントを追加せよ。
