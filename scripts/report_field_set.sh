@@ -44,11 +44,10 @@ USE_PYTHON=0
 if [ "$VALUE" = "-" ]; then
     STDIN_VALUE="$(cat)"
     # Detect YAML structure (list/dict) → Python fallback for faithful preservation
-    if python3 -c "
-import yaml, sys
-data = yaml.safe_load(sys.stdin.read())
-sys.exit(0 if isinstance(data, (list, dict)) else 1)
-" <<< "$STDIN_VALUE" 2>/dev/null; then
+    # bash fast-path: first non-whitespace char is [ { or - → list/dict
+    local _sv_fc
+    _sv_fc=$(printf '%s' "$STDIN_VALUE" | tr -d ' \t\n' | cut -c1)
+    if [[ "$_sv_fc" == "[" || "$_sv_fc" == "{" || "$_sv_fc" == "-" ]]; then
         VALUE="$STDIN_VALUE"
         USE_PYTHON=1
     elif [[ "$STDIN_VALUE" == *$'\n'* ]]; then
