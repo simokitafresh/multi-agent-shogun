@@ -1,7 +1,7 @@
 task:
   task_id: cmd_1682_chunk2_impl
   parent_cmd: cmd_1682
-  status: done
+  status: idle
   project: dm-signal
   task_type: impl
   command: |
