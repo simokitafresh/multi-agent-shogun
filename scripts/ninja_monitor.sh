@@ -88,6 +88,9 @@ CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
 LAST_CDP_CLEANUP=0        # CDP cleanup最終実行時刻（epoch秒）
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
+CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
+CI_STATUS_CHECK_LAST=0          # CI statusキャッシュ最終更新時刻（epoch秒）
+CI_STATUS_CHECK_INTERVAL=300    # CI statusキャッシュ有効期間（秒）— 5分
 
 # 監視対象の忍者名リスト（karoと将軍は対象外）
 # settings.yamlから動的取得（cmd_1136: ハードコード全廃）
@@ -1975,6 +1978,8 @@ write_karo_snapshot() {
                 fi
 
                 # 忍者task状態 + ペインCTX%
+                # L4-R24: statusキャッシュ（idle一覧セクションでyaml_field_get再読込を排除）
+                declare -A _snapshot_status
                 for name in "${NINJA_NAMES[@]}"; do
                     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
                     # ペインCTX%を取得（PANE_TARGETSから解決。tmux list-panes N回呼出し排除）
@@ -1987,11 +1992,18 @@ write_karo_snapshot() {
                     fi
                     if [ -f "$task_file" ]; then
                         local task_id status project
-                        task_id=$(yaml_field_get "$task_file" "task_id")
-                        status=$(yaml_field_get "$task_file" "status")
-                        project=$(yaml_field_get "$task_file" "project")
+                        # awk単一パス: yaml_field_get×3→awk×1（453ms→131ms/cycle削減 L4-R24）
+                        IFS='|' read -r task_id status project < <(awk '
+                            BEGIN { t=""; s=""; p="" }
+                            /^[ \t]*task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+                            /^[ \t]*status:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
+                            /^[ \t]*project:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); p=v }
+                            END { print t "|" s "|" p }
+                        ' "$task_file")
+                        _snapshot_status[$name]="${status:-}"
                         echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}"
                     else
+                        _snapshot_status[$name]=""
                         echo "ninja|${name}|none|idle|none|CTX:${_ctx}"
                     fi
                 done
@@ -2041,8 +2053,9 @@ write_karo_snapshot() {
                 for name in "${rotated_names[@]}"; do
                     if [ "${PREV_STATE[$name]}" = "idle" ]; then
                         local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-                        local task_status=""
-                        if [ -f "$task_file" ]; then
+                        # キャッシュから取得（ninja sectionで収集済み。yaml_field_get再読込排除 L4-R24）
+                        local task_status="${_snapshot_status[$name]:-}"
+                        if [ -z "$task_status" ] && [ -f "$task_file" ]; then
                             task_status=$(yaml_field_get "$task_file" "status")
                         fi
                         if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ]; then
@@ -2816,7 +2829,13 @@ while true; do
         bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --dashboard-warnings 2>/dev/null \
             | cksum | awk '{print $1 ":" $2}' || echo "missing"
     )
-    current_ci_status=$(bash "$SCRIPT_DIR/scripts/ci_status_check.sh" --status 2>/dev/null || echo "UNKNOWN")
+    # CI status: 5分間隔でキャッシュ更新（GitHubAPI毎サイクル呼出し→1708ms/cycle削減 L4-R24）
+    _ci_check_now=$EPOCHSECONDS
+    if (( _ci_check_now - CI_STATUS_CHECK_LAST >= CI_STATUS_CHECK_INTERVAL )); then
+        CI_STATUS_CACHE=$(bash "$SCRIPT_DIR/scripts/ci_status_check.sh" --status 2>/dev/null || echo "UNKNOWN")
+        CI_STATUS_CHECK_LAST=$_ci_check_now
+    fi
+    current_ci_status="$CI_STATUS_CACHE"
     current_unpushed_count=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo 0)
     if [[ "$current_idle" != "$prev_idle" || "$current_gate_lines" != "$prev_gate_lines" || "$current_context_warn_sig" != "$prev_context_warn_sig" || "$current_ci_status" != "$prev_ci_status" || "$current_unpushed_count" != "$prev_unpushed_count" ]]; then
         bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" 2>/dev/null || true

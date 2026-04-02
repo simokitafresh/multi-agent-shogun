@@ -205,3 +205,8 @@ lessons:
   detail: 'テンプレートにFILL_THISを入れてFP率を上げようとした→deepdive再読で気づき: gate BLOCKは成長機会(training-cycle §1)。FP率100%=学習機会ゼロ。殿の言葉『BLOCKすら起きない=知見を得ている証拠。スムースさが本質』。テンプレート強制は消火構造。忍者が自ら正しく書けるようになることが真の改善。家老の役割はBLOCK後のFIX hintの質を高めること(環境改善)であって、BLOCKを消すことではない'
   source_cmd: 'karo_self_drive_deepdive'
   created_at: '2026-04-02'
+- id: 'LK034'
+  title: '修行cmdの終了条件を明確化せよ — 1箇所改善+commitで終了'
+  detail: '修行の最適化cmdで終了条件が曖昧(ボトルネック1-2箇所改善)だと忍者が無限改良を続け時間がかかる(殿指摘)。改善: AC2を1箇所改善+commitに絞り明確な終了とする。長引くなら途中commitではなく1箇所で終了が正'
+  source_cmd: 'karo_self_drive_R24_feedback'
+  created_at: '2026-04-02'

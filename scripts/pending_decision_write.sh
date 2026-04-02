@@ -60,6 +60,7 @@ get_pending_decision_count() {
 
 dashboard_remove_pending() {
     local PD_ID="$1"
+    local PENDING_COUNT="${2:-}"
     local DASHBOARD_FILE="$SCRIPT_DIR/dashboard.md"
 
     if [ ! -f "$DASHBOARD_FILE" ]; then
@@ -67,28 +68,26 @@ dashboard_remove_pending() {
         return 0
     fi
 
-    if ! sed -i "/- \\*\\*${PD_ID}\\*\\*/d" "$DASHBOARD_FILE" 2>/dev/null; then
-        echo "[pending_decision] WARN: sed delete failed for $PD_ID" >&2
+    if [ -z "$PENDING_COUNT" ]; then
+        PENDING_COUNT=$(get_pending_decision_count 2>/dev/null || echo 0)
     fi
 
-    local PENDING_COUNT
-    PENDING_COUNT=$(get_pending_decision_count 2>/dev/null || echo 0)
-    if [ "$PENDING_COUNT" = "0" ]; then
-        local tmpfile
-        tmpfile=$(mktemp "${DASHBOARD_FILE}.XXXXXX.tmp")
-        if ! { awk '
-            /^## 要対応/{in_sec=1; print; next}
-            in_sec && /^## /{
-                if (!has_entry) print "（なし）"
-                in_sec=0; print; next
-            }
-            in_sec && /^- /{has_entry=1}
-            {print}
-            END{if(in_sec && !has_entry) print "（なし）"}
-        ' "$DASHBOARD_FILE" > "$tmpfile" && mv "$tmpfile" "$DASHBOARD_FILE"; }; then
-            rm -f "$tmpfile"
-            echo "[pending_decision] WARN: dashboard none-placeholder sync failed" >&2
-        fi
+    local tmpfile
+    tmpfile=$(mktemp "${DASHBOARD_FILE}.XXXXXX.tmp")
+    if ! { awk -v pd_id="$PD_ID" -v pending_count="$PENDING_COUNT" '
+        /^## 要対応/{in_sec=1; print; next}
+        in_sec && /^## /{
+            if ((pending_count + 0) == 0 && !has_entry) print "（なし）"
+            in_sec=0; print; next
+        }
+        in_sec && $0 ~ ("- \\*\\*" pd_id "\\*\\*:"){next}
+        in_sec && /^（なし）$/{next}
+        in_sec && /^- /{has_entry=1}
+        {print}
+        END{if(in_sec && (pending_count + 0) == 0 && !has_entry) print "（なし）"}
+    ' "$DASHBOARD_FILE" > "$tmpfile" && mv "$tmpfile" "$DASHBOARD_FILE"; }; then
+        rm -f "$tmpfile"
+        echo "[pending_decision] WARN: dashboard resolve sync failed for $PD_ID" >&2
     fi
 }
 
@@ -126,7 +125,7 @@ cmd_create() {
             (
             flock -w 5 200 || exit 1
 
-            python3 - "$DATA_FILE" "$SUMMARY" "$SOURCE_CMD" "$TYPE" "$CREATED_BY" "$TIMESTAMP" <<'PY' || exit 1
+            python3 - "$DATA_FILE" "$SUMMARY" "$SOURCE_CMD" "$TYPE" "$CREATED_BY" "$TIMESTAMP" "$SCRIPT_DIR/dashboard.md" <<'PY' || exit 1
 import yaml, sys, os, tempfile
 
 data_path = sys.argv[1]
@@ -135,6 +134,53 @@ source_cmd = sys.argv[3]
 pd_type = sys.argv[4]
 created_by = sys.argv[5]
 timestamp = sys.argv[6]
+dashboard_path = sys.argv[7]
+
+def _atomic_write_text(path, content):
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            f.write(content)
+        os.replace(tmp_path, path)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+def _sync_dashboard_add_pending(path, pd_id, summary_text, source_cmd_text):
+    if not os.path.exists(path):
+        print('[pending_decision] WARN: dashboard.md not found, skip create sync', file=sys.stderr)
+        return
+
+    entry = f'- **{pd_id}**: {summary_text}（{source_cmd_text}）\n'
+    with open(path) as f:
+        lines = f.readlines()
+
+    out = []
+    in_section = False
+    added = False
+    for line in lines:
+        if line.startswith('## 要対応'):
+            in_section = True
+            out.append(line)
+            continue
+        if in_section and line.startswith('## '):
+            if not added:
+                out.append(entry)
+                added = True
+            in_section = False
+            out.append(line)
+            continue
+        if in_section:
+            if line.strip() == '（なし）':
+                continue
+            if line.startswith(f'- **{pd_id}**:'):
+                continue
+        out.append(line)
+
+    if in_section and not added:
+        out.append(entry)
+
+    _atomic_write_text(path, ''.join(out))
 
 try:
     with open(data_path) as f:
@@ -184,6 +230,8 @@ try:
         os.unlink(tmp_path)
         raise
 
+    _sync_dashboard_add_pending(dashboard_path, new_id, summary, source_cmd)
+
     print(f'[pending_decision] Created {new_id}: {summary[:60]}')
     print(f'PD_ID={new_id}')
 
@@ -198,7 +246,6 @@ PY
             local NEW_PD_ID
             NEW_PD_ID=$(printf "%s\n" "$create_output" | awk -F= '/^PD_ID=/{print $2; exit}')
             if [ -n "$NEW_PD_ID" ]; then
-                dashboard_add_pending "$NEW_PD_ID" "$SUMMARY" "$SOURCE_CMD" || true
             else
                 echo "[pending_decision] WARN: created PD id parse failed, skip dashboard sync" >&2
             fi
@@ -249,7 +296,7 @@ cmd_resolve() {
             (
             flock -w 5 200 || exit 2
 
-            python3 - "$DATA_FILE" "$PD_ID" "$RESOLVED_CONTENT" "$RESOLVED_BY" "$TIMESTAMP" "$NO_CONTEXT_SYNC" "$SCRIPT_DIR/config/projects.yaml" <<'PY' || exit 1
+            python3 - "$DATA_FILE" "$PD_ID" "$RESOLVED_CONTENT" "$RESOLVED_BY" "$TIMESTAMP" "$NO_CONTEXT_SYNC" "$SCRIPT_DIR/config/projects.yaml" "$SCRIPT_DIR/dashboard.md" <<'PY' || exit 1
 import yaml, sys, os, tempfile
 
 data_path = sys.argv[1]
@@ -259,6 +306,54 @@ resolved_by = sys.argv[4]
 timestamp = sys.argv[5]
 no_context_sync_str = sys.argv[6]
 projects_yaml_path = sys.argv[7]
+dashboard_path = sys.argv[8]
+
+def _atomic_write_text(path, content):
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            f.write(content)
+        os.replace(tmp_path, path)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+def _sync_dashboard_remove_pending(path, pd_id_value, pending_count):
+    if not os.path.exists(path):
+        print('[pending_decision] WARN: dashboard.md not found, skip resolve sync', file=sys.stderr)
+        return
+
+    target_prefix = f'- **{pd_id_value}**:'
+    with open(path) as f:
+        lines = f.readlines()
+
+    out = []
+    in_section = False
+    has_entry = False
+    for line in lines:
+        if line.startswith('## 要対応'):
+            in_section = True
+            out.append(line)
+            continue
+        if in_section and line.startswith('## '):
+            if pending_count == 0 and not has_entry:
+                out.append('（なし）\n')
+            in_section = False
+            out.append(line)
+            continue
+        if in_section:
+            if line.startswith(target_prefix):
+                continue
+            if line.strip() == '（なし）':
+                continue
+            if line.startswith('- '):
+                has_entry = True
+        out.append(line)
+
+    if in_section and pending_count == 0 and not has_entry:
+        out.append('（なし）\n')
+
+    _atomic_write_text(path, ''.join(out))
 
 try:
     with open(data_path) as f:
@@ -321,6 +416,8 @@ try:
         os.unlink(tmp_path)
         raise
 
+    _sync_dashboard_remove_pending(dashboard_path, pd_id, _pending)
+
     # Output project field for TODO auto-append
     project = d.get('project', '')
     source_cmd = d.get('source_cmd', '')
@@ -348,13 +445,8 @@ PY
             local TODO_LOG="$SCRIPT_DIR/queue/alerts/pd_context_todo.log"
             mkdir -p "$(dirname "$TODO_LOG")"
 
-            # Determine context_file from PD's project field (bash case — no python3)
             local _project
-            _project=$(awk -v id="$PD_ID" '
-                /^- id: /{in_block=0}
-                $0 == "- id: " id {in_block=1; next}
-                in_block && /^  project: /{sub(/^  project: /, ""); print; exit}
-            ' "$DATA_FILE" 2>/dev/null || echo "")
+            _project=$(printf "%s\n" "$resolve_output" | awk -F= '/^PD_PROJECT=/{print $2; exit}')
             local CONTEXT_FILE
             case "$_project" in
                 infra)             CONTEXT_FILE="context/infrastructure.md" ;;
@@ -368,8 +460,6 @@ PY
             TODO_TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S%:z")
             echo "$TODO_TIMESTAMP  $PD_ID → $CONTEXT_FILE に反映必要" >> "$TODO_LOG"
             echo "[pending_decision] TODO追記: $PD_ID → $CONTEXT_FILE"
-
-            dashboard_remove_pending "$PD_ID" || true
 
             return 0
         elif [ "$_exit_code" -eq 2 ]; then
