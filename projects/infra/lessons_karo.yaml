@@ -200,3 +200,8 @@ lessons:
   detail: 'deploy_task.sh --cmdで1つのcmd_idを4名に配備→重複配備ガード(LK009)がBLOCK。手動配備時代はparent_cmd同一で問題なかったがdeploy_task.shには重複ガードがある。根因: ツールの内部動作を確認せずに使った=§0.1問い2違反。修正: 忍者別cmd_id(cmd_training_L4_RXX_{ninja})で配備。training-cycle.mdに標準手順記録済み'
   source_cmd: 'karo_self_drive_R21'
   created_at: '2026-04-02'
+- id: 'LK033'
+  title: 'FP率改善をテンプレート強制で解決するのは消火 — gate BLOCKは成長機会'
+  detail: 'テンプレートにFILL_THISを入れてFP率を上げようとした→deepdive再読で気づき: gate BLOCKは成長機会(training-cycle §1)。FP率100%=学習機会ゼロ。殿の言葉『BLOCKすら起きない=知見を得ている証拠。スムースさが本質』。テンプレート強制は消火構造。忍者が自ら正しく書けるようになることが真の改善。家老の役割はBLOCK後のFIX hintの質を高めること(環境改善)であって、BLOCKを消すことではない'
+  source_cmd: 'karo_self_drive_deepdive'
+  created_at: '2026-04-02'

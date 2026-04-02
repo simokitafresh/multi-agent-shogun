@@ -564,6 +564,18 @@ else
     echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
     echo ""
     echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
+
+    # Step 6: ALERT項目をinsightsに自動保存（将軍の「後でやる」放置防止）
+    if [ "$overall" = "ALERT" ] && [ ${#alerts[@]} -gt 0 ]; then
+        for a in "${alerts[@]}"; do
+            # 教訓健全度ALERTなど既知パターンのみ自動保存（ノイズ防止）
+            case "$a" in
+                *教訓健全度*|*三層ループ*|*軍師未処理*)
+                    bash "$SCRIPT_DIR/scripts/insight_write.sh" "起動ALERT未対処: $a" 2>/dev/null || true
+                    ;;
+            esac
+        done
+    fi
 fi
 }
 

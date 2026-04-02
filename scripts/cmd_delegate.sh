@@ -93,3 +93,11 @@ yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" "\"$TIMESTAMP\"" || {
 
 # Step 5: 成功出力
 echo "DELEGATED: $CMD_ID at $TIMESTAMP"
+
+# Step 6: §14 idle自走リマインダ（将軍の思考餓死防止）
+echo "---"
+echo "§14 IDLE自走: 委任完了。殿の入力を待つ間にデータを見ろ。"
+echo "  Step 1: queue/insights.yaml (pending件数確認)"
+echo "  Step 2: logs/karo_workarounds.yaml (直近10件)"
+echo "  Step 3: logs/cmd_design_quality.yaml (rework傾向)"
+echo "  → パターン発見→why-chain→cmd起票 or insight保存"

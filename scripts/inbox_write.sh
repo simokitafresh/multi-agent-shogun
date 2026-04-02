@@ -111,8 +111,10 @@ inbox_yaml_emit_field() {
 
 inbox_build_message_block() {
     local output="" first=1
+    local field_output=""
     while [[ $# -ge 2 ]]; do
-        output+="$(inbox_yaml_emit_field "$first" "$1" "$2")"
+        field_output="$(inbox_yaml_emit_field "$first" "$1" "$2")"
+        output+="${field_output}"$'\n'
         first=0
         shift 2
     done
@@ -268,7 +270,7 @@ task_has_related_lessons() {
             }
         }
         END { exit(found ? 0 : 1) }
-    ' "$1"
+    ' "$task_path"
 }
 
 extract_universal_lessons() {
@@ -542,108 +544,11 @@ if [ "$TYPE" = "task_assigned" ]; then
     if [ -f "$NINJA_TASK" ]; then
         TASK_LOCKFILE="$(lock_path "$NINJA_TASK")"
         LESSON_CHECK=$(
-            flock -w 5 "$TASK_LOCKFILE" \
-            env TASK_PATH="$NINJA_TASK" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 -c "
-import yaml, os, sys, tempfile
-task_path = os.environ['TASK_PATH']
-script_dir = os.environ['SCRIPT_DIR_ENV']
-try:
-    with open(task_path) as f:
-        data = yaml.safe_load(f)
-    if not data or 'task' not in data:
-        sys.exit(0)
-    task = data['task']
-    existing = task.get('related_lessons', [])
-    if existing:
-        print(f'OK: {len(existing)} lessons already injected')
-        sys.exit(0)
-    # related_lessons is empty — inject universal lessons as safety net
-    project = task.get('project', 'infra')
-    lessons_paths = [
-        os.path.join(script_dir, 'projects', project, 'lessons_archive.yaml'),
-        os.path.join(script_dir, 'projects', project, 'lessons.yaml'),
-    ]
-    all_lessons = []
-    for lp in lessons_paths:
-        if os.path.exists(lp):
-            with open(lp) as f:
-                ld = yaml.safe_load(f)
-            all_lessons = (ld or {}).get('lessons', [])
-            if all_lessons:
-                break
-    # Also load platform lessons
-    pj_yaml = os.path.join(script_dir, 'config', 'projects.yaml')
-    if os.path.exists(pj_yaml):
-        with open(pj_yaml) as f:
-            pdata = yaml.safe_load(f)
-        for pj in (pdata or {}).get('projects', []):
-            if pj.get('type') == 'platform' and pj.get('id') != project:
-                for suffix in ['lessons_archive.yaml', 'lessons.yaml']:
-                    pp = os.path.join(script_dir, 'projects', pj['id'], suffix)
-                    if os.path.exists(pp):
-                        with open(pp) as f:
-                            pd = yaml.safe_load(f)
-                        all_lessons.extend((pd or {}).get('lessons', []))
-                        break
-    if not all_lessons:
-        print('WARN: no lessons found')
-        sys.exit(0)
-    # Filter: universal + confirmed only
-    universal = []
-    for l in all_lessons:
-        if l.get('retired') or str(l.get('status','')).lower() == 'deprecated':
-            continue
-        tags = l.get('tags', [])
-        if isinstance(tags, str):
-            tags = [tags]
-        if 'universal' in [str(t).lower() for t in tags]:
-            universal.append({
-                'id': l.get('id',''),
-                'summary': str(l.get('summary','') or l.get('title','')),
-                'detail': str(l.get('detail','') or l.get('content','')),
-            })
-    # Build related_lessons YAML block as text (avoid yaml.dump on full file)
-    selected = universal[:10]
-    if not selected:
-        print('WARN: no universal lessons to inject')
-        sys.exit(0)
-    rl_lines = ['  related_lessons:']
-    for lesson in selected:
-        rl_lines.append(f\"  - id: {lesson['id']}\")
-        summary = str(lesson['summary']).replace(\"'\", \"''\")
-        detail = str(lesson['detail']).replace(\"'\", \"''\")
-        rl_lines.append(f\"    summary: '{summary}'\")
-        rl_lines.append(f\"    detail: '{detail}'\")
-    rl_block = '\\n'.join(rl_lines)
-
-    # Read raw text, remove existing related_lessons block, insert new one
-    with open(task_path, encoding='utf-8') as f:
-        raw = f.read()
-    import re
-    # Remove existing related_lessons block (indented under task:)
-    raw = re.sub(r'\\n  related_lessons:.*?(?=\\n  [a-z]|\\Z)', '', raw, flags=re.DOTALL)
-    # Insert before the last line of task block (append at end of task: section)
-    if '\\ntask:\\n' in raw:
-        # Find the end of the task block (next top-level key or EOF)
-        task_end = re.search(r'\\n[a-z]', raw[raw.index('\\ntask:\\n')+6:])
-        if task_end:
-            insert_pos = raw.index('\\ntask:\\n') + 6 + task_end.start()
-        else:
-            insert_pos = len(raw.rstrip())
-        raw = raw[:insert_pos] + '\\n' + rl_block + raw[insert_pos:]
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-            f.write(raw)
-        os.replace(tmp_path, task_path)
-    except:
-        os.unlink(tmp_path)
-        raise
-    print(f'INJECTED: {len(selected)} universal lessons (safety net)')
-except Exception as e:
-    print(f'WARN: lesson inject failed: {e}', file=sys.stderr)
-    sys.exit(0)
-" 2>&1 || true)
+            (
+                flock -w 5 200 || exit 0
+                project_id=$(inbox_yaml_field_get "$NINJA_TASK" "project" "infra")
+                inject_universal_lessons_if_missing "$NINJA_TASK" "${project_id:-infra}"
+            ) 200>"$TASK_LOCKFILE" 2>&1 || true)
         if [ -n "$LESSON_CHECK" ]; then
             echo "[lesson_safety_net] $LESSON_CHECK" >&2
         fi
@@ -730,34 +635,21 @@ if [ "$TYPE" = "report_received" ]; then
                         ROUTE_ID="msg_$(date +%s%N | head -c 16)"
                         (
                             flock -w 5 200 2>/dev/null
-                            GUNSHI_INBOX="$GUNSHI_INBOX" ROUTE_ID="$ROUTE_ID" ROUTE_TS="$ROUTE_TS" \
-                            ROUTE_FROM="$FROM" REPORT_FILE="$FULL_REPORT" GATE_ERRORS="$GATE_RESULT" \
-                            SCRIPT_DIR_LIB="$SCRIPT_DIR/scripts/lib" \
-                            python3 -c "
-import yaml, os, sys
-sys.path.insert(0, os.environ['SCRIPT_DIR_LIB'])
-from write_inbox_yaml import write_inbox
-inbox_path = os.environ['GUNSHI_INBOX']
-try:
-    with open(inbox_path) as f:
-        data = yaml.safe_load(f) or {}
-except FileNotFoundError:
-    data = {}
-msgs = data.get('messages', [])
-msgs.append({
-    'id': os.environ['ROUTE_ID'],
-    'from': 'system',
-    'timestamp': os.environ['ROUTE_TS'],
-    'type': 'quality_monitor',
-    'read': False,
-    'content': f\"【監視通知】忍者{os.environ['ROUTE_FROM']}の報告YAMLにgate FAIL。忍者にBLOCK済み。忍者が自分で修正して再送信する。軍師は直接修正するな(消火行為)。パターン分析用の記録。\",
-    'report_path': os.environ['REPORT_FILE'],
-    'gate_errors': os.environ['GATE_ERRORS'],
-    'original_ninja': os.environ['ROUTE_FROM'],
-})
-data['messages'] = msgs
-write_inbox(inbox_path, data)
-" 2>/dev/null
+                            if [ ! -f "$GUNSHI_INBOX" ]; then
+                                mkdir -p "$(dirname "$GUNSHI_INBOX")"
+                                printf 'messages: []\n' > "$GUNSHI_INBOX"
+                            fi
+                            _gunshi_msg="$(inbox_build_message_block \
+                                content "【監視通知】忍者${FROM}の報告YAMLにgate FAIL。忍者にBLOCK済み。忍者が自分で修正して再送信する。軍師は直接修正するな(消火行為)。パターン分析用の記録。" \
+                                from "system" \
+                                id "$ROUTE_ID" \
+                                read "false" \
+                                timestamp "$ROUTE_TS" \
+                                type "quality_monitor" \
+                                gate_errors "$GATE_RESULT" \
+                                original_ninja "$FROM" \
+                                report_path "$FULL_REPORT")"$'\n'
+                            inbox_append_message_locked "$GUNSHI_INBOX" "$_gunshi_msg"
                         ) 200>"$(lock_path "$GUNSHI_INBOX")" 2>/dev/null || true
                         echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2
                         # BLOCK: verdict記入済み+gate FAIL → 忍者が修正して再送信するまでkaroに届けない
@@ -788,48 +680,12 @@ write_inbox(inbox_path, data)
             # Git uncommitted check: 報告YAMLのfiles_modified + task YAMLのtarget_pathを確認
             # cmd_1296教訓: 全repoではなく忍者が申告したファイルのみチェック（運用ファイル誤検知防止）
             # サイクル2: WARNING→BLOCK昇格。commit漏れは忍者ペインで止める（局所免疫）
-            GIT_CHECK_PATHS=$(REPORT_YAML="$FULL_REPORT" TASK_PATH="$TASK_YAML" python3 -c "
-import yaml, os
-paths = set()
-# Source 1: 報告YAMLのfiles_modified（auto-fix後はdict list形式）
-try:
-    rp = os.environ.get('REPORT_YAML', '')
-    if rp and os.path.isfile(rp):
-        with open(rp) as f:
-            rdata = yaml.safe_load(f)
-        if rdata:
-            fm = rdata.get('files_modified', [])
-            if isinstance(fm, list):
-                for item in fm:
-                    if isinstance(item, dict) and 'path' in item:
-                        paths.add(item['path'])
-                    elif isinstance(item, str):
-                        paths.add(item)
-except Exception:
-    pass
-# Source 2: task YAMLのtarget_path/files（fallback）
-try:
-    tp = os.environ.get('TASK_PATH', '')
-    if tp and os.path.isfile(tp):
-        with open(tp) as f:
-            tdata = yaml.safe_load(f)
-        if tdata and 'task' in tdata:
-            task = tdata['task']
-            t = task.get('target_path', '')
-            if isinstance(t, str) and t:
-                paths.add(t)
-            elif isinstance(t, list):
-                paths.update(p for p in t if isinstance(p, str) and p)
-            files = task.get('files', [])
-            if isinstance(files, str) and files:
-                paths.add(files)
-            elif isinstance(files, list):
-                paths.update(p for p in files if isinstance(p, str) and p)
-except Exception:
-    pass
-for p in sorted(paths):
-    print(p)
-" 2>/dev/null || true)
+            GIT_CHECK_PATHS=$(
+                (
+                    inbox_extract_report_paths "$FULL_REPORT"
+                    inbox_extract_task_paths "$TASK_YAML"
+                ) | awk '!seen[$0]++'
+            )
 
             if [ -n "$GIT_CHECK_PATHS" ]; then
                 mapfile -t _check_paths <<< "$GIT_CHECK_PATHS"
@@ -867,58 +723,14 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
 
-        # Add message via python3 — HIGH-1: 全変数を環境変数経由で渡す（インジェクション防止）
-        INBOX_PATH="$INBOX" MSG_ID="$MSG_ID" MSG_FROM="$FROM" \
-        MSG_TIMESTAMP="$TIMESTAMP" MSG_TYPE="$TYPE" MSG_CONTENT="$CONTENT" \
-        SCRIPT_DIR_LIB="$SCRIPT_DIR/scripts/lib" \
-        python3 -c "
-import yaml, sys, os
-sys.path.insert(0, os.environ['SCRIPT_DIR_LIB'])
-from write_inbox_yaml import write_inbox
-
-try:
-    inbox_path  = os.environ['INBOX_PATH']
-    msg_id      = os.environ['MSG_ID']
-    msg_from    = os.environ['MSG_FROM']
-    msg_ts      = os.environ['MSG_TIMESTAMP']
-    msg_type    = os.environ['MSG_TYPE']
-    msg_content = os.environ['MSG_CONTENT']
-
-    # Load existing inbox
-    with open(inbox_path) as f:
-        data = yaml.safe_load(f)
-
-    # Initialize if needed
-    if not data:
-        data = {}
-    if not data.get('messages'):
-        data['messages'] = []
-
-    # Add new message
-    new_msg = {
-        'id':        msg_id,
-        'from':      msg_from,
-        'timestamp': msg_ts,
-        'type':      msg_type,
-        'content':   msg_content,
-        'read':      False
-    }
-    data['messages'].append(new_msg)
-
-    # Overflow protection: keep max 50 messages
-    if len(data['messages']) > 50:
-        msgs   = data['messages']
-        unread = [m for m in msgs if not m.get('read', False)]
-        read   = [m for m in msgs if m.get('read', False)]
-        # Keep all unread + newest 30 read messages
-        data['messages'] = unread + read[-30:]
-
-    write_inbox(inbox_path, data)
-
-except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-" || exit 1
+        _msg_block="$(inbox_build_message_block \
+            content "$CONTENT" \
+            from "$FROM" \
+            id "$MSG_ID" \
+            read "false" \
+            timestamp "$TIMESTAMP" \
+            type "$TYPE")"$'\n'
+        inbox_append_message_locked "$INBOX" "$_msg_block" || exit 1
 
     ) 200>"$LOCKFILE"; then
         # Success — inbox message persisted
