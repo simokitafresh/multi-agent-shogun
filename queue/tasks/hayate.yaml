@@ -1,18 +1,19 @@
 task:
-  task_id: cmd_training_L4_R14b_hayate
-  parent_cmd: cmd_training_L4_R14
+  task_id: cmd_training_L4_R15_hayate
+  parent_cmd: cmd_training_L4_R15
   task_type: impl
   project: infra
   status: done
-  target_path: tests/unit/test_inbox_write.bats
+  target_path: tests/unit/test_deploy_task_ac_version.bats
   command: |
-    テスト速度改善: test_inbox_write.batsを15秒以内に(現在5.4s→既に達成だがさらに改善)。
-    ボトルネック1-2箇所の改善でよい。全書き換え不要。
-    AC1: 実行時間計測+ボトルネック特定  AC2: 改善+commit  AC3: PASS+LC+BC+verdict
-    ★ bc構造維持。bats全量禁止。
+    テスト速度改善チャンク1: read_task_* python3→bash(field_get.sh)変換。
+    test_deploy_task_ac_version.batsの全テストがdeploy_task_fast内のpython3を33+回呼ぶ。
+    field_get.sh(bash native)に置換して-7s見込み。
+    AC1: python3呼出箇所を特定+計測  AC2: field_get.sh置換+commit  AC3: 全テストPASS+LC+BC+verdict
+    ★ bc構造維持。bats全量禁止。一部改善で十分。長引くなら途中commitで終了。
   acceptance_criteria:
-    - ac: "AC1: 実行時間計測+ボトルネック特定"
-    - ac: "AC2: 改善+commit"
+    - ac: "AC1: python3呼出箇所特定+計測"
+    - ac: "AC2: field_get.sh置換+commit"
     - ac: "AC3: 全テストPASS(SKIP=0)+LC+BC+verdict"
   ac_priority: AC1 > AC2 > AC3
   parallel_ok: [AC1, AC2, AC3]
@@ -20,6 +21,4 @@ task:
   never_stop_for: [bats全量禁止]
   role_reminder: "忍者hayate。このタスクのみ実行せよ。"
   deployed_at: "$(date -Iseconds)"
-  report_filename: hayate_report_cmd_training_L4_R14.yaml
-  report_path: queue/reports/hayate_report_cmd_training_L4_R14.yaml
-  progress: "AC1: 6.15s計測、report_received初期化と毎テストwrapper準備が支配的 / AC2: root override+git fixture template化で5.54s、report_received 3.00s→2.23s / AC3: 15/15 PASS, SKIP=0, report+verdict完備"
+  report_path: queue/reports/hayate_report_cmd_training_L4_R15.yaml

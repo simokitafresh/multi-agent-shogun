@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R15
   task_type: impl
   project: infra
-  status: assigned
+  status: in_progress
   target_path: tests/unit/test_deploy_task_ac_version.bats
   command: |
     テスト速度改善チャンク4: グループC(レポート4本)用ヘルパーinject_report_only作成。
@@ -20,3 +20,4 @@ task:
   never_stop_for: [bats全量禁止]
   role_reminder: "忍者kotaro。このタスクのみ実行せよ。"
   deployed_at: "$(date -Iseconds)"
+  report_path: 
