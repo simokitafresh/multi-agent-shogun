@@ -854,7 +854,7 @@ archive_reports() {
         [ -f "$report_file" ] || continue
 
         local status_val parent_cmd base_name target_name dest_path
-        local _bname; _bname="$(basename "$report_file")"
+        local _bname; _bname="${report_file##*/}"
         status_val="${_rpt_status[$_bname]}"
         parent_cmd="${_rpt_parent[$_bname]}"
 
@@ -866,7 +866,7 @@ archive_reports() {
 
         # CMD_ID指定パス: status=pending → スキップ（生成直後のテンプレート保護）
         if [ -n "$CMD_ID" ] && [ "$status_val" = "pending" ]; then
-            echo "[archive] WARNING: Skipping pending report: $(basename "$report_file")"
+            echo "[archive] WARNING: Skipping pending report: $_bname"
             kept=$((kept + 1))
             continue
         fi
@@ -887,7 +887,7 @@ archive_reports() {
             if [ "$is_training_cmd" = "false" ]; then
                 local review_gate_file="$PROJECT_DIR/queue/gates/${check_cmd_for_review}/review_gate.done"
                 if [ ! -f "$review_gate_file" ]; then
-                    echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $(basename "$report_file")"
+                    echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $_bname"
                     kept=$((kept + 1))
                     continue
                 fi
@@ -895,7 +895,7 @@ archive_reports() {
                 # 根因: deploy_task.shがimpl配備時にreview_gate.doneをplaceholder生成 → archive_completed.shが
                 # ファイル存在のみチェック → レビュー完了前に報告がアーカイブされ軍師レビューFAIL(cmd_1623事故)
                 if grep -q "source: deploy_preflight" "$review_gate_file" 2>/dev/null; then
-                    echo "[archive] SKIP: review_gate.done is placeholder (deploy_preflight) for ${check_cmd_for_review}: $(basename "$report_file")"
+                    echo "[archive] SKIP: review_gate.done is placeholder (deploy_preflight) for ${check_cmd_for_review}: $_bname"
                     kept=$((kept + 1))
                     continue
                 fi
@@ -952,7 +952,7 @@ archive_reports() {
                 if [ "$skip_archive_done" = "false" ]; then
                     local archive_done_flag="$PROJECT_DIR/queue/gates/${parent_cmd}/archive.done"
                     if [ ! -f "$archive_done_flag" ]; then
-                        echo "[archive] SKIP(sweep): archive.done not found for ${parent_cmd}: $(basename "$report_file")"
+                        echo "[archive] SKIP(sweep): archive.done not found for ${parent_cmd}: $_bname"
                         kept=$((kept + 1))
                         continue
                     fi
@@ -960,7 +960,7 @@ archive_reports() {
             fi
         fi
 
-        base_name="$(basename "$report_file")"
+        base_name="$_bname"
         target_name="$base_name"
 
         # 旧形式はアーカイブ時にcmdサフィックスを付与（識別性向上）
