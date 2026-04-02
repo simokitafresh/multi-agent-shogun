@@ -211,6 +211,181 @@ PY
     echo "[chronicle] synced: $cmd_id"
 }
 
+sync_chronicle_entries_batch() {
+    local batch_file="$1"
+    [ -s "$batch_file" ] || return 0
+
+    (
+        flock -w 10 200 || { echo "[chronicle] WARN: flock timeout on chronicle" >&2; return 1; }
+
+        python3 - "$CHRONICLE_FILE" "$REPORTS_DIR" "$batch_file" <<'PY'
+import glob
+import os
+import re
+import sys
+from datetime import datetime
+
+import yaml
+
+chronicle_path, report_dir, batch_file = sys.argv[1:4]
+today = datetime.now().strftime("%Y-%m-%d")
+date_mm_dd = datetime.now().strftime("%m-%d")
+year_month = datetime.now().strftime("%Y-%m")
+
+
+def norm(value, fallback="—"):
+    text = (value or "").strip()
+    return text if text else fallback
+
+
+def blankish(value):
+    return (value or "").strip() in {"", "—"}
+
+
+def normalize(value):
+    if value is None:
+        return ""
+    text = str(value).replace("\r", " ").replace("\n", " ").strip()
+    return " ".join(text.split())
+
+
+def load_report_summaries():
+    summaries = {}
+    patterns = [
+        os.path.join(report_dir, "*_report_*.yaml"),
+        os.path.join(report_dir, "subtask_*.yaml"),
+    ]
+    for pattern in patterns:
+        for path in sorted(glob.glob(pattern)):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    data = yaml.safe_load(f) or {}
+            except Exception:
+                continue
+            if not isinstance(data, dict):
+                continue
+
+            parent_cmd = normalize(data.get("parent_cmd"))
+            if not parent_cmd:
+                match = re.match(r".*_report_(cmd_[^.]+)\.yaml$", os.path.basename(path))
+                if match:
+                    parent_cmd = match.group(1)
+            if not parent_cmd or parent_cmd in summaries:
+                continue
+
+            nested_report = data.get("report") if isinstance(data.get("report"), dict) else {}
+            nested_result = data.get("result") if isinstance(data.get("result"), dict) else {}
+            for candidate in (
+                data.get("summary"),
+                nested_report.get("summary"),
+                nested_result.get("summary"),
+            ):
+                text = normalize(candidate)
+                if text and text != "|":
+                    summaries[parent_cmd] = text[:30]
+                    break
+    return summaries
+
+
+def load_archived_entry(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    except Exception:
+        return None, None
+
+    commands = data.get("commands")
+    if isinstance(commands, dict):
+        for cmd_id, entry in commands.items():
+            if isinstance(entry, dict):
+                return normalize(cmd_id), entry
+    elif isinstance(commands, list):
+        for entry in commands:
+            if isinstance(entry, dict):
+                cmd_id = normalize(entry.get("id"))
+                if cmd_id:
+                    return cmd_id, entry
+    return None, None
+
+
+if not os.path.exists(chronicle_path):
+    with open(chronicle_path, "w", encoding="utf-8") as f:
+        f.write(f"# CMD年代記\n<!-- last_updated: {today} -->\n")
+
+with open(chronicle_path, encoding="utf-8") as f:
+    lines = f.read().splitlines()
+
+if not lines:
+    lines = ["# CMD年代記", f"<!-- last_updated: {today} -->"]
+elif len(lines) == 1:
+    lines.append(f"<!-- last_updated: {today} -->")
+
+if not lines[1].startswith("<!-- last_updated: "):
+    lines.insert(1, f"<!-- last_updated: {today} -->")
+
+summaries = load_report_summaries()
+rows_to_append = []
+synced_ids = []
+
+with open(batch_file, encoding="utf-8") as f:
+    archive_paths = [line.strip() for line in f if line.strip()]
+
+for archive_path in archive_paths:
+    cmd_id, entry = load_archived_entry(archive_path)
+    if not cmd_id or not isinstance(entry, dict):
+        continue
+
+    title = normalize(entry.get("purpose")) or normalize(entry.get("title"))
+    project = normalize(entry.get("project"))
+    key_result = summaries.get(cmd_id, "")
+
+    row_idx = next((i for i, line in enumerate(lines) if line.startswith(f"| {cmd_id} |")), None)
+    if row_idx is not None:
+        parts = [part.strip() for part in lines[row_idx].split("|")[1:-1]]
+        while len(parts) < 5:
+            parts.append("")
+        if blankish(parts[1]) and title:
+            parts[1] = title
+        if blankish(parts[2]) and project:
+            parts[2] = project
+        if blankish(parts[3]):
+            parts[3] = date_mm_dd
+        if blankish(parts[4]) and key_result:
+            parts[4] = key_result
+        lines[row_idx] = (
+            f"| {parts[0] or cmd_id} | {norm(parts[1])} | {norm(parts[2])} | "
+            f"{norm(parts[3])} | {norm(parts[4])} |"
+        )
+    else:
+        rows_to_append.append(
+            f"| {cmd_id} | {norm(title)} | {norm(project)} | {norm(date_mm_dd)} | {norm(key_result)} |"
+        )
+    synced_ids.append(cmd_id)
+
+if rows_to_append:
+    if next((i for i, line in enumerate(lines) if line == f"## {year_month}"), None) is None:
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.extend([
+            f"## {year_month}",
+            "",
+            "| cmd | title | project | date | key_result |",
+            "|-----|-------|---------|------|------------|",
+        ])
+    lines.extend(rows_to_append)
+
+lines[1] = f"<!-- last_updated: {today} -->"
+
+with open(chronicle_path, "w", encoding="utf-8") as f:
+    f.write("\n".join(lines) + "\n")
+
+print(f"synced:{len(synced_ids)}")
+PY
+    ) 200>"/tmp/mas-chronicle.lock"
+
+    echo "[chronicle] batch synced"
+}
+
 archive_pending_decisions_for_cmd() {
     local cmd_id="$1"
     [ -f "$PENDING_DECISIONS_FILE" ] || return 0
@@ -460,10 +635,12 @@ archive_cmds() {
     [ -f "$QUEUE_FILE" ] || return 0
 
     local tmp_active="$TMP/stk_active.yaml"
+    local chronicle_batch="$TMP/chronicle_batch.list"
     local archived=0 kept=0
     local date_stamp
     date_stamp="$(date '+%Y%m%d')"
 
+    : > "$chronicle_batch"
     echo "commands:" > "$tmp_active"
     # エントリ境界を行番号で特定（リスト形式 + マッピング形式の両対応）
     local -a starts
@@ -526,7 +703,7 @@ archive_cmds() {
                     printf '%s\n' "$entry"
                 } > "$cmd_archive_file"
                 archive_pending_decisions_for_cmd "$cmd_id" || true
-                sync_chronicle_entry "$cmd_id" "$entry" || true
+                printf '%s\n' "$cmd_archive_file" >> "$chronicle_batch"
             else
                 echo "[archive] WARN: failed to parse cmd_id at lines ${s}-${e}" >&2
             fi
@@ -557,6 +734,7 @@ archive_cmds() {
             [ -f "$tmp_active" ] || { echo "[archive] FATAL: tmp_active not found: $tmp_active" >&2; exit 1; }
             mv "$tmp_active" "$QUEUE_FILE" || { echo "[archive] FATAL: mv failed: $tmp_active → $QUEUE_FILE" >&2; exit 1; }
         ) 200>"/tmp/mas-stk.lock"
+        sync_chronicle_entries_batch "$chronicle_batch" || true
         echo "[archive] cmds: archived=$archived kept=$kept"
     else
         rm -f "$tmp_active"
@@ -609,11 +787,20 @@ archive_reports() {
 
     # task files キャッシュ (L667-669のfield_get置換)
     declare -A _task_parent _task_status
+    declare -A _queue_cmd_status _parent_has_active_child
     local _task_glob=("$PROJECT_DIR/queue/tasks"/*.yaml)
     if [ -f "${_task_glob[0]}" ]; then
         while IFS='|' read -r _tf _ts _tp; do
             _task_status["$_tf"]="$_ts"
             _task_parent["$_tf"]="$_tp"
+            case "$_ts" in
+                done|completed|complete|success|failed|"") ;;
+                *)
+                    if [ -n "$_tp" ]; then
+                        _parent_has_active_child["$_tp"]=1
+                    fi
+                    ;;
+            esac
         done < <(gawk '
             BEGINFILE {
                 fname = FILENAME; sub(/.*\//, "", fname)
@@ -623,6 +810,44 @@ archive_reports() {
             /parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", pc) }
             ENDFILE { print fname "|" st "|" pc }
         ' "${_task_glob[@]}" 2>/dev/null)
+    fi
+
+    if [ -f "$QUEUE_FILE" ]; then
+        while IFS='|' read -r _cid _cs; do
+            [ -n "$_cid" ] || continue
+            _queue_cmd_status["$_cid"]="$_cs"
+        done < <(gawk '
+            function emit() {
+                if (cmd_id != "") print cmd_id "|" status
+            }
+            BEGINFILE {
+                cmd_id = ""
+                status = ""
+            }
+            /^[[:space:]]*-[[:space:]]id:[[:space:]]*cmd_/ {
+                emit()
+                cmd_id = $0
+                sub(/^[[:space:]]*-[[:space:]]id:[[:space:]]*/, "", cmd_id)
+                gsub(/[[:space:]]+$/, "", cmd_id)
+                status = ""
+                next
+            }
+            /^[[:space:]]{2}cmd_[0-9A-Za-z_]+:/ {
+                emit()
+                cmd_id = $0
+                sub(/^[[:space:]]*/, "", cmd_id)
+                sub(/:.*/, "", cmd_id)
+                status = ""
+                next
+            }
+            cmd_id != "" && /^[[:space:]]*status:[[:space:]]*/ {
+                status = $0
+                sub(/^[[:space:]]*status:[[:space:]]*/, "", status)
+                gsub(/["'"'"'\t ]/, "", status)
+                next
+            }
+            ENDFILE { emit() }
+        ' "$QUEUE_FILE" 2>/dev/null)
     fi
 
     for report_file in "${report_files[@]}"; do
@@ -697,27 +922,7 @@ archive_reports() {
                     continue
                 fi
 
-                # exact matchでparent_cmdブロックのstatusを抽出（部分一致防止）
-                cmd_status=$(
-                    awk -v target="$parent_cmd" '
-                        BEGIN { in_target = 0 }
-                        /^[[:space:]]*-[[:space:]]id:[[:space:]]*cmd_/ {
-                            id = $0
-                            sub(/^[[:space:]]*-[[:space:]]id:[[:space:]]*/, "", id)
-                            gsub(/[[:space:]]+$/, "", id)
-                            if (in_target == 1) { exit }
-                            in_target = (id == target)
-                            next
-                        }
-                        in_target == 1 && /^[[:space:]]*status:[[:space:]]*/ {
-                            st = $0
-                            sub(/^[[:space:]]*status:[[:space:]]*/, "", st)
-                            gsub(/[[:space:]]+$/, "", st)
-                            print st
-                            exit
-                        }
-                    ' "$QUEUE_FILE"
-                )
+                cmd_status="${_queue_cmd_status[$parent_cmd]:-}"
 
                 case "$cmd_status" in
                     pending|delegated|in_progress|acknowledged)
@@ -726,24 +931,7 @@ archive_reports() {
                         ;;
                     "")
                         # parent cmd not in QUEUE_FILE — check child tasks
-                        local has_active_child=false
-                        local task_file_check
-                        for task_file_check in "$PROJECT_DIR/queue/tasks"/*.yaml; do
-                            [ -f "$task_file_check" ] || continue
-                            local t_parent t_status
-                            local _tbname; _tbname="$(basename "$task_file_check")"
-                            t_parent="${_task_parent[$_tbname]}"
-                            [ "$t_parent" = "$parent_cmd" ] || continue
-                            t_status="${_task_status[$_tbname]}"
-                            case "$t_status" in
-                                done|completed|complete|success|failed|"") ;;
-                                *)
-                                    has_active_child=true
-                                    break
-                                    ;;
-                            esac
-                        done
-                        if $has_active_child; then
+                        if [ "${_parent_has_active_child[$parent_cmd]:-}" = "1" ]; then
                             kept=$((kept + 1))
                             continue
                         fi
