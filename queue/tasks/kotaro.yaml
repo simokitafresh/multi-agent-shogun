@@ -31,7 +31,7 @@ task:
   project: infra
   report_filename: kotaro_report_cmd_training_L4_R30_kotaro.yaml
   report_path: queue/reports/kotaro_report_cmd_training_L4_R30_kotaro.yaml
-  status: assigned
+  status: done
   stop_for: []
   task_id: cmd_training_L4_R30_kotaro_impl
   task_type: impl
