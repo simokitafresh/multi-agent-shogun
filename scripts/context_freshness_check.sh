@@ -94,6 +94,16 @@ def extract_date(value: str | None) -> date | None:
         return None
 
 
+def normalize_scalar(value: str) -> str:
+    text = str(value).strip()
+    if len(text) >= 2 and (
+        (text.startswith('"') and text.endswith('"'))
+        or (text.startswith("'") and text.endswith("'"))
+    ):
+        text = text[1:-1]
+    return text.strip()
+
+
 def load_projects():
     data = load_yaml(os.path.join(root, "config", "projects.yaml"))
     projects = data.get("projects", []) if isinstance(data, dict) else []
@@ -382,6 +392,56 @@ def project_has_recent_completed_cmd(project_id: str) -> bool:
 
 
 def find_cmd_project(target_cmd_id: str) -> str | None:
+    def find_project_in_command_file(path: str) -> str | None:
+        current_cmd: str | None = None
+        in_commands = False
+        top_level_match = False
+
+        try:
+            with open(path, encoding="utf-8") as f:
+                for raw_line in f:
+                    line = raw_line.rstrip("\n")
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+
+                    indent = len(line) - len(line.lstrip(" "))
+
+                    if indent == 0 and stripped == "commands:":
+                        in_commands = True
+                        current_cmd = None
+                        top_level_match = False
+                        continue
+
+                    if indent == 0 and in_commands and stripped != "commands:":
+                        in_commands = False
+                        current_cmd = None
+
+                    if indent == 0 and stripped.startswith("id:"):
+                        top_level_match = normalize_scalar(stripped.split(":", 1)[1]) == target_cmd_id
+                        continue
+
+                    if top_level_match and indent == 0 and stripped.startswith("project:"):
+                        return normalize_scalar(stripped.split(":", 1)[1]) or None
+
+                    if not in_commands:
+                        continue
+
+                    if stripped.startswith("- id:"):
+                        current_cmd = normalize_scalar(stripped.split(":", 1)[1])
+                        continue
+
+                    if indent == 2 and stripped.endswith(":") and not stripped.startswith("- "):
+                        current_cmd = normalize_scalar(stripped[:-1])
+                        continue
+
+                    if current_cmd == target_cmd_id and stripped.startswith("project:"):
+                        return normalize_scalar(stripped.split(":", 1)[1]) or None
+        except Exception:
+            return None
+
+        return None
+
     candidates = [os.path.join(root, "queue", "shogun_to_karo.yaml")]
 
     for current_cmd_id, project_id, _ in load_cmd_chronicle_rows():
@@ -396,20 +456,9 @@ def find_cmd_project(target_cmd_id: str) -> str | None:
     )
 
     for path in candidates:
-        data = load_yaml(path)
-        commands = data.get("commands", []) if isinstance(data, dict) else []
-        if isinstance(commands, dict):
-            command_iter = commands.values()
-        elif isinstance(commands, list):
-            command_iter = commands
-        else:
-            command_iter = ()
-        for command in command_iter:
-            if not isinstance(command, dict):
-                continue
-            if str(command.get("id", "")).strip() == target_cmd_id:
-                project_id = str(command.get("project", "")).strip()
-                return project_id or None
+        project_id = find_project_in_command_file(path)
+        if project_id:
+            return project_id
         if path.endswith(".yaml") and os.path.basename(path).startswith(f"{target_cmd_id}_"):
             project_id, _, _ = scan_archive_metadata(path)
             if project_id:

@@ -116,6 +116,16 @@ commands:
 STKYAML
 }
 
+_create_shogun_to_karo_mapping() {
+    local cmd_id="$1" project="$2"
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<STKYAML
+commands:
+  $cmd_id:
+    project: $project
+    description: test command
+STKYAML
+}
+
 # === Test 1: モード未指定 → exit 1 + usage ===
 @test "no mode argument → exit 1 with usage" {
     run bash "$TEST_SCRIPT"
@@ -181,6 +191,17 @@ STKYAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"context/dm-signal.md"* ]]
     # infra context should NOT appear (different project)
+    [[ "$output" != *"infrastructure.md"* ]]
+}
+
+@test "--cmd-warnings reads shogun_to_karo mapping command format" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_shogun_to_karo_mapping "cmd_502" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_502
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/dm-signal.md"* ]]
     [[ "$output" != *"infrastructure.md"* ]]
 }
 
