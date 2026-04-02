@@ -25,74 +25,90 @@ fi
 
 fast_no_fix_needed() {
     local report_path="$1"
-    awk '
-        BEGIN {
-            section = ""
-            need_python = 0
-            saw_worker = 0
-            saw_parent = 0
-            saw_lessons_useful = 0
-        }
+    local _gr_need_python=0
+    local _gr_section=""
+    local _gr_saw_worker=0
+    local _gr_saw_parent=0
+    local _gr_saw_lessons_useful=0
+    local _gr_line=""
+    local _gr_key=""
 
-        /^[^[:space:]][^:]*:/ {
-            key = $1
-            sub(/:$/, "", key)
-            section = key
+    while IFS= read -r _gr_line || [ -n "$_gr_line" ]; do
+        if [[ "$_gr_line" =~ ^[^[:space:]][^:]*: ]]; then
+            _gr_key="${_gr_line%%:*}"
+            _gr_section="$_gr_key"
 
-            if (key == "report") {
-                need_python = 1
-            } else if (key == "worker_id") {
-                saw_worker = 1
-                if ($0 ~ /^worker_id:[[:space:]]*$/) need_python = 1
-            } else if (key == "parent_cmd") {
-                saw_parent = 1
-                if ($0 ~ /^parent_cmd:[[:space:]]*$/) need_python = 1
-            } else if (key == "lessons_useful") {
-                saw_lessons_useful = 1
-                if ($0 ~ /^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$/) need_python = 1
-                else if ($0 !~ /^lessons_useful:[[:space:]]*$/ && $0 !~ /^lessons_useful:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) need_python = 1
-            } else if (key == "files_modified") {
-                if ($0 !~ /^files_modified:[[:space:]]*$/ && $0 !~ /^files_modified:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) need_python = 1
-            } else if (key == "binary_checks") {
-                if ($0 !~ /^binary_checks:[[:space:]]*$/) need_python = 1
-            } else if (key == "lesson_candidate") {
-                if ($0 ~ /^lesson_candidate:[[:space:]]*\[/) need_python = 1
-            } else if (key == "verdict") {
-                if ($0 !~ /^verdict:[[:space:]]*(PASS|FAIL)[[:space:]]*$/ && $0 !~ /^verdict:[[:space:]]*$/) need_python = 1
-            }
-            next
-        }
+            case "$_gr_key" in
+                report)
+                    _gr_need_python=1
+                    ;;
+                worker_id)
+                    _gr_saw_worker=1
+                    [[ "$_gr_line" =~ ^worker_id:[[:space:]]*$ ]] && _gr_need_python=1
+                    ;;
+                parent_cmd)
+                    _gr_saw_parent=1
+                    [[ "$_gr_line" =~ ^parent_cmd:[[:space:]]*$ ]] && _gr_need_python=1
+                    ;;
+                lessons_useful)
+                    _gr_saw_lessons_useful=1
+                    if [[ "$_gr_line" =~ ^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$ ]]; then
+                        _gr_need_python=1
+                    elif [[ ! "$_gr_line" =~ ^lessons_useful:[[:space:]]*$ ]] && [[ ! "$_gr_line" =~ ^lessons_useful:[[:space:]]*\[[[:space:]]*\][[:space:]]*$ ]]; then
+                        _gr_need_python=1
+                    fi
+                    ;;
+                files_modified)
+                    if [[ ! "$_gr_line" =~ ^files_modified:[[:space:]]*$ ]] && [[ ! "$_gr_line" =~ ^files_modified:[[:space:]]*\[[[:space:]]*\][[:space:]]*$ ]]; then
+                        _gr_need_python=1
+                    fi
+                    ;;
+                binary_checks)
+                    [[ ! "$_gr_line" =~ ^binary_checks:[[:space:]]*$ ]] && _gr_need_python=1
+                    ;;
+                lesson_candidate)
+                    [[ "$_gr_line" =~ ^lesson_candidate:[[:space:]]*\[ ]] && _gr_need_python=1
+                    ;;
+                verdict)
+                    if [[ ! "$_gr_line" =~ ^verdict:[[:space:]]*(PASS|FAIL)[[:space:]]*$ ]] && [[ ! "$_gr_line" =~ ^verdict:[[:space:]]*$ ]]; then
+                        _gr_need_python=1
+                    fi
+                    ;;
+            esac
+            continue
+        fi
 
-        section == "files_modified" {
-            if ($0 ~ /^  - / && $0 !~ /^  - path:/) need_python = 1
-            next
-        }
+        case "$_gr_section" in
+            files_modified)
+                [[ "$_gr_line" =~ ^[[:space:]]{2}-[[:space:]] ]] && [[ ! "$_gr_line" =~ ^[[:space:]]{2}-[[:space:]]path: ]] && _gr_need_python=1
+                ;;
+            lessons_useful)
+                [[ "$_gr_line" =~ ^[[:space:]]{2}[0-9A-Za-z_-]+: ]] && _gr_need_python=1
+                [[ "$_gr_line" =~ ^[[:space:]]{2}-[[:space:]] ]] && [[ ! "$_gr_line" =~ ^[[:space:]]{2}-[[:space:]]id: ]] && _gr_need_python=1
+                [[ "$_gr_line" =~ UNKNOWN_[0-9]+ ]] && _gr_need_python=1
+                [[ "$_gr_line" =~ id:[[:space:]]*(UNKNOWN|None|null) ]] && _gr_need_python=1
+                ;;
+            binary_checks)
+                [[ "$_gr_line" =~ ^[[:space:]]{2}[^:]+:[[:space:]]+[^[:space:]] ]] && _gr_need_python=1
+                [[ "$_gr_line" =~ ^[[:space:]]{4}(check|result): ]] && _gr_need_python=1
+                [[ "$_gr_line" =~ ^[[:space:]]{4}-[[:space:]] ]] && [[ ! "$_gr_line" =~ ^[[:space:]]{4}-[[:space:]]check: ]] && _gr_need_python=1
+                if [[ "$_gr_line" =~ ^[[:space:]]{6}result: ]]; then
+                    [[ ! "$_gr_line" =~ ^[[:space:]]{6}result:[[:space:]]*\"?(yes|no)\"?[[:space:]]*$ ]] && _gr_need_python=1
+                fi
+                ;;
+            self_gate_check)
+                [[ "$_gr_line" =~ ^[[:space:]]{2}[^:]+:[[:space:]]*(ok|yes|true|pass|o|○|ng|no|false|fail|x|×)[[:space:]]*$ ]] && _gr_need_python=1
+                ;;
+        esac
 
-        section == "lessons_useful" {
-            if ($0 ~ /^  [0-9A-Za-z_-]+:/) need_python = 1
-            if ($0 ~ /^  - / && $0 !~ /^  - id:/) need_python = 1
-            if ($0 ~ /UNKNOWN_[0-9]+|id:[[:space:]]*(UNKNOWN|None|null)/) need_python = 1
-            next
-        }
+        [ "$_gr_need_python" -eq 1 ] && break
+    done < "$report_path"
 
-        section == "binary_checks" {
-            if ($0 ~ /^  [^:]+:[[:space:]]+\S/) need_python = 1
-            if ($0 ~ /^    check:/ || $0 ~ /^    result:/) need_python = 1
-            if ($0 ~ /^    - / && $0 !~ /^    - check:/) need_python = 1
-            if ($0 ~ /^      result:/ && $0 !~ /^      result:[[:space:]]*"?((yes)|(no))"?[[:space:]]*$/) need_python = 1
-            next
-        }
+    if [ "$_gr_saw_worker" -eq 0 ] || [ "$_gr_saw_parent" -eq 0 ] || [ "$_gr_saw_lessons_useful" -eq 0 ]; then
+        _gr_need_python=1
+    fi
 
-        section == "self_gate_check" {
-            if ($0 ~ /^  [^:]+:[[:space:]]*(ok|yes|true|pass|o|○|ng|no|false|fail|x|×)[[:space:]]*$/) need_python = 1
-            next
-        }
-
-        END {
-            if (!saw_worker || !saw_parent || !saw_lessons_useful) need_python = 1
-            exit need_python ? 1 : 0
-        }
-    ' "$report_path"
+    [ "$_gr_need_python" -eq 0 ]
 }
 
 if fast_no_fix_needed "$REPORT_PATH"; then
