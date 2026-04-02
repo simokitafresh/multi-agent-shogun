@@ -6,7 +6,9 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh"
+    export SRC_GATE_HELPER="$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py"
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
+    [ -f "$SRC_GATE_HELPER" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -18,6 +20,7 @@ setup() {
              "$TEST_TMPDIR/logs"
     # Copy script so REPO_ROOT resolves to test tmpdir (no log pollution)
     cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_autofix.sh"
+    cp "$SRC_GATE_HELPER" "$TEST_TMPDIR/scripts/gates/gate_report_autofix_main.py"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_autofix.sh"
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_report_autofix.sh"
 }
