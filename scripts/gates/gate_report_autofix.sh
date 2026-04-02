@@ -111,10 +111,232 @@ fast_no_fix_needed() {
     [ "$_gr_need_python" -eq 0 ]
 }
 
+fast_binary_checks_fix() {
+    local report_path="$1"
+    local tmp_file=""
+    local meta_file=""
+    local awk_status=0
+    local fixes=""
+
+    tmp_file="$(mktemp)"
+    meta_file="$(mktemp)"
+
+    if ! awk -v meta_file="$meta_file" '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function unquote(s, first, last) {
+    s = trim(s)
+    first = substr(s, 1, 1)
+    last = substr(s, length(s), 1)
+    if (length(s) >= 2 && ((first == "\"" && last == "\"") || (first == "'"'"'" && last == "'"'"'"))) {
+        s = substr(s, 2, length(s) - 2)
+    }
+    return s
+}
+function yaml_safe(v, needs_quote, out, i, c) {
+    needs_quote = (v ~ /[:#\[\]\{\}",]/ || v ~ /^[[:space:]]/ || v ~ /[[:space:]]$/ || v == "" || v ~ /^[-?]/)
+    if (!needs_quote) {
+        return v
+    }
+    out = ""
+    for (i = 1; i <= length(v); i++) {
+        c = substr(v, i, 1)
+        if (c == "\"") {
+            out = out "\\" c
+        } else {
+            out = out c
+        }
+    }
+    return "\"" out "\""
+}
+function normalize_result(raw, cleaned, lowered) {
+    cleaned = trim(raw)
+    sub(/[[:space:]]+#.*$/, "", cleaned)
+    cleaned = unquote(cleaned)
+    lowered = tolower(cleaned)
+    if (lowered == "yes") return "yes"
+    if (lowered == "no") return "no"
+    if (lowered == "true" || lowered == "pass" || lowered == "ok" || lowered == "done" || lowered == "clear" || lowered == "n/a" || lowered == "na") return "yes"
+    if (lowered == "false" || lowered == "fail" || lowered == "ng" || lowered == "block") return "no"
+    return cleaned
+}
+function add_fix(label) {
+    if (fixes == "") {
+        fixes = label
+    } else if (index(fixes, label) == 0) {
+        fixes = fixes "; " label
+    }
+}
+BEGIN {
+    current_section = ""
+    in_binary_checks = 0
+    eligible = 1
+    changed = 0
+    bc_pass = 0
+    bc_fail = 0
+    verdict_idx = 0
+    verdict_invalid = 0
+    fixes = ""
+    out_count = 0
+}
+{
+    line = $0
+
+    if (line ~ /^[^[:space:]][^:]*:/) {
+        top_key = substr(line, 1, index(line, ":") - 1)
+        current_section = top_key
+        in_binary_checks = (top_key == "binary_checks")
+
+        if (top_key == "report") {
+            eligible = 0
+        } else if (top_key == "worker_id" || top_key == "parent_cmd") {
+            if (line ~ /^[^:]+:[[:space:]]*$/) eligible = 0
+        } else if (top_key == "lessons_useful") {
+            if (line ~ /^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$/) {
+                eligible = 0
+            } else if (line !~ /^lessons_useful:[[:space:]]*$/ && line !~ /^lessons_useful:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) {
+                eligible = 0
+            }
+        } else if (top_key == "files_modified") {
+            if (line !~ /^files_modified:[[:space:]]*$/ && line !~ /^files_modified:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) {
+                eligible = 0
+            }
+        } else if (top_key == "lesson_candidate") {
+            if (line ~ /^lesson_candidate:[[:space:]]*\[/) eligible = 0
+        } else if (top_key == "binary_checks") {
+            if (line !~ /^binary_checks:[[:space:]]*$/) eligible = 0
+        } else if (top_key == "verdict") {
+            verdict_idx = out_count + 1
+            verdict_val = line
+            sub(/^verdict:[[:space:]]*/, "", verdict_val)
+            verdict_val = trim(verdict_val)
+            if (verdict_val != "" && verdict_val != "PASS" && verdict_val != "FAIL") {
+                verdict_invalid = 1
+            }
+        } else if (top_key == "self_gate_check") {
+            # Non-standard self_gate_check values still require Python fallback.
+        }
+
+        out[++out_count] = line
+        next
+    }
+
+    if (current_section == "files_modified") {
+        if (line ~ /^[[:space:]]{2}-[[:space:]]/ && line !~ /^[[:space:]]{2}-[[:space:]]path:/) eligible = 0
+    } else if (current_section == "lessons_useful") {
+        if (line ~ /^[[:space:]]{2}[0-9A-Za-z_-]+:/) eligible = 0
+        if (line ~ /^[[:space:]]{2}-[[:space:]]/ && line !~ /^[[:space:]]{2}-[[:space:]]id:/) eligible = 0
+        if (line ~ /UNKNOWN_[0-9]+/) eligible = 0
+        if (line ~ /id:[[:space:]]*(UNKNOWN|None|null)/) eligible = 0
+    } else if (current_section == "binary_checks") {
+        if (line ~ /^[[:space:]]{4}(check|result):/) {
+            eligible = 0
+        } else if (line ~ /^[[:space:]]{6}result:/) {
+            raw_result = line
+            sub(/^[[:space:]]{6}result:[[:space:]]*/, "", raw_result)
+            normalized = normalize_result(raw_result)
+            if (normalized == "yes") bc_pass++
+            else if (normalized == "no") bc_fail++
+            if (normalized == "yes" || normalized == "no") {
+                normalized_line = "      result: " yaml_safe(normalized)
+                if (normalized_line != line) {
+                    line = normalized_line
+                    changed = 1
+                    add_fix("binary_checks result文字列正規化(PASS/ok→yes, FAIL/ng→no)")
+                }
+            } else if (line !~ /^[[:space:]]{6}result:[[:space:]]*\"?(yes|no)\"?[[:space:]]*$/) {
+                eligible = 0
+            }
+        } else if (line ~ /^[[:space:]]{4}-[[:space:]]check:/) {
+            # Valid list item. Result line will be processed separately.
+        } else if (line ~ /^[[:space:]]{4}-[[:space:]]/) {
+            if (match(line, /^[[:space:]]{4}-[[:space:]]([^:]+):[[:space:]]*(.*)$/, parts)) {
+                check_name = trim(parts[1])
+                raw_result = parts[2]
+                normalized = normalize_result(raw_result)
+                if (!(normalized == "yes" || normalized == "no")) {
+                    eligible = 0
+                } else {
+                    out[++out_count] = "    - check: " yaml_safe(check_name)
+                    out[++out_count] = "      result: " yaml_safe(normalized)
+                    if (normalized == "yes") bc_pass++
+                    else if (normalized == "no") bc_fail++
+                    changed = 1
+                    add_fix("binary_checks {name:val}→{check:name,result:val}正規化")
+                    if (tolower(unquote(trim(raw_result))) == "true" || tolower(unquote(trim(raw_result))) == "false") {
+                        add_fix("binary_checks result boolean→string変換")
+                    } else {
+                        add_fix("binary_checks result文字列正規化(PASS/ok→yes, FAIL/ng→no)")
+                    }
+                    next
+                }
+            } else {
+                eligible = 0
+            }
+        } else if (line !~ /^[[:space:]]{2}[^:]+:[[:space:]]*$/ && line !~ /^[[:space:]]*$/ && line !~ /^[[:space:]]*#/) {
+            eligible = 0
+        }
+    } else if (current_section == "self_gate_check") {
+        if (line ~ /^[[:space:]]{2}[^:]+:[[:space:]]*(ok|yes|true|pass|o|○|ng|no|false|fail|x|×)[[:space:]]*$/) eligible = 0
+    }
+
+    out[++out_count] = line
+}
+END {
+    if (!eligible) exit 2
+
+    if (verdict_invalid && verdict_idx > 0 && (bc_pass + bc_fail) > 0) {
+        out[verdict_idx] = "verdict: " (bc_fail > 0 ? "FAIL" : "PASS")
+        changed = 1
+        add_fix("verdict推定(" bc_pass "PASS/" bc_fail "FAIL)")
+    }
+
+    if (!changed) exit 2
+
+    print fixes > meta_file
+    close(meta_file)
+    for (i = 1; i <= out_count; i++) {
+        print out[i]
+    }
+}
+' "$report_path" > "$tmp_file"; then
+        awk_status=$?
+    else
+        awk_status=$?
+    fi
+
+    if [ "$awk_status" -ne 0 ]; then
+        rm -f "$tmp_file" "$meta_file"
+        return 1
+    fi
+
+    fixes="$(cat "$meta_file")"
+    rm -f "$meta_file"
+
+    if [ -z "$fixes" ]; then
+        rm -f "$tmp_file"
+        return 1
+    fi
+
+    mv "$tmp_file" "$report_path"
+    echo "AUTO-FIXED: $fixes"
+    return 0
+}
+
 if fast_no_fix_needed "$REPORT_PATH"; then
     echo "NO-FIX-NEEDED"
     exit 0
 fi
+
+if RESULT="$(fast_binary_checks_fix "$REPORT_PATH")"; then
+    echo "$RESULT"
+    :
+else
+    RESULT=""
+fi
+
+if [ -n "$RESULT" ]; then
+    :
+else
 
 RESULT=$(REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, os, sys, re
@@ -604,6 +826,8 @@ if fixes:
 else:
     print('NO-FIX-NEEDED')
 " 2>&1) || true
+
+fi
 
 echo "$RESULT"
 

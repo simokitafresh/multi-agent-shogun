@@ -388,6 +388,44 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
+# === Test 12b: binary_checks name:value entries + verdict推定 ===
+@test "binary_checks name:value entries are normalized and verdict is inferred" {
+    local rpath="$TEST_TMPDIR/queue/reports/saizo_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: saizo
+parent_cmd: cmd_999
+verdict: CONDITIONAL_PASS
+lessons_useful: []
+binary_checks:
+  AC1:
+    - committed: true
+    - lint: PASS
+  AC2:
+    - tests: false
+    - format: ng
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"binary_checks {name:val}→{check:name,result:val}正規化"* ]]
+    [[ "$output" == *"verdict推定(2PASS/2FAIL)"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+assert d['verdict'] == 'FAIL', f'Expected FAIL, got {d[\"verdict\"]}'
+bc1 = d['binary_checks']['AC1']
+bc2 = d['binary_checks']['AC2']
+assert bc1[0] == {'check': 'committed', 'result': 'yes'}, bc1[0]
+assert bc1[1] == {'check': 'lint', 'result': 'yes'}, bc1[1]
+assert bc2[0] == {'check': 'tests', 'result': 'no'}, bc2[0]
+assert bc2[1] == {'check': 'format', 'result': 'no'}, bc2[1]
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 # === Test 13: lessons_useful 単一教訓dict → list wrap (Pattern B) ===
 @test "lessons_useful single lesson dict is wrapped in list" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
