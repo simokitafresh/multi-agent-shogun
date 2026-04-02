@@ -24,7 +24,7 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
 fi
 
 RESULT=$(REPORT_PATH="$REPORT_PATH" python3 -c "
-import yaml, os, sys, copy
+import yaml, os, sys, copy, re
 
 report_path = os.environ['REPORT_PATH']
 
@@ -45,6 +45,25 @@ if not data or not isinstance(data, dict):
 
 fixes = []
 
+# === Task YAML cache (Fix 20/14/6/19 共通) ===
+# 4箇所で独立にopen+yaml.safe_loadしていたタスクYAMLを1回読込でキャッシュ
+_task_yaml_cache = {}
+def _get_task_data(worker_id):
+    if worker_id in _task_yaml_cache:
+        return _task_yaml_cache[worker_id]
+    result = None
+    if worker_id:
+        tpath = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{worker_id}.yaml')
+        if os.path.exists(tpath):
+            try:
+                with open(tpath) as tf:
+                    tdata = yaml.safe_load(tf)
+                result = tdata if not isinstance(tdata, dict) or 'task' not in tdata else tdata.get('task', {})
+            except Exception:
+                pass
+    _task_yaml_cache[worker_id] = result
+    return result
+
 # === Fix 22-28: 撤去(2026-03-25 消火→品質向上改修) ===
 # 旧: MISSINGフィールドにデフォルト値を挿入 → gateがPASS → 家老workaround発生(消火構造)
 # 新: MISSINGはautofixしない → gate_report_format.shがBLOCK → 忍者が修正 → 学習ループ回転
@@ -62,47 +81,39 @@ if 'report' in data and isinstance(data['report'], dict):
 # === Fix 20: worker_id/parent_cmd欠落 → ファイル名から推定 ===
 # パターン: 忍者がworker_id/parent_cmdを記入忘れ。ファイル名パターンから推定。
 # Fix 14等のworker_id依存Fixより前に配置し、worker_idを先に確定させる。
-import re as _re20
 if not data.get('worker_id'):
     _basename = os.path.basename(report_path)
-    _m20 = _re20.match(r'^([a-z_]+?)_report(?:_cmd_.+)?\.yaml$', _basename)
+    _m20 = re.match(r'^([a-z_]+?)_report(?:_cmd_.+)?\.yaml$', _basename)
     if _m20:
         data['worker_id'] = _m20.group(1)
         fixes.append(f'worker_id ファイル名から推定({_m20.group(1)})')
 
 if not data.get('parent_cmd'):
     _basename = os.path.basename(report_path)
-    _m20p = _re20.match(r'^[a-z_]+?_report_(cmd_.+)\.yaml$', _basename)
+    _m20p = re.match(r'^[a-z_]+?_report_(cmd_.+)\.yaml$', _basename)
     if _m20p:
         data['parent_cmd'] = _m20p.group(1)
         fixes.append(f'parent_cmd ファイル名から推定({_m20p.group(1)})')
     else:
-        # ファイル名から推定不可 → タスクYAMLから取得
+        # ファイル名から推定不可 → タスクYAMLから取得(キャッシュ使用)
         _worker20 = data.get('worker_id', '')
         if _worker20:
-            try:
-                _tpath20 = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker20}.yaml')
-                if os.path.exists(_tpath20):
-                    with open(_tpath20) as _tf20:
-                        _tdata20 = yaml.safe_load(_tf20)
-                    _task20 = _tdata20 if not isinstance(_tdata20, dict) or 'task' not in _tdata20 else _tdata20.get('task', {})
-                    _pcmd20 = _task20.get('parent_cmd', '')
-                    if _pcmd20:
-                        data['parent_cmd'] = str(_pcmd20)
-                        fixes.append(f'parent_cmd タスクYAMLから補完({_pcmd20})')
-            except Exception:
-                pass
+            _task20 = _get_task_data(_worker20)
+            if _task20:
+                _pcmd20 = _task20.get('parent_cmd', '')
+                if _pcmd20:
+                    data['parent_cmd'] = str(_pcmd20)
+                    fixes.append(f'parent_cmd タスクYAMLから補完({_pcmd20})')
 
 # === Fix 2: lessons_useful dict → list (3パターン網羅 cmd_1535) ===
 # Pattern A: 数値キーdict {0: {...}, 1: {...}} → [{...}, {...}] (既存)
 # Pattern B: 単一教訓dict {id: L074, useful: true, reason: ...} → [{id: L074, ...}]
 # Pattern C: 教訓IDキーdict {L074: {...}, L063: {...}} → [{id: L074, ...}, {id: L063, ...}]
-import re as _re2
 lu = data.get('lessons_useful')
 if isinstance(lu, dict):
     _lu_keys_str = {str(k) for k in lu.keys()}
     _known_fields = {'id', 'useful', 'reason'}
-    _lesson_id_re = _re2.compile(r'^L\d+$')
+    _lesson_id_re = re.compile(r'^L\d+$')
 
     _converted = None
     _fix_label = ''
@@ -171,21 +182,14 @@ if isinstance(lu, list) and lu:
             if not _lid or _lid.startswith('UNKNOWN') or _lid == 'None':
                 _unknown_ids.append(_idx)
     if _unknown_ids:
-        # タスクYAMLからrelated_lessons idを取得
+        # タスクYAMLからrelated_lessons idを取得(キャッシュ使用)
         _task_lesson_ids = []
-        try:
-            _worker = data.get('worker_id', '')
-            if _worker:
-                _tpath = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker}.yaml')
-                if os.path.exists(_tpath):
-                    with open(_tpath) as _tf:
-                        _tdata = yaml.safe_load(_tf)
-                    _task = _tdata if not isinstance(_tdata, dict) or 'task' not in _tdata else _tdata.get('task', {})
-                    _rl = _task.get('related_lessons', [])
-                    if isinstance(_rl, list):
-                        _task_lesson_ids = [str(r.get('id', '')) for r in _rl if isinstance(r, dict) and r.get('id')]
-        except Exception:
-            pass
+        _worker = data.get('worker_id', '')
+        _task14 = _get_task_data(_worker)
+        if _task14:
+            _rl = _task14.get('related_lessons', [])
+            if isinstance(_rl, list):
+                _task_lesson_ids = [str(r.get('id', '')) for r in _rl if isinstance(r, dict) and r.get('id')]
         _lu_fixed = False
         for _pos in _unknown_ids:
             _lid = str(lu[_pos].get('id', ''))
@@ -245,7 +249,6 @@ if isinstance(lu, list):
 #   (b) '- check: ...\n  result: ...' — YAML list without brackets
 #   (c) '{check: ..., result: ...}' — YAML dict string → yaml.safe_load→dict→[dict]
 #   (d) 'check: ..., result: ...' — bare key-value (yaml parse fails) → regex抽出
-import re as _re
 bc = data.get('binary_checks')
 if isinstance(bc, dict):
     bc_fixed = False
@@ -263,7 +266,7 @@ if isinstance(bc, dict):
                 pass
             # Step 2: regex fallback(dパターン: 'check: X, result: Y')
             if converted is None:
-                m = _re.search(r'check:\s*(.+?)\s*,\s*result:\s*(.+)', ac_val)
+                m = re.search(r'check:\s*(.+?)\s*,\s*result:\s*(.+)', ac_val)
                 if m:
                     converted = [{'check': m.group(1).strip(), 'result': m.group(2).strip()}]
             # === Fix 5 Step 3: plain string → [{check: str, result: 'yes'}] ===
@@ -364,21 +367,14 @@ _lu_missing = 'lessons_useful' not in data
 _lu_null = 'lessons_useful' in data and data['lessons_useful'] is None
 if _lu_missing or _lu_null:
     _skeleton = []
-    try:
-        _worker6 = data.get('worker_id', '')
-        if _worker6:
-            _tpath6 = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker6}.yaml')
-            if os.path.exists(_tpath6):
-                with open(_tpath6) as _tf6:
-                    _tdata6 = yaml.safe_load(_tf6)
-                _task6 = _tdata6 if not isinstance(_tdata6, dict) or 'task' not in _tdata6 else _tdata6.get('task', {})
-                _rl6 = _task6.get('related_lessons', [])
-                if isinstance(_rl6, list):
-                    for _item6 in _rl6:
-                        if isinstance(_item6, dict) and _item6.get('id'):
-                            _skeleton.append({'id': str(_item6['id']), 'useful': False, 'reason': ''})
-    except Exception:
-        pass
+    _worker6 = data.get('worker_id', '')
+    _task6 = _get_task_data(_worker6)
+    if _task6:
+        _rl6 = _task6.get('related_lessons', [])
+        if isinstance(_rl6, list):
+            for _item6 in _rl6:
+                if isinstance(_item6, dict) and _item6.get('id'):
+                    _skeleton.append({'id': str(_item6['id']), 'useful': False, 'reason': ''})
     data['lessons_useful'] = _skeleton if _skeleton else []
     _label6 = 'MISSING' if _lu_missing else 'null'
     if _skeleton:
@@ -468,7 +464,6 @@ if isinstance(sgc, dict):
 # パターン: 忍者がbcを [{[0]: {result: PASS}, [1]: {result: PASS}}] の番号キーdict形式で記入。
 # cmd_1387半蔵で検出。Fix 15(len==1)では捕まらない(複数キー)。
 # タスクYAMLのbinary_checksから本来のcheck名を取得して再構築。
-import re as _re19
 bc = data.get('binary_checks')
 if isinstance(bc, dict):
     bc19_fixed = False
@@ -478,30 +473,23 @@ if isinstance(bc, dict):
             for chk in ac_val:
                 if isinstance(chk, dict) and len(chk) > 1:
                     # 全キーが[N]パターンかチェック
-                    _numbered_keys = [k for k in chk.keys() if _re19.match(r'^\[?\d+\]?$', str(k))]
+                    _numbered_keys = [k for k in chk.keys() if re.match(r'^\[?\d+\]?$', str(k))]
                     if len(_numbered_keys) == len(chk):
                         _needs_convert = True
                         break
             if _needs_convert:
-                # タスクYAMLからcheck名取得
+                # タスクYAMLからcheck名取得(キャッシュ使用)
                 _task_checks = []
-                try:
-                    _worker = data.get('worker_id', '')
-                    if _worker:
-                        _tpath = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks', f'{_worker}.yaml')
-                        if os.path.exists(_tpath):
-                            with open(_tpath) as _tf:
-                                _tdata = yaml.safe_load(_tf)
-                            _task = _tdata if not isinstance(_tdata, dict) or 'task' not in _tdata else _tdata.get('task', {})
-                            _acs = _task.get('acceptance_criteria', [])
-                            if isinstance(_acs, list):
-                                for _ac_item in _acs:
-                                    if isinstance(_ac_item, dict) and _ac_item.get('id') == ac_key:
-                                        _bc_list = _ac_item.get('binary_checks', [])
-                                        if isinstance(_bc_list, list):
-                                            _task_checks = _bc_list
-                except Exception:
-                    pass
+                _worker = data.get('worker_id', '')
+                _task19 = _get_task_data(_worker)
+                if _task19:
+                    _acs = _task19.get('acceptance_criteria', [])
+                    if isinstance(_acs, list):
+                        for _ac_item in _acs:
+                            if isinstance(_ac_item, dict) and _ac_item.get('id') == ac_key:
+                                _bc_list = _ac_item.get('binary_checks', [])
+                                if isinstance(_bc_list, list):
+                                    _task_checks = _bc_list
                 # 番号キーから結果を抽出し、タスクYAMLのcheck名と結合
                 new_list = []
                 for chk in ac_val:
