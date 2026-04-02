@@ -59,7 +59,7 @@ EOF
 
     export PATH="$TEST_BIN:$PATH"
     export TMUX_PANE="%1"
-    export STOP_HOOK_INOTIFY_TIMEOUT=1  # テスト高速化: 55秒→1秒
+    export STOP_HOOK_INOTIFY_TIMEOUT=0.1  # テスト高速化: inotify待機を最小化
     rm -f "$TEST_IDLE_FLAG"
     : > "$TMUX_LOG"
     : > "$INBOX_WRITE_LOG"
@@ -147,9 +147,9 @@ EOF
 @test "T-SCI-005: inotifywait blocks when message arrives during wait" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
-    # バックグラウンドで0.5秒後に未読メッセージを書き込む
+    # バックグラウンドで0.05秒後に未読メッセージを書き込む
     (
-        sleep 0.5
+        sleep 0.05
         cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'YAML'
 messages:
   - id: msg_late
