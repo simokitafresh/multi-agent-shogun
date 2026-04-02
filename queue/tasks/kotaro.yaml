@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R18
   task_type: impl
   project: infra
-  status: acknowledged
+  status: done
   target_path: tests/unit/test_report_field_set_bc_validation.bats
   command: |
     テスト速度改善: test_report_field_set_bc_validation.bats(3.7s/13t→1.5s目標(python3→bash))。
