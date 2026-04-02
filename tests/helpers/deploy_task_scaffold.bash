@@ -25,42 +25,37 @@ deploy_task_setup_file() {
     [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
     [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
-}
 
-deploy_task_scaffold() {
-    local tmpdir_prefix="${1:-deploy_task}"
-    export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/${tmpdir_prefix}.XXXXXX")"
-    export TEST_PROJECT="$TEST_TMPDIR/project"
+    export DEPLOY_TASK_TEMPLATE_DIR
+    DEPLOY_TASK_TEMPLATE_DIR="$(mktemp -d "$BATS_TMPDIR/deploy_task_template.XXXXXX")"
 
     mkdir -p \
-        "$TEST_PROJECT/lib" \
-        "$TEST_PROJECT/scripts/lib" \
-        "$TEST_PROJECT/queue/tasks" \
-        "$TEST_PROJECT/queue/reports" \
-        "$TEST_PROJECT/queue/inbox" \
-        "$TEST_PROJECT/logs" \
-        "$TEST_PROJECT/config" \
-        "$TEST_PROJECT/projects"
+        "$DEPLOY_TASK_TEMPLATE_DIR/lib" \
+        "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib" \
+        "$DEPLOY_TASK_TEMPLATE_DIR/queue/tasks" \
+        "$DEPLOY_TASK_TEMPLATE_DIR/queue/reports" \
+        "$DEPLOY_TASK_TEMPLATE_DIR/queue/inbox" \
+        "$DEPLOY_TASK_TEMPLATE_DIR/logs" \
+        "$DEPLOY_TASK_TEMPLATE_DIR/config" \
+        "$DEPLOY_TASK_TEMPLATE_DIR/projects"
 
-    cp "$SRC_DEPLOY_SCRIPT" "$TEST_PROJECT/scripts/deploy_task.sh"
-    cp "$SRC_CLI_LOOKUP_SCRIPT" "$TEST_PROJECT/scripts/lib/cli_lookup.sh"
-    cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
-    cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
-    cp "$SRC_AGENT_STATE_LIB" "$TEST_PROJECT/lib/agent_state.sh"
-    cp "$SRC_CTX_UTILS_SCRIPT" "$TEST_PROJECT/scripts/lib/ctx_utils.sh"
-    cp "$SRC_PANE_LOOKUP_SCRIPT" "$TEST_PROJECT/scripts/lib/pane_lookup.sh"
-    cp "$SRC_AGENT_CONFIG_SCRIPT" "$TEST_PROJECT/scripts/lib/agent_config.sh"
-    cp "$SRC_INJECT_TASK_MODIFIERS" "$TEST_PROJECT/scripts/lib/inject_task_modifiers.py"
+    ln -s "$SRC_DEPLOY_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/deploy_task.sh"
+    ln -s "$SRC_CLI_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/cli_lookup.sh"
+    ln -s "$SRC_FIELD_GET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/field_get.sh"
+    ln -s "$SRC_YAML_FIELD_SET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/yaml_field_set.sh"
+    ln -s "$SRC_AGENT_STATE_LIB" "$DEPLOY_TASK_TEMPLATE_DIR/lib/agent_state.sh"
+    ln -s "$SRC_CTX_UTILS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/ctx_utils.sh"
+    ln -s "$SRC_PANE_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/pane_lookup.sh"
+    ln -s "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
+    ln -s "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
 
-    # Non-blocking script stubs
     for stub in inbox_write ntfy_cmd lesson_check; do
-        printf '#!/usr/bin/env bash\nexit 0\n' > "$TEST_PROJECT/scripts/${stub}.sh"
+        printf '#!/usr/bin/env bash\nexit 0\n' > "$DEPLOY_TASK_TEMPLATE_DIR/scripts/${stub}.sh"
     done
 
-    chmod +x "$TEST_PROJECT/scripts/"*.sh "$TEST_PROJECT/scripts/lib/"*.sh "$TEST_PROJECT/lib/"*.sh
+    chmod +x "$DEPLOY_TASK_TEMPLATE_DIR/scripts/"*.sh
 
-    cat > "$TEST_PROJECT/config/settings.yaml" <<'EOF'
+    cat > "$DEPLOY_TASK_TEMPLATE_DIR/config/settings.yaml" <<'EOF'
 cli:
   default: codex
   agents:
@@ -70,7 +65,7 @@ cli:
       japanese_name: 佐助
 EOF
 
-    cat > "$TEST_PROJECT/config/cli_profiles.yaml" <<'EOF'
+    cat > "$DEPLOY_TASK_TEMPLATE_DIR/config/cli_profiles.yaml" <<'EOF'
 profiles:
   codex:
     ctx_pattern: ""
@@ -78,6 +73,16 @@ profiles:
     busy_patterns: []
     idle_pattern: ""
 EOF
+}
+
+deploy_task_scaffold() {
+    local tmpdir_prefix="${1:-deploy_task}"
+    export TEST_TMPDIR
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/${tmpdir_prefix}.XXXXXX")"
+    export TEST_PROJECT="$TEST_TMPDIR/project"
+
+    mkdir -p "$TEST_PROJECT"
+    cp -a "$DEPLOY_TASK_TEMPLATE_DIR"/. "$TEST_PROJECT"/
 }
 
 deploy_task_teardown() {
@@ -149,6 +154,57 @@ deploy_task_fast() {
     )
 }
 
+normalize_simple_ac_ids() {
+    local task_file="$1"
+
+    python3 - "$task_file" <<'PY'
+import pathlib
+import re
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+normalized = re.sub(
+    r"^(\s*-?\s*id:\s*)'([A-Za-z0-9_.:+-]+)'$",
+    r"\1\2",
+    text,
+    flags=re.MULTILINE,
+)
+if normalized != text:
+    path.write_text(normalized, encoding="utf-8")
+PY
+}
+
+deploy_task_ac_only() {
+    (
+        # shellcheck disable=SC2030
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+
+        parse_deploy_task_args "$@"
+        cleanup_none_task_files
+        # shellcheck disable=SC2153
+        deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
+
+        local task_file="$TEST_PROJECT/queue/tasks/${NINJA_NAME}.yaml"
+        normalize_task_yaml "$task_file" || true
+
+        if [ -n "$CMD_ID" ]; then
+            if [ "$DIRECT_MODE" = true ]; then
+                log "direct_mode(test): skipping resolve_cmd_to_task for ${CMD_ID}"
+            elif ! resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+                echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
+                return 1
+            fi
+        fi
+
+        inject_task_id "$task_file" || true
+        inject_ac_version "$task_file" || true
+        normalize_simple_ac_ids "$task_file"
+    )
+}
+
 inject_report_only() {
     local ninja_name="$1"
     local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
@@ -168,12 +224,7 @@ inject_report_only() {
         prev_ac_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
         if [ "$curr_task_id" != "$prev_ac_task_id" ]; then
             _overwrite_ac_from_cmd "$task_file" || true
-            # Normalize YAML quotes after _overwrite_ac_from_cmd (Python _sv() adds quotes)
-            # yaml.safe_load→yaml.dump strips unnecessary single quotes from scalars
-            TASK_FILE_ENV="$task_file" \
-            SCRIPT_DIR_ENV="$SCRIPT_DIR" \
-            INJECT_TASK_MODIFIERS_ONLY="execution_controls" \
-                python3 "$SCRIPT_DIR/scripts/lib/inject_task_modifiers.py" 2>/dev/null || true
+            normalize_simple_ac_ids "$task_file"
         fi
 
         yaml_field_set "$task_file" "task" "report_filename" ""

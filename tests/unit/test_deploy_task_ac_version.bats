@@ -1155,7 +1155,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run deploy_task_fast sasuke cmd_1611
+    run deploy_task_ac_only sasuke cmd_1611
     [ "$status" -eq 0 ]
 
     # parent_cmd updated
@@ -1260,7 +1260,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run deploy_task_fast sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     # Flat dict should be converted with id: fields
