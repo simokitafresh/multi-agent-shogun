@@ -13,7 +13,7 @@
 #   - logs/gate_metrics.log (GATE BLOCK/CLEAR記録)
 #   - queue/reports/*.yaml (レポートverdict)
 #   - queue/archive/cmds/*.yaml (cmd時刻・related_lessons)
-#   - projects/dm-signal/lessons.yaml + projects/infra/lessons.yaml
+#   - projects/dm-signal/lessons_archive.yaml + projects/infra/lessons_archive.yaml
 #   - projects/dm-signal.yaml production_invariants
 
 set -euo pipefail
@@ -22,8 +22,8 @@ BASEDIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPORTS_DIR="$BASEDIR/queue/reports"
 ARCHIVE_DIR="$BASEDIR/queue/archive/cmds"
 GATE_LOG="$BASEDIR/logs/gate_metrics.log"
-DM_LESSONS="$BASEDIR/projects/dm-signal/lessons.yaml"
-INFRA_LESSONS="$BASEDIR/projects/infra/lessons.yaml"
+DM_LESSONS_ARCHIVE="$BASEDIR/projects/dm-signal/lessons_archive.yaml"
+INFRA_LESSONS_ARCHIVE="$BASEDIR/projects/infra/lessons_archive.yaml"
 DM_PROJECT="$BASEDIR/projects/dm-signal.yaml"
 
 TMP=$(mktemp -d)
@@ -64,8 +64,8 @@ extract_lessons() {
     ' "$file"
 }
 
-extract_lessons "$DM_LESSONS" > "$TMP/lessons.tsv" 2>/dev/null
-extract_lessons "$INFRA_LESSONS" >> "$TMP/lessons.tsv" 2>/dev/null
+extract_lessons "$DM_LESSONS_ARCHIVE" > "$TMP/lessons.tsv" 2>/dev/null
+extract_lessons "$INFRA_LESSONS_ARCHIVE" >> "$TMP/lessons.tsv" 2>/dev/null
 echo "  教訓: $(wc -l < "$TMP/lessons.tsv")件抽出" >&2
 
 # --- (B) レポートverdict: cmd_num|verdict ---
