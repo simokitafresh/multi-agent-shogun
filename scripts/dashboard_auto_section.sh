@@ -67,6 +67,9 @@ CTX_WARN_CACHE="/tmp/dashboard_ctx_warn_${_proj_hash}.txt"
 CTX_WARN_CACHE_TS="/tmp/dashboard_ctx_warn_${_proj_hash}.ts"
 CI_STATUS_CACHE="/tmp/dashboard_ci_status_${_proj_hash}.txt"
 CI_STATUS_CACHE_TS="/tmp/dashboard_ci_status_${_proj_hash}.ts"
+# L4-R29: git rev-list TTLキャッシュ（60s）— 毎回実行で179-364ms消費を削減
+GIT_REVLIST_CACHE="/tmp/dashboard_git_revlist_${_proj_hash}.txt"
+GIT_REVLIST_CACHE_TS="/tmp/dashboard_git_revlist_${_proj_hash}.ts"
 _CACHE_NOW=$(date +%s)
 
 MARKER_START="<!-- DASHBOARD_AUTO_START -->"
@@ -768,7 +771,19 @@ fi
     esac
 
     # ─── Unpushed Commits WARN (cmd_1267) ───
-    _unpushed_count=$(cd "$PROJECT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo 0)
+    # L4-R29: 60s TTLキャッシュ — 毎回git rev-list実行(179-364ms)を削減
+    _revlist_age=999
+    if [[ -f "$GIT_REVLIST_CACHE_TS" ]]; then
+        _revlist_ts=$(cat "$GIT_REVLIST_CACHE_TS" 2>/dev/null || echo 0)
+        _revlist_age=$(( _CACHE_NOW - _revlist_ts ))
+    fi
+    if (( _revlist_age < 60 )) && [[ -f "$GIT_REVLIST_CACHE" ]]; then
+        _unpushed_count=$(cat "$GIT_REVLIST_CACHE" 2>/dev/null || echo 0)
+    else
+        _unpushed_count=$(cd "$PROJECT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo 0)
+        echo "$_unpushed_count" > "$GIT_REVLIST_CACHE" 2>/dev/null || true
+        date +%s > "$GIT_REVLIST_CACHE_TS" 2>/dev/null || true
+    fi
     if [[ "$_unpushed_count" -ge 10 ]]; then
         echo "**WARN: ${_unpushed_count}件のcommit未push。\`git push\`を検討せよ**"
         echo ""
