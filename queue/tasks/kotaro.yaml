@@ -1,7 +1,7 @@
 task:
   task_id: cmd_1682_chunk4_impl
   parent_cmd: cmd_1682
-  status: acknowledged
+  status: done
   project: dm-signal
   task_type: impl
   command: |
