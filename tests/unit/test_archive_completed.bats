@@ -57,7 +57,7 @@ YAML
     run grep -q "cmd_520" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
     [ "$status" -eq 1 ]
 
-    run bash -lc "compgen -G '$TEST_PROJECT/queue/archive/cmds/cmd_520_completed_*.yaml' >/dev/null"
+    run ls "$TEST_PROJECT"/queue/archive/cmds/cmd_520_completed_*.yaml
     [ "$status" -eq 0 ]
 }
 
@@ -81,8 +81,8 @@ YAML
     run grep -q "id: cmd_521" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
     [ "$status" -eq 0 ]
 
-    run bash -lc "compgen -G '$TEST_PROJECT/queue/archive/cmds/cmd_521_*.yaml' >/dev/null"
-    [ "$status" -eq 1 ]
+    run ls "$TEST_PROJECT"/queue/archive/cmds/cmd_521_*.yaml
+    [ "$status" -ne 0 ]
 }
 
 @test "preserves existing status-based archive behavior" {
@@ -100,7 +100,7 @@ YAML
     run grep -q "cmd_530" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
     [ "$status" -eq 1 ]
 
-    run bash -lc "compgen -G '$TEST_PROJECT/queue/archive/cmds/cmd_530_completed_*.yaml' >/dev/null"
+    run ls "$TEST_PROJECT"/queue/archive/cmds/cmd_530_completed_*.yaml
     [ "$status" -eq 0 ]
 }
 
@@ -258,62 +258,36 @@ YAML
 # training/cycle/selfimprovement cmd exemption tests (cmd_1522)
 # ============================================================
 
-@test "report archive: training cmd reports skip review_gate.done check" {
+@test "report archive: training/cycle/selfimprovement cmd reports skip review_gate.done check" {
+    # cmd_training_*, cmd_cycle_*, cmd_selfimprovement_* の3プレフィックスを1テストで網羅
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
 commands:
   - id: cmd_training_001
     status: completed
     purpose: "training cycle test"
     project: infra
-YAML
-
-    # Create a completed report with parent_cmd=cmd_training_001
-    cat > "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml" <<'YAML'
-parent_cmd: cmd_training_001
-status: done
-result:
-  summary: "training report"
-YAML
-
-    # NO review_gate.done — training cmd should still be archived
-    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
-    [ "$status" -eq 0 ]
-
-    # report should be archived (moved out of queue/reports/)
-    [ ! -f "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml" ]
-}
-
-@test "report archive: cycle cmd reports skip review_gate.done check" {
-    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
-commands:
   - id: cmd_cycle_002
     status: completed
     purpose: "cycle test"
     project: infra
-YAML
-
-    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml" <<'YAML'
-parent_cmd: cmd_cycle_002
-status: done
-result:
-  summary: "cycle report"
-YAML
-
-    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
-    [ "$status" -eq 0 ]
-
-    [ ! -f "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml" ]
-}
-
-@test "report archive: selfimprovement cmd reports skip review_gate.done check" {
-    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
-commands:
   - id: cmd_selfimprovement_003
     status: completed
     purpose: "selfimprovement test"
     project: infra
 YAML
 
+    cat > "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml" <<'YAML'
+parent_cmd: cmd_training_001
+status: done
+result:
+  summary: "training report"
+YAML
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml" <<'YAML'
+parent_cmd: cmd_cycle_002
+status: done
+result:
+  summary: "cycle report"
+YAML
     cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_selfimprovement_003.yaml" <<'YAML'
 parent_cmd: cmd_selfimprovement_003
 status: done
@@ -321,9 +295,12 @@ result:
   summary: "selfimprovement report"
 YAML
 
+    # NO review_gate.done — all 3 exempt prefixes should still be archived
     run bash "$TEST_PROJECT/scripts/archive_completed.sh"
     [ "$status" -eq 0 ]
 
+    [ ! -f "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml" ]
+    [ ! -f "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml" ]
     [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_selfimprovement_003.yaml" ]
 }
 
