@@ -45,7 +45,7 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 5 200 || exit 1
 
         INBOX_PATH="$INBOX" MSG_ID="$MSG_ID" AGENT_ID="$AGENT_ID" python3 -c "
-import yaml, sys, os, tempfile
+import sys, os, tempfile
 
 inbox_path = os.environ['INBOX_PATH']
 msg_id = os.environ.get('MSG_ID', '')
@@ -55,54 +55,39 @@ try:
     with open(inbox_path, encoding='utf-8') as f:
         raw_text = f.read()
 
-    data = yaml.safe_load(raw_text)
-    if not data or not data.get('messages'):
-        print('[inbox_mark_read] No messages in inbox')
-        sys.exit(0)
-
-    # Identify target message IDs
-    target_ids = set()
-    for m in data['messages']:
-        if m.get('read', False):
-            continue
-        if msg_id and str(m.get('id', '')) != msg_id:
-            continue
-        target_ids.add(str(m.get('id', '')))
-
-    if not target_ids:
+    # Fast early exit: no unread messages in file (avoids yaml.safe_load cost)
+    if 'read: false' not in raw_text:
         if msg_id:
             print(f'[inbox_mark_read] msg_id={msg_id} not found or already read')
         else:
             print('[inbox_mark_read] No unread messages')
         sys.exit(0)
 
-    # Text-based replacement: find each target ID block, flip read: false -> read: true
-    # This preserves original YAML formatting (no yaml.dump round-trip)
+    # Single-pass: identify target IDs and replace read: false -> true
+    # (replaces yaml.safe_load + separate text scan with one combined pass)
     lines = raw_text.split('\n')
-    in_target = False
+    current_id = None
     changed = 0
     for i, line in enumerate(lines):
         stripped = line.lstrip()
         if stripped.startswith('- '):
-            in_target = False
-            # Handle '- id: xxx' (id as first field of list item)
+            current_id = None
             inner = stripped[2:].lstrip()
             if inner.startswith('id:'):
-                val = inner.split(':', 1)[1].strip().strip(\"'\\\"\")
-                if val in target_ids:
-                    in_target = True
-        elif stripped.startswith('id:'):
-            val = stripped.split(':', 1)[1].strip().strip(\"'\\\"\")
-            if val in target_ids:
-                in_target = True
-        if in_target and stripped.startswith('read:'):
+                current_id = inner.split(':', 1)[1].strip().strip(\"'\\\"\"  )
+        elif stripped.startswith('id:') and current_id is None:
+            current_id = stripped.split(':', 1)[1].strip().strip(\"'\\\"\"  )
+        elif stripped.startswith('read:') and current_id is not None:
             if 'false' in stripped:
-                lines[i] = line.replace('read: false', 'read: true')
-                changed += 1
-            in_target = False
+                if not msg_id or current_id == msg_id:
+                    lines[i] = line.replace('read: false', 'read: true')
+                    changed += 1
 
     if changed == 0:
-        print('[inbox_mark_read] No changes made')
+        if msg_id:
+            print(f'[inbox_mark_read] msg_id={msg_id} not found or already read')
+        else:
+            print('[inbox_mark_read] No unread messages')
         sys.exit(0)
 
     # Atomic write: preserve original text formatting
