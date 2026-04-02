@@ -1,22 +1,22 @@
 task:
-  task_id: cmd_training_L4_R19_kotaro
-  parent_cmd: cmd_training_L4_R19
+  task_id: cmd_training_L4_R20_kotaro
+  parent_cmd: cmd_training_L4_R20
   task_type: impl
   project: infra
-  status: done
-  target_path: tests/unit/test_build_system.bats
+  status: assigned
+  target_path: scripts/dashboard_auto_section.sh
   command: |
-    テスト改善: test_build_system.bats(4.4s→改善)。
-    ボトルネック改善。一部改善で十分。長引くなら途中commitで終了。
+    スクリプト速度改善: dashboard_auto_section.sh。S5: 子プロセス最適化。3.0s→1.5s目標。
+    一部改善で十分。長引くなら途中commitで終了。
     AC1: 計測+ボトルネック特定  AC2: 改善+commit  AC3: PASS+LC+BC+verdict
     ★ bc構造(AC1:/AC2:/AC3:)維持。bats全量禁止。
   acceptance_criteria:
     - ac: "AC1: 計測+ボトルネック特定"
     - ac: "AC2: 改善+commit"
-    - ac: "AC3: 全テストPASS(SKIP=0)+LC+BC+verdict"
+    - ac: "AC3: 関連テストPASS(あれば)+LC+BC+verdict"
   ac_priority: AC1 > AC2 > AC3
   parallel_ok: [AC1, AC2, AC3]
   stop_for: []
   never_stop_for: [bats全量禁止]
   role_reminder: "忍者kotaro。このタスクのみ実行せよ。"
-  deployed_at: "2026-04-02T11:43:24+09:00"
+  deployed_at: "2026-04-02T12:04:29+09:00"
