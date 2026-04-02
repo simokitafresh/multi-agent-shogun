@@ -245,8 +245,7 @@ PY
             echo "$create_output"
             local NEW_PD_ID
             NEW_PD_ID=$(printf "%s\n" "$create_output" | awk -F= '/^PD_ID=/{print $2; exit}')
-            if [ -n "$NEW_PD_ID" ]; then
-            else
+            if [ -z "$NEW_PD_ID" ]; then
                 echo "[pending_decision] WARN: created PD id parse failed, skip dashboard sync" >&2
             fi
             return 0
