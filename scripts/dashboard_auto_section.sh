@@ -60,6 +60,12 @@ FIRST_FIRE_RATE=$(compute_first_fire_rate)
 KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
 KM_MODEL_CACHE="/tmp/dashboard_km_model_cache.txt"
 KM_CACHE_LINES="/tmp/dashboard_km_cache_lines.txt"
+# GP-XXX: TTL caches for slow subprocesses (CTX: 120s, CI: 60s)
+CTX_WARN_CACHE="/tmp/dashboard_ctx_warn_cache.txt"
+CTX_WARN_CACHE_TS="/tmp/dashboard_ctx_warn_cache.ts"
+CI_STATUS_CACHE="/tmp/dashboard_ci_status_cache.txt"
+CI_STATUS_CACHE_TS="/tmp/dashboard_ci_status_cache.ts"
+_CACHE_NOW=$(date +%s)
 
 MARKER_START="<!-- DASHBOARD_AUTO_START -->"
 MARKER_END="<!-- DASHBOARD_AUTO_END -->"
@@ -344,12 +350,34 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     fi
 fi
 # Launch context_freshness_check with pre-computed cache (zero archive I/O)
-CFC_ARCHIVE_CACHE="$_CFC_CACHE" bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings > "$_TMP_CTX_WARN" 2>/dev/null &
-_PID_CTX=$!
+# GP-XXX: TTL cache (120s) — skip 2.2s Python subprocess on consecutive runs
+_PID_CTX=""
+_ctx_age=999
+if [[ -f "$CTX_WARN_CACHE_TS" ]]; then
+    _ctx_ts=$(cat "$CTX_WARN_CACHE_TS" 2>/dev/null || echo 0)
+    _ctx_age=$(( _CACHE_NOW - _ctx_ts ))
+fi
+if (( _ctx_age < 120 )) && [[ -f "$CTX_WARN_CACHE" ]]; then
+    cp "$CTX_WARN_CACHE" "$_TMP_CTX_WARN"
+else
+    CFC_ARCHIVE_CACHE="$_CFC_CACHE" bash "$SCRIPT_DIR/context_freshness_check.sh" --dashboard-warnings > "$_TMP_CTX_WARN" 2>/dev/null &
+    _PID_CTX=$!
+fi
 # GP-083: ci_status_check.sh parallel launch (2.3s network call)
+# GP-XXX: TTL cache (60s) — skip network call on consecutive runs
 _TMP_CI_STATUS=$(mktemp)
-bash "$SCRIPT_DIR/ci_status_check.sh" --status > "$_TMP_CI_STATUS" 2>/dev/null &
-_PID_CI=$!
+_PID_CI=""
+_ci_age=999
+if [[ -f "$CI_STATUS_CACHE_TS" ]]; then
+    _ci_ts=$(cat "$CI_STATUS_CACHE_TS" 2>/dev/null || echo 0)
+    _ci_age=$(( _CACHE_NOW - _ci_ts ))
+fi
+if (( _ci_age < 60 )) && [[ -f "$CI_STATUS_CACHE" ]]; then
+    cp "$CI_STATUS_CACHE" "$_TMP_CI_STATUS"
+else
+    bash "$SCRIPT_DIR/ci_status_check.sh" --status > "$_TMP_CI_STATUS" 2>/dev/null &
+    _PID_CI=$!
+fi
 
 _gate_signature="missing"
 if [[ -f "$GATE_LOG" ]]; then
@@ -368,7 +396,11 @@ if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_JSON_CACHE" 
     echo "$_gate_signature" > "$KM_CACHE_LINES"
 fi
 
-wait "$_PID_CTX" 2>/dev/null || true
+if [[ -n "$_PID_CTX" ]]; then
+    wait "$_PID_CTX" 2>/dev/null || true
+    cp "$_TMP_CTX_WARN" "$CTX_WARN_CACHE" 2>/dev/null || true
+    date +%s > "$CTX_WARN_CACHE_TS" 2>/dev/null || true
+fi
 CONTEXT_WARNINGS="$(cat "$_TMP_CTX_WARN" 2>/dev/null || true)"
 
 # Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp + knowledge breakdown rows)

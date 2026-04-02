@@ -175,3 +175,8 @@ lessons:
   detail: '疾風R12 STALL(deploy_task.sh 31テスト書換え)を『Codex大型ファイル不向き』と結論→才蔵R13で3985行スクリプト成功で反証。真因: 31テスト×関数抽出困難=タスク分量オーバー。ジャーナルにも『リファクタ必要』と書いてあった。N=1でモデル能力の結論を出すな。STALLしたらまず(1)タスク分量は適切か (2)前提条件(ジャーナル等)を読んだか (3)同モデルの他忍者の成績はどうか を確認せよ'
   source_cmd: 'cmd_training_L4_R12'
   created_at: '2026-04-02'
+- id: 'LK028'
+  title: 'Codex STALL根因=CLAUDE.md未読 — nudgeにtask YAML読込指示を含めよ'
+  detail: 'Codex CLIはCLAUDE.mdを自動読込しない(config.tomlにinstruction設定なし)。inbox1を受け取ってもrecovery手順を知らずプロンプト待ち→STALL。R7-R20で疾風/才蔵が計6回STALL。根因は忍者の能力ではなく家老の配備インフラ。自動化ターゲット: (1)Codex config.tomlにinstruction_file設定 (2)nudge時にCodex忍者にはtask YAMLパス付き具体指示を送信 (3)inbox_write.shのCodex分岐でnudge内容を拡張'
+  source_cmd: 'cmd_training_L4_R7_R20'
+  created_at: '2026-04-02'
