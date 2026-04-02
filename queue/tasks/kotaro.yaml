@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R19
   task_type: impl
   project: infra
-  status: idle
+  status: done
   target_path: tests/unit/test_build_system.bats
   command: |
     テスト改善: test_build_system.bats(4.4s→改善)。
