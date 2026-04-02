@@ -36,6 +36,42 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ] && [ -f "$SCRIPT_DIR/scripts/lib/agent_con
 else
     NINJA_NAMES=""
 fi
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/field_get.sh" 2>/dev/null || true
+
+inbox_yaml_field_get() {
+    local yaml_file="$1"
+    local field_name="$2"
+    local default_value="${3:-}"
+
+    if type field_get &>/dev/null; then
+        FIELD_GET_NO_LOG=1 field_get "$yaml_file" "$field_name" "$default_value" 2>/dev/null || true
+        return 0
+    fi
+
+    grep -m1 -E "^[[:space:]]*${field_name}:" "$yaml_file" 2>/dev/null \
+        | sed 's/^[^:]*:[[:space:]]*//' \
+        | sed "s/^['\"]//;s/['\"]$//"
+}
+
+report_yaml_is_template() {
+    local report_path="$1"
+    local verdict=""
+
+    verdict=$(inbox_yaml_field_get "$report_path" "verdict" "")
+    if [ -z "${verdict//[[:space:]]/}" ]; then
+        echo "yes"
+        return 0
+    fi
+
+    if grep -Eq '^[[:space:]]*result:[[:space:]]*.*FILL_THIS' "$report_path" 2>/dev/null; then
+        echo "yes"
+        return 0
+    fi
+
+    echo "no"
+}
+
 TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
@@ -268,36 +304,14 @@ if [ "$TYPE" = "report_received" ]; then
     if [ "$is_ninja_reporter" -eq 1 ]; then
         TASK_YAML="$SCRIPT_DIR/queue/tasks/${FROM}.yaml"
         if [ -f "$TASK_YAML" ]; then
-            REPORT_PATH=$(TASK_PATH="$TASK_YAML" python3 -c "
-import yaml, os
-try:
-    with open(os.environ['TASK_PATH']) as f:
-        data = yaml.safe_load(f)
-    if data and 'task' in data:
-        rp = data['task'].get('report_path', '')
-        if rp:
-            print(rp)
-except:
-    pass
-" 2>/dev/null || true)
+            REPORT_PATH=$(inbox_yaml_field_get "$TASK_YAML" "report_path" "")
 
             FULL_REPORT=""
             if [ -n "$REPORT_PATH" ]; then
                 FULL_REPORT="$SCRIPT_DIR/$REPORT_PATH"
             else
                 # Fallback: report_path未設定 → queue/reports/{from}_report_{cmd_id}*.yaml を検索
-                CMD_ID=$(TASK_PATH="$TASK_YAML" python3 -c "
-import yaml, os
-try:
-    with open(os.environ['TASK_PATH']) as f:
-        data = yaml.safe_load(f)
-    if data and 'task' in data:
-        pc = data['task'].get('parent_cmd', '')
-        if pc:
-            print(pc)
-except:
-    pass
-" 2>/dev/null || true)
+                CMD_ID=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
                 if [ -n "$CMD_ID" ]; then
                     FALLBACK=$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -name "${FROM}_report_${CMD_ID}*.yaml" -printf '%T@\t%p\n' 2>/dev/null | sort -rn | head -1 | cut -f2- || true)
                     if [ -n "$FALLBACK" ]; then
@@ -326,32 +340,7 @@ except:
                         # GP-071: テンプレート状態検出 — 忍者がまだ記入中ならquality_fix_requestスキップ
                         # FILL_THIS残存 or verdict未記入 → テンプレート状態（忍者が書いている途中）
                         # verdict記入済み + FAIL → 本物の品質問題 → 軍師に転送
-                        IS_TEMPLATE=$(REPORT_YAML="$FULL_REPORT" python3 -c "
-import yaml, os, sys
-try:
-    with open(os.environ['REPORT_YAML']) as f:
-        data = yaml.safe_load(f)
-    if not data or not isinstance(data, dict):
-        print('yes')
-        sys.exit(0)
-    # Check 1: verdict is empty or missing
-    verdict = data.get('verdict', '')
-    if not verdict or str(verdict).strip() == '':
-        print('yes')
-        sys.exit(0)
-    # Check 2: FILL_THIS in binary_checks result fields
-    bc = data.get('binary_checks', {})
-    if isinstance(bc, dict):
-        for ac_val in bc.values():
-            if isinstance(ac_val, list):
-                for item in ac_val:
-                    if isinstance(item, dict) and 'FILL_THIS' in str(item.get('result', '')):
-                        print('yes')
-                        sys.exit(0)
-    print('no')
-except Exception:
-    print('yes')
-" 2>/dev/null || echo "yes")
+                        IS_TEMPLATE=$(report_yaml_is_template "$FULL_REPORT")
 
                         if [ "$IS_TEMPLATE" = "yes" ]; then
                             # GP-071改: テンプレート状態でreport_received = 報告未完了のまま完了報告 = BLOCK
@@ -587,22 +576,13 @@ except Exception as e:
                 TASK_YAML="$SCRIPT_DIR/queue/tasks/${FROM}.yaml"
                 if [ -f "$TASK_YAML" ]; then
                     # Report YAML existence verification before done transition (cmd_813)
-                    REPORT_FILENAME=$(TASK_PATH="$TASK_YAML" NINJA_NAME="$FROM" python3 -c "
-import yaml, os
-try:
-    with open(os.environ['TASK_PATH']) as f:
-        data = yaml.safe_load(f)
-    if data and 'task' in data:
-        rf = data['task'].get('report_filename', '')
-        if rf:
-            print(rf)
-        else:
-            pc = data['task'].get('parent_cmd', '')
-            if pc:
-                print(os.environ['NINJA_NAME'] + '_report_' + pc + '.yaml')
-except:
-    pass
-" 2>/dev/null || true)
+                    REPORT_FILENAME=$(inbox_yaml_field_get "$TASK_YAML" "report_filename" "")
+                    if [ -z "$REPORT_FILENAME" ]; then
+                        _parent_cmd=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
+                        if [ -n "$_parent_cmd" ]; then
+                            REPORT_FILENAME="${FROM}_report_${_parent_cmd}.yaml"
+                        fi
+                    fi
 
                     report_found=0
                     if [ -n "$REPORT_FILENAME" ]; then
@@ -626,14 +606,7 @@ except:
                         echo "[inbox_write] auto-done BLOCKED: report YAML not found: ${REPORT_FILENAME:-unknown} (ninja: $FROM)" >&2
                     else
                         # Check current status — don't overwrite terminal states
-                        CURRENT_STATUS=$(TASK_PATH="$TASK_YAML" python3 -c "
-import yaml, os, sys
-try:
-    with open(os.environ['TASK_PATH']) as f:
-        data = yaml.safe_load(f)
-    print(data.get('task',{}).get('status','') if data else '')
-except: pass
-" 2>/dev/null)
+                        CURRENT_STATUS=$(inbox_yaml_field_get "$TASK_YAML" "status" "")
                         case "$CURRENT_STATUS" in
                             done|failed|blocked) ;;
                             *)
