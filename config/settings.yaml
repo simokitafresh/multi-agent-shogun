@@ -17,12 +17,12 @@ cli:
       role: ninja
       japanese_name: 疾風
     kagemaru:
-      type: codex
+      type: claude
       model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 影丸
     hanzo:
-      type: codex
+      type: claude
       model_name: claude-opus-4-6
       role: ninja
       japanese_name: 半蔵
@@ -32,12 +32,12 @@ cli:
       role: ninja
       japanese_name: 才蔵
     kotaro:
-      type: codex
+      type: claude
       model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 小太郎
     tobisaru:
-      type: codex
+      type: claude
       model_name: claude-opus-4-6
       role: ninja
       japanese_name: 飛猿

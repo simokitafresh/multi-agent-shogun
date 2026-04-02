@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L541 -->
+<!-- last_synced_lesson: L542 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -170,3 +170,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L539: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却（cmd_1701）
 - L540: preprocessing_fnを毎回生成するとidが変わり_preprocess_cacheが無効化される（cmd_training_L4_R38_kagemaru）
 - L541: depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ（cmd_training_L4_R38_kotaro）
+- L542: cmd用語の定義は高コスト分析前にテストへ固定せよ（cmd_training_L4_R39_hayate）

@@ -39,7 +39,7 @@ task:
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
   report_filename: hayate_report_cmd_training_L4_R39_hayate.yaml
   report_path: queue/reports/hayate_report_cmd_training_L4_R39_hayate.yaml
-  status: in_progress
+  status: done
   stop_for: []
   task_id: cmd_training_L4_R39_hayate_impl
   task_type: impl
