@@ -196,7 +196,7 @@ read_task_field() {
 }
 
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -212,7 +212,7 @@ task:
   ac_version: 7d010443
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_ac_version
@@ -235,7 +235,7 @@ task:
       description: "third"
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
     run read_task_ac_version
     [ "$status" -eq 0 ]
@@ -257,7 +257,7 @@ task:
   ac_version: 519485d7
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
     run read_task_ac_version
     [ "$status" -eq 0 ]
@@ -735,7 +735,7 @@ task:
   _ac_worker_id: hayate
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
     # Verify: ACs overwritten with cmd_200's ACs
@@ -777,7 +777,7 @@ task:
   _ac_worker_id: hayate
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
     run grep "Correct AC for cmd_300" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
@@ -815,7 +815,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
     # ACs should remain unchanged (no overwrite)
@@ -849,7 +849,7 @@ task:
   - 'AC1: Karo-written AC for first deploy'
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
     # cmd_1493 bug fix: first deploy SHOULD overwrite ACs from cmd source
@@ -886,7 +886,7 @@ task:
   - ac3: third
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
     run python3 -c "
@@ -1309,7 +1309,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
     # ACs from archive should be converted and injected
