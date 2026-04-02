@@ -21,7 +21,9 @@ setup_file() {
     export BUILD_SCRIPT="$PROJECT_ROOT/scripts/build_instructions.sh"
     export OUTPUT_DIR="$PROJECT_ROOT/instructions/generated"
     export BUILD_STATUS_FILE
+    export BUILD_HASH_FILE
     BUILD_STATUS_FILE="$(mktemp)"
+    BUILD_HASH_FILE="$(mktemp)"
 
     # パーツディレクトリの存在確認（前提条件）
     [ -d "$PROJECT_ROOT/instructions/roles" ] || return 1
@@ -31,10 +33,12 @@ setup_file() {
     # ビルド実行（全テストの前に1回のみ）
     bash "$BUILD_SCRIPT" > /dev/null 2>&1
     printf '%s\n' "$?" > "$BUILD_STATUS_FILE"
+    find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort > "$BUILD_HASH_FILE"
 }
 
 teardown_file() {
     rm -f "${BUILD_STATUS_FILE:-}"
+    rm -f "${BUILD_HASH_FILE:-}"
 }
 
 setup() {
@@ -274,18 +278,16 @@ EOF
 # =============================================================================
 
 @test "idempotent: second build produces identical output" {
-    local first_file second_file
-    first_file="$(mktemp)"
+    local second_file
     second_file="$(mktemp)"
-
-    bash "$BUILD_SCRIPT" > /dev/null 2>&1
-    find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort > "$first_file"
 
     bash "$BUILD_SCRIPT" > /dev/null 2>&1
     find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort > "$second_file"
 
-    run diff -u "$first_file" "$second_file"
-    [ "$status" -eq 0 ]
+    if ! cmp -s "$BUILD_HASH_FILE" "$second_file"; then
+        diff -u "$BUILD_HASH_FILE" "$second_file" >&2 || true
+        false
+    fi
 
-    rm -f "$first_file" "$second_file"
+    rm -f "$second_file"
 }
