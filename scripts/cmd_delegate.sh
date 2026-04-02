@@ -10,9 +10,10 @@
 # Behavior:
 #   1. shogun_to_karo.yaml に cmd_id が存在し status=pending か検証
 #   2. delegated_at が既にあれば ALREADY_DELEGATED で終了（冪等性）
-#   3. inbox_write.sh karo "<msg>" cmd_new shogun を実行
-#   4. 成功後、delegated_at: <ISO8601> を cmd エントリに追加
-#   5. 出力: DELEGATED: cmd_XXX at 2026-03-04T18:17:05
+#   3. 初回委任時のみ cmd_save.sh を自動実行。BLOCK(exit 1)なら委任中止
+#   4. inbox_write.sh karo "<msg>" cmd_new shogun を実行
+#   5. 成功後、delegated_at: <ISO8601> を cmd エントリに追加
+#   6. 出力: DELEGATED: cmd_XXX at 2026-03-04T18:17:05
 #
 # Exit codes:
 #   0 — 委任成功 or 既に委任済み
@@ -59,7 +60,13 @@ if [ -n "$existing_delegated" ]; then
     exit 0
 fi
 
-# Step 2.4: 他の未配備cmd検出チェック（status=pending + delegated_at存在 → WARNING）
+# Step 3: 初回委任前に cmd_save.sh を強制実行
+if ! bash "$SCRIPT_DIR/cmd_save.sh" "$CMD_ID"; then
+    echo "BLOCK: cmd_save.sh failed for $CMD_ID. Delegation aborted." >&2
+    exit 1
+fi
+
+# Step 3.4: 他の未配備cmd検出チェック（status=pending + delegated_at存在 → WARNING）
 # 事故防止: 家老が委任を受けたが配備を忘れたパターンを次の委任前に警告 (cmd_1686事故)
 undeployed_cmds=$(python3 - "$SHOGUN_TO_KARO" "$CMD_ID" <<'PYEOF'
 import sys, yaml
@@ -91,7 +98,7 @@ if [ -n "$undeployed_cmds" ]; then
     done <<< "$undeployed_cmds"
 fi
 
-# Step 2.5: 家老inboxに既にcmd_idが存在するかチェック（別経路委任の検出）
+# Step 3.5: 家老inboxに既にcmd_idが存在するかチェック（別経路委任の検出）
 KARO_INBOX="$PROJECT_DIR/queue/inbox/karo.yaml"
 if [ -f "$KARO_INBOX" ] && grep -Fqw "$CMD_ID" "$KARO_INBOX" 2>/dev/null; then
     echo "WARN: $CMD_ID is already mentioned in karo inbox (previously sent via another path)" >&2
@@ -99,35 +106,35 @@ if [ -f "$KARO_INBOX" ] && grep -Fqw "$CMD_ID" "$KARO_INBOX" 2>/dev/null; then
     exit 1
 fi
 
-# Step 2.6: dashboardパイプラインに既にcmd_idが載っているかチェック（WARN only — secondary data）
+# Step 3.6: dashboardパイプラインに既にcmd_idが載っているかチェック（WARN only — secondary data）
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 if [ -f "$DASHBOARD" ] && grep -Fqw "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
     echo "WARN: $CMD_ID is already listed in dashboard.md (karo may already be aware). Proceeding — dashboard is secondary data." >&2
 fi
 
-# Step 2.7: archiveに完了済みとして存在するかチェック
+# Step 3.7: archiveに完了済みとして存在するかチェック
 if find "$PROJECT_DIR/queue/archive/cmds/" -maxdepth 1 -name "${CMD_ID}_*" -print -quit 2>/dev/null | grep -q .; then
     echo "BLOCK: $CMD_ID is already archived (completed). Cannot re-delegate." >&2
     exit 1
 fi
 
-# Step 3: inbox_write.sh で家老に通知
+# Step 4: inbox_write.sh で家老に通知
 bash "$SCRIPT_DIR/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
     echo "ERROR: inbox_write.sh failed for $CMD_ID" >&2
     exit 1
 }
 
-# Step 4: delegated_at を設定
+# Step 5: delegated_at を設定
 TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
 yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" "\"$TIMESTAMP\"" || {
     echo "ERROR: Failed to set delegated_at for $CMD_ID" >&2
     exit 1
 }
 
-# Step 5: 成功出力
+# Step 6: 成功出力
 echo "DELEGATED: $CMD_ID at $TIMESTAMP"
 
-# Step 6: §14 idle自走の強制起動（表示だけでは意志依存。insightに保存して到達パスを確保）
+# Step 7: §14 idle自走の強制起動（表示だけでは意志依存。insightに保存して到達パスを確保）
 PENDING_INSIGHTS=$(grep -c "status: pending" "$PROJECT_DIR/queue/insights.yaml" 2>/dev/null || echo 0)
 bash "$SCRIPT_DIR/insight_write.sh" "§14自走トリガー: cmd_${CMD_ID}委任完了。pending insight=${PENDING_INSIGHTS}件。データを見て問いを見つけろ" 2>/dev/null || true
 echo "---"

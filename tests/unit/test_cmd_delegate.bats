@@ -15,6 +15,23 @@ setup() {
     # yaml_field_set.sh をコピー
     cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "${TEST_TMP}/scripts/lib/"
 
+    # cmd_save.sh のモック（成功する版）
+    cat > "${TEST_TMP}/scripts/cmd_save.sh" << 'MOCK'
+#!/bin/bash
+echo "CMD_SAVE_CALLED: $1" >> "${TEST_TMP}/cmd_save_calls.log"
+exit 0
+MOCK
+    chmod +x "${TEST_TMP}/scripts/cmd_save.sh"
+
+    # cmd_save.sh のモック（失敗する版）
+    cat > "${TEST_TMP}/scripts/cmd_save_fail.sh" << 'MOCK'
+#!/bin/bash
+echo "CMD_SAVE_CALLED: $1" >> "${TEST_TMP}/cmd_save_calls.log"
+echo "BLOCK: mock cmd_save failure for $1" >&2
+exit 1
+MOCK
+    chmod +x "${TEST_TMP}/scripts/cmd_save_fail.sh"
+
     # inbox_write.sh のモック（成功する版）
     cat > "${TEST_TMP}/scripts/inbox_write.sh" << 'MOCK'
 #!/bin/bash
@@ -197,6 +214,11 @@ YAML
     run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
     [ "$status" -eq 0 ]
 
+    # cmd_save.sh が先に呼ばれたことを確認
+    run cat "${TEST_TMP}/cmd_save_calls.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CMD_SAVE_CALLED: cmd_100"* ]]
+
     # inbox_write が呼ばれたことを確認
     run cat "${TEST_TMP}/inbox_calls.log"
     [ "$status" -eq 0 ]
@@ -215,6 +237,7 @@ YAML
 
     # inbox_write は呼ばれないことを確認
     [ ! -f "${TEST_TMP}/inbox_calls.log" ]
+    [ ! -f "${TEST_TMP}/cmd_save_calls.log" ]
 }
 
 @test "cmd_delegate: cmd_id未発見でエラー" {
@@ -283,6 +306,23 @@ YAML
     [[ "$output" == *"inbox_write"* ]]
 
     # delegated_at は設定されないことを確認
+    run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    [ "$status" -ne 0 ]
+}
+
+@test "cmd_delegate: cmd_save.sh BLOCK時は委任中止" {
+    create_shogun_yaml_with_pending
+
+    cp "${TEST_TMP}/scripts/cmd_save_fail.sh" "${TEST_TMP}/scripts/cmd_save.sh"
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "保存失敗"
+    echo "output: $output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: mock cmd_save failure for cmd_100"* ]]
+    [[ "$output" == *"Delegation aborted"* ]]
+
+    # inbox_write は呼ばれず、delegated_at も設定されない
+    [ ! -f "${TEST_TMP}/inbox_calls.log" ]
     run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
     [ "$status" -ne 0 ]
 }
