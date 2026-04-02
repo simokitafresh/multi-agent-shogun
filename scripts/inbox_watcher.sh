@@ -328,6 +328,11 @@ send_wakeup() {
     local effective_cli
     effective_cli=$(get_effective_cli_type)
 
+    # Codex/non-claude: nudgeにtask YAMLパスを付与してSTALL防止
+    if [[ "$effective_cli" != "claude" ]]; then
+        nudge="${nudge} — タスクYAML: queue/tasks/${AGENT_ID}.yaml を読んで作業開始せよ"
+    fi
+
     # Tier 1: Agent self-watch — skip nudge entirely
     if agent_has_self_watch; then
         echo "[$(date)] [SKIP] Agent $AGENT_ID has active self-watch, no nudge needed" >&2

@@ -125,6 +125,8 @@ language:
 Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instructions/generated/codex-ashigaru.md (cost saving).
 
 ```
+★ 最初にやること: queue/tasks/{自分の名前}.yaml を読め
+
 ★ 汝は忍者なり。将軍にあらず。家老にあらず。
   将軍は決める。家老は仕切る。忍者は遂げる。
   task YAMLの任務を最高品質で遂げよ。それが全て。
