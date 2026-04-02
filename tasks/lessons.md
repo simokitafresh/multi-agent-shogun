@@ -3303,3 +3303,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [process]
 - 殿裁定: Claude CLIのモデル切替はrespawn方式が正解。(1)/model opusは200Kコンテキストに縮退 (2)claude↔codexは/modelで切替不可 (3)respawnならCLAUDE.md/instructions再読込が保証される (4)引数なしclaude起動で1M確保。/henseiスキルのmodel_switchもrespawn方式に再設計必要。
+
+### L434: inbox分析結果は揮発する — docs/research永続化を同時実行せよ
+- **日付**: 2026-04-02
+- **出典**: gunshi_self_drive
+- **記録者**: gunshi
+- **tags**: [universal]
+- inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行

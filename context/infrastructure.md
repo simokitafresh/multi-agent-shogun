@@ -304,7 +304,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L433 -->
+<!-- last_synced_lesson: L434 -->
 <!-- lesson-sort 2026-03-28: L298-L301の4件を振り分け。ntfy(L298), gate強化(L299/L300), WSL2(L301) -->
 <!-- lesson-sort 2026-03-22: L256-L284の29件を振り分け(27件移動+2件重複削除)。§メインセクション: ninja_monitor(L259), ログローテーション(L258), tmux(L265/268), 軍師(L271/281)。サブセクション: bash(L263/269/270/272/277), deploy(L256/284), 報告(L264), 教訓(L257/260/266/273/275/276), gate(L262/280/282), テスト(L261), 知識(L274), レビュー(L267/283)。L278/L279重複削除 -->
 <!-- lesson-sort 2026-03-26: L285-L297の13件を振り分け(12件移動+1件重複削除)。bash(L287/289/290/295/297), deploy(L288), 報告(L291), 教訓(L285), git(L292), 知識(L286/293/294)。L296はL297重複→削除 -->
@@ -457,6 +457,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L431: hensei_apply.shテスト時にinbox_write model_switchが本番忍者に送信され実際にモデル切替が発生する副作用あり（cmd_1673）
 - L432: claude --model opus=200K制限。デフォルト起動(--modelなし)=1M+Max effort利用可。build_cli_command修正済み(b3f55d9)
 - L433: モデル切替は/modelではなくrespawn(CLI再起動)が正しい手順。/model opusは200K化、respawnなら1M+CLAUDE.md再読込保証
+- L434: inbox分析結果は揮発する — docs/research永続化を同時実行せよ（gunshi_self_drive）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

@@ -227,3 +227,25 @@ if [ "$unread" -eq 0 ]; then
     echo "  Step 5: パターン発見→因果推論→行動"
     echo "  → 止まるな。1つ完了したら次へ"
 fi
+
+# --- Check 10: 分析結果永続化チェック(GP-165: 自動化×強制) ---
+echo ""
+echo "■ 分析結果永続化チェック"
+# 直近のself_studyエントリにdocs/research/参照があるか確認
+# + 直近7日のdocs/research/更新があるか確認
+research_dir="$SCRIPT_DIR/docs/research"
+if [ -d "$research_dir" ]; then
+    recent_research=$(find "$research_dir" -name "*.md" -mtime -7 -type f 2>/dev/null | wc -l)
+    echo "  docs/research/ 直近7日更新: ${recent_research}件"
+    if [ "$recent_research" -eq 0 ]; then
+        echo "  WARN: 直近7日で分析結果の永続化なし"
+        echo "  → 分析をinbox_writeで送るだけで終わるな。docs/research/に永続化せよ"
+        echo "  → CS4: 気付きをinbox(揮発)に閉じず、永続ドキュメントに変換せよ"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+        fi
+        alerts+=("分析結果永続化なし(7日間)")
+    fi
+else
+    echo "  SKIP: docs/research/不在"
+fi

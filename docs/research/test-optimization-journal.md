@@ -165,3 +165,18 @@ python3起動+yaml import = 40ms/回。1 cmdフルサイクル最大34回 = 1.36
 ### 発見: 壊れたアーカイブYAML
 
 `queue/archive/cmds/cmd_1308_completed_20260323.yaml` L42にYAML構文エラー(mapping values not allowed)。context_freshness_check.shの全量パース時にエラー発生。
+
+## 修行実績（2026-04-02 修行サイクルL4 忍者実績）
+
+| チャンク | 忍者 | cmd | Before | After | 改善率 | 状態 |
+|---------|------|-----|--------|-------|--------|------|
+| S2 | 才蔵 | R21 | 135.6ms/call | 85.9ms/call | 37%削減 | 完了。commit 05f363c |
+| S1 | 疾風 | R22 | 6.2s(全量) | 1.861s(no-cache 7日) | 70%削減 | 完了。0.5s目標未達。commit d22cdf6 |
+| — | 小太郎 | R21 | — | — | — | gate FIX hint追加(cmd_1677b)。commit 3b91e54 |
+
+### S2実績詳細(才蔵)
+inbox_write.sh hot path bash化。task_assigned/report_received/wake_upのpython3→bash変換。
+wake_up: 135.6→85.9ms。task_assigned: 56.25→62.35ms(微増、許容)。bats 15/15。
+
+### S1実績詳細(疾風)
+context_freshness_check.sh archive scan修正。実アーカイブYAMLがネスト形(`commands.<cmd_id>.project`)なのにトップレベル`project:`前提で読んでいた構造不整合を修正。先頭80行軽量抽出に変換。default(cache有): 0.087s。no-cache(7日): 1.861s。0.5s目標には追加最適化要。
