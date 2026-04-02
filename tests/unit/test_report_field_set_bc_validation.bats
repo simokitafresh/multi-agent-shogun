@@ -9,13 +9,9 @@ setup_file() {
     export RFS="$PROJECT_ROOT/scripts/report_field_set.sh"
     [ -f "$RFS" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
-}
-
-setup() {
-    export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/rfs_bc.XXXXXX")"
-    # Minimal report template
-    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+    # Pre-create base report template once per file (shared via BATS_FILE_TMPDIR)
+    export BASE_REPORT="$BATS_FILE_TMPDIR/base_report.yaml"
+    cat > "$BASE_REPORT" <<'EOF'
 worker_id: test_ninja
 parent_cmd: cmd_test
 ac_version_read: abc12345
@@ -27,8 +23,11 @@ verdict: ""
 EOF
 }
 
-teardown() {
-    rm -rf "$TEST_TMPDIR"
+setup() {
+    # BATS_TEST_TMPDIR: per-test auto-cleanup dir (bats-core 1.8+)
+    TEST_TMPDIR="$BATS_TEST_TMPDIR"
+    export TEST_TMPDIR
+    cp "$BASE_REPORT" "$TEST_TMPDIR/report.yaml"
 }
 
 # --- AC1: string形式入力 → exit 1 ---
@@ -95,21 +94,21 @@ teardown() {
 # --- AC1: 正しい形式(result yes/no list) → exit 0 ---
 
 @test "full-field: 正しい形式(result yes)でexit 0" {
-    run bash -c 'echo "{AC1: [{check: test, result: yes}]}" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - 2>&1'
+    run bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - <<< '{AC1: [{check: test, result: yes}]}'
     [ "$status" -eq 0 ]
 }
 
 @test "full-field: 正しい形式(result no)でexit 0" {
-    run bash -c 'echo "{AC1: [{check: test, result: no}]}" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - 2>&1'
+    run bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - <<< '{AC1: [{check: test, result: no}]}'
     [ "$status" -eq 0 ]
 }
 
 @test "per-AC: 正しい形式(result yes)でexit 0" {
-    run bash -c 'echo "[{check: test, result: yes}]" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks.AC1 - 2>&1'
+    run bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks.AC1 - <<< '[{check: test, result: yes}]'
     [ "$status" -eq 0 ]
 }
 
 @test "full-field: result空文字はexit 0(テンプレート状態許容)" {
-    run bash -c 'echo "{AC1: [{check: test, result: \"\"}]}" | bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - 2>&1'
+    run bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks - <<< '{AC1: [{check: test, result: ""}]}'
     [ "$status" -eq 0 ]
 }
