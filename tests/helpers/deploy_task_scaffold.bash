@@ -76,20 +76,37 @@ profiles:
     busy_patterns: []
     idle_pattern: ""
 EOF
+
+    export DEPLOY_TASK_WORKSPACE_DIR
+    DEPLOY_TASK_WORKSPACE_DIR="$(mktemp -d "$BATS_TMPDIR/deploy_task_workspace.XXXXXX")"
+    mkdir -p "$DEPLOY_TASK_WORKSPACE_DIR/project"
+    cp -a "$DEPLOY_TASK_TEMPLATE_DIR"/. "$DEPLOY_TASK_WORKSPACE_DIR/project"/
 }
 
 deploy_task_scaffold() {
-    local tmpdir_prefix="${1:-deploy_task}"
     export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/${tmpdir_prefix}.XXXXXX")"
+    TEST_TMPDIR="$DEPLOY_TASK_WORKSPACE_DIR"
     export TEST_PROJECT="$TEST_TMPDIR/project"
 
-    mkdir -p "$TEST_PROJECT"
-    cp -a "$DEPLOY_TASK_TEMPLATE_DIR"/. "$TEST_PROJECT"/
+    rm -rf \
+        "$TEST_PROJECT/archive" \
+        "$TEST_PROJECT/logs" \
+        "$TEST_PROJECT/projects" \
+        "$TEST_PROJECT/queue"
+
+    mkdir -p \
+        "$TEST_PROJECT/queue/tasks" \
+        "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/logs" \
+        "$TEST_PROJECT/projects"
+
+    cp "$DEPLOY_TASK_TEMPLATE_DIR/config/settings.yaml" "$TEST_PROJECT/config/settings.yaml"
+    cp "$DEPLOY_TASK_TEMPLATE_DIR/config/cli_profiles.yaml" "$TEST_PROJECT/config/cli_profiles.yaml"
 }
 
 deploy_task_teardown() {
-    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+    :
 }
 
 deploy_task_fast() {

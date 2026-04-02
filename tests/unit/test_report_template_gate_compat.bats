@@ -507,12 +507,10 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 @test "Fix22-28撤去: binary_checks MISSING → autofixせず残存 → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-del data['binary_checks']
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+import re
+content = open('$TEST_TMPDIR/report.yaml').read()
+content = re.sub(r'^binary_checks:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
+open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 "
     # autofix does NOT restore MISSING fields
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
@@ -527,14 +525,7 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 
 @test "Fix22-28撤去: verdict MISSING → autofixせず残存 → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-del data['verdict']
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
+    sed -i '/^verdict:/d' "$TEST_TMPDIR/report.yaml"
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" != *"verdict MISSING"* ]]
@@ -546,12 +537,10 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 @test "Fix22-28撤去: files_modified MISSING → autofixせず → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-del data['files_modified']
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+import re
+content = open('$TEST_TMPDIR/report.yaml').read()
+content = re.sub(r'^files_modified:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
+open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 "
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
@@ -565,12 +554,10 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 @test "Fix6復活: lessons_useful MISSING → autofixで空list生成" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-del data['lessons_useful']
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+import re
+content = open('$TEST_TMPDIR/report.yaml').read()
+content = re.sub(r'^lessons_useful:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
+open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 "
     # Fix6(cmd_1496復活): autofix detects MISSING and generates empty list or skeleton
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
@@ -592,12 +579,10 @@ print('OK')
 @test "Fix22-28撤去: lesson_candidate MISSING → autofixせず → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-del data['lesson_candidate']
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+import re
+content = open('$TEST_TMPDIR/report.yaml').read()
+content = re.sub(r'^lesson_candidate:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
+open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 "
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
@@ -719,24 +704,11 @@ print('OK')
 @test "GP-106撤去: ac_version_read欠落 → autofixせず → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     # ac_version_readを消去
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-if 'ac_version_read' in data:
-    del data['ac_version_read']
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
+    sed -i '/^ac_version_read:/d' "$TEST_TMPDIR/report.yaml"
     # autofixが補完しないことを確認
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    run python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-print('MISSING' if not data.get('ac_version_read') else 'FILLED')
-"
+    run bash -c "grep -qE '^ac_version_read:' '$TEST_TMPDIR/report.yaml' && echo FILLED || echo MISSING"
     [[ "$output" == *"MISSING"* ]]
     # format gateがBLOCKすることを確認
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
