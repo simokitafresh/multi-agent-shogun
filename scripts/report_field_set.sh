@@ -45,7 +45,6 @@ if [ "$VALUE" = "-" ]; then
     STDIN_VALUE="$(cat)"
     # Detect YAML structure (list/dict) → Python fallback for faithful preservation
     # bash fast-path: first non-whitespace char is [ { or - → list/dict
-    local _sv_fc
     _sv_fc=$(printf '%s' "$STDIN_VALUE" | tr -d ' \t\n' | cut -c1)
     if [[ "$_sv_fc" == "[" || "$_sv_fc" == "{" || "$_sv_fc" == "-" ]]; then
         VALUE="$STDIN_VALUE"

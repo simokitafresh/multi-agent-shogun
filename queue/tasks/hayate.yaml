@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R18
   task_type: impl
   project: infra
-  status: in_progress
+  status: done
   target_path: tests/unit/test_deploy_task_engineering_preferences.bats
   command: |
     テスト速度改善: test_deploy_task_engineering_preferences.bats(4.0s/3t→0.5s目標)。
@@ -20,6 +20,6 @@ task:
   never_stop_for: [bats全量禁止]
   role_reminder: "忍者hayate。このタスクのみ実行せよ。"
   deployed_at: "2026-04-02T11:00:53+09:00"
-  progress: "AC1: 4.858sで全deploy起動が支配的と特定; AC2: engineering_preferences専用helper追加で0.655sまで短縮"
+  progress: "AC1: baseline 4.858sでdeploy_task全体起動が支配的と特定; AC2: 専用helper追加とcommit 99621ba; AC3: 3/3 PASS, SKIP=0, 0.655s, report PASS"
   report_filename: hayate_report_cmd_training_L4_R18.yaml
   report_path: queue/reports/hayate_report_cmd_training_L4_R18.yaml
