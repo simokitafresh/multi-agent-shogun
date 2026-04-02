@@ -79,6 +79,7 @@ parse_deploy_task_args() {
     DIRECT_MODE=false
     NINJA_NAME=""
     CMD_ID=""
+    CMD_FORCED=""
     MESSAGE="$DEFAULT_MESSAGE"
     TYPE="task_assigned"
     FROM="karo"
@@ -90,9 +91,17 @@ parse_deploy_task_args() {
 
     NINJA_NAME="${1:-}"
 
+    # --cmd <cmd_id>: shogun_to_karo.yaml不在cmdを強制展開（修行cmd等に対応）
+    # 例: deploy_task.sh kagemaru --cmd cmd_training_L4_R21
+    if [[ "${2:-}" == "--cmd" ]]; then
+        CMD_FORCED="${3:-}"
+        CMD_ID="$CMD_FORCED"
+        MESSAGE="${4:-$DEFAULT_MESSAGE}"
+        TYPE="${5:-task_assigned}"
+        FROM="${6:-karo}"
     # cmd_id自動検出: $2がcmd_+数字で始まればcmd_id、そうでなければmessage（後方互換）
     # 数字cmd(cmd_1234)、修行cmd(cmd_training_*)、サイクルcmd(cmd_cycle_*)等を全て検出
-    if [[ "${2:-}" =~ ^cmd_[a-zA-Z0-9_]+ ]]; then
+    elif [[ "${2:-}" =~ ^cmd_[a-zA-Z0-9_]+ ]]; then
         CMD_ID="$2"
         MESSAGE="${3:-$DEFAULT_MESSAGE}"
         TYPE="${4:-task_assigned}"
@@ -3047,6 +3056,21 @@ deploy_task_main() {
     if [ -n "$CMD_ID" ]; then
         if [ "$DIRECT_MODE" = true ]; then
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
+        elif [ -n "$CMD_FORCED" ]; then
+            # --cmd mode: shogun_to_karo.yaml不在cmdを強制展開（修行cmd等に対応）
+            # parent_cmd/task_idを直接設定。解決失敗でもabortしない。
+            yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_FORCED"
+            local force_task_type
+            force_task_type=$(field_get "$task_yaml" "task_type" "impl")
+            if [ -z "$force_task_type" ] || [ "$force_task_type" = "unknown" ]; then
+                force_task_type="impl"
+            fi
+            yaml_field_set "$task_yaml" "task" "task_id" "${CMD_FORCED}_${force_task_type}"
+            yaml_field_set "$task_yaml" "task" "status" "assigned"
+            yaml_field_set "$task_yaml" "task" "_ac_task_id" ""
+            yaml_field_set "$task_yaml" "task" "_ac_worker_id" ""
+            _overwrite_ac_from_cmd "$task_yaml" || true
+            log "cmd_forced: ${CMD_FORCED} → parent_cmd/task_id set directly (shogun_to_karo.yaml not required)"
         elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
             log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
         else
