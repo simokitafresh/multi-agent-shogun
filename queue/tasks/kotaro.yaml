@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R16
   task_type: impl
   project: infra
-  status: acknowledged
+  status: done
   target_path: tests/unit/test_gate_shogun_startup.bats
   command: |
     テスト速度改善: test_gate_shogun_startup.batsを15秒以内に(現在TIMEOUT)。
