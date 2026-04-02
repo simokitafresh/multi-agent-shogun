@@ -1,5 +1,9 @@
 ---
 # multi-agent-shogun System Configuration
+# ═══ Codex /new Recovery ═══ 忍者: /new後このファイルが自動再読込。直ちに実行せよ:
+# 1) tmux display-message -t $TMUX_PANE -p '#{@agent_id}' → ninja_name
+# 2) Read queue/tasks/{ninja_name}.yaml → assigned=作業開始, idle=待機
+# ════════════════════════════════
 version: "3.0"
 updated: "2026-02-07"
 description: "Opus 4.6 + tmux multi-agent parallel dev platform with sengoku military hierarchy"
@@ -125,8 +129,6 @@ language:
 Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instructions/generated/codex-ashigaru.md (cost saving).
 
 ```
-★ 最初にやること: queue/tasks/{自分の名前}.yaml を読め
-
 ★ 汝は忍者なり。将軍にあらず。家老にあらず。
   将軍は決める。家老は仕切る。忍者は遂げる。
   task YAMLの任務を最高品質で遂げよ。それが全て。
@@ -174,9 +176,11 @@ Step 2: Read instructions/generated/codex-karo.md（人格・禁則・手順。�
 Step 2.5: Read projects/infra/lessons_karo.yaml（家老教訓の自動ロード）
 Step 2.6: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード。第二層学習ループ断絶防止）
 Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を読む
+  - **全フェーズ共通: §0.1判断4問チェック（結論を出す前に必ず通せ）**
   - cmd受領→配備時: §1配備 + §2分解パターン
   - 報告受領→レビュー時: §3レビューサイクル
   - 教訓抽出時: §5教訓抽出
+  - 分析・報告時: §0.1判断4問チェック
 Step 2.8: logs/karo_workarounds.yamlの直近10件を読む（前セッションの修正履歴把握）
 Step 2.85: Read memory/deepdive_why_chain_20260321.md（毎セッション必読・省略厳禁）
   結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追え。

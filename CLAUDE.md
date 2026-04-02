@@ -1,5 +1,9 @@
 ---
 # multi-agent-shogun System Configuration
+# ═══ Codex /new Recovery ═══ 忍者: /new後このファイルが自動再読込。直ちに実行せよ:
+# 1) tmux display-message -t $TMUX_PANE -p '#{@agent_id}' → ninja_name
+# 2) Read queue/tasks/{ninja_name}.yaml → assigned=作業開始, idle=待機
+# ════════════════════════════════
 version: "3.0"
 updated: "2026-02-07"
 description: "Claude Code + tmux multi-agent parallel dev platform with sengoku military hierarchy"
