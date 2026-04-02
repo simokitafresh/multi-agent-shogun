@@ -203,6 +203,19 @@ generate_agents_md() {
         ".${cli_type}/config.toml" "config.toml (mcp_servers section)" \
         "$cli_display" "$claude_md" "$output_path"
 
+    # Codex uses /new instead of /clear for session reset.
+    # Replace /clear references with /new, preserving /shogun-clear-prep and clear_command.
+    # shellcheck disable=SC2016
+    sed -i \
+        -e 's|/clear Recovery|/new Recovery|g' \
+        -e 's|/clear前|/new前|g' \
+        -e 's|after /clear|after /new|g' \
+        -e 's|pre-/clear|pre-/new|g' \
+        -e 's|無条件/clear|無条件/new|g' \
+        -e 's|家老/clear|家老/new|g' \
+        -e 's|`/clear`|`/new`|g' \
+        "$output_path"
+
     echo "  ✅ Created: AGENTS.md"
 }
 

@@ -1,7 +1,8 @@
 ---
 # multi-agent-shogun System Configuration
-# ═══ Codex /new Recovery ═══ 忍者: /new後このファイルが自動再読込。直ちに実行せよ:
-# 1) tmux display-message -t $TMUX_PANE -p '#{@agent_id}' → ninja_name
+# ═══ Session Start (自律実行必須) ═══
+# このファイル読込=セッション開始。ユーザー入力を待たず即座に以下を実行せよ:
+# 1) tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → ninja_name取得
 # 2) Read queue/tasks/{ninja_name}.yaml → assigned=作業開始, idle=待機
 # ════════════════════════════════
 version: "3.0"
@@ -83,8 +84,8 @@ language:
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
 1.5. **ROUTE BY ROLE (mandatory)**:
      - 将軍(shogun) → 続行（Step 2へ）
-     - 家老(karo) → 「/clear Recovery (karo)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
-     - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
+     - 家老(karo) → 「/new Recovery (karo)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
+     - 忍者(ninja) → 「/new Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
 2.5.1. **起動ゲートALERT対応(将軍のみ)**: gate出力にALERTがあれば該当スキルを実行:
@@ -124,7 +125,7 @@ language:
 
 **CRITICAL**: dashboard.md is secondary data (karo's summary). Primary data = YAML files. Always verify from YAML.
 
-## /clear Recovery (ninja)
+## /new Recovery (ninja)
 
 Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instructions/generated/codex-ashigaru.md (cost saving).
 
@@ -164,9 +165,9 @@ Step 4.5: If task has "report_path:" field → Read that file as report template
 Step 5: Start work
 ```
 
-Forbidden after /clear: reading instructions/generated/codex-ashigaru.md (1st task), polling (F004), contacting humans directly (F002). Trust task YAML only — pre-/clear memory is gone.
+Forbidden after /new: reading instructions/generated/codex-ashigaru.md (1st task), polling (F004), contacting humans directly (F002). Trust task YAML only — pre-/new memory is gone.
 
-## /clear Recovery (karo)
+## /new Recovery (karo)
 
 家老専用の軽量復帰手順。陣形図(snapshot)により状態復元が高速化。
 
@@ -221,9 +222,9 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 ※ archive_completed.shはcmd_complete_gate.sh GATE CLEAR時に自動実行される（手動不要）
 ```
 
-## /clear前手順（将軍のみ）
+## /new前手順（将軍のみ）
 
-`/shogun-clear-prep` を実行してから `/clear` する。状態確認+殿への報告を自動化。省略禁止。
+`/shogun-clear-prep` を実行してから `/new` する。状態確認+殿への報告を自動化。省略禁止。
 
 ## 復帰時の手順（全エージェント共通）
 
@@ -272,7 +273,7 @@ The nudge is minimal: `inboxN` (e.g. `inbox3` = 3 unread). That's it.
 **Agent reads the inbox file itself.** Watcher never sends message content via send-keys.
 
 Special cases (CLI commands sent directly via send-keys):
-- `type: clear_command` → sends `/clear` + Enter + content
+- `type: clear_command` → sends `/new` + Enter + content
 - `type: model_switch` → sends the /model command directly
 
 ## Inbox Processing Protocol (karo/ninja)
@@ -344,7 +345,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 **infraはPJではなくplatform。current_projectに関係なく常にロード対象。教訓も常時注入。**
 詳細 → `context/infrastructure.md` を読め。推測するな。
 
-- CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
+- CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/new,家老/new(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)
@@ -375,7 +376,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 - id: dm-signal | path: `/mnt/c/Python_app/DM-signal`
 - context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md`
-- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md`
+- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md` `context/gunshi-infra-perf-audit.md`
 - チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md`
 - projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)
 

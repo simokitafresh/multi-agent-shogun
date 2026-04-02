@@ -1,7 +1,8 @@
 ---
 # multi-agent-shogun System Configuration
-# ═══ Codex /new Recovery ═══ 忍者: /new後このファイルが自動再読込。直ちに実行せよ:
-# 1) tmux display-message -t $TMUX_PANE -p '#{@agent_id}' → ninja_name
+# ═══ Session Start (自律実行必須) ═══
+# このファイル読込=セッション開始。ユーザー入力を待たず即座に以下を実行せよ:
+# 1) tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → ninja_name取得
 # 2) Read queue/tasks/{ninja_name}.yaml → assigned=作業開始, idle=待機
 # ════════════════════════════════
 version: "3.0"
