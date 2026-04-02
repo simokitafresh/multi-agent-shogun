@@ -432,7 +432,7 @@ fi
 
 # Self-restart on script/dependency change
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
-SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
+SCRIPT_HASH="$(stat -c %Y "$SCRIPT_PATH" 2>/dev/null)"
 STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10
 WATCHED_DEPS=(
