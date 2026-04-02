@@ -86,12 +86,14 @@ deploy_task_teardown() {
 
 deploy_task_fast() {
     (
+        # shellcheck disable=SC2030
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090
+        # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
 
         parse_deploy_task_args "$@"
         cleanup_none_task_files
+        # shellcheck disable=SC2153
         deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
 
         local task_file="$TEST_PROJECT/queue/tasks/${NINJA_NAME}.yaml"
@@ -144,6 +146,57 @@ deploy_task_fast() {
         parent_cmd=$(field_get "$task_file" "parent_cmd" "")
         project=$(field_get "$task_file" "project" "")
         generate_report_template "$NINJA_NAME" "$task_id" "$parent_cmd" "$project"
+    )
+}
+
+inject_report_only() {
+    local ninja_name="$1"
+    local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
+    (
+        # shellcheck disable=SC2030,SC2031
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+
+        NINJA_NAME="$ninja_name"
+        # SCRIPT_DIR is set by deploy_task.sh on source (BASH_SOURCE[0] → TEST_PROJECT)
+
+        # AC overwrite: if _ac_task_id != task_id, overwrite ACs from cmd source
+        # (needed for binary_checks generation from nested ac: format)
+        local curr_task_id prev_ac_task_id
+        curr_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "")
+        prev_ac_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
+        if [ "$curr_task_id" != "$prev_ac_task_id" ]; then
+            _overwrite_ac_from_cmd "$task_file" || true
+            # Normalize YAML quotes after _overwrite_ac_from_cmd (Python _sv() adds quotes)
+            # yaml.safe_load→yaml.dump strips unnecessary single quotes from scalars
+            TASK_FILE_ENV="$task_file" \
+            SCRIPT_DIR_ENV="$SCRIPT_DIR" \
+            INJECT_TASK_MODIFIERS_ONLY="execution_controls" \
+                python3 "$SCRIPT_DIR/scripts/lib/inject_task_modifiers.py" 2>/dev/null || true
+        fi
+
+        yaml_field_set "$task_file" "task" "report_filename" ""
+        yaml_field_set "$task_file" "task" "report_path" ""
+        inject_report_filename "$task_file" || true
+
+        local task_id parent_cmd project
+        task_id=$(field_get "$task_file" "task_id" "")
+        parent_cmd=$(field_get "$task_file" "parent_cmd" "")
+        project=$(field_get "$task_file" "project" "")
+        generate_report_template "$NINJA_NAME" "$task_id" "$parent_cmd" "$project"
+    )
+}
+
+inject_ac_version_only() {
+    local ninja_name="$1"
+    local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
+    (
+        # shellcheck disable=SC2031
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        inject_ac_version "$task_file"
     )
 }
 

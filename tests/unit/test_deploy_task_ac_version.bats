@@ -346,7 +346,7 @@ task:
     - ac1: first
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_report_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -665,7 +665,7 @@ parent_cmd: cmd_stale_test
 verdict:
 status: pending
 EOF
-    run deploy_task_fast sasuke
+    run inject_report_only sasuke
     [ "$status" -eq 0 ]
     # Stale template should be archived
     [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_stale_test.yaml" ]
@@ -692,7 +692,7 @@ parent_cmd: cmd_preserve_test
 verdict: PASS
 status: done
 EOF
-    run deploy_task_fast sasuke
+    run inject_report_only sasuke
     [ "$status" -eq 0 ]
     # Completed report should be preserved (not archived)
     [ -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_preserve_test.yaml" ]
@@ -1214,7 +1214,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_report_only sasuke
     [ "$status" -eq 0 ]
 
     # Report template should have binary_checks extracted from nested ac: format
