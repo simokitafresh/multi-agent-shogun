@@ -139,11 +139,7 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 @test "lessons_useful null is rejected by gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
     # Replace empty list with null
-    python3 -c "
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = content.replace('lessons_useful: []', 'lessons_useful: null')
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
+    sed -i 's/lessons_useful: \[\]/lessons_useful: null/' "$TEST_TMPDIR/report.yaml"
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
@@ -167,11 +163,7 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 
 @test "verdict CONDITIONAL_PASS is rejected by gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = content.replace('verdict: PASS', 'verdict: CONDITIONAL_PASS')
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
+    sed -i 's/verdict: PASS/verdict: CONDITIONAL_PASS/' "$TEST_TMPDIR/report.yaml"
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
@@ -186,11 +178,7 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 
 @test "verdict FAIL passes gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = content.replace('verdict: PASS', 'verdict: FAIL')
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
+    sed -i 's/verdict: PASS/verdict: FAIL/' "$TEST_TMPDIR/report.yaml"
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
@@ -198,11 +186,7 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 
 @test "verdict null is rejected by gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = content.replace('verdict: PASS', 'verdict: null')
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
+    sed -i 's/verdict: PASS/verdict: null/' "$TEST_TMPDIR/report.yaml"
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
@@ -211,11 +195,7 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 
 @test "verdict empty string is rejected by gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = content.replace('verdict: PASS', 'verdict: \"\"')
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
+    sed -i 's/verdict: PASS/verdict: ""/' "$TEST_TMPDIR/report.yaml"
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
@@ -241,14 +221,12 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 
 @test "lessons_useful entry missing id is rejected by gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lessons_useful'] = [{'useful': True, 'reason': 'test'}]
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
+    sed -i '/^lessons_useful: \[\]$/d' "$TEST_TMPDIR/report.yaml"
+    cat >> "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - useful: true
+    reason: test
+EOF
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
@@ -257,14 +235,13 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 
 @test "lessons_useful useful=string is rejected by gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lessons_useful'] = [{'id': 'L074', 'useful': 'yes', 'reason': 'test'}]
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
+    sed -i '/^lessons_useful: \[\]$/d' "$TEST_TMPDIR/report.yaml"
+    cat >> "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - id: L074
+    useful: 'yes'
+    reason: test
+EOF
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
@@ -274,14 +251,13 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 
 @test "lessons_useful FILL_THIS in useful is rejected by gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lessons_useful'] = [{'id': 'L074', 'useful': 'FILL_THIS', 'reason': 'test'}]
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
+    sed -i '/^lessons_useful: \[\]$/d' "$TEST_TMPDIR/report.yaml"
+    cat >> "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - id: L074
+    useful: FILL_THIS
+    reason: test
+EOF
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
@@ -489,11 +465,7 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 
 @test "GP-071: non-template detected when verdict=FAIL and no FILL_THIS" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = content.replace('verdict: PASS', 'verdict: FAIL')
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
+    sed -i 's/verdict: PASS/verdict: FAIL/' "$TEST_TMPDIR/report.yaml"
     run _detect_template_state "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "no" ]
@@ -596,14 +568,7 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 
 @test "GP-071: template state when verdict is null" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['verdict'] = None
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
+    sed -i 's/^verdict: PASS$/verdict: null/' "$TEST_TMPDIR/report.yaml"
     run _detect_template_state "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "yes" ]
