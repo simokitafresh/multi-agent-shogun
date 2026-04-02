@@ -32,10 +32,14 @@ $(sed -n '/# q4_depth: 段階的導入/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRI
 }"
     export -f check_q4_depth
 
-    # check_quality_gate: Check 3インラインセクション(lines 64-170)を関数化 + 成功時OK出力
+    # check_quality_gate: Check 3インラインセクション(質問ゲートブロック)を関数化 + 成功時OK出力
+    local _qg_start _qg_end
+    _qg_start=$(grep -n '# --- Check 3: quality_gate' "$SRC_SAVE_SCRIPT" | head -1 | cut -d: -f1)
+    _qg_end=$(grep -n '# --- Check 4:' "$SRC_SAVE_SCRIPT" | head -1 | cut -d: -f1)
+    _qg_end=$((_qg_end - 1))
     eval "check_quality_gate() {
 local WARN_COUNT=0
-$(sed -n '64,170p' "$SRC_SAVE_SCRIPT")
+$(sed -n "${_qg_start},${_qg_end}p" "$SRC_SAVE_SCRIPT")
 echo \"保存確認OK: \${CMD_ID}\"
 }"
     export -f check_quality_gate
