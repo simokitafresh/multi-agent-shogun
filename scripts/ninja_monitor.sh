@@ -2063,6 +2063,19 @@ write_karo_snapshot() {
                             | grep -oP 'CTX:\K[0-9]+' | tail -1)
                         _ctx="${_ctx:-?}%"
                     fi
+                    # モデル短縮名を取得（@model_nameペイン変数から変換）
+                    local _model_name="" _model_short="?"
+                    if [ -n "$_pane_target" ]; then
+                        _model_name=$(tmux show-options -p -t "$_pane_target" -v @model_name 2>/dev/null || echo "")
+                    fi
+                    case "$_model_name" in
+                        *[Oo]pus*)   _model_short="Op" ;;
+                        *[Ss]onnet*) _model_short="So" ;;
+                        *[Hh]aiku*)  _model_short="Ha" ;;
+                        *gpt*|*GPT*) _model_short="GPT" ;;
+                        *[Cc]odex*)  _model_short="Cx" ;;
+                        *)           _model_short="?" ;;
+                    esac
                     if [ -f "$task_file" ]; then
                         local task_id status project
                         # awk単一パス: yaml_field_get×3→awk×1（453ms→131ms/cycle削減 L4-R24）
@@ -2074,10 +2087,10 @@ write_karo_snapshot() {
                             END { print t "|" s "|" p }
                         ' "$task_file")
                         _snapshot_status[$name]="${status:-}"
-                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}"
+                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}|M:${_model_short}"
                     else
                         _snapshot_status[$name]=""
-                        echo "ninja|${name}|none|idle|none|CTX:${_ctx}"
+                        echo "ninja|${name}|none|idle|none|CTX:${_ctx}|M:${_model_short}"
                     fi
                 done
 
