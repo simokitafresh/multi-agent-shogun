@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L534 -->
+<!-- last_synced_lesson: L535 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -163,3 +163,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L505-L515は振り分け済 → core§19.1(L511/L512:DB), core§19.2(L506/L507/L508:実装パターン/PI-018), core§19.2BB(L513:OPT-Aウェイト消失), ops索引(L505:deploy/L509:ツール/L510:ツール/L515:APIフィールド名), research§27(L514:Wardクラスタ固定化)）
 - （L516-L529は振り分け済 → research§27 R28 ClSel教訓(L516-L523/L525-L527/L529), ops教訓索引ツール(L528)。L524はL525重複→統合）
 - （L530-L534は振り分け済 → research§27(L530:OPTICS退化), core§19.2(L531:cache_value), research§29(L532:前処理注入ポイント), research§30(L533:PE gate閾値/L534:L1キャッシュ最適化)）
+- L535: 補完cmd対の前処理条件不一致 — 先行cmdの独自置換が後続cmdに波及（cmd_1684）
