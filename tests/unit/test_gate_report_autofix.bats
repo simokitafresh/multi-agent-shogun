@@ -388,6 +388,29 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
+# === Test 12a: fast binary_checks fix emits no awk warning ===
+@test "fast binary_checks fix does not emit awk regex warnings" {
+    local rpath="$TEST_TMPDIR/queue/reports/saizo_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: saizo
+parent_cmd: cmd_999
+verdict: CONDITIONAL_PASS
+lessons_useful: []
+binary_checks:
+  AC1:
+    - committed: true
+    - lint: PASS
+  AC2:
+    - tests: false
+    - format: ng
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" != *"warning"* ]]
+    [[ "$output" != *"regexp escape sequence"* ]]
+}
+
 # === Test 12b: binary_checks name:value entries + verdict推定 ===
 @test "binary_checks name:value entries are normalized and verdict is inferred" {
     local rpath="$TEST_TMPDIR/queue/reports/saizo_report_cmd_999.yaml"
