@@ -1,24 +1,30 @@
 task:
-  _ac_task_id: cmd_training_L4_R29_hayate_impl
+  _ac_task_id: cmd_1683_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: 計測+最大ボトルネック1箇所特定'
-  - ac: 'AC2: その1箇所を改善+commit'
-  - ac: 'AC3: 対象テストPASS(SKIP=0)+LC+BC+verdict'
+  - ac: 'AC1: 6 FoF × 3条件(baseline/間接波及/直接適用) = 18 walkforwardが完了'
+  - ac: 'AC2: 5指標の比較テーブル + 間接波及効果(B-A) + 乗算効果(C-B)の定量化が生成'
+  - ac: 'AC3: 結果YAMLをoutputs/analysis/standard_pf_preprocessing/fof_layer2_preprocessing_results.yamlに保存+commit'
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     ────────────────────────────────────────"
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -27,13 +33,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_L4_R29_hayate
-  project: infra
-  report_filename: hayate_report_cmd_training_L4_R29_hayate.yaml
-  report_path: queue/reports/hayate_report_cmd_training_L4_R29_hayate.yaml
-  status: done
+  parent_cmd: cmd_1683
+  project: dm-signal
+  purpose: 研究日誌Phase 5で三層構造を認識。各レイヤーにmomentum計算があり前処理の余地がある。
+  report_filename: hayate_report_cmd_1683.yaml
+  report_path: queue/reports/hayate_report_cmd_1683.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_training_L4_R29_hayate_impl
+  task_id: cmd_1683_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -43,14 +50,6 @@ task:
     top_pattern: 'report_yaml_format(12件)'
     breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), double_deploy(2件), karo(2件), report_missing(1件), task_redeploy(1件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'lu_reason_empty'
-      count: 2
-    - pattern: 'no_lesson_reason'
-      count: 1
-    - pattern: 'bc_result_empty'
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 16
@@ -83,34 +82,34 @@ task:
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
   related_lessons:
-  - id: 'L437'
-    summary: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
-    detail: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
-  - id: 'L436'
-    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
-    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
-  - id: 'L435'
-    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
-    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
-  - id: 'L434'
-    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
-    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
-  - id: 'L425'
-    summary: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
-    detail: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
-  - id: 'L419'
-    summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
-    detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
-  - id: 'L416'
-    summary: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
-    detail: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
-  - id: 'L413'
-    summary: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
-    detail: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
-  - id: 'L410'
-    summary: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
-    detail: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
-  - id: 'L408'
-    summary: 'switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set'
-    detail: 'switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set'
-  deployed_at: "2026-04-02T14:17:35"
+  - id: 'L530'
+    summary: 'OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点がnoise又は単一クラスタに分類され事実上top-1'
+    detail: 'OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点がnoise又は単一クラスタに分類され事実上top-1'
+  - id: 'L529'
+    summary: 'NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せず区別力が弱い。選出指標の有効LB下限を意識すべき。'
+    detail: 'NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せず区別力が弱い。選出指標の有効LB下限を意識すべき。'
+  - id: 'L527'
+    summary: 'Sortino LB=2mのfull-sample CAGR=0.933/Calmar=6.76は異常に高く、OOSで56.9%劣化しOVERFIT。LB=12m(54.4%)と同程度。一方momentum'
+    detail: 'Sortino LB=2mのfull-sample CAGR=0.933/Calmar=6.76は異常に高く、OOSで56.9%劣化しOVERFIT。LB=12m(54.4%)と同程度。一方momentum'
+  - id: 'L525'
+    summary: 'K=2:6.5%→K=3:4.2%→K=4:1.3%→K=5:1.0%。分散(K体保有)はβ低下だがα希釈も。ClSel momentum方式でK大はα寄与ゼロに収束。K=4の3条件PASSはβ主導(cmd_1589'
+    detail: 'K=2:6.5%→K=3:4.2%→K=4:1.3%→K=5:1.0%。分散(K体保有)はβ低下だがα希釈も。ClSel momentum方式でK大はα寄与ゼロに収束。K=4の3条件PASSはβ主導(cmd_1589'
+  - id: 'L522'
+    summary: 'momentum選出はIS期間の累積リターンが高いPF=高βPFを選びやすい(avg β=1.11,76.3%がβ>1)。結果α share=4.2%。Sortino選出はdownside'
+    detail: 'momentum選出はIS期間の累積リターンが高いPF=高βPFを選びやすい(avg β=1.11,76.3%がβ>1)。結果α share=4.2%。Sortino選出はdownside'
+  - id: 'L521'
+    summary: 'momentum選出はβ=1.105で構造的高βバイアス(α4.2%)。Sortino/CalmarはβΝ中立(β~1.0)でα10%/7.9%と高効率。しかしβ調整後の絶対水準(adj'
+    detail: 'momentum選出はβ=1.105で構造的高βバイアス(α4.2%)。Sortino/CalmarはβΝ中立(β~1.0)でα10%/7.9%と高効率。しかしβ調整後の絶対水準(adj'
+  - id: 'L519'
+    summary: 'full-sampleではbest_calmar=3.90だがOOS期間では4.71に上昇。OOS ClSel性能劣化(Calmar4.60→2.69)との二重効果で超越条件が2/3→0/3に反転。超越条件の本質はfull-sample'
+    detail: 'full-sampleではbest_calmar=3.90だがOOS期間では4.71に上昇。OOS ClSel性能劣化(Calmar4.60→2.69)との二重効果で超越条件が2/3→0/3に反転。超越条件の本質はfull-sample'
+  - id: 'L518'
+    summary: 'Sortino選出K=3はfull-sampleでMaxDD-14.2%と最浅だがOOSで-29.0%に倍増(劣化-103.9%)。同条件のmomentum(-16.2%→-25.7%,劣化-58.7%)より悪化幅が大きい。full-sampleでMaxDDが特に良い指標は選出バイアスによるドローダウン回避の可能性があり、OOSでそのバイアスが消えるとMaxDDが激しく劣化する。一方CAGR/Sh'
+    detail: 'Sortino選出K=3はfull-sampleでMaxDD-14.2%と最浅だがOOSで-29.0%に倍増(劣化-103.9%)。同条件のmomentum(-16.2%→-25.7%,劣化-58.7%)より悪化幅が大きい。full-sampleでMaxDDが特に良い指標は選出バイアスによるドローダウン回避の可能性があり、OOSでそのバイアスが消えるとMaxDDが激しく劣化する。一方CAGR/Sh'
+  - id: 'L517'
+    summary: 'R28 ClSel K=3のmomentum選出は統計的に有意な高βバイアス(p<0.0001)を持ち、CAGR向上の95.8%はβ由来。α寄与は4.2%のみ。β調整後に超越条件が全FAILに反転。raw'
+    detail: 'R28 ClSel K=3のmomentum選出は統計的に有意な高βバイアス(p<0.0001)を持ち、CAGR向上の95.8%はβ由来。α寄与は4.2%のみ。β調整後に超越条件が全FAILに反転。raw'
+  - id: 'L516'
+    summary: 'K=3のCal mar劣化41.6%はCAGR劣化7.2%+MaxDD悪化58.7%の組合せ。CAGR維持良好なのにCalmar単体でOVERFIT判定は粒度不足。MaxDDは単一イベント依存のため窓数8では統計的信頼性が低い。劣化率判定はCAGR/Sharpe(分布依存)とMaxDD/Calmar/UWP(極値依存)を分離評価すべき'
+    detail: 'K=3のCal mar劣化41.6%はCAGR劣化7.2%+MaxDD悪化58.7%の組合せ。CAGR維持良好なのにCalmar単体でOVERFIT判定は粒度不足。MaxDDは単一イベント依存のため窓数8では統計的信頼性が低い。劣化率判定はCAGR/Sharpe(分布依存)とMaxDD/Calmar/UWP(極値依存)を分離評価すべき'
+  deployed_at: "2026-04-02T19:12:51"
