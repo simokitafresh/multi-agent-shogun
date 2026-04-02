@@ -149,8 +149,8 @@ QG_TEMPLATE
     # cmd_1481教訓: code_readingをproduction_verifiedに見せかけた。忍者に信頼度を正直に伝える(利他)
     # cmd_1692: code_readingのみでは前提未検証のためBLOCK。追加検証(isolated_test等)があれば通過
     # 除外条件: scope_mode=SCOUT OR scout_exempt=true（偵察cmdは実行前確認が目的のためcode_readingでも可）
-    _q5_scope_mode=$(echo "$CMD_BLOCK_NC" | grep "scope_mode:" | head -1 | sed 's/.*scope_mode: *//' | tr -d '"')
-    _q5_scout_exempt=$(echo "$CMD_BLOCK_NC" | grep "scout_exempt:" | head -1 | sed 's/.*scout_exempt: *//' | tr -d '"')
+    _q5_scope_mode=$(echo "$CMD_BLOCK_NC" | grep "scope_mode:" | head -1 | sed 's/.*scope_mode: *//' | tr -d '"' || true)
+    _q5_scout_exempt=$(echo "$CMD_BLOCK_NC" | grep "scout_exempt:" | head -1 | sed 's/.*scout_exempt: *//' | tr -d '"' || true)
     q5_val=$(echo "$CMD_BLOCK_NC" | grep "q5_verified_source:" | head -1)
     if echo "$q5_val" | grep -qiE "code_reading|コード読み|読んだだけ"; then
         if [[ "${_q5_scope_mode:-}" == "SCOUT" || "${_q5_scout_exempt:-}" == "true" ]]; then
