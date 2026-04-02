@@ -6,10 +6,9 @@
 
 set -e
 
-SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-GATE_DIR="$SCRIPT_DIR/scripts/gates"
-
 run_gate_shogun_startup() {
+local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+local GATE_DIR="$SCRIPT_DIR/scripts/gates"
 BRIEF=false
 [ "${1:-}" = "--brief" ] && BRIEF=true
 

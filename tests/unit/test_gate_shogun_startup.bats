@@ -9,6 +9,9 @@ setup_file() {
     export REAL_GIT_BIN
     REAL_GIT_BIN="$(command -v git)"
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
+    # Source once per file (function-only load) and export for run subshell
+    SHOGUN_STARTUP_LIB_ONLY=1 source "$SRC_GATE_SCRIPT"
+    export -f run_gate_shogun_startup
 }
 
 setup() {
@@ -144,15 +147,12 @@ MOCK
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
     export SHOGUN_STARTUP_ROOT="$TEST_TMPDIR"
-    export SHOGUN_STARTUP_LIB_ONLY=1
-    source "$SRC_GATE_SCRIPT"
 }
 
 teardown() {
     export PATH="$ORIG_PATH"
     export HOME="$ORIG_HOME"
     unset SHOGUN_STARTUP_ROOT
-    unset SHOGUN_STARTUP_LIB_ONLY
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
