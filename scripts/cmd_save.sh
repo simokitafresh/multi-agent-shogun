@@ -423,7 +423,7 @@ check_content_duplicate() {
     [[ ! -f "$QUEUE_FILE" ]] && return 0
 
     python3 - "$QUEUE_FILE" "$CMD_ID" "${ARCHIVE_CMD_DIR:-}" <<'PY' 2>&1 | cat >&2
-import sys, re, yaml, os, glob
+import sys, re, yaml, os
 
 def tokenize(text):
     """title+purposeをトークン集合に変換。ASCII単語+日本語2gramで混合テキスト対応"""
@@ -490,9 +490,11 @@ if hits:
     print("  → 重複起票でないか確認してください（BLOCKではありません）", file=sys.stderr)
 
 # Phase 2: archive/cmds/の直近20ファイルと比較
+# os.scandir()でstat情報を一括取得（glob+getmtimeのsyscall×n削減）
 if os.path.isdir(archive_dir):
-    archive_files = sorted(glob.glob(os.path.join(archive_dir, "*.yaml")),
-                           key=os.path.getmtime, reverse=True)[:20]
+    entries = [(e.stat().st_mtime, e.path) for e in os.scandir(archive_dir) if e.name.endswith('.yaml')]
+    entries.sort(reverse=True)
+    archive_files = [e[1] for e in entries[:20]]
     archive_hits = []
     for af in archive_files:
         try:
