@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R17
   task_type: impl
   project: infra
-  status: acknowledged
+  status: idle
   target_path: tests/unit/test_deploy_task_recon_template.bats
   command: |
     テスト速度改善: test_deploy_task_recon_template.batsを高速化(現在3.2s/2t)。
