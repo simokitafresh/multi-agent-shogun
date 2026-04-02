@@ -120,11 +120,14 @@ RESULT=$(REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, os, sys, re
 
 report_path = os.environ['REPORT_PATH']
+SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+SafeDumper = getattr(yaml, 'CSafeDumper', yaml.SafeDumper)
+DumpAll = getattr(yaml, 'dump_all')
 
 try:
     with open(report_path) as f:
         raw = f.read()
-    data = yaml.safe_load(raw)
+    data = yaml.load(raw, Loader=SafeLoader)
 except Exception as e:
     # === GP-091: 撤去(2026-03-25 消火→品質向上改修) ===
     # 旧: YAML parse errorを自動修復しダミーコンテンツを捏造(消火構造)
@@ -150,7 +153,7 @@ def _get_task_data(worker_id):
         if os.path.exists(tpath):
             try:
                 with open(tpath) as tf:
-                    tdata = yaml.safe_load(tf)
+                    tdata = yaml.load(tf, Loader=SafeLoader)
                 result = tdata if not isinstance(tdata, dict) or 'task' not in tdata else tdata.get('task', {})
             except Exception:
                 pass
@@ -350,7 +353,7 @@ if isinstance(bc, dict):
             converted = None
             # Step 1: yaml.safe_load を試行(a,b,cパターン)
             try:
-                parsed = yaml.safe_load(ac_val)
+                parsed = yaml.load(ac_val, Loader=SafeLoader)
                 if isinstance(parsed, list):
                     converted = parsed
                 elif isinstance(parsed, dict):
@@ -628,7 +631,7 @@ if isinstance(bc, dict):
 if fixes:
     data['autofix_applied'] = fixes
     with open(report_path, 'w') as f:
-        yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        DumpAll([data], f, Dumper=SafeDumper, allow_unicode=True, default_flow_style=False, sort_keys=False)
     print('AUTO-FIXED: ' + '; '.join(fixes))
 else:
     print('NO-FIX-NEEDED')
