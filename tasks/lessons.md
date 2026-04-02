@@ -3326,3 +3326,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `project:` を前提にした軽量regexはローカルfixtureでは通っても本番アーカイブで recent cmd 検出を静かに失敗させる。先頭行だけを走査する軽量抽出でも、実運用のネストとインデントを前提に設計すべきである。
+
+### L437: 複数Fixが同一ファイルを独立読込するパターンはキャッシュ関数で一元化すべき
+- **日付**: 2026-04-02
+- **出典**: cmd_training_L4_R23_tobisaru
+- **記録者**: tobisaru
+- **status**: draft
+- **tags**: [universal]
+- gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則: 同一スクリプト内で同じファイルを複数箇所で読む場合、初回読込結果をキャッシュせよ

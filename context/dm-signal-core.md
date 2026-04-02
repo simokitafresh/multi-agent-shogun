@@ -384,6 +384,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 - L506: OPT変更時は既存preloadのexpunge戦略を確認せよ（cmd_1479）
 - L507: lazy-loaded cache forward-fillは危険。OOM/データ汚染の原因（cmd_1481）
 - L508: silent fallbackパターン禁止(PI-018)。例外→デフォルト値フォールバックは問題を隠蔽する（cmd_1483）
+- L531: build_signal_cache_valueのholding_signal or signalフォールバック注意（cmd_1622）
 
 ### 19.2 BB仕様・バグ修正
 

@@ -779,7 +779,7 @@ review_gate.shがtitle/descriptionフィールドを検索していたが、タ�
 ## §26 R11-R12 テスト速度最適化（2026-04-02）— 殿指示ネタ変更
 
 ### 殿指示
-修行ネタをテスト速度最適化に変更。docs/research/test-optimization-journal.md参照。
+修行ネタをテスト速度最適化に変更。→ `docs/research/test-optimization-journal.md`
 確立済みパターン: 巨大スクリプトフル実行→関数抽出→source→単体テスト化(48倍/16倍/21倍実証)。
 
 ### R11結果（Sonnet+Codex 4名）

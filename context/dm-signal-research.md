@@ -356,6 +356,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - **R28 Ward Cluster Selection(cmd_1579): Ward改善不可の最終根拠**。クラスタ内momentum top1選出+K体EW保有→全K(3,4,5)で現行Ward FoF(全員保有)に全指標劣後。ClSel(K=5) Sharpe1.77<1/N EW1.78。超越条件3つ全FAIL(CAGR:60.6%vs80.6%/Calmar:2.72vs4.18)。**ウェイト変更でもselection変更でもWard改善不可能**
 - **R28-シン ClSel逆転(cmd_1581): シン素材で有効に逆転**。シンClSel_K3がCAGR74.6%/Sharpe1.75/Calmar4.60/MaxDD-16.2%/UWP3mで全方式中最良。超越条件B(Calmar4.60>3.90×0.95)PASS+C(UWP3m<5m)PASS。旧忍法では全FAIL→シンで逆転=素材依存性が明確。集中投資リスク(20体中3体)が残課題。cmd_1578(ARI45.5%=クラスタが動く)と整合
 - **R28-OOS 過適合なし(cmd_1580): WF-OOS 7窓で旧忍法Ward ClSel過適合フラグなし**。劣化率<30%全K。Ward K=4がOOS最良(CAGR74.0%/Sharpe2.02/Calmar3.57)。Ward vs Simple Momentum: 全KでWard優位(Sharpe差+0.28〜0.49)。Ward vs 1/N EW: K=4,5がEW(Sharpe1.89)上回る。**OOSでクラスタリング付加価値確認**
+- L530: N=20小集団ではOPTICS xi抽出が単一クラスタに退化する（cmd_1623）
 - R28-K2端点検証(cmd_1584): K=2は全K中CAGR最高(旧61.3%/シン75.8%)だがMaxDD最悪(旧-32.2%/シン-20.4%)。旧は超越条件全FAIL。シンは条件Bのみ辛うじてPASS(Calmar3.72≥3.705)。**K=2は集中リスク許容範囲外。K=3-5が最適帯域**
 - R28-指標感度分析(cmd_1582): 4指標(Momentum/Sharpe/Calmar/Sortino)×K=3,4,5=12パターン全てWardFoF全員保有(Sharpe1.85)に劣後。Sharpe選抜K=5が1.80で最高。Sortino-Momentum間ランク相関0.49で最も独立。**指標空間でもWard改善不可**
 - **PD-004裁定(2026-03-31殿裁定): Ward FoFはkeep(継続)**。R28-R30研究で付加価値ほぼゼロ+β調整後超越条件全FAIL確定だが、殿判断で維持
@@ -660,6 +661,8 @@ guide.mdに純度ルール（一次知識層汚染防止）を追加後、全忍
 
 残課題 → `docs/research/research-todo.md`
 
+- L532: cmd仕様の前処理適用レベル(gate-level vs return-level)を実装前にコード注入ポイント(L150等)と照合確認すべし（cmd_1628）
+
 ## §29. Standard PF FDA Smoothing研究 (cmd_1666)
 <!-- last_updated: 2026-04-01 -->
 
@@ -694,3 +697,6 @@ EMA平滑化(cmd_1632)とL1 Trend Filter(cmd_1633)のパラメータ選択がove
 **性能知見**: L1 cvxpy計算で(ticker,lambda)キャッシュ適用 → 650→65回に削減、実行時間4h→1h(10倍高速化)。LC登録推奨。
 
 → `queue/reports/saizo_report_cmd_1660.yaml` | `outputs/analysis/standard_pf_preprocessing/oos_verification_results.yaml`
+
+- L533: m=5 PE gateは月次99ヶ月データでwindow12/24に閾値未到達（cmd_1635）
+- L534: L1 cvxpy最適化: ticker×lambdaキャッシュで重複計算を解消すると実行時間が4時間→1時間に短縮（cmd_1660）
