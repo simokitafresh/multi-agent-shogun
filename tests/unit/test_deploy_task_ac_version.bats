@@ -9,6 +9,8 @@ setup_file() {
 
 setup() {
     deploy_task_scaffold "deploy_acv"
+    # shellcheck disable=SC1090
+    source "$TEST_PROJECT/scripts/lib/field_get.sh"
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
@@ -25,40 +27,135 @@ teardown() {
     deploy_task_teardown
 }
 
+task_file() {
+    printf '%s\n' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+}
+
+task_field_kind() {
+    local field_name="$1"
+
+    awk -v field="$field_name" '
+        BEGIN {
+            in_task = 0
+            found = 0
+        }
+        /^task:[[:space:]]*$/ {
+            in_task = 1
+            next
+        }
+        in_task && /^[^[:space:]]/ {
+            exit
+        }
+        !in_task {
+            next
+        }
+        $0 ~ ("^  " field ":[[:space:]]*\\[[^]]*\\][[:space:]]*$") {
+            print "list"
+            found = 1
+            exit
+        }
+        $0 ~ ("^  " field ":[[:space:]]*$") {
+            print "list"
+            found = 1
+            exit
+        }
+        $0 ~ ("^  " field ":[[:space:]]+") {
+            print "scalar"
+            found = 1
+            exit
+        }
+        END {
+            if (!found) {
+                print "missing"
+            }
+        }
+    ' "$(task_file)"
+}
+
+task_list_to_pipe() {
+    local value="$1"
+
+    if [ -z "$value" ] || [ "$value" = "[]" ]; then
+        printf '\n'
+        return
+    fi
+
+    value="${value#[}"
+    value="${value%]}"
+    printf '%s\n' "$value" | sed -E 's/[[:space:]]*,[[:space:]]*/|/g'
+}
+
+task_list_field_value() {
+    local field_name="$1"
+
+    awk -v field="$field_name" '
+        BEGIN {
+            in_task = 0
+            capture = 0
+            first = 1
+        }
+        /^task:[[:space:]]*$/ {
+            in_task = 1
+            next
+        }
+        in_task && /^[^[:space:]]/ {
+            exit
+        }
+        !in_task {
+            next
+        }
+        capture {
+            if ($0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) {
+                exit
+            }
+            if ($0 ~ /^  -[[:space:]]*/) {
+                item = $0
+                sub(/^  -[[:space:]]*/, "", item)
+                printf "%s%s", first ? "" : "|", item
+                first = 0
+            }
+            next
+        }
+        $0 ~ ("^  " field ":[[:space:]]*\\[[^]]*\\][[:space:]]*$") {
+            item = $0
+            sub("^  " field ":[[:space:]]*\\[", "", item)
+            sub("\\][[:space:]]*$", "", item)
+            gsub(/[[:space:]]*,[[:space:]]*/, "|", item)
+            print item
+            exit
+        }
+        $0 ~ ("^  " field ":[[:space:]]*$") {
+            capture = 1
+        }
+    ' "$(task_file)"
+}
+
 read_task_ac_version() {
-    python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-print(data.get('task', {}).get('ac_version', ''))
-"
+    FIELD_GET_NO_LOG=1 field_get "$(task_file)" "ac_version" "" 2>/dev/null
 }
 
 read_task_report_path() {
-    python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-print(data.get('task', {}).get('report_path', ''))
-"
+    FIELD_GET_NO_LOG=1 field_get "$(task_file)" "report_path" "" 2>/dev/null
 }
 
 read_task_field() {
     local field_name="$1"
-    TASK_FILE_ENV="$TEST_PROJECT/queue/tasks/sasuke.yaml" FIELD_NAME_ENV="$field_name" python3 -c "
-import os, yaml
-with open(os.environ['TASK_FILE_ENV'], encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-task = data.get('task', {})
-value = task.get(os.environ['FIELD_NAME_ENV'], '__missing__')
-if isinstance(value, list):
-    print('list')
-    print('|'.join(str(v) for v in value))
-elif value == '__missing__':
-    print('__missing__')
-else:
-    print(str(value))
-"
+    local kind value
+
+    kind="$(task_field_kind "$field_name")"
+    case "$kind" in
+        missing)
+            printf '__missing__\n'
+            ;;
+        list)
+            value="$(task_list_field_value "$field_name")"
+            printf 'list\n'
+            task_list_to_pipe "$value"
+            ;;
+        scalar)
+            FIELD_GET_NO_LOG=1 field_get "$(task_file)" "$field_name" "" 2>/dev/null
+            ;;
+    esac
 }
 
 @test "deploy_task injects ac_version and report ac_version_read on first deploy" {
@@ -178,7 +275,7 @@ task:
     - ac2: second
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -213,7 +310,7 @@ task:
   ac_priority: "AC2 > AC1 > AC3"
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     # cmd_1321: FIELD_CLEAR→再inject設計により、既存値はクリアされデフォルト再注入される
@@ -290,7 +387,7 @@ task:
       description: "third"
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -315,7 +412,7 @@ task:
       description: "second"
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -338,7 +435,7 @@ task:
       description: "the only one"
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field parallel_ok
@@ -370,7 +467,7 @@ task:
     - AC3
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -400,7 +497,7 @@ task:
   parallel_ok: []
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field parallel_ok
@@ -427,7 +524,7 @@ task:
   parallel_ok: []
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field parallel_ok
@@ -457,7 +554,7 @@ task:
   parallel_ok: []
 EOF
 
-    run deploy_task_fast sasuke
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority

@@ -146,3 +146,37 @@ deploy_task_fast() {
         generate_report_template "$NINJA_NAME" "$task_id" "$parent_cmd" "$project"
     )
 }
+
+inject_modifiers_only() {
+    local ninja_name="$1"
+    local only_ops="${2:-execution_controls}"
+    local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
+    local clear_fields clear_tmp
+
+    clear_fields="stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok"
+    clear_tmp="$(mktemp)"
+    if ! awk -v fields="$clear_fields" '
+        BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0 }
+        {
+            if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
+            if (skip) {
+                if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
+                else { next }
+            }
+            if (indent == 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) {
+                key = $0; sub(/^  /, "", key); sub(/:.*$/, "", key)
+                if (key in fset) { skip = 1; next }
+            }
+            print
+        }
+    ' "$task_file" > "$clear_tmp"; then
+        rm -f "$clear_tmp"
+        return 1
+    fi
+    mv "$clear_tmp" "$task_file"
+
+    TASK_FILE_ENV="$task_file" \
+    SCRIPT_DIR_ENV="$TEST_PROJECT" \
+    INJECT_TASK_MODIFIERS_ONLY="$only_ops" \
+        python3 "$TEST_PROJECT/scripts/lib/inject_task_modifiers.py"
+}

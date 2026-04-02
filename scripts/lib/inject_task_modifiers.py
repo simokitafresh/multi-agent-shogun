@@ -42,6 +42,15 @@ def atomic_write(data, task_file):
         raise
 
 
+def parse_selected_operations(raw_value):
+    if not raw_value:
+        return set()
+    return {
+        item.strip() for item in str(raw_value).split(',')
+        if item.strip()
+    }
+
+
 # ─── engineering_preferences ───
 def inject_engineering_preferences(task, script_dir):
     def is_empty(value):
@@ -505,6 +514,9 @@ def inject_execution_controls(task):
 def main():
     task_file = os.environ.get('TASK_FILE_ENV', '')
     script_dir = os.environ.get('SCRIPT_DIR_ENV', '')
+    selected_operations = parse_selected_operations(
+        os.environ.get('INJECT_TASK_MODIFIERS_ONLY', '')
+    )
 
     if not task_file or not os.path.isfile(task_file):
         print('[TASK_MOD] Task file not found', file=sys.stderr)
@@ -535,6 +547,8 @@ def main():
     ]
 
     for name, op in operations:
+        if selected_operations and name not in selected_operations:
+            continue
         try:
             if op():
                 changed = True
