@@ -906,24 +906,27 @@ def read_text(path: str) -> str:
 
 
 def collect_reference_files() -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    import glob as _glob
+
     forward_candidates: list[tuple[str, str]] = []
     reverse_candidates: list[tuple[str, str]] = []
 
-    for root, _dirs, files in os.walk(script_dir):
-        files.sort()
-        for filename in files:
-            rel_path = os.path.relpath(os.path.join(root, filename), script_dir).replace(os.sep, "/")
-            abs_path = os.path.join(root, filename)
-            if rel_path == "CLAUDE.md":
-                forward_candidates.append((rel_path, abs_path))
-                reverse_candidates.append((rel_path, abs_path))
-                continue
-            if rel_path.startswith("instructions/") and rel_path.endswith(".md"):
-                forward_candidates.append((rel_path, abs_path))
-                reverse_candidates.append((rel_path, abs_path))
-                continue
-            if is_script_target(rel_path):
-                forward_candidates.append((rel_path, abs_path))
+    # CLAUDE.md (root level only) — os.walk全走査を廃止しターゲット絞込み
+    claude_abs = os.path.join(script_dir, "CLAUDE.md")
+    if os.path.isfile(claude_abs):
+        forward_candidates.append(("CLAUDE.md", claude_abs))
+        reverse_candidates.append(("CLAUDE.md", claude_abs))
+
+    # instructions/*.md
+    for abs_path in sorted(_glob.glob(os.path.join(script_dir, "instructions", "*.md"))):
+        rel_path = os.path.relpath(abs_path, script_dir).replace(os.sep, "/")
+        forward_candidates.append((rel_path, abs_path))
+        reverse_candidates.append((rel_path, abs_path))
+
+    # scripts/**/*.sh (forward only)
+    for abs_path in sorted(_glob.glob(os.path.join(script_dir, "scripts", "**", "*.sh"), recursive=True)):
+        rel_path = os.path.relpath(abs_path, script_dir).replace(os.sep, "/")
+        forward_candidates.append((rel_path, abs_path))
 
     forward_candidates.sort()
     reverse_candidates.sort()

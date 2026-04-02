@@ -1,5 +1,5 @@
 task:
-  _ac_task_id: cmd_training_L4_R22_test_hayate_impl
+  _ac_task_id: cmd_training_L4_R24_hayate_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
@@ -8,16 +8,6 @@ task:
   - ac: 'AC1: 計測+ボトルネック特定'
   - ac: 'AC2: 改善+commit'
   - ac: 'AC3: 全テストPASS(SKIP=0)+LC+BC+verdict'
-  command: 'スクリプト速度改善: context_freshness_check.sh。S1: 日付フィルタ追加。1578アーカイブ全量パース→直近N日のみ。6.2s→0.5s目標。
-
-    一部改善で十分。長引くなら途中commitで終了。
-
-    AC1: 計測+ボトルネック特定  AC2: 改善+commit  AC3: PASS+LC+BC+verdict
-
-    ★ bc構造(AC1:/AC2:/AC3:)維持。bats全量禁止。
-
-    '
-  deployed_at: '2026-04-02T12:04:29+09:00'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     ────────────────────────────────────────"
@@ -37,35 +27,13 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_L4_R22_test_hayate
+  parent_cmd: cmd_training_L4_R24_hayate
   project: infra
-  related_lessons:
-  - detail: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-    id: L074
-    summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  - detail: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-    id: L063
-    summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for
-      lesson in data.get('lessons',[])が正しい形
-  - detail: 'IF: lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 → THEN: KM_JSON_CACHEの無効化条件にlessons.yaml変更検知を追加すべき
-      (BECAUSE: 現行のキャッシュ無効化はgate_metrics.logの行数変化のみで判定しており、lessons.yaml変更が反映されるまでラグがあるため)'
-    id: L152
-    summary: IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条件にlessons.yaml変更検知を追加すべき
-  - detail: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_karo.yaml(42k)は全カテゴリ共通Redで定期アーカイブが全エージェントに効く。構造的ファイルは圧縮限界あり。単調増加型5件は定期パージで制御可能。cmd_1121で計測'
-    id: L255
-    summary: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_karo.yaml(42k)は全カテゴリ共通Redで定期アーカイブが全エージェントに効く。構造的ファイルは圧縮限界あり。単調増加型5件は定期パージで制御可能。cmd_1121で計測'
-  - detail: 'IF: deploy_task.shがproject+platform教訓をlessons_by_idに統合する時 → THEN: dictキーをproject-prefixed
-      IDにして名前空間を分離せよ (BECAUSE: 同一IDのproject教訓がplatform教訓で静かに上書きされ、dm-signal固有教訓227件が注入不能になっていた)'
-    id: L230
-    summary: 'lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227件のproject固有教訓が静かに消失。対策:
-      キーをproject-prefixed IDにするかID体系自体を分離'
-  report_filename: hayate_report_cmd_training_L4_R22_test_hayate.yaml
-  report_path: queue/reports/hayate_report_cmd_training_L4_R22_test_hayate.yaml
-  status: done
+  report_filename: hayate_report_cmd_training_L4_R24_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L4_R24_hayate.yaml
+  status: in_progress
   stop_for: []
-  target_path: tests/unit/test_ntfy_auth.bats
-  task_id: cmd_training_L4_R22_test_hayate_impl
+  task_id: cmd_training_L4_R24_hayate_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -114,3 +82,35 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
+  related_lessons:
+  - id: 'L436'
+    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
+    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
+  - id: 'L435'
+    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
+    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+  - id: 'L425'
+    summary: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+    detail: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+  - id: 'L419'
+    summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+    detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+  - id: 'L416'
+    summary: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
+    detail: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
+  - id: 'L413'
+    summary: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
+    detail: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
+  - id: 'L410'
+    summary: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
+    detail: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
+  - id: 'L408'
+    summary: 'switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set'
+    detail: 'switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set'
+  - id: 'L407'
+    summary: 'make_barのpctが100超/負の場合にfilled/emptyが範囲外になり、forループの挙動が不正になる。set -euo pipefail環境では算術異常がスクリプト即終了に繋がるリスクもある。外部入力を受ける算術パラメータには必ず境界値クランプを入れるべき'
+    detail: 'make_barのpctが100超/負の場合にfilled/emptyが範囲外になり、forループの挙動が不正になる。set -euo pipefail環境では算術異常がスクリプト即終了に繋がるリスクもある。外部入力を受ける算術パラメータには必ず境界値クランプを入れるべき'
+  deployed_at: "2026-04-02T13:41:17"
