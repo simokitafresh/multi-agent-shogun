@@ -23,6 +23,83 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     exit 1
 fi
 
+fast_no_fix_needed() {
+    local report_path="$1"
+    awk '
+        BEGIN {
+            section = ""
+            need_python = 0
+            saw_worker = 0
+            saw_parent = 0
+            saw_lessons_useful = 0
+        }
+
+        /^[^[:space:]][^:]*:/ {
+            key = $1
+            sub(/:$/, "", key)
+            section = key
+
+            if (key == "report") {
+                need_python = 1
+            } else if (key == "worker_id") {
+                saw_worker = 1
+                if ($0 ~ /^worker_id:[[:space:]]*$/) need_python = 1
+            } else if (key == "parent_cmd") {
+                saw_parent = 1
+                if ($0 ~ /^parent_cmd:[[:space:]]*$/) need_python = 1
+            } else if (key == "lessons_useful") {
+                saw_lessons_useful = 1
+                if ($0 ~ /^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$/) need_python = 1
+                else if ($0 !~ /^lessons_useful:[[:space:]]*$/ && $0 !~ /^lessons_useful:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) need_python = 1
+            } else if (key == "files_modified") {
+                if ($0 !~ /^files_modified:[[:space:]]*$/ && $0 !~ /^files_modified:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) need_python = 1
+            } else if (key == "binary_checks") {
+                if ($0 !~ /^binary_checks:[[:space:]]*$/) need_python = 1
+            } else if (key == "lesson_candidate") {
+                if ($0 ~ /^lesson_candidate:[[:space:]]*\[/) need_python = 1
+            } else if (key == "verdict") {
+                if ($0 !~ /^verdict:[[:space:]]*(PASS|FAIL)[[:space:]]*$/ && $0 !~ /^verdict:[[:space:]]*$/) need_python = 1
+            }
+            next
+        }
+
+        section == "files_modified" {
+            if ($0 ~ /^  - / && $0 !~ /^  - path:/) need_python = 1
+            next
+        }
+
+        section == "lessons_useful" {
+            if ($0 ~ /^  [0-9A-Za-z_-]+:/) need_python = 1
+            if ($0 ~ /^  - / && $0 !~ /^  - id:/) need_python = 1
+            if ($0 ~ /UNKNOWN_[0-9]+|id:[[:space:]]*(UNKNOWN|None|null)/) need_python = 1
+            next
+        }
+
+        section == "binary_checks" {
+            if ($0 ~ /^  [^:]+:[[:space:]]+\S/) need_python = 1
+            if ($0 ~ /^    check:/ || $0 ~ /^    result:/) need_python = 1
+            if ($0 ~ /^    - / && $0 !~ /^    - check:/) need_python = 1
+            if ($0 ~ /^      result:/ && $0 !~ /^      result:[[:space:]]*"?((yes)|(no))"?[[:space:]]*$/) need_python = 1
+            next
+        }
+
+        section == "self_gate_check" {
+            if ($0 ~ /^  [^:]+:[[:space:]]*(ok|yes|true|pass|o|○|ng|no|false|fail|x|×)[[:space:]]*$/) need_python = 1
+            next
+        }
+
+        END {
+            if (!saw_worker || !saw_parent || !saw_lessons_useful) need_python = 1
+            exit need_python ? 1 : 0
+        }
+    ' "$report_path"
+}
+
+if fast_no_fix_needed "$REPORT_PATH"; then
+    echo "NO-FIX-NEEDED"
+    exit 0
+fi
+
 RESULT=$(REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, os, sys, copy, re
 
