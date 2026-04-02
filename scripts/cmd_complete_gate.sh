@@ -2706,7 +2706,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     fi
 
     PV_CHECKED=true
-    pv_fit=$(field_get "$report_file" "fit" "")
+    pv_fit=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "fit" "")
 
     case "$pv_fit" in
         true)
@@ -3201,11 +3201,11 @@ if [ "$HAS_RECON" = true ]; then
 
         # task_typeがrecon/scoutの報告のみ対象
         local_task_type=""
-        local_task_id=$(field_get "$report_file" "task_id" "")
+        local_task_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "task_id" "")
         if [ -n "$local_task_id" ]; then
             local_task_file="$TASKS_DIR/$(echo "$report_file" | sed 's|.*/\([^/]*\)_report_.*|\1|').yaml"
             if [ -f "$local_task_file" ]; then
-                local_task_type=$(field_get "$local_task_file" "task_type" "")
+                local_task_type=$(FIELD_GET_NO_LOG=1 field_get "$local_task_file" "task_type" "")
             fi
         fi
 
