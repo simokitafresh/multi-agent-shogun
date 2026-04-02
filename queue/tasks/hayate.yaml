@@ -1,13 +1,13 @@
 task:
-  _ac_task_id: cmd_1703_impl
+  _ac_task_id: cmd_1704_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: cmd_1702成果物3ファイル削除+commit完了'
-  - ac: 'AC2: 本番定義(rolling_cagr.max())で65PF×12window特徴量テーブル(High/Low/Average/Current)生成'
-  - ac: 'AC3: PFファミリー別High分布+window間High相関を分析+結果YAML保存+commit'
+  - ac: 'AC1: 12M delta_high >= 0 基準でEMA5適用対象/非対象PF一覧を生成'
+  - ac: 'AC2: 選択適用条件で65PF walkforward完了'
+  - ac: 'AC3: 59 FoF 3条件((A)baseline=全PF前処理なし/(B)一律EMA5=cmd_1700/(C)選択EMA5=本cmd)比較テーブル(CAGR/Sharpe/MaxDD)+改善率+YAML保存+commit'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -34,14 +34,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1703
+  parent_cmd: cmd_1704
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_1703.yaml
-  report_path: queue/reports/hayate_report_cmd_1703.yaml
+  report_filename: hayate_report_cmd_1704.yaml
+  report_path: queue/reports/hayate_report_cmd_1704.yaml
   status: done
   stop_for: []
-  task_id: cmd_1703_impl
+  task_id: cmd_1704_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -91,6 +91,9 @@ task:
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
   related_lessons:
+  - id: 'L543'
+    summary: 'Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products=abs_r[1:]*abs_r[:-1]をcumsum化し、rolling_sum=cs[t-1]-cs[t-w]で全t点を一括計算。50.6x高速化(27.72ms→0.55ms)。同パターンは全rolling'
+    detail: 'Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products=abs_r[1:]*abs_r[:-1]をcumsum化し、rolling_sum=cs[t-1]-cs[t-w]で全t点を一括計算。50.6x高速化(27.72ms→0.55ms)。同パターンは全rolling'
   - id: 'L542'
     summary: 'High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コスト集計スクリプトは'
     detail: 'High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コスト集計スクリプトは'
@@ -118,6 +121,3 @@ task:
   - id: 'L530'
     summary: 'OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点がnoise又は単一クラスタに分類され事実上top-1'
     detail: 'OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点がnoise又は単一クラスタに分類され事実上top-1'
-  - id: 'L529'
-    summary: 'NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せず区別力が弱い。選出指標の有効LB下限を意識すべき。'
-    detail: 'NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せず区別力が弱い。選出指標の有効LB下限を意識すべき。'
