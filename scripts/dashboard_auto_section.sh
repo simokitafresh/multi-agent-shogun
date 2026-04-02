@@ -61,10 +61,12 @@ KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
 KM_MODEL_CACHE="/tmp/dashboard_km_model_cache.txt"
 KM_CACHE_LINES="/tmp/dashboard_km_cache_lines.txt"
 # GP-XXX: TTL caches for slow subprocesses (CTX: 120s, CI: 60s)
-CTX_WARN_CACHE="/tmp/dashboard_ctx_warn_cache.txt"
-CTX_WARN_CACHE_TS="/tmp/dashboard_ctx_warn_cache.ts"
-CI_STATUS_CACHE="/tmp/dashboard_ci_status_cache.txt"
-CI_STATUS_CACHE_TS="/tmp/dashboard_ci_status_cache.ts"
+# Project-scoped via cksum so test environments don't share cache with production
+_proj_hash=$(printf '%s' "$PROJECT_DIR" | cksum | awk '{print $1}')
+CTX_WARN_CACHE="/tmp/dashboard_ctx_warn_${_proj_hash}.txt"
+CTX_WARN_CACHE_TS="/tmp/dashboard_ctx_warn_${_proj_hash}.ts"
+CI_STATUS_CACHE="/tmp/dashboard_ci_status_${_proj_hash}.txt"
+CI_STATUS_CACHE_TS="/tmp/dashboard_ci_status_${_proj_hash}.ts"
 _CACHE_NOW=$(date +%s)
 
 MARKER_START="<!-- DASHBOARD_AUTO_START -->"
