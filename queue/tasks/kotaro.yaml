@@ -1,22 +1,34 @@
 task:
-  task_id: cmd_training_L4_R20_kotaro
-  parent_cmd: cmd_training_L4_R20
+  task_id: cmd_1677b_impl
+  parent_cmd: cmd_1677
   task_type: impl
   project: infra
-  status: done
-  target_path: scripts/dashboard_auto_section.sh
+  status: assigned
+  target_path: scripts/gates/gate_report_format.sh
   command: |
-    スクリプト速度改善: dashboard_auto_section.sh。S5: 子プロセス最適化。3.0s→1.5s目標。
-    一部改善で十分。長引くなら途中commitで終了。
-    AC1: 計測+ボトルネック特定  AC2: 改善+commit  AC3: PASS+LC+BC+verdict
-    ★ bc構造(AC1:/AC2:/AC3:)維持。bats全量禁止。
+    gate_report_format.shのbinary_checks result不正検出メッセージにYAML引用符ヒントを追加せよ。
+
+    【根因】
+    Sonnet忍者(小太郎)がresult: 'yes'と書く→YAMLパーサーがリテラル文字列'yes'として読む→gateがFAIL。
+    7ラウンド(R13→R20)同一パターンを繰り返し。gateのFIX hintに引用符警告がない。
+
+    【修正箇所】
+    L207-209のエラーメッセージ+FIX hintに追加:
+    「★引用符なし: result: yes（result: 'yes' はNG。YAMLでは引用符付き文字列になる）」
+
+    【追加修正】
+    L204-206(空文字エラー)にも同様のヒント追加。
+
+    AC1: L207-209のエラーメッセージに引用符警告ヒントが追加されている
+    AC2: 既存テスト全PASS(対象ファイルのみ実行。bats全量禁止)
   acceptance_criteria:
-    - ac: "AC1: 計測+ボトルネック特定"
-    - ac: "AC2: 改善+commit"
-    - ac: "AC3: 関連テストPASS(あれば)+LC+BC+verdict"
-  ac_priority: AC1 > AC2 > AC3
-  parallel_ok: [AC1, AC2, AC3]
+    - ac: "AC1: binary_checks result不正メッセージに引用符警告追加"
+    - ac: "AC2: 既存テスト全PASS(SKIP=0)"
+  ac_priority: AC1 > AC2
+  parallel_ok: [AC1, AC2]
   stop_for: []
   never_stop_for: [bats全量禁止]
+  report_path: queue/reports/kotaro_report_cmd_1677b.yaml
+  report_filename: kotaro_report_cmd_1677b.yaml
   role_reminder: "忍者kotaro。このタスクのみ実行せよ。"
-  deployed_at: "2026-04-02T12:04:29+09:00"
+  deployed_at: "$(date -Iseconds)"

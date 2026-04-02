@@ -203,10 +203,10 @@ elif isinstance(bc, dict):
                 # result field: must be yes/no, not free-form text or empty
                 if isinstance(rs, str) and not rs.strip():
                     errors.append(f'binary_checks.{ac_key}[{j}].result: 空文字。\"yes\" または \"no\" を記入せよ')
-                    hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): 確認結果を \"yes\" or \"no\" で記入せよ')
+                    hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): 確認結果を \"yes\" or \"no\" で記入せよ\\n  ★引用符なし: result: yes（result: \'yes\' はNG。YAMLでは引用符付き文字列になる）')
                 elif isinstance(rs, str) and rs.strip().lower() not in ('yes', 'no'):
                     errors.append(f'binary_checks.{ac_key}[{j}].result: \"{rs[:40]}\" は不正。\"yes\" または \"no\" のみ')
-                    hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): \"yes\" or \"no\" のみ。自由記述は acceptance_criteria.detail に書け')
+                    hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): \"yes\" or \"no\" のみ。自由記述は acceptance_criteria.detail に書け\\n  ★引用符なし: result: yes（result: \'yes\' はNG。YAMLでは引用符付き文字列になる）')
 elif isinstance(bc, list) and not bc:
     errors.append('binary_checks: empty list (must have at least one entry)')
 
