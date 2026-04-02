@@ -88,24 +88,95 @@ fi
 # ─── Extract unread message info (lock-free read) ───
 # Returns TAB-separated: count \t has_specials \t fingerprint \t specials_tsv
 # specials_tsv: newline-separated "id\ttype\tbase64_content" lines (base64-encoded as whole)
-# Single python3 call replaces previous 5 calls (107ms → 39ms per cycle)
+# inbox_write.sh emits a constrained YAML shape, so use a lightweight line parser
+# instead of PyYAML full-load on every watch cycle.
 # IMPORTANT: Empty fields use placeholder '-' to prevent bash IFS='\t' read
 # from merging consecutive tabs (tab is IFS-whitespace → adjacent tabs collapse)
 get_unread_info() {
     INBOX_PATH="$INBOX" python3 -c "
-import yaml, sys, json, os, base64
+import sys, os, base64, ast
+
+SPECIAL_TYPES = {'clear_command', 'model_switch'}
+
+def decode_scalar(value):
+    value = value.strip()
+    if not value:
+        return ''
+    if value in ('true', 'false'):
+        return value
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ('\"', \"'\"):
+        try:
+            return ast.literal_eval(value)
+        except Exception:
+            if value[0] == \"'\":
+                return value[1:-1].replace(\"''\", \"'\")
+            return value[1:-1]
+    return value
+
 try:
     inbox_path = os.environ['INBOX_PATH']
-    with open(inbox_path) as f:
-        data = yaml.safe_load(f)
-    if not data or 'messages' not in data or not data['messages']:
+    normal_ids = []
+    specials = []
+    current = None
+    state = {'block_key': None, 'block_lines': []}
+
+    def flush_block():
+        if current is not None and state['block_key'] is not None:
+            current[state['block_key']] = '\n'.join(state['block_lines'])
+        state['block_key'] = None
+        state['block_lines'] = []
+
+    def flush_message():
+        flush_block()
+        if not current or current.get('read', 'true') != 'false':
+            return
+        if current.get('type', '') in SPECIAL_TYPES:
+            specials.append(current)
+        else:
+            normal_ids.append(current.get('id', ''))
+
+    def assign_field(target, key, raw_value):
+        value = raw_value.lstrip()
+        if value == '|-' or value == '|':
+            state['block_key'] = key
+            state['block_lines'] = []
+            return
+        target[key] = decode_scalar(value)
+
+    with open(inbox_path, encoding='utf-8') as f:
+        for raw in f:
+            line = raw.rstrip('\n')
+
+            if state['block_key'] is not None:
+                if line.startswith('    '):
+                    state['block_lines'].append(line[4:])
+                    continue
+                flush_block()
+
+            if line == 'messages: []':
+                continue
+            if line == 'messages:' or not line:
+                continue
+
+            if line.startswith('- '):
+                flush_message()
+                current = {}
+                key, value = line[2:].split(':', 1)
+                assign_field(current, key.strip(), value)
+                continue
+
+            if current is not None and line.startswith('  '):
+                key, value = line[2:].split(':', 1)
+                assign_field(current, key.strip(), value)
+
+    flush_message()
+
+    if not normal_ids and not specials:
         print('0\tfalse\t-\t-')
         sys.exit(0)
-    unread = [m for m in data['messages'] if not m.get('read', False)]
-    special_types = ('clear_command', 'model_switch')
-    specials = [m for m in unread if m.get('type') in special_types]
-    normal = [m for m in unread if m.get('type') not in special_types]
-    normal_ids = ','.join(sorted([m.get('id', '') for m in normal])) or '-'
+
+    normal_count = len(normal_ids)
+    normal_ids = ','.join(sorted(normal_ids)) or '-'
     specials_tsv = '-'
     if specials:
         lines = []
@@ -113,7 +184,7 @@ try:
             content_b64 = base64.b64encode(str(s.get('content', '')).encode('utf-8')).decode('ascii')
             lines.append(f\"{s.get('id', '')}\t{s.get('type', '')}\t{content_b64}\")
         specials_tsv = base64.b64encode('\n'.join(lines).encode('utf-8')).decode('ascii')
-    print(f\"{len(normal)}\t{'true' if specials else 'false'}\t{normal_ids}\t{specials_tsv}\")
+    print(f\"{normal_count}\t{'true' if specials else 'false'}\t{normal_ids}\t{specials_tsv}\")
 except Exception:
     print('0\tfalse\t-\t-')
 " 2>/dev/null
@@ -625,6 +696,10 @@ process_unread() {
         clear_first_unread_seen
     fi
 }
+
+if [ "${INBOX_WATCHER_LIB_ONLY:-0}" = "1" ]; then
+    return 0 2>/dev/null || exit 0
+fi
 
 # ─── Startup: ensure @agent_state is initialized (deadlock prevention) ───
 # If @agent_state is not set (fresh pane, after reset), initialize to idle.
