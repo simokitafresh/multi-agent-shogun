@@ -1,5 +1,5 @@
 task:
-  _ac_task_id: cmd_training_L4_R38_kotaro_impl
+  _ac_task_id: cmd_training_L4_R39_kotaro_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
@@ -34,14 +34,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_L4_R38_kotaro
+  parent_cmd: cmd_training_L4_R39_kotaro
   project: dm-signal
   purpose: cmd_1700で59 FoF中49体(83%)がEMA span=5間接波及で悪化。
-  report_filename: kotaro_report_cmd_training_L4_R38_kotaro.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_L4_R38_kotaro.yaml
-  status: idle
+  report_filename: kotaro_report_cmd_training_L4_R39_kotaro.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_L4_R39_kotaro.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_training_L4_R38_kotaro_impl
+  task_id: cmd_training_L4_R39_kotaro_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -79,6 +79,12 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
+  - id: 'L541'
+    summary: 'L538のような深度依存効果の発見後、研究スクリプトのYAML出力にdepth_summaryを追加することで次回実行時に知見を自動検証できる。group_summaryと同じパターンでdepth別統計を計算・出力するだけで実装可能。知見発見→スクリプト更新→自動確認のサイクルを確立することで、知見が陳腐化しない。'
+    detail: 'L538のような深度依存効果の発見後、研究スクリプトのYAML出力にdepth_summaryを追加することで次回実行時に知見を自動検証できる。group_summaryと同じパターンでdepth別統計を計算・出力するだけで実装可能。知見発見→スクリプト更新→自動確認のサイクルを確立することで、知見が陳腐化しない。'
+  - id: 'L540'
+    summary: 'simulate_signals()の_preprocess_cacheはfn_id=id(preprocessing_fn)をキーとする。呼び出し側でmake_xxx_fn()をループ内で毎回呼ぶと毎回新しい関数オブジェクト→fn_idが変わりキャッシュが全くヒットしない。ループ外でfn辞書を作成して再利用すれば65PF間でキャッシュが有効になる(31,200→480回)。今後の研究スクリプト作'
+    detail: 'simulate_signals()の_preprocess_cacheはfn_id=id(preprocessing_fn)をキーとする。呼び出し側でmake_xxx_fn()をループ内で毎回呼ぶと毎回新しい関数オブジェクト→fn_idが変わりキャッシュが全くヒットしない。ループ外でfn辞書を作成して再利用すれば65PF間でキャッシュが有効になる(31,200→480回)。今後の研究スクリプト作'
   - id: 'L539'
     summary: '65PFのEMA前後シグナル相関行列+尖り削減量とFoF Δcagr相関分析。r=-0.199(弱い負の相関)。尖り削減量はFoF悪化の主因ではない。cmd_1700のdepth増幅(L538)が支配変数。depth=1で正効果→depth=2/3で損失増幅の構造がFoF悪化の根因'
     detail: '65PFのEMA前後シグナル相関行列+尖り削減量とFoF Δcagr相関分析。r=-0.199(弱い負の相関)。尖り削減量はFoF悪化の主因ではない。cmd_1700のdepth増幅(L538)が支配変数。depth=1で正効果→depth=2/3で損失増幅の構造がFoF悪化の根因'
@@ -103,9 +109,3 @@ task:
   - id: 'L527'
     summary: 'Sortino LB=2mのfull-sample CAGR=0.933/Calmar=6.76は異常に高く、OOSで56.9%劣化しOVERFIT。LB=12m(54.4%)と同程度。一方momentum'
     detail: 'Sortino LB=2mのfull-sample CAGR=0.933/Calmar=6.76は異常に高く、OOSで56.9%劣化しOVERFIT。LB=12m(54.4%)と同程度。一方momentum'
-  - id: 'L525'
-    summary: 'K=2:6.5%→K=3:4.2%→K=4:1.3%→K=5:1.0%。分散(K体保有)はβ低下だがα希釈も。ClSel momentum方式でK大はα寄与ゼロに収束。K=4の3条件PASSはβ主導(cmd_1589'
-    detail: 'K=2:6.5%→K=3:4.2%→K=4:1.3%→K=5:1.0%。分散(K体保有)はβ低下だがα希釈も。ClSel momentum方式でK大はα寄与ゼロに収束。K=4の3条件PASSはβ主導(cmd_1589'
-  - id: 'L522'
-    summary: 'momentum選出はIS期間の累積リターンが高いPF=高βPFを選びやすい(avg β=1.11,76.3%がβ>1)。結果α share=4.2%。Sortino選出はdownside'
-    detail: 'momentum選出はIS期間の累積リターンが高いPF=高βPFを選びやすい(avg β=1.11,76.3%がβ>1)。結果α share=4.2%。Sortino選出はdownside'
