@@ -51,6 +51,7 @@ cmd_id = sys.argv[3]
 threshold_days = int(sys.argv[4])
 archive_cache_path = sys.argv[5] if len(sys.argv) > 5 else ""
 cutoff_date = date.today() - timedelta(days=threshold_days)
+FINAL_STATUSES = {"completed", "done", "complete", "success"}
 
 
 def load_yaml(path: str) -> dict:
@@ -131,6 +132,10 @@ def load_projects():
 ACTIVE_PROJECT_IDS, EXPLICIT_CONTEXT_MAP = load_projects()
 SORTED_PROJECT_IDS = sorted(ACTIVE_PROJECT_IDS, key=len, reverse=True)
 LAST_UPDATED_RE = re.compile(r"<!--\s*last_updated:\s*(\d{4}-\d{2}-\d{2})\b")
+CHRONICLE_MONTH_RE = re.compile(r"^##\s+(\d{4})-(\d{2})\s*$")
+CHRONICLE_ROW_RE = re.compile(
+    r"^\|\s*(cmd_[^| ]+)\s*\|[^|]*\|\s*([^|]+?)\s*\|\s*(\d{2}-\d{2})\s*\|"
+)
 PROJECT_LINE_PATTERNS = [
     (
         project_id,
@@ -245,6 +250,71 @@ def scan_archive_metadata(abs_path: str) -> tuple[str, str, str]:
 
 _recent_cmd_cache: dict[str, bool] = {}
 _archive_entries: list[tuple[str, str, str, str]] | None = None
+_chronicle_rows: list[tuple[str, str, date]] | None = None
+_chronicle_recent_projects: set[str] | None = None
+_chronicle_is_fresh: bool | None = None
+
+
+def load_cmd_chronicle_rows() -> list[tuple[str, str, date]]:
+    global _chronicle_rows, _chronicle_is_fresh
+    if _chronicle_rows is not None:
+        return _chronicle_rows
+
+    _chronicle_rows = []
+    _chronicle_is_fresh = False
+    chronicle_path = os.path.join(root, "context", "cmd-chronicle.md")
+    if not os.path.isfile(chronicle_path):
+        return _chronicle_rows
+
+    current_year: int | None = None
+    current_month: int | None = None
+
+    try:
+        with open(chronicle_path, encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.rstrip("\n")
+
+                month_match = CHRONICLE_MONTH_RE.match(line)
+                if month_match:
+                    current_year = int(month_match.group(1))
+                    current_month = int(month_match.group(2))
+                    continue
+
+                row_match = CHRONICLE_ROW_RE.match(line)
+                if not row_match or current_year is None or current_month is None:
+                    continue
+
+                project_id = row_match.group(2).strip()
+                if not project_id or project_id == "—":
+                    continue
+
+                month_text, day_text = row_match.group(3).split("-", 1)
+                try:
+                    row_date = date(current_year, int(month_text), int(day_text))
+                except ValueError:
+                    continue
+
+                _chronicle_rows.append((row_match.group(1).strip(), project_id, row_date))
+    except Exception:
+        _chronicle_rows = []
+        _chronicle_is_fresh = False
+        return _chronicle_rows
+
+    _chronicle_is_fresh = any(row_date >= cutoff_date for _, _, row_date in _chronicle_rows)
+    return _chronicle_rows
+
+
+def recent_projects_from_chronicle() -> set[str]:
+    global _chronicle_recent_projects
+    if _chronicle_recent_projects is not None:
+        return _chronicle_recent_projects
+
+    _chronicle_recent_projects = {
+        project_id
+        for _, project_id, row_date in load_cmd_chronicle_rows()
+        if row_date >= cutoff_date
+    }
+    return _chronicle_recent_projects
 
 def _load_archive_entries() -> list[tuple[str, str, str, str]]:
     """Load archive entries from gawk cache (GP-082) or fallback to file scan."""
@@ -290,6 +360,13 @@ def _load_archive_entries() -> list[tuple[str, str, str, str]]:
 def project_has_recent_completed_cmd(project_id: str) -> bool:
     if project_id in _recent_cmd_cache:
         return _recent_cmd_cache[project_id]
+
+    chronicle_projects = recent_projects_from_chronicle()
+    if _chronicle_is_fresh:
+        result = project_id in chronicle_projects
+        _recent_cmd_cache[project_id] = result
+        return result
+
     entries = _load_archive_entries()
     for fname, proj, status, dt in entries:
         if proj != project_id:
@@ -306,6 +383,11 @@ def project_has_recent_completed_cmd(project_id: str) -> bool:
 
 def find_cmd_project(target_cmd_id: str) -> str | None:
     candidates = [os.path.join(root, "queue", "shogun_to_karo.yaml")]
+
+    for current_cmd_id, project_id, _ in load_cmd_chronicle_rows():
+        if current_cmd_id == target_cmd_id:
+            return project_id
+
     candidates.extend(
         sorted(
             glob.glob(os.path.join(root, "queue", "archive", "cmds", f"{target_cmd_id}_*.yaml")),

@@ -89,6 +89,22 @@ commands:
 ARCHYAML
 }
 
+_create_cmd_chronicle() {
+    local cmd_id="$1" project="$2" mm_dd="${3:-$(date +%m-%d)}"
+    local section
+    section="$(date +%Y-%m)"
+    cat > "$TEST_TMPDIR/context/cmd-chronicle.md" <<CHRONICLE
+# CMD年代記
+<!-- last_updated: $TODAY -->
+
+## $section
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| $cmd_id | test command | $project | $mm_dd | — |
+CHRONICLE
+}
+
 # ── Helper: create shogun_to_karo.yaml with cmd entry ──
 _create_shogun_to_karo() {
     local cmd_id="$1" project="$2"
@@ -233,4 +249,24 @@ STKYAML
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
     [[ "$output" == *"context/dm-signal.md"* ]]
+}
+
+@test "--dashboard-warnings uses fresh cmd-chronicle as fast index" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_cmd_chronicle "cmd_920" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/dm-signal.md"* ]]
+}
+
+@test "--cmd-warnings finds project from cmd-chronicle" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_cmd_chronicle "cmd_921" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_921
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/dm-signal.md"* ]]
+    [[ "$output" != *"infrastructure.md"* ]]
 }
