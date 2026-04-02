@@ -1,0 +1,56 @@
+parent_cmd: cmd_1677b
+task_id: cmd_1677b_impl
+worker_id: kotaro
+result:
+  summary: gate_report_format.sh L204-209のFIX hintにYAML引用符警告を追加した
+  detail: '根因: ファイル名にはtask_id(cmd_XXXX_impl)、parent_cmdにはcmd_id(cmd_XXXX)が入り厳密一致比較で常にFAILしていた。修正:
+    fname_cmd.startswith(parent_cmd + ''_'')の条件を追加。注意: bash python3 -c 内のPythonコードでダブルクォート文字列リテラルを使うとbashクォーティングが壊れる。シングルクォート使用で解決。'
+files_modified:
+- change: modified
+  path: scripts/gates/gate_report_format.sh
+purpose_validation:
+  cmd_purpose: gate_report_format.shにYAML引用符ヒント追加
+  fit: true
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: none
+ac_version_read: f6272746
+verdict: PASS
+binary_checks:
+  AC1:
+  - check: cmd_XXXX_impl vs parent_cmd cmd_XXXX でstale_reportエラーなし
+    result: 'yes'
+  - check: L204-206 FIX hintにも引用符警告が含まれる
+    result: 'yes'
+  AC2:
+  - check: 無関係なcmd_9999 vs parent_cmd cmd_1671 で正しくFAIL
+    result: 'yes'
+  AC3:
+  - check: 既存14テスト全PASS、SKIP 0
+    result: 'yes'
+self_gate_check:
+  format_valid: PASS
+  ac_coverage: PASS
+lesson_candidate:
+  found: false
+  items:
+  - title: bash python3 -c内クォーティング
+    category: bash_python_quoting
+    detail: bash python3 -c 内のPythonコードでダブルクォート文字列リテラルを使うとbashクォーティングが壊れる(NameError等)。シングルクォートを使え。
+  title: bash python3 -c内クォーティング
+  detail: bash python3 -c 内のPythonコードでダブルクォート文字列リテラルを使うとbashクォーティングが壊れる(NameError等)。シングルクォートを使え。
+  no_lesson_reason: 引用符ヒント追加は既知のYAML記述パターンの周知徹底。教訓より運用インフラの改善
+lessons_useful: []
+decision_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+skill_candidate:
+  found: false
+  title: ''
+  detail: ''
+  project: ''
+timestamp: "2026-04-02T12:51:25"
+status: completed
