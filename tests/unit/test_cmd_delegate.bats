@@ -133,6 +133,54 @@ commands:
 YAML
 }
 
+# cmd_100: stuck (status=pending + delegated_at), cmd_101: new (status=pending, no delegated_at)
+create_shogun_yaml_with_stuck_cmd() {
+    cat > "${TEST_TMP}/queue/shogun_to_karo.yaml" << 'YAML'
+commands:
+  - id: cmd_100
+    timestamp: "2026-03-04T10:00:00"
+    title: "Stuck command"
+    project: infra
+    type: implement
+    priority: high
+    status: pending
+    delegated_at: "2026-03-04T10:05:00"
+    purpose: "Stuck purpose"
+  - id: cmd_101
+    timestamp: "2026-03-04T11:00:00"
+    title: "New command"
+    project: infra
+    type: implement
+    priority: high
+    status: pending
+    purpose: "New purpose"
+YAML
+}
+
+# cmd_100: properly delegated (status=delegated), cmd_101: new (status=pending, no delegated_at)
+create_shogun_yaml_all_delegated() {
+    cat > "${TEST_TMP}/queue/shogun_to_karo.yaml" << 'YAML'
+commands:
+  - id: cmd_100
+    timestamp: "2026-03-04T10:00:00"
+    title: "Delegated command"
+    project: infra
+    type: implement
+    priority: high
+    status: delegated
+    delegated_at: "2026-03-04T10:05:00"
+    purpose: "Delegated purpose"
+  - id: cmd_101
+    timestamp: "2026-03-04T11:00:00"
+    title: "New command"
+    project: infra
+    type: implement
+    priority: high
+    status: pending
+    purpose: "New purpose"
+YAML
+}
+
 # ============================================================
 # cmd_delegate.sh テスト
 # ============================================================
@@ -197,6 +245,29 @@ YAML
     run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100
     [ "$status" -eq 1 ]
     [[ "$output" == *"Usage"* ]]
+}
+
+@test "cmd_delegate: 異常系 — 未配備cmd(pending+delegated_at)検出でWARNING出力" {
+    create_shogun_yaml_with_stuck_cmd
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_101 "cmd_101を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_101 at"* ]]
+    # cmd_100 (pending+delegated_at) についてWARNINGが出力されること
+    [[ "$output" == *"WARN: 委任済みだが未配備のcmdを検出"* ]]
+    [[ "$output" == *"cmd_100"* ]]
+}
+
+@test "cmd_delegate: 正常系 — 全cmd配備済み(status=delegated)でWARNINGなし" {
+    create_shogun_yaml_all_delegated
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_101 "cmd_101を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_101 at"* ]]
+    # cmd_100 は status=delegated のためWARNING不要
+    [[ "$output" != *"WARN: 委任済みだが未配備のcmdを検出"* ]]
 }
 
 @test "cmd_delegate: inbox_write失敗時エラー" {

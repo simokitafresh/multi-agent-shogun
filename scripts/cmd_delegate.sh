@@ -38,6 +38,7 @@ if [ ! -f "$SHOGUN_TO_KARO" ]; then
 fi
 
 # Source yaml_field_set for field get/set
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/lib/yaml_field_set.sh"
 
 # Step 1: cmd_id が存在し status=pending か検証
@@ -56,6 +57,38 @@ existing_delegated=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "deleg
 if [ -n "$existing_delegated" ]; then
     echo "ALREADY_DELEGATED: $CMD_ID at $existing_delegated"
     exit 0
+fi
+
+# Step 2.4: 他の未配備cmd検出チェック（status=pending + delegated_at存在 → WARNING）
+# 事故防止: 家老が委任を受けたが配備を忘れたパターンを次の委任前に警告 (cmd_1686事故)
+undeployed_cmds=$(python3 - "$SHOGUN_TO_KARO" "$CMD_ID" <<'PYEOF'
+import sys, yaml
+yaml_file, current_cmd = sys.argv[1], sys.argv[2]
+try:
+    with open(yaml_file) as f:
+        data = yaml.safe_load(f)
+except Exception:
+    sys.exit(0)
+cmds = (data or {}).get('commands', {})
+result = []
+if isinstance(cmds, list):
+    for item in cmds:
+        cid = str(item.get('id', ''))
+        if cid and cid != current_cmd and item.get('status') == 'pending' and item.get('delegated_at'):
+            result.append('%s (delegated_at=%s)' % (cid, item.get('delegated_at', '')))
+elif isinstance(cmds, dict):
+    for cid, info in cmds.items():
+        if str(cid) != current_cmd and isinstance(info, dict) and info.get('status') == 'pending' and info.get('delegated_at'):
+            result.append('%s (delegated_at=%s)' % (cid, info.get('delegated_at', '')))
+print('\n'.join(result))
+PYEOF
+) || true
+
+if [ -n "$undeployed_cmds" ]; then
+    echo "WARN: 委任済みだが未配備のcmdを検出。家老が処理していない可能性がある:" >&2
+    while IFS= read -r line; do
+        echo "  - $line" >&2
+    done <<< "$undeployed_cmds"
 fi
 
 # Step 2.5: 家老inboxに既にcmd_idが存在するかチェック（別経路委任の検出）
