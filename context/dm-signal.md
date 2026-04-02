@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L539 -->
+<!-- last_synced_lesson: L541 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -168,3 +168,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L537: 研究スクリプトはresearch_engine.pyをimportせよ — 共通関数コピペ禁止（cmd_1691）
 - L538: EMA間接波及はネスト深度で増幅する — depth=1改善→depth=2/3で損失拡大（cmd_1700）
 - L539: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却（cmd_1701）
+- L540: preprocessing_fnを毎回生成するとidが変わり_preprocess_cacheが無効化される（cmd_training_L4_R38_kagemaru）
+- L541: depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ（cmd_training_L4_R38_kotaro）

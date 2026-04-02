@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-02 -->
+<!-- last_updated: 2026-04-03 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -603,3 +603,25 @@
 | cmd_1672 | deploy_task.sh direct mode追加 — 修行タスク配備パイプライン正常化(GP-138) | infra | 04-02 | deploy_task.shに--direct mode追加 |
 | cmd_1673 | 編成切替スキル /hensei 構築 — 稼働中モデル混成切替+Opus全戻し | infra | 04-02 | get_agent_model()にclaude-sonne |
 | cmd_1676 | gate_report_format.sh stale_reportチェック修正 — task_id/cmd_idサフィックス不一致(PD-005) | infra | 04-02 | gate_report_format.sh L367のsta |
+| cmd_1678 | commit 353f59eでscripts/api_usage.shの出力形式が変更されたが、 tests/unit/test_api_usage.batsのテスト12-13のアサーションが旧形式のまま。 9時間以上CI REDが継続中。テストを現行スクリプト出力に合わせて修正する。 | infra | 04-03 | test_api_usage.batsテスト12-13を修正 |
+| cmd_1680 | 月初にリバランスが確定しているにもかかわらず、Dashboard上で最大24時間「Pending」+生signal表示が続くバグを修正。 ユーザーから4/1 23:00と4/2 13:00でシグナルが異なるとの報告あり。 根因: holding_signalの確定が「当月の市場データ到着→signal行作成」に依存。 4月の保有は3月31日のパイプライン出力で既に決定済みだが、4月1日のsignal行がないとPendingになる。 | dm-signal | 04-03 | Phase 4.1月初signal行自動作成ロジックを実装。 |
+| cmd_1681 | DM6(lookback=15D)は全前処理手法で劣化した(研究日誌Phase 8)。 殿の洞察: lookbackを中期に変更すればDNAが全く変わる別物として前処理が効く領域に入る。 DM3(126D)でEMA+112%/L1+383%の改善が出た中期域でDM6構成を検証する。 | dm-signal | 04-03 | DM6構成6仮想PF×4条件=24件のwalkforward |
+| cmd_1682 | Phase 14でFDA 5PF実験を実施。DM3 +232%(K=32)と最大改善報告だがMatch率低下(49.5%)。 5PFは一般化に不十分(Phase 4でEMAも同じ指摘を殿から受けた)。 65PF全数に拡張してFDAのパフォーマンス特性の全体像を把握する。 OOS検証は後(殿指示)。まずパフォーマンスが良いものを探す。 | dm-signal | 04-03 | FDA smoothing study chunk2(PF |
+| cmd_1683 | 研究日誌Phase 5で三層構造を認識。各レイヤーにmomentum計算があり前処理の余地がある。 第一層(L0)研究は7手法完了。第二層(L1: FoF)の前処理研究を開始する。 間接波及(L0前処理の伝播)と直接適用(L1前処理)の両方を定量化する。 | dm-signal | 04-03 | FoF第二層前処理研究スクリプトを追加し、6 FoF×3条件 |
+| cmd_1684 | 殿指示: DM6.5のlookbackは1M~12Mまで全部やれ。4M/5M/10M/1M等に予想外のパフォーマンスがありうる。 DM6構成で1M~12Mの全12 lookbackを網羅的に探索し、パフォーマンス地図を描く。 | dm-signal | 04-03 | 9 lookback×2 rebalance×4条件=72 |
+| cmd_1685 | cmd_1681事故: ACに「前処理4条件」とだけ書き具体値未記載→忍者が独自判断でKalman_autoを使用→条件不一致。 ACに「N条件」「Nパターン」等の数量指定があるのにcommand欄にしか具体値がない場合、 忍者がACだけで全パラメータを一意に特定できない。これを機械的に検出してWARNする。 | infra | 04-03 | cmd_save.sh Check 13(ACパラメータ充足 |
+| cmd_1688 | cmd_1686がdelegated_at付与済みなのに家老が14分間配備を忘れた事故。 単一検出ポイントでは穴がある(cmd_delegate.sh=次cmd依存、gate=起動時のみ)。 二重防御: (1)cmd_delegate.shで委任時即検出 (2)ninja_monitorで常時監視。 | infra | 04-03 | cmd_delegate.shにStep 2.4(未配備cm |
+| cmd_1686 | cmd_1682のFDA 65PF結果でK=32が最大改善(+258%)だがMatch率40-50%。 Match率が低い=シグナルが大きく変わる=本番投入リスク大。 K=4/8の低K領域でMatch率70%+を維持しつつ改善が出る設定を特定する。 | dm-signal | 04-03 | 65PF×16設定(K={4,8,16,32}×λ={0,1 |
+| cmd_1687 | 第二層研究(cmd_1683)で間接波及が有効(朱雀+11%,玄武+3%,青龍+2%)。 最終出力PF(Ave-X/裏Ave-X)への伝播効果を定量化し、 EMA span=5(universal best, OOS ROBUST)の本番投入時のユーザー体験改善幅を確認する。 | dm-signal | 04-03 | Layer 3研究完了。Ave-X/裏Ave-X × 2条件 |
+| cmd_1689 | Phase 3サーベイで発見した未実施手法。EMA/L1(入力平滑化)と直交するアプローチ。 統計的に異常なジャンプ(1日の大変動)のみを除去し、ノイズとシグナルを精密に分離する。 Winsorization(Phase 1で殿却下)の精密版: テール全体をキャップするのではなく、 統計的にジャンプと判定されたイベントだけ除去。crash情報は保持。 | dm-signal | 04-03 | — |
+| cmd_1690 | Phase 3サーベイで発見した未実施手法。EMA/L1(時間軸平滑化)ともFDA(関数変換)とも直交。 SSAはSVDベースで価格系列を「トレ��ド+ノイズ+季節性」に分解し、トレンド成分のみ抽出。 非パラメトリック(分布仮定なし)。Deloitte研究でSharpe 1.88報告。 | dm-signal | 04-03 | — |
+| cmd_1691 | 研究スクリプト13本が同一のsimulate_signals/calculate_metricsをコピペしている。 軍師分析: 共通エンジン化で全スクリプト同時高速化+保守コスト削減。 今後のJump Detection/SSA等の研究cmdは全てこのエンジンを使う。 道具を先に作り、研究の生産性を構造的に上げる。 | dm-signal | 04-03 | research_engine.py(14関数+simula |
+| cmd_1692 | 今日5回の急がば回れ違反。全てcmdのACが前提としている事実をq5で確認していない。 q5=code_readingだけで通るのが根因。段階的では遅い。BLOCKにする。 | infra | 04-03 | cmd_save.shのq5=code_readingのみを |
+| cmd_1693 | cmd_1688はcmd_delegate.sh(委任時検出)のみ実装。殿指摘「次のcmdを出さなければ検出されない」穴が残存。 ninja_monitor(常時監視)に未配備cmd検出を追加し、イベント非依存の検出層を構築する。 cmd_delegate.sh(委任時即検出) + ninja_monitor(常時10分監視)の二重防御を完成させる。 | infra | 04-03 | ninja_monitor.shにpending+deleg |
+| cmd_1694 | 将軍がcmd_save.sh(保存確認)を実行せずにcmd_delegate.sh(委任)を実行する手順ミスが発生。 /clear後に手順を忘れる構造的問題。cmd_delegate.shの冒頭でcmd_save.shを自動実行し、 BLOCKなら委任中止、PASSなら続行。手順を覚える必要をなくす。 | infra | 04-03 | cmd_delegate.shに初回委任時のcmd_save |
+| cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
+| cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
+| cmd_1698 | Phase 3サーベイで発見した未実施手法。EMA(入力平滑化)と直交するテール処理アプローチ。 統計的に異常なジャンプのみ除去し、ノイズとシグナルを精密に分離する。 research_engine.py(高速化済み: 65PF×1条件=4s)のpreprocessing_fn引数で実装。 | dm-signal | 04-03 | AC1-3全完了。research_engine.pyにma |
+| cmd_1699 | Phase 3サーベイで発見した未実施手法。EMA/L1(時間軸平滑化)ともFDA(関数変換)とも直交。 SVDベースで価格系列を「トレンド+ノイズ」に分解しトレンド成分のみ抽出。非パラメトリック。 research_engine.py(高速化済み)のpreprocessing_fn引数で実装。 | dm-signal | 04-03 | SSA前処理をresearch_engine.pyのprep |
+| cmd_1700 | 本番DB確認: FoF 59体、全てEqualWeight(selection block=0)。 cmd_1687ではAve-X/裏Ave-Xの2体のみ検証(+2.2pp/+1.3pp)。残り57体が未検証。 全59体でEMA span=5間接波及(L0前処理のL1/L2伝播)の効果を測定し、 前処理の恩恵がFoF全体でどう分布するかのパフォーマンス地図を描く。 | dm-signal | 04-03 | 全59 FoF × 2条件 = 118 walkforwar |
+| cmd_1701 | cmd_1700で59 FoF中49体(83%)がEMA span=5間接波及で悪化。 殿の洞察: Standard PFは材料。尖っているほどFoF材料として価値が高い。 EMAは「ノイズ+独自性」を区別せず両方削る。尖り削減=FoF分散効果減少。 EMA前後のシグナル相関変化を定量化し、どのPFの尖りが削られたか特定する。 | dm-signal | 04-03 | 65 PF×2条件(baseline/EMA_span5)の |
