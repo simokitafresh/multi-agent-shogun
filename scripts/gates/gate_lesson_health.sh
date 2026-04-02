@@ -300,34 +300,41 @@ check_injection_count_threshold() {
         done < <(awk '/^  - id:/{id=$3} /status: active/{print id}' "$CONFIG_FILE" 2>/dev/null)
     fi
 
-    local problem_count=0
+    # injection_count >= THRESHOLD かつ helpful_count == 0 の教訓を抽出（awk: python3不要）
+    local problems=""
     for pid in "${target_pids[@]}"; do
         local lessons_file="$SCRIPT_DIR/projects/${pid}/lessons.yaml"
         [ -f "$lessons_file" ] || continue
-
-        # injection_count >= THRESHOLD かつ helpful_count == 0 の教訓を抽出
-        local problems
-        problems=$(python3 -c "
-import yaml, sys
-with open('$lessons_file', encoding='utf-8') as f:
-    data = yaml.safe_load(f)
-if not data or 'lessons' not in data:
-    sys.exit(0)
-for l in data['lessons']:
-    st = str(l.get('status', 'confirmed')).lower()
-    if st == 'deprecated' or l.get('deprecated', False):
-        continue
-    ic = l.get('injection_count', 0) or 0
-    hc = l.get('helpful_count', 0) or 0
-    if ic >= $INJECTION_WARN_THRESHOLD and hc == 0:
-        print(f\"  - {l['id']}: injection={ic}, helpful={hc} [{pid}]\")
-" 2>/dev/null || true)
-
-        if [ -n "$problems" ]; then
-            problem_count=$((problem_count + $(echo "$problems" | wc -l)))
-            echo "$problems"
-        fi
+        local result
+        result=$(awk -v threshold="$INJECTION_WARN_THRESHOLD" -v pid="$pid" '
+            /^- id: L/ {
+                if (current_id != "" && !is_deprecated && ic+0 >= threshold && hc+0 == 0) {
+                    printf "  - %s: injection=%d, helpful=%d [%s]\n", current_id, ic+0, hc+0, pid
+                }
+                current_id = $3
+                is_deprecated = 0; ic = 0; hc = 0
+            }
+            /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
+            /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
+            /[[:space:]]+injection_count:/ { gsub(/.*injection_count:[[:space:]]*/,""); ic = $1+0 }
+            /[[:space:]]+helpful_count:/ { gsub(/.*helpful_count:[[:space:]]*/,""); hc = $1+0 }
+            END {
+                if (current_id != "" && !is_deprecated && ic+0 >= threshold && hc+0 == 0) {
+                    printf "  - %s: injection=%d, helpful=%d [%s]\n", current_id, ic+0, hc+0, pid
+                }
+            }
+        ' "$lessons_file")
+        [ -n "$result" ] && problems="${problems}${result}"$'\n'
     done
+
+    # 末尾空行を除去
+    problems="${problems%$'\n'}"
+
+    local problem_count=0
+    if [ -n "$problems" ]; then
+        problem_count=$(echo "$problems" | wc -l)
+        echo "$problems"
+    fi
 
     if [ "$problem_count" -gt 0 ]; then
         emit_actionable \
