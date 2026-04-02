@@ -1,12 +1,12 @@
 task:
-  task_id: cmd_training_L4_R18_hayate
-  parent_cmd: cmd_training_L4_R18
+  task_id: cmd_training_L4_R19_hayate
+  parent_cmd: cmd_training_L4_R19
   task_type: impl
   project: infra
-  status: done
-  target_path: tests/unit/test_deploy_task_engineering_preferences.bats
+  status: assigned
+  target_path: tests/unit/test_dashboard_auto_context_freshness.bats
   command: |
-    テスト速度改善: test_deploy_task_engineering_preferences.bats(4.0s/3t→0.5s目標)。
+    テスト改善: test_dashboard_auto_context_freshness.bats(CI RED修正: scaffold stub追加)。
     ボトルネック改善。一部改善で十分。長引くなら途中commitで終了。
     AC1: 計測+ボトルネック特定  AC2: 改善+commit  AC3: PASS+LC+BC+verdict
     ★ bc構造(AC1:/AC2:/AC3:)維持。bats全量禁止。
@@ -19,7 +19,4 @@ task:
   stop_for: []
   never_stop_for: [bats全量禁止]
   role_reminder: "忍者hayate。このタスクのみ実行せよ。"
-  deployed_at: "2026-04-02T11:00:53+09:00"
-  progress: "AC1: baseline 4.858sでdeploy_task全体起動が支配的と特定; AC2: 専用helper追加とcommit 99621ba; AC3: 3/3 PASS, SKIP=0, 0.655s, report PASS"
-  report_filename: hayate_report_cmd_training_L4_R18.yaml
-  report_path: queue/reports/hayate_report_cmd_training_L4_R18.yaml
+  deployed_at: "2026-04-02T11:43:24+09:00"
