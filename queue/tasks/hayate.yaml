@@ -37,7 +37,7 @@ task:
   parent_cmd: cmd_1690
   project: dm-signal
   purpose: Phase 3サーベイで発見した未実施手法。EMA/L1(時間軸平滑化)ともFDA(関数変換)とも直交。
-  status: in_progress
+  status: idle
   stop_for: []
   task_id: cmd_1690_impl
   task_type: impl
