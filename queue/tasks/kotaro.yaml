@@ -1,26 +1,86 @@
 task:
-  task_id: cmd_training_L4_R34_kotaro_impl
-  parent_cmd: cmd_training_L4_R34_kotaro
-  status: done
-  project: dm-signal
-  task_type: impl
-  command: |
-    research_engine.py高速化修行(R33の続き)。R33で196s→1.58s(124x)達成済み。
-    残存最大ボトルネック: load_all_standard_pf_configs(7.96s)。
-    DB接続+65PF設定取得が毎回走る。キャッシュ化で削減せよ。
-    
-    AC0: cProfile実測で現在のload_all_standard_pf_configsの内訳確認。
-    AC1: load_all_standard_pf_configsを最適化+commit。候補: (1)結果のファイルキャッシュ(JSON/pickle) (2)SQLクエリ最適化(N+1排除等)。1箇所改善+commitで終了。
-    AC2: 65PF×EMA span=5で速度比較(改善前vs後)。ema_smoothing_results_full.yamlと全セルCAGR 1e-6一致確認+commit。
+  _ac_task_id: cmd_1701_impl
+  _ac_worker_id: null
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 7d010443
   acceptance_criteria:
-    - ac: "AC0: cProfile実測+load_all_standard_pf_configs内訳報告"
-    - ac: "AC1: load_all_standard_pf_configs最適化+commit"
-    - ac: "AC2: 速度比較+CAGR 1e-6一致確認+commit"
-  stop_for: []
+  - ac: 'AC1: 65 PFのシグナル相関行列を2条件(baseline/EMA_span5)で算出。PF別尖り度(1-avg一致率)をbaseline/EMA_span5両方で算出'
+  - ac: 'AC2: 尖り削減量ランキング + cmd_1700の59 FoF改善/悪化との相関分析(尖り削減量大=悪化の仮説検証)'
+  - ac: 'AC3: outputs/analysis/standard_pf_preprocessing/signal_correlation_analysis.yamlに保存+commit'
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
   never_stop_for:
-    - 自明な修正
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。段階的検証: 1つ最適化→計測→次。一括適用禁止。
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1701
+  project: dm-signal
+  purpose: cmd_1700で59 FoF中49体(83%)がEMA span=5間接波及で悪化。
+  status: acknowledged
+  stop_for: []
+  task_id: cmd_1701_impl
+  task_type: impl
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_1701.yaml
+  report_path: queue/reports/kotaro_report_cmd_1701.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 9
+    top_pattern: 'uncategorized(4件)'
+    breakdown: 'uncategorized(4件), report_yaml_format(3件), archive_race(1件), spec_mismatch_redeploy(1件)'
+    warning: '⚠ 過去9件のworkaround発生。品質に注意'
+    gate_fail_top3:
+    - pattern: 'lu_reason_empty'
+      count: 20
+    - pattern: 'field_missing'
+      count: 7
+    - pattern: 'lu_structure_error'
+      count: 4
+    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 15
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'binary_checks_fail'
+      count: 7
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'report_yaml_missing'
+      count: 4
+      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+    - reason: 'lesson_candidate_no_reason_empty'
+      count: 2
+      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
+    - reason: 'empty_lessons_useful'
+      count: 1
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'ac_version_mismatch'
+      count: 1
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
+  - id: 'L538'
+    summary: '59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdepth=2(旧忍法)で損失増幅、depth=3(旧忍法-Ward)で最大損失Δ=-0.182。L0前処理の正効果がネスト深度で逆転する。FoFレベルの前処理適用はdepth=1に限定すべき'
+    detail: '59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdepth=2(旧忍法)で損失増幅、depth=3(旧忍法-Ward)で最大損失Δ=-0.182。L0前処理の正効果がネスト深度で逆転する。FoFレベルの前処理適用はdepth=1に限定すべき'
+  - id: 'L537'
+    summary: '''研究WF共通エンジン(research_engine.py)が完成。14関数(simulate_signals/calculate_metrics/load系等)+Strategy'
+    detail: '''研究WF共通エンジン(research_engine.py)が完成。14関数(simulate_signals/calculate_metrics/load系等)+Strategy'
   - id: 'L536'
     summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
     detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
@@ -45,9 +105,4 @@ task:
   - id: 'L521'
     summary: 'momentum選出はβ=1.105で構造的高βバイアス(α4.2%)。Sortino/CalmarはβΝ中立(β~1.0)でα10%/7.9%と高効率。しかしβ調整後の絶対水準(adj'
     detail: 'momentum選出はβ=1.105で構造的高βバイアス(α4.2%)。Sortino/CalmarはβΝ中立(β~1.0)でα10%/7.9%と高効率。しかしβ調整後の絶対水準(adj'
-  - id: 'L519'
-    summary: 'full-sampleではbest_calmar=3.90だがOOS期間では4.71に上昇。OOS ClSel性能劣化(Calmar4.60→2.69)との二重効果で超越条件が2/3→0/3に反転。超越条件の本質はfull-sample'
-    detail: 'full-sampleではbest_calmar=3.90だがOOS期間では4.71に上昇。OOS ClSel性能劣化(Calmar4.60→2.69)との二重効果で超越条件が2/3→0/3に反転。超越条件の本質はfull-sample'
-  - id: 'L518'
-    summary: 'Sortino選出K=3はfull-sampleでMaxDD-14.2%と最浅だがOOSで-29.0%に倍増(劣化-103.9%)。同条件のmomentum(-16.2%→-25.7%,劣化-58.7%)より悪化幅が大きい。full-sampleでMaxDDが特に良い指標は選出バイアスによるドローダウン回避の可能性があり、OOSでそのバイアスが消えるとMaxDDが激しく劣化する。一方CAGR/Sh'
-    detail: 'Sortino選出K=3はfull-sampleでMaxDD-14.2%と最浅だがOOSで-29.0%に倍増(劣化-103.9%)。同条件のmomentum(-16.2%→-25.7%,劣化-58.7%)より悪化幅が大きい。full-sampleでMaxDDが特に良い指標は選出バイアスによるドローダウン回避の可能性があり、OOSでそのバイアスが消えるとMaxDDが激しく劣化する。一方CAGR/Sh'
+  deployed_at: "2026-04-03T03:18:41"

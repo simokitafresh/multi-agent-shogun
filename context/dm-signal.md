@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L537 -->
+<!-- last_synced_lesson: L538 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -166,3 +166,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L535: 補完cmd対の前処理条件不一致 — 先行cmdの独自置換が後続cmdに波及（cmd_1684）
 - L536: auto-commit巻き込みパターン — git status+git log直近セットで差分確認（cmd_1693）
 - L537: 研究スクリプトはresearch_engine.pyをimportせよ — 共通関数コピペ禁止（cmd_1691）
+- L538: EMA間接波及はネスト深度で増幅する — depth=1改善→depth=2/3で損失拡大（cmd_1700）
