@@ -31,7 +31,7 @@ task:
   project: infra
   report_filename: hayate_report_cmd_training_L4_R28_hayate.yaml
   report_path: queue/reports/hayate_report_cmd_training_L4_R28_hayate.yaml
-  status: in_progress
+  status: done
   stop_for: []
   task_id: cmd_training_L4_R28_hayate_impl
   task_type: impl
