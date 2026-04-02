@@ -30,7 +30,7 @@ task:
   parent_cmd: cmd_1688
   project: infra
   purpose: cmd_1686がdelegated_at付与済みなのに家老が14分間配備を忘れた事故。
-  status: acknowledged
+  status: done
   stop_for: []
   task_id: cmd_1688_impl
   task_type: impl

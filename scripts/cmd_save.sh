@@ -50,6 +50,21 @@ elif ! grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
     WARN_COUNT=$((WARN_COUNT + 1))
 fi
 
+# --- Check 1.5: 委任済みcmd再保存BLOCK ---
+# cmd_1688事故: 将軍が委任済みcmdを3回上書き→忍者フリーズ→殿指摘
+# delegated_at存在 = 既に家老に委任済み。再保存は設計変更を意味する。
+# CLAUDE.mdルール: 途中修正の二択(別CMD or 神速停止→再CMD)。inbox_writeで途中修正するな
+if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
+    _DELEGATED_AT=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found && /delegated_at:/{print; exit}" "$QUEUE_FILE")
+    if [[ -n "$_DELEGATED_AT" ]]; then
+        echo "BLOCK: ${CMD_ID} は既に委任済みです。" >&2
+        echo "  $_DELEGATED_AT" >&2
+        echo "  途中修正の二択: (1)別CMD_IDで発令 (2)忍者を神速停止→回復後に新CMD" >&2
+        echo "  同一cmd_idの上書きは忍者のフリーズ・成果物無効化を引き起こします(cmd_1688実証済み)" >&2
+        exit 1
+    fi
+fi
+
 # --- Check 2: 重複チェック（アーカイブ済みcmd_idとの衝突） ---
 if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     # パターン: cmd_XXXX_completed_YYYYMMDD.yaml
