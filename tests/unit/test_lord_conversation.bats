@@ -62,17 +62,19 @@ PY
 }
 
 @test "T-LC-003: append_lord_conversation fails when lock is held" {
+    export LORD_CONVERSATION_LOCK_WAIT_SEC=0.2
     (
         flock -x 200
-        sleep 6
+        sleep 0.4
     ) 200>"$LORD_CONVERSATION_LOCK" &
     local lock_pid=$!
     sleep 0.05
 
-    run timeout 6 bash -c "
+    run timeout 2 bash -c "
         source '$LORD_CONV_LIB'
         export LORD_CONVERSATION='$LORD_CONVERSATION'
         export LORD_CONVERSATION_LOCK='$LORD_CONVERSATION_LOCK'
+        export LORD_CONVERSATION_LOCK_WAIT_SEC='$LORD_CONVERSATION_LOCK_WAIT_SEC'
         append_lord_conversation 'blocked msg' 'outbound' 'karo'
     "
     [ "$status" -ne 0 ]

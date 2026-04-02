@@ -17,6 +17,7 @@ append_lord_conversation() {
   local direction="${2:?append_lord_conversation: direction is required}"
   local agent="${3:-}"
   local source="${4:-ntfy}"
+  local lock_wait="${LORD_CONVERSATION_LOCK_WAIT_SEC:-5}"
 
   case "$direction" in
     ""|*[!a-z_]*)
@@ -42,7 +43,7 @@ append_lord_conversation() {
   [ -f "$LORD_CONVERSATION" ] || : > "$LORD_CONVERSATION"
 
   if ! (
-    flock -w 5 200 || exit 1
+    flock -w "$lock_wait" 200 || exit 1
     CONV_PATH="$LORD_CONVERSATION" \
     CONV_LEGACY_PATH="$legacy_yaml" \
     CONV_TIMESTAMP="$timestamp" \
