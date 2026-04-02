@@ -81,26 +81,24 @@ teardown_file() {
     [ -n "${GIT_TEMPLATE_DIR:-}" ] && [ -d "$GIT_TEMPLATE_DIR" ] && rm -rf "$GIT_TEMPLATE_DIR"
 }
 
-setup() {
-    export INBOX_WRITE_TEST=1
-
-    # テスト毎に独立したtmpディレクトリを作成
-    export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/inbox_write_test.XXXXXX")"
-    export TEST_INBOX_DIR="$TEST_TMPDIR/queue/inbox"
-    mkdir -p "$TEST_INBOX_DIR"
-
+init_test_env() {
+    export TEST_TMPDIR="$BATS_TEST_TMPDIR/work"
+    mkdir -p "$TEST_TMPDIR"
     export INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR"
-
-    # lib/ディレクトリをシンボリックリンク（write_inbox_yaml.py等の共通モジュール参照用）
-    mkdir -p "$TEST_TMPDIR/scripts"
-    ln -s "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
-
     export TEST_INBOX_WRITE="$PROJECT_ROOT/scripts/inbox_write.sh"
 }
 
-teardown() {
-    # テスト用tmpディレクトリを削除
-    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+setup_basic_test_env() {
+    export INBOX_WRITE_TEST=1
+    export TEST_INBOX_DIR="$TEST_TMPDIR/queue/inbox"
+    mkdir -p "$TEST_INBOX_DIR" "$TEST_TMPDIR/scripts"
+    if [ ! -L "$TEST_TMPDIR/scripts/lib" ]; then
+        ln -s "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    fi
+}
+
+setup() {
+    init_test_env
 }
 
 # =============================================================================
@@ -108,6 +106,7 @@ teardown() {
 # =============================================================================
 
 @test "T-001: no arguments → exit 1 with Usage message" {
+    setup_basic_test_env
     run bash "$TEST_INBOX_WRITE"
     [ "$status" -eq 1 ]
     [[ "$output" =~ "Usage" ]]
@@ -118,6 +117,7 @@ teardown() {
 # =============================================================================
 
 @test "T-002: only target, no content → exit 1" {
+    setup_basic_test_env
     run bash "$TEST_INBOX_WRITE" "test_agent"
     [ "$status" -eq 1 ]
     [[ "$output" =~ "Usage" ]]
@@ -128,6 +128,7 @@ teardown() {
 # =============================================================================
 
 @test "T-003: normal write to new inbox file → messages array with correct fields" {
+    setup_basic_test_env
     run bash "$TEST_INBOX_WRITE" "test_agent" "テストメッセージ" "cmd_new" "shogun"
     [ "$status" -eq 0 ]
 
@@ -168,6 +169,7 @@ EOF
 # =============================================================================
 
 @test "T-004: append to existing inbox → preserves existing messages, adds new one" {
+    setup_basic_test_env
     # 1件目の書き込み
     bash "$TEST_INBOX_WRITE" "test_agent" "メッセージ1" "type1" "sender1"
 
@@ -197,6 +199,7 @@ EOF
 # =============================================================================
 
 @test "T-005: message ID uniqueness → 2 rapid writes produce different IDs" {
+    setup_basic_test_env
     # 2回連続書き込み
     bash "$TEST_INBOX_WRITE" "test_agent" "メッセージA"
     bash "$TEST_INBOX_WRITE" "test_agent" "メッセージB"
@@ -224,6 +227,7 @@ EOF
 # =============================================================================
 
 @test "T-006: type/from default values → type=wake_up, from=unknown when not specified" {
+    setup_basic_test_env
     run bash "$TEST_INBOX_WRITE" "test_agent" "デフォルトテスト"
     [ "$status" -eq 0 ]
 
@@ -248,6 +252,7 @@ EOF
 # =============================================================================
 
 @test "T-007: custom type/from → 4th and 5th args set type and from correctly" {
+    setup_basic_test_env
     run bash "$TEST_INBOX_WRITE" "test_agent" "カスタムメッセージ" "custom_type" "custom_sender"
     [ "$status" -eq 0 ]
 
@@ -272,6 +277,7 @@ EOF
 # =============================================================================
 
 @test "T-008: overflow protection at 50 messages → oldest read messages removed" {
+    setup_basic_test_env
     # 既読メッセージ60件を事前に作成
     python3 <<EOF
 import yaml
@@ -319,6 +325,7 @@ EOF
 # =============================================================================
 
 @test "T-009: overflow preserves unread → unread messages are NOT removed even when over 50" {
+    setup_basic_test_env
     # 未読20件 + 既読40件を事前に作成
     python3 <<EOF
 import yaml
@@ -382,6 +389,7 @@ EOF
 # =============================================================================
 
 @test "T-010: concurrent writes (flock test) → 8 parallel writes all succeed, no data loss" {
+    setup_basic_test_env
     # 並行書き込み用のスクリプトを作成
     cat > "$TEST_TMPDIR/parallel_write.sh" <<'SCRIPT_EOF'
 #!/bin/bash
@@ -422,6 +430,7 @@ EOF
 # =============================================================================
 
 @test "T-011: special characters in content → YAML special chars handled safely" {
+    setup_basic_test_env
     # YAML特殊文字を含むメッセージ
     SPECIAL_CONTENT="引用符: \"test\" と 'test'
 改行を含む
@@ -458,6 +467,7 @@ EOF
 # =============================================================================
 
 @test "T-012: auto-create inbox directory → missing queue/inbox/ directory is created" {
+    setup_basic_test_env
     # queue/inbox/ ディレクトリを削除
     rm -rf "$TEST_INBOX_DIR"
 
