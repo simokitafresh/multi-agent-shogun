@@ -6,34 +6,35 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_ARCHIVE_SCRIPT="$PROJECT_ROOT/scripts/archive_completed.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
+    export TEST_ROOT
+    TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/archive_completed.root.XXXXXX")"
+    export TEST_TEMPLATE="$TEST_ROOT/template"
 
     [ -f "$SRC_ARCHIVE_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     command -v awk >/dev/null 2>&1 || return 1
     command -v flock >/dev/null 2>&1 || return 1
-}
 
-setup() {
-    export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/archive_completed.XXXXXX")"
-    export TEST_PROJECT="$TEST_TMPDIR/project"
-
-    mkdir -p "$TEST_PROJECT/scripts/lib" "$TEST_PROJECT/queue" "$TEST_PROJECT/context" "$TEST_PROJECT/queue/reports"
-    cp "$SRC_ARCHIVE_SCRIPT" "$TEST_PROJECT/scripts/archive_completed.sh"
-    cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
+    mkdir -p "$TEST_TEMPLATE/scripts/lib" "$TEST_TEMPLATE/queue/reports" "$TEST_TEMPLATE/context"
+    ln -s "$SRC_ARCHIVE_SCRIPT" "$TEST_TEMPLATE/scripts/archive_completed.sh"
+    ln -s "$SRC_FIELD_GET_SCRIPT" "$TEST_TEMPLATE/scripts/lib/field_get.sh"
 
     # postconditionで呼ばれても外部通知しないようにスタブ化
-    cat > "$TEST_PROJECT/scripts/ntfy.sh" <<'EOF'
+    cat > "$TEST_TEMPLATE/scripts/ntfy.sh" <<'EOF'
 #!/usr/bin/env bash
 exit 0
 EOF
-    chmod +x "$TEST_PROJECT/scripts/archive_completed.sh" \
-        "$TEST_PROJECT/scripts/lib/field_get.sh" \
-        "$TEST_PROJECT/scripts/ntfy.sh"
+    chmod +x "$TEST_TEMPLATE/scripts/ntfy.sh"
 }
 
-teardown() {
-    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+setup() {
+    export TEST_PROJECT="$TEST_ROOT/project_${BATS_TEST_NUMBER}"
+    mkdir -p "$TEST_PROJECT"
+    cp -a "$TEST_TEMPLATE/." "$TEST_PROJECT/"
+}
+
+teardown_file() {
+    [ -n "${TEST_ROOT:-}" ] && [ -d "$TEST_ROOT" ] && rm -rf "$TEST_ROOT"
 }
 
 @test "archives cmd when status is missing but cmd exists in completed_changelog" {
