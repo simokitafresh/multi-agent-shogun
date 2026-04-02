@@ -36,14 +36,26 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ] && [ -f "$SCRIPT_DIR/scripts/lib/agent_con
 else
     NINJA_NAMES=""
 fi
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/field_get.sh" 2>/dev/null || true
+
+FIELD_GET_LOADED=0
+
+ensure_field_get_loaded() {
+    if [ "${FIELD_GET_LOADED:-0}" = "1" ]; then
+        return 0
+    fi
+    if [ -f "$SCRIPT_DIR/scripts/lib/field_get.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/scripts/lib/field_get.sh" 2>/dev/null || true
+    fi
+    FIELD_GET_LOADED=1
+}
 
 inbox_yaml_field_get() {
     local yaml_file="$1"
     local field_name="$2"
     local default_value="${3:-}"
 
+    ensure_field_get_loaded
     if type field_get &>/dev/null; then
         FIELD_GET_NO_LOG=1 field_get "$yaml_file" "$field_name" "$default_value" 2>/dev/null || true
         return 0
@@ -178,11 +190,39 @@ inbox_write_records() {
     mv "$tmp_file" "$inbox_file"
 }
 
+inbox_message_count() {
+    local inbox_file="$1"
+    [[ -f "$inbox_file" ]] || {
+        echo 0
+        return 0
+    }
+
+    awk 'BEGIN { c = 0 } /^- / { c++ } END { print c }' "$inbox_file"
+}
+
+inbox_append_message_fast_locked() {
+    local inbox_file="$1"
+    local message_block="$2"
+
+    if [[ ! -f "$inbox_file" ]] || grep -qx 'messages: \[\]' "$inbox_file" 2>/dev/null; then
+        inbox_write_records "$inbox_file" "$message_block"
+        return 0
+    fi
+
+    printf '%s' "$message_block" >> "$inbox_file"
+}
+
 inbox_append_message_locked() {
     local inbox_file="$1"
     local message_block="$2"
     local -a unread_records=() read_records=() kept_records=()
-    local i start_idx=0
+    local i start_idx=0 existing_count=0
+
+    existing_count=$(inbox_message_count "$inbox_file")
+    if (( existing_count < 50 )); then
+        inbox_append_message_fast_locked "$inbox_file" "$message_block"
+        return 0
+    fi
 
     inbox_collect_records "$inbox_file"
     INBOX_RECORDS+=("$message_block")
