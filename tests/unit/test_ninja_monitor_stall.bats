@@ -6,6 +6,100 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 }
 
+@test "check_undeployed_cmds: pending+delegated_at 10分超でntfy送信し重複通知しない" {
+    DELEGATED_AT=$(date -d "11 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+DELEGATED_AT="'"$DELEGATED_AT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+
+TEST_LOG="$(mktemp)"
+TEST_NTFY="$(mktemp)"
+export TEST_NTFY
+
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_undeployed:
+    status: pending
+    timestamp: "2026-04-03T01:12:00"
+    delegated_at: "\"$DELEGATED_AT\""
+EOF
+
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$1" >> "$TEST_NTFY"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh"
+
+log() { echo "$1" >> "$TEST_LOG"; }
+declare -A UNDEPLOYED_CMD_NOTIFIED
+
+check_undeployed_cmds
+check_undeployed_cmds
+
+echo "NTFY_COUNT=$(wc -l < "$TEST_NTFY" | tr -d " ")"
+cat "$TEST_NTFY"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NTFY_COUNT=1"* ]]
+    [[ "$output" == *"未配備cmd: cmd_undeployed"* ]]
+    [[ "$output" == *"UNDEPLOYED-CMD: cmd_undeployed"* ]]
+}
+
+@test "check_undeployed_cmds: 配備済み(status=delegated)なら通知しない" {
+    DELEGATED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+DELEGATED_AT="'"$DELEGATED_AT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+
+TEST_LOG="$(mktemp)"
+TEST_NTFY="$(mktemp)"
+export TEST_NTFY
+
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_deployed:
+    status: delegated
+    timestamp: "2026-04-03T01:12:00"
+    delegated_at: "\"$DELEGATED_AT\""
+EOF
+
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$1" >> "$TEST_NTFY"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh"
+
+log() { echo "$1" >> "$TEST_LOG"; }
+declare -A UNDEPLOYED_CMD_NOTIFIED
+
+check_undeployed_cmds
+
+echo "NTFY_COUNT=$(wc -l < "$TEST_NTFY" | tr -d " ")"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NTFY_COUNT=0"* ]]
+}
+
 @test "check_stall: same ninja x task re-notifies after 5-minute debounce" {
     run bash -lc '
 set -euo pipefail

@@ -134,6 +134,7 @@ declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
 declare -A STALL_NOTIFIED    # 停滞通知時刻（epoch秒）— key: "ninja:task_id", value: epoch
 declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
+declare -A UNDEPLOYED_CMD_NOTIFIED  # pending+delegated_at超過cmdのntfy送信済みフラグ — key: "cmd_XXX", value: epoch秒
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
 declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
 declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
@@ -1413,40 +1414,42 @@ list_pending_cmds() {
     local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
     [ ! -f "$cmd_file" ] && return
 
-    awk '
-        function emit() {
-            if (cmd_id != "" && cmd_status == "pending" && cmd_ts != "") {
-                print cmd_id "|" cmd_ts
-            }
-        }
-        /^[[:space:]]*-[[:space:]]id:/ {
-            emit()
-            cmd_id=$3
-            gsub(/"/, "", cmd_id)
-            cmd_ts=""
-            cmd_status=""
-            next
-        }
-        /^[[:space:]]*timestamp:/ {
-            cmd_ts=$2
-            gsub(/"/, "", cmd_ts)
-            next
-        }
-        /^[[:space:]]*status:/ {
-            cmd_status=$2
-            next
-        }
-        END {
-            emit()
-        }
-    ' "$cmd_file"
+    python3 - "$cmd_file" <<'PYEOF'
+import sys
+import yaml
+
+cmd_file = sys.argv[1]
+
+try:
+    with open(cmd_file, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+except Exception:
+    sys.exit(0)
+
+cmds = data.get("commands", {})
+if isinstance(cmds, dict):
+    entries = cmds.items()
+elif isinstance(cmds, list):
+    entries = ((str(item.get("id", "")), item) for item in cmds if isinstance(item, dict))
+else:
+    entries = []
+
+for cmd_id, info in entries:
+    if not cmd_id or not isinstance(info, dict):
+        continue
+    if str(info.get("status", "")) != "pending":
+        continue
+    timestamp = str(info.get("timestamp", "") or "").strip('"')
+    delegated_at = str(info.get("delegated_at", "") or "").strip('"')
+    print(f"{cmd_id}|{timestamp}|{delegated_at}")
+PYEOF
 }
 
 check_stale_cmds() {
     local now
     now=$EPOCHSECONDS
 
-    while IFS='|' read -r cmd_id cmd_timestamp; do
+    while IFS='|' read -r cmd_id cmd_timestamp _cmd_delegated_at; do
         [ -z "$cmd_id" ] && continue
         [ -z "$cmd_timestamp" ] && continue
 
@@ -1487,6 +1490,55 @@ check_stale_cmds() {
     done < <(list_pending_cmds)
 }
 
+check_undeployed_cmds() {
+    local now
+    now=$EPOCHSECONDS
+    local -A current_pending=()
+
+    while IFS='|' read -r cmd_id _cmd_timestamp delegated_at; do
+        [ -z "$cmd_id" ] && continue
+        [ -z "$delegated_at" ] && continue
+        current_pending["$cmd_id"]=1
+
+        if [ -n "${UNDEPLOYED_CMD_NOTIFIED[$cmd_id]:-}" ]; then
+            continue
+        fi
+
+        local delegated_epoch
+        delegated_epoch=$(date -d "$delegated_at" +%s 2>/dev/null || echo "0")
+        if [[ ! "$delegated_epoch" =~ ^[0-9]+$ ]] || [ "$delegated_epoch" -le 0 ]; then
+            log "WARN: Failed to parse delegated_at: ${cmd_id} delegated_at=${delegated_at}"
+            continue
+        fi
+
+        local elapsed_sec
+        elapsed_sec=$((now - delegated_epoch))
+        if [ "$elapsed_sec" -lt 600 ]; then
+            continue
+        fi
+
+        local elapsed_min delegated_hm msg
+        elapsed_min=$((elapsed_sec / 60))
+        delegated_hm=$(date -d "$delegated_at" "+%H:%M" 2>/dev/null || echo "$delegated_at")
+        msg="未配備cmd: ${cmd_id} (委任時刻: ${delegated_hm}, ${elapsed_min}分経過)"
+
+        log "UNDEPLOYED-CMD: ${cmd_id} pending+delegated_at ${elapsed_min}min, sending ntfy"
+        if bash "$SCRIPT_DIR/scripts/ntfy.sh" "$msg" >> "$LOG" 2>&1; then
+            UNDEPLOYED_CMD_NOTIFIED["$cmd_id"]=$now
+        else
+            log "ERROR: Failed to send ntfy for undeployed cmd ${cmd_id}"
+        fi
+    done < <(list_pending_cmds)
+
+    local notified_cmd
+    for notified_cmd in "${!UNDEPLOYED_CMD_NOTIFIED[@]}"; do
+        if [ -z "${current_pending[$notified_cmd]:-}" ]; then
+            unset "UNDEPLOYED_CMD_NOTIFIED[$notified_cmd]"
+            log "UNDEPLOYED-CMD-RESOLVED: ${notified_cmd} no longer pending+delegated_at"
+        fi
+    done
+}
+
 # ─── pending cmd検知（遷移駆動 — cmd_255改修） ───
 # 新規pending cmd出現時のみ家老に1回通知。同一cmdの繰り返し送信を廃止。
 # 長時間未処理のエスカレーションは check_stale_cmds() が担当。
@@ -1499,7 +1551,7 @@ check_karo_pending_cmd() {
     # 現在のpending cmd集合を収集し、新規のみ通知
     local -a current_ids=()
 
-    while IFS='|' read -r cmd_id cmd_timestamp; do
+    while IFS='|' read -r cmd_id cmd_timestamp _cmd_delegated_at; do
         [ -z "$cmd_id" ] && continue
         current_ids+=("$cmd_id")
 
@@ -2794,6 +2846,9 @@ while true; do
 
     # ═══ Stale cmd検知チェック ═══
     check_stale_cmds
+
+    # ═══ 未配備cmd常時監視（pending+delegated_at 10分超） ═══
+    check_undeployed_cmds
 
     # ═══ Pending cmd検知チェック（2分間隔） ═══
     if [ $((cycle % 6)) -eq 0 ]; then
