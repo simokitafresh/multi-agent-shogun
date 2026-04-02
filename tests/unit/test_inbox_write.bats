@@ -21,12 +21,64 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export INBOX_WRITE_SCRIPT="$PROJECT_ROOT/scripts/inbox_write.sh"
+    export GIT_TEMPLATE_DIR
+    GIT_TEMPLATE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/inbox_write_git_template.XXXXXX")"
 
     # スクリプト存在確認（前提条件）
     [ -f "$INBOX_WRITE_SCRIPT" ] || return 1
 
     # python3 + PyYAML存在確認
     python3 -c "import yaml" 2>/dev/null || return 1
+
+    mkdir -p "$GIT_TEMPLATE_DIR/scripts" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
+    cp -r "$PROJECT_ROOT/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/lib"
+
+    git -C "$GIT_TEMPLATE_DIR" init -q
+    git -C "$GIT_TEMPLATE_DIR" config user.name "test"
+    git -C "$GIT_TEMPLATE_DIR" config user.email "test@test.com"
+
+    cat > "$GIT_TEMPLATE_DIR/scripts/lib/agent_config.sh" << 'MOCK'
+get_ninja_names() { echo "testninja"; }
+get_allowed_targets() { echo "karo shogun testninja gunshi"; }
+MOCK
+
+    printf '#!/bin/bash\necho "NO-FIX-NEEDED"\n' > "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_autofix.sh"
+    chmod +x "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_autofix.sh"
+    printf '#!/bin/bash\necho "PASS: all checks passed"\n' > "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_format.sh"
+    chmod +x "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_format.sh"
+
+    cat > "$GIT_TEMPLATE_DIR/queue/tasks/testninja.yaml" << 'YAML'
+task:
+  status: in_progress
+  parent_cmd: cmd_test_001
+  target_path: src/test_file.sh
+  report_path: queue/reports/testninja_report_cmd_test_001.yaml
+  report_filename: testninja_report_cmd_test_001.yaml
+YAML
+
+    cat > "$GIT_TEMPLATE_DIR/queue/reports/testninja_report_cmd_test_001.yaml" << 'YAML'
+verdict: PASS
+files_modified:
+  - path: src/test_file.sh
+    change: modified
+binary_checks:
+  AC1:
+    - check: test check
+      result: PASS
+lesson_candidate:
+  found: false
+  no_lesson_reason: no lesson
+result:
+  summary: implementation complete
+YAML
+
+    echo '#!/bin/bash' > "$GIT_TEMPLATE_DIR/src/test_file.sh"
+    git -C "$GIT_TEMPLATE_DIR" add -A
+    git -C "$GIT_TEMPLATE_DIR" commit -q -m "initial"
+}
+
+teardown_file() {
+    [ -n "${GIT_TEMPLATE_DIR:-}" ] && [ -d "$GIT_TEMPLATE_DIR" ] && rm -rf "$GIT_TEMPLATE_DIR"
 }
 
 setup() {
@@ -37,19 +89,13 @@ setup() {
     export TEST_INBOX_DIR="$TEST_TMPDIR/queue/inbox"
     mkdir -p "$TEST_INBOX_DIR"
 
-    # inbox_write.shが参照するSCRIPT_DIRをtmpに向けるため、wrapper scriptを作成
-    export TEST_SCRIPT_DIR="$TEST_TMPDIR/scripts"
-    mkdir -p "$TEST_SCRIPT_DIR"
-
-    # 元のスクリプトをコピー（SCRIPT_DIRをテスト用に書き換える）
-    sed "s|SCRIPT_DIR=\"\$(cd \"\$(dirname \"\${BASH_SOURCE\[0\]}\")/..*|SCRIPT_DIR=\"$TEST_TMPDIR\"|" \
-        "$PROJECT_ROOT/scripts/inbox_write.sh" > "$TEST_SCRIPT_DIR/inbox_write.sh"
-    chmod +x "$TEST_SCRIPT_DIR/inbox_write.sh"
+    export INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR"
 
     # lib/ディレクトリをシンボリックリンク（write_inbox_yaml.py等の共通モジュール参照用）
-    ln -s "$PROJECT_ROOT/scripts/lib" "$TEST_SCRIPT_DIR/lib"
+    mkdir -p "$TEST_TMPDIR/scripts"
+    ln -s "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
 
-    export TEST_INBOX_WRITE="$TEST_SCRIPT_DIR/inbox_write.sh"
+    export TEST_INBOX_WRITE="$PROJECT_ROOT/scripts/inbox_write.sh"
 }
 
 teardown() {
@@ -449,64 +495,8 @@ setup_git_test_env() {
     # Unset INBOX_WRITE_TEST so the script sources agent_config.sh
     unset INBOX_WRITE_TEST
 
-    # setup()がscripts/lib→実体symlinkを作るが、mkdir -pはsymlink存在時no-op
-    # → 後続のcat >がsymlink経由で本物のagent_config.shを上書きする(破壊的)
-    # symlinkを実コピーに置換し、他のlibファイル(write_inbox_yaml.py等)へのアクセスを維持
-    if [ -L "$TEST_TMPDIR/scripts/lib" ]; then
-        rm -f "$TEST_TMPDIR/scripts/lib"
-        cp -r "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
-    fi
-    mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/scripts/gates"
-    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
-
-    git -C "$TEST_TMPDIR" init -q
-    git -C "$TEST_TMPDIR" config user.name "test"
-    git -C "$TEST_TMPDIR" config user.email "test@test.com"
-
-    # Mock agent_config.sh (provides ninja names for report_received checks)
-    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" << 'MOCK'
-get_ninja_names() { echo "testninja"; }
-get_allowed_targets() { echo "karo shogun testninja gunshi"; }
-MOCK
-
-    # Mock gate scripts (always pass — focus on git uncommitted check)
-    printf '#!/bin/bash\necho "NO-FIX-NEEDED"\n' > "$TEST_TMPDIR/scripts/gates/gate_report_autofix.sh"
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_autofix.sh"
-    printf '#!/bin/bash\necho "PASS: all checks passed"\n' > "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
-
-    # Task YAML for testninja
-    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" << 'YAML'
-task:
-  status: in_progress
-  parent_cmd: cmd_test_001
-  target_path: src/test_file.sh
-  report_path: queue/reports/testninja_report_cmd_test_001.yaml
-  report_filename: testninja_report_cmd_test_001.yaml
-YAML
-
-    # Valid report YAML (passes format gate)
-    cat > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" << 'YAML'
-verdict: PASS
-files_modified:
-  - path: src/test_file.sh
-    change: modified
-binary_checks:
-  AC1:
-    - check: test check
-      result: PASS
-lesson_candidate:
-  found: false
-  no_lesson_reason: no lesson
-result:
-  summary: implementation complete
-YAML
-
-    # Create source file and initial commit
-    mkdir -p "$TEST_TMPDIR/src"
-    echo '#!/bin/bash' > "$TEST_TMPDIR/src/test_file.sh"
-    git -C "$TEST_TMPDIR" add -A
-    git -C "$TEST_TMPDIR" commit -q -m "initial"
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/src" "$TEST_TMPDIR/.git"
+    cp -a "$GIT_TEMPLATE_DIR/." "$TEST_TMPDIR/"
 }
 
 # Wrapper to capture stderr in bats output

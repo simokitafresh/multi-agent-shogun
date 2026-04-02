@@ -28,7 +28,7 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="${INBOX_WRITE_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=/dev/null
 if [ "${INBOX_WRITE_TEST:-}" != "1" ] && [ -f "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]; then
     source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
@@ -108,7 +108,7 @@ TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
 
 # Pre-action auto-capture: 将軍→エージェント送信時、送信先ペインの現在状態を送信前に自動表示+ログ
 # 目的: 「観察なき行動」を構造的に防止（知性の外部化原則 2026-03-21）
-if [ "$FROM" = "shogun" ] || [ "$FROM" = "karo" ]; then
+if [ "${INBOX_WRITE_TEST:-}" != "1" ] && { [ "$FROM" = "shogun" ] || [ "$FROM" = "karo" ]; }; then
     _pane_idx=""
     while IFS=' ' read -r _idx _aid; do
         if [ "$_aid" = "$TARGET" ]; then
