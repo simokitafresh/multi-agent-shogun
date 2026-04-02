@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R13
   task_type: impl
   project: infra
-  status: assigned
+  status: in_progress
   target_path: tests/unit/test_cli_adapter.bats
   command: |
     テスト速度最適化: test_cli_adapter.batsを高速化せよ。

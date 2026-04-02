@@ -4,6 +4,100 @@
 
 # --- セットアップ ---
 
+# =============================================================================
+# Pure bash YAML helpers (python3 python3-based functions をオーバーライドして高速化)
+# =============================================================================
+
+# cli.agents.<agent>.type を返す（string形式/dict形式両対応）
+# cli.defaultも1パスで取得し、フォールバック時の追加forkを排除
+_bash_agent_type() {
+    local file="$1" agent="$2" default="${3:-claude}"
+    [[ -f "$file" ]] || { echo "$default"; return; }
+    local in_cli=0 in_agents=0 in_agent=0 result="" cli_default=""
+    while IFS= read -r line; do
+        if [[ $in_cli -eq 0 ]]; then
+            [[ "$line" == "cli:" ]] && { in_cli=1; continue; }
+        elif [[ $in_agents -eq 0 ]]; then
+            if [[ "$line" == "  default: "* ]]; then
+                cli_default="${line#  default: }"
+            elif [[ "$line" == "  agents:" ]]; then
+                in_agents=1
+            elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                in_cli=0
+            fi
+        elif [[ $in_agent -eq 0 ]]; then
+            if [[ "$line" == "    ${agent}: "* ]]; then
+                result="${line#*: }"; break          # string形式
+            elif [[ "$line" == "    ${agent}:" ]]; then
+                in_agent=1                            # dict形式
+            elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                break
+            fi
+        else
+            if [[ "$line" == "      type: "* ]]; then
+                result="${line#*type: }"; break
+            elif [[ "$line" =~ ^"    "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
+                break
+            fi
+        fi
+    done < "$file"
+    # cli.defaultフォールバック（追加forkなし）
+    [[ -z "$result" ]] && result="$cli_default"
+    case "${result}" in
+        claude|codex|copilot|kimi) echo "$result" ;;
+        *) echo "$default" ;;
+    esac
+}
+
+# YAML スカラー値を返す
+# 対応 key_path: models.<key> / cli.agents.<agent>.<field>
+_bash_yaml_val() {
+    local file="$1" key_path="$2" default="${3:-}"
+    [[ -f "$file" ]] || { echo "$default"; return; }
+    local result=""
+    case "$key_path" in
+        models.*)
+            local key="${key_path#models.}"
+            local in_models=0
+            while IFS= read -r line; do
+                if [[ $in_models -eq 0 ]]; then
+                    [[ "$line" == "models:" ]] && in_models=1
+                elif [[ "$line" == "  ${key}: "* ]]; then
+                    result="${line#  ${key}: }"; break
+                elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                    break
+                fi
+            done < "$file"
+            ;;
+        cli.agents.*.*)
+            local rest="${key_path#cli.agents.}"
+            local agent="${rest%%.*}" field="${rest#*.}"
+            local in_cli=0 in_agents=0 in_agent=0
+            while IFS= read -r line; do
+                if [[ $in_cli -eq 0 ]]; then
+                    [[ "$line" == "cli:" ]] && { in_cli=1; continue; }
+                elif [[ $in_agents -eq 0 ]]; then
+                    [[ "$line" == "  agents:" ]] && { in_agents=1; continue; }
+                    [[ ! "$line" =~ ^[[:space:]] ]] && { in_cli=0; continue; }
+                elif [[ $in_agent -eq 0 ]]; then
+                    if [[ "$line" == "    ${agent}: "* || "$line" == "    ${agent}:" ]]; then
+                        in_agent=1
+                    elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                        break
+                    fi
+                else
+                    if [[ "$line" == "      ${field}: "* ]]; then
+                        result="${line#*${field}: }"; break
+                    elif [[ "$line" =~ ^"    "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
+                        break
+                    fi
+                fi
+            done < "$file"
+            ;;
+    esac
+    echo "${result:-$default}"
+}
+
 setup_file() {
     export SETTINGS_DIR
     SETTINGS_DIR="$(mktemp -d)"
@@ -119,15 +213,124 @@ YAML
 cli:
   default: kimi
 YAML
+
+    # cli_adapter.sh を1回だけsource（export -fでテスト間共有）
+    export CLI_ADAPTER_SETTINGS="${SETTINGS_DIR}/settings_none.yaml"
+    source "${PROJECT_ROOT}/lib/cli_adapter.sh"
+
+    # python3-based helpers をpure bash実装でオーバーライド
+    _cli_lookup_settings_get() {
+        local agent="$1" field="$2" default="$3"
+        [[ "$field" == "type" ]] || { echo "$default"; return; }
+        _bash_agent_type "$_CLI_LOOKUP_SETTINGS" "$agent" "$default"
+    }
+    _cli_adapter_read_yaml() {
+        local key_path="$1" fallback="${2:-}"
+        _bash_yaml_val "$CLI_ADAPTER_SETTINGS" "$key_path" "$fallback"
+    }
+    _cli_lookup_profile_get() {
+        local cli_type="$1" key="$2"
+        [[ "$key" != "launch_cmd" ]] && { echo ""; return; }
+        case "$cli_type" in
+            claude) echo "/home/simokitafresh/bin/claude --dangerously-skip-permissions" ;;
+            codex)  echo "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen" ;;
+            *)      echo "" ;;
+        esac
+    }
+
+    # fork削減オーバーライド: 中間delegation排除で1forkに
+    get_cli_type() {
+        local agent_id="$1"
+        [[ -z "$agent_id" ]] && { echo "claude"; return; }
+        _bash_agent_type "$CLI_ADAPTER_SETTINGS" "$agent_id" "claude"
+    }
+    cli_type() {
+        local agent="$1"
+        [[ -z "$agent" ]] && { echo "claude"; return; }
+        _bash_agent_type "$_CLI_LOOKUP_SETTINGS" "$agent" "claude"
+    }
+    cli_launch_cmd() {
+        local ct
+        ct=$(_bash_agent_type "$_CLI_LOOKUP_SETTINGS" "$1" "claude")
+        case "$ct" in
+            claude) echo "/home/simokitafresh/bin/claude --dangerously-skip-permissions" ;;
+            codex)  echo "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen" ;;
+            *)      echo "" ;;
+        esac
+    }
+    # get_agent_model: 内部fork完全排除（settings.yaml 1パス、$()なし）
+    get_agent_model() {
+        local agent_id="$1"
+        local file="$CLI_ADAPTER_SETTINGS"
+        if [[ ! -f "$file" ]]; then echo "opus"; return; fi
+        local agent_model="" models_val="" cli_type_val="" cli_default=""
+        local in_cli=0 in_agents=0 in_agent=0 in_models=0
+        while IFS= read -r line; do
+            if [[ $in_models -eq 1 ]]; then
+                if [[ "$line" == "  ${agent_id}: "* ]]; then
+                    models_val="${line#  ${agent_id}: }"
+                elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                    in_models=0
+                    [[ "$line" == "cli:" ]] && { in_cli=1; continue; }
+                fi
+            elif [[ $in_cli -eq 0 ]]; then
+                if [[ "$line" == "models:" ]]; then in_models=1
+                elif [[ "$line" == "cli:" ]]; then in_cli=1
+                fi
+            elif [[ $in_agents -eq 0 ]]; then
+                if [[ "$line" == "  default: "* ]]; then cli_default="${line#  default: }"
+                elif [[ "$line" == "  agents:" ]]; then in_agents=1
+                elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                    in_cli=0; [[ "$line" == "models:" ]] && in_models=1
+                fi
+            elif [[ $in_agent -eq 0 ]]; then
+                if [[ "$line" == "    ${agent_id}:" ]]; then in_agent=1
+                elif [[ "$line" == "    ${agent_id}: "* ]]; then cli_type_val="${line#*: }"
+                elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                    in_agents=0; in_cli=0; [[ "$line" == "models:" ]] && in_models=1
+                fi
+            else
+                if [[ "$line" == "      type: "* ]]; then cli_type_val="${line#*type: }"
+                elif [[ "$line" == "      model: "* ]]; then agent_model="${line#*model: }"
+                elif [[ "$line" =~ ^"    "[^[:space:]] ]]; then in_agent=0
+                elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                    in_agent=0; in_agents=0; in_cli=0
+                    [[ "$line" == "models:" ]] && in_models=1
+                fi
+            fi
+        done < "$file"
+        if [[ -n "$agent_model" ]]; then
+            case "$agent_model" in
+                claude-opus*|*opus*)     echo "opus" ;;
+                claude-sonnet*|*sonnet*) echo "sonnet" ;;
+                claude-haiku*|*haiku*)   echo "haiku" ;;
+                claude-*)                echo "opus" ;;
+                *)                       echo "$agent_model" ;;
+            esac
+            return
+        fi
+        [[ -n "$models_val" ]] && { echo "$models_val"; return; }
+        [[ -z "$cli_type_val" ]] && cli_type_val="${cli_default:-claude}"
+        case "${cli_type_val}" in
+            kimi) echo "k2.5" ;;
+            *)    echo "opus" ;;
+        esac
+    }
+
+    # 全テスト間で関数を共有（export -f により各テストsubprocessへ継承）
+    export -f get_cli_type build_cli_command get_instruction_file validate_cli_availability get_agent_model
+    export -f cli_type cli_profile_get cli_launch_cmd cli_profile_get_for_type
+    export -f _cli_lookup_settings_get _cli_adapter_read_yaml _cli_lookup_profile_get
+    export -f _bash_agent_type _bash_yaml_val
 }
 
 setup() {
-    TEST_TMP="$(mktemp -d)"
-    ln -s "${SETTINGS_DIR}"/settings_*.yaml "$TEST_TMP"/
+    # TEST_TMPをSETTINGS_DIRに直接指定（mktemp+symlinks不要化）
+    TEST_TMP="${SETTINGS_DIR}"
 }
 
 teardown() {
-    rm -rf "$TEST_TMP"
+    [[ -d "${SETTINGS_DIR}/bin" ]] && rm -rf "${SETTINGS_DIR}/bin" || true
 }
 
 teardown_file() {
@@ -135,10 +338,14 @@ teardown_file() {
 }
 
 # ヘルパー: 特定のsettings.yamlでcli_adapterをロード
+# 最適化: source不要。settingsパス更新+cacheクリアのみ（export -fで関数は継承済）
 load_adapter_with() {
     local settings_file="$1"
     export CLI_ADAPTER_SETTINGS="$settings_file"
-    source "${PROJECT_ROOT}/lib/cli_adapter.sh"
+    _CLI_LOOKUP_SETTINGS="$settings_file"
+    unset _CLI_LOOKUP_TYPE_CACHE _CLI_LOOKUP_PROFILE_CACHE 2>/dev/null
+    declare -gA _CLI_LOOKUP_TYPE_CACHE 2>/dev/null || true
+    declare -gA _CLI_LOOKUP_PROFILE_CACHE 2>/dev/null || true
 }
 
 # =============================================================================

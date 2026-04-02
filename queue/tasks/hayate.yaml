@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R13
   task_type: impl
   project: infra
-  status: in_progress
+  status: done
   target_path: tests/unit/test_gate_shogun_startup.bats
   command: |
     テスト速度最適化: test_gate_shogun_startup.batsを高速化せよ。
@@ -26,3 +26,4 @@ task:
     - bc AC構造を消すな
   role_reminder: "忍者hayate。このタスクのみ実行せよ。"
   deployed_at: "2026-04-02T08:29:55+09:00"
+  progress: "AC1: 旧runは2 tests通過時点で120s超、ボトルネックはgate全体実行+git mock再帰。 AC2: gate_shogun_startup.shをrun_gate_shogun_startup()+LIB_ONLY/source対応へ変更し、テストをsource実行へ書換。 AC3: bats tests/unit/test_gate_shogun_startup.bats = 17/17 PASS, SKIP=0, real 4.942s。"
