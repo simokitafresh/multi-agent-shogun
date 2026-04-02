@@ -10,6 +10,10 @@ setup_file() {
     export GATE_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_report_format.sh"
     [ -f "$GATE_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
+    # Pre-generate base filled report and warm GP-073 PASS cache
+    export BASE_FILLED_REPORT="$BATS_FILE_TMPDIR/base_filled_report.yaml"
+    _generate_filled_report "$BASE_FILLED_REPORT" "filled"
+    bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT" > /dev/null 2>&1 || true
 }
 
 setup() {
@@ -111,8 +115,7 @@ TASK
 }
 
 @test "filled report with populated lessons_useful passes gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
@@ -176,8 +179,7 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 }
 
 @test "verdict PASS passes gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
@@ -371,8 +373,7 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 }
 
 @test "files_modified as string passes gate (GP-065)" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
@@ -653,9 +654,8 @@ EOF
 }
 
 @test "self_gate_check absent does not cause gate failure (impl tasks)" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # No self_gate_check added — simulates impl task
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    # BASE_FILLED_REPORT has no self_gate_check — simulates impl task
+    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
@@ -839,8 +839,7 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 }
 
 @test "GP-163: verdict=PASS with all results filled passes gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
