@@ -32,7 +32,7 @@ esac
 # GP-082: Accept pre-computed archive cache via env var CFC_ARCHIVE_CACHE
 # When called from dashboard_auto_section.sh, the cache is already generated
 # by the shared gawk pass (zero extra I/O). Standalone calls fall back to Python scan.
-_ARCHIVE_CACHE="${CFC_ARCHIVE_CACHE:-}"
+_ARCHIVE_CACHE="${CFC_ARCHIVE_CACHE:-/tmp/dashboard_arch_cfc_cache.txt}"
 
 python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" <<'PY'
 from __future__ import annotations
@@ -69,11 +69,26 @@ def normalize_rel(path: str) -> str:
 def extract_date(value: str | None) -> date | None:
     if not value:
         return None
-    m = re.search(r"(\d{4}-\d{2}-\d{2})", str(value))
-    if not m:
+    text = str(value)
+
+    iso_match = re.search(r"(\d{4}-\d{2}-\d{2})", text)
+    if iso_match:
+        try:
+            return date.fromisoformat(iso_match.group(1))
+        except ValueError:
+            return None
+
+    compact_match = re.search(r"(?<!\d)(\d{8})(?!\d)", text)
+    if not compact_match:
         return None
+
+    compact = compact_match.group(1)
     try:
-        return date.fromisoformat(m.group(1))
+        return date(
+            int(compact[0:4]),
+            int(compact[4:6]),
+            int(compact[6:8]),
+        )
     except ValueError:
         return None
 
