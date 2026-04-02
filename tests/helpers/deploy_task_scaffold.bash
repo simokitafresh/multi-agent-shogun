@@ -77,35 +77,23 @@ profiles:
     idle_pattern: ""
 EOF
 
-    export DEPLOY_TASK_WORKSPACE_DIR
-    DEPLOY_TASK_WORKSPACE_DIR="$(mktemp -d "$BATS_TMPDIR/deploy_task_workspace.XXXXXX")"
-    mkdir -p "$DEPLOY_TASK_WORKSPACE_DIR/project"
-    cp -a "$DEPLOY_TASK_TEMPLATE_DIR"/. "$DEPLOY_TASK_WORKSPACE_DIR/project"/
 }
 
 deploy_task_scaffold() {
+    local tmpdir_prefix="${1:-deploy_task}"
     export TEST_TMPDIR
-    TEST_TMPDIR="$DEPLOY_TASK_WORKSPACE_DIR"
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/${tmpdir_prefix}.XXXXXX")"
     export TEST_PROJECT="$TEST_TMPDIR/project"
 
-    rm -rf \
-        "$TEST_PROJECT/archive" \
-        "$TEST_PROJECT/logs" \
-        "$TEST_PROJECT/projects" \
-        "$TEST_PROJECT/queue"
-
-    mkdir -p \
-        "$TEST_PROJECT/queue/tasks" \
-        "$TEST_PROJECT/queue/reports" \
-        "$TEST_PROJECT/queue/inbox" \
-        "$TEST_PROJECT/logs" \
-        "$TEST_PROJECT/projects"
-
-    cp "$DEPLOY_TASK_TEMPLATE_DIR/config/settings.yaml" "$TEST_PROJECT/config/settings.yaml"
-    cp "$DEPLOY_TASK_TEMPLATE_DIR/config/cli_profiles.yaml" "$TEST_PROJECT/config/cli_profiles.yaml"
+    mkdir -p "$TEST_PROJECT"
+    cp -a "$DEPLOY_TASK_TEMPLATE_DIR"/. "$TEST_PROJECT"/
 }
 
 deploy_task_teardown() {
+    :
+}
+
+maybe_normalize_task_yaml() {
     :
 }
 
@@ -122,7 +110,7 @@ deploy_task_fast() {
         deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
 
         local task_file="$TEST_PROJECT/queue/tasks/${NINJA_NAME}.yaml"
-        normalize_task_yaml "$task_file" || true
+        maybe_normalize_task_yaml "$task_file"
 
         if [ -n "$CMD_ID" ]; then
             if [ "$DIRECT_MODE" = true ]; then
@@ -174,25 +162,89 @@ deploy_task_fast() {
     )
 }
 
+deploy_task_template_only() {
+    (
+        # shellcheck disable=SC2030
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+
+        parse_deploy_task_args "$@"
+        cleanup_none_task_files
+        # shellcheck disable=SC2153
+        deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
+
+        local task_file="$TEST_PROJECT/queue/tasks/${NINJA_NAME}.yaml"
+        maybe_normalize_task_yaml "$task_file"
+
+        if [ -n "$CMD_ID" ]; then
+            if [ "$DIRECT_MODE" = true ]; then
+                log "direct_mode(test): skipping resolve_cmd_to_task for ${CMD_ID}"
+            elif ! resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+                echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
+                return 1
+            fi
+        fi
+
+        inject_task_id "$task_file" || true
+        inject_ac_version "$task_file" || true
+
+        local clear_fields clear_tmp
+        clear_fields="stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok"
+        clear_tmp=$(mktemp)
+        if awk -v fields="$clear_fields" '
+            BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0 }
+            {
+                if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
+                if (skip) {
+                    if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
+                    else { next }
+                }
+                if (indent == 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) {
+                    key = $0; sub(/^  /, "", key); sub(/:.*$/, "", key)
+                    if (key in fset) { skip = 1; next }
+                }
+                print
+            }
+        ' "$task_file" > "$clear_tmp" 2>/dev/null; then
+            mv "$clear_tmp" "$task_file"
+        else
+            rm -f "$clear_tmp"
+            return 1
+        fi
+
+        inject_task_modifiers "$task_file" || true
+        yaml_field_set "$task_file" "task" "report_filename" ""
+        yaml_field_set "$task_file" "task" "report_path" ""
+        inject_report_filename "$task_file" || true
+
+        local task_id parent_cmd project
+        task_id=$(field_get "$task_file" "task_id" "")
+        parent_cmd=$(field_get "$task_file" "parent_cmd" "")
+        project=$(field_get "$task_file" "project" "")
+        generate_report_template "$NINJA_NAME" "$task_id" "$parent_cmd" "$project"
+    )
+}
+
+deploy_task_lessons_only() {
+    (
+        # shellcheck disable=SC2030
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+
+        local ninja_name="${1:-sasuke}"
+        local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
+
+        maybe_normalize_task_yaml "$task_file"
+        inject_related_lessons "$task_file" || true
+    )
+}
+
 normalize_simple_ac_ids() {
     local task_file="$1"
 
-    python3 - "$task_file" <<'PY'
-import pathlib
-import re
-import sys
-
-path = pathlib.Path(sys.argv[1])
-text = path.read_text(encoding="utf-8")
-normalized = re.sub(
-    r"^(\s*-?\s*id:\s*)'([A-Za-z0-9_.:+-]+)'$",
-    r"\1\2",
-    text,
-    flags=re.MULTILINE,
-)
-if normalized != text:
-    path.write_text(normalized, encoding="utf-8")
-PY
+    sed -Ei "s/^([[:space:]]*-?[[:space:]]*id:[[:space:]]*)'([A-Za-z0-9_.:+-]+)'$/\\1\\2/" "$task_file"
 }
 
 deploy_task_ac_only() {
@@ -208,7 +260,37 @@ deploy_task_ac_only() {
         deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
 
         local task_file="$TEST_PROJECT/queue/tasks/${NINJA_NAME}.yaml"
-        normalize_task_yaml "$task_file" || true
+        maybe_normalize_task_yaml "$task_file"
+
+        if [ -n "$CMD_ID" ]; then
+            if [ "$DIRECT_MODE" = true ]; then
+                log "direct_mode(test): skipping resolve_cmd_to_task for ${CMD_ID}"
+            elif ! resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+                echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
+                return 1
+            fi
+        fi
+
+        inject_task_id "$task_file" || true
+        inject_ac_version "$task_file" || true
+        normalize_simple_ac_ids "$task_file"
+    )
+}
+
+deploy_task_resolve_only() {
+    (
+        # shellcheck disable=SC2030
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+
+        parse_deploy_task_args "$@"
+        cleanup_none_task_files
+        # shellcheck disable=SC2153
+        deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
+
+        local task_file="$TEST_PROJECT/queue/tasks/${NINJA_NAME}.yaml"
+        maybe_normalize_task_yaml "$task_file"
 
         if [ -n "$CMD_ID" ]; then
             if [ "$DIRECT_MODE" = true ]; then

@@ -158,8 +158,15 @@ read_task_field() {
     esac
 }
 
+read_task_fields() {
+    local field_name
+    for field_name in "$@"; do
+        FIELD_GET_NO_LOG=1 field_get "$(task_file)" "$field_name" "" 2>/dev/null
+    done
+}
+
 @test "deploy_task injects ac_version and report ac_version_read on first deploy" {
-    run deploy_task_fast sasuke
+    run deploy_task_template_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_ac_version
@@ -361,16 +368,10 @@ EOF
         "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
     [ "$status" -eq 0 ]
 
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml', encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-print(type(data.get('lesson_candidate')).__name__)
-print(str((data.get('lesson_candidate') or {}).get('found', '')))
-"
+    run grep -E "^lesson_candidate:$" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "dict" ]
-    [ "${lines[1]}" = "False" ]
+    run grep -E "^  found: false$" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
+    [ "$status" -eq 0 ]
 }
 
 @test "deploy_task generates ac_priority and parallel_ok from explicit AC ids" {
@@ -634,7 +635,7 @@ task:
     - AC1
 EOF
 
-    run deploy_task_fast sasuke
+    run deploy_task_lessons_only sasuke
     [ "$status" -eq 0 ]
 
     run read_related_detail L900
@@ -860,14 +861,7 @@ EOF
     [ "$status" -eq 1 ]
 
     # Tracking fields should be set after first deploy
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-task = data.get('task', {})
-print(task.get('_ac_task_id', ''))
-print(task.get('_ac_worker_id', ''))
-"
+    run read_task_fields _ac_task_id _ac_worker_id
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "cmd_500_impl" ]
     [ "${lines[1]}" = "sasuke" ]
@@ -889,14 +883,7 @@ EOF
     run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
 
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-task = data.get('task', {})
-print(task.get('_ac_task_id', ''))
-print(task.get('_ac_worker_id', ''))
-"
+    run read_task_fields _ac_task_id _ac_worker_id
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "my_task_123" ]
     [ "${lines[1]}" = "sasuke" ]
@@ -925,7 +912,7 @@ task:
     - AC1
 EOF
 
-    run deploy_task_fast sasuke
+    run deploy_task_lessons_only sasuke
     [ "$status" -eq 0 ]
 
     run read_related_detail L901
@@ -966,20 +953,11 @@ task:
 EOF
 
     # cmd_id引数付きで配備
-    run deploy_task_fast sasuke cmd_600
+    run deploy_task_resolve_only sasuke cmd_600
     [ "$status" -eq 0 ]
 
     # parent_cmd/task_id/projectが新cmdに更新されたか
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-task = data.get('task', {})
-print(task.get('parent_cmd', ''))
-print(task.get('task_id', ''))
-print(task.get('project', ''))
-print(task.get('task_type', ''))
-"
+    run read_task_fields parent_cmd task_id project task_type
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "cmd_600" ]
     [ "${lines[1]}" = "cmd_600_impl" ]
@@ -1017,16 +995,11 @@ task:
 EOF
 
     # cmd_id無し（レガシー呼び出し）
-    run deploy_task_fast sasuke "配備メッセージ" task_assigned karo
+    run deploy_task_resolve_only sasuke "配備メッセージ" task_assigned karo
     [ "$status" -eq 0 ]
 
     # parent_cmdは変更されない
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-print(data.get('task', {}).get('parent_cmd', ''))
-"
+    run read_task_fields parent_cmd
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "cmd_700" ]
 
@@ -1055,7 +1028,7 @@ task:
 EOF
 
     # 存在しないcmd_idで配備試行
-    run deploy_task_fast sasuke cmd_999
+    run deploy_task_resolve_only sasuke cmd_999
     [ "$status" -eq 1 ]
 }
 
@@ -1159,14 +1132,7 @@ EOF
     [ "$status" -eq 0 ]
 
     # parent_cmd updated
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-task = data.get('task', {})
-print(task.get('parent_cmd', ''))
-print(task.get('task_id', ''))
-"
+    run read_task_fields parent_cmd task_id
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "cmd_1611" ]
     [ "${lines[1]}" = "cmd_1611_impl" ]
