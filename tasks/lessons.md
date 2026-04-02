@@ -3310,3 +3310,19 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: gunshi
 - **tags**: [universal]
 - inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行
+
+### L435: bash のコマンド置換は末尾改行を落とすため YAML レコード連結で明示改行が必要
+- **日付**: 2026-04-02
+- **出典**: cmd_training_L4_R21_saizo
+- **記録者**: saizo
+- **status**: draft
+- **tags**: [universal]
+- 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒着したため、呼出側で明示的に改行を戻して T-008 と T-009 で再発防止を確認した。
+
+### L436: archive scanは実運用YAMLのネスト形を前提に軽量抽出せよ
+- **日付**: 2026-04-02
+- **出典**: cmd_training_L4_R22_test_hayate
+- **記録者**: hayate
+- **status**: draft
+- **tags**: [universal]
+- archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `project:` を前提にした軽量regexはローカルfixtureでは通っても本番アーカイブで recent cmd 検出を静かに失敗させる。先頭行だけを走査する軽量抽出でも、実運用のネストとインデントを前提に設計すべきである。
