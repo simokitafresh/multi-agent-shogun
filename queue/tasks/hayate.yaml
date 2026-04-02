@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R19
   task_type: impl
   project: infra
-  status: assigned
+  status: done
   target_path: tests/unit/test_dashboard_auto_context_freshness.bats
   command: |
     テスト改善: test_dashboard_auto_context_freshness.bats(CI RED修正: scaffold stub追加)。
@@ -20,3 +20,4 @@ task:
   never_stop_for: [bats全量禁止]
   role_reminder: "忍者hayate。このタスクのみ実行せよ。"
   deployed_at: "2026-04-02T11:43:24+09:00"
+  report_path: queue/reports/hayate_report_cmd_training_L4_R19.yaml
