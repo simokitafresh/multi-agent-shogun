@@ -49,7 +49,7 @@ engineering_preferences:
   - "prefer PostgreSQL over SQLite writes"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run inject_engineering_preferences_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_engineering_preferences
@@ -83,7 +83,7 @@ engineering_preferences:
 - sample
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run inject_engineering_preferences_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_engineering_preferences
@@ -112,7 +112,7 @@ engineering_preferences:
   - "prefer parity over speed"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run inject_engineering_preferences_only sasuke
     [ "$status" -eq 0 ]
 
     # cmd_1321: FIELD_CLEAR→再inject設計により、既存値はクリアされプロジェクトデフォルトで再注入

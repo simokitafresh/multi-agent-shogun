@@ -386,3 +386,34 @@ inject_modifiers_only() {
     INJECT_TASK_MODIFIERS_ONLY="$only_ops" \
         python3 "$TEST_PROJECT/scripts/lib/inject_task_modifiers.py"
 }
+
+inject_engineering_preferences_only() {
+    local ninja_name="$1"
+    local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
+    local clear_tmp
+
+    clear_tmp="$(mktemp)"
+    if ! awk '
+        {
+            if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
+            if (skip) {
+                if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
+                else { next }
+            }
+            if (indent == 2 && $0 ~ /^  engineering_preferences:/) {
+                skip = 1
+                next
+            }
+            print
+        }
+    ' "$task_file" > "$clear_tmp"; then
+        rm -f "$clear_tmp"
+        return 1
+    fi
+    mv "$clear_tmp" "$task_file"
+
+    TASK_FILE_ENV="$task_file" \
+    SCRIPT_DIR_ENV="$TEST_PROJECT" \
+    INJECT_TASK_MODIFIERS_ONLY="engineering_preferences" \
+        python3 "$TEST_PROJECT/scripts/lib/inject_task_modifiers.py"
+}
