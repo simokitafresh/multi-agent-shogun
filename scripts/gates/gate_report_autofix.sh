@@ -379,59 +379,108 @@ if isinstance(bc, dict):
 
 # === Fix 8: binary_checks AC values dict → list wrap ===
 # パターン: 忍者がAC値を {check: ..., result: ...} の単一dictで記入(listでない)
+# Fix 8/15/11/19/18は全てbinary_checks走査なので一巡で正規化する
+def _task_binary_checks_for(ac_key):
+    _worker = data.get('worker_id', '')
+    _task = _get_task_data(_worker)
+    if not _task:
+        return []
+    _acs = _task.get('acceptance_criteria', [])
+    if not isinstance(_acs, list):
+        return []
+    for _ac_item in _acs:
+        if isinstance(_ac_item, dict) and _ac_item.get('id') == ac_key:
+            _bc_list = _ac_item.get('binary_checks', [])
+            return _bc_list if isinstance(_bc_list, list) else []
+    return []
+
 bc = data.get('binary_checks')
+_bc_pass_count = 0
+_bc_fail_count = 0
 if isinstance(bc, dict):
     bc_dict_fixed = False
-    for ac_key, ac_val in bc.items():
-        if isinstance(ac_val, dict):
-            bc[ac_key] = [ac_val]
-            bc_dict_fixed = True
-    if bc_dict_fixed:
-        fixes.append('binary_checks dict→list wrap')
-
-# === Fix 15: binary_checks {check_name: result} → {check: name, result: val} ===
-# パターン: 忍者がACのbcを [{check_name: result_val}] の単一キーdict listで記入。
-# 標準形式は [{check: 'name', result: 'val'}]。cmd_1351影丸で検出。
-# Fix 9(verdict推定)とFix 11(boolean→string)が'result'キーに依存するため正規化必須。
-bc = data.get('binary_checks')
-if isinstance(bc, dict):
     bc15_fixed = False
-    for ac_key, ac_val in bc.items():
-        if isinstance(ac_val, list):
+    bc_bool_fixed = False
+    bc19_fixed = False
+    _str_fixed = False
+    _pass_vals = {'pass', 'ok', 'true', 'yes', 'done', 'clear', 'n/a', 'na'}
+    _fail_vals = {'fail', 'false', 'no', 'ng', 'block'}
+
+    for ac_key, ac_val in list(bc.items()):
+        if isinstance(ac_val, dict):
+            ac_val = [ac_val]
+            bc[ac_key] = ac_val
+            bc_dict_fixed = True
+        if not isinstance(ac_val, list):
+            continue
+
+        _needs_numbered_convert = any(
+            isinstance(chk, dict) and len(chk) > 1 and len([k for k in chk.keys() if re.match(r'^\[?\d+\]?$', str(k))]) == len(chk)
+            for chk in ac_val
+        )
+        if _needs_numbered_convert:
+            _task_checks = _task_binary_checks_for(ac_key)
             new_list = []
-            _needs_convert = False
             for chk in ac_val:
-                if isinstance(chk, dict) and len(chk) == 1:
-                    _k = list(chk.keys())[0]
-                    if _k not in ('check', 'result'):
-                        _v = chk[_k]
-                        # booleanはFix 11で'yes'/'no'に変換するためstr()しない
-                        new_list.append({'check': str(_k), 'result': _v if isinstance(_v, bool) else str(_v)})
-                        _needs_convert = True
-                    else:
-                        new_list.append(chk)
+                if isinstance(chk, dict):
+                    for idx, (k, v) in enumerate(sorted(chk.items(), key=lambda x: str(x[0]))):
+                        _result_val = v.get('result', 'yes') if isinstance(v, dict) else v
+                        _check_name = ''
+                        if idx < len(_task_checks):
+                            tc = _task_checks[idx]
+                            _check_name = tc.get('check', tc) if isinstance(tc, dict) else str(tc)
+                        if not _check_name:
+                            _check_name = f'{ac_key}_check_{idx}'
+                        new_list.append({'check': _check_name, 'result': _result_val})
                 else:
                     new_list.append(chk)
-            if _needs_convert:
-                bc[ac_key] = new_list
-                bc15_fixed = True
+            if new_list:
+                ac_val = new_list
+                bc[ac_key] = ac_val
+                bc19_fixed = True
+
+        new_list = []
+        for chk in ac_val:
+            item = chk
+            if isinstance(chk, dict) and len(chk) == 1:
+                _k = list(chk.keys())[0]
+                if _k not in ('check', 'result'):
+                    _v = chk[_k]
+                    item = {'check': str(_k), 'result': _v if isinstance(_v, bool) else str(_v)}
+                    bc15_fixed = True
+            if isinstance(item, dict):
+                _result = item.get('result')
+                if isinstance(_result, bool):
+                    item['result'] = 'yes' if _result else 'no'
+                    bc_bool_fixed = True
+                elif isinstance(_result, str):
+                    r = _result.strip().lower()
+                    if r in _pass_vals and _result != 'yes':
+                        item['result'] = 'yes'
+                        _str_fixed = True
+                    elif r in _fail_vals and _result != 'no':
+                        item['result'] = 'no'
+                        _str_fixed = True
+
+                _norm = item.get('result')
+                if isinstance(_norm, str):
+                    if _norm == 'yes':
+                        _bc_pass_count = _bc_pass_count + 1
+                    elif _norm == 'no':
+                        _bc_fail_count = _bc_fail_count + 1
+            new_list.append(item)
+        bc[ac_key] = new_list
+
+    if bc_dict_fixed:
+        fixes.append('binary_checks dict→list wrap')
     if bc15_fixed:
         fixes.append('binary_checks {name:val}→{check:name,result:val}正規化')
-
-# === Fix 11: binary_checks result boolean → string ===
-# パターン: 忍者がresult: true/falseで記入。YAMLはbooleanとして解釈。
-# gate_report_format.shはyes/noを期待。cmd_1338で検出。
-bc = data.get('binary_checks')
-if isinstance(bc, dict):
-    bc_bool_fixed = False
-    for ac_key, ac_val in bc.items():
-        if isinstance(ac_val, list):
-            for chk in ac_val:
-                if isinstance(chk, dict) and isinstance(chk.get('result'), bool):
-                    chk['result'] = 'yes' if chk['result'] else 'no'
-                    bc_bool_fixed = True
     if bc_bool_fixed:
         fixes.append('binary_checks result boolean→string変換')
+    if bc19_fixed:
+        fixes.append('binary_checks [N]キー→check/result正規化')
+    if _str_fixed:
+        fixes.append('binary_checks result文字列正規化(PASS/ok→yes, FAIL/ng→no)')
 
 # === Fix 12: lesson_candidate list → dict ===
 # パターン: 忍者がlesson_candidateをlist形式で記入。dict形式が正しい。
@@ -502,29 +551,9 @@ verdict_val = data.get('verdict')
 _is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ('PASS', 'FAIL')
 if not _is_valid_verdict and 'verdict' in data:
     bc = data.get('binary_checks')
-    if isinstance(bc, dict) and bc:
-        pass_count = 0
-        fail_count = 0
-        for ac_key, ac_val in bc.items():
-            checks = ac_val if isinstance(ac_val, list) else []
-            for chk in checks:
-                if isinstance(chk, dict):
-                    r_raw = chk.get('result', '')
-                    # bool対応: YAML 'yes'→True, 'no'→False (GP-033)
-                    if isinstance(r_raw, bool):
-                        if r_raw:
-                            pass_count = pass_count + 1
-                        else:
-                            fail_count = fail_count + 1
-                    else:
-                        r = str(r_raw).strip().upper()
-                        if r in ('PASS', 'YES', 'TRUE'):
-                            pass_count = pass_count + 1
-                        elif r in ('FAIL', 'NO', 'FALSE'):
-                            fail_count = fail_count + 1
-        if pass_count + fail_count > 0:
-            data['verdict'] = 'FAIL' if fail_count > 0 else 'PASS'
-            fixes.append(f'verdict推定({pass_count}PASS/{fail_count}FAIL)')
+    if isinstance(bc, dict) and (_bc_pass_count + _bc_fail_count > 0):
+        data['verdict'] = 'FAIL' if _bc_fail_count > 0 else 'PASS'
+        fixes.append(f'verdict推定({_bc_pass_count}PASS/{_bc_fail_count}FAIL)')
 
 # === Fix 10: 撤去(2026-03-25 消火→品質向上改修) ===
 # 旧: no_lesson_reasonをタスク種別から自動補完 → 忍者の思考放棄を隠す(消火構造)
@@ -555,77 +584,6 @@ if isinstance(sgc, dict):
 #   autofixが補完すると忍者はACを読まなくても通る → attestation機能が無意味化
 # 新: ac_version_read欠落のままgate_report_format.shがBLOCK → 忍者がACを読んでハッシュをコピー
 # deepdive Phase 5: 証明を代行する自動化=免疫応答の無力化
-
-# === Fix 19: binary_checks [N] key pattern → proper check/result (GP-088) ===
-# パターン: 忍者がbcを [{[0]: {result: PASS}, [1]: {result: PASS}}] の番号キーdict形式で記入。
-# cmd_1387半蔵で検出。Fix 15(len==1)では捕まらない(複数キー)。
-# タスクYAMLのbinary_checksから本来のcheck名を取得して再構築。
-bc = data.get('binary_checks')
-if isinstance(bc, dict):
-    bc19_fixed = False
-    for ac_key, ac_val in bc.items():
-        if isinstance(ac_val, list):
-            _needs_convert = False
-            for chk in ac_val:
-                if isinstance(chk, dict) and len(chk) > 1:
-                    # 全キーが[N]パターンかチェック
-                    _numbered_keys = [k for k in chk.keys() if re.match(r'^\[?\d+\]?$', str(k))]
-                    if len(_numbered_keys) == len(chk):
-                        _needs_convert = True
-                        break
-            if _needs_convert:
-                # タスクYAMLからcheck名取得(キャッシュ使用)
-                _task_checks = []
-                _worker = data.get('worker_id', '')
-                _task19 = _get_task_data(_worker)
-                if _task19:
-                    _acs = _task19.get('acceptance_criteria', [])
-                    if isinstance(_acs, list):
-                        for _ac_item in _acs:
-                            if isinstance(_ac_item, dict) and _ac_item.get('id') == ac_key:
-                                _bc_list = _ac_item.get('binary_checks', [])
-                                if isinstance(_bc_list, list):
-                                    _task_checks = _bc_list
-                # 番号キーから結果を抽出し、タスクYAMLのcheck名と結合
-                new_list = []
-                for chk in ac_val:
-                    if isinstance(chk, dict):
-                        for idx, (k, v) in enumerate(sorted(chk.items(), key=lambda x: str(x[0]))):
-                            _result_val = v.get('result', 'yes') if isinstance(v, dict) else str(v)
-                            _check_name = ''
-                            if idx < len(_task_checks):
-                                tc = _task_checks[idx]
-                                _check_name = tc.get('check', tc) if isinstance(tc, dict) else str(tc)
-                            if not _check_name:
-                                _check_name = f'{ac_key}_check_{idx}'
-                            new_list.append({'check': _check_name, 'result': str(_result_val)})
-                if new_list:
-                    bc[ac_key] = new_list
-                    bc19_fixed = True
-    if bc19_fixed:
-        fixes.append('binary_checks [N]キー→check/result正規化')
-
-# === Fix 18: binary_checks result PASS/FAIL → yes/no (GP-083) ===
-# パターン: 忍者がresult: PASS/FAILで記入。gate_report_format.shはyes/noを期待。
-# Fix 11(boolean→string)とは別パターン。cmd_1384でhayate/kagemaru両方で検出。
-bc = data.get('binary_checks')
-if isinstance(bc, dict):
-    _str_fixed = False
-    _pass_vals = {'pass', 'ok', 'true', 'yes', 'done', 'clear', 'n/a', 'na'}
-    _fail_vals = {'fail', 'false', 'no', 'ng', 'block'}
-    for ac_key, ac_val in bc.items():
-        if isinstance(ac_val, list):
-            for chk in ac_val:
-                if isinstance(chk, dict) and isinstance(chk.get('result'), str):
-                    r = chk['result'].strip().lower()
-                    if r in _pass_vals and chk['result'] != 'yes':
-                        chk['result'] = 'yes'
-                        _str_fixed = True
-                    elif r in _fail_vals and chk['result'] != 'no':
-                        chk['result'] = 'no'
-                        _str_fixed = True
-    if _str_fixed:
-        fixes.append('binary_checks result文字列正規化(PASS/ok→yes, FAIL/ng→no)')
 
 # === Write back if changed ===
 if fixes:
