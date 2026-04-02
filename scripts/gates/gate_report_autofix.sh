@@ -140,6 +140,7 @@ if not data or not isinstance(data, dict):
     sys.exit(1)
 
 fixes = []
+_digit_key_re = re.compile(r'^\[?\d+\]?$')
 
 # === Task YAML cache (Fix 20/14/6/19 共通) ===
 # 4箇所で独立にopen+yaml.safe_loadしていたタスクYAMLを1回読込でキャッシュ
@@ -416,7 +417,7 @@ if isinstance(bc, dict):
     _pass_vals = {'pass', 'ok', 'true', 'yes', 'done', 'clear', 'n/a', 'na'}
     _fail_vals = {'fail', 'false', 'no', 'ng', 'block'}
 
-    for ac_key, ac_val in list(bc.items()):
+    for ac_key, ac_val in bc.items():
         if isinstance(ac_val, dict):
             ac_val = [ac_val]
             bc[ac_key] = ac_val
@@ -425,7 +426,7 @@ if isinstance(bc, dict):
             continue
 
         _needs_numbered_convert = any(
-            isinstance(chk, dict) and len(chk) > 1 and len([k for k in chk.keys() if re.match(r'^\[?\d+\]?$', str(k))]) == len(chk)
+            isinstance(chk, dict) and len(chk) > 1 and sum(1 for k in chk.keys() if _digit_key_re.match(str(k))) == len(chk)
             for chk in ac_val
         )
         if _needs_numbered_convert:
@@ -453,9 +454,8 @@ if isinstance(bc, dict):
         for chk in ac_val:
             item = chk
             if isinstance(chk, dict) and len(chk) == 1:
-                _k = list(chk.keys())[0]
+                _k, _v = next(iter(chk.items()))
                 if _k not in ('check', 'result'):
-                    _v = chk[_k]
                     item = {'check': str(_k), 'result': _v if isinstance(_v, bool) else str(_v)}
                     bc15_fixed = True
             if isinstance(item, dict):
