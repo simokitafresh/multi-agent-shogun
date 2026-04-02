@@ -254,14 +254,37 @@ _run_pd() { bash "$SCRIPT_UNDER_TEST" "$@"; }
     [[ "$output" == *"PD-002"* ]]
 }
 
-# ── Test 17: list on empty data shows 'No decisions found' ──
+# ── Test 17: list - multiline summary is flattened correctly ──
+@test "list flattens multiline summary" {
+    cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'
+summary:
+  total: 1
+  resolved: 0
+  pending: 1
+decisions:
+- id: PD-001
+  type: lord_decision
+  summary: 'bench one wraps over
+    multiple words'
+  source_cmd: cmd_1003
+  status: pending
+  created_at: '2026-04-02T00:00:00+09:00'
+  created_by: shogun
+EOF
+
+    run _run_pd list --status all
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PD-001  [pending]  (cmd_1003)  bench one wraps over multiple words"* ]]
+}
+
+# ── Test 18: list on empty data shows 'No decisions found' ──
 @test "list on empty data shows no decisions" {
     run _run_pd list
     [ "$status" -eq 0 ]
     [[ "$output" == *"No decisions found"* ]]
 }
 
-# ── Test 18: create - dashboard sync adds entry to 要対応 section ──
+# ── Test 19: create - dashboard sync adds entry to 要対応 section ──
 @test "create syncs new PD to dashboard 要対応 section" {
     _run_pd create "Dashboard test" "cmd_1100" "lord_decision" "shogun" >/dev/null 2>&1
 
@@ -272,7 +295,7 @@ _run_pd() { bash "$SCRIPT_UNDER_TEST" "$@"; }
     [[ "$output" != *"（なし）"* ]]
 }
 
-# ── Test 19: resolve - summary counts are correctly updated ──
+# ── Test 20: resolve - summary counts are correctly updated ──
 @test "resolve updates summary counts correctly" {
     _run_pd create "One" "cmd_1200" "lord_decision" "shogun" >/dev/null 2>&1
     _run_pd create "Two" "cmd_1201" "escalation" "karo" >/dev/null 2>&1

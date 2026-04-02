@@ -489,33 +489,73 @@ cmd_list() {
 
     init_data_file
 
-    python3 - "$DATA_FILE" "$STATUS_FILTER" <<'PY'
-import yaml, sys
-
-data_path = sys.argv[1]
-status_filter = sys.argv[2]
-
-try:
-    with open(data_path) as f:
-        data = yaml.safe_load(f)
-
-    if not data or not data.get('decisions'):
-        print('No decisions found.')
-        sys.exit(0)
-
-    for d in data['decisions']:
-        if status_filter != 'all' and d.get('status') != status_filter:
-            continue
-        pid = d.get('id', '???')
-        summary = d.get('summary', '')
-        status = d.get('status', 'unknown')
-        source = d.get('source_cmd', '')
-        print(f'{pid}  [{status}]  ({source})  {summary}')
-
-except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-PY
+    awk -v status_filter="$STATUS_FILTER" '
+function trim(s) {
+    sub(/^[ \t\r\n]+/, "", s)
+    sub(/[ \t\r\n]+$/, "", s)
+    return s
+}
+function normalize_scalar(s) {
+    s = trim(s)
+    if (s ~ /^".*"$/ || s ~ /^'\''.*'\''$/) {
+        s = substr(s, 2, length(s) - 2)
+    } else {
+        if (s ~ /^["'\'']/) s = substr(s, 2)
+        if (s ~ /["'\'']$/) s = substr(s, 1, length(s) - 1)
+    }
+    return trim(s)
+}
+function flush_current() {
+    if (!in_decision) return
+    if (status_filter == "all" || decision_status == status_filter) {
+        print decision_id "  [" decision_status "]  (" decision_source ")  " normalize_scalar(decision_summary)
+        matched = 1
+    }
+}
+BEGIN {
+    in_decision = 0
+    matched = 0
+    current_multiline = ""
+}
+/^- id: / {
+    flush_current()
+    in_decision = 1
+    current_multiline = ""
+    decision_id = trim(substr($0, 7))
+    decision_status = "unknown"
+    decision_source = ""
+    decision_summary = ""
+    next
+}
+!in_decision { next }
+/^  summary: / {
+    current_multiline = "summary"
+    decision_summary = substr($0, 12)
+    next
+}
+/^  status: / {
+    current_multiline = ""
+    decision_status = normalize_scalar(substr($0, 11))
+    next
+}
+/^  source_cmd: / {
+    current_multiline = ""
+    decision_source = normalize_scalar(substr($0, 15))
+    next
+}
+/^  [a-z_]+: / {
+    current_multiline = ""
+    next
+}
+/^    / && current_multiline == "summary" {
+    decision_summary = decision_summary " " trim($0)
+    next
+}
+END {
+    flush_current()
+    if (!matched) print "No decisions found."
+}
+    ' "$DATA_FILE"
 }
 
 # ── main dispatch (source guard) ─────────────────
