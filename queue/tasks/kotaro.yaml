@@ -33,7 +33,7 @@ task:
   parent_cmd: cmd_1701
   project: dm-signal
   purpose: cmd_1700で59 FoF中49体(83%)がEMA span=5間接波及で悪化。
-  status: acknowledged
+  status: done
   stop_for: []
   task_id: cmd_1701_impl
   task_type: impl
