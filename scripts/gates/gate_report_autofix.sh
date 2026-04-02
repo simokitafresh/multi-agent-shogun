@@ -117,7 +117,7 @@ if fast_no_fix_needed "$REPORT_PATH"; then
 fi
 
 RESULT=$(REPORT_PATH="$REPORT_PATH" python3 -c "
-import yaml, os, sys, copy, re
+import yaml, os, sys, re
 
 report_path = os.environ['REPORT_PATH']
 
