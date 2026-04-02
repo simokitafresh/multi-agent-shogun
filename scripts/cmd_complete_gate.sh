@@ -310,7 +310,7 @@ detect_task_types() {
         # parent_cmdが一致するか確認
         if is_cmd_task "$task_file"; then
             local ttype
-            ttype=$(field_get "$task_file" "task_type" "")
+            ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
             case "$ttype" in
                 recon) has_recon=true ;;
                 implement) has_implement=true ;;
@@ -446,7 +446,7 @@ collect_gate_metrics_extra() {
 
         # task_type収集
         local ttype
-        ttype=$(field_get "$task_file" "task_type" "")
+        ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
         if [ -n "$ttype" ] && [[ "$_seen_types" != *"|$ttype|"* ]]; then
             _seen_types="${_seen_types}|${ttype}|"
             task_types_csv="${task_types_csv:+${task_types_csv},}${ttype}"
@@ -454,7 +454,7 @@ collect_gate_metrics_extra() {
 
         # bloom_level収集（空欄はunknown）
         local bloom_level
-        bloom_level=$(field_get "$task_file" "bloom_level" "")
+        bloom_level=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "bloom_level" "")
         [ -z "$bloom_level" ] && bloom_level="unknown"
         if [[ "$_seen_bloom_levels" != *"|$bloom_level|"* ]]; then
             _seen_bloom_levels="${_seen_bloom_levels}|${bloom_level}|"
@@ -463,7 +463,7 @@ collect_gate_metrics_extra() {
 
         # model収集: assigned_toのtmux @model_name を優先し、不可時はsettings.yamlへフォールバック
         local ninja_name
-        ninja_name=$(field_get "$task_file" "assigned_to" "")
+        ninja_name=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "assigned_to" "")
         if [ -n "$ninja_name" ]; then
             local model
             model=$(resolve_agent_model_label "$ninja_name" 2>/dev/null || true)
