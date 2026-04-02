@@ -74,6 +74,21 @@ completed_at: $completed_date
 ARCHYAML
 }
 
+_create_nested_archive_cmd() {
+    local cmd_id="$1" project="$2" status="${3:-done}" completed_date="${4:-$TODAY}"
+    local compact_date
+    compact_date="${completed_date//-/}"
+    local fname="${cmd_id}_${status}_${compact_date}.yaml"
+    cat > "$TEST_TMPDIR/queue/archive/cmds/$fname" <<ARCHYAML
+commands:
+  $cmd_id:
+    title: test command
+    project: $project
+    status: $status
+    completed_at: "$completed_date"
+ARCHYAML
+}
+
 # ── Helper: create shogun_to_karo.yaml with cmd entry ──
 _create_shogun_to_karo() {
     local cmd_id="$1" project="$2"
@@ -153,6 +168,17 @@ STKYAML
     [[ "$output" != *"infrastructure.md"* ]]
 }
 
+@test "--cmd-warnings finds project from archived nested command format" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_nested_archive_cmd "cmd_501" "dm-signal" "done" "$TODAY"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_501
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/dm-signal.md"* ]]
+    [[ "$output" != *"infrastructure.md"* ]]
+}
+
 # === Test 8: CONTEXT_STALE_DAYS 環境変数オーバーライド ===
 @test "CONTEXT_STALE_DAYS override changes threshold" {
     # 3日前のファイル: デフォルト7日では鮮度OK、2日閾値なら陳腐化
@@ -196,6 +222,15 @@ STKYAML
     [ -z "$output" ]
 
     CONTEXT_STALE_DAYS=14 run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/dm-signal.md"* ]]
+}
+
+@test "--dashboard-warnings reads nested archived command format" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_nested_archive_cmd "cmd_910" "dm-signal" "done" "$TODAY"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
     [[ "$output" == *"context/dm-signal.md"* ]]
 }

@@ -129,6 +129,21 @@ def load_projects():
 
 
 ACTIVE_PROJECT_IDS, EXPLICIT_CONTEXT_MAP = load_projects()
+SORTED_PROJECT_IDS = sorted(ACTIVE_PROJECT_IDS, key=len, reverse=True)
+LAST_UPDATED_RE = re.compile(r"<!--\s*last_updated:\s*(\d{4}-\d{2}-\d{2})\b")
+PROJECT_LINE_PATTERNS = [
+    (
+        project_id,
+        re.compile(rf"^\s*project:\s*['\"]?{re.escape(project_id)}['\"]?\s*$"),
+    )
+    for project_id in SORTED_PROJECT_IDS
+]
+STATUS_LINE_RE = re.compile(r"^\s*status:\s*['\"]?([A-Za-z_]+)['\"]?\s*$")
+DATE_FIELD_PATTERNS = [
+    re.compile(rf"^\s*{field}:\s*(.+?)\s*$")
+    for field in ("completed_at", "archived_at", "updated_at")
+]
+ARCHIVE_SCAN_MAX_LINES = 80
 
 
 def infer_project_id(rel_path: str) -> str | None:
@@ -139,7 +154,7 @@ def infer_project_id(rel_path: str) -> str | None:
     if base == "infrastructure.md":
         return "infra"
 
-    for project_id in sorted(ACTIVE_PROJECT_IDS, key=len, reverse=True):
+    for project_id in SORTED_PROJECT_IDS:
         if base.startswith(f"{project_id}.") or base.startswith(f"{project_id}-"):
             return project_id
 
@@ -168,20 +183,64 @@ def iter_context_files():
 def last_updated_days(abs_path: str) -> int | None:
     try:
         with open(abs_path, encoding="utf-8") as f:
-            text = f.read()
+            for _ in range(5):
+                line = f.readline()
+                if not line:
+                    break
+                m = LAST_UPDATED_RE.search(line)
+                if not m:
+                    continue
+                try:
+                    updated_at = date.fromisoformat(m.group(1))
+                except ValueError:
+                    return None
+                return (date.today() - updated_at).days
     except Exception:
         return None
 
-    m = re.search(r"<!--\s*last_updated:\s*(\d{4}-\d{2}-\d{2})\b", text)
-    if not m:
-        return None
+    return None
+
+def scan_archive_metadata(abs_path: str) -> tuple[str, str, str]:
+    project_id = ""
+    status = ""
+    stamp = ""
 
     try:
-        updated_at = date.fromisoformat(m.group(1))
-    except ValueError:
-        return None
+        with open(abs_path, encoding="utf-8") as f:
+            for idx, line in enumerate(f):
+                if idx >= ARCHIVE_SCAN_MAX_LINES:
+                    break
 
-    return (date.today() - updated_at).days
+                if not project_id:
+                    stripped = line.rstrip("\n")
+                    for candidate_id, pattern in PROJECT_LINE_PATTERNS:
+                        if pattern.match(stripped):
+                            project_id = candidate_id
+                            break
+
+                if not status:
+                    status_match = STATUS_LINE_RE.match(line)
+                    if status_match:
+                        status_value = status_match.group(1).strip().lower()
+                        if status_value in ("completed", "done", "complete", "success"):
+                            status = status_value
+
+                if not stamp:
+                    for pattern in DATE_FIELD_PATTERNS:
+                        date_match = pattern.match(line)
+                        if not date_match:
+                            continue
+                        parsed = extract_date(date_match.group(1))
+                        if parsed:
+                            stamp = str(parsed)
+                            break
+
+                if project_id and status and stamp:
+                    break
+    except Exception:
+        return "", "", ""
+
+    return project_id, status, stamp
 
 
 _recent_cmd_cache: dict[str, bool] = {}
@@ -211,38 +270,20 @@ def _load_archive_entries() -> list[tuple[str, str, str, str]]:
     archive_dir = os.path.join(root, "queue", "archive", "cmds")
     if not os.path.isdir(archive_dir):
         return _archive_entries
+    candidates: list[tuple[date, str]] = []
     for fname in os.listdir(archive_dir):
         if not fname.endswith(".yaml"):
             continue
         fdate = extract_date(fname)
         if fdate and fdate < cutoff_date:
             continue
+        candidates.append((fdate or date.min, fname))
+
+    for _, fname in sorted(candidates, reverse=True):
         fpath = os.path.join(archive_dir, fname)
-        try:
-            with open(fpath, encoding="utf-8") as f:
-                text = f.read(4096)
-        except Exception:
-            continue
-        proj = ""
-        for pid in sorted(ACTIVE_PROJECT_IDS, key=len, reverse=True):
-            if re.search(rf"^project:\s*['\"]?{re.escape(pid)}['\"]?\s*$", text, re.MULTILINE):
-                proj = pid
-                break
+        proj, status, dt = scan_archive_metadata(fpath)
         if not proj:
             continue
-        status = ""
-        if "status: completed" in text:
-            status = "completed"
-        elif "status: done" in text:
-            status = "done"
-        dt = ""
-        for date_field in ("completed_at:", "archived_at:", "updated_at:"):
-            idx = text.find(date_field)
-            if idx >= 0:
-                d = extract_date(text[idx:idx+60])
-                if d:
-                    dt = str(d)
-                    break
         _archive_entries.append((fname, proj, status, dt))
     return _archive_entries
 
@@ -275,14 +316,22 @@ def find_cmd_project(target_cmd_id: str) -> str | None:
     for path in candidates:
         data = load_yaml(path)
         commands = data.get("commands", []) if isinstance(data, dict) else []
-        if not isinstance(commands, list):
-            continue
-        for command in commands:
+        if isinstance(commands, dict):
+            command_iter = commands.values()
+        elif isinstance(commands, list):
+            command_iter = commands
+        else:
+            command_iter = ()
+        for command in command_iter:
             if not isinstance(command, dict):
                 continue
             if str(command.get("id", "")).strip() == target_cmd_id:
                 project_id = str(command.get("project", "")).strip()
                 return project_id or None
+        if path.endswith(".yaml") and os.path.basename(path).startswith(f"{target_cmd_id}_"):
+            project_id, _, _ = scan_archive_metadata(path)
+            if project_id:
+                return project_id
     return None
 
 
