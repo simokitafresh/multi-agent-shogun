@@ -32,6 +32,7 @@ DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
 DIRECT_MODE=false
 NINJA_NAME=""
 CMD_ID=""
+CMD_FORCED=""
 MESSAGE="$DEFAULT_MESSAGE"
 TYPE="task_assigned"
 FROM="karo"
