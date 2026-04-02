@@ -206,15 +206,16 @@ def _load_archive_entries() -> list[tuple[str, str, str, str]]:
         return _archive_entries
 
     # Fallback: direct scan (for --cmd-warnings or standalone use)
+    # Only recent archive files can affect cutoff_date, so skip older files
+    # before opening them to keep standalone scans bounded by STALE_DAYS.
     archive_dir = os.path.join(root, "queue", "archive", "cmds")
     if not os.path.isdir(archive_dir):
         return _archive_entries
-    cutoff_14d = date.today() - timedelta(days=max(threshold_days * 2, 14))
     for fname in os.listdir(archive_dir):
         if not fname.endswith(".yaml"):
             continue
         fdate = extract_date(fname)
-        if fdate and fdate < cutoff_14d:
+        if fdate and fdate < cutoff_date:
             continue
         fpath = os.path.join(archive_dir, fname)
         try:

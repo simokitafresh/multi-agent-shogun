@@ -43,6 +43,7 @@ PROJYAML
     STALE_DATE="$(date -d '30 days ago' +%Y-%m-%d 2>/dev/null || date -v-30d +%Y-%m-%d)"
 
     export TEST_SCRIPT="$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    export CFC_ARCHIVE_CACHE="$TEST_TMPDIR/context_freshness_cache.txt"
 }
 
 teardown() {
@@ -180,4 +181,21 @@ STKYAML
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
     [ -z "$output" ]
+}
+
+# === Test 10: 古いarchive cmdは閾値外として無視される ===
+@test "--dashboard-warnings ignores archive cmds older than threshold days" {
+    local ten_days_ago
+    ten_days_ago="$(date -d '10 days ago' +%Y-%m-%d 2>/dev/null || date -v-10d +%Y-%m-%d)"
+
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_850" "dm-signal" "completed" "$ten_days_ago"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+
+    CONTEXT_STALE_DAYS=14 run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/dm-signal.md"* ]]
 }
