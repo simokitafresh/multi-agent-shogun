@@ -358,7 +358,8 @@ command: "直近30日のパフォーマンス推移を計測し結果を報告�
 
 | Step | 行動 | 対象 | 目的 |
 |------|------|------|------|
-| 0 | **修行配備** | `context/training-cycle.md` | **idle忍者がいれば最優先で修行を配備せよ。** 自分で分析する前に忍者を動かせ。忍者がBLOCKされて学ぶ=利他(Phase 8)。自分で直す=消火(Phase 7止まり) |
+| 0 | **修行配備** | `context/training-cycle.md` | idle忍者がいれば修行を配備。**配備したら即Step 1へ進め。忍者完了を待つな。待ち時間=思考時間。** |
+| 0.5 | **§0.1判断4問チェック** | `context/karo-operations.md` §0.1 | **修行結果・分析・報告の前に必ず4問を通せ。配備だけで満足するな。** |
 | 1 | **workaroundパターン分析** | `logs/karo_workarounds.yaml` 直近10件 | 繰り返す手動修正→template/gate改善の種。同じroot_cause 3回以上=gate化対象 |
 | 2 | **忍者品質プロファイル** | `gate_ninja_workaround_rate.sh --ninja X` | 個別忍者のWA率推移→弱点特定→教訓注入精度向上 |
 | 3 | **教訓有効性監査** | `projects/{id}/lessons*.yaml` | 有用率0%の教訓→deprecated/限定化。不要注入=忍者CTX浪費 |

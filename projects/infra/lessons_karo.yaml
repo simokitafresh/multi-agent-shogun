@@ -190,3 +190,8 @@ lessons:
   detail: '1セッションで殿に5回指摘された共通根: 推論→結論→現物で反証の繰り返し。(1)N=1結論 (2)現物未確認 (3)自分の配備品質を疑わない (4)比較データなし。karo-operations.md §0.1に4問チェックリストを埋め込み、分析・報告前に必ず通す手順を恒久化。deepdive Phase4(自動化×強制)の家老版実践'
   source_cmd: 'karo_self_drive_cycle3'
   created_at: '2026-04-02'
+- id: 'LK031'
+  title: 'Step 0無限ループ=思考餓死 — 配備後は即Step 1-5に進め'
+  detail: 'idle自走プロトコルのStep 0『修行配備最優先』がidle忍者がいる限り無限ループし、Step 1-5(workaround分析/忍者品質/教訓監査/なぜなぜ)に永遠に到達しない。14ラウンド配備×0回思考=オペレーター最適化。修正: Step 0の後『配備したら即Step 1へ。待ち時間=思考時間』を追加。Step 0.5に§0.1判断4問チェック参照を挿入。配備=手段、思考=目的'
+  source_cmd: 'karo_self_drive_cycle4'
+  created_at: '2026-04-02'
