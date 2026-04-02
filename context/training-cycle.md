@@ -811,6 +811,16 @@ review_gate.shがtitle/descriptionフィールドを検索していたが、タ�
 手動配備(cat > task YAML)が3問題を同時に生む: (1)テンプレートなし→FP低下 (2)scout_exempt未設定→BLOCK (3)deployed_at未設定→MISMATCH 19件。
 自動化ターゲット: deploy_task.sh --cmdオプション(指定cmd強制解決)で手動配備を根絶。
 
+### 修行並列配備の標準手順（R21で実証 LK032）
+
+**忍者別cmd_id必須。** 1つのcmd_idで複数忍者に配備すると重複配備ガード(LK009)がBLOCK。
+```
+手順:
+1. shogun_to_karo.yamlに忍者別エントリ追加: cmd_training_L4_RXX_{ninja}
+2. deploy_task.sh {ninja} --cmd cmd_training_L4_RXX_{ninja}
+3. テンプレート生成・scout_exempt・教訓注入が全て自動で通る
+```
+
 ### Codex(GPT-5.4) STALL傾向 — **N=1で結論を出すな（殿指摘で修正）**
 
 R12で疾風がdeploy_task.sh(2000行)テスト最適化でSTALL。当初「大型ファイル不向き」と結論したが、R13で才蔵がcmd_complete_gate.sh(3985行)を24倍高速化で成功。**ファイルサイズが原因ではない**ことが反証された。STALLの真因は未特定（Codexプロンプト待ち/nudge未到達/個体差の可能性）。N=1の事象で配備ルールを作るな。

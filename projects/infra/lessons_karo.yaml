@@ -195,3 +195,8 @@ lessons:
   detail: 'idle自走プロトコルのStep 0『修行配備最優先』がidle忍者がいる限り無限ループし、Step 1-5(workaround分析/忍者品質/教訓監査/なぜなぜ)に永遠に到達しない。14ラウンド配備×0回思考=オペレーター最適化。修正: Step 0の後『配備したら即Step 1へ。待ち時間=思考時間』を追加。Step 0.5に§0.1判断4問チェック参照を挿入。配備=手段、思考=目的'
   source_cmd: 'karo_self_drive_cycle4'
   created_at: '2026-04-02'
+- id: 'LK032'
+  title: '修行並列配備は忍者別cmd_id必須 — 重複ガードを確認せず使った§0.1違反'
+  detail: 'deploy_task.sh --cmdで1つのcmd_idを4名に配備→重複配備ガード(LK009)がBLOCK。手動配備時代はparent_cmd同一で問題なかったがdeploy_task.shには重複ガードがある。根因: ツールの内部動作を確認せずに使った=§0.1問い2違反。修正: 忍者別cmd_id(cmd_training_L4_RXX_{ninja})で配備。training-cycle.mdに標準手順記録済み'
+  source_cmd: 'karo_self_drive_R21'
+  created_at: '2026-04-02'
