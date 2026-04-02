@@ -17,9 +17,13 @@ fi
 # --- PASS cache: skip redundant re-checks on unmodified files (GP-073) ---
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PASS_CACHE="$REPO_ROOT/logs/.gate_pass_cache"
-_CANON=$(realpath "$REPORT_PATH" 2>/dev/null || echo "$REPORT_PATH")
-_MTIME=$(stat -c %Y "$REPORT_PATH" 2>/dev/null || echo "")
-_GATE_MTIME=$(stat -c %Y "${BASH_SOURCE[0]}" 2>/dev/null || echo "")
+# perf: absolute pathならrealpath(~12ms)をスキップ。stat 2ファイル同時取得(コマンド置換3→1)。
+if [[ "$REPORT_PATH" = /* ]]; then
+    _CANON="$REPORT_PATH"
+else
+    _CANON=$(realpath "$REPORT_PATH" 2>/dev/null || echo "$REPORT_PATH")
+fi
+{ read -r _MTIME; read -r _GATE_MTIME; } < <(stat -c '%Y' "$REPORT_PATH" "${BASH_SOURCE[0]}" 2>/dev/null || printf '\n\n')
 if [ -n "$_MTIME" ] && [ -n "$_GATE_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF "${_CANON} ${_MTIME} ${_GATE_MTIME}" "$PASS_CACHE" 2>/dev/null; then
     echo "PASS"
     exit 0
