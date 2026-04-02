@@ -61,47 +61,56 @@ build_instruction_file() {
     local output_filename="$3"
     local output_path="$OUTPUT_DIR/$output_filename"
     local original_file="$SCRIPT_DIR/instructions/${role}.md"
+    local tools_file="$PARTS_DIR/cli_specific/${cli_type}_tools.md"
 
     echo "Building: $output_filename (CLI: $cli_type, Role: $role)"
 
-    # Extract YAML front matter from original file
-    if [ -f "$original_file" ]; then
-        { echo "---"; awk '/^---$/{if(++n==2) {print "---"; exit} if(n==1) next} n==1' "$original_file"; } > "$output_path"
-        echo "" >> "$output_path"
-    else
-        # Minimal YAML front matter
-        cat > "$output_path" <<EOFYAML
----
-role: $role
-version: "3.0"
-cli_type: $cli_type
----
+    # Write entire file in a single pass to reduce WSL2 filesystem overhead.
+    # Multiple >> appends each open/close the output file; a single {} > file
+    # opens it once and streams all content through one file descriptor.
+    {
+        # Extract YAML front matter from original file
+        if [ -f "$original_file" ]; then
+            echo "---"
+            awk '/^---$/{if(++n==2) {print "---"; exit} if(n==1) next} n==1' "$original_file"
+            echo ""
+        else
+            # Minimal YAML front matter
+            printf -- '---\nrole: %s\nversion: "3.0"\ncli_type: %s\n---\n\n' "$role" "$cli_type"
+        fi
 
-EOFYAML
-    fi
+        # Role-specific content
+        cat "$PARTS_DIR/roles/${role}_role.md"
 
-    # Append role-specific content
-    cat "$PARTS_DIR/roles/${role}_role.md" >> "$output_path"
+        # Common sections (pre-built once; avoids re-reading 3 files per call)
+        cat "$_BUILD_COMMON_TMP"
 
-    # Append common sections
-    echo "" >> "$output_path"
-    cat "$PARTS_DIR/common/protocol.md" >> "$output_path"
-    echo "" >> "$output_path"
-    cat "$PARTS_DIR/common/task_flow.md" >> "$output_path"
-    echo "" >> "$output_path"
-    cat "$PARTS_DIR/common/forbidden_actions.md" >> "$output_path"
-
-    # Append CLI-specific tools section (dynamic file lookup)
-    echo "" >> "$output_path"
-    local tools_file="$PARTS_DIR/cli_specific/${cli_type}_tools.md"
-    if [ -f "$tools_file" ]; then
-        cat "$tools_file" >> "$output_path"
-    else
-        echo "  ⚠️  No CLI tools file for: $cli_type (${tools_file})"
-    fi
+        # CLI-specific tools section
+        if [ -f "$tools_file" ]; then
+            printf '\n'
+            cat "$tools_file"
+        else
+            echo "  ⚠️  No CLI tools file for: $cli_type (${tools_file})"
+        fi
+    } > "$output_path"
 
     echo "  ✅ Created: $output_filename"
 }
+
+# ============================================================
+# Pre-build common sections into a temp file (read once, reuse 12×)
+# ============================================================
+_BUILD_COMMON_TMP=$(mktemp)
+# shellcheck disable=SC2064
+trap "rm -f '$_BUILD_COMMON_TMP'" EXIT INT TERM
+{
+    printf '\n'
+    cat "$PARTS_DIR/common/protocol.md"
+    printf '\n'
+    cat "$PARTS_DIR/common/task_flow.md"
+    printf '\n'
+    cat "$PARTS_DIR/common/forbidden_actions.md"
+} > "$_BUILD_COMMON_TMP"
 
 # ============================================================
 # Build instruction files — profile-driven from cli_profiles.yaml
