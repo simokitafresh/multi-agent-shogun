@@ -603,3 +603,9 @@
 | cmd_1675 | startup gateにscripts/未コミット変更WARN追加 | GATE CLEAR | 影丸。Gate 17追加。git status --porcelainでscripts/の未コミット変更検出→WARN+ファイル一覧表示。deepdive Phase4直接適用(自動化×強制) |
 | cmd_1676 | gate_report_format.sh stale_reportサフィックス修正(PD-005) | GATE CLEAR | 小太郎。L367 fname_cmd厳密一致→startswith比較。task_id/cmd_id空間差の根因修正。stale_report WA根絶。PD-005解決 |
 | cmd_1680 | 月初Pendingバグ修正(Phase4.1 signal行自動作成) | GATE CLEAR(CI WARN) | 半蔵。Phase4完了後に月初signal行をforward-fill自動作成。月初最大24h Pending表示→即時解消。テスト8件全PASS。context/dm-signal-ops.md還流済み |
+
+## 2026-04-03
+
+| cmd | 目的 | 結果 | 因果・知見 |
+|-----|------|------|-----------|
+| cmd_training_L4_R38_saizo | research_engine FoF統合後の改善点抽出と最大リスク1件の補強 | 完了 | 原移設差分(c3d94d37/c1c1e5ef)は既存HEADに反映済み。才蔵は `topological_sort` の循環FoF依存を ValueError 化し、移設ヘルパー単体テスト+root testsのS101許可を追加。commit 57eef8ce |
