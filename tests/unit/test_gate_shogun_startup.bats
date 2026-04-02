@@ -12,82 +12,81 @@ setup_file() {
     # Source once per file (function-only load) and export for run subshell
     SHOGUN_STARTUP_LIB_ONLY=1 source "$SRC_GATE_SCRIPT"
     export -f run_gate_shogun_startup
-}
 
-setup() {
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/shogun_startup.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/scripts/gates" \
-             "$TEST_TMPDIR/queue/inbox" \
-             "$TEST_TMPDIR/queue/archive" \
-             "$TEST_TMPDIR/memory" \
-             "$TEST_TMPDIR/logs" \
-             "$TEST_TMPDIR/context" \
-             "$TEST_TMPDIR/config" \
-             "$TEST_TMPDIR/instructions"
-
-    # --- Default fixtures: all checks pass ---
+    # Build shared base directory once — all default-pass fixtures
+    # Each test does: cp -a "$SHARED_BASE/." "$TEST_TMPDIR/" instead of recreating files
+    export SHARED_BASE="$BATS_FILE_TMPDIR/base"
+    mkdir -p "$SHARED_BASE/scripts/gates" \
+             "$SHARED_BASE/queue/inbox" \
+             "$SHARED_BASE/queue/archive" \
+             "$SHARED_BASE/queue/tasks" \
+             "$SHARED_BASE/memory" \
+             "$SHARED_BASE/logs" \
+             "$SHARED_BASE/context" \
+             "$SHARED_BASE/config" \
+             "$SHARED_BASE/instructions" \
+             "$SHARED_BASE/bin" \
+             "$SHARED_BASE/fakehome/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory"
 
     # Gate 1 mock: gate_shogun_memory.sh → OK
-    cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
+    cat > "$SHARED_BASE/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "Memory健全度: OK"
 MOCK
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh"
+    chmod +x "$SHARED_BASE/scripts/gates/gate_shogun_memory.sh"
 
     # Gate 2 mock: gate_p_average_freshness.sh → OK
-    cat > "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh" <<'MOCK'
+    cat > "$SHARED_BASE/scripts/gates/gate_p_average_freshness.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "p̄鮮度: OK"
 MOCK
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+    chmod +x "$SHARED_BASE/scripts/gates/gate_p_average_freshness.sh"
 
     # Gate 3 mock: gate_cmd_state.sh → OK
-    cat > "$TEST_TMPDIR/scripts/gates/gate_cmd_state.sh" <<'MOCK'
+    cat > "$SHARED_BASE/scripts/gates/gate_cmd_state.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "cmd委任状態: OK"
 MOCK
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_cmd_state.sh"
+    chmod +x "$SHARED_BASE/scripts/gates/gate_cmd_state.sh"
 
     # Gate 12 mock: gate_loop_health.sh → OK
-    cat > "$TEST_TMPDIR/scripts/gates/gate_loop_health.sh" <<'MOCK'
+    cat > "$SHARED_BASE/scripts/gates/gate_loop_health.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "Total fires: 10"
 echo "FAIL: 0"
 echo "AUTO-FIXED: 0"
 echo "Loop Status: OK"
 MOCK
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_loop_health.sh"
+    chmod +x "$SHARED_BASE/scripts/gates/gate_loop_health.sh"
 
     # Gate 13 mock: gate_lesson_health.sh → OK
-    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh" <<'MOCK'
+    cat > "$SHARED_BASE/scripts/gates/gate_lesson_health.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "教訓健全度: OK"
 MOCK
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
+    chmod +x "$SHARED_BASE/scripts/gates/gate_lesson_health.sh"
 
     # Gate 4: inbox with no unread
-    cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'EOF'
+    cat > "$SHARED_BASE/queue/inbox/shogun.yaml" <<'EOF'
 messages:
 - content: test
   read: true
   id: msg_1
 EOF
 
-    # Gate 5: fresh snapshot
-    local now_time
-    now_time=$(date '+%Y-%m-%dT%H:%M:%S')
-    cat > "$TEST_TMPDIR/queue/karo_snapshot.txt" <<EOF
+    # Gate 5: fresh snapshot (fixed future date — Gate 5 only displays, no staleness check)
+    cat > "$SHARED_BASE/queue/karo_snapshot.txt" <<'EOF'
 # 家老陣形図(karo_snapshot)
-# Generated: $now_time
+# Generated: 2099-01-01T00:00:00
 ninja|hayate|cmd_100_impl|in_progress|infra|CTX:30%
 ninja|kagemaru|cmd_101_impl|in_progress|infra|CTX:25%
 EOF
 
     # Gate 6: required deepdive file
-    echo "# deepdive content" > "$TEST_TMPDIR/memory/deepdive_why_chain_20260321.md"
+    echo "# deepdive content" > "$SHARED_BASE/memory/deepdive_why_chain_20260321.md"
 
     # Gate 7: lord-conversation-index (no rulings)
-    cat > "$TEST_TMPDIR/context/lord-conversation-index.md" <<'EOF'
+    cat > "$SHARED_BASE/context/lord-conversation-index.md" <<'EOF'
 # Lord Conversation Index
 ## 殿の直近裁定・方針
 ## その他
@@ -97,20 +96,20 @@ EOF
     # (omit insights.yaml → "キューなし")
 
     # Gate 9: design quality + workarounds (minimal pass)
-    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+    cat > "$SHARED_BASE/logs/cmd_design_quality.yaml" <<'EOF'
 - cmd_id: cmd_100
   karo_rework: false
   gate_result: PASS
 EOF
-    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+    cat > "$SHARED_BASE/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_100
   workaround: false
   category: none
 EOF
 
     # Gate 11: dashboard + review log (no proposals)
-    echo "# Dashboard" > "$TEST_TMPDIR/dashboard.md"
-    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+    echo "# Dashboard" > "$SHARED_BASE/dashboard.md"
+    cat > "$SHARED_BASE/logs/gunshi_review_log.yaml" <<'EOF'
 entries: []
 EOF
 
@@ -118,19 +117,15 @@ EOF
     # (no gunshi-*.md in context/)
 
     # Gate 15: minimal knowledge map files for progress detection
-    echo "# CLAUDE.md" > "$TEST_TMPDIR/CLAUDE.md"
-    echo "# instructions" > "$TEST_TMPDIR/instructions/shogun.md"
-    echo "# projects" > "$TEST_TMPDIR/config/projects.yaml"
+    echo "# CLAUDE.md" > "$SHARED_BASE/CLAUDE.md"
+    echo "# instructions" > "$SHARED_BASE/instructions/shogun.md"
+    echo "# projects" > "$SHARED_BASE/config/projects.yaml"
 
     # HOME override for MEMORY.md path (Gate 15)
-    export ORIG_HOME="$HOME"
-    export HOME="$TEST_TMPDIR/fakehome"
-    mkdir -p "$HOME/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory"
-    echo "# MEMORY index" > "$HOME/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md"
+    echo "# MEMORY index" > "$SHARED_BASE/fakehome/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md"
 
     # Mock git for rev-list (unpushed count)
-    mkdir -p "$TEST_TMPDIR/bin"
-    cat > "$TEST_TMPDIR/bin/git" <<'MOCK'
+    cat > "$SHARED_BASE/bin/git" <<'MOCK'
 #!/usr/bin/env bash
 if [ "$1" = "rev-list" ]; then
     echo "0"
@@ -142,8 +137,15 @@ else
     "$REAL_GIT_BIN" "$@"
 fi
 MOCK
-    chmod +x "$TEST_TMPDIR/bin/git"
+    chmod +x "$SHARED_BASE/bin/git"
+}
 
+setup() {
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/shogun_startup.XXXXXX")"
+    cp -a "$SHARED_BASE/." "$TEST_TMPDIR/"
+
+    export ORIG_HOME="$HOME"
+    export HOME="$TEST_TMPDIR/fakehome"
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
     export SHOGUN_STARTUP_ROOT="$TEST_TMPDIR"
