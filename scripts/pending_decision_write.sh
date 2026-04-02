@@ -244,9 +244,10 @@ cmd_resolve() {
     max_attempts=3
 
     while [ $attempt -lt $max_attempts ]; do
-        if resolve_output=$(
+        _exit_code=0
+        resolve_output=$(
             (
-            flock -w 5 200 || exit 1
+            flock -w 5 200 || exit 2
 
             python3 - "$DATA_FILE" "$PD_ID" "$RESOLVED_CONTENT" "$RESOLVED_BY" "$TIMESTAMP" "$NO_CONTEXT_SYNC" "$SCRIPT_DIR/config/projects.yaml" <<'PY' || exit 1
 import yaml, sys, os, tempfile
@@ -333,7 +334,9 @@ except Exception as e:
 PY
 
             ) 200>"$LOCKFILE"
-        ); then
+        ) || _exit_code=$?
+
+        if [ "$_exit_code" -eq 0 ]; then
             echo "$resolve_output"
             # ── Post-resolve: gate_pd_sync + TODO auto-append (outside flock, per L022) ──
             local GATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_pd_sync.sh"
@@ -369,7 +372,8 @@ PY
             dashboard_remove_pending "$PD_ID" || true
 
             return 0
-        else
+        elif [ "$_exit_code" -eq 2 ]; then
+            # flock timeout — retry
             attempt=$((attempt + 1))
             if [ $attempt -lt $max_attempts ]; then
                 echo "[pending_decision] Lock timeout (attempt $attempt/$max_attempts), retrying..." >&2
@@ -378,6 +382,9 @@ PY
                 echo "[pending_decision] Failed to acquire lock after $max_attempts attempts" >&2
                 exit 1
             fi
+        else
+            # python3 error (ID not found, data error) — no retry
+            exit 1
         fi
     done
 }
