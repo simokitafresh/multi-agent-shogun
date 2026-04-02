@@ -48,7 +48,13 @@ EOF
     cat > "$TEST_PROJECT/config/settings.yaml" <<'EOF'
 cli:
   default: codex
-  agents: {}
+  agents:
+    hayate:
+      role: ninja
+      japanese_name: 疾風
+    sasuke:
+      role: ninja
+      japanese_name: 佐助
 EOF
 
     cat > "$TEST_PROJECT/queue/karo_snapshot.txt" <<'EOF'
