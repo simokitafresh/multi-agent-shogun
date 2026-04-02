@@ -127,7 +127,8 @@
 # | 131b | AC自己検証gate BLOCK | ★implemented      | 軍師自走 | gate_report_format.sh: task AC数>0かつreport AC sections=0→BLOCK。GP-133と二重防御(e93e44e) |
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
-# 集計: ★implemented:93(+GP-131,133,131b,134,135) / ★resolved:6(GP-114,115,117,122,124,126) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:3 / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:1(GP-129) / in_progress:1(GP-125) / cmd配備済:2 = 計113GP
+# | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
+# 集計: ★implemented:94(+GP-131,133,131b,134,135,136) / ★resolved:6(GP-114,115,117,122,124,126) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:1(GP-129) / in_progress:1(GP-125) / cmd配備済:2 = 計114GP
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -137,7 +138,5 @@
 # 根拠: GP-034はend-to-end未検証でN/A補完→gate即reject→提案無意味だった
 # 根拠: Fix5ギャップは fresh observation(gate_fire_log生データ)で将軍が発見。catalog信頼では見えない
 # 自動化: GP proposalsフォーマットに verified: true/false を追加。falseは hypothesis マーク
+# | 132 | 二重配備防止チェック | ✗obsolete          | S156 | GP-042+GP-051でカバー済み(他忍者同cmd→BLOCK)。S160清掃 |
 # ─── GP索引終 ───
-# | 131 | BC項目数整合チェック | proposed           | S155 | gate_report_format.shにtask YAML bc数比較。cmd_1631(14→1)パターン防止。既存L119-130読込インフラ活用 |
-# | 132 | 二重配備防止チェック | proposed           | S156 | deploy_task.shに配備前cmd_id衝突チェック。active task(status!=idle)に同cmd_idがあればBLOCK |
-# | 133 | BC task YAML自動注入 | proposed           | S156 | 報告テンプレート注入ロジック(L1034-1083)をtask YAMLにも適用。家老の手動BC注入作業を根絶 |

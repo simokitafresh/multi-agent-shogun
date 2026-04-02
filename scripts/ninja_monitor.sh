@@ -146,6 +146,7 @@ declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ �
 declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "ninja:subtask_id", value: count
 declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key: agent_name, value: epoch秒
 declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時刻 — key: "ninja:cmd_id", value: epoch秒
+declare -A IDLE_NOTIFY_SENT              # idle通知送信済み時刻 — key: agent_name, value: epoch秒（状態変化ベース+モード切替）
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
@@ -161,6 +162,7 @@ KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復
 STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 REPORT_DONE_MISMATCH_DEBOUNCE=300  # report done+status未idleの同一ninja×cmd再通知抑制（5分=300秒）
+IDLE_ACTIVE_COOLDOWN=300           # active mode idle再通知間隔（5分=300秒）— pipeline有時の圧力
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
 LAST_KARO_CLEAR=0           # 家老の最終/clear送信時刻（epoch秒）
@@ -1071,6 +1073,23 @@ _handle_idle_notify() {
 
     [ "${PREV_STATE[$name]}" = "idle" ] && return
 
+    # モード切替: 既に通知済みの場合、パイプライン状態で判断
+    if [ -n "${IDLE_NOTIFY_SENT[$name]}" ]; then
+        local pipeline_count
+        pipeline_count=$(grep -cE '^\s+status:\s+(pending|new|delegated)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+        if [ "${pipeline_count:-0}" -eq 0 ]; then
+            # standby mode: パイプライン空 → 再通知しない（状態変化まで待機）
+            log "IDLE-STANDBY: $name already notified, pipeline empty, skipping"
+            return
+        fi
+        # active mode: パイプライン有 → cooldown後に再通知（圧力）
+        local idle_elapsed=$((now - IDLE_NOTIFY_SENT[$name]))
+        if [ "$idle_elapsed" -lt "$IDLE_ACTIVE_COOLDOWN" ]; then
+            log "IDLE-ACTIVE-COOLDOWN: $name ${idle_elapsed}s < ${IDLE_ACTIVE_COOLDOWN}s"
+            return
+        fi
+    fi
+
     local last elapsed debounce_time
     last="${LAST_NOTIFIED[$name]:-0}"
     elapsed=$((now - last))
@@ -1080,6 +1099,7 @@ _handle_idle_notify() {
     if [ "$elapsed" -ge "$debounce_time" ]; then
         log "IDLE confirmed: $name"
         NEWLY_IDLE+=("$name")
+        IDLE_NOTIFY_SENT[$name]=$now
     else
         log "DEBOUNCE: $name idle but ${elapsed}s < ${debounce_time}s since last notify"
     fi
@@ -1166,6 +1186,7 @@ handle_busy() {
         log "ACTIVE: $name resumed work"
     fi
     PREV_STATE[$name]="busy"
+    unset "IDLE_NOTIFY_SENT[$name]"  # 状態変化: busy復帰→次idle時に再通知許可
     # 作業再開 → 停滞追跡リセット + fingerprint リセット（次idle時に新鮮な判定を保証）
     unset "STALL_FIRST_SEEN[$name]"
     unset "STALL_FIRST_SEEN[deploy_stall_${name}]"

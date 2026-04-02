@@ -4712,3 +4712,110 @@ entries:
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-04-01T17:16:15Z"
+  - cmd_id: "cmd_training_L4_R23_kotaro"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:31:55Z"
+    notes: "report_format:kotaro_report_cmd_training_L4_R23_kotaro.yaml|kotaro:binary_checks_fail|vercel_phase:broken_references|ci_failure:run_23883589670"
+  - cmd_id: "cmd_training_L4_R21_saizo"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:32:56Z"
+    notes: "vercel_phase:broken_references|ci_failure:run_23883589670"
+  - cmd_id: "cmd_training_L4_R22_test_hayate"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:34:00Z"
+    notes: "vercel_phase:broken_references|ci_failure:run_23883589670"
+  - cmd_id: "cmd_training_L4_R21_kotaro"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:34:34Z"
+    notes: "vercel_phase:broken_references"
+  - cmd_id: "cmd_training_L4_R23_kotaro"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:34:35Z"
+    notes: "report_format:kotaro_report_cmd_training_L4_R23_kotaro.yaml|kotaro:binary_checks_fail|vercel_phase:broken_references|ci_failure:run_23883589670"
+  - cmd_id: "cmd_training_L4_R23_kotaro"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:41:03Z"
+  - cmd_id: "cmd_training_L4_R23_tobisaru"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:44:13Z"
+    notes: "ci_failure:run_23883589670"
+  - cmd_id: "cmd_training_L4_R23_kotaro"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:48:32Z"
+    notes: "report_format:kotaro_report_cmd_training_L4_R23_kotaro.yaml|kotaro:binary_checks_fail"
+  - cmd_id: "cmd_training_L4_R23_kotaro"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:48:52Z"
+    notes: "report_format:kotaro_report_cmd_training_L4_R23_kotaro.yaml|kotaro:binary_checks_fail"
+  - cmd_id: "cmd_training_L4_R23_kotaro"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T04:58:14Z"
+    notes: "report_format:kotaro_report_cmd_training_L4_R23_kotaro.yaml|kotaro:binary_checks_fail|ci_failure:run_23884271716"
+  - cmd_id: "cmd_1680"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T06:22:27Z"
+    notes: "ci_failure:run_23884271716"
+  - cmd_id: "cmd_1680"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T06:23:24Z"
+    notes: "ci_failure:run_23884271716"
