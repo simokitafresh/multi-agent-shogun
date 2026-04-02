@@ -526,6 +526,49 @@ PY
 
 check_content_duplicate
 
+# --- Check 13: ACパラメータ充足度チェック（WARN — WARN_COUNTに加算） ---
+# 起源: cmd_1681事故 — ACに「前処理4条件」とだけ書き具体値未記載→忍者が独自判断でKalman_auto使用→条件不一致
+# 目的: ACに「N条件」「N項目」等の数量指定があり具体値列挙がない場合にWARN
+check_ac_param_sufficiency() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    # acceptance_criteria セクションを抽出（なければCMD_BLOCK_NC全体をフォールバック）
+    local AC_SECTION
+    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /acceptance_criteria:/ { found=1; next }
+        found && /^    - / { print; next }
+        found && /^      / { print; next }
+        found { exit }
+    ')
+    [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
+
+    # 数量指定パターン検出: 「N条件」「N項目」「N手法」「N種類」「N種」「Nパラメータ」等
+    local QUANT_LINES
+    QUANT_LINES=$(echo "$AC_SECTION" | grep -E '[0-9]+(条件|項目|手法|種類|パラメータ|要件|ステップ|設定|フィールド|種)' || true)
+    [[ -z "$QUANT_LINES" ]] && return 0
+
+    local HIT=false
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        # 具体値列挙チェック: 括弧内にスラッシュ区切り or カンマ区切り or 中点区切りの項目
+        if ! echo "$line" | grep -qE '\([^)]*[/,・][^)]*\)'; then
+            if [[ "$HIT" == false ]]; then
+                echo "WARN: ACに数量指定があるが具体値が列挙されていません（cmd_1681教訓）" >&2
+                HIT=true
+            fi
+            echo "  → $(echo "$line" | sed 's/^[[:space:]]*//' | cut -c1-80)" >&2
+        fi
+    done <<< "$QUANT_LINES"
+
+    if [[ "$HIT" == true ]]; then
+        echo "  具体値を列挙せよ。例: 「4条件」→「4条件(EMA/SMA/Kalman/Bandpass)」" >&2
+        echo "  理由: 忍者は独自判断で条件を補完する（cmd_1681実証済み）" >&2
+        WARN_COUNT=$((WARN_COUNT + 1))
+    fi
+}
+
+check_ac_param_sufficiency
+
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
     local QUALITY_LOG="$PROJECT_DIR/logs/cmd_design_quality.yaml"
