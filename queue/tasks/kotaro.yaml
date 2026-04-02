@@ -1,28 +1,22 @@
 task:
-  task_id: cmd_training_L4_R13_kotaro
-  parent_cmd: cmd_training_L4_R13
+  task_id: cmd_training_L4_R15_kotaro
+  parent_cmd: cmd_training_L4_R15
   task_type: impl
   project: infra
-  status: in_progress
-  target_path: tests/unit/test_cli_adapter.bats
+  status: assigned
+  target_path: tests/unit/test_deploy_task_ac_version.bats
   command: |
-    テスト速度最適化: test_cli_adapter.batsを高速化せよ。
-    【パターン】cli_adapter.shフル実行→関数抽出+source→単体テスト化
-    AC1: 現在の実行時間計測+ボトルネック関数特定
-    AC2: 関数抽出+source方式書き換え。30秒超→10倍目標、10秒未満→3倍目標
-    AC3: 全テストPASS(SKIP=0)+LC+BC+verdict
-    ★ bc構造(AC1:/AC2:/AC3:)維持。bats全量禁止(OOM)。対象ファイルのみ実行。
-    参考: docs/research/test-optimization-journal.md
+    テスト速度改善チャンク4: グループC(レポート4本)用ヘルパーinject_report_only作成。
+    レポートテンプレート生成に必要な関数だけ抽出。-2s見込み。
+    AC1: グループCテスト特定+計測  AC2: ヘルパー作成+commit  AC3: PASS+LC+BC+verdict
+    ★ bc構造維持。bats全量禁止。一部改善で十分。長引くなら途中commitで終了。
   acceptance_criteria:
-    - ac: "AC1: ボトルネック特定+実行時間計測"
-    - ac: "AC2: 関数抽出+source方式+高速化達成"
+    - ac: "AC1: グループCテスト特定+計測"
+    - ac: "AC2: ヘルパー作成+commit"
     - ac: "AC3: 全テストPASS(SKIP=0)+LC+BC+verdict"
   ac_priority: AC1 > AC2 > AC3
   parallel_ok: [AC1, AC2, AC3]
-  stop_for:
-    - 関数がグローバル変数に強く依存し抽出不可能→報告
-  never_stop_for:
-    - bats全量禁止(OOM)
-    - bc AC構造を消すな
+  stop_for: []
+  never_stop_for: [bats全量禁止]
   role_reminder: "忍者kotaro。このタスクのみ実行せよ。"
-  deployed_at: "2026-04-02T08:29:55+09:00"
+  deployed_at: "$(date -Iseconds)"
