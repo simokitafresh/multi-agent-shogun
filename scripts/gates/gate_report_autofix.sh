@@ -160,6 +160,25 @@ def _get_task_data(worker_id):
     _task_yaml_cache[worker_id] = result
     return result
 
+_task_binary_check_map_cache = {}
+def _task_binary_check_map(worker_id):
+    if worker_id in _task_binary_check_map_cache:
+        return _task_binary_check_map_cache[worker_id]
+    _task = _get_task_data(worker_id)
+    _mapping = {}
+    if isinstance(_task, dict):
+        _acs = _task.get('acceptance_criteria', [])
+        if isinstance(_acs, list):
+            for _ac_item in _acs:
+                if not isinstance(_ac_item, dict):
+                    continue
+                _ac_id = _ac_item.get('id')
+                _bc_list = _ac_item.get('binary_checks', [])
+                if _ac_id and isinstance(_bc_list, list):
+                    _mapping[str(_ac_id)] = _bc_list
+    _task_binary_check_map_cache[worker_id] = _mapping
+    return _mapping
+
 # === Fix 22-28: 撤去(2026-03-25 消火→品質向上改修) ===
 # 旧: MISSINGフィールドにデフォルト値を挿入 → gateがPASS → 家老workaround発生(消火構造)
 # 新: MISSINGはautofixしない → gate_report_format.shがBLOCK → 忍者が修正 → 学習ループ回転
@@ -380,19 +399,10 @@ if isinstance(bc, dict):
 # === Fix 8: binary_checks AC values dict → list wrap ===
 # パターン: 忍者がAC値を {check: ..., result: ...} の単一dictで記入(listでない)
 # Fix 8/15/11/19/18は全てbinary_checks走査なので一巡で正規化する
+# Fix 19のAC名解決は O(AC数) 線形探索を避け、task YAML読込後に map 化して O(1) lookup にする
 def _task_binary_checks_for(ac_key):
     _worker = data.get('worker_id', '')
-    _task = _get_task_data(_worker)
-    if not _task:
-        return []
-    _acs = _task.get('acceptance_criteria', [])
-    if not isinstance(_acs, list):
-        return []
-    for _ac_item in _acs:
-        if isinstance(_ac_item, dict) and _ac_item.get('id') == ac_key:
-            _bc_list = _ac_item.get('binary_checks', [])
-            return _bc_list if isinstance(_bc_list, list) else []
-    return []
+    return _task_binary_check_map(_worker).get(ac_key, [])
 
 bc = data.get('binary_checks')
 _bc_pass_count = 0

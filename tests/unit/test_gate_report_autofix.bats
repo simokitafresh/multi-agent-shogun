@@ -497,3 +497,59 @@ print('OK')
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+# === Test 16: binary_checks [N]キー正規化で task YAML の check 名を再利用 ===
+@test "numbered binary_checks reuse task acceptance criteria check names" {
+    local tpath="$TEST_TMPDIR/queue/tasks/saizo.yaml"
+    local rpath="$TEST_TMPDIR/queue/reports/saizo_report_cmd_999.yaml"
+    cat > "$tpath" <<'EOF'
+task:
+  acceptance_criteria:
+    - id: AC1
+      binary_checks:
+        - check: task AC1 check 1
+        - check: task AC1 check 2
+    - id: AC2
+      binary_checks:
+        - check: task AC2 check 1
+        - check: task AC2 check 2
+EOF
+    cat > "$rpath" <<'EOF'
+worker_id: saizo
+parent_cmd: cmd_999
+verdict: PASS
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: helpful
+binary_checks:
+  AC1:
+    - "[1]": {result: PASS}
+      "[2]": {result: FAIL}
+  AC2:
+    - "[1]": {result: PASS}
+      "[2]": {result: PASS}
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"[N]キー→check/result正規化"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+ac1 = d['binary_checks']['AC1']
+ac2 = d['binary_checks']['AC2']
+assert ac1[0]['check'] == 'task AC1 check 1', ac1
+assert ac1[1]['check'] == 'task AC1 check 2', ac1
+assert ac1[0]['result'] == 'yes', ac1
+assert ac1[1]['result'] == 'no', ac1
+assert ac2[0]['check'] == 'task AC2 check 1', ac2
+assert ac2[1]['check'] == 'task AC2 check 2', ac2
+assert ac2[0]['result'] == 'yes', ac2
+assert ac2[1]['result'] == 'yes', ac2
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
