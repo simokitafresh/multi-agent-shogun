@@ -3,7 +3,7 @@ task:
   parent_cmd: cmd_training_L4_R17
   task_type: impl
   project: infra
-  status: in_progress
+  status: done
   target_path: tests/unit/test_gate_shogun_startup.bats
   command: |
     テスト速度改善: test_gate_shogun_startup.batsを高速化(現在3.7s/17t)。
