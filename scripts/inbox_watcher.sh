@@ -56,7 +56,7 @@ BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: i
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
-SCRIPT_HASH="$(md5sum "$SCRIPT_PATH" | cut -d' ' -f1)"
+SCRIPT_HASH="$(stat -c %Y "$SCRIPT_PATH" 2>/dev/null)"
 STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 WATCHED_DEPS=(
