@@ -163,14 +163,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L505-L515は振り分け済 → core§19.1(L511/L512:DB), core§19.2(L506/L507/L508:実装パターン/PI-018), core§19.2BB(L513:OPT-Aウェイト消失), ops索引(L505:deploy/L509:ツール/L510:ツール/L515:APIフィールド名), research§27(L514:Wardクラスタ固定化)）
 - （L516-L529は振り分け済 → research§27 R28 ClSel教訓(L516-L523/L525-L527/L529), ops教訓索引ツール(L528)。L524はL525重複→統合）
 - （L530-L534は振り分け済 → research§27(L530:OPTICS退化), core§19.2(L531:cache_value), research§29(L532:前処理注入ポイント), research§30(L533:PE gate閾値/L534:L1キャッシュ最適化)）
-- L535: 補完cmd対の前処理条件不一致 — 先行cmdの独自置換が後続cmdに波及（cmd_1684）
-- L536: auto-commit巻き込みパターン — git status+git log直近セットで差分確認（cmd_1693）
-- L537: 研究スクリプトはresearch_engine.pyをimportせよ — 共通関数コピペ禁止（cmd_1691）
-- L538: EMA間接波及はネスト深度で増幅する — depth=1改善→depth=2/3で損失拡大（cmd_1700）
-- L539: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却（cmd_1701）
-- L540: preprocessing_fnを毎回生成するとidが変わり_preprocess_cacheが無効化される（cmd_training_L4_R38_kagemaru）
-- L541: depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ（cmd_training_L4_R38_kotaro）
-- L542: cmd用語の定義は高コスト分析前にテストへ固定せよ（cmd_training_L4_R39_hayate）
-- L543: numpy cumsum rolling windowでBipower Variationをベクトル化すると50x高速化（cmd_training_L4_R39_hanzo）
-- L544: EW terminal≠selection_block=0。59FoF中42体にmomentum selection blockが存在（cmd_1707）
-- L545: 逐次PF計測では先頭PFのウォームアップ外れ値を切り分けよ（cmd_metrics_R1）
+- （L535-L545は振り分け済 → research§30(L535/L537/L538/L539/L540/L541/L542), research§27(L544), gs-speedup§3(L543), ops索引(L536/L545)）

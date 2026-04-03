@@ -357,6 +357,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - **R28-シン ClSel逆転(cmd_1581): シン素材で有効に逆転**。シンClSel_K3がCAGR74.6%/Sharpe1.75/Calmar4.60/MaxDD-16.2%/UWP3mで全方式中最良。超越条件B(Calmar4.60>3.90×0.95)PASS+C(UWP3m<5m)PASS。旧忍法では全FAIL→シンで逆転=素材依存性が明確。集中投資リスク(20体中3体)が残課題。cmd_1578(ARI45.5%=クラスタが動く)と整合
 - **R28-OOS 過適合なし(cmd_1580): WF-OOS 7窓で旧忍法Ward ClSel過適合フラグなし**。劣化率<30%全K。Ward K=4がOOS最良(CAGR74.0%/Sharpe2.02/Calmar3.57)。Ward vs Simple Momentum: 全KでWard優位(Sharpe差+0.28〜0.49)。Ward vs 1/N EW: K=4,5がEW(Sharpe1.89)上回る。**OOSでクラスタリング付加価値確認**
 - L530: N=20小集団ではOPTICS xi抽出が単一クラスタに退化する（cmd_1623）
+- L544: EW terminal≠selection_block=0。59FoF中42体にmomentum selection blockが存在（cmd_1707）
 - R28-K2端点検証(cmd_1584): K=2は全K中CAGR最高(旧61.3%/シン75.8%)だがMaxDD最悪(旧-32.2%/シン-20.4%)。旧は超越条件全FAIL。シンは条件Bのみ辛うじてPASS(Calmar3.72≥3.705)。**K=2は集中リスク許容範囲外。K=3-5が最適帯域**
 - R28-指標感度分析(cmd_1582): 4指標(Momentum/Sharpe/Calmar/Sortino)×K=3,4,5=12パターン全てWardFoF全員保有(Sharpe1.85)に劣後。Sharpe選抜K=5が1.80で最高。Sortino-Momentum間ランク相関0.49で最も独立。**指標空間でもWard改善不可**
 - **PD-004裁定(2026-03-31殿裁定): Ward FoFはkeep(継続)**。R28-R30研究で付加価値ほぼゼロ+β調整後超越条件全FAIL確定だが、殿判断で維持
@@ -718,3 +719,10 @@ EMA平滑化(cmd_1632)とL1 Trend Filter(cmd_1633)のパラメータ選択がove
 
 - L533: m=5 PE gateは月次99ヶ月データでwindow12/24に閾値未到達（cmd_1635）
 - L534: L1 cvxpy最適化: ticker×lambdaキャッシュで重複計算を解消すると実行時間が4時間→1時間に短縮（cmd_1660）
+- L535: 補完cmd対の前処理条件不一致 — 先行cmdの独自置換が後続cmdに波及（cmd_1684）
+- L537: 研究スクリプトはresearch_engine.pyをimportせよ — 共通関数コピペ禁止（cmd_1691）
+- L538: EMA間接波及はネスト深度で増幅する — depth=1改善→depth=2/3で損失拡大（cmd_1700）
+- L539: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却（cmd_1701）
+- L540: preprocessing_fnを毎回生成するとidが変わり_preprocess_cacheが無効化される（cmd_training_L4_R38）
+- L541: depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ（cmd_training_L4_R38）
+- L542: cmd用語の定義は高コスト分析前にテストへ固定せよ（cmd_training_L4_R39）

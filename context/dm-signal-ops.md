@@ -120,6 +120,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 
 | ID | 結論(1行) | 分類 | 出典 |
 |---|---|---|---|
+| L536 | auto-commit巻き込み確認: git status+git log直近セットで差分確認 | git | cmd_1693 |
+| L545 | 逐次PF計測では先頭PFのウォームアップ外れ値を切り分けよ | 計測 | cmd_metrics_R1 |
 | L357 | 本番DB確認はPostgreSQL必須。SQLiteミラーは不完全 | DB | cmd_1025 |
 | L329 | 生成artifactの指摘修正はgenerator scriptへも同修正を戻せ | 開発プロセス | cmd_1005 |
 | L261 | キャッシュ系precomputeテーブル欠落はhealth endpointでdegradedに昇格させる | 運用手順 | cmd_828 |
