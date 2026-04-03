@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-03 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-03T23:17:44+09:00 -->
+<!-- generated_at: 2026-04-03T23:20:31+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-03T23:20:31+09:00 | terminal | response | SSA = **Singular Spectrum Analysis**（特異スペクトル分析）。 時系列データを**トレンド+周期+ノイズ**に非パラメトリックで分解する手法。FLAIRのLevel×Shape分解と同方向だが、SSAは仮…
+- 2026-04-03T23:19:37+09:00 | ntfy | outbound | 【monitor】将軍CTX:57%。/compactをご検討ください
+- 2026-04-03T23:17:58+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-03 23:06:33|CI緑: run 23948770716
 - 2026-04-03T23:17:44+09:00 | terminal | response | 合計11論文。知識辞書が一気に厚くなる。 **adaptive lookback momentum周辺の研究地図:** ``` ┌─ Levy DMA/DMS (2021) ← ベイズ動的選択 │ 動的lookback ├─ Gouldi…
 - 2026-04-03T23:15:32+09:00 | terminal | response | 合計11論文。知識辞書が一気に厚くなる。 **adaptive lookback momentum周辺の研究地図:** ``` ┌─ Levy DMA/DMS (2021) ← ベイズ動的選択 │ 動的lookback ├─ Gouldi…
 - 2026-04-03T23:14:01+09:00 | ntfy | outbound | 【家老】cmd_1727 初回配備開始 (title=知識辞書 — adaptive lookback関連6論文の一次知識層登録, ninja=hayate) 知識辞書 📋 https://gist.github.com/simokita…
@@ -11,9 +14,6 @@
 - 2026-04-03T23:11:20+09:00 | terminal | response | 6件未登録。cmdにする。 [meta] stop_reason=tool_use
 - 2026-04-03T23:10:18+09:00 | terminal | response | 広く深く探した結果。 **既存研究の全体像:** | 方向 | 代表研究 | 内容 | 我々との差 | |------|---------|------|----------| | **Levy & Lopes (2021)** | ar…
 - 2026-04-03T23:08:27+09:00 | terminal | response | 広く深く探した結果。 **既存研究の全体像:** | 方向 | 代表研究 | 内容 | 我々との差 | |------|---------|------|----------| | **Levy & Lopes (2021)** | ar…
-- 2026-04-03T23:08:20+09:00 | ntfy | outbound | 【家老】cmd_1726 初回配備開始 (title=研究 — 基礎資産トレンド抽出: SSA+FLAIRで10銘柄日次/月次ノイズ除去→momentum再計算, ninja=saizo) 研究 📋 https://gist.github…
-- 2026-04-03T23:04:29+09:00 | terminal | response | cmd_1726委任完了。 **研究パイプライン全景(4cmd並列):** | cmd | 内容 | 層 | 状態 | |-----|------|---|------| | cmd_1723 | Levy DMA/DMS | 動的loo…
-- 2026-04-03T23:04:25+09:00 | ntfy | outbound | 【家老】cmd_1725 初回配備開始 (title=研究 — 月次Level momentum: SSAトレンド抽出→6 lookbackでRaw momentumと精度比較, ninja=hayate) 研究 📋 https://gi…
 
 ## 未解決確認事項
 - 確かに。現行のdual momentumは**固定lookback**で設計時に決め打ち。「今この瞬間に最適なlookback」を自動選択するadaptive lookback momentumが実現すれば、固定lookbackの構造的上限を超える。 Levy(2021)が先物…
@@ -39,6 +39,7 @@
 - cmd_17
 - cmd_246
 - cmd_1186
+- cmd_1699
 - cmd_1700
 - cmd_1701
 - cmd_1702
@@ -65,7 +66,6 @@
 - cmd_1723
 - cmd_1724
 - cmd_1725
-- cmd_1726
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
