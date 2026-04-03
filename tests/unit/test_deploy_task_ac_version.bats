@@ -202,6 +202,55 @@ read_task_fields() {
     [ "$output" = "各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新" ]
 }
 
+@test "deploy_task pre-fills binary_checks from 3 ACs plus commit without outer quotes" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "binary_checks prefill test"
+  task_type: impl
+  parent_cmd: cmd_1731
+  task_id: cmd_1731_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "first check"
+    - id: AC2
+      checks:
+        - check: "'quoted check'"
+    - id: AC3
+      checks:
+        - check: "third check"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+report = Path("$report_path")
+data = yaml.safe_load(report.read_text(encoding="utf-8"))
+bc = data["binary_checks"]
+
+assert list(bc.keys()) == ["AC1", "AC2", "AC3", "commit"], bc.keys()
+assert bc["AC1"][0]["check"] == "first check"
+assert bc["AC2"][0]["check"] == "quoted check"
+assert bc["AC3"][0]["check"] == "third check"
+assert bc["commit"][0]["check"] == "git commitが完了したか(untracked/modified=0)"
+
+item_count = sum(len(items) for items in bc.values())
+assert item_count == 4, item_count
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
     run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]

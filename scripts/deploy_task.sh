@@ -1077,7 +1077,14 @@ EOF
             if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
         }
         in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
-        in_ac && /    - check:/ { sub(/.*- check:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cc++; chk[cc]=$0 }
+        in_ac && /    - check:/ {
+            sub(/.*- check:[[:space:]]*/, "")
+            sub(/[[:space:]]*$/, "")
+            while ($0 ~ /^["'"'"']/) sub(/^["'"'"']/, "")
+            while ($0 ~ /["'"'"']$/) sub(/["'"'"']$/, "")
+            cc++
+            chk[cc]=$0
+        }
         END {
             if (cur_id != "" && cc > 0) {
                 printf "  %s:\n", cur_id
@@ -1117,13 +1124,21 @@ ${_commit_bc}"
                 }
                 cur_id=""; desc=""
                 if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
-                if (/description:/) { s=$0; sub(/.*description:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); sub(/^"/, "", s); sub(/"$/, "", s); desc=s }
+                if (/description:/) {
+                    s=$0
+                    sub(/.*description:[[:space:]]*/, "", s)
+                    sub(/[[:space:]]*$/, "", s)
+                    while (s ~ /^["'"'"']/) sub(/^["'"'"']/, "", s)
+                    while (s ~ /["'"'"']$/) sub(/["'"'"']$/, "", s)
+                    desc=s
+                }
                 next
             }
             in_ac && /^    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0; next }
             in_ac && /^    description:/ {
                 sub(/.*description:[[:space:]]*/, ""); sub(/[[:space:]]*$/, "")
-                sub(/^"/, ""); sub(/"$/, "")
+                while ($0 ~ /^["'"'"']/) sub(/^["'"'"']/, "")
+                while ($0 ~ /["'"'"']$/) sub(/["'"'"']$/, "")
                 desc=$0
                 next
             }
