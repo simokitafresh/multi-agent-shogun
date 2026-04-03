@@ -1,13 +1,13 @@
 task:
-  _ac_task_id: cmd_1717_impl
+  _ac_task_id: cmd_1719_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: 5忍法(oikaze/nukimi/kawarimi/kasoku_ratio/kasoku_diff)のIS/OOS split GSを実行'
-  - ac: 'AC2: IS champion vs OOS成績の劣化率テーブル(CAGR/Sharpe/MaxDD)+overfit判定(劣化>30%=HIGH)'
-  - ac: 'AC3: 結果YAML(outputs/analysis/grid_search/cmd_1717_oos_validation.yaml)保存+commit'
+  - ac: 'AC1: 65PF×全月の信頼度マトリクス(confidence=median_return/uncertainty)生成'
+  - ac: 'AC2: 信頼度ベースselection(top1/2/3+ゲート)のCAGR/Sharpe/MaxDD比較テーブル'
+  - ac: 'AC3: 信頼度vsmomentum Kendall τ(12M/18M/24M)+結果YAML保存+commit'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -34,14 +34,16 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1717
+  parent_cmd: cmd_1719
+  progress: "AC1-AC3 complete: built FLAIR confidence matrix/selection/Kendall study, generated YAML+CSV artifacts, pending commit/report closeout."
+    artifacts, pending commit/report closeout.'
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_1717.yaml
-  report_path: queue/reports/hayate_report_cmd_1717.yaml
+  report_filename: hayate_report_cmd_1719.yaml
+  report_path: queue/reports/hayate_report_cmd_1719.yaml
   status: done
   stop_for: []
-  task_id: cmd_1717_impl
+  task_id: cmd_1719_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -121,4 +123,3 @@ task:
   - id: 'L535'
     summary: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
     detail: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
-  progress: "AC1-AC3 complete: added cmd_1717 OOS validation study, generated YAML/CSV artifacts, pending commit/report closeout."
