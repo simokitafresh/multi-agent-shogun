@@ -1,29 +1,27 @@
 task:
-  _ac_task_id: cmd_metrics_R3b_impl
+  _ac_task_id: cmd_metrics_R5_impl
   _ac_worker_id: null
-  ac_version: b99834bc
+  ac_version: d41d8cd9
   acceptance_criteria:
-  - ac: 'AC1: compute_rolling_metrics+build_tensor実装。tensor.shape=(65,>=150,34)'
-  - ac: 'AC2: DM2全期間窓パリティPASS+計算時間≤60s+commit'
+  - ac: 'AC1: 2関数実装+DM2パリティPASS(既存APIと一致)+commit'
   context_files:
   - context/dm-signal.md
-  - context/dm-signal-ops.md
+  - context/dm-signal-core.md
   - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L113: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ\n\
-    \  - L469: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS\
-    \ e\n  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    ────────────────────────────────────────\n\nRolling計算+build_tensor()を実装せよ。\n\n\
-    対象: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py\n設計書:\
-    \ context/gunshi-metrics-engine-design.md §4(Rolling計算) + §5(修行R3)\n\n前提(R3a成果):\
-    \ compute_34_metrics(monthly_slice)が実装済み。\n\n実装:\n1. compute_rolling_metrics(pf_id,\
-    \ window_months=60) -> pd.DataFrame\n   - 全期間MonthlyReturnをロード→window幅スライド→各窓でcompute_34_metrics()\n\
-    \   - 返り値: shape=(T-window, 34), columns=NUMERIC_METRICS\n2. compute_all_rolling(window_months=60)\
-    \ -> dict[str, pd.DataFrame]\n3. build_tensor(window_months=60) -> tuple[np.ndarray,\
-    \ list, list, list]\n   - tensor.shape = (65, T_windows, 34)\n4. get_metric_names()\
-    \ -> list[str]\n5. パリティ: DM2全期間窓でget_all_pf_metricsと34メトリクス一致(atol=1e-6、MDD系はatol=1e-2)\n\
-    6. 計算時間60秒以内\n7. commit\n\n制約: metrics_calculator.py変更なし。compute_34_metricsの公式変更禁止。"
+    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
+    \ Codeに'non-blo\n  - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit\
+    \ statusを実行\n  - L106: L303: load_lesson_summaries(os.path.dirname(data_file))は\
+    \ data_file=SCRIPT_DIR/lo\n────────────────────────────────────────\n\n仮想戦略API\
+    \ 2関数を実装せよ。\n\n対象: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py\n\
+    設計書: context/gunshi-metrics-engine-design.md §2.1\n\n実装(設計書のコードをそのまま実装):\n1. compute_metrics_from_returns(monthly_returns,\
+    \ benchmark_returns=None, dtb3_cache=None) -> dict[str, float]\n   - monthly_returns:\
+    \ pd.Series(DatetimeIndex, float)\n   - DataFrameに変換→_prepare_monthly_metrics_frame→compute_34_metrics\n\
+    \   - 計算ロジック追加ゼロ。ラッパーのみ\n2. compute_rolling_from_returns(monthly_returns, window_months=60,\
+    \ benchmark_returns=None, dtb3_cache=None) -> pd.DataFrame\n   - 同様にラッパー。返り値shape=(T-window,\
+    \ 34)\n\n検証:\n- DM2のMonthlyReturnをSeries化し、compute_metrics_from_returnsとget_all_pf_metricsの34メトリクスが一致(atol=1e-6、MDD系atol=1e-2)\n\
+    - compute_rolling_from_returnsがcompute_rolling_metricsと同一結果\n- commit\n\n制約: 既存関数の変更禁止。新規ラッパー追加のみ。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -36,19 +34,17 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_metrics_R3b
-  progress: "AC1-2完了: build_tensor union日付整列で shape=65x172x34、DM2 parity PASS、47.205s"
+  parallel_ok: []
+  parent_cmd: cmd_metrics_R5
+  progress: "AC1 PASS: return-series wrapper 2関数実装、DM2 parity/rolling parity PASS、commit 4ea08093"
   project: dm-signal
-  purpose: R2(高速化)+R3a(compute_34_metrics)の成果を統合し、Rolling計算+3Dテンソルを実装。
-  report_filename: hayate_report_cmd_metrics_R3b.yaml
-  report_path: queue/reports/hayate_report_cmd_metrics_R3b.yaml
+  purpose: ALM研究用仮想戦略API。任意リターン系列→34メトリクス。DB不要ラッパー。
+  report_filename: hayate_report_cmd_metrics_R5.yaml
+  report_path: queue/reports/hayate_report_cmd_metrics_R5.yaml
   status: done
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_metrics_R3b_impl
+  task_id: cmd_metrics_R5_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -129,4 +125,4 @@ task:
   - id: 'L536'
     summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
     detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
-  deployed_at: "2026-04-04T00:44:27"
+  deployed_at: "2026-04-04T01:29:19"
