@@ -40,12 +40,12 @@ task:
   - AC1
   - AC2
   parent_cmd: cmd_metrics_R3b
-  progress: ''
+  progress: "AC1-2完了: build_tensor union日付整列で shape=65x172x34、DM2 parity PASS、47.205s"
   project: dm-signal
   purpose: R2(高速化)+R3a(compute_34_metrics)の成果を統合し、Rolling計算+3Dテンソルを実装。
   report_filename: hayate_report_cmd_metrics_R3b.yaml
   report_path: queue/reports/hayate_report_cmd_metrics_R3b.yaml
-  status: in_progress
+  status: done
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
   task_id: cmd_metrics_R3b_impl
