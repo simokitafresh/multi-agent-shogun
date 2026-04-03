@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-04-03 cmd_1707 FoF momentum監査+研究WF教訓索引追記 -->
+<!-- last_updated: 2026-04-03 cmd_1713 FLAIR知識辞書追記 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -658,7 +658,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - FoF第二層前処理研究(cmd_1683): **6 FoF(四神+Ave-X+裏Ave-X)×3条件(baseline/間接波及/直接適用)=18件walkforward**。L0 EMA間接波及: 朱雀+0.11 CAGR(最大)。直接適用(C-B)=全FoFで0.0(EW FoFのためL1 momentum pathなし)。疾風impl → `outputs/analysis/standard_pf_preprocessing/fof_layer2_preprocessing_results.yaml`
 - PE gate研究(cmd_1635): **65PF×16configs(4window[12,24,36,48M]×4threshold[no_gate,0.7,0.8,0.9])=1040件walkforward**。Bandt&Pompe(2002)準拠PE(m=5,τ=1)。**m=5ではPE値が低くgate大部分未発火**。window=12/24はPE<全閾値(ベースラインと同一)。window=36/t=0.7のみ発火(CAGR win率21.5%)。window=48/t=0.7発火(win率7.7%)。**PE gateは月次リターンのm=5では実用的に無効**。L533: m=5は120パターンの疎分布→低閾値(0.3-0.5)検討要。疾風impl(才蔵・小太郎FAIL→3回目) → `outputs/analysis/standard_pf_preprocessing/entropy_gate_pe_results.yaml`
 
-## §29. 金融ML知識辞書 拡充 (cmd_1636-1653, 2026-04-01)
+## §29. 金融ML知識辞書 拡充 (cmd_1636-1653, cmd_1713, 2026-04-03追記)
 
 前処理研究(§28)の文献サーベイ30+論文の知見が辞書に未記録だったことを契機に、一次知識層の大規模拡充を3波で実施。
 guide.mdに純度ルール（一次知識層汚染防止）を追加後、全忍者6名並列投入×3波。
@@ -670,6 +670,12 @@ guide.mdに純度ルール（一次知識層汚染防止）を追加後、全忍
 | 3 | cmd_1648-1653 | 18件 | cmd_1643穴埋め(M40/M41/M54)、資産価格(CAPM/FF3/Carhart/FF5/APT)、時系列(ARIMA/VAR/Cointegration)、統計検定(ADF/KPSS/Ljung-Box/Jarque-Bera/Granger) 、マイクロストラクチャー(Amihud/VPIN) |
 
 **累計61エントリ**(methods/47 + validation/8 + portfolio/6 + sources/5 + pitfalls/3)。純度検証PASS（プロジェクト固有データ混入0件）。
+
+### 2026-04-03 追加
+
+| ID | エントリ | 概要 | ファイル |
+|----|---------|------|---------|
+| M17 | FLAIR (Factored Level And Interleaved Ridge) | `Level × Shape` 分解で周期構造を固定し、圧縮した `Level` のみを Ridge 予測する単一方程式型予測手法。一次知識層と DM-Signal 解釈層を分離して追加 | `docs/research/knowledge-base/methods/m17_flair.md` / `docs/research/knowledge-base/dm-signal/flair-interpretation.md` |
 
 残課題 → `docs/research/research-todo.md`
 
