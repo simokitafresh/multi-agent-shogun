@@ -1,12 +1,12 @@
 task:
-  _ac_task_id: cmd_1714_impl
+  _ac_task_id: cmd_1715_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: preprocessing-research-conclusions.md作成(§1-§4、標準フォーマット準拠)'
-  - ac: 'AC2: 9手法(EMA/L1/Kalman/Gerber/FD/PE/JD/SSA/FDA)のverdict全記入+定量結果+出典cmd番号'
+  - ac: 'AC1: production-invariants.md作成(§1-§3)'
+  - ac: 'AC2: PI-009/PI-010/PI-021+パリティ条件+GS修行ルール全記入'
   - ac: 'AC3: commit'
   context_files:
   - context/dm-signal.md
@@ -34,14 +34,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1714
+  parent_cmd: cmd_1715
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_1714.yaml
-  report_path: queue/reports/hayate_report_cmd_1714.yaml
+  report_filename: hayate_report_cmd_1715.yaml
+  report_path: queue/reports/hayate_report_cmd_1715.yaml
   status: in_progress
   stop_for: []
-  task_id: cmd_1714_impl
+  task_id: cmd_1715_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
