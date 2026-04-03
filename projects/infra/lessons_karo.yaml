@@ -220,3 +220,8 @@ lessons:
   detail: 'settings.yaml idle_cycle: on/offでninja_monitorのcheck_karo_idle_cycle()を制御。off時は家老へのidle通知を完全抑制。切替: yaml_field_set.sh config/settings.yaml '''' idle_cycle on/off。殿がon/offを指示する。家老が勝手に変更しない'
   source_cmd: 'karo_direct_idle_cycle_flag'
   created_at: '2026-04-03'
+- id: 'LK037'
+  title: 'pane tail -3で判断するな — Codex STALL 8回見逃し'
+  detail: 'tail -3のCTX%だけで作業中と誤判定し同じ失敗を8回繰り返した。根因: pane全体を読めばプロンプトにテキスト未実行が一目瞭然。対策: (1)STALL検知時はpane全体capture必須 (2)deploy後にCTX変化(0%→>0%)を確認 (3)respawn後はCLI起動完了(›プロンプト+CTX:0%)を待ってからsend-keys。LK018(信号を事実として扱うな)の再発'
+  source_cmd: 'cmd_karo_codex_deploy_fix'
+  created_at: '2026-04-03'
