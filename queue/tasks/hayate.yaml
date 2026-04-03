@@ -1,10 +1,10 @@
 task:
-  _ac_task_id: cmd_metrics_R3a_impl
+  _ac_task_id: cmd_metrics_R3b_impl
   _ac_worker_id: null
   ac_version: b99834bc
   acceptance_criteria:
-  - ac: 'AC1: compute_34_metrics()実装+NUMERIC_METRICS定数リスト定義'
-  - ac: 'AC2: DM2全期間34メトリクスパリティ(atol=1e-6、MDD系はatol=1e-2)+commit'
+  - ac: 'AC1: compute_rolling_metrics+build_tensor実装。tensor.shape=(65,>=150,34)'
+  - ac: 'AC2: DM2全期間窓パリティPASS+計算時間≤60s+commit'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-ops.md
@@ -13,17 +13,17 @@ task:
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L113: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ\n\
     \  - L469: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS\
-    \ e\n  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
-    ────────────────────────────────────────\n\ncompute_34_metrics(monthly_slice)を実装せよ。\n\
-    \n対象: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py\n\
-    設計書: context/gunshi-metrics-engine-design.md §3(メトリクス分類) + §4(Rolling計算)\n軍師ナビシート:\
-    \ docs/research/gunshi-metrics-engine-training-nav.md\n\n実装内容:\ncompute_34_metrics(monthly_slice:\
-    \ pd.DataFrame) -> dict[str, float]\n- metrics_calculator.py L255-1072の公式を1:1転写\n\
-    - 入力: monthly_slice(portfolio_return, benchmark_return, cumulative列を含むDataFrame)\n\
-    - DrawdownPeriod非依存(月次精度fallback: cummax→drawdown→min)\n- Positive Periods: 文字列→比率(pos/total)変換\n\
-    - NUMERIC_METRICS: list[str] 34個の定数リストも定義\n\n検証:\n- 1PF(DM2)の全期間データでget_all_pf_metricsの34数値メトリクスと突合\n\
-    - atol=1e-6(MDD関連はatol=1e-2、月次vs日次精度差)\n- commit\n\n制約:\n- metrics_calculator.pyの本番コードは変更しない\n\
-    - 独自アレンジ禁止。本番公式の1:1転写\n- R2(高速化)の成果には依存しない。現行エンジンで検証可"
+    \ e\n  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+    ────────────────────────────────────────\n\nRolling計算+build_tensor()を実装せよ。\n\n\
+    対象: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py\n設計書:\
+    \ context/gunshi-metrics-engine-design.md §4(Rolling計算) + §5(修行R3)\n\n前提(R3a成果):\
+    \ compute_34_metrics(monthly_slice)が実装済み。\n\n実装:\n1. compute_rolling_metrics(pf_id,\
+    \ window_months=60) -> pd.DataFrame\n   - 全期間MonthlyReturnをロード→window幅スライド→各窓でcompute_34_metrics()\n\
+    \   - 返り値: shape=(T-window, 34), columns=NUMERIC_METRICS\n2. compute_all_rolling(window_months=60)\
+    \ -> dict[str, pd.DataFrame]\n3. build_tensor(window_months=60) -> tuple[np.ndarray,\
+    \ list, list, list]\n   - tensor.shape = (65, T_windows, 34)\n4. get_metric_names()\
+    \ -> list[str]\n5. パリティ: DM2全期間窓でget_all_pf_metricsと34メトリクス一致(atol=1e-6、MDD系はatol=1e-2)\n\
+    6. 計算時間60秒以内\n7. commit\n\n制約: metrics_calculator.py変更なし。compute_34_metricsの公式変更禁止。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -39,16 +39,16 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_metrics_R3a
-  progress: AC1/AC2完了。report gate PASS。commit 89a3e62c。
+  parent_cmd: cmd_metrics_R3b
+  progress: ''
   project: dm-signal
-  purpose: metrics_calculator.pyの34数値メトリクス公式をcompute_34_metrics()に1:1転写。DB非依存。
-  report_filename: hayate_report_cmd_metrics_R3a.yaml
-  report_path: queue/reports/hayate_report_cmd_metrics_R3a.yaml
-  status: done
+  purpose: R2(高速化)+R3a(compute_34_metrics)の成果を統合し、Rolling計算+3Dテンソルを実装。
+  report_filename: hayate_report_cmd_metrics_R3b.yaml
+  report_path: queue/reports/hayate_report_cmd_metrics_R3b.yaml
+  status: in_progress
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_metrics_R3a_impl
+  task_id: cmd_metrics_R3b_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -129,4 +129,4 @@ task:
   - id: 'L536'
     summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
     detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
-  deployed_at: "2026-04-04T00:34:50"
+  deployed_at: "2026-04-04T00:44:27"
