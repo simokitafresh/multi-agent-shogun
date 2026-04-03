@@ -1,13 +1,9 @@
 task:
-  _ac_task_id: cmd_karo_gs_kawarimi_profile_impl
+  _ac_task_id: cmd_karo_gs_kasoku_diff_opt_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 7d010443
+  ac_version: d41d8cd9
   acceptance_criteria:
-  - ac: 'AC1: kawarimi cProfile実行+上位20関数テーブル報告'
-  - ac: 'AC2: hot path3関数+oikaze知見との比較'
-  - ac: 'AC3: 結果YAML保存+commit'
+  - ac: 'AC1: cProfile+最適化実装+gs_parity_check.py PASS+速度計測+commit'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -30,18 +26,15 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_karo_gs_kawarimi_profile
+  parallel_ok: []
+  parent_cmd: cmd_karo_gs_kasoku_diff_opt
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_karo_gs_kawarimi_profile.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_gs_kawarimi_profile.yaml
+  report_filename: hayate_report_cmd_karo_gs_kasoku_diff_opt.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_gs_kasoku_diff_opt.yaml
   status: in_progress
   stop_for: []
-  task_id: cmd_karo_gs_kawarimi_profile_impl
+  task_id: cmd_karo_gs_kasoku_diff_opt_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -52,13 +45,13 @@ task:
     breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), double_deploy(2件), karo(2件), report_missing(1件), task_redeploy(1件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
+    - pattern: 'verdict_invalid'
+      count: 4
     - pattern: 'yaml_parse_error'
       count: 4
-    - pattern: 'verdict_invalid'
-      count: 2
     - pattern: 'field_missing'
       count: 2
-    gate_warning: '⚠ gate頻出FAIL: YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
       count: 16
