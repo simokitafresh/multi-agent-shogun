@@ -1,42 +1,38 @@
 task:
-  _ac_task_id: cmd_1735_impl
+  _ac_task_id: cmd_1736_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 88572c76
   acceptance_criteria:
   - checks:
-    - check: 24固定lookback(1M~24M)戦略のメトリクス比較テーブル(baseline)生成
+    - check: 240固定戦略(24lb×10topn)のメトリクス比較テーブル生成
     id: AC1
   - checks:
-    - check: 34メトリクス目的関数ALMの戦略リターン系列+最終メトリクス生成
+    - check: 1700 ALM戦略(34メトリクス×10topn×5窓)のリターン系列+最終メトリクス生成
     id: AC2
   - checks:
-    - check: 結果YAML+CSV保存+commit
+    - check: top_n×窓別の最良目的関数テーブル+結果YAML+CSV保存+commit
     id: AC3
   context_files:
   - context/dm-signal.md
-  - context/dm-signal-ops.md
   - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
-    \ 6列: \n  - L215: gate_metricsテストがtmux環境依存\n  - L278: cmd_1264でkagemaruがcommit完了・task\
-    \ status doneだが報告YAML未作成のまま/clearされた。ninja_monitor\n────────────────────────────────────────\n\
-    \n道具: metrics_research_engine.pyのsimulate_selection + compute_metrics_from_returns\
-    \ + compute_rolling_from_returns。\nランブック: docs/research/metrics-engine-runbook.md\
-    \ §L1 Selection Simulator。\n\n計算フロー:\n1. build_return_wide()で65PF月次リターン行列\n2.\
-    \ 24 lookback(1M~24M全部: list(range(1,25)))でsimulate_selection(score_fn=momentum_k,\
-    \ top_n=5) → 24仮想戦略pd.Series\n3. 各仮想戦略でcompute_rolling_from_returns(window=60)\
-    \ → 24×DataFrame(T-60, 34)\n4. 月ごとに34メトリクスそれぞれで「最良のlookback」を選択 → 34通りのALM戦略リターン系列\n\
-    \   例: CAGR目的ALM=毎月Rolling60ヶ月CAGRが最大のlookbackを採用。その月はそのlookbackのtop5リターンを使用\n\
-    5. 34 ALM + 24固定 = 58戦略のcompute_metrics_from_returns → 58行×34列の比較テーブル\n\n出力:\n\
-    - outputs/analysis/alm_research/cmd_1735_strategy_comparison.csv (58戦略×34メトリクス)\n\
-    - outputs/analysis/alm_research/cmd_1735_alm_lookback_selection.csv (34ALM×各月のlookback選択パターン)\n\
-    - outputs/analysis/alm_research/cmd_1735_results.yaml (サマリ: 最良ALM、固定最良との差)\n-\
-    \ commit\n\nlookbacks: list(range(1,25)) = [1,2,3,...,24]。絞らない。全部やる。\nbenchmark:\
-    \ SPY月次リターン(metrics_engine SPYヘルパーで取得)\ntop_n: 5\nrolling_window: 60ヶ月\n\n★修正版:\
-    \ 旧版(6 lookback)から24 lookbackに拡張。根拠なき限定を排除。"
+    \  - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor\n\
+    \  - L113: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ\n\
+    \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
+    \ 06829a\n────────────────────────────────────────\n\ncmd_1735の拡張。top_n+rolling_windowも全パターン。\n\
+    \n道具: metrics_research_engine.py。\n参考: cmd_1735のスクリプト(outputs/analysis/alm_research/)をベースに拡張。\n\
+    \n計算フロー:\n1. 65PFのreturn_wide取得\n2. 10 top_n × 24 lookback = 240 simulate_selection\
+    \ → 240仮想戦略pd.Series\n3. 各仮想戦略 × 5 rolling_window = 1200 compute_rolling_from_returns\
+    \ → 1200×DataFrame\n4. 各(top_n, rolling_window)ごとに34メトリクス目的ALM → 10×5×34=1700\
+    \ ALM戦略\n5. 全戦略のcompute_metrics_from_returns → 比較テーブル\n\nパラメータ:\n- lookbacks:\
+    \ list(range(1,25)) = [1,...,24]\n- top_ns: list(range(1,11)) = [1,...,10]\n-\
+    \ rolling_windows: [12, 24, 36, 48, 60]\n- benchmark: SPY\n\n出力:\n- outputs/analysis/alm_research/cmd_1736_full_sweep.csv\n\
+    - outputs/analysis/alm_research/cmd_1736_best_by_topn.csv (top_n×rolling_window別の最良)\n\
+    - outputs/analysis/alm_research/cmd_1736_results.yaml\n- commit\n\n★計算量が大きい(1200\
+    \ rolling計算)。チャンク分割や進捗表示を推奨。\nOOMリスクあり→1 top_nずつ処理してメモリ解放。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -53,16 +49,16 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1735
-  progress: 24-lookback版を完了。1M-24M全固定戦略+34 ALMを生成し、58x34比較表/172x34選択表を出力。commit 274edb4a で保存済み。
+  parent_cmd: cmd_1736
+  progress: ''
   project: dm-signal
-  purpose: ALM核心実験。34メトリクス目的関数×24 lookback(1M~24M全部)動的選択。
-  report_filename: hayate_report_cmd_1735.yaml
-  report_path: queue/reports/hayate_report_cmd_1735.yaml
-  status: done
+  purpose: ALM top_n=1-10 × 24 lookback × 5 rolling窓 × 34メトリクス。全パラメータ空間探索。
+  report_filename: hayate_report_cmd_1736.yaml
+  report_path: queue/reports/hayate_report_cmd_1736.yaml
+  status: idle
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_1735_impl
+  task_id: cmd_1736_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -75,12 +71,12 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'lu_reason_empty'
+      count: 10
+    - pattern: 'bc_result_empty'
       count: 5
     - pattern: 'no_lesson_reason'
-      count: 1
-    - pattern: 'bc_result_empty'
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止'
+      count: 2
+    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入'
     gate_blocks:
     - reason: 'report_format'
       count: 16
@@ -146,4 +142,4 @@ task:
   - id: 'L536'
     summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
     detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
-  deployed_at: "2026-04-04T02:27:21"
+  deployed_at: "2026-04-04T02:48:12"
