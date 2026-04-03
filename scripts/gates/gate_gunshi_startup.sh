@@ -213,6 +213,13 @@ echo ""
 echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
 echo "■ 必読: logs/gunshi_stats.yaml（accuracy把握）"
 echo "■ 必読: projects/infra/lessons_gunshi.yaml（レビュー教訓）"
+echo ""
+echo "■ ★★★ セッション知見(2026-04-03殿指摘) ★★★"
+echo "  共通根因: 「知っている」≠「使っている」"
+echo "  穴1: 研究cmdでengine統合を見落とす → SG10(review_logヘッダ)で確認"
+echo "  穴2: 参照ドキュメントを読んだつもり → 引用時に定義を1行で明示。書けなければ読み直せ"
+echo "  穴3: チェックリスト≠gate → 新SG作成時に「読み飛ばせるか?」自問。YES→gate化提案"
+echo "  → 上記がlessons_gunshi.yamlに登録済みか確認せよ。未登録なら家老に催促"
 
 # --- Check 8: idle自走プロンプト ---
 echo ""
