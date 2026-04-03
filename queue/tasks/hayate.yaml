@@ -1,28 +1,29 @@
 task:
-  _ac_task_id: cmd_metrics_R1_impl
+  _ac_task_id: cmd_metrics_R3a_impl
   _ac_worker_id: null
   ac_version: b99834bc
   acceptance_criteria:
-  - ac: 'AC1: 65PF計算の総時間を秒単位で計測+PFごと計測結果'
-  - ac: 'AC2: ボトルネック上位3件特定+高速化候補の優先順位付きリスト'
+  - ac: 'AC1: compute_34_metrics()実装+NUMERIC_METRICS定数リスト定義'
+  - ac: 'AC2: DM2全期間34メトリクスパリティ(atol=1e-6、MDD系はatol=1e-2)+commit'
   context_files:
   - context/dm-signal.md
-  - context/dm-signal-core.md
   - context/dm-signal-ops.md
   - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L113: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ\n\
     \  - L469: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS\
-    \ e\n  - L213: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit\n\
-    \  - L129: python3-venv未導入だとvenv構築不可。pip --userもPEP668で拒否されるため、偵察手順に --break-system-package\n\
-    ────────────────────────────────────────\n\nmetrics_research_engine.pyの速度計測+ボトルネック分析を実施せよ。\n\
+    \ e\n  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
+    ────────────────────────────────────────\n\ncompute_34_metrics(monthly_slice)を実装せよ。\n\
     \n対象: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py\n\
-    設計書: context/gunshi-metrics-engine-design.md §5(修行R1) + §9.3(高速化ガイド)\n\n手順:\n\
-    1. get_all_pf_metrics(years=10, source=\"calculator\")の総実行時間を計測(65PF全量)\n2. PFごとの計算時間を記録。遅いPF上位5件とその原因を特定\n\
-    3. ボトルネック分析: 以下を分類\n   - DB I/O (MonthlyReturn取得, DrawdownPeriod取得, DTB3取得)\n\
-    \   - 計算コスト (numpy演算, 年次リサンプル, MDD計算)\n   - Python overhead (ループ, dict構築)\n4.\
-    \ 高速化候補リスト: 設計書§9.3の6候補(#1-#6)の適用可能性を現物確認\n   - 特に#2(monthly_df_cache), #3(DTB3キャッシュ)は既実装と記載あり。現物で確認\n\
-    5. 改善幅(推定)×実装難度で優先順位付け\n\n制約: 計測のみ。コード変更なし。本番DB READ ONLY。\nprofiling: time.perf_counter()で区間計測。cProfile不要。"
+    設計書: context/gunshi-metrics-engine-design.md §3(メトリクス分類) + §4(Rolling計算)\n軍師ナビシート:\
+    \ docs/research/gunshi-metrics-engine-training-nav.md\n\n実装内容:\ncompute_34_metrics(monthly_slice:\
+    \ pd.DataFrame) -> dict[str, float]\n- metrics_calculator.py L255-1072の公式を1:1転写\n\
+    - 入力: monthly_slice(portfolio_return, benchmark_return, cumulative列を含むDataFrame)\n\
+    - DrawdownPeriod非依存(月次精度fallback: cummax→drawdown→min)\n- Positive Periods: 文字列→比率(pos/total)変換\n\
+    - NUMERIC_METRICS: list[str] 34個の定数リストも定義\n\n検証:\n- 1PF(DM2)の全期間データでget_all_pf_metricsの34数値メトリクスと突合\n\
+    - atol=1e-6(MDD関連はatol=1e-2、月次vs日次精度差)\n- commit\n\n制約:\n- metrics_calculator.pyの本番コードは変更しない\n\
+    - 独自アレンジ禁止。本番公式の1:1転写\n- R2(高速化)の成果には依存しない。現行エンジンで検証可"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -38,16 +39,16 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_metrics_R1
-  progress: "AC1-AC2 complete: 65PF total 47.38s; bottlenecks monthly_returns 13.20s / drawdown_periods 10.50s / portfolios 5.48s; warm-check confirmed first-PF cold-start outlier; report gate PASS."
+  parent_cmd: cmd_metrics_R3a
+  progress: ''
   project: dm-signal
-  purpose: metrics_research_engine.py道具磨き。速度計測+ボトルネック分析。
-  report_filename: hayate_report_cmd_metrics_R1.yaml
-  report_path: queue/reports/hayate_report_cmd_metrics_R1.yaml
-  status: done
+  purpose: metrics_calculator.pyの34数値メトリクス公式をcompute_34_metrics()に1:1転写。DB非依存。
+  report_filename: hayate_report_cmd_metrics_R3a.yaml
+  report_path: queue/reports/hayate_report_cmd_metrics_R3a.yaml
+  status: in_progress
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_metrics_R1_impl
+  task_id: cmd_metrics_R3a_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -98,6 +99,9 @@ task:
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
   related_lessons:
+  - id: 'L545'
+    summary: '本番DBを逐次読む性能計測では、入力順先頭PFだけが接続確立や初回クエリ準備のウォームアップで突出して遅く見える。遅いPF上位をそのまま原因視せず、同一セッションで短いwarm'
+    detail: '本番DBを逐次読む性能計測では、入力順先頭PFだけが接続確立や初回クエリ準備のウォームアップで突出して遅く見える。遅いPF上位をそのまま原因視せず、同一セッションで短いwarm'
   - id: 'L544'
     summary: 'cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42体にmomentum選択blockが存在。EMAがL0'
     detail: 'cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42体にmomentum選択blockが存在。EMAがL0'
@@ -125,7 +129,4 @@ task:
   - id: 'L536'
     summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
     detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
-  - id: 'L535'
-    summary: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
-    detail: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
-  deployed_at: "2026-04-04T00:23:33"
+  deployed_at: "2026-04-04T00:34:50"
