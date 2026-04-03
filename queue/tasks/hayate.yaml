@@ -1,13 +1,13 @@
 task:
-  _ac_task_id: cmd_1706_impl
+  _ac_task_id: cmd_1707_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: 5パターン((A)baseline/(B)全EMA5/(C)全L1/(D)lookback依存/(E)手法混合)×59 FoFのCAGR/Sharpe/MaxDD算出'
-  - ac: 'AC2: パターン別改善率(baseline比)テーブル+最良パターン特定'
-  - ac: 'AC3: 結果YAML保存+commit'
+  - ac: 'AC1: FoF 59体の種類別内訳(EW/momentum/nested)と各タイプのmomentum判定コードパス特定'
+  - ac: 'AC2: momentum判定のパラメータ(lookback/比較対象/判定ロジック)一覧'
+  - ac: 'AC3: 改善余地3件以上特定(転換点対応/lookback動的化/マルチシグナル等)+偵察5要件'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -34,14 +34,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1706
+  parent_cmd: cmd_1707
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_1706.yaml
-  report_path: queue/reports/hayate_report_cmd_1706.yaml
+  report_filename: hayate_report_cmd_1707.yaml
+  report_path: queue/reports/hayate_report_cmd_1707.yaml
   status: done
   stop_for: []
-  task_id: cmd_1706_impl
+  task_id: cmd_1707_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 

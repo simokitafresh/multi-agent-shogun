@@ -41,6 +41,7 @@ cli:
       model_name: claude-opus-4-6
       role: ninja
       japanese_name: 飛猿
+idle_cycle: off
 effort: high  # v2.1.68でmediumデフォルト化→high固定(~/.claude/settings.json)
 ntfy_topic: shogun-simokitafresh
 gist_url: https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c

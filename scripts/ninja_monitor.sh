@@ -2606,6 +2606,13 @@ run_cdp_cleanup() {
 # ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
 # 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
 check_karo_idle_cycle() {
+    # 自走プロトコルoff時は通知しない
+    local idle_cycle_flag
+    idle_cycle_flag=$(grep -m1 '^\s*idle_cycle:' "$SCRIPT_DIR/config/settings.yaml" 2>/dev/null | sed 's/.*idle_cycle:[[:space:]]*//' | sed 's/[[:space:]]*#.*//' | tr -d "'" | tr -d '"')
+    if [ "$idle_cycle_flag" = "off" ]; then
+        return
+    fi
+
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
     [ ! -f "$snapshot_file" ] && return
 

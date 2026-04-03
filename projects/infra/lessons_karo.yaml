@@ -215,3 +215,8 @@ lessons:
   detail: 'ninja_monitorのidle通知が同一忍者に1-2分おきに無限反復。根因: PREV_STATEがGuard1等で毎サイクルbusyにリセット→次サイクルで状態変化と誤判定→再通知。殿のなぜなぜ+モード切替提案で到達: (1)idle通知は正しい圧力だが常時ではない (2)パイプライン空=待機すべき状態→繰り返し不要 (3)パイプライン有=仕事あり→圧力必要。IDLE_NOTIFY_SENT配列+パイプライン状態自動判定で実装。standby(空)=初回のみ、active(有)=5分cooldown。1時間10分idle通知ゼロで検証OK'
   source_cmd: 'karo_direct_idle_standby'
   created_at: '2026-04-02'
+- id: 'LK036'
+  title: 'idle_cycle設定でninja_monitorのidle通知を制御'
+  detail: 'settings.yaml idle_cycle: on/offでninja_monitorのcheck_karo_idle_cycle()を制御。off時は家老へのidle通知を完全抑制。切替: yaml_field_set.sh config/settings.yaml '''' idle_cycle on/off。殿がon/offを指示する。家老が勝手に変更しない'
+  source_cmd: 'karo_direct_idle_cycle_flag'
+  created_at: '2026-04-03'
