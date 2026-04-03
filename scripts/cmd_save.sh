@@ -450,6 +450,51 @@ check_impl_push_ac() {
 
 check_impl_push_ac
 
+# --- Check 11.5: 研究cmdの道具成長AC検出（informational — WARN_COUNTに加算しない） ---
+# 起源: 軍師SG10 — 研究cmdで新規関数を増やしてもresearch_engine.py統合ACがないと意志依存で分岐する
+# 目的: research系キーワードを含むimpl cmdで、ACにengine統合/追加/移設の明示がない場合にWARNING
+check_research_tool_growth_ac() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    local PROJECT_ID TASK_TYPE
+    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
+
+    TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    [[ "$TASK_TYPE" != "impl" ]] && return 0
+
+    local COMMAND_SECTION
+    COMMAND_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /command:/ { found=1; print; next }
+        found && /^    [a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+        found { print }
+    ')
+    [[ -z "$COMMAND_SECTION" ]] && return 0
+
+    if ! echo "$COMMAND_SECTION" | grep -qiE 'research_engine|simulate|analysis|研究'; then
+        return 0
+    fi
+
+    local AC_SECTION
+    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /acceptance_criteria:/ { found=1; next }
+        found && /^    - / { print; next }
+        found && /^      / { print; next }
+        found { exit }
+    ')
+    [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
+
+    if echo "$AC_SECTION" | grep -qiE 'research_engine(\.py)?|engine[^[:cntrl:]]*(統合|追加|移設)|(統合|追加|移設)[^[:cntrl:]]*(research_engine|engine)'; then
+        return 0
+    fi
+
+    echo "WARNING: 研究cmdで新規関数を定義する場合、research_engine.pyへの統合ACを検討せよ" >&2
+    echo '  例: "ACN: 新規関数をresearch_engine.pyへ統合し、呼び出し側を移設"' >&2
+    echo "  (軍師SG10: engine未統合の研究ロジックは再利用が意志依存になる)" >&2
+}
+
+check_research_tool_growth_ac
+
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止
 # 目的: 新cmdのtitle+purposeと直近20件(キュー+archive)の類似度を比較しWARN（50%以上）
