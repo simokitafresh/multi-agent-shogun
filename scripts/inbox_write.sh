@@ -38,6 +38,7 @@ else
 fi
 
 FIELD_GET_LOADED=0
+CLI_LOOKUP_LOADED=0
 
 ensure_field_get_loaded() {
     if [ "${FIELD_GET_LOADED:-0}" = "1" ]; then
@@ -48,6 +49,17 @@ ensure_field_get_loaded() {
         source "$SCRIPT_DIR/scripts/lib/field_get.sh" 2>/dev/null || true
     fi
     FIELD_GET_LOADED=1
+}
+
+ensure_cli_lookup_loaded() {
+    if [ "${CLI_LOOKUP_LOADED:-0}" = "1" ]; then
+        return 0
+    fi
+    if [ -f "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" 2>/dev/null || true
+    fi
+    CLI_LOOKUP_LOADED=1
 }
 
 inbox_yaml_field_get() {
@@ -198,6 +210,166 @@ inbox_message_count() {
     }
 
     awk 'BEGIN { c = 0 } /^- / { c++ } END { print c }' "$inbox_file"
+}
+
+inbox_unread_count() {
+    local inbox_file="$1"
+    [[ -f "$inbox_file" ]] || {
+        echo 0
+        return 0
+    }
+
+    awk '
+        BEGIN { c = 0 }
+        /^- / { in_msg = 1; read_state = "false"; next }
+        in_msg && /^  read:[[:space:]]*/ {
+            line = $0
+            sub(/^  read:[[:space:]]*/, "", line)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+            if (tolower(line) != "true") c++
+            in_msg = 0
+        }
+        END {
+            if (in_msg) c++
+            print c
+        }
+    ' "$inbox_file"
+}
+
+inbox_message_marked_read() {
+    local inbox_file="$1"
+    local msg_id="$2"
+    [[ -f "$inbox_file" ]] || return 1
+
+    awk -v msg_id="$msg_id" '
+        BEGIN { in_msg = 0; found = 0; read_state = "false" }
+        /^- / {
+            if (found) exit(tolower(read_state) == "true" ? 0 : 1)
+            in_msg = 1
+            read_state = "false"
+            next
+        }
+        in_msg && /^  id:[[:space:]]*/ {
+            line = $0
+            sub(/^  id:[[:space:]]*/, "", line)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+            gsub(/^["'\'']|["'\'']$/, "", line)
+            if (line == msg_id) found = 1
+            next
+        }
+        in_msg && found && /^  read:[[:space:]]*/ {
+            read_state = $0
+            sub(/^  read:[[:space:]]*/, "", read_state)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", read_state)
+            exit(tolower(read_state) == "true" ? 0 : 1)
+        }
+        END {
+            if (found) exit(tolower(read_state) == "true" ? 0 : 1)
+            exit 1
+        }
+    ' "$inbox_file"
+}
+
+resolve_agent_pane_target() {
+    local agent="$1"
+    command -v tmux >/dev/null 2>&1 || return 1
+
+    tmux list-panes -a -F '#{session_name}:#{window_name}.#{pane_index} #{@agent_id}' 2>/dev/null \
+        | awk -v agent="$agent" '$2 == agent { print $1; exit }'
+}
+
+run_tmux_with_timeout() {
+    if command -v timeout >/dev/null 2>&1; then
+        timeout 5 tmux "$@"
+    else
+        tmux "$@"
+    fi
+}
+
+send_codex_task_nudge() {
+    local target="$1"
+    local pane_target="$2"
+    local unread_count="$3"
+    local nudge="inbox${unread_count} — タスクYAML: queue/tasks/${target}.yaml を読んで作業開始せよ"
+
+    tmux set-buffer -b "nudge_${target}" "$nudge" 2>/dev/null || return 1
+    run_tmux_with_timeout paste-buffer -t "$pane_target" -b "nudge_${target}" -d >/dev/null 2>&1 || return 1
+    sleep 0.02
+    run_tmux_with_timeout send-keys -t "$pane_target" Enter >/dev/null 2>&1 || return 1
+}
+
+verify_codex_task_delivery() {
+    local target="$1"
+    local msg_id="$2"
+    local inbox_file="$SCRIPT_DIR/queue/inbox/${target}.yaml"
+    local task_file="$SCRIPT_DIR/queue/tasks/${target}.yaml"
+
+    if inbox_message_marked_read "$inbox_file" "$msg_id"; then
+        return 0
+    fi
+
+    if [ -f "$task_file" ]; then
+        local task_status
+        task_status=$(inbox_yaml_field_get "$task_file" "status" "")
+        case "$task_status" in
+            acknowledged|in_progress|done|failed|blocked)
+                return 0
+                ;;
+        esac
+    fi
+
+    return 1
+}
+
+maybe_verify_codex_delivery() {
+    local target="$1"
+    local msg_id="$2"
+    local type="$3"
+
+    [ "$type" = "task_assigned" ] || return 0
+
+    ensure_cli_lookup_loaded
+    type cli_type >/dev/null 2>&1 || return 0
+    [ "$(cli_type "$target")" = "codex" ] || return 0
+
+    local inbox_file="$SCRIPT_DIR/queue/inbox/${target}.yaml"
+    [ -f "$inbox_file" ] || return 0
+
+    local retries="${INBOX_CODEX_NUDGE_RETRIES:-2}"
+    local wait_sec="${INBOX_CODEX_VERIFY_WAIT_SEC:-1}"
+    local attempt=0
+
+    while [ "$attempt" -le "$retries" ]; do
+        if [ "$attempt" -gt 0 ]; then
+            local pane_target unread_count
+            pane_target=$(resolve_agent_pane_target "$target" || true)
+            unread_count=$(inbox_unread_count "$inbox_file")
+            if [ -n "$pane_target" ] && [ "$unread_count" -gt 0 ] 2>/dev/null; then
+                if send_codex_task_nudge "$target" "$pane_target" "$unread_count"; then
+                    echo "[inbox_write] codex nudge retry ${attempt}/${retries} sent to ${target}" >&2
+                else
+                    echo "[inbox_write] codex nudge retry ${attempt}/${retries} failed for ${target}" >&2
+                fi
+            else
+                echo "[inbox_write] codex nudge retry ${attempt}/${retries} skipped for ${target} (pane/unread unavailable)" >&2
+            fi
+        fi
+
+        sleep "$wait_sec"
+
+        if verify_codex_task_delivery "$target" "$msg_id"; then
+            if [ "$attempt" -eq 0 ]; then
+                echo "[inbox_write] codex delivery verified for ${target}" >&2
+            else
+                echo "[inbox_write] codex delivery verified after retry ${attempt}/${retries} for ${target}" >&2
+            fi
+            return 0
+        fi
+
+        attempt=$((attempt + 1))
+    done
+
+    echo "[inbox_write] WARN: codex delivery remained unverified for ${target} after ${retries} retries" >&2
 }
 
 inbox_append_message_fast_locked() {
@@ -857,6 +1029,7 @@ REVIEWEOF
             fi
         fi
 
+        maybe_verify_codex_delivery "$TARGET" "$MSG_ID" "$TYPE"
         exit 0
     else
         # Lock timeout or error

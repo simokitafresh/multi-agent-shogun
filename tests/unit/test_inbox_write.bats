@@ -552,3 +552,71 @@ _run_inbox_write() {
     run _run_inbox_write karo "報告完了" report_received testninja
     [ "$status" -eq 0 ]
 }
+
+@test "task_assigned: codex ninja delivery verification retries up to 2 times" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export TMUX_SEND_COUNT_FILE="$TEST_TMPDIR/tmux_send_count"
+    export TEST_TASK_FILE="$TEST_TMPDIR/queue/tasks/testninja.yaml"
+
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes)
+    echo "shogun:agents.3 testninja"
+    ;;
+  send-keys)
+    if [[ "$*" == *" Enter"* ]]; then
+      count=0
+      [ -f "$TMUX_SEND_COUNT_FILE" ] && count=$(cat "$TMUX_SEND_COUNT_FILE")
+      count=$((count + 1))
+      echo "$count" > "$TMUX_SEND_COUNT_FILE"
+      if [ "$count" -ge 2 ]; then
+        python3 - "$TEST_TASK_FILE" <<'PYEOF'
+import sys, yaml
+path = sys.argv[1]
+with open(path) as f:
+    data = yaml.safe_load(f) or {}
+data.setdefault('task', {})['status'] = 'acknowledged'
+with open(path, 'w') as f:
+    yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+PYEOF
+      fi
+    fi
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified after retry 2/2"* ]]
+
+    grep -q "set-buffer -b nudge_testninja" "$TMUX_LOG"
+    [ "$(cat "$TMUX_SEND_COUNT_FILE")" -eq 2 ]
+
+    python3 <<EOF
+import yaml
+with open('$TEST_TMPDIR/queue/tasks/testninja.yaml') as f:
+    data = yaml.safe_load(f)
+assert data['task']['status'] == 'acknowledged'
+EOF
+}
