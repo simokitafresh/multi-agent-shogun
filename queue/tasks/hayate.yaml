@@ -1,26 +1,22 @@
 task:
-  _ac_task_id: cmd_metrics_R7a_impl
+  _ac_task_id: cmd_metrics_R7c_impl
   _ac_worker_id: null
   ac_version: d41d8cd9
   acceptance_criteria:
-  - ac: 'AC1: 穴3件修正+score_wideモード実装+全検証PASS+commit'
+  - ac: 'AC1: build_tensor高速化+パリティPASS+速度計測before/after+commit'
   context_files:
   - context/dm-signal.md
-  - context/dm-signal-ops.md
   - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L469: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS\
-    \ e\n  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun\
-    \ #73=SHA 06829a\n────────────────────────────────────────\n\nsimulate_selection()の穴塞ぎ+score_wide高速化を実装せよ。\n\
-    \n対象: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py\n\
-    設計書: context/gunshi-metrics-engine-design.md §2.2.1\n\n穴塞ぎ3件:\n1. NaN汚染: np.where(np.isnan(scores),\
-    \ -np.inf, scores)でNaN最下位強制\n2. PF数<top_n: min(top_n, valid_count)動的クリップ。valid=0→Cash(0.0)\n\
-    3. 引数排他: score_fn/score_wide両方or両方なし→ValueError\n\nscore_wideモード:\n- score_wide:\
-    \ pd.DataFrame引数追加(事前計算行列)\n- NumPy一括: reindex_like→NaN処理→argsort→take_along_axis→nanmean\n\
-    - 既存score_fnモードは後方互換維持\n\n検証:\n- NaN含むデータでNaN PFが選択されないこと\n- PF数<top_nケース動作確認\n\
-    - score_fn+score_wide同時→ValueError\n- score_wideモードでscore_fnモードと結果一致\n- commit"
+    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
+    \ Codeに'non-blo\n  - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit\
+    \ statusを実行\n────────────────────────────────────────\n\nbuild_tensorを高速化せよ。\n\
+    \n対象: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py\n\n\
+    現状: build_tensor(60)=47.2s。\n\n高速化方針:\n1. _prepare_monthly_metrics_frame一括化→Dict\n\
+    2. mean/std/skew/kurtをpandas.rolling()一括事前計算\n3. 65PF×170窓の行列一括生成\n\nパリティ: 高速化前後でbuild_tensor結果一致(atol=1e-6、MDD系atol=1e-2)\n\
+    目標: 47.2s→3s以内\ncommit"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -34,16 +30,16 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  parent_cmd: cmd_metrics_R7a
-  progress: AC1 complete; report passed gate; karo notified.
+  parent_cmd: cmd_metrics_R7c
+  progress: "build_tensor高速化: before 64.631s / after fresh 8.863s / warm 1.602s。全65PF×34指標パリティPASS。fresh 3s目標未達のためFAIL報告。"
   project: dm-signal
-  purpose: simulate_selectionの穴3件修正+score_wideモード追加。
-  report_filename: hayate_report_cmd_metrics_R7a.yaml
-  report_path: queue/reports/hayate_report_cmd_metrics_R7a.yaml
-  status: done
+  purpose: build_tensor 47.2s→1-3s高速化。
+  report_filename: hayate_report_cmd_metrics_R7c.yaml
+  report_path: queue/reports/hayate_report_cmd_metrics_R7c.yaml
+  status: failed
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_metrics_R7a_impl
+  task_id: cmd_metrics_R7c_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -124,4 +120,4 @@ task:
   - id: 'L536'
     summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
     detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
-  deployed_at: "2026-04-04T01:42:46"
+  deployed_at: "2026-04-04T01:52:51"
