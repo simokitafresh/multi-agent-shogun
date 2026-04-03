@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L543 -->
+<!-- last_synced_lesson: L544 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -172,3 +172,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L541: depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ（cmd_training_L4_R38_kotaro）
 - L542: cmd用語の定義は高コスト分析前にテストへ固定せよ（cmd_training_L4_R39_hayate）
 - L543: numpy cumsum rolling windowでBipower Variationをベクトル化すると50x高速化（cmd_training_L4_R39_hanzo）
+- L544: EW terminal≠selection_block=0。59FoF中42体にmomentum selection blockが存在（cmd_1707）

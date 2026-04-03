@@ -1,13 +1,13 @@
 task:
-  _ac_task_id: cmd_1707_impl
+  _ac_task_id: cmd_1709_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: FoF 59体の種類別内訳(EW/momentum/nested)と各タイプのmomentum判定コードパス特定'
-  - ac: 'AC2: momentum判定のパラメータ(lookback/比較対象/判定ロジック)一覧'
-  - ac: 'AC3: 改善余地3件以上特定(転換点対応/lookback動的化/マルチシグナル等)+偵察5要件'
+  - ac: 'AC1: 本番DBから65 standard PF全期間holding_signalをdump→tests/golden_data/に保存+commit'
+  - ac: 'AC2: gs_parity_check.py作成。ゴールデンデータ vs GS出力の月次完全一致検証(PASS/FAIL+不一致月リスト)'
+  - ac: 'AC3: shin_shijin_l1_gs.py出力でgs_parity_check.py実行→PASS確認(現行パリティ成立の証明)'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -34,14 +34,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1707
+  parent_cmd: cmd_1709
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_1707.yaml
-  report_path: queue/reports/hayate_report_cmd_1707.yaml
-  status: done
+  report_filename: hayate_report_cmd_1709.yaml
+  report_path: queue/reports/hayate_report_cmd_1709.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_1707_impl
+  task_id: cmd_1709_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -91,6 +91,9 @@ task:
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
   related_lessons:
+  - id: 'L544'
+    summary: 'cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42体にmomentum選択blockが存在。EMAがL0'
+    detail: 'cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42体にmomentum選択blockが存在。EMAがL0'
   - id: 'L543'
     summary: 'Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products=abs_r[1:]*abs_r[:-1]をcumsum化し、rolling_sum=cs[t-1]-cs[t-w]で全t点を一括計算。50.6x高速化(27.72ms→0.55ms)。同パターンは全rolling'
     detail: 'Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products=abs_r[1:]*abs_r[:-1]をcumsum化し、rolling_sum=cs[t-1]-cs[t-w]で全t点を一括計算。50.6x高速化(27.72ms→0.55ms)。同パターンは全rolling'
@@ -118,6 +121,3 @@ task:
   - id: 'L535'
     summary: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
     detail: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
-  - id: 'L530'
-    summary: 'OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点がnoise又は単一クラスタに分類され事実上top-1'
-    detail: 'OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点がnoise又は単一クラスタに分類され事実上top-1'
