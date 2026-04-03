@@ -1,13 +1,13 @@
 task:
-  _ac_task_id: cmd_1709_impl
+  _ac_task_id: cmd_training_L4_R40_hayate_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: 本番DBから65 standard PF全期間holding_signalをdump→tests/golden_data/に保存+commit'
-  - ac: 'AC2: gs_parity_check.py作成。ゴールデンデータ vs GS出力の月次完全一致検証(PASS/FAIL+不一致月リスト)'
-  - ac: 'AC3: shin_shijin_l1_gs.py出力でgs_parity_check.py実行→PASS確認(現行パリティ成立の証明)'
+  - ac: 'AC1: 改善点3つ特定'
+  - ac: 'AC2: 最高インパクト1件実装+commit'
+  - ac: 'AC3: lesson_candidate+binary_checks+verdict完全記入'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -34,14 +34,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1709
+  parent_cmd: cmd_training_L4_R40_hayate
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_1709.yaml
-  report_path: queue/reports/hayate_report_cmd_1709.yaml
-  status: done
+  report_filename: hayate_report_cmd_training_L4_R40_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L4_R40_hayate.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_1709_impl
+  task_id: cmd_training_L4_R40_hayate_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -55,9 +55,9 @@ task:
     - pattern: 'yaml_parse_error'
       count: 4
     - pattern: 'verdict_invalid'
-      count: 1
+      count: 2
     - pattern: 'field_missing'
-      count: 1
+      count: 2
     gate_warning: '⚠ gate頻出FAIL: YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
