@@ -426,6 +426,11 @@ if [[ "${GATE_NO_LOG:-}" = "1" ]]; then
     echo "$RESULT" | grep -q "^PASS" && exit 0 || exit 1
 fi
 
+# --- Test report guard: /tmp/ reports are test artifacts, not production signal ---
+if [[ "$REPORT_PATH" == /tmp/* ]] || [[ "$REPORT_PATH" == *"/tmp/"* ]]; then
+    echo "$RESULT" | grep -q "^PASS" && exit 0 || exit 1
+fi
+
 # --- Gate fire logging (cmd_1279) ---
 LOG_FILE="$REPO_ROOT/logs/gate_fire_log.yaml"
 TS=$(date -Is)

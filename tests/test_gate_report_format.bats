@@ -5,15 +5,18 @@
 GATE="scripts/gates/gate_report_format.sh"
 AUTOFIX="scripts/gates/gate_report_autofix.sh"
 TMPDIR_BATS=""
+REPO_TMPDIR_BATS=""
 
 setup() {
     TMPDIR_BATS=$(mktemp -d)
+    REPO_TMPDIR_BATS=$(mktemp -d "tests/.tmp_gate_report_format.XXXXXX")
     # Clear PASS cache to ensure clean state
     rm -f logs/.gate_pass_cache
 }
 
 teardown() {
     rm -rf "$TMPDIR_BATS"
+    rm -rf "$REPO_TMPDIR_BATS"
     rm -f logs/.gate_pass_cache
 }
 
@@ -94,7 +97,8 @@ YAML
 
 # --- T-006: GP-073 PASS cache hit ---
 @test "T-006: GP-073 second call hits mtime cache" {
-    local report=$(create_valid_report)
+    local report="$REPO_TMPDIR_BATS/cache_report.yaml"
+    create_valid_report "$report" >/dev/null
     # First call: full validation
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
@@ -108,7 +112,8 @@ YAML
 
 # --- T-007: GP-073 cache invalidation on mtime change ---
 @test "T-007: GP-073 cache invalidated on file change" {
-    local report=$(create_valid_report)
+    local report="$REPO_TMPDIR_BATS/cache_invalidate_report.yaml"
+    create_valid_report "$report" >/dev/null
     # First call: cache
     bash "$GATE" "$report" > /dev/null 2>&1
     [ -f "logs/.gate_pass_cache" ]
@@ -167,7 +172,8 @@ YAML
 
 # --- T-NOLOG-2: GATE_NO_LOG未設定で通常書込み確認 ---
 @test "T-NOLOG-2: without GATE_NO_LOG fire_log is written" {
-    local report=$(create_valid_report)
+    local report="$REPO_TMPDIR_BATS/report.yaml"
+    create_valid_report "$report" >/dev/null
     rm -f logs/gate_fire_log.yaml
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
@@ -175,6 +181,18 @@ YAML
     [ -f "logs/gate_fire_log.yaml" ]
     run grep "gate_report_format" "logs/gate_fire_log.yaml"
     [ "$status" -eq 0 ]
+}
+
+# --- T-NOLOG-3: /tmp/テストレポートはfire_logに書き込まない ---
+@test "T-NOLOG-3: /tmp reports are excluded from fire_log" {
+    local report=$(create_valid_report)
+    rm -f logs/gate_fire_log.yaml
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    if [ -f "logs/gate_fire_log.yaml" ]; then
+        run grep "$report" "logs/gate_fire_log.yaml"
+        [ "$status" -ne 0 ]
+    fi
 }
 
 # --- T-011: Autofix binary_checks str→list conversion ---
