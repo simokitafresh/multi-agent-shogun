@@ -109,8 +109,8 @@ handle_busy_hold() {
 handle_input() {
     local line="$1"
 
-    if [[ "$line" =~ ^inbox[0-9]+$ ]]; then
-        handle_inbox_event "$line"
+    if [[ "$line" =~ ^(inbox[0-9]+)([[:space:]]+—.*)?$ ]]; then
+        handle_inbox_event "${BASH_REMATCH[1]}"
         return 0
     fi
 
