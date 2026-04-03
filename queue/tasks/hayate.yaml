@@ -1,5 +1,5 @@
 task:
-  _ac_task_id: cmd_karo_gs_kasoku_diff_opt_impl
+  _ac_task_id: cmd_karo_gs_shijin_opt_impl
   _ac_worker_id: null
   ac_version: d41d8cd9
   acceptance_criteria:
@@ -27,14 +27,14 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  parent_cmd: cmd_karo_gs_kasoku_diff_opt
+  parent_cmd: cmd_karo_gs_shijin_opt
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_karo_gs_kasoku_diff_opt.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_gs_kasoku_diff_opt.yaml
-  status: done
+  report_filename: hayate_report_cmd_karo_gs_shijin_opt.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_gs_shijin_opt.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_karo_gs_kasoku_diff_opt_impl
+  task_id: cmd_karo_gs_shijin_opt_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -46,12 +46,12 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'verdict_invalid'
-      count: 4
+      count: 5
+    - pattern: 'lu_reason_empty'
+      count: 5
     - pattern: 'yaml_parse_error'
       count: 4
-    - pattern: 'field_missing'
-      count: 2
-    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ'
     gate_blocks:
     - reason: 'report_format'
       count: 16
