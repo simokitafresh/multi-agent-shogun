@@ -13,11 +13,14 @@ SETTINGS_FILE="${SCRIPT_DIR}/config/settings.yaml"
 
 source "${SCRIPT_DIR}/lib/cli_adapter.sh"
 source "${SCRIPT_DIR}/scripts/lib/cli_lookup.sh"
+source "${SCRIPT_DIR}/lib/agent_state.sh"
 
 TARGET_CLI="${1:-}"
 SCOPE="core"
 DRY_RUN=false
 NO_RELAUNCH=false
+BOOT_TIMEOUT_SEC="${SWITCH_CLI_BOOT_TIMEOUT_SEC:-30}"
+BOOT_POLL_SEC="${SWITCH_CLI_BOOT_POLL_SEC:-1}"
 
 usage() {
     cat <<'USAGE'
@@ -183,6 +186,23 @@ agent_pane_target() {
     find_agent_pane "$agent"
 }
 
+wait_for_codex_boot() {
+    local agent="$1"
+    local target="$2"
+    local deadline=$((SECONDS + BOOT_TIMEOUT_SEC))
+
+    while [ "$SECONDS" -lt "$deadline" ]; do
+        if check_agent_busy "$target" "$agent"; then
+            echo "  [runtime] ${agent}@${target}: Codex boot ready"
+            return 0
+        fi
+        sleep "$BOOT_POLL_SEC"
+    done
+
+    echo "  [runtime] ${agent}@${target}: WARN Codex boot wait timed out after ${BOOT_TIMEOUT_SEC}s"
+    return 1
+}
+
 update_agent_type() {
     local agent="$1"
     local current
@@ -233,6 +253,7 @@ restart_agent_cli() {
 
     tmux set-option -p -t "$target" @agent_cli "$TARGET_CLI" >/dev/null 2>&1 || true
     tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
+    tmux set-option -p -t "$target" @agent_state active >/dev/null 2>&1 || true
 
     tmux send-keys -t "$target" C-c
     sleep 0.4
@@ -241,6 +262,10 @@ restart_agent_cli() {
     tmux send-keys -t "$target" "cd \"${SCRIPT_DIR}\" && clear" Enter
     sleep 0.3
     tmux send-keys -t "$target" "$launch" Enter
+
+    if [[ "$TARGET_CLI" == "codex" ]]; then
+        wait_for_codex_boot "$agent" "$target" || true
+    fi
 
     echo "  [runtime] ${agent}@${target}: relaunched (${TARGET_CLI})"
 }

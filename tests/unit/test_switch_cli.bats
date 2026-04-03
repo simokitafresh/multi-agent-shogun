@@ -80,6 +80,27 @@ load_find_agent_pane() {
     '
 }
 
+load_wait_for_codex_boot() {
+    eval '
+    wait_for_codex_boot_mock() {
+        local agent="$1"
+        local target="$2"
+        local deadline=$((SECONDS + BOOT_TIMEOUT_SEC))
+
+        while [ "$SECONDS" -lt "$deadline" ]; do
+            if check_agent_busy "$target" "$agent"; then
+                echo "ready"
+                return 0
+            fi
+            sleep "$BOOT_POLL_SEC"
+        done
+
+        echo "timeout"
+        return 1
+    }
+    '
+}
+
 @test "find_agent_pane: karo → shogun:agents.1" {
     load_find_agent_pane
     MOCK_PANE_BASE=1
@@ -124,6 +145,41 @@ load_find_agent_pane() {
     [ "$result" = "shogun:agents.3" ]
     result=$(find_agent_pane_mock "tobisaru")
     [ "$result" = "shogun:agents.8" ]
+}
+
+@test "wait_for_codex_boot: succeeds after busy clears" {
+    load_wait_for_codex_boot
+    run bash -lc '
+BOOT_TIMEOUT_SEC=3
+BOOT_POLL_SEC=0
+count=0
+check_agent_busy() {
+    count=$((count + 1))
+    if [ "$count" -ge 3 ]; then
+        return 0
+    fi
+    return 1
+}
+sleep() { :; }
+'"$(declare -f wait_for_codex_boot_mock)"'
+wait_for_codex_boot_mock saizo shogun:agents.7
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ready"* ]]
+}
+
+@test "wait_for_codex_boot: returns 1 on timeout" {
+    load_wait_for_codex_boot
+    run bash -lc '
+BOOT_TIMEOUT_SEC=1
+BOOT_POLL_SEC=0
+check_agent_busy() { return 1; }
+sleep() { :; }
+'"$(declare -f wait_for_codex_boot_mock)"'
+wait_for_codex_boot_mock saizo shogun:agents.7
+'
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"timeout"* ]]
 }
 
 # =============================================================================
@@ -210,4 +266,3 @@ PYEOF
     run bash "${PROJECT_ROOT}/scripts/switch_cli_mode.sh" invalid_cli
     [ "$status" -ne 0 ]
 }
-
