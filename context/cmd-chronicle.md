@@ -678,3 +678,6 @@
 | cmd_1728 | 軍師なぜなぜ合成(gunshi-nazenaze-synthesis.md)の設計検証。 信号改善の天井確定→選択改善に全振り。Ward(多様性)×confidence(品質)×momentum(方向)+動的K。 | dm-signal | 04-04 | cmd_1728 の4段検証を実装・実行し、random v |
 | cmd_1729 | 殿指示: 最強のALMを見つける。 Levy DMAの根本問題=目的関数がBinary(方向予測正解率)。IPヒートマップで1Mが支配的だが、 忍法GS/momentum top5では18Mが圧勝。「当てやすい」≠「儲かる」。 目的関数をBinary→CAGRランキング精度に変え、「儲かるlookback」を動的選択するALMを設計・検証。 | dm-signal | 04-04 | — |
 | cmd_1730 | ALM研究で本番メトリクスを特徴量に使う。独自計算は本番と乖離するため禁止(殿指示)。 本番metrics_calculator.pyのロジックを研究スクリプトからimportできる道具を構築する。 research_engine(前処理研究)と同じパターン。道具が先。 | dm-signal | 04-04 | metrics_research_engine.py作成完了 |
+| cmd_1732 | gate — gate_fire_logからテスト実行FAILを除外しメトリクス汚染解消 | infra | 04-04 | gate_report_format が /tmp テストレ |
+| cmd_1733 | gate — autofix拡張: verdict自動導出+status自動更新(GP-107消火4問PASS) | infra | 04-04 | gate_report_autofix_main.py に |
+| cmd_1734 | gate — 報告テンプレートにninja_weak_points gate_warningをフィールド直上に注入し学習ループを回す | infra | 04-04 | deploy_task.sh の報告テンプレート生成に ga |

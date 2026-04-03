@@ -1,22 +1,42 @@
 task:
-  _ac_task_id: cmd_metrics_R7c_impl
+  _ac_task_id: cmd_1735_impl
   _ac_worker_id: null
-  ac_version: d41d8cd9
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 88572c76
   acceptance_criteria:
-  - ac: 'AC1: build_tensor高速化+パリティPASS+速度計測before/after+commit'
+  - checks:
+    - check: 24固定lookback(1M~24M)戦略のメトリクス比較テーブル(baseline)生成
+    id: AC1
+  - checks:
+    - check: 34メトリクス目的関数ALMの戦略リターン系列+最終メトリクス生成
+    id: AC2
+  - checks:
+    - check: 結果YAML+CSV保存+commit
+    id: AC3
   context_files:
   - context/dm-signal.md
+  - context/dm-signal-ops.md
   - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
-    \ Codeに'non-blo\n  - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit\
-    \ statusを実行\n────────────────────────────────────────\n\nbuild_tensorを高速化せよ。\n\
-    \n対象: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py\n\n\
-    現状: build_tensor(60)=47.2s。\n\n高速化方針:\n1. _prepare_monthly_metrics_frame一括化→Dict\n\
-    2. mean/std/skew/kurtをpandas.rolling()一括事前計算\n3. 65PF×170窓の行列一括生成\n\nパリティ: 高速化前後でbuild_tensor結果一致(atol=1e-6、MDD系atol=1e-2)\n\
-    目標: 47.2s→3s以内\ncommit"
+    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
+    \ 6列: \n  - L215: gate_metricsテストがtmux環境依存\n  - L278: cmd_1264でkagemaruがcommit完了・task\
+    \ status doneだが報告YAML未作成のまま/clearされた。ninja_monitor\n────────────────────────────────────────\n\
+    \n道具: metrics_research_engine.pyのsimulate_selection + compute_metrics_from_returns\
+    \ + compute_rolling_from_returns。\nランブック: docs/research/metrics-engine-runbook.md\
+    \ §L1 Selection Simulator。\n\n計算フロー:\n1. build_return_wide()で65PF月次リターン行列\n2.\
+    \ 24 lookback(1M~24M全部: list(range(1,25)))でsimulate_selection(score_fn=momentum_k,\
+    \ top_n=5) → 24仮想戦略pd.Series\n3. 各仮想戦略でcompute_rolling_from_returns(window=60)\
+    \ → 24×DataFrame(T-60, 34)\n4. 月ごとに34メトリクスそれぞれで「最良のlookback」を選択 → 34通りのALM戦略リターン系列\n\
+    \   例: CAGR目的ALM=毎月Rolling60ヶ月CAGRが最大のlookbackを採用。その月はそのlookbackのtop5リターンを使用\n\
+    5. 34 ALM + 24固定 = 58戦略のcompute_metrics_from_returns → 58行×34列の比較テーブル\n\n出力:\n\
+    - outputs/analysis/alm_research/cmd_1735_strategy_comparison.csv (58戦略×34メトリクス)\n\
+    - outputs/analysis/alm_research/cmd_1735_alm_lookback_selection.csv (34ALM×各月のlookback選択パターン)\n\
+    - outputs/analysis/alm_research/cmd_1735_results.yaml (サマリ: 最良ALM、固定最良との差)\n-\
+    \ commit\n\nlookbacks: list(range(1,25)) = [1,2,3,...,24]。絞らない。全部やる。\nbenchmark:\
+    \ SPY月次リターン(metrics_engine SPYヘルパーで取得)\ntop_n: 5\nrolling_window: 60ヶ月\n\n★修正版:\
+    \ 旧版(6 lookback)から24 lookbackに拡張。根拠なき限定を排除。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -29,17 +49,20 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok: []
-  parent_cmd: cmd_metrics_R7c
-  progress: "build_tensor高速化: before 64.631s / after fresh 8.863s / warm 1.602s。全65PF×34指標パリティPASS。fresh 3s目標未達のためFAIL報告。"
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1735
+  progress: "旧6-lookback版はcommit 0ab1d994で成果物保存済み。02:24のcmd_cancelで24 lookback再配備指示を確認したため停止。"
   project: dm-signal
-  purpose: build_tensor 47.2s→1-3s高速化。
-  report_filename: hayate_report_cmd_metrics_R7c.yaml
-  report_path: queue/reports/hayate_report_cmd_metrics_R7c.yaml
+  purpose: ALM核心実験。34メトリクス目的関数×24 lookback(1M~24M全部)動的選択。
+  report_filename: hayate_report_cmd_1735.yaml
+  report_path: queue/reports/hayate_report_cmd_1735.yaml
   status: failed
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_metrics_R7c_impl
+  task_id: cmd_1735_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -52,12 +75,12 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'lu_reason_empty'
-      count: 20
-    - pattern: 'verdict_invalid'
-      count: 7
-    - pattern: 'field_missing'
-      count: 6
-    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+      count: 5
+    - pattern: 'no_lesson_reason'
+      count: 1
+    - pattern: 'bc_result_empty'
+      count: 1
+    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 16
@@ -71,12 +94,12 @@ task:
     - reason: 'ac_version_mismatch'
       count: 6
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+    - reason: 'binary_checks_fail'
+      count: 4
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'lesson_candidate_no_reason_empty'
       count: 3
       hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
-    - reason: 'binary_checks_fail'
-      count: 3
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'lesson_candidate_parse_error'
       count: 2
       hint: 'lesson_candidateのYAML構文エラー。インデント・引用符を確認'
@@ -89,6 +112,9 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
+    - reason: 'purpose_validation_fit_false'
+      count: 1
+      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
   - id: 'L545'
     summary: '本番DBを逐次読む性能計測では、入力順先頭PFだけが接続確立や初回クエリ準備のウォームアップで突出して遅く見える。遅いPF上位をそのまま原因視せず、同一セッションで短いwarm'
@@ -120,4 +146,4 @@ task:
   - id: 'L536'
     summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
     detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
-  deployed_at: "2026-04-04T01:52:51"
+  deployed_at: "2026-04-04T02:27:21"
