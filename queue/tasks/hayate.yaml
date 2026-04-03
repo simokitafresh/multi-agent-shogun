@@ -1,24 +1,96 @@
 task:
-  _ac_task_id: cmd_1720_impl
-  _ac_worker_id: 
+  _ac_task_id: cmd_1721_impl
+  _ac_worker_id: null
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: 検証6(Shape安定度×crash一致)+検証7(マクロゲートCAGR比較)+検証8(SVD残差×安定性相関)+検証9(Shape逆相関ペアCAGR)を実行'
-  - ac: 'AC2: 4検証の有効性判定テーブル(有効/条件付き/不適)'
-  - ac: 'AC3: 結果YAML(outputs/analysis/flair/cmd_1720_flair_cycle2.yaml)保存+commit'
+  - ac: 'AC1: 3部品(Shapeゲート/LOO/Box-Cox)のファミリー別分解テーブル+偏り判定'
+  - ac: 'AC2: 信頼度top3の選出頻度分布+HHI集中度'
+  - ac: 'AC3: Leave-One-Out 65回の安定性(各部品のmean±std)+結果YAML保存+commit'
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   deployed_at: '2026-04-03T03:54:39'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     ────────────────────────────────────────"
-  parent_cmd: cmd_1720
-  progress: "AC1-AC3 complete: flair_cycle2_study.py added, cmd_1720 YAML+CSV outputs saved, commit 1a3bbacf, report completed."
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1721
+  progress: 'AC1-AC3 complete: cmd_1721 family breakdown/top3 HHI/LOO stability saved, commit dbac3298, report completed.'
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_1720.yaml
-  report_path: queue/reports/hayate_report_cmd_1720.yaml
+  report_filename: hayate_report_cmd_1721.yaml
+  report_path: queue/reports/hayate_report_cmd_1721.yaml
   status: done
-  task_id: cmd_1720_impl
+  stop_for: []
+  task_id: cmd_1721_impl
   task_type: impl
+  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 29
+    top_pattern: 'report_yaml_format(12件)'
+    breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), double_deploy(2件), karo(2件), report_missing(1件), task_redeploy(1件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'lu_reason_empty'
+      count: 20
+    - pattern: 'verdict_invalid'
+      count: 7
+    - pattern: 'field_missing'
+      count: 6
+    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 16
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'report_yaml_missing'
+      count: 12
+      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+    - reason: 'empty_lessons_useful'
+      count: 7
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'ac_version_mismatch'
+      count: 6
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+    - reason: 'lesson_candidate_no_reason_empty'
+      count: 3
+      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
+    - reason: 'binary_checks_fail'
+      count: 3
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'lesson_candidate_parse_error'
+      count: 2
+      hint: 'lesson_candidateのYAML構文エラー。インデント・引用符を確認'
+    - reason: 'lesson_candidate_fields_empty'
+      count: 1
+      hint: 'gate BLOCK: lesson_candidate_fields_empty'
+    - reason: 'invalid_lessons_useful_format'
+      count: 1
+      hint: 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止'
+    - reason: 'lesson_candidate_missing'
+      count: 1
+      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
   related_lessons:
   - id: 'L544'
     summary: 'cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42体にmomentum選択blockが存在。EMAがL0'
@@ -50,5 +122,3 @@ task:
   - id: 'L535'
     summary: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
     detail: '''cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テーブルの第4条件が統一されず横比較に注意が必要。補完cmd対では先行cmdのスクリプトを後続が流用するため、先行の独自判断が後続に波及する。対策:'
-  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  bloom_level: 
