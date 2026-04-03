@@ -1182,6 +1182,69 @@ ${_commit_bc}"
         log "report_template: binary_checks template injected"
     fi
 
+    # cmd_1734: ninja_weak_points.gate_fail_top3 を報告テンプレートの該当フィールド直上コメントへ注入
+    REPORT_FILE_ENV="$report_file" TASK_FILE_ENV="$task_file" python3 - <<'PY_GATE_WARN'
+import os
+from pathlib import Path
+
+import yaml
+
+report_path = Path(os.environ["REPORT_FILE_ENV"])
+task_path = Path(os.environ["TASK_FILE_ENV"])
+
+try:
+    task_raw = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit(0)
+
+task = task_raw.get("task", task_raw)
+weak = task.get("ninja_weak_points", {})
+top3 = weak.get("gate_fail_top3", [])
+if not isinstance(top3, list) or not top3:
+    raise SystemExit(0)
+
+warning_map = {
+    "lu_reason_empty": ('lessons_useful:', 'lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止'),
+    "empty_lessons_useful": ('lessons_useful:', 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'),
+    "lu_structure_error": ('lessons_useful:', 'lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'),
+    "bc_result_empty": ('binary_checks:', 'binary_checksの各resultに"yes"/"no"を記入'),
+    "bc_result_invalid": ('binary_checks:', 'binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値'),
+    "binary_checks_fail": ('binary_checks:', 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'),
+    "verdict_invalid": ('verdict:', 'verdictは"PASS"/"FAIL"の二値のみ'),
+    "status_pending": ('status: pending', '完了後にstatusを"completed"に更新。"pending"のまま報告禁止'),
+    "no_lesson_reason": ('  no_lesson_reason:', 'lesson_candidate.found=false時はno_lesson_reasonに理由記入'),
+    "lesson_candidate_no_reason_empty": ('  no_lesson_reason:', 'lesson_candidate.found=false時はno_lesson_reasonに理由記入'),
+}
+
+anchor_comments: dict[str, list[str]] = {}
+for item in top3:
+    if not isinstance(item, dict):
+        continue
+    pattern = str(item.get("pattern", "")).strip()
+    mapped = warning_map.get(pattern)
+    if not mapped:
+        continue
+    anchor, warning = mapped
+    anchor_comments.setdefault(anchor, [])
+    if warning not in anchor_comments[anchor]:
+        anchor_comments[anchor].append(warning)
+
+if not anchor_comments:
+    raise SystemExit(0)
+
+lines = report_path.read_text(encoding="utf-8").splitlines()
+new_lines: list[str] = []
+for line in lines:
+    for anchor, comments in anchor_comments.items():
+        if line.startswith(anchor):
+            for warning in comments:
+                new_lines.append(f'# ⚠ あなたの頻出FAIL: {warning}')
+    new_lines.append(line)
+
+report_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+PY_GATE_WARN
+    log "report_template: gate warning comments injected"
+
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
     local report_task_type
     report_task_type=$(field_get "$task_file" "task_type" "")

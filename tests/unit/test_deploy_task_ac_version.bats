@@ -251,6 +251,85 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "deploy_task injects gate_fail_top3 warnings above matching report fields" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "gate warning injection test"
+  task_type: impl
+  parent_cmd: cmd_1734
+  task_id: cmd_1734_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "warning comment injected"
+  ninja_weak_points:
+    gate_fail_top3:
+      - pattern: verdict_invalid
+        count: 5
+      - pattern: bc_result_empty
+        count: 3
+      - pattern: lesson_candidate_no_reason_empty
+        count: 2
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run grep -F '# ⚠ あなたの頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F '# ⚠ あなたの頻出FAIL: binary_checksの各resultに"yes"/"no"を記入' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F '# ⚠ あなたの頻出FAIL: lesson_candidate.found=false時はno_lesson_reasonに理由記入' "$report_path"
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+from pathlib import Path
+
+lines = Path("$report_path").read_text(encoding="utf-8").splitlines()
+verdict_idx = next(i for i, line in enumerate(lines) if line.startswith('verdict: "'))
+binary_checks_idx = lines.index('binary_checks:')
+no_lesson_idx = next(i for i, line in enumerate(lines) if line.startswith('  no_lesson_reason: "'))
+assert lines[verdict_idx - 1] == '# ⚠ あなたの頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ'
+assert lines[binary_checks_idx - 1] == '# ⚠ あなたの頻出FAIL: binary_checksの各resultに"yes"/"no"を記入'
+assert lines[no_lesson_idx - 1] == '# ⚠ あなたの頻出FAIL: lesson_candidate.found=false時はno_lesson_reasonに理由記入'
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "deploy_task leaves template unchanged when gate_fail_top3 is absent" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "no gate warning test"
+  task_type: impl
+  parent_cmd: cmd_1734
+  task_id: cmd_1734_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "no warning comment"
+  ninja_weak_points:
+    warning: "⚠ report_field_set.sh必ず使用"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run grep -F '# ⚠ あなたの頻出FAIL:' "$report_path"
+    [ "$status" -ne 0 ]
+}
+
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
     run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]
