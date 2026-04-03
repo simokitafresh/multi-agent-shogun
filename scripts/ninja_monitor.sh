@@ -120,6 +120,38 @@ yaml_field_get() {
     FIELD_GET_NO_LOG=1 field_get "$file" "$field" "$default" 2>/dev/null
 }
 
+build_pane_head_tail_excerpt() {
+    local pane_target="$1"
+    local capture
+    capture=$(tmux capture-pane -t "$pane_target" -p -J 2>/dev/null || true)
+    capture=$(printf '%s\n' "$capture" | sed '/^[[:space:]]*$/d')
+    [ -n "$capture" ] || return 1
+
+    local line_count
+    line_count=$(printf '%s\n' "$capture" | wc -l | tr -d ' ')
+    if [ "$line_count" -le 10 ] 2>/dev/null; then
+        printf '%s' "$capture"
+        return 0
+    fi
+
+    local head_block tail_block
+    head_block=$(printf '%s\n' "$capture" | head -5)
+    tail_block=$(printf '%s\n' "$capture" | tail -5)
+    printf '[pane head 5]\n%s\n...\n[pane tail 5]\n%s' "$head_block" "$tail_block"
+}
+
+append_pane_excerpt() {
+    local message="$1"
+    local pane_target="$2"
+    local excerpt
+    excerpt=$(build_pane_head_tail_excerpt "$pane_target" || true)
+    if [ -n "$excerpt" ]; then
+        printf '%s\n%s' "$message" "$excerpt"
+    else
+        printf '%s' "$message"
+    fi
+}
+
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
     log "ninja_monitor started. Monitoring ${#NINJA_NAMES[@]} ninja."
     log "Poll interval: ${POLL_INTERVAL}s, Confirm wait: ${CONFIRM_WAIT}s"
@@ -1342,13 +1374,17 @@ check_stall() {
         fi
 
         log "STALL-DETECTED: $name stalled on $task_id for ${elapsed_min}min (status=${status}), notifying karo"
-        send_inbox_message karo "${name}が${task_id}で${elapsed_min}分停滞(status=${status})" stall_alert
+        local stall_message
+        stall_message=$(append_pane_excerpt "${name}が${task_id}で${elapsed_min}分停滞(status=${status})" "$target")
+        send_inbox_message karo "$stall_message" stall_alert
         STALL_NOTIFIED[$stall_key]=$now
 
         STALL_COUNT[$stall_key]=$(( ${STALL_COUNT[$stall_key]:-0} + 1 ))
         local stall_count=${STALL_COUNT[$stall_key]}
         if [ "$stall_count" -ge "$STALL_ESCALATE_THRESHOLD" ]; then
-            send_inbox_message karo "【STALL-ESCALATE】${name}が${task_id}で${stall_count}回STALL。差し替え必須。" stall_escalate
+            local escalate_message
+            escalate_message=$(append_pane_excerpt "【STALL-ESCALATE】${name}が${task_id}で${stall_count}回STALL。差し替え必須。" "$target")
+            send_inbox_message karo "$escalate_message" stall_escalate
         fi
 
         if [ "$status" = "in_progress" ]; then

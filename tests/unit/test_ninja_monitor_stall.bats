@@ -268,6 +268,66 @@ cat "$TEST_MESSAGES"
     [[ "$output" == *"差し替え必須"* ]]
 }
 
+@test "check_stall: stall alert includes pane head/tail excerpt" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
+TEST_MESSAGES="$(mktemp)"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: assigned
+  subtask_id: subtask_500_impl_stall_enforcement
+EOF
+
+log() { :; }
+send_inbox_message() {
+    local flattened="${2//$'\''\n'\''/<NL>}"
+    echo "$1|$3|$flattened|${4:-ninja_monitor}" >> "$TEST_MESSAGES"
+}
+check_idle() { return 0; }
+yaml_field_get() {
+    case "$2" in
+        status) echo "assigned" ;;
+        subtask_id) echo "subtask_500_impl_stall_enforcement" ;;
+        task_id) echo "" ;;
+        progress_updated_at) echo "" ;;
+        *) echo "${3:-}" ;;
+    esac
+}
+tmux() {
+    case "$1" in
+        capture-pane)
+            printf "l1\nl2\nl3\nl4\nl5\nmid1\nmid2\nl8\nl9\nl10\nl11\nl12\n"
+            ;;
+        *) return 0 ;;
+    esac
+}
+cli_profile_get() { echo ""; }
+
+PANE_TARGETS[kagemaru]="shogun:2.5"
+now=$(date +%s)
+STALL_FIRST_SEEN[kagemaru]=$((now - 16 * 60))
+check_stall kagemaru
+
+cat "$TEST_MESSAGES"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo|stall_alert|"* ]]
+    [[ "$output" == *"[pane head 5]<NL>l1<NL>l2<NL>l3<NL>l4<NL>l5"* ]]
+    [[ "$output" == *"[pane tail 5]<NL>l8<NL>l9<NL>l10<NL>l11<NL>l12"* ]]
+}
+
 # =============================================================================
 # auto_deploy_done tests (merged from test_ninja_monitor_auto_deploy_done.bats)
 # =============================================================================
