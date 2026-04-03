@@ -681,3 +681,4 @@
 | cmd_1732 | gate — gate_fire_logからテスト実行FAILを除外しメトリクス汚染解消 | infra | 04-04 | gate_report_format が /tmp テストレ |
 | cmd_1733 | gate — autofix拡張: verdict自動導出+status自動更新(GP-107消火4問PASS) | infra | 04-04 | gate_report_autofix_main.py に |
 | cmd_1734 | gate — 報告テンプレートにninja_weak_points gate_warningをフィールド直上に注入し学習ループを回す | infra | 04-04 | deploy_task.sh の報告テンプレート生成に ga |
+| cmd_1735 | 研究 — ALM: 34メトリクス目的関数×24 lookback(1M~24M全部)動的選択 | dm-signal | 04-04 | 24 lookback版ALM研究を完了。1M-24M全固定 |
