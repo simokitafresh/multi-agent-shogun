@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-04 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-04T02:48:03+09:00 -->
+<!-- generated_at: 2026-04-04T08:08:38+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-04T08:08:38+09:00 | terminal | response | 1940戦略完了。結果を報告する。 **全体最良: ALM top4 × 窓36M × MaxDrawdown目的 = CAGR 53.2%** (固定最良 top2×lb6M 44.0%比 +9.1pp) **top_n別の最良ALM:…
+- 2026-04-04T02:52:29+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-04 02:50:47|CI緑: run 23955565637
 - 2026-04-04T02:48:03+09:00 | terminal | response | 修正完了。24 lookback × 10 top_n × 5 rolling窓 × 34メトリクス。1940戦略の網羅的探索。家老に修正通知済み。 [meta] stop_reason=end_turn
 - 2026-04-04T02:47:30+09:00 | ntfy | outbound | 【家老】cmd_1736 初回配備開始 (title=研究 — ALM top_n=1-10全スイープ × 24 lookback × 34メトリクス目的関数, ninja=hayate) 研究 📋 https://gist.github…
 - 2026-04-04T02:47:04+09:00 | terminal | response | cmd_1736委任完了。OOS検証の道具設計は軍師に依頼する。 [meta] stop_reason=tool_use
@@ -12,8 +14,6 @@
 - 2026-04-04T02:39:35+09:00 | terminal | response | リターン系目的関数が軒並み中位〜下位。固定最良(23M, 39.4%)を**下回った**ALMを見る。 | # | 戦略 | CAGR | 固定23M比 | 特徴 | |---|------|------|-----------|----…
 - 2026-04-04T02:37:48+09:00 | terminal | response | 58戦略の全一覧。 **上位10:** | # | 戦略 | CAGR | Sharpe | MaxDD | Calmar | |---|------|------|--------|-------|--------| | 1 | **A…
 - 2026-04-04T02:37:12+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-04 02:26:17|CI緑: run 23954994562 2026-04-04 02:32:46|cmd_1735
-- 2026-04-04T02:36:48+09:00 | terminal | response | 結果が出た。 **核心数値:** - **最良固定lookback**: 23M (CAGR 39.4%) - **最良ALM**: tracking_error目的 (CAGR **52.7%**) - **ALM改善幅**: +13.…
-- 2026-04-04T02:23:56+09:00 | terminal | response | 修正通知済み。1M~24Mの24パターン全部。絞る根拠がなければ全部やる。計算時間は4-8分で問題ない。 [meta] stop_reason=tool_use
 
 ## 未解決確認事項
 - ## やったこと **問い**: 「65個のPFから毎月5個選ぶとき、どのlookback期間のmomentumで選ぶのが最良か？」を**固定ではなく毎月動的に切り替えたら**どうなるか。 **具体的な手順**: **Step 1 — 24本の固定戦略を作る** - lookb…
