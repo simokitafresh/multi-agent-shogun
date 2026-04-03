@@ -335,6 +335,66 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
+@test "blank verdict is inferred only when all binary_checks results are filled" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: tobisaru
+parent_cmd: cmd_999
+verdict: ""
+binary_checks:
+  AC1:
+    - check: test passes
+      result: yes
+  AC2:
+    - check: commit done
+      result: no
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"verdict推定(1PASS/1FAIL)"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+assert d['verdict'] == 'FAIL', f'Expected FAIL, got {d[\"verdict\"]}'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "pending status is completed when verdict becomes valid" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: tobisaru
+parent_cmd: cmd_999
+status: pending
+verdict: ""
+binary_checks:
+  AC1:
+    - check: test passes
+      result: yes
+  AC2:
+    - check: commit done
+      result: yes
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"status pending→completed"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+assert d['verdict'] == 'PASS', f'Expected PASS, got {d[\"verdict\"]}'
+assert d['status'] == 'completed', f'Expected completed, got {d[\"status\"]}'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 # === Test 11: worker_id/parent_cmd推定 from filename ===
 @test "worker_id and parent_cmd are inferred from filename" {
     local rpath="$TEST_TMPDIR/queue/reports/hanzo_report_cmd_888.yaml"

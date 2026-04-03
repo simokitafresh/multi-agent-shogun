@@ -248,6 +248,8 @@ def main() -> int:
     bc = data.get("binary_checks")
     bc_pass_count = 0
     bc_fail_count = 0
+    bc_result_total = 0
+    bc_result_filled = 0
     if isinstance(bc, dict):
         bc_dict_fixed = False
         bc15_fixed = False
@@ -316,10 +318,15 @@ def main() -> int:
 
                     norm = item.get("result")
                     if isinstance(norm, str):
+                        bc_result_total += 1
                         if norm == "yes":
                             bc_pass_count += 1
+                            bc_result_filled += 1
                         elif norm == "no":
                             bc_fail_count += 1
+                            bc_result_filled += 1
+                    elif norm is not None:
+                        bc_result_total += 1
                 new_list.append(item)
             bc[ac_key] = new_list
 
@@ -375,11 +382,24 @@ def main() -> int:
 
     verdict_val = data.get("verdict")
     is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ("PASS", "FAIL")
-    if not is_valid_verdict and "verdict" in data:
+    verdict_blank = verdict_val is None or (isinstance(verdict_val, str) and not verdict_val.strip())
+    if verdict_blank and "verdict" in data:
+        bc = data.get("binary_checks")
+        if isinstance(bc, dict) and bc_result_total > 0 and bc_result_total == bc_result_filled:
+            data["verdict"] = "FAIL" if bc_fail_count > 0 else "PASS"
+            fixes.append(f"verdict推定({bc_pass_count}PASS/{bc_fail_count}FAIL)")
+            is_valid_verdict = True
+    elif not is_valid_verdict and "verdict" in data:
         bc = data.get("binary_checks")
         if isinstance(bc, dict) and (bc_pass_count + bc_fail_count > 0):
             data["verdict"] = "FAIL" if bc_fail_count > 0 else "PASS"
             fixes.append(f"verdict推定({bc_pass_count}PASS/{bc_fail_count}FAIL)")
+            is_valid_verdict = True
+
+    status_val = data.get("status")
+    if is_valid_verdict and isinstance(status_val, str) and status_val.strip().lower() == "pending":
+        data["status"] = "completed"
+        fixes.append("status pending→completed")
 
     sgc = data.get("self_gate_check")
     if isinstance(sgc, dict):
