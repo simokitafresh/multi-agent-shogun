@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-03-31 cmd_1627 BB前処理偵察+注入ポイント追記 -->
+<!-- last_updated: 2026-04-03 cmd_1707 FoF momentum監査+研究WF教訓索引追記 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -649,6 +649,11 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - **研究WF共通エンジン(cmd_1691+R31-R37)**: research_engine.py完成。14関数+Strategy Pattern+SSA/FoF/FDA統合。**196s→1.58s(124x)+config 707x**。R31-R34: 高速化。R35: SSA統合。R36: FoF共通関数統合。R37: FDA統合。全研究スクリプトがresearch_engineをimport → `scripts/analysis/standard_pf_preprocessing/research_engine.py`
 - シグナル相関変化分析(cmd_1701): **65PF×2条件 相関行列+尖り削減量×FoF Δcagr回帰**。r=-0.199→尖り削減≠FoF悪化主因。depth増幅(L538)が支配変数。L539教訓。小太郎impl → `outputs/analysis/standard_pf_preprocessing/signal_correlation_analysis.yaml`
 - FoF全59体EMA間接波及(cmd_1700): **59 FoF×2条件=118WF**。avg_Δcagr=-0.087。改善11/59。**ネスト深度増幅発見**: depth=1(四神)正効果→depth=2(旧忍法)損失増幅→depth=3(Ward)最大損失Δ=-0.182。L538教訓。影丸impl → `outputs/analysis/standard_pf_preprocessing/fof_all59_ema_results.yaml`
+- FoF momentum実態監査(cmd_1707): **active 59 FoF = EW 17 / momentum 19 / nested 23**。terminalは58/59が`EqualWeight`だが、**selection_block=0は17/59のみ**。FoF momentum実行経路は `component cumulative returns -> selection block(if any) -> terminal`。cmd_1700スクリプトの「all 59 FoFs are EqualWeight(selection_block=0)」前提は不正確で、L0前処理は42体の選抜結果にも波及しうる → `docs/research/cmd_1707_fof_momentum_audit.md`
+- L540 前処理関数キャッシュ不変量: `simulate_signals()` の `_preprocess_cache` は `id(preprocessing_fn)` をキーに持つ。`make_xxx_fn()` をPFループ内で毎回呼ぶと関数idが毎回変わり、65PF横断キャッシュが全損する。**前処理関数はループ外で生成・再利用すること** → `tasks/lessons.md` / `scripts/analysis/standard_pf_preprocessing/research_engine.py`
+- L541 depth_summaryパターン: depth依存効果の知見は、研究YAMLに `depth_summary` を追加して次回実行時に自動検証可能な形へ固定する。**知見発見で止まらず、出力schemaに検証欄を増やして還流すること** → `tasks/lessons.md` / `scripts/analysis/standard_pf_preprocessing/fof_all59_preprocessing_study.py`
+- L542 研究用語の固定: High/Lowのような研究用語は、cmd文面だけでなく **output metadata と unit test に同じ定義を埋め込んでから** 高コスト集計を回す。用語がテストに固定されていないと、もっともらしいYAMLが大量に出ても結論がずれる → `tasks/lessons.md`
+- L543 rolling window高速化: Lee-Mykland jump detection のBV計算は `bv_products=abs_r[1:]*abs_r[:-1]` を `cumsum` 化し、`rolling_sum=cs[t-1]-cs[t-w]` で一括計算すると **50.6x高速化(27.72ms→0.55ms)**。同パターンは研究スクリプトのrolling window計算全般に横展開可能 → `tasks/lessons.md`
 - Layer3最終出力前処理研究(cmd_1687): **Ave-X/裏Ave-X × 2条件(baseline/L0 EMA span=5) = 4 WF**。三層研究完結。EMA span=5間接波及→最終出力: Ave-X CAGR+2.2pp(0.359→0.381)/Sharpe+0.064、裏Ave-X CAGR+1.3pp(0.423→0.436)/Sharpe+0.037。MaxDD不変。本番投入でユーザー体験改善確定。半蔵impl → `outputs/analysis/standard_pf_preprocessing/layer3_final_output_results.yaml`
 - FoF第二層前処理研究(cmd_1683): **6 FoF(四神+Ave-X+裏Ave-X)×3条件(baseline/間接波及/直接適用)=18件walkforward**。L0 EMA間接波及: 朱雀+0.11 CAGR(最大)。直接適用(C-B)=全FoFで0.0(EW FoFのためL1 momentum pathなし)。疾風impl → `outputs/analysis/standard_pf_preprocessing/fof_layer2_preprocessing_results.yaml`
 - PE gate研究(cmd_1635): **65PF×16configs(4window[12,24,36,48M]×4threshold[no_gate,0.7,0.8,0.9])=1040件walkforward**。Bandt&Pompe(2002)準拠PE(m=5,τ=1)。**m=5ではPE値が低くgate大部分未発火**。window=12/24はPE<全閾値(ベースラインと同一)。window=36/t=0.7のみ発火(CAGR win率21.5%)。window=48/t=0.7発火(win率7.7%)。**PE gateは月次リターンのm=5では実用的に無効**。L533: m=5は120パターンの疎分布→低閾値(0.3-0.5)検討要。疾風impl(才蔵・小太郎FAIL→3回目) → `outputs/analysis/standard_pf_preprocessing/entropy_gate_pe_results.yaml`
