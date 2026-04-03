@@ -1,13 +1,13 @@
 task:
-  _ac_task_id: cmd_karo_gs_profile_impl
+  _ac_task_id: cmd_karo_gs_tool_growth_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 7d010443
   acceptance_criteria:
-  - ac: 'AC1: oikaze cProfile実行+上位20関数テーブル報告'
-  - ac: 'AC2: 低hanging fruit 3点(JSONキャッシュ/pd.loc/momentum cache)の現状確認'
-  - ac: 'AC3: 結果YAML保存+commit'
+  - ac: 'AC1: cmd_save.shに研究cmd道具成長チェック追加(WARNING)'
+  - ac: 'AC2: batsテスト追加'
+  - ac: 'AC3: commit完了'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -34,14 +34,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_karo_gs_profile
+  parent_cmd: cmd_karo_gs_tool_growth
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_karo_gs_profile.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_gs_profile.yaml
+  report_filename: hayate_report_cmd_karo_gs_tool_growth.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_gs_tool_growth.yaml
   status: done
   stop_for: []
-  task_id: cmd_karo_gs_profile_impl
+  task_id: cmd_karo_gs_tool_growth_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
