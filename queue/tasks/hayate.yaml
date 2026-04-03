@@ -1,9 +1,9 @@
 task:
-  _ac_task_id: cmd_karo_gs_shijin_opt_impl
+  _ac_task_id: cmd_karo_gs_shijin_cache_impl
   _ac_worker_id: null
   ac_version: d41d8cd9
   acceptance_criteria:
-  - ac: 'AC1: cProfile+最適化実装+gs_parity_check.py PASS+速度計測+commit'
+  - ac: 'AC1: キャッシュ実装+gs_parity_check.py PASS+速度計測+commit'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -27,14 +27,14 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  parent_cmd: cmd_karo_gs_shijin_opt
+  parent_cmd: cmd_karo_gs_shijin_cache
   project: dm-signal
   purpose: 'Phase 17: 構成PF全改善でもFoF悪化。前処理(軸1)の天井が見えた。'
-  report_filename: hayate_report_cmd_karo_gs_shijin_opt.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_gs_shijin_opt.yaml
-  status: done
+  report_filename: hayate_report_cmd_karo_gs_shijin_cache.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_gs_shijin_cache.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_karo_gs_shijin_opt_impl
+  task_id: cmd_karo_gs_shijin_cache_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
