@@ -40,12 +40,12 @@ task:
   - AC1
   - AC2
   parent_cmd: cmd_metrics_R3a
-  progress: ''
+  progress: AC1/AC2完了。report gate PASS。commit 89a3e62c。
   project: dm-signal
   purpose: metrics_calculator.pyの34数値メトリクス公式をcompute_34_metrics()に1:1転写。DB非依存。
   report_filename: hayate_report_cmd_metrics_R3a.yaml
   report_path: queue/reports/hayate_report_cmd_metrics_R3a.yaml
-  status: in_progress
+  status: done
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
   task_id: cmd_metrics_R3a_impl
