@@ -649,6 +649,246 @@ check_ac_param_sufficiency() {
 
 check_ac_param_sufficiency
 
+# --- Check 14: 前段results.yamlとのパラメータ空間縮小検出（BLOCK） ---
+# 起源: 2026-04-04 将軍4回連続で範囲縮小(top_n=5/lookback=6/PBO=5/MaxDD=1)
+# 目的: 後段cmdが前段cmdを参照している場合、前段results.yamlのconfig空間を削っていないか構造的に検査
+check_param_space_against_results() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    local CMD_SECTION
+    CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*command:[[:space:]]*\|/ { found=1; next }
+        found && /^      / { sub(/^      /, ""); print; next }
+        found { exit }
+    ')
+    if [[ -z "$CMD_SECTION" ]]; then
+        CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+            /^[[:space:]]*command:[[:space:]]*/ {
+                sub(/^[[:space:]]*command:[[:space:]]*/, "")
+                gsub(/^"/, "")
+                gsub(/"$/, "")
+                print
+                exit
+            }
+        ')
+    fi
+    [[ -z "$CMD_SECTION" ]] && return 0
+
+    local PROJECT_ID PROJECT_ROOT_FOR_CMD PROJECT_FILE
+    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*project:/ {
+            sub(/^[[:space:]]*project:[[:space:]]*/, "")
+            gsub(/["'\''[:space:]]/, "")
+            print
+            exit
+        }
+    ')
+    if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "infra" ]]; then
+        PROJECT_ROOT_FOR_CMD="$PROJECT_DIR"
+    else
+        PROJECT_FILE="$PROJECT_DIR/projects/${PROJECT_ID}.yaml"
+        [[ ! -f "$PROJECT_FILE" ]] && return 0
+        PROJECT_ROOT_FOR_CMD=$(awk '
+            /^project:/ { in_project=1; next }
+            in_project && /^[^[:space:]]/ { exit }
+            in_project && /^  path:/ {
+                sub(/^  path:[[:space:]]*/, "")
+                gsub(/["'\''[:space:]]/, "")
+                print
+                exit
+            }
+        ' "$PROJECT_FILE")
+        [[ -z "$PROJECT_ROOT_FOR_CMD" ]] && return 0
+    fi
+
+    CMD_SECTION="$CMD_SECTION" \
+    CURRENT_CMD_ID="$CMD_ID" \
+    PROJECT_ROOT_FOR_CMD="$PROJECT_ROOT_FOR_CMD" \
+    python3 - <<'PY'
+import glob
+import os
+import re
+import sys
+
+cmd_section = os.environ.get("CMD_SECTION", "")
+current_cmd_id = os.environ.get("CURRENT_CMD_ID", "")
+project_root = os.environ.get("PROJECT_ROOT_FOR_CMD", "")
+
+if not cmd_section or not project_root:
+    sys.exit(0)
+
+
+def unique(values):
+    seen = set()
+    out = []
+    for value in values:
+        marker = repr(value)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        out.append(value)
+    return out
+
+
+def normalize_scalar(raw):
+    raw = raw.strip()
+    if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in {"'", '"'}:
+        raw = raw[1:-1]
+    if re.fullmatch(r"-?\d+", raw):
+        return int(raw)
+    return raw
+
+
+def parse_config_lists(path):
+    config = {}
+    in_config = False
+    current_key = None
+    with open(path, encoding="utf-8") as handle:
+        for raw_line in handle:
+            line = raw_line.rstrip("\n")
+            if not in_config:
+                if line.strip() == "config:":
+                    in_config = True
+                continue
+
+            if re.match(r"^\S", line):
+                break
+
+            match = re.match(r"^  ([A-Za-z0-9_]+):\s*$", line)
+            if match:
+                current_key = match.group(1)
+                config.setdefault(current_key, [])
+                continue
+
+            match = re.match(r"^  ([A-Za-z0-9_]+):\s+.+$", line)
+            if match:
+                current_key = None
+                continue
+
+            match = re.match(r"^  -\s*(.+)$", line)
+            if match and current_key:
+                config.setdefault(current_key, []).append(normalize_scalar(match.group(1)))
+                continue
+
+            if line.strip():
+                current_key = None
+
+    return {key: unique(values) for key, values in config.items() if values}
+
+
+def parse_value_expr(expr):
+    expr = expr.strip()
+    if expr.startswith("["):
+        end = expr.find("]")
+        if end == -1:
+            return None
+        content = expr[1:end]
+        parts = [part.strip() for part in content.split(",") if part.strip()]
+        return [normalize_scalar(part) for part in parts]
+
+    range_match = re.match(r"^(\d+)\s*-\s*(\d+)\b", expr)
+    if range_match:
+        start = int(range_match.group(1))
+        end = int(range_match.group(2))
+        step = 1 if end >= start else -1
+        return list(range(start, end + step, step))
+
+    csv_match = re.match(r"^(\d+(?:\s*,\s*\d+)+)\b", expr)
+    if csv_match:
+        return [int(part.strip()) for part in csv_match.group(1).split(",")]
+
+    return None
+
+
+ALIASES = {
+    "lookbacks": ["lookbacks", "lookback"],
+    "top_ns": ["top_ns", "top_n"],
+    "rolling_windows": ["rolling_windows", "rolling_window"],
+}
+
+
+def extract_cmd_values(text, config_key):
+    aliases = ALIASES.get(config_key, [config_key])
+    found = []
+    for alias in aliases:
+        patterns = [
+            rf"\b{re.escape(alias)}\b\s*[:=]\s*(\[[^\]]+\])",
+            rf"\b{re.escape(alias)}\b\s*[:=]\s*([0-9]+\s*-\s*[0-9]+)",
+            rf"\b{re.escape(alias)}\b\s*[:=]\s*([0-9]+(?:\s*,\s*[0-9]+)+)",
+        ]
+        for pattern in patterns:
+            for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+                values = parse_value_expr(match.group(1))
+                if values:
+                    found.extend(values)
+    return unique(found)
+
+
+blocked = []
+ref_cmds = unique(re.findall(r"(?<![A-Za-z0-9_])cmd_\d+(?![A-Za-z0-9_])", cmd_section))
+for ref_cmd in ref_cmds:
+    if ref_cmd == current_cmd_id:
+        continue
+
+    matches = glob.glob(os.path.join(project_root, "outputs", "analysis", "*", f"{ref_cmd}_results.yaml"))
+    if not matches:
+        continue
+
+    result_path = matches[0]
+    config_lists = parse_config_lists(result_path)
+    if not config_lists:
+        continue
+
+    for config_key, previous_values in config_lists.items():
+        current_values = extract_cmd_values(cmd_section, config_key)
+        if not current_values:
+            continue
+        if set(current_values).issubset(set(previous_values)) and set(current_values) != set(previous_values):
+            blocked.append((ref_cmd, config_key, previous_values, current_values, result_path))
+
+if blocked:
+    ref_cmd, config_key, previous_values, current_values, result_path = blocked[0]
+    print(
+        f"BLOCK: 前段cmdのパラメータ空間を縮小しています "
+        f"({ref_cmd} {config_key}: current={current_values} previous={previous_values})",
+        file=sys.stderr,
+    )
+    print(f"  参照results: {result_path}", file=sys.stderr)
+    print("  後段cmdは前段と同一または拡張のみ許可。部分列挙での縮小は不可。", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+check_param_space_against_results
+
+# --- Check 15: パラメータ空間縮小検出（WARN） ---
+# 起源: 2026-04-04 将軍4回連続で範囲縮小(top_n=5/lookback=6/PBO=5/MaxDD=1)
+# 目的: commandに「計算量を言い訳に範囲を狭めた」記述があればWARN
+check_param_space_shrink() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    local CMD_SECTION
+    CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*command:/ { found=1; next }
+        found && /^[[:space:]]{4,}/ { print; next }
+        found && /^[[:space:]]*[a-z]/ { exit }
+    ')
+    [[ -z "$CMD_SECTION" ]] && return 0
+
+    local SHRINK_PATTERNS="代表的な|代表[0-9]|主要な[0-9]|計算量を考慮|重いため|絞る|限定する|に絞|非現実的|コスト的に"
+    local HITS
+    HITS=$(echo "$CMD_SECTION" | grep -Ec "$SHRINK_PATTERNS" || true)
+
+    if [[ "$HITS" -gt 0 ]]; then
+        echo "WARN: パラメータ空間を縮小していないか？(${HITS}箇所で縮小表現を検出)" >&2
+        echo "  → 計算量が多いなら: (1)道具を磨け (2)並列にせよ (3)チャンクに分けよ" >&2
+        echo "  → 範囲を狭めることは殿の時間を奪う最大の無駄(2026-04-04殿厳命)" >&2
+        WARN_COUNT=$((WARN_COUNT + 1))
+    fi
+}
+
+check_param_space_shrink
+
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
     local QUALITY_LOG="$PROJECT_DIR/logs/cmd_design_quality.yaml"
