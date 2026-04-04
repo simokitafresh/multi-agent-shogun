@@ -182,6 +182,80 @@ QG_TEMPLATE
         echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
     fi
 
+    # causal_chain: cmd起票前の因果推論(Why/What/How/Compound)確認
+    # 起源: 2026-04-04 殿指摘「因果推論なしに反射的にcmd起票」+軍師compound_chain原理
+    # 目的: 各論パッチ(Check14/15/q8)を原理1つに統合。「確認したか」の1問
+    if ! echo "$CMD_BLOCK_NC" | grep -q "causal_chain:"; then
+        echo "WARNING: causal_chain未記入。cmd起票前に4chainを確認したか記載推奨" >&2
+        echo "  Why: なぜやるか。What: 何を確認したか(現物)。How: 道具は対応しているか。Compound: 10回繰り返したら？" >&2
+        echo '  例: causal_chain: "Why=FoF分散効果向上。What=shijin-design.yaml DNA確認済。How=ランブック確認cache対応済。Compound=cache1回→以降DB不要=正の複利"' >&2
+        WARN_COUNT=$((WARN_COUNT + 1))
+    fi
+
+    # q8_tool_readiness: 研究道具関数を使うcmdはランブック確認を必須化（BLOCK）
+    # 起源: 2026-04-04 殿指摘 — Why/What/Howなき反射起票で研究道具の制約未確認が連続
+    # 目的: research engine系の道具関数を含むcmdで runbook + 注意事項確認を強制
+    _cmd_save_extract_command_section() {
+        echo "$CMD_BLOCK_NC" | awk '
+            /command:/ { found=1; print; next }
+            found && /^    [a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+            found { print }
+        '
+    }
+
+    _cmd_save_print_tool_runbook_context() {
+        local repo_root dm_signal_root runbook_dir
+        repo_root="${PROJECT_DIR:-${PROJECT_ROOT:-$(pwd)}}"
+        dm_signal_root="${CMD_SAVE_DM_SIGNAL_ROOT:-}"
+        if [[ -z "$dm_signal_root" && -f "$repo_root/projects/dm-signal.yaml" ]]; then
+            dm_signal_root=$(awk -F'"' '/path: "/ {print $2; exit}' "$repo_root/projects/dm-signal.yaml" 2>/dev/null || true)
+        fi
+        [[ -z "$dm_signal_root" ]] && dm_signal_root="/mnt/c/Python_app/DM-signal"
+
+        runbook_dir="$dm_signal_root/docs/research"
+        local runbooks=()
+        local _rb
+        if [[ -d "$runbook_dir" ]]; then
+            shopt -s nullglob
+            runbooks=("$runbook_dir"/*-runbook.md)
+            shopt -u nullglob
+        fi
+
+        if [[ ${#runbooks[@]} -eq 0 ]]; then
+            echo "WARNING: 研究道具runbookが見つかりません: ${runbook_dir}/*-runbook.md" >&2
+            return 0
+        fi
+
+        echo "INFO: 研究道具runbook候補:" >&2
+        for _rb in "${runbooks[@]}"; do
+            echo "  - ${_rb#$dm_signal_root/}" >&2
+        done
+
+        echo "INFO: runbook制約/注意事項(最大10行):" >&2
+        local _printed=0
+        local _line
+        while IFS= read -r _line; do
+            [[ -z "$_line" ]] && continue
+            echo "$_line" >&2
+            _printed=$((_printed + 1))
+            [[ $_printed -ge 10 ]] && break
+        done < <(grep -nE '^(##|###) .*([Nn]otes|注意事項|制約)|Constraint|constraint|注意事項|制約' "${runbooks[@]}" 2>/dev/null || true)
+
+        if [[ $_printed -eq 0 ]]; then
+            echo "  (該当行なし。runbook本文を手動確認せよ)" >&2
+        fi
+    }
+
+    COMMAND_SECTION=$(_cmd_save_extract_command_section)
+    if echo "$COMMAND_SECTION" | grep -qiE 'research_engine|metrics_research_engine|simulate_selection|compute_metrics(_from_returns)?|build_tensor|build_return_wide'; then
+        _cmd_save_print_tool_runbook_context
+        if ! echo "$CMD_BLOCK_NC" | grep -q "q8_tool_readiness:"; then
+            echo "BLOCK: q8_tool_readiness未記入。研究道具runbook確認結果と改良要否を記載せよ" >&2
+            echo '  例: q8_tool_readiness: "metrics-engine-runbook.md確認。FoFリターンcache未対応→道具改良先行"' >&2
+            exit 1
+        fi
+    fi
+
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正
     # 目的: type=impl + 条件分岐キーワード検出時に、本番での分岐実行頻度確認ACの追加を提案
