@@ -3334,3 +3334,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則: 同一スクリプト内で同じファイルを複数箇所で読む場合、初回読込結果をキャッシュせよ
+
+### L438: Pythonの単語境界は日本語隣接のcmd_XXXX抽出に使えない
+- **日付**: 2026-04-04
+- **出典**: cmd_1738
+- **記録者**: saizo
+- **status**: draft
+- **tags**: [universal]
+- Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では cmd_1736 を抽出できない。ASCII識別子抽出では明示 lookaround を使うべし。

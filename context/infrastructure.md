@@ -304,7 +304,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L437 -->
+<!-- last_synced_lesson: L438 -->
 <!-- lesson-sort 2026-03-28: L298-L301の4件を振り分け。ntfy(L298), gate強化(L299/L300), WSL2(L301) -->
 <!-- lesson-sort 2026-03-22: L256-L284の29件を振り分け(27件移動+2件重複削除)。§メインセクション: ninja_monitor(L259), ログローテーション(L258), tmux(L265/268), 軍師(L271/281)。サブセクション: bash(L263/269/270/272/277), deploy(L256/284), 報告(L264), 教訓(L257/260/266/273/275/276), gate(L262/280/282), テスト(L261), 知識(L274), レビュー(L267/283)。L278/L279重複削除 -->
 <!-- lesson-sort 2026-03-26: L285-L297の13件を振り分け(12件移動+1件重複削除)。bash(L287/289/290/295/297), deploy(L288), 報告(L291), 教訓(L285), git(L292), 知識(L286/293/294)。L296はL297重複→削除 -->
@@ -463,6 +463,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L435: bash のコマンド置換は末尾改行を落とすため YAML レコード連結で明示改行が必要（cmd_training_L4_R21_saizo）
 - L436: archive scanは実運用YAMLのネスト形を前提に軽量抽出せよ（cmd_training_L4_R22_test_hayate）
 - L437: 複数Fixが同一ファイルを独立読込するパターンはキャッシュ関数で一元化すべき（cmd_training_L4_R23_tobisaru）
+- L438: Pythonの単語境界は日本語隣接のcmd_XXXX抽出に使えない（cmd_1738）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
