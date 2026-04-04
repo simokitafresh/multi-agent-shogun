@@ -3342,3 +3342,17 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では cmd_1736 を抽出できない。ASCII識別子抽出では明示 lookaround を使うべし。
+
+### L439: 全レビューで複利の問いを含めよ
+- **日付**: 2026-04-05
+- **出典**: gunshi_S6_compound
+- **記録者**: karo
+- **tags**: [universal]
+- cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因: 因果推論が実装選択の繰り返し効果を追跡していなかった。review_logヘッダに原理1行追加(L6-8)。過去5cmd遡及テストで12件の負の複利を全て検出
+
+### L440: 原理1行>各論パッチ30行。既存を磨け
+- **日付**: 2026-04-05
+- **出典**: gunshi_S6_principle
+- **記録者**: karo
+- **tags**: [universal]
+- compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate revert(8812148)+review_logヘッダ1行。殿:原理にたどり着けばすべてに対処できる

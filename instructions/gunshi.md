@@ -203,10 +203,12 @@ strategic_contribution: "{このcmdが戦略にどう寄与するか1行}"
 - 指摘・発見には必ず `causal_chain:` フィールドで原因→結果の連鎖を記載せよ
 - 因果鎖のない指摘は「列挙」であり「推論」ではない。gate_gunshi_cs_checklist.shがWARNを出す
 - 因果鎖の粒度: 最低2段(原因→結果)。可能なら3段以上(根因→中間→症状)
+- **複利の問い(必須)**: causal_chainには必ず「このcmdの各実装選択を10回繰り返したら正の複利か負の複利か」を含めよ。SQL毎回→負。cache1回→正。loop毎回→負。batch1回→正。道具未使用→負。道具活用→正。この問いがcmd_1741のDB依存/batch未使用/個別correlation計算の3件を事前検出できた(遡及テスト5cmd全件検出・偽陽性0)
+- **原理1行 > 各論パッチ**: 改善は既存の仕組みを1行磨け。新しいgate/Step/観点を作るな。原理を1箇所に埋め込めば未来の全類似問題に対応できる(殿指摘2026-04-05)
 
 例:
 ```yaml
-causal_chain: "AC未定義→忍者が範囲外実装→workaround発生"
+causal_chain: "AC未定義→忍者が範囲外実装→workaround発生。SQL一括×10回=毎回DB接続=負の複利→cache拡張が正解(compound)"
 ```
 
 ## Quality Check 3問 — 将軍基準の継承
