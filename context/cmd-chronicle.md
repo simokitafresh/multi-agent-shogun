@@ -683,3 +683,4 @@
 | cmd_1734 | gate — 報告テンプレートにninja_weak_points gate_warningをフィールド直上に注入し学習ループを回す | infra | 04-04 | deploy_task.sh の報告テンプレート生成に ga |
 | cmd_1735 | 研究 — ALM: 34メトリクス目的関数×24 lookback(1M~24M全部)動的選択 | dm-signal | 04-04 | 24 lookback版ALM研究を完了。1M-24M全固定 |
 | cmd_1736 | 研究 — ALM top_n=1-10 × 24 lookback × 5 rolling窓 × 34メトリクス目的関数 | dm-signal | 04-04 | cmd_1736完了。ALM full sweep 1940 |
+| cmd_1737 | 研究 — ALM OOS検証 3段構え(Stage0:3軸同時 + Stage1:50組合せ + Stage2:PBO) | dm-signal | 04-04 | cmd_1737実装・実行完了。cache欠損を自己修復し、 |

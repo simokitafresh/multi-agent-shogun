@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L545 -->
+<!-- last_synced_lesson: L546 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -164,3 +164,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L516-L529は振り分け済 → research§27 R28 ClSel教訓(L516-L523/L525-L527/L529), ops教訓索引ツール(L528)。L524はL525重複→統合）
 - （L530-L534は振り分け済 → research§27(L530:OPTICS退化), core§19.2(L531:cache_value), research§29(L532:前処理注入ポイント), research§30(L533:PE gate閾値/L534:L1キャッシュ最適化)）
 - （L535-L545は振り分け済 → research§30(L535/L537/L538/L539/L540/L541/L542), research§27(L544), gs-speedup§3(L543), ops索引(L536/L545)）
+- L546: ALM foundation cacheは240 fixed seriesの完全性検証が必須（cmd_1737）
