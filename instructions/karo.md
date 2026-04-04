@@ -141,6 +141,7 @@ Timestamp: `date`必須。推測禁止。dashboard=`date "+%Y-%m-%d %H:%M"` / YA
 
 ## Inbox・Halt・Non-blocking
 
+**★全アクション前の1問**: このアクションを10回繰り返したら正の複利か負の複利か？(§0.1問い0)
 **Inbox**: `bash scripts/inbox_write.sh {ninja} "<msg>" task_assigned karo` — sleep/確認不要
 **Halt受信**: 即停止→忍者clear→commit revert→YAML idle化→dashboard更新→待機
 **Non-blocking鉄則**: sleep/polling禁止。foreground bash(60秒超)→`run_in_background:true`必須
@@ -156,8 +157,9 @@ idle忍者は記憶なし前提で配備。忍者はproject:から自力知識�
 ninja_monitor.shがassigned/acknowledged状態で10分以上idle化した忍者を検知し、`stall_alert`で家老に通知する。
 
 **受信時の対処（LK009改訂: 検証→クリア→再配備の3段階）**:
+0. **★10回問い**: このアクション(cancel/respawn/再配備)を10回繰り返したら？確認なしrespawn×10=全コンテキスト破壊(負の複利)
 1. **検証**: STALL/idle通知は信号であり事実ではない。以下3点を全て確認してから判断せよ
-   - `tmux capture-pane -t {ninja_pane} -p | tail -20` でpane現物を確認（プロンプト待機か、作業中か）
+   - `tmux capture-pane -t {ninja_pane} -p -S -50` でpane**全体**を確認（末尾5行ではなく全体。指示待ち/確認待ち/Working中を見逃すな）
    - task YAMLのprogress欄に進捗があるか
    - 同一cmd_idが他忍者に既に配備されていないか（二重配備防止）
 2. **クリア**: STALL忍者のtask YAMLをstatus:idleにクリアせよ（旧タスク残存→二重配備の根本原因）
