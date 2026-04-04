@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L548 -->
+<!-- last_synced_lesson: L551 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -167,3 +167,6 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L546: ALM foundation cacheは240 fixed seriesの完全性検証が必須（cmd_1737）
 - L547: パラメータ空間をサイレント縮小するな(殿厳命2026-04-04)（cmd_1735-1737）
 - L548: bulk metrics RFはPFごとの月次軸で解決せよ（cmd_karo_batch_R6）
+- L549: ALM batch 統合では objective 単位 fallback で parity を守る（cmd_karo_batch_R7）
+- L550: 実データbatch parityではbenchmark共通を仮定するな（cmd_karo_batch_R5）
+- L551: ALM batch統合ではobjective単位fallbackでparityを守る（cmd_karo_batch_R7）

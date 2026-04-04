@@ -1,21 +1,23 @@
 task:
-  _ac_task_id: cmd_karo_batch_R7_impl
+  _ac_task_id: cmd_karo_batch_R10_impl
   _ac_worker_id: null
   ac_version: b99834bc
   acceptance_criteria:
   - checks:
-    - check: ALMパイプラインにbatch_rolling_metrics統合+パリティ+速度計測+commit
+    - check: numpy統一+fallback削除+パリティ(atol=1e-6)+速度計測+commit
     id: AC1
   context_files:
   - context/dm-signal.md
+  - context/dm-signal-ops.md
   - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
-    \ 06829a\n  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit\
-    \ 1がClaude Codeに'non-blo\n────────────────────────────────────────\n\nランブック docs/research/metrics-engine-runbook.md\
-    \ §修行ステップ R7を実装せよ。\nR5完了済み(65PFパリティPASS、commit 6b02de76)。R6(return_tensor)も完了済み。ランブックに従え。"
+    \  - L469: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS\
+    \ e\n  - L303: lesson_write.shのREFLUX_CHECKでRUNBOOK=MISSINGが検出された。silent fallbackパターンのランブック反映が未\n\
+    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
+    \ 6列: \n────────────────────────────────────────\n\nランブック docs/research/metrics-engine-runbook.md\
+    \ §R10を実装せよ。\nskew/kurt/corr/covをnumpy axis=2に統一。Fisher公式はランブック記載済み。\nMDD/TE legacy\
+    \ fallback削除。パリティatol=1e-6。ランブックに従え。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -29,16 +31,16 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  parent_cmd: cmd_karo_batch_R7
-  progress: "AC1 complete: R7 batch ALM integration, 5.17x speedup, fallback parity pass, commit 1d1fea12"
+  parent_cmd: cmd_karo_batch_R10
+  progress: R10 code patched; running syntax and local parity probes
   project: dm-signal
-  purpose: バッチ高速化R7。ALMパイプライン統合。最終段。
-  report_filename: hayate_report_cmd_karo_batch_R7.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_batch_R7.yaml
-  status: done
+  purpose: バッチ高速化R10。numpy統一+fallback消滅。pd.rolling()完全排除。
+  report_filename: hayate_report_cmd_karo_batch_R10.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_batch_R10.yaml
+  status: in_progress
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_karo_batch_R7_impl
+  task_id: cmd_karo_batch_R10_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -92,6 +94,18 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
+  - id: 'L551'
+    summary: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
+    detail: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
+  - id: 'L550'
+    summary: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
+    detail: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
+  - id: 'L549'
+    summary: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
+    detail: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
+  - id: 'L548'
+    summary: 'DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。bulk'
+    detail: 'DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。bulk'
   - id: 'L547'
     summary: '''計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:'
     detail: '''計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:'
@@ -110,16 +124,4 @@ task:
   - id: 'L542'
     summary: 'High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コスト集計スクリプトは'
     detail: 'High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コスト集計スクリプトは'
-  - id: 'L541'
-    summary: 'L538のような深度依存効果の発見後、研究スクリプトのYAML出力にdepth_summaryを追加することで次回実行時に知見を自動検証できる。group_summaryと同じパターンでdepth別統計を計算・出力するだけで実装可能。知見発見→スクリプト更新→自動確認のサイクルを確立することで、知見が陳腐化しない。'
-    detail: 'L538のような深度依存効果の発見後、研究スクリプトのYAML出力にdepth_summaryを追加することで次回実行時に知見を自動検証できる。group_summaryと同じパターンでdepth別統計を計算・出力するだけで実装可能。知見発見→スクリプト更新→自動確認のサイクルを確立することで、知見が陳腐化しない。'
-  - id: 'L540'
-    summary: 'simulate_signals()の_preprocess_cacheはfn_id=id(preprocessing_fn)をキーとする。呼び出し側でmake_xxx_fn()をループ内で毎回呼ぶと毎回新しい関数オブジェクト→fn_idが変わりキャッシュが全くヒットしない。ループ外でfn辞書を作成して再利用すれば65PF間でキャッシュが有効になる(31,200→480回)。今後の研究スクリプト作'
-    detail: 'simulate_signals()の_preprocess_cacheはfn_id=id(preprocessing_fn)をキーとする。呼び出し側でmake_xxx_fn()をループ内で毎回呼ぶと毎回新しい関数オブジェクト→fn_idが変わりキャッシュが全くヒットしない。ループ外でfn辞書を作成して再利用すれば65PF間でキャッシュが有効になる(31,200→480回)。今後の研究スクリプト作'
-  - id: 'L539'
-    summary: '65PFのEMA前後シグナル相関行列+尖り削減量とFoF Δcagr相関分析。r=-0.199(弱い負の相関)。尖り削減量はFoF悪化の主因ではない。cmd_1700のdepth増幅(L538)が支配変数。depth=1で正効果→depth=2/3で損失増幅の構造がFoF悪化の根因'
-    detail: '65PFのEMA前後シグナル相関行列+尖り削減量とFoF Δcagr相関分析。r=-0.199(弱い負の相関)。尖り削減量はFoF悪化の主因ではない。cmd_1700のdepth増幅(L538)が支配変数。depth=1で正効果→depth=2/3で損失増幅の構造がFoF悪化の根因'
-  - id: 'L538'
-    summary: '59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdepth=2(旧忍法)で損失増幅、depth=3(旧忍法-Ward)で最大損失Δ=-0.182。L0前処理の正効果がネスト深度で逆転する。FoFレベルの前処理適用はdepth=1に限定すべき'
-    detail: '59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdepth=2(旧忍法)で損失増幅、depth=3(旧忍法-Ward)で最大損失Δ=-0.182。L0前処理の正効果がネスト深度で逆転する。FoFレベルの前処理適用はdepth=1に限定すべき'
-  deployed_at: "2026-04-04T14:49:28"
+  deployed_at: "2026-04-04T15:58:48"
