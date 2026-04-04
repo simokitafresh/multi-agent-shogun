@@ -1,24 +1,21 @@
 task:
-  _ac_task_id: cmd_karo_alm_speedA_impl
+  _ac_task_id: cmd_karo_batch_R2_impl
   _ac_worker_id: null
   ac_version: b99834bc
   acceptance_criteria:
   - checks:
-    - check: score_wideキャッシュ+return_tensor一括化+パリティ確認+速度計測+commit
+    - check: リスク系メトリクス実装+パリティテスト+commit
     id: AC1
   context_files:
   - context/dm-signal.md
   - context/dm-signal-research.md
-  deployed_at: '2026-04-04T10:42:00'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
     \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
-    \ 06829a\n  - L192: 並列implのreviewではgit diff origin/main..HEADだけでなくgit diff --name-statusも確認し、対象差分が全て\n\
-    ────────────────────────────────────────\n\ncmd_1736_alm_research.pyのsimulate_fixed_strategies→return_tensor方式に書換。\n\
-    \n現状: 240回simulate_selection(top_n×lookbackごと)。\n改善: 24 lookbackのscore_wideを事前計算→Dict化。同一lookbackで10\
-    \ top_nを回す際にscore_wide再計算しない。\n\nランブック: docs/research/metrics-engine-runbook.md\
-    \ §高速化ガイド+§事前計算パターン参照。\n\nパリティ: 既存CSV出力(cmd_1736_full_sweep.csv)と一致確認。速度計測before/after。commit。"
+    \ 06829a\n  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit\
+    \ 1がClaude Codeに'non-blo\n────────────────────────────────────────\n\nランブック docs/research/metrics-engine-runbook.md\
+    \ §修行ステップ R2を実装せよ。\nR1完了済み(commit fde8e247)。ランブックに従え。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -32,18 +29,18 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  parent_cmd: cmd_karo_alm_speedA
-  progress: "AC1: score_wide互換式+24-cache+unit/live parity+commit完了"
+  parent_cmd: cmd_karo_batch_R2
+  progress: ''
   project: dm-signal
-  purpose: ALM高速化A。score_wideキャッシュ+return_tensor一括。240回→24回。
-  report_filename: hayate_report_cmd_karo_alm_speedA.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_alm_speedA.yaml
-  status: done
+  purpose: バッチ高速化R2。リスク系(MDD/Sharpe/Sortino/CAGR/Calmar/VaR/downside_dev)。
+  report_filename: hayate_report_cmd_karo_batch_R2.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_batch_R2.yaml
+  status: assigned
   stop_for: []
-  target_path: scripts/analysis/standard_pf_preprocessing/cmd_1736_alm_research.py
-  target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/cmd_1736_alm_research.py"
-  task_id: cmd_karo_alm_speedA_impl
+  target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
+  task_id: cmd_karo_batch_R2_impl
   task_type: impl
+  target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -95,6 +92,12 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
+  - id: 'L547'
+    summary: '''計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:'
+    detail: '''計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:'
+  - id: 'L546'
+    summary: 'cmd_1737でfixed_returns_240.csvを再利用したところ、実体はfixed_top5の24列しかなくtop_n=1-10のOOS/PBO計算が停止した。foundation'
+    detail: 'cmd_1737でfixed_returns_240.csvを再利用したところ、実体はfixed_top5の24列しかなくtop_n=1-10のOOS/PBO計算が停止した。foundation'
   - id: 'L545'
     summary: '本番DBを逐次読む性能計測では、入力順先頭PFだけが接続確立や初回クエリ準備のウォームアップで突出して遅く見える。遅いPF上位をそのまま原因視せず、同一セッションで短いwarm'
     detail: '本番DBを逐次読む性能計測では、入力順先頭PFだけが接続確立や初回クエリ準備のウォームアップで突出して遅く見える。遅いPF上位をそのまま原因視せず、同一セッションで短いwarm'
@@ -119,9 +122,4 @@ task:
   - id: 'L538'
     summary: '59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdepth=2(旧忍法)で損失増幅、depth=3(旧忍法-Ward)で最大損失Δ=-0.182。L0前処理の正効果がネスト深度で逆転する。FoFレベルの前処理適用はdepth=1に限定すべき'
     detail: '59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdepth=2(旧忍法)で損失増幅、depth=3(旧忍法-Ward)で最大損失Δ=-0.182。L0前処理の正効果がネスト深度で逆転する。FoFレベルの前処理適用はdepth=1に限定すべき'
-  - id: 'L537'
-    summary: '''研究WF共通エンジン(research_engine.py)が完成。14関数(simulate_signals/calculate_metrics/load系等)+Strategy'
-    detail: '''研究WF共通エンジン(research_engine.py)が完成。14関数(simulate_signals/calculate_metrics/load系等)+Strategy'
-  - id: 'L536'
-    summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
-    detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
+  deployed_at: "2026-04-04T14:24:27"
