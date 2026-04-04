@@ -40,7 +40,7 @@ task:
   - AC2
   - AC3
   parent_cmd: cmd_1742
-  progress: cmd_cancel受領。cmd_1742停止。commit/report整理へ移行。
+  progress: cmd_cancel受領。報告YAML記入・家老通知済み。commit未実施。
   project: infra
   purpose: 研究cmd用preflight。道具ランブック確認+q8_tool_readiness BLOCK。因果推論なき反射起票を構造的に止める。
   report_filename: hayate_report_cmd_1742.yaml
