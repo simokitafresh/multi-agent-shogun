@@ -40,12 +40,12 @@ task:
   - AC1
   - AC2
   parent_cmd: cmd_karo_score_wide
-  progress: latest correction read; no further full benchmark runs after current in-flight process
+  progress: done; report gate passed; notifying karo
   project: dm-signal
   purpose: ALMスクリプトscore_wide高速化。score_fn Pythonループ→numpy一括で20x。
   report_filename: hayate_report_cmd_karo_score_wide.yaml
   report_path: queue/reports/hayate_report_cmd_karo_score_wide.yaml
-  status: in_progress
+  status: done
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/cmd_1736_alm_research.py
   task_id: cmd_karo_score_wide_impl
