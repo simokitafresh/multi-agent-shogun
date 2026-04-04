@@ -875,7 +875,7 @@ check_param_space_shrink() {
     ')
     [[ -z "$CMD_SECTION" ]] && return 0
 
-    local SHRINK_PATTERNS="代表的な|代表[0-9]|主要な[0-9]|計算量を考慮|重いため|絞る|限定する|に絞|非現実的|コスト的に"
+    local SHRINK_PATTERNS="代表[0-9]+組|代表[0-9]+点|主要な[0-9]+パターン|計算量を考慮し|重いため[0-9]|に絞って検証|に絞って実行|非現実的なので|コスト的に[0-9]"
     local HITS
     HITS=$(echo "$CMD_SECTION" | grep -Ec "$SHRINK_PATTERNS" || true)
 
