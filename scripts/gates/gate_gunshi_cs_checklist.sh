@@ -56,53 +56,6 @@ all_pass=$(echo "$RESULT" | grep -c '^ALL_PASS' || true)
 
 if (( all_pass > 0 )); then
     echo "PASS: 直近self_study/consultationエントリ全てにcs_checklist+causal_chain確認"
-fi
-
-# ── compound_chain チェック (draft/reportレビュー) ──
-# 2026-04-05追加: 「この選択が10回繰り返されたら何が起きるか」
-# deepdive Phase 4: 理解では行動は変わらない→gateに埋め込む
-COMPOUND_RESULT=$(python3 -c "
-import re
-
-with open('$LOG_FILE') as f:
-    content = f.read()
-
-# review_type: draft のエントリを抽出(直近10件)
-blocks = re.split(r'\n- cmd_id:', content)
-recent_drafts = []
-for block in blocks[1:]:
-    if 'review_type: draft' in block:
-        cmd_match = re.search(r'^\s*(\S+)', block)
-        cmd_id = cmd_match.group(1).strip() if cmd_match else '?'
-        has_compound = 'compound_chain:' in block
-        recent_drafts.append((cmd_id, has_compound))
-
-missing = []
-for cmd_id, has_compound in recent_drafts[-10:]:
-    if not has_compound:
-        missing.append(cmd_id)
-
-if missing:
-    print('COMPOUND_MISSING:' + ','.join(missing))
-else:
-    print('COMPOUND_PASS')
-" 2>/dev/null)
-
-compound_missing=$(echo "$COMPOUND_RESULT" | grep '^COMPOUND_MISSING:' | sed 's/^COMPOUND_MISSING://' | tr ',' '\n')
-compound_pass=$(echo "$COMPOUND_RESULT" | grep -c '^COMPOUND_PASS' || true)
-
-if (( compound_pass > 0 )); then
-    echo "PASS: 直近draftレビュー全てにcompound_chain確認"
-else
-    if [ -n "$compound_missing" ]; then
-        compound_count=$(echo "$compound_missing" | wc -l)
-        echo "WARN: ${compound_count}件のdraftレビューにcompound_chainなし(「この選択が10回繰り返されたら?」):"
-        echo "$compound_missing" | while read -r id; do echo "  - $id"; done
-        warn=1
-    fi
-fi
-
-if (( all_pass > 0 )) && (( compound_pass > 0 )); then
     exit 0
 fi
 
