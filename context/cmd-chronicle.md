@@ -685,3 +685,4 @@
 | cmd_1736 | 研究 — ALM top_n=1-10 × 24 lookback × 5 rolling窓 × 34メトリクス目的関数 | dm-signal | 04-04 | cmd_1736完了。ALM full sweep 1940 |
 | cmd_1737 | 研究 — ALM OOS検証 3段構え(Stage0:3軸同時 + Stage1:50組合せ + Stage2:PBO) | dm-signal | 04-04 | cmd_1737実装・実行完了。cache欠損を自己修復し、 |
 | cmd_1738 | gate — cmd_save.shに前段cmdパラメータ空間突合チェック追加(BLOCK) | infra | 04-04 | cmd_save.sh に前段 results.yaml の |
+| cmd_1739 | 研究 — ALM OOS検証 全50組合せPBO + Stage0/1 (パラメータ縮小なし) | dm-signal | 04-04 | cmd_1739を実装し、ALM OOS Stage0-2を |
