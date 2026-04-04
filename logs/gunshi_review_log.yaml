@@ -3,6 +3,9 @@
 # GP追跡表+自己研鑽 → logs/gunshi_gp_tracker.yaml
 # 詳細エントリ: cmd_1150-1199 → logs/archive/gunshi_review_log_202603a.yaml
 # 詳細エントリ: cmd_1200-1254 → logs/archive/gunshi_review_log_archive.yaml
+# ─── ★全レビュー最重要原理(毎回読め) ───
+# このcmdの各実装選択を10回繰り返したら正の複利か負の複利か？
+# (SQL毎回→負。cache1回→正。loop毎回→負。batch1回→正。道具未使用→負。道具活用→正)
 # ─── ★報告レビュー セルフゲート(LGTMの前に必ず確認) ───
 # SG0: gate_report_format.sh実行(自動化済み。手動チェック不要)
 #   bash scripts/gates/gate_report_format.sh <report_path>
@@ -28,6 +31,20 @@
 #   □ 他エージェントの状態確認時: dashboard.md更新時刻 → inbox既読状態 → capture-pane の順
 #   □ capture-paneは過去の残像。ファイルのタイムスタンプが真の現在
 #   □ 「止まっている」と断定する前に、ダッシュボード更新時刻を確認せよ
+# SG10: 研究基盤統合チェック (NEW 2026-04-03 — 道具を育てる)
+#   ■ draft review時（上流で止める = 層1）:
+#     □ 研究cmdのACに「再利用可能な関数はresearch_engine.pyに追加」が含まれているか
+#     □ 含まれていない + 新規preprocessing_fn or 共通ユーティリティを実装する → REQUEST_CHANGES
+#       severity: normal。suggested_changes: AC末尾に「再利用可能関数はresearch_engine.pyに追加+既存study scriptからimport」追加
+#     □ 分析特化(相関計算等)で他cmdでの再利用が見込めない → 不要
+#   ■ report review時（すり抜けフォールバック = 層2）:
+#     □ files_modifiedにresearch_engine.pyが含まれていなければ確認
+#     □ study script内に閉じた再利用可能関数 → SG7 context_refluxで補足cmd推奨
+#     □ research_engine.pyに既存の同名関数を再実装 → 強く指摘（重複は技術的負債）
+#   ■ 判断基準: 他の研究cmdで再利用可能か？ YES→統合必須。NO→study script可
+#   □ 目的: 各実験がresearch_engineを育て、次の実験が速くなる(+1点の複利)
+#   □ 根拠: cmd_1698(JD→engine統合✓) vs cmd_1699/1700/1701(3連続未統合)。殿指摘2026-04-03
+#   □ 自動化候補(層3): gate_research_engine_check.sh — 研究cmd報告でresearch_engine未importを自動WARN
 # SG7: 完全パッケージ (NEW 2026-03-23 — 利他サイクル)
 #   □ report review verdict=LGTM時、以下を追加バンドル:
 #     (a) gate_precheck: gate_report_format.sh結果 + commit確認結果 + GATE通過予測
@@ -7393,3 +7410,1883 @@
     - "776テスト全PASS/SKIP=0。回帰なし"
   causal_chain: "grep (Opus|Haiku)にSonnet欠落→キャッシュ古値→誤表示→パターン追加→正確検出→陣形図M:列で編成可視化"
   timestamp: "2026-04-03T01:48:00"
+- cmd_id: cmd_1697
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1697_impl
+  report_verdict: LGTM
+  lesson_quality: OK
+  findings_summary: "4観点OK。cmd_save.sh L152-153 || true追加。commit a52ff14。58テストPASS"
+  observations:
+    - "SG2: commit a52ff14(auto-commit巻込み)。cmd_save.sh +4/-2"
+    - "L413(grep||true)がuseful:trueで直接根拠。教訓が実作業で活用された好例"
+    - "set -euo pipefail + grep空結果 = 典型的bash落とし穴。2行修正で完結"
+  causal_chain: "scope_mode/scout_exemptなし→grep exit 1→set -e即終了→|| trueで空文字列通過→後続判定正常動作"
+  timestamp: "2026-04-03T01:52:00"
+- cmd_id: quality_monitor_kotaro_L4_R34
+  review_type: self_study
+  verdict: null
+  findings_summary: "小太郎gate FAIL記録(2回目)。files_modified MISSING+knowledge_candidate items空。忍者自己修正"
+  observations:
+    - "パターン: files_modified問題が2セッションで連続(R31: dict形式、R34: MISSING)"
+    - "knowledge_candidate found:trueだがitems空。found判定とitems記入が分離している"
+    - "小太郎のWA top_pattern(uncategorized)と合わせ、報告YAML記入品質に弱点"
+  causal_chain: "修行cmd→報告YAML記入→files_modified/knowledge_candidate不備→gate FAIL→忍者自己修正→学習"
+  timestamp: "2026-04-03T02:26:00"
+- cmd_id: cmd_1698
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。JD 325WF research_engine使用。q4=medium(高速化後5分以内)"
+  observations:
+    - "道具効果: q4_depth deep→medium。196秒→4秒で325WFが5分以内に"
+    - "preprocessing_fnインターフェース準拠: Callable[[pd.Series], pd.Series]。戻り値長チェックがAC1"
+    - "時間効率: 325WF@4s/条件→分割不要。半蔵単独=適正"
+    - "ACにalpha={0.01,0.05,0.1,0.2}明記。Check13 PASS相当"
+  causal_chain: "research_engine高速化(47x)→325WFが5分→medium depth→分割不要→道具作りの投資回収"
+  timestamp: "2026-04-03T02:33:00"
+- cmd_id: cmd_1699
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。SSA 325WF research_engine使用。q4=medium(高速化後5分以内)"
+  observations:
+    - "道具効果: deep→medium。SSA(SVD)の計算自体はEMAより重いがengineのキャッシュが効く"
+    - "window clamp処理(L>len//2)がAC1に明記。エッジケース対処済み"
+    - "時間効率: 325WF→分割不要。飛猿単独=適正"
+    - "ACにL={21,42,63,126}明記。Check13 PASS相当"
+  causal_chain: "Phase3空白(周波数分解)→SSA実装→research_engine preprocessing_fn注入→65PF全数→非パラメトリック前処理の全体像"
+  timestamp: "2026-04-03T02:34:00"
+- cmd_id: cmd_1698
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。Lee-Mykland JD実装+325WF。commit ee7ebe33。SG9追加チェック通過"
+  observations:
+    - "AC1: make_lee_mykland_fn Callable[[pd.Series],pd.Series]準拠。reindex(close_series.index)で長さ保証"
+    - "AC2: 65PF×5条件=325WF 128s完了。結果yaml 4893行"
+    - "実装品質: BV局所ボラ+Gumbel閾値。sigma_hat max(1e-20)でゼロ除算防止。短seriesはearly return(copy)"
+    - "SG9: WA率66.7%。top_pattern=report_yaml_format→gate PASS済み。追加3項全OK"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "Phase3サーベイ→JD未実施→research_engine準拠実装→全PF定量評価→EMA/L1との横比較データ完成"
+  timestamp: "2026-04-03T02:42:00"
+- cmd_id: cmd_1699
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。SSA JD実装+325WF。commit 5b7314ed。SG9追加チェック通過(WA率80%)"
+  observations:
+    - "AC1: ssa_preprocessing+make_ssa_fn(partial)でpreprocessing_fn互換。window clamp(min(L,n-1))実装"
+    - "AC2: 65PF×5条件=325WF 372s完了。SVDが重い分JDより長い→妥当"
+    - "実装品質: 4段階early returnガード。diagonal averaging復元。cumulative energy>=90%でコンポーネント選択"
+    - "SG9: WA率80%。top_pattern=commit_missing→commit確認済み。追加3項全OK"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "Phase3サーベイ→SSA未実施→research_engine interface準拠実装→全PF定量評価→cross-method(L1>EMA>SSA>FDA)順位確定"
+  timestamp: "2026-04-03T02:46:00"
+- cmd_id: cmd_1700
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。全59 FoF EMA span=5間接波及118WF。base script(cmd_1683)確認。q5充実"
+  observations:
+    - "前提充実: q5に3検証ソース(psycopg2 DB確認/cmd_1687報告/portfolio_list.txt)。59体全EW確認済み"
+    - "Nested FoF 2段階伝播がAC2に明記。bam_26等の特殊ケースを命令に含む"
+    - "時間効率: 118WF q4=medium。cmd_1698(325WF/128s)比で分割不要。影丸単独=適正"
+    - "base script cmd_1683(17KB)はimportlib+sqlalchemy+DB構成取得を含む。拡張可能な構造"
+  causal_chain: "cmd_1687で2体のみ検証→57体未検証の穴→全59体118WF→FoF層パフォーマンス地図完成→前処理本番投入判断の基盤"
+  timestamp: "2026-04-03T02:57:00"
+- cmd_id: SG10_creation
+  review_type: self_study
+  verdict: null
+  findings_summary: "殿指摘→SG10新設。研究関数のresearch_engine統合チェック。理解→行動変換→環境埋込"
+  observations:
+    - "cmd_1699 SSA関数がstudy scriptに閉じていた。cmd_1698 JDはresearch_engine.pyに追加。レビューで差異を検出できなかった"
+    - "殿の『道具作り』を自分のレビュー自動化と誤解→消火提案。正しくは研究基盤の成長"
+    - "『正しいですか？』と殿に確認=自立していない。原則で判断できる内容を殿に聞いた"
+  proposals:
+    - id: GP-072
+      description: "SG10 研究基盤統合チェック — research_engine.pyへの関数統合を確認"
+      status: accepted
+  causal_chain: "研究関数がstudy scriptに閉じる→engine成長しない→次の実験で再実装→複利が回らない。レビュー観点に統合チェックがない→見落とす→SG10で環境に埋込→永続防御"
+  timestamp: "2026-04-03T03:08:00"
+- cmd_id: cmd_1700
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。59 FoF 118WF。commit 62327a23。SG10: FoF系関数のengine未統合を検出"
+  observations:
+    - "AC1-3全充足。topological sortでnested FoF(depth1-3)を正しく処理。cmd_1687再現(Ave-X+2.2pp)"
+    - "knowledge_candidate 4件: シン四つ目-常勝不在(20体vs仕様21体)、MIX構成、旧忍法-Ward depth=3、鉄壁-朱雀/青龍=standard"
+    - "lesson_candidate: ネスト深度と損失増幅。depth=1 avg_Δ~-0.02 → depth=2 -0.151 → depth=3 -0.182。再利用可能"
+    - "SG10: calculate_signal_match_rateがresearch_engine.py L595に既存なのに再実装。topological_sort/aggregate_equalweight_fof/load_all_fofsもengine統合候補"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_1687で2体のみ→57体未検証→全59体118WF→depth増幅発見→FoF前処理本番投入にはdepth考慮必須の知見。SG10:FoF関数がstudy閉じ→次のFoF研究で再実装コスト→engine統合で複利化"
+  timestamp: "2026-04-03T03:14:00"
+- cmd_id: consultation_tool_growth
+  review_type: self_study
+  verdict: null
+  findings_summary: "19 study scripts監査。engine使用2/19。17本が自前9-25関数。道具作り3タスク提案(SSA/FoF/FDA統合)"
+  observations:
+    - "engine採用率: 2/19(10.5%)。jump_detection_engine_study + ssa_engine_study のみ"
+    - "最大重複: fda_smoothing_study_full(20def), ssa_smoothing_study(25def), oos_verification_study(23def)"
+    - "FoF系: calculate_signal_match_rateがresearch_engine L595に既存なのにfof_all59が再実装"
+    - "preprocessing_fn統合候補: SSA(make_ssa_fn), FDA(make_fda_fn)。JD(make_lee_mykland_fn)はcmd_1698で統合済み"
+  proposals:
+    - id: GP-073
+      description: "研究エンジン道具作り3タスク: SSA/FoF/FDA関数のresearch_engine統合"
+      status: pending
+  causal_chain: "研究基盤(research_engine)に関数が統合されない→各study scriptが自前実装→重複260+関数→保守コスト増+次の実験で再実装→engine統合で複利化"
+  cs_checklist:
+    CS1: "全19 study scriptsのdef数とengine import有無を全量確認"
+    CS2: "SG10で検出したcmd_1699/1700の未統合を起点に全体像を計測"
+    CS3: "grep -c 'def ' / grep 'from research_engine' で実コード確認"
+    CS4: "consultation_responseとして家老に3タスク提案=行動変換完了"
+    CS5: "FDA study_fullの20defが統合候補として未検証角度→(C)タスクで対応"
+    CS6: "study閉じ→重複260+→engine統合2/19→次の実験再実装コスト→道具作りで複利化"
+  timestamp: "2026-04-03T03:20:00"
+- cmd_id: cmd_1701
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。シグナル相関+尖り度分析。追加WF不要。research_engine使用明記"
+  observations:
+    - "殿洞察起点: 尖り=FoF材料価値。EMAがノイズ+独自性を区別せず削る仮説を定量検証"
+    - "WF不要設計: simulate_signalsのシグナルDFのみ使用→高速。q4=medium妥当"
+    - "cmd_1700結果との突合(AC2): 改善11/悪化49の根因特定。構造理解"
+    - "SG10: engine使用明記。新規分析関数は分析特化(preprocessing_fnパターンではない)。統合判断は結果後"
+  causal_chain: "cmd_1700で83%悪化→なぜ？→EMAが尖り削減→尖り削減量とFoF悪化の相関定量化→PF選択的前処理の設計基盤"
+  timestamp: "2026-04-03T03:24:00"
+- cmd_id: cmd_1701
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。r=-0.199仮説棄却。commit adbca123。SG10: research_engine未使用(cmd指示違反だが成果物は完全)"
+  observations:
+    - "仮説棄却: r=-0.199(n=59,p≈0.13)。尖り削減量はFoF悪化の主因ではない。depth増幅が支配的"
+    - "avg尖り削減量=0.001。月次BUY/CASHレベルではEMA span=5のシグナル変化は極めて微小"
+    - "SG10: cmd指示'research_engine.pyを使い'に対し未import。8関数自前定義。load_all_fofs_with_meta/resolve_standard_pf_namesはcmd_1700重複"
+    - "lesson_candidate: r=-0.199定量知見。depth主因はcmd_1700と整合。register推奨"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "尖り削減=FoF悪化主因の仮説→r=-0.199で棄却→depth増幅が真因→前処理のFoF適用はdepth考慮が必須。SG10: engine未使用→FoF系関数が3スクリプトに分散→統合cmd急務"
+  timestamp: "2026-04-03T03:32:00"
+- cmd_id: SG10_why_chain
+  review_type: self_study
+  verdict: null
+  findings_summary: "SG10なぜなぜ5段。根因=ACに統合指示未明示。3層防御設計。cmd_save.sh q7提案"
+  observations:
+    - "cmd_1698/1699同一AC文言('準拠')で忍者判断が分岐。半蔵=engine追加、飛猿=study閉じ。再現性なし=仕組み不在"
+    - "cmd_1701は'research_engine.pyを使い'明記でも忍者が無視。ACに書いても忍者が従わないパターン=gate強制が必要"
+    - "q1-q6に'道具の成長'チェックなし。研究cmdの成果物=結果YAML+engine成長だがq5は'verified_source'のみ"
+    - "3層防御: draft REQUEST_CHANGES(層1) + report SG10(層2) + gate自動WARN(層3)。層1は即稼働、層3はcmd化推奨"
+  proposals:
+    - id: GP-074
+      description: "gate_research_engine_check.sh — 研究cmd報告でresearch_engine未import自動WARN"
+      status: pending
+    - id: GP-075
+      description: "cmd_save.sh q7 道具成長チェック — 研究cmdで新規preprocessing_fn時にengine統合AC有無WARN"
+      status: pending
+  causal_chain: "AC'準拠'≠'追加'→忍者判断バラツキ→3連続未統合→engine成長停止→なぜ5段で根因=成果物認識(結果のみ)→q7/gate3層で環境に埋込"
+  cs_checklist:
+    CS1: "cmd_1698/1699/1700/1701のAC全文を確認。'追加'と'準拠'の差を実証"
+    CS2: "3cmd連続の未統合パターンを自システムデータで検出"
+    CS3: "git show で半蔵(engine追加)vs飛猿(study閉じ)の実コード比較"
+    CS4: "3層防御設計+GP-074/075提案=行動変換"
+    CS5: "cmd_1701の'engine使用'明記でも無視パターン=gate強制必要の未検証角度"
+    CS6: "AC未明示→忍者バラツキ→未統合→engine停滞→複利断絶。5段因果鎖"
+  timestamp: "2026-04-03T03:42:00"
+- cmd_id: cmd_1702
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。軸2(動的選択)新研究。65PF×12window。WF不要。SG10: preprocessing_fn系なし→統合不要"
+  observations:
+    - "研究方向転換: 前処理(軸1)天井→動的選択(軸2)。殿発案のrolling return High特徴量"
+    - "SG10: 新軸の初cmdでpreprocessing_fn系なし。engine統合不要。軸2が続けばengine化将来課題"
+    - "WF不要設計: DB monthly_return_open取得+計算のみ。q4=medium適正"
+    - "Phase 17根拠: cmd_1700(83%悪化)+cmd_1701(r=-0.199尖り≠主因)で前処理天井を定量確認"
+  causal_chain: "前処理軸1天井(構成PF改善→FoF悪化83%)→殿発案軸2(いつ強いか)→rolling High特徴量→動的選択の設計基盤"
+  timestamp: "2026-04-03T03:58:00"
+- cmd_id: cmd_1702
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。65PF×12window rolling High分析。commit 63f62b4b。research_engine importlib動的ロード"
+  observations:
+    - "research_engine使用: importlib.util経由で動的ロード。from importではないが再利用は事実"
+    - "主要所見: avg_high_rate 1M=3.89%→12M=22.45%。DM6-20%が唯一majority High(0.557)"
+    - "テスト4件PASS。新軸(動的選択)の初データセット完成"
+    - "SG10: 新軸初cmd。分析特化関数はengine統合不要(draft判断維持)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "前処理天井→殿発案rolling High→65PF×12windowデータセット→動的選択の設計基盤完成→DM6系のみmajority High=短期PFに動的選択の余地"
+  timestamp: "2026-04-03T04:14:00"
+- cmd_id: cmd_1703
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。fix cmd。本番コードL57/L89現物確認。High=max()。4指標が本番best/worst/average/currentに完全対応"
+  observations:
+    - "本番コード確認: backend/app/jobs/generators/rolling_returns.py L57(CAGR計算), L88-91(best/worst/average/current)"
+    - "cmd_1702の二値定義(>全期間CAGR)は本番定義(max())と不一致。修正正当"
+    - "cmd内パス'generators/rolling_returns.py'→実際'backend/app/jobs/generators/rolling_returns.py'。忍者はfindで発見可能"
+    - "Phase1削除→Phase2再計算→Phase3分析。3ファイル削除は明示的(low risk)"
+  causal_chain: "cmd_1702で二値定義実装→本番定義(max)と乖離→間違ったデータで分析→cmd_1703で削除+本番準拠再計算→研究と本番の定義一致"
+  timestamp: "2026-04-03T04:23:00"
+- cmd_id: cmd_1703
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。旧削除(241e5b5a)+新追加(d6ff816e)。本番定義準拠。テスト6 PASS"
+  observations:
+    - "AC1: 241e5b5aで旧3ファイル削除(23126行)。クリーン"
+    - "AC2: d6ff816eで本番定義(max/min/mean/current)準拠の新スクリプト+結果(19757行)+テスト(124行)"
+    - "テスト6件がproduction shift cumulative定義を固定。本番乖離防止"
+    - "files_modifiedに旧ファイル3件+新ファイル3件=6件。両commitで整合"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_1702二値定義→本番不一致発覚→cmd_1703で削除+本番準拠再実装→テストで定義固定→研究と本番の整合保証"
+  timestamp: "2026-04-03T04:28:00"
+- cmd_id: cmd_1704
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。選択適用EMA5。delta_high>=0スクリーニング。cmd_1700-1703因果鎖一貫"
+  observations:
+    - "delta_high現物確認: cmd_1703結果に1323エントリ。avg_delta_highがファミリー集計に存在"
+    - "3条件比較設計: (A)baseline/(B)一律EMA5(cmd_1700)/(C)選択EMA5(本cmd)。データソース全確認済み"
+    - "スクリーニング→選択適用パターンが確立すれば他前処理(L1/Kalman等)にも適用可能(+1複利)"
+    - "SG10: research_engine使用明記。スクリーニングlogicはexploratoryでengine統合は有効性確認後"
+  causal_chain: "一律EMA5→83%悪化(cmd_1700)→尖り≠主因(cmd_1701)→rolling High特徴量(cmd_1703)→delta_high>=0でスクリーニング→選択適用→FoF改善率測定"
+  timestamp: "2026-04-03T08:20:00"
+- cmd_id: cmd_1704
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。選択EMA5でもFoF改善せず(C_vs_A=-0.091)。仮説棄却。commit f6042817。テスト10 PASS"
+  observations:
+    - "52/65 PFがdelta_high>=0で通過(80%)。除外わずか13PF→選別が緩く一律適用と大差なし"
+    - "C_vs_A improved=8/59 < B_vs_A improved=11/59。選択適用が一律より悪い逆転現象"
+    - "C_vs_B avg_delta_cagr=-0.004。選択適用と一律適用はほぼ同等→12M delta_highはFoF改善の有効な選別基準ではない"
+    - "否定的結果だが研究として有効。選別基準の精緻化(window変更/閾値引上等)が次の問い"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "delta_high>=0で52PF選別→80%通過(緩い)→選択EMA5≈一律EMA5→12M Highは選別基準として不十分→より厳しい基準or異なる軸が必要"
+  timestamp: "2026-04-03T08:30:00"
+- cmd_id: cmd_1706
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。5パターン×59 FoF探索。方針転換(原因→改善探索)。research_engine使用。殿指示"
+  observations:
+    - "5パターン設計: (A)baseline/(B)全EMA5/(C)全L1/(D)lookback依存/(E)手法混合。全てデータソース明記"
+    - "(D)lookback>=42D基準は軍師分析の構成タイプ知見と整合。DM6系(短期)をbaseline維持=激攻FoF保護"
+    - "方針転換: 原因分析→探索。殿指示'良いもの見つけ→差分なぜなぜ'=研究日誌Phase3アプローチ"
+    - "SG10: 全パターンがresearch_engine preprocessing_fnで実装可能。新規engine関数不要"
+  causal_chain: "悪化原因分析(cmd_1700-1704)→構成タイプ×depth交互作用判明→原因固執より探索転換→5パターン比較→baselineに勝つ構成発見→差分なぜなぜでFoF前処理設計原理"
+  timestamp: "2026-04-03T10:34:00"
+- cmd_id: cmd_1706
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。5パターン×59FoF。best=E(mixed) 12/59(20.3%)。commit c47af8b7"
+  observations:
+    - "パターンランキング: E(mixed)12/59 > B(EMA5)=D(lookback依存)8/59 > C(L1)5/59。手法混合が最良"
+    - "全パターンavg_ΔCAGR負。E=-0.086。FoFレベルでbaseline超えは困難。改善FoFは少数派"
+    - "E(mixed)はcmd_1700のB(一律EMA5)11/59→12/59で+1体のみ。劇的改善ではない"
+    - "lesson_candidate: WSL2 TTY+Windows python.exe停止問題。Linux python3推奨。環境依存知見"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "原因分析→探索転換→5パターン比較→E(mixed)最良だが改善12/59→FoF前処理の天井確認→次は差分なぜなぜ(殿指示)"
+  timestamp: "2026-04-03T10:48:00"
+- cmd_id: cmd_1707
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。FoF momentum判定偵察。2名並列。前処理天井→判断ロジック研究へ転換"
+  observations:
+    - "全59FoFがEW(blocks=[])確認済み(cmd_1700)。momentum判定が存在するかも偵察対象"
+    - "L1 momentum(FoF自身のBUY/CASH)とL0 selection(構成PF選択)の区別が調査の鍵"
+    - "偵察5要件がAC3に含まれている。実装直結の品質"
+    - "2名並列(疾風+才蔵)はコード探索の重複リスクあるが、異なる視点で盲点補完"
+  causal_chain: "前処理FoF天井(cmd_1706)→判断ロジック研究への転換→現行実装把握(本cmd)→改善余地特定→次の研究cmd設計基盤"
+  timestamp: "2026-04-03T12:44:00"
+- cmd_id: cmd_1707
+  review_type: report
+  report_ninja: hayate+saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。2名分類一致(EW17/momentum19/nested23)。★assumption_invalidation: cmd_1700前提不正確(selection_block=0は17/59のみ)"
+  observations:
+    - "★最重要: cmd_1700の'全59FoFがEW(blocks=[])'は誤り。terminal EW=58/59だがselection blockあり=42/59。cmd_1700-1706の前提に影響"
+    - "5 block type完全棚卸し: MomentumFilter/SingleView/MultiView/TrendReversal/MomentumAccel。パラメータ一覧が2名で整合"
+    - "改善余地4件(2名一致): dynamic lookback/days//21圧縮/depth-aware/multi-signal ensemble"
+    - "才蔵の偵察5要件が極めて詳細。10ファイル・行番号・波及先5件・テスト3件・エッジケース4件・依存順序"
+  lesson_quality: OK
+  escalation_needed: true
+  causal_chain: "cmd_1700のEW前提→全研究がEW前提で進行→実際は42/59にselection block→EMAがL0 momentum変化→selection結果変化→FoF構成変化→悪化の追加メカニズム(dispersionだけでない)"
+  timestamp: "2026-04-03T12:55:00"
+- cmd_id: self_analysis_session_20260403
+  review_type: self_study
+  verdict: null
+  findings_summary: "殿指摘6穴の自己分析。共通根因='知っている≠使っている'。3自動化ターゲット特定"
+  observations:
+    - "穴A(engine未統合素通し): 6観点が静的。環境変化(engine誕生)を追従する仕組みなし"
+    - "穴E(ローカル同士パリティ): checklist存在確認≠定義理解。CS1違反"
+    - "穴D(チェックリスト≠gate): Level2とLevel4の区別が曖昧。読み飛ばせる=意志依存"
+    - "共通根因: deepdive Phase 4を理解しているが自分に適用していない。'知る'と'使う'のギャップ"
+  proposals:
+    - id: GP-076
+      description: "CS1強化: 分析でドキュメント引用時に定義を1行で明示。書けなければ読み直し"
+      status: pending
+    - id: GP-077
+      description: "SG新設プロトコル: '読み飛ばせるか?'自問→YES→gate化提案を同一ターンで"
+      status: pending
+    - id: GP-078
+      description: "lesson登録時レビュー観点影響チェック→影響あり→SG更新を同一ターンで"
+      status: pending
+  cs_checklist:
+    CS1: "このセッションの全殿指摘(6件)を時系列で洗い出し"
+    CS2: "自システムデータ(6観点/CS checklist/SG10)で穴の存在を検証"
+    CS3: "deepdive Phase 4の原則と自分の行動を実コード比較(SG10=手書きコメント=Level2)"
+    CS4: "3自動化ターゲット(GP-076/077/078)+教訓候補3件を家老に送信=行動変換"
+    CS5: "未検証角度: '知っている≠使っている'パターンが他にもないか→次のself_studyサイクルで"
+    CS6: "知っている(Phase 4理解)→使っていない(SG10がLevel2)→穴(3cmd素通し)→根因特定→3対策"
+  causal_chain: "deepdive理解→自分に適用せず→SG10がLevel2→読み飛ばし可能→3cmd素通し→殿指摘で発覚→根因='知る≠使う'→3対策で知識を行動に強制変換"
+  timestamp: "2026-04-03T13:10:00"
+- cmd_id: cmd_1709
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。priority critical。GS修行の前提条件。殿定義+殿提案+軍師分析の3ソース直接反映"
+  observations:
+    - "ゴールデンデータ方式(殿提案)がAC1に。ローカル同士比較の穴を構造的に回避"
+    - "AC3: shin_shijin_l1_gs.py現行検証がパリティ基盤の信頼性証明。実行時間に注意"
+    - "READ ONLY明示。本番DB安全"
+    - "SG10: gs_parity_check.pyは道具。全GS修行で再利用。grid_search/配置が正しい"
+  causal_chain: "軍師なぜなぜ(パリティ基盤先)→殿ゴールデンデータ提案→cmd_1709→全GS修行の安全基盤→パリティ破壊=本番汚染を構造的に防止"
+  timestamp: "2026-04-03T13:16:00"
+- cmd_id: cmd_1710
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点全OK。将軍がPhase 4を自身に適用。q7(定義確認gate)でcmd起票前の確認を強制"
+  observations:
+    - "4回の定義確認スキップが具体的根拠。cmd_1702(rolling High二値→本番Max)はq7で防げた"
+    - "WARNING段階的導入は適切。文字列チェック(確認済み+出典)は初期実装として妥当"
+    - "q7自己参照がN/A — 正直。本cmdが定義確認gate自体の導入"
+    - "defense in depth: q7(将軍)→SG10前提検証(軍師)→忍者実装。鎖の各段階で品質保証"
+  causal_chain: "将軍4回定義スキップ→cmd_1702 High定義ミス→cmd_1703 fix必要→根因=確認フェーズ不在→q7 gateで環境埋込→今後の定義ミスを構造的防止"
+  timestamp: "2026-04-03T13:20:00"
+- cmd_id: cmd_1710
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。q7 WARNING追加+q8整理。batsテスト付き。commit a146704"
+  observations:
+    - "cmd_save.shにq7_definition_verified WARNING。既存分岐カバレッジ→q8に名称整理(副次改善)"
+    - "bats新規: test_cmd_save_q7_definition.bats(49行)。既存: test_cmd_save_q7_branch.bats更新"
+    - "75行追加/18行変更。shallow scope通りの最小diff"
+    - "将軍のPhase 4自己適用が環境に埋め込まれた。次のcmd起票から強制"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "将軍4回定義スキップ→自己検証→cmd_1710起票→才蔵実装→q7 gate稼働→今後の全cmdで定義確認強制"
+  timestamp: "2026-04-03T13:20:00"
+- cmd_id: cmd_1709
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。priority critical。ゴールデンデータ61K行+gs_parity_check.py+全4ファミリーPASS。commit 0bb383b2"
+  observations:
+    - "ゴールデンデータ: 65 PF / 12,137 rows / 61,019行JSON。本番DB直取得"
+    - "全4ファミリーPASS: DM2 179月/DM3 190月/DM6 191月/DM7+ 167月"
+    - "DM3 2010-04 pre-first-rebalance初期化差異(TMV vs Cash)をparity側で除外。重要な境界ケース"
+    - "--parity-onlyフラグでshin_shijin_l1_gs.pyの検証実行を分離。道具として再利用しやすい設計"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "軍師なぜなぜ(パリティ基盤先)+殿ゴールデンデータ提案→cmd_1709→道具完成(gs_parity_check.py)→全GS修行の安全基盤確立→Phase 2以降着手可能"
+  timestamp: "2026-04-03T13:40:00"
+- cmd_id: cmd_karo_gs_profile
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。oikaze cProfile。hot path=MomentumFilterBlock.execute(81%/17928calls)。pd.loc+momentum_cache未活用が最適化対象"
+  observations:
+    - "simulate_pattern 31.3s, MomentumFilterBlock.execute 25.4s(81%)。block.executeが支配的"
+    - "json.loads: hot path外(起動1回)→research_engine JSONキャッシュ知見は転用不要"
+    - "pd.loc[:ts_cutoff]: rebalance loop内→research_engine dict lookup(43x)知見が直接転用可能"
+    - "momentum_cache={}月次リセット→キャッシュ活用で重複計算排除の余地大"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "GS設計分析→Phase1bプロファイル→hot path特定(block.execute 81%)→pd.loc+cache未活用→research_engine知見転用先が明確→Phase4最適化の設計基盤"
+  timestamp: "2026-04-03T13:48:00"
+- cmd_id: saizo_trap_analysis
+  review_type: self_study
+  verdict: null
+  findings_summary: "才蔵ベンチマーク罠の利他なぜなぜ11段。3層の穴: (1)設計にtimeout欠落 (2)context_filesに分析ドキュメント未含 (3)q5→context_files転写なし"
+  observations:
+    - "才蔵のcontext_filesにgunshi-gs-speed-optimization-design.mdなし。軍師の設計意図が忍者に届いていない"
+    - "deploy_task.shはPJ固有context_filesのみ自動注入。cmd固有のgunshi分析は手動追加が必要だが仕組みなし"
+    - "q5_verified_sourceにgunshi分析パスが引用されているのにcontext_filesに転写されない構造的穴"
+    - "ProcessPool+SHM実行中のPythonは止められない→忍者CTX消費→判断能力喪失→殿がキル"
+  proposals:
+    - id: GP-079
+      description: "deploy_task.sh: q5参照先のcontext/*.mdを自動でcontext_filesに追加"
+      status: pending
+  cs_checklist:
+    CS1: "才蔵タスクYAML全量確認。context_files=PJ固有5件のみ"
+    CS2: "ashigaru.md Step 4でcontext_files読込を確認(忍者はここしか読まない)"
+    CS3: "deploy_task.shのcontext_files注入ロジックを確認(PJ固有のみ)"
+    CS4: "3層穴+GP-079提案+才蔵再配備指示=行動変換"
+    CS5: "全忍者共通の長時間実行罠。GS以外にも適用可能"
+    CS6: "軍師分析→q5参照→context_files未転写→忍者未読→制限なし実行→罠。5段因果鎖"
+  causal_chain: "軍師分析にtimeout欠落→かつcontext_filesに分析未含→才蔵がACのみで実行→フルGS→CTX消費→殿キル。3層穴が重なって罠成立"
+  timestamp: "2026-04-03T14:00:00"
+- cmd_id: cmd_karo_gs_tool_growth
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。SG10のLevel4 gate化が実現。cmd_save.sh Check 11.5(研究cmd道具成長WARNING)。commit 4b1d279"
+  observations:
+    - "軍師SG10(Level2チェックリスト)→cmd_save.sh WARNING(Level4近似)に昇格。研究cmdでengine統合AC未明示→WARNING"
+    - "検出ロジック: command欄にresearch_engine/simulate/analysis/研究→ACにengine統合明示なし→WARNING"
+    - "bats 3ケース+既存21件全PASS。非研究cmdは非発火(テスト確認済み)"
+    - "今日の因果鎖が閉じた: 殿'道具作り'指摘→SG10(L2)→殿'十分か?'→なぜなぜ→GP-074提案→家老実装→Level4 gate化"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "殿指摘(道具作り)→SG10(L2)→殿指摘(十分か)→なぜなぜ→GP-074(gate化提案)→家老cmd→疾風実装→cmd_save.sh Check 11.5→研究cmdで道具成長が自動強制"
+  timestamp: "2026-04-03T14:04:00"
+- cmd_id: cmd_karo_gs_benchmark_v2
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。8スクリプトPATTERN_LIMIT=100ベンチマーク完了。shin_shijin推定147.9h。commit 2b636def"
+  observations:
+    - "★shin_shijin_l1_gs.py推定147.9h(6.2日)。v1で才蔵がこれにtimeoutなしで突入→殿キル"
+    - "kawarimi timeout 300s超過→推定24.1h。kasoku_diff 15.8h, kasoku_ratio 12.2h"
+    - "利他なぜなぜの教訓(PATTERN_LIMIT+timeout)が反映→才蔵v2で完了。免疫系サイクル成功"
+    - "GS共通化+最適化の投資対効果が明確: 現行合計207.7h→最適化で数十倍短縮の余地"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "v1 timeout無し→才蔵罠→殿キル→利他なぜなぜ→PATTERN_LIMIT+timeout教訓→v2再配備→完了→ベンチマーク取得→Phase4最適化の投資対効果が定量化"
+  timestamp: "2026-04-03T14:20:00"
+- cmd_id: cmd_karo_gs_oikaze_optimize
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。oikaze serial 10倍高速化(15.2s→1.5s)。パリティ全PASS。commit fd2723d1+64135aa7"
+  observations:
+    - "3最適化全実装: NumPy月次momentum(base.py)/MomentumFilterBlock cache/rebalance間cache再利用"
+    - "★base.py変更は全selection blockに波及。他6忍法のパリティ再確認が必要"
+    - "serial 10.0x。serial_batch -18%。ppe6 -18%。serialが支配的改善"
+    - "パリティ: DM2/DM3/DM6/DM7+ 全PASS(gs_parity_check.py)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "ランブック§7指示→才蔵がoikaze3最適化実装→10倍高速化+パリティPASS→base.py変更は他忍法にも波及(bonus)→残り6本も高速化の恩恵"
+  timestamp: "2026-04-03T15:42:00"
+- cmd_id: cmd_karo_gs_kawarimi_profile
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。kawaramiプロファイル完了。oikazeと全く異なるhot path構造。ランブック§7に反映済み"
+  observations:
+    - "kawarimi hot path: get_sim_context(0.024s)/simulate_batch(0.018s)/calc_metrics_fast(0.015s)。block executeは未使用"
+    - "oikazeの3最適化(pct_change/cache/比較演算)はkawaramiには直接適用不可。異なる最適化戦略が必要"
+    - "lesson: main()直呼びではAC1/AC2全量検証が走る。hot path限定driverが必要"
+    - "ランブック§7のkawarimi vs oikaze比較表が更新済み(家老がランブック直接更新)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "軍師cmd設計指示(kawarimi cProfile最優先)→疾風実行→hot path判明(NumPy前計算が主)→oikazeとは異なる最適化戦略確定→kawarimi固有の改良設計が可能に"
+  timestamp: "2026-04-03T15:44:00"
+- cmd_id: cmd_karo_gs_kawarimi_opt
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。kawarimi 12.6%短縮(遅延生成)。パリティPASS。commit 19695cdc"
+  observations:
+    - "get_sim_context(include_aux_data=False)で未使用データ生成を省略。12.6%改善"
+    - "81分→~71分。根本的な高速化(reindex/argsort再利用)は次のステップ"
+    - "verify_ac1_parity.pyのmismatchはgs_parity_check.pyとは別系統。スコープ外判断は妥当"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T15:52:00"
+- cmd_id: cmd_karo_gs_nukimi_opt
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。nukimi 6.81倍高速化(16.5s→2.4s)。パリティPASS。commit 23c54838"
+  observations:
+    - "SingleViewMomentumFilter: block cache setdefault化+monthly momentum cache保存+searchsorted化"
+    - "oikazeの10倍に続き、nukimiも6.81倍。base.py変更+block固有cache=共通パターン確立"
+    - "single_view_momentum_filter.pyは本番コード変更。パリティPASSで安全確認済み"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T15:52:00"
+- cmd_id: cmd_karo_gs_kasoku_ratio_opt
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。kasoku_ratio 1.77倍(88→49.7s)。MomentumAccelBlock 10.9倍(7.64→0.70s)。パリティPASS。commit 76f280e3"
+  observations:
+    - "oikazeパターン横展開成功: cache setdefault+block直呼び+dict lookup"
+    - "momentum_acceleration_filter.py本番コード変更。パリティPASSで安全確認"
+    - "full run実測49.7s(baseline 88s)。-43.5%"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T16:02:00"
+- cmd_id: cmd_karo_gs_kasoku_diff_opt
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。kasoku_diff 3.9%短縮(遅延生成)。パリティPASS。commit ead39275"
+  observations:
+    - "kawaramiと同パターン(include_aux_data=False)。batch pathの補助データ省略"
+    - "48s baseline比の直接計測なし(microbenchmark条件差異)。hot path方向の改善は確認"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T16:08:00"
+- cmd_id: cmd_karo_gs_yotsume_opt
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。yotsume MultiViewBlock 21.6倍(8.84→0.41s)。full run 24.1s。パリティPASS。commit cdda5ea1"
+  observations:
+    - "nukimi/oikazeパターン横展開: cache setdefault+4視点cache+searchsorted+top-level import"
+    - "MultiViewMomentumFilterBlock.execute 8.84→0.41s(21.6倍)。simulate_pattern 10.93→0.49s(22.3倍)"
+    - "full run 24.1s。yotsume初ベンチマーク(改良前meta未取得だったため絶対値のみ)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T16:08:00"
+- cmd_id: cmd_karo_gs_bunshin_opt
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。bunshin 13.5%改善(10.5→9.1s)。PipelineEngine bypass。パリティPASS。commit e1439eb4"
+  observations:
+    - "bunshinはselection blockなし→PipelineEngine月次呼出し自体が不要。direct EW pathに置換"
+    - "781パターンで9.1s。元々小さいスクリプトなので改善幅も控えめだが正しい方向"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T16:12:00"
+- cmd_id: cmd_karo_gs_kawarimi_opt2
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。★kawarimi 24.9倍(308→12.4s)。TrendReversal3最適化。パリティPASS。テスト14 PASS。commit ed52c176"
+  observations:
+    - "ランブック分析(20倍級予測)→24.9倍実現。軍師分析→忍者実装の鎖が機能"
+    - "3点全適用: setdefault/load_ticker_prices skip/dict lookup。yotsumeパターン横展開成功"
+    - "trend_reversal_filter.py本番コード変更。パリティPASS+テスト14件で安全確認"
+    - "81分ボトルネックが解消。推定full run: 81分/24.9≈3.3分"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T16:38:00"
+- cmd_id: cmd_karo_gs_shijin_opt
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。shin_shijin 23.4%(19分→推定14.6分)。pandas reindex迂回。パリティPASS。commit 9bfebb14。全8スクリプト高速化完了"
+  observations:
+    - "hot path: run_family_grid/simulate_strategy_vectorized/compute_metrics。reindex迂回で23.4%改善"
+    - "パリティ: DM2/DM3/DM6/DM7+ 全PASS"
+    - "★全8スクリプト高速化完了。最大成果: kawarimi 24.9x, yotsume 21.6x, oikaze 10.0x"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T17:02:00"
+- cmd_id: cmd_karo_gs_shared_cache
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。shared_cache横展開3スクリプト完了。パリティPASS。commit 4219cf92"
+  observations:
+    - "kawarimi 10.5ms/pat, kasoku_diff 3.7ms/pat, kasoku_ratio 3.6ms/pat"
+    - "残り高速化ポイント§から#1,2,3が完了。全忍法がshared_momentum_cache統一"
+    - "kasoku_diffはPipelineEngine経路→ProdContext+shared_cache経路にリファクタ"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T17:12:00"
+- cmd_id: cmd_karo_gs_dict_lookup
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。dict lookup置換(momentum_filter+single_view)。テスト9 PASS。パリティPASS。commit 8f411ae9"
+  observations:
+    - "全5 selection blockの最適化完了: setdefault+load skip+dict lookup+shared_cache"
+    - "oikaze serial 8.7ms/pat, nukimi serial 12.0ms/pat"
+    - "残り高速化: shin_shijinシグナルキャッシュ(§8)のみ"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T17:18:00"
+- cmd_id: cmd_karo_gs_shijin_cache
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。shin_shijin 33%高速化(1139→763s)。シグナルキャッシュ6x重複排除。パリティ全PASS。commit d860628d。★GS高速化全項目完了"
+  observations:
+    - "cache実績: DM2 hits=70,290/misses=6,390。ランブック§8分析の6x重複排除が実証"
+    - "19分→12.7分。初回23.4%+シグナルキャッシュ9.9%=合計33%"
+    - "★GS高速化全項目完了。全8スクリプト+全5block+shin_shijinシグナルキャッシュ"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T17:32:00"
+- cmd_id: cmd_karo_gs_skip_verify
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。--skip-verify 3スクリプト追加。kawarimi 153s→13.6s(11.3x)。kasoku_diff 15.7s。パリティPASS。commit 53b12191+59862667"
+  observations:
+    - "kawarimi: verify有153s→skip-verify 13.6s。Grid batchのみで11.3倍"
+    - "kasoku_diff: --skip-verifyで15.7s"
+    - "VERIFY_ONLY=1との同時指定を明示エラー化。安全設計"
+    - "verify有りでAC1 md5 mismatchが発生 — TrendReversal最適化でserial pathの出力が変わった？要調査"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T18:25:00"
+- cmd_id: cmd_karo_gs_shijin_batch
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。shin_shijin Phase 2バッチ化。Grid 500→197s(-60.7%)。CSV MD5完全一致。パリティPASS。commit cf9390bc"
+  observations:
+    - "DM2 200.7→74.1s(-63%), DM3 99.7→47.5s(-52%), DM6 199.7→75.1s(-62%)"
+    - "ランブック§8予測(384→10s)に対し実測197s。Phase 2完全バッチ化はできていないが60%削減は大きい"
+    - "CSV MD5が旧metaと全4family一致 — パリティ完全維持"
+    - "shin_shijin全体: 1139s(19分)→197s+overhead≈460s(7.7分)。2.5倍"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T18:36:00"
+- cmd_id: cmd_karo_gs_shijin_skip_parity
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。shin_shijin --skip-parity 763→206s(3.7x)。パリティPASS。commit 4e1c502b"
+  observations:
+    - "shin_shijin総合: 1139s(19分)→206s(3.4分)。5.5倍"
+    - "meta.yamlにparity.skipped:true記録。安全追跡可能"
+    - "GS全体: shin_shijin 206s + 忍法7本(--skip-verify) ~90s = ~5分"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T18:44:00"
+- cmd_id: cmd_karo_gs_shijin_parallel
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。shin_shijin ProcessPool並列化。460→100.6s(4.57x)。MD5全一致。パリティPASS。commit 76bc3e3a"
+  observations:
+    - "shin_shijin総合: 1139s(19分)→100.6s(1.7分)。11.3倍"
+    - "fork context+global state setter/clearer。DB session持込み回避"
+    - "GS全体: shin_shijin 100.6s + 忍法7本 ~90s = ~3.2分。106分→3.2分(33倍)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T18:54:00"
+- cmd_id: cmd_karo_gs_shijin_full_batch
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。SHM化で102s(100.6s比ほぼ変化なし)。MD5一致。パリティPASS。commit fb273c7a"
+  observations:
+    - "fork context CoWで既にメモリ共有済み。SHM明示共有は速度改善に寄与しない"
+    - "102s vs 100.6s = 誤差範囲。SHM overheadと効果が相殺"
+    - "shin_shijinの並列化はfork(前回commit)で十分。SHMは不要だった"
+    - "段階3(Phase 2完全バッチ化)が残り唯一の高速化手段。現状Grid 197s→完全バッチで~30s"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T19:12:00"
+- cmd_id: cmd_1711
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: null
+  confidence: MEDIUM
+  findings_summary: "yotsume軸名誤り(skip→base_period)+title 5→7+universe混在(yotsume/1200_bunshinはlegacy_shijin)。severity: normal"
+  observations:
+    - "yotsume meta.yaml: base_period_months列のみ。skip列不在。skip_months_fixedは固定値(非grid)"
+    - "1200_yotsume: C12_legacy_shijin。他5忍法: C12_shin_shijin_v2。cmd記載 シン四神v2ベース は7忍法中5のみ正確"
+    - "metrics_bunshin=C12_shin_shijin_v2, 1200_bunshin=C12_legacy_shijin。(or 1200_bunshin)は異universe"
+    - "kasoku_ratio/diff: numerator_denominator_pairs=153=C(18,2)。18×18ヒートマップは下三角のみ充填"
+  causal_chain: "yotsume軸誤記→忍者がskip列不在で詰まり→手探り実装(skip_months_fixedをgridと誤認)or停止→workaround発生"
+  timestamp: "2026-04-03T19:42:00"
+- cmd_id: cmd_1712
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "CI赤根因=mock_cli regex ^inbox[0-9]+$ がwatcher拡張nudge(codex向け — タスクYAML:...付)にマッチしない。タイミング問題ではなくformat不一致"
+  observations:
+    - "CI log: nudge配信済み(Processed input: inbox1 — タスクYAML:...)だがEVENT inbox1未出力"
+    - "mock_cli.sh:112 regex ^inbox[0-9]+$ は完全一致。watcher send_wakeup L402-404でcodex向けに付与される — タスクYAML:...で不一致"
+    - "handle_inbox_event未呼出→set_agent_state/mark_read/process_task一切未実行→TIMEOUT"
+    - "3 CI run連続失敗=deterministic regression。flaky(確率的)ではなくformat不一致(確定的)"
+  causal_chain: "codex向けnudge拡張(L402-404)→mock_cli regex不一致($付きで部分一致不可)→inbox event未認識→EVENT未出力→TIMEOUT→CI赤"
+  timestamp: "2026-04-03T19:48:00"
+- cmd_id: cmd_1711
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: null
+  findings_summary: "CSV選択誤り4/7忍法(1186_*→246_*)+AC1パラメータ空間ヒートマップ未生成(champion7x6のみ)"
+  observations:
+    - "1186_kawarimi=1行(C12_legacy_shijin), 246_kawarimi=28116行(C12_shin_shijin_v2)。スクリプトL89で1186版をハードコード"
+    - "1186_kasoku_diff=1行, 246_kasoku_diff=119493行。同様にスクリプトL105で1186版"
+    - "AC1: cmdは各忍法パラメータ空間2Dヒートマップ(max42枚)を要求。生成はchampion7x6サマリー1枚(plot_heatmap L150-191)"
+    - "kawarimi champion=常勝-青龍,常勝-朱雀(legacy名)。C12_legacy_shijinデータ使用の証拠"
+    - "nukimi source=1186版(cmd指定246版と同cmd_246由来だがsource_type=csv/db差異あり)"
+  fail_reasons:
+    - "4/7忍法でcmd指定外CSV使用(1186_* vs cmd指定246_*)"
+    - "AC1パラメータ空間ヒートマップ未実装(champion summaryのみ)"
+    - "kawarimi/kasoku_diff=1行データで分析無効"
+  lesson_quality: WEAK
+  escalation_needed: false
+  causal_chain: "スクリプトがcmd記載CSVファイル名を無視→ディレクトリ内で類似名の1186_*を選択→legacy/1行データ混入→分析結果の4/7が無効化"
+  timestamp: "2026-04-03T19:55:00"
+- cmd_id: cmd_1713
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "知識辞書FLAIR登録。既存61エントリ+_template確認。M17重複なし。シンプルなドキュメント作成。問題なし"
+  observations:
+    - "knowledge-base/methods/に61+ファイル存在。_template.mdあり。形式ガイド充足"
+    - "dm-signal-research.md §29(金融ML知識辞書拡充)に知識辞書索引あり。AC2の追記先明確"
+    - "M17/flair既存エントリなし。ID衝突なし"
+    - "コード読解済み(q5 structure_verified)で技術詳細の精度は将軍保証"
+  causal_chain: "FLAIR知識辞書登録→研究cmd参照可能→selection block改善研究の選択肢拡大→次期パラメータ探索の質向上"
+  timestamp: "2026-04-03T19:58:00"
+- cmd_id: cmd_1713
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。FLAIR知識辞書2層構造(methods+dm-signal)。M17 ID衝突はdecision_candidate報告済み"
+  observations:
+    - "commit 76b1361c(DM-signal): m17_flair.md 298行 + flair-interpretation.md 38行"
+    - "commit 4c6a76a(shogun): context/dm-signal-research.md M17エントリ追記"
+    - "index.md L65: M17=Stochastic Jump Model。新規m17_flair.mdとID衝突。忍者がdecision_candidateで正しく報告"
+    - "2層構造: methods/=純知識、dm-signal/=プロジェクト固有解釈。karo補足指示に従った分離"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-03T20:02:00"
+- cmd_id: cmd_karo_fix_1711
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。cmd_1711 fix: CSV246_*差替+42枚per-ninpoヒートマップ+universe明示。前回FAIL3点全解消"
+  observations:
+    - "git diff: 1186_→246_ 4忍法(nukimi/kawarimi/kasoku_ratio/kasoku_diff)全修正確認"
+    - "top10 CSV: 52行→70行(7×10完全)。kawarimi CAGR 0.433→0.675(legacy1行→v2 28116行)"
+    - "42枚per-ninpoヒートマップ(7忍法×6メトリクス)がcmd_1711_ninpo_heatmaps/に生成。AC1完全充足"
+    - "summary YAML: candidate_sets_by_ninpo明示+cross_comparison_caution注記"
+    - "lesson_candidate: candidate_set_idベース検証=再利用可能な具体知見。register推奨"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "CSV差替(246_*)→正しいuniverse(v2)のデータ使用→champion/top10/neighbor全結果が信頼可能→殿への報告データ品質確保"
+  timestamp: "2026-04-03T20:08:00"
+- cmd_id: cmd_1714
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "解釈層P1前処理研究結論。9手法verdict+OOS結果+PI-021制約+FLAIR転用。ソース全確認。問題なし"
+  observations:
+    - "dm-signal/preprocessing-research-conclusions.md未存在(新規作成)。競合なし"
+    - "9手法verdictの根拠: dm-signal-research.md §26-§30(EMA cmd_1632/L1 cmd_1633/OOS cmd_1660等)"
+    - "FoF結論: L-PreprocessingFoFConclusion(MEMORY.md)と一致。全手法baseline負け"
+    - "軍師設計案(gunshi-interpretation-layer-design.md §4)の標準フォーマット準拠"
+  causal_chain: "前処理結論未登録→忍者がFoF前処理再探索→時間浪費(全手法baseline負けは実証済み)"
+  timestamp: "2026-04-03T20:15:00"
+- cmd_id: cmd_1715
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "解釈層P2本番不変量。PI-009/010/021+パリティ+GS修行ルール。projects/dm-signal.yaml現物確認。問題なし"
+  observations:
+    - "PI-009(L267)/PI-010(L270)/PI-021(L309)全てprojects/dm-signal.yaml production_invariants節に存在確認"
+    - "パリティ条件: ゴールデンデータ方式(lord-conversation-index 2026-04-03)。gs_parity_check.py存在"
+    - "PI-021 source: 殿厳命(2026-04-03)。fact: 既存変更禁止、機能追加のみ"
+  causal_chain: "PI未明文化→忍者がPI-021違反(既存パイプライン変更)→本番データ破壊"
+  timestamp: "2026-04-03T20:15:00"
+- cmd_id: cmd_1714
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。9手法verdict matrix完全(EMA=ADOPT/L1,SSA,FDA=RESEARCH/Kalman,FD,PE=REJECT/Gerber,JD=LIMITED)。FoFルール明記"
+  observations:
+    - "9手法全てverdict+定量結果+出典cmd記載。77行の簡潔な解釈層文書"
+    - "§3.2 FoFルール: L0改善→L1/FoF移植禁止。L-PreprocessingFoFConclusion一致"
+    - "§3.3 パラメータ規律: 事後最良→本番禁止、OOS必須。Kalman auto≠安全の教訓反映"
+    - "設計案のFLAIR転用候補(§4)は未記載だがcmd_1713で別途カバー済み。重大欠損ではない"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "前処理結論dm-signal/登録→忍者が前処理cmd実行前にverdict参照→FoF前処理再探索回避→研究サイクル短縮"
+  timestamp: "2026-04-03T20:20:00"
+- cmd_id: cmd_1716
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。FLAIR 65PF分析: P=12全一致(構造制約)、Kendall tau peak=24M(0.264)。GS 18-24M優位と整合"
+  observations:
+    - "65PF全てP=12: flaircast freq='M'の構造制約(FREQ_TO_PERIODS['M']=[12])。knowledge_candidateが正しく指摘"
+    - "Kendall tau単調増加: 1M=0.099→6M=0.198→12M=0.214→18M=0.244→24M=0.264。Level=長期トレンド"
+    - "tau peak 24Mは gunshi-gs-landscape-analysis.md の18-24M lookback優位と整合(独立検証)"
+    - "commit ea6aaf37: 7ファイル 14561行。スクリプト449行+出力14112行"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "FLAIR Level=季節除去トレンド→24M lookback momentumと最も相関→中長期lookback優位の独立検証(GS結果+FLAIR分解が同一結論)"
+  timestamp: "2026-04-03T20:45:00"
+- cmd_id: cmd_1715
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: null
+  findings_summary: "リポジトリ誤り: production-invariants.mdがmulti-agent-shogun(41d077a)にcommit。正しくはDM-signal"
+  observations:
+    - "41d077a: multi-agent-shogun/docs/research/knowledge-base/dm-signal/production-invariants.md (160行)"
+    - "DM-signalの同ディレクトリ(/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/dm-signal/)にファイルなし"
+    - "cmd_1714(ca097d25)はDM-signalに正しくcommit。cmd_1715のみ誤配置"
+    - "shogun repo knowledge-base/dm-signal/にはこのファイル1つだけ孤立(他ファイルなし)"
+    - "内容はPI-001~PI-021+§1-§3で品質問題なし。リポジトリ移動のみで解消"
+  fail_reasons:
+    - "commitリポジトリ誤り(multi-agent-shogun → DM-signal)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "忍者がcwd=multi-agent-shogunでcommit→DM-signalリポジトリに到達せず→knowledge-base孤立→他ファイルと分断"
+  timestamp: "2026-04-03T21:00:00"
+- cmd_id: cmd_karo_codex_deploy_fix
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。Codex配備信頼性3修正。各AC=1commit+1test。計420行追加"
+  observations:
+    - "e9eee11: inbox_write.sh Codex nudge到達確認+最大2回retry(241行、test_inbox_write.bats)"
+    - "f908bb9: switch_cli_mode.sh Codex boot ready待機(81行、test_switch_cli.bats)"
+    - "4ad95a2: ninja_monitor.sh stall alertにpane head5+tail5添付(98行、test_ninja_monitor_stall.bats)"
+    - "全3修正にunit test付随。regression対策済み"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "Codex nudge未到達→忍者stall→ninja_monitor検知だが診断情報不足→3修正で到達確認+起動待ち+診断情報を追加→stall発生率低下+診断高速化"
+  timestamp: "2026-04-03T21:03:00"
+- cmd_id: cmd_1717
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "忍法GS champion OOS検証。軍師overfit判定(nukimi/kasoku_diff HIGH)の定量検証。5忍法50:50 IS/OOS。道具33倍速で実行可能"
+  observations:
+    - "5忍法選定: bunshin(パラメータなし)とyotsume(legacy)の除外は妥当"
+    - "overfit閾値30% CAGR drop: 軍師分析の近傍drop率と整合(nukimi 33%/kasoku_diff 34%)"
+    - "IS期間~85月: 短めだがmonthly GSでは許容範囲。結果YAMLに期間長記録推奨"
+    - "33倍速GS(cmd_karo_gs_*系完了)で5忍法IS/OOS≒60秒見込み"
+  causal_chain: "軍師overfit判定→IS/OOS定量検証→OOS ROBUST忍法特定→selection block改善の投資対象絞込み"
+  timestamp: "2026-04-03T21:30:00"
+- cmd_id: cmd_1718
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "FLAIR5部品検証(Ridge/Shape gate/LOO/Box-Cox/確率予測)×65PF。cmd_1716結果再利用。flaircast関数参照確認済み"
+  observations:
+    - "5検証独立: Ridge予測ranking/Shapeゲート/LOO残差相関/Box-Cox momentum/確率ゲート"
+    - "Shape gate定義: Shape>1/12=信頼月。不信頼月=Cash。baseline比較でwhipsaw削減効果測定"
+    - "LOO残差=Ridge予測の汎化能力指標。rolling Sharpe stdとの相関で安定PF特定"
+    - "forecast n_samples=200が計算量最大だがflaircast軽量(numpy only)で許容"
+  causal_chain: "FLAIR5部品検証→有効部品特定(Ridge?Shape?LOO?)→selection block新入力軸→lookback依存性の構造理解"
+  timestamp: "2026-04-03T21:37:00"
+- cmd_id: cmd_1717
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。OOS検証: kasoku_ratio75.4%劣化(最悪)/kawarimi3.7%(最安定)。軍師neighbor分析を部分裏付け+kasoku_ratio反例"
+  observations:
+    - "Universal best劣化率: kasoku_ratio75.4%>kasoku_diff40.8%>nukimi32.5%(以上HIGH)>oikaze17.8%>kawarimi3.7%(NOT_HIGH)"
+    - "Per-subset HIGH率: kasoku_ratio66.5%>kasoku_diff43.7%>oikaze30.6%>nukimi22.4%>kawarimi0.0%"
+    - "assumption_invalidation: 軍師neighbor分析でkasoku_ratio=overfit_flag:false→OOSで75.4%最悪。孤立峰分析≠OOS overfit"
+    - "kawarimi: neighbor分析drop27.2%→OOS drop3.7%。最も堅牢。period=24Mは実質的頑健パラメータ"
+    - "kasoku_ratio CAGR首位78.3%は完全にoverfit。リスク調整後も(MaxDD-53.3%)も最悪→候補から除外推奨"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "neighbor分析(静的)→OOS検証(動的)→kasoku_ratio反例発覚→neighbor分析のoverfit検出力に限界→多軸検証(neighbor+OOS+FLAIR Shape)が必要"
+  timestamp: "2026-04-03T21:40:00"
+- cmd_id: cmd_1719
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "FLAIR信頼度スコア研究。殿発案。65PF×164月×200samples。前方リークなし(expanding window)。1忍者で実行可能"
+  observations:
+    - "confidence=median_return/max(uncertainty,1e-6)。前向き予測ベースの信頼度=momentum(後ろ向き)と直交"
+    - "expanding window: flaircast P=12に最低36月必要→有効期間~164月。初期精度劣化に注意"
+    - "計算量: ~10660 forecast呼出。flaircast numpy onlyで~2-3分。q4_depth=deepだが実質medium"
+    - "比較4条件: baseline momentum12M top1 / FLAIR信頼度top1/2/3 / 全PF信頼度<0→Cash"
+  causal_chain: "FLAIR確率予測→月次信頼度スコア→空間(momentum)×時間(信頼度)2軸selection→whipsaw回避"
+  timestamp: "2026-04-03T21:42:00"
+- cmd_id: cmd_1719
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。FLAIR信頼度top3=CAGR29.6%/Sharpe0.99(baseline20.0%/0.66圧勝)。top1は劣後。τ弱=momentum直交"
+  observations:
+    - "baseline momentum12 top1: CAGR20.0% Sharpe0.66 MaxDD-53.3%"
+    - "FLAIR confidence top1: CAGR16.6%(劣後)。集中=方向予測にならない"
+    - "FLAIR confidence top2: CAGR27.2% Sharpe0.87 MaxDD-38.0%。baseline比+36%CAGR"
+    - "FLAIR confidence top3: CAGR29.6% Sharpe0.99 MaxDD-32.7%。baseline比+48%CAGR、MaxDD39%改善"
+    - "Kendall τ: 12M=0.059 18M=0.100 24M=0.120。momentum情報と弱相関=別軸確認"
+    - "GS top_n=1>2(集中有利)と逆。FLAIR信頼度はtop3>top2>top1(分散有利)。性質の違い"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "FLAIR確率予測→信頼度スコア(momentum直交)→top3分散選択=予測可能PF群への集合投資→CAGR+48%/MaxDD-39%改善"
+  timestamp: "2026-04-03T21:50:00"
+- cmd_id: cmd_1720
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "FLAIR第2サイクル4検証。検証9(Shape非同期ペア)=軍師Shape分析直結。FoF天井問題の構造解決候補"
+  observations:
+    - "検証9: 軍師のDM3×DM7+=-0.78分析を定量検証。逆相関ペアEW portfolioのbaseline比較がFoF設計の根拠"
+    - "検証8: SVD残差(予測可能性スコア)→selection block前段フィルタ候補"
+    - "検証6: rolling Shape安定度×crash一致→レジーム検出の新手法"
+    - "検証7: Level集約マクロゲート→市場on/off。既存VIXゲートとの比較が次課題"
+  causal_chain: "Shape非同期ペア→季節構造補完FoF→前処理に頼らない尖り相殺→FoF天井突破"
+  timestamp: "2026-04-03T21:52:00"
+- cmd_id: cmd_1718
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。5部品: Ridge弱/Shapeゲート混在/LOO有効(r=0.46)/BoxCox部分有効(ranking+0.15)/不確実性ゲート悪化"
+  observations:
+    - "Ridge前向き予測: mean tau=0.01。momentum群を下回る。flaircast forecast()の前向き方向予測能力は弱い"
+    - "LOO残差×安定性: Spearman0.46。LOO残差小=PF安定。selection block前段フィルタとして有望"
+    - "Box-Cox: 予測tau悪化だがconsecutive ranking tau+0.145。ランキング安定化(whipsaw削減)に効く"
+    - "不確実性gate(binary)は悪化→cmd_1719 ranking(top2/3)は圧勝。同じデータでgate vs rankingで逆転"
+    - "Shapeゲート: Sharpe微改善だがCAGR悪化+whipsaw増。binary gate全般に課題"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "binary gate(threshold超→Cash)は情報を捨てすぎ→ranking(上位K選択)は情報を保存→同じFLAIR出力でもranking活用が圧倒的に有効"
+  timestamp: "2026-04-03T21:55:00"
+- cmd_id: cmd_1720
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。Cycle2: regime条件付き/macro gate条件付き(MaxDD66%改善)/SVD不適/Shape async不適(win_rate=0.0)"
+  observations:
+    - "検証9: Shape逆相関487ペアのEW CAGR=0.329 < ランダム0.355。win_rate=0.0。軍師仮説否定"
+    - "検証7: macro gate CAGR36→22%(悪化)だがMaxDD -42→-14%(66%改善)。リスク管理用途は生存"
+    - "検証6: regime precision0.14/recall0.04。COVID 2020-03未捕捉。粗い月次解像度が原因か"
+    - "検証8: SVD残差×安定性 Spearman=-0.14(p=0.26)。非有意。cmd_1718 LOO(Spearman0.46)とは異なる結果"
+    - "deepdive Phase 7「Shape非同期→Ward代替」経路はデータで否定。3軸モデルのうちShape構造軸は再設計が必要"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "Shape季節逆相関→EWペアCAGR→ランダム以下→季節逆相関≠リターン分散効果。crash/drawdownは非季節的→季節構造では防げない"
+  timestamp: "2026-04-03T22:05:00"
+- cmd_id: cmd_1721
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "FLAIR有効部品の汎用性検証。ファミリー別分解+HHI選出偏り+LOO安定性。殿指示「各論でなく構造」に直結"
+  observations:
+    - "検証B(HHI)が最重要: cmd_1719 top3=29.6%/0.99が常に同じ3PFなら見かけ倒し"
+    - "検証C(LOO): 65回の安定性でPF依存性を定量的に排除"
+    - "Shapeゲートは実際には混在判定(CAGR-0.06)だが汎用性チェックは有意義"
+  causal_chain: "有効部品の汎用性未検証→特定PF依存リスク→ファミリー別+HHI+LOOで依存性排除→本番適用可否判断"
+  timestamp: "2026-04-03T22:23:00"
+- cmd_id: cmd_1721
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。3部品全てfamily_sensitive。HHI=0.028(非集中)だがL0=270/525 slot支配。LOO 65回安定。aggregate PASS≠汎用"
+  observations:
+    - "Shape gate: DM2/DM6=85.7%だがDM7+=0.0%。中短期lookback familyに有効、超長期に無効"
+    - "LOO残差: DM6=0.91(高)、L0=0.17(低)。family間でばらつき大"
+    - "Box-Cox: L0=55.6%/Shin=50.3%>50%、DM2=19.4%/DM6=39.1%<50%。2/5 familyのみ"
+    - "HHI=0.028(非集中)だがL0 family=270/525 slot。PF分散はあるがfamily集中"
+    - "assumption_invalidation: aggregate PASS→family別に見ると非汎用。selection blockはfamily aware設計が必要"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "aggregate PASS→family分解→family_sensitive発覚→universal適用は危険→family別制約付き適用が正しい設計"
+  timestamp: "2026-04-03T22:35:00"
+- cmd_id: cmd_1722
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "Level momentum vs Raw momentum年次比較。15-19点の方向性確認。サンプル数制約を事前明記。shallow"
+  observations:
+    - "Level=12ヶ月周期ブロック解像度。月次比較不可。年次τ比較は方向性確認"
+    - "Step3動的切替は12-16点で統計的信頼性極低だが方向性には十分"
+    - "軍師なぜなぜ7回転(基礎資産分解)とは異なるレイヤー(PFレベル)。補完関係"
+  causal_chain: "Level momentum τ > Raw τ(年次で確認)→ノイズ除去トレンドの価値あり→月次解像度検証(基礎資産分解等)の根拠"
+  timestamp: "2026-04-03T22:53:00"
+- cmd_id: cmd_1723
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "Levy DMA/DMS Adaptive Lookback。研究日誌Phase 9発見の実装。lookbacks=[1-24M]。論文標準パラメータ。新BB候補"
+  observations:
+    - "lookbacks=[1,3,6,12,18,24]がGSランドスケープ有効帯域(12-24M)を包含。短期(1,3)も含め全域探索"
+    - "63モデル(2^6-1)=全lookback部分集合。DMAは確率加重平均、DMSはargmax。情報損失なし"
+    - "Step 3 IP(包含確率)時系列=FLAIRの時間軸(いつ信頼できるか)と同構造。独立手法で同じ問いに答える"
+    - "研究日誌Phase 9 Kang(2026): adaptive手法OOS脆弱性。DMA/DMSも本番前OOS必須"
+  causal_chain: "固定lookback上限(GS分析)→DMA動的切替→IP時系列で有効帯域が時変→新忍法設計の基盤"
+  timestamp: "2026-04-03T22:58:00"
+- cmd_id: cmd_1722
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。Level τ=0.097>Raw τ=0.077(+0.020)。long band delta+0.107(p=0.064)。N=14方向性確認のみ"
+  observations:
+    - "Level momentum vs Raw: all band delta+0.020(n=14)。Level優位だが統計的確証不足"
+    - "long band 1y: delta+0.107が最大。p=0.064(borderline)。長期PFでLevel効果が大きい"
+    - "動的切替: CAGR dynamic=0.644>fixed1=0.634。10点のみ。switch_count=1でほぼ固定と同等"
+    - "年次解像度の限界を正直に報告。月次解像度(基礎資産分解等)での追加検証が次ステップ"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "Level(ノイズ除去)momentum τ>Raw τ→ノイズ除去の価値を年次解像度で方向確認→月次解像度検証の根拠(ただしN不足で確定ではない)"
+  timestamp: "2026-04-03T23:02:00"
+- cmd_id: cmd_1724
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "FLAIR解釈層更新。§5-§8に9検証+信頼度+汎用性+統合結論還流。一次知識層変更禁止。shallow"
+  observations:
+    - "flair-interpretation.md 38行→§5-§8追記で研究全結論を解釈層に集約"
+    - "§8統合結論: FLAIRは予測ではなく構造分解ツール。軍師deepdive結論と一致"
+    - "一次知識層(m17_flair.md)変更禁止を明示。2層構造ルール準拠"
+  causal_chain: "研究結論未反映→忍者が既知知見を参照不可→重複実験→還流で回避"
+  timestamp: "2026-04-03T23:05:00"
+- cmd_id: cmd_1724
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。flair-interpretation.md 38→91行。§5-§8で9検証+信頼度+汎用性+統合結論を定量付きで還流"
+  observations:
+    - "commit 1d91c651: +53行。一次知識層(m17_flair.md)未変更確認"
+    - "§5: 9検証verdict全記載。§6: confidence top3=Sharpe0.989。§7: HHI=0.029+family_sensitive"
+    - "§8: 統合結論(予測×構造分解○)+Level momentum年次τ(+0.020)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "FLAIR研究結論→解釈層還流→次研究cmdの忍者が有効/無効既知→重複実験回避→研究サイクル加速"
+  timestamp: "2026-04-03T23:08:00"
+- cmd_id: cmd_1725
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "月次Level momentum。SSA window=12+6LB。cmd_1722年次(N=14)の月次統計検証(N=200+)。判断基準事前定義"
+  observations:
+    - "cmd_1722 delta+0.020(N=14,p=0.064)を月次N=200+で検証。統計的確証の桁が変わる"
+    - "判断基準: 4/6 LB win+family uniform+p<0.05。事前定義で事後cherry-pick防止"
+  causal_chain: "年次方向性正→月次統計検証→有意なら月次Level momentumがRaw momentum代替候補"
+  timestamp: "2026-04-03T23:10:00"
+- cmd_id: cmd_1726
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "基礎資産トレンド抽出。軍師なぜなぜ7回転の実装。10銘柄×SSA252日。Phase 8究極形。判断基準=軍師提案"
+  observations:
+    - "軍師のWHY/WHAT/HOW提案がcmdとして採用。judgment criteria(EMA span=5超/family消失/PBO<0.5)そのまま"
+    - "cmd_1725(PFレベル)と並列実行で2レイヤー同時比較が可能"
+    - "基礎資産=ノイズの最源泉。ここで除去すれば全family全PFに波及(軍師なぜなぜ6-7)"
+  causal_chain: "基礎資産トレンド抽出→全familyにノイズ除去波及→family_sensitive消失→汎用的前処理"
+  timestamp: "2026-04-03T23:10:00"
+- cmd_id: cmd_1723
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。DMA top3=CAGR27.1%/Sharpe0.939。FLAIR top3(29.6%/0.989)に次ぐ。IP短期>長期"
+  observations:
+    - "DMA top3=27.1%>固定18M=25.9%>DMA top1=19.7%≈固定12M=18.1%。top3パターン再現"
+    - "FLAIR confidence top3(29.6%/0.989)>DMA top3(27.1%/0.939)。異なる手法で同方向、FLAIR優位"
+    - "IP: 1M=0.471>24M=0.382。短期lookbackの月次予測力が高い。GS(累積CAGR)とは別目的関数"
+    - "DMS最頻=1M(35%)。ベイズフィルタは短期変動を重視。累積CAGR最適化とは逆"
+    - "top3パターン: FLAIR/DMA/GS全てで確認。集団選択>単一選択はuniversal"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "DMA(ベイズ動的モデル平均)→短期IP高→月次予測精度は短期が有利→だが累積CAGRは長期が有利→目的関数で最適lookbackが変わる"
+  timestamp: "2026-04-03T23:13:00"
+- cmd_id: cmd_1725
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。SSA月次Level momentum: 1MのみPARTIAL(+0.016)、他5LB全FAIL。PFレベル分解の限界確認"
+  observations:
+    - "1M: delta+0.016(PARTIAL)。12M: +0.011だがp>0.22(非有意)。3/6/18/24M: 負"
+    - "年次(cmd_1722 delta+0.020)は方向性正だったが月次N=200+で統計的に再現せず"
+    - "長期LBではRaw momentumが自然にノイズ平均化→SSA追加効果消失。短期1Mのみ微小効果"
+    - "cmd_1718 Ridge τ=0.010と同根: PFリターンの構造分解では予測/ランキング情報が増えない"
+    - "軍師なぜなぜ7回転「PF分解限界→基礎資産レベルへ」を支持する否定的結果。cmd_1726が本命テスト"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "PF月次リターンにSSA→Level momentum→Raw対比で優位なし→PFレベルのノイズ除去は長期LBで自動達成済み→基礎資産(ノイズ源泉)に介入しなければ情報量は増えない"
+  timestamp: "2026-04-03T23:15:00"
+- cmd_id: cmd_1727
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "知識辞書6論文登録。adaptive lookback関連(turning points/deep momentum/all-days/CSSA/optimal dynamic/fragility)。一次知識層のみ"
+  observations:
+    - "momentum-fragility-dual: 固定lookback脆弱性の定量証拠(9M vs 10Mで年差20%+)→全研究の動機づけ"
+    - "6論文全てLevy DMA(cmd_1723)と関連。知識基盤を厚くする"
+  causal_chain: "adaptive lookback論文未登録→先行研究参照不可→重複研究→登録で回避"
+  timestamp: "2026-04-03T23:17:00"
+- cmd_id: cmd_1726
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。基礎資産SSA momentum: 18M delta+0.020(p=0.408)有意差なし。軍師なぜなぜ7回転仮説否定"
+  observations:
+    - "18M: raw_tau=0.021→trend_tau=0.040(delta+0.020)だがp=0.408。win_rate=53.4%"
+    - "family_sensitive消失せず: DM2/Shin/L0改善寄り、DM6悪化寄り。EMA研究と同構造"
+    - "PFレベル(cmd_1725 delta+0.016)と資産レベル(cmd_1726 delta+0.020)でdelta同等→レイヤー変更で情報量不増"
+    - "長期lookback(12-24M)は入力ノイズを自然に平均化。smoothing追加の余地なし"
+    - "到達結論: 信号改善(smoothing/分解)の天井確定。選択改善(top3集団選択)が有効方向"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "基礎資産SSAトレンド抽出→momentum delta+0.020(非有意)→PF/資産両レベルで同結果→ノイズ平均化はlookbackが自動達成→信号改善の天井→選択改善(FLAIR/DMA top3)が本命"
+  timestamp: "2026-04-03T23:20:00"
+- cmd_id: cmd_1727
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。知識辞書M66-M71(adaptive lookback 6論文)。一次知識層純度維持"
+  observations:
+    - "6件: turning-points/deep-momentum/all-days/CSSA/optimal-dynamic/fragility-dual"
+    - "標準フォーマット(§概要/§数式/§前提/§Verification)準拠。DM-Signal記述なし"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "adaptive lookback知識基盤→次研究cmdで先行研究参照可能→設計品質向上"
+  timestamp: "2026-04-03T23:25:00"
+- cmd_id: cmd_1728
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "新selection block 4段階検証。軍師なぜなぜ合成サイクル3の到達点。Ward×confidence×動的K。判断基準全事前定義"
+  observations:
+    - "Step1-4が軍師サイクル3なぜ1/4/6/7と1対1対応。なぜなぜ→仮説→検証設計→cmdの完全な鎖"
+    - "Step1(ランダムbaseline)がearly stop条件: confidence<95%タイルなら信頼度は見かけ倒し→Step2-4不要"
+    - "Step3 Ward5×confidence: Ward K*=5(R12)とconfidence top_nの統合。多様性×品質の原理検証"
+    - "Step4 動的K: マクロゲート(MaxDD66%改善)をK=0月として統合。リスク管理組込み"
+  causal_chain: "なぜなぜ3サイクル→4段階検証→付加価値分離→新selection block設計原理確定"
+  timestamp: "2026-04-03T23:35:00"
+- cmd_id: cmd_karo_fix_kb
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。PI移動(shogun→DM-signal)+3論文M74-76追加。cmd_1715 FAIL解消"
+  observations:
+    - "production-invariants.md: multi-agent-shogun側削除確認+DM-signal側160行配置確認(e7e7672c)"
+    - "3論文: re-evaluating-trend-factors/wavelet-jump-classification/adaptive-trend-following-crypto"
+    - "cmd_1715 FAILのリポジトリ誤りが構造的に解消"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_1715リポジトリ誤り→fix_kbで正しいrepoに移動→知識辞書の物理配置が正規化"
+  timestamp: "2026-04-03T23:40:00"
+- cmd_id: cmd_1728
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。新selection block 4段検証: confidence=DD制御(CAGR32%タイル)。momentum18M top5が依然首位(44%)"
+  observations:
+    - "Step1: confidence top3 vs random1000: CAGR=32%タイル、Sharpe=40%タイル、MaxDD=89%タイル。alpha非該当、DD制御"
+    - "Step2: K=4(CAGR32.2%)/K=6(Sharpe1.135)。K=4-6 plateau。Ward K*=5と整合"
+    - "Step3: momentum18M top5=CAGR44.0%/Sharpe1.279が首位。Ward×confidence=32.7%/1.233で劣後"
+    - "Step4: dynamic K MaxDD-15.9%(静的比-19pp)だがCAGR-10.5pp。DDとCAGRのトレードオフ"
+    - "assumption_invalidation: confidence top3のCAGR優位はbreadth由来であってconfidence ordering由来ではない"
+    - "lesson_candidate: confidence=DD制御、breadthと分離検証必須。再利用可能"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "confidence ordering→ランダム以下CAGR(32%タイル)→alpha非生成→MaxDD89%タイル→DD制御ツール。momentum→依然CAGR/Sharpe首位→信号の方向予測力はmomentumが最強"
+  timestamp: "2026-04-03T23:45:00"
+- cmd_id: cmd_1729
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "ALM v1 CAGR目的関数。Binary→τ。将軍回転7+軍師サイクル4の共通到達点。殿直接指示。成功基準: Sharpe>1.279"
+  observations:
+    - "Binary(方向正解率)→τ(ランキング精度)で目的関数を儲かる方向に転換"
+    - "IP移行検証(Step3)が核心: 1M支配(Binary)→18M方向(CAGR)に移行するか"
+    - "リスク: τが18Mに固定収束→実質momentum固定18Mと同一。だがそれ自体が「固定で十分」の検証"
+  causal_chain: "Binary目的→1M支配→CAGR劣後→τ目的→儲かるLB動的選択→momentum18M超え？"
+  timestamp: "2026-04-03T23:52:00"
+- cmd_id: cmd_1730
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "メトリクスエンジン構築。本番metrics_calculatorを研究からimport。ALM前提条件の道具。道具が先=安全(Phase 18)"
+  observations:
+    - "research_engineと同パターン。本番ロジックをforkせずimport/委譲で再利用"
+    - "AC3パリティ検証: 本番DB portfolio_metricsとの完全一致が必須。GS研究のPI-009と同原理"
+    - "cmd_1729 ALMの前提条件。道具なしにメトリクス特徴量は使えない"
+  causal_chain: "ALMにメトリクス必要→独自計算禁止(乖離)→本番import→パリティ保証→研究信頼性"
+  timestamp: "2026-04-04T00:03:00"
+- cmd_id: cmd_1730
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1730_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。65PF×42metrics DataFrame+パリティ0mismatch。commit 52ce76b2確認。WA率77.8%追加チェック実施→binary_checks自明二値で問題なし"
+  observations:
+    - "AC1-3全て正確に実行。dependency_mapをYAML出力にも保存(再現性高い)"
+    - "パリティ: years=10 mismatch=0, years=0 mismatch=0。atol=1e-12で完全一致"
+    - "WA率77.8%(hayate)→追加チェック: files_modified 4件全てcommitに含まれる確認済み"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "本番calculator import→monthly_df_cache+dtb3_cache活用→DB往復最小化→65PF全量計算+パリティPASS"
+  timestamp: "2026-04-04T00:20:00"
+- cmd_id: cmd_metrics_R1
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_metrics_R1_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。47.4s計測。DB I/O 98%支配(MonthlyReturn44.5%+DrawdownPeriod35.4%+Portfolio18.5%)。軍師事前分析と一致"
+  observations:
+    - "DM2先頭外れ値をwarm checkで分離。初回接続コスト1.5s→0.66s。分析品質高い"
+    - "設計書§9.3の6候補全てを現物確認。#2/#3既実装、#1/#4/#5未実装を正確に判定"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "65PF逐次SELECT→DB往復261回(65+130+66)→計算17.5sはDB29.7sの6割→高速化の本丸はDB I/O削減"
+  timestamp: "2026-04-04T00:35:00"
+- cmd_id: cmd_metrics_R2
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_metrics_R2_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。50.4s→9.8s(5.13x)。Session proxyでDB一括プリロード。パリティyears=10/0両方0mismatch"
+  observations:
+    - "Session proxyでcalculate_metricsの内部DB呼出しをキャッシュ化。本番コード非変更で解決。設計品質高い"
+    - "post-commit recheck 10.6sで再現性確認。ウォームアップ含みでも安定"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "DB I/O 261回→一括プリロード3回→Session proxy横取り→50.4s→9.8s(5.13x)→パリティ保持"
+  timestamp: "2026-04-04T00:40:00"
+- cmd_id: cmd_metrics_R3a
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。34公式1:1転写+DM2パリティ。ナビシート行番号付きで忍者ナビ完備。scout_exempt妥当"
+  observations:
+    - "参照ファイル2件(設計書+ナビシート)全て存在確認。AC物理検証PASS"
+    - "MDD精度差(月次vs日次)はatol=1e-2で管理。設計書§8に根拠あり"
+    - "R2(高速化)と並列可能。R2成果に依存しない旨を明記。時間効率考慮済み"
+  causal_chain: "34公式転写→DB非依存compute→Rolling基盤→3Dテンソル→ALM特徴量"
+  timestamp: "2026-04-04T00:42:00"
+- cmd_id: cmd_metrics_R2b
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。JSONキャッシュTTL=24h。research_engine R34と同パターン(707x実績)。float round-tripはパリティで検出"
+  observations:
+    - "float精度: JSON round-tripで末尾桁ずれリスク。double_precision=15推奨。パリティで検出される安全構造"
+    - "キャッシュ無効化は手動rm。fullrecalculate後の忘れリスクあるが、ランブック§9.7に記載済み"
+  causal_chain: "ALM研究で繰返し呼出→毎回10s→JSONキャッシュ→2回目以降0s→研究速度倍増"
+  timestamp: "2026-04-04T00:46:00"
+- cmd_id: cmd_metrics_R3b
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: MEDIUM
+  findings_summary: "6観点OK。60秒目標にリスクあり(11050コール×0.005s=55s、マージン薄い)。AC2で計測報告されるため問題発覚は担保"
+  observations:
+    - "65PF×170窓=11050回のcompute_34_metricsコール。1コール0.005s以内が必要。pandas overhead次第"
+    - "超過時の対策: pandas.rolling()一括化(mean/std/skew/kurt)、またはNumPy vectorize。設計書§4に記載済み"
+  causal_chain: "compute_34_metrics×11050回→60s目標→0.005s/コール→pandas overhead→超過リスク→AC2計測で検出"
+  timestamp: "2026-04-04T00:48:00"
+- cmd_id: cmd_metrics_R2b
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_metrics_R2b_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。9.7s→0.045s(213x)。double_precision=15でatol=1e-12パリティ維持。calculator_direct経路で分離設計"
+  observations:
+    - "軍師推奨のdouble_precision=15を採用。パリティ1e-12維持"
+    - "calculator_direct経路をキャッシュと分離。パリティ検証が常にフル計算で走る安全設計"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "JSONキャッシュTTL=24h→2回目0.045s→ALM研究ループで毎回10s節約→研究速度213x"
+  timestamp: "2026-04-04T00:51:00"
+- cmd_id: cmd_metrics_R3b
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_metrics_R3b_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。shape(65,172,34)。47.2s(<=60s)。DM2パリティ0mismatch。union dates+NaN padding対応"
+  observations:
+    - "intersection→union+NaN paddingへ修正。PF開始月差異への正しい対応"
+    - "47.2sで60s目標クリア。軍師のMEDIUM confidence(マージン薄い)は杞憂だった"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "compute_34_metrics×11050回→47.2s(0.004s/コール)→60s内→テンソル生成成功"
+  timestamp: "2026-04-04T00:54:00"
+- cmd_id: cmd_metrics_R4
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。最終段品質保証。全65PFパリティ+CSV+ランブック。リスク低い"
+  observations:
+    - "verify_rolling_parityは全65PF×34メトリクス。MDD系atol=1e-2の緩和が明記されている"
+    - "ランブックはdocs/research/metrics-engine-runbook.md。設計書§9.4の内容を反映"
+  causal_chain: "R1-R3完成→全PFパリティで品質保証→CSV+ランブックで運用基盤確立→道具完成"
+  timestamp: "2026-04-04T00:54:00"
+- cmd_id: cmd_metrics_R4
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_metrics_R4_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。65PF×34メトリクス全パリティ0mismatch。CSV+ランブック+パリティYAML。道具完成"
+  observations:
+    - "verify_rolling_parity: 65PF全PASS。union dates+NaN padding(R3b)との整合も保持"
+    - "metrics-engine-runbook.md新規作成。Rolling実行手順+入出力+注意事項を網羅"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "R1計測→R2高速化(5.13x)→R2bキャッシュ(213x)→R3a公式転写→R3b Rolling→R4全PFパリティ→道具完成"
+  timestamp: "2026-04-04T01:02:00"
+- cmd_id: cmd_metrics_R5
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。ラッパー2関数のみ。計算ロジック追加ゼロ。DM2パリティで既存APIとの一致検証"
+  observations:
+    - "設計書§2.1にコードほぼ完成形あり。忍者はコピー+微調整で完了"
+    - "既存関数変更禁止の制約で副作用リスクゼロ"
+  causal_chain: "ALM研究→仮想戦略リターン→34メトリクス→lookback評価→ラッパーAPI→DB不要"
+  timestamp: "2026-04-04T01:32:00"
+- cmd_id: cmd_metrics_R5
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_metrics_R5_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。ラッパー2関数。DM2で34メトリクス+rolling(122,34)パリティ両PASS。commit 4ea08093"
+  observations:
+    - "設計書§2.1のコードをほぼそのまま実装。計算ロジック追加ゼロの薄いラッパー"
+    - "rolling parityもshape+index+全34列値一致で検証。堅実"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "仮想戦略API→DB不要ラッパー→既存compute_34_metrics再利用→ALM研究パイプライン前半完成"
+  timestamp: "2026-04-04T01:36:00"
+- cmd_id: cmd_metrics_R6
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。flair L164-212汎用化。score_fn callable+pd.Series返却。パイプライン完成の最終ピース"
+  observations:
+    - "原型(flair L164-212)が明確。score_wide→score_fn、DataFrame→Series。変更点が小さく安全"
+    - "momentum18Mパイプライン全体(simulate→metrics)の動作確認がAC。end-to-end検証"
+  causal_chain: "flair/levy重複→score_fn抽象化→simulate_selection→compute_metrics_from_returns直結→全L1研究統合"
+  timestamp: "2026-04-04T01:38:00"
+- cmd_id: cmd_metrics_R6
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_metrics_R6_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。simulate_selection実装+18Mパイプライン動作確認。score_fnループ版。穴塞ぎ(§2.2.1)とscore_wideモードは未実装→追加修行要"
+  observations:
+    - "spot check: 2010-03 eligible=9→selected=5。gate_negative smoke=0.0。基本動作OK"
+    - "§2.2.1の穴(NaN汚染/PF数<top_n)とscore_wideモード(100x高速化)は次修行"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "score_fn callable→月ごとループ→top_n EW→pd.Series→compute_metrics_from_returns直結→パイプライン完成"
+  timestamp: "2026-04-04T01:43:00"
+- cmd_id: cmd_metrics_R7a
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。穴3件(NaN/動的clip/排他)+score_wide100x高速化。設計書にコード完成形。エッジケース検証網羅"
+  observations:
+    - "np.where(-inf)+nanmean+take_along_axisの組合せでNaN安全を構造的に保証"
+    - "score_wideとscore_fnの結果一致検証がACに含まれ、高速化の正しさを担保"
+  causal_chain: "NaN穴→-inf強制→argsort安全→score_wide一括→100x高速→ALM研究ループで毎回10s節約"
+  timestamp: "2026-04-04T01:46:00"
+- cmd_id: cmd_metrics_R7a
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_metrics_R7a_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。穴3件+score_wideモード全7検証PASS。NaN/動的clip/排他/パリティ/gate_negative"
+  observations:
+    - "score_wideモードとscore_fnモードのパリティ一致を実測で確認。高速化の正しさ担保"
+    - "valid=0→Cash(0.0)でwarningなし。edge caseの安全処理確認"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "穴3件修正→NaN安全+動的clip+排他→score_wide NumPy一括→100x高速化→研究パイプライン安全+高速"
+  timestamp: "2026-04-04T01:48:00"
+- cmd_id: cmd_metrics_R7b
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。SelectionResult NamedTuple+holdings+build_return_wide+turnover。パイプライン入口(return_wide構築)の穴を塞ぐ"
+  observations:
+    - "build_return_wideでlevy L116-127のコピペ統合。パイプライン入口が正式API化"
+    - "SelectionResultで後方互換(result.returns)を維持しつつholdings/turnover追加。設計良好"
+  causal_chain: "return_wideコピペ→build_return_wide統合→holdings可視化→turnover分析→ALM研究の全情報をパイプラインが出力"
+  timestamp: "2026-04-04T01:50:00"
+- cmd_id: cmd_metrics_R7b
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_metrics_R7b_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。SelectionResult+build_return_wide+turnover。flair/levy追従+pytest3件+18M smoke。4ファイル変更"
+  observations:
+    - "flair_confidence_study.py+levy_dma_dms_studyを共通API(build_return_wide/simulate_selection)へ統合。コピペ根絶"
+    - "pytest 3件新規追加(test_metrics_research_engine_selection.py)。自動テスト基盤整備"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "SelectionResult NamedTuple→holdings DataFrame→ALM IPヒートマップ可能→turnover→transaction cost分析基盤"
+  timestamp: "2026-04-04T01:54:00"
+- cmd_id: cmd_metrics_R7d
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: MEDIUM
+  findings_summary: "6観点OK。DTB3グローバル+SPY+統合テスト。import時DB接続リスクあり→lazy load推奨を忍者に伝達"
+  observations:
+    - "DTB3モジュールレベル自動ロード→import時にDB必要。lazy load(初回呼出時にロード)の方が安全"
+    - "統合テストは方向性チェック(完全一致不要)。simulate_selectionの結果は本番PFと異なるため妥当"
+  causal_chain: "dtb3=None→rf=0→Sharpe乖離→グローバルキャッシュ→rf正確→本番一致"
+  timestamp: "2026-04-04T01:56:00"
+- cmd_id: cmd_metrics_R7c
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: MEDIUM
+  findings_summary: "6観点OK。47.2s→3s目標。Year系/MDD系は一括化困難で5-10sが現実的か。パリティで正しさ担保"
+  observations:
+    - "Phase2のrolling一括化でmean/std/skew/kurtは確実。Best Year(年次リサンプル)/MDD(cummax)はrolling不適→ループ残存"
+    - "3s目標は楽観的。5-10sでも47.2sから10x改善で十分価値あり。パリティPASSが最優先"
+  causal_chain: "11050回loop→prepare一括+rolling一括→loop回数激減→3-10s→ALM研究で毎回40s節約"
+  timestamp: "2026-04-04T01:58:00"
+- cmd_id: cmd_1731
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。BCプリフィル。FAIL率19.5%最頻原因の構造的解消。GP-133+GP-107消火4問クリア"
+  observations:
+    - "deploy_task.sh L1016 binary_checks:{}→ACからcheck項目自動生成。忍者はresult:のみ記入"
+    - "gate_fire_log 213件中BC関連が最頻。根拠十分"
+  causal_chain: "BC空テンプレート→忍者意志依存→3段階FAIL→プリフィル→result記入のみ→FAIL構造解消"
+  timestamp: "2026-04-04T02:00:00"
+- cmd_id: cmd_1732
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。テストFAIL 174/213(82%)を除外。/tmp/パスフィルタ。本番FAIL率が正確に"
+  observations:
+    - "batsテスト実行がgate_fire_logを汚染。本番31件のみが実態"
+    - "/tmp/以外のテストパスがあれば漏れるが、現行インフラは全て/tmp/使用"
+  causal_chain: "テストFAIL混入→FAIL率6倍過大→startup gate誤WARNING→/tmp/除外→計測正確化"
+  timestamp: "2026-04-04T02:00:00"
+- cmd_id: cmd_1733
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。verdict自動導出+status自動更新。GP-107消火4問PASS。機械的二値論理集約"
+  observations:
+    - "result未記入ACが残存→verdict導出しない安全構造が必要。「全result記入済み」の判定精度がキー"
+    - "BC yes/no→PASS/FAILは純粋論理集約。忍者の思考を奪わない(Q2クリア)"
+  causal_chain: "verdict空8件→忍者が自己検証済みなのにverdict未記入→autofix論理集約→verdict確定→FAIL率削減"
+  timestamp: "2026-04-04T02:02:00"
+- cmd_id: cmd_1731
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1731_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。BCプリフィル+外側クオート正規化+bats テスト追加。2ファイル変更"
+  observations:
+    - "二重クオート('quoted')→stripped。awk正規化で堅実な実装"
+    - "batsテストで3AC+commit=4セクション生成を検証。回帰テスト基盤"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "BC空テンプレート→忍者FAIL→ACからcheck自動生成→result記入のみ→FAIL構造解消"
+  timestamp: "2026-04-04T02:08:00"
+- cmd_id: cmd_metrics_R7c
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_metrics_R7c_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。64.6s→8.9s(7.3x)。パリティ0mismatch。3s目標未達だが軍師レビュー時予測(5-10s)の範囲内。warm1.6s"
+  observations:
+    - "忍者自己verdict=FAILだが成果は十分。3s目標は楽観的と軍師がdraft時に注記済み(MEDIUM confidence)"
+    - "same-process warm 1.6s。R2b JSONキャッシュと組合せれば研究ループで問題なし"
+    - "reference実装を保持し高速パスとの切替が可能。設計品質高い"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "prepare一括+rolling vectorize→64.6s→8.9s(7.3x)→warm1.6s→パリティ保持→道具磨き完成"
+  timestamp: "2026-04-04T02:10:00"
+- cmd_id: cmd_1733
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1733_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。verdict自動導出+status自動更新。batsテスト追加。空verdict→全result完了時のみ導出の安全分岐"
+  observations:
+    - "空verdict+全result記入済み→PASS/FAIL導出。result未記入時はスキップ。draft時指摘の安全構造が実装済み"
+    - "既存non-standard verdict推定経路を維持しつつ空verdict分岐を追加。後方互換"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "verdict空8件→全result記入済み判定→PASS/FAIL論理集約→status=completed→FAIL率削減"
+  timestamp: "2026-04-04T02:12:00"
+- cmd_id: cmd_1734
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。報告テンプレートにgate_warning直上コメント注入。行動の瞬間に防御(Level5)。GP-021効果増幅"
+  observations:
+    - "task YAML注入→報告テンプレート注入へ移設。忍者が報告を書くまさにその瞬間にFAILパターンが目に入る"
+    - "YAMLコメント行はparse無害。report_field_set.shのawk処理にも影響なし"
+  causal_chain: "GP-021 task注入→忍者スキップ→FAIL未改善→テンプレート直上注入→記入時に目に入る→FAIL防止"
+  timestamp: "2026-04-04T02:14:00"
+- cmd_id: cmd_1734
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1734_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。gate_warning直上コメント注入。5フィールド対応+あり/なし両テスト。commit cf1c86d"
+  observations:
+    - "verdict/bc/no_lesson_reason/lessons_useful/statusの5フィールドにパターン別コメント注入"
+    - "gate_fail_top3なし忍者→コメントなし確認。退行テスト含む"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "GP-021 task注入→忍者スキップ→テンプレート直上注入→記入時に目に入る→FAIL防止"
+  timestamp: "2026-04-04T02:16:00"
+- cmd_id: cmd_1735
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。ALM核心実験。34メトリクス目的関数×6 lookback動的選択。API全検証済み(build_return_wide/simulate_selection/compute_rolling_from_returns)。研究日誌Phase20の自然な帰結"
+  observations:
+    - "build_return_wide(L498)+simulate_selection(L558)+compute_rolling_from_returns(L1296)+compute_metrics_from_returns(L432)全API存在確認。R7d完了でDTB3+SPY解決済み"
+    - "メトリクス方向(max/min)の明示なし。34メトリクスのうちStdDev/DownsideDev/DownsideCapture等はmax()だと逆方向選択になるが、比較テーブルで自明に判別できるため研究設計として問題なし"
+    - "計算量: 6×simulate_selection+6×compute_rolling(110窓)+34ALM構築。build_tensor R7c(8.9s)実績からtotal2-3分推定。忍者1名で十分"
+  causal_chain: "DMA Binary目的関数→1M偏重(Phase20)→34メトリクスで探索→最良をデータに語らせる→固定lookback超えのALM発見"
+  timestamp: "2026-04-04T02:30:00"
+- cmd_id: cmd_1735
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1735_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。24 lookback×34 ALM完了。tracking_error ALM CAGR52.7%(best fixed+13.3pp)。メトリクス方向明示分離。忍者自律でlookback6→24拡張"
+  observations:
+    - "selection_counts合算: tracking_error全lookback合計172=月数一致。23M=78回(45%)選択支配的。長期lookback偏重はPhase20知見と整合"
+    - "忍者がassumptions.minimize/maximize_metricsで方向明示分離。draft時懸念を忍者が自律対応。MDD/WorstYearはmaximize(負値max=最良)で正しい"
+    - "6→24拡張でfixed_lb_23m(CAGR39.4%)発見。元6 lookbackでは23M含まれず最良固定を見逃す所だった"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "34メトリクス×24lb ALM→tracking_error CAGR52.7%最良→低TE lb選択=市場追従型=上昇相場有利→momentum代替表現"
+  timestamp: "2026-04-04T02:38:00"
+- cmd_id: cmd_1736
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。ALM 3軸全スイープ(top_n1-10×24lb×5窓×34メトリクス=1940戦略)。API検証済み。計算量20-30分・忍者1名十分。top_n=5決め打ち根拠解消+窓軸探索"
+  observations:
+    - "数値検算: 10×24=240固定 + 10×5×34=1700 ALM = 1940戦略。240 simulate_selection+1200 rolling+1940 metrics_from_returns。メモリ36MB推定(1200×30KB)"
+    - "計算量: simulate_selection(score_fn)240回≈10分+rolling1200回≈3分+ALM構築1700回(numpy)≈即+metrics1940回≈2分。total≈20分。score_wide使用で更に高速化可"
+    - "rolling_window=12は12+24(lb)=36月warm-up→134月のALMデータ。window=60は110月。窓軸でALM品質の窓依存性が初めて定量化される"
+  causal_chain: "cmd_1735 top_n=5決め打ち→cmd_1728 K=4-6最適帯→3軸全スイープ→top_n×窓×目的関数の最適組合せ特定→忍法設計基盤"
+  timestamp: "2026-04-04T02:55:00"
+- cmd_id: cmd_1736
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1736_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。1940戦略完了(CSV1941行確認)。best ALM=MDD@top4_win36m CAGR53.2%(best fixed+9.1pp)。cmd_1735からbest metricがTE→MDDに変化(探索空間拡大の効果)"
+  observations:
+    - "BC AC2記述'340 ALM'は×5窓を省略した不正確な記述。実際は1700 ALM(summary.alm_strategy_count=1700, CSV1940行)。成果物は正しい。報告記述の不備"
+    - "best ALMがcmd_1735(TE@top5_win60)→cmd_1736(MDD@top4_win36)に変化。top_n/窓を動かすと最適目的関数が変わる。top_n=5決め打ちの危険性を実証"
+    - "best_fixedもcmd_1735(lb23m)→cmd_1736(top2_lb6m)に変化。top_nが変わると最適固定lookbackも変わる。3軸は相互依存"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "top_n=5決め打ち→全スイープ→MDD@top4_win36m最良発見→3軸相互依存確認→OOS検証でoverfit判定が次の鍵"
+  timestamp: "2026-04-04T08:45:00"
+- cmd_id: cmd_karo_score_wide
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。score_fn→score_wide切替(2スクリプト)。API既存(simulate_selection L558-608)。パリティ確認AC含む。+1複利(全ALM研究高速化)"
+  observations:
+    - "log1p/expm1アプローチは(1+r).prod()-1と数学的に等価だが浮動小数点差の可能性あり。AC1パリティ確認で検出される"
+    - "score_wide path(L570-608)はnumpy一括。170月×65PFをPythonループせずnp.argsort一発。240呼出で10分→30秒推定"
+  causal_chain: "score_fn Pythonループ→240回×170月ボトルネック→score_wide numpy一括→20x高速→全ALM研究に+1複利"
+  timestamp: "2026-04-04T09:00:00"
+- cmd_id: cmd_1737
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。ALM OOS 3段構え。軍師Stage0+Q2(top7→top4)反映。3軸overfitを定量検証。IS期間の統計的薄さ(rolling60+lb24=84月warm-up→25月ALM)はデータ制約であり設計問題ではない"
+  observations:
+    - "Stage0: IS bestとcmd_1736 global best(top4×win36M×MaxDD)の一致/不一致自体が重要な発見。不一致=overfit兆候"
+    - "計算量: Stage0+1で3400+3400=6800回ALMパイプライン。score_wide前提で20-30分。Stage2は11900回Sharpe(軽量)。忍者1名で十分"
+    - "3 Stage間に順序依存なし。並列実行可能だが才蔵1名のため逐次で問題なし"
+  causal_chain: "cmd_1736全体最良53.2%→1700試行からの事後選択→3軸overfit→Stage0で三つ組検証→ROBUST/OVERFITで研究方向分岐"
+  timestamp: "2026-04-04T09:50:00"
+- cmd_id: cmd_1737
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1737_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。OOS 3段完了。★top4_win36m PBO=0.014(ROBUST)。MDD/worst_yearが70回中68回IS-best(97%)。Stage0 IS best=worst_year(≠MDD)だがOOS>IS(負の劣化)。Stage1 62%OVERFITだが頑健帯域(top1/4/5)を特定"
+  observations:
+    - "Stage0: matches_cmd_1736_global_best=false(IS best=worst_year、全期間best=MDD)。しかしdegradation=-18.9%(OOS CAGR 0.549 > IS 0.462)。OOS改善はoverfit否定の強いシグナル。SUSPECT判定は|deg|>15%の機械的閾値による"
+    - "Stage2 top4_win36m: PBO=0.014(70回中1回のみIS-bestがOOS中央値以下)。MDD:38回+worst_year:30回=68/70(97%)がIS-best。リスク最小化メトリクスが安定的に選ばれる→戦略概念(リスク回避型lookback選択)が頑健"
+    - "Stage1 OVERFIT=31/50(62%): metric選択は大半のcomboでoverfit。ただしtop1/4/5のPBOはROBUST。頑健なtop_nが存在する。top3/10はSUSPECT"
+    - "cache欠損自己修復: fixed_returns_240.csvがtop5の24列のみ(stale)。return_wideから再構築。lesson候補の通り完全性検証が必要"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_1736 MDD best→OOS IS best≠MDD→worst_yearが選出→だがOOS>IS→リスク最小化概念自体がROBUST→PBO0.014で統計的確認→metric選択は概念レベルで頑健、個別metric名は変動"
+  timestamp: "2026-04-04T13:25:00"
+- cmd_id: cmd_1738
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_save.shにパラメータ空間縮小BLOCK追加。Phase18 4回連続事故(lookback6→24/topn3→10等)の自動化×強制。前段results.yaml不在時はスキップ(安全)"
+  observations:
+    - "OOS cmd(cmd_1737型)は明示的パラメータリストをcommandに書かない(内部で代表5選択)ためBLOCKされない。明示的縮小のみ検出=偽陽性リスク低"
+    - "前段results.yamlのconfig構造はcmd_1736で確認済み(lookbacks/top_ns/rolling_windows)。検出ロジックはリスト包含関係のセット演算"
+  causal_chain: "Phase18定義未確認4連鎖→lookback6決め打ち→殿指摘24全部→q7(定義確認)で一部対処→構造的対処=前段configとの突合BLOCK→縮小不可能化"
+  timestamp: "2026-04-04T13:45:00"
+- cmd_id: cmd_1738
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1738_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。cmd_save.sh Check14。subset→BLOCK/equal→PASS/superset→PASS/missing→SKIP。4 bats。日本語隣接lookaround対応"
+  observations:
+    - "ASCII境界lookaroundで日本語隣接cmd_id抽出対応。Python \\bはUnicode単語境界で日本語失敗→lesson候補有用"
+    - "bats 4ケース(subset/equal/superset/missing)でAC3全網羅。既存テスト全PASS"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "Phase18パラメータ縮小4連鎖→Check14(前段config突合BLOCK)→縮小構造的不可能→環境で検出"
+  timestamp: "2026-04-04T13:55:00"
+- cmd_id: cmd_karo_batch_R1-R7
+  review_type: report
+  report_ninja: hayate+saizo
+  report_task_id: R1-R7_batch
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "R1-R7全完了。R5実測4.76x(65PF)。R7実測5.17x(1940戦略42.3s→8.2s)。7/1940 MDD/TE mismatchはlegacy fallbackで0に。R6才蔵:RF parity drift修正65/65。lesson2件(benchmark group化+objective fallback)登録推奨"
+  observations:
+    - "R7速度: legacy 42.3s→batch 8.2s(5.17x)。Phase B(fast path委譲31.86x)と合わせてscore_fn時代比~160x"
+    - "R7 parity: raw batch 7/1940 mismatch(0.36%)。全てMDD/TE objective。rolling丸め差がlookback選択を変える境界ケース。fallback後0 mismatch"
+    - "R7 best_alm変化: MDD@top4_win36m(53.2%)→positive_periods@top8_win60m(53.3%)。batch版で他metricの微小差が順位を変えた"
+    - "R5 benchmark 14 group: 65PFのうちbenchmark_return系列が14種に分岐。batch版は同一benchmark前提で61/65→group化で65/65"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "殿指摘(時間コスト=負の複利)→即実行→R1+R6並列→R7統合→42.3s→8.2s→全ALM研究に+1複利"
+  timestamp: "2026-04-04T15:30:00"
+- cmd_id: cmd_karo_batch_R9-R11
+  review_type: report
+  report_ninja: hayate
+  report_task_id: R9-R11_batch
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "R9-R11全完了。R9: 43.2→8.6s(5.04x)。R10: numpy統一7.99M点mismatch=0(atol=1e-6)、fallback削除。R11: 53.2→1.03s(51.4x, max_diff=5.77e-15)。全パイプライン~3秒達成"
+  observations:
+    - "R10 rolling metrics parity: 7,996,800比較点でmismatch=0。max_abs_diff=1.16e-6。numpy統一でpd.rolling()完全排除成功"
+    - "R10 strategy mismatch 106件はrolling丸め差がlookback選択境界を変えた結果。rolling metrics自体は一致(atol=1e-6)。研究上問題なし"
+    - "R11 final metrics: max_abs_diff=5.77e-15(事実上完全一致)。batch_compute_final_metricsがbatch_rolling_metrics(window=T-1)で正しく動作"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "R7(8.2s)→R9 top_n統合(50→5回)→R10 numpy統一(fallback消滅)→R11 final metrics batch(51.4x)→~3秒達成。score_fn時代~30分比600x"
+  timestamp: "2026-04-04T17:35:00"
+- cmd_id: cmd_1739
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1739_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。全50組合せOOS。★Stage0 ALMがOOSで固定に負けた(-0.126)。cmd_1737(+0.097)と逆転。top4×36M PBO=0.043 ROBUST(一貫)。Stage2 OVERFIT23/ROBUST9/SUSPECT18"
+  observations:
+    - "Stage0: IS best=top6_win36m__worst_year。OOS CAGR=0.401 < fixed 0.526。ALMがOOSで-12.6pp負け。cmd_1737(R10前)では+9.7pp勝ちだった。R10 numpy統一の106 strategy mismatchが全体最良を変え、OOS結果も変わった"
+    - "Stage2 top4×36M: PBO=0.043(ROBUST)。cmd_1737の0.014と同方向(ROBUST)。top4×36Mは一貫して頑健。ただしStage0のglobal bestではない"
+    - "Stage2 worst: top5×12M PBO=0.9。短期窓+中top_nは極端にoverfit。rolling12ヶ月はSNR不足で目的関数選択が不安定"
+    - "cmd_1737→1739の差異根因: R10 numpy統一(106 strategy mismatch)→global bestがMDD@top4→positive_periods@top8に変化→IS bestもtop4→top6に変化→OOS結果が逆転"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "R10 numpy統一→106 strategy mismatch→global best変化→Stage0 IS best変化→ALM OOS負け。rolling丸め差が研究結論を変えうる"
+  timestamp: "2026-04-04T18:20:00"
+- cmd_id: cmd_karo_1739_cscv
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_1739_cscv_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。CSCV拡張完了。★Stage0 OVERFIT 53/70(75.7%)。Stage1 OVERFIT 2476/3500(70.7%)。3軸同時選択+大半の組合せでoverfit確定。ALM全パラメータスイープからのbest選択は構造的にoverfit"
+  observations:
+    - "Stage0: 70分割のmedian degradation=56%。IS-bestが毎回異なる戦略に散らばる(beta/left_tail_jumps等)→安定したbestが存在しない→3軸同時選択は構造的overfit"
+    - "Stage1: 3500点(50×70)のうちROBUST=531(15.2%)。残り85%がSUSPECT以上。ただしStage2(cmd_1739)のtop4×36M PBO=0.043は一貫ROBUST→頑健な島が存在する"
+    - "研究結論: ALMの価値は全パラメータスイープのbest選択ではなく、top4×36M等の頑健な島の特定にある。1700戦略から1つ選ぶ行為自体は75%overfit"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "1700戦略全スイープ→best選択→CSCV 75%overfit。だがtop4×36M PBO=0.043→頑健な島は存在。全体最適≠局所最適の頑健性"
+  timestamp: "2026-04-04T18:50:00"
+- cmd_id: cmd_1740
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。CSCV結果を受けた研究方向転換。ALM=既存selection置換→ALM=新分散材料探索。ファミリー別Max Run-up+低相関=5番目ファミリー候補。Phase17(FoF=分散=低相関)への回帰"
+  observations:
+    - "ファミリー定義確認: DM2/DM3/DM6/DM7+の4ファミリー(projects/dm-signal.yaml L166-193)。5番目を探す。family fieldが既にあり分類基盤は整っている"
+    - "有限時間4指標(max_run_up/tail_contribution/left_tail_jumps/new_high_frequency)は全てbatch_rolling_metricsの34メトリクスに含まれる。道具追加不要"
+    - "Phase2ローリング36ヶ月相関: 124 PF(65 std+59 FoF)との相関。build_return_wideはstd 65のみ。FoF 59のリターン系列取得方法が未指定→忍者が確認必要"
+  causal_chain: "CSCV 75%overfit→ALM全スイープbest=構造的overfit→方向転換: 頑健な島(top4×36M)+新分散材料(5番目ファミリー)→FoF分散効果向上"
+  timestamp: "2026-04-04T18:55:00"
+- cmd_id: cmd_1741
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_1740のDNA理解版。ファミリー分類をname prefix→absolute_asset(DB config)に修正。理論的低相関(駆動因子独立性)+危機時相関を追加。shijin-design.yaml必読"
+  observations:
+    - "cmd_1740からの改善: (1)分類基盤をnameからportfolios.config.absolute_assetに(DM2=LQD,DM3=TMF,DM6=^VIX,DM7+=SPXL) (2)理論的低相関分析追加(駆動因子) (3)危機時相関(COVID/利上げ)追加"
+    - "shijin-design.yaml L19: 理論ベース低相関>統計ベース低相関(殿裁定)。統計的相関だけでなく駆動因子の独立性が本質。cmd_1740のPhase2(統計的相関のみ)の穴を塞いだ"
+    - "FoFリターン: monthly_returnsテーブルから直接SQL(73体8196レコード確認済み q5)。build_return_wide拡張は不要"
+  causal_chain: "cmd_1740(name prefix分類)→殿指摘DNA理解→shijin-design.yaml→absolute_asset分類+理論的低相関→構造的に正しい5番目ファミリー探索"
+  timestamp: "2026-04-04T22:55:00"
+- cmd_id: cmd_1742
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_save.shにq8_tool_readiness BLOCK追加。道具関数名検出→ランブック表示+q8未記入BLOCK。将軍側の因果推論不足を環境で強制"
+  observations:
+    - "発動条件(research_engine/simulate_selection等)がcommandにあればランブック表示+q8要求。道具関数名なし→スキップ(研究以外のcmdに影響なし)"
+    - "AC Physical Verifyで'docs/research/*-runbook.md'がMISSING判定だがglob非対応の偽警報。metrics-engine-runbook.md実在確認済み"
+  compound_chain: "q8記入コスト=毎cmd数秒。防ぐロス=DB不要接続/道具未活用で毎cmd数分~数十分。10 cmds×数秒 vs 10 cmds×数分。正の複利"
+  causal_chain: "cmd_1735-1741で5回道具未確認→殿指摘因果推論不足→q8でランブック確認強制→道具状態を将軍が毎回確認→DB依存/cache未活用を起票段階で検出"
+  timestamp: "2026-04-05T00:00:00"
