@@ -732,6 +732,7 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ] && { [ "$FROM" = "shogun" ] || [ "$FROM" =
         _capture=$(tmux capture-pane -t "shogun:agents.${_pane_idx}" -p 2>/dev/null | tail -8 || true)
         echo "[pre-send capture] ${TARGET} pane state BEFORE message:"
         echo "$_capture"
+        echo "★10回問い: このアクションを10回繰り返したら正の複利か負の複利か？"
         # CTX:0%検知 — task_assigned送信先がCTX:0%なら反応しない可能性を警告
         if [ "$TYPE" = "task_assigned" ]; then
             _ctx_val=$(echo "$_capture" | grep -oP 'CTX:\K[0-9]+' | tail -1)
