@@ -33,12 +33,12 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
   parent_cmd: cmd_karo_alm_speedA
-  progress: ''
+  progress: "AC1: score_wide互換式+24-cache+unit/live parity+commit完了"
   project: dm-signal
   purpose: ALM高速化A。score_wideキャッシュ+return_tensor一括。240回→24回。
   report_filename: hayate_report_cmd_karo_alm_speedA.yaml
   report_path: queue/reports/hayate_report_cmd_karo_alm_speedA.yaml
-  status: idle
+  status: done
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/cmd_1736_alm_research.py
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/cmd_1736_alm_research.py"
