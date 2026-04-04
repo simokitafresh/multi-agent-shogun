@@ -1,10 +1,10 @@
 task:
-  _ac_task_id: cmd_karo_batch_R10_impl
+  _ac_task_id: cmd_karo_batch_R11_impl
   _ac_worker_id: null
   ac_version: b99834bc
   acceptance_criteria:
   - checks:
-    - check: numpy統一+fallback削除+パリティ(atol=1e-6)+速度計測+commit
+    - check: 最終metrics batch化+パリティ+速度計測+commit
     id: AC1
   context_files:
   - context/dm-signal.md
@@ -13,11 +13,11 @@ task:
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L469: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS\
-    \ e\n  - L303: lesson_write.shのREFLUX_CHECKでRUNBOOK=MISSINGが検出された。silent fallbackパターンのランブック反映が未\n\
-    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
-    \ 6列: \n────────────────────────────────────────\n\nランブック docs/research/metrics-engine-runbook.md\
-    \ §R10を実装せよ。\nskew/kurt/corr/covをnumpy axis=2に統一。Fisher公式はランブック記載済み。\nMDD/TE legacy\
-    \ fallback削除。パリティatol=1e-6。ランブックに従え。"
+    \ e\n  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+    \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
+    \ 06829a\n────────────────────────────────────────\n\nランブック docs/research/metrics-engine-runbook.md\
+    \ §R11を実装せよ。\nR10完了済み(commit b12f04f7)。\ncompute_metrics_from_returns 1940回→batch_rolling_metrics(window=T-1)\
+    \ 1回に置換。\nランブックに従え。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -31,16 +31,16 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  parent_cmd: cmd_karo_batch_R10
-  progress: R10 code patched; running syntax and local parity probes
+  parent_cmd: cmd_karo_batch_R11
+  progress: R11 verified complete at HEAD 3b55828d; cmd_1736 final_metrics parity PASS and 51.42x speedup reconfirmed; report completed.
   project: dm-signal
-  purpose: バッチ高速化R10。numpy統一+fallback消滅。pd.rolling()完全排除。
-  report_filename: hayate_report_cmd_karo_batch_R10.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_batch_R10.yaml
-  status: in_progress
+  purpose: バッチ高速化R11。compute_metrics_from_returns 1940回→batch_rolling_metrics 1回。97s→1s。
+  report_filename: hayate_report_cmd_karo_batch_R11.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_batch_R11.yaml
+  status: done
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_karo_batch_R10_impl
+  task_id: cmd_karo_batch_R11_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -124,4 +124,4 @@ task:
   - id: 'L542'
     summary: 'High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コスト集計スクリプトは'
     detail: 'High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コスト集計スクリプトは'
-  deployed_at: "2026-04-04T15:58:48"
+  deployed_at: "2026-04-04T16:30:03"
