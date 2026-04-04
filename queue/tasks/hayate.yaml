@@ -1,48 +1,55 @@
 task:
-  _ac_task_id: cmd_karo_batch_R11_impl
+  _ac_task_id: cmd_1742_impl
   _ac_worker_id: null
-  ac_version: b99834bc
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 88572c76
   acceptance_criteria:
   - checks:
-    - check: 最終metrics batch化+パリティ+速度計測+commit
+    - check: 道具関数名検出→ランブック表示+q8 BLOCK
     id: AC1
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
+  - checks:
+    - check: 道具関数名なし→スキップ
+    id: AC2
+  - checks:
+    - check: テスト3ケース+既存テスト全PASS
+    id: AC3
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L469: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS\
-    \ e\n  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
-    \ 06829a\n────────────────────────────────────────\n\nランブック docs/research/metrics-engine-runbook.md\
-    \ §R11を実装せよ。\nR10完了済み(commit b12f04f7)。\ncompute_metrics_from_returns 1940回→batch_rolling_metrics(window=T-1)\
-    \ 1回に置換。\nランブックに従え。"
+    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
+    \ Codeに'non-blo\n  - L409: run_precommit_checks.shでruffは5段階フォールバック(resolve_ruff_cmd)、biomeはnpx自動取得だが、shellc\n\
+    \  - L321: INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ\n\
+    ────────────────────────────────────────\n\ncmd_save.shに研究cmd用preflightを追加。\n\
+    発動条件: commandにresearch_engine/metrics_research_engine/simulate_selection/compute_metrics/build_tensor/build_return_wide等の道具関数名が含まれる場合。\n\
+    チェック: (1)ランブックglob+表示 (2)制約/注意事項grep+表示 (3)q8_tool_readiness未記入→BLOCK。\nテスト: 道具関数名あり+q8なし→BLOCK\
+    \ / 名なし→スキップ / q8あり→PASS。commit。"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok: []
-  parent_cmd: cmd_karo_batch_R11
-  progress: R11 verified complete at HEAD 3b55828d; cmd_1736 final_metrics parity PASS and 51.42x speedup reconfirmed; report completed.
-  project: dm-signal
-  purpose: バッチ高速化R11。compute_metrics_from_returns 1940回→batch_rolling_metrics 1回。97s→1s。
-  report_filename: hayate_report_cmd_karo_batch_R11.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_batch_R11.yaml
-  status: done
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1742
+  progress: cmd_cancel受領。cmd_1742停止。commit/report整理へ移行。
+  project: infra
+  purpose: 研究cmd用preflight。道具ランブック確認+q8_tool_readiness BLOCK。因果推論なき反射起票を構造的に止める。
+  report_filename: hayate_report_cmd_1742.yaml
+  report_path: queue/reports/hayate_report_cmd_1742.yaml
+  status: failed
   stop_for: []
-  target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_karo_batch_R11_impl
+  target_path: scripts/cmd_save.sh
+  task_id: cmd_1742_impl
   task_type: impl
-  target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -94,34 +101,34 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
-  - id: 'L551'
-    summary: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
-    detail: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
-  - id: 'L550'
-    summary: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
-    detail: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
-  - id: 'L549'
-    summary: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
-    detail: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
-  - id: 'L548'
-    summary: 'DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。bulk'
-    detail: 'DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。bulk'
-  - id: 'L547'
-    summary: '''計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:'
-    detail: '''計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:'
-  - id: 'L546'
-    summary: 'cmd_1737でfixed_returns_240.csvを再利用したところ、実体はfixed_top5の24列しかなくtop_n=1-10のOOS/PBO計算が停止した。foundation'
-    detail: 'cmd_1737でfixed_returns_240.csvを再利用したところ、実体はfixed_top5の24列しかなくtop_n=1-10のOOS/PBO計算が停止した。foundation'
-  - id: 'L545'
-    summary: '本番DBを逐次読む性能計測では、入力順先頭PFだけが接続確立や初回クエリ準備のウォームアップで突出して遅く見える。遅いPF上位をそのまま原因視せず、同一セッションで短いwarm'
-    detail: '本番DBを逐次読む性能計測では、入力順先頭PFだけが接続確立や初回クエリ準備のウォームアップで突出して遅く見える。遅いPF上位をそのまま原因視せず、同一セッションで短いwarm'
-  - id: 'L544'
-    summary: 'cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42体にmomentum選択blockが存在。EMAがL0'
-    detail: 'cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42体にmomentum選択blockが存在。EMAがL0'
-  - id: 'L543'
-    summary: 'Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products=abs_r[1:]*abs_r[:-1]をcumsum化し、rolling_sum=cs[t-1]-cs[t-w]で全t点を一括計算。50.6x高速化(27.72ms→0.55ms)。同パターンは全rolling'
-    detail: 'Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products=abs_r[1:]*abs_r[:-1]をcumsum化し、rolling_sum=cs[t-1]-cs[t-w]で全t点を一括計算。50.6x高速化(27.72ms→0.55ms)。同パターンは全rolling'
-  - id: 'L542'
-    summary: 'High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コスト集計スクリプトは'
-    detail: 'High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コスト集計スクリプトは'
-  deployed_at: "2026-04-04T16:30:03"
+  - id: 'L438'
+    summary: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
+    detail: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
+  - id: 'L437'
+    summary: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
+    detail: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
+  - id: 'L436'
+    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
+    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
+  - id: 'L435'
+    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
+    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+  - id: 'L425'
+    summary: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+    detail: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+  - id: 'L419'
+    summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+    detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+  - id: 'L416'
+    summary: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
+    detail: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
+  - id: 'L413'
+    summary: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
+    detail: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
+  - id: 'L410'
+    summary: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
+    detail: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
+  deployed_at: "2026-04-04T23:56:51"

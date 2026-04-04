@@ -141,7 +141,8 @@ QG_TEMPLATE
     if ! echo "$CMD_BLOCK_NC" | grep -q "q5_verified_source:"; then
         echo "BLOCK: q5_verified_source未記入。cmdの前提を何で確認したか記載せよ" >&2
         echo "  一次情報源 = コード/本番DB/API応答。前cmdの報告は一次情報源ではない" >&2
-        echo '  例: q5_verified_source: "engine.py L107-137 + 本番FoF API GET応答で構造確認"' >&2
+        echo "  + この実装選択を10回繰り返したら何が起きるか(正の複利 or 負の複利)" >&2
+        echo '  例: q5_verified_source: "engine.py L107確認。cache化1回→以降DB不要=正の複利"' >&2
         exit 1
     fi
 
@@ -182,15 +183,7 @@ QG_TEMPLATE
         echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
     fi
 
-    # causal_chain: cmd起票前の因果推論(Why/What/How/Compound)確認
-    # 起源: 2026-04-04 殿指摘「因果推論なしに反射的にcmd起票」+軍師compound_chain原理
-    # 目的: 各論パッチ(Check14/15/q8)を原理1つに統合。「確認したか」の1問
-    if ! echo "$CMD_BLOCK_NC" | grep -q "causal_chain:"; then
-        echo "WARNING: causal_chain未記入。cmd起票前に4chainを確認したか記載推奨" >&2
-        echo "  Why: なぜやるか。What: 何を確認したか(現物)。How: 道具は対応しているか。Compound: 10回繰り返したら？" >&2
-        echo '  例: causal_chain: "Why=FoF分散効果向上。What=shijin-design.yaml DNA確認済。How=ランブック確認cache対応済。Compound=cache1回→以降DB不要=正の複利"' >&2
-        WARN_COUNT=$((WARN_COUNT + 1))
-    fi
+    # (causal_chain各論パッチは削除。q5_verified_sourceに複利の問いを統合 — 2026-04-05)
 
     # q8_tool_readiness: 研究道具関数を使うcmdはランブック確認を必須化（BLOCK）
     # 起源: 2026-04-04 殿指摘 — Why/What/Howなき反射起票で研究道具の制約未確認が連続
@@ -228,7 +221,7 @@ QG_TEMPLATE
 
         echo "INFO: 研究道具runbook候補:" >&2
         for _rb in "${runbooks[@]}"; do
-            echo "  - ${_rb#$dm_signal_root/}" >&2
+            echo "  - ${_rb#"$dm_signal_root"/}" >&2
         done
 
         echo "INFO: runbook制約/注意事項(最大10行):" >&2
