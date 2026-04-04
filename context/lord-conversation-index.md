@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-04 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-04T22:47:36+09:00 -->
+<!-- generated_at: 2026-04-04T23:20:22+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-04T23:20:22+09:00 | terminal | response | ntfyで送信した。Shogun Android v6.3 APKリンク。 [meta] stop_reason=end_turn
+- 2026-04-04T22:48:21+09:00 | ntfy | outbound | 【家老】cmd_1741 初回配備開始 (title=研究 — ファミリー別Max Run-up ALM(DNA理解版) + 理論的低相関 → 5番目ファミリー候補, ninja=saizo) 研究 📋 https://gist.gith…
 - 2026-04-04T22:47:36+09:00 | terminal | response | cmd_1740中止を家老に通知した。cmd_1741(DNA理解版)で置換。 [meta] stop_reason=end_turn
 - 2026-04-04T22:46:35+09:00 | terminal | response | **殿のドキュメントを読んだ。** 将軍が完全に理解していなかった核心: **`absolute_assetがファミリーを定義し、戦略のDNAを決定する`(L15)** | ファミリー | absolute | DNA | 駆動因子 | …
 - 2026-04-04T22:44:04+09:00 | terminal | response | **殿のドキュメントを読んだ。** 将軍が完全に理解していなかった核心: **`absolute_assetがファミリーを定義し、戦略のDNAを決定する`(L15)** | ファミリー | absolute | DNA | 駆動因子 | …
@@ -12,8 +14,6 @@
 - 2026-04-04T19:04:53+09:00 | terminal | response | していない。 1. **FoFリターン取得の道具不足** — build_return_wideがstandard 65のみ。FoF対応の道具改良cmdを先に出すべきだった 2. **ファミリー分類の定義** — 本番DBでname pr…
 - 2026-04-04T19:03:55+09:00 | terminal | response | していない。 1. **FoFリターン取得の道具不足** — build_return_wideがstandard 65のみ。FoF対応の道具改良cmdを先に出すべきだった 2. **ファミリー分類の定義** — 本番DBでname pr…
 - 2026-04-04T19:02:52+09:00 | terminal | response | その通りだ。軍師のレビューは家老のレビューパイプラインに組み込まれている。家老は軍師のAPPROVE/FAIL+指摘を読んでから忍者に配備する。 将軍がわざわざ家老に「軍師がこう言った」と中継する必要はない。**鎖を二重にしている。** …
-- 2026-04-04T19:02:35+09:00 | terminal | response | FoFのmonthly_returnsはDBにある(73体、8196レコード)。build_return_wideを拡張してFoFも含めれば解決。家老に伝える。 [meta] stop_reason=tool_use
-- 2026-04-04T19:00:51+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-04 18:45:28|cmd_karo_1739_cscv 2026-04-04 19:00:46|CI緑: run 23976410160
 
 ## 未解決確認事項
 - **分かった。** ファミリーのDNAは`absolute_asset`+`safe_haven_asset`の組合せで決まる。nameのprefixではない。 - **青龍(DM2)系**: absolute=LQD, safe_haven=XLU - **朱雀(DM3)系*…
@@ -40,12 +40,9 @@
 - cmd_1144
 - cmd_1699
 - cmd_1706
-- cmd_1722
 - cmd_1723
-- cmd_1724
 - cmd_1725
 - cmd_1726
-- cmd_1727
 - cmd_1728
 - cmd_1729
 - cmd_1730
