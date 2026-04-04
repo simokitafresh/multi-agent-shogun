@@ -1,21 +1,23 @@
 task:
-  _ac_task_id: cmd_karo_batch_R2_impl
+  _ac_task_id: cmd_karo_batch_R4_impl
   _ac_worker_id: null
   ac_version: b99834bc
   acceptance_criteria:
   - checks:
-    - check: リスク系メトリクス実装+パリティテスト+commit
+    - check: 分布系メトリクス実装+パリティテスト+commit
     id: AC1
   context_files:
   - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
   - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+    \  - L469: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS\
+    \ e\n  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
     \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
-    \ 06829a\n  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit\
-    \ 1がClaude Codeに'non-blo\n────────────────────────────────────────\n\nランブック docs/research/metrics-engine-runbook.md\
-    \ §修行ステップ R2を実装せよ。\nR1完了済み(commit fde8e247)。ランブックに従え。"
+    \ 06829a\n────────────────────────────────────────\n\nランブック docs/research/metrics-engine-runbook.md\
+    \ §修行ステップ R4を実装せよ。\nR3完了済み(commit 2db94b8f)。ランブックに従え。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -29,16 +31,16 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   parallel_ok: []
-  parent_cmd: cmd_karo_batch_R2
-  progress: ''
+  parent_cmd: cmd_karo_batch_R4
+  progress: "AC1 complete: batch_rolling_metrics R4 full parity + scale test + commit b3ea9845"
   project: dm-signal
-  purpose: バッチ高速化R2。リスク系(MDD/Sharpe/Sortino/CAGR/Calmar/VaR/downside_dev)。
-  report_filename: hayate_report_cmd_karo_batch_R2.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_batch_R2.yaml
-  status: assigned
+  purpose: バッチ高速化R4。分布系(tail/gain_loss/new_high/max_runup/positive_period/best_worst_year)。
+  report_filename: hayate_report_cmd_karo_batch_R4.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_batch_R4.yaml
+  status: done
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py
-  task_id: cmd_karo_batch_R2_impl
+  task_id: cmd_karo_batch_R4_impl
   task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
@@ -122,4 +124,4 @@ task:
   - id: 'L538'
     summary: '59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdepth=2(旧忍法)で損失増幅、depth=3(旧忍法-Ward)で最大損失Δ=-0.182。L0前処理の正効果がネスト深度で逆転する。FoFレベルの前処理適用はdepth=1に限定すべき'
     detail: '59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdepth=2(旧忍法)で損失増幅、depth=3(旧忍法-Ward)で最大損失Δ=-0.182。L0前処理の正効果がネスト深度で逆転する。FoFレベルの前処理適用はdepth=1に限定すべき'
-  deployed_at: "2026-04-04T14:24:27"
+  deployed_at: "2026-04-04T14:31:34"
