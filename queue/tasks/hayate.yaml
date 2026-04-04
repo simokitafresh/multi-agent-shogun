@@ -1,29 +1,24 @@
 task:
-  _ac_task_id: cmd_karo_score_wide_impl
+  _ac_task_id: cmd_karo_alm_speedA_impl
   _ac_worker_id: null
-  ac_version: 2edf2958
+  ac_version: b99834bc
   acceptance_criteria:
   - checks:
-    - check: cmd_1735/1736両スクリプトのscore_fn→score_wide切替+パリティ確認
+    - check: score_wideキャッシュ+return_tensor一括化+パリティ確認+速度計測+commit
     id: AC1
-  - checks:
-    - check: 速度計測before/after+commit
-    id: AC2
   context_files:
   - context/dm-signal.md
   - context/dm-signal-research.md
+  deployed_at: '2026-04-04T10:42:00'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
-    \ Codeに'non-blo\n  - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit\
-    \ statusを実行\n────────────────────────────────────────\n\ncmd_1735/1736のALM研究スクリプトをscore_fn→score_wide事前計算に切替。\n\
-    \n対象:\n- scripts/analysis/standard_pf_preprocessing/cmd_1735_alm_research.py (L80付近)\n\
-    - scripts/analysis/standard_pf_preprocessing/cmd_1736_alm_research.py (L116付近)\n\
-    \n変更:\n1. lookbackごとにscore_wideを事前計算:\n   score_wide = np.expm1(np.log1p(return_wide).rolling(lb).sum())\n\
-    2. simulate_selection(return_wide, score_fn=...) → simulate_selection(return_wide,\
-    \ score_wide=score_wide)\n3. 結果CSV/YAMLが変更前と一致(パリティ確認)\n4. 速度計測before/after\n\
-    5. commit\n\n制約: metrics_research_engine.py本体変更なし。"
+    \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
+    \ 06829a\n  - L192: 並列implのreviewではgit diff origin/main..HEADだけでなくgit diff --name-statusも確認し、対象差分が全て\n\
+    ────────────────────────────────────────\n\ncmd_1736_alm_research.pyのsimulate_fixed_strategies→return_tensor方式に書換。\n\
+    \n現状: 240回simulate_selection(top_n×lookbackごと)。\n改善: 24 lookbackのscore_wideを事前計算→Dict化。同一lookbackで10\
+    \ top_nを回す際にscore_wide再計算しない。\n\nランブック: docs/research/metrics-engine-runbook.md\
+    \ §高速化ガイド+§事前計算パターン参照。\n\nパリティ: 既存CSV出力(cmd_1736_full_sweep.csv)と一致確認。速度計測before/after。commit。"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -36,21 +31,19 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_karo_score_wide
-  progress: done; report gate passed; notifying karo
+  parallel_ok: []
+  parent_cmd: cmd_karo_alm_speedA
+  progress: ''
   project: dm-signal
-  purpose: ALMスクリプトscore_wide高速化。score_fn Pythonループ→numpy一括で20x。
-  report_filename: hayate_report_cmd_karo_score_wide.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_score_wide.yaml
-  status: done
+  purpose: ALM高速化A。score_wideキャッシュ+return_tensor一括。240回→24回。
+  report_filename: hayate_report_cmd_karo_alm_speedA.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_alm_speedA.yaml
+  status: in_progress
   stop_for: []
   target_path: scripts/analysis/standard_pf_preprocessing/cmd_1736_alm_research.py
-  task_id: cmd_karo_score_wide_impl
-  task_type: impl
   target_path_warning: "⚠ target_pathが存在しない: scripts/analysis/standard_pf_preprocessing/cmd_1736_alm_research.py"
+  task_id: cmd_karo_alm_speedA_impl
+  task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -132,4 +125,3 @@ task:
   - id: 'L536'
     summary: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
     detail: '''ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。忍者がcommit後にすぐidleになると、ninja_monitorのauto-commitに意図しないファイルが含まれる。対策:'
-  deployed_at: "2026-04-04T08:59:29"
