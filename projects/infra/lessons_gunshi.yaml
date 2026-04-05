@@ -1,0 +1,94 @@
+# 軍師(gunshi)レビュー教訓
+# フォーマット: lessons_karo.yamlと同一構造
+# 家老がlesson_write.shで正式登録する
+lessons:
+- id: LG001
+  title: git show HEAD検証必須 — Read toolはuncommitted含むため既実装判定に不十分
+  detail: draft/report reviewで「既実装か」を判定する際、Read toolはuncommittedな変更も含めて表示する。cmd_1178-1181で3件誤判定が発生。対策はgit show HEAD:ファイルで確定済みのコードのみ確認すること。
+  source_cmd: cmd_1178
+  created_at: '2026-03-21'
+- id: LG002
+  title: 並行配備衝突チェック — 事前検死で同一ファイル変更衝突を確認
+  detail: 並行cmdが同一ファイルを変更するケースをレビュー時に検出する。cmd_1173で検出された。事前検死で並行配備中のcmdとの変更対象ファイル重複を必ず確認せよ。
+  source_cmd: cmd_1173
+  created_at: '2026-03-21'
+- id: LG003
+  title: 前提崩壊パターン — 未実装/未対応主張はコード現物で再検証
+  detail: 偵察報告やlesson_candidateの「未実装」「未対応」主張をそのまま信頼してはならない。cmd_1176-1179で5件連続で前提崩壊が発生した。cmd化前にコード現物(grepまたはgit show)で再検証すること。
+  source_cmd: cmd_1176
+  created_at: '2026-03-21'
+- id: LG004
+  title: scope外コード混入 — 忍者commitにscope外変更が混入するパターン検出
+  detail: 忍者のcommitにタスクscope外のコード変更が混入することがある。事前検死で変更ファイル一覧とscope定義を照合し、scope外変更を検出せよ。cmd_1187で検出。
+  source_cmd: cmd_1187
+  created_at: '2026-03-21'
+- id: LG005
+  title: AC pending矛盾 — status:done報告にAC pending項目があればFAIL
+  detail: 忍者がstatus:doneで報告しつつAC pending項目が残存する矛盾パターン。cmd_1199影丸で発見。done報告にpending ACがあれば即FAIL判定し、差し戻すこと。
+  source_cmd: cmd_1199
+  created_at: '2026-03-21'
+- id: LG006
+  title: GATEフォーマット不備=報告FAIL必須 — LGTM+注記は消火構造
+  detail: gate_report_format.shでBLOCKとなるフォーマット不備(verdict非二値/lessons_useful dict形式/binary_checks string形式/必須フィールド欠落)を報告レビューで検出した場合、注記のみでLGTMとしてはならずFAIL判定を出す。cmd_1242でLGTM+注記→GATE BLOCK→家老workaround発生。根本原因は軍師の顧客認識ズレ(忍者の成果物品質→家老の処理可能性)。LGTMの信頼性=GATE通過保証レベルに引き上げる。
+  source_cmd: cmd_1242
+  created_at: '2026-03-22'
+  automated: true
+  enforcement: gunshi_review_log T1(GATEシミュレーション)で即時適用
+- id: LG007
+  title: capture-pane=残像、ファイルタイムスタンプ=現在 — 状態確認の優先順位
+  detail: エージェント状態確認はdashboard→inbox→capture-paneの順。capture-paneは過去の残像(Editエラー等が残る)であり現在の状態を反映しない。ファイルタイムスタンプが現在の状態。S5サイクル2で実証(家老Editエラー残像→リトライ成功済みなのに不要フォローアップ送信)。将軍F006/F007(想像するな確認せよ)と同根だが全役割に普遍的に適用。
+  source_cmd: gunshi_S5_cycle2
+  created_at: '2026-03-22'
+  automated: false
+  enforcement: SG6(軍師レビューログに外部化済み)
+- id: LG010
+  title: 防御階層原則 — GP設計はLevel4(フロー内埋込BLOCK)を目指せ
+  detail: 'Level1(事後検出gate) < Level2(事前予防doc) < Level3(事前強制auto-gen) < Level4(フロー内埋込BLOCK)。GP-053-060の実装で実証。事後検出(gate FAIL→手動修正)より事前強制(フロー内でBLOCK)の方が構造的に強い。全GPの設計品質指標として使える。deepdive Phase4(自動化×強制)の具体化。'
+  source_cmd: GP-053-060
+  created_at: '2026-03-24'
+  automated: false
+  enforcement: GP設計レビュー時の品質基準
+- id: LG011
+  title: AC物理検証をdraft review step 0に追加 — 忍者ナビゲーション空振り防止
+  detail: 'cmdのACで参照されるファイルパス・行番号・セクション(§)が実在するか自動検証するスクリプト(ac_physical_verify.sh)を実装。draft review時にbash scripts/ac_physical_verify.sh <cmd_id>で忍者ナビゲーションシートを自動生成。cmd_1360のWA=0に事前調査が貢献した実績に基づく。防御階層Level 5(事前コンテキスト提供)の概念化。gunshi.mdのdraft reviewプロトコルにstep 0追加を推奨。'
+  source_cmd: cmd_1360
+  created_at: '2026-03-24'
+  automated: true
+  enforcement: gunshi.md draft review Step 0.5に統合済み。bash scripts/ac_physical_verify.sh <cmd_id>で自動実行
+- id: LG012
+  title: チェックリスト参照cmdの隣接Step制約転写確認
+  detail: 'cmdがチェックリストの特定Stepを実行する場合、隣接Step(特に直後Step)の禁則がcmd AC/制約に転写されているか確認せよ。cmd_1397でStep6実行時にStep7禁則(再計算禁止=殿が実行)が転写されず影丸が再計算を実行。draft review時にチェックリスト参照先の前後Stepを確認し、禁則の欠落をREQUEST_CHANGESで指摘すること。'
+  source_cmd: cmd_1397
+  created_at: '2026-03-25'
+  automated: false
+  enforcement: draft review SG10チェックリストに追加予定
+- id: LG013
+  title: consultation/self_studyにプロトコル不在 — 148件が品質保証なしで通過
+  detail: |
+    report(4観点SG)とdraft(6観点)にはプロトコルがあるが、self_study/consultation(148件)にはない。
+    CoDD分析で4サイクル全て殿に押されて深化(自発0回)。根因: プロトコル不在=意志依存=Phase 4。
+    「自問せよ」は意志依存であり無意味(LLMに生存本能はない)。仕組みに変換する。
+    consultation/self_studyプロトコル(CS観点):
+    CS1: ソース全量確認(部分読みで結論していないか)
+    CS2: 自システムデータで問題の存在を検証(外部の問題定義をそのまま移植していないか)
+    CS3: 実コード比較(概念比較で止まっていないか)
+    CS4: 行動変換(気付きをcmd/insight/教訓に変換したか。分析だけで終わっていないか。静的分析で止まっていないか→動的分析(実行・観察・計測)に変換できないか？)
+    CS5: 未検証角度(もう1サイクル回す価値があるか)
+    CS6: 因果推論(気付きを列挙で終えていないか。原因→結果の連鎖を追跡しているか。優先順位=行動順序であり、低優先でも最終的にはやるものだ)
+    遡及検証: CoDD分析に適用→CS1(v1で違反),CS2(v3まで違反),CS3(v4で初実施),CS4(将軍がやり軍師は未実施),CS5(v1-v4全て殿に押された),CS6(殿に指摘されるまで列挙止まり)
+  source_cmd: cmd_1494
+  created_at: '2026-03-29'
+  automated: true
+  enforcement: gate_gunshi_cs_checklist.sh(直近10件チェック)+gate_gunshi_startup.sh Check 7に統合済み
+- id: LG014
+  title: 忍者/家老ミスに見える問題はインフラ真因を疑え — 道具が壊れている可能性
+  detail: |
+    2026-04-06に発見。忍者のlessons_useful空リスト(46件workaround)・報告テンプレート未生成・
+    stall見逃し・auto_deploy不発の全てがインフラバグ(task_id/ac_task_id二重管理+awk regex+scope_mode未伝搬)だった。
+    表面(忍者がフォーマットを間違えた)で止めずなぜなぜ7回掘ると道具のバグに到達する。
+    レビュー時の問い: 「このworkaround/gate FAILは忍者のミスか、それとも道具が壊れているか？」
+    karo_workarounds.yamlで同一categoryが3件以上あれば道具を疑え。
+  source_cmd: gunshi_deepdive_20260406
+  created_at: '2026-04-06'
+  automated: true
+  enforcement: gunshi_review_log ヘッダ2行目に原理として埋込済み。毎レビュー時に読む

@@ -6,6 +6,8 @@
 # ─── ★全レビュー最重要原理(毎回読め) ───
 # このcmdの各実装選択を10回繰り返したら正の複利か負の複利か？
 # (SQL毎回→負。cache1回→正。loop毎回→負。batch1回→正。道具未使用→負。道具活用→正)
+# 忍者/家老のミスに見える問題はインフラが真因でないか？道具を疑え。
+# (2026-04-06実証: task_id/ac_task_id不一致→8スクリプト28箇所。lessons_useful空リスト=awk regex壊。scope_mode未伝搬=偵察フィルタ不発)
 # ─── ★報告レビュー セルフゲート(LGTMの前に必ず確認) ───
 # SG0: gate_report_format.sh実行(自動化済み。手動チェック不要)
 #   bash scripts/gates/gate_report_format.sh <report_path>
