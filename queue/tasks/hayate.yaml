@@ -1,44 +1,27 @@
 task:
-  _ac_task_id: cmd_1754_alm_design_doc
+  _ac_task_id: cmd_1756_ratelimit
   _ac_worker_id: hayate
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 7d010443
+  ac_version: b99834bc
   acceptance_criteria:
-  - ac: 'AC1: docs/research/alm-integration-design.md作成（§1-§8）'
-  - ac: 'AC2: projects/dm-signal.yaml + context §35 にポインタ追加'
-  - ac: 'AC3: commit'
-  command: "【1. 統合設計書作成】\ndocs/research/alm-integration-design.md を新規作成。\n以下10ファイルの核心を1ファイルに統合:\n\
-    cmd_1749_alm_admin_design.md / cmd_1749_be_pipeline_flow.md /\ncmd_1749_alm_hook_candidates.md\
-    \ / cmd_1750_alm_design.md /\ncmd_1751_fof_analysis.md / cmd_1751_cdp_findings.md\
-    \ /\ncmd_1752_write_conflict.md / cmd_1752_etl_cost.md /\ncmd_1752_functionize.md\
-    \ / cmd_1752_estimate.md\n\n構成(§1-§8):\n§1 ALM概要（動的lookback@L0。殿裁定: 案A/Dashboard不要/MonthlyTrade不要/FE=Adminのみ）\n\
-    §2 BE設計（recalculate_fast.py Phase3.7/4/4.5改修。行番号付き。2パスfullrecalc）\n§3 FoF連携（recalculate_fof.py\
-    \ Hook A。FoFから透過的YES）\n§4 FE設計（Admin UI案A表示切替。チェックボックス。バリデーション6項目）\n§5 運用（daily\
-    \ ETL=mode=PORTFOLIO/fullrecalc=admin手動/cron設定）\n§6 注意事項（signal_cache_opt6再構築CRITICAL/buffer計算/MTD安全策/IS窓前月末固定）\n\
-    §7 impl分割案（A-G 7cmd依存グラフ。12.5h）\n§8 偵察ファイル索引（10ファイルへのポインタ）\n\n【2. ポインタ配置】\nprojects/dm-signal.yaml末尾にalm_integrationセクション追加:\n\
-    \  status/design_doc_path/殿裁定サマリ\ncontext/dm-signal-research.md §35末尾に統合設計書パスを追加\n\
-    \n【3. commit】\n\n対象: /mnt/c/Python_app/DM-signal/docs/research/ 配下\n参考: docs/research/cmd_1749_*.md,\
-    \ cmd_1750_*.md, cmd_1751_*.md, cmd_1752_*.md\n"
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
-  deployed_at: '2026-04-06T03:53:00'
+  - ac: 'AC1: ratelimit差分比較+取込判定ドキュメント'
+  - ac: 'AC2: commit'
+  command: "【A. ratelimit_check.sh改善比較】\n大元: c87ca64 — zoom-capture追加（狭ペイン表示切れ対策）、awkパーサーで最新statusブロック抽出。\n\
+    我が軍: scripts/ratelimit_check.sh（存在する場合）\n調査:\n- gh apiでc87ca64のratelimit_check.sh\
+    \ diffを取得\n  コマンド: gh api repos/yohey-w/multi-agent-shogun/commits/c87ca64 --jq\
+    \ '.files[].patch'\n- 我が軍の同等スクリプトとの差分比較\n- 狭ペインでの表示切れが我が軍で起きているか確認\n成果物: docs/research/cmd_1756_ratelimit.md\
+    \ + commit\n中立表現: 事実を報告せよ。\n"
+  deployed_at: '2026-04-06T04:14:00'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     ────────────────────────────────────────"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -46,22 +29,21 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  parent_cmd: cmd_1754
-  project: dm-signal
-  purpose: 'cmd_1754: ALM統合設計書作成+ポインタ配置。10偵察ファイル→1統合ドキュメント'
-  report_filename: hayate_report_cmd_1754.yaml
-  report_path: queue/reports/hayate_report_cmd_1754.yaml
+  parent_cmd: cmd_1756
+  project: infra
+  purpose: 'cmd_1756偵察A: ratelimit_check.sh改善比較'
+  report_filename: hayate_report_cmd_1756.yaml
+  report_path: queue/reports/hayate_report_cmd_1756.yaml
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 32
+    total_workarounds: 33
     top_pattern: 'report_yaml_format(12件)'
-    breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), report_missing(2件), double_deploy(2件), task_redeploy(2件), karo(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件), ci_gate_mismatch(1件)'
+    breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), report_missing(2件), double_deploy(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'lu_reason_empty'
@@ -106,33 +88,33 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
-  - id: 'L559'
-    summary: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
-    detail: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
-  - id: 'L558'
-    summary: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
-    detail: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
-  - id: 'L557'
-    summary: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
-    detail: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
-  - id: 'L556'
-    summary: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
-    detail: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
-  - id: 'L555'
-    summary: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
-    detail: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
-  - id: 'L554'
-    summary: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
-    detail: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
-  - id: 'L553'
-    summary: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
-    detail: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
-  - id: 'L552'
-    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
-    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
-  - id: 'L551'
-    summary: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
-    detail: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
-  - id: 'L550'
-    summary: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
-    detail: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
+  - id: 'L440'
+    summary: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+    detail: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+  - id: 'L439'
+    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+  - id: 'L438'
+    summary: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
+    detail: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
+  - id: 'L437'
+    summary: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
+    detail: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
+  - id: 'L436'
+    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
+    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
+  - id: 'L435'
+    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
+    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+  - id: 'L425'
+    summary: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+    detail: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+  - id: 'L419'
+    summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+    detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+  - id: 'L416'
+    summary: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
+    detail: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
