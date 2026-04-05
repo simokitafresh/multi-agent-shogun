@@ -32,25 +32,39 @@ detect_real_model() {
     case "$cli_t" in
         claude)
             # Claude Code: バナー検出（幅差分を吸収）
-            #   狭幅(47): ▐▛███▜▌   {Opus|Sonnet|Haiku} {X.Y} with {effort} effort
-            #   標準幅(71+): ▝▜█████▛▘  {Opus|Sonnet|Haiku} {X.Y} with {effort} effort · {Plan}
+            #   狭幅(200K): ▐▛███▜▌   Sonnet 4.6 with high effort
+            #   狭幅(1M):   ▐▛███▜▌\n           Opus 4.6 (1M contex…\n▝▜█████▛▘  （モデル名が別行）
+            #   標準幅(1M): ▐▛███▜▌   Opus 4.6 (1M context) with high effort
+            #   標準幅(200K): ▝▜█████▛▘  Sonnet 4.6 with high effort · path
             local output
             output=$(tmux capture-pane -t "$pane_target" -p -J -S -1000 2>/dev/null)
 
             if [ -n "$output" ]; then
                 local banner model
 
-                # 幅共通の一次検出: どちらのアート行でもモデル行なら許容
-                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+([[:space:]]+with[[:space:]]+[a-z]+[[:space:]]+effort)?([[:space:]]+·.*)?[[:space:]]*$' | tail -1)
+                # Pattern 1: アート行と同じ行にモデル名（幅共通）
+                # (1M context)等の括弧部分も許容
+                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+' | tail -1)
                 if [ -n "$banner" ]; then
-                    model=$(echo "$banner" | sed -E 's/.*(▐▛███▜▌|▝▜█████▛▘)[[:space:]]*//' | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' | sed -E 's/[[:space:]]*·.*//' | sed -E 's/[[:space:]]*$//')
+                    model=$(echo "$banner" \
+                        | sed -E 's/.*(▐▛███▜▌|▝▜█████▛▘)[[:space:]]*//' \
+                        | sed -E 's/[[:space:]]*\(.*\)//' \
+                        | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' \
+                        | sed -E 's/[[:space:]]*·.*//' \
+                        | sed -E 's/[[:space:]]*$//')
                 fi
 
-                # 標準幅フォールバック: ▝▜█████▛▘  Opus 4.6 with high effort · Plan
+                # Pattern 2: モデル名が別行（狭幅ペイン、1Mコンテキスト時）
+                #   行頭空白 + Opus/Sonnet/Haiku + バージョン
                 if [ -z "$model" ]; then
-                    banner=$(echo "$output" | grep -E '▝▜█████▛▘[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+([[:space:]]+with[[:space:]]+[a-z]+[[:space:]]+effort)?([[:space:]]+·.*)?[[:space:]]*$' | tail -1)
-                    if [ -n "$banner" ]; then
-                        model=$(echo "$banner" | sed -E 's/.*▝▜█████▛▘[[:space:]]*//' | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' | sed -E 's/[[:space:]]*·.*//' | sed -E 's/[[:space:]]*$//')
+                    local model_line
+                    model_line=$(echo "$output" | grep -E '^[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+' | tail -1)
+                    if [ -n "$model_line" ]; then
+                        model=$(echo "$model_line" \
+                            | sed -E 's/^[[:space:]]*//' \
+                            | sed -E 's/[[:space:]]*\(.*$//' \
+                            | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' \
+                            | sed -E 's/[[:space:]]*$//')
                     fi
                 fi
 

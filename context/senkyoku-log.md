@@ -609,3 +609,9 @@
 | cmd | 目的 | 結果 | 因果・知見 |
 |-----|------|------|-----------|
 | cmd_training_L4_R38_saizo | research_engine FoF統合後の改善点抽出と最大リスク1件の補強 | 完了 | 原移設差分(c3d94d37/c1c1e5ef)は既存HEADに反映済み。才蔵は `topological_sort` の循環FoF依存を ValueError 化し、移設ヘルパー単体テスト+root testsのS101許可を追加。commit 57eef8ce |
+
+## 2026-04-05
+
+| cmd | 目的 | 結果 | 因果・知見 |
+|-----|------|------|-----------|
+| cmd_1741 | ファミリー別Max Run-up ALM(DNA理解版)+理論的低相関→5番目ファミリー候補 | GATE CLEAR | 才蔵完遂。absolute_assetでファミリー分類(name prefixではなくDB config)。追補でFoF return-wide対応もcommit。top candidate=DM3(alm_DM3_top5_win12m)。教訓L552-L554登録。軍師APPROVE |

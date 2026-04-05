@@ -39,8 +39,8 @@ profiles:
     clear_debounce: 300
 
   codex:
-    # 表示名 (sync_pane_vars.sh → tmux @model_name)
-    display_name: "Opus 4.6"
+    # 表示名 (sync_pane_vars.sh → tmux @model_name) — CLI type単位のフォールバック用
+    display_name: "Codex"
     # 起動コマンド (lib/cli_adapter.sh L142)
     launch_cmd: "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     # CTXパース正規表現 (ninja_monitor.sh L190, L522)

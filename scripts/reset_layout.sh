@@ -80,25 +80,33 @@ _generate_prompt() {
 _resolve_model_display() {
     local agent_id="$1"
     local pane="${2:-}"
+
+    # 1st: tmux @model_name cached value (実モデル検出結果)
+    if [[ -n "$pane" ]]; then
+        local cached
+        cached=$(tmux show-options -p -t "shogun:agents.${pane}" -v @model_name 2>/dev/null || echo "")
+        if [[ -n "$cached" ]]; then
+            echo "$cached"
+            return
+        fi
+    fi
+
+    # 2nd: settings.yaml model_name → 表示名
+    local settings_display
+    settings_display=$(cli_model_display "$agent_id" 2>/dev/null) || settings_display=""
+    if [[ -n "$settings_display" ]]; then
+        echo "$settings_display"
+        return
+    fi
+
+    # 3rd: CLI type fallback
     local ct
     ct=$(get_cli_type "$agent_id")
-
     case "$ct" in
         codex)   echo "Codex" ;;
         copilot) echo "Copilot" ;;
         kimi)    echo "Kimi" ;;
-        claude|*)
-            # @model_nameから取得（settings.yaml参照廃止）
-            if [[ -n "$pane" ]]; then
-                local cached
-                cached=$(tmux show-options -p -t "shogun:agents.${pane}" -v @model_name 2>/dev/null || echo "")
-                if [[ -n "$cached" ]]; then
-                    echo "$cached"
-                    return
-                fi
-            fi
-            echo "Opus"  # fallback
-            ;;
+        *)       echo "Claude" ;;
     esac
 }
 

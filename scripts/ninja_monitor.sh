@@ -2307,7 +2307,10 @@ check_model_names() {
         local expected
         expected=$(detect_real_model "$name" "$target" 2>/dev/null) || expected=""
 
-        # AC3: 実モデル検出失敗時はsettings.yaml/cli_profiles.yamlにフォールバック
+        # AC3: 実モデル検出失敗時はsettings.yaml model_name → cli_profiles.yamlにフォールバック
+        if [ -z "$expected" ]; then
+            expected=$(cli_model_display "$name" 2>/dev/null) || expected=""
+        fi
         if [ -z "$expected" ]; then
             expected=$(cli_profile_get "$name" "display_name")
             if [ -z "$expected" ]; then

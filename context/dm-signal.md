@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L551 -->
+<!-- last_synced_lesson: L555 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -170,3 +170,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L549: ALM batch 統合では objective 単位 fallback で parity を守る（cmd_karo_batch_R7）
 - L550: 実データbatch parityではbenchmark共通を仮定するな（cmd_karo_batch_R5）
 - L551: ALM batch統合ではobjective単位fallbackでparityを守る（cmd_karo_batch_R7）
+- L552: 因果推論に複利の問いを含めよ — 全レビューで10回繰り返し効果を自問（cmd_1741）
+- L553: 原理1行が各論パッチ30行に勝る — 既存の仕組みを1行磨け（cmd_1741）
+- L554: family ALM研究はmetricsと相関をベクトル化しないと時間で破綻する（cmd_1741）
+- L555: load_all_monthly_returnsはholding_signalも取得必須（cmd_1743）

@@ -148,6 +148,27 @@ cli_profile_get_for_type() {
     _cli_lookup_profile_get "$cli_type" "$key"
 }
 
+# cli_model_display <agent_name>
+# settings.yamlのmodel_nameからユーザーフレンドリーな表示名を導出
+# claude-opus-4-6 → "Opus 4.6", claude-sonnet-4-6 → "Sonnet 4.6", gpt-5.4 → "gpt-5.4"
+cli_model_display() {
+    local agent="$1"
+    local model_name
+    model_name=$(_cli_lookup_settings_get "$agent" "model_name" "")
+    if [[ -z "$model_name" ]]; then
+        return 1
+    fi
+    case "$model_name" in
+        claude-opus-4-6*)    echo "Opus 4.6" ;;
+        claude-opus-4*)      echo "Opus 4" ;;
+        claude-sonnet-4-6*)  echo "Sonnet 4.6" ;;
+        claude-sonnet-4*)    echo "Sonnet 4" ;;
+        claude-haiku-4-5*)   echo "Haiku 4.5" ;;
+        claude-haiku-4*)     echo "Haiku 4" ;;
+        *)                   echo "$model_name" ;;
+    esac
+}
+
 # cli_launch_cmd <agent_name>
 # 起動コマンド文字列を返す
 cli_launch_cmd() {

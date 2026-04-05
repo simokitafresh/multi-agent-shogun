@@ -726,3 +726,15 @@ EMA平滑化(cmd_1632)とL1 Trend Filter(cmd_1633)のパラメータ選択がove
 - L540: preprocessing_fnを毎回生成するとidが変わり_preprocess_cacheが無効化される（cmd_training_L4_R38）
 - L541: depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ（cmd_training_L4_R38）
 - L542: cmd用語の定義は高コスト分析前にテストへ固定せよ（cmd_training_L4_R39）
+
+## §31. ファミリー別ALM + 5番目ファミリー候補 (cmd_1741)
+<!-- last_updated: 2026-04-05 -->
+
+absolute_assetでファミリー分類(DM2=LQD/DM3=TMF/DM6=^VIX/DM7+=SPXL)し、Max Run-up目的関数でALM実行。理論的低相関(駆動因子独立性)+危機時相関も分析。
+
+**top候補: DM3** (alm_DM3_top5_win12m__max_run_up)。avg_corr_canonical=0.494(4ファミリー中最低=最分散)。inflation_2022=-0.089(負相関)。
+
+→ `outputs/analysis/alm_research/cmd_1741_family5_analysis.yaml` | `cmd_1741_correlation_matrix.csv` | `cmd_1741_crisis_correlation.csv`
+- L552: 因果推論に複利の問いを含めよ（cmd_1741）
+- L553: 原理1行>各論パッチ30行（cmd_1741）
+- L554: family ALM研究はmetricsと相関をベクトル化しないと時間で破綻する（cmd_1741）

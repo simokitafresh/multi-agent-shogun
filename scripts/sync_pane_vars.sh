@@ -40,14 +40,15 @@ sync_one_pane() {
     local target="$2"
     local pane_label="$3"
 
-    # 実モデル検出 → display_name → cli_type → "Unknown" のフォールバックチェーン
-    local real_model display_name effective_model
+    # 実モデル検出 → settings.yaml model_name → display_name → "Unknown" のフォールバックチェーン
+    local real_model settings_display display_name effective_model
     real_model=$(detect_real_model "$agent" "$target" 2>/dev/null) || real_model=""
+    settings_display=$(cli_model_display "$agent" 2>/dev/null) || settings_display=""
     display_name=$(cli_profile_get "$agent" "display_name")
     if [[ -z "$display_name" ]]; then
         display_name=$(cli_type "$agent")
     fi
-    effective_model="${real_model:-${display_name:-Unknown}}"
+    effective_model="${real_model:-${settings_display:-${display_name:-Unknown}}}"
 
     # CLI種別
     local effective_cli
