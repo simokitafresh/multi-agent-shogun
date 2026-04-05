@@ -1,19 +1,20 @@
 task:
-  _ac_task_id: cmd_1742_impl
+  _ac_task_id: cmd_karo_fix_1743_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
   ac_version: 88572c76
   acceptance_criteria:
   - checks:
-    - check: 道具関数名検出→ランブック表示+q8 BLOCK
+    - check: 'finite_time_metrics_layer_stats.yaml再生成。layers: L0(n=65)/L1(n=59)の2層のみ'
     id: AC1
   - checks:
-    - check: 道具関数名なし→スキップ
+    - check: finite_time_metrics_124pf.csvのlayer列がL0/L1の2値のみ
     id: AC2
   - checks:
-    - check: テスト3ケース+既存テスト全PASS
+    - check: commit
     id: AC3
+  deployed_at: '2026-04-04T23:56:51'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
@@ -39,16 +40,16 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1742
-  progress: cmd_cancel受領。報告YAML記入・家老通知済み。commit未実施。
+  parent_cmd: cmd_karo_fix_1743
+  progress: task_yaml_mismatch_reported_to_karo
   project: infra
   purpose: 研究cmd用preflight。道具ランブック確認+q8_tool_readiness BLOCK。因果推論なき反射起票を構造的に止める。
-  report_filename: hayate_report_cmd_1742.yaml
-  report_path: queue/reports/hayate_report_cmd_1742.yaml
-  status: failed
+  report_filename: hayate_report_cmd_karo_fix_1743.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_fix_1743.yaml
+  status: idle
   stop_for: []
   target_path: scripts/cmd_save.sh
-  task_id: cmd_1742_impl
+  task_id: cmd_karo_fix_1743_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -101,6 +102,12 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
+  - id: 'L440'
+    summary: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+    detail: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+  - id: 'L439'
+    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
   - id: 'L438'
     summary: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
     detail: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
@@ -125,10 +132,3 @@ task:
   - id: 'L416'
     summary: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
     detail: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
-  - id: 'L413'
-    summary: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
-    detail: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
-  - id: 'L410'
-    summary: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
-    detail: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
-  deployed_at: "2026-04-04T23:56:51"

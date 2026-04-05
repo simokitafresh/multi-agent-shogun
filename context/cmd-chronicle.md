@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-04 -->
+<!-- last_updated: 2026-04-05 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -687,3 +687,4 @@
 | cmd_1738 | gate — cmd_save.shに前段cmdパラメータ空間突合チェック追加(BLOCK) | infra | 04-04 | cmd_save.sh に前段 results.yaml の |
 | cmd_1739 | 研究 — ALM OOS検証 全50組合せPBO + Stage0/1 (パラメータ縮小なし) | dm-signal | 04-04 | cmd_1739を実装し、ALM OOS Stage0-2を |
 | cmd_karo_1739_cscv | 研究 — ALM OOS Stage0/1をCSCV 70組合せに拡張 | dm-signal | 04-04 | cmd_1739 Stage0/1をCSCV 70分割へ拡張 |
+| cmd_1743 | 研究 — 既存124PF有限時間4指標一括計測 + L0/L1層別分布 | dm-signal | 04-05 | research_engine.pyに有限時間4指標(cal |
