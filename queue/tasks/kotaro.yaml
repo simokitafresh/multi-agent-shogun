@@ -2,7 +2,7 @@ task:
   parent_cmd: cmd_1748
   _ac_task_id: cmd_1748_cagr_impl
   _ac_worker_id: kotaro
-  status: assigned
+  status: done
   project: dm-signal
   ac_version: f148170f
   deployed_at: '2026-04-06T00:23:53'
