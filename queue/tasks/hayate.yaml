@@ -40,7 +40,7 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_karo_fix_1743
+  parent_cmd: 
   progress: task_yaml_mismatch_reported_to_karo
   project: infra
   purpose: 研究cmd用preflight。道具ランブック確認+q8_tool_readiness BLOCK。因果推論なき反射起票を構造的に止める。
@@ -49,7 +49,7 @@ task:
   status: idle
   stop_for: []
   target_path: scripts/cmd_save.sh
-  task_id: cmd_karo_fix_1743_impl
+  task_id: 
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
