@@ -2,7 +2,7 @@ task:
   parent_cmd: 
   _ac_task_id: cmd_1751_be_validate_recon
   _ac_worker_id: hayate
-  status: idle
+  status: in_progress
   project: dm-signal
   ac_version: 3b73cd50
   deployed_at: '2026-04-06T02:39:17'
@@ -42,3 +42,34 @@ task:
   stop_for:
   - 本番DBへの書込み操作が必要な場合
   task_id: 
+  related_lessons:
+  - id: 'L557'
+    summary: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
+    detail: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
+  - id: 'L556'
+    summary: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
+    detail: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
+  - id: 'L555'
+    summary: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
+    detail: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
+  - id: 'L554'
+    summary: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
+    detail: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
+  - id: 'L553'
+    summary: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
+    detail: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
+  - id: 'L552'
+    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
+    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
+  - id: 'L551'
+    summary: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
+    detail: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
+  - id: 'L550'
+    summary: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
+    detail: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
+  - id: 'L549'
+    summary: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
+    detail: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
+  - id: 'L548'
+    summary: 'DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。bulk'
+    detail: 'DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。bulk'
