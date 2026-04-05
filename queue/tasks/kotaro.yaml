@@ -1,27 +1,50 @@
 task:
-  _ac_task_id: cmd_1755_skill_creator
+  _ac_task_id: cmd_1759_item5
   _ac_worker_id: kotaro
-  ac_version: b99834bc
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: 2edf2958
   acceptance_criteria:
-  - ac: 'AC1: 差分比較表+取込推奨項目リスト+ドキュメント'
-  - ac: 'AC2: commit'
-  command: "【C. skill-creator v2.0 vs 我が軍のskill-design-rules.md】\n大元: commit 11e9df6でskill-creator\
-    \ v2.0。Anthropic公式ガイド2026-03準拠。\n我が軍: context/skill-design-rules.md\n調査:\n- 大元のskill-creatorのSKILL.md(またはinstructions内)の全内容を取得\n\
-    \  コマンド: gh api repos/yohey-w/multi-agent-shogun/contents/.claude/skills/skill-creator/SKILL.md\
-    \ --jq '.content' | base64 -d\n- 我が軍のskill-design-rules.mdと項目比較\n- 大元にあって我が軍にないベストプラクティスを特定\n\
-    成果物: docs/research/cmd_1755_skill_creator.md + commit\n中立表現: 事実を報告せよ。\n対象: context/skill-design-rules.md\n"
-  deployed_at: '2026-04-06T04:11:00'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────"
+  - ac: 'AC1: 24系列(6目的×4ファミリー)全ての月次lookback選出履歴取得'
+  - ac: 'AC2: whipsaw count + mode + 選出率 + 連続同一期間を各系列で算出'
+  - ac: 'AC3: 目的関数別の切替頻度比較表'
+  - ac: 'AC4: cmd_1759_switching_stability.yaml + commit'
+  binary_checks:
+  - check: 24系列(6目的×4ファミリー)全て分析されているか
+  - check: whipsaw count/mode/選出率/連続同一期間の4指標が全系列にあるか
+  - check: 目的関数別の比較表が含まれるか
+  - check: YAMLファイルがcommit済みか
+  command: '【5. lookback切替頻度・安定性分析】
+
+    cmd_1747のALM L0 24本(6目的×4ファミリー)の月次lookback選出履歴を分析。
+
+    - 各系列の月次切替回数（whipsaw count）
+
+    - 最頻lookback（mode）とその選出率
+
+    - 連続同一lookback期間（安定性指標）
+
+    - 目的関数別の切替頻度比較
+
+    ツール: research_engine.py。パラメータ空間縮小禁止。24本全系列を分析。
+
+    成果物: outputs/analysis/alm_research/cmd_1759_switching_stability.yaml + commit
+
+    '
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -29,15 +52,17 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1755
-  project: infra
-  purpose: 'cmd_1755偵察C: skill-creator v2.0 vs skill-design-rules.md差分比較'
-  report_filename: kotaro_report_cmd_1755.yaml
-  report_path: queue/reports/kotaro_report_cmd_1755.yaml
-  scout_exempt: true
-  status: idle
+  - AC3
+  - AC4
+  parent_cmd: cmd_1759
+  project: dm-signal
+  purpose: ALM本番登録前検証 — lookback切替頻度・安定性分析
+  related_lessons: []
+  status: in_progress
   stop_for: []
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_1759.yaml
+  report_path: queue/reports/kotaro_report_cmd_1759.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -73,33 +98,34 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
-  - id: 'L440'
-    summary: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
-    detail: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
-  - id: 'L439'
-    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
-    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
-  - id: 'L438'
-    summary: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
-    detail: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
-  - id: 'L437'
-    summary: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
-    detail: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
-  - id: 'L436'
-    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
-    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
-  - id: 'L435'
-    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
-    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
-  - id: 'L434'
-    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
-    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
-  - id: 'L425'
-    summary: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
-    detail: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
-  - id: 'L419'
-    summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
-    detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
-  - id: 'L416'
-    summary: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
-    detail: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
+  - id: 'L561'
+    summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
+    detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
+  - id: 'L560'
+    summary: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
+    detail: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
+  - id: 'L559'
+    summary: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
+    detail: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
+  - id: 'L558'
+    summary: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
+    detail: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
+  - id: 'L557'
+    summary: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
+    detail: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
+  - id: 'L556'
+    summary: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
+    detail: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
+  - id: 'L555'
+    summary: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
+    detail: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
+  - id: 'L554'
+    summary: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
+    detail: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
+  - id: 'L553'
+    summary: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
+    detail: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
+  - id: 'L552'
+    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
+    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
+  deployed_at: "2026-04-06T05:11:00"

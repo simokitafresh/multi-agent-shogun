@@ -26,6 +26,7 @@ cli:
       model_name: claude-opus-4-6
       role: ninja
       japanese_name: 半蔵
+      model: sonnet
     saizo:
       type: codex
       model_name: gpt-5.4
@@ -41,6 +42,7 @@ cli:
       model_name: claude-opus-4-6
       role: ninja
       japanese_name: 飛猿
+      model: sonnet
 idle_cycle: off
 effort: high  # v2.1.68でmediumデフォルト化→high固定(~/.claude/settings.json)
 ntfy_topic: shogun-simokitafresh

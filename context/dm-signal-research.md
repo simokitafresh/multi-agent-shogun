@@ -709,7 +709,7 @@ EMA平滑化(cmd_1632)とL1 Trend Filter(cmd_1633)のパラメータ選択がove
 
 → `queue/reports/saizo_report_cmd_1660.yaml` | `outputs/analysis/standard_pf_preprocessing/oos_verification_results.yaml`
 
-**研究実装教訓(§28-30統合)**: L532(gate/return-level照合)、L533(PE m=5閾値未到達)、L534(cvxpy cache 10x)、L535(cmd間前処理不一致)、L537(engine import必須)、L538/L539(ネスト深度増幅)、L540(fn cache id問題)、L541(depth_summary)、L542(用語テスト固定)、L543(rolling cumsum 50x) — 全て§28-30の研究結果行に内包済み。詳細→projects/dm-signal/lessons.yaml
+**研究実装教訓(§28-30統合)**: L532(gate/return-level照合)、L533(PE m=5閾値未到達)、L534(cvxpy cache 10x)、L535(cmd間前処理不一致)、L537(engine import必須)、L538/L539(ネスト深度増幅)、L540(fn cache id問題)、L541(depth_summary)、L542(用語テスト固定)、L543(rolling cumsum 50x)、L548(bulk metrics RFはPFごと月次軸)、L550(batch parityでbenchmark共通仮定禁止) — 全て§28-30の研究結果行に内包済み。詳細→projects/dm-signal/lessons.yaml
 
 ## §31. ファミリー別ALM + 5番目ファミリー候補 (cmd_1741)
 <!-- last_updated: 2026-04-05 -->
@@ -754,8 +754,10 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 | sharpe | 7/7 | 0 | OOS大幅超過(環境バイアス注意) |
 
 → `outputs/analysis/alm_research/cmd_1748_partial_*.yaml` (6ファイル)
+- L556: GS CSVとALM L0 metricsのユニバース差がパリティ破壊（cmd_1748）
+- L557: WF-OOS負の劣化率は過適合否定の十分条件ではない。市場環境バイアス要因（cmd_1748）
 
-## §35. ALM本番組込み設計 (cmd_1749-1751)
+## §35. ALM本番組込み設計 (cmd_1749-1753)
 <!-- last_updated: 2026-04-06 -->
 
 ### 殿裁定 (2026-04-06)
@@ -788,3 +790,9 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 4. 検証: fullrecalculate + daily ETL動作確認
 
 → 統合設計書: `/mnt/c/Python_app/DM-signal/docs/research/alm-integration-design.md`
+- L546: ALM foundation cacheは240 fixed seriesの完全性検証が必須（cmd_1737）
+- L549: ALM batch統合ではobjective単位fallbackでparityを守る（cmd_karo_batch_R7）
+- L554: family ALM研究はmetricsと相関をベクトル化必須（cmd_1741）
+- L559: Pass2シグナルflush後のsignal_cache_opt6陳腐化リスク。ALM PF分のcache再構築必須（cmd_1752）CRITICAL
+- L560: ALM buffer計算(L708-715)にcandidate_lookbacksのmax値を含める必要あり。378日不足（cmd_1753）
+- L561: pipeline_config=Dict[str,Any]でalm_config未検証保存。ALM実装時にバリデーション追加必要（cmd_1753）
