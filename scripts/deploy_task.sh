@@ -200,7 +200,7 @@ if not cmd:
     print(f"ERROR: {cmd_id} not found", file=sys.stderr)
     sys.exit(1)
 print(f"project={cmd.get('project', '')}")
-print(f"task_type={cmd.get('type', 'impl')}")
+print(f"task_type={cmd.get('scope_mode', cmd.get('type', 'impl')).lower()}")
 print(f"title={cmd.get('title', '')}")
 print(f"purpose={cmd.get('purpose', '')}")
 RESOLVE_PY
@@ -1422,7 +1422,7 @@ try:
 
     task = data['task']
     project = task.get('project', '')
-    task_type = str(task.get('task_type') or task.get('type') or 'unknown').lower().strip()
+    task_type = str(task.get('task_type') or task.get('type') or task.get('scope_mode') or 'unknown').lower().strip()
 
     # ═══ 偵察固有教訓リスト (cmd_1340) ═══
     # recon/scout/research タスクには以下の教訓のみ注入(全スキップ→固定リスト注入に変更)
