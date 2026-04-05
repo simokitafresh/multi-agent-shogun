@@ -677,3 +677,4 @@ CLAUDE.md `/clear Recovery` 手順に従う。追加:
     これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
 (2) `logs/gunshi_stats.yaml` を読む(accuracy把握)
 (3) `projects/infra/lessons_gunshi.yaml` を読む(レビュー教訓)
+(4) current_projectの `projects/{id}.yaml` を読む(PI含む核心知識。レビュー判断の基盤)

@@ -356,8 +356,6 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - **R28 Ward Cluster Selection(cmd_1579): Ward改善不可の最終根拠**。クラスタ内momentum top1選出+K体EW保有→全K(3,4,5)で現行Ward FoF(全員保有)に全指標劣後。ClSel(K=5) Sharpe1.77<1/N EW1.78。超越条件3つ全FAIL(CAGR:60.6%vs80.6%/Calmar:2.72vs4.18)。**ウェイト変更でもselection変更でもWard改善不可能**
 - **R28-シン ClSel逆転(cmd_1581): シン素材で有効に逆転**。シンClSel_K3がCAGR74.6%/Sharpe1.75/Calmar4.60/MaxDD-16.2%/UWP3mで全方式中最良。超越条件B(Calmar4.60>3.90×0.95)PASS+C(UWP3m<5m)PASS。旧忍法では全FAIL→シンで逆転=素材依存性が明確。集中投資リスク(20体中3体)が残課題。cmd_1578(ARI45.5%=クラスタが動く)と整合
 - **R28-OOS 過適合なし(cmd_1580): WF-OOS 7窓で旧忍法Ward ClSel過適合フラグなし**。劣化率<30%全K。Ward K=4がOOS最良(CAGR74.0%/Sharpe2.02/Calmar3.57)。Ward vs Simple Momentum: 全KでWard優位(Sharpe差+0.28〜0.49)。Ward vs 1/N EW: K=4,5がEW(Sharpe1.89)上回る。**OOSでクラスタリング付加価値確認**
-- L530: N=20小集団ではOPTICS xi抽出が単一クラスタに退化する（cmd_1623）
-- L544: EW terminal≠selection_block=0。59FoF中42体にmomentum selection blockが存在（cmd_1707）
 - R28-K2端点検証(cmd_1584): K=2は全K中CAGR最高(旧61.3%/シン75.8%)だがMaxDD最悪(旧-32.2%/シン-20.4%)。旧は超越条件全FAIL。シンは条件Bのみ辛うじてPASS(Calmar3.72≥3.705)。**K=2は集中リスク許容範囲外。K=3-5が最適帯域**
 - R28-指標感度分析(cmd_1582): 4指標(Momentum/Sharpe/Calmar/Sortino)×K=3,4,5=12パターン全てWardFoF全員保有(Sharpe1.85)に劣後。Sharpe選抜K=5が1.80で最高。Sortino-Momentum間ランク相関0.49で最も独立。**指標空間でもWard改善不可**
 - **PD-004裁定(2026-03-31殿裁定): Ward FoFはkeep(継続)**。R28-R30研究で付加価値ほぼゼロ+β調整後超越条件全FAIL確定だが、殿判断で維持
@@ -651,10 +649,6 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - シグナル相関変化分析(cmd_1701): **65PF×2条件 相関行列+尖り削減量×FoF Δcagr回帰**。r=-0.199→尖り削減≠FoF悪化主因。depth増幅(L538)が支配変数。L539教訓。小太郎impl → `outputs/analysis/standard_pf_preprocessing/signal_correlation_analysis.yaml`
 - FoF全59体EMA間接波及(cmd_1700): **59 FoF×2条件=118WF**。avg_Δcagr=-0.087。改善11/59。**ネスト深度増幅発見**: depth=1(四神)正効果→depth=2(旧忍法)損失増幅→depth=3(Ward)最大損失Δ=-0.182。L538教訓。影丸impl → `outputs/analysis/standard_pf_preprocessing/fof_all59_ema_results.yaml`
 - FoF momentum実態監査(cmd_1707): **active 59 FoF = EW 17 / momentum 19 / nested 23**。terminalは58/59が`EqualWeight`だが、**selection_block=0は17/59のみ**。FoF momentum実行経路は `component cumulative returns -> selection block(if any) -> terminal`。cmd_1700スクリプトの「all 59 FoFs are EqualWeight(selection_block=0)」前提は不正確で、L0前処理は42体の選抜結果にも波及しうる → `docs/research/cmd_1707_fof_momentum_audit.md`
-- L540 前処理関数キャッシュ不変量: `simulate_signals()` の `_preprocess_cache` は `id(preprocessing_fn)` をキーに持つ。`make_xxx_fn()` をPFループ内で毎回呼ぶと関数idが毎回変わり、65PF横断キャッシュが全損する。**前処理関数はループ外で生成・再利用すること** → `tasks/lessons.md` / `scripts/analysis/standard_pf_preprocessing/research_engine.py`
-- L541 depth_summaryパターン: depth依存効果の知見は、研究YAMLに `depth_summary` を追加して次回実行時に自動検証可能な形へ固定する。**知見発見で止まらず、出力schemaに検証欄を増やして還流すること** → `tasks/lessons.md` / `scripts/analysis/standard_pf_preprocessing/fof_all59_preprocessing_study.py`
-- L542 研究用語の固定: High/Lowのような研究用語は、cmd文面だけでなく **output metadata と unit test に同じ定義を埋め込んでから** 高コスト集計を回す。用語がテストに固定されていないと、もっともらしいYAMLが大量に出ても結論がずれる → `tasks/lessons.md`
-- L543 rolling window高速化: Lee-Mykland jump detection のBV計算は `bv_products=abs_r[1:]*abs_r[:-1]` を `cumsum` 化し、`rolling_sum=cs[t-1]-cs[t-w]` で一括計算すると **50.6x高速化(27.72ms→0.55ms)**。同パターンは研究スクリプトのrolling window計算全般に横展開可能 → `tasks/lessons.md`
 - Layer3最終出力前処理研究(cmd_1687): **Ave-X/裏Ave-X × 2条件(baseline/L0 EMA span=5) = 4 WF**。三層研究完結。EMA span=5間接波及→最終出力: Ave-X CAGR+2.2pp(0.359→0.381)/Sharpe+0.064、裏Ave-X CAGR+1.3pp(0.423→0.436)/Sharpe+0.037。MaxDD不変。本番投入でユーザー体験改善確定。半蔵impl → `outputs/analysis/standard_pf_preprocessing/layer3_final_output_results.yaml`
 - FoF第二層前処理研究(cmd_1683): **6 FoF(四神+Ave-X+裏Ave-X)×3条件(baseline/間接波及/直接適用)=18件walkforward**。L0 EMA間接波及: 朱雀+0.11 CAGR(最大)。直接適用(C-B)=全FoFで0.0(EW FoFのためL1 momentum pathなし)。疾風impl → `outputs/analysis/standard_pf_preprocessing/fof_layer2_preprocessing_results.yaml`
 - PE gate研究(cmd_1635): **65PF×16configs(4window[12,24,36,48M]×4threshold[no_gate,0.7,0.8,0.9])=1040件walkforward**。Bandt&Pompe(2002)準拠PE(m=5,τ=1)。**m=5ではPE値が低くgate大部分未発火**。window=12/24はPE<全閾値(ベースラインと同一)。window=36/t=0.7のみ発火(CAGR win率21.5%)。window=48/t=0.7発火(win率7.7%)。**PE gateは月次リターンのm=5では実用的に無効**。L533: m=5は120パターンの疎分布→低閾値(0.3-0.5)検討要。疾風impl(才蔵・小太郎FAIL→3回目) → `outputs/analysis/standard_pf_preprocessing/entropy_gate_pe_results.yaml`
@@ -679,8 +673,6 @@ guide.mdに純度ルール（一次知識層汚染防止）を追加後、全忍
 | M17 | FLAIR (Factored Level And Interleaved Ridge) | `Level × Shape` 分解で周期構造を固定し、圧縮した `Level` のみを Ridge 予測する単一方程式型予測手法。一次知識層と DM-Signal 解釈層を分離して追加 | `docs/research/knowledge-base/methods/m17_flair.md` / `docs/research/knowledge-base/dm-signal/flair-interpretation.md` |
 
 残課題 → `docs/research/research-todo.md`
-
-- L532: cmd仕様の前処理適用レベル(gate-level vs return-level)を実装前にコード注入ポイント(L150等)と照合確認すべし（cmd_1628）
 
 ## §29. Standard PF FDA Smoothing研究 (cmd_1666)
 <!-- last_updated: 2026-04-01 -->
@@ -717,15 +709,7 @@ EMA平滑化(cmd_1632)とL1 Trend Filter(cmd_1633)のパラメータ選択がove
 
 → `queue/reports/saizo_report_cmd_1660.yaml` | `outputs/analysis/standard_pf_preprocessing/oos_verification_results.yaml`
 
-- L533: m=5 PE gateは月次99ヶ月データでwindow12/24に閾値未到達（cmd_1635）
-- L534: L1 cvxpy最適化: ticker×lambdaキャッシュで重複計算を解消すると実行時間が4時間→1時間に短縮（cmd_1660）
-- L535: 補完cmd対の前処理条件不一致 — 先行cmdの独自置換が後続cmdに波及（cmd_1684）
-- L537: 研究スクリプトはresearch_engine.pyをimportせよ — 共通関数コピペ禁止（cmd_1691）
-- L538: EMA間接波及はネスト深度で増幅する — depth=1改善→depth=2/3で損失拡大（cmd_1700）
-- L539: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却（cmd_1701）
-- L540: preprocessing_fnを毎回生成するとidが変わり_preprocess_cacheが無効化される（cmd_training_L4_R38）
-- L541: depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ（cmd_training_L4_R38）
-- L542: cmd用語の定義は高コスト分析前にテストへ固定せよ（cmd_training_L4_R39）
+**研究実装教訓(§28-30統合)**: L532(gate/return-level照合)、L533(PE m=5閾値未到達)、L534(cvxpy cache 10x)、L535(cmd間前処理不一致)、L537(engine import必須)、L538/L539(ネスト深度増幅)、L540(fn cache id問題)、L541(depth_summary)、L542(用語テスト固定)、L543(rolling cumsum 50x) — 全て§28-30の研究結果行に内包済み。詳細→projects/dm-signal/lessons.yaml
 
 ## §31. ファミリー別ALM + 5番目ファミリー候補 (cmd_1741)
 <!-- last_updated: 2026-04-05 -->
@@ -735,6 +719,22 @@ absolute_assetでファミリー分類(DM2=LQD/DM3=TMF/DM6=^VIX/DM7+=SPXL)し、
 **top候補: DM3** (alm_DM3_top5_win12m__max_run_up)。avg_corr_canonical=0.494(4ファミリー中最低=最分散)。inflation_2022=-0.089(負相関)。
 
 → `outputs/analysis/alm_research/cmd_1741_family5_analysis.yaml` | `cmd_1741_correlation_matrix.csv` | `cmd_1741_crisis_correlation.csv`
-- L552: 因果推論に複利の問いを含めよ（cmd_1741）
-- L553: 原理1行>各論パッチ30行（cmd_1741）
-- L554: family ALM研究はmetricsと相関をベクトル化しないと時間で破綻する（cmd_1741）
+- L554: family ALM研究はmetricsと相関をベクトル化必須(cmd_1741)。L552/L553はinfra L439/L440と重複→削除
+
+## §32. ALM L0×忍法7種 + 既存シン忍法比較 (cmd_1745)
+<!-- last_updated: 2026-04-05 -->
+
+ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体と有限時間4指標で比較。orchestrator(425行)で自動実行。
+
+**top結果: 抜き身-激攻/鉄壁がシン忍法を6/7指標で上回る**(beats_count=6)。四つ目-常勝はbaseline不在(吸収済み)。
+
+→ `outputs/analysis/grid_search/cmd_1745_alm_ninpo_results.yaml` | `cmd_1745_vs_shin_ninpo.yaml`
+
+## §33. 6目的関数ALM×忍法7本 横比較 (cmd_1747)
+<!-- last_updated: 2026-04-05 -->
+
+6目的関数(max_run_up/tail_contribution/nhf/left_tail_jumps_inv/cagr/sharpe)×4ファミリーALM→24本L0→忍法7本→42パターン横比較。
+
+**最汎用: tail_contribution目的が7/7 runner全て改善**。cagr目的=加速R beats6。LTJ_inv目的=抜き身 beats6。Max Run-up=6/7。
+
+→ `outputs/analysis/grid_search/cmd_1747_cross_comparison.yaml` | `cmd_1747_ninpo_6obj_results.yaml`

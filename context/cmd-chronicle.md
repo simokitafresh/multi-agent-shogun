@@ -689,3 +689,6 @@
 | cmd_karo_1739_cscv | 研究 — ALM OOS Stage0/1をCSCV 70組合せに拡張 | dm-signal | 04-04 | cmd_1739 Stage0/1をCSCV 70分割へ拡張 |
 | cmd_1743 | 研究 — 既存124PF有限時間4指標一括計測 + L0/L1層別分布 | dm-signal | 04-05 | research_engine.pyに有限時間4指標(cal |
 | cmd_karo_fix_1743 | 修正 — cmd_1743層別分類の修正(L0=standard全65体/L1=FoF全59体) | dm-signal | 04-05 | classify_layer関数をportfolio_typ |
+| cmd_1744 | 研究 — ALM L0材料×既存L1パターンでFoF構築+既存ベースライン比較 | dm-signal | 04-05 | cmd_1744完了。ALM L0 4系列CSV・L1パター |
+| cmd_1746 | 強化 — shutsujin_departure.shに--dry-runオプション追加 | infra | 04-05 | shutsujin_departure.sh に --dry |
+| cmd_1747 | 研究 — 6目的関数ALM L0材料×忍法7本。Max Run-up以外の尖りでも効くか検証 | dm-signal | 04-05 | cmd_1747完了。6目的関数×4ファミリーのALM be |

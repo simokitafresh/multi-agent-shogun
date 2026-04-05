@@ -113,8 +113,9 @@ files:
 
 panes:
   self: shogun:2.1
-  ninja: [sasuke:2.2, kirimaru:2.3, hayate:2.4, kagemaru:2.5, hanzo:2.6, saizo:2.7, kotaro:2.8, tobisaru:2.9]
-  agent_id_lookup: "tmux list-panes -t shogun -F '#{pane_index}' -f '#{==:#{@agent_id},{ninja_name}}'"
+  ninja_pane_lookup: "tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},NINJA_NAME}'"
+  ninja_capture: "tmux capture-pane -t $(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},NINJA_NAME}' | head -1) -p -S -30"
+  pane_number_forbidden: "pane番号の直接指定(shogun:2.X)は禁止。上記lookupで動的解決せよ。pane番号はペイン増減で変わる"
 
 inbox:
   write_script: "scripts/inbox_write.sh"
@@ -159,7 +160,7 @@ ninja_monitor.shがassigned/acknowledged状態で10分以上idle化した忍者�
 **受信時の対処（LK009改訂: 検証→クリア→再配備の3段階）**:
 0. **★10回問い**: このアクション(cancel/respawn/再配備)を10回繰り返したら？確認なしrespawn×10=全コンテキスト破壊(負の複利)
 1. **検証**: STALL/idle通知は信号であり事実ではない。以下3点を全て確認してから判断せよ
-   - `tmux capture-pane -t {ninja_pane} -p -S -50` でpane**全体**を確認（末尾5行ではなく全体。指示待ち/確認待ち/Working中を見逃すな）
+   - ninja_captureコマンド（上記panes欄参照。NINJA_NAMEを差替）でpane**全体**を確認（末尾5行ではなく全体。指示待ち/確認待ち/Working中を見逃すな。pane番号直接指定禁止）
    - task YAMLのprogress欄に進捗があるか
    - 同一cmd_idが他忍者に既に配備されていないか（二重配備防止）
 2. **クリア**: STALL忍者のtask YAMLをstatus:idleにクリアせよ（旧タスク残存→二重配備の根本原因）

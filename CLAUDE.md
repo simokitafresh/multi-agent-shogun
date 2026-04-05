@@ -118,6 +118,7 @@ language:
 3.5. **Load project knowledge** (role-based):
    - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認。将軍のみ: `context/gunshi-*.md`（軍師の最新分析状態）を確認。将軍のみ: `memory/dialogue_preprocessing_research_20260331.md`末尾（最新Phase=研究到達点）+ `context/gunshi-nazenaze-synthesis.md`（軍師なぜなぜ合成）を確認
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
+   - 軍師: `config/projects.yaml` → current_projectの `projects/{id}.yaml`（PI含む核心知識。レビュー判断の基盤）→ `projects/infra/lessons_gunshi.yaml`
    - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
 5. Check inbox: read queue/inbox/{your_id}.yaml, process any read: false messages
@@ -320,7 +321,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 |--------|--------|------|------------|
 | CLAUDE.md | 全員(自動ロード) | 圧縮索引。恒久ルール・手順 | 家老のみ |
 | instructions/*.md | 全員 | 役割別の恒久ルール | 家老のみ |
-| projects/{id}.yaml | 忍者・家老 | PJ核心知識(ルール要約/UUID/DBルール) | 家老のみ |
+| projects/{id}.yaml | 全員(将軍・家老・軍師・忍者) | PJ核心知識(ルール要約/UUID/DBルール/PI) | 家老のみ |
 | projects/{id}/lessons.yaml | 忍者・家老 | PJ教訓(過去の失敗・発見) | 家老のみ(lesson_write.sh経由) |
 | queue/ YAML + dashboard + reports | 家老・忍者・将軍 | タスク指示・状態・状況報告 | 各担当 |
 | MCP Memory | 将軍のみ | 殿の好み・将軍教訓 | 将軍のみ |
