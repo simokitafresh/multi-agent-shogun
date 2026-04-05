@@ -1263,6 +1263,10 @@ PY_GATE_WARN
     if [ -z "$report_task_type" ]; then
         report_task_type=$(field_get "$task_file" "type" "")
     fi
+    if [ -z "$report_task_type" ]; then
+        report_task_type=$(field_get "$task_file" "scope_mode" "")
+    fi
+    report_task_type=$(echo "$report_task_type" | tr '[:upper:]' '[:lower:]')
     if [ "$report_task_type" = "recon" ] || [ "$report_task_type" = "scout" ]; then
         cat >> "$report_file" <<'RECON_EOF'
 # ─── 偵察 実装直結5要件（cmd_754+cmd_1476: 必須。空欄でWARN） ───
@@ -1272,6 +1276,9 @@ implementation_readiness:
   related_tests: []     # 関連テストの有無と修正要否 例: ["tests/test_auth.py — 修正必要"]
   edge_cases: []        # エッジケース・副作用 例: ["トークン期限切れ時の再認証フロー"]
   dependency_constraints: []  # 依存関係・順序制約 例: ["AC1完了後にAC2着手", "DB migration先行必須"]
+# ─── ★偵察で発見した重要Gap/知見はknowledge_candidateに記入せよ ───
+# 「我が軍に欠落」「本番と不一致」「設計変更が必要」等の発見は found: true にして記録。
+# context反映のトリガーになる。docs/research/に書くだけでは埋没する。
 RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
     fi
