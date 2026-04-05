@@ -668,7 +668,15 @@ inject_ac_version() {
     # 新: curr_task_id != prev_ac_task_id で判定（空→新も含む）
     local curr_task_id curr_worker_id
     curr_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "")
+    # task_idが空なら_ac_task_idをfallback(家老が_ac_task_idを直接設定するケース)
+    # 旧: task_id空→_ac_task_idと常に不一致→AC再書込→_ac_task_id破壊(cmd_1751/1752事故の根源)
+    if [ -z "$curr_task_id" ]; then
+        curr_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
+    fi
     curr_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "worker_id" "")
+    if [ -z "$curr_worker_id" ]; then
+        curr_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_worker_id" "")
+    fi
     local prev_ac_task_id prev_ac_worker_id
     prev_ac_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
     prev_ac_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_worker_id" "")
