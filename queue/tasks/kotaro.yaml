@@ -1,81 +1,61 @@
 task:
-  _ac_task_id: cmd_karo_fix_1743_impl
-  _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 88572c76
+  parent_cmd: cmd_1748
+  _ac_task_id: cmd_1748_cagr_impl
+  _ac_worker_id: kotaro
+  status: assigned
+  project: dm-signal
+  ac_version: f148170f
+  deployed_at: '2026-04-06T00:23:53'
+  purpose: |
+    cmd_1748のうち目的関数=cagrのOOS検証を担当。
+    ALM L0(4ファミリー)×忍法7種 = 7パターンのWF-OOS劣化判定。
+  command: |
+    目的関数 cagr に絞ってALM L1 OOS検証を実行せよ。
+
+    ■ 入力
+    - ALM L0月次リターン: /mnt/c/Python_app/DM-signal/outputs/analysis/alm_research/cmd_1747_alm_l0_returns_6obj.csv
+      → cagr__DM2, cagr__DM3, cagr__DM6, cagr__DM7+ の4列を使用
+    - in-sample結果: /mnt/c/Python_app/DM-signal/outputs/analysis/alm_research/cmd_1747_cross_comparison.yaml
+    - シン忍法v2チャンピオンパラメータ(固定使用)
+    - 研究エンジン: /mnt/c/Python_app/DM-signal/scripts/analysis/standard_pf_preprocessing/research_engine.py
+
+    ■ 手順
+    1. cmd_1747_alm_l0_returns_6obj.csv から cagr の4列をロード
+    2. 各4ファミリーL0を忍法7種(bunshin/oikaze/nukimi/kawarimi/kasoku_diff/kasoku_ratio/yotsume)に入力
+       - シン忍法v2チャンピオンパラメータを固定使用
+    3. WF各窓でIS/OOSメトリクス(38指標)を算出
+       - WFパラメータ: IS=60ヶ月, OOS=12ヶ月, step=12ヶ月
+    4. full-sample vs OOS劣化率を算出
+       - Calmar基準: <30%=ROBUST, 30-50%=SUSPECT, >50%=OVERFIT
+    5. シン忍法OOSベースライン(R30-shin cmd_1604)との差分算出(可能なら)
+
+    ■ 出力
+    - /mnt/c/Python_app/DM-signal/outputs/analysis/alm_research/cmd_1748_partial_cagr.yaml
+      内容: 7パターン(cagr×7忍法)のWF-OOS劣化率テーブル+overfit判定
+    - commit
+
+    制約: 他の目的関数は処理しない。cagrのみ。
   acceptance_criteria:
-  - checks:
-    - check: 'finite_time_metrics_layer_stats.yaml再生成。layers: L0(n=65)/L1(n=59)の2層のみ'
-    id: AC1
-  - checks:
-    - check: finite_time_metrics_124pf.csvのlayer列がL0/L1の2値のみ
-    id: AC2
-  - checks:
-    - check: commit
-    id: AC3
+  - ac: 'AC1: cagr×忍法7種のWF-OOS劣化率+overfit判定を部分結果YAMLに出力'
+  - ac: 'AC2: commit'
+  ac_priority: AC1 > AC2
+  parallel_ok: [AC1]
+  scout_exempt: true
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
-  - context/dm-signal-ops.md
   - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  deployed_at: '2026-04-03T03:18:41'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────"
+  report_path: queue/reports/kotaro_report_cmd_1748.yaml
+  report_filename: kotaro_report_cmd_1748.yaml
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断
   never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_karo_fix_1743
-  project: dm-signal
-  purpose: cmd_1743の層分類修正。L0=standard全65体/L1=FoF全59体の2層に修正
-  report_filename: kotaro_report_cmd_karo_fix_1743.yaml
-  report_path: queue/reports/kotaro_report_cmd_karo_fix_1743.yaml
-  status: done
-  stop_for: []
-  task_id: cmd_karo_fix_1743_impl
-  task_type: impl
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 9
-    top_pattern: 'uncategorized(4件)'
-    breakdown: 'uncategorized(4件), report_yaml_format(3件), archive_race(1件), spec_mismatch_redeploy(1件)'
-    warning: '⚠ 過去9件のworkaround発生。品質に注意'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 15
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'binary_checks_fail'
-      count: 7
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'report_yaml_missing'
-      count: 4
-      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
-    - reason: 'lesson_candidate_no_reason_empty'
-      count: 2
-      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
-    - reason: 'empty_lessons_useful'
-      count: 1
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'ac_version_mismatch'
-      count: 1
-      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する
+  stop_for:
+  - 入力CSV不在またはカラム名不一致
+  - 研究エンジンimportエラー
   related_lessons:
   - id: 'L555'
     summary: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'

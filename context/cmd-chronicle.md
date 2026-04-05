@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-05 -->
+<!-- last_updated: 2026-04-06 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -692,3 +692,4 @@
 | cmd_1744 | 研究 — ALM L0材料×既存L1パターンでFoF構築+既存ベースライン比較 | dm-signal | 04-05 | cmd_1744完了。ALM L0 4系列CSV・L1パター |
 | cmd_1746 | 強化 — shutsujin_departure.shに--dry-runオプション追加 | infra | 04-05 | shutsujin_departure.sh に --dry |
 | cmd_1747 | 研究 — 6目的関数ALM L0材料×忍法7本。Max Run-up以外の尖りでも効くか検証 | dm-signal | 04-05 | cmd_1747完了。6目的関数×4ファミリーのALM be |
+| cmd_karo_score_wide | 研究 — ALMスクリプトscore_wide高速化(score_fn→numpy一括) | dm-signal | 04-06 | cmd_1735/1736 を score_fn から sc |
