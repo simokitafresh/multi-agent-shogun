@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-06 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-06T00:51:58+09:00 -->
+<!-- generated_at: 2026-04-06T01:48:20+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-06T01:48:20+09:00 | terminal | response | 委任完了。 **cmd_1749**: 偵察 — ALM本番組込み設計のための現行L0パイプライン+UI全容把握 2軸で調査する: 1. **コード**: L0パイプラインの全フロー（pipeline_config→signals→ret…
+- 2026-04-06T01:42:34+09:00 | terminal | response | はっ、殿の仰る通りでござる。修正する。 **ALMの本質は「ルックバック期間そのものを動的に変える」。** ``` 既存（固定）: DM2 → lookback=11M:60|5M:20|20D:20 → シグナル → 固定 ALM（動的…
+- 2026-04-06T01:40:02+09:00 | terminal | response | 殿、ALMについて説明する。 --- ## ALM（Adaptive Lookback Momentum） ### 一言で **「毎月、最も調子のいいL0 PFを選んで乗り換える」仕組み。** ### 既存方式との違い | | 既存（固定…
 - 2026-04-06T00:51:57+09:00 | terminal | response | 全6忍者報告完了、全PASS。結果を統合報告する。 **cmd_1748 ALM L1 OOS検証結果:** | 目的関数 | 忍者 | ROBUST | SUSPECT | OVERFIT | 特記 | |----------|----…
 - 2026-04-06T00:51:20+09:00 | ntfy | outbound | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓12件 → /lesson-sort推奨
 - 2026-04-06T00:49:16+09:00 | ntfy | outbound | ✅ cmd_1748 COMPLETE: ALM L1 OOS検証 6忍者全完了。42パターン(6目的×7忍法)。大半ROBUST。tail_contribution加速RのみOVERFIT(80.79%)
@@ -11,9 +14,6 @@
 - 2026-04-06T00:26:30+09:00 | ntfy | outbound | 📊 Dashboard: R14/R15 CLEAR + batch R6-R11 CLEAR | cmd_1748(ALM L1 OOS)6忍者配備中 | idle:0名 | pipeline:1件+BLOCK5件
 - 2026-04-06T00:25:27+09:00 | ntfy | outbound | CI赤: run 24004342699 Build Instructions Check
 - 2026-04-06T00:16:40+09:00 | terminal | response | 委任完了。 **cmd_1748**: ALM L1 OOS検証 — 6目的関数×忍法7種 WF-OOS劣化判定 家老に委任した。全6忍者idle投入で並列実行可能。研究エンジン(38メトリクス対応済み)を使い、cmd_1747のin-s…
-- 2026-04-06T00:13:23+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-06 00:09:32|[archive] INFO: completed存在するがアーカイブ0件 (expected=1 actual=0) 2026-04-06 00:09:33|[archive]…
-- 2026-04-06T00:09:00+09:00 | terminal | response | 前セッション把握完了。最終: - /dream完了、/lesson-sort途中で切り上げ - 研究日誌Phase 22到達点: ALM材料×忍法7本でシン忍法超え - 修行R14(hayate), R15(kagemaru)配備済み→c…
-- 2026-04-06T00:05:39+09:00 | terminal | response | 教訓行を各§に振り分ける。L532は§28のGerber研究近傍に既に内包(L642行)。L533-L542は§28-30の研究結果行に既に内包。L552/L553はinfra重複。L554は§31近傍。 [meta] stop_reas…
 
 ## 未解決確認事項
 - 全6忍者報告完了、全PASS。結果を統合報告する。 **cmd_1748 ALM L1 OOS検証結果:** | 目的関数 | 忍者 | ROBUST | SUSPECT | OVERFIT | 特記 | |----------|------|--------|--------…
@@ -32,6 +32,8 @@
 
 ## 参照cmd
 - cmd_1735
+- cmd_1736
+- cmd_1737
 - cmd_1740
 - cmd_1741
 - cmd_1742
@@ -41,6 +43,7 @@
 - cmd_1746
 - cmd_1747
 - cmd_1748
+- cmd_1749
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
