@@ -2,7 +2,7 @@ task:
   parent_cmd: cmd_1752
   _ac_task_id: 
   _ac_worker_id: 
-  status: completed
+  status: done
   project: dm-signal
   ac_version: b59a9da3
   deployed_at: '2026-04-06T03:18:12'

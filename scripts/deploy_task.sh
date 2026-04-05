@@ -3198,6 +3198,13 @@ deploy_task_main() {
 
     deploy_parent_cmd=$(field_get "$task_yaml" "parent_cmd" "")
     deploy_task_id=$(field_get "$task_yaml" "_ac_task_id" "")
+
+    # _ac_task_id必須チェック: 分割配備の判定に必要。未設定だとparent_cmdクリア事故(cmd_1751/1752)
+    if [ -z "$deploy_task_id" ]; then
+        log "WARN: _ac_task_id is empty — split deploy detection may misfire"
+        echo "WARN: _ac_task_id が未設定。分割配備時に二重配備と誤判定する可能性あり。task YAMLに _ac_task_id を設定せよ。" >&2
+    fi
+
     if [ -n "$deploy_parent_cmd" ]; then
         for dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
             [ -f "$dd_task" ] || continue
