@@ -175,7 +175,7 @@ def inject_reports_to_read(task, script_dir):
                 if not tdata or 'task' not in tdata:
                     continue
                 t = tdata['task']
-                if t.get('task_id') == blocked_task_id:
+                if (t.get('task_id') or t.get('_ac_task_id')) == blocked_task_id:
                     assigned_to = t.get('assigned_to', '')
                     if assigned_to:
                         blocked_parent_cmd = t.get('parent_cmd', '')

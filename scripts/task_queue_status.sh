@@ -73,6 +73,7 @@ for yaml_file in "$TASKS_DIR"/*.yaml; do
 
     ninja=$(basename "$yaml_file" .yaml)
     task_id=$(extract_field "$yaml_file" "task_id")
+    [ -z "$task_id" ] && task_id=$(extract_field "$yaml_file" "_ac_task_id")
     status=$(extract_field "$yaml_file" "status")
     parent_cmd=$(extract_field "$yaml_file" "parent_cmd")
     task_type=$(extract_field "$yaml_file" "task_type")
