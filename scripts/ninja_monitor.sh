@@ -573,6 +573,7 @@ find_matching_report_file() {
     task_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
     [ -z "$task_parent_cmd" ] && return 1
     task_id=$(yaml_field_get "$task_file" "task_id")
+    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
 
     preferred_report="$SCRIPT_DIR/queue/reports/${name}_report_${task_parent_cmd}.yaml"
     legacy_report="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
@@ -726,6 +727,7 @@ check_and_update_done_task() {
     # task_id一致チェック（同一cmd内のWave間誤マッチ防止）
     local task_id report_task_id
     task_id=$(yaml_field_get "$task_file" "task_id")
+    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
     report_task_id=$(yaml_field_get "$report_file" "task_id")
     [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ] && return 1
 
@@ -744,6 +746,7 @@ check_and_update_done_task() {
                 local current_parent_cmd current_task_id
                 current_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
                 current_task_id=$(yaml_field_get "$task_file" "task_id")
+                [ -z "$current_task_id" ] && current_task_id=$(yaml_field_get "$task_file" "_ac_task_id")
                 if [ "$current_parent_cmd" != "$task_parent_cmd" ] || { [ -n "$task_id" ] && [ -n "$current_task_id" ] && [ "$current_task_id" != "$task_id" ]; }; then
                     log "WARN: task file changed during check_and_update_done_task for $name (expected parent_cmd=$task_parent_cmd, got $current_parent_cmd)"
                     exit 1
@@ -864,6 +867,7 @@ is_task_deployed() {
                 if [ "$gate_passed" = "true" ]; then
                     local task_id_val parent_cmd_val
                     task_id_val=$(yaml_field_get "$task_file" "task_id")
+                    [ -z "$task_id_val" ] && task_id_val=$(yaml_field_get "$task_file" "_ac_task_id")
                     parent_cmd_val=$(yaml_field_get "$task_file" "parent_cmd")
                     local deploy_key="${name}:${task_id_val}"
                     if [ -n "$parent_cmd_val" ] && [ -n "$task_id_val" ] && [ "${AUTO_DEPLOY_DONE[$deploy_key]}" != "1" ]; then
