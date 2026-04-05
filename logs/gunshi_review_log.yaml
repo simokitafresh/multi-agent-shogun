@@ -8941,7 +8941,7 @@
 - cmd_id: cmd_metrics_R7c
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: MEDIUM
   findings_summary: "6観点OK。47.2s→3s目標。Year系/MDD系は一括化困難で5-10sが現実的か。パリティで正しさ担保"
   observations:
@@ -9004,7 +9004,7 @@
   report_task_id: cmd_metrics_R7c_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。64.6s→8.9s(7.3x)。パリティ0mismatch。3s目標未達だが軍師レビュー時予測(5-10s)の範囲内。warm1.6s"
   observations:
     - "忍者自己verdict=FAILだが成果は十分。3s目標は楽観的と軍師がdraft時に注記済み(MEDIUM confidence)"
@@ -9119,7 +9119,7 @@
 - cmd_id: cmd_karo_score_wide
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。score_fn→score_wide切替(2スクリプト)。API既存(simulate_selection L558-608)。パリティ確認AC含む。+1複利(全ALM研究高速化)"
   observations:
@@ -9269,7 +9269,7 @@
 - cmd_id: cmd_1741
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。cmd_1740のDNA理解版。ファミリー分類をname prefix→absolute_asset(DB config)に修正。理論的低相関(駆動因子独立性)+危機時相関を追加。shijin-design.yaml必読"
   observations:
@@ -9290,3 +9290,596 @@
   compound_chain: "q8記入コスト=毎cmd数秒。防ぐロス=DB不要接続/道具未活用で毎cmd数分~数十分。10 cmds×数秒 vs 10 cmds×数分。正の複利"
   causal_chain: "cmd_1735-1741で5回道具未確認→殿指摘因果推論不足→q8でランブック確認強制→道具状態を将軍が毎回確認→DB依存/cache未活用を起票段階で検出"
   timestamp: "2026-04-05T00:00:00"
+- cmd_id: cmd_1741
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1741_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。family ALM 4家族完了。top=DM3(avg_corr_canonical=0.494最低, inflation_2022=-0.089負相関)。metrics_research_engine.py FoF return-wide追加+テスト付き。cache化+batch化で正の複利"
+  observations:
+    - "correlation_matrix: 4家族×124PF wide format。crisis_correlation: 496行(4家族×124PF)。family5_analysis: DM3がtop(avg_corr_canonical=0.494=4家族中最低=最分散、avg_corr_other=0.337、inflation_2022相関=-0.089=唯一の負相関)"
+    - "commit 9a55d43b: 11files/3329ins(本体)。1f637f1e: 2files/106ins(FoF return-wide追補)。全files_modifiedがcommit内に存在。unrelated変更は working treeに留まり commit scopeは適正(L462教訓適用)"
+    - "metrics_research_engine.py変更(共有ファイル): build_return_wide(include_fof)+load_active_portfolios追加。test_metrics_research_engine_selection.py(69行)でstandard/FoF切替検証。regression risk低"
+    - "lesson_candidate品質: batch化+ベクトル化の具体手法(batch_compute_final_metrics, DataFrame.rolling().corr(pairwise=True))記載。再利用可能な具体知見"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "個別compute_metrics呼出→時間破綻→batch化+cache化→再実行時DB不要+ベクトル演算→10回繰返しで正の複利"
+  timestamp: "2026-04-05T18:15:00"
+# --- gate_result update: cmd_1741 report ---
+# LGTM → GATE CLEAR (WA:false)。accuracy維持。教訓L552-L554登録済み
+- cmd_id: cmd_1743
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。124PF有限時間4指標一括計測。道具全確認(build_return_wide+compute_metrics_from_returns)。影丸1名・計算量軽。L0/L1層別分布でPhase21+17統合"
+  observations:
+    - "124PF=portfolio_meta.csv実測: 65 standard + 59 fof。portfolio_type列でL0/L1分類可能"
+    - "有限時間4指標: max_run_up/tail_contribution/left_tail_jumps/new_high_frequency全てmetrics_research_engine.pyに実装済み(L1070-1072個別,L1648-1700バッチ)"
+    - "build_return_wide(include_fof=True)はcmd_1741追補(1f637f1e)で実装+テスト済み。道具改良不要"
+  compound_chain: "124PF×compute_metrics=計算量軽(各<1秒)。batch化オーバーヘッド>個別呼出し。道具はcmd_1741で整備済み→再利用=正の複利"
+  causal_chain: "cmd_1741 FoF対応→build_return_wide(include_fof)道具化→cmd_1743で124PF一括計測可能→L0/L1層別分布→次研究の材料"
+  timestamp: "2026-04-05T18:35:00"
+- cmd_id: cmd_1743
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1743_impl
+  verdict: FAIL
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "3観点NG。AC2層分類不一致(L0=standard65→L0=忍法30に変質)。機能重複(research_engine.py新規 vs metrics_research_engine.py既存)。commit msg=training task"
+  observations:
+    - "CSV 124行×13列は正常。type=standard/fof正。ただしlayer列がL0/L1/DM/FoFの4層(cmd定義はL0=standard/L1=fofの2層)"
+    - "research_engine.py L1068-1156に新規6関数(calc_max_runup等)。metrics_research_engine.py L1648-1700に同等バッチ版が既存。cmd_1743はmetrics_research_engine.pyの道具使用を想定"
+    - "commit 2caa30a6のmessageがcmd_training_L4_R39。task YAML command欄も修行内容が残存。deploy_task.shのcmd差替え時にcommand欄がstaleになった可能性"
+    - "decision_candidate(found:true): AC説明とbinary_checksの不一致を影丸自身が検出。自己検証は機能している"
+  fail_reasons:
+    - "AC2層分類: cmd定義L0=standard(65)/L1=fof(59) vs 実装L0=忍法(30)/L1=四神(12)/DM(23)/FoF(59)"
+    - "機能重複: research_engine.py新規関数 vs metrics_research_engine.pyバッチ版"
+    - "commit message: cmd_training_L4_R39(修行) ≠ cmd_1743"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "task YAML command欄stale(修行内容残存)→影丸がresearch_engine.py(修行対象ファイル)に実装→cmd_1743の道具指定(metrics_research_engine.py)と乖離→機能重複+層分類独自解釈"
+  timestamp: "2026-04-05T18:48:00"
+- cmd_id: cmd_karo_fix_1743
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_1743 FAIL指摘の層分類修正。portfolio_type→L0/L1二値化。前提確認済み。機能重複・commit msgは別スコープ"
+  observations:
+    - "portfolio_meta.csv実測: standard=65, fof=59。portfolio_type列のみで正確にL0/L1分類可能"
+    - "FAIL指摘3件中1件(層分類)を対処。残2件(機能重複・commit msg)は本cmdスコープ外"
+  compound_chain: "分類ロジック1行修正→CSV/YAML両方正→全下流研究が正しいL0/L1対比を使える=正の複利"
+  causal_chain: "cmd_1743 FAIL(層分類不一致)→fix cmd起票→portfolio_type二値分類に修正→L0(65材料)vs L1(59束ね)の正しい対比復元"
+  timestamp: "2026-04-05T18:55:00"
+- cmd_id: cmd_karo_fix_1743
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_karo_fix_1743_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。層分類修正完了。CSV L0=65/L1=59。YAML L0(n=65)/L1(n=59)。commit 915f3220にcmd_id明記"
+  observations:
+    - "CSV layer列: L0=65件/L1=59件/header=1件。cmd定義通りの2値分類"
+    - "YAML layers: L0(n_valid=65)/L1(n_valid=59)。DM/四神等の不要サブ分類は消滅"
+    - "commit 915f3220: classify_layer関数の名前ベース→portfolio_type基準に修正。cmd_karo_fix_1743明記"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_1743 FAIL(L0=30/L1=12/DM=23)→fix cmd→classify_layer修正→L0=65/L1=59→研究意図(材料層vs束ね層)の正確な対比復元"
+  timestamp: "2026-04-05T19:00:00"
+- cmd_id: cmd_1744
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。ALM L0材料×4 L1パターン(22組合せ)でFoF構築→既存ベースライン比較。全前提データ実測確認済み"
+  observations:
+    - "L1ベースライン実測: CAGR=49.0%/Sharpe=1.36/MaxDD=-34.1%/LTJ=0.046。cmd記載値と完全一致"
+    - "4家族best_strategy実測: DM2 MRU=1132.8/DM3=131.5/DM6=1188.1/DM7+=167.6。cmd記載値と一致"
+    - "L1パターン計算量: A(1)+B(N3×win3=9)+C(3)+D(9)=22組合せ。simulate_selection×4+compute_metrics×22。軽量"
+  compound_chain: "cmd_1741(4家族ALM)+fix_1743(L1ベースライン)→再利用→22パターン一括評価→L1最適化の出発点=正の複利"
+  causal_chain: "cmd_1741(L0爆発力最大化)→cmd_1743+fix(L1ベースライン計測)→cmd_1744(L0×L1組合せ検証)→ALM材料がL1で有効か定量判定"
+  timestamp: "2026-04-05T19:32:00"
+- cmd_id: cmd_1744
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1744_impl
+  verdict: FAIL
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "★完全タスク不一致。cmd_1744(ALM L0×L1 FoF構築)に対し修行R37(FDA移設)を実施。成果物全不在。escalation"
+  observations:
+    - "cmd_1744成果物: cmd_1744_alm_l0_returns.csv/cmd_1744_l1_patterns.yaml/cmd_1744_vs_baseline.yaml → 全て不在(ls結果)"
+    - "報告内容: FDA B-spline前処理関数3本のresearch_engine.py移設+fda_smoothing_study_full.pyのimport書換。cmd_1744と完全無関係"
+    - "commits 28cc18cf/5f16e5f4: git log確認。28cc18cfは'refactor: move FDA B-spline preprocessing into research_engine (cmd_training_L4_R37)'。修行タスクcommit"
+    - "binary_checks: AC1-3全て'yes'だが実際の作業はどのACにも対応していない。虚偽のPASS"
+    - "★構造問題再発: cmd_1743(層分類)と同一根因。task YAML command欄がstale(修行内容残存)+AC欄のみcmd更新→忍者がcommand欄を実行"
+  fail_reasons:
+    - "成果物全不在: ALM L0リターンCSV/L1パターンYAML/ベースライン比較YAML全て未作成"
+    - "タスク不一致: FDA移設(修行R37)を実施。cmd_1744のALM L0×L1研究は未着手"
+    - "binary_checks虚偽: AC1-3全yes→実作業はACに対応せず"
+  lesson_quality: N/A
+  escalation_needed: true
+  causal_chain: "deploy_task.shがcmd差替え時にcommand/description欄を更新しない→stale command残存→忍者がstale commandを実行→cmd_1744未着手→成果物不在+BC虚偽PASS"
+  timestamp: "2026-04-05T19:40:00"
+- cmd_id: cmd_1745
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: MEDIUM
+  findings_summary: "6観点OK(事前検死注意)。ALM L0 4本×忍法7スクリプト→シン忍法20体比較。入力インターフェース適合が主要リスク"
+  observations:
+    - "cmd_1744_alm_l0_returns.csv実在。4列(DM2/DM3/DM6/DM7+)。wide format月次リターン"
+    - "シン忍法20体: CSV内32シン(20忍法+12四神)。7種×3変種-1(四つ目常勝吸収)=20。cmd記載正確"
+    - "入力インターフェース注意: run_077スクリプトはDB/build_return_wide前提。ALM CSVをbuild_return_wide(monthly_returns=)経由で渡すのが最有力だがcmdに詳細なし。q8「道具改良不要」と潜在矛盾"
+    - "コンポーネント数4制約: 12体→4体でtop_n≤4。GSパラメータ空間縮小は正当だが実装負荷あり"
+  compound_chain: "忍法スクリプト7本のALM対応が1回の工夫で再利用可能→正の複利。毎回手動調整→負の複利"
+  causal_chain: "cmd_1744(ALM L0 4本)→cmd_1745(忍法7種で束ね)→シン忍法20体と比較→ALM材料の忍法レベル有効性判定"
+  timestamp: "2026-04-05T22:05:00"
+- cmd_id: cmd_1746
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。shutsujin_departure.shにdry-run追加。reset_layout.sh(14箇所)の実績パターン踏襲。低リスク"
+  observations:
+    - "shutsujin_departure.sh 124行確認。tmux操作箇所にDRY_RUN分岐を追加する設計"
+    - "reset_layout.shにdry-runパターン14箇所で本番稼働実績あり。同一パターン踏襲で信頼性高"
+  compound_chain: "dry-run対応が全起動スクリプトに広がれば、PC再起動前の安全確認が標準化=正の複利"
+  causal_chain: "reset_layout.sh dry-run実績→同パターンをshutsujin_departureに適用→起動スクリプト群の安全性底上げ"
+  timestamp: "2026-04-05T22:28:00"
+- cmd_id: cmd_1745
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1745_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。ALM L0×忍法7種完了。21比較(+1 missing=四つ目常勝)。beats max=6(抜き身-激攻/鉄壁)。orchestrator+universe config設計"
+  observations:
+    - "commit bee8c740: 4files/139K ins。orchestrator 425行がALM CSV→既存runner変換を担当。universe config(alm_l0_4.yaml)で4体定義"
+    - "21比較: 7runner×3mode=21。四つ目-常勝はmissing_baselines(吸収済み,正当)。beats_count分布: 6(2件),5(6件),4(5件),3(2件),2(2件),1(1件)"
+    - "--skip-verify(3runner): 4体universeでinternal verify不適合。本計算結果には影響なし(verify=パラメータ空間整合性チェック)"
+    - "draftレビューで指摘した入力インターフェース問題: orchestrator+universe configで解決。compound_chain=正(再利用可能パターン)"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_1744(ALM L0 4本)→orchestrator+universe config→既存runner 7本で実行→21比較→抜き身-激攻/鉄壁がbeats6/7→ALM材料の忍法レベル有効性確認"
+  timestamp: "2026-04-05T22:32:00"
+- cmd_id: cmd_1746
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1746_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。dry-run追加。run_or_previewヘルパー設計。isolated tmux server+hash比較テスト"
+  observations:
+    - "commit 0ff9699: scripts/shutsujin_departure.sh 1ファイル変更。DRY_RUN解析+run_or_previewヘルパー追加"
+    - "テスト方法: isolated tmux serverでdry-run前後のstate hash一致+SHOGUN_STATE_DIR未生成。通常実行でexit 0+remain-on-exit=on+idle flag 8件"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "reset_layout.sh dry-runパターン→shutsujin_departureに踏襲→起動スクリプト安全性標準化"
+  timestamp: "2026-04-05T22:35:00"
+- cmd_id: cmd_1747
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。6目的関数ALM×忍法7本横比較。cmd_1741+1745パイプライン再利用。42パターン。LTJ逆数ゼロ除算注意"
+  observations:
+    - "6目的関数: max_run_up/tail_contribution_ratio/new_high_frequency/left_tail_jumps/cagr/sharpe。全てcompute_metrics_from_returns出力に実在(slugifyキー名一致)"
+    - "cmd_1741(ファミリーALM)のmax_run_up結果再利用+5新目的関数追加。cmd_1745(orchestrator)で忍法7本実行"
+    - "left_tail_jumps_inv: LTJ=0(下落なし)の戦略で1/0=inf。ゼロ除算ハンドリング要。ただし大半の戦略はLTJ>0のため致命的ではない"
+  compound_chain: "cmd_1741パイプライン+cmd_1745 orchestrator×6目的関数=12倍再利用。道具投資の正の複利が顕在化"
+  causal_chain: "cmd_1741(MRU目的)→cmd_1745(忍法検証)→cmd_1747(6目的に拡張)→最適な尖り方の網羅的特定"
+  timestamp: "2026-04-05T22:47:00"
+- cmd_id: cmd_1747
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1747_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。6obj ALM×忍法7本完了。42比較。tail_contribution=7/7改善(最汎用)。cagr=加速R beats6。LTJ_inv=抜き身 beats6"
+  observations:
+    - "commit 86902d1a: 5files/5225ins。L0 CSV 24列(6obj×4fam)+220行データ。ninpo結果1360行。cross比較2701行"
+    - "42 beats_count: 6obj×7ninpo=42 champion。cmd_1745(MRU目的7件)の6倍スケール。パイプライン再利用成功"
+    - "objective_summary: tail_contribution 7/7改善(最汎用), max_run_up 6/7, cagr/sharpe 混在, nhf 1/7(低汎用)"
+    - "L552/L554/L553/L547/L550の5教訓全てuseful=true。道具再利用+パラメータ空間維持の実践例"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_1741(MRU ALM)→cmd_1745(忍法検証)→cmd_1747(6obj拡張)→tail_contributionが最汎用目的関数と判明→次の研究方向(TC目的のALM材料最適化)が明確化"
+  timestamp: "2026-04-05T23:03:00"
+- cmd_id: cmd_training_R12
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_training_R12_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "事後レビュー。IR individual+batch追加。commit 01b2528e。NUMERIC_METRIC_NAMES L119+BATCH_R4 L187+individual L1167+batch L1763+テスト56行"
+  observations:
+    - "ランブックR12通りの実装。active_return/tracking_errorのnp.divide 1行でbatch化"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "R12設計(ランブック)→疾風が手順通り実装→IR 35番目メトリクス追加完了"
+  timestamp: "2026-04-05T23:45:00"
+- cmd_id: cmd_training_R13
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_training_R13_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "DD 3メトリクス individual path追加。35→38メトリクス。本番calc_dd_stats_monthly準拠。テスト3パターン(単調/V字/未回復)"
+  observations:
+    - "commit d627c417: NUMERIC_METRIC_NAMES L120-122 + individual L1171-1173 + BATCH_R4 L188-190(タプル追加のみ)"
+    - "commit messageにR13明記。ランブック手順通りの実装"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "R13設計(ランブック)→影丸が手順通り実装→DD 3メトリクス individual path完了→R14(batch)の基準定義確立"
+  timestamp: "2026-04-05T23:53:00"
+- cmd_id: cmd_training_R14
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_training_R14_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "DD 3メトリクス batch path。commit 70da1263。パリティテストPASS(10系列×120窓×3メトリクス)。batch(位置)vs individual(日付)一致"
+  observations:
+    - "numpy純粋実装: argmin/argmax/boolean mask/where。Pythonループなし"
+    - "パリティテスト実行確認: pytest PASSED 1.05s。atol=1e-6, equal_nan=True"
+    - "殿指摘の計算方法差異(位置vs日付): 連続月次データでは一致。パリティテストで検証済み"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "R13(individual定義)→R14(batchでnumpy再実装)→パリティPASS→38メトリクスbatch path完成"
+  timestamp: "2026-04-05T23:57:00"
+- cmd_id: cmd_training_R15
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_training_R15_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "38メトリクス最終パリティ+速度計測。4テスト全PASS(軍師実行確認)。速度0.163s(R11 1.03s比84%高速)"
+  observations:
+    - "commit f148170f: test 4件+ランブック更新。38カウント/4名前/全38パリティ/速度全PASS"
+    - "速度0.163s ≪ 閾値1.13s。34→38メトリクスで速度劣化なし(テスト条件差あるがR11比大幅下回る)"
+    - "R12-R15修行全完了。IR(R12疾風)+DD individual(R13影丸)+DD batch(R14疾風)+パリティ(R15影丸)"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "軍師ランブック設計(R12-R15)→忍者2名並列実行→4テスト全PASS→38メトリクス研究エンジン完成"
+  timestamp: "2026-04-06T00:00:00"
+- cmd_id: cmd_1748
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "ALM L1 OOS検証。6忍者×7パターン=42全量並列。入力CSV(24列220行)・出力パス衝突なし・WF(IS60/OOS12/step12→13 folds)全検証OK"
+  observations:
+    - "入力CSV存在確認: cmd_1747_alm_l0_returns_6obj.csv(82KB, 220行, 25列=1idx+24data)"
+    - "DM7+スパース: 目的関数により初期12-48ヶ月NaN。IS=60窓の初期foldでDM7+限定的。cmd_1747処理済みで想定内"
+    - "研究エンジン参照不正確: cmdはresearch_engine.pyだがsimulate_selection等はmetrics_research_engine.py。cmd_1747ベースで忍者は正しくimport可能"
+    - "6部分出力(cmd_1748_partial_{obj}.yaml)→統合は家老が全完了後に実施(標準並列パターン)"
+  proposals: []
+  causal_chain: "cmd_1747(in-sample)→cmd_1748(OOS検証)→overfit/robust判定→ALM材料選定精度向上。6忍者並列(idle=0)×WF-OOSフレーム確立=正の複利"
+  timestamp: "2026-04-06T00:30:00"
+- cmd_id: cmd_1748
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1748_max_run_up_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "max_run_up×7忍法WF-OOS。全7 ROBUST(-33.6%〜+5.2%)。commit 9413b604"
+  observations:
+    - "全7忍法ROBUST。加速R+5.2%は唯一の正値だが<30%閾値内"
+    - "cmd_1747成果物を正本として再利用。新GS不要の効率的アプローチ"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "cmd_1747 L0 champion→WF分割→38指標算出→Calmar劣化率→全ROBUST=max_run_upは過適合なし"
+  timestamp: "2026-04-06T00:50:00"
+- cmd_id: cmd_1748
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1748_tail_contribution_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "tail_contribution×7忍法WF-OOS。6/7 ROBUST、加速R OVERFIT(80.8%)。commit 7504301f"
+  observations:
+    - "加速R: full Calmar=0.10→OOS=0.02。80.8%劣化でOVERFIT判定。42パターン中唯一のOVERFIT"
+    - "lesson_candidate有意義: WF負劣化率は過適合否定の十分条件ではない(市場環境バイアス)"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "加速R×tail_contribution=構造的過適合。他6忍法はROBUST→加速R固有のtail_contribution感度問題"
+  timestamp: "2026-04-06T00:50:00"
+- cmd_id: cmd_1748
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1748_nhf_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "nhf×7忍法WF-OOS。全7 ROBUST。runner再実行方式でユニバース差を正しく処理。commit 498f6e20"
+  observations:
+    - "lesson_candidate有意義: GS CSV(標準PFユニバース183M)≠ALM L0(動的171M)→runner再実行必須"
+    - "窓数が忍法により異なる(8-9窓)のはDM7+スパースデータによる自然な結果"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "ユニバース差→GS CSV直接使用不可→runner再実行→ALM L0固有月次リターン生成→WF-OOS→全ROBUST"
+  timestamp: "2026-04-06T00:50:00"
+- cmd_id: cmd_1748
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1748_left_tail_jumps_inv_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "left_tail_jumps_inv×7忍法WF-OOS。全7 ROBUST。commit d6e371db"
+  observations:
+    - "objective-specific universeでrunner再実行(半蔵パターンと同一手法)"
+    - "gate FAIL 2回(引用符問題)→自力修正→最終PASS。学習ループ機能"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "L0 champion→objective universe再生成→WF 38指標→全ROBUST=left_tail_jumps_invは過適合なし"
+  timestamp: "2026-04-06T00:50:00"
+- cmd_id: cmd_1748
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1748_cagr_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "cagr×7忍法WF-OOS。全7 ROBUST。OOS>>full(劣化-78%〜-202%)。commit 49a4018d"
+  observations:
+    - "極端な負劣化率(OOS Calmarがfull-sampleの2-3倍)は最近の市場環境バイアスの可能性"
+    - "nhfパターン流用でGS再実行方式を採用。効率的コード再利用"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "cagr L0→GS再実行→WF→OOS>>full=最近の市場が有利。ROBUST判定だが市場バイアス注意"
+  timestamp: "2026-04-06T00:50:00"
+- cmd_id: cmd_1748
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1748_sharpe_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "sharpe×7忍法WF-OOS。全7 ROBUST。OOS>>full(劣化-110%〜-395%)。commit 71acb7e7"
+  observations:
+    - "加速R/加速Dで劣化率-370%/-395%=OOS Calmarがfull 4-5倍。cagr同様の市場バイアス傾向"
+    - "テンプレート(才蔵版)のOBJECTIVE_KEY変更のみで完全動作。修行テンプレートの品質証明"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "sharpe L0→テンプレート適用→WF→全ROBUST=sharpe目的関数は過適合なし。市場バイアス(OOS期間好環境)に注意"
+  timestamp: "2026-04-06T00:50:00"
+- cmd_id: cmd_1749
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "ALM本番組込み偵察。水平4分割(BE-Pipeline疾風/BE-Hook影丸/FE半蔵/CDP-Admin才蔵)。偵察5要件+中立表現全記載。殿直接指示"
+  observations:
+    - "4忍者の出力ファイル衝突なし(docs/research/cmd_1749_*.md × 4)"
+    - "CDP同時使用(半蔵ユーザー+才蔵admin): cdp_server逐次処理で致命的競合なし"
+    - "疾風(L0フロー)と影丸(フック候補)は情報的関連あるが独立読み設計。重複は偵察として許容"
+    - "cmd AC4つ→4忍者に適切分配: AC1→疾風, AC2→影丸, AC3→半蔵+才蔵, AC4→全4忍者"
+  proposals: []
+  causal_chain: "殿直接指示→偵察精度向上→impl設計精度向上→一発完了率↑→WA率↓=正の複利"
+  timestamp: "2026-04-06T01:55:00"
+- cmd_id: cmd_1749
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1749_be_pipeline_recon
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "BE-Pipeline偵察。pipeline_config→signals→returns全フロー。lookback参照箇所+行番号付き。commit 0b0cf43e"
+  observations:
+    - "L0フロー完全把握: admin保存→PipelineEngine→signals→monthly_returns→recalculate/fullrecalculate"
+    - "fullrecalculateは独立実装ではなくrecalculate_history_fast(mode=full)経由と正確に特定"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "BE-Pipeline偵察→L0フロー図→impl cmd設計精度向上→ALM組込み一発完了率↑"
+  timestamp: "2026-04-06T02:05:00"
+- cmd_id: cmd_1749
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1749_be_hook_recon
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "BE-Hook偵察。Hook A(recalculate_fof.py L708-723)主候補。最小3ファイル変更。DBマイグレーション不要(JSON列)。commit 9fc612e0"
+  observations:
+    - "Hook A: execute_pipeline直前に動的lookback選出を差し込む設計。alm_candidatesフィールド有無で後方互換"
+    - "テスト修正1件(test_fof_valid_start_lookback.py)を明確に特定"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "BE-Hook偵察→フック候補3案→Hook A推奨→impl cmd設計のアンカーポイント確定"
+  timestamp: "2026-04-06T02:05:00"
+- cmd_id: cmd_1749
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1749_fe_recon
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "FE偵察。全11ページlookback表示なし。最小変更=型1行+Dashboard10行+import1行。BE API先行必須。commit bbe03e99"
+  observations:
+    - "変更対象ファイル+行番号: portfolio.ts:97-109, page.tsx:501-519。波及先はsignals-context.tsx型のみ"
+    - "BE API先行必須(順序制約): /api/signalsにcurrent_lookback追加が先 → impl設計の重要制約"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "FE偵察→lookback表示不在確認→最小変更量特定→BE先行の順序制約発見→impl設計に順序制約反映"
+  timestamp: "2026-04-06T02:05:00"
+- cmd_id: cmd_1749
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1749_cdp_admin_recon
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "CDP-Admin偵察。inline editor(wizard非存在)を発見。スクショ5枚(既存PF/新規PF/dropdown3種)。commit 13249296"
+  observations:
+    - "PF作成はmulti-step wizardでなくinline editorで完結。pipeline_configはraw JSONでなく分解済みフォーム"
+    - "ALM用のlookback動的設定UIはadmin inline editorに追加フィールドとして差し込む形が自然"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "CDP-Admin偵察→inline editor発見→admin UI変更の影響範囲確定→impl cmd設計精度向上"
+  timestamp: "2026-04-06T02:05:00"
+- cmd_id: cmd_1750
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "ALM本番Phase3.7/4/4.5改修設計偵察。小太郎集中配備。recalculate_fast.py 2271行のPhase精読。行番号全検証済み"
+  observations:
+    - "行番号検証: Phase3.7(L1039)/Phase4(L1420)/month_changed(L1489)/vectorized O(1)(L1526)/Phase4.5(L1763)全て実在"
+    - "ファイル実長2271行。cmd記載1800行との差異あるが関連Phase範囲L900-1780(~880行)として正確"
+    - "3課題(OPT-E ALM対応/日次ループALM選出/鶏と卵問題)の定義が具体的で行番号付き"
+    - "cmd_1749偵察結果との関係: Hook A(recalculate_fof.py)はFoF用。本cmdはstandard PF(recalculate_fast.py)用で棲み分け"
+  proposals: []
+  causal_chain: "cmd_1749(FoFフック→L0設計漏れ発見)→cmd_1750(L0 recalculate_fast.py深掘り)→3課題設計→impl精度向上=正の複利"
+  timestamp: "2026-04-06T02:40:00"
+- cmd_id: cmd_1751
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "ALM盲点6件偵察。3忍者(才蔵CDP3件/疾風BE2件/影丸BE1件)。portfolios.py L63/L99行番号完全一致。Opus温存3名"
+  observations:
+    - "行番号検証: normalize_lookback_weights(L63), _validate_portfolio(L99)完全一致"
+    - "CDP才蔵集約でセッション競合回避。BE疾風(portfolios.py)+影丸(recalculate_fof.py)で別ファイル"
+    - "6件はcmd_1749/1750のなぜなぜ分析で特定された想像箇所。現物確認で盲点ゼロを目指す"
+  proposals: []
+  causal_chain: "cmd_1749(水平偵察)→cmd_1750(深掘り)→cmd_1751(盲点潰し)→全箇所現物確認→impl設計の見落としゼロ=正の複利"
+  timestamp: "2026-04-06T02:45:00"
+- cmd_id: cmd_1750
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: null
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "recalculate_fast.py 2271行精読。ALM 3課題設計完了。commit 36b035c2。knowledge_candidate 4件"
+  observations:
+    - "AC4項全yes。Phase3.7(L1039)/Phase4(L1420)/Phase4.5(L1763)の改修設計を1文書に整理"
+    - "cmd_1749参考ファイルをDM-signalリポジトリで逆引き。target_path誤り(services→jobs)を自力解決"
+    - "知識候補4件: jobs/配下パス/ALM未実装/Phase行番号/月初リバランス行番号"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "recalculate_fast.py精読→3課題設計確定→impl cmdの設計精度最大化=正の複利"
+  timestamp: "2026-04-06T03:10:00"
+- cmd_id: cmd_1751
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1751_be_fof_recon
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "FoF透過性YES。根拠3点(MonthlyReturn統一/ComponentPriceCache型フィルタなし/expand再帰展開)。commit 302357ff"
+  observations:
+    - "ALM PFはFoFから透過的に処理される=ALM固有FoF処理不要。impl設計を大幅簡素化する知見"
+    - "binary_checksのcheck記述がstale template(chronicle_metrics.sh)だが内容は正しい"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "FoF連携偵察→透過性YES確認→impl設計でFoF分岐不要→実装量削減=正の複利"
+  timestamp: "2026-04-06T03:10:00"
+- cmd_id: cmd_1751
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1751_recon
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: PASS
+  findings_summary: "CDP 3件完了。API payload 124件キャプチャ/fullrecalc自動cronなし(手動のみ)/FoFスクショ2枚。commit 1b26f475"
+  observations:
+    - "POST /api/portfolios/save body=portfolios全量配列(124件)。HTTP 200。pipeline_config実構造キャプチャ成功"
+    - "fullrecalculate自動cronなし=admin手動のみ。impl設計で自動cronへの影響考慮不要→設計簡素化"
+    - "knowledge_candidate 4件: API実構造/cron設定/FoF lookback表現/ALM PF透過的。全て実地確認"
+  fail_reasons: []
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "CDP実地確認→想像排除→6盲点全解消→impl設計の前提が全て現物確認済み=最高精度"
+  timestamp: "2026-04-06T03:10:00"
+- cmd_id: cmd_1751
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1751_be_validate_recon
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: N/A
+  findings_summary: "報告YAML不在。commit 39c39a8c+成果物cmd_1751_be_validation.md存在確認。workaround: 家老要対処"
+  observations:
+    - "報告YAML(queue/reports/hayate_report_cmd_1751.yaml)が存在しない。cmd_1187と同パターン"
+    - "commit 39c39a8c + 成果物 docs/research/cmd_1751_be_validation.md はDM-signalリポジトリに存在"
+  fail_reasons: ["報告YAML不在のためgate検証不可。ただし成果物+commitは確認済み"]
+  lesson_quality: N/A
+  escalation_needed: false
+  causal_chain: "報告YAML不在→gate検証不可→workaround要。原因不明(WSL2 /mnt/c同期問題の可能性)"
+  timestamp: "2026-04-06T03:10:00"
+- cmd_id: cmd_1752
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "ALM impl前最終4盲点。4忍者均等(書込み競合疾風/ETLコスト影丸/関数化才蔵/工数小太郎)。行番号全検証済み"
+  observations:
+    - "行番号: _flush_batch(L1624/1640)/Phase3.7(L1039-1328)/Phase4.5(L1763)/Phase5(L1787)全一致"
+    - "4件は独立調査可能。D(工数)はA/B/Cに軽度依存するがcmd_1750設計書で独立見積もり可能"
+  proposals: []
+  causal_chain: "cmd_1749(水平)→1750(深掘り)→1751(盲点6)→1752(最終4盲点)→impl設計の全前提確認済み=一発完了の最高確度"
+  timestamp: "2026-04-06T03:20:00"
+- cmd_id: cmd_1754
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  severity: normal
+  findings_summary: "ALM統合設計書。10ファイル中cmd_1752_estimate.md不在(9/10)。他9ファイル存在確認済み。構成§1-§8妥当"
+  observations:
+    - "cmd_1752_estimate.md不在: ls/grepで確認。docs/research/cmd_1752_*.mdは3件のみ(write_conflict/etl_cost/functionize)"
+    - "9ファイルは全て存在確認済み。統合構成§1-§8は論理的で網羅的"
+  suggested_changes: "cmd_1752_estimate.mdを小太郎成果物から切り出すか、cmdから除外して9ファイル統合に変更"
+  proposals: []
+  causal_chain: "統合元ファイル不在→忍者がmdファイル未作成(報告YAMLにのみ記述?)→統合cmd実行不能→REQUEST_CHANGES"
+  timestamp: "2026-04-06T03:55:00"
+- cmd_id: cmd_1753
+  review_type: report
+  report_ninja: "[hanzo,kagemaru,kotaro,tobisaru]"
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: ALL PASS
+  findings_summary: "ALM最終盲点4件。buffer378日不足(影丸)+MTD安全(半蔵)+Dict未検証(小太郎)+FE安全(飛猿)"
+  observations:
+    - "影丸核心: L708-715 buffer計算がALM候補24M=504日を未考慮。12M基準438日→378日不足。diff概案5行"
+    - "影丸追加: portfolio-diff.ts sameAssets()がpipeline_config未参照→ALM変更がスマートRecalc非トリガー"
+    - "半蔵: MTD混入=Yes(意図的,L254 calc_end_date=today)。IS窓フィルタ(<is_end)で安全除外。型整合リスク注意"
+    - "小太郎: pipeline_config=Dict[str,Any]でPydanticバリデーションなし。ALM実装時にmodel_validator追加必要"
+    - "飛猿: FE混入リスクなし。spread演算子+PF独立オブジェクト+duplicateのstructuredClone安全"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "なぜなぜ7回転→4盲点発見→4忍者並列偵察→buffer修正必須+他3件安全確認→impl設計精度最大化"
+  timestamp: "2026-04-06T04:05:00"

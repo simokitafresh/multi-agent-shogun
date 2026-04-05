@@ -4828,3 +4828,629 @@ entries:
     supplementary_cmds: 0
     timestamp: "2026-04-02T10:31:22Z"
     notes: "ci_failure:run_23884271716"
+  - cmd_id: "cmd_training_L4_R38_hayate"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:02:29Z"
+  - cmd_id: "cmd_training_L4_R38_kagemaru"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:03:20Z"
+  - cmd_id: "cmd_training_L4_R38_saizo"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:03:48Z"
+  - cmd_id: "cmd_training_L4_R38_kotaro"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:04:17Z"
+  - cmd_id: "cmd_1702"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:13:58Z"
+  - cmd_id: "cmd_training_L4_R39_hayate"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:17:25Z"
+  - cmd_id: "cmd_training_L4_R39_hanzo"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:19:45Z"
+  - cmd_id: "cmd_1703"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:26:59Z"
+    notes: "report_format:saizo_report_cmd_1703.yaml|saizo:binary_checks_fail|ci_failure:run_23917812995"
+  - cmd_id: "cmd_1703"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:35:15Z"
+    notes: "ci_failure:run_23917812995"
+  - cmd_id: "cmd_1703"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-02T19:35:43Z"
+    notes: "ci_failure:run_23917812995"
+  - cmd_id: "cmd_1730"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:14:34Z"
+    notes: "vercel_phase:broken_references"
+  - cmd_id: "cmd_1730"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:15:26Z"
+  - cmd_id: "cmd_metrics_R1"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:31:53Z"
+    notes: "vercel_phase:broken_references"
+  - cmd_id: "cmd_metrics_R1"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:32:08Z"
+    notes: "vercel_phase:broken_references"
+  - cmd_id: "cmd_metrics_R1"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "PASS"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:32:42Z"
+  - cmd_id: "cmd_metrics_R2"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:37:50Z"
+  - cmd_id: "cmd_metrics_R2b"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:48:29Z"
+  - cmd_id: "cmd_metrics_R3a"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:59:06Z"
+  - cmd_id: "cmd_metrics_R3b"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:59:27Z"
+  - cmd_id: "cmd_metrics_R4"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T15:59:49Z"
+  - cmd_id: "cmd_metrics_R5"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T16:34:03Z"
+  - cmd_id: "cmd_metrics_R6"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T16:39:12Z"
+  - cmd_id: "cmd_metrics_R7a"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T16:45:05Z"
+  - cmd_id: "cmd_metrics_R7b"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T16:51:50Z"
+  - cmd_id: "cmd_1732"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T17:06:04Z"
+  - cmd_id: "cmd_1731"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T17:06:32Z"
+  - cmd_id: "cmd_metrics_R7c"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T17:07:18Z"
+    notes: "hayate:binary_checks_fail|hayate:purpose_validation_fit_false"
+  - cmd_id: "cmd_1733"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T17:08:55Z"
+  - cmd_id: "cmd_1734"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T17:14:45Z"
+  - cmd_id: "cmd_1735"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T17:32:49Z"
+  - cmd_id: "cmd_1736"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-03T23:39:09Z"
+  - cmd_id: "cmd_1737"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T04:18:28Z"
+  - cmd_id: "cmd_1738"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T04:54:14Z"
+  - cmd_id: "cmd_karo_batch_R1"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T06:29:10Z"
+  - cmd_id: "cmd_karo_batch_R2"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T06:29:29Z"
+  - cmd_id: "cmd_karo_batch_R3"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T06:29:50Z"
+  - cmd_id: "cmd_karo_batch_R4"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T06:30:05Z"
+  - cmd_id: "cmd_karo_batch_R5"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T06:30:26Z"
+  - cmd_id: "cmd_karo_batch_R6"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T06:30:54Z"
+    notes: "saizo:binary_checks_fail"
+  - cmd_id: "cmd_karo_batch_R7"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T06:31:10Z"
+  - cmd_id: "cmd_1739"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T09:14:06Z"
+  - cmd_id: "cmd_karo_1739_cscv"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-04T09:45:31Z"
+  - cmd_id: "cmd_1741"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T09:08:57Z"
+  - cmd_id: "cmd_1743"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T09:45:25Z"
+  - cmd_id: "cmd_karo_fix_1743"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T09:58:29Z"
+    notes: "report_format:hayate_report_cmd_karo_fix_1743.yaml|hayate:binary_checks_fail"
+  - cmd_id: "cmd_karo_fix_1743"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T10:04:58Z"
+  - cmd_id: "cmd_1744"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T10:36:50Z"
+  - cmd_id: "cmd_1745"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T13:29:01Z"
+  - cmd_id: "cmd_1746"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T13:33:21Z"
+  - cmd_id: "cmd_1747"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T14:01:18Z"
+  - cmd_id: "cmd_training_R14"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "PASS"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:10:49Z"
+    notes: "hayate:empty_lessons_useful:related=['L440','L439','L438','L437','L436','L435','L434','L425','L419','L416']"
+  - cmd_id: "cmd_training_R14"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "PASS"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:14:03Z"
+  - cmd_id: "cmd_metrics_R7c"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:14:55Z"
+  - cmd_id: "cmd_karo_batch_R6"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:15:20Z"
+  - cmd_id: "cmd_karo_gs_benchmark"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:16:27Z"
+    notes: "report_format:hayate_report_cmd_karo_gs_benchmark.yaml|report_format:saizo_report_cmd_karo_gs_benchmark.yaml"
+  - cmd_id: "cmd_karo_gs_runbook"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:16:38Z"
+    notes: "report_format:hayate_report_cmd_karo_gs_runbook.yaml"
+  - cmd_id: "cmd_karo_score_wide"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:16:48Z"
+  - cmd_id: "cmd_karo_batch_R8"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:17:12Z"
+    notes: "report_format:hayate_report_cmd_karo_batch_R8.yaml"
+  - cmd_id: "cmd_karo_batch_R9"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:17:21Z"
+  - cmd_id: "cmd_karo_batch_R10"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:17:41Z"
+  - cmd_id: "cmd_karo_batch_R11"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:18:12Z"
+  - cmd_id: "cmd_1737_v2"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:18:28Z"
+    notes: "report_format:saizo_report_cmd_1737_v2.yaml"
+  - cmd_id: "cmd_1740"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:18:34Z"
+    notes: "report_format:saizo_report_cmd_1740.yaml"
+  - cmd_id: "cmd_training_R15"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "PASS"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:20:16Z"
+  - cmd_id: "cmd_1748"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:47:09Z"
+    notes: "report_format:tobisaru_report_cmd_1748.yaml|tobisaru:empty_lessons_useful:related=['L555','L554','L553','L552','L551','L550','L549','L548','L547','L546']|ci_failure:run_24004342699"
+  - cmd_id: "cmd_1748"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T15:48:23Z"
+    notes: "ci_failure:run_24004342699"
+  - cmd_id: "cmd_1749"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T17:00:28Z"
+    notes: "ci_failure:run_24004342699"
+  - cmd_id: "cmd_1750"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T18:09:50Z"
+    notes: "ci_failure:run_24004342699"
+  - cmd_id: "cmd_1751"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T18:16:51Z"
+    notes: "ci_failure:run_24004342699"
+  - cmd_id: "cmd_1752"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T18:35:52Z"
+    notes: "kotaro:empty_lessons_useful:related=['L558','L557','L556','L555','L554','L553','L552','L551','L550','L549']|ci_failure:run_24004342699"
+  - cmd_id: "cmd_1752"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T18:38:22Z"
+    notes: "ci_failure:run_24004342699"
+  - cmd_id: "cmd_1752"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T18:43:49Z"
+    notes: "ci_failure:run_24004342699"
+  - cmd_id: "cmd_1749"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T18:44:05Z"
+    notes: "ci_failure:run_24004342699"
+  - cmd_id: "cmd_1753"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T18:58:15Z"
+    notes: "ci_failure:run_24004342699"
+  - cmd_id: "cmd_1754"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-05T18:59:24Z"
+    notes: "ci_failure:run_24004342699"

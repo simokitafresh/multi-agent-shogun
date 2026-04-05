@@ -65,6 +65,18 @@ if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* ]]; then
     fi
 fi
 
+# === Guard 6: capture-pane minimum 30 lines (LK037/LK018: 末尾数行で状態を誤判断する防止) ===
+if [[ "$payload" == *'capture-pane'* ]]; then
+    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
+    if [[ -n "${command:-}" && "$command" =~ capture-pane.*-S[[:space:]]+-([0-9]+) ]]; then
+        lines="${BASH_REMATCH[1]}"
+        if (( lines < 30 )); then
+            emit_deny "BLOCK: capture-pane -S -${lines} は不十分。-S -30 以上を使え（末尾${lines}行では忍者の作業状態を見落とす）"
+            exit 1
+        fi
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \
