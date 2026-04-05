@@ -1,46 +1,115 @@
 task:
-  parent_cmd: cmd_1752
-  _ac_task_id: 
-  _ac_worker_id: 
-  status: done
-  project: dm-signal
+  _ac_task_id: null
+  _ac_worker_id: null
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3 > AC4
   ac_version: b59a9da3
-  deployed_at: '2026-04-06T03:18:12'
-  purpose: cmd_1752偵察 D:工数見積もり担当。
-  command: |
-    【D. impl工数見積もり】
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_1752.yaml
-  report_path: 
-  bloom_level: 
-cmd_1750+1751設計に基づくimpl分割設計。
-- BE recalculate_fast.py改修: 行数/忍者数/時間
-- BE recalculate_fof.py Hook A: 行数
-- FE Admin UI: コンポーネント数/行数
-- テスト: 新規テスト数/行数
-- 推奨cmd分割（依存考慮）
-成果物: impl cmd分割案+忍者配分+工数見積もり表
-出力: docs/research/cmd_1752_estimate.md + commit
-    中立表現: 事実を報告せよ。
-    対象: /mnt/c/Python_app/DM-signal/backend/app/services/recalculate_fast.py
-    参考: docs/research/cmd_1750_alm_design.md, docs/research/cmd_1751_*.md
   acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '書込み競合分析（Pass2→Phase4.5→Phase5の安全性+行番号）'
-  - id: 'AC2'
-    checks:
-    - check: '日次ETL ALM選出コスト見積もり（クエリ行数+計算量+追加時間%）'
-  - id: 'AC3'
-    checks:
-    - check: 'Phase 3.7関数化設計（入出力+外部変数+代替案）'
-  - id: 'AC4'
-    checks:
-    - check: 'impl cmd分割案+忍者配分+工数見積もり表'
-  scout_exempt: false
-  report_path: queue/reports/kotaro_report_cmd_1752.yaml
-  report_filename: kotaro_report_cmd_1752.yaml
+  - checks:
+    - check: buffer計算対応要否+diff概案
+    id: AC1
+  - checks:
+    - check: MTD混入判定+ALM安全性
+    id: AC2
+  - checks:
+    - check: BE保存バリデーション問題有無
+    id: AC3
+  - checks:
+    - check: FE保存ロジック混入リスク有無
+    id: AC4
+  command: '【C. Admin保存バリデーション（cmd_1751盲点A未完了分）】
+
+    backend/app/api/portfolios.py L63-152を精読。
+
+    - normalize_lookback_weights()がALM時にlookback_periodsが空配列の場合の挙動
+
+    - _validate_portfolio()がpipeline_config内のalm_configを拒否する箇所はあるか
+
+    - 保存時のPydanticスキーマ(schemas/models.py Portfolio)がalm_configをブロックするか
+
+    成果物: docs/research/cmd_1753_validation_analysis.md + commit
+
+    中立表現: 事実を報告せよ。
+
+    対象: /mnt/c/Python_app/DM-signal/backend/app/api/portfolios.py, /mnt/c/Python_app/DM-signal/backend/app/schemas/models.py
+
+    参考: docs/research/cmd_1751_admin_validation.md
+
+    '
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  deployed_at: '2026-04-06T03:45:00'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    ────────────────────────────────────────"
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  - AC4
+  parent_cmd: cmd_1753
+  project: dm-signal
+  purpose: 'cmd_1753偵察C: Admin保存バリデーション（portfolios.py精読）'
+  report_filename: kotaro_report_cmd_1753.yaml
+  report_path: queue/reports/kotaro_report_cmd_1753.yaml
+  scout_exempt: true
+  status: assigned
+  stop_for: []
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 11
+    top_pattern: 'uncategorized(4件)'
+    breakdown: 'uncategorized(4件), report_yaml_format(3件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件)'
+    warning: '⚠ 過去11件のworkaround発生。品質に注意'
+    gate_fail_top3:
+    - pattern: 'yaml_parse_error'
+      count: 2
+    - pattern: 'lu_structure_error'
+      count: 1
+    - pattern: 'verdict_invalid'
+      count: 1
+    gate_warning: '⚠ gate頻出FAIL: YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 15
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'binary_checks_fail'
+      count: 7
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'report_yaml_missing'
+      count: 4
+      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+    - reason: 'empty_lessons_useful'
+      count: 2
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'lesson_candidate_no_reason_empty'
+      count: 2
+      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
+    - reason: 'ac_version_mismatch'
+      count: 1
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
+  - id: 'L559'
+    summary: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
+    detail: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
   - id: 'L558'
     summary: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
     detail: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
@@ -68,6 +137,3 @@ cmd_1750+1751設計に基づくimpl分割設計。
   - id: 'L550'
     summary: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
     detail: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
-  - id: 'L549'
-    summary: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
-    detail: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
