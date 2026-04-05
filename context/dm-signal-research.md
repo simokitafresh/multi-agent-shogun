@@ -738,3 +738,51 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 **最汎用: tail_contribution目的が7/7 runner全て改善**。cagr目的=加速R beats6。LTJ_inv目的=抜き身 beats6。Max Run-up=6/7。
 
 → `outputs/analysis/grid_search/cmd_1747_cross_comparison.yaml` | `cmd_1747_ninpo_6obj_results.yaml`
+
+## §34. ALM L1 OOS検証 (cmd_1748)
+<!-- last_updated: 2026-04-06 -->
+
+6目的関数×忍法7種=42パターンのWF-OOS(IS=60M/OOS=12M/step=12M)。**41/42 ROBUST、1 OVERFIT(tail_contribution×加速R +80.8%)**。
+
+| 目的関数 | ROBUST | OVERFIT | 特記 |
+|----------|--------|---------|------|
+| max_run_up | 7/7 | 0 | 劣化率-33.6%〜+5.2%。最安定 |
+| tail_contribution | 6/7 | 1 | 加速R +80.8% OVERFIT |
+| nhf | 7/7 | 0 | 全OOS>full-sample |
+| left_tail_jumps_inv | 7/7 | 0 | 全ROBUST |
+| cagr | 7/7 | 0 | OOS大幅超過(環境バイアス注意) |
+| sharpe | 7/7 | 0 | OOS大幅超過(環境バイアス注意) |
+
+→ `outputs/analysis/alm_research/cmd_1748_partial_*.yaml` (6ファイル)
+
+## §35. ALM本番組込み設計 (cmd_1749-1751)
+<!-- last_updated: 2026-04-06 -->
+
+### 殿裁定 (2026-04-06)
+- ALM定義: **L0で動的にlookback期間を変える**（PF選出ではない）
+- Admin UI: **案A（表示切替）** — ☑ Adaptive チェックでLookback Periods→ALM CONFIG切替
+- Dashboard追加表示: **不要**
+- Monthly Trade変更: **不要**
+- FE変更: **Admin画面のみ必要**（ユーザー向けページは変更なし）
+
+### BE改修設計 (cmd_1750)
+- **Hook場所: recalculate_fast.py（L0）が正。recalculate_fof.py（FoF）は別担当**
+- Phase 3.7: ALM候補全LBのmomentum cache追加(+3.1MB/PF, +0.5s/PF)
+- Phase 4: L1499月初リバランス直前にALM選出挿入
+- fullrecalculate: **2パス方式**（Pass1: fallback LBでMR生成 → Pass2: ALM選出で正式シグナル）
+- 日次ETL: 1パス（既存MR使用、追加コスト軽微）
+- DBマイグレーション: **不要**（JSON列）
+→ `docs/research/cmd_1750_alm_design.md`
+
+### 盲点調査結果 (cmd_1751)
+- FoFからALM PFは**透過的に動作**（MonthlyReturnテーブル統一構造）
+- Daily cron: sync-standard(01:10UTC)→sync-fof(01:40UTC), mode=PORTFOLIO
+- fullrecalculate自動cron: **なし（admin手動のみ）**
+- Admin保存: 全124PF一括送信。pipeline_config=JSON列でスキーマレス
+→ `docs/research/cmd_1751_fof_analysis.md` | `cmd_1751_cdp_findings.md`
+
+### 実装順序
+1. BE: recalculate_fast.py Phase 3.7/4改修 + 2パスfullrecalculate
+2. BE: recalculate_fof.py Hook A (FoF側ALM対応)
+3. FE: Admin PortfolioEditor.tsx Adaptive チェックボックス+ALM CONFIG
+4. 検証: fullrecalculate + daily ETL動作確認

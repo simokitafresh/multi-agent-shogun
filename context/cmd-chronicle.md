@@ -693,3 +693,7 @@
 | cmd_1746 | 強化 — shutsujin_departure.shに--dry-runオプション追加 | infra | 04-05 | shutsujin_departure.sh に --dry |
 | cmd_1747 | 研究 — 6目的関数ALM L0材料×忍法7本。Max Run-up以外の尖りでも効くか検証 | dm-signal | 04-05 | cmd_1747完了。6目的関数×4ファミリーのALM be |
 | cmd_karo_score_wide | 研究 — ALMスクリプトscore_wide高速化(score_fn→numpy一括) | dm-signal | 04-06 | cmd_1735/1736 を score_fn から sc |
+| cmd_1748 | 研究 — ALM L1 OOS検証。6目的関数×忍法7種=42パターンWF-OOS | dm-signal | 04-06 | 41/42 ROBUST。tail_contribution×加速RのみOVERFIT |
+| cmd_1749 | 偵察 — ALM本番組込み。BEパイプライン+Admin CDP+ALMフック候補 | dm-signal | 04-06 | L0フロー全容把握。Hook A(fof)+FE UI分析+CDPスクショ |
+| cmd_1750 | 偵察 — ALM Phase 3.7/4/4.5改修設計。recalculate_fast.py精読 | dm-signal | 04-06 | 2パス方式推奨。事前計算+月次選出+fullrecalc設計確定 |
+| cmd_1751 | 偵察 — ALM盲点6件。保存バリデーション+cron+FoF連携+CDP実地 | dm-signal | 04-06 | FoF透過的OK。daily cron=mode=PORTFOLIO。fullrecalc自動cronなし |

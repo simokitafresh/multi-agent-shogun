@@ -1,181 +1,42 @@
 task:
-  _ac_task_id: null
-  _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: b59a9da3
-  acceptance_criteria:
-  - checks:
-    - check: Phase 3.7改修設計（ALM候補全lookback事前計算の方法+行番号+コスト見積もり）
-    id: AC1
-  - checks:
-    - check: Phase 4改修設計（月次ALM選出の挿入位置+dict構造拡張+月初判定連携）
-    id: AC2
-  - checks:
-    - check: fullrecalculate解決設計（2パス/インターリーブ/別案の比較+推奨案+日次ETLとの共通化）
-    id: AC3
-  - checks:
-    - check: '偵察一覧: 変更対象ファイル+行番号 / 波及先 / テスト / エッジケース / 依存関係'
-    id: AC4
-  command: 'recalculate_fast.pyを精読し、以下3課題の改修設計を提示せよ。
-
-
-    【課題1: Phase 3.7 OPT-E事前計算のALM対応】
-
-    現状: L955-998でfixed lookback_periodsから1つのmomentum cacheを計算。
-
-    ALM PFは複数候補lookbackがある。全候補のmomentum cacheを事前計算する方法を設計せよ。
-
-    - 変更箇所（ファイル+行番号）
-
-    - 既存PF(非ALM)への影響がゼロであること
-
-    - メモリ・計算コストの見積もり（候補N個×ティッカー数×日数）
-
-
-    【課題2: Phase 4 日次ループへの月次ALM選出差込み】
-
-    現状: L1498-1530で月初リバランス判定後、L1526-1528でvectorized_pipeline_signalsからO(1) lookup。
-
-    ALM PFは月初に「過去IS窓のmonthly_returnsで候補評価→最良lookback選出→そのlookbackのシグナルを使用」が必要。
-
-    - 日次ループ内のどの位置にALM選出ロジックを挿入するか（行番号）
-
-    - vectorized_pipeline_signalsのdict構造をどう拡張するか
-
-    - 月初判定(month_changed && is_reb_month)との連携方法
-
-
-    【課題3: fullrecalculate時の鶏と卵問題】
-
-    現状: Phase 4で全日のシグナルを生成→Phase 4.5で全monthly_returnsを一括生成。
-
-    ALMは過去のmonthly_returnsが必要だが、fullrecalculate時にはまだ存在しない。
-
-    - 解決方法の設計（2パス/インターリーブ/別案の比較+推奨案）
-
-    - fullrecalculateの実行頻度と影響範囲
-
-
-    【追加確認】
-
-    - recalculate_fof.py側のHook Aは不要か、FoF連携で必要か
-
-    - ALM PF用のテスト設計
-
-
-    偵察5要件:
-
-    (1) 変更対象ファイル+行番号 (2) 波及先 (3) テスト有無+修正要否
-
-    (4) エッジケース (5) 依存関係・順序制約
-
-
-    対象: /mnt/c/Python_app/DM-signal/backend/app/services/recalculate_fast.py
-
-    参考: docs/research/cmd_1749_*.md
-
-    出力: docs/research/cmd_1750_alm_design.md + commit
-
-    '
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  deployed_at: '2026-04-06T02:34:42'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────"
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  - AC4
-  parent_cmd: cmd_1750
+  parent_cmd: cmd_1752
+  _ac_task_id: 
+  _ac_worker_id: 
+  status: assigned
   project: dm-signal
-  purpose: 'ALM本番組込みのrecalculate_fast.py精読偵察。Phase 3.7/4/4.5の3課題改修設計を確定する。
-
-    '
-  report_filename: kotaro_report_cmd_1750.yaml
-  report_path: queue/reports/kotaro_report_cmd_1750.yaml
-  scout_exempt: false
-  status: completed
-  stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/backend/app/services/recalculate_fast.py
-  target_path_warning: "⚠ target_pathが存在しない: /mnt/c/Python_app/DM-signal/backend/app/services/recalculate_fast.py"
+  ac_version: b59a9da3
+  deployed_at: '2026-04-06T03:18:12'
+  purpose: cmd_1752偵察 D:工数見積もり担当。
+  command: |
+    【D. impl工数見積もり】
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_1752.yaml
+  report_path: 
   bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 10
-    top_pattern: 'uncategorized(4件)'
-    breakdown: 'uncategorized(4件), report_yaml_format(3件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件)'
-    warning: '⚠ 過去10件のworkaround発生。品質に注意'
-    gate_fail_top3:
-    - pattern: 'lu_structure_error'
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 15
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'binary_checks_fail'
-      count: 7
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'report_yaml_missing'
-      count: 4
-      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
-    - reason: 'lesson_candidate_no_reason_empty'
-      count: 2
-      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
-    - reason: 'empty_lessons_useful'
-      count: 1
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'ac_version_mismatch'
-      count: 1
-      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
-  related_lessons:
-  - id: 'L557'
-    summary: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
-    detail: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
-  - id: 'L556'
-    summary: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
-    detail: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
-  - id: 'L555'
-    summary: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
-    detail: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
-  - id: 'L554'
-    summary: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
-    detail: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
-  - id: 'L553'
-    summary: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
-    detail: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
-  - id: 'L552'
-    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
-    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
-  - id: 'L551'
-    summary: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
-    detail: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity'
-  - id: 'L550'
-    summary: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
-    detail: '65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとのbenchmark解決が必須'
-  - id: 'L549'
-    summary: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
-    detail: 'cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdown/tracking_error'
-  - id: 'L548'
-    summary: 'DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。bulk'
-    detail: 'DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。bulk'
+cmd_1750+1751設計に基づくimpl分割設計。
+- BE recalculate_fast.py改修: 行数/忍者数/時間
+- BE recalculate_fof.py Hook A: 行数
+- FE Admin UI: コンポーネント数/行数
+- テスト: 新規テスト数/行数
+- 推奨cmd分割（依存考慮）
+成果物: impl cmd分割案+忍者配分+工数見積もり表
+出力: docs/research/cmd_1752_estimate.md + commit
+    中立表現: 事実を報告せよ。
+    対象: /mnt/c/Python_app/DM-signal/backend/app/services/recalculate_fast.py
+    参考: docs/research/cmd_1750_alm_design.md, docs/research/cmd_1751_*.md
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '書込み競合分析（Pass2→Phase4.5→Phase5の安全性+行番号）'
+  - id: 'AC2'
+    checks:
+    - check: '日次ETL ALM選出コスト見積もり（クエリ行数+計算量+追加時間%）'
+  - id: 'AC3'
+    checks:
+    - check: 'Phase 3.7関数化設計（入出力+外部変数+代替案）'
+  - id: 'AC4'
+    checks:
+    - check: 'impl cmd分割案+忍者配分+工数見積もり表'
+  scout_exempt: false
+  report_path: queue/reports/kotaro_report_cmd_1752.yaml
+  report_filename: kotaro_report_cmd_1752.yaml
