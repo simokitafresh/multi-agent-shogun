@@ -11,12 +11,25 @@ emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
 }
 
-# === Guard 1: no-verify ===
-if [[ "$payload" == *'--no-verify'* ]]; then
+# === Guard 1: no-verify + hook bypass detection (G3: extended beyond commit-only) ===
+# Outer fast-check: --no-verify, HUSKY=0, or potential git commit -n
+if [[ "$payload" == *'--no-verify'* || "$payload" == *'HUSKY=0'* ]] || \
+   [[ "$payload" == *'commit'* && "$payload" == *' -n '* ]]; then
     command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)" || true
-    if [[ -n "$command" && "$command" =~ git[[:space:]]+commit[[:space:]] ]]; then
-        if [[ "$command" == *'--no-verify'* || "$command" =~ [[:space:]]-n([[:space:]]|$) ]]; then
-            emit_deny "BLOCKED: git commit --no-verify is forbidden. Fix hooks, do not bypass them."
+    if [[ -n "$command" ]]; then
+        # --no-verify on any git command (push/merge/rebase/cherry-pick, not just commit)
+        if [[ "$command" =~ git[[:space:]] && "$command" == *'--no-verify'* ]]; then
+            emit_deny "BLOCKED: --no-verify is forbidden on git commands. Fix hooks, do not bypass them."
+            exit 1
+        fi
+        # git commit -n (short alias for --no-verify, commit only — -n means different things for other subcommands)
+        if [[ "$command" =~ git[[:space:]]+commit[[:space:]] && "$command" =~ [[:space:]]-n([[:space:]]|$) ]]; then
+            emit_deny "BLOCKED: git commit -n (--no-verify) is forbidden. Fix hooks, do not bypass them."
+            exit 1
+        fi
+        # Hook bypass via environment variables
+        if [[ "$command" == *'HUSKY=0'* ]]; then
+            emit_deny "BLOCKED: HUSKY=0 (hook bypass) is forbidden. Fix hooks, do not bypass them."
             exit 1
         fi
     fi
@@ -211,6 +224,32 @@ def check_recursive_system_chmod_chown(tokens, cmd0):
     return ""
 
 
+def check_main_branch_protection(tokens, full_cmd):
+    """G2: Block push to main/master in external repos."""
+    if len(tokens) < 2 or tokens[0] != "git" or tokens[1] != "push":
+        return ""
+    args = tokens[2:]
+    non_flag = [a for a in args if not a.startswith("-")]
+    has_main_target = any(
+        a in ("main", "master") or a.endswith(":main") or a.endswith(":master")
+        for a in non_flag
+    )
+    if not has_main_target:
+        return ""
+    # Determine effective working directory from cd in the full command
+    effective = cwd
+    cd_match = re.search(r"\bcd\s+(\S+)", full_cmd)
+    if cd_match:
+        cd_target = cd_match.group(1)
+        expanded = os.path.expanduser(cd_target)
+        candidate = expanded if os.path.isabs(expanded) else os.path.join(cwd, expanded)
+        effective = os.path.realpath(candidate)
+    # If in project tree, allow (infra repo uses main branch directly)
+    if effective == project_root or effective.startswith(project_root + os.sep):
+        return ""
+    return f"G2: Direct push to main/master in external repo is forbidden ({effective})"
+
+
 reason = check_pipe_to_shell(command)
 if reason:
     print(reason)
@@ -235,6 +274,8 @@ for segment in split_segments(command):
         if reason: print(reason); raise SystemExit(0)
     if cmd0 == "git":
         reason = check_git(tokens)
+        if reason: print(reason); raise SystemExit(0)
+        reason = check_main_branch_protection(tokens, command)
         if reason: print(reason); raise SystemExit(0)
     if cmd0 in {"chmod", "chown"}:
         reason = check_recursive_system_chmod_chown(tokens, cmd0)
