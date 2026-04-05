@@ -697,3 +697,10 @@
 | cmd_1749 | 偵察 — ALM本番組込み。BEパイプライン+Admin CDP+ALMフック候補 | dm-signal | 04-06 | L0フロー全容把握。Hook A(fof)+FE UI分析+CDPスクショ |
 | cmd_1750 | 偵察 — ALM Phase 3.7/4/4.5改修設計。recalculate_fast.py精読 | dm-signal | 04-06 | 2パス方式推奨。事前計算+月次選出+fullrecalc設計確定 |
 | cmd_1751 | 偵察 — ALM盲点6件。保存バリデーション+cron+FoF連携+CDP実地 | dm-signal | 04-06 | FoF透過的OK。daily cron=mode=PORTFOLIO。fullrecalc自動cronなし |
+| cmd_1752 | ALM impl cmd発令前に残る4つの未検証事項を埋める。 cmd_1750設計書の実現可能性を実コードで最終確認する。 | dm-signal | 04-06 | cmd_1752書込み競合偵察を完了。Pass2→Phase |
+| cmd_1753 | なぜなぜ7回転で発見した4盲点を現物確認。全て5-10分のコード精読で済む。 | dm-signal | 04-06 | MTDはMonthlyReturnテーブルに混入する（意図的 |
+| cmd_1754 | ALM設計知識が10ファイルに散在。/clear後に全エージェントが即使えるよう 1統合設計書にまとめ、projects/dm-signal.yaml+context §35にポインタを置く。殿直接指示。 | dm-signal | 04-06 | cmd_1754を完了。ALM統合設計書を新規作成し、§1- |
+| cmd_1755 | 大元リポ(yohey-w/multi-agent-shogun)の最新アップデートから 我が軍にない3点の有用性を現物比較で判定する。 なぜなぜ7回転で絞り込んだ3点。 | infra | 04-06 | PR#113 guard.sh(6 hooks)と我が軍pr |
+| cmd_1756 | 大元リポ(yohey-w) commit c87ca64のratelimit表示改善+SSH key改善を 我が軍のAndroidアプリ(v5.7)+ratelimit_check.shと比較し、取り込み価値を判定する。 | infra | 04-06 | cmd_1756偵察を完了。upstream c87ca64 |
+| cmd_1757 | cmd_1754で作成された統合設計書(docs/research/alm-integration-design.md)に なぜなぜ追加回転で発見した6件の修正事項を反映する。 誤った数字(30分)と誤った前提(2パス=manual限定)を正す。 | dm-signal | 04-06 | alm-integration-design.md に指定6 |
+| cmd_1758 | 大元リポ(yohey-w)のPR#113+skill-creator v2.0から 我が軍に不足する7件を取り込む。cmd_1755偵察で特定済み。 | infra | 04-06 | guard強化3件完了。G1:test_hooks.sh(7 |

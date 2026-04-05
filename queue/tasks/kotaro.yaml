@@ -58,7 +58,7 @@ task:
   project: dm-signal
   purpose: ALM本番登録前検証 — lookback切替頻度・安定性分析
   related_lessons: []
-  status: in_progress
+  status: completed
   stop_for: []
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   report_filename: kotaro_report_cmd_1759.yaml
