@@ -3398,7 +3398,7 @@ else
     echo "  SKIP (no context/*.md changes detected since HEAD~1)"
 fi
 
-# ─── CI status check（push済みcmdでCI赤を検知 — failure時BLOCK） ───
+# ─── CI status check（push済みcmdでCI赤を検知 — failure時WARN。CLAUDE.md準拠） ───
 level_heading "[L3]" "CI status check:"
 CI_PUSH_DETECTED=false
 for task_file in "$TASKS_DIR"/*.yaml; do
@@ -3425,9 +3425,9 @@ if [ "$CI_PUSH_DETECTED" = true ]; then
                     echo "  OK (CI green, run ${ci_run_id})"
                     ;;
                 failure)
-                    echo "  FAIL: CI赤 (run ${ci_run_id}) — push後にCI失敗。修正必要"
-                    ALL_CLEAR=false
-                    record_block_reason "ci_failure:run_${ci_run_id}"
+                    echo "  WARN: CI赤 (run ${ci_run_id}) — push後にCI失敗。修正必要(CLAUDE.md準拠: WARN)"
+                    # CLAUDE.md: 「CI緑維持 — BLOCKではなくWARN」。ALL_CLEAR維持。
+                    # 旧: ALL_CLEAR=false + record_block_reason → 12回連続workaround(ci_gate_mismatch)
                     ;;
                 "")
                     echo "  [INFO] CI結果取得不可（進行中またはデータなし）"
