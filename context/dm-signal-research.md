@@ -786,3 +786,5 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 2. BE: recalculate_fof.py Hook A (FoF側ALM対応)
 3. FE: Admin PortfolioEditor.tsx Adaptive チェックボックス+ALM CONFIG
 4. 検証: fullrecalculate + daily ETL動作確認
+
+→ 統合設計書: `/mnt/c/Python_app/DM-signal/docs/research/alm-integration-design.md`
