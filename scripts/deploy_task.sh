@@ -943,6 +943,10 @@ generate_report_template() {
     if [ -z "$resolved_task_id" ]; then
         resolved_task_id=$(field_get "$task_file" "task_id" "$task_id")
     fi
+    # task_id系が全て空なら_ac_task_idをfallback
+    if [ -z "$resolved_task_id" ]; then
+        resolved_task_id=$(field_get "$task_file" "_ac_task_id" "")
+    fi
     local resolved_parent_cmd
     resolved_parent_cmd=$(field_get "$task_file" "parent_cmd" "$parent_cmd")
     local ac_version
@@ -1038,18 +1042,18 @@ EOF
     _lu_ids=$(awk '
         /^  related_lessons:/ { in_rl=1; next }
         in_rl && /^  [a-z]/ { exit }
-        in_rl && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print }
+        in_rl && /id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); gsub(/['"'"']/, ""); print }
     ' "$task_file" 2>/dev/null)
 
     if [ -z "$_lu_ids" ]; then
         # GP-088: related_lessonsなし or id抽出不能 → null→[]に変換
         if grep -q 'lessons_useful: null' "$report_file" 2>/dev/null; then
-            sed -i 's/lessons_useful: null/lessons_useful: []/' "$report_file"
+            sed -i 's/lessons_useful: null/lessons_useful: []  # ★教訓なし。追加教訓があればid\/useful\/reason形式で記入/' "$report_file"
             log "report_template: lessons_useful null→[] fallback"
         fi
     else
         # IDリストからlessons_useful雛形を生成
-        local _lu_block="lessons_useful:"
+        local _lu_block="lessons_useful:  # ★教訓注入済み。[]で上書きするな。各教訓にuseful+reasonを記入せよ"
         local _lu_count=0
         while IFS= read -r _lid; do
             [ -z "$_lid" ] && continue
@@ -3102,6 +3106,10 @@ deploy_task_apply_task_mutations() {
 
     local task_id parent_cmd project
     task_id=$(field_get "$task_file" "task_id" "")
+    # task_id空なら_ac_task_idをfallback(家老が_ac_task_idを直接設定するケース)
+    if [ -z "$task_id" ]; then
+        task_id=$(field_get "$task_file" "_ac_task_id" "")
+    fi
     parent_cmd=$(field_get "$task_file" "parent_cmd" "")
     project=$(field_get "$task_file" "project" "")
     generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project"
