@@ -3197,7 +3197,7 @@ deploy_task_main() {
     fi
 
     deploy_parent_cmd=$(field_get "$task_yaml" "parent_cmd" "")
-    deploy_task_id=$(field_get "$task_yaml" "task_id" "")
+    deploy_task_id=$(field_get "$task_yaml" "_ac_task_id" "")
     if [ -n "$deploy_parent_cmd" ]; then
         for dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
             [ -f "$dd_task" ] || continue
@@ -3205,9 +3205,12 @@ deploy_task_main() {
             [ "$dd_ninja" = "$NINJA_NAME" ] && continue
             dd_pcmd=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "parent_cmd" "")
             [ "$dd_pcmd" != "$deploy_parent_cmd" ] && continue
-            dd_tid=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "task_id" "")
-            if [ -n "$deploy_task_id" ] && [ -n "$dd_tid" ] && [ "$deploy_task_id" != "$dd_tid" ]; then
-                log "split_deploy: ${deploy_parent_cmd} peer ${dd_ninja} (task_id: ${dd_tid}) — different task_id, allowing"
+            dd_tid=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "_ac_task_id" "")
+            # BLOCKは「両方のtask_idが存在し同一」の場合のみ(真の二重配備)。
+            # task_idが片方でも空なら分割配備の可能性 → スキップ。
+            # 旧ロジック: task_idが空だとBLOCK→parent_cmdクリア→report_filename破壊(cmd_1751/1752事故)
+            if [ -z "$deploy_task_id" ] || [ -z "$dd_tid" ] || [ "$deploy_task_id" != "$dd_tid" ]; then
+                log "split_deploy: ${deploy_parent_cmd} peer ${dd_ninja} (task_id: ${dd_tid:-empty}) — allowing"
                 continue
             fi
             dd_status=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "status" "")

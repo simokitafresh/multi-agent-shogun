@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L558 -->
+<!-- last_synced_lesson: L559 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -177,3 +177,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L556: grid search CSVとALM L0 champion metricsの不一致: ユニバース差がパリティ破壊（cmd_1748）
 - L557: WF-OOS負の劣化率は過適合否定の十分条件ではない（cmd_1748）
 - L558: 参考ファイルパス不在時もcmdの目的を研究スクリプトから逆引きで設計を完成できる（cmd_1750）
+- L559: Pass2シグナルflush後のsignal_cache_opt6陳腐化リスク（cmd_1752）
