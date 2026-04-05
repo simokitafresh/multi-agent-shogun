@@ -2,7 +2,7 @@ task:
   parent_cmd: 
   _ac_task_id: cmd_1751_be_validate_recon
   _ac_worker_id: hayate
-  status: in_progress
+  status: done
   project: dm-signal
   ac_version: 3b73cd50
   deployed_at: '2026-04-06T02:39:17'
