@@ -86,7 +86,7 @@ for fpath in sorted(glob.glob(os.path.join(tasks_dir, '*.yaml'))):
         if t.get('parent_cmd') != cmd_id:
             continue
         raw_subtasks.append({
-            'task_id': t.get('task_id', ''),
+            'task_id': t.get('task_id') or t.get('_ac_task_id') or '',
             'status': str(t.get('status', '')).lower(),
             'blocked_by': t.get('blocked_by', []) or [],
             'auto_deploy': bool(t.get('auto_deploy', False)),

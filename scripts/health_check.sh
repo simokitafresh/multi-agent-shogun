@@ -65,7 +65,7 @@ try:
         data = yaml.safe_load(f) or {}
     task = data.get('task', {})
     status = task.get('status', 'idle')
-    task_id = task.get('task_id', 'unknown')
+    task_id = task.get('task_id') or task.get('_ac_task_id') or 'unknown'
     ts = task.get('deployed_at', '') or task.get('timestamp', '')
     age = 0
     if ts:
