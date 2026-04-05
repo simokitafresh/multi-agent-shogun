@@ -3202,6 +3202,7 @@ if [ "$HAS_RECON" = true ]; then
         # task_typeがrecon/scoutの報告のみ対象
         local_task_type=""
         local_task_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "task_id" "")
+        [ -z "$local_task_id" ] && local_task_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "_ac_task_id" "")
         if [ -n "$local_task_id" ]; then
             local_task_file="$TASKS_DIR/$(echo "$report_file" | sed 's|.*/\([^/]*\)_report_.*|\1|').yaml"
             if [ -f "$local_task_file" ]; then

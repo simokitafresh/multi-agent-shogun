@@ -75,6 +75,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
     # 偵察タスクとして登録
     local_ninja=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "assigned_to" "" 2>/dev/null)
     local_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "" 2>/dev/null)
+    [ -z "$local_task_id" ] && local_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "" 2>/dev/null)
 
     # L070: field_get経由でインデント変動に対応 + 空結果チェック
     task_status=""

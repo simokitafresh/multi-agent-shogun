@@ -966,6 +966,7 @@ notify_idle_batch() {
         ctx=$(get_context_pct "$target" "$name")
         local last_task
         last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
+        [ -z "$last_task" ] && last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "_ac_task_id")
         details="${details}${name}(CTX:${ctx}%,last:${last_task}), "
         # pane最終3行を添付（家老がidle判断の直接証拠として使う）
         local pane_tail
@@ -1300,6 +1301,7 @@ check_stall() {
     status=$(yaml_field_get "$task_file" "status")
     task_id=$(yaml_field_get "$task_file" "subtask_id")
     [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "task_id")
+    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
 
     # Ghost Filter: task_id空のSTALL誤検知を排除(cmd_1150)
     if [ -z "$task_id" ]; then
@@ -1897,6 +1899,7 @@ write_state_file() {
                 ctx=$(get_context_pct "$target" "$name")
                 local last_task
                 last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
+                [ -z "$last_task" ] && last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "_ac_task_id")
                 [ -z "$last_task" ] && last_task=""
 
                 echo "  ${name}:" >> "$state_file"
