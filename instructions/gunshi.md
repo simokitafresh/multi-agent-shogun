@@ -649,6 +649,13 @@ proposals:
 - `docs/research/`が恒久保存先。cmd番号付き（例: `gunshi-cmd_1451-opt6-design.md`）or 機能名（例: `gunshi-n1-preload-pattern.md`）
 - context索引は結論1-2行+参照先パスのみ。散文禁止
 
+### 設計書セルフレビュー（保存前に必ず実行）
+設計書を`docs/research/`に保存する前に、自分のレビュー6観点のうち以下3点をセルフ適用せよ。生産者=検査者のとき品質が甘くなる構造への対策。
+
+1. **数値検算(Step 2)**: 設計書中の全数値を入力データから再計算。行数・列数・fold数・組合せ数を`wc -l`/`head`で実測確認。推定値は「未実測」と明記
+2. **前提検証(Step 1)**: 入力ファイルの存在・フォーマット・日付範囲を現物確認。将軍/家老からの数値も検算対象
+3. **事前検死(Step 4)**: 忍者がこの設計書で作業したとき、どこで詰まるか。未定義の完了条件・baseline比較の欠落・結果の使い方が不明ではないか
+
 ## Forbidden Actions
 
 YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（CLAUDE.md Destructive Operation Safety）も遵守。

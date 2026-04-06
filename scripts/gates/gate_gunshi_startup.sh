@@ -254,6 +254,20 @@ if [ -f "$GP_TRACKER" ]; then
     fi
 fi
 
+# --- Check 9.5: 設計書セルフレビュー催促 ---
+# docs/research/gunshi_* が直近24h以内に更新されていたら、セルフレビュー3点を表示
+recent_designs=$(find "$SCRIPT_DIR/docs/research" /mnt/c/Python_app/DM-signal/docs/research -maxdepth 1 -name "gunshi_*" -mmin -1440 -type f 2>/dev/null | head -5)
+if [ -n "$recent_designs" ]; then
+    echo ""
+    echo "■ 設計書セルフレビュー"
+    echo "  直近24h更新の設計書:"
+    echo "$recent_designs" | while read -r f; do echo "    $(basename "$f")"; done
+    echo "  ★ 保存前セルフレビュー3点を実施したか？"
+    echo "    1. 数値検算: 全数値を入力データから再計算(wc -l/head実測)"
+    echo "    2. 前提検証: 入力ファイル存在・フォーマット・日付範囲を現物確認"
+    echo "    3. 事前検死: 忍者がどこで詰まるか。完了条件・baseline・結果の使い方"
+fi
+
 # --- Check 10: 分析結果永続化チェック(GP-165: 自動化×強制) ---
 echo ""
 echo "■ 分析結果永続化チェック"

@@ -3632,6 +3632,15 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
     fi
 
+    # ─── gunshi review_feedback自動送信（GATE CLEAR） ───
+    echo ""
+    echo "Gunshi review_feedback (GATE CLEAR):"
+    if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR" review_feedback system 2>/dev/null; then
+        echo "  gunshi review_feedback: OK (CLEAR)"
+    else
+        echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"
+    fi
+
     # ─── GATE CLEAR時 淘汰候補自動deprecate（ベストエフォート） ───
     echo ""
     echo "Auto-deprecate check (unused - GATE CLEAR):"
@@ -3872,6 +3881,15 @@ else
         echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
     fi
     bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
+
+    # ─── gunshi review_feedback自動送信（GATE BLOCK） ───
+    echo ""
+    echo "Gunshi review_feedback (GATE BLOCK):"
+    if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: BLOCK reason=${block_reason}" review_feedback system 2>/dev/null; then
+        echo "  gunshi review_feedback: OK (BLOCK)"
+    else
+        echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"
+    fi
 
     # ─── GATE BLOCK時自動draft教訓生成（ベストエフォート） ───
     echo ""

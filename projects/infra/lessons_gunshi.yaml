@@ -130,3 +130,45 @@ lessons:
   created_at: '2026-04-06'
   automated: true
   enforcement: ninja_monitor.sh run_lock_cleanup()がメインループ毎サイクル実行
+- id: LG018
+  title: 提案は行動ではない — proposed GPは自力実行判定→即実行
+  detail: proposed/pending GPを放置せず自力実行可能か判定し即実行。idle Step 6+gate startup Check 9に埋込み済み
+  source_cmd: gunshi_session_20260406
+  created_at: '2026-04-06'
+  automated: true
+  enforcement: gunshi.md idle Step 6 + gate_gunshi_startup.sh Check 9
+- id: LG019
+  title: タイムボックス原則 — 見込み不明タスクにtimeout 60先行
+  detail: 完了しない前提でtimeout設定。タイムアウト=計測完了。全研究cmdの速度検証に適用可能。複利効果最大
+  source_cmd: gunshi_session_20260406
+  created_at: '2026-04-06'
+  automated: true
+  enforcement: gunshi.md セルフレビュー3点+gate Check 9.5
+- id: LG020
+  title: 数値は実測 — 設計書中の数値を入力データから再計算して検証
+  detail: 設計書やcmd文面の数値を鵜呑みにせず入力データから再計算。セルフレビュー3点に埋込み済み
+  source_cmd: gunshi_session_20260406
+  created_at: '2026-04-06'
+  automated: true
+  enforcement: gunshi.md セルフレビュー3点
+- id: LG021
+  title: cmd分割3基準 — 任意忍者実行可能/短完了/依存並列考慮
+  detail: cmdを分割する際の3基準。(1)任意忍者で実行可能(2)各ステップ短く完了明確(3)依存と並列を考慮
+  source_cmd: gunshi_session_20260406
+  created_at: '2026-04-06'
+  automated: false
+  enforcement: draft review時の分割妥当性チェック
+- id: LG022
+  title: baseline必須 — 改善主張の研究cmdに比較対象を含める
+  detail: 改善を主張する研究cmdには必ず比較対象(baseline)を含める。改善幅の定量評価に必須
+  source_cmd: gunshi_session_20260406
+  created_at: '2026-04-06'
+  automated: false
+  enforcement: draft review時のbaseline有無チェック
+- id: LG023
+  title: 原理1行>各論パッチ — シンプルな原則をプロセスに膨らませるな
+  detail: 既存の1行原理で解決できることに各論パッチ(30行hook等)を作るな。deepdive Phase4-5の家老版実践
+  source_cmd: gunshi_session_20260406
+  created_at: '2026-04-06'
+  automated: false
+  enforcement: GP設計時の原理先行チェック
