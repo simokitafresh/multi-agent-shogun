@@ -396,3 +396,4 @@ CLAUDE.md手順に従う。primary:karo_snapshot.txt→YAML。作業フェーズ
 | §12 | Report Scanning | 起動時 |
 | §13 | 失敗ループ学習(retry_loop) | retry_policy: retry_loop指定cmd時 |
 | §16 | CLI種別切替手順(Claude↔Codex等) | CLI変更時 |
+# dummy change for test
