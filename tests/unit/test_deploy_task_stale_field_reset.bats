@@ -219,12 +219,9 @@ teardown_file() {
         "$file" \
         target_path progress description deployed_at \
         constraints engineering_preferences context_files stop_for never_stop_for parallel_ok \
-        AC1 AC2 AC3 scout_exempt ac_priority ac_checkpoint \
+        AC1 AC2 AC3 acceptance_criteria scout_exempt ac_priority ac_checkpoint \
         command reports_to_read credential_warning context_update type report_template \
         worker_id timestamp
-
-    output="$(get_task_values "$file" acceptance_criteria)"
-    [[ "$output" == *"acceptance_criteria=<dict:1>"* ]]
 
     nested_after=$(grep -c '^\s*task:' "$nested_file")
     [ "$nested_after" -eq 1 ]

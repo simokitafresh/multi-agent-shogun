@@ -235,7 +235,7 @@ STALE_FIELDS = [
     'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
     # 第3層: 忍者書込み+per-cmdフラグ
-    'AC1', 'AC2', 'AC3', 'scout_exempt', 'binary_checks',
+    'AC1', 'AC2', 'AC3', 'acceptance_criteria', 'scout_exempt', 'binary_checks',
     # 第4層: 旧版由来の残留フィールド(現在の配備パイプラインでは設定されないが使い回しで残る)
     'command', 'reports_to_read', 'credential_warning', 'context_update',
     # 第5層: task_typeと重複するレガシーフィールド(修行001 hayate発見)
