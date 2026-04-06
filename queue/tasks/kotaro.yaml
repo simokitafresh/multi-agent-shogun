@@ -1,52 +1,116 @@
 task:
-  parent_cmd: cmd_1761
-  task_id: cmd_1761_nukimi_kawarimi
-  _ac_task_id: cmd_1761_nukimi_kawarimi
+  _ac_task_id: cmd_1761_nukimi_kawarimi_legacy
   _ac_worker_id: kotaro
-  status: assigned
-  project: dm-signal
-  task_type: impl
-  scout_exempt: true
-  purpose: |
-    cmd_1761分割。担当忍法: 抜き身(nukimi) + 身代(kawarimi)の3世代(旧/シン/ALM)38メトリクス算出。
-  command: |
-    担当忍法: 抜き身(nukimi) + 身代(kawarimi)
-
-    ★★★ 追加指示(将軍cmd_update): 旧忍法も含め3世代比較 ★★★
-    旧忍法(旧四神ベースL2) + シン忍法(L1) + ALM忍法(L1) の3世代で38メトリクスを算出せよ。
-    Layer列は不要。旧/シン/ALMを忍法名で並べるだけでよい。
-
-    ■ 手順:
-    1. ALM L0月次リターンCSV読み込み:
-       - 激攻(max_run_up): outputs/analysis/alm_research/cmd_1747_alm_l0_returns_6obj.csv のmax_run_up列
-       - 常勝(calmar): outputs/analysis/alm_research/cmd_1760_calmar_ratio_l0_returns.csv
-       - 鉄壁(UWP): outputs/analysis/alm_research/cmd_1760_underwater_period_alm_l0_returns.csv
-
-    2. 各ALM L0から抜き身・身代の忍法をL1月次リターンに変換
-       - cmd_1747/cmd_1760のchampionパラメータ(GS結果CSV参照)を固定使用
-
-    3. research_engine.pyのcompute_metrics_from_returns()で38メトリクス算出
-       - dtb3_cache/benchmark_returns(SPY)も渡すこと
-
-    4. シン抜き身・シン身代も同じ38メトリクスで算出
-       - 本番DB monthly_returnsから取得
-
-    5. 旧抜き身・旧身代(旧四神ベースL2)も同じ38メトリクスで算出
-       - 旧忍法は旧四神(L1 FoF)をベースにしたL2忍法
-       - 本番DB monthly_returnsから取得(旧忍法PF名はportfoliosテーブルで確認)
-       - 旧忍法が5忍法×3モードの場合、担当忍法に該当する旧PFのみ算出
-
-    6. 出力:
-       - outputs/analysis/alm_research/cmd_1761_kotaro_nukimi_kawarimi.yaml
-       - 各体の38メトリクスを格納。旧/シン/ALMの3世代を含む
-
-    7. commit
-
-    ■ 制約:
-    - パス: /mnt/c/Python_app/DM-signal で作業
-    - 38メトリクス = research_engine.pyのcompute_metrics_from_returns出力(34+IR+UWP+DDLength+RecoveryTime)
-    - CSVパスや旧忍法PFが見つからない場合はdecision_candidateに報告
+  ac_version: d41d8cd9
   acceptance_criteria:
-    - ac: "AC1: 抜き身・身代のALM版(3目的×2忍法)38メトリクス算出+YAML保存"
-    - ac: "AC2: 抜き身・身代のシン版(2体)38メトリクス算出+YAML保存"
-    - ac: "AC3: 抜き身・身代の旧版(旧四神ベースL2)38メトリクス算出+YAML保存+commit"
+  - ac: 'AC1: 抜き身・身代の旧版(旧四神ベースL2)38メトリクス算出+YAML保存+commit'
+  command: "担当忍法: 抜き身(nukimi) + 身代(kawarimi) — 旧忍法のみ\n\n前タスクでALM 6体+シン 2体の38メトリクスは完了済み。\n\
+    この追加タスクでは旧忍法(旧四神ベースL2)の抜き身・身代のみ算出せよ。\n\n■ 手順:\n1. 旧抜き身・旧身代(旧四神ベースL2)の月次リターンを取得\n\
+    \   - 本番DB monthly_returnsから取得\n   - 旧忍法PF名はportfoliosテーブルで確認(name LIKE '%nukimi%'\
+    \ or '%kawarimi%'で旧世代を探す)\n   - 旧忍法は5忍法×3モード構成。担当忍法に該当する旧PFを全て取得\n\n2. research_engine.pyのcompute_metrics_from_returns()で38メトリクス算出\n\
+    \   - dtb3_cache/benchmark_returns(SPY)も渡すこと\n\n3. 出力: cmd_1761_kotaro_nukimi_kawarimi_legacy.yaml\
+    \ に保存\n\n4. commit\n\n■ 制約:\n- パス: /mnt/c/Python_app/DM-signal で作業\n- 38メトリクス\
+    \ = research_engine.pyのcompute_metrics_from_returns出力\n- 旧忍法PFが見つからない場合はdecision_candidateに報告\n"
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    ────────────────────────────────────────"
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  parallel_ok: []
+  parent_cmd: cmd_1761
+  project: dm-signal
+  purpose: 'cmd_1761追加分。抜き身+身代の旧忍法(旧四神ベースL2)38メトリクス算出。
+
+    前タスクでALM+シンは完了済み。旧忍法分のみ追加。
+
+    '
+  scout_exempt: true
+  status: assigned
+  stop_for: []
+  task_id: cmd_1761_nukimi_kawarimi_legacy
+  task_type: impl
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_1761.yaml
+  report_path: queue/reports/kotaro_report_cmd_1761.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 8
+    top_pattern: 'report_yaml_format(2件)'
+    breakdown: 'report_yaml_format(2件), uncategorized(2件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'yaml_parse_error'
+      count: 2
+    - pattern: 'lu_structure_error'
+      count: 1
+    - pattern: 'verdict_invalid'
+      count: 1
+    gate_warning: '⚠ gate頻出FAIL: YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 15
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'binary_checks_fail'
+      count: 7
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'report_yaml_missing'
+      count: 4
+      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+    - reason: 'empty_lessons_useful'
+      count: 2
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'lesson_candidate_no_reason_empty'
+      count: 2
+      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
+    - reason: 'ac_version_mismatch'
+      count: 1
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+  related_lessons:
+  - id: 'L564'
+    summary: 'cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる。importlib.util.module_from_specで独立ロードしたモジュールのmutableセットを直接追加する方式が有効。既存コードへの永続的変更なしに新目的関数を'
+    detail: 'cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる。importlib.util.module_from_specで独立ロードしたモジュールのmutableセットを直接追加する方式が有効。既存コードへの永続的変更なしに新目的関数を'
+  - id: 'L563'
+    summary: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
+    detail: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
+  - id: 'L562'
+    summary: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
+    detail: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
+  - id: 'L561'
+    summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
+    detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
+  - id: 'L560'
+    summary: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
+    detail: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
+  - id: 'L559'
+    summary: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
+    detail: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
+  - id: 'L558'
+    summary: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
+    detail: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
+  - id: 'L557'
+    summary: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
+    detail: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
+  - id: 'L556'
+    summary: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
+    detail: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
+  - id: 'L555'
+    summary: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
+    detail: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
+  deployed_at: "2026-04-06T12:56:26"
