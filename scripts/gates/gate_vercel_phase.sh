@@ -122,7 +122,7 @@ check_context_file() {
         awk '
             {
                 s = $0
-                while (match(s, /docs\/research\/[^`|[:space:]]+/)) {
+                while (match(s, /docs\/research\/[a-zA-Z0-9_./*-]+/)) {
                     ref = substr(s, RSTART, RLENGTH)
                     printf "%d\t%s\n", NR, ref
                     s = substr(s, RSTART + RLENGTH)
