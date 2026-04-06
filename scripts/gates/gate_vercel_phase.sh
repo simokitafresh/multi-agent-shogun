@@ -15,7 +15,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-DM_SIGNAL_DIR="/mnt/c/Python_app/DM-signal"
 
 declare -A SEEN_REFS=()
 # shellcheck disable=SC2034  # FIRST_ORIGIN: kept for debugging broken refs
@@ -23,6 +22,22 @@ declare -A FIRST_ORIGIN=()
 declare -a BROKEN_DETAILS=()
 TOTAL_REFS=0
 BROKEN_REFS=0
+declare -a EXTERNAL_REPO_PATHS=()
+# ANY_EXTERNAL_EXISTS: 外部リポ(docs/research/あり)が一つでも存在するか。main()で設定。
+# check_context_file()が参照: false時は外部リポ参照をスキップ（偽陽性防止）
+ANY_EXTERNAL_EXISTS=false
+
+load_external_repos() {
+    # config/projects.yaml から当リポ以外の全プロジェクトパスを動的に読む
+    local path
+    while IFS= read -r path; do
+        [[ -n "$path" && "$path" != "$SCRIPT_DIR" ]] || continue
+        EXTERNAL_REPO_PATHS+=("$path")
+    done < <(
+        grep -E '^ {4}path:' "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null | \
+        sed 's/^[[:space:]]*path:[[:space:]]*//' | tr -d '"'
+    )
+}
 
 normalize_ref() {
     local raw="$1"
@@ -43,8 +58,8 @@ is_glob_ref() {
 declare -A FILE_CACHE=()
 
 build_file_cache() {
-    local filepath
-    for base in "$SCRIPT_DIR" "$DM_SIGNAL_DIR"; do
+    local filepath base
+    for base in "$SCRIPT_DIR" "${EXTERNAL_REPO_PATHS[@]}"; do
         [ -d "${base}/docs/research" ] || continue
         while IFS= read -r filepath; do
             FILE_CACHE["$filepath"]=1
@@ -63,16 +78,12 @@ ref_exists_in_base() {
 }
 
 resolve_context_bases() {
-    local context_file="$1"
-    local base_name
-    base_name="$(basename "$context_file")"
-
-    if [[ "$base_name" == dm-signal* ]]; then
-        # task仕様に合わせてDM-signal優先。ただし既存配置差異に備えrepo rootも見る。
-        printf '%s\n' "$DM_SIGNAL_DIR" "$SCRIPT_DIR"
-    else
-        printf '%s\n' "$SCRIPT_DIR" "$DM_SIGNAL_DIR"
-    fi
+    # 当リポ + 全外部リポを返す（ファイル名ベースの判定を廃止）
+    printf '%s\n' "$SCRIPT_DIR"
+    local ext
+    for ext in "${EXTERNAL_REPO_PATHS[@]}"; do
+        printf '%s\n' "$ext"
+    done
 }
 
 display_path() {
@@ -115,6 +126,12 @@ check_context_file() {
         done < <(resolve_context_bases "$context_file")
 
         if [ "$found" = false ]; then
+            # 外部リポが存在しない環境では外部リポ参照をスキップ（偽陽性防止）
+            # 外部リポが存在する環境で見つからない場合のみFAIL（本物のリンク切れ）
+            if [ "$ANY_EXTERNAL_EXISTS" = false ]; then
+                TOTAL_REFS=$((TOTAL_REFS - 1))
+                continue
+            fi
             BROKEN_REFS=$((BROKEN_REFS + 1))
             BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
         fi

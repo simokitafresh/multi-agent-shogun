@@ -3364,3 +3364,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え
+
+### L442: shlex.quote eval方式でPython出力をbash変数に安全展開できる
+- **日付**: 2026-04-07
+- **出典**: cmd_precheck_consolidate
+- **記録者**: tobisaru
+- **status**: draft
+- **tags**: [universal]
+- 複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。REPO_ROOT配下のquote済み変数はeval安全。IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認

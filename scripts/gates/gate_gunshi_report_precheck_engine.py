@@ -5,7 +5,6 @@
 # Output: bash eval-safe key=value lines (shlex.quote形式)
 # 軍師監査§3.2: 13×python3 -c → 1スクリプト統合。390ms/report → 30ms/report
 
-import sys
 import os
 import glob
 import argparse
@@ -15,7 +14,8 @@ import yaml
 
 def main():
     parser = argparse.ArgumentParser(
-        description='gate_gunshi_report_precheck engine: 1回のYAML読込で全チェックを実行'
+        description='gate_gunshi_report_precheck engine: '
+        '1回のYAML読込で全チェックを実行'
     )
     parser.add_argument('--report', required=True, help='Report YAML path')
     parser.add_argument('--tasks-dir', default='', help='queue/tasks directory path')
@@ -72,32 +72,44 @@ def main():
         try:
             with open(task_file) as f:
                 task_data = yaml.safe_load(f)
-            task = task_data.get('task', task_data) if isinstance(task_data, dict) else {}
+            task = (
+                task_data.get('task', task_data)
+                if isinstance(task_data, dict) else {}
+            )
             task_bc = task.get('binary_checks') or {}
             report_bc = report.get('binary_checks') or {}
 
             if not isinstance(task_bc, dict) or not task_bc:
-                result['BINARY_CHECKS_MSG'] = '  SKIP: task YAMLにbinary_checksテンプレートなし'
+                result['BINARY_CHECKS_MSG'] = (
+                    '  SKIP: task YAMLにbinary_checksテンプレートなし'
+                )
             else:
                 task_count = sum(
                     len(v) if isinstance(v, list) else 0
                     for v in task_bc.values()
                 )
                 report_count = (
-                    sum(len(v) if isinstance(v, list) else 0 for v in report_bc.values())
+                    sum(
+                        len(v) if isinstance(v, list) else 0
+                        for v in report_bc.values()
+                    )
                     if isinstance(report_bc, dict) else 0
                 )
                 if report_count < task_count * 0.5:
                     result['BINARY_CHECKS_MSG'] = (
-                        f'  FAIL: 報告{report_count}項目 < テンプレート{task_count}項目の50%。テンプレート無視の可能性'
+                        f'  FAIL: 報告{report_count}項目 < '
+                        f'テンプレート{task_count}項目の50%。'
+                        'テンプレート無視の可能性'
                     )
                 elif report_count < task_count:
                     result['BINARY_CHECKS_MSG'] = (
-                        f'  WARN: 報告{report_count}項目 < テンプレート{task_count}項目。一部欠落の可能性'
+                        f'  WARN: 報告{report_count}項目 < '
+                        f'テンプレート{task_count}項目。一部欠落の可能性'
                     )
                 else:
                     result['BINARY_CHECKS_MSG'] = (
-                        f'  PASS: 報告{report_count}項目 >= テンプレート{task_count}項目'
+                        f'  PASS: 報告{report_count}項目 >= '
+                        f'テンプレート{task_count}項目'
                     )
         except Exception as e:
             result['BINARY_CHECKS_MSG'] = f'  ERROR: {e}'
