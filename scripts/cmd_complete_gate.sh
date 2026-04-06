@@ -1414,7 +1414,7 @@ detect_task_role() {
 # Helper: check lesson_candidate.found=true in report YAML (#3,#4共通関数 cmd_1387)
 _check_lc_found() {
     local rfile="$1"
-    if grep -A5 'lesson_candidate:' "$rfile" 2>/dev/null | grep -q 'found: true'; then
+    if awk '/^lesson_candidate:/{p=1;next} p&&/found: true/{found=1;exit} /^[^ ]/{if(p)exit 1} END{if(!found)exit 1}' "$rfile" 2>/dev/null; then
         echo "true"
     else
         echo "false"
@@ -2582,7 +2582,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
                 echo "  [INFO] ${ninja_name}: lesson_candidate旧形式を自動修正: ${a_normalize_output}"
                 echo "$(date '+%Y-%m-%dT%H:%M:%S') [A層] ${CMD_ID} ${ninja_name}: ${a_normalize_output}" >> "$SCRIPT_DIR/logs/normalize_report.log"
                 # 修正成功 → 再検証
-                if grep -A10 'lesson_candidate:' "$report_file" 2>/dev/null | grep -q 'found:'; then
+                if awk '/^lesson_candidate:/{p=1;next} p&&/found:/{found=1;exit} /^[^ ]/{if(p)exit 1} END{if(!found)exit 1}' "$report_file" 2>/dev/null; then
                     lc_recheck="ok"
                 else
                     lc_recheck="ng"
@@ -2904,7 +2904,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     if ! grep -q 'skill_candidate:' "$report_file" 2>/dev/null; then
         sc_status="missing"
-    elif grep -A5 'skill_candidate:' "$report_file" 2>/dev/null | grep -q 'found:'; then
+    elif awk '/^skill_candidate:/{p=1;next} p&&/found:/{found=1;exit} /^[^ ]/{if(p)exit 1} END{if(!found)exit 1}' "$report_file" 2>/dev/null; then
         sc_status="ok"
     else
         sc_status="no_found"
@@ -2951,7 +2951,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     if ! grep -q 'decision_candidate:' "$report_file" 2>/dev/null; then
         dc_status="missing"
-    elif grep -A5 'decision_candidate:' "$report_file" 2>/dev/null | grep -q 'found:'; then
+    elif awk '/^decision_candidate:/{p=1;next} p&&/found:/{found=1;exit} /^[^ ]/{if(p)exit 1} END{if(!found)exit 1}' "$report_file" 2>/dev/null; then
         dc_status="ok"
     else
         dc_status="no_found"
