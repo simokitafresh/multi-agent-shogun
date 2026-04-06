@@ -593,6 +593,12 @@ APPROVE→FAILは軍師の見落としを意味する。以下を必ず実施:
 - impl完了後の効果検証（impl_budget.verify条件の実行）
 - 検証結果を定量的にまとめ、家老に報告
 
+### 分析結果の永続化
+- Idle分析で発見した知見・データは `docs/research/` に保存してからinbox_writeで報告せよ
+- ファイル名: `docs/research/gunshi_idle_{topic}_{date}.md` (例: `gunshi_idle_wa_pattern_20260406.md`)
+- inbox_writeには保存先パスを含めよ。家老が後から参照できるように
+- 理由: inbox_writeのみだと分析結果が揮発し、CS4(行動変換)違反になる
+
 ### 報告方法
 分析結果は家老にinbox_writeで報告:
 ```bash
@@ -661,6 +667,7 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 | 3 | **未自動化教訓のgate化** | `projects/infra/lessons_gunshi.yaml` | `automated: false`の教訓→gate/hook/protocol化を設計し家老に提案 |
 | 4 | **CS観点遡及適用** | 過去のself_study/consultationエントリ | cs_checklistなしの過去エントリに遡及適用。自己検出率を計測 |
 | 5 | **パターン発見→因果推論→行動** | Step 1-4の結果 | 列挙で止めるな(CS6)。原因→結果の連鎖を追え。行動をinbox_writeで家老に提案 |
+| 6 | **proposed GP即実行** | `logs/gunshi_gp_tracker.yaml` | proposed/pending GPを走査。自力実行可能→即実装+テスト+完了。不可→家老送信のみ。**提案は行動ではない。実装して初めて行動。** |
 
 **サイクルの鉄則**:
 - 1つ完了したら次へ。報告して止まるな
