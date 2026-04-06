@@ -212,6 +212,8 @@
 !scripts/gates/gate_shogun_startup.sh
 !scripts/gates/gate_cycle_health.sh
 !scripts/gates/gate_gunshi_cs_checklist.sh
+!scripts/gates/gate_gunshi_report_precheck.sh
+!scripts/gates/gate_gunshi_report_precheck_engine.py
 !scripts/hooks/
 !scripts/hooks/*.sh
 !scripts/switch_project.sh
