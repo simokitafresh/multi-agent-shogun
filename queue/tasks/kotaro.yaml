@@ -1,39 +1,83 @@
-task_id: cmd_lk021_fix
-parent_cmd: cmd_lk021_fix
-ninja: kotaro
-project: infra
-status: completed
-purpose: "deploy_task.sh stale AC汚染修正(LK021)。4回再発の根因=acceptance_criteriaがSTALE_FIELDSリストに未記載"
-command: |
-  scripts/deploy_task.sh L231-245のSTALE_FIELDSリストにacceptance_criteriaを追加せよ。
-
-  修正箇所: L238の第3層コメントの下、または適切な層に追加
-  追加: 'acceptance_criteria' をSTALE_FIELDSリストに追加
-
-  テスト:
-  1. 既存の忍者task YAML(queue/tasks/任意.yaml)にダミーacceptance_criteriaを書く
-  2. deploy_task.sh実行(--dry-runまたはidle忍者に空cmd)
-  3. acceptance_criteriaがクリアされることを確認
-  4. 既存batsテストがあれば実行(tests/unit/test_deploy_task*.bats)
-  5. commit
-
-  ★1行追加+テスト。既存ロジックは変更するな。
-target_path: /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
-scope_mode: IMPL
-scout_exempt: true
-acceptance_criteria:
-  AC1:
-    description: "STALE_FIELDSにacceptance_criteria追加+テスト+commit"
-    binary_checks:
-      - "STALE_FIELDSリストにacceptance_criteriaが含まれるか？ yes/no"
-      - "再配備時にacceptance_criteriaがクリアされることをテスト確認したか？ yes/no"
-      - "既存batsテストがPASSするか？ yes/no"
-      - "commitされているか？ yes/no"
-stop_for:
-  - "既存テストがFAILする場合"
-never_stop_for:
-  - "gate警告"
-deployed_at: "2026-04-07T01:05:00+09:00"
+task:
+  _ac_task_id: cmd_vercel_false_positive
+  _ac_worker_id: null
+  ac_version: 2edf2958
+  acceptance_criteria:
+    AC1:
+      binary_checks:
+      - 外部リポパスへの参照でFAILしなくなったか？ yes/no
+      - 同リポ内の壊れた参照は引き続き検出されるか？ yes/no
+      - 既存テストがPASSするか？ yes/no
+      - commitされているか？ yes/no
+      description: 外部リポ参照の偽陽性修正+テスト+commit
+  command: "gate_vercel_phase.shが外部リポ(DM-signal等)のパスを含むcontext/*.mdで偽陽性BLOCKする問題を修正せよ。\n\
+    \n現状: context/*.md内の参照先(docs/research/*)が当リポにない場合FAIL→cmd_complete_gate.shでBLOCK\n\
+    原因: context/*.mdがDM-signalリポのdocs/research/*を参照しているケースを外部リポとして識別できない\n\nAC1: 偽陽性修正+テスト\n\
+    \  - gate_vercel_phase.shの参照チェックで、対象ファイルのプロジェクトパスを考慮\n  - DM-signalリポ等の外部リポパスへの参照はスキップ\n\
+    \  - config/projects.yamlのpath情報を活用して外部リポを判定\n  - 既存テスト(tests/unit/test_gate_vercel*.bats)がPASSすること\n\
+    \  - 偽陽性パターンのテスト追加\n  - commit\n"
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
+    \ Codeに'non-blo\n  - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit\
+    \ statusを実行\n────────────────────────────────────────"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  ninja: kotaro
+  parallel_ok: []
+  parent_cmd: cmd_vercel_false_positive
+  project: infra
+  purpose: vercel_phase外部リポ偽陽性fix。13回WA(ci_gate_mismatch)の残存原因。gate_vercel_phase.sh+cmd_complete_gate.sh
+  scope_mode: IMPL
+  scout_exempt: true
+  status: acknowledged
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_vercel_phase.sh
+  task_id: cmd_vercel_false_positive
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_vercel_false_positive.yaml
+  report_path: queue/reports/kotaro_report_cmd_vercel_false_positive.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 9
+    top_pattern: 'report_yaml_format(2件)'
+    breakdown: 'report_yaml_format(2件), uncategorized(2件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'field_missing'
+      count: 2
+    gate_warning: '⚠ gate頻出FAIL: 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 15
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'binary_checks_fail'
+      count: 7
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'report_yaml_missing'
+      count: 4
+      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+    - reason: 'empty_lessons_useful'
+      count: 3
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'lesson_candidate_no_reason_empty'
+      count: 2
+      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
+    - reason: 'ac_version_mismatch'
+      count: 1
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
   - id: 'L441'
     summary: 'Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え'
@@ -65,3 +109,4 @@ deployed_at: "2026-04-07T01:05:00+09:00"
   - id: 'L419'
     summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
     detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+  deployed_at: "2026-04-07T01:37:23"

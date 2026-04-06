@@ -816,6 +816,14 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - L561: pipeline_config=Dict[str,Any]でalm_config未検証保存。ALM実装時にバリデーション追加必要（cmd_1753）
 - L562: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)（cmd_1759）
 - L563: cmd_1762 BE第一弾完了(da14b6b7)。AlmConfig schema+Phase3.7 ALM cache+vectorized signals実装済み。注意: alm_config読取位置がblock config(実装)とPipelineConfig(schema)で分離→後続cmdで統一必要
+
+### ALM L1: 忍法パラメータ動的選出（2026-04-06殿との設計議論）
+- **ALM=lookback戦略のバリエーション**（固定/マルチプル/動的の延長。特別な仕組みではない）
+- **忍法別ALM適性**: 加速R(75%)最強、変わり身(46%)最弱。全忍法一律ではなくL1増幅効果に差あり
+- **ALM L1設計**: 加速Rのnum/denを動的選出(3パターンA/B/C)。全空間119,493パターン(サブセット含む)。事後フィルタ・事後ラベル
+- **道具**: `l1_alm_wf_engine.py`(455行)構築中(cmd_1765/1766)
+- **cmd_1763/1764発見**: 10目的間全45ペア相関>0.8(L0 4体共有構造)。目的関数の違いよりlookback戦略の違いが多様性の源泉
+- → 詳細: `context/checklist-alm-registration.md` §設計原理
 - L564: cmd_1763 ALM目的関数多様性分析完了(1d149a10)。Top1=MRU+NHF+CAGR(3.271)。cagr×MRU相関0.941(高)→実質多様性に注意。tail_contributionは多様性低下要因。calmar/UWPは6目的外→DC記録
 - L565: cmd_1764 C(10,3)=120通り完了(e43cefd2)。Top1=MRU+NHF+CAGR(3.271)=cmd_1763と同一→6→10目的拡張で結論頑健。現行ALM Ward#12/120(上位10%)。冗長ペア45件=L0共有の構造要因。sortino欠損率69%→距離計算影響要確認
 - L566: cmd_1765 L1 ALM WFエンジン骨格完了(1cbf703f)。CSV読込119,493列+30fold+6メトリクス。GS CSV早期NaN→fillna(0)修正。道具磨き完了→cmd B(タイムボックス60秒実行)が次

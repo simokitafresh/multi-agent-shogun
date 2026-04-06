@@ -1,140 +1,63 @@
-task:
-  _ac_task_id: cmd_1759_item1
-  _ac_worker_id: hayate
-  ac_version: b99834bc
-  acceptance_criteria:
-  - ac: 'AC1: 4ファミリー×6目的関数=24セルのヒートマップYAML生成。各セルにROBUST率+median劣化率を含む'
-  - ac: 'AC2: cmd_1759_family_objective_matrix.yaml + commit'
-  binary_checks:
-  - check: 24セル(4ファミリー×6目的関数)が全て埋まっているか
-  - check: 各セルにROBUST率とmedian劣化率の両方が含まれるか
-  - check: パラメータ空間を縮小していないか(忍法7種全て含むか)
-  - check: YAMLファイルがcommit済みか
-  command: '【1. ファミリー別×目的関数の最適組合せ】
+task_id: cmd_1767_impl
+parent_cmd: cmd_1767
+ninja: hayate
+project: dm-signal
+status: assigned
+purpose: "Step 0e: L1 ALM WFエンジンcmd C — 検証+baseline比較+事後分類。ランブック§3"
+command: |
+  軍師ランブック /mnt/c/Python_app/DM-signal/docs/research/gunshi_l1_alm_wf_engine_design.md §3に厳密に従え。
+  cmd_1766成果物(l1_alm_wf_engine.py)と出力CSV(selection_timeline/alm_returns)を使う。
 
-    cmd_1747の42パターン結果(cmd_1747_cross_comparison.yaml)を
+  AC1: 検証ゲート V1-V7
+    - V1: IS/OOS非重複(全foldでis_end < oos_start)
+    - V2: OOSギャップなし(ALMリターン月数=期待OOS月数)
+    - V3: Look-ahead biasなし(IS窓内データのみで選出)
+    - V4: 全パターン対象(df.columns=119,493)
+    - V5: タイムボックスPASS(60秒以内)
+    - V6: fold数検算(floor((166-36-12)/4)+1=30)
+    - V7: baseline比較あり
+    - binary_check: V1-V7全PASS
 
-    ファミリー別に分解し、各ファミリーでどの目的関数が最強かを特定。
+  AC2: baseline比較
+    - 固定GS champion(全期間最良パターン)のOOSリターンを計算
+    - WF dynamic vs fixed championの38メトリクス比較
+    - 出力: outputs/analysis/alm_research/cmd_1767_l1_wf_baseline_comparison.csv
+    - decision_candidate: found: true(動的選出の本番組込みは殿裁定)
 
-    - 4ファミリー × 6目的関数 = 24セル
-
-    - 各セルで忍法7種のOOS ROBUST率+median劣化率を集計（cmd_1748部分結果から）
-
-    - 出力: ファミリー×目的関数のヒートマップYAML
-
-    ツール: research_engine.py(38メトリクス対応)。パラメータ空間縮小禁止。
-
-    成果物: outputs/analysis/alm_research/cmd_1759_family_objective_matrix.yaml + commit
-
-    '
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_1759
-  project: dm-signal
-  purpose: ALM本番登録前検証 — ファミリー別×目的関数の最適組合せ特定
-  related_lessons: []
-  status: done
-  stop_for: []
-  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_1759.yaml
-  report_path: queue/reports/hayate_report_cmd_1759.yaml
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 33
-    top_pattern: 'report_yaml_format(12件)'
-    breakdown: 'report_yaml_format(12件), uncategorized(4件), commit_missing(3件), report_missing(2件), double_deploy(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'lu_reason_empty'
-      count: 30
-    - pattern: 'bc_result_empty'
-      count: 13
-    - pattern: 'no_lesson_reason'
-      count: 7
-    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 20
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'report_yaml_missing'
-      count: 12
-      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
-    - reason: 'empty_lessons_useful'
-      count: 8
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'ac_version_mismatch'
-      count: 6
-      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
-    - reason: 'binary_checks_fail'
-      count: 5
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'lesson_candidate_no_reason_empty'
-      count: 3
-      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
-    - reason: 'lesson_candidate_parse_error'
-      count: 2
-      hint: 'lesson_candidateのYAML構文エラー。インデント・引用符を確認'
-    - reason: 'lesson_candidate_fields_empty'
-      count: 1
-      hint: 'gate BLOCK: lesson_candidate_fields_empty'
-    - reason: 'invalid_lessons_useful_format'
-      count: 1
-      hint: 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止'
-    - reason: 'lesson_candidate_missing'
-      count: 1
-      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-    - reason: 'purpose_validation_fit_false'
-      count: 1
-      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  related_lessons:
-  - id: 'L561'
-    summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-    detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-  - id: 'L560'
-    summary: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
-    detail: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
-  - id: 'L559'
-    summary: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
-    detail: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
-  - id: 'L558'
-    summary: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
-    detail: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
-  - id: 'L557'
-    summary: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
-    detail: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
-  - id: 'L556'
-    summary: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
-    detail: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
-  - id: 'L555'
-    summary: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
-    detail: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
-  - id: 'L554'
-    summary: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
-    detail: 'cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling'
-  - id: 'L553'
-    summary: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
-    detail: '''改善は既存の仕組みを1行磨け。新しい仕組みを作るな。各論パッチは問題ごとに増殖し複雑化する。原理を既存の1箇所に埋め込めば未来の全類似問題に対応できる。gate追加をrevertしreview_logヘッダに1行追加。殿指摘:'
-  - id: 'L552'
-    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
-    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを設計したのに次cmdのレビューでcache活用をチェックしなかった。根因:'
-  deployed_at: "2026-04-06T05:10:00"
+  AC3: 事後分類(Pattern A/B/C)
+    - fold間選出パターン: A=num変動/den固定, B=den変動/num固定, C=両方変動
+    - 出力: outputs/analysis/alm_research/cmd_1767_l1_wf_pattern_classification.yaml
+    - binary_check: 6 objectives全てにA/B/C分類記載
+    - commit
+target_path: /mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py
+scope_mode: IMPL
+scout_exempt: true
+context_files:
+  - /mnt/c/Python_app/DM-signal/docs/research/gunshi_l1_alm_wf_engine_design.md
+acceptance_criteria:
+  AC1:
+    description: "V1-V7検証ゲート全PASS"
+    binary_checks:
+      - "V1: 全foldでis_end < oos_startか？ yes/no"
+      - "V2: ALMリターン月数が期待OOS月数と一致するか？ yes/no"
+      - "V3: IS窓内データのみで選出しているか？ yes/no"
+      - "V4: 全119,493パターンが対象か？ yes/no"
+      - "V5: 60秒以内に完了したか？ yes/no"
+      - "V6: fold数=30か？ yes/no"
+      - "V7: baseline比較が含まれるか？ yes/no"
+  AC2:
+    description: "baseline比較CSV+decision_candidate"
+    binary_checks:
+      - "固定champion OOSリターンが計算されたか？ yes/no"
+      - "38メトリクス比較テーブルが出力されたか？ yes/no"
+      - "decision_candidate found: trueが記載されたか？ yes/no"
+  AC3:
+    description: "Pattern A/B/C分類+commit"
+    binary_checks:
+      - "6 objectives全てにA/B/C分類が記載されたか？ yes/no"
+      - "commitされているか？ yes/no"
+ac_priority: "AC1 > AC2 > AC3"
+stop_for:
+  - "OOM等でプロセスが死ぬ場合"
+never_stop_for:
+  - "gate警告"
