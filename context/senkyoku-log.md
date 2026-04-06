@@ -615,3 +615,4 @@
 | cmd | 目的 | 結果 | 因果・知見 |
 |-----|------|------|-----------|
 | cmd_1741 | ファミリー別Max Run-up ALM(DNA理解版)+理論的低相関→5番目ファミリー候補 | GATE CLEAR | 才蔵完遂。absolute_assetでファミリー分類(name prefixではなくDB config)。追補でFoF return-wide対応もcommit。top candidate=DM3(alm_DM3_top5_win12m)。教訓L552-L554登録。軍師APPROVE |
+- 2026-04-06 16:24 cmd_1762(ALM BE第一弾) 半蔵完遂(da14b6b7)。deploy_task.sh stale AC汚染で影丸に誤配備→半蔵に正AC再配備。家老自走: CI修正+GP4件消化+stale cmd整理。軍師LGTM
