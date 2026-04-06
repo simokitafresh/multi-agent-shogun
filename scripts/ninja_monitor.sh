@@ -1913,34 +1913,45 @@ write_state_file() {
 }
 
 # ─── ntfy_listenerヘルスチェック (cmd_635) ───
-# ログの最終行タイムスタンプが古ければゾンビ判定→再起動
+# heartbeatファイル(ext4)→ログ(NTFS)の順で生存判定。NTFS mtime遅延による偽stale防止
 check_ntfy_listener_health() {
     local log_file="$SCRIPT_DIR/logs/ntfy_listener.log"
+    local heartbeat_file="/tmp/ntfy_listener.heartbeat"
+    local log_epoch=""
 
-    # ログが存在しない場合はスキップ（listenerが未起動）
-    if [ ! -f "$log_file" ]; then
-        return 0
+    # Phase 1: heartbeatファイル(ext4, 高信頼)で判定
+    if [ -f "$heartbeat_file" ]; then
+        log_epoch=$(cat "$heartbeat_file" 2>/dev/null || true)
+        if [ -n "$log_epoch" ] && [ "$log_epoch" -gt 0 ] 2>/dev/null; then
+            # heartbeatが有効 — これで判定（NTFS log不要）
+            :
+        else
+            log_epoch=""
+        fi
     fi
 
-    # 最終行からタイムスタンプを抽出 [Sat Mar  7 03:52:40 JST 2026]
-    local last_line
-    last_line=$(tail -1 "$log_file" 2>/dev/null || true)
-    if [ -z "$last_line" ]; then
-        return 0
-    fi
-
-    # [Day Mon DD HH:MM:SS TZ YYYY] 形式からタイムスタンプ部分を抽出
-    local ts_str
-    ts_str=$(echo "$last_line" | grep -oP '\[\K[A-Za-z]+ [A-Za-z]+ +\d+ \d+:\d+:\d+ [A-Z]+ \d+' | head -1)
-    if [ -z "$ts_str" ]; then
-        return 0
-    fi
-
-    # epoch秒に変換
-    local log_epoch
-    log_epoch=$(date -d "$ts_str" +%s 2>/dev/null || true)
+    # Phase 2: heartbeat不在時はログファイルにfallback（旧ロジック）
     if [ -z "$log_epoch" ]; then
-        return 0
+        if [ ! -f "$log_file" ]; then
+            return 0
+        fi
+
+        local last_line
+        last_line=$(tail -1 "$log_file" 2>/dev/null || true)
+        if [ -z "$last_line" ]; then
+            return 0
+        fi
+
+        local ts_str
+        ts_str=$(echo "$last_line" | grep -oP '\[\K[A-Za-z]+ [A-Za-z]+ +\d+ \d+:\d+:\d+ [A-Z]+ \d+' | head -1)
+        if [ -z "$ts_str" ]; then
+            return 0
+        fi
+
+        log_epoch=$(date -d "$ts_str" +%s 2>/dev/null || true)
+        if [ -z "$log_epoch" ]; then
+            return 0
+        fi
     fi
 
     local now

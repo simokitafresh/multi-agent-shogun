@@ -78,6 +78,8 @@ CURL_MAX_TIME_SECS=3600
 CURL_KEEPALIVE_SECS=30
 READ_POLL_SECS=5
 ATTACHMENT_DOWNLOAD_MAX_TIME_SECS=30
+# Heartbeat: /tmp上(ext4)にタイムスタンプ書出し。NTFS mtime遅延による偽stale検知を回避
+HEARTBEAT_FILE="/tmp/ntfy_listener.heartbeat"
 
 # JSON field extractor (python3 — jq not available)
 parse_json() {
@@ -346,9 +348,10 @@ process_stream_line() {
             SAVED_IMAGE_REL=$(to_repo_relative_path "$SAVED_IMAGE")
             echo "[$(date)] Saved image attachment: $SAVED_IMAGE_REL" >&2
             mark_message_activity
-            bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
+            timeout 15 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
                 "スクショ受信: $SAVED_IMAGE (latest: $SCREENSHOT_DIR/latest.png)" \
-                screenshot_received ntfy_listener
+                screenshot_received ntfy_listener \
+                || echo "[$(date)] WARNING: inbox_write for screenshot timed out (15s)" >&2
         fi
     fi
 
@@ -421,9 +424,11 @@ process_stream_line() {
     fi
 
     # === Backup path: Wake shogun via inbox ===
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
+    # Bug fix: inbox_write.shにタイムアウトなし→WSL2 NTFS flock/writeがhang→リスナー全停止(37回SIGKILL)
+    timeout 15 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
         "ntfyから新しいメッセージ受信。queue/ntfy_inbox.yaml を確認し処理せよ。" \
-        ntfy_received ntfy_listener
+        ntfy_received ntfy_listener \
+        || echo "[$(date)] WARNING: inbox_write for shogun wake timed out (15s)" >&2
 }
 
 if [ "$NTFY_LISTENER_LIB_ONLY" = "1" ]; then
@@ -460,6 +465,9 @@ while true; do
     WATCHDOG_LOG_MSG=""
 
     while true; do
+        # Heartbeat: ext4上で更新(NTFS mtime遅延回避)。ninja_monitorはこのファイルで生存判定
+        printf '%s' "$(date +%s)" > "$HEARTBEAT_FILE" 2>/dev/null || true
+
         if IFS= read -r -t "$READ_POLL_SECS" -u "${NTFY_STREAM[0]}" line; then
             LAST_STREAM_ACTIVITY=$(date +%s)
             process_stream_line "$line"

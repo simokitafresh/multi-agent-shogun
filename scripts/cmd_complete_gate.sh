@@ -3379,9 +3379,11 @@ if [ "$TEST_SKIP_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
-# ─── Vercel Phaseリンク整合チェック（context変更時のみ、BLOCK対象） ───
+# ─── Vercel Phaseリンク整合チェック（cmd固有context変更時のみ、BLOCK対象） ───
+# Bug fix: HEAD~1がauto-commitの場合、無関係なcontext変更で偽陽性BLOCK(ci_gate_mismatch 13件WA)
+# → cmd固有commitのcontext変更のみ検出。auto-commit由来のcontext変更を除外
 level_heading "[L3]" "Vercel phase link check:"
-changed_contexts=$(git -C "$SCRIPT_DIR" diff --name-only HEAD~1 2>/dev/null | grep '^context/' || true)
+changed_contexts=$(git -C "$SCRIPT_DIR" log --grep="${CMD_ID}" --format="" --name-only 2>/dev/null | grep '^context/' | sort -u || true)
 if [ -n "$changed_contexts" ]; then
     if [ -f "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" ]; then
         if bash "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh"; then
@@ -3395,7 +3397,7 @@ if [ -n "$changed_contexts" ]; then
         echo "  [INFO] gate_vercel_phase.sh not found (skip)"
     fi
 else
-    echo "  SKIP (no context/*.md changes detected since HEAD~1)"
+    echo "  SKIP (no context/*.md changes in ${CMD_ID} commits)"
 fi
 
 # ─── CI status check（push済みcmdでCI赤を検知 — failure時WARN。CLAUDE.md準拠） ───

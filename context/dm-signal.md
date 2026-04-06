@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L564 -->
+<!-- last_synced_lesson: L565 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -168,3 +168,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L562: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)（cmd_1759）
 - L563: DNA制約(domain knowledge)は1M-12Mフルセットより高いIS max_run_upを3/4ファミリーで達成する（cmd_1759）
 - L564: MINIMIZE_METRICSへのランタイムpatchでargmin方向を動的変更できる（cmd_1760）
+- L565: 旧加速忍法はkasoku_ratio/kasoku_diffの区別なし（cmd_1761）

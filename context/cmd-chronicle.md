@@ -704,3 +704,5 @@
 | cmd_1756 | 大元リポ(yohey-w) commit c87ca64のratelimit表示改善+SSH key改善を 我が軍のAndroidアプリ(v5.7)+ratelimit_check.shと比較し、取り込み価値を判定する。 | infra | 04-06 | cmd_1756偵察を完了。upstream c87ca64 |
 | cmd_1757 | cmd_1754で作成された統合設計書(docs/research/alm-integration-design.md)に なぜなぜ追加回転で発見した6件の修正事項を反映する。 誤った数字(30分)と誤った前提(2パス=manual限定)を正す。 | dm-signal | 04-06 | alm-integration-design.md に指定6 |
 | cmd_1758 | 大元リポ(yohey-w)のPR#113+skill-creator v2.0から 我が軍に不足する7件を取り込む。cmd_1755偵察で特定済み。 | infra | 04-06 | guard強化3件完了。G1:test_hooks.sh(7 |
+| cmd_1760 | ALM目的関数の鉄壁方向が手薄（LTJ_invのみ）。 calmar/sortino/UWP/MDDの4つを新規ALM目的として検証し、 L0性能+L1忍法7種性能+既存シン忍法比較まで一気に出す。 殿直接指示。 | dm-signal | 04-06 | cmd_1760 sortino_ratio ALM L0+ |
+| cmd_1761 | ALM忍法19体とシン忍法20体の全メトリクスを38指標で統一計算し、 忍法別比較表の空欄を全て埋める。 cmd_1760のcalmar/sortino目的でMaxDD/MRU/TC/NHF等が欠落していた問題を解消。 | dm-signal | 04-06 | 分身+追い風の旧/シン/ALM3世代・11体38メトリクス算 |
