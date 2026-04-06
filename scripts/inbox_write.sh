@@ -6,6 +6,7 @@
 # Supported types:
 #   wake_up              — デフォルト。汎用起動通知
 #   task_assigned        — タスク配備通知（家老→忍者）
+#   task_supplement      — タスク補足通知（家老/軍師→忍者）
 #   task_cancel          — タスク取消通知（家老→忍者）
 #   cmd_new              — 新cmd通知（将軍→家老）
 #   report_received      — 忍者報告完了通知（忍者→家老）※報告YAML検証+auto-done hookあり
@@ -29,6 +30,7 @@
 set -e
 
 SCRIPT_DIR="${INBOX_WRITE_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+SELF_SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 # shellcheck source=/dev/null
 if [ "${INBOX_WRITE_TEST:-}" != "1" ] && [ -f "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]; then
     source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
@@ -370,6 +372,41 @@ maybe_verify_codex_delivery() {
     done
 
     echo "[inbox_write] WARN: codex delivery remained unverified for ${target} after ${retries} retries" >&2
+}
+
+list_active_ninjas() {
+    local ninja=""
+    local task_file=""
+    local task_status=""
+
+    for ninja in $NINJA_NAMES; do
+        task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+        [ -f "$task_file" ] || continue
+
+        task_status=$(inbox_yaml_field_get "$task_file" "status" "")
+        case "$task_status" in
+            assigned|acknowledged|in_progress)
+                printf '%s\n' "$ninja"
+                ;;
+        esac
+    done
+}
+
+forward_gunshi_review_result_to_active_ninjas() {
+    local review_content="$1"
+    local ninja=""
+    local forward_message=""
+
+    while IFS= read -r ninja; do
+        [ -n "$ninja" ] || continue
+        forward_message="軍師レビュー補足: $review_content"
+        if ! INBOX_WRITE_ROOT_OVERRIDE="$SCRIPT_DIR" \
+            INBOX_WRITE_TEST="${INBOX_WRITE_TEST:-}" \
+            bash "$SELF_SCRIPT_PATH" \
+                "$ninja" "$forward_message" task_supplement gunshi; then
+            echo "[inbox_write] WARN: gunshi review forward failed for ${ninja}" >&2
+        fi
+    done < <(list_active_ninjas)
 }
 
 inbox_append_message_fast_locked() {
@@ -1028,6 +1065,11 @@ REVIEWEOF
                     echo "[inbox_write] review_gate.done updated: ${_rr_cmd_id} (placeholder→gunshi_review LGTM)" >&2
                 fi
             fi
+        fi
+
+        # 軍師review_resultは、配備中忍者へ補足として自動forwardする
+        if [ "$TYPE" = "review_result" ] && [ "$FROM" = "gunshi" ] && [ "$TARGET" = "karo" ]; then
+            forward_gunshi_review_result_to_active_ninjas "$CONTENT"
         fi
 
         maybe_verify_codex_delivery "$TARGET" "$MSG_ID" "$TYPE"

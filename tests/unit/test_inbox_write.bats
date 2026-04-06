@@ -620,3 +620,55 @@ with open('$TEST_TMPDIR/queue/tasks/testninja.yaml') as f:
 assert data['task']['status'] == 'acknowledged'
 EOF
 }
+
+@test "review_result: forwarded to active ninjas only as task_supplement" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks"
+    cp -a "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+get_ninja_names() { echo "ninja_a ninja_b ninja_c"; }
+get_allowed_targets() { echo "karo shogun gunshi ninja_a ninja_b ninja_c"; }
+MOCK
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_b.yaml" <<'YAML'
+task:
+  status: in_progress
+YAML
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_c.yaml" <<'YAML'
+task:
+  status: idle
+YAML
+
+    run _run_inbox_write karo "verdict: FAIL cmd_999 要確認" review_result gunshi
+    [ "$status" -eq 0 ]
+
+    python3 <<EOF
+import os
+import yaml
+
+root = "$TEST_TMPDIR/queue/inbox"
+
+with open(os.path.join(root, "karo.yaml")) as f:
+    karo = yaml.safe_load(f)
+assert karo["messages"][0]["type"] == "review_result"
+
+for ninja in ("ninja_a", "ninja_b"):
+    with open(os.path.join(root, f"{ninja}.yaml")) as f:
+        data = yaml.safe_load(f)
+    assert len(data["messages"]) == 1, f"{ninja} should have exactly one forwarded message"
+    msg = data["messages"][0]
+    assert msg["from"] == "gunshi", f"{ninja} sender mismatch"
+    assert msg["type"] == "task_supplement", f"{ninja} type mismatch"
+    assert msg["content"] == "軍師レビュー補足: verdict: FAIL cmd_999 要確認", f"{ninja} content mismatch"
+
+assert not os.path.exists(os.path.join(root, "ninja_c.yaml")), "idle ninja should not receive forwarded message"
+EOF
+}
