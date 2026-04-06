@@ -172,6 +172,12 @@ collect_context_files() {
 }
 
 main() {
+    load_external_repos
+    # 外部リポが一つでも存在するかを事前計算（check_context_file内で参照）
+    local ext_path
+    for ext_path in "${EXTERNAL_REPO_PATHS[@]}"; do
+        [ -d "${ext_path}/docs/research" ] && ANY_EXTERNAL_EXISTS=true && break
+    done
     build_file_cache
     local context_file
     local scanned=0

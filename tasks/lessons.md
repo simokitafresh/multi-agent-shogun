@@ -3372,3 +3372,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - 複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。REPO_ROOT配下のquote済み変数はeval安全。IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認
+
+### L443: awk EXIT後もEND блок実行される。found変数でEND処理の冪等性を保証せよ
+- **日付**: 2026-04-07
+- **出典**: cmd_gate_double_grep
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [universal]
+- awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!found)exit 1}で成功フラグを明示的に管理。p変数をENDで参照すると常に真になるため誤検知が発生する

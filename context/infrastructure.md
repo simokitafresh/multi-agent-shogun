@@ -309,7 +309,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L442 -->
+<!-- last_synced_lesson: L443 -->
 <!-- lesson-sort 2026-04-06: L437-L441の5件をカテゴリ分類。bash(L437/L438), レビュー/軍師(L439/L440), git(L441) -->
 <!-- lesson-sort 2026-03-28: L298-L301の4件を振り分け。ntfy(L298), gate強化(L299/L300), WSL2(L301) -->
 <!-- lesson-sort 2026-03-22: L256-L284の29件を振り分け(27件移動+2件重複削除)。§メインセクション: ninja_monitor(L259), ログローテーション(L258), tmux(L265/268), 軍師(L271/281)。サブセクション: bash(L263/269/270/272/277), deploy(L256/284), 報告(L264), 教訓(L257/260/266/273/275/276), gate(L262/280/282), テスト(L261), 知識(L274), レビュー(L267/283)。L278/L279重複削除 -->
@@ -474,6 +474,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L440: 原理1行>各論パッチ30行。既存を磨け（gunshi_S6_principle）
 - L441: hookが自己のコミットメッセージ/報告テキスト内のトリガー文字列に反応する（cmd_1758）
 - L442: shlex.quote eval方式でPython出力をbash変数に安全展開できる（cmd_precheck_consolidate）
+- L443: awk EXIT後もEND блок実行される。found変数でEND処理の冪等性を保証せよ（cmd_gate_double_grep）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
