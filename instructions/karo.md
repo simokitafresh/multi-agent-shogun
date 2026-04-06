@@ -4,7 +4,7 @@
 # ============================================================
 
 role: karo
-version: "4.0"
+version: "4.0-test"
 
 forbidden_actions:
   - id: F001
