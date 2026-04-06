@@ -90,7 +90,11 @@ deploy_task_scaffold() {
 }
 
 deploy_task_teardown() {
-    :
+    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+}
+
+teardown_file() {
+    [ -n "$DEPLOY_TASK_TEMPLATE_DIR" ] && [ -d "$DEPLOY_TASK_TEMPLATE_DIR" ] && rm -rf "$DEPLOY_TASK_TEMPLATE_DIR"
 }
 
 maybe_normalize_task_yaml() {
@@ -99,7 +103,7 @@ maybe_normalize_task_yaml() {
 
 deploy_task_fast() {
     (
-        # shellcheck disable=SC2030
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
@@ -164,7 +168,7 @@ deploy_task_fast() {
 
 deploy_task_template_only() {
     (
-        # shellcheck disable=SC2030
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
@@ -228,7 +232,7 @@ deploy_task_template_only() {
 
 deploy_task_lessons_only() {
     (
-        # shellcheck disable=SC2030
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
@@ -249,7 +253,7 @@ normalize_simple_ac_ids() {
 
 deploy_task_ac_only() {
     (
-        # shellcheck disable=SC2030
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
@@ -279,7 +283,7 @@ deploy_task_ac_only() {
 
 deploy_task_resolve_only() {
     (
-        # shellcheck disable=SC2030
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
