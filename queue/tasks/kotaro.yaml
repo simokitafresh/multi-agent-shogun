@@ -41,7 +41,7 @@ task:
   purpose: vercel_phase外部リポ偽陽性fix。13回WA(ci_gate_mismatch)の残存原因。gate_vercel_phase.sh+cmd_complete_gate.sh
   scope_mode: IMPL
   scout_exempt: true
-  status: acknowledged
+  status: done
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_vercel_phase.sh
   task_id: cmd_vercel_false_positive

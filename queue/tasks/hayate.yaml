@@ -1,41 +1,28 @@
 task:
-  _ac_task_id: cmd_1767_impl
+  _ac_task_id: cmd_1771_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  ac_version: 5a8a75ee
+  ac_version: 7bcdd866
   acceptance_criteria:
     AC1:
       binary_checks:
-      - 'V1: 全foldでis_end < oos_startか？ yes/no'
-      - 'V2: ALMリターン月数が期待OOS月数と一致するか？ yes/no'
-      - 'V3: IS窓内データのみで選出しているか？ yes/no'
-      - 'V4: 全119,493パターンが対象か？ yes/no'
-      - 'V5: 60秒以内に完了したか？ yes/no'
-      - 'V6: fold数=30か？ yes/no'
-      - 'V7: baseline比較が含まれるか？ yes/no'
-      description: V1-V7検証ゲート全PASS
+      - 全7忍法が60秒以内に完了したか？ yes/no
+      - 各忍法のselection_timelineが出力されたか？ yes/no
+      - 各忍法のALMリターン6系列が出力されたか？ yes/no
+      description: 全7忍法WF実行60秒以内
     AC2:
       binary_checks:
-      - 固定champion OOSリターンが計算されたか？ yes/no
-      - 38メトリクス比較テーブルが出力されたか？ yes/no
-      - 'decision_candidate found: trueが記載されたか？ yes/no'
-      description: baseline比較CSV+decision_candidate
-    AC3:
-      binary_checks:
-      - 6 objectives全てにA/B/C分類が記載されたか？ yes/no
+      - 7忍法×6目的のメトリクスサマリCSVが出力されたか？ yes/no
       - commitされているか？ yes/no
-      description: Pattern A/B/C分類+commit
-  command: "軍師ランブック /mnt/c/Python_app/DM-signal/docs/research/gunshi_l1_alm_wf_engine_design.md\
-    \ §3に厳密に従え。\ncmd_1766成果物(l1_alm_wf_engine.py)と出力CSV(selection_timeline/alm_returns)を使う。\n\
-    \nAC1: 検証ゲート V1-V7\n  - V1: IS/OOS非重複(全foldでis_end < oos_start)\n  - V2: OOSギャップなし(ALMリターン月数=期待OOS月数)\n\
-    \  - V3: Look-ahead biasなし(IS窓内データのみで選出)\n  - V4: 全パターン対象(df.columns=119,493)\n\
-    \  - V5: タイムボックスPASS(60秒以内)\n  - V6: fold数検算(floor((166-36-12)/4)+1=30)\n  - V7:\
-    \ baseline比較あり\n  - binary_check: V1-V7全PASS\n\nAC2: baseline比較\n  - 固定GS champion(全期間最良パターン)のOOSリターンを計算\n\
-    \  - WF dynamic vs fixed championの38メトリクス比較\n  - 出力: outputs/analysis/alm_research/cmd_1767_l1_wf_baseline_comparison.csv\n\
-    \  - decision_candidate: found: true(動的選出の本番組込みは殿裁定)\n\nAC3: 事後分類(Pattern A/B/C)\n\
-    \  - fold間選出パターン: A=num変動/den固定, B=den変動/num固定, C=両方変動\n  - 出力: outputs/analysis/alm_research/cmd_1767_l1_wf_pattern_classification.yaml\n\
-    \  - binary_check: 6 objectives全てにA/B/C分類記載\n  - commit\n"
+      description: 忍法別ALM適性サマリ+commit
+  command: "高速化済みl1_alm_wf_engine.pyで全7忍法のWF実行+検証を行え。\nランブック cmd D-I相当。全7忍法を1cmdで連続実行(高速化で60秒以内)。\n\
+    \n7忍法のGS CSV:\n  - 加速R: 246_kasoku_ratio_DM2_grid_monthly_fast.csv (cmd_1766で実行済み→結果比較用)\n\
+    \  - 加速D: {id}_kasoku_diff_grid_monthly_fast.csv\n  - 追い風: {id}_oikaze_grid_monthly_fast.csv\n\
+    \  - 抜き身: {id}_nukimi_grid_monthly_fast.csv\n  - 分身: {id}_bunshin_grid_monthly_fast.csv\n\
+    \  - 変わり身: {id}_kawarimi_grid_monthly_fast.csv\n  - 四つ目: {id}_yotsume_grid_monthly_fast.csv\n\
+    \nAC1: 全7忍法WF実行(60秒タイムボックス)\n  - timeout 60で全7忍法連続実行\n  - 各忍法のselection_timeline\
+    \ + ALMリターン出力\n  - binary_check: 全7忍法が60秒以内に完了\n\nAC2: 忍法別ALM適性サマリ\n  - 各忍法のALMリターン6系列(6目的関数)のメトリクス計算\n\
+    \  - チェックリスト§0の忍法別適性表(加速R75%最強〜変わり身46%)と突合\n  - 出力: outputs/analysis/alm_research/cmd_1771_ninpo_alm_summary.csv\n\
+    \  - commit\n"
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -45,9 +32,9 @@ task:
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
-    \ Codeに'non-blo\n  - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit\
-    \ statusを実行\n────────────────────────────────────────"
+    \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
+    \ 06829a\n  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit\
+    \ 1がClaude Codeに'non-blo\n────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -62,24 +49,24 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   ninja: hayate
   parallel_ok: []
-  parent_cmd: cmd_1767
+  parent_cmd: cmd_1771
   project: dm-signal
-  purpose: 'Step 0e: L1 ALM WFエンジンcmd C — 検証+baseline比較+事後分類。ランブック§3'
+  purpose: 'Step 0e続行+Step 0f: WFエンジンで全7忍法WF実行。忍法別ALM適性定量確認'
   scope_mode: IMPL
   scout_exempt: true
   status: in_progress
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py
-  task_id: cmd_1767_impl
+  task_id: cmd_1771_impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_1767.yaml
-  report_path: queue/reports/hayate_report_cmd_1767.yaml
+  report_filename: hayate_report_cmd_1771.yaml
+  report_path: queue/reports/hayate_report_cmd_1771.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 15
-    top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件), uncategorized(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件), report_missing(1件)'
+    total_workarounds: 16
+    top_pattern: 'report_yaml_format(3件)'
+    breakdown: 'report_yaml_format(3件), uncategorized(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件), report_missing(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_blocks:
     - reason: 'report_format'
@@ -116,6 +103,9 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
+  - id: 'L570'
+    summary: '119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/index`'
+    detail: '119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/index`'
   - id: 'L569'
     summary: '''left_tail_jumps_inv=1/count(r<-2σ)。早期fold(2012年付近)ではウォームアップ不足でリターン=0の月が多く、σ=0→left_count=0→ltj_inv=NaN。result:'
     detail: '''left_tail_jumps_inv=1/count(r<-2σ)。早期fold(2012年付近)ではウォームアップ不足でリターン=0の月が多く、σ=0→left_count=0→ltj_inv=NaN。result:'
@@ -143,7 +133,4 @@ task:
   - id: 'L561'
     summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
     detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-  - id: 'L560'
-    summary: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
-    detail: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
-  deployed_at: "2026-04-07T01:43:10"
+  deployed_at: "2026-04-07T02:25:26"

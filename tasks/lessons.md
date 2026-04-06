@@ -3380,3 +3380,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!found)exit 1}で成功フラグを明示的に管理。p変数をENDで参照すると常に真になるため誤検知が発生する
+
+### L444: 外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止
+- **日付**: 2026-04-07
+- **出典**: cmd_vercel_false_positive
+- **記録者**: kotaro
+- **status**: draft
+- **tags**: [universal]
+- gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: config/projects.yaml動的読込+外部リポ全滅時のSKIPロジック。同様のgate設計時は常にprojects.yamlから動的取得し、環境依存の参照はSKIP扱いにすること。
