@@ -396,7 +396,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - id: dm-signal | path: `/mnt/c/Python_app/DM-signal`
 - context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md`
 - 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md` `context/gunshi-infra-perf-audit.md`
-- チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md`
+- チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md` `context/checklist-alm-registration.md`
 - projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)
 
 ## Skills
