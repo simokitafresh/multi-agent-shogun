@@ -635,6 +635,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 - R27-旧PF結論(cmd_1441): **旧忍法15体+旧四神12体のWard+TwoStageEW 2Dグリッド分析**。旧忍法: K*=4,LB*=24,Sharpe=2.01,TwoStageEW優位率49.6%。旧四神: K*=4,LB*=12,Sharpe=1.55,TwoStageEW優位率76.7%。合計27体: K*=12,LB*=24,Sharpe=1.75。R25(12体,1.48)/R26(65体,1.49)より高Sharpe → `queue/archive/reports/hayate_report_cmd_1441_20260330.yaml`
 - ネオ五神偵察(cmd_1442): **GLD/USO/TIPの既存4absolute資産との相関偵察**。候補-既存max|r|: GLD=0.343(最有力), USO=0.378(次点), TIP=0.769(LQD冗長→不適)。危機時: GLD=利上げ時独立(全<0.17)、USO=COVID時VIX連動(0.719)、TIP=両危機でLQD完全連動。GLD独自ドライバー(中銀/地政学/インフレ) → `queue/archive/reports/hanzo_report_cmd_1442_20260330.yaml`
 - **Standard PF前処理研究日誌**: 思考・判断・結果の時系列記録。候補8手法の選別経緯、本命2つ(Gerber+LW)の研究設計、結果記入欄 → `docs/research/standard-pf-preprocessing-journal.md`
+- **前処理研究の全思考過程（殿との対話記録）**: FoF天井→Standard PF転換→EMA+112%/L1+383%→overfit警告→OOS検証。殿の全転換点含む → `memory/dialogue_preprocessing_research_20260331.md`（経験的知識。圧縮禁止。過程が本体）
 - BB前処理偵察(cmd_1627): **モメンタム系3BB+全7BB前処理不在確認+注入ポイント特定**。全BB共通基盤=calculate_composite_momentum_vectorized、生close直接pct_change(前処理なし)。注入ポイント5箇所: (A)ブロック内price取得後(副作用小・推奨), (B)base.py load_ticker_prices共通層, (C)vectorized_momentum.py計算基盤層, (D)ティッカー選出ロジック内(Gerber相関), (E)新規SelectionBlock(Gerber独立BB)。加速BBは短期/長期ratio/diffで平滑化と構造的に重複しない(組合せ可)。MonthlyReturnMomentumFilterはDB直接読込で独立。recalculate_fast.py Phase2 momentum_cache生成パスは前処理導入時に整合要件あり。研究仮説3件: H1-EWMA平滑化SNR改善, H2-Gerber閾値低相関選出, H3-対数リターン頑健性 → `queue/reports/hanzo_report_cmd_1627.yaml` / `queue/reports/kagemaru_report_cmd_1627.yaml`
 - EMA平滑化研究(cmd_1629): **5PF×5span(0/5/10/21/42)=25条件。close→EMA(span)→pct_change→momentum**。**DM3 span=42でCAGR2倍(0.11→0.23)/Sharpe45%改善**が注目結果。DM7+(504D lookback)はEMA影響ほぼなし。DM6(15D短期lookback)はEMA劣化(遅延が有害)。**EMA効果はlookback依存: 短期PFに恩恵、超短期に有害、長期に不変**。span=0 baseline誤差2-8%(リバランスタイミング簡易実装差) → `queue/archive/reports/hayate_report_cmd_1629_20260331.yaml`
 - Gerber gate-level threshold研究(cmd_1628): **65PF×5k(0.0/0.25/0.5/0.75/1.0)=325件。gate判定: diff=mom(asset)-mom(DTB3)>k*σ(diff)→BUY**。k=0.0=本番一致(match率85-97%、リバランス簡易実装差)。才蔵return-level GS1(FAIL)→半蔵gate-level修正。L532: cmd仕様の適用レベル(gate vs return)を実装前にコード注入ポイントと照合確認すべし → `queue/archive/reports/hanzo_report_cmd_1628_20260331.yaml`
@@ -720,6 +721,7 @@ absolute_assetでファミリー分類(DM2=LQD/DM3=TMF/DM6=^VIX/DM7+=SPXL)し、
 
 → `outputs/analysis/alm_research/cmd_1741_family5_analysis.yaml` | `cmd_1741_correlation_matrix.csv` | `cmd_1741_crisis_correlation.csv`
 - L554: family ALM研究はmetricsと相関をベクトル化必須(cmd_1741)。L552/L553はinfra L439/L440と重複→削除
+- L563: DNA制約(domain knowledge)は1M-12Mフルセットより高いIS max_run_upを3/4ファミリーで達成する（cmd_1759）
 
 ## §32. ALM L0×忍法7種 + 既存シン忍法比較 (cmd_1745)
 <!-- last_updated: 2026-04-05 -->
@@ -759,6 +761,7 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 
 ## §35. ALM本番組込み設計 (cmd_1749-1753)
 <!-- last_updated: 2026-04-06 -->
+> **思考過程**: ALM研究→有限時間4指標→各論パッチ量産→原理1つへの到達 → `memory/dialogue_alm_finite_time_20260404.md`（経験的知識。圧縮禁止）
 
 ### 殿裁定 (2026-04-06)
 - ALM定義: **L0で動的にlookback期間を変える**（PF選出ではない）
@@ -811,3 +814,4 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - L559: Pass2シグナルflush後のsignal_cache_opt6陳腐化リスク。ALM PF分のcache再構築必須（cmd_1752）CRITICAL
 - L560: ALM buffer計算(L708-715)にcandidate_lookbacksのmax値を含める必要あり。378日不足（cmd_1753）
 - L561: pipeline_config=Dict[str,Any]でalm_config未検証保存。ALM実装時にバリデーション追加必要（cmd_1753）
+- L562: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)（cmd_1759）

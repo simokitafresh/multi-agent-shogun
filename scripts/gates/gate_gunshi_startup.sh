@@ -232,7 +232,26 @@ if [ "$unread" -eq 0 ]; then
     echo "  Step 3: 未自動化教訓のgate化"
     echo "  Step 4: CS観点遡及適用"
     echo "  Step 5: パターン発見→因果推論→行動"
+    echo "  Step 6: proposed GP即実行（提案は行動ではない。実装して初めて行動）"
     echo "  → 止まるな。1つ完了したら次へ"
+fi
+
+# --- Check 9: proposed/pending GP件数（自力実行催促） ---
+GP_TRACKER="$SCRIPT_DIR/logs/gunshi_gp_tracker.yaml"
+if [ -f "$GP_TRACKER" ]; then
+    proposed_count=$(grep -c '| proposed ' "$GP_TRACKER" 2>/dev/null || true)
+    proposed_count=${proposed_count:-0}
+    pending_count=$(grep -c '| pending ' "$GP_TRACKER" 2>/dev/null || true)
+    pending_count=${pending_count:-0}
+    actionable=$((proposed_count + pending_count))
+    if [ "$actionable" -gt 0 ]; then
+        echo ""
+        echo "■ GP未実行チェック"
+        echo "  proposed: ${proposed_count}件, pending: ${pending_count}件"
+        echo "  → 自力実行可能か判定せよ。可能なら即実装+テスト+完了"
+        echo "  → 「家老送信=完了」は錯覚。提案は記録であり行動ではない"
+        grep -E '\| proposed |\| pending ' "$GP_TRACKER" 2>/dev/null | sed 's/^#/  /' || true
+    fi
 fi
 
 # --- Check 10: 分析結果永続化チェック(GP-165: 自動化×強制) ---

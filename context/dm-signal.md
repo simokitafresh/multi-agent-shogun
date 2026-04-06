@@ -165,7 +165,6 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L530-L534は振り分け済 → research§27(L530:OPTICS退化), core§19.2(L531:cache_value), research§29(L532:前処理注入ポイント), research§30(L533:PE gate閾値/L534:L1キャッシュ最適化)）
 - （L535-L545は振り分け済 → research§30(L535/L537/L538/L539/L540/L541/L542), research§27(L544), gs-speedup§3(L543), ops索引(L536/L545)）
 - （L546-L561は振り分け済 → research§35(L546/L549/L554/L559/L560/L561), research§34(L556/L557), research§28-30統合(L548/L550), ops索引(L552/L553/L558), core§19.2(L555)。L547はCLAUDE.md既記載→重複。L551はL549重複→削除）
-- L562: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)（cmd_1759）
-- L563: DNA制約(domain knowledge)は1M-12Mフルセットより高いIS max_run_upを3/4ファミリーで達成する（cmd_1759）
+- （L562-L563は振り分け済 → research§35(L562:ALM Ward K制約), research§31(L563:DNA制約IS効果)）
 - L564: MINIMIZE_METRICSへのランタイムpatchでargmin方向を動的変更できる（cmd_1760）
 - L565: 旧加速忍法はkasoku_ratio/kasoku_diffの区別なし（cmd_1761）

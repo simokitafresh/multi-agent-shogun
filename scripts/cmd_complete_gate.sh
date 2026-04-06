@@ -3386,10 +3386,12 @@ level_heading "[L3]" "Vercel phase link check:"
 changed_contexts=$(git -C "$SCRIPT_DIR" log --grep="${CMD_ID}" --format="" --name-only 2>/dev/null | grep '^context/' | sort -u || true)
 if [ -n "$changed_contexts" ]; then
     if [ -f "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh"; then
-            echo "  OK (gate_vercel_phase passed)"
+        # cmd変更context fileのみ走査（全context走査→偽陽性BLOCK防止, GP-137）
+        # shellcheck disable=SC2086
+        if bash "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" $changed_contexts; then
+            echo "  OK (gate_vercel_phase passed for cmd-changed files)"
         else
-            echo "  [CRITICAL] ALERT: gate_vercel_phase failed (broken docs/research refs)"
+            echo "  [CRITICAL] ALERT: gate_vercel_phase failed (broken docs/research refs in cmd-changed files)"
             record_block_reason "vercel_phase:broken_references"
             ALL_CLEAR=false
         fi

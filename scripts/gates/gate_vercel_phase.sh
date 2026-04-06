@@ -140,18 +140,18 @@ collect_context_files() {
         return 0
     fi
 
-    local arg="$1"
-    if [ -f "$arg" ]; then
-        realpath "$arg"
-        return 0
-    fi
-    if [ -f "$SCRIPT_DIR/$arg" ]; then
-        realpath "$SCRIPT_DIR/$arg"
-        return 0
-    fi
-
-    echo "ERROR: context file not found: $arg" >&2
-    return 1
+    # 複数ファイル引数対応（cmd_complete_gate.shからcmd変更context fileのみ渡される）
+    local arg
+    for arg in "$@"; do
+        if [ -f "$arg" ]; then
+            realpath "$arg"
+        elif [ -f "$SCRIPT_DIR/$arg" ]; then
+            realpath "$SCRIPT_DIR/$arg"
+        else
+            echo "ERROR: context file not found: $arg" >&2
+            return 1
+        fi
+    done
 }
 
 main() {

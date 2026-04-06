@@ -1,116 +1,76 @@
-task:
-  _ac_task_id: cmd_1761_nukimi_kawarimi_legacy
-  _ac_worker_id: kotaro
-  ac_version: d41d8cd9
-  acceptance_criteria:
-  - ac: 'AC1: 抜き身・身代の旧版(旧四神ベースL2)38メトリクス算出+YAML保存+commit'
-  command: "担当忍法: 抜き身(nukimi) + 身代(kawarimi) — 旧忍法のみ\n\n前タスクでALM 6体+シン 2体の38メトリクスは完了済み。\n\
-    この追加タスクでは旧忍法(旧四神ベースL2)の抜き身・身代のみ算出せよ。\n\n■ 手順:\n1. 旧抜き身・旧身代(旧四神ベースL2)の月次リターンを取得\n\
-    \   - 本番DB monthly_returnsから取得\n   - 旧忍法PF名はportfoliosテーブルで確認(name LIKE '%nukimi%'\
-    \ or '%kawarimi%'で旧世代を探す)\n   - 旧忍法は5忍法×3モード構成。担当忍法に該当する旧PFを全て取得\n\n2. research_engine.pyのcompute_metrics_from_returns()で38メトリクス算出\n\
-    \   - dtb3_cache/benchmark_returns(SPY)も渡すこと\n\n3. 出力: cmd_1761_kotaro_nukimi_kawarimi_legacy.yaml\
-    \ に保存\n\n4. commit\n\n■ 制約:\n- パス: /mnt/c/Python_app/DM-signal で作業\n- 38メトリクス\
-    \ = research_engine.pyのcompute_metrics_from_returns出力\n- 旧忍法PFが見つからない場合はdecision_candidateに報告\n"
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    ────────────────────────────────────────"
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  parallel_ok: []
-  parent_cmd: cmd_1761
-  project: dm-signal
-  purpose: 'cmd_1761追加分。抜き身+身代の旧忍法(旧四神ベースL2)38メトリクス算出。
+task_id: cmd_gp131_bc_count_gate
+parent_cmd: cmd_gp131_bc_count_gate
+ninja: kotaro
+project: infra
+status: assigned
+command: |
+  GP-131を実装せよ。gate_report_format.shにbinary_checks項目数整合チェックを追加する。
 
-    前タスクでALM+シンは完了済み。旧忍法分のみ追加。
+  仕様:
+  - task YAML(queue/tasks/{ninja}.yaml)のbinary_checksテンプレート項目数を取得
+  - 報告YAMLのbinary_checks項目数と比較
+  - report項目数 < task項目数 * 0.5 → errors.append + hints.append (FAIL)
+  - report項目数 < task項目数 → warnings（WARNのみ、BLOCKしない）
+  - task YAMLにbinary_checksがない場合はスキップ（チェックしない）
 
-    '
-  scout_exempt: true
-  status: done
-  stop_for: []
-  task_id: cmd_1761_nukimi_kawarimi_legacy
-  task_type: impl
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_1761.yaml
-  report_path: queue/reports/kotaro_report_cmd_1761.yaml
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 8
-    top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件), uncategorized(2件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'yaml_parse_error'
-      count: 2
-    - pattern: 'lu_structure_error'
-      count: 1
-    - pattern: 'verdict_invalid'
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 15
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'binary_checks_fail'
-      count: 7
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'report_yaml_missing'
-      count: 4
-      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
-    - reason: 'empty_lessons_useful'
-      count: 2
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'lesson_candidate_no_reason_empty'
-      count: 2
-      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
-    - reason: 'ac_version_mismatch'
-      count: 1
-      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+  実装箇所: scripts/gates/gate_report_format.sh 内のpython3 -c ブロック
+  参考: 既存のbinary_checks形式チェック(L168-188付近)の直後に追加
+
+  テスト:
+  - 項目数一致: PASS
+  - 項目数半分未満: FAIL+ヒント表示
+  - 項目数不足(半分以上): WARN
+  - task YAMLにbc未設定: スキップ
+  commit後にbash scripts/gates/gate_report_format.sh <適当な既存報告>でテスト
+
+  ★ 既存のチェックロジックは変更するな。追加のみ。
+target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_report_format.sh
+purpose: GP-131実装(binary_checks項目数整合チェック)
+scope_mode: IMPL
+scout_exempt: true
+acceptance_criteria:
+  AC1:
+    description: "binary_checks項目数チェックが追加され、4パターンのテストがPASS+commit済み"
+    binary_checks:
+      - "項目数一致でPASS(errorなし)か？ yes/no"
+      - "項目数半分未満でFAIL+ヒント表示か？ yes/no"
+      - "項目数不足(半分以上)でWARN表示か？ yes/no"
+      - "task YAMLにbc未設定でスキップか？ yes/no"
+      - "既存のテスト(報告YAML)が壊れていないか？ yes/no"
+      - "commitされているか？ yes/no"
+stop_for:
+  - "既存チェックロジックが壊れる場合"
+never_stop_for:
+  - "gate警告"
+deployed_at: "2026-04-06T14:58:00+09:00"
   related_lessons:
-  - id: 'L564'
-    summary: 'cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる。importlib.util.module_from_specで独立ロードしたモジュールのmutableセットを直接追加する方式が有効。既存コードへの永続的変更なしに新目的関数を'
-    detail: 'cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる。importlib.util.module_from_specで独立ロードしたモジュールのmutableセットを直接追加する方式が有効。既存コードへの永続的変更なしに新目的関数を'
-  - id: 'L563'
-    summary: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
-    detail: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
-  - id: 'L562'
-    summary: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
-    detail: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
-  - id: 'L561'
-    summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-    detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-  - id: 'L560'
-    summary: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
-    detail: 'recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM'
-  - id: 'L559'
-    summary: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
-    detail: '''2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのまま陳腐化する。ALM'
-  - id: 'L558'
-    summary: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
-    detail: 'cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからALMの概念を逆引きし、設計を完成できた。参考ファイル不在・パス誤りは即座に報告して作業継続が適切。'
-  - id: 'L557'
-    summary: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
-    detail: 'OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認。'
-  - id: 'L556'
-    summary: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
-    detail: 'grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(171ヶ月)で評価されており、同一pattern_idでもメトリクスが不一致。正しいOOS検証にはALM'
-  - id: 'L555'
-    summary: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
-    detail: 'bulk monthly returns取得時にholding_signalを省略するとcalculate_metrics(whipsaw_count算出)がKeyError。月次リターンBulk取得関数はyear_month/monthly_return/holding_signal全3カラムを返すべき。'
-  deployed_at: "2026-04-06T12:56:26"
+  - id: 'L441'
+    summary: 'Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え'
+    detail: 'Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え'
+  - id: 'L440'
+    summary: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+    detail: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+  - id: 'L439'
+    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+  - id: 'L438'
+    summary: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
+    detail: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
+  - id: 'L437'
+    summary: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
+    detail: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
+  - id: 'L436'
+    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
+    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
+  - id: 'L435'
+    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
+    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+  - id: 'L425'
+    summary: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+    detail: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+  - id: 'L419'
+    summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+    detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'

@@ -60,8 +60,8 @@ lessons:
   detail: 'cmdがチェックリストの特定Stepを実行する場合、隣接Step(特に直後Step)の禁則がcmd AC/制約に転写されているか確認せよ。cmd_1397でStep6実行時にStep7禁則(再計算禁止=殿が実行)が転写されず影丸が再計算を実行。draft review時にチェックリスト参照先の前後Stepを確認し、禁則の欠落をREQUEST_CHANGESで指摘すること。'
   source_cmd: cmd_1397
   created_at: '2026-03-25'
-  automated: false
-  enforcement: draft review SG10チェックリストに追加予定
+  automated: true
+  enforcement: gunshi_review_logヘッダL13に原理1行として埋込済み。毎レビュー時に読む
 - id: LG013
   title: consultation/self_studyにプロトコル不在 — 148件が品質保証なしで通過
   detail: |

@@ -7,7 +7,7 @@
 # ════════════════════════════════
 version: "3.0"
 updated: "2026-02-07"
-description: "Opus 4.6 + tmux multi-agent parallel dev platform with sengoku military hierarchy"
+description: "Codex + tmux multi-agent parallel dev platform with sengoku military hierarchy"
 
 hierarchy: "Lord (human) → Shogun → Karo → Ninja 1-8"
 communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
@@ -116,8 +116,9 @@ language:
   計測して止まるだけでは品質管理。還流して初めて成長。
   分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 3.5. **Load project knowledge** (role-based):
-   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認。将軍のみ: `context/gunshi-*.md`（軍師の最新分析状態）を確認
+   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認。将軍のみ: `context/gunshi-*.md`（軍師の最新分析状態）を確認。将軍のみ: `memory/dialogue_preprocessing_research_20260331.md`末尾（最新Phase=研究到達点）+ `context/gunshi-nazenaze-synthesis.md`（軍師なぜなぜ合成）を確認
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
+   - 軍師: `config/projects.yaml` → current_projectの `projects/{id}.yaml`（PI含む核心知識。レビュー判断の基盤）→ `projects/infra/lessons_gunshi.yaml`
    - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
 5. Check inbox: read queue/inbox/{your_id}.yaml, process any read: false messages
@@ -187,6 +188,9 @@ Step 2.85: Read memory/deepdive_why_chain_20260321.md（毎セッション必読
   結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追え。
   特にPhase 4「LLMに生存本能はない→自動化×強制」と
   Phase 5「なぜの目的=自動化ターゲット特定」が家老の判断品質の基盤。
+Step 2.86: Read memory/deepdive_karo_verification_20260405.md（家老専用・毎セッション必読）
+  家老固有の失敗パターン「確認しないから間違える」の全過程。
+  Phase 4「将軍/軍師は既存1行を磨く。家老は30行hookを提案(間違い)」が核心。
   これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
 Step 2.9: bash scripts/gates/gate_karo_startup.sh（8項目一括チェック: deepdive必読強制+陣形図鮮度+忍者CTX実態+inbox未読+PD未解決+workaround傾向+忍者別WA率+idle自走プロンプト）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
@@ -299,7 +303,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 ## File Operation Rule
 
-**Always Read before Write/Edit.** Opus 4.6 rejects Write/Edit on unread files.
+**Always Read before Write/Edit.** Codex rejects Write/Edit on unread files.
 
 ## YAML書込み安全規則（全エージェント必読）
 
@@ -317,7 +321,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 |--------|--------|------|------------|
 | AGENTS.md | 全員(自動ロード) | 圧縮索引。恒久ルール・手順 | 家老のみ |
 | instructions/*.md | 全員 | 役割別の恒久ルール | 家老のみ |
-| projects/{id}.yaml | 忍者・家老 | PJ核心知識(ルール要約/UUID/DBルール) | 家老のみ |
+| projects/{id}.yaml | 全員(将軍・家老・軍師・忍者) | PJ核心知識(ルール要約/UUID/DBルール/PI) | 家老のみ |
 | projects/{id}/lessons.yaml | 忍者・家老 | PJ教訓(過去の失敗・発見) | 家老のみ(lesson_write.sh経由) |
 | queue/ YAML + dashboard + reports | 家老・忍者・将軍 | タスク指示・状態・状況報告 | 各担当 |
 | MCP Memory | 将軍のみ | 殿の好み・将軍教訓 | 将軍のみ |
@@ -366,6 +370,21 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | 忍者 | hayate(3) kagemaru(4) hanzo(5) saizo(6) kotaro(7) tobisaru(8) | settings.yaml参照 |
 将軍はAgent toolでのコード深堀り調査を禁止(F008)。必要な調査は偵察cmdとして家老に委任せよ。
 編成(2026-03-20更新): 6忍者+1軍師 Opus 4.6。round-robin配備 → config/settings.yaml
+
+## パラメータ空間縮小禁止（全エージェント必読）
+
+**計算量を理由にパラメータ空間・探索範囲・検証対象を縮小することを禁止する。**
+殿の時間を奪う最大の無駄。「代表N点で十分」「計算量を考慮し」「重いため絞る」は全て禁止。
+
+対処手順（計算量が多いとき）:
+1. **道具を磨け** — 高速化cmdを先に出す。研究cmdの前に道具改良
+2. **並列にせよ** — 6忍者に分割投入。時間=1/6
+3. **チャンクに分けよ** — メモリ制約はチャンク分割→後で統合
+4. **それでも重いなら軍師に設計を相談** — 計算量を減らす正しい方法を設計
+
+**後段cmdは前段cmdのパラメータ空間を継承せよ。** 探索で1700通り試したなら検証も1700通り。狭めるな。
+
+reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5/lookback=6/PBO=5組合せ/MaxDD=1点)し殿の時間を奪った(2026-04-04)
 
 ## Deployment Rules
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照
