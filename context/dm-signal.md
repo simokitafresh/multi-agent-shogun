@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L567 -->
+<!-- last_synced_lesson: L568 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -170,3 +170,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L565: 旧加速忍法はkasoku_ratio/kasoku_diffの区別なし（cmd_1761）
 - L566: ALM吸収はシン吸収と異なりメトリクスが変わる（cmd_1762）
 - L567: tail_contributionは多様性低下要因。nhfとcagrは多様性貢献度最高（cmd_1763）
+- L568: 10目的間Spearman相関で45全ペアが冗長(|ρ|>0.8)。L0 4体からの選択プロセスが相関を構造的に高める（cmd_1764）
