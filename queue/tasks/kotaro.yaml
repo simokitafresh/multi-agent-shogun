@@ -2,7 +2,7 @@ task_id: cmd_gp131_bc_count_gate
 parent_cmd: cmd_gp131_bc_count_gate
 ninja: kotaro
 project: infra
-status: done
+status: idle
 command: |
   GP-131を実装せよ。gate_report_format.shにbinary_checks項目数整合チェックを追加する。
 
