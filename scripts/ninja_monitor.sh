@@ -86,6 +86,8 @@ LAST_BATCH_FLUSH=0   # ntfy_batch_flush最終実行時刻（epoch秒）
 CDP_CLEANUP_SCRIPT="$SCRIPT_DIR/scripts/cdp_chrome_cleanup.sh"
 CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
 LAST_CDP_CLEANUP=0        # CDP cleanup最終実行時刻（epoch秒）
+LOCK_CLEANUP_INTERVAL=3600  # /tmp lock file cleanup間隔（秒）— 1時間
+LAST_LOCK_CLEANUP=0         # lock cleanup最終実行時刻（epoch秒）
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
 CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
@@ -2660,6 +2662,26 @@ run_cdp_cleanup() {
     LAST_CDP_CLEANUP=$now
 }
 
+# ═══ /tmp lock file定期cleanup ═══
+# lock_path.shが生成するshogun_lock_*.lock + auto_deploy_*.lockが蓄積(10000+件)
+# flockはfd操作のため古いファイルは安全に削除可能
+run_lock_cleanup() {
+    local now=$EPOCHSECONDS
+    local elapsed=$((now - LAST_LOCK_CLEANUP))
+    if [ "$elapsed" -lt "$LOCK_CLEANUP_INTERVAL" ]; then
+        return 0
+    fi
+    local count
+    count=$(find /tmp -maxdepth 1 -name "shogun_lock_*.lock" -mmin +60 2>/dev/null | wc -l)
+    count=$((count + $(find /tmp -maxdepth 1 -name "auto_deploy_*.lock" -mmin +60 2>/dev/null | wc -l)))
+    if [ "$count" -gt 0 ]; then
+        find /tmp -maxdepth 1 -name "shogun_lock_*.lock" -mmin +60 -delete 2>/dev/null || true
+        find /tmp -maxdepth 1 -name "auto_deploy_*.lock" -mmin +60 -delete 2>/dev/null || true
+        log "LOCK-CLEANUP: Removed $count stale lock files from /tmp"
+    fi
+    LAST_LOCK_CLEANUP=$now
+}
+
 # ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
 # 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
 check_karo_idle_cycle() {
@@ -2973,6 +2995,7 @@ while true; do
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)
+    run_lock_cleanup            # /tmp orphan lock files定期削除
 
     # ═══ STEP 2: ダッシュボード自動更新 (cmd_404) ═══
     # 状態変化時のみ呼び出す（コスト最適化）

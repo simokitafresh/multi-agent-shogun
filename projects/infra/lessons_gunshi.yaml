@@ -92,3 +92,41 @@ lessons:
   created_at: '2026-04-06'
   automated: true
   enforcement: gunshi_review_log ヘッダ2行目に原理として埋込済み。毎レビュー時に読む
+- id: LG015
+  title: HEAD~1はauto-commitを指す — cmd固有diffには git log --grep=CMD_ID を使え
+  detail: |
+    cmd_complete_gate.shのvercel_phase gateが`git diff --name-only HEAD~1`でcontext/変更を検出していたが、
+    HEAD~1が忍者auto-commit(chore: auto-commit before /clear)の場合、無関係なcontext変更で偽陽性BLOCK発生。
+    13件連続workaround(ci_gate_mismatch)の2件がこの経路。
+    修正: `git log --grep="${CMD_ID}" --format="" --name-only | grep '^context/'` でcmd固有commitのみ検出。
+    発見手法: karo_workarounds.yamlのcategory集計→ci_gate_mismatch 13件→root_cause分析→HEAD~1が根因。
+  source_cmd: gunshi_infra_audit_20260406
+  created_at: '2026-04-06'
+  automated: true
+  enforcement: cmd_complete_gate.sh L3384に修正適用済み
+- id: LG016
+  title: inbox_write.shをデーモンから呼ぶ時はtimeout必須 — WSL2 NTFS flockがhangする
+  detail: |
+    ntfy_listener.shのinbox_write.sh呼出し(2箇所)にtimeoutがなく、WSL2 NTFS上のflock/writeが
+    hangすると全リスナーが停止。ninja_monitorが10分後にSIGKILL→再起動するが通知の空白が発生。
+    38回再起動・37回SIGKILLが計測された。
+    修正: `timeout 15 bash inbox_write.sh ...` で保護。加えてext4上(/tmp)のheartbeatファイルで
+    NTFS log mtime遅延による偽stale検知を回避。ninja_monitorの判定をheartbeat優先に変更。
+    一般原則: **デーモンから外部スクリプトを呼ぶ時は常にtimeoutで包め。** flock/ファイルI/Oは
+    WSL2 NTFSで無期限hangしうる。
+  source_cmd: gunshi_infra_audit_20260406
+  created_at: '2026-04-06'
+  automated: true
+  enforcement: ntfy_listener.sh L349,L424に`timeout 15`適用済み。heartbeat判定をninja_monitor.sh check_ntfy_listener_health()に組込済み
+- id: LG017
+  title: lock_path.shのlockファイルは永続蓄積する — 定期cleanupが必要
+  detail: |
+    yaml_field_set.sh等がlock_path.sh経由で/tmp/shogun_lock_*.lockを生成するが、flockはfd解放で
+    動作するため**ファイル自体は永久に残る**。10,268件蓄積が確認された。
+    機能障害はないが/tmpのinode消費が増加し続ける。
+    修正: ninja_monitor.shにrun_lock_cleanup()追加(1h周期、60min超lockを削除)。
+    初回実行で10,268件を即削除。
+  source_cmd: gunshi_infra_audit_20260406
+  created_at: '2026-04-06'
+  automated: true
+  enforcement: ninja_monitor.sh run_lock_cleanup()がメインループ毎サイクル実行

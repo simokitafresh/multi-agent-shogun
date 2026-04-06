@@ -790,6 +790,21 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 4. 検証: fullrecalculate + daily ETL動作確認
 
 → 統合設計書: `/mnt/c/Python_app/DM-signal/docs/research/alm-integration-design.md`
+
+### ALM忍法 確定事項 (2026-04-06 殿裁定)
+- **命名規則**: ALM-{忍法名}-{モード}（例: ALM-加速D-激攻）
+- **3モード目的関数**: 激攻=max_run_up / 常勝=calmar / 鉄壁=UWP（殿裁定）
+- **19体確定**（7忍法×3モード=21体 - 吸収2体）: ALM-加速R-鉄壁→常勝に吸収、ALM-分身-鉄壁→激攻に吸収
+- **DNA制約版候補LBが3/4ファミリーで優位**（cmd_1759 L563）: DM3+23%/DM6+86%/DM7++56%
+- **top_n**: DM2/DM6/DM7+=1、DM3=3（cmd_1759）
+- **Ward FoF**: K=3,LB=24がBest。K=5は4体<5クラスタで構造的不可能（cmd_1759 L562）
+- **切替安定性**: max_run_up最不安定(20%/月)、left_tail_jumps_inv最安定(9%/月)（cmd_1759）
+- **鉄壁4目的(cmd_1760)**: MDD目的がCalmar最高(2.78)。sortino目的の加速DがSharpe1.64(全体最高)
+- **3世代比較gist**: https://gist.github.com/simokitafresh/ea687a966e627b5e454524004fdd747e
+  - `alm_19_metrics_v2.md` — 19体完全版メトリクス
+  - `alm_vs_shin_by_ninjutsu_v3.md` — 忍法別3世代比較(旧/シン/ALM、吸収反映)
+  - `alm_vs_shin_full_38metrics.md` — 38メトリクス全量版
+
 - L546: ALM foundation cacheは240 fixed seriesの完全性検証が必須（cmd_1737）
 - L549: ALM batch統合ではobjective単位fallbackでparityを守る（cmd_karo_batch_R7）
 - L554: family ALM研究はmetricsと相関をベクトル化必須（cmd_1741）
