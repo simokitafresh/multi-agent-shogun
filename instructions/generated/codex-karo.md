@@ -113,8 +113,9 @@ files:
 
 panes:
   self: shogun:2.1
-  ninja: [sasuke:2.2, kirimaru:2.3, hayate:2.4, kagemaru:2.5, hanzo:2.6, saizo:2.7, kotaro:2.8, tobisaru:2.9]
-  agent_id_lookup: "tmux list-panes -t shogun -F '#{pane_index}' -f '#{==:#{@agent_id},{ninja_name}}'"
+  ninja_pane_lookup: "tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},NINJA_NAME}'"
+  ninja_capture: "tmux capture-pane -t $(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},NINJA_NAME}' | head -1) -p -S -30"
+  pane_number_forbidden: "pane番号の直接指定(shogun:2.X)は禁止。上記lookupで動的解決せよ。pane番号はペイン増減で変わる"
 
 inbox:
   write_script: "scripts/inbox_write.sh"
