@@ -672,3 +672,37 @@ for ninja in ("ninja_a", "ninja_b"):
 assert not os.path.exists(os.path.join(root, "ninja_c.yaml")), "idle ninja should not receive forwarded message"
 EOF
 }
+
+@test "task_supplement: not forwarded again to avoid recursive fanout" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks"
+    cp -a "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+get_ninja_names() { echo "ninja_a ninja_b"; }
+get_allowed_targets() { echo "karo shogun gunshi ninja_a ninja_b"; }
+MOCK
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'
+task:
+  status: in_progress
+YAML
+
+    run _run_inbox_write karo "軍師レビュー補足: 既存補足" task_supplement gunshi
+    [ "$status" -eq 0 ]
+
+    python3 <<EOF
+import os
+import yaml
+
+root = "$TEST_TMPDIR/queue/inbox"
+
+with open(os.path.join(root, "karo.yaml")) as f:
+    karo = yaml.safe_load(f)
+assert karo["messages"][0]["type"] == "task_supplement"
+
+assert not os.path.exists(os.path.join(root, "ninja_a.yaml")), "task_supplement should not be forwarded"
+assert not os.path.exists(os.path.join(root, "ninja_b.yaml")), "task_supplement should not be forwarded"
+EOF
+}

@@ -1067,7 +1067,8 @@ REVIEWEOF
             fi
         fi
 
-        # 軍師review_resultは、配備中忍者へ補足として自動forwardする
+        # 軍師review_resultのみ、配備中忍者へ補足として自動forwardする
+        # task_supplement/review_feedback 等の二次通知はforwardしない（再帰ループ防止）
         if [ "$TYPE" = "review_result" ] && [ "$FROM" = "gunshi" ] && [ "$TARGET" = "karo" ]; then
             forward_gunshi_review_result_to_active_ninjas "$CONTENT"
         fi
