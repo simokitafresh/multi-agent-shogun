@@ -41,7 +41,7 @@ task:
 
     '
   scout_exempt: true
-  status: assigned
+  status: done
   stop_for: []
   task_id: cmd_1761_nukimi_kawarimi_legacy
   task_type: impl
