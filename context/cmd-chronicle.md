@@ -709,3 +709,4 @@
 | cmd_1762 | ALM(Adaptive Lookback Momentum)本番組込みの第一弾。 スキーマにAlmConfig追加 + recalculate_fast.pyのPhase 3.7で ALM PFの全候補lookbackのmomentum cache + vectorized signalsを事前計算する。 設計書: docs/research/cmd_1750_alm_design.md (AC1+AC3前半) | dm-signal | 04-06 | ALM本番組込み第一弾(cmd_1762)を完了。AC1/A |
 | cmd_1737_v2 | ALM OOS検証v2: 全50組合せPBO | dm-signal | 04-06 | — |
 | cmd_1740 | ファミリー別Max Run-up ALM+ローリング相関 | dm-signal | 04-06 | — |
+| cmd_1763 | ALM忍法の3目的関数（現行: MRU/calmar/UWP）が最適か検証する。 L2（Ward FoF等）はシン忍法20体+ALM忍法を材料に使う。 L2材料プール全体の多様性を最大化する3目的関数の組合せを、 6目的関数の既存データからデータドリブンで選定する。 | dm-signal | 04-06 | AC1: cmd_1761_full_metrics.yam |

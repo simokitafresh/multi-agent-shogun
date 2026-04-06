@@ -816,3 +816,4 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - L561: pipeline_config=Dict[str,Any]でalm_config未検証保存。ALM実装時にバリデーション追加必要（cmd_1753）
 - L562: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)（cmd_1759）
 - L563: cmd_1762 BE第一弾完了(da14b6b7)。AlmConfig schema+Phase3.7 ALM cache+vectorized signals実装済み。注意: alm_config読取位置がblock config(実装)とPipelineConfig(schema)で分離→後続cmdで統一必要
+- L564: cmd_1763 ALM目的関数多様性分析完了(1d149a10)。Top1=MRU+NHF+CAGR(3.271)。cagr×MRU相関0.941(高)→実質多様性に注意。tail_contributionは多様性低下要因。calmar/UWPは6目的外→DC記録
