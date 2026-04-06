@@ -618,3 +618,4 @@
 - 2026-04-06 16:24 cmd_1762(ALM BE第一弾) 半蔵完遂(da14b6b7)。deploy_task.sh stale AC汚染で影丸に誤配備→半蔵に正AC再配備。家老自走: CI修正+GP4件消化+stale cmd整理。軍師LGTM
 - 2026-04-06 19:38 cmd_1763_research(ALM目的関数多様性分析) 影丸完遂(06fadbf4)。AC4修正: cmd_1761で現行ALM19体直接多様性=3.2428 vs Top1(MRU+NHF+CAGR)=3.2707(+0.9%)。calmar/UWP 6目的外→decision_candidate。ヒートマップPNG追加。gist ea687a9更新。
 - 2026-04-06 20:35 cmd_1764(ALM目的関数完全選定C(10,3)=120通り) 飛猿完遂(e43cefd2)。GATE CLEAR。Top1=MRU+NHF+CAGR頑健。現行Ward#12/120。DC:目的関数変更要否→殿裁定待ち
+- 2026-04-07 00:53 cmd_1765(L1 ALM WFエンジン骨格) 影丸完遂(1cbf703f)。GATE CLEAR。道具磨き完了→cmd B(タイムボックス60秒)次

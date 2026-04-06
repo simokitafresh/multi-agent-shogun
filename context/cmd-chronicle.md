@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-06 -->
+<!-- last_updated: 2026-04-07 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -711,3 +711,4 @@
 | cmd_1740 | ファミリー別Max Run-up ALM+ローリング相関 | dm-signal | 04-06 | — |
 | cmd_1763 | ALM忍法の3目的関数（現行: MRU/calmar/UWP）が最適か検証する。 L2（Ward FoF等）はシン忍法20体+ALM忍法を材料に使う。 L2材料プール全体の多様性を最大化する3目的関数の組合せを、 6目的関数の既存データからデータドリブンで選定する。 | dm-signal | 04-06 | AC1: cmd_1761_full_metrics.yam |
 | cmd_1764 | cmd_1763(6目的C(6,3)=20通り)の不完全分析を完全版に拡張。 cmd_1760データ(calmar/MaxDD/sortino/UWP)を追加し10目的関数でC(10,3)=120通り。 L2材料プール(シン20体+ALM)の多様性を最大化する3目的関数をデータドリブンで確定。 | dm-signal | 04-06 | AC1-4完了。90体×11メトリクス行列/120通りランキ |
+| cmd_1765 | L1 ALM WFエンジン骨格。CSV読込+WF fold生成+ベクトル化メトリクス計算。DM2(119,493パターン)先行 | dm-signal | 04-07 | AC1-3完了。L1 ALM WFエンジン骨格実装。CSV読 |

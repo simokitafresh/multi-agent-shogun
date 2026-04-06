@@ -1,48 +1,39 @@
-task_id: cmd_gp131_bc_count_gate
-parent_cmd: cmd_gp131_bc_count_gate
+task_id: cmd_lk021_fix
+parent_cmd: cmd_lk021_fix
 ninja: kotaro
 project: infra
-status: idle
+status: completed
+purpose: "deploy_task.sh stale AC汚染修正(LK021)。4回再発の根因=acceptance_criteriaがSTALE_FIELDSリストに未記載"
 command: |
-  GP-131を実装せよ。gate_report_format.shにbinary_checks項目数整合チェックを追加する。
+  scripts/deploy_task.sh L231-245のSTALE_FIELDSリストにacceptance_criteriaを追加せよ。
 
-  仕様:
-  - task YAML(queue/tasks/{ninja}.yaml)のbinary_checksテンプレート項目数を取得
-  - 報告YAMLのbinary_checks項目数と比較
-  - report項目数 < task項目数 * 0.5 → errors.append + hints.append (FAIL)
-  - report項目数 < task項目数 → warnings（WARNのみ、BLOCKしない）
-  - task YAMLにbinary_checksがない場合はスキップ（チェックしない）
-
-  実装箇所: scripts/gates/gate_report_format.sh 内のpython3 -c ブロック
-  参考: 既存のbinary_checks形式チェック(L168-188付近)の直後に追加
+  修正箇所: L238の第3層コメントの下、または適切な層に追加
+  追加: 'acceptance_criteria' をSTALE_FIELDSリストに追加
 
   テスト:
-  - 項目数一致: PASS
-  - 項目数半分未満: FAIL+ヒント表示
-  - 項目数不足(半分以上): WARN
-  - task YAMLにbc未設定: スキップ
-  commit後にbash scripts/gates/gate_report_format.sh <適当な既存報告>でテスト
+  1. 既存の忍者task YAML(queue/tasks/任意.yaml)にダミーacceptance_criteriaを書く
+  2. deploy_task.sh実行(--dry-runまたはidle忍者に空cmd)
+  3. acceptance_criteriaがクリアされることを確認
+  4. 既存batsテストがあれば実行(tests/unit/test_deploy_task*.bats)
+  5. commit
 
-  ★ 既存のチェックロジックは変更するな。追加のみ。
-target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_report_format.sh
-purpose: GP-131実装(binary_checks項目数整合チェック)
+  ★1行追加+テスト。既存ロジックは変更するな。
+target_path: /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
 scope_mode: IMPL
 scout_exempt: true
 acceptance_criteria:
   AC1:
-    description: "binary_checks項目数チェックが追加され、4パターンのテストがPASS+commit済み"
+    description: "STALE_FIELDSにacceptance_criteria追加+テスト+commit"
     binary_checks:
-      - "項目数一致でPASS(errorなし)か？ yes/no"
-      - "項目数半分未満でFAIL+ヒント表示か？ yes/no"
-      - "項目数不足(半分以上)でWARN表示か？ yes/no"
-      - "task YAMLにbc未設定でスキップか？ yes/no"
-      - "既存のテスト(報告YAML)が壊れていないか？ yes/no"
+      - "STALE_FIELDSリストにacceptance_criteriaが含まれるか？ yes/no"
+      - "再配備時にacceptance_criteriaがクリアされることをテスト確認したか？ yes/no"
+      - "既存batsテストがPASSするか？ yes/no"
       - "commitされているか？ yes/no"
 stop_for:
-  - "既存チェックロジックが壊れる場合"
+  - "既存テストがFAILする場合"
 never_stop_for:
   - "gate警告"
-deployed_at: "2026-04-06T14:58:00+09:00"
+deployed_at: "2026-04-07T01:05:00+09:00"
   related_lessons:
   - id: 'L441'
     summary: 'Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え'
