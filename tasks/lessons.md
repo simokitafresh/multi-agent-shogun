@@ -3396,3 +3396,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。
+
+### L446: AC3設計書参照検知はq5_verified_sourceベースが信頼性高い
+- **日付**: 2026-04-07
+- **出典**: cmd_1783
+- **記録者**: karo
+- **tags**: [universal]
+- cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用

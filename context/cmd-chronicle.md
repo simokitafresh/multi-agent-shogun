@@ -716,3 +716,4 @@
 | cmd_1777 | 道具磨き — 月次リターン計算pure function化 + ALMパリティ完全達成 | dm-signal | 04-07 | 月次リターン pure function を新設し、既存 c |
 | cmd_1780 | 起動ゲートstale GP検知修正 + 孤立context統合 + 未commit push | infra | 04-07 | Gate11 dashboard完了GP除外+GP-137 |
 | cmd_1781 | ALM 67窓速度最適化 — compute_metrics_np全量呼出し廃止 | dm-signal | 04-07 | cmd_1781_impl は将軍指示で中止。作業到達点とし |
+| cmd_1783 | ハーネス — cmd起票時WHY→WHAT因果強制 + 範囲縮小検知 | infra | 04-07 | cmd_save.shにq8_why_what BLOCK+ |

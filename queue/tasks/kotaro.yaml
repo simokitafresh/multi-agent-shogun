@@ -1,57 +1,18 @@
 task:
-  _ac_task_id: cmd_step2c_push
-  _ac_worker_id: null
+  _ac_task_id: 
+  _ac_worker_id: 
   ac_version: bce2db0d
-  acceptance_criteria:
-    AC1:
-      binary_checks:
-      - git push origin mainが成功したか？ yes/no
-      - エラーなしか？ yes/no
-      description: git push成功
-    AC2:
-      binary_checks:
-      - BEサービスのデプロイが開始されたか？ yes/no
-      description: Renderデプロイ確認
-  command: "ALM実装コード(Phase3.7+Phase4+pure function)を本番にデプロイする準備。\n\nAC1: DM-Signalリポpush\n\
-    \  - cd /mnt/c/Python_app/DM-signal\n  - git status で未commitファイル確認\n  - git push\
-    \ origin main\n  - push成功確認\n\nAC2: Render自動デプロイ確認\n  - Render CLIまたはAPI でデプロイステータス確認\n\
-    \  - render-cli: render deploys list --service srv-d4ja7q15pdvs739a4q1g(BE)\n\
-    \  - デプロイ開始を確認(完了まで待たなくてよい)\n  - commit(pushスクリプト等があれば)\n"
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L186: IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin\
-    \ refs/head\n  - L232: bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    ────────────────────────────────────────"
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
+
   ninja: kotaro
-  parallel_ok: []
-  parent_cmd: cmd_step2c_push
+
+  parent_cmd: cmd_1774
   project: dm-signal
-  purpose: 'Step 2c準備: ALMコード(cmd_1762+1768+1777)をDM-Signalリポにpush+Render自動デプロイ確認'
+
   scope_mode: IMPL
-  scout_exempt: true
+
   status: idle
-  stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py
-  task_id: cmd_step2c_push
+
+  task_id: cmd_1774_impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   report_filename: kotaro_report_cmd_step2c_push.yaml
   report_path: queue/reports/kotaro_report_cmd_step2c_push.yaml
@@ -116,4 +77,4 @@ task:
   - id: 'L561'
     summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
     detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-  deployed_at: "2026-04-07T12:17:48"
+  task_type: impl
