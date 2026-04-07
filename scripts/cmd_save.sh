@@ -894,6 +894,21 @@ check_param_space_shrink() {
 
 check_param_space_shrink
 
+# --- Check 16: 本番変更後確認AC検出（WARN — 行動→即確認原則 PI-023） ---
+# 原理: 行動したら即結果を確認する。本番変更を含むcmdに確認ACがなければWARN。
+# reason: ALM DB登録三重事故(2026-04-07)。前提情報に依存しない汎用チェック。
+# 検出キーワード: DB登録/INSERT/UPDATE/DELETE/deploy/push/fullrecalculate/migration
+_PROD_KEYWORDS="DB登録\|INSERT\|UPDATE\|DELETE\|deploy\|push\|fullrecalculate\|migration\|本番\|production\|register\|登録"
+if echo "$CMD_BLOCK" | grep -qi "$_PROD_KEYWORDS" 2>/dev/null; then
+    # 本番変更cmdを検出。確認ACがあるか？
+    _VERIFY_KEYWORDS="確認\|verify\|パリティ\|parity\|SELECT\|検証\|hide\|visibility"
+    if ! echo "$CMD_BLOCK" | grep -qi "$_VERIFY_KEYWORDS" 2>/dev/null; then
+        echo "WARNING: 本番変更を含むcmdですが、変更後の確認ACが見当たりません。" >&2
+        echo "  原則: 行動したら即結果を確認する(PI-023)。変更後の本番状態確認ACを追加してください" >&2
+        echo "  例: 「DB登録後にSELECTで存在確認」「deploy後にAPI応答確認」「hide_portfolio設定確認」" >&2
+    fi
+fi
+
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
     local QUALITY_LOG="$PROJECT_DIR/logs/cmd_design_quality.yaml"
