@@ -919,8 +919,11 @@ check_param_space_shrink
 check_gunshi_design_num_relax() {
     [[ -z "${CMD_BLOCK_NC:-}" ]] && return 0
 
-    # 軍師設計書参照検出（gunshi-ファイル or 設計書キーワード）
-    if ! echo "$CMD_BLOCK_NC" | grep -qiE 'gunshi[-_]|設計書'; then
+    # 軍師設計書参照検出: q5_verified_sourceに設計書パスが含まれる場合（gunshi補足 2026-04-07）
+    # 理由: q5は検証ソースの一次情報→設計書参照の信頼性が最も高い判定基準
+    local Q5_VAL
+    Q5_VAL=$(echo "$CMD_BLOCK_NC" | grep "q5_verified_source:" | head -1)
+    if ! echo "$Q5_VAL" | grep -qiE 'gunshi[-_]|設計書|context/gunshi'; then
         return 0
     fi
 
