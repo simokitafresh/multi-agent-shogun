@@ -1,21 +1,50 @@
 task:
-  _ac_task_id: 
-  _ac_worker_id: 
-  ac_version: bce2db0d
-
+  _ac_task_id: cmd_1786_scout
+  _ac_worker_id: null
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 097f19c6
+  acceptance_criteria:
+  - description: 'Cashフォールバック発生パスを行番号レベルで特定。確認: recalculate_fast.pyの該当行+条件を報告'
+    id: AC1
+  - description: 'Cash23体と正常FoFの差分（pipeline_config/selection block設定の違い）を特定。確認: DB設定比較表'
+    id: AC2
+  - description: '修正方針を提示。確認: 修正対象ファイル・行・修正内容の具体案'
+    id: AC3
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
   ninja: kotaro
-
-  parent_cmd: 
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1786
   project: dm-signal
-
+  related_lessons: []
+  report_filename: kotaro_report_cmd_1786.yaml
+  report_path: queue/reports/kotaro_report_cmd_1786.yaml
   scope_mode: IMPL
-
-  status: idle
-
-  task_id: 
+  status: acknowledged
+  stop_for: []
+  task_id: cmd_1786_scout
+  task_type: scout
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_step2c_push.yaml
-  report_path: queue/reports/kotaro_report_cmd_step2c_push.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -32,7 +61,7 @@ task:
       count: 15
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 7
+      count: 9
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_yaml_missing'
       count: 4
@@ -47,6 +76,12 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
+  - id: 'L572'
+    summary: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/analysis/grid_search/run_077_*.py。target_path_warningが発火したがfindコマンドで正パスを特定。今後のGS'
+    detail: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/analysis/grid_search/run_077_*.py。target_path_warningが発火したがfindコマンドで正パスを特定。今後のGS'
+  - id: 'L571'
+    summary: '''タスク記述の''''現行CSV(2012-07)''''はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range(''''2012-07-01''''))を指す。実際のCSVは2012-04起点(166行)。タスク記述が実CSVの仕様を反映していないため、ACチェック時に混乱が生じた。今後:'
+    detail: '''タスク記述の''''現行CSV(2012-07)''''はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range(''''2012-07-01''''))を指す。実際のCSVは2012-04起点(166行)。タスク記述が実CSVの仕様を反映していないため、ACチェック時に混乱が生じた。今後:'
   - id: 'L570'
     summary: '119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/index`'
     detail: '119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/index`'
@@ -71,10 +106,4 @@ task:
   - id: 'L563'
     summary: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
     detail: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
-  - id: 'L562'
-    summary: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
-    detail: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
-  - id: 'L561'
-    summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-    detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-  task_type: impl
+  deployed_at: "2026-04-07T18:50:08"
