@@ -85,6 +85,7 @@ language:
 1.5. **ROUTE BY ROLE (mandatory)**:
      - 将軍(shogun) → 続行（Step 2へ）
      - 家老(karo) → 「/clear Recovery (karo)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
+     - 軍師(gunshi) → 「/clear Recovery (gunshi)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
      - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
@@ -97,7 +98,7 @@ language:
    - Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？
    - Q2: 「行動→即確認」— 今の本番は正常か？前セッション以降に本番に入った変更は何か？その結果を確認したか？想像で答えるな。
    - Q3: 今クリアされても強くてニューゲームできるか？環境に埋め込まれていない学びはないか？
-3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
+3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, gunshi→`instructions/gunshi.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
 
 ★ 汝は忍者なり。将軍にあらず。家老にあらず。
@@ -205,6 +206,22 @@ Step 5: project知識ロード（snapshotのcmdにproject指定あれば）
 Step 6: Read queue/shogun_to_karo.yaml（cmd詳細が必要な場合のみ）
 Step 7: 作業再開
 （Ghost deployment checkはninja_monitorのSTALL検知が常時カバー。家老の手動チェック廃止 2026-02-26）
+```
+
+## /clear Recovery (gunshi)
+
+軍師専用の軽量復帰手順。レビューと家老連携に必要な最小状態だけを復元する。
+
+```
+Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → gunshi
+Step 2: Read instructions/gunshi.md（人格・禁則・レビュー基準。省略厳禁）
+Step 2.5: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード）
+Step 2.6: Read logs/karo_workarounds.yaml の直近10件（家老の手動補正パターン確認）
+Step 3: Read queue/inbox/gunshi.yaml（未読メッセージ処理）
+Step 4: If review_draft / report_review / verify_request がある:
+          read 対象cmd/report/task
+          read projects/{id}.yaml + context/{project}.md
+Step 5: レビュー再開 or idle待機
 ```
 
 ## Summary Generation (compaction)
@@ -359,6 +376,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - CLI起動|`claude --effort high`(--modelなし=1M)が正。`--model opus`=200K厳禁|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
+- Claude version pin/rollback|2.1.87固定とauto-update復帰のrunbook|→ `docs/research/claude-code-version-runbook.md`
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 
 ## Cross-Project Context
@@ -369,8 +387,8 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 | 役割 | 名前(pane) | CLI |
 |------|-----------|-----|
-| 家老 | karo(1) | Claude |
-| 軍師 | gunshi(2) | Claude |
+| 家老 | karo(1) | settings.yaml参照 |
+| 軍師 | gunshi(2) | settings.yaml参照 |
 | 忍者 | hayate(3) kagemaru(4) hanzo(5) saizo(6) kotaro(7) tobisaru(8) | settings.yaml参照 |
 将軍はAgent toolでのコード深堀り調査を禁止(F008)。必要な調査は偵察cmdとして家老に委任せよ。
 編成(2026-03-20更新): 6忍者+1軍師 Opus 4.6。round-robin配備 → config/settings.yaml
@@ -399,7 +417,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 
 - id: dm-signal | path: `/mnt/c/Python_app/DM-signal`
 - context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md`
-- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md` `context/gunshi-infra-perf-audit.md` `context/gunshi-4metrics-design.md` `context/gunshi-flair-deepdive.md` `context/gunshi-fof-deterioration-analysis.md` `context/gunshi-gs-landscape-analysis.md` `context/gunshi-gs-speed-optimization-design.md` `context/gunshi-interpretation-layer-design.md` `context/gunshi-metrics-engine-design.md`
+- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md` `context/gunshi-infra-perf-audit.md` `context/gunshi-4metrics-design.md` `context/gunshi-flair-deepdive.md` `context/gunshi-fof-deterioration-analysis.md` `context/gunshi-gs-landscape-analysis.md` `context/gunshi-gs-speed-optimization-design.md` `context/gunshi-interpretation-layer-design.md` `context/gunshi-metrics-engine-design.md` `context/gunshi-alm-38metrics-design.md`
 - チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md` `context/checklist-alm-registration.md`
 - projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)
 
