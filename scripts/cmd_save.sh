@@ -894,19 +894,17 @@ check_param_space_shrink() {
 
 check_param_space_shrink
 
-# --- Check 16: 本番変更後確認AC検出（WARN — 行動→即確認原則 PI-023） ---
-# 原理: 行動したら即結果を確認する。本番変更を含むcmdに確認ACがなければWARN。
-# reason: ALM DB登録三重事故(2026-04-07)。前提情報に依存しない汎用チェック。
-# 検出キーワード: DB登録/INSERT/UPDATE/DELETE/deploy/push/fullrecalculate/migration
-_PROD_KEYWORDS="DB登録\|INSERT\|UPDATE\|DELETE\|deploy\|push\|fullrecalculate\|migration\|本番\|production\|register\|登録"
-if echo "$CMD_BLOCK" | grep -qi "$_PROD_KEYWORDS" 2>/dev/null; then
-    # 本番変更cmdを検出。確認ACがあるか？
-    _VERIFY_KEYWORDS="確認\|verify\|パリティ\|parity\|SELECT\|検証\|hide\|visibility"
-    if ! echo "$CMD_BLOCK" | grep -qi "$_VERIFY_KEYWORDS" 2>/dev/null; then
-        echo "WARNING: 本番変更を含むcmdですが、変更後の確認ACが見当たりません。" >&2
-        echo "  原則: 行動したら即結果を確認する(PI-023)。変更後の本番状態確認ACを追加してください" >&2
-        echo "  例: 「DB登録後にSELECTで存在確認」「deploy後にAPI応答確認」「hide_portfolio設定確認」" >&2
-    fi
+# --- Check 16: 行動→即確認原則（全cmd対象 — PI-023汎用化） ---
+# 真因: 全ての問題の根源は「行動した後に結果を確認しない」。
+# 本番変更かどうかのキーワード判定は各論。全cmdの全ACに確認を問う。
+# reason: リアルワールドに事前通告はない(2026-04-07殿指摘)
+_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
+_AC_COUNT=$(( ${_AC_COUNT:-0} + 0 ))
+_VERIFY_AC_COUNT=$(echo "$CMD_BLOCK" | grep -i "description:" | grep -ciE "確認|verify|パリティ|parity|検証|validate|assert|比較|突合|PASS" 2>/dev/null || true)
+_VERIFY_AC_COUNT=$(( ${_VERIFY_AC_COUNT:-0} + 0 ))
+if [ "$_AC_COUNT" -gt 0 ] && [ "$_VERIFY_AC_COUNT" -eq 0 ]; then
+    echo "WARNING: 全ACが行動のみで確認を含みません。行動→即確認(PI-023)。" >&2
+    echo "  各ACに「やった後どう確認するか」を含めよ。確認なき行動は想像と同じ" >&2
 fi
 
 # --- Quality Summary (品質パターン表示) ---
