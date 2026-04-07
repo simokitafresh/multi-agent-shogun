@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-07 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-07T18:50:51+09:00 -->
+<!-- generated_at: 2026-04-07T19:18:02+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-07T19:18:02+09:00 | terminal | response | cmd_1787（URGENT修正）委任完了。 **現在の状態:** - cmd_1786（偵察）: kagemaru/tobisaru PASS、hanzo/kotaro作業中 - cmd_1787（修正）: 家老に通知済み。偵察完了後…
+- 2026-04-07T19:14:40+09:00 | terminal | response | **cmd_1786（FoF Cash化バグ偵察）:** - **kagemaru**: done, report **PASS** ✅ - **tobisaru**: done, report **PASS** ✅ - **hanzo*…
+- 2026-04-07T18:57:09+09:00 | ntfy | outbound | 未配備cmd: cmd_1786 (委任時刻: 18:47, 10分経過)
 - 2026-04-07T18:50:51+09:00 | terminal | response | **正常FoF（シン分身-激攻）のダッシュボード:** - Signal: TQQQ 50%, TMV 25%, XLU 25% ✅ 正常 - MTD: 04/01, 04/02, 04/06 の3日分表示 **比較結果:** - 正常F…
 - 2026-04-07T18:49:24+09:00 | ntfy | outbound | 【家老】cmd_1786 初回配備開始 (title=URGENT偵察 — FoF Cash化バグ根因特定。4/7 fullrecalculateで23FoFがCash化, ninja=kagemaru) URGENT偵察 📋 https…
 - 2026-04-07T18:45:40+09:00 | terminal | response | **原因特定。created_at = 2026-04-07 03:05〜**。 全てのCash signalは**4月7日のfullrecalculate**で生成されている。4/2時点のオリジナルデータではない。 **4/7のfull…
@@ -11,9 +14,6 @@
 - 2026-04-07T18:40:27+09:00 | terminal | response | tobisaruもidle化。cmd_1782の報告を確認する。 [meta] stop_reason=tool_use
 - 2026-04-07T17:07:04+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-07 16:51:45|cmd_1774
 - 2026-04-07T17:05:21+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
-- 2026-04-07T17:01:05+09:00 | ntfy | outbound | CI赤: run 24070600884 Unit Tests (bats)
-- 2026-04-07T16:02:41+09:00 | terminal | response | 変化あり: - **[tobisaru]** 陣形:cmd_1774_scout_1/done→**cmd_1782_impl/acknowledged** cmd_1782（38メトリクス全量高速化）作業開始 - **[kagemaru…
-- 2026-04-07T16:00:27+09:00 | terminal | response | 変化あり: - **[tobisaru]** 陣形:cmd_1774_scout_1/done→**cmd_1782_impl/acknowledged** cmd_1782（38メトリクス全量高速化）作業開始 - **[kagemaru…
 
 ## 未解決確認事項
 - **正常FoF（シン分身-激攻）のダッシュボード:** - Signal: TQQQ 50%, TMV 25%, XLU 25% ✅ 正常 - MTD: 04/01, 04/02, 04/06 の3日分表示 **比較結果:** - 正常FoF: 複数PFのウェイト付き保有、MT…
@@ -39,9 +39,6 @@
 - cmd_1
 - cmd_1736
 - cmd_1764
-- cmd_1767
-- cmd_1768
-- cmd_1769
 - cmd_1770
 - cmd_1771
 - cmd_1772
@@ -59,6 +56,7 @@
 - cmd_1784
 - cmd_1785
 - cmd_1786
+- cmd_1787
 - PD-007
 
 ## 参照先
