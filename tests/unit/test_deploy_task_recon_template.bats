@@ -35,7 +35,7 @@ EOF
     [ -n "$REPORT_FILE" ]
 }
 
-teardown() {
+teardown_file() {
     deploy_task_teardown
 }
 
