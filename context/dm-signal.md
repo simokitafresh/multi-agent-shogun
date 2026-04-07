@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L580 -->
+<!-- last_synced_lesson: L582 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -174,3 +174,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L578: FoF選択ブロックmonthly pathは月末日付dictでなくpd.Seriesで保存+bisect検索が必須（cmd_1786）
 - L579: [自動生成] draft教訓の査読を怠った: cmd_1786（cmd_1786）
 - L580: 38メトリクスは6目的関数を維持しつつ後計算で添付が最速（cmd_1791）
+- L581: gs_data_loader unit_naming の format変数はdisplay/pattern/kのみ — {family}は不可（cmd_1795）
+- L582: [自動生成] draft教訓の査読を怠った: cmd_1795（cmd_1795）

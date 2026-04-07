@@ -2674,7 +2674,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: test_cmd
 - **記録者**: saizo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - **retired**: true
 - **retired_at**: 2026-03-31
@@ -3223,7 +3223,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-01
 - **出典**: cmd_training_L4_003
 - **記録者**: kagemaru
-- **status**: draft
+- **status**: confirmed
 - **tags**: [testing]
 - **retired**: true
 - **retired_at**: 2026-04-01
@@ -3315,7 +3315,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-02
 - **出典**: cmd_training_L4_R21_saizo
 - **記録者**: saizo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒着したため、呼出側で明示的に改行を戻して T-008 と T-009 で再発防止を確認した。
 
@@ -3323,7 +3323,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-02
 - **出典**: cmd_training_L4_R22_test_hayate
 - **記録者**: hayate
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `project:` を前提にした軽量regexはローカルfixtureでは通っても本番アーカイブで recent cmd 検出を静かに失敗させる。先頭行だけを走査する軽量抽出でも、実運用のネストとインデントを前提に設計すべきである。
 
@@ -3331,7 +3331,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-02
 - **出典**: cmd_training_L4_R23_tobisaru
 - **記録者**: tobisaru
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則: 同一スクリプト内で同じファイルを複数箇所で読む場合、初回読込結果をキャッシュせよ
 
@@ -3339,7 +3339,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-04
 - **出典**: cmd_1738
 - **記録者**: saizo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では cmd_1736 を抽出できない。ASCII識別子抽出では明示 lookaround を使うべし。
 
@@ -3361,7 +3361,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-06
 - **出典**: cmd_1758
 - **記録者**: hanzo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え
 
@@ -3369,7 +3369,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-07
 - **出典**: cmd_precheck_consolidate
 - **記録者**: tobisaru
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - 複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。REPO_ROOT配下のquote済み変数はeval安全。IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認
 
@@ -3377,7 +3377,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-07
 - **出典**: cmd_gate_double_grep
 - **記録者**: hanzo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!found)exit 1}で成功フラグを明示的に管理。p変数をENDで参照すると常に真になるため誤検知が発生する
 
@@ -3385,7 +3385,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-07
 - **出典**: cmd_vercel_false_positive
 - **記録者**: kotaro
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: config/projects.yaml動的読込+外部リポ全滅時のSKIPロジック。同様のgate設計時は常にprojects.yamlから動的取得し、環境依存の参照はSKIP扱いにすること。
 
@@ -3393,7 +3393,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-07
 - **出典**: cmd_deploy_yaml_speedup
 - **記録者**: kagemaru
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。
 
@@ -3408,7 +3408,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-07
 - **出典**: cmd_step2c_push
 - **記録者**: kotaro
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature branchをpushしてPRを作成する必要がある。次回タスクにgit push origin mainが含まれる場合はfeature branch+PR作成手順を踏め
 
@@ -3416,6 +3416,6 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-08
 - **出典**: cmd_karo_fix_precommit_comment
 - **記録者**: gate_auto
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - draft教訓12件が未査読のままGATE到達

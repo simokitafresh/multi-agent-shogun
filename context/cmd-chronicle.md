@@ -731,3 +731,5 @@
 | cmd_1785 | 軍師設計依頼 — compute_metrics_npを38メトリクス対応に拡張する設計 | dm-signal | 04-07 | — |
 | cmd_1793 | ALM L1 WF分析 — 7忍法selection_timelineから忍法別ALM適性+モードラベル付与 | dm-signal | 04-07 | cmd_1791で生成した7忍法selection_time |
 | cmd_1794 | 知識鮮度回復 — ALMチェックリスト+context+dashboard+CLAUDE.md実物同期 | dm-signal | 04-08 | checklist-alm-registration.md( |
+| cmd_karo_fix_precommit_comment | pre-commit hookコメント行偽陽性修正 | infra | 04-08 | git-pre-commit.sh L49にコメント行除外g |
+| cmd_1795 | ALM忍法Step 3準備 — 12体universe+結合CSV+全7本ALM対応+bunshin動作検証 | dm-signal | 04-08 | AC1: alm_l0_12.yaml+alm_l0_12_ |

@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-08 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-08T03:07:44+09:00 -->
+<!-- generated_at: 2026-04-08T03:16:31+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-08T03:16:31+09:00 | terminal | response | **陣形:** - **kagemaru**: cmd_1795（ALM忍法Step 3準備）**作業中** CTX:33% - **tobisaru**: cmd_1794（知識鮮度回復）**完了** ✅ - **kotaro**: c…
+- 2026-04-08T03:15:29+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-009)
+- 2026-04-08T03:09:59+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-008)
+- 2026-04-08T03:09:02+09:00 | ntfy | outbound | 【家老】cmd_1795 初回配備開始 (title=ALM忍法Step 3準備 — 12体universe+結合CSV+全7本ALM対応+bunshin動作検証, ninja=kagemaru) ALM忍法Step 3準備 📋 http…
 - 2026-04-08T03:07:44+09:00 | terminal | response | cmd_1795委任完了。 **現在の配備:** - **cmd_1794**: 知識鮮度回復（ドキュメント4件更新）— 家老配備待ち - **cmd_1795**: ALM忍法Step 3準備（12体universe+全7本改修+bun…
 - 2026-04-08T03:04:38+09:00 | ntfy | outbound | 【家老】cmd_karo_fix_precommit_comment 初回配備開始 (title=pre-commit hookコメント行偽陽性修正, ninja=kotaro) pre-commit hookコメント行偽陽性修正 📋 h…
 - 2026-04-08T02:56:46+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-08T01:44:19+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-08 01:39:21|cmd_1794
 - 2026-04-08T01:43:43+09:00 | ntfy | outbound | CI赤: run 24092988513 Unit Tests (bats)
 - 2026-04-08T01:43:00+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-007)
-- 2026-04-08T01:40:06+09:00 | ntfy | outbound | 【家老】cmd_1794 GATE CLEAR。知識鮮度回復完了(checklist+research+dashboard+CLAUDE.md)。kotaro+tobisaru。連勝継続。
-- 2026-04-08T01:40:01+09:00 | ntfy | outbound | 【家老ALERT】workaround同一カテゴリ「report_yaml_format」が14件。構造対策cmd起票を強制
-- 2026-04-08T01:37:45+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-006)
-- 2026-04-08T01:33:46+09:00 | ntfy | outbound | 未配備cmd: cmd_1794 (委任時刻: 01:23, 10分経過)
 
 ## 未解決確認事項
 - cmd_1794委任完了。家老に配備指示済み。 **cmd_1794: 知識鮮度回復** - AC1: チェックリスト9項目を完了日時付きで記入 - AC2: dm-signal-research.md §35にALM到達点7件追記 - AC3: dashboardパイプライン…
@@ -38,10 +38,8 @@
 ## 参照cmd
 - cmd_1
 - cmd_1762
-- cmd_1764
 - cmd_1765
 - cmd_1770
-- cmd_1771
 - cmd_1774
 - cmd_1775
 - cmd_1776
