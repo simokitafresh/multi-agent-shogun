@@ -255,6 +255,13 @@ restart_agent_cli() {
     tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
     tmux set-option -p -t "$target" @agent_state active >/dev/null 2>&1 || true
 
+    pane_dead=$(tmux display-message -t "$target" -p '#{pane_dead}' 2>/dev/null || echo "1")
+    if [[ "$pane_dead" == "1" ]]; then
+        echo "  [runtime] ${agent}@${target}: pane dead — respawning"
+        tmux respawn-pane -t "$target" 2>/dev/null || true
+        sleep 1
+    fi
+
     tmux send-keys -t "$target" C-c
     sleep 0.4
     tmux send-keys -t "$target" C-c
