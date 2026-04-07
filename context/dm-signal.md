@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L572 -->
+<!-- last_synced_lesson: L580 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -166,12 +166,11 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L535-L545は振り分け済 → research§30(L535/L537/L538/L539/L540/L541/L542), research§27(L544), gs-speedup§3(L543), ops索引(L536/L545)）
 - （L546-L561は振り分け済 → research§35(L546/L549/L554/L559/L560/L561), research§34(L556/L557), research§28-30統合(L548/L550), ops索引(L552/L553/L558), core§19.2(L555)。L547はCLAUDE.md既記載→重複。L551はL549重複→削除）
 - （L562-L563は振り分け済 → research§35(L562:ALM Ward K制約), research§31(L563:DNA制約IS効果)）
-- L564: MINIMIZE_METRICSへのランタイムpatchでargmin方向を動的変更できる（cmd_1760）
-- L565: 旧加速忍法はkasoku_ratio/kasoku_diffの区別なし（cmd_1761）
-- L566: ALM吸収はシン吸収と異なりメトリクスが変わる（cmd_1762）
-- L567: tail_contributionは多様性低下要因。nhfとcagrは多様性貢献度最高（cmd_1763）
-- L568: 10目的間Spearman相関で45全ペアが冗長(|ρ|>0.8)。L0 4体からの選択プロセスが相関を構造的に高める（cmd_1764）
-- L569: left_tail_jumps_inv: 早期fold(ウォームアップ期間)で全パターンNaN→OOSスキップで系列長が短くなる（cmd_1766）
-- L570: 大規模月次CSVはnpzよりnpy sidecar memmapの方が再読込が桁違いに速い（cmd_wf_speedup）
-- L571: baseline_v2タスクの'2012-07'記述はCSV実態(2012-04)と不一致—タスク記述の参照を確認せよ（cmd_baseline_v2）
-- L572: GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search（cmd_alm_ninpo_recon）
+- （L564-L573は振り分け済 → research§35(L564:MINIMIZE_METRICSランタイムpatch/L566:ALM吸収メトリクス差異), research§32(L565:旧加速ratio/diff未分化), research§33(L567:多様性分析/L568:10目的相関冗長), research§34(L569:LTJ_inv早期fold NaN), gs-speedup§4(L570:npy sidecar), ops索引(L571:baseline_v2記述不一致), research GS結果(L572:runner正規パス), core§19.2(L573:bisect helper統一)）
+- L574: FoF月次データのexact dict lookup禁止 — bisect-based検索必須（cmd_1786）
+- L575: FoF絶対モメンタムブロックのdict直接.get()は月末日ミスマッチでCashを生む（cmd_1786）
+- L576: FoFのMVMF/SVMF/MomentumFilterで月次データlookupにexact-matchを使用するとCash全損になる（cmd_1786）
+- L577: 月次データcache最適化でexact date lookupを使う場合、ビジネスデー vs 月末日ミスマッチによる全NULL問題（cmd_1786）
+- L578: FoF選択ブロックmonthly pathは月末日付dictでなくpd.Seriesで保存+bisect検索が必須（cmd_1786）
+- L579: [自動生成] draft教訓の査読を怠った: cmd_1786（cmd_1786）
+- L580: 38メトリクスは6目的関数を維持しつつ後計算で添付が最速（cmd_1791）

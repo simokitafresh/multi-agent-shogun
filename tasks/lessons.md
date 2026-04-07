@@ -3411,3 +3411,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature branchをpushしてPRを作成する必要がある。次回タスクにgit push origin mainが含まれる場合はfeature branch+PR作成手順を踏め
+
+### L448: [自動生成] draft教訓の査読を怠った: cmd_karo_fix_precommit_comment
+- **日付**: 2026-04-08
+- **出典**: cmd_karo_fix_precommit_comment
+- **記録者**: gate_auto
+- **status**: draft
+- **tags**: [universal]
+- draft教訓12件が未査読のままGATE到達

@@ -1,40 +1,30 @@
 task:
-  _ac_task_id: cmd_1771_impl
+  _ac_task_id: cmd_1792_impl
   _ac_worker_id: null
-  ac_version: 7bcdd866
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 312c2199
   acceptance_criteria:
-    AC1:
-      binary_checks:
-      - 全7忍法が60秒以内に完了したか？ yes/no
-      - 各忍法のselection_timelineが出力されたか？ yes/no
-      - 各忍法のALMリターン6系列が出力されたか？ yes/no
-      description: 全7忍法WF実行60秒以内
-    AC2:
-      binary_checks:
-      - 7忍法×6目的のメトリクスサマリCSVが出力されたか？ yes/no
-      - commitされているか？ yes/no
-      description: 忍法別ALM適性サマリ+commit
-  command: "高速化済みl1_alm_wf_engine.pyで全7忍法のWF実行+検証を行え。\nランブック cmd D-I相当。全7忍法を1cmdで連続実行(高速化で60秒以内)。\n\
-    \n7忍法のGS CSV:\n  - 加速R: 246_kasoku_ratio_DM2_grid_monthly_fast.csv (cmd_1766で実行済み→結果比較用)\n\
-    \  - 加速D: {id}_kasoku_diff_grid_monthly_fast.csv\n  - 追い風: {id}_oikaze_grid_monthly_fast.csv\n\
-    \  - 抜き身: {id}_nukimi_grid_monthly_fast.csv\n  - 分身: {id}_bunshin_grid_monthly_fast.csv\n\
-    \  - 変わり身: {id}_kawarimi_grid_monthly_fast.csv\n  - 四つ目: {id}_yotsume_grid_monthly_fast.csv\n\
-    \nAC1: 全7忍法WF実行(60秒タイムボックス)\n  - timeout 60で全7忍法連続実行\n  - 各忍法のselection_timeline\
-    \ + ALMリターン出力\n  - binary_check: 全7忍法が60秒以内に完了\n\nAC2: 忍法別ALM適性サマリ\n  - 各忍法のALMリターン6系列(6目的関数)のメトリクス計算\n\
-    \  - チェックリスト§0の忍法別適性表(加速R75%最強〜変わり身46%)と突合\n  - 出力: outputs/analysis/alm_research/cmd_1771_ninpo_alm_summary.csv\n\
-    \  - commit\n"
+  - description: ALM四神フォルダが作成され、folder_idが取得できている
+    id: AC1
+  - description: 'ALM四神12体が全てfolder_id設定済み。確認: GET /api/admin/folders/tree でフォルダ内12体'
+    id: AC2
+  - description: 'フォルダ外のポートフォリオに影響なし。確認: 他PFのfolder_idが変化していない'
+    id: AC3
+  command: "本番Admin API経由でALM四神フォルダを作成し、ALM四神12体を移動する。\n\n手順:\n1. GET /api/admin/folders/tree\
+    \ で既存フォルダ確認（重複防止）\n2. POST /api/admin/folders {\"name\": \"ALM四神\"} → folder_id取得\n\
+    3. 本番DBからALM四神12体のportfolio_idを取得\n   （portfolios.nameが ALM- で始まるStandard PF、またはpipeline_configにalm_configを含む12体）\n\
+    4. 12体それぞれに POST /api/admin/folders/portfolios/{portfolio_id}/move {\"folder_id\"\
+    : \"xxx\"}\n5. GET /api/admin/folders/tree でフォルダ内12体確認\n\nAPIベースURL: backend/.env\
+    \ の RENDER_API_URL\n認証: backend/.env の ADMIN_API_KEY\n"
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
-    \ 06829a\n  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit\
-    \ 1がClaude Codeに'non-blo\n────────────────────────────────────────"
+    \  - L484: DELETE APIの認証がタスクYAML記載のBasic admin:703で401失敗。.env確認でADMIN_USER=simokitafreshと判明\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -48,26 +38,31 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   ninja: hayate
-  parallel_ok: []
-  parent_cmd: cmd_1771
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1792
   project: dm-signal
-  purpose: 'Step 0e続行+Step 0f: WFエンジンで全7忍法WF実行。忍法別ALM適性定量確認'
+  report_filename: hayate_report_cmd_1792.yaml
+  report_path: queue/reports/hayate_report_cmd_1792.yaml
   scope_mode: IMPL
-  scout_exempt: true
   status: done
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py
-  task_id: cmd_1771_impl
+  task_id: cmd_1792_impl
+  task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_1771.yaml
-  report_path: queue/reports/hayate_report_cmd_1771.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 16
+    total_workarounds: 17
     top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), uncategorized(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), scout_gate_bypass(1件), report_missing(1件)'
+    breakdown: 'report_yaml_format(3件), spec_mismatch_redeploy(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), scout_gate_bypass(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'verdict_invalid'
+      count: 1
+    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 20
@@ -103,34 +98,34 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
-  - id: 'L570'
-    summary: '119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/index`'
-    detail: '119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/index`'
-  - id: 'L569'
-    summary: '''left_tail_jumps_inv=1/count(r<-2σ)。早期fold(2012年付近)ではウォームアップ不足でリターン=0の月が多く、σ=0→left_count=0→ltj_inv=NaN。result:'
-    detail: '''left_tail_jumps_inv=1/count(r<-2σ)。早期fold(2012年付近)ではウォームアップ不足でリターン=0の月が多く、σ=0→left_count=0→ltj_inv=NaN。result:'
-  - id: 'L568'
-    summary: '10目的の平均プロファイル間Spearman相関を計算したところ全45ペアが|ρ|>0.8の冗長判定。理由: 全10目的とも同一L0 4体(DM2/DM3/DM6/DM7+)から7忍法が選択するため、目的関数が変わっても選ばれる体のcagr/maxdd等の値の順序が類似する。目的間の真の違いはWHICH体を選ぶか(月次選択の多様性)にあり、単純なスコア相関で冗長性を測定するのは不適切な可能性がある'
-    detail: '10目的の平均プロファイル間Spearman相関を計算したところ全45ペアが|ρ|>0.8の冗長判定。理由: 全10目的とも同一L0 4体(DM2/DM3/DM6/DM7+)から7忍法が選択するため、目的関数が変わっても選ばれる体のcagr/maxdd等の値の順序が類似する。目的間の真の違いはWHICH体を選ぶか(月次選択の多様性)にあり、単純なスコア相関で冗長性を測定するのは不適切な可能性がある'
-  - id: 'L567'
-    summary: 'C(6,3)=20通り多様性分析でtail_contributionを含む10コンボは全て下位11-20位(スコア2.9-3.0台)。逆にnhfとcagrを含む組合せは上位集中(上位10コンボの8/10に登場)。Spearman相関でtail_contribution×nhf=-0.366(逆相関)が確認。tail_contributionはnhfと逆相関するためtail_contribution'
-    detail: 'C(6,3)=20通り多様性分析でtail_contributionを含む10コンボは全て下位11-20位(スコア2.9-3.0台)。逆にnhfとcagrを含む組合せは上位集中(上位10コンボの8/10に登場)。Spearman相関でtail_contribution×nhf=-0.366(逆相関)が確認。tail_contributionはnhfと逆相関するためtail_contribution'
-  - id: 'L566'
-    summary: 'シン吸収=同一champion params→月次選択も同一→完全同一メトリクス。ALM吸収=同一IS設定(pattern_id)だが異なる目的関数(UWP'
-    detail: 'シン吸収=同一champion params→月次選択も同一→完全同一メトリクス。ALM吸収=同一IS設定(pattern_id)だが異なる目的関数(UWP'
-  - id: 'L565'
-    summary: 'DBの旧加速PF(加速-激攻/常勝/鉄壁)はratio/diffを統合した旧四神ベースL2。シン版以降からR/D分離。旧版比較テーブルではR/D共通データとして扱うべき。cmd_1761影丸報告で判明。'
-    detail: 'DBの旧加速PF(加速-激攻/常勝/鉄壁)はratio/diffを統合した旧四神ベースL2。シン版以降からR/D分離。旧版比較テーブルではR/D共通データとして扱うべき。cmd_1761影丸報告で判明。'
-  - id: 'L564'
-    summary: 'cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる。importlib.util.module_from_specで独立ロードしたモジュールのmutableセットを直接追加する方式が有効。既存コードへの永続的変更なしに新目的関数を'
-    detail: 'cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる。importlib.util.module_from_specで独立ロードしたモジュールのmutableセットを直接追加する方式が有効。既存コードへの永続的変更なしに新目的関数を'
-  - id: 'L563'
-    summary: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
-    detail: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
-  - id: 'L562'
-    summary: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
-    detail: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
-  - id: 'L561'
-    summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-    detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
-  deployed_at: "2026-04-07T02:25:26"
+  - id: 'L580'
+    summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
+    detail: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
+  - id: 'L579'
+    summary: 'draft教訓31件が未査読のままGATE到達'
+    detail: 'draft教訓31件が未査読のままGATE到達'
+  - id: 'L578'
+    summary: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
+    detail: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
+  - id: 'L577'
+    summary: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
+    detail: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
+  - id: 'L576'
+    summary: '''FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、context.target_date(月初第1営業日)でexact-match'
+    detail: '''FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、context.target_date(月初第1営業日)でexact-match'
+  - id: 'L575'
+    summary: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはmonth-end日付キー、FoFリバランス日は月初第1営業日→常にNone→Cash。SVMF/MVMFはget_momentum_value_at_date(bisect)で正しく対応済み。修正はdictに対してもbisect使用に統一す'
+    detail: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはmonth-end日付キー、FoFリバランス日は月初第1営業日→常にNone→Cash。SVMF/MVMFはget_momentum_value_at_date(bisect)で正しく対応済み。修正はdictに対してもbisect使用に統一す'
+  - id: 'L574'
+    summary: '''MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→Cash。修正:'
+    detail: '''MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→Cash。修正:'
+  - id: 'L573'
+    summary: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
+    detail: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
+  - id: 'L572'
+    summary: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/analysis/grid_search/run_077_*.py。target_path_warningが発火したがfindコマンドで正パスを特定。今後のGS'
+    detail: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/analysis/grid_search/run_077_*.py。target_path_warningが発火したがfindコマンドで正パスを特定。今後のGS'
+  - id: 'L571'
+    summary: '''タスク記述の''''現行CSV(2012-07)''''はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range(''''2012-07-01''''))を指す。実際のCSVは2012-04起点(166行)。タスク記述が実CSVの仕様を反映していないため、ACチェック時に混乱が生じた。今後:'
+    detail: '''タスク記述の''''現行CSV(2012-07)''''はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range(''''2012-07-01''''))を指す。実際のCSVは2012-04起点(166行)。タスク記述が実CSVの仕様を反映していないため、ACチェック時に混乱が生じた。今後:'
+  deployed_at: "2026-04-07T22:21:24"

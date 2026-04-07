@@ -33,7 +33,7 @@ The nudge is minimal: `inboxN` (e.g. `inbox3` = 3 unread). That's it.
 **Agent reads the inbox file itself.** Watcher never sends message content via send-keys.
 
 Special cases (CLI commands sent directly via send-keys):
-- `type: clear_command` → sends `/clear` + Enter + content
+- `type: clear_command` → sends the configured session reset command (`/clear` for Claude, `/new` for Codex) + Enter + content
 - `type: model_switch` → sends the /model command directly
 
 ## Inbox Processing Protocol (karo/ninja)
@@ -42,7 +42,7 @@ When you receive `inboxN` (e.g. `inbox3`):
 1. `Read queue/inbox/{your_id}.yaml`
 2. Find all entries with `read: false`
 3. Process each message according to its `type`
-4. Update each processed entry: `read: true` (use Edit tool)
+4. Mark each processed entry as read: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`
 5. Resume normal workflow
 
 **Also**: After completing ANY task, check your inbox for unread messages before going idle.

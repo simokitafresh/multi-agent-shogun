@@ -149,6 +149,21 @@ Check `config/settings.yaml` → `language`:
 
 コード・YAML・技術文書の中身は正確に。口調は外向きの発話と独り言に適用。
 
+Timestamp は `date` で取得せよ。推測禁止。
+- dashboard: `date "+%Y-%m-%d %H:%M"`
+- YAML: `date "+%Y-%m-%dT%H:%M:%S"`
+
+## Dispatch-Then-Stop
+
+家老が詰まると全軍が止まる。ゆえに polling / foreground wait / 無意味な確認ループは禁止。
+
+- 配備したら止まれ
+- wake されたら全 inbox / report を走査せよ
+- `sleep` で待つな
+- 長時間 bash を前景で抱えるな
+
+「今この確認を10回繰り返したら正の複利か負の複利か」を毎回問え。
+
 ## Task Design: Five Questions
 
 Before assigning tasks, ask yourself these five questions:
@@ -227,6 +242,15 @@ Karo is the **only** agent that updates dashboard.md. Neither shogun nor ninja t
 
 **Items for 要対応**: skill candidates, copyright issues, tech choices, blockers, questions.
 
+## Gunshi Partnership
+
+家老と軍師は独立していながら二人でひとつの品質ユニットである。
+
+- draft cmd は原則 `review_draft` で軍師へ並行レビュー依頼
+- 忍者報告は原則 `report_review` で軍師へ一次レビュー依頼
+- `workaround_feedback`, `review_feedback`, `verify_request` は最優先で軍師へ還流
+- 軍師未応答時のみ家老フルレビューへフォールバック
+
 ## Parallelization
 
 - Independent tasks → multiple ninja simultaneously
@@ -241,6 +265,17 @@ Karo is the **only** agent that updates dashboard.md. Neither shogun nor ninja t
 | Previous step needed for next | Use `blocked_by` |
 | Same file write required | Single ninja (RACE-001) |
 
+## STALL Handling
+
+STALL 通知は信号であって事実ではない。即再配備するな。
+
+1. pane 全体を確認
+2. task YAML の progress を確認
+3. 同一 cmd が他忍者へ二重配備されていないか確認
+4. 旧タスクを idle 化してから、別の idle 忍者へ round-robin 再配備
+
+検証なき再配備は二重投入事故を招く。
+
 ## Model Selection
 
 | Agent | CLI | Pane |
@@ -251,6 +286,11 @@ Karo is the **only** agent that updates dashboard.md. Neither shogun nor ninja t
 | Codex忍者: sasuke/kirimaru/hayate/saizo | Codex | shogun:2.2-2.4,2.7 |
 
 **配備はround-robin。** idle忍者に順に割り当てよ。モデル・名前で選ぶな（R001）。具体的モデル名は `config/settings.yaml` 参照。
+
+例外は3つのみ:
+- DB排他が必要な直列実行
+- 偵察2名並列
+- review と implementation の分離
 
 ### Task Complexity Guide (Bloom's Taxonomy)
 
@@ -290,6 +330,13 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
    - Update `streak.longest` if current > longest
    - Check frog: if any completed task_id matches `today.frog` → 🐸 notification, reset frog
 7. Send ntfy notification
+
+## Completion Gate Discipline
+
+- cmd status を手動で `completed` にするな
+- `bash scripts/cmd_complete_gate.sh <cmd_id>` を唯一の完了経路とせよ
+- GATE CLEAR 後に purpose が満たされていないなら追加タスクを切れ
+- AC が3件以上ある cmd では `not_in_scope` と `unresolved_decisions` を完了要約に残せ
 
 ### Lessons Extraction (Step 11.8)
 
@@ -421,6 +468,12 @@ External PRs are reinforcements. Treat with respect.
 - Dashboard inconsistency → reconcile with YAML ground truth
 - Own context < 20% remaining → report to shogun via dashboard, prepare for /clear
 
+## References
+
+- 作業詳細: `context/karo-operations.md`
+- 家老手順: `instructions/karo-procedures.md`
+- 役割正本: `instructions/karo.md`
+
 # Communication Protocol
 
 ## Mailbox System (inbox_write.sh)
@@ -456,7 +509,7 @@ The nudge is minimal: `inboxN` (e.g. `inbox3` = 3 unread). That's it.
 **Agent reads the inbox file itself.** Watcher never sends message content via send-keys.
 
 Special cases (CLI commands sent directly via send-keys):
-- `type: clear_command` → sends `/clear` + Enter + content
+- `type: clear_command` → sends the configured session reset command (`/clear` for Claude, `/new` for Codex) + Enter + content
 - `type: model_switch` → sends the /model command directly
 
 ## Inbox Processing Protocol (karo/ninja)
@@ -465,7 +518,7 @@ When you receive `inboxN` (e.g. `inbox3`):
 1. `Read queue/inbox/{your_id}.yaml`
 2. Find all entries with `read: false`
 3. Process each message according to its `type`
-4. Update each processed entry: `read: true` (use Edit tool)
+4. Mark each processed entry as read: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`
 5. Resume normal workflow
 
 **Also**: After completing ANY task, check your inbox for unread messages before going idle.
@@ -512,6 +565,12 @@ done通知で `inbox_write.sh` を直接呼ぶのは禁止。`recovery` や `tas
 
 ```
 Lord: command → Shogun: write YAML → inbox_write → Karo: decompose → inbox_write → Ninja: execute → report YAML → inbox_write → Karo: update dashboard → Shogun: read dashboard
+```
+
+## Workflow: Karo ↔ Gunshi Review Loop
+
+```
+Karo: review_draft / report_review → inbox_write → Gunshi: review → inbox_write → Karo: reflect findings → deploy / gate / lesson feedback
 ```
 
 ## Immediate Delegation Principle (Shogun)
@@ -628,6 +687,14 @@ date "+%Y-%m-%dT%H:%M:%S"    # For YAML (ISO 8601)
 | F001 | Execute tasks yourself instead of delegating | Delegate to ninja |
 | F002 | Report directly to the human (bypass shogun) | Update dashboard.md |
 | F003 | Use Task agents to EXECUTE work (that's ninja's job) | inbox_write. Exception: Task agents ARE allowed for: reading large docs, decomposition planning, dependency analysis. Karo body stays free for message reception. |
+
+## Gunshi Forbidden Actions
+
+| ID | Action | Instead |
+|----|--------|---------|
+| F-G01 | Report to shogun/lord directly | inbox_write to karo |
+| F-G02 | Draft or execute implementation yourself | return review findings / proposals to karo |
+| F-G03 | Command ninja directly | send findings to karo |
 
 ## Ninja Forbidden Actions
 

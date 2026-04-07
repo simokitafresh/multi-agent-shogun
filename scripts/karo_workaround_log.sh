@@ -13,6 +13,44 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOG_FILE="$REPO_ROOT/logs/karo_workarounds.yaml"
 LOCK_FILE="/tmp/karo_workarounds.lock"
 
+# --- Reclassify mode: update category of existing entries ---
+if [[ "${1:-}" == "--reclassify" ]]; then
+    shift
+    if [[ $# -lt 2 ]]; then
+        echo "Usage: bash scripts/karo_workaround_log.sh --reclassify <cmd_id_pattern> <new_category>" >&2
+        exit 1
+    fi
+    PATTERN="$1"
+    NEW_CAT="$2"
+    (
+        flock -w 10 200 || { echo "[reclassify] Error: lock" >&2; exit 1; }
+        TMPFILE=$(mktemp)
+        awk -v pat="$PATTERN" -v newcat="$NEW_CAT" '
+        /^- (cmd_id|cmd):/ { pending=0; if ($0 ~ pat) pending=1 }
+        pending && /^  category:/ { print "  category: " newcat; pending=0; next }
+        { print }
+        ' "$LOG_FILE" > "$TMPFILE"
+        mv "$TMPFILE" "$LOG_FILE"
+        echo "[reclassify] Updated entries matching '$PATTERN' → category: $NEW_CAT"
+    ) 200>"$LOCK_FILE"
+    exit 0
+fi
+
+# --- Normalize mode: fix cmd → cmd_id key ---
+if [[ "${1:-}" == "--normalize" ]]; then
+    (
+        flock -w 10 200 || { echo "[normalize] Error: lock" >&2; exit 1; }
+        BEFORE=$(grep -c "^- cmd: " "$LOG_FILE" 2>/dev/null || echo 0)
+        if [[ "$BEFORE" -gt 0 ]]; then
+            TMPFILE=$(mktemp)
+            sed "s/^- cmd: /- cmd_id: /" "$LOG_FILE" > "$TMPFILE"
+            mv "$TMPFILE" "$LOG_FILE"
+        fi
+        echo "[normalize] Fixed $BEFORE entries: cmd → cmd_id"
+    ) 200>"$LOCK_FILE"
+    exit 0
+fi
+
 # --- Argument validation ---
 CLEAN_MODE=false
 EXPLICIT_CATEGORY=""
@@ -154,22 +192,17 @@ count_category_entries() {
     fi
     awk -v target="$category" '
     /^- (cmd_id|timestamp):/ {
-        if (n > 0 && cat == target && !resolved) count++
-        n++; cat=""; resolved=0; detail=""
+        if (n > 0 && cat == target && is_wa && !resolved) count++
+        n++; cat=""; resolved=0; is_wa=0
     }
-    /^  category:/ { sub(/^  category: */, ""); gsub(/[" ]/, ""); cat=$0 }
+    /^  workaround: true/ { is_wa=1 }
+    /^  category:/ { sub(/^  category: */, ""); gsub(/["'"'"' ]/, "", $0); cat=$0 }
     /^  resolved_by_cmd:/ {
-        v=$0; sub(/^  resolved_by_cmd: */, "", v); gsub(/[" ]/, "", v)
+        v=$0; sub(/^  resolved_by_cmd: */, "", v); gsub(/["'"'"' ]/, "", v)
         if (v != "") resolved=1
     }
-    # Auto-classify entries without category from detail/issue
-    /^  (detail|issue):/ && cat == "" {
-        if ($0 ~ /lessons_useful|binary_checks|lesson_candidate|report_field_set|verdict|ac_version|(dict|list|string).*(→|変換|形式)/) cat="report_yaml_format"
-        else if ($0 ~ /missing|not found/) cat="file_disappearance"
-        else cat="uncategorized"
-    }
     END {
-        if (n > 0 && cat == target && !resolved) count++
+        if (n > 0 && cat == target && is_wa && !resolved) count++
         print count+0
     }
     ' "$LOG_FILE"

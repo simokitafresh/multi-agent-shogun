@@ -445,7 +445,7 @@ The nudge is minimal: `inboxN` (e.g. `inbox3` = 3 unread). That's it.
 **Agent reads the inbox file itself.** Watcher never sends message content via send-keys.
 
 Special cases (CLI commands sent directly via send-keys):
-- `type: clear_command` → sends `/clear` + Enter + content
+- `type: clear_command` → sends the configured session reset command (`/clear` for Claude, `/new` for Codex) + Enter + content
 - `type: model_switch` → sends the /model command directly
 
 ## Inbox Processing Protocol (karo/ninja)
@@ -454,7 +454,7 @@ When you receive `inboxN` (e.g. `inbox3`):
 1. `Read queue/inbox/{your_id}.yaml`
 2. Find all entries with `read: false`
 3. Process each message according to its `type`
-4. Update each processed entry: `read: true` (use Edit tool)
+4. Mark each processed entry as read: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`
 5. Resume normal workflow
 
 **Also**: After completing ANY task, check your inbox for unread messages before going idle.
@@ -501,6 +501,12 @@ done通知で `inbox_write.sh` を直接呼ぶのは禁止。`recovery` や `tas
 
 ```
 Lord: command → Shogun: write YAML → inbox_write → Karo: decompose → inbox_write → Ninja: execute → report YAML → inbox_write → Karo: update dashboard → Shogun: read dashboard
+```
+
+## Workflow: Karo ↔ Gunshi Review Loop
+
+```
+Karo: review_draft / report_review → inbox_write → Gunshi: review → inbox_write → Karo: reflect findings → deploy / gate / lesson feedback
 ```
 
 ## Immediate Delegation Principle (Shogun)
@@ -617,6 +623,14 @@ date "+%Y-%m-%dT%H:%M:%S"    # For YAML (ISO 8601)
 | F001 | Execute tasks yourself instead of delegating | Delegate to ninja |
 | F002 | Report directly to the human (bypass shogun) | Update dashboard.md |
 | F003 | Use Task agents to EXECUTE work (that's ninja's job) | inbox_write. Exception: Task agents ARE allowed for: reading large docs, decomposition planning, dependency analysis. Karo body stays free for message reception. |
+
+## Gunshi Forbidden Actions
+
+| ID | Action | Instead |
+|----|--------|---------|
+| F-G01 | Report to shogun/lord directly | inbox_write to karo |
+| F-G02 | Draft or execute implementation yourself | return review findings / proposals to karo |
+| F-G03 | Command ninja directly | send findings to karo |
 
 ## Ninja Forbidden Actions
 

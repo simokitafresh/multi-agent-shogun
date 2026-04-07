@@ -339,51 +339,34 @@ WRITE_EXIT=0
 (
     flock -w 10 201 || { log "ERROR: flock failed for ${TARGET_YAML}"; exit 1; }
 
-    TASK_FILE_PATH="$TASK_FILE" TARGET_PATH="$TARGET_YAML" \
-    NINJA_NAME="$SELECTED_NINJA" \
-    python3 -c "
-import yaml, sys, os, tempfile
+    # Copy source file to target (preserves original YAML format — no yaml.dump)
+    cp "$TASK_FILE" "$TARGET_YAML"
 
-task_file = os.environ['TASK_FILE_PATH']
-target_path = os.environ['TARGET_PATH']
-ninja = os.environ['NINJA_NAME']
+    # Update fields via yaml_field_set.sh (flock-safe, format-preserving)
+    local_yfs="$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 
-with open(task_file) as f:
-    data = yaml.safe_load(f)
+    # Set assigned_to if not already set
+    existing_assigned=$(python3 -c "
+import yaml, sys
+with open('${TARGET_YAML}') as f:
+    d = yaml.safe_load(f)
+v = d.get('task',{}).get('assigned_to','')
+print(v if v else '')
+" 2>/dev/null || true)
 
-task = data['task']
+    if [ -z "$existing_assigned" ]; then
+        bash "$local_yfs" "$TARGET_YAML" "task" "assigned_to" "$SELECTED_NINJA" 2>> "$LOG"
+    fi
 
-# assigned_toが事前指定されていればそちらを優先
-if not task.get('assigned_to'):
-    task['assigned_to'] = ninja
-task['status'] = 'assigned'
+    # Set status to assigned
+    bash "$local_yfs" "$TARGET_YAML" "task" "status" "assigned" 2>> "$LOG"
 
-# Atomic write to target ninja YAML
-tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(target_path), suffix='.tmp')
-try:
-    with os.fdopen(tmp_fd, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-    os.replace(tmp_path, target_path)
-except:
-    os.unlink(tmp_path)
-    raise
+    echo "Written: ${TARGET_YAML}" >&2
 
-print(f'Written: {target_path}', file=sys.stderr)
-
-# If source file differs from target, update source too (prevent stale duplicates)
-if os.path.abspath(task_file) != os.path.abspath(target_path):
-    tmp_fd2, tmp_path2 = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd2, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path2, task_file)
-        print(f'Source updated: {task_file}', file=sys.stderr)
-    except:
-        try: os.unlink(tmp_path2)
-        except: pass
-        # Non-fatal: target is the authority
-        print(f'WARN: source update failed (non-fatal)', file=sys.stderr)
-" 2>> "$LOG"
+    # If source file differs from target, update source too (prevent stale duplicates)
+    if [ "$(realpath "$TASK_FILE")" != "$(realpath "$TARGET_YAML")" ]; then
+        cp "$TARGET_YAML" "$TASK_FILE" 2>> "$LOG" || echo "WARN: source update failed (non-fatal)" >&2
+    fi
 
 ) 201>"$TARGET_LOCK" || WRITE_EXIT=$?
 

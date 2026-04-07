@@ -128,6 +128,8 @@ cli:
     karo:
       type: claude
       model: opus
+    gunshi:
+      type: codex
     sasuke:
       type: codex
     kirimaru:
@@ -451,6 +453,12 @@ load_adapter_with() {
     [ "$result" = "instructions/karo.md" ]
 }
 
+@test "get_instruction_file: gunshi + codex → instructions/generated/codex-gunshi.md" {
+    load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
+    result=$(get_instruction_file "gunshi")
+    [ "$result" = "instructions/generated/codex-gunshi.md" ]
+}
+
 @test "get_instruction_file: sasuke + codex → instructions/generated/codex-ashigaru.md" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
     result=$(get_instruction_file "sasuke")
@@ -498,18 +506,22 @@ load_adapter_with() {
     # claude
     [ "$(get_instruction_file shogun claude)" = "instructions/shogun.md" ]
     [ "$(get_instruction_file karo claude)" = "instructions/karo.md" ]
+    [ "$(get_instruction_file gunshi claude)" = "instructions/gunshi.md" ]
     [ "$(get_instruction_file sasuke claude)" = "instructions/ashigaru.md" ]
     # codex
     [ "$(get_instruction_file shogun codex)" = "instructions/generated/codex-shogun.md" ]
     [ "$(get_instruction_file karo codex)" = "instructions/generated/codex-karo.md" ]
+    [ "$(get_instruction_file gunshi codex)" = "instructions/generated/codex-gunshi.md" ]
     [ "$(get_instruction_file hayate codex)" = "instructions/generated/codex-ashigaru.md" ]
     # copilot
     [ "$(get_instruction_file shogun copilot)" = ".github/copilot-instructions-shogun.md" ]
     [ "$(get_instruction_file karo copilot)" = ".github/copilot-instructions-karo.md" ]
+    [ "$(get_instruction_file gunshi copilot)" = ".github/copilot-instructions-gunshi.md" ]
     [ "$(get_instruction_file hanzo copilot)" = ".github/copilot-instructions-ashigaru.md" ]
     # kimi
     [ "$(get_instruction_file shogun kimi)" = "instructions/generated/kimi-shogun.md" ]
     [ "$(get_instruction_file karo kimi)" = "instructions/generated/kimi-karo.md" ]
+    [ "$(get_instruction_file gunshi kimi)" = "instructions/generated/kimi-gunshi.md" ]
     [ "$(get_instruction_file kotaro kimi)" = "instructions/generated/kimi-ashigaru.md" ]
 }
 

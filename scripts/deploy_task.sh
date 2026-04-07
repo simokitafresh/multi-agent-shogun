@@ -1114,10 +1114,15 @@ EOF
         }
     ' "$task_file" 2>/dev/null)
 
-    # cmd_1512: Standard commit check - always injected alongside AC checks
-    local _commit_bc='  commit:
+    # cmd_1512: Standard commit check - skip for scout/recon (no code changes)
+    local _deploy_task_type
+    _deploy_task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null)
+    local _commit_bc=""
+    if [ "$_deploy_task_type" != "scout" ] && [ "$_deploy_task_type" != "recon" ]; then
+        _commit_bc='  commit:
   - check: "git commitが完了したか(untracked/modified=0)"
     result: ""  # yes or no'
+    fi
     local _bc_placeholder='binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入'
 
     if [ -n "$_bc_block" ]; then

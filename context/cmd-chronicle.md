@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-07 -->
+<!-- last_updated: 2026-04-08 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -719,3 +719,15 @@
 | cmd_1783 | ハーネス — cmd起票時WHY→WHAT因果強制 + 範囲縮小検知 | infra | 04-07 | cmd_save.shにq8_why_what BLOCK+ |
 | cmd_1774 | ALM四神L0パリティ検証 — 研究スクリプト vs 本番DB(12体) + momentum_data修正 | dm-signal | 04-07 | ALM L0パリティ検証PASS。momentum_data |
 | cmd_1784 | ALM 67窓速度 — Pool並列+batch最適化で7忍法31秒以内 | dm-signal | 04-07 | — |
+| cmd_1787 | URGENT修正 — FoF 23体Cash化バグ修正 + fullrecalculate + 本番復旧 | dm-signal | 04-07 | 3ブロックの月次FoF momentum cache loo |
+| cmd_1788 | ALM四神リネーム — DM番号→四神名に統一 | dm-signal | 04-07 | ALM四神12体の portfolios.name を DM |
+| cmd_1790 | ALM L1 38メトリクス — Phase A commit + Phase B vectorized系7メトリクス | dm-signal | 04-07 | Phase A を commit 1ff11495 で固定し |
+| cmd_1786 | URGENT偵察 — FoF Cash化バグ根因特定。4/7 fullrecalculateで23FoFがCash化 | dm-signal | 04-07 | Level3 FoF(23体)が常時Cashを出す根本原因を |
+| cmd_1791 | ALM L1 38メトリクス Phase C — MINIMIZE更新+select_champions整合+7忍法67窓全量実行 | dm-signal | 04-07 | select_champions_multi_is は 6 |
+| cmd_1789 | ALM L1 38メトリクス拡張Phase A — PrefixMomentCache+prefix系14メトリクス | dm-signal | 04-07 | PrefixMomentCacheに4配列を追加し、down |
+| cmd_1792 | ALM四神フォルダ作成 — 12体をALM四神フォルダに移動 | dm-signal | 04-07 | 本番Admin APIで ALM四神 フォルダを新規作成し、 |
+| cmd_1776 | ALM L0パリティ修正 — 研究スクリプトのmonthly_return計算を本番と完全一致させる | dm-signal | 04-07 | 研究側の monthly_return 期待値計算を本番Op |
+| cmd_1782 | ALM 67窓 — 34メトリクス全量prefix/vectorized化 + 7忍法5分以内 | dm-signal | 04-07 | 34メトリクス window fast path 化により |
+| cmd_1785 | 軍師設計依頼 — compute_metrics_npを38メトリクス対応に拡張する設計 | dm-signal | 04-07 | — |
+| cmd_1793 | ALM L1 WF分析 — 7忍法selection_timelineから忍法別ALM適性+モードラベル付与 | dm-signal | 04-07 | cmd_1791で生成した7忍法selection_time |
+| cmd_1794 | 知識鮮度回復 — ALMチェックリスト+context+dashboard+CLAUDE.md実物同期 | dm-signal | 04-08 | checklist-alm-registration.md( |

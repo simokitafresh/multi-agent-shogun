@@ -2540,7 +2540,7 @@ check_gate_improvement() {
     fi
     LAST_GATE_IMPROVEMENT=$now
 
-    local gate_script="$SCRIPT_DIR/scripts/gates/gate_improvement_trigger.sh"
+    local gate_script="$SCRIPT_DIR/scripts/gate_improvement_trigger.sh"
     if [ ! -f "$gate_script" ]; then
         log "GATE-IMPROVEMENT: gate_improvement_trigger.sh not found, skip"
         return

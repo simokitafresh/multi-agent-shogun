@@ -115,7 +115,7 @@ trap "rm -f '$_BUILD_COMMON_TMP'" EXIT INT TERM
 # ============================================================
 # Build instruction files — profile-driven from cli_profiles.yaml
 # ============================================================
-ROLES="shogun karo ashigaru"
+ROLES="shogun karo gunshi ashigaru"
 PROFILE_TYPES=$(get_profile_types)
 
 # Default CLI — files without prefix
@@ -162,6 +162,7 @@ transform_claude_md() {
         -e "s|CLAUDE\\.local\\.md|${autoload_local_md}|g" \
         -e "s|instructions/shogun\\.md|instructions/generated/${cli_type}-shogun.md|g" \
         -e "s|instructions/karo\\.md|instructions/generated/${cli_type}-karo.md|g" \
+        -e "s|instructions/gunshi\\.md|instructions/generated/${cli_type}-gunshi.md|g" \
         -e "s|instructions/ashigaru\\.md|instructions/generated/${cli_type}-ashigaru.md|g" \
         -e "s|~/\\.claude/|~/.${cli_type}/|g" \
         -e "s|\\.claude\\.json|${config_path}|g" \

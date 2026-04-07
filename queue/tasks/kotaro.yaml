@@ -32,7 +32,7 @@ task:
   parent_cmd: cmd_karo_fix_precommit_comment
   project: infra
   scope_mode: IMPL
-  status: assigned
+  status: done
   stop_for: []
   task_id: cmd_karo_fix_precommit_comment_impl
   task_type: impl

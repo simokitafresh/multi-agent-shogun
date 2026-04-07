@@ -251,17 +251,17 @@ append_changelog() {
     local completed_at
     completed_at=$(date '+%Y-%m-%dT%H:%M:%S')
 
-    # shogun_to_karo.yamlから該当cmdのpurposeとprojectを抽出
+    # shogun_to_karo.yamlから該当cmdのpurposeとprojectを抽出 (dict形式: "  cmd_XXXX:")
     local purpose
     purpose=$(awk -v cmd="${cmd_id}" '
-        /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
-        found && /^[ ]*purpose:/ { sub(/^[ ]*purpose: *"?/, ""); sub(/"$/, ""); print; exit }
+        /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
+        found && /^    (title|purpose):/ { sub(/^[[:space:]]*(title|purpose):[[:space:]]*"?/, ""); sub(/"[[:space:]]*$/, ""); print; exit }
     ' "$YAML_FILE")
 
     local project
     project=$(awk -v cmd="${cmd_id}" '
-        /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
-        found && /^[ ]*project:/ { sub(/^[ ]*project: */, ""); print; exit }
+        /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
+        found && /^    project:/ { sub(/^[[:space:]]*project:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
     ' "$YAML_FILE")
 
     if [ -z "$purpose" ]; then
@@ -3021,8 +3021,8 @@ run_review_quality_check
 level_heading "[L3]" "Draft lesson check:"
 # cmdのprojectを取得
 CMD_PROJECT=$(awk -v cmd="${CMD_ID}" '
-    /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
-    found && /^[ ]*project:/ { sub(/^[ ]*project: */, ""); print; exit }
+    /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
+    found && /^    project:/ { sub(/^[[:space:]]*project:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
 ' "$YAML_FILE")
 
 if [ -n "$CMD_PROJECT" ]; then
@@ -3144,8 +3144,8 @@ fi
 level_heading "[L3]" "Recon knowledge persistence check (穴4):"
 # purposeを取得（append_changelog内と同じawk）
 CMD_PURPOSE=$(awk -v cmd="${CMD_ID}" '
-    /^[ ]*- id:/ { line=$0; sub(/^[ ]*- id: */, "", line); gsub(/[" \t]/, "", line); if (line == cmd) { found=1; next } if (found) exit }
-    found && /^[ ]*purpose:/ { sub(/^[ ]*purpose: *"?/, ""); sub(/"$/, ""); print; exit }
+    /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
+    found && /^    (title|purpose):/ { sub(/^[[:space:]]*(title|purpose):[[:space:]]*"?/, ""); sub(/"[[:space:]]*$/, ""); print; exit }
 ' "$YAML_FILE")
 
 IS_RECON=false

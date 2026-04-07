@@ -26,7 +26,11 @@ fi
 if [ -z "$AGENT_ID" ]; then
   echo "WARNING: ntfy called with unavailable agent_id (outside tmux?)" >&2
 elif [ "$AGENT_ID" != "shogun" ] && [ "$AGENT_ID" != "karo" ]; then
-  echo "WARNING: ntfy called by non-authorized agent: ${AGENT_ID}" >&2
+  # ninja_monitor daemon inherits TMUX_PANE from launch context — suppress warning
+  CALLER=$(basename "${BASH_SOURCE[1]:-}" 2>/dev/null || true)
+  if [ "$CALLER" != "ninja_monitor.sh" ]; then
+    echo "WARNING: ntfy called by non-authorized agent: ${AGENT_ID}" >&2
+  fi
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

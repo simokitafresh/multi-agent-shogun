@@ -6,6 +6,12 @@
 Lord: command → Shogun: write YAML → inbox_write → Karo: decompose → inbox_write → Ninja: execute → report YAML → inbox_write → Karo: update dashboard → Shogun: read dashboard
 ```
 
+## Workflow: Karo ↔ Gunshi Review Loop
+
+```
+Karo: review_draft / report_review → inbox_write → Gunshi: review → inbox_write → Karo: reflect findings → deploy / gate / lesson feedback
+```
+
 ## Immediate Delegation Principle (Shogun)
 
 **Delegate to Karo immediately and end your turn** so the Lord can input next command.

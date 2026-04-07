@@ -114,6 +114,7 @@ get_instruction_file() {
     case "$agent_id" in
         shogun)    role="shogun" ;;
         karo)      role="karo" ;;
+        gunshi)    role="gunshi" ;;
         sasuke|kirimaru|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru) role="ashigaru" ;;
         *)
             echo "" >&2

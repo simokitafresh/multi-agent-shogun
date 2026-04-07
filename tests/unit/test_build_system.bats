@@ -59,10 +59,10 @@ setup() {
     [ -d "$OUTPUT_DIR" ]
 }
 
-@test "build: generated/ contains at least 6 files" {
+@test "build: generated/ contains at least 8 files" {
     local count
     count=$(find "$OUTPUT_DIR" -name "*.md" -type f | wc -l)
-    [ "$count" -ge 6 ]
+    [ "$count" -ge 8 ]
 }
 
 # =============================================================================
@@ -75,6 +75,10 @@ setup() {
 
 @test "claude: karo.md generated" {
     [ -f "$OUTPUT_DIR/karo.md" ]
+}
+
+@test "claude: gunshi.md generated" {
+    [ -f "$OUTPUT_DIR/gunshi.md" ]
 }
 
 @test "claude: ashigaru.md generated" {
@@ -93,6 +97,10 @@ setup() {
     [ -f "$OUTPUT_DIR/codex-karo.md" ]
 }
 
+@test "codex: codex-gunshi.md generated" {
+    [ -f "$OUTPUT_DIR/codex-gunshi.md" ]
+}
+
 @test "codex: codex-ashigaru.md generated" {
     [ -f "$OUTPUT_DIR/codex-ashigaru.md" ]
 }
@@ -107,6 +115,10 @@ setup() {
 
 @test "copilot: copilot-karo.md generated [Phase 2+3]" {
     [ -f "$OUTPUT_DIR/copilot-karo.md" ]
+}
+
+@test "copilot: copilot-gunshi.md generated [Phase 2+3]" {
+    [ -f "$OUTPUT_DIR/copilot-gunshi.md" ]
 }
 
 @test "copilot: copilot-ashigaru.md generated [Phase 2+3]" {
@@ -125,6 +137,10 @@ setup() {
     [ -s "$OUTPUT_DIR/karo.md" ]
 }
 
+@test "content: gunshi.md is not empty" {
+    [ -s "$OUTPUT_DIR/gunshi.md" ]
+}
+
 @test "content: ashigaru.md is not empty" {
     [ -s "$OUTPUT_DIR/ashigaru.md" ]
 }
@@ -135,6 +151,10 @@ setup() {
 
 @test "content: codex-karo.md is not empty" {
     [ -s "$OUTPUT_DIR/codex-karo.md" ]
+}
+
+@test "content: codex-gunshi.md is not empty" {
+    [ -s "$OUTPUT_DIR/codex-gunshi.md" ]
 }
 
 @test "content: codex-ashigaru.md is not empty" {
@@ -153,6 +173,10 @@ setup() {
     grep -qi "karo\|家老" "$OUTPUT_DIR/karo.md"
 }
 
+@test "content: gunshi.md contains gunshi role reference" {
+    grep -qi "gunshi\|軍師" "$OUTPUT_DIR/gunshi.md"
+}
+
 @test "content: ashigaru.md contains ninja/ashigaru role reference" {
     grep -qi "ninja\|忍者\|ashigaru\|足軽" "$OUTPUT_DIR/ashigaru.md"
 }
@@ -163,6 +187,10 @@ setup() {
 
 @test "content: codex-karo.md contains karo role reference" {
     grep -qi "karo\|家老" "$OUTPUT_DIR/codex-karo.md"
+}
+
+@test "content: codex-gunshi.md contains gunshi role reference" {
+    grep -qi "gunshi\|軍師" "$OUTPUT_DIR/codex-gunshi.md"
 }
 
 @test "content: codex-ashigaru.md contains ninja/ashigaru role reference" {
@@ -234,7 +262,7 @@ profiles:
     display_name: "Codex Display"
 EOF
 
-    for role in shogun karo ashigaru; do
+    for role in shogun karo gunshi ashigaru; do
         cat > "$temp_repo/instructions/${role}.md" <<EOF
 ---
 role: ${role}

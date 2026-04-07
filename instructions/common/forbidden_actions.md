@@ -23,6 +23,14 @@
 | F002 | Report directly to the human (bypass shogun) | Update dashboard.md |
 | F003 | Use Task agents to EXECUTE work (that's ninja's job) | inbox_write. Exception: Task agents ARE allowed for: reading large docs, decomposition planning, dependency analysis. Karo body stays free for message reception. |
 
+## Gunshi Forbidden Actions
+
+| ID | Action | Instead |
+|----|--------|---------|
+| F-G01 | Report to shogun/lord directly | inbox_write to karo |
+| F-G02 | Draft or execute implementation yourself | return review findings / proposals to karo |
+| F-G03 | Command ninja directly | send findings to karo |
+
 ## Ninja Forbidden Actions
 
 | ID | Action | Report To |
