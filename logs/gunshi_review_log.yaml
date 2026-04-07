@@ -1220,7 +1220,7 @@
   proposals:
     - id: GP-137
       description: "LG012原理をreview_logヘッダに1行追加(実施済み)。automated:true化を家老に申請"
-      status: pending
+      status: completed
   causal_chain: "ci_gate_mismatch12連続→gate実装とCLAUDE.md仕様の乖離が真因→5c3b2aa修正→根絶予測。LG014(道具を疑え)の成功事例。impl phase移行→偵察より複雑なタスク→品質低下リスク→SG強化を事前準備すべき"
   timestamp: "2026-04-06T08:15:00"
 - cmd_id: cmd_1760

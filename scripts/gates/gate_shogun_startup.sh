@@ -305,16 +305,26 @@ if [ -f "$DASHBOARD" ]; then
     dash_proposals=$(grep -c '\[PROPOSAL\]' "$DASHBOARD" 2>/dev/null) || dash_proposals=0
 fi
 
-# 11b: gunshi_review_log.yamlのproposals status=pending
-pending_gp_ids=""
-if [ -f "$REVIEW_LOG" ]; then
-    log_proposals=$(grep -v '^#' "$REVIEW_LOG" 2>/dev/null | grep -c 'status: pending' 2>/dev/null) || log_proposals=0
-    if [ "$log_proposals" -gt 0 ]; then
-        pending_gp_ids=$(awk '/^[[:space:]]*- id: GP-/{id=$NF} /^[[:space:]]*status: pending/{if(id!="") print id; id=""}' "$REVIEW_LOG" 2>/dev/null | paste -sd, -)
-    fi
+# 11a.5: dashboardで完了済みGP-IDを抽出→review_log pendingフィルタに使用
+completed_gps=""
+if [ -f "$DASHBOARD" ]; then
+    completed_gps=$(grep '完了:.*GP-' "$DASHBOARD" | grep -oP 'GP-[0-9]+[a-z]*' | paste -sd '|' -)
 fi
 
-proposal_total=$((dash_proposals + log_proposals))
+# 11b: gunshi_review_log.yamlのproposals status=pending (completed_gps除外)
+pending_gp_ids=""
+if [ -f "$REVIEW_LOG" ]; then
+    raw_pending=$(awk '/^[[:space:]]*- id: GP-/{id=$NF} /^[[:space:]]*status: pending/{if(id!="") print id; id=""}' "$REVIEW_LOG" 2>/dev/null)
+    if [ -n "$completed_gps" ] && [ -n "$raw_pending" ]; then
+        filtered=$(echo "$raw_pending" | grep -vE "^($completed_gps)$")
+    else
+        filtered=$raw_pending
+    fi
+    pending_gp_ids=$(echo "$filtered" | grep -v '^$' | paste -sd, -)
+    log_proposals=$(echo "$filtered" | grep -cv '^$') || log_proposals=0
+fi
+
+proposal_total=$((log_proposals))
 _d_proposals=$proposal_total
 if [ "$proposal_total" -gt 0 ]; then
     $BRIEF || echo "■ 未処理PROPOSAL"
