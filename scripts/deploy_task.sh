@@ -185,26 +185,35 @@ resolve_cmd_to_task() {
         return 1
     fi
 
-    # shogun_to_karo.yamlからcmdメタデータ抽出
+    # shogun_to_karo.yamlからcmdメタデータ抽出（awk方式: Python subprocess除去 cmd_deploy_yaml_speedup）
     local _resolve_output
-    _resolve_output=$(python3 - "$stk" "$cmd_id" <<'RESOLVE_PY'
-import sys
-import yaml
-
-stk_path = sys.argv[1]
-cmd_id = sys.argv[2]
-with open(stk_path, encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-cmd = (data.get('commands') or {}).get(cmd_id)
-if not cmd:
-    print(f"ERROR: {cmd_id} not found", file=sys.stderr)
-    sys.exit(1)
-print(f"project={cmd.get('project', '')}")
-print(f"task_type={cmd.get('scope_mode', cmd.get('type', 'impl')).lower()}")
-print(f"title={cmd.get('title', '')}")
-print(f"purpose={cmd.get('purpose', '')}")
-RESOLVE_PY
-    ) || {
+    _resolve_output=$(awk -v cmd="$cmd_id" '
+        /^  [^ ]/ {
+            if (in_cmd) { exit }
+            s = $0; sub(/^  /, "", s); sub(/:.*/, "", s)
+            if (s == cmd) { in_cmd = 1; next }
+        }
+        in_cmd && /^    [a-z_]+:/ {
+            key = $0; sub(/^    /, "", key); sub(/:.*/, "", key)
+            val = $0; sub(/^[^:]+:[[:space:]]*/, "", val)
+            fc = substr(val, 1, 1); lc = substr(val, length(val), 1)
+            if (length(val) >= 2 && ((fc == "\"" && lc == "\"") || (fc == "'"'"'" && lc == "'"'"'")))
+                val = substr(val, 2, length(val) - 2)
+            if (key == "project")    project   = val
+            else if (key == "scope_mode") scope_mode = val
+            else if (key == "type")       type_val   = val
+            else if (key == "title")      title      = val
+            else if (key == "purpose")    purpose    = val
+        }
+        END {
+            if (!in_cmd) { print "ERROR: " cmd " not found" > "/dev/stderr"; exit 1 }
+            if (!scope_mode) scope_mode = (type_val ? type_val : "impl")
+            print "project="    project
+            print "task_type="  tolower(scope_mode)
+            print "title="      title
+            print "purpose="    purpose
+        }
+    ' "$stk") || {
         log "resolve_cmd: ${cmd_id} not found in shogun_to_karo.yaml"
         return 1
     }
@@ -510,7 +519,7 @@ def find_cmd_acs(pcmd, sdir):
     if os.path.exists(stk_path):
         try:
             with open(stk_path, encoding='utf-8') as f:
-                stk = yaml.safe_load(f) or {}
+                stk = yaml.load(f, Loader=yaml.SafeLoader) or {}
             cmds = stk.get('commands', {})
             if isinstance(cmds, dict):
                 cmd = cmds.get(pcmd, {})
@@ -526,7 +535,7 @@ def find_cmd_acs(pcmd, sdir):
         for cpath in sorted(glob.glob(os.path.join(archive_dir, f'{pcmd}_*.yaml')), reverse=True):
             try:
                 with open(cpath, encoding='utf-8') as f:
-                    adata = yaml.safe_load(f) or {}
+                    adata = yaml.load(f, Loader=yaml.SafeLoader) or {}
                 cmds = adata.get('commands', {})
                 if isinstance(cmds, dict):
                     cmd = cmds.get(pcmd, {})
@@ -758,7 +767,7 @@ def find_cmd_acs(pcmd, sdir):
     if os.path.exists(stk_path):
         try:
             with open(stk_path, encoding='utf-8') as f:
-                stk = yaml.safe_load(f) or {}
+                stk = yaml.load(f, Loader=yaml.SafeLoader) or {}
             cmds = stk.get('commands', {})
             if isinstance(cmds, dict):
                 cmd = cmds.get(pcmd, {})
@@ -773,7 +782,7 @@ def find_cmd_acs(pcmd, sdir):
         for cpath in sorted(glob.glob(os.path.join(archive_dir, f'{pcmd}_*.yaml')), reverse=True):
             try:
                 with open(cpath, encoding='utf-8') as f:
-                    adata = yaml.safe_load(f) or {}
+                    adata = yaml.load(f, Loader=yaml.SafeLoader) or {}
                 cmds = adata.get('commands', {})
                 if isinstance(cmds, dict):
                     cmd = cmds.get(pcmd, {})
@@ -794,7 +803,7 @@ def to_list(acs):
 
 # Load task YAML
 with open(task_file, encoding='utf-8') as f:
-    task_data = yaml.safe_load(f) or {}
+    task_data = yaml.load(f, Loader=yaml.SafeLoader) or {}
 task = task_data.get('task', task_data)
 task_acs = to_list(task.get('acceptance_criteria', []))
 
@@ -1205,7 +1214,7 @@ report_path = Path(os.environ["REPORT_FILE_ENV"])
 task_path = Path(os.environ["TASK_FILE_ENV"])
 
 try:
-    task_raw = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+    task_raw = yaml.load(task_path.read_text(encoding="utf-8"), Loader=yaml.SafeLoader) or {}
 except Exception:
     raise SystemExit(0)
 
@@ -1421,7 +1430,7 @@ def build_lesson_detail(lesson):
 
 try:
     with open(task_file) as f:
-        data = yaml.safe_load(f)
+        data = yaml.load(f, Loader=yaml.SafeLoader)
 
     if not data or 'task' not in data:
         print('[INJECT] No task section in YAML, skipping', file=sys.stderr)
@@ -1451,7 +1460,7 @@ try:
             if os.path.exists(stk_path):
                 try:
                     with open(stk_path) as stk_f:
-                        stk_data = yaml.safe_load(stk_f)
+                        stk_data = yaml.load(stk_f, Loader=yaml.SafeLoader)
                     cmd_entry = (stk_data or {}).get('commands', {}).get(parent_cmd, {})
                     fallback_project = str(cmd_entry.get('project', '') or '').strip()
                     if fallback_project:
@@ -1464,7 +1473,7 @@ try:
             if os.path.exists(proj_yaml_path):
                 try:
                     with open(proj_yaml_path) as pf:
-                        proj_data = yaml.safe_load(pf)
+                        proj_data = yaml.load(pf, Loader=yaml.SafeLoader)
                     cp = str((proj_data or {}).get('current_project', '') or '').strip()
                     if cp:
                         project = cp
@@ -1501,7 +1510,7 @@ try:
         # キャッシュミス: YAML解析 → JSONキャッシュ保存
         try:
             with open(yaml_path) as f:
-                data = yaml.safe_load(f)
+                data = yaml.load(f, Loader=yaml.SafeLoader)
             lessons = data.get('lessons', []) if data else []
             with open(cache_path, 'w') as cf:
                 json.dump(lessons, cf)
@@ -1523,7 +1532,7 @@ try:
     if os.path.exists(projects_yaml_path):
         try:
             with open(projects_yaml_path) as pf:
-                pdata = yaml.safe_load(pf)
+                pdata = yaml.load(pf, Loader=yaml.SafeLoader)
             for pj in (pdata or {}).get('projects', []):
                 if pj.get('type') == 'platform' and pj.get('id') != project:
                     plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
@@ -1603,7 +1612,7 @@ try:
         if os.path.exists(tags_yaml_path):
             try:
                 with open(tags_yaml_path, encoding='utf-8') as tf:
-                    tdata = yaml.safe_load(tf)
+                    tdata = yaml.load(tf, Loader=yaml.SafeLoader)
                 for rule in (tdata or {}).get('tag_rules', []):
                     tag = rule.get('tag', '')
                     patterns = rule.get('patterns', [])
@@ -2277,9 +2286,9 @@ def parse_workarounds_robust(filepath):
     with open(filepath) as f:
         content = f.read()
 
-    # まずyaml.safe_loadを試す
+    # まずyaml.loadを試す
     try:
-        wa_data = yaml.safe_load(content)
+        wa_data = yaml.load(content, Loader=yaml.SafeLoader)
         if isinstance(wa_data, dict):
             return wa_data.get('workarounds', [])
         if isinstance(wa_data, list):
@@ -2306,7 +2315,7 @@ def parse_workarounds_robust(filepath):
             cleaned_lines.append(line)
         cleaned = '\n'.join(cleaned_lines)
         try:
-            parsed = yaml.safe_load(cleaned)
+            parsed = yaml.load(cleaned, Loader=yaml.SafeLoader)
             if isinstance(parsed, list) and parsed:
                 entries.append(parsed[0])
             elif isinstance(parsed, dict):
@@ -2355,7 +2364,7 @@ try:
 
     # task YAMLに注入
     with open(task_file) as f:
-        data = yaml.safe_load(f)
+        data = yaml.load(f, Loader=yaml.SafeLoader)
 
     if not data or 'task' not in data:
         print('[NINJA_WP] No task section, skipping', file=sys.stderr)
