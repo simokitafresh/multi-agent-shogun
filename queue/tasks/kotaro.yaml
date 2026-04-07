@@ -1,37 +1,26 @@
 task:
-  _ac_task_id: cmd_1794_impl
+  _ac_task_id: cmd_karo_fix_precommit_comment_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: eb0d7947
+  ac_version: 8a0b96d0
   acceptance_criteria:
-  - description: checklist-alm-registration.mdのStep 1f/2c/2c✓/2d/2d✓/2e/5a/0d/0eが完了日時付きで記入されている
+  - description: git-pre-commit.sh L49にコメント行除外grepを追加
     id: AC1
-  - description: context/dm-signal-research.md §35にL0パリティPASS+fullrecalc完了+Cash化バグ修正+38メトリクス道具完成+hide維持+フォルダ移動+リネームが追記されている
+  - description: auto_deploy_next.sh L342のコメント行が検出されないことを確認
     id: AC2
-  - description: dashboard.mdパイプラインのcmd_1789/1782/1785/1775/1776が正しい状態に更新されている
-    id: AC3
-  - description: CLAUDE.md知見リストにgunshi-alm-38metrics-design.mdが追加されている
-    id: AC4
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md\
-    \ / .github\n  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
-    \  - L132: IF dashboard_update.sh時 THEN 進捗メモ（配備開始等）にはEdit toolを使え\n────────────────────────────────────────"
+    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+    \  - L028: タスク記述のRun#とSHAが実データと異なるケースがある。Run #73=SHA c2313802(失敗)だが、タスクにはRun #73=SHA\
+    \ 06829a\n  - L192: 並列implのreviewではgit diff origin/main..HEADだけでなくgit diff --name-statusも確認し、対象差分が全て\n\
+    ────────────────────────────────────────"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -40,18 +29,16 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  - AC4
-  parent_cmd: cmd_1794
-  project: dm-signal
+  parent_cmd: cmd_karo_fix_precommit_comment
+  project: infra
   scope_mode: IMPL
-  status: acknowledged
+  status: assigned
   stop_for: []
-  task_id: cmd_1794_impl
+  task_id: cmd_karo_fix_precommit_comment_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_1794.yaml
-  report_path: queue/reports/kotaro_report_cmd_1794.yaml
+  report_filename: kotaro_report_cmd_karo_fix_precommit_comment.yaml
+  report_path: queue/reports/kotaro_report_cmd_karo_fix_precommit_comment.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -83,34 +70,34 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
-  - id: 'L580'
-    summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-    detail: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-  - id: 'L579'
-    summary: 'draft教訓31件が未査読のままGATE到達'
-    detail: 'draft教訓31件が未査読のままGATE到達'
-  - id: 'L578'
-    summary: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
-    detail: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
-  - id: 'L577'
-    summary: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
-    detail: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
-  - id: 'L576'
-    summary: '''FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、context.target_date(月初第1営業日)でexact-match'
-    detail: '''FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、context.target_date(月初第1営業日)でexact-match'
-  - id: 'L575'
-    summary: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはmonth-end日付キー、FoFリバランス日は月初第1営業日→常にNone→Cash。SVMF/MVMFはget_momentum_value_at_date(bisect)で正しく対応済み。修正はdictに対してもbisect使用に統一す'
-    detail: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはmonth-end日付キー、FoFリバランス日は月初第1営業日→常にNone→Cash。SVMF/MVMFはget_momentum_value_at_date(bisect)で正しく対応済み。修正はdictに対してもbisect使用に統一す'
-  - id: 'L574'
-    summary: '''MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→Cash。修正:'
-    detail: '''MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→Cash。修正:'
-  - id: 'L573'
-    summary: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
-    detail: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
-  - id: 'L572'
-    summary: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/analysis/grid_search/run_077_*.py。target_path_warningが発火したがfindコマンドで正パスを特定。今後のGS'
-    detail: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/analysis/grid_search/run_077_*.py。target_path_warningが発火したがfindコマンドで正パスを特定。今後のGS'
-  - id: 'L571'
-    summary: '''タスク記述の''''現行CSV(2012-07)''''はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range(''''2012-07-01''''))を指す。実際のCSVは2012-04起点(166行)。タスク記述が実CSVの仕様を反映していないため、ACチェック時に混乱が生じた。今後:'
-    detail: '''タスク記述の''''現行CSV(2012-07)''''はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range(''''2012-07-01''''))を指す。実際のCSVは2012-04起点(166行)。タスク記述が実CSVの仕様を反映していないため、ACチェック時に混乱が生じた。今後:'
-  deployed_at: "2026-04-08T01:26:54"
+  - id: 'L447'
+    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature'
+    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature'
+  - id: 'L446'
+    summary: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用'
+    detail: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用'
+  - id: 'L445'
+    summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。'
+    detail: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。'
+  - id: 'L444'
+    summary: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
+    detail: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
+  - id: 'L443'
+    summary: '''awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!found)exit'
+    detail: '''awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!found)exit'
+  - id: 'L442'
+    summary: '複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。REPO_ROOT配下のquote済み変数はeval安全。IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認'
+    detail: '複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。REPO_ROOT配下のquote済み変数はeval安全。IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認'
+  - id: 'L441'
+    summary: 'Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え'
+    detail: 'Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え'
+  - id: 'L440'
+    summary: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+    detail: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+  - id: 'L439'
+    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+  - id: 'L438'
+    summary: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
+    detail: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
+  deployed_at: "2026-04-08T03:04:32"
