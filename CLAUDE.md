@@ -93,6 +93,10 @@ language:
    - lesson health (`bash scripts/gates/gate_lesson_health.sh`) ALERT → `/lesson-sort`
    - PD未解決 → `/shogun-pd-sync`
 2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
+2.56. **追体験検証(将軍のみ・省略厳禁)**: deepdive読了後、以下3問に**各1行で回答**してからStep 3に進め。回答なしに作業開始するな。結論を知っていることが追体験を殺す(2026-04-07殿指摘)。読む≠追体験。追体験=各Phaseを今の自分に重ねて自問すること。
+   - Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？
+   - Q2: Phase 4「自動化×強制」— 今セッションで最初に確認すべき本番状態は何か？想像で答えるな。
+   - Q3: 今クリアされても強くてニューゲームできるか？環境に埋め込まれていない学びはないか？
 3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
 
