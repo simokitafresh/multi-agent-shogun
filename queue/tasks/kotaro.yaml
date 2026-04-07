@@ -48,7 +48,7 @@ task:
   purpose: 'Step 2c準備: ALMコード(cmd_1762+1768+1777)をDM-Signalリポにpush+Render自動デプロイ確認'
   scope_mode: IMPL
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py
   task_id: cmd_step2c_push
