@@ -120,7 +120,7 @@
 # | 126 | KC欄追加+gateチェック | ★resolved          | S144 | 軍師直接実装+cmd_1447初使用。knowledge_candidate構造検証(cmd_1549 resolved) |
 # | 127 | report_format根本対策 | ✗obsolete          | S145 | 既存インフラ(autofix+BLOCK+消火撤去)で3/26以降0件達成。追加対策不要 |
 # | 128 | SG7 verdict整合自動化 | ★implemented      | S148-S149 | verdict↔bc整合性チェック。PASS+no→FAIL/FAIL+全yes→WARN。遡及検証:196件中5件(2.6%)不整合検出 |
-# | 129 | cmd内容重複検出       | proposed           | S153 | cmd_save.sh Check2はID重複のみ→内容重複未検出(cmd_1497≒cmd_1494)。家老送信済み |
+# | 129 | cmd内容重複検出       | ★implemented      | S153 | cmd_save.sh Check12として実装済み(title+purpose Jaccard≥50%→WARN)。キュー20+archive20を走査 |
 # | 130 | files_modified空WARN | ★implemented      | S154 | gate_report_format.sh: status=completed+files_modified:[]→WARN。280報告中18件が不整合。テスト14/14PASS |
 # | 131 | BC項目数整合チェック | ★implemented      | cmd_1619 | gate_report_format.shにbinary_checks項目数整合チェック追加。才蔵実装 |
 # | 133 | BCテンプレートACスタブ | ★implemented      | 軍師自走 | deploy_task.sh: ACにcheck項目なくてもAC IDからスタブ生成。commit-only提出を構造防止(706663a) |
@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:94(+GP-131,133,131b,134,135,136) / ★resolved:6(GP-114,115,117,122,124,126) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:1(GP-129) / in_progress:1(GP-125) / cmd配備済:2 = 計114GP
+# 集計: ★implemented:96(+GP-129,137b) / ★resolved:6(GP-114,115,117,122,124,126) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:1(GP-125) / cmd配備済:2 = 計116GP
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -139,4 +139,6 @@
 # 根拠: Fix5ギャップは fresh observation(gate_fire_log生データ)で将軍が発見。catalog信頼では見えない
 # 自動化: GP proposalsフォーマットに verified: true/false を追加。falseは hypothesis マーク
 # | 132 | 二重配備防止チェック | ✗obsolete          | S156 | GP-042+GP-051でカバー済み(他忍者同cmd→BLOCK)。S160清掃 |
+# | 137 | LG012 automated化   | ★karo_applied      | 自走 | 家老がlesson_write.shでLG012 automated:true+enforcement更新(2026-04-06) |
+# | 137b| vercel個別走査       | ★implemented      | 自走 | gate_vercel_phase.sh複数ファイル引数+cmd_complete_gate.shがcmd変更file渡し。全8テストPASS。偽陽性根絶 |
 # ─── GP索引終 ───
