@@ -309,7 +309,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L446 -->
+<!-- last_synced_lesson: L447 -->
 <!-- lesson-sort 2026-04-06: L437-L441の5件をカテゴリ分類。bash(L437/L438), レビュー/軍師(L439/L440), git(L441) -->
 <!-- lesson-sort 2026-03-28: L298-L301の4件を振り分け。ntfy(L298), gate強化(L299/L300), WSL2(L301) -->
 <!-- lesson-sort 2026-03-22: L256-L284の29件を振り分け(27件移動+2件重複削除)。§メインセクション: ninja_monitor(L259), ログローテーション(L258), tmux(L265/268), 軍師(L271/281)。サブセクション: bash(L263/269/270/272/277), deploy(L256/284), 報告(L264), 教訓(L257/260/266/273/275/276), gate(L262/280/282), テスト(L261), 知識(L274), レビュー(L267/283)。L278/L279重複削除 -->
@@ -478,6 +478,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L444: 外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止（cmd_vercel_false_positive）
 - L445: yaml.safe_load→yaml.load(SafeLoader)で機能等価かつgrep検知を回避できる（cmd_deploy_yaml_speedup）
 - L446: AC3設計書参照検知はq5_verified_sourceベースが信頼性高い（cmd_1783）
+- L447: 外部リポのmain pushはG2ゲートで禁止→PRワークフローが必須（cmd_step2c_push）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

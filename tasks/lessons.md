@@ -3403,3 +3403,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用
+
+### L447: 外部リポのmain pushはG2ゲートで禁止→PRワークフローが必須
+- **日付**: 2026-04-07
+- **出典**: cmd_step2c_push
+- **記録者**: kotaro
+- **status**: draft
+- **tags**: [universal]
+- pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature branchをpushしてPRを作成する必要がある。次回タスクにgit push origin mainが含まれる場合はfeature branch+PR作成手順を踏め

@@ -717,3 +717,5 @@
 | cmd_1780 | 起動ゲートstale GP検知修正 + 孤立context統合 + 未commit push | infra | 04-07 | Gate11 dashboard完了GP除外+GP-137 |
 | cmd_1781 | ALM 67窓速度最適化 — compute_metrics_np全量呼出し廃止 | dm-signal | 04-07 | cmd_1781_impl は将軍指示で中止。作業到達点とし |
 | cmd_1783 | ハーネス — cmd起票時WHY→WHAT因果強制 + 範囲縮小検知 | infra | 04-07 | cmd_save.shにq8_why_what BLOCK+ |
+| cmd_1774 | ALM四神L0パリティ検証 — 研究スクリプト vs 本番DB(12体) + momentum_data修正 | dm-signal | 04-07 | ALM L0パリティ検証PASS。momentum_data |
+| cmd_1784 | ALM 67窓速度 — Pool並列+batch最適化で7忍法31秒以内 | dm-signal | 04-07 | — |

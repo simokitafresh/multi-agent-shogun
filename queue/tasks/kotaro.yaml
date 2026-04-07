@@ -5,14 +5,14 @@ task:
 
   ninja: kotaro
 
-  parent_cmd: cmd_1774
+  parent_cmd: 
   project: dm-signal
 
   scope_mode: IMPL
 
   status: idle
 
-  task_id: cmd_1774_impl
+  task_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   report_filename: kotaro_report_cmd_step2c_push.yaml
   report_path: queue/reports/kotaro_report_cmd_step2c_push.yaml
