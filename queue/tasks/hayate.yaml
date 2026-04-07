@@ -54,7 +54,7 @@ task:
   purpose: 'Step 0e続行+Step 0f: WFエンジンで全7忍法WF実行。忍法別ALM適性定量確認'
   scope_mode: IMPL
   scout_exempt: true
-  status: in_progress
+  status: done
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py
   task_id: cmd_1771_impl
