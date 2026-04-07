@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-04-03 cmd_1713 FLAIR知識辞書追記 -->
+<!-- last_updated: 2026-04-07 cmd_1794 ALM進捗同期 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -127,6 +127,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L132 | GS構成四神と本番FoF構成PFの不一致 | — |
 | L286 | ルールベース戦略のOOS検証はpipeline blockではなくGS runner上位の評価層に配置 | cmd_860 |
 | L299 | GS shared metricsとrunner CSV metricsが別系統だとdrift | cmd_861 |
+| L572 | GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search [deprecated] | cmd_alm_ninpo_recon |
 | L102 | MultiView skip_months=[0,1,2,3]はクラス変数固定、config変更不可 | cmd_253 |
 | L100 | MultiView base_period_months≥4必須(skip=3で0ヶ月問題) | cmd_253 |
 | L101 | MultiView Phase3 momentum_cache事前計算はFoF専用でskip | cmd_253 |
@@ -731,6 +732,7 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 **top結果: 抜き身-激攻/鉄壁がシン忍法を6/7指標で上回る**(beats_count=6)。四つ目-常勝はbaseline不在(吸収済み)。
 
 → `outputs/analysis/grid_search/cmd_1745_alm_ninpo_results.yaml` | `cmd_1745_vs_shin_ninpo.yaml`
+- L565: 旧加速忍法はkasoku_ratio/kasoku_diffの区別なし。シン版以降からR/D分離（cmd_1761）
 
 ## §33. 6目的関数ALM×忍法7本 横比較 (cmd_1747)
 <!-- last_updated: 2026-04-05 -->
@@ -740,6 +742,8 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 **最汎用: tail_contribution目的が7/7 runner全て改善**。cagr目的=加速R beats6。LTJ_inv目的=抜き身 beats6。Max Run-up=6/7。
 
 → `outputs/analysis/grid_search/cmd_1747_cross_comparison.yaml` | `cmd_1747_ninpo_6obj_results.yaml`
+- L567: tail_contributionは多様性低下要因。nhf/cagrが多様性貢献度最高（cmd_1763）[deprecated]
+- L568: 10目的間Spearman相関全45ペアが冗長(|ρ|>0.8)。L0 4体からの選択プロセスが構造的要因（cmd_1764）
 
 ## §34. ALM L1 OOS検証 (cmd_1748)
 <!-- last_updated: 2026-04-06 -->
@@ -758,6 +762,7 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 → `outputs/analysis/alm_research/cmd_1748_partial_*.yaml` (6ファイル)
 - L556: GS CSVとALM L0 metricsのユニバース差がパリティ破壊（cmd_1748）
 - L557: WF-OOS負の劣化率は過適合否定の十分条件ではない。市場環境バイアス要因（cmd_1748）
+- L569: left_tail_jumps_inv早期fold(ウォームアップ期間)で全パターンNaN→OOSスキップで系列長短縮（cmd_1766）[deprecated]
 
 ## §35. ALM本番組込み設計 (cmd_1749-1753)
 <!-- last_updated: 2026-04-06 -->
@@ -799,6 +804,8 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - **3モード目的関数**: 激攻=max_run_up / 常勝=calmar / 鉄壁=UWP（殿裁定）
 - **19体確定**（7忍法×3モード=21体 - 吸収2体）: ALM-加速R-鉄壁→常勝に吸収、ALM-分身-鉄壁→激攻に吸収
 - **DNA制約版候補LBが3/4ファミリーで優位**（cmd_1759 L563）: DM3+23%/DM6+86%/DM7++56%
+- L564: MINIMIZE_METRICSへのランタイムpatchでargmin方向を動的変更可能（cmd_1760）
+- L566: ALM吸収はシン吸収と異なりメトリクスが変わる。目的関数が異なるため完全同一にならない（cmd_1762）
 - **top_n**: DM2/DM6/DM7+=1、DM3=3（cmd_1759）
 - **Ward FoF**: K=3,LB=24がBest。K=5は4体<5クラスタで構造的不可能（cmd_1759 L562）
 - **切替安定性**: max_run_up最不安定(20%/月)、left_tail_jumps_inv最安定(9%/月)（cmd_1759）
@@ -827,3 +834,10 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - L564: cmd_1763 ALM目的関数多様性分析完了(1d149a10)。Top1=MRU+NHF+CAGR(3.271)。cagr×MRU相関0.941(高)→実質多様性に注意。tail_contributionは多様性低下要因。calmar/UWPは6目的外→DC記録
 - L565: cmd_1764 C(10,3)=120通り完了(e43cefd2)。Top1=MRU+NHF+CAGR(3.271)=cmd_1763と同一→6→10目的拡張で結論頑健。現行ALM Ward#12/120(上位10%)。冗長ペア45件=L0共有の構造要因。sortino欠損率69%→距離計算影響要確認
 - L566: cmd_1765 L1 ALM WFエンジン骨格完了(1cbf703f)。CSV読込119,493列+30fold+6メトリクス。GS CSV早期NaN→fillna(0)修正。道具磨き完了→cmd B(タイムボックス60秒実行)が次
+- **L0パリティ確定(2026-04-07)**: 12体全PASS (cmd_1774)。hs一致+ret差1e-11(<<1e-6)。momentum_dataにALMメタデータ(relative/absolute/risk_free/safe_haven)存在確認済み。fallbackではなくALM動的選出動作確認。
+- **fullrecalculate完了(2026-04-07)**: 殿実行。recalculation_status id=43, 2026-04-07 10:37-10:44 JST (cmd_1787才蔵報告)。2パス方式正常動作。
+- **FoF Cash化バグ修正(2026-04-07)**: cmd_1787で修正済み。原因=2026-04-03 perf commit(cdda5ea1/8f411ae9)でMVMF/SVMF/MFのmonthly cacheをdict{月末日:float}で保存→context.target_date(月初第1営業日)でexact .get()→val=None→全ticker除外→Cash。修正=bisect化(get_momentum_value_at_date統一)。commit 1a548111。
+- **38メトリクス道具完成(2026-04-07)**: Phase A(cmd_1789→cmd_1791包含)/B(cmd_1791)/C(cmd_1791)完了。select_champions_multi_isが6 objectiveを維持したまま38メトリクスを後計算添付。selection_timeline=180行×47列。7忍法batch 200.65s(300秒制限内)。commit 1da2c487。
+- **ALM四神hide維持(殿裁定 2026-04-07)**: global_visibility_settings hide_portfolio=trueのまま維持。パリティ確認済みだが殿裁定でStep 2e N/A扱い。
+- **ALM四神フォルダ移動完了(2026-04-07)**: cmd_1792(疾風)でAdmin API経由で「ALM四神」フォルダ作成(folder_id=924734c6-a518-4985-b326-0aad7a68972f)+12体移動完了。非ALM folder_id差分=0。
+- **ALM四神リネーム完了(2026-04-07)**: cmd_1788(才蔵)でDM番号→四神名(青龍/朱雀/白虎/玄武)にリネーム。commit saizo_report_cmd_1788.yaml timestamp 2026-04-07T20:05:15。
