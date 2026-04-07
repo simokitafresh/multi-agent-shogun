@@ -240,3 +240,8 @@ lessons:
   detail: 'E2E test#11と思い込んで記載→実際はBuild Instructions Check失敗。想像するな確認せよ原則のCI版。gh run view <run_id>で失敗jobと失敗stepを確認してから書け'
   source_cmd: 'cmd_session_20260407'
   created_at: '2026-04-07'
+- id: 'LK041'
+  title: 'CLI操作後のpane確認を省略するな — send-keys成功≠CLI起動成功'
+  detail: 'send-keysはpane deadでもエラーを返さない。確認なしで起動報告→殿に指摘。deepdive Phase 2/4と同構造(意志依存)。対策: CLI操作後は必ず(1)pane_dead確認(tmux list-panes -F pane_dead) (2)capture-pane -S -30でCLI起動確認 の2段階を実行。エッジケース: pane dead→respawn必要、pane alive+CLI dead→CLI再起動、pane alive+CLI alive→正常。send-keys後のsleep+capture-paneを省略するな'
+  source_cmd: 'cmd_gunshi_restart'
+  created_at: '2026-04-07'

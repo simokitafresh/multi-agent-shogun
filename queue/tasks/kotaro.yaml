@@ -1,53 +1,60 @@
 task:
-  _ac_task_id: cmd_vercel_false_positive
+  _ac_task_id: cmd_step2c_push
   _ac_worker_id: null
-  ac_version: 2edf2958
+  ac_version: bce2db0d
   acceptance_criteria:
     AC1:
       binary_checks:
-      - 外部リポパスへの参照でFAILしなくなったか？ yes/no
-      - 同リポ内の壊れた参照は引き続き検出されるか？ yes/no
-      - 既存テストがPASSするか？ yes/no
-      - commitされているか？ yes/no
-      description: 外部リポ参照の偽陽性修正+テスト+commit
-  command: "gate_vercel_phase.shが外部リポ(DM-signal等)のパスを含むcontext/*.mdで偽陽性BLOCKする問題を修正せよ。\n\
-    \n現状: context/*.md内の参照先(docs/research/*)が当リポにない場合FAIL→cmd_complete_gate.shでBLOCK\n\
-    原因: context/*.mdがDM-signalリポのdocs/research/*を参照しているケースを外部リポとして識別できない\n\nAC1: 偽陽性修正+テスト\n\
-    \  - gate_vercel_phase.shの参照チェックで、対象ファイルのプロジェクトパスを考慮\n  - DM-signalリポ等の外部リポパスへの参照はスキップ\n\
-    \  - config/projects.yamlのpath情報を活用して外部リポを判定\n  - 既存テスト(tests/unit/test_gate_vercel*.bats)がPASSすること\n\
-    \  - 偽陽性パターンのテスト追加\n  - commit\n"
+      - git push origin mainが成功したか？ yes/no
+      - エラーなしか？ yes/no
+      description: git push成功
+    AC2:
+      binary_checks:
+      - BEサービスのデプロイが開始されたか？ yes/no
+      description: Renderデプロイ確認
+  command: "ALM実装コード(Phase3.7+Phase4+pure function)を本番にデプロイする準備。\n\nAC1: DM-Signalリポpush\n\
+    \  - cd /mnt/c/Python_app/DM-signal\n  - git status で未commitファイル確認\n  - git push\
+    \ origin main\n  - push成功確認\n\nAC2: Render自動デプロイ確認\n  - Render CLIまたはAPI でデプロイステータス確認\n\
+    \  - render-cli: render deploys list --service srv-d4ja7q15pdvs739a4q1g(BE)\n\
+    \  - デプロイ開始を確認(完了まで待たなくてよい)\n  - commit(pushスクリプト等があれば)\n"
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L186: IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin\
+    \ refs/head\n  - L232: bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ\n\
     \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
-    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
-    \ Codeに'non-blo\n  - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit\
-    \ statusを実行\n────────────────────────────────────────"
+    ────────────────────────────────────────"
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   ninja: kotaro
   parallel_ok: []
-  parent_cmd: cmd_vercel_false_positive
-  project: infra
-  purpose: vercel_phase外部リポ偽陽性fix。13回WA(ci_gate_mismatch)の残存原因。gate_vercel_phase.sh+cmd_complete_gate.sh
+  parent_cmd: cmd_step2c_push
+  project: dm-signal
+  purpose: 'Step 2c準備: ALMコード(cmd_1762+1768+1777)をDM-Signalリポにpush+Render自動デプロイ確認'
   scope_mode: IMPL
   scout_exempt: true
   status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_vercel_phase.sh
-  task_id: cmd_vercel_false_positive
+  target_path: /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py
+  task_id: cmd_step2c_push
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_vercel_false_positive.yaml
-  report_path: queue/reports/kotaro_report_cmd_vercel_false_positive.yaml
+  report_filename: kotaro_report_cmd_step2c_push.yaml
+  report_path: queue/reports/kotaro_report_cmd_step2c_push.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -79,34 +86,34 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
-  - id: 'L441'
-    summary: 'Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え'
-    detail: 'Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え'
-  - id: 'L440'
-    summary: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
-    detail: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
-  - id: 'L439'
-    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
-    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
-  - id: 'L438'
-    summary: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
-    detail: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では'
-  - id: 'L437'
-    summary: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
-    detail: '''gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則:'
-  - id: 'L436'
-    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
-    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル'
-  - id: 'L435'
-    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
-    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox'
-  - id: 'L434'
-    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
-    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
-  - id: 'L425'
-    summary: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
-    detail: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
-  - id: 'L419'
-    summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
-    detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
-  deployed_at: "2026-04-07T01:37:23"
+  - id: 'L570'
+    summary: '119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/index`'
+    detail: '119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/index`'
+  - id: 'L569'
+    summary: '''left_tail_jumps_inv=1/count(r<-2σ)。早期fold(2012年付近)ではウォームアップ不足でリターン=0の月が多く、σ=0→left_count=0→ltj_inv=NaN。result:'
+    detail: '''left_tail_jumps_inv=1/count(r<-2σ)。早期fold(2012年付近)ではウォームアップ不足でリターン=0の月が多く、σ=0→left_count=0→ltj_inv=NaN。result:'
+  - id: 'L568'
+    summary: '10目的の平均プロファイル間Spearman相関を計算したところ全45ペアが|ρ|>0.8の冗長判定。理由: 全10目的とも同一L0 4体(DM2/DM3/DM6/DM7+)から7忍法が選択するため、目的関数が変わっても選ばれる体のcagr/maxdd等の値の順序が類似する。目的間の真の違いはWHICH体を選ぶか(月次選択の多様性)にあり、単純なスコア相関で冗長性を測定するのは不適切な可能性がある'
+    detail: '10目的の平均プロファイル間Spearman相関を計算したところ全45ペアが|ρ|>0.8の冗長判定。理由: 全10目的とも同一L0 4体(DM2/DM3/DM6/DM7+)から7忍法が選択するため、目的関数が変わっても選ばれる体のcagr/maxdd等の値の順序が類似する。目的間の真の違いはWHICH体を選ぶか(月次選択の多様性)にあり、単純なスコア相関で冗長性を測定するのは不適切な可能性がある'
+  - id: 'L567'
+    summary: 'C(6,3)=20通り多様性分析でtail_contributionを含む10コンボは全て下位11-20位(スコア2.9-3.0台)。逆にnhfとcagrを含む組合せは上位集中(上位10コンボの8/10に登場)。Spearman相関でtail_contribution×nhf=-0.366(逆相関)が確認。tail_contributionはnhfと逆相関するためtail_contribution'
+    detail: 'C(6,3)=20通り多様性分析でtail_contributionを含む10コンボは全て下位11-20位(スコア2.9-3.0台)。逆にnhfとcagrを含む組合せは上位集中(上位10コンボの8/10に登場)。Spearman相関でtail_contribution×nhf=-0.366(逆相関)が確認。tail_contributionはnhfと逆相関するためtail_contribution'
+  - id: 'L566'
+    summary: 'シン吸収=同一champion params→月次選択も同一→完全同一メトリクス。ALM吸収=同一IS設定(pattern_id)だが異なる目的関数(UWP'
+    detail: 'シン吸収=同一champion params→月次選択も同一→完全同一メトリクス。ALM吸収=同一IS設定(pattern_id)だが異なる目的関数(UWP'
+  - id: 'L565'
+    summary: 'DBの旧加速PF(加速-激攻/常勝/鉄壁)はratio/diffを統合した旧四神ベースL2。シン版以降からR/D分離。旧版比較テーブルではR/D共通データとして扱うべき。cmd_1761影丸報告で判明。'
+    detail: 'DBの旧加速PF(加速-激攻/常勝/鉄壁)はratio/diffを統合した旧四神ベースL2。シン版以降からR/D分離。旧版比較テーブルではR/D共通データとして扱うべき。cmd_1761影丸報告で判明。'
+  - id: 'L564'
+    summary: 'cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる。importlib.util.module_from_specで独立ロードしたモジュールのmutableセットを直接追加する方式が有効。既存コードへの永続的変更なしに新目的関数を'
+    detail: 'cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる。importlib.util.module_from_specで独立ロードしたモジュールのmutableセットを直接追加する方式が有効。既存コードへの永続的変更なしに新目的関数を'
+  - id: 'L563'
+    summary: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
+    detail: '''フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減しているにもかかわらずIS性能が向上する。理由:'
+  - id: 'L562'
+    summary: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
+    detail: 'ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage'
+  - id: 'L561'
+    summary: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
+    detail: 'portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype=''standard''であればlookback_periodsが空でも252日デフォルトを強制挿入する。schemas/models.pyのPortfolioクラスはpipeline_config=Optional[Dict[str,Any]]のためalm_configの内容バリデーション'
+  deployed_at: "2026-04-07T12:17:48"
