@@ -183,6 +183,25 @@ QG_TEMPLATE
         echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
     fi
 
+    # q8_why_what: WHY→WHAT因果連鎖必須化（BLOCK — cmd_1783）
+    # 起源: 将軍が計算量を理由に対象範囲を5回縮小(2026-04-04殿厳命)
+    # 目的: WHY→WHATの因果明示 + 縮小表現の自動検知で矮小化を構造的にBLOCK
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q8_why_what:"; then
+        echo "BLOCK: q8_why_what未記入。WHY→WHAT因果連鎖を記載してからcmd_save.shを実行せよ" >&2
+        echo '  形式: q8_why_what: "WHY: [理由] → WHAT: [対象][数値]を全量やる"' >&2
+        echo '  例: q8_why_what: "WHY: 矮小化5回再発防止 → WHAT: cmd_save.shに全チェック2件追加"' >&2
+        exit 1
+    else
+        # WHAT部分の縮小表現検出（WARN — AC2）
+        _Q8_WW_VAL=$(echo "$CMD_BLOCK_NC" | grep "q8_why_what:" | head -1)
+        _Q8_WHAT_PART="${_Q8_WW_VAL#*WHAT:}"
+        if echo "$_Q8_WHAT_PART" | grep -qE 'のみ|だけ|一部|代表'; then
+            echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
+            echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
+            WARN_COUNT=$((WARN_COUNT + 1))
+        fi
+    fi
+
     # (causal_chain各論パッチは削除。q5_verified_sourceに複利の問いを統合 — 2026-04-05)
 
     # (q8_tool_readiness各論パッチは削除。q5の複利の問いで十分 — cmd_1742 cancel 2026-04-05)
@@ -893,6 +912,59 @@ check_param_space_shrink() {
 }
 
 check_param_space_shrink
+
+# --- Check 17: 軍師設計書参照cmdの数値緩和検出（WARN — WARN_COUNTに加算しない） ---
+# 起源: cmd_1781事故 — 軍師設計書の数値→cmdで緩和して起票(cmd_1783教訓)
+# 目的: gunshi設計書参照cmdでq8_why_what数値とAC数値を突合し、緩和をWARN
+check_gunshi_design_num_relax() {
+    [[ -z "${CMD_BLOCK_NC:-}" ]] && return 0
+
+    # 軍師設計書参照検出（gunshi-ファイル or 設計書キーワード）
+    if ! echo "$CMD_BLOCK_NC" | grep -qiE 'gunshi[-_]|設計書'; then
+        return 0
+    fi
+
+    # q8_why_whatの存在確認（なければ上のBLOCKで終了済み）
+    local Q8_LINE
+    Q8_LINE=$(echo "$CMD_BLOCK_NC" | grep "q8_why_what:" | head -1)
+    [[ -z "$Q8_LINE" ]] && return 0
+
+    # WHAT部分から数値を抽出
+    local WHAT_PART Q8_NUMS Q8_MAX
+    WHAT_PART="${Q8_LINE#*WHAT:}"
+    Q8_NUMS=$(echo "$WHAT_PART" | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
+    [[ -z "$Q8_NUMS" ]] && return 0
+    Q8_MAX=$(echo "$Q8_NUMS" | tail -1)
+
+    # acceptance_criteriaから数値を抽出
+    local AC_SECTION AC_NUMS AC_MAX
+    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /acceptance_criteria:/ { found=1; next }
+        found && /^    - / { print; next }
+        found && /^      / { print; next }
+        found { exit }
+    ')
+    [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
+    AC_NUMS=$(echo "$AC_SECTION" | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
+
+    if [[ -z "$AC_NUMS" ]]; then
+        echo "WARN: 軍師設計書参照cmdでAC数値不一致を検出（cmd_1783教訓）" >&2
+        echo "  q8のWHAT数値: ${Q8_MAX} → ACに数値なし（緩和/抜落ちの可能性）" >&2
+        echo "  設計書の数値をACに明記せよ" >&2
+        return 0
+    fi
+
+    AC_MAX=$(echo "$AC_NUMS" | tail -1)
+
+    # AC最大値 > q8最大値 = 緩和の可能性（大きいtimeout/少ない対象数の逆）
+    if python3 -c "import sys; sys.exit(0 if float('$AC_MAX') > float('$Q8_MAX') else 1)" 2>/dev/null; then
+        echo "WARN: 軍師設計書参照cmdで数値緩和を検出（cmd_1783教訓）" >&2
+        echo "  q8のWHAT最大値: ${Q8_MAX} → AC最大値: ${AC_MAX}（ACがq8より大きい=緩和の可能性）" >&2
+        echo "  設計書の数値をACで緩和するな。元の設計書数値を維持せよ" >&2
+    fi
+}
+
+check_gunshi_design_num_relax
 
 # --- Check 16: 行動→即確認原則（全cmd対象 — PI-023汎用化） ---
 # 真因: 全ての問題の根源は「行動した後に結果を確認しない」。
