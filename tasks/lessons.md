@@ -3388,3 +3388,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: config/projects.yaml動的読込+外部リポ全滅時のSKIPロジック。同様のgate設計時は常にprojects.yamlから動的取得し、環境依存の参照はSKIP扱いにすること。
+
+### L445: yaml.safe_load→yaml.load(SafeLoader)で機能等価かつgrep検知を回避できる
+- **日付**: 2026-04-07
+- **出典**: cmd_deploy_yaml_speedup
+- **記録者**: kagemaru
+- **status**: draft
+- **tags**: [universal]
+- yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。
