@@ -243,7 +243,7 @@ QG_TEMPLATE
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
             exit 1
         fi
-        if echo "$_Q9_PREVENTION" | grep -qiE '気をつける|注意する|注意徹底|徹底する|再発防止を徹底|確認を徹底|漏れないよう|意識する'; then
+        if echo "$_Q9_PREVENTION" | grep -qiE '気をつけ|注意し|徹底|意識し|漏れないよう|覚えておく|次は.*ようにする'; then
             echo "WARNING: q9のpreventionが意志依存です。『気をつける/徹底する』ではなく、gate追加・自動化・チェック強制など仕組みに置き換えてください" >&2
         fi
     fi

@@ -521,6 +521,103 @@ YAML
     [[ "$output" != *"WARNING: q9のpreventionが意志依存"* ]]
 }
 
+@test "Check1-5: q9 preventionが気をつけて（活用形）ならWARNING" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8812:
+    id: cmd_8812
+    title: "infra — 不具合修正"
+    command: "パターンを更新する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 活用形検証 → WHAT: 気をつけて形でWARNINGを確認"
+      q9_firefighting_root_cause: "root_cause: 判定観点が曖昧でレビュー時に見落とした | prevention: 次回は気をつけてレビューする"
+YAML
+
+    CMD_ID="cmd_8812"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: q9のpreventionが意志依存"* ]]
+}
+
+@test "Check1-5: q9 preventionが注意して（活用形）ならWARNING" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8813:
+    id: cmd_8813
+    title: "infra — 不具合修正"
+    command: "パターンを更新する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 活用形検証 → WHAT: 注意して形でWARNINGを確認"
+      q9_firefighting_root_cause: "root_cause: 確認手順が曖昧だった | prevention: 毎回注意してチェックリストを確認する"
+YAML
+
+    CMD_ID="cmd_8813"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: q9のpreventionが意志依存"* ]]
+}
+
+@test "Check1-5: q9 preventionが意識して（活用形）ならWARNING" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8814:
+    id: cmd_8814
+    title: "infra — 不具合修正"
+    command: "パターンを更新する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 活用形検証 → WHAT: 意識して形でWARNINGを確認"
+      q9_firefighting_root_cause: "root_cause: レビュー観点が欠けていた | prevention: 品質を意識してレビューを実施する"
+YAML
+
+    CMD_ID="cmd_8814"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: q9のpreventionが意志依存"* ]]
+}
+
+@test "Check1-5: q9 preventionがgateを追加して自動検出する（仕組み系）なら意志依存WARNINGなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8815:
+    id: cmd_8815
+    title: "infra — 不具合修正"
+    command: "パターンを更新する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 仕組み系偽陽性排除検証 → WHAT: gate追加で自動検出する旨はWARNINGなし"
+      q9_firefighting_root_cause: "root_cause: 検知パターンが語幹未対応だった | prevention: gateを追加して自動検出する"
+YAML
+
+    CMD_ID="cmd_8815"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_8815"* ]]
+    [[ "$output" != *"WARNING: q9のpreventionが意志依存"* ]]
+}
+
 # --- Check 11: impl cmd post-deploy verification AC検出 ---
 
 @test "Check11: dm-signal+impl ACにpush/deploy無しでWARN" {
