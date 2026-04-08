@@ -142,8 +142,8 @@ blocking_reason: "{理由}"         # NG時のみ
 - 新規/変更コードにexcept Exception→データ値返却(silent fallback)パターンがないか？ 例: except→return 0.0, except→signal=Cash, except→return True。エラーを正常値で偽装するコードは全てNG(PI-018)
 
 判定基準:
-- OK: 主要な失敗モードに対する検知・回復手段が設計に含まれている
-- NG: 致命的な失敗モードが未対処、または検知手段がない
+- OK: 全FMの対処が「二度と起きない」レベルで設計に含まれている
+- NG: 1つでもFMの対処が未定義、または「許容」で止まっている
 
 出力形式:
 ```

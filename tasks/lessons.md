@@ -3450,3 +3450,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全関数を同時に修正する必要がある。
+
+### L453: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須
+- **日付**: 2026-04-08
+- **出典**: cmd_1800
+- **記録者**: kotaro
+- **tags**: [universal]
+- commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit testも同時復元されると整合が取れて検出不能になる。復元後はgit diff HEAD~2..HEAD -- fileで元コミットとの差分確認が必須。
