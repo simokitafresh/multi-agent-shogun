@@ -3505,3 +3505,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: rejected (L457と同一パターン)
 - **tags**: [universal]
 - .gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。
+
+### L460: ShogunScreen.ktはgitignore whitelist未登録だった — 新規UIファイル追加時は.gitignoreエントリ追加が必須
+- **日付**: 2026-04-09
+- **出典**: cmd_1814
+- **記録者**: kagemaru
+- **status**: draft
+- **tags**: [universal]
+- ShogunScreen.ktをgit addしようとしたところ.gitignoreに未登録でブロックされた。L459/L457と同じwhitelist型パターン。android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要。

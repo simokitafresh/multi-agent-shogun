@@ -309,7 +309,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L459 -->
+<!-- last_synced_lesson: L460 -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
 <!-- lesson-sort 2026-04-06: L437-L441の5件をカテゴリ分類。bash(L437/L438), レビュー/軍師(L439/L440), git(L441) -->
@@ -493,6 +493,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L457: whitelist型.gitignoreではスクリプト追加時にホワイトリストエントリ追加が必須（cmd_root_fixes）
 - L458: deploy_task.sh source追加時はscaffold symlinkも同時更新必須（cmd_karo_ci_fix）
 - L459: 新規ファイル追加時は.gitignoreへのwhitelistエントリも同時に追加必須（cmd_1811）
+- L460: ShogunScreen.ktはgitignore whitelist未登録だった — 新規UIファイル追加時は.gitignoreエントリ追加が必須（cmd_1814）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

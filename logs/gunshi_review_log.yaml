@@ -2511,3 +2511,39 @@
     - "@agent_state未設定時=空文字→idle以外→SKIPで安全側に倒れる設計"
   causal_chain: "GATE CLEAR→将軍idle判定→inbox通知→将軍が次cmd起票可能。active時SKIP→殿操作中断なし。timeout保護→WSL2 hang時もGATE処理継続(正の複利: 全GATE CLEARで将軍応答速度向上)"
   timestamp: "2026-04-09T07:45:00"
+- cmd_id: cmd_1807
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。deploy_task.sh消火title検知WARNING追加。shared FIREFIGHTING_PATTERN使用"
+  observations:
+    - "check_firefighting_title()はWARNING only非BLOCK。偽陽性時も配備中断なし(安全側設計)"
+    - "kotaro commitではinline pattern→tobisaru auto-commit(ad20515)で$FIREFIGHTING_PATTERN共通変数に改善済み"
+    - "title空→return 0で安全側。resolve_dispatch_title()はtask YAML/shogun_to_karo/archiveの3段フォールバック"
+  causal_chain: "家老経路cmd_karo_fix→deploy_task.sh→消火判定バイパス→WARNING未検出→消火cmdf積上げ。check_firefighting_title追加→配備時に可視化→家老/将軍が真因対処を意識(正の複利: 消火cmd比率の意識的管理)"
+  timestamp: "2026-04-09T07:55:00"
+- cmd_id: cmd_karo_fix_wa_yaml_dump
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。gate_wa_data_quality.sh yaml.dump除去+手動YAML書出し。137→129エントリ(重複8件削除)"
+  observations:
+    - "yaml.dumpはコメント内1件のみ(L162)、実行コード0件。AC1(完全除去)PASS"
+    - "tempfile.mkstemp+os.replaceパターンで安全書込み。L414(_sv関数パターン)準拠"
+    - "SG9: tobisaru WA率66.7%(3件中2件)。追加チェック実施→weak_points(report_yaml_format/split_deploy_ac_scope)非該当"
+  causal_chain: "yaml.dump使用→マルチライン消失+pre-commit BLOCK→karo_workaroundsデータ品質低下→分析精度劣化。手動書出し→データ保全+gate自動修復(正の複利: workaround分析の信頼性向上→軍師レビュー精度向上)"
+  timestamp: "2026-04-09T07:55:00"
+- cmd_id: cmd_1814
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。ShogunScreen SpecialKeysRow常時表示。AnimatedVisibility除去+assembleDebug成功"
+  observations:
+    - "SpecialKeysRow L355で直接呼出し。AnimatedVisibility(isInputFocused)ラッパー除去確認"
+    - "ShogunScreen.ktはgitignore未追跡→whitelist追加でgit new file扱い(報告modified表記は軽微不正確)"
+    - "lesson_candidate: gitignore whitelistパターン(L457/L459既知)。register_recommended: false"
+  causal_chain: "isInputFocused依存→フォーカス外でSpecialKeysRow非表示→操作性低下。常時表示→全状態でキー操作可能(正の複利: Android操作UIの一貫性向上)"
+  timestamp: "2026-04-09T07:58:00"

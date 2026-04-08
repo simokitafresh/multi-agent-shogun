@@ -3751,3 +3751,21 @@ entries:
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-04-08T22:45:02Z"
+  - cmd_id: "cmd_1814"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T22:53:00Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_1814"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T22:53:25Z"
+    notes: "draft_lessons:1"
