@@ -1,29 +1,24 @@
 task:
-  _ac_task_id: cmd_1792_impl
+  _ac_task_id: cmd_1796_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 312c2199
+  ac_version: 8ad79893
   acceptance_criteria:
-  - description: ALM四神フォルダが作成され、folder_idが取得できている
+  - description: 6忍法(oikaze/nukimi/kawarimi/kasoku_ratio/kasoku_diff/yotsume)が全てエラー0件で実行完了し、各結果CSVの行数をwc
+      -lで確認
     id: AC1
-  - description: 'ALM四神12体が全てfolder_id設定済み。確認: GET /api/admin/folders/tree でフォルダ内12体'
+  - description: 全7忍法(bunshin含む)の結果CSVが outputs/analysis/ 配下に揃っていることをls -lで確認
     id: AC2
-  - description: 'フォルダ外のポートフォリオに影響なし。確認: 他PFのfolder_idが変化していない'
-    id: AC3
-  command: "本番Admin API経由でALM四神フォルダを作成し、ALM四神12体を移動する。\n\n手順:\n1. GET /api/admin/folders/tree\
-    \ で既存フォルダ確認（重複防止）\n2. POST /api/admin/folders {\"name\": \"ALM四神\"} → folder_id取得\n\
-    3. 本番DBからALM四神12体のportfolio_idを取得\n   （portfolios.nameが ALM- で始まるStandard PF、またはpipeline_configにalm_configを含む12体）\n\
-    4. 12体それぞれに POST /api/admin/folders/portfolios/{portfolio_id}/move {\"folder_id\"\
-    : \"xxx\"}\n5. GET /api/admin/folders/tree でフォルダ内12体確認\n\nAPIベースURL: backend/.env\
-    \ の RENDER_API_URL\n認証: backend/.env の ADMIN_API_KEY\n"
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
-  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L484: DELETE APIの認証がタスクYAML記載のBasic admin:703で401失敗。.env確認でADMIN_USER=simokitafreshと判明\n\
+    \  - L106: L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo\n\
+    \  - L492: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。\n\
+    \  - L463: Python 3.12環境でsimulate_batch(precomputed_masks)とsimulate_pattern(TrendReversalFi\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
@@ -41,17 +36,16 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  parent_cmd: cmd_1792
+  parent_cmd: cmd_1796
   project: dm-signal
-  report_filename: hayate_report_cmd_1792.yaml
-  report_path: queue/reports/hayate_report_cmd_1792.yaml
   scope_mode: IMPL
   status: done
   stop_for: []
-  task_id: cmd_1792_impl
+  task_id: cmd_1796_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: hayate_report_cmd_1796.yaml
+  report_path: queue/reports/hayate_report_cmd_1796.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -98,6 +92,12 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
+  - id: 'L582'
+    summary: 'draft教訓1件が未査読のままGATE到達'
+    detail: 'draft教訓1件が未査読のままGATE到達'
+  - id: 'L581'
+    summary: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
+    detail: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
   - id: 'L580'
     summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
     detail: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
@@ -122,10 +122,4 @@ task:
   - id: 'L573'
     summary: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
     detail: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
-  - id: 'L572'
-    summary: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/analysis/grid_search/run_077_*.py。target_path_warningが発火したがfindコマンドで正パスを特定。今後のGS'
-    detail: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/analysis/grid_search/run_077_*.py。target_path_warningが発火したがfindコマンドで正パスを特定。今後のGS'
-  - id: 'L571'
-    summary: '''タスク記述の''''現行CSV(2012-07)''''はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range(''''2012-07-01''''))を指す。実際のCSVは2012-04起点(166行)。タスク記述が実CSVの仕様を反映していないため、ACチェック時に混乱が生じた。今後:'
-    detail: '''タスク記述の''''現行CSV(2012-07)''''はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range(''''2012-07-01''''))を指す。実際のCSVは2012-04起点(166行)。タスク記述が実CSVの仕様を反映していないため、ACチェック時に混乱が生じた。今後:'
-  deployed_at: "2026-04-07T22:21:24"
+  deployed_at: "2026-04-08T13:33:05"
