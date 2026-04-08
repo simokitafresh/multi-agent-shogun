@@ -425,6 +425,30 @@ YAML
     [[ "$output" == *"保存確認OK: cmd_8803"* ]]
 }
 
+@test "Check1-5: title非消火+command消火+q9なしでPASS（偽陽性排除）" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8808:
+    id: cmd_8808
+    title: "infra — gate強化"
+    command: |
+      FAILしているCIを修正し障害を復旧する
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: gate強化 → WHAT: title限定検出の偽陽性排除確認"
+YAML
+
+    CMD_ID="cmd_8808"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_8808"* ]]
+}
+
 # --- Check 11: impl cmd post-deploy verification AC検出 ---
 
 @test "Check11: dm-signal+impl ACにpush/deploy無しでWARN" {

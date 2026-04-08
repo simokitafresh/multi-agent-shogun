@@ -204,25 +204,12 @@ QG_TEMPLATE
 
     # q9_firefighting_root_cause: 消火cmdでは真因+再発防止を必須化（BLOCK — cmd_1801）
     # 起源: 消火禁止原則が理解止まりで、症状修正cmdが真因未記載のまま繰り返された
-    # 対象: title/commandに消火キーワードが含まれるcmd
+    # 対象: titleに消火キーワードが含まれるcmd（command本文は対象外 — cmd_1803）
     _Q9_SIGNAL_TEXT=$(echo "$CMD_BLOCK_NC" | awk '
         /^[[:space:]]*title:/ {
             sub(/^[[:space:]]*title:[[:space:]]*/, "")
             print
             next
-        }
-        /^[[:space:]]*command:[[:space:]]*\|/ {
-            in_cmd=1
-            next
-        }
-        /^[[:space:]]*command:/ {
-            sub(/^[[:space:]]*command:[[:space:]]*/, "")
-            print
-            next
-        }
-        in_cmd {
-            if ($0 ~ /^    [A-Za-z0-9_]+:/) exit
-            print
         }
     ')
     if echo "$_Q9_SIGNAL_TEXT" | grep -qiE 'fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix'; then
