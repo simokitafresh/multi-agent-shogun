@@ -37,6 +37,32 @@ report_path = os.environ['REPORT_PATH']
 errors = []
 hints = []
 
+# --- assigned_acs: 分割配備対応（担当外ACをverdict-BC矛盾チェックから除外） ---
+# report YAMLのworker_idからtask YAMLを導出し、assigned_acsを取得
+# Bug fix: gate_report_format.shがassigned_acs未対応→分割配備で担当外AC=no→BLOCK (cmd_1796で2回WA)
+assigned_acs = set()
+try:
+    _tasks_dir = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks')
+    with open(report_path) as _rf:
+        _rdata = yaml.safe_load(_rf)
+    _worker = _rdata.get('worker_id', '') if isinstance(_rdata, dict) else ''
+    if _worker:
+        _task_path = os.path.join(_tasks_dir, f'{_worker}.yaml')
+        if os.path.isfile(_task_path):
+            with open(_task_path) as _tf:
+                _tdata = yaml.safe_load(_tf)
+            _aa = ''
+            if isinstance(_tdata, dict):
+                _task_block = _tdata.get('task', {})
+                if isinstance(_task_block, dict):
+                    _aa = _task_block.get('assigned_acs', '') or ''
+                if not _aa:
+                    _aa = _tdata.get('assigned_acs', '') or ''
+            if isinstance(_aa, str) and _aa.strip():
+                assigned_acs = set(a.strip() for a in _aa.replace(',', ' ').split())
+except Exception:
+    pass  # task YAML読み込み失敗は無視（通常フローに影響しない）
+
 try:
     with open(report_path) as f:
         data = yaml.safe_load(f)
@@ -280,6 +306,9 @@ if isinstance(verdict, str) and verdict in ('PASS', 'FAIL') and isinstance(bc, d
     bc_has_empty = False
     bc_results_found = False
     for _ac_key, _ac_val in bc.items():
+        # 分割配備: assigned_acsがある場合、担当外ACをスキップ（commitは常にチェック）
+        if assigned_acs and _ac_key != 'commit' and _ac_key not in assigned_acs:
+            continue
         if isinstance(_ac_val, list):
             for _item in _ac_val:
                 if isinstance(_item, dict):
