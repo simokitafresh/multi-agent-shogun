@@ -449,6 +449,78 @@ YAML
     [[ "$output" == *"保存確認OK: cmd_8808"* ]]
 }
 
+@test "Check1-5: titleにバグ含有+q9なしでBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8809:
+    id: cmd_8809
+    title: "infra — バグ修正"
+    command: "挙動差分を調査する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: バグ系キーワード検証 → WHAT: q9必須BLOCKを確認"
+YAML
+
+    CMD_ID="cmd_8809"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"q9_firefighting_root_cause未記入"* ]]
+}
+
+@test "Check1-5: q9 preventionが気をつける系ならWARNING" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8810:
+    id: cmd_8810
+    title: "infra — broken pipe修正"
+    command: "壊れた通知を復旧する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: prevention意志依存検証 → WHAT: WARNING出力を確認"
+      q9_firefighting_root_cause: "root_cause: 判定観点が曖昧でレビュー時に見落とした | prevention: 次回は気をつけるよう共有する"
+YAML
+
+    CMD_ID="cmd_8810"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: q9のpreventionが意志依存"* ]]
+}
+
+@test "Check1-5: q9 preventionがgate追加なら意志依存WARNINGなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8811:
+    id: cmd_8811
+    title: "infra — 不具合修正"
+    command: "再発防止まで実装する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: prevention仕組み化検証 → WHAT: gate追加時はWARNINGを出さない"
+      q9_firefighting_root_cause: "root_cause: q9判定語彙が不足し検知から漏れた | prevention: title判定に不具合を追加しgateで再発を防ぐ"
+YAML
+
+    CMD_ID="cmd_8811"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_8811"* ]]
+    [[ "$output" != *"WARNING: q9のpreventionが意志依存"* ]]
+}
+
 # --- Check 11: impl cmd post-deploy verification AC検出 ---
 
 @test "Check11: dm-signal+impl ACにpush/deploy無しでWARN" {

@@ -212,7 +212,7 @@ QG_TEMPLATE
             next
         }
     ')
-    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE 'fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix'; then
+    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE 'fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix|バグ|不具合|(^|[^[:alnum:]_])bug([^[:alnum:]_]|$)|(^|[^[:alnum:]_])broken([^[:alnum:]_]|$)'; then
         if ! echo "$CMD_BLOCK_NC" | grep -q "q9_firefighting_root_cause:"; then
             echo "BLOCK: 消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ" >&2
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
@@ -242,6 +242,9 @@ QG_TEMPLATE
             echo "BLOCK: q9のpreventionが短すぎる。10文字以上で具体的に記載せよ" >&2
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
             exit 1
+        fi
+        if echo "$_Q9_PREVENTION" | grep -qiE '気をつける|注意する|注意徹底|徹底する|再発防止を徹底|確認を徹底|漏れないよう|意識する'; then
+            echo "WARNING: q9のpreventionが意志依存です。『気をつける/徹底する』ではなく、gate追加・自動化・チェック強制など仕組みに置き換えてください" >&2
         fi
     fi
 
