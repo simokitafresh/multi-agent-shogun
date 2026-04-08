@@ -231,6 +231,31 @@ QG_TEMPLATE
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
             exit 1
         fi
+        # q9の中身検証: root_cause: と prevention: の両方が含まれ非空であること（GP-176）
+        # 存在チェックのみでは "q9: TBD" で通過する = 形式的コンプライアンス = 消火
+        _Q9_VAL=$(echo "$CMD_BLOCK_NC" | grep "q9_firefighting_root_cause:" | head -1 | sed 's/.*q9_firefighting_root_cause:[[:space:]]*//')
+        if ! echo "$_Q9_VAL" | grep -q "root_cause:"; then
+            echo "BLOCK: q9にroot_cause:が含まれていない。真因を具体的に記載せよ" >&2
+            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+            exit 1
+        fi
+        if ! echo "$_Q9_VAL" | grep -q "prevention:"; then
+            echo "BLOCK: q9にprevention:が含まれていない。二度と起きない仕組みを記載せよ" >&2
+            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+            exit 1
+        fi
+        _Q9_ROOT=$(echo "$_Q9_VAL" | sed -E 's/.*root_cause:[[:space:]]*([^|]*).*/\1/' | sed 's/[[:space:]]*$//')
+        _Q9_PREVENTION=$(echo "$_Q9_VAL" | sed -E 's/.*prevention:[[:space:]]*(.*)/\1/' | sed 's/[[:space:]]*$//')
+        if [[ ${#_Q9_ROOT} -lt 10 ]]; then
+            echo "BLOCK: q9のroot_causeが短すぎる。10文字以上で具体的に記載せよ" >&2
+            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+            exit 1
+        fi
+        if [[ ${#_Q9_PREVENTION} -lt 10 ]]; then
+            echo "BLOCK: q9のpreventionが短すぎる。10文字以上で具体的に記載せよ" >&2
+            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+            exit 1
+        fi
     fi
 
     # (causal_chain各論パッチは削除。q5_verified_sourceに複利の問いを統合 — 2026-04-05)

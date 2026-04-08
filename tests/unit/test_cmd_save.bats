@@ -296,7 +296,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9付きcmd 1件確認"
-      q9_firefighting_root_cause: "root_cause: 再発条件未定義 | prevention: gateで真因記入を強制"
+      q9_firefighting_root_cause: "root_cause: 分岐条件の整理不足で再発した | prevention: gateで真因記入と再発防止記載を強制する"
 YAML
 
     CMD_ID="cmd_8802"; export CMD_ID
@@ -304,6 +304,102 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK: cmd_8802"* ]]
+}
+
+@test "Check1-5: 消火cmd+q9あるがroot_cause欠落でBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8804:
+    id: cmd_8804
+    title: "infra — CI赤修正"
+    command: "FAILしているテストを修正"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 消火cmd検証 → WHAT: q9形式不備検出確認"
+      q9_firefighting_root_cause: "TBD"
+YAML
+
+    CMD_ID="cmd_8804"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"root_cause:"* ]]
+}
+
+@test "Check1-5: 消火cmd+q9あるがroot_cause短すぎでBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8806:
+    id: cmd_8806
+    title: "infra — hotfix復旧"
+    command: "障害を修復"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 消火cmd検証 → WHAT: q9短文検出確認"
+      q9_firefighting_root_cause: "root_cause: TBD | prevention: gateで真因記入を強制する"
+YAML
+
+    CMD_ID="cmd_8806"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"root_causeが短すぎる"* ]]
+}
+
+@test "Check1-5: 消火cmd+q9あるがprevention欠落でBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8805:
+    id: cmd_8805
+    title: "infra — hotfix復旧"
+    command: "壊れた機能を修復"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 消火cmd検証 → WHAT: prevention欠落検出確認"
+      q9_firefighting_root_cause: "root_cause: テスト不足"
+YAML
+
+    CMD_ID="cmd_8805"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"prevention:"* ]]
+}
+
+@test "Check1-5: 消火cmd+q9あるがprevention短すぎでBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8807:
+    id: cmd_8807
+    title: "infra — CI赤修正"
+    command: "FAILした機能を復旧"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 消火cmd検証 → WHAT: prevention短文検出確認"
+      q9_firefighting_root_cause: "root_cause: 分岐条件が未定義だった | prevention: TBD"
+YAML
+
+    CMD_ID="cmd_8807"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"preventionが短すぎる"* ]]
 }
 
 @test "Check1-5: 非消火cmd+q9なしでPASS" {
