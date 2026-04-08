@@ -3439,7 +3439,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-08
 - **出典**: cmd_karo_fix_stale_reset
 - **記録者**: kagemaru
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、cmd未発見(return 1)時にstaleフィールドが残留する。修正: STALE_RESET処理をawk呼出し前に移動。原則: taskファイルのクリーンアップは状態解決の依存を持ってはならない
 
@@ -3447,6 +3447,6 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-08
 - **出典**: cmd_karo_ci_fix
 - **記録者**: hanzo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全関数を同時に修正する必要がある。
