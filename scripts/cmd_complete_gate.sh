@@ -2636,9 +2636,13 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 
     BC_CHECKED=true
 
+    # assigned_acs: タスクYAMLに指定がある場合は担当AC以外をスキップ（分割配備対応）
+    assigned_acs_raw=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "assigned_acs" "" 2>/dev/null || true)
+
     # binary_checks: リスト形式(フラット or ACグループ化)の全check→result確認
     # ネストされたdict形式(AC3:/AC4:見出し配下にcheck/result)もサポート
-    bc_status=$(awk '
+    # assigned_acsがある場合は担当外ACグループ(commitを除く)をスキップ
+    bc_status=$(awk -v assigned="$assigned_acs_raw" '
         /^binary_checks:/ {
             val = $0; sub(/.*binary_checks:[[:space:]]*/, "", val)
             if (val == "null" || val == "~") { print "missing"; exit }
@@ -2646,10 +2650,19 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         }
         # セクション終了: 行頭が英字(新キー)の場合のみ (- で始まるリスト項目は含めない)
         in_bc && /^[a-zA-Z]/ { in_bc = 0 }
-        # ACグループ見出し(AC1:/AC2:/AC3:等)→スキップして内部のcheck/resultを読む
-        in_bc && /^[[:space:]]+[A-Za-z_][A-Za-z_0-9]*:/ && !/^[[:space:]]+check:/ && !/^[[:space:]]+result:/ { next }
-        in_bc && /[[:space:]]*- check:/ { item_count++; cur_check = $0; sub(/.*- check:[[:space:]]*/, "", cur_check); gsub(/^["'"'"']+|["'"'"']+$/, "", cur_check) }
-        in_bc && /[[:space:]]+result:/ {
+        # ACグループ見出し(AC1:/AC2:/AC3:等)→assigned_acsがある場合は担当外をスキップ
+        # commitグループは常にチェック対象（assigned_acsに関係なく）
+        in_bc && /^[[:space:]]+[A-Za-z_][A-Za-z_0-9]*:/ && !/^[[:space:]]+check:/ && !/^[[:space:]]+result:/ {
+            grp = $0; sub(/^[[:space:]]+/, "", grp); sub(/:.*/, "", grp)
+            if (assigned != "" && grp != "commit") {
+                skip_group = 1
+                n = split(assigned, arr, /[, ]+/)
+                for (i=1; i<=n; i++) { if (arr[i] == grp) { skip_group = 0; break } }
+            } else { skip_group = 0 }
+            next
+        }
+        in_bc && !skip_group && /[[:space:]]*- check:/ { item_count++; cur_check = $0; sub(/.*- check:[[:space:]]*/, "", cur_check); gsub(/^["'"'"']+|["'"'"']+$/, "", cur_check) }
+        in_bc && !skip_group && /[[:space:]]+result:/ {
             r = $0; sub(/.*result:[[:space:]]*/, "", r); gsub(/^["'"'"']+|["'"'"']+$/, "", r)
             upper_r = toupper(r)
             if (upper_r != "PASS" && upper_r != "YES" && upper_r != "TRUE") {

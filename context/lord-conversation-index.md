@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-08 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-08T13:31:57+09:00 -->
+<!-- generated_at: 2026-04-08T14:06:15+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-08T14:06:14+09:00 | terminal | response | 8 `##` セクション + 免責フッター = 9論理セクション。全チェックPASS。 **週報完了。** 出力先: `/mnt/c/Python_app/DM-signal/marketing-director/content/week…
+- 2026-04-08T14:01:24+09:00 | ntfy | outbound | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓11件 → /lesson-sort推奨
+- 2026-04-08T14:01:14+09:00 | ntfy | outbound | 【改善トリガー】lesson_health ALERT (GA-011)
+- 2026-04-08T13:55:25+09:00 | ntfy | outbound | 【家老】cmd_karo_fix_neverstop_hang 初回配備開始 (title=never_stop_forにプロセスhang独立検証を追加, ninja=hayate) never_stop_forにプロセスhang独立検証…
+- 2026-04-08T13:42:15+09:00 | ntfy | outbound | 未配備cmd: cmd_1796 (委任時刻: 13:31, 10分経過)
+- 2026-04-08T13:33:11+09:00 | ntfy | outbound | 【家老】cmd_1796 初回配備開始 (title=ALM忍法Step 3実行 — 残り6忍法を6忍者並列実行, ninja=hayate) ALM忍法Step 3実行 📋 https://gist.github.com/simokit…
 - 2026-04-08T13:31:57+09:00 | terminal | response | cmd_1796委任完了。6忍法×6忍者の並列投入を家老に指示した。 **配備予定:** | 忍者 | 忍法 | パターン数 | |------|------|-----------| | 1 | oikaze | 28,116 | | …
 - 2026-04-08T13:30:06+09:00 | terminal | response | **cmd_1795 全AC PASS ✅** - **AC1**: alm_l0_12.yaml + alm_l0_12_returns.csv(220行×12列)作成 - **AC2**: 全7本スクリプトALM対応改修完了、synt…
 - 2026-04-08T08:59:41+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-08T03:46:53+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-08 03:36:09|cmd_1795
-- 2026-04-08T03:37:30+09:00 | ntfy | outbound | 【家老】cmd_1795 GATE CLEAR。ALM忍法Step 3準備完了(12体universe+結合CSV+7本改修+bunshin781パターン全量成功)。影丸完遂。
-- 2026-04-08T03:31:32+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-08 03:18:43|cmd_karo_fix_precommit_comment
-- 2026-04-08T03:26:09+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-010)
-- 2026-04-08T03:26:06+09:00 | ntfy | outbound | CI赤: run 24097333247 Unit Tests (bats), Build Instructions Check
-- 2026-04-08T03:18:08+09:00 | ntfy | outbound | 未配備cmd: cmd_1795 (委任時刻: 03:07, 10分経過)
-- 2026-04-08T03:16:31+09:00 | terminal | response | **陣形:** - **kagemaru**: cmd_1795（ALM忍法Step 3準備）**作業中** CTX:33% - **tobisaru**: cmd_1794（知識鮮度回復）**完了** ✅ - **kotaro**: c…
 
 ## 未解決確認事項
 - cmd_1794委任完了。家老に配備指示済み。 **cmd_1794: 知識鮮度回復** - AC1: チェックリスト9項目を完了日時付きで記入 - AC2: dm-signal-research.md §35にALM到達点7件追記 - AC3: dashboardパイプライン…
@@ -57,6 +57,7 @@
 - cmd_1793
 - cmd_1794
 - cmd_1795
+- cmd_1796
 - PD-007
 
 ## 参照先
