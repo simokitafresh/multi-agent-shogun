@@ -753,3 +753,4 @@
 | cmd_1811 | enhance — Androidアプリ メモ画面にGistファイル一覧表示を追加 | infra | 04-09 | GistファイルAPI連携+メモ画面UI追加をassembl |
 | cmd_1812 | enhance — GATE CLEAR時に将軍idle検知→inbox通知で将軍が自動で完了に気づく | infra | 04-09 | cmd_complete_gate.sh の通常・emerg |
 | cmd_1814 | fix — 将軍画面のSpecialKeysRowも常時表示にする | infra | 04-09 | ShogunScreen.ktのSpecialKeysRow |
+| cmd_1815 | recon — Androidアプリ入力欄キーボード問題の根本原因特定（おしお殿コード全比較+Android公式調査） | infra | 04-09 | Android EdgeToEdge+keyboard ha |

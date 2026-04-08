@@ -3514,3 +3514,28 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **tags**: [universal]
 - **dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要
 - ShogunScreen.ktをgit addしようとしたところ.gitignoreに未登録でブロックされた。L459/L457と同じwhitelist型パターン。android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要。
+
+### L461: EdgeToEdge+imePadding配置の誤り: NavigationBarではなくコンテンツColumnに置け
+- **日付**: 2026-04-09
+- **出典**: cmd_1815
+- **記録者**: hanzo
+- **status**: dismissed
+- **dismiss_reason**: L463として統合登録済み
+- **tags**: [universal]
+- MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer.android.com/develop/ui/compose/layouts/insets)。おしお殿コードはimePadding()なしでデフォルトScaffold動作に委ねており正しい。修正: (1)NavigationBarからimePadding()削除 (2)ShogunScreen/AgentsScreen PaneFullScreenのColumnにimePadding()追加
+
+### L462: Compose edge-to-edge: imePadding()はContent Columnに配置。NavigationBarへの配置は禁止
+- **日付**: 2026-04-09
+- **出典**: cmd_1815
+- **記録者**: kotaro
+- **status**: dismissed
+- **dismiss_reason**: L463として統合登録済み
+- **tags**: [universal]
+- enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold bottomBar)に配置するとIME insetsが早期消費され、後続ContentColumnのimePadding()が無効化される。さらにNavigationBarの高さが動的変化しジャンプが発生。公式推奨: imePadding()はScaffold content lambda内のColumnへ(https://developer.android.com/develop/ui/compose/system/insets#ime)。cmd_721はNavigationBar.imePadding削除まで正しかったが、InputRowではなくColumnレベルに追加すべきだった。
+
+### L463: EdgeToEdge imePaddingはContent Columnに配置しNavigationBarには置くな
+- **日付**: 2026-04-09
+- **出典**: cmd_1815
+- **記録者**: karo
+- **tags**: [universal]
+- MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars insetsのみ使用。出典: developer.android.com/develop/ui/compose/layouts/insets。4回失敗(cmd_713/718/721/1810)の根本原因。
