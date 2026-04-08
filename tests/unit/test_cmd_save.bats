@@ -8,6 +8,11 @@ setup_file() {
     export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
+    # 消火キーワードパターンをロード (Check 3 q9で使用)
+    # shellcheck disable=SC1091
+    source "$PROJECT_ROOT/scripts/lib/firefighting_keywords.sh"
+    export FIREFIGHTING_PATTERN
+
     # 各チェック関数をsed -nで抽出+eval (setup_fileで1回のみ実行)
 
     # check_impl_push_ac: Check 11 — 既存関数をそのまま抽出

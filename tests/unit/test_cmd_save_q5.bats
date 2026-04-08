@@ -10,6 +10,10 @@ setup_file() {
     export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
+    # shellcheck disable=SC1091
+    source "$PROJECT_ROOT/scripts/lib/firefighting_keywords.sh"
+    export FIREFIGHTING_PATTERN
+
     local _qg_start _qg_end
     _qg_start=$(grep -n '# --- Check 3: quality_gate' "$SRC_SAVE_SCRIPT" | head -1 | cut -d: -f1)
     _qg_end=$(grep -n '# --- Check 4:' "$SRC_SAVE_SCRIPT" | head -1 | cut -d: -f1)
