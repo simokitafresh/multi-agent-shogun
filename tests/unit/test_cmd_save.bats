@@ -501,7 +501,7 @@ YAML
 
 # --- Check 11.3: AC推奨/必須混在検出 (GP-173) ---
 
-@test "Check11.3: ACに推奨キーワードでWARN" {
+@test "Check11.3: ACに推奨キーワードでBLOCK" {
     CMD_BLOCK="test"
     CMD_BLOCK_NC='acceptance_criteria:
     - "AC1: flock修正を実施する"
@@ -512,10 +512,10 @@ YAML
     echo "$output" >&2
     [[ "$output" == *"推奨事項が混在"* ]]
     [[ "$output" == *"notesに分離"* ]]
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }
 
-@test "Check11.3: ACにoptionalでWARN" {
+@test "Check11.3: ACにoptionalでBLOCK" {
     CMD_BLOCK="test"
     CMD_BLOCK_NC='acceptance_criteria:
     - "AC1: implement core fix"
@@ -524,10 +524,10 @@ YAML
     run check_ac_must_should_mix
     echo "$output" >&2
     [[ "$output" == *"推奨事項が混在"* ]]
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }
 
-@test "Check11.3: ACにできればでWARN" {
+@test "Check11.3: ACにできればでBLOCK" {
     CMD_BLOCK="test"
     CMD_BLOCK_NC='acceptance_criteria:
     - "AC1: 修正実施"
@@ -536,7 +536,7 @@ YAML
     run check_ac_must_should_mix
     echo "$output" >&2
     [[ "$output" == *"推奨事項が混在"* ]]
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }
 
 @test "Check11.3: クリーンACでWARNなし" {
@@ -572,7 +572,7 @@ notes: "なし"'
     [ "$status" -eq 0 ]
 }
 
-@test "Check11.3: nice to haveでWARN" {
+@test "Check11.3: nice to haveでBLOCK" {
     CMD_BLOCK="test"
     CMD_BLOCK_NC='acceptance_criteria:
     - "AC1: core fix"
@@ -581,10 +581,10 @@ notes: "なし"'
     run check_ac_must_should_mix
     echo "$output" >&2
     [[ "$output" == *"推奨事項が混在"* ]]
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }
 
-@test "Check11.3: 望ましいでWARN" {
+@test "Check11.3: 望ましいでBLOCK" {
     CMD_BLOCK="test"
     CMD_BLOCK_NC='acceptance_criteria:
     - "AC1: 修正実施"
@@ -593,5 +593,5 @@ notes: "なし"'
     run check_ac_must_should_mix
     echo "$output" >&2
     [[ "$output" == *"推奨事項が混在"* ]]
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }

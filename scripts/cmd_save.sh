@@ -492,9 +492,11 @@ check_ac_must_should_mix() {
     local RECOMMEND_LINES
     RECOMMEND_LINES=$(echo "$AC_SECTION" | grep -inE '推奨|optional|nice.to.have|できれば|望ましい' || true)
     if [[ -n "$RECOMMEND_LINES" ]]; then
-        echo "WARNING: ACに推奨事項が混在しています。推奨はnotesに分離し、ACは必須(MUST)のみにせよ" >&2
+        echo "BLOCK: ACに推奨事項が混在しています。推奨はnotesに分離し、ACは必須(MUST)のみにせよ" >&2
+        echo "  AC定義: 忍者が二値(yes/no)で判定する必須完了基準。推奨/optional/nice-to-haveはnotes欄に" >&2
         echo "  該当行: $(echo "$RECOMMEND_LINES" | head -3 | tr '\n' ' ')" >&2
-        echo "  理由: 忍者は二値判定(yes/no)でACを評価する。推奨事項にnoと判定→gate BLOCK→家老override(WA)が発生する" >&2
+        echo "  根拠: verdict_override WA 2件(cmd_karo_fix_flock_silent)。推奨にno→FAIL→家老override。WARN→BLOCK昇格(GP-175)" >&2
+        exit 1
     fi
 }
 
