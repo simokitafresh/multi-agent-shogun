@@ -1,23 +1,93 @@
 task:
-  task_id: cmd_1801_supplement
-  parent_cmd: cmd_1801
-  status: done
-  ninja: hayate
-  project: infra
-  scope_mode: IMPL
-  task_type: impl
+  _ac_task_id: cmd_ga015_readme
+  _ac_worker_id: null
+  ac_version: 467da71d
   acceptance_criteria:
-  - id: AC1
-    description: "cmd_save.shのq9チェックを強化。q9_firefighting_root_causeの値にroot_cause:とprevention:の両サブフィールドが存在し、かつそれぞれ非空(10文字以上)であることを検証。片方でも欠落/空→BLOCK"
-  - id: AC2
-    description: "テスト追加: (4)消火cmd+q9あるが中身空(TBD)→BLOCK (5)消火cmd+q9にroot_causeのみ(prevention欠落)→BLOCK。既存テストとの回帰テスト全PASS"
-  report_path: queue/reports/hayate_report_cmd_1801_supplement.yaml
-  report_filename: hayate_report_cmd_1801_supplement.yaml
-  role_reminder: "忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ"
-  stop_for: []
+  - description: 'README.mdを読み、現在のプロジェクト状態（CLAUDE.md, config/settings.yaml, context/infrastructure.md）と照合。古い情報・欠落情報を特定し更新せよ。特に:
+      エージェント構成、機能一覧、セットアップ手順が現状と一致すること'
+    id: AC1
+  - description: 'README.md冒頭にlast_updatedコメントを追加（<!-- last_updated: YYYY-MM-DD -->形式）。更新日は今日の日付'
+    id: AC2
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
+    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
+    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
+    \  - L215: gate_metricsテストがtmux環境依存\n  - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.\n\
+    ────────────────────────────────────────"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  ninja: hayate
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_ga015_freshness
+  project: infra
+  report_filename: hayate_report_cmd_ga015_freshness.yaml
+  report_path: queue/reports/hayate_report_cmd_ga015_freshness.yaml
+  scope_mode: IMPL
+  scout_exempt: true
+  status: done
+  stop_for: []
+  task_id: cmd_ga015_readme
+  task_type: impl
+  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 17
+    top_pattern: 'report_yaml_format(3件)'
+    breakdown: 'report_yaml_format(3件), spec_mismatch_redeploy(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), scout_gate_bypass(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'verdict_invalid'
+      count: 3
+    - pattern: 'lu_structure_error'
+      count: 1
+    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 20
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'report_yaml_missing'
+      count: 12
+      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+    - reason: 'empty_lessons_useful'
+      count: 8
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'ac_version_mismatch'
+      count: 6
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+    - reason: 'binary_checks_fail'
+      count: 5
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'lesson_candidate_no_reason_empty'
+      count: 3
+      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
+    - reason: 'lesson_candidate_parse_error'
+      count: 2
+      hint: 'lesson_candidateのYAML構文エラー。インデント・引用符を確認'
+    - reason: 'lesson_candidate_fields_empty'
+      count: 1
+      hint: 'gate BLOCK: lesson_candidate_fields_empty'
+    - reason: 'invalid_lessons_useful_format'
+      count: 1
+      hint: 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止'
+    - reason: 'lesson_candidate_missing'
+      count: 1
+      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
+    - reason: 'purpose_validation_fit_false'
+      count: 1
+      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
   - id: 'L453'
     summary: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
@@ -49,3 +119,4 @@ task:
   - id: 'L444'
     summary: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
     detail: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
+  deployed_at: "2026-04-09T00:10:44"

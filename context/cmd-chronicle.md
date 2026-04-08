@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-08 -->
+<!-- last_updated: 2026-04-09 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -742,3 +742,4 @@
 | cmd_karo_ci_fix | CI赤修正 — テスト失敗3グループ修正(setup_file/q8_why_what/proposal出力) | infra | 04-08 | CI失敗テスト4件修正。全811件PASS達成 |
 | cmd_1800 | infra — lord_conversation loggerに殿のinput(inbound)を記録する | infra | 04-08 | AC1: log_terminal_input.shのdir |
 | cmd_1801 | infra — cmd_save.sh消火判定gate(q9)追加 — 消火cmdの入口で真因記入を強制 | infra | 04-08 | cmd_save.shに消火cmd向けq9_firefigh |
+| cmd_1804 | fix — cmd_save.sh q9磨き上げ — キーワード追加+意志依存prevention WARN | infra | 04-09 | cmd_save.shのq9判定語彙にバグ/bug/不具合/ |

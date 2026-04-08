@@ -1,21 +1,17 @@
 task:
-  _ac_task_id: cmd_1800_impl
+  _ac_task_id: cmd_ga015_autoops
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: d683312a
+  ac_version: 1aa111d2
   acceptance_criteria:
-  - description: scripts/log_terminal_input.shが既にUserPromptSubmit hookとして.claude/settings.json L101に登録済みだが出力ゼロ(不発)。根因を特定し修正せよ。テスト入力で{direction:inbound}エントリがlord_conversation.jsonlに書き込まれることをjq確認。新規hook作成禁止(二重hook防止)
+  - description: context/auto-ops.mdを読み、現在のインフラ状態（scripts/, config/settings.yaml,
+      context/infrastructure.md）と照合。古い情報・欠落情報を特定し更新せよ
     id: AC1
-  - description: 日次アーカイブ(logs/lord_conversation_archive/)にもinboundエントリが保存されることをjq確認
+  - description: last_updatedコメントを今日の日付に更新
     id: AC2
-  - description: gate_shogun_startup.shまたは日次ローテーションスクリプトに、前日アーカイブのinbound件数=0→ALERTチェックを追加。既存の2026-04-06.jsonl(inbound=0)でALERTが発火することを確認
-    id: AC3
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L102: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正\n\
-    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
-    \ 6列: \n  - L287: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様\n\
+    \  - L215: gate_metricsテストがtmux環境依存\n  - L152: IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時\
+    \ THEN KM_JSON_CACHEの無効化条\n  - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -34,15 +30,15 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  parent_cmd: cmd_1800
+  parent_cmd: cmd_ga015_freshness
   project: infra
-  report_filename: kotaro_report_cmd_1800.yaml
-  report_path: queue/reports/kotaro_report_cmd_1800.yaml
+  report_filename: kotaro_report_cmd_ga015_freshness.yaml
+  report_path: queue/reports/kotaro_report_cmd_ga015_freshness.yaml
   scope_mode: IMPL
-  status: completed
+  scout_exempt: true
+  status: done
   stop_for: []
-  task_id: cmd_1800_impl
+  task_id: cmd_ga015_autoops
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -80,6 +76,9 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
+  - id: 'L453'
+    summary: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
+    detail: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
   - id: 'L452'
     summary: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全関数を同時に修正する必要がある。'
     detail: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全関数を同時に修正する必要がある。'
@@ -107,7 +106,4 @@ task:
   - id: 'L444'
     summary: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
     detail: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
-  - id: 'L443'
-    summary: '''awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!found)exit'
-    detail: '''awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!found)exit'
-  deployed_at: "2026-04-08T22:12:50"
+  deployed_at: "2026-04-09T00:11:04"

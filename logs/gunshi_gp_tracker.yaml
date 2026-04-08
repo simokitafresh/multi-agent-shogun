@@ -116,7 +116,7 @@
 # | 119 | DBスキーマcmd警告   | ✗rejected          | S142 | 却下(cmd_1549)。GP-122(DBスキーマ直接追記)で代替済み |
 # | 122 | DBスキーマ追記       | ★resolved          | S143 | 軍師直接実装。projects/dm-signal.yamlにdb_schema_quick_ref(cmd_1549 resolved) |
 # | 124 | データ完全性チェック | ★resolved          | S143 | 軍師直接(S143)+cmd_1477(signal整合性)+cmd_1495(横展開)(cmd_1549 resolved) |
-# | 125 | WA入力品質ゲート    | in_progress        | S142d+S153 | GP-125b: cmd_1542進行中。ninja_id検証+root_cause最小長チェック |
+# | 125 | WA入力品質ゲート    | ★resolved          | S142d+S153 | GP-125b: cmd_1542完了(2026-03-30)。ninja_id検証+root_cause最小長チェック実装済み |
 # | 126 | KC欄追加+gateチェック | ★resolved          | S144 | 軍師直接実装+cmd_1447初使用。knowledge_candidate構造検証(cmd_1549 resolved) |
 # | 127 | report_format根本対策 | ✗obsolete          | S145 | 既存インフラ(autofix+BLOCK+消火撤去)で3/26以降0件達成。追加対策不要 |
 # | 128 | SG7 verdict整合自動化 | ★implemented      | S148-S149 | verdict↔bc整合性チェック。PASS+no→FAIL/FAIL+全yes→WARN。遡及検証:196件中5件(2.6%)不整合検出 |
@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:96(+GP-129,137b) / ★resolved:6(GP-114,115,117,122,124,126) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:1(GP-125) / cmd配備済:2 = 計116GP
+# 集計: ★implemented:96(+GP-129,137b) / ★resolved:7(GP-114,115,117,122,124,125,126) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / cmd配備済:2 = 計116GP
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ

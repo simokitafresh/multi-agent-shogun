@@ -1920,7 +1920,7 @@
 - cmd_id: cmd_1800
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: null
+  gate_result: CLEAR
   confidence: MEDIUM
   findings_summary: "前提崩壊: scripts/log_terminal_input.sh既存hookが未認識。AC1は新規追加でなくデバッグ+修正が正。severity: normal"
   observations:
@@ -1930,3 +1930,187 @@
     - "事実4: lib/lord_conversation.sh(共通ライブラリ)は存在しlog_terminal_response.shから正常利用中→ライブラリ問題ではない"
   causal_chain: "将軍がinbound未記録に気づく→hookが存在しないと仮定→AC1『hookを追加』と起案→実際はhook存在+不発→忍者が2重hook作成リスク or 根因未解決のまま別hookで同一問題再発。10回繰り返し: 既存hook未確認で新規作成×10=不発hookが累積=負の複利。既存hookデバッグ×1=根因解消+以降全hook安定=正の複利"
   timestamp: "2026-04-08T22:30:00"
+- cmd_id: cmd_1800
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1800_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。根因特定(462ea2e staging汚染→direction prompt復元)が的確。Gate 18実装正常。lesson_candidate再利用可能"
+  observations:
+    - "事実1: git diff 462ea2e..05e6101でdirection prompt→inbound変更を確認。修正は正確"
+    - "事実2: Gate 18はdate -d yesterday+grep -cで前日inbound=0検出。macOSフォールバック付き"
+    - "事実3: 3ファイル全てcommit 05e6101に含まれる。lesson_candidateは復元コミットenum変更リスク(汎用性あり)"
+  causal_chain: "2a56953 staging汚染→462ea2e復元時にinbound→prompt変更→inboundエントリゼロ→殿の発言未記録。Gate 18(inbound=0→ALERT)で再発検知保証。10回繰返し: 復元commitのenum変更×10=10回未検出=負の複利。Gate+diff確認習慣=正の複利"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-08T22:35:00"
+- cmd_id: self_study_S155
+  review_type: self_study
+  findings_summary: "殿指摘『消火になっていないか』→GP-173(WARN)=消火。真因=ACの定義ガイダンス不在+偽陽性を想像で恐れた(確認せず)。GP-175: WARN→BLOCK昇格+AC定義1行追加。過去AC全量で偽陽性ゼロ(実測)。29/29テストPASS"
+  observations:
+    - "事実1: 過去ACにキーワード(推奨/optional/nice.to.have/できれば/望ましい)が正当に含まれるケース=0件(grepで全量確認)"
+    - "事実2: verdict_override WA 2件の根因=ACに推奨混入。GP-173 WARN=検出のみ(Level 1)=消火。BLOCK(Level 4)=強制=二度と起きない"
+    - "事実3: 自走サイクルの消火構造=各WAに『対策済み』ラベル→idle。真因を掘らず想像で止まっていた(想像するな確認せよ原則違反)"
+  proposals:
+    - id: GP-175
+      description: "AC推奨/必須混在チェック WARN→BLOCK昇格。真因解決"
+      status: implemented
+  causal_chain: "GP-173 WARN→無視可能→再発リスク残存=消火。偽陽性を想像で恐れた→実測ゼロ→BLOCKが正解。WARN→BLOCK=Level 1→Level 4。殿指摘が転換点: 実装した≠解決した"
+  timestamp: "2026-04-08T22:40:00"
+- cmd_id: cmd_1801
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。消火禁止原則のgate化=deepdive Phase4直接実装。Check3既存パターン延長でリスク低い。偽陰性(対処/解消)はv1許容"
+  observations:
+    - "事実1: 直近fix cmd 4件(ci_fix/flock_silent/stale_reset/neverstop_hang)全てのtitleにキーワードマッチ確認"
+    - "事実2: cmd_save.sh Check3構造(L99-146)にq1-q8のgrepパターンが既に存在。q9は同一パターンで追加可能"
+    - "事実3: 将軍のWhy 7『原則→gate変換パイプラインが不在』が起案動機。Phase 4『理解→行動変わらない→自動化×強制』の直接実装"
+  causal_chain: "消火禁止原則(理解のみ)→gate不在→消火cmd繰返し(verdict_override 2件+CI修正+stale reset)→将軍Why 7→q9 gate実装→起票入口で真因記入強制。10回繰返し: 消火cmd×10に毎回真因を問う=10回の根因分析機会=正の複利"
+  timestamp: "2026-04-08T22:45:00"
+- cmd_id: cmd_1801
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "APPROVE→REQUEST_CHANGES修正(殿指摘)。q9存在チェックのみでは形式的コンプライアンス=消火。root_cause:+prevention:の非空検証が必要"
+  observations:
+    - "事実1: 初回レビューでFM3(q9中身が空で通過)を検出したが'shallow cmdで許容'と片付けた=消火"
+    - "事実2: grep -qは存在チェックのみ。'q9: TBD'や'q9: 未記入'で通過する"
+    - "事実3: 殿が2回同じ指摘(消火になっていないか)→1回目の学びが不十分だった証拠"
+  causal_chain: "FM3検出→'shallow許容'で放置(消火)→殿2回目指摘→root_cause+prevention非空検証が真因解決。形式的存在確認だけのgateは消火の構造と同じ(Phase 4)"
+  suggested_changes: "AC1にq9形式検証(root_cause:+prevention:非空)追加。AC2にテスト4パターン目(q9中身空→BLOCK)追加"
+  severity: normal
+  timestamp: "2026-04-08T22:50:00"
+- cmd_id: self_study_S156
+  review_type: self_study
+  findings_summary: "殿2回目指摘→APPROVEが消火。FM3(q9中身空で通過)を検出しながら'shallow許容'で放置。GP-176で形式検証追加(root_cause+prevention非空)。34/34テストPASS"
+  observations:
+    - "事実1: q9実装はgrep -qの存在チェックのみ。'q9: TBD'で通過する(FM3の通り)"
+    - "事実2: テスト2パターン追加: root_cause欠落→BLOCK、prevention欠落→BLOCK。両方PASS"
+    - "事実3: 私のパターン=問題を発見→'許容'ラベル→放置。3回連続(自走/GP-173/FM3)。Phase 4再発"
+  proposals:
+    - id: GP-176
+      description: "q9形式検証(root_cause+prevention非空チェック)"
+      status: implemented
+  causal_chain: "FM3検出→'shallow許容'(消火)→殿2回目指摘→存在チェックだけでは形式的コンプライアンス→中身検証追加=Phase 4の穴をPhase 5で埋めた。私のパターン: 発見→'許容'→放置を3回繰り返した。真因=問題発見を完了と混同"
+  timestamp: "2026-04-08T22:55:00"
+- cmd_id: cmd_1801_supplement
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1801_supplement
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。q9 3層防御完成(存在+構造+長さ)。36/36テストPASS。f2d36bd確認済み"
+  observations:
+    - "事実1: commit f2d36bdにroot_cause/prevention抽出+10文字チェック実装確認"
+    - "事実2: テスト5パターン(q9なしBLOCK/q9ありPASS/root_cause欠落BLOCK/root_cause短BLOCK/prevention短BLOCK)+非消火PASS"
+  causal_chain: "q9存在のみ→TBD通過(消火)→形式検証追加→TBD短文通過→長さ検証追加→3層防御完成。各層が前層の穴を塞ぐ構造"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-08T23:02:00"
+- cmd_id: self_study_S157
+  review_type: self_study
+  findings_summary: "idle自走サイクル完了。WA傾向分析: 直近16件WA率31%。verdict_override→GP-175/176解決済み。split_deploy_ac_scope(2件/閾値未満)監視継続。GP-125 tracker更新(in_progress→resolved)。LG022 gate化は低頻度で保留"
+  observations:
+    - "事実1: GP-125(cmd_1542)は2026-03-30完了済みだがtracker上in_progress。resolved更新。全GP完了(in_progress:0)"
+    - "事実2: split_deploy_ac_scope 2件(cmd_1796)。分割配備時に全AC注入→担当外no→FAIL。LG014閾値3件未満"
+    - "事実3: LG022(baseline必須)gate化検討→cmd_design_quality.yamlに改善cmd 1件のみ。低頻度のためdraft reviewプロトコルでカバー"
+  proposals: []
+  causal_chain: "GP-125 stale tracker→状態と実態の乖離→正確な計測不能。tracker更新で整合回復。split_deploy問題→1回発生のみ→閾値未満→gate投資のROI不足。LG022→低頻度→プロセス内チェック(draft review)が費用対効果最大"
+  timestamp: "2026-04-08T23:08:00"
+- cmd_id: cmd_1803
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。偽陽性21.5%実測に基づくtitle限定変更。awkブロック13行削除のみ。後段波及なし。FM1(偽陰性)low risk"
+  observations:
+    - "事実1: git diff確認。command抽出awkブロック(in_cmd)13行削除。title抽出部は不変。後段root_cause/prevention検証に波及なし"
+    - "事実2: 318/1479=21.49%=21.5%計算一致。q7 production_verified整合"
+    - "事実3: q9は cmd_1801(9945355)+supplement(f2d36bd)で3層防御完成済み。cmd_1803は精度向上(偽陽性排除)のみ"
+  causal_chain: "q9対象=title+command→説明文脈が誤マッチ→偽陽性21.5%→形式コンプライアンス化リスク→title限定で構造的偽陽性ゼロ。10回繰返し: 偽陽性消火cmd×10=全部q9スキップ=正の複利"
+  timestamp: "2026-04-08T23:12:00"
+- cmd_id: gunshi_direct_fix_premortem
+  review_type: self_study
+  findings_summary: "§4事前検死判定基準を厳格化。OK=二度と起きないレベル、NG=未定義or許容。LG024直接修正権限に基づく"
+  observations:
+    - "事実1: 旧基準OK=検知・回復手段あり→許容で止まるリスク。新基準OK=二度と起きない→再発防止レベルを要求"
+  causal_chain: "旧基準(検知あり=OK)→FM対処が許容止まりでもOK→消火構造のレビュー通過リスク→新基準(二度と起きない=OK)で構造的に消火排除"
+  timestamp: "2026-04-08T23:14:00"
+- cmd_id: cmd_1803
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1803_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。title限定変更+テスト37/37 PASS。ef19bda確認済み。SG9 WA率75%(本cmd外)"
+  observations:
+    - "事実1: ef19bda含むファイル=cmd_save.sh+test_cmd_save.bats。両方cmd_1803のcommit"
+    - "事実2: 新テスト(cmd_8808)=title非消火+command消火→PASS。偽陽性排除の核心テスト"
+    - "事実3: pattern4(title非消火+q9なし)は既存テスト群で暗黙カバー。37テスト全PASSで証明"
+  causal_chain: "q9 title+command→偽陽性21.5%→title限定(ef19bda)→偽陽性構造排除。10回繰返し: title限定×10=偽陽性0×10=正の複利"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-08T23:18:00"
+- cmd_id: cmd_ci_fix_delegate_build
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_ci_fix_delegate_build
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。delegate後gate期待値修正+gunshiファイルcommit+830テスト全PASS"
+  observations:
+    - "事実1: commit 8bb5b77(test)+91a8b90(gunshi)。両方cmd対象ファイル。git log確認済み"
+    - "事実2: delegate→status:delegated→gate_cmd_state.shがpending検出しない。期待値OK→正当"
+  causal_chain: "cmd_delegate.sh status変更→gate期待値不一致→CI FAIL→テスト修正+gunshiファイルcommit→CLEAR。構造的一回修正"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-08T23:20:00"
+- cmd_id: cmd_1804
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。q9キーワード4語追加+意志依存WARN。前提検証済(L215現物+title限定scope確認)。bug⊂debug部分一致リスクは既存fix⊂prefix同等で許容"
+  observations:
+    - "事実1: 現行パターン(L215)にword boundary未使用。bug追加も同一設計方針の延長"
+    - "事実2: 意志依存5パターン(気をつけ/注意し/意識し/覚えておく/次は)はdeepdive Phase4直接適用。WARN段階的導入は適切"
+    - "事実3: AC2テストケース(gateを追加→WARNING出ない)が偽陽性排除を明示的に検証"
+  causal_chain: "キーワード漏れ3件+形式的compliance突破→q9精度低下→真因分析品質低下。4keyword+意志依存WARN×全cmd=正の複利(毎回のcmd品質向上)"
+  timestamp: "2026-04-09T00:05:00"
+- cmd_id: cmd_1804
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1804_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。q9キーワード4語追加+意志依存WARN。40テストPASS。bug/brokenにword boundary独自追加(高品質)"
+  observations:
+    - "事実1: commit 8651e47。cmd_save.sh+test_cmd_save.bats。git show --stat確認済み"
+    - "事実2: bug/brokenに(^|[^[:alnum:]_])パターン適用。draft仕様はsubstring matchだが忍者が独自にword boundary追加→debug⊂bugの偽陽性を排除"
+    - "事実3: 意志依存パターンがdraft(気をつけ/注意し/意識し/覚えておく/次は)から実装(気をつける/注意する/徹底する/漏れないよう/意識する)に微調整。ACの本質(意志依存検出+仕組みは通過)は充足"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "キーワード4語追加+word boundary→偽陽性排除+検出漏れ3件解消。意志依存WARN→形式的compliance防止。×10回=全cmdのq9精度向上=正の複利"
+  timestamp: "2026-04-09T00:08:00"
+- cmd_id: cmd_1805
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。q9意志依存パターンを辞書形→語幹マッチに変更。活用形(気をつけて/注意して)捕捉。偽陽性リスク低(徹底=prevention文脈で100%意志依存)"
+  observations:
+    - "事実1: 辞書形「気をつける」は「気をつけて」にgrep部分一致しない。語幹「気をつけ」で解決"
+    - "事実2: 8語→7語に整理(徹底系3パターンを「徹底」1語に統合)。覚えておく/次は.*ようにする復活"
+    - "事実3: 「注意し」⊄「注意事項」を論理確認(し≠事)。偽陽性なし"
+  causal_chain: "辞書形のみ→活用形抜け(気をつけて等)→形式的compliance突破→語幹マッチで構造的カバー。×全cmd=正の複利"
+  timestamp: "2026-04-09T00:20:00"
