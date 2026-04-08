@@ -37,31 +37,8 @@ report_path = os.environ['REPORT_PATH']
 errors = []
 hints = []
 
-# --- assigned_acs: 分割配備対応（担当外ACをverdict-BC矛盾チェックから除外） ---
-# report YAMLのworker_idからtask YAMLを導出し、assigned_acsを取得
-# Bug fix: gate_report_format.shがassigned_acs未対応→分割配備で担当外AC=no→BLOCK (cmd_1796で2回WA)
+# assigned_acs: 後でtask YAML読込後に設定（L138-148の_task_dataを再利用）
 assigned_acs = set()
-try:
-    _tasks_dir = os.path.join(os.path.dirname(os.path.dirname(report_path)), 'tasks')
-    with open(report_path) as _rf:
-        _rdata = yaml.safe_load(_rf)
-    _worker = _rdata.get('worker_id', '') if isinstance(_rdata, dict) else ''
-    if _worker:
-        _task_path = os.path.join(_tasks_dir, f'{_worker}.yaml')
-        if os.path.isfile(_task_path):
-            with open(_task_path) as _tf:
-                _tdata = yaml.safe_load(_tf)
-            _aa = ''
-            if isinstance(_tdata, dict):
-                _task_block = _tdata.get('task', {})
-                if isinstance(_task_block, dict):
-                    _aa = _task_block.get('assigned_acs', '') or ''
-                if not _aa:
-                    _aa = _tdata.get('assigned_acs', '') or ''
-            if isinstance(_aa, str) and _aa.strip():
-                assigned_acs = set(a.strip() for a in _aa.replace(',', ' ').split())
-except Exception:
-    pass  # task YAML読み込み失敗は無視（通常フローに影響しない）
 
 try:
     with open(report_path) as f:
@@ -146,6 +123,12 @@ try:
         _task_data = (_raw or {}).get('task', _raw or {})
 except Exception:
     pass
+
+# --- assigned_acs: 分割配備対応（_task_dataから取得。DRY: task YAML二重読込排除） ---
+# Bug fix: 分割配備で担当外AC=no→verdict-BC矛盾+GP-131 AC件数で偽BLOCK (cmd_1796で2回WA)
+_aa_str = _task_data.get('assigned_acs', '') or ''
+if isinstance(_aa_str, str) and _aa_str.strip():
+    assigned_acs = set(a.strip() for a in _aa_str.replace(',', ' ').split())
 
 # --- lessons_useful must be list of dicts (null = FAIL) ---
 lu = data.get('lessons_useful')
@@ -244,12 +227,18 @@ elif isinstance(bc, list) and not bc:
 if isinstance(bc, dict) and bc:
     _rpt_bc_count = 0
     for _rbc_key, _rbc_val in bc.items():
+        # 分割配備: assigned_acsがある場合、担当外ACをカウントから除外
+        if assigned_acs and _rbc_key != 'commit' and _rbc_key not in assigned_acs:
+            continue
         if isinstance(_rbc_val, list):
             _rpt_bc_count += len(_rbc_val)
     _task_bc_count = 0
     _tbc = _task_data.get('binary_checks', {})
     if isinstance(_tbc, dict):
         for _tbc_key, _tbc_val in _tbc.items():
+            # 分割配備: assigned_acsがある場合、担当外ACをカウントから除外
+            if assigned_acs and _tbc_key != 'commit' and _tbc_key not in assigned_acs:
+                continue
             if isinstance(_tbc_val, list):
                 _task_bc_count += len(_tbc_val)
     if _task_bc_count > 0:
@@ -263,10 +252,17 @@ if isinstance(bc, dict) and bc:
         _ac_count = 0
         _ac_list = _task_data.get('acceptance_criteria', [])
         if isinstance(_ac_list, list):
-            _ac_count = len(_ac_list)
+            # 分割配備: assigned_acsがある場合、担当AC数のみカウント
+            if assigned_acs:
+                _ac_count = sum(1 for ac in _ac_list if isinstance(ac, dict) and ac.get('id', '') in assigned_acs)
+            else:
+                _ac_count = len(_ac_list)
         if _ac_count > 0:
             # report BCのキー数(commit除く)がAC数未満ならエラー
             _rpt_ac_keys = [k for k in bc.keys() if k.upper().startswith('AC')]
+            # 分割配備: assigned_acsがある場合、担当AC keyのみカウント
+            if assigned_acs:
+                _rpt_ac_keys = [k for k in _rpt_ac_keys if k in assigned_acs]
             if len(_rpt_ac_keys) == 0:
                 errors.append(f'binary_checks: AC self-verification missing (0/{_ac_count} ACs). 全ACの二値チェックを記入せよ')
                 hints.append(f'FIX (binary_checks): task YAMLに{_ac_count}件のACがある。AC1, AC2, ... のセクションを追加し各result=yes/noを記入')
