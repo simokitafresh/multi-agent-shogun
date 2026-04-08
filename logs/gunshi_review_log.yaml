@@ -2540,7 +2540,7 @@
   review_type: report
   report_ninja: kagemaru
   verdict: LGTM
-  gate_result: BLOCK
+  gate_result: CLEAR
   findings_summary: "4観点OK。ShogunScreen SpecialKeysRow常時表示。AnimatedVisibility除去+assembleDebug成功"
   observations:
     - "SpecialKeysRow L355で直接呼出し。AnimatedVisibility(isInputFocused)ラッパー除去確認"
@@ -2548,3 +2548,29 @@
     - "lesson_candidate: gitignore whitelistパターン(L457/L459既知)。register_recommended: false"
   causal_chain: "isInputFocused依存→フォーカス外でSpecialKeysRow非表示→操作性低下。常時表示→全状態でキー操作可能(正の複利: Android操作UIの一貫性向上)"
   timestamp: "2026-04-09T07:58:00"
+- cmd_id: cmd_1813
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GistFileCardタップ→ブラウザ起動(Intent.ACTION_VIEW)。GistFileContentDialog全削除"
+  observations:
+    - "Intent.ACTION_VIEW+Uri.parse(rawUrl)は標準Androidパターン。rawUrl不正時もアプリ安全(ブラウザ側処理)"
+    - "commitは33e8bc7(kotaro auto-commit)に含まれる。半蔵のMemoScreen.kt変更90行削減"
+    - "viewingGistFile/gistFileContent/isGistContentLoading state削除。不要コード残存なし"
+  causal_chain: "GistFile表示→アプリ内Dialog→制約(スクロール/フォント/コピー不便)。ブラウザ委譲→ネイティブ表示機能活用(正の複利: UIコード削減+ユーザー体験向上)"
+  timestamp: "2026-04-09T08:02:00"
+- cmd_id: gunshi_direct_fix_gp_dashboard
+  review_type: self_study
+  findings_summary: "dashboard古GP混入根因修正。WHY7段: archive proposals(凍結)がSSOTと並存→GP ID衝突+status未更新→古いpendingが混入。修正: スキルのデータソースをgp_tracker.yaml一択に変更+archive GP status修正+dashboard即時修正"
+  observations:
+    - "GP ID衝突6件(GP-073~078): archive cmd_1700では研究エンジン系提案、gp_trackerでは性能最適化。同番号に別提案"
+    - "dashboard-updateスキルL94/L129がarchive全量走査→凍結status読み→古いpendingを毎回再表示"
+    - "根因=SSOTが2つ(gp_tracker vs archive proposals)。gp_tracker導入後もarchive参照が残存"
+  causal_chain: "gp_tracker導入(cmd_1626)→archive参照を廃止せず→SSOT二重管理→GP ID衝突時に凍結statusが優先→古いGPが復活(負の複利: dashboard更新のたびに古GP表示)。修正=SSOT一本化(正の複利: 全未来のdashboard更新で正確なGP表示)"
+  proposals:
+    - id: GP-178
+      description: "GP採番時にgp_tracker最大ID確認を必須化(ID衝突再発防止)"
+      status: pending
+      defense_level: 2
+  timestamp: "2026-04-09T08:10:00"

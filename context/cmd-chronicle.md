@@ -752,3 +752,4 @@
 | cmd_1810 | enhance — Androidアプリ エージェントpane入力UI改善（展開ボタン+特殊コマンド常時表示） | infra | 04-09 | PaneFullScreen入力バー改善3点を実装。AC1: |
 | cmd_1811 | enhance — Androidアプリ メモ画面にGistファイル一覧表示を追加 | infra | 04-09 | GistファイルAPI連携+メモ画面UI追加をassembl |
 | cmd_1812 | enhance — GATE CLEAR時に将軍idle検知→inbox通知で将軍が自動で完了に気づく | infra | 04-09 | cmd_complete_gate.sh の通常・emerg |
+| cmd_1814 | fix — 将軍画面のSpecialKeysRowも常時表示にする | infra | 04-09 | ShogunScreen.ktのSpecialKeysRow |

@@ -1,11 +1,13 @@
 task:
-  _ac_task_id: cmd_1807_impl
+  _ac_task_id: cmd_1815_impl
   _ac_worker_id: null
-  ac_version: b99834bc
+  ac_version: 1495aed2
   acceptance_criteria:
-  - description: deploy_task.shの配備処理に消火キーワードtitle検知→WARNING表示を追加。title消火でWARNING出力、title非消火で無出力を確認
+  - binary_check: 公式ドキュメントに基づく正しい実装方法が報告に含まれるか
+    description: Android公式ドキュメントのenableEdgeToEdge+keyboard handling ベストプラクティスを調査し、我々のコードの何が間違っているかを特定。出典URL付き
     id: AC1
-  - description: 実際のcmd_karo_fix相当のtitleで配備シミュレーションし、WARNING発火を確認
+  - binary_check: 差分一覧+根本原因+修正案が偵察品質5要件を全て含むか
+    description: おしお殿コードとの全差分一覧+keyboard関連の重点分析。根本原因仮説と修正案を提示
     id: AC2
   deployed_at: '2026-04-09T01:29:56'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
@@ -31,14 +33,14 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1807
+  parent_cmd: cmd_1815
   project: infra
-  report_filename: kotaro_report_cmd_1807.yaml
-  report_path: queue/reports/kotaro_report_cmd_1807.yaml
+  report_filename: kotaro_report_cmd_1815.yaml
+  report_path: queue/reports/kotaro_report_cmd_1815.yaml
   scope_mode: IMPL
-  status: completed
+  status: acknowledged
   stop_for: []
-  task_id: cmd_1807_impl
+  task_id: cmd_1815_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -76,6 +78,9 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
+  - id: 'L460'
+    summary: 'ShogunScreen.ktをgit addしようとしたところ.gitignoreに未登録でブロックされた。L459/L457と同じwhitelist型パターン。android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要。'
+    detail: 'ShogunScreen.ktをgit addしようとしたところ.gitignoreに未登録でブロックされた。L459/L457と同じwhitelist型パターン。android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要。'
   - id: 'L459'
     summary: '.gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。'
     detail: '.gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。'
@@ -103,6 +108,3 @@ task:
   - id: 'L451'
     summary: '''deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、cmd未発見(return'
     detail: '''deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、cmd未発見(return'
-  - id: 'L450'
-    summary: '''殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師修正→家老レビュー)が切れなければF-G05の原理に違反しない。見つけた問題に必ず行動を紐付ける(REQUEST_CHANGESまたは直接修正)。注記で流さない。根因:'
-    detail: '''殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師修正→家老レビュー)が切れなければF-G05の原理に違反しない。見つけた問題に必ず行動を紐付ける(REQUEST_CHANGESまたは直接修正)。注記で流さない。根因:'
