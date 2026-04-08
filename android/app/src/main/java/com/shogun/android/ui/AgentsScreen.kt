@@ -462,11 +462,8 @@ fun PaneFullScreen(
     val imeVisible = WindowInsets.ime.getBottom(density) > 0
     val textMeasurer = rememberTextMeasurer()
 
-    LaunchedEffect(imeVisible) {
-        if (!imeVisible && isInputFocused) {
-            focusManager.clearFocus()
-        }
-    }
+    // Note: clearFocus on IME dismiss removed — conflicts with imePadding()
+    // (imePadding layout recomposition triggers false imeVisible=false, causing input to vanish)
 
     val zoomState = rememberTerminalZoomState()
     val coroutineScope = rememberCoroutineScope()
