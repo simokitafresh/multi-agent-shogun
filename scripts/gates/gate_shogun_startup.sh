@@ -561,6 +561,27 @@ if [ -n "$_scripts_dirty" ]; then
     alerts+=("scripts/未コミット変更: ${_sd_count}件")
 fi
 
+# --- Gate 18: lord_conversation inbound健全度 (cmd_1800) ---
+# 起源: 殿の発言が未記録 — log_terminal_input.shが不発のまま日々の入力が消失するリスク
+# 目的: 前日アーカイブのinbound件数=0なら記録機構の異常として即ALERT
+$BRIEF || echo "■ 会話記録 inbound健全度"
+_LC_ARCHIVE_DIR="$SCRIPT_DIR/logs/lord_conversation_archive"
+_LC_YESTERDAY=$(date -d "yesterday" '+%Y-%m-%d' 2>/dev/null || date -v-1d '+%Y-%m-%d' 2>/dev/null || true)
+if [ -n "$_LC_YESTERDAY" ] && [ -f "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" ]; then
+    _lc_inbound=$(grep -c '"direction":"inbound"' "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" 2>/dev/null) || _lc_inbound=0
+    if [ "$_lc_inbound" -eq 0 ]; then
+        overall="ALERT"
+        alerts+=("会話記録 inbound=0: ${_LC_YESTERDAY}に殿の発言未記録 — scripts/log_terminal_input.sh確認")
+        $BRIEF || echo "  ALERT: ${_LC_YESTERDAY}.jsonlのinbound=0 — 殿の入力が記録されていない"
+    else
+        $BRIEF || echo "  OK: ${_LC_YESTERDAY} inbound=${_lc_inbound}件"
+    fi
+elif [ -n "$_LC_YESTERDAY" ]; then
+    $BRIEF || echo "  INFO: アーカイブなし(${_LC_YESTERDAY})"
+else
+    $BRIEF || echo "  INFO: 日付取得失敗"
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ

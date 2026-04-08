@@ -77,7 +77,7 @@ print(obj.get("source", ""))
 print(obj.get("detail", "").replace("\\n", "\\\\n"))
 PY
 )
-    [ "${result[0]}" = "prompt" ]
+    [ "${result[0]}" = "inbound" ]
     [ "${result[1]}" = "terminal" ]
     echo "${result[2]}" | grep -q "dm-signal"
 }

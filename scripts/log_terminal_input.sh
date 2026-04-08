@@ -18,8 +18,9 @@ INPUT="${CLAUDE_USER_PROMPT:-}"
 
 # lord_conversation.sh読込・環境変数設定
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/lord_conversation.sh"
 export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
-append_lord_conversation "$INPUT" "prompt" "lord" "terminal"
+append_lord_conversation "$INPUT" "inbound" "lord" "terminal"
