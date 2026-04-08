@@ -3434,3 +3434,19 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - 殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師修正→家老レビュー)が切れなければF-G05の原理に違反しない。見つけた問題に必ず行動を紐付ける(REQUEST_CHANGESまたは直接修正)。注記で流さない。根因: ルールの字面に従い原理(鎖を切るな)で判断しなかった。原理準拠=保護対象を守る最善手を選ぶこと
+
+### L451: STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき
+- **日付**: 2026-04-08
+- **出典**: cmd_karo_fix_stale_reset
+- **記録者**: kagemaru
+- **status**: draft
+- **tags**: [universal]
+- deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、cmd未発見(return 1)時にstaleフィールドが残留する。修正: STALE_RESET処理をawk呼出し前に移動。原則: taskファイルのクリーンアップは状態解決の依存を持ってはならない
+
+### L452: SCOUT/exempt系テスト関数にもq8_why_whatが必要
+- **日付**: 2026-04-08
+- **出典**: cmd_karo_ci_fix
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [universal]
+- _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全関数を同時に修正する必要がある。

@@ -1987,14 +1987,22 @@ done
 echo ""
 
 # ─── 忍者報告からlesson_candidate自動draft登録 ───
+# 循環防止: 前回BLOCKがdraft_lessons起因なら自動draft生成をスキップ
+_prev_block_reason=""
+if [ -f "$GATE_METRICS_LOG" ]; then
+    _prev_block_reason=$(grep "^[^\t]*\t${CMD_ID}\tBLOCK\t" "$GATE_METRICS_LOG" | tail -1 | cut -f4)
+fi
 echo "Auto-draft lesson candidates:"
+if [[ "$_prev_block_reason" == draft_lessons* ]]; then
+    echo "  SKIP: 前回BLOCK理由=draft_lessons。循環防止のため自動draft生成をスキップ"
+else
 for task_file in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_file" ] || continue
     is_cmd_task "$task_file" || continue
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
-        if bash "$SCRIPT_DIR/scripts/auto_draft_lesson.sh" "$report_file" 2>&1; then
+        if GATE_BLOCK_REASON="$_prev_block_reason" bash "$SCRIPT_DIR/scripts/auto_draft_lesson.sh" "$report_file" 2>&1; then
             true
         else
             echo "  [INFO] auto_draft_lesson.sh failed for ${ninja_name} (non-blocking)"
@@ -2003,6 +2011,7 @@ for task_file in "$TASKS_DIR"/*.yaml; do
         echo "  ${ninja_name}: no report file"
     fi
 done
+fi  # draft_lessons循環防止の閉じ
 echo ""
 
 # ─── preflight: ゲートフラグ自動生成（冪等） ───
@@ -2088,7 +2097,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
     echo ""
     echo "Git push (post-GATE CLEAR - emergency override):"
-    if git -C "$PROJECT_DIR" push 2>&1; then
+    if git -C "$SCRIPT_DIR" push 2>&1; then
         echo "  git push: OK"
     else
         echo "  [INFO] git push: WARN (push failed, non-blocking)"
@@ -3852,7 +3861,7 @@ if [ "$ALL_CLEAR" = true ]; then
     # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
     echo ""
     echo "Git push (post-GATE CLEAR):"
-    if git -C "$PROJECT_DIR" push 2>&1; then
+    if git -C "$SCRIPT_DIR" push 2>&1; then
         echo "  git push: OK"
     else
         echo "  [INFO] git push: WARN (push failed, non-blocking)"

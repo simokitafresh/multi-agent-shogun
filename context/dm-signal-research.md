@@ -841,3 +841,5 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - **ALM四神hide維持(殿裁定 2026-04-07)**: global_visibility_settings hide_portfolio=trueのまま維持。パリティ確認済みだが殿裁定でStep 2e N/A扱い。
 - **ALM四神フォルダ移動完了(2026-04-07)**: cmd_1792(疾風)でAdmin API経由で「ALM四神」フォルダ作成(folder_id=924734c6-a518-4985-b326-0aad7a68972f)+12体移動完了。非ALM folder_id差分=0。
 - **ALM四神リネーム完了(2026-04-07)**: cmd_1788(才蔵)でDM番号→四神名(青龍/朱雀/白虎/玄武)にリネーム。commit saizo_report_cmd_1788.yaml timestamp 2026-04-07T20:05:15。
+- **Step 3b WFエンジン36M固定実行(2026-04-08)**: cmd_1798(才蔵)。--multi-isフラグなしで実行→IS窓36M固定。all_success=true、7忍法×186エントリ×38メトリクス。commit 8e7d4b64。
+- **Step 3b multi-is WF全量実行(2026-04-08)**: cmd_1799(小太郎)。67窓(6M-72M)×7忍法。IS窓多様性29-38種/忍法(36M固定でない)。213.76s。commit 7724bacb。→ Step 3c(champion確定)が次

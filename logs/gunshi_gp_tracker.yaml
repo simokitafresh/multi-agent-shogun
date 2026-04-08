@@ -142,3 +142,24 @@
 # | 137 | LG012 automated化   | ★karo_applied      | 自走 | 家老がlesson_write.shでLG012 automated:true+enforcement更新(2026-04-06) |
 # | 137b| vercel個別走査       | ★implemented      | 自走 | gate_vercel_phase.sh複数ファイル引数+cmd_complete_gate.shがcmd変更file渡し。全8テストPASS。偽陽性根絶 |
 # ─── GP索引終 ───
+- id: GP-170
+  description: "gate_shogun_startup Gate15 git logバッチ化。orphan検知のper-file git log(3-4s/件)を1回のgit logで一括取得"
+  status: karo_sent
+  proposed_at: "2026-04-07T22:55:00"
+  sent_at: "2026-04-08T21:10:00"
+  self_executable: false
+  reason: "インフラスクリプト。cmd化が必要"
+- id: GP-171
+  description: "dashboard_auto 6忍者ループ一括cat+awk化。per-ninja NTFS read(1.2-1.6s/件)を1回のI/Oに"
+  status: karo_sent
+  proposed_at: "2026-04-07T22:55:00"
+  sent_at: "2026-04-08T21:10:00"
+  self_executable: false
+  reason: "インフラスクリプト。cmd化が必要"
+- id: GP-172
+  description: "deploy_task.sh scout時commit check注入スキップ。task_type=scout→commit BC省略"
+  status: karo_sent
+  proposed_at: "2026-04-07T22:55:00"
+  sent_at: "2026-04-08T21:10:00"
+  self_executable: false
+  reason: "インフラスクリプト。cmd化が必要"

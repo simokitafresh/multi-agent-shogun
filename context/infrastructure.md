@@ -309,7 +309,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L450 -->
+<!-- last_synced_lesson: L452 -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
 <!-- lesson-sort 2026-04-06: L437-L441の5件をカテゴリ分類。bash(L437/L438), レビュー/軍師(L439/L440), git(L441) -->
@@ -484,6 +484,8 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L448: [自動生成] draft教訓の査読を怠った: cmd_karo_fix_precommit_comment（cmd_karo_fix_precommit_comment）
 - L449: 分割配備のbinary_checks誤BLOCKはassigned_acsをawk変数で渡してグループスキップで解決（cmd_karo_fix_gate_split_loop）
 - L450: 軍師直接修正権限 — 軽微事実誤りは鎖維持下で直接修正可（cmd_gunshi_ruling_20260408）
+- L451: STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき（cmd_karo_fix_stale_reset）
+- L452: SCOUT/exempt系テスト関数にもq8_why_whatが必要（cmd_karo_ci_fix）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

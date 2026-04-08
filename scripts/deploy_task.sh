@@ -389,7 +389,8 @@ inject_task_id() {
         return 0
     fi
 
-    yaml_field_set "$task_file" "task" "task_id" "$subtask_id"
+    yaml_field_set "$task_file" "task" "task_id" "$subtask_id" \
+        || { log "FATAL: yaml_field_set failed for task_id (inject_task_id)"; return 1; }
     log "inject_task_id: set task_id=$subtask_id"
 }
 
@@ -709,7 +710,8 @@ inject_ac_version() {
         fi
     fi
 
-    yaml_field_set "$task_file" "task" "ac_version" "$ac_version"
+    yaml_field_set "$task_file" "task" "ac_version" "$ac_version" \
+        || { log "FATAL: yaml_field_set failed for ac_version"; return 1; }
 
     if [ "$prev" = "$ac_version" ]; then
         log "[AC_VERSION] unchanged: $ac_version"
@@ -718,8 +720,10 @@ inject_ac_version() {
     fi
 
     # cmd_1493: 追跡フィールド更新（次回再配備検出に使用）
-    yaml_field_set "$task_file" "task" "_ac_task_id" "$curr_task_id"
-    yaml_field_set "$task_file" "task" "_ac_worker_id" "$curr_worker_id"
+    yaml_field_set "$task_file" "task" "_ac_task_id" "$curr_task_id" \
+        || { log "FATAL: yaml_field_set failed for _ac_task_id"; return 1; }
+    yaml_field_set "$task_file" "task" "_ac_worker_id" "$curr_worker_id" \
+        || { log "FATAL: yaml_field_set failed for _ac_worker_id"; return 1; }
 }
 
 # ─── verify_ac_consistency: task YAML vs cmdソースのAC件数・ID突合（cmd_1619） ───
@@ -3125,8 +3129,10 @@ deploy_task_apply_task_mutations() {
     inject_role_reminder "$task_file" "$ninja_name" || true
     inject_report_template "$task_file" || true
 
-    yaml_field_set "$task_file" "task" "report_filename" ""
-    yaml_field_set "$task_file" "task" "report_path" ""
+    yaml_field_set "$task_file" "task" "report_filename" "" \
+        || { log "FATAL: yaml_field_set failed for report_filename"; return 1; }
+    yaml_field_set "$task_file" "task" "report_path" "" \
+        || { log "FATAL: yaml_field_set failed for report_path"; return 1; }
 
     inject_report_filename "$task_file" || true
     inject_bloom_level "$task_file" || true
@@ -3184,16 +3190,21 @@ deploy_task_main() {
         elif [ -n "$CMD_FORCED" ]; then
             # --cmd mode: shogun_to_karo.yaml不在cmdを強制展開（修行cmd等に対応）
             # parent_cmd/task_idを直接設定。解決失敗でもabortしない。
-            yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_FORCED"
+            yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_FORCED" \
+                || { log "FATAL: yaml_field_set failed for parent_cmd (cmd_forced)"; return 1; }
             local force_task_type
             force_task_type=$(field_get "$task_yaml" "task_type" "impl")
             if [ -z "$force_task_type" ] || [ "$force_task_type" = "unknown" ]; then
                 force_task_type="impl"
             fi
-            yaml_field_set "$task_yaml" "task" "task_id" "${CMD_FORCED}_${force_task_type}"
-            yaml_field_set "$task_yaml" "task" "status" "assigned"
-            yaml_field_set "$task_yaml" "task" "_ac_task_id" ""
-            yaml_field_set "$task_yaml" "task" "_ac_worker_id" ""
+            yaml_field_set "$task_yaml" "task" "task_id" "${CMD_FORCED}_${force_task_type}" \
+                || { log "FATAL: yaml_field_set failed for task_id (cmd_forced)"; return 1; }
+            yaml_field_set "$task_yaml" "task" "status" "assigned" \
+                || { log "FATAL: yaml_field_set failed for status (cmd_forced)"; return 1; }
+            yaml_field_set "$task_yaml" "task" "_ac_task_id" "" \
+                || { log "FATAL: yaml_field_set failed for _ac_task_id (cmd_forced)"; return 1; }
+            yaml_field_set "$task_yaml" "task" "_ac_worker_id" "" \
+                || { log "FATAL: yaml_field_set failed for _ac_worker_id (cmd_forced)"; return 1; }
             _overwrite_ac_from_cmd "$task_yaml" || true
             log "cmd_forced: ${CMD_FORCED} → parent_cmd/task_id set directly (shogun_to_karo.yaml not required)"
         elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then

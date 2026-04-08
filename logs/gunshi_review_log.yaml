@@ -1771,3 +1771,92 @@
   escalation_needed: false
   causal_chain: "prefix部分(cagr/sharpe)はO(1)→残り32メトリクスがO(IS月数×パターン数)のまま→67窓で計算量1.86倍→timeout。L327のフル計算廃止が本丸"
   timestamp: "2026-04-07T11:35:00"
+- cmd_id: cmd_1793
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1793_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CSV126行×9列=7忍法×3モード×6メトリクス整合。AC1-3全成果物確認。コード変更なし"
+  observations:
+    - "事実1: comparison CSV 127行(header+126 data)×9列。7×3×6=126行の完全行列"
+    - "事実2: pattern_abc_summaryで忍法毎のA/B/C/same遷移頻度が全objective分出力済み"
+    - "事実3: checklist top_match=true(kasoku_ratio), bottom_match=false(kasoku_diff vs expected kawarimi)。assumption_invalidationで透明報告"
+  lesson_quality: OK
+  causal_chain: "cmd_1791出力(7忍法timeline)→cmd_1793集計(適性ランキング)→checklist部分不一致発見→assumption_invalidation記録。分析→発見→記録の正常フロー"
+  timestamp: "2026-04-07T22:50:00"
+- cmd_id: self_study_idle_20260407
+  review_type: self_study
+  verdict: null
+  findings_summary: "idle自走: (1)スクリプト速度ボトルネック特定(gate_shogun_startup 14.8s, dashboard_auto 12.1s)。root=WSL2 NTFS+per-file git log+per-ninja awk。改善P1-P4提案 (2)scout commit check workaround根因=deploy_task.sh L1117無条件commit注入。LG014(道具のバグ)"
+  observations:
+    - "事実1: gate_shogun_startup Gate15 orphan git log=3.4-4.3s/件(WSL2 NTFS cold cache)"
+    - "事実2: dashboard_auto 6忍者ループ各イテレーション1.2-1.6s(task YAML awk on NTFS)"
+    - "事実3: deploy_task.sh L1117 commit check always injected。scout 2件WA直近発生"
+  proposals:
+    - id: GP-170
+      description: "gate_shogun_startup Gate15 git logバッチ化(-3s改善)"
+      status: pending
+    - id: GP-171
+      description: "dashboard_auto忍者ループ一括cat+awk化(-5s cold改善)"
+      status: pending
+    - id: GP-172
+      description: "deploy_task.sh scout時commit check注入スキップ(WA根絶)"
+      status: pending
+  causal_chain: "NTFS 9P I/O遅延→per-file操作の累積→cold cache 10s超。scout無条件commit注入→構造的false positive→WA。道具の問題を忍者のミスに見せる(LG014)"
+  timestamp: "2026-04-07T22:55:00"
+- cmd_id: self_study_idle_20260408
+  review_type: self_study
+  verdict: null
+  findings_summary: "idle自走Step1-6: (1)直近10件WA率40%(4/10)。新パターン: split_deploy_ac_scope(2件)=分割配備全AC注入→担当外FAIL(道具LG014)、verdict_override(1件)=AC推奨混入→忍者FAIL→override (2)GP-170/171/172をkaro送信済み(karo_sent)"
+  observations:
+    - "事実1: split_deploy_ac_scope 2件(cmd_1796 kagemaru+tobisaru)。cmd_karo_fix_gate_split_loopで対処済み"
+    - "事実2: verdict_override 1件(cmd_karo_fix_flock_silent hanzo)。ACに推奨事項混入→忍者FAIL判定→家老override"
+    - "事実3: GP-170/171/172 proposed→karo_sent。インフラ速度改善3件をcmd化提案"
+  proposals: []
+  causal_chain: "AC推奨混入→忍者二値判定FAIL→家老override→WA。10回繰返し→10回override=負の複利。対策=ACは必須のみ、推奨はnotes分離"
+  timestamp: "2026-04-08T21:10:00"
+- cmd_id: cmd_karo_fix_stale_reset
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_fix_stale_reset_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。STALE_RESET配置移動+yaml_field_set&&連鎖。WA率57%追加チェックPASS。commit dadebd2"
+  observations:
+    - "事実1: 軍師直接修正(dadebd2)と影丸独立実装が同一diff。独立検証として機能"
+    - "事実2: WA率57%top_pattern=stale_ac_contamination。今回修正はその根因(STALE_RESET配置)を解消"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "STALE_RESET_PYがawk成功分岐内→cmd未発見でスキップ→staleフィールド残留→次cmd配備時にstale_ac_contamination WA。移動で根因解消=正の複利"
+  timestamp: "2026-04-08T21:17:00"
+- cmd_id: cmd_karo_fix_flock_silent
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_karo_fix_flock_silent_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GATE BLOCK=AC推奨混入(リトライ)→binary_checks no。半蔵作業品質問題なし。必須AC全達成。commit f8f84f1"
+  observations:
+    - "事実1: AC1テキストに'推奨'キーワード含む推奨事項が必須ACと混在。半蔵は正しくno判定"
+    - "事実2: karo_workaroundsで既にverdict_override済み(FAIL→PASS)。同一パターンをidle分析で今セッション内に特定済み"
+    - "事実3: commit f8f84f1 diff確認。L798/L887/L903の3箇所修正はAC目的と完全一致"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "ACに推奨混入→忍者が推奨をno判定→gate binary_checks_fail→BLOCK。根因=cmdの推奨/必須分離不足。idle分析で同パターン特定済み(verdict_override N=1→N=2で傾向確認)"
+  timestamp: "2026-04-08T21:22:00"
+- cmd_id: cmd_karo_ci_fix
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点全OK。CI赤3グループ修正(fixture q8_why_what追加+期待文字列更新+setup_file修正)。q8_why_what cmd_save.sh L186実在確認。テスト4件tests/unit/実在確認"
+  observations:
+    - "事実1: q8_why_whatはcmd_save.sh L186-192に実装済み。テストfixtureにフィールド未追加がCI赤原因"
+    - "事実2: setup_file失敗→39 SKIP。build_instructions.shのCI環境差異が原因"
+  causal_chain: "gate/script変更→テストfixture未更新→CI赤3連→CI信頼性低下=負の複利。fixture更新+全テストPASS→CI緑復帰=正の複利"
+  timestamp: "2026-04-08T21:28:00"
