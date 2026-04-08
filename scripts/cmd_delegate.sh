@@ -124,10 +124,14 @@ bash "$SCRIPT_DIR/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
     exit 1
 }
 
-# Step 5: delegated_at を設定
+# Step 5: delegated_at を設定 + status を delegated に遷移
 TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
 yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" "\"$TIMESTAMP\"" || {
     echo "ERROR: Failed to set delegated_at for $CMD_ID" >&2
+    exit 1
+}
+yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "delegated" || {
+    echo "ERROR: Failed to set status=delegated for $CMD_ID" >&2
     exit 1
 }
 

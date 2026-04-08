@@ -739,3 +739,4 @@
 | cmd_1797 | チェックリスト改訂 — Step 3をIS窓動的選出フローに書き換え+GS完了記録 | dm-signal | 04-08 | checklist-alm-registration.md |
 | cmd_1798 | ALM忍法Step 3b — WFエンジンをALM GSデータで実行し21体候補のselection_timeline生成 | dm-signal | 04-08 | WFエンジンALM 7忍法実行は完了。CSV_FILESを6 |
 | cmd_1799 | ALM忍法Step 3b再実行 — WFエンジン67窓(--multi-is)で7忍法全量実行 | dm-signal | 04-08 | 7忍法全量--multi-is(IS=6-72M, 67窓) |
+| cmd_karo_ci_fix | CI赤修正 — テスト失敗3グループ修正(setup_file/q8_why_what/proposal出力) | infra | 04-08 | CI失敗テスト4件修正。全811件PASS達成 |
