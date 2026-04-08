@@ -37,7 +37,7 @@ task:
   report_path: queue/reports/hayate_report_cmd_root_fixes.yaml
   scope_mode: IMPL
   scout_exempt: true
-  status: failed
+  status: idle
   stop_for: []
   task_id: cmd_root_dashboard_auto
   task_type: impl
