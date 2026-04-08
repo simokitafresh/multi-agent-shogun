@@ -1,11 +1,11 @@
 # gunshi_stats.yaml — 軍師レビュー統計
 # source: gunshi_review_log.yamlヘッダーから分離 (cmd_1626)
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 600件 (draft:198, report:402) | '2026-03-22〜
+# 累計: 612件 (draft:204, report:408) | '2026-03-22〜
 # accuracy公式: gate_result判明分 100% (228/228 CLEAR, 0 BLOCK) ← Goodhart注意
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   未判明: 276件(48%)
-# verdict分布: APPROVE:170 LGTM:210 REQ_CHANGES:18 FAIL:11
+# verdict分布: APPROVE:174 LGTM:214 REQ_CHANGES:18 FAIL:11
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)

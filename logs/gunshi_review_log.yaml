@@ -2334,3 +2334,157 @@
   lesson_quality: OK
   escalation_needed: false
   timestamp: "2026-04-09T01:40:00"
+- cmd_id: cmd_karo_gp177_keyword_lib
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。GP-177実装。DRY共通化=正の複利。cmd_save.sh側は変更済みのため実質deploy_task.sh L3028のみ"
+  observations:
+    - "firefighting_keywords.shはディスク上存在・git未追跡。AC1=git add+commit"
+    - "cmd_save.sh L26 source済+L218 $FIREFIGHTING_PATTERN使用済。変更不要"
+    - "deploy_task.sh L29 source済だがcheck_firefighting_title() L3028がハードコード残存。AC2の実質作業"
+    - "q4_depth=shallow、AC2個。致命リスクなし"
+  causal_chain: "キーワードリスト2箇所分散→片方更新漏れリスク(負の複利)→lib共通化で1箇所管理→更新×10=正の複利"
+  timestamp: "2026-04-09T02:10:00"
+- cmd_id: cmd_karo_fix_wa_yaml_dump
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。yaml.dump除去→手書き出力。飛猿が既に完了(270475b)。成果物HEAD上に反映済み"
+  observations:
+    - "gate_wa_data_quality.sh L162-189: _yaml_val()+手書き出力実装確認。yaml.dump完全除去"
+    - "commit 270475b(02:04:30)+ad20515(auto-commit)でmain上に反映済み"
+    - "pre-commit hookが正しくBLOCKしていた実績あり。根本除去で二重防御"
+  causal_chain: "yaml.dumpのround-trip問題→マルチライン消失→データ破損→手書き出力で構造的除去→破損リスク×10=負の複利が0に"
+  timestamp: "2026-04-09T02:10:00"
+- cmd_id: cmd_karo_fix_wa_yaml_dump
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_fix_wa_yaml_dump_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。yaml.dump実行コード完全除去(L162コメントのみ残存)。_yaml_val+atomic write。SG9 WA率66.7%追加チェックPASS"
+  observations:
+    - "commit 270475b: 206 insertions(新規ファイル作成)。files_modified 1=stat一致"
+    - "L162 'yaml.dump禁止'はコメント(設計根拠の文書化)。実行コードにyaml.dump/safe_dump=0件"
+    - "DUPLICATE 8件削除(137→129)。GP049_BYPASS/NINJA_CORRUPT 32件はfixスコープ外WARNING=正常"
+    - "飛猿WA率66.7%(2/3)。弱点report_yaml_format→本報告は該当なし。binary_checks evidence具体的"
+  causal_chain: "yaml.dump使用→round-trip問題→マルチライン消失→手書き出力置換→_yaml_val()エスケープ+atomic write=データ破損リスク構造的除去"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T02:15:00"
+- cmd_id: cmd_karo_gp177_keyword_lib
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_karo_gp177_keyword_lib_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。$FIREFIGHTING_PATTERN置換確認(deploy_task.sh L3028)。lib git追跡済(59ea85d)。GP-177完了"
+  observations:
+    - "deploy_task.sh L3028: ハードコード→$FIREFIGHTING_PATTERN。diff確認(ad20515)"
+    - "firefighting_keywords.sh: git追跡済み(59ea85d)。cmd_save.sh L26 source+L218使用=変更不要(事前完了)"
+    - "コード変更は並列忍者auto-commit(ad20515/59ea85d)に帰属。半蔵cmd固有commit(46b4616)はcontext更新のみ。並列配備の既知アーティファクト"
+    - "半蔵WA率16.7%(1/6)。標準レビューで十分"
+  causal_chain: "キーワードリスト2箇所分散→更新漏れリスク(負の複利)→lib共通化1箇所→更新×10=正の複利。GP-177がcmd_1807から2時間で完了=提案→行動の鎖が機能"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T02:20:00"
+- cmd_id: cmd_1808
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。AC3前提崩壊(L58-91=/clear検知ではなく研究日誌注入モード)だが安全通過"
+  observations:
+    - "AC3記述のL58-91は/clear検知ロジックではなく研究日誌全文注入モード。前セッション未commit作業がcmd記述と乖離"
+    - "binary_checkが不在確認設計(grep '/clear'=0件)のため、コード不在でも安全にPASS"
+  causal_chain: "前セッション作業未commit→cmd記述と現物乖離→AC3前提崩壊。binary_checkが不在確認設計→安全通過。q5(verified_source)有効性の好例"
+  timestamp: "2026-04-09T03:05:00"
+- cmd_id: cmd_1809
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。AgentsScreen.kt L525-533のwasAtBottom判定タイミング問題、原因分析正確"
+  observations:
+    - "wasAtBottom判定: maxValue=0→true→測定後false→scrollTo不発。コード現物で確認済み"
+  causal_chain: "レイアウト測定完了前にwasAtBottom=true設定→測定後にfalse上書き→scrollTo発火条件不成立→最上部表示。修正は初期表示時の明示的scrollToで根本対処"
+  timestamp: "2026-04-09T03:05:00"
+- cmd_id: cmd_1810
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。ShogunScreen L402-411の展開ボタン移植+AgentsScreen L635のisInputFocused条件削除"
+  observations:
+    - "移植元ShogunScreenのisInputExpanded+Arrow UIパターンを現物確認。AgentsScreenへの移植は明確"
+    - "cmd_1809との直列配備設計が適切。変更箇所が離れており(L525 vs L635)衝突リスク低"
+  causal_chain: "将軍pane機能がエージェントpaneに未移植→操作性格差→移植で同等化。直列配備で同一ファイル競合回避"
+  timestamp: "2026-04-09T03:05:00"
+- cmd_id: cmd_1808
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1808_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  findings_summary: "4観点OK。AC3前提崩壊をhayateが正確に判断し研究日誌機能保全。commit 2b3857a検証済み"
+  observations:
+    - "hayateはAC3前提崩壊(L58-91=/clear検知不在)を正しく認識し、コメント並べ替えのみで研究日誌注入機能を保全"
+    - "SessionEnd hookのagent_id checkでshogun以外は即exit。ntfyはALERT時のみ発火。false positive低"
+  causal_chain: "AC3前提崩壊→hayateが現物確認で安全判断→最小変更(コメント並べ替え)→研究日誌機能保全。binary_check不在確認設計が安全弁として機能"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T03:05:00"
+- cmd_id: cmd_1809
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1809_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  findings_summary: "4観点OK。snapshotFlow+firstパターンで初回スクロール修正。既存ロジック無変更"
+  observations:
+    - "snapshotFlow{maxValue}.first{it>0}はCompose標準手法。pane.indexキーで各pane初回のみ発火"
+    - "既存wasAtBottom判定+auto-scroll追従は無変更。副作用リスク最小の設計"
+  causal_chain: "maxValue=0→wasAtBottom=true→測定後false→scrollTo不発→修正: snapshotFlow待機で測定完了を保証→scrollTo確実発火。既存ロジック無変更=副作用ゼロ(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T03:15:00"
+- cmd_id: cmd_1811
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Gist API連携+メモ画面UI追加。straightforward実装"
+  observations:
+    - "MemoScreen.kt 344行現存確認。既存メモ機能(作成/編集/削除/WSL同期)への影響はAC3で保護"
+    - "Gist API public endpoint(認証不要、60req/h上限)は個人使用で十分"
+  causal_chain: "メモ画面未活用+Gistアクセスがブラウザ経由で不便→API統合でアプリ内一覧+内容表示→アプリの実用価値向上(正の複利)"
+  timestamp: "2026-04-09T03:20:00"
+- cmd_id: cmd_1810
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1810_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  findings_summary: "4観点OK。展開ボタン+SpecialKeysRow常時表示+imePadding。ShogunScreen準拠移植"
+  observations:
+    - "diff確認: isInputExpanded状態管理+singleLine/maxLines切替+IconButton追加がShogunScreen L402-411と同一パターン"
+    - "cmd_1809(L525付近スクロール)とcmd_1810(L455,L547,L642,L671入力UI)は変更箇所が離れており直列配備が安全に機能"
+  causal_chain: "エージェントpane入力UIが将軍paneより機能不足→展開+SpecialKeys+imePadding移植→操作性同等化(正の複利: 全paneで統一的操作体験)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T05:10:00"
+- cmd_id: cmd_1811
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1811_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  findings_summary: "4観点OK。Gist API連携+メモ画面UI(一覧+全画面+Settings)+.gitignore whitelist"
+  observations:
+    - "7ファイル(新規2: GistFile.kt,GistRepository.kt + 修正5)がcommit 6864facと完全一致"
+    - "L457教訓適用: .gitignoreにwhitelistエントリ追加済み。lesson_candidateは既知パターンの再確認"
+  causal_chain: "Gist共有ファイルへのブラウザ経由アクセスが不便→API連携でアプリ内一覧+全画面表示→殿の操作効率向上(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T05:15:00"

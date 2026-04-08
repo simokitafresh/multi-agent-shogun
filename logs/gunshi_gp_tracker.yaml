@@ -183,7 +183,9 @@
   reason: "gate_result: null 104件蓄積。真因=review_feedback手動更新(自動化不在)。起動時auto-syncで永続防御"
 - id: GP-177
   description: "消火キーワードリストをscripts/lib/firefighting_keywords.shに共通化。cmd_save.sh/deploy_task.sh両方から参照"
-  status: proposed
+  status: implemented
   proposed_at: "2026-04-09T01:35:00"
+  implemented_at: "2026-04-09T02:20:00"
+  implemented_by: cmd_karo_gp177_keyword_lib
   self_executable: false
   reason: "cmd_1807レビューで発見。cmd_save.sh L215とcmd_1807のキーワードリスト乖離(FAIL欠落+単語境界差)。2箇所管理=片方だけ更新リスク=負の複利。共通化で1箇所管理"

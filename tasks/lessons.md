@@ -3497,3 +3497,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須。CI環境ではscaffoldがtmpにプロジェクトを再構成するため、source対象ファイルがsymlink未登録だとsetup_file失敗→テストスキップ→CI赤。cmd_save系テストでも抽出関数がFIREFIGHTING_PATTERN等の外部変数を参照する場合、テストsetup_fileでsource+exportが必要
+
+### L459: 新規ファイル追加時は.gitignoreへのwhitelistエントリも同時に追加必須
+- **日付**: 2026-04-09
+- **出典**: cmd_1811
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [universal]
+- .gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。
