@@ -749,3 +749,4 @@
 | cmd_karo_gp177_keyword_lib | enhance — 消火キーワードリストをscripts/lib/に共通化（GP-177） | infra | 04-09 | scripts/lib/firefighting_keywo |
 | cmd_1808 | fix — /clear前チェックhookをSessionEndに移設+ntfy通知化 | infra | 04-09 | SessionEnd clear check hookを追加 |
 | cmd_1809 | fix — Androidアプリ エージェントpane全画面表示の初期スクロール位置を最下部にする | infra | 04-09 | PaneFullScreen初回表示時のスクロール位置を最下 |
+| cmd_1810 | enhance — Androidアプリ エージェントpane入力UI改善（展開ボタン+特殊コマンド常時表示） | infra | 04-09 | PaneFullScreen入力バー改善3点を実装。AC1: |
