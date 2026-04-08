@@ -544,7 +544,7 @@ fun PaneFullScreen(
 
     ScreenBackground(imageResId = R.drawable.bg_agents) {
     Column(
-        modifier = Modifier.fillMaxSize().imePadding()
+        modifier = Modifier.fillMaxSize()
     ) {
         // Top bar with agent name and back button
                 Row(

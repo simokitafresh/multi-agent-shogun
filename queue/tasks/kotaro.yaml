@@ -1,12 +1,13 @@
 task:
   _ac_task_id: cmd_1807_impl
   _ac_worker_id: null
-  ac_version: 54434f04
+  ac_version: b99834bc
   acceptance_criteria:
   - description: deploy_task.shの配備処理に消火キーワードtitle検知→WARNING表示を追加。title消火でWARNING出力、title非消火で無出力を確認
     id: AC1
   - description: 実際のcmd_karo_fix相当のtitleで配備シミュレーションし、WARNING発火を確認
     id: AC2
+  deployed_at: '2026-04-09T01:29:56'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
@@ -35,7 +36,7 @@ task:
   report_filename: kotaro_report_cmd_1807.yaml
   report_path: queue/reports/kotaro_report_cmd_1807.yaml
   scope_mode: IMPL
-  status: idle
+  status: completed
   stop_for: []
   task_id: cmd_1807_impl
   task_type: impl
@@ -75,18 +76,24 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
+  - id: 'L459'
+    summary: '.gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。'
+    detail: '.gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。'
+  - id: 'L458'
+    summary: 'deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須。CI環境ではscaffoldがtmpにプロジェクトを再構成するため、source対象ファイルがsymlink未登録だとsetup_file失敗→テストスキップ→CI赤。cmd_save系テストでも抽出関数がFIREFIGHT'
+    detail: 'deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須。CI環境ではscaffoldがtmpにプロジェクトを再構成するため、source対象ファイルがsymlink未登録だとsetup_file失敗→テストスキップ→CI赤。cmd_save系テストでも抽出関数がFIREFIGHT'
   - id: 'L457'
     summary: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
     detail: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
   - id: 'L456'
-    summary: 'context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit'
-    detail: 'context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit'
+    summary: '''**retired_reason**: .gitignore glob化(66a87ab)でcontext/*.mdが追跡対象に。git log使用可能'
+    detail: '''**retired_reason**: .gitignore glob化(66a87ab)でcontext/*.mdが追跡対象に。git log使用可能'
   - id: 'L455'
     summary: 'dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と'
     detail: 'dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と'
   - id: 'L454'
-    summary: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit'
-    detail: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit'
+    summary: '''**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス'
+    detail: '''**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス'
   - id: 'L453'
     summary: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
     detail: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
@@ -99,10 +106,3 @@ task:
   - id: 'L450'
     summary: '''殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師修正→家老レビュー)が切れなければF-G05の原理に違反しない。見つけた問題に必ず行動を紐付ける(REQUEST_CHANGESまたは直接修正)。注記で流さない。根因:'
     detail: '''殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師修正→家老レビュー)が切れなければF-G05の原理に違反しない。見つけた問題に必ず行動を紐付ける(REQUEST_CHANGESまたは直接修正)。注記で流さない。根因:'
-  - id: 'L449'
-    summary: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresult空欄が誤BLOCKを招く。assigned_acsをawk'
-    detail: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresult空欄が誤BLOCKを招く。assigned_acsをawk'
-  - id: 'L448'
-    summary: 'draft教訓12件が未査読のままGATE到達'
-    detail: 'draft教訓12件が未査読のままGATE到達'
-  deployed_at: "2026-04-09T01:29:56"

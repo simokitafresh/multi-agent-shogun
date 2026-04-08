@@ -1,18 +1,17 @@
 package com.shogun.android.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -40,10 +39,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shogun.android.R
 import com.shogun.android.data.GistFile
@@ -66,13 +64,11 @@ fun MemoScreen(viewModel: MemoViewModel = viewModel()) {
     val gistFiles by viewModel.gistFiles.collectAsState()
     val isGistLoading by viewModel.isGistLoading.collectAsState()
     val gistError by viewModel.gistError.collectAsState()
-    val gistFileContent by viewModel.gistFileContent.collectAsState()
-    val isGistContentLoading by viewModel.isGistContentLoading.collectAsState()
+    val context = LocalContext.current
 
     var editingMemo by remember { mutableStateOf<MemoEntity?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var deletingMemo by remember { mutableStateOf<MemoEntity?>(null) }
-    var viewingGistFile by remember { mutableStateOf<GistFile?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.requestSync()
@@ -146,8 +142,7 @@ fun MemoScreen(viewModel: MemoViewModel = viewModel()) {
                             error = gistError,
                             onRefresh = { viewModel.refreshGist() },
                             onFileClick = { gistFile ->
-                                viewingGistFile = gistFile
-                                viewModel.loadGistFileContent(gistFile)
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(gistFile.rawUrl)))
                             },
                         )
                     }
@@ -247,17 +242,6 @@ fun MemoScreen(viewModel: MemoViewModel = viewModel()) {
         )
     }
 
-    viewingGistFile?.let { gistFile ->
-        GistFileContentDialog(
-            gistFile = gistFile,
-            content = gistFileContent,
-            isLoading = isGistContentLoading,
-            onDismiss = {
-                viewingGistFile = null
-                viewModel.clearGistFileContent()
-            },
-        )
-    }
 }
 
 @Composable
@@ -378,70 +362,6 @@ private fun formatFileSize(bytes: Int): String = when {
     bytes < 1024 -> "${bytes}B"
     bytes < 1024 * 1024 -> "${bytes / 1024}KB"
     else -> "${bytes / (1024 * 1024)}MB"
-}
-
-@Composable
-private fun GistFileContentDialog(
-    gistFile: GistFile,
-    content: String?,
-    isLoading: Boolean,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Surface1,
-        title = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = gistFile.filename,
-                    color = Kinpaku,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (gistFile.language.isNotBlank()) {
-                    Text(
-                        text = gistFile.language,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextMuted,
-                    )
-                }
-            }
-        },
-        text = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(400.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                when {
-                    isLoading -> CircularProgressIndicator(color = Kinpaku)
-                    content != null -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState()),
-                        ) {
-                            Text(
-                                text = content,
-                                color = Zouge,
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 12.sp,
-                            )
-                        }
-                    }
-                    else -> {
-                        Text(text = "内容を読み込み中...", color = TextMuted)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("閉じる", color = Kinpaku)
-            }
-        },
-    )
 }
 
 @Composable
