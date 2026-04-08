@@ -3931,19 +3931,13 @@ else
             fi
         fi
 
-        # Pattern 2: draft_remaining
+        # Pattern 2: draft_remaining — 循環防止のためdraft生成をスキップ
+        # draft_lessons起因のBLOCKでさらにdraftを生成すると次回GATEもBLOCKし続ける循環を招く
         for reason in "${BLOCK_REASONS[@]}"; do
             if [[ "$reason" == draft_lessons:* ]]; then
                 d_count=$(echo "$reason" | cut -d: -f2)
-                if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" \
-                    "[自動生成] draft教訓の査読を怠った: ${CMD_ID}" \
-                    "draft教訓${d_count}件が未査読のままGATE到達" \
-                    "${CMD_ID}" "gate_auto" "${CMD_ID}" --status draft 2>&1; then
-                    echo "  draft: draft教訓の査読を怠った (${d_count}件)"
-                    DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
-                else
-                    echo "  [INFO] draft生成失敗 (draft_remaining)"
-                fi
+                echo "  SKIP: draft_lessons:${d_count} — draft_lessons起因BLOCKでのdraft生成は循環を招くためスキップ (auto_draft_lesson.sh循環防止)"
+                echo "  ヒント: ${CMD_PROJECT}の${d_count}件のdraft教訓を査読・承認してからGATEを再実行せよ"
                 break
             fi
         done

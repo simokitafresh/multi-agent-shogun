@@ -15,6 +15,13 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     exit 1
 fi
 
+# draft_lessons起因のBLOCK循環防止
+# GATE_BLOCK_REASON=draft_lessons* が設定されている場合はdraft生成をスキップ
+if [[ "${GATE_BLOCK_REASON:-}" == draft_lessons* ]]; then
+    echo "[auto_draft] SKIP: draft_lessons起因のBLOCKによる循環防止 (${REPORT_PATH})"
+    exit 0
+fi
+
 # Extract lesson_candidate fields from report YAML
 export REPORT_PATH
 extract_result=$(python3 << 'PYEOF'
