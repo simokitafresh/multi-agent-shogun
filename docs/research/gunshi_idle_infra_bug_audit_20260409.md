@@ -5,12 +5,9 @@ karo_workarounds.yaml全127件のcategory集計 → パターン分析 → 現�
 
 ## 現存バグ（未修正）
 
-### Bug 1: gate_report_format.sh — assigned_acs未対応
-- **症状**: 分割配備で担当外ACのbinary_checks result=no → verdict-BC矛盾チェックがBLOCK
-- **根因**: cmd_complete_gate.sh(L2648-2670)はassigned_acs対応済みだが、上流のgate_report_format.sh(L280-301)がassigned_acsを読まない
-- **証拠**: cmd_1796 split_deploy_ac_scope 2回WA(kagemaru+tobisaru)
-- **修正箇所**: gate_report_format.sh L280-301。task YAMLからassigned_acsを取得 → 担当外ACのresult=noをverdict矛盾チェックから除外
-- **因果鎖**: deploy_task.sh全AC注入→gate_report未対応→担当外no→BLOCK→WA。×分割配備回数=負の複利
+### ~~Bug 1: gate_report_format.sh — assigned_acs未対応~~ (修正済み)
+- **状態**: 修正済み。gate_report_format.sh L127-131, L234-269, L309-310でassigned_acs対応実装済み
+- **確認**: 2026-04-09 grep assigned_acs gate_report_format.sh → 11箇所で対応済み
 
 ### Bug 2: recording_error — workaround記録時のシェル構文エラー
 - **症状**: detail/root_causeが「(記録欠損: 呼出し構文エラー)」で空

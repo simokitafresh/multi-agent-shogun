@@ -1,18 +1,25 @@
 task:
-  _ac_task_id: cmd_root_dashboard_auto
+  _ac_task_id: cmd_1808_impl
   _ac_worker_id: null
-  ac_version: 7bdf5d56
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 95053966
   acceptance_criteria:
-  - description: dashboard.mdに<!-- DASHBOARD_AUTO_START -->と<!-- DASHBOARD_AUTO_END
-      -->マーカーが存在するか確認。なければconfig/dashboard_template.mdを参照して正しい位置に追加せよ。dashboard_auto_section.shが正常動作することを確認
+  - binary_check: SessionEndフック発火時にntfy通知が送信されるか
+    description: scripts/hooks/session_end_clear_check.shを新規作成。SessionEnd時に殿の言葉保存状況(lord_conversation.jsonl
+      inbound件数)、裁定反映状況(clear_prep_check.sh)をチェック。問題があればntfy.shで殿に通知
     id: AC1
-  - description: bash scripts/dashboard_auto_section.sh を実行しERRORが出ないことを確認
+  - binary_check: settings.jsonのhooks.SessionEnd配列にエントリが存在するか
+    description: '.claude/settings.jsonにSessionEndフックを追加。command: bash scripts/hooks/session_end_clear_check.sh'
     id: AC2
+  - binary_check: prompt_state_inject.shにgrep '/clear'でマッチする行がないか
+    description: prompt_state_inject.shからL58-91(/clear検知ロジック)を削除
+    id: AC3
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern*\
-    \ ]]は純bashで同等のマ\n  - L337: archive_karo_section L800-802でsed -n line_nop DASHBOARDをN回呼出し。awkのNR\
-    \ in del判定で1パ\n  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
+    \  - L421: Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合\n\
+    \  - L164: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな\n\
+    \  - L426: CLAUDE.mdでyaml.dump禁止が明記されているが、archive_completed.sh内のheredoc Pythonでのdump呼出はpre-\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -31,33 +38,33 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_root_fixes
+  - AC3
+  parent_cmd: cmd_1808
   project: infra
-  report_filename: hayate_report_cmd_root_fixes.yaml
-  report_path: queue/reports/hayate_report_cmd_root_fixes.yaml
+  report_filename: hayate_report_cmd_1808.yaml
+  report_path: queue/reports/hayate_report_cmd_1808.yaml
   scope_mode: IMPL
-  scout_exempt: true
   status: idle
   stop_for: []
-  task_id: cmd_root_dashboard_auto
+  task_id: cmd_1808_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 18
+    total_workarounds: 15
     top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), spec_mismatch_redeploy(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), scout_gate_bypass(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
+    breakdown: 'report_yaml_format(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), verdict_override(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'verdict_invalid'
-      count: 4
+      count: 6
     - pattern: 'lu_structure_error'
       count: 1
     gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
     gate_blocks:
     - reason: 'report_format'
-      count: 20
+      count: 21
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'report_yaml_missing'
       count: 12
@@ -65,12 +72,12 @@ task:
     - reason: 'empty_lessons_useful'
       count: 8
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'binary_checks_fail'
+      count: 7
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'ac_version_mismatch'
       count: 6
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
-    - reason: 'binary_checks_fail'
-      count: 5
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'lesson_candidate_no_reason_empty'
       count: 3
       hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
@@ -90,6 +97,18 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
+  - id: 'L457'
+    summary: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
+    detail: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
+  - id: 'L456'
+    summary: 'context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit'
+    detail: 'context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit'
+  - id: 'L455'
+    summary: 'dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と'
+    detail: 'dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と'
+  - id: 'L454'
+    summary: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit'
+    detail: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit'
   - id: 'L453'
     summary: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
     detail: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
@@ -108,16 +127,4 @@ task:
   - id: 'L448'
     summary: 'draft教訓12件が未査読のままGATE到達'
     detail: 'draft教訓12件が未査読のままGATE到達'
-  - id: 'L447'
-    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature'
-    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature'
-  - id: 'L446'
-    summary: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用'
-    detail: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用'
-  - id: 'L445'
-    summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。'
-    detail: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。'
-  - id: 'L444'
-    summary: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
-    detail: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
-  deployed_at: "2026-04-09T00:33:13"
+  deployed_at: "2026-04-09T02:51:07"

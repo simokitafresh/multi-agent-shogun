@@ -6,8 +6,9 @@ set -eu
 AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
 [ "$AGENT_ID" = "shogun" ] || exit 0
 
-# 入力テキスト取得
-INPUT="${CLAUDE_USER_PROMPT:-}"
+# 入力テキスト取得（stdin JSON の .prompt フィールドから）
+payload="$(cat 2>/dev/null || true)"
+INPUT="$(printf '%s' "$payload" | jq -r '.prompt // ""' 2>/dev/null || true)"
 [ -n "$INPUT" ] || exit 0
 
 # スラッシュコマンド除外

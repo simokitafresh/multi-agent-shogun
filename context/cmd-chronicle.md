@@ -745,3 +745,7 @@
 | cmd_1804 | fix — cmd_save.sh q9磨き上げ — キーワード追加+意志依存prevention WARN | infra | 04-09 | cmd_save.shのq9判定語彙にバグ/bug/不具合/ |
 | cmd_1805 | fix — q9意志依存パターンを語幹マッチに強化（活用形抜け修正） | infra | 04-09 | q9意志依存パターンを語幹マッチに変更。活用形(気をつけて/ |
 | cmd_1807 | fix — deploy_task.shに消火判定gate追加（家老自発cmd経路のq9カバー） | infra | 04-09 | deploy_task.shにcheck_firefight |
+| cmd_karo_fix_wa_yaml_dump | fix — gate_wa_data_quality.sh --fixモードのyaml.dump除去 | infra | 04-09 | gate_wa_data_quality.sh --fixモ |
+| cmd_karo_gp177_keyword_lib | enhance — 消火キーワードリストをscripts/lib/に共通化（GP-177） | infra | 04-09 | scripts/lib/firefighting_keywo |
+| cmd_1808 | fix — /clear前チェックhookをSessionEndに移設+ntfy通知化 | infra | 04-09 | SessionEnd clear check hookを追加 |
+| cmd_1809 | fix — Androidアプリ エージェントpane全画面表示の初期スクロール位置を最下部にする | infra | 04-09 | PaneFullScreen初回表示時のスクロール位置を最下 |
