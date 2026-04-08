@@ -1,5 +1,5 @@
 # Stock Database Context
-<!-- last_updated: 2026-03-16 cmd_992 freshness review -->
+<!-- last_updated: 2026-04-09 cmd_ga016_db_style freshness review -->
 
 > cmd_865初回偵察完了(2026-03-12)。水平4名+垂直1名(2AC)で全容把握。
 
