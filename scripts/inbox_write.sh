@@ -341,10 +341,21 @@ maybe_verify_codex_delivery() {
     local wait_sec="${INBOX_CODEX_VERIFY_WAIT_SEC:-1}"
     local attempt=0
 
+    local pane_target
+    pane_target=$(resolve_agent_pane_target "$target" || true)
+
     while [ "$attempt" -le "$retries" ]; do
         if [ "$attempt" -gt 0 ]; then
-            local pane_target unread_count
-            pane_target=$(resolve_agent_pane_target "$target" || true)
+            # Working状態の忍者にはretry不要（既に処理中）
+            if [ -n "$pane_target" ]; then
+                local pane_snapshot
+                pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
+                if echo "$pane_snapshot" | grep -qE '• (Working|Ran |Waiting)'; then
+                    echo "[inbox_write] codex delivery verified (ninja working) for ${target}" >&2
+                    return 0
+                fi
+            fi
+            local unread_count
             unread_count=$(inbox_unread_count "$inbox_file")
             if [ -n "$pane_target" ] && [ "$unread_count" -gt 0 ] 2>/dev/null; then
                 if send_codex_task_nudge "$target" "$pane_target" "$unread_count"; then
