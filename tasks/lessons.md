@@ -3510,6 +3510,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-09
 - **出典**: cmd_1814
 - **記録者**: kagemaru
-- **status**: draft
+- **status**: dismissed
 - **tags**: [universal]
+- **dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要
 - ShogunScreen.ktをgit addしようとしたところ.gitignoreに未登録でブロックされた。L459/L457と同じwhitelist型パターン。android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要。
