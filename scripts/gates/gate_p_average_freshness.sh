@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# ============================================================
+# gate_p_average_freshness.sh
+# p̄バッチの鮮度チェックゲート
+#
+# Usage:
+#   bash scripts/gates/gate_p_average_freshness.sh
+#
+# 判定:
+#   - calculated_at が 30日以内: OK
+#   - 30-35日: WARN
+#   - 35日超: ALERT + ntfy通知
+#   - null/取得失敗: ALERT + ntfy通知
+#
+# Exit code: 0=OK, 1=ALERT, 2=WARN
+# ============================================================
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
+API_BASE="https://dm-signal-backend.onrender.com"
+CACHE_FILE="/tmp/gate_p_average_cache.txt"
+CACHE_TTL_SECONDS=21600  # 6時間キャッシュ(p̄は月次更新のため十分)
+
+# キャッシュチェック: 6時間以内ならAPI呼出しをスキップ
+if [ -f "$CACHE_FILE" ]; then
+    cache_age=$(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0) ))
+    if [ "$cache_age" -lt "$CACHE_TTL_SECONDS" ]; then
+        head -1 "$CACHE_FILE"
+        cached_exit=$(grep -oE 'exit_code=[0-9]+' "$CACHE_FILE" | cut -d= -f2)
+        exit "${cached_exit:-0}"
+    fi
+fi
+
+# 認証情報を取得
+if [ ! -f "$ENV_FILE" ]; then
+    echo "ALERT: p̄鮮度: backend/.env が見つかりません"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — backend/.env不在"
+    exit 1
+fi
+
+ADMIN_USER=""
+ADMIN_PASS=""
+while IFS='=' read -r key value; do
+    case "$key" in
+        ADMIN_USER) ADMIN_USER="$value" ;;
+        ADMIN_PASS) ADMIN_PASS="$value" ;;
+    esac
+done < <(grep -E '^ADMIN_(USER|PASS)=' "$ENV_FILE" | tr -d '\r')
+
+if [ -z "$ADMIN_USER" ] || [ -z "$ADMIN_PASS" ]; then
+    echo "ALERT: p̄鮮度: ADMIN認証情報が取得できません"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — ADMIN認証情報不在"
+    exit 1
+fi
+
+# API呼出し
+response=$(curl -s -f -u "${ADMIN_USER}:${ADMIN_PASS}" \
+    --max-time 15 \
+    "${API_BASE}/api/p-average" 2>/dev/null) || {
+    echo "ALERT: p̄鮮度: API呼出し失敗"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API応答なし"
+    exit 1
+}
+
+# calculated_at を抽出（トップレベルのdata.calculated_at）
+calculated_at=$(echo "$response" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+cat = d.get('data', {}).get('calculated_at')
+print(cat if cat else 'null')
+" 2>/dev/null) || calculated_at="null"
+
+if [ "$calculated_at" = "null" ] || [ -z "$calculated_at" ]; then
+    echo "ALERT: p̄ never calculated (calculated_at=null)"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄未計算(calculated_at=null)"
+    exit 1
+fi
+
+# 日数計算
+calc_epoch=$(date -d "${calculated_at}" +%s 2>/dev/null) || {
+    echo "ALERT: p̄鮮度: calculated_at パース失敗(${calculated_at})"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — 日付パース不可"
+    exit 1
+}
+now_epoch=$(date +%s)
+days_ago=$(( (now_epoch - calc_epoch) / 86400 ))
+
+if [ "$days_ago" -gt 35 ]; then
+    msg="ALERT: p̄ stale (${days_ago}d)"
+    echo "$msg" | tee "$CACHE_FILE"
+    echo "exit_code=1" >> "$CACHE_FILE"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄計算が${days_ago}日前"
+    exit 1
+elif [ "$days_ago" -gt 30 ]; then
+    msg="WARN: p̄ calculated_at ${days_ago}d ago"
+    echo "$msg" | tee "$CACHE_FILE"
+    echo "exit_code=2" >> "$CACHE_FILE"
+    exit 2
+else
+    msg="OK: p̄ calculated_at within 30 days (${days_ago}d ago, ${calculated_at})"
+    echo "$msg" | tee "$CACHE_FILE"
+    echo "exit_code=0" >> "$CACHE_FILE"
+    exit 0
+fi
