@@ -2488,3 +2488,26 @@
   lesson_quality: OK
   escalation_needed: false
   timestamp: "2026-04-09T05:15:00"
+- cmd_id: cmd_1811
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "LGTM→BLOCK。原因: draft_lessons:1(プロジェクトに未査読draft教訓1件)。報告品質問題ではなくプロジェクトレベルgate"
+  observations:
+    - "SG7 gate_prediction: CLEARが不正確。draft_lessonsチェックを予測に含めていなかった"
+    - "BLOCK原因はcmd_1811のlesson_candidateからauto_draft_lesson.shが生成したdraft教訓の未査読"
+  causal_chain: "lesson_candidate有→auto_draft_lesson生成→draft_lessons:1→GATE BLOCK。SG7予測にdraft_lessonsチェック不在→CLEAR予測→miss"
+  timestamp: "2026-04-09T05:15:00"
+- cmd_id: cmd_1812
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GATE CLEAR時idle将軍inbox通知。通常+emergency 2箇所配置、timeout 10保護、非阻害設計"
+  observations:
+    - "SCRIPT_DIRパスは既存inbox_write呼出し(L3681,L3931)と同一パターン。一貫性あり"
+    - "timeout 10でWSL2 NTFSハングリスク対処済み(LG016準拠)"
+    - "@agent_state未設定時=空文字→idle以外→SKIPで安全側に倒れる設計"
+  causal_chain: "GATE CLEAR→将軍idle判定→inbox通知→将軍が次cmd起票可能。active時SKIP→殿操作中断なし。timeout保護→WSL2 hang時もGATE処理継続(正の複利: 全GATE CLEARで将軍応答速度向上)"
+  timestamp: "2026-04-09T07:45:00"

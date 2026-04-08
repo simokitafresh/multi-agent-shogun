@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-09 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-09T03:05:37+09:00 -->
+<!-- generated_at: 2026-04-09T07:45:01+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-09T03:05:36+09:00 | terminal | response | 良い問いでござる。 **現状の問題**: 将軍はcmd委任後、殿の次の入力まで何も知らない。完了を知るのは殿が「どうなった？」と聞いた時か、殿の入力に便乗してsnapshotを読んだ時。 **鎖を壊さない方法**: `prompt_sta…
-- 2026-04-09T03:04:48+09:00 | terminal | inbound | なんだが 君は cmd が完了したかどうかをわからない 鎖の原理を壊さずに 何か cmd が完了したかどうかを将軍が気づく方法はないかな
-- 2026-04-09T03:03:38+09:00 | ntfy | outbound | 【家老】cmd_1811 初回配備開始 (title=enhance — Androidアプリ メモ画面にGistファイル一覧表示を追加, ninja=hanzo) enhance 📋 https://gist.github.com/si…
-- 2026-04-09T03:03:00+09:00 | ntfy | outbound | 【家老】cmd_1810 初回配備開始 (title=enhance — Androidアプリ エージェントpane入力UI改善（展開ボタン+特殊コマンド常時表示）, ninja=kagemaru) enhance 📋 https://g…
-- 2026-04-09T03:02:54+09:00 | terminal | response | cmd_1811委任完了。 **今日のAndroidアプリ改善まとめ:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_1809 | エージェントpane初期スクロール→最下部 | 配備中(…
-- 2026-04-09T03:01:25+09:00 | terminal | inbound | メモが活用されていない。他のアイデアを考えている。gistで共有されたものを一覧として表示sるのはどうかな？
-- 2026-04-09T02:58:59+09:00 | terminal | response | YAMLにAC3を追加し、家老に通知した。 [meta] stop_reason=end_turn
-- 2026-04-09T02:58:30+09:00 | terminal | inbound | yaml書いたか？家老のpaneを確認せよ
-- 2026-04-09T02:56:31+09:00 | terminal | response | 殿、報告する。 **原因**: `enableEdgeToEdge()`でアプリが全画面表示だが、`PaneFullScreen`のColumnに`imePadding()`が適用されていない。キーボード出現時にシステムが自動でレイアウト…
-- 2026-04-09T02:54:59+09:00 | terminal | inbound | 入力ボックスをタップすると、その瞬間にキーボードが現れて、入力ボックスが常法にジャンプする。入力を開始すると問題なく表示される。これはなぜだ？修正したい
+- 2026-04-09T07:45:00+09:00 | terminal | response | 修正完了。APK更新済み。 **原因**: `imePadding()`(cmd_1810追加)とキーボード非表示時の`clearFocus()`が競合。レイアウト再計算で`imeVisible=false`を誤検知→フォーカス解除→入力…
+- 2026-04-09T07:43:51+09:00 | ntfy | outbound | 【家老】cmd_1814 初回配備開始 (title=fix — 将軍画面のSpecialKeysRowも常時表示にする, ninja=kagemaru) fix 📋 https://gist.github.com/simokitafre…
+- 2026-04-09T07:42:55+09:00 | ntfy | outbound | 【家老】cmd_1813 初回配備開始 (title=enhance — Gistファイルカードにブラウザで開くリンクを追加, ninja=hanzo) enhance 📋 https://gist.github.com/simokita…
+- 2026-04-09T07:41:02+09:00 | terminal | inbound | エージェント側の 入力欄がバグって壊れている 入力欄を押すと入力欄が消えてしまう
+- 2026-04-09T07:40:59+09:00 | terminal | response | cmd_1814委任完了。 殿の指摘を理解した。Gistだけでなく、**ntfyで共有されたリンクやファイル**も含めて「共有されたもの」を一覧表示したい。ntfyで送ったAPKリンク、ピザ店リスト、CIステータス等も全て。 これはlor…
+- 2026-04-09T07:39:40+09:00 | terminal | inbound | エージェント側の プランには 入力欄の上に 特別 コマンドが表示されているが 将軍側の入力欄の上には特別 コマンドがない
+- 2026-04-09T07:39:23+09:00 | terminal | response | 殿、Gistの共有ファイルは**dashboard.md 1ファイルのみ**。 殿が今まで共有したファイルはdashboard.mdだけ。他のファイル（チェックリスト、研究資料等）をGistに追加すれば、アプリのメモ画面に一覧表示される。…
+- 2026-04-09T07:38:14+09:00 | terminal | inbound | ゲストのメモのギフト 共有ファイルは リンク が乗っていて 直接 Android のブラウザで開けるようにしないとだめだな
+- 2026-04-09T07:36:14+09:00 | ntfy | outbound | 【v6.3 再ビルド】release版APK追加。app-release.apkをDLせよ https://github.com/simokitafresh/multi-agent-shogun/releases/tag/v6.3.0
+- 2026-04-09T07:36:12+09:00 | terminal | response | release版APKをアップロードした。`app-release.apk`をダウンロードしてインストールせよ。 https://github.com/simokitafresh/multi-agent-shogun/releases/t…
 
 ## 未解決確認事項
 - 良い問いでござる。 **現状の問題**: 将軍はcmd委任後、殿の次の入力まで何も知らない。完了を知るのは殿が「どうなった？」と聞いた時か、殿の入力に便乗してsnapshotを読んだ時。 **鎖を壊さない方法**: `prompt_state_inject.sh`（UserPr…
@@ -37,10 +37,7 @@
 
 ## 参照cmd
 - cmd_1403
-- cmd_1658
 - cmd_1685
-- cmd_1748
-- cmd_1761
 - cmd_1794
 - cmd_1795
 - cmd_1796
@@ -58,6 +55,9 @@
 - cmd_1809
 - cmd_1810
 - cmd_1811
+- cmd_1812
+- cmd_1813
+- cmd_1814
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
