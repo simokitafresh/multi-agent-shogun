@@ -228,6 +228,7 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
+      q8_why_what: "WHY: テスト用 → WHAT: テストcmd 1件作成"
 YAML
 
     CMD_ID="cmd_9999"; export CMD_ID

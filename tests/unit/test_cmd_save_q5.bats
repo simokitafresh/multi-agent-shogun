@@ -52,6 +52,7 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "${q5_val}"
+      q8_why_what: "WHY: q5テスト用 → WHAT: q5検証1件実施"
 YAML
     CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
     CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
@@ -146,6 +147,7 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "${q5_val}"
+      q8_why_what: "WHY: q5除外条件テスト用 → WHAT: 除外条件検証1件"
 YAML
     CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
     CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)

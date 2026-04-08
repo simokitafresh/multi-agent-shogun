@@ -333,7 +333,13 @@ MOCK
 
 # === Test 14: 未処理PROPOSAL → WARN ===
 @test "pending proposals → WARN with proposal count" {
-    echo "# Dashboard [PROPOSAL] item1 [PROPOSAL] item2" > "$TEST_TMPDIR/dashboard.md"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_test_prop
+  proposals:
+    - id: GP-999
+      description: "テスト提案"
+      status: pending
+EOF
 
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
