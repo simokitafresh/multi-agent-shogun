@@ -736,3 +736,4 @@
 | cmd_1796 | ALM忍法Step 3実行 — 残り6忍法を6忍者並列実行 | dm-signal | 04-08 | 6忍法(oikaze/nukimi/kawarimi/kas |
 | cmd_karo_fix_neverstop_hang | never_stop_forにプロセスhang独立検証を追加 | infra | 04-08 | NEVER_STOP_DEFAULTS に 4 項目目として |
 | cmd_karo_fix_gate_split_loop | GATE構造バグ2件修正 — 分割配備ACスコープ+auto_draft循環防止 | infra | 04-08 | cmd_complete_gate.shのassigned_ |
+| cmd_1797 | チェックリスト改訂 — Step 3をIS窓動的選出フローに書き換え+GS完了記録 | dm-signal | 04-08 | checklist-alm-registration.md |
