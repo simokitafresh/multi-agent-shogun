@@ -1,33 +1,23 @@
 task:
-  _ac_task_id: cmd_1796_impl
+  _ac_task_id: cmd_karo_fix_neverstop_hang_impl
   _ac_worker_id: null
-  ac_version: 8ad79893
+  ac_version: b07126fd
   acceptance_criteria:
-  - description: 6忍法(oikaze/nukimi/kawarimi/kasoku_ratio/kasoku_diff/yotsume)が全てエラー0件で実行完了し、各結果CSVの行数をwc
-      -lで確認
+  - description: NEVER_STOP_DEFAULTSに4項目目を追加
     id: AC1
-  - description: 全7忍法(bunshin含む)の結果CSVが outputs/analysis/ 配下に揃っていることをls -lで確認
+  - description: 注入テストで4項目確認
     id: AC2
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L106: L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo\n\
-    \  - L492: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。\n\
-    \  - L463: Python 3.12環境でsimulate_batch(precomputed_masks)とsimulate_pattern(TrendReversalFi\n\
     ────────────────────────────────────────"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -36,16 +26,16 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1796
-  project: dm-signal
+  parent_cmd: cmd_karo_fix_neverstop_hang
+  project: infra
   scope_mode: IMPL
   status: done
   stop_for: []
-  task_id: cmd_1796_impl
+  task_id: cmd_karo_fix_neverstop_hang_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_1796.yaml
-  report_path: queue/reports/hayate_report_cmd_1796.yaml
+  report_filename: hayate_report_cmd_karo_fix_neverstop_hang.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_fix_neverstop_hang.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -55,7 +45,7 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'verdict_invalid'
-      count: 1
+      count: 3
     gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
@@ -92,34 +82,34 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   related_lessons:
-  - id: 'L582'
-    summary: 'draft教訓1件が未査読のままGATE到達'
-    detail: 'draft教訓1件が未査読のままGATE到達'
-  - id: 'L581'
-    summary: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
-    detail: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
-  - id: 'L580'
-    summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-    detail: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-  - id: 'L579'
-    summary: 'draft教訓31件が未査読のままGATE到達'
-    detail: 'draft教訓31件が未査読のままGATE到達'
-  - id: 'L578'
-    summary: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
-    detail: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
-  - id: 'L577'
-    summary: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
-    detail: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
-  - id: 'L576'
-    summary: '''FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、context.target_date(月初第1営業日)でexact-match'
-    detail: '''FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、context.target_date(月初第1営業日)でexact-match'
-  - id: 'L575'
-    summary: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはmonth-end日付キー、FoFリバランス日は月初第1営業日→常にNone→Cash。SVMF/MVMFはget_momentum_value_at_date(bisect)で正しく対応済み。修正はdictに対してもbisect使用に統一す'
-    detail: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはmonth-end日付キー、FoFリバランス日は月初第1営業日→常にNone→Cash。SVMF/MVMFはget_momentum_value_at_date(bisect)で正しく対応済み。修正はdictに対してもbisect使用に統一す'
-  - id: 'L574'
-    summary: '''MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→Cash。修正:'
-    detail: '''MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→Cash。修正:'
-  - id: 'L573'
-    summary: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
-    detail: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
-  deployed_at: "2026-04-08T13:33:05"
+  - id: 'L446'
+    summary: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用'
+    detail: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用'
+  - id: 'L440'
+    summary: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+    detail: 'compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate'
+  - id: 'L439'
+    summary: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+    detail: '''cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因:'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
+  - id: 'L425'
+    summary: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+    detail: 'ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい'
+  - id: 'L419'
+    summary: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+    detail: '''workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則:'
+  - id: 'L416'
+    summary: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
+    detail: 'awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。'
+  - id: 'L413'
+    summary: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
+    detail: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全'
+  - id: 'L410'
+    summary: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
+    detail: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
+  - id: 'L408'
+    summary: 'switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set'
+    detail: 'switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set'
+  deployed_at: "2026-04-08T13:55:18"
