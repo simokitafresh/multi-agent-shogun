@@ -49,22 +49,19 @@ teardown() {
 }
 
 @test "T-TL-001: slash commands are filtered out by log_terminal_input.sh" {
-    export CLAUDE_USER_PROMPT="/clear"
-    run bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"
+    run bash -c 'echo "{\"prompt\":\"/clear\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
     [ ! -f "$TEST_LORD_CONV" ]
 }
 
 @test "T-TL-002: inbox nudge messages are filtered out by log_terminal_input.sh" {
-    export CLAUDE_USER_PROMPT="inbox3"
-    run bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"
+    run bash -c 'echo "{\"prompt\":\"inbox3\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
     [ ! -f "$TEST_LORD_CONV" ]
 }
 
 @test "T-TL-003: normal input is recorded in lord_conversation.jsonl" {
-    export CLAUDE_USER_PROMPT="dm-signalの進捗を教えてくれ"
-    run bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"
+    run bash -c 'echo "{\"prompt\":\"dm-signalの進捗を教えてくれ\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
 
     [ -f "$TEST_LORD_CONV" ]
