@@ -187,6 +187,7 @@ read_task_fields() {
     [[ "${lines[1]}" == *"CDPポート未応答"* ]]
     [[ "${lines[1]}" == *"自動対処機能"* ]]
     [[ "${lines[1]}" == *"自明な修正"* ]]
+    [[ "${lines[1]}" == *"9p stall/hang疑い"* ]]
 
     run read_task_field parallel_ok
     [ "$status" -eq 0 ]

@@ -8,7 +8,8 @@ Replaces: inject_engineering_preferences, inject_reports_to_read,
           inject_execution_controls
 
 Usage:
-    TASK_FILE_ENV=<path> SCRIPT_DIR_ENV=<path> python3 scripts/lib/inject_task_modifiers.py
+    TASK_FILE_ENV=<path> SCRIPT_DIR_ENV=<path> \
+        python3 scripts/lib/inject_task_modifiers.py
 """
 import glob
 import os
@@ -470,6 +471,8 @@ def inject_execution_controls(task):
         'CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ',
         '既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告',
         '自明な修正（typo等） — 実行→事後報告',
+        '9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で'
+        '環境起因か切り分けよ',
     ]
 
     changed = False
