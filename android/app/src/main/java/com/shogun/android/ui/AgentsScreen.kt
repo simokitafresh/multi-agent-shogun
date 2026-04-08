@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Speed
@@ -454,6 +455,7 @@ fun PaneFullScreen(
     var isListening by remember { mutableStateOf(false) }
     var partialText by remember { mutableStateOf("") }
     var isInputFocused by remember { mutableStateOf(false) }
+    var isInputExpanded by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
     val horizontalPaddingPx = with(density) { 16.dp.toPx() }
@@ -545,7 +547,7 @@ fun PaneFullScreen(
 
     ScreenBackground(imageResId = R.drawable.bg_agents) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().imePadding()
     ) {
         // Top bar with agent name and back button
                 Row(
@@ -640,9 +642,7 @@ fun PaneFullScreen(
             }
         }
 
-        AnimatedVisibility(visible = isInputFocused) {
-            SpecialKeysRow(onSendKey = { onSendCommand(it) })
-        }
+        SpecialKeysRow(onSendKey = { onSendCommand(it) })
 
         // Partial recognition text (shown while listening)
         AnimatedVisibility(visible = isListening && partialText.isNotEmpty()) {
@@ -671,8 +671,21 @@ fun PaneFullScreen(
                     .weight(1f)
                     .onFocusChanged { isInputFocused = it.isFocused },
                 placeholder = { Text("コマンドを入力") },
-                singleLine = true
+                singleLine = !isInputExpanded,
+                maxLines = if (isInputExpanded) 6 else 1
             )
+            Spacer(modifier = Modifier.width(4.dp))
+            // Expand/collapse input button
+            IconButton(
+                onClick = { isInputExpanded = !isInputExpanded },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = if (isInputExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = "展開",
+                    tint = Kinpaku
+                )
+            }
             Spacer(modifier = Modifier.width(4.dp))
             // Voice input button
             IconButton(
