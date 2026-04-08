@@ -1,5 +1,5 @@
 # おしお殿リポジトリ対比索引
-<!-- last_updated: 2026-03-25 将軍調査(深掘り2巡目) -->
+<!-- last_updated: 2026-04-09 -->
 
 > 詳細: `docs/research/oshio-repo-comparison.md`
 > 対象: yohey-w/multi-agent-shogun (フォーク元)

@@ -36,7 +36,7 @@ task:
   report_path: queue/reports/kotaro_report_cmd_ga017_freshness.yaml
   scope_mode: IMPL
   scout_exempt: true
-  status: in_progress
+  status: done
   stop_for: []
   task_id: cmd_ga017_gunshi_designs
   task_type: impl

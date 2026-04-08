@@ -1,5 +1,5 @@
 # context ディレクトリ
-<!-- last_updated: 2026-03-16 cmd_992 freshness review -->
+<!-- last_updated: 2026-04-09 -->
 
 プロジェクト固有のコンテキストを管理するディレクトリ。
 

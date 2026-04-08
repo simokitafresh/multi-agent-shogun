@@ -1,5 +1,5 @@
 # L3堅牢性検証 — 知見と方針の永久保存
-<!-- last_updated: 2026-03-16 cmd_992 freshness review -->
+<!-- last_updated: 2026-04-09 -->
 
 > 管理責任: 家老(karo)
 > 最終更新: 2026-03-16（cmd_992 鮮度確認）
