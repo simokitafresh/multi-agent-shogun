@@ -676,9 +676,11 @@ inject_universal_lessons_if_missing() {
     local lesson_entry
     for lesson_entry in "${selected_lessons[@]}"; do
         IFS=$'\t' read -r lesson_id lesson_summary lesson_detail <<< "$lesson_entry"
-        printf "  - id: '%s'\n" "${lesson_id//\'/\'\'}" >> "$tmp_file"
-        printf "    summary: '%s'\n" "${lesson_summary//\'/\'\'}" >> "$tmp_file"
-        printf "    detail: '%s'\n" "${lesson_detail//\'/\'\'}" >> "$tmp_file"
+        {
+            printf "  - id: '%s'\n" "${lesson_id//\'/\'\'}"
+            printf "    summary: '%s'\n" "${lesson_summary//\'/\'\'}"
+            printf "    detail: '%s'\n" "${lesson_detail//\'/\'\'}"
+        } >> "$tmp_file"
     done
     mv "$tmp_file" "$task_path"
     echo "INJECTED: ${#selected_lessons[@]} universal lessons (safety net)"
@@ -795,7 +797,7 @@ if [ "$TYPE" = "task_assigned" ]; then
         TASK_LOCKFILE="$(lock_path "$NINJA_TASK")"
         LESSON_CHECK=$(
             (
-                flock -w 5 200 || exit 0
+                flock -w 5 200 || { echo "[lesson_safety_net] WARN: flock timeout on ${TARGET} task YAML, skipping lesson injection" >&2; exit 1; }
                 project_id=$(inbox_yaml_field_get "$NINJA_TASK" "project" "infra")
                 inject_universal_lessons_if_missing "$NINJA_TASK" "${project_id:-infra}"
             ) 200>"$TASK_LOCKFILE" 2>&1 || true)
@@ -884,7 +886,7 @@ if [ "$TYPE" = "report_received" ]; then
                         ROUTE_TS=$(date -Is)
                         ROUTE_ID="msg_$(date +%s%N | head -c 16)"
                         (
-                            flock -w 5 200 2>/dev/null
+                            flock -w 5 200 || { echo "[report_quality_route] WARN: flock timeout for gunshi inbox, skipping quality notification" >&2; exit 1; }
                             if [ ! -f "$GUNSHI_INBOX" ]; then
                                 mkdir -p "$(dirname "$GUNSHI_INBOX")"
                                 printf 'messages: []\n' > "$GUNSHI_INBOX"
@@ -900,8 +902,9 @@ if [ "$TYPE" = "report_received" ]; then
                                 original_ninja "$FROM" \
                                 report_path "$FULL_REPORT")"$'\n'
                             inbox_append_message_locked "$GUNSHI_INBOX" "$_gunshi_msg"
-                        ) 200>"$(lock_path "$GUNSHI_INBOX")" 2>/dev/null || true
-                        echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2
+                        ) 200>"$(lock_path "$GUNSHI_INBOX")" \
+                            && echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2 \
+                            || echo "[report_quality_route] WARN: gunshi notification skipped (flock timeout)" >&2
                         # BLOCK: verdict記入済み+gate FAIL → 忍者が修正して再送信するまでkaroに届けない
                         echo "" >&2
                         echo "==============================" >&2
