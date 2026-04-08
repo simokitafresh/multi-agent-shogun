@@ -3419,3 +3419,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - draft教訓12件が未査読のままGATE到達
+
+### L449: 分割配備のbinary_checks誤BLOCKはassigned_acsをawk変数で渡してグループスキップで解決
+- **日付**: 2026-04-08
+- **出典**: cmd_karo_fix_gate_split_loop
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [universal]
+- cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresult空欄が誤BLOCKを招く。assigned_acsをawk -vで渡しグループ単位でスキップするのが正解。commitグループは常にチェック対象にする必要があるため特別扱いが必要。

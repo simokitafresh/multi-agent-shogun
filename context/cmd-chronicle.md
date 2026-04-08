@@ -735,3 +735,4 @@
 | cmd_1795 | ALM忍法Step 3準備 — 12体universe+結合CSV+全7本ALM対応+bunshin動作検証 | dm-signal | 04-08 | AC1: alm_l0_12.yaml+alm_l0_12_ |
 | cmd_1796 | ALM忍法Step 3実行 — 残り6忍法を6忍者並列実行 | dm-signal | 04-08 | 6忍法(oikaze/nukimi/kawarimi/kas |
 | cmd_karo_fix_neverstop_hang | never_stop_forにプロセスhang独立検証を追加 | infra | 04-08 | NEVER_STOP_DEFAULTS に 4 項目目として |
+| cmd_karo_fix_gate_split_loop | GATE構造バグ2件修正 — 分割配備ACスコープ+auto_draft循環防止 | infra | 04-08 | cmd_complete_gate.shのassigned_ |
