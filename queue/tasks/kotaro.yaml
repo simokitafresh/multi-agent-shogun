@@ -1,17 +1,17 @@
 task:
-  _ac_task_id: cmd_ga015_autoops
+  _ac_task_id: cmd_ga017_gunshi_designs
   _ac_worker_id: null
-  ac_version: 1aa111d2
+  ac_version: 7f897c38
   acceptance_criteria:
-  - description: context/auto-ops.mdを読み、現在のインフラ状態（scripts/, config/settings.yaml,
-      context/infrastructure.md）と照合。古い情報・欠落情報を特定し更新せよ
+  - description: 'context/gunshi-4metrics-design.md を読みlast_updatedコメント(<!-- last_updated:
+      YYYY-MM-DD -->形式)を冒頭に追加。最終git commit日を使用。内容に古い情報があれば更新せよ'
     id: AC1
-  - description: last_updatedコメントを今日の日付に更新
+  - description: context/gunshi-alm-38metrics-design.md を読みlast_updatedコメントを冒頭に追加。最終git
+      commit日を使用。内容に古い情報があれば更新せよ
     id: AC2
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L215: gate_metricsテストがtmux環境依存\n  - L152: IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時\
-    \ THEN KM_JSON_CACHEの無効化条\n  - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor\n\
+    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -30,15 +30,15 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_ga015_freshness
+  parent_cmd: cmd_ga017_freshness
   project: infra
-  report_filename: kotaro_report_cmd_ga015_freshness.yaml
-  report_path: queue/reports/kotaro_report_cmd_ga015_freshness.yaml
+  report_filename: kotaro_report_cmd_ga017_freshness.yaml
+  report_path: queue/reports/kotaro_report_cmd_ga017_freshness.yaml
   scope_mode: IMPL
   scout_exempt: true
-  status: done
+  status: assigned
   stop_for: []
-  task_id: cmd_ga015_autoops
+  task_id: cmd_ga017_gunshi_designs
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -106,4 +106,4 @@ task:
   - id: 'L444'
     summary: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
     detail: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
-  deployed_at: "2026-04-09T00:11:04"
+  deployed_at: "2026-04-09T00:24:36"

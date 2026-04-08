@@ -1,17 +1,18 @@
 task:
-  _ac_task_id: cmd_ga015_readme
+  _ac_task_id: cmd_ga017_gs_knowledge
   _ac_worker_id: null
-  ac_version: 467da71d
+  ac_version: a97636f5
   acceptance_criteria:
-  - description: 'README.mdを読み、現在のプロジェクト状態（CLAUDE.md, config/settings.yaml, context/infrastructure.md）と照合。古い情報・欠落情報を特定し更新せよ。特に:
-      エージェント構成、機能一覧、セットアップ手順が現状と一致すること'
+  - description: context/gs-speedup-knowledge.md を読み現状と照合。last_updatedを今日の日付に更新。古い情報があれば更新せよ
     id: AC1
-  - description: 'README.md冒頭にlast_updatedコメントを追加（<!-- last_updated: YYYY-MM-DD -->形式）。更新日は今日の日付'
+  - description: context/gstack-knowledge.md を読み現状と照合。last_updatedを今日の日付に更新。古い情報があれば更新せよ
     id: AC2
+  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
-    \  - L215: gate_metricsテストがtmux環境依存\n  - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.\n\
+    \  - L260: (1) L062(infra)がknowledge_metricsではinject=1だがlesson_impact.tsvに注入記録なし。データソース間の整合\n\
+    \  - L267: 殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと\n\
+    \  - L087: knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -30,15 +31,15 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_ga015_freshness
+  parent_cmd: cmd_ga017_freshness
   project: infra
-  report_filename: hayate_report_cmd_ga015_freshness.yaml
-  report_path: queue/reports/hayate_report_cmd_ga015_freshness.yaml
+  report_filename: hayate_report_cmd_ga017_freshness.yaml
+  report_path: queue/reports/hayate_report_cmd_ga017_freshness.yaml
   scope_mode: IMPL
   scout_exempt: true
-  status: done
+  status: assigned
   stop_for: []
-  task_id: cmd_ga015_readme
+  task_id: cmd_ga017_gs_knowledge
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -119,4 +120,4 @@ task:
   - id: 'L444'
     summary: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
     detail: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
-  deployed_at: "2026-04-09T00:10:44"
+  deployed_at: "2026-04-09T00:24:24"
