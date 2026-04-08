@@ -90,6 +90,33 @@ if [[ "$payload" == *'capture-pane'* ]]; then
     fi
 fi
 
+# === Guard 7: inbox_mark_read without prior Read — prevent stop hook bypass ===
+# Why: mark_read before reading inbox content lets agent bypass stop_check_inbox hook
+#      without processing messages (confirmed 2026-04-07: karo missed hayate completion)
+if [[ "$payload" == *'inbox_mark_read'* ]]; then
+    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
+    if [[ -n "${command:-}" && "$command" == *'inbox_mark_read.sh'* ]]; then
+        mark_agent=""
+        if [[ "$command" =~ inbox_mark_read\.sh[[:space:]]+([a-z_]+) ]]; then
+            mark_agent="${BASH_REMATCH[1]}"
+        fi
+        if [[ -n "$mark_agent" ]]; then
+            read_log="/tmp/claude_read_log_${mark_agent}.txt"
+            inbox_pattern="queue/inbox/${mark_agent}.yaml"
+            if [[ -f "$read_log" ]]; then
+                recent_reads="$(tail -5 "$read_log" 2>/dev/null || true)"
+                if [[ "$recent_reads" != *"$inbox_pattern"* ]]; then
+                    emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。中身を確認せずに既読化するとメッセージ処理漏れが発生する(2026-04-07実証)"
+                    exit 1
+                fi
+            else
+                emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。read logが存在しない"
+                exit 1
+            fi
+        fi
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \

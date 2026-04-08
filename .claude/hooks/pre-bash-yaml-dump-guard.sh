@@ -23,7 +23,7 @@ has_yaml_dump=false
 [[ "$has_yaml_dump" == "false" ]] && exit 0
 
 targets_operational=false
-for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/"; do
+for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/" "logs/karo_workarounds"; do
     [[ "$command" == *"$pattern"* ]] && { targets_operational=true; break; }
 done
 [[ "$targets_operational" == "false" ]] && exit 0
