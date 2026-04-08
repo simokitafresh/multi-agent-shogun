@@ -743,3 +743,4 @@
 | cmd_1800 | infra — lord_conversation loggerに殿のinput(inbound)を記録する | infra | 04-08 | AC1: log_terminal_input.shのdir |
 | cmd_1801 | infra — cmd_save.sh消火判定gate(q9)追加 — 消火cmdの入口で真因記入を強制 | infra | 04-08 | cmd_save.shに消火cmd向けq9_firefigh |
 | cmd_1804 | fix — cmd_save.sh q9磨き上げ — キーワード追加+意志依存prevention WARN | infra | 04-09 | cmd_save.shのq9判定語彙にバグ/bug/不具合/ |
+| cmd_1805 | fix — q9意志依存パターンを語幹マッチに強化（活用形抜け修正） | infra | 04-09 | q9意志依存パターンを語幹マッチに変更。活用形(気をつけて/ |

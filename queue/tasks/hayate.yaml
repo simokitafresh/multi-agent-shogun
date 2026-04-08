@@ -1,18 +1,18 @@
 task:
-  _ac_task_id: cmd_ga017_gs_knowledge
+  _ac_task_id: cmd_root_dashboard_auto
   _ac_worker_id: null
-  ac_version: a97636f5
+  ac_version: 7bdf5d56
   acceptance_criteria:
-  - description: context/gs-speedup-knowledge.md を読み現状と照合。last_updatedを今日の日付に更新。古い情報があれば更新せよ
+  - description: dashboard.mdに<!-- DASHBOARD_AUTO_START -->と<!-- DASHBOARD_AUTO_END
+      -->マーカーが存在するか確認。なければconfig/dashboard_template.mdを参照して正しい位置に追加せよ。dashboard_auto_section.shが正常動作することを確認
     id: AC1
-  - description: context/gstack-knowledge.md を読み現状と照合。last_updatedを今日の日付に更新。古い情報があれば更新せよ
+  - description: bash scripts/dashboard_auto_section.sh を実行しERRORが出ないことを確認
     id: AC2
-  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L260: (1) L062(infra)がknowledge_metricsではinject=1だがlesson_impact.tsvに注入記録なし。データソース間の整合\n\
-    \  - L267: 殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと\n\
-    \  - L087: knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の\n\
+    \  - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern*\
+    \ ]]は純bashで同等のマ\n  - L337: archive_karo_section L800-802でsed -n line_nop DASHBOARDをN回呼出し。awkのNR\
+    \ in del判定で1パ\n  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -31,27 +31,27 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_ga017_freshness
+  parent_cmd: cmd_root_fixes
   project: infra
-  report_filename: hayate_report_cmd_ga017_freshness.yaml
-  report_path: queue/reports/hayate_report_cmd_ga017_freshness.yaml
+  report_filename: hayate_report_cmd_root_fixes.yaml
+  report_path: queue/reports/hayate_report_cmd_root_fixes.yaml
   scope_mode: IMPL
   scout_exempt: true
-  status: assigned
+  status: failed
   stop_for: []
-  task_id: cmd_ga017_gs_knowledge
+  task_id: cmd_root_dashboard_auto
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 17
+    total_workarounds: 18
     top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), spec_mismatch_redeploy(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), scout_gate_bypass(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件)'
+    breakdown: 'report_yaml_format(3件), spec_mismatch_redeploy(2件), task_redeploy(2件), karo(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), scout_gate_bypass(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'verdict_invalid'
-      count: 3
+      count: 4
     - pattern: 'lu_structure_error'
       count: 1
     gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
@@ -120,4 +120,4 @@ task:
   - id: 'L444'
     summary: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
     detail: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
-  deployed_at: "2026-04-09T00:24:24"
+  deployed_at: "2026-04-09T00:33:13"

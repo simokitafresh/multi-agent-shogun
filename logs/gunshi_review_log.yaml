@@ -2105,7 +2105,7 @@
 - cmd_id: cmd_1805
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。q9意志依存パターンを辞書形→語幹マッチに変更。活用形(気をつけて/注意して)捕捉。偽陽性リスク低(徹底=prevention文脈で100%意志依存)"
   observations:
@@ -2114,3 +2114,92 @@
     - "事実3: 「注意し」⊄「注意事項」を論理確認(し≠事)。偽陽性なし"
   causal_chain: "辞書形のみ→活用形抜け(気をつけて等)→形式的compliance突破→語幹マッチで構造的カバー。×全cmd=正の複利"
   timestamp: "2026-04-09T00:20:00"
+- cmd_id: gunshi_infra_bug_fix_20260409
+  review_type: self_study
+  verdict: null
+  findings_summary: "Bug1修正完了: gate_report_format.sh assigned_acs対応(e554da5)。分割配備の偽BLOCK根絶。3パターンテスト+既存74件全PASS。Bug2(recording_error)は呼出し側quoting問題で修正不要"
+  observations:
+    - "事実1: gate_report_format.shのverdict-BC矛盾チェック(L308)にassigned_acsフィルタ追加。task YAMLからworker_id経由で導出"
+    - "事実2: cmd_complete_gate.sh(L2648)は既対応だが上流gate未対応が根因。上流修正で構造的解決"
+    - "事実3: recording_error(6件)はkaro_workaround_log.shバグでなく呼出し引数quoting問題。yaml_escape_sq+flock完備"
+  causal_chain: "deploy_task.sh全AC注入→gate_report_format.sh assigned_acs未読→担当外no検出→偽BLOCK→WA。修正: task YAML導出+assigned_acsフィルタ→偽BLOCK根絶。×分割配備回数=正の複利"
+  timestamp: "2026-04-09T00:30:00"
+- cmd_id: cmd_1805
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1805_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。語幹マッチ+テスト4件。44件全PASS。commit 56583d4"
+  observations:
+    - "grepパターン1行変更(辞書形→語幹)+テスト97行追加"
+  causal_chain: "辞書形→語幹で活用形カバー。×全cmd=正の複利"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T00:35:00"
+- cmd_id: GA-015_hayate
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。README mixed CLI現行化。commit 417f334"
+  observations:
+    - "7セクション更新。settings.yaml照合"
+  causal_chain: "README陳腐化→現行化で解消"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T00:35:00"
+- cmd_id: GA-015_kotaro
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。auto-ops.md CDP参照2件追加"
+  observations:
+    - "cdp/README.md+cdp_chrome_cleanup.sh欠落を発見・追記"
+  causal_chain: "CDP拡張後context未反映→更新で解消"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T00:35:00"
+- cmd_id: GA-015_tobisaru
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。チェックリスト3件。ALM用語+PD-004更新。commit dd1a10e"
+  observations:
+    - "ALM/WARDはgitignore→disk更新のみ。decision_candidate(mtime基準)あり"
+  causal_chain: "裁定後の未更新→鮮度回復"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T00:35:00"
+- cmd_id: GA-016_saizo
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。google-classroom.md更新。commit 56efd51"
+  observations:
+    - "memory不在を正しく検出・記録"
+  causal_chain: "context陳腐化→照合更新で解消"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T00:35:00"
+- cmd_id: GA-016_hanzo
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: null
+  findings_summary: "4観点OK。database+doc-style-guide更新。commit 4c42b4a。BCネスト問題あるがautofix通過"
+  observations:
+    - "doc-style-guideに4セクション追加。半蔵WA率62.5%だがBC内容は正確"
+  causal_chain: "CLAUDE.mdとdoc-style-guide分散→追加で索引完備"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T00:35:00"

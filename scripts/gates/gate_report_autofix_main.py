@@ -294,6 +294,20 @@ def main() -> int:
                     bc[ac_key] = ac_val
                     bc19_fixed = True
 
+            # Flatten nested lists: - - check: → - check: (半蔵WA率62.5%の一因)
+            flat_val = []
+            _had_nested = False
+            for _item in ac_val:
+                if isinstance(_item, list):
+                    flat_val.extend(_item)
+                    _had_nested = True
+                else:
+                    flat_val.append(_item)
+            if _had_nested:
+                ac_val = flat_val
+                bc[ac_key] = ac_val
+                bc_dict_fixed = True
+
             new_list = []
             for chk in ac_val:
                 item = chk

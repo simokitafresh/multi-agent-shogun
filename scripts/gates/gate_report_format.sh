@@ -196,6 +196,10 @@ elif isinstance(bc, dict):
             # 品質の起点: binary_checksが機能しなければ第一層学習ループが空回りする。
             verdict_words = {'PASS', 'FAIL', 'OK', 'NG', 'yes', 'no', 'YES', 'NO', 'true', 'false', 'True', 'False', 'pass', 'fail', 'ok', 'ng'}
             for j, check_item in enumerate(ac_val):
+                if isinstance(check_item, list):
+                    errors.append(f'binary_checks.{ac_key}[{j}]: nested list detected (- - check: pattern). autofix対象')
+                    hints.append(f'FIX (binary_checks.{ac_key}[{j}]): \"- - check:\" を \"- check:\" に修正せよ(余分な\"-\"を削除)')
+                    continue
                 if not isinstance(check_item, dict):
                     continue
                 # GP-088: check/resultフィールド欠落検出（[N]キー形式等の残骸）
