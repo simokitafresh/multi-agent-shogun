@@ -71,6 +71,8 @@
 !android/app/src/main/java/com/shogun/android/MainActivity.kt
 !android/app/src/main/java/com/shogun/android/data/
 !android/app/src/main/java/com/shogun/android/data/AppDatabase.kt
+!android/app/src/main/java/com/shogun/android/data/GistFile.kt
+!android/app/src/main/java/com/shogun/android/data/GistRepository.kt
 !android/app/src/main/java/com/shogun/android/data/MemoDao.kt
 !android/app/src/main/java/com/shogun/android/data/MemoEntity.kt
 !android/app/src/main/java/com/shogun/android/ui/MemoScreen.kt

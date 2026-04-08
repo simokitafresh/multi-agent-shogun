@@ -11,14 +11,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -36,10 +40,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shogun.android.R
+import com.shogun.android.data.GistFile
 import com.shogun.android.data.MemoEntity
 import com.shogun.android.ui.theme.Kinpaku
 import com.shogun.android.ui.theme.Kurenai
@@ -56,10 +63,16 @@ fun MemoScreen(viewModel: MemoViewModel = viewModel()) {
     val memos by viewModel.memos.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     val syncMessage by viewModel.syncMessage.collectAsState()
+    val gistFiles by viewModel.gistFiles.collectAsState()
+    val isGistLoading by viewModel.isGistLoading.collectAsState()
+    val gistError by viewModel.gistError.collectAsState()
+    val gistFileContent by viewModel.gistFileContent.collectAsState()
+    val isGistContentLoading by viewModel.isGistContentLoading.collectAsState()
 
     var editingMemo by remember { mutableStateOf<MemoEntity?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var deletingMemo by remember { mutableStateOf<MemoEntity?>(null) }
+    var viewingGistFile by remember { mutableStateOf<GistFile?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.requestSync()
@@ -120,26 +133,41 @@ fun MemoScreen(viewModel: MemoViewModel = viewModel()) {
                     }
                 }
 
-                if (memos.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "まだメモはありません。\n右下のボタンから追加できます。",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Zouge,
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item {
+                        GistFilesSection(
+                            gistFiles = gistFiles,
+                            isLoading = isGistLoading,
+                            error = gistError,
+                            onRefresh = { viewModel.refreshGist() },
+                            onFileClick = { gistFile ->
+                                viewingGistFile = gistFile
+                                viewModel.loadGistFileContent(gistFile)
+                            },
                         )
                     }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
+
+                    if (memos.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "まだメモはありません。\n右下のボタンから追加できます。",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Zouge,
+                                )
+                            }
+                        }
+                    } else {
                         items(memos, key = { it.id }) { memo ->
                             MemoCard(
                                 memo = memo,
@@ -218,6 +246,202 @@ fun MemoScreen(viewModel: MemoViewModel = viewModel()) {
             },
         )
     }
+
+    viewingGistFile?.let { gistFile ->
+        GistFileContentDialog(
+            gistFile = gistFile,
+            content = gistFileContent,
+            isLoading = isGistContentLoading,
+            onDismiss = {
+                viewingGistFile = null
+                viewModel.clearGistFileContent()
+            },
+        )
+    }
+}
+
+@Composable
+private fun GistFilesSection(
+    gistFiles: List<GistFile>,
+    isLoading: Boolean,
+    error: String?,
+    onRefresh: () -> Unit,
+    onFileClick: (GistFile) -> Unit,
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Surface1.copy(alpha = 0.92f)),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Gist共有ファイル",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Kinpaku,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.height(18.dp).padding(end = 4.dp),
+                            strokeWidth = 2.dp,
+                            color = Kinpaku,
+                        )
+                    }
+                    IconButton(onClick = onRefresh) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Gist更新",
+                            tint = Kinpaku,
+                        )
+                    }
+                }
+            }
+
+            when {
+                error != null -> {
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Kurenai,
+                    )
+                }
+                !isLoading && gistFiles.isEmpty() -> {
+                    Text(
+                        text = "ファイルなし（URLを設定画面で確認してください）",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextMuted,
+                    )
+                }
+                else -> {
+                    gistFiles.forEach { gistFile ->
+                        GistFileCard(gistFile = gistFile, onClick = { onFileClick(gistFile) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GistFileCard(
+    gistFile: GistFile,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = Surface1.copy(alpha = 0.7f)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = gistFile.filename,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Zouge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = buildString {
+                        if (gistFile.language.isNotBlank()) append(gistFile.language)
+                        if (gistFile.language.isNotBlank()) append(" · ")
+                        append(formatFileSize(gistFile.size))
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                )
+            }
+        }
+    }
+}
+
+private fun formatFileSize(bytes: Int): String = when {
+    bytes < 1024 -> "${bytes}B"
+    bytes < 1024 * 1024 -> "${bytes / 1024}KB"
+    else -> "${bytes / (1024 * 1024)}MB"
+}
+
+@Composable
+private fun GistFileContentDialog(
+    gistFile: GistFile,
+    content: String?,
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Surface1,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = gistFile.filename,
+                    color = Kinpaku,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (gistFile.language.isNotBlank()) {
+                    Text(
+                        text = gistFile.language,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextMuted,
+                    )
+                }
+            }
+        },
+        text = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                when {
+                    isLoading -> CircularProgressIndicator(color = Kinpaku)
+                    content != null -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                        ) {
+                            Text(
+                                text = content,
+                                color = Zouge,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+                    else -> {
+                        Text(text = "内容を読み込み中...", color = TextMuted)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("閉じる", color = Kinpaku)
+            }
+        },
+    )
 }
 
 @Composable

@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.shogun.android.data.AppDatabase
+import com.shogun.android.data.GistFile
+import com.shogun.android.data.GistRepository
 import com.shogun.android.data.MemoEntity
 import com.shogun.android.ssh.SshManager
 import com.shogun.android.util.PrefsKeys
@@ -37,6 +39,21 @@ class MemoViewModel(application: Application) : AndroidViewModel(application) {
     private val _syncMessage = MutableStateFlow("オフライン保存中")
     val syncMessage: StateFlow<String> = _syncMessage.asStateFlow()
 
+    private val _gistFiles = MutableStateFlow<List<GistFile>>(emptyList())
+    val gistFiles: StateFlow<List<GistFile>> = _gistFiles.asStateFlow()
+
+    private val _isGistLoading = MutableStateFlow(false)
+    val isGistLoading: StateFlow<Boolean> = _isGistLoading.asStateFlow()
+
+    private val _gistError = MutableStateFlow<String?>(null)
+    val gistError: StateFlow<String?> = _gistError.asStateFlow()
+
+    private val _gistFileContent = MutableStateFlow<String?>(null)
+    val gistFileContent: StateFlow<String?> = _gistFileContent.asStateFlow()
+
+    private val _isGistContentLoading = MutableStateFlow(false)
+    val isGistContentLoading: StateFlow<Boolean> = _isGistContentLoading.asStateFlow()
+
     private var syncLoopJob: Job? = null
 
     init {
@@ -51,6 +68,7 @@ class MemoViewModel(application: Application) : AndroidViewModel(application) {
                 delay(15000)
             }
         }
+        refreshGist()
     }
 
     fun createMemo(title: String, body: String) {
@@ -105,6 +123,53 @@ class MemoViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             syncUnsyncedMemos()
         }
+    }
+
+    fun refreshGist() {
+        val gistUrl = prefs.getString(PrefsKeys.GIST_URL, com.shogun.android.util.Defaults.GIST_URL)
+            ?.trim().orEmpty()
+        if (gistUrl.isBlank()) {
+            _gistError.value = "Gist URLが設定されていません"
+            return
+        }
+        viewModelScope.launch {
+            _isGistLoading.value = true
+            _gistError.value = null
+            val result = GistRepository.fetchGist(gistUrl)
+            result.fold(
+                onSuccess = { files ->
+                    _gistFiles.value = files
+                    _gistError.value = null
+                },
+                onFailure = { e ->
+                    _gistError.value = "取得失敗: ${e.message}"
+                }
+            )
+            _isGistLoading.value = false
+        }
+    }
+
+    fun loadGistFileContent(gistFile: GistFile) {
+        _gistFileContent.value = null
+        _isGistContentLoading.value = true
+        viewModelScope.launch {
+            if (!gistFile.truncated) {
+                _gistFileContent.value = gistFile.content
+                _isGistContentLoading.value = false
+                return@launch
+            }
+            val result = GistRepository.fetchRawContent(gistFile.rawUrl)
+            result.fold(
+                onSuccess = { content -> _gistFileContent.value = content },
+                onFailure = { e -> _gistFileContent.value = "取得エラー: ${e.message}" }
+            )
+            _isGistContentLoading.value = false
+        }
+    }
+
+    fun clearGistFileContent() {
+        _gistFileContent.value = null
+        _isGistContentLoading.value = false
     }
 
     private suspend fun syncUnsyncedMemos() {

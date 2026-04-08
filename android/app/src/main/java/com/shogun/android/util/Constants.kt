@@ -16,6 +16,7 @@ object PrefsKeys {
     const val FONT_SIZE = "font_size"
     const val SOFT_WRAP = "soft_wrap"
     const val VOICE_DICTIONARY = "voice_dictionary"
+    const val GIST_URL = "gist_url"
 }
 
 object Defaults {
@@ -34,4 +35,5 @@ object Defaults {
     const val FONT_SIZE_MAX = 22f
     const val SOFT_WRAP_DEFAULT = true
     const val PROJECT_PATH = "/mnt/c/tools/multi-agent-shogun"
+    const val GIST_URL = "https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"
 }

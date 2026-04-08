@@ -43,6 +43,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
     var keyPath by remember { mutableStateOf(prefs.getString(PrefsKeys.SSH_KEY_PATH, "") ?: "") }
     var password by remember { mutableStateOf(prefs.getString(PrefsKeys.SSH_PASSWORD, "") ?: "") }
     var projectPath by remember { mutableStateOf(prefs.getString(PrefsKeys.PROJECT_PATH, Defaults.PROJECT_PATH) ?: Defaults.PROJECT_PATH) }
+    var gistUrl by remember { mutableStateOf(prefs.getString(PrefsKeys.GIST_URL, Defaults.GIST_URL) ?: Defaults.GIST_URL) }
     var shogunSession by remember { mutableStateOf(prefs.getString(PrefsKeys.SHOGUN_SESSION, Defaults.SHOGUN_SESSION) ?: Defaults.SHOGUN_SESSION) }
     var agentsSession by remember { mutableStateOf(prefs.getString(PrefsKeys.AGENTS_SESSION, Defaults.AGENTS_SESSION) ?: Defaults.AGENTS_SESSION) }
     var backgroundStyle by remember {
@@ -140,6 +141,19 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
             onValueChange = { projectPath = it },
             label = { Text("プロジェクトパス（サーバー側）") },
             placeholder = { Text("/path/to/multi-agent-shogun") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        HorizontalDivider(color = TextMuted.copy(alpha = 0.3f))
+
+        Text("Gist設定", style = MaterialTheme.typography.titleMedium, color = Kinpaku)
+
+        OutlinedTextField(
+            value = gistUrl,
+            onValueChange = { gistUrl = it },
+            label = { Text("Gist URL") },
+            placeholder = { Text("https://gist.github.com/user/gist_id") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -285,6 +299,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                     .putString(PrefsKeys.SSH_KEY_PATH, keyPath)
                     .putString(PrefsKeys.SSH_PASSWORD, password)
                     .putString(PrefsKeys.PROJECT_PATH, projectPath)
+                    .putString(PrefsKeys.GIST_URL, gistUrl)
                     .putString(PrefsKeys.SHOGUN_SESSION, shogunSession)
                     .putString(PrefsKeys.AGENTS_SESSION, agentsSession)
                     .putString(PrefsKeys.BACKGROUND_STYLE, backgroundStyle)
