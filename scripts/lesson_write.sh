@@ -303,7 +303,7 @@ while [ $attempt -lt $max_attempts ]; do
                     # AC2: dedup — 同一LESSON_IDがあればスキップ (L006教訓)
                     if ! grep -qF -- "- ${NEW_LESSON_ID}:" "$CONTEXT_FULL_PATH"; then
                         (
-                            flock -w 10 201 || { echo "WARN: context lock timeout" >&2; exit 0; }
+                            flock -w 10 201 || { echo "WARN: context lock timeout, skipping context update" >&2; exit 1; }
                             export CONTEXT_FULL_PATH NEW_LESSON_ID TITLE SOURCE_CMD
                             python3 << 'CTXEOF'
 import re, os

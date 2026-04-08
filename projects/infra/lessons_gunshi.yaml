@@ -172,3 +172,15 @@ lessons:
   created_at: '2026-04-06'
   automated: false
   enforcement: GP設計時の原理先行チェック
+- id: LG024
+  title: 軍師直接修正権限 — 軽微事実誤りは鎖維持下で直接修正可
+  detail: |
+    殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は
+    軍師が直接修正してよい。修正後に家老がレビューする。
+    鎖(軍師修正→家老レビュー)が切れなければF-G05の原理に違反しない。
+    見つけた問題に必ず行動を紐付ける(REQUEST_CHANGESまたは直接修正)。注記で流さない。
+    根因: ルールの字面に従い原理(鎖を切るな)で判断しなかった。原理準拠=保護対象を守る最善手を選ぶこと。
+  source_cmd: cmd_gunshi_ruling_20260408
+  created_at: '2026-04-08'
+  automated: false
+  enforcement: gunshi.md F-G05例外条項として運用。家老は軍師direct_fixをinbox受領後にレビュー

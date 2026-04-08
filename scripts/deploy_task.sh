@@ -185,53 +185,12 @@ resolve_cmd_to_task() {
         return 1
     fi
 
-    # shogun_to_karo.yamlからcmdメタデータ抽出（awk方式: Python subprocess除去 cmd_deploy_yaml_speedup）
-    local _resolve_output
-    _resolve_output=$(awk -v cmd="$cmd_id" '
-        /^  [^ ]/ {
-            if (in_cmd) { exit }
-            s = $0; sub(/^  /, "", s); sub(/:.*/, "", s)
-            if (s == cmd) { in_cmd = 1; next }
-        }
-        in_cmd && /^    [a-z_]+:/ {
-            key = $0; sub(/^    /, "", key); sub(/:.*/, "", key)
-            val = $0; sub(/^[^:]+:[[:space:]]*/, "", val)
-            fc = substr(val, 1, 1); lc = substr(val, length(val), 1)
-            if (length(val) >= 2 && ((fc == "\"" && lc == "\"") || (fc == "'"'"'" && lc == "'"'"'")))
-                val = substr(val, 2, length(val) - 2)
-            if (key == "project")    project   = val
-            else if (key == "scope_mode") scope_mode = val
-            else if (key == "type")       type_val   = val
-            else if (key == "title")      title      = val
-            else if (key == "purpose")    purpose    = val
-        }
-        END {
-            if (!in_cmd) { print "ERROR: " cmd " not found" > "/dev/stderr"; exit 1 }
-            if (!scope_mode) scope_mode = (type_val ? type_val : "impl")
-            print "project="    project
-            print "task_type="  tolower(scope_mode)
-            print "title="      title
-            print "purpose="    purpose
-        }
-    ' "$stk") || {
-        log "resolve_cmd: ${cmd_id} not found in shogun_to_karo.yaml"
-        return 1
-    }
-
-    local project task_type title purpose
-    project=$(echo "$_resolve_output" | grep '^project=' | cut -d= -f2-)
-    task_type=$(echo "$_resolve_output" | grep '^task_type=' | cut -d= -f2-)
-    title=$(echo "$_resolve_output" | grep '^title=' | cut -d= -f2-)
-    purpose=$(echo "$_resolve_output" | grep '^purpose=' | cut -d= -f2-)
-    [ -z "$task_type" ] && task_type="impl"
-
-    local task_id="${cmd_id}_${task_type}"
-
     # ─── 前cmd残留フィールド清掃（再配備時のstale field汚染防止） ───
     # task YAMLは使い回しモデル。yaml_field_setは行ベース置換のためリスト型フィールドを
     # クリアできない(子行が残る)。Python一括クリアで全フィールド型を確実に処理。
     # なぜなぜ3層: (1)resolve_cmd_to_taskのリセット漏れ → (2)yaml_field_setのリスト非対応
     # → (3)inject_task_modifiers.pyの「存在チェック」で前cmdのリスト値が残留
+    # cmd未発見時(return 1)でも実行されるようawk解決より前に配置（AC1修正）
     python3 - "$task_file" <<'STALE_FIELD_RESET_PY'
 import os, sys, tempfile, yaml, re
 
@@ -286,17 +245,67 @@ print(f'[STALE_RESET] Cleared {len(STALE_FIELDS)} stale fields + root-level orph
 STALE_FIELD_RESET_PY
     log "[STALE_RESET] Python stale field reset completed for ${ninja_name}"
 
-    # task YAMLの中核フィールドを自動設定
-    yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id"
-    yaml_field_set "$task_file" "task" "task_id" "$task_id"
-    yaml_field_set "$task_file" "task" "task_type" "$task_type"
-    [ -n "$project" ] && yaml_field_set "$task_file" "task" "project" "$project"
-    yaml_field_set "$task_file" "task" "status" "assigned"
+    # shogun_to_karo.yamlからcmdメタデータ抽出（awk方式: Python subprocess除去 cmd_deploy_yaml_speedup）
+    local _resolve_output
+    _resolve_output=$(awk -v cmd="$cmd_id" '
+        /^  [^ ]/ {
+            if (in_cmd) { exit }
+            s = $0; sub(/^  /, "", s); sub(/:.*/, "", s)
+            if (s == cmd) { in_cmd = 1; next }
+        }
+        in_cmd && /^    [a-z_]+:/ {
+            key = $0; sub(/^    /, "", key); sub(/:.*/, "", key)
+            val = $0; sub(/^[^:]+:[[:space:]]*/, "", val)
+            fc = substr(val, 1, 1); lc = substr(val, length(val), 1)
+            if (length(val) >= 2 && ((fc == "\"" && lc == "\"") || (fc == "'"'"'" && lc == "'"'"'")))
+                val = substr(val, 2, length(val) - 2)
+            if (key == "project")    project   = val
+            else if (key == "scope_mode") scope_mode = val
+            else if (key == "type")       type_val   = val
+            else if (key == "title")      title      = val
+            else if (key == "purpose")    purpose    = val
+        }
+        END {
+            if (!in_cmd) { print "ERROR: " cmd " not found" > "/dev/stderr"; exit 1 }
+            if (!scope_mode) scope_mode = (type_val ? type_val : "impl")
+            print "project="    project
+            print "task_type="  tolower(scope_mode)
+            print "title="      title
+            print "purpose="    purpose
+        }
+    ' "$stk") || {
+        log "resolve_cmd: ${cmd_id} not found in shogun_to_karo.yaml"
+        return 1
+    }
+
+    local project task_type title purpose
+    project=$(echo "$_resolve_output" | grep '^project=' | cut -d= -f2-)
+    task_type=$(echo "$_resolve_output" | grep '^task_type=' | cut -d= -f2-)
+    title=$(echo "$_resolve_output" | grep '^title=' | cut -d= -f2-)
+    purpose=$(echo "$_resolve_output" | grep '^purpose=' | cut -d= -f2-)
+    [ -z "$task_type" ] && task_type="impl"
+
+    local task_id="${cmd_id}_${task_type}"
+
+    # task YAMLの中核フィールドを自動設定（連鎖失敗時は即停止）
+    yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id" \
+        || { log "FATAL: yaml_field_set failed for parent_cmd"; return 1; }
+    yaml_field_set "$task_file" "task" "task_id" "$task_id" \
+        || { log "FATAL: yaml_field_set failed for task_id"; return 1; }
+    yaml_field_set "$task_file" "task" "task_type" "$task_type" \
+        || { log "FATAL: yaml_field_set failed for task_type"; return 1; }
+    [ -n "$project" ] && { yaml_field_set "$task_file" "task" "project" "$project" \
+        || { log "FATAL: yaml_field_set failed for project"; return 1; }; }
+    yaml_field_set "$task_file" "task" "status" "assigned" \
+        || { log "FATAL: yaml_field_set failed for status"; return 1; }
     # cmdソースからpurpose注入
-    [ -n "$purpose" ] && yaml_field_set "$task_file" "task" "purpose" "$purpose"
+    [ -n "$purpose" ] && { yaml_field_set "$task_file" "task" "purpose" "$purpose" \
+        || { log "FATAL: yaml_field_set failed for purpose"; return 1; }; }
     # _ac_task_id/worker_idクリア → inject_ac_versionでAC上書きトリガー
-    yaml_field_set "$task_file" "task" "_ac_task_id" ""
-    yaml_field_set "$task_file" "task" "_ac_worker_id" ""
+    yaml_field_set "$task_file" "task" "_ac_task_id" "" \
+        || { log "FATAL: yaml_field_set failed for _ac_task_id"; return 1; }
+    yaml_field_set "$task_file" "task" "_ac_worker_id" "" \
+        || { log "FATAL: yaml_field_set failed for _ac_worker_id"; return 1; }
 
     log "resolve_cmd: ${cmd_id} → ninja=${ninja_name}, task_id=${task_id}, project=${project:-none}, type=${task_type}, title=${title}"
     return 0

@@ -271,6 +271,13 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 - L427: resample(ME).last()はカレンダー月末を返す。実取引日との差異がシグナル帰属ズレを引き起こす（cmd_1115）
 - L428: valid_start_date計算は全構成シンボル(relative+absolute+safe_haven+DTB3)を含めよ（cmd_1115）
 - L429: パリティ検証における非決定的順序とpartial-month初月の扱い（cmd_1116）
+- L258/L259: try/exceptフォールバックでbulk preload+mock DB両立（cmd_820）
+- L506: OPT変更時は既存preloadのexpunge戦略を確認せよ（cmd_1479）
+- L507: lazy-loaded cache forward-fillは危険。OOM/データ汚染の原因（cmd_1481）
+- L508: silent fallbackパターン禁止(PI-018)。例外→デフォルト値フォールバックは問題を隠蔽する（cmd_1483）
+- L531: build_signal_cache_valueのholding_signal or signalフォールバック注意（cmd_1622）
+- L555: load_all_monthly_returnsはholding_signalも取得必須。KeyError防止（cmd_1743）
+- L573: FoF月次キャッシュをdictに変えるときもlookupはbisect helper統一（cmd_1787）[PI]
 
 ## 4.5 GS用語定義（混同厳禁）
 
@@ -377,16 +384,6 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L128 | `experiments.db`はスナップショットでありSSOTではない | cmd_222 |
 | L511 | fof_component_weightsのactual_weight/driftがNULL(未計算状態)。Admin画面ウェイト未表示の根因 | cmd_1566 |
 | L512 | experiments.db進行中月データは日次更新本番と構造的に乖離する(完了月diff=0、進行中月のみ4-7%差) | cmd_1567 |
-
-### 19.2 実装パターン
-- L258: try/exceptフォールバックでbulk preload+mock DB両立。bulk_loaded flagで本番最適化/テストmock分岐（cmd_820）
-- L259: try/exceptフォールバックパターンでmock DB互換性とN+1最適化を両立（cmd_820）
-- L506: OPT変更時は既存preloadのexpunge戦略を確認せよ（cmd_1479）
-- L507: lazy-loaded cache forward-fillは危険。OOM/データ汚染の原因（cmd_1481）
-- L508: silent fallbackパターン禁止(PI-018)。例外→デフォルト値フォールバックは問題を隠蔽する（cmd_1483）
-- L531: build_signal_cache_valueのholding_signal or signalフォールバック注意（cmd_1622）
-- L555: load_all_monthly_returnsはholding_signalも取得必須。KeyError防止（cmd_1743）
-- L573: FoF月次キャッシュをdictに変えるときもlookupはexact getでなくbisect helperに統一せよ（cmd_1787）
 
 ### 19.2 BB仕様・バグ修正
 

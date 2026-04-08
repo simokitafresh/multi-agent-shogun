@@ -230,7 +230,7 @@ for p in cfg.get('projects', []):
                 CONTEXT_FULL_PATH="$SCRIPT_DIR/$CONTEXT_FILE"
                 if [ -f "$CONTEXT_FULL_PATH" ]; then
                     (
-                        flock -w 10 201 || { echo "WARN: context lock timeout" >&2; exit 0; }
+                        flock -w 10 201 || { echo "WARN: context lock timeout, skipping context update" >&2; exit 1; }
                         export CONTEXT_FULL_PATH NEW_LESSON_ID SOURCE_ID_1 SOURCE_ID_2 MERGED_TITLE
                         python3 << 'CTXEOF'
 import re, os

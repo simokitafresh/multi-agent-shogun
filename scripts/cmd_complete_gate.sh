@@ -65,7 +65,7 @@ resolve_report_file() {
 
         unwrap_result=$(
             (
-                flock -w 5 200 || { echo "flock_timeout"; exit 0; }
+                flock -w 5 200 || { echo "[auto_unwrap] WARN: flock timeout on report YAML, skipping unwrap" >&2; exit 1; }
                 REPORT_FILE="$report_file" python3 - <<'PY'
 import os
 import tempfile

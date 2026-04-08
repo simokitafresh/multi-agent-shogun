@@ -1,25 +1,14 @@
 task:
-  _ac_task_id: cmd_1796_impl
+  _ac_task_id: null
   _ac_worker_id: null
   ac_version: 8ad79893
-  acceptance_criteria:
-  - description: 6忍法(oikaze/nukimi/kawarimi/kasoku_ratio/kasoku_diff/yotsume)が全てエラー0件で実行完了し、各結果CSVの行数をwc
-      -lで確認
-    id: AC1
-  - description: 全7忍法(bunshin含む)の結果CSVが outputs/analysis/ 配下に揃っていることをls -lで確認
-    id: AC2
+  bloom_level: null
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
   - context/dm-signal-research.md
   - context/dm-signal-frontend.md
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L106: L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo\n\
-    \  - L492: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。\n\
-    \  - L463: Python 3.12環境でsimulate_batch(precomputed_masks)とsimulate_pattern(TrendReversalFi\n\
-    ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -32,83 +21,67 @@ task:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   ninja: kotaro
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_1796
-  project: dm-signal
-  scope_mode: IMPL
-  status: done
-  stop_for: []
-  task_id: cmd_1796_impl
-  task_type: impl
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_1796.yaml
-  report_path: queue/reports/kotaro_report_cmd_1796.yaml
-  bloom_level: 
   ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 9
-    top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'field_missing'
-      count: 2
-    - pattern: 'bc_result_empty'
-      count: 1
-    - pattern: 'verdict_invalid'
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+    breakdown: report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件),
+      archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件),
+      empty_lessons_useful(1件)
     gate_blocks:
-    - reason: 'report_format'
-      count: 15
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'binary_checks_fail'
-      count: 9
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'report_yaml_missing'
-      count: 4
-      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
-    - reason: 'empty_lessons_useful'
-      count: 3
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'lesson_candidate_no_reason_empty'
-      count: 2
-      hint: 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須'
-    - reason: 'ac_version_mismatch'
-      count: 1
-      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+    - count: 15
+      hint: report YAMLのフォーマットエラー。report_field_set.sh使用必須
+      reason: report_format
+    - count: 9
+      hint: binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認
+      reason: binary_checks_fail
+    - count: 4
+      hint: report YAMLが存在しない。report_pathのファイルを作成・記入せよ
+      reason: report_yaml_missing
+    - count: 3
+      hint: lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止
+      reason: empty_lessons_useful
+    - count: 2
+      hint: lesson_candidate.found=false時はno_lesson_reasonに理由記入必須
+      reason: lesson_candidate_no_reason_empty
+    - count: 1
+      hint: ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込
+      reason: ac_version_mismatch
+    gate_fail_top3:
+    - count: 2
+      pattern: field_missing
+    - count: 1
+      pattern: bc_result_empty
+    - count: 1
+      pattern: verdict_invalid
+    gate_warning: '⚠ gate頻出FAIL: 必須フィールド(binary_checks/files_modified/result.summary)を省略するな;
+      binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+    source: karo_workarounds.yaml
+    top_pattern: report_yaml_format(2件)
+    total_workarounds: 9
+    warning: ⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守
+  parallel_ok: []
+  parent_cmd: cmd_1799
+  project: dm-signal
   related_lessons:
-  - id: 'L582'
-    summary: 'draft教訓1件が未査読のままGATE到達'
-    detail: 'draft教訓1件が未査読のままGATE到達'
-  - id: 'L581'
-    summary: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
-    detail: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
-  - id: 'L580'
-    summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-    detail: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-  - id: 'L579'
-    summary: 'draft教訓31件が未査読のままGATE到達'
-    detail: 'draft教訓31件が未査読のままGATE到達'
-  - id: 'L578'
-    summary: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
-    detail: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
-  - id: 'L577'
-    summary: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
-    detail: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
-  - id: 'L576'
-    summary: '''FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、context.target_date(月初第1営業日)でexact-match'
-    detail: '''FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、context.target_date(月初第1営業日)でexact-match'
-  - id: 'L575'
-    summary: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはmonth-end日付キー、FoFリバランス日は月初第1営業日→常にNone→Cash。SVMF/MVMFはget_momentum_value_at_date(bisect)で正しく対応済み。修正はdictに対してもbisect使用に統一す'
-    detail: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはmonth-end日付キー、FoFリバランス日は月初第1営業日→常にNone→Cash。SVMF/MVMFはget_momentum_value_at_date(bisect)で正しく対応済み。修正はdictに対してもbisect使用に統一す'
-  - id: 'L574'
-    summary: '''MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→Cash。修正:'
-    detail: '''MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→Cash。修正:'
-  - id: 'L573'
-    summary: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
-    detail: '''2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache'
-  deployed_at: "2026-04-08T13:34:07"
+  - id: 'L074'
+    summary: '((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。'
+    detail: '((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。'
+  - id: 'L063'
+    summary: '観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for lesson in data.get(''lessons'',[])が正しい形'
+    detail: '観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for lesson in data.get(''lessons'',[])が正しい形'
+  report_filename: kotaro_report_cmd_1799.yaml
+  report_path: queue/reports/kotaro_report_cmd_1799.yaml
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  scope_mode: IMPL
+  scout_exempt: true
+  status: idle
+  stop_for: []
+  task_id: cmd_1799_impl
+  task_type: impl
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L074: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+      - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
+    ────────────────────────────────────────
+    
+    
