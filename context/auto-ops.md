@@ -1,5 +1,5 @@
 # Auto-Ops Context
-<!-- last_updated: 2026-03-15 lesson-sort L024-L055振り分け -->
+<!-- last_updated: 2026-04-09 cmd_ga015_autoops: scripts/cdp/README.md参照+cdp_chrome_cleanup.sh追記 -->
 
 ## 概要
 
@@ -112,6 +112,8 @@ CDP(Chrome DevTools Protocol) + Google Workspace CLI によるデスクトップ
 - L050: Chrome(9222)ログイン済み前提のnote taskでも9222が通常Chromeへ未結線ならpreflightがclean temp profileを起動しstop_forへ直行する（cmd_947）
 - 計測CLI本体は `auto-ops/workflows/perf_measure.py`、CDP transport は `auto-ops/cdp/cdp_helper.py`。task文面にある `cdp/perf_measure.py` は現行repoには存在しない。→ `docs/research/cmd_816_cdp-measurement-architecture.md` §1
 - CDPポートは `9222` に統一（cmd_885）。`launch_browser()` は `--remote-debugging-port=9222`, `--remote-debugging-address=0.0.0.0` を付ける。Daemon mode(cdp_server.py)も `--cdp-port=9222` が既定。→ `docs/research/cmd_816_cdp-measurement-architecture.md` §2
+- Daemon mode toolkit: `scripts/cdp/` (cdp_server.py + cdp_cli.sh)。persistent WebSocket+@ref方式でCDP操作を一本化（cmd_877）。詳細 → `scripts/cdp/README.md`
+- CDP Chrome idle cleanup: `scripts/cdp_chrome_cleanup.sh`。PIDファイル追跡+idle ninja検知時にninja_monitor.shが自動実行（cmd_905）
 - 計測順序は `preflight_cdp_flow()` に統合済み: プロセス確認 → 未起動時自動起動 → CDP接続確認 → `perf_measure.py` 本計測。cmd_810/811/815 の着地点。→ `docs/research/cmd_816_cdp-measurement-architecture.md` §3, §5
 - `9224` は現行 `auto-ops` repo・git履歴・近傍workspace検索で実装痕跡なし。知識としては「現行未確認ポート」と扱う。→ `docs/research/cmd_816_cdp-measurement-architecture.md` §4
 
