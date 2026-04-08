@@ -202,6 +202,37 @@ QG_TEMPLATE
         fi
     fi
 
+    # q9_firefighting_root_cause: 消火cmdでは真因+再発防止を必須化（BLOCK — cmd_1801）
+    # 起源: 消火禁止原則が理解止まりで、症状修正cmdが真因未記載のまま繰り返された
+    # 対象: title/commandに消火キーワードが含まれるcmd
+    _Q9_SIGNAL_TEXT=$(echo "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*title:/ {
+            sub(/^[[:space:]]*title:[[:space:]]*/, "")
+            print
+            next
+        }
+        /^[[:space:]]*command:[[:space:]]*\|/ {
+            in_cmd=1
+            next
+        }
+        /^[[:space:]]*command:/ {
+            sub(/^[[:space:]]*command:[[:space:]]*/, "")
+            print
+            next
+        }
+        in_cmd {
+            if ($0 ~ /^    [A-Za-z0-9_]+:/) exit
+            print
+        }
+    ')
+    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE 'fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix'; then
+        if ! echo "$CMD_BLOCK_NC" | grep -q "q9_firefighting_root_cause:"; then
+            echo "BLOCK: 消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ" >&2
+            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+            exit 1
+        fi
+    fi
+
     # (causal_chain各論パッチは削除。q5_verified_sourceに複利の問いを統合 — 2026-04-05)
 
     # (q8_tool_readiness各論パッチは削除。q5の複利の問いで十分 — cmd_1742 cancel 2026-04-05)

@@ -258,6 +258,77 @@ YAML
     [[ "$output" == *"BLOCK"* ]]
 }
 
+@test "Check1-5: 消火cmd+q9なしでBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8801:
+    id: cmd_8801
+    title: "infra — CI赤修正"
+    command: "FAILしているhookを修正"
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 消火cmd検証 → WHAT: q9必須化を確認"
+YAML
+
+    CMD_ID="cmd_8801"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"q9_firefighting_root_cause未記入"* ]]
+}
+
+@test "Check1-5: 消火cmd+q9ありでPASS" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8802:
+    id: cmd_8802
+    title: "infra — hotfix"
+    command: |
+      障害復旧のため修復する
+    status: pending
+    quality_gate:
+      q1_firefighting: "品質向上"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 消火cmd検証 → WHAT: q9付きcmd 1件確認"
+      q9_firefighting_root_cause: "root_cause: 再発条件未定義 | prevention: gateで真因記入を強制"
+YAML
+
+    CMD_ID="cmd_8802"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_8802"* ]]
+}
+
+@test "Check1-5: 非消火cmd+q9なしでPASS" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_8803:
+    id: cmd_8803
+    title: "infra — 学習ループ改善"
+    command: "gateの可視化を追加"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "code_reading + structure_verified"
+      q8_why_what: "WHY: 学習ループ改善 → WHAT: gate可視化 1件追加"
+YAML
+
+    CMD_ID="cmd_8803"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_8803"* ]]
+}
+
 # --- Check 11: impl cmd post-deploy verification AC検出 ---
 
 @test "Check11: dm-signal+impl ACにpush/deploy無しでWARN" {
