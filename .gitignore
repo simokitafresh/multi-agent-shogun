@@ -110,28 +110,9 @@
 !templates/
 !templates/**
 
-# Context (knowledge files)
+# Context (knowledge files — glob: cmdで変更するファイルは全て追跡)
 !context/
-!context/README.md
-!context/infrastructure.md
-!context/doc-style-guide.md
-!context/l3-robustness.md
-!context/karo-operations.md
-!context/dm-signal.md
-!context/dm-signal-core.md
-!context/dm-signal-ops.md
-!context/dm-signal-research.md
-!context/cmd-chronicle.md
-!context/lord-conversation-index.md
-!context/dm-signal-frontend.md
-!context/auto-ops.md
-!context/database.md
-!context/checklist-shin-v2-registration.md
-!context/google-classroom.md
-!context/milk.md
-!context/senkyoku-log.md
-!context/training-cycle.md
-!context/oshio-comparison.md
+!context/*.md
 !context/archive/
 !context/archive/*.md
 
@@ -315,17 +296,11 @@ queue/ntfy_batch_queue.txt
 !outputs/baselines/
 !outputs/baselines/.gitkeep
 
-# Docs
+# Docs (knowledge base — glob: 研究成果は全て追跡)
 !docs/
-!docs/philosophy.md
-!docs/model-switch-checklist.md
+!docs/*.md
 !docs/research/
-!docs/research/cmd_709_system-comparison.md
-!docs/research/gstack-deep-analysis.md
-!docs/research/infra-lessons-detail.md
-!docs/research/cmd_1755_skill_creator.md
-!docs/research/cmd_1755_stop_hook.md
-!docs/research/cmd_1756_android.md
+!docs/research/*.md
 
 # Screenshots (masked — no secrets)
 !images/
