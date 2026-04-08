@@ -11,6 +11,9 @@
 # 忍者/家老のミスに見える問題はインフラが真因でないか？道具を疑え。
 # (2026-04-06実証: task_id/ac_task_id不一致→8スクリプト28箇所。lessons_useful空リスト=awk regex壊。scope_mode未伝搬=偵察フィルタ不発)
 # チェックリスト参照cmdは前後Stepの禁則をACに転写済みか？(LG012: cmd_1397で再計算禁止未転写→忍者実行)
+# 状態確認: dashboard→inbox→capture-pane。capture-pane=過去の残像。ファイルmtime=現在(LG007)
+# cmd分割: AC>4 or 依存ありAC並列 → REQUEST_CHANGES。3基準: 任意忍者可/短完了/依存並列考慮(LG021)
+# 研究cmdにbaselineなし → REQUEST_CHANGES。改善主張には比較対象が必須(LG022)
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
 # SG一覧: SG0(gate自動) SG2(commit) SG3(scope) SG4(家老処理) SG5(偵察トレーサビリティ)
 #          SG6(状態確認順序) SG7(バンドル) SG8(自動消火4類型) SG10(研究基盤+送信前gate)
@@ -2301,7 +2304,7 @@
 - cmd_id: cmd_1807
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。消火禁止原則の全配備経路カバー。キーワードリスト乖離を注記"
   observations:
@@ -2315,3 +2318,19 @@
       description: "消火キーワードリストをscripts/lib/firefighting_keywords.shに共通化し、cmd_save.sh/deploy_task.sh両方から参照"
       status: proposed
   timestamp: "2026-04-09T01:35:00"
+- cmd_id: cmd_1807
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cmd_save.sh同一キーワードリスト使用でdraft指摘を自主解消"
+  observations:
+    - "commit fd45ed3: 21行追加(check_firefighting_title関数15行+呼出し5行+空行)。files_modified 1=stat 1一致"
+    - "grepパターンがcmd_save.sh L215と完全一致(FAIL+bug/broken単語境界含む)。draft reviewでの乖離指摘を忍者が自主対応"
+    - "挿入位置: double-deploy check後、apply_task_mutations前。配備直前の適切なタイミング"
+    - "小太郎WA率0%(直近30件中4担当)。通常レビューで十分"
+  causal_chain: "家老自発cmd→deploy_task.sh直接配備→q9バイパス→check_firefighting_title()追加→WARNING表示→真因自問促進×10=正の複利"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-04-09T01:40:00"

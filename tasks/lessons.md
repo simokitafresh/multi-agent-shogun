@@ -3462,7 +3462,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-09
 - **出典**: cmd_root_fixes
 - **記録者**: hanzo
-- **status**: draft
+- **status**: retired
+- **retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み
 - **tags**: [universal]
 - whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit add/commit対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること。
 
@@ -3470,7 +3471,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-09
 - **出典**: cmd_root_fixes
 - **記録者**: hayate
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と scripts/dashboard_auto_section.sh の正常実行は達成できても、report templateの commit binary_check は yes にできず verdict PASS と両立しない。dashboard系修正タスクでは deploy時に ignore対象検知と commit不要扱い、または対象ファイル側の追跡方針見直しが必要。
 
@@ -3478,7 +3479,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-09
 - **出典**: cmd_ga017_freshness
 - **記録者**: kotaro
-- **status**: draft
+- **status**: retired
+- **retired_reason**: .gitignore glob化(66a87ab)でcontext/*.mdが追跡対象に。git log使用可能
 - **tags**: [universal]
 - context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit commit日を指定するタスクでは、gitignoreファイルは作業実施日(2026-04-09)を代用すること。同パターンのcontextファイルは全て同様。
 

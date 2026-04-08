@@ -94,10 +94,12 @@ language:
    - lesson health (`bash scripts/gates/gate_lesson_health.sh`) ALERT → `/lesson-sort`
    - PD未解決 → `/shogun-pd-sync`
 2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。
-2.56. **追体験検証(将軍のみ・省略厳禁)**: deepdive読了後、以下3問に**各1行で回答**してからStep 3に進め。回答なしに作業開始するな。結論を知っていることが追体験を殺す(2026-04-07殿指摘)。読む≠追体験。追体験=各Phaseを今の自分に重ねて自問すること。
+2.56. **追体験検証(将軍のみ・省略厳禁)**: deepdive読了後、以下5問に**各1行で回答**してからStep 3に進め。回答なしに作業開始するな。結論を知っていることが追体験を殺す(2026-04-07殿指摘)。読む≠追体験。追体験=各Phaseを今の自分に重ねて自問すること。
    - Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？
    - Q2: 「行動→即確認」— 今の本番は正常か？前セッション以降に本番に入った変更は何か？その結果を確認したか？想像で答えるな。
    - Q3: 今クリアされても強くてニューゲームできるか？環境に埋め込まれていない学びはないか？
+   - Q4: deepdiveのPhase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）
+   - Q5: 今セッションで殿が将軍の前提を崩した場面はあるか？deepdiveのどのPhaseと同じ構造か？
 3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, gunshi→`instructions/gunshi.md`, ninja(忍者)→`instructions/ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
 
@@ -197,6 +199,12 @@ Step 2.86: Read memory/deepdive_karo_verification_20260405.md（家老専用・�
   家老固有の失敗パターン「確認しないから間違える」の全過程。
   Phase 4「将軍/軍師は既存1行を磨く。家老は30行hookを提案(間違い)」が核心。
   これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
+Step 2.87: **追体験検証(家老・省略厳禁)**: deepdive 2本読了後、以下5問に**各1行で回答**してからStep 2.9に進め。回答なしに作業開始するな。
+  - Q1: Phase 1「cmdが来た→反射で配備」— 今の自分に未確認のまま配備しようとしているcmdはないか？
+  - Q2: Phase 4「原理1行 > 各論30行」— 今から書こうとしているhook/gateは各論パッチではないか？既存の仕組みを磨くだけで解決しないか？
+  - Q3: 「確認しないから間違える」— 今の陣形図の情報を鵜呑みにしていないか？実態をcapture-paneで確認したか？
+  - Q4: deepdive_why_chain Phase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）
+  - Q5: 今セッションで直近のworkaroundは何か？その真因は何か？消火ではなく仕組みで解決できないか？
 Step 2.9: bash scripts/gates/gate_karo_startup.sh（8項目一括チェック: deepdive必読強制+陣形図鮮度+忍者CTX実態+inbox未読+PD未解決+workaround傾向+忍者別WA率+idle自走プロンプト）
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
 Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
@@ -217,6 +225,16 @@ Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → gunshi
 Step 2: Read instructions/gunshi.md（人格・禁則・レビュー基準。省略厳禁）
 Step 2.5: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード）
 Step 2.6: Read logs/karo_workarounds.yaml の直近10件（家老の手動補正パターン確認）
+Step 2.7: Read memory/deepdive_why_chain_20260321.md（毎セッション必読・省略厳禁）
+  結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追え。
+  特にPhase 5「なぜの目的=自動化ターゲット特定」が軍師のレビュー品質の基盤。
+Step 2.8: **追体験検証(軍師・省略厳禁)**: deepdive読了後、以下5問に**各1行で回答**してからStep 3に進め。
+  - Q1: Phase 3「考えて進む×無限ループ」— 今の自分のレビューは結論の確認だけで止まっていないか？コードを実際に動かして検証したか？
+  - Q2: Phase 5「なぜの目的=自動化ターゲット特定」— 直近のレビュー指摘はSG追加で終わっていないか？指摘の真因にgateを提案したか？
+  - Q3: 「自動化×強制」— 直近のGP提案は将軍/家老の意志に依存していないか？環境に埋め込む仕組みになっているか？
+  - Q4: deepdiveのPhase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）
+  - Q5: 軍師のSGプロトコルで見逃した問題が後で発覚した例はあるか？SGのどの観点が不足していたか？
+Step 2.9: bash scripts/gates/gate_gunshi_startup.sh（9項目一括チェック: deepdive必読+inbox未読+レビュー統計+WA傾向+教訓+GATE未確認+CS観点+GP未実行+分析永続化）
 Step 3: Read queue/inbox/gunshi.yaml（未読メッセージ処理）
 Step 4: If review_draft / report_review / verify_request がある:
           read 対象cmd/report/task

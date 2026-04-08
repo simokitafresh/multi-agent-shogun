@@ -39,15 +39,15 @@ lessons:
   detail: エージェント状態確認はdashboard→inbox→capture-paneの順。capture-paneは過去の残像(Editエラー等が残る)であり現在の状態を反映しない。ファイルタイムスタンプが現在の状態。S5サイクル2で実証(家老Editエラー残像→リトライ成功済みなのに不要フォローアップ送信)。将軍F006/F007(想像するな確認せよ)と同根だが全役割に普遍的に適用。
   source_cmd: gunshi_S5_cycle2
   created_at: '2026-03-22'
-  automated: false
-  enforcement: SG6(軍師レビューログに外部化済み)
+  automated: true
+  enforcement: SG6(軍師レビューログに外部化済み)+review_logヘッダL14に状態確認順序1行追加(2026-04-09)
 - id: LG010
   title: 防御階層原則 — GP設計はLevel4(フロー内埋込BLOCK)を目指せ
-  detail: 'Level1(事後検出gate) < Level2(事前予防doc) < Level3(事前強制auto-gen) < Level4(フロー内埋込BLOCK)。GP-053-060の実装で実証。事後検出(gate FAIL→手動修正)より事前強制(フロー内でBLOCK)の方が構造的に強い。全GPの設計品質指標として使える。deepdive Phase4(自動化×強制)の具体化。'
+  detail: 'Level1(事後検出gate) < Level2(事前予防doc) < Level3(事前強制auto-gen) < Level4(フロー内埋込BLOCK) < Level5(事前コンテキスト提供)。GP-053-060の実装で実証。事後検出(gate FAIL→手動修正)より事前強制(フロー内でBLOCK)の方が構造的に強い。全GPの設計品質指標として使える。deepdive Phase4(自動化×強制)の具体化。'
   source_cmd: GP-053-060
   created_at: '2026-03-24'
-  automated: false
-  enforcement: GP設計レビュー時の品質基準
+  automated: true
+  enforcement: gunshi.md GP提案テンプレートにdefense_level必須フィールド追加(2026-04-09)
 - id: LG011
   title: AC物理検証をdraft review step 0に追加 — 忍者ナビゲーション空振り防止
   detail: 'cmdのACで参照されるファイルパス・行番号・セクション(§)が実在するか自動検証するスクリプト(ac_physical_verify.sh)を実装。draft review時にbash scripts/ac_physical_verify.sh <cmd_id>で忍者ナビゲーションシートを自動生成。cmd_1360のWA=0に事前調査が貢献した実績に基づく。防御階層Level 5(事前コンテキスト提供)の概念化。gunshi.mdのdraft reviewプロトコルにstep 0追加を推奨。'
@@ -156,22 +156,22 @@ lessons:
   detail: cmdを分割する際の3基準。(1)任意忍者で実行可能(2)各ステップ短く完了明確(3)依存と並列を考慮
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: false
-  enforcement: draft review時の分割妥当性チェック
+  automated: true
+  enforcement: review_logヘッダに「AC>4→REQUEST_CHANGES」1行埋込み(2026-04-09)+gunshi.md Step 3時間効率チェック
 - id: LG022
   title: baseline必須 — 改善主張の研究cmdに比較対象を含める
   detail: 改善を主張する研究cmdには必ず比較対象(baseline)を含める。改善幅の定量評価に必須
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: false
-  enforcement: draft review時のbaseline有無チェック
+  automated: true
+  enforcement: review_logヘッダに「研究cmdにbaselineなし→REQUEST_CHANGES」1行埋込み(2026-04-09)
 - id: LG023
   title: 原理1行>各論パッチ — シンプルな原則をプロセスに膨らませるな
   detail: 既存の1行原理で解決できることに各論パッチ(30行hook等)を作るな。deepdive Phase4-5の家老版実践
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: false
-  enforcement: GP設計時の原理先行チェック
+  automated: true
+  enforcement: gunshi.md §因果推論ルール L207に原理1行埋込み済み+review_logヘッダ(複利の問い)で毎レビュー時強制読込
 - id: LG024
   title: 軍師直接修正権限 — 軽微事実誤りは鎖維持下で直接修正可
   detail: |
@@ -182,5 +182,5 @@ lessons:
     根因: ルールの字面に従い原理(鎖を切るな)で判断しなかった。原理準拠=保護対象を守る最善手を選ぶこと。
   source_cmd: cmd_gunshi_ruling_20260408
   created_at: '2026-04-08'
-  automated: false
-  enforcement: gunshi.md F-G05例外条項として運用。家老は軍師direct_fixをinbox受領後にレビュー
+  automated: true
+  enforcement: gunshi.md F-G05例外条項として文書化済み(Level 2)。家老は軍師direct_fixをinbox受領後にレビュー

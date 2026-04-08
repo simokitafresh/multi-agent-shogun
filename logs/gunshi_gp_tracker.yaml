@@ -158,11 +158,12 @@
   reason: "インフラスクリプト。cmd化が必要"
 - id: GP-172
   description: "deploy_task.sh scout時commit check注入スキップ。task_type=scout→commit BC省略"
-  status: karo_sent
+  status: implemented
   proposed_at: "2026-04-07T22:55:00"
   sent_at: "2026-04-08T21:10:00"
+  implemented_at: "2026-04-09T01:30:00"
   self_executable: false
-  reason: "インフラスクリプト。cmd化が必要"
+  reason: "ac_physical_verify.sh gitignore検出(770b086)+.gitignore glob化(66a87ab)で根因消滅。家老確認済み"
 - id: GP-173
   description: "cmd_save.sh AC推奨/必須混在検出WARN。ACテキストに'推奨''SHOULD''optional'含むACをWARN表示し、notesへの分離を促す"
   status: implemented
@@ -180,3 +181,9 @@
   implemented_at: "2026-04-08T22:25:00"
   self_executable: true
   reason: "gate_result: null 104件蓄積。真因=review_feedback手動更新(自動化不在)。起動時auto-syncで永続防御"
+- id: GP-177
+  description: "消火キーワードリストをscripts/lib/firefighting_keywords.shに共通化。cmd_save.sh/deploy_task.sh両方から参照"
+  status: proposed
+  proposed_at: "2026-04-09T01:35:00"
+  self_executable: false
+  reason: "cmd_1807レビューで発見。cmd_save.sh L215とcmd_1807のキーワードリスト乖離(FAIL欠落+単語境界差)。2箇所管理=片方だけ更新リスク=負の複利。共通化で1箇所管理"

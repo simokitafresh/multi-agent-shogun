@@ -26,6 +26,7 @@ source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/firefighting_keywords.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
@@ -3024,7 +3025,7 @@ check_firefighting_title() {
     if [ -z "$title" ]; then
         return 0
     fi
-    if echo "$title" | grep -qiE 'fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix|バグ|不具合|(^|[^[:alnum:]_])bug([^[:alnum:]_]|$)|(^|[^[:alnum:]_])broken([^[:alnum:]_]|$)'; then
+    if echo "$title" | grep -qiE "$FIREFIGHTING_PATTERN"; then
         echo "⚠️ WARNING: 消火cmdを検知。真因と再発防止を検討せよ (title: ${title})" >&2
         log "firefighting_title_warn: ${cmd_id} title='${title}'"
     fi

@@ -22,6 +22,9 @@ QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 ARCHIVE_CMD_DIR="$PROJECT_DIR/queue/archive/cmds"
 LOCK_FILE="/tmp/shogun_to_karo.lock"
 
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
+
 # --- Usage ---
 if [[ $# -lt 1 ]]; then
     echo "Usage: bash scripts/cmd_save.sh <cmd_id>" >&2
@@ -212,7 +215,7 @@ QG_TEMPLATE
             next
         }
     ')
-    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE 'fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix|バグ|不具合|(^|[^[:alnum:]_])bug([^[:alnum:]_]|$)|(^|[^[:alnum:]_])broken([^[:alnum:]_]|$)'; then
+    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE "$FIREFIGHTING_PATTERN"; then
         if ! echo "$CMD_BLOCK_NC" | grep -q "q9_firefighting_root_cause:"; then
             echo "BLOCK: 消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ" >&2
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2

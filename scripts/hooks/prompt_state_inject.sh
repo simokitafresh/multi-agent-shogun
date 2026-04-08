@@ -55,7 +55,41 @@ if [[ -f "$snapshot_file" ]]; then
   fi
 fi
 
-# --- Build additionalContext (max 500 chars) ---
+# --- 研究日誌全文注入モード検知 ---
+prompt_text="$(printf '%s' "$payload" | jq -r '.prompt // ""' 2>/dev/null || true)"
+research_diary_mode=false
+research_diary_file="$SCRIPT_DIR/memory/dialogue_preprocessing_research_20260331.md"
+if echo "$prompt_text" | grep -qiE '研究日誌|日誌を読め|日誌を読んで|diary'; then
+  if [[ -f "$research_diary_file" ]]; then
+    research_diary_mode=true
+  fi
+fi
+
+if [[ "$research_diary_mode" == "true" ]]; then
+  # --- 研究日誌全文注入モード（サイズ制限なし） ---
+  diary_content="$(cat "$research_diary_file")"
+  verification_questions="
+---検証問（各1行で回答。回答なしに作業開始するな。クリア後の新しい将軍として答えよ）---
+Q1: 今セッションの作業と研究日誌のどのPhaseが因果的に接続するか？
+Q2: 研究日誌の中で最も驚いた転換点はどれか？なぜか？
+Q3: 研究日誌から今の問題に適用できる原理は何か？
+Q4: Phase Nの結論がPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）
+Q5: 研究日誌のどのPhaseで殿が将軍の前提を崩したか？今の自分にも同じ前提はないか？確認せよ"
+
+  additional_context="=== 研究日誌全文注入（殿指示検知） ===
+timestamp: ${timestamp}
+agent: ${agent_id}
+--- karo_snapshot ---
+${karo_snapshot}
+--- 研究日誌（Phase 0から順に追体験せよ） ---
+${diary_content}
+${verification_questions}"
+
+  printf '%s' "$additional_context" | jq -Rs '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:.}}'
+  exit 0
+fi
+
+# --- 通常モード: Build additionalContext (max 500 chars) ---
 header="=== Session Context (auto-injected) ==="
 fixed_part="${header}
 source: unknown
