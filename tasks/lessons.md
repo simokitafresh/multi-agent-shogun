@@ -3457,3 +3457,34 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: kotaro
 - **tags**: [universal]
 - commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit testも同時復元されると整合が取れて検出不能になる。復元後はgit diff HEAD~2..HEAD -- fileで元コミットとの差分確認が必須。
+
+### L454: whitelist型.gitignoreではスクリプト追加時に.gitignoreへのホワイトリストエントリ追加が必須
+- **日付**: 2026-04-09
+- **出典**: cmd_root_fixes
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [universal]
+- whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit add/commit対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること。
+
+### L455: ignore対象dashboard修正タスクはcommit gateと衝突する
+- **日付**: 2026-04-09
+- **出典**: cmd_root_fixes
+- **記録者**: hayate
+- **status**: draft
+- **tags**: [universal]
+- dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と scripts/dashboard_auto_section.sh の正常実行は達成できても、report templateの commit binary_check は yes にできず verdict PASS と両立しない。dashboard系修正タスクでは deploy時に ignore対象検知と commit不要扱い、または対象ファイル側の追跡方針見直しが必要。
+
+### L456: gitignoreファイルのlast_updated日付はgit log不可→作業日を代用
+- **日付**: 2026-04-09
+- **出典**: cmd_ga017_freshness
+- **記録者**: kotaro
+- **status**: draft
+- **tags**: [universal]
+- context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit commit日を指定するタスクでは、gitignoreファイルは作業実施日(2026-04-09)を代用すること。同パターンのcontextファイルは全て同様。
+
+### L457: whitelist型.gitignoreではスクリプト追加時にホワイトリストエントリ追加が必須
+- **日付**: 2026-04-09
+- **出典**: cmd_root_fixes
+- **記録者**: karo
+- **tags**: [universal]
+- whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること

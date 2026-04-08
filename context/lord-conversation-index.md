@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-09 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-09T00:34:05+09:00 -->
+<!-- generated_at: 2026-04-09T01:03:39+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-09T00:34:05+09:00 | terminal | response | **殿、全テスト完了。q9消火判定gate — 磨き上げ完了の報告でござる。** **bats 15/15 PASS + 実弾5パターン全PASS:** | テスト | 期待 | 結果 | |--------|------|------|…
-- 2026-04-09T00:33:06+09:00 | ntfy | outbound | CI赤: run 24143645364 Unit Tests (bats)
-- 2026-04-09T00:32:45+09:00 | ntfy | outbound | 【家老】cmd_root_fixes 初回配備開始 (title=(untitled), ninja=hanzo) 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d433…
-- 2026-04-09T00:32:24+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-019)
-- 2026-04-09T00:32:18+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: karo-operations.md(31日)
-- 2026-04-09T00:29:12+09:00 | ntfy | outbound | 【家老】cmd_ga018_freshness 初回配備開始 (title=(untitled), ninja=tobisaru) 📋 https://gist.github.com/simokitafresh/6eb495d917fb0…
-- 2026-04-09T00:27:00+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-018)
-- 2026-04-09T00:26:54+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: karo-operations.md(31日)
-- 2026-04-09T00:24:29+09:00 | ntfy | outbound | 【家老】cmd_ga017_freshness 初回配備開始 (title=(untitled), ninja=hayate) 📋 https://gist.github.com/simokitafresh/6eb495d917fb00b…
-- 2026-04-09T00:21:29+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-017)
+- 2026-04-09T01:03:39+09:00 | terminal | response | cmd_1806委任完了。q9を実戦投入した。 消火（commit+数値更新）と真因解決（bats期待値動的化）をセットで起票。q9が真因記入を強制したからこそ「期待値のハードコードが再発構造」という真因に辿り着いた。 [meta] st…
+- 2026-04-09T01:01:38+09:00 | ntfy | outbound | 【karo】復帰済み。4cmd GATE CLEAR完了。パイプライン空。idle4名。
+- 2026-04-09T00:59:42+09:00 | ntfy | outbound | 📊 Dashboard: 4cmd GATE CLEAR(root_fixes/freshness_bulk/ga017/ga018) | idle:4名 | pipeline:cmd_try_ci(CI赤修正)
+- 2026-04-09T00:58:02+09:00 | terminal | response | 殿、実際にトライした。 CI赤修正cmdを書いたらq9がBLOCKした。「なぜCI赤になった？二度と起きない仕組みは？」を考えなければ保存できなかった。真因（commit漏れチェック不在+期待値ハードコード）と仕組み（pre-pushフッ…
+- 2026-04-09T00:54:32+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-09 00:52:12|cmd_freshness_bulk
+- 2026-04-09T00:46:36+09:00 | terminal | response | cmd_save.bats 44/44 PASS、0 FAIL。 殿、正直に答える。 **磨き上げたもの（q9消火判定gate）:** - bats 15/15 q9テスト + 全44/44 cmd_save テスト PASS - 実弾テ…
+- 2026-04-09T00:39:24+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-09 00:26:26|cmd_1805
+- 2026-04-09T00:38:32+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: karo-operations.md(31日)
+- 2026-04-09T00:37:23+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-020)
+- 2026-04-09T00:37:16+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: karo-operations.md(31日)
 
 ## 未解決確認事項
 - **殿、報告でござる。** **消火判定gate(q9) — 完成。2サイクル回して磨き上げた。** **サイクル1（cmd_1801）:** - cmd_save.shにq9_firefighting_root_causeを追加 - title+commandの消火キーワード…
@@ -39,17 +39,9 @@
 - cmd_1658
 - cmd_1748
 - cmd_1761
-- cmd_1765
-- cmd_1770
-- cmd_1774
 - cmd_1775
 - cmd_1776
-- cmd_1787
-- cmd_1788
 - cmd_1789
-- cmd_1791
-- cmd_1792
-- cmd_1793
 - cmd_1794
 - cmd_1795
 - cmd_1796
@@ -61,7 +53,6 @@
 - cmd_1803
 - cmd_1804
 - cmd_1805
-- PD-007
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

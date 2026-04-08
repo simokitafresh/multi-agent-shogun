@@ -150,6 +150,28 @@ if section_refs:
             except Exception:
                 pass
 
+# Gitignore check — detect gitignored files with commit ACs (workaround prevention)
+import subprocess
+gitignored = []
+for p in sorted(paths):
+    rel_path = p if not p.startswith('/') else os.path.relpath(p, repo_root)
+    try:
+        result = subprocess.run(['git', '-C', repo_root, 'check-ignore', '-q', rel_path],
+                                capture_output=True, timeout=5)
+        if result.returncode == 0:
+            gitignored.append(rel_path)
+    except Exception:
+        pass
+
+if gitignored:
+    has_commit_ac = bool(re.search(r'commit|push|git\s+add', cmd_text, re.IGNORECASE))
+    print(f'\n--- Gitignore Check ---')
+    for gp in gitignored:
+        if has_commit_ac:
+            print(f'  [WARN] {gp} is gitignored but cmd has commit/push AC — verdict FAIL risk')
+        else:
+            print(f'  [INFO] {gp} is gitignored (commit不要)')
+
 # Navigation sheet for ninja
 print(f'\n=== Navigation Sheet ===')
 for i, block in enumerate(ac_blocks):

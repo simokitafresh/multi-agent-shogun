@@ -309,7 +309,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L453 -->
+<!-- last_synced_lesson: L457 -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
 <!-- lesson-sort 2026-04-06: L437-L441の5件をカテゴリ分類。bash(L437/L438), レビュー/軍師(L439/L440), git(L441) -->
@@ -487,6 +487,10 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L451: STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき（cmd_karo_fix_stale_reset）
 - L452: SCOUT/exempt系テスト関数にもq8_why_whatが必要（cmd_karo_ci_fix）
 - L453: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須（cmd_1800）
+- L454: whitelist型.gitignoreではスクリプト追加時に.gitignoreへのホワイトリストエントリ追加が必須（cmd_root_fixes）
+- L455: ignore対象dashboard修正タスクはcommit gateと衝突する（cmd_root_fixes）
+- L456: gitignoreファイルのlast_updated日付はgit log不可→作業日を代用（cmd_ga017_freshness）
+- L457: whitelist型.gitignoreではスクリプト追加時にホワイトリストエントリ追加が必須（cmd_root_fixes）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
