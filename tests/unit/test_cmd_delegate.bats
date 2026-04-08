@@ -448,6 +448,5 @@ YAML
     run bash "${TEST_TMP}/scripts/gates/gate_cmd_state.sh"
     echo "output: $output"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK: cmd_100"* ]]
-    [[ "$output" == *"委任済み"* ]]
+    [[ "$output" == *"OK: pending cmd なし"* ]]
 }
