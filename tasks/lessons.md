@@ -3502,6 +3502,6 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-09
 - **出典**: cmd_1811
 - **記録者**: hanzo
-- **status**: draft
+- **status**: rejected (L457と同一パターン)
 - **tags**: [universal]
 - .gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。
