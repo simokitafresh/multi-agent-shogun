@@ -14,6 +14,7 @@
 # 状態確認: dashboard→inbox→capture-pane。capture-pane=過去の残像。ファイルmtime=現在(LG007)
 # cmd分割: AC>4 or 依存ありAC並列 → REQUEST_CHANGES。3基準: 任意忍者可/短完了/依存並列考慮(LG021)
 # 研究cmdにbaselineなし → REQUEST_CHANGES。改善主張には比較対象が必須(LG022)
+# SG7 gate_prediction: lesson_candidate有→draft_lessons BLOCKリスク。gate_prediction: WARNに設定せよ(cmd_1811/1814で2連続miss)
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
 # SG一覧: SG0(gate自動) SG2(commit) SG3(scope) SG4(家老処理) SG5(偵察トレーサビリティ)
 #          SG6(状態確認順序) SG7(バンドル) SG8(自動消火4類型) SG10(研究基盤+送信前gate)
