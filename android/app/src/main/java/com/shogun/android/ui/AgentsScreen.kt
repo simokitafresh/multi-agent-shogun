@@ -454,16 +454,10 @@ fun PaneFullScreen(
     var commandTextValue by remember { mutableStateOf(TextFieldValue("")) }
     var isListening by remember { mutableStateOf(false) }
     var partialText by remember { mutableStateOf("") }
-    var isInputFocused by remember { mutableStateOf(false) }
     var isInputExpanded by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
     val horizontalPaddingPx = with(density) { 16.dp.toPx() }
-    val imeVisible = WindowInsets.ime.getBottom(density) > 0
     val textMeasurer = rememberTextMeasurer()
-
-    // Note: clearFocus on IME dismiss removed — conflicts with imePadding()
-    // (imePadding layout recomposition triggers false imeVisible=false, causing input to vanish)
 
     val zoomState = rememberTerminalZoomState()
     val coroutineScope = rememberCoroutineScope()
@@ -664,9 +658,7 @@ fun PaneFullScreen(
             OutlinedTextField(
                 value = commandTextValue,
                 onValueChange = { commandTextValue = it },
-                modifier = Modifier
-                    .weight(1f)
-                    .onFocusChanged { isInputFocused = it.isFocused },
+                modifier = Modifier.weight(1f),
                 placeholder = { Text("コマンドを入力") },
                 singleLine = !isInputExpanded,
                 maxLines = if (isInputExpanded) 6 else 1
