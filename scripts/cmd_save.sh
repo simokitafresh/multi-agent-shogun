@@ -474,6 +474,32 @@ check_impl_push_ac() {
 
 check_impl_push_ac
 
+# --- Check 11.3: AC推奨/必須混在検出（informational — WARN_COUNTに加算しない） ---
+# 起源: GP-173。verdict_override 2件(cmd_karo_fix_flock_silent)。ACに推奨事項混入→忍者正FAIL→家老override
+# 目的: ACテキストに推奨キーワードが含まれる場合にWARNし、notesへの分離を促す
+check_ac_must_should_mix() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    local AC_SECTION
+    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /acceptance_criteria:/ { found=1; next }
+        found && /^    - / { print; next }
+        found && /^      / { print; next }
+        found { exit }
+    ')
+    [[ -z "$AC_SECTION" ]] && return 0
+
+    local RECOMMEND_LINES
+    RECOMMEND_LINES=$(echo "$AC_SECTION" | grep -inE '推奨|optional|nice.to.have|できれば|望ましい' || true)
+    if [[ -n "$RECOMMEND_LINES" ]]; then
+        echo "WARNING: ACに推奨事項が混在しています。推奨はnotesに分離し、ACは必須(MUST)のみにせよ" >&2
+        echo "  該当行: $(echo "$RECOMMEND_LINES" | head -3 | tr '\n' ' ')" >&2
+        echo "  理由: 忍者は二値判定(yes/no)でACを評価する。推奨事項にnoと判定→gate BLOCK→家老override(WA)が発生する" >&2
+    fi
+}
+
+check_ac_must_should_mix
+
 # --- Check 11.5: 研究cmdの道具成長AC検出（informational — WARN_COUNTに加算しない） ---
 # 起源: 軍師SG10 — 研究cmdで新規関数を増やしてもresearch_engine.py統合ACがないと意志依存で分岐する
 # 目的: research系キーワードを含むimpl cmdで、ACにengine統合/追加/移設の明示がない場合にWARNING

@@ -14,6 +14,10 @@ setup_file() {
     eval "$(sed -n '/^check_impl_push_ac()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f check_impl_push_ac
 
+    # check_ac_must_should_mix: Check 11.3 — AC推奨/必須混在検出
+    eval "$(sed -n '/^check_ac_must_should_mix()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    export -f check_ac_must_should_mix
+
     # check_gp_duplicate: Check 6インラインセクションを関数化
     eval "check_gp_duplicate() {
 $(sed -n '/^# --- Check 6:/,/^# --- Check 7:/{/^# --- Check 7:/d;p}' "$SRC_SAVE_SCRIPT")
@@ -492,5 +496,102 @@ YAML
     echo "$output" >&2
     [[ "$output" == *"q4_depth未記入"* ]]
     [[ "$output" != *"q4_depth=deep/medium"* ]]
+    [ "$status" -eq 0 ]
+}
+
+# --- Check 11.3: AC推奨/必須混在検出 (GP-173) ---
+
+@test "Check11.3: ACに推奨キーワードでWARN" {
+    CMD_BLOCK="test"
+    CMD_BLOCK_NC='acceptance_criteria:
+    - "AC1: flock修正を実施する"
+    - "AC2: リトライロジックを追加する（推奨）"
+    - "AC3: テスト実行しPASS確認"'
+    export CMD_BLOCK CMD_BLOCK_NC
+    run check_ac_must_should_mix
+    echo "$output" >&2
+    [[ "$output" == *"推奨事項が混在"* ]]
+    [[ "$output" == *"notesに分離"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check11.3: ACにoptionalでWARN" {
+    CMD_BLOCK="test"
+    CMD_BLOCK_NC='acceptance_criteria:
+    - "AC1: implement core fix"
+    - "AC2: add retry logic (optional)"'
+    export CMD_BLOCK CMD_BLOCK_NC
+    run check_ac_must_should_mix
+    echo "$output" >&2
+    [[ "$output" == *"推奨事項が混在"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check11.3: ACにできればでWARN" {
+    CMD_BLOCK="test"
+    CMD_BLOCK_NC='acceptance_criteria:
+    - "AC1: 修正実施"
+    - "AC2: できればログ出力も追加"'
+    export CMD_BLOCK CMD_BLOCK_NC
+    run check_ac_must_should_mix
+    echo "$output" >&2
+    [[ "$output" == *"推奨事項が混在"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check11.3: クリーンACでWARNなし" {
+    CMD_BLOCK="test"
+    CMD_BLOCK_NC='acceptance_criteria:
+    - "AC1: flock修正を実施する"
+    - "AC2: テスト実行しPASS確認"'
+    export CMD_BLOCK CMD_BLOCK_NC
+    run check_ac_must_should_mix
+    echo "$output" >&2
+    [[ "$output" != *"推奨事項が混在"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check11.3: ACセクションなしでWARNなし" {
+    CMD_BLOCK="test"
+    CMD_BLOCK_NC='title: "テストcmd"
+notes: "なし"'
+    export CMD_BLOCK CMD_BLOCK_NC
+    run check_ac_must_should_mix
+    echo "$output" >&2
+    [[ "$output" != *"推奨事項が混在"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check11.3: CMD_BLOCK空でスキップ" {
+    CMD_BLOCK=""
+    CMD_BLOCK_NC=""
+    export CMD_BLOCK CMD_BLOCK_NC
+    run check_ac_must_should_mix
+    echo "$output" >&2
+    [[ "$output" != *"推奨事項が混在"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check11.3: nice to haveでWARN" {
+    CMD_BLOCK="test"
+    CMD_BLOCK_NC='acceptance_criteria:
+    - "AC1: core fix"
+    - "AC2: nice to have: add logging"'
+    export CMD_BLOCK CMD_BLOCK_NC
+    run check_ac_must_should_mix
+    echo "$output" >&2
+    [[ "$output" == *"推奨事項が混在"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check11.3: 望ましいでWARN" {
+    CMD_BLOCK="test"
+    CMD_BLOCK_NC='acceptance_criteria:
+    - "AC1: 修正実施"
+    - "AC2: パフォーマンス改善が望ましい"'
+    export CMD_BLOCK CMD_BLOCK_NC
+    run check_ac_must_should_mix
+    echo "$output" >&2
+    [[ "$output" == *"推奨事項が混在"* ]]
     [ "$status" -eq 0 ]
 }

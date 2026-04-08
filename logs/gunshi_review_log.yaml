@@ -43,7 +43,7 @@
   report_task_id: cmd_metrics_R2_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。50.4s→9.8s(5.13x)。Session proxyでDB一括プリロード。パリティyears=10/0両方0mismatch"
   observations:
     - "Session proxyでcalculate_metricsの内部DB呼出しをキャッシュ化。本番コード非変更で解決。設計品質高い"
@@ -93,7 +93,7 @@
   report_task_id: cmd_metrics_R2b_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。9.7s→0.045s(213x)。double_precision=15でatol=1e-12パリティ維持。calculator_direct経路で分離設計"
   observations:
     - "軍師推奨のdouble_precision=15を採用。パリティ1e-12維持"
@@ -136,7 +136,7 @@
   report_task_id: cmd_metrics_R4_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。65PF×34メトリクス全パリティ0mismatch。CSV+ランブック+パリティYAML。道具完成"
   observations:
     - "verify_rolling_parity: 65PF全PASS。union dates+NaN padding(R3b)との整合も保持"
@@ -163,7 +163,7 @@
   report_task_id: cmd_metrics_R5_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。ラッパー2関数。DM2で34メトリクス+rolling(122,34)パリティ両PASS。commit 4ea08093"
   observations:
     - "設計書§2.1のコードをほぼそのまま実装。計算ロジック追加ゼロの薄いラッパー"
@@ -190,7 +190,7 @@
   report_task_id: cmd_metrics_R6_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。simulate_selection実装+18Mパイプライン動作確認。score_fnループ版。穴塞ぎ(§2.2.1)とscore_wideモードは未実装→追加修行要"
   observations:
     - "spot check: 2010-03 eligible=9→selected=5。gate_negative smoke=0.0。基本動作OK"
@@ -217,7 +217,7 @@
   report_task_id: cmd_metrics_R7a_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。穴3件+score_wideモード全7検証PASS。NaN/動的clip/排他/パリティ/gate_negative"
   observations:
     - "score_wideモードとscore_fnモードのパリティ一致を実測で確認。高速化の正しさ担保"
@@ -244,7 +244,7 @@
   report_task_id: cmd_metrics_R7b_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。SelectionResult+build_return_wide+turnover。flair/levy追従+pytest3件+18M smoke。4ファイル変更"
   observations:
     - "flair_confidence_study.py+levy_dma_dms_studyを共通API(build_return_wide/simulate_selection)へ統合。コピペ根絶"
@@ -257,7 +257,7 @@
 - cmd_id: cmd_metrics_R7d
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: MEDIUM
   findings_summary: "6観点OK。DTB3グローバル+SPY+統合テスト。import時DB接続リスクあり→lazy load推奨を忍者に伝達"
   observations:
@@ -315,7 +315,7 @@
   report_task_id: cmd_1731_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。BCプリフィル+外側クオート正規化+bats テスト追加。2ファイル変更"
   observations:
     - "二重クオート('quoted')→stripped。awk正規化で堅実な実装"
@@ -348,7 +348,7 @@
   report_task_id: cmd_1733_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。verdict自動導出+status自動更新。batsテスト追加。空verdict→全result完了時のみ導出の安全分岐"
   observations:
     - "空verdict+全result記入済み→PASS/FAIL導出。result未記入時はスキップ。draft時指摘の安全構造が実装済み"
@@ -375,7 +375,7 @@
   report_task_id: cmd_1734_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。gate_warning直上コメント注入。5フィールド対応+あり/なし両テスト。commit cf1c86d"
   observations:
     - "verdict/bc/no_lesson_reason/lessons_useful/statusの5フィールドにパターン別コメント注入"
@@ -403,7 +403,7 @@
   report_task_id: cmd_1735_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。24 lookback×34 ALM完了。tracking_error ALM CAGR52.7%(best fixed+13.3pp)。メトリクス方向明示分離。忍者自律でlookback6→24拡張"
   observations:
     - "selection_counts合算: tracking_error全lookback合計172=月数一致。23M=78回(45%)選択支配的。長期lookback偏重はPhase20知見と整合"
@@ -432,7 +432,7 @@
   report_task_id: cmd_1736_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。1940戦略完了(CSV1941行確認)。best ALM=MDD@top4_win36m CAGR53.2%(best fixed+9.1pp)。cmd_1735からbest metricがTE→MDDに変化(探索空間拡大の効果)"
   observations:
     - "BC AC2記述'340 ALM'は×5窓を省略した不正確な記述。実際は1700 ALM(summary.alm_strategy_count=1700, CSV1940行)。成果物は正しい。報告記述の不備"
@@ -472,7 +472,7 @@
   report_task_id: cmd_1737_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。OOS 3段完了。★top4_win36m PBO=0.014(ROBUST)。MDD/worst_yearが70回中68回IS-best(97%)。Stage0 IS best=worst_year(≠MDD)だがOOS>IS(負の劣化)。Stage1 62%OVERFITだが頑健帯域(top1/4/5)を特定"
   observations:
     - "Stage0: matches_cmd_1736_global_best=false(IS best=worst_year、全期間best=MDD)。しかしdegradation=-18.9%(OOS CAGR 0.549 > IS 0.462)。OOS改善はoverfit否定の強いシグナル。SUSPECT判定は|deg|>15%の機械的閾値による"
@@ -501,7 +501,7 @@
   report_task_id: cmd_1738_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。cmd_save.sh Check14。subset→BLOCK/equal→PASS/superset→PASS/missing→SKIP。4 bats。日本語隣接lookaround対応"
   observations:
     - "ASCII境界lookaroundで日本語隣接cmd_id抽出対応。Python \\bはUnicode単語境界で日本語失敗→lesson候補有用"
@@ -552,7 +552,7 @@
   report_task_id: cmd_1739_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。全50組合せOOS。★Stage0 ALMがOOSで固定に負けた(-0.126)。cmd_1737(+0.097)と逆転。top4×36M PBO=0.043 ROBUST(一貫)。Stage2 OVERFIT23/ROBUST9/SUSPECT18"
   observations:
     - "Stage0: IS best=top6_win36m__worst_year。OOS CAGR=0.401 < fixed 0.526。ALMがOOSで-12.6pp負け。cmd_1737(R10前)では+9.7pp勝ちだった。R10 numpy統一の106 strategy mismatchが全体最良を変え、OOS結果も変わった"
@@ -570,7 +570,7 @@
   report_task_id: cmd_karo_1739_cscv_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。CSCV拡張完了。★Stage0 OVERFIT 53/70(75.7%)。Stage1 OVERFIT 2476/3500(70.7%)。3軸同時選択+大半の組合せでoverfit確定。ALM全パラメータスイープからのbest選択は構造的にoverfit"
   observations:
     - "Stage0: 70分割のmedian degradation=56%。IS-bestが毎回異なる戦略に散らばる(beta/left_tail_jumps等)→安定したbestが存在しない→3軸同時選択は構造的overfit"
@@ -608,7 +608,7 @@
 - cmd_id: cmd_1742
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。cmd_save.shにq8_tool_readiness BLOCK追加。道具関数名検出→ランブック表示+q8未記入BLOCK。将軍側の因果推論不足を環境で強制"
   observations:
@@ -785,7 +785,7 @@
   report_task_id: cmd_1746_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。dry-run追加。run_or_previewヘルパー設計。isolated tmux server+hash比較テスト"
   observations:
     - "commit 0ff9699: scripts/shutsujin_departure.sh 1ファイル変更。DRY_RUN解析+run_or_previewヘルパー追加"
@@ -814,7 +814,7 @@
   report_task_id: cmd_1747_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。6obj ALM×忍法7本完了。42比較。tail_contribution=7/7改善(最汎用)。cagr=加速R beats6。LTJ_inv=抜き身 beats6"
   observations:
     - "commit 86902d1a: 5files/5225ins。L0 CSV 24列(6obj×4fam)+220行データ。ninpo結果1360行。cross比較2701行"
@@ -832,7 +832,7 @@
   report_task_id: cmd_training_R12_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "事後レビュー。IR individual+batch追加。commit 01b2528e。NUMERIC_METRIC_NAMES L119+BATCH_R4 L187+individual L1167+batch L1763+テスト56行"
   observations:
     - "ランブックR12通りの実装。active_return/tracking_errorのnp.divide 1行でbatch化"
@@ -847,7 +847,7 @@
   report_task_id: cmd_training_R13_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "DD 3メトリクス individual path追加。35→38メトリクス。本番calc_dd_stats_monthly準拠。テスト3パターン(単調/V字/未回復)"
   observations:
     - "commit d627c417: NUMERIC_METRIC_NAMES L120-122 + individual L1171-1173 + BATCH_R4 L188-190(タプル追加のみ)"
@@ -1661,7 +1661,7 @@
   report_task_id: cmd_wf_speedup_impl
   verdict: LGTM
   report_verdict: FAIL
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "殿要求達成。7忍法全量31.10s(<60s)。mmap 0.013s+Pool並列+batch。AC1-2単体5.25s(5s超0.25s)のみFAIL。commit 328bb7c0"
   observations:
     - "batch summary実測: total_elapsed=31.10s。all_success=true。7忍法全出力生成済み"
@@ -1726,7 +1726,7 @@
   report_task_id: cmd_1773_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。ALM四神12体非表示。hide_portfolio=true×12。viewer leaked=0。commit 545df060"
   observations:
     - "global_visibility_settings read-modify-write。before/after=137(件数不変)。12 UUID全件hide"
@@ -1742,7 +1742,7 @@
   report_task_id: cmd_1777_impl
   verdict: LGTM
   report_verdict: PASS
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。Chapter A Pure Function化完了。return_calculator_pure.py 144行。ALM12体パリティ1e-6。1377テスト全PASS"
   observations:
     - "pure関数新設→既存関数リファクタ→パリティ検証の3段階。設計書Chapter A準拠"
@@ -1852,7 +1852,7 @@
 - cmd_id: cmd_karo_ci_fix
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点全OK。CI赤3グループ修正(fixture q8_why_what追加+期待文字列更新+setup_file修正)。q8_why_what cmd_save.sh L186実在確認。テスト4件tests/unit/実在確認"
   observations:
@@ -1860,3 +1860,73 @@
     - "事実2: setup_file失敗→39 SKIP。build_instructions.shのCI環境差異が原因"
   causal_chain: "gate/script変更→テストfixture未更新→CI赤3連→CI信頼性低下=負の複利。fixture更新+全テストPASS→CI緑復帰=正の複利"
   timestamp: "2026-04-08T21:28:00"
+- cmd_id: cmd_karo_ci_fix
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_karo_ci_fix_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CI修正811テスト全PASS/0skip。AC4は修正前PASS(CI環境差異)。commit 47046e7"
+  observations:
+    - "事実1: AC4 binary_checks result:yes だがfiles_modifiedにtest_build_system.bats未含。修正前からPASS。BC不正確だが透明"
+    - "事実2: 811テスト全PASS確認。AC1-3のfixture q8_why_what追加+期待文字列更新が主修正"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "gate/script変更時テストfixture未更新→CI赤→fixture修正→811全PASS=CI信頼性復帰。AC4 CI環境差異は別途調査要(再発リスク)"
+  timestamp: "2026-04-08T21:42:00"
+- cmd_id: self_study_S152
+  review_type: self_study
+  findings_summary: "idle自走Step1-3: WA直近10件分析→verdict_override 2件(AC推奨混入)が未GP化パターン。GP-173提案(cmd_save.sh WARN)→karo送信。未自動化教訓6件確認→LG021/LG022は複利の問い(ヘッダ1行目)で包含済み=各論パッチ不要(LG023適用)"
+  observations:
+    - "事実1: verdict_override 2件(cmd_karo_fix_flock_silent)。根因=ACに推奨事項を必須として混入。忍者の判定は正しい(no)"
+    - "事実2: split_deploy_ac_scope 2件はcmd_karo_fix_gate_split_loopで対処済み。再発なし"
+    - "事実3: 未自動化教訓LG021/LG022はヘッダの複利の問い(10回繰返し)で原理レベル包含。個別gate不要"
+  proposals:
+    - id: GP-173
+      description: "cmd_save.sh AC推奨/必須混在検出WARN"
+      status: karo_sent
+  causal_chain: "AC推奨混入→忍者正FAIL→家老override(WA)。10回→10回override=負の複利。cmd_save.shにWARN1行追加で予防可能。既存AC解析awkの後にgrep→最小変更"
+  timestamp: "2026-04-08T22:00:00"
+- cmd_id: self_study_S153
+  review_type: self_study
+  findings_summary: "GP-173実装完了。cmd_save.sh Check 11.3追加+batsテスト8件(29/29全PASS)。verdict_override WA根絶の防御層。殿指示「自分でできることは実行」→なぜなぜ→F-G05字面→LG024原理(鎖維持)→直接実装が正"
+  observations:
+    - "事実1: check_ac_must_should_mix()関数追加。5キーワード(推奨/optional/nice.to.have/できれば/望ましい)検出"
+    - "事実2: テスト10パターン手動検証+bats 8テスト自動化。偽陽性許容(WARN=情報提供。BLOCKではない)"
+    - "事実3: 既存テスト21件全PASSリグレッションゼロ。全cmd_saveテストスイートも全PASS"
+    - "事実4: なぜなぜ結果=F-G05を字面で適用→LG024の核心(原理で判断=鎖維持なら直接実装可)を適用せず→提案止まり。殿指示で気づき実行"
+  proposals:
+    - id: GP-173
+      description: "cmd_save.sh AC推奨/必須混在検出WARN"
+      status: implemented
+  causal_chain: "F-G05字面準拠(触れるな)→提案止まり→殿指摘→LG024原理(鎖維持=直接実装→家老レビュー)→実装+テスト完了。原理で判断すべき場面で字面に逃げた=Phase 4(理解だけでは行動変わらない)の再発"
+  timestamp: "2026-04-08T22:12:00"
+- cmd_id: self_study_S154
+  review_type: self_study
+  findings_summary: "gate_result: null蓄積の真因解決。gunshi_gate_sync.sh作成+gate_gunshi_startup.sh Check6自動sync統合+bats4テスト。55件手動消火→仕組みで二度と起きない"
+  observations:
+    - "事実1: gate_result: null 104件(現行36+archive68)のうち93件を自動sync(inbox+archive→CLEAR)。残11件=内部cmd/self_study(GATE対象外)"
+    - "事実2: 真因=review_feedback受信時のgate_result更新が手動=Phase 4(自動化なし)。殿「消火になっていないか」指摘で気づく"
+    - "事実3: gate_gunshi_startup.sh Check6にauto-sync組込み。起動時にnull→自動解消。二度と溜まらない"
+    - "事実4: bats 4テスト(更新/非更新/複数エントリ/異ID分離)全PASS。33/33全テストPASS"
+  proposals:
+    - id: GP-174
+      description: "gunshi_gate_sync.sh + startup gate自動sync"
+      status: implemented
+  causal_chain: "review_feedback手動更新→漏れ→55件蓄積→手動消化=消火(殿指摘)→真因=自動化不在→sync script+startup組込み=Phase 5(自動化ターゲット特定→実装)。起動時auto-syncで永続防御"
+  timestamp: "2026-04-08T22:25:00"
+- cmd_id: cmd_1800
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: null
+  confidence: MEDIUM
+  findings_summary: "前提崩壊: scripts/log_terminal_input.sh既存hookが未認識。AC1は新規追加でなくデバッグ+修正が正。severity: normal"
+  observations:
+    - "事実1: scripts/log_terminal_input.sh が.claude/settings.json L101でUserPromptSubmit hookとして登録済み。direction:prompt, source:terminal"
+    - "事実2: lord_conversation.jsonl+全archive共にprompt/inboundエントリがゼロ。hookは登録されているが出力を生成していない"
+    - "事実3: log_terminal_input.shはCLAUDE_USER_PROMPT環境変数を参照(L10)。prompt_state_inject.shはstdin JSON読取(L8)で動作中→環境変数未設定が不発根因の可能性大"
+    - "事実4: lib/lord_conversation.sh(共通ライブラリ)は存在しlog_terminal_response.shから正常利用中→ライブラリ問題ではない"
+  causal_chain: "将軍がinbound未記録に気づく→hookが存在しないと仮定→AC1『hookを追加』と起案→実際はhook存在+不発→忍者が2重hook作成リスク or 根因未解決のまま別hookで同一問題再発。10回繰り返し: 既存hook未確認で新規作成×10=不発hookが累積=負の複利。既存hookデバッグ×1=根因解消+以降全hook安定=正の複利"
+  timestamp: "2026-04-08T22:30:00"

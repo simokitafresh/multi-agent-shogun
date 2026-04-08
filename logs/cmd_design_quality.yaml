@@ -3491,3 +3491,20 @@ entries:
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-04-08T12:16:57Z"
+  - cmd_id: "cmd_karo_ci_fix"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T12:40:34Z"
+    notes: "draft_lessons:2"
+  - cmd_id: "cmd_karo_ci_fix"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T12:42:21Z"

@@ -163,3 +163,20 @@
   sent_at: "2026-04-08T21:10:00"
   self_executable: false
   reason: "インフラスクリプト。cmd化が必要"
+- id: GP-173
+  description: "cmd_save.sh AC推奨/必須混在検出WARN。ACテキストに'推奨''SHOULD''optional'含むACをWARN表示し、notesへの分離を促す"
+  status: implemented
+  proposed_at: "2026-04-08T21:58:00"
+  sent_at: "2026-04-08T22:00:00"
+  implemented_at: "2026-04-08T22:10:00"
+  proposed_at: "2026-04-08T21:58:00"
+  self_executable: false
+  reason: "verdict_override 2件(cmd_karo_fix_flock_silent)。ACに推奨事項混入→忍者正FAIL→家老override=負の複利。cmd_save.shはインフラ共有スクリプトのためcmd化必要"
+  evidence: "karo_workarounds.yaml verdict_override 2件(2026-04-08)。causal_chain: AC推奨混入→忍者no判定→gate BLOCK→家老override→WA。10回→10回override"
+- id: GP-174
+  description: "gunshi_gate_sync.sh + gate_gunshi_startup.sh Check6自動sync。gate_result: null蓄積の真因解決"
+  status: implemented
+  proposed_at: "2026-04-08T22:15:00"
+  implemented_at: "2026-04-08T22:25:00"
+  self_executable: true
+  reason: "gate_result: null 104件蓄積。真因=review_feedback手動更新(自動化不在)。起動時auto-syncで永続防御"

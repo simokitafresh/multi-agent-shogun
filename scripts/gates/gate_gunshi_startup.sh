@@ -157,9 +157,38 @@ if [ -f "$REVIEW_LOG" ]; then
         print count+0
     }
     ' "$REVIEW_LOG" 2>/dev/null || echo "0")
-    echo "  GATE結果未反映: ${ungated}件"
-    if [ "$ungated" -gt 5 ]; then
-        echo "  → review_feedback受信時にgate_resultを更新せよ"
+    if [ "$ungated" -gt 0 ]; then
+        # 自動sync実行（gate_result: nullをinbox/archiveから自動更新）
+        GATE_SYNC="$SCRIPT_DIR/scripts/gunshi_gate_sync.sh"
+        if [ -f "$GATE_SYNC" ]; then
+            sync_out=$(bash "$GATE_SYNC" 2>&1) || true
+            echo "  自動sync実行: $sync_out"
+            # sync後に再計測
+            ungated_after=$(awk '
+            /^- (cmd_id|id):/ {
+                if (n > 0 && !has_gate && (rt == "draft" || rt == "report")) count++
+                n++; has_gate=0; rt=""
+            }
+            /^  gate_result:/ {
+                v=$0; sub(/^  gate_result: */, "", v); gsub(/["'"'"' ]/, "", v)
+                if (v != "" && v != "null" && v != "pending") has_gate=1
+            }
+            /^  (review_type|type):/ {
+                v=$0; sub(/^  (review_type|type): */, "", v); gsub(/["'"'"']/, "", v)
+                if (v == "draft" || v == "report") rt=v
+            }
+            END {
+                if (n > 0 && !has_gate && (rt == "draft" || rt == "report")) count++
+                print count+0
+            }
+            ' "$REVIEW_LOG" 2>/dev/null || echo "0")
+            echo "  GATE結果未反映: ${ungated}→${ungated_after}件 (sync後)"
+        else
+            echo "  GATE結果未反映: ${ungated}件"
+            echo "  → scripts/gunshi_gate_sync.sh が不在。手動更新せよ"
+        fi
+    else
+        echo "  GATE結果未反映: 0件"
     fi
 else
     echo "  SKIP: レビューログ不在"
