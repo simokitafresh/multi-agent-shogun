@@ -76,6 +76,7 @@
 !android/app/src/main/java/com/shogun/android/data/MemoDao.kt
 !android/app/src/main/java/com/shogun/android/data/MemoEntity.kt
 !android/app/src/main/java/com/shogun/android/ui/MemoScreen.kt
+!android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt
 !android/app/src/main/java/com/shogun/android/util/MemoSyncFormatter.kt
 !android/app/src/main/java/com/shogun/android/viewmodel/MemoViewModel.kt
 !android/app/src/test/java/com/shogun/android/util/MemoSyncFormatterTest.kt
