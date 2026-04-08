@@ -3014,6 +3014,22 @@ resolve_dispatch_title() {
     echo "$title"
 }
 
+# 消火キーワードtitle検知: cmdのtitleが消火系キーワードを含む場合にWARNING出力（cmd_1807）
+# 家老経路(deploy_task.sh)でcmd_save.sh(将軍経路)と同一キーワードをカバーする
+check_firefighting_title() {
+    local cmd_id="$1"
+    local task_file="$2"
+    local title
+    title=$(resolve_dispatch_title "$cmd_id" "$task_file")
+    if [ -z "$title" ]; then
+        return 0
+    fi
+    if echo "$title" | grep -qiE 'fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix|バグ|不具合|(^|[^[:alnum:]_])bug([^[:alnum:]_]|$)|(^|[^[:alnum:]_])broken([^[:alnum:]_]|$)'; then
+        echo "⚠️ WARNING: 消火cmdを検知。真因と再発防止を検討せよ (title: ${title})" >&2
+        log "firefighting_title_warn: ${cmd_id} title='${title}'"
+    fi
+}
+
 notify_initial_deploy_ntfy_once() {
     local task_file="$1"
     local ninja_name="$2"
@@ -3291,6 +3307,11 @@ deploy_task_main() {
                     ;;
             esac
         done
+    fi
+
+    # 消火キーワードtitle検知（cmd_1807）
+    if [ -n "$deploy_parent_cmd" ]; then
+        check_firefighting_title "$deploy_parent_cmd" "$task_yaml"
     fi
 
     deploy_task_apply_task_mutations "$NINJA_NAME"
