@@ -1,17 +1,18 @@
+<!-- last_updated: 2026-04-09 -->
 <div align="center">
 
 # multi-agent-shogun
 
 **Command your AI army like a feudal warlord.**
 
-Run 9 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code / Opus 4.6** coordinated by YAML, tmux, and event-driven mailboxes.
+Run 9 AI coding agents in parallel through a Sengoku hierarchy: a **mixed Claude Code + Codex formation** coordinated by YAML, tmux, and event-driven mailboxes.
 
 **Talk coding, not vibe coding. Speak from your terminal, phone, or Android companion app.**
 
 [![GitHub Stars](https://img.shields.io/github/stars/simokitafresh/multi-agent-shogun?style=social)](https://github.com/simokitafresh/multi-agent-shogun)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Formation](https://img.shields.io/badge/formation-Full%20Opus%204.6-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
-[![GATE CLEAR](https://img.shields.io/badge/GATE%20CLEAR-909%2F912%20(99.7%25)-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
+[![Formation](https://img.shields.io/badge/formation-mixed%20CLI%20from%20config%2Fsettings.yaml-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
+[![Runtime](https://img.shields.io/badge/runtime-live%20YAML%20%2B%20tmux-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
 [![Shell](https://img.shields.io/badge/Shell%2FBash-100%25-green)]()
 
 [English](README.md) | [日本語](README_ja.md)
@@ -22,17 +23,19 @@ Run 9 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code / 
   <img src="assets/screenshots/tmux_shogun_9panes.png" alt="multi-agent-shogun: 9 panes running in parallel" width="800">
 </p> -->
 
-<p align="center"><i>One Karo coordinating 6 ninja + 1 gunshi (military advisor) in the live Full Opus 4.6 formation — real session, no mock data.</i></p>
+<p align="center"><i>One Karo coordinating 6 ninja + 1 gunshi (military advisor) in the live mixed-CLI formation defined by <code>config/settings.yaml</code> — real session, no mock data.</i></p>
 
 ---
 
 ## What is this?
 
-**multi-agent-shogun** is a multi-agent development platform for real work, not toy demos. The current live formation is:
+**multi-agent-shogun** is a multi-agent development platform for real work, not toy demos. The current default formation is defined in `config/settings.yaml`:
 
-- Shogun + Karo on **Claude Code / Opus 4.6**
+- Shogun + Karo on **`cli.default`** from `config/settings.yaml` (currently Claude Code)
 - Gunshi (military advisor) on **Claude Code / Opus 4.6**
-- Hayate, Kagemaru, Hanzo, Saizo, Kotaro, Tobisaru on **Claude Code / Opus 4.6**
+- Hayate and Saizo on **Codex / gpt-5.4**
+- Kagemaru and Kotaro on **Claude Code / Sonnet 4.6**
+- Hanzo and Tobisaru on **Claude Code / Opus 4.6**
 
 **Why use it?**
 - One command launches **9 agents** and returns control immediately
@@ -63,17 +66,17 @@ Run 9 AI coding agents in parallel through a Sengoku hierarchy: **Claude Code / 
 
 ---
 
-## Live Operating Record
+## Live State Sources
 
-| Metric | Current value |
+| Source | What it tells you |
 |---|---|
-| GATE CLEAR | 909 / 912 (99.7%) |
-| CLEAR streak | 85 consecutive wins (`cmd_1038` to `cmd_1135`) |
-| Commands issued | ~1137 |
-| Lesson injection rate | 74.0% |
-| Lesson effectiveness | 58.8% |
+| `config/settings.yaml` | Current CLI mix, per-agent models, shell, layout, and language |
+| `dashboard.md` | Latest completed cmds, pending issues, and current project focus |
+| `queue/karo_snapshot.txt` | Recoverable formation state after restart/compaction |
+| `context/infrastructure.md` | Current operational invariants, tmux topology, CLI behavior, and recovery rules |
+| `projects/infra.yaml` | Infra core knowledge and production invariants |
 
-The numbers above come from the current `dashboard.md` battle metrics and reflect this local installation, not the upstream fork.
+Live numbers change frequently; the files above are the source of truth.
 
 ---
 
@@ -130,7 +133,7 @@ Most AI coding tools charge per token. Running 9 Opus-grade agents through the A
 
 ### CLI and Instruction Build System
 
-The current formation runs entirely on **Claude Code / Opus 4.6**. A unified instruction build system generates role-specific instruction files from shared templates:
+The runtime now supports a **mixed CLI formation**. Claude agents autoload `CLAUDE.md`, Codex agents autoload `AGENTS.md`, and both are generated from the same shared instruction sources:
 
 ```
 instructions/
@@ -143,7 +146,7 @@ instructions/
 CLAUDE.md / AGENTS.md / copilot-instructions.md  ← Generated per CLI
 ```
 
-One source of truth, zero sync drift. Change a rule once, all CLIs get it.
+One source of truth, zero sync drift. Change a rule once, then rebuild and both Claude/Codex instruction surfaces stay aligned.
 
 ---
 
@@ -244,7 +247,7 @@ cd /mnt/c/tools/multi-agent-shogun
 
 #### First-time only: Authentication
 
-After `first_setup.sh`, run these commands once to authenticate:
+After `first_setup.sh`, authenticate Claude Code once:
 
 ```bash
 # 1. Apply PATH changes
@@ -258,6 +261,8 @@ claude --dangerously-skip-permissions
 ```
 
 This saves credentials to `~/.claude/` — you won't need to do it again.
+
+If your `config/settings.yaml` enables Codex agents, also ensure the Codex CLI is already usable in your environment before launch. Current infra expectations for Codex live in `context/infrastructure.md` (`~/.codex/config.toml`, 1M context settings, high reasoning effort).
 
 #### Daily startup
 
@@ -426,11 +431,11 @@ Then restart your computer and run `install.bat` again.
 - ✅ Shows next steps (how to run `first_setup.sh`)
 
 ### What `shutsujin_departure.sh` does:
-- ✅ Creates tmux sessions (`shogun:main` + `shogun:agents`)
+- ✅ Creates tmux session `shogun` with window `main` (Shogun) and window `agents` (Karo + Gunshi + 6 ninja)
 - ✅ Launches the current mixed formation from `config/settings.yaml`
-- ✅ Auto-loads instruction files for each agent
-- ✅ Resets queue files for a fresh state
-- ✅ Starts ntfy listener for phone notifications (if configured)
+- ✅ Auto-loads the correct instruction surface for each CLI (`CLAUDE.md` or `AGENTS.md`)
+- ✅ Preserves state by default, or resets queue/dashboard state with `-c`
+- ✅ Starts inbox watchers and the ntfy listener
 
 **After running, all agents are ready to receive commands!**
 
@@ -917,35 +922,37 @@ SayTask handles personal productivity (capture → schedule → remind). The cmd
 
 ## Model Settings
 
-All agents run on **Claude Code / Opus 4.6** with extended thinking enabled:
+`config/settings.yaml` is the source of truth for the current formation. Today it is a mixed Claude/Codex deployment:
 
 | Agent | Model | Thinking | Rationale |
 |-------|-------|----------|-----------|
-| Shogun | Opus 4.6 | **Enabled (high)** | Strategic discussions, research, and policy design require deep reasoning. Use `--shogun-no-thinking` to disable for relay-only mode |
-| Karo | Opus 4.6 | Enabled | Task distribution requires careful judgment |
+| Shogun | `cli.default` (currently Claude Code) | **Enabled (high)** | Strategic discussions, research, and policy design require deep reasoning. Use `--shogun-no-thinking` to disable for relay-only mode |
+| Karo | `cli.default` (currently Claude Code) | Enabled | Task distribution requires careful judgment |
 | Gunshi | Opus 4.6 | Enabled | Strategic analysis and advisory |
-| Hayate, Kagemaru, Hanzo, Saizo, Kotaro, Tobisaru | Opus 4.6 | Enabled | Implementation, review, research, and all task types |
+| Hayate, Saizo | gpt-5.4 (Codex) | Enabled | Fast implementation/research workers on the Codex side |
+| Kagemaru, Kotaro | Sonnet 4.6 | Enabled | Lower-cost Claude workers for parallel execution |
+| Hanzo, Tobisaru | Opus 4.6 | Enabled | Higher-capability Claude workers for heavier tasks |
 
 The Shogun serves as the Lord's strategic advisor — not just a task relay. Strategic discussions, research analysis, and policy design are Bloom's Taxonomy Level 4–6 (analysis, evaluation, creation), requiring Thinking mode enabled. For relay-only use, disable with `--shogun-no-thinking`.
 
 ### Current Formation
 
-All 9 agents run on **Claude Code / Opus 4.6**. The formation has been unified since 2026-03-20.
+The default formation is no longer "all Opus." It is whatever `config/settings.yaml` declares at launch time, with optional overrides such as `./shutsujin_departure.sh -k` for battle mode.
 
 ### Bloom's Taxonomy Task Classification
 
 Tasks are classified using Bloom's Taxonomy to optimize model assignment:
 
-| Level | Category | Description | Model |
+| Level | Category | Description | Runtime assignment |
 |-------|----------|-------------|-------|
-| L1 | Remember | Recall facts, copy, list | Opus 4.6 |
-| L2 | Understand | Explain, summarize, paraphrase | Opus 4.6 |
-| L3 | Apply | Execute procedures, implement known patterns | Opus 4.6 |
-| L4 | Analyze | Compare, investigate, deconstruct | Opus 4.6 |
-| L5 | Evaluate | Judge, critique, recommend | Opus 4.6 |
-| L6 | Create | Design, build, synthesize new solutions | Opus 4.6 |
+| L1 | Remember | Recall facts, copy, list | Assigned from current formation |
+| L2 | Understand | Explain, summarize, paraphrase | Assigned from current formation |
+| L3 | Apply | Execute procedures, implement known patterns | Assigned from current formation |
+| L4 | Analyze | Compare, investigate, deconstruct | Assigned from current formation |
+| L5 | Evaluate | Judge, critique, recommend | Assigned from current formation |
+| L6 | Create | Design, build, synthesize new solutions | Assigned from current formation |
 
-The Karo assigns each subtask a Bloom level for classification. All agents run on Opus 4.6, with round-robin assignment from `config/settings.yaml`.
+The Karo assigns each subtask a Bloom level for classification, then maps it onto the current formation from `config/settings.yaml`.
 
 ### Task Dependencies (blockedBy)
 
@@ -1259,9 +1266,9 @@ tmux attach-session -t shogun # Connect (Window 0 = Shogun)
 ```bash
 ./shutsujin_departure.sh -s       # Create session only
 
-# Manually launch Claude Code on specific agents
+# Manually launch the pane's configured CLI
 tmux send-keys -t shogun:main 'claude --dangerously-skip-permissions' Enter
-tmux send-keys -t shogun:agents.1 'claude --dangerously-skip-permissions' Enter
+tmux send-keys -t shogun:agents.3 'codex' Enter   # example: hayate on Codex
 ```
 
 **Restart after crash:**
@@ -1349,7 +1356,8 @@ multi-agent-shogun/
 │
 ├── memory/                   # Memory MCP persistent storage
 ├── dashboard.md              # Real-time status board
-└── CLAUDE.md                 # System instructions (auto-loaded)
+├── CLAUDE.md                 # System instructions for Claude Code
+└── AGENTS.md                 # System instructions for Codex
 ```
 
 </details>
@@ -1443,7 +1451,7 @@ Agents should start with `--dangerously-skip-permissions`. This is handled autom
 
 ```bash
 tmux attach-session -t shogun
-# Ctrl+B then 0-8 to switch panes
+# Ctrl+A then 1 to open workers, then Ctrl+A + arrow keys / pane selection
 ```
 
 </details>
@@ -1456,16 +1464,17 @@ tmux attach-session -t shogun
 **Correct restart methods:**
 
 ```bash
-# Method 1: Run claude directly in the pane
-claude --model opus --dangerously-skip-permissions
+# Method 1: Run the pane's configured CLI directly
+claude --dangerously-skip-permissions   # Claude panes
+# codex                                # Codex panes, if that worker uses Codex
 
-# Method 2: Karo force-restarts via respawn-pane (also fixes nesting)
-tmux respawn-pane -t shogun:main -k 'claude --model opus --dangerously-skip-permissions'
+# Method 2: respawn the pane with the right launcher
+tmux respawn-pane -t shogun:main -k 'claude --dangerously-skip-permissions'
 ```
 
 **If you accidentally nested tmux:**
-1. Press `Ctrl+B` then `d` to detach (exits the inner session)
-2. Run `claude` directly (don't use `csm`)
+1. Press `Ctrl+A` then `d` to detach (exits the inner session)
+2. Run the pane's CLI directly (don't use `csm`)
 3. If detach doesn't work, use `tmux respawn-pane -k` from another pane to force-reset
 
 </details>
@@ -1479,8 +1488,9 @@ tmux respawn-pane -t shogun:main -k 'claude --model opus --dangerously-skip-perm
 | `tmux attach -t shogun` | Connect to the session |
 | `Ctrl+A` then `0` | Switch to Shogun window |
 | `Ctrl+A` then `1` | Switch to workers window |
-| `Ctrl+B` then `0`–`8` | Switch panes (within workers window) |
-| `Ctrl+B` then `d` | Detach (agents keep running) |
+| `Ctrl+A` then `0`–`1` | Switch windows |
+| `Ctrl+A` then arrow keys | Move across panes |
+| `Ctrl+A` then `d` | Detach (agents keep running) |
 | `tmux kill-session -t shogun` | Stop all agents |
 
 ### Mouse Support
@@ -1499,7 +1509,7 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 ## Current Highlights
 
-- **Full Opus 4.6 + Gunshi formation** — active since 2026-03-20, round-robin assignment from `config/settings.yaml`
+- **Mixed Claude + Codex formation** — live assignment comes from `config/settings.yaml`, not hard-coded README tables
 - **GATE-first operations** — `cmd_complete_gate.sh`, `gate_cmd_state.sh`, and `gate_lesson_health.sh` protect against false completion, stale delegation, and low-value lessons
 - **Knowledge operations** — the 7-layer knowledge map, `queue/karo_snapshot.txt`, `queue/pending_decisions.yaml`, and `context/cmd-chronicle.md` keep recovery and audits cheap
 - **Mobile surface** — ntfy push, the Android companion app, and Termux/mosh access let you run the army away from the desk
