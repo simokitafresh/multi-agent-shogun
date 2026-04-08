@@ -1,8 +1,17 @@
 # Google Classroom Dashboard — Context Index
+<!-- last_updated: 2026-04-09 -->
 
 > Playwright headlessでGoogle Classroomをスクレイピング→ダッシュボード生成。Render cronjob化予定。
 > PJ復帰: 2026-03-23殿裁定。CDP統合せず別PJ。
 > repo: `github.com/simokitafresh/google_classroom` | path: `/mnt/c/Python_app/google_classroom`
+
+## §0 現在状態
+
+- `config/projects.yaml` 上の project id は `google-classroom`
+- path: `/mnt/c/Python_app/google_classroom`、repo: `https://github.com/simokitafresh/google_classroom`
+- priority: `high`、status: `active`
+- `current_project` は `dm-signal`。Google Classroom は active だが現在フォーカスPJではない
+- `memory/project_google_classroom.md` は現時点で存在しない。PJ状態照合の一次情報は `config/projects.yaml` と本contextを優先する
 
 ## §1 スクレイピング/セレクタ
 
