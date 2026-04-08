@@ -246,7 +246,7 @@ fun ShogunScreen(
     val showScrollToBottomFab = if (softWrapEnabled) !wasAtBottomLazy else !wasAtBottomScroll
 
     ScreenBackground(imageResId = R.drawable.bg_shogun) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().imePadding()) {
         // 陣幕バー — 未接続時のみ赤警告バー表示
         AnimatedVisibility(visible = !isConnected) {
             Row(
