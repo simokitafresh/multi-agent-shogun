@@ -59,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shogun.android.R
 import com.shogun.android.viewmodel.AgentsViewModel
 import com.shogun.android.viewmodel.PaneInfo
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 // ── Rate limit data classes ──────────────────────────────────────────────────
@@ -520,6 +521,13 @@ fun PaneFullScreen(
             )
             isListening = true
         }
+    }
+
+    // 初回表示時：コンテンツ測定完了後に最下部へスクロール
+    LaunchedEffect(pane.index) {
+        snapshotFlow { verticalScrollState.maxValue }
+            .first { it > 0 }
+        verticalScrollState.scrollTo(verticalScrollState.maxValue)
     }
 
     LaunchedEffect(verticalScrollState.value, softWrapEnabled, pane.index) {
