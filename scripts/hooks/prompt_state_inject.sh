@@ -55,8 +55,9 @@ if [[ -f "$snapshot_file" ]]; then
   fi
 fi
 
-# --- 研究日誌全文注入モード検知 ---
 prompt_text="$(printf '%s' "$payload" | jq -r '.prompt // ""' 2>/dev/null || true)"
+
+# --- 研究日誌全文注入モード検知 ---
 research_diary_mode=false
 research_diary_file="$SCRIPT_DIR/memory/dialogue_preprocessing_research_20260331.md"
 if echo "$prompt_text" | grep -qiE '研究日誌|日誌を読め|日誌を読んで|diary'; then

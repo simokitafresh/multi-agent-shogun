@@ -89,6 +89,17 @@
         ]
       }
     ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/session_end_clear_check.sh",
+            "timeout": 60000
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
