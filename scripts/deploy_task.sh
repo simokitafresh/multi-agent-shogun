@@ -2857,7 +2857,7 @@ check_scout_gate() {
         local _se
         _se=$(awk -v cmd="$parent_cmd" '
             /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
-            /^[[:space:]]*id:[[:space:]]/ { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); if (s ~ /^cmd_/) cur_id=s }
+            /^[[:space:]]*-?[[:space:]]*id:[[:space:]]/ { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); if (s ~ /^cmd_/) cur_id=s }
             cur_id == cmd && /scout_exempt:[[:space:]]*true/ { print "true"; exit }
         ' "$stk_path" 2>/dev/null)
         if [ "$_se" = "true" ]; then

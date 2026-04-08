@@ -159,6 +159,32 @@ YAML
     [ "$result" = "true" ] || { echo "Expected 'true' but got '$result'"; false; }
 }
 
+@test "scout_gate AWK detects scout_exempt with list format parent cmd id" {
+    local stk_yaml
+    stk_yaml=$(cat <<'YAML'
+commands:
+  - id: cmd_1805
+    status: pending
+    title: "list format cmd"
+    acceptance_criteria:
+      - id: AC1
+        description: "first"
+      - id: AC2
+        description: "second"
+    scout_exempt: true
+YAML
+)
+
+    local result
+    result=$(echo "$stk_yaml" | awk -v cmd="cmd_1805" '
+        /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
+        /^[[:space:]]*-?[[:space:]]*id:[[:space:]]/ { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); if (s ~ /^cmd_/) cur_id=s }
+        cur_id == cmd && /scout_exempt:[[:space:]]*true/ { print "true"; exit }
+    ')
+
+    [ "$result" = "true" ] || { echo "Expected 'true' but got '$result'"; false; }
+}
+
 @test "scout_gate AWK returns empty when scout_exempt is false" {
     local stk_yaml
     stk_yaml=$(cat <<'YAML'
