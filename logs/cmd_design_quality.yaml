@@ -3556,3 +3556,53 @@ entries:
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-04-08T15:26:33Z"
+  - cmd_id: "cmd_root_fixes"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T15:51:59Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_freshness_bulk"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T15:52:27Z"
+  - cmd_id: "cmd_root_fixes"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T15:53:26Z"
+    notes: "report_format:hayate_report_cmd_root_fixes.yaml|hayate:binary_checks_fail"
+  - cmd_id: "cmd_root_fixes"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T15:54:39Z"
+  - cmd_id: "cmd_ga017_freshness"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T15:55:28Z"
+  - cmd_id: "cmd_ga018_freshness"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-08T15:56:03Z"

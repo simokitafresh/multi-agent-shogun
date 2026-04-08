@@ -1,17 +1,17 @@
 task:
-  _ac_task_id: cmd_ga017_gunshi_designs
+  _ac_task_id: cmd_1807_impl
   _ac_worker_id: null
-  ac_version: 7f897c38
+  ac_version: 54434f04
   acceptance_criteria:
-  - description: 'context/gunshi-4metrics-design.md を読みlast_updatedコメント(<!-- last_updated:
-      YYYY-MM-DD -->形式)を冒頭に追加。最終git commit日を使用。内容に古い情報があれば更新せよ'
+  - description: deploy_task.shの配備処理に消火キーワードtitle検知→WARNING表示を追加。title消火でWARNING出力、title非消火で無出力を確認
     id: AC1
-  - description: context/gunshi-alm-38metrics-design.md を読みlast_updatedコメントを冒頭に追加。最終git
-      commit日を使用。内容に古い情報があれば更新せよ
+  - description: 実際のcmd_karo_fix相当のtitleで配備シミュレーションし、WARNING発火を確認
     id: AC2
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
+    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
+    \  - L076: 新関数(inject_role_reminder/inject_report_template)はL047準拠(環境変数経由)だが、旧来のresolve_pan\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -30,15 +30,14 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_ga017_freshness
+  parent_cmd: cmd_1807
   project: infra
-  report_filename: kotaro_report_cmd_ga017_freshness.yaml
-  report_path: queue/reports/kotaro_report_cmd_ga017_freshness.yaml
+  report_filename: kotaro_report_cmd_1807.yaml
+  report_path: queue/reports/kotaro_report_cmd_1807.yaml
   scope_mode: IMPL
-  scout_exempt: true
   status: done
   stop_for: []
-  task_id: cmd_ga017_gunshi_designs
+  task_id: cmd_1807_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -76,6 +75,18 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
+  - id: 'L457'
+    summary: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
+    detail: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
+  - id: 'L456'
+    summary: 'context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit'
+    detail: 'context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit'
+  - id: 'L455'
+    summary: 'dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と'
+    detail: 'dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と'
+  - id: 'L454'
+    summary: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit'
+    detail: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit'
   - id: 'L453'
     summary: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
     detail: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
@@ -94,16 +105,4 @@ task:
   - id: 'L448'
     summary: 'draft教訓12件が未査読のままGATE到達'
     detail: 'draft教訓12件が未査読のままGATE到達'
-  - id: 'L447'
-    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature'
-    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature'
-  - id: 'L446'
-    summary: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用'
-    detail: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用'
-  - id: 'L445'
-    summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。'
-    detail: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。'
-  - id: 'L444'
-    summary: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
-    detail: '''gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:'
-  deployed_at: "2026-04-09T00:24:36"
+  deployed_at: "2026-04-09T01:29:56"

@@ -121,7 +121,7 @@ language:
   計測して止まるだけでは品質管理。還流して初めて成長。
   分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 3.5. **Load project knowledge** (role-based):
-   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認。将軍のみ: `context/gunshi-*.md`（軍師の最新分析状態）を確認。将軍のみ: `memory/dialogue_preprocessing_research_20260331.md`末尾（最新Phase=研究到達点）+ `context/gunshi-nazenaze-synthesis.md`（軍師なぜなぜ合成）を確認
+   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認。将軍のみ: `context/gunshi-*.md`（軍師の最新分析状態）を確認。将軍のみ: `memory/dialogue_preprocessing_research_20260331.md`末尾（最新Phase=研究到達点）+ `context/gunshi-nazenaze-synthesis.md`（軍師なぜなぜ合成）を確認。**研究日誌の読み方**: 通常起動時=末尾(最新Phase)のみ。殿が「読め」と言った時=全文を最初から順番に一切省略せず読む(追体験目的)
    - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
    - 軍師: `config/projects.yaml` → current_projectの `projects/{id}.yaml`（PI含む核心知識。レビュー判断の基盤）→ `projects/infra/lessons_gunshi.yaml`
    - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
