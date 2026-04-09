@@ -1371,7 +1371,7 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 2
   last_referenced: '2026-04-09'
 - id: L261
@@ -1570,7 +1570,7 @@ lessons:
   - testing
   - review
   - git
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-07'
 - id: L232
@@ -2687,8 +2687,8 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 32
-  harmful_count: 26
+  helpful_count: 31
+  harmful_count: 27
   last_referenced: '2026-04-09'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2766,8 +2766,8 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 32
-  harmful_count: 26
+  helpful_count: 31
+  harmful_count: 27
   last_referenced: '2026-04-09'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要

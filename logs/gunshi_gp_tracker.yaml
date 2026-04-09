@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:96(+GP-129,137b) / ★resolved:7(GP-114,115,117,122,124,125,126) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / cmd配備済:2 = 計116GP
+# 集計: ★implemented:96(+GP-129,137b) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / cmd配備済:2 = 計117GP
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -189,3 +189,10 @@
   implemented_by: cmd_karo_gp177_keyword_lib
   self_executable: false
   reason: "cmd_1807レビューで発見。cmd_save.sh L215とcmd_1807のキーワードリスト乖離(FAIL欠落+単語境界差)。2箇所管理=片方だけ更新リスク=負の複利。共通化で1箇所管理"
+- id: GP-178
+  description: "GP採番時にgp_tracker最大ID確認を必須化(ID衝突再発防止)"
+  status: resolved
+  proposed_at: "2026-04-09T08:10:00"
+  resolved_at: "2026-04-09T22:25:00"
+  self_executable: true
+  reason: "dashboard-updateスキルのSSoT二重管理(archive+gp_tracker)を一本化済み。根因解消により再発リスク消失。defense_level: 2文書追加は不要"
