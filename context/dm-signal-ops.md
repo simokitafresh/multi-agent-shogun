@@ -211,6 +211,79 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L515 | download_prod_data.pyのAPIフィールド名不整合(relative_momentum_tickers→relative_assets) | ツール | cmd_1572 |
 | L528 | Windows環境YAMLファイル読み書きにはencoding=utf-8が必須(cp932デコードエラー防止) | ツール | cmd_1604 |
 
+## §18 研究道具APIカタログ（cmd_1823追記）
+
+研究cmdを書く前に必ずここを確認し、ACに使用スクリプトのパスと主要引数を明記せよ。
+
+### GS（グリッドサーチ）
+
+**スクリプト**: `scripts/analysis/grid_search/run_077_{忍法}.py`
+7本: `bunshin` / `kasoku_diff` / `kasoku_ratio` / `kawarimi` / `nukimi` / `oikaze` / `yotsume`
+
+| 引数 | 説明 | デフォルト |
+|------|------|-----------|
+| `--universe <YAML>` | PF構成YAML | `config/portfolio_universes/alm_l0_12.yaml` |
+| `--out-dir <dir>` | 出力ディレクトリ上書き | `outputs/grid_search/` |
+| `--output-prefix <str>` | 出力ファイル接頭辞上書き | cmd ID自動付与 |
+
+- **入力**: 本番PostgreSQL DB直接読み込み（CSV利用禁止 L064/cmd_214裁定）
+- **出力**: `outputs/grid_search/{CMD_ID}_{忍法}_grid_results.csv` + `.meta.yaml`
+- **実行例**: `python scripts/analysis/grid_search/run_077_oikaze.py --universe config/portfolio_universes/shin_ninpo_20.yaml`
+- **所要時間**: 数分〜十数分/忍法（6忍者並列投入で約1/6）
+
+### WF（ウォークフォワード）
+
+**スクリプト**: `outputs/scripts/l1_alm_wf_engine.py`
+
+| 引数 | 説明 |
+|------|------|
+| `--csv <path>` | GS月次CSVパス（単体実行） |
+| `--cmd-id <id>` | cmd ID（出力ファイル名用） |
+| `--progress` | 進捗表示 |
+| `--multi-is` | IS窓6M-72Mを全探索（殿定義67窓） |
+| `--multi-is-min/max <int>` | multi-IS範囲（デフォルト: 6/72） |
+| `--batch-csvs <paths...>` | 複数CSV一括実行 |
+| `--batch-workers <N>` | バッチ並列worker数 |
+| `--batch-inner-workers <N>` | 各子プロセスのfold worker数 |
+
+- **入力**: GS出力CSV（`outputs/analysis/alm_research/` 配下）
+- **出力**: `{CMD_ID}_alm_returns.csv`（ALM系列6目的）+ サマリYAML
+- **実行例**: `python outputs/scripts/l1_alm_wf_engine.py --batch-csvs cmd_1822_*.csv --multi-is --cmd-id cmd_1822`
+- **所要時間**: ~21s/CSV（30 fold）、バッチ並列対応
+
+### research_engine（ライブラリ）
+
+**スクリプト**: `scripts/analysis/standard_pf_preprocessing/research_engine.py`
+**CLIなし** — import専用ライブラリ。
+
+```python
+from research_engine import (
+    simulate_signals,          # PFシグナル計算（前処理fn注入可能）
+    calculate_monthly_returns, # 月次リターン計算
+    calculate_metrics,         # メトリクス計算
+    calculate_signal_match_rate,      # 本番一致率
+    calculate_production_match_rate,  # 本番一致率（詳細版）
+    load_all_standard_pf_configs,     # 全PF設定ロード
+    load_prices, load_dtb3, load_production_signals,
+)
+```
+
+- **用途**: Standard PF前処理研究の共通エンジン。13本スクリプトの重複14関数を統合
+- **所要時間**: 関数単位（ロード込みで初回数十秒、以降はキャッシュ利用）
+
+### metrics（metrics_research_engine、ライブラリ）
+
+**スクリプト**: `scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py`
+**CLIなし** — import専用ライブラリ。
+
+```python
+import metrics_research_engine as MRE
+# MRE.NUMERIC_METRICS  — 38メトリクス名リスト（本番MetricsCalculatorと同一定義）
+```
+
+- **用途**: 本番MetricsCalculatorへのブリッジ。research_engineから内部呼び出し
+- **依存**: `backend/app/services/metrics_calculator.py`（本番同一エンジン）
+
 ## §17 現在の全体ステータス（2026-03-11）
 
 | 項目 | 状態 |

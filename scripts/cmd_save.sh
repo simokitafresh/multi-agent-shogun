@@ -1059,6 +1059,88 @@ if [ "$_AC_COUNT" -gt 0 ] && [ "$_VERIFY_AC_COUNT" -eq 0 ]; then
     echo "  各ACに「やった後どう確認するか」を含めよ。確認なき行動は想像と同じ" >&2
 fi
 
+# --- Check 18: 研究cmd道具明示チェック（dm-signal研究cmd対象 — WARNING） ---
+# 起源: cmd_1822事故 — 将軍がACに研究エンジンのCLI引数を書かず忍者がhang
+# 目的: dm-signal研究cmdでAC内にスクリプトパスが未記載の場合WARNING表示（WARN_COUNTに加算しない）
+# カタログ: context/dm-signal-ops.md §18 参照
+check_research_tool_explicit() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    # project=dm-signalのみ対象
+    local PROJECT_ID
+    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
+
+    # title + command本文から研究ツールキーワード検出
+    local FULL_CMD TITLE_LINE SEARCH_TEXT
+    FULL_CMD=$(echo "$CMD_BLOCK_NC" | awk '
+        /^\s*command:\s*\|/ { found=1; next }
+        /^\s*command:\s*[^|]/ { found=1; sub(/^\s*command:\s*/, ""); print; next }
+        found && /^\s{4,}/ { print; next }
+        found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+    ')
+    TITLE_LINE=$(echo "$CMD_BLOCK_NC" | grep '^\s*title:' | head -1)
+    SEARCH_TEXT="${TITLE_LINE}
+${FULL_CMD}"
+
+    local HIT_GS=false HIT_WF=false
+
+    # GS検出: run_077 / grid_search / GS(大文字) / グリッドサーチ
+    if echo "$SEARCH_TEXT" | grep -qE 'run_077|grid[_-]search|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
+        HIT_GS=true
+    fi
+
+    # WF検出: l1_alm_wf_engine / walk.forward / WF(大文字) / ウォークフォワード
+    if echo "$SEARCH_TEXT" | grep -qE 'l1_alm_wf_engine|wf_engine|walk[_-]forward|ウォークフォワード|[[:space:]]WF[[:space:]　]|窓WF|WF[[:space:]を]|WFで'; then
+        HIT_WF=true
+    fi
+
+    # どちらも検出されなければ対象外
+    [[ "$HIT_GS" == false && "$HIT_WF" == false ]] && return 0
+
+    # ACセクションを抽出
+    local AC_SECTION
+    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /acceptance_criteria:/ { found=1; next }
+        found && /^    - / { print; next }
+        found && /^      / { print; next }
+        found { exit }
+    ')
+    [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
+
+    local HIT=false
+
+    # GS検出 → ACにrun_077が含まれるか確認
+    if [[ "$HIT_GS" == true ]]; then
+        if ! echo "$AC_SECTION" | grep -qE 'run_077|grid_search/run'; then
+            if [[ "$HIT" == false ]]; then
+                echo "WARNING: 研究cmd道具明示チェック(Check 18)。ACに研究スクリプトパスが未記載(cmd_1822教訓)" >&2
+                HIT=true
+            fi
+            echo "  GS道具: scripts/analysis/grid_search/run_077_{忍法}.py をACに明記せよ" >&2
+            echo '  例: "run_077_oikaze.py --universe config/portfolio_universes/XXX.yaml を実行"' >&2
+        fi
+    fi
+
+    # WF検出 → ACにl1_alm_wf_engineが含まれるか確認
+    if [[ "$HIT_WF" == true ]]; then
+        if ! echo "$AC_SECTION" | grep -qE 'l1_alm_wf_engine|wf_engine'; then
+            if [[ "$HIT" == false ]]; then
+                echo "WARNING: 研究cmd道具明示チェック(Check 18)。ACに研究スクリプトパスが未記載(cmd_1822教訓)" >&2
+                HIT=true
+            fi
+            echo "  WF道具: outputs/scripts/l1_alm_wf_engine.py をACに明記せよ" >&2
+            echo '  例: "l1_alm_wf_engine.py --batch-csvs <paths> --multi-is --cmd-id XXX を実行"' >&2
+        fi
+    fi
+
+    if [[ "$HIT" == true ]]; then
+        echo "  道具カタログ: context/dm-signal-ops.md §18 参照" >&2
+    fi
+}
+
+check_research_tool_explicit
+
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
     local QUALITY_LOG="$PROJECT_DIR/logs/cmd_design_quality.yaml"
