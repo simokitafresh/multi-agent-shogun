@@ -969,7 +969,7 @@ lessons:
   - yaml
   - inbox
   helpful_count: 1
-  harmful_count: 2
+  harmful_count: 4
   last_referenced: '2026-04-09'
 - id: L318
   title: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
@@ -1371,7 +1371,7 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 7
+  helpful_count: 6
   harmful_count: 2
   last_referenced: '2026-04-09'
 - id: L261
@@ -1559,6 +1559,9 @@ lessons:
   tags:
   - frontend
   - testing
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-09'
 - id: L233
   title: review task の `git diff --check` AC は対象commitスコープか clean-tree 前提を明示すべし
   summary: review/push task で `git diff --check` を repo 全体に対して要求すると、対象 commit が clean
@@ -1656,7 +1659,7 @@ lessons:
   tags:
   - process
   - git
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 1
   last_referenced: '2026-04-09'
 - id: L219
@@ -1860,8 +1863,8 @@ lessons:
   - testing
   - yaml
   helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-08'
+  harmful_count: 3
+  last_referenced: '2026-04-09'
 - id: L190
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ。cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit
     statusで未コミット差分を確認すべき
@@ -2684,8 +2687,8 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 33
-  harmful_count: 23
+  helpful_count: 32
+  harmful_count: 25
   last_referenced: '2026-04-09'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2763,8 +2766,8 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 33
-  harmful_count: 23
+  helpful_count: 32
+  harmful_count: 25
   last_referenced: '2026-04-09'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要
@@ -2985,7 +2988,7 @@ lessons:
   tags:
   - git
   - review
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-08'
 - id: L026

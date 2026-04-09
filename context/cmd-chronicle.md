@@ -755,3 +755,4 @@
 | cmd_1814 | fix — 将軍画面のSpecialKeysRowも常時表示にする | infra | 04-09 | ShogunScreen.ktのSpecialKeysRow |
 | cmd_1815 | recon — Androidアプリ入力欄キーボード問題の根本原因特定（おしお殿コード全比較+Android公式調査） | infra | 04-09 | Android EdgeToEdge+keyboard ha |
 | cmd_1816 | fix — Android keyboard問題根本修正 — NavigationBar.imePadding削除+Column.imePadding追加 | infra | 04-09 | NavigationBarのimePadding()をSho |
+| cmd_1817 | ゴールデンデータ全量アップデート — 全136PFのmonthly_returns+holding_signal取得(タイムスタンプ付き) | dm-signal | 04-09 | AC2完了: 全active PF 136体(standar |

@@ -1,29 +1,36 @@
 task:
-  _ac_task_id: cmd_1815_impl
+  _ac_task_id: cmd_1818_impl
   _ac_worker_id: null
-  ac_version: 1495aed2
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: d794c650
   acceptance_criteria:
-  - binary_check: 公式ドキュメントに基づく正しい実装方法が報告に含まれるか
-    description: Android公式ドキュメントのenableEdgeToEdge+keyboard handling ベストプラクティスを調査し、我々のコードの何が間違っているかを特定。出典URL付き
+  - description: 研究スクリプト(l1_alm_wf_engine.py or 関連)のALM L0計算パス(目的関数=cagr, ファミリー=DM2)を特定し、本番recalculate_fast.pyに同一ロジックが存在するか確認。存在しなければ実装する
     id: AC1
-  - binary_check: 差分一覧+根本原因+修正案が偵察品質5要件を全て含むか
-    description: おしお殿コードとの全差分一覧+keyboard関連の重点分析。根本原因仮説と修正案を提示
+  - description: ALM青龍-激攻のpipeline_configに研究と同一のALMパラメータ(objective, candidate_lookbacks,
+      is_window等)を設定。Admin UIは不要、DB直接更新で可
     id: AC2
-  deployed_at: '2026-04-09T01:29:56'
+  - description: fullrecalculate(ALM青龍-激攻のみ or portfolio_id指定)実行後、monthly_returnsの各月値が研究データ(cmd_1747_alm_l0_returns_6obj.csvのcagr__DM2列)と一致(差<1e-6)。不一致月があれば原因特定
+    id: AC3
+  - description: ゴールデンデータ(all_pf_monthly_returns_golden.json)のALM青龍-激攻以外の全PFについて、monthly_returnsが変更前と完全一致(他PF不変の確認)
+    id: AC4
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
-    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
-    \  - L076: 新関数(inject_role_reminder/inject_report_template)はL047準拠(環境変数経由)だが、旧来のresolve_pan\n\
+    \  - L234: IF Android の local unit test (`testDebugUnitTest`) で `org.json.JSONObject.put(..\n\
+    \  - L492: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。\n\
+    \  - L482: selection_pipeline.blocksがあるFoFも本番holding_signalから選択componentsを特定しEqualWeight独立計\n\
     ────────────────────────────────────────"
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -33,14 +40,16 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1815
-  project: infra
-  report_filename: kotaro_report_cmd_1815.yaml
-  report_path: queue/reports/kotaro_report_cmd_1815.yaml
+  - AC3
+  - AC4
+  parent_cmd: cmd_1818
+  project: dm-signal
+  report_filename: kotaro_report_cmd_1818.yaml
+  report_path: queue/reports/kotaro_report_cmd_1818.yaml
   scope_mode: IMPL
-  status: done
+  status: idle
   stop_for: []
-  task_id: cmd_1815_impl
+  task_id: cmd_1818_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -78,33 +87,34 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
-  - id: 'L460'
-    summary: 'ShogunScreen.ktをgit addしようとしたところ.gitignoreに未登録でブロックされた。L459/L457と同じwhitelist型パターン。android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要。'
-    detail: 'ShogunScreen.ktをgit addしようとしたところ.gitignoreに未登録でブロックされた。L459/L457と同じwhitelist型パターン。android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要。'
-  - id: 'L459'
-    summary: '.gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。'
-    detail: '.gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。'
-  - id: 'L458'
-    summary: 'deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須。CI環境ではscaffoldがtmpにプロジェクトを再構成するため、source対象ファイルがsymlink未登録だとsetup_file失敗→テストスキップ→CI赤。cmd_save系テストでも抽出関数がFIREFIGHT'
-    detail: 'deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須。CI環境ではscaffoldがtmpにプロジェクトを再構成するため、source対象ファイルがsymlink未登録だとsetup_file失敗→テストスキップ→CI赤。cmd_save系テストでも抽出関数がFIREFIGHT'
-  - id: 'L457'
-    summary: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
-    detail: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
-  - id: 'L456'
-    summary: '''**retired_reason**: .gitignore glob化(66a87ab)でcontext/*.mdが追跡対象に。git log使用可能'
-    detail: '''**retired_reason**: .gitignore glob化(66a87ab)でcontext/*.mdが追跡対象に。git log使用可能'
-  - id: 'L455'
-    summary: 'dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と'
-    detail: 'dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と'
-  - id: 'L454'
-    summary: '''**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス'
-    detail: '''**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス'
-  - id: 'L453'
-    summary: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
-    detail: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit'
-  - id: 'L452'
-    summary: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全関数を同時に修正する必要がある。'
-    detail: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全関数を同時に修正する必要がある。'
-  - id: 'L451'
-    summary: '''deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、cmd未発見(return'
-    detail: '''deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、cmd未発見(return'
+  - id: 'L586'
+    summary: '''AC3で既存golden(2026-04-03)と新golden(2026-04-09)を比較した際、2026-04のmonthly_returnが全65体で差異。原因は本番DBの自然更新(6日間)でスクリプトバグではない。完全一致チェックは取得日差がある当月データで必ず失敗する。対策:'
+    detail: '''AC3で既存golden(2026-04-03)と新golden(2026-04-09)を比較した際、2026-04のmonthly_returnが全65体で差異。原因は本番DBの自然更新(6日間)でスクリプトバグではない。完全一致チェックは取得日差がある当月データで必ず失敗する。対策:'
+  - id: 'L585'
+    summary: '''cmd_1796のAC2には全7忍法CSVがoutputs/analysis/配下に揃うことと記載されているが、実際の出力先はoutputs/grid_search/shin_ninpo_v2_12body/。AC作成時に出力先パスの確認が必要。lesson:'
+    detail: '''cmd_1796のAC2には全7忍法CSVがoutputs/analysis/配下に揃うことと記載されているが、実際の出力先はoutputs/grid_search/shin_ninpo_v2_12body/。AC作成時に出力先パスの確認が必要。lesson:'
+  - id: 'L584'
+    summary: 'draft教訓1件が未査読のままGATE到達'
+    detail: 'draft教訓1件が未査読のままGATE到達'
+  - id: 'L583'
+    summary: '119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBになり、WSL2'
+    detail: '119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBになり、WSL2'
+  - id: 'L582'
+    summary: 'draft教訓1件が未査読のままGATE到達'
+    detail: 'draft教訓1件が未査読のままGATE到達'
+  - id: 'L581'
+    summary: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
+    detail: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
+  - id: 'L580'
+    summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
+    detail: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
+  - id: 'L579'
+    summary: 'draft教訓31件が未査読のままGATE到達'
+    detail: 'draft教訓31件が未査読のままGATE到達'
+  - id: 'L578'
+    summary: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
+    detail: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexact'
+  - id: 'L577'
+    summary: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
+    detail: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
+  deployed_at: "2026-04-09T13:38:24"

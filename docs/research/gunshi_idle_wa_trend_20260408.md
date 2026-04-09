@@ -55,3 +55,31 @@ GP-175/176の効果がverdict_override根絶として今後反映される見込
 ### WA率推移(累積)
 100% → 64% → 33% → 0%(N=5) → 31%(N=16) → **16.7%(N=12)**
 改善傾向継続。全既知パターンの防御が機能。
+
+## 2026-04-09T13:37 更新(cmd_1817追加)
+
+### cmd_1817 workaround 2件
+| ninja | category | root_cause |
+|-------|----------|------------|
+| hanzo | stale_ac_contamination | GATE初回BLOCK→karo修正→CLEAR |
+| kagemaru | verdict_override | AC3 FAIL→karo WAIVE(当月DB更新は期待動作) |
+
+### 分析
+- stale_ac_contamination: 古いAC情報がreport形式に残存→format BLOCK。既知パターン(LK021修正対象)
+- verdict_override: AC3「完全一致」要件がDB更新タイミングを考慮していない設計不備。lesson_candidate登録推奨済み
+- 両件ともkaro側で即座に解決(BLOCK→CLEAR)。忍者の実装品質は正常
+
+### 修正効果確認(更新)
+| パターン | GP/修正 | 直近再発 |
+|---------|---------|---------|
+| ci_gate_mismatch | LG015 | 0件 ✓ |
+| verdict_override(AC推奨混入) | GP-175/176 | 0件 ✓ |
+| verdict_override(DB更新考慮不足) | lesson_candidate | cmd_1817で1件(新パターン) |
+| split_deploy_ac_scope | Bug1修正(e554da5) | 0件 ✓ |
+| report_yaml_format | autofix群 | 0件 ✓ |
+| gitignore_untracked | gitignore検出GP | 実装後0件 ✓ |
+| stale_ac_contamination | LK021 | cmd_1817で1件(再発) |
+
+### WA率推移(累積)
+100% → 64% → 33% → 0%(N=5) → 31%(N=16) → 16.7%(N=12) → **28.6%(N=14, cmd_1817含む)**
+cmd_1817で+2件。ただし忍者実装品質は正常。AC設計+gate format起因。
