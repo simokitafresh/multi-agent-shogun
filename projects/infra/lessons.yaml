@@ -2766,7 +2766,7 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 31
+  helpful_count: 32
   harmful_count: 27
   last_referenced: '2026-04-09'
 - id: L062
