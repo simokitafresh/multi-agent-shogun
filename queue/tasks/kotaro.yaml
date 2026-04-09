@@ -1,27 +1,25 @@
 task:
-  _ac_task_id: cmd_1818_impl
+  _ac_task_id: cmd_1819_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: d794c650
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: fe778585
   acceptance_criteria:
-  - description: 研究スクリプト(l1_alm_wf_engine.py or 関連)のALM L0計算パス(目的関数=cagr, ファミリー=DM2)を特定し、本番recalculate_fast.pyに同一ロジックが存在するか確認。存在しなければ実装する
+  - description: l1_alm_wf_engine.py L67のMETRIC_NAMESを['cagr','nhf','maximum_drawdown','max_run_up','calmar_ratio','underwater_period']に変更。MINIMIZE_SETに'maximum_drawdown','underwater_period'を追加(小さいほど良い目的関数)
     id: AC1
-  - description: ALM青龍-激攻のpipeline_configに研究と同一のALMパラメータ(objective, candidate_lookbacks,
-      is_window等)を設定。Admin UIは不要、DB直接更新で可
+  - description: l1_alm_wf_engine.py --batch-csvs --multi-is --cmd-id cmd_1819で7忍法全量実行。全rc=0、selection_timeline各忍法のエントリ数=fold数×6(新6目的)、alm_returns
+      shape=(132,6)の列名が新6目的と一致
     id: AC2
-  - description: fullrecalculate(ALM青龍-激攻のみ or portfolio_id指定)実行後、monthly_returnsの各月値が研究データ(cmd_1747_alm_l0_returns_6obj.csvのcagr__DM2列)と一致(差<1e-6)。不一致月があれば原因特定
+  - description: cmd_1799と同一のGS CSVを入力とし、cagr/nhf/max_run_upの3目的はcmd_1799の結果と完全一致(METRIC_NAMES変更の副作用がないことの確認)
     id: AC3
-  - description: ゴールデンデータ(all_pf_monthly_returns_golden.json)のALM青龍-激攻以外の全PFについて、monthly_returnsが変更前と完全一致(他PF不変の確認)
-    id: AC4
   context_files:
   - context/dm-signal.md
-  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L234: IF Android の local unit test (`testDebugUnitTest`) で `org.json.JSONObject.put(..\n\
-    \  - L492: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。\n\
-    \  - L482: selection_pipeline.blocksがあるFoFも本番holding_signalから選択componentsを特定しEqualWeight独立計\n\
+    \  - L493: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓moment\n\
+    \  - L491: 本番MomentumFilterBlock.execute()はcomposite_mom.add(fill_value=0.0)でNaN\
+    \ momentumを0\n  - L490: batch pathのprecomputed_picksでtolerance=1e-12を使用すると、モメンタム値が2ULP差のコンポーネントでserial(e\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
@@ -41,15 +39,14 @@ task:
   - AC1
   - AC2
   - AC3
-  - AC4
-  parent_cmd: cmd_1818
+  parent_cmd: cmd_1819
   project: dm-signal
-  report_filename: kotaro_report_cmd_1818.yaml
-  report_path: queue/reports/kotaro_report_cmd_1818.yaml
+  report_filename: kotaro_report_cmd_1819.yaml
+  report_path: queue/reports/kotaro_report_cmd_1819.yaml
   scope_mode: IMPL
   status: idle
   stop_for: []
-  task_id: cmd_1818_impl
+  task_id: cmd_1819_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -117,4 +114,4 @@ task:
   - id: 'L577'
     summary: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
     detail: '''MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でexact'
-  deployed_at: "2026-04-09T13:38:24"
+  deployed_at: "2026-04-09T14:13:49"
