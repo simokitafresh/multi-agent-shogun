@@ -2688,7 +2688,7 @@ lessons:
   tags:
   - universal
   helpful_count: 32
-  harmful_count: 25
+  harmful_count: 26
   last_referenced: '2026-04-09'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2767,7 +2767,7 @@ lessons:
   tags:
   - universal
   helpful_count: 32
-  harmful_count: 25
+  harmful_count: 26
   last_referenced: '2026-04-09'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要
