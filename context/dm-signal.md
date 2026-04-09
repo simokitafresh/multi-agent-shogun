@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L587 -->
+<!-- last_synced_lesson: L588 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -181,3 +181,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L585: AC2のoutput_pathがoutputs/grid_search/であるにもかかわらずoutputs/analysis/と記載（cmd_1796）
 - L586: ゴールデンデータ比較ACは当月DB更新を考慮して設計せよ（cmd_1817）
 - L587: METRIC_NAMES変更時はselect_champions_multi_isのmetrics_np dictも同期更新が必要（cmd_1819）
+- L588: l1_alm_wf_engine.pyは直列化でもOOM不可避：468MB CSV→anon-rss=13GB(28倍膨張)（cmd_1825）

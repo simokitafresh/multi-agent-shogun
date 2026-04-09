@@ -2688,8 +2688,8 @@ lessons:
   tags:
   - universal
   helpful_count: 31
-  harmful_count: 27
-  last_referenced: '2026-04-09'
+  harmful_count: 28
+  last_referenced: '2026-04-10'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
   summary: cmd_371 C1のタスク指示は'lib/配下→..でリポルート'だったが、実際はscripts/lib/配下のため../..が必要。指示コードをそのまま使う
@@ -2767,8 +2767,8 @@ lessons:
   tags:
   - universal
   helpful_count: 32
-  harmful_count: 27
-  last_referenced: '2026-04-09'
+  harmful_count: 28
+  last_referenced: '2026-04-10'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要
   summary: IF YAMLフィールド(acceptance_criteria等)の要素をjoinする時 THEN 要素がdict型の場合があるため、str()変換のフォール

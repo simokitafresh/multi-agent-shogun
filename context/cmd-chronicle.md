@@ -758,3 +758,4 @@
 | cmd_1817 | ゴールデンデータ全量アップデート — 全136PFのmonthly_returns+holding_signal取得(タイムスタンプ付き) | dm-signal | 04-09 | AC2完了: 全active PF 136体(standar |
 | cmd_1819 | ALM忍法 殿定義6目的 67窓L1 WF全量実行 — METRIC_NAMES変更+7忍法再実行 | dm-signal | 04-09 | METRIC_NAMESをcagr/nhf/maximum_ |
 | cmd_1821 | 奥義-シン忍法 — シン忍法20体を材料にL2忍法GS+67窓WF実行 | dm-signal | 04-09 | AC1-AC4の技術作業は完了。シン忍法20体の本番DB月次 |
+| cmd_1823 | 研究道具カタログ永続化 + cmd_save.sh道具明示チェック追加 | infra | 04-09 | AC1: dm-signal-ops.md §18に研究道具 |
