@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L585 -->
+<!-- last_synced_lesson: L586 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -179,3 +179,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L583: WSL2 /mnt/c 巨大CSV flush は p9_client_rpc stall を起こしうる — Linux側出力か分割書込前提で設計すべし（cmd_1796）
 - L584: [自動生成] draft教訓の査読を怠った: cmd_1796（cmd_1796）
 - L585: AC2のoutput_pathがoutputs/grid_search/であるにもかかわらずoutputs/analysis/と記載（cmd_1796）
+- L586: ゴールデンデータ比較ACは当月DB更新を考慮して設計せよ（cmd_1817）
