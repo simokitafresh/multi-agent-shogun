@@ -3539,3 +3539,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars insetsのみ使用。出典: developer.android.com/develop/ui/compose/layouts/insets。4回失敗(cmd_713/718/721/1810)の根本原因。
+
+### L464: 想像した数字を報告するな — 実測値のみ報告せよ
+- **日付**: 2026-04-10
+- **出典**: cmd_1829
+- **記録者**: karo
+- **tags**: [universal]
+- capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象
