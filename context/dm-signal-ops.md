@@ -121,6 +121,11 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | ID | 結論(1行) | 分類 | 出典 |
 |---|---|---|---|
 | L558 | 参考ファイル不在時はcmd目的を研究スクリプトから逆引きで設計完成可能 | 運用 | cmd_1750 |
+| L579 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1786 |
+| L582 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1795 |
+| L584 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1796 |
+| L585 | AC2 output_pathがoutputs/grid_searchなのにoutputs/analysisと記載 | 運用 | cmd_1796 |
+| L589 | tracemallocデフォルトdepth=1ではnumpy内部行のみ。depth=30+ファイルフィルタで真の呼出行特定 | ツール | cmd_1826 |
 | L571 | baseline_v2タスクの'2012-07'記述はCSV実態(2012-04)と不一致—タスク記述の参照を確認せよ [deprecated] | 運用 | cmd_baseline_v2 |
 | L553 | 原理1行が各論パッチ30行に勝る。既存の仕組みを1行磨け | 判断原則 | cmd_1741 |
 | L552 | 因果推論に複利の問いを含めよ。全レビューで10回繰り返し効果を自問 | 判断原則 | cmd_1741 |
@@ -248,8 +253,13 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 
 - **入力**: GS出力CSV（`outputs/analysis/alm_research/` 配下）
 - **出力**: `{CMD_ID}_alm_returns.csv`（ALM系列6目的）+ サマリYAML
-- **実行例**: `python outputs/scripts/l1_alm_wf_engine.py --batch-csvs cmd_1822_*.csv --multi-is --cmd-id cmd_1822`
-- **所要時間**: ~21s/CSV（30 fold）、バッチ並列対応
+- **実行例**: `python3 outputs/scripts/l1_alm_wf_engine.py --csv <path> --multi-is --cmd-id cmd_XXXX --progress`
+- **所要時間**: ~3-10分/CSV（`--parallel`時）。7忍法全量`--batch-csvs`は各CSV直列+内部並列
+- **🔴 `--no-parallel`禁止**: fold毎buildで各worker独立→`--parallel`で安全。`--no-parallel`だと30-60分/CSV（cmd_1827実績: 半蔵がoikazeを`--no-parallel`で30-60分浪費）
+- **🔴 `--batch-csvs`禁止（大CSV時）**: kasoku系(1.8GB)を含む場合、同時ロードでOOM。`--csv`で1本ずつ実行。小→大の順(bunshin→yotsume→oikaze→kawarimi→nukimi→kasoku_diff→kasoku_ratio)
+- **🔴 kasoku系実行前**: `free -h`でavailable > 6GB確認。初回はmmapキャッシュ未生成→pandas read_csvピーク~3.6GB
+- **peak RSS計測**: `/usr/bin/time -v python3 l1_alm_wf_engine.py ...` で包む（`--no-parallel`にする必要なし）
+- **メモリ設計**: → `docs/research/gunshi_wf_engine_memory_fix_design_20260410.md`
 
 ### research_engine（ライブラリ）
 

@@ -123,6 +123,8 @@
 - L401: 正確性修正(tiebreak+normalize)は全性能最適化に先行すべき。パリティ基準が不正確だと最適化後の検証自体が無効（cmd_1037）
 - L411: GS並列実行時のメモリ競合によるBus error。複数忍者が同時にGS実行するとメモリ不足で即死（cmd_1075）
 - L570: 大規模月次CSVはnpzよりnpy sidecar memmapの方が再読込が桁違いに速い（cmd_wf_speedup）[deprecated]
+- L583: WSL2 /mnt/c巨大CSVフラッシュはp9_client_rpc stallを誘発。Linux側出力か分割書込で対処（cmd_1796）
+- L588: l1_alm_wf_engine.py PrefixMomentCache.build()が468MB CSV→2010MB peak(24.7倍)。float64×7+int32×2一括生成が主因。mmap+fold毎f64スライスで75%削減可能（cmd_1826）
 
 ---
 

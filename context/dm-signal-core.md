@@ -278,6 +278,7 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 - L531: build_signal_cache_valueのholding_signal or signalフォールバック注意（cmd_1622）
 - L555: load_all_monthly_returnsはholding_signalも取得必須。KeyError防止（cmd_1743）
 - L573: FoF月次キャッシュをdictに変えるときもlookupはbisect helper統一（cmd_1787）[PI]
+- L574-L578: FoF選択block(MVMF/SVMF/MomentumFilter)のmonthly pathでexact dict lookupするとbiz day/月末日ミスマッチでCash全損。Series+bisect必須（cmd_1786）[PI:L573同根]
 
 ## 4.5 GS用語定義（混同厳禁）
 

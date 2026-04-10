@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L588 -->
+<!-- last_synced_lesson: L589 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -167,18 +167,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L546-L561は振り分け済 → research§35(L546/L549/L554/L559/L560/L561), research§34(L556/L557), research§28-30統合(L548/L550), ops索引(L552/L553/L558), core§19.2(L555)。L547はCLAUDE.md既記載→重複。L551はL549重複→削除）
 - （L562-L563は振り分け済 → research§35(L562:ALM Ward K制約), research§31(L563:DNA制約IS効果)）
 - （L564-L573は振り分け済 → research§35(L564:MINIMIZE_METRICSランタイムpatch/L566:ALM吸収メトリクス差異), research§32(L565:旧加速ratio/diff未分化), research§33(L567:多様性分析/L568:10目的相関冗長), research§34(L569:LTJ_inv早期fold NaN), gs-speedup§4(L570:npy sidecar), ops索引(L571:baseline_v2記述不一致), research GS結果(L572:runner正規パス), core§19.2(L573:bisect helper統一)）
-- L574: FoF月次データのexact dict lookup禁止 — bisect-based検索必須（cmd_1786）
-- L575: FoF絶対モメンタムブロックのdict直接.get()は月末日ミスマッチでCashを生む（cmd_1786）
-- L576: FoFのMVMF/SVMF/MomentumFilterで月次データlookupにexact-matchを使用するとCash全損になる（cmd_1786）
-- L577: 月次データcache最適化でexact date lookupを使う場合、ビジネスデー vs 月末日ミスマッチによる全NULL問題（cmd_1786）
-- L578: FoF選択ブロックmonthly pathは月末日付dictでなくpd.Seriesで保存+bisect検索が必須（cmd_1786）
-- L579: [自動生成] draft教訓の査読を怠った: cmd_1786（cmd_1786）
-- L580: 38メトリクスは6目的関数を維持しつつ後計算で添付が最速（cmd_1791）
-- L581: gs_data_loader unit_naming の format変数はdisplay/pattern/kのみ — {family}は不可（cmd_1795）
-- L582: [自動生成] draft教訓の査読を怠った: cmd_1795（cmd_1795）
-- L583: WSL2 /mnt/c 巨大CSV flush は p9_client_rpc stall を起こしうる — Linux側出力か分割書込前提で設計すべし（cmd_1796）
-- L584: [自動生成] draft教訓の査読を怠った: cmd_1796（cmd_1796）
-- L585: AC2のoutput_pathがoutputs/grid_search/であるにもかかわらずoutputs/analysis/と記載（cmd_1796）
-- L586: ゴールデンデータ比較ACは当月DB更新を考慮して設計せよ（cmd_1817）
-- L587: METRIC_NAMES変更時はselect_champions_multi_isのmetrics_np dictも同期更新が必要（cmd_1819）
-- L588: l1_alm_wf_engine.pyは直列化でもOOM不可避：468MB CSV→anon-rss=13GB(28倍膨張)（cmd_1825）
+- （L574-L589は振り分け済 → core§19.2(L574-L578:FoF月次bisect統一[PI:L573同根]), ops索引(L579/L582/L584:自動生成/L585:output_path記述/L589:tracemallocツール), research§35(L580:38メトリクス後計算/L587:METRIC_NAMES同期), research§GS結果(L581:unit_naming制約), research§パリティ(L586:golden当月DB更新), gs-speedup§4(L583:WSL2 p9 stall/L588:WFエンジンOOM 24.7倍膨張)）

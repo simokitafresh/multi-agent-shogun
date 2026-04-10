@@ -128,6 +128,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L286 | ルールベース戦略のOOS検証はpipeline blockではなくGS runner上位の評価層に配置 | cmd_860 |
 | L299 | GS shared metricsとrunner CSV metricsが別系統だとdrift | cmd_861 |
 | L572 | GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search [deprecated] | cmd_alm_ninpo_recon |
+| L581 | gs_data_loader unit_naming format変数はdisplay/pattern/kのみ。{family}は不可 | cmd_1795 |
 | L102 | MultiView skip_months=[0,1,2,3]はクラス変数固定、config変更不可 | cmd_253 |
 | L100 | MultiView base_period_months≥4必須(skip=3で0ヶ月問題) | cmd_253 |
 | L101 | MultiView Phase3 momentum_cache事前計算はFoF専用でskip | cmd_253 |
@@ -213,6 +214,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L486 | MAF(ratio)パリティはPhase B-Dと完全同一挙動。selection block種別に非依存 | cmd_1345 |
 | L487 | PI強制化時は波及先関数の未更新チェック必須（GS側simulate等） | cmd_1349 |
 | L488 | 非市場ティッカー(^VIX/DTB3)は全コードパスで統一除外必須（PI-010同根） | cmd_1353 |
+| L586 | ゴールデンデータ比較ACは当月DB更新を考慮して設計せよ（進行中月差異は正常） | cmd_1817 |
 
 ### SPA/過剰最適化
 
@@ -807,6 +809,8 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - L564: MINIMIZE_METRICSへのランタイムpatchでargmin方向を動的変更可能（cmd_1760）
 - L566: ALM吸収はシン吸収と異なりメトリクスが変わる。目的関数が異なるため完全同一にならない（cmd_1762）
 - **top_n**: DM2/DM6/DM7+=1、DM3=3（cmd_1759）
+- L580: 38メトリクスは6目的維持+後計算添付が最速（cmd_1791）
+- L587: METRIC_NAMES変更時はselect_champions_multi_isのmetrics_np dictも同期更新必須（cmd_1819）
 - **Ward FoF**: K=3,LB=24がBest。K=5は4体<5クラスタで構造的不可能（cmd_1759 L562）
 - **切替安定性**: max_run_up最不安定(20%/月)、left_tail_jumps_inv最安定(9%/月)（cmd_1759）
 - **鉄壁4目的(cmd_1760)**: MDD目的がCalmar最高(2.78)。sortino目的の加速DがSharpe1.64(全体最高)

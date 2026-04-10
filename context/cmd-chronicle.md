@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-09 -->
+<!-- last_updated: 2026-04-10 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -8,41 +8,8 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 | — | → 3月前半(03-09, cmd_662-707)は `context/archive/cmd-chronicle-2026-03-early.md` 参照 | — | 03-09 | 43件 |
-| cmd_709 | 偵察 — おしお殿(yohey-w)最新システム深掘り+5大システム対比分析 | infra | 03-10 | 偵察 — おしお殿(yohey-w)最新システム深掘り... |
-| cmd_708 | GSD知見取込Phase2 — 逸脱管理ルール(Deviation Management)+認知バイアスガード | infra | 03-10 | GSD知見取込Phase2 — 逸脱管理ルール(Dev... |
-| cmd_710 | GSD知見取込Phase3 — 検証パイプライン拡張（配線検証+ゴール逆算+スコープ適正） | infra | 03-10 | GSD知見取込Phase3 — 検証パイプライン拡張（... |
-| cmd_711 | GSD知見取込Phase1-2ブラッシュアップ — 検出漏れ穴3件修復+検証レベル体系化 | infra | 03-10 | GSD知見取込Phase1-2ブラッシュアップ — 検... |
-| cmd_712 | CI修復 — gitignoreホワイトリスト漏れ+テスト不整合21件 | infra | 03-10 | cmd_712 review 完了。対象 |
-| cmd_714 | CI全緑化 — Unit環境互換修正+E2E全スイート検証 | infra | 03-10 | レビューFAIL。`889a467 te |
-| cmd_713 | Android: キーボード表示時スクロールジャンプ修正 | infra | 03-10 | 全6AC PASS。SideEffect+snaps |
-| cmd_715 | CI緑維持ルール — push前ゲート+赤時自動修正フロー制度化 | infra | 03-10 | AC5: cmd_complete_gate.shにCI |
-| cmd_716 | Android: cmd_713スコープ外変更の整理（revert+空白統一） | infra | 03-10 | Android: cmd_713スコープ外変更の整理（revert+空白統… |
-| cmd_717 | Android: v5.4 APKビルド+GitHubリリース | infra | 03-10 | Android: v5.4 APKビルド+GitHubリリース |
-| cmd_718 | Android: imePaddingをNavigationBarから各InputBarに移動 | infra | 03-10 | imePadding修正+v5.5ビルド |
-| cmd_720 | 偵察(GSD式) — DM-Signal本番表示性能ボトルネック特定（4名同一テーマ・観点分割） | dm-signal | 03-10 | インフラ・ネットワー |
-| cmd_719 | 偵察 — DM-Signal本番表示性能の定量把握（4名並列） | dm-signal | 03-10 | 主要4ページのAPI依存 |
-| cmd_722 | DM-Signal表示性能ベースライン統合 — cmd_719+720知識恒久化 | dm-signal | 03-10 | cmd_719(領域分割4名)+cmd_720(GSD式4名)の全8報告を… |
-| cmd_721 | Android: cmd_713+cmd_718のキーボード修正を全revert → v5.6リリース | infra | 03-10 | cmd_713/cmd_718 のキーボード修正を 3 ファイルで巻き戻し… |
-| cmd_723 | DM-signalの.gitignoreが未追跡ファイルをカバーできておらず、機密ファイルや一時出力が放置されている状態を解消する | dm-signal | 03-10 | DM-signal `.gitignore` を整理し、`.env.pre… |
-| cmd_724 | Phase1施策のうちRenderプラン制約に依存する2件（uvicorn --workers 2、signal-pie-chart dynamic import）がRender Proプランで実現可能かを事実ベースで確認する | dm-signal | 03-10 | 偵察 — Render Proプラン制約とPhase1施策2件の実現可能性… |
-| cmd_727 | 現行cdp_helper.py（1記事ベース11関数）では網羅できていないCDP技法を調査し、我が軍のブラウザ自動化能力の拡張余地を特定する | auto-ops | 03-10 | WSL2+Windows CDP 偵察Bを完了。一次情報/技術記事/Git… |
-| cmd_725 | プラン制約に依存しない確実な2施策を実装し、CDP本番計測で効果を定量検証する | dm-signal | 03-10 | cmd_726(テスト修正)PASS + |
-| cmd_728 | 偵察 — DM-signal UIゼロベース再設計調査（現行全情報・全機能の最適実現方式） | dm-signal | 03-10 | DM-signalフロントエンド全19ページ棚卸し +... |
-| cmd_729 | 現行ダークモードに加え、ライトモードとブラック(AMOLED)モードを追加し、コントラスト改善と視認性向上を実現する | infra | 03-10 | Android 3テーマ実装を完 |
-| cmd_730 | 殿のUIデザインTips30項目をinfra教訓に登録 | infra | 03-10 | 殿のUIデザインTips30項目をinfra教訓に登録 |
-| cmd_731 | 家老がcmd配備時にntfyで殿に送る通知にcmdのtitleが含まれず(untitled)と表示される問題を修正する | infra | 03-10 | deploy_task.sh の初回配備 |
-| cmd_732 | MCP将軍専用の知識が忍者に届かない構造的な穴をふさぐ自動同期パイプラインの実現方式を調査し、設計案を提示する | infra | 03-10 | 偵察 — MCP将軍知識→lessons.yaml自動同期パイプラインの設… |
-| cmd_734 | cmd_729で実装済みの3テーマ対応をv5.7としてバージョンバンプ+APKビルド+GitHubリリースする | infra | 03-10 | Android v5.7リリース完了 |
-| cmd_733 | 初期ロード時のprefetch 83本を selected PF用3本に縮退し、初期表示速度を大幅改善する | dm-signal | 03-10 | cmd_733 は PASS。hanzo 実 |
-| cmd_735 | 将軍がMCPに[share:ninja]マーカー付きで書いた知識を、自動的にlessons.yamlに登録するパイプラインを構築し、MCP→忍者の知識同期を恒久的に自動化する | infra | 03-10 | 佐助レビュー指摘2件 |
-| cmd_736 | v5.7のAPKが署名なしでインストールできない問題を修正し、殿のスマホにインストール可能な状態にする | infra | 03-10 | レビューPASS。`android/ap |
-| cmd_737 | CDP計測フレームワーク構築 — 汎用ベンチマークツール+認証自動化+教訓統合 | auto-ops | 03-10 | CDP計測フレームワーク構築 — 汎用ベンチマークツー... |
-| cmd_726 | spa-navigation.test.tsxの既存FAIL3件を修正し、cmd_725のAC3ブロックを解消する | dm-signal | 03-10 | 佐助の `9ebedcb` をレビ |
-| cmd_738 | /x-research Skillを構築し、将軍がClaude CodeからGrok経由でXのリアルタイム検索・トレンド収集を実行できるようにする | infra | 03-10 | X検索Skillをxai Grok API経 |
-| cmd_739 | /weekly-report Skillを構築し、DM-Signal Weekly Reportの記事生成を将軍が一発で再現可能にする | dm-signal | 03-10 | /weekly-report Skill を新設。DM-Signal AP… |
 | cmd_745 | cmd_744で認証組み込みしたCDP計測フレームワークが、本番環境で一切の手動介入なく全ページ計測を一発完了できることを実戦検証する | auto-ops | 03-11 | verify — CDP計測フレームワーク実戦検証（本番全ページ一発計測） |
 | cmd_744 | CDP計測フレームワーク(perf_measure.py)に本番viewer認証を組み込み、忍者が引数指定だけで認証済み本番計測を一発実行できる状態にする | auto-ops | 03-11 | perf_measure.pyに本番viewer |
-| cmd_740 | perf — SignalsContext value useMemo化（全ページ再レンダー防止） | dm-signal | 03-10 | perf — SignalsContext value... |
 | cmd_741 | layout.tsxでグローバルimportされているkatex CSSを、実際に使用するdocsページのみに限定し、全ページから不要な27KB CSSを排除する。CDP本番計測で改善効果を定量検証する | dm-signal | 03-11 | 佐助のcmd_741 impl報告を |
 | cmd_743 | uvicornのワーカー数を1→2に増設し、APIの同時処理能力を倍増させる。CDP本番計測で改善効果を定量検証する | dm-signal | 03-11 | cmd_743 impl 完了。`render. |
 | cmd_742 | signal-pie-chartコンポーネントをdynamic importに変更し、rechartsライブラリ(~280KB)を初期バンドルから排除する。CDP本番計測で改善効果を定量検証する | dm-signal | 03-11 | AC1-AC4 PASS。半蔵独自検 |
@@ -759,3 +726,5 @@
 | cmd_1819 | ALM忍法 殿定義6目的 67窓L1 WF全量実行 — METRIC_NAMES変更+7忍法再実行 | dm-signal | 04-09 | METRIC_NAMESをcagr/nhf/maximum_ |
 | cmd_1821 | 奥義-シン忍法 — シン忍法20体を材料にL2忍法GS+67窓WF実行 | dm-signal | 04-09 | AC1-AC4の技術作業は完了。シン忍法20体の本番DB月次 |
 | cmd_1823 | 研究道具カタログ永続化 + cmd_save.sh道具明示チェック追加 | infra | 04-09 | AC1: dm-signal-ops.md §18に研究道具 |
+| cmd_1826 | 偵察 — l1_alm_wf_engine.py メモリプロファイリング（468MB CSV→13GB膨張の根因特定） | dm-signal | 04-10 | l1_alm_wf_engine.py メモリ消費分析完了。 |
+| cmd_karo_premise_check | fix — inbox_write.sh pre-send captureに★前提問い追加 | infra | 04-10 | inbox_write.sh L785の★10回問いecho |
