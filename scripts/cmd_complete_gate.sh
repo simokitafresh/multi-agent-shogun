@@ -1044,6 +1044,65 @@ else:
 PY
 }
 
+# ─── GS忍法スクリプト変更時ベンチマーク確認（WARNのみ、run_077_*.py変更検出） ───
+# cmd_1833: files_modifiedにrun_077_*.pyが含まれる場合、gs-bench-gate未実行をWARN
+check_gs_bench_gate_warn() {
+    level_heading "[L3]" "GS bench-gate check:"
+
+    # dm-signalのプロジェクトパスを取得（config/projects.yaml参照）
+    local dm_signal_path=""
+    local config_yaml="$SCRIPT_DIR/config/projects.yaml"
+    if [[ -f "$config_yaml" ]]; then
+        dm_signal_path=$(awk -v target="dm-signal" '
+            /^  - id:/ { cur=$3; gsub(/["'"'"']/, "", cur) }
+            /^    path:/ && cur == target { $1=""; gsub(/^[[:space:]]+|[[:space:]]+$|["'"'"']/, ""); print; exit }
+        ' "$config_yaml")
+    fi
+
+    local found_run077=false
+    local warn_count=0
+
+    for task_file in "$TASKS_DIR"/*.yaml; do
+        [ -f "$task_file" ] || continue
+        is_cmd_task "$task_file" || continue
+
+        local ninja_name report_file
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+        [ -f "$report_file" ] || continue
+
+        # files_modifiedフィールドからrun_077_*.pyパターンを抽出
+        local run077_files
+        run077_files=$(grep -oE 'run_077_[a-z_]+\.py' "$report_file" 2>/dev/null | sort -u || true)
+        [ -n "$run077_files" ] || continue
+
+        found_run077=true
+
+        while IFS= read -r py_file; do
+            local ninjutsu_name gate_json
+            ninjutsu_name=$(printf '%s' "$py_file" | sed 's/run_077_\(.*\)\.py/\1/')
+            gate_json=""
+            if [[ -n "$dm_signal_path" ]]; then
+                gate_json="${dm_signal_path}/outputs/analysis/gs_gate_after_${ninjutsu_name}.json"
+            fi
+
+            if [[ -n "$gate_json" ]] && [[ -f "$gate_json" ]]; then
+                echo "  OK: ${ninja_name}: ${py_file} — gs-bench-gate実行確認 (${ninjutsu_name})"
+            else
+                echo "  [WARN] ${ninja_name}: ${py_file} 変更あり。gs-bench-gate未実行の可能性。"
+                echo "         実行: /gs-bench-gate after --ninjutsu ${ninjutsu_name}"
+                warn_count=$((warn_count + 1))
+            fi
+        done <<< "$run077_files"
+    done
+
+    if [[ "$found_run077" = false ]]; then
+        echo "  SKIP (run_077_*.py 変更なし)"
+    elif [[ "$warn_count" -eq 0 ]]; then
+        echo "  OK (gs-bench-gate実行確認済み)"
+    fi
+}
+
 # ─── lesson tracking追記（ベストエフォート） ───
 append_lesson_tracking() {
     local cmd_id="$1"
@@ -3353,6 +3412,8 @@ else
 fi
 
 run_todo_fixme_residual_check "$CMD_ID"
+
+check_gs_bench_gate_warn
 
 # ─── テストSKIP検査（skip_count > 0 で BLOCK） ───
 level_heading "[L2]" "Test skip count check:"
