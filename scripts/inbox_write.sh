@@ -783,6 +783,7 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ] && { [ "$FROM" = "shogun" ] || [ "$FROM" =
         echo "[pre-send capture] ${TARGET} pane state BEFORE message:"
         echo "$_capture"
         echo "★10回問い: このアクションを10回繰り返したら正の複利か負の複利か？"
+        echo "★前提問い: この指示に含まれる数値・条件は自分で確認したか？出典は？中継元の主張を鵜呑みにしていないか？"
         # CTX:0%検知 — task_assigned送信先がCTX:0%なら反応しない可能性を警告
         if [ "$TYPE" = "task_assigned" ]; then
             _ctx_val=$(echo "$_capture" | grep -oP 'CTX:\K[0-9]+' | tail -1)
