@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-10 -->
+<!-- last_updated: 2026-04-11 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -8,67 +8,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 | — | → 3月前半(03-09, cmd_662-707)は `context/archive/cmd-chronicle-2026-03-early.md` 参照 | — | 03-09 | 43件 |
-| cmd_745 | cmd_744で認証組み込みしたCDP計測フレームワークが、本番環境で一切の手動介入なく全ページ計測を一発完了できることを実戦検証する | auto-ops | 03-11 | verify — CDP計測フレームワーク実戦検証（本番全ページ一発計測） |
-| cmd_744 | CDP計測フレームワーク(perf_measure.py)に本番viewer認証を組み込み、忍者が引数指定だけで認証済み本番計測を一発実行できる状態にする | auto-ops | 03-11 | perf_measure.pyに本番viewer |
-| cmd_741 | layout.tsxでグローバルimportされているkatex CSSを、実際に使用するdocsページのみに限定し、全ページから不要な27KB CSSを排除する。CDP本番計測で改善効果を定量検証する | dm-signal | 03-11 | 佐助のcmd_741 impl報告を |
-| cmd_743 | uvicornのワーカー数を1→2に増設し、APIの同時処理能力を倍増させる。CDP本番計測で改善効果を定量検証する | dm-signal | 03-11 | cmd_743 impl 完了。`render. |
-| cmd_742 | signal-pie-chartコンポーネントをdynamic importに変更し、rechartsライブラリ(~280KB)を初期バンドルから排除する。CDP本番計測で改善効果を定量検証する | dm-signal | 03-11 | AC1-AC4 PASS。半蔵独自検 |
-| cmd_747 | docs/research/cmd_719_720_performance-baseline.md と context/dm-signal-frontend.md に含まれるコールドスタート誤認を修正し、完了済み施策の状態を反映して、偵察報告を事実に基づく正確な内容にする | dm-signal | 03-11 | cmd_747 は PASS。欠落し |
-| cmd_742 | signal-pie-chartコンポーネントをdynamic importに変更し、rechartsライブラリ(~280KB)を初期バンドルから排除する。CDP本番計測で改善効果を定量検証する | dm-signal | 03-11 | AC1-AC4 PASS。半蔵独自検 |
-| cmd_751 | cmd_743(3e515ca)で導入したuvicorn --workers 2をrevertし、本番のviewer認証障害を即時復旧する | dm-signal | 03-11 | render.yamlのstartCommandか |
-| cmd_749 | 偵察 — 全ページのアドミンログイン動作検証（本番で一部ページでログインが効かない） | dm-signal | 03-11 | 担当3ページ(/admin, /admin/fof, ... |
-| cmd_752 | fix — viewerトークンをDB保存に移行（workers複数化の前提条件） | dm-signal | 03-11 | viewerトークンをインメモリdict(_viewe... |
-| cmd_753 | cmd_749偵察で発見された3件の副次的バグについて、修正実装に必要なコードの全容（変更箇所・影響範囲・テスト対象・エッジケース）を特定し、後続のfix cmdが手戻りなく一発で完了できる材料を揃える | dm-signal | 03-11 | /monthly-trade は navigation 側で portfo… |
-| cmd_754 | 偵察cmdの成果物が『修正実装に直結する粒度』をデフォルトで満たす状態にする。ルール追記だけでなく、ゲートで機械的に検証し、不足があればBLOCKする仕組みを構築する | infra | 03-11 | 半蔵のcmd_754実装をレビュー。4ファイル全てコード品質良好、構文PA… |
-| cmd_755 | backend/app/auth.pyの_admin_tokens dictをDBに移行し、uvicorn workers複数化でadmin認証が壊れない状態にする。cmd_752(viewer_tokens)と同パターン | dm-signal | 03-11 | fix — admin_tokensをDB保存に移行（cmd_752のad… |
-| cmd_748 | 偵察 — 性能改善残施策4件の実装根拠深堀り（コード実態+副作用+効果見積り） | dm-signal | 03-11 | 偵察 — 性能改善残施策4件の実装根拠深堀り（コード実... |
-| cmd_756 | cmd_753偵察で実装直結粒度まで調査済みの3件を一括修正し、認証周辺の潜在バグを一掃する | dm-signal | 03-11 | review retry 完了。指定6 |
-| cmd_759 | fix — Cookie expiry TZズレ修正（JST/UTCの9時間差でcookieが早期失効） | dm-signal | 03-11 | fix — Cookie expiry TZズレ修正（... |
-| cmd_746 | CDP計測フレームワーク(perf_measure.py)を、忍者がコマンド一発で本番の全計測パターン（cold/warm/PF切替/SPA遷移/API個別応答）を実行でき、前回結果と自動比較できる完全なシステムに仕上げる | auto-ops | 03-11 | CDP計測フレームワーク |
-| cmd_758 | PF切替時に1本のAPIが401を返しただけで全viewerセッションが崩壊する連鎖崩壊を修正し、単発401をエンドポイント単位で隔離する | dm-signal | 03-11 | AC1-AC5 PASS。viewer 401 を『単発即死』から『短時間… |
-| cmd_757 | GATE CLEAR連勝が377から0にリセットされた原因を特定し、FAILしたcmdとその理由を報告する | infra | 03-11 | 377→0 を起こしたのは |
-| cmd_760 | fix — FE api-client.ts 304対応（既存ETag 3件の有効化+将来拡充の前提整備） | dm-signal | 03-11 | FE api-client.ts 304対応（ETag... |
-| cmd_761 | 偵察(水平) — dm-signal改善点洗い出し（4領域×1名、定量データ収集） | dm-signal | 03-11 | 偵察(水平) — dm-signal改善点洗い出し（4... |
-| cmd_762 | dm-signalの最大のボトルネック・最高ROI改善策を、4名が異なる観点から独立分析し、結論を突合して盲点を炙り出す | dm-signal | 03-11 | 最大のボトルネックは |
-| cmd_764 | 偵察 — DM-Signal trade rule全容の理解（シグナル/モメンタム/保有シグナル/リバランス） | dm-signal | 03-11 | 偵察 — DM-Signal trade rule全容... |
-| cmd_763 | 認証インフラ修正（DB化+401 handler+Cookie TZ）が全て完了したため、uvicorn workers=2を再投入し、本番の同時処理能力を回復する。CDP計測で効果を定量検証する | dm-signal | 03-11 | workers=2デプロイ後curl |
-| cmd_765 | 毎回のclearSignalsCache()によるTTL無効化を廃止し、stale-while-revalidateパターンを導入して初回ロード2-5秒の空白画面を解消する | dm-signal | 03-11 | 前任(才蔵)のSWR化実装 |
-| cmd_766 | BE関連のdm-signal cmdに取り組む忍者が、trade-rule.mdの正式ルール（特にRULE09/10/11とLLMが間違えやすい14誤解パターン）を自動的に参照できる状態にする | dm-signal | 03-11 | trade-rule教訓8件を `lesso |
-| cmd_750 | 偵察 — viewer認証の間欠的unauthorized問題（PF切替で発生、workers 2化の影響疑い） | dm-signal | 03-11 | viewer/admin認証トークンがBE側インメモリ... |
-| cmd_767 | fix — trade-rule.md LLM誤読防止の7箇所補完 | dm-signal | 03-11 | fix — trade-rule.md LLM誤読防止... |
-| cmd_769 | fix — trade-rule.md MECE整合性レビュー+今回の殿裁定6件反映 | dm-signal | 03-11 | cmd_769 impl(小太郎)のtrade-rul... |
-| cmd_768 | fix(critical) — Trade期間リターンを月次複利合成に修正+四神・忍法再選定 | dm-signal | 03-11 | GSパイプライン内に `calculate_trade... |
-| cmd_770 | fix — business_rules.md 現行コード・殿裁定との乖離10箇所修正 | dm-signal | 03-11 | PASS。佐助retry(commit `17378c... |
-| cmd_771 | context鮮度回復 — dm-signal-core.md BE認証基盤変更(cmd_752/755/759/760)反映 | dm-signal | 03-11 | `context/dm-signal-core.md`... |
-| cmd_772 | fix — trade-rule.md §7.3a逆参照追加+cmd_768完了に伴う不要コメント削除 | dm-signal | 03-11 | trade-rule.mdとprojects/dm-s... |
-| cmd_773 | 偵察 — FEコンポーネント・ロジック重複の全量洗い出し | dm-signal | 03-11 | app/**/page.tsx のトップレベル宣言を棚... |
-| cmd_775 | 偵察 — /api/monthly-returns 1721ms ボトルネック切り分け | dm-signal | 03-11 | 偵察 — /api/monthly-returns 1... |
-| cmd_774 | 偵察 — /dashboardバンドル分析（238kB内訳特定+削減候補） | dm-signal | 03-11 | 偵察 — /dashboardバンドル分析（238kB... |
-| cmd_776 | fix — lesson_candidate旧形式BLOCK根治（3層自動修正+共通関数） | infra | 03-11 | fix — lesson_candidate旧形式BL... |
-| cmd_777 | 偵察 — STALL誤判定の実態調査+CLI間フック互換性+長時間Bash保護策の設計材料収集 | infra | 03-11 | 偵察 — STALL誤判定の実態調査+CLI間フック互... |
-| cmd_778 | fix — context鮮度の自動検知（時間ベースWARN+cmd完了時nudge） | infra | 03-11 | cmd_778 review PASS。`contex... |
-| cmd_779 | fix — BEテスト陳腐化削除+SKIP修復+pycache清掃 | dm-signal | 03-11 | fix — BEテスト陳腐化削除+SKIP修復+pyc... |
-| cmd_780 | impl — deteriorationモジュール テストカバレッジ追加（BE 3ファイル） | dm-signal | 03-11 | deterioration service/batch... |
-| cmd_781 | fix — STALL誤判定防御（pstree子プロセス検知+PreToolUseフック併用） | infra | 03-11 | fix — STALL誤判定防御（pstree子プロセ... |
-| cmd_782 | 偵察(水平) — DM-signal最適化 実装設計（4領域分割） | dm-signal | 03-11 | 偵察(水平) — DM-signal最適化 実装設計（... |
-| cmd_783 | 偵察(垂直) — DM-signal最適化 盲点発見（GSD式4観点） | dm-signal | 03-11 | 偵察(垂直) — DM-signal最適化 盲点発見（... |
-| cmd_784 | impl — formatJST共通化（lib/date.ts抽出 + 10ファイル置換） | dm-signal | 03-11 | impl — formatJST共通化（lib/dat... |
-| cmd_785 | impl — FolderFilterChip共通コンポーネント抽出（4ファイル→1） | dm-signal | 03-11 | impl — FolderFilterChip共通コン... |
-| cmd_786 | impl — FEバンドル最適化3点（date-fns除去 + lucide optimize + dynamic import） | dm-signal | 03-11 | impl — FEバンドル最適化3点（date-fns... |
-| cmd_788 | 偵察 — BE APIレスポンス ベースラインスナップショット取得 | dm-signal | 03-11 | API baseline取得（signals/metr... |
-| cmd_789 | 偵察 — 本番PFリスト取得 + protected_portfolios突合 | dm-signal | 03-11 | 本番PFリストとprotected_portfolio... |
-| cmd_787 | impl — PersistentFolderFilter hook抽出 + Page shell抽出 | dm-signal | 03-11 | Phase2a Part2: PageShellコンポ... |
-| cmd_790 | 偵察 — BEベースライン再取得（正確PFセット15体×全期間×全API） | dm-signal | 03-11 | AC1-AC5完了。BEベースライン再取得 |
-| cmd_791 | impl — monthly-returns API高速化（expanded_tickersスキップ + months前倒しslice） | dm-signal | 03-11 | monthly-returns APIからexpand... |
-| cmd_792 | impl — 304エラー扱いバグ修正 + ETag有効化 | dm-signal | 03-11 | impl — 304エラー扱いバグ修正 + ETag有効化 |
-| cmd_795 | impl — done通知スクリプト化（報告空欄チェック強制） | infra | 03-11 | cmd_795再レビューPASS。b |
-| cmd_796 | context鮮度回復 — dm-signal系4ファイルに直近cmd成果… | dm-signal | 03-11 | dm-signal-core.md と dm-signa |
-| cmd_797 | fix — E2E teardown cleanup失敗によるCI RED… | infra | 03-11 | cmd_797事後レビューは P |
-| cmd_798 | 偵察 — NDL OCR-Lite 深掘り調査（サーバーサイド運用設計） | infra | 03-11 | 偵察 — NDL OCR-Lite深掘り調査(サーバーサイド運用設計) |
-| cmd_793 | impl — SWR化（stale-while-revalidate キャ… | dm-signal | 03-11 | cmd_793 re-review は PASS。p |
-| cmd_802 | 衛生 — logs/ログローテーション導入(ninja_monitor 1… | infra | 03-11 | cmd_802ログローテーシ� |
-| cmd_799 | 衛生 — pending_decisions.yamlアーカイブ + cm… | infra | 03-11 | cmd_799レビュー PASS。PD� |
-| cmd_801 | 衛生 — shogun_to_karo_done.yaml(44,698行… | infra | 03-11 | cmd_801レビューPASS。5スクリプトからdone.yaml参照完全… |
 | cmd_850 | 整備 — cmd-chronicle空欄key_result補完（18行） | infra | 03-12 | 整備 — cmd-chronicle空欄key_result補完（18行） |
 | cmd_849 | impl — B3 prefetch/page fetch責務統一 | dm-signal | 03-12 | impl — B3 prefetch/page fetch責務統一 |
 | cmd_851 | 修正 — cmd_complete_gate.sh TSV ninja=n… | infra | 03-12 | 修正 — cmd_complete_gate.sh TSV ninja=n… |
@@ -741,3 +680,5 @@
 | cmd_1841 | fix — l1_alm_wf_engine.py load_data() numpy直読み化（pd.read_csv OOM根絶） | dm-signal | 04-10 | l1_alm_wf_engine.pyのcache-miss |
 | cmd_1840 | fix — 奥義-シン忍法 大CSVキャッシュ生成+WF完走+チャンピオン選出 | dm-signal | 04-10 | AC1 PASS: nukimi/kasoku_ratio |
 | cmd_1844 | 奥義-シン忍法 GS事後チャンピオン選出 — 3目的(CAGR/NHF/MaxDD)×7忍法 | dm-signal | 04-10 | GS CSV 7本全量確認完了。全パターン(合計195805 |
+| cmd_1845 | 奥義-シン忍法 6メトリクス比較表 — GS事後 vs ALM方式 vs シン忍法(材料) | dm-signal | 04-10 | AC1 PASS: シン忍法20体全UUID存在確認(20/ |
+| cmd_1846 | 奥義-シン忍法 忍法×忍法 組み合わせ有効性分析 — selection_timeline全21チャンピオン | dm-signal | 04-11 | 21体パラメータ一覧(AC1)、21本selection_t |

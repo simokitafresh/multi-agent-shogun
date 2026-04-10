@@ -1,16 +1,16 @@
 task:
-  _ac_task_id: cmd_1845_impl
+  _ac_task_id: cmd_1848_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: 160a71e0
+  ac_version: 4bd58fc6
   acceptance_criteria:
-  - description: シン忍法20体のmonthly_returnsを本番DB(DATABASE_URL)から取得。20体全てのUUID存在を確認し各体の月数を報告
+  - description: GS CSV 7本のmonthly_returnsを前半/後半に分割。分割点(年月)と各半分の月数を報告
     id: AC1
-  - description: metrics_research_engine.py(scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py)で62体分(20+21+21)の6メトリクス(CAGR/NHF/MaxDD/MRU/Calmar/UWP)を計算。MRE.NUMERIC_METRICSから該当6指標を使用。計算結果を報告YAMLに全数値含める
+  - description: 前半のみで3目的×7忍法=21チャンピオンを選出。全期間チャンピオン(cmd_1844)とのpattern_id一致率(21体中何体一致)を報告
     id: AC2
-  - description: '3層比較表をMarkdownで作成: シン忍法20体(材料)+GS事後21体+ALM方式21体の6メトリクス。gh gist createでGist作成し、bash
-      scripts/ntfy.sh でGist URLを送信。ntfy送信結果を報告'
+  - description: 前半チャンピオン21体の後半OOS 6メトリクス(CAGR/NHF/MaxDD/MRU/Calmar/UWP)を計算。IS(前半)→OOS(後半)の劣化率テーブルを作成。gh
+      gist create + bash /mnt/c/tools/multi-agent-shogun/scripts/ntfy.sh でGist URL送信
     id: AC3
   acceptance_criteria.1.description: bunshinで回帰テスト。l1_alm_wf_engine.pyのpd.read_csvで読込可能+alm_returnsがnp.allclose(rtol=1e-4)で一致(float32精度のため完全一致ではなくallclose)
   context_files:
@@ -21,10 +21,10 @@ task:
   - context/dm-signal-frontend.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
-    \  - L002: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash\
-    \ tool\n  - L263: bashのwhile readループ変数名は呼出元のlocal変数と動的スコープで衝突する。ライブラリ関数内のwhile\
-    \ read変数は必ずプレフィックス付き(\n────────────────────────────────────────"
+    \  - L263: bashのwhile readループ変数名は呼出元のlocal変数と動的スコープで衝突する。ライブラリ関数内のwhile read変数は必ずプレフィックス付き(\n\
+    \  - L205: 2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま\
+    \ `• Working (.\n  - L094: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -43,14 +43,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1845
+  parent_cmd: cmd_1848
   project: dm-signal
-  report_filename: kotaro_report_cmd_1845.yaml
-  report_path: queue/reports/kotaro_report_cmd_1845.yaml
+  report_filename: kotaro_report_cmd_1848.yaml
+  report_path: queue/reports/kotaro_report_cmd_1848.yaml
   scope_mode: IMPL
-  status: done
+  status: in_progress
   stop_for: []
-  task_id: cmd_1845_impl
+  task_id: cmd_1848_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -61,19 +61,19 @@ task:
     breakdown: 'report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
-    - pattern: 'field_missing'
-      count: 2
     - pattern: 'bc_result_empty'
-      count: 1
-    - pattern: 'verdict_invalid'
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+      count: 10
+    - pattern: 'field_missing'
+      count: 3
+    - pattern: 'lu_reason_empty'
+      count: 3
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止'
     gate_blocks:
     - reason: 'binary_checks_fail'
       count: 9
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_format'
-      count: 7
+      count: 8
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'empty_lessons_useful'
       count: 2
@@ -85,6 +85,12 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L603'
+    summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確認必須'
+    detail: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確認必須'
+  - id: 'L602'
+    summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body'
+    detail: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body'
   - id: 'L601'
     summary: 'cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と非常に大きな負値を示す。GS事後方式で選出した最良MaxDD(0.11〜0.12)と比較して差異が0.45〜0.54と大きく、cmd_1840のMaxDD目的は最悪パターンを選出している疑いがある(argmin誤用またはスコア符号反転バグ)'
     detail: 'cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と非常に大きな負値を示す。GS事後方式で選出した最良MaxDD(0.11〜0.12)と比較して差異が0.45〜0.54と大きく、cmd_1840のMaxDD目的は最悪パターンを選出している疑いがある(argmin誤用またはスコア符号反転バグ)'
@@ -109,10 +115,4 @@ task:
   - id: 'L594'
     summary: 'TrendReversalFilterBlock.execute() L78でtickers = list(context.current_tickers)がsetからlist変換。PYTHONHASHSEED(デフォルトでPython起動ごとに変化)によりsetの反復順序が変わる。stable'
     detail: 'TrendReversalFilterBlock.execute() L78でtickers = list(context.current_tickers)がsetからlist変換。PYTHONHASHSEED(デフォルトでPython起動ごとに変化)によりsetの反復順序が変わる。stable'
-  - id: 'L593'
-    summary: '12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパターン数+メモリ+実行時間見積りをACに含めよ'
-    detail: '12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパターン数+メモリ+実行時間見積りをACに含めよ'
-  - id: 'L592'
-    summary: 'run_077_nukimi.py L74-76 PipelineEngine import(75.7MB+4.5s)が検証用パスのみ使用。fork全workerで454MB追加+per-pattern'
-    detail: 'run_077_nukimi.py L74-76 PipelineEngine import(75.7MB+4.5s)が検証用パスのみ使用。fork全workerで454MB追加+per-pattern'
-  deployed_at: "2026-04-10T23:29:14"
+  deployed_at: "2026-04-11T01:45:00"

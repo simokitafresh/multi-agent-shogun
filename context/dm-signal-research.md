@@ -532,6 +532,8 @@ BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメ�
 
 **OOM事故(cmd_1843)と教訓**: wf_runner.py並列ランナー(workers=2)でOOM Killer発動→エージェント死亡。殿裁定: 並列不要、直列1本ずつが正解。cmd_1843クローズ。→ `docs/research/gunshi_wf_oom_prevention_design_20260410.md`
 
+**知見(2026-04-10検証済み)**: ALM方式(WF動的選択)とGS事後方式(全期間最強固定)の激攻・常勝チャンピオン14体中10体が同一pattern_id。全期間最強パターンはALM動的選択でも選ばれる傾向がある。差が出たケース: kawarimi CAGR(GS事後93.0% vs ALM 84.4% = +8.6pp), yotsume CAGR(88.4% vs 81.3% = +7.1pp)。鉄壁(MaxDD目的)はALM方式が最悪値を選出しており比較不能。GS CSV直接計算で独立検証済み(bunshin N2_0072: 両方式78.6%完全一致, kawarimi全222,300パターン中1位=N3_0771_24M 93.0%でcmd_1844と一致)。
+
 **道具磨き成果（副産物）**: OOM対策としてload_data() numpy直読み化(cmd_1841)+GS側.npy同時出力(cmd_1842)を実装。WF使用時のCSV読込OOMは根絶。ただしWF並列実行は禁止(LG025)
 
 ### パリティ検証（cmd_1097-1116）
