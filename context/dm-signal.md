@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L599 -->
+<!-- last_synced_lesson: L600 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -179,3 +179,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L597: module-level pipeline importのRSS削減量は--helpでなくworker fork RSSで計測せよ（cmd_1832）
 - L598: numpy savetxt(float32)のyear_month混在CSVへの適用: BytesIO中継+行単位プレフィックス追記パターン（cmd_1836）
 - L599: TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致（cmd_1837）
+- L600: np.fromstringは空セル連続のwide CSV行を安全に読めない（cmd_1841）

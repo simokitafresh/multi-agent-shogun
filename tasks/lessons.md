@@ -3546,3 +3546,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象
+
+### L465: 道具磨きcmdのテスト実行ACと並行研究cmdの入力衝突チェック
+- **日付**: 2026-04-10
+- **出典**: cmd_1843
+- **記録者**: gunshi
+- **tags**: [universal]
+- cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft review時にLG002(並行配備衝突チェック)を道具磨きのテストACにも適用すべきだった。道具磨きcmdのACにテスト実行が含まれる場合、同一入力を使う並行cmdの有無を確認せよ

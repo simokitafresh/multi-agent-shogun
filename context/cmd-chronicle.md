@@ -737,3 +737,5 @@
 | cmd_1838 | fix — deploy_task.sh commit check gitignore自動除外 | infra | 04-10 | deploy_task.shにgit check-ignor |
 | cmd_1836 | perf — GS CSV書出しnumpy savetxt置換(pandas 270s→4.6s) | dm-signal | 04-10 | 7忍法のrun_077_*.pyの月次CSV書出しをnump |
 | cmd_1837 | fix — kawarimi PYTHONHASHSEED非決定性修正(L78 sorted()) | dm-signal | 04-10 | TrendReversalFilterBlock L78をs |
+| cmd_1842 | fix — GS run_077_*.py CSV出力時に.npyキャッシュ同時生成（キャッシュ不在ゼロ化） | dm-signal | 04-10 | 7忍法run_077_*.pyのwrite_monthly_ |
+| cmd_1841 | fix — l1_alm_wf_engine.py load_data() numpy直読み化（pd.read_csv OOM根絶） | dm-signal | 04-10 | l1_alm_wf_engine.pyのcache-miss |
