@@ -736,3 +736,4 @@
 | cmd_1832 | perf — pipeline関連heavy import lazy化(全7忍法) | dm-signal | 04-10 | 7忍法 run_077_*.py のpipeline関連mo |
 | cmd_1838 | fix — deploy_task.sh commit check gitignore自動除外 | infra | 04-10 | deploy_task.shにgit check-ignor |
 | cmd_1836 | perf — GS CSV書出しnumpy savetxt置換(pandas 270s→4.6s) | dm-signal | 04-10 | 7忍法のrun_077_*.pyの月次CSV書出しをnump |
+| cmd_1837 | fix — kawarimi PYTHONHASHSEED非決定性修正(L78 sorted()) | dm-signal | 04-10 | TrendReversalFilterBlock L78をs |

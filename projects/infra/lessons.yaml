@@ -525,7 +525,7 @@ lessons:
   - testing
   helpful_count: 0
   harmful_count: 1
-  last_referenced: '2026-04-07'
+  last_referenced: '2026-04-10'
 - id: L388
   title: gitignoreホワイトリスト方式でのcommit不可パターン
   summary: 修行サイクルの対象ファイルがgitignoreホワイトリスト(デフォルト全除外)に未登録の場合、改善を実装してもgit commitできない。対象ファイルのco
@@ -2698,7 +2698,7 @@ lessons:
   tags:
   - universal
   helpful_count: 39
-  harmful_count: 29
+  harmful_count: 30
   last_referenced: '2026-04-10'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2774,7 +2774,7 @@ lessons:
   tags:
   - universal
   helpful_count: 39
-  harmful_count: 29
+  harmful_count: 30
   last_referenced: '2026-04-10'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要

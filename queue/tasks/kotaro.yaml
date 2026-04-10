@@ -1,22 +1,30 @@
 task:
-  _ac_task_id: cmd_1836_impl
+  _ac_task_id: cmd_1839_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 58356702
+  ac_priority: AC1 > AC2
+  ac_version: 9f4c7f1f
   acceptance_criteria:
-  - description: 7忍法のrun_077_*.pyのCSV書出しをnumpy savetxt(float32)に置換。ヘッダー行はPython writeで出力
+  - description: outputs/grid_search/okugi_shin_ninpo_20body/cmd_1822_okugi_shin_ninpo_20body_{忍法}_grid_monthly_20260409.csv
+      が7本(bunshin/yotsume/oikaze/kawarimi/nukimi/kasoku_diff/kasoku_ratio)全て存在。各ファイルの行数を報告。不在ならFAIL
     id: AC1
-  - description: bunshinで回帰テスト。l1_alm_wf_engine.pyのpd.read_csvで読込可能+alm_returns完全一致
+  - description: outputs/scripts/l1_alm_wf_engine.py --csv <path> --multi-is --cmd-id
+      cmd_1839 --progress --out-dir outputs/analysis/alm_research/okugi_shin_ninpo
+      で7忍法を1本ずつ直列実行。全7本rc=0を確認。--batch-csvs使用禁止。出力alm_returnsの行数×列数を報告
     id: AC2
-  - description: kasoku_ratio 12体で書出し時間計測。270s→10s以下を確認
+  - description: 'WF結果(alm_returns)から3目的(CAGR/NHF/MaxDD)×7忍法のチャンピオン21体を選出。各チャンピオンのpattern_id/IS窓/OOS
+      CAGR/OOS NHF/OOS MaxDDを一覧テーブルで報告。選出ロジック: 各目的変数で最大(MaxDDは最小絶対値)のパターンを選出'
     id: AC3
+  - description: 同一pattern_idが複数目的で選出されたケース(吸収候補)があれば別テーブルで報告。全チャンピオンが異なるpattern_idなら「吸収なし」と明記
+    id: AC4
+  acceptance_criteria.1.description: bunshinで回帰テスト。l1_alm_wf_engine.pyのpd.read_csvで読込可能+alm_returnsがnp.allclose(rtol=1e-4)で一致(float32精度のため完全一致ではなくallclose)
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
   - context/dm-signal-research.md
   - context/dm-signal-frontend.md
+  deployed_at: '2026-04-10T15:18:43'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     ────────────────────────────────────────"
@@ -38,14 +46,15 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1836
+  - AC4
+  parent_cmd: cmd_1839
   project: dm-signal
-  report_filename: kotaro_report_cmd_1836.yaml
-  report_path: queue/reports/kotaro_report_cmd_1836.yaml
+  report_filename: kotaro_report_cmd_1839.yaml
+  report_path: queue/reports/kotaro_report_cmd_1839.yaml
   scope_mode: IMPL
-  status: done
+  status: in_progress
   stop_for: []
-  task_id: cmd_1836_impl
+  task_id: cmd_1839_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -80,6 +89,12 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L599'
+    summary: 'momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_tickersを元のset(components)のままにしていた。batch側はmomentum不足月をNaN(選択なし)として扱うため、sequential側がcurrent_tickersを全コンポーネントとして引き継ぎ月0のreturnを計算し'
+    detail: 'momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_tickersを元のset(components)のままにしていた。batch側はmomentum不足月をNaN(選択なし)として扱うため、sequential側がcurrent_tickersを全コンポーネントとして引き継ぎ月0のreturnを計算し'
+  - id: 'L598'
+    summary: 'monthly_fast.csvは年月文字列+float列の混在フォーマット。np.savetxtは純数値のみ対応するため、float32行列をBytesIOにsavetxt後、行ごとに年月文字列をプレフィックス追記する2段階パターンで実現。pd.read_csv互換(index_col=year_month)を維持しつつ4.47s(12体258MB)を達成。'
+    detail: 'monthly_fast.csvは年月文字列+float列の混在フォーマット。np.savetxtは純数値のみ対応するため、float32行列をBytesIOにsavetxt後、行ごとに年月文字列をプレフィックス追記する2段階パターンで実現。pd.read_csv互換(index_col=year_month)を維持しつつ4.47s(12体258MB)を達成。'
   - id: 'L597'
     summary: 'lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCoWが破れworkerあたり79.6MBのRSSコスト。正しい計測=before(pipeline読込+6worker'
     detail: 'lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCoWが破れworkerあたり79.6MBのRSSコスト。正しい計測=before(pipeline読込+6worker'
@@ -104,11 +119,5 @@ task:
   - id: 'L590'
     summary: 'tracemallocはPythonヒープのみ。RSS差=850MB(Pythonランタイム+.so+GC)。cmd_1828でAC3 FAIL(1.394GB>700MB)の根因。メモリ削減cmdの目標はRSSで設定必須'
     detail: 'tracemallocはPythonヒープのみ。RSS差=850MB(Pythonランタイム+.so+GC)。cmd_1828でAC3 FAIL(1.394GB>700MB)の根因。メモリ削減cmdの目標はRSSで設定必須'
-  - id: 'L589'
-    summary: 'shared_memory で chunk 計算自体は完了していても、pid ごとに any(r["pattern_id"] == pid for'
-    detail: 'shared_memory で chunk 計算自体は完了していても、pid ごとに any(r["pattern_id"] == pid for'
-  - id: 'L588'
-    summary: '''小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。軍師指摘:'
-    detail: '''小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。軍師指摘:'
-  deployed_at: "2026-04-10T15:18:43"
-  acceptance_criteria.1.description: bunshinで回帰テスト。l1_alm_wf_engine.pyのpd.read_csvで読込可能+alm_returnsがnp.allclose(rtol=1e-4)で一致(float32精度のため完全一致ではなくallclose)
+  command: kasoku_diffのみWF実行(5/7)。cd /mnt/c/Python_app/DM-signal && python3 outputs/scripts/l1_alm_wf_engine.py --csv outputs/grid_search/okugi_shin_ninpo_20body/cmd_1822_okugi_shin_ninpo_20body_kasoku_diff_grid_monthly_20260409.csv --multi-is --cmd-id cmd_1839 --progress --out-dir outputs/analysis/alm_research/okugi_shin_ninpo。他忍法は絶対実行するな。batch-csvs禁止。kasoku_diff 1本のみ
+  purpose: kasoku_diffのみWF実行(5/7)。bunshin/yotsume/oikaze/kawariminは完了済み。nukimiは後回し(殿指示)。kasoku_diff 1本だけ実行して報告せよ。他忍法は絶対に実行するな
