@@ -1,24 +1,25 @@
 task:
-  _ac_task_id: cmd_1827_impl
+  _ac_task_id: cmd_1841_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: a29054e2
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 86e8dce0
   acceptance_criteria:
-  - description: 設計書Step 1-6を全て実装。変更箇所11箇所が設計書の行番号一覧と一致すること
+  - description: outputs/scripts/l1_alm_wf_engine.py L1527-1541のpd.read_csv(キャッシュなし分岐)をnumpy行単位直読みに差替え。設計書の修正後コードに準拠。差替え後のコードがpandasのread_csvを使わないことを確認
     id: AC1
-  - description: bunshin(16MB)で変更前後のselection_timeline + alm_returnsが完全一致（回帰テスト）
+  - description: nukimi CSV(481K列)でキャッシュファイル(.cache.arr.npy等)を削除した状態からWF実行(outputs/scripts/l1_alm_wf_engine.py
+      --csv <nukimi_csv> --multi-is --cmd-id cmd_1841 --progress)。peak RSS < 2GB かつ
+      rc=0。peak RSSはtracemalloc or /proc/self/status VmPeakで計測し報告
     id: AC2
-  - description: oikaze(468MB)で実行完了 + peak RSS < 1GB + 全メトリクスfloat64版との差 < 1e-4
+  - description: bunshin CSV(小)でキャッシュ削除→再生成→WF実行。allclose(新旧alm_returns, rtol=1e-4)がTrue。数値回帰がないことを確認
     id: AC3
-  - description: kasoku_diff(1.8GB)で実行完了 + OOMなし + peak RSS < 4GB
-    id: AC4
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
   - context/dm-signal-research.md
   - context/dm-signal-frontend.md
+  deployed_at: '2026-04-10T12:01:16'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L492: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。\n\
@@ -41,15 +42,14 @@ task:
   - AC1
   - AC2
   - AC3
-  - AC4
-  parent_cmd: cmd_1827
+  parent_cmd: cmd_1841
   project: dm-signal
-  report_filename: hayate_report_cmd_1827.yaml
-  report_path: queue/reports/hayate_report_cmd_1827.yaml
+  report_filename: hayate_report_cmd_1841.yaml
+  report_path: queue/reports/hayate_report_cmd_1841.yaml
   scope_mode: IMPL
-  status: idle
+  status: in_progress
   stop_for: []
-  task_id: cmd_1827_impl
+  task_id: cmd_1841_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -61,10 +61,12 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'verdict_invalid'
-      count: 11
+      count: 13
+    - pattern: 'yaml_parse_error'
+      count: 3
     - pattern: 'lu_structure_error'
       count: 1
-    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
     gate_blocks:
     - reason: 'report_format'
       count: 8
@@ -85,34 +87,33 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
-  - id: 'L589'
-    summary: 'tracemalloc.start()デフォルト(depth=1)でsnapshot.statistics(''lineno'')を使うとnumpy/_core/fromnumeric.py:54等numpy内部行のみ表示され、l1_alm_wf_engine.pyの呼出行が不明になる。tracemalloc.start(30)でdepth=30にし、statistics(''traceback'')で全'
-    detail: 'tracemalloc.start()デフォルト(depth=1)でsnapshot.statistics(''lineno'')を使うとnumpy/_core/fromnumeric.py:54等numpy内部行のみ表示され、l1_alm_wf_engine.pyの呼出行が不明になる。tracemalloc.start(30)でdepth=30にし、statistics(''traceback'')で全'
-  - id: 'L588'
-    summary: '''小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。軍師指摘:'
-    detail: '''小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。軍師指摘:'
-  - id: 'L587'
-    summary: '''l1_alm_wf_engine.pyのMETRIC_NAMESを変更した際、select_champions_multi_isのforループ内metrics_np'
-    detail: '''l1_alm_wf_engine.pyのMETRIC_NAMESを変更した際、select_champions_multi_isのforループ内metrics_np'
-  - id: 'L586'
-    summary: '''AC3で既存golden(2026-04-03)と新golden(2026-04-09)を比較した際、2026-04のmonthly_returnが全65体で差異。原因は本番DBの自然更新(6日間)でスクリプトバグではない。完全一致チェックは取得日差がある当月データで必ず失敗する。対策:'
-    detail: '''AC3で既存golden(2026-04-03)と新golden(2026-04-09)を比較した際、2026-04のmonthly_returnが全65体で差異。原因は本番DBの自然更新(6日間)でスクリプトバグではない。完全一致チェックは取得日差がある当月データで必ず失敗する。対策:'
-  - id: 'L585'
-    summary: '''cmd_1796のAC2には全7忍法CSVがoutputs/analysis/配下に揃うことと記載されているが、実際の出力先はoutputs/grid_search/shin_ninpo_v2_12body/。AC作成時に出力先パスの確認が必要。lesson:'
-    detail: '''cmd_1796のAC2には全7忍法CSVがoutputs/analysis/配下に揃うことと記載されているが、実際の出力先はoutputs/grid_search/shin_ninpo_v2_12body/。AC作成時に出力先パスの確認が必要。lesson:'
-  - id: 'L584'
-    summary: 'draft教訓1件が未査読のままGATE到達'
-    detail: 'draft教訓1件が未査読のままGATE到達'
-  - id: 'L583'
-    summary: '119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBになり、WSL2'
-    detail: '119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBになり、WSL2'
-  - id: 'L582'
-    summary: 'draft教訓1件が未査読のままGATE到達'
-    detail: 'draft教訓1件が未査読のままGATE到達'
-  - id: 'L581'
-    summary: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
-    detail: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
-  - id: 'L580'
-    summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-    detail: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-  deployed_at: "2026-04-10T12:01:16"
+  - id: 'L599'
+    summary: 'momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_tickersを元のset(components)のままにしていた。batch側はmomentum不足月をNaN(選択なし)として扱うため、sequential側がcurrent_tickersを全コンポーネントとして引き継ぎ月0のreturnを計算し'
+    detail: 'momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_tickersを元のset(components)のままにしていた。batch側はmomentum不足月をNaN(選択なし)として扱うため、sequential側がcurrent_tickersを全コンポーネントとして引き継ぎ月0のreturnを計算し'
+  - id: 'L598'
+    summary: 'monthly_fast.csvは年月文字列+float列の混在フォーマット。np.savetxtは純数値のみ対応するため、float32行列をBytesIOにsavetxt後、行ごとに年月文字列をプレフィックス追記する2段階パターンで実現。pd.read_csv互換(index_col=year_month)を維持しつつ4.47s(12体258MB)を達成。'
+    detail: 'monthly_fast.csvは年月文字列+float列の混在フォーマット。np.savetxtは純数値のみ対応するため、float32行列をBytesIOにsavetxt後、行ごとに年月文字列をプレフィックス追記する2段階パターンで実現。pd.read_csv互換(index_col=year_month)を維持しつつ4.47s(12体258MB)を達成。'
+  - id: 'L597'
+    summary: 'lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCoWが破れworkerあたり79.6MBのRSSコスト。正しい計測=before(pipeline読込+6worker'
+    detail: 'lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCoWが破れworkerあたり79.6MBのRSSコスト。正しい計測=before(pipeline読込+6worker'
+  - id: 'L596'
+    summary: 'kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy'
+    detail: 'kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy'
+  - id: 'L595'
+    summary: 'trend_reversal_filter.py L78でtickers=list(context.current_tickers)がsetからlist変換。PYTHONHASHSEEDにより反復順序が変化し、stable'
+    detail: 'trend_reversal_filter.py L78でtickers=list(context.current_tickers)がsetからlist変換。PYTHONHASHSEEDにより反復順序が変化し、stable'
+  - id: 'L594'
+    summary: 'TrendReversalFilterBlock.execute() L78でtickers = list(context.current_tickers)がsetからlist変換。PYTHONHASHSEED(デフォルトでPython起動ごとに変化)によりsetの反復順序が変わる。stable'
+    detail: 'TrendReversalFilterBlock.execute() L78でtickers = list(context.current_tickers)がsetからlist変換。PYTHONHASHSEED(デフォルトでPython起動ごとに変化)によりsetの反復順序が変わる。stable'
+  - id: 'L593'
+    summary: '12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパターン数+メモリ+実行時間見積りをACに含めよ'
+    detail: '12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパターン数+メモリ+実行時間見積りをACに含めよ'
+  - id: 'L592'
+    summary: 'run_077_nukimi.py L74-76 PipelineEngine import(75.7MB+4.5s)が検証用パスのみ使用。fork全workerで454MB追加+per-pattern'
+    detail: 'run_077_nukimi.py L74-76 PipelineEngine import(75.7MB+4.5s)が検証用パスのみ使用。fork全workerで454MB追加+per-pattern'
+  - id: 'L591'
+    summary: '軍師がfold毎buildで並列安全と助言→半蔵がkasoku_diff --parallelでOOM Kill死亡。N workers合計メモリが理論単体と大幅乖離。大CSVは実測してから助言'
+    detail: '軍師がfold毎buildで並列安全と助言→半蔵がkasoku_diff --parallelでOOM Kill死亡。N workers合計メモリが理論単体と大幅乖離。大CSVは実測してから助言'
+  - id: 'L590'
+    summary: 'tracemallocはPythonヒープのみ。RSS差=850MB(Pythonランタイム+.so+GC)。cmd_1828でAC3 FAIL(1.394GB>700MB)の根因。メモリ削減cmdの目標はRSSで設定必須'
+    detail: 'tracemallocはPythonヒープのみ。RSS差=850MB(Pythonランタイム+.so+GC)。cmd_1828でAC3 FAIL(1.394GB>700MB)の根因。メモリ削減cmdの目標はRSSで設定必須'

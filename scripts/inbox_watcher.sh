@@ -604,6 +604,15 @@ process_unread() {
                             special_ok=false
                         fi
                     fi
+                    # Post-clear verification: confirm CTX dropped to 0%
+                    sleep 8
+                    local post_ctx
+                    post_ctx=$(tmux capture-pane -t "$PANE_TARGET" -p -S -5 2>/dev/null | grep -oP 'CTX:\K[0-9]+' | tail -1 || echo "?")
+                    if [[ "$post_ctx" != "0" && "$post_ctx" != "?" ]]; then
+                        echo "[$(date)] [WARN] clear_command sent to $AGENT_ID but CTX:${post_ctx}% (not 0%). Agent may still be running" >&2
+                    else
+                        echo "[$(date)] [OK] clear_command verified: $AGENT_ID CTX:${post_ctx}%" >&2
+                    fi
                     ;;
                 model_switch)
                     # Whitelist: only /model <known-provider-prefix> allowed

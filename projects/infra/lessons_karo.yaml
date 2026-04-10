@@ -255,3 +255,8 @@ lessons:
   detail: 'cmd_1806をCI赤修正として配備したが、CIは既に緑(前cmd cmd_root_fixesで解消済み)。軍師REQUEST_CHANGESで発覚。根因: ダッシュボードの要修正事項にCI赤と書いてあったのを現在の状態と思い込み、gh run list等で現物確認しなかった。deepdive Phase1-2と同構造。§0.1問い2(現物確認したか)違反。配備前に対象システムの現在状態を直接確認せよ'
   source_cmd: 'cmd_1806'
   created_at: '2026-04-09'
+- id: 'LK044'
+  title: 'clear_command送信後の状態確認を自動化 — 送信=停止ではない'
+  detail: 'pane末尾のプロンプト(❯)だけ見て止まったと報告→実際はthinking/実行中。deepdive Phase2と同構造。真因: /clearは実行中タスクを中断しない+送信後の確認が意志依存。対策: inbox_watcher.shのclear_command処理にpost-verification追加(sleep 8→CTX確認→WARN/OK)。半蔵で動作確認OK。原理: 送った=完了ではない。確認するまでが命令'
+  source_cmd: 'cmd_1839'
+  created_at: '2026-04-10'
