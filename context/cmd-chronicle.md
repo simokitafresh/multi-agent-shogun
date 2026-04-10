@@ -732,3 +732,4 @@
 | cmd_1829 | fix — nukimi simulate_batch L3キャッシュ最適化（BATCH_CHUNK分割） | dm-signal | 04-10 | run_077_nukimi.py に BATCH_CHUN |
 | cmd_1831 | new — GS並列ランナー(gs_runner.py)構築 | dm-signal | 04-10 | gs_runner.py新規実装完了(147行)。--uni |
 | cmd_1835 | recon — kawarimi batch vs sequential md5不一致の根因調査 | dm-signal | 04-10 | TrendReversalFilterBlock.execu |
+| cmd_1834 | recon — CSV I/Oボトルネック調査(GS書出し91%占有) | dm-signal | 04-10 | CSV書出し実装箇所特定・計測完了。kasoku_ratio |

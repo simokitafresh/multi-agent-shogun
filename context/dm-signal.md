@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L595 -->
+<!-- last_synced_lesson: L597 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -175,3 +175,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L593: GSパターン数のC(n,k)スケーリング — universe体数変更で組合せ爆発（cmd_1826）
 - L594: PythonのsetはPYTHONHASHSEEDに依存する非決定論的な順序を持つ。GS sequential検証でlist(set())を使う場合はsorted()に置換せよ（cmd_1835）
 - L595: list(set())はPYTHONHASHSEEDに依存し非決定論的。GS sequential検証ではsorted()に置換せよ（cmd_1835）
+- L596: pandas to_csvは大規模wide CSV(10万列超)で著しく低速。numpy savetxtで59x、.npyで2200x（cmd_1834）
+- L597: module-level pipeline importのRSS削減量は--helpでなくworker fork RSSで計測せよ（cmd_1832）
