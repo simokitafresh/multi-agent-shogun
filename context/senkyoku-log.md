@@ -620,3 +620,5 @@
 - 2026-04-06 20:35 cmd_1764(ALM目的関数完全選定C(10,3)=120通り) 飛猿完遂(e43cefd2)。GATE CLEAR。Top1=MRU+NHF+CAGR頑健。現行Ward#12/120。DC:目的関数変更要否→殿裁定待ち
 - 2026-04-07 00:53 cmd_1765(L1 ALM WFエンジン骨格) 影丸完遂(1cbf703f)。GATE CLEAR。道具磨き完了→cmd B(タイムボックス60秒)次
 - 2026-04-09 01:41 cmd_1807(deploy_task.sh消火判定WARNING追加) 小太郎完遂(fd45ed3)。GATE CLEAR。家老自発cmd経路のq9バイパスを塞ぐ。cmd_save.shと同一キーワードリスト。軍師APPROVE(HIGH)
+- 2026-04-10 14:28 cmd_1831(GS並列ランナーgs_runner.py構築) 半蔵完遂。GATE CLEAR。7本全量3w=1.9min���DC:kawarimi md5不一致。軍師LGTM
+- 2026-04-10 14:29 cmd_1830(BATCH_CHUNK横展開5忍法) 影丸完遂。GATE CLEAR。kasoku_diff MP24.5s(343s→14x)。回帰一致max_diff=0。軍師LGTM

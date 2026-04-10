@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L593 -->
+<!-- last_synced_lesson: L595 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -173,3 +173,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L591: --parallel安全性は実測で確認せよ — 理論的安全≠実際の安全（cmd_1827）
 - L592: トップレベルimportの性能影響 — 不使用パスのimportがfork全workerにロードされる（cmd_1199）
 - L593: GSパターン数のC(n,k)スケーリング — universe体数変更で組合せ爆発（cmd_1826）
+- L594: PythonのsetはPYTHONHASHSEEDに依存する非決定論的な順序を持つ。GS sequential検証でlist(set())を使う場合はsorted()に置換せよ（cmd_1835）
+- L595: list(set())はPYTHONHASHSEEDに依存し非決定論的。GS sequential検証ではsorted()に置換せよ（cmd_1835）

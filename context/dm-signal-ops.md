@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-03-29 cmd_1480 context鮮度更新(357.28s+OPT-12~15+GP-124+crash-safety) -->
+<!-- last_updated: 2026-04-10 §18研究道具カタログ大幅更新(GS 150min→1.9min道具磨き+WFメモリ削減+実測値) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -237,8 +237,9 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - **所要時間(20体universe, meta実測)**:
   - bunshin ~1min / yotsume 57s / oikaze 218s(3.6min) / kawarimi 123s(2.1min)
   - nukimi **209s(3.5min)**(cmd_1829 BATCH_CHUNK=500 + SHM O(n)化。改善前106min→**30倍高速化**)
-  - kasoku_diff **343s(5.7min)** / kasoku_ratio **352s(5.9min)** ← 新律速(各25%)
-  - **直列合計 22.7min(改善前150min→6.6倍削減)。全忍法がほぼ均等化(0.9-5.9min)**
+  - kasoku_diff **MP 24.5s**(cmd_1830 BATCH_CHUNK横展開。total 282.6s=CSV I/O律速) / kasoku_ratio 同等
+  - **gs_runner.py並列(cmd_1831): 7本全量3 workers = 111.1s(1.9min)。改善前150min→79倍**
+  - **★ボトルネックがCSV I/Oに移行**（kasoku_diff: MP 24.5s vs total 282.6s。258s=CSV書出し）
 - **🔴 --help未実装**: run_077_*には--helpオプションがない。実行するとGSが即開始する
 - **🔴 パターン数はuniverse体数で組合せ爆発**: 12体→119,493パターン / 20体→**944,775パターン(7.9倍)**。CSVサイズ・メモリ・実行時間が全てP比例
 - **メタ改善設計**: → `docs/research/gunshi_research_pipeline_meta_20260410.md`（GS共通基盤+並列ランナー）

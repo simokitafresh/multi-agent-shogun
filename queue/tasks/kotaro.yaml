@@ -1,15 +1,15 @@
 task:
-  _ac_task_id: cmd_1828_impl
+  _ac_task_id: cmd_1832_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: 063ae7d9
+  ac_version: 656f9442
   acceptance_criteria:
-  - description: Step 8-10の3箇所dtype変更を実装。変更箇所が設計書と一致すること
+  - description: 7忍法のrun_077_*.pyのpipeline関連トップレベルimportをsimulate_pattern関数内に移動
     id: AC1
-  - description: bunshin(16MB)で変更前後のselection_timeline + alm_returnsが完全一致（回帰テスト）
+  - description: bunshinで回帰テスト(変更前後の結果完全一致)
     id: AC2
-  - description: oikaze(468MB)でpeak RSS計測。目標 < 700MB
+  - description: /usr/bin/time -vでRSS計測。75.7MB以上の削減確認
     id: AC3
   context_files:
   - context/dm-signal.md
@@ -19,9 +19,6 @@ task:
   - context/dm-signal-frontend.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L492: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。\n\
-    \  - L072: shout.sh(ninja FINAL step必須)とgate_mcp_access.sh(セキュリティhook)がwhitelist未登録。スクリプト作成\n\
-    \  - L347: ninja_done.shは.gitignoreのホワイトリスト(Step3: !scripts/xxx.sh)に未登録。類似の運用スクリプト(inbox_wr\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
@@ -41,14 +38,14 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1828
+  parent_cmd: cmd_1832
   project: dm-signal
-  report_filename: kotaro_report_cmd_1828.yaml
-  report_path: queue/reports/kotaro_report_cmd_1828.yaml
+  report_filename: kotaro_report_cmd_1832.yaml
+  report_path: queue/reports/kotaro_report_cmd_1832.yaml
   scope_mode: IMPL
-  status: done
+  status: assigned
   stop_for: []
-  task_id: cmd_1828_impl
+  task_id: cmd_1832_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -83,9 +80,21 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L593'
+    summary: '12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパターン数+メモリ+実行時間見積りをACに含めよ'
+    detail: '12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパターン数+メモリ+実行時間見積りをACに含めよ'
+  - id: 'L592'
+    summary: 'run_077_nukimi.py L74-76 PipelineEngine import(75.7MB+4.5s)が検証用パスのみ使用。fork全workerで454MB追加+per-pattern'
+    detail: 'run_077_nukimi.py L74-76 PipelineEngine import(75.7MB+4.5s)が検証用パスのみ使用。fork全workerで454MB追加+per-pattern'
+  - id: 'L591'
+    summary: '軍師がfold毎buildで並列安全と助言→半蔵がkasoku_diff --parallelでOOM Kill死亡。N workers合計メモリが理論単体と大幅乖離。大CSVは実測してから助言'
+    detail: '軍師がfold毎buildで並列安全と助言→半蔵がkasoku_diff --parallelでOOM Kill死亡。N workers合計メモリが理論単体と大幅乖離。大CSVは実測してから助言'
+  - id: 'L590'
+    summary: 'tracemallocはPythonヒープのみ。RSS差=850MB(Pythonランタイム+.so+GC)。cmd_1828でAC3 FAIL(1.394GB>700MB)の根因。メモリ削減cmdの目標はRSSで設定必須'
+    detail: 'tracemallocはPythonヒープのみ。RSS差=850MB(Pythonランタイム+.so+GC)。cmd_1828でAC3 FAIL(1.394GB>700MB)の根因。メモリ削減cmdの目標はRSSで設定必須'
   - id: 'L589'
-    summary: 'tracemalloc.start()デフォルト(depth=1)でsnapshot.statistics(''lineno'')を使うとnumpy/_core/fromnumeric.py:54等numpy内部行のみ表示され、l1_alm_wf_engine.pyの呼出行が不明になる。tracemalloc.start(30)でdepth=30にし、statistics(''traceback'')で全'
-    detail: 'tracemalloc.start()デフォルト(depth=1)でsnapshot.statistics(''lineno'')を使うとnumpy/_core/fromnumeric.py:54等numpy内部行のみ表示され、l1_alm_wf_engine.pyの呼出行が不明になる。tracemalloc.start(30)でdepth=30にし、statistics(''traceback'')で全'
+    summary: 'shared_memory で chunk 計算自体は完了していても、pid ごとに any(r["pattern_id"] == pid for'
+    detail: 'shared_memory で chunk 計算自体は完了していても、pid ごとに any(r["pattern_id"] == pid for'
   - id: 'L588'
     summary: '''小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。軍師指摘:'
     detail: '''小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。軍師指摘:'
@@ -101,16 +110,4 @@ task:
   - id: 'L584'
     summary: 'draft教訓1件が未査読のままGATE到達'
     detail: 'draft教訓1件が未査読のままGATE到達'
-  - id: 'L583'
-    summary: '119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBになり、WSL2'
-    detail: '119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBになり、WSL2'
-  - id: 'L582'
-    summary: 'draft教訓1件が未査読のままGATE到達'
-    detail: 'draft教訓1件が未査読のままGATE到達'
-  - id: 'L581'
-    summary: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
-    detail: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''display''],'
-  - id: 'L580'
-    summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-    detail: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric_values_for_pattern()で後計算添付する方式で、速度劣化なく47列のselection_timelineを生成。200.65s/7忍法(300秒制限内)。'
-  deployed_at: "2026-04-10T13:19:07"
+  deployed_at: "2026-04-10T14:39:00"

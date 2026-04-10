@@ -1527,4 +1527,236 @@
   causal_chain: "cmd_1822でACに道具CLI未記載→忍者がrun_077旧ツール使用→12分hang→道具カタログ永続化+cmd_save WARNING(二重防御)。Check番号衝突→上書き→パラメータ空間チェック消失=負の複利。Check 18で回避"
   severity: normal
   timestamp: "2026-04-09T23:10:00"
-  timestamp: "2026-04-09T22:30:00"
+- cmd_id: cmd_1823
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1823_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。commit 5d061b4。Check 15→18修正反映確認済み。dm-signal-ops.md §18追記+cmd_save.sh Check 18追加。binary_checksにCheck 15旧番号残存あるが実装は正(軽微)"
+  observations:
+    - "事実1: commit 5d061b4にcmd_save.sh+dm-signal-ops.md 2ファイル。RC指摘(Check番号衝突)反映済み"
+    - "事実2: Check 18実装はGS/WF検出→ACセクション内run_077/l1_alm_wf_engine存在確認→未記載WARNING。WARN_COUNT非加算(段階的導入)"
+    - "事実3: AC3回帰テスト: cmd_1822のACに対してGS道具未記載WARNING出力確認。期待通り"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "RC指摘(Check 15衝突)→半蔵がCheck 18に修正→パラメータ空間チェック保全+新チェック追加=二重防御。cmd_1822事故の恒久対策完了(正の複利: 全研究cmdに道具明示チェック適用)"
+  timestamp: "2026-04-09T23:20:00"
+- cmd_id: cmd_1824
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  findings_summary: "6観点レビュー。前提崩壊2点: (1)run_077_*は--help未実装(7/10道具で動的取得不可) (2)cmd_save.sh内python3 --help毎回実行→10-20秒加算でcmd起票劣化。cmd_1823静的カタログで十分(LG023)。severity: normal。棚上げ推奨"
+  observations:
+    - "事実1: python3 run_077_oikaze.py --helpはexit 1。出力='already exists'エラー。--helpオプション未実装"
+    - "事実2: l1_alm_wf_engine.py --help=0.865秒。run_077_oikaze.py(エラー終了)=1.980秒。10道具全部→10-20秒"
+    - "事実3: cmd_1823静的カタログ(context/dm-signal-ops.md §18)が既に稼働中。Check 18もGATE CLEAR済み"
+    - "事実4: 改善判断基準(1)今よりマシか→run_077で機能しない=マシではない (2)新しい長期問題を生まないか→起票速度劣化=生む"
+  proposals: []
+  causal_chain: "動的--help取得→run_077未実装(7/10道具)+速度劣化(+10-20秒)=改善判断基準(2)違反。cmd_1823静的カタログ→陳腐化リスクは低頻度+道具変更cmd時にcontext更新で対応可能。各論パッチ(LG023)に該当"
+  severity: normal
+  timestamp: "2026-04-10T03:15:00"
+- cmd_id: cmd_1825
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  findings_summary: "6観点レビュー。CSVサイズ見積り乖離: kasoku系=各1.8GB(将軍見積り950MBの1.9倍)。pandas展開4-5GB+claude群2.4GB→単独でもOOMリスク。直列化だけでは不足。メモリ確保策+小→大の実行順序が必要。severity: urgent"
+  observations:
+    - "事実1: kasoku_diff=1.8GB, kasoku_ratio=1.8GB(ls -lh実測)。7CSV合計5.6GB。将軍q8記載'≈950MB'の1.9倍"
+    - "事実2: free -h: 15GB total, swap 3GB/4GB使用中。claude群(約8プロセス×300MB=2.4GB常駐)"
+    - "事実3: 小太郎もOOM Kill(家老注記)。bunshin(16MB)成功→kasoku系でOOM。単独でもメモリ上限圧迫"
+    - "事実4: pandas read_csvのメモリ展開比率≈2-3倍。1.8GB CSV→4-5GB in-memory"
+  proposals: []
+  causal_chain: "CSV実サイズ1.8GB(見積り1.9倍)→pandas展開4-5GB→claude群+swap消費と合計→15GB上限圧迫→OOM再発リスク。直列化(cmd_1825方針)は正しいが、kasoku系はメモリ確保策(idle CLI停止 or チャンク読込み)が必要。小→大の実行順序で成功件数最大化"
+  severity: urgent
+  timestamp: "2026-04-10T03:30:00"
+- cmd_id: cmd_1826
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。468MB→13GB(28倍)膨張の根因特定偵察。tracemalloc+段階RSS計測+削減案。read-only安全。bunshinで手法確立→大CSV段階拡大が望ましい"
+  observations:
+    - "事実1: journalctl実測 anon-rss=13,607MB(468MB CSV)。28倍=13607/468=29.1倍"
+    - "事実2: l1_alm_wf_engine.py存在確認済み。--csv/--batch-csvs両モード対象"
+    - "事実3: 偵察5要件充足。read-only。コード変更なし"
+  proposals: []
+  causal_chain: "単独468MB→13GB膨張→直列でもOOM→WF実行不能→根因特定(偵察)→メモリ削減設計→WF実行可能(正の複利: 全研究cmdメモリ安全性)"
+  timestamp: "2026-04-10T03:50:00"
+- cmd_id: cmd_1825
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1825_impl
+  verdict: LGTM
+  report_verdict: FAIL
+  gate_result: BLOCK
+  findings_summary: "4観点OK。halt指示によるFAIL正当。AC1(7 CSV存在確認)PASS。AC2-4未実行(OOMメモリバグ)。LC(28倍膨張)登録推奨。KC 2件有用"
+  observations:
+    - "事実1: halt指示(msg_20260410_033957)によるFAIL。飛猿の作業品質問題ではない"
+    - "事実2: AC1: 7 CSV全存在確認済み。cmd_1822成果物残存"
+    - "事実3: LC: 468MB→13GB(28倍)直列でもOOM不可避。具体的・再利用可能。register推奨"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "l1_alm_wf_engine 28倍メモリ膨張→直列でもOOM→halt→FAIL。エンジン修正(cmd_1826偵察)が先決。飛猿のFAILは環境問題であり忍者品質問題ではない"
+  timestamp: "2026-04-10T03:55:00"
+- cmd_id: cmd_1826
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1826_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。主因特定秀逸: PrefixMomentCache.build() L208-216 float64×7+int32×2=1247MB一括生成(peak 2010MB/baseline 82MB=24.7x)。削減案3種(float32 47%/On-demand 70%/mmap+slice 75%)。LC(tracemalloc depth設定)登録推奨"
+  observations:
+    - "事実1: top10全てL208-216(PrefixMomentCache.build)内。155.89MB×7(float64)+77.95MB×2(int32)=1247MB"
+    - "事実2: Stage-wise RSS: baseline82→CSV523→f64変換762→PrefixMomentCache2010MB。Stage3-bが最大膨張(+1247MB)"
+    - "事実3: 削減案3はmmap維持+fold毎slice(75%削減/20行)が最良バランス。桁落ちリスクなし"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "PrefixMomentCache.build()が全データ分float64×9配列一括生成→1247MB→peak 2010MB→OOM。根因特定完了→削減案実装cmdで解決可能(正の複利: 全WF実行のメモリ安全性)"
+  timestamp: "2026-04-10T04:00:00"
+- cmd_id: cmd_1827
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。設計書11箇所+ランブック§1-4と完全対応。Step 1-6依存順序正しい。FM注記: kasoku系mmapキャッシュ未生成(AC4初回pandas read_csvピーク3.6GB)だがnormal"
+  observations:
+    - "事実1: 設計書の11箇所変更一覧とcmd AC1が完全対応。Step 1-6の依存順序も設計書通り"
+    - "事実2: kasoku_diff/kasoku_ratioのmmapキャッシュ(.npy)が未生成。bunshin/kawariminのみ存在。AC4初回実行時のpandas read_csvピーク(1.8GB→3.6GB)は残る"
+    - "事実3: AC2→AC3→AC4の小→大テスト順序で段階的検証。AC4失敗しても前段成果は残る"
+  proposals: []
+  causal_chain: "設計書(なぜなぜ7回+依存マップ+ランブック)→cmd化→忍者実装→段階テスト→kasoku_diff OOMなし→cmd_1825再実行可能=正の複利"
+  timestamp: "2026-04-10T10:45:00"
+- cmd_id: cmd_karo_premise_check
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_karo_premise_check_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。commit bc2377a。inbox_write.sh L786に★前提問い1行追加。副作用なし"
+  observations:
+    - "事実1: 追加行=echo '★前提問い: この指示に含まれる数値・条件は自分で確認したか？出典は？'。既存★10回問い(L785)の直後"
+    - "事実2: 変更は1行のみ。files_modified 1=commit 1一致"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "将軍指示の数値混同(468MB≠1.8GB)→なぜなぜ7回→前提確認の習慣化→inbox_write.shに★前提問い埋込み=Phase 5(知性の外部化)"
+  timestamp: "2026-04-10T12:10:00"
+- cmd_id: cmd_1828
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。WFメモリ第2弾Step8-10。3箇所dtype変更。設計書通り"
+  observations:
+    - "事実1: Step8-10は設計書deepdiveと完全対応。oikaze目標<700MB"
+  proposals: []
+  causal_chain: "drawdown内部f64→f32自動追従。5行変更でkasoku 3.68→2.66GB=正の複利"
+  timestamp: "2026-04-10T13:20:00"
+- cmd_id: cmd_1829
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。nukimi simulate_batch BATCH_CHUNK=500分割。3D配列15MB=L3内。6/7忍法に横展開可能。GS全体53%削減"
+  observations:
+    - "事実1: 6/7忍法にsimulate_batch+3D mask存在(bunshinのみ不在)。横展開で全忍法高速化可能"
+    - "事実2: BATCH_CHUNK=500×150×20×10bytes=15MB。L3(16MB)内収容"
+    - "事実3: パターン数7.91倍=C(20,4)/C(12,4)の組合せ爆発。パターン当たり4.9倍=L3溢れ。合計38.7倍(実測一致)"
+  proposals: []
+  causal_chain: "3D配列(P,M,C) L3溢れ→DRAM律速→13.3ms/pattern。BATCH_CHUNK=500→L3内→0.04ms/pattern→nukimi 106min→3.5min(30x)→GS全体150min→22.7min(6.6x)=正の複利×全研究cmd"
+  timestamp: "2026-04-10T13:40:00"
+- cmd_id: cmd_1829
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1829_impl
+  verdict: LGTM
+  report_verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "4観点OK。nukimi 106min→3.5min(30x)。fast 19.3s/0.040ms/pat。SHM O(n^2)→O(n)化。回帰md5一致+max_abs_diff=0。commit=noのみ"
+  observations:
+    - "事実1: fast 19.284s(0.040ms/pattern)。total 209.2s(0.434ms/pattern)。改善前13.25ms→331倍速"
+    - "事実2: SHM回収O(n^2)(any rows_fast線形探索)→produced_pids集合参照O(n)。大規模gridで効く"
+    - "事実3: bunshinはsimulate_batch不在→横展開不要(AC4確認済み)"
+  fail_reasons: []
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "BATCH_CHUNK=500で3D配列15MB=L3内+SHM O(n)化→nukimi 106min→3.5min。GS 150min→22.7min(6.6x)"
+  timestamp: "2026-04-10T13:55:00"
+- cmd_id: cmd_1830
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。BATCH_CHUNK+SHM O(n)化横展開5忍法。nukimiコピーパターン。key_to_pis部分のみ忍法固有"
+  observations:
+    - "事実1: 5忍法にsimulate_batch+3D mask存在確認済み(才蔵AC4)"
+    - "事実2: kasoku_diff meta実測343s(5.7min)。横展開で更に高速化の可能性"
+  proposals: []
+  causal_chain: "nukimi 30x成功パターン→5忍法横展開→GS全忍法均等化→全体22.7min以下=正の複利"
+  timestamp: "2026-04-10T14:05:00"
+- cmd_id: cmd_1831
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。GS並列ランナー80行新規。subprocess+ThreadPoolExecutor。WF run_batch_mode同パターン"
+  observations:
+    - "事実1: DB同時接続負荷→workers=3で制限(デフォルト2)"
+    - "事実2: 出力CSV名衝突リスク→cmd_idにworker IDを含める設計"
+  proposals: []
+  causal_chain: "7忍法直列22.7min→3 workers並列→7.6min=正の複利(研究ループ高速化)"
+  timestamp: "2026-04-10T14:05:00"
+- cmd_id: cmd_1828
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1828_impl
+  verdict: LGTM
+  report_verdict: FAIL
+  gate_result: null
+  findings_summary: "4観点OK。AC3 FAIL=設計書の穴(tracemalloc≠RSS 850MB+Step9/10 no-op)。忍者品質問題なし"
+  observations:
+    - "事実1: baseline/after差12KBのみ。Step9/10 cmd_1827で先取り済み"
+    - "事実2: tracemalloc~545MB vs RSS 1.394GB。差850MB=runtime+.so+GC"
+    - "事実3: PipelineEngine import 75.7MB×6w=454MB未計上"
+  lesson_quality: OK
+  causal_chain: "tracemalloc基準目標→RSS乖離850MB→AC3未達。設計書の穴"
+  timestamp: "2026-04-10T14:15:00"
+- cmd_id: self_study_ralph_loop_20260410
+  review_type: self_study
+  findings_summary: "ラルフループ点検+環境埋込み。教訓5件登録依頼+PipelineEngine劣化docs永続化+lazy import/gs-bench-gate cmd提案"
+  observations:
+    - "✅環境埋込み8件(設計書3+context1+cmd実装4)"
+    - "⚠️未実装4件→cmd提案済み(PipelineEngine lazy/gs-bench-gate/横展開/runner)"
+    - "❌セッション記憶5件→教訓5件(LG-A~E)+docs追記で環境埋込み完了"
+  causal_chain: "セッション知見→教訓登録+docs永続化→clear後も残る=ラルフループ"
+  timestamp: "2026-04-10T14:20:00"
+- cmd_id: cmd_1830
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1830_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。5忍法BATCH_CHUNK横展開。kasoku_diff MP 24.5s(343s→14x)。回帰max_diff=0。CSV I/Oが新ボトルネック(258s/282.6s=91%)"
+  observations:
+    - "事実1: 5忍法全てmax_diff=0。横展開パターンの正当性確認"
+    - "事実2: kasoku_diff: MP 24.5s(計算) vs total 282.6s(CSV I/O 258s=91%)"
+  lesson_quality: OK
+  causal_chain: "nukimi BATCH_CHUNK→5忍法横展開→計算14x高速化→ボトルネックがCSV I/Oに移行"
+  timestamp: "2026-04-10T14:30:00"
+- cmd_id: cmd_1831
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1831_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gs_runner.py 147行。7本全量3w=111.1s(1.9min)。DC: kawarimi md5不一致(--skip-verify)"
+  observations:
+    - "事実1: 7本全rc=0。直列推定5.4min→並列1.9min(2.8x)"
+    - "事実2: kawarimi sequential md5が非決定的。batch md5は固定。根因不明"
+  lesson_quality: OK
+  causal_chain: "gs_runner.py並列化→GS全体150min→1.9min(79x)。kawarimi非決定性は別途調査要"
+  timestamp: "2026-04-10T14:30:00"
