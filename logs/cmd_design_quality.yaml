@@ -4341,3 +4341,12 @@ entries:
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-04-10T17:21:55Z"
+  - cmd_id: "cmd_1851"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-10T17:41:44Z"
+    notes: "draft_lessons:1"
