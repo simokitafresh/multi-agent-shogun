@@ -37,6 +37,7 @@ source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/lib/rotate_log.sh"
+source "$SCRIPT_DIR/lib/cli_adapter.sh"
 
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
@@ -93,6 +94,8 @@ LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epo
 CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
 CI_STATUS_CHECK_LAST=0          # CI statusキャッシュ最終更新時刻（epoch秒）
 CI_STATUS_CHECK_INTERVAL=300    # CI statusキャッシュ有効期間（秒）— 5分
+CLI_DEAD_LOOP_WINDOW=300    # CLI死亡ループ防止ウィンドウ（秒）— 5分 (cmd_1851)
+CLI_DEAD_LOOP_THRESHOLD=2   # CLI死亡ループ防止閾値（回）— 5分以内にN回以上でALERT (cmd_1851)
 
 # 監視対象の忍者名リスト（karoと将軍は対象外）
 # settings.yamlから動的取得（cmd_1136: ハードコード全廃）
@@ -183,6 +186,7 @@ declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key
 declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時刻 — key: "ninja:cmd_id", value: epoch秒
 declare -A IDLE_NOTIFY_SENT              # idle通知送信済み時刻 — key: agent_name, value: epoch秒（状態変化ベース+モード切替）
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
+declare -A CLI_DEAD_RESTART_TIMES    # CLI死亡再起動時刻リスト — key: ninja_name, value: スペース区切りepoch秒リスト (cmd_1851)
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
 for name in "${NINJA_NAMES[@]}"; do
@@ -2142,6 +2146,14 @@ write_karo_snapshot() {
                             /^[ \t]*project:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); p=v }
                             END { print t "|" s "|" p }
                         ' "$task_file")
+                        # CLI死亡判定: pane_current_commandがbash/zshならdead (cmd_1851)
+                        if [ -n "$_pane_target" ]; then
+                            local _pane_cmd
+                            _pane_cmd=$(tmux display-message -t "$_pane_target" -p '#{pane_current_command}' 2>/dev/null || true)
+                            case "$_pane_cmd" in
+                                bash|zsh|sh) status="dead" ;;
+                            esac
+                        fi
                         _snapshot_status[$name]="${status:-}"
                         echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}|M:${_model_short}"
                     else
@@ -2211,6 +2223,86 @@ write_karo_snapshot() {
             } > "$snapshot_file"
         fi
     } 200>"$lock_file"
+}
+
+# ─── CLI死亡検知+自動再起動 (cmd_1851) ───
+# 全忍者ペインのpane_current_commandを確認し、bash/zshならCLI死亡と判定。
+# 5分以内に2回以上再起動した場合はntfy ALERTのみ送信してループ防止。
+check_ninja_cli_dead() {
+    local now=$EPOCHSECONDS
+    for name in "${NINJA_NAMES[@]}"; do
+        local pane_target="${PANE_TARGETS[$name]:-}"
+        [ -z "$pane_target" ] && continue
+
+        # pane_current_commandを取得
+        local pane_cmd
+        pane_cmd=$(tmux display-message -t "$pane_target" -p '#{pane_current_command}' 2>/dev/null || true)
+
+        # bash/zsh/sh以外はCLI稼働中 → スキップ
+        case "$pane_cmd" in
+            bash|zsh|sh) ;;
+            *) continue ;;
+        esac
+
+        log "CLI-DEAD: ${name}@${pane_target} pane_current_command=${pane_cmd} → CLI死亡検知"
+
+        # ループ防止チェック: 直近CLI_DEAD_LOOP_WINDOW秒以内の再起動回数を計算
+        local restart_times="${CLI_DEAD_RESTART_TIMES[$name]:-}"
+        local recent_count=0
+        local new_times=""
+        for t in $restart_times; do
+            if (( now - t < CLI_DEAD_LOOP_WINDOW )); then
+                recent_count=$((recent_count + 1))
+                new_times="$new_times $t"
+            fi
+        done
+        CLI_DEAD_RESTART_TIMES[$name]="${new_times# }"  # 期限切れ記録を削除
+
+        if (( recent_count >= CLI_DEAD_LOOP_THRESHOLD )); then
+            log "CLI-DEAD-LOOP: ${name} ${recent_count}回再起動/直近${CLI_DEAD_LOOP_WINDOW}秒。ALERTのみ送信し再起動停止。"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "【ALERT】${name} CLI連続死亡ループ検知。直近5分で${recent_count}回再起動。手動確認が必要。" 2>/dev/null || true
+            continue
+        fi
+
+        # 起動コマンドを取得
+        local launch_cmd
+        launch_cmd=$(build_cli_command "$name" 2>/dev/null || true)
+        if [ -z "$launch_cmd" ]; then
+            log "CLI-DEAD: ${name} launch_cmd取得失敗。再起動スキップ。"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "【ALERT】${name} CLI死亡検知。launch_cmd取得失敗で自動再起動不可。手動確認が必要。" 2>/dev/null || true
+            continue
+        fi
+
+        # 再起動時刻を記録
+        CLI_DEAD_RESTART_TIMES[$name]="${CLI_DEAD_RESTART_TIMES[$name]} ${now}"
+
+        log "CLI-DEAD: ${name} 再起動実行。launch_cmd=${launch_cmd}"
+
+        # バックグラウンドで再起動+30秒後確認（メインループをブロックしない）
+        local _pane_target_bg="$pane_target"
+        local _name_bg="$name"
+        local _launch_bg="$launch_cmd"
+        (
+            tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
+            sleep 1
+            tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
+            sleep 1
+            tmux send-keys -t "$_pane_target_bg" "cd \"${SCRIPT_DIR}\" && clear" Enter 2>/dev/null || true
+            sleep 1
+            tmux send-keys -t "$_pane_target_bg" "$_launch_bg" Enter 2>/dev/null || true
+            sleep 30
+            local post_cmd
+            post_cmd=$(tmux display-message -t "$_pane_target_bg" -p '#{pane_current_command}' 2>/dev/null || true)
+            case "$post_cmd" in
+                bash|zsh|sh)
+                    bash "$SCRIPT_DIR/scripts/ntfy.sh" "【CLI再起動失敗】${_name_bg}: pane_cmd=${post_cmd}（まだshell）。手動確認が必要。" 2>/dev/null || true
+                    ;;
+                *)
+                    bash "$SCRIPT_DIR/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: pane_cmd=${post_cmd}" 2>/dev/null || true
+                    ;;
+            esac
+        ) &
+    done
 }
 
 # ─── 家老/clear送信共通関数（全コードパスで使用） ───
@@ -2995,6 +3087,7 @@ while true; do
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)
+    check_ninja_cli_dead        # 忍者CLI死亡検知+自動再起動 (cmd_1851)
     run_lock_cleanup            # /tmp orphan lock files定期削除
 
     # ═══ STEP 2: ダッシュボード自動更新 (cmd_404) ═══
