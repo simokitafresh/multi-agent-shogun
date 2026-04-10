@@ -739,3 +739,4 @@
 | cmd_1837 | fix — kawarimi PYTHONHASHSEED非決定性修正(L78 sorted()) | dm-signal | 04-10 | TrendReversalFilterBlock L78をs |
 | cmd_1842 | fix — GS run_077_*.py CSV出力時に.npyキャッシュ同時生成（キャッシュ不在ゼロ化） | dm-signal | 04-10 | 7忍法run_077_*.pyのwrite_monthly_ |
 | cmd_1841 | fix — l1_alm_wf_engine.py load_data() numpy直読み化（pd.read_csv OOM根絶） | dm-signal | 04-10 | l1_alm_wf_engine.pyのcache-miss |
+| cmd_1840 | fix — 奥義-シン忍法 大CSVキャッシュ生成+WF完走+チャンピオン選出 | dm-signal | 04-10 | AC1 PASS: nukimi/kasoku_ratio |

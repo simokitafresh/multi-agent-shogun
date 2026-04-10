@@ -503,6 +503,33 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 
 BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメモリOOM解消(10.2GB→3.68GB)。lazy import(-79.6MB/worker)。gs-bench-gate WARN自動化。CSV I/O: numpy savetxt(float32)置換で270s→4.47s(60x)実装完了(cmd_1836)。BytesIO中継+年月プレフィックス追記パターン(L598)。→ `docs/research/gunshi_research_pipeline_meta_20260410.md` / `docs/research/gunshi_wf_engine_memory_fix_design_20260410.md`
 
+### 奥義-シン忍法（cmd_1822/1840/1844）
+
+**定義**: シン忍法20体を構成PFとしたL2 FoF。3目的(CAGR/NHF/MaxDD)×7忍法=21体。
+
+**2つの方式の違い（殿指摘 2026-04-10）**:
+
+| | シン忍法方式（正） | ALM方式（誤適用） |
+|--|-------------------|-------------------|
+| **選出方法** | GS全期間結果から事後的に最強パターンを選出 | WFエンジンでIS窓を毎月動的に切替えOOS検証 |
+| **パラメータ** | 固定（全期間ベスト1つ） | 動的（毎月変わる） |
+| **道具** | GS CSV直接読込み | l1_alm_wf_engine.py |
+| **用途** | シン四神/シン忍法/奥義-シン忍法 | ALM四神/ALM忍法 |
+
+**経緯**:
+1. **cmd_1822 AC1**: GS新規実行（run_077_*.py --universe okugi_shin_ninpo_20.yaml）→ 7 CSV生成。これは正しい
+2. **cmd_1840**: GS CSVにWFエンジン(l1_alm_wf_engine.py)を適用しチャンピオン選出 → **ALM方式を誤適用**。結果は参考データとして保持（破棄しない）
+3. **cmd_1844**: GS CSVから事後的に3目的チャンピオンを直接選出 → **正しいシン忍法方式**
+
+**殿指摘(2026-04-10)**: 「シン忍法にALM忍法をしていないか？」→ 奥義-シン忍法は シン忍法と同じ事後選出方式で作るべきところ、将軍がALM方式(WFエンジン)で作った。 「結果は破棄するなよ。それはそれで役に立つ」→ cmd_1840の結果は保持。 「しかし今回やろうとしていたものとは違う」→ cmd_1844で事後選出方式にて再実行。
+
+**データ**:
+- GS CSV: `outputs/grid_search/okugi_shin_ninpo_20body/cmd_1822_okugi_shin_ninpo_20body_{忍法}_grid_monthly_20260409.csv`（7本）
+- ALM方式結果(参考): `queue/archive/reports/tobisaru_report_cmd_1840_20260410.yaml`
+- シン忍法方式結果: cmd_1844完了後に追記
+
+**道具磨き成果（副産物）**: OOM対策としてload_data() numpy直読み化(cmd_1841)+GS側.npy同時出力(cmd_1842)を実装。今後のGS→WFパイプラインでOOMが原理的に起きない
+
 ### パリティ検証（cmd_1097-1116）
 
 | cmd | 対象 | 結果 | 教訓 |
