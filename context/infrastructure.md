@@ -309,7 +309,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L465 -->
+<!-- last_synced_lesson: L466 -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
 <!-- lesson-sort 2026-04-06: L437-L441の5件をカテゴリ分類。bash(L437/L438), レビュー/軍師(L439/L440), git(L441) -->
@@ -499,6 +499,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L463: EdgeToEdge imePaddingはContent Columnに配置しNavigationBarには置くな（cmd_1815）
 - L464: 想像した数字を報告するな — 実測値のみ報告せよ（cmd_1829）
 - L465: 道具磨きcmdのテスト実行ACと並行研究cmdの入力衝突チェック（cmd_1843）
+- L466: CLI死活判定はpane_current_commandで全CLI種別をカバー可能。codex死亡時もbash/zshに戻る（cmd_1851）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

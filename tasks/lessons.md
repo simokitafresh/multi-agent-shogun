@@ -3553,3 +3553,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: gunshi
 - **tags**: [universal]
 - cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft review時にLG002(並行配備衝突チェック)を道具磨きのテストACにも適用すべきだった。道具磨きcmdのACにテスト実行が含まれる場合、同一入力を使う並行cmdの有無を確認せよ
+
+### L466: CLI死活判定はpane_current_commandで全CLI種別をカバー可能。codex死亡時もbash/zshに戻る
+- **日付**: 2026-04-11
+- **出典**: cmd_1851
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [universal]
+- CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。
