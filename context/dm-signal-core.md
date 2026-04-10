@@ -224,6 +224,7 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 - L154: OPEN/CLOSE切替修正ではbenchmark側の*_open参照を全ビューで同時点検する（cmd_522）
 - L318: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、スイッチ型(朱雀/TMF-TMV)を排除する（cmd_981）
 - L320: p̄検定は朱雀(DM3)のDNA「債券方向スイッチ」と構造的に不適合（cmd_981）
+- L599: TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致（cmd_1837）
 
 ### tiebreakルール（cmd_217, L086/L092）
 

@@ -125,6 +125,11 @@
 - L570: 大規模月次CSVはnpzよりnpy sidecar memmapの方が再読込が桁違いに速い（cmd_wf_speedup）[deprecated]
 - L583: WSL2 /mnt/c巨大CSVフラッシュはp9_client_rpc stallを誘発。Linux側出力か分割書込で対処（cmd_1796）
 - L588: l1_alm_wf_engine.py PrefixMomentCache.build()が468MB CSV→2010MB peak(24.7倍)。float64×7+int32×2一括生成が主因。mmap+fold毎f64スライスで75%削減可能（cmd_1826）
+- L589: SHM結果回収でrows_fast線形探索を重ねるとlarge-gridで二乗時間化（cmd_1829）
+- L592: トップレベルimportの性能影響 — 不使用パスのimportがfork全workerにロード（cmd_1199）
+- L596: pandas to_csvは大規模wide CSV(10万列超)で低速。numpy savetxtで59x、.npyで2200x（cmd_1834）
+- L597: module-level pipeline importのRSS削減量は--helpでなくworker fork RSSで計測せよ（cmd_1832）
+- L598: numpy savetxt(float32)のyear_month混在CSV: BytesIO中継+行単位プレフィックス追記パターン（cmd_1836）
 
 ---
 

@@ -528,13 +528,23 @@ BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメ�
 - ALM方式結果(参考): `queue/archive/reports/tobisaru_report_cmd_1840_20260410.yaml`
 - シン忍法方式結果: `queue/archive/reports/hanzo_report_cmd_1844_20260410.yaml`（PASS。195万パターン→21チャンピオン選出。直列事後計算、OOMなし）
 
-**cmd_1844結果（GS事後方式、正しいシン忍法方式）**: hanzoが7 GS CSV全量(1,958,050パターン)からCAGR/NHF/MaxDDを直接事後計算。7忍法×3目的=21チャンピオン。吸収候補なし。cmd_1840(ALM方式)との比較でGS事後方式のCAGR優位(kawarimi+12.2%, yotsume+8.8%)。MaxDD目的はcmd_1840に選出方向の不整合発見(最悪値選出の疑い→decision_candidate)。
+**cmd_1844結果（GS事後方式、正しいシン忍法方式）**: hanzoが7 GS CSV全量(2,859,025パターン。報告の1,958,050は合算ミス)からCAGR/NHF/MaxDDを直接事後計算。7忍法×3目的=21チャンピオン。吸収候補なし。cmd_1840(ALM方式)との比較でGS事後方式のCAGR優位(kawarimi+12.2%, yotsume+8.8%)。MaxDD目的はcmd_1840に選出方向の不整合発見(最悪値選出の疑い→decision_candidate)。
 
 **OOM事故(cmd_1843)と教訓**: wf_runner.py並列ランナー(workers=2)でOOM Killer発動→エージェント死亡。殿裁定: 並列不要、直列1本ずつが正解。cmd_1843クローズ。→ `docs/research/gunshi_wf_oom_prevention_design_20260410.md`
 
 **知見(2026-04-10検証済み)**: ALM方式(WF動的選択)とGS事後方式(全期間最強固定)の激攻・常勝チャンピオン14体中10体が同一pattern_id。全期間最強パターンはALM動的選択でも選ばれる傾向がある。差が出たケース: kawarimi CAGR(GS事後93.0% vs ALM 84.4% = +8.6pp), yotsume CAGR(88.4% vs 81.3% = +7.1pp)。鉄壁(MaxDD目的)はALM方式が最悪値を選出しており比較不能。GS CSV直接計算で独立検証済み(bunshin N2_0072: 両方式78.6%完全一致, kawarimi全222,300パターン中1位=N3_0771_24M 93.0%でcmd_1844と一致)。
 
-**道具磨き成果（副産物）**: OOM対策としてload_data() numpy直読み化(cmd_1841)+GS側.npy同時出力(cmd_1842)を実装。WF使用時のCSV読込OOMは根絶。ただしWF並列実行は禁止(LG025)
+- L601: cmd_1840 maximum_drawdown目的は最悪値を選出（GS事後とは逆方向）（cmd_1844）
+- L602: oikaze MaxDD champion ID誤記 N2→N4（cmd_1845）
+- L604: IS前半チャンピオンは全期間チャンピオンと完全に異なる(0/21一致)（cmd_1848）
+- L605: CAGRチャンピオン系は構造的に過適合リスクが高い: 全忍法でMEDIUM以上、NHF/MaxDD系は全てLOW（cmd_1847）
+
+**道具磨き成果（副産物）**:
+- OOM対策: load_data() numpy直読み化(cmd_1841)+GS側.npy同時出力(cmd_1842)。WF CSV読込OOM根絶。WF並列実行は禁止(LG025)
+- **champion_selector.py**(2026-04-11軍師作成): GS CSV/.npyから3目的チャンピオンを直列選出。NaN-safe+float64+チャンク+方向テーブル+NHF NaN除外。195万パターン→25秒/1GB。cmd_1844と21/21完全一致。→ `docs/research/gunshi_champion_selector_design_20260411.md`
+- **cpcv_analyzer設計**(2026-04-11軍師設計): CPCV(N=8,28fold)6メトリクス一括算出。パーティション事前計算で30倍高速化(kasoku_diff: 7.4秒/758MB)。→ `docs/research/gunshi_cpcv_analyzer_design_20260411.md`
+
+**NaN-safe計算の必須知見(LG025)**: cumprodはNaN伝播で真チャンピオンが消失する(kasoku_diff CAGR実証)。prod方式+有効月数年率化+NaN月NHF除外+float64が正解。全事後計算ツールに埋込み済み
 
 ### パリティ検証（cmd_1097-1116）
 

@@ -242,6 +242,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
   - **★ボトルネックがCSV I/Oに移行**（kasoku_diff: MP 24.5s vs total 282.6s。258s=CSV書出し）
 - **🔴 --help未実装**: run_077_*には--helpオプションがない。実行するとGSが即開始する
 - **🔴 パターン数はuniverse体数で組合せ爆発**: 12体→119,493パターン / 20体→**944,775パターン(7.9倍)**。CSVサイズ・メモリ・実行時間が全てP比例
+- L593: GSパターン数のC(n,k)スケーリング — universe体数変更で組合せ爆発（cmd_1826）
+- L594: PythonのsetはPYTHONHASHSEED依存。GS sequential検証ではsorted()に置換せよ（cmd_1835）
 - **メタ改善設計**: → `docs/research/gunshi_research_pipeline_meta_20260410.md`（GS共通基盤+並列ランナー）
 
 ### WF（ウォークフォワード）
@@ -269,6 +271,19 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - **🔴 kasoku系実行前**: `free -h`でavailable > 6GB確認。初回はmmapキャッシュ未生成→pandas read_csvピーク~3.6GB
 - **peak RSS計測**: `/usr/bin/time -v python3 l1_alm_wf_engine.py ...` で包む
 - **メモリ設計**: → `docs/research/gunshi_wf_engine_memory_fix_design_20260410.md`
+- **🔴 WF並列実行(wf_runner.py)禁止**: 殿裁定(2026-04-10)。直列1本ずつが正解。cmd_1843 OOM事故(LG025)
+
+### champion_selector.py（事後チャンピオン選出）
+
+GS CSV/.npyから3目的(CAGR/NHF/MaxDD)チャンピオンを直列選出。NaN-safe+float64+チャンク+方向テーブル。
+- **実行例**: `python3 outputs/scripts/champion_selector.py --csv-dir outputs/grid_search/okugi_shin_ninpo_20body --cmd-id cmd_1822`
+- **性能**: 195万パターン→25秒/peak 1GB。kasoku_diff 944K: 8秒
+- **方向テーブル**: CAGR/NHF=max, MaxDD=min（METRIC_DIRECTIONに埋込み。方向間違い構造的防止）
+- **NaN-safe**: cumprod NaN伝播を回避(prod方式+有効月数年率化)。NHFはNaN月をnew highカウントから除外
+- **設計書**: → `docs/research/gunshi_champion_selector_design_20260411.md`
+- L590: tracemalloc≠RSS — メモリ目標はRSS(/usr/bin/time -v)で設定せよ（cmd_1828）
+- L591: --parallel安全性は実測で確認せよ — 理論的安全≠実際の安全（cmd_1827）
+- L600: np.fromstringは空セル連続のwide CSV行を安全に読めない（cmd_1841）
 
 ### research_engine（ライブラリ）
 

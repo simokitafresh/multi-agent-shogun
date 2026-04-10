@@ -683,3 +683,5 @@
 | cmd_1845 | 奥義-シン忍法 6メトリクス比較表 — GS事後 vs ALM方式 vs シン忍法(材料) | dm-signal | 04-10 | AC1 PASS: シン忍法20体全UUID存在確認(20/ |
 | cmd_1846 | 奥義-シン忍法 忍法×忍法 組み合わせ有効性分析 — selection_timeline全21チャンピオン | dm-signal | 04-11 | 21体パラメータ一覧(AC1)、21本selection_t |
 | cmd_1848 | 奥義-シン忍法 過適合検証2 — 期間分割OOS | dm-signal | 04-11 | cmd_1848完了。IS/OOS分割(前半75M/後半75 |
+| cmd_1847 | 奥義-シン忍法 過適合検証1 — 近傍パラメータ安定性 | dm-signal | 04-11 | AC1 PASS: 21チャンピオンpattern_idから |
+| cmd_1850 | 奥義-シン忍法 CPCV全方位分析 — L0/L1/L2の3層PBO+IS-OOS相関+分散+MinBTL | dm-signal | 04-11 | AC1: L0(四神12体)/L2(奥義シン忍法20体×7忍 |

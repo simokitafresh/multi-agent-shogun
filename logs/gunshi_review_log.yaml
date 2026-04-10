@@ -1824,3 +1824,159 @@
   proposals: []
   causal_chain: "gitignore対象ファイル×commit check一律→構造的FAIL→override WA。git check-ignore判定で自動除外→WA根絶。×10回=正の複利"
   timestamp: "2026-04-10T15:25:00"
+- cmd_id: cmd_1838
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1838_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。deploy_task.sh gitignore判定36行追加。テスト2件+回帰34件PASS。commit 7236cbf。WA率構造的解消"
+  observations:
+    - "事実1: git check-ignore判定→gitignore対象のみのcmdでcommit check=no自動設定"
+    - "事実2: テスト2件(gitignored→no, not-ignored→空)+回帰34件PASS。既存inject_target_path_checkと同パターン"
+  lesson_quality: OK
+  causal_chain: "軍師WA分析(3/5件同一根因)→cmd_1838設計→影丸実装→gitignore判定自動化。WA率構造的削減=正の複利"
+  timestamp: "2026-04-10T15:32:00"
+- cmd_id: cmd_1836
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1836_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。7忍法CSV savetxt置換。4.47s(60x)。allclose rtol=1e-4 PASS(max_diff=7.45e-9)。軍師RC反映済み"
+  observations:
+    - "事実1: kasoku_ratio 258MB: 270s→4.47s(60x)。偵察値59xと整合"
+    - "事実2: allclose(rtol=1e-4)=True, max_abs_diff=7.45e-9。float32精度で十分(軍師RC修正反映)"
+    - "事実3: BytesIO+年月プレフィックス追記で混在CSV対応。pd.read_csv互換維持"
+  lesson_quality: OK
+  causal_chain: "pandas to_csv Python文字列変換270s→numpy savetxt C実装4.47s。年5.2h→5min。正の複利×全GS実行"
+  timestamp: "2026-04-10T15:43:00"
+- cmd_id: cmd_1837
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1837_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。sorted()+insufficient_candidates edge case修正。batch vs sequential md5完全一致(28116pat)。本番パリティ0.0"
+  observations:
+    - "事実1: sorted()だけでは不十分。insufficient_candidates月でcurrent_tickers=set()追加が必要だった"
+    - "事実2: batch vs sequential md5=1af2e40c完全一致。本番パリティmax_abs_diff=0.0"
+  lesson_quality: OK
+  causal_chain: "list(set)=hash依存→sorted()で確定+insufficient_candidates edge case→batch完全パリティ。--skip-verify撤去=信頼性回復"
+  timestamp: "2026-04-10T15:56:00"
+- cmd_id: cmd_1839
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。道具磨き完了→WF直列7本+3目的×7忍法=21体チャンピオン選出。既存CSV+既存WF。即配備可"
+  observations:
+    - "事実1: GS CSV 7本=cmd_1822生成済み。WFエンジン=cmd_1827最適化済み(peak 3.68GB)"
+    - "事実2: --batch-csvs禁止(cmd_1822 OOM事故教訓)。直列実行+小→大順でメモリ安全"
+  proposals: []
+  causal_chain: "道具磨き8cmd完了(150min→1.9min+OOM解消+CSV60x)→研究パイプライン実行可能→21体チャンピオン選出。正の複利の成果活用"
+  timestamp: "2026-04-10T16:09:00"
+- cmd_id: cmd_1841
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  findings_summary: "5観点OK、数値検算NG。AC2 peak RSS<2GBは不可能(nukimi WF実測2.8GB)。<4GBに修正要"
+  observations:
+    - "事実1: 軍師nukimiテスト peak RSS=2876MB=2.8GB(Maximum resident set size)。WF計算フェーズがピーク"
+    - "事実2: numpy直読み部分は752MB(OK)。del後にmmap→WF計算で2.8GBに到達"
+  proposals: []
+  causal_chain: "numpy直読み752MB→del→mmap(0)→WF計算2.8GB=全体peak。AC2閾値2GBは実測より低い→FAIL確定→忍者詰まり"
+  timestamp: "2026-04-10T18:52:00"
+- cmd_id: cmd_1842
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。GS側.npy同時出力。3行×7=21行。キャッシュ不在の構造的排除。即配備可"
+  observations:
+    - "事実1: cmd_1836でsavetxt化済み。arrはfloat32 numpy arrayとして既存。.npy保存は3行追加のみ"
+    - "事実2: cache_paths()のファイル名規則(.cache.arr.npy等)とGS側出力の一致が必須"
+  proposals: []
+  causal_chain: "GS CSV出力→キャッシュ不在→WF pd.read_csv→OOM。GS側で.npy同時保存→不在ゼロ→OOM原理的排除"
+  timestamp: "2026-04-10T18:52:00"
+- cmd_id: cmd_1843
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。gs_runner.pyベースWF並列ランナー。MEMORY_GROUPSでメモリ制約内並列。即配備可"
+  observations:
+    - "事実1: gs_runner.py(147行)をベースにWFコマンドに差替え+MEMORY_GROUPS追加。~80行"
+    - "事実2: --parallel撤回済み。各WFが--parallelで走るため、wf_runner.pyの並列数はメモリ制約で決定"
+  proposals: []
+  causal_chain: "7本直列70min→MEMORY_GROUPS並列→kasoku系律速40min。+各WF内--parallel→さらに高速化"
+  timestamp: "2026-04-10T18:52:00"
+- cmd_id: cmd_1842
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1842_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。7忍法GS .npy同時出力。bunshin実行→キャッシュ生成→WFヒット(0.002s)確認。commit f7f61d24"
+  observations:
+    - "事実1: 7ファイル各3行追加(行番号報告あり)。save_memmap_cache形式準拠(arr:f32,columns:str_,index:YYYY-MM-DD)"
+    - "事実2: bunshin GS 13.1s→.npy 3ファイル生成→WF memmapキャッシュ読込0.002s確認"
+  lesson_quality: OK
+  causal_chain: "GS CSV出力時に.npy同時生成→WF初回pd.read_csv不要→OOM構造的排除。二重防御完成"
+  timestamp: "2026-04-10T19:02:00"
+- cmd_id: cmd_1841
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1841_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。load_data numpy直読み化。nukimi 481K列 peak 2.1GB(<4GB)。bunshin allclose(rtol=1e-4)=True max_diff=0.0。commit 3cb3b17c"
+  observations:
+    - "事実1: np.fromstring→空セル連続でValueError→split(',')ベースに修正。481K列完走"
+    - "事実2: nukimi peak RSS=2097MB。軍師テスト(752MB cache生成+2.8GB WF)と整合"
+  lesson_quality: OK
+  causal_chain: "pd.read_csv 48倍膨張→numpy split直読み(2.1GB)→OOM根絶。pd.read_csv依存を構造的に断絶"
+  timestamp: "2026-04-10T20:18:00"
+- cmd_id: cmd_1840
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1840_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。7忍法WF全完走+21体チャンピオン+吸収5件。kasoku_diff 17m/ratio 13m(--parallel実測)。35ファイル出力"
+  observations:
+    - "事実1: kasoku_diff --parallel 17m24s peak5.3GB。プロファイル推定49minの3倍速。線形スケーリング仮定が過大"
+    - "事実2: kasoku_ratio --parallel=CAGR/NHF/MaxDD全3目的が同一pattern_id(N4_4801)→1体に吸収"
+    - "事実3: 吸収5件: bunshin(CAGR+MaxDD), kawarimi(CAGR+MaxDD), nukimi(CAGR+NHF), kasoku_diff(CAGR+NHF), kasoku_ratio(全3目的)"
+  lesson_quality: OK
+  causal_chain: "道具磨き(OOM解消+速度79x)→7忍法WF全完走→21体チャンピオン確定。研究パイプライン初の完全実行"
+  timestamp: "2026-04-10T20:56:00"
+- cmd_id: cmd_1844
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。GS事後チャンピオン選出(シン忍法方式)。WF不使用。CSV読込+メトリクス計算のみ。即配備可"
+  observations:
+    - "事実1: 殿指摘: シン忍法=GS事後選出、ALM=WF動的選択。奥義はシン忍法方式"
+    - "事実2: cmd_1840(ALM方式)結果は破棄せず比較用に保持(AC4)"
+  proposals: []
+  causal_chain: "cmd_1840はALM方式(誤)→殿指摘→GS事後選出(正)。cmd_1840結果との比較でALM vs GS事後の差異を定量化"
+  timestamp: "2026-04-10T22:57:00"
+- cmd_id: cmd_1844
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1844_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GS事後21体+吸収0件。⚠MaxDD方向バグ確認: WFエンジンargmin=最悪選出。殿判断要"
+  observations:
+    - "事実1: L590 max_drawdown=drawdowns.min()→負値。L1138 argmin→最も負(最悪)を選出。期待=最も0に近い(最良)"
+    - "事実2: cmd_1840 MaxDD score=-0.57〜-0.66(最悪)。cmd_1844 MaxDD=0.11〜0.13(最良)。差0.45〜0.54"
+    - "事実3: GS事後方式はCAGR+10%(kawarimi)、NHF+0.05(kawarimi)でALM方式を上回る。殿指摘の正しさを定量確認"
+  lesson_quality: OK
+  causal_chain: "MaxDD=負値→MINIMIZE_SET→argmin→最も負(最悪)選出。意図は最も浅い(最良)。argmax or abs()が必要。殿判断待ち"
+  timestamp: "2026-04-10T23:17:00"
