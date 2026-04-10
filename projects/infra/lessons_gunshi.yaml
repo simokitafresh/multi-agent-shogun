@@ -184,3 +184,16 @@ lessons:
   created_at: '2026-04-08'
   automated: true
   enforcement: gunshi.md F-G05例外条項として文書化済み(Level 2)。家老は軍師direct_fixをinbox受領後にレビュー
+- id: LG025
+  title: WF並列実行禁止 — 直列1本ずつが正解。OOM事故実証済み
+  detail: |
+    cmd_1843でwf_runner.py(並列ランナー workers=2)実行中にOOM Killer発動。
+    python3子プロセスRSS 3-4GB超 + エージェント群常時消費(~2.1GB) → 16GB突破 → signal 9でClaude CLI巻き添え死。
+    殿裁定: 並列ランナー不要。直列1本ずつ実行が正解。
+    理由: (1)OOMリスク激減(1プロセスのみ) (2)途中結果を都度保全 (3)失敗時は当該忍法だけ再実行。
+    成功実績: cmd_1844(hanzo)がGS CSV 7本・195万パターンを直列事後計算で21チャンピオン選出。OOMなし、PASS。
+    運用: l1_alm_wf_engine.py --csv で1本ずつfor文実行。wf_runner.py使用禁止。
+  source_cmd: cmd_1843
+  created_at: '2026-04-10'
+  automated: false
+  enforcement: 設計書(docs/research/gunshi_wf_oom_prevention_design_20260410.md)に殿裁定記録+運用方針明記。cmd_1843クローズ済み

@@ -18,6 +18,9 @@ lessons:
   summary: MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePad
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-10T23:30:46+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=6 > helpful=0'
   helpful_count: 0
   harmful_count: 6
   last_referenced: '2026-04-08'
@@ -255,7 +258,7 @@ lessons:
   - bash
   - yaml
   helpful_count: 3
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-09'
 - id: L425
   title: grep繰返しパターンをO(1)連想配列に置換する定石
@@ -1063,7 +1066,7 @@ lessons:
   - deploy
   - yaml
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-08'
 - id: L304
   title: grep -c || echo 0 二重出力バグ
@@ -1354,6 +1357,9 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-10T20:20:43+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-10'
 - id: L262
   title: 'stop-lint-gate.shの偽ブロック防止: (1)shellcheckに-S warning追加でinfo/style除外 (2)block時exit
     1→exit 0でJSON decisionに委譲(exit 1はClaude Codeにhookエラーと誤判定される) (3)全uncommitted filesを対象にするため他忍者の変更でブロックされうる構造的欠陥は認識済み'
@@ -2410,6 +2416,9 @@ lessons:
   tags:
   - bash
   - lesson
+  deprecated: true
+  deprecated_at: '2026-04-10T23:30:47+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=6 > helpful=0'
   helpful_count: 0
   harmful_count: 6
   last_referenced: '2026-04-08'
@@ -2516,8 +2525,8 @@ lessons:
   - monitor
   - tmux
   helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-09'
+  harmful_count: 2
+  last_referenced: '2026-04-10'
 - id: L093
   title: impl忍者のgit add漏れ — 新規ファイル作成時のcommit忘れ
   summary: 新規ファイル作成後にgit add+commitを実行せずuntrackedのまま残した。.gitignore whitelistはあったがuntrackedの
@@ -2626,6 +2635,9 @@ lessons:
   - gate
   - bash
   - lesson
+  deprecated: true
+  deprecated_at: '2026-04-10T23:30:47+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=6 > helpful=5'
   helpful_count: 5
   harmful_count: 6
   last_referenced: '2026-04-09'
@@ -2661,7 +2673,7 @@ lessons:
   tags:
   - universal
   helpful_count: 34
-  harmful_count: 27
+  harmful_count: 28
   last_referenced: '2026-04-10'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -3110,6 +3122,9 @@ lessons:
   tags:
   - communication
   - scripting
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-10'
 - id: L001
   title: Read before Write必須（Claude Code制約）
   summary: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タスクYAML・inbox・報告YAML等を書く前に必ず対象ファイルをRea

@@ -740,3 +740,4 @@
 | cmd_1842 | fix — GS run_077_*.py CSV出力時に.npyキャッシュ同時生成（キャッシュ不在ゼロ化） | dm-signal | 04-10 | 7忍法run_077_*.pyのwrite_monthly_ |
 | cmd_1841 | fix — l1_alm_wf_engine.py load_data() numpy直読み化（pd.read_csv OOM根絶） | dm-signal | 04-10 | l1_alm_wf_engine.pyのcache-miss |
 | cmd_1840 | fix — 奥義-シン忍法 大CSVキャッシュ生成+WF完走+チャンピオン選出 | dm-signal | 04-10 | AC1 PASS: nukimi/kasoku_ratio |
+| cmd_1844 | 奥義-シン忍法 GS事後チャンピオン選出 — 3目的(CAGR/NHF/MaxDD)×7忍法 | dm-signal | 04-10 | GS CSV 7本全量確認完了。全パターン(合計195805 |

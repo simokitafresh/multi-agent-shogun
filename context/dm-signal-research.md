@@ -526,9 +526,13 @@ BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメ�
 **データ**:
 - GS CSV: `outputs/grid_search/okugi_shin_ninpo_20body/cmd_1822_okugi_shin_ninpo_20body_{忍法}_grid_monthly_20260409.csv`（7本）
 - ALM方式結果(参考): `queue/archive/reports/tobisaru_report_cmd_1840_20260410.yaml`
-- シン忍法方式結果: cmd_1844完了後に追記
+- シン忍法方式結果: `queue/archive/reports/hanzo_report_cmd_1844_20260410.yaml`（PASS。195万パターン→21チャンピオン選出。直列事後計算、OOMなし）
 
-**道具磨き成果（副産物）**: OOM対策としてload_data() numpy直読み化(cmd_1841)+GS側.npy同時出力(cmd_1842)を実装。今後のGS→WFパイプラインでOOMが原理的に起きない
+**cmd_1844結果（GS事後方式、正しいシン忍法方式）**: hanzoが7 GS CSV全量(1,958,050パターン)からCAGR/NHF/MaxDDを直接事後計算。7忍法×3目的=21チャンピオン。吸収候補なし。cmd_1840(ALM方式)との比較でGS事後方式のCAGR優位(kawarimi+12.2%, yotsume+8.8%)。MaxDD目的はcmd_1840に選出方向の不整合発見(最悪値選出の疑い→decision_candidate)。
+
+**OOM事故(cmd_1843)と教訓**: wf_runner.py並列ランナー(workers=2)でOOM Killer発動→エージェント死亡。殿裁定: 並列不要、直列1本ずつが正解。cmd_1843クローズ。→ `docs/research/gunshi_wf_oom_prevention_design_20260410.md`
+
+**道具磨き成果（副産物）**: OOM対策としてload_data() numpy直読み化(cmd_1841)+GS側.npy同時出力(cmd_1842)を実装。WF使用時のCSV読込OOMは根絶。ただしWF並列実行は禁止(LG025)
 
 ### パリティ検証（cmd_1097-1116）
 
