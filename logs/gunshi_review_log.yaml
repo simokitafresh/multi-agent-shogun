@@ -16,6 +16,7 @@
 # cmd分割: AC>4 or 依存ありAC並列 → REQUEST_CHANGES。3基準: 任意忍者可/短完了/依存並列考慮(LG021)
 # 研究cmdにbaselineなし → REQUEST_CHANGES。改善主張には比較対象が必須(LG022)
 # SG7 gate_prediction: lesson_candidate有→draft_lessons BLOCKリスク。gate_prediction: WARNに設定せよ(cmd_1811/1814で2連続miss)
+# AC commit check → 対象ファイルがgitignore/outputs/(commit不可)なら除外設計か確認。一律適用=負の複利(3/5 WA, 2026-04-10分析)
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
 # SG一覧: SG0(gate自動) SG2(commit) SG3(scope) SG4(家老処理) SG5(偵察トレーサビリティ)
 #          SG6(状態確認順序) SG7(バンドル) SG8(自動消火4類型) SG10(研究基盤+送信前gate)
@@ -1760,3 +1761,66 @@
   lesson_quality: OK
   causal_chain: "gs_runner.py並列化→GS全体150min→1.9min(79x)。kawarimi非決定性は別途調査要"
   timestamp: "2026-04-10T14:30:00"
+- cmd_id: cmd_1834
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1834_recon
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。偵察品質5要件全充足。kasoku 12体 pandas to_csv=270s→savetxt 4.6s(59x)→npy 0.12s(2200x)。削減案2件。実運用258s(cmd_1830)と整合"
+  observations:
+    - "事実1: oikaze 83MB(28K列)=23.8s, kasoku 347MB(119K列)=270s。列数4.3倍で時間11.3倍=非線形増大"
+    - "事実2: 20体推定1470sは5.2倍係数。L593(7.9倍パターン増)との乖離はCSVサイズが行数依存でパターン数に比例しないため"
+    - "事実3: implementation_readiness 7ファイル+影響先+エッジケース(float32精度md5変化)完備。偵察品質5要件全充足"
+  lesson_quality: OK
+  causal_chain: "pandas to_csv Python文字列変換×119K列→270s律速→numpy C実装savetxt 59x→バイナリnpy 2200x。複利: 案1即実装=全GS研究ループ高速化"
+  timestamp: "2026-04-10T15:10:00"
+- cmd_id: cmd_1832
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1832_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。lazy import 6ファイル。RSS削減79.6MB(≥75.7MB)。bunshin回帰完全一致。CoW正しく考慮した計測"
+  observations:
+    - "事実1: worker fork RSS 93741→12233KB=81508KB=79.6MB削減。--help計測43.4MBとの差=CoW破壊分"
+    - "事実2: bunshin max abs diff=0.00e+00。import移動のみで演算ロジック不変"
+    - "事実3: commit 199a6e09(6ファイル)+44a7e5ff(lessons)確認済み"
+  lesson_quality: OK
+  causal_chain: "module-level pipeline import→fork時CoW破壊→worker RSS 79.6MB増→lazy化で削減。複利: 全GS並列実行のメモリ効率改善"
+  timestamp: "2026-04-10T15:15:00"
+- cmd_id: cmd_1836
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: MEDIUM
+  findings_summary: "5観点OK、事前検死NG。AC2 alm_returns完全一致はfloat32精度(%.8g)で構造的に不可。allclose(rtol=1e-4)に修正要"
+  observations:
+    - "事実1: 元pandas to_csv=float64 repr(17桁)。新numpy savetxt=float32 %.8g(8桁)。数値が変わる"
+    - "事実2: 偵察edge_casesにmd5変化を認知済みだがAC2に未反映"
+  proposals: []
+  causal_chain: "float64→csv vs float32→csv→精度差→完全一致FAIL→忍者詰まり。AC精度仕様明確化で防止。×10回=毎回詰まり=負の複利"
+  timestamp: "2026-04-10T15:25:00"
+- cmd_id: cmd_1837
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。1行変更(sorted())+md5検証。根因特定済み(cmd_1835)。即配備可"
+  observations:
+    - "事実1: L78 list(context.current_tickers)→sorted()。PYTHONHASHSEED依存を根本除去"
+    - "事実2: AC2 --skip-verifyなしでbatch vs sequential md5一致=完全パリティ検証"
+  proposals: []
+  causal_chain: "set→list()=hash依存順序→非決定的md5→sorted()で確定的順序→md5一致=信頼性回復"
+  timestamp: "2026-04-10T15:25:00"
+- cmd_id: cmd_1838
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。deploy_task.sh git check-ignore判定追加。WA率3/5件(verdict_override)の構造的解消"
+  observations:
+    - "事実1: 軍師WA分析(docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md)が設計根拠"
+    - "事実2: git check-ignoreはgit標準コマンド。誤除外は安全側(commit自体は阻止されない)"
+  proposals: []
+  causal_chain: "gitignore対象ファイル×commit check一律→構造的FAIL→override WA。git check-ignore判定で自動除外→WA根絶。×10回=正の複利"
+  timestamp: "2026-04-10T15:25:00"
