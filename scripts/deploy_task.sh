@@ -1137,6 +1137,42 @@ EOF
   - check: "git commitが完了したか(untracked/modified=0)"
     result: ""  # yes or no'
     fi
+
+    # cmd_1838: gitignore対象ファイルのみ変更するcmdのcommit checkを自動でno設定
+    if [ -n "$_commit_bc" ]; then
+        local _tp_raw
+        _tp_raw=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null)
+        if [ -n "$_tp_raw" ]; then
+            local -a _tp_paths=()
+            if echo "$_tp_raw" | grep -q '^- '; then
+                while IFS= read -r _tp_line; do
+                    local _tp_p="${_tp_line#- }"
+                    _tp_p="${_tp_p#[[:space:]]}"
+                    _tp_p="${_tp_p%[[:space:]]}"
+                    [ -n "$_tp_p" ] && _tp_paths+=("$_tp_p")
+                done <<< "$_tp_raw"
+            else
+                _tp_paths+=("$_tp_raw")
+            fi
+
+            if [ ${#_tp_paths[@]} -gt 0 ]; then
+                local _all_ignored=true
+                for _tp_p in "${_tp_paths[@]}"; do
+                    if ! git -C "$SCRIPT_DIR" check-ignore -q "$_tp_p" 2>/dev/null; then
+                        _all_ignored=false
+                        break
+                    fi
+                done
+                if [ "$_all_ignored" = "true" ]; then
+                    _commit_bc='  commit:
+  - check: "git commitが完了したか(untracked/modified=0)"
+    result: "no"  # gitignore対象ファイルのみ: commit不要'
+                    log "binary_checks: commit check auto-set to no (all target_path are gitignored)"
+                fi
+            fi
+        fi
+    fi
+
     local _bc_placeholder='binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入'
 
     if [ -n "$_bc_block" ]; then
