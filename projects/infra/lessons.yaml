@@ -1357,8 +1357,8 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-10T20:20:43+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
-  helpful_count: 1
-  harmful_count: 1
+  helpful_count: 2
+  harmful_count: 2
   last_referenced: '2026-04-11'
 - id: L262
   title: 'stop-lint-gate.shの偽ブロック防止: (1)shellcheckに-S warning追加でinfo/style除外 (2)block時exit
@@ -1763,8 +1763,8 @@ lessons:
   - bash
   - monitor
   - tmux
-  helpful_count: 1
-  harmful_count: 0
+  helpful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-11'
 - id: L204
   title: STALL誤判定の実態は「idle+status未更新」が主因。pstree方式で予防的防御層追加が有効
@@ -2527,8 +2527,8 @@ lessons:
   - bash
   - monitor
   - tmux
-  helpful_count: 1
-  harmful_count: 2
+  helpful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-11'
 - id: L093
   title: impl忍者のgit add漏れ — 新規ファイル作成時のcommit忘れ
@@ -2675,8 +2675,8 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 31
-  harmful_count: 20
+  helpful_count: 32
+  harmful_count: 21
   last_referenced: '2026-04-11'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2751,8 +2751,8 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 31
-  harmful_count: 20
+  helpful_count: 32
+  harmful_count: 21
   last_referenced: '2026-04-11'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要

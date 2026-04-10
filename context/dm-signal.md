@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L603 -->
+<!-- last_synced_lesson: L604 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -183,3 +183,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L601: cmd_1840 maximum_drawdown目的は最悪値選出(方向反転バグ疑い)（cmd_1844）
 - L602: cmd_1844 oikaze MaxDD champion ID誤記: N2→N4(20体GSで subset=2の誤記)（cmd_1845）
 - L603: cmd_1844 oikaze MaxDD champion ID誤記: N2→N4（cmd_1845）
+- L604: IS前半チャンピオンは全期間チャンピオンと完全に異なる(0/21一致)（cmd_1848）
