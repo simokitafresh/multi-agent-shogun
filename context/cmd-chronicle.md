@@ -682,3 +682,4 @@
 | cmd_1844 | 奥義-シン忍法 GS事後チャンピオン選出 — 3目的(CAGR/NHF/MaxDD)×7忍法 | dm-signal | 04-10 | GS CSV 7本全量確認完了。全パターン(合計195805 |
 | cmd_1845 | 奥義-シン忍法 6メトリクス比較表 — GS事後 vs ALM方式 vs シン忍法(材料) | dm-signal | 04-10 | AC1 PASS: シン忍法20体全UUID存在確認(20/ |
 | cmd_1846 | 奥義-シン忍法 忍法×忍法 組み合わせ有効性分析 — selection_timeline全21チャンピオン | dm-signal | 04-11 | 21体パラメータ一覧(AC1)、21本selection_t |
+| cmd_1848 | 奥義-シン忍法 過適合検証2 — 期間分割OOS | dm-signal | 04-11 | cmd_1848完了。IS/OOS分割(前半75M/後半75 |
