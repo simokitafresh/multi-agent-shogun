@@ -686,3 +686,4 @@
 | cmd_1847 | 奥義-シン忍法 過適合検証1 — 近傍パラメータ安定性 | dm-signal | 04-11 | AC1 PASS: 21チャンピオンpattern_idから |
 | cmd_1850 | 奥義-シン忍法 CPCV全方位分析 — L0/L1/L2の3層PBO+IS-OOS相関+分散+MinBTL | dm-signal | 04-11 | AC1: L0(四神12体)/L2(奥義シン忍法20体×7忍 |
 | cmd_1851 | fix — ninja_monitor.sh CLI死活判定+自動再起動（OOM死亡2h放置防止） | infra | 04-11 | ninja_monitor.shにCLI死活判定+自動再起動 |
+| cmd_1852 | 奥義-シン忍法 β調整α分析 — L0/L1/L2の3層でSPY/TQQQ/TECLベンチマーク比較 | dm-signal | 04-11 | AC1: SPY 195ヶ月/TQQQ 194ヶ月/TECL |
