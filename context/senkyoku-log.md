@@ -622,3 +622,7 @@
 - 2026-04-09 01:41 cmd_1807(deploy_task.sh消火判定WARNING追加) 小太郎完遂(fd45ed3)。GATE CLEAR。家老自発cmd経路のq9バイパスを塞ぐ。cmd_save.shと同一キーワードリスト。軍師APPROVE(HIGH)
 - 2026-04-10 14:28 cmd_1831(GS並列ランナーgs_runner.py構築) 半蔵完遂。GATE CLEAR。7本全量3w=1.9min���DC:kawarimi md5不一致。軍師LGTM
 - 2026-04-10 14:29 cmd_1830(BATCH_CHUNK横展開5忍法) 影丸完遂。GATE CLEAR。kasoku_diff MP24.5s(343s→14x)。回帰一致max_diff=0。軍師LGTM
+- 2026-04-10 15:13 cmd_1832(pipeline lazy import 7忍法) 小太郎完遂。GATE CLEAR。6ファイルlazy化。RSS削減79.6MB(CoW考慮)。軍師LGTM
+- 2026-04-10 15:08 cmd_1834(CSV I/Oボトルネック偵察) 影丸完遂。GATE CLEAR。pandas270s→savetxt4.6s(59x)→npy0.12s(2200x)。削減案2件。軍師LGTM
+- 2026-04-10 14:57 cmd_1833(gs-bench-gate WARN追加) 飛猿完遂。GATE CLEAR。bats5/5PASS。性能リグレッション再発防止。軍師LGTM
+- 2026-04-10 14:52 cmd_1835(kawarimi md5根因調査) 半蔵完遂。GATE CLEAR。根因=trend_reversal_filter.py L78 list(set()) PYTHONHASHSEED。L595登録。軍師LGTM

@@ -2694,7 +2694,7 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 38
+  helpful_count: 39
   harmful_count: 29
   last_referenced: '2026-04-10'
 - id: L073
@@ -2770,7 +2770,7 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 38
+  helpful_count: 39
   harmful_count: 29
   last_referenced: '2026-04-10'
 - id: L062
