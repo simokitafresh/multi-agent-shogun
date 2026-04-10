@@ -233,8 +233,15 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 
 - **入力**: 本番PostgreSQL DB直接読み込み（CSV利用禁止 L064/cmd_214裁定）
 - **出力**: `outputs/grid_search/{CMD_ID}_{忍法}_grid_results.csv` + `.meta.yaml`
-- **実行例**: `python scripts/analysis/grid_search/run_077_oikaze.py --universe config/portfolio_universes/shin_ninpo_20.yaml`
-- **所要時間**: 数分〜十数分/忍法（6忍者並列投入で約1/6）
+- **実行例**: `python3 scripts/analysis/grid_search/run_077_oikaze.py --universe config/portfolio_universes/shin_ninpo_20.yaml`
+- **所要時間(20体universe, meta実測)**:
+  - bunshin ~1min / yotsume 57s / oikaze 218s(3.6min) / kawarimi 123s(2.1min)
+  - nukimi **209s(3.5min)**(cmd_1829 BATCH_CHUNK=500 + SHM O(n)化。改善前106min→**30倍高速化**)
+  - kasoku_diff **343s(5.7min)** / kasoku_ratio **352s(5.9min)** ← 新律速(各25%)
+  - **直列合計 22.7min(改善前150min→6.6倍削減)。全忍法がほぼ均等化(0.9-5.9min)**
+- **🔴 --help未実装**: run_077_*には--helpオプションがない。実行するとGSが即開始する
+- **🔴 パターン数はuniverse体数で組合せ爆発**: 12体→119,493パターン / 20体→**944,775パターン(7.9倍)**。CSVサイズ・メモリ・実行時間が全てP比例
+- **メタ改善設計**: → `docs/research/gunshi_research_pipeline_meta_20260410.md`（GS共通基盤+並列ランナー）
 
 ### WF（ウォークフォワード）
 
@@ -254,11 +261,12 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - **入力**: GS出力CSV（`outputs/analysis/alm_research/` 配下）
 - **出力**: `{CMD_ID}_alm_returns.csv`（ALM系列6目的）+ サマリYAML
 - **実行例**: `python3 outputs/scripts/l1_alm_wf_engine.py --csv <path> --multi-is --cmd-id cmd_XXXX --progress`
-- **所要時間**: ~3-10分/CSV（`--parallel`時）。7忍法全量`--batch-csvs`は各CSV直列+内部並列
-- **🔴 `--no-parallel`禁止**: fold毎buildで各worker独立→`--parallel`で安全。`--no-parallel`だと30-60分/CSV（cmd_1827実績: 半蔵がoikazeを`--no-parallel`で30-60分浪費）
+- **所要時間**: ~3-10分/CSV（`--parallel`時）。kasoku系は`--no-parallel`で30-60分/本
+- **実測peak RSS(cmd_1827 Step1-7)**: oikaze 929MB / kasoku_diff 3.68GB / float64差 3.55e-15
+- **🔴 `--parallel`/`--no-parallel`はCSVサイズで判断**: 小CSV(≤500MB)→`--parallel`(デフォルト)でOK。**大CSV(>500MB、kasoku系1.8GB)→`--no-parallel`必須**（並列worker合計でOOM。半蔵がkasoku_diff --parallelでRSS 6GB→OOM Kill実証済み）
 - **🔴 `--batch-csvs`禁止（大CSV時）**: kasoku系(1.8GB)を含む場合、同時ロードでOOM。`--csv`で1本ずつ実行。小→大の順(bunshin→yotsume→oikaze→kawarimi→nukimi→kasoku_diff→kasoku_ratio)
 - **🔴 kasoku系実行前**: `free -h`でavailable > 6GB確認。初回はmmapキャッシュ未生成→pandas read_csvピーク~3.6GB
-- **peak RSS計測**: `/usr/bin/time -v python3 l1_alm_wf_engine.py ...` で包む（`--no-parallel`にする必要なし）
+- **peak RSS計測**: `/usr/bin/time -v python3 l1_alm_wf_engine.py ...` で包む
 - **メモリ設計**: → `docs/research/gunshi_wf_engine_memory_fix_design_20260410.md`
 
 ### research_engine（ライブラリ）
