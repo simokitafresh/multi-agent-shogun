@@ -731,3 +731,4 @@
 | cmd_1827 | fix — l1_alm_wf_engine.py メモリ削減（PrefixMomentCache fold毎構築+float32化） | dm-signal | 04-10 | cmd_1827_impl再完了。deepdive第3弾の5 |
 | cmd_1829 | fix — nukimi simulate_batch L3キャッシュ最適化（BATCH_CHUNK分割） | dm-signal | 04-10 | run_077_nukimi.py に BATCH_CHUN |
 | cmd_1831 | new — GS並列ランナー(gs_runner.py)構築 | dm-signal | 04-10 | gs_runner.py新規実装完了(147行)。--uni |
+| cmd_1835 | recon — kawarimi batch vs sequential md5不一致の根因調査 | dm-signal | 04-10 | TrendReversalFilterBlock.execu |
