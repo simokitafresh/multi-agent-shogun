@@ -501,7 +501,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 
 ### GS高速化第2世代（cmd_1827-1834）— 150min→1.9min(79x)
 
-BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメモリOOM解消(10.2GB→3.68GB)。lazy import(-79.6MB/worker)。gs-bench-gate WARN自動化。次ボトルネック=CSV I/O(savetxt 59x確認済み,実装cmd未起票)。→ `docs/research/gunshi_research_pipeline_meta_20260410.md` / `docs/research/gunshi_wf_engine_memory_fix_design_20260410.md`
+BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメモリOOM解消(10.2GB→3.68GB)。lazy import(-79.6MB/worker)。gs-bench-gate WARN自動化。CSV I/O: numpy savetxt(float32)置換で270s→4.47s(60x)実装完了(cmd_1836)。BytesIO中継+年月プレフィックス追記パターン(L598)。→ `docs/research/gunshi_research_pipeline_meta_20260410.md` / `docs/research/gunshi_wf_engine_memory_fix_design_20260410.md`
 
 ### パリティ検証（cmd_1097-1116）
 

@@ -735,3 +735,4 @@
 | cmd_1834 | recon — CSV I/Oボトルネック調査(GS書出し91%占有) | dm-signal | 04-10 | CSV書出し実装箇所特定・計測完了。kasoku_ratio |
 | cmd_1832 | perf — pipeline関連heavy import lazy化(全7忍法) | dm-signal | 04-10 | 7忍法 run_077_*.py のpipeline関連mo |
 | cmd_1838 | fix — deploy_task.sh commit check gitignore自動除外 | infra | 04-10 | deploy_task.shにgit check-ignor |
+| cmd_1836 | perf — GS CSV書出しnumpy savetxt置換(pandas 270s→4.6s) | dm-signal | 04-10 | 7忍法のrun_077_*.pyの月次CSV書出しをnump |
