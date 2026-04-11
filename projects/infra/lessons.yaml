@@ -964,9 +964,9 @@ lessons:
   - gate
   - yaml
   - inbox
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 3
-  last_referenced: '2026-04-09'
+  last_referenced: '2026-04-11'
 - id: L318
   title: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
   summary: test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間
@@ -1257,7 +1257,7 @@ lessons:
   - communication
   - gate
   - inbox
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-09'
 - id: L275
@@ -1349,7 +1349,7 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 1
   last_referenced: '2026-04-10'
 - id: L261
@@ -2081,9 +2081,9 @@ lessons:
   - yaml
   - lesson
   - reporting
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 1
-  last_referenced: '2026-04-10'
+  last_referenced: '2026-04-11'
 - id: L151
   title: Git hook導入時はスクリプト内容だけでなく executable bit(100755) のコミット有無を必須確認
   summary: IF Git hookをリポジトリに導入する時 THEN スクリプト内容だけでなくexecutable bit(100755)のコミット有無を必ず確認せよ
@@ -2580,6 +2580,9 @@ lessons:
   tags:
   - db
   - tmux
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-11'
 - id: L081
   title: 追記型YAMLファイルのフォーマット変更時は既存データのマイグレーションも必須
   summary: ntfy_listener.shのYAML出力インデント変更(2sp→0sp)でスクリプトのみ修正し既存データの一括マイグレーションを怠った。旧/新フォーマット
