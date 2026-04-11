@@ -117,6 +117,16 @@ if [[ "$payload" == *'inbox_mark_read'* ]]; then
     fi
 fi
 
+# === Guard 8: wf_runner.py parallel execution BLOCK (LG025: OOM Kill実証済み) ===
+# Note: regex limits to python execution context to avoid blocking mentions in message strings
+if [[ "$payload" == *'wf_runner.py'* ]]; then
+    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
+    if [[ -n "${command:-}" && "$command" =~ python[23]?[[:space:]].*wf_runner\.py ]]; then
+        emit_deny "BLOCKED: wf_runner.py は並列OOMリスクのため使用禁止(LG025)。代替: l1_alm_wf_engine.py --csv で1本ずつ直列実行せよ。"
+        exit 1
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \

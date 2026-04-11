@@ -1,34 +1,33 @@
 task:
-  _ac_task_id: cmd_1856_impl
+  _ac_task_id: cmd_1860_impl
   _ac_worker_id: null
-  ac_version: b99834bc
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: 7603fce4
   acceptance_criteria:
-  - description: '登録前のPF数を記録(SELECT count(*) FROM portfolios)。20体のFoFレコードを本番DBにhide=trueで作成。各体のportfolio_id(UUID)と名前を一覧で報告。登録後のPF数を報告(期待:
-      +20)'
+  - description: 忍者配備ループ(L706-740)内にget_task_parent_cmd呼出しがゼロになっていること
     id: AC1
-  - description: bunshin激攻(7d6c1f5e)が既に存在することを確認し、重複登録しないこと。20体全てのselection_pipeline設定(pattern_idからデコードしたblock設定)を報告
+  - description: NINJA_CMD連想配列がL179-188のループ内で構築され、全6忍者のparent_cmdが正しく格納されること
     id: AC2
+  - description: dashboard_auto_section.sh実行後のDASHBOARD_AUTO_SECTIONが変更前と同一内容であること(diff確認)
+    id: AC3
+  - description: 既存batsテスト全件PASS
+    id: AC4
   acceptance_criteria.1.description: bunshinで回帰テスト。l1_alm_wf_engine.pyのpd.read_csvで読込可能+alm_returnsがnp.allclose(rtol=1e-4)で一致(float32精度のため完全一致ではなくallclose)
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  deployed_at: '2026-04-11T15:32:45'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
-    \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L480: selection block付きFoF21体中、初月monthly_returns.holding_signalがNULLの体がある。signals\
-    \ tabl\n  - L476: FoFのtop_n=1がconfigに存在しても、pipeline_config.selection_pipeline.blocksが空の場合はmomentum\n\
-    \  - L029: inbox_watcherの60秒安全網とninja_monitorのrenudge/cmd_pending再送が独立に動作するため、受信側が1回取り逃すと同一\n\
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追\n\
+    \  - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern*\
+    \ ]]は純bashで同等のマ\n  - L327: dashboard_auto_section.shで忍者総数が8にハードコードされていたが、ALL_NINJASはL77でget_ninja_namesにより動\n\
+    \  - L279: 才蔵がAC1配備でAC2(小太郎担当)のコードも実装しcommit。小太郎は実装済みコードをテスト確認のみで報告。根本原因: 同一ファイル(dashboard_\n\
     ────────────────────────────────────────"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
-    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -38,14 +37,16 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1856
-  project: dm-signal
-  report_filename: kotaro_report_cmd_1856.yaml
-  report_path: queue/reports/kotaro_report_cmd_1856.yaml
+  - AC3
+  - AC4
+  parent_cmd: cmd_1860
+  project: infra
+  report_filename: kotaro_report_cmd_1860.yaml
+  report_path: queue/reports/kotaro_report_cmd_1860.yaml
   scope_mode: IMPL
-  status: completed
+  status: done
   stop_for: []
-  task_id: cmd_1856_impl
+  task_id: cmd_1860_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -80,33 +81,34 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
-  - id: 'L605'
-    summary: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/kasoku_diff24.4pp/kasoku_ratio37pp)。NHFチャンピオン(常勝)は全7体LOW。MaxDDチャンピオン(鉄壁)も全7体LOW。CAGRの最大化は単一パラメータ点に過集中しやすく、NHF/MaxDDは分布が滑'
-    detail: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/kasoku_diff24.4pp/kasoku_ratio37pp)。NHFチャンピオン(常勝)は全7体LOW。MaxDDチャンピオン(鉄壁)も全7体LOW。CAGRの最大化は単一パラメータ点に過集中しやすく、NHF/MaxDDは分布が滑'
-  - id: 'L604'
-    summary: '7忍法×3目的=21体全て、IS前半(75M)最適パターンは全期間最適パターンと異なった。前半過適合の典型パターン。OOS検証の必要性を定量的に裏付ける結果。'
-    detail: '7忍法×3目的=21体全て、IS前半(75M)最適パターンは全期間最適パターンと異なった。前半過適合の典型パターン。OOS検証の必要性を定量的に裏付ける結果。'
-  - id: 'L603'
-    summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確認必須'
-    detail: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確認必須'
-  - id: 'L602'
-    summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body'
-    detail: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body'
-  - id: 'L601'
-    summary: 'cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と非常に大きな負値を示す。GS事後方式で選出した最良MaxDD(0.11〜0.12)と比較して差異が0.45〜0.54と大きく、cmd_1840のMaxDD目的は最悪パターンを選出している疑いがある(argmin誤用またはスコア符号反転バグ)'
-    detail: 'cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と非常に大きな負値を示す。GS事後方式で選出した最良MaxDD(0.11〜0.12)と比較して差異が0.45〜0.54と大きく、cmd_1840のMaxDD目的は最悪パターンを選出している疑いがある(argmin誤用またはスコア符号反転バグ)'
-  - id: 'L600'
-    summary: '481650列のnukimi monthly_fast.csvで先頭月がほぼ空セルの行に対し、np.fromstring(line, sep=,)は'
-    detail: '481650列のnukimi monthly_fast.csvで先頭月がほぼ空セルの行に対し、np.fromstring(line, sep=,)は'
-  - id: 'L599'
-    summary: 'momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_tickersを元のset(components)のままにしていた。batch側はmomentum不足月をNaN(選択なし)として扱うため、sequential側がcurrent_tickersを全コンポーネントとして引き継ぎ月0のreturnを計算し'
-    detail: 'momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_tickersを元のset(components)のままにしていた。batch側はmomentum不足月をNaN(選択なし)として扱うため、sequential側がcurrent_tickersを全コンポーネントとして引き継ぎ月0のreturnを計算し'
-  - id: 'L598'
-    summary: 'monthly_fast.csvは年月文字列+float列の混在フォーマット。np.savetxtは純数値のみ対応するため、float32行列をBytesIOにsavetxt後、行ごとに年月文字列をプレフィックス追記する2段階パターンで実現。pd.read_csv互換(index_col=year_month)を維持しつつ4.47s(12体258MB)を達成。'
-    detail: 'monthly_fast.csvは年月文字列+float列の混在フォーマット。np.savetxtは純数値のみ対応するため、float32行列をBytesIOにsavetxt後、行ごとに年月文字列をプレフィックス追記する2段階パターンで実現。pd.read_csv互換(index_col=year_month)を維持しつつ4.47s(12体258MB)を達成。'
-  - id: 'L597'
-    summary: 'lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCoWが破れworkerあたり79.6MBのRSSコスト。正しい計測=before(pipeline読込+6worker'
-    detail: 'lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCoWが破れworkerあたり79.6MBのRSSコスト。正しい計測=before(pipeline読込+6worker'
-  - id: 'L596'
-    summary: 'kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy'
-    detail: 'kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy'
+  - id: 'L466'
+    summary: 'CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。'
+    detail: 'CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。'
+  - id: 'L465'
+    summary: 'cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft'
+    detail: 'cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft'
+  - id: 'L464'
+    summary: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
+    detail: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
+  - id: 'L463'
+    summary: '''MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars'
+    detail: '''MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars'
+  - id: 'L462'
+    summary: '''**dismiss_reason**: L463として統合登録済み enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold'
+    detail: '''**dismiss_reason**: L463として統合登録済み enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold'
+  - id: 'L461'
+    summary: '**dismiss_reason**: L463として統合登録済み MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer'
+    detail: '**dismiss_reason**: L463として統合登録済み MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer'
+  - id: 'L460'
+    summary: '''**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要'
+    detail: '''**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要'
+  - id: 'L459'
+    summary: '.gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。'
+    detail: '.gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。'
+  - id: 'L458'
+    summary: 'deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須。CI環境ではscaffoldがtmpにプロジェクトを再構成するため、source対象ファイルがsymlink未登録だとsetup_file失敗→テストスキップ→CI赤。cmd_save系テストでも抽出関数がFIREFIGHT'
+    detail: 'deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須。CI環境ではscaffoldがtmpにプロジェクトを再構成するため、source対象ファイルがsymlink未登録だとsetup_file失敗→テストスキップ→CI赤。cmd_save系テストでも抽出関数がFIREFIGHT'
+  - id: 'L457'
+    summary: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
+    detail: 'whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること'
+  deployed_at: "2026-04-11T23:47:11"

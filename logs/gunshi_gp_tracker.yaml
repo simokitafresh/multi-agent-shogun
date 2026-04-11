@@ -196,3 +196,30 @@
   resolved_at: "2026-04-09T22:25:00"
   self_executable: true
   reason: "dashboard-updateスキルのSSoT二重管理(archive+gp_tracker)を一本化済み。根因解消により再発リスク消失。defense_level: 2文書追加は不要"
+- id: GP-181
+  description: "deploy_task.sh配備直前にSTALE_RESET実行済みフラグ確認。未実行→BLOCK。新パス追加時の防御層迂回を構造的に防止"
+  status: karo_sent
+  proposed_at: "2026-04-11T19:50:00"
+  sent_at: "2026-04-11T19:50:00"
+  self_executable: false
+  defense_level: 4
+  reason: "なぜなぜ7回の根因=新パス追加時に既存防御層との整合性チェックがない。GP-180(即効)に加え、STALE_RESET実行済みフラグ(例: _STALE_RESET_DONE=1)を配備最終段階で確認→未実行ならBLOCK。今後DIRECT_MODE3やCMD_FORCED2が追加されても防御層迂回を構造的に検出"
+  evidence: "なぜなぜ7回: STALE_RESET(03/30)→DIRECT_MODE追加(04/02)→整合性未検証→7件stale汚染。時系列が根因を証明"
+- id: GP-180
+  description: "STALE_RESETをresolve_cmd_to_task()外に移動。DIRECT/CMD_FORCEDパスでもstale field清掃を実行"
+  status: karo_sent
+  proposed_at: "2026-04-11T19:40:00"
+  sent_at: "2026-04-11T19:42:00"
+  self_executable: false
+  defense_level: 4
+  reason: "stale_ac_contamination 7件(karo_workarounds)。根因=STALE_RESET がresolve_cmd_to_task()内部にあり、DIRECT_MODE/CMD_FORCEDパスでスキップされる。L189のPythonブロックをL3269(CMD_IDチェック直後)に移動すれば全パスで実行される。10回繰り返したら10回stale汚染防止=正の複利"
+  evidence: "deploy_task.log: cmd_1858配備時にSTALE_RESET行なし。task YAML: acceptance_criteria=cmd_1843のまま残留。karo_workarounds: stale_ac_contamination 7件"
+- id: GP-179
+  description: "wf_runner.py実行BLOCK hook(LG025 gate化)。pre-bash-combined Guard 8"
+  status: implemented
+  proposed_at: "2026-04-11T16:30:00"
+  implemented_at: "2026-04-11T16:35:00"
+  implemented_by: gunshi_idle_self_drive
+  self_executable: true
+  defense_level: 4
+  reason: "LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし)"

@@ -690,3 +690,4 @@
 | cmd_1854 | ゴールデンデータ更新 — 本番DB全PF monthly_returns再取得 | dm-signal | 04-11 | 本番DB全PF monthly_returnsを取得しゴール |
 | cmd_1856 | 奥義-シン忍法 残り20体 本番DB一括登録（登録のみ） | dm-signal | 04-11 | 20体の奥義FoFレコードを本番DBに正常登録(hide=t |
 | cmd_1857 | fix — insight§14自走トリガー廃止+report templateデフォルト値追加 | infra | 04-11 | cmd_1857: §14自走トリガー廃止(AC1)+dep |
+| cmd_1858 | fix — gate_shogun_startup.sh ALERT精度改良3件（false ALERT削減+actionable化） | infra | 04-11 | AC2(Gate17 oneshot除外)+AC3(Gate |

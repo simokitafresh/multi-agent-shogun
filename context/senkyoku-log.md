@@ -626,3 +626,4 @@
 - 2026-04-10 15:08 cmd_1834(CSV I/Oボトルネック偵察) 影丸完遂。GATE CLEAR。pandas270s→savetxt4.6s(59x)→npy0.12s(2200x)。削減案2件。軍師LGTM
 - 2026-04-10 14:57 cmd_1833(gs-bench-gate WARN追加) 飛猿完遂。GATE CLEAR。bats5/5PASS。性能リグレッション再発防止。軍師LGTM
 - 2026-04-10 14:52 cmd_1835(kawarimi md5根因調査) 半蔵完遂。GATE CLEAR。根因=trend_reversal_filter.py L78 list(set()) PYTHONHASHSEED。L595登録。軍師LGTM
+- 2026-04-11 19:12 cmd_1858(gate_shogun_startup.sh ALERT精度改良3件) 影丸完遂。GATE CLEAR。Gate17 oneshot除外/Gate18 DIR不在INFO降格/Gate12 対処済みラベル。17bats PASS。WA:stale_ac_contamination(LK021)

@@ -4350,3 +4350,77 @@ entries:
     supplementary_cmds: 0
     timestamp: "2026-04-10T17:41:44Z"
     notes: "draft_lessons:1"
+  - cmd_id: "cmd_1851"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-10T17:43:15Z"
+  - cmd_id: "cmd_1852"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-10T23:24:25Z"
+  - cmd_id: "cmd_1854"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-11T04:24:05Z"
+  - cmd_id: "cmd_1856"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-11T06:48:14Z"
+    notes: "kotaro:binary_checks_fail"
+  - cmd_id: "cmd_1856"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-11T06:49:04Z"
+  - cmd_id: "cmd_1857"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-11T08:25:07Z"
+  - cmd_id: "cmd_1855"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-11T09:18:30Z"
+    notes: "hanzo:binary_checks_fail"
+  - cmd_id: "cmd_1855"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "FAIL"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-11T09:20:27Z"
+  - cmd_id: "cmd_1858"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-11T10:12:43Z"
