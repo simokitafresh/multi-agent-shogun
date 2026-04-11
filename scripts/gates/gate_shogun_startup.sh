@@ -356,7 +356,11 @@ if [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
         echo "  $loop_status"
         # Show maturation recommendations if any
         echo "$loop_result" | grep -A20 "成熟提案" | grep "UPGRADE\|INVESTIGATE" | while IFS= read -r rec; do
-            echo "  $rec"
+            if echo "$rec" | grep -q "result\.summary.*MISSING\|result\.summary.*empty"; then
+                echo "  $rec (対処済み: cmd_1857)"
+            else
+                echo "  $rec"
+            fi
         done
     fi
     if echo "$loop_status" | grep -q "WARNING"; then
@@ -547,7 +551,7 @@ fi
 # --- Gate 17: scripts/未コミット変更チェック (cmd_1675) ---
 # 起源: scripts/配下に未コミットの変更があると気付かずに消失するリスク
 # 目的: 起動時にscripts/の変更をWARNして把握漏れを防止。変更なしなら無音通過
-_scripts_dirty=$(cd "$SCRIPT_DIR" && git status --porcelain -- scripts/ 2>/dev/null) || _scripts_dirty=""
+_scripts_dirty=$(cd "$SCRIPT_DIR" && git status --porcelain -- scripts/ 2>/dev/null | grep -v '^?? scripts/oneshot/') || _scripts_dirty=""
 if [ -n "$_scripts_dirty" ]; then
     _sd_count=$(echo "$_scripts_dirty" | wc -l)
     $BRIEF || echo "■ scripts/未コミット変更"
@@ -567,7 +571,9 @@ fi
 $BRIEF || echo "■ 会話記録 inbound健全度"
 _LC_ARCHIVE_DIR="$SCRIPT_DIR/logs/lord_conversation_archive"
 _LC_YESTERDAY=$(date -d "yesterday" '+%Y-%m-%d' 2>/dev/null || date -v-1d '+%Y-%m-%d' 2>/dev/null || true)
-if [ -n "$_LC_YESTERDAY" ] && [ -f "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" ]; then
+if [ ! -d "$_LC_ARCHIVE_DIR" ]; then
+    $BRIEF || echo "  INFO: lord_conversation_archiveディレクトリ不在(正常)"
+elif [ -n "$_LC_YESTERDAY" ] && [ -f "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" ]; then
     _lc_inbound=$(grep -c '"direction":"inbound"' "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" 2>/dev/null) || _lc_inbound=0
     if [ "$_lc_inbound" -eq 0 ]; then
         overall="ALERT"
