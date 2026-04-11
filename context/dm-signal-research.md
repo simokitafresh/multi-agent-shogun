@@ -534,7 +534,7 @@ BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメ�
 
 **知見(2026-04-10検証済み)**: ALM方式(WF動的選択)とGS事後方式(全期間最強固定)の激攻・常勝チャンピオン14体中10体が同一pattern_id。全期間最強パターンはALM動的選択でも選ばれる傾向がある。差が出たケース: kawarimi CAGR(GS事後93.0% vs ALM 84.4% = +8.6pp), yotsume CAGR(88.4% vs 81.3% = +7.1pp)。鉄壁(MaxDD目的)はALM方式が最悪値を選出しており比較不能。GS CSV直接計算で独立検証済み(bunshin N2_0072: 両方式78.6%完全一致, kawarimi全222,300パターン中1位=N3_0771_24M 93.0%でcmd_1844と一致)。
 
-- L601: cmd_1840 maximum_drawdown目的は最悪値を選出（GS事後とは逆方向）（cmd_1844）
+- L601: cmd_1840 maximum_drawdown目的は最悪値を選出（GS事後とは逆方向）（cmd_1844）→ **修正済み(86f2e6ae)**: METRIC_DIRECTIONテーブル導入+MINIMIZE_SETから除去+MaxDD=0→NaN選出マスク。→ `docs/research/gunshi_maxdd_direction_bug_design_20260412.md`
 - L602: oikaze MaxDD champion ID誤記 N2→N4（cmd_1845）
 - L604: IS前半チャンピオンは全期間チャンピオンと完全に異なる(0/21一致)（cmd_1848）
 - L605: CAGRチャンピオン系は構造的に過適合リスクが高い: 全忍法でMEDIUM以上、NHF/MaxDD系は全てLOW（cmd_1847）
@@ -542,6 +542,7 @@ BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメ�
 **道具磨き成果（副産物）**:
 - OOM対策: load_data() numpy直読み化(cmd_1841)+GS側.npy同時出力(cmd_1842)。WF CSV読込OOM根絶。WF並列実行は禁止(LG025)
 - **champion_selector.py**(2026-04-11軍師作成): GS CSV/.npyから3目的チャンピオンを直列選出。NaN-safe+float64+チャンク+方向テーブル+NHF NaN除外。195万パターン→25秒/1GB。cmd_1844と21/21完全一致。→ `docs/research/gunshi_champion_selector_design_20260411.md`
+- **MaxDD方向バグ+ゼロバグ修正**(2026-04-12軍師修正, commit 86f2e6ae+2df25f6d): l1_alm_wf_engine.pyにMETRIC_DIRECTIONテーブル(champion_selectorパターン横展開, Level 5)導入。MaxDD負値×argmin=最悪選出→argmax=最浅選出に修正。ゼロバグ: MaxDD=0.0+UWP=0.0(NaN→0由来の偽ゼロ)→NaNマスクで偽チャンピオン防止。ALM四神全6 objective検証済み(argmax方向4つはゼロバグ不発生)。recalculate_fast.pyも予防修正。12テスト全PASS。→ `docs/research/gunshi_maxdd_direction_bug_design_20260412.md`
 - **cpcv_analyzer設計**(2026-04-11軍師設計): CPCV(N=8,28fold)6メトリクス一括算出。パーティション事前計算で30倍高速化(kasoku_diff: 7.4秒/758MB)。→ `docs/research/gunshi_cpcv_analyzer_design_20260411.md`
 
 **NaN-safe計算の必須知見(LG025)**: cumprodはNaN伝播で真チャンピオンが消失する(kasoku_diff CAGR実証)。prod方式+有効月数年率化+NaN月NHF除外+float64が正解。全事後計算ツールに埋込み済み

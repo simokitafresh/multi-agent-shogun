@@ -630,3 +630,4 @@
 - cmd_1859: Gate15 git logバッチ化(GP-170)。半蔵。WSL2 NTFS I/O 3-4s/件削減。GATE CLEAR
 - cmd_1860: dashboard_auto NINJA_CMD置換(GP-171)。小太郎。ループ内get_task_parent_cmd廃止。GATE CLEAR。軍師no-op誤判定→タイミングエラー(commit後grep)
 - cmd_1862: archive_completed.sh TOCTOU修正(GP-182)。影丸。flock内読込+二相分割。GATE CLEAR。WA:なし
+- cmd_1861: deploy_task.sh STALE_RESET全パス修正(GP-180+181)。飛猿。stale_ac_contamination 7件の根因根治。GATE CLEAR。WA:なし
