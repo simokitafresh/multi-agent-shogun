@@ -13,6 +13,9 @@ lessons:
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-12T00:00:55+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=5 referenced=0'
 - id: L464
   title: 想像した数字を報告するな — 実測値のみ報告せよ
   summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定
@@ -256,9 +259,9 @@ lessons:
   - gate
   - bash
   - yaml
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-04-09'
+  last_referenced: '2026-04-11'
 - id: L425
   title: grep繰返しパターンをO(1)連想配列に置換する定石
   summary: ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュ
@@ -904,6 +907,9 @@ lessons:
   tags:
   - review
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-11'
 - id: L326
   title: nohup+disownプロセスの起動検証はPID配列追跡+kill -0が確実
   summary: pgrep -fcによる集計カウントは誤検知(vim等)で不正確かつ障害時に個別特定不可。各起動時に$!をPID配列に蓄積し、sleep後にkill
@@ -925,9 +931,9 @@ lessons:
   - process
   - bash
   - reporting
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 1
-  last_referenced: '2026-04-09'
+  last_referenced: '2026-04-11'
 - id: L323
   title: プロセス数検証は実際の起動数を追跡せよ。外部計算の期待値はスキップ条件を反映しない
   summary: restart_watchers.shでexpected=1+全エージェント数としていたが、ループ内でpane未解決エージェントをスキップするため、期待値と実際
@@ -968,7 +974,7 @@ lessons:
   - yaml
   - inbox
   helpful_count: 1
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-04-11'
 - id: L318
   title: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
@@ -1077,6 +1083,9 @@ lessons:
   summary: set -euo pipefailスクリプトでgrep -oE ... | sort -uを使うと、grepマッチなし時にexit 1がpipefailで伝播し
   tags:
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-11'
 - id: L301
   title: bash埋込みPythonではsys.argv経由でパスを渡せ
   summary: bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保
@@ -1236,6 +1245,9 @@ lessons:
   - communication
   - git
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-11'
 - id: L278
   title: 報告YAML欠損パターン — commit後/clear前にreport未作成
   summary: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
@@ -1502,9 +1514,9 @@ lessons:
     "ok 293
   tags:
   - testing
-  helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-09'
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-11'
 - id: L239
   title: 並列implレビューはcommit integrityを独立チェックせよ
   summary: cmd_1031ではGrid dedup/PPE/parityのコード品質は全てINFORMATIONALだったが、impl_aが未commitのままHEADに
@@ -1576,7 +1588,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-04-11'
 - id: L228
@@ -1602,7 +1614,7 @@ lessons:
   summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-04-11'
 - id: L224
@@ -2548,7 +2560,7 @@ lessons:
   - yaml
   - lesson
   helpful_count: 0
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-04-09'
 - id: L087
   title: 教訓効果メトリクスΔはBLOCKリトライ行膨張+構造BLOCK混入で歪む — cmd単位dedup+品質BLOCK分離が必須
@@ -2623,7 +2635,7 @@ lessons:
   deprecated_at: '2026-04-11T02:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=4'
   helpful_count: 4
-  harmful_count: 5
+  harmful_count: 4
   last_referenced: '2026-04-11'
 - id: L078
   title: GATE BLOCK率65%は構造問題(missing_gate)。家老フラグ生成タイミングが主因
@@ -2642,7 +2654,7 @@ lessons:
   tags:
   - deploy
   helpful_count: 0
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-04-09'
 - id: L075
   title: L075
@@ -2656,8 +2668,8 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 27
-  harmful_count: 24
+  helpful_count: 26
+  harmful_count: 22
   last_referenced: '2026-04-11'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2732,8 +2744,8 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 28
-  harmful_count: 24
+  helpful_count: 26
+  harmful_count: 22
   last_referenced: '2026-04-11'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要

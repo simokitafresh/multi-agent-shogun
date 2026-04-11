@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-11 -->
+<!-- last_updated: 2026-04-12 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -8,29 +8,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 | — | → 3月前半(03-09, cmd_662-707)は `context/archive/cmd-chronicle-2026-03-early.md` 参照 | — | 03-09 | 43件 |
-| cmd_850 | 整備 — cmd-chronicle空欄key_result補完（18行） | infra | 03-12 | 整備 — cmd-chronicle空欄key_result補完（18行） |
-| cmd_849 | impl — B3 prefetch/page fetch責務統一 | dm-signal | 03-12 | impl — B3 prefetch/page fetch責務統一 |
-| cmd_851 | 修正 — cmd_complete_gate.sh TSV ninja=n… | infra | 03-12 | 修正 — cmd_complete_gate.sh TSV ninja=n… |
-| cmd_852 | 計測 — CDP After-After計測 Group1（Home/Da… | dm-signal | 03-12 | 計測 — CDP After-After計測 Group1（Home/Da… |
-| cmd_856 | 検証 — Wave1-3 BE変更後の計算結果完全一致確認（シグナル不変精… | dm-signal | 03-12 | 検証 — Wave1-3 BE変更後の計算結果完全一致確認（シグナル不変精… |
-| cmd_855 | 計測 — CDP After-After計測 Group4（Deterio… | dm-signal | 03-12 | 計測 — CDP After-After計測 Group4（Deterio… |
-| cmd_853 | 計測 — CDP After-After計測 Group2（Compare… | dm-signal | 03-12 | 計測 — CDP After-After計測 Group2（Compare… |
-| cmd_857 | 改善 — CDP計測フレームワーク安定化（Chrome移行+preflig… | dm-signal | 03-12 | 改善 — CDP計測フレームワーク安定化（Chrome移行+preflig… |
-| cmd_858 | 整備 — DM-signal .gitignore整理整頓 | dm-signal | 03-12 | 整備 — DM-signal .gitignore整理整頓 |
-| cmd_854 | 計測 — CDP After-After計測 Group3（Rolling… | dm-signal | 03-12 | CDP本番計測Group3（Rolling Returns/ |
-| cmd_859 | 万全偵察 — P(det)信頼性検証+弱体化入替忍法の設計調査（水平4+垂… | dm-signal | 03-12 | P(det)入替忍法は「条件付きで成立可能」。最大リスクは過剰入替(whi… |
-| cmd_860 | 万全偵察 — パフォーマンス持続性の数学的定量化手法調査（ベイズ/構造変化… | dm-signal | 03-12 | 4手法の非専門家向け解釈可能性は手法ごとに大きく異なる。 ベイズ持続確率(… |
-| cmd_861 | 万全偵察 第2弾 — パフォーマンス持続性 追加7手法調査（HMM/AFM… | dm-signal | 03-12 | 万全偵察 第2弾 — パフォーマンス持続性 追加7手法調査（HMM/AFM… |
-| cmd_863 | 辞書基盤構築 — 金融ML知識辞書のVercelスタイル骨格作成+cmd_… | dm-signal | 03-12 | 金融ML知識辞書のVercelスタイル骨格を構築完了。 6デ |
-| cmd_862 | 万全偵察 第3弾 — López de Prado全講義・論文の体系的知見… | dm-signal | 03-12 | 万全偵察 第3弾 — López de Prado全講義・論文の体系的知見… |
-| cmd_865 | 新PJ登録+偵察 — 殿の株式データベース（simokitafresh/d… | database | 03-12 | /mnt/c/Python_app/database リポジ |
-| cmd_864 | 辞書充填 — cmd_860/861の全知見をknowledge-base… | dm-signal | 03-12 | knowledge-base 既存8エントリを更新し、cmd_860 の不… |
-| cmd_866 | 辞書充填 — cmd_862のDC6件+教訓候補5件をknowledge-… | dm-signal | 03-12 | cmd_862統合報告のDC6件+LC5件を既存knowledge-bas… |
-| cmd_867 | 辞書新設 — DM-Signalメタ構造の明示的記述+全エントリへの織り込み | dm-signal | 03-12 | 辞書新設 — DM-Signalメタ構造の明示的記述+全エントリへの織り込み |
-| cmd_868 | 偵察 — 四神PFの実データ構造確認（データ長・相関・ファミリー構成） | dm-signal | 03-12 | 偵察 — 四神PFの実データ構造確認（データ長・相関・ファミリー構成） |
-| cmd_870 | 恒久ルール追加 — 一次データ不可侵原則の全層明文化 | infra | 03-12 | 一次データ不可侵原則を全3層(ashigaru.md, karo.md, … |
-| cmd_869 | 辞書構造改革 — 一次知識層とDM-Signal解釈層の分離+メタ構造記述 | dm-signal | 03-12 | 辞書構造改革 — 一次知識層とDM-Signal解釈層の分離+メタ構造記述 |
-| cmd_871 | 辞書構造改革（8人全並列）— 一次知識層浄化+DM-Signal解釈層新設… | dm-signal | 03-12 | AC3: meta-structure.md新規作成完了。AC4: cmd… |
 | cmd_872 | 辞書検証トレーサビリティ必須化 — 全エントリに出典・検証日・検証方法を記録 | dm-signal | 03-13 | knowledge-base の guide と methods/11件に… |
 | cmd_873 | GSD式偵察 — 家老サブエージェント活用の設計検討（4観点独立分析） | infra | 03-13 | 家老サブエージェント導入の7失敗シナリオを分析。殿の核心指示「制限がキモ」… |
 | cmd_875 | 実装 — gstack知見Tier1: 忍者プロンプト強化+タスクYAML… | infra | 03-13 | gstack知見Tier1。L215/L216登録 |
@@ -691,3 +668,4 @@
 | cmd_1856 | 奥義-シン忍法 残り20体 本番DB一括登録（登録のみ） | dm-signal | 04-11 | 20体の奥義FoFレコードを本番DBに正常登録(hide=t |
 | cmd_1857 | fix — insight§14自走トリガー廃止+report templateデフォルト値追加 | infra | 04-11 | cmd_1857: §14自走トリガー廃止(AC1)+dep |
 | cmd_1858 | fix — gate_shogun_startup.sh ALERT精度改良3件（false ALERT削減+actionable化） | infra | 04-11 | AC2(Gate17 oneshot除外)+AC3(Gate |
+| cmd_1859 | perf — Gate15 orphan検知 git logバッチ化（GP-170） | infra | 04-12 | Gate15 orphanループ内のgit log個別呼出し |

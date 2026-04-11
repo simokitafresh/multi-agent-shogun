@@ -196,6 +196,14 @@
   resolved_at: "2026-04-09T22:25:00"
   self_executable: true
   reason: "dashboard-updateスキルのSSoT二重管理(archive+gp_tracker)を一本化済み。根因解消により再発リスク消失。defense_level: 2文書追加は不要"
+- id: GP-182
+  description: "archive_completed.sh shogun_to_karo.yaml読込みをflock内に移動。TOCTOU競合によるcmd消失リスク排除"
+  status: proposed
+  proposed_at: "2026-04-12T00:10:00"
+  self_executable: false
+  defense_level: 3
+  reason: "archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置)"
+  evidence: "archive_completed.sh L647(grep flock外)→L675(sed flock外)→L731(flock→mv)。1800件アーカイブ稼働中"
 - id: GP-181
   description: "deploy_task.sh配備直前にSTALE_RESET実行済みフラグ確認。未実行→BLOCK。新パス追加時の防御層迂回を構造的に防止"
   status: karo_sent

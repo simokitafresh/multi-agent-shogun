@@ -19,6 +19,7 @@
 # SG7 gate_prediction: lesson_candidate有→draft_lessons BLOCKリスク。gate_prediction: WARNに設定せよ(cmd_1811/1814で2連続miss)
 # AC commit check → 対象ファイルがgitignore/outputs/(commit不可)なら除外設計か確認。一律適用=負の複利(3/5 WA, 2026-04-10分析)
 # REQUEST_CHANGES verdict → severity: urgent/normal 必須。欠落→家老がurgent/normal判断できず対応遅延(cmd_1836/1841で2件欠落, 2026-04-11検出)
+# 「既実装」判定 → git show HEAD~1:file で変更前状態を確認。HEADは並行commit影響を受ける(cmd_1860 premature_shelve: LG001違反の変形)
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
 # SG一覧: SG0(gate自動) SG2(commit) SG3(scope) SG4(家老処理) SG5(偵察トレーサビリティ)
 #          SG6(状態確認順序) SG7(バンドル) SG8(自動消火4類型) SG10(研究基盤+送信前gate)
@@ -557,13 +558,62 @@
   timestamp: "2026-04-11T23:50:00"
 - cmd_id: cmd_1860
   review_type: draft
-  verdict: REQUEST_CHANGES
+  verdict: APPROVE_CORRECTED
   confidence: HIGH
-  severity: urgent
-  findings_summary: "AC1前提崩壊(LG003)。NINJA_CMD連想配列は既にL179で構築済み、L727-730でO(1)参照済み。get_task_parent_cmdのループ内呼出しは既に排除済み。cmd全体がno-op。cmd取消し推奨"
+  severity: null
+  findings_summary: "★誤判定→修正。当初RC(no-op判定)→小太郎commit d9f10f5で実変更確認→APPROVE。軍師のgrepがcommit後の状態を見た(LG001違反: git show HEAD~1で確認すべき)。実際はNINJA_CMD追加+get_task_parent_cmd置換の有効な変更(+4/-5行)"
   observations:
     - "事実1: L179: declare -A NINJA_CMD=()。L185: NINJA_CMD[$n]=$pcmd。構築済み(実物確認)"
     - "事実2: L727-730: cmd=${NINJA_CMD[$ninja]:-}。O(1)参照済み(実物確認)"
     - "事実3: grep get_task_parent_cmd dashboard_auto_section.sh → L99(定義),L183(MAP構築時1回),L727(コメント参照)。ループ内呼出しゼロ"
   causal_chain: "GP-171提案時(2026-04-07)にはget_task_parent_cmdがループ内にあったが、その後のcmd(GP-082等)で既に修正された可能性。cmd起票前に現物確認されていなかった"
   timestamp: "2026-04-11T23:50:00"
+- cmd_id: cmd_1860
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1860_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。NINJA_CMD連想配列構築+get_task_parent_cmd廃止。commit d9f10f5(+4/-5行)。bats 855 PASS。diff完全一致。★私のdraftRC(no-op判定)はLG001違反→撤回"
+  observations:
+    - "事実1: git show d9f10f5: NINJA_CMD追加+get_task_parent_cmd→NINJA_CMD参照置換。有効な変更"
+    - "事実2: baseline_dashboard.txtとのdiff完全一致。出力不変"
+  lesson_quality: OK
+  causal_chain: "軍師のdraft RC誤判定原因: grepがcommit後の状態を読んだ(LG001違反)。git show HEAD~1で確認すべき"
+  timestamp: "2026-04-12T00:15:00"
+- cmd_id: cmd_1859
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1859_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Gate15 _CONTEXT_AUTHOR_MAP事前構築。git log個別呼出し廃止。bats 17/17 PASS SKIP=0"
+  observations:
+    - "事実1: AC1 grep git log Gate15=0件。AC2 孤立ファイル手動テストPASS。AC3 bats 17/17"
+  lesson_quality: OK
+  causal_chain: "WSL2 NTFS git log 3-4s/件→MAP化で0s=正の複利"
+  timestamp: "2026-04-12T00:15:00"
+- cmd_id: cmd_1861
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。L189-247 STALE_RESET Python blockの関数抽出+L3269全パス共通呼出し+_STALE_RESET_DONEフラグBLOCK。GP-180+181でstale_ac_contamination 7件構造的根絶。Phase4正実装"
+  observations:
+    - "事実1: L189-247=STALE_FIELD_RESET_PYヘレドック。resolve_cmd_to_task()内部(L183開始)に位置。task_file+ninja_nameのみ参照→cleanly extractable"
+    - "事実2: L3270 DIRECT_MODE='skipping resolve'/L3272 CMD_FORCED=直接field設定/L3292 resolve呼出し。3分岐現物確認"
+    - "事実3: Python block L241 raise→Silent fallback不在。GP-181フラグ=未来の新パス自動防御"
+  causal_chain: "STALE_RESETがresolve_cmd_to_task()の副作用→DIRECT/CMD_FORCEDが同関数未呼出し→stale残留7件。独立関数化+全パス共通呼出しで構造的に根絶。_STALE_RESET_DONEフラグ=新パス追加時の迂回自動検出=正の複利(10回繰返し=10回全パス防御)"
+  timestamp: "2026-04-12T00:20:00"
+- cmd_id: cmd_1862
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。archive_cmds() TOCTOU修正。L647 mapfile/L675 sed(flock外)→L731 mv(flock内)の窓を閉じる。observation: command欄全体flock内 vs AC2 archive I/O flock外に表面矛盾あるがACs binding原則で解決可能"
+  observations:
+    - "事実1: L731-736=flock範囲。L647-715=QUEUE_FILE読込全てflock外。TOCTOU窓=L647-L731の84行分の実行時間"
+    - "事実2: command欄'全体flock内'とAC2'archive I/O flock外'に表面矛盾。正解=二相分割(flock内=読込+mv、flock外=archive書出し)"
+    - "事実3: 実害未確認だが1800件archive稼働中の構造的脆弱性。予防修正として妥当"
+  causal_chain: "flock外QUEUE_FILE全量読込→flock内mv上書き→読込〜mv間にEdit追加cmd消失リスク。flock範囲拡大+awk一括化で構造的atomicity保証=正の複利(毎archive実行で安全保証)"
+  timestamp: "2026-04-12T00:20:00"

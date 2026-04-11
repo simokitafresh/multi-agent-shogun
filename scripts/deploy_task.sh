@@ -172,26 +172,16 @@ check_idle() {
 }
 
 
-# ─── cmd_id→task YAML自動解決（なぜなぜL5根因対策: 家老の手動ステップ排除） ───
-# cmd_id指定時、shogun_to_karo.yamlからメタデータを取得しtask YAMLの中核フィールドを自動設定。
-# これにより「task YAML更新 → deploy_task.sh」の2ステップが原子的操作になる。
-resolve_cmd_to_task() {
-    local cmd_id="$1"
-    local ninja_name="$2"
+# ─── 前cmd残留フィールド清掃（再配備時のstale field汚染防止） ───
+# task YAMLは使い回しモデル。yaml_field_setは行ベース置換のためリスト型フィールドを
+# クリアできない(子行が残る)。Python一括クリアで全フィールド型を確実に処理。
+# なぜなぜ3層: (1)resolve_cmd_to_taskのリセット漏れ → (2)yaml_field_setのリスト非対応
+# → (3)inject_task_modifiers.pyの「存在チェック」で前cmdのリスト値が残留
+# --directモード・--cmdモードを含む全パスで実行されるよう、L3269直後の共通位置で呼び出す（AC1）
+reset_stale_fields() {
+    local ninja_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
-    local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 
-    if [ ! -f "$stk" ]; then
-        log "resolve_cmd: ERROR shogun_to_karo.yaml not found"
-        return 1
-    fi
-
-    # ─── 前cmd残留フィールド清掃（再配備時のstale field汚染防止） ───
-    # task YAMLは使い回しモデル。yaml_field_setは行ベース置換のためリスト型フィールドを
-    # クリアできない(子行が残る)。Python一括クリアで全フィールド型を確実に処理。
-    # なぜなぜ3層: (1)resolve_cmd_to_taskのリセット漏れ → (2)yaml_field_setのリスト非対応
-    # → (3)inject_task_modifiers.pyの「存在チェック」で前cmdのリスト値が残留
-    # cmd未発見時(return 1)でも実行されるようawk解決より前に配置（AC1修正）
     python3 - "$task_file" <<'STALE_FIELD_RESET_PY'
 import os, sys, tempfile, yaml, re
 
@@ -245,6 +235,22 @@ except Exception:
 print(f'[STALE_RESET] Cleared {len(STALE_FIELDS)} stale fields + root-level orphans from {os.path.basename(task_file)}', file=sys.stderr)
 STALE_FIELD_RESET_PY
     log "[STALE_RESET] Python stale field reset completed for ${ninja_name}"
+    _STALE_RESET_DONE=1
+}
+
+# ─── cmd_id→task YAML自動解決（なぜなぜL5根因対策: 家老の手動ステップ排除） ───
+# cmd_id指定時、shogun_to_karo.yamlからメタデータを取得しtask YAMLの中核フィールドを自動設定。
+# これにより「task YAML更新 → deploy_task.sh」の2ステップが原子的操作になる。
+resolve_cmd_to_task() {
+    local cmd_id="$1"
+    local ninja_name="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+
+    if [ ! -f "$stk" ]; then
+        log "resolve_cmd: ERROR shogun_to_karo.yaml not found"
+        return 1
+    fi
 
     # shogun_to_karo.yamlからcmdメタデータ抽出（awk方式: Python subprocess除去 cmd_deploy_yaml_speedup）
     local _resolve_output
@@ -3267,6 +3273,7 @@ deploy_task_main() {
     fi
 
     if [ -n "$CMD_ID" ]; then
+        reset_stale_fields "$NINJA_NAME"
         if [ "$DIRECT_MODE" = true ]; then
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
         elif [ -n "$CMD_FORCED" ]; then
@@ -3378,6 +3385,13 @@ deploy_task_main() {
     # 消火キーワードtitle検知（cmd_1807）
     if [ -n "$deploy_parent_cmd" ]; then
         check_firefighting_title "$deploy_parent_cmd" "$task_yaml"
+    fi
+
+    # AC3: _STALE_RESET_DONE確認ゲート — CMD_ID配備時にreset_stale_fieldsが実行済みか検証
+    if [ -n "$CMD_ID" ] && [ "${_STALE_RESET_DONE:-0}" != "1" ]; then
+        log "BLOCK(AC3): _STALE_RESET_DONE not set — reset_stale_fields が未実行。配備を中止。"
+        echo "BLOCK: stale field reset (reset_stale_fields) が未実行。配備を中止。deploy_task.shのreset_stale_fields呼出し経路を確認せよ。" >&2
+        return 1
     fi
 
     deploy_task_apply_task_mutations "$NINJA_NAME"
