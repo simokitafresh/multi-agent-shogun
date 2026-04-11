@@ -1266,6 +1266,39 @@ show_gunshi_pane_status() {
 
 show_gunshi_pane_status
 
+# --- Check 19: パリティcmdのP1-P6全基準チェック（WARN） ---
+# 本番DB操作cmd（パリティ/登録/recalculate含む）のACにP1-P6が網羅されているか
+if echo "$CMD_BLOCK" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then
+    PARITY_MISSING=()
+    # P1: holding_signal
+    if ! echo "$AC_TEXT" | grep -qi 'holding_signal'; then
+        PARITY_MISSING+=("P1:holding_signal完全一致")
+    fi
+    # P2: monthly_return
+    if ! echo "$AC_TEXT" | grep -qi 'monthly_return.*1e-6\|monthly_return.*差\|return.*一致'; then
+        PARITY_MISSING+=("P2:monthly_return完全一致(1e-6)")
+    fi
+    # P3: 既存PF不変
+    if ! echo "$AC_TEXT" | grep -qi 'ゴールデン\|golden\|既存.*不変\|不変.*確認'; then
+        PARITY_MISSING+=("P3:既存PF不変(ゴールデンデータ)")
+    fi
+    # P4: FE UI
+    if ! echo "$AC_TEXT" | grep -qi 'FE\|UI\|frontend\|Dashboard\|ページ'; then
+        PARITY_MISSING+=("P4:FE UI全ページ整合")
+    fi
+    # P5: hide-first
+    if ! echo "$AC_TEXT" | grep -qi 'hide\|is_visible\|非表示'; then
+        PARITY_MISSING+=("P5:hide-first原則")
+    fi
+    if [[ ${#PARITY_MISSING[@]} -gt 0 ]]; then
+        echo "WARNING: パリティcmdのAC基準欠落を検出(dm-signal-ops.md §6-7 チェックリスト参照)"
+        for m in "${PARITY_MISSING[@]}"; do
+            echo "  ✗ $m"
+        done
+        WARN_COUNT=$((WARN_COUNT + 1))
+    fi
+fi
+
 # --- 結果出力 ---
 if [[ "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"

@@ -187,6 +187,7 @@ declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時�
 declare -A IDLE_NOTIFY_SENT              # idle通知送信済み時刻 — key: agent_name, value: epoch秒（状態変化ベース+モード切替）
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 declare -A CLI_DEAD_RESTART_TIMES    # CLI死亡再起動時刻リスト — key: ninja_name, value: スペース区切りepoch秒リスト (cmd_1851)
+declare -A CLI_DEAD_LOOP_LAST_NTFY   # CLI-DEAD-LOOP ntfy最終送信時刻 — key: ninja_name, value: epoch秒 (ntfy flood防止)
 
 # 案A: PREV_STATE初期化（起動直後のidle→idle通知を防止）
 for name in "${NINJA_NAMES[@]}"; do
@@ -2260,7 +2261,12 @@ check_ninja_cli_dead() {
 
         if (( recent_count >= CLI_DEAD_LOOP_THRESHOLD )); then
             log "CLI-DEAD-LOOP: ${name} ${recent_count}回再起動/直近${CLI_DEAD_LOOP_WINDOW}秒。ALERTのみ送信し再起動停止。"
-            bash "$SCRIPT_DIR/scripts/ntfy.sh" "【ALERT】${name} CLI連続死亡ループ検知。直近5分で${recent_count}回再起動。手動確認が必要。" 2>/dev/null || true
+            # ntfy flood防止: 同一agentへのLOOP ALERTは30分に1回まで
+            local last_ntfy="${CLI_DEAD_LOOP_LAST_NTFY[$name]:-0}"
+            if (( now - last_ntfy >= 1800 )); then
+                bash "$SCRIPT_DIR/scripts/ntfy.sh" "【ALERT】${name} CLI連続死亡ループ検知。直近5分で${recent_count}回再起動。手動確認が必要。" 2>/dev/null || true
+                CLI_DEAD_LOOP_LAST_NTFY[$name]=$now
+            fi
             continue
         fi
 
@@ -2278,27 +2284,40 @@ check_ninja_cli_dead() {
 
         log "CLI-DEAD: ${name} 再起動実行。launch_cmd=${launch_cmd}"
 
+        # pane_dead判定: remain-on-exitでペインが死亡状態ならsend-keysは無効
+        local pane_dead
+        pane_dead=$(tmux display-message -t "$pane_target" -p '#{pane_dead}' 2>/dev/null || echo "0")
+
         # バックグラウンドで再起動+30秒後確認（メインループをブロックしない）
         local _pane_target_bg="$pane_target"
         local _name_bg="$name"
         local _launch_bg="$launch_cmd"
+        local _pane_dead_bg="$pane_dead"
+        local _script_dir_bg="$SCRIPT_DIR"
         (
-            tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
-            sleep 1
-            tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
-            sleep 1
-            tmux send-keys -t "$_pane_target_bg" "cd \"${SCRIPT_DIR}\" && clear" Enter 2>/dev/null || true
-            sleep 1
-            tmux send-keys -t "$_pane_target_bg" "$_launch_bg" Enter 2>/dev/null || true
+            if [ "$_pane_dead_bg" = "1" ]; then
+                # pane_dead=1: send-keysは無効。respawn-paneでペインプロセスを再生成
+                log "CLI-DEAD: ${_name_bg} pane_dead=1 → respawn-pane使用"
+                tmux respawn-pane -k -t "$_pane_target_bg" "cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
+            else
+                # pane_dead=0: シェルは生きているがCLIが終了した状態。send-keysで再起動
+                tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
+                sleep 1
+                tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
+                sleep 1
+                tmux send-keys -t "$_pane_target_bg" "cd \"${_script_dir_bg}\" && clear" Enter 2>/dev/null || true
+                sleep 1
+                tmux send-keys -t "$_pane_target_bg" "$_launch_bg" Enter 2>/dev/null || true
+            fi
             sleep 30
             local post_cmd
             post_cmd=$(tmux display-message -t "$_pane_target_bg" -p '#{pane_current_command}' 2>/dev/null || true)
             case "$post_cmd" in
                 bash|zsh|sh)
-                    bash "$SCRIPT_DIR/scripts/ntfy.sh" "【CLI再起動失敗】${_name_bg}: pane_cmd=${post_cmd}（まだshell）。手動確認が必要。" 2>/dev/null || true
+                    bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動失敗】${_name_bg}: pane_cmd=${post_cmd}（まだshell）。手動確認が必要。" 2>/dev/null || true
                     ;;
                 *)
-                    bash "$SCRIPT_DIR/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: pane_cmd=${post_cmd}" 2>/dev/null || true
+                    bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: pane_cmd=${post_cmd}" 2>/dev/null || true
                     ;;
             esac
         ) &

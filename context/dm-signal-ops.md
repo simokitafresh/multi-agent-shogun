@@ -14,6 +14,32 @@ crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテー�
 GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_integrity)。zero-signal自動検知WARN+signal COUNT記録。OPT-13(修正)+GP-124(検知)=二重防御。
 Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal日<当月かつリバランス月PF存在時、前月末signalをforward-fillした月初signal行を自動生成。月初Pending最大24h表示→即時解消。
 詳細アーキ全量解析(2026-03-28コード全文読了) → `docs/research/fullrecalculate-architecture-2026-03-28.md`
+
+### fullrecalculate実行方法（本番=Render。ローカルではない）
+
+**本番のrecalculate_fast.pyはRender上で動く。ローカルのメモリに影響しない。**
+
+| 方法 | コマンド | 用途 |
+|------|---------|------|
+| **手動トリガー** | `curl -X POST https://<backend-url>/admin/recalculate-sync` | PF登録後の即時再計算 |
+| **日次cron** | Render cron 01:10/01:40 UTC | sync-standard + sync-fof |
+| **排他制御** | pg_advisory_lock。409=排他中(30秒待って再実行) | 同時実行不可 |
+
+ローカルでやること: DB接続(psycopg2)でPFレコード作成/読取 + GS CSV 1列読取 + 数値比較。メモリ数MB。
+ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
+
+### パリティ全基準チェックリスト（殿定義集約 2026-04-11）
+
+本番DB操作cmdのACに以下を全て含めよ。1つでも欠落したらFAIL。
+
+| # | 基準 | 定義 | 出典 |
+|---|------|------|------|
+| P1 | **holding_signal完全一致** | 全期間。GS独立計算 vs 本番DB | 殿教示 2026-03-22 |
+| P2 | **monthly_return完全一致** | 全期間。差<1e-6(IEEE754許容) | PI-009運用基準 |
+| P3 | **既存PF不変** | ゴールデンデータ突合。新規以外の全PF | PI-023 |
+| P4 | **FE UI全ページ整合** | Dashboard/Compare/Signals/Detail/Admin MECE確認 | 殿指示 2026-04-11 |
+| P5 | **hide-first原則** | is_visible=false→PASS後に表示切替 | PI-023 |
+| P6 | **本番がground truth** | 不一致ならGS側の問題。本番を疑わない | 殿厳命 2026-03-22 |
 旧アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
 - L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）
 - L157: pending判定は『存在チェック』より先にrebalance月 gatingを入れないと非月次triggerで誤表示する（cmd_525）

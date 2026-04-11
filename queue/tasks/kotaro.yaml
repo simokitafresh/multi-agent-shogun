@@ -1,7 +1,7 @@
 task:
   _ac_task_id: cmd_1856_impl
   _ac_worker_id: null
-  ac_version: 473c729b
+  ac_version: b99834bc
   acceptance_criteria:
   - description: '登録前のPF数を記録(SELECT count(*) FROM portfolios)。20体のFoFレコードを本番DBにhide=trueで作成。各体のportfolio_id(UUID)と名前を一覧で報告。登録後のPF数を報告(期待:
       +20)'
@@ -12,6 +12,7 @@ task:
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
+  deployed_at: '2026-04-11T15:32:45'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
     \  - L480: selection block付きFoF21体中、初月monthly_returns.holding_signalがNULLの体がある。signals\
@@ -59,12 +60,12 @@ task:
       count: 10
     - pattern: 'field_missing'
       count: 3
-    - pattern: 'lu_reason_empty'
+    - pattern: 'verdict_invalid'
       count: 3
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止'
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'binary_checks_fail'
-      count: 9
+      count: 10
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_format'
       count: 8
@@ -109,4 +110,3 @@ task:
   - id: 'L596'
     summary: 'kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy'
     detail: 'kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy'
-  deployed_at: "2026-04-11T15:32:45"

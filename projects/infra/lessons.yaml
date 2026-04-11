@@ -1570,6 +1570,9 @@ lessons:
   tags:
   - infra
   - universal
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-11'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
   summary: 'ast-grep rule を regex ベースで書く場合、kind を伴わない composite rule は `Rule must
@@ -1593,6 +1596,9 @@ lessons:
   summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ
   tags:
   - universal
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-11'
 - id: L224
   title: MCP obsに運用ルールと殿の好みを混在させると陳腐化が加速する
   summary: 53obsの突合でMCPに混在していた重複・旧版化項目の多くが本来context/instructionsに置くべき運用ルールだった。MCPは殿の好み/哲学を中
@@ -2464,9 +2470,9 @@ lessons:
   - bash
   - yaml
   - reporting
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-04-10'
+  last_referenced: '2026-04-11'
 - id: L096
   title: preflight_gate_flags()でlocal変数をif/else跨ぎで参照する場合、両ブロックのどちらが実行されても参照可能なスコープ（関数先頭等）で宣言・初期化すべき。bashのlocalは関数スコープだが、宣言がif内にあると実行されないelseブロックでは未初期化になる。
   summary: bash,variable-scope,preflight
@@ -2607,9 +2613,9 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-11T02:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=4'
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 5
-  last_referenced: '2026-04-09'
+  last_referenced: '2026-04-11'
 - id: L078
   title: GATE BLOCK率65%は構造問題(missing_gate)。家老フラグ生成タイミングが主因
   summary: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
@@ -2641,7 +2647,7 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 29
+  helpful_count: 28
   harmful_count: 23
   last_referenced: '2026-04-11'
 - id: L073
@@ -2671,6 +2677,9 @@ lessons:
   - yaml-key-mismatch
   - silent-fail
   - deploy
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-11'
 - id: L069
   title: スキルがsystem-reminderに検出されるにはSKILL.mdにYAMLフロントマター(---/name/description/allowed-tools/---)が必須
   summary: shogun-param-neighbor-checkはMarkdown見出しのみでフロントマターなし→スキル検出システムに認識されず。他8スキルは全てフロント
@@ -2714,7 +2723,7 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 29
+  helpful_count: 28
   harmful_count: 23
   last_referenced: '2026-04-11'
 - id: L062

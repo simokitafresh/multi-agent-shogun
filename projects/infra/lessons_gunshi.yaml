@@ -195,5 +195,5 @@ lessons:
     運用: l1_alm_wf_engine.py --csv で1本ずつfor文実行。wf_runner.py使用禁止。
   source_cmd: cmd_1843
   created_at: '2026-04-10'
-  automated: false
-  enforcement: 設計書(docs/research/gunshi_wf_oom_prevention_design_20260410.md)に殿裁定記録+運用方針明記。cmd_1843クローズ済み
+  automated: true
+  enforcement: pre-bash-combined.sh Guard 8(wf_runner.py BLOCK)。Level 4。4テストPASS。設計書=docs/research/gunshi_wf_oom_prevention_design_20260410.md

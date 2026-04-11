@@ -3926,6 +3926,25 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "  SKIP (gate_loop_health.sh not found)"
     fi
 
+    # ─── 教訓フィードバック記録（GATE CLEAR後、archive前） ───
+    # karo_idle_fix: 報告YAMLのlessons_usefulをlesson_impact.tsvに書き戻し
+    echo ""
+    echo "Lesson feedback recording (post-GATE CLEAR):"
+    feedback_script="$SCRIPT_DIR/scripts/record_lesson_feedback.sh"
+    if [ -f "$feedback_script" ]; then
+        for report_yaml in "$SCRIPT_DIR"/queue/reports/*_report_"${CMD_ID}"*.yaml; do
+            if [ -f "$report_yaml" ]; then
+                if bash "$feedback_script" "$report_yaml" 2>&1; then
+                    echo "  feedback: OK ($report_yaml)"
+                else
+                    echo "  [INFO] feedback: WARN ($report_yaml, non-blocking)"
+                fi
+            fi
+        done
+    else
+        echo "  SKIP (record_lesson_feedback.sh not found)"
+    fi
+
     # ─── archive実行（GATE CLEAR後、全チェック+ポストプロセス完了後） ───
     # cmd_1302: 報告YAMLをGATEが読み終わってからアーカイブ
     echo ""

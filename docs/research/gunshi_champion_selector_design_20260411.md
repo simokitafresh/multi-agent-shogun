@@ -4,7 +4,7 @@
 ## 結論
 
 `outputs/scripts/champion_selector.py` — GS CSV/.npyから3目的チャンピオンを直列選出。
-195万パターン×3メトリクス → **25秒、peak RSS ~1GB**。cmd_1844(hanzo)と21/21完全一致。
+約286万パターン×3メトリクス → **25秒、peak RSS ~1GB**。cmd_1844(hanzo)と21/21完全一致。
 
 ## なぜなぜ7回（計測ベース）
 
@@ -39,7 +39,7 @@
 | nukimi | 481,650 | 4.22s | npy |
 | kasoku_diff | 944,775 | 8.47s | npy |
 | kasoku_ratio | 944,775 | 8.41s | npy |
-| **合計** | **1,859,025** | **25.2s** | — |
+| **合計** | **2,859,025** | **25.2s** | — |
 
 Peak RSS: ~1,055MB (kasoku_diffチャンク処理時)
 

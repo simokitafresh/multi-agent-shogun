@@ -1436,30 +1436,39 @@ def greedy_dedup(scored_list, all_lessons, threshold=DEDUP_THRESHOLD):
         print(f'[INJECT] dedup: removed {deduped_count} similar lessons (threshold={threshold})', file=sys.stderr)
     return accepted
 
+USEFUL_RATE_MIN_SAMPLES = 5  # feedback件数がこの値未満の教訓にはdecayを適用しない
+
 def compute_useful_rates(script_dir):
-    """lesson_impact.tsvからlesson別useful_rateを算出。useful_rate = referenced_count / injection_count"""
+    """lesson_impact.tsvのfeedback行からlesson別useful_rateを算出。
+    feedback行(action='feedback')がある教訓はそちらで計算（忍者の実フィードバック）。
+    feedback行がない教訓はrateを返さない（decayなし=安全側）。
+    MIN_SAMPLES未満の教訓もdecay対象外（サンプル不足でのペナルティ防止）。"""
     impact_path = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
     if not os.path.exists(impact_path):
         return {}
-    counts = {}  # lesson_id -> [useful_true, injection_count]
+    feedback_counts = {}  # lesson_id -> [useful_count, total_feedback_count]
     try:
         with open(impact_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f, delimiter='\t')
             for row in reader:
                 lid = (row.get('lesson_id') or '').strip()
                 action = (row.get('action') or '').strip().lower()
-                result = (row.get('result') or '').strip().upper()
-                if not lid or action != 'injected' or result == 'PENDING':
+                if not lid or action != 'feedback':
                     continue
-                if lid not in counts:
-                    counts[lid] = [0, 0]
-                counts[lid][1] += 1
-                ref = (row.get('referenced') or '').strip().lower()
-                if ref in ('yes', 'true', '1', 'y'):
-                    counts[lid][0] += 1
+                if lid not in feedback_counts:
+                    feedback_counts[lid] = [0, 0]
+                feedback_counts[lid][1] += 1
+                result = (row.get('result') or '').strip().upper()
+                if result == 'USEFUL':
+                    feedback_counts[lid][0] += 1
     except Exception:
         return {}
-    return {lid: vals[0] / vals[1] if vals[1] > 0 else 0.0 for lid, vals in counts.items()}
+    # MIN_SAMPLES以上のfeedbackがある教訓のみrateを返す
+    return {
+        lid: vals[0] / vals[1] if vals[1] > 0 else 0.0
+        for lid, vals in feedback_counts.items()
+        if vals[1] >= USEFUL_RATE_MIN_SAMPLES
+    }
 
 def build_lesson_detail(lesson):
     if_then = lesson.get('if_then')
@@ -1841,8 +1850,28 @@ try:
         if score > 0:
             scored.append((score, lid, l_summary or l_title))
 
-    # cmd_1564: useful_rate decay — 活用率が低い教訓のスコアを減衰
+    # cmd_1564+karo_idle_fix: useful_rate decay — 活用率が低い教訓のスコアを減衰
+    # フィードバックデータ(record_lesson_feedback.sh)から実有用率を算出
     useful_rates = compute_useful_rates(script_dir)
+
+    # universal教訓にもuseful_rateフィルタを適用
+    # 有用率が閾値未満のuniversal教訓はtag_candidatesに降格（スコアリング対象に移動）
+    if useful_rates and universal_lessons:
+        demoted = []
+        kept = []
+        for lesson in universal_lessons:
+            lid = lesson.get('id', '')
+            rate = useful_rates.get(lid)
+            if rate is not None and rate < USEFUL_RATE_THRESHOLD:
+                demoted.append(lesson)
+            else:
+                kept.append(lesson)
+        if demoted:
+            demoted_ids = [l.get('id', '?') for l in demoted]
+            print(f'[INJECT] universal demotion: {len(demoted)} lessons below {USEFUL_RATE_THRESHOLD*100:.0f}% useful_rate → scored candidates: {demoted_ids}', file=sys.stderr)
+            tag_candidates.extend(demoted)
+            universal_lessons = kept
+
     if useful_rates:
         new_scored = []
         decayed_count = 0
