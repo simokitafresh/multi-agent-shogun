@@ -234,3 +234,28 @@ teardown_file() {
     root_field_name=$(grep '^[a-zA-Z_]' "$nested_file" | head -1)
     [[ "$root_field_name" == task:* ]]
 }
+
+@test "--directモード: reset_stale_fieldsがstaleフィールドを清掃する(AC2)" {
+    # --directモードではresolve_cmd_to_taskをスキップするが
+    # reset_stale_fieldsがL3269直後の共通位置で呼ばれるためstaleフィールドは清掃される
+    local direct_root
+    direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_direct.XXXXXX")"
+    prepare_source_fixture "$direct_root"
+
+    local file="$direct_root/queue/tasks/tobisaru.yaml"
+
+    SCRIPT_DIR="$direct_root"
+    log() { :; }
+    eval "$(extract_function reset_stale_fields)"
+    reset_stale_fields "tobisaru"
+
+    assert_missing_fields \
+        "$file" \
+        target_path progress description deployed_at \
+        constraints engineering_preferences context_files stop_for never_stop_for parallel_ok \
+        AC1 AC2 AC3 acceptance_criteria scout_exempt ac_priority ac_checkpoint \
+        command reports_to_read credential_warning context_update type report_template \
+        worker_id timestamp
+
+    rm -rf "$direct_root"
+}
