@@ -176,11 +176,13 @@ get_model() {
 
 # ─── Build cmd→ninjas mapping (from task YAMLs) ───
 declare -A CMD_NINJAS=()
+declare -A NINJA_CMD=()
 for n in $ALL_NINJAS; do
     tf="$TASKS_DIR/${n}.yaml"
     [[ ! -f "$tf" ]] && continue
     pcmd=$(get_task_parent_cmd "$tf" || true)
     [[ -z "$pcmd" ]] && continue
+    NINJA_CMD[$n]="$pcmd"
     jp=$(name_jp "$n")
     if [[ -n "${CMD_NINJAS[$pcmd]:-}" ]]; then
         CMD_NINJAS[$pcmd]="${CMD_NINJAS[$pcmd]},${jp}"
@@ -722,13 +724,10 @@ fi
             fi
         fi
 
-        # parent_cmd from task YAML
+        # parent_cmd from pre-built NINJA_CMD (O(1) lookup, avoids repeated get_task_parent_cmd)
         cmd="—"
-        tf="$TASKS_DIR/${ninja}.yaml"
-        if [[ -f "$tf" ]]; then
-            _cmd=$(get_task_parent_cmd "$tf" || true)
-            [[ -n "$_cmd" ]] && cmd="$_cmd"
-        fi
+        _cmd="${NINJA_CMD[$ninja]:-}"
+        [[ -n "$_cmd" ]] && cmd="$_cmd"
 
         # cmd title from TITLE_MAP (O(1) lookup, GP-XXX)
         title="—"
