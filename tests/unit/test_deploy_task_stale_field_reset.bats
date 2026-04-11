@@ -110,7 +110,9 @@ resolve_fixture_task() {
         bash "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"
     }
 
+    eval "$(extract_function reset_stale_fields)"
     eval "$(extract_function resolve_cmd_to_task)"
+    reset_stale_fields "$ninja_name"
     resolve_cmd_to_task "$cmd_id" "$ninja_name"
 }
 
