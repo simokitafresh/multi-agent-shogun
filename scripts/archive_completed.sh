@@ -636,20 +636,125 @@ archive_cmds() {
 
     local tmp_active="$TMP/stk_active.yaml"
     local chronicle_batch="$TMP/chronicle_batch.list"
-    local archived=0 kept=0
+    local archive_todo="$TMP/stk_archive_todo.list"
+    local archive_result="$TMP/stk_archive_result.env"
     local date_stamp
     date_stamp="$(date '+%Y%m%d')"
 
     : > "$chronicle_batch"
+    : > "$archive_todo"
     echo "commands:" > "$tmp_active"
-    # エントリ境界を行番号で特定（リスト形式 + マッピング形式の両対応）
-    local -a starts
-    mapfile -t starts < <(grep -nE '^ *- id: cmd_|^  cmd_[0-9a-z_]+:' "$QUEUE_FILE" | cut -d: -f1)
 
-    if [ ${#starts[@]} -eq 0 ]; then
-        # 空振り検出: エントリ境界が0件でも完了ステータスが存在するならパターン不一致
-        local pre_check
-        pre_check=$(awk '/^ *status: *(completed|cancelled|absorbed|halted|superseded|done)/{c++} END{print c+0}' "$QUEUE_FILE")
+    # フェーズ1: flock内でQUEUE_FILE読込（mapfile+forループ）・分類・QUEUE_FILE更新
+    # AC1: QUEUE_FILEのすべての読み込みをflock内に包含
+    # AC2: アーカイブファイル書き出し等QUEUE_FILE以外のI/OはこのサブシェルをEXIT後に実行
+    (
+        flock -w 10 200 || { echo "[archive] WARN: flock timeout on QUEUE_FILE" >&2; exit 1; }
+
+        # エントリ境界を行番号で特定（リスト形式 + マッピング形式の両対応）
+        local -a starts
+        mapfile -t starts < <(grep -nE '^ *- id: cmd_|^  cmd_[0-9a-z_]+:' "$QUEUE_FILE" | cut -d: -f1)
+
+        if [ ${#starts[@]} -eq 0 ]; then
+            # 空振り検出: エントリ境界が0件でも完了ステータスが存在するならパターン不一致
+            local pre_check
+            pre_check=$(awk '/^ *status: *(completed|cancelled|absorbed|halted|superseded|done)/{c++} END{print c+0}' "$QUEUE_FILE")
+            printf 'no_entries=1\npre_check=%s\narchived=0\nkept=0\ncompleted_count=%s\n' \
+                "$pre_check" "$pre_check" > "$archive_result"
+            exit 0
+        fi
+
+        local total_lines archived_i=0 kept_i=0
+        total_lines=$(wc -l < "$QUEUE_FILE")
+
+        for i in "${!starts[@]}"; do
+            local s=${starts[$i]}
+            local e
+            if [ $((i + 1)) -lt ${#starts[@]} ]; then
+                e=$(( ${starts[$((i + 1))]} - 1 ))
+            else
+                e=$total_lines
+            fi
+
+            local entry
+            entry="$(sed -n "${s},${e}p" "$QUEUE_FILE")"
+
+            # statusフィールドを取得（インメモリ抽出: temp file I/O排除）
+            local status_val
+            status_val=$(printf '%s\n' "$entry" | grep -m1 '^ *status:' | sed 's/^ *status: *//; s/["'"'"']//g; s/[[:space:]]*$//' || true)
+
+            # cmd_idを取得（退避先ファイル名に利用。リスト形式 + マッピング形式の両対応）
+            local cmd_id
+            cmd_id=$(printf '%s\n' "$entry" \
+                | grep -m1 -E '^ *- id: cmd_|^  cmd_[0-9a-z_]+:' \
+                | sed -E 's/^ *- id: *//; s/^[[:space:]]*(cmd_[0-9a-z_]+):.*/\1/')
+
+            # status欠損時のみ、completed_changelog照合でcompleted扱いにする。
+            # 完全一致(anchor)で cmd_51 が cmd_515 に誤マッチしないようにする。
+            if [ -z "$status_val" ] && [ -n "$cmd_id" ] && [ -f "$CHANGELOG_FILE" ]; then
+                local cmd_id_re
+                cmd_id_re=$(printf '%s' "$cmd_id" | sed 's/[][(){}.^$*+?|\\-]/\\&/g')
+                if grep -Eq "^[[:space:]]*(-[[:space:]]*)?(id|cmd_id):[[:space:]]*${cmd_id_re}[[:space:]]*$" "$CHANGELOG_FILE"; then
+                    status_val="completed"
+                fi
+            fi
+
+            if [[ "$status_val" =~ ^(completed|cancelled|absorbed|halted|superseded|done) ]]; then
+                local archive_status="${BASH_REMATCH[1]}"
+                if [ -n "$cmd_id" ]; then
+                    # AC2: アーカイブファイル書き出しはflock外で実施。entryをtmpに保存しtodoリストに登録
+                    printf '%s\n' "$entry" > "$TMP/entry_${cmd_id}.tmp"
+                    printf '%s|%s\n' "$cmd_id" "$archive_status" >> "$archive_todo"
+                else
+                    echo "[archive] WARN: failed to parse cmd_id at lines ${s}-${e}" >&2
+                fi
+                archived_i=$((archived_i + 1))
+            else
+                printf '%s\n' "$entry" >> "$tmp_active"
+                kept_i=$((kept_i + 1))
+            fi
+        done
+
+        # 空振り検出用: 完了ステータス件数をQUEUE_FILEから取得（flock内・最終読み込み）
+        local completed_count
+        completed_count=$(awk '/^ *status: *(completed|cancelled|absorbed|halted|superseded|done)/{c++} END{print c+0}' "$QUEUE_FILE")
+
+        if [ "$archived_i" -gt 0 ]; then
+            # QUEUE_FILE更新（flock内でアトミックに実行）
+            [ -f "$tmp_active" ] || { echo "[archive] FATAL: tmp_active not found: $tmp_active" >&2; exit 1; }
+            mv "$tmp_active" "$QUEUE_FILE" || { echo "[archive] FATAL: mv failed: $tmp_active → $QUEUE_FILE" >&2; exit 1; }
+        fi
+
+        # 結果を親スコープに渡すためにtmpファイルに書き出し
+        printf 'no_entries=0\narchived=%s\nkept=%s\ncompleted_count=%s\n' \
+            "$archived_i" "$kept_i" "$completed_count" > "$archive_result"
+
+    ) 200>"/tmp/mas-stk.lock"
+
+    local flock_exit=$?
+    if [ "$flock_exit" -ne 0 ]; then
+        rm -f "$tmp_active" "$archive_todo"
+        return 1
+    fi
+
+    # フェーズ2: flock外で結果読み込み・アーカイブファイル書き出し
+    if [ ! -f "$archive_result" ]; then
+        echo "[archive] FATAL: archive_result not found" >&2
+        return 1
+    fi
+
+    local no_entries=0 archived=0 kept=0 completed_count=0 pre_check=0
+    while IFS='=' read -r key val; do
+        case "$key" in
+            no_entries)      no_entries="$val" ;;
+            archived)        archived="$val" ;;
+            kept)            kept="$val" ;;
+            completed_count) completed_count="$val" ;;
+            pre_check)       pre_check="$val" ;;
+        esac
+    done < "$archive_result"
+
+    if [ "$no_entries" -eq 1 ]; then
         if [ "$pre_check" -gt 0 ]; then
             echo "[archive] WARN: $pre_check completed cmds found but 0 archived — grep pattern mismatch?" >&2
         fi
@@ -659,65 +764,6 @@ archive_cmds() {
         return 0
     fi
 
-    local total_lines
-    total_lines=$(wc -l < "$QUEUE_FILE")
-
-    for i in "${!starts[@]}"; do
-        local s=${starts[$i]}
-        local e
-        if [ $((i + 1)) -lt ${#starts[@]} ]; then
-            e=$(( ${starts[$((i + 1))]} - 1 ))
-        else
-            e=$total_lines
-        fi
-
-        local entry
-        entry="$(sed -n "${s},${e}p" "$QUEUE_FILE")"
-
-        # statusフィールドを取得（インメモリ抽出: temp file I/O排除）
-        local status_val
-        status_val=$(printf '%s\n' "$entry" | grep -m1 '^ *status:' | sed 's/^ *status: *//; s/["'"'"']//g; s/[[:space:]]*$//' || true)
-
-        # cmd_idを取得（退避先ファイル名に利用。リスト形式 + マッピング形式の両対応）
-        local cmd_id
-        cmd_id=$(printf '%s\n' "$entry" \
-            | grep -m1 -E '^ *- id: cmd_|^  cmd_[0-9a-z_]+:' \
-            | sed -E 's/^ *- id: *//; s/^[[:space:]]*(cmd_[0-9a-z_]+):.*/\1/')
-
-        # status欠損時のみ、completed_changelog照合でcompleted扱いにする。
-        # 完全一致(anchor)で cmd_51 が cmd_515 に誤マッチしないようにする。
-        if [ -z "$status_val" ] && [ -n "$cmd_id" ] && [ -f "$CHANGELOG_FILE" ]; then
-            local cmd_id_re
-            cmd_id_re=$(printf '%s' "$cmd_id" | sed 's/[][(){}.^$*+?|\\-]/\\&/g')
-            if grep -Eq "^[[:space:]]*(-[[:space:]]*)?(id|cmd_id):[[:space:]]*${cmd_id_re}[[:space:]]*$" "$CHANGELOG_FILE"; then
-                status_val="completed"
-            fi
-        fi
-
-        if [[ "$status_val" =~ ^(completed|cancelled|absorbed|halted|superseded|done) ]]; then
-            local archive_status="${BASH_REMATCH[1]}"
-            if [ -n "$cmd_id" ]; then
-                local cmd_archive_file="$ARCHIVE_CMD_DIR/${cmd_id}_${archive_status}_${date_stamp}.yaml"
-                {
-                    echo "commands:"
-                    printf '%s\n' "$entry"
-                } > "$cmd_archive_file"
-                archive_pending_decisions_for_cmd "$cmd_id" || true
-                printf '%s\n' "$cmd_archive_file" >> "$chronicle_batch"
-            else
-                echo "[archive] WARN: failed to parse cmd_id at lines ${s}-${e}" >&2
-            fi
-
-            archived=$((archived + 1))
-        else
-            printf '%s\n' "$entry" >> "$tmp_active"
-            kept=$((kept + 1))
-        fi
-    done
-
-    # 空振り検出: 完了ステータスのcmdが存在するのにarchived=0の場合WARN
-    local completed_count
-    completed_count=$(awk '/^ *status: *(completed|cancelled|absorbed|halted|superseded|done)/{c++} END{print c+0}' "$QUEUE_FILE")
     # postcondition用グローバル変数を設定
     _POSTCOND_COMPLETED=$completed_count
     _POSTCOND_ARCHIVED=$archived
@@ -727,13 +773,17 @@ archive_cmds() {
     fi
 
     if [ "$archived" -gt 0 ]; then
-        # flockでYAMLファイルへの書き込みを排他制御
-        (
-            flock -w 10 200 || { echo "[archive] WARN: flock timeout on QUEUE_FILE"; return 1; }
-            # S06修正: mv前にtmpファイル存在確認
-            [ -f "$tmp_active" ] || { echo "[archive] FATAL: tmp_active not found: $tmp_active" >&2; exit 1; }
-            mv "$tmp_active" "$QUEUE_FILE" || { echo "[archive] FATAL: mv failed: $tmp_active → $QUEUE_FILE" >&2; exit 1; }
-        ) 200>"/tmp/mas-stk.lock"
+        # AC2: flock外でアーカイブファイル書き出し（QUEUE_FILE以外のI/O。flock保持時間最小化）
+        while IFS='|' read -r cmd_id archive_status; do
+            local cmd_archive_file="$ARCHIVE_CMD_DIR/${cmd_id}_${archive_status}_${date_stamp}.yaml"
+            {
+                echo "commands:"
+                cat "$TMP/entry_${cmd_id}.tmp"
+            } > "$cmd_archive_file"
+            rm -f "$TMP/entry_${cmd_id}.tmp"
+            archive_pending_decisions_for_cmd "$cmd_id" || true
+            printf '%s\n' "$cmd_archive_file" >> "$chronicle_batch"
+        done < "$archive_todo"
         sync_chronicle_entries_batch "$chronicle_batch" || true
         echo "[archive] cmds: archived=$archived kept=$kept"
     else
