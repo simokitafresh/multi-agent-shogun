@@ -1278,6 +1278,9 @@ lessons:
     hookがSKI
   tags:
   - deploy
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-11'
 - id: L272
   title: テスト依存ファイル追加時は全テストのsetup()も更新すべき+固定日付は動的日付に
   summary: agent_config.sh/normalize_report.sh/gate_dc_duplicate.sh追加時にテストsetupへのコピーが漏れた(L2
@@ -2235,6 +2238,9 @@ lessons:
   - communication
   - gate
   - reporting
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-11'
 - id: L131
   title: archive_completed.sh sweep modeはparent_cmd完了チェック必須
   summary: sweep mode（引数なし）はstatus判定のみだと進行中cmdの報告を早期退避し得る。原則はcmd_id指定呼び出しとし、sweepにはparent_c
@@ -2648,7 +2654,7 @@ lessons:
   tags:
   - universal
   helpful_count: 28
-  harmful_count: 23
+  harmful_count: 24
   last_referenced: '2026-04-11'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2724,7 +2730,7 @@ lessons:
   tags:
   - universal
   helpful_count: 28
-  harmful_count: 23
+  harmful_count: 24
   last_referenced: '2026-04-11'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要

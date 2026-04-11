@@ -260,3 +260,8 @@ lessons:
   detail: 'pane末尾のプロンプト(❯)だけ見て止まったと報告→実際はthinking/実行中。deepdive Phase2と同構造。真因: /clearは実行中タスクを中断しない+送信後の確認が意志依存。対策: inbox_watcher.shのclear_command処理にpost-verification追加(sleep 8→CTX確認→WARN/OK)。半蔵で動作確認OK。原理: 送った=完了ではない。確認するまでが命令'
   source_cmd: 'cmd_1839'
   created_at: '2026-04-10'
+- id: 'LK045'
+  title: '新cmd配備前にtask YAMLの旧parent_cmdをクリアせよ'
+  detail: 'deploy_task.shはtask YAMLのparent_cmdで配備先cmdを解決する。旧cmdが残存していると新cmdではなく旧cmdに配備される(cmd_1858配備時にcmd_1843に解決した事故)。配備前にyaml_field_set.shでparent_cmd/task_id/statusをクリアしてからdeploy_task.shを実行すること'
+  source_cmd: 'cmd_1858'
+  created_at: '2026-04-11'

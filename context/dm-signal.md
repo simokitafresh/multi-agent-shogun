@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L605 -->
+<!-- last_synced_lesson: L609 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -169,3 +169,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L564-L573は振り分け済 → research§35(L564:MINIMIZE_METRICSランタイムpatch/L566:ALM吸収メトリクス差異), research§32(L565:旧加速ratio/diff未分化), research§33(L567:多様性分析/L568:10目的相関冗長), research§34(L569:LTJ_inv早期fold NaN), gs-speedup§4(L570:npy sidecar), ops索引(L571:baseline_v2記述不一致), research GS結果(L572:runner正規パス), core§19.2(L573:bisect helper統一)）
 - （L574-L589は振り分け済 → core§19.2(L574-L578:FoF月次bisect統一[PI:L573同根]), ops索引(L579/L582/L584:自動生成/L585:output_path記述/L589:tracemallocツール), research§35(L580:38メトリクス後計算/L587:METRIC_NAMES同期), research§GS結果(L581:unit_naming制約), research§パリティ(L586:golden当月DB更新), gs-speedup§4(L583:WSL2 p9 stall/L588:WFエンジンOOM 24.7倍膨張)）
 - （L589-L605は振り分け済 → gs-speedup§4(L589:SHM二乗時間化/L592:import性能/L596:savetxt 59x/L597:fork RSS計測/L598:BytesIOパターン), ops§WF(L590:tracemalloc≠RSS/L591:parallel実測/L600:fromstring空セル), ops§GS(L593:C(n,k)スケーリング/L594:HASHSEED sorted()), core§忍法BB(L599:TrendReversalFilter early return), research§奥義(L601:MaxDD最悪値選出/L602:oikaze ID誤記/L604:IS前半≠全期間0/21/L605:CAGR系過適合リスク高)。L595/L603重複削除）
+- L606: WF回帰テストは同一CSV2回実行での決定論確認(異なるCSV世代間比較は別用途)（cmd_1856）
+- L607: 進行中月(当月)monthly_returnはGS作成日依存のため差異が生じる（cmd_1855）
+- L608: 進行中月パリティ差異は構造的問題（cmd_1855）
+- L609: WF回帰テストは同一CSV2回実行での決定論確認（cmd_1856）
