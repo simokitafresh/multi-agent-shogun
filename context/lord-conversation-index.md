@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-11 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-11T17:21:05+09:00 -->
+<!-- generated_at: 2026-04-11T17:27:16+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-11T17:27:16+09:00 | terminal | response | **cmd_1857 GATE CLEAR。** 飛猿が完遂。 - **AC1**: §14自走トリガーinsight_write行を削除 — PASS - **AC2**: deploy_task.sh heredocにassumpti…
+- 2026-04-11T17:26:41+09:00 | terminal | inbound | どうなった？
 - 2026-04-11T17:21:05+09:00 | terminal | response | cmd_1857起票・委任完了。 **cmd_1857**: fix — insight§14自走トリガー廃止+report templateデフォルト値追加 - **Part 1**: cmd_delegate.sh L143の§14 …
 - 2026-04-11T17:16:16+09:00 | terminal | inbound | 起票せよ
 - 2026-04-11T17:15:51+09:00 | terminal | response | 残りのpendingを最終確認。 [meta] stop_reason=tool_use
@@ -12,10 +14,9 @@
 - 2026-04-11T17:01:58+09:00 | terminal | response | はっ！将軍、復帰完了でござる。 **陣形図:** - 全忍者6名idle（疾風・影丸・半蔵・才蔵・小太郎・飛猿） - パイプライン空 — 次cmd待ち - 直近GATE CLEAR連勝10（cmd_1845〜cmd_1856） **直近の…
 - 2026-04-11T16:59:54+09:00 | terminal | inbound | y
 - 2026-04-11T16:59:20+09:00 | terminal | response | **12/12 全PASS。強くてニューゲーム準備完了。** [meta] stop_reason=tool_use
-- 2026-04-11T16:58:55+09:00 | terminal | inbound | もう一度テストして
-- 2026-04-11T16:58:24+09:00 | terminal | response | **12/12 全PASS。強くてニューゲーム準備完了。** [meta] stop_reason=end_turn
 
 ## 未解決確認事項
+- **cmd_1857 GATE CLEAR。** 飛猿が完遂。 - **AC1**: §14自走トリガーinsight_write行を削除 — PASS - **AC2**: deploy_task.sh heredocにassumption_invalidation+verd…
 - 残りのpendingを最終確認。 [meta] stop_reason=tool_use
 - 家老のpaneを読め。軍師のinsights蓄積分析を確認して実行せよ
 - **【/lesson-sort 実行結果】** 移動完了: 16件 スキップ: 0件 不変量候補: 0件 | # | Lesson ID | カテゴリ | 備考 | |---|-----------|---------|------| | 1 | L451 | deploy_t…
@@ -23,7 +24,6 @@
 - deepdive Phase 1-10を今の自分に重ねて追体験する。 **Phase 1-2（浅い分析）**: 今日「ALM方式が不適切」と書いた。表面的な判断。殿に「不適切と判断する根拠は？」と問われて答えられなかった。Phase 1の将軍と同じ構造。 **Phase 3（考…
 - 殿の通り、**リアルタイムで再計算が進行中**。tailストリームで確認した。 07:21〜07:22(UTC=16:21-16:22 JST)で奥義の再計算が走っている: - 奥義-抜き身-常勝 → completed (0.58s) - 奥義-追い風-常勝 → comple…
 - あれ、手動で実行したんだけど、本当にリアルタイムのログを確認した？
-- Renderログ確認完了。 **奥義21体は06:43に全てAPI経由で登録成功**。その後**07:17の日次cron(sync-fof)のFoF processing orderに奥義21体が含まれている**。つまりfullrecalculateが既に1回走っている。 本番…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-11T17:01:58+09:00 | はっ！将軍、復帰完了でござる。 **陣形図:** - 全忍者6名idle（疾風・影丸・半蔵・才蔵・小太郎・飛猿） - パイプライン空 — 次cmd待ち - 直近GATE CLEAR連勝10（cmd_1845〜cmd_1856） **直近の戦果（cmd-chronicle）:**…
