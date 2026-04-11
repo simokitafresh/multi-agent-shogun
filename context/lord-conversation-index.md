@@ -1,44 +1,41 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-11 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-11T08:13:44+09:00 -->
+<!-- generated_at: 2026-04-11T13:10:32+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-11T08:13:44+09:00 | terminal | response | StockData API確認: `stockdata-api-6xok.onrender.com` / クライアント: `backend/app/client.py`。cmd_1851もGATE CLEAR（連勝23）。 [meta] …
-- 2026-04-11T08:11:50+09:00 | terminal | inbound | stockdataAPIを使おう。本番もそうしてる
-- 2026-04-11T03:56:55+09:00 | ntfy | outbound | 【CLI再起動失敗】kagemaru: pane_cmd=bash（まだshell）。手動確認が必要。
-- 2026-04-11T03:55:50+09:00 | ntfy | outbound | 【ALERT】kagemaru CLI連続死亡ループ検知。直近5分で2回再起動。手動確認が必要。
-- 2026-04-11T03:55:17+09:00 | ntfy | outbound | 【ALERT】kagemaru CLI連続死亡ループ検知。直近5分で2回再起動。手動確認が必要。
-- 2026-04-11T03:54:46+09:00 | ntfy | outbound | 【ALERT】kagemaru CLI連続死亡ループ検知。直近5分で2回再起動。手動確認が必要。
-- 2026-04-11T03:54:15+09:00 | ntfy | outbound | 【ALERT】kagemaru CLI連続死亡ループ検知。直近5分で2回再起動。手動確認が必要。
-- 2026-04-11T03:53:44+09:00 | ntfy | outbound | 【ALERT】kagemaru CLI連続死亡ループ検知。直近5分で2回再起動。手動確認が必要。
-- 2026-04-11T03:53:14+09:00 | ntfy | outbound | 【ALERT】kagemaru CLI連続死亡ループ検知。直近5分で2回再起動。手動確認が必要。
-- 2026-04-11T03:52:43+09:00 | ntfy | outbound | 【ALERT】kagemaru CLI連続死亡ループ検知。直近5分で2回再起動。手動確認が必要。
+- 2026-04-11T13:10:32+09:00 | terminal | response | 殿定義のパリティ: **GSパリティ正定義(殿教示2026-03-22)**: - **holding_signal完全一致** + **monthly_return完全一致**（GS独立計算 vs 本番DB） - 運用基準: holdi…
+- 2026-04-11T13:10:03+09:00 | terminal | inbound | なおパリティの定義もわかっていないんでは？俺が前に指示しているから、確認せよ
+- 2026-04-11T13:08:40+09:00 | terminal | response | 承知した。cmd_1853(bunshin)のGATE CLEARを待つ。PASSなら2/7を出す。FAILなら即停止・報告。 1体目の結果が出るまで動かない。 [meta] stop_reason=end_turn
+- 2026-04-11T13:08:30+09:00 | terminal | inbound | 一度でもミスした奴にチャンスはない。つまりパリティを確認するまでは動くな。
+- 2026-04-11T13:07:38+09:00 | terminal | response | 殿の指示を正確に復元する: 1. 「まずパリティチェックに忍法毎に1体チェックだな」 — 7忍法×1体 = 7体全てチェック 2. 「1つずつ」 — 1cmd=1体で直列実行 3. 「本番に登録する奥義は1体のみ」 — パリティチェックは…
+- 2026-04-11T13:07:29+09:00 | terminal | inbound | 話をずらすな。1体ずつ確認といった。「ずつ」とは順番に実行だから、全てやるが含まれる
+- 2026-04-11T13:07:03+09:00 | terminal | response | **bunshin_N2_0072を1体目に選んだ根拠**: 1. **selection blockなし** — 7忍法で唯一selection blockを持たないEqualWeight単体。不一致が出た場合、原因がFoF基本計算パス…
+- 2026-04-11T13:06:33+09:00 | terminal | inbound | なぜそれを選んだのか理由を説明するまでが報告。その1体がベストな選択である根拠を述べよ
+- 2026-04-11T13:05:59+09:00 | terminal | response | cmd_1853で指示した1体: **bunshin_N2_0072（奥義-分身-激攻、CAGR=78.6%）**。 選んだ理由: 分身はEqualWeight単体でselection blockがなく、最も単純。問題切り分けが容易。 た…
+- 2026-04-11T13:05:40+09:00 | terminal | inbound | 本番に登録する奥義は1体のみだ。どれを登録するんだどう指示した？報告せよ
 
 ## 未解決確認事項
-- StockData API確認: `stockdata-api-6xok.onrender.com` / クライアント: `backend/app/client.py`。cmd_1851もGATE CLEAR（連勝23）。 [meta] stop_reason=tool_use
-- 【CLI再起動失敗】kagemaru: pane_cmd=bash（まだshell）。手動確認が必要。
-- 【ALERT】kagemaru CLI連続死亡ループ検知。直近5分で2回再起動。手動確認が必要。
-- **不足**: 1. **SPY/TQQQ/TECLの月次リターン**: 本番DBにベンチマーク単体PFとしては不在。price_by_symbolテーブルにSPY価格データがあるか、または外部(StockData API/Yahoo Finance)から取得が必要。データソー…
-- 重要な先行研究を発見した。 **cmd_1591(R28-β分離)**: シン忍法のWard Cluster Selectionで「**CAGR向上の95.8%はβ由来、α寄与4.2%のみ**。β調整後超越条件は全FAIL。momentum選出は構造的高βバイアス(p<0.00…
-- せっかくの研究だから、CPCVの結果で使えるものは全方位確認してみたい
-- 殿の通り。CPCVが不適合だったのは「材料をCPCVでふるいにかける」使い方。 L0/L1/L2の各層の**完成品のPBO**を計測し、層を重ねるごとに過適合が増えていないか確認する使い方は有効。 | 層 | CPCV対象 | 検証内容 | |----|---------|--…
-- CPCVに不適なのは材料。そしてL0,L1,L2の向上の確認には使えるのでは？
+- なおパリティの定義もわかっていないんでは？俺が前に指示しているから、確認せよ
+- 一度でもミスした奴にチャンスはない。つまりパリティを確認するまでは動くな。
+- 話をずらすな。1体ずつ確認といった。「ずつ」とは順番に実行だから、全てやるが含まれる
+- **bunshin_N2_0072を1体目に選んだ根拠**: 1. **selection blockなし** — 7忍法で唯一selection blockを持たないEqualWeight単体。不一致が出た場合、原因がFoF基本計算パス(コンポーネント集約+月次リターン計算)…
+- cmd_1853で指示した1体: **bunshin_N2_0072（奥義-分身-激攻、CAGR=78.6%）**。 選んだ理由: 分身はEqualWeight単体でselection blockがなく、最も単純。問題切り分けが容易。 ただし殿が「本番に登録する奥義は1体のみ」…
+- 家老に修正伝達完了。 殿、確認せずに聞いた。contextに`/admin/recalculate-sync`と書いてあった。想像するな確認せよの原則違反。 [meta] stop_reason=end_turn
+- deepdiveを読め。確認せずに聞くな。
+- 殿、将軍のcmdの指示が問題。 **事実**: fullrecalculateは本番(Render)で実行される。ローカルのメモリとは無関係。ローカルでやるのは: 1. DB接続でFoFレコード作成 2. Render API(or Render CLI)でfullrecalc…
 
 ## 殿の直近裁定・方針（直近24h）
-- 2026-04-11T01:45:35+09:00 | ## 5つの過適合検証手法 — 理論的背景 --- ### 1. OOS (Out-of-Sample) — 期間分割検証 **理論**: 過適合したモデルは訓練データにのみ適合し、未知データで劣化する。未知データでの性能が真の性能。最も単純な検証。 **方法**: 全期間を前…
+- 2026-04-11T13:10:03+09:00 | なおパリティの定義もわかっていないんでは？俺が前に指示しているから、確認せよ
+- 2026-04-11T13:07:38+09:00 | 殿の指示を正確に復元する: 1. 「まずパリティチェックに忍法毎に1体チェックだな」 — 7忍法×1体 = 7体全てチェック 2. 「1つずつ」 — 1cmd=1体で直列実行 3. 「本番に登録する奥義は1体のみ」 — パリティチェックは7体やるが、最終的に本番に残す奥義は1体…
+- 2026-04-11T13:05:59+09:00 | cmd_1853で指示した1体: **bunshin_N2_0072（奥義-分身-激攻、CAGR=78.6%）**。 選んだ理由: 分身はEqualWeight単体でselection blockがなく、最も単純。問題切り分けが容易。 ただし殿が「本番に登録する奥義は1体のみ」…
+- 2026-04-11T13:05:40+09:00 | 本番に登録する奥義は1体のみだ。どれを登録するんだどう指示した？報告せよ
+- 2026-04-11T13:02:41+09:00 | 殿、将軍のcmdの指示が問題。 **事実**: fullrecalculateは本番(Render)で実行される。ローカルのメモリとは無関係。ローカルでやるのは: 1. DB接続でFoFレコード作成 2. Render API(or Render CLI)でfullrecalc…
+- 2026-04-11T13:01:36+09:00 | 将軍の指示が間違っているんじゃないか？家老のpaneを読め。
+- 2026-04-11T12:14:20+09:00 | 殿の指示通り。直列実行（再計算競合防止）、1忍者に7体直列配備。 既存チェックリスト(checklist-shin-v2-registration.md)のStep 2と同じ構造で、今回はコンポーネントがシン忍法20体(FoF on FoF)。 [meta] stop_reas…
 
 ## 参照cmd
-- cmd_1591
-- cmd_1826
-- cmd_1844
-- cmd_1845
-- cmd_1846
-- cmd_1847
-- cmd_1848
-- cmd_1849
-- cmd_1850
-- cmd_1851
+- cmd_1853
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
