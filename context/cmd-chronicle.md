@@ -671,3 +671,5 @@
 | cmd_1859 | perf — Gate15 orphan検知 git logバッチ化（GP-170） | infra | 04-12 | Gate15 orphanループ内のgit log個別呼出し |
 | cmd_1862 | fix — archive_completed.sh TOCTOU競合修正 shogun_to_karo.yaml読込flock内移動（GP-182） | infra | 04-12 | archive_cmds()のQUEUE_FILE読込(ma |
 | cmd_1861 | fix — deploy_task.sh STALE_RESET全パス実行+実行済みフラグ確認（GP-180+GP-181） | infra | 04-12 | reset_stale_fields()をresolve_c |
+| cmd_1863 | ALM WF再実行 — MaxDD方向バグ修正後の全量再計算(バグデータ削除+再生成) | dm-signal | 04-12 | AC1完了(127件削除/87件指定範囲+40件スコープ外を |
+| cmd_1864 | FE Compare SummaryにCalmar RatioとUWP(Underwater Period)を追加 | dm-signal | 04-12 | Compare SummaryページにCalmar列(高→低 |

@@ -850,7 +850,7 @@ lessons:
   tags:
   - bash
   - reporting
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-12'
 - id: L336
@@ -976,9 +976,9 @@ lessons:
   - gate
   - yaml
   - inbox
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 2
-  last_referenced: '2026-04-11'
+  last_referenced: '2026-04-12'
 - id: L318
   title: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
   summary: test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間
@@ -1224,6 +1224,9 @@ lessons:
     skip パタ
   tags:
   - universal
+  helpful_count: 1
+  harmful_count: 1
+  last_referenced: '2026-04-12'
 - id: L282
   title: PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御
   summary: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
@@ -1520,9 +1523,9 @@ lessons:
     "ok 293
   tags:
   - testing
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-11'
+  last_referenced: '2026-04-12'
 - id: L239
   title: 並列implレビューはcommit integrityを独立チェックせよ
   summary: cmd_1031ではGrid dedup/PPE/parityのコード品質は全てINFORMATIONALだったが、impl_aが未commitのままHEADに
@@ -1861,9 +1864,9 @@ lessons:
   tags:
   - testing
   - yaml
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 2
-  last_referenced: '2026-04-09'
+  last_referenced: '2026-04-12'
 - id: L190
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ。cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit
     statusで未コミット差分を確認すべき
@@ -2497,7 +2500,7 @@ lessons:
   - bash
   - yaml
   - reporting
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-11'
 - id: L096
@@ -2674,7 +2677,7 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 26
+  helpful_count: 25
   harmful_count: 21
   last_referenced: '2026-04-11'
 - id: L073
@@ -2750,7 +2753,7 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 26
+  helpful_count: 25
   harmful_count: 21
   last_referenced: '2026-04-11'
 - id: L062
