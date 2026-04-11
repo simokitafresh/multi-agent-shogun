@@ -1,24 +1,22 @@
 task:
-  _ac_task_id: cmd_1854_impl
+  _ac_task_id: cmd_1856_impl
   _ac_worker_id: null
-  ac_version: 21f5644f
+  ac_version: 473c729b
   acceptance_criteria:
-  - description: 本番DBから全PFのmonthly_returnsを取得。PF数と総レコード数を報告
+  - description: '登録前のPF数を記録(SELECT count(*) FROM portfolios)。20体のFoFレコードを本番DBにhide=trueで作成。各体のportfolio_id(UUID)と名前を一覧で報告。登録後のPF数を報告(期待:
+      +20)'
     id: AC1
-  - description: tests/golden_data/all_pf_monthly_returns_golden.json に保存。ファイルサイズとPF数を報告。生成タイムスタンプをファイル内メタデータに記録
+  - description: bunshin激攻(7d6c1f5e)が既に存在することを確認し、重複登録しないこと。20体全てのselection_pipeline設定(pattern_idからデコードしたblock設定)を報告
     id: AC2
   acceptance_criteria.1.description: bunshinで回帰テスト。l1_alm_wf_engine.pyのpd.read_csvで読込可能+alm_returnsがnp.allclose(rtol=1e-4)で一致(float32精度のため完全一致ではなくallclose)
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L074: ((PASS++))はPASS=0の時に((0))を評価→exit\
     \ code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。\n  - L063: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス\n\
-    \  - L152: IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条\n\
-    \  - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ\n\
-    \  - L082: CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Code\n\
+    \  - L480: selection block付きFoF21体中、初月monthly_returns.holding_signalがNULLの体がある。signals\
+    \ tabl\n  - L476: FoFのtop_n=1がconfigに存在しても、pipeline_config.selection_pipeline.blocksが空の場合はmomentum\n\
+    \  - L029: inbox_watcherの60秒安全網とninja_monitorのrenudge/cmd_pending再送が独立に動作するため、受信側が1回取り逃すと同一\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
@@ -39,14 +37,14 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1854
+  parent_cmd: cmd_1856
   project: dm-signal
-  report_filename: kotaro_report_cmd_1854.yaml
-  report_path: queue/reports/kotaro_report_cmd_1854.yaml
+  report_filename: kotaro_report_cmd_1856.yaml
+  report_path: queue/reports/kotaro_report_cmd_1856.yaml
   scope_mode: IMPL
-  status: done
+  status: completed
   stop_for: []
-  task_id: cmd_1854_impl
+  task_id: cmd_1856_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -111,4 +109,4 @@ task:
   - id: 'L596'
     summary: 'kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy'
     detail: 'kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy'
-  deployed_at: "2026-04-11T13:14:44"
+  deployed_at: "2026-04-11T15:32:45"
