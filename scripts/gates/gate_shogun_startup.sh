@@ -413,6 +413,18 @@ else
     $BRIEF || echo "  軍師分析ファイルなし"
 fi
 
+# --- Context著者MAP一括取得（Gate15で使用, git log 1回に集約 cmd_1859） ---
+declare -A _CONTEXT_AUTHOR_MAP=()
+while IFS=$'\t' read -r _cam_base _cam_author; do
+    if [ -n "$_cam_base" ] && [ -z "${_CONTEXT_AUTHOR_MAP[$_cam_base]+_}" ]; then
+        _CONTEXT_AUTHOR_MAP["$_cam_base"]="$_cam_author"
+    fi
+done < <(cd "$SCRIPT_DIR" && git log --format='%an' --name-only -- 'context/' 2>/dev/null | awk '
+    /^$/ { next }
+    /^context\// { n=$0; sub("^context/","",n); if(author!="") print n "\t" author; next }
+    { author=$0 }
+')
+
 # --- Gate 15: 進化検知（知識循環の上流検知） ---
 # 起源: cmd_1451→なぜなぜ5段 — 失敗は検知するが進化(新能力・新出力)は検知しない
 # 目的: context/に知識マップ(CLAUDE.md/MEMORY.md/instructions/config/dashboard)から
@@ -454,7 +466,7 @@ for cfile in "$SCRIPT_DIR"/context/*.md; do
     if ! grep -q "$_cbase" "$_KMAP_TMP" 2>/dev/null; then
         _c_title=$(head -5 "$cfile" | grep -m1 '^#' | sed 's/^# *//')
         _c_mtime=$(date -r "$cfile" '+%m-%d %H:%M' 2>/dev/null || echo "?")
-        _c_author=$(cd "$SCRIPT_DIR" && git log -1 --format='%an' -- "context/$_cbase" 2>/dev/null || echo "?")
+        _c_author="${_CONTEXT_AUTHOR_MAP[$_cbase]:-?}"
         _evo_orphans="${_evo_orphans}  ${_cbase} [${_c_mtime}] by ${_c_author} — ${_c_title}\n"
         _evo_count=$((_evo_count + 1))
     fi
