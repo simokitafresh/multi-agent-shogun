@@ -629,3 +629,4 @@
 - 2026-04-11 19:12 cmd_1858(gate_shogun_startup.sh ALERT精度改良3件) 影丸完遂。GATE CLEAR。Gate17 oneshot除外/Gate18 DIR不在INFO降格/Gate12 対処済みラベル。17bats PASS。WA:stale_ac_contamination(LK021)
 - cmd_1859: Gate15 git logバッチ化(GP-170)。半蔵。WSL2 NTFS I/O 3-4s/件削減。GATE CLEAR
 - cmd_1860: dashboard_auto NINJA_CMD置換(GP-171)。小太郎。ループ内get_task_parent_cmd廃止。GATE CLEAR。軍師no-op誤判定→タイミングエラー(commit後grep)
+- cmd_1862: archive_completed.sh TOCTOU修正(GP-182)。影丸。flock内読込+二相分割。GATE CLEAR。WA:なし

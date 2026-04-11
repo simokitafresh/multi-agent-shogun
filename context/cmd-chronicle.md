@@ -669,3 +669,4 @@
 | cmd_1857 | fix — insight§14自走トリガー廃止+report templateデフォルト値追加 | infra | 04-11 | cmd_1857: §14自走トリガー廃止(AC1)+dep |
 | cmd_1858 | fix — gate_shogun_startup.sh ALERT精度改良3件（false ALERT削減+actionable化） | infra | 04-11 | AC2(Gate17 oneshot除外)+AC3(Gate |
 | cmd_1859 | perf — Gate15 orphan検知 git logバッチ化（GP-170） | infra | 04-12 | Gate15 orphanループ内のgit log個別呼出し |
+| cmd_1862 | fix — archive_completed.sh TOCTOU競合修正 shogun_to_karo.yaml読込flock内移動（GP-182） | infra | 04-12 | archive_cmds()のQUEUE_FILE読込(ma |

@@ -12,6 +12,8 @@ lessons:
   detail: 並行cmdが同一ファイルを変更するケースをレビュー時に検出する。cmd_1173で検出された。事前検死で並行配備中のcmdとの変更対象ファイル重複を必ず確認せよ。
   source_cmd: cmd_1173
   created_at: '2026-03-21'
+  automated: true
+  enforcement: GP-042 deploy_task.sh L2859-2872 他忍者同cmd配備→BLOCK
 - id: LG003
   title: 前提崩壊パターン — 未実装/未対応主張はコード現物で再検証
   detail: 偵察報告やlesson_candidateの「未実装」「未対応」主張をそのまま信頼してはならない。cmd_1176-1179で5件連続で前提崩壊が発生した。cmd化前にコード現物(grepまたはgit show)で再検証すること。
