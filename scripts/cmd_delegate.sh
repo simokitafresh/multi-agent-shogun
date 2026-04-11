@@ -138,8 +138,3 @@ yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "delegated" || {
 # Step 6: 成功出力
 echo "DELEGATED: $CMD_ID at $TIMESTAMP"
 
-# Step 7: §14 idle自走の強制起動（表示だけでは意志依存。insightに保存して到達パスを確保）
-PENDING_INSIGHTS=$(grep -c "status: pending" "$PROJECT_DIR/queue/insights.yaml" 2>/dev/null || echo 0)
-bash "$SCRIPT_DIR/insight_write.sh" "§14自走トリガー: cmd_${CMD_ID}委任完了。pending insight=${PENDING_INSIGHTS}件。データを見て問いを見つけろ" 2>/dev/null || true
-echo "---"
-echo "§14 IDLE自走: insight保存済み(pending=${PENDING_INSIGHTS})。殿の入力がなければ§14を回せ。"
