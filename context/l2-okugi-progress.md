@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T02:41:25+09:00 -->
-<!-- updated_by: hayate -->
+<!-- last_updated: 2026-04-13T02:51:33+09:00 -->
+<!-- updated_by: saizo -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -111,15 +111,15 @@ GS dir: okugi_alm_shin/ → 選出: champion_selector
 
 | # | 忍法 | GS(R) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
-| 5-1 | bunshin | ✅ | — | GS: okugi_alm_shin/metrics_bunshin_results_fast.csv (1.7MB, 7526行) | — |
-| 5-2 | oikaze | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_results_fast.csv (100MB, 270901行) | 2026-04-13 |
-| 5-3 | kasoku_diff | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_results_fast.csv (310MB, 1151325行) | 2026-04-13 |
-| 5-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_ratio_grid_results_fast.csv (312MB, 1151325行) | 2026-04-13 |
-| 5-5 | kawarimi | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kawarimi_grid_results_fast.csv (85MB, 270901行) | 2026-04-13 |
-| 5-6 | nukimi | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_nukimi_grid_results_fast.csv (158MB, 586950行) | 2026-04-13 |
-| 5-7 | yotsume | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_yotsume_grid_results_fast.csv (17MB, 45150行) | 2026-04-13 |
+| 5-1 | bunshin | ✅ | ✅ | GS: okugi_alm_shin/metrics_bunshin_results_fast.csv (1.7MB, 7526行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-2 | oikaze | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_results_fast.csv (100MB, 270901行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_results_fast.csv (310MB, 1151325行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_ratio_grid_results_fast.csv (312MB, 1151325行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kawarimi_grid_results_fast.csv (85MB, 270901行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-6 | nukimi | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_nukimi_grid_results_fast.csv (158MB, 586950行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-7 | yotsume | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_yotsume_grid_results_fast.csv (17MB, 45150行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 
-**⑤ 完了: 7/7** — GS全完了
+**⑤ 完了: 7/7** — champion選出完了。shared artifact: `okugi_alm_shin/cmd_1877_alm_shin_champions.json`
 
 ---
 
@@ -188,6 +188,7 @@ GS実行残量(ペア共有): ②5本 + ④1本(nukimi) + ⑦⑧1本 = **7本**
 
 ## 変更履歴
 
+- 2026-04-13 02:51 ⑤5-1〜5-7 champion ✅(saizo, cmd_1877_block_14)
 - 2026-04-13 01:51 ⑤5-6/⑥6-6 nukimi ✅(hayate, cmd_1877_block_12)
 - 2026-04-13 01:40 ⑦7-7/⑧8-7 yotsume ✅(kotaro, cmd_1877_block_18)
 - 2026-04-13 01:14 ⑤5-7/⑥6-7 yotsume ✅(hanzo, cmd_1877_block_13)
