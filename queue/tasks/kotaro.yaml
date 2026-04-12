@@ -1,28 +1,26 @@
 task:
-  _ac_task_id: cmd_1867_impl
+  _ac_task_id: cmd_1871_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: acaa2cff
+  ac_version: 2ad38ca7
   acceptance_criteria:
-  - description: l1_alm_wf_engine.py でシン四神BB 7忍法×67窓WF実行完了。all_success=true
+  - description: 3パターンL1のuniverse YAML+統合CSVが作成され、run_077で参照可能
     id: AC1
-  - description: 7忍法のselection_timeline CSVが生成され、6目的関数を含む
+  - description: 3パターン×7忍法=21 GS実行完了。各忍法の月次リターンCSVが出力先に存在
     id: AC2
-  - description: 6目的×7忍法のOOS CAGR中央値マトリクスを報告YAMLに記載
+  - description: ②奥義シンシン×ALMのWFエンジン実行完了。selection_timeline+alm_returns生成
     id: AC3
   context_files:
   - context/dm-signal.md
-  - context/dm-signal-core.md
   - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  created_at: '2026-04-12T12:20:00+09:00'
+  created_at: '2026-04-12T15:18:00+09:00'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L571: タスク記述の'現行CSV(2012-07)'はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range('2012-07-0\n\
     \  - L570: 119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/in\n\
-    \  - L002: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash\
-    \ tool\n  - L339: context_freshness_check.shのarchive scanでproject IDをf-string\
-    \ in textで検出していたが、短いID\n────────────────────────────────────────"
+    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
+    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
+    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
+    \ 6列: \n────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -42,15 +40,15 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1867
+  parent_cmd: cmd_1871
   project: dm-signal
-  report_path: queue/reports/kotaro_report_cmd_1867.yaml
+  report_path: queue/reports/kotaro_report_cmd_1871.yaml
   status: idle
   stop_for: []
-  task_id: cmd_1867_impl
+  task_id: cmd_1871_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_1867.yaml
+  report_filename: kotaro_report_cmd_1871.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -75,6 +73,9 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L615'
+    summary: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
+    detail: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
   - id: 'L614'
     summary: 'cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。karoから指摘を受け削除・修正。正解は既存スクリプトへの最小差分追加（--alm-dmフラグ追加）だった。新スクリプト作成前に既存コードの再利用可能性を確認すること。'
     detail: 'cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。karoから指摘を受け削除・修正。正解は既存スクリプトへの最小差分追加（--alm-dmフラグ追加）だった。新スクリプト作成前に既存コードの再利用可能性を確認すること。'
@@ -102,8 +103,4 @@ task:
   - id: 'L606'
     summary: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異なる世代のCSVと比較するとmax_diffが0.5超でallclose=False。正しい比較対象は同一セッション内での2回実行結果。異なるCSV世代間比較は改良効果検証であり回帰テストではない。'
     detail: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異なる世代のCSVと比較するとmax_diffが0.5超でallclose=False。正しい比較対象は同一セッション内での2回実行結果。異なるCSV世代間比較は改良効果検証であり回帰テストではない。'
-  - id: 'L605'
-    summary: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/kasoku_diff24.4pp/kasoku_ratio37pp)。NHFチャンピオン(常勝)は全7体LOW。MaxDDチャンピオン(鉄壁)も全7体LOW。CAGRの最大化は単一パラメータ点に過集中しやすく、NHF/MaxDDは分布が滑'
-    detail: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/kasoku_diff24.4pp/kasoku_ratio37pp)。NHFチャンピオン(常勝)は全7体LOW。MaxDDチャンピオン(鉄壁)も全7体LOW。CAGRの最大化は単一パラメータ点に過集中しやすく、NHF/MaxDDは分布が滑'
-  deployed_at: "2026-04-12T12:19:13"
-  command: "シン×ALM — シン四神BBのGS CSVをWFエンジンで動的選出(2×2因子分析)。l1_alm_wf_engine.py --batch-csvs で7忍法のGS CSVを一括WF実行。★--batch-workers 1 必須(デフォルトworkers=2はOOMリスク。LG025)。実行: l1_alm_wf_engine.py --batch-csvs <7忍法CSV> --multi-is --batch-workers 1 --cmd-id cmd_1867"
+  deployed_at: "2026-04-12T15:18:07"
