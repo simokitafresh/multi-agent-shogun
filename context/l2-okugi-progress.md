@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T05:12:51+09:00 -->
-<!-- updated_by: hayate -->
+<!-- last_updated: 2026-04-13T05:41:27+09:00 -->
+<!-- updated_by: saizo -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -96,13 +96,13 @@ GS dir: okugi_shin_alm/ (③と共有, monthly_fast必須) → 選出: WFエン�
 |---|------|:-----:|:----:|-----------|-------|
 | 4-1 | bunshin | ✅ | ✅ | GS: okugi_shin_alm/cmd_1871_shin_alm_bunshin_grid_monthly_fast.csv (11MB) + WF: alm_research/okugi_shin_alm/cmd_1877_l1_wf_alm_returns.csv (88行×6系列) + selection_timeline.csv (120エントリ) | 2026-04-13 |
 | 4-2 | oikaze | ✅ | ✅ | GS: okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_monthly_fast.csv (394MB, 126行) + WF: alm_research/okugi_shin_alm/cmd_1877_l1_wf_alm_returns.csv (88行×6系列) + selection_timeline.csv (120エントリ) | 2026-04-13 |
-| 4-3 | kasoku_diff | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_diff_grid_monthly_fast.csv (1.6GB, 126行) | 2026-04-12 |
+| 4-3 | kasoku_diff | ✅ | ✅ | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_diff_grid_monthly_fast.csv (1.6GB, 126行) + WF: alm_research/okugi_shin_alm/cmd_1877_l1_wf_alm_returns.csv (88行×6系列) + selection_timeline.csv (120エントリ) | 2026-04-13 |
 | 4-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_ratio_grid_monthly_fast.csv (1.6GB, 125行) | 2026-04-12 |
 | 4-5 | kawarimi | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kawarimi_grid_monthly_fast.csv (379MB, 126行) | 2026-04-13 |
 | 4-6 | nukimi | ❌ | — | — | — |
 | 4-7 | yotsume | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_yotsume_grid_monthly_fast.csv (63MB, 125行) | 2026-04-13 |
 
-**④ 完了: 6/7** — ③のGS完了でmonthlyも増加。GS残1本(nukimi)
+**④ 完了: 3/7** — WF選出: bunshin✅ oikaze✅ kasoku_diff✅。残: kasoku_ratio/kawarimi/nukimi/yotsume
 
 ---
 
@@ -188,6 +188,7 @@ GS実行残量(ペア共有): ②3本 + ④1本(nukimi) + ⑧1本(kawarimi) = **
 
 ## 変更履歴
 
+- 2026-04-13 05:41 ④4-3 kasoku_diff WF ✅(saizo, cmd_1877_block_34)
 - 2026-04-13 04:40 ②2-5 kawarimi WF ✅(saizo, cmd_1877_block_29)
 - 2026-04-13 03:22 ②2-7 yotsume GS(M) ✅(saizo, cmd_1877_block_24)
 - 2026-04-13 03:17 ②2-4 kasoku_ratio GS(M) ✅(hayate, cmd_1877_block_23)
