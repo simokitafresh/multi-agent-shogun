@@ -1,38 +1,43 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_07_v3
-  status: done
+  task_id: cmd_1877_block_23
+  status: assigned
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#07 [TYPE-CS] ③champion選出（ファイルリネーム済み）
+    L2奥義 ブロック#23 [TYPE-GS] ② 2-4 kasoku_ratio GS(monthly生成)
 
     cd /mnt/c/Python_app/DM-signal
-    python3 outputs/scripts/champion_selector.py \
-      --csv-dir outputs/grid_search/okugi_shin_alm/ \
-      --cmd-id cmd_1877
+    python3 scripts/analysis/grid_search/run_077_kasoku_ratio.py \
+      --universe config/portfolio_universes/okugi_shin_ninpo_20.yaml \
+      --out-dir outputs/grid_search/okugi_shin_ninpo_20body/ \
+      --output-prefix cmd_1877_shin_ninpo_20_kasoku_ratio_grid
 
     完了後:
-    1. champion結果ファイルがokugi_shin_alm/に存在することを確認
-    2. context/l2-okugi-progress.md の ③ champion行を更新
+    1. monthly_fast.csvが存在することを確認
+    2. context/l2-okugi-progress.md の ② 2-4 kasoku_ratio GS(M)を ✅ に更新
     3. git add + git commit
   acceptance_criteria:
     - id: AC1
-      description: "champion結果ファイルがokugi_shin_alm/に存在"
+      description: "monthly_fast.csvが存在しrc=0"
     - id: AC2
       description: "進行表更新+git commit済み"
   binary_checks:
     AC1:
-      - check: "champion結果ファイルが存在するか"
-        result: "yes"
+      - check: "monthly_fast.csv存在か"
+        result: ""
+      - check: "rc=0か"
+        result: ""
     AC2:
       - check: "git commitしたか"
-        result: "yes"
+        result: ""
   context_files:
     - context/l2-okugi-progress.md
-  target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/champion_selector.py"
+  target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
   stop_for:
-    - "champion_selector.pyエラー"
+    - "OOM Kill(signal 9/137)"
+  never_stop_for:
+    - "既存ファイル警告 — 確認して続行"
   scout_exempt: true
   deployed_at: ""
   related_lessons:
