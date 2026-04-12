@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T03:17:38+09:00 -->
-<!-- updated_by: hayate -->
+<!-- last_updated: 2026-04-13T03:22:27+09:00 -->
+<!-- updated_by: saizo -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -66,9 +66,9 @@ GS: ①と共有 (monthly_fast必須) → 選出: WFエンジン
 | 2-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_ratio_grid_monthly_fast.csv (1.7GB, 150行) | 2026-04-13 |
 | 2-5 | kawarimi | ✅ | 部分 | GS: okugi_shin_ninpo_20body/tmp_1822_kawarimi_monthly_fast.csv (503MB) | — |
 | 2-6 | nukimi | ✅ | 部分 | GS: okugi_shin_ninpo_20body/tmp_1822_nukimi_monthly_fast.csv (941MB) | — |
-| 2-7 | yotsume | ❌ | — | — | — |
+| 2-7 | yotsume | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_yotsume_grid_monthly_fast.csv (63MB, 150行) | 2026-04-13 |
 
-**② 完了: 0/7** — GS(monthly)残3本。WF選出は全忍法のmonthly揃い後に一括実行
+**② 完了: 0/7** — GS(monthly)全完了。WF選出は全忍法のmonthly揃い後に一括実行
 
 ---
 
@@ -188,6 +188,7 @@ GS実行残量(ペア共有): ②3本 + ④1本(nukimi) + ⑧1本(kawarimi) = **
 
 ## 変更履歴
 
+- 2026-04-13 03:22 ②2-7 yotsume GS(M) ✅(saizo, cmd_1877_block_24)
 - 2026-04-13 03:17 ②2-4 kasoku_ratio GS(M) ✅(hayate, cmd_1877_block_23)
 - 2026-04-13 03:10 ②2-3 kasoku_diff GS(M) ✅(tobisaru, cmd_1877_block_22)
 - 2026-04-13 02:51 ⑤5-1〜5-7 champion ✅(saizo, cmd_1877_block_14)
