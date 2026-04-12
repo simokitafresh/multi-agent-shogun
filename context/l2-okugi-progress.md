@@ -61,7 +61,7 @@ GS: ①と共有 (monthly_fast必須) → 選出: WFエンジン
 | # | 忍法 | GS(M) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
 | 2-1 | bunshin | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_bunshin_monthly_fast.csv (11MB, 151行) | — |
-| 2-2 | oikaze | ❌ | — | — | — |
+| 2-2 | oikaze | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_oikaze_grid_monthly_fast.csv (150行) | — |
 | 2-3 | kasoku_diff | ❌ | — | — | — |
 | 2-4 | kasoku_ratio | ❌ | — | — | — |
 | 2-5 | kawarimi | ✅ | 部分 | GS: okugi_shin_ninpo_20body/tmp_1822_kawarimi_monthly_fast.csv (503MB) | — |
