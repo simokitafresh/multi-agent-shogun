@@ -1,60 +1,43 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_07
-  status: done
+  task_id: cmd_1877_block_21
+  status: in_progress
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#07 [TYPE-CS] ③champion選出 + 旧CSV退避
+    L2奥義 ブロック#21 [TYPE-GS] ② 2-2 oikaze GS(monthly生成)
 
-    Step 1: 旧CSV退避（3ディレクトリ全て実施）
-      cd /mnt/c/Python_app/DM-signal/outputs/grid_search
-      mkdir -p okugi_shin_alm/old okugi_alm_shin/old okugi_alm_alm/old
-      mv okugi_shin_alm/cmd_1871_* okugi_shin_alm/old/ 2>/dev/null || true
-      mv okugi_alm_shin/1795_* okugi_alm_shin/old/ 2>/dev/null || true
-      mv okugi_alm_shin/metrics_bunshin_* okugi_alm_shin/old/ 2>/dev/null || true
-      mv okugi_alm_alm/1795_* okugi_alm_alm/old/ 2>/dev/null || true
-      mv okugi_alm_alm/metrics_bunshin_* okugi_alm_alm/old/ 2>/dev/null || true
-
-    Step 2: champion選出(③ okugi_shin_alm)
-      cd /mnt/c/Python_app/DM-signal
-      python3 outputs/scripts/champion_selector.py \
-        --csv-dir outputs/grid_search/okugi_shin_alm/ \
-        --cmd-id cmd_1877
+    cd /mnt/c/Python_app/DM-signal
+    python3 scripts/analysis/grid_search/run_077_oikaze.py \
+      --universe config/portfolio_universes/okugi_shin_ninpo_20.yaml \
+      --out-dir outputs/grid_search/okugi_shin_ninpo_20body/ \
+      --output-prefix cmd_1877_shin_ninpo_20_oikaze_grid
 
     完了後:
-    1. old/ディレクトリに旧ファイルが移動されていることを確認
-    2. champion結果ファイルがokugi_shin_alm/に存在することを確認
-    3. context/l2-okugi-progress.md の ③ champion行を更新
-    4. git add + git commit
-
-    制約:
-    - 旧ファイルは削除ではなく移動（可逆）
-    - cmd_1876_*ファイルは退避しない（⑦の正本）
+    1. monthly_fast.csvが存在することを確認
+    2. context/l2-okugi-progress.md の ② 2-2 oikaze GS(M)を ✅ に更新
+    3. git add + git commit
   acceptance_criteria:
     - id: AC1
-      description: "旧CSV(cmd_1871_*/1795_*/metrics_bunshin_*)がold/に退避済み"
+      description: "monthly_fast.csvが存在しrc=0"
     - id: AC2
-      description: "champion結果ファイルがokugi_shin_alm/に存在"
-    - id: AC3
       description: "進行表更新+git commit済み"
   binary_checks:
     AC1:
-      - check: "旧ファイルがold/に移動されたか"
+      - check: "monthly_fast.csv存在か"
+        result: ""
+      - check: "rc=0か"
         result: ""
     AC2:
-      - check: "champion結果ファイルが存在するか"
-        result: ""
-    AC3:
       - check: "git commitしたか"
         result: ""
   context_files:
     - context/l2-okugi-progress.md
-  target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/champion_selector.py"
+  target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
   stop_for:
-    - "champion_selector.pyエラー"
+    - "OOM Kill(signal 9/137)"
   never_stop_for:
-    - "mv: No such file — 対象ファイルなしは正常"
+    - "既存ファイル警告 — 確認して続行"
   scout_exempt: true
   deployed_at: ""
   related_lessons:
