@@ -1,54 +1,60 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_18
+  task_id: cmd_1877_block_07
   status: done
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#18 [TYPE-GS] ⑦ 7-7 yotsume GS実行
+    L2奥義 ブロック#07 [TYPE-CS] ③champion選出 + 旧CSV退避
 
-    cd /mnt/c/Python_app/DM-signal
-    python3 scripts/analysis/grid_search/run_077_yotsume.py \
-      --universe config/portfolio_universes/okugi_alm_alm.yaml \
-      --out-dir outputs/grid_search/okugi_alm_alm/ \
-      --output-prefix cmd_1877_alm_alm_yotsume
+    Step 1: 旧CSV退避（3ディレクトリ全て実施）
+      cd /mnt/c/Python_app/DM-signal/outputs/grid_search
+      mkdir -p okugi_shin_alm/old okugi_alm_shin/old okugi_alm_alm/old
+      mv okugi_shin_alm/cmd_1871_* okugi_shin_alm/old/ 2>/dev/null || true
+      mv okugi_alm_shin/1795_* okugi_alm_shin/old/ 2>/dev/null || true
+      mv okugi_alm_shin/metrics_bunshin_* okugi_alm_shin/old/ 2>/dev/null || true
+      mv okugi_alm_alm/1795_* okugi_alm_alm/old/ 2>/dev/null || true
+      mv okugi_alm_alm/metrics_bunshin_* okugi_alm_alm/old/ 2>/dev/null || true
+
+    Step 2: champion選出(③ okugi_shin_alm)
+      cd /mnt/c/Python_app/DM-signal
+      python3 outputs/scripts/champion_selector.py \
+        --csv-dir outputs/grid_search/okugi_shin_alm/ \
+        --cmd-id cmd_1877
 
     完了後:
-    1. outputs/grid_search/okugi_alm_alm/ にcmd_1877_alm_alm_yotsume_results_fast.csv + monthly_fast.csvが存在することを確認
-    2. context/l2-okugi-progress.md の ⑦ 7-7 yotsume行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
-    3. git add + git commit
+    1. old/ディレクトリに旧ファイルが移動されていることを確認
+    2. champion結果ファイルがokugi_shin_alm/に存在することを確認
+    3. context/l2-okugi-progress.md の ③ champion行を更新
+    4. git add + git commit
 
     制約:
-    - MP_WORKERS=1 (commit 6efe2681で設定済み)
-    - --output-prefix cmd_1877_alm_alm_yotsume 必須
+    - 旧ファイルは削除ではなく移動（可逆）
+    - cmd_1876_*ファイルは退避しない（⑦の正本）
   acceptance_criteria:
     - id: AC1
-      description: "cmd_1877_alm_alm_yotsume_results_fast.csv + monthly_fast.csvが存在しrc=0"
+      description: "旧CSV(cmd_1871_*/1795_*/metrics_bunshin_*)がold/に退避済み"
     - id: AC2
-      description: "l2-okugi-progress.md ⑦ 7-7 yotsume を ✅ に更新+成果物所在記入"
+      description: "champion結果ファイルがokugi_shin_alm/に存在"
     - id: AC3
-      description: "git commitした"
+      description: "進行表更新+git commit済み"
   binary_checks:
     AC1:
-      - check: "results_fast.csv存在か"
-        result: ""
-      - check: "monthly_fast.csv存在か"
-        result: ""
-      - check: "rc=0か"
+      - check: "旧ファイルがold/に移動されたか"
         result: ""
     AC2:
-      - check: "進行表更新済みか"
+      - check: "champion結果ファイルが存在するか"
         result: ""
     AC3:
       - check: "git commitしたか"
         result: ""
   context_files:
     - context/l2-okugi-progress.md
-  target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
+  target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/champion_selector.py"
   stop_for:
-    - "OOM Kill(signal 9/137)"
+    - "champion_selector.pyエラー"
   never_stop_for:
-    - "既存ファイル警告 — 確認して続行"
+    - "mv: No such file — 対象ファイルなしは正常"
   scout_exempt: true
   deployed_at: ""
   related_lessons:

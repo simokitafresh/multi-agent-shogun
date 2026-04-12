@@ -1,56 +1,40 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_12
-  status: done
+  task_id: cmd_1877_block_07_v3
+  status: assigned
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#12 [TYPE-GS] ⑤ 5-6 nukimi GS実行
+    L2奥義 ブロック#07 [TYPE-CS] ③champion選出（ファイルリネーム済み）
 
     cd /mnt/c/Python_app/DM-signal
-    python3 scripts/analysis/grid_search/run_077_nukimi.py \
-      --universe config/portfolio_universes/okugi_alm_shin.yaml \
-      --out-dir outputs/grid_search/okugi_alm_shin/ \
-      --output-prefix cmd_1877_alm_shin_nukimi
+    python3 outputs/scripts/champion_selector.py \
+      --csv-dir outputs/grid_search/okugi_shin_alm/ \
+      --cmd-id cmd_1877
 
     完了後:
-    1. outputs/grid_search/okugi_alm_shin/ にcmd_1877_alm_shin_nukimi_results_fast.csv + monthly_fast.csvが存在することを確認
-    2. context/l2-okugi-progress.md の ⑤ 5-6 nukimi行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
+    1. champion結果ファイルがokugi_shin_alm/に存在することを確認
+    2. context/l2-okugi-progress.md の ③ champion行を更新
     3. git add + git commit
-
-    制約:
-    - MP_WORKERS=1 (commit 6efe2681で設定済み)
-    - --output-prefix cmd_1877_alm_shin_nukimi 必須
   acceptance_criteria:
     - id: AC1
-      description: "cmd_1877_alm_shin_nukimi_results_fast.csv + monthly_fast.csvが存在しrc=0"
+      description: "champion結果ファイルがokugi_shin_alm/に存在"
     - id: AC2
-      description: "l2-okugi-progress.md ⑤ 5-6 nukimi を ✅ に更新+成果物所在記入"
-    - id: AC3
-      description: "git commitした"
+      description: "進行表更新+git commit済み"
   binary_checks:
     AC1:
-      - check: "results_fast.csv存在か"
-        result: ""
-      - check: "monthly_fast.csv存在か"
-        result: ""
-      - check: "rc=0か"
+      - check: "champion結果ファイルが存在するか"
         result: ""
     AC2:
-      - check: "進行表更新済みか"
-        result: ""
-    AC3:
       - check: "git commitしたか"
         result: ""
   context_files:
     - context/l2-okugi-progress.md
-  target_path: outputs/grid_search/okugi_alm_shin/cmd_1877_alm_shin_nukimi_results_fast.csv,outputs/grid_search/okugi_alm_shin/cmd_1877_alm_shin_nukimi_monthly_fast.csv,outputs/grid_search/okugi_alm_shin/cmd_1877_alm_shin_nukimi_results_fast.meta.yaml
+  target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/champion_selector.py"
   stop_for:
-    - "OOM Kill(signal 9/137)"
-  never_stop_for:
-    - "既存ファイル警告 — 確認して続行"
+    - "champion_selector.pyエラー"
   scout_exempt: true
-  deployed_at: "2026-04-13T01:53:58+09:00"
+  deployed_at: ""
   related_lessons:
   - id: 'L617'
     summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
@@ -82,4 +66,3 @@ task:
   - id: 'L608'
     summary: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
     detail: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
-  report_path: queue/reports/hayate_report_cmd_1877_block_12.yaml
