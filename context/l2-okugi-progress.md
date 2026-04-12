@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T02:00:07+09:00 -->
-<!-- updated_by: saizo -->
+<!-- last_updated: 2026-04-13T02:07:00+09:00 -->
+<!-- updated_by: kagemaru -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -115,11 +115,11 @@ GS dir: okugi_alm_shin/ → 選出: champion_selector
 | 5-2 | oikaze | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_results_fast.csv (100MB, 270901行) | 2026-04-13 |
 | 5-3 | kasoku_diff | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_results_fast.csv (310MB, 1151325行) | 2026-04-13 |
 | 5-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_ratio_results_fast.csv (312MB, 1151325行) | 2026-04-13 |
-| 5-5 | kawarimi | ❌ | — | — | — |
+| 5-5 | kawarimi | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kawarimi_results_fast.csv (85MB, 270901行) | 2026-04-13 |
 | 5-6 | nukimi | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_nukimi_results_fast.csv (158MB, 586950行) | 2026-04-13 |
 | 5-7 | yotsume | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_yotsume_results_fast.csv (17MB, 45150行) | 2026-04-13 |
 
-**⑤ 完了: 6/7** — GS残1本(kawarimi)
+**⑤ 完了: 7/7** — GS全完了
 
 ---
 
@@ -132,11 +132,11 @@ GS dir: okugi_alm_shin/ (⑤と共有, monthly_fast必須) → 選出: WFエン�
 | 6-2 | oikaze | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_monthly_fast.csv (456MB, 146行) | 2026-04-13 |
 | 6-3 | kasoku_diff | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_monthly_fast.csv (1.9GB, 145行) | 2026-04-13 |
 | 6-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_ratio_monthly_fast.csv (2.0GB, 145行) | 2026-04-13 |
-| 6-5 | kawarimi | ❌ | — | — | — |
+| 6-5 | kawarimi | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kawarimi_monthly_fast.csv (442MB, 145行) | 2026-04-13 |
 | 6-6 | nukimi | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_nukimi_monthly_fast.csv (943MB, 145行) | 2026-04-13 |
 | 6-7 | yotsume | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_yotsume_monthly_fast.csv (73MB, 145行) | 2026-04-13 |
 
-**⑥ 完了: 6/7** — ⑤のGS完了で自動的にmonthlyも生成される。GS残1本(kawarimi)
+**⑥ 完了: 7/7** — GS全完了
 
 ---
 
@@ -179,12 +179,12 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 状態 | ブロック数 |
 |------|----------|
 | ✅ 全完了(DB登録済み) | 7 (①全7) |
-| G GS完了・選出待ち | 34 |
-| ❌ GS未完了 | 13 |
+| G GS完了・選出待ち | 36 |
+| ❌ GS未完了 | 11 |
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
-GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥1本 + ⑦⑧1本 = **9本**
+GS実行残量(ペア共有): ②5本 + ④1本(nukimi) + ⑦⑧1本 = **7本**
 
 ## 変更履歴
 
@@ -201,4 +201,5 @@ GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥1本 + ⑦⑧1本 = *
 - 2026-04-12 21:10 56ブロック構造+成果物所在マッピングに全面改修(将軍)。なぜなぜ7回(成果物追跡不在)の対策
 - 2026-04-12 20:xx 将軍確認: 1795_ファイル全て無効(旧universe)
 - 2026-04-12 19:52 初版作成(将軍)
+- 2026-04-13 02:07 ⑤5-5/⑥6-5 kawarimi ✅(kagemaru, cmd_1877_block_11)
 - 2026-04-13 02:00 ⑦7-6/⑧8-6 nukimi ✅(saizo, cmd_1877_block_17)
