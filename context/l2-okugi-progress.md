@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T01:51:56+09:00 -->
-<!-- updated_by: hayate -->
+<!-- last_updated: 2026-04-13T02:00:07+09:00 -->
+<!-- updated_by: saizo -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -150,10 +150,10 @@ GS dir: okugi_alm_alm/ → 選出: champion_selector
 | 7-3 | kasoku_diff | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_results_fast.csv (346MB, 1151326行) | 2026-04-13 |
 | 7-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_results_fast.csv (349MB, 1.15M行) | 2026-04-12 |
 | 7-5 | kawarimi | ❌ | — | — | — |
-| 7-6 | nukimi | ❌ | — | — | — |
+| 7-6 | nukimi | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_nukimi_results_fast.csv (176MB, 586951行) | 2026-04-13 |
 | 7-7 | yotsume | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_yotsume_results_fast.csv (20MB, 45151行) | 2026-04-13 |
 
-**⑦ 完了: 5/7** — GS残2本(kawarimi, nukimi)
+**⑦ 完了: 6/7** — GS残1本(kawarimi)
 
 ---
 
@@ -167,10 +167,10 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 8-3 | kasoku_diff | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_monthly_fast.csv (1.7GB, 131行) | 2026-04-13 |
 | 8-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_monthly_fast.csv (1.7GB) | 2026-04-12 |
 | 8-5 | kawarimi | ❌ | — | — | — |
-| 8-6 | nukimi | ❌ | — | — | — |
+| 8-6 | nukimi | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_nukimi_monthly_fast.csv (845MB, 131行) | 2026-04-13 |
 | 8-7 | yotsume | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_yotsume_monthly_fast.csv (66MB, 131行) | 2026-04-13 |
 
-**⑧ 完了: 5/7** — ⑦のGS完了で自動的にmonthlyも生成される。GS残2本(kawarimi, nukimi)
+**⑧ 完了: 6/7** — ⑦のGS完了で自動的にmonthlyも生成される。GS残1本(kawarimi)
 
 ---
 
@@ -179,12 +179,12 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 状態 | ブロック数 |
 |------|----------|
 | ✅ 全完了(DB登録済み) | 7 (①全7) |
-| G GS完了・選出待ち | 32 |
-| ❌ GS未完了 | 15 |
+| G GS完了・選出待ち | 34 |
+| ❌ GS未完了 | 13 |
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
-GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥1本 + ⑦⑧2本 = **10本**
+GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥1本 + ⑦⑧1本 = **9本**
 
 ## 変更履歴
 
@@ -201,3 +201,4 @@ GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥1本 + ⑦⑧2本 = *
 - 2026-04-12 21:10 56ブロック構造+成果物所在マッピングに全面改修(将軍)。なぜなぜ7回(成果物追跡不在)の対策
 - 2026-04-12 20:xx 将軍確認: 1795_ファイル全て無効(旧universe)
 - 2026-04-12 19:52 初版作成(将軍)
+- 2026-04-13 02:00 ⑦7-6/⑧8-6 nukimi ✅(saizo, cmd_1877_block_17)

@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-13 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-13T00:27:22+09:00 -->
+<!-- generated_at: 2026-04-13T02:02:22+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-13T02:02:22+09:00 | terminal | response | 承知。ネーミングルール(`奥義{L1方式}{L2方式}-{忍法名}-{モード}`)と進行表の表現は現行ルール通り維持する。 [meta] stop_reason=end_turn
+- 2026-04-13T02:02:12+09:00 | terminal | inbound | 表現や ネーミングは ルール通り
+- 2026-04-13T02:00:33+09:00 | terminal | response | **cmd_1877 L2奥義GS — 順調に進行中。** | パターン | 前回(00:24) | 現在(02:00) | |----------|:-----------:|:-----------:| | ① シンシン×シン | 7…
+- 2026-04-13T01:59:40+09:00 | terminal | inbound | どうなった？
+- 2026-04-13T00:34:01+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-13 00:29:18|CI緑: run 24309851120
 - 2026-04-13T00:27:22+09:00 | terminal | response | 起動手順完了。状態を把握した。 **現況サマリ:** - **cmd_1877** (L2奥義56ブロック直列GS) 進行中 - 半蔵(block_04, CTX:30%) / 小太郎(block_08, CTX:26%) 稼働中 - 疾…
 - 2026-04-13T00:26:27+09:00 | ntfy | outbound | 【shogun】復帰済み。cmd_1877進行中(hanzo block_04/kotaro block_08稼働、idle3名)。
 - 2026-04-13T00:23:59+09:00 | terminal | inbound | y
 - 2026-04-13T00:18:52+09:00 | terminal | response | push完了。 **穴なし。** 家老は追加指示(--output-prefix)を正しく反映済み。進行表も更新済み。全commitがpush済み。教訓登録依頼も送付済み。 [meta] stop_reason=end_turn
 - 2026-04-13T00:17:53+09:00 | terminal | inbound | 穴はないか？
-- 2026-04-13T00:17:02+09:00 | terminal | response | 完了。 1. **教訓L618/L619候補** → 家老にlesson_write.sh登録依頼送付済み。登録後は次の忍者タスクYAMLに自動注入される 2. **lord-conversation-index.md** → commi…
-- 2026-04-13T00:16:35+09:00 | terminal | inbound | 解消せよ
-- 2026-04-13T00:15:09+09:00 | terminal | response | lesson-sortとcmd_1877の変更はauto-commitで既にpush済み。残りは`context/lord-conversation-index.md`のみ。 **答え: ほぼできる。ただし2点の弱さがある。** **強く…
-- 2026-04-13T00:13:28+09:00 | terminal | inbound | 今クリアされても、より強くてニューゲームできるか？
-- 2026-04-13T00:07:59+09:00 | terminal | response | --- **Dream completed [2026-04-13T00:07:42+09:00]** ``` - Phase 1: 61 files, 154 lines, gate=WARN(>150) - Phase 2: sign…
 
 ## 未解決確認事項
 - lesson-sortとcmd_1877の変更はauto-commitで既にpush済み。残りは`context/lord-conversation-index.md`のみ。 **答え: ほぼできる。ただし2点の弱さがある。** **強くてニューゲームできる部分:** - 49…
@@ -39,15 +39,9 @@
 - cmd_1822
 - cmd_1825
 - cmd_1840
-- cmd_1841
 - cmd_1844
-- cmd_1845
 - cmd_1846
 - cmd_1856
-- cmd_1865
-- cmd_1868
-- cmd_1869
-- cmd_1870
 - cmd_1871
 - cmd_1872
 - cmd_1873
