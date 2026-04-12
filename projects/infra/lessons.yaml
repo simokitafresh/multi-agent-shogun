@@ -262,7 +262,7 @@ lessons:
   - gate
   - bash
   - yaml
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-11'
 - id: L425
@@ -429,6 +429,9 @@ lessons:
   - gate
   - git
   - wsl2
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-12'
 - id: L401
   title: python3 -cのシェル変数展開はインジェクション源。heredoc+sys.argvパターン統一必須
   summary: pending_decision_write.shで同一ファイル内にsys.argv方式(安全)とpython3 -c展開方式(危険)が混在。新規追加時に危険パ
@@ -595,6 +598,9 @@ lessons:
   tags:
   - communication
   - inbox
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-12'
 - id: L375
   title: 同一ファイル多段読取りパターンは単一awkパスに統合せよ
   summary: wc -l + awk×N で同一ファイルを複数回読むパターンが複数スクリプトに散在。単一awkパスで全カウントを同時実行すればプロセス数・I/O削減。coun
@@ -1296,6 +1302,9 @@ lessons:
   summary: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
   tags:
   - gate
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-12'
 - id: L273
   title: PostToolUse hookがテスト名中のskipに誤検知
   summary: batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse
@@ -1382,7 +1391,7 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-10'
 - id: L261
@@ -1493,6 +1502,9 @@ lessons:
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
   tags:
   - universal
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-12'
 - id: L245
   title: ホワイトリスト型gitignoreで新規lib追加時はgitignore反映を確認せよ
   summary: ホワイトリスト型gitignore環境でscripts/lib/に新規shファイル追加時、.gitignoreホワイトリスト追記漏れでCIのみ失敗する。ローカル
@@ -2107,6 +2119,9 @@ lessons:
     形式で受けよ
   tags:
   - universal
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-12'
 - id: L155
   title: lib/配下の共通関数は呼出し元の環境変数依存を明示バリデーションすべき
   summary: IF lib/配下の共通関数を実装する時 THEN 呼出し元の環境変数依存を関数冒頭で明示バリデーションせよ
@@ -2655,7 +2670,7 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-11T02:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=4'
-  helpful_count: 5
+  helpful_count: 4
   harmful_count: 4
   last_referenced: '2026-04-12'
 - id: L078
@@ -2675,7 +2690,7 @@ lessons:
   tags:
   - deploy
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-09'
 - id: L075
   title: L075
@@ -2689,7 +2704,7 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 25
+  helpful_count: 23
   harmful_count: 20
   last_referenced: '2026-04-11'
 - id: L073
@@ -2765,7 +2780,7 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 25
+  helpful_count: 23
   harmful_count: 20
   last_referenced: '2026-04-11'
 - id: L062

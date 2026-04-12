@@ -679,3 +679,7 @@
 | cmd_1867 | シン×ALM — シン四神BBのGS CSVをWFエンジンで動的選出(2×2因子分析) | dm-signal | 04-12 | l1_alm_wf_engine.py --batch-cs |
 | cmd_1869 | 2×2因子分析 同一期間統一再計算(2015-03~2026-01, 130ヶ月) | dm-signal | 04-12 | cmd_1869 2×2因子分析完了。7忍法×6メトリクス× |
 | cmd_1870 | 2×2因子分析 β調整版 — 同一期間4セルのα/β分離+β調整後CAGR比較 | dm-signal | 04-12 | 4セル×7忍法=28データポイントのβ/α/β調整後CAGR |
+| cmd_1871 | L2奥義8パターン生成 Step1 — universe CSV作成+GS実行+②WF | dm-signal | 04-12 | — |
+| cmd_1872 | L2奥義8パターン生成 Step2 — ③〜⑧選出+L2 2×2因子分析(β調整) | dm-signal | 04-12 | — |
+| cmd_1873 | fix — SessionEnd hookのALERT判定を修正（cmd_pending/ninja_activeはINFO化） | infra | 04-12 | clear_prep_check.shのcmd_pendin |
+| cmd_1874 | gate — MCP書込み時の殿帰属キーワード照合hook追加（研究出力→殿定義混同防止） | infra | 04-12 | cmd_1874: pre-mcp-lord-attribu |

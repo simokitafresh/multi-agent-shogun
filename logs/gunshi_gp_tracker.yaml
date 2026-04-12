@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:96(+GP-129,137b) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / cmd配備済:2 = 計117GP
+# 集計: ★implemented:99(+GP-129,137b,180,181,182) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / cmd配備済:0 = 計117+5=122GP
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -197,27 +197,30 @@
   self_executable: true
   reason: "dashboard-updateスキルのSSoT二重管理(archive+gp_tracker)を一本化済み。根因解消により再発リスク消失。defense_level: 2文書追加は不要"
 - id: GP-182
-  description: "archive_completed.sh shogun_to_karo.yaml読込みをflock内に移動。TOCTOU競合によるcmd消失リスク排除"
-  status: proposed
+  description: "archive_completed.sh QUEUE_FILE読込みをflock内に移動。TOCTOU競合によるcmd消失リスク排除"
+  status: implemented
   proposed_at: "2026-04-12T00:10:00"
+  implemented_by: cmd_1862
   self_executable: false
   defense_level: 3
   reason: "archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置)"
   evidence: "archive_completed.sh L647(grep flock外)→L675(sed flock外)→L731(flock→mv)。1800件アーカイブ稼働中"
 - id: GP-181
   description: "deploy_task.sh配備直前にSTALE_RESET実行済みフラグ確認。未実行→BLOCK。新パス追加時の防御層迂回を構造的に防止"
-  status: karo_sent
+  status: implemented
   proposed_at: "2026-04-11T19:50:00"
   sent_at: "2026-04-11T19:50:00"
+  implemented_by: cmd_1861
   self_executable: false
   defense_level: 4
   reason: "なぜなぜ7回の根因=新パス追加時に既存防御層との整合性チェックがない。GP-180(即効)に加え、STALE_RESET実行済みフラグ(例: _STALE_RESET_DONE=1)を配備最終段階で確認→未実行ならBLOCK。今後DIRECT_MODE3やCMD_FORCED2が追加されても防御層迂回を構造的に検出"
   evidence: "なぜなぜ7回: STALE_RESET(03/30)→DIRECT_MODE追加(04/02)→整合性未検証→7件stale汚染。時系列が根因を証明"
 - id: GP-180
   description: "STALE_RESETをresolve_cmd_to_task()外に移動。DIRECT/CMD_FORCEDパスでもstale field清掃を実行"
-  status: karo_sent
+  status: implemented
   proposed_at: "2026-04-11T19:40:00"
   sent_at: "2026-04-11T19:42:00"
+  implemented_by: cmd_1861
   self_executable: false
   defense_level: 4
   reason: "stale_ac_contamination 7件(karo_workarounds)。根因=STALE_RESET がresolve_cmd_to_task()内部にあり、DIRECT_MODE/CMD_FORCEDパスでスキップされる。L189のPythonブロックをL3269(CMD_IDチェック直後)に移動すれば全パスで実行される。10回繰り返したら10回stale汚染防止=正の複利"
