@@ -81,11 +81,11 @@ GS dir: okugi_shin_alm/ → 選出: champion_selector
 | 3-2 | oikaze | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_results_fast.csv (115MB, 270901行) | 2026-04-12 |
 | 3-3 | kasoku_diff | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_diff_grid_results_fast.csv (346MB, 1151326行) | 2026-04-12 |
 | 3-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_ratio_results_fast.csv (350MB, 1151325行) | 2026-04-12 |
-| 3-5 | kawarimi | ❌ | — | — | — |
+| 3-5 | kawarimi | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kawarimi_results_fast.csv (94MB, 270901行) | 2026-04-13 |
 | 3-6 | nukimi | ❌ | — | — | — |
 | 3-7 | yotsume | ❌ | — | — | — |
 
-**③ 完了: 3/7** — GS残3本(kawarimi, nukimi, yotsume)
+**③ 完了: 4/7** — GS残2本(nukimi, yotsume)
 
 ---
 
@@ -98,11 +98,11 @@ GS dir: okugi_shin_alm/ (③と共有, monthly_fast必須) → 選出: WFエン�
 | 4-2 | oikaze | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_monthly_fast.csv (394MB, 126行) | 2026-04-12 |
 | 4-3 | kasoku_diff | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_diff_grid_monthly_fast.csv (1.6GB, 126行) | 2026-04-12 |
 | 4-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_ratio_monthly_fast.csv (1.6GB, 125行) | 2026-04-12 |
-| 4-5 | kawarimi | ❌ | — | — | — |
+| 4-5 | kawarimi | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kawarimi_monthly_fast.csv (379MB, 126行) | 2026-04-13 |
 | 4-6 | nukimi | ❌ | — | — | — |
 | 4-7 | yotsume | ❌ | — | — | — |
 
-**④ 完了: 3/7** — ③のGS完了でmonthlyも増加。GS残3本(kawarimi, nukimi, yotsume)
+**④ 完了: 4/7** — ③のGS完了でmonthlyも増加。GS残2本(nukimi, yotsume)
 
 ---
 
@@ -184,10 +184,11 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
-GS実行残量(ペア共有): ②5本 + ③④3本 + ⑤⑥6本 + ⑦⑧4本 = **18本**
+GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥6本 + ⑦⑧4本 = **17本**
 
 ## 変更履歴
 
+- 2026-04-13 00:22 ③3-5/④4-5 kawarimi ✅(hanzo, cmd_1877_block_04)
 - 2026-04-12 23:40 ③3-4/④4-4 kasoku_ratio ✅(kagemaru, cmd_1877_block_03)
 - 2026-04-12 21:10 56ブロック構造+成果物所在マッピングに全面改修(将軍)。なぜなぜ7回(成果物追跡不在)の対策
 - 2026-04-12 20:xx 将軍確認: 1795_ファイル全て無効(旧universe)
