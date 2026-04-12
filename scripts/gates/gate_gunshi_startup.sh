@@ -1,15 +1,31 @@
 #!/bin/bash
 # gate_gunshi_startup.sh — 軍師セッション起動時の全チェックを一括実行
 # 目的: /clear後の状態復元に必要な6項目を一括チェック（知性の外部化原則）
-# Usage: bash scripts/gates/gate_gunshi_startup.sh
-# 参考: gate_karo_startup.sh（構造踏襲）
+# Usage: bash scripts/gates/gate_gunshi_startup.sh [--brief]
+# --brief: session_start_inject用。一行サマリのみ出力（gate↔inject契約）
+# 参考: gate_karo_startup.sh, gate_shogun_startup.sh（構造踏襲）
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+BRIEF=false
+[ "${1:-}" = "--brief" ] && BRIEF=true
+
+# --- デフォルト値（main実行前に初期化。BRIEF時のサマリで参照） ---
 overall="OK"
 alerts=()
+unread=0
+WA_COUNT=0
+WA_TOTAL=0
+WA_CATS="none"
+ungated=0
+ungated_after=""
+proposed_count=0
+pending_count=0
+recent_research=0
+
+main() {
 
 echo "=== 軍師起動チェック $(date '+%H:%M:%S') ==="
 echo ""
@@ -317,4 +333,23 @@ if [ -d "$research_dir" ]; then
     fi
 else
     echo "  SKIP: docs/research/不在"
+fi
+
+}  # main()
+
+# --- 実行分岐: BRIEF vs 通常 ---
+if $BRIEF; then
+    # session_start_inject用: fat出力を破棄し、1行サマリのみ出力
+    # set -e環境でmain失敗時も1行サマリは必ず出す
+    main >/dev/null 2>&1 || true
+    alert_str=""
+    if [ ${#alerts[@]} -gt 0 ]; then
+        alert_str=" — $(IFS=', '; echo "${alerts[*]}")"
+    fi
+    ungated_show="${ungated_after:-$ungated}"
+    self_step="Step1:karo_workarounds分析"
+    [ "$unread" -gt 0 ] && self_step="inbox処理(${unread}件)"
+    echo "gunshi_startup: ${overall}${alert_str} | inbox=${unread} | WA:${WA_COUNT}/${WA_TOTAL}(${WA_CATS}) | ungated:${ungated_show} | GP:${proposed_count}p+${pending_count}pe | research7d:${recent_research} | 自走:${self_step} | 必読: memory/deepdive_why_chain_20260321.md"
+else
+    main
 fi

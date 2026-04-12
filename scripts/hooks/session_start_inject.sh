@@ -53,16 +53,27 @@ if [[ -f "$snapshot_file" ]]; then
 fi
 
 # --- compact_state ---
+# /clear は PreCompact を発火しないため、compact_state は /clear 時に古い情報のまま。
+# 古い情報を「現在の状態」として注入するとノイズ=誤読リスク。source_type で分岐し、
+# /clear 時は明示的にスキップする（殿原則「想像するな確認せよ」）。
 compact_file="$SCRIPT_DIR/queue/compact_state/${agent_id}.yaml"
 compact_state="none"
-if [[ -f "$compact_file" ]]; then
+if [[ "$source_type" == "clear" ]]; then
+  compact_state="(skipped: /clear type does not update compact_state; last value may be stale)"
+elif [[ -f "$compact_file" ]]; then
   compact_state="$(cat "$compact_file" 2>/dev/null || echo "none")"
   if [[ -z "$compact_state" ]]; then
     compact_state="none"
   fi
 fi
 
-# --- Build additionalContext (max 500 chars) ---
+# --- startup gate セクション削除(2026-04-12殿裁定) ---
+# 理由: /clear直後にgate自動実行=無駄なcontext消費。
+# 正解: 殿の入力受領時にエージェントがCLAUDE.md recovery手順で手動実行し、
+#       その後入力対応する。今まで通りの流れ。
+# gate_*_startup.sh は手動実行専用として維持（--brief/通常の2モード）
+
+# --- Build additionalContext ---
 header="=== Session Context (auto-injected) ==="
 fixed_part="${header}
 source: ${source_type}
@@ -75,6 +86,7 @@ compact_section="
 --- compact_state ---
 ${compact_state}"
 
+# karo_snapshotは budget で切り詰め
 fixed_len=${#fixed_part}
 compact_len=${#compact_section}
 max_total=500
