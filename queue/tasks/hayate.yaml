@@ -1,58 +1,54 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_01
-  status: done
+  task_id: cmd_1877_block_10
+  status: acknowledged
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#01 [TYPE-GS] ③ 3-2 oikaze GS実行
+    L2奥義 ブロック#10 [TYPE-GS] ⑤ 5-4 kasoku_ratio GS実行
 
     cd /mnt/c/Python_app/DM-signal
-    python3 scripts/analysis/grid_search/run_077_oikaze.py \
-      --universe config/portfolio_universes/okugi_shin_alm.yaml \
-      --out-dir outputs/grid_search/okugi_shin_alm/
+    python3 scripts/analysis/grid_search/run_077_kasoku_ratio.py \
+      --universe config/portfolio_universes/okugi_alm_shin.yaml \
+      --out-dir outputs/grid_search/okugi_alm_shin/ \
+      --output-prefix cmd_1877_alm_shin_kasoku_ratio
 
     完了後:
-    1. outputs/grid_search/okugi_shin_alm/ にoikazeのresults_fast.csv + monthly_fast.csvが存在することを確認
-    2. context/l2-okugi-progress.md の ③ 3-2 oikaze行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
+    1. outputs/grid_search/okugi_alm_shin/ にcmd_1877_alm_shin_kasoku_ratio_results_fast.csv + monthly_fast.csvが存在することを確認
+    2. context/l2-okugi-progress.md の ⑤ 5-4 kasoku_ratio行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
     3. git add + git commit
 
     制約:
     - MP_WORKERS=1 (commit 6efe2681で設定済み)
-    - 1795_プレフィックスファイルは旧universe→使用禁止
+    - --output-prefix cmd_1877_alm_shin_kasoku_ratio 必須
   acceptance_criteria:
     - id: AC1
-      description: "outputs/grid_search/okugi_shin_alm/にoikazeのresults_fast.csv + monthly_fast.csvが存在しrc=0"
+      description: "cmd_1877_alm_shin_kasoku_ratio_results_fast.csv + monthly_fast.csvが存在しrc=0"
     - id: AC2
-      description: "l2-okugi-progress.md の ③ 3-2 oikaze を ✅ に更新+成果物所在を記入"
+      description: "l2-okugi-progress.md ⑤ 5-4 kasoku_ratio を ✅ に更新+成果物所在記入"
     - id: AC3
-      description: "変更をgit commitした"
+      description: "git commitした"
   binary_checks:
     AC1:
-      - check: "oikaze results_fast.csvが存在するか"
-        result: "yes"
-      - check: "oikaze monthly_fast.csvが存在するか"
-        result: "yes"
-      - check: "python3のrc=0か"
-        result: "yes"
+      - check: "results_fast.csv存在か"
+        result: ""
+      - check: "monthly_fast.csv存在か"
+        result: ""
+      - check: "rc=0か"
+        result: ""
     AC2:
-      - check: "l2-okugi-progress.md 3-2 oikazeが✅か"
-        result: "yes"
-      - check: "成果物所在(パス+サイズ+行数)を記入したか"
-        result: "yes"
+      - check: "進行表更新済みか"
+        result: ""
     AC3:
       - check: "git commitしたか"
-        result: "yes"
+        result: ""
   context_files:
     - context/l2-okugi-progress.md
-  report_path: queue/reports/hayate_report_cmd_1877_block_01.yaml
   target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
   stop_for:
     - "OOM Kill(signal 9/137)"
-    - "python3プロセス異常終了"
   never_stop_for:
     - "既存ファイル警告 — 確認して続行"
-    - "自明な修正 — 実行→事後報告"
   scout_exempt: true
   deployed_at: ""
   related_lessons:
