@@ -1,38 +1,38 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_08
-  status: done
+  task_id: cmd_1877_block_18
+  status: in_progress
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#08 [TYPE-GS] ⑤ 5-2 oikaze GS実行
+    L2奥義 ブロック#18 [TYPE-GS] ⑦ 7-7 yotsume GS実行
 
     cd /mnt/c/Python_app/DM-signal
-    python3 scripts/analysis/grid_search/run_077_oikaze.py \
-      --universe config/portfolio_universes/okugi_alm_shin.yaml \
-      --out-dir outputs/grid_search/okugi_alm_shin/ \
-      --output-prefix cmd_1877_alm_shin_oikaze
+    python3 scripts/analysis/grid_search/run_077_yotsume.py \
+      --universe config/portfolio_universes/okugi_alm_alm.yaml \
+      --out-dir outputs/grid_search/okugi_alm_alm/ \
+      --output-prefix cmd_1877_alm_alm_yotsume
 
     完了後:
-    1. outputs/grid_search/okugi_alm_shin/ にcmd_1877_alm_shin_oikaze_results_fast.csv + monthly_fast.csvが存在することを確認
-    2. context/l2-okugi-progress.md の ⑤ 5-2 oikaze行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
+    1. outputs/grid_search/okugi_alm_alm/ にcmd_1877_alm_alm_yotsume_results_fast.csv + monthly_fast.csvが存在することを確認
+    2. context/l2-okugi-progress.md の ⑦ 7-7 yotsume行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
     3. git add + git commit
 
     制約:
     - MP_WORKERS=1 (commit 6efe2681で設定済み)
-    - --output-prefix cmd_1877_alm_shin_oikaze 必須
+    - --output-prefix cmd_1877_alm_alm_yotsume 必須
   acceptance_criteria:
     - id: AC1
-      description: "cmd_1877_alm_shin_oikaze_results_fast.csv + monthly_fast.csvが存在しrc=0"
+      description: "cmd_1877_alm_alm_yotsume_results_fast.csv + monthly_fast.csvが存在しrc=0"
     - id: AC2
-      description: "l2-okugi-progress.md の ⑤ 5-2 oikaze を ✅ に更新+成果物所在を記入"
+      description: "l2-okugi-progress.md ⑦ 7-7 yotsume を ✅ に更新+成果物所在記入"
     - id: AC3
-      description: "変更をgit commitした"
+      description: "git commitした"
   binary_checks:
     AC1:
-      - check: "results_fast.csvが存在するか"
+      - check: "results_fast.csv存在か"
         result: ""
-      - check: "monthly_fast.csvが存在するか"
+      - check: "monthly_fast.csv存在か"
         result: ""
       - check: "rc=0か"
         result: ""
@@ -82,4 +82,3 @@ task:
   - id: 'L608'
     summary: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
     detail: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
-  report_path: queue/reports/kotaro_report_cmd_1877.yaml
