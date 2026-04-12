@@ -69,6 +69,12 @@ if [[ -n "$prep_digest" ]]; then
 fi
 
 if [[ "${#issues[@]}" -eq 0 ]]; then
+  if [[ "${#detail_lines[@]}" -gt 0 ]]; then
+    info_message="【SessionEnd 報告】/clear前確認
+agent=${agent_id}
+$(printf '%s\n' "${detail_lines[@]}")"
+    "$ntfy_cmd" "$info_message"
+  fi
   printf 'OK: session_end_clear_check (%s)\n' "$agent_id"
   exit 0
 fi

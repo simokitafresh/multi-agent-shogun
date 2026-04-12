@@ -166,10 +166,6 @@ if [ "$pd_count" -gt 0 ]; then
   issues=$((issues + pd_count))
   issue_reasons+=("PD未決${pd_count}")
 fi
-if [ "$cmd_count" -gt 0 ]; then
-  issues=$((issues + cmd_count))
-  issue_reasons+=("cmd_pending${cmd_count}")
-fi
 if [ "$alert_count" -gt 0 ]; then
   issues=$((issues + alert_count))
   issue_reasons+=("要対応${alert_count}")
