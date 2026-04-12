@@ -45,7 +45,7 @@ task:
   parent_cmd: cmd_1867
   project: dm-signal
   report_path: queue/reports/kotaro_report_cmd_1867.yaml
-  status: in_progress
+  status: idle
   stop_for: []
   task_id: cmd_1867_impl
   task_type: impl

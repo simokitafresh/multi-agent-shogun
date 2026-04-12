@@ -675,3 +675,5 @@
 | cmd_1864 | FE Compare SummaryにCalmar RatioとUWP(Underwater Period)を追加 | dm-signal | 04-12 | Compare SummaryページにCalmar列(高→低 |
 | cmd_1865 | ALM忍法CPCV検証 — 7忍法×4ファミリー選択バイアス定量評価 | dm-signal | 04-12 | 既存の --alm-dm 24セルに加え、constrain |
 | cmd_1866 | ALM忍法 全方位検証(7手法) — WF-OOS劣化率+β調整+超越条件+IS感度+指標感度+構成体数+SPA | dm-signal | 04-12 | cmd_1866 ALM忍法全方位検証7手法完了。8手法中5 |
+| cmd_1868 | ALM×シン — ALM四神BBのGS CSVからchampion_selector固定選出(2×2因子分析) | dm-signal | 04-12 | ALM四神BB 7忍法×3目的=21チャンピオン選出完了。c |
+| cmd_1867 | シン×ALM — シン四神BBのGS CSVをWFエンジンで動的選出(2×2因子分析) | dm-signal | 04-12 | l1_alm_wf_engine.py --batch-cs |
