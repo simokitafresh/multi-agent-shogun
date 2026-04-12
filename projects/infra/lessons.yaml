@@ -817,8 +817,8 @@ lessons:
   - bash
   - git
   helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-11'
+  harmful_count: 1
+  last_referenced: '2026-04-12'
 - id: L341
   title: heredoc一括書込みでファイル中間状態を排除
   summary: echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat
@@ -1225,7 +1225,7 @@ lessons:
   tags:
   - universal
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 6
   last_referenced: '2026-04-12'
 - id: L282
   title: PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御
@@ -2010,6 +2010,9 @@ lessons:
   - api
   - bash
   - yaml
+  helpful_count: 0
+  harmful_count: 3
+  last_referenced: '2026-04-12'
 - id: L169
   title: YAMLへの追記をheredoc直書きすると引用符/改行で構造破壊する
   summary: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ
@@ -2018,6 +2021,9 @@ lessons:
   - bash
   - yaml
   - inbox
+  helpful_count: 0
+  harmful_count: 3
+  last_referenced: '2026-04-12'
 - id: L168
   title: auto_draft_lesson.shのIF-THEN引数にスペース含む値を渡すと切り詰められる
   summary: IF auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時 THEN IF_THEN_FLAGS
@@ -2501,8 +2507,8 @@ lessons:
   - yaml
   - reporting
   helpful_count: 3
-  harmful_count: 0
-  last_referenced: '2026-04-11'
+  harmful_count: 3
+  last_referenced: '2026-04-12'
 - id: L096
   title: preflight_gate_flags()でlocal変数をif/else跨ぎで参照する場合、両ブロックのどちらが実行されても参照可能なスコープ（関数先頭等）で宣言・初期化すべき。bashのlocalは関数スコープだが、宣言がif内にあると実行されないelseブロックでは未初期化になる。
   summary: bash,variable-scope,preflight
@@ -2530,8 +2536,8 @@ lessons:
   deprecated_at: '2026-04-11T02:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=3'
   helpful_count: 5
-  harmful_count: 4
-  last_referenced: '2026-04-11'
+  harmful_count: 5
+  last_referenced: '2026-04-12'
 - id: L093
   title: impl忍者のgit add漏れ — 新規ファイル作成時のcommit忘れ
   summary: 新規ファイル作成後にgit add+commitを実行せずuntrackedのまま残した。.gitignore whitelistはあったがuntrackedの
@@ -2644,7 +2650,7 @@ lessons:
   deprecated_at: '2026-04-11T02:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=4'
   helpful_count: 5
-  harmful_count: 4
+  harmful_count: 5
   last_referenced: '2026-04-12'
 - id: L078
   title: GATE BLOCK率65%は構造問題(missing_gate)。家老フラグ生成タイミングが主因

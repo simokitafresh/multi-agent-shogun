@@ -673,3 +673,5 @@
 | cmd_1861 | fix — deploy_task.sh STALE_RESET全パス実行+実行済みフラグ確認（GP-180+GP-181） | infra | 04-12 | reset_stale_fields()をresolve_c |
 | cmd_1863 | ALM WF再実行 — MaxDD方向バグ修正後の全量再計算(バグデータ削除+再生成) | dm-signal | 04-12 | AC1完了(127件削除/87件指定範囲+40件スコープ外を |
 | cmd_1864 | FE Compare SummaryにCalmar RatioとUWP(Underwater Period)を追加 | dm-signal | 04-12 | Compare SummaryページにCalmar列(高→低 |
+| cmd_1865 | ALM忍法CPCV検証 — 7忍法×4ファミリー選択バイアス定量評価 | dm-signal | 04-12 | 既存の --alm-dm 24セルに加え、constrain |
+| cmd_1866 | ALM忍法 全方位検証(7手法) — WF-OOS劣化率+β調整+超越条件+IS感度+指標感度+構成体数+SPA | dm-signal | 04-12 | cmd_1866 ALM忍法全方位検証7手法完了。8手法中5 |

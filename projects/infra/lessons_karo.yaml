@@ -265,3 +265,8 @@ lessons:
   detail: 'deploy_task.shはtask YAMLのparent_cmdで配備先cmdを解決する。旧cmdが残存していると新cmdではなく旧cmdに配備される(cmd_1858配備時にcmd_1843に解決した事故)。配備前にyaml_field_set.shでparent_cmd/task_id/statusをクリアしてからdeploy_task.shを実行すること'
   source_cmd: 'cmd_1858'
   created_at: '2026-04-11'
+- id: 'LK046'
+  title: 'Codex優先配備ルール違反 — 4cmd連続でCodex忍者をスキップ'
+  detail: 'cmd_1863-1866の4cmd全てでCodex忍者(疾風/才蔵)が空きだったにもかかわらずOpus/Sonnet忍者に配備。R001 round-robinに従いモデル優先度を無視した。殿裁定でR000(Codex→Sonnet→Opus順)をR001より上位に設定。同一モデル内はround-robin維持。レート制限温存が目的'
+  source_cmd: 'cmd_1863'
+  created_at: '2026-04-12'

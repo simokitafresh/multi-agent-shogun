@@ -1,30 +1,28 @@
 task:
-  _ac_task_id: cmd_1864_impl
+  _ac_task_id: cmd_1867_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: 8652e2f3
+  ac_version: acaa2cff
   acceptance_criteria:
-  - description: Compare Summaryページの列にCalmarとUWPが表示される。本番APIから値が取得できること(npm run dev
-      + 本番API接続で目視確認)
+  - description: l1_alm_wf_engine.py でシン四神BB 7忍法×67窓WF実行完了。all_success=true
     id: AC1
-  - description: Calmarソートが高→低順、UWPソートが低→高順で正しく動作すること
+  - description: 7忍法のselection_timeline CSVが生成され、6目的関数を含む
     id: AC2
-  - description: 既存テスト(compare-summary-table.test.tsx)がPASSし、新カラムに対するテストケースが追加されていること
+  - description: 6目的×7忍法のOOS CAGR中央値マトリクスを報告YAMLに記載
     id: AC3
-  acceptance_criteria.1.description: bunshinで回帰テスト。l1_alm_wf_engine.pyのpd.read_csvで読込可能+alm_returnsがnp.allclose(rtol=1e-4)で一致(float32精度のため完全一致ではなくallclose)
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
   - context/dm-signal-research.md
   - context/dm-signal-frontend.md
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L283: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の\
-    \ ok N (hash) skip パタ\n  - L572: task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/ana\n\
-    \  - L240: parse_skip_count()の汎用正規表現 r\"(\\d+)\\s+(?:tests?\\s+)?skips?\\b\" は\
-    \ bats TAP出力 \"ok 293\n  - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ\n\
-    \  - L191: IF E2E test が `cp \"$PROJECT_ROOT/tests/e2e/fixtures/...\"` のように fixture\
-    \ ファイルを前提にす\n────────────────────────────────────────"
+  created_at: '2026-04-12T12:20:00+09:00'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L571: タスク記述の'現行CSV(2012-07)'はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range('2012-07-0\n\
+    \  - L570: 119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/in\n\
+    \  - L002: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash\
+    \ tool\n  - L339: context_freshness_check.shのarchive scanでproject IDをf-string\
+    \ in textで検出していたが、短いID\n────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -40,21 +38,19 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  ninja: kotaro
   parallel_ok:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1864
+  parent_cmd: cmd_1867
   project: dm-signal
-  report_filename: kotaro_report_cmd_1864.yaml
-  report_path: queue/reports/kotaro_report_cmd_1864.yaml
-  scope_mode: IMPL
-  status: idle
+  report_path: queue/reports/kotaro_report_cmd_1867.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_1864_impl
+  task_id: cmd_1867_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_1867.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -79,6 +75,21 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L614'
+    summary: 'cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。karoから指摘を受け削除・修正。正解は既存スクリプトへの最小差分追加（--alm-dmフラグ追加）だった。新スクリプト作成前に既存コードの再利用可能性を確認すること。'
+    detail: 'cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。karoから指摘を受け削除・修正。正解は既存スクリプトへの最小差分追加（--alm-dmフラグ追加）だった。新スクリプト作成前に既存コードの再利用可能性を確認すること。'
+  - id: 'L613'
+    summary: '''V3超越条件: 条件C(UWP<5M)は2015-2026の132ヶ月OOS全期間で計算するため実績UWP=7-41Mとなり全セル失敗。フォールド単位のUWP(12M'
+    detail: '''V3超越条件: 条件C(UWP<5M)は2015-2026の132ヶ月OOS全期間で計算するため実績UWP=7-41Mとなり全セル失敗。フォールド単位のUWP(12M'
+  - id: 'L612'
+    summary: 'cmd_1866 ALM忍法全方位検証でV3超越条件のUWP<5M閾値が132ヶ月OOS期間に対して非現実的に厳しい。全42セルFAIL。V7'
+    detail: 'cmd_1866 ALM忍法全方位検証でV3超越条件のUWP<5M閾値が132ヶ月OOS期間に対して非現実的に厳しい。全42セルFAIL。V7'
+  - id: 'L611'
+    summary: 'cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にもcmd_1822が40件存在し合計127件になった。削除コマンド実行前にfindでプロジェクト全体を検索しcmd記載件数との不一致を検出して全量把握すべき。不一致があれば停止して報告。'
+    detail: 'cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にもcmd_1822が40件存在し合計127件になった。削除コマンド実行前にfindでプロジェクト全体を検索しcmd記載件数との不一致を検出して全量把握すべき。不一致があれば停止して報告。'
+  - id: 'L610'
+    summary: 'cmd_1863 AC1でcmd_1819_*/cmd_1821_*/cmd_1822_*をプロジェクト全体で削除したところ、alm_research/以外のgrid_search/okugi_shin_ninpo_20body/以下の20体universe月次CSVも削除。shogun_to_karo.yamlには削除対象パスがalm_research/と明記されていたが、タスクYAMLのAC1'
+    detail: 'cmd_1863 AC1でcmd_1819_*/cmd_1821_*/cmd_1822_*をプロジェクト全体で削除したところ、alm_research/以外のgrid_search/okugi_shin_ninpo_20body/以下の20体universe月次CSVも削除。shogun_to_karo.yamlには削除対象パスがalm_research/と明記されていたが、タスクYAMLのAC1'
   - id: 'L609'
     summary: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との比較はmax_diff0.5超でallclose=Falseになる。回帰テストの正しい比較対象は同一セッション内での2回実行結果'
     detail: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との比較はmax_diff0.5超でallclose=Falseになる。回帰テストの正しい比較対象は同一セッション内での2回実行結果'
@@ -94,20 +105,5 @@ task:
   - id: 'L605'
     summary: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/kasoku_diff24.4pp/kasoku_ratio37pp)。NHFチャンピオン(常勝)は全7体LOW。MaxDDチャンピオン(鉄壁)も全7体LOW。CAGRの最大化は単一パラメータ点に過集中しやすく、NHF/MaxDDは分布が滑'
     detail: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/kasoku_diff24.4pp/kasoku_ratio37pp)。NHFチャンピオン(常勝)は全7体LOW。MaxDDチャンピオン(鉄壁)も全7体LOW。CAGRの最大化は単一パラメータ点に過集中しやすく、NHF/MaxDDは分布が滑'
-  - id: 'L604'
-    summary: '7忍法×3目的=21体全て、IS前半(75M)最適パターンは全期間最適パターンと異なった。前半過適合の典型パターン。OOS検証の必要性を定量的に裏付ける結果。'
-    detail: '7忍法×3目的=21体全て、IS前半(75M)最適パターンは全期間最適パターンと異なった。前半過適合の典型パターン。OOS検証の必要性を定量的に裏付ける結果。'
-  - id: 'L603'
-    summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確認必須'
-    detail: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確認必須'
-  - id: 'L602'
-    summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body'
-    detail: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body'
-  - id: 'L601'
-    summary: 'cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と非常に大きな負値を示す。GS事後方式で選出した最良MaxDD(0.11〜0.12)と比較して差異が0.45〜0.54と大きく、cmd_1840のMaxDD目的は最悪パターンを選出している疑いがある(argmin誤用またはスコア符号反転バグ)'
-    detail: 'cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と非常に大きな負値を示す。GS事後方式で選出した最良MaxDD(0.11〜0.12)と比較して差異が0.45〜0.54と大きく、cmd_1840のMaxDD目的は最悪パターンを選出している疑いがある(argmin誤用またはスコア符号反転バグ)'
-  - id: 'L600'
-    summary: '481650列のnukimi monthly_fast.csvで先頭月がほぼ空セルの行に対し、np.fromstring(line, sep=,)は'
-    detail: '481650列のnukimi monthly_fast.csvで先頭月がほぼ空セルの行に対し、np.fromstring(line, sep=,)は'
-  deployed_at: "2026-04-12T03:26:50"
-  constraints: "【注意】UWPのBE返却はtext形式(例: '12 months')。FEでnumber型として扱うにはparseFloat適用が必要。useSortableTable L30のtypeof===number比較でソート正常動作のため、buildRowでparseFloat変換せよ。metrics_calculator.py L720参照。"
+  deployed_at: "2026-04-12T12:19:13"
+  command: "シン×ALM — シン四神BBのGS CSVをWFエンジンで動的選出(2×2因子分析)。l1_alm_wf_engine.py --batch-csvs で7忍法のGS CSVを一括WF実行。★--batch-workers 1 必須(デフォルトworkers=2はOOMリスク。LG025)。実行: l1_alm_wf_engine.py --batch-csvs <7忍法CSV> --multi-is --batch-workers 1 --cmd-id cmd_1867"

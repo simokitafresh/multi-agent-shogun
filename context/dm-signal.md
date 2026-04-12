@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L611 -->
+<!-- last_synced_lesson: L614 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -175,3 +175,6 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L609: WF回帰テストは同一CSV2回実行での決定論確認（cmd_1856）
 - L610: バグ汚染ファイル削除時のスコープ確認: alm_research以外にもWFエンジン入力CSVが存在（cmd_1863）
 - L611: バグ汚染ファイル削除時のスコープ確認（cmd_1863）
+- L612: 超越条件C UWP<5M閾値は132M OOSに非現実+SPA全42非有意（cmd_1866）
+- L613: ALM忍法WF検証: 超越条件C(UWP<5M)は132ヶ月OOS期間には非現実的閾値。IS最適化チャンピオンはランダム選択と統計的有意差なし(SPA p>0.4)（cmd_1866）
+- L614: 既存スクリプトの関数を再実装した（車輪再発明）（cmd_1865）
