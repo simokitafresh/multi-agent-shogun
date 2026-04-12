@@ -1,47 +1,55 @@
 task:
-  _ac_task_id: cmd_1876_gs_alm_shin_A
-  _ac_worker_id: kotaro
-  parent_cmd: 
-  status: idle
+  parent_cmd: cmd_1877
+  task_id: cmd_1877_block_08
+  status: acknowledged
   project: dm-signal
   type: impl
   command: |
-    cmd_1876 AC2の一部: okugi_alm_shin パターンの3忍法GSを実行。
+    L2奥義 ブロック#08 [TYPE-GS] ⑤ 5-2 oikaze GS実行
 
-    実行手順:
-      cd /mnt/c/Python_app/DM-signal
-      for ninjutsu in oikaze kasoku_diff kasoku_ratio; do
-        echo "=== Running ${ninjutsu} ==="
-        python3 scripts/analysis/grid_search/run_077_${ninjutsu}.py \
-          --universe config/portfolio_universes/okugi_alm_shin.yaml \
-          --out-dir outputs/grid_search/okugi_alm_shin/
-        echo "=== ${ninjutsu} done (rc=$?) ==="
-      done
+    cd /mnt/c/Python_app/DM-signal
+    python3 scripts/analysis/grid_search/run_077_oikaze.py \
+      --universe config/portfolio_universes/okugi_alm_shin.yaml \
+      --out-dir outputs/grid_search/okugi_alm_shin/ \
+      --output-prefix cmd_1877_alm_shin_oikaze
 
-    注意:
-      - MP_WORKERS=1(修正済み commit 6efe2681)。OOMなし
-      - 1本ずつ直列。各忍法完了ごとにpython3プロセスが解放される
-      - 既存ファイルが存在する場合エラーになる可能性→そのファイル確認し次へ進め
+    完了後:
+    1. outputs/grid_search/okugi_alm_shin/ にcmd_1877_alm_shin_oikaze_results_fast.csv + monthly_fast.csvが存在することを確認
+    2. context/l2-okugi-progress.md の ⑤ 5-2 oikaze行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
+    3. git add + git commit
+
+    制約:
+    - MP_WORKERS=1 (commit 6efe2681で設定済み)
+    - --output-prefix cmd_1877_alm_shin_oikaze 必須
   acceptance_criteria:
     - id: AC1
-      description: "3忍法(oikaze, kasoku_diff, kasoku_ratio)のGS CSV(.csv)がoutputs/grid_search/okugi_alm_shin/に存在。全rc=0"
+      description: "cmd_1877_alm_shin_oikaze_results_fast.csv + monthly_fast.csvが存在しrc=0"
+    - id: AC2
+      description: "l2-okugi-progress.md の ⑤ 5-2 oikaze を ✅ に更新+成果物所在を記入"
+    - id: AC3
+      description: "変更をgit commitした"
   binary_checks:
     AC1:
-      - check: "3忍法全てのGS CSVが出力されたか"
+      - check: "results_fast.csvが存在するか"
         result: ""
-      - check: "全実行rc=0か"
+      - check: "monthly_fast.csvが存在するか"
+        result: ""
+      - check: "rc=0か"
+        result: ""
+    AC2:
+      - check: "進行表更新済みか"
+        result: ""
+    AC3:
+      - check: "git commitしたか"
         result: ""
   context_files:
-    - context/dm-signal-research.md
-  report_path: queue/reports/kotaro_report_cmd_1876_alm_shin_A.yaml
+    - context/l2-okugi-progress.md
   target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
   stop_for:
-    - OOM Kill発生
+    - "OOM Kill(signal 9/137)"
   never_stop_for:
-    - 既存ファイルエラー — 確認して次の忍法へ進め
-    - 自明な修正 — 実行→事後報告
+    - "既存ファイル警告 — 確認して続行"
   scout_exempt: true
-  parallel_ok: [AC1]
   deployed_at: ""
   related_lessons:
   - id: 'L617'
@@ -74,4 +82,3 @@ task:
   - id: 'L608'
     summary: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
     detail: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
-  task_id: 

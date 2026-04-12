@@ -112,14 +112,14 @@ GS dir: okugi_alm_shin/ → 選出: champion_selector
 | # | 忍法 | GS(R) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
 | 5-1 | bunshin | ✅ | — | GS: okugi_alm_shin/metrics_bunshin_results_fast.csv (1.7MB, 7526行) | — |
-| 5-2 | oikaze | ❌ | — | — | — |
+| 5-2 | oikaze | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_results_fast.csv (100MB, 270901行) | 2026-04-13 |
 | 5-3 | kasoku_diff | ❌ | — | — | — |
 | 5-4 | kasoku_ratio | ❌ | — | — | — |
 | 5-5 | kawarimi | ❌ | — | — | — |
 | 5-6 | nukimi | ❌ | — | — | — |
 | 5-7 | yotsume | ❌ | — | — | — |
 
-**⑤ 完了: 0/7** — GS残6本(oikaze, kasoku_diff, kasoku_ratio, kawarimi, nukimi, yotsume)
+**⑤ 完了: 1/7** — GS残5本(kasoku_diff, kasoku_ratio, kawarimi, nukimi, yotsume)
 
 ---
 
@@ -129,14 +129,14 @@ GS dir: okugi_alm_shin/ (⑤と共有, monthly_fast必須) → 選出: WFエン�
 | # | 忍法 | GS(M) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
 | 6-1 | bunshin | ✅ | — | GS: okugi_alm_shin/metrics_bunshin_monthly_fast.csv (13MB) | — |
-| 6-2 | oikaze | ❌ | — | — | — |
+| 6-2 | oikaze | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_monthly_fast.csv (456MB, 146行) | 2026-04-13 |
 | 6-3 | kasoku_diff | ❌ | — | — | — |
 | 6-4 | kasoku_ratio | ❌ | — | — | — |
 | 6-5 | kawarimi | ❌ | — | — | — |
 | 6-6 | nukimi | ❌ | — | — | — |
 | 6-7 | yotsume | ❌ | — | — | — |
 
-**⑥ 完了: 0/7** — ⑤のGS完了で自動的にmonthlyも生成される
+**⑥ 完了: 1/7** — ⑤のGS完了で自動的にmonthlyも生成される(oikaze月次済)
 
 ---
 
@@ -179,15 +179,16 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 状態 | ブロック数 |
 |------|----------|
 | ✅ 全完了(DB登録済み) | 7 (①全7) |
-| G GS完了・選出待ち | 16 |
-| ❌ GS未完了 | 31 |
+| G GS完了・選出待ち | 17 |
+| ❌ GS未完了 | 29 |
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
-GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥6本 + ⑦⑧4本 = **17本**
+GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥5本 + ⑦⑧4本 = **16本**
 
 ## 変更履歴
 
+- 2026-04-13 00:26 ⑤5-2/⑥6-2 oikaze ✅(kotaro, cmd_1877_block_08)
 - 2026-04-13 00:22 ③3-5/④4-5 kawarimi ✅(hanzo, cmd_1877_block_04)
 - 2026-04-12 23:40 ③3-4/④4-4 kasoku_ratio ✅(kagemaru, cmd_1877_block_03)
 - 2026-04-12 21:10 56ブロック構造+成果物所在マッピングに全面改修(将軍)。なぜなぜ7回(成果物追跡不在)の対策
