@@ -2581,7 +2581,7 @@ lessons:
   - yaml
   - lesson
   helpful_count: 1
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-12'
 - id: L087
   title: 教訓効果メトリクスΔはBLOCKリトライ行膨張+構造BLOCK混入で歪む — cmd単位dedup+品質BLOCK分離が必須
@@ -2656,7 +2656,7 @@ lessons:
   deprecated_at: '2026-04-11T02:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=4'
   helpful_count: 5
-  harmful_count: 5
+  harmful_count: 4
   last_referenced: '2026-04-12'
 - id: L078
   title: GATE BLOCK率65%は構造問題(missing_gate)。家老フラグ生成タイミングが主因
@@ -2690,7 +2690,7 @@ lessons:
   tags:
   - universal
   helpful_count: 25
-  harmful_count: 21
+  harmful_count: 20
   last_referenced: '2026-04-11'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2766,7 +2766,7 @@ lessons:
   tags:
   - universal
   helpful_count: 25
-  harmful_count: 21
+  harmful_count: 20
   last_referenced: '2026-04-11'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要
