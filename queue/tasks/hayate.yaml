@@ -1,7 +1,7 @@
 task:
   parent_cmd: cmd_1877
   task_id: cmd_1877_block_28
-  status: assigned
+  status: done
   project: dm-signal
   type: impl
   command: |
@@ -27,12 +27,14 @@ task:
   binary_checks:
     AC1:
       - check: "alm_returns CSVが存在するか"
-        result: ""
+        result: "PASS"
       - check: "rc=0か"
-        result: ""
+        result: "PASS"
     AC2:
+      - check: "進行表更新したか"
+        result: "PASS"
       - check: "git commitしたか"
-        result: ""
+        result: "PASS"
   context_files:
     - context/l2-okugi-progress.md
   target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py"
