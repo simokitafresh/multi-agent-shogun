@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-12 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-12T21:26:52+09:00 -->
+<!-- generated_at: 2026-04-12T21:54:26+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-12T21:54:25+09:00 | terminal | response | 家老レビュー: **APPROVE**。軽微1件（dead code）を修正してpushする。 [meta] stop_reason=tool_use
+- 2026-04-12T21:52:01+09:00 | terminal | response | commit完了。残りは運用ファイル(projects/queue)とoneshot scriptのみ — これらはgitignore対象 or 別途commit。 pushも今やるか、殿。 [meta] stop_reason=tool…
+- 2026-04-12T21:50:17+09:00 | terminal | inbound | 追加しよう。コミットはいつするんだ？
 - 2026-04-12T21:26:52+09:00 | terminal | response | Check 7のパース bug。`WARN: 0` という集計行を `WARN:` として誤カウントしている。修正する。 [meta] stop_reason=tool_use
 - 2026-04-12T21:22:42+09:00 | terminal | inbound | じゃあやれ。asis/tobe/why/what/howを意識しろ。ベストを尽くせ。
 - 2026-04-12T21:21:06+09:00 | terminal | response | 確認する。現物を読む。 [meta] stop_reason=tool_use
@@ -11,9 +14,6 @@
 - 2026-04-12T21:20:12+09:00 | ntfy | outbound | 【将軍】/clear準備完了。PD:0 cmd:0 🚨:0。本セッション: 56ブロック進行表+成果物gate実装+テスト5件PASS+家老レビュー反映。GS残21本。
 - 2026-04-12T21:20:11+09:00 | terminal | response | 会話は自動記録されている。殿の入力(inbound)も将軍の応答(response)も記録済み。 /clear前準備を実行する。 [meta] stop_reason=tool_use
 - 2026-04-12T21:20:01+09:00 | terminal | session_summary | 殿指示でOpus1Mにrespawn。L2奥義56ブロック進行表を設計(8パターン×7忍法)。なぜなぜ7回で成果物マッピング不在を特定→gate_artifact_map.sh実装+テスト5件PASS。家老レビューでshin_alm ka…
-- 2026-04-12T21:19:31+09:00 | terminal | inbound | クリアする準備はいいか？会話は自動で記録されているか？
-- 2026-04-12T21:18:08+09:00 | terminal | response | 修正完了。GS完了ブロック: 21→19（3-3/4-3を❌に修正）。WARN=0。 **修正サマリ**: - 3-3/4-3 (shin_alm kasoku_diff): ✅→❌。cmd_1871ファイルは旧universe42体で生…
-- 2026-04-12T21:15:39+09:00 | terminal | response | テスト5件全PASS。 | # | テスト | 期待 | 結果 | |---|--------|------|------| | 1 | 正常(実データ) | WARN=0, ブロック=56, GS完了=21 | ✅ PASS | | 2…
 
 ## 未解決確認事項
 - 確認する。現物を読む。 [meta] stop_reason=tool_use
