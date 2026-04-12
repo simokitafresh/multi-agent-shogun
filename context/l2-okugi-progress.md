@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T00:52:00+09:00 -->
-<!-- updated_by: hayate -->
+<!-- last_updated: 2026-04-13T01:09:00+09:00 -->
+<!-- updated_by: kagemaru -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -83,9 +83,9 @@ GS dir: okugi_shin_alm/ → 選出: champion_selector
 | 3-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_ratio_results_fast.csv (350MB, 1151325行) | 2026-04-12 |
 | 3-5 | kawarimi | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kawarimi_results_fast.csv (94MB, 270901行) | 2026-04-13 |
 | 3-6 | nukimi | ❌ | — | — | — |
-| 3-7 | yotsume | ❌ | — | — | — |
+| 3-7 | yotsume | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_yotsume_results_fast.csv (20MB, 45150行) | 2026-04-13 |
 
-**③ 完了: 4/7** — GS残2本(nukimi, yotsume)
+**③ 完了: 6/7** — GS残1本(nukimi)
 
 ---
 
@@ -100,9 +100,9 @@ GS dir: okugi_shin_alm/ (③と共有, monthly_fast必須) → 選出: WFエン�
 | 4-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_ratio_monthly_fast.csv (1.6GB, 125行) | 2026-04-12 |
 | 4-5 | kawarimi | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kawarimi_monthly_fast.csv (379MB, 126行) | 2026-04-13 |
 | 4-6 | nukimi | ❌ | — | — | — |
-| 4-7 | yotsume | ❌ | — | — | — |
+| 4-7 | yotsume | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_yotsume_monthly_fast.csv (63MB, 125行) | 2026-04-13 |
 
-**④ 完了: 4/7** — ③のGS完了でmonthlyも増加。GS残2本(nukimi, yotsume)
+**④ 完了: 6/7** — ③のGS完了でmonthlyも増加。GS残1本(nukimi)
 
 ---
 
@@ -119,7 +119,7 @@ GS dir: okugi_alm_shin/ → 選出: champion_selector
 | 5-6 | nukimi | ❌ | — | — | — |
 | 5-7 | yotsume | ❌ | — | — | — |
 
-**⑤ 完了: 3/7** — GS残3本(kawarimi, nukimi, yotsume)
+**⑤ 完了: 4/7** — GS残3本(kawarimi, nukimi, yotsume)
 
 ---
 
@@ -136,7 +136,7 @@ GS dir: okugi_alm_shin/ (⑤と共有, monthly_fast必須) → 選出: WFエン�
 | 6-6 | nukimi | ❌ | — | — | — |
 | 6-7 | yotsume | ❌ | — | — | — |
 
-**⑥ 完了: 3/7** — ⑤のGS完了で自動的にmonthlyも生成される(oikaze/kasoku_diff/kasoku_ratio月次済)
+**⑥ 完了: 4/7** — ⑤のGS完了で自動的にmonthlyも生成される(oikaze/kasoku_diff/kasoku_ratio月次済)
 
 ---
 
@@ -147,13 +147,13 @@ GS dir: okugi_alm_alm/ → 選出: champion_selector
 |---|------|:-----:|:----:|-----------|-------|
 | 7-1 | bunshin | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_bunshin_grid_results_fast.csv (2.0MB, 7526行) | — |
 | 7-2 | oikaze | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_oikaze_grid_results_fast.csv (117MB, 270901行) | 2026-04-12 |
-| 7-3 | kasoku_diff | ❌ | — | — | — |
+| 7-3 | kasoku_diff | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_results_fast.csv (346MB, 1151326行) | 2026-04-13 |
 | 7-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_results_fast.csv (349MB, 1.15M行) | 2026-04-12 |
 | 7-5 | kawarimi | ❌ | — | — | — |
 | 7-6 | nukimi | ❌ | — | — | — |
 | 7-7 | yotsume | ❌ | — | — | — |
 
-**⑦ 完了: 0/7** — GS残4本(kasoku_diff, kawarimi, nukimi, yotsume)
+**⑦ 完了: 4/7** — GS残3本(kawarimi, nukimi, yotsume)
 
 ---
 
@@ -164,13 +164,13 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 |---|------|:-----:|:----:|-----------|-------|
 | 8-1 | bunshin | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_bunshin_grid_monthly_fast.csv (12MB) | — |
 | 8-2 | oikaze | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_oikaze_grid_monthly_fast.csv (411MB) | 2026-04-12 |
-| 8-3 | kasoku_diff | ❌ | — | — | — |
+| 8-3 | kasoku_diff | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_monthly_fast.csv (1.7GB, 131行) | 2026-04-13 |
 | 8-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_monthly_fast.csv (1.7GB) | 2026-04-12 |
 | 8-5 | kawarimi | ❌ | — | — | — |
 | 8-6 | nukimi | ❌ | — | — | — |
 | 8-7 | yotsume | ❌ | — | — | — |
 
-**⑧ 完了: 0/7** — ⑦のGS完了で自動的にmonthlyも生成される
+**⑧ 完了: 4/7** — ⑦のGS完了で自動的にmonthlyも生成される。GS残3本(kawarimi, nukimi, yotsume)
 
 ---
 
@@ -179,15 +179,17 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 状態 | ブロック数 |
 |------|----------|
 | ✅ 全完了(DB登録済み) | 7 (①全7) |
-| G GS完了・選出待ち | 21 |
-| ❌ GS未完了 | 25 |
+| G GS完了・選出待ち | 26 |
+| ❌ GS未完了 | 21 |
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
-GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥3本 + ⑦⑧4本 = **14本**
+GS実行残量(ペア共有): ②5本 + ③④2本 + ⑤⑥3本 + ⑦⑧3本 = **13本**
 
 ## 変更履歴
 
+- 2026-04-13 01:09 ③3-7/④4-7 yotsume ✅(kagemaru, cmd_1877_block_06)
+- 2026-04-13 01:02 ⑦7-3/⑧8-3 kasoku_diff ✅(saizo, cmd_1877_block_15)
 - 2026-04-13 00:52 ⑤5-4/⑥6-4 kasoku_ratio ✅(hayate, cmd_1877_block_10)
 - 2026-04-13 00:40 ⑤5-3/⑥6-3 kasoku_diff ✅(tobisaru, cmd_1877_block_09)
 - 2026-04-13 00:26 ⑤5-2/⑥6-2 oikaze ✅(kotaro, cmd_1877_block_08)
