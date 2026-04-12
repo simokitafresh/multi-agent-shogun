@@ -1,23 +1,21 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_28
-  status: done
+  task_id: cmd_1877_block_33
+  status: in_progress
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#28 [TYPE-WF] ② 2-4 kasoku_ratio WF選出
+    L2奥義 ブロック#33 [TYPE-WF] ④ 4-2 oikaze WF選出
 
     cd /mnt/c/Python_app/DM-signal
     python3 outputs/scripts/l1_alm_wf_engine.py \
-      --csv outputs/grid_search/okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_ratio_grid_monthly_fast.csv \
-      --multi-is --cmd-id cmd_1877 --progress --no-parallel \
-      --out-dir outputs/analysis/alm_research/okugi_shin_ninpo_20body/
-
-    ※kasoku_ratio --no-parallel必須(OOM防止)。30分以上かかる可能性あり。
+      --csv outputs/grid_search/okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_monthly_fast.csv \
+      --multi-is --cmd-id cmd_1877 --progress \
+      --out-dir outputs/analysis/alm_research/okugi_shin_alm/
 
     完了後:
     1. alm_returns CSV + selection_timeline存在を確認
-    2. context/l2-okugi-progress.md の ② 2-4 kasoku_ratio WF選出を ✅ に更新
+    2. context/l2-okugi-progress.md の ④ 4-2 oikaze WF選出を ✅ に更新
     3. git add + git commit
   acceptance_criteria:
     - id: AC1
@@ -27,14 +25,12 @@ task:
   binary_checks:
     AC1:
       - check: "alm_returns CSVが存在するか"
-        result: "PASS"
+        result: ""
       - check: "rc=0か"
-        result: "PASS"
+        result: ""
     AC2:
-      - check: "進行表更新したか"
-        result: "PASS"
       - check: "git commitしたか"
-        result: "PASS"
+        result: ""
   context_files:
     - context/l2-okugi-progress.md
   target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py"
@@ -42,7 +38,6 @@ task:
     - "OOM Kill(signal 9/137)"
   never_stop_for:
     - "既存ファイル警告 — 確認して続行"
-    - "長時間実行(30分超) — 正常動作"
   scout_exempt: true
   deployed_at: ""
   related_lessons:

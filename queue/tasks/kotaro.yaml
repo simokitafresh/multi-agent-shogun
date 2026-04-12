@@ -1,23 +1,21 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_27
-  status: done
+  task_id: cmd_1877_block_32
+  status: completed
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#27 [TYPE-WF] ② 2-3 kasoku_diff WF選出
+    L2奥義 ブロック#32 [TYPE-WF] ④ 4-1 bunshin WF選出
 
     cd /mnt/c/Python_app/DM-signal
     python3 outputs/scripts/l1_alm_wf_engine.py \
-      --csv outputs/grid_search/okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_diff_grid_monthly_fast.csv \
-      --multi-is --cmd-id cmd_1877 --progress --no-parallel \
-      --out-dir outputs/analysis/alm_research/okugi_shin_ninpo_20body/
-
-    ※kasoku_diff/kasoku_ratioは --no-parallel 必須(>500MB→OOM防止)
+      --csv outputs/grid_search/okugi_shin_alm/cmd_1871_shin_alm_bunshin_grid_monthly_fast.csv \
+      --multi-is --cmd-id cmd_1877 --progress \
+      --out-dir outputs/analysis/alm_research/okugi_shin_alm/
 
     完了後:
     1. alm_returns CSV + selection_timeline存在を確認
-    2. context/l2-okugi-progress.md の ② 2-3 kasoku_diff WF選出を ✅ に更新
+    2. context/l2-okugi-progress.md の ④ 4-1 bunshin WF選出を ✅ に更新
     3. git add + git commit
   acceptance_criteria:
     - id: AC1
