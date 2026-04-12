@@ -78,14 +78,14 @@ GS dir: okugi_shin_alm/ → 選出: champion_selector
 | # | 忍法 | GS(R) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
 | 3-1 | bunshin | ✅ | — | GS: okugi_shin_alm/cmd_1871_shin_alm_bunshin_grid_results_fast.csv (2.0MB, 7526行) | — |
-| 3-2 | oikaze | ❌ | — | — | — |
+| 3-2 | oikaze | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_results_fast.csv (115MB, 270901行) | 2026-04-12 |
 | 3-3 | kasoku_diff | ❌ | — | — (cmd_1871ファイルは旧universe42体で生成→無効。列数1.15M≠有効基準7526) | — |
 | 3-4 | kasoku_ratio | ❌ | — | — | — |
 | 3-5 | kawarimi | ❌ | — | — | — |
 | 3-6 | nukimi | ❌ | — | — | — |
 | 3-7 | yotsume | ❌ | — | — | — |
 
-**③ 完了: 0/7** — GS残6本(oikaze, kasoku_diff, kasoku_ratio, kawarimi, nukimi, yotsume)
+**③ 完了: 1/7** — GS残5本(kasoku_diff, kasoku_ratio, kawarimi, nukimi, yotsume)
 
 ---
 
@@ -95,14 +95,14 @@ GS dir: okugi_shin_alm/ (③と共有, monthly_fast必須) → 選出: WFエン�
 | # | 忍法 | GS(M) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
 | 4-1 | bunshin | ✅ | — | GS: okugi_shin_alm/cmd_1871_shin_alm_bunshin_grid_monthly_fast.csv (11MB) | — |
-| 4-2 | oikaze | ❌ | — | — | — |
+| 4-2 | oikaze | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_monthly_fast.csv (394MB, 126行) | 2026-04-12 |
 | 4-3 | kasoku_diff | ❌ | — | — (cmd_1871ファイルは旧universe42体で生成→無効。1.6GB/列数1.15M≠有効基準7526) | — |
 | 4-4 | kasoku_ratio | ❌ | — | — | — |
 | 4-5 | kawarimi | ❌ | — | — | — |
 | 4-6 | nukimi | ❌ | — | — | — |
 | 4-7 | yotsume | ❌ | — | — | — |
 
-**④ 完了: 0/7** — ③のGS完了で自動的にmonthlyも生成される
+**④ 完了: 1/7** — ③のGS完了でmonthlyも1本増加。GS残5本(kasoku_diff, kasoku_ratio, kawarimi, nukimi, yotsume)
 
 ---
 
@@ -179,8 +179,8 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 状態 | ブロック数 |
 |------|----------|
 | ✅ 全完了(DB登録済み) | 7 (①全7) |
-| G GS完了・選出待ち | 10 |
-| ❌ GS未完了 | 37 |
+| G GS完了・選出待ち | 12 |
+| ❌ GS未完了 | 35 |
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
