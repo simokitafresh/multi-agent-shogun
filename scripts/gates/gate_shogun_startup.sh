@@ -1,16 +1,13 @@
 #!/bin/bash
 # gate_shogun_startup.sh — 将軍セッション起動時の全チェックを一括実行
 # 目的: 3つの個別gateを覚えて実行する「意志依存」を排除（知性の外部化原則 2026-03-21）
-# Usage: bash scripts/gates/gate_shogun_startup.sh [--brief]
-# --brief: session_start_inject用。一行サマリのみ出力
+# Usage: bash scripts/gates/gate_shogun_startup.sh
 
 set -e
 
 run_gate_shogun_startup() {
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 local GATE_DIR="$SCRIPT_DIR/scripts/gates"
-BRIEF=false
-[ "${1:-}" = "--brief" ] && BRIEF=true
 
 overall="OK"
 alerts=()
@@ -20,8 +17,8 @@ _d_proposals=0
 _d_inbox=0
 _d_idle_trigger=""
 
-$BRIEF || echo "=== 将軍起動チェック $(date '+%H:%M:%S') ==="
-$BRIEF || echo ""
+echo "=== 将軍起動チェック $(date '+%H:%M:%S') ==="
+echo ""
 
 # --- Parallel launch: Gate 1, 12, 13 (独立サブスクリプト並列化 cmd_1516) ---
 _TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp)
@@ -34,19 +31,19 @@ bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
 _PID_G13=$!
 
 # --- Gate 1: Memory健全度 (Step 2.5) ---
-$BRIEF || echo "■ Memory健全度"
+echo "■ Memory健全度"
 wait $_PID_G1 || true
 result1=$(tail -1 "$_TMP_G1")
-$BRIEF || echo "  $result1"
+echo "  $result1"
 if echo "$result1" | grep -q "ALERT"; then
     overall="ALERT"
     alerts+=("Memory健全度: ALERT")
 fi
 
 # --- Gate 2: p̄鮮度 (Step 2.57) ---
-$BRIEF || echo "■ p̄鮮度"
+echo "■ p̄鮮度"
 result2=$("$GATE_DIR/gate_p_average_freshness.sh" 2>&1 | tail -1)
-$BRIEF || echo "  $result2"
+echo "  $result2"
 if echo "$result2" | grep -q "ALERT\|WARN"; then
     if echo "$result2" | grep -q "ALERT"; then
         overall="ALERT"
@@ -58,37 +55,37 @@ if echo "$result2" | grep -q "ALERT\|WARN"; then
 fi
 
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
-$BRIEF || echo "■ cmd委任状態"
+echo "■ cmd委任状態"
 result3=$("$GATE_DIR/gate_cmd_state.sh" 2>&1 | tail -1)
-$BRIEF || echo "  $result3"
+echo "  $result3"
 if echo "$result3" | grep -q "ALERT"; then
     overall="ALERT"
     alerts+=("cmd委任状態: ALERT")
 fi
 
 # --- Gate 4: 未読inbox ---
-$BRIEF || echo "■ inbox未読"
+echo "■ inbox未読"
 inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
 if [ -f "$inbox_file" ]; then
     unread=$(grep -c 'read: false' "$inbox_file" 2>/dev/null) || unread=0
     _d_inbox=$unread
-    $BRIEF || echo "  未読: ${unread}件"
+    echo "  未読: ${unread}件"
     if [ "$unread" -gt 0 ] && [ "$overall" != "ALERT" ]; then
         overall="WARN"
         alerts+=("inbox未読: ${unread}件")
     fi
 else
-    $BRIEF || echo "  未読: 0件"
+    echo "  未読: 0件"
 fi
 
 # --- Gate 5: 陣形図鮮度 ---
-$BRIEF || echo "■ 陣形図鮮度"
+echo "■ 陣形図鮮度"
 snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
 if [ -f "$snapshot" ]; then
     snap_time=$(head -2 "$snapshot" | grep "Generated:" | sed 's/.*Generated: //')
-    $BRIEF || echo "  最終更新: $snap_time"
+    echo "  最終更新: $snap_time"
 else
-    $BRIEF || echo "  WARNING: karo_snapshot.txt不在"
+    echo "  WARNING: karo_snapshot.txt不在"
     if [ "$overall" != "ALERT" ]; then
         overall="WARN"
         alerts+=("陣形図不在")
@@ -97,45 +94,45 @@ fi
 
 # --- Gate 6: 必読ファイル存在チェック ---
 REQUIRED_READ="$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"
-$BRIEF || echo "■ 必読ファイル"
+echo "■ 必読ファイル"
 if [ -f "$REQUIRED_READ" ]; then
-    $BRIEF || echo "  OK: $(basename "$REQUIRED_READ") 存在確認"
+    echo "  OK: $(basename "$REQUIRED_READ") 存在確認"
 else
     overall="ALERT"
     alerts+=("必読ファイル不在: memory/deepdive_why_chain_20260321.md")
-    $BRIEF || echo "  ALERT: $REQUIRED_READ が存在しない"
+    echo "  ALERT: $REQUIRED_READ が存在しない"
 fi
 
 # --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---
 # 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。
 # 読んだだけでは不十分。各Phaseを今の自分に重ねて自問したかを検証する。
 # gateは補助。追体験が主体。追体験が正しく動けば間違いは自然に避けられる。
-$BRIEF || echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
-$BRIEF || echo "  deepdive読了後に以下3問に各1行で回答せよ。回答なしに作業開始するな。"
-$BRIEF || echo "  Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？"
-$BRIEF || echo "  Q2: 「行動→即確認」— 今の本番は正常か？前セッション以降に本番に入った変更は何か？その結果を確認したか？想像で答えるな。"
-$BRIEF || echo "  Q3: 今クリアされても強くてニューゲームできるか？環境に埋め込まれていない学びはないか？"
-$BRIEF || echo "  ※ 結論(自動化×強制が大事)を書くな。今の自分の具体的状況を書け。"
-$BRIEF || echo "  ※ reason: 結論を知っていることが追体験を殺す。テキスト処理ではなく自己診断(2026-04-07殿指摘)"
+echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
+echo "  deepdive読了後に以下3問に各1行で回答せよ。回答なしに作業開始するな。"
+echo "  Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？"
+echo "  Q2: 「行動→即確認」— 今の本番は正常か？前セッション以降に本番に入った変更は何か？その結果を確認したか？想像で答えるな。"
+echo "  Q3: 今クリアされても強くてニューゲームできるか？環境に埋め込まれていない学びはないか？"
+echo "  ※ 結論(自動化×強制が大事)を書くな。今の自分の具体的状況を書け。"
+echo "  ※ reason: 結論を知っていることが追体験を殺す。テキスト処理ではなく自己診断(2026-04-07殿指摘)"
 
 # --- Gate 7: 前セッション裁定の知識還流チェック ---
 LORD_INDEX="$SCRIPT_DIR/context/lord-conversation-index.md"
-$BRIEF || echo "■ 前セッション裁定"
+echo "■ 前セッション裁定"
 if [ -f "$LORD_INDEX" ]; then
     ruling_count=$(grep -c "^- " <(sed -n '/殿の直近裁定・方針/,/^## /p' "$LORD_INDEX") 2>/dev/null) || ruling_count=0
     if [ "$ruling_count" -gt 0 ]; then
-        $BRIEF || echo "  前セッション裁定${ruling_count}件あり。projects/*.yamlへの反映を確認せよ"
+        echo "  前セッション裁定${ruling_count}件あり。projects/*.yamlへの反映を確認せよ"
     else
-        $BRIEF || echo "  裁定なし"
+        echo "  裁定なし"
     fi
 else
-    $BRIEF || echo "  lord-conversation-index.md不在"
+    echo "  lord-conversation-index.md不在"
 fi
 
 # --- Gate 8: 気づきキュー（自動アーカイブ付き） ---
 INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
 INSIGHTS_ARCHIVE="$SCRIPT_DIR/queue/archive/insights_archive.yaml"
-$BRIEF || echo "■ 気づきキュー"
+echo "■ 気づきキュー"
 if [ -f "$INSIGHTS_FILE" ]; then
     # Auto-archive: done/monitoring/observation/deferred が合計5件以上なら自動アーカイブ
     # 高速パス: grepで先にarchivable件数チェック（閾値未満ならPythonスキップ）
@@ -195,22 +192,22 @@ if [ -f "$INSIGHTS_FILE" ]; then
     else
         archive_result="アーカイブ対象${archivable_count}件(閾値5未満), pending${remaining_count}件"
     fi
-    $BRIEF || echo "  $archive_result"
+    echo "  $archive_result"
 
     # Count pending (after potential archive)
     pending_count=$(grep -c "status: pending" "$INSIGHTS_FILE" 2>/dev/null) || pending_count=0
     _d_insights=$pending_count
     if [ "$pending_count" -gt 0 ]; then
-        $BRIEF || echo "  未処理: ${pending_count}件（idle時に確認推奨）"
+        echo "  未処理: ${pending_count}件（idle時に確認推奨）"
     else
-        $BRIEF || echo "  未処理: 0件"
+        echo "  未処理: 0件"
     fi
 else
-    $BRIEF || echo "  キューなし"
+    echo "  キューなし"
 fi
 
 # --- Gate 9: 将軍パフォーマンスフィードバック ---
-$BRIEF || echo "■ 将軍パフォーマンスフィードバック"
+echo "■ 将軍パフォーマンスフィードバック"
 DESIGN_QUALITY="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
 WORKAROUNDS_FILE="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 REWORK_PCT="N/A"
@@ -235,9 +232,9 @@ END {
 }
 ' "$DESIGN_QUALITY" 2>/dev/null || echo "N/A N/A")
     read -r REWORK_PCT BLOCK_PCT <<< "$dq_result"
-    $BRIEF || echo "  直近10件: rework率=${REWORK_PCT}% blocker率=${BLOCK_PCT}%"
+    echo "  直近10件: rework率=${REWORK_PCT}% blocker率=${BLOCK_PCT}%"
 else
-    $BRIEF || echo "  cmd_design_quality.yaml不在"
+    echo "  cmd_design_quality.yaml不在"
 fi
 
 # 9b: 家老workaround (直近5件)
@@ -263,13 +260,13 @@ END {
 }
 ' "$WORKAROUNDS_FILE" 2>/dev/null || echo "0 0 error")
     read -r WA_COUNT WA_TOTAL WA_CATS <<< "$wa_result"
-    $BRIEF || echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件 (${WA_CATS})"
+    echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件 (${WA_CATS})"
 else
-    $BRIEF || echo "  karo_workarounds.yaml不在"
+    echo "  karo_workarounds.yaml不在"
 fi
 
 # --- Gate 10: idle自走トリガー ---
-$BRIEF || echo "■ idle自走トリガー"
+echo "■ idle自走トリガー"
 IDLE_TRIGGER="OFF"
 if [ -f "$snapshot" ]; then
     # ninja行から稼働中cmd(in_progress/assigned/acknowledged)を数える
@@ -279,19 +276,17 @@ if [ -f "$snapshot" ]; then
 
     if [ "$active_cmds" -eq 0 ] && [ "$total_ninjas" -gt 0 ] && [ "$idle_or_done" -eq "$total_ninjas" ]; then
         IDLE_TRIGGER="ON"
-        if ! $BRIEF; then
-            echo "  全忍者idle・パイプライン空。idle時自己分析に入れ:"
-            echo "  Step 1: insightsキュー消費 (queue/insights.yaml)"
-            echo "  Step 2: karo_workarounds直近10件分析"
-            echo "  Step 3: cmd_design_quality直近10件分析"
-            echo "  Step 4: gunshi_review_log確認"
-            echo "  Step 5: パターン発見→why-chain→アクション"
-        fi
+        echo "  全忍者idle・パイプライン空。idle時自己分析に入れ:"
+        echo "  Step 1: insightsキュー消費 (queue/insights.yaml)"
+        echo "  Step 2: karo_workarounds直近10件分析"
+        echo "  Step 3: cmd_design_quality直近10件分析"
+        echo "  Step 4: gunshi_review_log確認"
+        echo "  Step 5: パターン発見→why-chain→アクション"
     else
-        $BRIEF || echo "  稼働中cmd: ${active_cmds}件、idle忍者: ${idle_or_done}/${total_ninjas}"
+        echo "  稼働中cmd: ${active_cmds}件、idle忍者: ${idle_or_done}/${total_ninjas}"
     fi
 else
-    $BRIEF || echo "  karo_snapshot.txt不在 — 判定不可"
+    echo "  karo_snapshot.txt不在 — 判定不可"
 fi
 
 # --- Gate 11: 未処理PROPOSAL (cmd_1256 + cmd_1261) ---
@@ -327,12 +322,12 @@ fi
 proposal_total=$((log_proposals))
 _d_proposals=$proposal_total
 if [ "$proposal_total" -gt 0 ]; then
-    $BRIEF || echo "■ 未処理PROPOSAL"
+    echo "■ 未処理PROPOSAL"
     gp_list_suffix=""
     if [ -n "$pending_gp_ids" ]; then
         gp_list_suffix=" ($pending_gp_ids)"
     fi
-    $BRIEF || echo "  WARN: 軍師未処理提案 ${proposal_total}件${gp_list_suffix} (dashboard:${dash_proposals} review_log:${log_proposals})"
+    echo "  WARN: 軍師未処理提案 ${proposal_total}件${gp_list_suffix} (dashboard:${dash_proposals} review_log:${log_proposals})"
     if [ "$overall" != "ALERT" ]; then
         overall="WARN"
         alerts+=("軍師未処理提案: ${proposal_total}件${gp_list_suffix}")
@@ -340,7 +335,7 @@ if [ "$proposal_total" -gt 0 ]; then
 fi
 
 # --- Gate 12: 三層学習ループ健全性 ---
-$BRIEF || echo "■ 三層学習ループ"
+echo "■ 三層学習ループ"
 if [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
     wait $_PID_G12 || true
     loop_result=$(cat "$_TMP_G12")
@@ -349,20 +344,16 @@ if [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
     loop_fail=$(echo "$loop_result" | grep "FAIL:" | head -1 | grep -oP '\d+' | head -1 || echo "0")
     loop_autofix=$(echo "$loop_result" | grep "AUTO-FIXED:" | grep -oP '\d+' || echo "0")
     loop_status=$(echo "$loop_result" | grep "Loop Status" -A1 | tail -1 | sed 's/^ *//')
-    if $BRIEF; then
-        : # brief output handled in summary below
-    else
-        echo "  gate発火: ${loop_fires}件, FAIL: ${loop_fail}件, AUTO-FIX: ${loop_autofix}件"
-        echo "  $loop_status"
-        # Show maturation recommendations if any
-        echo "$loop_result" | grep -A20 "成熟提案" | grep "UPGRADE\|INVESTIGATE" | while IFS= read -r rec; do
-            if echo "$rec" | grep -q "result\.summary.*MISSING\|result\.summary.*empty"; then
-                echo "  $rec (対処済み: cmd_1857)"
-            else
-                echo "  $rec"
-            fi
-        done
-    fi
+    echo "  gate発火: ${loop_fires}件, FAIL: ${loop_fail}件, AUTO-FIX: ${loop_autofix}件"
+    echo "  $loop_status"
+    # Show maturation recommendations if any
+    echo "$loop_result" | grep -A20 "成熟提案" | grep "UPGRADE\|INVESTIGATE" | while IFS= read -r rec; do
+        if echo "$rec" | grep -q "result\.summary.*MISSING\|result\.summary.*empty"; then
+            echo "  $rec (対処済み: cmd_1857)"
+        else
+            echo "  $rec"
+        fi
+    done
     if echo "$loop_status" | grep -q "WARNING"; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
@@ -370,15 +361,15 @@ if [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
         fi
     fi
 else
-    $BRIEF || echo "  gate_loop_health.sh不在"
+    echo "  gate_loop_health.sh不在"
 fi
 
 # --- Gate 13: 教訓健全度 (lesson_sort trigger) ---
-$BRIEF || echo "■ 教訓健全度"
+echo "■ 教訓健全度"
 if [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then
     wait $_PID_G13 || true
     lesson_result=$(tail -1 "$_TMP_G13")
-    $BRIEF || echo "  $lesson_result"
+    echo "  $lesson_result"
     if echo "$lesson_result" | grep -q "ALERT"; then
         overall="ALERT"
         alerts+=("教訓健全度: ALERT → /lesson-sort実行せよ")
@@ -389,13 +380,13 @@ if [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then
         fi
     fi
 else
-    $BRIEF || echo "  gate_lesson_health.sh不在"
+    echo "  gate_lesson_health.sh不在"
 fi
 
 # --- Gate 14: 軍師分析状態（知識循環チェック） ---
 # 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに将軍が偵察cmd重複起票
 # 目的: 起動時に軍師の最新分析テーマを表示し、cmd起票前の情報基盤を整える
-$BRIEF || echo "■ 軍師分析状態"
+echo "■ 軍師分析状態"
 GUNSHI_CONTEXT_FILES=$(find "$SCRIPT_DIR/context" -name "gunshi-*.md" -type f 2>/dev/null)
 if [ -n "$GUNSHI_CONTEXT_FILES" ]; then
     _gunshi_info=""
@@ -406,11 +397,11 @@ if [ -n "$GUNSHI_CONTEXT_FILES" ]; then
         _gunshi_info="${_gunshi_info}  $(basename "$gfile") [${_g_mtime}] — ${_g_title}\n"
     done <<< "$GUNSHI_CONTEXT_FILES"
     if [ -n "$_gunshi_info" ]; then
-        $BRIEF || echo -e "$_gunshi_info"
-        $BRIEF || echo "  → cmd起票前にこれらを確認せよ（cmd_1451重複防止）"
+        echo -e "$_gunshi_info"
+        echo "  → cmd起票前にこれらを確認せよ（cmd_1451重複防止）"
     fi
 else
-    $BRIEF || echo "  軍師分析ファイルなし"
+    echo "  軍師分析ファイルなし"
 fi
 
 # --- Context著者MAP一括取得（Gate15で使用, git log 1回に集約 cmd_1859） ---
@@ -430,7 +421,7 @@ done < <(cd "$SCRIPT_DIR" && git log --format='%an' --name-only -- 'context/' 2>
 # 目的: context/に知識マップ(CLAUDE.md/MEMORY.md/instructions/config/dashboard)から
 #        参照されていないファイルがあれば、進化シグナルとしてフラグ。知識循環を自動促進
 # 高速版: 核心ファイルをcatして一括grepで判定(WSL2 /mnt/c でのfull-repo scan回避)
-$BRIEF || echo "■ 進化検知（孤立context）"
+echo "■ 進化検知（孤立context）"
 _evo_orphans=""
 _evo_count=0
 # 知識マップの核心ファイルを結合（context/自体は含めない = 自己参照除外）
@@ -456,7 +447,7 @@ done
 _append_kmap_source "$SCRIPT_DIR/config/projects.yaml"
 _append_kmap_source "$SCRIPT_DIR/dashboard.md"
 if [ ${#_KMAP_MISSING[@]} -gt 0 ]; then
-    $BRIEF || echo "  INFO: 知識マップ参照元欠落: $(printf '%s, ' "${_KMAP_MISSING[@]}" | sed 's/, $//')"
+    echo "  INFO: 知識マップ参照元欠落: $(printf '%s, ' "${_KMAP_MISSING[@]}" | sed 's/, $//')"
 fi
 for cfile in "$SCRIPT_DIR"/context/*.md; do
     [ ! -f "$cfile" ] && continue
@@ -473,20 +464,20 @@ for cfile in "$SCRIPT_DIR"/context/*.md; do
 done
 rm -f "$_KMAP_TMP"
 if [ "$_evo_count" -gt 0 ]; then
-    $BRIEF || echo -e "$_evo_orphans"
-    $BRIEF || echo "  → ${_evo_count}件: 知識マップ(CLAUDE.md/MEMORY.md/instructions/config)に未参照。進化シグナルか確認し統合せよ"
+    echo -e "$_evo_orphans"
+    echo "  → ${_evo_count}件: 知識マップ(CLAUDE.md/MEMORY.md/instructions/config)に未参照。進化シグナルか確認し統合せよ"
     if [ "$_evo_count" -ge 3 ]; then
         alerts+=("進化検知: context/に孤立ファイル${_evo_count}件")
         overall="ALERT"
     fi
 else
-    $BRIEF || echo "  孤立context/ファイルなし（知識マップ完全同期）"
+    echo "  孤立context/ファイルなし（知識マップ完全同期）"
 fi
 
 # --- Gate 16: AC注入検証（配備済みタスク vs cmdソース, cmd_1668） ---
 # 起源: AC注入失敗WA 6件 — _overwrite_ac_from_cmdのネスト形式未対応/stale AC残留
 # 目的: 起動時に稼働中タスクのACがcmdソースと一致するか検証。不一致時WARNING（BLOCK不要）
-$BRIEF || echo "■ AC注入検証"
+echo "■ AC注入検証"
 _ac16_warn_msgs=()
 _ac16_checked=0
 _AC16_STK="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
@@ -547,17 +538,17 @@ if [ -d "$_AC16_TDIR" ] && [ -f "$_AC16_STK" ]; then
 
     if [ ${#_ac16_warn_msgs[@]} -gt 0 ]; then
         for _ac16_wm in "${_ac16_warn_msgs[@]}"; do
-            $BRIEF || echo "  WARNING: AC不一致 — $_ac16_wm"
+            echo "  WARNING: AC不一致 — $_ac16_wm"
         done
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
         fi
         alerts+=("AC注入不一致: ${#_ac16_warn_msgs[@]}/${_ac16_checked}件")
     else
-        $BRIEF || echo "  OK: 稼働中${_ac16_checked}件のAC整合確認"
+        echo "  OK: 稼働中${_ac16_checked}件のAC整合確認"
     fi
 else
-    $BRIEF || echo "  SKIP: task/cmd不在"
+    echo "  SKIP: task/cmd不在"
 fi
 
 # --- Gate 17: scripts/未コミット変更チェック (cmd_1675) ---
@@ -566,10 +557,10 @@ fi
 _scripts_dirty=$(cd "$SCRIPT_DIR" && git status --porcelain -- scripts/ 2>/dev/null | grep -v '^?? scripts/oneshot/') || _scripts_dirty=""
 if [ -n "$_scripts_dirty" ]; then
     _sd_count=$(echo "$_scripts_dirty" | wc -l)
-    $BRIEF || echo "■ scripts/未コミット変更"
+    echo "■ scripts/未コミット変更"
     while IFS= read -r _sd_line; do
         [ -z "$_sd_line" ] && continue
-        $BRIEF || echo "  WARN: $_sd_line"
+        echo "  WARN: $_sd_line"
     done <<< "$_scripts_dirty"
     if [ "$overall" != "ALERT" ]; then
         overall="WARN"
@@ -580,86 +571,72 @@ fi
 # --- Gate 18: lord_conversation inbound健全度 (cmd_1800) ---
 # 起源: 殿の発言が未記録 — log_terminal_input.shが不発のまま日々の入力が消失するリスク
 # 目的: 前日アーカイブのinbound件数=0なら記録機構の異常として即ALERT
-$BRIEF || echo "■ 会話記録 inbound健全度"
+echo "■ 会話記録 inbound健全度"
 _LC_ARCHIVE_DIR="$SCRIPT_DIR/logs/lord_conversation_archive"
 _LC_YESTERDAY=$(date -d "yesterday" '+%Y-%m-%d' 2>/dev/null || date -v-1d '+%Y-%m-%d' 2>/dev/null || true)
 if [ ! -d "$_LC_ARCHIVE_DIR" ]; then
-    $BRIEF || echo "  INFO: lord_conversation_archiveディレクトリ不在(正常)"
+    echo "  INFO: lord_conversation_archiveディレクトリ不在(正常)"
 elif [ -n "$_LC_YESTERDAY" ] && [ -f "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" ]; then
-    _lc_inbound=$(grep -c '"direction":"inbound"' "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" 2>/dev/null) || _lc_inbound=0
+    _lc_inbound=$(grep -cE '"direction": *"inbound"' "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" 2>/dev/null) || _lc_inbound=0
     if [ "$_lc_inbound" -eq 0 ]; then
         overall="ALERT"
         alerts+=("会話記録 inbound=0: ${_LC_YESTERDAY}に殿の発言未記録 — scripts/log_terminal_input.sh確認")
-        $BRIEF || echo "  ALERT: ${_LC_YESTERDAY}.jsonlのinbound=0 — 殿の入力が記録されていない"
+        echo "  ALERT: ${_LC_YESTERDAY}.jsonlのinbound=0 — 殿の入力が記録されていない"
     else
-        $BRIEF || echo "  OK: ${_LC_YESTERDAY} inbound=${_lc_inbound}件"
+        echo "  OK: ${_LC_YESTERDAY} inbound=${_lc_inbound}件"
     fi
 elif [ -n "$_LC_YESTERDAY" ]; then
-    $BRIEF || echo "  INFO: アーカイブなし(${_LC_YESTERDAY})"
+    echo "  INFO: アーカイブなし(${_LC_YESTERDAY})"
 else
-    $BRIEF || echo "  INFO: 日付取得失敗"
+    echo "  INFO: 日付取得失敗"
 fi
 
 # --- Gate 19: 強制度監査 (meta-gate, 2026-04-12) ---
 # 起源: 軍師 /clear 後に gate_gunshi_startup.sh が自動実行されなかった
 # なぜなぜ7回で到達した根因=「gate の gate 不在」メタレベル欠落
 # 目的: CLAUDE.md 記述と settings hooks 登録の乖離(意志依存 script)を検出
-$BRIEF || echo "■ 強制度監査 (meta-gate)"
+echo "■ 強制度監査 (meta-gate)"
 _ENFORCE_AUDIT="$SCRIPT_DIR/scripts/gates/gate_enforcement_audit.sh"
 if [ -x "$_ENFORCE_AUDIT" ]; then
     if _ea_out=$(bash "$_ENFORCE_AUDIT" 2>&1); then
-        $BRIEF || echo "  OK: 意志依存 script 0 本"
+        echo "  OK: 意志依存 script 0 本"
     else
         _ea_count=$(printf '%s\n' "$_ea_out" | grep -oE '意志依存 script 検出: [0-9]+ 本' | grep -oE '[0-9]+' | head -1)
         [ -z "$_ea_count" ] && _ea_count="?"
         overall="ALERT"
         alerts+=("強制度監査: 意志依存 script ${_ea_count}本 — bash scripts/gates/gate_enforcement_audit.sh")
-        $BRIEF || {
-            echo "  ALERT: 意志依存 script ${_ea_count} 本 — CLAUDE.md参照のみでhooks未登録"
-            printf '%s\n' "$_ea_out" | grep -E '^  - ' | head -10
-        }
+        echo "  ALERT: 意志依存 script ${_ea_count} 本 — CLAUDE.md参照のみでhooks未登録"
+        printf '%s\n' "$_ea_out" | grep -E '^  - ' | head -10
     fi
 else
-    $BRIEF || echo "  INFO: gate_enforcement_audit.sh 未配備"
+    echo "  INFO: gate_enforcement_audit.sh 未配備"
 fi
 
 # --- 総合判定 ---
-if $BRIEF; then
-    # session_start_inject用: 一行サマリ
-    PERF_BRIEF="rework:${REWORK_PCT}% workaround:${WA_COUNT}件 autofix:${loop_autofix:-0}件"
-    _d_unpushed=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?")
-    _DIGEST="insights:${_d_insights} proposals:${_d_proposals} unpushed:${_d_unpushed}"
-    if [ ${#alerts[@]} -gt 0 ]; then
-        echo "startup_gate: ${overall} — $(IFS=', '; echo "${alerts[*]}") | ${_DIGEST} | idle_trigger:${IDLE_TRIGGER} | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
-    else
-        echo "startup_gate: OK | ${_DIGEST} | idle_trigger:${IDLE_TRIGGER} | ${PERF_BRIEF} | 必読: memory/deepdive_why_chain_20260321.md"
-    fi
-else
-    echo ""
-    echo "=== 総合判定: $overall ==="
-    if [ ${#alerts[@]} -gt 0 ]; then
-        for a in "${alerts[@]}"; do
-            echo "  ⚠ $a"
-        done
-    fi
-    echo ""
-    # ─── ダイジェスト: 全項目1行（grepフィルタ不要化。殿裁定2026-03-24） ───
-    _d_unpushed=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?")
-    echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
-    echo ""
-    echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
+echo ""
+echo "=== 総合判定: $overall ==="
+if [ ${#alerts[@]} -gt 0 ]; then
+    for a in "${alerts[@]}"; do
+        echo "  ⚠ $a"
+    done
+fi
+echo ""
+# ─── ダイジェスト: 全項目1行（grepフィルタ不要化。殿裁定2026-03-24） ───
+_d_unpushed=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?")
+echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
+echo ""
+echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
 
-    # Step 6: ALERT項目をinsightsに自動保存（将軍の「後でやる」放置防止）
-    if [ "$overall" = "ALERT" ] && [ ${#alerts[@]} -gt 0 ]; then
-        for a in "${alerts[@]}"; do
-            # 教訓健全度ALERTなど既知パターンのみ自動保存（ノイズ防止）
-            case "$a" in
-                *教訓健全度*|*三層ループ*|*軍師未処理*)
-                    bash "$SCRIPT_DIR/scripts/insight_write.sh" "起動ALERT未対処: $a" 2>/dev/null || true
-                    ;;
-            esac
-        done
-    fi
+# Step 6: ALERT項目をinsightsに自動保存（将軍の「後でやる」放置防止）
+if [ "$overall" = "ALERT" ] && [ ${#alerts[@]} -gt 0 ]; then
+    for a in "${alerts[@]}"; do
+        # 教訓健全度ALERTなど既知パターンのみ自動保存（ノイズ防止）
+        case "$a" in
+            *教訓健全度*|*三層ループ*|*軍師未処理*)
+                bash "$SCRIPT_DIR/scripts/insight_write.sh" "起動ALERT未対処: $a" 2>/dev/null || true
+                ;;
+        esac
+    done
 fi
 }
 

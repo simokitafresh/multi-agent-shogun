@@ -291,16 +291,8 @@ EOF
     [[ "$output" == *"稼働中cmd"* ]]
 }
 
-# === Test 11: --brief モード → 一行サマリ出力 ===
-@test "--brief mode → single line summary with startup_gate" {
-    run run_gate_shogun_startup --brief
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"startup_gate: OK"* ]]
-    [[ "$output" == *"idle_trigger:"* ]]
-    [[ "$output" == *"必読:"* ]]
-    # brief modeでは「■」セクションヘッダがないこと
-    [[ "$output" != *"■ Memory健全度"* ]]
-}
+# Test 11 (--brief mode) は 2026-04-12 殿裁定で削除。
+# 呼出元session_start_injectへの統合が21日間未実現のままdead code化したため撤去。
 
 # === Test 12: 教訓健全度 ALERT → 総合判定ALERT ===
 @test "lesson health ALERT → 総合判定: ALERT" {
@@ -347,19 +339,7 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
-# === Test 15: --brief + ALERT → ALERT in single line ===
-@test "--brief + Memory ALERT → single line with ALERT" {
-    cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
-#!/usr/bin/env bash
-echo "Memory健全度: ALERT"
-MOCK
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh"
-
-    run run_gate_shogun_startup --brief
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"startup_gate: ALERT"* ]]
-    [[ "$output" == *"Memory健全度"* ]]
-}
+# Test 15 (--brief + ALERT) は 2026-04-12 殿裁定で削除。Test 11と同じ理由。
 
 # === Test 16: AC注入一致 → WARNING無し (cmd_1668) ===
 @test "AC injection match → OK, no WARNING" {
