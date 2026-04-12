@@ -185,9 +185,8 @@ fi
 conv_status="OK"
 conv_detail=""
 if [ -f "$LORD_CONV" ]; then
-  inbound_today=$(grep -c '"direction"' "$LORD_CONV" 2>/dev/null | head -1 || true)
-  inbound_count=$(grep -c '"inbound"' "$LORD_CONV" 2>/dev/null | head -1 || true)
-  inbound_today="${inbound_count:-0}"
+  inbound_today=$(grep -c '"inbound"' "$LORD_CONV" 2>/dev/null | head -1 || true)
+  inbound_today="${inbound_today:-0}"
   # 直近のinboundのタイムスタンプ
   last_inbound_ts=$(grep '"inbound"' "$LORD_CONV" 2>/dev/null | tail -1 | grep -oP '"ts":\s*"[^"]*"' | head -1 | sed 's/"ts":[[:space:]]*"//;s/"//' || echo "none")
   conv_detail="殿の発言 inbound=${inbound_today}件(全期間), 直近=${last_inbound_ts}"
