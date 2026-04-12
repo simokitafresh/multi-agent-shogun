@@ -1,7 +1,7 @@
 task:
   parent_cmd: cmd_1877
   task_id: cmd_1877_block_33
-  status: in_progress
+  status: done
   project: dm-signal
   type: impl
   command: |
@@ -25,12 +25,14 @@ task:
   binary_checks:
     AC1:
       - check: "alm_returns CSVが存在するか"
-        result: ""
+        result: "yes"
       - check: "rc=0か"
-        result: ""
+        result: "yes"
     AC2:
       - check: "git commitしたか"
-        result: ""
+        result: "yes"
+  progress: "AC1 PASS: oikaze WF rc=0、alm_returns+selection_timeline生成確認。AC2 PASS: 進行表更新+gate_artifact_map WARN=0+commit完了。"
+  progress_updated_at: "2026-04-13T05:12:51+09:00"
   context_files:
     - context/l2-okugi-progress.md
   target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py"
