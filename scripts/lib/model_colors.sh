@@ -2,18 +2,24 @@
 # model_colors.sh — モデル別ペイン色定義（DRY原則: ここが唯一の定義元）
 # Usage: source scripts/lib/model_colors.sh
 
+# モデル表示名を正規化（"gpt-5.4 high" → "Codex", "Sonnet 4.6 high" → "Sonnet" 等）
+_normalize_model_name() {
+  local model_display="$1"
+  case "$model_display" in
+    *[Cc]odex*)  echo "Codex" ;;
+    gpt-*)       echo "Codex" ;;
+    *[Oo]pus*)   echo "Opus" ;;
+    *[Ss]onnet*) echo "Sonnet" ;;
+    *[Hh]aiku*)  echo "Haiku" ;;
+    *)           echo "$model_display" ;;
+  esac
+}
+
 resolve_bg_color() {
   local agent_id="$1"
   local model_display="$2"
-  # 生モデル文字列を正規化（例: "gpt-5.4/high" → "Codex"）
   local normalized
-  case "$model_display" in
-    *[Cc]odex*)  normalized="Codex" ;;
-    *[Oo]pus*)   normalized="Opus" ;;
-    *[Ss]onnet*) normalized="Sonnet" ;;
-    *[Hh]aiku*)  normalized="Haiku" ;;
-    *)           normalized="$model_display" ;;
-  esac
+  normalized=$(_normalize_model_name "$model_display")
   case "$agent_id" in
     karo|gunshi) echo "#121214" ;;
     *)
@@ -30,15 +36,8 @@ resolve_bg_color() {
 
 resolve_border_fg_color() {
   local model_display="$1"
-  # 生モデル文字列を正規化（例: "gpt-5.4/high" → "Codex"）
   local normalized
-  case "$model_display" in
-    *[Cc]odex*)  normalized="Codex" ;;
-    *[Oo]pus*)   normalized="Opus" ;;
-    *[Ss]onnet*) normalized="Sonnet" ;;
-    *[Hh]aiku*)  normalized="Haiku" ;;
-    *)           normalized="$model_display" ;;
-  esac
+  normalized=$(_normalize_model_name "$model_display")
   case "$normalized" in
     Opus*)   echo "#cba6f7" ;;  # 紫
     Sonnet*) echo "#89dceb" ;;  # 水色

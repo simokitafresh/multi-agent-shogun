@@ -12,34 +12,34 @@ cli:
       role: gunshi
       japanese_name: 軍師
     hayate:
-      type: claude
-      model_name: claude-opus-4-6
+      type: codex
       role: ninja
       japanese_name: 疾風
     kagemaru:
       type: claude
-      model_name: claude-opus-4-6
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 影丸
+      model: sonnet
     hanzo:
       type: claude
-      model_name: claude-opus-4-6
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 半蔵
       model: sonnet
     saizo:
       type: codex
-      model_name: claude-opus-4-6
       role: ninja
       japanese_name: 才蔵
     kotaro:
       type: claude
-      model_name: claude-opus-4-6
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 小太郎
+      model: sonnet
     tobisaru:
       type: claude
-      model_name: claude-opus-4-6
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 飛猿
       model: sonnet
@@ -54,5 +54,5 @@ logging:
   level: info
   path: /mnt/c/tools/multi-agent-shogun/logs/
 layout:
-  col1_width_pct: 38
+  col1_width_pct: 36
   karo_height: 24

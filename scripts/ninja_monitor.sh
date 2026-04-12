@@ -32,6 +32,7 @@ LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
+source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
@@ -215,7 +216,7 @@ prev_unpushed_count=""
 # tmuxの@agent_idからペインターゲットを動的に解決
 discover_panes() {
     local mapping
-    mapping=$(tmux list-panes -t shogun -a -F '#{window_index}.#{pane_index} #{@agent_id}' 2>/dev/null)
+    mapping=$(tmux list-panes -t shogun -a -F '#{window_name}.#{pane_index} #{@agent_id}' 2>/dev/null)
 
     if [ -z "$mapping" ]; then
         log "ERROR: Failed to list tmux panes"
@@ -525,6 +526,23 @@ get_context_pct() {
                 tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
                 echo "$ctx_num"
                 return 0
+            fi
+        elif [ "$ctx_mode" = "bar" ]; then
+            # bar モード（Codex "Context [▌    ]"）— バー充填率をusage%に変換
+            local bar_match bar_content bar_total bar_spaces bar_filled
+            bar_match=$(echo "$output" | grep -oE "$ctx_pattern" | head -1)
+            if [ -n "$bar_match" ]; then
+                bar_content="${bar_match#*\[}"
+                bar_content="${bar_content%\]}"
+                bar_total=${#bar_content}
+                if [ "$bar_total" -gt 0 ]; then
+                    bar_spaces=$(printf '%s' "$bar_content" | tr -cd ' ' | wc -c)
+                    bar_filled=$((bar_total - bar_spaces))
+                    ctx_num=$(( (bar_filled * 100) / bar_total ))
+                    tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
+                    echo "$ctx_num"
+                    return 0
+                fi
             fi
         fi
     else
@@ -1306,6 +1324,16 @@ check_stall() {
     # status判定: assigned/acknowledged/in_progressのみ対象
     local status task_id
     status=$(yaml_field_get "$task_file" "status")
+
+    # Early exit: idle/done/等はSTALL対象外（task_id読込も不要）
+    case "$status" in
+        assigned|acknowledged|in_progress) ;;
+        *)
+            unset "STALL_FIRST_SEEN[$name]"
+            return
+            ;;
+    esac
+
     task_id=$(yaml_field_get "$task_file" "subtask_id")
     [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "task_id")
     [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
@@ -1335,10 +1363,6 @@ check_stall() {
                     return
                 fi
             fi
-            ;;
-        *)
-            unset "STALL_FIRST_SEEN[$name]"
-            return
             ;;
     esac
 
@@ -1841,7 +1865,7 @@ print(d.get('status','idle'))
 
 # ─── context_pct更新（単一ペイン） ───
 # get_context_pctのthin wrapper。デフォルト"--"を設定後、再パースで上書き。
-# 引数: $1=pane_target (例: shogun:2.4), $2=agent_name（省略時はフォールバック）
+# 引数: $1=pane_target (例: shogun:agents.4), $2=agent_name（省略時はフォールバック）
 # 戻り値: 0=更新成功, 1=失敗(--設定)
 update_context_pct() {
     local pane_target="$1"
@@ -2117,12 +2141,13 @@ write_karo_snapshot() {
                 for name in "${NINJA_NAMES[@]}"; do
                     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
                     # ペインCTX%を取得（PANE_TARGETSから解決。tmux list-panes N回呼出し排除）
-                    local _ctx="?"
+                    local _ctx="?%"
                     local _pane_target="${PANE_TARGETS[$name]:-}"
                     if [ -n "$_pane_target" ]; then
-                        _ctx=$(tmux capture-pane -t "$_pane_target" -p 2>/dev/null \
-                            | grep -oP 'CTX:\K[0-9]+' | tail -1)
-                        _ctx="${_ctx:-?}%"
+                        local _ctx_num
+                        if _ctx_num=$(get_context_pct "$_pane_target" "$name"); then
+                            _ctx="${_ctx_num}%"
+                        fi
                     fi
                     # モデル短縮名を取得（@model_nameペイン変数から変換）
                     local _model_name="" _model_short="?"
@@ -2434,20 +2459,9 @@ check_model_names() {
         fi
         [ -z "$target" ] && continue
 
-        # 実モデル検出を試行（AC1: /model切替後のリアルタイム同期）
+        # モデル表示名解決（model_resolve.shに統一委譲）
         local expected
-        expected=$(detect_real_model "$name" "$target" 2>/dev/null) || expected=""
-
-        # AC3: 実モデル検出失敗時はsettings.yaml model_name → cli_profiles.yamlにフォールバック
-        if [ -z "$expected" ]; then
-            expected=$(cli_model_display "$name" 2>/dev/null) || expected=""
-        fi
-        if [ -z "$expected" ]; then
-            expected=$(cli_profile_get "$name" "display_name")
-            if [ -z "$expected" ]; then
-                expected=$(cli_type "$name")
-            fi
-        fi
+        expected=$(resolve_model_display "$name" "$target")
 
         # 現在値
         local current

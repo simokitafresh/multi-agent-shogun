@@ -1,78 +1,55 @@
 task:
-  _ac_task_id: cmd_1871_impl
-  _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 2ad38ca7
-  acceptance_criteria:
-  - description: 3パターンL1のuniverse YAML+統合CSVが作成され、run_077で参照可能
-    id: AC1
-  - description: 3パターン×7忍法=21 GS実行完了。各忍法の月次リターンCSVが出力先に存在
-    id: AC2
-  - description: ②奥義シンシン×ALMのWFエンジン実行完了。selection_timeline+alm_returns生成
-    id: AC3
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-ops.md
-  created_at: '2026-04-12T15:18:00+09:00'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L571: タスク記述の'現行CSV(2012-07)'はtest_l1_alm_wf_engine.pyの合成データ起点(pd.date_range('2012-07-0\n\
-    \  - L570: 119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/in\n\
-    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
-    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
-    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
-    \ 6列: \n────────────────────────────────────────"
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
-    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
+  _ac_task_id: cmd_1876_gs_alm_shin_A
+  _ac_worker_id: kotaro
   parent_cmd: 
-  project: dm-signal
-  report_path: queue/reports/kotaro_report_cmd_1871.yaml
   status: idle
-  stop_for: []
-  task_id: 
-  task_type: impl
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_1871.yaml
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 10
-    top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件), premature_shelve(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_blocks:
-    - reason: 'binary_checks_fail'
-      count: 10
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'report_format'
-      count: 8
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'empty_lessons_useful'
-      count: 2
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'ac_version_mismatch'
-      count: 1
-      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
-    - reason: 'report_yaml_missing'
-      count: 1
-      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+  project: dm-signal
+  type: impl
+  command: |
+    cmd_1876 AC2の一部: okugi_alm_shin パターンの3忍法GSを実行。
+
+    実行手順:
+      cd /mnt/c/Python_app/DM-signal
+      for ninjutsu in oikaze kasoku_diff kasoku_ratio; do
+        echo "=== Running ${ninjutsu} ==="
+        python3 scripts/analysis/grid_search/run_077_${ninjutsu}.py \
+          --universe config/portfolio_universes/okugi_alm_shin.yaml \
+          --out-dir outputs/grid_search/okugi_alm_shin/
+        echo "=== ${ninjutsu} done (rc=$?) ==="
+      done
+
+    注意:
+      - MP_WORKERS=1(修正済み commit 6efe2681)。OOMなし
+      - 1本ずつ直列。各忍法完了ごとにpython3プロセスが解放される
+      - 既存ファイルが存在する場合エラーになる可能性→そのファイル確認し次へ進め
+  acceptance_criteria:
+    - id: AC1
+      description: "3忍法(oikaze, kasoku_diff, kasoku_ratio)のGS CSV(.csv)がoutputs/grid_search/okugi_alm_shin/に存在。全rc=0"
+  binary_checks:
+    AC1:
+      - check: "3忍法全てのGS CSVが出力されたか"
+        result: ""
+      - check: "全実行rc=0か"
+        result: ""
+  context_files:
+    - context/dm-signal-research.md
+  report_path: queue/reports/kotaro_report_cmd_1876_alm_shin_A.yaml
+  target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
+  stop_for:
+    - OOM Kill発生
+  never_stop_for:
+    - 既存ファイルエラー — 確認して次の忍法へ進め
+    - 自明な修正 — 実行→事後報告
+  scout_exempt: true
+  parallel_ok: [AC1]
+  deployed_at: ""
   related_lessons:
+  - id: 'L617'
+    summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+    detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+  - id: 'L616'
+    summary: '多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知'
+    detail: '多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知'
   - id: 'L615'
     summary: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
     detail: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
@@ -97,10 +74,4 @@ task:
   - id: 'L608'
     summary: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
     detail: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
-  - id: 'L607'
-    summary: 'GS CSV monthly_fast.csvの当月(2026-04)エントリはCSV作成日(2026-04-09)時点の暫定値。本番recalculateを後日実行すると本番側が更新データを持ち差異が生じる(今回diff=0.0172)。完了月(150ヶ月)は全一致。パリティチェックの全期間条件から当月を除外するか、GS'
-    detail: 'GS CSV monthly_fast.csvの当月(2026-04)エントリはCSV作成日(2026-04-09)時点の暫定値。本番recalculateを後日実行すると本番側が更新データを持ち差異が生じる(今回diff=0.0172)。完了月(150ヶ月)は全一致。パリティチェックの全期間条件から当月を除外するか、GS'
-  - id: 'L606'
-    summary: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異なる世代のCSVと比較するとmax_diffが0.5超でallclose=False。正しい比較対象は同一セッション内での2回実行結果。異なるCSV世代間比較は改良効果検証であり回帰テストではない。'
-    detail: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異なる世代のCSVと比較するとmax_diffが0.5超でallclose=False。正しい比較対象は同一セッション内での2回実行結果。異なるCSV世代間比較は改良効果検証であり回帰テストではない。'
-  deployed_at: "2026-04-12T15:18:07"
+  task_id: 

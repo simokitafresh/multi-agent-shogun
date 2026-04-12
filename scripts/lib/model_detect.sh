@@ -68,6 +68,11 @@ detect_real_model() {
                     fi
                 fi
 
+                # Validate: reject model names containing non-ASCII (false positive from file content in pane)
+                if [[ -n "$model" && "$model" =~ [^A-Za-z0-9.\ \(\)/-] ]]; then
+                    model=""
+                fi
+
                 if [ -n "$model" ]; then
                     tmux set-option -p -t "$pane_target" @real_model "$model" 2>/dev/null
                     echo "$model"

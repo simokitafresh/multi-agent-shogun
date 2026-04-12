@@ -241,6 +241,11 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L510 | inbox_write.sh report_received auto-doneのflock deadlock | ツール | cmd_1508 |
 | L515 | download_prod_data.pyのAPIフィールド名不整合(relative_momentum_tickers→relative_assets) | ツール | cmd_1572 |
 | L528 | Windows環境YAMLファイル読み書きにはencoding=utf-8が必須(cp932デコードエラー防止) | ツール | cmd_1604 |
+| L607 | 進行中月(当月)monthly_returnはGS作成日依存で差異が生じる。パリティ検証は当月除外を検討 | パリティ | cmd_1855 |
+| L610 | バグ汚染ファイル削除はfindでプロジェクト全体検索→cmd記載件数との不一致を検出して全量把握 | 運用 | cmd_1863 |
+| L614 | 既存スクリプトの関数を再実装するな(車輪再発明)。新スクリプト作成前に既存コードの再利用可能性を確認 | 運用 | cmd_1865 |
+| L616 | cmdの完了記録≠成果物の所在記録。多段パイプラインの進行表に物理的所在(パス/DB名/UUID)を必須記録 | 運用 | cmd_1876 |
+| L617 | gate_artifact_map.shで進行表の成果物所在チェック。完了ブロック空欄→WARN | ツール | cmd_1876 |
 
 ## §18 研究道具APIカタログ（cmd_1823追記）
 
@@ -310,6 +315,7 @@ GS CSV/.npyから3目的(CAGR/NHF/MaxDD)チャンピオンを直列選出。NaN-
 - L590: tracemalloc≠RSS — メモリ目標はRSS(/usr/bin/time -v)で設定せよ（cmd_1828）
 - L591: --parallel安全性は実測で確認せよ — 理論的安全≠実際の安全（cmd_1827）
 - L600: np.fromstringは空セル連続のwide CSV行を安全に読めない（cmd_1841）
+- L606: WF回帰テストは同一CSV2回実行での決定論確認。異なるCSV世代間比較は別用途（cmd_1856）
 
 ### research_engine（ライブラリ）
 

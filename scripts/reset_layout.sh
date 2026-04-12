@@ -43,6 +43,12 @@ NUM_AGENTS=${#EXPECTED_AGENTS[@]}
 source "$SCRIPT_DIR/lib/cli_adapter.sh"
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 # shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/pane_format.sh"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
 
 # シェル設定
@@ -75,39 +81,15 @@ _generate_prompt() {
     fi
 }
 
-# モデル表示名を解決（@model_name優先 — settings.yaml参照廃止）
-# 引数: agent_id [pane_index]
+# モデル表示名を解決（model_resolve.shに委譲。pane_indexからtarget構築）
 _resolve_model_display() {
     local agent_id="$1"
     local pane="${2:-}"
-
-    # 1st: tmux @model_name cached value (実モデル検出結果)
     if [[ -n "$pane" ]]; then
-        local cached
-        cached=$(tmux show-options -p -t "shogun:agents.${pane}" -v @model_name 2>/dev/null || echo "")
-        if [[ -n "$cached" ]]; then
-            echo "$cached"
-            return
-        fi
+        resolve_model_display "$agent_id" "shogun:agents.${pane}"
+    else
+        resolve_model_display "$agent_id"
     fi
-
-    # 2nd: settings.yaml model_name → 表示名
-    local settings_display
-    settings_display=$(cli_model_display "$agent_id" 2>/dev/null) || settings_display=""
-    if [[ -n "$settings_display" ]]; then
-        echo "$settings_display"
-        return
-    fi
-
-    # 3rd: CLI type fallback
-    local ct
-    ct=$(get_cli_type "$agent_id")
-    case "$ct" in
-        codex)   echo "Codex" ;;
-        copilot) echo "Copilot" ;;
-        kimi)    echo "Kimi" ;;
-        *)       echo "Claude" ;;
-    esac
 }
 
 # 表示グループを解決（将軍編成の現在値: karo / codex / opus / haiku / claude）
@@ -128,6 +110,7 @@ _resolve_agent_group() {
         claude|*)
             case "$model_display" in
                 *[Oo]pus*)   echo "opus" ;;
+                *[Ss]onnet*) echo "sonnet" ;;
                 *[Hh]aiku*)  echo "haiku" ;;
                 *)           echo "claude" ;;
             esac
@@ -406,8 +389,7 @@ log_ok "変数正規化: ${var_fix_count}ペイン処理"
 
 # ═══════════════════════════════════════════════════════════════
 # Step 4.5: pane-border-format再適用
-# shutsujin_departure.sh L21-23と同じ設定をWindow 2(agents)に適用
-# Color: karo=#f9e2af(黄) Opus=#cba6f7(紫) Codex=#a6e3a1(緑) Haiku=#f9e2af(黄) Claude=#89b4fa(青)
+# 色定義・フォーマット文字列は pane_format.sh に集約（DRY原則）
 # ═══════════════════════════════════════════════════════════════
 log "Step 4.5: pane-border-format再適用"
 
@@ -415,7 +397,7 @@ if [[ "$DRY_RUN" == true ]]; then
     log_dry "  tmux set-option -w -t shogun:2 pane-border-format '...model-based colors...'"
 else
     tmux set-option -w -t shogun:2 pane-border-format \
-      '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:Codex*,#{@model_name}},#[fg=#a6e3a1],#{?#{m:Haiku*,#{@model_name}},#[fg=#f9e2af],#[fg=#89b4fa]}}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
+      "$AGENTS_PANE_BORDER_FORMAT" \
       2>/dev/null
     log_ok "pane-border-format再適用完了（Window 2）"
 fi

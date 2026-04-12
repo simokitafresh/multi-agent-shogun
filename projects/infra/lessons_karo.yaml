@@ -270,3 +270,8 @@ lessons:
   detail: 'cmd_1863-1866の4cmd全てでCodex忍者(疾風/才蔵)が空きだったにもかかわらずOpus/Sonnet忍者に配備。R001 round-robinに従いモデル優先度を無視した。殿裁定でR000(Codex→Sonnet→Opus順)をR001より上位に設定。同一モデル内はround-robin維持。レート制限温存が目的'
   source_cmd: 'cmd_1863'
   created_at: '2026-04-12'
+- id: 'LK047'
+  title: '配備変更前に稼働実態をcapture-paneで確認せよ — task statusとプロセス稼働は別'
+  detail: '殿のCodex2名指示を/clear後に保持しておらずSonnet3名配備→指摘後に反射でidle化→しかしpython3プロセスは稼働継続→Codex再配備で影丸と才蔵がalm_shinで重複実行。3回連続で確認前に行動した。(1)配備前に殿の指示を確認(2)停止前にcapture-paneで稼働実態を確認(3)再配備前に既存作業との重複を確認。deepdive Phase1-4と同構造。'
+  source_cmd: 'cmd_1876'
+  created_at: '2026-04-12'

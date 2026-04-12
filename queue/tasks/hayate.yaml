@@ -1,52 +1,67 @@
 task:
-  _ac_task_id: cmd_1876_fix_oom
-  _ac_worker_id: hayate
-  parent_cmd: cmd_1876
-  status: failed
+  parent_cmd: cmd_1877
+  task_id: cmd_1877_block_01
+  status: done
   project: dm-signal
   type: impl
   command: |
-    cmd_1876 AC2でOOM Kill発生。根因: run_077スクリプトのMP_WORKERS=6がfork時CoW膨張で16.9GB消費。
-    修正: 全7スクリプトのMP_WORKERS = 6 → MP_WORKERS = 1に変更。
+    L2奥義 ブロック#01 [TYPE-GS] ③ 3-2 oikaze GS実行
 
-    対象ファイル(7本):
-      /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_bunshin.py
-      /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_kasoku_diff.py
-      /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_kasoku_ratio.py
-      /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_kawarimi.py
-      /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_nukimi.py
-      /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_oikaze.py
-      /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_yotsume.py
+    cd /mnt/c/Python_app/DM-signal
+    python3 scripts/analysis/grid_search/run_077_oikaze.py \
+      --universe config/portfolio_universes/okugi_shin_alm.yaml \
+      --out-dir outputs/grid_search/okugi_shin_alm/
 
-    変更内容: MP_WORKERS = 6 → MP_WORKERS = 1 (1行のみ/各ファイル)
-    理由: ProcessPoolExecutor(workers=6)がfork時にCoWメモリ実体化→親2.5GB+子6×2.4GB=16.9GB→OOM
-    workers=1で直列実行=OOM不可能
+    完了後:
+    1. outputs/grid_search/okugi_shin_alm/ にoikazeのresults_fast.csv + monthly_fast.csvが存在することを確認
+    2. context/l2-okugi-progress.md の ③ 3-2 oikaze行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
+    3. git add + git commit
 
+    制約:
+    - MP_WORKERS=1 (commit 6efe2681で設定済み)
+    - 1795_プレフィックスファイルは旧universe→使用禁止
   acceptance_criteria:
     - id: AC1
-      description: "7スクリプト全てでMP_WORKERS = 1に変更済み。grep -n 'MP_WORKERS' で7ファイル全て=1を確認"
+      description: "outputs/grid_search/okugi_shin_alm/にoikazeのresults_fast.csv + monthly_fast.csvが存在しrc=0"
     - id: AC2
-      description: "git commit完了(DM-signalリポジトリ)"
+      description: "l2-okugi-progress.md の ③ 3-2 oikaze を ✅ に更新+成果物所在を記入"
+    - id: AC3
+      description: "変更をgit commitした"
   binary_checks:
     AC1:
-      - check: "7ファイル全てMP_WORKERS = 1に変更したか"
-        result: ""
-      - check: "変更前にgrep -rn 'MP_WORKERS' で現状=6を確認したか"
-        result: ""
+      - check: "oikaze results_fast.csvが存在するか"
+        result: "yes"
+      - check: "oikaze monthly_fast.csvが存在するか"
+        result: "yes"
+      - check: "python3のrc=0か"
+        result: "yes"
     AC2:
-      - check: "git commitが完了したか"
-        result: ""
-  context_files: []
-  report_path: queue/reports/hayate_report_cmd_1876_fix.yaml
+      - check: "l2-okugi-progress.md 3-2 oikazeが✅か"
+        result: "yes"
+      - check: "成果物所在(パス+サイズ+行数)を記入したか"
+        result: "yes"
+    AC3:
+      - check: "git commitしたか"
+        result: "yes"
+  context_files:
+    - context/l2-okugi-progress.md
+  report_path: queue/reports/hayate_report_cmd_1877_block_01.yaml
   target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
-  stop_for: []
+  stop_for:
+    - "OOM Kill(signal 9/137)"
+    - "python3プロセス異常終了"
   never_stop_for:
-    - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-    - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-    - 自明な修正（typo等） — 実行→事後報告
+    - "既存ファイル警告 — 確認して続行"
+    - "自明な修正 — 実行→事後報告"
   scout_exempt: true
-  parallel_ok: [AC1, AC2]
+  deployed_at: ""
   related_lessons:
+  - id: 'L617'
+    summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+    detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+  - id: 'L616'
+    summary: '多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知'
+    detail: '多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知'
   - id: 'L615'
     summary: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
     detail: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
@@ -71,9 +86,3 @@ task:
   - id: 'L608'
     summary: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
     detail: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
-  - id: 'L607'
-    summary: 'GS CSV monthly_fast.csvの当月(2026-04)エントリはCSV作成日(2026-04-09)時点の暫定値。本番recalculateを後日実行すると本番側が更新データを持ち差異が生じる(今回diff=0.0172)。完了月(150ヶ月)は全一致。パリティチェックの全期間条件から当月を除外するか、GS'
-    detail: 'GS CSV monthly_fast.csvの当月(2026-04)エントリはCSV作成日(2026-04-09)時点の暫定値。本番recalculateを後日実行すると本番側が更新データを持ち差異が生じる(今回diff=0.0172)。完了月(150ヶ月)は全一致。パリティチェックの全期間条件から当月を除外するか、GS'
-  - id: 'L606'
-    summary: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異なる世代のCSVと比較するとmax_diffが0.5超でallclose=False。正しい比較対象は同一セッション内での2回実行結果。異なるCSV世代間比較は改良効果検証であり回帰テストではない。'
-    detail: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異なる世代のCSVと比較するとmax_diffが0.5超でallclose=False。正しい比較対象は同一セッション内での2回実行結果。異なるCSV世代間比較は改良効果検証であり回帰テストではない。'

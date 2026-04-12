@@ -19,6 +19,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 # model_detect.sh を使って実行中モデル名を検出
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
+# model_resolve.sh — モデル表示名解決の統一実装
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
 
 # エージェント → ペインのマッピング（settings.yamlから動的生成 — cmd_1136）
 # shellcheck source=/dev/null
@@ -40,15 +43,9 @@ sync_one_pane() {
     local target="$2"
     local pane_label="$3"
 
-    # 実モデル検出 → settings.yaml model_name → display_name → "Unknown" のフォールバックチェーン
-    local real_model settings_display display_name effective_model
-    real_model=$(detect_real_model "$agent" "$target" 2>/dev/null) || real_model=""
-    settings_display=$(cli_model_display "$agent" 2>/dev/null) || settings_display=""
-    display_name=$(cli_profile_get "$agent" "display_name")
-    if [[ -z "$display_name" ]]; then
-        display_name=$(cli_type "$agent")
-    fi
-    effective_model="${real_model:-${settings_display:-${display_name:-Unknown}}}"
+    # モデル表示名解決（model_resolve.shに統一委譲）
+    local effective_model
+    effective_model=$(resolve_model_display "$agent" "$target")
 
     # CLI種別
     local effective_cli

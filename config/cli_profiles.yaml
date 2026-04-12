@@ -43,10 +43,10 @@ profiles:
     display_name: "Codex"
     # 起動コマンド (lib/cli_adapter.sh L142)
     launch_cmd: "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
-    # CTXパース正規表現 (ninja_monitor.sh L190, L522)
-    ctx_pattern: "[0-9]+% (context )?left"
-    # CTX解釈モード: remaining% → usage%に変換 (ninja_monitor.sh L192-193)
-    ctx_mode: "remaining"
+    # CTXパース正規表現 (ninja_monitor.sh get_context_pct)
+    ctx_pattern: 'Context \[[^]]*\]'
+    # CTX解釈モード: bar=バー充填率からusage%算出 (Codex "Context [▌    ]")
+    ctx_mode: "bar"
     # idleプロンプト判定 (ninja_monitor.sh L154)
     idle_pattern: "›"
     # ビジー判定パターン (ninja_monitor.sh L149)

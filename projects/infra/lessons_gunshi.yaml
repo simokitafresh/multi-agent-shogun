@@ -199,3 +199,15 @@ lessons:
   created_at: '2026-04-10'
   automated: true
   enforcement: pre-bash-combined.sh Guard 8(wf_runner.py BLOCK)。Level 4。4テストPASS。設計書=docs/research/gunshi_wf_oom_prevention_design_20260410.md
+- id: LG026
+  title: 軍師自己コード変更時にも6観点を通せ — 検証を殿に丸投げするな
+  detail: |
+    前回セッションでsession_start_inject.shにgate自動実行を組込み、動作検証を殿に丸投げ→
+    殿に「/clear後に勝手に動くな」と指摘され全撤去。LG018「提案は行動ではない」の再発。
+    原因: 軍師は他人のdraftに6観点を通すが、自分のコード変更には通していない。
+    対策: SGプロトコルにstep S0追加(自己変更チェック: 6観点+他覚的検証+殿運用原則突合)。
+    対象=hook/gate/CLAUDE.md/instructions/settings系に限定。
+  source_cmd: gunshi_session_20260412
+  created_at: '2026-04-12'
+  automated: false
+  enforcement: Level 2(設計書完成)。docs/research/gunshi_sg_s0_self_code_change_20260412.md。instructions/gunshi.md+review_logヘッダへの組込は次cmd待ち

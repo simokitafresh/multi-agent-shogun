@@ -169,15 +169,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L564-L573は振り分け済 → research§35(L564:MINIMIZE_METRICSランタイムpatch/L566:ALM吸収メトリクス差異), research§32(L565:旧加速ratio/diff未分化), research§33(L567:多様性分析/L568:10目的相関冗長), research§34(L569:LTJ_inv早期fold NaN), gs-speedup§4(L570:npy sidecar), ops索引(L571:baseline_v2記述不一致), research GS結果(L572:runner正規パス), core§19.2(L573:bisect helper統一)）
 - （L574-L589は振り分け済 → core§19.2(L574-L578:FoF月次bisect統一[PI:L573同根]), ops索引(L579/L582/L584:自動生成/L585:output_path記述/L589:tracemallocツール), research§35(L580:38メトリクス後計算/L587:METRIC_NAMES同期), research§GS結果(L581:unit_naming制約), research§パリティ(L586:golden当月DB更新), gs-speedup§4(L583:WSL2 p9 stall/L588:WFエンジンOOM 24.7倍膨張)）
 - （L589-L605は振り分け済 → gs-speedup§4(L589:SHM二乗時間化/L592:import性能/L596:savetxt 59x/L597:fork RSS計測/L598:BytesIOパターン), ops§WF(L590:tracemalloc≠RSS/L591:parallel実測/L600:fromstring空セル), ops§GS(L593:C(n,k)スケーリング/L594:HASHSEED sorted()), core§忍法BB(L599:TrendReversalFilter early return), research§奥義(L601:MaxDD最悪値選出/L602:oikaze ID誤記/L604:IS前半≠全期間0/21/L605:CAGR系過適合リスク高)。L595/L603重複削除）
-- L606: WF回帰テストは同一CSV2回実行での決定論確認(異なるCSV世代間比較は別用途)（cmd_1856）
-- L607: 進行中月(当月)monthly_returnはGS作成日依存のため差異が生じる（cmd_1855）
-- L608: 進行中月パリティ差異は構造的問題（cmd_1855）
-- L609: WF回帰テストは同一CSV2回実行での決定論確認（cmd_1856）
-- L610: バグ汚染ファイル削除時のスコープ確認: alm_research以外にもWFエンジン入力CSVが存在（cmd_1863）
-- L611: バグ汚染ファイル削除時のスコープ確認（cmd_1863）
-- L612: 超越条件C UWP<5M閾値は132M OOSに非現実+SPA全42非有意（cmd_1866）
-- L613: ALM忍法WF検証: 超越条件C(UWP<5M)は132ヶ月OOS期間には非現実的閾値。IS最適化チャンピオンはランダム選択と統計的有意差なし(SPA p>0.4)（cmd_1866）
-- L614: 既存スクリプトの関数を再実装した（車輪再発明）（cmd_1865）
-- L615: Cell B(シン×ALM)の一部忍法はGSパラメータ数=1のためALM動的選出≡静的選出（cmd_1869）
-- L616: cmdの完了記録≠成果物の所在記録 — 多段パイプラインの進行表に物理的所在必須（cmd_1876）
-- L617: gate_artifact_map.shで進行表の成果物所在チェック — 完了ブロック空欄→WARN（cmd_1876）
+- （L606-L617は振り分け済 → ops§18 WF(L606:回帰テスト決定論), ops索引(L607:当月パリティ/L610:削除スコープ/L614:車輪再発明/L616:成果物所在/L617:gate_artifact_map), research§35(L613:超越条件C非現実+SPA/L615:Cell Bパラメータ縮退)。L608≡L607, L609≡L606, L611≡L610, L612≡L613重複→削除）

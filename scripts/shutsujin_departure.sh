@@ -42,6 +42,10 @@ if [ -f "$SCRIPT_DIR/scripts/lib/model_detect.sh" ]; then
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 fi
+if [ -f "$SCRIPT_DIR/scripts/lib/pane_format.sh" ]; then
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/scripts/lib/pane_format.sh"
+fi
 if [ -f "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]; then
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
@@ -92,13 +96,11 @@ run_or_preview \
 echo "[shutsujin] remain-on-exit: on (${AGENTS_WINDOW_TARGET})"
 
 # ─── pane-border-format with inbox count (cmd_188) ───
-# Color scheme: karo=#f9e2af(黄) Opus=#cba6f7(紫) gpt-*=#a6e3a1(緑/Codex) else=#89b4fa(青)
-# #{m:pattern,string} = fnmatch前方一致。"Opus 4.6"等バージョン付きにも対応
-# agents: agent_id + model_name + context_pct + inbox_count + current_task
+# 色定義・フォーマット文字列は pane_format.sh に集約（DRY原則）
 run_or_preview \
   "tmux set-option -w -t ${AGENTS_WINDOW_TARGET} pane-border-format '<agent/model/context/inbox/task>'" \
   tmux set-option -w -t "$AGENTS_WINDOW_TARGET" pane-border-format \
-  '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{==:#{@agent_id},gunshi},#[fg=#94e2d5],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:gpt-*,#{@model_name}},#[fg=#a6e3a1],#[fg=#89b4fa]}}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
+  "$AGENTS_PANE_BORDER_FORMAT" \
   2>/dev/null
 
 # shogun: Opus紫(#cba6f7) + model_name + context_pct
