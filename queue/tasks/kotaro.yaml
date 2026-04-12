@@ -1,7 +1,7 @@
 task:
   parent_cmd: cmd_1877
   task_id: cmd_1877_block_27
-  status: acknowledged
+  status: done
   project: dm-signal
   type: impl
   command: |
