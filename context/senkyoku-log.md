@@ -632,3 +632,4 @@
 - cmd_1862: archive_completed.sh TOCTOU修正(GP-182)。影丸。flock内読込+二相分割。GATE CLEAR。WA:なし
 - cmd_1861: deploy_task.sh STALE_RESET全パス修正(GP-180+181)。飛猿。stale_ac_contamination 7件の根因根治。GATE CLEAR。WA:なし
 - 2026-04-12 23:22 cmd_1877_block_01(③3-2 oikaze GS) 疾風完遂。`cmd_1877_shin_alm_oikaze_grid_{results_fast,monthly_fast}.csv` 生成(rc=0, 115MB/394MB)、進行表3-2/4-2更新、`gate_artifact_map.sh` OK、進行表commit `286b99f`。因果: 旧`1795_`接頭辞衝突を避けて新prefix明示。
+- 2026-04-13 03:17 cmd_1877_block_23(②2-4 kasoku_ratio GS(M)) 疾風完遂。`cmd_1877_shin_ninpo_20_kasoku_ratio_grid_{results_fast,monthly_fast}.csv` 生成(rc=0, 280MB/1.7GB)、進行表2-4更新、`gate_artifact_map.sh` OK。因果: ②の月次GS残を4本→3本へ圧縮し、WF一括実行への前提を1段進めた。
