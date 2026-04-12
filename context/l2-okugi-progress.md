@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T02:59:00+09:00 -->
-<!-- updated_by: kagemaru -->
+<!-- last_updated: 2026-04-13T03:02:00+09:00 -->
+<!-- updated_by: hanzo -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -60,7 +60,7 @@ GS: ①と共有 (monthly_fast必須) → 選出: WFエンジン
 
 | # | 忍法 | GS(M) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
-| 2-1 | bunshin | ❌ | — | — | — |
+| 2-1 | bunshin | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_bunshin_monthly_fast.csv (11MB, 151行) | — |
 | 2-2 | oikaze | ❌ | — | — | — |
 | 2-3 | kasoku_diff | ❌ | — | — | — |
 | 2-4 | kasoku_ratio | ❌ | — | — | — |
@@ -68,7 +68,7 @@ GS: ①と共有 (monthly_fast必須) → 選出: WFエンジン
 | 2-6 | nukimi | ✅ | 部分 | GS: okugi_shin_ninpo_20body/tmp_1822_nukimi_monthly_fast.csv (941MB) | — |
 | 2-7 | yotsume | ❌ | — | — | — |
 
-**② 完了: 0/7** — GS(monthly)残5本。WF選出は全忍法のmonthly揃い後に一括実行
+**② 完了: 0/7** — GS(monthly)残4本。WF選出は全忍法のmonthly揃い後に一括実行
 
 ---
 
@@ -184,7 +184,7 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
-GS実行残量(ペア共有): ②5本 + ④1本(nukimi) + ⑦⑧1本 = **7本**
+GS実行残量(ペア共有): ②4本 + ④1本(nukimi) + ⑧1本(kawarimi) = **6本**
 
 ## 変更履歴
 
@@ -204,5 +204,6 @@ GS実行残量(ペア共有): ②5本 + ④1本(nukimi) + ⑦⑧1本 = **7本**
 - 2026-04-12 19:52 初版作成(将軍)
 - 2026-04-13 02:07 ⑤5-5/⑥6-5 kawarimi ✅(kagemaru, cmd_1877_block_11)
 - 2026-04-13 02:00 ⑦7-6/⑧8-6 nukimi ✅(saizo, cmd_1877_block_17)
+- 2026-04-13 03:02 ②2-1 bunshin GS(M) ✅(hanzo, cmd_1877_block_20)
 - 2026-04-13 02:59 ⑦7-1〜7-7 champion ✅(kagemaru, cmd_1877_block_19)
 - 2026-04-13 02:41 ③3-1〜3-7 champion ✅(hayate, cmd_1877_block_07_v3)
