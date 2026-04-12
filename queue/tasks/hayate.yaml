@@ -1,31 +1,31 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_10
+  task_id: cmd_1877_block_12
   status: done
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#10 [TYPE-GS] ⑤ 5-4 kasoku_ratio GS実行
+    L2奥義 ブロック#12 [TYPE-GS] ⑤ 5-6 nukimi GS実行
 
     cd /mnt/c/Python_app/DM-signal
-    python3 scripts/analysis/grid_search/run_077_kasoku_ratio.py \
+    python3 scripts/analysis/grid_search/run_077_nukimi.py \
       --universe config/portfolio_universes/okugi_alm_shin.yaml \
       --out-dir outputs/grid_search/okugi_alm_shin/ \
-      --output-prefix cmd_1877_alm_shin_kasoku_ratio
+      --output-prefix cmd_1877_alm_shin_nukimi
 
     完了後:
-    1. outputs/grid_search/okugi_alm_shin/ にcmd_1877_alm_shin_kasoku_ratio_results_fast.csv + monthly_fast.csvが存在することを確認
-    2. context/l2-okugi-progress.md の ⑤ 5-4 kasoku_ratio行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
+    1. outputs/grid_search/okugi_alm_shin/ にcmd_1877_alm_shin_nukimi_results_fast.csv + monthly_fast.csvが存在することを確認
+    2. context/l2-okugi-progress.md の ⑤ 5-6 nukimi行を ✅ に更新し、成果物所在にファイルパス+サイズ+行数を記入
     3. git add + git commit
 
     制約:
     - MP_WORKERS=1 (commit 6efe2681で設定済み)
-    - --output-prefix cmd_1877_alm_shin_kasoku_ratio 必須
+    - --output-prefix cmd_1877_alm_shin_nukimi 必須
   acceptance_criteria:
     - id: AC1
-      description: "cmd_1877_alm_shin_kasoku_ratio_results_fast.csv + monthly_fast.csvが存在しrc=0"
+      description: "cmd_1877_alm_shin_nukimi_results_fast.csv + monthly_fast.csvが存在しrc=0"
     - id: AC2
-      description: "l2-okugi-progress.md ⑤ 5-4 kasoku_ratio を ✅ に更新+成果物所在記入"
+      description: "l2-okugi-progress.md ⑤ 5-6 nukimi を ✅ に更新+成果物所在記入"
     - id: AC3
       description: "git commitした"
   binary_checks:
@@ -50,7 +50,7 @@ task:
   never_stop_for:
     - "既存ファイル警告 — 確認して続行"
   scout_exempt: true
-  deployed_at: ""
+  deployed_at: "2026-04-13T01:53:58+09:00"
   related_lessons:
   - id: 'L617'
     summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
