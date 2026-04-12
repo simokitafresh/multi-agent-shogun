@@ -54,16 +54,37 @@ fi
 
 # --- compact_state ---
 # /clear は PreCompact を発火しないため、compact_state は /clear 時に古い情報のまま。
-# 古い情報を「現在の状態」として注入するとノイズ=誤読リスク。source_type で分岐し、
-# /clear 時は明示的にスキップする（殿原則「想像するな確認せよ」）。
+# さらに軍師/将軍/一部忍者は auto-compact 頻度が低く、startup/resume でも構造的に
+# 古い情報になる。古い情報を「現在の状態」として注入するとノイズ=誤読リスク。
+# 2段階防御: (1) source_type == clear → 全面スキップ注記
+#            (2) それ以外でも timestamp が 24h 超なら stale 注記を冒頭に付与
+# 殿原則「想像するな確認せよ」(2026-03-21) に準拠。
 compact_file="$SCRIPT_DIR/queue/compact_state/${agent_id}.yaml"
 compact_state="none"
+compact_stale_threshold=86400  # 24h in seconds
 if [[ "$source_type" == "clear" ]]; then
   compact_state="(skipped: /clear type does not update compact_state; last value may be stale)"
 elif [[ -f "$compact_file" ]]; then
-  compact_state="$(cat "$compact_file" 2>/dev/null || echo "none")"
-  if [[ -z "$compact_state" ]]; then
+  raw_state="$(cat "$compact_file" 2>/dev/null || echo "")"
+  if [[ -z "$raw_state" ]]; then
     compact_state="none"
+  else
+    # timestamp行を抽出してepoch比較。quote除去にsedを使用
+    ts_line="$(grep '^timestamp:' "$compact_file" 2>/dev/null | head -1 | sed "s/^timestamp:[[:space:]]*//; s/^'//; s/'$//")"
+    if [[ -n "$ts_line" ]]; then
+      ts_epoch="$(date -d "$ts_line" +%s 2>/dev/null || echo 0)"
+      now_epoch="$(date +%s)"
+      age_sec=$((now_epoch - ts_epoch))
+      if (( ts_epoch > 0 && age_sec > compact_stale_threshold )); then
+        age_days=$((age_sec / 86400))
+        compact_state="(stale: ${age_days}d old; last update=${ts_line}; auto-compact未踏=構造的古さ)
+${raw_state}"
+      else
+        compact_state="$raw_state"
+      fi
+    else
+      compact_state="$raw_state"
+    fi
   fi
 fi
 
