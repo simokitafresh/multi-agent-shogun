@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T05:41:27+09:00 -->
-<!-- updated_by: saizo -->
+<!-- last_updated: 2026-04-13T06:12:00+09:00 -->
+<!-- updated_by: kagemaru -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -97,12 +97,12 @@ GS dir: okugi_shin_alm/ (③と共有, monthly_fast必須) → 選出: WFエン�
 | 4-1 | bunshin | ✅ | ✅ | GS: okugi_shin_alm/cmd_1871_shin_alm_bunshin_grid_monthly_fast.csv (11MB) + WF: alm_research/okugi_shin_alm/cmd_1877_l1_wf_alm_returns.csv (88行×6系列) + selection_timeline.csv (120エントリ) | 2026-04-13 |
 | 4-2 | oikaze | ✅ | ✅ | GS: okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_monthly_fast.csv (394MB, 126行) + WF: alm_research/okugi_shin_alm/cmd_1877_l1_wf_alm_returns.csv (88行×6系列) + selection_timeline.csv (120エントリ) | 2026-04-13 |
 | 4-3 | kasoku_diff | ✅ | ✅ | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_diff_grid_monthly_fast.csv (1.6GB, 126行) + WF: alm_research/okugi_shin_alm/cmd_1877_l1_wf_alm_returns.csv (88行×6系列) + selection_timeline.csv (120エントリ) | 2026-04-13 |
-| 4-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_ratio_grid_monthly_fast.csv (1.6GB, 125行) | 2026-04-12 |
+| 4-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_ratio_grid_monthly_fast.csv (1.6GB, 125行) + WF: alm_research/okugi_shin_alm/cmd_1877_l1_wf_alm_returns.csv (88行×6系列) + selection_timeline.csv (120エントリ) | 2026-04-13 |
 | 4-5 | kawarimi | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kawarimi_grid_monthly_fast.csv (379MB, 126行) | 2026-04-13 |
 | 4-6 | nukimi | ❌ | — | — | — |
 | 4-7 | yotsume | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_yotsume_grid_monthly_fast.csv (63MB, 125行) | 2026-04-13 |
 
-**④ 完了: 3/7** — WF選出: bunshin✅ oikaze✅ kasoku_diff✅。残: kasoku_ratio/kawarimi/nukimi/yotsume
+**④ 完了: 4/7** — WF選出: bunshin✅ oikaze✅ kasoku_diff✅ kasoku_ratio✅。残: kawarimi/nukimi/yotsume
 
 ---
 
@@ -219,4 +219,5 @@ GS実行残量(ペア共有): ②3本 + ④1本(nukimi) + ⑧1本(kawarimi) = **
 - 2026-04-13 05:06 ④4-1 bunshin WF選出 ✅(kotaro, cmd_1877_block_32)
 - 2026-04-13 05:05 ②2-7 yotsume WF選出 ✅(hanzo, cmd_1877_block_31) — ②WF完了
 - 2026-04-13 03:30 ②2-2 oikaze WF選出 ✅(hanzo, cmd_1877_block_26)
+- 2026-04-13 06:12 ④4-4 kasoku_ratio WF選出 ✅(kagemaru, cmd_1877_block_35)
 - 2026-04-13 05:12 ④4-2 oikaze WF選出 ✅(hayate, cmd_1877_block_33)
