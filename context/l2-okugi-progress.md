@@ -82,10 +82,10 @@ GS dir: okugi_shin_alm/ → 選出: champion_selector
 | 3-3 | kasoku_diff | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_diff_grid_results_fast.csv (346MB, 1151326行) | 2026-04-12 |
 | 3-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_ratio_results_fast.csv (350MB, 1151325行) | 2026-04-12 |
 | 3-5 | kawarimi | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kawarimi_results_fast.csv (94MB, 270901行) | 2026-04-13 |
-| 3-6 | nukimi | ❌ | — | — | — |
+| 3-6 | nukimi | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_nukimi_results_fast.csv (177MB, 586951行) | 2026-04-13 |
 | 3-7 | yotsume | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_yotsume_results_fast.csv (20MB, 45150行) | 2026-04-13 |
 
-**③ 完了: 6/7** — GS残1本(nukimi)
+**③ 完了: 7/7** — GS全完了
 
 ---
 
