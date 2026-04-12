@@ -149,11 +149,11 @@ GS dir: okugi_alm_alm/ → 選出: champion_selector
 | 7-2 | oikaze | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_oikaze_grid_results_fast.csv (117MB, 270901行) | 2026-04-12 |
 | 7-3 | kasoku_diff | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_results_fast.csv (346MB, 1151326行) | 2026-04-13 |
 | 7-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_results_fast.csv (349MB, 1.15M行) | 2026-04-12 |
-| 7-5 | kawarimi | ❌ | — | — | — |
+| 7-5 | kawarimi | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv (93MB, 270901行) + monthly_fast.csv (396MB, 131行) | 2026-04-13 |
 | 7-6 | nukimi | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_nukimi_results_fast.csv (176MB, 586951行) | 2026-04-13 |
 | 7-7 | yotsume | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_yotsume_results_fast.csv (20MB, 45151行) | 2026-04-13 |
 
-**⑦ 完了: 6/7** — GS残1本(kawarimi)
+**⑦ 完了: 7/7** ✅
 
 ---
 
