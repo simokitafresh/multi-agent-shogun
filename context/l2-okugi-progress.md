@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T04:07:00+09:00 -->
-<!-- updated_by: kotaro -->
+<!-- last_updated: 2026-04-13T04:40:35+09:00 -->
+<!-- updated_by: saizo -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -64,11 +64,11 @@ GS: ①と共有 (monthly_fast必須) → 選出: WFエンジン
 | 2-2 | oikaze | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_oikaze_grid_monthly_fast.csv (150行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 | 2-3 | kasoku_diff | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_diff_grid_monthly_fast.csv (1.7GB, 150行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 | 2-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_ratio_grid_monthly_fast.csv (1.7GB, 150行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
-| 2-5 | kawarimi | ✅ | 部分 | GS: okugi_shin_ninpo_20body/tmp_1822_kawarimi_monthly_fast.csv (503MB) | — |
+| 2-5 | kawarimi | ✅ | ✅ | GS: okugi_shin_ninpo_20body/tmp_1822_kawarimi_monthly_fast.csv (503MB) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 | 2-6 | nukimi | ✅ | 部分 | GS: okugi_shin_ninpo_20body/tmp_1822_nukimi_monthly_fast.csv (941MB) | — |
 | 2-7 | yotsume | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_yotsume_grid_monthly_fast.csv (63MB, 150行) | 2026-04-13 |
 
-**② 完了: 4/7** — WF選出: bunshin✅ oikaze✅ kasoku_diff✅ kasoku_ratio✅。残: kawarimi/nukimi/yotsume
+**② 完了: 5/7** — WF選出: bunshin✅ oikaze✅ kasoku_diff✅ kasoku_ratio✅ kawarimi✅。残: nukimi/yotsume
 
 ---
 
@@ -188,6 +188,7 @@ GS実行残量(ペア共有): ②3本 + ④1本(nukimi) + ⑧1本(kawarimi) = **
 
 ## 変更履歴
 
+- 2026-04-13 04:40 ②2-5 kawarimi WF ✅(saizo, cmd_1877_block_29)
 - 2026-04-13 03:22 ②2-7 yotsume GS(M) ✅(saizo, cmd_1877_block_24)
 - 2026-04-13 03:17 ②2-4 kasoku_ratio GS(M) ✅(hayate, cmd_1877_block_23)
 - 2026-04-13 03:10 ②2-3 kasoku_diff GS(M) ✅(tobisaru, cmd_1877_block_22)
