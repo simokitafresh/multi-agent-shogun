@@ -1,30 +1,32 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_21
-  status: done
+  task_id: cmd_1877_block_27
+  status: acknowledged
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#21 [TYPE-GS] ② 2-2 oikaze GS(monthly生成)
+    L2奥義 ブロック#27 [TYPE-WF] ② 2-3 kasoku_diff WF選出
 
     cd /mnt/c/Python_app/DM-signal
-    python3 scripts/analysis/grid_search/run_077_oikaze.py \
-      --universe config/portfolio_universes/okugi_shin_ninpo_20.yaml \
-      --out-dir outputs/grid_search/okugi_shin_ninpo_20body/ \
-      --output-prefix cmd_1877_shin_ninpo_20_oikaze_grid
+    python3 outputs/scripts/l1_alm_wf_engine.py \
+      --csv outputs/grid_search/okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_diff_grid_monthly_fast.csv \
+      --multi-is --cmd-id cmd_1877 --progress --no-parallel \
+      --out-dir outputs/analysis/alm_research/okugi_shin_ninpo_20body/
+
+    ※kasoku_diff/kasoku_ratioは --no-parallel 必須(>500MB→OOM防止)
 
     完了後:
-    1. monthly_fast.csvが存在することを確認
-    2. context/l2-okugi-progress.md の ② 2-2 oikaze GS(M)を ✅ に更新
+    1. alm_returns CSV + selection_timeline存在を確認
+    2. context/l2-okugi-progress.md の ② 2-3 kasoku_diff WF選出を ✅ に更新
     3. git add + git commit
   acceptance_criteria:
     - id: AC1
-      description: "monthly_fast.csvが存在しrc=0"
+      description: "alm_returns CSV + selection_timeline存在。rc=0"
     - id: AC2
       description: "進行表更新+git commit済み"
   binary_checks:
     AC1:
-      - check: "monthly_fast.csv存在か"
+      - check: "alm_returns CSVが存在するか"
         result: ""
       - check: "rc=0か"
         result: ""
@@ -33,7 +35,7 @@ task:
         result: ""
   context_files:
     - context/l2-okugi-progress.md
-  target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
+  target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py"
   stop_for:
     - "OOM Kill(signal 9/137)"
   never_stop_for:
