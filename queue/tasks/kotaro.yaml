@@ -1,23 +1,23 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_37
-  status: done
+  task_id: cmd_1877_block_42
+  status: idle
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#37 [TYPE-WF] ④ 4-6 nukimi WF選出
+    L2奥義 ブロック#42 [TYPE-WF] ⑥ 6-4 kasoku_ratio WF選出
 
     cd /mnt/c/Python_app/DM-signal
     python3 outputs/scripts/l1_alm_wf_engine.py \
-      --csv outputs/grid_search/okugi_shin_alm/cmd_1877_shin_alm_nukimi_grid_monthly_fast.csv \
+      --csv outputs/grid_search/okugi_alm_shin/cmd_1877_alm_shin_kasoku_ratio_grid_monthly_fast.csv \
       --multi-is --cmd-id cmd_1877 --progress --no-parallel \
-      --out-dir outputs/analysis/alm_research/okugi_shin_alm/
+      --out-dir outputs/analysis/alm_research/okugi_alm_shin/
 
-    ※nukimi --no-parallel必須(OOM防止)
+    ※kasoku_ratio --no-parallel必須。30分以上見込み。
 
     完了後:
     1. alm_returns CSV + selection_timeline存在を確認
-    2. context/l2-okugi-progress.md の ④ 4-6 nukimi WF選出を ✅ に更新
+    2. context/l2-okugi-progress.md の ⑥ 6-4 kasoku_ratio WF選出を ✅ に更新
     3. git add + git commit
   acceptance_criteria:
     - id: AC1
