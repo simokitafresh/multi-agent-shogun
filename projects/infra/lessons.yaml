@@ -1311,6 +1311,9 @@ lessons:
   tags:
   - gate
   - reporting
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-12'
 - id: L271
   title: 報告YAMLフォーマット修正必要なし — cmd_1252
   summary: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデー
