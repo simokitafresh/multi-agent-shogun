@@ -62,7 +62,7 @@ GS: ①と共有 (monthly_fast必須) → 選出: WFエンジン
 |---|------|:-----:|:----:|-----------|-------|
 | 2-1 | bunshin | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_bunshin_monthly_fast.csv (11MB, 151行) | — |
 | 2-2 | oikaze | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_oikaze_grid_monthly_fast.csv (150行) | — |
-| 2-3 | kasoku_diff | ❌ | — | — | — |
+| 2-3 | kasoku_diff | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_diff_grid_monthly_fast.csv (1.7GB, 150行) | — |
 | 2-4 | kasoku_ratio | ❌ | — | — | — |
 | 2-5 | kawarimi | ✅ | 部分 | GS: okugi_shin_ninpo_20body/tmp_1822_kawarimi_monthly_fast.csv (503MB) | — |
 | 2-6 | nukimi | ✅ | 部分 | GS: okugi_shin_ninpo_20body/tmp_1822_nukimi_monthly_fast.csv (941MB) | — |
@@ -188,6 +188,7 @@ GS実行残量(ペア共有): ②4本 + ④1本(nukimi) + ⑧1本(kawarimi) = **
 
 ## 変更履歴
 
+- 2026-04-13 03:10 ②2-3 kasoku_diff GS(M) ✅(tobisaru, cmd_1877_block_22)
 - 2026-04-13 02:51 ⑤5-1〜5-7 champion ✅(saizo, cmd_1877_block_14)
 - 2026-04-13 01:51 ⑤5-6/⑥6-6 nukimi ✅(hayate, cmd_1877_block_12)
 - 2026-04-13 01:40 ⑦7-7/⑧8-7 yotsume ✅(kotaro, cmd_1877_block_18)
