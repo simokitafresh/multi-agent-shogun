@@ -1,7 +1,7 @@
 task:
   parent_cmd: cmd_1877
   task_id: cmd_1877_block_07_v3
-  status: assigned
+  status: done
   project: dm-signal
   type: impl
   command: |
@@ -24,10 +24,10 @@ task:
   binary_checks:
     AC1:
       - check: "champion結果ファイルが存在するか"
-        result: ""
+        result: "yes"
     AC2:
       - check: "git commitしたか"
-        result: ""
+        result: "yes"
   context_files:
     - context/l2-okugi-progress.md
   target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/champion_selector.py"
