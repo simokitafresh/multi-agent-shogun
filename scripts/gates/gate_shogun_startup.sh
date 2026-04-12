@@ -600,6 +600,29 @@ else
     $BRIEF || echo "  INFO: 日付取得失敗"
 fi
 
+# --- Gate 19: 強制度監査 (meta-gate, 2026-04-12) ---
+# 起源: 軍師 /clear 後に gate_gunshi_startup.sh が自動実行されなかった
+# なぜなぜ7回で到達した根因=「gate の gate 不在」メタレベル欠落
+# 目的: CLAUDE.md 記述と settings hooks 登録の乖離(意志依存 script)を検出
+$BRIEF || echo "■ 強制度監査 (meta-gate)"
+_ENFORCE_AUDIT="$SCRIPT_DIR/scripts/gates/gate_enforcement_audit.sh"
+if [ -x "$_ENFORCE_AUDIT" ]; then
+    if _ea_out=$(bash "$_ENFORCE_AUDIT" 2>&1); then
+        $BRIEF || echo "  OK: 意志依存 script 0 本"
+    else
+        _ea_count=$(printf '%s\n' "$_ea_out" | grep -oE '意志依存 script 検出: [0-9]+ 本' | grep -oE '[0-9]+' | head -1)
+        [ -z "$_ea_count" ] && _ea_count="?"
+        overall="ALERT"
+        alerts+=("強制度監査: 意志依存 script ${_ea_count}本 — bash scripts/gates/gate_enforcement_audit.sh")
+        $BRIEF || {
+            echo "  ALERT: 意志依存 script ${_ea_count} 本 — CLAUDE.md参照のみでhooks未登録"
+            printf '%s\n' "$_ea_out" | grep -E '^  - ' | head -10
+        }
+    fi
+else
+    $BRIEF || echo "  INFO: gate_enforcement_audit.sh 未配備"
+fi
+
 # --- 総合判定 ---
 if $BRIEF; then
     # session_start_inject用: 一行サマリ

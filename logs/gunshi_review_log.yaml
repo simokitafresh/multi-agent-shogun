@@ -637,3 +637,39 @@
   lesson_quality: OK
   causal_chain: "cmd_1871事故: WFエンジン6目的出力→MCP殿帰属記録(検証なし)→42体universe→OOM。根因=一次情報源との照合不在。hook=add_observations時にBLOCK=Phase4(自動化×強制)。10回繰り返し=10回の誤帰属防止=正の複利"
   timestamp: "2026-04-12T16:55:00"
+- cmd_id: cmd_1875
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1875_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。pre-mcp-lord-attribution-guard.shに設計情報WARNチェック追加(+25/-6行)。DESIGN_PATTERNマッチ→WARN(exit 0)+projects/*.yaml誘導。BLOCKなし。cmd_1874殿帰属BLOCKと共存。5テストPASS。commit 5746d91"
+  observations:
+    - "事実1: Check2(WARN)がCheck1(BLOCK)の前に実行。両方マッチ時はWARN出力後BLOCK到達=正しい優先順"
+    - "事実2: DESIGN_PATTERN広め(=[0-9]等)だがWARN止まりのため偽陽性は許容範囲。BLOCKしない設計"
+  lesson_quality: OK
+  causal_chain: "MCP設計情報(体数/目的数等)→将軍以外検証不可→後続cmdで誤設計→事故。WARN=Level2(注意喚起)。BLOCKしない理由=哲学寄り参照値もマッチするため。cmd_1874 BLOCK(Level4)+cmd_1875 WARN(Level2)の二段構え"
+  timestamp: "2026-04-12T17:00:00"
+- cmd_id: cmd_1876
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_1871/1872代替。3目的21体universe(修正済み)+21GS+8パターン選出+因子分析。objectives_by_method現物確認済み。N=20/21完走実績あり。hayate(AC1+2)→saizo(AC3+4)分割で依存関係順守。即配備可"
+  observations:
+    - "事実1: okugi_shin_alm/alm_alm 43列→22列修正がAC1。ALM3目的(MRU/calmar/UWP)のみ残す。okugi_alm_shin 22列は変更不要"
+    - "事実2: cmd_1871のOOM根因(42列universe)が根本修正されている。N=21 peak 2.4GB < 16GB安全"
+    - "事実3: ①②は既存(okugi_shin_ninpo_20body)。③〜⑧のGS CSV入力はStep 2で生成→Step 3で選出。依存関係が2忍者分割配備で順守"
+  causal_chain: "cmd_1871 OOM=42列universe→根本修正=3目的21列→N=21でGS安全(N=20実績)→8パターン選出→因子分析で動的選出の最終判断。設計書(gunshi_okugi_8pattern_design)の内容がcmdに正確反映"
+  timestamp: "2026-04-12T17:30:00"
+- cmd_id: self_study_S169
+  review_type: self_study
+  findings_summary: "/clear復帰自走: (1)起動ゲートOK。inbox未読0。(2)前セッション(S166-S168)の状態確認: GP-180/181/182実装済み、WA分析完了、insights cleared。(3)MaxDDバグ: 86f2e6ae+2df25f6d+d2b17104で修正+WF再実行完了。(4)cmd_1876進行中: saizo alm_alm bunshin PASS、hayate/hanzo OOM fix PASS(commit 6efe2681)、kotaro AC2 pending。(5)pending insight(FAIL率20%)→解決済み。追加GPなし。"
+  observations:
+    - "事実1: GP全件実装済み(S168確認)。karo_sent GP-170/171は既往。新規pending GP=0"
+    - "事実2: cmd_1876 alm_alm bunshin GS完走(saizo, 10.3s, 7525パターン, N=21)。MP_WORKERS=1適用後OOMなし"
+    - "事実3: hayate_report_cmd_1876_fix verdict=FAIL(bunshinにMP_WORKERSなし→AC1=no/6本のみ)。hanzo_report verdict=PASS(同内容確認+commit 6efe2681)"
+    - "事実4: kotaro_report_cmd_1876_ac2は未提出(template状態)。家老指示待ち"
+  causal_chain: "前セッションS166-S168でWA分析・GP実装・insight処理完了。本セッションは状態確認のみ。追加対処なし=Level4防御層の安定稼働の証拠"
+  proposals: []
+  timestamp: "2026-04-12T20:22:00"
