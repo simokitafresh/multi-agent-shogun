@@ -79,13 +79,13 @@ GS dir: okugi_shin_alm/ → 選出: champion_selector
 |---|------|:-----:|:----:|-----------|-------|
 | 3-1 | bunshin | ✅ | — | GS: okugi_shin_alm/cmd_1871_shin_alm_bunshin_grid_results_fast.csv (2.0MB, 7526行) | — |
 | 3-2 | oikaze | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_results_fast.csv (115MB, 270901行) | 2026-04-12 |
-| 3-3 | kasoku_diff | ❌ | — | — (cmd_1871ファイルは旧universe42体で生成→無効。列数1.15M≠有効基準7526) | — |
+| 3-3 | kasoku_diff | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_diff_grid_results_fast.csv (346MB, 1151326行) | 2026-04-12 |
 | 3-4 | kasoku_ratio | ❌ | — | — | — |
 | 3-5 | kawarimi | ❌ | — | — | — |
 | 3-6 | nukimi | ❌ | — | — | — |
 | 3-7 | yotsume | ❌ | — | — | — |
 
-**③ 完了: 1/7** — GS残5本(kasoku_diff, kasoku_ratio, kawarimi, nukimi, yotsume)
+**③ 完了: 2/7** — GS残4本(kasoku_ratio, kawarimi, nukimi, yotsume)
 
 ---
 
@@ -96,13 +96,13 @@ GS dir: okugi_shin_alm/ (③と共有, monthly_fast必須) → 選出: WFエン�
 |---|------|:-----:|:----:|-----------|-------|
 | 4-1 | bunshin | ✅ | — | GS: okugi_shin_alm/cmd_1871_shin_alm_bunshin_grid_monthly_fast.csv (11MB) | — |
 | 4-2 | oikaze | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_oikaze_grid_monthly_fast.csv (394MB, 126行) | 2026-04-12 |
-| 4-3 | kasoku_diff | ❌ | — | — (cmd_1871ファイルは旧universe42体で生成→無効。1.6GB/列数1.15M≠有効基準7526) | — |
+| 4-3 | kasoku_diff | ✅ | — | GS: okugi_shin_alm/cmd_1877_shin_alm_kasoku_diff_grid_monthly_fast.csv (1.6GB, 126行) | 2026-04-12 |
 | 4-4 | kasoku_ratio | ❌ | — | — | — |
 | 4-5 | kawarimi | ❌ | — | — | — |
 | 4-6 | nukimi | ❌ | — | — | — |
 | 4-7 | yotsume | ❌ | — | — | — |
 
-**④ 完了: 1/7** — ③のGS完了でmonthlyも1本増加。GS残5本(kasoku_diff, kasoku_ratio, kawarimi, nukimi, yotsume)
+**④ 完了: 2/7** — ③のGS完了でmonthlyも1本増加。GS残4本(kasoku_ratio, kawarimi, nukimi, yotsume)
 
 ---
 
@@ -179,12 +179,12 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 状態 | ブロック数 |
 |------|----------|
 | ✅ 全完了(DB登録済み) | 7 (①全7) |
-| G GS完了・選出待ち | 12 |
-| ❌ GS未完了 | 35 |
+| G GS完了・選出待ち | 14 |
+| ❌ GS未完了 | 33 |
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
-GS実行残量(ペア共有): ②5本 + ③④6本 + ⑤⑥6本 + ⑦⑧4本 = **21本**
+GS実行残量(ペア共有): ②5本 + ③④4本 + ⑤⑥6本 + ⑦⑧4本 = **19本**
 
 ## 変更履歴
 
