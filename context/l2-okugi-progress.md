@@ -60,7 +60,7 @@ GS: ①と共有 (monthly_fast必須) → 選出: WFエンジン
 
 | # | 忍法 | GS(M) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
-| 2-1 | bunshin | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_bunshin_monthly_fast.csv (11MB, 151行) | — |
+| 2-1 | bunshin | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_bunshin_monthly_fast.csv (11MB, 151行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 | 2-2 | oikaze | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_oikaze_grid_monthly_fast.csv (150行) | — |
 | 2-3 | kasoku_diff | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_diff_grid_monthly_fast.csv (1.7GB, 150行) | — |
 | 2-4 | kasoku_ratio | ✅ | — | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_ratio_grid_monthly_fast.csv (1.7GB, 150行) | 2026-04-13 |
@@ -209,4 +209,5 @@ GS実行残量(ペア共有): ②3本 + ④1本(nukimi) + ⑧1本(kawarimi) = **
 - 2026-04-13 02:00 ⑦7-6/⑧8-6 nukimi ✅(saizo, cmd_1877_block_17)
 - 2026-04-13 03:02 ②2-1 bunshin GS(M) ✅(hanzo, cmd_1877_block_20)
 - 2026-04-13 02:59 ⑦7-1〜7-7 champion ✅(kagemaru, cmd_1877_block_19)
+- 2026-04-13 03:25 ②2-1 bunshin WF選出 ✅(kagemaru, cmd_1877_block_25)
 - 2026-04-13 02:41 ③3-1〜3-7 champion ✅(hayate, cmd_1877_block_07_v3)
