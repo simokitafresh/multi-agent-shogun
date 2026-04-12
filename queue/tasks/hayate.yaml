@@ -1,7 +1,7 @@
 task:
   parent_cmd: cmd_1877
   task_id: cmd_1877_block_23
-  status: in_progress
+  status: done
   project: dm-signal
   type: impl
   command: |
@@ -25,12 +25,12 @@ task:
   binary_checks:
     AC1:
       - check: "monthly_fast.csv存在か"
-        result: ""
+        result: "PASS"
       - check: "rc=0か"
-        result: ""
+        result: "PASS"
     AC2:
       - check: "git commitしたか"
-        result: ""
+        result: "PASS (d6b03e5)"
   context_files:
     - context/l2-okugi-progress.md
   target_path: "/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/"
