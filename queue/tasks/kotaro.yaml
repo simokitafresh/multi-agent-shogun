@@ -1,45 +1,61 @@
 task:
-  parent_cmd: cmd_karo_reflux_1878
-  task_id: cmd_karo_reflux_1878_impl
-  status: idle
-  project: dm-signal
-  type: impl
-  command: |
-    cmd_1878成果のcontext還流。dm-signal-research.mdにL2奥義2×2因子分析結果を追記せよ。
-
-    データソース:
-    - outputs/analysis/alm_research/cmd_1878_l2_okugi_comparison.csv (168体比較表)
-    - queue/reports/kagemaru_report_cmd_1878.yaml (因子分析結果)
-
-    追記内容(§35 L2奥義の末尾に追記):
-    - 2×2因子分析結果: BB効果+5.4pp / 選出効果-12.9pp
-    - L1との比較: L1(BB+15pp/動的-27〜-41pp)→L2で傾向継続だが縮小
-    - 最優秀: ⑤(ALM-BB×GS固定)×nukimi×激攻 CAGR=1.228
-    - パターン別平均: ⑤最強(CAGR=0.819) > ⑥ > ③ > ① > ⑧最低
-    - 鉄壁のみWF親和性あり(+4.4pp)、激攻は大幅WF劣位(-33.5pp)
-
-    Vercelスタイル: 結論1-2行+参照先(kagemaru報告YAML)。散文禁止。
-
-    完了後: git add + git commit
-  acceptance_criteria:
-    - id: AC1
-      description: "context/dm-signal-research.md §35にL2因子分析結果が追記されている"
-    - id: AC2
-      description: "git commitした"
-  binary_checks:
-    AC1:
-      - check: "§35にBB効果/選出効果の数値が記載されているか"
-        result: ""
-    AC2:
-      - check: "git commitしたか"
-        result: ""
+  _ac_task_id: cmd_karo_reflux_1880_impl
+  _ac_worker_id: null
+  ac_version: d41d8cd9
   context_files:
-    - context/dm-signal-research.md
-    - queue/reports/kagemaru_report_cmd_1878.yaml
-  target_path: "context/dm-signal-research.md"
-  scout_exempt: true
-  deployed_at: "2026-04-13T13:43:29+09:00"
-  related_lessons: []
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
+    \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
+    ────────────────────────────────────────"
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
+    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_karo_reflux_1880
+  project: dm-signal
+  status: idle
+  stop_for: []
+  task_id: cmd_karo_reflux_1880_impl
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_karo_reflux_1880.yaml
+  report_path: queue/reports/kotaro_report_cmd_karo_reflux_1880.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 10
+    top_pattern: 'report_yaml_format(2件)'
+    breakdown: 'report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件), premature_shelve(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_blocks:
+    - reason: 'binary_checks_fail'
+      count: 10
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'report_format'
+      count: 8
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'empty_lessons_useful'
+      count: 2
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'ac_version_mismatch'
+      count: 1
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+    - reason: 'report_yaml_missing'
+      count: 1
+      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
   - id: 'L620'
     summary: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
@@ -71,3 +87,4 @@ task:
   - id: 'L611'
     summary: 'cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にもcmd_1822が40件存在し合計127件になった。削除コマンド実行前にfindでプロジェクト全体を検索しcmd記載件数との不一致を検出して全量把握すべき。不一致があれば停止して報告。'
     detail: 'cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にもcmd_1822が40件存在し合計127件になった。削除コマンド実行前にfindでプロジェクト全体を検索しcmd記載件数との不一致を検出して全量把握すべき。不一致があれば停止して報告。'
+  deployed_at: "2026-04-13T14:18:05"
