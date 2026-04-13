@@ -438,3 +438,56 @@
       status: proposed
       defense_level: 2
   timestamp: "2026-04-13T16:10:00"
+- cmd_id: cmd_1883
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。GS再実行(filter-repo消失復旧)。前提全検証済み: scripts/universe存在、消失6ファイル不在確認、kawarimi results_fast残存(93MB)確認。2波並列+MP_WORKERS=1でOOMリスク回避。scout_exempt適切"
+  observations:
+    - "事実1: 消失6ファイル(alm_shin nukimi×2, alm_alm nukimi×2, alm_alm kawarimi monthly, alm_alm kasoku_diff results)の不在をls -lhで確認"
+    - "事実2: kawarimi results_fast 93MB残存、kasoku_diff results_fast 232MB(18:45=hayate作業中)を確認。cmd記載と一致"
+    - "事実3: run_077_{nukimi,kawarimi,kasoku_diff}.py 3スクリプト+universe 2YAML全存在確認"
+  causal_chain: "filter-repo --invert-paths→WT CSV削除(L622)→6ファイル消失→GS再実行で復旧→L2奥義研究パイプライン完全性回復。復旧cmdなので+1複利は薄いがデータ完全性は全後段cmdの基盤=負の複利阻止"
+  timestamp: "2026-04-13T18:50:00"
+- cmd_id: cmd_1883
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1883_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。hayateはcmdの非grid命名と実態(_grid_バリアント)の差異を正しく把握し、真の欠損1本(kasoku_diff results_fast)のみを再生成。5本grid既存+1本再生成=全6本present。AC1/AC2全PASS"
+  observations:
+    - "事実1: cmdは*_nukimi_results_fast.csv(非grid)を期待したが実際のスクリプト出力は*_nukimi_grid_results_fast.csv。命名パターン差がcmd設計時に見落とされていた"
+    - "事実2: kasoku_diff results_fast 346M/1151325パターン/76.662sで再生成。monthly_fastは一時退避→再生成→3ファイル出力。files_modified 3件と整合"
+    - "事実3: 軍師draft review時(18:43)も非grid命名でls→5本不在。hayate(18:47)はgridバリアントも含めて照合→5本既存。軍師のdraft reviewも非grid命名前提に引きずられていた"
+  lesson_quality: OK
+  causal_chain: "filter-repo→WT CSV消失→cmd起票時に非grid命名で消失ファイル特定→実際はgridバリアント既存→hayateが実態照合で1本に絞込み→最小限再生成。cmdの命名前提と実態の乖離は偵察精度の問題"
+  timestamp: "2026-04-13T18:58:00"
+- cmd_id: cmd_1884
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。GS出力CSV命名統一(非grid→_grid_)。21本CSV現物確認(alm_shin 6+alm_alm 5+shin_ninpo_20body 10)。全対象に_grid_バリアント未存在で衝突リスクゼロ。scout_exempt/shallow適切"
+  observations:
+    - "事実1: 21本CSVの内訳=alm_shin(kasoku_diff2+oikaze2+metrics_bunshin2=6)+alm_alm(kasoku_diff2+kawarimi1+metrics_bunshin2=5)+shin_ninpo_20body(bunshin2+tmp_1822×8=10)。cmd記載と完全一致"
+    - "事実2: 全対象ディレクトリでリネーム先(_grid_バリアント)の既存ファイルなし。衝突リスクゼロ確認済み"
+    - "事実3: cmd_1877固有output(再実行されない)のためリネームは永続的。スクリプト側の命名ロジック修正は不要(別cmdの話題)"
+  causal_chain: "GS出力CSV命名混在(殿指摘)→_grid_なし21本が後工程パターン検索で漏れるリスク→_grid_付きに統一→検索・参照の一貫性=正の複利。cmd_1877固有ファイルなので再実行で巻き戻りなし"
+  timestamp: "2026-04-13T19:55:00"
+- cmd_id: cmd_1884
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1884_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_result: CLEAR
+  findings_summary: "4観点OK。全4dirで非grid CSV=0確認。kawarimi重複(grid+非grid同内容93MB)を正しく検出し非grid削除で衝突回避。selection_timeline.pyも追加更新(AC外だが参照整合性確保)。commit checkはscope外diffsで家老PASS補正—妥当"
+  observations:
+    - "事実1: draft reviewで「衝突リスクゼロ」と判定したがkawarimi_results_fast(grid+非grid93MB共存)を見落としていた。hayateが正しく検出・処理。軍師のdraft review精度に課題(衝突チェック対象をkasoku/oikaze/metrics_bunshinに限定しkawarimiを漏らした)"
+    - "事実2: progress差分8箇所=bunshin(2-1),oikaze→なし(既にgrid),kasoku_diff(5-3),metrics_bunshin(5-1),oikaze(5-2),kawarimi(2-5),nukimi(2-6)+selection_timeline.py更新"
+    - "事実3: commit binary_check=yes vs details=noの矛盾は家老PASS補正の痕跡。scope外diffs(cmd-chronicle.md等)が原因で妥当な補正"
+  lesson_quality: OK
+  causal_chain: "draft review衝突チェック漏れ(kawarimi)→hayateが実態で検出→非grid削除で安全に処理。軍師のチェック対象選定が不完全。cmdの3忍法リスト(kasoku_diff,kawarimi,metrics_bunshin)を個別にgrid存在確認すべきだった→チェック対象=リネーム対象全数が原則"
+  timestamp: "2026-04-13T20:03:00"
