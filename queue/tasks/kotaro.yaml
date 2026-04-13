@@ -1,47 +1,55 @@
 task:
-  parent_cmd: cmd_1877
-  task_id: cmd_1877_block_51
-  status: done
+  parent_cmd: cmd_karo_reflux_1878
+  task_id: cmd_karo_reflux_1878_impl
+  status: idle
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#51 [TYPE-WF] ⑧ 8-6 nukimi WF選出
+    cmd_1878成果のcontext還流。dm-signal-research.mdにL2奥義2×2因子分析結果を追記せよ。
 
-    cd /mnt/c/Python_app/DM-signal
-    python3 outputs/scripts/l1_alm_wf_engine.py \
-      --csv outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_nukimi_grid_monthly_fast.csv \
-      --multi-is --cmd-id cmd_1877 --progress --no-parallel \
-      --out-dir outputs/analysis/alm_research/okugi_alm_alm/
+    データソース:
+    - outputs/analysis/alm_research/cmd_1878_l2_okugi_comparison.csv (168体比較表)
+    - queue/reports/kagemaru_report_cmd_1878.yaml (因子分析結果)
 
-    完了後:
-    1. alm_returns CSV + selection_timeline存在を確認
-    2. context/l2-okugi-progress.md の ⑧ 8-6 nukimi WF選出を ✅ に更新
-    3. git add + git commit
+    追記内容(§35 L2奥義の末尾に追記):
+    - 2×2因子分析結果: BB効果+5.4pp / 選出効果-12.9pp
+    - L1との比較: L1(BB+15pp/動的-27〜-41pp)→L2で傾向継続だが縮小
+    - 最優秀: ⑤(ALM-BB×GS固定)×nukimi×激攻 CAGR=1.228
+    - パターン別平均: ⑤最強(CAGR=0.819) > ⑥ > ③ > ① > ⑧最低
+    - 鉄壁のみWF親和性あり(+4.4pp)、激攻は大幅WF劣位(-33.5pp)
+
+    Vercelスタイル: 結論1-2行+参照先(kagemaru報告YAML)。散文禁止。
+
+    完了後: git add + git commit
   acceptance_criteria:
     - id: AC1
-      description: "alm_returns CSV + selection_timeline存在。rc=0"
+      description: "context/dm-signal-research.md §35にL2因子分析結果が追記されている"
     - id: AC2
-      description: "進行表更新+git commit済み"
+      description: "git commitした"
   binary_checks:
     AC1:
-      - check: "alm_returns CSVが存在するか"
-        result: ""
-      - check: "rc=0か"
+      - check: "§35にBB効果/選出効果の数値が記載されているか"
         result: ""
     AC2:
       - check: "git commitしたか"
         result: ""
   context_files:
-    - context/l2-okugi-progress.md
-  target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py"
-  stop_for:
-    - "OOM Kill(signal 9/137)"
-  never_stop_for:
-    - "既存ファイル警告 — 確認して続行"
+    - context/dm-signal-research.md
+    - queue/reports/kagemaru_report_cmd_1878.yaml
+  target_path: "context/dm-signal-research.md"
   scout_exempt: true
-  deployed_at: "2026-04-13T10:47:53+09:00"
+  deployed_at: "2026-04-13T13:43:29+09:00"
   related_lessons: []
   related_lessons:
+  - id: 'L620'
+    summary: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
+    detail: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
+  - id: 'L619'
+    summary: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
+    detail: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
+  - id: 'L618'
+    summary: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
+    detail: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
   - id: 'L617'
     summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
     detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
@@ -63,12 +71,3 @@ task:
   - id: 'L611'
     summary: 'cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にもcmd_1822が40件存在し合計127件になった。削除コマンド実行前にfindでプロジェクト全体を検索しcmd記載件数との不一致を検出して全量把握すべき。不一致があれば停止して報告。'
     detail: 'cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にもcmd_1822が40件存在し合計127件になった。削除コマンド実行前にfindでプロジェクト全体を検索しcmd記載件数との不一致を検出して全量把握すべき。不一致があれば停止して報告。'
-  - id: 'L610'
-    summary: 'cmd_1863 AC1でcmd_1819_*/cmd_1821_*/cmd_1822_*をプロジェクト全体で削除したところ、alm_research/以外のgrid_search/okugi_shin_ninpo_20body/以下の20体universe月次CSVも削除。shogun_to_karo.yamlには削除対象パスがalm_research/と明記されていたが、タスクYAMLのAC1'
-    detail: 'cmd_1863 AC1でcmd_1819_*/cmd_1821_*/cmd_1822_*をプロジェクト全体で削除したところ、alm_research/以外のgrid_search/okugi_shin_ninpo_20body/以下の20体universe月次CSVも削除。shogun_to_karo.yamlには削除対象パスがalm_research/と明記されていたが、タスクYAMLのAC1'
-  - id: 'L609'
-    summary: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との比較はmax_diff0.5超でallclose=Falseになる。回帰テストの正しい比較対象は同一セッション内での2回実行結果'
-    detail: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との比較はmax_diff0.5超でallclose=Falseになる。回帰テストの正しい比較対象は同一セッション内での2回実行結果'
-  - id: 'L608'
-    summary: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
-    detail: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
