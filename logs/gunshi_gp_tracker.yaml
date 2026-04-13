@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:99(+GP-129,137b,180,181,182) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:1(GP-184) / in_progress:0 / karo_sent:1(GP-183) = 計117+5+2=124GP
+# 集計: ★implemented:100(+GP-129,137b,180,181,182,187) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:1(GP-184) / in_progress:0 / karo_sent:1(GP-183) = 計118+5+2=125GP
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -266,3 +266,12 @@
   self_executable: false
   defense_level: 4
   reason: "cmd_1859 WA根因=将軍scout_exempt設定忘れ。infra cmd(q4_depth=shallow+project=infra)は偵察不要→自動scout_exempt=true"
+- id: GP-187
+  description: "autofixスケルトンreason空→FILL_THIS(忍者reason空パターン根絶)"
+  status: implemented
+  proposed_at: "2026-04-13T14:15:00"
+  implemented_at: "2026-04-13T14:20:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 4
+  reason: "影丸lessons_useful reason空×10が本日3報告で繰り返し(FAIL率36%)。根因=autofixが空文字でスケルトン生成→忍者が埋まっていると誤認。FILL_THISに変更→既存gate L152がBLOCK。才蔵/小太郎は0%なので道具が壊れているのではなく忍者への指示不足。E2Eテスト: autofix→FILL_THIS 10件→gate FAIL確認"

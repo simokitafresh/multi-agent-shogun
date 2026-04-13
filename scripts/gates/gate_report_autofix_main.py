@@ -386,7 +386,7 @@ def main() -> int:
             if isinstance(rl6, list):
                 for item6 in rl6:
                     if isinstance(item6, dict) and item6.get("id"):
-                        skeleton.append({"id": str(item6["id"]), "useful": False, "reason": ""})
+                        skeleton.append({"id": str(item6["id"]), "useful": False, "reason": "FILL_THIS"})
         data["lessons_useful"] = skeleton if skeleton else []
         label6 = "MISSING" if lu_missing else "null"
         if skeleton:
