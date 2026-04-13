@@ -20,6 +20,9 @@ lessons:
   summary: 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-13T22:05:47+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L467
   title: REPORT-DONE-MISMATCH誤検知はtask_id照合不在が根因。snapshot report cmd_idとtask YAMLのtask_idを比較して旧report残存をスキップせよ
   summary: 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ
@@ -30,11 +33,17 @@ lessons:
   summary: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo
   tags:
   - universal
+  helpful_count: 3
+  harmful_count: 1
+  last_referenced: '2026-04-13'
 - id: L465
   title: 道具磨きcmdのテスト実行ACと並行研究cmdの入力衝突チェック
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
   tags:
   - universal
+  helpful_count: 3
+  harmful_count: 1
+  last_referenced: '2026-04-13'
 - id: L464
   title: 想像した数字を報告するな — 実測値のみ報告せよ
   summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定
@@ -989,9 +998,9 @@ lessons:
   - gate
   - yaml
   - inbox
-  helpful_count: 2
-  harmful_count: 2
-  last_referenced: '2026-04-12'
+  helpful_count: 5
+  harmful_count: 1
+  last_referenced: '2026-04-13'
 - id: L318
   title: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
   summary: test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間
@@ -1114,7 +1123,7 @@ lessons:
   - testing
   - gate
   helpful_count: 1
-  harmful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-13'
 - id: L299
   title: git_uncommitted_gateはプロジェクトリポジトリを解決すべし
@@ -1201,7 +1210,7 @@ lessons:
   - bash
   - yaml
   - inbox
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-10'
 - id: L288
@@ -1404,7 +1413,7 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 2
   last_referenced: '2026-04-13'
 - id: L261
@@ -1554,9 +1563,9 @@ lessons:
     "ok 293
   tags:
   - testing
-  helpful_count: 2
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-04-12'
+  last_referenced: '2026-04-13'
 - id: L239
   title: 並列implレビューはcommit integrityを独立チェックせよ
   summary: cmd_1031ではGrid dedup/PPE/parityのコード品質は全てINFORMATIONALだったが、impl_aが未commitのままHEADに
@@ -1593,7 +1602,7 @@ lessons:
   - frontend
   - testing
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-09'
 - id: L233
   title: review task の `git diff --check` AC は対象commitスコープか clean-tree 前提を明示すべし
@@ -1774,7 +1783,7 @@ lessons:
   - communication
   - inbox
   - reporting
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-10'
 - id: L208
@@ -1784,6 +1793,9 @@ lessons:
   - testing
   - gate
   - tmux
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-13'
 - id: L207
   title: field_getはYAML block scalar指示子をリテラル文字列で返す
   summary: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML
@@ -1898,9 +1910,9 @@ lessons:
   tags:
   - testing
   - yaml
-  helpful_count: 1
-  harmful_count: 2
-  last_referenced: '2026-04-12'
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-13'
 - id: L190
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ。cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit
     statusで未コミット差分を確認すべき
@@ -2708,8 +2720,8 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - universal
-  helpful_count: 18
-  harmful_count: 16
+  helpful_count: 11
+  harmful_count: 10
   last_referenced: '2026-04-11'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
@@ -2787,8 +2799,8 @@ lessons:
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
   tags:
   - universal
-  helpful_count: 18
-  harmful_count: 16
+  helpful_count: 11
+  harmful_count: 10
   last_referenced: '2026-04-11'
 - id: L062
   title: YAMLフィールドのdict/str混在型はjoin前にstr()変換が必要
@@ -2914,7 +2926,7 @@ lessons:
   tags:
   - communication
   - security
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-10'
 - id: L042

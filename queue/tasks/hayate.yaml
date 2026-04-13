@@ -1,25 +1,23 @@
 task:
-  _ac_task_id: cmd_1890_impl
+  _ac_task_id: cmd_karo_gp110_deploy_warn_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4 > AC5
-  ac_version: 16ad3324
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: 7b808d7e
   acceptance_criteria:
-  - description: gate_report_autofix_main.pyから文字列正規化コード(PASS/ok→yes, FAIL/ng→no)が削除されている
+  - description: 軍師/家老の自走commit(cmd_を含まないmessage+24h以内)があるファイルを含むcmd配備でWARN出力される
     id: AC1
-  - description: boolean→string変換(true→yes, false→no)は残存している
+  - description: 忍者のcmd commit(messageにcmd_XXXXを含む)があるファイルではWARN出力されない
     id: AC2
-  - description: 'result: PASSの報告YAMLでgate_report_format.shがBLOCK(エラー出力+exit 1)する'
+  - description: 24h以上前のcommitではWARN出力されない
     id: AC3
-  - description: 'result: yesの報告YAMLでgate_report_format.sh PASS(exit 0)する'
+  - description: bats tests/unit/ 既存テスト全PASS
     id: AC4
-  - description: bats tests/unit/ 既存テスト全PASS（CI赤がcmd_karo_ci_fix_1885完了済みの場合）
-    id: AC5
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L466: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo\n\
-    \  - L465: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS\
-    \ 15GB超過OOM。dr\n  - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ\n\
-    \  - L300: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed\n\
-    \  - L208: test_gate_metrics_model_labels.batsのテスト#158がライブtmuxセッションの@model_nameを取得し、テストフィクス\n\
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L464: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定\n\
+    \  - L463: MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePad\n\
+    \  - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ\n\
+    \  - L240: parse_skip_count()の汎用正規表現 r\"(\\d+)\\s+(?:tests?\\s+)?skips?\\b\" は\
+    \ bats TAP出力 \"ok 293\n  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -39,29 +37,60 @@ task:
   - AC2
   - AC3
   - AC4
-  - AC5
-  parent_cmd: cmd_1890
+  parent_cmd: cmd_karo_gp110_deploy_warn
   project: infra
-  report_filename: hayate_report_cmd_1890.yaml
-  report_path: queue/reports/hayate_report_cmd_1890.yaml
+  related_lessons:
+  - detail: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象
+    id: L464
+    summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象
+  - detail: 'MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars
+      insetsのみ使用。出典: developer.androi'
+    id: L463
+    summary: 'MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars
+      insetsのみ使用。出典: developer.androi'
+  - detail: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファイルが存在。内容は補完的(異なるテストケース)だが、同一ファイルに統合すればCI実行時のsetup/teardownオーバーヘッドを削減可能。削除ではなく統合を推奨。
+    id: L319
+    summary: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファイルが存在。内容は補完的(異なるテストケース)だが、同一ファイルに統合すればCI実行時のsetup/teardownオーバーヘッドを削減可能。削除ではなく統合を推奨。
+  - detail: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
+      "ok 293 skip and fail..." のテスト番号+テスト名を
+    id: L240
+    summary: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
+      "ok 293 skip and fail..." のテスト番号+テスト名を
+  - detail: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
+      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
+      files を除外するか commit/push 対象から切り離さないと実運用で達成
+    id: L220
+    summary: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
+      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
+      files を除外するか commit/push 対象から切り離さないと実運用で達成
+  report_filename: hayate_report_cmd_karo_gp110_deploy_warn.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_gp110_deploy_warn.yaml
   status: done
   stop_for: []
-  task_id: cmd_1890_impl
+  task_id: cmd_karo_gp110_deploy_warn_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 17
+    total_workarounds: 19
     top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), verdict_override(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
+    breakdown: 'report_yaml_format(3件), verdict_override(3件), task_redeploy(2件), ci_gate_mismatch(2件), commit_missing(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 22
+    - pattern: 'lu_reason_empty'
+      count: 5
+    - pattern: 'verdict_invalid'
+      count: 4
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 10
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 8
+      count: 9
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_yaml_missing'
       count: 3
@@ -75,36 +104,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  related_lessons:
-  - id: 'L470'
-    summary: '''`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive'
-    detail: '''`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive'
-  - id: 'L469'
-    summary: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix'
-    detail: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix'
-  - id: 'L468'
-    summary: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_format.shにautofix'
-    detail: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_format.shにautofix'
-  - id: 'L467'
-    summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
-    detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
-  - id: 'L466'
-    summary: 'CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。'
-    detail: 'CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。'
-  - id: 'L465'
-    summary: 'cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft'
-    detail: 'cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft'
-  - id: 'L464'
-    summary: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
-    detail: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
-  - id: 'L463'
-    summary: '''MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars'
-    detail: '''MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars'
-  - id: 'L462'
-    summary: '''**dismiss_reason**: L463として統合登録済み enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold'
-    detail: '''**dismiss_reason**: L463として統合登録済み enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold'
-  - id: 'L461'
-    summary: '**dismiss_reason**: L463として統合登録済み MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer'
-    detail: '**dismiss_reason**: L463として統合登録済み MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer'
-  deployed_at: "2026-04-13T21:54:20"
-  progress: AC1-AC5達成。report YAMLとgate通過まで完了。commit未了のため report verdict は FAIL。
+  progress: AC1-AC3達成。新規 deploy WARN テスト3件PASS。AC4は既存 test_inbox_write.bats T-010 失敗で未達。report YAML/gate完了。

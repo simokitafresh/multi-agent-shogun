@@ -3136,6 +3136,66 @@ check_firefighting_title() {
     fi
 }
 
+# 直近24hの非cmd commit検知: target_pathの直近コミットmessageにcmd_が無ければWARN
+# 殿承認GP-110修正版: 忍者完了パスに依存せず、配備直前のgit実態をその場で確認する
+warn_recent_noncmd_commit_targets() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local _tp_raw
+    _tp_raw=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null)
+    [ -n "$_tp_raw" ] || return 0
+
+    local _repo_root
+    _repo_root=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)
+    [ -n "$_repo_root" ] || return 0
+
+    local -a _tp_paths=()
+    if echo "$_tp_raw" | grep -q '^- '; then
+        while IFS= read -r _tp_line; do
+            local _tp_p="${_tp_line#- }"
+            _tp_p="${_tp_p#[[:space:]]}"
+            _tp_p="${_tp_p%[[:space:]]}"
+            [ -n "$_tp_p" ] && _tp_paths+=("$_tp_p")
+        done <<< "$_tp_raw"
+    else
+        _tp_paths+=("$_tp_raw")
+    fi
+
+    local _now_epoch
+    _now_epoch=$(date +%s)
+    local _warned=false
+    local _tp_path _git_path _log_line _commit_epoch _subject _age_sec
+
+    for _tp_path in "${_tp_paths[@]}"; do
+        [ -n "$_tp_path" ] || continue
+        _git_path="$_tp_path"
+        if [[ "$_git_path" = "$_repo_root/"* ]]; then
+            _git_path="${_git_path#"$_repo_root/"}"
+        elif [[ "$_git_path" = /* ]]; then
+            continue
+        fi
+
+        _log_line=$(git -C "$_repo_root" log -1 --format='%ct%x09%s' -- "$_git_path" 2>/dev/null || true)
+        [ -n "$_log_line" ] || continue
+
+        _commit_epoch="${_log_line%%$'\t'*}"
+        _subject="${_log_line#*$'\t'}"
+        [[ "$_commit_epoch" =~ ^[0-9]+$ ]] || continue
+
+        _age_sec=$((_now_epoch - _commit_epoch))
+        if [ "$_age_sec" -le 86400 ] && [[ "$_subject" != *cmd_* ]]; then
+            echo "WARNING: target_path=${_git_path} の直近commitが24h以内かつ非cmd message。軍師/家老の自走commit混入の可能性あり: ${_subject}" >&2
+            log "recent_noncmd_commit_warn: target=${_git_path} age=${_age_sec}s subject='${_subject}'"
+            _warned=true
+        fi
+    done
+
+    if [ "$_warned" = "true" ]; then
+        echo "  target_pathの直近commitを確認し、軍師/家老の自走修正を吸収していないか見極めよ" >&2
+    fi
+}
+
 notify_initial_deploy_ntfy_once() {
     local task_file="$1"
     local ninja_name="$2"
@@ -3420,6 +3480,9 @@ deploy_task_main() {
     if [ -n "$deploy_parent_cmd" ]; then
         check_firefighting_title "$deploy_parent_cmd" "$task_yaml"
     fi
+
+    # GP-110修正版: target_pathの直近コミットが非cmd self-driveならWARN
+    warn_recent_noncmd_commit_targets "$task_yaml"
 
     # AC3: _STALE_RESET_DONE確認ゲート — CMD_ID配備時にreset_stale_fieldsが実行済みか検証
     if [ -n "$CMD_ID" ] && [ "${_STALE_RESET_DONE:-0}" != "1" ]; then
