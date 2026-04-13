@@ -1,20 +1,16 @@
 task:
-  _ac_task_id: cmd_1895_impl
+  _ac_task_id: cmd_karo_gs_vectorized_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 92fca896
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 0fbdb25d
   acceptance_criteria:
-  - description: 'universe YAML+CSVを既存フォーマットで作成。run_077_bunshin.py --universe okugi_l3_168.yaml
-      で試走成功。確認: GS CSV行数>0、実行時間をprint'
+  - description: 3最適化(metricsベクトル化/gather共有/月ループ廃止)+チャンク処理を統合。gs_vectorized_subset.pyが単体実行可能
     id: AC1
-  - description: '全7忍法のGS完走。outputs/grid_search/okugi_l3_168/に7本のGS CSV生成。確認: 各CSV行数と実行時間をprint'
+  - description: --verifyフラグでalm_l0_12.yaml(12体)のkasoku_diff GSと既存CSV全行突合。119,493行max_diff<1e-10
     id: AC2
-  - description: 'champion_selectorで7忍法×3目的=21チャンピオン選出。JSON出力。確認: 21体全てユニーク(重複なし)'
+  - description: 実行時間をprint(12体での秒数)。試作5.6秒以下を確認
     id: AC3
-  - description: '21体のβ調整完了。α年率/β/β調整後CAGRを算出。L2 Top5(⑤ nukimi激攻 α=101.2%等)と比較するMDサマリ出力。確認:
-      L2 cmd_1880のα値と突合'
-    id: AC4
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -44,8 +40,7 @@ task:
   - AC1
   - AC2
   - AC3
-  - AC4
-  parent_cmd: cmd_1895
+  parent_cmd: cmd_karo_gs_vectorized
   project: dm-signal
   related_lessons:
   - detail: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み
@@ -69,11 +64,11 @@ task:
     id: L101
     summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
       6列: timestamp/cmd_id/result/reason/task_type/model)に格納される。タスク記述の「gate_metrics.yaml」は実際のファイルと異なる。実装前にファイル形式を確認せよ。'
-  report_filename: hayate_report_cmd_1895.yaml
+  report_filename: hayate_report_cmd_karo_gs_vectorized.yaml
   report_path: 
-  status: idle
+  status: done
   stop_for: []
-  task_id: cmd_1895_impl
+  task_id: cmd_karo_gs_vectorized_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
