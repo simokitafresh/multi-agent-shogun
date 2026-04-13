@@ -1,7 +1,7 @@
 task:
   parent_cmd: cmd_1878
   task_id: cmd_1878_ac12_v2
-  status: in_progress
+  status: done
   project: dm-signal
   type: impl
   command: |
@@ -42,14 +42,14 @@ task:
   binary_checks:
     AC1:
       - check: "③⑤⑦のchampion JSONが存在し各21体あるか"
-        result: ""
+        result: "yes"
       - check: "②④⑥⑧で7忍法別WFファイルが全て存在するか"
-        result: ""
+        result: "yes"
     AC2:
       - check: "比較表CSVが出力されたか"
-        result: ""
+        result: "yes"
       - check: "168体全てのメトリクスが含まれるか"
-        result: ""
+        result: "yes"
   context_files:
     - context/l2-okugi-progress.md
     - context/dm-signal-research.md

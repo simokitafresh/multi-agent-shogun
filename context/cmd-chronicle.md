@@ -634,3 +634,4 @@
 | cmd_1874 | gate — MCP書込み時の殿帰属キーワード照合hook追加（研究出力→殿定義混同防止） | infra | 04-12 | cmd_1874: pre-mcp-lord-attribu |
 | cmd_1875 | gate — MCP書込み時の設計情報/好み仕分けhook（設計パラメータはprojects/*.yamlへ誘導） | infra | 04-12 | pre-mcp-lord-attribution-guard |
 | cmd_1877 | L2奥義 49ブロック完全直列 — 1忍者1忍法OOM防止 | dm-signal | 04-13 | ③3-5 kawarimi GS完了。270900パターン処 |
+| cmd_1879 | WF出力上書きバグ修正後の3忍法WF再実行 — 並列配備 | dm-signal | 04-13 | ④4-1 bunshin WF再実行を完了。5成果物生成と忍 |
