@@ -639,3 +639,5 @@
 | cmd_1880 | L2奥義168体 β調整検証 — 市場リスク分離+α算出 | dm-signal | 04-13 | AC1-AC4完了。168体をSPY共通期間(88-161ヶ |
 | cmd_1881 | DM-Signal push修復 — git履歴から大ファイル除去+push | dm-signal | 04-13 | AC1完了(8ファイル履歴除去済み)。AC2でG2ゲートブロ |
 | cmd_1882 | UWP定義修正 — 比較表+β調整表再生成+スプレッドシート更新 | dm-signal | 04-13 | AC1-AC4完了。UWPを本番定義(最大DDのpeak→r |
+| cmd_1883 | GS再実行 — filter-repo消失3忍法×2パターン復旧 | dm-signal | 04-13 | cmd_1883の欠損GS成果物6本を確認し、未存在だったk |
+| cmd_1884 | GS出力CSV命名統一 — _grid_results_fast/_grid_monthly_fast形式に統一 | dm-signal | 04-13 | cmd_1884対象4dirのGS出力CSVを_grid_* |

@@ -471,8 +471,8 @@ lessons:
   tags:
   - bash
   helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-10'
+  harmful_count: 2
+  last_referenced: '2026-04-13'
 - id: L393
   title: yaml.dumpをqueue/配下で使用するスクリプトは.gitignoreのホワイトリスト外で潜伏しうる
   summary: mcp_sync_lesson.shはscripts/配下にあったが.gitignoreのホワイトリストに未登録→git追跡外で安全規則違反が検出されなかった。
@@ -2558,6 +2558,9 @@ lessons:
   - testing
   - review
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-13'
 - id: L089
   title: universal教訓がdm-signalで30件(23%)に膨張し注入枠10件中5件を固定占有 — タスク固有教訓枠を圧迫して精度低下
   summary: infra7件+dm-signal30件のuniversalが全デプロイに候補入り。10件上限中5件をuniversalが占有しタスク固有教訓枠は実質5件。un
@@ -2675,7 +2678,8 @@ lessons:
 - id: L074
   title: bash ((var++))はvar=0時にset -eで即exit — $((var+1))を使え
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  tags: bash
+  tags:
+  - bash
   - universal
   helpful_count: 20
   harmful_count: 19
@@ -2754,7 +2758,8 @@ lessons:
 - id: L063
   title: lessons.yamlはdict構造(lessons:キー配下リスト)。for lesson in dataはdictキーをイテレート→誤り。data['lessons']で取得せよ
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
-  tags: python
+  tags:
+  - python
   - universal
   helpful_count: 20
   harmful_count: 19

@@ -1,5 +1,5 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T09:08:00+09:00 -->
+<!-- last_updated: 2026-04-13T19:55:48+09:00 -->
 <!-- updated_by: hayate -->
 
 > 全エージェント参照可。将軍が随時更新。
@@ -60,12 +60,12 @@ GS: ①と共有 (monthly_fast必須) → 選出: WFエンジン
 
 | # | 忍法 | GS(M) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
-| 2-1 | bunshin | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_bunshin_monthly_fast.csv (11MB, 151行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
+| 2-1 | bunshin | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_bunshin_grid_monthly_fast.csv (11MB, 151行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 | 2-2 | oikaze | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_oikaze_grid_monthly_fast.csv (150行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 | 2-3 | kasoku_diff | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_diff_grid_monthly_fast.csv (1.7GB, 150行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 | 2-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_kasoku_ratio_grid_monthly_fast.csv (1.7GB, 150行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
-| 2-5 | kawarimi | ✅ | ✅ | GS: okugi_shin_ninpo_20body/tmp_1822_kawarimi_monthly_fast.csv (503MB) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
-| 2-6 | nukimi | ✅ | ✅ | GS: okugi_shin_ninpo_20body/tmp_1822_nukimi_monthly_fast.csv (941MB) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
+| 2-5 | kawarimi | ✅ | ✅ | GS: okugi_shin_ninpo_20body/tmp_1822_kawarimi_grid_monthly_fast.csv (503MB) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
+| 2-6 | nukimi | ✅ | ✅ | GS: okugi_shin_ninpo_20body/tmp_1822_nukimi_grid_monthly_fast.csv (941MB) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 | 2-7 | yotsume | ✅ | ✅ | GS: okugi_shin_ninpo_20body/cmd_1877_shin_ninpo_20_yotsume_grid_monthly_fast.csv (63MB, 150行) + WF: alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_alm_returns.csv (112行×6系列) + selection_timeline.csv (156エントリ) | 2026-04-13 |
 
 **② 完了: 7/7** ✅ — WF選出: 全7本完了
@@ -111,9 +111,9 @@ GS dir: okugi_alm_shin/ → 選出: champion_selector
 
 | # | 忍法 | GS(R) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
-| 5-1 | bunshin | ✅ | ✅ | GS: okugi_alm_shin/metrics_bunshin_results_fast.csv (1.7MB, 7526行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
-| 5-2 | oikaze | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_results_fast.csv (100MB, 270901行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
-| 5-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_results_fast.csv (310MB, 1151325行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-1 | bunshin | ✅ | ✅ | GS: okugi_alm_shin/metrics_bunshin_grid_results_fast.csv (1.7MB, 7526行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-2 | oikaze | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_grid_results_fast.csv (100MB, 270901行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 5-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_grid_results_fast.csv (310MB, 1151325行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 5-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_ratio_grid_results_fast.csv (312MB, 1151325行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 5-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kawarimi_grid_results_fast.csv (85MB, 270901行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 5-6 | nukimi | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_nukimi_grid_results_fast.csv (158MB, 586950行) + 選出: okugi_alm_shin/cmd_1877_alm_shin_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
@@ -128,9 +128,9 @@ GS dir: okugi_alm_shin/ (⑤と共有, monthly_fast必須) → 選出: WFエン�
 
 | # | 忍法 | GS(M) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
-| 6-1 | bunshin | ✅ | ✅ | GS: okugi_alm_shin/metrics_bunshin_monthly_fast.csv (13MB) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
-| 6-2 | oikaze | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_monthly_fast.csv (456MB, 146行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
-| 6-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_monthly_fast.csv (1.9GB, 145行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
+| 6-1 | bunshin | ✅ | ✅ | GS: okugi_alm_shin/metrics_bunshin_grid_monthly_fast.csv (13MB) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
+| 6-2 | oikaze | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_grid_monthly_fast.csv (456MB, 146行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
+| 6-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_grid_monthly_fast.csv (1.9GB, 145行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
 | 6-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_ratio_grid_monthly_fast.csv (2.0GB, 145行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
 | 6-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kawarimi_grid_monthly_fast.csv (442MB, 145行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
 | 6-6 | nukimi | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_nukimi_grid_monthly_fast.csv (943MB, 145行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
@@ -147,9 +147,9 @@ GS dir: okugi_alm_alm/ → 選出: champion_selector
 |---|------|:-----:|:----:|-----------|-------|
 | 7-1 | bunshin | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_bunshin_grid_results_fast.csv (2.0MB, 7526行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 7-2 | oikaze | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_oikaze_grid_results_fast.csv (117MB, 270901行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
-| 7-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_results_fast.meta.yaml + cache(arr/columns/index.npy)。CSV本体はfilter-repoで除去(346MB>100MB制限)。cache復元可能 + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json | 2026-04-13 |
+| 7-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_grid_results_fast.meta.yaml + cache(arr/columns/index.npy)。CSV本体はfilter-repoで除去(346MB>100MB制限)。cache復元可能 + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json | 2026-04-13 |
 | 7-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_results_fast.csv (349MB, 1.15M行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
-| 7-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kawarimi_grid_results_fast.csv (93MB, 270901行) + monthly_fast.csv (396MB, 131行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 7-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kawarimi_grid_results_fast.csv (93MB, 270901行) + okugi_alm_alm/cmd_1877_alm_alm_kawarimi_grid_monthly_fast.csv (396MB, 131行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 7-6 | nukimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_nukimi_grid_results_fast.csv (176MB, 586951行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 7-7 | yotsume | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_yotsume_grid_results_fast.csv (20MB, 45151行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 
