@@ -11,6 +11,15 @@ emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
 }
 
+# === Guard 0: filter-repo working tree destruction prevention (cmd_1881 incident) ===
+if [[ "$payload" == *'filter-repo'* ]]; then
+    _g0_cmd="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)" || true
+    if [[ -n "$_g0_cmd" && "$_g0_cmd" == *'filter-repo'* && "$_g0_cmd" != *'echo'* && "$_g0_cmd" != *'grep'* && "$_g0_cmd" != *'commit'* ]]; then
+        emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
+        exit 1
+    fi
+fi
+
 # === Guard 1: no-verify + hook bypass detection (G3: extended beyond commit-only) ===
 # Outer fast-check: --no-verify, HUSKY=0, or potential git commit -n
 if [[ "$payload" == *'--no-verify'* || "$payload" == *'HUSKY=0'* ]] || \
@@ -314,6 +323,7 @@ for segment in split_segments(command):
         if reason: print(reason); raise SystemExit(0)
         reason = check_main_branch_protection(tokens, command)
         if reason: print(reason); raise SystemExit(0)
+    # filter-repo is blocked by Guard 0 (bash fast-check)
     if cmd0 in {"chmod", "chown"}:
         reason = check_recursive_system_chmod_chown(tokens, cmd0)
         if reason: print(reason); raise SystemExit(0)

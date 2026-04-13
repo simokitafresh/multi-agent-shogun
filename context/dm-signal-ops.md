@@ -350,6 +350,17 @@ import metrics_research_engine as MRE
 - **用途**: 本番MetricsCalculatorへのブリッジ。research_engineから内部呼び出し
 - **依存**: `backend/app/services/metrics_calculator.py`（本番同一エンジン）
 
+## §19 サービスURL一覧（CDP/API操作前に必ず参照）
+
+| サービス | URL | 備考 |
+|---------|-----|------|
+| Frontend | `https://dm-signal-frontend.onrender.com` | ログイン必須(Admin: simokitafresh/703) |
+| Backend API | `https://dm-signal-backend.onrender.com` | API_KEY: backend/.env |
+| Stock API | `https://stockdata-api-6xok.onrender.com` | 株価データ |
+| Render Dashboard | Render API v1 | srv-d4ja8pp5pdvs739a5fsg(FE), srv-d4ja7q15pdvs739a4q1g(BE) |
+
+**注意**: `dm-signal.onrender.com` は404(L002)。必ず`dm-signal-frontend`を使え。
+
 ## §17 現在の全体ステータス（2026-03-11）
 
 | 項目 | 状態 |
