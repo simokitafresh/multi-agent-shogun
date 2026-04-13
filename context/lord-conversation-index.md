@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-13 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-13T08:18:47+09:00 -->
+<!-- generated_at: 2026-04-13T10:27:07+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-13T10:27:07+09:00 | terminal | response | **block_49到達。ほぼ完了。** 影丸(block_49)が最終ブロック付近で稼働中。4名idle。 | Phase | 08:18時点 | 現在(10:26) | |-------|----------|------------…
+- 2026-04-13T10:26:55+09:00 | terminal | inbound | どうなった？
 - 2026-04-13T08:18:47+09:00 | terminal | response | 大幅に進行した。block_42まで到達。 **前回(02:00) → 現在(08:18)の6時間で:** | Phase | 前回 | 現在 | 変化 | |-------|------|------|------| | ③ champ…
 - 2026-04-13T08:18:27+09:00 | terminal | inbound | どうなった？
 - 2026-04-13T05:52:17+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
@@ -12,8 +14,6 @@
 - 2026-04-13T02:23:11+09:00 | terminal | response | 軍師はWFエンジンのmonthly CSVメモリ使用パターンを分析中（OOM対策のなぜなぜ7回）。CTX:47%。 **シン忍法とALM忍法の違い:** 知っていること: - **目的関数が異なる**: シン = CAGR/NHF/Max…
 - 2026-04-13T02:22:01+09:00 | terminal | inbound | 1877は正しいCMDになっているか？家老は正しく理解しているか？
 - 2026-04-13T02:21:58+09:00 | terminal | response | 軍師はWFエンジンのmonthly CSVメモリ使用パターンを分析中（OOM対策のなぜなぜ7回）。CTX:47%。 **シン忍法とALM忍法の違い:** 知っていること: - **目的関数が異なる**: シン = CAGR/NHF/Max…
-- 2026-04-13T02:21:07+09:00 | terminal | inbound | 軍師のpaneを読め。シン忍法とALM忍法の違いは将軍は知っているか？
-- 2026-04-13T02:02:22+09:00 | terminal | response | 承知。ネーミングルール(`奥義{L1方式}{L2方式}-{忍法名}-{モード}`)と進行表の表現は現行ルール通り維持する。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 確認していなかった。想像で「並列」と断定した。現物を見る。 [meta] stop_reason=tool_use
