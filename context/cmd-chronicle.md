@@ -644,3 +644,4 @@
 | cmd_karo_gp183_184 | GP-183/184実装 — commit check研究cmd免除+進行中月除外AC文言 | infra | 04-13 | deploy_task.sh の binary_checks |
 | cmd_1885 | 偵察+修正 — 三層学習ループFAIL率分析+gate強化 | infra | 04-13 | gate_fire_log.yaml の22件中9件FAIL |
 | cmd_1887 | 修正 — gate_shogun_startup.sh 2件の誤検知修正（inboundアーカイブ+AC段階配備） | infra | 04-13 | gate_shogun_startup.sh 誤検知2件修正 |
+| cmd_1889 | 整備 — context鮮度WARN解消（dm-signal 3件+infrastructure 1件） | infra | 04-13 | AC1/AC2達成。context/infrastructu |
