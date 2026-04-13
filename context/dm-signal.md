@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L618 -->
+<!-- last_synced_lesson: L620 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -171,3 +171,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L589-L605は振り分け済 → gs-speedup§4(L589:SHM二乗時間化/L592:import性能/L596:savetxt 59x/L597:fork RSS計測/L598:BytesIOパターン), ops§WF(L590:tracemalloc≠RSS/L591:parallel実測/L600:fromstring空セル), ops§GS(L593:C(n,k)スケーリング/L594:HASHSEED sorted()), core§忍法BB(L599:TrendReversalFilter early return), research§奥義(L601:MaxDD最悪値選出/L602:oikaze ID誤記/L604:IS前半≠全期間0/21/L605:CAGR系過適合リスク高)。L595/L603重複削除）
 - （L606-L617は振り分け済 → ops§18 WF(L606:回帰テスト決定論), ops索引(L607:当月パリティ/L610:削除スコープ/L614:車輪再発明/L616:成果物所在/L617:gate_artifact_map), research§35(L613:超越条件C非現実+SPA/L615:Cell Bパラメータ縮退)。L608≡L607, L609≡L606, L611≡L610, L612≡L613重複→削除）
 - L618: 長時間計算はBash tool直接実行。Agent toolバックグラウンド+sleepポーリング禁止（cmd_1879）
+- L619: L2奥義2×2因子分析: L1傾向継続だが縮小する理由（cmd_1878）
+- L620: L2奥義2×2因子分析でL1傾向継続だが縮小。GS固定の2種混在(DB vs champion)が一因（cmd_1878）
