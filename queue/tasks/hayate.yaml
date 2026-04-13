@@ -1,17 +1,17 @@
 task:
-  _ac_task_id: cmd_1880_ac12
+  _ac_task_id: cmd_1882_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: ed050c21
+  ac_version: 56ef262b
   acceptance_criteria:
-  - description: 168体全ての月次リターン系列を収集し、SPYと共通期間で揃えた
+  - description: UWP定義を最大DD peak→recovery期間に修正。①bunshin鉄壁のUWPが本番DB値と一致
     id: AC1
-  - description: 168体のβ, α年率, β調整後CAGRを算出しCSV出力
+  - description: cmd_1878_l2_okugi_comparison.csv再生成。168行×20列
     id: AC2
-  - description: β調整後の2×2因子分析(BB効果, 選出効果)を算出。生CAGRとの差異を報告
+  - description: Google Sheets(シート1)を再生成CSVで更新
     id: AC3
-  - description: α>0の体数と、生CAGR Top5 vs β調整後Top5の順位変動を報告
+  - description: git commit完了
     id: AC4
   context_files:
   - context/dm-signal.md
@@ -19,6 +19,8 @@ task:
   - context/dm-signal-ops.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
     \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
+    \  - L192: 並列implのreviewではgit diff origin/main..HEADだけでなくgit diff --name-statusも確認し、対象差分が全て\n\
+    \  - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
@@ -40,14 +42,15 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_1880
+  parent_cmd: cmd_1882
   project: dm-signal
+  report_filename: hayate_report_cmd_1882.yaml
+  report_path: queue/reports/hayate_report_cmd_1882.yaml
   status: done
   stop_for: []
-  task_id: cmd_1880_ac12
+  task_id: cmd_1882_impl
+  task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_1880.yaml
-  report_path: queue/reports/hayate_report_cmd_1880.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -105,4 +108,4 @@ task:
   - id: 'L611'
     summary: 'cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にもcmd_1822が40件存在し合計127件になった。削除コマンド実行前にfindでプロジェクト全体を検索しcmd記載件数との不一致を検出して全量把握すべき。不一致があれば停止して報告。'
     detail: 'cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にもcmd_1822が40件存在し合計127件になった。削除コマンド実行前にfindでプロジェクト全体を検索しcmd記載件数との不一致を検出して全量把握すべき。不一致があれば停止して報告。'
-  deployed_at: "2026-04-13T14:08:40"
+  deployed_at: "2026-04-13T14:55:05"
