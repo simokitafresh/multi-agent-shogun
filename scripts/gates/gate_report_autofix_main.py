@@ -169,9 +169,6 @@ def main() -> int:
         bc15_fixed = False
         bc_bool_fixed = False
         bc19_fixed = False
-        str_fixed = False
-        pass_vals = {"pass", "ok", "true", "yes", "done", "clear", "n/a", "na"}
-        fail_vals = {"fail", "false", "no", "ng", "block"}
 
         for ac_key, ac_val in bc.items():
             # binary_checks AC dict→list変換は消火→撤去。gateが"must be list"でBLOCK
@@ -247,14 +244,6 @@ def main() -> int:
                     if isinstance(result, bool):
                         item["result"] = "yes" if result else "no"
                         bc_bool_fixed = True
-                    elif isinstance(result, str):
-                        lowered = result.strip().lower()
-                        if lowered in pass_vals and result != "yes":
-                            item["result"] = "yes"
-                            str_fixed = True
-                        elif lowered in fail_vals and result != "no":
-                            item["result"] = "no"
-                            str_fixed = True
 
                     norm = item.get("result")
                     if isinstance(norm, str):
@@ -278,8 +267,6 @@ def main() -> int:
             fixes.append("binary_checks result boolean→string変換")
         if bc19_fixed:
             fixes.append("binary_checks [N]キー→check/result正規化")
-        if str_fixed:
-            fixes.append("binary_checks result文字列正規化(PASS/ok→yes, FAIL/ng→no)")
 
     lc = data.get("lesson_candidate")
     if isinstance(lc, list):

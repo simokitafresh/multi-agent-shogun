@@ -1,17 +1,25 @@
 task:
-  _ac_task_id: cmd_1889_impl
+  _ac_task_id: cmd_1890_impl
   _ac_worker_id: null
-  ac_version: 04d27bd9
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3 > AC4 > AC5
+  ac_version: 16ad3324
   acceptance_criteria:
-  - description: '4ファイル全てのlast_updatedが2026-04-13に更新されている。確認: grep last_updated で各ファイルの日付を表示'
+  - description: gate_report_autofix_main.pyから文字列正規化コード(PASS/ok→yes, FAIL/ng→no)が削除されている
     id: AC1
-  - description: bash scripts/gates/gate_context_freshness.sh 実行でWARN 0件
+  - description: boolean→string変換(true→yes, false→no)は残存している
     id: AC2
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L246: 関数がデフォルト値をechoしつつreturn 1する設計は、set\
-    \ -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn\n  - L156: IF set -e環境で非0戻り値を返す判定関数を呼び出す時\
-    \ THEN `if func; then rc=0; else rc=$?; fi` 形式で受けよ\n  - L426: CLAUDE.mdでyaml.dump禁止が明記されているが、archive_completed.sh内のheredoc\
-    \ Pythonでのdump呼出はpre-\n  - L324: echo str | grep -q patternは2 subprocessをforkする。[[\
-    \ str == *pattern* ]]は純bashで同等のマ\n  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+  - description: 'result: PASSの報告YAMLでgate_report_format.shがBLOCK(エラー出力+exit 1)する'
+    id: AC3
+  - description: 'result: yesの報告YAMLでgate_report_format.sh PASS(exit 0)する'
+    id: AC4
+  - description: bats tests/unit/ 既存テスト全PASS（CI赤がcmd_karo_ci_fix_1885完了済みの場合）
+    id: AC5
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L466: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo\n\
+    \  - L465: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS\
+    \ 15GB超過OOM。dr\n  - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ\n\
+    \  - L300: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed\n\
+    \  - L208: test_gate_metrics_model_labels.batsのテスト#158がライブtmuxセッションの@model_nameを取得し、テストフィクス\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -29,21 +37,24 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1889
+  - AC3
+  - AC4
+  - AC5
+  parent_cmd: cmd_1890
   project: infra
-  report_filename: hayate_report_cmd_1889.yaml
-  report_path: queue/reports/hayate_report_cmd_1889.yaml
+  report_filename: hayate_report_cmd_1890.yaml
+  report_path: queue/reports/hayate_report_cmd_1890.yaml
   status: done
   stop_for: []
-  task_id: cmd_1889_impl
+  task_id: cmd_1890_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 20
+    total_workarounds: 17
     top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), verdict_override(3件), test_pd_verify(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
+    breakdown: 'report_yaml_format(3件), verdict_override(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_blocks:
     - reason: 'report_format'
@@ -65,6 +76,9 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
+  - id: 'L470'
+    summary: '''`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive'
+    detail: '''`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive'
   - id: 'L469'
     summary: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix'
     detail: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix'
@@ -92,7 +106,5 @@ task:
   - id: 'L461'
     summary: '**dismiss_reason**: L463として統合登録済み MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer'
     detail: '**dismiss_reason**: L463として統合登録済み MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer'
-  - id: 'L460'
-    summary: '''**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要'
-    detail: '''**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要'
-  deployed_at: "2026-04-13T21:21:49"
+  deployed_at: "2026-04-13T21:54:20"
+  progress: AC1-AC5達成。report YAMLとgate通過まで完了。commit未了のため report verdict は FAIL。

@@ -176,6 +176,22 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     [[ "$output" == *"PASS"* ]]
 }
 
+@test "binary_checks result PASS is rejected by gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    sed -i '0,/result: "yes"/s//result: PASS/' "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL"* ]]
+    [[ "$output" == *"binary_checks.AC1[0].result"* ]]
+}
+
+@test "binary_checks result yes passes gate" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
 @test "verdict FAIL passes gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     sed -i 's/verdict: PASS/verdict: FAIL/' "$TEST_TMPDIR/report.yaml"
