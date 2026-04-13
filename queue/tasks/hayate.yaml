@@ -1,45 +1,59 @@
 task:
-  parent_cmd: cmd_1877
-  task_id: cmd_1877_block_48
-  status: done
+  parent_cmd: cmd_1878
+  task_id: cmd_1878_ac12
+  status: failed
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#48 [TYPE-WF] ⑧ 8-3 kasoku_diff WF選出
+    L2奥義 8パターン全比較 — AC1+AC2: 存在確認+全比較表
 
-    cd /mnt/c/Python_app/DM-signal
-    python3 outputs/scripts/l1_alm_wf_engine.py \
-      --csv outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_monthly_fast.csv \
-      --multi-is --cmd-id cmd_1877 --progress --no-parallel \
-      --out-dir outputs/analysis/alm_research/okugi_alm_alm/
+    === AC1: 168体存在確認 ===
+    8パターンそれぞれで21体(7忍法×3モード)が揃っているか確認。
 
-    完了後:
-    1. alm_returns CSV + selection_timeline存在を確認
-    2. context/l2-okugi-progress.md の ⑧ 8-3 kasoku_diff WF選出を ✅ に更新
-    3. git add + git commit
+    GS固定選出(③⑤⑦) — champion JSON:
+      ③: outputs/grid_search/okugi_shin_alm/cmd_1877_shin_alm_champions.json
+      ⑤: outputs/grid_search/okugi_alm_shin/cmd_1877_alm_shin_champions.json
+      ⑦: outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_champions.json
+      構造: ninjutsu → {7忍法} → champions → {cagr, nhf, maxdd} = 21体/パターン
+
+    WF動的選出(②④⑥⑧) — WFエンジン出力:
+      ②: outputs/analysis/alm_research/okugi_shin_ninpo_20body/cmd_1877_l1_wf_*.csv
+      ④: outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_l1_wf_*.csv
+      ⑥: outputs/analysis/alm_research/okugi_alm_shin/cmd_1877_l1_wf_*.csv
+      ⑧: outputs/analysis/alm_research/okugi_alm_alm/cmd_1877_l1_wf_*.csv
+
+    ①: 本番DB登録済み21体。context/l2-okugi-progress.md参照
+
+    === AC2: 168体OOS全比較表 ===
+    168体のOOS主要メトリクス(CAGR, MaxDD, NHF, Sharpe等)を
+    8パターン横並びで一覧化。CSV出力。
+    出力先: outputs/analysis/alm_research/cmd_1878_l2_okugi_comparison.csv
+
   acceptance_criteria:
     - id: AC1
-      description: "alm_returns CSV + selection_timeline存在。rc=0"
+      description: "8パターンそれぞれで21体(7忍法×3モード)のチャンピオン/選出結果の存在を確認し、欠損があれば報告"
     - id: AC2
-      description: "進行表更新+git commit済み"
+      description: "168体のOOS主要メトリクスを8パターン比較表(CSV)として出力"
   binary_checks:
     AC1:
-      - check: "alm_returns CSVが存在するか"
-        result: "PASS: outputs/analysis/alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv"
-      - check: "rc=0か"
-        result: "PASS: python3 outputs/scripts/l1_alm_wf_engine.py rc=0"
+      - check: "③⑤⑦のchampion JSONが存在し各21体あるか"
+        result: ""
+      - check: "②④⑥⑧のWF CSVが存在するか"
+        result: ""
     AC2:
-      - check: "git commitしたか"
-        result: "PASS: 9135e8fd"
+      - check: "比較表CSVが出力されたか"
+        result: ""
+      - check: "168体全てのメトリクスが含まれるか"
+        result: ""
   context_files:
     - context/l2-okugi-progress.md
-  target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py"
+    - context/dm-signal-research.md
   stop_for:
-    - "OOM Kill(signal 9/137)"
+    - "champion JSONまたはWF CSVに欠損がある場合（AC1で報告後に停止）"
   never_stop_for:
-    - "既存ファイル警告 — 確認して続行"
+    - "メトリクスの値が異常でも記録して続行"
   scout_exempt: true
-  deployed_at: "2026-04-13T09:47:56+09:00"
+  deployed_at: "2026-04-13T11:38:01+09:00"
   related_lessons: []
   related_lessons:
   - id: 'L617'

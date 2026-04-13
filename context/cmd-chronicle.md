@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-12 -->
+<!-- last_updated: 2026-04-13 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -8,57 +8,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 | — | → 3月前半(03-09, cmd_662-707)は `context/archive/cmd-chronicle-2026-03-early.md` 参照 | — | 03-09 | 43件 |
-| cmd_872 | 辞書検証トレーサビリティ必須化 — 全エントリに出典・検証日・検証方法を記録 | dm-signal | 03-13 | knowledge-base の guide と methods/11件に… |
-| cmd_873 | GSD式偵察 — 家老サブエージェント活用の設計検討（4観点独立分析） | infra | 03-13 | 家老サブエージェント導入の7失敗シナリオを分析。殿の核心指示「制限がキモ」… |
-| cmd_875 | 実装 — gstack知見Tier1: 忍者プロンプト強化+タスクYAML… | infra | 03-13 | gstack知見Tier1。L215/L216登録 |
-| cmd_878 | 修正 — 教訓injection_count同期修復+deprecatio… | infra | 03-13 | PD-002根本解決。L217登録 |
-| cmd_876 | 実装 — gstack知見Tier2: 家老レビュー強化+PJ知識拡張+定… | infra | 03-13 | gstack知見Tier2。L218登録。自動退役4件 |
-| cmd_877 | 実装 — gstack知見Tier3: CDP persistent da… | infra | 03-13 | gstack知見Tier3 |
-| cmd_883 | 修正 — 知識基盤衛生修復（context鮮度+リンク切れ+gitignoreホワイトリスト） | infra | 03-13 | dm-signal.md cmd_804リンク切れ修復+database.md gitignoreホワイトリスト (cmd_883_B) |
-| cmd_884 | 修正 — cmd-chronicle空欄補完（title37行+key_result92行） | infra | 03-13 | fix: fill cmd chronicle blanks for cmd_884 |
-| cmd_888 | 偵察 — gate×skill自動修復パターンの外部知見調査（GSD/gstack/業界事例） | infra | 03-13 | 偵察 — gate×skill自動修復パターンの外部知見調査（GSD/gstack/業界事例） |
-| cmd_887 | 偵察 — 忍者作業の繰り返しパターン分析+スキル化候補洗い出し | infra | 03-13 | 偵察 — 忍者作業の繰り返しパターン分析+スキル化候補洗い出し |
-| cmd_886 | 偵察 — SPA遷移不成立の根本原因調査（Web+X検索含む） | dm-signal | 03-13 | 偵察 — SPA遷移不成立の根本原因調査（Web+X検索含む） |
-| cmd_885 | 修正 — CDP 2系統統廃合（Legacy helper廃止→Daemon mode一本化） | auto-ops | 03-13 | add --remote-allow-origins=* to Chrome launch args (cmd_885_D) |
-| cmd_880 | 実装 — SPA Phase2: Sidebar Link化+CDP動作検証 | dm-signal | 03-13 | cancelled |
-| cmd_881 | 実装 — SPA Phase3: Dropdown Link化+CDP動作検証 | dm-signal | 03-13 | cancelled |
-| cmd_890 | 修正 — help-link.tsx SPA遷移廃止→window.location.href統一 | dm-signal | 03-13 | 修正 — help-link.tsx SPA遷移廃止→window.location.href統一 |
-| cmd_892 | 偵察 — Render frontend build failure調査（render-cli log取得） | dm-signal | 03-13 | 偵察 — Render frontend build failure調査（render-cli log取得） |
-| cmd_891 | 修正 — skill_candidateフィールド活性化（忍者がスキル提案できる仕組み） | infra | 03-13 | skill_candidateフィールド活性化 — 記入ガイド+判定基準+処理フロー追加 (cmd_891_A) |
-| cmd_893 | 修正 — Render build failure復旧（isLoadingMore prop型定義+redeploy） | dm-signal | 03-13 | 修正 — Render build failure復旧（isLoadingMore prop型定義+redeploy） |
-| cmd_889 | 修正 — HomeButton SPA遷移廃止→window.location.href統一 | dm-signal | 03-13 | 修正 — HomeButton SPA遷移廃止→window.location.href統一 |
-| cmd_879 | 実装 — SPA Phase1: HomeButton Link化+CDP動作検証 | dm-signal | 03-13 | cancelled |
-| cmd_882 | 修正 — SPA Phase1修正: buildUrlWithPortfolio SSR対応+再検証 | dm-signal | 03-13 | cancelled |
-| cmd_895 | 偵察 — note CDP自動ログイン+資料ページDOM構造調査 | auto-ops | 03-13 | 偵察 — note CDP自動ログイン+資料ページDOM構造調査 |
-| cmd_894 | 実装 — note売上手数料PDF Google Driveアップロード+CSV追記 | auto-ops | 03-13 | 実装 — note売上手数料PDF Google Driveアップロード+CSV追記 |
-| cmd_896 | 実装 — 個人事業_2025.csv 15列フォーマット移行（既存187行+新規14行） | auto-ops | 03-13 | 実装 — 個人事業_2025.csv 15列フォーマット移行（既存187行+新規14行） |
-| cmd_898 | 実装 — 経費マスターSpreadsheet作成+個人事業READMEドキュメント整備 | auto-ops | 03-13 | 実装 — 経費マスターSpreadsheet作成+個人事業READMEドキュメント整備 |
-| cmd_897 | 偵察 — MoneyForward CDP自動ログイン+家計簿CSV DLページDOM構造調査 | auto-ops | 03-13 | 偵察 — MoneyForward CDP自動ログイン+家計簿CSV DLページDOM構造調査 |
-| cmd_899 | 修正 — マスターCSV「殿コメント」→「補足メモ」カラム名変更 | auto-ops | 03-13 | Drive上の個人事業_2025.csvヘッダー13列目「殿 |
-| cmd_900 | 実装 — MoneyForward CDPログイン+グループ選択+家計簿CSV自動DLパイプライン | auto-ops | 03-13 | 実装 — MoneyForward CDPログイン+グループ選択+家計簿CSV自動DLパイプライン |
-| cmd_902 | 整理 — auto-ops gitignore整備+未追跡ソースコミット+プッシュ | auto-ops | 03-13 | 整理 — auto-ops gitignore整備+未追跡ソースコミット+プッシュ |
-| cmd_903 | 整理 — DM-signal 未コミットファイル一括コミット+プッシュ | dm-signal | 03-13 | 整理 — DM-signal 未コミットファイル一括コミット+プッシュ |
-| cmd_904 | 整理 — shogun 未コミットファイル一括コミット+プッシュ | infra | 03-13 | 整理 — shogun 未コミットファイル一括コミット+プッシュ |
-| cmd_901 | 実装 — CDP基盤にsnapshot+ref方式を組込み（gstack browse知見転用） | auto-ops | 03-13 | 実装 — CDP基盤にsnapshot+ref方式を組込み（gstack browse知見転用） |
-| cmd_905 | 実装 — CDP Chrome自動クリーンアップ（PID追跡+idle時自動kill） | auto-ops | 03-13 | integrate CDP Chrome idle cleanup into ninja_monitor (cmd_905_B) |
-| cmd_906 | 実装 — Render APIキー共通ローダー（.env自動読込ヘルパー） | dm-signal | 03-13 | Render APIキーの共通ローダー `scripts/l |
-| cmd_908 | 実装 — note.com売上CSV+購入領収書PDF自動取得パイプライン | auto-ops | 03-13 | 実装 — note.com売上CSV+購入領収書PDF自動取得パイプライン |
-| cmd_907 | 偵察 — MoneyForward認証方式調査（TOTP対応+email_otp自動化可否） | auto-ops | 03-13 | 偵察 — MoneyForward認証方式調査（TOTP対応+email_otp自動化可否） |
-| cmd_909 | 実装 — MFパイプラインTOTP自動認証統合+live実証 | auto-ops | 03-13 | 実装 — MFパイプラインTOTP自動認証統合+live実証 |
-| cmd_911 | 改善 — スキル品質是正（description統一+バリデーションスクリプト） | infra | 03-13 | 既存12スキルのdescriptionをWhat+When+ |
-| cmd_910 | 実証 — note.comパイプラインlive実行（売上CSV+領収書PDF） | auto-ops | 03-13 | absorbed→cmd_912 |
-| cmd_913 | 改善 — gstack停止条件二分法の導入（stop_for/never_stop_for） | infra | 03-13 | never_stop_forにデフォルト3条件を注入 (cmd_913_A) |
-| cmd_915 | 実装 — PDFリネーム+Drive自動アップロードパイプライン | auto-ops | 03-13 | 実装 — PDFリネーム+Drive自動アップロードパイプライン |
-| cmd_914 | 実装 — MF CSV→マスターCSV変換+マージパイプライン | auto-ops | 03-13 | 実装 — MF CSV→マスターCSV変換+マージパイプライン |
-| cmd_912 | 修正 — note_pipeline購入領収書→PF手数料領収書に差替え+live実証 | auto-ops | 03-13 | 修正 — note_pipeline購入領収書→PF手数料領収書に差替え+live実証 |
-| cmd_916 | 偵察 — 経費マスター19パターン証票入手経路の棚卸し | auto-ops | 03-13 | 偵察 — 経費マスター19パターン証票入手経路の棚卸し |
-| cmd_918 | 修正 — receipt_manager.py unknown続行+サブフォルダ重複の2件修正 | auto-ops | 03-13 | 修正 — receipt_manager.py unknown続行+サブフォルダ重複の2件修正 |
-| cmd_917 | 修正 — expense_csv.py 振込手数料fail-close+非月次CSV停止の2件修正 | auto-ops | 03-13 | 修正 — expense_csv.py 振込手数料fail-close+非月次CSV停止の2件修正 |
-| cmd_919 | 実装 — 年度統合パイプライン（確定申告用一括処理） | auto-ops | 03-13 | 実装 — 年度統合パイプライン（確定申告用一括処理） |
-| cmd_922 | 偵察 — MoneyForwardログインフォーム検出タイムアウト原因調査 | auto-ops | 03-13 | 偵察 — MoneyForwardログインフォーム検出タイムアウト原因調査 |
-| cmd_921 | 修正 — annual_pipeline.py MFステップ例外ハンドリング追加 | auto-ops | 03-13 | 修正 — annual_pipeline.py MFステップ例外ハンドリング追加 |
-| cmd_923 | 修正 — MFログイン既ログインredirect対応（fast-path追加） | auto-ops | 03-13 | 修正 — MFログイン既ログインredirect対応（fast-path追加） |
-| cmd_924 | 修正 — note売上CSV取得を月別12回→1回に最適化 | auto-ops | 03-13 | 修正 — note売上CSV取得を月別12回→1回に最適化 |
 | cmd_925 | 実装 — gstack Tier1適用: Suppressions+推薦先行+WHY（忍者報告品質） | infra | 03-14 | complete cmd_925 suppressions S1-S12 + recommendation WHY |
 | cmd_926 | 実装 — gstack Tier1適用: Priority Hierarchy+並列実行明示（タスクYAML自動注入） | infra | 03-14 | ac_priority/parallel_okの空sentinel補完+extract_ac_ids (cmd_926) |
 | cmd_928 | 実装 — gstack将軍適用: 推薦先行+WHY/モードコミットメント/Temporal Interrogation/Dream State Mapping | infra | 03-14 | approve scope_mode cmd format fix |
@@ -684,3 +633,4 @@
 | cmd_1873 | fix — SessionEnd hookのALERT判定を修正（cmd_pending/ninja_activeはINFO化） | infra | 04-12 | clear_prep_check.shのcmd_pendin |
 | cmd_1874 | gate — MCP書込み時の殿帰属キーワード照合hook追加（研究出力→殿定義混同防止） | infra | 04-12 | cmd_1874: pre-mcp-lord-attribu |
 | cmd_1875 | gate — MCP書込み時の設計情報/好み仕分けhook（設計パラメータはprojects/*.yamlへ誘導） | infra | 04-12 | pre-mcp-lord-attribution-guard |
+| cmd_1877 | L2奥義 49ブロック完全直列 — 1忍者1忍法OOM防止 | dm-signal | 04-13 | ③3-5 kawarimi GS完了。270900パターン処 |
