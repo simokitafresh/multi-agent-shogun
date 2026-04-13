@@ -280,3 +280,8 @@ lessons:
   detail: 'cmd_1877に並列配備絶対禁止と明記されていたのに1忍者1ブロックだから並列OKと独自解釈し5本同時配備しようとした。殿に止められなければOOM Kill発生。karo deepdive Phase 1と同構造。制約がある→なぜこの制約か確認→制約通りに配備。独自解釈して緩和するな。cmd_1879では将軍がメモリ見積もり付きで並列可と明記→正しく配備できた。制約に疑問があれば将軍に確認。'
   source_cmd: 'cmd_1877'
   created_at: '2026-04-13'
+- id: 'LK049'
+  title: 'WA ALERT→PD自動起票で将軍検知を強制化'
+  detail: 'WA同一カテゴリ3件ALERTが表示止まりで行動に接続されていなかった(verdict_override 6件蓄積)。karo_workaround_log.shのALERT発火時にpending_decision_write.sh自動呼出しを追加。将軍startup gateで直接検知される。deepdive Phase4(自動化×強制)の家老版実践'
+  source_cmd: 'cmd_1885'
+  created_at: '2026-04-13'

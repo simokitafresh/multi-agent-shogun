@@ -13,6 +13,7 @@ lessons:
   summary: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_'
   tags:
   - 'universal'
+  status: 'confirmed'
 - id: 'L467'
   title: 'REPORT-DONE-MISMATCH誤検知はtask_id照合不在が根因。snapshot report cmd_idとtask YAMLのtask_idを比較して旧report残存をスキップせよ'
   summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
@@ -726,6 +727,9 @@ lessons:
   - 'git'
   - 'monitor'
   - 'inbox'
+  deprecated: true
+  deprecated_at: '2026-04-13T20:25:58+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: 'L346'
   title: 'stderr/stdout混合キャプチャは値汚染バグの温床'
   summary: 'Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外'
@@ -2374,6 +2378,9 @@ lessons:
   - 'gate'
   - 'yaml'
   - 'lesson'
+  deprecated: true
+  deprecated_at: '2026-04-13T20:25:58+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: 'L101'
   title: 'gate_metrics.logはTSV形式(YAMLではない)'
   summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '

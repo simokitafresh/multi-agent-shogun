@@ -3573,7 +3573,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-13
 - **出典**: cmd_1885
 - **記録者**: hanzo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_format.shにautofix pre-stepを組み込むことで手順依存を排除。GP-107 Q1-Q4全PASS確認済。
 

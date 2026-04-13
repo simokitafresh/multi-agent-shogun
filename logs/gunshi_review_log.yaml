@@ -23,6 +23,7 @@
 # REQUEST_CHANGES verdict → severity: urgent/normal 必須。欠落→家老がurgent/normal判断できず対応遅延(cmd_1836/1841で2件欠落, 2026-04-11検出)
 # 「既実装」判定 → git show HEAD~1:file で変更前状態を確認。HEADは並行commit影響を受ける(cmd_1860 premature_shelve: LG001違反の変形)
 # AC絶対条件(「全期間」「100%」「全ファイル」)→構造的例外の有無を確認。例外あれば除外条件をAC文面に明示(5件verdict_override共通根因, 2026-04-12分析)
+# 全称判定(ゼロ/全て/なし/壊れない)→反証を探せ。反証が見つからなかったらOK。反証を探す前にOKを出すな。著者の物語に乗るな(cmd_1884 kawarimi見落とし: 7段なぜなぜ到達点)
 # 軍師自己コード変更(hooks/gates/CLAUDE.md/instructions/settings)→S0プロトコル必須。docs/research/gunshi_sg_s0_self_code_change_20260412.md(LG026)
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
 # SG一覧: SG0(gate自動) SG2(commit) SG3(scope) SG4(家老処理) SG5(偵察トレーサビリティ)
@@ -528,3 +529,26 @@
   lesson_quality: OK
   causal_chain: "GP-183/184実装→verdict_override WA理論根絶→家老手動補正ゼロ→正の複利。テスト6件+shellcheck=品質保証済み"
   timestamp: "2026-04-13T20:25:00"
+- cmd_id: cmd_1885
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1885_scout_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。FAIL率40.9%→22.7%改善。autofix pre-step(gate_report_format.sh)+verdict PASS→FAIL訂正(autofix_main.py)。bats 15/15。cmdの数値誤り(224→22)を半蔵が正しく修正"
+  observations:
+    - "事実1: 半蔵はcmdの前提誤り(224件→22件, 4%→40.9%)を偵察フェーズで正しく修正。SCOUT_IMPLの設計が機能"
+    - "事実2: autofix pre-stepは> /dev/null 2>&1 || trueで副作用抑制。gate判定ロジックには影響しない"
+    - "事実3: verdict PASS→FAIL訂正はbc_fail_count>0条件のみ。GP-107 Q1-Q4全PASS(機械的集計)"
+  lesson_quality: OK
+  causal_chain: "gate FAIL率40.9%→22.7%=18.2pp改善。autofix未実行パターン(手順依存)→pre-step組込み(環境強制)。×10回=180ppのFAIL防止=正の複利。残22.7%は別パターン(FILL_THIS残存等)→次段で対処可能"
+  timestamp: "2026-04-13T20:30:00"
+- cmd_id: self_study_S178
+  review_type: self_study
+  findings_summary: "殿指示なぜなぜ7回。起点=cmd_1884 kawarimi衝突見落とし。到達点=全称判定(ゼロ/全て/なし)は著者の主張。レビュアーは反証を探し、崩せなければOK。反証探索前のOK禁止。review_logヘッダL26+docs/research/永続化+lesson_candidate家老送信"
+  observations:
+    - "事実1: cmd_1884 draft reviewで「衝突リスクゼロ」をAPPROVEしたがhayateがkawarimi grid+非grid共存(93MB)を検出"
+    - "事実2: 7段目到達=draftの物語に沿って検証=著者の視点=レビューの独立性消失。反証者の視点が欠如"
+    - "事実3: review_logヘッダは/clear後も残る(Level 2)。毎レビュー時に読む仕組み既存。Level 4(gate)は全称判定の自動検出が困難で現時点不適合"
+  causal_chain: "確証バイアス→暗黙前提の見落とし→全称判定を裏付けのみで検証→衝突見落とし。根因=レビュアーが著者と同じ前提を共有。処方=反証探索を原理として埋込み。×10回=見落とし率低下=正の複利"
+  timestamp: "2026-04-13T20:35:00"

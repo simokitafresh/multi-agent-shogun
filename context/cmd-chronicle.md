@@ -642,3 +642,4 @@
 | cmd_1883 | GS再実行 — filter-repo消失3忍法×2パターン復旧 | dm-signal | 04-13 | cmd_1883の欠損GS成果物6本を確認し、未存在だったk |
 | cmd_1884 | GS出力CSV命名統一 — _grid_results_fast/_grid_monthly_fast形式に統一 | dm-signal | 04-13 | cmd_1884対象4dirのGS出力CSVを_grid_* |
 | cmd_karo_gp183_184 | GP-183/184実装 — commit check研究cmd免除+進行中月除外AC文言 | infra | 04-13 | deploy_task.sh の binary_checks |
+| cmd_1885 | 偵察+修正 — 三層学習ループFAIL率分析+gate強化 | infra | 04-13 | gate_fire_log.yaml の22件中9件FAIL |
