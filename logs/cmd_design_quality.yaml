@@ -4794,3 +4794,11 @@ entries:
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-04-13T12:30:04Z"
+  - cmd_id: "cmd_karo_shouka2_wid"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-13T12:31:20Z"

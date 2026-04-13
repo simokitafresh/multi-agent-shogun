@@ -494,7 +494,7 @@
 - cmd_id: cmd_karo_gp183_184
   review_type: draft
   verdict: APPROVE
-  gate_result:
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。GP-183(scout_exempt+target_path未設定→commit no)+GP-184(monthly/月次→進行中月除外付記)統合実装。deploy_task.sh L1141/L1130実在確認。verdict_override7件中6件根絶見込み(GP-173除外)。才蔵単独配備妥当"
   observations:
@@ -573,6 +573,9 @@
   gate_result: CLEAR
   confidence: LOW
   findings_summary: "AC1前提不正確(jsonlのみ→実際はarchive確認済み)。AC2 scout_exemptスキップは妥当"
+  observations:
+    - "事実1: AC1はjsonl直近N日のみ対象だがgate_shogun_startup.shはarchive済みcmd_idも検出対象。前提不整合"
+    - "事実2: AC2のscout_exemptスキップ方針は妥当(偵察不要のinfra cmd自動判定)"
   causal_chain: "cmd前提不正確→修正ロジック不適切→再設計必要"
   timestamp: "2026-04-13T20:55:00"
 - cmd_id: cmd_1886
@@ -581,6 +584,9 @@
   verdict: LGTM
   gate_result:
   findings_summary: "AC1/AC2変更妥当。AC3既存赤(疾風無関係)。未commit"
+  observations:
+    - "事実1: deploy_task.sh L1092にreason記入例(例: 教訓なし→理由:本cmdは既存ロジック修正のみ)追加済み"
+    - "事実2: AC3 CI赤はcmd_1885影響(影丸修正中)。疾風の変更に起因しない"
   causal_chain: "記入例追加→FAIL率低下=正の複利"
   timestamp: "2026-04-13T21:00:00"
 - cmd_id: cmd_1887
@@ -589,6 +595,9 @@
   verdict: LGTM
   gate_result: CLEAR
   findings_summary: "Gate16 scout_exemptスキップ+Gate18他アーカイブ判定。bats 17/17"
+  observations:
+    - "事実1: Gate16にscout_exempt判定追加(L891)。scout_exempt=trueのcmdは偵察不要→Gate16スキップ"
+    - "事実2: Gate18で他のアーカイブ済みcmd(例:done_yyyymmdd.yaml)を正しく識別。bats 17/17全PASS"
   causal_chain: "誤検知修正→ALERT精度向上=正の複利"
   timestamp: "2026-04-13T21:05:00"
 - cmd_id: cmd_1888
@@ -622,3 +631,15 @@
     - "事実2: dm-signal 3件は着手時点で既に2026-04-13更新済み。前提崩壊を正しく報告"
   causal_chain: "監視対象ズレ→dashboardとgateで判定不一致→偽FAIL→WA。SSOT化→一貫性→正の複利"
   timestamp: "2026-04-13T21:35:00"
+- cmd_id: cmd_karo_shouka2_wid
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_karo_shouka2_wid_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。消火撤去第2弾。autofix worker_id/parent_cmd推定削除+gate空値BLOCK追加。AC1-3全PASS"
+  observations:
+    - "事実1: autofix_main.py L85-105の推定コード(ファイル名→worker_id, タスクYAML→parent_cmd)が撤去済み"
+    - "事実2: gate_report_format.shに空値BLOCKチェック追加。worker_id空→FAIL、parent_cmd空→FAILをテスト確認"
+  causal_chain: "推定コード(消火)→未検証データで穴埋め→誤推定リスク+忍者が学ばない。撤去+BLOCK→忍者が自力記入=正の複利"
+  timestamp: "2026-04-13T21:38:00"
