@@ -921,3 +921,12 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - **⑧が最下位群独占**: ALM-BB×WF動的がβ高(β>1.7)+α低の構造的劣位
 - **共通期間**: 88-161ヶ月（忍法/パターン依存）
 → 詳細: `outputs/analysis/alm_research/cmd_1880_l2_beta_adjusted_summary.md` | CSV: `outputs/analysis/alm_research/cmd_1880_l2_beta_adjusted_2x2.csv`
+
+### ALM L2: 168体パターン間相関分析 (cmd_1893)
+<!-- last_updated: 2026-04-14 -->
+- **共通期間**: 87ヶ月(2018-08〜2025-10)、NaN率0%
+- **8パターン間平均相関**: 0.63〜0.77（①ベースライン）
+- **①vs各パターン**: ②0.77 > ⑤0.74 > ③0.70 > ⑦0.69 > ⑥0.68 > ④0.67 > ⑧0.63
+- **仮説検証**: ①vs⑤(0.736) > ①vs③(0.701) → **確認**（同忍法BB違い > 目的関数違い）
+- **多様性**: ⑧(ALM-BB×WF動的)が①と最も低相関(0.63)=追加価値最大。ただしβ調整では最下位群(cmd_1880)
+→ 詳細: `outputs/analysis/alm_research/cmd_1893_correlation_summary.md` | CSV: `outputs/analysis/alm_research/cmd_1893_correlation_8x8.csv`
