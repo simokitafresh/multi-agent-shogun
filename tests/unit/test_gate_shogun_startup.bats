@@ -405,3 +405,51 @@ EOF
     [[ "$output" == *"hayate(cmd_100)"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
 }
+
+# === Test 18: scout_exempt=true cmd → AC不一致でもWARNINGなし (AC2修正検証) ===
+@test "scout_exempt=true cmd → AC mismatch skipped, no WARNING" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  status: assigned
+  parent_cmd: cmd_100
+  acceptance_criteria:
+  - id: AC1
+    description: "test"
+EOF
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_100:
+    status: pending
+    scout_exempt: true
+    acceptance_criteria:
+      - id: AC1
+        description: "test"
+      - id: AC2
+        description: "test2"
+      - id: AC3
+        description: "test3"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARNING: AC不一致"* ]]
+}
+
+# === Test 19: アーカイブ他ファイル存在時にinbound=0 ALERT出ない (AC1修正検証) ===
+@test "archive has other files + inbound=0 → INFO not ALERT" {
+    mkdir -p "$TEST_TMPDIR/logs/lord_conversation_archive"
+    local yesterday
+    yesterday=$(date -d "yesterday" '+%Y-%m-%d' 2>/dev/null || date -v-1d '+%Y-%m-%d' 2>/dev/null || echo "2099-01-01")
+    # 昨日のファイル: inbound=0 (outboundのみ)
+    printf '{"direction": "outbound", "content": "test"}\n' \
+        > "$TEST_TMPDIR/logs/lord_conversation_archive/${yesterday}.jsonl"
+    # 他のアーカイブファイル (システム健全を示す)
+    printf '{"direction": "inbound", "content": "old"}\n' \
+        > "$TEST_TMPDIR/logs/lord_conversation_archive/2026-01-01.jsonl"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT: ${yesterday}.jsonlのinbound=0"* ]]
+    [[ "$output" == *"INFO: ${yesterday} inbound=0"* ]]
+}

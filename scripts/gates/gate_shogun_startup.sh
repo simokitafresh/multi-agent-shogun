@@ -494,6 +494,17 @@ if [ -d "$_AC16_TDIR" ] && [ -f "$_AC16_STK" ]; then
         _ac16_pcmd=$(awk '/^  parent_cmd:/{print $2; exit}' "$_ac16_tf")
         [ -z "$_ac16_pcmd" ] && continue
 
+        # scout_exempt=trueのcmdはAC段階配備のためスキップ
+        _ac16_scout=$(awk -v cmd="$_ac16_pcmd" '
+            BEGIN { t="  "cmd":" }
+            $0==t { c=1; next }
+            c && /^  [a-zA-Z]/ { exit }
+            c && /^    scout_exempt: / { sub(/.*scout_exempt: */, ""); print; exit }
+        ' "$_AC16_STK")
+        if [ "$_ac16_scout" = "true" ]; then
+            continue
+        fi
+
         # Task YAML: AC IDs (sorted). [- ]* handles both "  - id:" and "    id:" formats
         _ac16_tids=$(awk '
             /^  acceptance_criteria:/ { f=1; next }
@@ -579,9 +590,20 @@ if [ ! -d "$_LC_ARCHIVE_DIR" ]; then
 elif [ -n "$_LC_YESTERDAY" ] && [ -f "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" ]; then
     _lc_inbound=$(grep -cE '"direction": *"inbound"' "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" 2>/dev/null) || _lc_inbound=0
     if [ "$_lc_inbound" -eq 0 ]; then
-        overall="ALERT"
-        alerts+=("会話記録 inbound=0: ${_LC_YESTERDAY}に殿の発言未記録 — scripts/log_terminal_input.sh確認")
-        echo "  ALERT: ${_LC_YESTERDAY}.jsonlのinbound=0 — 殿の入力が記録されていない"
+        # 他のアーカイブファイルが存在する場合はシステム健全で殿が未発言日のためスキップ
+        _lc_other=0
+        for _lc_f in "$_LC_ARCHIVE_DIR"/*.jsonl; do
+            [ -f "$_lc_f" ] || continue
+            case "$_lc_f" in *"${_LC_YESTERDAY}"*) continue ;; esac
+            _lc_other=$((_lc_other + 1))
+        done
+        if [ "$_lc_other" -gt 0 ]; then
+            echo "  INFO: ${_LC_YESTERDAY} inbound=0（アーカイブ他${_lc_other}件存在 — 未発言日の可能性）"
+        else
+            overall="ALERT"
+            alerts+=("会話記録 inbound=0: ${_LC_YESTERDAY}に殿の発言未記録 — scripts/log_terminal_input.sh確認")
+            echo "  ALERT: ${_LC_YESTERDAY}.jsonlのinbound=0 — 殿の入力が記録されていない"
+        fi
     else
         echo "  OK: ${_LC_YESTERDAY} inbound=${_lc_inbound}件"
     fi
