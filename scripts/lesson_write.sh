@@ -61,6 +61,60 @@ resolve_project_path() {
     resolve_project_field "$1" "path"
 }
 
+warn_similar_title() {
+    LESSONS_FILE_ENV="$1" TITLE_ENV="$2" python3 <<'PY'
+import os
+import re
+import sys
+
+lessons_file = os.environ["LESSONS_FILE_ENV"]
+new_title = os.environ["TITLE_ENV"]
+threshold = 0.6
+min_tokens = 3
+
+def tokenize(text):
+    tokens = set()
+    for token in re.findall(r'[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9]|[a-zA-Z0-9]{2,}', text.lower()):
+        tokens.add(token)
+    jp_chars = re.sub(r'[\x00-\x7f\s]', '', text)
+    for i in range(len(jp_chars) - 1):
+        tokens.add(jp_chars[i:i+2])
+    return tokens
+
+def jaccard(set_a, set_b):
+    if not set_a or not set_b:
+        return 0.0
+    union = set_a | set_b
+    return len(set_a & set_b) / len(union) if union else 0.0
+
+new_tokens = tokenize(new_title)
+if len(new_tokens) < min_tokens:
+    sys.exit(0)
+
+best_match = None
+heading_re = re.compile(r'^### L(\d+): (.+)$', re.MULTILINE)
+with open(lessons_file, encoding='utf-8') as f:
+    content = f.read()
+
+for match in heading_re.finditer(content):
+    existing_id = f'L{int(match.group(1)):03d}'
+    existing_title = match.group(2).strip()
+    existing_tokens = tokenize(existing_title)
+    if len(existing_tokens) < min_tokens:
+        continue
+    score = jaccard(new_tokens, existing_tokens)
+    if score >= threshold and (best_match is None or score > best_match[0]):
+        best_match = (score, existing_id, existing_title)
+
+if best_match is not None:
+    score, existing_id, existing_title = best_match
+    print(
+        f'WARN: 類似教訓候補: {existing_id}: {existing_title} (Jaccard: {score:.2f})',
+        file=sys.stderr,
+    )
+PY
+}
+
 # ── Parse all flags ──
 if has_flag --force "$@"; then FORCE=1; else FORCE=0; fi
 # Fix: --strategic was positional ($7) — now scanned like other flags
@@ -258,6 +312,8 @@ while [ $attempt -lt $max_attempts ]; do
                     fi
                 fi
             done < "$LESSONS_FILE"
+
+            warn_similar_title "$LESSONS_FILE" "$TITLE"
         fi
 
         # Tag processing (bash native)

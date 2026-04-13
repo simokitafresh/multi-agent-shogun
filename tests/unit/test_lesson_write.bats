@@ -208,6 +208,44 @@ run_lesson_write_with_sync() {
     [ "$status" -eq 0 ]
 }
 
+@test "warns on similar title with Jaccard >= 0.6 but still writes lesson" {
+    cat >> "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+
+### L002: alpha beta gamma delta
+- **日付**: 2026-01-02
+- **出典**: cmd_002
+- **記録者**: karo
+- **tags**: [universal]
+- similar title fixture
+EOF
+
+    run_lesson_write testproj "alpha beta gamma epsilon" "Jaccard閾値以上ではWARNを出しつつ登録を継続する確認テスト" "cmd_601" "saizo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 類似教訓候補: L002: alpha beta gamma delta (Jaccard: 0.60)"* ]]
+
+    run grep "### L003: alpha beta gamma epsilon" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+}
+
+@test "does not warn when similar title Jaccard is below 0.6" {
+    cat >> "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+
+### L002: alpha beta gamma delta
+- **日付**: 2026-01-02
+- **出典**: cmd_002
+- **記録者**: karo
+- **tags**: [universal]
+- similar title fixture
+EOF
+
+    run_lesson_write testproj "alpha beta zeta eta" "Jaccard閾値未満ではWARNを出さず登録を継続する確認テスト" "cmd_602" "saizo"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: 類似教訓候補"* ]]
+
+    run grep "### L003: alpha beta zeta eta" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+}
+
 # ============================================================
 # 6. Optional flags (--tags, --status, --if/--then/--because)
 # ============================================================
