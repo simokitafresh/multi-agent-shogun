@@ -176,7 +176,7 @@ if [[ $VIOLATIONS -gt 0 ]]; then
     echo "Each suspect should be reviewed:"
     echo "  - Is the data value hiding an error? → PI-018 violation (fix)"
     echo "  - Is it a legitimate default? → Add comment explaining why"
-    exit 0  # WARNであってBLOCKではない（人間判断が必要）
+    exit 1  # BLOCK: silent fallbackは消火(PI-018)。忍者に修正させよ
 else
     echo "STATUS: OK — No suspect patterns found"
     exit 0

@@ -69,27 +69,44 @@ case "$file_path" in
         exit 0 ;;
 esac
 
-# --- Check ninja status ---
-active_ninjas=""
+# --- Check ninja status + file conflict ---
+# 改善(LK050/LK051): 全面BLOCK→ファイル衝突時のみBLOCK
+# 稼働中忍者のcmd commandフィールドから編集対象ファイルのbasename照合
+conflicting_ninjas=""
+edit_basename="$(basename "$file_path")"
+
 for task_yaml in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_yaml" ] || continue
     ninja_name="$(basename "$task_yaml" .yaml)"
-    # Skip non-ninja files
     case "$ninja_name" in
         hayate|kagemaru|hanzo|saizo|kotaro|tobisaru) ;;
         *) continue ;;
     esac
     status="$(grep -m1 '^\s*status:' "$task_yaml" 2>/dev/null | sed 's/.*status:\s*//' | tr -d "' \"" || true)"
-    if [ "$status" = "acknowledged" ] || [ "$status" = "in_progress" ]; then
-        active_ninjas="${active_ninjas}${ninja_name}(${status}) "
+    if [ "$status" != "assigned" ] && [ "$status" != "acknowledged" ] && [ "$status" != "in_progress" ]; then
+        continue
+    fi
+    # 忍者のcmd commandフィールドから変更対象ファイル名を抽出
+    cmd_id="$(grep -m1 '^\s*parent_cmd:' "$task_yaml" 2>/dev/null | sed 's/.*parent_cmd:\s*//' | tr -d "' \"" || true)"
+    if [ -z "$cmd_id" ]; then
+        continue
+    fi
+    # shogun_to_karoからcmd本文を取得し、編集対象ファイルのbasenameが含まれるか確認
+    stk="${PROJ_DIR}/queue/shogun_to_karo.yaml"
+    if [ -f "$stk" ] && grep -qF "$edit_basename" "$stk" 2>/dev/null; then
+        # cmd本文内にファイル名が存在 → 衝突チェック
+        # cmd_idブロック内で検索
+        if sed -n "/^  ${cmd_id}:/,/^  cmd_/p" "$stk" 2>/dev/null | grep -qF "$edit_basename"; then
+            conflicting_ninjas="${conflicting_ninjas}${ninja_name}(${status},${cmd_id}) "
+        fi
     fi
 done
 
-if [ -z "$active_ninjas" ]; then
-    # No active ninja → safe to edit
+if [ -z "$conflicting_ninjas" ]; then
+    # 稼働中忍者の変更対象と衝突なし → safe to edit
     exit 0
 fi
 
-# --- BLOCK: ninja active + non-management path ---
-emit_deny "BLOCK: 忍者稼働中(${active_ninjas})。家老の直接Edit/Write禁止(管理領域外: ${file_path})。忍者をidle化してから操作するか、cmdで忍者に指示せよ。[pre-karo-edit-guard]"
+# --- BLOCK: file conflict detected ---
+emit_deny "BLOCK: ファイル衝突検出。${edit_basename}は忍者(${conflicting_ninjas})のcmd変更対象。忍者完了後に編集するか、cmdで忍者に指示せよ。[pre-karo-edit-guard]"
 exit 2
