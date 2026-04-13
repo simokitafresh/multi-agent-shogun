@@ -897,3 +897,14 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - **Step 3b multi-is WF全量実行(2026-04-08)**: cmd_1799(小太郎)。67窓(6M-72M)×7忍法。IS窓多様性29-38種/忍法(36M固定でない)。213.76s。commit 7724bacb。→ Step 3c(champion確定)が次
 - L613: 超越条件C(UWP<5M)は132ヶ月OOS期間に非現実的閾値。SPA全42セル非有意(p>0.4)。ISチャンピオン≒ランダム選択（cmd_1866）
 - L615: Cell B(シン×ALM)の一部忍法はGSパラメータ数=1のためALM動的選出≡静的選出。2×2因子分析で縮退ケース注記必要（cmd_1869）
+
+### ALM L2: 2×2因子分析結果 (cmd_1878)
+<!-- last_updated: 2026-04-13 -->
+- **BB効果**: ALM-BB vs シンBB = **+5.4pp**（GS側+7.2pp / WF側+3.7pp）
+- **選出効果**: WF動的 vs GS固定 = **-12.9pp**（shin側-11.1pp / ALM側-14.6pp）
+- **L1比較**: L1(BB+15pp/動的-27〜-41pp)→L2で傾向継続だが縮小（L2 GS固定にproduction_db+gs_static_champion混在が一因 → L619）
+- **最優秀**: ⑤(ALM-BB×GS固定)×nukimi×激攻 CAGR=1.228 Sharpe=2.054
+- **パターン別平均(CAGR)**: ⑤(0.819) > ⑥(0.772) > ③(0.730) > ①(0.707) > ⑧(0.516)最低
+- **mode別選出効果**: 鉄壁のみWF優位(+4.4pp)。激攻は大幅WF劣位(-33.5pp)
+- **縮退ケース(L615)**: bunshin(expected_patterns=1)はALM-WF≡GS固定(diff=+0.015)
+→ 詳細: `queue/reports/kagemaru_report_cmd_1878.yaml` | CSV: `outputs/analysis/alm_research/cmd_1878_l2_okugi_comparison.csv`
