@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T08:25:00+09:00 -->
-<!-- updated_by: kotaro -->
+<!-- last_updated: 2026-04-13T09:08:00+09:00 -->
+<!-- updated_by: hayate -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -132,11 +132,11 @@ GS dir: okugi_alm_shin/ (⑤と共有, monthly_fast必須) → 選出: WFエン�
 | 6-2 | oikaze | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_oikaze_monthly_fast.csv (456MB, 146行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
 | 6-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_diff_monthly_fast.csv (1.9GB, 145行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
 | 6-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kasoku_ratio_grid_monthly_fast.csv (2.0GB, 145行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
-| 6-5 | kawarimi | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_kawarimi_grid_monthly_fast.csv (442MB, 145行) | 2026-04-13 |
+| 6-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_shin/cmd_1877_alm_shin_kawarimi_grid_monthly_fast.csv (442MB, 145行) + WF: alm_research/okugi_alm_shin/cmd_1877_l1_wf_alm_returns.csv (108行×6系列) + selection_timeline.csv (150エントリ) | 2026-04-13 |
 | 6-6 | nukimi | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_nukimi_grid_monthly_fast.csv (943MB, 145行) | 2026-04-13 |
 | 6-7 | yotsume | ✅ | — | GS: okugi_alm_shin/cmd_1877_alm_shin_yotsume_grid_monthly_fast.csv (73MB, 145行) | 2026-04-13 |
 
-**⑥ 完了: 4/7** — WF選出: bunshin✅ oikaze✅ kasoku_diff✅ kasoku_ratio✅。残: kawarimi/nukimi/yotsume
+**⑥ 完了: 5/7** — WF選出: bunshin✅ oikaze✅ kasoku_diff✅ kasoku_ratio✅ kawarimi✅。残: nukimi/yotsume
 
 ---
 
@@ -188,6 +188,7 @@ GS実行残量(ペア共有): ②3本 + ④1本(nukimi) + ⑧1本(kawarimi) = **
 
 ## 変更履歴
 
+- 2026-04-13 09:08 ⑥6-5 kawarimi WF ✅(hayate, cmd_1877_block_43)
 - 2026-04-13 08:25 ⑥6-4 kasoku_ratio WF ✅(kotaro, cmd_1877_block_42)
 - 2026-04-13 07:35 ⑥6-3 kasoku_diff WF ✅(hanzo, cmd_1877_block_41)
 - 2026-04-13 06:51 ⑥6-2 oikaze WF ✅(kagemaru, cmd_1877_block_40)
