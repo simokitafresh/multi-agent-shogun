@@ -161,9 +161,9 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 5: MISSINGフィールドの自動復元(Fix6復活+他は撤去維持) ===
-# cmd_1496でFix6復活: lessons_useful MISSINGは空listに復元。他フィールドは撤去維持。
-@test "missing fields: lessons_useful is auto-filled by Fix6, others are NOT" {
+# === Test 5: MISSINGフィールドは全て消火撤去(GP-107)。gate_report_format.shがBLOCK ===
+# Fix6(lessons_useful MISSING→空list)も消火撤去: MISSING→空list生成はBLOCKで代替可能
+@test "missing fields: NO fields are auto-filled (消火撤去: gate blocks all)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -175,19 +175,17 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    # Verify: lessons_useful IS auto-filled by Fix6 (MISSING→空list)
-    # Other fields are NOT auto-filled (Fix22-28撤去維持)
+    # autofixはどのMISSINGフィールドも自動補完しない(消火撤去)
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
-# verdict key absent → should NOT be added
+# verdict absent → should NOT be added
 assert 'verdict' not in d, f'verdict should not be auto-filled'
 # files_modified absent → should NOT be added
 assert 'files_modified' not in d, f'files_modified should not be auto-filled'
-# lessons_useful IS auto-filled by Fix6 (cmd_1496復活)
-assert 'lessons_useful' in d, f'lessons_useful should be auto-filled by Fix6'
-assert isinstance(d['lessons_useful'], list), f'lessons_useful should be a list'
+# lessons_useful absent → should NOT be added (消火撤去: Fix6撤去)
+assert 'lessons_useful' not in d, f'lessons_useful should not be auto-filled (Fix6消火撤去)'
 # lesson_candidate absent → should NOT be added
 assert 'lesson_candidate' not in d, f'lesson_candidate should not be auto-filled'
 # self_gate_check absent → should NOT be added

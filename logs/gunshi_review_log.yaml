@@ -643,3 +643,12 @@
     - "事実2: gate_report_format.shに空値BLOCKチェック追加。worker_id空→FAIL、parent_cmd空→FAILをテスト確認"
   causal_chain: "推定コード(消火)→未検証データで穴埋め→誤推定リスク+忍者が学ばない。撤去+BLOCK→忍者が自力記入=正の複利"
   timestamp: "2026-04-13T21:38:00"
+- cmd_id: self_study_S181
+  review_type: self_study
+  findings_summary: "S180消火撤去のテスト修正2件。T-004(verdict訂正→FAIL期待)、T-012(スケルトン生成→BLOCK期待)。review_log observations補填3件+gate_result更新1件+テストデータ汚染報告"
+  observations:
+    - "事実1: T-012はlessonsuful MISSINGのautofix撤去(L304-306)に追従していなかった"
+    - "事実2: T-004はverdict訂正の消火撤去(L310-311)に追従していなかった。GP-128がgate側でFAIL(L344-345)"
+    - "事実3: karo_workarounds.yamlにtest_pd_verify 3件混入(WA率4%汚染)。家老に報告済み"
+  causal_chain: "消火撤去(S180)→テスト期待値が旧挙動のまま→FAIL2件。テスト更新=消火撤去の完了条件。テスト未更新×10回=10回のCI赤=負の複利"
+  timestamp: "2026-04-13T21:45:00"

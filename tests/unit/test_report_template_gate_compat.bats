@@ -524,7 +524,7 @@ open('$TEST_TMPDIR/report.yaml', 'w').write(content)
     [[ "$output" == *"files_modified"* ]]
 }
 
-@test "Fix6復活: lessons_useful MISSING → autofixで空list生成" {
+@test "Fix6撤去: lessons_useful MISSING → autofixせず → gate FAIL" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
     python3 -c "
 import re
@@ -532,21 +532,13 @@ content = open('$TEST_TMPDIR/report.yaml').read()
 content = re.sub(r'^lessons_useful:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
 open('$TEST_TMPDIR/report.yaml', 'w').write(content)
 "
-    # Fix6(cmd_1496復活): autofix detects MISSING and generates empty list or skeleton
+    # Fix6撤去(cmd_1888): autofix does NOT restore lessons_useful — gate_report_format.sh BLOCKs
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"lessons_useful"* ]]
-    # Verify lessons_useful is now present as a list
-    run python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-assert 'lessons_useful' in data, 'lessons_useful should be restored by Fix6'
-assert isinstance(data['lessons_useful'], list), f'Expected list, got {type(data[\"lessons_useful\"])}'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    [[ "$output" != *"lessons_useful MISSING"* ]]
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"lessons_useful: MISSING"* ]]
 }
 
 @test "Fix22-28撤去: lesson_candidate MISSING → autofixせず → gate FAIL" {

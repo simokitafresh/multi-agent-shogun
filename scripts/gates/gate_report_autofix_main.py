@@ -41,7 +41,9 @@ def main() -> int:
         result = None
         if worker_id:
             tpath = os.path.join(
-                os.path.dirname(os.path.dirname(report_path)), "tasks", f"{worker_id}.yaml"
+                os.path.dirname(os.path.dirname(report_path)),
+                "tasks",
+                f"{worker_id}.yaml",
             )
             if os.path.exists(tpath):
                 try:
@@ -52,7 +54,10 @@ def main() -> int:
                         else tdata.get("task", {})
                     )
                 except Exception as e:
-                    print(f"  [WARN] task YAML parse failed ({tpath}): {e}", file=sys.stderr)
+                    print(
+                        f"  [WARN] task YAML parse failed ({tpath}): {e}",
+                        file=sys.stderr,
+                    )
 
         task_yaml_cache[worker_id] = result
         return result
@@ -127,7 +132,10 @@ def main() -> int:
                 match = re.search(r"check:\s*(.+?)\s*,\s*result:\s*(.+)", ac_val)
                 if match:
                     converted = [
-                        {"check": match.group(1).strip(), "result": match.group(2).strip()}
+                        {
+                            "check": match.group(1).strip(),
+                            "result": match.group(2).strip(),
+                        }
                     ]
             # 単一verdict語(yes/no/pass等)は消火→skipしてgateがBLOCKする
             # 散文テキストのみ変換
@@ -186,11 +194,19 @@ def main() -> int:
                         for idx, (key, value) in enumerate(
                             sorted(chk.items(), key=lambda pair: str(pair[0]))
                         ):
-                            result_val = value.get("result", "yes") if isinstance(value, dict) else value
+                            result_val = (
+                                value.get("result", "yes")
+                                if isinstance(value, dict)
+                                else value
+                            )
                             check_name = ""
                             if idx < len(task_checks):
                                 tc = task_checks[idx]
-                                check_name = tc.get("check", tc) if isinstance(tc, dict) else str(tc)
+                                check_name = (
+                                    tc.get("check", tc)
+                                    if isinstance(tc, dict)
+                                    else str(tc)
+                                )
                             if not check_name:
                                 check_name = f"{ac_key}_check_{idx}"
                             new_list.append({"check": check_name, "result": result_val})
@@ -221,7 +237,10 @@ def main() -> int:
                 if isinstance(chk, dict) and len(chk) == 1:
                     key, value = next(iter(chk.items()))
                     if key not in ("check", "result"):
-                        item = {"check": str(key), "result": value if isinstance(value, bool) else str(value)}
+                        item = {
+                            "check": str(key),
+                            "result": value if isinstance(value, bool) else str(value),
+                        }
                         bc15_fixed = True
                 if isinstance(item, dict):
                     result = item.get("result")
@@ -282,24 +301,9 @@ def main() -> int:
             }
             fixes.append(f"lesson_candidate list→dict変換({len(lc)}要素)")
 
-    lu_missing = "lessons_useful" not in data
-    # lu_null(null値)は消火→撤去。gate_report_format.shが"lessons_useful: null"でBLOCK
-    if lu_missing:
-        skeleton = []
-        worker6 = data.get("worker_id", "")
-        task6 = get_task_data(worker6)
-        if task6:
-            rl6 = task6.get("related_lessons", [])
-            if isinstance(rl6, list):
-                for item6 in rl6:
-                    if isinstance(item6, dict) and item6.get("id"):
-                        skeleton.append({"id": str(item6["id"]), "useful": False, "reason": "FILL_THIS"})
-        data["lessons_useful"] = skeleton if skeleton else []
-        label6 = "MISSING"
-        if skeleton:
-            fixes.append(f"lessons_useful {label6}→タスクYAMLからスケルトン生成({len(skeleton)}件)")
-        else:
-            fixes.append(f"lessons_useful {label6}→空list")
+    # lessons_useful MISSING→スケルトン生成は消火(GP-107)→撤去。
+    # gate_report_format.shがBLOCK
+    # 忍者が自分で記入しなければgateが止める。消火で先送りしない。
 
     verdict_val = data.get("verdict")
     is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ("PASS", "FAIL")
@@ -307,7 +311,11 @@ def main() -> int:
     # verdict訂正(PASS→FAIL)も消火→撤去。GP-128でgateがWARN/ERROR
 
     status_val = data.get("status")
-    if is_valid_verdict and isinstance(status_val, str) and status_val.strip().lower() == "pending":
+    if (
+        is_valid_verdict
+        and isinstance(status_val, str)
+        and status_val.strip().lower() == "pending"
+    ):
         data["status"] = "completed"
         fixes.append("status pending→completed")
 
@@ -316,7 +324,14 @@ def main() -> int:
     if fixes:
         data["autofix_applied"] = fixes
         with open(report_path, "w", encoding="utf-8") as f:
-            DumpAll([data], f, Dumper=SafeDumper, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            DumpAll(
+                [data],
+                f,
+                Dumper=SafeDumper,
+                allow_unicode=True,
+                default_flow_style=False,
+                sort_keys=False,
+            )
         print("AUTO-FIXED: " + "; ".join(fixes))
     else:
         print("NO-FIX-NEEDED")

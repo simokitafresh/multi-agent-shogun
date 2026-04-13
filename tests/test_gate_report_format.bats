@@ -79,13 +79,13 @@ YAML
 }
 
 # --- T-004: GP-128 PASS+no → auto-corrected to FAIL verdict → PASS ---
-@test "T-004: GP-128 verdict=PASS with bc no → auto-corrected by pre-autofix" {
+@test "T-004: GP-128 verdict=PASS with bc no → gate FAIL (消火撤去: autofix verdict訂正廃止)" {
     local report=$(create_valid_report)
     sed -i 's/result: "yes"/result: "no"/' "$report"
-    # Pre-autofix corrects verdict PASS→FAIL, so format gate should PASS
+    # 消火撤去: autofixはverdict訂正しない。GP-128がgate側でFAILする
     run bash "$GATE" "$report"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS"* ]]
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"verdict"* ]]
 }
 
 # --- T-005: GP-128 FAIL+all-yes → WARN ---
@@ -237,8 +237,8 @@ YAML
     [ "$status" -eq 0 ]
 }
 
-# --- T-012: Autofix lessons_useful MISSING→skeleton generation ---
-@test "T-012: autofix generates lessons_useful skeleton from task YAML" {
+# --- T-012: lessons_useful MISSING → BLOCK (消火撤去: スケルトン生成廃止) ---
+@test "T-012: lessons_useful MISSING triggers BLOCK not autofix" {
     # Setup directory structure matching report→task path resolution
     mkdir -p "$TMPDIR_BATS/tasks" "$TMPDIR_BATS/reports"
     cat > "$TMPDIR_BATS/tasks/testninja.yaml" << 'YAML'
@@ -276,21 +276,9 @@ result:
   summary: "テスト結果のサマリ"
 verdict: PASS
 YAML
-    # Run autofix — should generate skeleton from task YAML
-    run bash "$AUTOFIX" "$report"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
+    # Run gate format check — should FAIL (lessons_useful MISSING → BLOCK)
+    # 消火撤去(GP-107): autofixでスケルトン生成=消火。忍者が自力記入すべき
+    run bash "$GATE" "$report"
+    [ "$status" -ne 0 ]
     [[ "$output" == *"lessons_useful"* ]]
-    # Verify skeleton has 2 entries matching task YAML related_lessons
-    run python3 -c "
-import yaml
-d = yaml.safe_load(open('$report'))
-lu = d.get('lessons_useful', [])
-assert len(lu) == 2, f'Expected 2, got {len(lu)}'
-assert lu[0]['id'] == 'L001'
-assert lu[1]['id'] == 'L002'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
 }
