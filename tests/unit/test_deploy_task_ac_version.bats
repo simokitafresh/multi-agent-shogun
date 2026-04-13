@@ -304,6 +304,44 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "deploy_task injects lessons_useful reason examples when related_lessons exist" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L246
+    title: set -e return code lesson
+    summary: summary
+    detail: detail
+    status: confirmed
+    tags: [universal]
+    helpful_count: 10
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "lessons_useful reason example injection"
+  task_type: impl
+  parent_cmd: cmd_reason_examples
+  task_id: cmd_reason_examples_impl
+  project: testproj
+  acceptance_criteria:
+    - id: AC1
+      description: "report template is generated"
+EOF
+
+    run deploy_task_fast sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run grep -F 'L246のreturn 1罠と一致し、set -e呼出元確認の指針として有用' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F '今回の変更では未使用。対象箇所と無関係' "$report_path"
+    [ "$status" -eq 0 ]
+}
+
 @test "deploy_task leaves template unchanged when gate_fail_top3 is absent" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

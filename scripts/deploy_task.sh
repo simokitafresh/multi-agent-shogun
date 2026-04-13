@@ -1089,7 +1089,7 @@ EOF
             _lu_block="${_lu_block}
   - id: ${_lid}
     useful: false
-    reason: ''  # 有用/無用の理由を具体的に書け"
+    reason: ''  # 例: \"L246のreturn 1罠と一致し、set -e呼出元確認の指針として有用\" / \"今回の変更では未使用。対象箇所と無関係\""
             _lu_count=$((_lu_count + 1))
         done <<< "$_lu_ids"
 

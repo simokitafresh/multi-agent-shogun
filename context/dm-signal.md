@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-03-29 cmd_1480 性能357.28s+OPT-12~15+crash-safety+GP-124+偵察5要件+L505 -->
-<!-- last_synced_lesson: L622 -->
+<!-- last_synced_lesson: L625 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -175,3 +175,6 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L620: L2奥義2×2因子分析でL1傾向継続だが縮小。GS固定の2種混在(DB vs champion)が一因（cmd_1878）
 - L621: monthly_fast成果物探索はcache-onlyも許容せよ（cmd_1882）
 - L622: filter-repo --invert-pathsはワーキングツリーファイルも削除する — バックアップ必須（cmd_1881）
+- L623: 既存GS CSVの有効性はmeta.yaml universe_idで判定せよ — 行数判定は誤り（cmd_1877）
+- L624: 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因（cmd_1877）
+- L625: GS dir旧ファイル混在はchampion_selector汚染リスク — GS前にdir棚卸し+退避を先行ステップに入れよ（cmd_1877）

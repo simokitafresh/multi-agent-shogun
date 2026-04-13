@@ -766,6 +766,8 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     [ "$hint_count" -eq 1 ]
     # ヒントに[N]が含まれる
     [[ "$output" == *"lessons_useful[N]"* ]]
+    [[ "$output" == *'L246のreturn 1罠と一致し、set -e呼出元確認の指針として有用'* ]]
+    [[ "$output" == *'今回の変更では未使用。対象箇所と無関係'* ]]
 }
 
 # --- GP-163: verdict=PASS + empty binary_checks result contradiction (cmd_1663) ---

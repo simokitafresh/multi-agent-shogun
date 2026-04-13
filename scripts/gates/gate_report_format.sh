@@ -171,7 +171,7 @@ elif lu is not None:
                     hints.append(f'FIX (lessons_useful[{i}]): reason フィールド必須。教訓が有用/無用な理由を具体的に記入せよ')
                 elif isinstance(item.get('reason'), str) and not item['reason'].strip():
                     errors.append(f'lessons_useful[{i}]: reason is empty (教訓が有用/無用な理由を具体的に書け)')
-                    hints.append(f'FIX (lessons_useful[{i}]): reason: \"L070のパターンと同一で参考にならなかった\" など具体的に記述')
+                    hints.append(f'FIX (lessons_useful[{i}]): reason: \"L246のreturn 1罠と一致し、set -e呼出元確認の指針として有用\" / \"今回の変更では未使用。対象箇所と無関係\" など具体的に記述')
             else:
                 errors.append(f'lessons_useful[{i}]: is {type(item).__name__} (must be dict)')
     elif isinstance(lu, dict):

@@ -94,8 +94,8 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 3: lessons_useful dict → list変換 ===
-@test "lessons_useful numbered dict is converted to list" {
+# === Test 3: lessons_useful dict → 消火撤去(GP-107)。gate_report_format.shがBLOCK ===
+@test "lessons_useful numbered dict is NOT converted (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -117,26 +117,23 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"lessons_useful dict→list"* ]]
-    # Verify converted to ordered list
+    # autofixは変換しない(消火撤去) → NO-FIX-NEEDED
+    [[ "$output" != *"lessons_useful dict→list"* ]]
+    # lessons_usefulはdictのまま(変換されていない)
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
 lu = d['lessons_useful']
-assert isinstance(lu, list), f'Expected list, got {type(lu)}'
-assert len(lu) == 2
-assert lu[0]['id'] == 'L001'
-assert lu[1]['id'] == 'L002'
+assert isinstance(lu, dict), f'Expected dict (not converted), got {type(lu)}'
 print('OK')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 4: binary_checks dict値 → list wrap ===
-@test "binary_checks single dict value is wrapped in list" {
+# === Test 4: binary_checks dict値 → 消火撤去(GP-107)。gate_report_format.shがBLOCK ===
+@test "binary_checks single dict value is NOT wrapped (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -149,18 +146,15 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"binary_checks"* ]]
-    # Verify dict was wrapped in list
+    # autofixはdict→list変換しない(消火撤去)
+    [[ "$output" != *"binary_checks dict→list wrap"* ]]
+    # binary_checks.AC1はdictのまま(変換されていない)
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
 bc = d['binary_checks']['AC1']
-assert isinstance(bc, list), f'Expected list, got {type(bc)}'
-assert len(bc) == 1
-assert bc[0]['check'] == 'test passes'
-assert bc[0]['result'] == 'yes'
+assert isinstance(bc, dict), f'Expected dict (not converted), got {type(bc)}'
 print('OK')
 "
     [ "$status" -eq 0 ]
@@ -305,8 +299,8 @@ EOF
     [[ "$output" == *"UNFIXABLE"* ]]
 }
 
-# === Test 10: verdict推定 from binary_checks ===
-@test "non-standard verdict is inferred from binary_checks results" {
+# === Test 10: verdict推定 → 消火撤去(GP-107)。gate_report_format.shがBLOCK ===
+@test "non-standard verdict is NOT inferred (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -322,20 +316,21 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"verdict"* ]]
+    # autofixはverdict推定しない(消火撤去)
+    [[ "$output" != *"verdict推定"* ]]
+    # verdictはCONDITIONAL_PASSのまま変更されていない
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
-assert d['verdict'] == 'PASS', f'Expected PASS, got {d[\"verdict\"]}'
+assert d['verdict'] == 'CONDITIONAL_PASS', f'Expected CONDITIONAL_PASS, got {d[\"verdict\"]}'
 print('OK')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
 
-@test "blank verdict is inferred only when all binary_checks results are filled" {
+@test "blank verdict is NOT inferred (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -351,20 +346,22 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"verdict推定(1PASS/1FAIL)"* ]]
+    # autofixはblank verdictを推定しない(消火撤去)
+    [[ "$output" != *"verdict推定"* ]]
+    # verdictは""のまま変更されていない
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
-assert d['verdict'] == 'FAIL', f'Expected FAIL, got {d[\"verdict\"]}'
+v = d['verdict']
+assert v == '' or v is None, f'Expected empty, got {v!r}'
 print('OK')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
 
-@test "pending status is completed when verdict becomes valid" {
+@test "pending status is NOT auto-completed when verdict is invalid (消火撤去)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -381,14 +378,16 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"status pending→completed"* ]]
+    # verdict推定なし → is_valid_verdict=False → status推定もなし(消火撤去)
+    [[ "$output" != *"status pending→completed"* ]]
+    [[ "$output" != *"verdict推定"* ]]
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
-assert d['verdict'] == 'PASS', f'Expected PASS, got {d[\"verdict\"]}'
-assert d['status'] == 'completed', f'Expected completed, got {d[\"status\"]}'
+v = d['verdict']
+assert v == '' or v is None, f'Expected empty verdict, got {v!r}'
+assert d['status'] == 'pending', f'Expected pending, got {d[\"status\"]}'
 print('OK')
 "
     [ "$status" -eq 0 ]
@@ -475,7 +474,7 @@ EOF
 }
 
 # === Test 12b: binary_checks name:value entries + verdict推定 ===
-@test "binary_checks name:value entries are normalized and verdict is inferred" {
+@test "binary_checks name:value entries are normalized (verdict推定は消火撤去)" {
     local rpath="$TEST_TMPDIR/queue/reports/saizo_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: saizo
@@ -494,12 +493,14 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"AUTO-FIXED"* ]]
     [[ "$output" == *"binary_checks {name:val}→{check:name,result:val}正規化"* ]]
-    [[ "$output" == *"verdict推定(2PASS/2FAIL)"* ]]
+    # verdict推定は消火撤去 — gate_report_format.shがCONDITIONAL_PASSをBLOCK
+    [[ "$output" != *"verdict推定"* ]]
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
-assert d['verdict'] == 'FAIL', f'Expected FAIL, got {d[\"verdict\"]}'
+# verdictはCONDITIONAL_PASSのまま(推定されていない)
+assert d['verdict'] == 'CONDITIONAL_PASS', f'Expected CONDITIONAL_PASS, got {d[\"verdict\"]}'
 bc1 = d['binary_checks']['AC1']
 bc2 = d['binary_checks']['AC2']
 assert bc1[0] == {'check': 'committed', 'result': 'yes'}, bc1[0]
@@ -512,8 +513,8 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 13: lessons_useful 単一教訓dict → list wrap (Pattern B) ===
-@test "lessons_useful single lesson dict is wrapped in list" {
+# === Test 13: lessons_useful 単一教訓dict → 消火撤去(GP-107)。gate_report_format.shがBLOCK ===
+@test "lessons_useful single lesson dict is NOT wrapped (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -530,26 +531,23 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"単一dict→list wrap"* ]]
+    # autofixは単一dict→list変換しない(消火撤去)
+    [[ "$output" != *"単一dict→list wrap"* ]]
+    # lessons_usefulはdictのまま
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
 lu = d['lessons_useful']
-assert isinstance(lu, list), f'Expected list, got {type(lu)}'
-assert len(lu) == 1, f'Expected 1 item, got {len(lu)}'
-assert lu[0]['id'] == 'L074', f'Expected L074, got {lu[0].get(\"id\")}'
-assert lu[0]['useful'] == True, f'Expected True, got {lu[0].get(\"useful\")}'
-assert lu[0]['reason'] == 'helpful for debugging'
+assert isinstance(lu, dict), f'Expected dict (not converted), got {type(lu)}'
 print('OK')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 14: lessons_useful 教訓IDキーdict → list変換 (Pattern C) ===
-@test "lessons_useful lesson-ID-keyed dict converts to list with id injection" {
+# === Test 14: lessons_useful 教訓IDキーdict → 消火撤去(GP-107)。gate_report_format.shがBLOCK ===
+@test "lessons_useful lesson-ID-keyed dict is NOT converted (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -569,32 +567,23 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"LessonIDキーdict→list"* ]]
+    # autofixはLessonIDキーdict→list変換しない(消火撤去)
+    [[ "$output" != *"LessonIDキーdict→list"* ]]
+    # lessons_usefulはdictのまま
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
 lu = d['lessons_useful']
-assert isinstance(lu, list), f'Expected list, got {type(lu)}'
-assert len(lu) == 2, f'Expected 2 items, got {len(lu)}'
-ids = {item['id'] for item in lu}
-assert ids == {'L074', 'L063'}, f'Expected L074,L063, got {ids}'
-for item in lu:
-    if item['id'] == 'L074':
-        assert item['useful'] == True
-        assert item['reason'] == 'helped avoid trap'
-    elif item['id'] == 'L063':
-        assert item['useful'] == False
-        assert item['reason'] == 'not relevant'
+assert isinstance(lu, dict), f'Expected dict (not converted), got {type(lu)}'
 print('OK')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 15: lessons_useful 空dict → 空list変換 ===
-@test "lessons_useful empty dict converts to empty list" {
+# === Test 15: lessons_useful 空dict → 消火撤去(GP-107)。gate_report_format.shがBLOCK ===
+@test "lessons_useful empty dict is NOT converted (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -608,14 +597,16 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
+    # autofixは空dict→空list変換しない(消火撤去)
+    [[ "$output" != *"空dict→空list"* ]]
+    # lessons_usefulは{}のまま
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
 lu = d['lessons_useful']
-assert isinstance(lu, list), f'Expected list, got {type(lu)}'
-assert len(lu) == 0, f'Expected empty list, got {len(lu)}'
+assert isinstance(lu, dict), f'Expected dict (not converted), got {type(lu)}'
+assert len(lu) == 0, f'Expected empty dict, got {len(lu)}'
 print('OK')
 "
     [ "$status" -eq 0 ]

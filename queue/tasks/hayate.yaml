@@ -1,30 +1,29 @@
 task:
-  _ac_task_id: cmd_1884_impl
+  _ac_task_id: cmd_1886_impl
   _ac_worker_id: null
-  ac_version: 75e78e20
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 28111804
   acceptance_criteria:
-  - description: 全GS出力CSVが_grid_results_fast/_grid_monthly_fast形式。_results_fast(grid無し)が0件
+  - description: deploy_task.shのlessons_useful雛形にreason記入例が2パターン以上含まれる
     id: AC1
-  - description: l2-okugi-progress.mdの成果物所在パスを新ファイル名に更新
+  - description: gate_report_format.shのFIXヒントにreason記入例が含まれる
     id: AC2
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
-    \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
-    \  - L394: usage_status.shのprogress_barは'ERR'と'--'のみガードしていたが、upstreamから空文字・浮動小数・非整数文字列が渡される\n\
-    ────────────────────────────────────────"
+  - description: bats tests/unit/ の既存テスト全PASS
+    id: AC3
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L246: 関数がデフォルト値をechoしつつreturn 1する設計は、set\
+    \ -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn\n  - L156: IF set -e環境で非0戻り値を返す判定関数を呼び出す時\
+    \ THEN `if func; then rc=0; else rc=$?; fi` 形式で受けよ\n  - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ\n\
+    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
+    \  - L142: IF 飛猿報告のテスト8件時 THEN テスト件数を報告する場合は根拠(ファイル名・実行コマンド)も記載すべき\n────────────────────────────────────────"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
-    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -33,32 +32,29 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1884
-  project: dm-signal
-  report_filename: hayate_report_cmd_1884.yaml
-  report_path: queue/reports/hayate_report_cmd_1884.yaml
-  status: done
+  - AC3
+  parent_cmd: cmd_1886
+  project: infra
+  report_filename: hayate_report_cmd_1886.yaml
+  report_path: queue/reports/hayate_report_cmd_1886.yaml
+  status: failed
   stop_for: []
-  task_id: cmd_1884_impl
+  task_id: cmd_1886_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 16
+    total_workarounds: 20
     top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), task_redeploy(2件), ci_gate_mismatch(2件), verdict_override(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
+    breakdown: 'report_yaml_format(3件), verdict_override(3件), test_pd_verify(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'verdict_invalid'
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
-      count: 9
+      count: 10
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 7
+      count: 8
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_yaml_missing'
       count: 3
@@ -73,35 +69,34 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
-  - id: 'L622'
-    summary: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
-    detail: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
-  - id: 'L621'
-    summary: 'cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`load_cached_series()`'
-    detail: 'cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`load_cached_series()`'
-  - id: 'L620'
-    summary: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
-    detail: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
-  - id: 'L619'
-    summary: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
-    detail: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
-  - id: 'L618'
-    summary: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
-    detail: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
-  - id: 'L617'
-    summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
-    detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
-  - id: 'L616'
-    summary: '多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知'
-    detail: '多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知'
-  - id: 'L615'
-    summary: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
-    detail: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
-  - id: 'L614'
-    summary: 'cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。karoから指摘を受け削除・修正。正解は既存スクリプトへの最小差分追加（--alm-dmフラグ追加）だった。新スクリプト作成前に既存コードの再利用可能性を確認すること。'
-    detail: 'cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。karoから指摘を受け削除・修正。正解は既存スクリプトへの最小差分追加（--alm-dmフラグ追加）だった。新スクリプト作成前に既存コードの再利用可能性を確認すること。'
-  - id: 'L613'
-    summary: '''V3超越条件: 条件C(UWP<5M)は2015-2026の132ヶ月OOS全期間で計算するため実績UWP=7-41Mとなり全セル失敗。フォールド単位のUWP(12M'
-    detail: '''V3超越条件: 条件C(UWP<5M)は2015-2026の132ヶ月OOS全期間で計算するため実績UWP=7-41Mとなり全セル失敗。フォールド単位のUWP(12M'
-  deployed_at: "2026-04-13T19:51:30"
-  progress: "AC1: cmd_1884対象4dirの非_grid CSVを0件化。21本CSV+付随meta/cacheを命名統一 / AC2: context/l2-okugi-progress.md と cmd_1846_selection_timeline.py の旧名参照を更新"
+  - id: 'L469'
+    summary: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix'
+    detail: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix'
+  - id: 'L468'
+    summary: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_format.shにautofix'
+    detail: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_format.shにautofix'
+  - id: 'L467'
+    summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
+    detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
+  - id: 'L466'
+    summary: 'CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。'
+    detail: 'CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。'
+  - id: 'L465'
+    summary: 'cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft'
+    detail: 'cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft'
+  - id: 'L464'
+    summary: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
+    detail: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
+  - id: 'L463'
+    summary: '''MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars'
+    detail: '''MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars'
+  - id: 'L462'
+    summary: '''**dismiss_reason**: L463として統合登録済み enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold'
+    detail: '''**dismiss_reason**: L463として統合登録済み enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold'
+  - id: 'L461'
+    summary: '**dismiss_reason**: L463として統合登録済み MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer'
+    detail: '**dismiss_reason**: L463として統合登録済み MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer'
+  - id: 'L460'
+    summary: '''**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要'
+    detail: '''**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要'
+  deployed_at: "2026-04-13T20:46:41"
