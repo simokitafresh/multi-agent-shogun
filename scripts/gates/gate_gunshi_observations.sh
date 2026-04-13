@@ -11,8 +11,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG_FILE="$REPO_ROOT/logs/gunshi_review_log.yaml"
 
 if [ ! -f "$LOG_FILE" ]; then
-    echo "SKIP: gunshi_review_log.yaml not found"
-    exit 0
+    echo "ALERT: gunshi_review_log.yaml not found — レビューログ不在は異常"
+    exit 1
 fi
 
 MISSING=$(python3 -c "

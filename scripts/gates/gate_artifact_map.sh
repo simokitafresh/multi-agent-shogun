@@ -68,8 +68,8 @@ echo "WARN: $WARN_COUNT"
 
 if [[ $WARN_COUNT -gt 0 ]]; then
     echo ""
-    echo "判定: WARN — 成果物所在が欠落しているブロックあり"
-    exit 0
+    echo "判定: BLOCK — 成果物所在が欠落しているブロックあり"
+    exit 1
 else
     echo ""
     echo "判定: OK — 全完了ブロックに成果物所在あり"

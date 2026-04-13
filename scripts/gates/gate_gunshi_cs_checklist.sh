@@ -11,8 +11,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG_FILE="$REPO_ROOT/logs/gunshi_review_log.yaml"
 
 if [ ! -f "$LOG_FILE" ]; then
-    echo "SKIP: gunshi_review_log.yaml not found"
-    exit 0
+    echo "ALERT: gunshi_review_log.yaml not found — レビューログ不在は異常"
+    exit 1
 fi
 
 # 直近N件のself_study/consultationエントリにcs_checklistがあるか確認
@@ -105,11 +105,14 @@ elif (( fm_pass > 0 )); then
     echo "PASS: APPROVE+FM許容パターンなし"
 fi
 
+warn=0
+if [ -n "$fm_flagged" ]; then
+    warn=1
+fi
+
 if (( all_pass > 0 )) && (( fm_pass > 0 )); then
     exit 0
 fi
-
-warn=0
 if [ -n "$cs_missing" ]; then
     cs_count=$(echo "$cs_missing" | wc -l)
     echo "WARN: ${cs_count}件のエントリにcs_checklistなし:"

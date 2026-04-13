@@ -22,7 +22,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/config/projects.yaml"
-ALERT_THRESHOLD=10
+ALERT_THRESHOLD=5
 EXIT_CODE=0
 LESSON_IMPACT_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
 LESSON_EFFECT_WINDOW_CMDS=30

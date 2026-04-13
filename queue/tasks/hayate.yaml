@@ -1,21 +1,18 @@
 task:
-  _ac_task_id: cmd_1886_impl
+  _ac_task_id: cmd_1889_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 28111804
+  ac_version: 04d27bd9
   acceptance_criteria:
-  - description: deploy_task.shのlessons_useful雛形にreason記入例が2パターン以上含まれる
+  - description: '4ファイル全てのlast_updatedが2026-04-13に更新されている。確認: grep last_updated で各ファイルの日付を表示'
     id: AC1
-  - description: gate_report_format.shのFIXヒントにreason記入例が含まれる
+  - description: bash scripts/gates/gate_context_freshness.sh 実行でWARN 0件
     id: AC2
-  - description: bats tests/unit/ の既存テスト全PASS
-    id: AC3
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L246: 関数がデフォルト値をechoしつつreturn 1する設計は、set\
     \ -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn\n  - L156: IF set -e環境で非0戻り値を返す判定関数を呼び出す時\
-    \ THEN `if func; then rc=0; else rc=$?; fi` 形式で受けよ\n  - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ\n\
-    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
-    \  - L142: IF 飛猿報告のテスト8件時 THEN テスト件数を報告する場合は根拠(ファイル名・実行コマンド)も記載すべき\n────────────────────────────────────────"
+    \ THEN `if func; then rc=0; else rc=$?; fi` 形式で受けよ\n  - L426: CLAUDE.mdでyaml.dump禁止が明記されているが、archive_completed.sh内のheredoc\
+    \ Pythonでのdump呼出はpre-\n  - L324: echo str | grep -q patternは2 subprocessをforkする。[[\
+    \ str == *pattern* ]]は純bashで同等のマ\n  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -32,14 +29,13 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  parent_cmd: cmd_1886
+  parent_cmd: cmd_1889
   project: infra
-  report_filename: hayate_report_cmd_1886.yaml
-  report_path: queue/reports/hayate_report_cmd_1886.yaml
-  status: failed
+  report_filename: hayate_report_cmd_1889.yaml
+  report_path: queue/reports/hayate_report_cmd_1889.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_1886_impl
+  task_id: cmd_1889_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -99,4 +95,4 @@ task:
   - id: 'L460'
     summary: '''**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要'
     detail: '''**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要'
-  deployed_at: "2026-04-13T20:46:41"
+  deployed_at: "2026-04-13T21:21:49"

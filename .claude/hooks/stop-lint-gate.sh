@@ -97,17 +97,19 @@ current_hash="$(printf '%s' "$violations" | md5sum | cut -d' ' -f1)"
 if [ -f "$fail_hash_file" ]; then
     prev_hash="$(cat "$fail_hash_file" 2>/dev/null || true)"
     if [ "$current_hash" = "$prev_hash" ]; then
-        # Same failure repeated — agent cannot fix this. Allow stop but escalate.
+        # Same failure repeated — agent cannot fix this. Block + escalate to karo.
+        # 消火禁止: auto-approveは問題を隠す。blockを維持し家老に対処を委ねる。
         rm -f "$fail_hash_file" 2>/dev/null
         if [ -x "${SHOGUN_ROOT}/scripts/inbox_write.sh" ]; then
             bash "${SHOGUN_ROOT}/scripts/inbox_write.sh" karo \
-                "${AGENT_ID}: Stop Hook lint違反同一繰り返し。修正不能と判断しstop許可。要対応。" \
+                "${AGENT_ID}: Stop Hook lint違反同一繰り返し。修正不能。タスク停止+lint修正cmdが必要。" \
                 error_report "$AGENT_ID" 2>/dev/null || true
         fi
+        violations_escaped2="$(printf '%b' "$violations" | head -50 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"
         cat <<HOOK_JSON
 {
-  "decision": "approve",
-  "reason": "WARNING: Lint violations still present (same failure repeated). Stop allowed but escalated to karo. Same lint violations occurred twice — agent cannot resolve autonomously. karo has been notified."
+  "decision": "block",
+  "reason": "BLOCK: Same lint violations repeated. Agent cannot fix autonomously. Escalated to karo for task halt + lint fix cmd.\n\n${violations_escaped2}"
 }
 HOOK_JSON
         exit 0

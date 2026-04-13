@@ -82,27 +82,8 @@ def main() -> int:
         data.update(inner)
         fixes.append("report:ラップ→フラット化")
 
-    if not data.get("worker_id"):
-        basename = os.path.basename(report_path)
-        m20 = re.match(r"^([a-z_]+?)_report(?:_cmd_.+)?\.yaml$", basename)
-        if m20:
-            data["worker_id"] = m20.group(1)
-            fixes.append(f"worker_id ファイル名から推定({m20.group(1)})")
-
-    if not data.get("parent_cmd"):
-        basename = os.path.basename(report_path)
-        m20p = re.match(r"^[a-z_]+?_report_(cmd_.+)\.yaml$", basename)
-        if m20p:
-            data["parent_cmd"] = m20p.group(1)
-            fixes.append(f"parent_cmd ファイル名から推定({m20p.group(1)})")
-        else:
-            worker20 = data.get("worker_id", "")
-            task20 = get_task_data(worker20)
-            if task20:
-                pcmd20 = task20.get("parent_cmd", "")
-                if pcmd20:
-                    data["parent_cmd"] = str(pcmd20)
-                    fixes.append(f"parent_cmd タスクYAMLから補完({pcmd20})")
+    # worker_id / parent_cmd ファイル名推定は消火(GP-107 Q1:値の推定=NO)→撤去
+    # 空値はgate_report_format.shがBLOCKする
 
     # lessons_useful dict→list変換は消火(GP-107 Q1:内容不変でない)→撤去
     # gate_report_format.shでBLOCK

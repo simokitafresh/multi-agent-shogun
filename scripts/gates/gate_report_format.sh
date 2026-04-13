@@ -77,6 +77,13 @@ for field in required:
         if field in missing_hints:
             hints.append(missing_hints[field])
 
+# --- worker_id / parent_cmd 空値チェック (autofix消火撤去後ガード) ---
+for _eid_key, _eid_hint in [('worker_id', missing_hints.get('worker_id', '')), ('parent_cmd', missing_hints.get('parent_cmd', ''))]:
+    if _eid_key in data and not str(data.get(_eid_key) or '').strip():
+        errors.append(f'{_eid_key}: MISSING (empty value)')
+        if _eid_hint:
+            hints.append(_eid_hint)
+
 # --- files_modified must be string or list, not null/dict (GP-065) ---
 fm = data.get('files_modified')
 if fm is None and 'files_modified' in data:

@@ -552,3 +552,61 @@
     - "事実3: review_logヘッダは/clear後も残る(Level 2)。毎レビュー時に読む仕組み既存。Level 4(gate)は全称判定の自動検出が困難で現時点不適合"
   causal_chain: "確証バイアス→暗黙前提の見落とし→全称判定を裏付けのみで検証→衝突見落とし。根因=レビュアーが著者と同じ前提を共有。処方=反証探索を原理として埋込み。×10回=見落とし率低下=正の複利"
   timestamp: "2026-04-13T20:35:00"
+- cmd_id: self_study_S179
+  review_type: self_study
+  findings_summary: "idle自走: 教訓効果率推奨送信+GATE更新2件+WA分析"
+  causal_chain: "分析→送信漏れ=CS4違反→送信で閉鎖"
+  timestamp: "2026-04-13T20:40:00"
+- cmd_id: cmd_1886
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "Level 5(事前コンテキスト)でFAIL最頻パターン(reason空)根絶"
+  observations:
+    - "deploy_task.sh L1092にreason記入例なし=忍者が空提出の根因"
+  causal_chain: "記入例なし→空提出→FAIL→WA。記入例追加→自力記入→正の複利"
+  timestamp: "2026-04-13T20:50:00"
+- cmd_id: cmd_1887
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: LOW
+  findings_summary: "AC1前提不正確(jsonlのみ→実際はarchive確認済み)。AC2 scout_exemptスキップは妥当"
+  causal_chain: "cmd前提不正確→修正ロジック不適切→再設計必要"
+  timestamp: "2026-04-13T20:55:00"
+- cmd_id: cmd_1886
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result:
+  findings_summary: "AC1/AC2変更妥当。AC3既存赤(疾風無関係)。未commit"
+  causal_chain: "記入例追加→FAIL率低下=正の複利"
+  timestamp: "2026-04-13T21:00:00"
+- cmd_id: cmd_1887
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "Gate16 scout_exemptスキップ+Gate18他アーカイブ判定。bats 17/17"
+  causal_chain: "誤検知修正→ALERT精度向上=正の複利"
+  timestamp: "2026-04-13T21:05:00"
+- cmd_id: cmd_1888
+  review_type: draft
+  verdict: APPROVE
+  gate_result:
+  confidence: HIGH
+  findings_summary: "消火→免疫転換。autofix L306-321消火コード撤去+MISSING BLOCK化"
+  observations:
+    - "autofix MISSING→スケルトン19/69件(28%)=最頻消火"
+  causal_chain: "autofix消火→学習ループ断絶=負の複利。撤去+BLOCK→自力記入→正の複利"
+  timestamp: "2026-04-13T21:20:00"
+- cmd_id: self_study_S180
+  review_type: self_study
+  findings_summary: "消火撤去7件実行。gate4件(artifact_map/dc_dup/observations/cs_checklist)+hook1件(stop-lint)+閾値2件(freshness/lesson_health)。全テスト済み"
+  observations:
+    - "gate_gunshi_cs_checklist.sh L103 warn=1→L112 warn=0上書き=バグ発見。FM+APPROVEがexit0通過"
+    - "stop-lint-gate.sh auto-approve=消火の典型。block+escalateに変更"
+    - "gate_context_freshness 30日→14日、gate_lesson_health 10→5件に閾値引下げ"
+  causal_chain: "exit0消火→問題不可視→根因温存=負の複利。exit1 BLOCK→問題可視→修正動機=正の複利"
+  timestamp: "2026-04-13T21:30:00"
