@@ -1107,17 +1107,37 @@ EOF
     # cmd_1260+cmd_1393: acceptance_criteriaのbinary_checksをreportに事前展開（Python→bash/awk）
     local _bc_block
     _bc_block=$(awk '
+        function normalize_check_text(text, ac_desc, out) {
+            out = text
+            if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
+                out = out " (進行中月除外)"
+            }
+            return out
+        }
         /^  acceptance_criteria:/ { in_ac=1; next }
         in_ac && /^  [a-z]/ { exit }
         in_ac && /^  - / {
             if (cur_id != "" && cc > 0) {
                 printf "  %s:\n", cur_id
-                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", chk[i] }
+                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(chk[i], cur_desc) }
             }
-            cur_id=""; cc=0
+            cur_id=""; cur_desc=""; cc=0
             if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
+            if (/description:/) {
+                s=$0; sub(/.*description:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s)
+                while (s ~ /^["'"'"']/) sub(/^["'"'"']/, "", s)
+                while (s ~ /["'"'"']$/) sub(/["'"'"']$/, "", s)
+                cur_desc=s
+            }
         }
         in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
+        in_ac && /    description:/ {
+            sub(/.*description:[[:space:]]*/, "")
+            sub(/[[:space:]]*$/, "")
+            while ($0 ~ /^["'"'"']/) sub(/^["'"'"']/, "")
+            while ($0 ~ /["'"'"']$/) sub(/["'"'"']$/, "")
+            cur_desc=$0
+        }
         in_ac && /    - check:/ {
             sub(/.*- check:[[:space:]]*/, "")
             sub(/[[:space:]]*$/, "")
@@ -1129,7 +1149,7 @@ EOF
         END {
             if (cur_id != "" && cc > 0) {
                 printf "  %s:\n", cur_id
-                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", chk[i] }
+                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(chk[i], cur_desc) }
             }
         }
     ' "$task_file" 2>/dev/null)
@@ -1148,7 +1168,14 @@ EOF
     if [ -n "$_commit_bc" ]; then
         local _tp_raw
         _tp_raw=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null)
-        if [ -n "$_tp_raw" ]; then
+        local _scout_exempt
+        _scout_exempt=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "scout_exempt" "" 2>/dev/null)
+        if [ "$_scout_exempt" = "true" ] && [ -z "$_tp_raw" ]; then
+            _commit_bc='  commit:
+  - check: "git commitが完了したか(untracked/modified=0)"
+    result: "no"  # scout_exemptかつtarget_path未設定: commit不要'
+            log "binary_checks: commit check auto-set to no (scout_exempt=true and target_path unset)"
+        elif [ -n "$_tp_raw" ]; then
             local -a _tp_paths=()
             if echo "$_tp_raw" | grep -q '^- '; then
                 while IFS= read -r _tp_line; do
@@ -1189,6 +1216,13 @@ ${_commit_bc}"
         # GP-133 enhanced: AC descriptionから。分割でcheck項目を自動生成（description空→FILLフォールバック）
         local _ac_stubs
         _ac_stubs=$(awk '
+            function normalize_check_text(text, ac_desc, out) {
+                out = text
+                if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
+                    out = out " (進行中月除外)"
+                }
+                return out
+            }
             /^  acceptance_criteria:/ { in_ac=1; next }
             in_ac && /^  [a-z]/ { exit }
             in_ac && /^  - / {
@@ -1198,7 +1232,7 @@ ${_commit_bc}"
                         n = split(desc, parts, "。")
                         for (i=1; i<=n; i++) {
                             gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
-                            if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", parts[i]
+                            if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(parts[i], desc)
                         }
                     } else {
                         printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", cur_id
@@ -1231,7 +1265,7 @@ ${_commit_bc}"
                         n = split(desc, parts, "。")
                         for (i=1; i<=n; i++) {
                             gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
-                            if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", parts[i]
+                            if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(parts[i], desc)
                         }
                     } else {
                         printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", cur_id
