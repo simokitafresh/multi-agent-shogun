@@ -394,8 +394,9 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 11: worker_id/parent_cmd推定 from filename ===
-@test "worker_id and parent_cmd are inferred from filename" {
+# === Test 11: worker_id/parent_cmd推定 → 消火撤去(GP-107 Q1:値の推定=NO) ===
+# gate_report_format.shが空値をBLOCKする。autofixが推定すべきでない。
+@test "worker_id and parent_cmd are NOT inferred from filename (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/hanzo_report_cmd_888.yaml"
     cat > "$rpath" <<'EOF'
 verdict: PASS
@@ -406,14 +407,16 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"worker_id"* ]]
+    # autofixはworker_id/parent_cmdを推定しない(消火撤去)
+    [[ "$output" != *"worker_id ファイル名から推定"* ]]
+    [[ "$output" != *"parent_cmd ファイル名から推定"* ]]
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
-assert d['worker_id'] == 'hanzo', f'Expected hanzo, got {d[\"worker_id\"]}'
-assert d['parent_cmd'] == 'cmd_888', f'Expected cmd_888, got {d[\"parent_cmd\"]}'
+# worker_id/parent_cmdは推定されない(消火撤去)
+assert 'worker_id' not in d, f'worker_id should not be auto-inferred'
+assert 'parent_cmd' not in d, f'parent_cmd should not be auto-inferred'
 print('OK')
 "
     [ "$status" -eq 0 ]
