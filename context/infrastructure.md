@@ -334,7 +334,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L469 -->
+<!-- last_synced_lesson: L470 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
@@ -529,6 +529,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L467: REPORT-DONE-MISMATCH誤検知はtask_id照合不在が根因。snapshot report cmd_idとtask YAMLのtask_idを比較して旧report残存をスキップせよ（cmd_karo_mismatch_fix）
 - L468: gate_report_formatにautofix pre-stepを組み込むことで忍者のautofix未実行による無駄FAILサイクルを防止できる（cmd_1885）
 - L469: gate_report_formatにautofix pre-stepを組込みFAILサイクル防止（cmd_1885）
+- L470: dashboard WARNとgateの監視対象は同一SSOTに揃えよ（cmd_1889）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

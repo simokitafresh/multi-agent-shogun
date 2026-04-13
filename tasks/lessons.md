@@ -3583,3 +3583,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix pre-stepを組み込むことで手順依存を排除。GP-107 Q1-Q4全PASS確認済。FAIL率40.9%→22.7%。
+
+### L470: dashboard WARNとgateの監視対象は同一SSOTに揃えよ
+- **日付**: 2026-04-13
+- **出典**: cmd_1889
+- **記録者**: hayate
+- **status**: draft
+- **tags**: [universal]
+- `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive projectのcontextだけを見る一方、`gate_context_freshness.sh` が `context/*.md` 全件走査のままだと、dashboard上の対象4件を更新しても別project/古文書のWARNでACが偽FAILになる。監視系は同一対象集合を共有すべし。
