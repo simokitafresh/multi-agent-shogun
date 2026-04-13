@@ -698,6 +698,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **出典**: cmd_405
 - **記録者**: karo
 - **tags**: [bash, monitor, tmux]
+- **retired**: true
+- **retired_at**: 2026-04-14
 - rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッション設定用)のsaizo pane変数(@model_name Sonnet)にハードコードが残る。ninja_monitorのcheck_model_names()が毎サイクル自動修正するため実害なし。ただし将来的にモデル変更時はscripts/shutsujin_departure.shも更新が必要。
 
 ### L095: archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後は常にno-op

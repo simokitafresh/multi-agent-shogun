@@ -50,13 +50,15 @@ for f in queue/inbox/archive/gunshi_*.yaml; do
 done
 
 # archiveでstatus: doneのcmdはCLEARと推定
-for f in queue/archive/cmds/*_done_*.yaml queue/archive/cmds/*_completed_*.yaml; do
-    [[ -f "$f" ]] || continue
-    local_cmd_id=$(basename "$f" | sed 's/_done_.*//; s/_completed_.*//')
-    # 既にGATE_MAPにあればスキップ
-    [[ -n "${GATE_MAP[$local_cmd_id]:-}" ]] && continue
-    GATE_MAP["$local_cmd_id"]="CLEAR"
-done
+# 高速化: glob展開+basename loop(3.1s/1740files)→ls+awk(0.014s, 220x)
+# WSL2 NTFSではglob展開が個別stat→致命的に遅い
+if [[ -d "queue/archive/cmds" ]]; then
+    while read -r local_cmd_id; do
+        [[ -n "$local_cmd_id" ]] || continue
+        [[ -n "${GATE_MAP[$local_cmd_id]:-}" ]] && continue
+        GATE_MAP["$local_cmd_id"]="CLEAR"
+    done < <(find queue/archive/cmds/ -maxdepth 1 -name '*_done_*.yaml' -o -name '*_completed_*.yaml' 2>/dev/null | sed 's|.*/||; s/_done_.*//; s/_completed_.*//' | sort -u)
+fi
 
 echo "=== gunshi_gate_sync: ${#GATE_MAP[@]}件のgate_result情報収集済み ==="
 

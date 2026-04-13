@@ -1,25 +1,28 @@
 task:
-  _ac_task_id: cmd_1896_impl
+  _ac_task_id: cmd_1897_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: b5b1064c
+  ac_version: 201570bf
   acceptance_criteria:
-  - description: '3,486通り全量のβ調整���了。cmd_1896_l3_beta_adjusted.csvに出力。確認: 行数=3486、α年率の分布(mean/std/min/max)���print'
+  - description: 'champions.jsonから21体のpattern_idを取得しselection_pipeline設定をデコード。21体全てユニーク確認。確認:
+      pattern_id一覧をprint、重複なし検証'
     id: AC1
-  - description: 'L2最強(α=101.2%)を超えるL3の件数と割合を算出。Top10構成体リスト出力。確認: L2 cmd_1880のα値と突合'
+  - description: '21体を本番DBにhide=true, active=trueで登録。登録前PF数=157、登録後PF数=178(+21)。確認:
+      APIで登録後PF数を取得し178であることを検証'
     id: AC2
-  - description: cmd_1896_l3_summary.mdに結果サマリ出力。L2 vs L3の比較表(α/β/CAGR)。L3がL2に勝てるか否かの結論を1行で記載
+  - description: 登録結果JSONをoutputs/analysis/cmd_1897_registration_results.jsonに出力。各体のname/id/pattern_id/selection_pipeline設定を記録
     id: AC3
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
+  - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
     \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
-    \  - L495: R2独立実装でCAGR差異(74.5% vs 将軍80.8%)発生。R1は完全一致(63.8%)のため計算ロジックは正確。差異はクラスタリングのNaN処理や距離\n\
-    \  - L029: inbox_watcherの60秒安全網とninja_monitorのrenudge/cmd_pending再送が独立に動作するため、受信側が1回取り逃すと同一\n\
-    \  - L493: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓moment\n\
+    \  - L300: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed\n\
+    \  - L494: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.\n\
+    \  - L508: except Exceptionでデータ値(Cash/0.0/True/1.0/SPY等)をfallback返却するコードは嘘をつく。cmd_1483で38箇所\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
@@ -40,13 +43,13 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1896
+  parent_cmd: cmd_1897
   project: dm-signal
-  report_filename: hayate_report_cmd_1896.yaml
-  report_path: queue/reports/hayate_report_cmd_1896.yaml
+  report_filename: hayate_report_cmd_1897.yaml
+  report_path: queue/reports/hayate_report_cmd_1897.yaml
   status: done
   stop_for: []
-  task_id: cmd_1896_impl
+  task_id: cmd_1897_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -114,4 +117,4 @@ task:
   - id: 'L617'
     summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
     detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
-  deployed_at: "2026-04-14T02:48:28"
+  deployed_at: "2026-04-14T08:22:20"
