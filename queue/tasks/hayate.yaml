@@ -1,30 +1,30 @@
 task:
-  _ac_task_id: cmd_1894_impl
+  _ac_task_id: cmd_1895_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 43aa1ea0
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: 92fca896
   acceptance_criteria:
-  - description: 'C(168,2)+C(168,3)=790,244通りの全量EW→β調整を完走。outputs/analysis/alm_research/cmd_1894_l3_ew_beta_adjusted.csvに出力(列:
-      combo_id, body1, body2, body3, raw_cagr, beta, alpha_annual, beta_adj_cagr)。確認:
-      行数=790244、α年率の分布統計(mean/std/min/max)をprint'
+  - description: 'universe YAML+CSVを既存フォーマットで作成。run_077_bunshin.py --universe okugi_l3_168.yaml
+      で試走成功。確認: GS CSV行数>0、実行時間をprint'
     id: AC1
-  - description: 'L2最強(α年率101.2%)を超えるL3の件数と割合を算出。L3 Top10の構成体リスト+cmd_1893相関値を出力。確認:
-      Top10にL2 Top5構成体が含まれるか検証'
+  - description: '全7忍法のGS完走。outputs/grid_search/okugi_l3_168/に7本のGS CSV生成。確認: 各CSV行数と実行時間をprint'
     id: AC2
-  - description: '結果サマリをoutputs/analysis/alm_research/cmd_1894_l3_summary.mdに出力。L2
-      vs L3の比較表(α/β/CAGR)。確認: L2 cmd_1880のTop5 α値と突合して整合確認'
+  - description: 'champion_selectorで7忍法×3目的=21チャンピオン選出。JSON出力。確認: 21体全てユニーク(重複なし)'
     id: AC3
+  - description: '21体のβ調整完了。α年率/β/β調整後CAGRを算出。L2 Top5(⑤ nukimi激攻 α=101.2%等)と比較するMDサマリ出力。確認:
+      L2 cmd_1880のα値と突合'
+    id: AC4
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
-  - context/dm-signal-research.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
     \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
-    \  - L494: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.\n\
-    \  - L493: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓moment\n\
-    ────────────────────────────────────────"
+    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
+    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
+    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
+    \ 6列: \n────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -44,7 +44,8 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1894
+  - AC4
+  parent_cmd: cmd_1895
   project: dm-signal
   related_lessons:
   - detail: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み
@@ -53,19 +54,26 @@ task:
   - detail: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知
     id: L616
     summary: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知
-  - detail: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.pyの再計算値74.5%に6.3%の乖離。予備分析は別の計算手法(おそらく全期間を使った非WF計算)を使用していた可能性。独立検証(constraint)の重要性を再確認。
-    id: L494
-    summary: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.pyの再計算値74.5%に6.3%の乖離。予備分析は別の計算手法(おそらく全期間を使った非WF計算)を使用していた可能性。独立検証(constraint)の重要性を再確認。
-  - detail: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓momentum
-      union+cutoff_score top_nのタイミング(シグナル月vsリターン月)がPipelineEngine実装と微妙に異なる可能性。numpy快速パスで忍法リターンを再現する際、yotsume系は4窓momのunion集合
-    id: L493
-    summary: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓momentum
-      union+cutoff_score top_nのタイミング(シグナル月vsリターン月)がPipelineEngine実装と微妙に異なる可能性。numpy快速パスで忍法リターンを再現する際、yotsume系は4窓momのunion集合
-  report_filename: hayate_report_cmd_1894.yaml
+  - detail: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
+      '_report\.yaml')で影響範囲を完全列挙してからスコープを
+    id: L085
+    summary: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
+      '_report\.yaml')で影響範囲を完全列挙してからスコープを
+  - detail: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)。推定タグ数上限(max
+      3)の導入が必要
+    id: L088
+    summary: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)。推定タグ数上限(max
+      3)の導入が必要
+  - detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
+      6列: timestamp/cmd_id/result/reason/task_type/model)に格納される。タスク記述の「gate_metrics.yaml」は実際のファイルと異なる。実装前にファイル形式を確認せよ。'
+    id: L101
+    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
+      6列: timestamp/cmd_id/result/reason/task_type/model)に格納される。タスク記述の「gate_metrics.yaml」は実際のファイルと異なる。実装前にファイル形式を確認せよ。'
+  report_filename: hayate_report_cmd_1895.yaml
   report_path: 
   status: idle
   stop_for: []
-  task_id: cmd_1894_impl
+  task_id: cmd_1895_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
