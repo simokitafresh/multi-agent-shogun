@@ -51,7 +51,7 @@ print(text)
 fi
 
 # Run verification
-REPO_ROOT="$REPO_ROOT" python3 -c "
+REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" python3 -c "
 import re, os, sys
 
 repo_root = os.environ['REPO_ROOT']
@@ -199,6 +199,24 @@ for i, block in enumerate(ac_blocks):
 
     if refs:
         print(f'  {ac_label}: {\" | \".join(refs)}')
+
+
+# Parallel work detection — cmd_idのcommitが既に存在するか警告 (GP-185: premature_shelve防止)
+cmd_id = os.environ.get('CMD_ID', '')
+if cmd_id and cmd_id != '-':
+    try:
+        result = subprocess.run(
+            ['git', '-C', repo_root, 'log', f'--grep={cmd_id}', '--oneline', '-5'],
+            capture_output=True, text=True, timeout=15
+        )
+        if result.stdout.strip():
+            print(f'\n--- Parallel Work Detection (GP-185) ---')
+            print(f'  [WARN] {cmd_id}を含むcommitが既に存在:')
+            for line in result.stdout.strip().split('\n'):
+                print(f'    {line}')
+            print(f'  → 「既実装」判定注意: これらは忍者の実装であり既存コードではない(LG001)')
+    except Exception:
+        pass
 
 if missing > 0:
     sys.exit(1)
