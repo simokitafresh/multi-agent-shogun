@@ -1452,13 +1452,20 @@ check_report_done_idle_mismatch() {
         local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
         [ -f "$task_file" ] || continue
 
-        local task_status
+        local task_status task_id
         task_status=$(yaml_field_get "$task_file" "status")
+        task_id=$(yaml_field_get "$task_file" "task_id")
 
         # idle/done は正常状態 → スキップ
         case "$task_status" in
             idle|done) continue ;;
         esac
+
+        # 旧report残存チェック: snapshotの_summaryと現taskのtask_idが不一致なら
+        # 新task配備後の旧report残存 → 誤検知なのでスキップ
+        if [ "$_summary" != "$task_id" ] && [ -n "$task_id" ]; then
+            continue
+        fi
 
         # parent_cmd取得（デバウンスキーに使用）
         local parent_cmd
