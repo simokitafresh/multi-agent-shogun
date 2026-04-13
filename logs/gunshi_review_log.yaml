@@ -482,7 +482,6 @@
   report_task_id: cmd_1884_impl
   verdict: LGTM
   gate_result: CLEAR
-  gate_result: CLEAR
   findings_summary: "4観点OK。全4dirで非grid CSV=0確認。kawarimi重複(grid+非grid同内容93MB)を正しく検出し非grid削除で衝突回避。selection_timeline.pyも追加更新(AC外だが参照整合性確保)。commit checkはscope外diffsで家老PASS補正—妥当"
   observations:
     - "事実1: draft reviewで「衝突リスクゼロ」と判定したがkawarimi_results_fast(grid+非grid93MB共存)を見落としていた。hayateが正しく検出・処理。軍師のdraft review精度に課題(衝突チェック対象をkasoku/oikaze/metrics_bunshinに限定しkawarimiを漏らした)"
@@ -491,3 +490,41 @@
   lesson_quality: OK
   causal_chain: "draft review衝突チェック漏れ(kawarimi)→hayateが実態で検出→非grid削除で安全に処理。軍師のチェック対象選定が不完全。cmdの3忍法リスト(kasoku_diff,kawarimi,metrics_bunshin)を個別にgrid存在確認すべきだった→チェック対象=リネーム対象全数が原則"
   timestamp: "2026-04-13T20:03:00"
+- cmd_id: cmd_karo_gp183_184
+  review_type: draft
+  verdict: APPROVE
+  gate_result:
+  confidence: HIGH
+  findings_summary: "6観点OK。GP-183(scout_exempt+target_path未設定→commit no)+GP-184(monthly/月次→進行中月除外付記)統合実装。deploy_task.sh L1141/L1130実在確認。verdict_override7件中6件根絶見込み(GP-173除外)。才蔵単独配備妥当"
+  observations:
+    - "事実1: verdict_override実測7件(cmdは6件記載)。GP-173対処済み1件を除外すれば6件で整合"
+    - "事実2: GP-183条件(scout_exempt+target_path未設定)は研究/復旧cmdに限定。infra cmdは通常target_path設定あり→誤発火リスク低"
+    - "事実3: GP-184のawk内日本語パターンマッチ(月次)はawk実装依存。gawk/mawk差異で不発の可能性→AC2でテスト済みなら問題なし"
+  causal_chain: "verdict_override WA7件→3パターン(AC推奨混在/研究cmd commit/進行中月)→GP-173+GP-183+GP-184で構造的根絶→家老WA理論ゼロ→正の複利。×10回=70件のWA削減"
+  timestamp: "2026-04-13T20:15:00"
+- cmd_id: cmd_1885
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result:
+  confidence: LOW
+  findings_summary: "前提検証NG。ファイル名(gate_fire.yaml→gate_fire_log.yaml)+数値(224件→22件, 4.0%→40.9%)が実測と桁違い。severity: normal(SCOUT_IMPL偵察フェーズで正しい値を得られる)"
+  observations:
+    - "事実1: gate_fire_log.yaml実測=26エントリ。gate_loop_health.shはテスト4件除外で22件計上。cmdの224件は桁違い"
+    - "事実2: FAIL 9件/22件=40.9%。cmdの4.0%は分母224件に基づく誤算"
+    - "事実3: gate_fire.yamlは不在。正しいファイル名はgate_fire_log.yaml"
+  causal_chain: "cmd起票時にgate_loop_health.sh出力を確認したが数値を誤読(22→224)。×10回=誤前提に基づくcmdが10件→偵察やり直し10件=負の複利。cmd起票前の数値実測確認(q5)で防げた"
+  timestamp: "2026-04-13T20:20:00"
+- cmd_id: cmd_karo_gp183_184
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_gp183_184_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GP-183: scout_exempt+tp未設定→commit=no(L1168)。GP-184: normalize_check_text 3箇所+二重付記防止。bats 6/6。commit ada21c5"
+  observations:
+    - "事実1: normalize_check_text関数が手書きBC/description分解/GP-133 auto-genの3経路全てに適用。カバレッジ完全"
+    - "事実2: scout_exempt条件がelifで既存gitignoreロジック前に挿入。既存フロー維持確認"
+    - "事実3: 二重付記防止(!~ /進行中月除外/)が関数内に組込み。冪等性保証"
+  lesson_quality: OK
+  causal_chain: "GP-183/184実装→verdict_override WA理論根絶→家老手動補正ゼロ→正の複利。テスト6件+shellcheck=品質保証済み"
+  timestamp: "2026-04-13T20:25:00"

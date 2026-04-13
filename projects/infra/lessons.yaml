@@ -1381,7 +1381,7 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 2
   last_referenced: '2026-04-13'
 - id: L261
@@ -1492,9 +1492,9 @@ lessons:
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-12'
+  last_referenced: '2026-04-13'
 - id: L245
   title: ホワイトリスト型gitignoreで新規lib追加時はgitignore反映を確認せよ
   summary: ホワイトリスト型gitignore環境でscripts/lib/に新規shファイル追加時、.gitignoreホワイトリスト追記漏れでCIのみ失敗する。ローカル
@@ -1580,6 +1580,9 @@ lessons:
   - testing
   - review
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-13'
 - id: L232
   title: 'pre-pushフックtimeout: 294テストが120秒内に完走しない'
   summary: bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ
@@ -1949,6 +1952,9 @@ lessons:
   tags:
   - bash
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-13'
 - id: L179
   title: 忍者がcommit未実施でdone報告するケース
   summary: '疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco'
@@ -2106,9 +2112,9 @@ lessons:
     形式で受けよ
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-12'
+  last_referenced: '2026-04-13'
 - id: L155
   title: lib/配下の共通関数は呼出し元の環境変数依存を明示バリデーションすべき
   summary: IF lib/配下の共通関数を実装する時 THEN 呼出し元の環境変数依存を関数冒頭で明示バリデーションせよ
@@ -2613,7 +2619,7 @@ lessons:
   tags:
   - db
   - yaml
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 2
   last_referenced: '2026-04-09'
 - id: L082
@@ -2646,7 +2652,7 @@ lessons:
   - gate
   - bash
   - lesson
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 4
   last_referenced: '2026-04-12'
 - id: L078
@@ -2681,7 +2687,7 @@ lessons:
   tags:
   - bash
   - universal
-  helpful_count: 20
+  helpful_count: 19
   harmful_count: 19
   last_referenced: '2026-04-11'
 - id: L073
@@ -2761,7 +2767,7 @@ lessons:
   tags:
   - python
   - universal
-  helpful_count: 20
+  helpful_count: 19
   harmful_count: 19
   last_referenced: '2026-04-11'
 - id: L062
