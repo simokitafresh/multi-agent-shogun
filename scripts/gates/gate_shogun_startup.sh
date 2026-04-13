@@ -590,15 +590,22 @@ if [ ! -d "$_LC_ARCHIVE_DIR" ]; then
 elif [ -n "$_LC_YESTERDAY" ] && [ -f "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" ]; then
     _lc_inbound=$(grep -cE '"direction": *"inbound"' "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" 2>/dev/null) || _lc_inbound=0
     if [ "$_lc_inbound" -eq 0 ]; then
-        # 他のアーカイブファイルが存在する場合はシステム健全で殿が未発言日のためスキップ
-        _lc_other=0
-        for _lc_f in "$_LC_ARCHIVE_DIR"/*.jsonl; do
-            [ -f "$_lc_f" ] || continue
-            case "$_lc_f" in *"${_LC_YESTERDAY}"*) continue ;; esac
-            _lc_other=$((_lc_other + 1))
+        # 直近7日でinbound>0の日が1日以上あれば未発言日の可能性 → SKIP
+        # 連続してinbound=0の場合のみ真のALERT（記録機構障害）
+        _lc_recent_ok=0
+        for _lc_n in 1 2 3 4 5 6 7; do
+            _lc_d=$(date -d "${_lc_n} days ago" '+%Y-%m-%d' 2>/dev/null \
+                    || date -v"-${_lc_n}d" '+%Y-%m-%d' 2>/dev/null || true)
+            [ -z "$_lc_d" ] && continue
+            [ "$_lc_d" = "$_LC_YESTERDAY" ] && continue
+            _lc_nf="$_LC_ARCHIVE_DIR/${_lc_d}.jsonl"
+            if [ -f "$_lc_nf" ]; then
+                _lc_nc=$(grep -cE '"direction": *"inbound"' "$_lc_nf" 2>/dev/null) || _lc_nc=0
+                [ "$_lc_nc" -gt 0 ] && _lc_recent_ok=$((_lc_recent_ok + 1))
+            fi
         done
-        if [ "$_lc_other" -gt 0 ]; then
-            echo "  INFO: ${_LC_YESTERDAY} inbound=0（アーカイブ他${_lc_other}件存在 — 未発言日の可能性）"
+        if [ "$_lc_recent_ok" -gt 0 ]; then
+            echo "  INFO: ${_LC_YESTERDAY} inbound=0（直近7日中${_lc_recent_ok}日はinbound有 — 未発言日の可能性）"
         else
             overall="ALERT"
             alerts+=("会話記録 inbound=0: ${_LC_YESTERDAY}に殿の発言未記録 — scripts/log_terminal_input.sh確認")

@@ -40,12 +40,17 @@ def main() -> int:
 
         result = None
         if worker_id:
-            tpath = os.path.join(os.path.dirname(os.path.dirname(report_path)), "tasks", f"{worker_id}.yaml")
+            tpath = os.path.join(
+                os.path.dirname(os.path.dirname(report_path)), "tasks", f"{worker_id}.yaml"
+            )
             if os.path.exists(tpath):
                 try:
                     with open(tpath, encoding="utf-8") as tf:
                         tdata = yaml.load(tf, Loader=SafeLoader)
-                    result = tdata if not isinstance(tdata, dict) or "task" not in tdata else tdata.get("task", {})
+                    result = (
+                        tdata if not isinstance(tdata, dict) or "task" not in tdata
+                        else tdata.get("task", {})
+                    )
                 except Exception:
                     pass
 
@@ -99,96 +104,9 @@ def main() -> int:
                     data["parent_cmd"] = str(pcmd20)
                     fixes.append(f"parent_cmd タスクYAMLから補完({pcmd20})")
 
-    lu = data.get("lessons_useful")
-    if isinstance(lu, dict):
-        lu_keys_str = {str(k) for k in lu.keys()}
-        known_fields = {"id", "useful", "reason"}
-        lesson_id_re = re.compile(r"^L\d+$")
-
-        converted = None
-        fix_label = ""
-
-        if not lu:
-            converted = []
-            fix_label = "lessons_useful 空dict→空list変換"
-        elif lu_keys_str & known_fields:
-            converted = [dict(lu)]
-            fix_label = "lessons_useful 単一dict→list wrap"
-            if not all(converted[0].get(k) == v for k, v in lu.items()):
-                converted = None
-        elif all(lesson_id_re.match(str(k)) for k in lu.keys()):
-            new_list = []
-            for key in sorted(lu.keys(), key=str):
-                val = lu[key]
-                if isinstance(val, dict):
-                    entry = dict(val)
-                    if "id" not in entry:
-                        entry["id"] = str(key)
-                    new_list.append(entry)
-                else:
-                    new_list.append({"id": str(key)})
-            converted = new_list
-            fix_label = "lessons_useful LessonIDキーdict→list変換(id注入)"
-            ok = len(converted) == len(lu)
-            if ok:
-                for item in converted:
-                    lid = item.get("id", "")
-                    if lid in lu and isinstance(lu[lid], dict):
-                        if not all(item.get(fk) == fv for fk, fv in lu[lid].items()):
-                            ok = False
-                            break
-            if not ok:
-                converted = None
-        else:
-            try:
-                sorted_keys = sorted(
-                    lu.keys(),
-                    key=lambda key: (0, int(str(key))) if str(key).isdigit() else (1, str(key)),
-                )
-            except (ValueError, TypeError):
-                sorted_keys = sorted(lu.keys(), key=str)
-            converted = [lu[key] for key in sorted_keys]
-            fix_label = "lessons_useful dict→list変換"
-            if len(converted) != len(lu):
-                converted = None
-
-        if converted is not None:
-            data["lessons_useful"] = converted
-            fixes.append(fix_label)
-
-    lu = data.get("lessons_useful")
-    if isinstance(lu, list) and lu:
-        unknown_ids: list[int] = []
-        for idx, item in enumerate(lu):
-            if isinstance(item, dict):
-                lid = str(item.get("id", ""))
-                if not lid or lid.startswith("UNKNOWN") or lid == "None":
-                    unknown_ids.append(idx)
-        if unknown_ids:
-            task_lesson_ids: list[str] = []
-            worker = data.get("worker_id", "")
-            task14 = get_task_data(worker)
-            if task14:
-                rl = task14.get("related_lessons", [])
-                if isinstance(rl, list):
-                    task_lesson_ids = [str(r.get("id", "")) for r in rl if isinstance(r, dict) and r.get("id")]
-            lu_fixed = False
-            for pos in unknown_ids:
-                lid = str(lu[pos].get("id", ""))
-                num = -1
-                if lid.startswith("UNKNOWN_"):
-                    try:
-                        num = int(lid.split("_")[1])
-                    except (ValueError, IndexError):
-                        pass
-                if 0 <= num < len(task_lesson_ids):
-                    lu[pos]["id"] = task_lesson_ids[num]
-                    lu_fixed = True
-                elif (not lid or lid == "None") and pos < len(task_lesson_ids):
-                    lu[pos]["id"] = task_lesson_ids[pos]
-                    lu_fixed = True
-            if lu_fixed:
-                fixes.append(f"lessons_useful id UNKNOWN→タスクYAML参照解決({len(unknown_ids)}件)")
+    # lessons_useful dict→list変換は消火(GP-107 Q1:内容不変でない)→撤去
+    # gate_report_format.shでBLOCK
+    # UNKNOWN id追加も消火→撤去。missing "id"はgateがBLOCKする
 
     fm = data.get("files_modified")
     if isinstance(fm, str) and fm.strip():
@@ -207,12 +125,7 @@ def main() -> int:
             data["files_modified"] = new_fm
             fixes.append("files_modified string→dict変換")
 
-    lu = data.get("lessons_useful")
-    if isinstance(lu, list):
-        for idx, item in enumerate(lu):
-            if isinstance(item, dict) and "id" not in item:
-                item["id"] = f"UNKNOWN_{idx}"
-                fixes.append(f"lessons_useful[{idx}]: id=UNKNOWN_{idx}仮付番")
+    # UNKNOWN id仮付番は消火(gate_report_format.shがmissing "id"をBLOCK)→撤去
 
     bc = data.get("binary_checks")
     if isinstance(bc, dict):
@@ -232,8 +145,20 @@ def main() -> int:
             if converted is None:
                 match = re.search(r"check:\s*(.+?)\s*,\s*result:\s*(.+)", ac_val)
                 if match:
-                    converted = [{"check": match.group(1).strip(), "result": match.group(2).strip()}]
-            if converted is None and ac_val.strip():
+                    converted = [
+                        {"check": match.group(1).strip(), "result": match.group(2).strip()}
+                    ]
+            # 単一verdict語(yes/no/pass等)は消火→skipしてgateがBLOCKする
+            # 散文テキストのみ変換
+            _bc_skip_words = {
+                "yes", "no", "pass", "fail", "ok", "ng", "true", "false",
+                "done", "clear", "n/a", "na", "block",
+            }
+            if (
+                converted is None
+                and ac_val.strip()
+                and ac_val.strip().lower() not in _bc_skip_words
+            ):
                 converted = [{"check": ac_val.strip(), "result": "yes"}]
             if converted is not None:
                 bc[ac_key] = converted
@@ -260,17 +185,16 @@ def main() -> int:
         fail_vals = {"fail", "false", "no", "ng", "block"}
 
         for ac_key, ac_val in bc.items():
-            if isinstance(ac_val, dict):
-                ac_val = [ac_val]
-                bc[ac_key] = ac_val
-                bc_dict_fixed = True
+            # binary_checks AC dict→list変換は消火→撤去。gateが"must be list"でBLOCK
             if not isinstance(ac_val, list):
                 continue
 
             needs_numbered_convert = any(
                 isinstance(chk, dict)
                 and len(chk) > 1
-                and sum(1 for key in chk.keys() if digit_key_re.match(str(key))) == len(chk)
+                and sum(
+                    1 for key in chk.keys() if digit_key_re.match(str(key))
+                ) == len(chk)
                 for chk in ac_val
             )
             if needs_numbered_convert:
@@ -278,7 +202,9 @@ def main() -> int:
                 new_list = []
                 for chk in ac_val:
                     if isinstance(chk, dict):
-                        for idx, (key, value) in enumerate(sorted(chk.items(), key=lambda pair: str(pair[0]))):
+                        for idx, (key, value) in enumerate(
+                            sorted(chk.items(), key=lambda pair: str(pair[0]))
+                        ):
                             result_val = value.get("result", "yes") if isinstance(value, dict) else value
                             check_name = ""
                             if idx < len(task_checks):
@@ -376,8 +302,8 @@ def main() -> int:
             fixes.append(f"lesson_candidate list→dict変換({len(lc)}要素)")
 
     lu_missing = "lessons_useful" not in data
-    lu_null = "lessons_useful" in data and data["lessons_useful"] is None
-    if lu_missing or lu_null:
+    # lu_null(null値)は消火→撤去。gate_report_format.shが"lessons_useful: null"でBLOCK
+    if lu_missing:
         skeleton = []
         worker6 = data.get("worker_id", "")
         task6 = get_task_data(worker6)
@@ -388,7 +314,7 @@ def main() -> int:
                     if isinstance(item6, dict) and item6.get("id"):
                         skeleton.append({"id": str(item6["id"]), "useful": False, "reason": "FILL_THIS"})
         data["lessons_useful"] = skeleton if skeleton else []
-        label6 = "MISSING" if lu_missing else "null"
+        label6 = "MISSING"
         if skeleton:
             fixes.append(f"lessons_useful {label6}→タスクYAMLからスケルトン生成({len(skeleton)}件)")
         else:
@@ -396,47 +322,15 @@ def main() -> int:
 
     verdict_val = data.get("verdict")
     is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ("PASS", "FAIL")
-    verdict_blank = verdict_val is None or (isinstance(verdict_val, str) and not verdict_val.strip())
-    if verdict_blank and "verdict" in data:
-        bc = data.get("binary_checks")
-        if isinstance(bc, dict) and bc_result_total > 0 and bc_result_total == bc_result_filled:
-            data["verdict"] = "FAIL" if bc_fail_count > 0 else "PASS"
-            fixes.append(f"verdict推定({bc_pass_count}PASS/{bc_fail_count}FAIL)")
-            is_valid_verdict = True
-    elif not is_valid_verdict and "verdict" in data:
-        bc = data.get("binary_checks")
-        if isinstance(bc, dict) and (bc_pass_count + bc_fail_count > 0):
-            data["verdict"] = "FAIL" if bc_fail_count > 0 else "PASS"
-            fixes.append(f"verdict推定({bc_pass_count}PASS/{bc_fail_count}FAIL)")
-            is_valid_verdict = True
-    elif is_valid_verdict and verdict_val == "PASS" and bc_fail_count > 0 and "verdict" in data:
-        data["verdict"] = "FAIL"
-        fixes.append(f"verdict訂正PASS→FAIL(no={bc_fail_count}件)")
-        is_valid_verdict = True
+    # verdict推定(blank/invalid→PASS/FAIL)は消火→撤去。gate_report_format.shがBLOCK
+    # verdict訂正(PASS→FAIL)も消火→撤去。GP-128でgateがWARN/ERROR
 
     status_val = data.get("status")
     if is_valid_verdict and isinstance(status_val, str) and status_val.strip().lower() == "pending":
         data["status"] = "completed"
         fixes.append("status pending→completed")
 
-    sgc = data.get("self_gate_check")
-    if isinstance(sgc, dict):
-        pass_map = {"ok", "yes", "true", "pass", "o", "○"}
-        fail_map = {"ng", "no", "false", "fail", "x", "×"}
-        changed = False
-        for key, value in sgc.items():
-            if not isinstance(value, str):
-                continue
-            lowered = value.strip().lower()
-            if lowered in pass_map and value != "PASS":
-                sgc[key] = "PASS"
-                changed = True
-            elif lowered in fail_map and value != "FAIL":
-                sgc[key] = "FAIL"
-                changed = True
-        if changed:
-            data["self_gate_check"] = sgc
-            fixes.append("self_gate_check値正規化(ok/yes→PASS)")
+    # self_gate_check値正規化(ok→PASS等)は消火→撤去。gate_report_format.shがBLOCK
 
     if fixes:
         data["autofix_applied"] = fixes
