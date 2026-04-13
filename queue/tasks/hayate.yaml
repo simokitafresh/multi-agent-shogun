@@ -1,7 +1,7 @@
 task:
   parent_cmd: cmd_1879
   task_id: cmd_1879_A
-  status: assigned
+  status: done
   project: dm-signal
   type: impl
   command: |
@@ -24,12 +24,13 @@ task:
   binary_checks:
     AC1:
       - check: "cmd_1877_bunshin_l1_wf_*の5ファイルが存在するか"
-        result: ""
+        result: "PASS"
       - check: "rc=0か"
-        result: ""
+        result: "PASS"
     AC2:
       - check: "git commitしたか"
-        result: ""
+        result: "PASS"
+  progress: "AC1: 完了 / AC2: 完了"
   context_files: []
   target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py"
   stop_for:
@@ -70,3 +71,4 @@ task:
   - id: 'L608'
     summary: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
     detail: 'GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致。パリティチェックの全期間条件から当月除外を検討'
+  report_path: queue/reports/hayate_report_cmd_1879_A.yaml

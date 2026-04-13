@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-13 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-13T12:45:19+09:00 -->
+<!-- generated_at: 2026-04-13T12:46:46+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-13T12:46:46+09:00 | terminal | response | 委任完了。 **cmd_1879** — WF再実行3件、3忍者並列配備。 - [A] ④bunshin (11MB, parallel) - [B] ④kasoku_ratio (1.6GB, --no-parallel) - [C] …
+- 2026-04-13T12:46:16+09:00 | terminal | inbound | 次の作業も考えておこう。
 - 2026-04-13T12:45:18+09:00 | terminal | response | 委任完了。 **cmd_1879** — WF再実行3件、3忍者並列配備。 - [A] ④bunshin (11MB, parallel) - [B] ④kasoku_ratio (1.6GB, --no-parallel) - [C] …
 - 2026-04-13T12:43:26+09:00 | terminal | inbound | 出そう。OOMkillに注意して、今回は並列可能なものは並列実行にしようか。並列にした時の最大メモリ使用量を事前に考慮しないとな。
 - 2026-04-13T12:42:03+09:00 | terminal | response | **3件のWFデータがgitにも残っていない。** コミット前に次の忍法が上書きしたため。 | パターン | 復元 | 欠損(再実行必要) | |----------|------|----------------| | ② shin_n…
@@ -12,8 +14,6 @@
 - 2026-04-13T12:31:23+09:00 | terminal | inbound | バグを確認して修正せよ。修正したらテストして直ったか確認
 - 2026-04-13T12:11:07+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-13T11:56:48+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-13 11:50:35|CI緑: run 24323037507
-- 2026-04-13T11:43:23+09:00 | ntfy | outbound | 【家老】cmd_1878 AC1 FAIL。②④⑥⑧のWF成果物が共有ファイル名で最後のyotsumeのみ残存。7忍法別に再保存が必要。WFエンジンに--prefix未実装。対処案: (A)再実行+リネーム(28回) (B)out-dir…
-- 2026-04-13T11:41:28+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-13 11:34:42|cmd_1877
 
 ## 未解決確認事項
 - バグを確認して修正せよ。修正したらテストして直ったか確認
@@ -43,7 +43,6 @@
 - cmd_1846
 - cmd_1856
 - cmd_1871
-- cmd_1872
 - cmd_1873
 - cmd_1874
 - cmd_1875
