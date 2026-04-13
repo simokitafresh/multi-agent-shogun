@@ -908,3 +908,16 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - **mode別選出効果**: 鉄壁のみWF優位(+4.4pp)。激攻は大幅WF劣位(-33.5pp)
 - **縮退ケース(L615)**: bunshin(expected_patterns=1)はALM-WF≡GS固定(diff=+0.015)
 → 詳細: `queue/reports/kagemaru_report_cmd_1878.yaml` | CSV: `outputs/analysis/alm_research/cmd_1878_l2_okugi_comparison.csv`
+
+### ALM L2: β調整分析 (cmd_1880)
+<!-- last_updated: 2026-04-13 -->
+- **α>0**: 168/168 (100%)。全体積が超過収益。
+- **β調整後2×2効果(sign flip 0)**: BB効果・選出効果ともにrobust
+  - static群: BB raw +7.2pp→beta_adj +8.0pp / selection raw -1.7pp→beta_adj -2.0pp
+  - wf群: BB raw +3.7pp→beta_adj +3.8pp / selection raw -15.3pp→beta_adj -16.7pp
+- **Top5完全一致**: raw/β調整後ともに⑤(nukimi/kasoku_diff/kawarimi/kasoku_ratio/oikaze)の激攻
+- **最大順位上昇**: ⑦ oikaze/yotsume 鉄壁 各+21位（β低群=市場連動小→β調整で相対評価上昇）
+- **最大順位下降**: ④ bunshin 常勝 -29位（β=1.82の高β群→β調整で下落）
+- **⑧が最下位群独占**: ALM-BB×WF動的がβ高(β>1.7)+α低の構造的劣位
+- **共通期間**: 88-161ヶ月（忍法/パターン依存）
+→ 詳細: `outputs/analysis/alm_research/cmd_1880_l2_beta_adjusted_summary.md` | CSV: `outputs/analysis/alm_research/cmd_1880_l2_beta_adjusted_2x2.csv`
