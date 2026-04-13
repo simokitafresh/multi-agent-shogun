@@ -158,6 +158,30 @@ YAML
     export CMD_ID CMD_BLOCK CMD_BLOCK_NC
 }
 
+_make_cmd_project_depth() {
+    local project_val="$1"
+    local depth_val="$2"
+    local q5_val="$3"
+    cat > "$QUEUE_FILE" <<YAML
+commands:
+  cmd_q5test:
+    id: cmd_q5test
+    command: "q5 project/depth テスト用cmd"
+    status: pending
+    project: ${project_val}
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "${depth_val}"
+      q5_verified_source: "${q5_val}"
+      q8_why_what: "WHY: q5 project/depthテスト → WHAT: 条件分岐1件確認"
+YAML
+    CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
+    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+    export CMD_ID CMD_BLOCK CMD_BLOCK_NC
+}
+
 @test "Q5-T009: scope_mode=SCOUT + code_readingのみ → BLOCKなし(除外)" {
     _make_cmd_exempt "code_reading" "scope_mode: SCOUT"
     run check_quality_gate
@@ -172,4 +196,29 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" != *"BLOCK: q5=code_readingのみ"* ]]
+}
+
+@test "Q5-T011: project=infra + q4_depth=shallow + code_readingのみ → INFOでBLOCKなし" {
+    _make_cmd_project_depth "infra" "shallow" "code_reading"
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: q5=code_reading。project=infra かつ q4_depth=shallow のためINFO扱い。OK"* ]]
+    [[ "$output" != *"BLOCK: q5=code_readingのみ"* ]]
+}
+
+@test "Q5-T012: project=dm-signal + q4_depth=shallow + code_readingのみ → 従来通りBLOCK" {
+    _make_cmd_project_depth "dm-signal" "shallow" "code_reading"
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: q5=code_readingのみ"* ]]
+}
+
+@test "Q5-T013: project=infra + q4_depth=deep + code_readingのみ → 従来通りBLOCK" {
+    _make_cmd_project_depth "infra" "deep" "code_reading"
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: q5=code_readingのみ"* ]]
 }
