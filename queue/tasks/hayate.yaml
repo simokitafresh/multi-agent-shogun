@@ -1,30 +1,26 @@
 task:
-  _ac_task_id: cmd_1895_impl
+  _ac_task_id: cmd_1896_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 92fca896
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: b5b1064c
   acceptance_criteria:
-  - description: 'universe YAML+CSVを既存フォーマットで作成。run_077_bunshin.py --universe okugi_l3_168.yaml
-      で試走成功。確認: GS CSV行数>0、実行時間をprint'
+  - description: '3,486通り全量のβ調整���了。cmd_1896_l3_beta_adjusted.csvに出力。確認: 行数=3486、α年率の分布(mean/std/min/max)���print'
     id: AC1
-  - description: '全7忍法のGS完走。outputs/grid_search/okugi_l3_168/に7本のGS CSV生成。確認: 各CSV行数と実行時間をprint'
+  - description: 'L2最強(α=101.2%)を超えるL3の件数と割合を算出。Top10構成体リスト出力。確認: L2 cmd_1880のα値と突合'
     id: AC2
-  - description: 'champion_selectorで7忍法×3目的=21チャンピオン選出。JSON出力。確認: 21体全てユニーク(重複なし)'
+  - description: cmd_1896_l3_summary.mdに結果サマリ出力。L2 vs L3の比較表(α/β/CAGR)。L3がL2に勝てるか否かの結論を1行で記載
     id: AC3
-  - description: '21体のβ調整完了。α年率/β/β調整後CAGRを算出。L2 Top5(⑤ nukimi激攻 α=101.2%等)と比較するMDサマリ出力。確認:
-      L2 cmd_1880のα値と突合'
-    id: AC4
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
     \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
-    \  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
-    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
-    \  - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV\
-    \ 6列: \n────────────────────────────────────────"
+    \  - L495: R2独立実装でCAGR差異(74.5% vs 将軍80.8%)発生。R1は完全一致(63.8%)のため計算ロジックは正確。差異はクラスタリングのNaN処理や距離\n\
+    \  - L029: inbox_watcherの60秒安全網とninja_monitorのrenudge/cmd_pending再送が独立に動作するため、受信側が1回取り逃すと同一\n\
+    \  - L493: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓moment\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -44,36 +40,13 @@ task:
   - AC1
   - AC2
   - AC3
-  - AC4
-  parent_cmd: cmd_1895
+  parent_cmd: cmd_1896
   project: dm-signal
-  related_lessons:
-  - detail: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み
-    id: L617
-    summary: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み
-  - detail: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知
-    id: L616
-    summary: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知
-  - detail: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
-      '_report\.yaml')で影響範囲を完全列挙してからスコープを
-    id: L085
-    summary: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep
-      '_report\.yaml')で影響範囲を完全列挙してからスコープを
-  - detail: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)。推定タグ数上限(max
-      3)の導入が必要
-    id: L088
-    summary: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)。推定タグ数上限(max
-      3)の導入が必要
-  - detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
-      6列: timestamp/cmd_id/result/reason/task_type/model)に格納される。タスク記述の「gate_metrics.yaml」は実際のファイルと異なる。実装前にファイル形式を確認せよ。'
-    id: L101
-    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
-      6列: timestamp/cmd_id/result/reason/task_type/model)に格納される。タスク記述の「gate_metrics.yaml」は実際のファイルと異なる。実装前にファイル形式を確認せよ。'
-  report_filename: hayate_report_cmd_1895.yaml
-  report_path: 
-  status: idle
+  report_filename: hayate_report_cmd_1896.yaml
+  report_path: queue/reports/hayate_report_cmd_1896.yaml
+  status: done
   stop_for: []
-  task_id: cmd_1895_impl
+  task_id: cmd_1896_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -110,3 +83,35 @@ task:
     - reason: 'empty_lessons_useful'
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+  related_lessons:
+  - id: 'L626'
+    summary: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
+    detail: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
+  - id: 'L625'
+    summary: 'GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること。cmd_1877で旧ファイル混在が発生した。'
+    detail: 'GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること。cmd_1877で旧ファイル混在が発生した。'
+  - id: 'L624'
+    summary: 'GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォルト依存を排除すること。cmd_1877で不統一が発生した。'
+    detail: 'GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォルト依存を排除すること。cmd_1877で不統一が発生した。'
+  - id: 'L623'
+    summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuniverse_idで判定すれば旧universe出力を正しく無効化できる。cmd_1877でbunshin基準判定により13本が不要再実行された。'
+    detail: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuniverse_idで判定すれば旧universe出力を正しく無効化できる。cmd_1877でbunshin基準判定により13本が不要再実行された。'
+  - id: 'L622'
+    summary: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
+    detail: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
+  - id: 'L621'
+    summary: 'cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`load_cached_series()`'
+    detail: 'cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`load_cached_series()`'
+  - id: 'L620'
+    summary: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
+    detail: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
+  - id: 'L619'
+    summary: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
+    detail: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
+  - id: 'L618'
+    summary: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
+    detail: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
+  - id: 'L617'
+    summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+    detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+  deployed_at: "2026-04-14T02:48:28"
