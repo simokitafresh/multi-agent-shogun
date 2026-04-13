@@ -32,7 +32,10 @@ fi
 # --- Pre-step: 機械的修正を自動実行（autofix未実行による無駄FAILを防止）---
 _AUTOFIX_GATE="$(dirname "${BASH_SOURCE[0]}")/gate_report_autofix.sh"
 if [ -f "$_AUTOFIX_GATE" ]; then
-    bash "$_AUTOFIX_GATE" "$REPORT_PATH" > /dev/null 2>&1 || true
+    _AUTOFIX_OUT=$(bash "$_AUTOFIX_GATE" "$REPORT_PATH" 2>&1) || {
+        echo "  [WARN] autofix pre-step failed (exit $?). Output:" >&2
+        echo "$_AUTOFIX_OUT" | head -5 >&2
+    }
 fi
 
 # Python validation — checks all known failure patterns from karo_workarounds

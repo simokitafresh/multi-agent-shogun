@@ -51,8 +51,8 @@ def main() -> int:
                         tdata if not isinstance(tdata, dict) or "task" not in tdata
                         else tdata.get("task", {})
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"  [WARN] task YAML parse failed ({tpath}): {e}", file=sys.stderr)
 
         task_yaml_cache[worker_id] = result
         return result
