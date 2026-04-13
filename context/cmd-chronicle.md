@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-13 -->
+<!-- last_updated: 2026-04-14 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -8,22 +8,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 | — | → 3月前半(03-09, cmd_662-707)は `context/archive/cmd-chronicle-2026-03-early.md` 参照 | — | 03-09 | 43件 |
-| cmd_925 | 実装 — gstack Tier1適用: Suppressions+推薦先行+WHY（忍者報告品質） | infra | 03-14 | complete cmd_925 suppressions S1-S12 + recommendation WHY |
-| cmd_926 | 実装 — gstack Tier1適用: Priority Hierarchy+並列実行明示（タスクYAML自動注入） | infra | 03-14 | ac_priority/parallel_okの空sentinel補完+extract_ac_ids (cmd_926) |
-| cmd_928 | 実装 — gstack将軍適用: 推薦先行+WHY/モードコミットメント/Temporal Interrogation/Dream State Mapping | infra | 03-14 | approve scope_mode cmd format fix |
-| cmd_929 | 実装 — gstack忍者適用: 反復STOP+名前をつけろパターン | infra | 03-14 | AC完了チェックポイント+報告具体性ルール+ac_checkpoint自動注入 (cmd_929) |
-| cmd_930 | 修正 — note CDPを月ごとfresh tab+失敗時リトライに変更 | auto-ops | 03-14 | 修正 — note CDPを月ごとfresh tab+失敗時リトライに変更 |
-| cmd_931 | 偵察 — gstack深掘り調査（GSD式4観点+水平4領域=8名全投入） | infra | 03-14 | gstack深掘り偵察統合レポート (cmd_931_INT) |
-| cmd_920 | 実行 — 年度統合パイプライン2025年本番実行 | auto-ops | 03-14 | 実行 — 年度統合パイプライン2025年本番実行 |
-| cmd_927 | 実装 — gstack Tier2適用: Engineering Preferences（PJ固有判断基準） | infra | 03-14 | engineering_preferences自動注入+PJ3件整備+忍者参照ルール (cmd_927) |
-| cmd_933 | 実装 — gstack家老ロール適用: wrapError/A-B-C Triage/Re-review Loop | infra | 03-14 | wrapError action行追加+A/B/C Triage+Re-review Loop (cmd_933) |
-| cmd_932 | 実装 — gstack将軍ロール適用: Deferred Work Discipline+統合サマリ義務化 | infra | 03-14 | cmd_932 enforce deferred work schema |
-| cmd_934 | 実装 — gstack忍者ロール適用: Named Invariants/Incremental Evidence/Shadow Paths/Read-only | infra | 03-14 | Named Invariants+発見即記録+Shadow Paths+Read-only Default (cmd_934) |
-| cmd_935 | 整備 — gstack知識の索引層構築（context/gstack-knowledge.md） | infra | 03-14 | cmd_935 gstack-knowledge.md re-review PASS (8/4/49/3整合確認) |
-| cmd_936 | 偵察+修正 — マスターCSVデータ汚染の調査と復旧 | auto-ops | 03-14 | 偵察+修正 — マスターCSVデータ汚染の調査と復旧 |
-| cmd_937 | 整理 — 確定申告データの不要ファイル削除+ディレクトリ浄化 | auto-ops | 03-14 | cancelled |
-| cmd_939 | 実装 — note売上CSVのGoogle Drive upload機能追加 | auto-ops | 03-14 | 実装 — note売上CSVのGoogle Drive upload機能追加 |
-| cmd_938 | 修正+整理 — 確定申告データの出力先修正+Drive upload+確認後ローカル削除 | auto-ops | 03-14 | 修正+整理 — 確定申告データの出力先修正+Drive upload+確認後ローカル削除 |
 | cmd_940 | 偵察+整備 — Drive確定申告フォルダの整合性検証+チェックリスト恒久化 | | auto-ops | 03-14 | Drive「2026確定申告 個人事業」フォルダの完全性・整合性チェック完了。 3AC全て調査完了。ローカルCSVとDrive版の間に体系的な差異を検出。 |
 | cmd_942 | 偵察 — 確定申告証票PDFの重複・有効性調査 | | auto-ops | 03-14 | — |
 | cmd_944 | 修正 — マスターCSV更新（MFクレカ追加反映） | | auto-ops | 03-14 | — |
@@ -652,3 +636,5 @@
 | cmd_1892 | GP-189 — lesson_write.shにtitle Jaccard類似度WARN追加（教訓重複検出） | infra | 04-13 | lesson_write.sh に title Jaccar |
 | cmd_karo_gp110_deploy_warn | GP-110 — deploy_task.shに配備前重複チェック(自走commit検知WARN) | infra | 04-13 | deploy_task.sh に target_path の |
 | cmd_1893 | L2奥義168体 パターン間相関分析 — ①(登録済み)vs②〜⑧の月次リターン相関構造 | dm-signal | 04-13 | AC1-AC3完了。168体を共通87ヶ月で揃えた相関分析を |
+| cmd_1894 | L3奥義EW全量β調整 — 79万組み合わせでL2αを超えるL3があるか | dm-signal | 04-14 | — |
+| cmd_karo_gs_vectorized | GS高速化 — gs_vectorized_subset.py本実装(3最適化+チャンク+verify) | dm-signal | 04-14 | gs_vectorized_subset.py に3最適化+ |

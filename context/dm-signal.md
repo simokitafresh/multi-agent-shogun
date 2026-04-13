@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-13 cmd_1888 L2奥義56ブロック全完了+ALM19体確定+消火撤去+GP-183/184実装+FAIL率改善 -->
-<!-- last_synced_lesson: L625 -->
+<!-- last_synced_lesson: L626 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -178,3 +178,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L623: 既存GS CSVの有効性はmeta.yaml universe_idで判定せよ — 行数判定は誤り（cmd_1877）
 - L624: 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因（cmd_1877）
 - L625: GS dir旧ファイル混在はchampion_selector汚染リスク — GS前にdir棚卸し+退避を先行ステップに入れよ（cmd_1877）
+- L626: subset gather共有+no-NaN metrics fast pathでsubset GSは秒単位まで落ちる（cmd_karo_gs_vectorized）
