@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-03-30 cmd_1547 cmd_1532-1543改善還流+CLEAR率84.6%更新 -->
+<!-- last_updated: 2026-04-13 cmd_1889 context鮮度gate対象整合+鮮度確認 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -158,6 +158,7 @@ cmd_1173偵察で特定した高優先gate未実装項目の構造的実装。
 | lesson_tracking.tsv | cmd_complete_gate.sh | cmd_348 | 教訓注入・参照の追跡ログをTSV永続化 |
 | PDサマリー自動更新 | pending_decision_write.sh | cmd_541 | PD書込み/resolve時にpending_decisions.yaml冒頭のtotal/resolved/pending件数を自動更新 |
 | context未更新ゲート | cmd_complete_gate.sh + deploy_task.sh | cmd_543 | cmd YAMLにcontext_update指定→deploy時に忍者タスクへ伝播→GATE時にlast_updated検査→stale時BLOCK |
+| context鮮度監視整合 | context_freshness_check.sh + gate_context_freshness.sh | cmd_1889 | dashboard WARNとgateの監視対象を統一。直近completed cmdがあるactive projectのcontextのみ監視し、放置WARNの対象を一次データ基準へ揃える |
 | CMD年代記 | archive_completed.sh | cmd_544 | cmd完了→archive時にcontext/cmd-chronicle.mdへ1行自動追記。月別セクション+flock排他 |
 | Read追跡hook | settings.json hook | cmd_1044 | Write/Edit前に未Readファイルを自動ブロック。Read前Write問題を根本解決 |
 | タスク/報告YAML hook強制 | settings.json hook | cmd_1065/1067 | queue/tasks/*.yaml, queue/reports/*.yamlへの直接Write/Editを無条件deny。deploy_task.sh/report_field_set.sh経由のみ許可 |

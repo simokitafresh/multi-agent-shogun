@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 # ============================================================
 # gate_context_freshness.sh
-# context/*.mdのlast_updated鮮度を自動チェックする
+# dashboardと同じ監視対象に対してlast_updated鮮度を自動チェックする
 #
 # Usage:
 #   bash scripts/gates/gate_context_freshness.sh
 #
 # チェック内容:
+#   scripts/context_freshness_check.sh --dashboard-warnings と同じ対象
+#   （直近completed cmdがあるactive projectのcontext）のみを監視する
 #   各context/*.mdの先頭コメントから last_updated を解析
 #   フォーマット: <!-- last_updated: YYYY-MM-DD --> または
 #                <!-- last_updated: YYYY-MM-DD cmd_XXX ... -->
 #   基準日からの経過日数:
-#     14日超 → WARN
-#     30日超 → ALERT
+#     7日超 → WARN
+#     14日超 → ALERT
 #     last_updated未記載 → WARN（「未記載」と明示）
 #
 # Exit code: 0=全OK, 1=1つ以上ALERT, 2=WARNのみ(ALERTなし)
@@ -21,6 +23,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CONTEXT_DIR="$SCRIPT_DIR/context"
+CHECK_SCRIPT="$SCRIPT_DIR/scripts/context_freshness_check.sh"
 
 HAS_ALERT=0
 HAS_WARN=0
@@ -35,7 +38,25 @@ emit_actionable() {
 
 TODAY_EPOCH=$(date +%s)
 
-for file in "$CONTEXT_DIR"/*.md; do
+if [ ! -f "$CHECK_SCRIPT" ]; then
+    echo "WARN: context_freshness_check.sh not found"
+    echo "  action: scripts/context_freshness_check.sh を復旧せよ。"
+    exit 2
+fi
+
+mapfile -t target_rel_paths < <(
+    bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null \
+        | sed -nE 's/^WARN: ([^ ]+) last_updated .*$/\1/p' \
+        | sort -u
+)
+
+if [ "${#target_rel_paths[@]}" -eq 0 ]; then
+    echo "--- 総合判定: OK ---"
+    exit 0
+fi
+
+for rel_path in "${target_rel_paths[@]}"; do
+    file="$SCRIPT_DIR/$rel_path"
     [ -f "$file" ] || continue
 
     basename_file=$(basename "$file")
@@ -66,13 +87,13 @@ for file in "$CONTEXT_DIR"/*.md; do
 
     days_ago=$(( (TODAY_EPOCH - file_epoch) / 86400 ))
 
-    if [ "$days_ago" -gt 30 ]; then
+    if [ "$days_ago" -gt 14 ]; then
         emit_actionable \
             "ALERT: ${basename_file} (${days_ago}日前更新)" \
             "${basename_file} の内容を確認し、最新情報へ更新せよ。"
         HAS_ALERT=1
         ALERT_LIST+=("${basename_file}(${days_ago}日)")
-    elif [ "$days_ago" -gt 14 ]; then
+    elif [ "$days_ago" -gt 7 ]; then
         emit_actionable \
             "WARN: ${basename_file} (${days_ago}日前更新)" \
             "${basename_file} の鮮度を確認し、必要なら更新せよ。"
