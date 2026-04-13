@@ -645,3 +645,4 @@
 | cmd_1885 | 偵察+修正 — 三層学習ループFAIL率分析+gate強化 | infra | 04-13 | gate_fire_log.yaml の22件中9件FAIL |
 | cmd_1887 | 修正 — gate_shogun_startup.sh 2件の誤検知修正（inboundアーカイブ+AC段階配備） | infra | 04-13 | gate_shogun_startup.sh 誤検知2件修正 |
 | cmd_1889 | 整備 — context鮮度WARN解消（dm-signal 3件+infrastructure 1件） | infra | 04-13 | AC1/AC2達成。context/infrastructu |
+| cmd_karo_shouka2_wid | 消火撤去第2弾 — worker_id/parent_cmdファイル名推定を撤去 | infra | 04-13 | gate_report_autofix_main.pyからw |
