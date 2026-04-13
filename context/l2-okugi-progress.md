@@ -168,7 +168,7 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 8-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_monthly_fast.csv (1.7GB) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
 | 8-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kawarimi_grid_monthly_fast.csv (396MB) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
 | 8-6 | nukimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_nukimi_grid_monthly_fast.csv (845MB, 131行) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
-| 8-7 | yotsume | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_yotsume_grid_monthly_fast.csv (66MB, 131行) | 2026-04-13 |
+| 8-7 | yotsume | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_yotsume_grid_monthly_fast.csv (66MB, 131行) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
 
 **⑧ 完了: 7/7** ✅ — 全忍法GS+WF完了
 
