@@ -29,6 +29,12 @@ if [ -n "$_MTIME" ] && [ -n "$_GATE_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF
     exit 0
 fi
 
+# --- Pre-step: 機械的修正を自動実行（autofix未実行による無駄FAILを防止）---
+_AUTOFIX_GATE="$(dirname "${BASH_SOURCE[0]}")/gate_report_autofix.sh"
+if [ -f "$_AUTOFIX_GATE" ]; then
+    bash "$_AUTOFIX_GATE" "$REPORT_PATH" > /dev/null 2>&1 || true
+fi
+
 # Python validation — checks all known failure patterns from karo_workarounds
 RESULT=$(REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, os, sys

@@ -67,22 +67,25 @@ YAML
     [[ "$output" == *"FAIL"* ]]
 }
 
-# --- T-003: Empty verdict → FAIL ---
-@test "T-003: empty verdict returns FAIL" {
+# --- T-003: Empty verdict with unfilled binary_checks → FAIL (autofix cannot derive) ---
+@test "T-003: empty verdict with unfilled binary_checks returns FAIL" {
     local report=$(create_valid_report)
+    # Set verdict="" AND binary_checks result="" → autofix can't derive verdict
     sed -i 's/^verdict: PASS/verdict: ""/' "$report"
+    sed -i 's/result: "yes"/result: ""/' "$report"
     run bash "$GATE" "$report"
     [ "$status" -eq 1 ]
     [[ "$output" == *"verdict"* ]]
 }
 
-# --- T-004: GP-128 PASS+no → FAIL (verdict inconsistency) ---
-@test "T-004: GP-128 verdict=PASS with bc no → FAIL" {
+# --- T-004: GP-128 PASS+no → auto-corrected to FAIL verdict → PASS ---
+@test "T-004: GP-128 verdict=PASS with bc no → auto-corrected by pre-autofix" {
     local report=$(create_valid_report)
     sed -i 's/result: "yes"/result: "no"/' "$report"
+    # Pre-autofix corrects verdict PASS→FAIL, so format gate should PASS
     run bash "$GATE" "$report"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"binary_checks contain"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
 }
 
 # --- T-005: GP-128 FAIL+all-yes → WARN ---
@@ -143,10 +146,12 @@ YAML
     [[ "$output" == *"FAIL"* ]]
 }
 
-# --- T-010: FAIL report not cached ---
+# --- T-010: FAIL report not cached (use unfixable FAIL: empty result string) ---
 @test "T-010: FAIL reports are not cached" {
     local report=$(create_valid_report)
+    # Set both verdict="" and binary_checks result="" → autofix can't derive → still FAIL
     sed -i 's/^verdict: PASS/verdict: ""/' "$report"
+    sed -i 's/result: "yes"/result: ""/' "$report"
     run bash "$GATE" "$report"
     [ "$status" -eq 1 ]
     # Cache should not contain this file

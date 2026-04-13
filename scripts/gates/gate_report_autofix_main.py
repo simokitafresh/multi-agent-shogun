@@ -409,6 +409,10 @@ def main() -> int:
             data["verdict"] = "FAIL" if bc_fail_count > 0 else "PASS"
             fixes.append(f"verdict推定({bc_pass_count}PASS/{bc_fail_count}FAIL)")
             is_valid_verdict = True
+    elif is_valid_verdict and verdict_val == "PASS" and bc_fail_count > 0 and "verdict" in data:
+        data["verdict"] = "FAIL"
+        fixes.append(f"verdict訂正PASS→FAIL(no={bc_fail_count}件)")
+        is_valid_verdict = True
 
     status_val = data.get("status")
     if is_valid_verdict and isinstance(status_val, str) and status_val.strip().lower() == "pending":
