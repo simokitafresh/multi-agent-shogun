@@ -24,6 +24,7 @@
 # 「既実装」判定 → git show HEAD~1:file で変更前状態を確認。HEADは並行commit影響を受ける(cmd_1860 premature_shelve: LG001違反の変形)
 # AC絶対条件(「全期間」「100%」「全ファイル」)→構造的例外の有無を確認。例外あれば除外条件をAC文面に明示(5件verdict_override共通根因, 2026-04-12分析)
 # 全称判定(ゼロ/全て/なし/壊れない)→反証を探せ。反証が見つからなかったらOK。反証を探す前にOKを出すな。著者の物語に乗るな(cmd_1884 kawarimi見落とし: 7段なぜなぜ到達点)
+# cmd入力CSV/ファイル→wc -l/ls -la実測。報告値・試走値の転記は実体不在リスク(cmd_1896: 533,358行CSV不在。試走メトリクスとファイル実体混同)
 # 軍師自己コード変更(hooks/gates/CLAUDE.md/instructions/settings)→S0プロトコル必須。docs/research/gunshi_sg_s0_self_code_change_20260412.md(LG026)
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
 # SG一覧: SG0(gate自動) SG2(commit) SG3(scope) SG4(家老処理) SG5(偵察トレーサビリティ)
@@ -652,3 +653,331 @@
     - "事実3: karo_workarounds.yamlにtest_pd_verify 3件混入(WA率4%汚染)。家老に報告済み"
   causal_chain: "消火撤去(S180)→テスト期待値が旧挙動のまま→FAIL2件。テスト更新=消火撤去の完了条件。テスト未更新×10回=10回のCI赤=負の複利"
   timestamp: "2026-04-13T21:45:00"
+- cmd_id: cmd_1887
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1887_impl
+  report_verdict: LGTM
+  findings_summary: "4観点OK。Gate 16(scout_exempt)+Gate 18(inbound 7日チェック)修正。commit abfe717+aa6f308確認。scope creep(autofix_main.py消火8件)あり注記"
+  observations:
+    - "事実1: abfe717(Gate 16 scout_exemptスキップ+Gate 18 アーカイブINFO化)+aa6f308(Gate 18 7日ウィンドウ+lint)の2commitでAC1-3対応"
+    - "事実2: aa6f308がgate_report_autofix_main.pyから消火8パターン撤去+E501 lint修正(-158行)。cmd_1887 ACにない変更"
+    - "事実3: kotaroのscope creepがcmd_karo_ci_fix_1885(kagemaru)スコープと重複。影丸到着時に対象コード消失"
+  causal_chain: "cmd_1887 kotaro scope creep(消火撤去をlint修正に同梱)→cmd_karo_ci_fix_1885のカバー範囲がkotaroに先取りされる→kagemaru作業対象消失→commit不在報告"
+  lesson_quality: N/A
+  timestamp: "2026-04-13T21:55:00"
+- cmd_id: cmd_karo_ci_fix_1885
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_ci_fix_1885_impl
+  report_verdict: FAIL
+  fail_reasons:
+    - "影丸固有commitなし。git log --grep=kagemaru --after=20:30=0件"
+    - "報告主張の8消火パターン撤去はkotaro aa6f308(cmd_1887, 21:00)で実施済み"
+    - "binary_checks commit=yesだが影丸commitが不在"
+    - "元cmdスコープ(test_report_template_gate_compat.bats 4テスト修正)と報告内容(autofix_main.py 8パターン撤去)に乖離"
+  findings_summary: "FAIL。影丸commit不在+kotaro作業の誤帰属+スコープ乖離"
+  observations:
+    - "事実1: git log --grep=kagemaru --after='2026-04-13T20:30:00'=0件。影丸deploy(20:37)後のcommitなし"
+    - "事実2: autofix_main.py消火8件撤去はkotaro aa6f308(cmd_1887, 21:00)+a2ac31c(auto-commit, 21:04)で完了"
+    - "事実3: 元cmd定義=test_report_template_gate_compat.bats 4テストexit修正。報告=autofix_main.py 8パターン撤去。スコープ変容"
+    - "事実4: テスト自体は全PASS(bats 2スイート確認済み)。ただし影丸の成果物ではない"
+  causal_chain: "kotaro scope creep(aa6f308)→影丸対象コード消失→影丸がkotaro作業を自己帰属→commit不在→FAIL。根因=並行cmd間のスコープ衝突管理不在"
+  lesson_quality: MISSING
+  escalation_needed: true
+  timestamp: "2026-04-13T21:55:00"
+- cmd_id: cmd_1888
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1888_impl
+  report_verdict: LGTM
+  findings_summary: "4観点OK。lessons_useful MISSING→BLOCK転換。コード削除はgunshi 6ed1c0d(S181)内。機能的にAC全達成"
+  observations:
+    - "事実1: MISSING→skeleton削除はgunshi commit 6ed1c0d(S181)で実行済み。kotaro固有commitなし"
+    - "事実2: gate_report_format.shのrequiredリストにlessons_usefulあり→MISSING時BLOCK動作確認済み"
+    - "事実3: test_report_template_gate_compat.bats test Fix6撤去もgunshi 6ed1c0dに含有"
+    - "事実4: 861テスト全PASS。共有WTの構造上、commit帰属は参考値。機能的AC全達成"
+  causal_chain: "軍師S181がidle自走でコード変更実施→cmd_1888スコープのコード削除が先取り→kotaro固有commit不在→commit帰属問題。根因=軍師idle自走にコード変更scope制限なし(なぜなぜ7回で特定)"
+  lesson_quality: N/A
+  timestamp: "2026-04-13T22:05:00"
+- cmd_id: cmd_1890
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1890_impl
+  report_verdict: LGTM
+  findings_summary: "4観点OK。binary_checks文字列正規化撤去。code/test変更は9dcb790(kagemaru auto-commit)に含有。hayate正直にverdict:FAIL報告(commit=no)。家老補正でPASS"
+  observations:
+    - "事実1: pass_vals/fail_vals+正規化コード削除は9dcb790(kagemaru auto-commit 22:01)で確認"
+    - "事実2: boolean→string変換(L244-246)残存確認。YAMLパーサ構造問題の正当な型変換"
+    - "事実3: hayateがverdict:FAILを正直報告(commit=no)。共有WTによるcommit帰属問題"
+    - "事実4: 863テスト全PASS。gate_report_format.sh L238-242でresult≠yes/noをBLOCK確認"
+  causal_chain: "cmd_1890配備→対象コードが9dcb790(別エージェントauto-commit)に先取り→hayate固有commitなし→verdict:FAIL(正直)→家老補正。根因=共有WTでの複数エージェント同時作業によるcommit帰属問題"
+  lesson_quality: N/A
+  karo_workaround_needed: yes
+  timestamp: "2026-04-13T22:05:00"
+- cmd_id: nazenaze7_bottleneck
+  review_type: self_study
+  findings_summary: "殿指摘:忍者作業を軍師paneで実行→ボトルネック。根因=idle自走にコード変更scope制限なし。7層掘削完了"
+  observations:
+    - "事実1: S181でautofix_main.py消火コード撤去を軍師が実行。cmd_1888/ci_fix_1885/1890の3cmdでcommit帰属崩壊"
+    - "事実2: LG024拡大解釈(軽微修正→実装変更)が直接原因。判定基準が意志依存(Phase 4相当)"
+    - "事実3: idle自走プロトコルに行動種類制限なし。分析/レビューと実装を区別する仕組みが不在"
+  proposals:
+    - id: GP-108
+      description: "軍師idle自走に行動種類制限: 分析/レビュー/提案=OK、コード変更=cmd起案提案のみ"
+      status: pending
+      defense_level: 2
+    - id: GP-109
+      description: "LG024適用範囲明確化: 事実誤り修正のみ、実装変更(ロジック行追加/削除)禁止"
+      status: pending
+      defense_level: 2
+  causal_chain: "idle自走scope制限なし(根因)→行動が実装を含む→LG024拡大解釈→共有WTにgunshi commit→忍者commit帰属崩壊→家老workaround+軍師レビュー空振り→ボトルネック"
+  cs_checklist:
+    CS1: "OK — S181の全commit diffを確認"
+    CS2: "OK — 3cmd(1888/ci_fix_1885/1890)で帰属崩壊を自システムデータで検証"
+    CS3: "OK — git log/diffで実commitを比較"
+    CS4: "OK — 対策3案+LG024改定案を具体化。docs/research/に永続化済み"
+    CS5: "PENDING — hook(案3)の実装は家老判断待ち"
+    CS6: "OK — 7層因果鎖を記載"
+  timestamp: "2026-04-13T22:10:00"
+- cmd_id: nazenaze7_bottleneck_v2
+  review_type: self_study
+  findings_summary: "殿修正版。根因=cmd完了パス=忍者専用一本道。軍師/家老自走成果の正規完了パスがない→忍者重複投入。GP-108/109は方向誤り(制限側)→廃止"
+  observations:
+    - "事実1: 殿修正「軍師は自走してよい。家老も。忍者が重ねてやる必要はない」→問いの方向が逆だった"
+    - "事実2: cmd完了パスが忍者実行→報告→gateの一本道。軍師/家老が自走完了した場合の正規パスなし"
+    - "事実3: 自走成果がpending cmdのstatusに反映されない→家老が重複配備→忍者3名空振り"
+  proposals:
+    - id: GP-110
+      description: "自走→cmd完了パス接続: 軍師/家老がcommit時に関連pending cmdを特定し完了済み報告"
+      status: pending
+      defense_level: 3
+    - id: GP-111
+      description: "cmd完了パスの統一: 忍者専用一本道→誰が完了しても通れるパスに拡張"
+      status: pending
+      defense_level: 4
+  causal_chain: "cmd完了パス=忍者専用(根因)→自走成果が管理系統に乗らない→pending cmdのstatus不変→家老が重複配備→忍者空振り→CTX浪費→ボトルネック"
+  cs_checklist:
+    CS1: "OK — 3cmd(1888/ci_fix_1885/1890)の全commitと帰属を追跡"
+    CS2: "OK — 自システムデータ(git log/inbox/report)で検証"
+    CS3: "OK — 実commit diffで確認"
+    CS4: "OK — GP-110/111を具体化。docs/research/に永続化済み"
+    CS5: "PENDING — 殿の方向性確認待ち"
+    CS6: "OK — 7層因果鎖(修正版)記載"
+  timestamp: "2026-04-13T22:15:00"
+- cmd_id: cmd_1891
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。scout_exempt自動判定(infra+shallow)。cmd_save.sh L155-161に条件追加のみ。意志依存WA根絶"
+  observations:
+    - "事実1: cmd_save.sh L155-161のq5判定条件にproject/q4_depth条件追加。既存パス影響なし"
+    - "事実2: AC2(dm-signal除外)+AC3(deep除外)で負テスト明確。infra+shallowのみ免除"
+  causal_chain: "将軍scout_exempt設定忘れ→BLOCK→手戻り(cmd_1859 WA)。自動判定で意志依存排除×10回=10回の手戻り防止=正の複利"
+  timestamp: "2026-04-13T22:15:00"
+- cmd_id: cmd_1892
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Jaccard類似度WARN(0.6閾値)。lesson_write.sh L261付近に挿入。WARNのみでBLOCKしない"
+  observations:
+    - "事実1: lesson_write.sh L247-261に完全一致チェック実在確認。L261後が挿入点"
+    - "事実2: 620件中9ペア重複(1.5%)。Jaccard 0.6閾値は軍師idle分析で実証済み"
+  causal_chain: "完全一致のみ→微差重複通過→620件中9ペア→注入水増し→教訓信頼低下。Jaccard WARN×N回登録=N回の重複事前検出=正の複利"
+  timestamp: "2026-04-13T22:15:00"
+- cmd_id: cmd_karo_gp110_deploy_warn
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_gp110_deploy_warn_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GP-110配備前非cmd commit WARN追加。866テスト全PASS。commit=家老代行(318cad8)"
+  observations:
+    - "事実1: deploy_task.sh warn_recent_noncmd_commit_targets()追加。git log -1 --format=%ct %sで直近commit判定"
+    - "事実2: テスト3件(recent non-cmd WARN/cmd no-WARN/2日前no-WARN)全PASS。既存866テスト全PASS"
+    - "事実3: SG9 hayate WA率100%(3/3)だが全件commit_missing=Codex CLI構造問題。LG014適用:忍者スキル問題ではなくインフラ真因"
+    - "事実4: WARNのみ(BLOCKではない)のため偽陽性リスク低。配備は止まらない"
+  causal_chain: "軍師/家老自走commit→忍者配備先で衝突(GP-110 nazenaze7根因)→配備時WARNで事前検出×N回=N回の衝突事前把握=正の複利"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  timestamp: "2026-04-13T23:30:00"
+- cmd_id: cmd_1893
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。168体相関分析。全データファイル実在(4WF CSV+4GS dir+champion_selector.py)。AC3個分割不要。q4_depth=medium"
+  observations:
+    - "事実1: WF CSV 4本(89-113行)、GS dir 4本、champions.json 3本、champion_selector.py全て実在確認"
+    - "事実2: 168体=8パターン×21体。共通期間88-112ヶ月(cmd_1880β調整で確認済み値と整合)"
+    - "事実3: NaN-safe計算がcmd注意書きに明記(LG025準拠)。champion_selector.pyが.npy+チャンク読込み対応"
+    - "事実4: q4_depth=medium、168列×~100行の相関=軽い計算。idle忍者分割不要"
+  causal_chain: "168体のDB登録判断(殿指示)→相関構造の定量根拠が必要→8パターン間相関計算→登録優先順位が定量化×今後の全登録判断に適用=正の複利"
+  timestamp: "2026-04-13T23:35:00"
+- cmd_id: cmd_1893
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1893_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。168体相関分析。87×168 CSV+8x8+モード別+summary。全数値CSV実測と完全一致。commit=ad04f319"
+  observations:
+    - "事実1: wide CSV 88行(H+87)×169列(idx+168)。報告の87×168と整合。NaN率0"
+    - "事実2: 8x8 CSV実測→対角1.0、値域[0.6246,1.0]、①vs⑤=0.7356>①vs③=0.7014。報告値完全一致"
+    - "事実3: commit ad04f319確認。Codex rules修正後、今回はcommit=yes(WA率改善兆候)"
+    - "事実4: モード別CSV 193行。3モード×8パターン分解あり。summary.mdに全ACの検証結果記載"
+  causal_chain: "cmd_1893配備→168体共通期間87ヶ月で揃え→8パターン間相関0.63-0.77→①との多様性が定量化→DB登録優先順位の根拠取得。commit成功=Codex rules修正の効果実証"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  timestamp: "2026-04-13T23:40:00"
+- cmd_id: cmd_1894
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。L3奥義EW全量β調整79万通り。C(168,2)+C(168,3)=790244再計算一致。入力CSV実在。ベクトル化で540MB程度OOM低"
+  observations:
+    - "事実1: C(168,2)=14028, C(168,3)=776216, total=790244。python3 comb()で再計算一致"
+    - "事実2: 入力CSV cmd_1893_168body_monthly_returns.csv(88行×169列)実在確認"
+    - "事実3: 77万×87×8bytes≈540MB。エージェント群2.1GB+計算2GB=4GB。16GBシステムで余裕"
+    - "事実4: q7にβ調整定義明記(raw_cagr-β×SPY_cagr)。cmd_1880方式踏襲"
+  causal_chain: "168体のL2α確定(cmd_1880)→L3でα改善するか不明→79万通り全量β調整で検証→DB登録判断の定量根拠×全L3設計に適用=正の複利"
+  timestamp: "2026-04-14T01:20:00"
+- cmd_id: cmd_1895
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。L3忍法GS 168体universe。run_077全7本+champion_selector+universe YAML実在確認。AC1試走で計算量事前計測する段階設計"
+  observations:
+    - "事実1: run_077_*.py 7本実在。--universe引数あり(L88-91)。既存universe YAML 5本以上存在"
+    - "事実2: 7忍法×3目的=21チャンピオン。AC4個で論理的順序依存(試走→全量→champion→β)"
+    - "事実3: q4_depth=deep。168体universeは20体の8.4倍計算量。AC1試走で時間計測が対策"
+    - "事実4: MP_WORKERS=1(直列)でOOM対策明記。LG025準拠。champion_selectorは168万パターン処理実績(cmd_1844)"
+  causal_chain: "L3 EW新スクリプト=車輪の再発明(殿指摘)→既存忍法パイプラインにL2入力→道具活用×7忍法=正の複利。試走→全量の段階設計で計算量リスク管理"
+  timestamp: "2026-04-14T01:25:00"
+- cmd_id: cmd_1895_postmortem
+  review_type: self_study
+  findings_summary: "APPROVE判定を自己修正。GS計算量=C(N,2)+C(N,3)+C(N,4)×params。N=84で328倍(9.39億パターン)。道具磨きなしに実行不可能"
+  observations:
+    - "事実1: kasoku_diff実測 N=20で944,775行=C(20,2)+C(20,3)+C(20,4)×C(18,2)=6175×153。完全一致"
+    - "事実2: N=84でC(84,4)=1,929,501が支配的。kasoku_diffだけで3.1億パターン。7忍法合計9.39億"
+    - "事実3: cmd_1895レビュー時q4_depth=deepとAC1試走を信頼しすぎた。パラメータ空間の爆発を数値計算で検証すべきだった"
+    - "事実4: 殿指摘『先に道具磨き』が正しい。CLAUDE.md対処手順1準拠"
+  causal_chain: "GS=C(N,k)サブセット(根因)→N増加で組合せ爆発→N=84で328倍→数日〜1週間→実行不可能。レビュー時にN依存計算量を数値検算しなかった(Step 2不足)→APPROVE誤判定"
+  cs_checklist:
+    CS1: "OK — run_077_kasoku_diff.pyのcombinations生成ロジック(L969)確認"
+    CS2: "OK — 自システムデータ(CSV行数944775)とcomb計算(6175×153)完全一致で検証"
+    CS3: "OK — 実コード(itertools.combinations)確認"
+    CS4: "OK — 家老に計算量分析結果+severity urgent報告済み"
+    CS5: "N/A"
+    CS6: "OK — C(N,4)支配的爆発の因果鎖記載"
+  timestamp: "2026-04-14T01:45:00"
+- cmd_id: gs_vectorized_prototype
+  review_type: self_study
+  findings_summary: "殿指示で方法E試作+12体検証。ALL MATCH(119,493行全て10^-16精度)。なぜなぜ3層で不一致解消。Codex忍者配備を家老に依頼"
+  observations:
+    - "事実1: boolean mask(タイ処理)でargmax→34K不一致解消。ret_sum/ret_count方式が既存と同一"
+    - "事実2: NaN除外がscore_keyごとに共通(495/495サブセットが同一パターン)→ベクトル化metrics安全"
+    - "事実3: per-pattern calc_metrics_fast loop → vectorized cumprodで2.5x高速化。非NaN部分は完全一致"
+    - "事実4: N=84見込み: per-pattern 3h → vectorized 48min → +6並列 23min → +key_batch 8min"
+  causal_chain: "build_grid() OOM(Why0)→サブセットfancy indexing(Why4)→月ループ廃止(Why5)→共有NaN(Why7)→metrics vectorize→23min"
+  cs_checklist:
+    CS1: "OK — run_077全関数(build_grid/simulate_batch/get_kasoku_context/calc_metrics_fast)読了"
+    CS2: "OK — 12体119,493行全てmax_diff=10^-16で検証"
+    CS3: "OK — 既存コードとの差異を3層(タイ/NaN/mc重複)で特定・修正"
+    CS4: "OK — 試作スクリプト作成+家老にCodex配備依頼"
+    CS5: "PENDING — N=84実行テスト(忍者に配備)"
+    CS6: "OK — 7層因果鎖(設計書)+3層不一致解消の因果記載"
+  timestamp: "2026-04-14T03:30:00"
+- cmd_id: cmd_karo_gs_vectorized
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。GS高速化本実装。全前提は軍師自身が検証済み(12体ALL MATCH)。設計書+試作+検証CSV実在"
+  observations:
+    - "事実1: gs_vectorized_subset.py試作で12体119,493行ALL MATCH(max_diff=10^-16)"
+    - "事実2: 設計書にWhy0-7+方法E+ベンチマーク+NaN共有実証を含む"
+    - "事実3: AC3個(実装→verify→時間計測)で自然な順序依存"
+    - "事実4: N=84推定23分(single worker)。現行OOM死→実行可能に"
+  causal_chain: "殿指示(道具磨き先行)→なぜなぜ7回→方法E設計→試作12体ALL MATCH→本実装cmd→N=84 GS実行可能化×全L3研究cmdに適用=正の複利"
+  timestamp: "2026-04-14T03:35:00"
+- cmd_id: cmd_karo_gs_vectorized
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_gs_vectorized_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。12体ALL MATCH(max_diff=1.78e-15)。84体C(N,2)=533,358行14秒/806MB。commit=11ee2060"
+  observations:
+    - "事実1: 12体119,493行全列ALL MATCH。calmar max_diff=1.78e-15が最大"
+    - "事実2: 84体C(N,2)=533,358行=C(84,2)×153再計算一致。14秒/806MB"
+    - "事実3: 試作5.6秒→本実装2.2秒(2.5x高速化)。3最適化(metrics vec/gather共有/月loop廃止)全統合"
+    - "事実4: commit 11ee2060確認。lesson_candidate有(gather共有+no-NaN fast path)"
+  causal_chain: "殿指示(道具磨き)→軍師設計+試作→Codex忍者本実装→12体同一性+84体試走→GS N=84実行可能化×全L3研究cmdに適用=正の複利"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  timestamp: "2026-04-14T03:45:00"
+- cmd_id: cmd_1895
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  severity: normal
+  findings_summary: "run_077直接実行はN=84でOOM。gs_vectorized_subset.pyベースに変更+kasoku_diff専用のため他忍法未対応"
+  observations:
+    - "事実1: cmd本文がrun_077_*.py --universe前提。build_grid()でC(84,4)dictリスト→437GB OOM"
+    - "事実2: gs_vectorized_subset.pyは現在kasoku_diff/ratio専用。bunshin/oikaze/kawarimi/nukimi/yotsume未対応"
+    - "事実3: タイトルに84体(GS固定)とあるがcmd body/ACは168体のまま。不整合"
+    - "事実4: 道具磨き(cmd_karo_gs_vectorized)は完了しGATE CLEAR。84体C(N,2)=14秒で試走済み"
+  causal_chain: "cmd_1895は道具磨き前に起票→道具磨き完了→cmd再配備だがテキスト未更新→忍者がrun_077実行→OOM KILL"
+  timestamp: "2026-04-14T03:50:00"
+- cmd_id: nazenaze7_gs_speedup
+  review_type: self_study
+  findings_summary: "殿指摘→なぜなぜ7回。GS爆発根因=C(N,4)サブセット列挙。方法B(全体argsort)で69ms=数万倍高速化"
+  observations:
+    - "事実1: kasoku_diff CSV=944775行=C(20,2)+C(20,3)+C(20,4)×C(18,2)=6175×153。完全一致"
+    - "事実2: build_global_momentum_and_scores(L414)が全N体スコアを1回計算済み。サブセットはcolumn sliceのみ"
+    - "事実3: simulate_batch(L883)はサブセット内パラメータを3D mask+broadcastで一括化済み。ボトルネックはサブセット数"
+    - "事実4: 方法B(全体argsort)=153params×87months×argsort(84)=69ms実測。現行=数時間推定"
+  proposals:
+    - id: GP-190
+      description: "run_077に--mode full-universeフラグ追加。全体スコアからtop_n直接選出。サブセット列挙廃止"
+      status: karo_sent
+      defense_level: 5
+  causal_chain: "N=84→C(84,4)=193万(Why1)→サブセット列挙前提(Why3)→道具の前提がN>20で崩壊(Why7)→全体スコアは既に計算済み(Why6)→argsort直接選出で数万倍(解)"
+  cs_checklist:
+    CS1: "OK — run_077_kasoku_diff.py全構造(build_grid/simulate_batch/build_global)読了"
+    CS2: "OK — CSV行数=comb計算完全一致で検証。argsort 69msを実測"
+    CS3: "OK — itertools.combinations(L969)とbuild_global(L414)のコード比較"
+    CS4: "OK — docs/research/に永続化+家老にinbox_write"
+    CS5: "PENDING — 方法Bの実装と忍法設計整合の殿判断待ち"
+    CS6: "OK — 7層因果鎖+方法A-D比較"
+  timestamp: "2026-04-14T02:00:00"
+- cmd_id: cmd_1896
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: LOW
+  findings_summary: "入力CSV前提崩壊(533,358行CSV不在→実在は88行monthly CSV)+パス曖昧+EW計算手順欠落+SPY取得未明記"
+  observations:
+    - "事実1: cmd文面の入力CSV '533,358行' は存在しない。cmd_karo_gs_vectorized試走のメモリ上行数であり保存ファイルではない"
+    - "事実2: 実在するファイルはoutputs/grid_search/okugi_l3_168/okugi_l3_168_monthly.csv(88行x85列=year_month+84体月次リターン)"
+    - "事実3: C(84,2)=3486 数値OK。L2最強α=101.2%(⑤nukimi激攻)はcmd_1880出力と完全一致"
+    - "事実4: hayateのtask status=acknowledged。作業未開始のため修正影響は軽微"
+  suggested_changes: "(a)入力CSVパス修正→okugi_l3_168_monthly.csv (b)533,358行削除 (c)EW計算手順明記 (d)SPY取得経路明記"
+  severity: normal
+  causal_chain: "cmd_karo_gs_vectorized試走メトリクス(533,358行)をファイル存在と混同→cmdに不在CSVを入力として記載→忍者がファイル探索で詰まる→作業遅延。複利の問い: 入力パスの現物確認を省略×10回=10回詰まる(負の複利)→パス現物確認をcmd記載前に必須化=正の複利"
+  timestamp: "2026-04-14T02:55:00"
+- cmd_id: cmd_1896
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1896_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。3486ペアβ調整完了。L3最良α=134.3%>L2 101.2%。161件(4.62%)L2超え。Top10=①×⑤5+⑤×⑤5。python3再計算全一致"
+  observations:
+    - "事実1: 出力CSV 3487行(header+3486)。C(84,2)=3486一致"
+    - "事実2: L2超え161/3486=4.62%をpython3再計算で完全一致"
+    - "事実3: Top10=①×⑤5件+⑤×⑤5件。③/⑦はTop10外(⑦best=rank25, ③best=rank43)"
+    - "事実4: commit 2482d9a0確認。忍者は入力CSVを正しくokugi_l3_168_monthly.csvから特定(draft REQUEST_CHANGESの指摘箇所を自力解決)"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  causal_chain: "84体月次CSV→C(84,2)=3486EW平均→SPY共通期間OLS→α/β分離。L3最良α=134.3%>L2 101.2%→L3付加価値確定×DB登録判断の定量根拠=正の複利"
+  timestamp: "2026-04-14T03:05:00"

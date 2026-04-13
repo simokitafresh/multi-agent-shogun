@@ -930,3 +930,13 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - **仮説検証**: ①vs⑤(0.736) > ①vs③(0.701) → **確認**（同忍法BB違い > 目的関数違い）
 - **多様性**: ⑧(ALM-BB×WF動的)が①と最も低相関(0.63)=追加価値最大。ただしβ調整では最下位群(cmd_1880)
 → 詳細: `outputs/analysis/alm_research/cmd_1893_correlation_summary.md` | CSV: `outputs/analysis/alm_research/cmd_1893_correlation_8x8.csv`
+
+### ALM L3: 2体EW β調整分析 (cmd_1896)
+<!-- last_updated: 2026-04-14 -->
+- **入力**: 84体(GS固定①③⑤⑦) C(84,2)=3,486ペアEW。88ヶ月月次リターン
+- **L3最良α**: 134.3%（①kasoku_diff激攻 + ⑤kasoku_diff激攻）> **L2最強α 101.2%**
+- **L2超え**: 161/3,486件(4.62%)
+- **Top10構成**: ①×⑤(5件) + ⑤×⑤(5件)のみ。③/⑦はTop10に入らず
+- **③/⑦の最良rank**: ⑦ rank25(α=119.4%) > ③ rank43(α=115.8%)
+- **結論**: L3はL2を上回る。追加候補は⑤で十分、③/⑦不要
+→ 詳細: `outputs/analysis/alm_research/cmd_1896_l3_summary.md` | CSV: `outputs/analysis/alm_research/cmd_1896_l3_beta_adjusted.csv`

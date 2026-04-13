@@ -144,14 +144,14 @@
 # ─── GP索引終 ───
 - id: GP-170
   description: "gate_shogun_startup Gate15 git logバッチ化。orphan検知のper-file git log(3-4s/件)を1回のgit logで一括取得"
-  status: karo_sent
+  status: implemented
   proposed_at: "2026-04-07T22:55:00"
   sent_at: "2026-04-08T21:10:00"
   self_executable: false
   reason: "インフラスクリプト。cmd化が必要"
 - id: GP-171
   description: "dashboard_auto 6忍者ループ一括cat+awk化。per-ninja NTFS read(1.2-1.6s/件)を1回のI/Oに"
-  status: karo_sent
+  status: implemented
   proposed_at: "2026-04-07T22:55:00"
   sent_at: "2026-04-08T21:10:00"
   self_executable: false
@@ -260,7 +260,7 @@
   reason: "cmd_1860 premature_shelve根因。draft review時にgrepが忍者commit後の状態を読み→no-op誤判定。ac_physical_verify.sh Step0.5で自動WARNING→Level5(事前コンテキスト提供)。なぜなぜ7回でタイミング問題特定→修正→テスト→検証完了"
 - id: GP-186
   description: "infra系cmd自動scout_exempt(cmd_save.sh改修)"
-  status: karo_sent
+  status: implemented
   proposed_at: "2026-04-13T13:05:00"
   sent_at: "2026-04-13T13:05:00"
   self_executable: false
@@ -277,7 +277,7 @@
   reason: "影丸lessons_useful reason空×10が本日3報告で繰り返し(FAIL率36%)。根因=autofixが空文字でスケルトン生成→忍者が埋まっていると誤認。FILL_THISに変更→既存gate L152がBLOCK。才蔵/小太郎は0%なので道具が壊れているのではなく忍者への指示不足。E2Eテスト: autofix→FILL_THIS 10件→gate FAIL確認"
 - id: GP-189
   description: "lesson_write.shにtitle Jaccard≥0.6 WARN追加(内容重複検出)"
-  status: karo_sent
+  status: implemented
   proposed_at: "2026-04-13T16:10:00"
   sent_at: "2026-04-13T20:08:00"
   self_executable: false

@@ -1,7 +1,7 @@
 # gunshi_stats.yaml — 軍師レビュー統計
 # source: gunshi_review_log.yamlヘッダーから分離 (cmd_1626)
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: 1103件 (draft:329, report:526, self_study:208, verify:3, consultation:2, other:35) | '2026-03-22〜 (2026-04-13T16:15更新。アーカイブ8本)
+# 累計: 1106件 (draft:330, report:528, self_study:208, verify:3, consultation:2, other:35) | '2026-03-22〜 (2026-04-13T23:40更新。アーカイブ8本)
 # accuracy公式: gate_result判明分 99.5% (645/648 CLEAR, 3 BLOCK) ← Goodhart注意。BLOCK3件
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   gate_result null: 72件(7%)
