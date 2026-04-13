@@ -346,6 +346,19 @@
   causal_chain: "大ファイルがcontext/に滞留→読込みコスト増→Vercel圧縮で索引化→結論のみ即取得。×10回=正の複利(毎/clear時のCTX節約)"
   proposals: []
   timestamp: "2026-04-13T14:05:00"
+- cmd_id: cmd_1880_hayate
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  report_task_id: cmd_1880_ac12
+  findings_summary: "4観点OK。168体β調整。α年率168/168全正。β1.007-2.063。raw Top5=β調整Top5(順位安定)。commit 87271045"
+  observations:
+    - "事実1: commit 87271045 dm-signalリポジトリ確認。スクリプト+CSV3+summary計5ファイル"
+    - "事実2: BB効果はβ調整後も維持(static +0.080/wf +0.038)。選出劣化も維持(static -0.020/wf -0.167)。raw傾向とβ調整後傾向が一致=市場リスク除去後もL2奥義の構造的優位性は本物"
+  lesson_quality: OK
+  causal_chain: "168体収集→SPY共通期間整列→β/α分離→β調整CAGR→2×2因子分析→Top5不変確認。研究日誌Phase30(β調整が正道)の実証"
+  timestamp: "2026-04-13T14:30:00"
 - cmd_id: cmd_1878_kagemaru
   review_type: report
   verdict: LGTM
@@ -359,3 +372,69 @@
   lesson_quality: OK
   causal_chain: "hayate CSV入力→2×2因子分析→L1比較→傾向縮小を構造的に説明(GS固定2種混在)→lesson_candidate"
   timestamp: "2026-04-13T13:50:00"
+- cmd_id: cmd_1881
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1881_impl
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "FAIL。AC2矛盾(summary=push不可 vs binary_checks=yes)。binary_checks空欄4箇所(AC1×2,AC3×1,commit×1)"
+  observations:
+    - "事実1: summary「AC2でG2ゲートブロック」とbinary_checks AC2 result:yes が矛盾。pushの成否が不明"
+    - "事実2: AC1 2check/AC3 1check/commit 1check = 4箇所のresultが空文字列。gate BLOCKのbinary_checks_fail原因"
+    - "事実3: kagemaru WA率=直近11件中top_pattern=report_yaml_format(3件)+stale_ac(3件)。binary_checks空欄はreport_yaml_formatパターンの再発"
+  fail_reasons:
+    - "AC2 summary-binary_checks矛盾"
+    - "binary_checks空欄4箇所"
+  lesson_quality: N/A
+  causal_chain: "git filter-repo完了→push試行→G2 BLOCK→summary記載→しかしbinary_checks AC2=yes記入→矛盾。空欄4箇所はAC実行状態の正確な記録怠り。10回繰り返し=10回のverdict不正確=負の複利"
+  timestamp: "2026-04-13T14:55:00"
+- cmd_id: cmd_1882
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1882_impl
+  verdict: LGTM
+  report_verdict: PASS
+  gate_result: CLEAR
+  findings_summary: "4観点OK。UWP定義修正(69→8、本番DB一致)。168行×20列CSV再生成。Sheets40列統合。commit 3b4e82c1"
+  observations:
+    - "事実1: commit 3b4e82c1に2ファイル(py+csv)。β調整CSVはoutputs/(gitignore)のため未含で正常"
+    - "事実2: bunshin鉄壁UWP=8.0をCSVから実測確認。報告記載「本番DB=8」と一致"
+    - "事実3: lesson_candidate(cache-only成果物探索)はDM-Signal GS環境で再現性あり。登録推奨"
+  lesson_quality: OK
+  causal_chain: "UWP定義が(drawdown<0).sum()だった→本番DBのpeak→recovery期間と乖離→修正→69→8に変化→比較表全体再生成→Sheets反映。定義不一致の根本修正=正の複利"
+  timestamp: "2026-04-13T15:10:00"
+- cmd_id: self_study_S174
+  review_type: self_study
+  findings_summary: "/clear復帰自走6Step完了。(1)WA直近10件4/10=40%。軍師起因1件(cmd_1860→GP-185根治)。(2)review_log直近20件accuracy100%。FAIL1件(cmd_1881影丸bc空欄)gate正常BLOCK→CLEAR。(3)未automated教訓LG001/003/004/005=判断型でgate化不向き。Level2(ヘッダ原理)維持。(4)CS checklist完備。(5)GP-184 karo_sent。proposed0件。(6)cmd_design_quality分析: 415unique中75%CLEAR。BLOCK25%の内訳=報告format問題が主。karo_rework/ninja_blockers全0=設計品質データ未記録。指標がgate_resultのみで設計品質を捕捉していない"
+  observations:
+    - "事実1: GP pipeline clean。proposed:0、karo_sent:4(GP-170/171/183/184/186)。全proposedGP処理済み"
+    - "事実2: cmd_design_quality BLOCK-only 30件は全てtraining/karo_batch(ac_count=0)。真のcmd設計問題(rework>0/blockers>0)=0件記録"
+    - "事実3: 影丸WA率40%(5件中2件)。verdict_override(GP-183)+stale_ac(cmd_1861根治)。直近cmd_1881 FAIL→gate正常差戻し→CLEAR"
+  causal_chain: "cmd_design_quality BLOCK率25%=見かけ上高い→内訳分析→報告format(autofix対象)+training(永続BLOCK)→真の設計問題0件=指標のデータ不足が真因。karo_rework/ninja_blockersフィールドが常に初期値→cmd_complete_gate.shの記録ロジックに計測不在。指標を磨かないと指標で判断できない=計測フライホイール不全"
+  proposals: []
+  timestamp: "2026-04-13T15:30:00"
+- cmd_id: self_study_S175
+  review_type: self_study
+  findings_summary: "idle自走サイクル2-3: (1)WA全量148件分析→verdict_override5件が最重要未根絶カテゴリ。3パターン(AC推奨混在/commit対象外/進行中月)に集約。GP-173根絶済み1件+GP-183/184で4件根絶予定。家老報告済。(2)教訓効果率: injected useful75%(健全)。feedback NOT_USEFUL81%(L063/L074=universalタグ過剰注入+L094=解決済み未retire)。L063/L074タグ変更+L094 retire推奨→家老送信。永続化: docs/research/gunshi_idle_lesson_effectiveness_20260413.md"
+  observations:
+    - "事実1: verdict_override 5件中4件(80%)がGP-183+GP-184で根絶可能。残1件(GP-173)は実装済み"
+    - "事実2: lesson_impact.tsv 2004件。L063(29回0%)とL074(28回3%)はuniversalタグで全cmd注入→コーディング限定→タグ粒度不適合"
+    - "事実3: L608-613(12-13回各0%)はcmd_1855バッチ登録。進行中月パリティ→注入タイミング問題(cmd実行時では遅い→GP-184 AC標準文言が正解)"
+  causal_chain: "verdict_override=AC設計品質問題(3パターン)→GP未実装→家老WA。教訓NOT_USEFUL=タグ粒度不適合(universal→全cmd)→無関係cmdに注入→NOT_USEFUL蓄積→教訓への信頼低下→参照率低下リスク。10回繰り返し=10回のNOT_USEFUL→教訓システムの信頼劣化=負の複利。タグ精度向上=正の複利"
+  proposals: []
+  timestamp: "2026-04-13T15:50:00"
+- cmd_id: self_study_S176
+  review_type: self_study
+  findings_summary: "idle自走サイクル4-6: (1)Vercel500行超過5件検出→家老報告。(2)教訓重複検出: 620件中9ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複+具体/抽象ペア4組。retire候補5件→家老報告。(3)lesson_write.sh title Jaccard WARN追加がGP候補。永続化: docs/research/gunshi_idle_lesson_dedup_20260413.md+gunshi_idle_lesson_effectiveness_20260413.md"
+  observations:
+    - "事実1: context/*.md 500行超=dm-signal-research(923)/training-cycle(827)/cmd-chronicle(641)/senkyoku-log(636)/infrastructure(583)"
+    - "事実2: L551 vs L549: Jaccard=1.00(スペース差のみ)。L584/582/579: 自動生成×cmd番号差(0.87)"
+    - "事実3: Jaccard計算でUnicode対応(英数字+日本語文字トークン化)が必要。初回は英数字のみ→cmdで偽陽性大量発生→修正"
+  causal_chain: "lesson_write.sh AC2=ID dedup→内容dedup不在→同一テーマが複数ID登録→注入回数水増し→教訓信頼低下。自動生成教訓は定型文+cmd番号で重複確率高い。title Jaccard WARN(cmd_save.sh Check12流用)で予防=正の複利"
+  proposals:
+    - id: GP-189
+      description: "lesson_write.shにtitle Jaccard≥0.6 WARN追加(内容重複検出)"
+      status: proposed
+      defense_level: 2
+  timestamp: "2026-04-13T16:10:00"

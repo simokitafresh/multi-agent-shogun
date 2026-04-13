@@ -1264,6 +1264,9 @@ lessons:
   - monitor
   - inbox
   - reporting
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-13'
 - id: L277
   title: git diff一時リポジトリにはgit config user.email/name設定必須
   summary: git diffテスト用一時リポジトリにはgit config user.email/name設定必須。未設定だとcommit失敗しテスト前提が崩れる
@@ -1859,6 +1862,9 @@ lessons:
   - testing
   - review
   - git
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-13'
 - id: L191
   title: E2E fixture参照は tests/e2e/fixtures 実在確認をCIで壊れやすい前提として先に検証すべき
   summary: IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture
@@ -2528,6 +2534,7 @@ lessons:
   helpful_count: 5
   harmful_count: 5
   last_referenced: '2026-04-12'
+  deprecated: true
 - id: L093
   title: impl忍者のgit add漏れ — 新規ファイル作成時のcommit忘れ
   summary: 新規ファイル作成後にgit add+commitを実行せずuntrackedのまま残した。.gitignore whitelistはあったがuntrackedの
@@ -2668,7 +2675,7 @@ lessons:
 - id: L074
   title: bash ((var++))はvar=0時にset -eで即exit — $((var+1))を使え
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
-  tags:
+  tags: bash
   - universal
   helpful_count: 20
   harmful_count: 19
@@ -2747,7 +2754,7 @@ lessons:
 - id: L063
   title: lessons.yamlはdict構造(lessons:キー配下リスト)。for lesson in dataはdictキーをイテレート→誤り。data['lessons']で取得せよ
   summary: 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリス
-  tags:
+  tags: python
   - universal
   helpful_count: 20
   harmful_count: 19

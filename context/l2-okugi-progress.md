@@ -147,7 +147,7 @@ GS dir: okugi_alm_alm/ → 選出: champion_selector
 |---|------|:-----:|:----:|-----------|-------|
 | 7-1 | bunshin | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_bunshin_grid_results_fast.csv (2.0MB, 7526行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 7-2 | oikaze | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_oikaze_grid_results_fast.csv (117MB, 270901行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
-| 7-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_results_fast.csv (346MB, 1151326行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
+| 7-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_results_fast.meta.yaml + cache(arr/columns/index.npy)。CSV本体はfilter-repoで除去(346MB>100MB制限)。cache復元可能 + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json | 2026-04-13 |
 | 7-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_results_fast.csv (349MB, 1.15M行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 7-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kawarimi_grid_results_fast.csv (93MB, 270901行) + monthly_fast.csv (396MB, 131行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
 | 7-6 | nukimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_nukimi_grid_results_fast.csv (176MB, 586951行) + 選出: okugi_alm_alm/cmd_1877_alm_alm_champions.json (shared, 4.3KB, 7忍法×3目的) | 2026-04-13 |
@@ -164,7 +164,7 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 |---|------|:-----:|:----:|-----------|-------|
 | 8-1 | bunshin | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_bunshin_grid_monthly_fast.csv (12MB) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
 | 8-2 | oikaze | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_oikaze_grid_monthly_fast.csv (411MB) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
-| 8-3 | kasoku_diff | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_monthly_fast.csv (1.7GB, 131行) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
+| 8-3 | kasoku_diff | ✅ | ✅ | GS: cache(arr/columns/index.npy)復元可能。CSV本体はfilter-repoで除去(1.7GB>100MB制限) + WF: alm_research/okugi_alm_alm/cmd_1877_kasoku_diff_l1_wf_alm_returns.csv | 2026-04-13 |
 | 8-4 | kasoku_ratio | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_monthly_fast.csv (1.7GB) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
 | 8-5 | kawarimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_kawarimi_grid_monthly_fast.csv (396MB) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
 | 8-6 | nukimi | ✅ | ✅ | GS: okugi_alm_alm/cmd_1877_alm_alm_nukimi_grid_monthly_fast.csv (845MB, 131行) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
@@ -184,7 +184,7 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 | 部分(GS済・選出途中) | 2 (②-5, ②-6) |
 | **合計** | **56** |
 
-GS実行残量(ペア共有): ②3本 + ④1本(nukimi) + ⑧1本(kawarimi) = **5本**
+GS実行残量: **0本(全完了)** — cmd_1877で全52ブロック完了(2026-04-13)
 
 ## 変更履歴
 
