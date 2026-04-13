@@ -162,7 +162,7 @@ GS dir: okugi_alm_alm/ (⑦と共有, monthly_fast必須) → 選出: WFエン�
 
 | # | 忍法 | GS(M) | 選出 | 成果物所在 | 完了日 |
 |---|------|:-----:|:----:|-----------|-------|
-| 8-1 | bunshin | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_bunshin_grid_monthly_fast.csv (12MB) | — |
+| 8-1 | bunshin | ✅ | ✅ | GS: okugi_alm_alm/cmd_1876_alm_alm_bunshin_grid_monthly_fast.csv (12MB) + WF: alm_research/okugi_alm_alm/cmd_1877_l1_wf_alm_returns.csv (92行×6系列) + selection_timeline.csv (126エントリ) | 2026-04-13 |
 | 8-2 | oikaze | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_oikaze_grid_monthly_fast.csv (411MB) | 2026-04-12 |
 | 8-3 | kasoku_diff | ✅ | — | GS: okugi_alm_alm/cmd_1877_alm_alm_kasoku_diff_monthly_fast.csv (1.7GB, 131行) | 2026-04-13 |
 | 8-4 | kasoku_ratio | ✅ | — | GS: okugi_alm_alm/cmd_1876_alm_alm_kasoku_ratio_grid_monthly_fast.csv (1.7GB) | 2026-04-12 |
@@ -188,6 +188,7 @@ GS実行残量(ペア共有): ②3本 + ④1本(nukimi) + ⑧1本(kawarimi) = **
 
 ## 変更履歴
 
+- 2026-04-13 09:41 ⑧8-1 bunshin WF ✅(kotaro, cmd_1877_block_46)
 - 2026-04-13 09:39 ⑥6-7 yotsume WF ✅(hanzo, cmd_1877_block_45) — ⑥WF完了
 - 2026-04-13 09:08 ⑥6-5 kawarimi WF ✅(hayate, cmd_1877_block_43)
 - 2026-04-13 08:25 ⑥6-4 kasoku_ratio WF ✅(kotaro, cmd_1877_block_42)
