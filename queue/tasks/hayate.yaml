@@ -1,18 +1,19 @@
 task:
-  _ac_task_id: cmd_1893_impl
+  _ac_task_id: cmd_1894_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: cb1aaaf0
+  ac_version: 43aa1ea0
   acceptance_criteria:
-  - description: '168体の月次リターン時系列を共通期間で統一したDataFrame（168列×Nヶ月行）を生成。outputs/analysis/alm_research/cmd_1893_168body_monthly_returns.csvに出力。確認:
-      shape確認(168列)、NaN率<5%、共通期間月数をprint'
+  - description: 'C(168,2)+C(168,3)=790,244通りの全量EW→β調整を完走。outputs/analysis/alm_research/cmd_1894_l3_ew_beta_adjusted.csvに出力(列:
+      combo_id, body1, body2, body3, raw_cagr, beta, alpha_annual, beta_adj_cagr)。確認:
+      行数=790244、α年率の分布統計(mean/std/min/max)をprint'
     id: AC1
-  - description: '8パターン間の平均相関サマリ（8×8ヒートマップ値）を算出。モード別(激攻/常勝/鉄壁)の分解付き。outputs/analysis/alm_research/cmd_1893_correlation_8x8.csv
-      + cmd_1893_correlation_by_mode.csvに出力。確認: 対角成分=1.0、値域[-1,1]、①-①相関値が既知のcmd_1850結果と整合'
+  - description: 'L2最強(α年率101.2%)を超えるL3の件数と割合を算出。L3 Top10の構成体リスト+cmd_1893相関値を出力。確認:
+      Top10にL2 Top5構成体が含まれるか検証'
     id: AC2
-  - description: '①vs各パターンの平均相関を算出し、①との差分多様性を定量化。outputs/analysis/alm_research/cmd_1893_correlation_summary.mdに出力。確認:
-      ①vs⑤相関>①vs③相関（同忍法BB違いが目的関数違いより高相関のはず）を検証。想定と逆なら報告'
+  - description: '結果サマリをoutputs/analysis/alm_research/cmd_1894_l3_summary.mdに出力。L2
+      vs L3の比較表(α/β/CAGR)。確認: L2 cmd_1880のTop5 α値と突合して整合確認'
     id: AC3
   context_files:
   - context/dm-signal.md
@@ -22,6 +23,7 @@ task:
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
     \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
     \  - L494: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.\n\
+    \  - L493: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓moment\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
@@ -42,7 +44,7 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1893
+  parent_cmd: cmd_1894
   project: dm-signal
   related_lessons:
   - detail: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み
@@ -54,11 +56,16 @@ task:
   - detail: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.pyの再計算値74.5%に6.3%の乖離。予備分析は別の計算手法(おそらく全期間を使った非WF計算)を使用していた可能性。独立検証(constraint)の重要性を再確認。
     id: L494
     summary: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.pyの再計算値74.5%に6.3%の乖離。予備分析は別の計算手法(おそらく全期間を使った非WF計算)を使用していた可能性。独立検証(constraint)の重要性を再確認。
-  report_filename: hayate_report_cmd_1893.yaml
-  report_path: queue/reports/hayate_report_cmd_1893.yaml
-  status: done
+  - detail: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓momentum
+      union+cutoff_score top_nのタイミング(シグナル月vsリターン月)がPipelineEngine実装と微妙に異なる可能性。numpy快速パスで忍法リターンを再現する際、yotsume系は4窓momのunion集合
+    id: L493
+    summary: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓momentum
+      union+cutoff_score top_nのタイミング(シグナル月vsリターン月)がPipelineEngine実装と微妙に異なる可能性。numpy快速パスで忍法リターンを再現する際、yotsume系は4窓momのunion集合
+  report_filename: hayate_report_cmd_1894.yaml
+  report_path: 
+  status: idle
   stop_for: []
-  task_id: cmd_1893_impl
+  task_id: cmd_1894_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
