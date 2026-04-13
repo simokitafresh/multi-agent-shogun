@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:99(+GP-129,137b,180,181,182) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / cmd配備済:0 = 計117+5=122GP
+# 集計: ★implemented:99(+GP-129,137b,180,181,182) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:1(GP-184) / in_progress:0 / karo_sent:1(GP-183) = 計117+5+2=124GP
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -234,3 +234,35 @@
   self_executable: true
   defense_level: 4
   reason: "LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし)"
+- id: GP-183
+  description: "研究cmd用commit check免除(AC生成テンプレート改修)"
+  status: karo_sent
+  proposed_at: "2026-04-13T09:25:00"
+  sent_at: "2026-04-13T09:30:00"
+  self_executable: false
+  defense_level: 2
+  reason: "verdict_override 2件(cmd_1835研究output未commit)。deploy_task.sh AC生成で研究cmdのcommit checkを『本番コード変更分のみ』に限定。review_logヘッダL21で既にパターン検出(2026-04-10)→根本修正はテンプレート側"
+- id: GP-184
+  description: "進行中月除外のAC標準文言(完了月のみ比較)"
+  status: karo_sent
+  proposed_at: "2026-04-13T09:25:00"
+  sent_at: "2026-04-13T12:47:00"
+  self_executable: false
+  defense_level: 2
+  reason: "cmd_1855のverdict_override根因。AC『全期間月次リターン差』が進行中月を含み、GS作成日vs本番更新日の差異で常にFAIL。AC標準文言を『完了月(最終月除外)』に変更。cmd起票テンプレート修正が必要→家老担当"
+- id: GP-185
+  description: "並行作業検知(ac_physical_verify.sh内git log --grep=CMD_ID)"
+  status: implemented
+  proposed_at: "2026-04-13T12:50:00"
+  implemented_at: "2026-04-13T12:55:00"
+  self_executable: true
+  defense_level: 5
+  reason: "cmd_1860 premature_shelve根因。draft review時にgrepが忍者commit後の状態を読み→no-op誤判定。ac_physical_verify.sh Step0.5で自動WARNING→Level5(事前コンテキスト提供)。なぜなぜ7回でタイミング問題特定→修正→テスト→検証完了"
+- id: GP-186
+  description: "infra系cmd自動scout_exempt(cmd_save.sh改修)"
+  status: karo_sent
+  proposed_at: "2026-04-13T13:05:00"
+  sent_at: "2026-04-13T13:05:00"
+  self_executable: false
+  defense_level: 4
+  reason: "cmd_1859 WA根因=将軍scout_exempt設定忘れ。infra cmd(q4_depth=shallow+project=infra)は偵察不要→自動scout_exempt=true"
