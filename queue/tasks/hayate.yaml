@@ -1,32 +1,38 @@
 task:
-  _ac_task_id: cmd_karo_gp110_deploy_warn_impl
+  _ac_task_id: cmd_1893_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 7b808d7e
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: cb1aaaf0
   acceptance_criteria:
-  - description: 軍師/家老の自走commit(cmd_を含まないmessage+24h以内)があるファイルを含むcmd配備でWARN出力される
+  - description: '168体の月次リターン時系列を共通期間で統一したDataFrame（168列×Nヶ月行）を生成。outputs/analysis/alm_research/cmd_1893_168body_monthly_returns.csvに出力。確認:
+      shape確認(168列)、NaN率<5%、共通期間月数をprint'
     id: AC1
-  - description: 忍者のcmd commit(messageにcmd_XXXXを含む)があるファイルではWARN出力されない
+  - description: '8パターン間の平均相関サマリ（8×8ヒートマップ値）を算出。モード別(激攻/常勝/鉄壁)の分解付き。outputs/analysis/alm_research/cmd_1893_correlation_8x8.csv
+      + cmd_1893_correlation_by_mode.csvに出力。確認: 対角成分=1.0、値域[-1,1]、①-①相関値が既知のcmd_1850結果と整合'
     id: AC2
-  - description: 24h以上前のcommitではWARN出力されない
+  - description: '①vs各パターンの平均相関を算出し、①との差分多様性を定量化。outputs/analysis/alm_research/cmd_1893_correlation_summary.mdに出力。確認:
+      ①vs⑤相関>①vs③相関（同忍法BB違いが目的関数違いより高相関のはず）を検証。想定と逆なら報告'
     id: AC3
-  - description: bats tests/unit/ 既存テスト全PASS
-    id: AC4
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L464: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定\n\
-    \  - L463: MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePad\n\
-    \  - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ\n\
-    \  - L240: parse_skip_count()の汎用正規表現 r\"(\\d+)\\s+(?:tests?\\s+)?skips?\\b\" は\
-    \ bats TAP出力 \"ok 293\n  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
+    \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
+    \  - L494: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.\n\
     ────────────────────────────────────────"
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
+    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -36,55 +42,40 @@ task:
   - AC1
   - AC2
   - AC3
-  - AC4
-  parent_cmd: cmd_karo_gp110_deploy_warn
-  project: infra
+  parent_cmd: cmd_1893
+  project: dm-signal
   related_lessons:
-  - detail: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象
-    id: L464
-    summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象
-  - detail: 'MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars
-      insetsのみ使用。出典: developer.androi'
-    id: L463
-    summary: 'MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars
-      insetsのみ使用。出典: developer.androi'
-  - detail: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファイルが存在。内容は補完的(異なるテストケース)だが、同一ファイルに統合すればCI実行時のsetup/teardownオーバーヘッドを削減可能。削除ではなく統合を推奨。
-    id: L319
-    summary: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファイルが存在。内容は補完的(異なるテストケース)だが、同一ファイルに統合すればCI実行時のsetup/teardownオーバーヘッドを削減可能。削除ではなく統合を推奨。
-  - detail: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
-      "ok 293 skip and fail..." のテスト番号+テスト名を
-    id: L240
-    summary: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
-      "ok 293 skip and fail..." のテスト番号+テスト名を
-  - detail: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
-      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
-      files を除外するか commit/push 対象から切り離さないと実運用で達成
-    id: L220
-    summary: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
-      は作業中に自動更新される。bulk commit task で git status clean を AC に置く場合は、runtime tracked
-      files を除外するか commit/push 対象から切り離さないと実運用で達成
-  report_filename: hayate_report_cmd_karo_gp110_deploy_warn.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_gp110_deploy_warn.yaml
+  - detail: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み
+    id: L617
+    summary: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み
+  - detail: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知
+    id: L616
+    summary: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知
+  - detail: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.pyの再計算値74.5%に6.3%の乖離。予備分析は別の計算手法(おそらく全期間を使った非WF計算)を使用していた可能性。独立検証(constraint)の重要性を再確認。
+    id: L494
+    summary: 将軍予備分析(nested-fof-preliminary-analysis.md)のR2 N=4 CAGR=80.8%と、才蔵実装r2_cluster_ew.pyの再計算値74.5%に6.3%の乖離。予備分析は別の計算手法(おそらく全期間を使った非WF計算)を使用していた可能性。独立検証(constraint)の重要性を再確認。
+  report_filename: hayate_report_cmd_1893.yaml
+  report_path: queue/reports/hayate_report_cmd_1893.yaml
   status: done
   stop_for: []
-  task_id: cmd_karo_gp110_deploy_warn_impl
+  task_id: cmd_1893_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 19
+    total_workarounds: 20
     top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), verdict_override(3件), task_redeploy(2件), ci_gate_mismatch(2件), commit_missing(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
+    breakdown: 'report_yaml_format(3件), verdict_override(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
       count: 22
+    - pattern: 'yaml_parse_error'
+      count: 6
     - pattern: 'lu_reason_empty'
       count: 5
-    - pattern: 'verdict_invalid'
-      count: 4
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 10
@@ -104,4 +95,3 @@ task:
     - reason: 'empty_lessons_useful'
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  progress: AC1-AC3達成。新規 deploy WARN テスト3件PASS。AC4は既存 test_inbox_write.bats T-010 失敗で未達。report YAML/gate完了。
