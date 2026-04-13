@@ -3568,3 +3568,18 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport cmd_idとtask YAMLのtask_idを照合していないため。cmd_karo_mismatch_fixで修正。L1464-1468にtask_id比較追加。
+
+### L468: gate_report_formatにautofix pre-stepを組み込むことで忍者のautofix未実行による無駄FAILサイクルを防止できる
+- **日付**: 2026-04-13
+- **出典**: cmd_1885
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [universal]
+- 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_format.shにautofix pre-stepを組み込むことで手順依存を排除。GP-107 Q1-Q4全PASS確認済。
+
+### L469: gate_report_formatにautofix pre-stepを組込みFAILサイクル防止
+- **日付**: 2026-04-13
+- **出典**: cmd_1885
+- **記録者**: karo
+- **tags**: [universal]
+- 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix pre-stepを組み込むことで手順依存を排除。GP-107 Q1-Q4全PASS確認済。FAIL率40.9%→22.7%。
