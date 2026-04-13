@@ -1,23 +1,21 @@
 task:
   parent_cmd: cmd_1877
-  task_id: cmd_1877_block_38
-  status: done
+  task_id: cmd_1877_block_43
+  status: idle
   project: dm-signal
   type: impl
   command: |
-    L2奥義 ブロック#38 [TYPE-WF] ④ 4-7 yotsume WF選出
+    L2奥義 ブロック#43 [TYPE-WF] ⑥ 6-5 kawarimi WF選出
 
     cd /mnt/c/Python_app/DM-signal
     python3 outputs/scripts/l1_alm_wf_engine.py \
-      --csv outputs/grid_search/okugi_shin_alm/cmd_1877_shin_alm_yotsume_grid_monthly_fast.csv \
+      --csv outputs/grid_search/okugi_alm_shin/cmd_1877_alm_shin_kawarimi_grid_monthly_fast.csv \
       --multi-is --cmd-id cmd_1877 --progress \
-      --out-dir outputs/analysis/alm_research/okugi_shin_alm/
-
-    ※④WF最後の1本
+      --out-dir outputs/analysis/alm_research/okugi_alm_shin/
 
     完了後:
     1. alm_returns CSV + selection_timeline存在を確認
-    2. context/l2-okugi-progress.md の ④ 4-7 yotsume WF選出を ✅ に更新
+    2. context/l2-okugi-progress.md の ⑥ 6-5 kawarimi WF選出を ✅ に更新
     3. git add + git commit
   acceptance_criteria:
     - id: AC1
@@ -27,12 +25,12 @@ task:
   binary_checks:
     AC1:
       - check: "alm_returns CSVが存在するか"
-        result: "yes"
+        result: ""
       - check: "rc=0か"
-        result: "yes"
+        result: ""
     AC2:
       - check: "git commitしたか"
-        result: "yes"
+        result: ""
   context_files:
     - context/l2-okugi-progress.md
   target_path: "/mnt/c/Python_app/DM-signal/outputs/scripts/l1_alm_wf_engine.py"
@@ -41,7 +39,7 @@ task:
   never_stop_for:
     - "既存ファイル警告 — 確認して続行"
   scout_exempt: true
-  deployed_at: "2026-04-13T06:42:49+09:00"
+  deployed_at: ""
   related_lessons:
   - id: 'L617'
     summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
