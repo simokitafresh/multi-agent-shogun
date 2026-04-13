@@ -256,7 +256,7 @@ chunk: "1-8"  # この忍者の担当範囲
 - **OK例**: AC単位で二値チェックが設計され、related_lessonsが注入される分解
 - **NG例**: 1ACに複数の独立作業を詰め込み、教訓との対応が不明な分解
 
-**YAML操作**: task YAML作成は**Bash tool(`cat`/`echo`)**で書け（Write/Edit直接はhookブロック）。配備は`deploy_task.sh`。報告YAMLは`report_field_set.sh`経由。**yqは環境に存在しない**。ツール詳細→`docs/research/karo-operations-detail.md` §7
+**YAML操作**: task YAML作成は**Bash tool(`cat`/`echo`)**で書け（Write/Edit直接はhookブロック）。配備は`deploy_task.sh`。cmd_resolveエラー時はdeploy_task.sh --directを使え。手動配備(cat+inbox_write直接)は全ガードバイパスのため禁止。報告YAMLは`report_field_set.sh`経由。**yqは環境に存在しない**。ツール詳細→`docs/research/karo-operations-detail.md` §7
 
 ### 停止条件二分法（task分解ルール）
 

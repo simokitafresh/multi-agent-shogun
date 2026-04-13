@@ -34,6 +34,7 @@
 
 ## §1 配備
 
+- **deploy_task.shが使えない場合は--directモードを使え。手動配備(cat+inbox_write)はdeploy_task.shの全ガードをバイパスするため禁止。**
 - 配備前は毎回「五問チェック」を通す。Purpose / Decomposition / Headcount / Difficulty / Risk を1行で言えなければ配備するな。
 - **配備前にcmdの前提を現物確認せよ**。ダッシュボードの記載は過去の事実。CI赤→`dashboard.md AUTO_SECTION`のCI Status確認。本番障害→本番を直接確認。KARO_SECTIONの手書き情報は二次データ(LK043: cmd_1806事故)
 - implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
