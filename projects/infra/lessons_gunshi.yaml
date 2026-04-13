@@ -209,5 +209,5 @@ lessons:
     対象=hook/gate/CLAUDE.md/instructions/settings系に限定。
   source_cmd: gunshi_session_20260412
   created_at: '2026-04-12'
-  automated: false
-  enforcement: Level 2(設計書完成)。docs/research/gunshi_sg_s0_self_code_change_20260412.md。instructions/gunshi.md+review_logヘッダへの組込は次cmd待ち
+  automated: true
+  enforcement: Level 2(ドキュメント化+フロー組込)。設計書=docs/research/gunshi_sg_s0_self_code_change_20260412.md。instructions/gunshi.md §S0セクション追加済み(2026-04-13)
