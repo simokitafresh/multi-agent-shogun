@@ -650,3 +650,4 @@
 | cmd_1890 | 消火撤去 — binary_checks result文字列正規化(PASS/ok→yes)を撤去しBLOCKに転換 | infra | 04-13 | autofix から PASS/ok/FAIL/ng の r |
 | cmd_1891 | GP-186 — infra系shallow cmdのscout_exempt自動判定（cmd_save.sh改修） | infra | 04-13 | cmd_save.sh の q5 判定に infra+q4_ |
 | cmd_1892 | GP-189 — lesson_write.shにtitle Jaccard類似度WARN追加（教訓重複検出） | infra | 04-13 | lesson_write.sh に title Jaccar |
+| cmd_karo_gp110_deploy_warn | GP-110 — deploy_task.shに配備前重複チェック(自走commit検知WARN) | infra | 04-13 | deploy_task.sh に target_path の |

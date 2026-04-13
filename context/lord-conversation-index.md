@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-13 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-13T22:24:41+09:00 -->
+<!-- generated_at: 2026-04-13T22:42:41+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-13T22:42:41+09:00 | terminal | response | cmd_karo_gp110_deploy_warn GATE CLEAR。既読化済み。 殿、168体の話の続き — 相関計測してから判断するか、それとも方針を先に決めるか？ [meta] stop_reason=end_turn
+- 2026-04-13T22:42:39+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝46
+- 2026-04-13T22:40:36+09:00 | ntfy | outbound | 【家老ALERT】workaround同一カテゴリ「commit_missing」が4件。構造対策cmd起票を強制
+- 2026-04-13T22:38:50+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-13 22:30:22|CI緑: run 24345625785
+- 2026-04-13T22:37:49+09:00 | terminal | response | gist v3更新完了。 推薦の核心が変わった: **前回**: ⑤が単独最優先（CAGRトップだから） **今回**: **⑤と③⑦が同列最優先**、ただし性質が違う - **⑤** = ①のALM-BB版アップグレード。CAGR底上げ…
+- 2026-04-13T22:34:51+09:00 | terminal | inbound | すでに本番DBに登録済みの奥義は考慮してるか？
 - 2026-04-13T22:24:41+09:00 | terminal | response | gist v2更新完了、ntfy送信済み。inbox: cmd_1891 GATE CLEAR（既読化済み）。 **v2で変えたこと**: - 結論羅列 → **Phase 1-6の物語形式**（方式混同事故→6目的混合事故→2×2因子分…
 - 2026-04-13T22:24:24+09:00 | ntfy | outbound | 【将軍】L2奥義168体 解説gist更新(v2追体験版): https://gist.github.com/simokitafresh/8de3643d8f064c687394437f1beaa2b1
 - 2026-04-13T22:23:35+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-13 22:18:47|cmd_1891 2026-04-13 22:20:17|cmd_1892
 - 2026-04-13T22:20:38+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝45
-- 2026-04-13T22:19:32+09:00 | ntfy | outbound | 【家老ALERT】workaround同一カテゴリ「commit_missing」が3件。構造対策cmd起票を強制
-- 2026-04-13T22:19:29+09:00 | terminal | inbound | 追体験できるような文章にしたか？
-- 2026-04-13T22:19:00+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝44
-- 2026-04-13T22:18:42+09:00 | terminal | response | gist作成・ntfy送信完了。 https://gist.github.com/simokitafresh/8de3643d8f064c687394437f1beaa2b1 --- 殿の追加質問「ずばり本番DBに登録すべきものは？」に対…
-- 2026-04-13T22:18:22+09:00 | ntfy | outbound | 【将軍】L2奥義168体 完全解説gist: https://gist.github.com/simokitafresh/8de3643d8f064c687394437f1beaa2b1
-- 2026-04-13T22:14:42+09:00 | terminal | inbound | 解説が欲しいな。詳細な解説だ。gistにあげて、ntfyでリンクを送ってくれ。
 
 ## 未解決確認事項
 - deepdive読了。追体験検証5問に回答する。 **Q1**: 今は止まっていない。殿が奥義168体の話を持ちかけている — 行動の出発点がある。確認すべきは168体の現状（進行表の実態と本番DBの状態）。 **Q2**: 前セッションで56ブロック全GS+WF選出完了（cm…
@@ -26,6 +26,7 @@
 - **結果確認:** **cmd_1889 (context鮮度)** — ✅ 疾風完了。4ファイルlast_updated更新済み。gate_context_freshness.sh OK。commit 0e2eed1。 **cmd_karo_ci_fix_1885 (CI修正…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-13T22:42:41+09:00 | cmd_karo_gp110_deploy_warn GATE CLEAR。既読化済み。 殿、168体の話の続き — 相関計測してから判断するか、それとも方針を先に決めるか？ [meta] stop_reason=end_turn
 - 2026-04-13T22:12:52+09:00 | deepdive読了。追体験検証5問に回答する。 **Q1**: 今は止まっていない。殿が奥義168体の話を持ちかけている — 行動の出発点がある。確認すべきは168体の現状（進行表の実態と本番DBの状態）。 **Q2**: 前セッションで56ブロック全GS+WF選出完了（cm…
 - 2026-04-13T22:03:15+09:00 | cmd_1891(GP-186)・cmd_1892(GP-189)を家老に委任完了。並列配備指示済み。 - **cmd_1890**: binary_checks文字列正規化撤去 → 疾風が作業中 - **cmd_1891**: infra+shallow自動scout_exe…
 - 2026-04-13T21:58:50+09:00 | 家老に指示済み。GP-170/171の陳腐化記載を削除し、実態（GP-186/189のみpending）に修正させる。 [meta] stop_reason=end_turn
@@ -33,7 +34,6 @@
 - 2026-04-13T21:49:52+09:00 | 確認完了。殿に報告する。 **消火撤去第二弾 — 軍師提案2件の現況:** | # | 内容 | 状態 | 該当コード | |---|------|------|-----------| | 1 | worker_id/parent_cmdファイル名推定 | **完了済み**（…
 - 2026-04-13T21:47:44+09:00 | 殿、将軍復帰いたした。現況を報告する。 **全軍状況:** - **CI赤**: Unit Tests (bats) — 影丸(cmd_karo_ci_fix_1885)が修正中（assigned, CTX:0%） - **idle忍者**: 疾風・半蔵・飛猿の3名 + 才蔵・…
 - 2026-04-13T21:47:35+09:00 | 【将軍】復帰済み。CI赤(影丸修正中)、idle忍者5名、パイプライン空。殿の指示待ち。
-- 2026-04-13T21:28:53+09:00 | **結果確認:** **cmd_1889 (context鮮度)** — ✅ 疾風完了。4ファイルlast_updated更新済み。gate_context_freshness.sh OK。commit 0e2eed1。 **cmd_karo_ci_fix_1885 (CI修正…
 
 ## 参照cmd
 - cmd_1845
