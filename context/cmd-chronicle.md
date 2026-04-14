@@ -642,3 +642,4 @@
 | cmd_1897 | 奥義ALMシン 21体 本番DB登録 — ⑤(ALM-BB×シン忍法×GS固定)をhide=trueで登録 | dm-signal | 04-14 | okugi_alm_shin champions.json |
 | cmd_karo_gp192 | GP-192 — パリティcmdテンプレートにtarget_date標準文言追加 | infra | 04-14 | inject_task_modifiers.pyにinjec |
 | cmd_karo_gp191 | GP-191 — dict.get(target_date)禁止 pre-commit hook | dm-signal | 04-14 | scripts/run_precommit_checks.s |
+| cmd_1899 | fix — FoF選択ブロック日付ミスマッチ修正(TRF dict.get→bisect)+潜在バグ2箇所+fullrecalculate+パリティ | dm-signal | 04-14 | dict.get(target_date)→get_mome |

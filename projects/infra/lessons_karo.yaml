@@ -315,3 +315,8 @@ lessons:
   detail: '軍師GP提案のcmd化は家老直接起票(karo_direct)で即配備可能。将軍の承認を待つのは自走の放棄。infra改善は本番依存なし。殿裁定: 家老の直接実装=自走(MEMORY.md参照)'
   source_cmd: 'cmd_karo_gp191'
   created_at: '2026-04-14'
+- id: 'LK056'
+  title: '並列配備時に軍師レビュー依頼を落とすな'
+  detail: 'cmd_1900でGP-191/192の並列配備に集中し軍師draftレビュー+報告レビューの両方を飛ばした。標準フロー(全cmd軍師レビュー)は並列配備数に関わらず必須。配備直後にレビュー依頼を送る手順を1セットとして扱え'
+  source_cmd: 'cmd_1900'
+  created_at: '2026-04-14'

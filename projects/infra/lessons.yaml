@@ -2388,6 +2388,9 @@ lessons:
   - deploy
   - bash
   - lesson
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-14'
 - id: L118
   title: tmux set-optionのtargetがsession指定だとwindow optionが意図せずcurrent windowのみ更新されることがある
   summary: 'IF tmux set-optionでwindow option(pane-border-format等)を設定する時 THEN window明示(-w
@@ -2703,7 +2706,7 @@ lessons:
   tags:
   - deploy
   helpful_count: 2
-  harmful_count: 0
+  harmful_count: 2
   last_referenced: '2026-04-14'
 - id: L075
   title: L075
