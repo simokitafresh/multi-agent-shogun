@@ -1,17 +1,7 @@
 task:
   _ac_task_id: cmd_1900_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 716b7afc
-  acceptance_criteria:
-  - description: 'パリティスクリプトL217のtarget_dateを前月末日→当月第1営業日に修正。確認: git diffで変更箇所を表示。BDay(0)使用を確認'
-    id: AC1
-  - description: '修正スクリプトで奥義ALMシン21体を全量パリティ再検証。holding_signal一致率を全21体printし100%目標。確認:
-      不一致があれば名前+月+expected_hs+actual_hsを報告'
-    id: AC2
-  - description: monthly_return一致(max_diff < 1e-6)を全21体で確認。max_diffをprint。超過があれば名前+月+diff値を報告
-    id: AC3
+  ac_version: d41d8cd9
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -34,41 +24,38 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_1900
+  parallel_ok: []
+  parent_cmd: cmd_karo_ci_fix_1900
   project: dm-signal
-  report_filename: hayate_report_cmd_1900.yaml
-  report_path: queue/reports/hayate_report_cmd_1900.yaml
-  status: failed
+  report_filename: hayate_report_cmd_karo_ci_fix_1900.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_1900.yaml
+  status: done
   stop_for: []
-  task_id: cmd_1900_impl
+  task_id: cmd_karo_ci_fix_1900_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 21
+    total_workarounds: 22
     top_pattern: 'verdict_override(4件)'
-    breakdown: 'verdict_override(4件), report_yaml_format(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件)'
-    warning: '⚠ 過去21件のworkaround発生。品質に注意'
+    breakdown: 'verdict_override(4件), report_yaml_format(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), deploy_error(1件)'
+    warning: '⚠ 過去22件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
       count: 49
     - pattern: 'lu_reason_empty'
-      count: 15
+      count: 19
     - pattern: 'verdict_invalid'
-      count: 9
+      count: 11
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
+    - reason: 'binary_checks_fail'
+      count: 12
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_format'
       count: 11
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'binary_checks_fail'
-      count: 10
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_yaml_missing'
       count: 3
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
@@ -112,5 +99,3 @@ task:
   - id: 'L617'
     summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
     detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
-  deployed_at: "2026-04-14T12:52:14"
-  constraints: "AC1のみ実行せよ。AC2/AC3はcmd_1899完了(fullrecalculate後)まで実行禁止。AC1完了後にstatus:doneで報告し待機"
