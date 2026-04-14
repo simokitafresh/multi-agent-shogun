@@ -66,4 +66,13 @@ if [[ "$file_path" == *'logs/karo_workarounds.yaml' ]]; then
     exit 1
 fi
 
+# === Guard 5: lessons.yaml tags直接Edit禁止 (LK052: 同期不整合防止) ===
+if [[ "$tool_name" == "Edit" && "$file_path" == *'/lessons.yaml' ]]; then
+    old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
+    if [[ "$old_string" == *'tags:'* ]]; then
+        emit_deny "BLOCKED: lessons.yamlのtags直接Edit禁止。\\nWHY: lessons.md←→lessons.yaml同期不整合が発生する(LK052実証済み)。\\nFIX: bash scripts/lesson_write.sh <project_id> --retag <lesson_id> --new-tags \\\"tag1,tag2\\\""
+        exit 1
+    fi
+fi
+
 exit 0
