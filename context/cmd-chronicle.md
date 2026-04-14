@@ -643,3 +643,4 @@
 | cmd_karo_gp192 | GP-192 — パリティcmdテンプレートにtarget_date標準文言追加 | infra | 04-14 | inject_task_modifiers.pyにinjec |
 | cmd_karo_gp191 | GP-191 — dict.get(target_date)禁止 pre-commit hook | dm-signal | 04-14 | scripts/run_precommit_checks.s |
 | cmd_1899 | fix — FoF選択ブロック日付ミスマッチ修正(TRF dict.get→bisect)+潜在バグ2箇所+fullrecalculate+パリティ | dm-signal | 04-14 | dict.get(target_date)→get_mome |
+| cmd_karo_ci_fix_1900 | CI赤修正 — test_cmd_save_ac_paths.bats T-002/T-004/T-005 unbound WARN_COUNT + stderr capture | infra | 04-14 | test_cmd_save_ac_paths.bats修正。 |
