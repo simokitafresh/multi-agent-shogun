@@ -13,6 +13,7 @@ Usage:
 """
 import glob
 import os
+import re
 import sys
 import tempfile
 
@@ -513,6 +514,63 @@ def inject_execution_controls(task):
     return changed
 
 
+# ─── parity_target_date_ac ───
+_PARITY_RE = re.compile(r'パリティ|parity', re.IGNORECASE)
+_TARGET_DATE_AC = 'target_dateがproduction fullrecalculateと同一であること'
+
+
+def inject_parity_target_date_ac(task, script_dir):
+    """パリティcmd検出 → target_date AC自動注入。
+
+    タスクYAMLのtitle/command/description、または親cmdのtitle/commandに
+    「パリティ」「parity」が含まれる場合に、acceptance_criteriaへ
+    target_date確認ACを追記する。既にtarget_dateが含まれていれば何もしない。
+    """
+    # 1. タスクYAML自体を確認
+    task_texts = [
+        str(task.get('title', '') or ''),
+        str(task.get('command', '') or ''),
+        str(task.get('description', '') or ''),
+    ]
+    is_parity = any(_PARITY_RE.search(t) for t in task_texts)
+
+    # 2. タスク自体になければ親cmdをshogun_to_karo.yamlから確認
+    if not is_parity:
+        parent_cmd = str(task.get('parent_cmd', '') or '').strip()
+        if parent_cmd:
+            stk = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
+            if os.path.exists(stk):
+                stk_data = load_yaml_safe(stk)
+                cmd_data = stk_data.get('commands', {})
+                if isinstance(cmd_data, dict):
+                    entry = cmd_data.get(parent_cmd, {})
+                    if isinstance(entry, dict):
+                        for field in ['title', 'command', 'description']:
+                            if _PARITY_RE.search(str(entry.get(field, '') or '')):
+                                is_parity = True
+                                break
+
+    if not is_parity:
+        return False
+
+    # 3. 既にtarget_dateACが存在すればスキップ
+    ac_list = task.get('acceptance_criteria') or []
+    for ac in ac_list:
+        text = (str(ac.get('description', '') or '')
+                if isinstance(ac, dict) else str(ac or ''))
+        if 'target_date' in text.lower():
+            return False
+
+    # 4. 末尾に新ACを追加
+    new_id = f'AC{len(ac_list) + 1}'
+    task['acceptance_criteria'] = list(ac_list) + [
+        {'id': new_id, 'description': _TARGET_DATE_AC}
+    ]
+    print(f'[PARITY_AC] Injected target_date AC ({new_id}) for parity cmd',
+          file=sys.stderr)
+    return True
+
+
 # ─── main ───
 def main():
     task_file = os.environ.get('TASK_FILE_ENV', '')
@@ -547,6 +605,8 @@ def main():
          lambda: inject_report_template(task, script_dir)),
         ('execution_controls',
          lambda: inject_execution_controls(task)),
+        ('parity_target_date_ac',
+         lambda: inject_parity_target_date_ac(task, script_dir)),
     ]
 
     for name, op in operations:
