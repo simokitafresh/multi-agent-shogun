@@ -1177,7 +1177,14 @@ EOF
         local _tp_raw
         _tp_raw=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null)
         local _scout_exempt
+        # GP-190改: task fileはstale resetで消えるためSTKも確認。task fileが残っている場合(テスト等)は優先
         _scout_exempt=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "scout_exempt" "" 2>/dev/null)
+        if [ "$_scout_exempt" != "true" ] && [ -f "$SCRIPT_DIR/queue/shogun_to_karo.yaml" ] && [ -n "$parent_cmd" ]; then
+            _scout_exempt=$(awk -v cmd="$parent_cmd" '
+                /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
+                cur_id == cmd && /scout_exempt:[[:space:]]*true/ { print "true"; exit }
+            ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null)
+        fi
         # GP-190: scout_exempt=trueはcommit不要 → commit check注入しない
         if [ "$_scout_exempt" = "true" ]; then
             _commit_bc=""
