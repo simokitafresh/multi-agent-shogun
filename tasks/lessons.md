@@ -470,7 +470,7 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-26
 - **出典**: cmd_351
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [python]
 - 観点⑧のPythonコードが才蔵骨格実装時にdataを直接イテレーションしていた。lessons.yamlはトップレベルがdictでlessonsキー配下にリスト構造。for lesson in data.get('lessons',[])が正しい形
 
 ### L064: gitignore whitelist未登録は実行テストで検出不可
@@ -553,7 +553,7 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-26
 - **出典**: bash,set-e,arithmetic,trap
 - **記録者**: cmd_372
-- **tags**: [universal]
+- **tags**: [bash]
 - ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
 
 ### L075: L075
