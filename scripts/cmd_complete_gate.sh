@@ -3945,6 +3945,15 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "  SKIP (record_lesson_feedback.sh not found)"
     fi
 
+    # ─── status: completed 自動設定（GATE CLEAR後。cmdライフサイクル完了） ───
+    echo ""
+    echo "Status completed (post-GATE CLEAR):"
+    if bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed 2>/dev/null; then
+        echo "  status: completed — OK"
+    else
+        echo "  [INFO] status: completed — WARN (set failed, non-blocking)"
+    fi
+
     # ─── archive実行（GATE CLEAR後、全チェック+ポストプロセス完了後） ───
     # cmd_1302: 報告YAMLをGATEが読み終わってからアーカイブ
     echo ""

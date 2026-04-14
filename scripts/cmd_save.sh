@@ -1318,6 +1318,13 @@ fi
 # --- 結果出力 ---
 if [[ "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"
+    # status: pending 自動注入（未設定時のみ。cmdライフサイクル追跡の起点）
+    _EXISTING_STATUS=$(echo "$CMD_BLOCK" | awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}')
+    if [[ -z "$_EXISTING_STATUS" ]]; then
+        if bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$QUEUE_FILE" "$CMD_ID" status pending 2>/dev/null; then
+            echo "  status: pending — 自動設定"
+        fi
+    fi
 else
     echo "保存確認NG: ${CMD_ID} (${WARN_COUNT}件のWARN)" >&2
     exit 1

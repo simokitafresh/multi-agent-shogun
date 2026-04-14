@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-04-09 -->
+<!-- last_updated: 2026-04-15 -->
 # GS速度最適化 設計分析
 
 <!-- 軍師分析(2026-04-03)。将軍相談への回答 -->
@@ -96,6 +96,14 @@ Phase 4: 速度最適化（Phase 1bのプロファイル結果に基づく）
 現状: 7忍法が独自実装(11,397行) → 最適化が各スクリプト個別 → 1箇所改善しても6箇所に波及しない
 改善: gs_engine.py共通化 → 最適化が1箇所で全忍法に波及 → +1点の複利 → パリティ基盤で品質保証
 ```
+
+## §4 N=84爆発問題と方法E (2026-04-14追記)
+
+N=20→84でC(N,4)=193万。サブセット列挙前提が崩壊。
+- **根因**: build_grid()がitertools.combinationsで全サブセットを列挙。N>20で組合せ爆発
+- **方法E(採用)**: 全体スコア算出済み(build_global_momentum_and_scores)→argsortでtop_n直接選出。サブセット列挙廃止。69ms実測(現行=数時間)
+- **vectorized実装**: gs_vectorized_subset.py。boolean mask+cumprod。12体ALL MATCH(max_diff=10^-16)。84体C(N,2)=533,358行14秒/806MB
+- → `docs/research/gunshi_nazenaze7_gs_speedup_20260414.md`(なぜなぜ7回全記録)
 
 ---
 → 参照: `context/gs-speedup-knowledge.md`(既存知見), `context/checklist-shin-v2-registration.md`(パリティ手順)

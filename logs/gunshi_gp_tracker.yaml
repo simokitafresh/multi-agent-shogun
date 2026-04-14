@@ -285,16 +285,17 @@
   reason: "620教訓中9重複ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複。lesson_write.sh AC2=ID dedupのみ→内容dedup不在→同一テーマ重複。cmd_save.sh Check12(Jaccard≥50%)と同構造で実装可能"
 - id: GP-190
   description: "no_commitフィールド自動検出+commit check waive(verdict_override 62.5%排除)"
-  status: karo_sent
+  status: implemented
   proposed_at: "2026-04-14T09:15:00"
   sent_at: "2026-04-14T09:15:00"
   self_executable: false
   defense_level: 4
   reason: "verdict_override 8件中5件がcommit check起因。根因=cmdのcommit禁止制約が構造化されていない。cmd_save.shにno_commitキーワード検出→deploy_task.shでcommit check waive。10回繰返し=10回×0分(現状10回×10分)=正の複利"
   evidence: "karo_workarounds.yaml verdict_override 8件分類: A)commit起因5件 B)AC設計2件 C)データ時差1件。cmd_1897で軍師LGTM→BLOCK再現"
+  implemented_by: cmd_karo_gp190
 - id: GP-191
   description: "FoF選択block dict.get(target_date)禁止hook(PI L573 gate化)"
-  status: karo_sent
+  status: implemented
   sent_at: "2026-04-14T12:45:50"
   proposed_at: "2026-04-14T12:40:00"
   self_executable: false
@@ -302,9 +303,26 @@
   reason: "TRF dict.get()がPI L573違反で12体Cash100%。MF/SVMF/MVMFは修正済みだがTRF/MAFが漏れた。DM-signalリポジトリのpre-commit hookでblocks/+jobs/内のdict.get(target_date)パターンをBLOCK。横展開漏れの構造的防止。DM-signalリポジトリ変更のためcmd化必要"
 - id: GP-192
   description: "パリティスクリプトtarget_date検証(production日付と一致確認)"
-  status: karo_sent
+  status: implemented
   sent_at: "2026-04-14T12:45:50"
   proposed_at: "2026-04-14T12:40:00"
   self_executable: false
   defense_level: 2
   reason: "cmd_1898パリティスクリプトがtarget_date=前月末日でproduction(当月第1営業日)と異なる。skip_months>0で差が増幅→抜き身/四つ目83-99%。パリティスクリプト作成cmdのACに'target_dateがproductionと一致'を標準化"
+- id: GP-193
+  description: "SG-PRE9 T1違反予防(binary_checks no→gate_prediction BLOCK予告)"
+  status: implemented
+  proposed_at: "2026-04-14T20:15:00"
+  implemented_at: "2026-04-14T20:25:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 5
+  reason: "cmd_1897+cmd_1900でT1違反2回(LGTM→BLOCK)。根因=binary_checks result:noを見てもgate_prediction:BLOCKを付記しない(意志依存)。gate_gunshi_report_precheck.sh SG-PRE9でresult:no検出→WARN自動表示。設計書=docs/research/gunshi_gp193_t1_prevention_20260414.md"
+- id: GP-194
+  description: "分割配備時binary_checksをAC分担範囲に制限(ac_assigned制御)"
+  status: proposed
+  proposed_at: "2026-04-15T05:10:00"
+  self_executable: false
+  defense_level: 4
+  reason: "split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成"
+  evidence: "karo_workarounds.yaml split_deploy_ac_scope 2件。deploy_task.sh L1230-1296がtask全ACを読む構造"

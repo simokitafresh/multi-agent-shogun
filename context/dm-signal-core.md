@@ -406,6 +406,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L445 | DTB3を株式用momentum関数で処理してはならない | cmd_1194 |
 | L447 | nukimiのみ`_run_mp`関数不在で構造差異 | cmd_1196 |
 | L513 | OPT-A(cmd_1450)で非リバランス日momentum_data={skipped:true}→weightsキー消失→EWフォールバック。Ward/KalmanMetaのみ影響 | cmd_1568 |
+| L631 | TRF insufficient_candidatesパス(len<2)でcurrent_tickers=set()するな。単独ティッカー通過不能バグ。dict.get→bisect修正と同根(cmd_1899) | cmd_1899 |
 
 ### 19.3 GS-本番パリティ
 

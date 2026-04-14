@@ -330,3 +330,8 @@ lessons:
   detail: 'cmd_1896-1902の研究成果がdm-signal-research.mdに還流されず8日間未更新。軍師SG7がcontext_reflux needed:trueと指摘しても実際の更新アクションにつながらない。還流判定→忍者配備の自動化が不在。gate_freshness WARNが出てから対処では遅い'
   source_cmd: 'cmd_1902'
   created_at: '2026-04-15'
+- id: 'LK059'
+  title: 'cmdライフサイクル両端の自動化 — cmd_save.shでpending注入+cmd_complete_gate.shでcompleted自動設定'
+  detail: 'status未設定cmd 8件蓄積の根因: (1)cmd_save.shが初期statusを注入しない (2)GATE CLEARがstatusをcompletedに自動遷移しない (3)検出gateなし。修正: cmd_save.shに保存成功時status:pending自動注入+cmd_complete_gate.shにGATE CLEAR後status:completed自動設定を各1行追加。新しい仕組みゼロ。deepdive Phase4(手動=意志依存=漏れる)の家老版実践'
+  source_cmd: 'cmd_karo_lifecycle_fix'
+  created_at: '2026-04-15'
