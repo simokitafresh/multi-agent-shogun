@@ -1178,11 +1178,10 @@ EOF
         _tp_raw=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null)
         local _scout_exempt
         _scout_exempt=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "scout_exempt" "" 2>/dev/null)
-        if [ "$_scout_exempt" = "true" ] && [ -z "$_tp_raw" ]; then
-            _commit_bc='  commit:
-  - check: "git commitが完了したか(untracked/modified=0)"
-    result: "no"  # scout_exemptかつtarget_path未設定: commit不要'
-            log "binary_checks: commit check auto-set to no (scout_exempt=true and target_path unset)"
+        # GP-190: scout_exempt=trueはcommit不要 → commit check注入しない
+        if [ "$_scout_exempt" = "true" ]; then
+            _commit_bc=""
+            log "binary_checks: commit check skipped (scout_exempt=true)"
         elif [ -n "$_tp_raw" ]; then
             local -a _tp_paths=()
             if echo "$_tp_raw" | grep -q '^- '; then
@@ -1218,7 +1217,7 @@ EOF
     # 根因: bc設計に「正当なno」の概念がなかった。waive_reasonで事実を歪めずgate通過可能にする
     if [ -n "$_commit_bc" ]; then
         local _cmd_command=""
-        _cmd_command=$(FIELD_GET_NO_LOG=1 field_get "$STK" "$CMD_ID" "command" 2>/dev/null || true)
+        _cmd_command=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$CMD_ID" "command" 2>/dev/null || true)
         if echo "$_cmd_command" | grep -qiE 'commit.*禁止|commit一切禁止|登録.*のみ.*commit'; then
             _commit_bc='  commit:
   - check: "git commitが完了したか(untracked/modified=0)"
@@ -2990,6 +2989,19 @@ check_scout_gate() {
         ' "$stk_path" 2>/dev/null)
         if [ "$_se" = "true" ]; then
             log "scout_gate: PASS: scout_exempt=true for ${parent_cmd}"
+            return 0
+        fi
+    fi
+
+    # 3.5 研究cmd自動scout_exempt: q4_depth=shallow → 本番コード変更なし (LK057)
+    if [ -f "$stk_path" ]; then
+        local _q4
+        _q4=$(awk -v cmd="$parent_cmd" '
+            /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
+            cur_id == cmd && /q4_depth:/ { sub(/.*q4_depth:[[:space:]]*"?/, ""); sub(/"?[[:space:]]*—.*/, ""); print; exit }
+        ' "$stk_path" 2>/dev/null)
+        if [ "$_q4" = "shallow" ]; then
+            log "scout_gate: PASS: q4_depth=shallow (research cmd auto-exempt, LK057)"
             return 0
         fi
     fi

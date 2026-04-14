@@ -24,7 +24,7 @@ read_task_report_path() {
     FIELD_GET_NO_LOG=1 field_get "$(task_file)" "report_path" "" 2>/dev/null
 }
 
-@test "scout_exempt=true かつ target_path未設定のcmdでcommit check=noが自動設定される" {
+@test "scout_exempt=true のcmdでcommit checkが注入されない (GP-190)" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
   title: "scout exempt commit check test"
@@ -50,9 +50,7 @@ import yaml
 from pathlib import Path
 report = Path("$report_path")
 data = yaml.safe_load(report.read_text(encoding="utf-8"))
-commit_items = data["binary_checks"].get("commit", [])
-assert len(commit_items) >= 1, f"commit checkが存在しない: {data['binary_checks']}"
-assert commit_items[0]["result"] == "no", commit_items[0]
+assert "commit" not in data["binary_checks"], f"commit checkが注入されている(不要): {data['binary_checks']}"
 print("OK")
 PYEOF
     [ "$status" -eq 0 ]
