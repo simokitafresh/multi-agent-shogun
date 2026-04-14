@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-14 -->
+<!-- last_updated: 2026-04-15 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -19,7 +19,6 @@
 | cmd_947 | 修正 — note.com領収書DL（売上手数料2件+振込手数料11件） | | auto-ops | 03-15 | — |
 | cmd_950 | 偵察 — 欠損領収書6商号Gmail調査+取得可能性判定 | | auto-ops | 03-15 | — |
 | cmd_951 | 修正 — 全Driveフォルダ Invoice/Receipt混在是正 | | auto-ops | 03-15 | — |
-| cmd_952 | 修正 — 経費マスター未登録4商号の補完 | auto-ops | 03-15 | 経費マスターSpreadsheetの既存パターンを調査し、4 |
 | cmd_955 | 最適化 — monthly-returns fallback window query化（-88%改善） | | dm-signal | 03-15 | — |
 | cmd_956 | 最適化 — monthly_trade N+1クエリ修正（170→3 queries） | | dm-signal | 03-15 | — |
 | cmd_957 | 偵察 — MCP obs正本突合（Vercel原則適用） | | infra | 03-15 | — |
@@ -646,3 +645,4 @@
 | cmd_karo_ci_fix_1900 | CI赤修正 — test_cmd_save_ac_paths.bats T-002/T-004/T-005 unbound WARN_COUNT + stderr capture | infra | 04-14 | test_cmd_save_ac_paths.bats修正。 |
 | cmd_1900 | fix — パリティスクリプト target_date修正 + 奥義ALMシン21体全量パリティ再検証 | dm-signal | 04-14 | cmd_1898 parity script の targe |
 | cmd_1902 | L3 β調整 6指標拡張 — cmd_1896既存3486ペアにα版NHF/MaxDD/MRU/Calmar/UWP追加 | dm-signal | 04-14 | cmd_1902完了。cmd_1896互換の3486ペアCS |
+| cmd_karo_gp190 | GP-190 commit check waive — scout_exempt/研究cmdのbinary_checksからcommit check除外 | infra | 04-15 | GP-190: scout_exempt=trueのcomm |

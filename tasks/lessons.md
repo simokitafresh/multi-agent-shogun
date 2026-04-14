@@ -3593,3 +3593,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive projectのcontextだけを見る一方、`gate_context_freshness.sh` が `context/*.md` 全件走査のままだと、dashboard上の対象4件を更新しても別project/古文書のWARNでACが偽FAILになる。監視系は同一対象集合を共有すべし。
+
+### L471: scout_exemptのcommit check: 注入するより注入しない方がシンプル
+- **日付**: 2026-04-15
+- **出典**: cmd_karo_gp190
+- **記録者**: karo
+- **tags**: [universal]
+- 旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:noをFAIL判定するためverdict_override(WA)が頻発。注入しない方が根本解
