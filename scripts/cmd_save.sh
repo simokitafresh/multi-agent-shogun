@@ -208,6 +208,15 @@ QG_TEMPLATE
             echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
             WARN_COUNT=$((WARN_COUNT + 1))
         fi
+        # WHY部分に殿の指示引用を強制（WARN — 2026-04-14 L-CmdDialogueFirst）
+        # 起源: 殿の指示→即cmd起票で4/4失敗。対話完了前のcmd起票を防ぐ
+        # 方法: q8 WHYに殿の言葉(「」引用 or 殿指示/殿裁定)が含まれるか検査
+        _Q8_WHY_PART="${_Q8_WW_VAL%%→ WHAT:*}"
+        if ! echo "$_Q8_WHY_PART" | grep -qE '「.*」|殿指示|殿裁定|殿指摘|殿提案'; then
+            echo "WARN: q8 WHYに殿の指示引用がありません。対話で理解を固めてからcmd起票せよ" >&2
+            echo "  → 「殿の言葉を引用」 or 殿指示/殿裁定/殿指摘 を含めよ(L-CmdDialogueFirst)" >&2
+            WARN_COUNT=$((WARN_COUNT + 1))
+        fi
     fi
 
     # q9_firefighting_root_cause: 消火cmdでは真因+再発防止を必須化（BLOCK — cmd_1801）

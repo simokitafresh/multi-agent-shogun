@@ -538,6 +538,7 @@ BATCH_CHUNK(30x) + 横展開(14x) + gs_runner並列(12x)の三重効果。WFメ�
 - L602: oikaze MaxDD champion ID誤記 N2→N4（cmd_1845）
 - L604: IS前半チャンピオンは全期間チャンピオンと完全に異なる(0/21一致)（cmd_1848）
 - L605: CAGRチャンピオン系は構造的に過適合リスクが高い: 全忍法でMEDIUM以上、NHF/MaxDD系は全てLOW（cmd_1847）
+- L620: L2奥義2×2因子分析でL1傾向継続だが縮小。GS固定の2種混在(DB vs champion)が一因（cmd_1878）
 
 **道具磨き成果（副産物）**:
 - OOM対策: load_data() numpy直読み化(cmd_1841)+GS側.npy同時出力(cmd_1842)。WF CSV読込OOM根絶。WF並列実行は禁止(LG025)
@@ -902,7 +903,7 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 <!-- last_updated: 2026-04-13 -->
 - **BB効果**: ALM-BB vs シンBB = **+5.4pp**（GS側+7.2pp / WF側+3.7pp）
 - **選出効果**: WF動的 vs GS固定 = **-12.9pp**（shin側-11.1pp / ALM側-14.6pp）
-- **L1比較**: L1(BB+15pp/動的-27〜-41pp)→L2で傾向継続だが縮小（L2 GS固定にproduction_db+gs_static_champion混在が一因 → L619）
+- **L1比較**: L1(BB+15pp/動的-27〜-41pp)→L2で傾向継続だが縮小（L2 GS固定にproduction_db+gs_static_champion混在が一因 → L620）
 - **最優秀**: ⑤(ALM-BB×GS固定)×nukimi×激攻 CAGR=1.228 Sharpe=2.054
 - **パターン別平均(CAGR)**: ⑤(0.819) > ⑥(0.772) > ③(0.730) > ①(0.707) > ⑧(0.516)最低
 - **mode別選出効果**: 鉄壁のみWF優位(+4.4pp)。激攻は大幅WF劣位(-33.5pp)

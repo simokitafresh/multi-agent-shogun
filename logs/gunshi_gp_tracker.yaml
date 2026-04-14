@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:100(+GP-129,137b,180,181,182,187) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:6(GP-170,171,183,184,186,189) = 計118+5+2+1=126GP
+# 集計: ★implemented:100(+GP-129,137b,180,181,182,187) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:9(GP-170,171,183,184,186,189,190,191,192) = 計128GP (2026-04-14T12:50更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -294,14 +294,16 @@
   evidence: "karo_workarounds.yaml verdict_override 8件分類: A)commit起因5件 B)AC設計2件 C)データ時差1件。cmd_1897で軍師LGTM→BLOCK再現"
 - id: GP-191
   description: "FoF選択block dict.get(target_date)禁止hook(PI L573 gate化)"
-  status: proposed
+  status: karo_sent
+  sent_at: "2026-04-14T12:45:50"
   proposed_at: "2026-04-14T12:40:00"
-  self_executable: true
+  self_executable: false
   defense_level: 4
-  reason: "TRF dict.get()がPI L573違反で12体Cash100%。MF/SVMF/MVMFは修正済みだがTRF/MAFが漏れた。pre-commit hookでblocks/+jobs/内のdict.get(target_date)パターンをBLOCK。横展開漏れの構造的防止"
+  reason: "TRF dict.get()がPI L573違反で12体Cash100%。MF/SVMF/MVMFは修正済みだがTRF/MAFが漏れた。DM-signalリポジトリのpre-commit hookでblocks/+jobs/内のdict.get(target_date)パターンをBLOCK。横展開漏れの構造的防止。DM-signalリポジトリ変更のためcmd化必要"
 - id: GP-192
   description: "パリティスクリプトtarget_date検証(production日付と一致確認)"
-  status: proposed
+  status: karo_sent
+  sent_at: "2026-04-14T12:45:50"
   proposed_at: "2026-04-14T12:40:00"
   self_executable: false
   defense_level: 2

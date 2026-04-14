@@ -147,6 +147,10 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | ID | 結論(1行) | 分類 | 出典 |
 |---|---|---|---|
 | L558 | 参考ファイル不在時はcmd目的を研究スクリプトから逆引きで設計完成可能 | 運用 | cmd_1750 |
+| L621 | monthly_fast成果物探索はcache-onlyも許容せよ（.csv欠損+.cache.*.npyのみ残存ケースあり） | ツール | cmd_1882 |
+| L624 | 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因 | ツール | cmd_1877 |
+| L628 | パリティスクリプトtarget_date: productionの日付定義と揃えよ（skip_months増幅リスク） | パリティ | cmd_1899 |
+| L629 | golden data有効性: 生成時のコード状態を確認せよ（バグ下で生成=検証基準にならない） | テスト | cmd_1899 |
 | L579 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1786 |
 | L582 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1795 |
 | L584 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1796 |

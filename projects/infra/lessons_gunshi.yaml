@@ -7,6 +7,8 @@ lessons:
   detail: draft/report reviewで「既実装か」を判定する際、Read toolはuncommittedな変更も含めて表示する。cmd_1178-1181で3件誤判定が発生。対策はgit show HEAD:ファイルで確定済みのコードのみ確認すること。
   source_cmd: cmd_1178
   created_at: '2026-03-21'
+  automated: true
+  enforcement: review_logヘッダL26「既実装判定→git show HEAD~1」+gunshi.md §1前提検証に明記
 - id: LG002
   title: 並行配備衝突チェック — 事前検死で同一ファイル変更衝突を確認
   detail: 並行cmdが同一ファイルを変更するケースをレビュー時に検出する。cmd_1173で検出された。事前検死で並行配備中のcmdとの変更対象ファイル重複を必ず確認せよ。
@@ -19,16 +21,22 @@ lessons:
   detail: 偵察報告やlesson_candidateの「未実装」「未対応」主張をそのまま信頼してはならない。cmd_1176-1179で5件連続で前提崩壊が発生した。cmd化前にコード現物(grepまたはgit show)で再検証すること。
   source_cmd: cmd_1176
   created_at: '2026-03-21'
+  automated: true
+  enforcement: review_logヘッダL28「全称判定→反証を探せ」+gunshi.md §1前提検証で「未実装」主張の現物再検証が義務化
 - id: LG004
   title: scope外コード混入 — 忍者commitにscope外変更が混入するパターン検出
   detail: 忍者のcommitにタスクscope外のコード変更が混入することがある。事前検死で変更ファイル一覧とscope定義を照合し、scope外変更を検出せよ。cmd_1187で検出。
   source_cmd: cmd_1187
   created_at: '2026-03-21'
+  automated: true
+  enforcement: report review SG3(scope)+gate_report_format.sh files_modified×task scope照合
 - id: LG005
   title: AC pending矛盾 — status:done報告にAC pending項目があればFAIL
   detail: 忍者がstatus:doneで報告しつつAC pending項目が残存する矛盾パターン。cmd_1199影丸で発見。done報告にpending ACがあれば即FAIL判定し、差し戻すこと。
   source_cmd: cmd_1199
   created_at: '2026-03-21'
+  automated: true
+  enforcement: gate_report_format.sh GP-128(verdict↔bc整合性)+status↔pending AC矛盾検出
 - id: LG006
   title: GATEフォーマット不備=報告FAIL必須 — LGTM+注記は消火構造
   detail: gate_report_format.shでBLOCKとなるフォーマット不備(verdict非二値/lessons_useful dict形式/binary_checks string形式/必須フィールド欠落)を報告レビューで検出した場合、注記のみでLGTMとしてはならずFAIL判定を出す。cmd_1242でLGTM+注記→GATE BLOCK→家老workaround発生。根本原因は軍師の顧客認識ズレ(忍者の成果物品質→家老の処理可能性)。LGTMの信頼性=GATE通過保証レベルに引き上げる。

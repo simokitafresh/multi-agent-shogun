@@ -70,6 +70,7 @@
 - L404: batch化の費用対効果: picks構築>forward-fill>pack。ボトルネック支配率の高い箇所を優先（cmd_1048）
 - L407: picks vectorize効果はentry数に比例。kasoku240→54.9x、nukimi39→24.2x、yotsume12→微小（cmd_1052）
 - L543: numpy cumsum rolling windowでBipower Variationをベクトル化すると50x高速化（cmd_training_L4_R39）
+- L626: subset gather共有+no-NaN metrics fast pathでsubset GSは秒単位まで落ちる（cmd_karo_gs_vectorized）
 
 ### (5) Numba適用はpure kernelに絞れ（cmd_1030）
 - L369: subset cache削減後はNumba候補をpure kernel(simulate_pattern hot loop, momentum kernel)に絞らぬと費用対効果が崩れる。pandas境界がブロック
@@ -115,6 +116,10 @@
 
 ### gs_benchmark.pyアダプタ保守（cmd_1064）
 - L410: gs_benchmark.pyアダプタはrun_077_*.pyのAPI変更（load_monthly_returns_dual_from_db→load_monthly_returns_dual_from_universe等）に追従が必要（cmd_1064）
+
+### GS CSV/ディレクトリ管理（cmd_1877）
+- L623: 既存GS CSVの有効性はmeta.yaml universe_idで判定せよ — 行数判定は誤り（cmd_1877）
+- L625: GS dir旧ファイル混在はchampion_selector汚染リスク — GS前にdir棚卸し+退避を先行ステップに入れよ（cmd_1877）
 
 ### PPE/profiler計測の罠（cmd_1033-1037）
 - L379: PPE異常診断ではfull-script benchmarkとcore _run_mp計測を分離すべし。data load/preflight外オーバーヘッドを分離しないとPPE効率を誤診する（cmd_1033）

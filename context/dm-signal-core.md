@@ -280,6 +280,8 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 - L555: load_all_monthly_returnsはholding_signalも取得必須。KeyError防止（cmd_1743）
 - L573: FoF月次キャッシュをdictに変えるときもlookupはbisect helper統一（cmd_1787）[PI]
 - L574-L578: FoF選択block(**全5種: MVMF/SVMF/MomentumFilter/TrendReversalFilter/MomentumAccelerationFilter**)のmonthly pathでexact dict lookupするとbiz day/月末日ミスマッチでCash全損。Series+bisect必須（cmd_1786。**TRF/MAF追加: cmd_1899で12体Cash100%事故**）[PI:L573同根]
+- L627: 横展開漏れ検出: コード修正時にgrep同パターン全ファイル確認必須。TRF/MAFが04f74830 bisect修正で漏れた実例（cmd_1899）
+- L630: dict.get(target_date)禁止: blocks/内はbisect helper統一（cmd_1899）[PI:L573同根]
 
 ## 4.5 GS用語定義（混同厳禁）
 
