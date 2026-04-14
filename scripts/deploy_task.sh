@@ -287,12 +287,18 @@ resolve_cmd_to_task() {
         return 1
     }
 
-    local project task_type title purpose
+    local project task_type title purpose _depends_on
     project=$(echo "$_resolve_output" | grep '^project=' | cut -d= -f2-)
     task_type=$(echo "$_resolve_output" | grep '^task_type=' | cut -d= -f2-)
     title=$(echo "$_resolve_output" | grep '^title=' | cut -d= -f2-)
     purpose=$(echo "$_resolve_output" | grep '^purpose=' | cut -d= -f2-)
+    _depends_on=$(echo "$_resolve_output" | grep '^depends_on=' | cut -d= -f2-)
     [ -z "$task_type" ] && task_type="impl"
+
+    # LK054: depends_on検出時にAC単位依存分析を促すWARN
+    if [ -n "$_depends_on" ]; then
+        echo "WARN: depends_on=${_depends_on} 検出。全ACが依存先に本当に依存するか？並列可能なACはないか？(LK054)" >&2
+    fi
 
     local task_id="${cmd_id}_${task_type}"
 
