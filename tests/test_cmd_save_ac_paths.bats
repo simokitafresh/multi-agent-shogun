@@ -15,6 +15,7 @@
 setup() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
     [ -f "$PROJECT_ROOT/scripts/cmd_save.sh" ] || return 1
+    export WARN_COUNT=0
 
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cmd_save_test.XXXXXX")"
 
@@ -76,7 +77,7 @@ teardown() {
     local CMD_BLOCK="    acceptance_criteria:
       - 'AC1: backend/generators/monthly_returns.py を修正'
     project: test-proj"
-    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
     [ "$status" -eq 0 ]
     [[ "$output" == *"AC内のファイルパスが存在しません"* ]]
     [[ "$output" == *"backend/generators/monthly_returns.py"* ]]
@@ -97,7 +98,7 @@ teardown() {
     local CMD_BLOCK="    acceptance_criteria:
       - 'AC1: backend/nonexistent/file.py を修正'
     project: test-proj"
-    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
     # 関数はWARNINGを出力するがexit 0で返る（WARN_COUNTに加算しない）
     [ "$status" -eq 0 ]
     [[ "$output" == *"AC内のファイルパスが存在しません"* ]]
@@ -109,7 +110,7 @@ teardown() {
       - 'AC1: backend/app/services/engine.py 修正'
       - 'AC2: frontend/app/nonexistent.tsx 新規作成'
     project: test-proj"
-    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
     [ "$status" -eq 0 ]
     # 存在しないパスだけWARNING
     [[ "$output" == *"frontend/app/nonexistent.tsx"* ]]
