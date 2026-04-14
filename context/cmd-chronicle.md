@@ -640,3 +640,4 @@
 | cmd_karo_gs_vectorized | GS高速化 — gs_vectorized_subset.py本実装(3最適化+チャンク+verify) | dm-signal | 04-14 | gs_vectorized_subset.py に3最適化+ |
 | cmd_1896 | L3 EW β調整 — 84体C(84,2)=3486通りのβ/α分離+L2α比較 | dm-signal | 04-14 | 3486ペアのL3 2体EW β調整を完了。L3最良α=13 |
 | cmd_1897 | 奥義ALMシン 21体 本番DB登録 — ⑤(ALM-BB×シン忍法×GS固定)をhide=trueで登録 | dm-signal | 04-14 | okugi_alm_shin champions.json |
+| cmd_karo_gp192 | GP-192 — パリティcmdテンプレートにtarget_date標準文言追加 | infra | 04-14 | inject_task_modifiers.pyにinjec |
