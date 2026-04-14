@@ -271,6 +271,7 @@ resolve_cmd_to_task() {
             else if (key == "type")       type_val   = val
             else if (key == "title")      title      = val
             else if (key == "purpose")    purpose    = val
+            else if (key == "depends_on") depends_on = val
         }
         END {
             if (!in_cmd) { print "ERROR: " cmd " not found" > "/dev/stderr"; exit 1 }
@@ -279,6 +280,7 @@ resolve_cmd_to_task() {
             print "task_type="  tolower(scope_mode)
             print "title="      title
             print "purpose="    purpose
+            print "depends_on=" depends_on
         }
     ' "$stk") || {
         log "resolve_cmd: ${cmd_id} not found in shogun_to_karo.yaml"
