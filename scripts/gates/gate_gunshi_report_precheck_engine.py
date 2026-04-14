@@ -29,6 +29,8 @@ def main():
         'BINARY_CHECKS_MSG': '  SKIP: task YAML not found',
         'SAME_CMD_NINJAS': '',
         'TASK_FILE': '',
+        'BC_HAS_NO': '0',
+        'BC_NO_ITEMS': '',
     }
 
     # ── 1. REPORT_PATH を1回読込 ──────────────────────────────────────────
@@ -115,6 +117,23 @@ def main():
             result['BINARY_CHECKS_MSG'] = f'  ERROR: {e}'
     else:
         result['BINARY_CHECKS_MSG'] = f'  SKIP: task YAML not found: {task_file}'
+
+    # ── 2b. binary_checks result:no 検出 → T1違反予防 ──────────────────
+    report_bc = report.get('binary_checks') or {}
+    bc_no_items = []
+    if isinstance(report_bc, dict):
+        for ac_key, checks in report_bc.items():
+            if not isinstance(checks, list):
+                continue
+            for check_item in checks:
+                if not isinstance(check_item, dict):
+                    continue
+                res = str(check_item.get('result', '')).strip().lower()
+                if res == 'no':
+                    check_name = check_item.get('check', ac_key)
+                    bc_no_items.append(f'{ac_key}/{check_name}')
+    result['BC_HAS_NO'] = '1' if bc_no_items else '0'
+    result['BC_NO_ITEMS'] = ', '.join(bc_no_items)
 
     # ── 3. 全task YAMLを1度ずつ読込 → 二重配備検出 ────────────────────────
     same_cmd_ninjas_parts = []

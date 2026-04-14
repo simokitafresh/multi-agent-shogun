@@ -1,6 +1,6 @@
 # L2奥義 56ブロック進行表
-<!-- last_updated: 2026-04-13T19:55:48+09:00 -->
-<!-- updated_by: hayate -->
+<!-- last_updated: 2026-04-15T01:40:00+09:00 -->
+<!-- updated_by: karo -->
 
 > 全エージェント参照可。将軍が随時更新。
 > **成果物所在が空欄の完了ブロックは gate_artifact_map.sh がWARN**
@@ -235,3 +235,10 @@ GS実行残量: **0本(全完了)** — cmd_1877で全52ブロック完了(2026-
 - 2026-04-13 06:12 ④4-4 kasoku_ratio WF選出 ✅(kagemaru, cmd_1877_block_35)
 - 2026-04-13 06:18 ④4-5 kawarimi WF選出 ✅(hanzo, cmd_1877_block_36)
 - 2026-04-13 05:12 ④4-2 oikaze WF選出 ✅(hayate, cmd_1877_block_33)
+
+## L3 β調整分析
+
+| cmd | 内容 | 結果 | 成果物 |
+|-----|------|------|--------|
+| cmd_1896 | 2体EW β調整(α-CAGR) | 3486ペア×87ヶ月。α-CAGR Top10特定 | `outputs/analysis/alm_research/cmd_1896_l3_beta_adjusted.csv` |
+| cmd_1902 | α版6指標拡張(NHF/MaxDD/MRU/Calmar/UWP) | 3486ペア全量。α-Calmar Top1=⑤kasoku_diff激攻×⑤kasoku_ratio鉄壁(16.39)。L0→L1→L2で5/6指標改善(MRUのみno) | `outputs/analysis/alm_research/cmd_1902_l3_alpha_6metrics.csv` |

@@ -163,6 +163,18 @@ else
     echo "  SKIP: parent_cmd or worker_id not found"
 fi
 
+# ─── SG-PRE9: binary_checks result:no → gate_prediction BLOCK予告 (GP-193) ───
+echo ""
+echo "■ SG-PRE9: T1違反予防(binary_checks no検出)"
+if [ "${BC_HAS_NO:-0}" = "1" ]; then
+    echo "  ★★★ WARN: binary_checks result:no検出: ${BC_NO_ITEMS}"
+    echo "  → LGTM判定時はgate_prediction: BLOCK/WARN必須"
+    echo "  → GP-128: verdict PASS + result:no → gate機械的BLOCK"
+    echo "  → 見落とし実績: cmd_1897, cmd_1900 (T1違反2回)"
+else
+    echo "  PASS: binary_checks全result:yes (or検出対象なし)"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="

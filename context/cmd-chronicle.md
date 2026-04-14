@@ -644,3 +644,5 @@
 | cmd_karo_gp191 | GP-191 — dict.get(target_date)禁止 pre-commit hook | dm-signal | 04-14 | scripts/run_precommit_checks.s |
 | cmd_1899 | fix — FoF選択ブロック日付ミスマッチ修正(TRF dict.get→bisect)+潜在バグ2箇所+fullrecalculate+パリティ | dm-signal | 04-14 | dict.get(target_date)→get_mome |
 | cmd_karo_ci_fix_1900 | CI赤修正 — test_cmd_save_ac_paths.bats T-002/T-004/T-005 unbound WARN_COUNT + stderr capture | infra | 04-14 | test_cmd_save_ac_paths.bats修正。 |
+| cmd_1900 | fix — パリティスクリプト target_date修正 + 奥義ALMシン21体全量パリティ再検証 | dm-signal | 04-14 | cmd_1898 parity script の targe |
+| cmd_1902 | L3 β調整 6指標拡張 — cmd_1896既存3486ペアにα版NHF/MaxDD/MRU/Calmar/UWP追加 | dm-signal | 04-14 | cmd_1902完了。cmd_1896互換の3486ペアCS |
