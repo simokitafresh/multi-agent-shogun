@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-13 cmd_1888 L2奥義56ブロック全完了+ALM19体確定+消火撤去+GP-183/184実装+FAIL率改善 -->
-<!-- last_synced_lesson: L630 -->
+<!-- last_synced_lesson: L631 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -171,3 +171,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L589-L605は振り分け済 → gs-speedup§4(L589:SHM二乗時間化/L592:import性能/L596:savetxt 59x/L597:fork RSS計測/L598:BytesIOパターン), ops§WF(L590:tracemalloc≠RSS/L591:parallel実測/L600:fromstring空セル), ops§GS(L593:C(n,k)スケーリング/L594:HASHSEED sorted()), core§忍法BB(L599:TrendReversalFilter early return), research§奥義(L601:MaxDD最悪値選出/L602:oikaze ID誤記/L604:IS前半≠全期間0/21/L605:CAGR系過適合リスク高)。L595/L603重複削除）
 - （L606-L617は振り分け済 → ops§18 WF(L606:回帰テスト決定論), ops索引(L607:当月パリティ/L610:削除スコープ/L614:車輪再発明/L616:成果物所在/L617:gate_artifact_map), research§35(L613:超越条件C非現実+SPA/L615:Cell Bパラメータ縮退)。L608≡L607, L609≡L606, L611≡L610, L612≡L613重複→削除）
 - （L618-L630は振り分け済 → infra教訓索引LLM(L618), research教訓索引奥義(L620), ops教訓索引ツール(L621/L624), infra git(L622), gs-speedup§4(L623/L625), gs-speedup§3(4)(L626), core§19.2(L627/L630:L573同根統合), ops教訓索引パリティ(L628/L629)。L619はL620重複→削除）
+- L631: TRF insufficient_candidatesパスでcurrent_tickersをクリアするな（cmd_1899）
