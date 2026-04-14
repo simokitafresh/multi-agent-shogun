@@ -135,6 +135,55 @@ def main():
     result['BC_HAS_NO'] = '1' if bc_no_items else '0'
     result['BC_NO_ITEMS'] = ', '.join(bc_no_items)
 
+    # ── 2c. ac_version照合 → ac_version_mismatch BLOCK予防 ─────────────
+    ac_ver_msg = '  SKIP: task YAML not loaded'
+    if task_file and os.path.exists(task_file):
+        try:
+            acv_task = str(task.get('ac_version', '')).strip()
+            acv_report = str(report.get('ac_version_read', '')).strip()
+            if not acv_task:
+                ac_ver_msg = '  SKIP: task.ac_version未設定'
+            elif not acv_report:
+                ac_ver_msg = '  WARN: report.ac_version_read未記載'
+            elif acv_task == acv_report:
+                ac_ver_msg = f'  PASS: ac_version一致 ({acv_task[:8]})'
+            else:
+                ac_ver_msg = (
+                    f'  ★ FAIL: ac_version不一致! '
+                    f'task={acv_task[:8]} report={acv_report[:8]} '
+                    '→ gate BLOCK確実。忍者がtask更新後のACで作業していない可能性'
+                )
+        except Exception:
+            ac_ver_msg = '  SKIP: ac_version解析エラー'
+    result['AC_VERSION_MSG'] = ac_ver_msg
+
+    # ── 2d. lessons_useful format検証 → draft_lessons BLOCK予防 ──────────
+    lu_msg = '  SKIP'
+    lessons_useful = report.get('lessons_useful')
+    lesson_candidate = report.get('lesson_candidate')
+    if isinstance(lessons_useful, list) and lessons_useful:
+        bad_items = []
+        for i, item in enumerate(lessons_useful):
+            if not isinstance(item, dict):
+                bad_items.append(f'[{i}] not dict')
+            elif not item.get('id'):
+                bad_items.append(f'[{i}] id missing')
+            elif not isinstance(item.get('useful'), bool):
+                u = item.get('useful')
+                bad_items.append(f'[{i}] useful={u} (not bool)')
+        if bad_items:
+            lu_msg = f'  WARN: lessons_useful形式不備: {"; ".join(bad_items[:3])}'
+        else:
+            lu_msg = f'  PASS: lessons_useful {len(lessons_useful)}件 形式OK'
+    elif lesson_candidate:
+        lu_msg = (
+            '  INFO: lesson_candidate有+lessons_useful空'
+            ' → draft_lessons BLOCKリスクなし'
+        )
+    else:
+        lu_msg = '  PASS: lesson_candidate/lessons_useful共になし'
+    result['LESSONS_USEFUL_MSG'] = lu_msg
+
     # ── 3. 全task YAMLを1度ずつ読込 → 二重配備検出 ────────────────────────
     same_cmd_ninjas_parts = []
     if parent_cmd and worker_id and args.tasks_dir:

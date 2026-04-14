@@ -3954,6 +3954,72 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "  [INFO] status: completed — WARN (set failed, non-blocking)"
     fi
 
+    # ─── gunshi_verdict 自動記録（GATE CLEAR時、archive前） ───
+    echo ""
+    echo "Gunshi verdict record (GATE CLEAR):"
+    _DQ_FILE="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+    _RL_FILE="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
+    _RL_ARCHIVE=$(ls "$SCRIPT_DIR/logs/archive/gunshi_review_log"*.yaml 2>/dev/null | sort | tail -1)
+    if [ -f "$_DQ_FILE" ] && [ -f "$_RL_FILE" ]; then
+        _verdict_result=$(python3 - "$CMD_ID" "$_RL_FILE" "${_RL_ARCHIVE:-}" "$_DQ_FILE" 2>/dev/null <<'END_VERDICT_PY'
+import sys, re
+
+cmd_id = sys.argv[1]
+review_log = sys.argv[2]
+archive_file = sys.argv[3] if len(sys.argv) > 3 else ''
+quality_file = sys.argv[4]
+
+sources = [review_log]
+if archive_file:
+    sources.append(archive_file)
+
+verdict = None
+for src in sources:
+    try:
+        with open(src, encoding='utf-8') as f:
+            content = f.read()
+    except Exception:
+        continue
+    for m in re.finditer(r'^- cmd_id:.*?(?=^- cmd_id:|\Z)', content, re.MULTILINE | re.DOTALL):
+        entry = m.group(0)
+        if ('cmd_id: ' + cmd_id) not in entry:
+            continue
+        if 'review_type: draft' not in entry:
+            continue
+        vm = re.search(r'verdict:\s*(\S+)', entry)
+        if vm:
+            verdict = vm.group(1).strip('"\'')
+
+if verdict not in ('LGTM', 'REQUEST_CHANGES', 'APPROVE'):
+    print('SKIP (no draft verdict found)')
+    sys.exit(0)
+
+try:
+    with open(quality_file, encoding='utf-8') as f:
+        content = f.read()
+except Exception:
+    print('SKIP (design_quality read failed)')
+    sys.exit(0)
+
+pattern = re.compile(
+    r'(- cmd_id: "?' + re.escape(cmd_id) + r'"?'
+    r'.*?gunshi_verdict: ")[^"\n]+(")',
+    re.DOTALL
+)
+if pattern.search(content):
+    new_content = pattern.sub(r'\g<1>' + verdict + r'\g<2>', content)
+    with open(quality_file, 'w', encoding='utf-8') as f:
+        f.write(new_content)
+    print(f'UPDATED: {cmd_id} gunshi_verdict={verdict}')
+else:
+    print(f'SKIP (cmd_id={cmd_id} not found in design_quality)')
+END_VERDICT_PY
+        ) || _verdict_result="ERROR (python3 failed)"
+        echo "  ${_verdict_result}"
+    else
+        echo "  SKIP (required files not found)"
+    fi
+
     # ─── archive実行（GATE CLEAR後、全チェック+ポストプロセス完了後） ───
     # cmd_1302: 報告YAMLをGATEが読み終わってからアーカイブ
     echo ""

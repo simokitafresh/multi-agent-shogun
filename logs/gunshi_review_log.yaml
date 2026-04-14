@@ -28,7 +28,7 @@
 # 「既実装」判定 → git show HEAD~1:file で変更前状態を確認。HEADは並行commit影響を受ける(cmd_1860 premature_shelve: LG001違反の変形)
 # AC絶対条件(「全期間」「100%」「全ファイル」)→構造的例外の有無を確認。例外あれば除外条件をAC文面に明示(5件verdict_override共通根因, 2026-04-12分析)
 # 全称判定(ゼロ/全て/なし/壊れない)→反証を探せ。反証が見つからなかったらOK。反証を探す前にOKを出すな。著者の物語に乗るな(cmd_1884 kawarimi見落とし: 7段なぜなぜ到達点)
-# cmd入力CSV/ファイル→wc -l/ls -la実測。報告値・試走値の転記は実体不在リスク(cmd_1896: 533,358行CSV不在。試走メトリクスとファイル実体混同)
+# ★前提崩壊=RC最大原因(79%, 11/14件)。cmdが参照する全数値・パス・状態を現物確認。特にCSV→wc -l、メモリ→実測RSS、CI→run確認(cmd_1896/1825/1806)
 # 軍師自己コード変更(hooks/gates/CLAUDE.md/instructions/settings)→S0プロトコル必須。docs/research/gunshi_sg_s0_self_code_change_20260412.md(LG026)
 # コード修正の横展開: grep修正前パターンで残存0件確認必須。1箇所修正→コピペ散在ファイル漏れ(cmd_1899: bisect fix 04f74830がTRF/MAF漏れ→12体Cash100%)
 # golden data検証基準: 生成時のコード状態(commit)を確認。バグ状態で生成されたgolden dataは検証基準にならない(cmd_1899: TRFバグ状態のgolden=全選択≠正しいTop+Worst)
@@ -418,3 +418,64 @@
     CS6: "OK — 因果鎖記載"
   causal_chain: "全28 WAカテゴリ分析→19根絶確認(GP/fix効果)→残9カテゴリ中5はGP実装済み(7日窓重複)→真の未対処=4孤発。split_deploy_ac_scope=唯一の構造的再発リスク→GP-194提案。免疫系の健全性=GP→根絶→新種出現→GP...の持続サイクル=正の複利"
   timestamp: "2026-04-15T05:12:00"
+- cmd_id: self_study_S187
+  review_type: self_study
+  gate_result: N/A
+  findings_summary: "RC遡及分析+教訓効果率。RC最大原因=前提崩壊79%(11/14)。教訓Top注入L617/L616(30回,40%BLOCK=パイプライン複雑性由来)。L225/L229(100%CLEAR)。review_logヘッダL31を統計事実で強化。cmd品質直近30cmd最終CLEAR率100%"
+  observations:
+    - "事実1: RC 28件中直近14件分類→前提崩壊11件(79%)。ファイル不在/CSV行数乖離/メモリ見積もり誤り/CI状態誤認"
+    - "事実2: lesson_impact.tsv 2004行。injected 327回→CLEAR 46%/BLOCK 33%。L617/L616(30回)はパイプラインcmdに頻繁注入だがBLOCKは教訓品質由来でない"
+    - "事実3: cmd_design_quality 607エントリ。直近30 cmd最終CLEAR率100%(前50: 92%→改善)"
+    - "事実4: recording_error 6件中3件がデータ破損(ninja=False)。2026-04-07以降再発なし"
+  cs_checklist:
+    CS1: "OK — review_log全アーカイブ+current+lesson_impact.tsv+cmd_design_quality全量読了"
+    CS2: "OK — python3でRC分類・教訓効果計算・CLEAR率計算を実測"
+    CS3: "N/A — 分析レポート"
+    CS4: "OK — review_logヘッダL31強化+context索引更新+アーカイブ+stats更新"
+    CS5: "PENDING — 前提崩壊の自動検出強化(ac_physical_verify.shのcmd本文パス抽出拡張)"
+    CS6: "OK — 因果鎖記載"
+  causal_chain: "RC 79%が前提崩壊(根因)→既存ac_physical_verify.shはACパスのみ(部分カバー)→cmd本文の数値・パス・状態は手動レビュー依存(意志依存=Phase4)→ヘッダ統計事実追記で発火率向上を狙う→将来的にcmd本文パス自動抽出でLevel5へ"
+  timestamp: "2026-04-15T05:30:00"
+- cmd_id: self_study_S188
+  review_type: self_study
+  gate_result: N/A
+  findings_summary: "利他改善: precheck SG-PRE10(ac_version照合)+SG-PRE11(lessons_useful検証)実装。ac_version_mismatch BLOCK事前検出(cmd_1901でFAIL確認)。S0 6観点クリア。autofix 20テストPASS。家老workaround源の構造的排除"
+  observations:
+    - "事実1: 全期間APPROVE→BLOCK 2件(cmd_karo_ci_fix_1900+cmd_1876)。両方report_format由来。draft設計見落とし0件"
+    - "事実2: report BLOCK 4件(cmd_1811/1825/1897/1898)。うちT1違反=GP-193で対処済み"
+    - "事実3: SG-PRE10テスト: hanzo_report_cmd_karo_gp190→PASS(ac_version一致), hayate_report_cmd_1901→FAIL(ac_version不一致)。正しく検出"
+    - "事実4: SG-PRE11テスト: 両報告→lessons_useful形式PASS。engine.py 52行+shell 12行追加"
+  cs_checklist:
+    CS1: "OK — cmd_complete_gate.sh ac_version照合ロジック(L2494-2552)確認+engine.py/shell全量読了"
+    CS2: "OK — 2報告で実測(PASS+FAIL両方確認)"
+    CS3: "OK — cmd_complete_gate.shのac_version照合コードとの整合確認"
+    CS4: "OK — engine.py+shell修正+S0チェック+テスト+家老報告"
+    CS5: "PENDING — 次回report reviewでSG-PRE10/11が実稼働するか観察"
+    CS6: "OK — 因果鎖記載"
+  causal_chain: "LGTM→BLOCK原因分析→ac_version_mismatch+draft_lessons未カバー→precheck SG-PRE10/11追加→事前検出→家老workaround構造的排除=利他×正の複利"
+  timestamp: "2026-04-15T05:45:00"
+- cmd_id: cmd_1903
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。q10_knowledge_boundary新設(WARNING,L260以降)+q7 BLOCK昇格(dm-signal impl限定)+§14.5研究cmd品質プロトコル。全変数(_q5_project/L159,_Q8_TASK_TYPE/L275,scout_exempt/L158)現物確認。procedures.mdはgitignored"
+  observations:
+    - "事実1: q7チェック=L186-191。q7 BLOCK昇格条件=_q5_project==dm-signal AND _Q8_TASK_TYPE==impl AND scout_exempt!=true。3変数全てCheck 3内で既取得"
+    - "事実2: q10挿入位置=q9ブロック終了後(L260以降)。WARN_COUNT非加算(段階的導入)"
+    - "事実3: §14=L293。§14.5はその直後に追加。procedures.mdはgitignored(.gitignoreに!instructions/shogun-procedures.md不在)"
+    - "事実4: テスト77件(cmd_save 44+ac_param 8+archive_dup 3+param_space 4+q5 13+q7 2+tool_growth 3)。AC4で全PASS確認"
+  causal_chain: "Phase 31-32で11過ちがgate通過(根因)→無知の知がcmd起票に未強制→q10で検証済み空間明示強制+q7 BLOCK昇格(dm-signal impl)→前提未検証cmdの構造的排除=正の複利"
+  timestamp: "2026-04-15T05:50:00"
+- cmd_id: cmd_1904
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  severity: normal
+  confidence: HIGH
+  findings_summary: "5観点OK、前提検証NG。AC2 yaml_field_set.shはcmd_design_quality.yamlの'- cmd_id:'に非対応('- id:'のみ)。python3/sedに変更要。AC1(startup RC傾向)+AC3(テスト)はOK"
+  observations:
+    - "事実1: yaml_field_set.sh L212='- id:'パターンマッチのみ。cmd_design_quality.yamlは'- cmd_id:'。begin_target()がマッチしない"
+    - "事実2: gate_shogun_startup.sh L209-235に既存パフォーマンスフィードバックセクション。RC傾向追加位置は妥当"
+    - "事実3: cmd_complete_gate.sh L3715付近のGATE CLEAR処理。gunshi review_feedback送信(L3750)の前にverdict記録追加可能"
+    - "事実4: cmd_1903と並列配備(hayate/saizo)。ファイル衝突なし(cmd_save.sh vs startup/complete_gate)"
+  causal_chain: "AC2がyaml_field_set.sh使用を前提→yaml_field_set.shは'- id:'パターンのみ→cmd_design_quality.yamlは'- cmd_id:'→忍者がfield_set実行→マッチなし→更新失敗→AC未達。前提崩壊79%(S187分析)の典型例"
+  timestamp: "2026-04-15T05:55:00"

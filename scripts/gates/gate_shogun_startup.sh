@@ -265,6 +265,69 @@ else
     echo "  karo_workarounds.yaml不在"
 fi
 
+# 9c: 軍師draft RC傾向 (直近20件)
+REVIEW_LOG_ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
+rc_data=$(python3 - "$REVIEW_LOG" "$REVIEW_LOG_ARCHIVE_DIR" 2>/dev/null <<'END_RC_PY'
+import sys, os, glob, re
+
+review_log = sys.argv[1]
+archive_dir = sys.argv[2]
+
+# データソース: gunshi_review_log.yaml + archive直近2ファイル
+sources = []
+if os.path.exists(review_log):
+    sources.append(review_log)
+archives = sorted(glob.glob(os.path.join(archive_dir, "gunshi_review_log*.yaml")))
+sources.extend(archives[-2:])
+
+drafts = []
+kw_patterns = [
+    ('前提崩壊', re.compile(r'前提崩壊|premise', re.I)),
+    ('パス誤り', re.compile(r'パス.*誤|誤.*パス|path.*err|wrong.*path', re.I)),
+    ('runtime', re.compile(r'runtime', re.I)),
+    ('scope', re.compile(r'scope|スコープ', re.I)),
+]
+
+for src in sources:
+    try:
+        with open(src, encoding='utf-8') as f:
+            content = f.read()
+    except Exception:
+        continue
+    for m in re.finditer(r'^- cmd_id:.*?(?=^- cmd_id:|\Z)', content, re.MULTILINE | re.DOTALL):
+        entry = m.group(0)
+        if 'review_type: draft' not in entry:
+            continue
+        vm = re.search(r'verdict:\s*(\S+)', entry)
+        verdict = vm.group(1).strip('"\'') if vm else 'unknown'
+        fm = re.search(r'findings_summary:\s*"(.+?)"', entry, re.DOTALL)
+        summary = fm.group(1) if fm else ''
+        drafts.append((verdict, summary))
+
+drafts = drafts[-20:]
+total = len(drafts)
+if total == 0:
+    print("N/A (データなし)")
+    sys.exit(0)
+
+rc_count = sum(1 for v, _ in drafts if v == 'REQUEST_CHANGES')
+rc_pct = rc_count * 100 // total
+
+kw_counts = {}
+for v, summary in drafts:
+    if v != 'REQUEST_CHANGES':
+        continue
+    for kw, pat in kw_patterns:
+        if pat.search(summary):
+            kw_counts[kw] = kw_counts.get(kw, 0) + 1
+
+kw_parts = sorted(kw_counts.items(), key=lambda x: -x[1])
+kw_str = '  ' + ', '.join(f'{k}: {v}件' for k, v in kw_parts) if kw_parts else ''
+print(f"RC={rc_count}/{total} ({rc_pct}%){kw_str}")
+END_RC_PY
+) || rc_data="N/A (スクリプトエラー)"
+echo "  軍師draft RC傾向(直近20件): ${rc_data}"
+
 # --- Gate 10: idle自走トリガー ---
 echo "■ idle自走トリガー"
 IDLE_TRIGGER="OFF"

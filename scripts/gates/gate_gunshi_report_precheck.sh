@@ -175,6 +175,19 @@ else
     echo "  PASS: binary_checks全result:yes (or検出対象なし)"
 fi
 
+# ─── SG-PRE10: ac_version照合 ───
+echo ""
+echo "■ SG-PRE10: ac_version照合"
+echo "${AC_VERSION_MSG:-  SKIP}"
+if echo "${AC_VERSION_MSG:-}" | grep -q "FAIL"; then
+    ERRORS=$((ERRORS + 1))
+fi
+
+# ─── SG-PRE11: lessons_useful形式検証 ───
+echo ""
+echo "■ SG-PRE11: lessons_useful形式検証"
+echo "${LESSONS_USEFUL_MSG:-  SKIP}"
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
