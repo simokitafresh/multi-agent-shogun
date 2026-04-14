@@ -132,6 +132,99 @@ IF_COND=$(parse_named_arg --if "$@")
 THEN_ACTION=$(parse_named_arg --then "$@")
 BECAUSE_REASON=$(parse_named_arg --because "$@")
 RETIRE_ID=$(parse_named_arg --retire "$@")
+RETAG_ID=$(parse_named_arg --retag "$@")
+RETAG_TAGS=$(parse_named_arg --new-tags "$@")
+
+# ─── Retag mode: change tags of existing lesson (both lessons.md + sync) ───
+if [ -n "$RETAG_ID" ]; then
+    if [ -z "$PROJECT_ID" ] || [ -z "$RETAG_TAGS" ]; then
+        echo "Usage: lesson_write.sh <project_id> --retag <lesson_id> --new-tags \"tag1,tag2\"" >&2
+        exit 1
+    fi
+
+    if [[ "$PROJECT_ID" == cmd_* ]]; then
+        echo "ERROR: 第1引数はproject_id（例: infra, dm-signal）。cmd_idではない。" >&2
+        exit 1
+    fi
+
+    PROJECT_PATH=$(resolve_project_path "$PROJECT_ID")
+    if [ -z "$PROJECT_PATH" ]; then
+        echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
+        exit 1
+    fi
+
+    LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
+    LOCKFILE="${LESSONS_FILE}.lock"
+
+    if [ ! -f "$LESSONS_FILE" ]; then
+        echo "ERROR: $LESSONS_FILE not found." >&2
+        exit 1
+    fi
+
+    (
+        flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
+
+        export LESSONS_FILE RETAG_ID RETAG_TAGS
+        python3 << 'RETAGPY'
+import re, os, sys
+
+lessons_file = os.environ["LESSONS_FILE"]
+retag_id = os.environ["RETAG_ID"]
+new_tags = os.environ["RETAG_TAGS"]
+
+with open(lessons_file, encoding='utf-8') as f:
+    content = f.read()
+
+# Normalize lesson ID
+m_id = re.match(r'^L?(\d+)$', retag_id)
+if m_id:
+    retag_id = f'L{int(m_id.group(1)):03d}'
+
+# Format tags as [tag1, tag2]
+tag_list = [t.strip() for t in new_tags.split(',')]
+tags_str = '[' + ', '.join(tag_list) + ']'
+
+lines = content.split('\n')
+
+# Find lesson heading
+heading_idx = None
+for i, line in enumerate(lines):
+    if re.match(rf'^### {re.escape(retag_id)}\s*[:：]', line):
+        heading_idx = i
+        break
+
+if heading_idx is None:
+    print(f'ERROR: {retag_id} not found in {lessons_file}', file=sys.stderr)
+    sys.exit(1)
+
+# Find and replace tags line
+found = False
+for j in range(heading_idx + 1, min(heading_idx + 10, len(lines))):
+    if re.match(r'^- \*\*tags\*\*:', lines[j]):
+        old_tags = lines[j]
+        lines[j] = f'- **tags**: {tags_str}'
+        found = True
+        print(f'{retag_id} tags: {old_tags.strip()} → {tags_str}')
+        break
+    if lines[j].startswith('###'):
+        break
+
+if not found:
+    print(f'ERROR: tags line not found for {retag_id}', file=sys.stderr)
+    sys.exit(1)
+
+with open(lessons_file, 'w', encoding='utf-8') as f:
+    f.write('\n'.join(lines))
+RETAGPY
+
+    ) 200>"$LOCKFILE"
+
+    # Re-sync YAML cache (both lessons.md → lessons.yaml)
+    bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+
+    echo "[lesson_write] $RETAG_ID retag successfully"
+    exit 0
+fi
 
 # ─── Retire mode: mark existing lesson as retired ───
 if [ -n "$RETIRE_ID" ]; then
