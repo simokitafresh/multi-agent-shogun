@@ -1206,6 +1206,20 @@ EOF
         fi
     fi
 
+    # GP-190: cmd制約(commit禁止)検出 → commit checkにwaive_reason付きno設定
+    # 根因: bc設計に「正当なno」の概念がなかった。waive_reasonで事実を歪めずgate通過可能にする
+    if [ -n "$_commit_bc" ]; then
+        local _cmd_command=""
+        _cmd_command=$(FIELD_GET_NO_LOG=1 field_get "$STK" "$CMD_ID" "command" 2>/dev/null || true)
+        if echo "$_cmd_command" | grep -qiE 'commit.*禁止|commit一切禁止|登録.*のみ.*commit'; then
+            _commit_bc='  commit:
+  - check: "git commitが完了したか(untracked/modified=0)"
+    result: "no"
+    waive_reason: "cmd制約: commit禁止"'
+            log "binary_checks: commit check waived (cmd constraint: commit禁止)"
+        fi
+    fi
+
     local _bc_placeholder='binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入'
 
     if [ -n "$_bc_block" ]; then

@@ -335,7 +335,10 @@ if isinstance(verdict, str) and verdict in ('PASS', 'FAIL') and isinstance(bc, d
                         bc_results_found = True
                         r = str(_item['result']).strip().lower()
                         if r in ('no', 'false', 'fail', 'ng'):
-                            bc_has_no = True
+                            # GP-190: waive_reasonがあればnoでもverdict不整合にしない
+                            _waive = _item.get('waive_reason', '')
+                            if not (isinstance(_waive, str) and _waive.strip()):
+                                bc_has_no = True
     # --- GP-163: verdict=PASS + empty result contradiction (cmd_1663) ---
     if verdict == 'PASS' and bc_has_empty:
         errors.append('verdict: PASS but binary_checks contain empty result(s) (全result記入後にverdictを設定せよ)')
