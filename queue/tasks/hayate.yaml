@@ -1,13 +1,31 @@
 task:
-  _ac_task_id: cmd_1900_impl
+  _ac_task_id: cmd_1901_impl
   _ac_worker_id: null
-  ac_version: d41d8cd9
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: 0e3d4e89
+  acceptance_criteria:
+  - description: 'recalculate_fof.py の component_weights_batch 構築ループで comp_id == ''Cash''
+      をスキップするガード追加。確認: git diffで変更箇所を表示'
+    id: AC1
+  - description: '本番DBから既存Cash行を削除: DELETE FROM fof_component_weights WHERE component_id
+      = ''Cash''。確認: 削除前の行数と削除後の SELECT COUNT(*) WHERE component_id = ''Cash'' = 0
+      を報告'
+    id: AC2
+  - description: deploy + fullrecalculate実行後に SELECT COUNT(*) FROM fof_component_weights
+      WHERE component_id = 'Cash' = 0 を確認。再発していないこと
+    id: AC3
+  - description: 既存テスト全PASS (pytest)。Cashスキップでテストが壊れていないこと
+    id: AC4
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
     \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
+    \  - L482: selection_pipeline.blocksがあるFoFも本番holding_signalから選択componentsを特定しEqualWeight独立計\n\
+    \  - L477: (1) recalculate_fast.pyをCLIから実行する場合、backend/app/services/pipeline/base.py:121のfr\n\
+    \  - L256: dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
@@ -24,14 +42,23 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_karo_ci_fix_1900
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  - AC4
+  parent_cmd: cmd_1901
   project: dm-signal
-  report_filename: hayate_report_cmd_karo_ci_fix_1900.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_1900.yaml
-  status: idle
+  report_filename: hayate_report_cmd_1901.yaml
+  report_path: 
+  progress:
+  - 'AC1: recalculate_fof.py の component_weights_batch ループに Cash スキップガード追加、git diff確認済み'
+  - 'AC2: 本番DB fof_component_weights の component_id=''Cash'' を 5355件削除し、再確認0件'
+  - 'AC4: backend pytest 完走。1380 passed / 5 xfailed / 6 xpassed / 0 skipped'
+  - 'AC3: Render deploy は local未push差分を直接載せられず保留。未deploy状態での fullrecalculate は再汚染リスクのため未実行'
+  status: failed
   stop_for: []
-  task_id: cmd_karo_ci_fix_1900_impl
+  task_id: cmd_1901_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -45,17 +72,17 @@ task:
     - pattern: 'bc_result_empty'
       count: 49
     - pattern: 'lu_reason_empty'
-      count: 19
+      count: 21
     - pattern: 'verdict_invalid'
-      count: 11
+      count: 12
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
+    - reason: 'report_format'
+      count: 13
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
       count: 12
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'report_format'
-      count: 11
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'report_yaml_missing'
       count: 3
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
