@@ -283,3 +283,26 @@
   self_executable: false
   defense_level: 2
   reason: "620教訓中9重複ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複。lesson_write.sh AC2=ID dedupのみ→内容dedup不在→同一テーマ重複。cmd_save.sh Check12(Jaccard≥50%)と同構造で実装可能"
+- id: GP-190
+  description: "no_commitフィールド自動検出+commit check waive(verdict_override 62.5%排除)"
+  status: karo_sent
+  proposed_at: "2026-04-14T09:15:00"
+  sent_at: "2026-04-14T09:15:00"
+  self_executable: false
+  defense_level: 4
+  reason: "verdict_override 8件中5件がcommit check起因。根因=cmdのcommit禁止制約が構造化されていない。cmd_save.shにno_commitキーワード検出→deploy_task.shでcommit check waive。10回繰返し=10回×0分(現状10回×10分)=正の複利"
+  evidence: "karo_workarounds.yaml verdict_override 8件分類: A)commit起因5件 B)AC設計2件 C)データ時差1件。cmd_1897で軍師LGTM→BLOCK再現"
+- id: GP-191
+  description: "FoF選択block dict.get(target_date)禁止hook(PI L573 gate化)"
+  status: proposed
+  proposed_at: "2026-04-14T12:40:00"
+  self_executable: true
+  defense_level: 4
+  reason: "TRF dict.get()がPI L573違反で12体Cash100%。MF/SVMF/MVMFは修正済みだがTRF/MAFが漏れた。pre-commit hookでblocks/+jobs/内のdict.get(target_date)パターンをBLOCK。横展開漏れの構造的防止"
+- id: GP-192
+  description: "パリティスクリプトtarget_date検証(production日付と一致確認)"
+  status: proposed
+  proposed_at: "2026-04-14T12:40:00"
+  self_executable: false
+  defense_level: 2
+  reason: "cmd_1898パリティスクリプトがtarget_date=前月末日でproduction(当月第1営業日)と異なる。skip_months>0で差が増幅→抜き身/四つ目83-99%。パリティスクリプト作成cmdのACに'target_dateがproductionと一致'を標準化"

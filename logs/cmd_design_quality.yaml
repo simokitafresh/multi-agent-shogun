@@ -4901,3 +4901,29 @@ entries:
     ninja_blockers: 0
     supplementary_cmds: 0
     timestamp: "2026-04-13T18:01:00Z"
+  - cmd_id: "cmd_1897"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-14T00:00:47Z"
+    notes: "report_format:hayate_report_cmd_1897.yaml|hayate:binary_checks_fail"
+  - cmd_id: "cmd_1897"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-14T00:01:45Z"
+  - cmd_id: "cmd_1898"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    timestamp: "2026-04-14T01:42:20Z"
+    notes: "saizo:binary_checks_fail"

@@ -442,9 +442,10 @@ PY
 
 show_pending_insights
 
-# --- Check 10: AC内ファイルパス存在チェック（informational — WARN_COUNTに加算しない） ---
-# 起源: cmd_1464事故 — AC内「generators/monthly_returns.py」指定→実体はservices/return_calculator.py
-# 目的: AC内のファイルパス参照が実在するか事前警告
+# --- Check 10: AC内ファイルパス存在チェック（BLOCK — パス不在はcmd品質低下の根因） ---
+# 起源: cmd_1464事故 + cmd_1896/1899で3回連続パス誤り(2026-04-14なぜなぜ7回)
+# 目的: AC内のファイルパス参照が実在するか検証。不在はBLOCK
+# 真因: WARNを無視する習慣が定着し、パス誤りcmdが家老・忍者に到達する
 check_ac_file_paths() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
@@ -481,7 +482,8 @@ check_ac_file_paths() {
     done <<< "$PATHS"
 
     if [[ "$HAS_MISSING" == true ]]; then
-        echo "  → パス名の確認を推奨（BLOCKではありません）" >&2
+        echo "  BLOCK: パスが存在しないACはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ" >&2
+        WARN_COUNT=$((WARN_COUNT + 1))
     fi
 }
 

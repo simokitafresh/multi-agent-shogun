@@ -295,3 +295,8 @@ lessons:
   detail: 'cmd_karo_ci_fix_1885(テスト期待値)とcmd_1888(autofix撤去)が同時配備され影丸55分苦戦。ファイル名は別だが依存関係(autofix動作→テスト期待値)で衝突。ファイルパス照合では検出不可(テスト実証済み)。gate系変更は直列配備で解決。DB排他(§10)と同じ原理'
   source_cmd: 'cmd_1888'
   created_at: '2026-04-13'
+- id: 'LK052'
+  title: 'LG027: コード修正の横展開確認 — grep修正前パターンで残存0件確認必須'
+  detail: 'bisect fix(04f74830)がMF/SVMF/MVMFに適用されTRF/MAFが漏れた。同パターン5ファイルにコピペ散在。修正後にgrep修正前パターンで残存ファイル確認工程が不在→12体Cash100%事故。レビュー時にdraft/報告の変更パターンが他ファイルにも存在するかgrep確認。automated候補: pre-commit hookでblocks/内のdict.get(context.target_date)禁止'
+  source_cmd: 'cmd_1899'
+  created_at: '2026-04-14'
