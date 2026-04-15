@@ -398,7 +398,6 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - CLI起動|`claude --effort high`(--modelなし=1M)が正。`--model opus`=200K厳禁|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
 - Claude version pin/rollback|2.1.87固定とauto-update復帰のrunbook|→ `docs/research/claude-code-version-runbook.md`
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
-- Androidコンパニオン|`android/` 同梱Kotlin/Composeアプリ。現行は5タブ+共有シート+SSH/ntfy連携|パッケージ/ビルド/配布物/ソース構造は `context/infrastructure.md` §Androidコンパニオンアプリ
 - gws|Google Workspace CLI(Sheets/Drive/Gmail)|デフォルト=simokitafresh@gmail.com|シート名「シート1」注意|→ `context/infrastructure.md` §gws
 
 ## Cross-Project Context

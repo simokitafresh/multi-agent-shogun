@@ -77,7 +77,7 @@ lessons:
   summary: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo
   tags:
   - universal
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 1
   last_referenced: '2026-04-15'
 - id: L465
@@ -85,7 +85,7 @@ lessons:
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
   tags:
   - universal
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 1
   last_referenced: '2026-04-15'
 - id: L464
@@ -93,9 +93,9 @@ lessons:
   summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-04-14'
+  last_referenced: '2026-04-15'
 - id: L463
   title: EdgeToEdge imePaddingはContent Columnに配置しNavigationBarには置くな
   summary: MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePad
@@ -1160,7 +1160,7 @@ lessons:
   tags:
   - testing
   - gate
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 2
   last_referenced: '2026-04-15'
 - id: L299
@@ -1558,7 +1558,7 @@ lessons:
   - universal
   helpful_count: 2
   harmful_count: 1
-  last_referenced: '2026-04-13'
+  last_referenced: '2026-04-15'
 - id: L245
   title: ホワイトリスト型gitignoreで新規lib追加時はgitignore反映を確認せよ
   summary: ホワイトリスト型gitignore環境でscripts/lib/に新規shファイル追加時、.gitignoreホワイトリスト追記漏れでCIのみ失敗する。ローカル
@@ -1672,7 +1672,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 13
+  helpful_count: 18
   harmful_count: 4
   last_referenced: '2026-04-15'
 - id: L228
@@ -1739,9 +1739,9 @@ lessons:
   tags:
   - process
   - git
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-04-14'
+  last_referenced: '2026-04-15'
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
   summary: cmd_887_B の分析対象に archive/completed_changelog.yaml とあったが、現行実体は queue/completed_ch
@@ -1976,6 +1976,9 @@ lessons:
   - communication
   - git
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L187
   title: Compose の zoom 下限は viewport 配下の onTextLayout 幅から計算するな
   summary: IF Compose で terminal の pinch-zoom `minScale` を `contentWidth` から算出する時
@@ -1989,6 +1992,9 @@ lessons:
   tags:
   - review
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L185
   title: report_path 注入だけで報告テンプレート未生成→忍者が手動補完
   summary: '`cmd_675` 配備後の `queue/tasks/hayate.yaml` には `report_path: queue/reports/hayate_r'
@@ -2077,7 +2083,7 @@ lessons:
   - frontend
   - git
   - reporting
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-15'
 - id: L172
@@ -2187,7 +2193,7 @@ lessons:
   - universal
   helpful_count: 2
   harmful_count: 1
-  last_referenced: '2026-04-13'
+  last_referenced: '2026-04-15'
 - id: L155
   title: lib/配下の共通関数は呼出し元の環境変数依存を明示バリデーションすべき
   summary: IF lib/配下の共通関数を実装する時 THEN 呼出し元の環境変数依存を関数冒頭で明示バリデーションせよ
@@ -2329,7 +2335,7 @@ lessons:
   - deploy
   - gate
   - lesson
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-15'
 - id: L135
@@ -2608,7 +2614,7 @@ lessons:
   - bash
   - yaml
   - reporting
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 3
   last_referenced: '2026-04-15'
 - id: L096
@@ -2701,7 +2707,7 @@ lessons:
   - gate
   - yaml
   - reporting
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 1
   last_referenced: '2026-04-15'
 - id: L084
@@ -3004,7 +3010,7 @@ lessons:
   - testing
   - knowledge
   - gate
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-15'
 - id: L037
@@ -3027,6 +3033,9 @@ lessons:
   tags:
   - testing
   - gate
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L034
   title: shogun_to_karo.yamlのインデントが動的に変動する(2space→0space)
   summary: awk/sedパターンは固定インデントに依存させず柔軟なマッチに。cmd_complete_gate.shのupdate_status()も4space固定依存
@@ -3045,6 +3054,9 @@ lessons:
   summary: '##PJ名から次の##直前までが差替え対象。セクション内の###は区切りではない。才蔵設計'
   tags:
   - knowledge
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L031
   title: CLAUDE.md PJ固有比率は4%のみ(14行/347行)
   summary: IF CLAUDE.md PJ固有比率時 THEN 95%以上がPJ非依存骨格
