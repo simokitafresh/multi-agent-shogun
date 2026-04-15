@@ -664,3 +664,4 @@
 | cmd_1939 | 強化 — scripts/cmd_save.sh L3診断推論: BLOCK時Diagnose MANDATORY+Session State | infra | 04-16 | cmd_save.shにDiagnose MANDATORY |
 | cmd_1942 | 強化 — 忍者ACテストをaffected_tests.sh(関連テストのみ)に変更 | infra | 04-16 | deploy_task.shのテストAC生成で、全量unit |
 | cmd_1941 | 強化 — GP/改善にbefore/after退化計測を義務化 | infra | 04-16 | GP/改善cmd向けreport templateにbefo |
+| cmd_1940 | 強化 — gate_lesson_health.sh閾値をuseful率に変更+低効果教訓自動除外 | infra | 04-16 | gate_lesson_health.shにuseful率計 |
