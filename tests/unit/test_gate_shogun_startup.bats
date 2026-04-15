@@ -84,8 +84,9 @@ ninja|hayate|cmd_100_impl|in_progress|infra|CTX:30%
 ninja|kagemaru|cmd_101_impl|in_progress|infra|CTX:25%
 EOF
 
-    # Gate 6: required deepdive file
+    # Gate 6: required deepdive files
     echo "# deepdive content" > "$SHARED_BASE/memory/deepdive_why_chain_20260321.md"
+    echo "# deepdive causal tracing" > "$SHARED_BASE/memory/deepdive_causal_tracing_20260415.md"
 
     # Gate 7: lord-conversation-index (no rulings)
     cat > "$SHARED_BASE/context/lord-conversation-index.md" <<'EOF'

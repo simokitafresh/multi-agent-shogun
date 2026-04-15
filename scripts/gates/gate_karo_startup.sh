@@ -31,6 +31,36 @@ echo "  Phase 4「LLMに生存本能はない→自動化×強制」"
 echo "  Phase 5「なぜの目的=自動化ターゲット特定」"
 echo ""
 
+# --- Check 1.5: 追体験検証Q4 (前セッション出来事注入) ---
+_prev_session_summary=$(python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null <<'PY'
+import sys, json
+log_file = sys.argv[1]
+summary = "(前セッション要約なし)"
+try:
+    with open(log_file, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+                if entry.get("direction") == "session_summary":
+                    s = entry.get("summary", "").strip()
+                    if s:
+                        summary = s
+            except (json.JSONDecodeError, Exception):
+                continue
+except (FileNotFoundError, OSError):
+    pass
+print(summary)
+PY
+) || _prev_session_summary="(取得失敗)"
+echo "■ 追体験検証Q4（CLAUDE.md Step 2.88 — 省略厳禁）"
+echo "  Q4: deepdive_why_chain Phase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）"
+echo "  [前セッション出来事] ${_prev_session_summary}"
+echo "  ※ Q4は前セッションの出来事を手がかりに因果をたどれ。暗記したPhase例を貼るな。"
+echo ""
+
 # --- Check 2: 陣形図(karo_snapshot.txt)の鮮度 ---
 echo "■ 陣形図鮮度"
 snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"

@@ -663,3 +663,7 @@
 | cmd_1917 | 偵察 — cmd_save.sh CoDDプロファイリング(Phase 1): 関数レベルボトルネック特定 | infra | 04-15 | cmd_save.sh を隔離cloneで実測し、全体中央値 |
 | cmd_1919 | 強化 — inbox_writeにaction_required引数追加(全エージェントデッドロック防止) | infra | 04-15 | scripts/inbox_write.sh に任意5引数 |
 | cmd_1920 | 強化 — 掲示板システム導入: 全エージェント共有ボード+チェックボックス確認追跡 | infra | 04-15 | 共有掲示板を導入し、書込み/確認スクリプトと shogun・ |
+| cmd_1916 | 強化 — q11自動検索: cmdの対象スクリプトとdocs/research/を自動照合(意志依存ゼロ層) | infra | 04-15 | cmd_save.shにcommandフィールドのスクリプト名自動抽出+docs/research grep+INFO表示 |
+| cmd_1918 | fix — q11自動検索バグ修正(cmd_1916実装の動作不良修正) | infra | 04-15 | cmd_save.sh L298-336のq11自動検索ロジック修正 |
+| cmd_1921 | fix — 掲示板requires_confirmationバグ修正+Q4形骸化防止(前セッション出来事注入) | infra | 04-15 | 作業中(影丸) |
+| cmd_1922 | 強化 — 因果探索原則を将軍必読ファイルに追加(CLAUDE.md+startup gate) | infra | 04-15 | CLAUDE.md Step 2.55+gate存在チェック追加。テスト済み |

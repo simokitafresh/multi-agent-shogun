@@ -162,11 +162,38 @@ fi
 # 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。
 # 読んだだけでは不十分。各Phaseを今の自分に重ねて自問したかを検証する。
 # gateは補助。追体験が主体。追体験が正しく動けば間違いは自然に避けられる。
+_prev_session_summary=$(python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null <<'PY'
+import sys, json
+log_file = sys.argv[1]
+summary = "(前セッション要約なし)"
+try:
+    with open(log_file, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+                if entry.get("direction") == "session_summary":
+                    s = entry.get("summary", "").strip()
+                    if s:
+                        summary = s
+            except (json.JSONDecodeError, Exception):
+                continue
+except (FileNotFoundError, OSError):
+    pass
+print(summary)
+PY
+) || _prev_session_summary="(取得失敗)"
+
 echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
-echo "  deepdive読了後に以下3問に各1行で回答せよ。回答なしに作業開始するな。"
+echo "  deepdive読了後に以下4問に各1行で回答せよ。回答なしに作業開始するな。"
 echo "  Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？"
 echo "  Q2: 「行動→即確認」— 今の本番は正常か？前セッション以降に本番に入った変更は何か？その結果を確認したか？想像で答えるな。"
 echo "  Q3: 今クリアされても強くてニューゲームできるか？環境に埋め込まれていない学びはないか？"
+echo "  Q4: deepdiveのPhase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）"
+echo "  [前セッション出来事] ${_prev_session_summary}"
+echo "  ※ Q4は前セッションの出来事を手がかりに因果をたどれ。暗記したPhase例を貼るな。"
 echo "  ※ 結論(自動化×強制が大事)を書くな。今の自分の具体的状況を書け。"
 echo "  ※ reason: 結論を知っていることが追体験を殺す。テキスト処理ではなく自己診断(2026-04-07殿指摘)"
 
