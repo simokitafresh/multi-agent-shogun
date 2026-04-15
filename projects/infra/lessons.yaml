@@ -77,17 +77,17 @@ lessons:
   summary: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 1
-  last_referenced: '2026-04-13'
+  last_referenced: '2026-04-15'
 - id: L465
   title: 道具磨きcmdのテスト実行ACと並行研究cmdの入力衝突チェック
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 1
-  last_referenced: '2026-04-13'
+  last_referenced: '2026-04-15'
 - id: L464
   title: 想像した数字を報告するな — 実測値のみ報告せよ
   summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定
@@ -677,6 +677,9 @@ lessons:
   tags:
   - gate
   - bash
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L372
   title: tmux display-messageはフォーマット文字列で複数変数を一括取得可能
   summary: tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS
@@ -778,6 +781,9 @@ lessons:
   - process
   - yaml
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L356
   title: YAML文字列化dictのパースにast.literal_evalは使えない(不完全文字列で失敗)
   summary: lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite
@@ -1281,7 +1287,7 @@ lessons:
     skip パタ
   tags:
   - universal
-  helpful_count: 7
+  helpful_count: 8
   harmful_count: 0
   last_referenced: '2026-04-15'
 - id: L282
@@ -1433,7 +1439,7 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 8
+  helpful_count: 9
   harmful_count: 2
   last_referenced: '2026-04-15'
 - id: L261
@@ -1452,6 +1458,9 @@ lessons:
   - recon
   - security
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L259
   title: STALL偽陽性の38%はStale YAML Ghost(task_id空)が原因
   summary: AUTO-CLEARはtmux変数のみリセットしYAMLファイルをクリーンアップしない。check_stall()がstatus残留を拾い偽陽性を発火。task
@@ -1547,7 +1556,7 @@ lessons:
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 1
   last_referenced: '2026-04-13'
 - id: L245
@@ -1663,7 +1672,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 10
+  helpful_count: 13
   harmful_count: 4
   last_referenced: '2026-04-15'
 - id: L228
@@ -2021,7 +2030,7 @@ lessons:
   - git
   helpful_count: 1
   harmful_count: 0
-  last_referenced: '2026-04-13'
+  last_referenced: '2026-04-15'
 - id: L179
   title: 忍者がcommit未実施でdone報告するケース
   summary: '疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco'
@@ -2176,7 +2185,7 @@ lessons:
     形式で受けよ
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 1
   last_referenced: '2026-04-13'
 - id: L155
@@ -2599,7 +2608,7 @@ lessons:
   - bash
   - yaml
   - reporting
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 3
   last_referenced: '2026-04-15'
 - id: L096
@@ -2674,6 +2683,9 @@ lessons:
   tags:
   - gate
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L086
   title: auto_draft_lesson.shがlesson_write.shをCMD_ID空で呼ぶためlesson.done未生成
   summary: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは
@@ -2992,6 +3004,9 @@ lessons:
   - testing
   - knowledge
   - gate
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L037
   title: WSL2でWrite tool作成の.shファイルはCRLF混入が確実に発生する
   summary: 'auto_failure_lesson.sh作成時にもCRLF混入(L008)。Write tool経由の新規.shは100%CRLFになる前提でsed

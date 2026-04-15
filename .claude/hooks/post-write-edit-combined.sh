@@ -15,9 +15,21 @@ emit_context() {
 file_path="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .file_path // .filePath // .path // empty' 2>/dev/null)" || exit 0
 [[ -z "$file_path" ]] && exit 0
 
-# === Guard 1: report-guard (WARN) ===
+# === Guard 1: report-guard (WARN + YAML parse check) ===
 if [[ "$file_path" =~ queue/reports/[^/]*_report_[^/]*\.yaml$ ]]; then
     emit_context "WARNING: 報告YAMLへの直接Edit/Write検出。\\nWHY: 報告YAMLはreport_field_set.sh経由で更新せよ。flock排他制御+構造保全のため。\\nFIX: bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>"
+    # GP-197: YAML構文検証。parse errorなら即通知(忍者が壊れたYAMLに気づける)
+    if [[ -f "$file_path" ]]; then
+        parse_err="$(python3 -c "
+import yaml,sys
+try:
+    yaml.safe_load(open(sys.argv[1]))
+except yaml.YAMLError as e:
+    print(str(e).replace(chr(10),' ')[:200])
+    sys.exit(1)
+" "$file_path" 2>/dev/null)" || \
+            emit_context "ERROR: 報告YAML構文エラー。gate BLOCKされる。修正せよ: ${parse_err//\"/\\\"}"
+    fi
 fi
 
 # === Guard 2: shellcheck (only for .sh/.bash files) ===

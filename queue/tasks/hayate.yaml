@@ -1,22 +1,19 @@
 task:
-  _ac_task_id: cmd_1919_impl
+  _ac_task_id: cmd_1923_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: a0817ea9
+  ac_version: 209208ec
   acceptance_criteria:
-  - description: action引数ありのinbox_write実行でYAMLにaction:フィールドが書き込まれること。catで確認
+  - description: cmd_save.sh Check 21追加。ACのdescription内の数値絶対値パターン検出→WARN(informational,
+      WARN_COUNT加算なし)
     id: AC1
-  - description: action引数なしのinbox_write実行で後方互換維持（既存動作に影響なし）+WARN表示
+  - description: 'テスト追加: 絶対値→WARN / 相対条件→非表示 / 既存テスト全PASS'
     id: AC2
-  - description: 既存テスト全PASS(bats --jobs 4)
-    id: AC3
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L283: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の\
-    \ ok N (hash) skip パタ\n  - L142: IF 飛猿報告のテスト8件時 THEN テスト件数を報告する場合は根拠(ファイル名・実行コマンド)も記載すべき\n\
-    \  - L193: IF pre-push で `timeout 30 bats tests/unit/ --jobs 4` のような厳しい予算を課す時\
-    \ THEN 実装コードより先\n  - L261: settings.yaml等の全体設定変更(全8名claude統一)がE2Eテスト2件+Unitテスト2件の陳腐化を43コミット蓄積後に発覚させた。設定変更コミ\n\
-    ────────────────────────────────────────"
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L466: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo\n\
+    \  - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude\
+    \ Codeに'non-blo\n  - L180: IF whitelist-based .gitignore のrepoで新規source fileや対象scriptを追加する時\
+    \ THEN git add前に \n  - L373: cmd_save.sh Check3内でecho CMD_BLOCK|grep -v comment|grep\
+    \ -q keyのパターンが7箇所に重複。各回3サブ\n────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -33,14 +30,13 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  parent_cmd: cmd_1919
+  parent_cmd: cmd_1923
   project: infra
-  report_filename: hayate_report_cmd_1919.yaml
-  report_path: queue/reports/hayate_report_cmd_1919.yaml
+  report_filename: hayate_report_cmd_1923.yaml
+  report_path: queue/reports/hayate_report_cmd_1923.yaml
   status: done
   stop_for: []
-  task_id: cmd_1919_impl
+  task_id: cmd_1923_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -100,4 +96,4 @@ task:
   - id: 'L467'
     summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
     detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
-  deployed_at: "2026-04-15T18:09:50"
+  deployed_at: "2026-04-15T19:38:00"

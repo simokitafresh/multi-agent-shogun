@@ -45,7 +45,11 @@ S182分析通りrules修正でcmd_1893以降再発0(hayate 5cmd+saizo 1cmd成功
 
 ## 次のアクション
 
-1. verdict_override消滅をGP-190効果として04/15以降で定量確認(次回自走)
-2. deploy_error再発監視(3件到達でGP化検討)
-3. gate_result null cleanup完了(25→5件。残5件は構造的null)
-4. review_logアーカイブ完了(726→420行。9本目)
+1. ~~verdict_override消滅をGP-190効果として04/15以降で定量確認~~ → **確認済み(19:35)**: cmd_1910以降5件で再発0。N=5
+2. deploy_error再発監視(3件到達でGP化検討)。孤発1件
+3. wrong_task_execution再発監視(3件到達でGP化検討)。孤発1件
+4. GP-196実装完了(19:35): lessons_useful numbered dict→list autofix復活。家老承認済み
+5. GP-197実装完了(19:50): PostToolUse Edit hook YAML構文検証。家老報告済み
+6. GP-032をpartialに降格(ファイル不在確定)
+7. review_logアーカイブ完了(773→216行。10本目)
+8. 免疫系健全: GP対応済みカテゴリ全て対処後再発0件

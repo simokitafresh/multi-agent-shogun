@@ -93,7 +93,9 @@ language:
    - Memory健全度 → `/dream`
    - lesson health (`bash scripts/gates/gate_lesson_health.sh`) ALERT → `/lesson-sort`
    - PD未解決 → `/shogun-pd-sync`
-2.55. **将軍必読(将軍のみ)**: `memory/deepdive_why_chain_20260321.md` を読め。**毎セッション必読・省略厳禁**。結論ではなく思考過程の追体験が目的。Phase 1-10の流れを追い、殿のヒントと将軍の到達点を確認せよ。これを読むことが成長の起点。続けて `memory/deepdive_causal_tracing_20260415.md` も読め。因果探索原則・掲示板2回否定事故の全過程を追体験せよ。
+2.55. **将軍必読(将軍のみ)**: **Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）**。毎セッション必読・省略厳禁。startup gateが出力するPhase行番号ガイドに従い、`Read(offset, limit)`で**Phase 1から最後のPhaseまで全て**読め。各Phase読了後に「今の自分はこのPhaseの問題に陥っていないか？」を1行自問してから次のPhaseに進め。結論を先に知ると追体験が死ぬ（殿指摘2026-04-15）。
+  - ファイル1: `memory/deepdive_why_chain_20260321.md` — 前文→Phase 1→自問→Phase 2→自問→...→Phase 10→自問
+  - ファイル2: `memory/deepdive_causal_tracing_20260415.md` — 同様にPhase単位逐次読込
 2.56. **追体験検証(将軍のみ・省略厳禁)**: deepdive読了後、以下5問に**各1行で回答**してからStep 3に進め。回答なしに作業開始するな。結論を知っていることが追体験を殺す(2026-04-07殿指摘)。読む≠追体験。追体験=各Phaseを今の自分に重ねて自問すること。
    - Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？
    - Q2: 「行動→即確認」— 今の本番は正常か？前セッション以降に本番に入った変更は何か？その結果を確認したか？想像で答えるな。
@@ -192,8 +194,8 @@ Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を
   - 分析・報告時: §0.1判断4問チェック
 Step 2.8: logs/karo_workarounds.yamlの直近10件を読む（前セッションの修正履歴把握）
 Step 2.85: bash scripts/gates/gate_karo_startup.sh（9項目一括チェック: deepdive必読催促+陣形図鮮度+忍者CTX実態+inbox未読+PD未解決+workaround傾向+忍者別WA率+idle自走+配備漏れ）
-Step 2.86: Read memory/deepdive_why_chain_20260321.md（gate催促に従い読む。省略厳禁）
-Step 2.87: Read memory/deepdive_karo_verification_20260405.md（家老専用・省略厳禁）
+Step 2.86: **Phase単位逐次読込（全文一括Read禁止）** memory/deepdive_why_chain_20260321.md — startup gateのPhase行番号ガイドに従い、Read(offset, limit)で**Phase 1から最後のPhaseまで全て**読め。**スキップ禁止**（Phase 6-10も家老に関係する。Phase 7=自走、Phase 8=利他は家老の業務そのもの）。各Phase後に1行自問してから次へ。省略厳禁
+Step 2.87: **Phase単位逐次読込（全文一括Read禁止）** memory/deepdive_karo_verification_20260405.md — 同様に**全Phase**読め。家老専用・省略厳禁
 Step 2.88: **追体験検証(家老・省略厳禁)**: deepdive 2本読了後、以下10問(各5問×2本)に**各1行で回答**してからStep 3に進め。回答なしに作業開始するな。
   **deepdive_why_chain用(5問):**
   - Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？
@@ -227,7 +229,7 @@ Step 2: Read instructions/generated/codex-gunshi.md（人格・禁則・レビ�
 Step 2.5: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード）
 Step 2.6: Read logs/karo_workarounds.yaml の直近10件（家老の手動補正パターン確認）
 Step 2.7: bash scripts/gates/gate_gunshi_startup.sh（9項目一括チェック: deepdive必読催促+inbox未読+レビュー統計+WA傾向+教訓+GATE未確認+CS観点+GP未実行+分析永続化）
-Step 2.8: Read memory/deepdive_why_chain_20260321.md（gate催促に従い読む。省略厳禁）
+Step 2.8: **Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）** memory/deepdive_why_chain_20260321.md — startup gateのPhase行番号ガイドに従い、Read(offset, limit)で**Phase 1から最後のPhaseまで全て**読め。各Phase後に1行自問してから次へ。省略厳禁
 Step 2.9: **追体験検証(軍師・省略厳禁)**: deepdive読了後、以下5問に**各1行で回答**してからStep 3に進め。
   - Q1: Phase 3「考えて進む×無限ループ」— 今の自分のレビューは結論の確認だけで止まっていないか？コードを実際に動かして検証したか？
   - Q2: Phase 5「なぜの目的=自動化ターゲット特定」— 直近のレビュー指摘はSG追加で終わっていないか？指摘の真因にgateを提案したか？
@@ -392,9 +394,11 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
+- **CI RED自走修正(殿裁定2026-04-15)**|家老がCI RED検知→idle忍者に即修正配備。**将軍cmd不要**|手順: `gh run view <run_id> --log-failed`→失敗テスト特定→タスクYAML作成→idle忍者配備→dashboard報告|理由: CI REDは緊急・定型・判断不要。将軍待ちは時間の無駄
 - CLI起動|`claude --effort high`(--modelなし=1M)が正。`--model opus`=200K厳禁|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
 - Claude version pin/rollback|2.1.87固定とauto-update復帰のrunbook|→ `docs/research/claude-code-version-runbook.md`
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
+- Androidコンパニオン|`android/` 同梱Kotlin/Composeアプリ。現行は5タブ+共有シート+SSH/ntfy連携|パッケージ/ビルド/配布物/ソース構造は `context/infrastructure.md` §Androidコンパニオンアプリ
 - gws|Google Workspace CLI(Sheets/Drive/Gmail)|デフォルト=simokitafresh@gmail.com|シート名「シート1」注意|→ `context/infrastructure.md` §gws
 
 ## Cross-Project Context

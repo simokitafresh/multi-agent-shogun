@@ -350,3 +350,8 @@ lessons:
   detail: '他エージェントのコード変更をrevertする場合、revert実行前にそのエージェントにinbox_writeで理由と状況を伝えよ。依存ファイル不足等の場合、先にcommitする代替案が出る可能性がある。revert後の事後通知では手遅れ。deploy_task.sh revert(f6be564)で軍師に通知不在→依存ファイル(yaml_field_set_batch)未commitが根因だったが先にcommitすれば解決できた'
   source_cmd: 'cmd_1914_revert'
   created_at: '2026-04-15'
+- id: 'LK063'
+  title: 'Codex忍者の@agent_state残留 — CLI種別差のフォールバック不在'
+  detail: 'Codex CLIにはClaude CodeのPreToolUse/PostToolUseフック(agent_state/last_active更新)がない。前回Claude Code時のagent_state=activeが残り続け、last_activeは空のまま→ninja_monitorがBUSY判定→/clearされない→idle行にも含まれない→家老が配備対象から除外。修正: (1)last_active空→stale補正(idle判定) (2)idle行にdone忍者も含める。根因: CLI種別の違いをninja_monitorが吸収していなかった'
+  source_cmd: 'cmd_karo_codex_stale_fix'
+  created_at: '2026-04-15'

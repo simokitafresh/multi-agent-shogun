@@ -1,23 +1,21 @@
 task:
-  _ac_task_id: cmd_1909_exact
+  _ac_task_id: cmd_karo_feedback_gap_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: 8d480448
+  ac_version: fd5c17f2
   acceptance_criteria:
-  - description: 'deploy_task.shの分割配備時にac_assignedフィールドをtask YAMLに書き込む。ac_assignedは忍者に割り当てられたACのIDリスト(例:
-      [AC1,AC2])。確認: 分割配備後のtask YAMLにac_assigned欄が存在'
+  - description: cmd_complete_gate.sh内のrecord_lesson_feedback.sh呼出し箇所と実行条件を報告
     id: AC1
-  - description: 'deploy_task.shのbinary_checks生成ロジックがac_assigned範囲のACのみを対象にする。ac_assignedが未設定(非分割配備)の場合は全ACを対象(既存動作維持)。確認:
-      分割配備時にtask YAMLのbinary_checksがac_assigned範囲のACのみ'
+  - description: 直近10件GATE CLEAR済みcmdのfeedback記録有無を確認。未記録cmdを一覧化
     id: AC2
-  - description: 既存テスト全PASS + 分割配備シナリオの新規テスト追加
+  - description: feedback未記録の根因を修正。既存テスト全PASS
     id: AC3
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追\n\
-    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
-    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
-    \  - L076: 新関数(inject_role_reminder/inject_report_template)はL047準拠(環境変数経由)だが、旧来のresolve_pan\n\
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L466: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo\n\
+    \  - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現\n\
+    \  - L038: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必\n\
+    \  - L035: cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -36,22 +34,21 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1909
+  parent_cmd: cmd_karo_feedback_gap
   project: infra
-  purpose: 分割配備時にdeploy_task.shが全AC分のbinary_checksを注入してしまい、担当外ACでFAILになる問題を修正。ac_assignedフィールドで忍者の担当AC範囲を制御し、binary_checksもその範囲に制限する
-  report_filename: kotaro_report_cmd_1909.yaml
-  report_path: queue/reports/kotaro_report_cmd_1909.yaml
+  report_filename: kotaro_report_cmd_karo_feedback_gap.yaml
+  report_path: queue/reports/kotaro_report_cmd_karo_feedback_gap.yaml
   status: done
   stop_for: []
-  task_id: cmd_1909_exact
-  task_type: exact
+  task_id: cmd_karo_feedback_gap_impl
+  task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 10
+    total_workarounds: 11
     top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件), premature_shelve(1件)'
+    breakdown: 'report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件), premature_shelve(1件), wrong_task_execution(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_blocks:
     - reason: 'binary_checks_fail'
@@ -70,6 +67,15 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L476'
+    summary: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
+    detail: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
+  - id: 'L475'
+    summary: 'dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用。テスト環境と本番環境でファイル数が一致すると誤ったキャッシュをHITし、context_freshness_check.shが誤データを参照。_proj_hash(PROJECT_DIRのcksum)をサフィッ'
+    detail: 'dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用。テスト環境と本番環境でファイル数が一致すると誤ったキャッシュをHITし、context_freshness_check.shが誤データを参照。_proj_hash(PROJECT_DIRのcksum)をサフィッ'
+  - id: 'L474'
+    summary: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、field_get.shではac_assignedを取得できない。awkで両形式を解析するパーサが必要。'
+    detail: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、field_get.shではac_assignedを取得できない。awkで両形式を解析するパーサが必要。'
   - id: 'L473'
     summary: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。'
     detail: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。'
@@ -91,13 +97,4 @@ task:
   - id: 'L467'
     summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
     detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
-  - id: 'L466'
-    summary: 'CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。'
-    detail: 'CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。'
-  - id: 'L465'
-    summary: 'cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft'
-    detail: 'cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft'
-  - id: 'L464'
-    summary: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
-    detail: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
-  deployed_at: "2026-04-15T14:46:45"
+  deployed_at: "2026-04-15T19:29:47"

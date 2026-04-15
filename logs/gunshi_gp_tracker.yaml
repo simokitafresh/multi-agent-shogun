@@ -47,7 +47,7 @@
 # | 029 | insights起票品質改善  | ★implemented      | S70  | cmd_1334。ID 4hex化+先頭50文字dedup追加 |
 # | 030 | autofix bc dict→list | ★implemented      | S72  | cmd_1316。gate_report_autofix.sh Fix8 |
 # | 031 | GATE autofix追加       | ★implemented      | S77  | cmd_complete_gate.sh L2080にgate_report_autofix.sh呼出あり。S125で現物確認。race condition防止済み |
-# | 032 | YAML parse prevention | ★implemented      | S103 | PostToolUse hookでYAML構文検証。post-edit-report-guard.shに追加。テスト検証済。GP品質ゲート初適用 |
+# | 032 | YAML parse prevention | ★partial(WARN only) | S103 | PostToolUse WARN表示のみ(post-write-edit-combined.sh Guard1)。YAML構文検証(parse check)は未実装。post-edit-report-guard.shファイル不在。GP-197で根因対処予定 |
 # | 033 | verdict autofix Fix9  | ★将軍解決         | S79  | 将軍Phase15: boolバグ修正+TRUE/FALSEマッチ追加。私の方向性は正→将軍が現物でbugfix |
 # | 034 | no_lesson_reason自動補完| ★将軍解決(除去)   | S81  | 将軍Phase15: gateがN/Aをplaceholder reject→Fix10除去。私の提案は誤り(end-to-end未検証) |
 # | 035 | gunshi self-gate       | ★implemented      | S102 | SG10として実装。5項目送信前チェック。軍師直接修正 |
@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:101(+GP-129,137b,180,181,182,187,195) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:9(GP-170,171,183,184,186,189,190,191,192) = 計129GP (2026-04-15T19:10更新)
+# 集計: ★implemented:103(+GP-129,137b,180,181,182,187,195,196,197) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:9(GP-170,171,183,184,186,189,190,191,192) = 計131GP (2026-04-15T19:50更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -338,3 +338,23 @@
   defense_level: 5
   reason: "lesson_candidate有→gate draft_lessons BLOCK→軍師gate_prediction:CLEAR設定(意志依存)→4回見落とし(cmd_1811/1814/1909/1911)。SG-PRE12でfound:true自動検出→WARN表示→意志依存排除。10回繰返し=10回×自動WARN=正の複利"
   evidence: "3テストケース検証: found:false→PASS(2件), found:true→WARN(1件)。既存SG-PRE9テスト3件PASS(副作用なし)"
+- id: GP-196
+  description: "lessons_useful numbered dict→list autofix復活(内容不変の構造変換)"
+  status: implemented
+  proposed_at: "2026-04-15T19:30:00"
+  implemented_at: "2026-04-15T19:35:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 4
+  reason: "cmd_1921 report_yaml_format WA(影丸lessons_useful dict/list混在)。GP-107撤去再評価: numbered dict({0:{id:X},1:{id:Y}})→list変換は内容不変。単一dict/ID-keyed dictは条件外(全キーint+全値dict)。家老workaround削減=利他"
+  evidence: "bats 20/20 PASS。Test3: numbered dict→list変換確認。Test17/18/19: 非numbered dictは変換されない(消火撤去維持)"
+- id: GP-197
+  description: "PostToolUse Edit hookでreport YAML構文検証(parse error即通知)"
+  status: implemented
+  proposed_at: "2026-04-15T19:35:00"
+  implemented_at: "2026-04-15T19:50:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 4
+  reason: "GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格"
+  evidence: "正常YAML→exit 0(エラーなし)。壊れたYAML→exit 1+parse error 1行表示。shellcheck clean"
