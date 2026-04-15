@@ -204,6 +204,8 @@ STALE_FIELDS = [
     'type', 'report_template',
     # 第6層: ネスト残留+旧メタデータ(cmd_1527発見: 前cmdの全task:ブロックが残留)
     'task', 'worker_id', 'timestamp',
+    # 第7層: GP-198 session state (新cmd配備時に前cmdの失敗履歴をクリア)
+    'session_state', 'previous_failures',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:
@@ -2796,6 +2798,67 @@ PY
     rm -f "$py_output"
 }
 
+# ─── GP-198: session_state → previous_failures 注入（再配備時失敗履歴引継ぎ） ───
+inject_session_state_hints() {
+    local task_file="$1"
+    [ -z "${_DEPLOY_PREV_SESSION_STATE:-}" ] && return 0
+    local ss_tmp
+    ss_tmp=$(mktemp)
+    printf '%s' "$_DEPLOY_PREV_SESSION_STATE" > "$ss_tmp"
+    python3 - "$task_file" "$ss_tmp" <<'SS_INJECT_PY' 2>/dev/null || true
+import json, sys, re, os, tempfile
+
+task_yaml = sys.argv[1]
+ss_tmp = sys.argv[2]
+
+try:
+    with open(ss_tmp) as f:
+        ss = json.load(f)
+except Exception:
+    sys.exit(0)
+
+if not ss:
+    sys.exit(0)
+
+attempt = ss.get('attempt', 0)
+last_reason = ss.get('last_block_reason', '')
+tried = ss.get('tried_approaches', [])
+
+if not attempt and not last_reason:
+    sys.exit(0)
+
+with open(task_yaml, encoding='utf-8') as f:
+    raw = f.read()
+
+def _sq(s):
+    return "'" + str(s).replace("'", "''") + "'"
+
+pf_lines = ['previous_failures:',
+            f'  attempt: {attempt}',
+            f'  last_block_reason: {_sq(last_reason)}',
+            '  tried_approaches:']
+for t in tried:
+    pf_lines.append(f'  - {_sq(t)}')
+pf_frag = '\n'.join(pf_lines)
+pf_indented = '\n'.join('  ' + l for l in pf_frag.split('\n'))
+
+pat = re.compile(r'^  previous_failures:.*?(?=\n  [a-zA-Z_]|\Z)', re.MULTILINE | re.DOTALL)
+m = pat.search(raw)
+if m:
+    raw = raw[:m.start()] + pf_indented + raw[m.end():]
+else:
+    raw = raw.rstrip('\n') + '\n' + pf_indented + '\n'
+
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_yaml), suffix='.pf_tmp')
+os.close(fd)
+with open(tmp, 'w', encoding='utf-8') as f:
+    f.write(raw)
+os.replace(tmp, task_yaml)
+print(f'[SESSION_HINT] previous_failures injected: attempt={attempt}', file=sys.stderr)
+SS_INJECT_PY
+    rm -f "$ss_tmp"
+}
+
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
 # deploy_task.sh実行時にcmd_complete_gate.shが要求するgateフラグを事前生成。
 # L078: 65%のBLOCKがmissing_gate(archive/lesson/review_gate)。配備時に生成で削減。
@@ -3347,6 +3410,7 @@ deploy_task_apply_task_mutations() {
     fi
 
     inject_task_modifiers "$task_file" || true
+    inject_session_state_hints "$task_file" || true  # GP-198
     inject_engineering_preferences "$task_file" || true
     postcondition_lesson_inject "$task_file" || true
 
@@ -3432,6 +3496,20 @@ deploy_task_main() {
     fi
 
     if [ -n "$CMD_ID" ]; then
+        # GP-198: session_stateをstale reset前に保存（再配備時のhint注入用）
+        _DEPLOY_PREV_SESSION_STATE=""
+        _DEPLOY_PREV_SESSION_STATE=$(python3 -c "
+import yaml, json, sys
+try:
+    with open('$task_yaml') as f:
+        d = yaml.safe_load(f) or {}
+    ss = (d.get('task') or d).get('session_state')
+    if ss and isinstance(ss, dict):
+        print(json.dumps(ss))
+except Exception:
+    pass
+" 2>/dev/null || true)
+        export _DEPLOY_PREV_SESSION_STATE
         reset_stale_fields "$NINJA_NAME"
         if [ "$DIRECT_MODE" = true ]; then
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"

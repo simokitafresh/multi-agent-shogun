@@ -507,5 +507,64 @@ else
     if [ -f "$_DIAGNOSE_GATE" ]; then
         bash "$_DIAGNOSE_GATE" "$REPORT_PATH" "$REASONS" || true
     fi
+    # --- GP-198: session_state recording on gate FAIL ---
+    _SS_REPORT_BASE=$(basename "$REPORT_PATH")
+    _SS_NINJA="${_SS_REPORT_BASE%%_report_*}"
+    _SS_TASK_DIR="${GATE_SESSION_STATE_TASK_DIR:-$REPO_ROOT/queue/tasks}"
+    _SS_TASK_YAML="$_SS_TASK_DIR/${_SS_NINJA}.yaml"
+    _SS_VALID=false
+    for _nn in kagemaru hanzo hayate tobisaru saizo kotaro sasuke kirimaru; do
+        [ "$_nn" = "$_SS_NINJA" ] && { _SS_VALID=true; break; }
+    done
+    if [ "$_SS_VALID" = "true" ] && [ -f "$_SS_TASK_YAML" ]; then
+        python3 - "$_SS_TASK_YAML" "$REASONS" <<'SESSION_STATE_PY' 2>/dev/null || true
+import yaml, sys, re, os, tempfile
+
+task_yaml = sys.argv[1]
+block_reason = sys.argv[2]
+
+with open(task_yaml, encoding='utf-8') as f:
+    raw = f.read()
+
+try:
+    data = yaml.safe_load(raw) or {}
+    task_node = data.get('task') or data
+    ss = task_node.get('session_state') or {}
+    attempt = int(ss.get('attempt', 0)) + 1
+    tried = list(ss.get('tried_approaches', []))
+except Exception:
+    attempt = 1
+    tried = []
+
+if block_reason and block_reason not in tried:
+    tried.append(block_reason)
+
+def _sq(s):
+    return "'" + str(s).replace("'", "''") + "'"
+
+frag_lines = ['session_state:',
+              f'  attempt: {attempt}',
+              f'  last_block_reason: {_sq(block_reason)}',
+              '  tried_approaches:']
+for t in tried:
+    frag_lines.append(f'  - {_sq(t)}')
+frag = '\n'.join(frag_lines)
+indented = '\n'.join('  ' + l for l in frag.split('\n'))
+
+pat = re.compile(r'^  session_state:.*?(?=\n  [a-zA-Z_]|\Z)', re.MULTILINE | re.DOTALL)
+m = pat.search(raw)
+if m:
+    raw = raw[:m.start()] + indented + raw[m.end():]
+else:
+    raw = raw.rstrip('\n') + '\n' + indented + '\n'
+
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_yaml), suffix='.ss_tmp')
+os.close(fd)
+with open(tmp, 'w', encoding='utf-8') as f:
+    f.write(raw)
+os.replace(tmp, task_yaml)
+print(f'[SESSION_STATE] attempt={attempt} block_reason={block_reason[:50]!r}', file=sys.stderr)
+SESSION_STATE_PY
+    fi
     exit 1
 fi
