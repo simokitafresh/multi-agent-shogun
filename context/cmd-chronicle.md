@@ -660,3 +660,4 @@
 | cmd_1936 | 強化 — gist作成時にインデックスgistを自動更新するスクリプト | infra | 04-16 | gist一覧の自動更新スクリプトと52+件実データの分類テス |
 | cmd_karo_gp198 | GP-198 — Session State: タスクレベル失敗履歴引継ぎ | infra | 04-16 | GP-198実装完了。gate_report_format. |
 | cmd_1937 | 整備 — context/ui-design-guide.md新設: 全エージェント共通UIデザインガイド | infra | 04-16 | Created context/ui-design-guid |
+| cmd_1938 | 整備 — context/ui-design-guide.md補強: ボタンデザイン9tips+16tips統合 | infra | 04-16 | context/ui-design-guide.md に 1 |
