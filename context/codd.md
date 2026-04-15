@@ -55,9 +55,9 @@
 
 | 層 | CoDD | 我が軍 | 有効率/GAP |
 |----|------|--------|-----------|
-| L1 事前 | codd extract設計書 | related_lessons + context_files | 有用率16%(10件注入→3件絞込み提案中: GP-199) |
-| L2 事後 | テストFB + DIVERGENT | gate BLOCK + FIX hints + DIVERGENT(GP-200実装済み) | workaround率0%(直近10件) |
-| L3 診断 | Diagnose MANDATORY + Session State | diagnose_reason必須(GP-198実装済み) + deepdive | 段階的導入中(初回=警告) |
+| L1 事前 | codd extract設計書 | related_lessons + context_files | 有用率26%→3件絞込み実装済み(GP-199 CLEAR) |
+| L2 事後 | テストFB + DIVERGENT | gate BLOCK + FIX hints + DIVERGENT(GP-200 CLEAR) | workaround率0%(直近10件) |
+| L3 診断 | Diagnose MANDATORY + Session State | diagnose_reason必須(GP-198 CLEAR) + Session State(GP-201 CLEAR) + deepdive | 全層実装完了。初回実証済み(疾風cmd_1936) |
 
 ## §5 我が軍での使い方
 
