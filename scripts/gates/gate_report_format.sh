@@ -16,7 +16,7 @@ fi
 
 # --- PASS cache: skip redundant re-checks on unmodified files (GP-073) ---
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PASS_CACHE="$REPO_ROOT/logs/.gate_pass_cache"
+PASS_CACHE="${GATE_PASS_CACHE_FILE:-$REPO_ROOT/logs/.gate_pass_cache}"
 # perf: absolute pathならrealpath(~12ms)をスキップ。stat 2ファイル同時取得(コマンド置換3→1)。
 if [[ "$REPORT_PATH" = /* ]]; then
     _CANON="$REPORT_PATH"
@@ -480,7 +480,7 @@ if [[ "$REPORT_PATH" == /tmp/* ]] || [[ "$REPORT_PATH" == *"/tmp/"* ]]; then
 fi
 
 # --- Gate fire logging (cmd_1279) ---
-LOG_FILE="$REPO_ROOT/logs/gate_fire_log.yaml"
+LOG_FILE="${GATE_FIRE_LOG_FILE:-$REPO_ROOT/logs/gate_fire_log.yaml}"
 TS=$(date -Is)
 
 if echo "$RESULT" | grep -q "^PASS"; then

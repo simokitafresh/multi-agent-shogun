@@ -10,14 +10,15 @@ REPO_TMPDIR_BATS=""
 setup() {
     TMPDIR_BATS=$(mktemp -d)
     REPO_TMPDIR_BATS=$(mktemp -d "tests/.tmp_gate_report_format.XXXXXX")
-    # Clear PASS cache to ensure clean state
-    rm -f logs/.gate_pass_cache
+    # --jobs 8並列実行時の競合を回避するためキャッシュ/ログをテストごとに一意化
+    export GATE_PASS_CACHE_FILE="$TMPDIR_BATS/.gate_pass_cache"
+    export GATE_FIRE_LOG_FILE="$TMPDIR_BATS/gate_fire_log.yaml"
 }
 
 teardown() {
     rm -rf "$TMPDIR_BATS"
     rm -rf "$REPO_TMPDIR_BATS"
-    rm -f logs/.gate_pass_cache
+    unset GATE_PASS_CACHE_FILE GATE_FIRE_LOG_FILE
 }
 
 # Helper: create a minimal valid report
@@ -106,7 +107,7 @@ YAML
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
     # Verify cache file exists
-    [ -f "logs/.gate_pass_cache" ]
+    [ -f "$GATE_PASS_CACHE_FILE" ]
     # Second call: should hit cache (no GP-062 WARN etc, just PASS)
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
@@ -119,7 +120,7 @@ YAML
     create_valid_report "$report" >/dev/null
     # First call: cache
     bash "$GATE" "$report" > /dev/null 2>&1
-    [ -f "logs/.gate_pass_cache" ]
+    [ -f "$GATE_PASS_CACHE_FILE" ]
     # Modify file (changes mtime)
     sleep 1
     echo "# mtime change" >> "$report"
@@ -155,8 +156,8 @@ YAML
     run bash "$GATE" "$report"
     [ "$status" -eq 1 ]
     # Cache should not contain this file
-    if [ -f "logs/.gate_pass_cache" ]; then
-        run grep "$(realpath "$report")" "logs/.gate_pass_cache"
+    if [ -f "$GATE_PASS_CACHE_FILE" ]; then
+        run grep "$(realpath "$report")" "$GATE_PASS_CACHE_FILE"
         [ "$status" -ne 0 ]
     fi
 }
@@ -164,13 +165,12 @@ YAML
 # --- T-NOLOG-1: GATE_NO_LOG=1 PASS時にgate_fire_logに書込みなし ---
 @test "T-NOLOG-1: GATE_NO_LOG=1 skips fire_log on PASS" {
     local report=$(create_valid_report)
-    rm -f logs/gate_fire_log.yaml
     GATE_NO_LOG=1 run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
     # fire_log should not exist or not contain this report
-    if [ -f "logs/gate_fire_log.yaml" ]; then
-        run grep "gate_report_format" "logs/gate_fire_log.yaml"
+    if [ -f "$GATE_FIRE_LOG_FILE" ]; then
+        run grep "gate_report_format" "$GATE_FIRE_LOG_FILE"
         [ "$status" -ne 0 ]
     fi
 }
@@ -179,23 +179,21 @@ YAML
 @test "T-NOLOG-2: without GATE_NO_LOG fire_log is written" {
     local report="$REPO_TMPDIR_BATS/report.yaml"
     create_valid_report "$report" >/dev/null
-    rm -f logs/gate_fire_log.yaml
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
     # fire_log should contain an entry
-    [ -f "logs/gate_fire_log.yaml" ]
-    run grep "gate_report_format" "logs/gate_fire_log.yaml"
+    [ -f "$GATE_FIRE_LOG_FILE" ]
+    run grep "gate_report_format" "$GATE_FIRE_LOG_FILE"
     [ "$status" -eq 0 ]
 }
 
 # --- T-NOLOG-3: /tmp/テストレポートはfire_logに書き込まない ---
 @test "T-NOLOG-3: /tmp reports are excluded from fire_log" {
     local report=$(create_valid_report)
-    rm -f logs/gate_fire_log.yaml
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
-    if [ -f "logs/gate_fire_log.yaml" ]; then
-        run grep "$report" "logs/gate_fire_log.yaml"
+    if [ -f "$GATE_FIRE_LOG_FILE" ]; then
+        run grep "$report" "$GATE_FIRE_LOG_FILE"
         [ "$status" -ne 0 ]
     fi
 }
