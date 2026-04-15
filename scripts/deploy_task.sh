@@ -2012,14 +2012,19 @@ try:
     if useful_rates:
         new_scored = []
         decayed_count = 0
+        excluded_zero_ids = []
         for score, lid, summary in scored:
             rate = useful_rates.get(lid)
-            if rate is not None and rate < USEFUL_RATE_THRESHOLD:
+            if rate is not None and rate == 0.0:
+                excluded_zero_ids.append(lid)
+            elif rate is not None and rate < USEFUL_RATE_THRESHOLD:
                 new_scored.append((score * USEFUL_RATE_DECAY, lid, summary))
                 decayed_count += 1
             else:
                 new_scored.append((score, lid, summary))
         scored = new_scored
+        if excluded_zero_ids:
+            print(f'[INJECT] useful_rate=0% exclusion: {len(excluded_zero_ids)} lessons excluded: {excluded_zero_ids}', file=sys.stderr)
         if decayed_count > 0:
             print(f'[INJECT] useful_rate decay: {decayed_count} lessons below {USEFUL_RATE_THRESHOLD*100:.0f}% threshold (score *= {USEFUL_RATE_DECAY})', file=sys.stderr)
 

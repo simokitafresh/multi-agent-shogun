@@ -351,6 +351,9 @@ write_lesson_effect_status() {
     local referenced="$4"
     local injected="$5"
     local scope="$6"
+    local useful="${7:-0}"
+    local total_feedback="${8:-0}"
+    local useful_rate="${9:-0.0}"
     cat > "$LESSON_EFFECT_STATUS_FILE" <<EOF
 updated_at=$(date '+%Y-%m-%dT%H:%M:%S%z')
 status=${status}
@@ -359,6 +362,9 @@ window_cmds=${window_cmds}
 referenced=${referenced}
 injected=${injected}
 scope=${scope}
+useful=${useful}
+total_feedback=${total_feedback}
+useful_rate=${useful_rate}
 EOF
 }
 
@@ -460,10 +466,12 @@ check_lesson_effectiveness() {
         {
             cmd = $2
             action = $5
+            result = $6
             ref = tolower($7)
             proj = $8
             gsub(/\r$/, "", cmd)
             gsub(/\r$/, "", action)
+            gsub(/\r$/, "", result)
             gsub(/\r$/, "", ref)
             gsub(/\r$/, "", proj)
             if (cmd !~ /^cmd_/) next
@@ -474,21 +482,34 @@ check_lesson_effectiveness() {
                 if (ref == "yes" || ref == "true" || ref == "1") {
                     referenced++
                 }
+            } else if (action == "feedback") {
+                total_feedback++
+                if (toupper(result) == "USEFUL") {
+                    useful++
+                }
             }
         }
         END {
-            printf "%d\t%d\n", referenced + 0, injected + 0
+            printf "%d\t%d\t%d\t%d\n", referenced + 0, injected + 0, useful + 0, total_feedback + 0
         }
     ' "$LESSON_IMPACT_FILE")
     rm -f "$cmd_file"
 
     local referenced_count=0
     local injected_count=0
-    IFS=$'\t' read -r referenced_count injected_count <<< "$metric"
+    local useful_count=0
+    local total_feedback_count=0
+    IFS=$'\t' read -r referenced_count injected_count useful_count total_feedback_count <<< "$metric"
 
     local rate
     rate=$(awk -v ref="$referenced_count" -v inj="$injected_count" 'BEGIN{
         if (inj > 0) printf "%.1f", (ref / inj) * 100
+        else printf "0.0"
+    }')
+
+    local useful_rate
+    useful_rate=$(awk -v u="$useful_count" -v t="$total_feedback_count" 'BEGIN{
+        if (t > 0) printf "%.1f", (u / t) * 100
         else printf "0.0"
     }')
 
@@ -500,11 +521,20 @@ check_lesson_effectiveness() {
             threshold_status="WARN"
         fi
     fi
+    # useful率によるステータス判定（feedback件数がある場合のみ）
+    if [ "$total_feedback_count" -gt 0 ]; then
+        if awk -v v="$useful_rate" -v thr="$LESSON_EFFECT_ALERT_THRESHOLD" 'BEGIN{exit !(v < thr)}'; then
+            threshold_status="ALERT"
+        elif [ "$threshold_status" = "OK" ] && awk -v v="$useful_rate" -v thr="$LESSON_EFFECT_WARN_THRESHOLD" 'BEGIN{exit !(v < thr)}'; then
+            threshold_status="WARN"
+        fi
+    fi
 
     echo "INFO: 教訓効果率(直近${window_cmds}cmd): ${referenced_count}/${injected_count} = ${rate}%"
-    echo "METRIC: lesson_effectiveness_threshold status=${threshold_status} rate=${rate}% window_cmds=${window_cmds} referenced=${referenced_count} injected=${injected_count} scope=${scope}"
+    echo "INFO: useful率(直近${window_cmds}cmd): ${useful_count}/${total_feedback_count} = ${useful_rate}%"
+    echo "METRIC: lesson_effectiveness_threshold status=${threshold_status} rate=${rate}% useful_rate=${useful_rate}% window_cmds=${window_cmds} referenced=${referenced_count} injected=${injected_count} useful=${useful_count} total_feedback=${total_feedback_count} scope=${scope}"
 
-    write_lesson_effect_status "$threshold_status" "$rate" "$window_cmds" "$referenced_count" "$injected_count" "$scope"
+    write_lesson_effect_status "$threshold_status" "$rate" "$window_cmds" "$referenced_count" "$injected_count" "$scope" "$useful_count" "$total_feedback_count" "$useful_rate"
     notify_lesson_effect_if_needed "$threshold_status" "$rate" "$scope"
 
     # injection_count >= 10 かつ helpful_count == 0 の精密チェック (cmd_470)
