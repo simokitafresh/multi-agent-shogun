@@ -137,14 +137,22 @@ else
 fi
 
 # --- Gate 6: 必読ファイル存在チェック ---
-REQUIRED_READ="$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"
 echo "■ 必読ファイル"
+REQUIRED_READ="$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"
 if [ -f "$REQUIRED_READ" ]; then
     echo "  OK: $(basename "$REQUIRED_READ") 存在確認"
 else
     overall="ALERT"
     alerts+=("必読ファイル不在: memory/deepdive_why_chain_20260321.md")
     echo "  ALERT: $REQUIRED_READ が存在しない"
+fi
+REQUIRED_READ2="$SCRIPT_DIR/memory/deepdive_causal_tracing_20260415.md"
+if [ -f "$REQUIRED_READ2" ]; then
+    echo "  OK: $(basename "$REQUIRED_READ2") 存在確認"
+else
+    overall="ALERT"
+    alerts+=("必読ファイル不在: memory/deepdive_causal_tracing_20260415.md")
+    echo "  ALERT: $REQUIRED_READ2 が存在しない"
 fi
 
 # --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---
