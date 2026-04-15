@@ -563,6 +563,28 @@ else
     if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
 fi
 
+# --- Gate 13.7: cmd品質直近BLOCK（将軍のworkarounds相当） ---
+echo "■ cmd品質(直近10件)"
+_DQ_FILE="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+if [ -f "$_DQ_FILE" ]; then
+    _dq_total=$(grep -c 'cmd_id:' "$_DQ_FILE" 2>/dev/null || true)
+    _dq_total=${_dq_total:-0}; _dq_total=${_dq_total//[^0-9]/}; _dq_total=${_dq_total:-0}
+    _dq_block=$(grep -c 'gate_result.*BLOCK' "$_DQ_FILE" 2>/dev/null || true)
+    _dq_block=${_dq_block:-0}; _dq_block=${_dq_block//[^0-9]/}; _dq_block=${_dq_block:-0}
+    if [ "$_dq_total" -gt 0 ]; then
+        _dq_rate=$(( _dq_block * 100 / _dq_total ))
+        echo "  全体: ${_dq_total}件中BLOCK ${_dq_block}件 (${_dq_rate}%)"
+    fi
+    # 直近10件のBLOCK理由を表示
+    _recent_blocks=$(tail -200 "$_DQ_FILE" | grep -B 1 'gate_result.*BLOCK' 2>/dev/null | grep 'notes:' 2>/dev/null | tail -5 | sed 's/.*notes: */  BLOCK: /' || true)
+    if [ -n "$_recent_blocks" ]; then
+        echo "  直近BLOCK理由:"
+        echo "$_recent_blocks"
+    else
+        echo "  直近BLOCK: なし"
+    fi
+fi
+
 # --- Gate 14: 軍師分析状態（知識循環チェック） ---
 # 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに将軍が偵察cmd重複起票
 # 目的: 起動時に軍師の最新分析テーマを表示し、cmd起票前の情報基盤を整える

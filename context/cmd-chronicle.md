@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-15 -->
+<!-- last_updated: 2026-04-16 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -44,34 +44,6 @@
 | cmd_978 | 衛生 — 全プロジェクト .gitignore整備 + 未プッシュ一覧 | | infra | 03-16 | — |
 | cmd_980 | 偵察 — 教訓注入率低下の原因精査と改善提案 | | infra | 03-16 | — |
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
-| cmd_981 | 'p̄（p平均法）をFoFレイヤーのコーディングブロックとして忍法パイプラインに組み込み、 | dm-signal | 03-16 | — |
-| cmd_982 | 'Render BEデプロイが2連続update_failed。 | dm-signal | 03-16 | — |
-| cmd_983 | 'p̄の複合PK化・複数n_splits事前計算・パイプラインブロック・FE表示について、 | dm-signal | 03-16 | — |
-| cmd_977 | 'p平均法を知識辞書に反映し、DM-Signal BEに実装し、FEに表示する。 | dm-signal | 03-16 | — |
-| cmd_984 | Android音声入力（Gboard等のIME）の認識結果に対し、アプリ内で後処理辞書による 自動置換を適用し、将軍運用で頻出する専門用語の入力精度を向上させる。 | infra | 03-16 | AC3+AC4完了。VoiceDictionarySecti |
-| cmd_985 | AndroidアプリからOpenAI APIのusage（使用量・コスト）を確認できるようにする。 既存のClaude usage表示と並列で、Claude/OpenAI切替で両方のAPIコストを把握可能にする。 | infra | 03-16 | — |
-| cmd_990 | 'cancelled - replaced by cmd_991' | infra | 03-16 | — |
-| cmd_988 | 'p̄バッチがサイレントに壊れた場合を検知するゲートを追加し、 | dm-signal | 03-16 | — |
-| cmd_986 | 'Androidアプリにオフライン対応の開発アイデア帳を追加し、 | infra | 03-16 | — |
-| cmd_987 | 'PBarSelectionBlockをパイプラインに追加し、複合PK化+複数n_splits事前計算を実装する。 | dm-signal | 03-16 | — |
-| cmd_989 | 'ntfy_listener, inbox_watcher, ninja_monitor等のデーモンが落ちた場合に | infra | 03-16 | — |
-| cmd_991 | 'ダッシュボードの教訓注入率セクションにタスク種別(impl/review/recon/scout)ごとの | infra | 03-16 | — |
-| cmd_992 | 'gate_context_freshness.shのWARN/ALERTを解消する。 | infra | 03-16 | — |
-| cmd_994 | 'Androidアプリ v6.0をビルドし、GitHubリリースを作成してAPKをアップロード、 | infra | 03-16 | — |
-| cmd_993 | 'dashboard_auto_section.shのshellcheck SC2034違反（未使用変数CLEAR_RATE, LAST_GATE）を修正し、Stop Hook lintをパスさせる。' | infra | 03-16 | dashboard_auto_section.sh の sh |
-| cmd_995 | 'cmd_985のRate Limit表示を殿の要件通りに修正する。 | infra | 03-16 | — |
-| cmd_996 | 'cmd_985/986の実装で発生した横スクロールを修正し、 | infra | 03-16 | — |
-| cmd_997 | '音声辞書のプリセットを複数の方法論で大幅に増やす。 | infra | 03-16 | — |
-| cmd_998 | 'PBarSelectionBlockを四神×3パターン=12体の入力プールでtop_n=2実行し、 | dm-signal | 03-16 | PBarSelectionBlock実戦テスト完了。四神×3 |
-| cmd_1000 | '既存ビルディングブロック群とPBarSelectionBlockの動作形式の整合性を確認し、 | dm-signal | 03-16 | — |
-| cmd_999 | 'PBarSelectionBlockの月次リバランス・均等保有バックテストを実施し、 | dm-signal | 03-16 | — |
-| cmd_1001 | 'cmd_1000偵察でビルディングブロック内に共通期間算出がないことを確認した。 | dm-signal | 03-16 | — |
-| cmd_1003 | '殿が発見した2件の表示バグを調査・修正し、さらに全PF/FoFで | dm-signal | 03-16 | — |
-| cmd_1002 | 'PBarSelectionBlockのp̄計算に任意のlookback_months（ルックバック期間）を | dm-signal | 03-16 | — |
-| cmd_1005 | '(1) MIN_PERIOD_LENGTH=12はrichmanbtcの実装判断であり学術的根拠なし。 | dm-signal | 03-16 | — |
-| cmd_1004 | 'FoFの計算開始日(fof_valid_start_date)が構成PFのシグナル開始日しか見ておらず、 | dm-signal | 03-16 | — |
-| cmd_1007 | 'cmd_1005のPBar BTをtop_n=1で再実行し、毎月p̄最良1体に集中した場合の | dm-signal | 03-16 | — |
-| cmd_1008 | '各ファミリー（青龍/朱雀/白虎/玄武）内の3モード（激攻/鉄壁/常勝）から | dm-signal | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1014 | Max Run-upと直交する2メトリクスをL1レベルで特定し、シン四神CPCVスクリーニング用トリプルEを確定する | dm-signal | 03-17 | シン四神Phase1: L1ファミリー別メトリクス相関分析を |
 | cmd_1016 | trade-ruleパリティ修正前に生成された汚染GS結果データを特定し完全削除する | dm-signal | 03-17 | — |
@@ -677,3 +649,6 @@
 | cmd_karo_revert_1928_1930 | fix — cmd_1928/1930のgate_shogun_startup.sh変更をrevert | infra | 04-15 | gate_shogun_startup.shからcmd_19 |
 | cmd_karo_revert_1928_1930_v2 | fix — revert不完全修正(deepdive Phase 6 + gate L750-753) | infra | 04-15 | Gate 18(lord_conversation inbo |
 | cmd_karo_ci_fix_ga056 | fix — CI RED修正(gate_karo_startup.bats + cmd_save.bats テスト失敗4件) | infra | 04-15 | CI失敗テスト(test_cmd_save.bats×5件 |
+| cmd_1933 | cmd_save.sh Check 10の作成cmd偽陽性修正。ファイル不在時に親ディレクトリが存在すれば作成対象としてINFO表示に降格し、親ディレクトリも不在ならBLOCK維持。cmd_1931/1932で2回連続BLOCKされた実害あり | infra | 04-15 | Check 10で親ディレクトリが存在する未作成パスをINF |
+| cmd_1931 | 将軍の追体験品質が構造的に低い根因修正。家老(lessons_karo.yaml 55件)と軍師(lessons_gunshi.yaml 26件)にはdeepdive前に通読する具体的失敗データがあるが、将軍にはない。教訓の格納形式が出力の深さを決める(軍師分析)。lessons_shogun.yamlを作成し起動手順に組み込む | infra | 04-16 | lessons_shogun.yaml 20件を新設し、将軍 |
+| cmd_1932 | 掲示板システムの引数順バグ修正+ライフサイクル管理追加。4エントリ中3件でcontent/posted_byが逆転。根因=引数順<posted_by> <content>がinbox_write.sh(<target> <content> ... <from>)と不一致でエージェントが間違える | infra | 04-16 | 掲示板の引数順バグを修正し、明示クローズ機能追加と既存3件の |
