@@ -1998,8 +1998,8 @@ try:
 
     # AC4: スコア0時のフォールバック = 注入なし（無関連教訓のCTX浪費防止）
 
-    # cmd_531: AC1 — MAX_INJECT=5 総合注入上限（universalは内数）
-    MAX_INJECT = 5
+    # cmd_karo_gp196: AC1 — MAX_INJECT=3 総合注入上限（universalは内数）
+    MAX_INJECT = 3
 
     # cmd_1457: universal教訓の準備（max 2、helpful_count上位）— task-specificに最低3枠確保
     MAX_UNIVERSAL = 2
@@ -2009,7 +2009,7 @@ try:
 
     # cmd_1457: universal/task-specific枠分離（universalがtask-specificの枠を奪えない構造）
     # universal: 先頭に配置、最大MAX_UNIVERSAL(2)枠
-    # task-specific: 残り枠（最低 MAX_INJECT - MAX_UNIVERSAL = 3枠確保）
+    # task-specific: 残り枠（最低 MAX_INJECT - MAX_UNIVERSAL = 1枠確保）
     related = []
     withheld = []
     universal_added = 0

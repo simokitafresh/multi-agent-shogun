@@ -1,5 +1,9 @@
 # CoDD (Coherence-Driven Development) 索引
 
+<!-- last_updated: 2026-04-16 -->
+<!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
+<!-- verify: codd --version == §1の版数, §4 3層モデルのGP statusが最新か -->
+
 > 詳細原典: `memory/reference_codd_oshio_articles.md`
 > 実戦教訓: `memory/tool_codd_lessons.md`
 > 将軍システム適用分析: `context/gunshi-codd-analysis.md`
@@ -42,10 +46,18 @@
 | CoDD | 我が軍 | 結論 |
 |------|--------|------|
 | `extract` | `context/*.md` | どちらも現物から索引層を起こし、必要な文脈だけを読むための圧縮レイヤ |
-| テストFB + DIVERGENT | gate BLOCK -> 教訓 -> 再挑戦 | 失敗を次の行動に変換する事後ハーネスという点で同型 |
-| 診断推論 | なぜなぜ7回 / deepdive | 直す前に原因を言語化して前提を疑う構造が対応する |
-| Session State | lessons / deepdive / task履歴 | `/clear` や再配備を跨いで学びを保持する受動的記憶として機能する |
+| テストFB + DIVERGENT | gate BLOCK + gate_diagnose_check.sh(GP-200) | 失敗を次の行動に変換する事後ハーネス。同一理由2回連続→仮説転換強制 |
+| 診断推論 | なぜなぜ7回 + gate_diagnose_check.sh(GP-198) | 将軍=deepdive、忍者=BLOCK時diagnose_reason必須。全層で根本原因を先に言語化 |
+| Session State | lessons / deepdive / ninja_weak_points | `/clear`を跨いで学びを保持する受動的記憶。タスクレベルSession State(GP-201)は設計済み未実装 |
 | Harness as Code | 自動化×強制 | 人間依存の注意でなく、環境とフローに正しい動きを埋め込む思想が一致する |
+
+### 3層モデル対応(§3補足)
+
+| 層 | CoDD | 我が軍 | 有効率/GAP |
+|----|------|--------|-----------|
+| L1 事前 | codd extract設計書 | related_lessons + context_files | 有用率16%(10件注入→3件絞込み提案中: GP-199) |
+| L2 事後 | テストFB + DIVERGENT | gate BLOCK + FIX hints + DIVERGENT(GP-200実装済み) | workaround率0%(直近10件) |
+| L3 診断 | Diagnose MANDATORY + Session State | diagnose_reason必須(GP-198実装済み) + deepdive | 段階的導入中(初回=警告) |
 
 ## §5 我が軍での使い方
 
@@ -53,7 +65,7 @@
 |--------|------|------|
 | `/codd` | 設計書パイプライン専用。specからWave設計書群を起こす | `~/.claude/skills/codd/SKILL.md` |
 | `/codd-refactor` | 計測 -> spec -> CoDD -> 実装 -> 再計測の一連を回す | `~/.claude/skills/codd-refactor/SKILL.md` |
-| `codd fix` | CI REDや設計破綻の修正向け。診断推論+Session Stateがv1.8.0の差分 | `docs/research/gunshi_codd_swebench_application_20260416.md` §2, §4-§5 |
+| `codd fix` | CI RED修正向け。診断推論+Session State。家老CI RED検知→`codd fix`でパッチ生成→忍者配備。スキル非対応のため直接CLI実行 | `docs/research/gunshi_codd_swebench_application_20260416.md` §2, §4-§5 |
 | `propagate` | `scan/impact` と組み合わせ、変更波及先の更新漏れを潰す | `memory/reference_codd_oshio_articles.md` |
 | `review` / `verify` / `policy` / `audit` | 品質確認を単発でなく層として回す。レビュー、整合性、方針、監査を分離する | `memory/reference_codd_oshio_articles.md` |
 | `measure` | 健全性を数値で監視し、リファクタや運用劣化を感覚でなくスコアで検知する | `memory/reference_codd_oshio_articles.md` |

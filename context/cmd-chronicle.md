@@ -653,3 +653,6 @@
 | cmd_1931 | 将軍の追体験品質が構造的に低い根因修正。家老(lessons_karo.yaml 55件)と軍師(lessons_gunshi.yaml 26件)にはdeepdive前に通読する具体的失敗データがあるが、将軍にはない。教訓の格納形式が出力の深さを決める(軍師分析)。lessons_shogun.yamlを作成し起動手順に組み込む | infra | 04-16 | lessons_shogun.yaml 20件を新設し、将軍 |
 | cmd_1932 | 掲示板システムの引数順バグ修正+ライフサイクル管理追加。4エントリ中3件でcontent/posted_byが逆転。根因=引数順<posted_by> <content>がinbox_write.sh(<target> <content> ... <from>)と不一致でエージェントが間違える | infra | 04-16 | 掲示板の引数順バグを修正し、明示クローズ機能追加と既存3件の |
 | cmd_karo_ci_fix_acpaths | CI RED修正 — test_cmd_save_ac_paths.bats更新コミット | infra | 04-16 | AC path test期待値を更新し、追加で露出したbul |
+| cmd_1934 | 研究 — 3体EW全量探索: C(21,3)=1330通り×4手法β調整α6指標 | dm-signal | 04-16 | cmd_1934 実装完了。⑤_* 21列の3体1330通り |
+| cmd_1935 | 整備 — context/codd.md新設: CoDD v1.8.0知識一元化 | infra | 04-16 | context/codd.mdを新設し、CLAUDE.md/ |
+| cmd_karo_gp195_197 | GP-195+197統合 — gate_diagnose_check.shをgate_report_format.shに統合 | infra | 04-16 | gate_report_format.sh の FAIL 経 |
