@@ -1421,8 +1421,10 @@ echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
 # sync_stk Source 2 + archive_reports L582-583 の両方が消費
 # WSL2 NTFS最適化: /tmp/に永続キャッシュ。reportファイル数未変更ならNTFS走査スキップ(1074ms→5ms)
 _REPORT_CACHE="$TMP/report_fields_cache.tsv"
-_PERSISTENT_RPT_CACHE="/tmp/shogun_report_fields_cache.tsv"
-_PERSISTENT_RPT_COUNT="/tmp/shogun_report_fields_count"
+# WSL2 NTFS最適化: REPORTS_DIRパスごとに別キャッシュ(テスト環境と本番を分離)
+_RPT_HASH=$(printf '%s' "$REPORTS_DIR" | md5sum | cut -c1-8)
+_PERSISTENT_RPT_CACHE="/tmp/shogun_rpt_cache_${_RPT_HASH}.tsv"
+_PERSISTENT_RPT_COUNT="/tmp/shogun_rpt_count_${_RPT_HASH}"
 if compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$REPORTS_DIR/subtask_*.yaml" > /dev/null 2>&1; then
     shopt -s nullglob
     _rpt_files=("$REPORTS_DIR"/*.yaml)
