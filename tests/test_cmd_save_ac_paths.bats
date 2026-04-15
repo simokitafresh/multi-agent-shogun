@@ -3,10 +3,11 @@
 #
 # テスト構成:
 #   T-001: 存在するパス → WARNING出ない
-#   T-002: 存在しないパス → WARNING出る
+#   T-002: 親ディレクトリも不在のパス → WARNING/BLOCK
 #   T-003: パスなし → 何もしない（空振り耐性）
 #   T-004: WARN_COUNTに加算しない（check_ac_file_pathsはWARN_COUNTを変更しない）
-#   T-005: 複数パス（存在+不在混在）
+#   T-005: 親ディレクトリありの未作成パス → INFOのみ
+#   T-006: 複数パス（存在+INFO+BLOCK混在）
 #
 # 注: check_ac_file_paths関数を単体テスト。cmd_save.shフルパイプラインは
 #     check_pi_number_collisionの既存pipefailバグで途中exitするため
@@ -72,15 +73,16 @@ teardown() {
     [[ "$output" != *"AC内のファイルパスが存在しません"* ]]
 }
 
-# T-002: 存在しないパス → WARNING出る
-@test "T-002: non-existing paths produce WARNING" {
+# T-002: 親ディレクトリも不在のパス → WARNING/BLOCK
+@test "T-002: missing parent paths produce WARNING and BLOCK" {
     local CMD_BLOCK="    acceptance_criteria:
       - 'AC1: backend/generators/monthly_returns.py を修正'
     project: test-proj"
     run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AC内のファイルパスが存在しません"* ]]
+    [[ "$output" == *"親ディレクトリも不在です"* ]]
     [[ "$output" == *"backend/generators/monthly_returns.py"* ]]
+    [[ "$output" == *"BLOCK:"* ]]
 }
 
 # T-003: パスなし → 何もしない（空振り耐性）
@@ -101,19 +103,33 @@ teardown() {
     run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
     # 関数はWARNINGを出力するがexit 0で返る（WARN_COUNTに加算しない）
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AC内のファイルパスが存在しません"* ]]
+    [[ "$output" == *"親ディレクトリも不在です"* ]]
 }
 
-# T-005: 複数パス（存在+不在混在）
-@test "T-005: mixed existing and non-existing paths" {
+# T-005: 親ディレクトリありの未作成パス → INFOのみ
+@test "T-005: creatable paths under existing parent produce INFO only" {
     local CMD_BLOCK="    acceptance_criteria:
-      - 'AC1: backend/app/services/engine.py 修正'
-      - 'AC2: frontend/app/nonexistent.tsx 新規作成'
+      - 'AC1: frontend/app/new-widget.tsx 新規作成'
     project: test-proj"
     run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
     [ "$status" -eq 0 ]
-    # 存在しないパスだけWARNING
-    [[ "$output" == *"frontend/app/nonexistent.tsx"* ]]
-    # 存在するパスはWARNING行に出ない
+    [[ "$output" == *"INFO: AC内の未作成ファイルは親ディレクトリが存在するため作成対象として扱います"* ]]
+    [[ "$output" == *"frontend/app/new-widget.tsx"* ]]
+    [[ "$output" != *"BLOCK:"* ]]
+    [[ "$output" != *"親ディレクトリも不在です"* ]]
+}
+
+# T-006: 複数パス（存在+INFO+BLOCK混在）
+@test "T-006: mixed existing creatable and missing-parent paths" {
+    local CMD_BLOCK="    acceptance_criteria:
+      - 'AC1: backend/app/services/engine.py 修正'
+      - 'AC2: frontend/app/new-widget.tsx 新規作成'
+      - 'AC3: mobile/app/screens/Home.tsx 新規作成'
+    project: test-proj"
+    run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"frontend/app/new-widget.tsx"* ]]
+    [[ "$output" == *"mobile/app/screens/Home.tsx"* ]]
+    [[ "$output" == *"BLOCK:"* ]]
     [[ "$output" != *"✗ backend/app/services/engine.py"* ]]
 }
