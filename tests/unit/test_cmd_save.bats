@@ -77,6 +77,8 @@ setup() {
     export CMD_ID="cmd_test"
     export CMD_BLOCK=""
     export CMD_BLOCK_NC=""
+    # --jobs 8並列実行時の競合を回避するためQUEUE_FILEをテストごとに一意化
+    export QUEUE_FILE="${TEST_SHARED_TMP}/queue/shogun_to_karo_${BATS_TEST_NUMBER}.yaml"
 }
 
 teardown() { true; }
