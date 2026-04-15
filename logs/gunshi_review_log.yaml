@@ -35,7 +35,7 @@
 # golden data検証基準: 生成時のコード状態(commit)を確認。バグ状態で生成されたgolden dataは検証基準にならない(cmd_1899: TRFバグ状態のgolden=全選択≠正しいTop+Worst)
 # パリティスクリプトtarget_date: productionと同じ日付で再実行必須。skip_months>0で差が増幅(cmd_1898: 前月末日vs第1営業日→抜き身/四つ目83-99%)
 # 「既にBLOCK化済み」判定→git show <commit>:fileで確認せよ。Readはuncommitted変更を含む(cmd_1912: exit 1があると思ったらuncommitted変更だった。LG001の再発形)
-# lesson_candidate有→gate_prediction: WARN。3回見落とし(cmd_1811/1814+cmd_1909+cmd_1911)。SG-PRE9はbc:noのみ検出。lesson有のWARN自動化はSG-PRE未対応→手動注意(GP候補)
+# lesson_candidate(found:true)有→gate_prediction: WARN。4回見落とし(cmd_1811/1814/1909/1911)→GP-195 SG-PRE12自動化済み(2026-04-15)
 # 他エージェントのコード変更をrevertする前に変更元に通知せよ(殿裁定2026-04-15)。deploy_task.sh R1+R2がrevert→依存ファイル先commitで解決可能だった。事後通知では手遅れ
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
 # SG一覧: SG0(gate自動) SG2(commit) SG3(scope) SG4(家老処理) SG5(偵察トレーサビリティ)
@@ -720,3 +720,18 @@
   gate_prediction: CLEAR
   causal_chain: "殿指摘(因果探索原則)→deepdive作成→cmd_1922(必読化)→半蔵実装→CLAUDE.md+gate埋込→次の将軍が毎セッション追体験=自動化×強制"
   timestamp: "2026-04-15T18:47:00"
+- cmd_id: self_study_S184
+  review_type: self_study
+  findings_summary: "GP-195実装。SG-PRE12 lesson_candidate(found:true)自動WARN。4回見落とし(cmd_1811/1814/1909/1911)の意志依存→環境埋込み。verdict_override 9件因果分析(7/9 GP対策済み)。karo_workarounds直近7件WA率28.6%(2/7)"
+  observations:
+    - "事実1: verdict_override 9件。commit check起因5件(GP-183/184/190),AC推奨混入1件(GP-173),テスト固定値1件(ヘッダL30),当月DB差異1件(GP-184),scope外1件"
+    - "事実2: lesson_candidate found:true→SG-PRE12 WARN表示確認。found:false→PASS確認。既存3テストPASS(副作用なし)"
+    - "事実3: cmd_1909 wrong_task_execution 1件(孤立事例)。影丸がcmd_1904と混同。道具閾値(3件)未到達"
+    - "事実4: cmd_1912 軍師誤判定(Read tool uncommitted変更→既実装と判定)。LG001再発形。ヘッダL37記載済み"
+  proposals:
+    - id: GP-195
+      description: "SG-PRE12 lesson_candidate(found:true)→WARN自動表示"
+      status: implemented
+      defense_level: 5
+  causal_chain: "lesson有→gate draft_lessons BLOCK→軍師gate_prediction:CLEAR(意志依存)→4回見落とし→GP-195(SG-PRE12 WARN)→意志依存排除=正の複利"
+  timestamp: "2026-04-15T19:10:00"

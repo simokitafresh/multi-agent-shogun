@@ -31,6 +31,7 @@ def main():
         'TASK_FILE': '',
         'BC_HAS_NO': '0',
         'BC_NO_ITEMS': '',
+        'HAS_LESSON_CANDIDATE': '0',
     }
 
     # ── 1. REPORT_PATH を1回読込 ──────────────────────────────────────────
@@ -161,6 +162,13 @@ def main():
     lu_msg = '  SKIP'
     lessons_useful = report.get('lessons_useful')
     lesson_candidate = report.get('lesson_candidate')
+    # lesson_candidate存在判定: dict形式の場合found:trueのみ有効
+    has_lc = False
+    if isinstance(lesson_candidate, dict):
+        has_lc = bool(lesson_candidate.get('found', False))
+    elif lesson_candidate:
+        has_lc = True
+    result['HAS_LESSON_CANDIDATE'] = '1' if has_lc else '0'
     if isinstance(lessons_useful, list) and lessons_useful:
         bad_items = []
         for i, item in enumerate(lessons_useful):
@@ -175,10 +183,10 @@ def main():
             lu_msg = f'  WARN: lessons_useful形式不備: {"; ".join(bad_items[:3])}'
         else:
             lu_msg = f'  PASS: lessons_useful {len(lessons_useful)}件 形式OK'
-    elif lesson_candidate:
+    elif has_lc:
         lu_msg = (
-            '  INFO: lesson_candidate有+lessons_useful空'
-            ' → draft_lessons BLOCKリスクなし'
+            '  INFO: lesson_candidate(found:true)+lessons_useful空'
+            ' → draft_lessons BLOCKリスクあり(gate_prediction: WARN必須)'
         )
     else:
         lu_msg = '  PASS: lesson_candidate/lessons_useful共になし'

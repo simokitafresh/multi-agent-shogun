@@ -188,6 +188,17 @@ echo ""
 echo "■ SG-PRE11: lessons_useful形式検証"
 echo "${LESSONS_USEFUL_MSG:-  SKIP}"
 
+# ─── SG-PRE12: lesson_candidate有 → gate_prediction WARN必須 (GP-195) ───
+echo ""
+echo "■ SG-PRE12: lesson_candidate存在チェック"
+if [ "${HAS_LESSON_CANDIDATE:-0}" = "1" ]; then
+    echo "  ★★★ WARN: lesson_candidate有。gate_prediction: WARN/BLOCK必須"
+    echo "  → draft_lessons BLOCKリスク(家老がlesson登録するまでGATE通過しない)"
+    echo "  → 見落とし実績: cmd_1811, cmd_1814, cmd_1909, cmd_1911 (4回)"
+else
+    echo "  PASS: lesson_candidateなし"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="

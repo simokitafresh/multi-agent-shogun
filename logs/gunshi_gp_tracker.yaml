@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:100(+GP-129,137b,180,181,182,187) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:9(GP-170,171,183,184,186,189,190,191,192) = 計128GP (2026-04-14T12:50更新)
+# 集計: ★implemented:101(+GP-129,137b,180,181,182,187,195) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:9(GP-170,171,183,184,186,189,190,191,192) = 計129GP (2026-04-15T19:10更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -328,3 +328,13 @@
   defense_level: 4
   reason: "split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成"
   evidence: "karo_workarounds.yaml split_deploy_ac_scope 2件。deploy_task.sh L1230-1296がtask全ACを読む構造"
+- id: GP-195
+  description: "SG-PRE12 lesson_candidate(found:true)→WARN自動表示(gate_prediction見落とし4回根絶)"
+  status: implemented
+  proposed_at: "2026-04-15T19:00:00"
+  implemented_at: "2026-04-15T19:10:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 5
+  reason: "lesson_candidate有→gate draft_lessons BLOCK→軍師gate_prediction:CLEAR設定(意志依存)→4回見落とし(cmd_1811/1814/1909/1911)。SG-PRE12でfound:true自動検出→WARN表示→意志依存排除。10回繰返し=10回×自動WARN=正の複利"
+  evidence: "3テストケース検証: found:false→PASS(2件), found:true→WARN(1件)。既存SG-PRE9テスト3件PASS(副作用なし)"
