@@ -1,17 +1,52 @@
 task:
-  _ac_task_id: cmd_1903_impl
+  _ac_task_id: cmd_1907_exact
   _ac_worker_id: null
-
-  ac_version: 2edf2958
-
-  parent_cmd: cmd_1903
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: a3f91c99
+  acceptance_criteria:
+  - description: 'cmd_1902 CSVをalpha_calmar降順でソートし、Top30を抽出。各ペアのpair_id/alpha_calmar/alpha_cagr/alpha_max_dd/alpha_uwp/mode_a/mode_b/ninpo_a/ninpo_bを含むCSV出力。確認:
+      wc -l=31(ヘッダ+30行)'
+    id: AC1
+  - description: 'Top30のモード混成パターン集計: 激攻×激攻/激攻×鉄壁/鉄壁×鉄壁の3カテゴリの出現件数と割合。確認: 3カテゴリの件数合計=30'
+    id: AC2
+  - description: 'Top30の忍法出現頻度集計: ninpo_a/ninpo_bに出現する各忍法の延べ出現回数(60回=30ペア×2)。確認: 合計=60。最頻忍法を特定'
+    id: AC3
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-ops.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
+    ────────────────────────────────────────"
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
+    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_1907
   project: dm-signal
-  report_filename: hayate_report_cmd_1903.yaml
-  report_path: queue/reports/hayate_report_cmd_1903.yaml
+  purpose: cmd_1902の6指標α版3486ペアCSVからα-Calmar Top30を抽出し、モード混成(激攻×鉄壁)・忍法組合せ・奥義レベル構成の出現頻度を定量化する。Phase
+    32の発見(激攻+鉄壁混成がα安定性の構造的源泉)を数字で裏付ける
+  report_filename: hayate_report_cmd_1907.yaml
+  report_path: queue/reports/hayate_report_cmd_1907.yaml
   status: done
-
-  task_id: cmd_1903_impl
-  task_type: impl
+  stop_for: []
+  task_id: cmd_1907_exact
+  task_type: exact
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -20,14 +55,6 @@ task:
     top_pattern: 'verdict_override(4件)'
     breakdown: 'verdict_override(4件), report_yaml_format(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), deploy_error(1件)'
     warning: '⚠ 過去22件のworkaround発生。品質に注意'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 77
-    - pattern: 'lu_reason_empty'
-      count: 28
-    - pattern: 'verdict_invalid'
-      count: 15
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 14
@@ -78,3 +105,4 @@ task:
   - id: 'L617'
     summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
     detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+  deployed_at: "2026-04-15T14:10:11"

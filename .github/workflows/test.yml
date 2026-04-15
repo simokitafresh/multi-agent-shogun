@@ -28,12 +28,12 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-yaml
+          sudo apt-get install -y python3-yaml parallel
 
       - name: Run root-level tests (inbox_write.sh etc.)
         run: |
           if ls tests/*.bats 1>/dev/null 2>&1; then
-            bats tests/*.bats --timing
+            bats tests/*.bats --timing --jobs 4
           else
             echo "::warning::No root-level test files found"
           fi
@@ -44,7 +44,7 @@ jobs:
             echo "::warning::tests/unit directory not found. Skipping unit tests."
             exit 0
           fi
-          bats tests/unit/ --timing || {
+          bats tests/unit/ --timing --jobs 4 || {
             echo "::error::Unit tests failed"
             exit 1
           }

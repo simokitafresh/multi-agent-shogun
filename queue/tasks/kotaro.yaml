@@ -1,29 +1,23 @@
 task:
-  _ac_task_id: cmd_1905_exact
+  _ac_task_id: cmd_1909_exact
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 09817166
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 8d480448
   acceptance_criteria:
-  - description: 'instructions/shogun-procedures.md §7 Required cmd fieldsにassumptionsフィールドを追加。形式:
-      assumptions配列。各要素にclaim(前提内容)・source(出典)・trust(verified/unverified)の3キーを持つ。ACが3個以上のcmdで必須。2個以下のcmdでは任意。確認:
-      §7に定義が追記されていること'
+  - description: 'deploy_task.shの分割配備時にac_assignedフィールドをtask YAMLに書き込む。ac_assignedは忍者に割り当てられたACのIDリスト(例:
+      [AC1,AC2])。確認: 分割配備後のtask YAMLにac_assigned欄が存在'
     id: AC1
-  - description: 'cmd_save.sh にassumptionsフィールドのtrust検査を追加(WARNING)。条件: AC数が3以上のcmdでassumptions未記入→WARNING。assumptions記入済みでtrust:
-      unverifiedが含まれる→WARNING(''未検証前提あり。現物確認してからcmd_save.sh再実行せよ'')。WARN_COUNTに加算しない(段階的導入)。確認:
-      AC3個以上のcmdでassumptionsなし→WARNING表示。trust:unverified含む→WARNING表示'
+  - description: 'deploy_task.shのbinary_checks生成ロジックがac_assigned範囲のACのみを対象にする。ac_assignedが未設定(非分割配備)の場合は全ACを対象(既存動作維持)。確認:
+      分割配備時にtask YAMLのbinary_checksがac_assigned範囲のACのみ'
     id: AC2
-  - description: 'instructions/gunshi.md のdraft reviewセクション(SGプロトコル)にassumptions検証ガイドを追記。内容:
-      assumptionsフィールドが存在する場合、trust:unverifiedの前提を優先的に現物検証せよ。assumptionsがないcmdでは暗黙前提の推測が必要(従来通り)。確認:
-      gunshi.mdのSGプロトコルにassumptions検証の記述があること'
+  - description: 既存テスト全PASS + 分割配備シナリオの新規テスト追加
     id: AC3
-  - description: 既存テスト全PASS。cmd_save.shのbatsテストが壊れていないこと
-    id: AC4
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L126: IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時\
-    \ THEN 同期モードまたは結果ファイル連携で結果を取得せよ\n  - L458: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト\n\
-    \  - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md\
-    \ / .github\n  - L145: IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修\n\
-    \  - L276: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行\n\
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追\n\
+    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
+    \  - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)\n\
+    \  - L076: 新関数(inject_role_reminder/inject_report_template)はL047準拠(環境変数経由)だが、旧来のresolve_pan\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -42,15 +36,14 @@ task:
   - AC1
   - AC2
   - AC3
-  - AC4
-  parent_cmd: cmd_1905
+  parent_cmd: cmd_1909
   project: infra
-  purpose: cmdの暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ。なぜなぜ7回の到達点:前提が明示されないから検証されない、検証されないから崩壊する
-  report_filename: kotaro_report_cmd_1905.yaml
-  report_path: queue/reports/kotaro_report_cmd_1905.yaml
+  purpose: 分割配備時にdeploy_task.shが全AC分のbinary_checksを注入してしまい、担当外ACでFAILになる問題を修正。ac_assignedフィールドで忍者の担当AC範囲を制御し、binary_checksもその範囲に制限する
+  report_filename: kotaro_report_cmd_1909.yaml
+  report_path: queue/reports/kotaro_report_cmd_1909.yaml
   status: done
   stop_for: []
-  task_id: cmd_1905_exact
+  task_id: cmd_1909_exact
   task_type: exact
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -77,6 +70,12 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L473'
+    summary: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。'
+    detail: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。'
+  - id: 'L472'
+    summary: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含まれず。変更はローカルのみ。次回以降'
+    detail: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含まれず。変更はローカルのみ。次回以降'
   - id: 'L471'
     summary: '旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:noをFAIL判定するためverdict_override(WA)が頻発。注入しない方が根本解'
     detail: '旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:noをFAIL判定するためverdict_override(WA)が頻発。注入しない方が根本解'
@@ -101,10 +100,4 @@ task:
   - id: 'L464'
     summary: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
     detail: 'capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象'
-  - id: 'L463'
-    summary: '''MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars'
-    detail: '''MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars'
-  - id: 'L462'
-    summary: '''**dismiss_reason**: L463として統合登録済み enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold'
-    detail: '''**dismiss_reason**: L463として統合登録済み enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold'
-  deployed_at: "2026-04-15T12:43:11"
+  deployed_at: "2026-04-15T14:46:45"

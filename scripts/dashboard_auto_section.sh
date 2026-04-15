@@ -300,9 +300,9 @@ MODEL_SCOREBOARD_ROWS=""
 # GP-083: archiveファイル数キャッシュ（不変ファイルの再スキャン防止）
 _TMP_CTX_WARN=$(mktemp)
 _CFC_CACHE=$(mktemp)
-_ARCH_TITLES_CACHE="/tmp/dashboard_arch_titles_cache.txt"
-_ARCH_CFC_CACHE="/tmp/dashboard_arch_cfc_cache.txt"
-_ARCH_COUNT_CACHE="/tmp/dashboard_arch_count_cache.txt"
+_ARCH_TITLES_CACHE="/tmp/dashboard_arch_titles_cache_${_proj_hash}.txt"
+_ARCH_CFC_CACHE="/tmp/dashboard_arch_cfc_cache_${_proj_hash}.txt"
+_ARCH_COUNT_CACHE="/tmp/dashboard_arch_count_cache_${_proj_hash}.txt"
 # trap統合済み（L71に一本化）— ここでの再定義は不要
 if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     shopt -s nullglob
