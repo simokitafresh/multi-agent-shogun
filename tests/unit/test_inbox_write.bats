@@ -272,6 +272,49 @@ print('T-007: PASS')
 EOF
 }
 
+@test "T-007a: action argument provided → action field is persisted in YAML" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "アクション付き" "custom_type" "custom_sender" "notify_karo"
+    [ "$status" -eq 0 ]
+
+    python3 <<EOF
+import yaml
+
+with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
+    data = yaml.safe_load(f)
+
+msg = data['messages'][0]
+
+assert msg['action'] == 'notify_karo', f'Expected action=notify_karo, got {msg.get("action")}'
+assert msg['type'] == 'custom_type', f'Expected type=custom_type, got {msg["type"]}'
+assert msg['from'] == 'custom_sender', f'Expected from=custom_sender, got {msg["from"]}'
+
+print('T-007a: PASS')
+EOF
+}
+
+@test "T-007b: action omitted → backward compatible write with WARN and no action field" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "アクションなし" "custom_type" "custom_sender"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: action omitted"* ]]
+
+    python3 <<EOF
+import yaml
+
+with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
+    data = yaml.safe_load(f)
+
+msg = data['messages'][0]
+
+assert 'action' not in msg, f'Action field should be omitted, got {msg}'
+assert msg['type'] == 'custom_type', f'Expected type=custom_type, got {msg["type"]}'
+assert msg['from'] == 'custom_sender', f'Expected from=custom_sender, got {msg["from"]}'
+
+print('T-007b: PASS')
+EOF
+}
+
 # =============================================================================
 # T-008: Overflow Protection — 50件超で古い既読を削除
 # =============================================================================

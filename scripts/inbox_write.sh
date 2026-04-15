@@ -1,7 +1,7 @@
 #!/bin/bash
 # inbox_write.sh — メールボックスへのメッセージ書き込み（排他ロック付き）
-# Usage: bash scripts/inbox_write.sh <target_agent> <content> [type] [from]
-# Example: bash scripts/inbox_write.sh karo "半蔵、任務完了" report_received hanzo
+# Usage: bash scripts/inbox_write.sh <target_agent> <content> [type] [from] [action]
+# Example: bash scripts/inbox_write.sh karo "半蔵、任務完了" report_received hanzo notify_karo
 #
 # Supported types:
 #   wake_up              — デフォルト。汎用起動通知
@@ -701,19 +701,24 @@ TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
+ACTION="${5:-}"
 
 # Validate arguments
 if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
-    echo "Usage: inbox_write.sh <target_agent> <content> [type] [from]" >&2
+    echo "Usage: inbox_write.sh <target_agent> <content> [type] [from] [action]" >&2
     echo "受け取った引数: $*" >&2
     exit 1
 fi
 
 if [[ "$TARGET" == cmd_* ]]; then
     echo "ERROR: 第1引数はtarget_agent（例: karo, hanzo）。cmd_idではない。" >&2
-    echo "Usage: inbox_write.sh <target_agent> <content> [type] [from]" >&2
+    echo "Usage: inbox_write.sh <target_agent> <content> [type] [from] [action]" >&2
     echo "受け取った引数: $*" >&2
     exit 1
+fi
+
+if [ -z "$ACTION" ]; then
+    echo "[inbox_write] WARN: action omitted; writing message without action field for backward compatibility" >&2
 fi
 
 # HIGH-2: パストラバーサル防止 + sender/target制約
@@ -988,13 +993,24 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
 
-        _msg_block="$(inbox_build_message_block \
-            content "$CONTENT" \
-            from "$FROM" \
-            id "$MSG_ID" \
-            read "false" \
-            timestamp "$TIMESTAMP" \
-            type "$TYPE")"$'\n'
+        if [ -n "$ACTION" ]; then
+            _msg_block="$(inbox_build_message_block \
+                action "$ACTION" \
+                content "$CONTENT" \
+                from "$FROM" \
+                id "$MSG_ID" \
+                read "false" \
+                timestamp "$TIMESTAMP" \
+                type "$TYPE")"$'\n'
+        else
+            _msg_block="$(inbox_build_message_block \
+                content "$CONTENT" \
+                from "$FROM" \
+                id "$MSG_ID" \
+                read "false" \
+                timestamp "$TIMESTAMP" \
+                type "$TYPE")"$'\n'
+        fi
         inbox_append_message_locked "$INBOX" "$_msg_block" || exit 1
 
     ) 200>"$LOCKFILE"; then
