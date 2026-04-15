@@ -18,12 +18,198 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
-ARCHIVE_CMD_DIR="$PROJECT_DIR/queue/archive/cmds"
+QUEUE_FILE="${CMD_SAVE_QUEUE_FILE:-$PROJECT_DIR/queue/shogun_to_karo.yaml}"
+ARCHIVE_CMD_DIR="${CMD_SAVE_ARCHIVE_CMD_DIR:-$PROJECT_DIR/queue/archive/cmds}"
+QUALITY_LOG_FILE="${CMD_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.yaml}"
 LOCK_FILE="/tmp/shogun_to_karo.lock"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
+
+CMD_DIAGNOSIS=""
+PRIOR_ATTEMPT_COUNT=0
+CMD_SAVE_STDERR_LOG="$(mktemp)"
+exec 3>&2
+exec 2> >(tee -a "$CMD_SAVE_STDERR_LOG" >&3)
+
+extract_cmd_diagnosis() {
+    local block_text="${1:-}"
+    echo "$block_text" | awk '
+        /quality_gate:/ { in_qg=1; next }
+        in_qg && /^[[:space:]]{6,}diagnosis:[[:space:]]*/ {
+            sub(/^[[:space:]]*diagnosis:[[:space:]]*/, "")
+            gsub(/^["'\'']|["'\'']$/, "")
+            print
+            exit
+        }
+        in_qg && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+    '
+}
+
+show_prior_attempts() {
+    [[ -f "$QUALITY_LOG_FILE" ]] || return 0
+
+    local prior_output
+    prior_output=$(CMD_SAVE_CMD_ID="$CMD_ID" CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" python3 - <<'PY'
+import os
+import yaml
+
+cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
+log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
+
+if not cmd_id or not log_path or not os.path.exists(log_path):
+    print(0)
+    raise SystemExit(0)
+
+with open(log_path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+
+entries = data.get("entries", []) if isinstance(data, dict) else []
+filtered = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    if entry.get("cmd_id") != cmd_id:
+        continue
+    if entry.get("gate_result") != "BLOCK":
+        continue
+    if entry.get("source") != "cmd_save":
+        continue
+    filtered.append(entry)
+
+print(len(filtered))
+for idx, entry in enumerate(filtered, start=1):
+    reason = str(entry.get("notes", "") or "").split("|")[0].strip() or "unknown"
+    diagnosis = str(entry.get("diagnosis", "") or "").strip()
+    if diagnosis:
+        print(f"Attempt {idx}: {reason} diagnosis: {diagnosis}")
+    else:
+        print(f"Attempt {idx}: {reason}")
+PY
+)
+
+    PRIOR_ATTEMPT_COUNT=$(echo "$prior_output" | head -n1 | tr -d '[:space:]')
+    [[ "${PRIOR_ATTEMPT_COUNT:-0}" =~ ^[0-9]+$ ]] || PRIOR_ATTEMPT_COUNT=0
+    (( PRIOR_ATTEMPT_COUNT > 0 )) || return 0
+
+    echo "★ Prior attempts (同じcmd):" >&2
+    echo "$prior_output" | tail -n +2 | while IFS= read -r line; do
+        [[ -n "$line" ]] && echo "  $line" >&2
+    done
+    echo "  DO NOT repeat these — 別のアプローチを取れ" >&2
+}
+
+count_same_reason_prior_blocks() {
+    local current_reason="${1:-}"
+    [[ -n "$current_reason" && -f "$QUALITY_LOG_FILE" ]] || {
+        echo 0
+        return 0
+    }
+
+    CMD_SAVE_CMD_ID="$CMD_ID" \
+    CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" \
+    CMD_SAVE_BLOCK_REASON="$current_reason" \
+    python3 - <<'PY'
+import os
+import yaml
+
+cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
+log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
+current_reason = os.environ.get("CMD_SAVE_BLOCK_REASON", "").strip()
+
+if not cmd_id or not current_reason or not log_path or not os.path.exists(log_path):
+    print(0)
+    raise SystemExit(0)
+
+with open(log_path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+
+entries = data.get("entries", []) if isinstance(data, dict) else []
+filtered = [
+    entry for entry in entries
+    if isinstance(entry, dict)
+    and entry.get("cmd_id") == cmd_id
+    and entry.get("gate_result") == "BLOCK"
+    and entry.get("source") == "cmd_save"
+]
+
+count = 0
+for entry in reversed(filtered[-5:]):
+    reason = str(entry.get("notes", "") or "").split("|")[0].strip()
+    if reason == current_reason:
+        count += 1
+    else:
+        break
+
+print(count)
+PY
+}
+
+extract_last_block_reason() {
+    python3 - "$CMD_SAVE_STDERR_LOG" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.readlines()
+except FileNotFoundError:
+    print("")
+    raise SystemExit(0)
+
+for line in reversed(lines):
+    match = re.match(r"BLOCK:\s*(.+)", line.strip())
+    if match:
+        print(match.group(1).strip())
+        break
+else:
+    print("")
+PY
+}
+
+log_cmd_save_block() {
+    local block_reason="${1:-}"
+    [[ -n "$block_reason" && -x "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
+
+    CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+    CMD_QUALITY_SOURCE="cmd_save" \
+    CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
+    bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 || true
+}
+
+handle_cmd_save_exit() {
+    local status=$?
+    trap - EXIT
+
+    if [[ "$status" -ne 0 ]]; then
+        local block_reason same_reason_count
+        block_reason="$(extract_last_block_reason)"
+
+        if [[ -n "$block_reason" ]]; then
+            if [[ -n "$CMD_DIAGNOSIS" ]]; then
+                echo "診断: $CMD_DIAGNOSIS" >&2
+            fi
+
+            echo "★ 診断せよ: なぜこのBLOCKが起きたか？根本原因を1行で書け。" >&2
+            echo '★ 修正前に: quality_gateに diagnosis: "根本原因の1行記述" を追加してから再実行せよ。' >&2
+
+            same_reason_count="$(count_same_reason_prior_blocks "$block_reason" | tr -d '[:space:]')"
+            [[ "$same_reason_count" =~ ^[0-9]+$ ]] || same_reason_count=0
+            if (( same_reason_count >= 1 )); then
+                echo "★ DIVERGENT: 同じチェック($block_reason)で2回連続BLOCK。" >&2
+                echo "  根本的に異なるアプローチを検討せよ。" >&2
+            fi
+
+            log_cmd_save_block "$block_reason"
+        fi
+    fi
+
+    rm -f "$CMD_SAVE_STDERR_LOG"
+    exit "$status"
+}
+
+trap 'handle_cmd_save_exit' EXIT
 
 # --- Usage ---
 if [[ $# -lt 1 ]]; then
@@ -75,6 +261,14 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
         echo "WARN: ${CMD_ID} は既にアーカイブ済みです（重複の可能性）" >&2
         WARN_COUNT=$((WARN_COUNT + 1))
     fi
+fi
+
+# --- Session State: 同一cmdの過去BLOCK履歴を表示 ---
+if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
+    CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
+    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+    CMD_DIAGNOSIS="$(extract_cmd_diagnosis "$CMD_BLOCK_NC")"
+    show_prior_attempts
 fi
 
 # --- Check 3: quality_gateフィールド検査 ---
@@ -1300,7 +1494,7 @@ check_research_tool_explicit
 
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
-    local QUALITY_LOG="$PROJECT_DIR/logs/cmd_design_quality.yaml"
+    local QUALITY_LOG="$QUALITY_LOG_FILE"
 
     # AC3: ファイル不存在・空→スキップ（エラーなし）
     if [[ ! -f "$QUALITY_LOG" ]] || [[ ! -s "$QUALITY_LOG" ]]; then

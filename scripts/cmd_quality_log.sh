@@ -11,8 +11,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LOG_FILE="$REPO_ROOT/logs/cmd_design_quality.yaml"
+LOG_FILE="${CMD_QUALITY_LOG_FILE:-$REPO_ROOT/logs/cmd_design_quality.yaml}"
 LOCK_FILE="/tmp/cmd_design_quality.lock"
+SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"
+DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
 
 # --- Argument validation ---
 if [[ $# -lt 4 || $# -gt 5 ]]; then
@@ -205,8 +207,15 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     gunshi_verdict: "$GUNSHI_VERDICT"
     ninja_blockers: $NINJA_BLOCKERS
     supplementary_cmds: $SUPPLEMENTARY_CMDS
+    source: "$SOURCE_STAGE"
     timestamp: "$TIMESTAMP"
 EOF
+
+    if [[ -n "$DIAGNOSIS_TEXT" ]]; then
+        escaped_diagnosis="${DIAGNOSIS_TEXT//\\/\\\\}"
+        escaped_diagnosis="${escaped_diagnosis//\"/\\\"}"
+        echo "    diagnosis: \"$escaped_diagnosis\"" >> "$LOG_FILE"
+    fi
 
     # Append notes field only when provided (optional 5th argument)
     if [[ -n "$NOTES" ]]; then
@@ -216,6 +225,6 @@ EOF
         echo "    notes: \"$escaped_notes\"" >> "$LOG_FILE"
     fi
 
-    echo "[cmd_quality_log] Logged: $CMD_ID | AC:$AC_COUNT | gate:$GATE_RESULT | rework:$KARO_REWORK | gunshi:$GUNSHI_VERDICT | blockers:$NINJA_BLOCKERS | supp_cmds:$SUPPLEMENTARY_CMDS${NOTES:+ | notes:$NOTES}"
+    echo "[cmd_quality_log] Logged: $CMD_ID | AC:$AC_COUNT | gate:$GATE_RESULT | rework:$KARO_REWORK | gunshi:$GUNSHI_VERDICT | blockers:$NINJA_BLOCKERS | supp_cmds:$SUPPLEMENTARY_CMDS | source:$SOURCE_STAGE${DIAGNOSIS_TEXT:+ | diagnosis:$DIAGNOSIS_TEXT}${NOTES:+ | notes:$NOTES}"
 
 ) 200>"$LOCK_FILE"
