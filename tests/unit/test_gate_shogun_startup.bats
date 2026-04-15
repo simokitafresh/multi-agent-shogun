@@ -480,3 +480,4 @@ EOF
     [[ "$output" != *"ALERT: ${yesterday}.jsonlのinbound=0"* ]]
     [[ "$output" == *"INFO: ${yesterday} inbound=0"* ]]
 }
+

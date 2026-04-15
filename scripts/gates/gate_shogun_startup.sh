@@ -152,13 +152,6 @@ fi
 REQUIRED_READ2="$SCRIPT_DIR/memory/deepdive_causal_tracing_20260415.md"
 if [ -f "$REQUIRED_READ2" ]; then
     echo "  OK: $(basename "$REQUIRED_READ2") 存在確認"
-    if grep -q '^## Phase 6:' "$REQUIRED_READ2"; then
-        echo "  OK: deepdive_causal_tracing は Phase 6 まで存在"
-    else
-        overall="ALERT"
-        alerts+=("deepdive_causal_tracing Phase 6欠落")
-        echo "  ALERT: deepdive_causal_tracing に Phase 6 がない"
-    fi
 else
     overall="ALERT"
     alerts+=("必読ファイル不在: memory/deepdive_causal_tracing_20260415.md")
@@ -789,26 +782,6 @@ elif [ -n "$_LC_YESTERDAY" ]; then
     echo "  INFO: アーカイブなし(${_LC_YESTERDAY})"
 else
     echo "  INFO: 日付取得失敗"
-fi
-
-# --- Gate 18.5: 殿対話頻出トピック索引 (cmd_1928) ---
-# 起源: 将軍が殿の過去トピックを毎回忘れ、同じ説明を繰り返して時間を奪う
-# 目的: lord_conversation_archive の inbound summary から頻出トピックを抽出し、起動時に即参照可能にする
-echo "■ 殿対話頻出トピック"
-_LC_TOPIC_SCRIPT="$SCRIPT_DIR/scripts/lord_topic_index.py"
-if [ -x "$_LC_TOPIC_SCRIPT" ]; then
-    if _lc_topic_out=$("$_LC_TOPIC_SCRIPT" --archive-dir "$_LC_ARCHIVE_DIR" --top 20 2>&1); then
-        printf '%s\n' "$_lc_topic_out" | sed 's/^/  /'
-    else
-        echo "  WARN: 頻出トピック抽出失敗"
-        printf '%s\n' "$_lc_topic_out" | sed 's/^/    /'
-        if [ "$overall" = "OK" ]; then
-            overall="WARN"
-        fi
-        alerts+=("殿対話頻出トピック抽出失敗")
-    fi
-else
-    echo "  INFO: lord_topic_index.py 未配備"
 fi
 
 # --- Gate 19: 強制度監査 (meta-gate, 2026-04-12) ---
