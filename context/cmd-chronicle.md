@@ -650,4 +650,8 @@
 | cmd_1903 | 将軍のcmd起票品質を構造的に引き上げる。Phase 31-32で11過ちが全てgateを通過した根因=「無知の知」がcmd起票に強制されていない。q10で検証済み空間の明示を強制し、q7を昇格し、研究cmd手順を追加する | infra | 04-15 | AC1(q10 WARNING), AC2(q7 dm-si |
 | cmd_1906 | WARNINGは意志依存で壊れる。trust:unverifiedが残存するcmdをBLOCKし、sourceのファイルパス実在を検査することで、将軍の前提自己申告の嘘を構造的に防ぐ | infra | 04-15 | AC1: Check 20のtrust:unverified |
 | cmd_1907 | cmd_1902の6指標α版3486ペアCSVからα-Calmar Top30を抽出し、モード混成(激攻×鉄壁)・忍法組合せ・奥義レベル構成の出現頻度を定量化する。Phase 32の発見(激攻+鉄壁混成がα安定性の構造的源泉)を数字で裏付ける | dm-signal | 04-15 | cmd_1902のalpha-Calmar Top30を抽出 |
-| cmd_1908 | cmd_1907のTop30ペアを6指標(α-CAGR/α-NHF/α-MaxDD/α-MRU/α-Calmar/α-UWP)で多角評価し、Pareto最適ペア(他のどのペアにも全指標で劣らない)を特定する。最終候補N=2-5の選定根拠を作る | dm-signal | 04-15 | cmd_1907 Top30に不足していたalpha_nhf |
+| cmd_1908 | L3 α-Calmar Top30 Pareto最適ペア特定(6指標)。→殿指摘「なぜペアなの？3体の研究したよな」で車輪再発明に気づく | dm-signal | 04-15 | Pareto最適9/30件特定。しかし2体分析の重複。次は3体C(84,3) |
+| cmd_1904 | 将軍cmd品質フィードバックループ — 軍師RC傾向の起動時可視化+verdict自動記録 | infra | 04-15 | gate_shogun_startup.shにRC傾向表示+cmd_design_quality verdict自動更新 |
+| cmd_1905 | cmd前提明示 — assumptionsフィールド新設+trust検査+軍師review連携(なぜなぜ7回到達点) | infra | 04-15 | assumptions+trust WARNING。AC≧3のcmdで前提明示を促す |
+| cmd_1909 | GP-194実装 — 分割配備時binary_checksをac_assigned範囲に制限 | infra | 04-15 | 配備中(小太郎) |
+| cmd_1910 | テスト統合整理Phase1 — deploy_task.sh 16→7ファイル統合(軍師設計書準拠) | infra | 04-15 | 配備中(半蔵) |
