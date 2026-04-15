@@ -22,8 +22,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -44,15 +44,21 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.shogun.android.ui.AgentsScreen
 import com.shogun.android.ui.DashboardScreen
-import com.shogun.android.ui.MemoScreen
 import com.shogun.android.ui.SettingsScreen
 import com.shogun.android.ui.ShogunScreen
 import com.shogun.android.ui.theme.ShogunTheme
 
-sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
+private const val GIST_INDEX_URL = "https://gist.github.com/simokitafresh/83a17157247174e9faefc3962968fe1b"
+
+sealed class Screen(
+    val route: String,
+    val label: String,
+    val icon: ImageVector,
+    val externalUrl: String? = null,
+) {
     object Shogun : Screen("shogun", "将軍", Icons.Default.Star)
     object Agents : Screen("agents", "エージェント", Icons.Default.List)
-    object Memos : Screen("memos", "メモ", Icons.Default.Edit)
+    object GistIndex : Screen("gist_index", "Gist Index", Icons.Default.Link, GIST_INDEX_URL)
     object Dashboard : Screen("dashboard", "戦況", Icons.Default.Home)
     object Settings : Screen("settings", "設定", Icons.Default.Settings)
 }
@@ -60,7 +66,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 val bottomNavItems = listOf(
     Screen.Shogun,
     Screen.Agents,
-    Screen.Memos,
+    Screen.GistIndex,
     Screen.Dashboard,
     Screen.Settings
 )
@@ -183,6 +189,7 @@ fun ShogunApp() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val context = LocalContext.current
 
     // Re-tap same tab → reset internal state (e.g., AgentsScreen detail → grid)
     var agentsResetTrigger by remember { mutableIntStateOf(0) }
@@ -198,7 +205,7 @@ fun ShogunApp() {
                     NavigationBarItem(
                         icon = { Icon(screen.icon, contentDescription = screen.label) },
                         label = { Text(screen.label, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        selected = currentRoute == screen.route,
+                        selected = screen.externalUrl == null && currentRoute == screen.route,
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Kinpaku,
                             selectedTextColor = Kinpaku,
@@ -207,7 +214,9 @@ fun ShogunApp() {
                             indicatorColor = Sumi,
                         ),
                         onClick = {
-                            if (currentRoute == screen.route && screen == Screen.Agents) {
+                            if (screen.externalUrl != null) {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(screen.externalUrl)))
+                            } else if (currentRoute == screen.route && screen == Screen.Agents) {
                                 agentsResetTrigger++
                             } else {
                                 navController.navigate(screen.route) {
@@ -231,7 +240,6 @@ fun ShogunApp() {
         ) {
             composable(Screen.Shogun.route) { ShogunScreen() }
             composable(Screen.Agents.route) { AgentsScreen(resetTrigger = agentsResetTrigger) }
-            composable(Screen.Memos.route) { MemoScreen() }
             composable(Screen.Dashboard.route) { DashboardScreen() }
             composable(Screen.Settings.route) { SettingsScreen() }
         }
