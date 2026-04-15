@@ -673,3 +673,5 @@
 | cmd_1926 | cmd_1924取消 — 各論パッチrevert | infra | 04-15 | cmd_1924で追加されたAndroid知識をcontex |
 | cmd_1925 | 殿の全入力に確認リマインド注入 — 確認せずに回答する真因修正 | infra | 04-15 | 通常モードの additionalContext に `re |
 | cmd_1927 | cmd_1925取消 — 確認なし起票のrevert | infra | 04-15 | cmd_1925で加えられた確認リマインド注入を撤去し、追加 |
+| cmd_1930 | deepdive_causal_tracing Phase 6追記 — 人殺しの思想 | infra | 04-15 | deepdive_causal_tracing に Phas |
+| cmd_karo_revert_1928_1930 | fix — cmd_1928/1930のgate_shogun_startup.sh変更をrevert | infra | 04-15 | gate_shogun_startup.shからcmd_19 |
