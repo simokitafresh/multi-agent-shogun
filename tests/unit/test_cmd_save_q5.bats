@@ -57,6 +57,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "${q5_val}"
       q8_why_what: "WHY: q5テスト用 → WHAT: q5検証1件実施"
+      q11_not_already_done: "未達成。q5検証ケースを新規作成し、既存達成ではないことを確認"
 YAML
     CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
     CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
@@ -152,6 +153,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "${q5_val}"
       q8_why_what: "WHY: q5除外条件テスト用 → WHAT: 除外条件検証1件"
+      q11_not_already_done: "未達成。q5除外条件ケースを新規作成し、既存達成ではないことを確認"
 YAML
     CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
     CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
@@ -176,6 +178,7 @@ commands:
       q4_depth: "${depth_val}"
       q5_verified_source: "${q5_val}"
       q8_why_what: "WHY: q5 project/depthテスト → WHAT: 条件分岐1件確認"
+      q11_not_already_done: "未達成。project/depth分岐ケースを新規作成し、既存達成ではないことを確認"
 YAML
     CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
     CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)

@@ -295,6 +295,47 @@ QG_TEMPLATE
         exit 1
     fi
 
+    # q11自動検索: command内スクリプト名とdocs/researchの既存成果物を照合（INFO）
+    # 起源: cmd_1916 — q11手動記入は嘘が書ける。自動露出で車輪の再発明を補助的に防ぐ
+    _Q11_PROJECT_DIR="${PROJECT_DIR:-${PROJECT_ROOT:-.}}"
+    _Q11_RESEARCH_DIR="${_Q11_PROJECT_DIR}/docs/research"
+    if [[ -d "$_Q11_RESEARCH_DIR" ]]; then
+        _Q11_COMMAND_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+            /^\s*command:\s*\|/ { found=1; next }
+            /^\s*command:\s*[^|]/ { found=1; sub(/^\s*command:\s*/, ""); print; next }
+            found && /^\s{4,}/ { print; next }
+            found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+        ')
+        if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
+            _Q11_TARGETS=$(printf '%s\n' "$_Q11_COMMAND_SECTION" | grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)|[A-Za-z0-9_./-]+\.(sh|py)' | sort -u || true)
+            if [[ -n "${_Q11_TARGETS:-}" ]]; then
+                _Q11_ANY_MATCH=false
+                while IFS= read -r _q11_target; do
+                    [[ -z "$_q11_target" ]] && continue
+                    _q11_base="${_q11_target##*/}"
+                    _Q11_MATCHES=$(
+                        {
+                            rg -l -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
+                            if [[ "$_q11_base" != "$_q11_target" ]]; then
+                                rg -l -F "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
+                            fi
+                        } | sort -u
+                    )
+                    [[ -z "${_Q11_MATCHES:-}" ]] && continue
+                    if [[ "$_Q11_ANY_MATCH" == false ]]; then
+                        echo "INFO: 関連する既存成果物を検出:" >&2
+                        _Q11_ANY_MATCH=true
+                    fi
+                    while IFS= read -r _q11_doc; do
+                        [[ -z "$_q11_doc" ]] && continue
+                        _q11_rel="${_q11_doc#${_Q11_PROJECT_DIR}/}"
+                        echo "  ${_q11_target} → ${_q11_rel}" >&2
+                    done <<< "$_Q11_MATCHES"
+                done <<< "$_Q11_TARGETS"
+            fi
+        fi
+    fi
+
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正
     # 目的: type=impl + 条件分岐キーワード検出時に、本番での分岐実行頻度確認ACの追加を提案

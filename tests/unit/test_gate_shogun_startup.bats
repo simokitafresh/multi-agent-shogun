@@ -74,6 +74,8 @@ messages:
   id: msg_1
 EOF
 
+    echo "entries: []" > "$SHARED_BASE/queue/bulletin_board.yaml"
+
     # Gate 5: fresh snapshot (fixed future date — Gate 5 only displays, no staleness check)
     cat > "$SHARED_BASE/queue/karo_snapshot.txt" <<'EOF'
 # 家老陣形図(karo_snapshot)
@@ -243,6 +245,27 @@ EOF
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"未読: 2件"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+@test "bulletin pending for shogun → 総合判定: WARN" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_test'
+  content: |-
+    全員確認事項
+  posted_by: 'karo'
+  posted_at: '2026-04-15T18:00:00'
+  requires_confirmation: true
+  confirmed_by:
+    - 'karo'
+  status: 'open'
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"掲示板未確認"* ]]
+    [[ "$output" == *"WARN: 未確認掲示板 1件"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 

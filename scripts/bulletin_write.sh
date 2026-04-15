@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# bulletin_write.sh — 全エージェント共有掲示板への書込み
+# Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]
+
+set -euo pipefail
+
+SCRIPT_DIR="${BULLETIN_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+BULLETIN_FILE="$SCRIPT_DIR/queue/bulletin_board.yaml"
+LOCK_FILE="${BULLETIN_FILE}.lock"
+
+if [[ $# -lt 2 ]]; then
+    echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
+    exit 1
+fi
+
+POSTED_BY="$1"
+CONTENT="$2"
+REQUIRES_CONFIRMATION="${3:-true}"
+POSTED_AT="$(date '+%Y-%m-%dT%H:%M:%S')"
+RAND_SUFFIX="$(printf '%s' "$(date +%s%N)$POSTED_BY$CONTENT" | sha1sum | cut -c1-6)"
+ENTRY_ID="blt_$(date '+%Y%m%d_%H%M%S')_${RAND_SUFFIX}"
+
+mkdir -p "$(dirname "$BULLETIN_FILE")"
+
+{
+    flock -x 200
+    python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$CONTENT" "$POSTED_BY" "$POSTED_AT" "$REQUIRES_CONFIRMATION" <<'PY'
+import os
+import sys
+import yaml
+
+bulletin_file, entry_id, content, posted_by, posted_at, requires_confirmation = sys.argv[1:7]
+
+if os.path.exists(bulletin_file):
+    with open(bulletin_file, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+else:
+    data = {}
+
+entries = data.get("entries")
+if not isinstance(entries, list):
+    entries = []
+
+req = str(requires_confirmation).strip().lower() in {"1", "true", "yes", "y"}
+entries.append({
+    "id": entry_id,
+    "content": content,
+    "posted_by": posted_by,
+    "posted_at": posted_at,
+    "requires_confirmation": req,
+    "confirmed_by": [],
+    "status": "open",
+})
+
+def sq(value):
+    return str(value).replace("'", "''")
+
+tmp_file = f"{bulletin_file}.tmp"
+with open(tmp_file, "w", encoding="utf-8") as fh:
+    fh.write("entries:\n")
+    for entry in entries:
+        fh.write(f"- id: '{sq(entry.get('id', ''))}'\n")
+        fh.write("  content: |-\n")
+        text = str(entry.get("content", ""))
+        lines = text.splitlines() or [""]
+        for line in lines:
+            fh.write(f"    {line}\n")
+        fh.write(f"  posted_by: '{sq(entry.get('posted_by', ''))}'\n")
+        fh.write(f"  posted_at: '{sq(entry.get('posted_at', ''))}'\n")
+        fh.write(f"  requires_confirmation: {'true' if entry.get('requires_confirmation') else 'false'}\n")
+        confirmed = entry.get("confirmed_by") or []
+        if confirmed:
+            fh.write("  confirmed_by:\n")
+            for agent in confirmed:
+                fh.write(f"    - '{sq(agent)}'\n")
+        else:
+            fh.write("  confirmed_by: []\n")
+        fh.write(f"  status: '{sq(entry.get('status', 'open'))}'\n")
+os.replace(tmp_file, bulletin_file)
+print(entry_id)
+PY
+} 200>"$LOCK_FILE"

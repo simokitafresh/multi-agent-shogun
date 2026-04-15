@@ -30,6 +30,9 @@
 !.claude/settings.json
 !.claude/hooks/
 !.claude/hooks/*.sh
+!.claude/skills/
+!.claude/skills/*/
+!.claude/skills/*/SKILL.md
 
 # Instructions (core OSS)
 !instructions/
@@ -190,10 +193,12 @@ queue/ntfy_batch_queue.txt
 !images/screenshots/ntfy_tasklist_final.jpg
 !images/screenshots/tdd_ndd_rdd.png
 
-# Skills (skill-creator only)
+# Skills
 !skills/
 !skills/skill-creator/
 !skills/skill-creator/SKILL.md
+!skills/codd-refactor/
+!skills/codd-refactor/SKILL.md
 
 # Tests
 !tests/

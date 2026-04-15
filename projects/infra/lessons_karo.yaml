@@ -345,3 +345,8 @@ lessons:
   detail: 'deploy_task.sh hanzo cmd_XXXXの形式でcmd_idを渡すとresolve_cmd_to_taskが発動しACが正しく上書きされる。parent_cmdをyaml_field_set.shで手動設定してからdeploy_task.sh ninjaだけではresolve_cmdが発動せず旧ACが残存する(cmd_1903/1904で3回失敗)。正しい手順: (1)task_id/parent_cmd/status全クリア (2)report mv (3)deploy_task.sh ninja cmd_XXXX'
   source_cmd: 'cmd_1903'
   created_at: '2026-04-15'
+- id: 'LK062'
+  title: 'revert前に変更元エージェントへの通知義務'
+  detail: '他エージェントのコード変更をrevertする場合、revert実行前にそのエージェントにinbox_writeで理由と状況を伝えよ。依存ファイル不足等の場合、先にcommitする代替案が出る可能性がある。revert後の事後通知では手遅れ。deploy_task.sh revert(f6be564)で軍師に通知不在→依存ファイル(yaml_field_set_batch)未commitが根因だったが先にcommitすれば解決できた'
+  source_cmd: 'cmd_1914_revert'
+  created_at: '2026-04-15'

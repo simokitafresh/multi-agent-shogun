@@ -1,23 +1,22 @@
 task:
-  _ac_task_id: cmd_1914_impl
+  _ac_task_id: cmd_1919_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3
-  ac_version: 97ceffa3
+  ac_version: a0817ea9
   acceptance_criteria:
-  - description: docs/research/codd_refactor_registry.md が存在し、既存3実績が登録されていること。cat
-      で内容確認
+  - description: action引数ありのinbox_write実行でYAMLにaction:フィールドが書き込まれること。catで確認
     id: AC1
-  - description: context/infrastructure.mdに台帳リンクが追加されていること。grep で確認
+  - description: action引数なしのinbox_write実行で後方互換維持（既存動作に影響なし）+WARN表示
     id: AC2
-  - description: 軍師にinbox_writeで通知が送信されていること。inbox確認
+  - description: 既存テスト全PASS(bats --jobs 4)
     id: AC3
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
     \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L283: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の\
-    \ ok N (hash) skip パタ\n  - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction\n\
-    \  - L346: Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外\n\
-    \  - L326: pgrep -fcによる集計カウントは誤検知(vim等)で不正確かつ障害時に個別特定不可。各起動時に$!をPID配列に蓄積し、sleep後にkill\
-    \ -0で個別\n────────────────────────────────────────"
+    \ ok N (hash) skip パタ\n  - L142: IF 飛猿報告のテスト8件時 THEN テスト件数を報告する場合は根拠(ファイル名・実行コマンド)も記載すべき\n\
+    \  - L193: IF pre-push で `timeout 30 bats tests/unit/ --jobs 4` のような厳しい予算を課す時\
+    \ THEN 実装コードより先\n  - L261: settings.yaml等の全体設定変更(全8名claude統一)がE2Eテスト2件+Unitテスト2件の陳腐化を43コミット蓄積後に発覚させた。設定変更コミ\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -35,13 +34,13 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_1914
+  parent_cmd: cmd_1919
   project: infra
-  report_filename: hayate_report_cmd_1914.yaml
-  report_path: queue/reports/hayate_report_cmd_1914.yaml
+  report_filename: hayate_report_cmd_1919.yaml
+  report_path: queue/reports/hayate_report_cmd_1919.yaml
   status: done
   stop_for: []
-  task_id: cmd_1914_impl
+  task_id: cmd_1919_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -101,4 +100,4 @@ task:
   - id: 'L467'
     summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
     detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport'
-  deployed_at: "2026-04-15T17:34:01"
+  deployed_at: "2026-04-15T18:09:50"

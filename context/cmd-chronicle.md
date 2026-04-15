@@ -660,3 +660,6 @@
 | cmd_1911 | fix — CI RED修正: テスト並列化(--jobs 4)で露出した14テストの分離不足修正 | infra | 04-15 | 4テストファイルのsetup/teardownでBATS_T |
 | cmd_1914 | 整備 — CoDDリファクタリング台帳作成+既存実績登録+軍師連携 | infra | 04-15 | CoDDリファクタリング台帳を新設し、既存3実績登録・inf |
 | cmd_1915 | 強化 — q11_not_already_done: cmdの必要性検証BLOCK(車輪の再発明の原理的防止) | infra | 04-15 | cmd_save.sh に q11_not_already_ |
+| cmd_1917 | 偵察 — cmd_save.sh CoDDプロファイリング(Phase 1): 関数レベルボトルネック特定 | infra | 04-15 | cmd_save.sh を隔離cloneで実測し、全体中央値 |
+| cmd_1919 | 強化 — inbox_writeにaction_required引数追加(全エージェントデッドロック防止) | infra | 04-15 | scripts/inbox_write.sh に任意5引数 |
+| cmd_1920 | 強化 — 掲示板システム導入: 全エージェント共有ボード+チェックボックス確認追跡 | infra | 04-15 | 共有掲示板を導入し、書込み/確認スクリプトと shogun・ |

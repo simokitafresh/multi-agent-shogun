@@ -246,6 +246,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
       q8_why_what: "WHY: テスト用 → WHAT: テストcmd 1件作成"
+      q11_not_already_done: "未達成。grep 'q11_not_already_done' scripts/cmd_save.sh で未実装を確認"
 YAML
 
     CMD_ID="cmd_9999"; export CMD_ID
@@ -253,6 +254,100 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK: cmd_9999"* ]]
+}
+
+@test "Check1-5: q11_not_already_done未記入でBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_9998:
+    id: cmd_9998
+    command: "q11未記入のテスト"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+      q8_why_what: "WHY: テスト用 → WHAT: テストcmd 1件作成"
+YAML
+
+    CMD_ID="cmd_9998"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: q11_not_already_done未記入"* ]]
+}
+
+@test "Check1-5: q11_not_already_done記入済みならPASS" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_9997:
+    id: cmd_9997
+    command: "q11記入済みのテスト"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+      q8_why_what: "WHY: テスト用 → WHAT: テストcmd 1件作成"
+      q11_not_already_done: "未達成。grep 'BLOCK: q11_not_already_done' scripts/cmd_save.sh で未実装を確認"
+YAML
+
+    CMD_ID="cmd_9997"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_9997"* ]]
+    [[ "$output" != *"BLOCK: q11_not_already_done未記入"* ]]
+}
+
+@test "Check1-5: q11自動検索でdeploy_task関連docsをINFO表示" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_9996:
+    id: cmd_9996
+    command: |
+      bash scripts/deploy_task.sh hayate "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+      q8_why_what: "WHY: q11補助情報の確認 → WHAT: deploy_task.sh関連docs表示を確認"
+      q11_not_already_done: "未達成。docs/research自動検索INFOは未実装だったため追加対象と確認"
+YAML
+
+    CMD_ID="cmd_9996"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: 関連する既存成果物を検出:"* ]]
+    [[ "$output" == *"scripts/deploy_task.sh → docs/research/"* ]]
+}
+
+@test "Check1-5: q11自動検索はスクリプト名なしなら追加表示なし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_9995:
+    id: cmd_9995
+    command: "既存成果物の有無を文章で確認するだけ"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q5_verified_source: "コード確認"
+      q8_why_what: "WHY: q11補助情報の非表示確認 → WHAT: スクリプト名なしcmd 1件確認"
+      q11_not_already_done: "未達成。commandにスクリプト名を含まないケースを作成した"
+YAML
+
+    CMD_ID="cmd_9995"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"INFO: 関連する既存成果物を検出:"* ]]
 }
 
 @test "Check1-5: quality_gate未記入でBLOCK" {
@@ -285,6 +380,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9必須化を確認"
+      q11_not_already_done: "未達成。title確認で消火cmd、q9未記入のため未完成と判断"
 YAML
 
     CMD_ID="cmd_8801"; export CMD_ID
@@ -309,6 +405,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9付きcmd 1件確認"
+      q11_not_already_done: "未達成。q9付き正常系ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 分岐条件の整理不足で再発した | prevention: gateで真因記入と再発防止記載を強制する"
 YAML
 
@@ -333,6 +430,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9形式不備検出確認"
+      q11_not_already_done: "未達成。q9をTBDにしておりroot_cause欠落ケースを再現した"
       q9_firefighting_root_cause: "TBD"
 YAML
 
@@ -357,6 +455,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9短文検出確認"
+      q11_not_already_done: "未達成。root_cause を短文TBDにしてBLOCK対象を維持した"
       q9_firefighting_root_cause: "root_cause: TBD | prevention: gateで真因記入を強制する"
 YAML
 
@@ -381,6 +480,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 消火cmd検証 → WHAT: prevention欠落検出確認"
+      q11_not_already_done: "未達成。prevention欠落の異常系ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: テスト不足"
 YAML
 
@@ -405,6 +505,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 消火cmd検証 → WHAT: prevention短文検出確認"
+      q11_not_already_done: "未達成。prevention をTBDにして短文BLOCKケースを再現した"
       q9_firefighting_root_cause: "root_cause: 分岐条件が未定義だった | prevention: TBD"
 YAML
 
@@ -429,6 +530,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 学習ループ改善 → WHAT: gate可視化 1件追加"
+      q11_not_already_done: "未達成。gate可視化追加の正常系ケースを新規作成した"
 YAML
 
     CMD_ID="cmd_8803"; export CMD_ID
@@ -453,6 +555,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: gate強化 → WHAT: title限定検出の偽陽性排除確認"
+      q11_not_already_done: "未達成。title限定判定の偽陽性排除ケースを新規作成した"
 YAML
 
     CMD_ID="cmd_8808"; export CMD_ID
@@ -476,6 +579,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: バグ系キーワード検証 → WHAT: q9必須BLOCKを確認"
+      q11_not_already_done: "未達成。titleにバグを含めた異常系ケースを新規作成した"
 YAML
 
     CMD_ID="cmd_8809"; export CMD_ID
@@ -499,6 +603,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: prevention意志依存検証 → WHAT: WARNING出力を確認"
+      q11_not_already_done: "未達成。prevention意志依存WARNINGの確認ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 判定観点が曖昧でレビュー時に見落とした | prevention: 次回は気をつけるよう共有する"
 YAML
 
@@ -523,6 +628,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: prevention仕組み化検証 → WHAT: gate追加時はWARNINGを出さない"
+      q11_not_already_done: "未達成。gate追加による正常系 prevention ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: q9判定語彙が不足し検知から漏れた | prevention: title判定に不具合を追加しgateで再発を防ぐ"
 YAML
 
@@ -548,6 +654,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 活用形検証 → WHAT: 気をつけて形でWARNINGを確認"
+      q11_not_already_done: "未達成。気をつけて活用形のWARNINGケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 判定観点が曖昧でレビュー時に見落とした | prevention: 次回は気をつけてレビューする"
 YAML
 
@@ -572,6 +679,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 活用形検証 → WHAT: 注意して形でWARNINGを確認"
+      q11_not_already_done: "未達成。注意して活用形のWARNINGケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 確認手順が曖昧だった | prevention: 毎回注意してチェックリストを確認する"
 YAML
 
@@ -596,6 +704,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 活用形検証 → WHAT: 意識して形でWARNINGを確認"
+      q11_not_already_done: "未達成。意識して活用形のWARNINGケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: レビュー観点が欠けていた | prevention: 品質を意識してレビューを実施する"
 YAML
 
@@ -620,6 +729,7 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 仕組み系偽陽性排除検証 → WHAT: gate追加で自動検出する旨はWARNINGなし"
+      q11_not_already_done: "未達成。自動検出する prevention 正常系ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 検知パターンが語幹未対応だった | prevention: gateを追加して自動検出する"
 YAML
 

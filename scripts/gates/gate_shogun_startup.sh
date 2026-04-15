@@ -78,6 +78,50 @@ else
     echo "  未読: 0件"
 fi
 
+# --- Gate 4.5: 掲示板未確認 ---
+echo "■ 掲示板未確認"
+bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
+if [ -f "$bulletin_file" ]; then
+    bulletin_result=$(python3 - "$bulletin_file" shogun <<'PY'
+import sys, yaml
+path, agent = sys.argv[1:3]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+entries = data.get("entries") or []
+pending = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    if not entry.get("requires_confirmation", False):
+        continue
+    if str(entry.get("status", "")).lower() == "closed":
+        continue
+    confirmed = entry.get("confirmed_by") or []
+    if agent in confirmed:
+        continue
+    text = str(entry.get("content", "")).splitlines()
+    head = text[0] if text else ""
+    pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
+print(len(pending))
+for item in pending[:3]:
+    print(item)
+PY
+)
+    bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
+    if [ "${bulletin_count:-0}" -gt 0 ]; then
+        echo "  WARN: 未確認掲示板 ${bulletin_count}件"
+        printf '%s\n' "$bulletin_result" | tail -n +2 | sed 's/^/    /'
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("掲示板未確認: ${bulletin_count}件")
+        fi
+    else
+        echo "  未確認: 0件"
+    fi
+else
+    echo "  掲示板なし"
+fi
+
 # --- Gate 5: 陣形図鮮度 ---
 echo "■ 陣形図鮮度"
 snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
