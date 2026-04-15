@@ -564,10 +564,25 @@ fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
 try:
     with os.fdopen(fd, 'w') as f:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    # Round-trip validation: reload and verify key fields survive yaml.dump
+    with open(tmp_path, 'r') as f:
+        reloaded = yaml.safe_load(f)
+    if not isinstance(reloaded, dict):
+        raise ValueError('yaml.dump produced non-dict output')
+    # Verify critical fields survived round-trip
+    for ck in ['worker_id', 'parent_cmd', 'verdict', 'status', 'ac_version_read']:
+        orig = data.get(ck)
+        reload_val = reloaded.get(ck)
+        if orig is not None and reload_val is None:
+            raise ValueError(f'yaml.dump lost field: {ck}')
     os.replace(tmp_path, report_path)
-except Exception:
-    os.unlink(tmp_path)
-    raise
+except Exception as e:
+    try:
+        os.unlink(tmp_path)
+    except OSError:
+        pass
+    print(f'[report_field_set] YAML_DUMP_CORRUPTION: {e}. Original file preserved.', file=sys.stderr)
+    sys.exit(1)
 
 print(f'[report_field_set] {dot_key} = {value}')
 " "$rp" "$dk" "$val" "$sv"

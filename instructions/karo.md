@@ -355,6 +355,18 @@ command: "直近30日のパフォーマンス推移を計測し結果を報告�
   - §9 全cmd軍師レビュー（並行方式）— 例外条件: (a)殿の緊急指示 (b)1AC以下。それ以外は全cmd必須
   - §10 軍師通信プロトコル — inbox type定義+verdict処理(APPROVE/REQUEST_CHANGES/REJECT)
 
+## CI RED即応（将軍cmd不要 — 殿裁定2026-04-15）
+
+CI RED検知時は**待つな。即修正せよ。** 将軍cmdは不要。家老判断でidle忍者に修正を配備する。
+
+手順:
+1. `gh run view <run_id> --repo simokitafresh/multi-agent-shogun --log-failed` で失敗テスト特定
+2. idle忍者にタスクYAML作成+配備（CI RED修正は定型タスク。軍師レビュー不要）
+3. 修正push後 `gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --limit 1` でCI GREEN復帰を確認
+4. dashboard更新で将軍に報告
+
+**理由**: CI REDは緊急・定型・判断不要。将軍を待つ時間は全員の時間の無駄。
+
 ## Idle時自走プロトコル
 
 **行動理念**: cmdを待つな。データを見ろ。改善の種を見つけろ。止まった瞬間に進化が止まる。

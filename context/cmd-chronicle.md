@@ -667,3 +667,4 @@
 | cmd_1918 | fix — q11自動検索バグ修正(cmd_1916実装の動作不良修正) | infra | 04-15 | cmd_save.sh L298-336のq11自動検索ロジック修正 |
 | cmd_1921 | fix — 掲示板requires_confirmationバグ修正+Q4形骸化防止(前セッション出来事注入) | infra | 04-15 | 作業中(影丸) |
 | cmd_1922 | 強化 — 因果探索原則を将軍必読ファイルに追加(CLAUDE.md+startup gate) | infra | 04-15 | CLAUDE.md Step 2.55+gate存在チェック追加。テスト済み |
+| cmd_1923 | cmd_save.sh Check 21: ACの数値絶対値WARN検出 | infra | 04-15 | cmd_save.shにCheck 21を追加し、AC de |

@@ -90,8 +90,13 @@ def main() -> int:
     # worker_id / parent_cmd ファイル名推定は消火(GP-107 Q1:値の推定=NO)→撤去
     # 空値はgate_report_format.shがBLOCKする
 
-    # lessons_useful dict→list変換は消火(GP-107 Q1:内容不変でない)→撤去
-    # gate_report_format.shでBLOCK
+    # lessons_useful numbered dict→list変換 (GP-196: 内容不変の構造変換。GP-107再評価済み)
+    # {0:{id:X,useful:true,reason:Y}, 1:...} → [{id:X,useful:true,reason:Y},...]
+    # 条件: 全キーがint + 全値がdict(各教訓エントリ)。単一dict/ID-keyed dictは対象外
+    lu = data.get("lessons_useful")
+    if isinstance(lu, dict) and lu and all(isinstance(k, int) for k in lu.keys()) and all(isinstance(v, dict) for v in lu.values()):
+        data["lessons_useful"] = list(lu.values())
+        fixes.append("lessons_useful numbered dict→list変換")
     # UNKNOWN id追加も消火→撤去。missing "id"はgateがBLOCKする
 
     fm = data.get("files_modified")
@@ -310,15 +315,39 @@ def main() -> int:
 
     if fixes:
         data["autofix_applied"] = fixes
-        with open(report_path, "w", encoding="utf-8") as f:
-            DumpAll(
-                [data],
-                f,
-                Dumper=SafeDumper,
-                allow_unicode=True,
-                default_flow_style=False,
-                sort_keys=False,
+        # Write to temp file first, then validate round-trip
+        import tempfile
+        dir_name = os.path.dirname(report_path) or "."
+        fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                DumpAll(
+                    [data],
+                    f,
+                    Dumper=SafeDumper,
+                    allow_unicode=True,
+                    default_flow_style=False,
+                    sort_keys=False,
+                )
+            # Round-trip validation: ensure yaml.dump didn't corrupt
+            with open(tmp_path, "r", encoding="utf-8") as f:
+                reloaded = yaml.safe_load(f)
+            if not isinstance(reloaded, dict):
+                raise ValueError("yaml.dump produced non-dict output")
+            for ck in ["worker_id", "parent_cmd", "verdict", "status"]:
+                if data.get(ck) is not None and reloaded.get(ck) is None:
+                    raise ValueError(f"yaml.dump lost field: {ck}")
+            os.replace(tmp_path, report_path)
+        except Exception as e:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            print(
+                f"UNFIXABLE: yaml.dump round-trip validation failed: {e}. "
+                "Original file preserved."
             )
+            return 1
         print("AUTO-FIXED: " + "; ".join(fixes))
     else:
         print("NO-FIX-NEEDED")

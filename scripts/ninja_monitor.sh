@@ -388,8 +388,8 @@ check_idle() {
         if [ -n "$_ht_last_active" ] && [ "$_ht_last_active" -gt 0 ] 2>/dev/null; then
             _ht_elapsed=$((_ht_now - _ht_last_active))
         fi
-        # stale補正: @last_activeから5分(300秒)以上→hooks stuck判断→idle補正
-        if [ "$_ht_elapsed" -ge 300 ]; then
+        # stale補正: @last_activeが空(=hookが動いていない=Codex等)または5分(300秒)以上→idle補正
+        if [ -z "$_ht_last_active" ] || [ "$_ht_elapsed" -ge 300 ]; then
             log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=${agent_state} stale (last_active=${_ht_last_active}, ${_ht_elapsed}s ago), corrected to idle"
             tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
             [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
@@ -2238,7 +2238,7 @@ write_karo_snapshot() {
 
                 local idle_list=""
                 for name in "${rotated_names[@]}"; do
-                    if [ "${PREV_STATE[$name]}" = "idle" ]; then
+                    if [ "${PREV_STATE[$name]}" = "idle" ] || [ "${PREV_STATE[$name]}" = "done" ]; then
                         local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
                         # キャッシュから取得（ninja sectionで収集済み。yaml_field_get再読込排除 L4-R24）
                         local task_status="${_snapshot_status[$name]:-}"

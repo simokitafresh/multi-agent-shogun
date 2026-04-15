@@ -638,3 +638,5 @@
 - 2026-04-15 cmd_1904: 将軍cmd品質フィードバックループ(RC傾向表示+verdict自動記録)。影丸。GATE CLEAR。WA:なし
 - 2026-04-15 cmd_1905: 将軍cmd前提明示(assumptions新設+trust検査+軍師review連携)。小太郎。GATE CLEAR。WA:なし
 - 2026-04-15 deploy_task.sh配備失敗5回→LK060/LK061(cmd_id引数必須)→karo.md+karo-operations.md §1/§7に反映。根因=cmd_id省略時AC上書きスキップ
+- 2026-04-15 cmd_1921: 掲示板requires_confirmationバグ修正+Q4形骸化防止(前セッション出来事注入)。影丸。GATE CLEAR。WA:report_yaml_format(lessons_useful dict/list混在→家老修復)
+- 2026-04-15 cmd_1922: 因果探索原則を将軍必読ファイルに追加(CLAUDE.md+startup gate)。半蔵。GATE CLEAR。WA:なし

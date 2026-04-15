@@ -179,7 +179,7 @@ for j, (start, title) in enumerate(lines):
     print(f'    {title}: Read(offset={start}, limit={limit})')
 " "$_ddfile"
 done
-echo "  ★ 1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
+echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
 
 # --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---
 # 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。

@@ -1512,6 +1512,28 @@ for e in entries:
     fi
 fi
 
+# --- Check 21: ACの数値絶対値WARN検出（informational — WARN_COUNTに加算しない） ---
+# 起源: cmd_1910事故 — ACに「テスト数=118」のような固定値を記載し、並行cmdで即陳腐化
+# 目的: AC description内の絶対値パターンを検出し、相対条件への書換えを促す
+check_ac_absolute_literals() {
+    [[ -z "${AC_TEXT:-}" ]] && return 0
+
+    local ABSOLUTE_HITS
+    ABSOLUTE_HITS=$(echo "$AC_TEXT" | grep -iE \
+        '=[[:space:]]*[0-9]+|テスト数[[:space:]]*[=:：]?[[:space:]]*[0-9]+|[0-9]+(件|個|本|行|回|分|秒|時間|箇所|テスト)([[:space:]]*(PASS|成功|通過))?|ゼロ' \
+        || true)
+    [[ -z "$ABSOLUTE_HITS" ]] && return 0
+
+    echo "WARN: ACに数値絶対値パターンを検出。並行配備時に陳腐化リスクあり(cmd_1910教訓)" >&2
+    echo "  → 相対条件(例: 減少しないこと)への書換えを検討せよ。Check 21はinformationalのみ" >&2
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        echo "  → $(echo "$line" | sed -E 's/^[[:space:]-]*description:[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
+    done <<< "$ABSOLUTE_HITS"
+}
+
+check_ac_absolute_literals
+
 # --- 結果出力 ---
 if [[ "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"

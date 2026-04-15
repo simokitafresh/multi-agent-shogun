@@ -55,7 +55,7 @@ for j, (start, title) in enumerate(lines):
     print(f'    {title}: Read(offset={start}, limit={limit})')
 " "$_ddfile"
 done
-echo "  ★ 1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
+echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
 echo ""
 
 # --- Check 1.5: 追体験検証Q4 (前セッション出来事注入) ---

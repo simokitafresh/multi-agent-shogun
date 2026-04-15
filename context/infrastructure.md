@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-04-13 cmd_1889 context鮮度gate対象整合+鮮度確認 -->
+<!-- last_updated: 2026-04-15 cmd_1924 Android companion inventory -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -283,6 +283,19 @@ capture-paneバナー解析: モデル名+バージョン番号の精密パタ�
 - L083: bypass-approvals-and-sandboxフラグ漏れで全操作が権限確認停止（cmd_390）
 - L237: OpenAI ChatGPT ProはOAuth認証でAPIキー不要。tmuxペインパース方式では不正確（cmd_995）
 → `docs/research/cmd_314_usage_api_verification.md` / `docs/research/cmd_314_account_switching_procedures.md`
+
+## Androidコンパニオンアプリ
+
+`android/` は同梱モバイルクライアントの正本。現物確認は `android/app/build.gradle.kts`, `android/app/src/main/AndroidManifest.xml`, `android/app/src/main/java/com/shogun/android/`, `android/README.md` を参照。
+
+| 項目 | 現物確認結果 |
+|------|--------------|
+| パッケージ/Gradle構成 | 単一モジュール `ShogunAndroid` (`android/settings.gradle.kts`) + `:app`。`namespace`/`applicationId` は `com.shogun.android`、`compileSdk=34`、`minSdk=26`、`targetSdk=34`、`versionCode=15`、`versionName=6.4` (`android/app/build.gradle.kts`) |
+| 機能 | 現行UIは **5タブ**: `Shogun`/`Agents`/`Memos`/`Dashboard`/`Settings` (`android/app/src/main/java/com/shogun/android/MainActivity.kt`)。READMEの「4-Tab」は古く、実装はメモ機能込み。共有シート(`SEND`/`SEND_MULTIPLE`)で画像/PDFを受け、ntfyへ送信。`SshForegroundService` でSSH接続を前景化 (`AndroidManifest.xml`) |
+| 主要依存 | Jetpack Compose + Material 3、Navigation Compose、DataStore、Room、JSch 0.2.21、Markwon、OkHttp、KSP (`android/gradle/libs.versions.toml`, `android/app/build.gradle.kts`) |
+| ビルド | `cd android && ./gradlew assembleDebug`。README記載の debug APK 出力先は `app/build/outputs/apk/debug/app-debug.apk`。`release` buildType は存在するが debug keystore 署名 (`android/app/build.gradle.kts`) |
+| リリース先 | リポジトリ内の配布APK実体は `android/release/` (`multi-agent-shogun.apk`, `shogun-v5.8-debug.apk`, `shogun-v5.9-debug.apk`, `shogun-v6.2-debug.apk`)。README/README_ja の GitHub Releases URL は旧版参照が混在するため、現物確認時は `android/release/` を優先 |
+| ソース構造 | `MainActivity.kt` がナビゲーション入口。`ui/` 画面、`viewmodel/` 状態管理、`ssh/SshManager.kt` 接続、`data/` Room/Gist、`util/` 定数/辞書/整形、`SshForegroundService.kt` がバックグラウンド接続を担当 |
 
 ## Google Workspace CLI (gws) — 全PJ共通ツール
 
