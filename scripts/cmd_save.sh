@@ -217,6 +217,14 @@ QG_TEMPLATE
             echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
             WARN_COUNT=$((WARN_COUNT + 1))
         fi
+        # COMPOUND(複利の問い)検査（WARN — 2026-04-15 殿指摘「将軍に因果をたどる仕組みを」）
+        # 起源: 軍師のcausal_chain+複利の問いが因果思考を強制。将軍にはなかった
+        # 方法: q8に「正の複利」or「負の複利」or「複利」が含まれるか検査
+        if ! echo "$_Q8_WW_VAL" | grep -qE '複利|compound'; then
+            echo "WARN: q8に複利の問いがありません。「この実装選択を10回繰り返したら正の複利か負の複利か」を追記せよ" >&2
+            echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
+            WARN_COUNT=$((WARN_COUNT + 1))
+        fi
         # WHY部分に殿の指示引用を強制（WARN — 2026-04-14 L-CmdDialogueFirst）
         # 起源: 殿の指示→即cmd起票で4/4失敗。対話完了前のcmd起票を防ぐ
         # 方法: q8 WHYに殿の言葉(「」引用 or 殿指示/殿裁定)が含まれるか検査
@@ -572,9 +580,9 @@ PY
 
 show_pending_insights
 
-# --- Check 10: AC内ファイルパス存在チェック（BLOCK — パス不在はcmd品質低下の根因） ---
+# --- Check 10: AC内ファイルパス存在チェック（親ディレクトリありはINFO、親も不在はBLOCK） ---
 # 起源: cmd_1464事故 + cmd_1896/1899で3回連続パス誤り(2026-04-14なぜなぜ7回)
-# 目的: AC内のファイルパス参照が実在するか検証。不在はBLOCK
+# 目的: AC内のファイルパス参照が実在するか検証。未作成でも親ディレクトリがあれば作成対象として許容する
 # 真因: WARNを無視する習慣が定着し、パス誤りcmdが家老・忍者に到達する
 check_ac_file_paths() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
@@ -600,19 +608,31 @@ check_ac_file_paths() {
 
     # 各パスの存在チェック
     local HAS_MISSING=false
+    local HAS_CREATABLE=false
     while IFS= read -r fpath; do
         [[ -z "$fpath" ]] && continue
         if [[ ! -e "$PROJECT_WD/$fpath" ]]; then
-            if [[ "$HAS_MISSING" == false ]]; then
-                echo "WARNING: AC内のファイルパスが存在しません（cmd_1464教訓）:" >&2
-                HAS_MISSING=true
+            local parent_dir
+            parent_dir=$(dirname "$fpath")
+
+            if [[ -d "$PROJECT_WD/$parent_dir" ]]; then
+                if [[ "$HAS_CREATABLE" == false ]]; then
+                    echo "INFO: AC内の未作成ファイルは親ディレクトリが存在するため作成対象として扱います:" >&2
+                    HAS_CREATABLE=true
+                fi
+                echo "  • $fpath (parent: $PROJECT_WD/$parent_dir)" >&2
+            else
+                if [[ "$HAS_MISSING" == false ]]; then
+                    echo "WARNING: AC内のファイルパスが存在せず、親ディレクトリも不在です（cmd_1464教訓）:" >&2
+                    HAS_MISSING=true
+                fi
+                echo "  ✗ $fpath (missing parent: $PROJECT_WD/$parent_dir)" >&2
             fi
-            echo "  ✗ $fpath (in $PROJECT_WD)" >&2
         fi
     done <<< "$PATHS"
 
     if [[ "$HAS_MISSING" == true ]]; then
-        echo "  BLOCK: パスが存在しないACはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ" >&2
+        echo "  BLOCK: 親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ" >&2
         WARN_COUNT=$((WARN_COUNT + 1))
     fi
 }

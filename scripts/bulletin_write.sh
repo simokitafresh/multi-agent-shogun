@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # bulletin_write.sh — 全エージェント共有掲示板への書込み
-# Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]
+# Usage: bash scripts/bulletin_write.sh <content> [requires_confirmation]
 
 set -euo pipefail
 
@@ -8,14 +8,25 @@ SCRIPT_DIR="${BULLETIN_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." &
 BULLETIN_FILE="$SCRIPT_DIR/queue/bulletin_board.yaml"
 LOCK_FILE="${BULLETIN_FILE}.lock"
 
-if [[ $# -lt 2 ]]; then
-    echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
+if [[ $# -lt 1 ]]; then
+    echo "Usage: bash scripts/bulletin_write.sh <content> [requires_confirmation]" >&2
     exit 1
 fi
 
-POSTED_BY="$1"
-CONTENT="$2"
-REQUIRES_CONFIRMATION="${3:-true}"
+POSTED_BY=""
+if [[ -n "${TMUX_PANE:-}" ]]; then
+    POSTED_BY="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+fi
+if [[ -z "$POSTED_BY" ]]; then
+    POSTED_BY="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
+fi
+if [[ -z "$POSTED_BY" ]]; then
+    echo "ERROR: agent_id unavailable from tmux" >&2
+    exit 1
+fi
+
+CONTENT="$1"
+REQUIRES_CONFIRMATION="${2:-true}"
 POSTED_AT="$(date '+%Y-%m-%dT%H:%M:%S')"
 RAND_SUFFIX="$(printf '%s' "$(date +%s%N)$POSTED_BY$CONTENT" | sha1sum | cut -c1-6)"
 ENTRY_ID="blt_$(date '+%Y%m%d_%H%M%S')_${RAND_SUFFIX}"

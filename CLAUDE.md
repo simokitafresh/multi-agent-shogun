@@ -364,6 +364,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | instructions/*.md | 全員 | 役割別の恒久ルール | 家老のみ |
 | projects/{id}.yaml | 全員(将軍・家老・軍師・忍者) | PJ核心知識(ルール要約/UUID/DBルール/PI) | 家老のみ |
 | projects/{id}/lessons.yaml | 忍者・家老 | PJ教訓(過去の失敗・発見) | 家老のみ(lesson_write.sh経由) |
+| projects/infra/lessons_{role}.yaml | 各ロール | ロール別教訓(具体的失敗+原因+修正+enforcement) | 将軍=lesson_write_shogun.sh, 家老=lesson_write_karo.sh, 軍師=家老が登録 |
 | queue/ YAML + dashboard + reports | 家老・忍者・将軍 | タスク指示・状態・状況報告 | 各担当 |
 | MCP Memory | 将軍のみ | 殿の好み・将軍教訓 | 将軍のみ |
 
@@ -380,9 +381,10 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
   ├─ 全員が常に守るルール？ → instructions/*.md or CLAUDE.md
   ├─ PJ固有の知識？ → projects/{id}.yaml
   ├─ PJ固有の教訓？ → 報告YAMLにlesson_candidate → 家老がlesson_write.sh
+  ├─ ロール別の教訓？ → 将軍: lesson_write_shogun.sh / 家老: lesson_write_karo.sh / 軍師: 家老が登録
   ├─ タスクの指示・状態？ → queue/ YAML
   ├─ 状況の報告？ → dashboard.md / reports/
-  └─ 殿の好み・将軍の教訓？ → MCP Memory（将軍のみ）
+  └─ 殿の好み？ → MCP Memory（将軍のみ）
 ```
 
 ## Infra

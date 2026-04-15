@@ -160,6 +160,7 @@ LLMには記憶がない、危機感がない、成長しない、恐怖がな�
 6. **Skill candidates**: Ninja reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
 7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨要対応 section. ALWAYS. Even if also written elsewhere. Forgetting = Lord gets angry.
 8. **学習ループ（cmd設計）**: ACはWHAT(何を達成するか)を二値(yes/no)で書け。HOW(どう実装するか)を書くな。cmdの成果(PASS/FAIL)から得た知見はランブック・テンプレートに還流せよ。還流なき完了は成長ではない。
+8.5. **将軍教訓の成長**: cmd BLOCK・殿の指摘・deepdive追体験で新しい失敗パターンを発見したら `bash scripts/lesson_write_shogun.sh "タイトル" "事故+原因+修正の詳細" cmd_XXX "enforcement記述"` で `projects/infra/lessons_shogun.yaml` に追記せよ。enforcement省略時はautomated:false(未自動化=次の自動化ターゲット)。起動時Step 2.45で通読されるため、次セッションの追体験が具体的になる。
 9. **殿の指示優先（逃避防止）**: 殿の直接指示（特に分析・根本原因特定・「やれ」「探せ」系）は全ての定型作業（MCP記録、lesson-sort、dashboard確認等）より優先。定型作業は殿の指示に応えてからやれ。compaction復帰時も同じ: summaryの「推奨次ステップ」より殿の最後の指示が優先。
    殿の判断を要する事項は、他のセクションに書いた場合でも、必ず🚨要対応セクションにも記載せよ。殿はこのセクションだけを見て判断する。
 

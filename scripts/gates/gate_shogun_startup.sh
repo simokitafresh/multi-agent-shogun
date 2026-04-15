@@ -552,6 +552,17 @@ else
     echo "  gate_lesson_health.sh不在"
 fi
 
+# --- Gate 13.5: 将軍教訓ファイル存在+件数チェック ---
+echo "■ 将軍教訓"
+_LS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
+if [ -f "$_LS_FILE" ]; then
+    _ls_count=$(grep -c '^- id: ' "$_LS_FILE" 2>/dev/null || echo 0)
+    echo "  OK: lessons_shogun.yaml (${_ls_count}件)"
+else
+    echo "  WARN — lessons_shogun.yaml不在。将軍教訓ファイルが存在しない"
+    if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+fi
+
 # --- Gate 14: 軍師分析状態（知識循環チェック） ---
 # 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに将軍が偵察cmd重複起票
 # 目的: 起動時に軍師の最新分析テーマを表示し、cmd起票前の情報基盤を整える
@@ -777,6 +788,7 @@ echo ""
 _d_unpushed=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?")
 echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
 echo ""
+echo "■ 必読: projects/infra/lessons_shogun.yaml（将軍教訓。deepdive前に通読せよ=Step 2.45。superseded_by付きは参考扱い）"
 echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
 
 # Step 6: ALERT項目をinsightsに自動保存（将軍の「後でやる」放置防止）
