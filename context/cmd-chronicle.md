@@ -656,3 +656,5 @@
 | cmd_1934 | 研究 — 3体EW全量探索: C(21,3)=1330通り×4手法β調整α6指標 | dm-signal | 04-16 | cmd_1934 実装完了。⑤_* 21列の3体1330通り |
 | cmd_1935 | 整備 — context/codd.md新設: CoDD v1.8.0知識一元化 | infra | 04-16 | context/codd.mdを新設し、CLAUDE.md/ |
 | cmd_karo_gp195_197 | GP-195+197統合 — gate_diagnose_check.shをgate_report_format.shに統合 | infra | 04-16 | gate_report_format.sh の FAIL 経 |
+| cmd_karo_gp196 | GP-196 — 教訓注入絞込み 10→3件+IF-THEN構造化 | infra | 04-16 | deploy_task.sh の related_lesso |
+| cmd_1936 | 強化 — gist作成時にインデックスgistを自動更新するスクリプト | infra | 04-16 | gist一覧の自動更新スクリプトと52+件実データの分類テス |

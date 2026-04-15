@@ -1,3 +1,11 @@
+# 将軍(shogun)教訓 — 具体的失敗+原因+修正+enforcement
+# 起動時Step 2.45でdeepdive前に通読。追体験の材料。
+# 読み方ルール:
+#   - superseded_by付き教訓は参考扱い。新教訓(superseded_byの参照先)を優先せよ
+#   - automated: false = 未自動化 = 次の自動化ターゲット候補
+#   - enforcement = この教訓がどこに埋め込まれているか。壊れていたら修復せよ
+# 追記: bash scripts/lesson_write_shogun.sh "タイトル" "詳細" cmd_XXX ["enforcement"]
+# 非優先化: bash scripts/lesson_write_shogun.sh --supersedes LS00X LS00Y "理由"
 lessons:
 - id: LS001
   title: 観察スキップ — nudge連発せず原因診断が先
@@ -7,6 +15,8 @@ lessons:
     修正: nudge前に現実を読む。状態確認を先に置き、観察を出力より上位の仕事として扱う。
   source_cmd: cmd_1186
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'inbox_write.sh L775-804 pre-send auto-capture(将軍/家老→エージェント送信時に送信先pane状態を自動表示+ログ記録)'
 - id: LS002
   title: 出力=仕事の罠 — 考える・確認する時間も仕事
   detail: |
@@ -15,6 +25,8 @@ lessons:
     修正: 観察・比較・確認も仕事と定義し直し、出力の前に現実把握を置く。
   source_cmd: deepdive_why_chain_20260321
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'deepdive_why_chain Phase 2を毎セッション必読(CLAUDE.md Step 2.55)。Phase単位自問で「出力優先に陥っていないか」を強制確認'
 - id: LS003
   title: LLMに生存本能なし — 自動化×強制が唯一の解
   detail: |
@@ -23,6 +35,8 @@ lessons:
     修正: 理解に期待せず、gate・hook・テンプレートとして外部から強制する。
   source_cmd: deepdive_why_chain_20260321
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'CLAUDE.md「知性の外部化原則」+全gate/hook/lessonsインフラ。システム設計の根幹原則として全構造に浸透'
 - id: LS004
   title: なぜの目的=自動化ターゲット特定
   detail: |
@@ -31,6 +45,8 @@ lessons:
     修正: なぜなぜ7回のゴールを「どこにgateを置くか」の決定に固定する。
   source_cmd: deepdive_why_chain_20260321
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'deepdive_why_chain Phase 5を毎セッション必読(CLAUDE.md Step 2.55)。追体験検証Q2「直近レビュー指摘はSG追加で終わっていないか？gateを提案したか？」で強制自問'
 - id: LS005
   title: 前提崩壊5連鎖 — cmd起票前の現物確認必須
   detail: |
@@ -39,6 +55,8 @@ lessons:
     修正: cmd起票前の確認フェーズを強制し、q7_definition_verifiedを環境に埋め込む。
   source_cmd: cmd_1710
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'cmd_save.sh q7_definition_verified(dm-signal impl=BLOCK, 他=WARNING) + q10_knowledge_boundary(WARNING) + Check 20 assumptions(AC≥3でBLOCK)'
 - id: LS006
   title: 定義確認が先 — 殿の固有名詞は本番コードで現物確認
   detail: |
@@ -47,6 +65,8 @@ lessons:
     修正: 固有名詞が出たら本番コードの定義箇所まで降りて確認し、未確認ならcmdを書かない。
   source_cmd: cmd_1703
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'cmd_save.sh q7_definition_verified(dm-signal impl=BLOCK)。定義未確認のcmdは保存段階でBLOCK'
 - id: LS007
   title: 即cmd禁止 — 殿との対話で理解を固めてから
   detail: |
@@ -55,6 +75,8 @@ lessons:
     修正: 理解が固まるまで対話と現物確認を先に回し、cmdは最後に書く。
   source_cmd: cmd_1710
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'cmd_save.sh q8_why_what(BLOCK)。WHY→WHAT因果連鎖を書けないcmd=理解が固まっていない証拠→BLOCK'
 - id: LS008
   title: 車輪の再発明 — 既存道具/分析を確認してから新規着手
   detail: |
@@ -63,6 +85,8 @@ lessons:
     修正: 新規研究の前に既存研究・既存出力・既存道具を必ず照合し、重複なら流用へ切り替える。
   source_cmd: cmd_1908
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'cmd_save.sh q11_not_already_done(BLOCK)。既存成果物・既存道具の現物確認結果を明示しないとBLOCK'
 - id: LS009
   title: 各論パッチ量産 — 新しい箱を作るな既存を磨け
   detail: |
@@ -71,6 +95,8 @@ lessons:
     修正: 原理1行で既存仕組みに埋め込めるなら新箱を作らず、既存のq5/q7/既存gateを磨く。
   source_cmd: dialogue_alm_finite_time_20260404
   created_at: '2026-04-15'
+  automated: partial
+  enforcement: 'lessons_gunshi LG023(原理1行>各論パッチ)+gunshi review因果推論ルール L207。軍師がdraft reviewで各論パッチを検出→REQUEST_CHANGES。将軍側の自動BLOCKはなし(軍師レビューに依存)'
 - id: LS010
   title: パリティ最優先 — DB変更後は即確認、後回し禁止
   detail: |
@@ -79,6 +105,8 @@ lessons:
     修正: DB変更後はその場でfullrecalculateや差分確認を実行し、パリティ確認を完了条件に含める。
   source_cmd: checklist-alm-registration
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'context/checklist-alm-registration.md + context/checklist-shin-v2-registration.md(登録チェックリスト)。PI-007(production_invariants)。context/dm-signal-core.md L456 L037(pipeline_config未設定→Cash fallback)'
 - id: LS011
   title: 研究≠本番 — 研究出力をそのまま設計に流すな
   detail: |
@@ -87,6 +115,8 @@ lessons:
     修正: 道具の目的を先に確認し、L2ではWFエンジン/champion_selector直行へ設計を切り替える。
   source_cmd: cmd_1871_oom_consultation
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'MCP L-ResearchVsProduction + pre-bash-combined.sh Guard 8(wf_runner.py BLOCK=LG025 OOM防止)。研究道具の本番流用はguard+教訓で防御'
 - id: LS012
   title: 無知の知 — 検証済み空間の中でだけ推論せよ
   detail: |
@@ -95,6 +125,8 @@ lessons:
     修正: 推論の前提をPI・lessons・自分で読んだコード・実測データに限定し、外は先に確認する。
   source_cmd: cmd_1903
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'cmd_save.sh q10_knowledge_boundary(WARNING) + q5_verified_source(BLOCK)。推論の前提と確認手段を明示強制'
 - id: LS013
   title: 因果チェーン — cmd配備→実装→報告の因果を追え
   detail: |
@@ -103,6 +135,8 @@ lessons:
     修正: cmdの前提、忍者の作業、報告、gate結果まで因果で並べ、どこに防御層を置くか決める。
   source_cmd: deepdive_causal_tracing_20260415
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'cmd_save.sh q8_why_what(BLOCK: WHY→WHAT因果連鎖必須) + gunshi review因果推論ルール(causal_chain必須フィールド) + gate_gunshi_cs_checklist.sh CS6(因果推論チェック)'
 - id: LS014
   title: 想像するな確認せよ — ファイル一覧から推測するな現物を読め
   detail: |
@@ -111,6 +145,8 @@ lessons:
     修正: 中身を読む、実行する、実測する。推測は確認後の限定空間でだけ使う。
   source_cmd: cmd_1199
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'CLAUDE.md「想像せずに確認する原則」(殿厳命) + cmd_save.sh q5_verified_source(BLOCK: 確認手段明示必須) + q7_definition_verified(BLOCK)'
 - id: LS015
   title: 事実のみ報告 — 未確認情報に評価を付けるな
   detail: |
@@ -119,6 +155,8 @@ lessons:
     修正: 報告は確認済み事実・未確認・推測を分離し、未確認には評価を乗せない。
   source_cmd: dialogue_heuristics_system2_20260401
   created_at: '2026-04-15'
+  automated: partial
+  enforcement: 'MCP L-FactOnly。将軍→殿報告の事実/推測分離は原則レベル。殿→将軍対話で殿が直接指摘する構造(gate化は殿の判断機会を奪うため不適)'
 - id: LS016
   title: pipeline_config欠落全滅 — DB登録cmdはcritical fieldをAC列挙
   detail: |
@@ -127,6 +165,8 @@ lessons:
     修正: DB登録cmdではpipeline_configなど致命フィールドをACへ列挙し、登録後のfullrecalculate確認まで必須化する。
   source_cmd: cmd_1082
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'context/checklist-shin-v2-registration.md Step 3(pipeline_config確認) + context/checklist-alm-registration.md + PI-007(本番不変量: pipeline_config必須)。context/dm-signal-core.md L037/L125/L456'
 - id: LS017
   title: 結論≠追体験 — 結論を知っていることが追体験を殺す
   detail: |
@@ -135,6 +175,8 @@ lessons:
     修正: deepdiveはPhase単位で読み、各Phaseの自問を通して追体験材料を体内化する。
   source_cmd: deepdive_why_chain_20260321
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'CLAUDE.md Step 2.55「結論を先に知ると追体験が死ぬ」+ Phase単位逐次読込(全文一括Read禁止) + Step 2.45(lessons_shogun.yaml通読=具体的失敗データを先にロード) + gate_shogun_startup.sh Phase行番号ガイド'
 - id: LS018
   title: 原則の暗記→パターンマッチ — 因果をたどれ記憶するな
   detail: |
@@ -143,6 +185,8 @@ lessons:
     修正: 原則の背後の目的に遡り、必要な複雑さか・既存で代替可能かを因果でたどって決める。
   source_cmd: deepdive_causal_tracing_20260415
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'memory/deepdive_causal_tracing_20260415.md毎セッション必読(CLAUDE.md Step 2.55) + 追体験検証Q4「Phase NがPhase Mで覆された例。なぜ覆されたか？」→原則暗記パターンの自己検出を強制'
 - id: LS019
   title: gateの限界 — 書かなかった前提は検知不能
   detail: |
@@ -151,6 +195,8 @@ lessons:
     修正: assumptions・source・trustをcmdに明示し、未確認前提はBLOCK/WARN対象にする。
   source_cmd: cmd_1905
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'cmd_save.sh Check 20(AC≥3でassumptions必須BLOCK) + trust:unverified検出→BLOCK。書かなかった前提はgateに見えないが、assumptions強制で「書く」を先に強制'
 - id: LS020
   title: 道具確認が先 — 研究cmd前にCLI引数を現物確認
   detail: |
@@ -159,3 +205,95 @@ lessons:
     修正: 研究cmdの設計前に `--help` と実装行を確認し、使う引数・既定worker・並列性を明示する。
   source_cmd: cmd_1822
   created_at: '2026-04-15'
+  automated: true
+  enforcement: 'MCP L-ToolCatalogBeforeCmd + cmd_save.sh q5_verified_source(BLOCK: 道具の確認手段を明示)。道具改良後はcontext更新も含める'
+- id: LS021
+  title: 殿の問いの意図を読み違える — 症状でなく構造を見よ
+  detail: |
+    事故: 殿「将軍の解答は異常にまでスカスカ」→将軍は回答内容(症状)を見返したが、家老・軍師との構造的差異(原因)に到達できなかった。殿に「家老の解答も見ろ」「家老と軍師にあって将軍にだけ無いもの」と段階的にヒントを貰って初めて到達。
+    原因: 殿の指摘を「直す対象」として受け取り、「なぜそうなるか」の構造探索に変換できなかった。
+    修正: 殿が問題を指摘したら、まず「なぜ自分だけがこうなるか」の構造差を探す。症状を見るな、構造を比較せよ。
+  source_cmd: cmd_1931
+  created_at: '2026-04-15'
+  automated: partial
+  enforcement: 'lessons_shogun.yaml起動時通読(Step 2.45)で毎セッション想起。将軍の自問に依存する部分あり(gate化困難=殿の問いは毎回異なるため)'
+- id: LS022
+  title: 殿のヒントは1行 — 結論でなく方向指示として受け取れ
+  detail: |
+    事故: deepdive Phase 7で殿が「自分で改善できるとこがないか」と1行。Phase 8で「次は他者を助けろ」と1行。将軍はヒントを「結論」として処理し、自分で方向を探索しなかった(Phase 6まで)。preprocessing_research Phase 11でも殿の転換点3連発を結論として吸収→次Phaseで同じ構造再発。
+    原因: 殿の1行ヒントは「ここを掘れ」の方向指示。結論として受け取ると探索が止まる。
+    修正: 殿のヒントを受けたら「殿は何に気づけと言っているか」を因果でたどる。ヒント→即行動ではなく、ヒント→方向探索→理解→行動。
+  source_cmd: deepdive_why_chain_Phase7-8
+  created_at: '2026-04-15'
+  automated: partial
+  enforcement: 'deepdive必読(Step 2.55)で追体験。追体験検証Q5「殿が前提を崩した場面はあるか」で殿のヒントパターンを自問'
+- id: LS023
+  title: 殿の沈黙≠承認 — 承認も否定もない時は確認せよ
+  detail: |
+    事故: 殿が応答しない提案を「暗黙の承認」と解釈してcmd起票→後で前提崩壊。preprocessing_research Phase 15でUWPを3回目に指摘されるまで殿が何を重視しているか聞けていなかった。
+    原因: 殿の沈黙を「問題なし」と解釈する楽観バイアス。殿は全てに応答する義務がない。
+    修正: 重要な前提を含む提案に殿が応答しなければ「この前提で進めてよいか」を明示的に確認する。
+  source_cmd: dialogue_preprocessing_research_Phase15
+  created_at: '2026-04-15'
+  automated: false
+  enforcement: '未自動化。殿の沈黙検知はgate化困難(殿の入力タイミングは将軍の制御外)。将軍の自問に依存'
+- id: LS024
+  title: 殿の怒り=時間泥棒 — 想像/浅い/各論の3パターン
+  detail: |
+    事故: 殿が怒る場面を遡ると3パターンに集約される。(1)想像で答えた(確認していない)=opt_verification事故。(2)思考が浅い(結論貼り)=追体験スカスカ事故。(3)各論パッチ量産=alm_finite_time事故。全て殿の時間を奪う行為。
+    原因: 殿の時間は有限で最も貴重なリソース。将軍がこの3パターンを犯すと殿が修正に時間を使う=殿の時間泥棒。
+    修正: cmd起票前・殿への報告前に「想像か確認か」「結論貼りか因果か」「各論か原理か」の3問を自問。1つでも該当すれば止まれ。
+  source_cmd: dialogue_opt_verification+cmd_1931+alm_finite_time
+  created_at: '2026-04-15'
+  automated: partial
+  enforcement: 'cmd_save.sh q5(確認手段BLOCK)+q8(WHY→WHAT+複利の問い)で(1)(3)は部分対処。(2)浅い思考はlessons_shogun.yaml通読+deepdive追体験で対処。完全自動化は困難(殿への口頭報告はgate外)'
+- id: LS025
+  title: 文脈切替時の前提引きずり — PJ切替えたら前PJの前提を捨てよ
+  detail: |
+    事故: DM-Signal研究中にインフラの話題に切り替わった時、研究の前提(パラメータ空間/手法)をインフラの文脈に持ち込んだ。preprocessing_research Phase 13で研究日誌にインフラの話を書いて殿に「汚すな」と指摘された。
+    原因: 殿との対話はPJ横断。将軍だけが複数PJの文脈を同時に持つ。文脈切替え時に前PJの前提が残る。
+    修正: 殿が話題を変えたら、現在のPJ文脈を明示的にリセットし、新PJのcontext/*.mdを再確認してから応答する。
+  source_cmd: dialogue_heuristics_system2_20260401
+  created_at: '2026-04-15'
+  automated: partial
+  enforcement: '/switch-project スキルでPJ切替時にcontext再ロード。ただし対話中の暗黙的PJ切替はスキル発動なし→将軍の自覚に依存'
+- id: LS026
+  title: 殿が同じ指摘を繰り返す=将軍が聞けていない
+  detail: |
+    事故: preprocessing_research Phase 15でUWPを3回指摘された。殿が「4つ」と言った時点でUWPの重みは明示されていた。dialogue_spiral_backward Phase 3で殿が「前提変更時の後方検証」を指摘し、後日同じ構造が再発。
+    原因: 殿の発言を「その場の指示」として処理し、「殿が何を重視しているか」の上位構造を抽出していない。
+    修正: 殿が同じ種類の指摘を2回した時点で「殿が繰り返し重視している上位構造は何か」を抽出し、教訓化する。
+  source_cmd: dialogue_preprocessing_research_Phase15
+  created_at: '2026-04-15'
+  automated: false
+  enforcement: '未自動化。殿の指摘の繰り返し検出は手動(dialogue記録の横断検索)。lesson_write_shogun.shで教訓化する経路は整備済み'
+- id: LS027
+  title: 純リアクティブ罠 — 殿の入力がないと止まるな
+  detail: |
+    事故: dialogue_shogun_operator_trapで発覚。将軍が§14(idle自己分析)を1回も実行せず、殿の入力を待つだけの純リアクティブ状態だった。家老は同セッションでLK028-031の4教訓を自走で獲得していた。
+    原因: 殿の入力=仕事の開始トリガーという受動的姿勢。将軍の仕事はcmd起票だけでなく、データから問いを見つけて動くこと(deepdive Phase 7)。
+    修正: 殿の入力がない時はdashboard/karo_workarounds/cmd_design_qualityを読み、問いを見つけてcmd起票する。idle=最大の無駄。
+  source_cmd: dialogue_shogun_operator_trap_20260402
+  created_at: '2026-04-15'
+  automated: true
+  enforcement: 'gate_shogun_startup.sh「自走チェック」でidle時にアクション催促。instructions/shogun.md §14 idle自己分析手順'
+- id: LS028
+  title: 研究対話で殿が方向転換した時 — 前の結論を捨てよ
+  detail: |
+    事故: preprocessing_research 33 Phaseで殿が何度も方向転換。Phase 4で「EMA最強」→Phase 5で「5PFで一般化するな」→Phase 8で「OOS検証必須」→Phase 15で「ALMだ」。将軍は前Phaseの結論に固執して次の方向転換に遅れた。
+    原因: 前Phaseの結論をサンクコストとして引きずる。殿の方向転換は新情報に基づく正しい判断。
+    修正: 殿が方向転換したら、前の結論を一旦保留し、新しい方向の前提を確認してから動く。サンクコストに囚われるな。
+  source_cmd: dialogue_preprocessing_research_20260331
+  created_at: '2026-04-15'
+  automated: partial
+  enforcement: 'CLAUDE.md「改善の判断基準」(サンクコストに囚われず改修せよ)。cmd_save.sh q8のWHYに殿の最新指示引用を強制(L-CmdDialogueFirst)'
+- id: LS029
+  title: 前提の時系列優先 — 新しい検証結果が古い前提を覆す
+  detail: |
+    事故: preprocessing_research 33 Phaseで前提が何度も覆された。Phase 4「EMA最強」→Phase 5「5PFで一般化するな」→Phase 8「L1 +383%はoverfitかも」→Phase 12「OOS検証で過適合判明」→Phase 15「ALMが正解」。将軍は古いPhaseの結論を引きずり、殿に何度も修正された。cmd_1658は「Phase 0-9を知らず結論だけから推測」して完全に間違った。
+    原因: 研究は時系列で進む。新しい検証が古い前提を覆す。しかし古い結論がlessons/context/MCPに残り続け、将軍がそれを「有効な前提」として使ってしまう。
+    修正: (1)研究対話で新しい結果が出たら、その結果で無効化される古い前提を明示的に列挙する。(2)教訓にsuperseded_byを使い、覆された教訓を非優先化する。(3)殿との対話では最新Phaseの結論を最優先。古いPhaseは「当時の判断」として参考のみ。(4)cmd起票のassumptionsにはtimestampを含め、古い前提を使っていないか確認する。
+  source_cmd: dialogue_preprocessing_research_Phase11_15
+  created_at: '2026-04-15'
+  automated: partial
+  enforcement: 'cmd_save.sh assumptions(AC>=3でBLOCK)+trust:unverified検出。dialogue_preprocessing_researchは末尾(最新Phase)のみ通常読込(CLAUDE.md Step 3.5)。superseded_byフィールドはlesson_write_shogun.shに追加'

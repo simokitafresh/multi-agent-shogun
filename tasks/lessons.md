@@ -3640,3 +3640,18 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解: background sleep(0.2s) >> hook startup時間(~0.05s)かつ << inotifywait timeout(1.0s)の関係を保つことで両端の競合を排除
+
+### L477: bats並列実行(--jobs N)の共有ファイル競合 — per-testパス化が必須
+- **日付**: 2026-04-15
+- **出典**: cmd_karo_ci_fix_ga056
+- **記録者**: tobisaru
+- **tags**: [universal]
+- bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL。CI環境(GitHub Actions)でのみ再現。修正: mktemp or テスト名付きパスでper-test隔離。gate_report_format.shにenv var override追加で後方互換確保
+
+### L478: bats --jobs 8並列実行で共有ファイルへの競合書き込みが発生しテストが断続的に失敗する
+- **日付**: 2026-04-15
+- **出典**: cmd_karo_ci_fix_ga056
+- **記録者**: tobisaru
+- **status**: reviewed
+- **tags**: [universal]
+- QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jobs 8並列実行時に複数テストが同時書き込み→後発の書き込みが前の内容を上書き→grep検索失敗→if ブロックスキップ→期待出力なし→テスト失敗。修正: setup()でBATST_TEST_NUMBERやenv var経由でper-testファイルパスを生成する。

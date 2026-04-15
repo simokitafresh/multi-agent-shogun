@@ -1135,6 +1135,57 @@ EOF
     [ "$output" = "IF: trigger condition → THEN: take action (BECAUSE: expected effect)" ]
 }
 
+@test "deploy_task caps injected related_lessons at 3 entries" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L910
+    title: rollback safeguard
+    summary: rollback branch before deploy cutover
+    status: confirmed
+    helpful_count: 10
+  - id: L911
+    title: database migration guard
+    summary: database schema check before release
+    status: confirmed
+    helpful_count: 9
+  - id: L912
+    title: cache invalidation order
+    summary: cache purge after config update
+    status: confirmed
+    helpful_count: 8
+  - id: L913
+    title: notification fallback route
+    summary: notification fallback when primary webhook fails
+    status: confirmed
+    helpful_count: 7
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "deploy rollback database cache notification rollout"
+  description: "validate rollback database cache notification lesson injection cap"
+  task_type: impl
+  project: testproj
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+related = (data.get('task') or {}).get('related_lessons') or []
+assert len(related) == 3, related
+print(len(related))
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "3" ]
+}
+
 # === GP-105: stale report reassignment detection ===
 
 @test "GP-105: stale other ninja template archived on reassignment (verdict empty)" {
