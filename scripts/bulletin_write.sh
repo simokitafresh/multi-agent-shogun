@@ -106,3 +106,16 @@ os.replace(tmp_file, bulletin_file)
 print(entry_id)
 PY
 } 200>"$LOCK_FILE"
+
+# --- 投稿者以外の将軍・家老・軍師に自動通知 ---
+INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
+if [[ -f "$INBOX_WRITE" ]]; then
+    # 通知先: 将軍+家老+軍師（投稿者自身は除外）
+    NOTIFY_TARGETS=("shogun" "karo" "gunshi")
+    SUMMARY="${CONTENT:0:80}"
+    for target in "${NOTIFY_TARGETS[@]}"; do
+        if [[ "$target" != "$POSTED_BY" ]]; then
+            bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${SUMMARY}..." bulletin_notify "$POSTED_BY" 2>/dev/null || true
+        fi
+    done
+fi

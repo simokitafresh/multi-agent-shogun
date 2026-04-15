@@ -662,3 +662,4 @@
 | cmd_1937 | 整備 — context/ui-design-guide.md新設: 全エージェント共通UIデザインガイド | infra | 04-16 | Created context/ui-design-guid |
 | cmd_1938 | 整備 — context/ui-design-guide.md補強: ボタンデザイン9tips+16tips統合 | infra | 04-16 | context/ui-design-guide.md に 1 |
 | cmd_1939 | 強化 — scripts/cmd_save.sh L3診断推論: BLOCK時Diagnose MANDATORY+Session State | infra | 04-16 | cmd_save.shにDiagnose MANDATORY |
+| cmd_1942 | 強化 — 忍者ACテストをaffected_tests.sh(関連テストのみ)に変更 | infra | 04-16 | deploy_task.shのテストAC生成で、全量unit |

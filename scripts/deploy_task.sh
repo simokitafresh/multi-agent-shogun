@@ -861,6 +861,29 @@ VERIFY_AC_PY
 }
 
 # ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
+is_before_after_required_task() {
+    local task_file="$1"
+    local parent_cmd="$2"
+    local task_title task_type
+
+    task_title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null)
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null)
+
+    case "$parent_cmd" in
+        cmd_karo_gp*) return 0 ;;
+    esac
+
+    case "${task_type,,}" in
+        gp|improvement) return 0 ;;
+    esac
+
+    case "$task_title" in
+        GP*|強化*|改善*|*"GP/"*|*" GP "*|*"改善"*|*"強化"*) return 0 ;;
+    esac
+
+    return 1
+}
+
 generate_report_template() {
     local ninja_name="$1"
     local task_id="$2"
@@ -978,6 +1001,19 @@ generate_report_template() {
     resolved_parent_cmd=$(field_get "$task_file" "parent_cmd" "$parent_cmd")
     local ac_version
     ac_version=$(field_get "$task_file" "ac_version" "")
+    local _before_after_block=""
+    if is_before_after_required_task "$task_file" "$resolved_parent_cmd"; then
+        _before_after_block=$(cat <<'EOF'
+before_metrics:
+  summary: ""  # 実装前の計測値
+  details: ""
+after_metrics:
+  summary: ""  # 実装後の計測値
+  details: ""
+regression: ""  # yes or no
+EOF
+)
+    fi
 
     cat > "$report_file" <<EOF
 # !! トップレベル構造を維持せよ。report: で包むな !!
@@ -1011,6 +1047,7 @@ purpose_validation:
   cmd_purpose: ""
   fit: true
   purpose_gap: ""
+${_before_after_block}
 files_modified: []
 lesson_candidate:
   # found: true/false を書け。リスト形式[] 禁止
@@ -1139,6 +1176,9 @@ EOF
             out = text
             if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
                 out = out " (進行中月除外)"
+            }
+            if (out ~ /全テストPASS\(bats --jobs 4 tests\/unit\)/) {
+                out = "bash scripts/affected_tests.sh で列挙されたテストを実行し、空リスト時は bats --jobs 4 tests/unit にフォールバックしてPASS確認"
             }
             return out
         }
@@ -1274,6 +1314,9 @@ ${_commit_bc}"
                 out = text
                 if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
                     out = out " (進行中月除外)"
+                }
+                if (out ~ /全テストPASS\(bats --jobs 4 tests\/unit\)/) {
+                    out = "bash scripts/affected_tests.sh で列挙されたテストを実行し、空リスト時は bats --jobs 4 tests/unit にフォールバックしてPASS確認"
                 }
                 return out
             }

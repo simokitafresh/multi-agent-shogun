@@ -140,6 +140,43 @@ try:
 except Exception:
     pass
 
+# --- GP-199: GP/改善cmdのbefore/after退化計測はWARNで促す ---
+def _metric_filled(metric):
+    if metric is None:
+        return False
+    if isinstance(metric, str):
+        return bool(metric.strip())
+    if isinstance(metric, dict):
+        return any(str(v).strip() for v in metric.values() if v is not None)
+    if isinstance(metric, list):
+        return len(metric) > 0
+    return True
+
+_task_title = str(_task_data.get('title') or '')
+_task_type = str(_task_data.get('task_type') or _task_data.get('type') or _task_data.get('scope_mode') or '').lower().strip()
+_report_parent_cmd = str(data.get('parent_cmd') or '')
+_needs_before_after = (
+    _report_parent_cmd.startswith('cmd_karo_gp')
+    or _task_type in ('gp', 'improvement')
+    or _task_title.startswith('GP')
+    or _task_title.startswith('強化')
+    or _task_title.startswith('改善')
+    or 'GP/' in _task_title
+)
+
+if _needs_before_after:
+    if not _metric_filled(data.get('before_metrics')):
+        hints.append('GP-199 WARN: before_metrics未記入 — GP/改善cmdは実装前の計測値を記録せよ')
+    if not _metric_filled(data.get('after_metrics')):
+        hints.append('GP-199 WARN: after_metrics未記入 — GP/改善cmdは実装後の計測値を記録せよ')
+    _regression = data.get('regression')
+    if isinstance(_regression, bool):
+        _regression_norm = 'yes' if _regression else 'no'
+    else:
+        _regression_norm = str(_regression or '').strip().lower()
+    if _regression_norm not in ('yes', 'no'):
+        hints.append('GP-199 WARN: regression未記入 — GP/改善cmdは退化有無を yes/no で記録せよ')
+
 # --- assigned_acs: 分割配備対応（_task_dataから取得。DRY: task YAML二重読込排除） ---
 # Bug fix: 分割配備で担当外AC=no→verdict-BC矛盾+GP-131 AC件数で偽BLOCK (cmd_1796で2回WA)
 _aa_str = _task_data.get('assigned_acs', '') or ''
