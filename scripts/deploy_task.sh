@@ -29,6 +29,9 @@ source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/firefighting_keywords.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 
+# WSL2 NTFS最適化: field_getの依存ログ(flock+stat+write)を抑制。65回×20ms=1.3s削減
+export FIELD_GET_NO_LOG=1
+
 DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
 DIRECT_MODE=false
 NINJA_NAME=""

@@ -3600,3 +3600,19 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - 旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:noをFAIL判定するためverdict_override(WA)が頻発。注入しない方が根本解
+
+### L472: shogun-procedures.md は gitignore対象外ファイルのため変更はコミット不可
+- **日付**: 2026-04-15
+- **出典**: cmd_1903
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [universal]
+- instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含まれず。変更はローカルのみ。次回以降 instructions/*.md を変更するcmdは git-ignored か事前確認が必要
+
+### L473: gate_shogun_startup.shのゲートセクション間で変数スコープ確認必須
+- **日付**: 2026-04-15
+- **出典**: cmd_1904
+- **記録者**: kagemaru
+- **status**: draft
+- **tags**: [universal]
+- 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。
