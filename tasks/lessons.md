@@ -3616,3 +3616,27 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。
+
+### L474: ac_assigned注入時はinline/multi-line両YAMLフォーマットを考慮すること
+- **日付**: 2026-04-15
+- **出典**: cmd_1909
+- **記録者**: kotaro
+- **status**: confirmed
+- **tags**: [universal]
+- inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、field_get.shではac_assignedを取得できない。awkで両形式を解析するパーサが必要。
+
+### L475: dashboard_auto_section.shのアーカイブキャッシュはプロジェクト非スコープで異プロジェクト間干渉が発生する
+- **日付**: 2026-04-15
+- **出典**: cmd_1910
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [universal]
+- dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用。テスト環境と本番環境でファイル数が一致すると誤ったキャッシュをHITし、context_freshness_check.shが誤データを参照。_proj_hash(PROJECT_DIRのcksum)をサフィックスに付与しプロジェクトスコープ化で解決。CTX_WARN_CACHE等は既にproj_hash分離済みだったが、arch cacheだけ漏れていた。
+
+### L476: T-SCI-005のようなタイミング依存テストはinitial check完了後にbackground書込みするよう設計せよ
+- **日付**: 2026-04-15
+- **出典**: cmd_1911
+- **記録者**: tobisaru
+- **status**: confirmed
+- **tags**: [universal]
+- T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解: background sleep(0.2s) >> hook startup時間(~0.05s)かつ << inotifywait timeout(1.0s)の関係を保つことで両端の競合を排除

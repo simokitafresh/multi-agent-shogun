@@ -1,11 +1,3 @@
----
-codd:
-  node_id: "req:deploy-task-refactor-requirements"
-  type: requirement
-  status: approved
-  confidence: 0.95
----
-
 # deploy_task.sh リファクタリング CoDD Spec
 
 ## 問題

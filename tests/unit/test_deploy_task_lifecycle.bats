@@ -110,9 +110,8 @@ resolve_fixture_task() {
 
     log() { :; }
 
-    yaml_field_set() {
-        bash "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"
-    }
+    # shellcheck disable=SC1091
+    source "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
 
     eval "$(extract_function reset_stale_fields)"
     eval "$(extract_function resolve_cmd_to_task)"

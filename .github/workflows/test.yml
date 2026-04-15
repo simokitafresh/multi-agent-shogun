@@ -33,7 +33,7 @@ jobs:
       - name: Run root-level tests (inbox_write.sh etc.)
         run: |
           if ls tests/*.bats 1>/dev/null 2>&1; then
-            bats tests/*.bats --timing --jobs 4
+            bats tests/*.bats --timing --jobs 8
           else
             echo "::warning::No root-level test files found"
           fi
@@ -44,7 +44,7 @@ jobs:
             echo "::warning::tests/unit directory not found. Skipping unit tests."
             exit 0
           fi
-          bats tests/unit/ --timing --jobs 4 || {
+          bats tests/unit/ --timing --jobs 8 || {
             echo "::error::Unit tests failed"
             exit 1
           }

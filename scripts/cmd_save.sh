@@ -315,15 +315,56 @@ if ! (flock -n 200) 200>"$LOCK_FILE" 2>/dev/null; then
     WARN_COUNT=$((WARN_COUNT + 1))
 fi
 
+show_recent_completed_ninjas() {
+    local snapshot_file="$PROJECT_DIR/queue/karo_snapshot.txt"
+    [[ -f "$snapshot_file" ]] || return 0
+
+    local completed_ninjas
+    completed_ninjas=$(
+        awk -F'|' '
+            NR == FNR {
+                if ($1 == "report" && ($4 == "completed" || $4 == "done")) {
+                    report_done[$2] = 1
+                    if (!seen[$2]++) {
+                        names[++count] = $2
+                    }
+                }
+                next
+            }
+            $1 == "ninja" && ($4 == "completed" || $4 == "done") {
+                if (!report_done[$2] && !seen[$2]++) {
+                    names[++count] = $2
+                }
+            }
+            END {
+                for (i = 1; i <= count; i++) {
+                    printf "%s%s", names[i], (i < count ? ", " : "")
+                }
+            }
+        ' "$snapshot_file" "$snapshot_file" 2>/dev/null || true
+    )
+
+    [[ -n "$completed_ninjas" ]] || return 0
+    echo "  直近完了忍者一覧: $completed_ninjas" >&2
+}
+
+show_uncommitted_changes_warning() {
+    local uncommitted="${1:-}"
+    [[ -n "$uncommitted" ]] || return 0
+
+    echo "WARN: 未コミット変更を検出（コミット忘れ注意）:" >&2
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        echo "  $line" >&2
+    done <<< "$uncommitted"
+
+    show_recent_completed_ninjas
+}
+
 # --- Check 5: uncommitted changes検出 ---
 # WSL2 NTFS最適化: 全ファイルgit status(1.7s)→パス限定(0.2s)。7倍高速化
 UNCOMMITTED=$(git -C "$PROJECT_DIR" diff --name-only -- scripts/ CLAUDE.md instructions/ config/ 2>/dev/null || true)
-if [[ -n "$UNCOMMITTED" ]]; then
-    echo "WARN: 未コミット変更を検出（コミット忘れ注意）:" >&2
-    echo "$UNCOMMITTED" | while IFS= read -r line; do
-        echo "  $line" >&2
-    done
-fi
+show_uncommitted_changes_warning "$UNCOMMITTED"
 
 # --- Check 6: パイプラインGP重複チェック（非BLOCK — WARN_COUNTに加算しない） ---
 # 新cmdのcommandフィールドからGP-XXXパターンを抽出し、
@@ -1340,17 +1381,18 @@ fi
 
 # --- Check 20: assumptionsフィールド検査（BLOCK昇格 cmd_1906） ---
 # 起源: cmd_1905 — 暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ
-# 目的: AC数3以上のcmdにassumptionsがない場合WARNING。trust:unverifiedがある場合BLOCK(exit 1)
+# 目的: AC数3以上のcmdにassumptionsがない/未検証前提があるcmdをBLOCKし、暗黙前提の混入を防ぐ
 # cmd_1906: trust:unverified→BLOCK昇格。trust:verified+sourceにファイルパスがある場合実在確認
 _ASSUMP_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
 _ASSUMP_AC_COUNT=$(( ${_ASSUMP_AC_COUNT:-0} + 0 ))
 if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
     if ! echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
-        echo "WARNING: AC数${_ASSUMP_AC_COUNT}個のcmdにassumptionsフィールドがありません。前提を明示せよ(shogun-procedures.md §7参照)" >&2
+        echo "BLOCK: AC数${_ASSUMP_AC_COUNT}個のcmdはassumptions必須です。前提を明示してからcmd_save.shを再実行せよ(shogun-procedures.md §7参照)" >&2
         echo '  例: assumptions:' >&2
         echo '        - claim: "cache.pyのexpiry=86400は変更されていない"' >&2
         echo '          source: "cache.py L42 code_reading"' >&2
         echo '          trust: "verified"' >&2
+        exit 1
     else
         # AC1: trust: unverified が含まれる場合BLOCK(exit 1)
         if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then

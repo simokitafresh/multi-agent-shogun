@@ -368,6 +368,67 @@ YAML
 }
 
 # ──────────────────────────────────────────────────────
+# field_get_multi <file> <field1> <field2> ...
+#   1回のawk passで複数フィールドを一括取得。
+#   出力: field1='value1'\nfield2='value2'\n...  (eval可能)
+#   未存在フィールドは空文字列。
+# ──────────────────────────────────────────────────────
+field_get_multi() {
+    local file="$1"
+    shift
+    if [ ! -f "$file" ] || [ "$#" -eq 0 ]; then return 1; fi
+
+    local fields_str=""
+    local _f _cnt=0
+    for _f in "$@"; do
+        if [ "$_cnt" -gt 0 ]; then fields_str="${fields_str}|${_f}"; else fields_str="$_f"; fi
+        _cnt=$((_cnt + 1))
+    done
+
+    awk -v fields_str="$fields_str" '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function unquote(s) {
+    if (length(s) >= 2) {
+        if (substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") {
+            s = substr(s, 2, length(s)-2); gsub(/\\"/, "\"", s)
+        } else if (substr(s,1,1) == "\047" && substr(s,length(s),1) == "\047") {
+            s = substr(s, 2, length(s)-2)
+        }
+    }
+    return s
+}
+function shell_escape(s,    out) {
+    gsub(/\047/, "\047\\\047\047", s)
+    return "\047" s "\047"
+}
+BEGIN {
+    nf = split(fields_str, farr, "|")
+    for (i = 1; i <= nf; i++) { found[i] = 0; vals[i] = "" }
+}
+{
+    for (i = 1; i <= nf; i++) {
+        if (!found[i]) {
+            pat = "^[[:space:]]*" farr[i] ":[[:space:]]+"
+            if ($0 ~ pat) {
+                v = $0; sub(pat, "", v); v = trim(v)
+                if (substr(v, 1, 1) != "\"" && substr(v, 1, 1) != "\047") {
+                    sub(/[[:space:]]+#.*$/, "", v)
+                }
+                v = trim(unquote(v))
+                vals[i] = v; found[i] = 1
+            }
+        }
+    }
+}
+END {
+    for (i = 1; i <= nf; i++) {
+        printf "%s=%s\n", farr[i], shell_escape(vals[i])
+    }
+}
+' "$file"
+}
+
+# ──────────────────────────────────────────────────────
 # メイン実行 (直接実行時のみ)
 # ──────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

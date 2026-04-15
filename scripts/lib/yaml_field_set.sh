@@ -554,6 +554,220 @@ yaml_field_set() {
     } 200>"$lock_file"
 }
 
+yaml_field_set_batch() {
+    # Batch update: 1 flock + 1 awk pass for N fields.
+    # Usage: yaml_field_set_batch <yaml_file> <block_id> "field1=value1" "field2=value2" ...
+    local yaml_file="$1"
+    local block_id="$2"
+    shift 2
+
+    if [ "$#" -eq 0 ]; then
+        echo "Usage: yaml_field_set_batch <yaml_file> <block_id> field1=val1 [field2=val2 ...]" >&2
+        return 1
+    fi
+    if [ ! -f "$yaml_file" ]; then
+        echo "FATAL: yaml_field_set_batch: file not found: $yaml_file" >&2
+        return 1
+    fi
+
+    # Build fields/values arrays as pipe-delimited strings for awk
+    local _fields="" _values="" _count=0
+    local _arg _f _v
+    for _arg in "$@"; do
+        _f="${_arg%%=*}"
+        _v="${_arg#*=}"
+        if [ -z "$_f" ]; then continue; fi
+        if [ "$_count" -gt 0 ]; then
+            _fields="${_fields}|${_f}"
+            _values="${_values}|${_v}"
+        else
+            _fields="$_f"
+            _values="$_v"
+        fi
+        _count=$((_count + 1))
+    done
+
+    if [ "$_count" -eq 0 ]; then return 0; fi
+
+    local lock_file
+    lock_file="$(lock_path "$yaml_file")"
+    local tmp_file
+    tmp_file="$(mktemp "${yaml_file}.tmp.XXXXXX")" || {
+        echo "FATAL: yaml_field_set_batch: failed to create temp file" >&2
+        return 1
+    }
+
+    {
+        flock -w 10 200 || {
+            rm -f "$tmp_file"
+            echo "FATAL: yaml_field_set_batch: flock timeout for $yaml_file" >&2
+            return 1
+        }
+
+        awk \
+            -v block_id="$block_id" \
+            -v fields_str="$_fields" \
+            -v values_str="$_values" '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function unquote(s) {
+    if (length(s) >= 2) {
+        if (substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") {
+            s = substr(s, 2, length(s)-2); gsub(/\\"/, "\"", s)
+        } else if (substr(s,1,1) == "\047" && substr(s,length(s),1) == "\047") {
+            s = substr(s, 2, length(s)-2)
+        }
+    }
+    return s
+}
+function leading_spaces(line,    i,cnt,c) {
+    cnt = 0
+    for (i = 1; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (c == " ") cnt++; else break
+    }
+    return cnt
+}
+function make_indent(n,    s,i) { s = ""; for (i = 0; i < n; i++) s = s " "; return s }
+function regex_escape(str,    out,i,c) {
+    out = ""
+    for (i = 1; i <= length(str); i++) {
+        c = substr(str, i, 1)
+        if (c ~ /[][\\.^$*+?(){}|]/) out = out "\\" c
+        else out = out c
+    }
+    return out
+}
+function yaml_safe(v,    out,i,c,nq) {
+    nq = 0
+    if (index(v, ":") > 0) nq = 1
+    if (index(v, "#") > 0) nq = 1
+    if (index(v, "[") > 0) nq = 1
+    if (index(v, "]") > 0) nq = 1
+    if (index(v, "{") > 0) nq = 1
+    if (index(v, "}") > 0) nq = 1
+    if (nq) {
+        out = ""
+        for (i = 1; i <= length(v); i++) {
+            c = substr(v, i, 1)
+            if (c == "\"") out = out "\\" c
+            else out = out c
+        }
+        return "\"" out "\""
+    }
+    return v
+}
+function begin_target(line,    t,key) {
+    t = line
+    if (t ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
+        sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", t)
+        sub(/[[:space:]]+#.*$/, "", t)
+        t = trim(unquote(t))
+        if (t == block_id) { block_kind = "id"; block_indent = leading_spaces(line); field_indent = block_indent + 2; return 1 }
+    }
+    t = line; sub(/[[:space:]]+#.*$/, "", t)
+    if (t ~ /^[[:space:]]*[A-Za-z0-9_.-]+:[[:space:]]*$/) {
+        key = t; sub(/^[[:space:]]*/, "", key); sub(/:[[:space:]]*$/, "", key)
+        if (key == block_id) { block_kind = "map"; block_indent = leading_spaces(line); field_indent = block_indent + 2; return 1 }
+    }
+    return 0
+}
+function is_boundary(line,    indent,t) {
+    if (block_kind == "id") {
+        if (line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) { indent = leading_spaces(line); if (indent <= block_indent) return 1 }
+        return 0
+    }
+    t = trim(line)
+    if (t == "" || t ~ /^#/) return 0
+    indent = leading_spaces(line)
+    if (indent <= block_indent) return 1
+    return 0
+}
+function flush_block(    i,line,indent_str,j,fre,replaced_count) {
+    indent_str = make_indent(field_indent)
+    replaced_count = 0
+    for (i = 1; i <= block_len; i++) {
+        line = block_lines[i]
+        if (i > 1) {
+            for (j = 1; j <= nf; j++) {
+                if (!replaced[j]) {
+                    fre = "^" indent_str regex_escape(farr[j]) ":[[:space:]]*"
+                    if (line ~ fre) {
+                        print indent_str farr[j] ": " yaml_safe(varr[j])
+                        replaced[j] = 1
+                        replaced_count++
+                        line = ""
+                        break
+                    }
+                }
+            }
+        }
+        if (line != "") print line
+    }
+    for (j = 1; j <= nf; j++) {
+        if (!replaced[j]) {
+            print indent_str farr[j] ": " yaml_safe(varr[j])
+        }
+    }
+    delete block_lines; block_len = 0
+}
+BEGIN {
+    in_block = 0; block_found = 0; block_done = 0; block_len = 0
+    nf = split(fields_str, farr, "|")
+    split(values_str, varr, "|")
+    for (i = 1; i <= nf; i++) replaced[i] = 0
+}
+{
+    if (!in_block) {
+        if (!block_done && begin_target($0)) {
+            in_block = 1; block_found = 1; block_len = 1; block_lines[1] = $0; next
+        }
+        print; next
+    }
+    if (is_boundary($0)) {
+        flush_block(); in_block = 0; block_done = 1; print $0; next
+    }
+    block_len++; block_lines[block_len] = $0
+}
+END {
+    if (in_block) { flush_block(); block_done = 1 }
+    if (!block_found) exit 2
+}
+' "$yaml_file" > "$tmp_file"
+        local rc=$?
+
+        if [ "$rc" -ne 0 ]; then
+            rm -f "$tmp_file"
+            echo "FATAL: yaml_field_set_batch: awk failed (rc=$rc) for $yaml_file" >&2
+            return 1
+        fi
+
+        if ! mv "$tmp_file" "$yaml_file"; then
+            rm -f "$tmp_file"
+            echo "FATAL: yaml_field_set_batch: atomic replace failed: $yaml_file" >&2
+            return 1
+        fi
+
+        # Post-write verification for all fields
+        local _vf _va _norm_a _norm_e _idx=0
+        for _arg in "$@"; do
+            _vf="${_arg%%=*}"
+            _va="${_arg#*=}"
+            if [ -z "$_vf" ]; then continue; fi
+            local actual
+            if ! actual="$(_yaml_field_get_in_block "$yaml_file" "$block_id" "$_vf")"; then
+                echo "FATAL: yaml_field_set_batch: verify failed for ${block_id}.${_vf}" >&2
+                return 1
+            fi
+            _norm_a="$(_yaml_field_set_normalize "$actual")"
+            _norm_e="$(_yaml_field_set_normalize "$_va")"
+            if [ "$_norm_a" != "$_norm_e" ]; then
+                echo "FATAL: yaml_field_set_batch: mismatch ${block_id}.${_vf} (expected='$_norm_e', actual='$_norm_a')" >&2
+                return 1
+            fi
+        done
+    } 200>"$lock_file"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     yaml_field_set "$@"
 fi

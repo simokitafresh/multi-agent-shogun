@@ -655,3 +655,7 @@
 | cmd_1905 | cmd前提明示 — assumptionsフィールド新設+trust検査+軍師review連携(なぜなぜ7回到達点) | infra | 04-15 | assumptions+trust WARNING。AC≧3のcmdで前提明示を促す |
 | cmd_1909 | GP-194実装 — 分割配備時binary_checksをac_assigned範囲に制限 | infra | 04-15 | 配備中(小太郎) |
 | cmd_1910 | テスト統合整理Phase1 — deploy_task.sh 16→7ファイル統合(軍師設計書準拠) | infra | 04-15 | 配備中(半蔵) |
+| cmd_1912 | 強化 — assumptions未記入BLOCK化: AC≧3のcmdにassumptions必須化 | infra | 04-15 | Check 20でAC>=3のassumptions欠落をB |
+| cmd_1913 | 強化 — 未コミット変更WARNに陣形図照合追加(cmd_1912誤キャンセル事故防止) | infra | 04-15 | cmd_save.shの未コミット変更警告に直近完了忍者一覧 |
+| cmd_1911 | fix — CI RED修正: テスト並列化(--jobs 4)で露出した14テストの分離不足修正 | infra | 04-15 | 4テストファイルのsetup/teardownでBATS_T |
+| cmd_1914 | 整備 — CoDDリファクタリング台帳作成+既存実績登録+軍師連携 | infra | 04-15 | CoDDリファクタリング台帳を新設し、既存3実績登録・inf |

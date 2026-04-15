@@ -971,6 +971,18 @@ notes: "なし"'
 
 # --- Check 20: assumptionsフィールド検査 ---
 
+@test "Check20.0: AC数3以上かつassumptions欠落→BLOCK" {
+    CMD_BLOCK='description: AC1
+description: AC2
+description: AC3'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" == *"BLOCK: AC数3個のcmdはassumptions必須です"* ]]
+    [ "$status" -eq 1 ]
+}
+
 @test "Check20.1: trust:unverified含む→BLOCK" {
     CMD_BLOCK='description: AC1
 description: AC2
@@ -1042,4 +1054,14 @@ assumptions:
     rm -rf "$FAKE_WD"
     [[ "$output" == *"BLOCK: assumptions sourceのファイルパスが存在しません"* ]]
     [ "$status" -eq 1 ]
+}
+
+@test "Check20.4: AC数2かつassumptions欠落→PASS" {
+    CMD_BLOCK='description: AC1
+description: AC2'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
 }
