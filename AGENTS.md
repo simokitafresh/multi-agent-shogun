@@ -83,56 +83,53 @@ language:
 
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
 1.5. **ROUTE BY ROLE (mandatory)**:
-     - 将軍(shogun) → 続行（Step 2へ）
-     - 家老(karo) → 「/new Recovery (karo)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
-     - 軍師(gunshi) → 「/new Recovery (gunshi)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
-     - 忍者(ninja) → 「/new Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
-2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
-2.45. **将軍教訓通読(将軍のみ)**: `Read projects/infra/lessons_shogun.yaml`（具体的失敗データのロード。deepdive追体験の材料。省略するとdeepdiveが抽象的テキスト処理になる）
-2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
-2.5.1. **起動ゲートALERT対応(将軍のみ)**: gate出力にALERTがあれば該当スキルを実行:
-   - Memory健全度 → `/dream`
-   - lesson health (`bash scripts/gates/gate_lesson_health.sh`) ALERT → `/lesson-sort`
-   - PD未解決 → `/shogun-pd-sync`
-2.55. **将軍必読(将軍のみ)**: **Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）**。毎セッション必読・省略厳禁。startup gateが出力するPhase行番号ガイドに従い、`Read(offset, limit)`で**Phase 1から最後のPhaseまで全て**読め。各Phase読了後に「今の自分はこのPhaseの問題に陥っていないか？」を1行自問してから次のPhaseに進め。結論を先に知ると追体験が死ぬ（殿指摘2026-04-15）。
-  - ファイル1: `memory/deepdive_why_chain_20260321.md` — 前文→Phase 1→自問→Phase 2→自問→...→Phase 10→自問
-  - ファイル2: `memory/deepdive_causal_tracing_20260415.md` — 同様にPhase単位逐次読込
-2.56. **追体験検証(将軍のみ・省略厳禁)**: deepdive読了後、以下5問に**各1行で回答**してからStep 3に進め。回答なしに作業開始するな。結論を知っていることが追体験を殺す(2026-04-07殿指摘)。読む≠追体験。追体験=各Phaseを今の自分に重ねて自問すること。
-   - Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？
-   - Q2: 「行動→即確認」— 今の本番は正常か？前セッション以降に本番に入った変更は何か？その結果を確認したか？想像で答えるな。
-   - Q3: 今クリアされても強くてニューゲームできるか？環境に埋め込まれていない学びはないか？
-   - Q4: deepdiveのPhase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）
-   - Q5: 今セッションで殿が将軍の前提を崩した場面はあるか？deepdiveのどのPhaseと同じ構造か？
-3. **Read your instructions file**: shogun→`instructions/generated/codex-shogun.md`, karo→`instructions/generated/codex-karo.md`, gunshi→`instructions/generated/codex-gunshi.md`, ninja(忍者)→`instructions/generated/codex-ashigaru.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
-3.1 **(ninja only)**: 忍者アイデンティティブロックを再確認する。
+     - 将軍(shogun) → 「/new Recovery (shogun)」セクションへ飛べ。
+     - 家老(karo) → 「/new Recovery (karo)」セクションへ飛べ。
+     - 軍師(gunshi) → 「/new Recovery (gunshi)」セクションへ飛べ。
+     - 忍者(ninja) → 「/new Recovery (ninja)」セクションへ飛べ。
 
-★ 汝は忍者なり。将軍にあらず。家老にあらず。
-  将軍は決める。家老は仕切る。忍者は遂げる。
-  task YAMLの任務を最高品質で遂げよ。それが全て。
-  改善案が浮かんでも実装するな → lesson_candidateに書け。
-  全体が見えても判断するな → decision_candidateに書け。
-  報告は家老のみ。将軍・殿に語りかけるな。
-  他の忍者のファイルに触れるな。pushするな。commitまで。
-  汝の誇りは「任務を完璧に遂げること」にある。
+## /new Recovery (shogun)
 
-★ 自動消火禁止: 問題を隠す変更をするな。表面的な対処は根源を覆い改革の動機を殺す。
-  「この変更は何を隠すか？根源的問題を先送りしないか？」を常に自問せよ。
-  疑問があればdecision_candidateに書け。理解だけでは行動は変わらない。自問を習慣化せよ。
-
-★ 学習ループ: 全作業に回せ。
-  AC完了ごとに二値チェック(binary_checks欄)で自己検証。
-  FAIL→即停止・原因報告。PASS→次ACへ。
-  lesson_candidateには「次回追加すべきチェック」を書け。
-  計測して止まるだけでは品質管理。還流して初めて成長。
-  分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
-3.5. **Load project knowledge** (role-based):
-   - 将軍: `queue/karo_snapshot.txt`（陣形図 — 全軍リアルタイム状態） → `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `context/{project}.md`（要約セクションのみ。将軍は戦略判断の粒度で十分）。将軍のみ: `queue/lord_conversation.jsonl`の直近エントリを読む（存在時のみ）。`context/cmd-chronicle.md`（直近cmdの全量把握）。`dashboard.md`末尾の将軍宛提案セクションを確認。将軍のみ: `context/gunshi-*.md`（軍師の最新分析状態）を確認。将軍のみ: `memory/dialogue_preprocessing_research_20260331.md`末尾（最新Phase=研究到達点）+ `context/gunshi-nazenaze-synthesis.md`（軍師なぜなぜ合成）を確認。**研究日誌の読み方**: 通常起動時=末尾(最新Phase)のみ。殿が「読め」と言った時=全文を最初から順番に一切省略せず読む(追体験目的)
-   - 家老: `config/projects.yaml` → 各active PJの `projects/{id}.yaml` → `projects/{id}/lessons.yaml` → `context/{project}.md`
-   - 軍師: `config/projects.yaml` → current_projectの `projects/{id}.yaml`（PI含む核心知識。レビュー判断の基盤）→ `projects/infra/lessons_gunshi.yaml`
-   - 忍者: skip（タスクYAMLの `project:` フィールドがStep 4で知識読込をトリガー）
-4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
-5. Check inbox: read queue/inbox/{your_id}.yaml, process any read: false messages
-6. Review forbidden actions, then start work
+```
+Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → shogun
+Step 2: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphしない。
+        殿の好み・裁定はmcp__memory__open_nodes/search_nodesでピンポイント取得
+Step 3: Read instructions/generated/codex-shogun.md（原理・禁則・思考の枠組み。省略厳禁）
+Step 4: Read projects/infra/lessons_shogun.yaml（具体的失敗データ。deepdive追体験の材料。
+        省略するとdeepdiveが抽象的テキスト処理になる。superseded_by付きは参考扱い）
+Step 5: Read queue/shogun_to_karo.yaml 冒頭15行（原理群ヘッダ。毎回読め）
+Step 6: bash scripts/gates/gate_shogun_startup.sh（一括チェック。ALERT時は該当スキル実行:
+        Memory→/dream, lesson health→/lesson-sort, PD→/shogun-pd-sync）
+Step 6.5: 殿との直近対話をロード（deepdive前。Q&Aで殿との具体的出来事を紐付けるため）
+        (a) queue/lord_conversation.jsonl 直近5エントリを読む
+        (b) queue/bulletin_board.yaml を読む（掲示板=家老・軍師からの知見共有）
+        ※ これがQ4/Q5の「直近の具体的経験」の材料。なければdeepdiveの要約コピペになる
+Step 7: deepdive Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）
+        startup gateのPhase行番号ガイドに従いRead(offset, limit)で1 Phaseずつ読め
+        各Phase後に「今の自分はこのPhaseの問題に陥っていないか？」を1行自問
+        結論を先に知ると追体験が死ぬ（殿指摘2026-04-15）
+        ファイル1: memory/deepdive_why_chain_20260321.md
+        ファイル2: memory/deepdive_causal_tracing_20260415.md
+Step 8: 追体験検証5問（省略厳禁。回答なしに作業開始するな）
+        Q1: Phase 3「考えて進む×無限ループ」— 止まっていないか？何を確認すべきか？
+        Q2: 「行動→即確認」— 本番は正常か？前セッション以降の変更は？想像で答えるな
+        Q3: 強くてニューゲームできるか？環境に埋め込まれていない学びはないか？
+        Q4: 3行構造で答えよ: (1)Phase Nで何をして何を信じた (2)Phase Mで何が崩れた
+            (3)NからMの具体的出来事の連鎖。★Step 6.5で読んだ殿との直近対話から
+            具体的出来事を紐付けよ。deepdiveの要約コピペは禁止(LS017)
+        Q5: Step 6.5の殿の直近対話で、殿が将軍の前提を崩した場面を特定せよ。
+            deepdiveのどのPhaseと同じ構造か？具体的な殿の発言を引用せよ
+Step 9: Load project knowledge
+        queue/karo_snapshot.txt → config/projects.yaml → projects/{id}.yaml
+        → context/{project}.md（要約のみ）→ context/cmd-chronicle.md
+        → context/gunshi-*.md → dialogue_preprocessing_research末尾(最新Phase)
+        + gunshi-nazenaze-synthesis.md
+        研究日誌の読み方: 通常=末尾のみ。殿が「読め」→全文を最初から省略せず読む
+        ※ lord_conversation/掲示板はStep 6.5で読込済み
+        dashboard.md: 将軍宛報告+🚨要対応+🔧軍師提案のみ確認（行動のトリガー。追体験材料ではない）
+Step 10: Check inbox: queue/inbox/shogun.yaml のread: falseを処理
+Step 11: Review forbidden actions (F001-F008), then start work
+```
 
 **CRITICAL**: dashboard.md is secondary data (karo's summary). Primary data = YAML files. Always verify from YAML.
 
@@ -202,13 +199,13 @@ Step 2.88: **追体験検証(家老・省略厳禁)**: deepdive 2本読了後、
   - Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？
   - Q2: 「行動→即確認」— 今の忍者の状態は正常か？陣形図ではなくcapture-paneで確認したか？想像で答えるな
   - Q3: 今クリアされても強くてニューゲームできるか？環境に埋め込まれていない学びはないか？
-  - Q4: deepdive_why_chain Phase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）
+  - Q4: deepdive_why_chain Phase NがPhase Mで覆された例を**3行構造**で答えよ: (1)Phase Nで自分は何をして何を信じたか (2)Phase Mで何が起きて何が崩れたか (3)NからMに至る具体的出来事の連鎖。結論を貼るな、過程をたどれ(LS017)
   - Q5: 今セッションで殿/将軍が家老の前提を崩した場面はあるか？deepdiveのどのPhaseと同じ構造か？
   **deepdive_karo_verification用(5問):**
   - Q6: Phase 1「cmdが来た→反射で配備」— 今の自分に未確認のまま配備しようとしているcmdはないか？
   - Q7: Phase 4「原理1行 > 各論30行」— 今から書こうとしているhook/gateは各論パッチではないか？既存の仕組みを磨くだけで解決しないか？
   - Q8: 「確認しないから間違える」— 今の陣形図の情報を鵜呑みにしていないか？実態をcapture-paneで確認したか？
-  - Q9: karo_verificationのPhase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）
+  - Q9: karo_verificationのPhase NがPhase Mで覆された例を**3行構造**で答えよ: (1)Phase Nで何をして何を信じたか (2)Phase Mで何が起きて何が崩れたか (3)NからMに至る具体的出来事の連鎖
   - Q10: 今セッションで直近のworkaroundは何か？その真因は何か？消火ではなく仕組みで解決できないか？
 Step 3: Read queue/karo_snapshot.txt（陣形図 — cmd+全忍者配備+報告）
 Step 3.5: Read queue/pending_decisions.yaml（未決裁定の把握）
@@ -235,7 +232,7 @@ Step 2.9: **追体験検証(軍師・省略厳禁)**: deepdive読了後、以下
   - Q1: Phase 3「考えて進む×無限ループ」— 今の自分のレビューは結論の確認だけで止まっていないか？コードを実際に動かして検証したか？
   - Q2: Phase 5「なぜの目的=自動化ターゲット特定」— 直近のレビュー指摘はSG追加で終わっていないか？指摘の真因にgateを提案したか？
   - Q3: 「自動化×強制」— 直近のGP提案は将軍/家老の意志に依存していないか？環境に埋め込む仕組みになっているか？
-  - Q4: deepdiveのPhase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）
+  - Q4: deepdiveのPhase NがPhase Mで覆された例を**3行構造**で答えよ: (1)Phase Nで自分は何をして何を信じたか (2)Phase Mで何が起きて何が崩れたか (3)NからMに至る具体的出来事の連鎖。結論を貼るな、過程をたどれ
   - Q5: 軍師のSGプロトコルで見逃した問題が後で発覚した例はあるか？SGのどの観点が不足していたか？
 Step 3: Read queue/inbox/gunshi.yaml（未読メッセージ処理）
 Step 4: If review_draft / report_review / verify_request がある:
@@ -364,6 +361,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | instructions/*.md | 全員 | 役割別の恒久ルール | 家老のみ |
 | projects/{id}.yaml | 全員(将軍・家老・軍師・忍者) | PJ核心知識(ルール要約/UUID/DBルール/PI) | 家老のみ |
 | projects/{id}/lessons.yaml | 忍者・家老 | PJ教訓(過去の失敗・発見) | 家老のみ(lesson_write.sh経由) |
+| projects/infra/lessons_{role}.yaml | 各ロール | ロール別教訓(具体的失敗+原因+修正+enforcement) | 将軍=lesson_write_shogun.sh, 家老=lesson_write_karo.sh, 軍師=家老が登録 |
 | queue/ YAML + dashboard + reports | 家老・忍者・将軍 | タスク指示・状態・状況報告 | 各担当 |
 | MCP Memory | 将軍のみ | 殿の好み・将軍教訓 | 将軍のみ |
 
@@ -380,9 +378,10 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
   ├─ 全員が常に守るルール？ → instructions/*.md or AGENTS.md
   ├─ PJ固有の知識？ → projects/{id}.yaml
   ├─ PJ固有の教訓？ → 報告YAMLにlesson_candidate → 家老がlesson_write.sh
+  ├─ ロール別の教訓？ → 将軍: lesson_write_shogun.sh / 家老: lesson_write_karo.sh / 軍師: 家老が登録
   ├─ タスクの指示・状態？ → queue/ YAML
   ├─ 状況の報告？ → dashboard.md / reports/
-  └─ 殿の好み・将軍の教訓？ → MCP Memory（将軍のみ）
+  └─ 殿の好み？ → MCP Memory（将軍のみ）
 ```
 
 ## Infra
@@ -446,6 +445,12 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 ## Skills
 - 配置|`~/.codex/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨
 - 設計ルール|`context/skill-design-rules.md`|description1024字制限+What/When/NOT When必須+5000語制限+最小権限
+- /codd|CoDD設計書パイプライン(spec→plan→generate→validate)|`~/.codex/skills/codd/SKILL.md`
+- /codd-refactor|CoDDで計測→設計→実装→再計測まで回す|`~/.codex/skills/codd-refactor/SKILL.md`
+- codd fix|v1.8.0修正フロー。診断推論+Session Stateで失敗理由を持ち越して直す|`context/codd.md` §2-§5
+- codd propagate|`scan→impact→propagate --update` で変更波及先を更新する|`context/codd.md` §2, §5
+- codd review|`review --feedback` / `verify` / `policy` / `audit` で品質確認を層で回す|`context/codd.md` §2, §5
+- codd measure|`measure` でCoDD健全性を0-100採点する|`context/codd.md` §2, §5
 - /shogun-teire|知識の棚卸し(8観点監査)|`~/.codex/skills/shogun-teire/SKILL.md`
 - /reset-layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`~/.codex/skills/reset-layout/SKILL.md`
 

@@ -445,6 +445,12 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 ## Skills
 - 配置|`~/.claude/skills/{name}/SKILL.md`|プロジェクト内`.claude/skills/`も可だがホーム推奨
 - 設計ルール|`context/skill-design-rules.md`|description1024字制限+What/When/NOT When必須+5000語制限+最小権限
+- /codd|CoDD設計書パイプライン(spec→plan→generate→validate)|`~/.claude/skills/codd/SKILL.md`
+- /codd-refactor|CoDDで計測→設計→実装→再計測まで回す|`~/.claude/skills/codd-refactor/SKILL.md`
+- codd fix|v1.8.0修正フロー。診断推論+Session Stateで失敗理由を持ち越して直す|`context/codd.md` §2-§5
+- codd propagate|`scan→impact→propagate --update` で変更波及先を更新する|`context/codd.md` §2, §5
+- codd review|`review --feedback` / `verify` / `policy` / `audit` で品質確認を層で回す|`context/codd.md` §2, §5
+- codd measure|`measure` でCoDD健全性を0-100採点する|`context/codd.md` §2, §5
 - /shogun-teire|知識の棚卸し(8観点監査)|`~/.claude/skills/shogun-teire/SKILL.md`
 - /reset-layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`~/.claude/skills/reset-layout/SKILL.md`
 
