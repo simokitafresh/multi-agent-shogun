@@ -659,3 +659,4 @@
 | cmd_karo_gp196 | GP-196 — 教訓注入絞込み 10→3件+IF-THEN構造化 | infra | 04-16 | deploy_task.sh の related_lesso |
 | cmd_1936 | 強化 — gist作成時にインデックスgistを自動更新するスクリプト | infra | 04-16 | gist一覧の自動更新スクリプトと52+件実データの分類テス |
 | cmd_karo_gp198 | GP-198 — Session State: タスクレベル失敗履歴引継ぎ | infra | 04-16 | GP-198実装完了。gate_report_format. |
+| cmd_1937 | 整備 — context/ui-design-guide.md新設: 全エージェント共通UIデザインガイド | infra | 04-16 | Created context/ui-design-guid |
