@@ -1305,7 +1305,9 @@ AC_TEXT=$(echo "$CMD_BLOCK" | awk '/acceptance_criteria:/,0' | grep 'description
 
 # --- Check 19: パリティcmdのP1-P6全基準チェック（WARN） ---
 # 本番DB操作cmd（パリティ/登録/recalculate含む）のACにP1-P6が網羅されているか
-if echo "$CMD_BLOCK" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then
+# トリガー対象はtitle+purpose+AC_TEXTのみ（not_in_scopeの否定文による誤検知防止）
+_CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:|description:' || true)
+if echo "$_CHECK19_TRIGGER" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then
     PARITY_MISSING=()
     # P1: holding_signal
     if ! echo "$AC_TEXT" | grep -qi 'holding_signal'; then
