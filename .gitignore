@@ -107,6 +107,7 @@
 !config/settings.yaml
 !config/projects.yaml
 !projects/infra/lessons_karo.yaml
+!projects/infra/lessons_shogun.yaml
 !config/cli_profiles.yaml
 !config/ninja_bashrc_safety.sh
 !config/lesson_tags.yaml

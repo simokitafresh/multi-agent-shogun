@@ -88,6 +88,7 @@ language:
      - 軍師(gunshi) → 「/new Recovery (gunshi)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
      - 忍者(ninja) → 「/new Recovery (ninja)」セクションへ飛べ。以下のStep 2-6は将軍専用。読むな。
 2. **将軍のみ**: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphは実行しない。殿の好み・裁定の詳細が必要な場面では `mcp__memory__open_nodes` or `mcp__memory__search_nodes` でピンポイント取得。家老・忍者はスキップ（projects/{id}.yaml + lessons.yamlから知識を取得する）
+2.45. **将軍教訓通読(将軍のみ)**: `Read projects/infra/lessons_shogun.yaml`（具体的失敗データのロード。deepdive追体験の材料。省略するとdeepdiveが抽象的テキスト処理になる）
 2.5. **将軍起動ゲート(将軍のみ)**: `bash scripts/gates/gate_shogun_startup.sh` — Memory健全度+p̄鮮度+cmd委任状態+inbox未読+陣形図鮮度を一括チェック。ALERT時ntfy通知。**1コマンドで全起動チェック完了**。個別gate(gate_shogun_memory/gate_p_average_freshness/gate_cmd_state)も引き続き存在するが、起動時はstartupに統合。
 2.5.1. **起動ゲートALERT対応(将軍のみ)**: gate出力にALERTがあれば該当スキルを実行:
    - Memory健全度 → `/dream`
