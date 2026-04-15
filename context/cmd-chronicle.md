@@ -675,3 +675,4 @@
 | cmd_1927 | cmd_1925取消 — 確認なし起票のrevert | infra | 04-15 | cmd_1925で加えられた確認リマインド注入を撤去し、追加 |
 | cmd_1930 | deepdive_causal_tracing Phase 6追記 — 人殺しの思想 | infra | 04-15 | deepdive_causal_tracing に Phas |
 | cmd_karo_revert_1928_1930 | fix — cmd_1928/1930のgate_shogun_startup.sh変更をrevert | infra | 04-15 | gate_shogun_startup.shからcmd_19 |
+| cmd_karo_revert_1928_1930_v2 | fix — revert不完全修正(deepdive Phase 6 + gate L750-753) | infra | 04-15 | Gate 18(lord_conversation inbo |
