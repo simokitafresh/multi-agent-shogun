@@ -479,3 +479,72 @@
     - "事実4: cmd_1903と並列配備(hayate/saizo)。ファイル衝突なし(cmd_save.sh vs startup/complete_gate)"
   causal_chain: "AC2がyaml_field_set.sh使用を前提→yaml_field_set.shは'- id:'パターンのみ→cmd_design_quality.yamlは'- cmd_id:'→忍者がfield_set実行→マッチなし→更新失敗→AC未達。前提崩壊79%(S187分析)の典型例"
   timestamp: "2026-04-15T05:55:00"
+- cmd_id: cmd_1905
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。assumptions フィールド新設+trust検査WARNING+軍師review連携。3前提全て現物確認。cmd_1903完了→q10 L281存在→順序依存解消。初self-dogfooding適用"
+  observations:
+    - "事実1: cmd_save.sh L82(quality_gate開始)L292(_Q8_TASK_TYPE)確認。q10はL281に追加済み(cmd_1903完了)"
+    - "事実2: shogun-procedures.md §7=L115。Required cmd fields定義存在"
+    - "事実3: gunshi.md L71=§1 前提検証(Validate Assumptions)。assumptions検証ガイド追記の自然な位置"
+    - "事実4: cmd_1905自体がassumptionsフィールド初適用(3前提、うち1件trust:unverified→将軍が正直に宣言)"
+  causal_chain: "なぜなぜ7回(L7:前提暗黙→未検証→崩壊)→assumptionsフィールドで前提可視化→trust検査で未検証を顕在化→将軍の現物確認トリガー+軍師の優先検証ガイド→前提崩壊79%(S187分析)の構造的対処=正の複利"
+  timestamp: "2026-04-15T12:48:00"
+- cmd_id: cmd_1903
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1903_exact
+  report_verdict: LGTM
+  findings_summary: "4観点OK。q10(L281)+q7 BLOCK(L192 dm-signal impl)+§14.5全現物確認。bats 16/16。lesson: procedures.md gitignore注意"
+  observations:
+    - "事実1: q10_knowledge_boundary L281-286。WARNING+ガイド表示。WARN_COUNT非加算"
+    - "事実2: q7 BLOCK昇格 L192-195。_q5_project==dm-signal AND _Q8_TASK_TYPE==impl条件。infra/scoutはWARNING維持"
+    - "事実3: SG-PRE10 PASS(ac_version一致 de14106b)。SG-PRE11 PASS(lessons_useful 5件形式OK)"
+    - "事実4: files_modified path形式が2ファイル結合(軽微。gate_report_format PASS)"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  causal_chain: "cmd_1903設計→hanzo実装→q10+q7+§14.5全AC PASS→将軍のcmd品質gate構造的強化=正の複利"
+  timestamp: "2026-04-15T12:55:00"
+- cmd_id: cmd_1904
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1904_exact
+  report_verdict: LGTM
+  findings_summary: "4観点OK。REVIEW_LOGバグ修正(L269)+verdict自動更新(python3 tempfile方式)。bats 58件PASS。RC指摘のyaml_field_set非対応を正確に解決"
+  observations:
+    - "事実1: REVIEW_LOG変数L269追加。9cセクションで未定義だったバグ修正。影丸が自力発見"
+    - "事実2: verdict更新はpython3+tempfile+os.replace。yaml_field_set.sh非対応(- cmd_id:パターン)への正確な対処。私のRC指摘と同一根因"
+    - "事実3: SG-PRE10 PASS(ac_version一致 8fffcfa5)。SG-PRE11 PASS"
+    - "事実4: lesson_candidate: gate変数スコープ。bashのset -uなしだと空文字で動作し不具合に気づきにくい"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  causal_chain: "cmd_1904設計→影丸実装→RC傾向表示+verdict自動更新→将軍の学習ループ②③構造化=正の複利"
+  timestamp: "2026-04-15T12:55:00"
+- cmd_id: cmd_1905
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1905_exact
+  report_verdict: LGTM
+  findings_summary: "4観点OK。Check 20(L1336 assumptions検査)+gunshi.md(L249 assumptions検証ガイド)+§7定義。bats 93件PASS。SG-PRE全11項PASS"
+  observations:
+    - "事実1: Check 20 L1336。AC数≥3でassumptions未記入→WARNING。trust:unverified→WARNING。WARN_COUNT非加算"
+    - "事実2: gunshi.md L249-254にassumptions検証ガイド2段構え(あり→unverified優先/なし→従来通り)"
+    - "事実3: SG-PRE10 PASS(ac_version一致 09817166)。SG-PRE11 PASS(lessons_useful 5��形式OK)"
+    - "事実4: files_modified 3ファイル(shogun-procedures.md+gunshi.md+cmd_save.sh)。shogun-procedures.md=gitignored"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  causal_chain: "cmd_1905設計→kotaro実装→assumptions新設+trust検査+review連携→暗黙前提の構造的可視化=正の複利"
+  timestamp: "2026-04-15T12:58:00"
+- cmd_id: cmd_1906
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。assumptions trust BLOCK昇格+source実在検査。Check 20(L1336)→BLOCK化+Check 10(L476)構造をsource検査に再利用。cmd_1903/1905完了済みで競合なし。Phase 4直接適用"
+  observations:
+    - "事実1: Check 20 L1336。現在WARNING→BLOCK昇格(trust:unverified存在時exit 1)"
+    - "事実2: Check 10 L476 check_ac_file_paths()。regex+PROJECT_WD+存在チェック。source内パスに同構造適用"
+    - "事実3: cmd_1906自体のassumptions 3件(verified 2+unverified 1)。self-dogfooding継続。unverified=起票速度影響は推論(合理的)"
+    - "事実4: tobisaru配備。cmd_save.sh変更する他cmdなし(1903/1905完了済み)"
+  causal_chain: "Phase 4(意志依存→壊れる)→WARNING=意志依存→BLOCK=強制→trust:unverified BLOCK+source実在検査→嘘防止の構造化=正の複利"
+  timestamp: "2026-04-15T13:18:00"

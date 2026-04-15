@@ -18,6 +18,9 @@ lessons:
   summary: 旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:no
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:46+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=5 referenced=0'
 - id: L470
   title: dashboard WARNとgateの監視対象は同一SSOTに揃えよ
   summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive
@@ -34,6 +37,9 @@ lessons:
   summary: 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:45+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L467
   title: REPORT-DONE-MISMATCH誤検知はtask_id照合不在が根因。snapshot report cmd_idとtask YAMLのtask_idを比較して旧report残存をスキップせよ
   summary: 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ
@@ -96,7 +102,7 @@ lessons:
   summary: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 4
   last_referenced: '2026-04-15'
 - id: L457
@@ -120,16 +126,25 @@ lessons:
   summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:45+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=26 referenced=0'
 - id: L453
   title: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須
   summary: commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→prom
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:45+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=34 referenced=0'
 - id: L452
   title: SCOUT/exempt系テスト関数にもq8_why_whatが必要
   summary: _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:44+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: L451
   title: STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき
   summary: deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、
@@ -140,21 +155,33 @@ lessons:
   summary: '殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師'
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:44+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: L449
   title: 分割配備のbinary_checks誤BLOCKはassigned_acsをawk変数で渡してグループスキップで解決
   summary: cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:44+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=29 referenced=0'
 - id: L448
   title: '[自動生成] draft教訓の査読を怠った: cmd_karo_fix_precommit_comment'
   summary: draft教訓12件が未査読のままGATE到達
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:43+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=19 referenced=0'
 - id: L447
   title: 外部リポのmain pushはG2ゲートで禁止→PRワークフローが必須
   summary: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:43+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
 - id: L446
   title: AC3設計書参照検知はq5_verified_sourceベースが信頼性高い
   summary: cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準
@@ -165,6 +192,9 @@ lessons:
   summary: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:43+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=21 referenced=0'
 - id: L444
   title: 外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止
   summary: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:
@@ -181,6 +211,9 @@ lessons:
   summary: 複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:42+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: L441
   title: hookが自己のコミットメッセージ/報告テキスト内のトリガー文字列に反応する
   summary: Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストス
@@ -283,7 +316,7 @@ lessons:
   - gate
   - bash
   - yaml
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 3
   last_referenced: '2026-04-15'
 - id: L425
@@ -368,6 +401,9 @@ lessons:
   summary: set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:42+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L412
   title: inbox_prune.shもyaml.dump禁止規則の対象漏れ
   summary: inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_
@@ -386,6 +422,9 @@ lessons:
   summary: datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:42+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L409
   title: precommitスクリプトの外部ツール依存チェックは全ツールで統一すべき
   summary: run_precommit_checks.shでruffは5段階フォールバック(resolve_ruff_cmd)、biomeはnpx自動取得だが、shellc
@@ -398,6 +437,9 @@ lessons:
     -e即死で、P
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:42+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L407
   title: 'L074適用対象の拡張: 境界値チェックはset -e環境の安全弁'
   summary: make_barのpctが100超/負の場合にfilled/emptyが範囲外になり、forループの挙動が不正になる。set -euo pipefail環境では
@@ -557,6 +599,9 @@ lessons:
   summary: section_c_detail()がsection_c()と同一matrixを内部構築していたが返却せず、呼出し元で再計算が必要だった。内部データをraw_m
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:41+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L380
   title: daemon_watchdog.shのログ出力先にローテーション不在で肥大化リスク
   summary: cronで毎分実行されるwatchdogスクリプトのlog()がappend-onlyでサイズチェックなし。10分毎のOKログだけでも月1440行、再起動イベン
@@ -699,6 +744,9 @@ lessons:
   summary: sed -nで抽出した値が空文字の場合、後段の比較(==MISSING)に静かに不一致し処理がスキップされる。抽出直後に空文字チェック+exit1が必須。set
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:41+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L357
   title: yaml.dumpを使用する自動タグ付けスクリプトはCLAUDE.md安全規則に違反
   summary: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
@@ -766,6 +814,9 @@ lessons:
   - git
   - monitor
   - inbox
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:47+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
   summary: Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外
@@ -801,7 +852,7 @@ lessons:
   tags:
   - bash
   - git
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-12'
 - id: L341
@@ -922,7 +973,7 @@ lessons:
   - process
   - bash
   - reporting
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-13'
 - id: L323
@@ -964,7 +1015,7 @@ lessons:
   - gate
   - yaml
   - inbox
-  helpful_count: 8
+  helpful_count: 7
   harmful_count: 1
   last_referenced: '2026-04-15'
 - id: L318
@@ -1275,6 +1326,9 @@ lessons:
   - communication
   - gate
   - inbox
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L275
   title: gunshi_review_log大規模ファイルのRead制限
   summary: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ
@@ -1529,7 +1583,7 @@ lessons:
     "ok 293
   tags:
   - testing
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-04-13'
 - id: L239
@@ -1603,7 +1657,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 6
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-12'
 - id: L228
@@ -1629,7 +1683,7 @@ lessons:
   summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-12'
 - id: L224
@@ -1795,6 +1849,9 @@ lessons:
   - yaml
   - wsl2
   - monitor
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:41+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=5 referenced=0'
 - id: L203
   title: xAI x_searchはResponses API+grok-4ファミリー限定
   summary: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール
@@ -1999,6 +2056,9 @@ lessons:
   - frontend
   - git
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L172
   title: レビューでは『履歴位置確認』を先に行うと push 可否の誤判定を防げる
   summary: git status の一時表示だけで ahead/behind を判断せず、`git branch -vv` と `git rev-parse
@@ -2041,6 +2101,9 @@ lessons:
   summary: IF auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時 THEN IF_THEN_FLAGS
   tags:
   - lesson
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:40+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L167
   title: ストリーム購読系デーモンは singleton lock + message idempotency を必須セットで実装すべき
   summary: IF ストリーム購読系デーモン時 THEN ntfy_listenerで多重起動防止(lock/pidfile)とMSG_ID重複排除が無いと、運用上の二重起動
@@ -2179,6 +2242,9 @@ lessons:
   tags:
   - frontend
   - yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-15'
 - id: L144
   title: git add失敗の頻度分析にはgate_metricsではなく専用guardログが必要
   summary: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する
@@ -2321,7 +2387,7 @@ lessons:
   summary: IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時 THEN 同期モードまたは結果ファイル連携で結果を取得せよ
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 4
   last_referenced: '2026-04-15'
 - id: L125
@@ -2483,6 +2549,9 @@ lessons:
   - gate
   - yaml
   - lesson
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:47+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
   helpful_count: 0
   harmful_count: 2
   last_referenced: '2026-04-15'
@@ -2527,7 +2596,7 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-15T12:51:23+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=6 > helpful=1'
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 6
   last_referenced: '2026-04-15'
 - id: L096
@@ -2543,6 +2612,9 @@ lessons:
   tags:
   - gate
   - reporting
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:40+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=9 referenced=0'
 - id: L094
   title: scripts/shutsujin_departure.sh(session設定)にモデル名ハードコード残存
   summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ
@@ -2550,8 +2622,8 @@ lessons:
   - bash
   - monitor
   - tmux
-  helpful_count: 2
-  harmful_count: 2
+  helpful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-12'
   retired: true
 - id: L093
@@ -2593,7 +2665,7 @@ lessons:
   - deploy
   - yaml
   - lesson
-  helpful_count: 5
+  helpful_count: 4
   harmful_count: 1
   last_referenced: '2026-04-15'
 - id: L087
@@ -2665,7 +2737,7 @@ lessons:
   - gate
   - bash
   - lesson
-  helpful_count: 3
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-12'
 - id: L078
@@ -2732,7 +2804,7 @@ lessons:
   - yaml-key-mismatch
   - silent-fail
   - deploy
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-14'
 - id: L069
@@ -2922,6 +2994,9 @@ lessons:
   tags:
   - wsl2
   - api
+  deprecated: true
+  deprecated_at: '2026-04-15T12:54:40+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=5 referenced=0'
 - id: L038
   title: cmd_complete_gate.shテスト実行で本番lessonsにdraftが副作用で残る問題
   summary: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必
@@ -2985,7 +3060,7 @@ lessons:
   - communication
   - monitoring
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-14'
 - id: L028
   title: CI Run番号とcommit SHAの整合性確認

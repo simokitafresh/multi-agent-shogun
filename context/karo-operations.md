@@ -34,7 +34,7 @@
 
 ## §1 配備
 
-- **deploy_task.shが使えない場合は--directモードを使え。手動配備(cat+inbox_write)はdeploy_task.shの全ガードをバイパスするため禁止。**
+- **配備コマンド: `deploy_task.sh <ninja> <cmd_id>`**。cmd_id第2引数は必須。省略するとAC上書きされず旧タスクを実行する(LK061)。使えない場合は--directモード。手動配備(cat+inbox_write)はdeploy_task.shの全ガードをバイパスするため禁止。
 - 配備前は毎回「五問チェック」を通す。Purpose / Decomposition / Headcount / Difficulty / Risk を1行で言えなければ配備するな。
 - **配備前にcmdの前提を現物確認せよ**。ダッシュボードの記載は過去の事実。CI赤→`dashboard.md AUTO_SECTION`のCI Status確認。本番障害→本番を直接確認。KARO_SECTIONの手書き情報は二次データ(LK043: cmd_1806事故)
 - implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
@@ -199,7 +199,7 @@ REQUEST_CHANGES修正完了後の再検証。severity判定→verify_request→�
 - 分割宣言は配備前の遵守証跡。1名配備なら例外理由を必ず書く。
 - task YAML は薄書きが原則。既知知識を重複転記するな。
 - すべて Read-before-Write。inbox既読化は `inbox_mark_read.sh` を使う。
-- **task YAML作成はBash tool(`cat`/`echo`)で書け**（Write/Edit直接はhookブロック）。配備は `deploy_task.sh` 経由。
+- **task YAML作成はBash tool(`cat`/`echo`)で書け**（Write/Edit直接はhookブロック）。配備は `deploy_task.sh <ninja> <cmd_id>` 経由。**cmd_id必須**(LK061)。
 - **報告YAML操作は `report_field_set.sh` 経由**（Edit tool直接禁止=Lost Updateリスク）。
 - **yqは環境に存在しない**。YAML操作ツール: `deploy_task.sh` / `report_field_set.sh` / `field_get.sh` / `yaml_field_set.sh`
 → `docs/research/karo-operations-detail.md` §6-7（YAML操作ツール詳細・コマンド書式あり）

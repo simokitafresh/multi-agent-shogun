@@ -33,7 +33,17 @@ if [ ! -f "$WA_FILE" ]; then
     exit 0
 fi
 
-WAFILE="$WA_FILE" LAST_N="$LAST_N" QUIET="$QUIET" NINJA_FILTER="$NINJA_FILTER" python3 << 'PYEOF'
+# WSL2 NTFS最適化: python3起動(150ms)をmtimeキャッシュで回避
+_WA_CACHE="/tmp/shogun_wa_rate_cache_${NINJA_FILTER:-all}_${LAST_N}.txt"
+_WA_MTIME=$(stat -c%Y "$WA_FILE" 2>/dev/null || echo 0)
+_WA_CACHED_MTIME=$(head -1 "$_WA_CACHE" 2>/dev/null || echo -1)
+if [ "$_WA_MTIME" = "$_WA_CACHED_MTIME" ] && [ -f "$_WA_CACHE" ]; then
+    tail -n +2 "$_WA_CACHE"
+    exit 0
+fi
+
+_WA_TMP=$(mktemp)
+WAFILE="$WA_FILE" LAST_N="$LAST_N" QUIET="$QUIET" NINJA_FILTER="$NINJA_FILTER" python3 << 'PYEOF' | tee "$_WA_TMP"
 import os, re, sys
 
 wa_file = os.environ["WAFILE"]
@@ -258,3 +268,7 @@ else:
     if not alert_ninjas and not warn_ninjas:
         print("  全員clean: 閾値超過なし (サンプル2件未満の忍者は除外)")
 PYEOF
+
+# キャッシュ保存(mtime + 出力)
+{ echo "$_WA_MTIME"; cat "$_WA_TMP"; } > "$_WA_CACHE" 2>/dev/null || true
+rm -f "$_WA_TMP"

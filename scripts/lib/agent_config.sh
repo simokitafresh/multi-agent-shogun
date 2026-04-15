@@ -45,6 +45,28 @@ _agent_config_load() {
         return 1
     fi
 
+    # WSL2 NTFS最適化: ファイルベースキャッシュ。settings.yaml未変更なら/tmp/から読む
+    local _cache_file="/tmp/shogun_agent_config_cache.tsv"
+    local _cache_meta="/tmp/shogun_agent_config_meta"
+    local _settings_mtime
+    _settings_mtime=$(stat -c%Y "$_AGENT_CONFIG_SETTINGS" 2>/dev/null || echo 0)
+    if [[ -f "$_cache_file" && -f "$_cache_meta" ]]; then
+        local _cached_mtime
+        _cached_mtime=$(cat "$_cache_meta" 2>/dev/null || echo -1)
+        if [[ "$_settings_mtime" == "$_cached_mtime" ]]; then
+            _AGENT_CONFIG_RAW=$(cat "$_cache_file")
+            local ninjas=() all_names=()
+            while IFS=$'\t' read -r _ac_name _ac_role _ac_jp; do
+                [[ -z "$_ac_name" ]] && continue
+                all_names+=("$_ac_name")
+                [[ "$_ac_role" == "ninja" ]] && ninjas+=("$_ac_name")
+            done <<< "$_AGENT_CONFIG_RAW"
+            _AGENT_CONFIG_NINJA_NAMES="${ninjas[*]}"
+            _AGENT_CONFIG_ALL_NAMES="${all_names[*]}"
+            return 0
+        fi
+    fi
+
     local _ac_raw="" _ac_line="" _ac_name="" _ac_role="" _ac_jp=""
     local _in_cli=0 _in_agents=0 _seen_agents=0
     local _line_value=""
@@ -130,6 +152,10 @@ _agent_config_load() {
 
     _AGENT_CONFIG_NINJA_NAMES="${ninjas[*]}"
     _AGENT_CONFIG_ALL_NAMES="${all_names[*]}"
+
+    # キャッシュ書込み(/tmp=ext4で高速)
+    printf '%s' "$_AGENT_CONFIG_RAW" > "$_cache_file" 2>/dev/null || true
+    printf '%s' "$_settings_mtime" > "$_cache_meta" 2>/dev/null || true
 }
 
 get_ninja_names() {

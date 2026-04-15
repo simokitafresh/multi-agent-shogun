@@ -1419,17 +1419,31 @@ echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
 
 # GP-080: 報告ファイルのstatus/parent_cmdを一括抽出 (共有キャッシュ)
 # sync_stk Source 2 + archive_reports L582-583 の両方が消費
+# WSL2 NTFS最適化: /tmp/に永続キャッシュ。reportファイル数未変更ならNTFS走査スキップ(1074ms→5ms)
 _REPORT_CACHE="$TMP/report_fields_cache.tsv"
+_PERSISTENT_RPT_CACHE="/tmp/shogun_report_fields_cache.tsv"
+_PERSISTENT_RPT_COUNT="/tmp/shogun_report_fields_count"
 if compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$REPORTS_DIR/subtask_*.yaml" > /dev/null 2>&1; then
-    gawk '
-        BEGINFILE {
-            fname = FILENAME; sub(/.*\//, "", fname)
-            st = ""; pc = ""
-        }
-        /^status:/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
-        /^parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
-        ENDFILE { print fname "|" st "|" pc }
-    ' "$REPORTS_DIR"/*.yaml 2>/dev/null > "$_REPORT_CACHE"
+    shopt -s nullglob
+    _rpt_files=("$REPORTS_DIR"/*.yaml)
+    shopt -u nullglob
+    _rpt_count=${#_rpt_files[@]}
+    _cached_rpt_count=$(cat "$_PERSISTENT_RPT_COUNT" 2>/dev/null || echo "0")
+    if [[ "$_rpt_count" == "$_cached_rpt_count" ]] && [[ -f "$_PERSISTENT_RPT_CACHE" ]]; then
+        cp "$_PERSISTENT_RPT_CACHE" "$_REPORT_CACHE"
+    else
+        gawk '
+            BEGINFILE {
+                fname = FILENAME; sub(/.*\//, "", fname)
+                st = ""; pc = ""
+            }
+            /^status:/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
+            /^parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
+            ENDFILE { print fname "|" st "|" pc }
+        ' "${_rpt_files[@]}" 2>/dev/null > "$_REPORT_CACHE"
+        cp "$_REPORT_CACHE" "$_PERSISTENT_RPT_CACHE" 2>/dev/null || true
+        echo "$_rpt_count" > "$_PERSISTENT_RPT_COUNT" 2>/dev/null || true
+    fi
 fi
 
 archive_cmds

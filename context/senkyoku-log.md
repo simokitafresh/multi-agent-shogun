@@ -634,3 +634,7 @@
 - 2026-04-12 23:22 cmd_1877_block_01(③3-2 oikaze GS) 疾風完遂。`cmd_1877_shin_alm_oikaze_grid_{results_fast,monthly_fast}.csv` 生成(rc=0, 115MB/394MB)、進行表3-2/4-2更新、`gate_artifact_map.sh` OK、進行表commit `286b99f`。因果: 旧`1795_`接頭辞衝突を避けて新prefix明示。
 - 2026-04-13 03:17 cmd_1877_block_23(②2-4 kasoku_ratio GS(M)) 疾風完遂。`cmd_1877_shin_ninpo_20_kasoku_ratio_grid_{results_fast,monthly_fast}.csv` 生成(rc=0, 280MB/1.7GB)、進行表2-4更新、`gate_artifact_map.sh` OK。因果: ②の月次GS残を4本→3本へ圧縮し、WF一括実行への前提を1段進めた。
 - 2026-04-13 09:08 cmd_1877_block_43(⑥6-5 kawarimi WF) 疾風完遂。`cmd_1877_l1_wf_{alm_returns,selection_timeline}.csv` を `okugi_alm_shin` 配下に再生成(rc=0, 108行×6系列/150エントリ)、進行表6-5更新、`gate_artifact_map.sh` OK。因果: ⑥のWF残を `nukimi/yotsume` の2本まで圧縮し、ALMシン×ALM面の終盤へ前進。
+- 2026-04-15 cmd_1903: 将軍cmd品質強化(q10新設+q7昇格+§14.5)。半蔵。GATE CLEAR。WA:なし
+- 2026-04-15 cmd_1904: 将軍cmd品質フィードバックループ(RC傾向表示+verdict自動記録)。影丸。GATE CLEAR。WA:なし
+- 2026-04-15 cmd_1905: 将軍cmd前提明示(assumptions新設+trust検査+軍師review連携)。小太郎。GATE CLEAR。WA:なし
+- 2026-04-15 deploy_task.sh配備失敗5回→LK060/LK061(cmd_id引数必須)→karo.md+karo-operations.md §1/§7に反映。根因=cmd_id省略時AC上書きスキップ
