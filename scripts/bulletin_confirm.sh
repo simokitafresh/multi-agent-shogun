@@ -73,13 +73,19 @@ if agent_id not in confirmed:
     confirmed.append(agent_id)
 target["confirmed_by"] = confirmed
 
-requires_confirmation = bool(target.get("requires_confirmation", False))
+rc = target.get("requires_confirmation", False)
 status = str(target.get("status", "open") or "open")
-if requires_confirmation:
-    if all(agent in confirmed for agent in confirm_agents):
-        status = "closed"
+if rc:
+    if isinstance(rc, list):
+        if all(agent in confirmed for agent in rc):
+            status = "closed"
+        else:
+            status = "open"
     else:
-        status = "open"
+        if all(agent in confirmed for agent in confirm_agents):
+            status = "closed"
+        else:
+            status = "open"
 target["status"] = status
 
 def sq(value):
@@ -97,7 +103,15 @@ with open(tmp_file, "w", encoding="utf-8") as fh:
             fh.write(f"    {line}\n")
         fh.write(f"  posted_by: '{sq(entry.get('posted_by', ''))}'\n")
         fh.write(f"  posted_at: '{sq(entry.get('posted_at', ''))}'\n")
-        fh.write(f"  requires_confirmation: {'true' if entry.get('requires_confirmation') else 'false'}\n")
+        rc = entry.get('requires_confirmation')
+        if isinstance(rc, list):
+            fh.write("  requires_confirmation:\n")
+            for agent_name in rc:
+                fh.write(f"    - '{sq(agent_name)}'\n")
+        elif rc:
+            fh.write("  requires_confirmation: true\n")
+        else:
+            fh.write("  requires_confirmation: false\n")
         confirmed_list = entry.get("confirmed_by") or []
         if confirmed_list:
             fh.write("  confirmed_by:\n")

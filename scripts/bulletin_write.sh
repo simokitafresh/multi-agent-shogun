@@ -41,7 +41,14 @@ entries = data.get("entries")
 if not isinstance(entries, list):
     entries = []
 
-req = str(requires_confirmation).strip().lower() in {"1", "true", "yes", "y"}
+rc_raw = str(requires_confirmation).strip()
+if rc_raw.lower() in {"1", "true", "yes", "y"}:
+    req = True
+elif rc_raw.lower() in {"0", "false", "no", "n", ""}:
+    req = False
+else:
+    agents = [a.strip() for a in rc_raw.split(",") if a.strip()]
+    req = agents if agents else False
 entries.append({
     "id": entry_id,
     "content": content,
@@ -67,7 +74,15 @@ with open(tmp_file, "w", encoding="utf-8") as fh:
             fh.write(f"    {line}\n")
         fh.write(f"  posted_by: '{sq(entry.get('posted_by', ''))}'\n")
         fh.write(f"  posted_at: '{sq(entry.get('posted_at', ''))}'\n")
-        fh.write(f"  requires_confirmation: {'true' if entry.get('requires_confirmation') else 'false'}\n")
+        rc = entry.get('requires_confirmation')
+        if isinstance(rc, list):
+            fh.write("  requires_confirmation:\n")
+            for agent_name in rc:
+                fh.write(f"    - '{sq(agent_name)}'\n")
+        elif rc:
+            fh.write("  requires_confirmation: true\n")
+        else:
+            fh.write("  requires_confirmation: false\n")
         confirmed = entry.get("confirmed_by") or []
         if confirmed:
             fh.write("  confirmed_by:\n")

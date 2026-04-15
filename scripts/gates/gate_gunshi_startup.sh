@@ -59,7 +59,10 @@ pending = []
 for entry in entries:
     if not isinstance(entry, dict):
         continue
-    if not entry.get("requires_confirmation", False):
+    rc = entry.get("requires_confirmation", False)
+    if not rc:
+        continue
+    if isinstance(rc, list) and agent not in rc:
         continue
     if str(entry.get("status", "")).lower() == "closed":
         continue
