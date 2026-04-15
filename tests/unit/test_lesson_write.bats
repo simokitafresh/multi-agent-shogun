@@ -8,7 +8,7 @@ setup_file() {
     export SRC_LESSON_WRITE="$REAL_PROJECT_ROOT/scripts/lesson_write.sh"
     [ -f "$SRC_LESSON_WRITE" ] || return 1
 
-    # 共有ベースディレクトリ（setup_fileで1回のみ作成）
+    # 共有ベースディレクトリ（read-only共有リソースのみ）
     export SHARED_DIR
     SHARED_DIR="$(mktemp -d "$BATS_TMPDIR/lw_shared.XXXXXX")"
 
@@ -17,22 +17,6 @@ setup_file() {
     cp "$SRC_LESSON_WRITE" "$SHARED_DIR/scripts/lesson_write.sh"
     printf '#!/bin/bash\nexit 0\n' > "$SHARED_DIR/scripts/sync_lessons.sh"
     chmod +x "$SHARED_DIR/scripts/sync_lessons.sh"
-
-    # 固定EXT_PROJECT（lessons.mdはtestごとにコピーで上書き）
-    export EXT_PROJECT="$SHARED_DIR/extproj"
-    mkdir -p "$EXT_PROJECT/tasks"
-
-    # 固定TEST_PROJECT（config.yamlは固定パスで1回作成）
-    export TEST_PROJECT="$SHARED_DIR/project"
-    mkdir -p "$TEST_PROJECT/config" "$TEST_PROJECT/context" "$TEST_PROJECT/projects/testproj" "$TEST_PROJECT/logs"
-    ln -s "$SHARED_DIR/scripts" "$TEST_PROJECT/scripts"
-
-    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
-projects:
-  - id: testproj
-    path: $EXT_PROJECT
-    context_file: context/test-context.md
-EOF
 
     # lessons.mdテンプレート（各テストでここからコピー）
     export LESSONS_TEMPLATE="$SHARED_DIR/lessons_template.md"
@@ -69,7 +53,21 @@ teardown_file() {
 }
 
 setup() {
-    # テンプレートからのコピーのみ（mktemp/mkdir不要）
+    # テストごとに独立したディレクトリを作成（--jobs並列実行の分離保証）
+    export EXT_PROJECT="$BATS_TEST_TMPDIR/extproj"
+    export TEST_PROJECT="$BATS_TEST_TMPDIR/project"
+
+    mkdir -p "$EXT_PROJECT/tasks"
+    mkdir -p "$TEST_PROJECT/config" "$TEST_PROJECT/context" "$TEST_PROJECT/projects/testproj" "$TEST_PROJECT/logs"
+    ln -s "$SHARED_DIR/scripts" "$TEST_PROJECT/scripts"
+
+    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
+projects:
+  - id: testproj
+    path: $EXT_PROJECT
+    context_file: context/test-context.md
+EOF
+
     cp "$LESSONS_TEMPLATE" "$EXT_PROJECT/tasks/lessons.md"
     cp "$CONTEXT_TEMPLATE" "$TEST_PROJECT/context/test-context.md"
 }

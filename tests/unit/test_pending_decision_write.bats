@@ -49,25 +49,28 @@ teardown_file() {
 }
 
 setup() {
-    # 共有tmpdirを再利用 — per-testのmktemp/cp/mkdirオーバーヘッドを排除
-    export TEST_TMPDIR="$SHARED_TMPDIR"
+    # テストごとに独立したディレクトリを作成（--jobs並列実行の分離保証）
+    export TEST_TMPDIR="$BATS_TEST_TMPDIR"
+    mkdir -p "$TEST_TMPDIR/scripts/gates" \
+             "$TEST_TMPDIR/queue/alerts" \
+             "$TEST_TMPDIR/config"
+
+    # スクリプトをコピー（BASH_SOURCE[0]がTEST_TMPDIRを向くよう）
+    cp "$SHARED_TMPDIR/scripts/pending_decision_write.sh" "$TEST_TMPDIR/scripts/"
+    cp "$SHARED_TMPDIR/scripts/gates/gate_pd_sync.sh" "$TEST_TMPDIR/scripts/gates/"
+    cp "$SHARED_TMPDIR/config/projects.yaml" "$TEST_TMPDIR/config/"
     export SCRIPT_UNDER_TEST="$TEST_TMPDIR/scripts/pending_decision_write.sh"
 
-    # 可変ファイルのみリセット (dashboard.md + pending_decisions.yaml)
+    # 可変ファイルを初期化
     cat > "$TEST_TMPDIR/dashboard.md" <<'EOF'
 ## 要対応
 （なし）
 ## 次セクション
 EOF
-    rm -f "$TEST_TMPDIR/queue/pending_decisions.yaml" \
-          "$TEST_TMPDIR/queue/pending_decisions.yaml.lock"
 }
 
 teardown() {
-    # teardown_fileで一括rm。ここは可変ファイルのみ後片付け
-    rm -f "$TEST_TMPDIR/queue/pending_decisions.yaml" \
-          "$TEST_TMPDIR/queue/pending_decisions.yaml.lock" \
-          "$TEST_TMPDIR/queue/alerts/pd_context_todo.log"
+    true  # BATS_TEST_TMPDIRはbatsが自動クリーンアップ
 }
 
 # ─── _run_pd: SCRIPT_UNDER_TESTのラッパー (DATA_FILEパスをTEST_TMPDIRで共有) ───

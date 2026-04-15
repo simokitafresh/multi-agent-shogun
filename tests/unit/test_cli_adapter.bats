@@ -248,12 +248,14 @@ YAML
 }
 
 setup() {
-    # TEST_TMPをSETTINGS_DIRに直接指定（mktemp+symlinks不要化）
+    # TEST_TMPはSETTINGS_DIR（read-only設定ファイル参照用）
     TEST_TMP="${SETTINGS_DIR}"
+    # モックbin用にテストごとの独立ディレクトリを使用（--jobs並列実行の分離保証）
+    TEST_BIN="${BATS_TEST_TMPDIR}/bin"
 }
 
 teardown() {
-    [[ -d "${SETTINGS_DIR}/bin" ]] && rm -rf "${SETTINGS_DIR}/bin" || true
+    true  # BATS_TEST_TMPDIRはbatsが自動クリーンアップ
 }
 
 teardown_file() {
@@ -538,10 +540,10 @@ load_adapter_with() {
 @test "validate_cli_availability: claude mock (PATH操作)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     # モックclaudeコマンドを作成
-    mkdir -p "${TEST_TMP}/bin"
-    echo '#!/bin/bash' > "${TEST_TMP}/bin/claude"
-    chmod +x "${TEST_TMP}/bin/claude"
-    PATH="${TEST_TMP}/bin:$PATH" run validate_cli_availability "claude"
+    mkdir -p "${TEST_BIN}"
+    echo '#!/bin/bash' > "${TEST_BIN}/claude"
+    chmod +x "${TEST_BIN}/claude"
+    PATH="${TEST_BIN}:$PATH" run validate_cli_availability "claude"
     [ "$status" -eq 0 ]
 }
 
@@ -561,37 +563,37 @@ load_adapter_with() {
 @test "validate_cli_availability: codex mock (PATH操作)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     # モックcodexコマンドを作成
-    mkdir -p "${TEST_TMP}/bin"
-    echo '#!/bin/bash' > "${TEST_TMP}/bin/codex"
-    chmod +x "${TEST_TMP}/bin/codex"
-    PATH="${TEST_TMP}/bin:$PATH" run validate_cli_availability "codex"
+    mkdir -p "${TEST_BIN}"
+    echo '#!/bin/bash' > "${TEST_BIN}/codex"
+    chmod +x "${TEST_BIN}/codex"
+    PATH="${TEST_BIN}:$PATH" run validate_cli_availability "codex"
     [ "$status" -eq 0 ]
 }
 
 @test "validate_cli_availability: copilot mock (PATH操作)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
-    mkdir -p "${TEST_TMP}/bin"
-    echo '#!/bin/bash' > "${TEST_TMP}/bin/copilot"
-    chmod +x "${TEST_TMP}/bin/copilot"
-    PATH="${TEST_TMP}/bin:$PATH" run validate_cli_availability "copilot"
+    mkdir -p "${TEST_BIN}"
+    echo '#!/bin/bash' > "${TEST_BIN}/copilot"
+    chmod +x "${TEST_BIN}/copilot"
+    PATH="${TEST_BIN}:$PATH" run validate_cli_availability "copilot"
     [ "$status" -eq 0 ]
 }
 
 @test "validate_cli_availability: kimi-cli mock (PATH操作)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
-    mkdir -p "${TEST_TMP}/bin"
-    echo '#!/bin/bash' > "${TEST_TMP}/bin/kimi-cli"
-    chmod +x "${TEST_TMP}/bin/kimi-cli"
-    PATH="${TEST_TMP}/bin:$PATH" run validate_cli_availability "kimi"
+    mkdir -p "${TEST_BIN}"
+    echo '#!/bin/bash' > "${TEST_BIN}/kimi-cli"
+    chmod +x "${TEST_BIN}/kimi-cli"
+    PATH="${TEST_BIN}:$PATH" run validate_cli_availability "kimi"
     [ "$status" -eq 0 ]
 }
 
 @test "validate_cli_availability: kimi mock (PATH操作)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
-    mkdir -p "${TEST_TMP}/bin"
-    echo '#!/bin/bash' > "${TEST_TMP}/bin/kimi"
-    chmod +x "${TEST_TMP}/bin/kimi"
-    PATH="${TEST_TMP}/bin:$PATH" run validate_cli_availability "kimi"
+    mkdir -p "${TEST_BIN}"
+    echo '#!/bin/bash' > "${TEST_BIN}/kimi"
+    chmod +x "${TEST_BIN}/kimi"
+    PATH="${TEST_BIN}:$PATH" run validate_cli_availability "kimi"
     [ "$status" -eq 0 ]
 }
 
