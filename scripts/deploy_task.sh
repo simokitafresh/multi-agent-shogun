@@ -1116,8 +1116,38 @@ EOF
     fi
 
     # cmd_1260+cmd_1393: acceptance_criteriaのbinary_checksをreportに事前展開（Python→bash/awk）
+    # GP-194: ac_assigned フィールド読み込み（分割配備時の担当AC範囲制限）
+    # 両フォーマット対応: inline "[AC1,AC2]" と yaml.dump後の multi-line "- AC1"
+    local _ac_assigned_filter=""
+    _ac_assigned_filter=$(awk '
+        /^  ac_assigned:[[:space:]]*\[/ {
+            s=$0; sub(/^[^[]*\[/, "", s); sub(/\].*$/, "", s)
+            n=split(s, a, /[[:space:]]*,[[:space:]]*/);
+            out=""
+            for(i=1;i<=n;i++) { gsub(/[[:space:]"'"'"']/, "", a[i]); if(a[i]!="") out=(out=="")?a[i]:(out"|"a[i]) }
+            print out; exit
+        }
+        /^  ac_assigned:[[:space:]]*$/ { in_aa=1; next }
+        in_aa && /^  - / {
+            item=$0; sub(/^[[:space:]]*-[[:space:]]*/, "", item); gsub(/[[:space:]"'"'"']/, "", item)
+            if(item!="") out=(out=="")?item:(out"|"item)
+            next
+        }
+        in_aa && /^  [a-zA-Z_]/ { in_aa=0; print out; exit }
+        END { if(in_aa && out!="") print out }
+    ' "$task_file" 2>/dev/null)
+    if [ -n "$_ac_assigned_filter" ]; then
+        log "binary_checks: ac_assigned filter active: ${_ac_assigned_filter}"
+    fi
+
     local _bc_block
-    _bc_block=$(awk '
+    _bc_block=$(awk -v ac_filter="$_ac_assigned_filter" '
+        function in_filter(id,    n, arr, i) {
+            if (ac_filter == "") return 1
+            n = split(ac_filter, arr, "|")
+            for (i = 1; i <= n; i++) if (arr[i] == id) return 1
+            return 0
+        }
         function normalize_check_text(text, ac_desc, out) {
             out = text
             if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
@@ -1128,7 +1158,7 @@ EOF
         /^  acceptance_criteria:/ { in_ac=1; next }
         in_ac && /^  [a-z]/ { exit }
         in_ac && /^  - / {
-            if (cur_id != "" && cc > 0) {
+            if (cur_id != "" && cc > 0 && in_filter(cur_id)) {
                 printf "  %s:\n", cur_id
                 for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(chk[i], cur_desc) }
             }
@@ -1158,7 +1188,7 @@ EOF
             chk[cc]=$0
         }
         END {
-            if (cur_id != "" && cc > 0) {
+            if (cur_id != "" && cc > 0 && in_filter(cur_id)) {
                 printf "  %s:\n", cur_id
                 for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(chk[i], cur_desc) }
             }
@@ -1246,7 +1276,13 @@ ${_commit_bc}"
     else
         # GP-133 enhanced: AC descriptionから。分割でcheck項目を自動生成（description空→FILLフォールバック）
         local _ac_stubs
-        _ac_stubs=$(awk '
+        _ac_stubs=$(awk -v ac_filter="$_ac_assigned_filter" '
+            function in_filter(id,    n, arr, i) {
+                if (ac_filter == "") return 1
+                n = split(ac_filter, arr, "|")
+                for (i = 1; i <= n; i++) if (arr[i] == id) return 1
+                return 0
+            }
             function normalize_check_text(text, ac_desc, out) {
                 out = text
                 if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
@@ -1257,7 +1293,7 @@ ${_commit_bc}"
             /^  acceptance_criteria:/ { in_ac=1; next }
             in_ac && /^  [a-z]/ { exit }
             in_ac && /^  - / {
-                if (cur_id != "") {
+                if (cur_id != "" && in_filter(cur_id)) {
                     printf "  %s:\n", cur_id
                     if (desc != "") {
                         n = split(desc, parts, "。")
@@ -1290,7 +1326,7 @@ ${_commit_bc}"
                 next
             }
             END {
-                if (cur_id != "") {
+                if (cur_id != "" && in_filter(cur_id)) {
                     printf "  %s:\n", cur_id
                     if (desc != "") {
                         n = split(desc, parts, "。")
