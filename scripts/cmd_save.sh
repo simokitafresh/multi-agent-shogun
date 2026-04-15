@@ -183,12 +183,21 @@ QG_TEMPLATE
         echo '  例: q6_not_hiding: "no — Vercel化は構造改革であり表面的対処ではない"' >&2
     fi
 
-    # q7_definition_verified: cmd内定義の一次情報照合明示（段階的導入 — WARNING）
+    # q7_definition_verified: cmd内定義の一次情報照合明示
     # 起源: L542 — High/Low等の研究用語は実装とテストに同じ意味を固定しないと結論がずれる
     # 目的: cmd固有定義を一次情報に照合した事実をquality_gateに明示させる
+    # dm-signal impl cmd → BLOCK昇格（cmd_1903）。infra/他PJ・scout/reconはWARNING維持
+    _Q7_PROJECT=$(echo "$CMD_BLOCK_NC" | grep "project:" | head -1 | sed 's/.*project: *//' | tr -d '"' | tr -d "'" | xargs)
+    _Q7_TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
     if ! echo "$CMD_BLOCK_NC" | grep -q "q7_definition_verified:"; then
-        echo "WARNING: q7_definition_verified未記入。High/Lowなどcmd固有定義を一次情報へ照合したか記載推奨" >&2
-        echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
+        if [[ "${_Q7_PROJECT:-}" == "dm-signal" && "${_Q7_TASK_TYPE:-}" == "impl" ]]; then
+            echo "BLOCK: q7_definition_verified未記入。dm-signal implではBLOCK。High/Lowなどcmd固有定義を一次情報へ照合した事実を記載せよ" >&2
+            echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
+            exit 1
+        else
+            echo "WARNING: q7_definition_verified未記入。High/Lowなどcmd固有定義を一次情報へ照合したか記載推奨" >&2
+            echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
+        fi
     fi
 
     # q8_why_what: WHY→WHAT因果連鎖必須化（BLOCK — cmd_1783）
@@ -268,6 +277,14 @@ QG_TEMPLATE
     # (causal_chain各論パッチは削除。q5_verified_sourceに複利の問いを統合 — 2026-04-05)
 
     # (q8_tool_readiness各論パッチは削除。q5の複利の問いで十分 — cmd_1742 cancel 2026-04-05)
+
+    # q10_knowledge_boundary: 検証済み空間の明示（段階的導入 — WARNING）
+    # 起源: cmd_1903 — Phase 31-32の11過ちが全てgateを通過。「無知の知」がcmd起票に強制されていない
+    # 目的: cmdの前提が「前Phase/前cmdの到達点(検証済み事実)」に基づいているかを明示させる
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q10_knowledge_boundary:"; then
+        echo "WARNING: q10_knowledge_boundary未記入。cmdの前提は検証済み空間内か？前Phase/前cmdの到達点を使っているか？" >&2
+        echo '  形式例: q10_knowledge_boundary: "空間内。根拠: Phase30 β調整確立 + cmd_1896結果確認済み"' >&2
+    fi
 
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正

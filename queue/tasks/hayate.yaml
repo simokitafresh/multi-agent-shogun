@@ -1,53 +1,15 @@
 task:
   _ac_task_id: cmd_1903_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
+
   ac_version: 2edf2958
-  acceptance_criteria:
-  - description: cmd_1896と同一の3486ペア・同一期間(87ヶ月)で計算。alpha_annualがcmd_1896 CSVと一致(差<1e-6)することをペア10件でスポットチェック
-    id: AC1
-  - description: 6指標カラム(alpha_cagr, alpha_nhf, alpha_max_dd, alpha_mru, alpha_calmar,
-      alpha_uwp)が全3486行に値あり(NaN=UWP未回復のみ許容)
-    id: AC2
-  - description: α-Calmar Top10をサマリに記載。cmd_1896 Top10(α-CAGR順)との順位変動を対比
-    id: AC3
-  - description: 層別(L0 vs L1 vs L2)のα6指標中央値をサマリに記載。L0→L1→L2で各指標が改善しているか確認
-    id: AC4
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  deployed_at: '2026-04-14T23:32:54'
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
-    \  - L616: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ\n\
-    ────────────────────────────────────────"
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
-    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  - AC4
+
   parent_cmd: cmd_1903
   project: dm-signal
   report_filename: hayate_report_cmd_1903.yaml
   report_path: queue/reports/hayate_report_cmd_1903.yaml
   status: done
-  stop_for: []
+
   task_id: cmd_1903_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
