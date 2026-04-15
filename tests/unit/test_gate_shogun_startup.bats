@@ -66,6 +66,15 @@ echo "教訓健全度: OK"
 MOCK
     chmod +x "$SHARED_BASE/scripts/gates/gate_lesson_health.sh"
 
+    # Gate 13.5: lessons_shogun.yaml (minimal pass)
+    mkdir -p "$SHARED_BASE/projects/infra"
+    cat > "$SHARED_BASE/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons:
+- id: LS001
+  title: test lesson
+  detail: test detail for gate pass
+EOF
+
     # Gate 4: inbox with no unread
     cat > "$SHARED_BASE/queue/inbox/shogun.yaml" <<'EOF'
 messages:
