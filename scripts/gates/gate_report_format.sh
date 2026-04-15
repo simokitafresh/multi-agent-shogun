@@ -503,5 +503,9 @@ else
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    _DIAGNOSE_GATE="$(dirname "${BASH_SOURCE[0]}")/gate_diagnose_check.sh"
+    if [ -f "$_DIAGNOSE_GATE" ]; then
+        bash "$_DIAGNOSE_GATE" "$REPORT_PATH" "$REASONS" || true
+    fi
     exit 1
 fi
