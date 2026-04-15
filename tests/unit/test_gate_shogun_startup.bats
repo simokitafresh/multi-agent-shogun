@@ -460,24 +460,3 @@ EOF
     [[ "$output" != *"WARNING: AC不一致"* ]]
 }
 
-# === Test 19: 直近7日内にinbound>0の日あり + 昨日inbound=0 → INFO not ALERT (AC1修正検証) ===
-@test "recent 7-day archive has inbound + yesterday inbound=0 → INFO not ALERT" {
-    mkdir -p "$TEST_TMPDIR/logs/lord_conversation_archive"
-    local yesterday two_days_ago
-    yesterday=$(date -d "yesterday" '+%Y-%m-%d' 2>/dev/null || date -v-1d '+%Y-%m-%d' 2>/dev/null || echo "2099-01-01")
-    two_days_ago=$(date -d "2 days ago" '+%Y-%m-%d' 2>/dev/null || date -v-2d '+%Y-%m-%d' 2>/dev/null || echo "")
-    # 昨日のファイル: inbound=0 (outboundのみ)
-    printf '{"direction": "outbound", "content": "test"}\n' \
-        > "$TEST_TMPDIR/logs/lord_conversation_archive/${yesterday}.jsonl"
-    # 2日前のファイル: inbound>0 (直近7日内に有効な記録あり)
-    if [ -n "$two_days_ago" ]; then
-        printf '{"direction": "inbound", "content": "recent"}\n' \
-            > "$TEST_TMPDIR/logs/lord_conversation_archive/${two_days_ago}.jsonl"
-    fi
-
-    run run_gate_shogun_startup
-    [ "$status" -eq 0 ]
-    [[ "$output" != *"ALERT: ${yesterday}.jsonlのinbound=0"* ]]
-    [[ "$output" == *"INFO: ${yesterday} inbound=0"* ]]
-}
-

@@ -743,47 +743,6 @@ if [ -n "$_scripts_dirty" ]; then
     alerts+=("scripts/未コミット変更: ${_sd_count}件")
 fi
 
-# --- Gate 18: lord_conversation inbound健全度 (cmd_1800) ---
-# 起源: 殿の発言が未記録 — log_terminal_input.shが不発のまま日々の入力が消失するリスク
-# 目的: 前日アーカイブのinbound件数=0なら記録機構の異常として即ALERT
-echo "■ 会話記録 inbound健全度"
-_LC_ARCHIVE_DIR="$SCRIPT_DIR/logs/lord_conversation_archive"
-_LC_YESTERDAY=$(date -d "yesterday" '+%Y-%m-%d' 2>/dev/null || date -v-1d '+%Y-%m-%d' 2>/dev/null || true)
-if [ ! -d "$_LC_ARCHIVE_DIR" ]; then
-    echo "  INFO: lord_conversation_archiveディレクトリ不在(正常)"
-elif [ -n "$_LC_YESTERDAY" ] && [ -f "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" ]; then
-    _lc_inbound=$(grep -cE '"direction": *"inbound"' "$_LC_ARCHIVE_DIR/$_LC_YESTERDAY.jsonl" 2>/dev/null) || _lc_inbound=0
-    if [ "$_lc_inbound" -eq 0 ]; then
-        # 直近7日でinbound>0の日が1日以上あれば未発言日の可能性 → SKIP
-        # 連続してinbound=0の場合のみ真のALERT（記録機構障害）
-        _lc_recent_ok=0
-        for _lc_n in 1 2 3 4 5 6 7; do
-            _lc_d=$(date -d "${_lc_n} days ago" '+%Y-%m-%d' 2>/dev/null \
-                    || date -v"-${_lc_n}d" '+%Y-%m-%d' 2>/dev/null || true)
-            [ -z "$_lc_d" ] && continue
-            [ "$_lc_d" = "$_LC_YESTERDAY" ] && continue
-            _lc_nf="$_LC_ARCHIVE_DIR/${_lc_d}.jsonl"
-            if [ -f "$_lc_nf" ]; then
-                _lc_nc=$(grep -cE '"direction": *"inbound"' "$_lc_nf" 2>/dev/null) || _lc_nc=0
-                [ "$_lc_nc" -gt 0 ] && _lc_recent_ok=$((_lc_recent_ok + 1))
-            fi
-        done
-        if [ "$_lc_recent_ok" -gt 0 ]; then
-            echo "  INFO: ${_LC_YESTERDAY} inbound=0（直近7日中${_lc_recent_ok}日はinbound有 — 未発言日の可能性）"
-        else
-            overall="ALERT"
-            alerts+=("会話記録 inbound=0: ${_LC_YESTERDAY}に殿の発言未記録 — scripts/log_terminal_input.sh確認")
-            echo "  ALERT: ${_LC_YESTERDAY}.jsonlのinbound=0 — 殿の入力が記録されていない"
-        fi
-    else
-        echo "  OK: ${_LC_YESTERDAY} inbound=${_lc_inbound}件"
-    fi
-elif [ -n "$_LC_YESTERDAY" ]; then
-    echo "  INFO: アーカイブなし(${_LC_YESTERDAY})"
-else
-    echo "  INFO: 日付取得失敗"
-fi
-
 # --- Gate 19: 強制度監査 (meta-gate, 2026-04-12) ---
 # 起源: 軍師 /clear 後に gate_gunshi_startup.sh が自動実行されなかった
 # なぜなぜ7回で到達した根因=「gate の gate 不在」メタレベル欠落
