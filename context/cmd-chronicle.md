@@ -669,3 +669,4 @@
 | cmd_1922 | 強化 — 因果探索原則を将軍必読ファイルに追加(CLAUDE.md+startup gate) | infra | 04-15 | CLAUDE.md Step 2.55+gate存在チェック追加。テスト済み |
 | cmd_1923 | cmd_save.sh Check 21: ACの数値絶対値WARN検出 | infra | 04-15 | cmd_save.shにCheck 21を追加し、AC de |
 | cmd_1924 | Androidアプリ知識のcontext登録 — 存在するものを探せない問題の根因修正 | infra | 04-15 | context/infrastructure.md に An |
+| cmd_karo_feedback_gap | fix — lesson feedback記録欠損の根因調査+修正 | infra | 04-15 | AC1: cmd_complete_gate.sh L403 |
