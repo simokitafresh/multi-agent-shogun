@@ -53,6 +53,14 @@ echo \"保存確認OK: \${CMD_ID}\"
 }"
     export -f check_quality_gate
 
+    # check_20_assumptions: Check 20インラインセクション（assumptions検査）を関数化
+    eval "check_20_assumptions() {
+local WARN_COUNT=0
+$(sed -n '/^# --- Check 20:/,/^# --- 結果出力/{/^# --- 結果出力/d;p}' "$SRC_SAVE_SCRIPT")
+echo \"OK\"
+}"
+    export -f check_20_assumptions
+
     # 共有テンポラリディレクトリ(setup_fileで1回のみ作成)
     export TEST_SHARED_TMP
     TEST_SHARED_TMP="$(mktemp -d)"
@@ -958,5 +966,80 @@ notes: "なし"'
     run check_ac_must_should_mix
     echo "$output" >&2
     [[ "$output" == *"推奨事項が混在"* ]]
+    [ "$status" -eq 1 ]
+}
+
+# --- Check 20: assumptionsフィールド検査 ---
+
+@test "Check20.1: trust:unverified含む→BLOCK" {
+    CMD_BLOCK='description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "未確認前提"
+    source: "想像"
+    trust: "unverified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" == *"BLOCK: 未検証前提あり"* ]]
+    [ "$status" -eq 1 ]
+}
+
+@test "Check20.2: trust:verified+実在パス→PASS" {
+    local FAKE_WD2
+    FAKE_WD2="$(mktemp -d)"
+    mkdir -p "$FAKE_WD2/config" "$FAKE_WD2/scripts"
+    touch "$FAKE_WD2/scripts/cmd_save.sh"
+    cat > "$FAKE_WD2/config/projects.yaml" << YAML
+current_project: testpj2
+projects:
+  - id: testpj2
+    path: "$FAKE_WD2"
+YAML
+    CMD_BLOCK='description: AC1
+description: AC2
+description: AC3
+project: testpj2
+assumptions:
+  - claim: "cmd_save.shは存在する"
+    source: "scripts/cmd_save.sh code_reading"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$FAKE_WD2"
+    run check_20_assumptions
+    echo "$output" >&2
+    rm -rf "$FAKE_WD2"
+    [[ "$output" != *"BLOCK"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.3: trust:verified+不在パス→BLOCK" {
+    # tmpdir配下に存在しないパスをsourceに指定
+    local FAKE_WD
+    FAKE_WD="$(mktemp -d)"
+    # config/projects.yaml にfake projectを作成してWDをFAKE_WDに設定
+    mkdir -p "$FAKE_WD/config"
+    cat > "$FAKE_WD/config/projects.yaml" << YAML
+current_project: fake
+projects:
+  - id: fake
+    path: "$FAKE_WD"
+YAML
+    CMD_BLOCK='description: AC1
+description: AC2
+description: AC3
+project: fake
+assumptions:
+  - claim: "存在しないファイルの前提"
+    source: "nonexistent/path.sh code_reading"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$FAKE_WD"
+    run check_20_assumptions
+    echo "$output" >&2
+    rm -rf "$FAKE_WD"
+    [[ "$output" == *"BLOCK: assumptions sourceのファイルパスが存在しません"* ]]
     [ "$status" -eq 1 ]
 }

@@ -1333,9 +1333,10 @@ if echo "$CMD_BLOCK" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登
     fi
 fi
 
-# --- Check 20: assumptionsフィールド検査（段階的導入 — WARN_COUNTに加算しない） ---
+# --- Check 20: assumptionsフィールド検査（BLOCK昇格 cmd_1906） ---
 # 起源: cmd_1905 — 暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ
-# 目的: AC数3以上のcmdにassumptionsがない場合WARNING。trust:unverifiedがある場合WARNING
+# 目的: AC数3以上のcmdにassumptionsがない場合WARNING。trust:unverifiedがある場合BLOCK(exit 1)
+# cmd_1906: trust:unverified→BLOCK昇格。trust:verified+sourceにファイルパスがある場合実在確認
 _ASSUMP_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
 _ASSUMP_AC_COUNT=$(( ${_ASSUMP_AC_COUNT:-0} + 0 ))
 if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
@@ -1346,10 +1347,70 @@ if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
         echo '          source: "cache.py L42 code_reading"' >&2
         echo '          trust: "verified"' >&2
     else
-        # trust: unverified が含まれる場合にWARNING
+        # AC1: trust: unverified が含まれる場合BLOCK(exit 1)
         if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
-            echo "WARNING: 未検証前提あり。現物確認してからcmd_save.shを再実行せよ" >&2
-            echo "  trust:unverified の前提を現物確認し trust:verified に変更すること" >&2
+            echo "BLOCK: 未検証前提あり。現物確認してtrust:verifiedに変更せよ" >&2
+            exit 1
+        fi
+        # AC2: trust:verified + sourceにファイルパスがある場合、プロジェクトWD内の実在確認
+        _ASSUMP_PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+        [[ -z "${_ASSUMP_PROJECT_ID:-}" ]] && _ASSUMP_PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
+        if [[ -n "${_ASSUMP_PROJECT_ID:-}" ]]; then
+            _ASSUMP_PROJECT_WD=$(awk -v id="$_ASSUMP_PROJECT_ID" '
+                /^  - id:/ { current_id = $3; gsub(/"/, "", current_id) }
+                /^    path:/ && current_id == id { gsub(/.*path: *"?/, ""); gsub(/"$/, ""); print; exit }
+            ' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
+        fi
+        if [[ -n "${_ASSUMP_PROJECT_WD:-}" ]]; then
+            _ASSUMP_VERIFIED_PATHS=$(echo "$CMD_BLOCK_NC" | python3 -c "
+import sys, re
+content = sys.stdin.read()
+lines = content.split('\n')
+in_assumptions = False
+current = {}
+entries = []
+for line in lines:
+    if re.match(r'\s*assumptions\s*:', line):
+        in_assumptions = True
+        continue
+    if in_assumptions:
+        if re.match(r'\s*-\s', line):
+            if current:
+                entries.append(dict(current))
+            current = {}
+        m = re.search(r'source\s*:\s*(.+)', line)
+        if m: current['source'] = m.group(1).strip().strip('\"').strip(\"'\")
+        m = re.search(r'trust\s*:\s*(.+)', line)
+        if m: current['trust'] = m.group(1).strip().strip('\"').strip(\"'\")
+        if line and not line[0].isspace() and line.strip():
+            in_assumptions = False
+            if current: entries.append(dict(current))
+            current = {}
+if current: entries.append(current)
+pat = re.compile(r'[A-Za-z0-9_/-]+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)')
+for e in entries:
+    trust = e.get('trust', '')
+    if 'verified' in trust and 'unverified' not in trust:
+        for m in pat.finditer(e.get('source', '')):
+            print(m.group(0))
+" 2>/dev/null || true)
+            if [[ -n "${_ASSUMP_VERIFIED_PATHS:-}" ]]; then
+                _ASSUMP_HAS_MISSING=false
+                while IFS= read -r fpath; do
+                    [[ -z "$fpath" ]] && continue
+                    if [[ ! -e "$_ASSUMP_PROJECT_WD/$fpath" ]]; then
+                        if [[ "$_ASSUMP_HAS_MISSING" == false ]]; then
+                            echo "BLOCK: assumptions sourceのファイルパスが存在しません:" >&2
+                            _ASSUMP_HAS_MISSING=true
+                        fi
+                        echo "  ✗ $fpath (in $_ASSUMP_PROJECT_WD)" >&2
+                    fi
+                done <<< "$_ASSUMP_VERIFIED_PATHS"
+                if [[ "$_ASSUMP_HAS_MISSING" == true ]]; then
+                    echo "  現物確認してからcmd_save.shを再実行せよ" >&2
+                    exit 1
+                fi
+            fi
         fi
     fi
 fi
