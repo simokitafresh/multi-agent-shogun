@@ -286,6 +286,15 @@ QG_TEMPLATE
         echo '  形式例: q10_knowledge_boundary: "空間内。根拠: Phase30 β調整確立 + cmd_1896結果確認済み"' >&2
     fi
 
+    # q11_not_already_done: cmd必要性の現物確認（BLOCK — cmd_1915）
+    # 起源: 車輪の再発明が再発。cmd_save.shは品質を検証するが必要性を検証していなかった
+    # 目的: cmdのACが既に達成済みでないことを、現物確認した方法と結果で明示させる
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q11_not_already_done:"; then
+        echo "BLOCK: q11_not_already_done未記入。このcmdのACは既に達成されていないか？現物で確認した方法と結果を記載せよ" >&2
+        echo "  例: q11_not_already_done: \"未達成。grep 'BLOCK.*assumptions' cmd_save.shでWARNINGのみ確認。exit 1なし\"" >&2
+        exit 1
+    fi
+
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正
     # 目的: type=impl + 条件分岐キーワード検出時に、本番での分岐実行頻度確認ACの追加を提案

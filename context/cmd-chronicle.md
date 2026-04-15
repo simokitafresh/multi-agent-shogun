@@ -659,3 +659,4 @@
 | cmd_1913 | 強化 — 未コミット変更WARNに陣形図照合追加(cmd_1912誤キャンセル事故防止) | infra | 04-15 | cmd_save.shの未コミット変更警告に直近完了忍者一覧 |
 | cmd_1911 | fix — CI RED修正: テスト並列化(--jobs 4)で露出した14テストの分離不足修正 | infra | 04-15 | 4テストファイルのsetup/teardownでBATS_T |
 | cmd_1914 | 整備 — CoDDリファクタリング台帳作成+既存実績登録+軍師連携 | infra | 04-15 | CoDDリファクタリング台帳を新設し、既存3実績登録・inf |
+| cmd_1915 | 強化 — q11_not_already_done: cmdの必要性検証BLOCK(車輪の再発明の原理的防止) | infra | 04-15 | cmd_save.sh に q11_not_already_ |
