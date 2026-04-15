@@ -1300,6 +1300,9 @@ show_gunshi_pane_status() {
 
 show_gunshi_pane_status
 
+# AC_TEXT: acceptance_criteriaセクションのdescription行を結合（Check 19/20で使用）
+AC_TEXT=$(echo "$CMD_BLOCK" | awk '/acceptance_criteria:/,0' | grep 'description:' || true)
+
 # --- Check 19: パリティcmdのP1-P6全基準チェック（WARN） ---
 # 本番DB操作cmd（パリティ/登録/recalculate含む）のACにP1-P6が網羅されているか
 if echo "$CMD_BLOCK" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then
