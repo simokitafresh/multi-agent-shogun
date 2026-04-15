@@ -13,6 +13,7 @@
 # 詳細エントリ: 20260413b(consultation_kawarimi_speed〜cmd_1893) → logs/archive/gunshi_review_log_20260413b.yaml
 # 詳細エントリ: 20260414a(cmd_1894〜cmd_1899+S182-S183+consultations) → logs/archive/gunshi_review_log_20260414a.yaml
 # ─── ★全レビュー最重要原理(毎回読め) ───
+# ★★★ レビュー依頼=最優先。自走・分析・高速化より先にinbox処理。他者の仕事をブロックするな(2026-04-15殿指摘)
 # このcmdの各実装選択を10回繰り返したら正の複利か負の複利か？
 # (SQL毎回→負。cache1回→正。loop毎回→負。batch1回→正。道具未使用→負。道具活用→正)
 # 忍者/家老のミスに見える問題はインフラが真因でないか？道具を疑え。
@@ -36,6 +37,8 @@
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
 # SG一覧: SG0(gate自動) SG2(commit) SG3(scope) SG4(家老処理) SG5(偵察トレーサビリティ)
 #          SG6(状態確認順序) SG7(バンドル) SG8(自動消火4類型) SG10(研究基盤+送信前gate)
+# SG-PRE(precheck 11項): PRE1(format) PRE2(WA率) PRE3(commit) PRE4(backend) PRE5(bc数)
+#          PRE6(行数) PRE7(パラメータ) PRE8(二重配備) PRE9(T1:bc no) PRE10(ac_version) PRE11(lessons形式)
 # ─────────────────────────
 # ─── エントリ形式(簡略) ───
 # draft: cmd_id, verdict, gate_result, findings_summary(1行), timestamp, proposals(optional)
@@ -548,3 +551,100 @@
     - "事実4: tobisaru配備。cmd_save.sh変更する他cmdなし(1903/1905完了済み)"
   causal_chain: "Phase 4(意志依存→壊れる)→WARNING=意志依存→BLOCK=強制→trust:unverified BLOCK+source実在検査→嘘防止の構造化=正の複利"
   timestamp: "2026-04-15T13:18:00"
+- cmd_id: cmd_1906
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1906_exact
+  report_verdict: LGTM
+  findings_summary: "4観点OK。Check 20 BLOCK昇格(L1350)+source実在確認(L1355)。50テストPASS。commit c986bca。Phase 4(自動化×強制)直接適用"
+  observations:
+    - "事実1: Check 20 L1336。trust:unverified→BLOCK(exit 1)。WARNING→BLOCK昇格完了"
+    - "事実2: source実在確認 L1355-1406。check_ac_file_paths同構造。_ASSUMP_PROJECT_WDでPJ WD自動取得"
+    - "事実3: 新規テスト3件(Check20.1/20.2/20.3)+既存47件=50件全PASS"
+    - "事実4: SG-PRE10 PASS(ac_version一致 e688de9c)。SG-PRE11 PASS"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  causal_chain: "WARNING(意志依存)→BLOCK(強制)昇格+source嘘防止→将軍の前提自己申告の質が構造的に保証=正の複利"
+  timestamp: "2026-04-15T13:30:00"
+- cmd_id: cmd_1907
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。全4 assumptions verified(CSV 3487行+全列存在)。AC3個明確(Top30抽出/モード混成/忍法頻度)。q4_depth=shallow。研究分析のみPI影響なし"
+  observations:
+    - "事実1: cmd_1902 CSV 3487行=header+3486(C(84,2))。alpha_calmar列37番目に存在"
+    - "事実2: mode_a(8)/mode_b(9)/ninpo_a(6)/ninpo_b(7)/pattern_code_a(4)/pattern_code_b(5)全列存在。q7定義と一致"
+    - "事実3: hayate配備(CTX20%)。idle 4名だが単独pandas分析→分割不要"
+    - "事実4: outputs/analysis/出力→gitignored。commit check不要。GP-190対象外(scout_exemptなし)だがoutput-onlyのためGP-128リスク低"
+  causal_chain: "cmd_1902(6指標α版)→Phase 32仮説(激攻+鉄壁混成=α安定性源泉)→cmd_1907で定量化→次の研究方針根拠=正の複利"
+  timestamp: "2026-04-15T14:15:00"
+- cmd_id: cmd_1907
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1907_exact
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Top30(wc-l=31)+mode mix(合計30)+ninpo頻度(合計60)全数値一致。常勝モード4件混入→raw 5分類CSV併記+3分類正規化で適切対処。commit a60b5bc"
+  observations:
+    - "事実1: SG-PRE全11項PASS。ac_version一致(a3f91c99)。binary_checks全yes"
+    - "事実2: commit a60b5bc=scripts/oneshot/cmd_1907_*.py。outputs/はgitignored(正常)"
+    - "事実3: 常勝モード4件(常勝×鉄壁3+常勝×激攻1)がTop30に混入。cmdのAC2は3分類想定だが実態5分類。疾風がraw CSV併記で対処"
+    - "事実4: SG9 hayate WA率71.4%。top_pattern=commit_missing。今回commit:yes→不一致。追加チェック実施:evidence/files_modified全確認"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  causal_chain: "cmd_1902 α-Calmar→cmd_1907 Top30構造分析→激攻×鉄壁17/30(57%)定量確認→Phase 32仮説裏付け。常勝モード発見=新知見(将軍判断事項)=正の複利"
+  timestamp: "2026-04-15T14:20:00"
+- cmd_id: cmd_1908
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。assumptions verified(cmd_1907=4指標のみ、cmd_1902=6指標全列)。Pareto定義正確。q4_depth=shallow。alpha_uwp NaN 3件注意(忍者判断可)"
+  observations:
+    - "事実1: cmd_1907 Top30 headerにalpha_cagr(6)/alpha_max_dd(7)/alpha_calmar(8)/alpha_uwp(9)のみ。alpha_nhf/alpha_mru欠落確認"
+    - "事実2: cmd_1902 CSVにalpha_nhf(34)/alpha_mru(36)存在。pair_id結合で6指標完備"
+    - "事実3: Pareto方向定義=max(cagr,nhf,mru,calmar)+min(max_dd,uwp)。標準的多目的最適化"
+    - "事実4: cmd_1902でalpha_uwp NaN 3件(未回復)。Top30にNaN含む場合Pareto計算影響あり"
+  causal_chain: "cmd_1907 Top30→6指標Pareto最適→殿との対話でN=2-5最終選定→DB登録判断品質向上=正の複利"
+  timestamp: "2026-04-15T14:35:00"
+- cmd_id: cmd_1908
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1908_exact
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。6metrics 31行/Pareto 10行(9件)/radar 31行+pareto列。全数値一致。commit 6d70354e。SG-PRE全PASS"
+  observations:
+    - "事実1: 6metrics CSV 31行=ヘッダ+30。6指標全列存在(alpha_nhf/alpha_mru補完済み)"
+    - "事実2: Pareto CSV 10行=ヘッダ+9件。30ペア中9件がPareto最適"
+    - "事実3: radar CSV 31行+pareto列(13番目)。min-max正規化済み"
+    - "事実4: commit 6d70354e=スクリプトのみ。出力CSVはgitignored(正常)"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  causal_chain: "cmd_1907 Top30→cmd_1908 6指標結合+Pareto算出→9/30件Pareto最適→殿との対話でN=2-5選定根拠確立=正の複利"
+  timestamp: "2026-04-15T14:40:00"
+- cmd_id: cmd_1909
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。GP-194実装cmd。deploy_task.sh L1118-1240 bc生成ロジック現物確認。3FM全て設計書に記載済み"
+  observations:
+    - "事実1: L1118 awk bc展開開始。L1171 _commit_bc生成。L1240 _bc_placeholder。bc生成パイプライン確認"
+    - "事実2: split_deploy検出=L3478-3509。ac_assigned書込みはここで実装(自然な位置)"
+    - "事実3: GP-194設計書(gunshi_gp194_split_deploy_bc_scope_20260415.md)にFM3件記載済み"
+    - "事実4: 影丸配備。infra cmd。並行衝突なし"
+  causal_chain: "cmd_1796 分割配備FAIL 2件(根因=全AC bc注入)→軍師GP-194提案→cmd_1909実装→ac_assigned範囲制限→分割配備FAIL構造的排除=正の複利"
+  timestamp: "2026-04-15T14:45:00"
+- cmd_id: cmd_1910
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  severity: normal
+  confidence: HIGH
+  findings_summary: "前提崩壊。統合マッピング3-7が不在ファイルを参照。実在10ファイルの行き先未定義。設計書§Aのマッピングと不一致"
+  observations:
+    - "事実1: cmd参照ソース6件(lesson_injection/related_lessons/ninja_adaptive/report_template_gate_compat/project_config/integration)が全て不在"
+    - "事実2: 実在16ファイル中10件(ac_verify/double_deploy_guard/engineering_preferences/gate_blocks/gate_fail_top3/match_ninja/stale_field_reset/stale_report_verdict/target_files/useful_rate_decay)の統合先が未定義"
+    - "事実3: 設計書§Aは3統合+4standalone=7ファイル。cmdマッピングは異なる7ファイル構造"
+    - "事実4: AC2(118テスト維持)は達成不能 — 10ファイル分のテストが孤児化"
+  suggested_changes: "設計書§A準拠のマッピングに修正: (1)template_generation←gitignore_cc+monthly_scout+recon+handwritten_bc(テンプレ部) (2)ac_handling←ac_verify+ac_version+handwritten_bc(AC部) (3)lifecycle←double_deploy+stale_field+stale_report+engineering_prefs+gate_blocks+gate_fail_top3 (4-7)standalone=match_ninja/target_files/useful_rate_decay/recent_noncmd_commit_warn"
+  causal_chain: "将軍cmd起票→マッピングが設計書と乖離(不在ファイル参照+実在ファイル孤児化)→忍者実行不能→RC。前提崩壊79%(S187)の典型例"
+  timestamp: "2026-04-15T14:50:00"

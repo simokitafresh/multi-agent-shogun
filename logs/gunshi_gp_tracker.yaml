@@ -320,8 +320,10 @@
   reason: "cmd_1897+cmd_1900でT1違反2回(LGTM→BLOCK)。根因=binary_checks result:noを見てもgate_prediction:BLOCKを付記しない(意志依存)。gate_gunshi_report_precheck.sh SG-PRE9でresult:no検出→WARN自動表示。設計書=docs/research/gunshi_gp193_t1_prevention_20260414.md"
 - id: GP-194
   description: "分割配備時binary_checksをAC分担範囲に制限(ac_assigned制御)"
-  status: proposed
+  status: implemented
   proposed_at: "2026-04-15T05:10:00"
+  sent_at: "2026-04-15T13:45:00"
+  implemented_by: cmd_1909
   self_executable: false
   defense_level: 4
   reason: "split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成"

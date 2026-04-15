@@ -648,3 +648,6 @@
 | cmd_karo_gp190 | GP-190 commit check waive — scout_exempt/研究cmdのbinary_checksからcommit check除外 | infra | 04-15 | GP-190: scout_exempt=trueのcomm |
 | cmd_1898 | 奥義ALMシン 21体 パリティチェック — holding_signal+monthly_return突合 | dm-signal | 04-15 | cmd_1898 parity実測完了。21体のうち hol |
 | cmd_1903 | 将軍のcmd起票品質を構造的に引き上げる。Phase 31-32で11過ちが全てgateを通過した根因=「無知の知」がcmd起票に強制されていない。q10で検証済み空間の明示を強制し、q7を昇格し、研究cmd手順を追加する | infra | 04-15 | AC1(q10 WARNING), AC2(q7 dm-si |
+| cmd_1906 | WARNINGは意志依存で壊れる。trust:unverifiedが残存するcmdをBLOCKし、sourceのファイルパス実在を検査することで、将軍の前提自己申告の嘘を構造的に防ぐ | infra | 04-15 | AC1: Check 20のtrust:unverified |
+| cmd_1907 | cmd_1902の6指標α版3486ペアCSVからα-Calmar Top30を抽出し、モード混成(激攻×鉄壁)・忍法組合せ・奥義レベル構成の出現頻度を定量化する。Phase 32の発見(激攻+鉄壁混成がα安定性の構造的源泉)を数字で裏付ける | dm-signal | 04-15 | cmd_1902のalpha-Calmar Top30を抽出 |
+| cmd_1908 | cmd_1907のTop30ペアを6指標(α-CAGR/α-NHF/α-MaxDD/α-MRU/α-Calmar/α-UWP)で多角評価し、Pareto最適ペア(他のどのペアにも全指標で劣らない)を特定する。最終候補N=2-5の選定根拠を作る | dm-signal | 04-15 | cmd_1907 Top30に不足していたalpha_nhf |
