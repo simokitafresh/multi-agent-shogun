@@ -451,8 +451,8 @@ safe_send_clear() {
     # cmd_1303: 運用ファイル除外フィルタ（自動更新される運用ファイルで/clearをブロックしない）
     # 改善: BLOCKせず自動commit → /clearを続行（忍者を起こさない）
     local _uncommitted
-    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain -uno 2>/dev/null \
-        | grep -v -E '^.. (dashboard\.md|logs/|queue/inbox/|queue/karo_snapshot\.txt|queue/insights\.yaml|queue/reports/|\.claude/)')
+    # WSL2 NTFS最適化: フルスキャン(1.7s)→パス限定(0.2s)。除外パターンgrepも不要に
+    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain -uno -- scripts/ instructions/ config/ context/ CLAUDE.md 2>/dev/null || true)
     if [ -n "$_uncommitted" ]; then
         local _file_list
         _file_list=$(echo "$_uncommitted" | sed 's/^...//' | tr '\n' ' ')

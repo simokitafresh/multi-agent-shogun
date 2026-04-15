@@ -1333,6 +1333,27 @@ if echo "$CMD_BLOCK" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登
     fi
 fi
 
+# --- Check 20: assumptionsフィールド検査（段階的導入 — WARN_COUNTに加算しない） ---
+# 起源: cmd_1905 — 暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ
+# 目的: AC数3以上のcmdにassumptionsがない場合WARNING。trust:unverifiedがある場合WARNING
+_ASSUMP_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
+_ASSUMP_AC_COUNT=$(( ${_ASSUMP_AC_COUNT:-0} + 0 ))
+if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
+    if ! echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
+        echo "WARNING: AC数${_ASSUMP_AC_COUNT}個のcmdにassumptionsフィールドがありません。前提を明示せよ(shogun-procedures.md §7参照)" >&2
+        echo '  例: assumptions:' >&2
+        echo '        - claim: "cache.pyのexpiry=86400は変更されていない"' >&2
+        echo '          source: "cache.py L42 code_reading"' >&2
+        echo '          trust: "verified"' >&2
+    else
+        # trust: unverified が含まれる場合にWARNING
+        if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
+            echo "WARNING: 未検証前提あり。現物確認してからcmd_save.shを再実行せよ" >&2
+            echo "  trust:unverified の前提を現物確認し trust:verified に変更すること" >&2
+        fi
+    fi
+fi
+
 # --- 結果出力 ---
 if [[ "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"

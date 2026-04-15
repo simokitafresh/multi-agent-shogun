@@ -246,6 +246,15 @@ draft review時に `bash scripts/ac_physical_verify.sh <cmd_id>` を実行。AC�
 ### Step 1: Challenge Assumptions（前提を疑え）
 draftが「当然こうだろう」と暗黙に前提としている事実を列挙し、各々の根拠を確認する。
 
+**assumptionsフィールドが存在するcmd**:
+- `trust:unverified` の前提を優先的に現物検証せよ（コード/本番DB/API応答で確認）
+- 全前提のsourceが一次情報（コード行番号/本番確認）であることを確認
+- unverifiedが残っている場合 → REQUEST_CHANGES(severity: normal)。「現物確認してから再保存せよ」と明示
+
+**assumptionsフィールドがないcmd（AC3個以上）**:
+- 暗黙前提の推測が必要（従来通りStep 1の全手順を適用）
+- 発見した前提をレビューコメントに明示し、cmd修正を促す
+
 実例: cmd_1171で名前ベースgrep→「新規消火0件」と結論したが、名前に含まない実質消火スクリプトが漏れていた。「カバレッジ%は？」で検出可能。
 
 ### Step 2: Recalculate Numbers（数値を再計算せよ）

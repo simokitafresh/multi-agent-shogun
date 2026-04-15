@@ -208,12 +208,8 @@ uncommitted_count=0
 uncommitted_files=""
 if command -v git &>/dev/null && git -C "$ROOT_DIR" rev-parse --git-dir &>/dev/null; then
   # Staged + unstaged modified + untracked (excluding queue/ logs/ etc.)
-  uncommitted_files=$(git -C "$ROOT_DIR" status --porcelain 2>/dev/null \
-    | grep -v '^?? queue/' \
-    | grep -v '^?? logs/' \
-    | grep -v '^?? projects/' \
-    | grep -v '^?? reports/' \
-    | grep -v '^?? outputs/' \
+  # WSL2 NTFS最適化: フルスキャン(1.7s)→パス限定(0.2s)。除外grepチェーンも不要に
+  uncommitted_files=$(git -C "$ROOT_DIR" status --porcelain -- scripts/ instructions/ config/ context/ CLAUDE.md 2>/dev/null \
     | head -20)
   uncommitted_count=$(echo "$uncommitted_files" | grep -c '[^ ]' || true)
 fi
