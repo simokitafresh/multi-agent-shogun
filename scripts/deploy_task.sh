@@ -305,25 +305,12 @@ resolve_cmd_to_task() {
 
     local task_id="${cmd_id}_${task_type}"
 
-    # task YAMLの中核フィールドを自動設定（連鎖失敗時は即停止）
-    yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id" \
-        || { log "FATAL: yaml_field_set failed for parent_cmd"; return 1; }
-    yaml_field_set "$task_file" "task" "task_id" "$task_id" \
-        || { log "FATAL: yaml_field_set failed for task_id"; return 1; }
-    yaml_field_set "$task_file" "task" "task_type" "$task_type" \
-        || { log "FATAL: yaml_field_set failed for task_type"; return 1; }
-    [ -n "$project" ] && { yaml_field_set "$task_file" "task" "project" "$project" \
-        || { log "FATAL: yaml_field_set failed for project"; return 1; }; }
-    yaml_field_set "$task_file" "task" "status" "assigned" \
-        || { log "FATAL: yaml_field_set failed for status"; return 1; }
-    # cmdソースからpurpose注入
-    [ -n "$purpose" ] && { yaml_field_set "$task_file" "task" "purpose" "$purpose" \
-        || { log "FATAL: yaml_field_set failed for purpose"; return 1; }; }
-    # _ac_task_id/worker_idクリア → inject_ac_versionでAC上書きトリガー
-    yaml_field_set "$task_file" "task" "_ac_task_id" "" \
-        || { log "FATAL: yaml_field_set failed for _ac_task_id"; return 1; }
-    yaml_field_set "$task_file" "task" "_ac_worker_id" "" \
-        || { log "FATAL: yaml_field_set failed for _ac_worker_id"; return 1; }
+    # task YAMLの中核フィールドを一括設定（R1: 7回flock→1回batch。CoDD refactor_sequence準拠）
+    local _batch_args=("parent_cmd=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "_ac_task_id=" "_ac_worker_id=")
+    [ -n "$project" ] && _batch_args+=("project=$project")
+    [ -n "$purpose" ] && _batch_args+=("purpose=$purpose")
+    yaml_field_set_batch "$task_file" "task" "${_batch_args[@]}" \
+        || { log "FATAL: yaml_field_set_batch failed for resolve_cmd_to_task"; return 1; }
 
     log "resolve_cmd: ${cmd_id} → ninja=${ninja_name}, task_id=${task_id}, project=${project:-none}, type=${task_type}, title=${title}"
     return 0
@@ -700,23 +687,22 @@ inject_ac_version() {
     local prev
     prev=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_version" "")
 
-    # cmd_1493+家老修正: 再配備/新規配備検出 — task_idが異なれば常にAC上書き
-    # 旧: _ac_task_idが空だとスキップ（新規配備でACが前cmdから残存するバグ）
-    # 新: curr_task_id != prev_ac_task_id で判定（空→新も含む）
-    local curr_task_id curr_worker_id
-    curr_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "")
+    # R2: field_get 6-7回→field_get_multi 1回(CoDD batch_read_flow準拠)
+    local curr_task_id curr_worker_id prev_ac_task_id prev_ac_worker_id _ac_task_id="" _ac_worker_id=""
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_id _ac_task_id worker_id _ac_worker_id)"
     # task_idが空なら_ac_task_idをfallback(家老が_ac_task_idを直接設定するケース)
-    # 旧: task_id空→_ac_task_idと常に不一致→AC再書込→_ac_task_id破壊(cmd_1751/1752事故の根源)
-    if [ -z "$curr_task_id" ]; then
-        curr_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
+    if [ -z "$task_id" ]; then
+        curr_task_id="$_ac_task_id"
+    else
+        curr_task_id="$task_id"
     fi
-    curr_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "worker_id" "")
-    if [ -z "$curr_worker_id" ]; then
-        curr_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_worker_id" "")
+    if [ -z "$worker_id" ]; then
+        curr_worker_id="$_ac_worker_id"
+    else
+        curr_worker_id="$worker_id"
     fi
-    local prev_ac_task_id prev_ac_worker_id
-    prev_ac_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "")
-    prev_ac_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_worker_id" "")
+    prev_ac_task_id="$_ac_task_id"
+    prev_ac_worker_id="$_ac_worker_id"
 
     if [ "$curr_task_id" != "$prev_ac_task_id" ] || [ "$curr_worker_id" != "${prev_ac_worker_id:-}" ]; then
         log "[AC_VERSION] deploy detected (task_id: ${prev_ac_task_id:-empty}→${curr_task_id}, worker: ${prev_ac_worker_id:-empty}→${curr_worker_id}). Overwriting ACs from cmd source."
@@ -728,20 +714,18 @@ inject_ac_version() {
         fi
     fi
 
-    yaml_field_set "$task_file" "task" "ac_version" "$ac_version" \
-        || { log "FATAL: yaml_field_set failed for ac_version"; return 1; }
+    # R2: yaml_field_set 3回→batch 1回(CoDD batch_write_flow準拠)
+    yaml_field_set_batch "$task_file" "task" \
+        "ac_version=$ac_version" \
+        "_ac_task_id=$curr_task_id" \
+        "_ac_worker_id=$curr_worker_id" \
+        || { log "FATAL: yaml_field_set_batch failed for inject_ac_version"; return 1; }
 
     if [ "$prev" = "$ac_version" ]; then
         log "[AC_VERSION] unchanged: $ac_version"
     else
         log "[AC_VERSION] set: $prev -> $ac_version"
     fi
-
-    # cmd_1493: 追跡フィールド更新（次回再配備検出に使用）
-    yaml_field_set "$task_file" "task" "_ac_task_id" "$curr_task_id" \
-        || { log "FATAL: yaml_field_set failed for _ac_task_id"; return 1; }
-    yaml_field_set "$task_file" "task" "_ac_worker_id" "$curr_worker_id" \
-        || { log "FATAL: yaml_field_set failed for _ac_worker_id"; return 1; }
 }
 
 # ─── verify_ac_consistency: task YAML vs cmdソースのAC件数・ID突合（cmd_1619） ───
