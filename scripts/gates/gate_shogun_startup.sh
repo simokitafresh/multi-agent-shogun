@@ -266,6 +266,7 @@ else
 fi
 
 # 9c: 軍師draft RC傾向 (直近20件)
+REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 REVIEW_LOG_ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
 rc_data=$(python3 - "$REVIEW_LOG" "$REVIEW_LOG_ARCHIVE_DIR" 2>/dev/null <<'END_RC_PY'
 import sys, os, glob, re
