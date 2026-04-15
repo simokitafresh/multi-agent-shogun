@@ -652,3 +652,4 @@
 | cmd_1933 | cmd_save.sh Check 10の作成cmd偽陽性修正。ファイル不在時に親ディレクトリが存在すれば作成対象としてINFO表示に降格し、親ディレクトリも不在ならBLOCK維持。cmd_1931/1932で2回連続BLOCKされた実害あり | infra | 04-15 | Check 10で親ディレクトリが存在する未作成パスをINF |
 | cmd_1931 | 将軍の追体験品質が構造的に低い根因修正。家老(lessons_karo.yaml 55件)と軍師(lessons_gunshi.yaml 26件)にはdeepdive前に通読する具体的失敗データがあるが、将軍にはない。教訓の格納形式が出力の深さを決める(軍師分析)。lessons_shogun.yamlを作成し起動手順に組み込む | infra | 04-16 | lessons_shogun.yaml 20件を新設し、将軍 |
 | cmd_1932 | 掲示板システムの引数順バグ修正+ライフサイクル管理追加。4エントリ中3件でcontent/posted_byが逆転。根因=引数順<posted_by> <content>がinbox_write.sh(<target> <content> ... <from>)と不一致でエージェントが間違える | infra | 04-16 | 掲示板の引数順バグを修正し、明示クローズ機能追加と既存3件の |
+| cmd_karo_ci_fix_acpaths | CI RED修正 — test_cmd_save_ac_paths.bats更新コミット | infra | 04-16 | AC path test期待値を更新し、追加で露出したbul |

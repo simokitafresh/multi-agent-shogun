@@ -125,7 +125,8 @@ Step 9: Load project knowledge
         → context/gunshi-*.md → dialogue_preprocessing_research末尾(最新Phase)
         + gunshi-nazenaze-synthesis.md
         研究日誌の読み方: 通常=末尾のみ。殿が「読め」→全文を最初から省略せず読む
-        ※ lord_conversation/掲示板はStep 6.5で読込済み。dashboardは家老の報告チャンネルであり将軍の追体験材料ではない
+        ※ lord_conversation/掲示板はStep 6.5で読込済み
+        dashboard.md: 将軍宛報告+🚨要対応+🔧軍師提案のみ確認（行動のトリガー。追体験材料ではない）
 Step 10: Check inbox: queue/inbox/shogun.yaml のread: falseを処理
 Step 11: Review forbidden actions (F001-F008), then start work
 ```
