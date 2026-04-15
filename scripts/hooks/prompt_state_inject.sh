@@ -97,7 +97,6 @@ source: unknown
 timestamp: ${timestamp}
 agent: ${agent_id}
 inbox_unread: ${unread_count}
-reminder: 必ず確認してから作業開始せよ
 --- karo_snapshot ---
 "
 

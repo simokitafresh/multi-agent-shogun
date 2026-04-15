@@ -670,3 +670,6 @@
 | cmd_1923 | cmd_save.sh Check 21: ACの数値絶対値WARN検出 | infra | 04-15 | cmd_save.shにCheck 21を追加し、AC de |
 | cmd_1924 | Androidアプリ知識のcontext登録 — 存在するものを探せない問題の根因修正 | infra | 04-15 | context/infrastructure.md に An |
 | cmd_karo_feedback_gap | fix — lesson feedback記録欠損の根因調査+修正 | infra | 04-15 | AC1: cmd_complete_gate.sh L403 |
+| cmd_1926 | cmd_1924取消 — 各論パッチrevert | infra | 04-15 | cmd_1924で追加されたAndroid知識をcontex |
+| cmd_1925 | 殿の全入力に確認リマインド注入 — 確認せずに回答する真因修正 | infra | 04-15 | 通常モードの additionalContext に `re |
+| cmd_1927 | cmd_1925取消 — 確認なし起票のrevert | infra | 04-15 | cmd_1925で加えられた確認リマインド注入を撤去し、追加 |
