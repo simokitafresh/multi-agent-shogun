@@ -158,6 +158,29 @@ else
     echo "  ALERT: $REQUIRED_READ2 が存在しない"
 fi
 
+# Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
+echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
+for _ddfile in "$REQUIRED_READ" "$REQUIRED_READ2"; do
+    [ -f "$_ddfile" ] || continue
+    echo "  $(basename "$_ddfile"):"
+    python3 -c "
+import sys
+lines = []
+with open(sys.argv[1]) as f:
+    for i, line in enumerate(f, 1):
+        if line.startswith('## Phase'):
+            lines.append((i, line.strip().replace('## ', '')))
+    total = i
+if lines:
+    print(f'    前文: Read(offset=1, limit={lines[0][0]-2})')
+for j, (start, title) in enumerate(lines):
+    end = lines[j+1][0]-1 if j+1 < len(lines) else total
+    limit = end - start + 1
+    print(f'    {title}: Read(offset={start}, limit={limit})')
+" "$_ddfile"
+done
+echo "  ★ 1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
+
 # --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---
 # 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。
 # 読んだだけでは不十分。各Phaseを今の自分に重ねて自問したかを検証する。

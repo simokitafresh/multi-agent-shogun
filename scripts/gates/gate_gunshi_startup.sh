@@ -25,10 +25,29 @@ else
     echo "  ALERT: $REQUIRED_READ が存在しない"
 fi
 echo ""
-echo "  ★★★ レビュー開始前にdeepdiveを読め ★★★"
-echo "  → memory/deepdive_why_chain_20260321.md"
-echo "  Phase 4「LLMに生存本能はない→自動化×強制」"
-echo "  Phase 5「なぜの目的=自動化ターゲット特定」"
+
+# Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
+echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
+for _ddfile in "$REQUIRED_READ"; do
+    [ -f "$_ddfile" ] || continue
+    echo "  $(basename "$_ddfile"):"
+    python3 -c "
+import sys
+lines = []
+with open(sys.argv[1]) as f:
+    for i, line in enumerate(f, 1):
+        if line.startswith('## Phase'):
+            lines.append((i, line.strip().replace('## ', '')))
+    total = i
+if lines:
+    print(f'    前文: Read(offset=1, limit={lines[0][0]-2})')
+for j, (start, title) in enumerate(lines):
+    end = lines[j+1][0]-1 if j+1 < len(lines) else total
+    limit = end - start + 1
+    print(f'    {title}: Read(offset={start}, limit={limit})')
+" "$_ddfile"
+done
+echo "  ★ 1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
 echo ""
 
 # --- Check 1.5: 追体験検証Q4 (前セッション出来事注入) ---
