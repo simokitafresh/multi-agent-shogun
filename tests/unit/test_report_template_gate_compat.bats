@@ -218,7 +218,9 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     [[ "$output" == *"verdict"* ]]
 }
 
-@test "lessons_useful dict form is rejected by gate" {
+@test "lessons_useful numbered dict is auto-fixed to list by autofix pre-step (GP-196)" {
+    # GP-196: gate_report_format.shのpre-step autofixがnumbered dict→list変換を適用する
+    # 旧: 変換なし→gate BLOCK。新: 変換あり→gate PASS
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
     python3 -c "
 import yaml
@@ -229,10 +231,19 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 "
     run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"FAIL"* ]]
-    [[ "$output" == *"lessons_useful"* ]]
-    [[ "$output" == *"dict"* ]]
+    [ "$status" -eq 0 ]
+    # autofix適用後、lessons_usefulがlistに変換されていること
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    d = yaml.safe_load(f)
+lu = d['lessons_useful']
+assert isinstance(lu, list), f'Expected list after autofix, got {type(lu)}'
+assert lu[0]['id'] == 'L074', f'Expected L074, got {lu[0][\"id\"]}'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
 }
 
 @test "lessons_useful entry missing id is rejected by gate" {

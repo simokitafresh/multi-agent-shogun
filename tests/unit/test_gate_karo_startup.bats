@@ -23,8 +23,9 @@ setup() {
 
     # --- Default fixtures: all checks pass ---
 
-    # Check 1: deepdive file exists
+    # Check 1: deepdive files exist (両ファイル必須: gate_karo_startup.sh REQUIRED_READ1+REQUIRED_READ2)
     echo "# deepdive content" > "$TEST_TMPDIR/memory/deepdive_why_chain_20260321.md"
+    echo "# deepdive content" > "$TEST_TMPDIR/memory/deepdive_karo_verification_20260405.md"
 
     # Check 2: fresh snapshot (generated just now)
     local now_time

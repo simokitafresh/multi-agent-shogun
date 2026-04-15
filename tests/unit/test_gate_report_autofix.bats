@@ -94,8 +94,8 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 3: lessons_useful dict → 消火撤去(GP-107)。gate_report_format.shがBLOCK ===
-@test "lessons_useful numbered dict is NOT converted (消火撤去: gate blocks)" {
+# === Test 3: lessons_useful numbered dict → GP-196で自動変換 ===
+@test "lessons_useful numbered dict is converted to list (GP-196)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -117,15 +117,18 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    # autofixは変換しない(消火撤去) → NO-FIX-NEEDED
-    [[ "$output" != *"lessons_useful dict→list"* ]]
-    # lessons_usefulはdictのまま(変換されていない)
+    # GP-196: numbered dict→list変換が実行される
+    [[ "$output" == *"lessons_useful"*"dict"*"list"* ]]
+    # lessons_usefulがlistに変換され、内容が保持されている
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
 lu = d['lessons_useful']
-assert isinstance(lu, dict), f'Expected dict (not converted), got {type(lu)}'
+assert isinstance(lu, list), f'Expected list, got {type(lu)}'
+assert len(lu) == 2, f'Expected 2 items, got {len(lu)}'
+assert lu[0]['id'] == 'L001', f'Expected L001, got {lu[0][\"id\"]}'
+assert lu[1]['id'] == 'L002', f'Expected L002, got {lu[1][\"id\"]}'
 print('OK')
 "
     [ "$status" -eq 0 ]

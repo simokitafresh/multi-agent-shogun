@@ -313,14 +313,26 @@ QG_TEMPLATE
                 while IFS= read -r _q11_target; do
                     [[ -z "$_q11_target" ]] && continue
                     _q11_base="${_q11_target##*/}"
-                    _Q11_MATCHES=$(
-                        {
-                            rg -l -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
-                            if [[ "$_q11_base" != "$_q11_target" ]]; then
-                                rg -l -F "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
-                            fi
-                        } | sort -u
-                    )
+                    # rg優先、未インストール環境はgrep -rl にフォールバック（bash -c subshell PATH互換）
+                    if command -v rg >/dev/null 2>&1; then
+                        _Q11_MATCHES=$(
+                            {
+                                rg -l -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
+                                if [[ "$_q11_base" != "$_q11_target" ]]; then
+                                    rg -l -F "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
+                                fi
+                            } | sort -u
+                        )
+                    else
+                        _Q11_MATCHES=$(
+                            {
+                                grep -rl -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
+                                if [[ "$_q11_base" != "$_q11_target" ]]; then
+                                    grep -rl -F "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
+                                fi
+                            } | sort -u
+                        )
+                    fi
                     [[ -z "${_Q11_MATCHES:-}" ]] && continue
                     if [[ "$_Q11_ANY_MATCH" == false ]]; then
                         echo "INFO: 関連する既存成果物を検出:" >&2
@@ -328,7 +340,7 @@ QG_TEMPLATE
                     fi
                     while IFS= read -r _q11_doc; do
                         [[ -z "$_q11_doc" ]] && continue
-                        _q11_rel="${_q11_doc#${_Q11_PROJECT_DIR}/}"
+                        _q11_rel="${_q11_doc#"${_Q11_PROJECT_DIR}"/}"
                         echo "  ${_q11_target} → ${_q11_rel}" >&2
                     done <<< "$_Q11_MATCHES"
                 done <<< "$_Q11_TARGETS"
