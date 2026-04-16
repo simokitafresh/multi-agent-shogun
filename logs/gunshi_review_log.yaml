@@ -1226,3 +1226,54 @@
     - "commit未実行。harness.py+codd_fullrecalc_cprofile.md+成果物がuncommitted"
   causal_chain: "cmd_1994配備→疾風がcProfile計測(1527s)+分析doc作成→commit前に報告→成果物未確定→GATE BLOCK見込み"
   timestamp: "2026-04-17T01:00:00"
+- cmd_id: cmd_1998
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。3関数の行番号全て現物一致(L929/L290/L114)。偵察で定型コード読解。1忍者で適切"
+  observations:
+    - "事実1: expand_portfolio_to_tickers L929にsignal_cache引数(L933)確認。cache miss時のDB SELECT経路がコードに存在"
+    - "事実2: calculate_trade_period_return L290にmonthly_returns_map引数(L301)確認。fallback計測用のprofiling accumulator(L44-45)も既存"
+    - "事実3: _recalculate_fof_history L114にcomponent_weights_batch(L370)確認。バッチ化の下地が既にある"
+  causal_chain: "cProfile計測(cmd_1994)→DB I/O 69%支配→軍師T1-1/T1-2特定→偵察でcache miss実測→impl cmdのROI精緻化(正の複利)"
+  timestamp: "2026-04-17T01:22:00"
+- cmd_id: cmd_karo_gp190_fix
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_karo_gp190_fix_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GP-190バグ修正確認。scout_exempt=true→_commit_bc=''の3行削除(commit 2fb539d)。bats 17/17 PASS"
+  observations:
+    - "事実1: 修正前L1354-1357で scout_exempt=true → _commit_bc='' でcommit checkが消えていた。これが3連続commit漏れの真因"
+    - "事実2: 修正後はscout_exemptがcommit checkに影響しない。impl taskは常にcommit check注入"
+    - "事実3: CI FAILはtest_bulletin_board.bats test 72の既存バグ。deploy_task.sh変更とは無関係"
+  causal_chain: "GP-190(scout_exempt→commit消去)→3連続commit漏れ(cmd_1994/1995/1996)→軍師真因分析→小太郎が3行削除→根治"
+  timestamp: "2026-04-17T01:25:00"
+- cmd_id: cmd_1999
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "前提崩壊: cmd_delegate.sh L63-79にgate先行チェックが既に実装済み(commit d543aeb 01:24)。cmd_1999は既達成"
+  observations:
+    - "事実1: cmd_delegate.sh L65 if bash cmd_save.sh → L71 exit_code=1 → BLOCK+exit 1。gate FAIL時に送信されない条件分岐が存在"
+    - "事実2: commit d543aeb(01:24)でFix cmd_delegate gate failure handlingとして実装済み"
+  suggested_changes: "cmd_1999は取り下げるか、才蔵のタスクを完了(検証のみ)に変更"
+  severity: normal
+  causal_chain: "殿指摘→なぜなぜ7回→cmd_1999起票→しかし修正は既にd543aebで入っている→既達成"
+  timestamp: "2026-04-17T01:28:00"
+- cmd_id: cmd_1998
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1998_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。偵察品質高(定量データ+impl_readiness)。signal_cache miss 0%でT1-1前提覆る。Phase4改善方針の再評価が必要"
+  observations:
+    - "事実1: signal_cache miss 0/26806(0%)。T1-1(signal_cache完全化-100s)の前提が覆った。expand_portfolio_to_tickersの384sはcache miss由来ではない"
+    - "事実2: fallback 436/26738(1.63%)は全件partial_final_month。monthly_returns row欠落は0。T1-2(fallbackゼロ化)は限定的効果"
+    - "事実3: component_weights N+1なし。既にバッチ化済み(79405 INSERT削減)。T2-2(バッチ化)は既達成"
+  causal_chain: "軍師T1-1/T1-2/T2-2を偵察で検証→3点とも前提が覆るまたは既達成→Phase4改善方針の全面再評価が必要→DB I/O 69%の真因は別にある"
+  timestamp: "2026-04-17T01:32:00"

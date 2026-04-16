@@ -99,8 +99,8 @@ model_deployment_rules:
 
 random_deployment_rules:
   - id: R000
-    positive_rule: "Codex忍者(GPTモデル)をidle忍者の中で最優先で配備せよ。Codex→Sonnet→Opusの順"
-    reason: "Opus/Sonnetのレート制限温存(殿裁定2026-04-12)。R001(round-robin)より上位ルール"
+    positive_rule: "Codex忍者(GPTモデル)をidle忍者の中で最優先で配備せよ。Codex→Sonnet→Opusの順。ただし排他ではない。GPT全員稼働中ならSonnetに配備。idle=最大の無駄(LK079)"
+    reason: "Opus/Sonnetのレート制限温存(殿裁定2026-04-12)。R001(round-robin)より上位ルール。殿指摘(2026-04-17): Sonnet利用は禁止ではない"
   - id: R001
     positive_rule: "同一モデル内ではround-robinで行え"
     reason: "同一モデル内では選択バイアス回避のためround-robin維持"

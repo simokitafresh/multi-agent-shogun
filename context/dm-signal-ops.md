@@ -28,6 +28,20 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 ローカルでやること: DB接続(psycopg2)でPFレコード作成/読取 + GS CSV 1列読取 + 数値比較。メモリ数MB。
 ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
 
+### Render CLI (v2.12.0)
+
+`/home/simokitafresh/.local/bin/render`。DM-Signal運用で利用可能。
+
+| コマンド | 用途 |
+|---------|------|
+| `render ssh srv-d4ja7q15pdvs739a4q1g` | Backend SSHセッション |
+| `render ssh -e srv-d4ja7q15pdvs739a4q1g` | エフェメラルインスタンス(本番影響なし) |
+| `render jobs create srv-d4ja7q15pdvs739a4q1g --start-command '...'` | one-offジョブ投入 |
+| `render psql` | PostgreSQL直接接続 |
+| `render logs` | ログ閲覧 |
+
+★ cProfile等の計測はRender上で実行すべき。ローカル→Singapore RTT 80msがDB I/O比率を歪める(2026-04-17実証)。
+
 ### パリティ全基準チェックリスト（殿定義集約 2026-04-11）
 
 本番DB操作cmdのACに以下を全て含めよ。1つでも欠落したらFAIL。
