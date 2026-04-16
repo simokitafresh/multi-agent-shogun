@@ -98,12 +98,12 @@ fi
 
 # --- No violations: clean exit ---
 if [ -z "$violations" ]; then
-    rm -f "/tmp/stop_hook_${AGENT_ID}_lint_fail_hash" 2>/dev/null
+    rm -f "${STOP_LINT_HASH_FILE:-/tmp/stop_hook_${AGENT_ID}_lint_fail_hash}" 2>/dev/null
     exit 0
 fi
 
 # --- Violations found: compare with previous failure (loop prevention) ---
-fail_hash_file="/tmp/stop_hook_${AGENT_ID}_lint_fail_hash"
+fail_hash_file="${STOP_LINT_HASH_FILE:-/tmp/stop_hook_${AGENT_ID}_lint_fail_hash}"
 current_hash="$(printf '%s' "$violations" | md5sum | cut -d' ' -f1)"
 
 if [ -f "$fail_hash_file" ]; then

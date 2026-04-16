@@ -75,7 +75,7 @@ EOF
         git commit -qm "init"
     )
 
-    export HASH_FILE="/tmp/stop_hook_hayate_lint_fail_hash"
+    export HASH_FILE="$TEST_ROOT/stop_hook_hayate_lint_fail_hash"
     rm -f "$HASH_FILE"
 }
 
@@ -85,7 +85,8 @@ teardown() {
 }
 
 run_hook() {
-    run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" PATH="$TEST_ROOT/mock_bin:$PATH" \
+    run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
+        STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
         bash -c 'cd "$TEST_ROOT" && bash .claude/hooks/stop-lint-gate.sh'
 }
 
@@ -115,7 +116,7 @@ run_hook() {
     printf '# change\n' >> "$TEST_ROOT/a.sh"
 
     run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
-        MOCK_SHELLCHECK_MODE="fail" PATH="$TEST_ROOT/mock_bin:$PATH" \
+        MOCK_SHELLCHECK_MODE="fail" STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
         bash -c 'cd "$TEST_ROOT" && bash .claude/hooks/stop-lint-gate.sh'
     [ "$status" -eq 0 ]
     [[ "$output" == *'"decision": "block"'* ]]
@@ -127,12 +128,12 @@ run_hook() {
     printf '# change\n' >> "$TEST_ROOT/a.sh"
 
     run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
-        MOCK_SHELLCHECK_MODE="fail" PATH="$TEST_ROOT/mock_bin:$PATH" \
+        MOCK_SHELLCHECK_MODE="fail" STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
         bash -c 'cd "$TEST_ROOT" && bash .claude/hooks/stop-lint-gate.sh'
     [ "$status" -eq 0 ]
 
     run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
-        MOCK_SHELLCHECK_MODE="fail" PATH="$TEST_ROOT/mock_bin:$PATH" \
+        MOCK_SHELLCHECK_MODE="fail" STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
         bash -c 'cd "$TEST_ROOT" && bash .claude/hooks/stop-lint-gate.sh'
     [ "$status" -eq 0 ]
     [[ "$output" == *'Same lint violations repeated'* ]]
