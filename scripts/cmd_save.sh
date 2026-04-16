@@ -1937,5 +1937,5 @@ if [[ "$WARN_COUNT" -eq 0 ]]; then
     fi
 else
     echo "保存確認NG: ${CMD_ID} (${WARN_COUNT}件のWARN)" >&2
-    exit 1
+    exit 2
 fi

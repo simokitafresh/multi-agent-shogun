@@ -69,11 +69,16 @@ else
 fi
 
 if [ "$cmd_save_exit" -eq 1 ]; then
-    echo "BLOCK: GATE未通過。修正してからcmd_save.sh→inbox_writeを手動実行せよ" >&2
+    echo "BLOCK: GATE未通過(BLOCK)。修正してからcmd_save.sh→cmd_delegate.shを再実行せよ" >&2
     exit 1
 fi
 
-if [ "$cmd_save_exit" -ne 0 ]; then
+# exit 2 = WARN(警告のみ。委任は続行)
+if [ "$cmd_save_exit" -eq 2 ]; then
+    echo "WARN: cmd_save.sh WARN ${CMD_ID} — 委任は続行" >&2
+fi
+
+if [ "$cmd_save_exit" -gt 2 ]; then
     echo "ERROR: cmd_save.sh failed for $CMD_ID (exit=$cmd_save_exit)" >&2
     exit "$cmd_save_exit"
 fi
