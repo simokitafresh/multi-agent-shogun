@@ -842,3 +842,18 @@
   gate_prediction: CLEAR
   causal_chain: "cmd_1951→deploy_task.sh特定→field_get多重→field_get_multi 1回→-86%=忍者配備ごとの正の複利"
   timestamp: "2026-04-16T19:35:00"
+- cmd_id: cmd_1981
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1981_impl
+  report_verdict: LGTM
+  gate_result: BLOCK(draft_lessons:1)
+  findings_summary: "4観点OK。dashboard_auto_section.sh mtimeキャッシュ+stat||true修正でCOLD -11%、WARM -29%。テスト2/2 PASS"
+  observations:
+    - "事実1: 6セクションにmtimeキャッシュ。HIT時は80ms分の計算をスキップ"
+    - "事実2: stat+pipefail罠(ファイル不在時exit)のpre-existing bugも同時修正。L481と同種"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  gate_prediction: WARN(draft_lessons)
+  causal_chain: "cmd_1954→再トライ→mtimeキャッシュ→WARM -29%=dashboard更新ごとの正の複利。stat||true修正はpipefail罠の横展開"
+  timestamp: "2026-04-16T19:44:00"

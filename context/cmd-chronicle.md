@@ -700,3 +700,4 @@
 | cmd_1980 | CoDD改善#28 — gate_recalculate_completeness.sh再トライ(2.74s→目標500ms) | infra | 04-16 | gate_recalculate_completeness. |
 | cmd_1984 | CoDD改善#32 — gate_karo_startup.sh再トライ(225ms→目標80ms, 起動ごと) | infra | 04-16 | gate_karo_startup.sh 3改善: pyth |
 | cmd_1983 | CoDD改善#31 — deploy_task.sh再トライ(88ms→目標30ms, 配備ごと) | infra | 04-16 | deploy_task.sh generate_report |
+| cmd_1981 | CoDD改善#29 — dashboard_auto_section.sh再トライ(340ms→目標100ms, ×21回) | infra | 04-16 | dashboard_auto_section.shの第2次高 |

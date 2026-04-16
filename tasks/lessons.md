@@ -3717,3 +3717,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。WSL2のサブシェル起動コスト(~5ms/個x6=30ms)が並列化の利益と相殺。L485(awk並列統合の遅化)と同構造。WSL2 /mnt/c上ではサブプロセス起動コストが支配的なため、並列化よりも呼び出し回数削減が有効。
+
+### L487: set -euo pipefailスクリプトでファイル不在時のstatパイプはmatch後に|| trueが必須
+- **日付**: 2026-04-16
+- **出典**: cmd_1981
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [universal]
+- stat複数ファイル | trはいずれかのファイルが不在でstatが非ゼロ→pipefailでパイプ全体非ゼロ→set -eで即exit。テスト環境では対象ファイルが存在しないため発現。修正: 変数代入行末に|| trueを追加。同パターンはL481(grep no-match)と同種の罠。

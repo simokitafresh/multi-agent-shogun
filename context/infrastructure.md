@@ -336,7 +336,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L486 -->
+<!-- last_synced_lesson: L487 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
@@ -550,6 +550,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L484: 高頻度スクリプトのgrep多重呼出はWSL2 I/Oボトルネックを生む。パターン結合で1回に削減せよ（cmd_1973）
 - L485: WSL2 /mnt/c でsingle awk一括化は逆効果: Windows Defender一括スキャンが支配（cmd_1976）
 - L486: WSL2 tmux capture-pane並列化の効果なし: サブシェル起動コストが相殺（cmd_1984）
+- L487: set -euo pipefailスクリプトでファイル不在時のstatパイプはmatch後に|| trueが必須（cmd_1981）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
