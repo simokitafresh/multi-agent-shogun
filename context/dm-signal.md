@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-13 cmd_1888 L2奥義56ブロック全完了+ALM19体確定+消火撤去+GP-183/184実装+FAIL率改善 -->
-<!-- last_synced_lesson: L631 -->
+<!-- last_synced_lesson: L632 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -172,3 +172,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L606-L617は振り分け済 → ops§18 WF(L606:回帰テスト決定論), ops索引(L607:当月パリティ/L610:削除スコープ/L614:車輪再発明/L616:成果物所在/L617:gate_artifact_map), research§35(L613:超越条件C非現実+SPA/L615:Cell Bパラメータ縮退)。L608≡L607, L609≡L606, L611≡L610, L612≡L613重複→削除）
 - （L618-L630は振り分け済 → infra教訓索引LLM(L618), research教訓索引奥義(L620), ops教訓索引ツール(L621/L624), infra git(L622), gs-speedup§4(L623/L625), gs-speedup§3(4)(L626), core§19.2(L627/L630:L573同根統合), ops教訓索引パリティ(L628/L629)。L619はL620重複→削除）
 - （L631は振り分け済 → core§19.2 BB仕様・バグ修正(L631:TRF insufficient_candidatesでcurrent_tickersクリア禁止)）
+- L632: snapshot比較器は保存していない字段を比較対象に含めるな（cmd_1985）
