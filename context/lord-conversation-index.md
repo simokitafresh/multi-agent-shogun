@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-17 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-17T03:28:33+09:00 -->
+<!-- generated_at: 2026-04-17T03:31:09+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-17T03:31:09+09:00 | terminal | response | 直近workaroundsにscout_exempt問題がない。殿が「毎回起きている」と言っているのは、workaroundsに記録されていない別の場所で発生しているか、家老が都度手動修正して記録していない可能性。 殿、workaroun…
+- 2026-04-17T03:30:50+09:00 | terminal | inbound | 見よ
 - 2026-04-17T03:28:32+09:00 | terminal | response | 殿、なぜなぜ7回の結果。 **真因は2つの経路が混在:** 1. **将軍のscout_exempt設定忘れ**(cmd_1859/1860): cmd起票時にscout_exemptをSTKに書いていない→scout_gateがSTKか…
 - 2026-04-17T03:27:46+09:00 | terminal | inbound | まずは確認
 - 2026-04-17T03:27:46+09:00 | terminal | inbound | なぜなぜ7回
@@ -12,10 +14,9 @@
 - 2026-04-17T03:22:57+09:00 | terminal | inbound | 今クリアされても強くてニューゲームができるようにせよ
 - 2026-04-17T03:22:31+09:00 | terminal | response | 殿、guard完成。6パターンテスト全PASS。bypass迂回路も封鎖済み。 [meta] stop_reason=tool_use
 - 2026-04-17T03:20:32+09:00 | terminal | inbound | テストパターンは十分か？
-- 2026-04-17T03:20:30+09:00 | terminal | response | **全5パターンPASS。** | # | パターン | 期待 | 結果 | inbox | |---|---------|------|------|-------| | 1 | cmd_delegate.sh正規フロー | PASS …
-- 2026-04-17T03:19:28+09:00 | terminal | inbound | もう一度テストせよ
 
 ## 未解決確認事項
+- 直近workaroundsにscout_exempt問題がない。殿が「毎回起きている」と言っているのは、workaroundsに記録されていない別の場所で発生しているか、家老が都度手動修正して記録していない可能性。 殿、workaroundsの直近30件にscout_exemp…
 - まずは確認
 - 全テストPASS: - cmd_delegate.sh正規フロー: ✅ PASS(bypass環境変数で通過) - 直接inbox_write存在しないcmd: ✅ BLOCK(inbox到達なし) - delegatedのcmd: ✅ PASS(前テスト確認済み) commi…
 - CoDDの対象を間違えていないか。殿は「本番のUIとfrontendも確認が必要」「依存と影響範囲を調べてないだろ」と言った。 **CoDDの`extract → scan → impact`はbashスクリプト向け。** DM-SignalはPythonバックエンド+Next…
@@ -23,7 +24,6 @@
 - 殿の指摘は正しい。なぜなぜ7回。 **1. なぜimpl cmdを慌てて書こうとしたか？** 偵察3本GATE CLEARで「準備完了」と判断した。 **2. なぜ「準備完了」と判断したか？** N+1真因が確定し、設計書v2.1で方向が確定したから。 **3. なぜそれで十分…
 - 設計書を先に更新。Coddの対象は？Coddの使い方を理解してるのか？確認せよ
 - 慌てるな。本番のUIとfrontendも確認が必要だ。依存と影響範囲を調べてないだろ？CoDDをやるべきだ。なぜなぜ7回
-- いいえ。Renderのauto-deployが完了していない可能性がある。deploy完了を確認せずに配備すると、また「ハーネス未搭載」で失敗する。確認してから配備する。 1と3を先に進める。 [meta] stop_reason=end_turn
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-17T02:50:01+09:00 | 殿、才蔵のCodex CLIはセッション終了済み（`codex resume`プロンプト表示、CTX:0%）。ただし**報告YAML(saizo_report_cmd_2001.yaml)は存在する**ので、Render cProfile計測は完了して報告を書いた後にCLIが終…
