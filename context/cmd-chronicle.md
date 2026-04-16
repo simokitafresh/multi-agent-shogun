@@ -676,3 +676,5 @@
 | cmd_1951 | 偵察 — インフラスクリプト全量プロファイリング+CoDD改善リスト作成 | infra | 04-16 | 全220本を計測・分類し docs/research/cod |
 | cmd_karo_ci_fix_cmd_save | CI修正 — cmd_save.shテスト期待値修正(BLOCKメッセージ形式変更対応) | infra | 04-16 | cmd_save の現行出力に合わせて 5 件の失敗テスト期 |
 | cmd_1957 | CoDD改善#5 — gate_artifact_map.sh高速化(2.2s→目標400ms) | infra | 04-16 | gate_artifact_map.sh高速化完了。967m |
+| cmd_1954 | CoDD改善#2 — dashboard_auto_section.sh高速化(2.8s→目標500ms) | infra | 04-16 | dashboard_auto_section.sh を高速化 |
+| cmd_1953 | CoDD改善#1 — shutsujin_departure.sh高速化(2.4s→目標500ms) | infra | 04-16 | scripts/shutsujin_departure.sh |

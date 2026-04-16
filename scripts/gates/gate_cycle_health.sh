@@ -46,22 +46,33 @@ fi
 PENDING_REPORTS=0
 NOW=$(date +%s)
 GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
-# Optimized: find -newer + bulk grep (per-file stat+grepループ排除, cmd_1516)
-_REF_FILE=$(mktemp)
-touch -d '24 hours ago' "$_REF_FILE"
-_COMPLETED=$(find queue/reports/ -name "*_report_*.yaml" -newer "$_REF_FILE" -exec grep -l "^status: completed" {} + 2>/dev/null || true)
-rm -f "$_REF_FILE"
+# Optimized: find -printf+awk mtime-filter + awk in-memory lookup (cmd_1955)
+# per-file grep-qサブプロセスループ廃止 → awk1回で完結
+_CUTOFF=$((NOW - 86400))
+_CLEAR_LIST=""
+[ -f "$GATE_LOG" ] && _CLEAR_LIST=$(grep "	CLEAR" "$GATE_LOG" 2>/dev/null || true)
+_COMPLETED=$(find queue/reports/ -name "*_report_*.yaml" -printf '%T@\t%p\n' 2>/dev/null \
+    | awk -v cutoff="$_CUTOFF" '$1 > cutoff {print $2}' \
+    | xargs grep -l "^status: completed" 2>/dev/null || true)
 if [ -n "$_COMPLETED" ]; then
-    _CLEAR_LIST=""
-    [ -f "$GATE_LOG" ] && _CLEAR_LIST=$(grep "	CLEAR" "$GATE_LOG" 2>/dev/null || true)
-    while IFS= read -r report; do
-        [ -z "$report" ] && continue
-        CMD_ID=$(basename "$report" | sed 's/.*_report_//;s/\.yaml//;s/_[a-z]*$//')
-        if [ -n "$_CLEAR_LIST" ] && echo "$_CLEAR_LIST" | grep -q "	${CMD_ID}	"; then
-            continue
-        fi
-        PENDING_REPORTS=$((PENDING_REPORTS + 1))
-    done <<< "$_COMPLETED"
+    PENDING_REPORTS=$(echo "$_COMPLETED" | awk -v clist="$_CLEAR_LIST" '
+    BEGIN {
+        n = split(clist, lines, "\n")
+        for(i=1; i<=n; i++) {
+            split(lines[i], f, "\t")
+            if(f[3] == "CLEAR") cleared[f[2]] = 1
+        }
+    }
+    NF > 0 {
+        fname = $0
+        sub(".*/", "", fname)
+        sub(".*_report_", "", fname)
+        sub("\\.yaml$", "", fname)
+        sub("_[a-z]*$", "", fname)
+        if(!cleared[fname]) count++
+    }
+    END { print count+0 }
+    ')
 fi
 if [ "$PENDING_REPORTS" -gt 3 ]; then
     ALERTS+=("GATE未処理報告: ${PENDING_REPORTS}件(24h以内)。成果が還流されていない")
@@ -71,17 +82,17 @@ fi
 
 # --- 4. PI原理率 check ---
 if [ -f projects/dm-signal.yaml ]; then
-    PI_RATIO=$(python3 -c "
-import yaml
-with open('projects/dm-signal.yaml') as f:
-    data = yaml.safe_load(f)
-pi = data.get('production_invariants',{}).get('entries',[])
-total = len(pi)
-if total == 0: print('0'); exit()
-kw = ['全て', '原理', '適用される', '信頼境界', '任意の']
-principles = [p for p in pi if any(k in p.get('implication','') for k in kw)]
-print(f'{100*len(principles)//total}')
-" 2>/dev/null || echo "?")
+    # Optimized: python3(80ms) → awk(6ms) cmd_1955
+    PI_RATIO=$(awk '
+    /^  entries:/{in_pi=1; next}
+    in_pi && /^    - /{found++}
+    in_pi && /implication:/ && /全て|原理|適用される|信頼境界|任意の/{principle++}
+    /^[^ ]/{if(in_pi) in_pi=0}
+    END{
+        if(found>0) printf "%d\n", 100*principle/found
+        else print "0"
+    }
+    ' projects/dm-signal.yaml 2>/dev/null || echo "?")
     if [ "$PI_RATIO" != "?" ] && [ "$PI_RATIO" -lt 20 ]; then
         ALERTS+=("PI原理率: ${PI_RATIO}%。個別防御に偏っている(原理=1対N防御)")
     else
