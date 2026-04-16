@@ -597,3 +597,17 @@
   gate_prediction: CLEAR
   causal_chain: "cmd_1951→post_recalculate_checks.sh特定→DB接続最適化+CRLF修正→-64%=fullrecalculate後チェックごとの正の複利"
   timestamp: "2026-04-16T17:07:00"
+- cmd_id: cmd_1971
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1971_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。lesson_harvest.sh rgベース一次スキャン+YAML fallbackで36.3→10.6s(-71%)。テストPASS"
+  observations:
+    - "事実1: archive全件safe_load(python yaml.safe_load)がボトルネック。rg -uuuで必要行のみ抽出し大幅削減"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1951→lesson_harvest.sh特定→python safe_load→rg一次スキャン→-71%=教訓収穫ごとの正の複利"
+  timestamp: "2026-04-16T17:11:00"

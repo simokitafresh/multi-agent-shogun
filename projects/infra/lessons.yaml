@@ -161,7 +161,7 @@ lessons:
   summary: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト
   tags:
   - universal
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 4
   last_referenced: '2026-04-16'
 - id: L457
@@ -1689,7 +1689,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 49
+  helpful_count: 50
   harmful_count: 10
   last_referenced: '2026-04-16'
 - id: L228
@@ -2059,7 +2059,7 @@ lessons:
   summary: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
   tags:
   - recon
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L177
