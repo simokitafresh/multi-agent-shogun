@@ -1289,3 +1289,14 @@
     - "事実2: test_bulletin_board.bats test 72のCI既存赤も修正(requires_confirmation true未指定)"
   causal_chain: "cmd_1995でgate修正中に忍者が旧版で作業→レースコンディション→gate先行送信化で根治+CI赤も同時修正"
   timestamp: "2026-04-17T01:54:00"
+- cmd_id: cmd_2001
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。軍師提案のRender上cProfile偵察。ハーネス再利用+render jobs create。パリティ確認含む"
+  observations:
+    - "事実1: BE serviceID=srv-d4ja7q15pdvs739a4q1g(dm-signal-ops.md現物確認済み)"
+    - "事実2: AC1にrender ssh -eでの環境互換性テスト含む。ハーネスが動かない場合のデバッグ手順あり"
+  causal_chain: "ローカルcProfile RTTノイズ→本番ボトルネック誤認→Render上計測で純Python時間取得→A面impl方向確定(正の複利)"
+  timestamp: "2026-04-17T01:56:00"
