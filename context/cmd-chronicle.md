@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-16 -->
+<!-- last_updated: 2026-04-17 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -45,28 +45,6 @@
 | cmd_980 | 偵察 — 教訓注入率低下の原因精査と改善提案 | | infra | 03-16 | — |
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
-| cmd_1014 | Max Run-upと直交する2メトリクスをL1レベルで特定し、シン四神CPCVスクリーニング用トリプルEを確定する | dm-signal | 03-17 | シン四神Phase1: L1ファミリー別メトリクス相関分析を |
-| cmd_1016 | trade-ruleパリティ修正前に生成された汚染GS結果データを特定し完全削除する | dm-signal | 03-17 | — |
-| cmd_1015 | run_077正規計算でL1フルGS月次リターンを生成し、Max Run-upと直交する2メトリクスをL1レベルで特定する | dm-signal | 03-17 | — |
-| cmd_1017 | analysis_runs/docs/に定義された既存GSパイプライン(5 Phase, 56,556候補/ファミリー)がシン四神のL1 CPCVスクリーニング基盤として使えるか、精査し所見を報告する | dm-signal | 03-17 | 指定対象 `scripts/analysis/grid_search/cpcv_full_validator.py` は現working treeに存在しない。 |
-| cmd_1018 | シン四神設計書(outputs/analysis/shin_shijin_design.md §3)に定義された191,796変種のL1パラメータ空間をGS実行し、全変種の月次リターン+8メトリクスを算出する。GSエンジンは本番PipelineEngineと計算完全一致であること | dm-signal | 03-17 | — |
-| cmd_1019 | cmd_1018出力の191,796変種×8メトリクスを3手法(全期間/ローリング/DD条件付き)で相関分析し、トリプルE候補を殿に推薦する | dm-signal | 03-17 | — |
-| cmd_1020 | Phase 2(トリプルE確定)と並行してCPCV+PBO完璧版エンジンを構築する。メトリクス名はパラメータ化し、Phase 2完了後に即実行可能な状態にする | dm-signal | 03-17 | — |
-| cmd_1021 | シン四神パイプラインで使用する全スクリプト（GS/メトリクス/CPCV/忍法/四つ身）の所在・状態・依存関係を棚卸しし、再利用カタログとして恒久記録する | dm-signal | 03-17 | — |
-| cmd_1022 | 分析+設計更新 — シン四神トリプルE: ファミリー独立化+C3符号修正+設計書反映 | dm-signal | 03-17 | FAIL。C3の正方向jump限定ロジック自体は scrip |
-| cmd_1023 | 実装 — シン四神Phase3: CPCV+PBOスクリーニング（ファミリー独立×3メトリクス独立） | dm-signal | 03-17 | — |
-| cmd_1024 | シン四神 Phase 4 — 脱相関K体選出 + 16ユニット構築 | dm-signal | 03-17 | — |
-| cmd_1025 | Phase 4完了後の殿裁定（ファミリー別K選択+32体構成）を設計書に正確に記録し、Phase 5以降の前提を確定させる | dm-signal | 03-17 | — |
-| cmd_1026 | シン忍法GS(Phase 5)の前提として、四つ目GSスクリプトを作成して6忍法体制を完成させ、全スクリプトの命名を統一し、カタログドキュメントに記録する | dm-signal | 03-17 | 四つ目(yotsume) GSスクリプト新規作成 + 6忍法 |
-| cmd_1027 | 32体ユニバースでの7忍法GS実行時間を実測し、チャンク分割並列実行の設計パラメータを確定する | dm-signal | 03-17 | — |
-| cmd_1028 | シン忍法知見の教訓登録+設計書同期確認 | dm-signal | 03-17 | cmd_1028 impl成果物の全検証PASS。L357- |
-| cmd_1029 | cmd_1027ベンチマークは本番高速化パスを使わず計測していた。本番と同じ実行方式で正確なms/patを取得し、全量見積もりを再算出する | dm-signal | 03-17 | — |
-| cmd_1030 | cmd_1029でgrouped実行23.19h(直列)まで短縮済み。さらに10倍（直列2-3h、8並列20-30min）を目指し、全高速化手段を調査する | dm-signal | 03-17 | — |
-| cmd_1031 | cmd_1030偵察結果の高速化#1(Grid dedup)+#2(PPE全忍法)+#5(worker 4→6)を実装。23h→2.8hを目指す。本番パリティ完全一致が絶対条件。 | dm-signal | 03-17 | — |
-| cmd_1032 | cmd_1031のGrid dedupを差し戻す。本番は日次解像度でシグナル計算するため10D/15D/20D/1Mは全て異なる値を生む。月次GS内のbefore/after比較は本番パリティではない。PPE導入部分は残す。 | dm-signal | 03-17 | — |
-| cmd_1033 | kawarimiのPPE効率が1.09x（他忍法2.5-3.75x）である原因を特定し、改善可能か判定する | dm-signal | 03-17 | — |
-| cmd_1034 | kasoku GS(12.6Mパターン, PPE6で6.6h)のさらなる高速化余地を6観点から調査し、次の実装cmdの設計根拠を確立する | dm-signal | 03-17 | WAIVED — sasuke stall後、hayate(疾風)がangle1を完了 |
-| cmd_1035 | Phase 5(シン忍法GS 19.2Mパターン)実行前に、cmd_1034実証済み高速化をkasokuに組込み、他忍法にも横展開し、全7忍法スクリプトの本番パリティを再検証する | dm-signal | 03-17 | yotsume+bunshinベンチマーク計測完了。 yot |
 | cmd_1037 | cmd_1035で各忍法に適用した高速化手法を横断分析し、忍法間の知見転用でさらなる高速化余地を定量的に特定する | dm-signal | 03-18 | — |
 | cmd_1036 | 全忍法のGSベンチマークを1本の共通スクリプトで統一し、計測方法のブレ・重複実装・ミスを排除する | dm-signal | 03-18 | — |
 | cmd_1039 | ninja_monitorの/clear判定を三段階化し、作業中(acknowledged/in_progress)の忍者を/clearしない | infra | 03-18 | AC1(5観点レビューPASS)+AC2(3テスト全PASS)完了。commit済み(3961379)。pushが既存テスト失敗でブロック。 |
@@ -701,3 +679,6 @@
 | cmd_1984 | CoDD改善#32 — gate_karo_startup.sh再トライ(225ms→目標80ms, 起動ごと) | infra | 04-16 | gate_karo_startup.sh 3改善: pyth |
 | cmd_1983 | CoDD改善#31 — deploy_task.sh再トライ(88ms→目標30ms, 配備ごと) | infra | 04-16 | deploy_task.sh generate_report |
 | cmd_1981 | CoDD改善#29 — dashboard_auto_section.sh再トライ(340ms→目標100ms, ×21回) | infra | 04-16 | dashboard_auto_section.shの第2次高 |
+| cmd_karo_ci_fix_1987 | CI RED修正 — test_stop_lint_gate.bats test 941 HASH_FILE未生成 | infra | 04-17 | bats --jobs 8並列実行でHASH_FILEが/t |
+| cmd_karo_context_freshness_1993 | context鮮度更新 — dm-signal-research.md+infrastructure.md | infra | 04-17 | context鮮度更新2件を反映し、対象2ファイルのみをコミ |
+| cmd_karo_1995_fix | cmd_1995補足 — compare_snapshots.py holding_signal空振り修正+列名統一 | dm-signal | 04-17 | compare_snapshots.pyのholding_s |

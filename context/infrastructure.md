@@ -136,6 +136,18 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 **codex CLI**: デフォルト272K。1Mには`~/.codex/config.toml`に`model_context_window=1000000`+`model_auto_compact_token_limit=900000`必要。デフォルトモデル=gpt-5.4(旧gpt-5は廃止名)。effort=config.tomlの`model_reasoning_effort=high`。
 → `lib/cli_adapter.sh` L88 | 詳細: `docs/research/gunshi-cli-model-context.md`（respawn手順/セレクタの罠/effort優先順位/codex config設定方法）
 
+## Claude Code バージョン固定と復帰
+
+現在v2.1.87に固定。`config/cli_profiles.yaml`の`launch_cmd`が正本。
+
+| 操作 | launch_cmd | 備考 |
+|------|-----------|------|
+| **v2.1.87固定** | `/home/simokitafresh/bin/claude --dangerously-skip-permissions` | 現在の状態 |
+| **auto-update復帰** | `/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions` | updater管理symlink |
+
+切替手順: launch_cmd変更 → `bash scripts/switch_cli_mode.sh claude --scope shogun,karo,gunshi,kagemaru,hanzo,kotaro,tobisaru` でrespawn。backup3本(`~/bin/claude`, `claude.pinned`, `claude-2.1.87-stable`)で復元可能。
+→ `docs/research/claude-code-version-runbook.md`（全手順+緊急ロールバック+復元方法）
+
 ## 忍者個別弱点自動注入（cmd_1307）
 
 deploy_task.shにinject_ninja_weak_points関数追加。karo_workarounds.yamlから忍者名でフィルタし、workaround:trueのcategory別件数をtask YAMLのninja_weak_pointsセクションに自動注入。0件忍者には注入しない。
