@@ -35,7 +35,7 @@ lessons:
     file
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L480
@@ -1700,7 +1700,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 54
+  helpful_count: 55
   harmful_count: 11
   last_referenced: '2026-04-16'
 - id: L228
@@ -1742,9 +1742,9 @@ lessons:
   - process
   - gate
   - inbox
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-15'
+  last_referenced: '2026-04-16'
 - id: L222
   title: 'deploy_task.sh既定値補完: empty sentinelテスト必須'
   summary: IF deploy_task.shが未設定/空文字/空リストを既定値へ補完する仕様を持つ THEN テストはmissing/Noneだけでなく空文字と空リストの
@@ -2823,7 +2823,7 @@ lessons:
   - yaml-key-mismatch
   - silent-fail
   - deploy
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-14'
 - id: L069

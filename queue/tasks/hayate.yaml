@@ -1,22 +1,22 @@
 task:
-  _ac_task_id: cmd_1971_impl
+  _ac_task_id: cmd_1977_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 92cf4027
+  ac_version: c6de9d57
   acceptance_criteria:
   - description: ボトルネック分析+最適化候補列挙。候補2つ以上→docs/research/にspec記録
     id: AC1
-  - description: 実装。機能変更なし
+  - description: 実装。全既存チェック(Check 1-22含むpreflight)の動作を維持。機能変更なし
     id: AC2
   - description: after計測。before比で改善を数値で示す
     id: AC3
-  - description: 既存テスト全PASS。codd_refactor_registry.mdに結果追記
+  - description: 既存テスト全PASS(test_cmd_save系3ファイル+unit全体)。codd_refactor_registry.mdに結果追記
     id: AC4
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L458: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト\n\
-    \  - L178: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から\
-    \ code.claude.\n────────────────────────────────────────"
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L481: set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit\
+    \ 1でスクリプト全体が異常終了する。grep pattern file\n  - L223: IF gate/スクリプトのエラー出力を設計する THEN\
+    \ 「次にやるべきこと」を含むAI行動指示形式にせよ。チェックリストは外部md分離(Read失敗→STO\n────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -35,14 +35,21 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_1971
+  parent_cmd: cmd_1977
   project: infra
-  report_filename: hayate_report_cmd_1971.yaml
-  report_path: queue/reports/hayate_report_cmd_1971.yaml
+  report_filename: hayate_report_cmd_1977.yaml
+  report_path: queue/reports/hayate_report_cmd_1977.yaml
   status: done
   stop_for: []
-  task_id: cmd_1971_impl
+  task_id: cmd_1977_impl
   task_type: impl
+  previous_failures:
+    attempt: 3
+    last_block_reason: 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
+    tried_approaches:
+    - 'YAML parse error: while parsing a block mapping'
+    - 'YAML parse error: mapping values are not allowed here'
+    - 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -56,9 +63,9 @@ task:
       count: 5
     - pattern: 'verdict_invalid'
       count: 2
-    - pattern: 'no_lesson_reason'
-      count: 1
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入'
+    - pattern: 'yaml_parse_error'
+      count: 2
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ'
     gate_blocks:
     - reason: 'report_format'
       count: 14
@@ -79,6 +86,12 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
+  - id: 'L485'
+    summary: '''gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因:'
+    detail: '''gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因:'
+  - id: 'L484'
+    summary: 'model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。'
+    detail: 'model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。'
   - id: 'L483'
     summary: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に'
     detail: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に'
@@ -103,17 +116,4 @@ task:
   - id: 'L476'
     summary: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
     detail: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
-  - id: 'L475'
-    summary: 'dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用。テスト環境と本番環境でファイル数が一致すると誤ったキャッシュをHITし、context_freshness_check.shが誤データを参照。_proj_hash(PROJECT_DIRのcksum)をサフィッ'
-    detail: 'dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用。テスト環境と本番環境でファイル数が一致すると誤ったキャッシュをHITし、context_freshness_check.shが誤データを参照。_proj_hash(PROJECT_DIRのcksum)をサフィッ'
-  - id: 'L474'
-    summary: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、field_get.shではac_assignedを取得できない。awkで両形式を解析するパーサが必要。'
-    detail: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、field_get.shではac_assignedを取得できない。awkで両形式を解析するパーサが必要。'
-  deployed_at: "2026-04-16T16:46:42"
-  session_state:
-    attempt: 3
-    last_block_reason: 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
-    tried_approaches:
-    - 'YAML parse error: while parsing a block mapping'
-    - 'YAML parse error: mapping values are not allowed here'
-    - 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
+  deployed_at: "2026-04-16T18:27:14"

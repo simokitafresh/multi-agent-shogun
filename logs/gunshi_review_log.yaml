@@ -686,3 +686,28 @@
   gate_prediction: CLEAR
   causal_chain: "cmd_1951→pre_compact_save.sh特定→jq+tmux subprocess削減→-30%=compactionごとの正の複利"
   timestamp: "2026-04-16T17:36:00"
+- cmd_id: cmd_1977
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_save.sh 4.0s→目標500ms。assumptions全verified。競合制約(改善中cmd起票停止)適切。AC2にCheck 1-22維持明記。テスト3ファイル"
+  observations:
+    - "事実1: cmd_save.shは将軍cmd起票ごと発火(4016ms timeout)。改善効果=全cmd起票の正の複利"
+    - "事実2: 競合制約が明記されており、cmd_save.sh改修中のデータ破損リスクを構造的に防止"
+  causal_chain: "cmd_1951→cmd_save.sh 4016ms特定→高速化→全cmd起票で正の複利。競合制約で改修中の破損防止"
+  timestamp: "2026-04-16T18:30:00"
+- cmd_id: cmd_1977
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1977_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cmd_save.sh q11統合+content_dup軽量parser+キャッシュでwarm 1.83→1.06s(-42%)。テスト112/112 PASS SKIP 0"
+  observations:
+    - "事実1: check_content_duplicate 0.93→0.02s(warm)が最大改善。/tmpキャッシュでarchive走査を回避"
+    - "事実2: L229(全テスト回帰確認)+L481(grep fallback || true)がuseful:true。教訓還流2件成功"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1951→cmd_save.sh 4016ms特定→content_dupキャッシュ+q11統合→-42%=全cmd起票の正の複利"
+  timestamp: "2026-04-16T18:40:00"
