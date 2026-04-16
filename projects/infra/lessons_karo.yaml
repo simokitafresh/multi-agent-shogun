@@ -380,3 +380,8 @@ lessons:
   detail: 'verdict_override 3件中2件がビルドAC関連(cmd_1944 AC5, 過去のビルド競合)。根因: 全cmdにビルドACを入れる→並列配備時に競合→WAIVE→override→蓄積。PD-012自動起票済み。構造対策: (1)並列配備時はビルドACを最終cmdのみに含める (2)ビルド確認は統合テストとして別cmdで実施 (3)deploy_task.shで並列検知時にビルドAC自動除外'
   source_cmd: 'cmd_1944'
   created_at: '2026-04-16'
+- id: 'LK069'
+  title: '研究cmd報告レビューで成果物現物確認を怠った — report verdictだけでGATE CLEAR'
+  detail: 'cmd_1948で疾風がcmd_1947スクリプトをフィルタ変更なしで再実行→①データ未生成→report verdict PASSだが成果物は⑤データ。家老はreport verdictのみで判断しGATE CLEAR→軍師FAILで発覚。研究cmdはoutputsにファイル生成するためcommit不要→gate_report_formatのcommit checkが効かない→成果物の実在+内容確認が唯一の防御層。レビュー時にls cmd_XXXX_*でprefix一致+head -1でデータ内容を確認すべきだった。LK065(現物確認)の再違反'
+  source_cmd: 'cmd_1948'
+  created_at: '2026-04-16'

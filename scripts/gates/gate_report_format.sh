@@ -97,6 +97,18 @@ elif isinstance(fm, bool):
 elif isinstance(fm, list) and len(fm) == 0 and data.get('status') == 'completed':
     hints.append('GP-127 WARN: files_modified: [] (空リスト) — 変更ファイルを記入せよ。偵察のみの場合は文字列で \"偵察のみ\" と記入')
 
+# --- GP-202: files_modified paths should contain parent_cmd prefix (LK069/cmd_1948事故) ---
+_pcmd = str(data.get('parent_cmd') or '')
+if _pcmd and isinstance(fm, list) and len(fm) > 0:
+    _fm_paths = []
+    for _fi in fm:
+        if isinstance(_fi, dict):
+            _fm_paths.append(str(_fi.get('path', '')))
+        elif isinstance(_fi, str):
+            _fm_paths.append(_fi)
+    if _fm_paths and not any(_pcmd in os.path.basename(p) for p in _fm_paths if p):
+        hints.append(f'GP-202 WARN: files_modified内に{_pcmd}を含むファイルが0件。別cmdの成果物を上書きしていないか確認せよ')
+
 # --- lesson_candidate must be dict with 'found' (null = FAIL) ---
 lc = data.get('lesson_candidate')
 if lc is None and 'lesson_candidate' in data:
