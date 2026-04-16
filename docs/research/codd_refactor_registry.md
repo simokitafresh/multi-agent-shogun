@@ -11,6 +11,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-15 | 軍師 | `scripts/cmd_complete_gate.sh` テスト統合 | Phase 5完了(統合のみ) | 6ファイル→3ファイル, 41テスト維持, 8.3s→8.7s(速度横ばい=保守性改善) | テスト統合spec: `docs/research/gunshi_test_consolidation_spec.md` |
 | 2026-04-16 | hayate | `scripts/shutsujin_departure.sh` | Phase 6完了 | `1.84-3.25s → 0.15-0.20s` (`layout reset fast path`) | after: `docs/research/shutsujin_departure_after_20260416.md` |
 | 2026-04-16 | 忍者kotaro | `scripts/gates/gate_artifact_map.sh` | 高速化実装完了 | `967ms → 99ms` (`-90%`, `9.8x`) | ループ内echo\|awk×3(168サブシェル)→awk1パス+pure bash展開 |
+| 2026-04-16 | 忍者hanzo | `scripts/report_merge.sh` | 高速化実装完了 | `1947ms → ~76ms`（目標300ms達成）、awk直接比較: `~470ms → ~28ms` (`-94%`, `17x`) | 1ファイルあたり4-5回 field_get(subshell)→全ファイル単一awkパスで置換 |
 
 ## 運用
 
