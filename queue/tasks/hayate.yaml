@@ -1,53 +1,49 @@
 task:
-  _ac_task_id: cmd_1979_impl
+  _ac_task_id: cmd_1985_recon
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 545a9766
-  acceptance_criteria:
-  - description: 前回改善内容確認+残存ボトルネック特定。候補2つ以上→spec記録
-    id: AC1
-  - description: 実装。機能変更なし
-    id: AC2
-  - description: after計測。before(50ms)比で改善を数値で示す
-    id: AC3
-  - description: 既存テスト全PASS。codd_refactor_registry.mdに結果追記
-    id: AC4
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L481: set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit\
-    \ 1でスクリプト全体が異常終了する。grep pattern file\n  - L001: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タスクYAML・inbox・報告YAML等を書く前に必ず対象ファイルをRea\n\
-    ────────────────────────────────────────"
+  ac_version: d41d8cd9
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
+    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  - AC4
-  parent_cmd: cmd_1979
-  project: infra
-  report_filename: hayate_report_cmd_1979.yaml
-  report_path: queue/reports/hayate_report_cmd_1979.yaml
+  parallel_ok: []
+  parent_cmd: cmd_1985
+  project: dm-signal
+  related_lessons: []
+  report_filename: hayate_report_cmd_1985.yaml
+  report_path: queue/reports/hayate_report_cmd_1985.yaml
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
+    notes:
+    - 他の忍者の報告を参照するな（並行偵察の独立性）
+    required_fields:
+    - findings
+    - verdict
+    - confidence
+    - blind_spots
   status: done
   stop_for: []
-  task_id: cmd_1979_impl
-  task_type: impl
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
-    tried_approaches:
-    - 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
+  task_id: cmd_1985_recon
+  task_type: recon
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -84,34 +80,34 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
-  - id: 'L485'
-    summary: '''gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因:'
-    detail: '''gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因:'
-  - id: 'L484'
-    summary: 'model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。'
-    detail: 'model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。'
-  - id: 'L483'
-    summary: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に'
-    detail: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に'
-  - id: 'L482'
-    summary: 'python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3'
-    detail: 'python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3'
-  - id: 'L481'
-    summary: 'set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern'
-    detail: 'set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern'
-  - id: 'L480'
-    summary: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加することで解決。テスト環境(空のgate_metrics.log)が本番では現れない条件を先に検出した。'
-    detail: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加することで解決。テスト環境(空のgate_metrics.log)が本番では現れない条件を先に検出した。'
-  - id: 'L479'
-    summary: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入効果(before/after)の計測を全GP実装時に義務化すべき。IF'
-    detail: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入効果(before/after)の計測を全GP実装時に義務化すべき。IF'
-  - id: 'L478'
-    summary: '''QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jobs'
-    detail: '''QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jobs'
-  - id: 'L477'
-    summary: '''bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL。CI環境(GitHub'
-    detail: '''bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL。CI環境(GitHub'
-  - id: 'L476'
-    summary: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
-    detail: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
-  deployed_at: "2026-04-16T18:56:51"
+  - id: 'L626'
+    summary: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
+    detail: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
+  - id: 'L625'
+    summary: 'GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること。cmd_1877で旧ファイル混在が発生した。'
+    detail: 'GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること。cmd_1877で旧ファイル混在が発生した。'
+  - id: 'L624'
+    summary: 'GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォルト依存を排除すること。cmd_1877で不統一が発生した。'
+    detail: 'GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォルト依存を排除すること。cmd_1877で不統一が発生した。'
+  - id: 'L623'
+    summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuniverse_idで判定すれば旧universe出力を正しく無効化できる。cmd_1877でbunshin基準判定により13本が不要再実行された。'
+    detail: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuniverse_idで判定すれば旧universe出力を正しく無効化できる。cmd_1877でbunshin基準判定により13本が不要再実行された。'
+  - id: 'L622'
+    summary: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
+    detail: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
+  - id: 'L621'
+    summary: 'cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`load_cached_series()`'
+    detail: 'cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`load_cached_series()`'
+  - id: 'L620'
+    summary: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
+    detail: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
+  - id: 'L619'
+    summary: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
+    detail: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
+  - id: 'L618'
+    summary: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
+    detail: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
+  - id: 'L617'
+    summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+    detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
+  deployed_at: "2026-04-16T19:53:38"

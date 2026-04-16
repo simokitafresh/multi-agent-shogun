@@ -73,6 +73,8 @@ DM-Signalは既存コードの改善 = **ブラウンフィールド**系統を�
 ### Phase 1: CoDDのPython適用検証(1本)
 
 ```
+Step 0: codd.yaml作成(DM-Signal側に配置。ai_command: generate=Opus, implement=Codex)
+        → CoDDがプロジェクト設定を認識するための前提条件(軍師指摘2026-04-16)
 Step 1: codd extract <対象.py>
         → 既存コードから構造・依存を抽出。Pythonで動くか確認
 Step 2: codd require "速度改善: ボトルネックを特定し高速化する"
@@ -133,7 +135,23 @@ Step 9: codd_refactor_registry.mdに結果追記
 
 ```
 Phase 3のStep 1-9に加えて:
-Step 10: parity_check.sh実行 — 本番パリティ確認PASS
+Step 10: コード変更パリティ確認 — 現在の本番コードの計算結果と修正後コードの計算結果が一致すること
+          一致の定義(殿裁定2026-04-16):
+          (a) 全期間の保有ポジションの完全一致(signalsテーブル)
+          (b) 全期間のmonthly returnの完全一致(monthly_returnsテーブル)
+
+          ■ MTD/初期月問題(2026-04-16現物確認で発覚):
+          snapshot_tables.pyはmonthly_returns/signalsを丸ごとダンプ。
+          MTD(当月進行中)の行は日次で変動するため、before/after間で完全一致が構造的に不可能。
+          対策: compare時にMTD月(当月)を除外して比較する。
+          手順:
+            (i) before snapshot取得: python3 scripts/snapshot_tables.py --label before --skip-recalc
+            (ii) コード修正+deploy
+            (iii) after snapshot取得: python3 scripts/snapshot_tables.py --label after
+            (iv) compare時にMTD行を除外: python3 scripts/compare_recalc_results.py snapshots/before snapshots/after
+                 → compare_recalc_results.pyにMTD除外オプション追加が必要(未実装。Phase 4前に実装)
+          初期月: PF運用開始月も不完全データの可能性。compare時に初期月フラグがある場合は除外検討
+          浮動小数点: tolerance=1e-10(compare_recalc_results.py既定値)
 Step 10.5: dry run(計算のみ・書込みなし)で出力検証(軍師推奨。dry runフラグの実装有無は要確認)
 Step 11: 本番deploy(Render)
 Step 12: fullrecalculate実行

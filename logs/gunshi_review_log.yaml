@@ -857,3 +857,51 @@
   gate_prediction: WARN(draft_lessons)
   causal_chain: "cmd_1954→再トライ→mtimeキャッシュ→WARM -29%=dashboard更新ごとの正の複利。stat||true修正はpipefail罠の横展開"
   timestamp: "2026-04-16T19:44:00"
+- cmd_id: cmd_1985
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。DM-Signalパリティ検証偵察。assumptions全verified。2名並列→成果物1ファイルの衝突注意を指摘"
+  observations:
+    - "事実1: dry runフラグ未検出(grep確認済み)。Phase4設計書にdry run非対応を明記する必要あり"
+    - "事実2: 2名並列配備で成果物docs/research/1ファイル。後着マージが必要"
+  causal_chain: "CoDD設計書§5穴→パリティ検証現物調査→Phase4安全性向上=本番改善時の正の複利"
+  timestamp: "2026-04-16T19:55:00"
+- cmd_id: codd_dmsignal_strategy_final
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "最終版4観点レビュー。APPROVE+1点RC。codd.yamlがDM-Signalリポジトリに未存在→Phase1前にStep 0(codd.yaml作成)追加推奨"
+  observations:
+    - "事実1: ls /mnt/c/Python_app/DM-signal/codd.yaml → 存在しない。Phase1 Step1(codd extract)の前提条件が未充足"
+    - "事実2: 前回指摘2点(codd review Step 5.5 + dry run Step 10.5)が反映済み"
+    - "事実3: 殿裁定のパリティ定義(全期間ポジション+monthly return完全一致)がStep 10に明記済み"
+  causal_chain: "codd.yaml不在→codd extract失敗→Phase1頓挫。Step 0でcodd.yaml作成→Phase1着手可能に"
+  timestamp: "2026-04-16T19:58:00"
+- cmd_id: cmd_1985
+  review_type: report
+  report_ninja: hayate+saizo
+  report_task_id: cmd_1985_recon
+  report_verdict: LGTM
+  gate_result: BLOCK(draft_lessons:1)
+  findings_summary: "4観点OK。2名並列偵察。核心: 既存3ツールでは殿定義パリティ不足。hayate=列名不一致発見+比較器提案、saizo=保存/比較字段不一致+assumption_invalidation"
+  observations:
+    - "事実1: parity_check.shはreturn_open/return_closeを参照するがORM列名はmonthly_return_open/monthly_return。命名差あり"
+    - "事実2: snapshot_recalc_results.pyがholding_signalを保存していないのにcompare_snapshots.pyが比較対象に含める。空振り"
+    - "事実3: dry runフラグは/admin/recalculate-sync・recalculate_history_fast()いずれも未実装"
+    - "事実4: 2名が独立に同一結論(既存ツール不足)に到達。並列偵察の品質確認効果あり"
+  lesson_quality: OK(saizo)
+  karo_workaround_needed: no
+  gate_prediction: WARN(draft_lessons)
+  causal_chain: "既存parity不足→殿定義パリティ満たせない→Phase4前に新規comparator必要→設計書§5に反映必要=本番安全性の正の複利"
+  timestamp: "2026-04-16T20:05:00"
+- cmd_id: codd_dmsignal_step10_mtd
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "Step 10 MTD/初期月追記レビュー。APPROVE+2点RC。(1)fullrecalculateスケジュール停止をStep 10手順に明記 (2)--exclude-months汎用オプション推奨"
+  observations:
+    - "事実1: before→deploy→after間にスケジュールfullrecalculateが走ると結果変動。タイミング制約の抜け"
+    - "事実2: 初期月は「除外検討」で保留中。PFごとに異なるため特定ロジックが必要"
+  causal_chain: "MTD日次変動→before/after不一致→除外が正解。しかし除外対象定義が曖昧+タイミング制約抜け→偽陰性リスク→明確化で防止"
+  timestamp: "2026-04-16T20:09:00"
