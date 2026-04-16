@@ -689,3 +689,4 @@
 | cmd_1999 | インフラ改善 — cmd_delegate.sh gate先行送信化(レースコンディション防止) | infra | 04-17 | cmd_delegate の gate FAIL分岐を実装・ |
 | cmd_karo_ci_fix_blt72 | CI RED修正 — test_bulletin_board.bats test 72修正 | infra | 04-17 | bulletin_confirm.sh の if rc: ガ |
 | cmd_karo_gp210_fix | GP-210修正 — inbox_watcher STATE_DIRパス不一致解消 | infra | 04-17 | restart_watchers.shの3箇所からSHOGU |
+| cmd_2000 | Phase 4偵察② — fullrecalculate SQLクエリログ分類+top10重クエリ特定 | dm-signal | 04-17 | SQLAlchemy queryロギングをcmd_1994ハ |
