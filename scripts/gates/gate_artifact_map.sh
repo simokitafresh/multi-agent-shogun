@@ -22,43 +22,41 @@ echo "=== 成果物マッピング健全度チェック ==="
 echo "対象: $PROGRESS_FILE"
 echo ""
 
-# Parse block rows: lines matching "| N-N |"
-while IFS= read -r line; do
-    # Match block rows like "| 1-1 | bunshin | ✅ | ✅ | DB: ... | 2026-... |"
-    if [[ "$line" =~ ^\|[[:space:]]*([0-9]-[0-9])[[:space:]]*\| ]]; then
-        block_id="${BASH_REMATCH[1]}"
-        TOTAL_BLOCKS=$((TOTAL_BLOCKS + 1))
+# Parse block rows in one awk pass (avoids per-row subshell spawns)
+# Column layout: | # | 忍法 | GS | 選出 | 成果物所在 | 完了日 |
+while IFS=$'\t' read -r block_id ninjutsu gs_status artifact; do
+    TOTAL_BLOCKS=$((TOTAL_BLOCKS + 1))
 
-        # Extract columns by splitting on |
-        # Column layout: | # | 忍法 | GS | 選出 | 成果物所在 | 完了日 |
-        ninjutsu=$(echo "$line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3}')
-        gs_status=$(echo "$line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); print $4}')
-        artifact=$(echo "$line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $6); print $6}')
+    # Check if GS is done (contains ✅)
+    if [[ "$gs_status" == *"✅"* ]]; then
+        TOTAL_DONE=$((TOTAL_DONE + 1))
 
-        # Check if GS is done (contains ✅)
-        if [[ "$gs_status" == *"✅"* ]]; then
-            TOTAL_DONE=$((TOTAL_DONE + 1))
-
-            # Check if artifact is missing
-            if [[ "$artifact" == "—" || -z "$artifact" ]]; then
-                echo "  WARN: [$block_id] $ninjutsu — GS完了だが成果物所在が未記入"
-                WARN_COUNT=$((WARN_COUNT + 1))
-            else
-                # If artifact mentions a file path, verify it exists
-                if [[ "$artifact" == *"GS:"* ]]; then
-                    # Extract path after "GS: "
-                    gs_path=$(echo "$artifact" | sed 's/.*GS: //' | sed 's/ (.*//')
-                    # Resolve relative to DM-Signal
-                    full_path="/mnt/c/Python_app/DM-signal/outputs/grid_search/$gs_path"
-                    if [[ ! -f "$full_path" ]]; then
-                        echo "  WARN: [$block_id] $ninjutsu — 成果物ファイル不在: $gs_path"
-                        WARN_COUNT=$((WARN_COUNT + 1))
-                    fi
+        # Check if artifact is missing
+        if [[ "$artifact" == "—" || -z "$artifact" ]]; then
+            echo "  WARN: [$block_id] $ninjutsu — GS完了だが成果物所在が未記入"
+            WARN_COUNT=$((WARN_COUNT + 1))
+        else
+            # If artifact mentions a file path, verify it exists
+            if [[ "$artifact" == *"GS:"* ]]; then
+                # Pure bash extraction (no subshell): strip prefix up to "GS: ", then suffix from " ("
+                gs_path="${artifact#*GS: }"
+                gs_path="${gs_path%% (*}"
+                # Resolve relative to DM-Signal
+                full_path="/mnt/c/Python_app/DM-signal/outputs/grid_search/$gs_path"
+                if [[ ! -f "$full_path" ]]; then
+                    echo "  WARN: [$block_id] $ninjutsu — 成果物ファイル不在: $gs_path"
+                    WARN_COUNT=$((WARN_COUNT + 1))
                 fi
             fi
         fi
     fi
-done < "$PROGRESS_FILE"
+done < <(awk -F'|' '/^\|[[:space:]]*[0-9]-[0-9][[:space:]]*\|/ {
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3)
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4)
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $6)
+    print $2"\t"$3"\t"$4"\t"$6
+}' "$PROGRESS_FILE")
 
 echo ""
 echo "--- 結果 ---"
