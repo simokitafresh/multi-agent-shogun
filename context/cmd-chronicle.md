@@ -690,3 +690,4 @@
 | cmd_karo_ci_fix_blt72 | CI RED修正 — test_bulletin_board.bats test 72修正 | infra | 04-17 | bulletin_confirm.sh の if rc: ガ |
 | cmd_karo_gp210_fix | GP-210修正 — inbox_watcher STATE_DIRパス不一致解消 | infra | 04-17 | restart_watchers.shの3箇所からSHOGU |
 | cmd_2000 | Phase 4偵察② — fullrecalculate SQLクエリログ分類+top10重クエリ特定 | dm-signal | 04-17 | SQLAlchemy queryロギングをcmd_1994ハ |
+| cmd_2003 | Phase 4偵察④ — fullrecalculate DB呼出のループ構造現物確認 | dm-signal | 04-17 | expand_portfolio_to_tickersの直呼 |

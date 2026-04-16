@@ -900,6 +900,26 @@ if [ "$TYPE" = "task_assigned" ]; then
     fi
 fi
 
+# cmd_new gate: type=cmd_new → cmd_save.sh gate照合
+# 目的: gate BLOCK中のcmd委任を防止（将軍がcmd_delegate.shを迂回してinbox_write直送信する経路を封鎖）
+# 原因事故: cmd_2004でcmd_save.sh BLOCK中に手動inbox_writeで家老に送信→gate未通過cmdが配備された
+if [ "$TYPE" = "cmd_new" ]; then
+    # contentからcmd_idを抽出（"cmd_XXXX"パターン）
+    _CMD_NEW_ID=$(echo "$CONTENT" | grep -oP 'cmd_\d+' | head -1 || true)
+    if [ -n "$_CMD_NEW_ID" ]; then
+        _CMD_GATE_OUTPUT=$("$SCRIPT_DIR/scripts/cmd_save.sh" "$_CMD_NEW_ID" 2>&1 || true)
+        _CMD_GATE_RC=$?
+        if [ "$_CMD_GATE_RC" -ne 0 ]; then
+            echo "" >&2
+            echo "==============================" >&2
+            echo "[cmd_new_gate] BLOCKED: ${_CMD_NEW_ID} はcmd_save.sh gate未通過 (exit=$_CMD_GATE_RC)" >&2
+            echo "[cmd_new_gate] gateを通してからinbox_writeせよ" >&2
+            echo "==============================" >&2
+            exit 1
+        fi
+    fi
+fi
+
 # Report format gate: type=report_received → 報告YAMLのフォーマット検証
 # 目的: 家老の手動修正作業を根絶（karo_workarounds 5件連続同一問題を自動化×強制で解消）
 if [ "$TYPE" = "report_received" ]; then
