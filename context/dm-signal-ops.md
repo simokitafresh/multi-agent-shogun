@@ -30,17 +30,39 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 
 ### Render CLI (v2.12.0)
 
-`/home/simokitafresh/.local/bin/render`。DM-Signal運用で利用可能。
+`/home/simokitafresh/.local/bin/render`。認証済み(simokitafresh@gmail.com)。ワークスペース=My Workspace。
 
-| コマンド | 用途 |
-|---------|------|
-| `render ssh srv-d4ja7q15pdvs739a4q1g` | Backend SSHセッション |
-| `render ssh -e srv-d4ja7q15pdvs739a4q1g` | エフェメラルインスタンス(本番影響なし) |
-| `render jobs create srv-d4ja7q15pdvs739a4q1g --start-command '...'` | one-offジョブ投入 |
-| `render psql` | PostgreSQL直接接続 |
-| `render logs` | ログ閲覧 |
+**DM-Signalサービス一覧:**
+
+| 用途 | 名前 | ID | type | region |
+|------|------|-----|------|--------|
+| **Backend** | dm-signal-backend | `srv-d4ja7q15pdvs739a4q1g` | web | singapore |
+| Frontend | dm-signal-frontend | `srv-d4ja8pp5pdvs739a5fsg` | static | — |
+| **DB** | dm-signal-db | `dpg-d542chchg0os73979vg0-a` | postgres | singapore |
+| TEST Backend | TEST-dm-signal-backend-lyk3 | `srv-d5ahs0ali9vc73b6tprg` | web | singapore |
+| sync-prices | dm-signal-sync-prices | `crn-d5e8rabe5dus73fhlkj0` | cron | oregon |
+| sync-tickers | dm-signal-sync-tickers | `crn-d5e8rabe5dus73fhlkkg` | cron | oregon |
+| sync-standard | dm-signal-sync-standard | `crn-d5e8rabe5dus73fhlkl0` | cron | oregon |
+| sync-fof | dm-signal-sync-fof | `crn-d5e8rabe5dus73fhlkjg` | cron | oregon |
+| deterioration | dm-signal-deterioration-batch | `crn-d6kehqlm5p6s73dov630` | cron | oregon |
+| pw-rotation | dm-signal-password-rotation | `crn-d53agure5dus73ap8el0` | cron | singapore |
+
+**主要コマンド:**
+
+| コマンド | 用途 | 備考 |
+|---------|------|------|
+| `render ssh srv-d4ja7q15pdvs739a4q1g` | Backend SSH | 本番インスタンスに接続。対話的操作 |
+| `render ssh -e srv-d4ja7q15pdvs739a4q1g` | エフェメラルSSH | 本番影響なし。計測・調査用 |
+| `render jobs create srv-d4ja7q15pdvs739a4q1g --start-command '...'` | one-offジョブ | バッチ計測等。--plan-idでリソース指定可 |
+| `render psql dpg-d542chchg0os73979vg0-a` | PostgreSQL直接接続 | DB ID指定。クエリ計測 |
+| `render logs --output text srv-d4ja7q15pdvs739a4q1g` | ログ閲覧 | ジョブ出力確認 |
+| `render deploys list srv-d4ja7q15pdvs739a4q1g` | デプロイ履歴 | |
+| `render whoami` | 認証確認 | |
+
+**サービス名でも指定可能**（ID暗記不要）: `render ssh dm-signal-backend`
 
 ★ cProfile等の計測はRender上で実行すべき。ローカル→Singapore RTT 80msがDB I/O比率を歪める(2026-04-17実証)。
+★ cronジョブのregionがoregon(render.yamlではsingapore指定)。DB(singapore)とcron(oregon)間でRTTが発生している可能性。要確認。
 
 ### パリティ全基準チェックリスト（殿定義集約 2026-04-11）
 
