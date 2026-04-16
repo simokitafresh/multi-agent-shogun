@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# SCRIPT_DIR unused but kept for reference
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GH_CMD="${GH_CMD:-gh}"
 GIST_OWNER="${GIST_OWNER:-simokitafresh}"
 GIST_INDEX_ID="${GIST_INDEX_ID:-83a17157247174e9faefc3962968fe1b}"
@@ -12,11 +13,14 @@ GIST_INDEX_DATE="${GIST_INDEX_DATE:-$(date '+%Y-%m-%d')}"
 declare -a CATEGORY_ORDER=(
     "note記事"
     "週報"
-    "研究データ・分析レポート"
-    "deepdive・将軍記録"
+    "L2奥義研究"
+    "研究日誌"
+    "deepdive"
+    "DM-Signal運用"
+    "設計書"
+    "確定申告"
+    "インフラ"
     "ユーザー向け"
-    "インフラ・確定申告・比較分析"
-    "前処理研究"
 )
 
 log() {
@@ -121,8 +125,8 @@ main() {
     local kept_count=0
     local excluded_lines=""
 
-    local gist_id title files visibility updated_at
-    while IFS=$'\t' read -r gist_id title files visibility updated_at; do
+    local gist_id title _files _visibility updated_at
+    while IFS=$'\t' read -r gist_id title _files _visibility updated_at; do
         [ -n "${gist_id:-}" ] || continue
         total_count=$((total_count + 1))
 
@@ -161,7 +165,7 @@ main() {
 
     local tmpfile
     tmpfile="$(mktemp)"
-    trap "rm -f '$tmpfile'" EXIT
+    trap 'rm -f "$tmpfile"' EXIT
 
     render_header > "$tmpfile"
     local category
