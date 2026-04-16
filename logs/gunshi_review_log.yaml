@@ -711,3 +711,13 @@
   gate_prediction: CLEAR
   causal_chain: "cmd_1951→cmd_save.sh 4016ms特定→content_dupキャッシュ+q11統合→-42%=全cmd起票の正の複利"
   timestamp: "2026-04-16T18:40:00"
+- cmd_id: cmd_1978
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。stop-lint-gate.sh 3.0s→目標500ms。競合注意+バックアップ差替方式明記。cmd_1975反省を踏まえhook変更の安全手順が構造化"
+  observations:
+    - "事実1: AC2にバックアップ→修正→テストPASS→本体差替の手順を明記。cmd_1975(直接上書き→破壊)の教訓が反映"
+    - "事実2: 忍者自身のStopで改修中スクリプトが発火するリスクをバックアップ方式で回避"
+  causal_chain: "cmd_1951→stop-lint-gate.sh 3002ms特定→高速化→全エージェントStop発火の正の複利。バックアップ差替で自爆防止"
+  timestamp: "2026-04-16T18:45:00"

@@ -3,7 +3,7 @@
 # Loop prevention: file-based failure hash comparison (cmd_972 pattern).
 # Design: Same failure repeated = agent can't fix → allow stop + escalate to karo.
 #         New/different failure = block stop, prompt fix.
-set -eu
+set -euo pipefail
 
 # --- Skip for non-tmux or shogun/karo ---
 if [ -z "${TMUX_PANE:-}" ]; then
@@ -16,43 +16,56 @@ fi
 
 SHOGUN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-# --- Collect changed files (staged + unstaged) ---
-changed_files="$(cd "$SHOGUN_ROOT" && git diff --name-only --cached 2>/dev/null; cd "$SHOGUN_ROOT" && git diff --name-only 2>/dev/null)"
-if [ -z "$changed_files" ]; then
+# --- Collect changed files (staged + unstaged tracked files only) ---
+# `git diff --name-only` was the dominant cost on WSL2. Use lighter plumbing commands
+# and dedupe the staged/unstaged union before dispatching the linters.
+collect_changed_files() {
+    local staged_files unstaged_files
+    staged_files="$(cd "$SHOGUN_ROOT" && git diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
+    unstaged_files="$(cd "$SHOGUN_ROOT" && git ls-files -m 2>/dev/null || true)"
+
+    if [ -z "${staged_files}${unstaged_files}" ]; then
+        return 0
+    fi
+
+    printf '%s\n%s\n' "$staged_files" "$unstaged_files" | awk 'NF && !seen[$0]++'
+}
+
+mapfile -t changed_files < <(collect_changed_files)
+if [ "${#changed_files[@]}" -eq 0 ]; then
     exit 0
 fi
 
 # --- Separate files by type ---
-sh_files=""
-py_files=""
-ts_js_files=""
+sh_files=()
+py_files=()
+ts_js_files=()
 
-while IFS= read -r f; do
-    [ -z "$f" ] && continue
+for f in "${changed_files[@]}"; do
+    [ -f "$SHOGUN_ROOT/$f" ] || continue
     case "$f" in
-        *.sh|*.bash) sh_files="$sh_files $f" ;;
-        *.py)        py_files="$py_files $f" ;;
-        *.ts|*.tsx|*.js|*.jsx) ts_js_files="$ts_js_files $f" ;;
+        *.sh|*.bash) sh_files+=("$f") ;;
+        *.py) py_files+=("$f") ;;
+        *.ts|*.tsx|*.js|*.jsx) ts_js_files+=("$f") ;;
     esac
-done <<< "$changed_files"
+done
 
 # --- Run lint checks ---
 violations=""
 
 # ShellCheck for .sh files (-S warning: info/style除外。既存警告での偽ブロック防止)
-if [ -n "$sh_files" ] && command -v shellcheck >/dev/null 2>&1; then
-    for f in $sh_files; do
-        full_path="$SHOGUN_ROOT/$f"
-        [ -f "$full_path" ] || continue
-        sc_out="$(shellcheck -S warning "$full_path" 2>&1)" || true
-        if [ -n "$sc_out" ]; then
-            violations="${violations}--- shellcheck: $f ---\n${sc_out}\n"
-        fi
-    done
+if [ "${#sh_files[@]}" -gt 0 ] && command -v shellcheck >/dev/null 2>&1; then
+    sc_out=""
+    if ! sc_out="$(cd "$SHOGUN_ROOT" && shellcheck -S warning "${sh_files[@]}" 2>&1)"; then
+        :
+    fi
+    if [ -n "$sc_out" ]; then
+        violations="${violations}--- shellcheck ---"$'\n'"${sc_out}"$'\n'
+    fi
 fi
 
 # Ruff for .py files
-if [ -n "$py_files" ]; then
+if [ "${#py_files[@]}" -gt 0 ]; then
     ruff_cmd=""
     if [ -x "$SHOGUN_ROOT/.venv/bin/ruff" ]; then
         ruff_cmd="$SHOGUN_ROOT/.venv/bin/ruff"
@@ -62,26 +75,24 @@ if [ -n "$py_files" ]; then
         ruff_cmd="ruff"
     fi
     if [ -n "$ruff_cmd" ]; then
-        for f in $py_files; do
-            full_path="$SHOGUN_ROOT/$f"
-            [ -f "$full_path" ] || continue
-            if ! ruff_out="$("$ruff_cmd" check --quiet --select E,W,F "$full_path" 2>&1)"; then
-                violations="${violations}--- ruff: $f ---\n${ruff_out}\n"
+        ruff_out=""
+        if ! ruff_out="$(cd "$SHOGUN_ROOT" && "$ruff_cmd" check --quiet --select E,W,F "${py_files[@]}" 2>&1)"; then
+            if [ -n "$ruff_out" ]; then
+                violations="${violations}--- ruff ---"$'\n'"${ruff_out}"$'\n'
             fi
-        done
+        fi
     fi
 fi
 
 # Biome for .ts/.tsx/.js/.jsx files
-if [ -n "$ts_js_files" ] && command -v npx >/dev/null 2>&1; then
-    for f in $ts_js_files; do
-        full_path="$SHOGUN_ROOT/$f"
-        [ -f "$full_path" ] || continue
-        biome_out="$(npx --yes biome check "$full_path" 2>/dev/null)" || true
-        if [ -n "$biome_out" ]; then
-            violations="${violations}--- biome: $f ---\n${biome_out}\n"
-        fi
-    done
+if [ "${#ts_js_files[@]}" -gt 0 ] && command -v npx >/dev/null 2>&1; then
+    biome_out=""
+    if ! biome_out="$(cd "$SHOGUN_ROOT" && npx --yes biome check "${ts_js_files[@]}" 2>/dev/null)"; then
+        :
+    fi
+    if [ -n "$biome_out" ]; then
+        violations="${violations}--- biome ---"$'\n'"${biome_out}"$'\n'
+    fi
 fi
 
 # --- No violations: clean exit ---
@@ -105,7 +116,7 @@ if [ -f "$fail_hash_file" ]; then
                 "${AGENT_ID}: Stop Hook lint違反同一繰り返し。修正不能。タスク停止+lint修正cmdが必要。" \
                 error_report "$AGENT_ID" 2>/dev/null || true
         fi
-        violations_escaped2="$(printf '%b' "$violations" | head -50 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"
+        violations_escaped2="$(printf '%s' "$violations" | head -50 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"
         cat <<HOOK_JSON
 {
   "decision": "block",
@@ -120,7 +131,7 @@ fi
 printf '%s' "$current_hash" > "$fail_hash_file"
 
 # Prepare violations for JSON (escape special chars)
-violations_escaped="$(printf '%b' "$violations" | head -100 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"
+violations_escaped="$(printf '%s' "$violations" | head -100 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"
 
 cat <<HOOK_JSON
 {

@@ -35,7 +35,7 @@ lessons:
     file
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L480
@@ -1700,7 +1700,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 55
+  helpful_count: 56
   harmful_count: 11
   last_referenced: '2026-04-16'
 - id: L228
