@@ -683,3 +683,4 @@
 | cmd_karo_context_freshness_1993 | context鮮度更新 — dm-signal-research.md+infrastructure.md | infra | 04-17 | context鮮度更新2件を反映し、対象2ファイルのみをコミ |
 | cmd_karo_1995_fix | cmd_1995補足 — compare_snapshots.py holding_signal空振り修正+列名統一 | dm-signal | 04-17 | compare_snapshots.pyのholding_s |
 | cmd_1994 | Phase 4準備① — fullrecalculate cProfile計測(read-only) | dm-signal | 04-17 | recalculate_fast.py fullrecalc |
+| cmd_karo_ci_fix_f821 | CI RED修正 — run_077_yotsume.py F821(未定義変数)解消 | dm-signal | 04-17 | run_077_yotsume.py F821/F841/B |
