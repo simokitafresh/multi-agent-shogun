@@ -658,4 +658,15 @@
 - 2026-04-17 cmd_1998: 疾風。Phase4偵察①(cache miss/fallback/N+1)。signal_cache miss 0%、fallback 1.63%、N+1なし→T1前提崩壊→方針v2再設計。GATE CLEAR
 - 2026-04-17 cmd_1999: 才蔵。cmd_delegate.sh gate先行送信化。実装+push完了(d543aeb, bd89ba3)。報告待ち
 - 2026-04-17 cmd_2000: 半蔵作業中。Phase4偵察②(SQLクエリログ分類+top10重クエリ)
-- 2026-04-17 教訓: LK076(補足ナッジ許容), LK077(GP-190真因), LK078(CI待ちidle禁止), LK079(R000排他ではない)
+- 2026-04-17 教訓: LK076(補足ナッジ許容), LK077(GP-190真因), LK078(CI待ちidle禁止), LK079(R000排他ではない), LK080(auto-commit build_instructions.sh未実行→CI RED真因修正)
+- 2026-04-17 cmd_karo_gp190_fix: 小太郎。GP-190根治修正(scout_exempt→commit check分離)。GATE CLEAR
+- 2026-04-17 cmd_karo_ci_fix_blt72: 半蔵。test 72修正+CI GREEN復帰。GATE CLEAR
+- 2026-04-17 cmd_1999: 才蔵。cmd_delegate gate先行送信化。GATE CLEAR
+- 2026-04-17 cmd_karo_gp210_fix: 影丸。STATE_DIRパス統一(GP-210)。GATE CLEAR
+- 2026-04-17 cmd_1998: 疾風。Phase4偵察①(cache miss 0%/fallback 1.63%/N+1なし→T1前提崩壊)。GATE CLEAR
+- 2026-04-17 cmd_2000: 半蔵。Phase4偵察②(SQL 10293クエリ実測。N+1: portfolio2706+signal1985)。GATE CLEAR
+- 2026-04-17 cmd_2001: 才蔵。Render cProfile→殿指示で中止(shelved)
+- 2026-04-17 cmd_2002: 半蔵。Gist Index 7→10カテゴリ改善。GATE CLEAR
+- 2026-04-17 cmd_2003: 疾風。Phase4偵察④(ループ構造確認。N+1真因=monthly_returns preload skip L183-191)。GATE CLEAR
+- 2026-04-17 cmd_2004: 影丸。cProfileハーネスbackend/移動→PR#9作成(G2ゲート)。merge待ち
+- 2026-04-17 auto-commit CI RED真因修正: ninja_monitor.sh L462にbuild_instructions.sh追加(500f0cd)
