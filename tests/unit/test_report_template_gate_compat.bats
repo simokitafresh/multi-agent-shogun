@@ -876,3 +876,43 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
     # verdict=FAILなので矛盾エラーは出ない（ただし空resultの個別エラーは出る）
     [[ "$output" != *"verdict: PASS but binary_checks contain empty result"* ]]
 }
+
+# --- GP-202: files_modified×parent_cmdプレフィックス不一致WARN (LK069/cmd_1948事故) ---
+
+@test "GP-202: files_modifiedにparent_cmdプレフィックスが0件 → WARN表示" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    # parent_cmd=cmd_testだがfiles_modifiedにcmd_testを含まないファイルのみ
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['parent_cmd'] = 'cmd_1948'
+data['files_modified'] = [
+    {'path': 'scripts/oneshot/cmd_1947_l3_ew_combo_stability.py', 'change': 'modified'},
+    {'path': 'outputs/analysis/cmd_1947_l3_onebody_stability.csv', 'change': 'modified'},
+]
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [[ "$output" == *"GP-202 WARN"* ]]
+    [[ "$output" == *"cmd_1948"* ]]
+}
+
+@test "GP-202: files_modifiedにparent_cmdプレフィックスが含まれる → WARN非表示" {
+    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+data['parent_cmd'] = 'cmd_1948'
+data['files_modified'] = [
+    {'path': 'outputs/analysis/cmd_1948_l3_1body_1x1.csv', 'change': 'modified'},
+    {'path': 'scripts/oneshot/cmd_1948_nbody_1x1.py', 'change': 'modified'},
+]
+with open('$TEST_TMPDIR/report.yaml', 'w') as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    [[ "$output" != *"GP-202 WARN"* ]]
+}
