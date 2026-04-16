@@ -682,3 +682,4 @@
 | cmd_karo_ci_fix_1987 | CI RED修正 — test_stop_lint_gate.bats test 941 HASH_FILE未生成 | infra | 04-17 | bats --jobs 8並列実行でHASH_FILEが/t |
 | cmd_karo_context_freshness_1993 | context鮮度更新 — dm-signal-research.md+infrastructure.md | infra | 04-17 | context鮮度更新2件を反映し、対象2ファイルのみをコミ |
 | cmd_karo_1995_fix | cmd_1995補足 — compare_snapshots.py holding_signal空振り修正+列名統一 | dm-signal | 04-17 | compare_snapshots.pyのholding_s |
+| cmd_1994 | Phase 4準備① — fullrecalculate cProfile計測(read-only) | dm-signal | 04-17 | recalculate_fast.py fullrecalc |
