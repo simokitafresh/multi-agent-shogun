@@ -696,3 +696,4 @@
 | cmd_karo_ci_fix_ga091 | CI RED修正(GA-091) — gist_index_updateテスト期待値を新カテゴリ体系に更新+CATEGORY_ORDER修正 | infra | 04-17 | gist_index_update.sh のカテゴリ体系を新 |
 | cmd_karo_ci_fix_ga092 | CI RED修正(GA-092) — cmd_delegate inbox_write失敗時のexit code修正 | infra | 04-17 | cmd_delegate の inbox_write失敗仕様 |
 | cmd_2007 | Phase 4事前確認 — preload動作3パターン記録(standardPF/FoF/nestedFoF) | dm-signal | 04-17 | 代表3体(standard/FoF/nestedFoF)を |
+| cmd_2008 | Phase 4 golden data化 — cmd_2007スナップショットを全改善cmdのパリティ基準に固定 | dm-signal | 04-17 | golden baseline固定・設計書作成・compar |
