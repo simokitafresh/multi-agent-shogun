@@ -689,3 +689,4 @@
 | cmd_1962 | CoDD改善#10 — lesson_effectiveness.sh高速化(5.5s→目標500ms) | infra | 04-16 | lesson_effectiveness.sh高速化: ba |
 | cmd_1966 | CoDD改善#14 — report_field_set.sh高速化(40ms×73回→目標15ms) | infra | 04-16 | report_field_set.shを高速化し、scala |
 | cmd_1965 | CoDD改善#13 — ninja_done.sh高速化(68ms×104回→目標30ms) | infra | 04-16 | ninja_done.sh を軽量化し、usage/help |
+| cmd_1970 | CoDD改善#18 — gate_workaround_rate.sh高速化(135ms×14回→目標40ms) | infra | 04-16 | gate_workaround_rate.sh高速化: py |

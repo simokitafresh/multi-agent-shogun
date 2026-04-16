@@ -539,3 +539,31 @@
   gate_prediction: WARN(draft_lessons)
   causal_chain: "cmd_1951→ninja_done.sh特定→field_get除去+awk化→usage 82-91%削減=忍者タスク完了ごとの正の複利"
   timestamp: "2026-04-16T16:33:00"
+- cmd_id: cmd_1967
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1967_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。karo_workaround_log.sh validate_ninja_id task dirループ廃止+TZ=UTC printf+dirname置換でclean 61→26ms(57%削減2.3x)。テスト26/26 PASS"
+  observations:
+    - "事実1: validate_ninja_idがtask dir forループ(basename subprocess×10)→settings.yaml awk 1回に統一。権威ソース正規化"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1951→karo_workaround_log.sh特定→subprocess廃止→57%削減=家老workaround記録ごとの正の複利"
+  timestamp: "2026-04-16T16:39:00"
+- cmd_id: cmd_1970
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1970_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。gate_workaround_rate.sh python3+grep+awk→awk1本統合でCPU 30→12ms(-60%,2.5x)。テスト38件PASS"
+  observations:
+    - "事実1: FNR==NRでgate_metrics.log+karo_workarounds.yamlを1 awkパスで処理。python3 startup 22ms除去が主因"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1951→gate_workaround_rate.sh特定→python3+pipeline→awk統合→CPU -60%=忍者WA率チェックごとの正の複利"
+  timestamp: "2026-04-16T16:42:00"
