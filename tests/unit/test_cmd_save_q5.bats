@@ -39,6 +39,10 @@ setup() {
     export CMD_ID="cmd_q5test"
     export CMD_BLOCK=""
     export CMD_BLOCK_NC=""
+    # per-test tmpでCI並列競合回避 (LK477)
+    export TEST_PER_TMP="$BATS_TEST_TMPDIR"
+    mkdir -p "${TEST_PER_TMP}/queue/archive/cmds"
+    export QUEUE_FILE="${TEST_PER_TMP}/queue/shogun_to_karo.yaml"
 }
 
 teardown() { true; }
