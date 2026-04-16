@@ -16,6 +16,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | 忍者kagemaru | `scripts/gates/gate_cycle_health.sh` | 高速化実装完了 | `793ms → 296ms`（目標500ms達成, `-63%`） | ①S3: 500ファイル全stat→名前CLEARフィルタ後に非CLEAR分(~269)のみstatに削減+grep-qループ廃止→awk in-memory lookup ②S4: python3(80ms)→awk(7ms)。全11テストPASS |
 | 2026-04-16 | 忍者tobisaru | `scripts/gates/gate_karo_startup.sh` | 高速化実装完了 | `464ms → 225ms`（目標300ms達成, `-51%`） | ①python3 4回→1回統合(phase guide×2+session summary+bulletin) ②tmux list-panes 6回→1回キャッシュ ③gate_workaround_rate/ninja_workaround_rateをバックグラウンド並列起動。全12テストPASS |
 | 2026-04-16 | 忍者kagemaru | `scripts/ntfy.sh` | 高速化実装完了 | `33ms → 23ms`（目標50ms達成, `-30%`, 実測ベース）/cmd_1951計測130ms基準での改善 | ①`source lord_conversation.sh`をバックグラウンドsubshellに移動(-7ms) ②`cd+pwd`subshell→pure bash SCRIPT_DIR(-2ms) ③`basename`→bash `${##*/}`(-1ms) ④`echo|tr`→bash `${,,}`(-1ms) ⑤`mkdir -p`→条件付き実行。全22テストPASS |
+| 2026-04-16 | hayate | `scripts/gates/gate_recalculate_completeness.sh` | before/after計測 + 実装 + tests PASS | `7.40s(FAIL) → 2.74s(PASS)` (`-63.0%`) | after: `docs/research/gate_recalculate_completeness_after_20260416.md` |
 
 ## 運用
 
