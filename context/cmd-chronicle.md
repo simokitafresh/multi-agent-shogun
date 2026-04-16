@@ -692,3 +692,6 @@
 | cmd_2000 | Phase 4偵察② — fullrecalculate SQLクエリログ分類+top10重クエリ特定 | dm-signal | 04-17 | SQLAlchemy queryロギングをcmd_1994ハ |
 | cmd_2003 | Phase 4偵察④ — fullrecalculate DB呼出のループ構造現物確認 | dm-signal | 04-17 | expand_portfolio_to_tickersの直呼 |
 | cmd_2002 | Gist Index分類改善 — gist_index_update.sh classify_gist()を10カテゴリに再設計 | infra | 04-17 | gist_index_update.shのCATEGORY_ |
+| cmd_2005 | Phase 4偵察⑤ — B1 preload変更のFE/UI影響範囲確認+設計書追記 | dm-signal | 04-17 | preload条件は monthly_return 値を変え |
+| cmd_karo_ci_fix_ga091 | CI RED修正(GA-091) — gist_index_updateテスト期待値を新カテゴリ体系に更新+CATEGORY_ORDER修正 | infra | 04-17 | gist_index_update.sh のカテゴリ体系を新 |
+| cmd_karo_ci_fix_ga092 | CI RED修正(GA-092) — cmd_delegate inbox_write失敗時のexit code修正 | infra | 04-17 | cmd_delegate の inbox_write失敗仕様 |
