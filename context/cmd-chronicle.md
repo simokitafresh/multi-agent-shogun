@@ -667,3 +667,5 @@
 | cmd_1940 | 強化 — gate_lesson_health.sh閾値をuseful率に変更+低効果教訓自動除外 | infra | 04-16 | gate_lesson_health.shにuseful率計 |
 | cmd_1943 | 改修 — Androidアプリ ボトムナビ「メモ」→「Gist Index」差替え | infra | 04-16 | ボトムナビの「メモ」を「Gist Index」に差し替え、旧 |
 | cmd_1945 | 修正 — Androidアプリ ライトテーマ文字コントラスト強化（殿フィードバック: ルール違反） | infra | 04-16 | DarkSengokuPalette の textMuted |
+| cmd_1946 | verdict_override構造対策 — waive_ac正式機構 + 研究cmd commit check自動waive | infra | 04-16 | deploy_task.shに研究cmd/waive_ac用 |
+| cmd_1947 | 研究 — N体EW比較: 1体/2体/3体 × 4手法 × 6指標 横並び分析 | dm-signal | 04-16 | cmd_1947完了。⑤_* 21列の1体21通り・2体21 |
