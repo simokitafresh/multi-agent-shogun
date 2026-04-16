@@ -907,8 +907,8 @@ if [ "$TYPE" = "cmd_new" ]; then
     # contentからcmd_idを抽出（"cmd_XXXX"パターン）
     _CMD_NEW_ID=$(echo "$CONTENT" | grep -oP 'cmd_\d+' | head -1 || true)
     if [ -n "$_CMD_NEW_ID" ]; then
-        _CMD_GATE_OUTPUT=$("$SCRIPT_DIR/scripts/cmd_save.sh" "$_CMD_NEW_ID" 2>&1 || true)
-        _CMD_GATE_RC=$?
+        _CMD_GATE_RC=0
+        _CMD_GATE_OUTPUT=$("$SCRIPT_DIR/scripts/cmd_save.sh" "$_CMD_NEW_ID" 2>&1) || _CMD_GATE_RC=$?
         if [ "$_CMD_GATE_RC" -ne 0 ]; then
             echo "" >&2
             echo "==============================" >&2
