@@ -42,6 +42,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 2026-04-16 | tobisaru | `scripts/gates/gate_vercel_phase.sh` | Phase 5(計測+実装+検証)。spec事後更新 | `real 1.74s → 0.51s` (`-71%`, `3.4x`) / `CPU 1.61s → 0.23s` (`-86%`, `7.0x`) | normalize_ref(sed×268回)排除+display_path subshell(43回)排除+resolve_context_bases process-sub(268回)→RESOLVE_BASES配列。7/7テストPASS。spec: `docs/research/cmd_1976_gate_vercel_phase_speedup.md` |
 | 2026-04-16 | kotaro | `scripts/deploy_task.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `224ms → 32ms` (`-86%`, WSL2実測) / template suite `15.6s → 8.7s` (`-44%`) | generate_report_template() 12+field_get→field_get_multi 1回+eval+変数参照化。is_before_after_required_task()にpre-read値optional引数追加。988/988テストPASS。spec: `docs/research/codd_spec_deploy_task_field_get_batch_20260416.md` |
+| 2026-04-16 | kagemaru | `scripts/dashboard_auto_section.sh` | Phase 5(計測+実装+検証)。第2次高速化 | `340ms → 302ms COLD` (`-11%`) / `340ms → 240ms WARM(HIT)` (`-29%`, 最良180ms `-47%`) | 6セクションにmtimeキャッシュ実装(lesson_effectiveness/task_type_rows/recent30_gawk/gate_titles+stat 1回 /gate_metrics/ffr)+stat pipefail || true修正(pre-existing test failure解消)。2/2テストPASS |
 
 ## 運用
 
