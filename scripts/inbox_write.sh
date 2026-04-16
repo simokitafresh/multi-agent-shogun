@@ -907,13 +907,21 @@ if [ "$TYPE" = "cmd_new" ]; then
     # contentからcmd_idを抽出（"cmd_XXXX"パターン）
     _CMD_NEW_ID=$(echo "$CONTENT" | grep -oP 'cmd_\d+' | head -1 || true)
     if [ -n "$_CMD_NEW_ID" ]; then
-        _CMD_GATE_RC=0
-        _CMD_GATE_OUTPUT=$("$SCRIPT_DIR/scripts/cmd_save.sh" "$_CMD_NEW_ID" 2>&1) || _CMD_GATE_RC=$?
-        if [ "$_CMD_GATE_RC" -ne 0 ]; then
+        # cmdのstatusを確認。pendingならgate未通過(cmd_save.sh→cmd_delegate.shの正規フローを通っていない)
+        _CMD_STATUS=$(awk -v id="$_CMD_NEW_ID" '
+            $0 ~ "^  " id ":" { found=1; next }
+            found && /^    status:/ { gsub(/.*status:[[:space:]]*/, ""); gsub(/"/, ""); print; exit }
+            found && /^  [a-zA-Z]/ { exit }
+        ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null)
+        if [ -z "$_CMD_STATUS" ]; then
+            echo "[cmd_new_gate] BLOCKED: ${_CMD_NEW_ID} がshogun_to_karo.yamlに存在しない" >&2
+            exit 1
+        fi
+        if [ "$_CMD_STATUS" = "pending" ]; then
             echo "" >&2
             echo "==============================" >&2
-            echo "[cmd_new_gate] BLOCKED: ${_CMD_NEW_ID} はcmd_save.sh gate未通過 (exit=$_CMD_GATE_RC)" >&2
-            echo "[cmd_new_gate] gateを通してからinbox_writeせよ" >&2
+            echo "[cmd_new_gate] BLOCKED: ${_CMD_NEW_ID} はstatus=pending(gate未通過)" >&2
+            echo "[cmd_new_gate] cmd_save.sh→cmd_delegate.shの正規フローでgateを通せ" >&2
             echo "==============================" >&2
             exit 1
         fi
