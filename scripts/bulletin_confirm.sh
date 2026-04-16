@@ -75,17 +75,16 @@ target["confirmed_by"] = confirmed
 
 rc = target.get("requires_confirmation", False)
 status = str(target.get("status", "open") or "open")
-if rc:
-    if isinstance(rc, list):
-        if all(agent in confirmed for agent in rc):
-            status = "closed"
-        else:
-            status = "open"
+if isinstance(rc, list):
+    if all(agent in confirmed for agent in rc):
+        status = "closed"
     else:
-        if all(agent in confirmed for agent in confirm_agents):
-            status = "closed"
-        else:
-            status = "open"
+        status = "open"
+else:
+    if all(agent in confirmed for agent in confirm_agents):
+        status = "closed"
+    else:
+        status = "open"
 target["status"] = status
 
 def sq(value):
