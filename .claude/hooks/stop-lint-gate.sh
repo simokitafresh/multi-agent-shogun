@@ -10,6 +10,7 @@ if [ -z "${TMUX_PANE:-}" ]; then
     exit 0
 fi
 AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+[ -z "$AGENT_ID" ] && AGENT_ID="${MOCK_AGENT_ID:-}"
 if [ -z "$AGENT_ID" ] || [ "$AGENT_ID" = "shogun" ] || [ "$AGENT_ID" = "karo" ] || [ "$AGENT_ID" = "gunshi" ]; then
     exit 0
 fi
