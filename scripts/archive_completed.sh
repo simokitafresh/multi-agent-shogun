@@ -714,13 +714,12 @@ archive_cmds() {
         }' "$QUEUE_FILE"
 
         # 結果読込
-        local no_entries=0 archived_i=0 kept_i=0 completed_count=0
+        local no_entries=0 archived_i=0 completed_count=0
         if [ -f "$archive_result" ]; then
             while IFS='=' read -r key val; do
                 case "$key" in
                     no_entries)      no_entries="$val" ;;
                     archived)        archived_i="$val" ;;
-                    kept)            kept_i="$val" ;;
                     completed_count) completed_count="$val" ;;
                 esac
             done < "$archive_result"
@@ -911,6 +910,15 @@ archive_reports() {
         ' "$QUEUE_FILE" 2>/dev/null)
     fi
 
+    # GP-XXX: deploy_preflight バッチ事前スキャン (19x grep -q → 1x grep -rl)
+    declare -A _preflight_gate_cmds=()
+    if compgen -G "$PROJECT_DIR/queue/gates/*/review_gate.done" > /dev/null 2>&1; then
+        while IFS= read -r _gf; do
+            _gf_cmd="${_gf%/review_gate.done}"; _gf_cmd="${_gf_cmd##*/}"
+            _preflight_gate_cmds["$_gf_cmd"]=1
+        done < <(grep -rl "source: deploy_preflight" "$PROJECT_DIR/queue/gates" --include="review_gate.done" 2>/dev/null)
+    fi
+
     for report_file in "${report_files[@]}"; do
         [ -f "$report_file" ] || continue
 
@@ -955,7 +963,8 @@ archive_reports() {
                 # GP-133: deploy_preflightのplaceholderはレビュー未完了。アーカイブ禁止。
                 # 根因: deploy_task.shがimpl配備時にreview_gate.doneをplaceholder生成 → archive_completed.shが
                 # ファイル存在のみチェック → レビュー完了前に報告がアーカイブされ軍師レビューFAIL(cmd_1623事故)
-                if grep -q "source: deploy_preflight" "$review_gate_file" 2>/dev/null; then
+                # GP-XXX: バッチ事前スキャン済み連想配列で判定 (per-file grep -q → O(1) lookup)
+                if [ "${_preflight_gate_cmds[$check_cmd_for_review]:-}" = "1" ]; then
                     echo "[archive] SKIP: review_gate.done is placeholder (deploy_preflight) for ${check_cmd_for_review}: $_bname"
                     kept=$((kept + 1))
                     continue
