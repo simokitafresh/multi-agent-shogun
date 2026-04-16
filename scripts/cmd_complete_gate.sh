@@ -2162,6 +2162,20 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
     notify_idle_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
 
+    # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
+    echo ""
+    echo "Bulletin board (GATE CLEAR - emergency override):"
+    local _blt_title_eo=""
+    _blt_title_eo=$(awk -v cmd="$CMD_ID" '
+        /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
+        cur_id == cmd && /title:/ { sub(/.*title:[[:space:]]*"?/, ""); sub(/"?$/, ""); print; exit }
+    ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+    if timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" "GATE CLEAR ${CMD_ID}: ${_blt_title_eo:-完了}" false 2>/dev/null; then
+        echo "  bulletin: OK"
+    else
+        echo "  [INFO] bulletin: WARN (failed, non-blocking)" >&2
+    fi
+
     # cmd_531: AC6 — GATE CLEAR時に教訓有効率スキャン+自動退役（緊急override時も実行）
     echo ""
     echo "Lesson effectiveness scan (GATE CLEAR - emergency override):"
