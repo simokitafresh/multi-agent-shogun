@@ -1351,11 +1351,10 @@ EOF
                 cur_id == cmd && /scout_exempt:[[:space:]]*true/ { print "true"; exit }
             ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null)
         fi
-        # GP-190: scout_exempt=trueはcommit不要 → commit check注入しない
-        if [ "$_scout_exempt" = "true" ]; then
-            _commit_bc=""
-            log "binary_checks: commit check skipped (scout_exempt=true)"
-        elif [ -n "$_tp_raw" ]; then
+        # GP-190修正: scout_exempt=trueはscout gate免除フラグ。commit要否とは独立。
+        # impl taskはscout_exemptに関わらずcommit checkが必要。
+        # (scout/recon taskはline 1336でcommit_bcが生成されないためここに到達しない)
+        if [ -n "$_tp_raw" ]; then
             local -a _tp_paths=()
             if echo "$_tp_raw" | grep -q '^- '; then
                 while IFS= read -r _tp_line; do

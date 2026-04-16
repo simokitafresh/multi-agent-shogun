@@ -217,7 +217,7 @@ PYEOF
 # monthly and scout_exempt tests (from test_deploy_task_monthly_and_scout_exempt.bats)
 # ═══════════════════════════════════════════════════════════
 
-@test "scout_exempt=true のcmdでcommit checkが注入されない (GP-190)" {
+@test "scout_exempt=true + impl taskでcommit checkが注入される (GP-190修正)" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
   title: "scout exempt commit check test"
@@ -243,7 +243,9 @@ import yaml
 from pathlib import Path
 report = Path("$report_path")
 data = yaml.safe_load(report.read_text(encoding="utf-8"))
-assert "commit" not in data["binary_checks"], f"commit checkが注入されている(不要): {data['binary_checks']}"
+assert "commit" in data["binary_checks"], f"commit checkが注入されていない(impl taskは必須): {data['binary_checks']}"
+commit_items = data["binary_checks"]["commit"]
+assert len(commit_items) >= 1, f"commit checkが空: {commit_items}"
 print("OK")
 PYEOF
     [ "$status" -eq 0 ]
