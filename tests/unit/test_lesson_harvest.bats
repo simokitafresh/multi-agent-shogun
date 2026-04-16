@@ -6,7 +6,7 @@ setup_file() {
     export LESSON_HARVEST_SCRIPT="$PROJECT_ROOT/scripts/lesson_harvest.sh"
     [ -f "$LESSON_HARVEST_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
-    command -v rg >/dev/null 2>&1 || return 1
+    command -v rg >/dev/null 2>&1 || skip "rg not available"
 }
 
 setup() {
