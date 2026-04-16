@@ -626,3 +626,18 @@
   gate_prediction: CLEAR
   causal_chain: "cmd_1951→test_hooks.sh特定→subprocess除去+evaluator共通化→-89%=hookテスト実行ごとの正の複利"
   timestamp: "2026-04-16T17:18:00"
+- cmd_id: cmd_1973
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1973_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。model_switch_preflight.sh grep結合+python→awk+git grepで5483→1230ms(-78%,4.5x)。テスト63/63 PASS"
+  observations:
+    - "事実1: check_hardcodesが9.4s(73%)占有。11パターン別々grep→単一正規表現で0.76s(12.4x)。WSL2 I/O回数削減が決定打"
+    - "事実2: lesson_candidate有: grep多重→パターン結合。CoDD改善全体に横展開可能な汎用パターン"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  gate_prediction: WARN(draft_lessons)
+  causal_chain: "cmd_1951→model_switch_preflight.sh特定→grep多重呼出→I/O回数支配→パターン結合→-78%=/hensei発火ごとの正の複利"
+  timestamp: "2026-04-16T17:22:00"

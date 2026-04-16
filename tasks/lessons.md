@@ -3693,3 +3693,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に source すると usage/help でも固定コストを払い続ける。hot path は専用の軽量パーサへ切り出し、重い共通ライブラリは遅延読込または不使用に寄せるべし。
+
+### L484: 高頻度スクリプトのgrep多重呼出はWSL2 I/Oボトルネックを生む。パターン結合で1回に削減せよ
+- **日付**: 2026-04-16
+- **出典**: cmd_1973
+- **記録者**: kagemaru
+- **status**: draft
+- **tags**: [universal]
+- model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。

@@ -42,17 +42,6 @@ load_external_repos() {
     )
 }
 
-normalize_ref() {
-    local raw="$1"
-    local cleaned
-    cleaned="$(printf '%s' "$raw" | sed -E \
-        -e 's/[[:space:]]*\|.*$//' \
-        -e 's/[[:space:]]*§.*$//' \
-        -e 's/[`"'"'"']//g' \
-        -e 's/[),.;:]+$//')"
-    printf '%s' "$cleaned"
-}
-
 is_glob_ref() {
     local ref="$1"
     [[ "$ref" == *"*"* || "$ref" == *"?"* || "$ref" == *"["* ]]
@@ -80,27 +69,18 @@ ref_exists_in_base() {
     fi
 }
 
-display_path() {
-    local file="$1"
-    if [[ "$file" == "$SCRIPT_DIR/"* ]]; then
-        printf '%s' "${file#"$SCRIPT_DIR"/}"
-    else
-        printf '%s' "$file"
-    fi
-}
-
 check_context_file() {
     local context_file="$1"
-    local file_display
-    file_display="$(display_path "$context_file")"
+    # cmd_1976最適化: display_path subshell排除 → bash文字列演算でインライン化
+    local file_display="${context_file#"$SCRIPT_DIR"/}"
 
     while IFS=$'\t' read -r line_no raw_ref; do
         [ -n "$raw_ref" ] || continue
 
-        local ref
-        ref="$(normalize_ref "$raw_ref")"
-        [[ "$ref" == docs/research/* ]] || continue
-
+        # cmd_1976最適化: normalize_ref(sed×268回)排除
+        # awk正規表現 [a-zA-Z0-9_./*-]+ は|§`'"'"'"),.:;を含まないためnormalize_refはno-op
+        # [[ ref == docs/research/* ]] も常にtrue(awk出力はdocs/research/始まり)→省略
+        local ref="$raw_ref"
         local key="${context_file}|${ref}"
         if [[ -n "${SEEN_REFS[$key]:-}" ]]; then
             continue
