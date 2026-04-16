@@ -7,6 +7,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | 才蔵 | `scripts/report_field_set.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `66-70ms → 11ms` (`-83%`, scalar hot path) | spec+after: `docs/research/report_field_set_after_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/inbox_write.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `78ms → 50ms` (`-35.9%`, write path) / `89ms → 10-20ms` (`--help`) | spec+after: `docs/research/inbox_write_after_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/dashboard_auto_section.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `0.89s → 0.34s` (`-61.8%`, stale-cache path) | spec+after: `docs/research/dashboard_auto_section_after_20260416.md` |
+| 2026-04-16 | hayate | `scripts/cmd_save.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `1.83s → 1.06s` (`-42.1%`, warm median) / `cmd_1951基準 4.02s → 1.06s` (`-73.6%`) | spec+after: `docs/research/codd_spec_cmd_save_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/post_recalculate_checks.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `6.15s → 2.23s` (`-63.9%`, cold run) | spec: `docs/research/codd_spec_post_recalculate_checks_20260416.md` |
 | 2026-04-15 | 軍師 | `scripts/deploy_task.sh` | Phase 6完了 | `2639ms → 88ms` (`-97%`) | spec: `docs/research/gunshi_deploy_task_refactor_spec.md` / after: `docs/research/deploy_task_after_20260415.md` |
 | 2026-04-14 | 軍師 | `scripts/gates/gate_gunshi_startup.sh` / `scripts/gates/gate_shogun_startup.sh` / `scripts/gunshi_gate_sync.sh` | なぜなぜ7回完了 + 高速化適用済 | `14.9s → 3.2s` (`4.7x`) | spec+result: `docs/research/gunshi_idle_startup_speedup_20260414.md` |
