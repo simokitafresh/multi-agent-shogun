@@ -645,18 +645,88 @@ archive_cmds() {
     : > "$archive_todo"
     echo "commands:" > "$tmp_active"
 
-    # フェーズ1: flock内でQUEUE_FILE読込（mapfile+forループ）・分類・QUEUE_FILE更新
+    # フェーズ1: flock内でQUEUE_FILE読込・分類・QUEUE_FILE更新
+    # GP-XXX: 21x sed+grep ループ → 単一 gawk パスに置換（WSL2プロセス起動コスト削減）
     # AC1: QUEUE_FILEのすべての読み込みをflock内に包含
     # AC2: アーカイブファイル書き出し等QUEUE_FILE以外のI/OはこのサブシェルをEXIT後に実行
     (
         flock -w 10 200 || { echo "[archive] WARN: flock timeout on QUEUE_FILE" >&2; exit 1; }
 
-        # エントリ境界を行番号で特定（リスト形式 + マッピング形式の両対応）
-        local -a starts
-        mapfile -t starts < <(grep -nE '^ *- id: cmd_|^  cmd_[0-9a-z_]+:' "$QUEUE_FILE" | cut -d: -f1)
+        # changelog IDs を事前ロード（status欠損エントリ用フォールバック）
+        local _cl_ids=""
+        if [ -f "$CHANGELOG_FILE" ]; then
+            _cl_ids=$(gawk '/^[[:space:]]*(-[[:space:]]*)?(id|cmd_id):[[:space:]]*cmd_[^[:space:]]+/{
+                id=$0; sub(/^[[:space:]]*(-[[:space:]]*)?(id|cmd_id):[[:space:]]*/,"",id)
+                gsub(/[[:space:]]+$/,"",id)
+                if (id~/^cmd_/) print id
+            }' "$CHANGELOG_FILE" 2>/dev/null | paste -sd, || true)
+        fi
 
-        if [ ${#starts[@]} -eq 0 ]; then
-            # 空振り検出: エントリ境界が0件でも完了ステータスが存在するならパターン不一致
+        # 単一 gawk パス: エントリ分類 + active/archive 振り分け
+        gawk -v tmp_dir="$TMP" \
+             -v active_f="$tmp_active" \
+             -v todo_f="$archive_todo" \
+             -v result_f="$archive_result" \
+             -v cl_ids="$_cl_ids" \
+        'BEGIN {
+            archived=0; kept=0; completed_count=0
+            in_entry=0; cur_cmd=""; cur_status=""; buf_n=0
+            n=split(cl_ids,arr,","); for(i=1;i<=n;i++) if(arr[i]!="") cl[arr[i]]=1
+        }
+        /^  cmd_[0-9a-z_]+:/ {
+            if(cur_cmd!="") _flush()
+            cur_cmd=$0; sub(/^  /,"",cur_cmd); sub(/:.*$/,"",cur_cmd)
+            cur_status=""; buf_n=0; buf[++buf_n]=$0; in_entry=1; next
+        }
+        /^[[:space:]]*-[[:space:]]id:[[:space:]]*cmd_/ {
+            if(cur_cmd!="") _flush()
+            cur_cmd=$0; sub(/^[[:space:]]*-[[:space:]]id:[[:space:]]*/,"",cur_cmd)
+            gsub(/[[:space:]]+$/,"",cur_cmd)
+            cur_status=""; buf_n=0; buf[++buf_n]=$0; in_entry=1; next
+        }
+        in_entry && /^[[:space:]]*status:/ && cur_status=="" {
+            cur_status=$0; sub(/^[[:space:]]*status:[[:space:]]*/,"",cur_status)
+            gsub(/["'"'"'\t ]/,"",cur_status)
+        }
+        in_entry { buf[++buf_n]=$0; next }
+        END {
+            if(cur_cmd!="") _flush()
+            printf "no_entries=%d\narchived=%d\nkept=%d\ncompleted_count=%d\n", \
+                (archived==0&&kept==0?1:0), archived, kept, completed_count > result_f
+            close(result_f)
+        }
+        function _flush(    i,stat,arch_stat,out) {
+            stat=tolower(cur_status)
+            if(stat==""&&(cur_cmd in cl)) stat="completed"
+            if(stat~/^(completed|cancelled|absorbed|halted|superseded|done)/) {
+                completed_count++
+                match(stat,/^(completed|cancelled|absorbed|halted|superseded|done)/)
+                arch_stat=substr(stat,1,RLENGTH)
+                out=tmp_dir "/entry_" cur_cmd ".tmp"
+                for(i=1;i<=buf_n;i++) print buf[i] > out; close(out)
+                printf "%s|%s\n",cur_cmd,arch_stat >> todo_f
+                archived++
+            } else {
+                for(i=1;i<=buf_n;i++) print buf[i] >> active_f
+                kept++
+            }
+            cur_cmd=""; cur_status=""; buf_n=0; delete buf
+        }' "$QUEUE_FILE"
+
+        # 結果読込
+        local no_entries=0 archived_i=0 kept_i=0 completed_count=0
+        if [ -f "$archive_result" ]; then
+            while IFS='=' read -r key val; do
+                case "$key" in
+                    no_entries)      no_entries="$val" ;;
+                    archived)        archived_i="$val" ;;
+                    kept)            kept_i="$val" ;;
+                    completed_count) completed_count="$val" ;;
+                esac
+            done < "$archive_result"
+        fi
+
+        if [ "${no_entries:-0}" -eq 1 ]; then
             local pre_check
             pre_check=$(awk '/^ *status: *(completed|cancelled|absorbed|halted|superseded|done)/{c++} END{print c+0}' "$QUEUE_FILE")
             printf 'no_entries=1\npre_check=%s\narchived=0\nkept=0\ncompleted_count=%s\n' \
@@ -664,70 +734,11 @@ archive_cmds() {
             exit 0
         fi
 
-        local total_lines archived_i=0 kept_i=0
-        total_lines=$(wc -l < "$QUEUE_FILE")
-
-        for i in "${!starts[@]}"; do
-            local s=${starts[$i]}
-            local e
-            if [ $((i + 1)) -lt ${#starts[@]} ]; then
-                e=$(( ${starts[$((i + 1))]} - 1 ))
-            else
-                e=$total_lines
-            fi
-
-            local entry
-            entry="$(sed -n "${s},${e}p" "$QUEUE_FILE")"
-
-            # statusフィールドを取得（インメモリ抽出: temp file I/O排除）
-            local status_val
-            status_val=$(printf '%s\n' "$entry" | grep -m1 '^ *status:' | sed 's/^ *status: *//; s/["'"'"']//g; s/[[:space:]]*$//' || true)
-
-            # cmd_idを取得（退避先ファイル名に利用。リスト形式 + マッピング形式の両対応）
-            local cmd_id
-            cmd_id=$(printf '%s\n' "$entry" \
-                | grep -m1 -E '^ *- id: cmd_|^  cmd_[0-9a-z_]+:' \
-                | sed -E 's/^ *- id: *//; s/^[[:space:]]*(cmd_[0-9a-z_]+):.*/\1/')
-
-            # status欠損時のみ、completed_changelog照合でcompleted扱いにする。
-            # 完全一致(anchor)で cmd_51 が cmd_515 に誤マッチしないようにする。
-            if [ -z "$status_val" ] && [ -n "$cmd_id" ] && [ -f "$CHANGELOG_FILE" ]; then
-                local cmd_id_re
-                cmd_id_re=$(printf '%s' "$cmd_id" | sed 's/[][(){}.^$*+?|\\-]/\\&/g')
-                if grep -Eq "^[[:space:]]*(-[[:space:]]*)?(id|cmd_id):[[:space:]]*${cmd_id_re}[[:space:]]*$" "$CHANGELOG_FILE"; then
-                    status_val="completed"
-                fi
-            fi
-
-            if [[ "$status_val" =~ ^(completed|cancelled|absorbed|halted|superseded|done) ]]; then
-                local archive_status="${BASH_REMATCH[1]}"
-                if [ -n "$cmd_id" ]; then
-                    # AC2: アーカイブファイル書き出しはflock外で実施。entryをtmpに保存しtodoリストに登録
-                    printf '%s\n' "$entry" > "$TMP/entry_${cmd_id}.tmp"
-                    printf '%s|%s\n' "$cmd_id" "$archive_status" >> "$archive_todo"
-                else
-                    echo "[archive] WARN: failed to parse cmd_id at lines ${s}-${e}" >&2
-                fi
-                archived_i=$((archived_i + 1))
-            else
-                printf '%s\n' "$entry" >> "$tmp_active"
-                kept_i=$((kept_i + 1))
-            fi
-        done
-
-        # 空振り検出用: 完了ステータス件数をQUEUE_FILEから取得（flock内・最終読み込み）
-        local completed_count
-        completed_count=$(awk '/^ *status: *(completed|cancelled|absorbed|halted|superseded|done)/{c++} END{print c+0}' "$QUEUE_FILE")
-
-        if [ "$archived_i" -gt 0 ]; then
+        if [ "${archived_i:-0}" -gt 0 ]; then
             # QUEUE_FILE更新（flock内でアトミックに実行）
             [ -f "$tmp_active" ] || { echo "[archive] FATAL: tmp_active not found: $tmp_active" >&2; exit 1; }
             mv "$tmp_active" "$QUEUE_FILE" || { echo "[archive] FATAL: mv failed: $tmp_active → $QUEUE_FILE" >&2; exit 1; }
         fi
-
-        # 結果を親スコープに渡すためにtmpファイルに書き出し
-        printf 'no_entries=0\narchived=%s\nkept=%s\ncompleted_count=%s\n' \
-            "$archived_i" "$kept_i" "$completed_count" > "$archive_result"
 
     ) 200>"/tmp/mas-stk.lock"
 
