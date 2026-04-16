@@ -1,4 +1,5 @@
 # インフラコンテキスト
+<!-- last_updated: 2026-04-17 cmd_karo_context_freshness_1993 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -96,6 +97,16 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 | 1543 | **計測検証** | CLEAR率62.7%→84.6%(+21.9pt)を実測。学習ループ完結 |
 
 → 完了履歴: `context/cmd-chronicle.md` 03-30 / `scripts/cmd_save.sh` / `scripts/cmd_complete_gate.sh` / `scripts/deploy_task.sh` / `scripts/karo_workaround_log.sh`
+
+## 直近改善（2026-04-16 CoDD波 / GP-198〜208）
+
+| 領域 | 結論 | 参照 |
+|------|------|------|
+| CoDD改善32本 | cmd_1951の全量プロファイリングを起点にhot path 32本を改善。代表値: `cmd_save.sh 4.02s→1.06s (-73.6%)`, `deploy_task.sh 2639ms→32ms`, `gate_karo_startup.sh 464ms→190ms` | `docs/research/codd_refactor_registry.md`, `context/cmd-chronicle.md` 04-16 |
+| GP-198/201 Session State | gate FAIL時の失敗履歴をtask再配備へ注入し、`cmd_save.sh` 側でもDiagnose MANDATORY+Session Stateを強制。/newや再配備を跨いでL3診断を保持 | `context/codd.md` §4, `context/cmd-chronicle.md` `cmd_karo_gp198`/`cmd_1939` |
+| GP-199 退化計測 | GP/改善cmdの報告に `before_metrics` / `after_metrics` / `regression` をWARNで強制し、速度改善が退化を隠さない形に変更 | `scripts/gates/gate_report_format.sh`, `context/cmd-chronicle.md` `cmd_1941` |
+| GP-202 成果物プレフィックス検査 | `files_modified` に `parent_cmd` プレフィックスが無い場合WARN。cmd_1948事故系の「別cmd成果物上書き」をゲートで検知 | `scripts/gates/gate_report_format.sh`, `tests/unit/test_report_template_gate_compat.bats` |
+| GP-204/208 運用耐障害 | `daemon_watchdog.sh` は `set -e` / 二重flockを外して部分失敗で全体停止しない形に修正。`bulletin_write.sh` は掲示板通知を80文字要約でなく全文inbox配信へ変更 | `scripts/daemon_watchdog.sh`, `scripts/bulletin_write.sh` |
 
 ## deploy_task.sh --direct mode（cmd_1672）
 

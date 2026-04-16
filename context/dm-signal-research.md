@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-04-07 cmd_1794 ALM進捗同期 -->
+<!-- last_updated: 2026-04-17 cmd_karo_context_freshness_1993 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -941,3 +941,10 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - **③/⑦の最良rank**: ⑦ rank25(α=119.4%) > ③ rank43(α=115.8%)
 - **結論**: L3はL2を上回る。追加候補は⑤で十分、③/⑦不要
 → 詳細: `outputs/analysis/alm_research/cmd_1896_l3_summary.md` | CSV: `outputs/analysis/alm_research/cmd_1896_l3_beta_adjusted.csv`
+
+### CoDD適用: Phase 3完了 / Phase 4準備 (cmd_1947-1950, cmd_1986-1992)
+<!-- last_updated: 2026-04-17 cmd_karo_context_freshness_1993 -->
+- **Phase 3高速化完了**: yotsume `-98.6%`, nukimi `-63.3%`, oikaze `-99.3%`, l1_alm_wf `-81%`, bunshin `-78%`。レベルA上位5本のCoDD改善を完了。→ `docs/research/codd_refactor_registry.md` | `docs/research/codd_dmsignal_python_strategy.md` §0.5
+- **N体EW比較を横並び化**: cmd_1947-1950系列で1/2/3体EWを同一評価軸に整列。alpha-CalmarはIS/OOS/Expandingで2-3体優位、WFは1体優位。→ `context/l2-okugi-progress.md` §L3 N体EW比較 | `context/senkyoku-log.md`
+- **CoDD適用方式はハイブリッドで確定**: OSS版CoDDは `extract`/`measure` を使用し、spec/cProfile/実装/検証は手動で回す。`review`/`implement` は codd-pro 依存で対象外。→ `docs/research/codd_dmsignal_python_strategy.md` §0, §1
+- **Phase 4は準備中**: 前提は `(1)` fullrecalculate read-only cProfile, `(2)` cmd_1985偵察結果の設計書反映(compare_recalc_results.py差分), `(3)` `--exclude-months` 実装。→ `docs/research/codd_dmsignal_python_strategy.md` §3.5
