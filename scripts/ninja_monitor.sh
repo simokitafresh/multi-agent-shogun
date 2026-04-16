@@ -462,6 +462,11 @@ safe_send_clear() {
         (
             cd "$SCRIPT_DIR" || exit
             echo "$_uncommitted" | sed 's/^...//' | xargs -d '\n' git add -- 2>/dev/null || true
+            # CI RED防止: instructions/変更時はgenerated filesを再生成(GA-085/089/090の真因)
+            if git diff --cached --name-only | grep -q '^instructions/'; then
+                bash scripts/build_instructions.sh 2>/dev/null || true
+                git add instructions/generated/ 2>/dev/null || true
+            fi
             git commit -m "chore: auto-commit before /clear ($agent_name) — 運用ファイル" 2>/dev/null || true
         )
     fi
