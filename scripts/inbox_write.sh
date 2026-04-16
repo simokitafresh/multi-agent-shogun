@@ -906,8 +906,8 @@ fi
 if [ "$TYPE" = "cmd_new" ]; then
     # contentからcmd_idを抽出（"cmd_XXXX"パターン）
     _CMD_NEW_ID=$(echo "$CONTENT" | grep -oP 'cmd_\d+' | head -1 || true)
-    if [ -n "$_CMD_NEW_ID" ] && [ "${_CMD_DELEGATE_BYPASS:-}" != "1" ]; then
-        # cmd_delegate.sh経由は_CMD_DELEGATE_BYPASS=1で通過。直接呼出しのみstatusチェック
+    if [ -n "$_CMD_NEW_ID" ]; then
+        # statusを確認。pendingならgate未通過(cmd_delegate.shはinbox_write前にstatus=delegatedに変更済み)
         _CMD_STATUS=$(awk -v id="$_CMD_NEW_ID" '
             $0 ~ "^  " id ":" { found=1; next }
             found && /^    status:/ { gsub(/.*status:[[:space:]]*/, ""); gsub(/"/, ""); print; exit }

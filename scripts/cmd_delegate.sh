@@ -130,20 +130,20 @@ if find "$PROJECT_DIR/queue/archive/cmds/" -maxdepth 1 -name "${CMD_ID}_*" -prin
     exit 1
 fi
 
-# Step 4: inbox_write.sh で家老に通知（_CMD_DELEGATE_BYPASSでcmd_new guard通過）
-_CMD_DELEGATE_BYPASS=1 bash "$SCRIPT_DIR/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
-    echo "ERROR: inbox_write.sh failed for $CMD_ID" >&2
+# Step 4: status=delegated + delegated_at を先に設定（inbox_writeのcmd_new guardがstatus確認するため）
+TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
+yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "delegated" || {
+    echo "ERROR: Failed to set status=delegated for $CMD_ID" >&2
     exit 1
 }
-
-# Step 5: delegated_at を設定 + status を delegated に遷移
-TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
 yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" "\"$TIMESTAMP\"" || {
     echo "ERROR: Failed to set delegated_at for $CMD_ID" >&2
     exit 1
 }
-yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "delegated" || {
-    echo "ERROR: Failed to set status=delegated for $CMD_ID" >&2
+
+# Step 5: inbox_write.sh で家老に通知（status=delegated済みなのでguard通過）
+bash "$SCRIPT_DIR/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
+    echo "ERROR: inbox_write.sh failed for $CMD_ID — status=delegatedは維持(手動inbox_writeで再送可)" >&2
     exit 1
 }
 
