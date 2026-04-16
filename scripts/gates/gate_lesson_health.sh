@@ -31,6 +31,10 @@ LESSON_EFFECT_ALERT_THRESHOLD=30
 LESSON_EFFECT_STATUS_FILE="${LESSON_EFFECT_STATUS_FILE:-$SCRIPT_DIR/queue/lesson_effectiveness_status.txt}"
 LESSON_EFFECT_NOTIFY_STATE="${LESSON_EFFECT_NOTIFY_STATE:-$SCRIPT_DIR/queue/lesson_effectiveness_notify_state.txt}"
 LESSON_EFFECT_NTFY_ENABLED="${LESSON_EFFECT_NTFY_ENABLED:-1}"
+INJECTION_WARN_THRESHOLD=10
+ACCUMULATION_THRESHOLD=10
+UNSORTED_THRESHOLD=10
+CHECKPOINT_FILE="$SCRIPT_DIR/queue/lesson_deprecation_checkpoint.txt"
 
 emit_actionable() {
     local message="$1"
@@ -39,323 +43,59 @@ emit_actionable() {
     echo "action: $action"
 }
 
-# ─── 非deprecated教訓IDを出力（数値のみ、Lプレフィックスなし、1行1ID） ───
-_active_lesson_ids() {
+# ─── 高速化: lessons.yaml を1回だけ読んで全統計を計算 ───
+# 出力1行目: active_count|max_id|deprecated_count|unsynced_count|new_since_checkpoint
+# 追加行: PROBLEM:L番号: injection=N, helpful=0 [pid]
+_compute_lesson_stats() {
     local file="$1"
-    awk '
-        /^- id: L/ {
-            if (current_id != "" && !is_deprecated) print current_id
-            current_id = $3; sub(/^L/, "", current_id)
-            is_deprecated = 0
+    local synced_num="${2:-0}"
+    local checkpoint="${3:-0}"
+    local inject_thr="${4:-10}"
+    local pid="${5:-}"
+
+    awk -v synced="$synced_num" -v chk="$checkpoint" \
+        -v thr="$inject_thr" -v pid="$pid" '
+    function flush_current(    n) {
+        if (current_id == "") return
+        n = current_id + 0
+        if (is_deprecated) {
+            dep++
+        } else {
+            active_nc++
+            if (n > max_id) max_id = n
+            if (n > synced + 0) unsynced++
+            if (n > chk + 0) new_since++
+            if (ic + 0 >= thr + 0 && hc + 0 == 0) {
+                problems[active_nc] = "L" current_id ": injection=" ic+0 ", helpful=0 [" pid "]"
+            }
         }
-        /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
-        /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
-        END { if (current_id != "" && !is_deprecated) print current_id }
+    }
+    /^- id: L/ {
+        flush_current()
+        current_id = $3; sub(/^L/, "", current_id)
+        is_deprecated = 0; ic = 0; hc = 0
+    }
+    /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
+    /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
+    /[[:space:]]+injection_count:[[:space:]]/ {
+        gsub(/.*injection_count:[[:space:]]*/,""); ic = $1 + 0
+    }
+    /[[:space:]]+helpful_count:[[:space:]]/ {
+        gsub(/.*helpful_count:[[:space:]]*/,""); hc = $1 + 0
+    }
+    END {
+        flush_current()
+        printf "%d|%d|%d|%d|%d\n", active_nc+0, max_id+0, dep+0, unsynced+0, new_since+0
+        for (i in problems) printf "PROBLEM:%s\n", problems[i]
+    }
     ' "$file"
 }
 
-# 単一projectの健全性チェック
-# $1: project_id
-check_project() {
-    local project_id="$1"
-    local lessons_file="$SCRIPT_DIR/projects/${project_id}/lessons.yaml"
-    local context_file
-
-    # context_fileをconfig/projects.yamlから取得
-    context_file=$(grep -A5 "id: ${project_id}" "$CONFIG_FILE" 2>/dev/null \
-        | grep 'context_file:' | head -1 \
-        | sed 's/.*context_file:[[:space:]]*//' | tr -d '"' | tr -d "'" | tr -d '[:space:]')
-
-    if [ -z "$context_file" ]; then
-        # フォールバック: context/{project_id}.md
-        context_file="context/${project_id}.md"
-    fi
-    local context_path="$SCRIPT_DIR/$context_file"
-
-    # (a) lessons.yamlの総lesson数
-    if [ ! -f "$lessons_file" ]; then
-        echo "OK: ${project_id} lessons.yaml不在(lesson 0件)"
-        return 0
-    fi
-
-    local total_lessons_raw
-    total_lessons_raw=$(awk '/^- id: L/{c++} END{print c+0}' "$lessons_file")
-
-    if [ "$total_lessons_raw" -eq 0 ]; then
-        echo "OK: ${project_id} lesson 0件"
-        return 0
-    fi
-
-    # deprecated教訓を除外してIDを収集 (L034: 固定インデント非依存)
-    # deprecated: true AND status: deprecated 両方を除外 (cmd_414)
-    local -a all_ids
-    mapfile -t all_ids < <(_active_lesson_ids "$lessons_file" | sort -rn)
-
-    # deprecated件数をログ出力 (status: deprecated OR deprecated: true, per-lesson)
-    local deprecated_count
-    deprecated_count=$(awk '
-        /^- id: L/ {
-            if (current_id != "" && is_deprecated) c++
-            current_id = $3; is_deprecated = 0
-        }
-        /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
-        /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
-        END { if (current_id != "" && is_deprecated) c++; print c+0 }
-    ' "$lessons_file")
-    if [ "$deprecated_count" -gt 0 ]; then
-        echo "INFO: ${project_id} deprecated除外: ${deprecated_count}件"
-    fi
-
-    local total_lessons="${#all_ids[@]}"
-
-    if [ "$total_lessons" -eq 0 ]; then
-        echo "OK: ${project_id} lesson 0件(deprecated除外後)"
-        return 0
-    fi
-
-    local max_id="${all_ids[0]}"
-
-    # (b) context fileの last_synced_lesson マーカーを取得
-    local synced_num=0
-    if [ -f "$context_path" ]; then
-        local marker
-        marker=$(grep -oE '<!-- last_synced_lesson: L[0-9]+ -->' "$context_path" 2>/dev/null | tail -1)
-        if [ -n "$marker" ]; then
-            synced_num=$(echo "$marker" | grep -oE '[0-9]+')
-        fi
-    fi
-
-    # (c) 未合流lesson数を計算(IDの数値 > synced_num のものをカウント)
-    local unsynced=0
-    for id_num in "${all_ids[@]}"; do
-        if [ "$id_num" -gt "$synced_num" ] 2>/dev/null; then
-            ((unsynced++))
-        fi
-    done
-
-    # (d)(e) 判定と出力
-    if [ "$unsynced" -gt "$ALERT_THRESHOLD" ]; then
-        emit_actionable \
-            "ALERT: ${project_id}のlesson→context未合流${unsynced}件(total:${total_lessons},synced:L${synced_num},max:L${max_id})" \
-            "context 側へ未合流教訓を反映し、last_synced_lesson を更新せよ。"
-        return 1
-    else
-        echo "OK: ${project_id}のlesson統合状況は健全(未合流${unsynced}件,total:${total_lessons},synced:L${synced_num})"
-        return 0
-    fi
-}
-
-# 蓄積トリガーチェック (cmd_414)
-# 前回審査時点から新規教訓が10件以上増えたらWARN
-# checkpoint: queue/lesson_deprecation_checkpoint.txt (L番号1つだけ記録)
-ACCUMULATION_THRESHOLD=10
-CHECKPOINT_FILE="$SCRIPT_DIR/queue/lesson_deprecation_checkpoint.txt"
-
-check_accumulation() {
-    # 全projectの最新L番号(deprecated除外)を取得
-    local max_id=0
-    local total_active=0
-
-    for pid in "$@"; do
-        local lessons_file="$SCRIPT_DIR/projects/${pid}/lessons.yaml"
-        [ -f "$lessons_file" ] || continue
-
-        # deprecated: true AND status: deprecated 両方を除外してactive教訓のIDを収集 (L034: 柔軟マッチ)
-        while IFS= read -r id_num; do
-            [ -z "$id_num" ] && continue
-            total_active=$((total_active + 1))
-            if [ "$id_num" -gt "$max_id" ] 2>/dev/null; then
-                max_id="$id_num"
-            fi
-        done < <(_active_lesson_ids "$lessons_file")
-    done
-
-    if [ "$max_id" -eq 0 ]; then
-        return 0
-    fi
-
-    # checkpoint読取り
-    local checkpoint=0
-    if [ -f "$CHECKPOINT_FILE" ]; then
-        local raw
-        raw=$(grep -oE 'L[0-9]+' "$CHECKPOINT_FILE" 2>/dev/null | head -1)
-        if [ -n "$raw" ]; then
-            checkpoint=$(echo "$raw" | grep -oE '[0-9]+')
-        fi
-    fi
-
-    # 新規件数計算
-    local new_count=0
-    for pid in "$@"; do
-        local lessons_file="$SCRIPT_DIR/projects/${pid}/lessons.yaml"
-        [ -f "$lessons_file" ] || continue
-
-        while IFS= read -r id_num; do
-            [ -z "$id_num" ] && continue
-            if [ "$id_num" -gt "$checkpoint" ] 2>/dev/null; then
-                new_count=$((new_count + 1))
-            fi
-        done < <(_active_lesson_ids "$lessons_file")
-    done
-
-    if [ "$new_count" -ge "$ACCUMULATION_THRESHOLD" ]; then
-        emit_actionable \
-            "WARN: 新規教訓+${new_count}件(前回審査: L${checkpoint}, 現在最新: L${max_id})。" \
-            "bash scripts/lesson_deprecation_scan.sh を実行し、新規教訓を審査せよ。"
-        return 1
-    else
-        echo "OK: 蓄積チェック(新規${new_count}件, 前回審査: L${checkpoint}, 閾値${ACCUMULATION_THRESHOLD})"
-    fi
-    return 0
-}
-
-# 未振り分け教訓チェック (cmd_301)
-# context fileの「## 教訓索引（自動追記）」セクション内の「- L」行をカウント
-# $1: project_id
-UNSORTED_THRESHOLD=10
-
-check_unsorted_lessons() {
-    local project_id="$1"
-    local context_file
-
-    # context_fileをconfig/projects.yamlから取得
-    context_file=$(grep -A5 "id: ${project_id}" "$CONFIG_FILE" 2>/dev/null \
-        | grep 'context_file:' | head -1 \
-        | sed 's/.*context_file:[[:space:]]*//' | tr -d '"' | tr -d "'" | tr -d '[:space:]')
-
-    if [ -z "$context_file" ]; then
-        context_file="context/${project_id}.md"
-    fi
-    local context_path="$SCRIPT_DIR/$context_file"
-
-    if [ ! -f "$context_path" ]; then
-        # context fileなし → 0件扱い
-        return 0
-    fi
-
-    # セクション「## 教訓索引（自動追記）」内の「- L」行をカウント
-    local count
-    count=$(awk '
-        /^## 教訓索引（自動追記）/ { in_section=1; next }
-        in_section && /^## / { exit }
-        in_section && /^- L/ { c++ }
-        END { print c+0 }
-    ' "$context_path")
-
-    if [ "$count" -gt "$UNSORTED_THRESHOLD" ]; then
-        emit_actionable \
-            "ALERT: ${project_id}の未振り分け教訓${count}件 → /lesson-sort推奨" \
-            "/lesson-sort を実行し、未振り分け教訓を適切なcontextセクションへ移動せよ。"
-        return 1
-    elif [ "$count" -gt 0 ]; then
-        echo "OK: ${project_id}の未振り分け教訓${count}件(閾値${UNSORTED_THRESHOLD}以下)"
-    fi
-    # セクションなし or 0件 → 何も出力しない（0件扱い）
-    return 0
-}
-
-# メイン処理
-if [ $# -ge 1 ]; then
-    # 引数あり: 指定projectのみチェック
-    check_project "$1" || EXIT_CODE=1
-    check_unsorted_lessons "$1" || EXIT_CODE=1
-    check_accumulation "$1" || EXIT_CODE=1
-else
-    # 引数なし: 全projectを走査
-    if [ ! -f "$CONFIG_FILE" ]; then
-        echo "ERROR: config/projects.yaml not found"
-        exit 1
-    fi
-
-    # active projectのIDを取得
-    local_ids=()
-    while IFS= read -r line; do
-        local_ids+=("$line")
-    done < <(awk '/^  - id:/{id=$3} /status: active/{print id}' "$CONFIG_FILE")
-
-    if [ ${#local_ids[@]} -eq 0 ]; then
-        emit_actionable \
-            "WARN: active projectが見つかりません" \
-            "config/projects.yaml の active project 設定を確認し、対象projectを有効化せよ。"
-        exit 0
-    fi
-
-    for pid in "${local_ids[@]}"; do
-        check_project "$pid" || EXIT_CODE=1
-        check_unsorted_lessons "$pid" || EXIT_CODE=1
-    done
-
-    # 蓄積チェックは全project横断で1回実行
-    check_accumulation "${local_ids[@]}" || EXIT_CODE=1
-fi
-
-# --- injection_count閾値チェック (cmd_470) ---
-INJECTION_WARN_THRESHOLD=10
-check_injection_count_threshold() {
-    local target_pids=("$@")
-    if [ ${#target_pids[@]} -eq 0 ]; then
-        # 全projectを走査
-        while IFS= read -r line; do
-            target_pids+=("$line")
-        done < <(awk '/^  - id:/{id=$3} /status: active/{print id}' "$CONFIG_FILE" 2>/dev/null)
-    fi
-
-    # injection_count >= THRESHOLD かつ helpful_count == 0 の教訓を抽出（awk: python3不要）
-    local problems=""
-    for pid in "${target_pids[@]}"; do
-        local lessons_file="$SCRIPT_DIR/projects/${pid}/lessons.yaml"
-        [ -f "$lessons_file" ] || continue
-        local result
-        result=$(awk -v threshold="$INJECTION_WARN_THRESHOLD" -v pid="$pid" '
-            /^- id: L/ {
-                if (current_id != "" && !is_deprecated && ic+0 >= threshold && hc+0 == 0) {
-                    printf "  - %s: injection=%d, helpful=%d [%s]\n", current_id, ic+0, hc+0, pid
-                }
-                current_id = $3
-                is_deprecated = 0; ic = 0; hc = 0
-            }
-            /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
-            /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
-            /[[:space:]]+injection_count:/ { gsub(/.*injection_count:[[:space:]]*/,""); ic = $1+0 }
-            /[[:space:]]+helpful_count:/ { gsub(/.*helpful_count:[[:space:]]*/,""); hc = $1+0 }
-            END {
-                if (current_id != "" && !is_deprecated && ic+0 >= threshold && hc+0 == 0) {
-                    printf "  - %s: injection=%d, helpful=%d [%s]\n", current_id, ic+0, hc+0, pid
-                }
-            }
-        ' "$lessons_file")
-        [ -n "$result" ] && problems="${problems}${result}"$'\n'
-    done
-
-    # 末尾空行を除去
-    problems="${problems%$'\n'}"
-
-    local problem_count=0
-    if [ -n "$problems" ]; then
-        problem_count=$(echo "$problems" | wc -l)
-        echo "$problems"
-    fi
-
-    if [ "$problem_count" -gt 0 ]; then
-        emit_actionable \
-            "WARN: 注入${INJECTION_WARN_THRESHOLD}回以上で効果報告0件の教訓: ${problem_count}件" \
-            "helpful_count=0 の教訓を見直し、改善するか deprecated 候補として審査せよ。"
-    fi
-}
-
-# 教訓効果率ステータスをダッシュボードが拾える形式で保存
 write_lesson_effect_status() {
-    local status="$1"
-    local rate="$2"
-    local window_cmds="$3"
-    local referenced="$4"
-    local injected="$5"
-    local scope="$6"
-    local useful="${7:-0}"
-    local total_feedback="${8:-0}"
-    local useful_rate="${9:-0.0}"
+    local status="$1" rate="$2" window_cmds="$3" referenced="$4" injected="$5" scope="$6"
+    local useful="${7:-0}" total_feedback="${8:-0}" useful_rate="${9:-0.0}"
     cat > "$LESSON_EFFECT_STATUS_FILE" <<EOF
-updated_at=$(date '+%Y-%m-%dT%H:%M:%S%z')
+updated_at=$_now
 status=${status}
 rate=${rate}
 window_cmds=${window_cmds}
@@ -369,38 +109,34 @@ EOF
 }
 
 notify_lesson_effect_if_needed() {
-    local status="$1"
-    local rate="$2"
-    local scope="$3"
+    local status="$1" rate="$2" scope="$3"
+    local prev_status="" prev_scope=""
 
-    local prev_status=""
-    local prev_scope=""
+    # 高速化: 2回のawk呼び出しを1回に統合
     if [ -f "$LESSON_EFFECT_NOTIFY_STATE" ]; then
-        prev_status=$(awk -F= '/^last_status=/{print $2; exit}' "$LESSON_EFFECT_NOTIFY_STATE" 2>/dev/null || true)
-        prev_scope=$(awk -F= '/^scope=/{print $2; exit}' "$LESSON_EFFECT_NOTIFY_STATE" 2>/dev/null || true)
+        local _ns
+        _ns=$(awk -F= '/^last_status=/{s=$2} /^scope=/{sc=$2} END{print s "|" sc}' \
+            "$LESSON_EFFECT_NOTIFY_STATE" 2>/dev/null || true)
+        prev_status="${_ns%%|*}"
+        prev_scope="${_ns##*|}"
     fi
 
-    if [ "$scope" != "$prev_scope" ]; then
-        prev_status=""
-    fi
+    [ "$scope" != "$prev_scope" ] && prev_status=""
 
     if [ "$status" = "WARN" ] || [ "$status" = "ALERT" ]; then
-        if [ "$prev_status" != "$status" ]; then
-            if [ "$LESSON_EFFECT_NTFY_ENABLED" = "1" ]; then
-                bash "$SCRIPT_DIR/scripts/ntfy.sh" "教訓効果率${status}: ${rate}%"
-            fi
+        if [ "$prev_status" != "$status" ] && [ "$LESSON_EFFECT_NTFY_ENABLED" = "1" ]; then
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "教訓効果率${status}: ${rate}%"
         fi
     fi
 
     cat > "$LESSON_EFFECT_NOTIFY_STATE" <<EOF
-updated_at=$(date '+%Y-%m-%dT%H:%M:%S%z')
+updated_at=$_now
 last_status=${status}
 last_rate=${rate}
 scope=${scope}
 EOF
 }
 
-# --- 教訓効果サマリ (cmd_531: lesson_impact.tsv 直近30cmdで評価) ---
 check_lesson_effectiveness() {
     local target_project="${1:-}"
     local scope="${target_project:-all}"
@@ -414,35 +150,28 @@ check_lesson_effectiveness() {
         return 0
     fi
 
-    local cmd_file
-    cmd_file="$(mktemp)"
-    local reversed_file
-    reversed_file="$(mktemp)"
+    # 高速化: reversed_file tempファイルを排除 (tac→awk直結)
+    # 高速化: cmd_fileを$$固定パスに (mktemp呼び出し削減)
+    local cmd_file="/tmp/_glh_cmds_$$"
 
-    tail -2000 "$LESSON_IMPACT_FILE" | tac > "$reversed_file"
-
-    awk -F'\t' -v limit="$LESSON_EFFECT_WINDOW_CMDS" -v project="$target_project" '
+    tac "$LESSON_IMPACT_FILE" | awk -F'\t' -v limit="$LESSON_EFFECT_WINDOW_CMDS" \
+        -v project="$target_project" '
         $1 == "timestamp" { next }
         {
-            cmd = $2
-            proj = $8
-            gsub(/\r$/, "", cmd)
-            gsub(/\r$/, "", proj)
+            cmd = $2; proj = $8
+            gsub(/\r$/, "", cmd); gsub(/\r$/, "", proj)
             if (cmd !~ /^cmd_/) next
             if (cmd ~ /^cmd_test/) next
             if (project != "" && proj != project) next
             if (!(cmd in seen)) {
-                seen[cmd] = 1
-                print cmd
-                n++
+                seen[cmd] = 1; print cmd; n++
                 if (n >= limit) exit
             }
         }
-    ' "$reversed_file" > "$cmd_file"
-    rm -f "$reversed_file"
+    ' > "$cmd_file"
 
     local window_cmds
-    window_cmds=$(wc -l < "$cmd_file" | tr -d ' ')
+    window_cmds=$(awk 'END{print NR}' "$cmd_file")
     if [ "$window_cmds" -eq 0 ]; then
         rm -f "$cmd_file"
         emit_actionable \
@@ -464,88 +193,229 @@ check_lesson_effectiveness() {
         }
         $1 == "timestamp" { next }
         {
-            cmd = $2
-            action = $5
-            result = $6
-            ref = tolower($7)
-            proj = $8
-            gsub(/\r$/, "", cmd)
-            gsub(/\r$/, "", action)
-            gsub(/\r$/, "", result)
-            gsub(/\r$/, "", ref)
-            gsub(/\r$/, "", proj)
+            cmd=$2; action=$5; result=$6; ref=tolower($7); proj=$8
+            gsub(/\r$/, "", cmd); gsub(/\r$/, "", action)
+            gsub(/\r$/, "", result); gsub(/\r$/, "", ref); gsub(/\r$/, "", proj)
             if (cmd !~ /^cmd_/) next
             if (!(cmd in selected)) next
             if (project != "" && proj != project) next
             if (action == "injected") {
                 injected++
-                if (ref == "yes" || ref == "true" || ref == "1") {
-                    referenced++
-                }
+                if (ref == "yes" || ref == "true" || ref == "1") referenced++
             } else if (action == "feedback") {
                 total_feedback++
-                if (toupper(result) == "USEFUL") {
-                    useful++
-                }
+                if (toupper(result) == "USEFUL") useful++
             }
         }
-        END {
-            printf "%d\t%d\t%d\t%d\n", referenced + 0, injected + 0, useful + 0, total_feedback + 0
-        }
+        END { printf "%d\t%d\t%d\t%d\n", referenced+0, injected+0, useful+0, total_feedback+0 }
     ' "$LESSON_IMPACT_FILE")
     rm -f "$cmd_file"
 
-    local referenced_count=0
-    local injected_count=0
-    local useful_count=0
-    local total_feedback_count=0
+    local referenced_count=0 injected_count=0 useful_count=0 total_feedback_count=0
     IFS=$'\t' read -r referenced_count injected_count useful_count total_feedback_count <<< "$metric"
 
-    local rate
-    rate=$(awk -v ref="$referenced_count" -v inj="$injected_count" 'BEGIN{
-        if (inj > 0) printf "%.1f", (ref / inj) * 100
-        else printf "0.0"
-    }')
-
-    local useful_rate
-    useful_rate=$(awk -v u="$useful_count" -v t="$total_feedback_count" 'BEGIN{
-        if (t > 0) printf "%.1f", (u / t) * 100
-        else printf "0.0"
-    }')
-
-    local threshold_status="OK"
-    if [ "$injected_count" -gt 0 ]; then
-        if awk -v v="$rate" -v thr="$LESSON_EFFECT_ALERT_THRESHOLD" 'BEGIN{exit !(v < thr)}'; then
-            threshold_status="ALERT"
-        elif awk -v v="$rate" -v thr="$LESSON_EFFECT_WARN_THRESHOLD" 'BEGIN{exit !(v < thr)}'; then
-            threshold_status="WARN"
-        fi
-    fi
-    # useful率によるステータス判定（feedback件数がある場合のみ）
-    if [ "$total_feedback_count" -gt 0 ]; then
-        if awk -v v="$useful_rate" -v thr="$LESSON_EFFECT_ALERT_THRESHOLD" 'BEGIN{exit !(v < thr)}'; then
-            threshold_status="ALERT"
-        elif [ "$threshold_status" = "OK" ] && awk -v v="$useful_rate" -v thr="$LESSON_EFFECT_WARN_THRESHOLD" 'BEGIN{exit !(v < thr)}'; then
-            threshold_status="WARN"
-        fi
-    fi
+    # 高速化: float比較4回のawk呼び出しを1回に統合
+    local threshold_status rate useful_rate
+    IFS='|' read -r threshold_status rate useful_rate <<< "$(awk \
+        -v ref="$referenced_count" -v inj="$injected_count" \
+        -v uf="$useful_count" -v tf="$total_feedback_count" \
+        -v wa="$LESSON_EFFECT_WARN_THRESHOLD" -v al="$LESSON_EFFECT_ALERT_THRESHOLD" '
+    BEGIN {
+        r  = (inj > 0) ? (ref / inj) * 100 : 0.0
+        ur = (tf  > 0) ? (uf  / tf)  * 100 : 0.0
+        s  = "OK"
+        if (inj > 0 && r < al)                   s = "ALERT"
+        else if (inj > 0 && r < wa)               s = "WARN"
+        if (tf > 0 && ur < al)                    s = "ALERT"
+        else if (tf > 0 && s == "OK" && ur < wa)  s = "WARN"
+        printf "%s|%.1f|%.1f\n", s, r, ur
+    }')"
 
     echo "INFO: 教訓効果率(直近${window_cmds}cmd): ${referenced_count}/${injected_count} = ${rate}%"
     echo "INFO: useful率(直近${window_cmds}cmd): ${useful_count}/${total_feedback_count} = ${useful_rate}%"
     echo "METRIC: lesson_effectiveness_threshold status=${threshold_status} rate=${rate}% useful_rate=${useful_rate}% window_cmds=${window_cmds} referenced=${referenced_count} injected=${injected_count} useful=${useful_count} total_feedback=${total_feedback_count} scope=${scope}"
 
-    write_lesson_effect_status "$threshold_status" "$rate" "$window_cmds" "$referenced_count" "$injected_count" "$scope" "$useful_count" "$total_feedback_count" "$useful_rate"
+    write_lesson_effect_status "$threshold_status" "$rate" "$window_cmds" \
+        "$referenced_count" "$injected_count" "$scope" \
+        "$useful_count" "$total_feedback_count" "$useful_rate"
     notify_lesson_effect_if_needed "$threshold_status" "$rate" "$scope"
-
-    # injection_count >= 10 かつ helpful_count == 0 の精密チェック (cmd_470)
-    if [ -n "$target_project" ]; then
-        check_injection_count_threshold "$target_project"
-    else
-        check_injection_count_threshold
-    fi
     return 0
 }
 
+# ─── メイン処理 ───
+
+# 高速化: date を1回だけ呼ぶ
+_now=$(date '+%Y-%m-%dT%H:%M:%S%z')
+
+# 高速化: checkpoint を1回だけ読む (bash param展開でgrep置換)
+_checkpoint=0
+if [ -f "$CHECKPOINT_FILE" ]; then
+    _raw_chk=$(awk 'match($0, /L([0-9]+)/, a) {found=1; r=a[1]+0; exit} END{print (found ? r : 0)}' \
+        "$CHECKPOINT_FILE" 2>/dev/null || echo 0)
+    _checkpoint="${_raw_chk:-0}"
+fi
+
+# 処理対象projectリストを決定
+if [ $# -ge 1 ]; then
+    _target_pids=("$1")
+    # 単一PJ指定時: context_fileをawk1回で取得
+    _cf_raw=$(awk -v pid="$1" '
+        /^  - id:/ { cur_id=$3 }
+        cur_id == pid && /context_file:/ {
+            cf=$2; gsub(/["'"'"']/, "", cf); gsub(/[[:space:]]/, "", cf); print cf; exit
+        }
+    ' "$CONFIG_FILE" 2>/dev/null || true)
+    declare -A _context_map
+    if [ -n "$_cf_raw" ]; then
+        _context_map["$1"]="$_cf_raw"
+    else
+        _context_map["$1"]="context/$1.md"
+    fi
+else
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "ERROR: config/projects.yaml not found"
+        exit 1
+    fi
+
+    # 高速化: active projects + context_files を1回のawk passで取得
+    _target_pids=()
+    declare -A _context_map
+    while IFS='=' read -r _k _v; do
+        if [ "$_k" = "PID" ]; then
+            _target_pids+=("$_v")
+        else
+            _context_map["$_k"]="$_v"
+        fi
+    done < <(awk '
+        /^  - id:/ {
+            if (cur_id != "" && is_active) {
+                print "PID=" cur_id
+                print cur_id "=" (cf != "" ? cf : "context/" cur_id ".md")
+            }
+            cur_id = $3; is_active = 0; cf = ""
+        }
+        /status:[[:space:]]+active/ { is_active = 1 }
+        /^[[:space:]]+context_file:/ {
+            v = $2; gsub(/["'"'"']/, "", v); gsub(/[[:space:]]/, "", v)
+            if (v != "") cf = v
+        }
+        END {
+            if (cur_id != "" && is_active) {
+                print "PID=" cur_id
+                print cur_id "=" (cf != "" ? cf : "context/" cur_id ".md")
+            }
+        }
+    ' "$CONFIG_FILE")
+
+    if [ ${#_target_pids[@]} -eq 0 ]; then
+        emit_actionable \
+            "WARN: active projectが見つかりません" \
+            "config/projects.yaml の active project 設定を確認し、対象projectを有効化せよ。"
+        exit 0
+    fi
+fi
+
+# 蓄積チェック用グローバル集計
+_global_max_id=0
+_global_new_count=0
+
+for _pid in "${_target_pids[@]}"; do
+    _lessons_file="$SCRIPT_DIR/projects/${_pid}/lessons.yaml"
+
+    if [ ! -f "$_lessons_file" ]; then
+        echo "OK: ${_pid} lessons.yaml不在(lesson 0件)"
+        continue
+    fi
+
+    # context_file パスを取得 (awk1回のキャッシュから)
+    _cf="${_context_map[$_pid]:-}"
+    [ -z "$_cf" ] && _cf="context/${_pid}.md"
+    _context_path="$SCRIPT_DIR/$_cf"
+
+    # 高速化: context fileを1回のawk passでsynced_num+unsorted_countを取得
+    _synced_num=0
+    _unsorted=0
+    if [ -f "$_context_path" ]; then
+        _ctx_data=$(awk '
+            /<!-- last_synced_lesson: L[0-9]+ -->/ {
+                match($0, /L([0-9]+)/, arr); synced = arr[1]+0
+            }
+            /^## 教訓索引（自動追記）/ { in_sec=1; next }
+            in_sec && /^## / { in_sec=0 }
+            in_sec && /^- L/ { c++ }
+            END { printf "%d|%d\n", synced+0, c+0 }
+        ' "$_context_path")
+        _synced_num="${_ctx_data%%|*}"
+        _unsorted="${_ctx_data##*|}"
+    fi
+
+    # ─── 1回のawk passで全統計を取得 ───
+    _stats_output=$(_compute_lesson_stats "$_lessons_file" "$_synced_num" "$_checkpoint" \
+        "$INJECTION_WARN_THRESHOLD" "$_pid")
+
+    _stats_line="${_stats_output%%$'\n'*}"
+    IFS='|' read -r _total_lessons _max_id _deprecated_count _unsynced _new_count <<< "$_stats_line"
+    _injection_problems=$(printf '%s\n' "$_stats_output" | grep '^PROBLEM:' | sed 's/^PROBLEM://' || true)
+
+    # ─── check_project 相当 ───
+    if [ "${_total_lessons:-0}" -eq 0 ]; then
+        if [ "${_deprecated_count:-0}" -gt 0 ]; then
+            echo "OK: ${_pid} lesson 0件(deprecated除外後)"
+        else
+            echo "OK: ${_pid} lesson 0件"
+        fi
+        continue
+    fi
+
+    [ "${_deprecated_count:-0}" -gt 0 ] && echo "INFO: ${_pid} deprecated除外: ${_deprecated_count}件"
+
+    if [ "${_unsynced:-0}" -gt "$ALERT_THRESHOLD" ]; then
+        emit_actionable \
+            "ALERT: ${_pid}のlesson→context未合流${_unsynced}件(total:${_total_lessons},synced:L${_synced_num},max:L${_max_id})" \
+            "context 側へ未合流教訓を反映し、last_synced_lesson を更新せよ。"
+        EXIT_CODE=1
+    else
+        echo "OK: ${_pid}のlesson統合状況は健全(未合流${_unsynced}件,total:${_total_lessons},synced:L${_synced_num})"
+    fi
+
+    # ─── check_unsorted_lessons 相当 ───
+    if [ "${_unsorted:-0}" -gt "$UNSORTED_THRESHOLD" ]; then
+        emit_actionable \
+            "ALERT: ${_pid}の未振り分け教訓${_unsorted}件 → /lesson-sort推奨" \
+            "/lesson-sort を実行し、未振り分け教訓を適切なcontextセクションへ移動せよ。"
+        EXIT_CODE=1
+    elif [ "${_unsorted:-0}" -gt 0 ]; then
+        echo "OK: ${_pid}の未振り分け教訓${_unsorted}件(閾値${UNSORTED_THRESHOLD}以下)"
+    fi
+
+    # ─── injection_count チェック相当 ───
+    if [ -n "$_injection_problems" ]; then
+        local_problem_count=$(printf '%s\n' "$_injection_problems" | wc -l)
+        while IFS= read -r _prob_line; do echo "  - $_prob_line"; done <<< "$_injection_problems"
+        emit_actionable \
+            "WARN: 注入${INJECTION_WARN_THRESHOLD}回以上で効果報告0件の教訓: ${local_problem_count}件" \
+            "helpful_count=0 の教訓を見直し、改善するか deprecated 候補として審査せよ。"
+    fi
+
+    # 蓄積チェック用に集計
+    [ "${_max_id:-0}" -gt "$_global_max_id" ] && _global_max_id="${_max_id}"
+    _global_new_count=$((_global_new_count + _new_count))
+
+done
+
+# ─── check_accumulation 相当 ───
+if [ "$_global_max_id" -gt 0 ]; then
+    if [ "$_global_new_count" -ge "$ACCUMULATION_THRESHOLD" ]; then
+        emit_actionable \
+            "WARN: 新規教訓+${_global_new_count}件(前回審査: L${_checkpoint}, 現在最新: L${_global_max_id})。" \
+            "bash scripts/lesson_deprecation_scan.sh を実行し、新規教訓を審査せよ。"
+        EXIT_CODE=1
+    else
+        echo "OK: 蓄積チェック(新規${_global_new_count}件, 前回審査: L${_checkpoint}, 閾値${ACCUMULATION_THRESHOLD})"
+    fi
+fi
+
+# ─── check_lesson_effectiveness ───
 if [ $# -ge 1 ]; then
     check_lesson_effectiveness "$1"
 else

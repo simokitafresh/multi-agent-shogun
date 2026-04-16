@@ -4,20 +4,23 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
-| 2026-04-16 | 才蔵 | `scripts/inbox_write.sh` | before/after計測 + 実装 + tests PASS | `78ms → 50ms` (`-35.9%`, write path) / `89ms → 10-20ms` (`--help`) | after: `docs/research/inbox_write_after_20260416.md` |
-| 2026-04-16 | 才蔵 | `scripts/dashboard_auto_section.sh` | before/after計測 + 実装 + tests PASS | `0.89s → 0.34s` (`-61.8%`, stale-cache path) | after: `docs/research/dashboard_auto_section_after_20260416.md` |
+| 2026-04-16 | 才蔵 | `scripts/inbox_write.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `78ms → 50ms` (`-35.9%`, write path) / `89ms → 10-20ms` (`--help`) | spec+after: `docs/research/inbox_write_after_20260416.md` |
+| 2026-04-16 | 才蔵 | `scripts/dashboard_auto_section.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `0.89s → 0.34s` (`-61.8%`, stale-cache path) | spec+after: `docs/research/dashboard_auto_section_after_20260416.md` |
 | 2026-04-15 | 軍師 | `scripts/deploy_task.sh` | Phase 6完了 | `2639ms → 88ms` (`-97%`) | spec: `docs/research/gunshi_deploy_task_refactor_spec.md` / after: `docs/research/deploy_task_after_20260415.md` |
 | 2026-04-14 | 軍師 | `scripts/gates/gate_gunshi_startup.sh` / `scripts/gates/gate_shogun_startup.sh` / `scripts/gunshi_gate_sync.sh` | なぜなぜ7回完了 + 高速化適用済 | `14.9s → 3.2s` (`4.7x`) | spec+result: `docs/research/gunshi_idle_startup_speedup_20260414.md` |
 | 2026-04-14 | 軍師 | `scripts/analysis/grid_search/run_077_*` / `scripts/analysis/grid_search/gs_vectorized_subset.py` | なぜなぜ7回完了 + 方法E実装/12体同一性確認 | `OOM (437GB, 実行不能) → 50分/662MB (N=84推定, 同一性100%)` | spec+result: `docs/research/gunshi_nazenaze7_gs_speedup_20260414.md` |
 | 2026-04-15 | 軍師 | `scripts/cmd_complete_gate.sh` テスト統合 | Phase 5完了(統合のみ) | 6ファイル→3ファイル, 41テスト維持, 8.3s→8.7s(速度横ばい=保守性改善) | テスト統合spec: `docs/research/gunshi_test_consolidation_spec.md` |
-| 2026-04-16 | hayate | `scripts/shutsujin_departure.sh` | Phase 6完了 | `1.84-3.25s → 0.15-0.20s` (`layout reset fast path`) | after: `docs/research/shutsujin_departure_after_20260416.md` |
-| 2026-04-16 | 忍者kotaro | `scripts/gates/gate_artifact_map.sh` | 高速化実装完了 | `967ms → 99ms` (`-90%`, `9.8x`) | ループ内echo\|awk×3(168サブシェル)→awk1パス+pure bash展開 |
-| 2026-04-16 | 忍者hanzo | `scripts/report_merge.sh` | 高速化実装完了 | `1947ms → ~76ms`（目標300ms達成）、awk直接比較: `~470ms → ~28ms` (`-94%`, `17x`) | 1ファイルあたり4-5回 field_get(subshell)→全ファイル単一awkパスで置換 |
-| 2026-04-16 | 忍者kagemaru | `scripts/gates/gate_cycle_health.sh` | 高速化実装完了 | `793ms → 296ms`（目標500ms達成, `-63%`） | ①S3: 500ファイル全stat→名前CLEARフィルタ後に非CLEAR分(~269)のみstatに削減+grep-qループ廃止→awk in-memory lookup ②S4: python3(80ms)→awk(7ms)。全11テストPASS |
-| 2026-04-16 | 忍者tobisaru | `scripts/gates/gate_karo_startup.sh` | 高速化実装完了 | `464ms → 225ms`（目標300ms達成, `-51%`） | ①python3 4回→1回統合(phase guide×2+session summary+bulletin) ②tmux list-panes 6回→1回キャッシュ ③gate_workaround_rate/ninja_workaround_rateをバックグラウンド並列起動。全12テストPASS |
-| 2026-04-16 | 忍者kagemaru | `scripts/ntfy.sh` | 高速化実装完了 | `33ms → 23ms`（目標50ms達成, `-30%`, 実測ベース）/cmd_1951計測130ms基準での改善 | ①`source lord_conversation.sh`をバックグラウンドsubshellに移動(-7ms) ②`cd+pwd`subshell→pure bash SCRIPT_DIR(-2ms) ③`basename`→bash `${##*/}`(-1ms) ④`echo|tr`→bash `${,,}`(-1ms) ⑤`mkdir -p`→条件付き実行。全22テストPASS |
-| 2026-04-16 | hayate | `scripts/gates/gate_recalculate_completeness.sh` | before/after計測 + 実装 + tests PASS | `7.40s(FAIL) → 2.74s(PASS)` (`-63.0%`) | after: `docs/research/gate_recalculate_completeness_after_20260416.md` |
-| 2026-04-16 | 忍者kotaro | `scripts/gates/gate_loop_health.sh` | 高速化実装完了 + tests PASS | `287ms → 93ms` (`-67%`, `3.1x`) | `python3 -c "..."` → `python3 << 'PYEOF'` (heredoc化) + `yaml.safe_load(karo_workarounds.yaml,1629行)` → 行ベースパーサ(-148ms) + `yaml.safe_load(insights.yaml,1323行)` → 行ベースパーサ(-127ms) + `import subprocess` 遅延ロード。全17テストPASS |
+| 2026-04-16 | hayate | `scripts/shutsujin_departure.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `2.43s → 0.17s` (`-92.9%`, `14.1x`) | spec+after: `docs/research/shutsujin_departure_after_20260416.md` |
+| 2026-04-16 | kotaro | `scripts/gates/gate_artifact_map.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `967ms → 99ms` (`-90%`, `9.8x`) | spec: `docs/research/codd_spec_gate_artifact_map_20260416.md` |
+| 2026-04-16 | hanzo | `scripts/report_merge.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `1947ms → 76ms` (`-96%`, `25.6x`) | spec: `docs/research/codd_spec_report_merge_20260416.md` |
+| 2026-04-16 | kagemaru | `scripts/gates/gate_cycle_health.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `793ms → 296ms` (`-63%`, `2.7x`) | spec: `docs/research/codd_spec_gate_cycle_health_20260416.md` |
+| 2026-04-16 | tobisaru | `scripts/gates/gate_karo_startup.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `464ms → 225ms` (`-51%`, `2.1x`) | spec: `docs/research/codd_spec_gate_karo_startup_20260416.md` |
+| 2026-04-16 | kagemaru | `scripts/ntfy.sh` | Phase 5(計測+実装+検証) | `33ms → 23ms` (`-30%`) | (軽微改善。spec省略) |
+| 2026-04-16 | hayate | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(計測+実装+検証) | `7.40s(FAIL) → 2.74s(PASS)` (`-63%`) | after: `docs/research/gate_recalculate_completeness_after_20260416.md` |
+| 2026-04-16 | kotaro | `scripts/gates/gate_loop_health.sh` | Phase 5(計測+実装+検証) | `287ms → 93ms` (`-67%`, `3.1x`) | (yaml.safe_load→行パーサ。spec省略) |
+| 2026-04-16 | tobisaru | `scripts/gates/gate_lesson_health.sh` | Phase 5(計測+実装+検証) | `666ms → 140ms` (`-79%`, `4.75x`) | lessons.yaml awk 15+回→1回/PJ統合+config 1回awk+context synced+unsorted 1awk+float比較4→1awk+notify read 2→1awk+mktemp廃止。全関連テストPASS |
+
+| 2026-04-16 | 軍師 | `scripts/oneshot/cmd_1934_l3_threebody_stability.py` | Phase 5(計測+実装+検証) | `~10min → ~1min` (`10x`, 4851combo) | `_fast_beta`関数追加+evaluate_expanding/WFのnumpy化+load_monthly_returns引数化+COL_RE ①対応。spec: `docs/research/gunshi_cmd1934_scalability_42col_20260416.md` |
 
 ## 運用
 
