@@ -319,7 +319,7 @@ YAML
     echo "output: $output"
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK: mock cmd_save failure for cmd_100"* ]]
-    [[ "$output" == *"Delegation aborted"* ]]
+    [[ "$output" == *"GATE未通過。修正してからcmd_save.sh→inbox_writeを手動実行せよ"* ]]
 
     # inbox_write は呼ばれず、delegated_at も設定されない
     [ ! -f "${TEST_TMP}/inbox_calls.log" ]

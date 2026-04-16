@@ -10,7 +10,7 @@
 # Behavior:
 #   1. shogun_to_karo.yaml に cmd_id が存在し status=pending か検証
 #   2. delegated_at が既にあれば ALREADY_DELEGATED で終了（冪等性）
-#   3. 初回委任時のみ cmd_save.sh を自動実行。BLOCK(exit 1)なら委任中止
+#   3. 初回委任時のみ cmd_save.sh を自動実行。PASS(exit 0)時のみ次へ進む
 #   4. inbox_write.sh karo "<msg>" cmd_new shogun を実行
 #   5. 成功後、delegated_at: <ISO8601> を cmd エントリに追加
 #   6. 出力: DELEGATED: cmd_XXX at 2026-03-04T18:17:05
@@ -61,9 +61,21 @@ if [ -n "$existing_delegated" ]; then
 fi
 
 # Step 3: 初回委任前に cmd_save.sh を強制実行
-if ! bash "$SCRIPT_DIR/cmd_save.sh" "$CMD_ID"; then
-    echo "BLOCK: cmd_save.sh failed for $CMD_ID. Delegation aborted." >&2
+cmd_save_exit=0
+if bash "$SCRIPT_DIR/cmd_save.sh" "$CMD_ID"; then
+    cmd_save_exit=0
+else
+    cmd_save_exit=$?
+fi
+
+if [ "$cmd_save_exit" -eq 1 ]; then
+    echo "BLOCK: GATE未通過。修正してからcmd_save.sh→inbox_writeを手動実行せよ" >&2
     exit 1
+fi
+
+if [ "$cmd_save_exit" -ne 0 ]; then
+    echo "ERROR: cmd_save.sh failed for $CMD_ID (exit=$cmd_save_exit)" >&2
+    exit "$cmd_save_exit"
 fi
 
 # Step 3.4: 他の未配備cmd検出チェック（status=pending + delegated_at存在 → WARNING）
@@ -137,4 +149,3 @@ yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "delegated" || {
 
 # Step 6: 成功出力
 echo "DELEGATED: $CMD_ID at $TIMESTAMP"
-
