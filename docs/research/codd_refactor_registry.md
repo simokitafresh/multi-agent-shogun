@@ -17,6 +17,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | 忍者tobisaru | `scripts/gates/gate_karo_startup.sh` | 高速化実装完了 | `464ms → 225ms`（目標300ms達成, `-51%`） | ①python3 4回→1回統合(phase guide×2+session summary+bulletin) ②tmux list-panes 6回→1回キャッシュ ③gate_workaround_rate/ninja_workaround_rateをバックグラウンド並列起動。全12テストPASS |
 | 2026-04-16 | 忍者kagemaru | `scripts/ntfy.sh` | 高速化実装完了 | `33ms → 23ms`（目標50ms達成, `-30%`, 実測ベース）/cmd_1951計測130ms基準での改善 | ①`source lord_conversation.sh`をバックグラウンドsubshellに移動(-7ms) ②`cd+pwd`subshell→pure bash SCRIPT_DIR(-2ms) ③`basename`→bash `${##*/}`(-1ms) ④`echo|tr`→bash `${,,}`(-1ms) ⑤`mkdir -p`→条件付き実行。全22テストPASS |
 | 2026-04-16 | hayate | `scripts/gates/gate_recalculate_completeness.sh` | before/after計測 + 実装 + tests PASS | `7.40s(FAIL) → 2.74s(PASS)` (`-63.0%`) | after: `docs/research/gate_recalculate_completeness_after_20260416.md` |
+| 2026-04-16 | 忍者kotaro | `scripts/gates/gate_loop_health.sh` | 高速化実装完了 + tests PASS | `287ms → 93ms` (`-67%`, `3.1x`) | `python3 -c "..."` → `python3 << 'PYEOF'` (heredoc化) + `yaml.safe_load(karo_workarounds.yaml,1629行)` → 行ベースパーサ(-148ms) + `yaml.safe_load(insights.yaml,1323行)` → 行ベースパーサ(-127ms) + `import subprocess` 遅延ロード。全17テストPASS |
 
 ## 運用
 
