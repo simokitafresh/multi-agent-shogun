@@ -666,3 +666,4 @@
 | cmd_1941 | 強化 — GP/改善にbefore/after退化計測を義務化 | infra | 04-16 | GP/改善cmd向けreport templateにbefo |
 | cmd_1940 | 強化 — gate_lesson_health.sh閾値をuseful率に変更+低効果教訓自動除外 | infra | 04-16 | gate_lesson_health.shにuseful率計 |
 | cmd_1943 | 改修 — Androidアプリ ボトムナビ「メモ」→「Gist Index」差替え | infra | 04-16 | ボトムナビの「メモ」を「Gist Index」に差し替え、旧 |
+| cmd_1945 | 修正 — Androidアプリ ライトテーマ文字コントラスト強化（殿フィードバック: ルール違反） | infra | 04-16 | DarkSengokuPalette の textMuted |

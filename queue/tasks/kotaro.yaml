@@ -38,7 +38,7 @@ task:
   project: infra
   report_filename: kotaro_report_cmd_karo_feedback_gap.yaml
   report_path: queue/reports/kotaro_report_cmd_karo_feedback_gap.yaml
-  status: done
+  status: completed
   stop_for: []
   task_id: cmd_karo_feedback_gap_impl
   task_type: impl

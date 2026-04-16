@@ -276,6 +276,11 @@ chunk: "1-8"  # この忍者の担当範囲
 - **positive_rule**: `ac_priority`はdeploy_task.shがAC 3個以上でAC定義順に自動生成する。家老が順序を変更したい場合はtask YAML書き込み時に上書きせよ
   **reason**: 自動生成はAC定義順だが、実際の優先度は家老の分解判断で決まる
 
+### Androidビルド排他ルール（LK066: gradlew並列競合）
+
+- **positive_rule**: gradlew/ビルドACを含むAndroid系cmdを2名以上に並列配備する場合、ビルドACは最終1名のみに割当てよ。他はビルドACを外すかWAIVEとする
+  **reason**: gradlew assembleDebugが並列実行するとbuild dir競合(R.jar/BuildConfig欠落)で両方失敗する(cmd_1943+1944実証)。DB排他§10と同じ原理
+
 ### 並列配備参照ルール（parallel_ok）
 
 - **positive_rule**: task YAMLの`parallel_ok`フィールドを参照し、リスト内のACは独立と判断して並列配備してよい

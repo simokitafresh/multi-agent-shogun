@@ -592,6 +592,43 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "deploy_task rewrites generic full-test AC to affected_tests workflow in report template" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "affected tests template"
+  task_type: impl
+  parent_cmd: cmd_1942
+  task_id: cmd_1942_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "全テストPASS(bats --jobs 4 tests/unit)"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+report = Path("$report_path")
+data = yaml.safe_load(report.read_text(encoding="utf-8"))
+check = data["binary_checks"]["AC1"][0]["check"]
+
+assert "bash scripts/affected_tests.sh" in check, check
+assert "bats --jobs 4 tests/unit" in check, check
+assert "フォールバック" in check, check
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "deploy_task injects gate_fail_top3 warnings above matching report fields" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

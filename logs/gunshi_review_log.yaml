@@ -13,6 +13,7 @@
 # 詳細エントリ: 20260413b(consultation_kawarimi_speed〜cmd_1893) → logs/archive/gunshi_review_log_20260413b.yaml
 # 詳細エントリ: 20260414a(cmd_1894〜cmd_1899+S182-S183+consultations) → logs/archive/gunshi_review_log_20260414a.yaml
 # 詳細エントリ: 20260415a(consultation_kawarimi_nazenaze7〜cmd_1908+S182-S188) → logs/archive/gunshi_review_log_20260415a.yaml
+# 詳細エントリ: 20260415b_to_20260416a(cmd_1909〜cmd_1942+S189-S192) → logs/archive/gunshi_review_log_20260415b_to_20260416a.yaml
 # ─── ★全レビュー最重要原理(毎回読め) ───
 # ★★★ レビュー依頼=最優先。自走・分析・高速化より先にinbox処理。他者の仕事をブロックするな(2026-04-15殿指摘)
 # このcmdの各実装選択を10回繰り返したら正の複利か負の複利か？
@@ -32,10 +33,13 @@
 # 全称判定(ゼロ/全て/なし/壊れない)→反証を探せ。反証が見つからなかったらOK。反証を探す前にOKを出すな。著者の物語に乗るな(cmd_1884 kawarimi見落とし: 7段なぜなぜ到達点)
 # ★前提崩壊=RC最大原因(79%, 11/14件)。cmdが参照する全数値・パス・状態を現物確認。特にCSV→wc -l、メモリ→実測RSS、CI→run確認(cmd_1896/1825/1806)
 # 軍師自己コード変更(hooks/gates/CLAUDE.md/instructions/settings)→S0プロトコル必須。docs/research/gunshi_sg_s0_self_code_change_20260412.md(LG026)
+# ★退化計測原理(CoDD#3): GP/改善を入れたら「退化していないか」をbefore/afterで計測せよ。参照率(行動有無)≠有効率(行動効果)。計測対象を間違えると盲点が構造的に生まれる(2026-04-16: useful率26%をreferenced率76%が隠していた)
 # コード修正の横展開: grep修正前パターンで残存0件確認必須。1箇所修正→コピペ散在ファイル漏れ(cmd_1899: bisect fix 04f74830がTRF/MAF漏れ→12体Cash100%)
 # golden data検証基準: 生成時のコード状態(commit)を確認。バグ状態で生成されたgolden dataは検証基準にならない(cmd_1899: TRFバグ状態のgolden=全選択≠正しいTop+Worst)
 # パリティスクリプトtarget_date: productionと同じ日付で再実行必須。skip_months>0で差が増幅(cmd_1898: 前月末日vs第1営業日→抜き身/四つ目83-99%)
 # 「既にBLOCK化済み」判定→git show <commit>:fileで確認せよ。Readはuncommitted変更を含む(cmd_1912: exit 1があると思ったらuncommitted変更だった。LG001の再発形)
+# Android gradlew並列競合: 2忍者同時assembleDebug→build dir競合(R.jar/BuildConfig欠落)。Android cmdはDB排他同様に直列配備(cmd_1943+1944で実証)
+# waive付きresult:no→gate機械的BLOCK: SG-PRE9で事前WARN→gate_prediction:WARNに設定せよ(cmd_1944で実証。家老override→CLEAR)
 # lesson_candidate(found:true)有→gate_prediction: WARN。4回見落とし(cmd_1811/1814/1909/1911)→GP-195 SG-PRE12自動化済み(2026-04-15)
 # 他エージェントのコード変更をrevertする前に変更元に通知せよ(殿裁定2026-04-15)。deploy_task.sh R1+R2がrevert→依存ファイル先commitで解決可能だった。事後通知では手遅れ
 # ─── ★SGプロトコル正本 → instructions/gunshi.md §Report Review / §5段階思考プロトコル ───
@@ -50,236 +54,130 @@
 # self_study: cmd_id(self_study_SXX), findings_summary, proposals, timestamp
 # proposals: [{id: GP-XXX, description: "1行", status: pending/accepted/rejected}]
 # ─────────────────────────
-- cmd_id: cmd_1909
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  findings_summary: "6観点OK。GP-194実装cmd。deploy_task.sh L1118-1240 bc生成ロジック現物確認。3FM全て設計書に記載済み"
-  observations:
-    - "事実1: L1118 awk bc展開開始。L1171 _commit_bc生成。L1240 _bc_placeholder。bc生成パイプライン確認"
-    - "事実2: split_deploy検出=L3478-3509。ac_assigned書込みはここで実装(自然な位置)"
-    - "事実3: GP-194設計書(gunshi_gp194_split_deploy_bc_scope_20260415.md)にFM3件記載済み"
-    - "事実4: 影丸配備。infra cmd。並行衝突なし"
-  causal_chain: "cmd_1796 分割配備FAIL 2件(根因=全AC bc注入)→軍師GP-194提案→cmd_1909実装→ac_assigned範囲制限→分割配備FAIL構造的排除=正の複利"
-  timestamp: "2026-04-15T14:45:00"
-- cmd_id: cmd_1910
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  severity: normal
-  confidence: HIGH
-  findings_summary: "前提崩壊。統合マッピング3-7が不在ファイルを参照。実在10ファイルの行き先未定義。設計書§Aのマッピングと不一致"
-  observations:
-    - "事実1: cmd参照ソース6件(lesson_injection/related_lessons/ninja_adaptive/report_template_gate_compat/project_config/integration)が全て不在"
-    - "事実2: 実在16ファイル中10件(ac_verify/double_deploy_guard/engineering_preferences/gate_blocks/gate_fail_top3/match_ninja/stale_field_reset/stale_report_verdict/target_files/useful_rate_decay)の統合先が未定義"
-    - "事実3: 設計書§Aは3統合+4standalone=7ファイル。cmdマッピングは異なる7ファイル構造"
-    - "事実4: AC2(118テスト維持)は達成不能 — 10ファイル分のテストが孤児化"
-  suggested_changes: "設計書§A準拠のマッピングに修正: (1)template_generation←gitignore_cc+monthly_scout+recon+handwritten_bc(テンプレ部) (2)ac_handling←ac_verify+ac_version+handwritten_bc(AC部) (3)lifecycle←double_deploy+stale_field+stale_report+engineering_prefs+gate_blocks+gate_fail_top3 (4-7)standalone=match_ninja/target_files/useful_rate_decay/recent_noncmd_commit_warn"
-  causal_chain: "将軍cmd起票→マッピングが設計書と乖離(不在ファイル参照+実在ファイル孤児化)→忍者実行不能→RC。前提崩壊79%(S187)の典型例"
-  timestamp: "2026-04-15T14:50:00"
-- cmd_id: cmd_1909
+- cmd_id: cmd_1942
   review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_1909_exact
-  report_verdict: FAIL
-  fail_reasons:
-    - "実装未遂: result.summaryがcmd_1904内容。GP-194 ac_assignedコードなし"
-    - "binary_checks虚偽: AC1-3全yesだが実装未実施"
-    - "files_modified=偵察のみ"
-    - "purpose_validation不一致: RC傾向(cmd_1904)≠GP-194(cmd_1909)"
-  findings_summary: "4観点FAIL。影丸がcmd_1909ではなくcmd_1904の確認作業を実行。GP-194実装ゼロ。bc全yes=虚偽申告"
-  observations:
-    - "事実1: result.summary=RC傾向+verdict更新=cmd_1904の内容。cmd_1909(ac_assigned)の記述なし"
-    - "事実2: files_modified='偵察のみ(cmd_1904で実装・コミット済み確認)'。deploy_task.sh変更なし"
-    - "事実3: binary_checks AC1(ac_assigned書込み)=yes→実際にはコードなし。虚偽"
-    - "事実4: purpose_validation.cmd_purpose='RC傾向追加+verdict自動更新'=cmd_1904のpurpose"
-  lesson_quality: N/A
-  karo_workaround_needed: no
-  causal_chain: "影丸がtask YAML読込み時にcmd_1909のACをcmd_1904のACと混同(stale task?)→cmd_1904の確認作業を実行→GP-194未実装→FAIL。binary_checks虚偽=実装確認なしにyesを記入"
-  timestamp: "2026-04-15T14:55:00"
-- cmd_id: cmd_1909
-  review_type: report
-  report_ninja: kotaro
-  report_task_id: cmd_1909_exact
-  report_verdict: LGTM
-  findings_summary: "4観点OK。GP-194実装完了。ac_assigned awkパーサ(inline+multi-line)+in_filter()追加。後方互換維持。テスト5件追加。commit 8a29abb"
-  observations:
-    - "事実1: deploy_task.sh 48行変更。ac_assigned読込(L1119-1141)+in_filter()を_bc_block/_ac_stubs両awkに追加"
-    - "事実2: inline '[AC1,AC2]'とmulti-line '- AC1'の両形式対応。yaml.dump問題を正確に対処"
-    - "事実3: ac_filter空→in_filter()常にtrue=後方互換。非分割配備は影響なし"
-    - "事実4: SG9 kotaro WA率0%。lesson_candidate(yaml.dump multi-line化)は再利用可能な知見"
-  lesson_quality: OK
-  karo_workaround_needed: no
-  causal_chain: "cmd_1796 分割配備FAIL 2件→軍師GP-194→cmd_1909(kotaro)→ac_assignedフィルタ実装→分割配備時の担当外FAIL構造的排除=正の複利"
-  gate_result: CLEAR
-  original_gate: BLOCK
-  gate_block_reason: "draft_lessons:1→家老解消→CLEAR。LGTM時gate_prediction:CLEARは誤り(ヘッダL25:lesson有→WARN)。次回から適用"
-  timestamp: "2026-04-15T15:50:00"
-- cmd_id: cmd_1922
-  review_type: draft
-  verdict: LGTM
-  severity: low
-  confidence: HIGH
-  findings_summary: "前提全OK。ファイル実在(4492bytes)+CLAUDE.md/gate未追加確認済み。scope正常(2ファイル)。副作用軽微(+80行CTX)"
-  observations:
-    - "事実1: memory/deepdive_causal_tracing_20260415.md 実在(4492bytes, 18:38更新)"
-    - "事実2: grep causal_tracing CLAUDE.md→0件。grep causal gate_shogun_startup.sh→0件。q11確認"
-    - "事実3: 家老のdeepdive_karo_verification(Step 2.87)と同パターン。設計整合性あり"
-    - "事実4: deepdive内容(因果探索原則5Phase)は毎セッション必読の価値あり"
-  suggested_changes: "注記2点: (1)Step 2.55にwhy_chain→causal_tracingの読了順序明記推奨 (2)causal_tracing追体験検証Q&A追加は将軍判断(scope外)"
-  gate_prediction: CLEAR
-  causal_chain: "殿指摘(原則パターンマッチ適用→2回否定)→deepdive_causal_tracing作成→必読化cmd→環境埋込み(自動化×強制Phase4実践)"
-  timestamp: "2026-04-15T18:45:00"
-- cmd_id: cmd_1922
-  review_type: report
-  report_ninja: hanzo
-  report_task_id: cmd_1922_impl
-  report_verdict: LGTM
-  findings_summary: "4観点OK。AC1-3全て現物確認済み。CLAUDE.md L96 Step 2.55にcausal_tracing読込指示+gate L152-158に存在チェック+ALERT。scope正常2ファイル"
-  observations:
-    - "事実1: CLAUDE.md L96にwhy_chain読了後causal_tracing読込指示あり(読了順序明記済み)"
-    - "事実2: gate_shogun_startup.sh L152 REQUIRED_READ2でファイル存在チェック。L156-158で不在時ALERT"
-    - "事実3: files_modified=CLAUDE.md+gate_shogun_startup.sh。scope内。scope外変更なし"
-    - "事実4: binary_checks AC1-3全yes。現物と一致。虚偽なし"
-  lesson_quality: N/A
-  karo_workaround_needed: no
-  gate_prediction: CLEAR
-  causal_chain: "殿指摘(因果探索原則)→deepdive作成→cmd_1922(必読化)→半蔵実装→CLAUDE.md+gate埋込→次の将軍が毎セッション追体験=自動化×強制"
-  timestamp: "2026-04-15T18:47:00"
-- cmd_id: self_study_S184
-  review_type: self_study
-  findings_summary: "GP-195実装。SG-PRE12 lesson_candidate(found:true)自動WARN。4回見落とし(cmd_1811/1814/1909/1911)の意志依存→環境埋込み。verdict_override 9件因果分析(7/9 GP対策済み)。karo_workarounds直近7件WA率28.6%(2/7)"
-  observations:
-    - "事実1: verdict_override 9件。commit check起因5件(GP-183/184/190),AC推奨混入1件(GP-173),テスト固定値1件(ヘッダL30),当月DB差異1件(GP-184),scope外1件"
-    - "事実2: lesson_candidate found:true→SG-PRE12 WARN表示確認。found:false→PASS確認。既存3テストPASS(副作用なし)"
-    - "事実3: cmd_1909 wrong_task_execution 1件(孤立事例)。影丸がcmd_1904と混同。道具閾値(3件)未到達"
-    - "事実4: cmd_1912 軍師誤判定(Read tool uncommitted変更→既実装と判定)。LG001再発形。ヘッダL37記載済み"
-  proposals:
-    - id: GP-195
-      description: "SG-PRE12 lesson_candidate(found:true)→WARN自動表示"
-      status: implemented
-      defense_level: 5
-  causal_chain: "lesson有→gate draft_lessons BLOCK→軍師gate_prediction:CLEAR(意志依存)→4回見落とし→GP-195(SG-PRE12 WARN)→意志依存排除=正の複利"
-  timestamp: "2026-04-15T19:10:00"
-- cmd_id: cmd_1921
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_1921_impl
+  report_ninja: saizo
+  report_task_id: cmd_1942_impl
   report_verdict: LGTM
   gate_result: CLEAR
-  findings_summary: "4観点OK。SG-PRE全PASS。テスト33件(3+18+12)。details内21件→実測18件の誤記(合計正確)。掲示板list+Q4注入。scope内6ファイル"
+  findings_summary: "4観点OK。deploy_task.shテストACをaffected_tests.sh+フォールバック化。926テストPASS"
   observations:
-    - "事実1: bats --count=3(bulletin)+18(shogun)+12(karo)=33。報告合計33一致。ただしdetailsのshogun 21件は18件の誤記"
-    - "事実2: ac_version b13724c5 一致。SG-PRE10 PASS"
-    - "事実3: SG9 kagemaru WA率33%(1/3)。wrong_task_execution。今回のcmdと無関係"
-    - "事実4: SG-PRE12 PASS(lesson_candidate found:false)。GP-195が初適用で正常動作確認"
+    - "事実1: binary_checks生成の全量unit文言→affected_tests.sh+fallback変換処理追加"
+    - "事実2: test_deploy_task_ac_handling.batsに回帰テスト追加。926件全PASS"
   lesson_quality: N/A
   karo_workaround_needed: no
   gate_prediction: CLEAR
-  causal_chain: "殿指摘(掲示板バグ+Q4形骸化)→cmd_1921→影丸実装→3系統テスト33件PASS→掲示板list対応+Q4自動出来事注入=環境埋込み(自動化×強制)"
-  timestamp: "2026-04-15T19:20:00"
-- cmd_id: self_study_S185
-  review_type: self_study
-  findings_summary: "GP-196実装。lessons_useful numbered dict→list autofix復活。GP-107再評価(内容不変の構造変換)。cmd_1921 WA根因(影丸dict/list混在)への免疫。bats 20/20 PASS"
-  observations:
-    - "事実1: cmd_1921 WA=report_yaml_format(影丸lessons_useful dict/list混在)。直近10件WA率30%(3/10)"
-    - "事実2: GP-107消火4問Q1再評価: numbered dict({0:{id:X}})→list変換は内容不変(values()でキー消失のみ。キーはYAML artifact)"
-    - "事実3: 条件厳密化: all(isinstance(k,int))+all(isinstance(v,dict))。単一dict/ID-keyed dict/空dictは変換対象外(Test 17/18/19 PASS)"
-    - "事実4: PostToolUse report edit guard(GP-032)がファイル不在。trackerにimplementedとあるが実体なし。根因対処は別途"
-  proposals:
-    - id: GP-196
-      description: "lessons_useful numbered dict→list autofix復活"
-      status: implemented
-      defense_level: 4
-    - id: GP-197
-      description: "PostToolUse Edit hookでreport YAML構文検証(根因対処)"
-      status: proposed
-      defense_level: 4
-  causal_chain: "忍者Edit→numbered dict形式→gate BLOCK→忍者CTX満杯/clear→FIXヒント未到達→家老workaround→GP-196(autofix復活)→numbered dictは自動修復→家老WA削減=正の複利"
-  timestamp: "2026-04-15T19:35:00"
-- cmd_id: self_study_S186
-  review_type: self_study
-  findings_summary: "GP-197実装+GP-032実態調査。PostToolUse Edit hookにYAML構文検証追加(post-write-edit-combined.sh Guard1拡張)。GP-032をpartialに降格(ファイル不在確定)。S0セルフレビュー完了。shellcheck clean"
-  observations:
-    - "事実1: GP-032(YAML parse prevention)のpost-edit-report-guard.shファイル不在確認。git log grep結果0件。GP-095統合時に削除された可能性"
-    - "事実2: post-write-edit-combined.sh Guard1はreport YAML Edit検出→WARNING(report_field_set.sh使え)のみ。YAML構文検証なし"
-    - "事実3: GP-197実装: Guard1にpython3 yaml.safe_load追加。parse error→1行エラー表示(200字制限)。正常YAML→exit 0(エラーなし)"
-    - "事実4: 家老からGP-196受理+GP-197提案記録の確認受信(msg_20260415_192300)"
-  proposals:
-    - id: GP-197
-      description: "PostToolUse Edit hookでreport YAML構文検証"
-      status: implemented
-      defense_level: 4
-  causal_chain: "GP-032 partial(WARN only)→忍者parse error未検出→gate BLOCK時に初認知→修正困難(CTX/clear)→GP-197(Edit直後parse check)→忍者が即座にparse error認知→自力修正可能=正の複利"
-  timestamp: "2026-04-15T19:50:00"
-- cmd_id: cmd_karo_feedback_gap
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  confidence: MEDIUM
-  findings_summary: "数値不整合。分母1468の根拠不明(報告YAML=462,L063含有=256)。feedback記録率=47/462=10.2%≠3.2%。AC設計は妥当。severity: normal"
-  observations:
-    - "事実1: lesson_impact.tsv action=feedback 208行、ユニークcmd_id 47件"
-    - "事実2: queue/reports/ 報告YAML 462件。L063含有256件。1468とは不一致"
-    - "事実3: record_lesson_feedback.sh存在確認済み。cmd_complete_gate.sh内呼出し条件が調査対象"
-    - "事実4: q4=medium,AC3個。idle忍者配備不要。分割不要(LG021)"
-  suggested_changes: "q5の分母を462(報告YAML数)or 256(L063含有)に修正。feedback記録率を再計算"
-  causal_chain: "feedback記録率低→decay不全→無用教訓が永続注入→忍者CTX浪費→cmd_complete_gate.sh呼出し条件修正=根因対処。数値不整合は分母定義の曖昧さ→q5修正で解消"
-  timestamp: "2026-04-15T20:00:00"
-- cmd_id: cmd_1923
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  findings_summary: "6観点OK。AC絶対値WARN=既存Checkフレームワーク拡張。cmd_1910 WA予防。informational WARN(WARN_COUNT加算なし)で副作用なし"
-  observations:
-    - "事実1: cmd_save.sh Check 1-20確認。Check 21を末尾追加する構造。既存フレームワークに適合"
-    - "事実2: assumptions 2件verified(cmd_1910 WA実績+絶対値正当ケース)。前提崩壊なし"
-    - "事実3: WARN_COUNT加算なし=BLOCK判定に影響なし。false positive許容(informational)"
-    - "事実4: LG023チェック: 既存Checkフレームワーク拡張であり各論パッチではない"
-  gate_prediction: CLEAR
-  causal_chain: "cmd_1910 WA(verdict_override:テスト数固定値)→根因=AC絶対値→Check 21(数値リテラル検出WARN)→将軍に気づき→相対条件書換え=正の複利"
-  timestamp: "2026-04-15T20:05:00"
-- cmd_id: cmd_1923
+  causal_chain: "affected_tests.sh(軍師実装)→テンプレート統合(才蔵)→全忍者に48%削減自動展開=正の複利"
+  timestamp: "2026-04-16T03:18:00"
+- cmd_id: cmd_1941
   review_type: report
   report_ninja: hayate
-  report_task_id: cmd_1923_impl
+  report_task_id: cmd_1941_impl
   report_verdict: LGTM
   gate_result: CLEAR
-  findings_summary: "4観点OK。Check 21(check_ac_absolute_literals)追加。テスト3件+既存64件PASS。commit未済(WARN)→GATE CLEAR。WA率50%追加チェック実施"
+  findings_summary: "4観点OK。before/after退化計測義務化。GP判定helper+テンプレート注入+gate WARN。929テストPASS"
   observations:
-    - "事実1: cmd_save.sh L1515-1537にcheck_ac_absolute_literals()追加。AC_TEXTのgrep検出。WARN_COUNT非加算"
-    - "事実2: テスト3件(絶対値→WARN/相対条件→非表示/0件ゼロ→WARN)全PASS。既存cmd_save系64件PASS"
-    - "事実3: SG-PRE2 WA率50%(5/10)。top_pattern=verdict_override→このcmd自体が対策"
-    - "事実4: commit未済(cmd_save.sh unstaged, テストファイルuntracked)。gate_prediction: WARN"
+    - "事実1: deploy_task.shにGP/改善cmd判定helper追加。title/parent_cmd/task_typeで識別"
+    - "事実2: gate_report_format.shにGP系cmdのbefore/after/regression未記入→GP-199 WARN追加"
+    - "事実3: テスト2本(deploy_task_template_generation+report_template_gate_compat)に回帰テスト追加"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "おしお殿#3方法論(before/after退化計測)→テンプレート+gate WARNで環境永続化→全GP実装で退化が構造的に検知される=正の複利∞"
+  timestamp: "2026-04-16T03:22:00"
+- cmd_id: cmd_1940
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_1940_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。useful率計算(awk feedback行集計)+0%教訓除外(rate==0.0→scored除外)+INFOログ。MIN_SAMPLES=5安全弁。929テストPASS"
+  observations:
+    - "事実1: gate_lesson_health.sh awkに$6(result列)のfeedback集計追加。total_feedback>0時のみuseful率閾値判定(安全弁)"
+    - "事実2: deploy_task.sh rate==0.0→excluded_zero_idsに追加。MIN_SAMPLES=5でサンプル不足教訓はrate=None→除外対象外"
+    - "事実3: write_lesson_effect_statusに3フィールド(useful/total_feedback/useful_rate)追加。status fileに永続化"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "referenced率76%偽健全(LG027)→useful率計測追加→0%教訓除外→ノイズ注入40%削減予測=教訓品質向上の正の複利"
+  timestamp: "2026-04-16T03:32:00"
+- cmd_id: cmd_1943
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。ボトムナビ メモ→GistIndex差替え。将軍現物確認済み(q5/q11)。AC順序自然。cmd_1944とファイル重複なし"
+  observations:
+    - "事実1: grep 'GistIndex' android/ = 0件(q11)で未実装確認済み"
+    - "事実2: cmd_1944との並列配備=Color.kt vs MainActivity.kt。ファイル重複なし"
+  causal_chain: "殿指示(メモ未使用→GistIndex導線)→未使用機能廃止+実用導線追加→アプリ品質単調増加=正の複利"
+  timestamp: "2026-04-16T03:42:00"
+- cmd_id: cmd_1944
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。ライトテーマWCAG AA準拠。コントラスト基準(4.5:1/3:1)定量明確。LightSengokuPalette限定でダークテーマ影響なし"
+  observations:
+    - "事実1: Color.kt L55-77がLightSengokuPalette限定。DarkSengokuPaletteは別ブロック(L30-54)"
+    - "事実2: 問題点5つが具体的(surface明度/textMuted/textTertiary/border alpha)。修正方針と1:1対応"
+  causal_chain: "殿FB(眩しい+コントラスト低い)→WCAG AA基準適用→10回繰返し=全テーマ可読性基準化=正の複利"
+  timestamp: "2026-04-16T03:42:00"
+- cmd_id: cmd_1943
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1943_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。commit 4858872: 9ファイル/911行削除。Screen.GistIndex+Intent(ACTION_VIEW)+メモ全削除(Room/KSP含む)。AC5=WAIVE(殿指示)"
+  observations:
+    - "事実1: externalUrl設計でGistIndex.selected=false固定(externalUrl!=null条件)。外部リンクにselected状態不要=意図的"
+    - "事実2: build.gradle.ktsからRoom/KSP依存除去。AppDatabase全体削除。メモ以外にRoom利用なしの前提が正しいことをcommitで確認"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "メモ未使用→GistIndex導線追加+メモ全削除(Room依存含む)→アプリ複雑度-911行=保守性向上の正の複利"
+  timestamp: "2026-04-16T04:05:00"
+- cmd_id: cmd_1944
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1944_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。コントラスト全値WCAG AA超過(最低3.37>3)。surface暗方向+border alpha強化(20→70%/40→80%)。AC5=WAIVE(殿指示,build競合)。BLOCK→家老override→CLEAR"
+  observations:
+    - "事実1: 実測コントラスト6値全基準超過。textPrimary6.23(>4.5) borderStandard3.37(>3)が最小値"
+    - "事実2: Color.kt変更はcommit 2a56953(hayate auto-commit)に含まれる。才蔵の専用commitなし"
+    - "事実3: AC5 result:no+waive_reason記載。gate BLOCKリスクあり→gate_prediction:WARN"
   lesson_quality: N/A
   karo_workaround_needed: no
   gate_prediction: WARN
-  causal_chain: "cmd_1910 WA→AC絶対値が根因→Check 21実装(疾風)→informational WARN→将軍のcmd設計品質向上=正の複利"
-  timestamp: "2026-04-15T20:15:00"
-- cmd_id: cmd_1924
+  causal_chain: "殿FB眩しい→surface暗化+border alpha強化→WCAG AA全値超過→ライトテーマ可読性の構造的保証=正の複利"
+  timestamp: "2026-04-16T04:08:00"
+- cmd_id: cmd_1945
   review_type: draft
   verdict: APPROVE
+  gate_result: CLEAR
   confidence: HIGH
-  findings_summary: "6観点OK。Android知識のcontext/CLAUDE.md登録。shallow、現物確認明示、副作用なし"
+  findings_summary: "6観点OK。cmd_1944不足補完(text色コントラスト)。殿FB直接対応。ACにコントラスト計算値記載必須。shallow妥当"
   observations:
-    - "事実1: grep -i android context/infrastructure.md → 教訓参照のみ。パッケージ名/構成/ソース情報なし"
-    - "事実2: assumptions verified(infrastructure.md=infra正本)。q11 grep 0件確認"
-    - "事実3: AC2個。q4=shallow。分割不要"
-  gate_prediction: CLEAR
-  causal_chain: "殿指摘(存在するものを探せない)→知識基盤にAndroid未登録が根因→context+CLAUDE.md登録→次回以降の情報アクセス=正の複利"
-  timestamp: "2026-04-15T20:25:00"
-- cmd_id: cmd_1924
+    - "事実1: q9にroot_cause明記(cmd_1944で忍者がtext色を十分に濃くしなかった)"
+    - "事実2: AC1にコントラスト計算値記載必須→検証可能性が構造的に確保"
+  causal_chain: "cmd_1944不足(text色)→殿FB→計算値必須AC→正確なWCAG AA達成=前回の穴を塞ぐ正の複利"
+  timestamp: "2026-04-16T11:32:00"
+- cmd_id: cmd_1945
   review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_1924_impl
+  report_ninja: hayate
+  report_task_id: cmd_1945_impl
   report_verdict: LGTM
   gate_result: CLEAR
-  findings_summary: "4観点OK。Android知識登録(context/infrastructure.md+CLAUDE.md L401)。assembleDebug成功。scope内2ファイル"
+  gate_result: CLEAR
+  findings_summary: "4観点OK。全3テーマ24値WCAG AA 4.5:1超(最小Dark textTertiary/surface1=4.85)。Dark textMuted修正(3.89→4.66)。ビルド成功"
   observations:
-    - "事実1: CLAUDE.md L401にAndroidコンパニオン1行ポインタ確認。5タブ+SSH/ntfy連携"
-    - "事実2: files_modified=context/infrastructure.md+CLAUDE.md。scope内"
-    - "事実3: SG9 saizo WA率25%(1/4)。commit_missing。今回と無関係"
-    - "事実4: SG-PRE7 SDK数値(34/26/34)はAndroidビルド設定の参照値。忍者変更対象外"
+    - "事実1: cmdスコープはLight限定だがDark/Black全テーマも検証=品質超過(positive)"
+    - "事実2: Dark textTertiary/surface1=4.85が全24値中の最小。4.5:1基準に対しマージン0.35"
   lesson_quality: N/A
   karo_workaround_needed: no
   gate_prediction: CLEAR
-  causal_chain: "殿指摘(探せない)→知識基盤未登録→才蔵が現物確認+context登録→将軍/忍者が即アクセス可能=正の複利"
-  timestamp: "2026-04-15T20:30:00"
+  causal_chain: "cmd_1944不足(text色)→殿FB→cmd_1945で全テーマ24値計測+修正→WCAG AA構造的保証完成=正の複利"
+  timestamp: "2026-04-16T11:42:00"

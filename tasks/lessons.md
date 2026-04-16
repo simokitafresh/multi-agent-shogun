@@ -3655,3 +3655,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: reviewed
 - **tags**: [universal]
 - QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jobs 8並列実行時に複数テストが同時書き込み→後発の書き込みが前の内容を上書き→grep検索失敗→if ブロックスキップ→期待出力なし→テスト失敗。修正: setup()でBATST_TEST_NUMBERやenv var経由でper-testファイルパスを生成する。
+
+### L479: 計測対象のズレは盲点を構造的に生む — referenced率≠useful率
+- **日付**: 2026-04-16
+- **出典**: gunshi_codd_session_20260416
+- **記録者**: karo
+- **tags**: [universal]
+- gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入効果(before/after)の計測を全GP実装時に義務化すべき。IF gate健全性を判定するなら THEN 回答率でなく有効率を計測せよ BECAUSE 参照率は偽の健全性を示す(76%OK→実態26%)

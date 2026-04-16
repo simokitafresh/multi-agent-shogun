@@ -219,3 +219,14 @@ lessons:
   created_at: '2026-04-12'
   automated: true
   enforcement: Level 2(ドキュメント化+フロー組込)。設計書=docs/research/gunshi_sg_s0_self_code_change_20260412.md。instructions/gunshi.md §S0セクション追加済み(2026-04-13)
+- id: LG027
+  title: 計測対象のズレは盲点を構造的に生む — referenced率≠useful率
+  detail: |
+    gate_lesson_health.shはreferenced率76%(回答率)でOK判定していたが、useful率26%(有効率)は計測対象外。
+    参照した≠役に立ったの混同。おしお殿#3の退化計測方法論で発見。
+    IF gate健全性を判定するなら THEN 回答率でなく有効率を計測せよ
+    BECAUSE 参照率は偽の健全性を示す(76%OK→実態26%)
+  source_cmd: gunshi_codd_session_20260416
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: cmd_1940でgate_lesson_health.sh閾値をuseful率に変更(実装中)

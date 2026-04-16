@@ -288,6 +288,40 @@ PYEOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "強化cmdの報告テンプレートにbefore/after/regressionを追加する" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "強化 — GP/改善にbefore/after退化計測を義務化"
+  task_type: impl
+  parent_cmd: cmd_1941
+  task_id: cmd_1941_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "報告テンプレートを更新する"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<PYEOF
+import yaml
+from pathlib import Path
+report = Path("$report_path")
+data = yaml.safe_load(report.read_text(encoding="utf-8"))
+assert data["before_metrics"]["summary"] == "", data
+assert data["after_metrics"]["summary"] == "", data
+assert data["regression"] == "", data
+print("OK")
+PYEOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════

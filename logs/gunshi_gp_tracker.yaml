@@ -128,7 +128,7 @@
 # | 134 | scout_gate旧AWK削除  | ★implemented      | 軍師自走 | deploy_task.sh: 旧list形式ルール削除。ACの- id:がcur_id上書きする問題根絶(77fabd7) |
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
-# 集計: ★implemented:103(+GP-129,137b,180,181,182,187,195,196,197) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:9(GP-170,171,183,184,186,189,190,191,192) = 計131GP (2026-04-15T19:50更新)
+# 集計: ★implemented:103(+GP-129,137b,180,181,182,187,195,196,197) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:9(GP-170,171,183,184,186,189,190,191,192) = 計131GP (2026-04-16T11:45更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -358,3 +358,23 @@
   defense_level: 4
   reason: "GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格"
   evidence: "正常YAML→exit 0(エラーなし)。壊れたYAML→exit 1+parse error 1行表示。shellcheck clean"
+- id: GP-198
+  description: "Diagnose Step: gate BLOCK時にdiagnose_reason必須化。おしお殿CoDD#5「根本原因を書いてから直せ」の環境埋込み"
+  status: implemented
+  proposed_at: "2026-04-16T01:25:00"
+  implemented_at: "2026-04-16T01:35:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 4
+  reason: "FIX hint=答え注入(情報注入)→退化リスク(#3)。思考構造の強制=退化しない(#5)。diagnose_reason必須化で忍者に根本原因の言語化を強制。段階的導入(初回=警告のみ)。gate_report_format.sh FAIL後に1行呼出追加で有効化"
+  evidence: "tests/unit/test_gate_diagnose_check.bats 7/7 PASS。初回警告/コピペ検出/DIVERGENT発動/記入済みOK/異なる理由非発動を検証"
+- id: GP-200
+  description: "DIVERGENT: 同一理由2回連続BLOCK→仮説転換強制メッセージ。おしお殿CoDD#4の環境埋込み"
+  status: implemented
+  proposed_at: "2026-04-16T01:25:00"
+  implemented_at: "2026-04-16T01:35:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 4
+  reason: "おしお殿#4「2回同じ失敗→仮説ごと疑え」。gate_fire_logから同一忍者×同一BLOCK理由の連続回数を計数。2回連続→仮説転換メッセージ表示+exit 1(強制BLOCK)。GP-198のgate_diagnose_check.shに統合実装"
+  evidence: "tests/unit/test_gate_diagnose_check.bats テスト5(2回連続→DIVERGENT)+テスト6(異なる理由→非発動)+テスト7(2回連続+diagnose記入→OK)"

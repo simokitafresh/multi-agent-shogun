@@ -297,3 +297,24 @@ lessons:
   created_at: '2026-04-15'
   automated: partial
   enforcement: 'cmd_save.sh assumptions(AC>=3でBLOCK)+trust:unverified検出。dialogue_preprocessing_researchは末尾(最新Phase)のみ通常読込(CLAUDE.md Step 3.5)。superseded_byフィールドはlesson_write_shogun.shに追加'
+- id: 'LS030'
+  title: 'CoDD 3層モデル適用 — L3診断推論が将軍学習ループに不在だった'
+  detail: '事故: 将軍のcmd BLOCKはステートレスリトライ。前回なぜBLOCKされたか知らずに修正→再起票。CoDD #5のSWE-bench実験と同構造(attempt 1を知らないattempt 2)。原因: gateの設計が入口検査だけで、弾かれた後の学習まで含んでいなかった。修正: cmd_save.shにDiagnose MANDATORY(根本原因言語化強制)+Session State(過去BLOCK履歴自動表示)+DIVERGENT(同パターン2連続→仮説転換強制)を実装(cmd_1939)。おしお殿CoDD #5の3層モデル(L1事前コンテキスト/L2事後ハーネス/L3診断推論)の直接適用。'
+  source_cmd: 'cmd_1939'
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: 'cmd_save.sh Session State(cmd_1939 GATE CLEAR)。cmd_1940委任時に10回のBLOCK履歴が自動表示された=即座に動作確認済み'
+- id: 'LS031'
+  title: '外部知見の適用パターン — 記事を読む→我が軍との対応を探す→なぜなぜで自動化ターゲット特定→cmd化'
+  detail: '事故ではなく成功パターン。おしお殿CoDD記事#0-#5を読み、我が軍との対応関係を特定し(extract≒context, テストFB≒gate, 診断推論≒なぜなぜ7回)、L3不在をなぜなぜ7回で掘り、cmd_1939-1942で4つの自動化を実装した。このサイクル=deepdive Phase 7(自走)+Phase 8(利他)の実践。記事を読む→対応探す→ギャップ発見→なぜなぜ→自動化が1セッションで回った。'
+  source_cmd: 'cmd_1939'
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: 'context/codd.md(cmd_1935)+reference_codd_oshio_articles.md+cmd_1939-1942。次セッションで同じサイクルを別の外部知見にも適用可能'
+- id: 'LS032'
+  title: 'CDP 403対処 — auto-ops launch_browser(非headless)+isolated port'
+  detail: '事故: CDP接続403を2セッション連続で同じように再発見。auto-opsにlaunch_browser()があることを毎回忘れる。原因: (1)cdp_server.pyが古い接続をキャッシュ (2)headless Chromeに--remote-allow-originsがない (3)headlessだとreCAPTCHA不可。修正: auto-opsのlaunch_browser(port=9231)で非headless Chrome起動→reCAPTCHA手動解決→cookie永続。cdp_server.py経由でなくauto-ops cdp_helper直接使用で403回避可能'
+  source_cmd: 'cmd_1944'
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: 'lessons_shogun.yaml(起動時通読)+memory/reference_cdp_note_com.md更新要。launch_browser()に--remote-allow-origins追加cmd未起票'

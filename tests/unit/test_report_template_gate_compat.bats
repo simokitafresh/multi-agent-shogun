@@ -120,6 +120,37 @@ TASK
     [[ "$output" == *"PASS"* ]]
 }
 
+@test "GP/改善cmdはbefore/after/regression未記入でもWARNを出す" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/test_ninja.yaml" <<'TASK'
+task:
+  title: "強化 — GP/改善にbefore/after退化計測を義務化"
+  task_type: impl
+TASK
+    _generate_filled_report "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml" "filled"
+    sed -i 's/parent_cmd: cmd_test/parent_cmd: cmd_1941/' "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"GP-199 WARN: before_metrics未記入"* ]]
+    [[ "$output" == *"GP-199 WARN: after_metrics未記入"* ]]
+    [[ "$output" == *"GP-199 WARN: regression未記入"* ]]
+}
+
+@test "通常cmdではbefore/after/regression WARNを出さない" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/test_ninja.yaml" <<'TASK'
+task:
+  title: "通常実装"
+  task_type: impl
+TASK
+    _generate_filled_report "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_test.yaml" "filled"
+    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_test.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"GP-199 WARN"* ]]
+}
+
 @test "binary_checks as string is rejected by gate" {
     _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
     # Replace proper binary_checks with string version

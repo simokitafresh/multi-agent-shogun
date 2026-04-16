@@ -1,16 +1,21 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-04-15T21:53:19'
+last_synced: '2026-04-16T02:57:19'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 474
+lesson_count: 475
 lessons:
+- id: L479
+  title: 計測対象のズレは盲点を構造的に生む — referenced率≠useful率
+  summary: gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入
+  tags:
+  - universal
 - id: L478
   title: bats --jobs 8並列実行で共有ファイルへの競合書き込みが発生しテストが断続的に失敗する
   summary: QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jo
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-16T01:41:35+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=5 referenced=0'
+  deprecated_at: '2026-04-16T02:59:02+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: L477
   title: bats並列実行(--jobs N)の共有ファイル競合 — per-testパス化が必須
   summary: bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL。CI環境(Gi
@@ -27,40 +32,40 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:28+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
+  deprecated_at: '2026-04-16T02:59:02+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=36 referenced=0'
 - id: L474
   title: ac_assigned注入時はinline/multi-line両YAMLフォーマットを考慮すること
   summary: inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:28+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
+  deprecated_at: '2026-04-16T02:59:02+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=36 referenced=0'
 - id: L473
   title: gate_shogun_startup.shのゲートセクション間で変数スコープ確認必須
   summary: 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:28+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=30 referenced=0'
+  deprecated_at: '2026-04-16T02:59:01+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=41 referenced=0'
 - id: L472
   title: shogun-procedures.md は gitignore対象外ファイルのため変更はコミット不可
   summary: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:27+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=30 referenced=0'
+  deprecated_at: '2026-04-16T02:59:01+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=41 referenced=0'
 - id: L471
   title: 'scout_exemptのcommit check: 注入するより注入しない方がシンプル'
   summary: 旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:no
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:27+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=37 referenced=0'
+  deprecated_at: '2026-04-16T02:59:01+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=48 referenced=0'
 - id: L470
   title: dashboard WARNとgateの監視対象は同一SSOTに揃えよ
   summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive
@@ -78,7 +83,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:27+09:00'
+  deprecated_at: '2026-04-16T02:59:01+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=45 referenced=0'
 - id: L467
   title: REPORT-DONE-MISMATCH誤検知はtask_id照合不在が根因。snapshot report cmd_idとtask YAMLのtask_idを比較して旧report残存をスキップせよ
@@ -90,17 +95,17 @@ lessons:
   summary: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo
   tags:
   - universal
-  helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-04-15'
+  helpful_count: 4
+  harmful_count: 1
+  last_referenced: '2026-04-16'
 - id: L465
   title: 道具磨きcmdのテスト実行ACと並行研究cmdの入力衝突チェック
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 6
   harmful_count: 1
-  last_referenced: '2026-04-15'
+  last_referenced: '2026-04-16'
 - id: L464
   title: 想像した数字を報告するな — 実測値のみ報告せよ
   summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定
@@ -167,7 +172,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:27+09:00'
+  deprecated_at: '2026-04-16T02:59:00+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=26 referenced=0'
 - id: L453
   title: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須
@@ -175,7 +180,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:26+09:00'
+  deprecated_at: '2026-04-16T02:59:00+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=34 referenced=0'
 - id: L452
   title: SCOUT/exempt系テスト関数にもq8_why_whatが必要
@@ -183,7 +188,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:26+09:00'
+  deprecated_at: '2026-04-16T02:59:00+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: L451
   title: STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき
@@ -196,7 +201,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:26+09:00'
+  deprecated_at: '2026-04-16T02:58:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: L449
   title: 分割配備のbinary_checks誤BLOCKはassigned_acsをawk変数で渡してグループスキップで解決
@@ -204,7 +209,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:26+09:00'
+  deprecated_at: '2026-04-16T02:58:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=29 referenced=0'
 - id: L448
   title: '[自動生成] draft教訓の査読を怠った: cmd_karo_fix_precommit_comment'
@@ -212,7 +217,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:25+09:00'
+  deprecated_at: '2026-04-16T02:58:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=19 referenced=0'
 - id: L447
   title: 外部リポのmain pushはG2ゲートで禁止→PRワークフローが必須
@@ -220,7 +225,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:25+09:00'
+  deprecated_at: '2026-04-16T02:58:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
 - id: L446
   title: AC3設計書参照検知はq5_verified_sourceベースが信頼性高い
@@ -233,7 +238,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:25+09:00'
+  deprecated_at: '2026-04-16T02:58:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=21 referenced=0'
 - id: L444
   title: 外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止
@@ -252,7 +257,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:25+09:00'
+  deprecated_at: '2026-04-16T02:58:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: L441
   title: hookが自己のコミットメッセージ/報告テキスト内のトリガー文字列に反応する
@@ -442,7 +447,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:24+09:00'
+  deprecated_at: '2026-04-16T02:58:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L412
   title: inbox_prune.shもyaml.dump禁止規則の対象漏れ
@@ -466,7 +471,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:24+09:00'
+  deprecated_at: '2026-04-16T02:58:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L409
   title: precommitスクリプトの外部ツール依存チェックは全ツールで統一すべき
@@ -481,7 +486,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:24+09:00'
+  deprecated_at: '2026-04-16T02:58:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L407
   title: 'L074適用対象の拡張: 境界値チェックはset -e環境の安全弁'
@@ -637,7 +642,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:24+09:00'
+  deprecated_at: '2026-04-16T02:58:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L380
   title: daemon_watchdog.shのログ出力先にローテーション不在で肥大化リスク
@@ -782,7 +787,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:23+09:00'
+  deprecated_at: '2026-04-16T02:58:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L357
   title: yaml.dumpを使用する自動タグ付けスクリプトはCLAUDE.md安全規則に違反
@@ -855,7 +860,7 @@ lessons:
   - monitor
   - inbox
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:29+09:00'
+  deprecated_at: '2026-04-16T02:59:03+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -1007,9 +1012,6 @@ lessons:
   - process
   - bash
   - reporting
-  helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-13'
 - id: L323
   title: プロセス数検証は実際の起動数を追跡せよ。外部計算の期待値はスキップ条件を反映しない
   summary: restart_watchers.shでexpected=1+全エージェント数としていたが、ループ内でpane未解決エージェントをスキップするため、期待値と実際
@@ -1049,7 +1051,7 @@ lessons:
   - gate
   - yaml
   - inbox
-  helpful_count: 6
+  helpful_count: 13
   harmful_count: 1
   last_referenced: '2026-04-16'
 - id: L318
@@ -1242,9 +1244,6 @@ lessons:
   summary: resolve_expected_report_file()はreport_filename/parent_cmdからファイル名を解決する既存関数。新規ガード追
   tags:
   - reporting
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-13'
 - id: L290
   title: karo_workarounds.yamlの混在フォーマット対応
   summary: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
@@ -1560,7 +1559,7 @@ lessons:
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 7
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L245
@@ -1602,7 +1601,7 @@ lessons:
     "ok 293
   tags:
   - testing
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 1
   last_referenced: '2026-04-16'
 - id: L239
@@ -1654,7 +1653,7 @@ lessons:
   tags:
   - testing
   - git
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L231
@@ -1676,8 +1675,8 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 26
-  harmful_count: 5
+  helpful_count: 35
+  harmful_count: 6
   last_referenced: '2026-04-16'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
@@ -1952,9 +1951,6 @@ lessons:
   tags:
   - testing
   - yaml
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-13'
 - id: L190
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ。cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit
     statusで未コミット差分を確認すべき
@@ -2124,7 +2120,7 @@ lessons:
   tags:
   - lesson
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:23+09:00'
+  deprecated_at: '2026-04-16T02:58:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L167
   title: ストリーム購読系デーモンは singleton lock + message idempotency を必須セットで実装すべき
@@ -2192,7 +2188,7 @@ lessons:
     形式で受けよ
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L155
@@ -2371,9 +2367,6 @@ lessons:
   tags:
   - communication
   - reporting
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-13'
 - id: L130
   title: Get-Clipboard -Format Imageは非画像時にnullを返す
   summary: IF PowerShellのGet-Clipboard -Format Imageで画像を取得する時 THEN try/catchだけでなくnull判定も必須化
@@ -2575,7 +2568,7 @@ lessons:
   - yaml
   - lesson
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:29+09:00'
+  deprecated_at: '2026-04-16T02:59:03+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
   helpful_count: 0
   harmful_count: 2
@@ -2635,7 +2628,7 @@ lessons:
   - gate
   - reporting
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:23+09:00'
+  deprecated_at: '2026-04-16T02:58:56+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=9 referenced=0'
 - id: L094
   title: scripts/shutsujin_departure.sh(session設定)にモデル名ハードコード残存
@@ -2682,7 +2675,7 @@ lessons:
   - yaml
   - lesson
   helpful_count: 6
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-04-15'
 - id: L087
   title: 教訓効果メトリクスΔはBLOCKリトライ行膨張+構造BLOCK混入で歪む — cmd単位dedup+品質BLOCK分離が必須
@@ -2709,7 +2702,7 @@ lessons:
   - yaml
   - reporting
   helpful_count: 4
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L084
   title: roles/ashigaru_role.mdは現在不存在 — build_instructions.shがashigaru.md直接処理
@@ -2999,7 +2992,7 @@ lessons:
   - wsl2
   - api
   deprecated: true
-  deprecated_at: '2026-04-15T21:56:23+09:00'
+  deprecated_at: '2026-04-16T02:58:56+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=5 referenced=0'
 - id: L038
   title: cmd_complete_gate.shテスト実行で本番lessonsにdraftが副作用で残る問題
