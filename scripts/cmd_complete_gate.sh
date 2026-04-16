@@ -3738,6 +3738,20 @@ if [ "$ALL_CLEAR" = true ]; then
     fi
     notify_idle_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
 
+    # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
+    echo ""
+    echo "Bulletin board (GATE CLEAR):"
+    local _blt_title=""
+    _blt_title=$(awk -v cmd="$CMD_ID" '
+        /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
+        cur_id == cmd && /title:/ { sub(/.*title:[[:space:]]*"?/, ""); sub(/"?$/, ""); print; exit }
+    ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+    if timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" "GATE CLEAR ${CMD_ID}: ${_blt_title:-完了}" false 2>/dev/null; then
+        echo "  bulletin: OK"
+    else
+        echo "  [INFO] bulletin: WARN (failed, non-blocking)" >&2
+    fi
+
     # ─── gunshi review_feedback自動送信（GATE CLEAR） ───
     echo ""
     echo "Gunshi review_feedback (GATE CLEAR):"
