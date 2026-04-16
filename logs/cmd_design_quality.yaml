@@ -6154,3 +6154,32 @@ entries:
     source: "cmd_complete_gate"
     timestamp: "2026-04-16T07:30:38Z"
     notes: "draft_lessons:1"
+  - cmd_id: "cmd_1965"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T07:33:46Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_1965"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T07:33:59Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_1965"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T07:35:40Z"

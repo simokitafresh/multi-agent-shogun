@@ -346,3 +346,10 @@ lessons:
   created_at: '2026-04-16'
   automated: true
   enforcement: 'lessons_shogun.yaml(本教訓)+context/codd.md §4.5(CoDD固有の適用判断)。方法論参照cmdでは軍師レビュー(事後)が作業性質との照合漏れを拾う'
+- id: 'LS037'
+  title: 'inbox_watcher STATE_DIR不一致 — 環境変数のパス整合性を起動時に確認'
+  detail: '事故: 将軍inbox_watcher(PID 1696051)にSHOGUN_STATE_DIR未設定→idle flagパス不一致(/tmp/ vs /tmp/shogun_state/)→idle判定失敗→nudge送信不達→殿に指摘されるまで気づかず。軍師が根因特定(blt_20260416_160505)、家老が再起動で修正(PID 930575, SHOGUN_STATE_DIR=/tmp/shogun_state)。修正: watcher起動時に環境変数の整合性を確認する仕組みが必要。'
+  source_cmd: 'cmd_1951'
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: '軍師分析(docs/research/gunshi_idle_shogun_inbox_blindspot)で根因特定+家老が再起動実施。再発防止はwatcher起動スクリプトへの環境変数チェック追加が候補'

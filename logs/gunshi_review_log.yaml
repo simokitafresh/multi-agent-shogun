@@ -510,3 +510,32 @@
     cs5: "N/A: 他のBLOCK理由(忍者解消不可)がないか→vercel_phaseも同様の可能性→次回確認"
     cs6: "PASS: 因果鎖3段記載済み"
   timestamp: "2026-04-16T16:20:00"
+- cmd_id: cmd_1966
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1966_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。report_field_set.sh 40→11ms(73%削減)。scalar hot path+遅延読込。テスト22+66件PASS"
+  observations:
+    - "事実1: inbox_write.shと同型の遅延読込+fast pathパターン。既知最適化の横展開"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1951→report_field_set.sh特定→scalar hot path+遅延読込→73%削減=報告処理ごとの正の複利"
+  timestamp: "2026-04-16T16:33:00"
+- cmd_id: cmd_1965
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1965_impl
+  report_verdict: LGTM
+  gate_result: BLOCK(draft_lessons:1)
+  findings_summary: "4観点OK。ninja_done.sh field_get除去+awk化でusage 22→2-4ms(82-91%削減), success 228→168ms(26%削減)。テスト追加+隔離inbox実運用テストPASS"
+  observations:
+    - "事実1: usage/helpのfast path化(22→2-4ms)が最大改善。success pathは168msで目標30msには未達だがfield_get依存除去で構造改善"
+    - "事実2: lesson_candidate有: hot pathに汎用ライブラリsourceを直結するな。バッチ1-2の共通パターンとして汎用化可能"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  gate_prediction: WARN(draft_lessons)
+  causal_chain: "cmd_1951→ninja_done.sh特定→field_get除去+awk化→usage 82-91%削減=忍者タスク完了ごとの正の複利"
+  timestamp: "2026-04-16T16:33:00"

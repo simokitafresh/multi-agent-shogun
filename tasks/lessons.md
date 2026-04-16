@@ -3690,6 +3690,6 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-16
 - **出典**: cmd_1965
 - **記録者**: hayate
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に source すると usage/help でも固定コストを払い続ける。hot path は専用の軽量パーサへ切り出し、重い共通ライブラリは遅延読込または不使用に寄せるべし。
