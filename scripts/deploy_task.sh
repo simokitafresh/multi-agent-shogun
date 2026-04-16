@@ -277,27 +277,30 @@ resolve_cmd_to_task() {
             else if (key == "title")      title      = val
             else if (key == "purpose")    purpose    = val
             else if (key == "depends_on") depends_on = val
+            else if (key == "scout_exempt") scout_exempt = val
         }
         END {
             if (!in_cmd) { print "ERROR: " cmd " not found" > "/dev/stderr"; exit 1 }
             if (!scope_mode) scope_mode = (type_val ? type_val : "impl")
-            print "project="    project
-            print "task_type="  tolower(scope_mode)
-            print "title="      title
-            print "purpose="    purpose
-            print "depends_on=" depends_on
+            print "project="       project
+            print "task_type="     tolower(scope_mode)
+            print "title="         title
+            print "purpose="       purpose
+            print "depends_on="    depends_on
+            print "scout_exempt="  scout_exempt
         }
     ' "$stk") || {
         log "resolve_cmd: ${cmd_id} not found in shogun_to_karo.yaml"
         return 1
     }
 
-    local project task_type title purpose _depends_on
+    local project task_type title purpose _depends_on _scout_exempt_stk
     project=$(echo "$_resolve_output" | grep '^project=' | cut -d= -f2-)
     task_type=$(echo "$_resolve_output" | grep '^task_type=' | cut -d= -f2-)
     title=$(echo "$_resolve_output" | grep '^title=' | cut -d= -f2-)
     purpose=$(echo "$_resolve_output" | grep '^purpose=' | cut -d= -f2-)
     _depends_on=$(echo "$_resolve_output" | grep '^depends_on=' | cut -d= -f2-)
+    _scout_exempt_stk=$(echo "$_resolve_output" | grep '^scout_exempt=' | cut -d= -f2-)
     [ -z "$task_type" ] && task_type="impl"
 
     # LK054: depends_on検出時にAC単位依存分析を促すWARN
@@ -311,6 +314,8 @@ resolve_cmd_to_task() {
     local _batch_args=("parent_cmd=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "_ac_task_id=" "_ac_worker_id=")
     [ -n "$project" ] && _batch_args+=("project=$project")
     [ -n "$purpose" ] && _batch_args+=("purpose=$purpose")
+    # scout_exempt: STKからtask YAMLに転記（reset_stale_fieldsでクリアされるため復元が必要）
+    [ "$_scout_exempt_stk" = "true" ] && _batch_args+=("scout_exempt=true")
     yaml_field_set_batch "$task_file" "task" "${_batch_args[@]}" \
         || { log "FATAL: yaml_field_set_batch failed for resolve_cmd_to_task"; return 1; }
 
