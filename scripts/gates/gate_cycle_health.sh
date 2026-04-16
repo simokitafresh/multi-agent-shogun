@@ -46,33 +46,40 @@ fi
 PENDING_REPORTS=0
 NOW=$(date +%s)
 GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
-# Optimized: find -printf+awk mtime-filter + awk in-memory lookup (cmd_1955)
-# per-file grep-qサブプロセスループ廃止 → awk1回で完結
+# Optimized: name-first CLEAR filter → stat非CLEAR分のみ (cmd_1955)
+# 500ファイル全stat廃止: ①名前でCLEAR済み除外→②残りだけstat→③最近のみgrep
 _CUTOFF=$((NOW - 86400))
 _CLEAR_LIST=""
 [ -f "$GATE_LOG" ] && _CLEAR_LIST=$(grep "	CLEAR" "$GATE_LOG" 2>/dev/null || true)
-_COMPLETED=$(find queue/reports/ -name "*_report_*.yaml" -printf '%T@\t%p\n' 2>/dev/null \
-    | awk -v cutoff="$_CUTOFF" '$1 > cutoff {print $2}' \
-    | xargs grep -l "^status: completed" 2>/dev/null || true)
-if [ -n "$_COMPLETED" ]; then
-    PENDING_REPORTS=$(echo "$_COMPLETED" | awk -v clist="$_CLEAR_LIST" '
-    BEGIN {
-        n = split(clist, lines, "\n")
-        for(i=1; i<=n; i++) {
-            split(lines[i], f, "\t")
-            if(f[3] == "CLEAR") cleared[f[2]] = 1
-        }
-    }
-    NF > 0 {
-        fname = $0
-        sub(".*/", "", fname)
-        sub(".*_report_", "", fname)
-        sub("\\.yaml$", "", fname)
-        sub("_[a-z]*$", "", fname)
-        if(!cleared[fname]) count++
-    }
-    END { print count+0 }
+_CLEARED_IDS=$(echo "$_CLEAR_LIST" | awk '$3=="CLEAR"{print $2}')
+_NON_CLEARED=$(find queue/reports/ -maxdepth 1 -name '*_report_*.yaml' 2>/dev/null \
+    | awk -v cids="$_CLEARED_IDS" '
+        BEGIN{n=split(cids,c,"\n");for(i=1;i<=n;i++)clr[c[i]]=1}
+        {fname=$0;sub(".*/","",fname);sub(".*_report_","",fname);sub("\\.yaml$","",fname);sub("_[a-z]*$","",fname);if(!clr[fname])print}
     ')
+if [ -n "$_NON_CLEARED" ]; then
+    _RECENT=$(echo "$_NON_CLEARED" | xargs stat -c '%Y %n' 2>/dev/null \
+        | awk -v cutoff="$_CUTOFF" '$1 > cutoff {print $2}')
+    if [ -n "$_RECENT" ]; then
+        _COMPLETED=$(echo "$_RECENT" | xargs grep -l "^status: completed" 2>/dev/null || true)
+        if [ -n "$_COMPLETED" ]; then
+            PENDING_REPORTS=$(echo "$_COMPLETED" | awk -v clist="$_CLEAR_LIST" '
+            BEGIN {
+                n = split(clist, lines, "\n")
+                for(i=1; i<=n; i++) {
+                    split(lines[i], f, "\t")
+                    if(f[3] == "CLEAR") cleared[f[2]] = 1
+                }
+            }
+            NF > 0 {
+                fname = $0; sub(".*/", "", fname)
+                sub(".*_report_", "", fname); sub("\\.yaml$", "", fname); sub("_[a-z]*$", "", fname)
+                if(!cleared[fname]) count++
+            }
+            END { print count+0 }
+            ')
+        fi
+    fi
 fi
 if [ "$PENDING_REPORTS" -gt 3 ]; then
     ALERTS+=("GATE未処理報告: ${PENDING_REPORTS}件(24h以内)。成果が還流されていない")
