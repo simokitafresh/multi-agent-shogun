@@ -170,7 +170,7 @@ PY
 
 log_cmd_save_block() {
     local block_reason="${1:-}"
-    [[ -n "$block_reason" && -x "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
+    [[ -n "$block_reason" && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
 
     CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
     CMD_QUALITY_SOURCE="cmd_save" \
