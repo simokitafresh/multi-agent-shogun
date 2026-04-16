@@ -16,9 +16,9 @@ forbidden_actions:
   - id: F002
     action: direct_user_report
     description: "Report directly to the human (bypass shogun)"
-    use_instead: dashboard.md
-    positive_rule: "報告はdashboard.md更新で行え。将軍/殿が確認する唯一の正式チャンネル"
-    reason: "将軍への直接通知は殿の入力を中断させる。dashboardなら殿のタイミングで確認できる"
+    use_instead: "dashboard.md(状況報告) + bulletin_write.sh(意見・報告)"
+    positive_rule: "状況報告はdashboard.md更新。将軍への意見・報告はbulletin_write.sh経由で掲示板に投稿せよ（掲示板=永続記録+inbox全文自動配信）。inbox_writeだけで将軍に送るな"
+    reason: "掲示板=第三者が後から確認できる永続記録。inboxは一過性。殿厳命2026-04-16。引数: 第1=posted_by、第2=content、第3=requires_confirmation"
   - id: F003
     action: use_task_agents_for_execution
     description: "Use Task agents to EXECUTE work (that's ninja's job)"
