@@ -1312,3 +1312,82 @@
     - "事実2: lesson_candidate有り(連動チェック必要)。register推奨"
   causal_chain: "bulletin_write.shデフォルト変更→confirm側未更新→test72 FAIL→半蔵がif rc:��去→��員確認時に常にclose"
   timestamp: "2026-04-17T02:00:00"
+- cmd_id: self_study_S163
+  review_type: self_study
+  findings_summary: "generated/ashigaru*.md 4ファイルに報告YAML Edit tool直接編集指示あり→hook(pre-write-report-deny.sh)と矛盾。report_field_set.sh経由に統一修正(LG024直接修正権限適用)"
+  observations:
+    - "事実1: generated/ashigaru.md L377がEdit tool使用を指示するがhookがdeny→指示矛盾。codex/copilot/kimi版も同一"
+    - "事実2: report_yaml_corrupt(cmd_karo_context_freshness_1993)の構造的原因を追跡→並行書込みレースコンディション+忍者YAML手動記入品質。WA率10%(直近10件)"
+    - "事実3: generated/ashigaru.mdはClaude Code環境の忍者からは直接参照されず影響度低。他ランタイム向けファイル"
+  causal_chain: "generated指示矛盾→忍者がEdit試行→hookでdeny→代替手段で壊れたYAML作成→並行書込みで破損拡大→report_yaml_corrupt。矛盾指示除去で経路遮断(正の複利)"
+  proposals:
+    - id: GP-209
+      description: "generated/ashigaru*.md報告YAML指示をreport_field_set.sh経由に統一"
+      status: implemented
+      defense_level: 2
+  timestamp: "2026-04-17T02:15:00"
+- cmd_id: self_study_S164
+  review_type: self_study
+  findings_summary: "inbox_watcher家老nudge遅延の真因=STATE_DIRパス不一致。将軍が一度撤回→再撤回で軍師分析が正と確認(blt_20260417_021610)"
+  observations:
+    - "事実1: STATE_DIRパス不一致(watcher=/tmp/shogun_state, Stop hook=/tmp)→idle_flag不一致"
+    - "事実2: 将軍が計測→軍師の誤りと判定→自身の計測を再撤回→軍師分析が正と確認"
+    - "事実3: 教訓: 計測データが入手困難でも現物コード分析(grep/Read)で真因特定は可能"
+  causal_chain: "settings.jsonにSHOGUN_STATE_DIR未設定→Stop hook=/tmp、watcher=/tmp/shogun_state→パス不一致→idle判定失敗→nudge遅延"
+  proposals:
+    - id: GP-210
+      description: "STATE_DIR統一: watcher起動コマンドのSHOGUN_STATE_DIR除去 or settings.jsonに設定"
+      status: karo_sent
+      defense_level: 4
+  timestamp: "2026-04-17T02:12:00"
+- cmd_id: self_study_S165
+  review_type: self_study
+  findings_summary: "なぜなぜ7回: 結論の受渡しで因果追跡が止まる構造的弱点→stop_check_inbox.shに突合警告1行追加。全エージェント共通・既存強制行動に乗せる(LG032)"
+  observations:
+    - "事実1: 軍師がGP-210を出す→将軍が修正不要と掲示板→軍師が自分の証拠を確認せず撤回→将軍も撤回。双方とも相手の結論を検証していない"
+    - "事実2: 根因=結論の受渡しで因果をたどらない。これは全組み合わせ(将軍↔軍師、家老↔忍者等)で発生しうる"
+    - "事実3: stop_check_inbox.shのinboxサマリにCONCLUSION_TYPES検出→突合警告付加。テスト9件全PASS(新規2件含む)"
+  causal_chain: "結論受取り→上位者/計測データだから正しいと判断→自分の証拠と突合しない→撤回→前提崩壊。7段:即撤回→計測>分析の偏見→鎖=盲従の誤解→矛盾問い返さず→結論先行→受入れ=検証の混同→因果受渡し不在"
+  proposals:
+    - id: GP-211
+      description: "stop_check_inbox.shに結論type検出→突合警告付加。全エージェント共通。既存強制行動に乗せる"
+      status: implemented
+      defense_level: 4
+  timestamp: "2026-04-17T02:30:00"
+- cmd_id: cmd_karo_gp210_fix
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_gp210_fix_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。restart_watchers.sh 3箇所STATE_DIR除去。commit 63ad73a。nudge即座送信確認済み"
+  observations:
+    - "事実1: diff確認 — 3行削除(将軍/家老/忍者ループ)。SHOGUN_STATE_DIR=/tmp/shogun_state除去"
+    - "事実2: 自分のGP-210提案の修正結果。自分の証拠(ls -la/environ)と報告内容を突合→整合"
+  causal_chain: "restart_watchers.sh STATE_DIR指定→watcher=/tmp/shogun_state→stop hook=/tmp→パス不一致→busy判定→60秒遅延。除去で/tmpに統一→即座nudge(正の複利:全inbox配信に即時効果)"
+  timestamp: "2026-04-17T02:35:00"
+- cmd_id: cmd_2000
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2000_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。SQLクエリ実測10293回。Top N+1: portfolio2706+signal1985。軍師推定との乖離分析(AC4)正確。implementation_readiness偵察5要件網羅"
+  observations:
+    - "事実1: 軍師推定SELECT7858→実測7022(-11%)。WRITE1523→実測3271(+115%: DELETE838+rolling900未計上)"
+    - "事実2: flush推定3→実測181(60倍: ソース静的count vs 実行時動的flush)。推定精度の限界=コード読みだけでは動的挙動を捉えきれない"
+  causal_chain: "queryロギング実装→dry-run実測→軍師推定との乖離定量化→Phase4実装の根拠が精緻化(正の複利:推定ではなく実測ベースの改善計画)"
+  timestamp: "2026-04-17T02:40:00"
+- cmd_id: cmd_2003
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2003_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。N+1真因=monthly_returns.py L183-191のpreload skip条件。signal_cacheに親PFがあるとchild preloadスキップ→月ループ内遅延N+1。B1→A1順序の根拠確立"
+  observations:
+    - "事実1: monthly_returns側がN+1主因(preload skip)。trade_performance側は毎回preload実行で問題なし"
+    - "事実2: 2706/104FoF=26件/FoF、1985/104=19件/FoF。child遅延読込量としてオーダー整合"
+    - "事実3: 軍師推論「ループ内にDB混在」が現物確認で立証。B面(DB外出し)→A面(NumPy化)の順序が正"
+  causal_chain: "signal_cacheに親PFあり→preload skip→child未プリロード→月ループ内で遅延SELECT→N+1(2706+1985回)。修正=preload条件をcomponent ids充足で判定(正の複利:全FoFに効く)"
+  timestamp: "2026-04-17T02:58:00"

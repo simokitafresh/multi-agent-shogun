@@ -181,6 +181,36 @@ YAML
     fi
 }
 
+@test "T-SCI-008: conclusion type triggers cross-check warning" {
+    cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
+messages:
+  - id: msg1
+    from: shogun
+    type: bulletin_notify
+    content: 修正不要。計測結果を確認した
+    read: false
+EOF
+
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"★結論を含む通知あり。自分の証拠と突合せよ。矛盾があれば問い返せ。撤回は突合後。"* ]]
+}
+
+@test "T-SCI-009: non-conclusion type does not trigger cross-check warning" {
+    cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
+messages:
+  - id: msg1
+    from: karo
+    type: task_assigned
+    content: タスクYAMLを読んで作業開始せよ
+    read: false
+EOF
+
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"★結論を含む通知あり"* ]]
+}
+
 @test "T-SCI-007: error message triggers async error_report notification" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
