@@ -51,24 +51,26 @@ GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
 _CUTOFF=$((NOW - 86400))
 _CLEAR_LIST=""
 [ -f "$GATE_LOG" ] && _CLEAR_LIST=$(grep "	CLEAR" "$GATE_LOG" 2>/dev/null || true)
-_CLEARED_IDS=$(echo "$_CLEAR_LIST" | awk '$3=="CLEAR"{print $2}')
+# CLEARED_IDS: grep -oE でカラム順序に依存しない抽出 (テスト互換)
+_CLEARED_IDS=$(echo "$_CLEAR_LIST" | grep -oE 'cmd_[a-zA-Z0-9_]+' 2>/dev/null | sort -u || true)
 _NON_CLEARED=$(find queue/reports/ -maxdepth 1 -name '*_report_*.yaml' 2>/dev/null \
     | awk -v cids="$_CLEARED_IDS" '
         BEGIN{n=split(cids,c,"\n");for(i=1;i<=n;i++)clr[c[i]]=1}
         {fname=$0;sub(".*/","",fname);sub(".*_report_","",fname);sub("\\.yaml$","",fname);sub("_[a-z]*$","",fname);if(!clr[fname])print}
-    ')
+    ' || true)
 if [ -n "$_NON_CLEARED" ]; then
     _RECENT=$(echo "$_NON_CLEARED" | xargs stat -c '%Y %n' 2>/dev/null \
-        | awk -v cutoff="$_CUTOFF" '$1 > cutoff {print $2}')
+        | awk -v cutoff="$_CUTOFF" '$1 > cutoff {print $2}' || true)
     if [ -n "$_RECENT" ]; then
         _COMPLETED=$(echo "$_RECENT" | xargs grep -l "^status: completed" 2>/dev/null || true)
         if [ -n "$_COMPLETED" ]; then
             PENDING_REPORTS=$(echo "$_COMPLETED" | awk -v clist="$_CLEAR_LIST" '
             BEGIN {
+                # カラム順序不問: CLEARを含む行からcmd_フィールドを全て抽出
                 n = split(clist, lines, "\n")
                 for(i=1; i<=n; i++) {
-                    split(lines[i], f, "\t")
-                    if(f[3] == "CLEAR") cleared[f[2]] = 1
+                    m = split(lines[i], f, "\t")
+                    for(j=1; j<=m; j++) if(f[j] ~ /^cmd_/) cleared[f[j]] = 1
                 }
             }
             NF > 0 {
