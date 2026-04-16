@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T14:14:30+09:00 -->
+<!-- generated_at: 2026-04-16T14:24:11+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-16T14:14:30+09:00 | terminal | response | 殿の方針を理解した。整理する。 **3基準でMECEにリストアップ:** 1. 使用頻度が高い（hook/通信/gate等） 2. 頻度低いが重要（本番影響/データ整合性） 3. 頻度低いが極端に遅い **スコープ確認:** `scrip…
-- 2026-04-16T14:14:02+09:00 | terminal | inbound | 使用頻度が高いもの、頻度が低くても重要なもの、頻度が低くても速度が極端に遅いものなどが対象だな。まずはリストアップし、番号順にリストアップしてMECEにCoddで改善するという案だ
-- 2026-04-16T14:13:52+09:00 | terminal | response | 特定できた。リファクタ台帳と突合して未着手の高頻度候補を出す。 **使用頻度トップ（未リファクタ）:** | Tier | スクリプト | 発火条件 | 参照数 | |------|----------|---------|-------…
-- 2026-04-16T14:12:46+09:00 | terminal | inbound | 使用頻度の高いインフラのスクリプトだ。
-- 2026-04-16T14:12:01+09:00 | terminal | response | 正直に言う。その話がどの会話で出たかを特定できなかった（lord_conversation.jsonlに記録なし。/clear前のセッションで消えた可能性がある）。 **事実として分かっていること:** リファクタ台帳(`docs/res…
-- 2026-04-16T14:11:40+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 13:56:59|CI緑: run 24492690787 2026-04-16 14:10:42|CI緑: run 24493014908
-- 2026-04-16T14:11:15+09:00 | ntfy | outbound | 【家老】cmd_karo_1948_retry 初回配備開始 (title=研究 — N体EW比較(①×①) 再配備: load_monthly_returns引数化済み, ninja=hayate) 研究 📋 https://gist.…
-- 2026-04-16T14:11:00+09:00 | terminal | inbound | よく使うスクリプトのリファクタリングと高速化をCoDDを使ってやろうというハナシは？
-- 2026-04-16T14:09:20+09:00 | terminal | response | 覚えている。おしお殿(@shio_shoppaize)のCoDD (Coherence-Driven Development) v1.8.0。 **前セッションでの実践:** - CoDD #3-#5の3層モデル(L1事前コンテキスト/L…
-- 2026-04-16T14:08:55+09:00 | terminal | inbound | Coddの話は覚えているか？
+- 2026-04-16T14:24:07+09:00 | ntfy | outbound | 教訓効果率WARN: 88.2%
+- 2026-04-16T14:23:45+09:00 | ntfy | outbound | 【gate自動】context鮮度WARN: WARN: dm-signal-research.md (9日前更新) WARN: infrastructure.md (last_updated 未記載)
+- 2026-04-16T14:23:18+09:00 | terminal | inbound | 自分で実装せよ。実装したら検証してみよ
+- 2026-04-16T14:22:57+09:00 | terminal | response | なっていない。殿の指摘通り、意志依存。/clearで消える。Phase 4の罠そのもの。 **根因**: cmd_save.shが「1つBLOCKしたら止まる」設計のため、項目を逐次で潰すしかない構造になっている。「全部書こう」は決意であ…
+- 2026-04-16T14:22:32+09:00 | terminal | inbound | なお、cmd_save.shで7回BLOCKされた。根因: quality_gateの全項目(q5/q8/q11/assumptions)を最初から書かず、1つずつ後追いで潰した。次回は起票前に全項目を一括で書く。は仕組×強制になっている…
+- 2026-04-16T14:22:02+09:00 | terminal | response | **全cmd進行状況:** | cmd | 内容 | 忍者 | status | |-----|------|------|--------| | cmd_1947 | ⑤×⑤ N体EW比較 (1,330通り) | — | **GATE …
+- 2026-04-16T14:21:44+09:00 | terminal | inbound | CMDの進行状況を報告せよ
+- 2026-04-16T14:20:58+09:00 | ntfy | outbound | 【家老】cmd_1951 初回配備開始 (title=偵察 — インフラスクリプト全量プロファイリング+CoDD改善リスト作成, ninja=saizo) 偵察 📋 https://gist.github.com/simokitafres…
+- 2026-04-16T14:20:40+09:00 | ntfy | outbound | 【家老】cmd_1950 初回配備開始 (title=研究 — N体EW比較(①1⑤2): クロス 3体(⑤多め) × 4手法 × 6指標, ninja=hayate) 研究 📋 https://gist.github.com/simok…
+- 2026-04-16T14:19:35+09:00 | terminal | response | cmd_1951を家老に委任完了。偵察結果が出たら、番号順にCoDD改善cmdを連続起票する。 **現在の状況:** | cmd | 内容 | status | |-----|------|--------| | cmd_1947 | ⑤…
 
 ## 未解決確認事項
+- cmd_1951を家老に委任完了。偵察結果が出たら、番号順にCoDD改善cmdを連続起票する。 **現在の状況:** | cmd | 内容 | status | |-----|------|--------| | cmd_1947 | ⑤×⑤ N体比較 | **GATE CLE…
 - 殿の方針を理解した。整理する。 **3基準でMECEにリストアップ:** 1. 使用頻度が高い（hook/通信/gate等） 2. 頻度低いが重要（本番影響/データ整合性） 3. 頻度低いが極端に遅い **スコープ確認:** `scripts/` + `.claude/hook…
 - 覚えている。おしお殿(@shio_shoppaize)のCoDD (Coherence-Driven Development) v1.8.0。 **前セッションでの実践:** - CoDD #3-#5の3層モデル(L1事前コンテキスト/L2事後ハーネス/L3診断推論)を我が軍に…
 - inbox未読2件を処理。cmd_1949完了 + 新掲示板投稿の確認を並列で進める。 [meta] stop_reason=tool_use
@@ -23,7 +24,6 @@
 - 自分で実装せよ。そのうえで確認して
 - 読んだ。軍師の指摘は正しい。 **今セッションでまさにこの盲点を踏んだ。** 殿に「掲示板やinboxを確認せよ」と言われるまで、軍師の道具確認結果(blt_20260416_134156)やcmd_1947 GATE CLEAR通知に気づいていなかった。 **根因**: 殿と…
 - 全4件の対応状況: | # | 提案 | cmd | status | |---|------|-----|--------| | 1 | useful率閾値変更 | cmd_1940 | **GATE CLEAR** ✅ | | 2 | 0%教訓自動除外 | cmd_1940…
-- 鎖の閉じたルートについては？軍師提案を確認したか？
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-16T14:14:30+09:00 | 殿の方針を理解した。整理する。 **3基準でMECEにリストアップ:** 1. 使用頻度が高い（hook/通信/gate等） 2. 頻度低いが重要（本番影響/データ整合性） 3. 頻度低いが極端に遅い **スコープ確認:** `scripts/` + `.claude/hook…
@@ -36,11 +36,11 @@
 - 2026-04-16T12:19:09+09:00 | 殿指示: (1)Androidアプリ メモ→GistIndex差替え(cmd_1943 GATE CLEAR) (2)ライトテーマWCAG AA改善(cmd_1944+1945 GATE CLEAR) (3)第20話「将軍だけ裸で戦場に立っていた」執筆+gist+note.com下書き自動保存 (…
 
 ## 参照cmd
+- cmd_19
 - cmd_1902
 - cmd_1903
 - cmd_1934
 - cmd_1935
-- cmd_1936
 - cmd_1937
 - cmd_1938
 - cmd_1939
@@ -55,6 +55,7 @@
 - cmd_1948
 - cmd_1949
 - cmd_1950
+- cmd_1951
 - PD-012
 
 ## 参照先

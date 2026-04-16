@@ -293,28 +293,66 @@ QG_TEMPLATE
         exit 1
     fi
 
+    # --- Preflight: 全必須項目の存在を一括チェック（逐次BLOCK防止） ---
+    # 起源: cmd_1951で7回連続BLOCK。1項目ずつexit 1するため全項目埋めるのに7往復
+    # 修正: 全必須項目を一括チェックし、全ての不足を1回で表示してexit 1
     MISSING_KEYS=()
+    MISSING_HINTS=()
+
     for _QG_KEY in q1_firefighting q2_learning q3_next_quality; do
         if ! echo "$CMD_BLOCK_NC" | grep -q "${_QG_KEY}:"; then
             MISSING_KEYS+=("$_QG_KEY")
+            case "$_QG_KEY" in
+                q1_firefighting)  MISSING_HINTS+=('  q1_firefighting: "no/yes — 理由"') ;;
+                q2_learning)      MISSING_HINTS+=('  q2_learning: "奪わない/奪う — 学習機会への影響"') ;;
+                q3_next_quality)  MISSING_HINTS+=('  q3_next_quality: "上がる/下がる — 品質への影響"') ;;
+            esac
         fi
     done
 
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q5_verified_source:"; then
+        MISSING_KEYS+=("q5_verified_source")
+        MISSING_HINTS+=('  q5_verified_source: "structure_verified — 確認方法と対象を記載"')
+    fi
+
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q8_why_what:"; then
+        MISSING_KEYS+=("q8_why_what")
+        MISSING_HINTS+=('  q8_why_what: "WHY: 殿指示「...」 → WHAT: ...=正の複利(...)"')
+    fi
+
+    if ! echo "$CMD_BLOCK_NC" | grep -q "q11_not_already_done:"; then
+        MISSING_KEYS+=("q11_not_already_done")
+        MISSING_HINTS+=('  q11_not_already_done: "未達成。確認方法と結果を記載"')
+    fi
+
+    # q7: dm-signal impl のみBLOCK
+    _PF_PROJECT=$(echo "$CMD_BLOCK_NC" | grep "project:" | head -1 | sed 's/.*project: *//' | tr -d '"' | tr -d "'" | xargs)
+    _PF_TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    if [[ "${_PF_PROJECT:-}" == "dm-signal" && "${_PF_TASK_TYPE:-}" == "impl" ]]; then
+        if ! echo "$CMD_BLOCK_NC" | grep -q "q7_definition_verified:"; then
+            MISSING_KEYS+=("q7_definition_verified")
+            MISSING_HINTS+=('  q7_definition_verified: "yes — 定義を一次情報で照合した事実"')
+        fi
+    fi
+
+    # assumptions: AC数3以上で必須
+    _PF_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
+    _PF_AC_COUNT=$(( ${_PF_AC_COUNT:-0} + 0 ))
+    if [ "$_PF_AC_COUNT" -ge 3 ]; then
+        if ! echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
+            MISSING_KEYS+=("assumptions")
+            MISSING_HINTS+=('  assumptions: [{claim: "...", source: "...", trust: "verified"}]')
+        fi
+    fi
+
     if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
-        echo "BLOCK: quality_gate未記入。3問に答えてからcmd_save.shを実行せよ" >&2
-        echo "  未記入キー: ${MISSING_KEYS[*]}" >&2
-        {
-            echo "---"
-            echo "quality_gate:"
-            for _MK in "${MISSING_KEYS[@]}"; do
-                case "$_MK" in
-                    q1_firefighting)  echo '  q1_firefighting: "no/yes — 理由"' ;;
-                    q2_learning)      echo '  q2_learning: "奪わない/奪う — 学習機会への影響"' ;;
-                    q3_next_quality)  echo '  q3_next_quality: "上がる/下がる — 品質への影響"' ;;
-                esac
-            done
-            echo "---"
-        } >&2
+        echo "BLOCK: 必須項目 ${#MISSING_KEYS[@]}件 未記入。全て記入してからcmd_save.shを再実行せよ" >&2
+        echo "  未記入: ${MISSING_KEYS[*]}" >&2
+        echo "  ---" >&2
+        for _hint in "${MISSING_HINTS[@]}"; do
+            echo "$_hint" >&2
+        done
+        echo "  ---" >&2
         exit 1
     fi
 
@@ -333,16 +371,7 @@ QG_TEMPLATE
         fi
     fi
 
-    # q5_verified_source: cmdの前提を一次情報源で確認したか（BLOCK）
-    # 一次情報源 = コード/本番DB/API応答。前cmdの報告は一次情報源ではない
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q5_verified_source:"; then
-        echo "BLOCK: q5_verified_source未記入。cmdの前提を何で確認したか記載せよ" >&2
-        echo "  一次情報源 = コード/本番DB/API応答。前cmdの報告は一次情報源ではない" >&2
-        echo "  + この実装選択を10回繰り返したら何が起きるか(正の複利 or 負の複利)" >&2
-        echo '  例: q5_verified_source: "engine.py L107確認。cache化1回→以降DB不要=正の複利"' >&2
-        exit 1
-    fi
-
+    # q5_verified_source: 存在チェックはpreflight済み。以下は内容検証のみ
     # q5検証レベル分類（cmd_1692: code_readingのみはBLOCK）
     # cmd_1481教訓: code_readingをproduction_verifiedに見せかけた。忍者に信頼度を正直に伝える(利他)
     # cmd_1692: code_readingのみでは前提未検証のためBLOCK。追加検証(isolated_test等)があれば通過
@@ -383,26 +412,16 @@ QG_TEMPLATE
     # dm-signal impl cmd → BLOCK昇格（cmd_1903）。infra/他PJ・scout/reconはWARNING維持
     _Q7_PROJECT=$(echo "$CMD_BLOCK_NC" | grep "project:" | head -1 | sed 's/.*project: *//' | tr -d '"' | tr -d "'" | xargs)
     _Q7_TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    # q7: dm-signal impl BLOCKはpreflight済み。それ以外はWARNING
     if ! echo "$CMD_BLOCK_NC" | grep -q "q7_definition_verified:"; then
-        if [[ "${_Q7_PROJECT:-}" == "dm-signal" && "${_Q7_TASK_TYPE:-}" == "impl" ]]; then
-            echo "BLOCK: q7_definition_verified未記入。dm-signal implではBLOCK。High/Lowなどcmd固有定義を一次情報へ照合した事実を記載せよ" >&2
-            echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
-            exit 1
-        else
+        if [[ "${_Q7_PROJECT:-}" != "dm-signal" || "${_Q7_TASK_TYPE:-}" != "impl" ]]; then
             echo "WARNING: q7_definition_verified未記入。High/Lowなどcmd固有定義を一次情報へ照合したか記載推奨" >&2
             echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
         fi
     fi
 
-    # q8_why_what: WHY→WHAT因果連鎖必須化（BLOCK — cmd_1783）
-    # 起源: 将軍が計算量を理由に対象範囲を5回縮小(2026-04-04殿厳命)
-    # 目的: WHY→WHATの因果明示 + 縮小表現の自動検知で矮小化を構造的にBLOCK
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q8_why_what:"; then
-        echo "BLOCK: q8_why_what未記入。WHY→WHAT因果連鎖を記載してからcmd_save.shを実行せよ" >&2
-        echo '  形式: q8_why_what: "WHY: [理由] → WHAT: [対象][数値]を全量やる"' >&2
-        echo '  例: q8_why_what: "WHY: 矮小化5回再発防止 → WHAT: cmd_save.shに全チェック2件追加"' >&2
-        exit 1
-    else
+    # q8_why_what: 存在チェックはpreflight済み。以下は内容検証のみ
+    if echo "$CMD_BLOCK_NC" | grep -q "q8_why_what:"; then
         # WHAT部分の縮小表現検出（WARN — AC2）
         _Q8_WW_VAL=$(echo "$CMD_BLOCK_NC" | grep "q8_why_what:" | head -1)
         _Q8_WHAT_PART="${_Q8_WW_VAL#*WHAT:}"
@@ -488,14 +507,7 @@ QG_TEMPLATE
         echo '  形式例: q10_knowledge_boundary: "空間内。根拠: Phase30 β調整確立 + cmd_1896結果確認済み"' >&2
     fi
 
-    # q11_not_already_done: cmd必要性の現物確認（BLOCK — cmd_1915）
-    # 起源: 車輪の再発明が再発。cmd_save.shは品質を検証するが必要性を検証していなかった
-    # 目的: cmdのACが既に達成済みでないことを、現物確認した方法と結果で明示させる
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q11_not_already_done:"; then
-        echo "BLOCK: q11_not_already_done未記入。このcmdのACは既に達成されていないか？現物で確認した方法と結果を記載せよ" >&2
-        echo "  例: q11_not_already_done: \"未達成。grep 'BLOCK.*assumptions' cmd_save.shでWARNINGのみ確認。exit 1なし\"" >&2
-        exit 1
-    fi
+    # q11_not_already_done: 存在チェックはpreflight済み。以下は自動検索のみ
 
     # q11自動検索: command内スクリプト名とdocs/researchの既存成果物を照合（INFO）
     # 起源: cmd_1916 — q11手動記入は嘘が書ける。自動露出で車輪の再発明を補助的に防ぐ
@@ -1662,14 +1674,8 @@ fi
 _ASSUMP_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
 _ASSUMP_AC_COUNT=$(( ${_ASSUMP_AC_COUNT:-0} + 0 ))
 if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
-    if ! echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
-        echo "BLOCK: AC数${_ASSUMP_AC_COUNT}個のcmdはassumptions必須です。前提を明示してからcmd_save.shを再実行せよ(shogun-procedures.md §7参照)" >&2
-        echo '  例: assumptions:' >&2
-        echo '        - claim: "cache.pyのexpiry=86400は変更されていない"' >&2
-        echo '          source: "cache.py L42 code_reading"' >&2
-        echo '          trust: "verified"' >&2
-        exit 1
-    else
+    # assumptions存在チェックはpreflight済み。以下は内容検証のみ
+    if echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
         # AC1: trust: unverified が含まれる場合BLOCK(exit 1)
         if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
             echo "BLOCK: 未検証前提あり。現物確認してtrust:verifiedに変更せよ" >&2

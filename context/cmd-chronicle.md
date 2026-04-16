@@ -670,3 +670,5 @@
 | cmd_1946 | verdict_override構造対策 — waive_ac正式機構 + 研究cmd commit check自動waive | infra | 04-16 | deploy_task.shに研究cmd/waive_ac用 |
 | cmd_1947 | 研究 — N体EW比較: 1体/2体/3体 × 4手法 × 6指標 横並び分析 | dm-signal | 04-16 | cmd_1947完了。⑤_* 21列の1体21通り・2体21 |
 | cmd_1948 | 研究 — N体EW比較(①×①): 1体/2体/3体 × 4手法 × 6指標 | dm-signal | 04-16 | cmd_1947を実行し、⑤_*21列の1体21通り・2体2 |
+| cmd_1949 | 研究 — N体EW比較(①2⑤1): クロス 2体+3体(①多め) × 4手法 × 6指標 | dm-signal | 04-16 | ①×⑤クロス2体441通りと①①⑤の3体4410通りをcmd |
+| cmd_karo_1948_retry | 研究 — N体EW比較(①×①) 再配備: load_monthly_returns引数化済み | dm-signal | 04-16 | ①_* 21列の1/2/3体EWを4手法×6指標で再計算し、 |
