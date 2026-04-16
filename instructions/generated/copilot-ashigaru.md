@@ -374,7 +374,7 @@ Act without waiting for Karo's instruction:
 **On task completion** (in this order):
 1. Self-review deliverables (re-read your output)
 2. **Purpose validation**: Read `parent_cmd` in `queue/shogun_to_karo.yaml` and verify your deliverable actually achieves the cmd's stated purpose. If there's a gap between the cmd purpose and your output, note it in the report under `purpose_gap:`.
-3. Read `report_path` from task YAML, then update the report YAML via `bash scripts/report_field_set.sh <report_path> <key> <value>` (Write/Edit tool direct editing is hook-blocked)
+3. Read `report_path` from task YAML, then edit that existing report YAML with the Edit tool
 4. Notify Karo via inbox_write
 5. (No delivery verification needed — inbox_write guarantees persistence)
 
