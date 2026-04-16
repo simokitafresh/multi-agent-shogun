@@ -884,6 +884,103 @@ is_before_after_required_task() {
     return 1
 }
 
+_apply_binary_check_waivers() {
+    local task_file="$1"
+    local bc_full="$2"
+
+    TASK_FILE_ENV="$task_file" BC_FULL_ENV="$bc_full" python3 - <<'PY_BC_WAIVE'
+import os
+import sys
+
+import yaml
+
+
+def to_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if str(v).strip()]
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return []
+        if text.startswith('[') and text.endswith(']'):
+            text = text[1:-1]
+        return [part.strip().strip('"\'') for part in text.replace(',', ' ').split() if part.strip()]
+    return [str(value).strip()] if str(value).strip() else []
+
+
+def is_research_target(path):
+    raw = str(path or '').strip().strip('"\'')
+    if not raw:
+        return False
+    normalized = raw.replace('\\', '/')
+    stripped = normalized
+    while stripped.startswith('./'):
+        stripped = stripped[2:]
+    prefixes = ('outputs', 'docs/research')
+    if any(stripped == prefix or stripped.startswith(prefix + '/') for prefix in prefixes):
+        return True
+    if '/outputs/' in normalized or normalized.endswith('/outputs'):
+        return True
+    if '/docs/research/' in normalized or normalized.endswith('/docs/research'):
+        return True
+    return False
+
+
+task_path = os.environ['TASK_FILE_ENV']
+bc_full = os.environ['BC_FULL_ENV']
+
+try:
+    with open(task_path, encoding='utf-8') as f:
+        task_raw = yaml.safe_load(f) or {}
+except Exception:
+    print(bc_full.rstrip())
+    raise SystemExit(0)
+
+task = task_raw.get('task', task_raw)
+
+try:
+    parsed = yaml.safe_load(bc_full) or {}
+except Exception:
+    print(bc_full.rstrip())
+    raise SystemExit(0)
+
+bc = parsed.get('binary_checks')
+if not isinstance(bc, dict):
+    print(bc_full.rstrip())
+    raise SystemExit(0)
+
+waive_ac = set(to_list(task.get('waive_ac')))
+
+scope_mode = str(task.get('scope_mode') or task.get('task_type') or task.get('type') or '')
+targets = to_list(task.get('target_path'))
+is_research = ('RESEARCH' in scope_mode.upper()) or (bool(targets) and all(is_research_target(p) for p in targets))
+
+for ac_id in waive_ac:
+    items = bc.get(ac_id)
+    if not isinstance(items, list):
+        continue
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        item['result'] = 'no'
+        item['waive_reason'] = 'waive_ac指定'
+
+if is_research:
+    items = bc.get('commit')
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            item['result'] = 'no'
+            if not str(item.get('waive_reason') or '').strip():
+                item['waive_reason'] = '研究cmd: commit不要'
+
+print(yaml.safe_dump({'binary_checks': bc}, allow_unicode=True, sort_keys=False).rstrip())
+PY_BC_WAIVE
+}
+
 generate_report_template() {
     local ninja_name="$1"
     local task_id="$2"
@@ -1379,6 +1476,8 @@ ${_commit_bc}"
 ${_commit_bc}"
         fi
     fi
+
+    _bc_full=$(_apply_binary_check_waivers "$task_file" "$_bc_full")
 
     if grep -qF "$_bc_placeholder" "$report_file" 2>/dev/null; then
         awk -v repl="$_bc_full" -v placeholder="$_bc_placeholder" '

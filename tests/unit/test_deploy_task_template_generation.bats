@@ -150,6 +150,69 @@ PYEOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "研究cmdではcommit checkにwaive_reason付きresult:noを自動注入する" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "research commit auto waive test"
+  task_type: impl
+  scope_mode: RESEARCH
+  parent_cmd: cmd_1946
+  task_id: cmd_1946_research_scope
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "研究ログを更新する"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local scope_report_path="$TEST_PROJECT/$output"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "research output auto waive test"
+  task_type: impl
+  parent_cmd: cmd_1946
+  task_id: cmd_1946_research_target
+  project: infra
+  target_path:
+    - outputs/research.csv
+    - docs/research/cmd_1946_notes.md
+  acceptance_criteria:
+    - id: AC1
+      description: "研究成果を保存する"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local target_report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<PYEOF
+import yaml
+from pathlib import Path
+
+def assert_commit_waived(path_str):
+    data = yaml.safe_load(Path(path_str).read_text(encoding="utf-8"))
+    commit_items = data["binary_checks"].get("commit", [])
+    assert len(commit_items) >= 1, f"commit checkが存在しない: {data['binary_checks']}"
+    item = commit_items[0]
+    assert item.get("result") == "no", f"commit resultが'no'でない: {item!r}"
+    assert item.get("waive_reason"), f"waive_reasonが空: {item!r}"
+
+assert_commit_waived("$scope_report_path")
+assert_commit_waived("$target_report_path")
+print("OK")
+PYEOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 # ═══════════════════════════════════════════════════════════
 # monthly and scout_exempt tests (from test_deploy_task_monthly_and_scout_exempt.bats)
 # ═══════════════════════════════════════════════════════════
@@ -181,6 +244,45 @@ from pathlib import Path
 report = Path("$report_path")
 data = yaml.safe_load(report.read_text(encoding="utf-8"))
 assert "commit" not in data["binary_checks"], f"commit checkが注入されている(不要): {data['binary_checks']}"
+print("OK")
+PYEOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "waive_ac指定のACはwaive_reason付きresult:noで初期化される" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "waive_ac field test"
+  task_type: impl
+  parent_cmd: cmd_1946
+  task_id: cmd_1946_waive_ac
+  project: infra
+  waive_ac: [AC5]
+  acceptance_criteria:
+    - id: AC1
+      description: "通常ACは空のまま残す"
+    - id: AC5
+      description: "後続レビューで免除する"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<PYEOF
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
+ac1_items = data["binary_checks"]["AC1"]
+ac5_items = data["binary_checks"]["AC5"]
+assert all(item.get("result", "") == "" for item in ac1_items), ac1_items
+assert len(ac5_items) >= 1, ac5_items
+assert all(item.get("result") == "no" for item in ac5_items), ac5_items
+assert all(item.get("waive_reason") == "waive_ac指定" for item in ac5_items), ac5_items
 print("OK")
 PYEOF
     [ "$status" -eq 0 ]
