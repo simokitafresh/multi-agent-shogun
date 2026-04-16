@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T17:10:17+09:00 -->
+<!-- generated_at: 2026-04-16T17:17:43+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-16T17:17:43+09:00 | terminal | response | バッチ4: 4/6完了(1971, 1972, 1974, 1975)。残り: 1973(影丸CTX:56%), 1976(未配備)。バッチ3残り: 1968(半蔵CTX:54%), 1969(小太郎)。 殿、第五弾を先に書くか？忍者がi…
+- 2026-04-16T17:17:25+09:00 | ntfy | outbound | 【kagemaru】cmd_1973完了。model_switch_preflight.sh 5483ms→1230ms(-78%, 4.5x)
+- 2026-04-16T17:16:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 17:06:25|cmd_1974 2026-04-16 17:09:50|cmd_1971
+- 2026-04-16T17:14:48+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-073)
 - 2026-04-16T17:10:16+09:00 | terminal | response | バッチ4進捗: 3/6完了(1971 lesson_harvest, 1972 parity_check, 1974 post_recalculate_checks)。残り: 1973(影丸), 1975(才蔵), 1976(未配備)。バ…
 - 2026-04-16T17:08:54+09:00 | ntfy | outbound | 【家老】cmd_1975 初回配備開始 (title=CoDD改善#23 — test_hooks.sh高速化(4.0s timeout→目標500ms), ninja=saizo) CoDD改善#23 📋 https://gist.gi…
 - 2026-04-16T17:06:45+09:00 | terminal | response | 確認完了。殿、第五弾を先に書くか？ [meta] stop_reason=end_turn
 - 2026-04-16T17:06:27+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働6名 CLEAR率94% 連勝73
 - 2026-04-16T17:03:10+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-072)
 - 2026-04-16T17:01:35+09:00 | ntfy | outbound | CI赤: run 24498905512 Unit Tests (bats)
-- 2026-04-16T17:01:35+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 16:55:33|cmd_1972
-- 2026-04-16T16:58:01+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-071)
-- 2026-04-16T16:57:50+09:00 | ntfy | outbound | 【家老】cmd_1974 初回配備開始 (title=CoDD改善#22 — post_recalculate_checks.sh高速化(5.5s timeout→目標500ms), ninja=saizo) CoDD改善#22 📋 ht…
-- 2026-04-16T16:56:06+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働5名 CLEAR率94% 連勝72
 
 ## 未解決確認事項
 - 確認完了。殿、第五弾を先に書くか？ [meta] stop_reason=end_turn

@@ -6,26 +6,19 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-HOOK_PATH="${REPO_ROOT}/.claude/hooks/pre-bash-combined.sh"
+# shellcheck disable=SC1091
+source "${REPO_ROOT}/scripts/lib/pre_bash_combined_guard.sh"
 
 PASS=0
 FAIL=0
 TOTAL=0
-
-# Create JSON payload for Bash tool
-make_payload() {
-    local cmd="$1"
-    local escaped
-    escaped=$(printf '%s' "$cmd" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
-    printf '{"tool_name":"Bash","tool_input":{"command":%s}}' "$escaped"
-}
 
 # Test that command is ALLOWED (exit 0 AND no deny in output)
 expect_allow() {
     local desc="$1" cmd="$2"
     TOTAL=$((TOTAL + 1))
     local output rc
-    output=$(make_payload "$cmd" | bash "$HOOK_PATH" 2>/dev/null) && rc=$? || rc=$?
+    output="$(pre_bash_combined_eval_command "$cmd" "$REPO_ROOT" 2>/dev/null)" && rc=$? || rc=$?
     if [[ $rc -eq 0 ]] && [[ "$output" != *'"deny"'* ]]; then
         PASS=$((PASS + 1))
     else
@@ -40,7 +33,7 @@ expect_block() {
     local desc="$1" cmd="$2"
     TOTAL=$((TOTAL + 1))
     local output rc
-    output=$(make_payload "$cmd" | bash "$HOOK_PATH" 2>/dev/null) && rc=$? || rc=$?
+    output="$(pre_bash_combined_eval_command "$cmd" "$REPO_ROOT" 2>/dev/null)" && rc=$? || rc=$?
     if [[ $rc -ne 0 ]] || [[ "$output" == *'"deny"'* ]]; then
         PASS=$((PASS + 1))
     else
@@ -50,7 +43,7 @@ expect_block() {
 }
 
 echo "=== pre-bash-combined.sh Guard Tests ==="
-echo "Hook: $HOOK_PATH"
+echo "Hook: pre_bash_combined_eval_command"
 echo ""
 
 # ─── Guard 1: --no-verify + hook bypass (G3) ───

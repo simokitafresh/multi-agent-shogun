@@ -24,7 +24,7 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-16T16:35:30+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L480
@@ -1689,7 +1689,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 50
+  helpful_count: 51
   harmful_count: 10
   last_referenced: '2026-04-16'
 - id: L228
@@ -2059,7 +2059,7 @@ lessons:
   summary: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
   tags:
   - recon
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L177

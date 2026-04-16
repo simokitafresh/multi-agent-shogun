@@ -692,3 +692,4 @@
 | cmd_1970 | CoDD改善#18 — gate_workaround_rate.sh高速化(135ms×14回→目標40ms) | infra | 04-16 | gate_workaround_rate.sh高速化: py |
 | cmd_1972 | CoDD改善#20 — parity_check.sh高速化(5.5s timeout→目標500ms) | infra | 04-16 | parity_check.sh に --help fast- |
 | cmd_1974 | CoDD改善#22 — post_recalculate_checks.sh高速化(5.5s timeout→目標500ms) | infra | 04-16 | post_recalculate_checks.shをCRL |
+| cmd_1975 | CoDD改善#23 — test_hooks.sh高速化(4.0s timeout→目標500ms) | infra | 04-16 | test_hooks.shを共通evaluator直呼びへ変 |

@@ -641,3 +641,4 @@
 - 2026-04-15 cmd_1921: 掲示板requires_confirmationバグ修正+Q4形骸化防止(前セッション出来事注入)。影丸。GATE CLEAR。WA:report_yaml_format(lessons_useful dict/list混在→家老修復)
 - 2026-04-15 cmd_1922: 因果探索原則を将軍必読ファイルに追加(CLAUDE.md+startup gate)。半蔵。GATE CLEAR。WA:なし
 - 2026-04-16 cmd_1947: 疾風。⑤_* 21列の1体21通り・2体210通りをcmd_1934同等の4手法×α6指標で再計算し、3体既存CSVを再利用してN=1/2/3 summaryを生成。因果: 3体再計算を避けつつ同一評価軸で比較できる形に揃え、alpha-CalmarではIS/OOS/Expandingで2-3体優位、WFは1体優位を数値化。
+| cmd_1973 | kagemaru | model_switch_preflight.sh高速化 | 5483ms→1230ms(-78%, 4.5x)。11grep→1grep+python3→awk+git grep。63/63テストPASS |
