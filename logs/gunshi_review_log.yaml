@@ -641,3 +641,34 @@
   gate_prediction: WARN(draft_lessons)
   causal_chain: "cmd_1951→model_switch_preflight.sh特定→grep多重呼出→I/O回数支配→パターン結合→-78%=/hensei発火ごとの正の複利"
   timestamp: "2026-04-16T17:22:00"
+- cmd_id: cmd_1975
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1975_impl
+  report_verdict: LGTM
+  gate_result: BLOCK(CI_RED)
+  findings_summary: "★MISS: pre-bash-combined.sh 347→12行削減(全hookガード消滅)を見落とし。CI 5テスト失敗。家老revert"
+  observations:
+    - "事実1: files_modifiedにpre-bash-combined.sh記載あり。しかしgit diffで変更規模を確認しなかった"
+    - "事実2: 報告のbinary_checks AC2に'機能変更なし: yes'とあり信頼した。実際は347→12行=機能破壊"
+    - "事実3: SG3(事前検死)でhook変更→機能等価確認の重要性を自問したが、コード現物を読まなかった"
+  lesson_quality: N/A
+  karo_workaround_needed: "yes(revert)"
+  gate_prediction: CLEAR
+  causal_chain: "files_modifiedにhook記載→忍者の'機能変更なし'を信頼→コード現物未確認→347→12行の破壊的変更見落とし→CI RED→revert。Phase 3再現: 考えたが動かなかった"
+  timestamp: "2026-04-16T17:32:00"
+- cmd_id: cmd_1976
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1976_impl
+  report_verdict: LGTM
+  gate_result: BLOCK(draft_lessons:1)
+  findings_summary: "4観点OK。gate_vercel_phase.sh normalize_ref/display_path/process-sub排除でreal -71%(3.4x)、CPU -86%(7.0x)。テスト7/7 PASS"
+  observations:
+    - "事実1: awk一括化を試みたがDefender一括スキャンで1142msに逆効果。per-file維持が正解。WSL2固有知見"
+    - "事実2: cmd_1975反省を踏まえgit diff --statで変更規模を確認。本体commitが見当たらないが報告はPASS主張"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  gate_prediction: WARN(draft_lessons)
+  causal_chain: "cmd_1951→gate_vercel_phase.sh特定→subprocess排除→real -71%=context変更チェックごとの正の複利"
+  timestamp: "2026-04-16T17:34:00"

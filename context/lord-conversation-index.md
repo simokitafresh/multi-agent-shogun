@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T17:21:14+09:00 -->
+<!-- generated_at: 2026-04-16T17:33:41+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-16T17:33:41+09:00 | terminal | response | **全体状況:** | バッチ | status | |--------|--------| | 1 (cmd_1953-1958) | **全6本 GATE CLEAR** ✅ | | 2 (cmd_1959-1964) | **全6本…
+- 2026-04-16T17:31:47+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 17:17:00|cmd_1975 2026-04-16 17:20:52|cmd_1973
+- 2026-04-16T17:30:52+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-076)
+- 2026-04-16T17:27:25+09:00 | ntfy | outbound | CI赤: run 24499977025 Unit Tests (bats)
+- 2026-04-16T17:25:39+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-075)
 - 2026-04-16T17:21:14+09:00 | terminal | response | 残り: バッチ3の1968(半蔵), 1969(小太郎) + バッチ4の1976(未配備)。idle 4名(疾風・影丸・才蔵・飛猿)。第五弾を書くか？ [meta] stop_reason=end_turn
 - 2026-04-16T17:20:26+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-074)
 - 2026-04-16T17:17:43+09:00 | terminal | response | バッチ4: 4/6完了(1971, 1972, 1974, 1975)。残り: 1973(影丸CTX:56%), 1976(未配備)。バッチ3残り: 1968(半蔵CTX:54%), 1969(小太郎)。 殿、第五弾を先に書くか？忍者がi…
 - 2026-04-16T17:17:25+09:00 | ntfy | outbound | 【kagemaru】cmd_1973完了。model_switch_preflight.sh 5483ms→1230ms(-78%, 4.5x)
 - 2026-04-16T17:16:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 17:06:25|cmd_1974 2026-04-16 17:09:50|cmd_1971
-- 2026-04-16T17:14:48+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-073)
-- 2026-04-16T17:10:16+09:00 | terminal | response | バッチ4進捗: 3/6完了(1971 lesson_harvest, 1972 parity_check, 1974 post_recalculate_checks)。残り: 1973(影丸), 1975(才蔵), 1976(未配備)。バ…
-- 2026-04-16T17:08:54+09:00 | ntfy | outbound | 【家老】cmd_1975 初回配備開始 (title=CoDD改善#23 — test_hooks.sh高速化(4.0s timeout→目標500ms), ninja=saizo) CoDD改善#23 📋 https://gist.gi…
-- 2026-04-16T17:06:45+09:00 | terminal | response | 確認完了。殿、第五弾を先に書くか？ [meta] stop_reason=end_turn
-- 2026-04-16T17:06:27+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働6名 CLEAR率94% 連勝73
 
 ## 未解決確認事項
 - 確認完了。殿、第五弾を先に書くか？ [meta] stop_reason=end_turn
@@ -29,7 +29,6 @@
 - 2026-04-16T16:38:29+09:00 | バッチ3の進捗: 4/6完了(ninja_done, report_field_set, karo_workaround_log, cmd_1965)。残り2本(archive_completed, pre_compact_save)が半蔵・小太郎で進行中。第四弾の起票準備でき…
 - 2026-04-16T16:30:26+09:00 | **なぜなぜ7回:** 1. なぜ忍者はspec後回しにした？ → 実装の方が早く、ACに順序制約がなかった 2. なぜ実装の方が早い？ → bash局所最適化は「読む→見つける→直す」の1パス 3. なぜspecが不要に感じる？ → 1ファイル局所最適化では設計整合性の問題が…
 - 2026-04-16T15:39:43+09:00 | 次のバッチ候補を整理する。殿の「実行回数×小さな差=複利」の指摘を反映して、**秒単位の遅さ**と**高頻度×ms改善**の両方から選ぶ。 **次バッチ候補6本:** | # | 対象 | 現在 | 理由 | |---|------|------|------| | 1 | `…
-- 2026-04-16T14:14:30+09:00 | 殿の方針を理解した。整理する。 **3基準でMECEにリストアップ:** 1. 使用頻度が高い（hook/通信/gate等） 2. 頻度低いが重要（本番影響/データ整合性） 3. 頻度低いが極端に遅い **スコープ確認:** `scripts/` + `.claude/hook…
 
 ## 参照cmd
 - cmd_19

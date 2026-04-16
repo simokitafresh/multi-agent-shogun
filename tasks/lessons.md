@@ -3698,6 +3698,14 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-16
 - **出典**: cmd_1973
 - **記録者**: kagemaru
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。
+
+### L485: WSL2 /mnt/c でsingle awk一括化は逆効果: Windows Defender一括スキャンが支配
+- **日付**: 2026-04-16
+- **出典**: cmd_1976
+- **記録者**: tobisaru
+- **status**: confirmed
+- **tags**: [universal]
+- gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: Windowsファイルシステム上で多数ファイルを一括でawkに渡すとWindows Defenderが一括スキャンを開始しI/O待ちが急増。per-file awk維持が正解。WSL2 /mnt/c最適化では「プロセス起動回数削減」より「I/Oアクセスパターン」が支配的な場合がある。

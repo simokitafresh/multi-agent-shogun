@@ -693,3 +693,4 @@
 | cmd_1972 | CoDD改善#20 — parity_check.sh高速化(5.5s timeout→目標500ms) | infra | 04-16 | parity_check.sh に --help fast- |
 | cmd_1974 | CoDD改善#22 — post_recalculate_checks.sh高速化(5.5s timeout→目標500ms) | infra | 04-16 | post_recalculate_checks.shをCRL |
 | cmd_1975 | CoDD改善#23 — test_hooks.sh高速化(4.0s timeout→目標500ms) | infra | 04-16 | test_hooks.shを共通evaluator直呼びへ変 |
+| cmd_1976 | CoDD改善#24 — gate_vercel_phase.sh高速化(481ms×7回→目標100ms) | infra | 04-16 | gate_vercel_phase.sh高速化完了。norm |

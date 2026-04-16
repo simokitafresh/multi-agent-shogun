@@ -388,3 +388,13 @@
   defense_level: 2
   reason: "cmd_1955で影丸が13回連続BLOCK(draft_lessons:1)。忍者にはdraft教訓の査読権限がなく全リトライが無駄。GP-200(DIVERGENT)は忍者修正可能なBLOCKが前提であり外部依存BLOCKには効かない。cmd_complete_gate.sh L3158のBLOCKメッセージに「忍者は解消不可。家老に報告して待機」ガイダンス追加"
   evidence: null
+- id: GP-205
+  description: "hook/gate系ファイルの大規模削減検出: files_modifiedにhook/gate含む場合、git diff --statで行数変化をチェック。50%超削減→WARN"
+  status: proposed
+  proposed_at: "2026-04-16T17:32:00"
+  implemented_at: null
+  implemented_by: null
+  self_executable: true
+  defense_level: 3
+  reason: "cmd_1975でpre-bash-combined.sh 347→12行(97%削減)をLGTM。忍者の'機能変更なし'を信頼しコード未確認。hook/gateの大規模削減は機能破壊の強いシグナル。自動検出で見落とし防止"
+  evidence: null
