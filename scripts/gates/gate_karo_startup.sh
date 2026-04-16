@@ -11,6 +11,131 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 overall="OK"
 alerts=()
 
+# === 高速化: バックグラウンド並列 + python3 一括呼び出し ===
+
+# (A) gate_workaround_rate.sh / gate_ninja_workaround_rate.sh を即座にバックグラウンド起動
+_WA_RATE_TMP=$(mktemp)
+_NINJA_WA_TMP=$(mktemp)
+WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
+NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
+if [ -x "$WA_RATE_SCRIPT" ]; then
+    bash "$WA_RATE_SCRIPT" --last 10 > "$_WA_RATE_TMP" 2>&1 &
+    _WA_RATE_PID=$!
+else
+    echo "■ Workaround率" > "$_WA_RATE_TMP"
+    echo "  SKIP: gate_workaround_rate.sh が存在しないか実行権限なし" >> "$_WA_RATE_TMP"
+    _WA_RATE_PID=""
+fi
+if [ -x "$NINJA_WA_SCRIPT" ]; then
+    bash "$NINJA_WA_SCRIPT" --quiet --last 30 > "$_NINJA_WA_TMP" 2>&1 &
+    _NINJA_WA_PID=$!
+else
+    echo "  SKIP: gate_ninja_workaround_rate.sh が存在しないか実行権限なし" > "$_NINJA_WA_TMP"
+    _NINJA_WA_PID=""
+fi
+
+# (B) tmux list-panes を1回だけ呼び出してキャッシュ
+_PANE_MAP=$(tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
+
+# (C) python3 を1回だけ起動してPhaseガイド + セッション要約 + 掲示板を一括取得
+_PY_OUT=$(python3 - "$SCRIPT_DIR" 2>/dev/null <<'PY'
+import sys, json, yaml, os
+
+SCRIPT_DIR = sys.argv[1]
+
+def get_phase_guide(filepath):
+    lines_info = []
+    total = 0
+    try:
+        with open(filepath, encoding="utf-8") as f:
+            for i, line in enumerate(f, 1):
+                total = i
+                if line.startswith("## Phase"):
+                    lines_info.append((i, line.strip().replace("## ", "")))
+    except (FileNotFoundError, OSError):
+        return []
+    results = []
+    if lines_info:
+        results.append(f"    前文: Read(offset=1, limit={lines_info[0][0]-2})")
+    for j, (start, title) in enumerate(lines_info):
+        end = lines_info[j+1][0]-1 if j+1 < len(lines_info) else total
+        limit = end - start + 1
+        results.append(f"    {title}: Read(offset={start}, limit={limit})")
+    return results
+
+dd1 = os.path.join(SCRIPT_DIR, "memory/deepdive_why_chain_20260321.md")
+dd2 = os.path.join(SCRIPT_DIR, "memory/deepdive_karo_verification_20260405.md")
+
+print("PHASE_GUIDE_1_START")
+for line in get_phase_guide(dd1):
+    print(line)
+print("PHASE_GUIDE_1_END")
+
+print("PHASE_GUIDE_2_START")
+for line in get_phase_guide(dd2):
+    print(line)
+print("PHASE_GUIDE_2_END")
+
+# セッション要約（lord_conversation.jsonl 末尾 session_summary エントリ）
+summary = "(前セッション要約なし)"
+try:
+    with open(os.path.join(SCRIPT_DIR, "queue/lord_conversation.jsonl"), encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+                if entry.get("direction") == "session_summary":
+                    s = entry.get("summary", "").strip()
+                    if s:
+                        summary = s
+            except (json.JSONDecodeError, Exception):
+                continue
+except (FileNotFoundError, OSError):
+    pass
+print(f"SESSION_SUMMARY: {summary}")
+
+# 掲示板未確認件数
+bulletin_count = 0
+bulletin_items = []
+try:
+    with open(os.path.join(SCRIPT_DIR, "queue/bulletin_board.yaml"), encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    entries = data.get("entries") or []
+    agent = "karo"
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        rc = entry.get("requires_confirmation", False)
+        if not rc:
+            continue
+        if isinstance(rc, list) and agent not in rc:
+            continue
+        if str(entry.get("status", "")).lower() == "closed":
+            continue
+        confirmed = entry.get("confirmed_by") or []
+        if agent in confirmed:
+            continue
+        text = str(entry.get("content", "")).splitlines()
+        head = text[0] if text else ""
+        bulletin_items.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
+    bulletin_count = len(bulletin_items)
+except (FileNotFoundError, OSError):
+    pass
+print(f"BULLETIN_COUNT: {bulletin_count}")
+for item in bulletin_items[:3]:
+    print(f"BULLETIN_ITEM: {item}")
+PY
+) || _PY_OUT=""
+
+# python3 出力パース
+_phase_guide_1=$(echo "$_PY_OUT" | awk '/^PHASE_GUIDE_1_START/{f=1;next} /^PHASE_GUIDE_1_END/{f=0} f{print}')
+_phase_guide_2=$(echo "$_PY_OUT" | awk '/^PHASE_GUIDE_2_START/{f=1;next} /^PHASE_GUIDE_2_END/{f=0} f{print}')
+_prev_session_summary=$(echo "$_PY_OUT" | grep '^SESSION_SUMMARY: ' | head -1 | sed 's/^SESSION_SUMMARY: //')
+_bulletin_count=$(echo "$_PY_OUT" | grep '^BULLETIN_COUNT: ' | head -1 | sed 's/^BULLETIN_COUNT: //')
+_bulletin_count=${_bulletin_count:-0}
+
 echo "=== 家老起動チェック $(date '+%H:%M:%S') ==="
 echo ""
 
@@ -34,57 +159,27 @@ else
 fi
 echo ""
 
-# Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
+# Phase逐次読込ガイド（キャッシュ済みpython3出力を表示）
 echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
-for _ddfile in "$REQUIRED_READ" "$REQUIRED_READ2"; do
-    [ -f "$_ddfile" ] || continue
-    echo "  $(basename "$_ddfile"):"
-    python3 -c "
-import sys
-lines = []
-with open(sys.argv[1]) as f:
-    for i, line in enumerate(f, 1):
-        if line.startswith('## Phase'):
-            lines.append((i, line.strip().replace('## ', '')))
-    total = i
-if lines:
-    print(f'    前文: Read(offset=1, limit={lines[0][0]-2})')
-for j, (start, title) in enumerate(lines):
-    end = lines[j+1][0]-1 if j+1 < len(lines) else total
-    limit = end - start + 1
-    print(f'    {title}: Read(offset={start}, limit={limit})')
-" "$_ddfile"
-done
+echo "  $(basename "$REQUIRED_READ"):"
+if [ -n "$_phase_guide_1" ]; then
+    echo "$_phase_guide_1"
+else
+    echo "    (ファイル不在またはPhaseなし)"
+fi
+echo "  $(basename "$REQUIRED_READ2"):"
+if [ -n "$_phase_guide_2" ]; then
+    echo "$_phase_guide_2"
+else
+    echo "    (ファイル不在またはPhaseなし)"
+fi
 echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
 echo ""
 
 # --- Check 1.5: 追体験検証Q4 (前セッション出来事注入) ---
-_prev_session_summary=$(python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null <<'PY'
-import sys, json
-log_file = sys.argv[1]
-summary = "(前セッション要約なし)"
-try:
-    with open(log_file, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                entry = json.loads(line)
-                if entry.get("direction") == "session_summary":
-                    s = entry.get("summary", "").strip()
-                    if s:
-                        summary = s
-            except (json.JSONDecodeError, Exception):
-                continue
-except (FileNotFoundError, OSError):
-    pass
-print(summary)
-PY
-) || _prev_session_summary="(取得失敗)"
 echo "■ 追体験検証Q4（CLAUDE.md Step 2.88 — 省略厳禁）"
 echo "  Q4: deepdive_why_chain Phase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）"
-echo "  [前セッション出来事] ${_prev_session_summary}"
+echo "  [前セッション出来事] ${_prev_session_summary:-(前セッション要約なし)}"
 echo "  ※ Q4は前セッションの出来事を手がかりに因果をたどれ。暗記したPhase例を貼るな。"
 echo ""
 
@@ -126,7 +221,7 @@ fi
 echo "■ 忍者ペインCTX実態"
 stall_count=0
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
-    pane_idx=$(tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id}' 2>/dev/null | awk -v n="$ninja" '$2==n{print $1}')
+    pane_idx=$(echo "$_PANE_MAP" | awk -v n="$ninja" '$2==n{print $1}')
     if [ -n "$pane_idx" ]; then
         ctx=$(tmux capture-pane -t "shogun:2.$pane_idx" -p 2>/dev/null | grep -oP 'CTX:\K[0-9]+%' | tail -1)
         task_status=$(awk '/^  status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
@@ -158,51 +253,17 @@ else
     unread=0
 fi
 
-# --- Check 3.5: 掲示板未確認 ---
+# --- Check 3.5: 掲示板未確認（キャッシュ済みpython3出力を使用） ---
 echo "■ 掲示板未確認"
-bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
-if [ -f "$bulletin_file" ]; then
-    bulletin_result=$(python3 - "$bulletin_file" karo <<'PY'
-import sys, yaml
-path, agent = sys.argv[1:3]
-with open(path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-entries = data.get("entries") or []
-pending = []
-for entry in entries:
-    if not isinstance(entry, dict):
-        continue
-    rc = entry.get("requires_confirmation", False)
-    if not rc:
-        continue
-    if isinstance(rc, list) and agent not in rc:
-        continue
-    if str(entry.get("status", "")).lower() == "closed":
-        continue
-    confirmed = entry.get("confirmed_by") or []
-    if agent in confirmed:
-        continue
-    text = str(entry.get("content", "")).splitlines()
-    head = text[0] if text else ""
-    pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
-print(len(pending))
-for item in pending[:3]:
-    print(item)
-PY
-)
-    bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
-    if [ "${bulletin_count:-0}" -gt 0 ]; then
-        echo "  WARN: 未確認掲示板 ${bulletin_count}件"
-        printf '%s\n' "$bulletin_result" | tail -n +2 | sed 's/^/    /'
-        if [ "$overall" != "ALERT" ]; then
-            overall="WARN"
-            alerts+=("掲示板未確認: ${bulletin_count}件")
-        fi
-    else
-        echo "  未確認: 0件"
+if [ "${_bulletin_count:-0}" -gt 0 ]; then
+    echo "  WARN: 未確認掲示板 ${_bulletin_count}件"
+    echo "$_PY_OUT" | grep '^BULLETIN_ITEM: ' | sed 's/^BULLETIN_ITEM: /    /'
+    if [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("掲示板未確認: ${_bulletin_count}件")
     fi
 else
-    echo "  掲示板なし"
+    echo "  未確認: 0件"
 fi
 
 # --- Check 4: pending_decisions未解決件数 ---
@@ -266,23 +327,17 @@ else
     echo "  karo_workarounds.yaml不在"
 fi
 
-# --- Check 6: 全体workaround率 (cmd_1308) ---
-WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
-if [ -x "$WA_RATE_SCRIPT" ]; then
-    bash "$WA_RATE_SCRIPT" --last 10 2>&1 || echo "  [INFO] gate_workaround_rate.sh failed (non-blocking)"
-else
-    echo "■ Workaround率"
-    echo "  SKIP: gate_workaround_rate.sh が存在しないか実行権限なし"
-fi
+# --- Check 6: 全体workaround率（バックグラウンド結果を回収） ---
+if [ -n "$_WA_RATE_PID" ]; then wait "$_WA_RATE_PID" 2>/dev/null || true; fi
+cat "$_WA_RATE_TMP"
 
-# --- Check 7: 忍者別workaround率 (GP-011) ---
+# --- Check 7: 忍者別workaround率（バックグラウンド結果を回収） ---
 echo "■ 忍者別workaround率"
-NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
-if [ -x "$NINJA_WA_SCRIPT" ]; then
-    bash "$NINJA_WA_SCRIPT" --quiet --last 30 || echo "  [INFO] gate_ninja_workaround_rate.sh failed (non-blocking)"
-else
-    echo "  SKIP: gate_ninja_workaround_rate.sh が存在しないか実行権限なし"
-fi
+if [ -n "$_NINJA_WA_PID" ]; then wait "$_NINJA_WA_PID" 2>/dev/null || true; fi
+cat "$_NINJA_WA_TMP"
+
+# tmpファイル削除
+rm -f "$_WA_RATE_TMP" "$_NINJA_WA_TMP"
 
 # --- Check 8: idle自走プロンプト ---
 echo ""
