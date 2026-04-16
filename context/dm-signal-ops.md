@@ -117,6 +117,8 @@ PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic
 
 ## §14 ドキュメントインデックス
 
+**CoDD適用方針設計書**: `docs/research/codd_dmsignal_python_strategy.md` — DM-Signal Python高速化の全体方針。§0前提条件(環境/コマンド/成功条件)+§3ワークフロー(Phase 1-4)+§5本番防御層。CoDD改善cmd着手前に必読
+
 docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証・API使用法ルール抜粋。
 補助参照: `docs/research/cmd_485_dm-signal-environment-catalog.md`（環境/Render/API） + `docs/research/cmd_488_dm-signal-claude-config-catalog.md`（運用設定）
 - L169: 設計書補完はMECE表+仕様章リンクの二層化で抜け漏れを抑制できる（cmd_549）
