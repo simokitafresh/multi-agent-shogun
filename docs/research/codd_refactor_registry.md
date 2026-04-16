@@ -24,6 +24,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | kagemaru | `scripts/karo_workaround_log.sh` | Phase 5(計測+実装+検証) | `61ms → 26ms` (`-57%`, `2.3x`, clean mode) / `70ms → 32ms` (`-54%`, normal mode) | validate_ninja_id task dir loop(basename subprocess×10=45ms)廃止+settings.yaml only+TZ=UTC printf builtin。26/26テストPASS。spec: `docs/research/codd_spec_karo_workaround_log_20260416.md` |
 | 2026-04-16 | hayate | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(計測+実装+検証) | `7.40s(FAIL) → 2.74s(PASS)` (`-63%`) | after: `docs/research/gate_recalculate_completeness_after_20260416.md` |
 | 2026-04-16 | kotaro | `scripts/gates/gate_loop_health.sh` | Phase 5(計測+実装+検証) | `287ms → 93ms` (`-67%`, `3.1x`) | (yaml.safe_load→行パーサ。spec省略) |
+| 2026-04-16 | kotaro | `scripts/hooks/pre_compact_save.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `141ms → ~99ms(TMUX推定, -30%)` / `46ms → 28ms(非TMUX実測, -39%)` | jq×2→bash regex/tmux×2→1呼び出し/冗長mkdir削除。全980テストPASS。spec: `docs/research/codd_spec_pre_compact_save_20260416.md` |
 | 2026-04-16 | tobisaru | `scripts/gates/gate_lesson_health.sh` | Phase 5(計測+実装+検証) | `666ms → 140ms` (`-79%`, `4.75x`) | lessons.yaml awk 15+回→1回/PJ統合+config 1回awk+context synced+unsorted 1awk+float比較4→1awk+notify read 2→1awk+mktemp廃止。全関連テストPASS |
 
 | 2026-04-16 | 軍師 | `scripts/oneshot/cmd_1934_l3_threebody_stability.py` | Phase 5(計測+実装+検証) | `~10min → ~1min` (`10x`, 4851combo) | `_fast_beta`関数追加+evaluate_expanding/WFのnumpy化+load_monthly_returns引数化+COL_RE ①対応。spec: `docs/research/gunshi_cmd1934_scalability_42col_20260416.md` |
