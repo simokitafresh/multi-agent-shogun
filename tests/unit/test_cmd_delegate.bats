@@ -305,9 +305,11 @@ YAML
     [[ "$output" == *"ERROR"* ]]
     [[ "$output" == *"inbox_write"* ]]
 
-    # delegated_at は設定されないことを確認
+    # cmd_new guardを通した事実は保持し、手動再送可能な状態を維持する
     run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
-    [ "$status" -ne 0 ]
+    [ "$status" -eq 0 ]
+    run grep "status: delegated" "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    [ "$status" -eq 0 ]
 }
 
 @test "cmd_delegate: cmd_save.sh BLOCK時は委任中止" {
