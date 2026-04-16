@@ -27,25 +27,26 @@ if [ -z "$AGENT_ID" ]; then
   echo "WARNING: ntfy called with unavailable agent_id (outside tmux?)" >&2
 elif [ "$AGENT_ID" != "shogun" ] && [ "$AGENT_ID" != "karo" ]; then
   # ninja_monitor daemon inherits TMUX_PANE from launch context — suppress warning
-  CALLER=$(basename "${BASH_SOURCE[1]:-}" 2>/dev/null || true)
+  CALLER="${BASH_SOURCE[1]:-}"; CALLER="${CALLER##*/}"  # pure bash basename
   if [ "$CALLER" != "ninja_monitor.sh" ]; then
     echo "WARNING: ntfy called by non-authorized agent: ${AGENT_ID}" >&2
   fi
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Pure bash: avoid cd+pwd subshell (saves ~5ms)
+_ntfy_script="${BASH_SOURCE[0]}"
+[[ "$_ntfy_script" != /* ]] && _ntfy_script="$PWD/$_ntfy_script"
+_ntfy_dir="${_ntfy_script%/*}"
+SCRIPT_DIR="${_ntfy_dir%/*}"
+unset _ntfy_script _ntfy_dir
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 # shellcheck disable=SC2034  # Used by lord_conversation.sh
 LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
 # ntfy_auth.sh読み込み
-# shellcheck source=../lib/ntfy_auth.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/ntfy_auth.sh"
-
-# lord_conversation.sh読み込み (cmd_546: 重複ロジック集約)
-# shellcheck source=../lib/lord_conversation.sh
-source "$SCRIPT_DIR/lib/lord_conversation.sh"
 
 TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
 if [ -z "$TOPIC" ]; then
@@ -63,7 +64,7 @@ while IFS= read -r line; do
 done < <(ntfy_get_auth_args "$SCRIPT_DIR/config/ntfy_auth.env")
 
 LOGFILE="$SCRIPT_DIR/logs/ntfy.log"
-mkdir -p "$SCRIPT_DIR/logs"
+[ -d "$SCRIPT_DIR/logs" ] || mkdir -p "$SCRIPT_DIR/logs"
 
 MSG="$1"
 
@@ -117,10 +118,16 @@ send_with_retry() {
 
 if [ "${NTFY_SYNC:-0}" = "1" ]; then
   # Optional sync mode for callers that need delivery observability.
+  # lord_conversation.sh loaded here (sync path only) to keep it off the hot path
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/lib/lord_conversation.sh"
   send_with_retry "$MSG"
   exit $?
 fi
 
 # Default mode: fire-and-forget
-( send_with_retry "$MSG" ) &
+# lord_conversation.sh sourced in background to save ~7ms from main path
+( # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/lib/lord_conversation.sh"
+  send_with_retry "$MSG" ) &
 exit 0

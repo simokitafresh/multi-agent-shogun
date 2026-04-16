@@ -73,7 +73,7 @@ ntfy_validate_topic() {
     # 一般的な弱いトピック名チェック
     local weak_topics="test mytopic notifications alerts messages my-topic default ntfy"
     local lower_topic
-    lower_topic=$(echo "$topic" | tr '[:upper:]' '[:lower:]')
+    lower_topic="${topic,,}"  # bash 4.0+ lowercase (avoids echo|tr subprocess)
     for weak in $weak_topics; do
         if [ "$lower_topic" = "$weak" ]; then
             echo "WARNING: ntfy topic '$topic' is a commonly used name. Use a random string." >&2
