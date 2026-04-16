@@ -81,7 +81,10 @@ snippet_len = int(os.environ["SUMMARY_SNIPPET_LEN_ENV"])
 with open(inbox_path, encoding="utf-8") as f:
     data = yaml.safe_load(f) or {}
 
+CONCLUSION_TYPES = {"bulletin_notify", "review_feedback", "retraction", "analysis_result", "review_result", "report_review_result", "verify_result"}
+
 parts = []
+has_conclusion = False
 for msg in data.get("messages", []):
     if msg.get("read") is not False:
         continue
@@ -90,10 +93,15 @@ for msg in data.get("messages", []):
     content = " ".join(str(msg.get("content", "")).split())
     content = content[:snippet_len]
     parts.append(f"[{sender}/{msg_type}] {content}")
+    if msg_type in CONCLUSION_TYPES:
+        has_conclusion = True
     if len(parts) >= limit:
         break
 
-print(" | ".join(parts))
+result = " | ".join(parts)
+if has_conclusion:
+    result += " | ★結論を含む通知あり。自分の証拠と突合せよ。矛盾があれば問い返せ。撤回は突合後。"
+print(result)
 PY
   )"
   touch "$idle_flag"
