@@ -39,6 +39,7 @@ SETTINGS="$PROJECT_DIR/config/settings.yaml"
 ARCHIVE_CMD_DIR="$PROJECT_DIR/queue/archive/cmds"
 LESSON_EFFECT_STATUS_FILE="$PROJECT_DIR/queue/lesson_effectiveness_status.txt"
 GATE_FIRE_LOG="$PROJECT_DIR/logs/gate_fire_log.yaml"
+LESSON_IMPACT_FILE="$PROJECT_DIR/logs/lesson_impact.tsv"
 
 # ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
 compute_first_fire_rate() {
@@ -56,13 +57,14 @@ compute_first_fire_rate() {
         }
     ' "$GATE_FIRE_LOG"
 }
-FIRST_FIRE_RATE=$(compute_first_fire_rate)
 KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
 KM_MODEL_CACHE="/tmp/dashboard_km_model_cache.txt"
 KM_CACHE_LINES="/tmp/dashboard_km_cache_lines.txt"
 # GP-XXX: TTL caches for slow subprocesses (CTX: 120s, CI: 60s)
 # Project-scoped via cksum so test environments don't share cache with production
-_proj_hash=$(printf '%s' "$PROJECT_DIR" | cksum | awk '{print $1}')
+# GP-cmd_1981: awk subprocess排除 — ${...%% *}でスペース以降を剥ぎ取る(~2ms削減)
+_proj_hash_raw=$(printf '%s' "$PROJECT_DIR" | cksum)
+_proj_hash=${_proj_hash_raw%% *}
 CTX_WARN_CACHE="/tmp/dashboard_ctx_warn_${_proj_hash}.txt"
 CTX_WARN_CACHE_TS="/tmp/dashboard_ctx_warn_${_proj_hash}.ts"
 CI_STATUS_CACHE="/tmp/dashboard_ci_status_${_proj_hash}.txt"
@@ -72,6 +74,33 @@ CI_STATUS_REFRESH_LOCK="/tmp/dashboard_ci_status_${_proj_hash}.lock"
 GIT_REVLIST_CACHE="/tmp/dashboard_git_revlist_${_proj_hash}.txt"
 GIT_REVLIST_CACHE_TS="/tmp/dashboard_git_revlist_${_proj_hash}.ts"
 _CACHE_NOW=$(date +%s)
+
+# ─── GP-cmd_1981: Heavy awk mtimeキャッシュ ───
+# 対象: first_fire_rate(21ms)+gate_metrics+streak(26ms)+lesson_effectiveness(9ms)
+#       +task_type_rows(16ms)+recent_30_gawk(34ms)+gate_titles(21ms) = ~127ms
+# キャッシュキー: 4ファイルのmtime(stat 1回で取得)
+_HEAVY_CACHE_DIR="/tmp/das_heavy_${_proj_hash}"
+mkdir -p "$_HEAVY_CACHE_DIR" 2>/dev/null || true
+_heavy_key_file="$_HEAVY_CACHE_DIR/.key"
+_heavy_key=$(stat -c '%Y' "$GATE_FIRE_LOG" "$GATE_LOG" "$LESSON_IMPACT_FILE" \
+    "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null | tr '\n' ':')
+_cached_heavy_key=$(cat "$_heavy_key_file" 2>/dev/null || echo "MISS")
+_HEAVY_HIT=false
+if [[ "$_heavy_key" == "$_cached_heavy_key" ]] && [[ -n "$_heavy_key" ]] && \
+   [[ "$_heavy_key" != "MISS" ]] && \
+   [[ -f "$_HEAVY_CACHE_DIR/ffr.txt" ]] && \
+   [[ -f "$_HEAVY_CACHE_DIR/metrics.tsv" ]] && \
+   [[ -f "$_HEAVY_CACHE_DIR/recent30.tsv" ]]; then
+    _HEAVY_HIT=true
+fi
+
+# first_fire_rate: heavy cacheから取得 or 計算
+if [[ "$_HEAVY_HIT" == true ]]; then
+    FIRST_FIRE_RATE=$(cat "$_HEAVY_CACHE_DIR/ffr.txt" 2>/dev/null || echo "—")
+else
+    FIRST_FIRE_RATE=$(compute_first_fire_rate)
+    echo "$FIRST_FIRE_RATE" > "$_HEAVY_CACHE_DIR/ffr.txt" 2>/dev/null || true
+fi
 
 MARKER_START="<!-- DASHBOARD_AUTO_START -->"
 MARKER_END="<!-- DASHBOARD_AUTO_END -->"
@@ -89,7 +118,9 @@ NOW=$(TZ=Asia/Tokyo date '+%H:%M')
 # shellcheck source=/dev/null
 source "$(dirname "$SCRIPT_DIR")/scripts/lib/agent_config.sh"
 ALL_NINJAS=$(get_ninja_names)
-TOTAL_NINJAS=$(echo "$ALL_NINJAS" | wc -w | tr -d ' ')
+# GP-cmd_1981: wc+tr subprocessをbash配列長で排除
+read -r -a _ninja_arr <<< "$ALL_NINJAS"
+TOTAL_NINJAS=${#_ninja_arr[@]}
 
 declare -A _JP_CACHE=([karo]="家老")
 if [[ -n "${_AGENT_CONFIG_RAW:-}" ]]; then
@@ -203,21 +234,39 @@ start_ci_status_refresh_async() {
 }
 
 # ─── Build cmd→ninjas mapping (from task YAMLs) ───
+# GP-cmd_1981: grep+sed×2+tr×6回 → 単一awk(~20ms削減)
 declare -A CMD_NINJAS=()
 declare -A NINJA_CMD=()
-for n in $ALL_NINJAS; do
-    tf="$TASKS_DIR/${n}.yaml"
-    [[ ! -f "$tf" ]] && continue
-    pcmd=$(get_task_parent_cmd "$tf" || true)
-    [[ -z "$pcmd" ]] && continue
-    NINJA_CMD[$n]="$pcmd"
-    jp=$(name_jp "$n")
-    if [[ -n "${CMD_NINJAS[$pcmd]:-}" ]]; then
-        CMD_NINJAS[$pcmd]="${CMD_NINJAS[$pcmd]},${jp}"
-    else
-        CMD_NINJAS[$pcmd]="$jp"
-    fi
+_task_files_arr=()
+for _tnn in $ALL_NINJAS; do
+    _tf="$TASKS_DIR/${_tnn}.yaml"
+    [[ -f "$_tf" ]] && _task_files_arr+=("$_tf")
 done
+if [[ ${#_task_files_arr[@]} -gt 0 ]]; then
+    while IFS='|' read -r _n _pcmd; do
+        [[ -z "$_pcmd" ]] && continue
+        NINJA_CMD[$_n]="$_pcmd"
+        jp=$(name_jp "$_n")
+        if [[ -n "${CMD_NINJAS[$_pcmd]:-}" ]]; then
+            CMD_NINJAS[$_pcmd]="${CMD_NINJAS[$_pcmd]},${jp}"
+        else
+            CMD_NINJAS[$_pcmd]="$jp"
+        fi
+    done < <(awk '
+        FNR == 1 {
+            fname = FILENAME
+            sub(/.*\//, "", fname)
+            sub(/\.yaml$/, "", fname)
+            ninja = fname
+        }
+        /^[[:space:]]*parent_cmd:/ {
+            v = $0
+            sub(/.*parent_cmd:[[:space:]]*/, "", v)
+            gsub(/["'"'"'[:space:]]/, "", v)
+            if (v != "") { print ninja "|" v; nextfile }
+        }
+    ' "${_task_files_arr[@]}")
+fi
 
 # ─── Get idle list from snapshot ───
 IDLE_LIST=""
@@ -279,41 +328,62 @@ TOTAL_CMDS=0
 declare -A CLEARED_CMDS=()
 
 if [[ -f "$GATE_LOG" ]]; then
-    # Cmd-latest dedup (exclude test cmds), sorted by timestamp
-    awk -F'\t' '
-        NF>=3 && $2 !~ /^cmd_test/ {
-            cmd=$2; ts[cmd]=$1; st[cmd]=$3
-        }
-        END {
-            for (c in st) printf "%s\t%s\t%s\n", ts[c], c, st[c]
-        }
-    ' "$GATE_LOG" | sort -t$'\t' -k1,1 > "$TMP_METRICS"
-
-    TOTAL_CMDS=$(wc -l < "$TMP_METRICS" | tr -d ' ')
-    CLEAR_COUNT=$(awk -F'\t' '$3=="CLEAR"{c++} END{print c+0}' "$TMP_METRICS")
-
-    if [[ "$TOTAL_CMDS" -gt 0 ]]; then
-        : # CLEAR_COUNT/TOTAL_CMDS used directly in output
-    fi
-
-    # Streak: consecutive CLEARs from the end (L074: avoid ((var++)))
-    STREAK=0
-    STREAK_START=""
-    STREAK_END=""
-    while IFS=$'\t' read -r _ts _cmd result; do
-        if [[ "$result" == "CLEAR" ]]; then
-            if [[ $STREAK -eq 0 ]]; then
-                STREAK_START="$_cmd"
-            fi
-            STREAK=$((STREAK + 1))
-            STREAK_END="$_cmd"
-            CLEARED_CMDS[$_cmd]=1
-        else
-            STREAK=0
-            STREAK_START=""
-            STREAK_END=""
+    if [[ "$_HEAVY_HIT" == true ]] && [[ -f "$_HEAVY_CACHE_DIR/metrics.tsv" ]]; then
+        # GP-cmd_1981: heavy cacheからTMP_METRICS復元 — awk+sortをスキップ
+        cp "$_HEAVY_CACHE_DIR/metrics.tsv" "$TMP_METRICS"
+        # streak/counts もキャッシュから復元
+        if [[ -f "$_HEAVY_CACHE_DIR/streak.txt" ]]; then
+            IFS=$'\t' read -r STREAK STREAK_START STREAK_END TOTAL_CMDS CLEAR_COUNT \
+                < "$_HEAVY_CACHE_DIR/streak.txt" 2>/dev/null || true
         fi
-    done < "$TMP_METRICS"
+        if [[ -f "$_HEAVY_CACHE_DIR/cleared.txt" ]]; then
+            while IFS= read -r _cc; do
+                [[ -n "$_cc" ]] && CLEARED_CMDS["$_cc"]=1
+            done < "$_HEAVY_CACHE_DIR/cleared.txt"
+        fi
+    else
+        # Cmd-latest dedup (exclude test cmds), sorted by timestamp
+        awk -F'\t' '
+            NF>=3 && $2 !~ /^cmd_test/ {
+                cmd=$2; ts[cmd]=$1; st[cmd]=$3
+            }
+            END {
+                for (c in st) printf "%s\t%s\t%s\n", ts[c], c, st[c]
+            }
+        ' "$GATE_LOG" | sort -t$'\t' -k1,1 > "$TMP_METRICS"
+
+        # GP-cmd_1981: wc+tr+awk → streakループにインライン化(~7ms削減)
+        # Streak: consecutive CLEARs from the end (L074: avoid ((var++)))
+        STREAK=0
+        STREAK_START=""
+        STREAK_END=""
+        TOTAL_CMDS=0
+        CLEAR_COUNT=0
+        while IFS=$'\t' read -r _ts _cmd result; do
+            TOTAL_CMDS=$((TOTAL_CMDS + 1))
+            if [[ "$result" == "CLEAR" ]]; then
+                CLEAR_COUNT=$((CLEAR_COUNT + 1))
+                if [[ $STREAK -eq 0 ]]; then
+                    STREAK_START="$_cmd"
+                fi
+                STREAK=$((STREAK + 1))
+                STREAK_END="$_cmd"
+                CLEARED_CMDS[$_cmd]=1
+            else
+                STREAK=0
+                STREAK_START=""
+                STREAK_END=""
+            fi
+        done < "$TMP_METRICS"
+
+        # heavy cacheに保存
+        cp "$TMP_METRICS" "$_HEAVY_CACHE_DIR/metrics.tsv" 2>/dev/null || true
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "$STREAK" "$STREAK_START" "$STREAK_END" "$TOTAL_CMDS" "$CLEAR_COUNT" \
+            > "$_HEAVY_CACHE_DIR/streak.txt" 2>/dev/null || true
+        for _cc in "${!CLEARED_CMDS[@]}"; do echo "$_cc"; done \
+            > "$_HEAVY_CACHE_DIR/cleared.txt" 2>/dev/null || true
+    fi
 
     # Last GATE time (informational only, not rendered in dashboard)
 fi

@@ -366,6 +366,15 @@ S0 を通過した変更には commit message に以下を添付せよ:
 
 ## Communication Protocol
 
+### 返信先ルール（強制）
+
+| 送信元 | type | 返信先 | 理由 |
+|--------|------|--------|------|
+| 家老 | review_draft / report_review | inbox_write → karo | 通常業務。鎖の中の閉じたループ |
+| **将軍** | **review_request** | **掲示板(bulletin_write.sh)** | **掲示板が唯一の将軍↔軍師直通ライン。家老inboxに返しても将軍に届かない(実証: 2026-04-16)** |
+
+★ 将軍からのreview_requestに家老inbox_writeで返信するな。掲示板に投稿せよ。(GP-206)
+
 ### 受信
 家老からのレビュー依頼（inbox_write type: review_draft）。
 依頼にはdraft cmdの内容（purpose/AC/command）と元の偵察報告参照先が含まれる。

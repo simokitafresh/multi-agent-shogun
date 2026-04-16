@@ -866,8 +866,14 @@ is_before_after_required_task() {
     local parent_cmd="$2"
     local task_title task_type
 
-    task_title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null)
-    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null)
+    # cmd_1983: 第3・第4引数が渡された場合はpre-read値を使用（field_get subprocess削減）
+    if [[ ${3+x} ]] && [[ ${4+x} ]]; then
+        task_title="$3"
+        task_type="$4"
+    else
+        task_title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null)
+        task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null)
+    fi
 
     case "$parent_cmd" in
         cmd_karo_gp*) return 0 ;;
@@ -990,14 +996,21 @@ generate_report_template() {
     local report_file=""
     local report_rel_path=""
 
-    # report_filenameフィールドを優先参照（cmd_412: 命名ミスマッチ根治）
-    local report_filename=""
-    report_filename=$(field_get "$task_file" "report_filename" "")
+    # cmd_1983: 12+ field_get → field_get_multi 1回 (WSL2 subprocess削減)
+    # task_id・parent_cmd はパラメータと同名のため上書き前にコピー
+    local _p_task_id="$task_id" _p_parent_cmd="$parent_cmd"
+    local report_filename assigned_to subtask_id task_id _ac_task_id parent_cmd \
+          ac_version title task_type target_path scout_exempt type scope_mode
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        report_filename assigned_to subtask_id task_id _ac_task_id \
+        parent_cmd ac_version title task_type target_path scout_exempt \
+        type scope_mode 2>/dev/null)" || true
 
+    # report_filenameフィールドを優先参照（cmd_412: 命名ミスマッチ根治）
     if [ -n "$report_filename" ]; then
         report_file="$SCRIPT_DIR/queue/reports/${report_filename}"
-    elif [[ -n "$parent_cmd" && "$parent_cmd" == cmd_* ]]; then
-        report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}.yaml"
+    elif [[ -n "$_p_parent_cmd" && "$_p_parent_cmd" == cmd_* ]]; then
+        report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${_p_parent_cmd}.yaml"
     else
         # 後方互換: parent_cmdが未設定/不正なら旧形式にフォールバック
         report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
@@ -1024,9 +1037,9 @@ generate_report_template() {
 
     # cmd_1323: STALL再配備時の旧報告テンプレート自動cleanup
     # cmd_cycle_001: 他忍者の報告は絶対にアーカイブしない（配備対象の忍者名の報告のみ対象）
-    if [[ -n "$parent_cmd" && "$parent_cmd" == cmd_* ]]; then
+    if [[ -n "$_p_parent_cmd" && "$_p_parent_cmd" == cmd_* ]]; then
         local stale_basename
-        for stale_report in "$SCRIPT_DIR/queue/reports/"*"_report_${parent_cmd}.yaml"; do
+        for stale_report in "$SCRIPT_DIR/queue/reports/"*"_report_${_p_parent_cmd}.yaml"; do
             [ -f "$stale_report" ] || continue
             stale_basename=$(basename "$stale_report")
             # 自分の報告はスキップ（下のown-reportブロックで処理）
@@ -1083,23 +1096,20 @@ generate_report_template() {
     fi
 
     # タスクYAMLから自動記入値を取得（cmd_532: 機械的フィールド自動記入）
-    local worker_id
-    worker_id=$(field_get "$task_file" "assigned_to" "$ninja_name")
-    local resolved_task_id
-    resolved_task_id=$(field_get "$task_file" "subtask_id" "")
+    # cmd_1983: field_get_multiで一括取得済み → 変数参照のみ
+    local worker_id="${assigned_to:-$ninja_name}"
+    local resolved_task_id="${subtask_id}"
     if [ -z "$resolved_task_id" ]; then
-        resolved_task_id=$(field_get "$task_file" "task_id" "$task_id")
+        resolved_task_id="${task_id:-$_p_task_id}"
     fi
     # task_id系が全て空なら_ac_task_idをfallback
     if [ -z "$resolved_task_id" ]; then
-        resolved_task_id=$(field_get "$task_file" "_ac_task_id" "")
+        resolved_task_id="${_ac_task_id}"
     fi
-    local resolved_parent_cmd
-    resolved_parent_cmd=$(field_get "$task_file" "parent_cmd" "$parent_cmd")
-    local ac_version
-    ac_version=$(field_get "$task_file" "ac_version" "")
+    local resolved_parent_cmd="${parent_cmd:-$_p_parent_cmd}"
+    # ac_version: field_get_multi済み($ac_version)
     local _before_after_block=""
-    if is_before_after_required_task "$task_file" "$resolved_parent_cmd"; then
+    if is_before_after_required_task "$task_file" "$resolved_parent_cmd" "$title" "$task_type"; then
         _before_after_block=$(cat <<'EOF'
 before_metrics:
   summary: ""  # 実装前の計測値
