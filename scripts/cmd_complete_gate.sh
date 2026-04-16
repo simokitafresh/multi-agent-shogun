@@ -3156,6 +3156,7 @@ if [ -n "$CMD_PROJECT" ]; then
             draft_count=${draft_count:-0}
             if [ "$draft_count" -gt 0 ]; then
                 echo "  [CRITICAL] NG ← ${CMD_PROJECT}に${draft_count}件のdraft未査読教訓あり"
+                echo "  ★ この問題は忍者では解消できない。家老に報告して待機せよ。リトライは無駄(GP-203)"
                 record_block_reason "draft_lessons:${draft_count}"
                 ALL_CLEAR=false
             else

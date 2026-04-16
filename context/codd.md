@@ -59,6 +59,19 @@
 | L2 事後 | テストFB + DIVERGENT | gate BLOCK + FIX hints + DIVERGENT(GP-200 CLEAR) | workaround率0%(直近10件) |
 | L3 診断 | Diagnose MANDATORY + Session State | diagnose_reason必須(GP-198 CLEAR) + Session State(GP-201 CLEAR) + deepdive | 全層実装完了。初回実証済み(疾風cmd_1936) |
 
+## §4.5 CoDD改善cmdのAC設計ルール（cmd_1953事故→殿裁定2026-04-16）
+
+**ACは4段階に分解せよ。** command欄に「/codd-refactorの手順で」と書いてもACに分解しなければ忍者は実行しない。
+
+| AC | 内容 |
+|----|------|
+| AC-spec | CoDD spec作成(`docs/research/`に保存)。Phase 1実測値+ボトルネック+リファクタ対象 |
+| AC-design | coddコマンドで設計書生成。設計書パスを報告に記載 |
+| AC-impl | 設計書に基づき実装+before/after計測 |
+| AC-test | 既存テスト全PASS+`codd_refactor_registry.md`に追記 |
+
+**防御層:** cmd_save.sh Check 22(ステップ数 vs AC数の粗い網) + 軍師レビュー(事後) + Session State(診断)。事前100%は不可能かつ怠慢(LS035)。
+
 ## §5 我が軍での使い方
 
 | 使い方 | 結論 | 参照 |

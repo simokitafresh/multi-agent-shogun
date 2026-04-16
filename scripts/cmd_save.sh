@@ -1766,6 +1766,26 @@ check_ac_absolute_literals() {
 
 check_ac_absolute_literals
 
+# --- Check 22: command欄ステップ数 vs AC数の不整合検出（WARN） ---
+# 起源: cmd_1953-1958でcommand欄に(1)(2)(3)(4)の4ステップを書いたがAC2個→忍者がspec/設計書をスキップ
+# 原理: command欄の番号付きステップ数 > AC数 = 中間成果物がACに分解されていない可能性
+# CoDD固有でなく全cmdに適用。手順が増えれば自動検出(100億パターン対応)
+if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
+    _CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /^\s*command:\s*\|/ { found=1; next }
+        /^\s*command:\s*[^|]/ { found=1; sub(/^\s*command:\s*/, ""); print; next }
+        found && /^\s{4,}/ { print; next }
+        found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+    ')
+    _STEP_COUNT=$(echo "$_CMD_SECTION" | grep -cE '^\s*\([0-9]+\)|^\s*[0-9]+[\.\)]\s' 2>/dev/null || echo 0)
+    _AC_COUNT=$(echo "$CMD_BLOCK_NC" | grep -c "description:" 2>/dev/null || echo 0)
+    if (( _STEP_COUNT > 0 && _STEP_COUNT > _AC_COUNT )); then
+        echo "WARN: command欄に${_STEP_COUNT}ステップあるがACは${_AC_COUNT}個。中間成果物がACに分解されていない可能性" >&2
+        echo "  忍者はACにないことは実行しない。各ステップの成果物をACに対応させよ" >&2
+        WARN_COUNT=$((WARN_COUNT + 1))
+    fi
+fi
+
 # --- 結果出力 ---
 if [[ "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"
