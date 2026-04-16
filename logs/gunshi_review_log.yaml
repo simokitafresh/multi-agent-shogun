@@ -766,3 +766,14 @@
   gate_prediction: CLEAR
   causal_chain: "cmd_1960→再トライ→agent_config source回避→-20%(live)=全inbox_write呼出しの正の複利(×312回)"
   timestamp: "2026-04-16T19:06:00"
+- cmd_id: codd_dmsignal_strategy
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "5観点レビュー。APPROVE+2点RC。(1)FoFパリティ確認明示推奨 (2)LG028+WSL2 I/O知見移管追加推奨"
+  observations:
+    - "事実1: A/B/C分類は安全度で明確。Cの対象外判断(Renderボトルネック)も妥当"
+    - "事実2: §8知見移管にLG028(内部ループ計上)が欠落。Python計算スクリプトこそ該当"
+    - "事実3: Phase間依存の明記+フォールバック(手動spec)でリスク構造化済み"
+  causal_chain: "インフラbash 32本改善→知見蓄積→DM-Signal Python適用→正の複利(fullrecalculate 8分→さらに短縮)"
+  timestamp: "2026-04-16T19:10:00"

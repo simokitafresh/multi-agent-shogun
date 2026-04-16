@@ -35,7 +35,7 @@ lessons:
     file
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 7
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L480
@@ -1700,7 +1700,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 58
+  helpful_count: 59
   harmful_count: 11
   last_referenced: '2026-04-16'
 - id: L228
@@ -3239,6 +3239,6 @@ lessons:
   summary: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タスクYAML・inbox・報告YAML等を書く前に必ず対象ファイルをRea
   tags:
   - claude-code
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-16'
