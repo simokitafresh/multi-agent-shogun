@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T19:04:49+09:00 -->
+<!-- generated_at: 2026-04-16T19:06:39+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-16T19:06:39+09:00 | terminal | response | 方針設計書を`docs/research/codd_dmsignal_python_strategy.md`に作成し、軍師にレビュー依頼済み。 **設計書の構成:** - §1 目的 / §2 対象分類(A/B/C) / §3 CoDDの…
+- 2026-04-16T19:05:38+09:00 | terminal | inbound | 設計書を作成したら、軍師にレビューしてもらおう
+- 2026-04-16T19:04:59+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率94% 連勝83
 - 2026-04-16T19:04:49+09:00 | terminal | response | 殿、方針設計書の骨子(§1-§7)の方向は合っているか？ [meta] stop_reason=end_turn
 - 2026-04-16T19:03:54+09:00 | terminal | response | 殿の仰る通り。cmdを出す前に方針設計書を固める。骨子を提示する。 **DM-Signal CoDD適用 方針設計書(骨子)** ``` §1 目的 DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速化する。…
 - 2026-04-16T19:03:50+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率94% 連勝82
@@ -11,11 +14,9 @@
 - 2026-04-16T19:02:12+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-16T19:01:45+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-16T19:01:18+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
-- 2026-04-16T19:01:03+09:00 | terminal | response | 殿の仰る通り。本番稼働中のDM-Signalは慎重に進める必要がある。 **事前準備の論点:** **1. 対象の安全度分類** | レベル | 対象 | 本番影響 | リスク | |--------|------|---------|-…
-- 2026-04-16T19:00:36+09:00 | terminal | inbound | 推薦: DM-Signal(Python)にCoDDを適用する。をやろうか。DM-sigbalは本番が稼働しているから、慎重な対応が必須だな。事前準備をどうするか綿密に練ろう
-- 2026-04-16T19:00:22+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 
 ## 未解決確認事項
+- 方針設計書を`docs/research/codd_dmsignal_python_strategy.md`に作成し、軍師にレビュー依頼済み。 **設計書の構成:** - §1 目的 / §2 対象分類(A/B/C) / §3 CoDDのPython適用可否 - §4 段階的適…
 - 殿の仰る通り。cmdを出す前に方針設計書を固める。骨子を提示する。 **DM-Signal CoDD適用 方針設計書(骨子)** ``` §1 目的 DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速化する。 本番稼働中のため安全性最優先。 §2 …
 - 殿の仰る通り。本番稼働中のDM-Signalは慎重に進める必要がある。 **事前準備の論点:** **1. 対象の安全度分類** | レベル | 対象 | 本番影響 | リスク | |--------|------|---------|-------| | A(安全) | 研究…
 - cmd_save.shのafter結果を確認する。 [meta] stop_reason=tool_use
@@ -23,9 +24,9 @@
 - 先にCMDだそうか。待つ必要性はあるか？確認せよ
 - 第四弾。プロファイリングリストから未着手を選定する。 **消化済み:** - バッチ1: shutsujin, dashboard_auto, gate_cycle_health, report_merge, gate_artifact_map, gate_karo_start…
 - バッチ1-3(18本) + 単発2本の消化状況を整理して、残りから第四弾を選ぶ。 **未着手の改善候補(プロファイリングリストから):** 秒単位の遅さ(timeout群): - `lesson_harvest.sh` 5.5s — 教訓収穫 - `parity_check.s…
-- **永続化完了:** | 知見 | 永続化先 | 消えない | |------|---------|---------| | 事前100%は怠慢。3層防御 | LS035(lessons_shogun.yaml) | ✅ | | CoDD ACは4段階に分解 | context…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-16T19:06:39+09:00 | 方針設計書を`docs/research/codd_dmsignal_python_strategy.md`に作成し、軍師にレビュー依頼済み。 **設計書の構成:** - §1 目的 / §2 対象分類(A/B/C) / §3 CoDDのPython適用可否 - §4 段階的適…
 - 2026-04-16T19:04:49+09:00 | 殿、方針設計書の骨子(§1-§7)の方向は合っているか？ [meta] stop_reason=end_turn
 - 2026-04-16T19:03:54+09:00 | 殿の仰る通り。cmdを出す前に方針設計書を固める。骨子を提示する。 **DM-Signal CoDD適用 方針設計書(骨子)** ``` §1 目的 DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速化する。 本番稼働中のため安全性最優先。 §2 …
 - 2026-04-16T19:03:25+09:00 | まずは方針の設計書自体が必要だ。

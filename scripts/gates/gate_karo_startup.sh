@@ -37,103 +37,76 @@ fi
 # (B) tmux list-panes を1回だけ呼び出してキャッシュ
 _PANE_MAP=$(tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
 
-# (C) python3 を1回だけ起動してPhaseガイド + セッション要約 + 掲示板を一括取得
-_PY_OUT=$(python3 - "$SCRIPT_DIR" 2>/dev/null <<'PY'
-import sys, json, yaml, os
+# (C) awk/bash で phase guide + session summary + bulletin を取得（python3不要）
 
-SCRIPT_DIR = sys.argv[1]
+# phase guide 1
+_phase_guide_1=""
+if [ -f "$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md" ]; then
+    _phase_guide_1=$(awk '
+        /^## Phase/ { titles[++n] = substr($0, 4); lineno[n] = NR }
+        END {
+            if (n == 0) exit
+            printf "    前文: Read(offset=1, limit=%d)\n", lineno[1]-2
+            for (i=1; i<=n; i++) {
+                end_line = (i<n) ? lineno[i+1]-1 : NR
+                printf "    %s: Read(offset=%d, limit=%d)\n", titles[i], lineno[i], end_line-lineno[i]+1
+            }
+        }
+    ' "$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md")
+fi
 
-def get_phase_guide(filepath):
-    lines_info = []
-    total = 0
-    try:
-        with open(filepath, encoding="utf-8") as f:
-            for i, line in enumerate(f, 1):
-                total = i
-                if line.startswith("## Phase"):
-                    lines_info.append((i, line.strip().replace("## ", "")))
-    except (FileNotFoundError, OSError):
-        return []
-    results = []
-    if lines_info:
-        results.append(f"    前文: Read(offset=1, limit={lines_info[0][0]-2})")
-    for j, (start, title) in enumerate(lines_info):
-        end = lines_info[j+1][0]-1 if j+1 < len(lines_info) else total
-        limit = end - start + 1
-        results.append(f"    {title}: Read(offset={start}, limit={limit})")
-    return results
+# phase guide 2
+_phase_guide_2=""
+if [ -f "$SCRIPT_DIR/memory/deepdive_karo_verification_20260405.md" ]; then
+    _phase_guide_2=$(awk '
+        /^## Phase/ { titles[++n] = substr($0, 4); lineno[n] = NR }
+        END {
+            if (n == 0) exit
+            printf "    前文: Read(offset=1, limit=%d)\n", lineno[1]-2
+            for (i=1; i<=n; i++) {
+                end_line = (i<n) ? lineno[i+1]-1 : NR
+                printf "    %s: Read(offset=%d, limit=%d)\n", titles[i], lineno[i], end_line-lineno[i]+1
+            }
+        }
+    ' "$SCRIPT_DIR/memory/deepdive_karo_verification_20260405.md")
+fi
 
-dd1 = os.path.join(SCRIPT_DIR, "memory/deepdive_why_chain_20260321.md")
-dd2 = os.path.join(SCRIPT_DIR, "memory/deepdive_karo_verification_20260405.md")
+# session summary (JSONLから grep/awk で取得)
+_prev_session_summary=""
+if [ -f "$SCRIPT_DIR/queue/lord_conversation.jsonl" ]; then
+    _prev_session_summary=$(grep '"session_summary"' "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null | \
+        tail -1 | grep -oP '"summary":\s*"\K[^"]*' || true)
+fi
+[ -z "$_prev_session_summary" ] && _prev_session_summary="(前セッション要約なし)"
 
-print("PHASE_GUIDE_1_START")
-for line in get_phase_guide(dd1):
-    print(line)
-print("PHASE_GUIDE_1_END")
-
-print("PHASE_GUIDE_2_START")
-for line in get_phase_guide(dd2):
-    print(line)
-print("PHASE_GUIDE_2_END")
-
-# セッション要約（lord_conversation.jsonl 末尾 session_summary エントリ）
-summary = "(前セッション要約なし)"
-try:
-    with open(os.path.join(SCRIPT_DIR, "queue/lord_conversation.jsonl"), encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                entry = json.loads(line)
-                if entry.get("direction") == "session_summary":
-                    s = entry.get("summary", "").strip()
-                    if s:
-                        summary = s
-            except (json.JSONDecodeError, Exception):
-                continue
-except (FileNotFoundError, OSError):
-    pass
-print(f"SESSION_SUMMARY: {summary}")
-
-# 掲示板未確認件数
-bulletin_count = 0
-bulletin_items = []
-try:
-    with open(os.path.join(SCRIPT_DIR, "queue/bulletin_board.yaml"), encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-    entries = data.get("entries") or []
-    agent = "karo"
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        rc = entry.get("requires_confirmation", False)
-        if not rc:
-            continue
-        if isinstance(rc, list) and agent not in rc:
-            continue
-        if str(entry.get("status", "")).lower() == "closed":
-            continue
-        confirmed = entry.get("confirmed_by") or []
-        if agent in confirmed:
-            continue
-        text = str(entry.get("content", "")).splitlines()
-        head = text[0] if text else ""
-        bulletin_items.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
-    bulletin_count = len(bulletin_items)
-except (FileNotFoundError, OSError):
-    pass
-print(f"BULLETIN_COUNT: {bulletin_count}")
-for item in bulletin_items[:3]:
-    print(f"BULLETIN_ITEM: {item}")
-PY
-) || _PY_OUT=""
-
-# python3 出力パース
-_phase_guide_1=$(echo "$_PY_OUT" | awk '/^PHASE_GUIDE_1_START/{f=1;next} /^PHASE_GUIDE_1_END/{f=0} f{print}')
-_phase_guide_2=$(echo "$_PY_OUT" | awk '/^PHASE_GUIDE_2_START/{f=1;next} /^PHASE_GUIDE_2_END/{f=0} f{print}')
-_prev_session_summary=$(echo "$_PY_OUT" | grep '^SESSION_SUMMARY: ' | head -1 | sed 's/^SESSION_SUMMARY: //')
-_bulletin_count=$(echo "$_PY_OUT" | grep '^BULLETIN_COUNT: ' | head -1 | sed 's/^BULLETIN_COUNT: //')
+# bulletin 未確認件数とアイテム（awk YAML近似解析）
+_bulletin_count=0
+_bulletin_items=""
+if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
+    _blt_raw=$(awk '
+        /^- id:/ {
+            if (in_entry && rc && !closed && !karo_c) {
+                count++
+                if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
+            }
+            in_entry=1; rc=0; closed=0; karo_c=0; eid=""; epby=""
+        }
+        in_entry && /^  id:/ { v=$2; gsub(/['"'"'"]/, "", v); eid=v }
+        in_entry && /^  posted_by:/ { v=$2; gsub(/['"'"'"]/, "", v); epby=v }
+        in_entry && /requires_confirmation: true/ { rc=1 }
+        in_entry && /status:.*closed/ { closed=1 }
+        in_entry && /- .karo./ { karo_c=1 }
+        END {
+            if (in_entry && rc && !closed && !karo_c) {
+                count++
+                if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
+            }
+            print "COUNT: " count+0
+        }
+    ' "$SCRIPT_DIR/queue/bulletin_board.yaml" 2>/dev/null || echo "COUNT: 0")
+    _bulletin_count=$(echo "$_blt_raw" | grep '^COUNT: ' | sed 's/COUNT: //')
+    _bulletin_items=$(echo "$_blt_raw" | grep '^ITEM: ' | sed 's/^ITEM: /    /')
+fi
 _bulletin_count=${_bulletin_count:-0}
 
 echo "=== 家老起動チェック $(date '+%H:%M:%S') ==="
@@ -219,12 +192,34 @@ fi
 
 # --- Check 2.5: 忍者ペインCTX実態（snapshot突合） ---
 echo "■ 忍者ペインCTX実態"
-stall_count=0
+
+# capture-pane を並列実行（R2）
+declare -A _CTX_TMPF
+declare -A _NINJA_PANE_IDX
+declare -a _CTX_PIDS=()
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
     pane_idx=$(echo "$_PANE_MAP" | awk -v n="$ninja" '$2==n{print $1}')
+    _NINJA_PANE_IDX[$ninja]=$pane_idx
     if [ -n "$pane_idx" ]; then
-        ctx=$(tmux capture-pane -t "shogun:2.$pane_idx" -p 2>/dev/null | grep -oP 'CTX:\K[0-9]+%' | tail -1)
-        task_status=$(awk '/^  status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
+        _tmpf=$(mktemp)
+        _CTX_TMPF[$ninja]=$_tmpf
+        ( tmux capture-pane -t "shogun:2.$pane_idx" -p 2>/dev/null | grep -oP 'CTX:\K[0-9]+%' | tail -1 > "$_tmpf" ) &
+        _CTX_PIDS+=($!)
+    fi
+done
+for _pid in "${_CTX_PIDS[@]}"; do wait "$_pid" 2>/dev/null || true; done
+
+# task status をキャッシュ（Check 8 で再利用: R3）
+declare -A _NINJA_STATUS_CACHE
+
+stall_count=0
+for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+    task_status=$(awk '/^  status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
+    _NINJA_STATUS_CACHE[$ninja]=$task_status
+    pane_idx=${_NINJA_PANE_IDX[$ninja]}
+    if [ -n "$pane_idx" ]; then
+        ctx=$(cat "${_CTX_TMPF[$ninja]}" 2>/dev/null || true)
+        rm -f "${_CTX_TMPF[$ninja]}"
         if [[ "$task_status" =~ ^(assigned|in_progress)$ && ( "$ctx" == "0%" || -z "$ctx" ) ]]; then
             echo "  ⚠ $ninja: CTX=${ctx:-EMPTY} status=$task_status → STALL疑い"
             stall_count=$((stall_count + 1))
@@ -253,11 +248,11 @@ else
     unread=0
 fi
 
-# --- Check 3.5: 掲示板未確認（キャッシュ済みpython3出力を使用） ---
+# --- Check 3.5: 掲示板未確認 ---
 echo "■ 掲示板未確認"
 if [ "${_bulletin_count:-0}" -gt 0 ]; then
     echo "  WARN: 未確認掲示板 ${_bulletin_count}件"
-    echo "$_PY_OUT" | grep '^BULLETIN_ITEM: ' | sed 's/^BULLETIN_ITEM: /    /'
+    [ -n "$_bulletin_items" ] && echo "$_bulletin_items"
     if [ "$overall" != "ALERT" ]; then
         overall="WARN"
         alerts+=("掲示板未確認: ${_bulletin_count}件")
@@ -342,15 +337,16 @@ rm -f "$_WA_RATE_TMP" "$_NINJA_WA_TMP"
 # --- Check 8: idle自走プロンプト ---
 echo ""
 echo "■ 自走チェック"
-# 全忍者がidle or completedか確認
+# 全忍者がidle or completedか確認（Check 2.5のstatusキャッシュを再利用: R3）
 active_ninjas=0
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
-    task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
-    if [ -f "$task_file" ]; then
-        ninja_status=$(awk '/^  status:/{print $2; exit}' "$task_file" 2>/dev/null)
-        if [[ "$ninja_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
-            active_ninjas=$((active_ninjas + 1))
-        fi
+    ninja_status=${_NINJA_STATUS_CACHE[$ninja]:-""}
+    if [ -z "$ninja_status" ]; then
+        task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+        [ -f "$task_file" ] && ninja_status=$(awk '/^  status:/{print $2; exit}' "$task_file" 2>/dev/null)
+    fi
+    if [[ "$ninja_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
+        active_ninjas=$((active_ninjas + 1))
     fi
 done
 if [ "$active_ninjas" -eq 0 ] && [ "$unread" -eq 0 ]; then
