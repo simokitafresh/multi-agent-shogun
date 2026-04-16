@@ -1300,3 +1300,15 @@
     - "事実2: AC1にrender ssh -eでの環境互換性テスト含む。ハーネスが動かない場合のデバッグ手順あり"
   causal_chain: "ローカルcProfile RTTノイズ→本番ボトルネック誤認→Render上計測で純Python時間取得→A面impl方向確定(正の複利)"
   timestamp: "2026-04-17T01:56:00"
+- cmd_id: cmd_karo_ci_fix_blt72
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_karo_ci_fix_blt72_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。bulletin_confirm.sh auto-close修正。requires_confirmation=false時も全員確認でclose。CI GREEN"
+  observations:
+    - "事実1: 根因=bulletin_write.shのデフォルトtrue→false変更時にbulletin_confirm.shのif rc:ガー��未更新"
+    - "事実2: lesson_candidate有り(連動チェック必要)。register推奨"
+  causal_chain: "bulletin_write.shデフォルト変更→confirm側未更新→test72 FAIL→半蔵がif rc:��去→��員確認時に常にclose"
+  timestamp: "2026-04-17T02:00:00"
