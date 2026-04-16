@@ -1330,8 +1330,8 @@ EOF
     ' "$task_file" 2>/dev/null)
 
     # cmd_1512: Standard commit check - skip for scout/recon (no code changes)
-    local _deploy_task_type
-    _deploy_task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null)
+    # cmd_1983: field_get_multiで一括取得済み → task_type変数を直接使用
+    local _deploy_task_type="${task_type}"
     local _commit_bc=""
     if [ "$_deploy_task_type" != "scout" ] && [ "$_deploy_task_type" != "recon" ]; then
         _commit_bc='  commit:
@@ -1341,13 +1341,12 @@ EOF
 
     # cmd_1838: gitignore対象ファイルのみ変更するcmdのcommit checkを自動でno設定
     if [ -n "$_commit_bc" ]; then
-        local _tp_raw
-        _tp_raw=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null)
-        local _scout_exempt
+        # cmd_1983: field_get_multiで一括取得済み → 変数参照
+        local _tp_raw="${target_path}"
+        local _scout_exempt="${scout_exempt}"
         # GP-190改: task fileはstale resetで消えるためSTKも確認。task fileが残っている場合(テスト等)は優先
-        _scout_exempt=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "scout_exempt" "" 2>/dev/null)
-        if [ "$_scout_exempt" != "true" ] && [ -f "$SCRIPT_DIR/queue/shogun_to_karo.yaml" ] && [ -n "$parent_cmd" ]; then
-            _scout_exempt=$(awk -v cmd="$parent_cmd" '
+        if [ "$_scout_exempt" != "true" ] && [ -f "$SCRIPT_DIR/queue/shogun_to_karo.yaml" ] && [ -n "$_p_parent_cmd" ]; then
+            _scout_exempt=$(awk -v cmd="$_p_parent_cmd" '
                 /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
                 cur_id == cmd && /scout_exempt:[[:space:]]*true/ { print "true"; exit }
             ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null)
@@ -1568,14 +1567,8 @@ PY_GATE_WARN
     log "report_template: gate warning comments injected"
 
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
-    local report_task_type
-    report_task_type=$(field_get "$task_file" "task_type" "")
-    if [ -z "$report_task_type" ]; then
-        report_task_type=$(field_get "$task_file" "type" "")
-    fi
-    if [ -z "$report_task_type" ]; then
-        report_task_type=$(field_get "$task_file" "scope_mode" "")
-    fi
+    # cmd_1983: field_get_multiで一括取得済み → task_type/type/scope_mode変数を参照
+    local report_task_type="${task_type:-${type:-${scope_mode}}}"
     report_task_type=$(echo "$report_task_type" | tr '[:upper:]' '[:lower:]')
     if [ "$report_task_type" = "recon" ] || [ "$report_task_type" = "scout" ]; then
         cat >> "$report_file" <<'RECON_EOF'
