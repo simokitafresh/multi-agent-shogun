@@ -36,6 +36,20 @@ teardown() {
     [ "$output" = "postgres://user:pass@example.com/db" ]
 }
 
+@test "extract_db_host parses hostname and strips userinfo plus port" {
+    run bash -lc "source \"$TEST_GATE\"; extract_db_host 'postgres://user:pass@db.example.com:5432/app?sslmode=require'"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "db.example.com" ]
+}
+
+@test "extract_db_host supports bracketed IPv6 hosts" {
+    run bash -lc "source \"$TEST_GATE\"; extract_db_host 'postgres://user:pass@[2001:db8::10]:5432/app'"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "2001:db8::10" ]
+}
+
 @test "resolve_hostaddr uses fresh cache without calling getent" {
     cat > "$TEST_TMPDIR/bin/getent" <<'EOF'
 #!/usr/bin/env bash

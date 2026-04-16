@@ -721,3 +721,33 @@
     - "事実2: 忍者自身のStopで改修中スクリプトが発火するリスクをバックアップ方式で回避"
   causal_chain: "cmd_1951→stop-lint-gate.sh 3002ms特定→高速化→全エージェントStop発火の正の複利。バックアップ差替で自爆防止"
   timestamp: "2026-04-16T18:45:00"
+- cmd_id: cmd_1978
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1978_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。stop-lint-gate.sh Git plumbing+lintバッチ化で0.82→0.65s(-21%)。live 0.54s。テスト75/75+4/4 PASS"
+  observations:
+    - "事実1: changed-files取得(git diff)が0.74-1.11s占有。Git plumbing(diff-index+ls-files)で解消"
+    - "事実2: バックアップ→テストPASS→本体差替の手順を遵守(cmd_1975反省の環境埋込み確認)"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1951→stop-lint-gate.sh 3002ms特定→Git plumbing+バッチ化→-21%=全エージェントStop発火の正の複利"
+  timestamp: "2026-04-16T18:55:00"
+- cmd_id: cmd_1980
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1980_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。gate_recalculate_completeness.sh bash parser+EXISTS+ORDER BY除去でcold 2.74→2.17s(-21%)。テスト5/5+live 3/3 PASS"
+  observations:
+    - "事実1: extract_db_host Python urlparse→bash parserで6.018→0.010s(600x)。Python起動コスト除去が主因"
+    - "事実2: SQL COUNT/GROUP BY→EXISTS semi-joinで267→83ms。DB往復は変わらないがクエリ自体が軽量化"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1959→再トライ→Python除去+SQL最適化→-21%=fullrecalculate完了チェックの正の複利"
+  timestamp: "2026-04-16T19:05:00"

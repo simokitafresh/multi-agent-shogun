@@ -1,21 +1,22 @@
 task:
-  _ac_task_id: cmd_1969_impl
+  _ac_task_id: cmd_1983_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: ab1c17b2
+  ac_version: 83701af9
   acceptance_criteria:
-  - description: CoDD spec作成。before実測値+ボトルネック分析+リファクタ方針をdocs/research/に保存
+  - description: 前回改善内容確認+残存ボトルネック特定。候補2つ以上→spec記録
     id: AC1
-  - description: specに基づき実装。機能変更なし
+  - description: 実装。機能変更なし
     id: AC2
-  - description: after計測。before比で改善を数値で示す
+  - description: after計測。before(88ms)比で改善を数値で示す
     id: AC3
   - description: 既存テスト全PASS。codd_refactor_registry.mdに結果追記
     id: AC4
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L126: IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時\
-    \ THEN 同期モードまたは結果ファイル連携で結果を取得せよ\n────────────────────────────────────────"
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L481: set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit\
+    \ 1でスクリプト全体が異常終了する。grep pattern file\n  - L001: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タスクYAML・inbox・報告YAML等を書く前に必ず対象ファイルをRea\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -34,13 +35,13 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_1969
+  parent_cmd: cmd_1983
   project: infra
-  report_filename: kotaro_report_cmd_1969.yaml
-  report_path: queue/reports/kotaro_report_cmd_1969.yaml
-  status: completed
+  report_filename: kotaro_report_cmd_1983.yaml
+  report_path: queue/reports/kotaro_report_cmd_1983.yaml
+  status: assigned
   stop_for: []
-  task_id: cmd_1969_impl
+  task_id: cmd_1983_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -67,6 +68,15 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L485'
+    summary: '''gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因:'
+    detail: '''gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因:'
+  - id: 'L484'
+    summary: 'model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。'
+    detail: 'model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。'
+  - id: 'L483'
+    summary: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に'
+    detail: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に'
   - id: 'L482'
     summary: 'python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3'
     detail: 'python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3'
@@ -88,13 +98,4 @@ task:
   - id: 'L476'
     summary: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
     detail: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
-  - id: 'L475'
-    summary: 'dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用。テスト環境と本番環境でファイル数が一致すると誤ったキャッシュをHITし、context_freshness_check.shが誤データを参照。_proj_hash(PROJECT_DIRのcksum)をサフィッ'
-    detail: 'dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用。テスト環境と本番環境でファイル数が一致すると誤ったキャッシュをHITし、context_freshness_check.shが誤データを参照。_proj_hash(PROJECT_DIRのcksum)をサフィッ'
-  - id: 'L474'
-    summary: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、field_get.shではac_assignedを取得できない。awkで両形式を解析するパーサが必要。'
-    detail: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、field_get.shではac_assignedを取得できない。awkで両形式を解析するパーサが必要。'
-  - id: 'L473'
-    summary: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。'
-    detail: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。'
-  deployed_at: "2026-04-16T16:22:29"
+  deployed_at: "2026-04-16T18:57:28"

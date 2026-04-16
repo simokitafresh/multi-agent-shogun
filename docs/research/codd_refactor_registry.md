@@ -8,6 +8,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | 才蔵 | `scripts/inbox_write.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `78ms → 50ms` (`-35.9%`, write path) / `89ms → 10-20ms` (`--help`) | spec+after: `docs/research/inbox_write_after_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/dashboard_auto_section.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `0.89s → 0.34s` (`-61.8%`, stale-cache path) | spec+after: `docs/research/dashboard_auto_section_after_20260416.md` |
 | 2026-04-16 | hayate | `scripts/cmd_save.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `1.83s → 1.06s` (`-42.1%`, warm median) / `cmd_1951基準 4.02s → 1.06s` (`-73.6%`) | spec+after: `docs/research/codd_spec_cmd_save_20260416.md` |
+| 2026-04-16 | hayate | `scripts/inbox_write.sh` | Phase 5(計測+実装+検証)。follow-up speedup | `50ms → 22ms` (`-56%`, isolated average) / live worktree median `40ms` (`-20%`) | spec+after: `docs/research/codd_spec_inbox_write_cmd_1979_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/post_recalculate_checks.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `6.15s → 2.23s` (`-63.9%`, cold run) | spec: `docs/research/codd_spec_post_recalculate_checks_20260416.md` |
 | 2026-04-15 | 軍師 | `scripts/deploy_task.sh` | Phase 6完了 | `2639ms → 88ms` (`-97%`) | spec: `docs/research/gunshi_deploy_task_refactor_spec.md` / after: `docs/research/deploy_task_after_20260415.md` |
 | 2026-04-14 | 軍師 | `scripts/gates/gate_gunshi_startup.sh` / `scripts/gates/gate_shogun_startup.sh` / `scripts/gunshi_gate_sync.sh` | なぜなぜ7回完了 + 高速化適用済 | `14.9s → 3.2s` (`4.7x`) | spec+result: `docs/research/gunshi_idle_startup_speedup_20260414.md` |
@@ -20,6 +21,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | kotaro | `scripts/gates/gate_artifact_map.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `967ms → 99ms` (`-90%`, `9.8x`) | spec: `docs/research/codd_spec_gate_artifact_map_20260416.md` |
 | 2026-04-16 | hanzo | `scripts/report_merge.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `1947ms → 76ms` (`-96%`, `25.6x`) | spec: `docs/research/codd_spec_report_merge_20260416.md` |
 | 2026-04-16 | kagemaru | `scripts/gates/gate_cycle_health.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `793ms → 296ms` (`-63%`, `2.7x`) | spec: `docs/research/codd_spec_gate_cycle_health_20260416.md` |
+| 2026-04-16 | hanzo | `scripts/gates/gate_cycle_health.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `~98ms → ~80ms` (`-18%`, actual env baseline) B1:glob stat+awk-getline単一パス / B2:grep pipeline統合 | (spec省略。軽微改善) |
 | 2026-04-16 | tobisaru | `scripts/gates/gate_karo_startup.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `464ms → 225ms` (`-51%`, `2.1x`) | spec: `docs/research/codd_spec_gate_karo_startup_20260416.md` |
 | 2026-04-16 | kagemaru | `scripts/ntfy.sh` | Phase 5(計測+実装+検証) | `33ms → 23ms` (`-30%`) | (軽微改善。spec省略) |
 | 2026-04-16 | kagemaru | `scripts/karo_workaround_log.sh` | Phase 5(計測+実装+検証) | `61ms → 26ms` (`-57%`, `2.3x`, clean mode) / `70ms → 32ms` (`-54%`, normal mode) | validate_ninja_id task dir loop(basename subprocess×10=45ms)廃止+settings.yaml only+TZ=UTC printf builtin。26/26テストPASS。spec: `docs/research/codd_spec_karo_workaround_log_20260416.md` |
@@ -35,6 +37,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | saizo | `scripts/hooks/test_hooks.sh` | Phase 5(計測+実装+検証) | `18.07s → 1.93s` (`-89.3%`, `9.4x`) | spec+after: `docs/research/codd_spec_test_hooks_20260416.md` |
 | 2026-04-16 | hayate | `.claude/hooks/stop-lint-gate.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `0.82s → 0.65s` (`-20.7%`, representative mixed shell+python set) / live worktree median `0.54s` | spec+after: `docs/research/codd_spec_stop_lint_gate_20260416.md` |
 | 2026-04-16 | hanzo | `scripts/archive_completed.sh` | Phase 5(計測+実装+検証) | `1073ms → 783ms` (`-27%`) | sed×21→gawk単一pass(A)+grep-rl全走査→REPORT_CACHE直接path(B)+sync_stk+trim_stk Python統合(C)+chronicle早期リターン(D)。980/980テストPASS。spec: `docs/research/codd_spec_archive_completed_20260416.md` |
+| 2026-04-16 | saizo | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(追改善: 計測+実装+検証) | `2.74s → 2.17s` (`-20.9%`, cold) / warm `~1.08s` | spec+after: `docs/research/codd_spec_gate_recalculate_completeness_cmd_1980_20260416.md` |
 
 | 2026-04-16 | tobisaru | `scripts/gates/gate_vercel_phase.sh` | Phase 5(計測+実装+検証)。spec事後更新 | `real 1.74s → 0.51s` (`-71%`, `3.4x`) / `CPU 1.61s → 0.23s` (`-86%`, `7.0x`) | normalize_ref(sed×268回)排除+display_path subshell(43回)排除+resolve_context_bases process-sub(268回)→RESOLVE_BASES配列。7/7テストPASS。spec: `docs/research/cmd_1976_gate_vercel_phase_speedup.md` |
 

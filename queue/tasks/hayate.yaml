@@ -1,21 +1,22 @@
 task:
-  _ac_task_id: cmd_1978_impl
+  _ac_task_id: cmd_1979_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: a64ce0f8
+  ac_version: 545a9766
   acceptance_criteria:
-  - description: ボトルネック分析+最適化候補列挙。候補2つ以上→docs/research/にspec記録
+  - description: 前回改善内容確認+残存ボトルネック特定。候補2つ以上→spec記録
     id: AC1
-  - description: 実装。バックアップ→修正→テストPASS→本体差替。既存lintチェック動作を維持すること
+  - description: 実装。機能変更なし
     id: AC2
-  - description: after計測。before比で改善を数値で示す
+  - description: after計測。before(50ms)比で改善を数値で示す
     id: AC3
   - description: 既存テスト全PASS。codd_refactor_registry.mdに結果追記
     id: AC4
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
     \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L481: set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit\
-    \ 1でスクリプト全体が異常終了する。grep pattern file\n────────────────────────────────────────"
+    \ 1でスクリプト全体が異常終了する。grep pattern file\n  - L001: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する。タスクYAML・inbox・報告YAML等を書く前に必ず対象ファイルをRea\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -34,14 +35,19 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_1978
+  parent_cmd: cmd_1979
   project: infra
-  report_filename: hayate_report_cmd_1978.yaml
-  report_path: queue/reports/hayate_report_cmd_1978.yaml
+  report_filename: hayate_report_cmd_1979.yaml
+  report_path: queue/reports/hayate_report_cmd_1979.yaml
   status: done
   stop_for: []
-  task_id: cmd_1978_impl
+  task_id: cmd_1979_impl
   task_type: impl
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
+    tried_approaches:
+    - 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -108,9 +114,4 @@ task:
   - id: 'L476'
     summary: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
     detail: '''T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解:'
-  deployed_at: "2026-04-16T18:42:53"
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
-    tried_approaches:
-    - 'binary_checks.AC2[0].check: \"実装\" が短すぎる(確認内容を具体的に書け)'
+  deployed_at: "2026-04-16T18:56:51"

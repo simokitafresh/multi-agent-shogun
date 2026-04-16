@@ -749,3 +749,45 @@ assert not os.path.exists(os.path.join(root, "ninja_a.yaml")), "task_supplement 
 assert not os.path.exists(os.path.join(root, "ninja_b.yaml")), "task_supplement should not be forwarded"
 EOF
 }
+
+@test "filesystem fast-path: known ninja target succeeds without sourcing agent_config" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/inbox"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+echo "agent_config should not be sourced on filesystem fast-path" >&2
+return 99
+MOCK
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_fast.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+
+    run _run_inbox_write ninja_fast "fast path ok" wake_up karo
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"agent_config should not be sourced"* ]]
+    [ -f "$TEST_TMPDIR/queue/inbox/ninja_fast.yaml" ]
+}
+
+@test "filesystem fast-path: ninja sender to shogun is blocked without agent_config" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+echo "agent_config should not be sourced on filesystem fast-path" >&2
+return 99
+MOCK
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_fast.yaml" <<'YAML'
+task:
+  status: in_progress
+YAML
+
+    run _run_inbox_write shogun "relay forbidden" wake_up ninja_fast
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Ninja cannot send inbox to shogun directly"* ]]
+    [[ "$output" != *"agent_config should not be sourced"* ]]
+}
