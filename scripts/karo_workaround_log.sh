@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "${0%/*}" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOG_FILE="$REPO_ROOT/logs/karo_workarounds.yaml"
 LOCK_FILE="/tmp/karo_workarounds.lock"
@@ -87,38 +87,24 @@ else
 fi
 
 # --- AC1(cmd_1542): ninja_id validation ---
+# cmd_1967高速化: task dirループ(basename subprocess×10=45ms)廃止。
+# settings.yamlが全エージェントの権威リスト。task filesはephemeral state。
 validate_ninja_id() {
     local ninja_id="$1"
     local settings_file="$REPO_ROOT/config/settings.yaml"
-    local tasks_dir="$REPO_ROOT/queue/tasks"
-    local valid_names=()
-
-    # Source 1: config/settings.yaml agents section
-    if [[ -f "$settings_file" ]]; then
-        while IFS= read -r name; do
-            [[ -n "$name" ]] && valid_names+=("$name")
-        done < <(awk '
-            /^  agents:/ { in_agents=1; next }
-            in_agents && /^    [a-z][a-z0-9_]*:$/ { name=$0; gsub(/^ +|:$/, "", name); print name }
-            in_agents && /^[^ ]/ { in_agents=0 }
-            in_agents && /^  [a-z]/ { in_agents=0 }
-        ' "$settings_file")
-    fi
-
-    # Source 2: queue/tasks/ yaml files
-    if [[ -d "$tasks_dir" ]]; then
-        for f in "$tasks_dir"/*.yaml; do
-            [[ -f "$f" ]] && valid_names+=("$(basename "$f" .yaml)")
-        done
-    fi
-
-    # Include karo (caller agent)
-    valid_names+=("karo")
-
-    for name in "${valid_names[@]}"; do
-        [[ "$name" == "$ninja_id" ]] && return 0
-    done
-    return 1
+    # karo (caller agent) は常に有効
+    [[ "$ninja_id" == "karo" ]] && return 0
+    # settings.yaml agents のみで検証(早期exit付き)
+    awk -v id="$ninja_id" '
+        /^  agents:/ { in_agents=1; next }
+        in_agents && /^    [a-z][a-z0-9_]*:$/ {
+            name=$0; gsub(/^ +|:$/, "", name)
+            if (name == id) { found=1; exit }
+        }
+        in_agents && /^[^ ]/ { exit }
+        in_agents && /^  [a-z]/ { exit }
+        END { exit !found }
+    ' "$settings_file"
 }
 
 if ! validate_ninja_id "$NINJA_NAME"; then
@@ -167,7 +153,7 @@ elif [[ -n "$EXPLICIT_CATEGORY" ]]; then
 else
     CATEGORY=$(classify_category "$ISSUE")
 fi
-TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+TZ=UTC printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%SZ)T' -1
 
 # AC1(cmd_1538): WARN when category is uncategorized
 if [[ "$CLEAN_MODE" != true && "$CATEGORY" == "uncategorized" ]]; then
