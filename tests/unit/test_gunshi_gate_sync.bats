@@ -17,7 +17,8 @@ teardown_file() {
 }
 
 setup() {
-    # テスト用のディレクトリ構造を作成
+    # per-testディレクトリで並列競合を回避 (LK477)
+    TEST_TMP="$BATS_TEST_TMPDIR"
     mkdir -p "$TEST_TMP/logs/archive"
     mkdir -p "$TEST_TMP/queue/inbox"
     mkdir -p "$TEST_TMP/queue/archive/cmds"
