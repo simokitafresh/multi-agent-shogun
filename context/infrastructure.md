@@ -3,6 +3,7 @@
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
 > CoDDリファクタリング台帳: `docs/research/codd_refactor_registry.md`
+> inbox_write高速化(as-is): `docs/research/inbox_write_after_20260416.md`
 
 ## コンテキスト管理
 

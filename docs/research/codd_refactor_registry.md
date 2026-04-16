@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-16 | 才蔵 | `scripts/inbox_write.sh` | before/after計測 + 実装 + tests PASS | `78ms → 50ms` (`-35.9%`, write path) / `89ms → 10-20ms` (`--help`) | after: `docs/research/inbox_write_after_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/dashboard_auto_section.sh` | before/after計測 + 実装 + tests PASS | `0.89s → 0.34s` (`-61.8%`, stale-cache path) | after: `docs/research/dashboard_auto_section_after_20260416.md` |
 | 2026-04-15 | 軍師 | `scripts/deploy_task.sh` | Phase 6完了 | `2639ms → 88ms` (`-97%`) | spec: `docs/research/gunshi_deploy_task_refactor_spec.md` / after: `docs/research/deploy_task_after_20260415.md` |
 | 2026-04-14 | 軍師 | `scripts/gates/gate_gunshi_startup.sh` / `scripts/gates/gate_shogun_startup.sh` / `scripts/gunshi_gate_sync.sh` | なぜなぜ7回完了 + 高速化適用済 | `14.9s → 3.2s` (`4.7x`) | spec+result: `docs/research/gunshi_idle_startup_speedup_20260414.md` |

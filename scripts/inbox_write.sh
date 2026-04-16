@@ -31,16 +31,34 @@ set -e
 
 SCRIPT_DIR="${INBOX_WRITE_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SELF_SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
-# shellcheck source=/dev/null
-if [ "${INBOX_WRITE_TEST:-}" != "1" ] && [ -f "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]; then
-    source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
-    NINJA_NAMES=$(get_ninja_names)
-else
-    NINJA_NAMES=""
-fi
+NINJA_NAMES=""
+AGENT_CONFIG_LOADED=0
 
 FIELD_GET_LOADED=0
 CLI_LOOKUP_LOADED=0
+LOCK_PATH_LOADED=0
+
+usage() {
+    cat <<'EOF'
+Usage: inbox_write.sh <target_agent> <content> [type] [from] [action]
+EOF
+}
+
+ensure_agent_config_loaded() {
+    if [ "${AGENT_CONFIG_LOADED:-0}" = "1" ]; then
+        return 0
+    fi
+
+    if [ "${INBOX_WRITE_TEST:-}" != "1" ] && [ -f "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+        NINJA_NAMES=$(get_ninja_names)
+    else
+        NINJA_NAMES=""
+    fi
+
+    AGENT_CONFIG_LOADED=1
+}
 
 ensure_field_get_loaded() {
     if [ "${FIELD_GET_LOADED:-0}" = "1" ]; then
@@ -62,6 +80,16 @@ ensure_cli_lookup_loaded() {
         source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" 2>/dev/null || true
     fi
     CLI_LOOKUP_LOADED=1
+}
+
+ensure_lock_path_loaded() {
+    if [ "${LOCK_PATH_LOADED:-0}" = "1" ]; then
+        return 0
+    fi
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
+        || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
+    LOCK_PATH_LOADED=1
 }
 
 inbox_yaml_field_get() {
@@ -390,6 +418,7 @@ list_active_ninjas() {
     local task_file=""
     local task_status=""
 
+    ensure_agent_config_loaded
     for ninja in $NINJA_NAMES; do
         task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
         [ -f "$task_file" ] || continue
@@ -703,16 +732,22 @@ TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
 ACTION="${5:-}"
 
+# Fast path: profiling/usage queries should not pay the agent-config cost.
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    usage
+    exit 0
+fi
+
 # Validate arguments
 if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
-    echo "Usage: inbox_write.sh <target_agent> <content> [type] [from] [action]" >&2
+    usage >&2
     echo "受け取った引数: $*" >&2
     exit 1
 fi
 
 if [[ "$TARGET" == cmd_* ]]; then
     echo "ERROR: 第1引数はtarget_agent（例: karo, hanzo）。cmd_idではない。" >&2
-    echo "Usage: inbox_write.sh <target_agent> <content> [type] [from] [action]" >&2
+    usage >&2
     echo "受け取った引数: $*" >&2
     exit 1
 fi
@@ -723,6 +758,9 @@ fi
 
 # HIGH-2: パストラバーサル防止 + sender/target制約
 # INBOX_WRITE_TEST=1 or agent_config.sh未ロード: テスト環境でバリデーションをスキップ
+if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
+    ensure_agent_config_loaded
+fi
 if [ "${INBOX_WRITE_TEST:-}" != "1" ] && type get_allowed_targets &>/dev/null; then
     ALLOWED_TARGETS=$(get_allowed_targets)
     valid_target=0
@@ -757,9 +795,7 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ] && type get_allowed_targets &>/dev/null; t
 fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
-    || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
+ensure_lock_path_loaded
 LOCKFILE="$(lock_path "$INBOX")"
 
 # Initialize inbox if not exists
@@ -768,9 +804,11 @@ if [ ! -f "$INBOX" ]; then
     echo "messages: []" > "$INBOX"
 fi
 
-# Generate unique message ID (timestamp-based)
-MSG_ID="msg_$(date +%Y%m%d_%H%M%S)_$(head -c 4 /dev/urandom | xxd -p)"
-TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
+# Generate message ID and timestamp using bash builtins to avoid subprocess overhead
+printf -v _msg_stamp '%(%Y%m%d_%H%M%S)T' -1
+printf -v _msg_rand '%04x%04x' "$RANDOM" "$RANDOM"
+MSG_ID="msg_${_msg_stamp}_$$_${_msg_rand}"
+printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
 
 # Pre-action auto-capture: 将軍→エージェント送信時、送信先ペインの現在状態を送信前に自動表示+ログ
 # 目的: 「観察なき行動」を構造的に防止（知性の外部化原則 2026-03-21）
@@ -828,6 +866,7 @@ fi
 # 目的: 家老の手動修正作業を根絶（karo_workarounds 5件連続同一問題を自動化×強制で解消）
 if [ "$TYPE" = "report_received" ]; then
     # Find report YAML path from task YAML
+    ensure_agent_config_loaded
     is_ninja_reporter=0
     for ninja in $NINJA_NAMES; do
         if [ "$FROM" = "$ninja" ]; then
@@ -1018,6 +1057,7 @@ while [ $attempt -lt $max_attempts ]; do
 
         # Hook: report_received from ninja → auto-update task YAML to done
         if [ "$TYPE" = "report_received" ]; then
+            ensure_agent_config_loaded
             is_ninja=0
             for ninja in $NINJA_NAMES; do
                 if [ "$FROM" = "$ninja" ]; then
