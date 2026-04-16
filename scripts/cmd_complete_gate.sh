@@ -2165,7 +2165,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
     echo ""
     echo "Bulletin board (GATE CLEAR - emergency override):"
-    local _blt_title_eo=""
+    _blt_title_eo=""
     _blt_title_eo=$(awk -v cmd="$CMD_ID" '
         /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
         cur_id == cmd && /title:/ { sub(/.*title:[[:space:]]*"?/, ""); sub(/"?$/, ""); print; exit }
@@ -3755,7 +3755,7 @@ if [ "$ALL_CLEAR" = true ]; then
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
     echo ""
     echo "Bulletin board (GATE CLEAR):"
-    local _blt_title=""
+    _blt_title=""
     _blt_title=$(awk -v cmd="$CMD_ID" '
         /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
         cur_id == cmd && /title:/ { sub(/.*title:[[:space:]]*"?/, ""); sub(/"?$/, ""); print; exit }

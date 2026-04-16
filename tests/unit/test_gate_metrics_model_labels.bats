@@ -54,7 +54,8 @@ setup() {
         dashboard_update.sh \
         gist_sync.sh \
         ntfy_cmd.sh \
-        ntfy.sh
+        ntfy.sh \
+        bulletin_write.sh
     do
         cat > "$TEST_PROJECT/scripts/$stub" <<'EOF'
 #!/usr/bin/env bash
@@ -144,7 +145,8 @@ teardown() {
 write_gate_cmd_fixture() {
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<EOF
 commands:
-  - id: $TEST_CMD_ID
+  $TEST_CMD_ID:
+    title: "gate metrics model label test"
     purpose: "gate metrics model label test"
     project: infra
     status: delegated
