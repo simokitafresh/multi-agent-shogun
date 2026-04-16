@@ -258,7 +258,7 @@ YAML
     [[ "$output" == *"保存確認OK: cmd_9999"* ]]
 }
 
-@test "Check1-5: q11_not_already_done未記入でBLOCK" {
+@test "Check1-5: q11_not_already_done未記入で必須項目BLOCK" {
     create_queue_file << 'YAML'
 commands:
   cmd_9998:
@@ -277,7 +277,8 @@ YAML
     run check_quality_gate
     echo "$output" >&2
     [ "$status" -eq 1 ]
-    [[ "$output" == *"BLOCK: q11_not_already_done未記入"* ]]
+    [[ "$output" == *"BLOCK: 必須項目 1件 未記入。全て記入してからcmd_save.shを再実行せよ"* ]]
+    [[ "$output" == *"未記入: q11_not_already_done"* ]]
 }
 
 @test "Check1-5: q11_not_already_done記入済みならPASS" {
@@ -1083,7 +1084,7 @@ notes: "なし"'
 
 # --- Check 20: assumptionsフィールド検査 ---
 
-@test "Check20.0: AC数3以上かつassumptions欠落→BLOCK" {
+@test "Check20.0: AC数3以上かつassumptions欠落→inline checkはOK" {
     CMD_BLOCK='description: AC1
 description: AC2
 description: AC3'
@@ -1091,8 +1092,8 @@ description: AC3'
     export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
     run check_20_assumptions
     echo "$output" >&2
-    [[ "$output" == *"BLOCK: AC数3個のcmdはassumptions必須です"* ]]
-    [ "$status" -eq 1 ]
+    [[ "$output" == *"OK"* ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check20.1: trust:unverified含む→BLOCK" {

@@ -60,7 +60,8 @@ run_cmd_save() {
     echo "$output" >&2
 
     [ "$status" -eq 1 ]
-    [[ "$output" == *"BLOCK: q11_not_already_done未記入"* ]]
+    [[ "$output" == *"BLOCK: 必須項目 1件 未記入。全て記入してからcmd_save.shを再実行せよ"* ]]
+    [[ "$output" == *"未記入: q11_not_already_done"* ]]
     [[ "$output" == *"★ 診断せよ:"* ]]
     [[ "$output" == *'quality_gateに diagnosis: "根本原因の1行記述"'* ]]
 }
@@ -77,7 +78,7 @@ run_cmd_save() {
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"★ Prior attempts (同じcmd):"* ]]
-    [[ "$output" == *"Attempt 1: q11_not_already_done未記入。"* ]]
+    [[ "$output" == *"Attempt 1: 必須項目 1件 未記入。全て記入してからcmd_save.shを再実行せよ"* ]]
     [[ "$output" == *"診断: q11未記入のまま再実行した。未実装確認をquality_gateへ残していない"* ]]
 
     run python3 - <<'PY'
@@ -108,5 +109,5 @@ PY
     echo "$output" >&2
 
     [ "$status" -eq 1 ]
-    [[ "$output" == *"★ DIVERGENT: 同じチェック(q11_not_already_done未記入。"* ]]
+    [[ "$output" == *"★ DIVERGENT: 同じチェック(必須項目 1件 未記入。全て記入してからcmd_save.shを再実行せよ)で2回連続BLOCK。"* ]]
 }
