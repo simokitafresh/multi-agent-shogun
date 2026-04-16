@@ -25,6 +25,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 2026-04-16 | 軍師 | `scripts/oneshot/cmd_1934_l3_threebody_stability.py` | Phase 5(計測+実装+検証) | `~10min → ~1min` (`10x`, 4851combo) | `_fast_beta`関数追加+evaluate_expanding/WFのnumpy化+load_monthly_returns引数化+COL_RE ①対応。spec: `docs/research/gunshi_cmd1934_scalability_42col_20260416.md` |
 | 2026-04-16 | hanzo | `scripts/lesson_effectiveness.sh` | Phase 5(計測+実装+検証) | `30s → 0.33s` (`-98.9%`, `91x`) | bash while-loop×501ファイル逐次処理 → Python3+ThreadPoolExecutor(8並列)。WSL2 I/O並列化で0.33s達成。63/63テストPASS |
+| 2026-04-16 | tobisaru | `scripts/gates/gate_workaround_rate.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `user 30ms → 12ms` (`-60% CPU`, `2.5x`) / `real 55ms → 46ms` (`-16%` WSL2 I/O支配) | python3+grep+awk3本 → awk1本統合。cmd_1951基準135ms(14回発火)。38/38テストPASS。spec: `docs/research/codd_spec_gate_workaround_rate_20260416.md` |
 
 ## 運用
 
