@@ -29,15 +29,19 @@ load_database_url() {
 
 extract_db_host() {
     local database_url="${1:?database url is required}"
-    DATABASE_URL_INPUT="$database_url" python3 - <<'PY'
-import os
-from urllib.parse import urlparse
+    local authority host
 
-url = os.environ["DATABASE_URL_INPUT"]
-parsed = urlparse(url)
-if parsed.hostname:
-    print(parsed.hostname)
-PY
+    authority="${database_url#*://}"
+    authority="${authority#*@}"
+
+    if [[ "$authority" == \[* ]]; then
+        host="${authority#\[}"
+        host="${host%%]*}"
+    else
+        host="${authority%%[:/?#]*}"
+    fi
+
+    [[ -n "$host" ]] && printf '%s\n' "$host"
 }
 
 read_cached_hostaddr() {
@@ -130,46 +134,30 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 HOSTADDR = os.environ.get("GATE_RECALCULATE_HOSTADDR", "").strip()
 
 QUERY = """
-WITH active_portfolios AS (
-    SELECT id, name, type
-    FROM portfolios
-    WHERE is_active = true
-),
-signal_counts AS (
-    SELECT portfolio_id, COUNT(*)::bigint AS signal_count
-    FROM signals
-    WHERE portfolio_id IN (SELECT id FROM active_portfolios)
-    GROUP BY portfolio_id
-),
-monthly_return_counts AS (
-    SELECT portfolio_id, COUNT(*)::bigint AS monthly_return_count
-    FROM monthly_returns
-    WHERE portfolio_id IN (SELECT id FROM active_portfolios)
-    GROUP BY portfolio_id
-),
-fof_component_weight_counts AS (
-    SELECT portfolio_id, COUNT(*)::bigint AS component_weight_count
-    FROM fof_component_weights
-    WHERE portfolio_id IN (
-        SELECT id FROM active_portfolios WHERE type = 'fof'
-    )
-    GROUP BY portfolio_id
-)
 SELECT
     p.id,
     p.name,
     p.type,
-    COALESCE(s.signal_count, 0) AS signal_count,
-    COALESCE(m.monthly_return_count, 0) AS monthly_return_count,
+    EXISTS (
+        SELECT 1
+        FROM signals s
+        WHERE s.portfolio_id = p.id
+    ) AS has_signals,
+    EXISTS (
+        SELECT 1
+        FROM monthly_returns m
+        WHERE m.portfolio_id = p.id
+    ) AS has_monthly_returns,
     CASE
-        WHEN p.type = 'fof' THEN COALESCE(c.component_weight_count, 0)
+        WHEN p.type = 'fof' THEN EXISTS (
+            SELECT 1
+            FROM fof_component_weights c
+            WHERE c.portfolio_id = p.id
+        )
         ELSE NULL
-    END AS component_weight_count
-FROM active_portfolios p
-LEFT JOIN signal_counts s ON s.portfolio_id = p.id
-LEFT JOIN monthly_return_counts m ON m.portfolio_id = p.id
-LEFT JOIN fof_component_weight_counts c ON c.portfolio_id = p.id
-ORDER BY p.type, p.name
+    END AS has_component_weights
+FROM portfolios p
+WHERE p.is_active = true
 """
 
 try:
@@ -192,7 +180,10 @@ try:
     print(f"Active portfolios: {total} (standard={standard}, fof={fofs})")
     print()
 
-    missing_signals = [row for row in rows if row[3] == 0]
+    missing_signals = sorted(
+        (row for row in rows if not row[3]),
+        key=lambda row: (row[2], row[1]),
+    )
     if missing_signals:
         print(f"FAIL: {len(missing_signals)} portfolios with 0 signals:")
         for row in missing_signals:
@@ -202,7 +193,10 @@ try:
 
     print()
 
-    missing_monthly_returns = [row for row in rows if row[4] == 0]
+    missing_monthly_returns = sorted(
+        (row for row in rows if not row[4]),
+        key=lambda row: (row[2], row[1]),
+    )
     if missing_monthly_returns:
         print(f"FAIL: {len(missing_monthly_returns)} portfolios with 0 monthly_returns:")
         for row in missing_monthly_returns:
@@ -212,7 +206,9 @@ try:
 
     print()
 
-    missing_component_weights = [row[1] for row in rows if row[2] == "fof" and row[5] == 0]
+    missing_component_weights = sorted(
+        row[1] for row in rows if row[2] == "fof" and row[5] is False
+    )
     if fofs == 0:
         print("INFO: No FoF portfolios found")
     elif missing_component_weights:

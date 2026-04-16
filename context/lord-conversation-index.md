@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T18:53:31+09:00 -->
+<!-- generated_at: 2026-04-16T19:01:03+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-16T18:53:31+09:00 | terminal | response | **全26本 GATE CLEAR。** バッチ1-4(24本) + 単発2本(cmd_save.sh, stop-lint-gate.sh)全完了。全忍者idle。 再トライ4本を第五弾として起票するか？ [meta] stop_rea…
-- 2026-04-16T18:48:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 18:37:59|cmd_1977
-- 2026-04-16T18:43:00+09:00 | ntfy | outbound | 【家老】cmd_1978 初回配備開始 (title=CoDD改善#26 — stop-lint-gate.sh高速化(3.0s→目標500ms), ninja=hayate) CoDD改善#26 📋 https://gist.githu…
-- 2026-04-16T18:42:34+09:00 | terminal | response | cmd_1978(stop-lint-gate.sh)委任完了。 殿、第五弾を改めて整理する。単発2本(cmd_save.sh, stop-lint-gate.sh)は起票済み。残りは再トライ4本: | # | 対象 | 現在(改善後) …
-- 2026-04-16T18:39:51+09:00 | terminal | inbound | stop-lint-gate.sh を単発でやろう
-- 2026-04-16T18:38:34+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率94% 連勝80
-- 2026-04-16T18:38:17+09:00 | terminal | response | cmd_save.shのafter結果を確認する。 [meta] stop_reason=tool_use
-- 2026-04-16T18:27:54+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-078)
-- 2026-04-16T18:27:20+09:00 | ntfy | outbound | 【家老】cmd_1977 初回配備開始 (title=CoDD改善#25 — cmd_save.sh高速化(4.0s→目標500ms), ninja=hayate) CoDD改善#25 📋 https://gist.github.com/…
-- 2026-04-16T18:26:47+09:00 | terminal | response | cmd_1977(cmd_save.sh高速化)委任完了。単発配備。改善完了まで将軍のcmd起票は停止。残りの第五弾(再トライ4本 + stop-lint-gate.sh)はcmd_save.sh改善完了後に起票する。 [meta] st…
+- 2026-04-16T19:01:03+09:00 | terminal | response | 殿の仰る通り。本番稼働中のDM-Signalは慎重に進める必要がある。 **事前準備の論点:** **1. 対象の安全度分類** | レベル | 対象 | 本番影響 | リスク | |--------|------|---------|-…
+- 2026-04-16T19:00:36+09:00 | terminal | inbound | 推薦: DM-Signal(Python)にCoDDを適用する。をやろうか。DM-sigbalは本番が稼働しているから、慎重な対応が必須だな。事前準備をどうするか綿密に練ろう
+- 2026-04-16T19:00:22+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
+- 2026-04-16T19:00:19+09:00 | ntfy | outbound | 【家老】cmd_1984 初回配備開始 (title=CoDD改善#32 — gate_karo_startup.sh再トライ(225ms→目標80ms, 起動ごと), ninja=tobisaru) CoDD改善#32 📋 https:…
+- 2026-04-16T18:58:50+09:00 | terminal | response | インフラbashスクリプトの改善見込み「高」「中」はほぼ網羅した。第六弾の方向は3つ考えられる。 **推薦: DM-Signal(Python)にCoDDを適用する。** 理由: CoDDのbash implementは不適合だったが、P…
+- 2026-04-16T18:58:37+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
+- 2026-04-16T18:58:31+09:00 | terminal | inbound | 第六弾はどうする？
+- 2026-04-16T18:58:07+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
+- 2026-04-16T18:58:05+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-079)
+- 2026-04-16T18:58:05+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 18:53:17|cmd_1978
 
 ## 未解決確認事項
+- 殿の仰る通り。本番稼働中のDM-Signalは慎重に進める必要がある。 **事前準備の論点:** **1. 対象の安全度分類** | レベル | 対象 | 本番影響 | リスク | |--------|------|---------|-------| | A(安全) | 研究…
 - cmd_save.shのafter結果を確認する。 [meta] stop_reason=tool_use
 - 確認完了。殿、第五弾を先に書くか？ [meta] stop_reason=end_turn
 - 先にCMDだそうか。待つ必要性はあるか？確認せよ
@@ -23,7 +24,6 @@
 - バッチ1-3(18本) + 単発2本の消化状況を整理して、残りから第四弾を選ぶ。 **未着手の改善候補(プロファイリングリストから):** 秒単位の遅さ(timeout群): - `lesson_harvest.sh` 5.5s — 教訓収穫 - `parity_check.s…
 - **永続化完了:** | 知見 | 永続化先 | 消えない | |------|---------|---------| | 事前100%は怠慢。3層防御 | LS035(lessons_shogun.yaml) | ✅ | | CoDD ACは4段階に分解 | context…
 - **なぜなぜ7回:** 1. なぜACにspec工程が抜けた？ → command欄→AC変換を確認していない 2. なぜ確認していない？ → 事前チェックで100%検出しようとした 3. **なぜ事前100%にこだわった？** → 事後フィードバックの仕組みがないと思い込み、…
-- **確認完了。既に対処済み。** - 旧watcher(PID 1696051, SHOGUN_STATE_DIR未設定) → 停止済み - 新watcher(PID 930575, 16:08起動, `SHOGUN_STATE_DIR=/tmp/shogun_state`) …
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-16T16:38:29+09:00 | バッチ3の進捗: 4/6完了(ninja_done, report_field_set, karo_workaround_log, cmd_1965)。残り2本(archive_completed, pre_compact_save)が半蔵・小太郎で進行中。第四弾の起票準備でき…
@@ -31,11 +31,6 @@
 - 2026-04-16T15:39:43+09:00 | 次のバッチ候補を整理する。殿の「実行回数×小さな差=複利」の指摘を反映して、**秒単位の遅さ**と**高頻度×ms改善**の両方から選ぶ。 **次バッチ候補6本:** | # | 対象 | 現在 | 理由 | |---|------|------|------| | 1 | `…
 
 ## 参照cmd
-- cmd_1947
-- cmd_1948
-- cmd_1949
-- cmd_1950
-- cmd_1951
 - cmd_1953
 - cmd_1954
 - cmd_1955
@@ -61,6 +56,11 @@
 - cmd_1975
 - cmd_1976
 - cmd_1977
+- cmd_1978
+- cmd_1979
+- cmd_1980
+- cmd_1981
+- cmd_1982
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

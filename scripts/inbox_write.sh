@@ -44,6 +44,32 @@ Usage: inbox_write.sh <target_agent> <content> [type] [from] [action]
 EOF
 }
 
+is_core_agent() {
+    case "$1" in
+        shogun|karo|gunshi)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+known_agent_from_fs() {
+    local agent="$1"
+
+    is_core_agent "$agent" && return 0
+    [ -f "$SCRIPT_DIR/queue/tasks/${agent}.yaml" ] && return 0
+    [ -f "$SCRIPT_DIR/queue/inbox/${agent}.yaml" ] && return 0
+    return 1
+}
+
+sender_is_ninja_from_fs() {
+    local agent="$1"
+
+    [ "$agent" = "ninja_monitor" ] && return 1
+    is_core_agent "$agent" && return 1
+    [ -f "$SCRIPT_DIR/queue/tasks/${agent}.yaml" ]
+}
+
 ensure_agent_config_loaded() {
     if [ "${AGENT_CONFIG_LOADED:-0}" = "1" ]; then
         return 0
@@ -238,8 +264,9 @@ inbox_message_count() {
         echo 0
         return 0
     }
-
-    awk 'BEGIN { c = 0 } /^- / { c++ } END { print c }' "$inbox_file"
+    local count
+    count=$(grep -c '^- ' "$inbox_file" 2>/dev/null || true)
+    printf '%s\n' "${count:-0}"
 }
 
 inbox_unread_count() {
@@ -757,31 +784,42 @@ if [ -z "$ACTION" ]; then
 fi
 
 # HIGH-2: パストラバーサル防止 + sender/target制約
-# INBOX_WRITE_TEST=1 or agent_config.sh未ロード: テスト環境でバリデーションをスキップ
+# Common path: 静的役職 + queue/tasks|inbox の実在確認だけで判定できる場合は
+# agent_config.sh を読まない。fallback時のみロードする。
 if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
-    ensure_agent_config_loaded
-fi
-if [ "${INBOX_WRITE_TEST:-}" != "1" ] && type get_allowed_targets &>/dev/null; then
-    ALLOWED_TARGETS=$(get_allowed_targets)
     valid_target=0
-    for allowed in $ALLOWED_TARGETS; do
-        if [ "$TARGET" = "$allowed" ]; then
-            valid_target=1
-            break
+    if known_agent_from_fs "$TARGET"; then
+        valid_target=1
+        ALLOWED_TARGETS="shogun karo gunshi + known queue agents"
+    else
+        ensure_agent_config_loaded
+        if type get_allowed_targets &>/dev/null; then
+            ALLOWED_TARGETS=$(get_allowed_targets)
+            for allowed in $ALLOWED_TARGETS; do
+                if [ "$TARGET" = "$allowed" ]; then
+                    valid_target=1
+                    break
+                fi
+            done
         fi
-    done
+    fi
     if [ "$valid_target" -eq 0 ]; then
-        echo "ERROR: Invalid target agent: '$TARGET'. Allowed: $ALLOWED_TARGETS" >&2
+        echo "ERROR: Invalid target agent: '$TARGET'. Allowed: ${ALLOWED_TARGETS:-none}" >&2
         exit 1
     fi
 
     is_ninja_sender=0
-    for ninja in $NINJA_NAMES; do
-        if [ "$FROM" = "$ninja" ]; then
-            is_ninja_sender=1
-            break
-        fi
-    done
+    if sender_is_ninja_from_fs "$FROM"; then
+        is_ninja_sender=1
+    elif [ "$TARGET" = "shogun" ]; then
+        ensure_agent_config_loaded
+        for ninja in $NINJA_NAMES; do
+            if [ "$FROM" = "$ninja" ]; then
+                is_ninja_sender=1
+                break
+            fi
+        done
+    fi
 
     if [ "$is_ninja_sender" -eq 1 ] && [ "$TARGET" = "shogun" ]; then
         echo "ERROR: Ninja cannot send inbox to shogun directly. Use karo as relay." >&2

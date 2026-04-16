@@ -10,6 +10,7 @@
 
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
+| cmd_1979 | `inbox_write.sh` の残存固定費削減 | GATE PASS。疾風。target/sender判定を filesystem fast-path 化し、件数カウントを軽量化。隔離 workspace 平均 `50ms→22ms`、live worktree 中央値 `40ms`。`test_inbox_write.bats` 22件 PASS | 共通経路で `agent_config.sh` を毎回 source する必要はなく、`queue/tasks` / `queue/inbox` の現物で多くの判定が足りた。fallback は維持しつつ初期化コストだけ削った |
 | cmd_1978 | Stop hook `stop-lint-gate.sh` の高速化 | GATE PASS。疾風。changed-files取得をGit plumbing化し lint を tool単位バッチ化。代表 mixed shell+python 条件で `0.82s→0.65s`、live worktree 中央値 `0.54s`。unit test 4件追加+既存hook harness PASS | WSL2では `git diff --name-only` 系が主因。`diff-index --cached` + `ls-files -m` へ置換し、shellcheck/ruff/biome の per-file 起動を廃止。500ms目標は代表条件で未達だが実運用 changed-set では近傍まで短縮 |
 
 ## 2026-03-28
