@@ -390,10 +390,10 @@
   evidence: null
 - id: GP-205
   description: "hook/gate系ファイルの大規模削減検出: files_modifiedにhook/gate含む場合、git diff --statで行数変化をチェック。50%超削減→WARN"
-  status: proposed
+  status: implemented
   proposed_at: "2026-04-16T17:32:00"
-  implemented_at: null
-  implemented_by: null
+  implemented_at: "2026-04-17T00:00:00"
+  implemented_by: gunshi_direct
   self_executable: true
   defense_level: 3
   reason: "cmd_1975でpre-bash-combined.sh 347→12行(97%削減)をLGTM。忍者の'機能変更なし'を信頼しコード未確認。hook/gateの大規模削減は機能破壊の強いシグナル。自動検出で見落とし防止"
@@ -408,3 +408,23 @@
   defense_level: 2
   reason: "2026-04-16実証: 軍師がレビュー完了→家老にinbox_write→将軍気づかず→リマインダー送信。掲示板が唯一の将軍↔軍師直通ライン。F-G01(全通信は家老のみ)の例外として返信先ルールをgunshi.mdに明記"
   evidence: "instructions/gunshi.md §Communication Protocol 返信先ルール表に埋込み済み"
+- id: GP-207
+  description: "bulletin_write.sh引数バリデーション: contentがエージェント名のみ→BLOCK(引数順序ミス検出)"
+  status: implemented
+  proposed_at: "2026-04-16T23:02:00"
+  implemented_at: "2026-04-16T23:02:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 4
+  reason: "家老がbulletin_write.sh karo '本文' trueと呼んだ際、第1引数(content)に'karo'が入りcontent='karo'になる事故(blt_20260416_230053)。引数順序ミスを構造的に検出しBLOCK"
+  evidence: "テスト: エージェント名のみ→exit 1 BLOCK、正常形式→exit 0。2パターン確認済み"
+- id: GP-208
+  description: "掲示板通知を80文字要約→全文に変更。既に強制されている行動(inbox読み)に全文を乗せる"
+  status: implemented
+  proposed_at: "2026-04-16T23:30:00"
+  implemented_at: "2026-04-16T23:30:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 5
+  reason: "bulletin_notifyが80文字要約→将軍が掲示板を読みに行かない→内容が届かない。通知≠閲読。読む行動の強制は新しい仕組みでなく、既に強制されている行動(inbox処理)に全文を含めることで達成。Phase 4「自動化×強制」の正しい適用: 新しい行動を強制するのではなく、既存の強制された行動に乗せる"
+  evidence: "bulletin_write.sh L144 SUMMARY削除→CONTENT全文をinbox_writeに渡す"

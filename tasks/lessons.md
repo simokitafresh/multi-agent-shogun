@@ -3725,3 +3725,18 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - stat複数ファイル | trはいずれかのファイルが不在でstatが非ゼロ→pipefailでパイプ全体非ゼロ→set -eで即exit。テスト環境では対象ファイルが存在しないため発現。修正: 変数代入行末に|| trueを追加。同パターンはL481(grep no-match)と同種の罠。
+
+### L488: bats --jobs並列実行時の/tmp固定パス競合 — テスト用状態ファイルはTEST_ROOT配下に隔離せよ
+- **日付**: 2026-04-16
+- **出典**: cmd_karo_ci_fix_1987
+- **記録者**: kagemaru
+- **status**: approved
+- **tags**: [universal]
+- stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardown()が同一パスを操作しレースコンディションが発生した。修正: 環境変数でオーバーライド可能にしテストからTEST_ROOT配下のパスを渡す。原則: テスト用副作用ファイルはTEST_ROOT/BATSの一時ディレクトリ内に収め/tmp固定パスを使わない。
+
+### L489: bats並列実行での/tmp固定パス競合
+- **日付**: 2026-04-16
+- **出典**: cmd_karo_ci_fix_1987
+- **記録者**: karo
+- **tags**: [universal]
+- bats --jobs並列でsetup/teardownが/tmp固定パスに同時アクセスしレースコンディション発生。テスト用状態ファイルはTEST_ROOT配下に隔離し/tmp固定パスを使わない。STOP_LINT_HASH_FILE環境変数でオーバーライド可能にした

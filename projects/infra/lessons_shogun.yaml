@@ -353,3 +353,10 @@ lessons:
   created_at: '2026-04-16'
   automated: true
   enforcement: '軍師分析(docs/research/gunshi_idle_shogun_inbox_blindspot)で根因特定+家老が再起動実施。再発防止はwatcher起動スクリプトへの環境変数チェック追加が候補'
+- id: 'LS038'
+  title: 'gate先行委任 — gateクリアしてから家老に送信せよ'
+  detail: '事故: cmd_1995でYAML追記→即cmd_delegate(gate+inbox_write同時)→家老が即配備→忍者が旧版task YAMLで作業開始→gate BLOCK修正→ナッジ間に合わず→補足cmd必要。原因: cmd_delegateがgate+送信を一括実行するため、gate修正中に忍者が動き出すレースコンディション。修正: (1)cmd_save.shでgateクリアを先に確認 (2)クリア後にinbox_writeで家老に送信。2ステップに分離することで忍者が古い版で動くことを防止。殿直接指摘(2026-04-17)。'
+  source_cmd: 'cmd_1995'
+  created_at: '2026-04-17'
+  automated: true
+  enforcement: 'cmd_save.sh→PASS確認→inbox_write。cmd_delegate.shは使わず2ステップ分離を手順化'

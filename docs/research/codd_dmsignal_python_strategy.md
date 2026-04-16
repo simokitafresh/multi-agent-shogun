@@ -67,11 +67,67 @@ ai_command:
 |-------|------|-----|--------|------|
 | 1 | CoDDのPython適用検証(compare_snapshots.py, 224行) | cmd_1986 | **完了** | review/implementがcodd-pro依存で不可。extract→generate→validate→measureは使用可。**フォールバック: CoDDで設計書生成+手動実装** |
 | 2 | レベルA全量cProfileプロファイリング | cmd_1987 | **完了** | Top3=simulate_pattern系(yotsume 5.3s/nukimi 3.4s/oikaze 2.2s per 100pat)。本番影響確認済み: GS研究用と本番は別実装→レベルA安全 |
-| 3 | レベルA上位5本改善(cmd_1988-1992) | cmd_1988-1992 | **進行中** | yotsume/nukimi/oikaze/l1_alm_wf/bunshin |
-| 4 | レベルB(fullrecalculate)適用 | — | 待機 | — |
+| 3 | レベルA上位5本改善(cmd_1988-1992) | cmd_1988-1992 | **完了** | yotsume -99%/oikaze -99%/nukimi -63%/l1_alm_wf -81%/bunshin -78% |
+| 4a | Phase 4準備(cProfile+ツール修正) | cmd_1994/1995/1996/karo_1995_fix | **完了** | cProfile計測完了(1527s,DB I/O 75%)。compare_snapshots修正+exclude-months追加 |
+| 4b | Phase 4偵察(cache miss実測) | — | **次** | 軍師分析3点の計測(下記§4) |
+| 4c | Phase 4実装(fullrecalculate改善) | — | 待機 | 偵察結果に基づきimpl cmd設計 |
 | 5 | 結果評価+次の判断 | — | 待機 | — |
 
+### §3.5 Phase 3知見 + Phase 4準備(2026-04-16軍師助言)
+
+**Phase 3で確立した2パターン:**
+- **パターンA(100x級):** precomputed masks直接利用(yotsume/oikaze)。monthly-onlyスクリプト限定。MomentumFilter.executeを排除
+- **パターンB(3-5x):** キャッシュ+再利用(nukimi/l1_alm_wf/bunshin)。汎用。Phase 4はこちらが主適用先
+
+**Phase 4準備3点(全完了 2026-04-17):**
+1. ✅ **fullrecalculateのcProfile計測** — cmd_1994 GATE CLEAR。結果→§4
+2. ✅ **snapshot比較ツール修正** — cmd_1995+cmd_karo_1995_fix GATE CLEAR。snapshot_recalc_results.py holding_signal保存+compare_snapshots.py列名統一
+3. ✅ **--exclude-monthsオプション** — cmd_1996 GATE CLEAR。compare_recalc_results.pyに実装済み
+
 **更新ルール:** cmd起票時にcmd列を記入。GATE CLEAR時にstatus+結果を更新。Phase間は前Phase完了後に次Phaseへ進む(飛ばさない)。
+
+## §4 Phase 4: fullrecalculate改善(レベルB)
+
+### §4.1 cProfile計測結果(cmd_1994, 2026-04-17)
+
+→ 詳細: `docs/research/codd_fullrecalc_cprofile.md`
+
+**総実行時間: 1527s** (dry-run: commit→flush+rollback)
+
+| 層 | 時間(s) | 割合 | 解釈 |
+|----|---------|------|------|
+| DB I/O (SQLAlchemy/psycopg2) | 1057-1152 | **69-75%** | クエリ回数削減が最大レバレッジ |
+| アプリ層計算 | 375-470 | 25-31% | Phase 3パターンB(キャッシュ+再利用)で対処 |
+
+**アプリ層Top5:**
+
+| # | 関数 | 時間(s) | 呼出回数 | ボトルネック |
+|---|------|---------|----------|------------|
+| 1 | `_generate_trade_performance` | 508 | 181 | L2/L3 trade計算。最大アプリ層ホットスポット |
+| 2 | `expand_portfolio_to_tickers` | 384 | 1,168,384 | FoF展開。117万回呼出。signal_cache miss→DB SELECT |
+| 3 | `_recalculate_fof_history` | 382 | 1 | L3 FoF全体。daily_loop/monthly_returns_gen/flush分散 |
+| 4 | `calculate_trade_period_return` | 369 | 26,738 | trade-return集約。fallback発火→DB再取得の可能性 |
+| 5 | `calculate_monthly_return` | 368 | 436 | 月次リターン計算 |
+
+### §4.2 改善方針(軍師分析 gunshi_phase4_improvement_plan_20260417.md)
+
+**Tier 1(高ROI):**
+- **T1-1: signal_cache完全化** — expand_portfolio_to_tickers 117万回のcache miss→DB SELECT を削減。推定-100s
+- **T1-2: fallbackゼロ化+NumPy化** — calculate_trade_period_returnのfallback発火をゼロにし、NumPy化。推定-95s
+
+**Tier 2(中ROI):**
+- **T2-2: dw_component_weightsバッチ化** — 104 FoF×日数のN+1を解消。推定-13s
+
+**目標:** 480s → 280-320s(T1) → 250-280s(T2) → 150-200s(将来の並列化)
+
+### §4.3 偵察計測項目(Phase 4b, 軍師助言3点)
+
+偵察で計測すべき3点(impl cmdの精度を決定):
+1. **signal_cacheのcache miss率** — 117万回のうちDB SELECTに落ちる割合。コード現物確認+プロファイルログから推定
+2. **monthly_returns_mapの欠損パターン** — calculate_trade_period_returnのfallback発火率。fallback時にDB再取得か0返却か。コード現物確認
+3. **FoF component_weights取得回数** — 104 FoF×日数でN+1発生有無。バッチ化ROI推定
+
+偵察は1忍者で十分(コード読解+grep計測)。並列不要。
 
 ## §1 目的
 

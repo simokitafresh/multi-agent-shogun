@@ -6,9 +6,10 @@
 |--------|-----|------|--------|
 | 1 | 1953-1958 | shutsujin_departure, dashboard_auto_section, gate_cycle_health, report_merge, gate_artifact_map, gate_karo_startup | **全GATE CLEAR** |
 | 2 | 1959-1964 | gate_recalculate_completeness, inbox_write, ntfy, lesson_effectiveness, gate_loop_health, gate_lesson_health | **全GATE CLEAR** |
-| 3 | 1965-1970 | ninja_done, report_field_set, karo_workaround_log, archive_completed, pre_compact_save, gate_workaround_rate | **進行中** |
-| 4(次) | 未起票 | lesson_harvest, parity_check, model_switch_preflight, post_recalculate_checks, test_hooks, gate_vercel_phase | 待機 |
-| 単発 | 未起票 | cmd_save.sh(競合:将軍使用中), stop-lint-gate.sh(競合:全員Stop hook) | 待機(直列実行) |
+| 3 | 1965-1970 | ninja_done, report_field_set, karo_workaround_log, archive_completed, pre_compact_save, gate_workaround_rate | **全GATE CLEAR** |
+| 4 | 1971-1976 | lesson_harvest, parity_check, model_switch_preflight, post_recalculate_checks, test_hooks, gate_vercel_phase | **全GATE CLEAR** |
+| 単発 | 1977-1978 | cmd_save.sh(4.0s→1.06s), stop-lint-gate.sh(0.82s→0.65s) | **全GATE CLEAR** |
+| 5(再トライ) | 1979-1984 | inbox_write, gate_recalculate_completeness, dashboard_auto_section, gate_cycle_health, deploy_task, gate_karo_startup | **全GATE CLEAR** |
 
 知見: ACは4段階(spec/design/impl/test)に分解(codd.md §4.5)。ただし道具の目的と作業性質を照合し機械的適用は避ける(LS036)。
 

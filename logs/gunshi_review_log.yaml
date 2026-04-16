@@ -544,7 +544,7 @@
   report_ninja: kagemaru
   report_task_id: cmd_1967_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。karo_workaround_log.sh validate_ninja_id task dirループ廃止+TZ=UTC printf+dirname置換でclean 61→26ms(57%削減2.3x)。テスト26/26 PASS"
   observations:
     - "事実1: validate_ninja_idがtask dir forループ(basename subprocess×10)→settings.yaml awk 1回に統一。権威ソース正規化"
@@ -558,7 +558,7 @@
   report_ninja: tobisaru
   report_task_id: cmd_1970_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。gate_workaround_rate.sh python3+grep+awk→awk1本統合でCPU 30→12ms(-60%,2.5x)。テスト38件PASS"
   observations:
     - "事実1: FNR==NRでgate_metrics.log+karo_workarounds.yamlを1 awkパスで処理。python3 startup 22ms除去が主因"
@@ -572,7 +572,7 @@
   report_ninja: saizo
   report_task_id: cmd_1972_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。parity_check.sh --help fast-path+CRLF-safe DB URLで5.5s→8-18ms(300x改善)。テスト975件PASS"
   observations:
     - "事実1: --helpでもDB接続していたことがtimeoutの直接原因。fast-path追加で接続自体を回避"
@@ -587,7 +587,7 @@
   report_ninja: saizo
   report_task_id: cmd_1974_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。post_recalculate_checks.sh CRLF-safe loader+hostaddr+batch queryで6.15→2.23s(-64%)。テストPASS"
   observations:
     - "事実1: .envのCRLF問題をcmd_1972(parity_check)と同型のload_database_url()で解決。横展開パターン"
@@ -602,7 +602,7 @@
   report_ninja: hayate
   report_task_id: cmd_1971_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。lesson_harvest.sh rgベース一次スキャン+YAML fallbackで36.3→10.6s(-71%)。テストPASS"
   observations:
     - "事実1: archive全件safe_load(python yaml.safe_load)がボトルネック。rg -uuuで必要行のみ抽出し大幅削減"
@@ -616,7 +616,7 @@
   report_ninja: saizo
   report_task_id: cmd_1975_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。test_hooks.sh 共通evaluator直呼び+subprocess除去でavg 18.1→1.9s(-89%,9.4x)。テストPASS"
   observations:
     - "事実1: 75ケースの個別hook subprocess起動→共通evaluator1回呼出しに統合。起動コスト除去が主因"
@@ -631,7 +631,7 @@
   report_ninja: kagemaru
   report_task_id: cmd_1973_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。model_switch_preflight.sh grep結合+python→awk+git grepで5483→1230ms(-78%,4.5x)。テスト63/63 PASS"
   observations:
     - "事実1: check_hardcodesが9.4s(73%)占有。11パターン別々grep→単一正規表現で0.76s(12.4x)。WSL2 I/O回数削減が決定打"
@@ -677,7 +677,7 @@
   report_ninja: kotaro
   report_task_id: cmd_1969_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。pre_compact_save.sh jq→bash regex+tmux統合で非TMUX 46→28ms(-39%)、TMUX推定 141→99ms(-30%)。テスト980件PASS"
   observations:
     - "事実1: jq×2(~10ms)→BASH_REMATCH置換でサブプロセス除去。tmux×2(~60ms)→タブ区切り1呼出しに統合"
@@ -726,7 +726,7 @@
   report_ninja: hayate
   report_task_id: cmd_1978_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。stop-lint-gate.sh Git plumbing+lintバッチ化で0.82→0.65s(-21%)。live 0.54s。テスト75/75+4/4 PASS"
   observations:
     - "事実1: changed-files取得(git diff)が0.74-1.11s占有。Git plumbing(diff-index+ls-files)で解消"
@@ -741,7 +741,7 @@
   report_ninja: saizo
   report_task_id: cmd_1980_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。gate_recalculate_completeness.sh bash parser+EXISTS+ORDER BY除去でcold 2.74→2.17s(-21%)。テスト5/5+live 3/3 PASS"
   observations:
     - "事実1: extract_db_host Python urlparse→bash parserで6.018→0.010s(600x)。Python起動コスト除去が主因"
@@ -756,7 +756,7 @@
   report_ninja: hayate
   report_task_id: cmd_1979_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。inbox_write.sh filesystem fast-path+grep-c軽量化で隔離22ms(-56%)、live 40ms(-20%)。テスト22/22 PASS"
   observations:
     - "事実1: agent_config.sh source回避→filesystem判定(queue/tasks/inbox実在チェック)で固定費削減"
@@ -782,7 +782,7 @@
   report_ninja: hanzo
   report_task_id: cmd_1982_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。gate_cycle_health.sh glob+stat+awk統合で実測98→80ms(-18%)。assumption_invalidation有(前提296ms→実測98ms)"
   observations:
     - "事実1: assumption_invalidation:trueを誠実に報告。前提値(296ms)は環境変化で実測98msに既改善。忍者の品質意識良好"
@@ -833,7 +833,7 @@
   report_ninja: kotaro
   report_task_id: cmd_1983_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。deploy_task.sh field_get 12+回→field_get_multi 1回でgenerate_report_template 224→32ms(-86%)。テスト988件PASS"
   observations:
     - "事実1: field_get_multi+eval+変数参照でWSL2上の20ms×12=240msを32ms(1回)に圧縮。L484(grep複数→単一)と同構造"
@@ -930,7 +930,7 @@
   report_ninja: hayate
   report_task_id: cmd_1986_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。CoDD Phase 1結果: extract〜validate+measure成功(score 88)。review/implement=codd-pro依存→フォールバック確定。venvパスassumption_invalidation"
   observations:
     - "事実1: codd review --jsonがcodd-pro(private)移管メッセージでexit 1。OSS版1.8.0では実行不可"
@@ -1016,7 +1016,7 @@
   report_ninja: hayate
   report_task_id: cmd_1988_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。run_077_yotsume.py precomputed mask再利用で100pat 8.53→0.12s(-98.6%, 72x)。md5一致。smoke PASS"
   observations:
     - "事実1: simulate_patternがproduction blockを月ごとに再実行→relativedelta支配(8.5s)。precomputed mask再利用で0.12s"
@@ -1031,7 +1031,7 @@
   report_ninja: saizo
   report_task_id: cmd_1989_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。run_077_nukimi.py classキャッシュ+artifact再利用で100pat 6.27→2.30s(-63.3%)。SHA256一致。health_score 100"
   observations:
     - "事実1: yotsume(-98.6%)とは異なるアプローチ(キャッシュ+再利用)だが同様に大幅改善"
@@ -1040,3 +1040,189 @@
   gate_prediction: CLEAR
   causal_chain: "Phase 2 Top2(nukimi 3.4s)→キャッシュ+再利用→-63.3%=GS nukimi実行ごとの正の複利"
   timestamp: "2026-04-16T22:26:00"
+- cmd_id: cmd_1991
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1991_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。l1_alm_wf_engine.py itertuples+リスト構築+date_range統合でreconstruct -81%、main -34%。diff完全一致"
+  observations:
+    - "事実1: pandas iterrows→itertuples+リスト→直接Series構築。Python典型高速化パターン"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "Phase 2(l1_alm_wf 0.5s/2col)→itertuples+リスト化→reconstruct -81%=ALM WF実行ごとの正の複利"
+  timestamp: "2026-04-16T22:32:00"
+- cmd_id: cmd_1992
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1992_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。bunshin lazy import→フラグ関数化でwrapper -78%(4.6x)。781回ループ"
+  observations:
+    - "事実1: sys.path O(N)チェック×2+import×3が781回ループ内で繰返し→フラグで1回に"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "Phase 2(bunshin 2.9s)→lazy import除去→wrapper -78%=GS bunshin実行ごとの正の複利"
+  timestamp: "2026-04-16T22:33:00"
+- cmd_id: cmd_karo_ci_fix_1987
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_ci_fix_1987_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CI test 941 /tmp並列競合→環境変数+TEST_ROOT隔離。CI GREEN"
+  observations:
+    - "事実1: bats --jobs 8で/tmp固定パスのレースコンディション。STOP_LINT_HASH_FILE環境変数で隔離"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  gate_prediction: WARN(draft_lessons)
+  causal_chain: "/tmp固定パス→並列テスト競合→CI RED。環境変数+TEST_ROOT隔離→CI GREEN=テスト基盤の正の複利"
+  timestamp: "2026-04-16T22:33:00"
+- cmd_id: cmd_1990
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1990_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。oikaze precomputed masks+monthly fast pathで4.65→0.03s(-99.3%)。SHA256一致。28116pat完走"
+  observations:
+    - "事実1: yotsume(cmd_1988)と同パターン。MomentumFilterBlock.execute排除+precomputed masks直接利用"
+    - "事実2: Phase 3 Top3全完了: yotsume -98.6% / nukimi -63.3% / oikaze -99.3%"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "Phase 2 Top3(oikaze 2.2s)→precomputed masks→-99.3%=GS oikaze実行ごとの正の複利。Phase 3 Top3完了"
+  timestamp: "2026-04-16T22:38:00"
+- cmd_id: consultation_phase3_review
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "Phase 3振り返り+Phase 4準備+セッション申し送り。2パターン確立(precomputed masks 100x/キャッシュ再利用 3-5x)。Phase 4準備3点"
+  observations:
+    - "事実1: パターンA(precomputed masks)はmonthly-only前提で70-145x。パターンB(キャッシュ)は汎用で3-5x"
+    - "事実2: Phase 4準備: compare_recalc_results.py拡張+fullrecalculate cProfile計測が前提条件"
+  cs_checklist:
+    cs1: "PASS: Phase 3全5cmdの報告+cProfile結果を現物確認"
+    cs4: "PASS: Phase 4準備3点に具体的行動(cProfile/ツール拡張/設計書反映)を紐付け"
+    cs6: "PASS: 二極化(100x vs 3-5x)の因果=precomputed masks適用可否"
+  causal_chain: "Phase 3完了→2パターン確立→Phase 4はパターンB主体→compare_recalc拡張+cProfile計測が前提→準備完了後にPhase 4着手"
+  timestamp: "2026-04-16T23:04:00"
+- cmd_id: cmd_karo_context_freshness_1993
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_context_freshness_1993_impl
+  verdict: LGTM
+  gate_result: BLOCK_then_manual_CLEAR
+  findings_summary: "4観点OK。context鮮度更新2件。commit 5baa2a6確認。scope逸脱なし"
+  observations:
+    - "事実1: commit 5baa2a6は2ファイル(dm-signal-research.md+infrastructure.md)のみ変更(+19/-1行)。scope正確"
+    - "事実2: GATE BLOCKはreport_format(YAML構文破壊)が原因。家老が成果物現物確認で手動CLEAR。報告YAMLは修復済み"
+  causal_chain: "gate_freshness ALERT→context更新cmd配備→hayateが2ファイル更新+commit→報告YAML競合破損でGATE BLOCK→家老が成果物確認で手動CLEAR"
+  timestamp: "2026-04-17T00:15:00"
+- cmd_id: cmd_1994
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cProfile計測は定型。DB書込みリスクはAC3パリティ確認+最小PFで対処済み"
+  observations:
+    - "事実1: recalculate_fast.py=2960行(wc -l確認)。cmd記載と一致"
+    - "事実2: dry-run未実装(cmd_1985偵察確認済み)。書込み前提でのパリティ確認が適切"
+  causal_chain: "Phase3完了→Phase4specにはボトルネック計測が前提→cProfile計測cmd→Phase4全cmdの品質決定(正の複利)"
+  timestamp: "2026-04-17T00:28:00"
+- cmd_id: cmd_1995
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  findings_summary: "前提崩壊: cmd対象=compare_recalc_results.pyだがholding_signal問題の実体はcompare_snapshots.py(L125)。対象ファイル修正要"
+  observations:
+    - "事実1: compare_recalc_results.py L163-166のmonthly_returnsにholding_signalは含まれていない=問題なし"
+    - "事実2: compare_snapshots.py L125がmonthly_returnsのcompare_fieldsにholding_signalを含むが、snapshot_recalc_results.py L83-97には保存されていない=空振り"
+    - "事実3: snapshot_recalc_results.py L77でsignals.holding_signalは保存済み。問題はmonthly_returns側のみ"
+  suggested_changes: "対象ファイルをcompare_recalc_results.pyからcompare_snapshots.py(251行)に変更、またはcompare_snapshots.pyも修正対象に含める。列名不一致問題の実体を再確認し、ACを対象ファイルに合わせて修正"
+  severity: normal
+  causal_chain: "cmd_1985偵察→holding_signal未保存+列名不一致報告→cmd_1995起票→対象ファイル=compare_recalc_results.pyだが実際の問題=compare_snapshots.py L125→忍者が正しいファイルを修正できないリスク"
+  timestamp: "2026-04-17T00:28:00"
+- cmd_id: cmd_1996
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_1995依存の直列配備。--exclude-monthsオプション追加は汎用ツール改善"
+  observations:
+    - "事実1: compare_recalc_results.pyに--exclude関連コードなし(grep確認)。新規実装"
+    - "事実2: cmd_1995→cmd_1996の依存順序が明記されており、配備計画(家老メッセージ)と整合"
+  causal_chain: "MTD/初期月でパリティ差分がノイズになる→除外オプション→Phase4全cmdのパリティ確認精度向上(正の複利)"
+  timestamp: "2026-04-17T00:28:00"
+- cmd_id: cmd_1995
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1995_impl
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "commit未実行+ac_version不一致。実装内容は4観点OK(holding_signal+列名統一+tolerance修正+target_date追加)"
+  observations:
+    - "事実1: git status shows 'M backend/scripts/compare_recalc_results.py' + 'M backend/scripts/snapshot_recalc_results.py' — uncommitted"
+    - "事実2: ac_version不一致 task=9ff8128d report=9303b79f。GATE BLOCK確実"
+    - "事実3: 実装内容は適切。holding_signalがmonthly_returnsの両側(snapshot L93+compare L179)に追加。trade_performance/drawdown列名統一。tolerance伝搬修正"
+    - "事実4: 先のREQUEST_CHANGES(snapshot側修正不足)は解消。snapshot_recalc_results.pyも修正対象に含まれている"
+  fail_reasons:
+    - "commit未実行。変更はworking treeにあるがuncommitted。成果物が確定状態にない"
+    - "ac_version不一致(task=9ff8128d vs report=9303b79f)。GATE BLOCK確実"
+  causal_chain: "cmd_1995配備→才蔵が実装→commit前に報告提出→ac_version不一致+commit不在→GATE BLOCK"
+  timestamp: "2026-04-17T00:38:00"
+- cmd_id: cmd_1996
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1996_impl
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "commit未実行。実装内容は4観点OK(--exclude-months+target_date+pytest3件+手動検証)"
+  observations:
+    - "事実1: compare_snapshots.py=modified(unstaged)、test_compare_snapshots.py=untracked。commit未実行"
+    - "事実2: 実装は適切。parse_excluded_months+filter_records_by_month+target_date一致チェック。392行diff"
+    - "事実3: ac_version一致(9ff8128d)。PRE1-PRE13でERRORS=0(PRE3のcommit不在はWARN)"
+  fail_reasons:
+    - "commit未実行。compare_snapshots.py+test_compare_snapshots.pyの変更がworking treeにuncommitted"
+  causal_chain: "cmd_1996配備→才蔵が実装(exclude-months+target_date+テスト)→commit前に報告→成果物未確定→GATE BLOCK見込み"
+  timestamp: "2026-04-17T00:42:00"
+- cmd_id: cmd_karo_1995_fix
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_1995_fix_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。commit 6c63907b確認(4ファイル+546/-217)。holding_signal+exclude-months+列名統一が全て反映済み"
+  observations:
+    - "事実1: commit 6c63907bに才蔵のcmd_1995+cmd_1996の全変更が含まれる(compare_recalc+compare_snapshots+snapshot_recalc+test)"
+    - "事実2: 影丸は検証タスク。compare_snapshots.py L178,183のholding_signal+1体fixtureでdiff=0を確認"
+  causal_chain: "才蔵commit漏れ→家老が補足cmd起票→影丸がcommit+検証→6c63907bで全変更確定→Phase4パリティ確認ツール完成"
+  timestamp: "2026-04-17T00:48:00"
+- cmd_id: cmd_karo_1995_fix
+  review_type: report
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "LGTM→GATE BLOCK(draft_lessons)。実装問題なし。GATE原因はdraft_lessons(教訓未登録)"
+  observations:
+    - "事実: GATE BLOCKはreport_formatではなくdraft_lessons。軍師レビュー観点(4観点)では検出対象外"
+  causal_chain: "LGTM→GATE BLOCK(draft_lessons)→家老workaround見込み"
+  timestamp: "2026-04-17T00:50:00"
+- cmd_id: cmd_1994
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1994_impl
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "commit未実行。分析内容は4観点OK。DB execute 69%支配、top5ホットスポット特定、パリティPASS"
+  observations:
+    - "事実1: harness.py(210行)+cprofile.md(108行)+JSON+TXTが全てDM-Signalリポジトリに存在するがuncommitted"
+    - "事実2: total 1527s中DB execute 1056s(69%)。app hotspot top1=_generate_trade_performance 508s"
+    - "事実3: dry-run harness(commit→flush+rollback)でDB不変化保証。monthly_returns 30134→30134 parity PASS"
+  fail_reasons:
+    - "commit未実行。harness.py+codd_fullrecalc_cprofile.md+成果物がuncommitted"
+  causal_chain: "cmd_1994配備→疾風がcProfile計測(1527s)+分析doc作成→commit前に報告→成果物未確定→GATE BLOCK見込み"
+  timestamp: "2026-04-17T01:00:00"

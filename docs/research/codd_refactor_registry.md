@@ -48,6 +48,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 2026-04-16 | tobisaru | `scripts/analysis/grid_search/run_077_bunshin.py` | Phase 5(計測+実装+検証) | wrapper overhead `0.622ms → 0.136ms` (`-78%`, `4.6x`, 781calls warm) / simulate_pattern lazy import inside loop → `_ensure_pipeline_ready()` flag guard | spec: `docs/research/cmd_1992_codd_spec_bunshin.md` |
 | 2026-04-16 | kotaro | `outputs/scripts/l1_alm_wf_engine.py` | Phase 5(計測+実装+検証)。spec先行作成 | main `0.801s → 0.527s` (`-34%`) / `reconstruct_alm_returns` `0.349s → 0.067s` (`-81%`, `5.2x`) / `_compute_metric_values_for_pattern` `0.276s → 0.264s` (`-4%`) / subset 2col全体 `0.63s → 0.35s` (`-44%`). 出力同一性diff PASS。codd measure 0/100(outputs/scripts=standalone, codd.yaml対象外) | spec: `docs/research/cmd_1991_l1_alm_wf_refactor_spec.md` |
+| 2026-04-16 | hanzo | `scripts/analysis/grid_search/run_077_oikaze.py` | Phase 5(計測+実装+検証) | `simulate_pattern` `4.648s → 0.032s` (`-99.3%`, 100pat hot path) / import bootstrap `-100%` / `numpy.isclose` `-100%` / SHA256同一性一致 / 28116pat全走PASS | spec: `docs/research/codd_spec_cmd_1990_run_077_oikaze_20260416.md` |
 
 ## 運用
 

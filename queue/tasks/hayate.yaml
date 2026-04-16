@@ -1,24 +1,24 @@
 task:
-  _ac_task_id: cmd_1988_impl
+  _ac_task_id: cmd_1998_scout
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: adfc922d
+  ac_version: 92478c9c
   acceptance_criteria:
-  - description: cProfile before計測+codd extract実行。spec(ボトルネック分析+改善方針)をdocs/research/に保存
+  - description: signal_cacheの構造・populate箇所・cache missパターンを特定。miss率の定量推定(X万回中Y回miss)を報告に含める
     id: AC1
-  - description: specに基づき実装。機能変更なし
+  - description: calculate_trade_period_returnのfallback発火条件・挙動・発火率推定を報告。fallbackゼロ化の実現可能性を判定
     id: AC2
-  - description: 出力同一性確認(diff)+after計測。before比で改善を数値で示す
+  - description: FoF component_weightsのクエリパターンを特定。N+1有無とバッチ化による削減クエリ数推定を報告
     id: AC3
-  - description: codd measure実行+codd_refactor_registry.mdに結果追記
+  - description: 3点の計測結果をdocs/research/codd_phase4_cache_miss_recon.mdに記録。commit+push
     id: AC4
   context_files:
   - context/dm-signal.md
+  - context/dm-signal-core.md
   - context/dm-signal-ops.md
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
-    ────────────────────────────────────────"
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -39,33 +39,34 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_1988
+  parent_cmd: cmd_1998
   project: dm-signal
-  report_filename: hayate_report_cmd_1988.yaml
-  report_path: queue/reports/hayate_report_cmd_1988.yaml
-  status: done
+  related_lessons: []
+  report_filename: hayate_report_cmd_1998.yaml
+  report_path: queue/reports/hayate_report_cmd_1998.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_1988_impl
-  task_type: impl
+  task_id: cmd_1998_scout
+  task_type: scout
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 23
+    total_workarounds: 24
     top_pattern: 'verdict_override(4件)'
-    breakdown: 'verdict_override(4件), report_yaml_format(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), deploy_error(1件), uncategorized(1件)'
-    warning: '⚠ 過去23件のworkaround発生。品質に注意'
+    breakdown: 'verdict_override(4件), report_yaml_format(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), deploy_error(1件), uncategorized(1件), report_yaml_corrupt(1件)'
+    warning: '⚠ 過去24件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
       count: 7
-    - pattern: 'verdict_invalid'
-      count: 2
+    - pattern: 'bc_result_invalid'
+      count: 7
     - pattern: 'yaml_parse_error'
-      count: 2
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ'
+      count: 4
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値; YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ'
     gate_blocks:
     - reason: 'report_format'
-      count: 14
+      count: 15
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
       count: 13
@@ -83,6 +84,9 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
+  - id: 'L633'
+    summary: '四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial'
+    detail: '四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial'
   - id: 'L632'
     summary: 'snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに'
     detail: 'snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに'
@@ -110,12 +114,4 @@ task:
   - id: 'L619'
     summary: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
     detail: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
-  - id: 'L618'
-    summary: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
-    detail: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
-  deployed_at: "2026-04-16T22:12:16"
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.AC1[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC1[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC4[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC1[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC4[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'
+  deployed_at: "2026-04-17T01:18:26"

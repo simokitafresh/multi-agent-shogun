@@ -266,3 +266,31 @@ lessons:
   created_at: '2026-04-16'
   automated: true
   enforcement: instructions/gunshi.md サイクルの鉄則に「行動完了≠還流完了」1行埋込み済み。毎サイクル自動読込
+- id: LG031
+  title: hook/gate大規模削減をレビューで見落とすな — files_modifiedにhook/gate含む場合はgit diff --statで変更規模確認
+  detail: |
+    cmd_1975でpre-bash-combined.sh 347→12行をLGTM→CI RED。大規模削減は機能消失リスクが高い。
+    files_modifiedにhook/gate/scripts/gates/scripts/hooks含む場合はgit diff --statで変更規模を確認し、
+    50%以上の削減がある場合はテスト結果とCI状態を重点チェックせよ。
+  source_cmd: cmd_1975
+  created_at: '2026-04-17'
+  automated: true
+  enforcement: GP-205実装済み→gate_gunshi_report_precheck.sh SG-PRE13に組込み(2026-04-17)
+- id: LG032
+  title: 新しい強制の仕組みを作るな — 既に強制されている行動に乗せよ
+  detail: |
+    GP-208で実証。掲示板を読む行動の強制→新仕組み不要、inbox全文配信(inboxは既にstartup gate+stop hookで強制済み)に乗せるだけで解決。
+    GP設計時の自問: 「既存の強制された行動に乗せられないか？」。deepdive Phase 6(原理1行を環境に埋め込む)の軍師版実践。
+  source_cmd: GP-208
+  created_at: '2026-04-17'
+  automated: true
+  enforcement: gunshi.md idle Step 6のGP設計時に自問追加
+- id: LG033
+  title: 既存の仕組みを確認せず「仕組みがない」と結論するな — grep/Readで現物確認必須
+  detail: |
+    bulletin_write.shに既にinbox通知機能があったのに確認せず「読む側の強制がない」と提案した。
+    想像するな確認せよ原則の再適用。GP提案前にgrep/Readで既存実装を現物確認。
+  source_cmd: GP-208
+  created_at: '2026-04-17'
+  automated: true
+  enforcement: GP提案前に既存実装grep確認をgunshi.md SGプロトコルに追加
