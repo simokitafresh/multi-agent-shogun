@@ -231,6 +231,7 @@ Do NOT specify: number of ninja, assignments, verification methods, personas, or
 cmdの起票は以下の3段階で行う。効率化を求めて設計品質を犠牲にしてはならない。
 
 1. **書く**: Read toolで`queue/shogun_to_karo.yaml`末尾を確認 → Edit toolでcmdブロックを追記
+   - **初期statusは`draft`で書け**（pendingにするとninja_monitorが検知し、gate未通過版で家老に配備される。cmd_2008/2009事故）
    - `cat >>`やBash直接追記は禁止（Read before Write違反の温床）
    - cmdの内容は将軍が考えて手で書く（**学習機会**。テンプレ自動生成は品質低下の原因）
    - AC設計・command記述・因果関係の思考は将軍の手作業であり学習機会
@@ -251,7 +252,7 @@ cmdの起票は以下の3段階で行う。効率化を求めて設計品質を�
        q3_next_quality: "上がる。理由: ..."
      ```
 2. **保存確認**: `bash scripts/cmd_save.sh <cmd_id>`（重複・競合・quality_gateチェック）
-3. **通知**: `bash scripts/inbox_write.sh karo "cmd_XXXを書いた。配備せよ。" cmd_new shogun`
+3. **委任**: `bash scripts/cmd_delegate.sh <cmd_id> "cmd_XXXを書いた。配備せよ。"`（gate再実行+status:draft→delegated+家老通知を一括実行）
 
 自動化すべきは機械的な安全チェック（重複・競合・Read確認）のみ。
 cmdのAC設計・command記述・因果関係の思考は将軍の手作業であり**学習機会**。
