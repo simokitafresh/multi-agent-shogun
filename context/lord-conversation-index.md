@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-17 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-17T01:47:56+09:00 -->
+<!-- generated_at: 2026-04-17T01:52:14+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-17T01:52:14+09:00 | terminal | response | cmd_2001、gateクリア後に家老送信完了。Render上cProfile偵察を配備。 [meta] stop_reason=end_turn
+- 2026-04-17T01:48:14+09:00 | terminal | inbound | よい
 - 2026-04-17T01:47:56+09:00 | terminal | response | 殿、設計書§4は軍師APPROVEで確定した。Render上cProfile偵察(偵察③)を起票してよいか。 [meta] stop_reason=tool_use
 - 2026-04-17T01:46:23+09:00 | terminal | response | 軍師に設計書§4のレビューを依頼した。レビュー結果待ち。 [meta] stop_reason=tool_use
 - 2026-04-17T01:46:10+09:00 | terminal | inbound | 軍師に設計書のレビューを依頼せよ
@@ -12,8 +14,6 @@
 - 2026-04-17T01:44:27+09:00 | terminal | response | 殿、軍師からRender上cProfile実行の提案が届いた。Render上で実行すればDB wait=10-50s(1-5ms×10298)でローカルの1056sからノイズが消え、純Python計算時間が正確に出る。 ただしRender…
 - 2026-04-17T01:42:55+09:00 | terminal | response | 殿、軍師からRender上cProfile実行の提案が届いた。Render上で実行すればDB wait=10-50s(1-5ms×10298)でローカルの1056sからノイズが消え、純Python計算時間が正確に出る。 ただしRender…
 - 2026-04-17T01:41:54+09:00 | terminal | response | 殿、軍師が前提を修正した。**cProfile計測(WSL→Singapore RTT 80ms)は本番環境(Render内RTT 1-5ms)と異なる。** 将軍のなぜなぜ7回の結論「RTT×回数が真因」は**ローカル環境では正しいが本…
-- 2026-04-17T01:38:42+09:00 | terminal | response | cmd_2000 **GATE CLEAR**。家老に送信。 [meta] stop_reason=tool_use
-- 2026-04-17T01:36:27+09:00 | terminal | inbound | 起票しよう
 
 ## 未解決確認事項
 - cmd_delegate.shの現物を確認せずにcmdを書いた。LS008（車輪の再発明）+LS014（想像するな確認せよ）の再発。cmd_save.sh q11でも検出できなかった — assumptionsに「exit codeを無視している」とverifiedで書いたが、…
@@ -59,6 +59,7 @@
 - cmd_1998
 - cmd_1999
 - cmd_2000
+- cmd_2001
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

@@ -151,6 +151,7 @@ Timestamp: `date`必須。推測禁止。dashboard=`date "+%Y-%m-%d %H:%M"` / YA
 **Non-blocking鉄則**: sleep/polling禁止。foreground bash(60秒超)→`run_in_background:true`必須
 **Dispatch-then-Stop**: dispatch→inbox_write→(pending cmdあれば次)→stop→ninja完了→wakeup→全scan
 **途中修正≠補足ナッジ**: inbox_writeでの指示変更(AC変更等)は禁止(CLAUDE.md二択)。だが事実情報の補足ナッジ(正しいファイル名通知等)は許容。忍者が間違った前提で作業していたらナッジで補足せよ(LK076)
+**CI待ちで忍者を止めるな**: push後のCI完了待ちは忍者がやる仕事ではない。報告YAMLを先に書かせろ。CI GREEN確認は家老がgh run viewで確認(LK078)
 
 ## Ninja Auto-/clear
 

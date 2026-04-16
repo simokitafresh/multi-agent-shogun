@@ -649,3 +649,13 @@
 - 2026-04-15 cmd_1922: 因果探索原則を将軍必読ファイルに追加(CLAUDE.md+startup gate)。半蔵。GATE CLEAR。WA:なし
 - 2026-04-16 cmd_1947: 疾風。⑤_* 21列の1体21通り・2体210通りをcmd_1934同等の4手法×α6指標で再計算し、3体既存CSVを再利用してN=1/2/3 summaryを生成。因果: 3体再計算を避けつつ同一評価軸で比較できる形に揃え、alpha-CalmarではIS/OOS/Expandingで2-3体優位、WFは1体優位を数値化。
 | cmd_1973 | kagemaru | model_switch_preflight.sh高速化 | 5483ms→1230ms(-78%, 4.5x)。11grep→1grep+python3→awk+git grep。63/63テストPASS |
+- 2026-04-17 cmd_1994: 疾風。fullrecalculate cProfile計測。total 1527s、DB execute 1056s(69%)支配。top5ホットスポット特定。monthly_returns parity PASS(30134→30134)。GATE CLEAR
+- 2026-04-17 cmd_1995+1996: 才蔵。compare tools修正(holding_signal+列名統一+exclude-months)。commit漏れ3連続→GP-190バグ発覚。GATE CLEAR
+- 2026-04-17 cmd_karo_1995_fix: 影丸。compare_snapshots.py検証(commit 6c63907b)。GATE CLEAR
+- 2026-04-17 cmd_karo_ci_fix_f821: 半蔵。run_077_yotsume.py F821修正+ruff全解消。DM-Signal CI GREEN復帰。GATE CLEAR
+- 2026-04-17 cmd_karo_gp190_fix: 小太郎。GP-190根治修正(scout_exempt→commit check分離)。bats 17/17 PASS。GATE CLEAR
+- 2026-04-17 cmd_karo_ci_fix_blt72: 半蔵。test_bulletin_board.bats test 72修正。bulletin_confirm auto-close修正。CI GREEN復帰。軍師LGTM待ち
+- 2026-04-17 cmd_1998: 疾風。Phase4偵察①(cache miss/fallback/N+1)。signal_cache miss 0%、fallback 1.63%、N+1なし→T1前提崩壊→方針v2再設計。GATE CLEAR
+- 2026-04-17 cmd_1999: 才蔵。cmd_delegate.sh gate先行送信化。実装+push完了(d543aeb, bd89ba3)。報告待ち
+- 2026-04-17 cmd_2000: 半蔵作業中。Phase4偵察②(SQLクエリログ分類+top10重クエリ)
+- 2026-04-17 教訓: LK076(補足ナッジ許容), LK077(GP-190真因), LK078(CI待ちidle禁止), LK079(R000排他ではない)
