@@ -4,6 +4,75 @@
 <!-- author: shogun -->
 <!-- status: approved (gunshi review APPROVE 2026-04-16 19:16) -->
 
+## §0 前提条件(忍者含む全員必読)
+
+### CoDDとは
+おしお殿(@shio_shoppaize)作の設計書パイプラインツール。既存コードから構造を抽出し、設計書を生成し、設計書に基づいて実装する。設計整合性を人手でなくツールで強制する。
+
+### 環境(venv使い分けルール — 同時activate不可)
+
+| 操作 | 使うvenv | activateコマンド |
+|------|---------|----------------|
+| coddコマンド(extract/measure) | codd-venv | `source /home/simokitafresh/.codd-venv/bin/activate` |
+| スクリプト実行(cProfile/time/python) | DM-Signal venv | Windows: `.venv/Scripts/python.exe` / WSL: `backend/.venv/bin/activate` |
+
+**注意:** Phase 1で`backend/.venv`前提が不正確と判明。実際の検証実行系は`.venv/Scripts/python.exe`(cmd_1986 assumption_invalidation)。WSLからの実行は`backend/.venv`で可。
+
+**Step内で切り替える場合は`deactivate`してから次のvenvをactivate。**
+
+```bash
+cd /mnt/c/Python_app/DM-signal
+
+# coddコマンド(extract/measure)実行時
+source /home/simokitafresh/.codd-venv/bin/activate
+codd --version  # 1.8.0
+
+# スクリプト実行時(切り替え)
+deactivate
+source /mnt/c/Python_app/DM-signal/backend/.venv/bin/activate
+```
+
+### codd.yaml(DM-Signal側に配置。Phase 1 Step 0で作成)
+```yaml
+# /mnt/c/Python_app/DM-signal/codd.yaml
+project:
+  name: dm-signal
+  language: python
+ai_command:
+  generate: claude-opus-4-6
+  implement: codex
+```
+
+### 参照先
+- CoDDの詳細: `context/codd.md`
+- CoDDスキル: `~/.claude/skills/codd/SKILL.md`
+- インフラ改善実績: `docs/research/codd_refactor_registry.md`
+
+### CoDDの利用範囲(Phase 1で確定)
+- **使用可能(OSS版1.8.0):** `extract`(構造抽出), `measure`(健全性計測)
+- **使用不可(codd-pro依存):** `review`, `implement`
+- **不安定(手動介入要):** `plan`(AI出力XML混入), `generate`, `validate`(warning出る場合あり)
+- **方式:** ハイブリッド = codd extract → 手動spec(cProfile) → 手動実装 → codd measure
+
+### 各Stepの成功条件
+- `codd extract`: `docs/` 配下に抽出ファイルが生成される
+- `codd measure`: 0-100のスコアが出力される
+- 手動spec: docs/research/にボトルネック分析+改善方針を記録
+- 手動実装: コード変更+出力同一性(diff)確認
+- before/after計測: time pythonで数値比較
+
+## §0.5 進捗管理(Phase単位)
+
+| Phase | 内容 | cmd | status | 結果 |
+|-------|------|-----|--------|------|
+| 1 | CoDDのPython適用検証(compare_snapshots.py, 224行) | cmd_1986 | **完了** | review/implementがcodd-pro依存で不可。extract→generate→validate→measureは使用可。**フォールバック: CoDDで設計書生成+手動実装** |
+| 2 | レベルA全量cProfileプロファイリング | cmd_1987 | **完了** | Top3=simulate_pattern系(yotsume 5.3s/nukimi 3.4s/oikaze 2.2s per 100pat)。本番影響確認済み: GS研究用と本番は別実装→レベルA安全 |
+| 3 | レベルA上位5本改善(cmd_1988-1992) | cmd_1988-1992 | **進行中** | yotsume/nukimi/oikaze/l1_alm_wf/bunshin |
+| 4 | レベルB(fullrecalculate)適用 | — | 待機 | — |
+| 5 | 結果評価+次の判断 | — | 待機 | — |
+
+**更新ルール:** cmd起票時にcmd列を記入。GATE CLEAR時にstatus+結果を更新。Phase間は前Phase完了後に次Phaseへ進む(飛ばさない)。
+
 ## §1 目的
 
 DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速化する。
@@ -11,7 +80,7 @@ DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速�
 
 ### 背景
 - CoDDのbash implementは不適合(実証済み: memory/tool_codd_lessons.md)
-- Pythonは全工程(spec→plan→generate→validate→implement)が使える見込み
+- Python全工程は不可(Phase 1で確定: review/implementがcodd-pro依存)。**ハイブリッド方式**: extract+measure(CoDDが得意な部分)+手動spec+手動実装
 - DM-Signalのfullrecalculate: 3566s→480s(86.5%改善済み)だがまだ8分
 - GSエンジン等の研究スクリプトも計算量が大きい
 
@@ -27,18 +96,27 @@ DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速�
 - レベルC(本番API): リスクが高く、速度改善の複利効果も限定的(Renderのレスポンス時間がボトルネック)
 - フロントエンド: Next.js。CoDDのPython適用対象外
 
+### 本番影響確認(2026-04-16現物確認)
+
+- GS研究用(run_077系): `simulate_pattern`関数がスクリプト内にインライン定義。依存=`gs_numba_kernels.py`(numba JIT)
+- 本番(backend/app/): `MomentumFilterBlock`クラス。依存=`vectorized_momentum.py`(pandas/numpy)
+- **共有モジュールなし。別々の実装。** run_077系の改善は本番に影響しない→レベルA安全
+
 ### 具体的対象ファイル(2026-04-16確認)
 
-**レベルA(研究) — 高速化対象候補(行数順)**
+**レベルA(研究) — Phase 2 cProfile結果で優先順位更新**
 
-| 優先 | ファイル | 行数 | 用途 | 備考 |
-|------|---------|------|------|------|
-| A-1 | `scripts/analysis/grid_search/grid_search_metrics_v2.py` | 2300 | GS共通エンジン | 全GS実行のボトルネック |
-| A-2 | `outputs/scripts/l1_alm_wf_engine.py` | 2546 | ALM WFエンジン | 56ブロックで使用 |
-| A-3 | `scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py` | 2645 | 研究エンジン | 4メトリクス計算 |
-| A-4 | `scripts/analysis/grid_search/run_077_*.py` | 1352-1880 | 忍法別GS | 7本。共通部分が多い |
-| A-5 | `scripts/analysis/grid_search/gs_benchmark.py` | 1045 | GSベンチマーク | 速度計測用 |
-| A-6 | `outputs/scripts/champion_selector.py` | — | チャンピオン選出 | 選出ロジック |
+| 優先 | ファイル | 行数 | cProfile結果(100pat) | ホットスポット |
+|------|---------|------|-------------------|-------------|
+| **1** | `run_077_yotsume.py` | 1566 | **5.3s** | simulate_pattern→MultiViewMomentumFilter.execute(83%) |
+| **2** | `run_077_nukimi.py` | 1731 | **3.4s** | simulate_pattern→SingleViewMomentumFilter.execute |
+| **3** | `run_077_oikaze.py` | 1352 | **2.2s** | simulate_pattern→MomentumFilter.execute+numpy.isclose |
+| 4 | `l1_alm_wf_engine.py` | 2546 | 0.5s(2列subset) | reconstruct_alm_returns+metric再計算 |
+| 5 | `run_077_bunshin.py` | 809 | 2.9s(full) | simulate_pattern |
+| 6 | `compare_snapshots.py` | 251 | 4.4s | compare_records(補助ツール) |
+| 7-9 | `run_077_kasoku_*/kawarimi.py` | 1537-1880 | 0.006-0.008s | 既に高速。後回し |
+| 10 | `champion_selector.py` | 278 | 0.17s | CSV fallback load。後回し |
+| 計測不能 | `grid_search_metrics_v2.py`, `gs_benchmark.py`, `metrics_research_engine.py` | 1045-2645 | DB fixture/adapter不足 | Phase 3完了後に再挑戦 |
 
 **レベルB(バッチ) — 本番影響あり。慎重対応**
 
@@ -66,45 +144,15 @@ Phase 3: A-1(GS共通エンジン)から着手 → 全GSの速度に効く
 Phase 4: B-1(fullrecalculate)に慎重適用
 ```
 
-## §3 CoDDワークフロー(各Phaseの具体的手順)
+## §3 ハイブリッドワークフロー(各Phaseの具体的手順)
 
-DM-Signalは既存コードの改善 = **ブラウンフィールド**系統を使用。
+Phase 1検証結果: CoDDのOSS版(1.8.0)ではreview/implementがcodd-pro依存で不可。
+**方式: codd extract(構造抽出) → 手動spec(cProfile) → 手動実装 → codd measure(健全性計測)**
 
-### Phase 1: CoDDのPython適用検証(1本)
+### Phase 1: 完了(cmd_1986)
 
-```
-Step 0: codd.yaml作成(DM-Signal側に配置。ai_command: generate=Opus, implement=Codex)
-        → CoDDがプロジェクト設定を認識するための前提条件(軍師指摘2026-04-16)
-Step 1: codd extract <対象.py>
-        → 既存コードから構造・依存を抽出。Pythonで動くか確認
-Step 2: codd require "速度改善: ボトルネックを特定し高速化する"
-        → 改善要件を定義
-Step 3: codd plan
-        → 要件+抽出結果から改善計画を生成
-Step 4: codd generate
-        → 計画に基づき設計書群を生成
-Step 5: codd validate
-        → 設計書の整合性を検証
-Step 5.5: codd review --feedback
-        → 設計書品質を確認(軍師指摘: validate→implement間に必要)
-Step 6: codd implement
-        → 設計書に基づきコード変更を実装
-Step 7: codd measure
-        → 健全性スコアを計測
-Step 8: 手動計測 — time python <対象.py> でbefore/after比較
-Step 9: 出力同一性確認 — diff before_output after_output
-```
-
-**判断ポイント**: Step 1-7が全て通れば本格適用。通らなければフォールバック↓
-
-### フォールバック(CoDDが動かない場合)
-
-```
-Step 1: 手動spec作成(cProfile結果+ボトルネック分析+改善方針)
-Step 2: 手動実装(specに基づく)
-Step 3: before/after計測+出力同一性確認
-        → インフラbash改善と同じ方式
-```
+CoDDのPython適用を検証。extract/measure=使用可、review/implement=codd-pro依存で不可と確定。
+health_score 88。詳細: `docs/research/cmd_1986_codd_phase1_report.md`
 
 ### Phase 2: 全量プロファイリング
 
@@ -116,19 +164,18 @@ Step 4: 優先順位リスト作成(実行時間×使用頻度)
         → docs/research/に成果物保存
 ```
 
-### Phase 3: レベルA改善(6並列)
+### Phase 3: レベルA改善(6並列) — ハイブリッド方式
 
 ```
 各スクリプトに対して:
 Step 1: cProfile でbefore計測+ホットスポット特定
-Step 2: codd extract <対象.py>
-Step 3: codd require "ホットスポットXXを高速化。目標: YYms→ZZms"
-Step 4: codd plan → generate → validate → review --feedback
-Step 5: codd implement
-Step 6: 出力同一性確認(diff)
-Step 7: time計測でafter確認
-Step 8: codd measure
-Step 9: codd_refactor_registry.mdに結果追記
+Step 2: codd extract <対象.py>(codd-venvで実行。構造・依存関係を自動抽出)
+Step 3: 手動spec作成(cProfile結果+extract出力を参考にボトルネック分析+改善方針をdocs/research/に記録)
+Step 4: 手動実装(specに基づく。機能変更なし)
+Step 5: 出力同一性確認(diff)
+Step 6: time計測でafter確認
+Step 7: codd measure(codd-venvで実行。変更後の健全性スコア確認)
+Step 8: codd_refactor_registry.mdに結果追記
 ```
 
 ### Phase 4: レベルB改善(直列・慎重)
@@ -143,14 +190,19 @@ Step 10: コード変更パリティ確認 — 現在の本番コードの計算
           ■ MTD/初期月問題(2026-04-16現物確認で発覚):
           snapshot_tables.pyはmonthly_returns/signalsを丸ごとダンプ。
           MTD(当月進行中)の行は日次で変動するため、before/after間で完全一致が構造的に不可能。
-          対策: compare時にMTD月(当月)を除外して比較する。
+          対策: compare時にMTD月(当月)+初期月を除外して比較する。
+          MTD定義: date >= 当月1日の行(軍師推奨: is_mtdフラグまたはdate基準)
+          初期月: PFごとに運用開始月が異なる。PF別のfirst_monthを特定して除外
+
           手順:
-            (i) before snapshot取得: python3 scripts/snapshot_tables.py --label before --skip-recalc
-            (ii) コード修正+deploy
-            (iii) after snapshot取得: python3 scripts/snapshot_tables.py --label after
-            (iv) compare時にMTD行を除外: python3 scripts/compare_recalc_results.py snapshots/before snapshots/after
-                 → compare_recalc_results.pyにMTD除外オプション追加が必要(未実装。Phase 4前に実装)
-          初期月: PF運用開始月も不完全データの可能性。compare時に初期月フラグがある場合は除外検討
+            (i) fullrecalculateスケジュールを一時停止(軍師指摘: before→after間に走ると結果が変わる)
+            (ii) before snapshot取得: python3 scripts/snapshot_tables.py --label before --skip-recalc
+            (iii) コード修正+deploy
+            (iv) after snapshot取得: python3 scripts/snapshot_tables.py --label after
+            (v) compare: python3 scripts/compare_recalc_results.py snapshots/before snapshots/after --exclude-months YYYY-MM,...
+                → --exclude-monthsオプション追加が必要(未実装。Phase 4前に実装。MTD+初期月の両方に対応する汎用オプション)
+            (vi) fullrecalculateスケジュール再開
+
           浮動小数点: tolerance=1e-10(compare_recalc_results.py既定値)
 Step 10.5: dry run(計算のみ・書込みなし)で出力検証(軍師推奨。dry runフラグの実装有無は要確認)
 Step 11: 本番deploy(Render)
@@ -176,14 +228,14 @@ cd /mnt/c/Python_app/DM-signal
 
 | Phase | 内容 | 成功条件 | 判断ポイント |
 |-------|------|---------|-------------|
-| 1 | CoDDのPython適用を1本検証(レベルA小スクリプト。候補: oneshot/内の100行以下) | 全工程が通り、実測で速度改善を確認 | CoDDが使えるか/フォールバックか |
+| 1 | CoDDのPython適用検証(compare_snapshots.py) | extract/measure=可、review/implement=codd-pro依存で不可 | ハイブリッド方式確定(cmd_1986) |
 | 2 | レベルA全量プロファイリング+改善(cProfile) | 対象一覧+優先順位リスト作成 | インフラbashと同じ流れ |
 | 3 | レベルA上位スクリプトをCoDD改善(6並列) | before/after計測で改善確認 | 改善率の実績蓄積 |
 | 4 | レベルB(fullrecalculate)に適用 | パリティ確認PASS+速度改善 | 本番影響の安全性確認 |
 | 5 | 結果評価+次の判断 | — | 殿の裁定 |
 
 ### Phase間の依存
-- Phase 1→2: CoDDが使えると確認してからプロファイリング
+- Phase 1→2: Phase 1完了(ハイブリッド方式確定)。Phase 2に進む
 - Phase 2→3: プロファイリング結果で優先順位を決めてから改善
 - Phase 3→4: レベルAで十分な実績を積んでからレベルBに進む
 - **Phase間を飛ばさない**(1ステップずつ確認してから次へ。shogun.md §2 無知の知)
@@ -266,7 +318,7 @@ acceptance_criteria:
 
 | リスク | 影響 | 対策 |
 |--------|------|------|
-| CoDDがPythonで動かない | Phase 1で判明 | 手動spec+手動実装にフォールバック |
+| review/implementはcodd-pro依存 | Phase 1で確認済み(cmd_1986) | ハイブリッド方式: extract+measure(CoDD)+手動spec+手動実装 |
 | 速度改善が出力を変える | データ汚染 | 出力同一性のdiff確認をAC必須化 |
 | fullrecalculate改善で本番データ不整合 | 重大 | パリティ確認+ロールバック手順 |
 | venv/依存の不整合 | 実行不能 | backend/.venvを使用。pip freeze確認 |

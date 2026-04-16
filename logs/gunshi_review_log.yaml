@@ -905,3 +905,138 @@
     - "事実2: 初期月は「除外検討」で保留中。PFごとに異なるため特定ロジックが必要"
   causal_chain: "MTD日次変動→before/after不一致→除外が正解。しかし除外対象定義が曖昧+タイミング制約抜け→偽陰性リスク→明確化で防止"
   timestamp: "2026-04-16T20:09:00"
+- cmd_id: codd_dmsignal_s0_prerequisites
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "§0前提条件レビュー。APPROVE+1点RC。venv使い分けルール明記推奨(codd-venv vs backend/.venv)"
+  observations:
+    - "事実1: 2つのvenv(codd-venv/backend/.venv)が共存。同時activate不可だがStep内の切替手順が未記載"
+    - "事実2: dm-signal-ops.md §14→設計書リンク確認済み。参照経路に穴なし"
+  causal_chain: "venv使い分け不明確→忍者がcodd-venvでスクリプト実行→import失敗→手戻り。明記で防止"
+  timestamp: "2026-04-16T20:24:00"
+- cmd_id: cmd_1986
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。CoDD Phase 1(compare_snapshots.py 224行)。設計書§0-§3完全準拠。venv切替+本番制約+二値判定+フォールバック全て明記"
+  observations:
+    - "事実1: Phase 1検証候補が100行以下→224行に変更。管理可能だがPhase 1の「小スクリプト」の定義が拡大"
+    - "事実2: 設計書の前回指摘(venv切替Step 8、codd.yaml Step 0)が全て反映済み"
+  causal_chain: "設計書完成→Phase 1検証cmd起票→CoDDのPython適用可否判定→Phase 2以降の全計画に影響する前提確認"
+  timestamp: "2026-04-16T20:32:00"
+- cmd_id: cmd_1986
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1986_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。CoDD Phase 1結果: extract〜validate+measure成功(score 88)。review/implement=codd-pro依存→フォールバック確定。venvパスassumption_invalidation"
+  observations:
+    - "事実1: codd review --jsonがcodd-pro(private)移管メッセージでexit 1。OSS版1.8.0では実行不可"
+    - "事実2: codd implementもsprint未定義でexit 1。plan --initのAI出力にXML混入→手動wave_config投入で回避"
+    - "事実3: venvパスがbackend/.venvでなく.venv/Scripts/python.exe。設計書§0の前提修正必要"
+    - "事実4: 副産物としてcompare_snapshots.pyのCP932 UnicodeEncodeError crash修正(実用的改善)"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "CoDDのPython適用検証→review/implementがcodd-pro依存→OSS版では全工程不可→フォールバック(手動spec+手動実装)確定=Phase 2以降の計画確定"
+  timestamp: "2026-04-16T20:52:00"
+- cmd_id: codd_dmsignal_hybrid_revision
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "ハイブリッド方式改訂レビュー。APPROVE。5回の軍師指摘全て反映確認。§4と§9に旧文面3箇所残存→更新要"
+  observations:
+    - "事実1: §4 Phase 1行と依存記述が旧文面(CoDDが使えるか→ハイブリッド確定に未更新)"
+    - "事実2: §9リスク表も旧文面(CoDDが動かない→review/implement codd-pro依存に未更新)"
+    - "事実3: §0/§0.5/§1/§3/Phase 4は全て正しく改訂されている"
+  causal_chain: "5回の反復レビュー→指摘反映→§4/§9の旧文面3箇所のみ残存→更新で設計書完成"
+  timestamp: "2026-04-16T21:17:00"
+- cmd_id: cmd_1987
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 2全量cProfile。DB接続制約+引数必須代替手段明記。2名並列RECON"
+  observations:
+    - "事実1: DB接続スクリプトは--helpのみ。引数必須は行数+コード精読で推定。安全手順が構造化"
+  causal_chain: "Phase 1完了→Phase 2プロファイリング→ボトルネック特定→Phase 3改善の起点=研究速度向上の正の複利"
+  timestamp: "2026-04-16T21:22:00"
+- cmd_id: cmd_1987
+  review_type: report
+  report_ninja: hayate+saizo
+  report_task_id: cmd_1987_recon
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Phase 2全量プロファイリング。hayate=139本(find全量)、saizo=15本(§2ベース)。相補的カバレッジ"
+  observations:
+    - "事実1: hayate 139本中19本cProfile実行(11成功)。120本はDB/副作用リスクで適切にスキップ"
+    - "事実2: saizo §2テーブル15本中10本実測。simulate_pattern系(3-5s)がGS共通ホットスポット"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "Phase 1完了→Phase 2プロファイリング→ホットスポット特定→Phase 3改善の起点確定"
+  timestamp: "2026-04-16T21:36:00"
+- cmd_id: consultation_phase3_prep
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "Phase 3事前準備4質問回答。(1)MomentumFilter継承階層把握+全パターン推定が先 (2)共通基底を先に改善=最大複利 (3)計測不能5本は並行不要 (4)MomentumFilterの本番import有無要確認"
+  observations:
+    - "事実1: yotsume/nukimi/oikazeのホットスポットが全てMomentumFilter.execute系。基底改善で3忍法同時に効く"
+    - "事実2: kasoku系はsimulate_batch(0.006-0.008s/100pat)で既に高速。後回し"
+    - "事実3: MomentumFilterがbackend/app/でimportされていれば本番影響→レベルB昇格が必要"
+  cs_checklist:
+    cs1: "PASS: cProfile結果全量を現物確認(cmd_1987_level_a_cprofile_inventory.md)"
+    cs4: "PASS: 4質問全てに具体的行動(grep確認方法等)を紐付け"
+    cs6: "PASS: 共通基底→個別の因果(1改善→3忍法に波及)"
+  causal_chain: "MomentumFilter.execute=3忍法共通ホットスポット→基底改善→3忍法同時高速化=最大複利。ただし本番import確認が前提条件"
+  timestamp: "2026-04-16T21:43:00"
+- cmd_id: codd_dmsignal_phase2_update
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "Phase 2結果+本番影響確認反映レビュー。矛盾・漏れなし。§4/§9旧文面も修正済み(grep 0件)"
+  observations:
+    - "事実1: 本番影響確認: GS研究用simulate_pattern(インライン)と本番MomentumFilterBlock(vectorized_momentum)は別実装→共有モジュールなし"
+    - "事実2: 対象ファイル表がcProfile結果で優先順位更新。Top3=yotsume(5.3s)/nukimi(3.4s)/oikaze(2.2s)"
+  causal_chain: "Phase 2完了→本番影響確認(別実装)→レベルA安全確定→Phase 3着手準備完了"
+  timestamp: "2026-04-16T21:55:00"
+- cmd_id: cmd_1988-1992
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 3レベルA改善5本並列。§3ハイブリッド方式準拠(cProfile/extract/spec/impl/diff/measure)。5独立スクリプトで衝突なし"
+  observations:
+    - "事実1: Top3(yotsume 5.3s/nukimi 3.4s/oikaze 2.2s)+l1_alm_wf+bunshin。Phase 2結果に基づく優先順位"
+    - "事実2: 各cmd 4AC。設計書§3のStep対応が明確"
+  causal_chain: "Phase 2プロファイリング→Top5特定→5並列改善→GS研究速度向上の正の複利"
+  timestamp: "2026-04-16T22:15:00"
+- cmd_id: cmd_1988
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1988_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。run_077_yotsume.py precomputed mask再利用で100pat 8.53→0.12s(-98.6%, 72x)。md5一致。smoke PASS"
+  observations:
+    - "事実1: simulate_patternがproduction blockを月ごとに再実行→relativedelta支配(8.5s)。precomputed mask再利用で0.12s"
+    - "事実2: L626(subset chunk共有+ベクトル化再利用)がuseful:true。同根の最適化パターン"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  gate_prediction: WARN(draft_lessons)
+  causal_chain: "Phase 2 Top1(yotsume 5.3s)→precomputed mask再利用→-98.6%=GS yotsume実行ごとの正の複利"
+  timestamp: "2026-04-16T22:25:00"
+- cmd_id: cmd_1989
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1989_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。run_077_nukimi.py classキャッシュ+artifact再利用で100pat 6.27→2.30s(-63.3%)。SHA256一致。health_score 100"
+  observations:
+    - "事実1: yotsume(-98.6%)とは異なるアプローチ(キャッシュ+再利用)だが同様に大幅改善"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "Phase 2 Top2(nukimi 3.4s)→キャッシュ+再利用→-63.3%=GS nukimi実行ごとの正の複利"
+  timestamp: "2026-04-16T22:26:00"

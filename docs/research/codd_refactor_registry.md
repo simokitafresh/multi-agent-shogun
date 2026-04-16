@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-16 | hayate | `scripts/analysis/grid_search/run_077_yotsume.py` | Phase 5(計測+実装+検証)。monthly fast path化 | `8.528s → 0.119s` (`-98.6%`, first 100 `simulate_pattern`) | spec: `docs/research/cmd_1988_yotsume_codd_spec.md` |
 | 2026-04-16 | 才蔵 | `scripts/report_field_set.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `66-70ms → 11ms` (`-83%`, scalar hot path) | spec+after: `docs/research/report_field_set_after_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/inbox_write.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `78ms → 50ms` (`-35.9%`, write path) / `89ms → 10-20ms` (`--help`) | spec+after: `docs/research/inbox_write_after_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/dashboard_auto_section.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `0.89s → 0.34s` (`-61.8%`, stale-cache path) | spec+after: `docs/research/dashboard_auto_section_after_20260416.md` |
@@ -36,6 +37,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | tobisaru | `scripts/gates/gate_workaround_rate.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `user 30ms → 12ms` (`-60% CPU`, `2.5x`) / `real 55ms → 46ms` (`-16%` WSL2 I/O支配) | python3+grep+awk3本 → awk1本統合。cmd_1951基準135ms(14回発火)。38/38テストPASS。spec: `docs/research/codd_spec_gate_workaround_rate_20260416.md` |
 | 2026-04-16 | kagemaru | `scripts/model_switch_preflight.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `5483ms → ~1230ms` (`-78%`, `4.5x`) / 本セッション実測 `13183ms → ~1230ms` | 11grep別々→単一正規表現(12.4x)+python3×6→awk(10.5x)+grep -rl→git grep(3.5x)。63/63テストPASS。spec: `docs/research/cmd_1973_model_switch_preflight_speedup.md` |
 | 2026-04-16 | saizo | `scripts/hooks/test_hooks.sh` | Phase 5(計測+実装+検証) | `18.07s → 1.93s` (`-89.3%`, `9.4x`) | spec+after: `docs/research/codd_spec_test_hooks_20260416.md` |
+| 2026-04-16 | saizo | `scripts/analysis/grid_search/run_077_nukimi.py` | Phase 5(計測+実装+検証) | `6.27s → 2.30s` (`-63.3%`, serial `simulate_pattern` 100pat) | spec: `docs/research/codd_spec_cmd_1989_run_077_nukimi_20260416.md` / after: `docs/research/run_077_nukimi_after_20260416.md` |
 | 2026-04-16 | hayate | `.claude/hooks/stop-lint-gate.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `0.82s → 0.65s` (`-20.7%`, representative mixed shell+python set) / live worktree median `0.54s` | spec+after: `docs/research/codd_spec_stop_lint_gate_20260416.md` |
 | 2026-04-16 | hanzo | `scripts/archive_completed.sh` | Phase 5(計測+実装+検証) | `1073ms → 783ms` (`-27%`) | sed×21→gawk単一pass(A)+grep-rl全走査→REPORT_CACHE直接path(B)+sync_stk+trim_stk Python統合(C)+chronicle早期リターン(D)。980/980テストPASS。spec: `docs/research/codd_spec_archive_completed_20260416.md` |
 | 2026-04-16 | saizo | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(追改善: 計測+実装+検証) | `2.74s → 2.17s` (`-20.9%`, cold) / warm `~1.08s` | spec+after: `docs/research/codd_spec_gate_recalculate_completeness_cmd_1980_20260416.md` |
@@ -43,6 +45,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | tobisaru | `scripts/gates/gate_vercel_phase.sh` | Phase 5(計測+実装+検証)。spec事後更新 | `real 1.74s → 0.51s` (`-71%`, `3.4x`) / `CPU 1.61s → 0.23s` (`-86%`, `7.0x`) | normalize_ref(sed×268回)排除+display_path subshell(43回)排除+resolve_context_bases process-sub(268回)→RESOLVE_BASES配列。7/7テストPASS。spec: `docs/research/cmd_1976_gate_vercel_phase_speedup.md` |
 | 2026-04-16 | kotaro | `scripts/deploy_task.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `224ms → 32ms` (`-86%`, WSL2実測) / template suite `15.6s → 8.7s` (`-44%`) | generate_report_template() 12+field_get→field_get_multi 1回+eval+変数参照化。is_before_after_required_task()にpre-read値optional引数追加。988/988テストPASS。spec: `docs/research/codd_spec_deploy_task_field_get_batch_20260416.md` |
 | 2026-04-16 | kagemaru | `scripts/dashboard_auto_section.sh` | Phase 5(計測+実装+検証)。第2次高速化 | `340ms → 302ms COLD` (`-11%`) / `340ms → 240ms WARM(HIT)` (`-29%`, 最良180ms `-47%`) | 6セクションにmtimeキャッシュ実装(lesson_effectiveness/task_type_rows/recent30_gawk/gate_titles+stat 1回 /gate_metrics/ffr)+stat pipefail || true修正(pre-existing test failure解消)。2/2テストPASS |
+
+| 2026-04-16 | tobisaru | `scripts/analysis/grid_search/run_077_bunshin.py` | Phase 5(計測+実装+検証) | wrapper overhead `0.622ms → 0.136ms` (`-78%`, `4.6x`, 781calls warm) / simulate_pattern lazy import inside loop → `_ensure_pipeline_ready()` flag guard | spec: `docs/research/cmd_1992_codd_spec_bunshin.md` |
+| 2026-04-16 | kotaro | `outputs/scripts/l1_alm_wf_engine.py` | Phase 5(計測+実装+検証)。spec先行作成 | main `0.801s → 0.527s` (`-34%`) / `reconstruct_alm_returns` `0.349s → 0.067s` (`-81%`, `5.2x`) / `_compute_metric_values_for_pattern` `0.276s → 0.264s` (`-4%`) / subset 2col全体 `0.63s → 0.35s` (`-44%`). 出力同一性diff PASS。codd measure 0/100(outputs/scripts=standalone, codd.yaml対象外) | spec: `docs/research/cmd_1991_l1_alm_wf_refactor_spec.md` |
 
 ## 運用
 

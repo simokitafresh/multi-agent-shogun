@@ -1,13 +1,24 @@
 task:
-  _ac_task_id: cmd_1985_recon
+  _ac_task_id: cmd_1988_impl
   _ac_worker_id: null
-  ac_version: d41d8cd9
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: adfc922d
+  acceptance_criteria:
+  - description: cProfile before計測+codd extract実行。spec(ボトルネック分析+改善方針)をdocs/research/に保存
+    id: AC1
+  - description: specに基づき実装。機能変更なし
+    id: AC2
+  - description: 出力同一性確認(diff)+after計測。before比で改善を数値で示す
+    id: AC3
+  - description: codd measure実行+codd_refactor_registry.mdに結果追記
+    id: AC4
   context_files:
   - context/dm-signal.md
-  - context/dm-signal-core.md
   - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L617: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
   - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
@@ -23,27 +34,19 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_1985
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  - AC4
+  parent_cmd: cmd_1988
   project: dm-signal
-  related_lessons: []
-  report_filename: hayate_report_cmd_1985.yaml
-  report_path: queue/reports/hayate_report_cmd_1985.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
-    notes:
-    - 他の忍者の報告を参照するな（並行偵察の独立性）
-    required_fields:
-    - findings
-    - verdict
-    - confidence
-    - blind_spots
+  report_filename: hayate_report_cmd_1988.yaml
+  report_path: queue/reports/hayate_report_cmd_1988.yaml
   status: done
   stop_for: []
-  task_id: cmd_1985_recon
-  task_type: recon
+  task_id: cmd_1988_impl
+  task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -54,7 +57,7 @@ task:
     warning: '⚠ 過去23件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 5
+      count: 7
     - pattern: 'verdict_invalid'
       count: 2
     - pattern: 'yaml_parse_error'
@@ -65,7 +68,7 @@ task:
       count: 14
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 12
+      count: 13
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_yaml_missing'
       count: 3
@@ -80,6 +83,9 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
+  - id: 'L632'
+    summary: 'snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに'
+    detail: 'snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに'
   - id: 'L626'
     summary: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
     detail: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
@@ -107,7 +113,9 @@ task:
   - id: 'L618'
     summary: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
     detail: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
-  - id: 'L617'
-    summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
-    detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
-  deployed_at: "2026-04-16T19:53:38"
+  deployed_at: "2026-04-16T22:12:16"
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.AC1[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC1[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC4[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC1[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC4[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'

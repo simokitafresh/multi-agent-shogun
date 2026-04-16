@@ -6486,3 +6486,72 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-16T11:08:36Z"
+  - cmd_id: "cmd_1986"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T11:52:33Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_1987"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T12:35:39Z"
+  - cmd_id: "cmd_1988"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T13:09:50Z"
+    notes: "親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ"
+  - cmd_id: "cmd_1989"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T13:09:51Z"
+    notes: "親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ"
+  - cmd_id: "cmd_1990"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T13:09:52Z"
+    notes: "親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ"
+  - cmd_id: "cmd_1991"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T13:09:54Z"
+    notes: "親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ"
+  - cmd_id: "cmd_1992"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T13:09:55Z"
+    notes: "親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ"
