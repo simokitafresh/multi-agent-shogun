@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T18:38:17+09:00 -->
+<!-- generated_at: 2026-04-16T18:42:34+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-16T18:42:34+09:00 | terminal | response | cmd_1978(stop-lint-gate.sh)委任完了。 殿、第五弾を改めて整理する。単発2本(cmd_save.sh, stop-lint-gate.sh)は起票済み。残りは再トライ4本: | # | 対象 | 現在(改善後) …
+- 2026-04-16T18:39:51+09:00 | terminal | inbound | stop-lint-gate.sh を単発でやろう
+- 2026-04-16T18:38:34+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率94% 連勝80
 - 2026-04-16T18:38:17+09:00 | terminal | response | cmd_save.shのafter結果を確認する。 [meta] stop_reason=tool_use
 - 2026-04-16T18:27:54+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-078)
 - 2026-04-16T18:27:20+09:00 | ntfy | outbound | 【家老】cmd_1977 初回配備開始 (title=CoDD改善#25 — cmd_save.sh高速化(4.0s→目標500ms), ninja=hayate) CoDD改善#25 📋 https://gist.github.com/…
@@ -11,9 +14,6 @@
 - 2026-04-16T18:25:26+09:00 | terminal | inbound | cmd_save.shを先にやろう
 - 2026-04-16T18:18:01+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 18:17:05|CI緑: run 24501603122
 - 2026-04-16T17:52:32+09:00 | ntfy | outbound | CI赤: run 24500526696 Unit Tests (bats)
-- 2026-04-16T17:46:48+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 17:33:18|cmd_1976 2026-04-16 17:34:38|cmd_1969 2026-04-16 17:35:46|cmd_1968
-- 2026-04-16T17:42:02+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率94% 連勝79
-- 2026-04-16T17:41:54+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-077)
 
 ## 未解決確認事項
 - cmd_save.shのafter結果を確認する。 [meta] stop_reason=tool_use

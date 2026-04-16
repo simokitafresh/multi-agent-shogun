@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-04-16
+
+| cmd | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_1978 | Stop hook `stop-lint-gate.sh` の高速化 | GATE PASS。疾風。changed-files取得をGit plumbing化し lint を tool単位バッチ化。代表 mixed shell+python 条件で `0.82s→0.65s`、live worktree 中央値 `0.54s`。unit test 4件追加+既存hook harness PASS | WSL2では `git diff --name-only` 系が主因。`diff-index --cached` + `ls-files -m` へ置換し、shellcheck/ruff/biome の per-file 起動を廃止。500ms目標は代表条件で未達だが実運用 changed-set では近傍まで短縮 |
+
 ## 2026-03-28
 
 **🔥 焦点: fullrecalculate高速化** — OPT-1/2(trade_perf -159s)+OPT-A(db_write -137s)+OPT-6(monthly_gen -120s)=計4cmd進行中。軍師が先行分析でOPT-6設計完了。本番793s→推定~420s(47%削減)目標。研究全文: `docs/research/fullrecalculate-architecture-2026-03-28.md`

@@ -696,3 +696,4 @@
 | cmd_1976 | CoDD改善#24 — gate_vercel_phase.sh高速化(481ms×7回→目標100ms) | infra | 04-16 | gate_vercel_phase.sh高速化完了。norm |
 | cmd_1969 | CoDD改善#17 — pre_compact_save.sh高速化(141ms×毎compaction→目標40ms) | infra | 04-16 | pre_compact_save.sh高速化完了。jq×2→ |
 | cmd_1977 | CoDD改善#25 — cmd_save.sh高速化(4.0s→目標500ms) | infra | 04-16 | cmd_save.sh高速化結果を記録。warm media |
+| cmd_1978 | CoDD改善#26 — stop-lint-gate.sh高速化(3.0s→目標500ms) | infra | 04-16 | Stop hookの changed-file 取得を Gi |
