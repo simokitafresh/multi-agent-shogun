@@ -691,3 +691,4 @@
 | cmd_karo_gp210_fix | GP-210修正 — inbox_watcher STATE_DIRパス不一致解消 | infra | 04-17 | restart_watchers.shの3箇所からSHOGU |
 | cmd_2000 | Phase 4偵察② — fullrecalculate SQLクエリログ分類+top10重クエリ特定 | dm-signal | 04-17 | SQLAlchemy queryロギングをcmd_1994ハ |
 | cmd_2003 | Phase 4偵察④ — fullrecalculate DB呼出のループ構造現物確認 | dm-signal | 04-17 | expand_portfolio_to_tickersの直呼 |
+| cmd_2002 | Gist Index分類改善 — gist_index_update.sh classify_gist()を10カテゴリに再設計 | infra | 04-17 | gist_index_update.shのCATEGORY_ |

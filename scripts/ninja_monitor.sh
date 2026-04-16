@@ -90,6 +90,8 @@ CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
 LAST_CDP_CLEANUP=0        # CDP cleanup最終実行時刻（epoch秒）
 LOCK_CLEANUP_INTERVAL=3600  # /tmp lock file cleanup間隔（秒）— 1時間
 LAST_LOCK_CLEANUP=0         # lock cleanup最終実行時刻（epoch秒）
+BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
+LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
 CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
@@ -2819,6 +2821,32 @@ run_lock_cleanup() {
     LAST_LOCK_CLEANUP=$now
 }
 
+# ═══ 掲示板自動アーカイブ (掲示板肥大防止) ═══
+# 1時間ごとに bulletin_archive.sh を実行
+# 24h超+closed/no-confirm-needed のエントリをアーカイブ、直近30件保持
+check_bulletin_archive() {
+    local now=$EPOCHSECONDS
+    local elapsed=$((now - LAST_BULLETIN_ARCHIVE))
+    if [ "$elapsed" -lt "$BULLETIN_ARCHIVE_INTERVAL" ]; then
+        return 0
+    fi
+    local bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
+    if [ ! -f "$bulletin_file" ]; then
+        LAST_BULLETIN_ARCHIVE=$now
+        return 0
+    fi
+    local entry_count
+    entry_count=$(grep -c '^- id:' "$bulletin_file" 2>/dev/null || echo 0)
+    if [ "$entry_count" -gt 30 ]; then
+        local result
+        result=$(timeout 30 bash "$SCRIPT_DIR/scripts/bulletin_archive.sh" 2>&1) || true
+        if [[ "$result" == *"Archived"* ]]; then
+            log "BULLETIN-ARCHIVE: $result"
+        fi
+    fi
+    LAST_BULLETIN_ARCHIVE=$now
+}
+
 # ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
 # 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
 check_karo_idle_cycle() {
@@ -3134,6 +3162,7 @@ while true; do
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)
     check_ninja_cli_dead        # 忍者CLI死亡検知+自動再起動 (cmd_1851)
     run_lock_cleanup            # /tmp orphan lock files定期削除
+    check_bulletin_archive      # 掲示板自動アーカイブ（肥大防止）
 
     # ═══ STEP 2: ダッシュボード自動更新 (cmd_404) ═══
     # 状態変化時のみ呼び出す（コスト最適化）
