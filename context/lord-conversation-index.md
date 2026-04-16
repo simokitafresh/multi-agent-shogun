@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T14:35:50+09:00 -->
+<!-- generated_at: 2026-04-16T15:37:46+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-16T14:35:49+09:00 | terminal | response | 6cmd委任完了。家老に配備を任せた。 **配備計画:** | cmd | 対象スクリプト | Before | 目標 | |-----|--------------|--------|------| | 1953 | `shutsuji…
-- 2026-04-16T14:32:35+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_cmd_save 初回配備開始 (title=CI修正 — cmd_save.shテスト期待値修正(BLOCKメッセージ形式変更対応), ninja=saizo) CI修正 📋 https://gi…
-- 2026-04-16T14:32:18+09:00 | terminal | inbound | 最大並列で進めよう。競合や依存に注意せよ
-- 2026-04-16T14:31:30+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-067)
-- 2026-04-16T14:31:26+09:00 | terminal | response | **cmd_1951結果サマリ: 全220本プロファイリング完了。** **CoDD改善の即効候補（改善見込み「高」× 秒単位の遅さ）:** | 優先 | スクリプト | 実行時間 | 発火条件 | |------|----------|…
-- 2026-04-16T14:30:50+09:00 | terminal | inbound | 1951を確認しよう
-- 2026-04-16T14:30:29+09:00 | terminal | response | **全cmd完了。** | cmd | 内容 | status | |-----|------|--------| | cmd_1947 | ⑤×⑤ N体EW比較 | **GATE CLEAR** ✅ | | cmd_1948 | ①×①…
-- 2026-04-16T14:30:26+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝54
-- 2026-04-16T14:30:13+09:00 | terminal | inbound | CMDの進捗は？
-- 2026-04-16T14:28:09+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝53
+- 2026-04-16T15:37:46+09:00 | terminal | response | **CoDD改善 Before→After一覧:** | cmd | 対象 | Before | After | 改善率 | |-----|------|--------|-------|--------| | 1953 | `shuts…
+- 2026-04-16T15:37:29+09:00 | terminal | inbound | afterを教えて
+- 2026-04-16T15:36:39+09:00 | terminal | response | **CoDD改善6本の進捗:** | cmd | 対象 | Before | status | |-----|------|--------|--------| | 1953 | `shutsujin_departure.sh` | 2.…
+- 2026-04-16T15:35:59+09:00 | terminal | inbound | どこまで進んだ？
+- 2026-04-16T14:59:29+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率93% 連勝60
+- 2026-04-16T14:52:25+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-068)
+- 2026-04-16T14:49:06+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率93% 連勝59
+- 2026-04-16T14:44:39+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働5名 CLEAR率93% 連勝58
+- 2026-04-16T14:44:04+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働5名 CLEAR率93% 連勝57
+- 2026-04-16T14:42:52+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働6名 CLEAR率93% 連勝56
 
 ## 未解決確認事項
 - 1951を確認しよう
@@ -53,6 +53,12 @@
 - cmd_1949
 - cmd_1950
 - cmd_1951
+- cmd_1953
+- cmd_1954
+- cmd_1955
+- cmd_1956
+- cmd_1957
+- cmd_1958
 - PD-012
 
 ## 参照先

@@ -3662,3 +3662,18 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入効果(before/after)の計測を全GP実装時に義務化すべき。IF gate健全性を判定するなら THEN 回答率でなく有効率を計測せよ BECAUSE 参照率は偽の健全性を示す(76%OK→実態26%)
+
+### L480: pipefail下でgrep no-matchは||trueが必須。テストが先に気づける
+- **日付**: 2026-04-16
+- **出典**: cmd_1955
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [universal]
+- set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加することで解決。テスト環境(空のgate_metrics.log)が本番では現れない条件を先に検出した。
+
+### L481: pipefail下でgrepのno-matchはexit 1 — ||trueで保護必須
+- **日付**: 2026-04-16
+- **出典**: cmd_1955
+- **記録者**: karo
+- **tags**: [universal]
+- set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern file || trueで保護が必須。gate_cycle_health.sh高速化cmd_1955影丸で発見。bashスクリプト全般に適用できる一般教訓

@@ -679,3 +679,4 @@
 | cmd_1954 | CoDD改善#2 — dashboard_auto_section.sh高速化(2.8s→目標500ms) | infra | 04-16 | dashboard_auto_section.sh を高速化 |
 | cmd_1953 | CoDD改善#1 — shutsujin_departure.sh高速化(2.4s→目標500ms) | infra | 04-16 | scripts/shutsujin_departure.sh |
 | cmd_1956 | CoDD改善#4 — report_merge.sh高速化(1.9s→目標300ms) | infra | 04-16 | report_merge.sh: 1ファイルあたり4-5回の |
+| cmd_1955 | CoDD改善#3 — gate_cycle_health.sh高速化(2.6s→目標500ms) | infra | 04-16 | gate_cycle_health.sh を 793ms→2 |
