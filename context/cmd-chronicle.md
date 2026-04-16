@@ -698,3 +698,4 @@
 | cmd_1977 | CoDD改善#25 — cmd_save.sh高速化(4.0s→目標500ms) | infra | 04-16 | cmd_save.sh高速化結果を記録。warm media |
 | cmd_1978 | CoDD改善#26 — stop-lint-gate.sh高速化(3.0s→目標500ms) | infra | 04-16 | Stop hookの changed-file 取得を Gi |
 | cmd_1980 | CoDD改善#28 — gate_recalculate_completeness.sh再トライ(2.74s→目標500ms) | infra | 04-16 | gate_recalculate_completeness. |
+| cmd_1984 | CoDD改善#32 — gate_karo_startup.sh再トライ(225ms→目標80ms, 起動ごと) | infra | 04-16 | gate_karo_startup.sh 3改善: pyth |

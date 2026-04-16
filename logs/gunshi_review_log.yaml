@@ -777,3 +777,32 @@
     - "事実3: Phase間依存の明記+フォールバック(手動spec)でリスク構造化済み"
   causal_chain: "インフラbash 32本改善→知見蓄積→DM-Signal Python適用→正の複利(fullrecalculate 8分→さらに短縮)"
   timestamp: "2026-04-16T19:10:00"
+- cmd_id: cmd_1982
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_1982_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。gate_cycle_health.sh glob+stat+awk統合で実測98→80ms(-18%)。assumption_invalidation有(前提296ms→実測98ms)"
+  observations:
+    - "事実1: assumption_invalidation:trueを誠実に報告。前提値(296ms)は環境変化で実測98msに既改善。忍者の品質意識良好"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1955→再トライ→find+xargs→glob+awk統合→-18%=cycle health起動ごとの正の複利"
+  timestamp: "2026-04-16T19:12:00"
+- cmd_id: cmd_1984
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_1984_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gate_karo_startup.sh python3→awk+statusキャッシュで225→190ms(-16%)。並列化効果なし(WSL2サブシェルコスト)。テスト12/12 PASS"
+  observations:
+    - "事実1: capture-pane並列化37→35ms(-2ms)。WSL2サブシェル起動5ms×6=30msが並列化利益を相殺。L485と同構造"
+    - "事実2: 残存ボトルネック=tmux IPC(40ms)+WSL2 I/O(34ms)。これ以上はtmux側の制約"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  gate_prediction: WARN(draft_lessons)
+  causal_chain: "cmd_1958→再トライ→python3除去+キャッシュ→-16%=家老起動ごとの正の複利。並列化不発はWSL2固有制約"
+  timestamp: "2026-04-16T19:13:00"

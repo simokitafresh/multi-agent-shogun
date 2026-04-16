@@ -3709,3 +3709,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: Windowsファイルシステム上で多数ファイルを一括でawkに渡すとWindows Defenderが一括スキャンを開始しI/O待ちが急増。per-file awk維持が正解。WSL2 /mnt/c最適化では「プロセス起動回数削減」より「I/Oアクセスパターン」が支配的な場合がある。
+
+### L486: WSL2 tmux capture-pane並列化の効果なし: サブシェル起動コストが相殺
+- **日付**: 2026-04-16
+- **出典**: cmd_1984
+- **記録者**: tobisaru
+- **status**: confirmed
+- **tags**: [universal]
+- gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。WSL2のサブシェル起動コスト(~5ms/個x6=30ms)が並列化の利益と相殺。L485(awk並列統合の遅化)と同構造。WSL2 /mnt/c上ではサブプロセス起動コストが支配的なため、並列化よりも呼び出し回数削減が有効。
