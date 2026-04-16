@@ -23,6 +23,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | kagemaru | `scripts/gates/gate_cycle_health.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `793ms → 296ms` (`-63%`, `2.7x`) | spec: `docs/research/codd_spec_gate_cycle_health_20260416.md` |
 | 2026-04-16 | hanzo | `scripts/gates/gate_cycle_health.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `~98ms → ~80ms` (`-18%`, actual env baseline) B1:glob stat+awk-getline単一パス / B2:grep pipeline統合 | (spec省略。軽微改善) |
 | 2026-04-16 | tobisaru | `scripts/gates/gate_karo_startup.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `464ms → 225ms` (`-51%`, `2.1x`) | spec: `docs/research/codd_spec_gate_karo_startup_20260416.md` |
+| 2026-04-16 | tobisaru | `scripts/gates/gate_karo_startup.sh` | Phase 5(再改善: 計測+実装+検証) | `225ms → 190ms` (`-15.6%`) | python3(108ms)→awk/bash置換+statusキャッシュ重複排除。12/12テストPASS。spec: `docs/research/codd_spec_gate_karo_startup_20260416.md`(追記) |
 | 2026-04-16 | kagemaru | `scripts/ntfy.sh` | Phase 5(計測+実装+検証) | `33ms → 23ms` (`-30%`) | (軽微改善。spec省略) |
 | 2026-04-16 | kagemaru | `scripts/karo_workaround_log.sh` | Phase 5(計測+実装+検証) | `61ms → 26ms` (`-57%`, `2.3x`, clean mode) / `70ms → 32ms` (`-54%`, normal mode) | validate_ninja_id task dir loop(basename subprocess×10=45ms)廃止+settings.yaml only+TZ=UTC printf builtin。26/26テストPASS。spec: `docs/research/codd_spec_karo_workaround_log_20260416.md` |
 | 2026-04-16 | hayate | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(計測+実装+検証) | `7.40s(FAIL) → 2.74s(PASS)` (`-63%`) | after: `docs/research/gate_recalculate_completeness_after_20260416.md` |
