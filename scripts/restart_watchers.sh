@@ -45,7 +45,6 @@ declare -a LAUNCHED_PIDS=()
 
 # 将軍
 _cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
-SHOGUN_STATE_DIR=/tmp/shogun_state \
 nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_cli" \
     &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" &
 disown
@@ -55,7 +54,6 @@ LAUNCHED_PIDS+=("$!")
 
 # 家老
 _cli=$(tmux show-options -p -t "shogun:agents.1" -v @agent_cli 2>/dev/null || echo "claude")
-SHOGUN_STATE_DIR=/tmp/shogun_state \
 nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.1" "$_cli" \
     &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" &
 disown
@@ -74,7 +72,6 @@ for name in $(get_all_agents); do
     pane=$(pane_lookup "$name" 2>/dev/null)
     [[ -z "$pane" ]] && continue
     _cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "claude")
-    SHOGUN_STATE_DIR=/tmp/shogun_state \
     nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${name}" "$pane" "$_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_${name}.log" &
     disown
