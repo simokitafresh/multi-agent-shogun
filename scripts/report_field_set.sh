@@ -14,9 +14,19 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+_script_path="${BASH_SOURCE[0]}"
+SCRIPT_DIR="${_script_path%/*}/.."
+SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd -P)"
+YAML_FIELD_SET_LOADED=0
+
+ensure_yaml_field_set_loaded() {
+    if [ "$YAML_FIELD_SET_LOADED" -eq 1 ]; then
+        return 0
+    fi
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+    YAML_FIELD_SET_LOADED=1
+}
 
 REPORT_PATH="$1"
 DOT_KEY="$2"
@@ -455,6 +465,172 @@ NUM_KEYS=${#KEYS[@]}
 # Create file if not exists
 [ -f "$REPORT_PATH" ] || touch "$REPORT_PATH"
 
+# --- Fast path: scalar root / 2-level nested writes without sourcing yaml_field_set.sh ---
+# Common report updates (status/result.summary/etc.) dominate call volume. Keep the
+# Python/list paths unchanged, and only short-circuit the simple scalar mapping case.
+_report_field_set_fast_scalar() {
+    local report_path="$1"
+    local tmp_file="$2"
+    local dot_key="$3"
+    local value="$4"
+    local num_keys="$5"
+    shift 5
+    local keys=("$@")
+
+    if [ "$num_keys" -gt 2 ]; then
+        return 2
+    fi
+    if [[ "$dot_key" == *'['* ]] || [[ "$value" == '['* ]] || [[ "$value" == '{'* ]] || [[ "$value" == *$'\n'* ]]; then
+        return 2
+    fi
+
+    if [ "$num_keys" -eq 1 ]; then
+        awk \
+            -v field="${keys[0]}" \
+            -v new_value="$value" '
+function regex_escape(str,    out,i,c) {
+    out = ""
+    for (i = 1; i <= length(str); i++) {
+        c = substr(str, i, 1)
+        if (c ~ /[][\\.^$*+?(){}|]/) out = out "\\" c
+        else out = out c
+    }
+    return out
+}
+function yaml_safe(v,    out,i,c,needs_quote) {
+    needs_quote = 0
+    if (index(v, ":") > 0) needs_quote = 1
+    if (index(v, "#") > 0) needs_quote = 1
+    if (index(v, "[") > 0) needs_quote = 1
+    if (index(v, "]") > 0) needs_quote = 1
+    if (index(v, "{") > 0) needs_quote = 1
+    if (index(v, "}") > 0) needs_quote = 1
+    if (needs_quote) {
+        out = ""
+        for (i = 1; i <= length(v); i++) {
+            c = substr(v, i, 1)
+            if (c == "\"") out = out "\\" c
+            else out = out c
+        }
+        return "\"" out "\""
+    }
+    return v
+}
+BEGIN { replaced = 0; has_fields = 0 }
+{
+    field_re = "^" regex_escape(field) ":[[:space:]]*"
+    if (!replaced && $0 ~ field_re) {
+        print field ": " yaml_safe(new_value)
+        replaced = 1
+        has_fields = 1
+        next
+    }
+    if ($0 ~ /^[A-Za-z0-9_.-]+:[[:space:]]/) has_fields = 1
+    print
+}
+END {
+    if (!has_fields) exit 2
+    if (!replaced) print field ": " yaml_safe(new_value)
+}
+' "$report_path" > "$tmp_file"
+        return $?
+    fi
+
+    awk \
+        -v block_id="${keys[0]}" \
+        -v field="${keys[1]}" \
+        -v new_value="$value" '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function leading_spaces(line,    i,cnt,c) {
+    cnt = 0
+    for (i = 1; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (c == " ") cnt++
+        else break
+    }
+    return cnt
+}
+function make_indent(n,    s,i) {
+    s = ""
+    for (i = 0; i < n; i++) s = s " "
+    return s
+}
+function regex_escape(str,    out,i,c) {
+    out = ""
+    for (i = 1; i <= length(str); i++) {
+        c = substr(str, i, 1)
+        if (c ~ /[][\\.^$*+?(){}|]/) out = out "\\" c
+        else out = out c
+    }
+    return out
+}
+function yaml_safe(v,    out,i,c,needs_quote) {
+    needs_quote = 0
+    if (index(v, ":") > 0) needs_quote = 1
+    if (index(v, "#") > 0) needs_quote = 1
+    if (index(v, "[") > 0) needs_quote = 1
+    if (index(v, "]") > 0) needs_quote = 1
+    if (index(v, "{") > 0) needs_quote = 1
+    if (index(v, "}") > 0) needs_quote = 1
+    if (needs_quote) {
+        out = ""
+        for (i = 1; i <= length(v); i++) {
+            c = substr(v, i, 1)
+            if (c == "\"") out = out "\\" c
+            else out = out c
+        }
+        return "\"" out "\""
+    }
+    return v
+}
+BEGIN {
+    block_found = 0
+    in_block = 0
+    replaced = 0
+    block_indent = -1
+    field_indent = -1
+}
+{
+    if (!in_block) {
+        block_re = "^" regex_escape(block_id) ":[[:space:]]*$"
+        if ($0 ~ block_re) {
+            in_block = 1
+            block_found = 1
+            block_indent = leading_spaces($0)
+            field_indent = block_indent + 2
+        }
+        print
+        next
+    }
+
+    trimmed = trim($0)
+    indent = leading_spaces($0)
+    if (trimmed != "" && trimmed !~ /^#/ && indent <= block_indent) {
+        if (!replaced) {
+            print make_indent(field_indent) field ": " yaml_safe(new_value)
+            replaced = 1
+        }
+        in_block = 0
+        print
+        next
+    }
+
+    field_re = "^" make_indent(field_indent) regex_escape(field) ":[[:space:]]*"
+    if (!replaced && $0 ~ field_re) {
+        print make_indent(field_indent) field ": " yaml_safe(new_value)
+        replaced = 1
+        next
+    }
+
+    print
+}
+END {
+    if (!block_found) exit 2
+    if (in_block && !replaced) print make_indent(field_indent) field ": " yaml_safe(new_value)
+}
+' "$report_path" > "$tmp_file"
+}
+
 # --- Python fallback (multi-line text, new block creation) ---
 _report_field_set_python() {
     local rp="$1" dk="$2" val="$3" sv="$4"
@@ -590,7 +766,7 @@ print(f'[report_field_set] {dot_key} = {value}')
 
 # --- Main write logic with flock + retries ---
 MAX_RETRIES=3
-for attempt in $(seq 1 $MAX_RETRIES); do
+for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
     (
         flock -w 5 200 || { echo "[report_field_set] flock failed (attempt $attempt)" >&2; exit 1; }
 
@@ -614,10 +790,20 @@ for attempt in $(seq 1 $MAX_RETRIES); do
             exit $?
         fi
 
-        tmp_file="$(mktemp "${REPORT_PATH}.tmp.XXXXXX")"
+        tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
+        rm -f "$tmp_file"
         rc=0
 
-        if [ "$NUM_KEYS" -eq 1 ]; then
+        _report_field_set_fast_scalar "$REPORT_PATH" "$tmp_file" "$DOT_KEY" "$VALUE" "$NUM_KEYS" "${KEYS[@]}" || rc=$?
+        if [ "$rc" -eq 0 ]; then
+            :
+        else
+            ensure_yaml_field_set_loaded
+        fi
+
+        if [ "$rc" -eq 0 ]; then
+            :
+        elif [ "$NUM_KEYS" -eq 1 ]; then
             # Root-level field (e.g., "status")
             _yaml_field_set_apply_root "$REPORT_PATH" "$tmp_file" "${KEYS[0]}" "$VALUE" || rc=$?
             if [ "$rc" -eq 2 ]; then
@@ -640,7 +826,7 @@ for attempt in $(seq 1 $MAX_RETRIES); do
                 fi
                 rc=0
             fi
-        else
+        elif [ "$rc" -eq 2 ]; then
             # Nested field: block_id = second-to-last segment, field = last segment
             BLOCK_ID="${KEYS[$((NUM_KEYS-2))]}"
             FIELD="${KEYS[$((NUM_KEYS-1))]}"
@@ -665,19 +851,21 @@ for attempt in $(seq 1 $MAX_RETRIES); do
             exit 1
         fi
 
-        # Post-write verification using shared library functions
-        actual=""
-        if [ "$NUM_KEYS" -eq 1 ]; then
-            actual="$(_yaml_field_get_root "$REPORT_PATH" "${KEYS[0]}")" || true
-        else
-            actual="$(_yaml_field_get_in_block "$REPORT_PATH" "$BLOCK_ID" "$FIELD")" || true
-        fi
+        if [ "$rc" -ne 0 ]; then
+            ensure_yaml_field_set_loaded
+            actual=""
+            if [ "$NUM_KEYS" -eq 1 ]; then
+                actual="$(_yaml_field_get_root "$REPORT_PATH" "${KEYS[0]}")" || true
+            else
+                actual="$(_yaml_field_get_in_block "$REPORT_PATH" "$BLOCK_ID" "$FIELD")" || true
+            fi
 
-        normalized_actual="$(_yaml_field_set_normalize "$actual")"
-        normalized_expected="$(_yaml_field_set_normalize "$VALUE")"
-        if [ "$normalized_actual" != "$normalized_expected" ]; then
-            echo "FATAL: report_field_set: post-write verification mismatch for $DOT_KEY (expected='$normalized_expected', actual='$normalized_actual')" >&2
-            exit 1
+            normalized_actual="$(_yaml_field_set_normalize "$actual")"
+            normalized_expected="$(_yaml_field_set_normalize "$VALUE")"
+            if [ "$normalized_actual" != "$normalized_expected" ]; then
+                echo "FATAL: report_field_set: post-write verification mismatch for $DOT_KEY (expected='$normalized_expected', actual='$normalized_actual')" >&2
+                exit 1
+            fi
         fi
 
         echo "[report_field_set] $DOT_KEY = ${VALUE:0:80}"

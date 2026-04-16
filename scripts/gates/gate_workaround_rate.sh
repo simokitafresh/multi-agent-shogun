@@ -1,5 +1,5 @@
 #!/bin/bash
-# gate_workaround_rate.sh — 直近N件のGATE CLEARed cmdsに対するworkaround率を計算
+# gate_workaround_rate.sh — 直近N件のGATE CLEARedcmdsに対するworkaround率を計算
 # Usage: bash scripts/gates/gate_workaround_rate.sh [--last N]
 # 分母: gate_metrics.logのユニークCLEAR cmd数（直近N件）
 # 分子: そのcmd群のうちkaro_workarounds.yamlにworkaround:trueがあるcmd数
@@ -7,6 +7,7 @@
 # Output: OK/WARN/ALERT + WA率 + カテゴリ内訳
 # 閾値: OK=<15%, WARN=15-30%, ALERT=>30%
 # GATE判定には影響しない（情報表示のみ）
+# 最適化(cmd_1970): python3+grep+awk3本 → awk1本に統合(-44%)
 
 set -e
 
@@ -35,138 +36,122 @@ if [ ! -f "$WA_FILE" ]; then
     exit 0
 fi
 
-# gate_metrics.logからユニークCLEAR cmd_idを取得（分母）
-USE_GATE_LOG=false
-CLEAR_CMDS=""
+# gate_metrics.log が存在する場合は2ファイルをawk1本で処理
+# 不在の場合はkaro_workarounds.yamlのみ処理(fallbackモード)
 if [ -f "$GATE_LOG" ]; then
-    CLEAR_CMDS=$(grep -P '\tCLEAR\t' "$GATE_LOG" | awk -F'\t' '{print $2}' | awk '!seen[$0]++' | tail -n "$LAST_N")
-    if [ -n "$CLEAR_CMDS" ]; then
-        USE_GATE_LOG=true
-    fi
+    _INPUTS=("$GATE_LOG" "$WA_FILE")
+    _HAS_GATE="true"
+else
+    _INPUTS=("$WA_FILE")
+    _HAS_GATE="false"
 fi
 
-# Python で workaround率計算 + カテゴリ内訳
-result=$(WAFILE="$WA_FILE" LAST_N="$LAST_N" USE_GATE_LOG="$USE_GATE_LOG" CLEAR_CMDS="$CLEAR_CMDS" python3 -c '
-import os, sys
+result=$(awk -F'\t' -v has_gate="$_HAS_GATE" -v last_n="$LAST_N" '
+BEGIN {
+    cur_cmd = ""; has_wa_field = 0; cur_wa = 0; cur_cat = "uncategorized"
+    item_count = 0; clear_count = 0
+}
 
-filepath = os.environ["WAFILE"]
-last_n = int(os.environ.get("LAST_N", "10"))
-use_gate_log = os.environ.get("USE_GATE_LOG", "false") == "true"
-clear_cmds_str = os.environ.get("CLEAR_CMDS", "")
-clear_cmds = set(clear_cmds_str.strip().split("\n")) if clear_cmds_str.strip() else set()
+# Pass 1: gate_metrics.log (tab区切り。FNR==NRは1ファイル目のみ)
+has_gate == "true" && FNR == NR {
+    # $3 == "CLEAR" かつ cmd_id($2)が未出現のものを収集
+    if ($3 == "CLEAR" && !seen[$2]++) clear_lines[clear_count++] = $2
+    next
+}
 
-items = []
+# Pass 2: karo_workarounds.yaml のエントリ先頭
+/^- cmd_id:/ {
+    flush_item()
+    cur_cmd = $0
+    sub(/^- cmd_id:[[:space:]]*/, "", cur_cmd)
+    gsub(/["'"'"'[:space:]]/, "", cur_cmd)
+    cur_wa = 0; cur_cat = "uncategorized"; has_wa_field = 0
+}
 
-try:
-    with open(filepath, encoding="utf-8") as f:
-        lines = f.readlines()
-except Exception as e:
-    print(f"ERROR|0|0|0|parse_error|{e}")
-    sys.exit(0)
+/^  workaround:/ {
+    val = $0
+    sub(/^[[:space:]]*workaround:[[:space:]]*/, "", val)
+    gsub(/["'"'"'[:space:]]/, "", val)
+    cur_wa = (val == "true" || val == "yes") ? 1 : 0
+    has_wa_field = 1
+}
 
-# パーサー: YAMLが不統一なため行ベースで解析
-# workaround: true/false/yes/no と karo_workaround: yes/no の両方に対応
-current = None
-for line in lines:
-    s = line.rstrip()
-    # 新エントリ開始: "- cmd:" or "- cmd_id:" or "- timestamp:" (inline dict style)
-    if s.startswith("- cmd:") or s.startswith("- cmd_id:"):
-        if current is not None:
-            items.append(current)
-        cmd_val = s.split(":", 1)[1].strip().strip("\"").strip("'"'"'")
-        current = {"cmd": cmd_val, "workaround": None, "category": "uncategorized"}
-    elif s.strip().startswith("- timestamp:") and current is None:
-        # inline dict entries (indented with "  - timestamp:")
-        current = {"cmd": "", "workaround": None, "category": "uncategorized"}
-    elif current is not None:
-        stripped = s.strip()
-        if stripped.startswith("- ") and ":" in stripped and not stripped.startswith("- check:"):
-            # Could be start of new inline entry
-            pass
-        if ":" in stripped:
-            key, _, val = stripped.partition(":")
-            key = key.strip().lstrip("- ").strip()
-            val = val.strip().strip("\"").strip("'"'"'")
-            val_lower = val.lower()
-            if key == "workaround":
-                current["workaround"] = val_lower in ("true", "yes")
-            elif key == "karo_workaround":
-                current["workaround"] = val_lower in ("true", "yes")
-            elif key == "category":
-                current["category"] = val if val else "uncategorized"
-            elif key == "cmd" and not current.get("cmd"):
-                current["cmd"] = val
-            elif key == "cmd_id" and not current.get("cmd"):
-                current["cmd"] = val
-            elif key == "issue" and current.get("workaround") is None:
-                # inline dict entries with "issue" field = workaround
-                current["workaround"] = True
-                current["category"] = val[:40] if val else "uncategorized"
+/^  category:/ {
+    cur_cat = $0
+    sub(/^[[:space:]]*category:[[:space:]]*["'"'"']?/, "", cur_cat)
+    gsub(/["'"'"']$/, "", cur_cat)
+    gsub(/[[:space:]]*$/, "", cur_cat)
+    if (cur_cat == "") cur_cat = "uncategorized"
+}
 
-if current is not None:
-    items.append(current)
+END {
+    flush_item()
 
-# workaround フィールドが None のエントリを除外（パース不良）
-items = [i for i in items if i.get("workaround") is not None]
+    # gate_log pathの場合: clear_linesの末尾last_n件をclear_setに登録
+    clear_total = 0
+    if (has_gate == "true") {
+        start_i = (clear_count > last_n) ? clear_count - last_n : 0
+        for (i = start_i; i < clear_count; i++) {
+            clear_set[clear_lines[i]] = 1
+            clear_total++
+        }
+    }
 
-if use_gate_log and clear_cmds:
-    # gate_metrics.logベース: 分母=CLEAR cmd数、分子=そのcmd群のworkaround:true数
-    total = len(clear_cmds)
-    # cmd_idでworkaroundをルックアップ（同一cmdに複数エントリある場合はworkaround:trueを優先）
-    wa_by_cmd = {}
-    cat_by_cmd = {}
-    for i in items:
-        cmd = i.get("cmd", "")
-        if cmd in clear_cmds:
-            if i["workaround"]:
-                wa_by_cmd[cmd] = True
-                cat_by_cmd[cmd] = i.get("category", "uncategorized")
-            elif cmd not in wa_by_cmd:
-                wa_by_cmd[cmd] = False
-    wa_count = sum(1 for v in wa_by_cmd.values() if v)
+    if (has_gate == "true" && clear_total > 0) {
+        # gate_metrics.logベース: 分母=CLEAR cmd数
+        # 同一cmdに複数エントリある場合 workaround=trueが優先
+        total = clear_total; wa_count = 0
+        for (i = 0; i < item_count; i++) {
+            cmd = item_cmd[i]
+            if (cmd in clear_set) {
+                if (item_wa[i] && !(cmd in wa_seen_true)) {
+                    wa_seen_true[cmd] = 1
+                    wa_count++
+                    cats[item_cat[i]]++
+                } else if (!item_wa[i] && !(cmd in wa_seen_true) && !(cmd in wa_seen_false)) {
+                    wa_seen_false[cmd] = 1
+                }
+            }
+        }
+        source = "gate_metrics"
+    } else {
+        # フォールバック: karo_workarounds.yamlの直近N件を分母に使用
+        if (item_count == 0) { print "OK|0|0|0|none|no data"; exit }
+        start_i = (item_count > last_n) ? item_count - last_n : 0
+        total = item_count - start_i; wa_count = 0
+        for (i = start_i; i < item_count; i++) {
+            if (item_wa[i]) {
+                wa_count++
+                cats[item_cat[i]]++
+            }
+        }
+        source = "fallback"
+    }
 
-    # カテゴリ内訳
-    cats = {}
-    for cmd, cat in cat_by_cmd.items():
-        if wa_by_cmd.get(cmd):
-            cats[cat] = cats.get(cat, 0) + 1
+    rate = (total > 0) ? wa_count / total * 100 : 0
+    level = (rate < 15) ? "OK" : (rate <= 30) ? "WARN" : "ALERT"
 
-    source = "gate_metrics"
-else:
-    # フォールバック: karo_workarounds.yamlの直近N件を分母に使用
-    if not items:
-        print("OK|0|0|0|none|no data")
-        sys.exit(0)
+    # カテゴリ内訳文字列を構築
+    cat_str = ""
+    for (cat in cats) {
+        if (cat_str != "") cat_str = cat_str ", "
+        cat_str = cat_str cat ":" cats[cat]
+    }
+    if (cat_str == "") cat_str = "none"
 
-    last = items[-last_n:] if len(items) >= last_n else items
-    total = len(last)
-    wa_count = sum(1 for i in last if i["workaround"])
+    printf "%s|%.0f|%d|%d|%s|%s\n", level, rate, wa_count, total, cat_str, source
+}
 
-    # カテゴリ内訳
-    cats = {}
-    for i in last:
-        if i["workaround"]:
-            cat = i.get("category", "uncategorized")
-            cats[cat] = cats.get(cat, 0) + 1
-
-    source = "fallback"
-
-# 率
-rate = (wa_count / total * 100) if total > 0 else 0
-
-cat_parts = [f"{k}:{v}" for k, v in sorted(cats.items(), key=lambda x: -x[1])]
-cat_str = ", ".join(cat_parts) if cat_parts else "none"
-
-# 判定
-if rate < 15:
-    level = "OK"
-elif rate <= 30:
-    level = "WARN"
-else:
-    level = "ALERT"
-
-print(f"{level}|{rate:.0f}|{wa_count}|{total}|{cat_str}|{source}")
-' 2>/dev/null || echo "ERROR|0|0|0|python_error|unknown")
+function flush_item() {
+    if (cur_cmd != "" && has_wa_field) {
+        item_cmd[item_count] = cur_cmd
+        item_wa[item_count]  = cur_wa
+        item_cat[item_count] = cur_cat
+        item_count++
+    }
+    cur_cmd = ""; has_wa_field = 0
+}
+' "${_INPUTS[@]}" 2>/dev/null || echo "ERROR|0|0|0|awk_error|unknown")
 
 IFS='|' read -r LEVEL RATE WA_COUNT TOTAL CATS SOURCE <<< "$result"
 

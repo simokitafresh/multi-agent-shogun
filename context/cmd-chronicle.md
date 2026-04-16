@@ -687,3 +687,4 @@
 | cmd_1963 | CoDD改善#11 — gate_loop_health.sh高速化(493ms→目標100ms) | infra | 04-16 | gate_loop_health.sh 287ms→93ms |
 | cmd_1964 | CoDD改善#12 — gate_lesson_health.sh高速化(228ms→目標50ms) | infra | 04-16 | gate_lesson_health.sh を 666ms |
 | cmd_1962 | CoDD改善#10 — lesson_effectiveness.sh高速化(5.5s→目標500ms) | infra | 04-16 | lesson_effectiveness.sh高速化: ba |
+| cmd_1966 | CoDD改善#14 — report_field_set.sh高速化(40ms×73回→目標15ms) | infra | 04-16 | report_field_set.shを高速化し、scala |

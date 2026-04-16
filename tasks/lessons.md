@@ -3685,3 +3685,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3 << 'PYEOF'形式に変換すること。シェル変数はGATE_VAR=val python3 << 'PYEOF'の形でos.environ['GATE_VAR']として渡す。yaml.safe_loadはfileオブジェクトにもimportコストがあるため大ファイルは行ベースパーサで代替すると100ms以上削減できる
+
+### L483: hot path の単一用途判定に汎用ライブラリ source を直結するな
+- **日付**: 2026-04-16
+- **出典**: cmd_1965
+- **記録者**: hayate
+- **status**: draft
+- **tags**: [universal]
+- 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に source すると usage/help でも固定コストを払い続ける。hot path は専用の軽量パーサへ切り出し、重い共通ライブラリは遅延読込または不使用に寄せるべし。

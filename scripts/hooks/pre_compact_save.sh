@@ -10,19 +10,31 @@ if [[ -z "$payload" ]]; then
   payload='{}'
 fi
 
-compact_trigger="$(printf '%s' "$payload" | jq -r '.trigger // "manual"' 2>/dev/null || echo "manual")"
-session_id="$(printf '%s' "$payload" | jq -r '.session_id // ""' 2>/dev/null || echo "")"
+# Parse trigger and session_id via bash regex (no jq subprocess)
+if [[ "$payload" =~ \"trigger\":\"([^\"]+)\" ]]; then
+  compact_trigger="${BASH_REMATCH[1]}"
+else
+  compact_trigger="manual"
+fi
+if [[ "$payload" =~ \"session_id\":\"([^\"]+)\" ]]; then
+  session_id="${BASH_REMATCH[1]}"
+else
+  session_id=""
+fi
 
 agent_id=""
 current_task=""
 
 if command -v tmux >/dev/null 2>&1; then
   if [[ -n "${TMUX_PANE:-}" ]]; then
-    agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
-    current_task="$(tmux display-message -t "$TMUX_PANE" -p '#{@current_task}' 2>/dev/null || true)"
+    # Single tmux call to fetch both variables (tab-delimited)
+    tmux_out="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}	#{@current_task}' 2>/dev/null || true)"
+    agent_id="${tmux_out%%	*}"
+    current_task="${tmux_out##*	}"
   elif [[ -n "${TMUX:-}" ]]; then
-    agent_id="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
-    current_task="$(tmux display-message -p '#{@current_task}' 2>/dev/null || true)"
+    tmux_out="$(tmux display-message -p '#{@agent_id}	#{@current_task}' 2>/dev/null || true)"
+    agent_id="${tmux_out%%	*}"
+    current_task="${tmux_out##*	}"
   fi
 fi
 
@@ -35,7 +47,6 @@ if [[ -z "$safe_agent_id" ]]; then
   safe_agent_id="unknown"
 fi
 
-mkdir -p "$ROOT_DIR/scripts/hooks"
 mkdir -p "$ROOT_DIR/queue/compact_state"
 
 state_file="$ROOT_DIR/queue/compact_state/${safe_agent_id}.yaml"

@@ -332,7 +332,7 @@
   report_ninja: saizo
   report_task_id: cmd_1951_recon
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。220本全量プロファイリング。A93+B109+C18=220(find一致MECE)。Top5特定。implementation_readiness充実"
   observations:
     - "事実1: find結果220本=報告220本。A+B+C=220。漏れなし"
@@ -347,7 +347,7 @@
   report_ninja: saizo
   report_task_id: cmd_karo_ci_fix_cmd_save_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。cmd_saveテスト期待値5件修正。56件全PASS(bats実行確認)。本体変更なし。削除なし"
   observations:
     - "事実1: test_cmd_save.bats+test_cmd_save_diagnose.bats 56件全PASS(bats実行)"
@@ -407,7 +407,7 @@
   report_ninja: kotaro
   report_task_id: cmd_1957_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。967→99ms(90%削減9.8x)。168サブシェル→単一awkパス。PRE ERRORS=0"
   observations:
     - "事実1: before 895/908/967ms→after 98/94/105ms。3回計測で安定"
@@ -436,7 +436,7 @@
   report_ninja: hayate
   report_task_id: cmd_1953_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。shutsujin_departure.sh 2430→170ms(92.9%削減14.1x)。layout fast path。テスト71件全PASS"
   observations:
     - "事実1: before 3.25/2.20/1.84s→after 0.16/0.17/0.15/0.18/0.20s。目標500ms大幅達成"
@@ -450,7 +450,7 @@
   report_ninja: hanzo
   report_task_id: cmd_1956_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。report_merge.sh 1947→76ms(96%削減25.6x)。field_get多重→単一awkパス。テスト50件全PASS"
   observations:
     - "事実1: field_get 14ms×4-5回×Nファイル→awk 1パス28ms。直接計測で17x"
@@ -489,3 +489,24 @@
   gate_prediction: WARN(vercel_phase)
   causal_chain: "cmd_1951→gate_karo_startup.sh特定→python3+tmux+並列化→2.1x=家老起動ごとの正の複利"
   timestamp: "2026-04-16T15:40:00"
+- cmd_id: idle_self_study
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "cmd_1955の13回連続BLOCK分析→draft_lessonsは忍者解消不可→GP-203実装(ガイダンス追加)→テスト9/9 PASS"
+  observations:
+    - "事実1: cmd_1955 影丸がdraft_lessons:1で13回連続BLOCK(14:53-14:57の4分間)。忍者には教訓査読権限なし"
+    - "事実2: GP-200(DIVERGENT)は忍者修正可能BLOCKを前提。外部依存BLOCKには効かない"
+    - "事実3: cmd_complete_gate.sh L3158にガイダンス1行追加。テスト9/9 PASS"
+  proposals:
+    - id: GP-203
+      description: "draft_lessons BLOCKに忍者向けガイダンス(リトライ無駄+家老報告促進)"
+      status: implemented
+  causal_chain: "draft_lessons BLOCK→忍者管轄外(査読権限なし)→リトライ13回無駄→CTX消費。GP-200(DIVERGENT)前提=忍者修正可能BLOCK→外部依存BLOCKは対象外→ガイダンスなし→忍者がリトライし続ける。1行追加で構造的に抑止→次回以降のCTX浪費防止=正の複利"
+  cs_checklist:
+    cs1: "PASS: cmd_1955のinbox全18件+gate出力コードを現物確認"
+    cs2: "PASS: 13回連続BLOCKの事実をinbox timestampで検証"
+    cs3: "PASS: cmd_complete_gate.sh L3155-3166を直接読んでBLOCK判定ロジック確認"
+    cs4: "PASS: GP-203提案→即実装→テストPASS。分析で終わらず行動に変換"
+    cs5: "N/A: 他のBLOCK理由(忍者解消不可)がないか→vercel_phaseも同様の可能性→次回確認"
+    cs6: "PASS: 因果鎖3段記載済み"
+  timestamp: "2026-04-16T16:20:00"

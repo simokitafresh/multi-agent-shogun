@@ -12,15 +12,17 @@
 #   bash scripts/daemon_watchdog.sh          # 手動実行
 #   * * * * * flock -n /tmp/daemon_watchdog.lock bash /path/to/scripts/daemon_watchdog.sh
 # =============================================================================
-set -euo pipefail
+set -uo pipefail
+# NOTE: set -e を外した(2026-04-16 GP-204)。個別チェック関数の失敗で全体が死ぬと
+# 後続デーモンの監視がスキップされる。各関数内で個別にエラーハンドリングする。
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/daemon_watchdog.log"
-LOCK_FILE="/tmp/daemon_watchdog.lock"
+HEARTBEAT_FILE="/tmp/daemon_watchdog_heartbeat"
 
-# flock for single-instance (cron多重起動防止)
-exec 201>"$LOCK_FILE"
-flock -n 201 || exit 0
+# 多重起動防止: crontabのflock -n で制御済み。
+# スクリプト内部での二重flockは同一ファイルで競合するため削除(GP-204)。
+# 手動実行時はflock不要（短時間で完了するため）。
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -103,6 +105,7 @@ check_ninja_monitor() {
         notify "【watchdog】ninja_monitor.shを自動再起動しました"
         RESTARTED=$((RESTARTED + 1))
     fi
+    return 0
 }
 
 # =============================================================================
@@ -122,6 +125,7 @@ check_ntfy_listener() {
         notify "【watchdog】ntfy_listener.shを自動再起動しました"
         RESTARTED=$((RESTARTED + 1))
     fi
+    return 0
 }
 
 # =============================================================================
@@ -191,6 +195,9 @@ rotate_log
 check_ninja_monitor
 check_ntfy_listener
 check_inbox_watchers
+
+# heartbeat更新: 外部から「watchdog自体が動いているか」を検証可能にする
+date +%s > "$HEARTBEAT_FILE"
 
 if [[ "$RESTARTED" -gt 0 ]]; then
     log "Total restarted: ${RESTARTED} daemon(s)"

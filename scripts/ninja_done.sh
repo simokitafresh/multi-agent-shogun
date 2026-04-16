@@ -8,12 +8,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORTS_DIR="$SCRIPT_DIR/queue/reports"
 ARCHIVE_REPORT_DIR="$SCRIPT_DIR/queue/archive/reports"
 
-source "$SCRIPT_DIR/scripts/lib/field_get.sh"
-
 usage() {
     echo "Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>" >&2
     echo "Example: bash scripts/ninja_done.sh hayate cmd_795" >&2
     echo "Note: parent_cmd must be cmd_XXX (digits only). task_id like cmd_795_review is invalid." >&2
+}
+
+show_help() {
+    echo "Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>"
+    echo "Example: bash scripts/ninja_done.sh hayate cmd_795"
+    echo "Note: parent_cmd must be cmd_XXX (digits only). task_id like cmd_795_review is invalid."
 }
 
 resolve_report_file() {
@@ -56,8 +60,62 @@ summary_is_present() {
     local summary=""
     local trimmed=""
 
-    summary=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "summary" "" 2>/dev/null || true)
-    trimmed=$(printf '%s' "$summary" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+    summary=$(
+        awk '
+            function trim(s) {
+                sub(/^[[:space:]]+/, "", s)
+                sub(/[[:space:]]+$/, "", s)
+                return s
+            }
+            function unquote(s, q) {
+                q = substr(s, 1, 1)
+                if ((q == "\"" || q == "'\''") && substr(s, length(s), 1) == q) {
+                    return substr(s, 2, length(s) - 2)
+                }
+                return s
+            }
+            function indent_of(line) {
+                if (match(line, /[^ ]/)) {
+                    return RSTART - 1
+                }
+                return length(line)
+            }
+            /^[[:space:]]*#/ { next }
+            {
+                if (!seen_summary && $0 ~ /^[[:space:]]*summary:[[:space:]]*/) {
+                    seen_summary = 1
+                    base_indent = indent_of($0)
+                    line = $0
+                    sub(/^[[:space:]]*summary:[[:space:]]*/, "", line)
+                    line = trim(line)
+
+                    if (line == "|" || line == "|-" || line == ">" || line == ">-") {
+                        in_block = 1
+                        next
+                    }
+
+                    print unquote(line)
+                    exit
+                }
+
+                if (in_block) {
+                    if ($0 ~ /^[[:space:]]*$/) {
+                        next
+                    }
+
+                    if (indent_of($0) <= base_indent) {
+                        exit
+                    }
+
+                    print trim($0)
+                    exit
+                }
+            }
+        ' "$report_file"
+    )
+    trimmed="${summary//$'\r'/}"
+    trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
+    trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
 
     if [ -z "$trimmed" ]; then
         return 1
@@ -76,6 +134,11 @@ main() {
     local ninja_name="${1:-}"
     local parent_cmd="${2:-}"
     local report_file=""
+
+    if [ "${ninja_name:-}" = "--help" ] || [ "${ninja_name:-}" = "-h" ]; then
+        show_help
+        exit 0
+    fi
 
     if [ -z "$ninja_name" ] || [ -z "$parent_cmd" ]; then
         usage

@@ -378,3 +378,13 @@
   defense_level: 4
   reason: "おしお殿#4「2回同じ失敗→仮説ごと疑え」。gate_fire_logから同一忍者×同一BLOCK理由の連続回数を計数。2回連続→仮説転換メッセージ表示+exit 1(強制BLOCK)。GP-198のgate_diagnose_check.shに統合実装"
   evidence: "tests/unit/test_gate_diagnose_check.bats テスト5(2回連続→DIVERGENT)+テスト6(異なる理由→非発動)+テスト7(2回連続+diagnose記入→OK)"
+- id: GP-203
+  description: "draft_lessons BLOCKに忍者向けガイダンス追加: 忍者解消不可能BLOCK時にリトライ抑止+家老報告促進"
+  status: implemented
+  proposed_at: "2026-04-16T16:15:00"
+  implemented_at: "2026-04-16T16:18:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 2
+  reason: "cmd_1955で影丸が13回連続BLOCK(draft_lessons:1)。忍者にはdraft教訓の査読権限がなく全リトライが無駄。GP-200(DIVERGENT)は忍者修正可能なBLOCKが前提であり外部依存BLOCKには効かない。cmd_complete_gate.sh L3158のBLOCKメッセージに「忍者は解消不可。家老に報告して待機」ガイダンス追加"
+  evidence: null
