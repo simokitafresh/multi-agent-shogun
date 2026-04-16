@@ -503,6 +503,8 @@ stk_remove_cmd_blocks() {
 #   3. done/cancelled/absorbed エントリをarchive/cmds/に退避しSTKから除去
 # ============================================================
 sync_stk_status_from_archive() {
+    # GP-XXX: sync_stk + trim_stk_old を単一Python呼び出しに統合
+    # STK yaml.safe_load を2回→1回に削減 (Python起動コスト×1回 + yaml.safe_load×1回 削減)
     [ -f "$QUEUE_FILE" ] || return 0
 
     local result
@@ -510,20 +512,21 @@ sync_stk_status_from_archive() {
         (
             flock -w 10 200 || { echo "[stk-sync] WARN: flock timeout" >&2; echo "0 0"; exit 1; }
 
-            python3 - "$QUEUE_FILE" "$ARCHIVE_CMD_DIR" "$REPORTS_DIR" "$ARCHIVE_REPORT_DIR" <<'PY'
-import glob
+            python3 - "$QUEUE_FILE" "$ARCHIVE_CMD_DIR" "$REPORTS_DIR" "$ARCHIVE_REPORT_DIR" "$STK_ARCHIVE_DIR" <<'PY'
 import os
 import sys
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import yaml
 
-stk_path, archive_cmd_dir, reports_dir, archive_report_dir = sys.argv[1:5]
+stk_path, archive_cmd_dir, reports_dir, archive_report_dir, stk_archive_dir = sys.argv[1:6]
 SAFE_STATUSES = {"pending", "in_progress", "acknowledged", "assigned"}
 DONE_STATUSES = {"done", "cancelled", "absorbed"}
+TRIM_STATUSES = {"done", "absorbed", "cancelled"}
+CUTOFF_DAYS = 30
 
-# === Phase 1: 完了cmd_idを3ソースから収集 ===
+# === Phase 1: 完了cmd_idを収集 (sync用) ===
 
 completed_ids = set()
 
@@ -536,8 +539,6 @@ if os.path.isdir(archive_cmd_dir):
                 completed_ids.add(f"{parts[0]}_{parts[1]}")
 
 # Source 2: 現行報告 (status: done/completed) — GP-080: TSVキャッシュから読取り
-# 旧: yaml.safe_load×97ファイル(457ms)
-# 新: gawk生成TSV 1回読取り(<1ms)
 cache_path = os.path.join(os.environ.get("TMP", "/tmp"), "report_fields_cache.tsv")
 if os.path.isfile(cache_path):
     with open(cache_path, encoding="utf-8") as cf:
@@ -551,12 +552,9 @@ if os.path.isfile(cache_path):
                     cid = "_".join(parent.split("_")[:2])
                     completed_ids.add(cid)
 
-# Source 3: アーカイブ済み報告 — GP-077: スキップ
-# archive/reportsの全量yaml.safe_load(2827件, 11.7秒)は冗長。
-# Source 1(archive/cmds/ファイル名)で完了cmd_idは十分カバー済み。
-# check_reports_dir(archive_report_dir)  # GP-077: disabled for performance
+# Source 3: GP-077: スキップ (archive/cmds/ファイル名で十分カバー)
 
-# === Phase 2: STK読み込み+status同期+退避 ===
+# === Phase 2: STK読み込み (1回) — sync + trim 両方に使用 ===
 
 with open(stk_path, encoding="utf-8") as f:
     data = yaml.safe_load(f) or {}
@@ -566,30 +564,28 @@ if not isinstance(cmds, dict):
     print("0 0")
     sys.exit(0)
 
-date_stamp = datetime.now().strftime("%Y%m%d")
+now = datetime.now(timezone(timedelta(hours=9)))
+cutoff = now - timedelta(days=CUTOFF_DAYS)
+date_stamp = now.strftime("%Y%m%d")
+
 synced = 0
 archived = 0
-keep = {}
+sync_removed = []
+keep_after_sync = {}  # syncが残したエントリ群 (trimの入力)
 
+# --- sync パス ---
 for cmd_id, entry in cmds.items():
     if not isinstance(entry, dict):
-        keep[cmd_id] = entry
+        keep_after_sync[cmd_id] = entry
         continue
-
     status = str(entry.get("status", "")).strip()
-
-    # 安全弁: pending/in_progressは無条件で残す
     if status in SAFE_STATUSES:
-        keep[cmd_id] = entry
+        keep_after_sync[cmd_id] = entry
         continue
-
-    # delegated → done 同期
     if status == "delegated" and cmd_id in completed_ids:
         entry["status"] = "done"
         status = "done"
         synced += 1
-
-    # done/cancelled/absorbed → archive/cmds/に退避
     if status in DONE_STATUSES:
         archive_path = os.path.join(archive_cmd_dir, f"{cmd_id}_{status}_{date_stamp}.yaml")
         if not os.path.exists(archive_path):
@@ -599,15 +595,74 @@ for cmd_id, entry in cmds.items():
                           default_flow_style=False, allow_unicode=True,
                           indent=2, sort_keys=False)
         archived += 1
+        sync_removed.append(cmd_id)
         continue
+    keep_after_sync[cmd_id] = entry
 
-    keep[cmd_id] = entry
+# --- trim パス: syncが残したエントリのうち done+30日超を stk_archive_dir退避 ---
+trim_to_archive = {}
+trim_removed = []
+final_keep = {}
 
-# yaml.dump禁止: 退避対象cmd_idリストをbash側に出力（テキストベース処理）
-removed_ids = [cid for cid in cmds if cid not in keep and isinstance(cmds[cid], dict)]
+for cmd_id, entry in keep_after_sync.items():
+    if not isinstance(entry, dict):
+        final_keep[cmd_id] = entry
+        continue
+    status_l = str(entry.get("status", "")).strip().lower()
+    if status_l not in TRIM_STATUSES:
+        final_keep[cmd_id] = entry
+        continue
+    ts_raw = entry.get("timestamp") or entry.get("delegated_at") or ""
+    ts_str = str(ts_raw).strip().strip("'\"")
+    entry_dt = None
+    for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S+09:00",
+                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            entry_dt = datetime.strptime(ts_str, fmt)
+            if entry_dt.tzinfo is None:
+                entry_dt = entry_dt.replace(tzinfo=timezone(timedelta(hours=9)))
+            break
+        except ValueError:
+            continue
+    if entry_dt is not None and entry_dt < cutoff:
+        ym = entry_dt.strftime("%Y-%m")
+        trim_to_archive.setdefault(ym, {})[cmd_id] = entry
+        trim_removed.append(cmd_id)
+    else:
+        final_keep[cmd_id] = entry
+
+# trim: 退避先に書き出し (月別 YYYY-MM.yaml)
+if trim_to_archive:
+    os.makedirs(stk_archive_dir, exist_ok=True)
+    for ym, entries in trim_to_archive.items():
+        archive_path = os.path.join(stk_archive_dir, f"{ym}.yaml")
+        if os.path.exists(archive_path):
+            with open(archive_path, encoding="utf-8") as f:
+                existing = yaml.safe_load(f) or {}
+            existing_cmds = existing.get("commands") or {}
+        else:
+            existing_cmds = {}
+        existing_cmds.update(entries)
+        fd, tmp_path = tempfile.mkstemp(dir=stk_archive_dir, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                yaml.dump({"commands": existing_cmds}, f, default_flow_style=False,
+                          allow_unicode=True, indent=2, sort_keys=False)
+            os.replace(tmp_path, archive_path)
+        except Exception:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+            raise
+
+all_removed = sync_removed + trim_removed
+trim_archived = len(trim_removed)
 print(f"{synced} {archived}")
-if removed_ids:
-    print(f"REMOVE:{','.join(removed_ids)}")
+if all_removed:
+    print(f"REMOVE:{','.join(all_removed)}")
+if trim_archived > 0:
+    print(f"TRIM:trimmed: archived={trim_archived} kept={len(final_keep)}")
+else:
+    print("TRIM:noop: no entries to archive")
 PY
         ) 200>"/tmp/mas-stk.lock"
     )
@@ -626,6 +681,7 @@ PY
     synced=$(echo "$result" | head -1 | awk '{print $1}')
     archived=$(echo "$result" | head -1 | awk '{print $2}')
     echo "[stk-sync] delegated→done: ${synced:-0}, archived: ${archived:-0}"
+    echo "[stk-trim] $(echo "$result" | grep '^TRIM:' | sed 's/^TRIM://' || echo 'done')"
 }
 
 # ============================================================
@@ -910,13 +966,21 @@ archive_reports() {
         ' "$QUEUE_FILE" 2>/dev/null)
     fi
 
-    # GP-XXX: deploy_preflight バッチ事前スキャン (19x grep -q → 1x grep -rl)
+    # GP-XXX: deploy_preflight バッチ事前スキャン
+    # REPORT_CACHEから対象parent_cmdを収集→直接pathでgrep (grep -rl全走査14s問題回避)
     declare -A _preflight_gate_cmds=()
-    if compgen -G "$PROJECT_DIR/queue/gates/*/review_gate.done" > /dev/null 2>&1; then
-        while IFS= read -r _gf; do
-            _gf_cmd="${_gf%/review_gate.done}"; _gf_cmd="${_gf_cmd##*/}"
-            _preflight_gate_cmds["$_gf_cmd"]=1
-        done < <(grep -rl "source: deploy_preflight" "$PROJECT_DIR/queue/gates" --include="review_gate.done" 2>/dev/null)
+    if [ -f "$_REPORT_CACHE" ]; then
+        while IFS='|' read -r _rc_fname _rc_status _rc_parent; do
+            [ -z "$_rc_parent" ] && continue
+            [ "${_preflight_gate_cmds[$_rc_parent]+x}" = "x" ] && continue  # 重複スキップ
+            _rc_gate="$PROJECT_DIR/queue/gates/${_rc_parent}/review_gate.done"
+            [ -f "$_rc_gate" ] || continue
+            if grep -q "source: deploy_preflight" "$_rc_gate" 2>/dev/null; then
+                _preflight_gate_cmds["$_rc_parent"]=1
+            else
+                _preflight_gate_cmds["$_rc_parent"]=0  # 存在するがdeploy_preflightではない
+            fi
+        done < "$_REPORT_CACHE"
     fi
 
     for report_file in "${report_files[@]}"; do
@@ -1168,6 +1232,19 @@ trim_cmd_chronicle() {
     local cutoff_date
     cutoff_date=$(date -d '30 days ago' '+%Y-%m-%d')
 
+    # 早期リターン: 30日超エントリが存在しない場合はPython起動をスキップ (~20ms削減)
+    if ! gawk -v co="$cutoff_date" '
+        /^\| cmd_/ {
+            n = split($0, p, "|")
+            d = p[5]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", d)
+            if (d != "" && d < co) { found = 1; exit }
+        }
+        END { exit !found }
+    ' "$CHRONICLE_FILE" 2>/dev/null; then
+        echo "[chronicle-trim] noop: no old entries (early exit)"
+        return 0
+    fi
+
     (
         flock -w 10 200 || { echo "[chronicle-trim] WARN: flock timeout" >&2; return 1; }
 
@@ -1297,139 +1374,8 @@ PY
 STK_ARCHIVE_DIR="$PROJECT_DIR/archive/shogun_to_karo"
 
 trim_stk_old_entries() {
-    [ -f "$QUEUE_FILE" ] || return 0
-
-    local _trim_result
-    _trim_result=$(
-        (
-            flock -w 10 200 || { echo "[stk-trim] WARN: flock timeout on QUEUE_FILE" >&2; return 1; }
-
-            python3 - "$QUEUE_FILE" "$STK_ARCHIVE_DIR" <<'PY'
-import os
-import sys
-import tempfile
-from datetime import datetime, timedelta, timezone
-
-import yaml
-
-stk_path, archive_dir = sys.argv[1:3]
-CUTOFF_DAYS = 30
-ARCHIVE_STATUSES = {"done", "absorbed", "cancelled"}
-# pending/in_progress は絶対に退避しない
-KEEP_STATUSES = {"pending", "in_progress", "acknowledged", "assigned"}
-
-now = datetime.now(timezone(timedelta(hours=9)))
-cutoff = now - timedelta(days=CUTOFF_DAYS)
-
-with open(stk_path, encoding="utf-8") as f:
-    data = yaml.safe_load(f) or {}
-
-cmds = data.get("commands")
-if not isinstance(cmds, dict):
-    print("noop: no commands dict")
-    sys.exit(0)
-
-keep = {}
-to_archive = {}  # ym -> {cmd_id: entry}
-archived_count = 0
-
-for cmd_id, entry in cmds.items():
-    if not isinstance(entry, dict):
-        keep[cmd_id] = entry
-        continue
-
-    status = str(entry.get("status", "")).strip().lower()
-
-    # 安全弁: pending/in_progressは無条件で残す
-    if status in KEEP_STATUSES:
-        keep[cmd_id] = entry
-        continue
-
-    if status not in ARCHIVE_STATUSES:
-        keep[cmd_id] = entry
-        continue
-
-    # timestamp解析 (複数フォーマット対応)
-    ts_raw = entry.get("timestamp") or entry.get("delegated_at") or ""
-    ts_str = str(ts_raw).strip().strip("'\"")
-    entry_dt = None
-    for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S+09:00",
-                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
-        try:
-            entry_dt = datetime.strptime(ts_str, fmt)
-            if entry_dt.tzinfo is None:
-                entry_dt = entry_dt.replace(tzinfo=timezone(timedelta(hours=9)))
-            break
-        except ValueError:
-            continue
-
-    if entry_dt is None:
-        # timestamp解析失敗 → 安全側(keep)
-        keep[cmd_id] = entry
-        continue
-
-    if entry_dt >= cutoff:
-        # 30日以内 → keep
-        keep[cmd_id] = entry
-        continue
-
-    # 退避対象
-    ym = entry_dt.strftime("%Y-%m")
-    to_archive.setdefault(ym, {})[cmd_id] = entry
-    archived_count += 1
-
-if archived_count == 0:
-    print("noop: no entries to archive")
-    sys.exit(0)
-
-# Phase 2: 退避先に書き出し (月別 YYYY-MM.yaml)
-os.makedirs(archive_dir, exist_ok=True)
-for ym, entries in to_archive.items():
-    archive_path = os.path.join(archive_dir, f"{ym}.yaml")
-    if os.path.exists(archive_path):
-        with open(archive_path, encoding="utf-8") as f:
-            existing = yaml.safe_load(f) or {}
-        existing_cmds = existing.get("commands") or {}
-    else:
-        existing_cmds = {}
-
-    existing_cmds.update(entries)
-    archive_data = {"commands": existing_cmds}
-
-    fd, tmp_path = tempfile.mkstemp(dir=archive_dir, suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            yaml.dump(archive_data, f, default_flow_style=False,
-                      allow_unicode=True, indent=2, sort_keys=False)
-        os.replace(tmp_path, archive_path)
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
-
-# yaml.dump禁止: 退避対象cmd_idリストをbash側に出力（テキストベース処理）
-all_archived_ids = []
-for ym_key, entries in to_archive.items():
-    all_archived_ids.extend(entries.keys())
-
-print(f"trimmed: archived={archived_count} kept={len(keep)}")
-if all_archived_ids:
-    print(f"REMOVE:{','.join(all_archived_ids)}")
-PY
-        ) 200>"/tmp/mas-stk.lock"
-    )
-
-    # yaml.dump禁止: テキストベースでSTKからcmdブロックを除去
-    local remove_csv
-    remove_csv=$(echo "$_trim_result" | grep '^REMOVE:' | sed 's/^REMOVE://' || true)
-    if [ -n "$remove_csv" ]; then
-        (
-            flock -w 10 200 || { echo "[stk-trim] WARN: flock timeout on rewrite" >&2; return 1; }
-            stk_remove_cmd_blocks "$QUEUE_FILE" "$remove_csv"
-        ) 200>"/tmp/mas-stk.lock"
-    fi
-
-    echo "[stk-trim] $(echo "$_trim_result" | head -1 || echo 'done')"
+    # GP-XXX: trim_stk_old logic is now merged into sync_stk_status_from_archive (single Python call)
+    echo "[stk-trim] (merged into sync_stk, skipped)"
 }
 
 # ============================================================
