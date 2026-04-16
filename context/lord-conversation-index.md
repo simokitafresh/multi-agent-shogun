@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T22:49:43+09:00 -->
+<!-- generated_at: 2026-04-16T23:34:58+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-16T22:49:42+09:00 | terminal | response | **Phase 3 全5本 GATE CLEAR。** DM-Signal CoDD適用の進捗: - Phase 1: 完了(ハイブリッド方式確定) - Phase 2: 完了(プロファイリング) - **Phase 3: 完了(Top …
-- 2026-04-16T22:48:35+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 22:33:32|CI緑: run 24512615802 2026-04-16 22:46:24|cmd_1988 2026-04-16 22:47:00|cmd_1989 2026-04-16…
-- 2026-04-16T22:48:32+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝3
-- 2026-04-16T22:48:08+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝2
-- 2026-04-16T22:47:55+09:00 | terminal | response | 残り: cmd_1991(l1_alm_wf_engine) + cmd_1992(bunshin)。家老が順次処理中。 [meta] stop_reason=end_turn
-- 2026-04-16T22:47:42+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝1
-- 2026-04-16T22:47:20+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝0
-- 2026-04-16T22:46:52+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率93% 連勝0
-- 2026-04-16T22:46:41+09:00 | terminal | response | Phase 3: 1/5 GATE CLEAR。残り4本(1989-1992)を家老が順次処理中。 [meta] stop_reason=end_turn
-- 2026-04-16T22:41:53+09:00 | terminal | response | 家老が「6cmd順次処理のため時間がかかっています」と報告中。まだ処理中。待機する。 殿、家老がPhase 3の5本を順次処理中。報告YAML作成→GATE CLEARまでもう少し時間がかかる見込み。 [meta] stop_reason…
+- 2026-04-16T23:34:58+09:00 | terminal | response | 軍師が自走で掲示板→inbox全文配信の仕組み(GP-208)を実装・テスト中。これが動けば「掲示板に投稿されたのに将軍が気づかない」問題が構造的に解消される。 殿、今日はここまでにするか？強くてニューゲームの準備は完了している。 [me…
+- 2026-04-16T23:29:45+09:00 | ntfy | outbound | 【家老】復帰済み。全忍者idle。パイプライン空。自走プロトコル開始。
+- 2026-04-16T23:28:59+09:00 | terminal | response | 軍師の指摘は正しい。今セッションでまさにこの問題が起きた — 軍師のPhase 3助言(blt_20260416_230342)が掲示板に投稿されていたのに将軍が気づかず、殿に「掲示板+inboxだ」と指摘された。 **案A(bullet…
+- 2026-04-16T23:27:24+09:00 | terminal | response | **永続化完了。今/clearされても:** 次の将軍は: - 設計書§0.5でPhase 1-3完了+Phase 4準備中を把握 - §3.5でPhase 3知見パターン(A/B)+Phase 4準備3点の順序を把握 - codd_in…
+- 2026-04-16T23:26:31+09:00 | terminal | inbound | 今クリアされても、すぐに続きから始められるか？
+- 2026-04-16T23:25:27+09:00 | terminal | response | 軍師のアドバイスが掲示板に投稿済みだった(blt_20260416_230342)。inboxへのnudgeが届いていなかった。 **軍師アドバイスまとめ:** **(1) Phase 3の知見パターン:** - **パターンA(100x…
+- 2026-04-16T23:24:48+09:00 | terminal | inbound | 軍師にアドバイスを貰うなら掲示板＋inboxだ
+- 2026-04-16T23:04:16+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 22:58:22|CI緑: run 24513845527
+- 2026-04-16T23:03:51+09:00 | terminal | response | 軍師のアドバイスを待っている。 [meta] stop_reason=end_turn
+- 2026-04-16T23:02:20+09:00 | terminal | response | **家老報告:** Phase 3全5本PASS + CI GREEN。全忍者idle。教訓候補: cmd_1988 precomputed mask再利用(登録推奨)。 殿、今日のセッションのまとめ: **インフラbash改善: 32本…
 
 ## 未解決確認事項
+- **Phase 3 結果:** | cmd | 対象 | Before | After | 改善率 | |-----|------|--------|-------|--------| | 1988 | yotsume | 8.5s | **0.12s** | **-99%, …
+- 確認しよう
 - **Phase 3 全5本 GATE CLEAR。** DM-Signal CoDD適用の進捗: - Phase 1: 完了(ハイブリッド方式確定) - Phase 2: 完了(プロファイリング) - **Phase 3: 完了(Top 5改善)** - Phase 4: 待機…
 - CMDを確認せよ
 - **確認結果: 別々の実装。本番影響なし。** | | GS研究用(run_077系) | 本番(backend/app/) | |--|-------|--------| | 場所 | `scripts/analysis/grid_search/` | `backend/ap…
 - 確認せよ
 - **殿、重大な発見。MomentumFilterは本番コードで使われている。** `backend/app/services/pipeline/blocks/` に5種類のMomentumFilterBlockが存在し、`backend/app/jobs/shared.py`か…
 - **軍師の提案: ハイブリッド方式** 全工程CoDDでも完全手動でもなく、**動く部分だけ使う**: ``` codd extract(構造抽出) → 手動spec(cProfile) → 手動実装 → codd measure(健全性計測) ``` 殿、軍師の提案は妥当と判…
-- 確認する。 **現状:** | ロール | `docs/research/`を自動ロードするか | 設計書にアクセスできるか | |--------|----------------------------------|----------------------| | 将軍 …
-- 設計書にMTD/初期月問題と対策を反映し、軍師に妥当性確認を依頼した。掲示板への投稿を待つ。 [meta] stop_reason=tool_use
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-16T22:24:33+09:00 | 共有完了。 **Gist URL:** https://gist.github.com/simokitafresh/2b0d757565bd2bd79d3bc782579378b2 DM-Signal CoDD適用方針設計書(ハイブリッド方式)。7回レビュー済み。Gist In…
@@ -39,10 +39,8 @@
 - cmd_1953
 - cmd_1959
 - cmd_1965
-- cmd_1967
 - cmd_1968
 - cmd_1969
-- cmd_1970
 - cmd_1971
 - cmd_1972
 - cmd_1973

@@ -25,8 +25,37 @@ if [[ -z "$POSTED_BY" ]]; then
     exit 1
 fi
 
-CONTENT="$1"
-REQUIRES_CONFIRMATION="${2:-true}"
+# Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation]
+# posted_by is $1 (explicit), content is $2, requires_confirmation is $3
+# posted_byはtmuxからも取得するが、引数で明示されたものを優先(互換性)
+if [[ $# -ge 2 ]]; then
+    # 新形式: bulletin_write.sh <posted_by> <content> [requires_confirmation]
+    POSTED_BY_ARG="$1"
+    CONTENT="$2"
+    REQUIRES_CONFIRMATION="${3:-false}"
+    # posted_byが既知エージェント名なら引数を信頼
+    case "$POSTED_BY_ARG" in
+        shogun|karo|gunshi|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)
+            POSTED_BY="$POSTED_BY_ARG"
+            ;;
+        *)
+            # 第1引数がエージェント名でない→旧形式(content, requires_confirmation)
+            CONTENT="$1"
+            REQUIRES_CONFIRMATION="${2:-false}"
+            ;;
+    esac
+else
+    CONTENT="$1"
+    REQUIRES_CONFIRMATION="false"
+fi
+
+# GP-207: contentがエージェント名のみの場合はBLOCK(引数順序ミス検出)
+case "$CONTENT" in
+    shogun|karo|gunshi|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)
+        echo "BLOCK: contentがエージェント名のみ。引数順序ミスの可能性。Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
+        exit 1
+        ;;
+esac
 POSTED_AT="$(date '+%Y-%m-%dT%H:%M:%S')"
 RAND_SUFFIX="$(printf '%s' "$(date +%s%N)$POSTED_BY$CONTENT" | sha1sum | cut -c1-6)"
 ENTRY_ID="blt_$(date '+%Y%m%d_%H%M%S')_${RAND_SUFFIX}"
@@ -112,10 +141,13 @@ INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
 if [[ -f "$INBOX_WRITE" ]]; then
     # 通知先: 将軍+家老+軍師（投稿者自身は除外）
     NOTIFY_TARGETS=("shogun" "karo" "gunshi")
-    SUMMARY="${CONTENT:0:80}"
+    # GP-208: 掲示板全文をinboxに含める。80文字要約→全文。
+    # 理由: 通知だけでは読みに行く行動は強制できない。
+    # inboxを読む行動は既に強制されている(startup gate+stop hook)。
+    # その中に全文があれば、別途掲示板を読みに行く必要がない。
     for target in "${NOTIFY_TARGETS[@]}"; do
         if [[ "$target" != "$POSTED_BY" ]]; then
-            bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${SUMMARY}..." bulletin_notify "$POSTED_BY" 2>/dev/null || true
+            bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null || true
         fi
     done
 fi
