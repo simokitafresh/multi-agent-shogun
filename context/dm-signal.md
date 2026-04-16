@@ -172,5 +172,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L606-L617は振り分け済 → ops§18 WF(L606:回帰テスト決定論), ops索引(L607:当月パリティ/L610:削除スコープ/L614:車輪再発明/L616:成果物所在/L617:gate_artifact_map), research§35(L613:超越条件C非現実+SPA/L615:Cell Bパラメータ縮退)。L608≡L607, L609≡L606, L611≡L610, L612≡L613重複→削除）
 - （L618-L630は振り分け済 → infra教訓索引LLM(L618), research教訓索引奥義(L620), ops教訓索引ツール(L621/L624), infra git(L622), gs-speedup§4(L623/L625), gs-speedup§3(4)(L626), core§19.2(L627/L630:L573同根統合), ops教訓索引パリティ(L628/L629)。L619はL620重複→削除）
 - （L631は振り分け済 → core§19.2 BB仕様・バグ修正(L631:TRF insufficient_candidatesでcurrent_tickersクリア禁止)）
-- L632: snapshot比較器は保存していない字段を比較対象に含めるな（cmd_1985）
-- L633: monthly専用GS serial pathはprecomputed union maskを再利用せよ（cmd_1988）
+- （L632は振り分け済 → ops教訓索引ツール。L633はAUTO-DEPRECATE(referenced=0)→振り分けスキップ）

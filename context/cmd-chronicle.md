@@ -684,3 +684,4 @@
 | cmd_karo_1995_fix | cmd_1995補足 — compare_snapshots.py holding_signal空振り修正+列名統一 | dm-signal | 04-17 | compare_snapshots.pyのholding_s |
 | cmd_1994 | Phase 4準備① — fullrecalculate cProfile計測(read-only) | dm-signal | 04-17 | recalculate_fast.py fullrecalc |
 | cmd_karo_ci_fix_f821 | CI RED修正 — run_077_yotsume.py F821(未定義変数)解消 | dm-signal | 04-17 | run_077_yotsume.py F821/F841/B |
+| cmd_karo_gp190_fix | GP-190バグ修正 — scout_exemptがcommit checkを消す問題解消 | infra | 04-17 | deploy_task.sh修正: scout_exempt |
