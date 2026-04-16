@@ -24,8 +24,10 @@ TOTAL_REFS=0
 BROKEN_REFS=0
 declare -a EXTERNAL_REPO_PATHS=()
 # ANY_EXTERNAL_EXISTS: 外部リポ(docs/research/あり)が一つでも存在するか。main()で設定。
-# check_context_file()が参照: false時は外部リポ参照をスキップ（偽陽性防止）
 ANY_EXTERNAL_EXISTS=false
+
+# cmd_1976最適化: RESOLVE_BASES配列を事前構築しprocess substitutionを排除
+declare -a RESOLVE_BASES=()
 
 load_external_repos() {
     # config/projects.yaml から当リポ以外の全プロジェクトパスを動的に読む
@@ -37,17 +39,6 @@ load_external_repos() {
         grep -E '^ {4}path:' "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null | \
         sed 's/^[[:space:]]*path:[[:space:]]*//' | tr -d '"'
     )
-}
-
-normalize_ref() {
-    local raw="$1"
-    local cleaned
-    cleaned="$(printf '%s' "$raw" | sed -E \
-        -e 's/[[:space:]]*\|.*$//' \
-        -e 's/[[:space:]]*§.*$//' \
-        -e 's/[`"'"'"']//g' \
-        -e 's/[),.;:]+$//')"
-    printf '%s' "$cleaned"
 }
 
 is_glob_ref() {
@@ -77,78 +68,6 @@ ref_exists_in_base() {
     fi
 }
 
-resolve_context_bases() {
-    # 当リポ + 全外部リポを返す（ファイル名ベースの判定を廃止）
-    printf '%s\n' "$SCRIPT_DIR"
-    local ext
-    for ext in "${EXTERNAL_REPO_PATHS[@]}"; do
-        printf '%s\n' "$ext"
-    done
-}
-
-display_path() {
-    local file="$1"
-    if [[ "$file" == "$SCRIPT_DIR/"* ]]; then
-        printf '%s' "${file#"$SCRIPT_DIR"/}"
-    else
-        printf '%s' "$file"
-    fi
-}
-
-check_context_file() {
-    local context_file="$1"
-    local file_display
-    file_display="$(display_path "$context_file")"
-
-    while IFS=$'\t' read -r line_no raw_ref; do
-        [ -n "$raw_ref" ] || continue
-
-        local ref
-        ref="$(normalize_ref "$raw_ref")"
-        [[ "$ref" == docs/research/* ]] || continue
-
-        local key="${context_file}|${ref}"
-        if [[ -n "${SEEN_REFS[$key]:-}" ]]; then
-            continue
-        fi
-        SEEN_REFS["$key"]=1
-        # shellcheck disable=SC2034
-        FIRST_ORIGIN["$key"]="${file_display}:${line_no}"
-        TOTAL_REFS=$((TOTAL_REFS + 1))
-
-        local found=false
-        while IFS= read -r base_dir; do
-            [ -n "$base_dir" ] || continue
-            if ref_exists_in_base "$base_dir" "$ref"; then
-                found=true
-                break
-            fi
-        done < <(resolve_context_bases "$context_file")
-
-        if [ "$found" = false ]; then
-            # 外部リポが存在しない環境では外部リポ参照をスキップ（偽陽性防止）
-            # 外部リポが存在する環境で見つからない場合のみFAIL（本物のリンク切れ）
-            if [ "$ANY_EXTERNAL_EXISTS" = false ]; then
-                TOTAL_REFS=$((TOTAL_REFS - 1))
-                continue
-            fi
-            BROKEN_REFS=$((BROKEN_REFS + 1))
-            BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
-        fi
-    done < <(
-        awk '
-            {
-                s = $0
-                while (match(s, /docs\/research\/[a-zA-Z0-9_./*-]+/)) {
-                    ref = substr(s, RSTART, RLENGTH)
-                    printf "%d\t%s\n", NR, ref
-                    s = substr(s, RSTART + RLENGTH)
-                }
-            }
-        ' "$context_file"
-    )
-}
-
 collect_context_files() {
     if [ "$#" -eq 0 ]; then
         # lord-conversation-index.md は auto-generated 会話ログ。参照チェック対象外
@@ -173,24 +92,75 @@ collect_context_files() {
 
 main() {
     load_external_repos
-    # 外部リポが一つでも存在するかを事前計算（check_context_file内で参照）
+
+    # cmd_1976最適化: RESOLVE_BASES配列を事前構築（process substitutionをref毎に呼ぶ代わり）
+    RESOLVE_BASES=("$SCRIPT_DIR")
     local ext_path
     for ext_path in "${EXTERNAL_REPO_PATHS[@]}"; do
-        [ -d "${ext_path}/docs/research" ] && ANY_EXTERNAL_EXISTS=true && break
+        [ -d "${ext_path}/docs/research" ] && ANY_EXTERNAL_EXISTS=true
+        RESOLVE_BASES+=("$ext_path")
     done
+
     build_file_cache
-    local context_file
-    local scanned=0
-    while IFS= read -r context_file; do
-        [ -n "$context_file" ] || continue
-        scanned=$((scanned + 1))
-        check_context_file "$context_file"
+
+    # cmd_1976最適化: 全contextファイルを事前リスト化
+    local -a ctx_files=()
+    while IFS= read -r f; do
+        ctx_files+=("$f")
     done < <(collect_context_files "$@")
 
+    local scanned=${#ctx_files[@]}
     if [ "$scanned" -eq 0 ]; then
         echo "[ALERT] gate_vercel_phase: 0 context files scanned"
         return 1
     fi
+
+    # cmd_1976最適化: grep単一起動で全contextファイルを一括処理(awk×43→grep×1)
+    # grep -nHo: filename:lineno:match 形式で全マッチを出力(1行複数マッチも正常処理)
+    # grep -E でdocs/research/参照を抽出; 未マッチファイルはexit 1→|| true で継続
+    while IFS= read -r grep_line; do
+        [ -n "$grep_line" ] || continue
+
+        # 出力形式: /abs/path/file.md:LINENO:docs/research/something.md
+        # ref は [a-zA-Z0-9_./*-]+ でコロンを含まないため末尾から安全に分割可能
+        local ref="${grep_line##*:}"            # 最後の:以降 = ref
+        local linenum_file="${grep_line%:*}"    # 最後の:より前 = path:lineno
+        local line_no="${linenum_file##*:}"     # 最後の:以降 = lineno
+        local context_file="${linenum_file%:*}" # 最後の:より前 = filepath
+
+        local key="${context_file}|${ref}"
+        if [[ -n "${SEEN_REFS[$key]:-}" ]]; then
+            continue
+        fi
+        SEEN_REFS["$key"]=1
+        # shellcheck disable=SC2034
+        FIRST_ORIGIN["$key"]="${context_file#"$SCRIPT_DIR"/}:${line_no}"
+        TOTAL_REFS=$((TOTAL_REFS + 1))
+
+        local found=false
+        local base_dir
+        for base_dir in "${RESOLVE_BASES[@]}"; do
+            [ -n "$base_dir" ] || continue
+            if ref_exists_in_base "$base_dir" "$ref"; then
+                found=true
+                break
+            fi
+        done
+
+        if [ "$found" = false ]; then
+            # 外部リポが存在しない環境では外部リポ参照をスキップ（偽陽性防止）
+            # 外部リポが存在する環境で見つからない場合のみFAIL（本物のリンク切れ）
+            if [ "$ANY_EXTERNAL_EXISTS" = false ]; then
+                TOTAL_REFS=$((TOTAL_REFS - 1))
+                continue
+            fi
+            BROKEN_REFS=$((BROKEN_REFS + 1))
+            local file_display="${context_file#"$SCRIPT_DIR"/}"
+            BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
+        fi
+    done < <(
+        grep -nHo 'docs/research/[a-zA-Z0-9_./*-]\+' "${ctx_files[@]}" 2>/dev/null || true
+    )
 
     if [ "$BROKEN_REFS" -eq 0 ]; then
         echo "[OK] gate_vercel_phase: ${TOTAL_REFS} refs checked, all exist"

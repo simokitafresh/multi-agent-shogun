@@ -158,9 +158,9 @@ lessons:
   summary: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 4
-  last_referenced: '2026-04-15'
+  last_referenced: '2026-04-16'
 - id: L457
   title: whitelist型.gitignoreではスクリプト追加時にホワイトリストエントリ追加が必須
   summary: whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱い
@@ -1686,7 +1686,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 47
+  helpful_count: 48
   harmful_count: 10
   last_referenced: '2026-04-16'
 - id: L228
@@ -1750,7 +1750,7 @@ lessons:
   tags:
   - process
   - git
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L219
@@ -2056,6 +2056,9 @@ lessons:
   summary: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
   tags:
   - recon
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-16'
 - id: L177
   title: 追跡ログのキーをproducer/consumerで変える時は両側同時に整合させよ
   summary: IF 追跡TSVやqueueの識別子をparent_cmdからtask_id/subtask_idへ変更する時 THEN 書き込み側だけでなく集計・更新・分析の
@@ -2315,7 +2318,7 @@ lessons:
   - review
   - gate
   - git
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-14'
 - id: L138
@@ -3068,7 +3071,7 @@ lessons:
   tags:
   - git
   - review
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-14'
 - id: L026

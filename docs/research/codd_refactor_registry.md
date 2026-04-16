@@ -12,6 +12,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-14 | 軍師 | `scripts/analysis/grid_search/run_077_*` / `scripts/analysis/grid_search/gs_vectorized_subset.py` | なぜなぜ7回完了 + 方法E実装/12体同一性確認 | `OOM (437GB, 実行不能) → 50分/662MB (N=84推定, 同一性100%)` | spec+result: `docs/research/gunshi_nazenaze7_gs_speedup_20260414.md` |
 | 2026-04-15 | 軍師 | `scripts/cmd_complete_gate.sh` テスト統合 | Phase 5完了(統合のみ) | 6ファイル→3ファイル, 41テスト維持, 8.3s→8.7s(速度横ばい=保守性改善) | テスト統合spec: `docs/research/gunshi_test_consolidation_spec.md` |
 | 2026-04-16 | hayate | `scripts/shutsujin_departure.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `2.43s → 0.17s` (`-92.9%`, `14.1x`) | spec+after: `docs/research/shutsujin_departure_after_20260416.md` |
+| 2026-04-16 | 才蔵 | `scripts/parity_check.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `5.50s → 0.02s` (`-99.6%`, `--help` path) | spec: `docs/research/codd_spec_parity_check_20260416.md` |
 | 2026-04-16 | hayate | `scripts/ninja_done.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `22ms → 2ms` (usage, `-90.9%`) / `228ms → 168ms` (success path, `-26.3%`) | spec+after: `docs/research/cmd_1965_ninja_done_after_20260416.md` |
 | 2026-04-16 | kotaro | `scripts/gates/gate_artifact_map.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `967ms → 99ms` (`-90%`, `9.8x`) | spec: `docs/research/codd_spec_gate_artifact_map_20260416.md` |
 | 2026-04-16 | hanzo | `scripts/report_merge.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `1947ms → 76ms` (`-96%`, `25.6x`) | spec: `docs/research/codd_spec_report_merge_20260416.md` |

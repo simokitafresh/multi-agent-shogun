@@ -63,20 +63,17 @@ check_hardcodes() {
     # grep --exclude はWSL2環境で不安定なため、パイプフィルタで確実に除外
     local exclude_filter='cli_lookup\.sh|cli_profiles\.yaml|settings\.yaml|model_switch_preflight\.sh|cli_specific/|generated/'
 
-    # 検索パターン（静的: モデル名・旧関数名の直書き検出）
-    local patterns=(
-        'is_codex'
-        'gpt-5\.'
-        'claude-(opus|sonnet|haiku)-[0-9]'
-    )
-
     # 動的パターン: 全エージェント×非デフォルトCLI種別の直書き検出
     # settings.yaml/cli_profiles.yamlはexclude_filterで除外済み
     local _all_agents_arr
     read -ra _all_agents_arr <<< "$(get_all_agents)"
+    local _agent_patterns=""
     for _agent in "${_all_agents_arr[@]}"; do
-        patterns+=("${_agent}.*codex")
+        _agent_patterns+="|${_agent}.*codex"
     done
+
+    # 全パターンを単一正規表現に結合（11grep→1grep。WSL2 I/O 11x削減）
+    local combined_pattern="(is_codex|gpt-5\.|claude-(opus|sonnet|haiku)-[0-9]${_agent_patterns})"
 
     # 検索対象ディレクトリ
     local search_dirs=(
@@ -86,29 +83,19 @@ check_hardcodes() {
         "$SCRIPT_DIR/context/"
     )
 
-    local total_hits=0
-    local all_results=""
+    local found
+    found=$(grep -Ern \
+        --include='*.sh' --include='*.yaml' --include='*.md' \
+        "$combined_pattern" "${search_dirs[@]}" 2>/dev/null \
+        | grep -Ev "$exclude_filter" || true)
 
-    for pattern in "${patterns[@]}"; do
-        local found
-        found=$(grep -Ern \
-            --include='*.sh' --include='*.yaml' --include='*.md' \
-            "$pattern" "${search_dirs[@]}" 2>/dev/null \
-            | grep -Ev "$exclude_filter" || true)
-
-        if [[ -n "$found" ]]; then
-            all_results+="  Pattern: ${pattern}\n${found}\n\n"
-            local count
-            count=$(echo "$found" | wc -l)
-            total_hits=$((total_hits + count))
-        fi
-    done
-
-    if [[ $total_hits -eq 0 ]]; then
+    if [[ -z "$found" ]]; then
         result_pass "ハードコード 0件"
     else
+        local total_hits
+        total_hits=$(echo "$found" | wc -l)
         result_fail "ハードコード ${total_hits}件検出"
-        echo -e "$all_results"
+        echo -e "$found"
     fi
 }
 
@@ -201,14 +188,13 @@ check_task_status() {
         fi
 
         local status
-        status=$(python3 - "$task_file" 2>/dev/null <<'PYEOF'
-import yaml, sys
-with open(sys.argv[1]) as f:
-    data = yaml.safe_load(f) or {}
-task = data.get('task', data)
-print(task.get('status', 'unknown'))
-PYEOF
-) || status="parse_error"
+        # awkでYAML statusを取得（python3起動コスト回避）
+        status=$(awk '
+            /^task:/ { in_task=1; next }
+            in_task && /^  status:/ { print $2; exit }
+            /^status:/ { print $2; exit }
+        ' "$task_file" 2>/dev/null | head -1) || status="parse_error"
+        [[ -z "$status" ]] && status="parse_error"
 
         case "$status" in
             idle|done|completed)
@@ -240,13 +226,11 @@ check_cli_lookup_usage() {
     local exclude_pattern='cli_lookup\.sh|model_switch_preflight\.sh|\.tmp/|tests/'
     local dependent_scripts=()
 
-    while IFS= read -r script_path; do
-        [[ -z "$script_path" ]] && continue
-        local rel_path="${script_path#"$SCRIPT_DIR/"}"
-        dependent_scripts+=("$rel_path")
-    done < <(grep -rl 'source.*cli_lookup\.sh' \
-        "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" \
-        --include='*.sh' 2>/dev/null \
+    # git grepでgit index経由スキャン（WSL2 I/O 3.5x高速化）
+    while IFS= read -r git_path; do
+        [[ -z "$git_path" ]] && continue
+        dependent_scripts+=("$git_path")
+    done < <(git -C "$SCRIPT_DIR" grep -rl 'source.*cli_lookup\.sh' -- '*.sh' 2>/dev/null \
         | grep -Ev "$exclude_pattern" || true)
 
     if [[ ${#dependent_scripts[@]} -eq 0 ]]; then

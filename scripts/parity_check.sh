@@ -11,41 +11,84 @@
 
 set -euo pipefail
 
-DM_SIGNAL_PATH="/mnt/c/Python_app/DM-signal"
-ENV_PATH="${DM_SIGNAL_PATH}/backend/.env"
-EXPERIMENTS_DB="${DM_SIGNAL_PATH}/analysis_runs/experiments.db"
+DM_SIGNAL_PATH="${DM_SIGNAL_PATH:-/mnt/c/Python_app/DM-signal}"
+ENV_PATH="${ENV_PATH:-${DM_SIGNAL_PATH}/backend/.env}"
+EXPERIMENTS_DB="${EXPERIMENTS_DB:-${DM_SIGNAL_PATH}/analysis_runs/experiments.db}"
 
-if [[ $# -eq 0 ]]; then
+print_usage() {
     echo "Usage: bash scripts/parity_check.sh <PF名 or UUID> [...]"
     echo "       bash scripts/parity_check.sh --all"
-    exit 1
-fi
+}
 
-if [[ ! -f "$ENV_PATH" ]]; then
-    echo "FAIL: backend/.env not found at ${ENV_PATH}"
-    exit 1
-fi
+is_help_request() {
+    local arg
+    for arg in "$@"; do
+        case "$arg" in
+            -h|--help)
+                return 0
+                ;;
+        esac
+    done
+    return 1
+}
 
-if [[ ! -f "$EXPERIMENTS_DB" ]]; then
-    echo "FAIL: experiments.db not found at ${EXPERIMENTS_DB}"
-    exit 1
-fi
+load_database_url() {
+    local env_path="${1:?env path is required}"
+    awk '
+        /^DATABASE_URL=/ {
+            sub(/\r$/, "", $0)
+            print substr($0, index($0, "=") + 1)
+            found = 1
+            exit
+        }
+        END {
+            if (!found) {
+                exit 1
+            }
+        }
+    ' "$env_path"
+}
 
-DATABASE_URL=$(grep '^DATABASE_URL=' "$ENV_PATH" | cut -d= -f2-)
-if [[ -z "$DATABASE_URL" ]]; then
-    echo "FAIL: DATABASE_URL not found in backend/.env"
-    exit 1
-fi
+run_parity_check() {
+    if [[ $# -eq 0 ]]; then
+        print_usage
+        return 1
+    fi
 
-export DATABASE_URL
-export DM_SIGNAL_PATH
-export EXPERIMENTS_DB
+    if is_help_request "$@"; then
+        print_usage
+        return 0
+    fi
 
-# Pass all arguments to Python
-ARGS=("$@")
-export PARITY_ARGS="${ARGS[*]}"
+    if [[ ! -f "$ENV_PATH" ]]; then
+        echo "FAIL: backend/.env not found at ${ENV_PATH}"
+        return 1
+    fi
 
-python3 -u - <<'PYTHON_EOF'
+    if [[ ! -f "$EXPERIMENTS_DB" ]]; then
+        echo "FAIL: experiments.db not found at ${EXPERIMENTS_DB}"
+        return 1
+    fi
+
+    local database_url
+    database_url="$(load_database_url "$ENV_PATH")" || {
+        echo "FAIL: DATABASE_URL not found in backend/.env"
+        return 1
+    }
+
+    if [[ -z "$database_url" ]]; then
+        echo "FAIL: DATABASE_URL not found in backend/.env"
+        return 1
+    fi
+
+    export DATABASE_URL="$database_url"
+    export DM_SIGNAL_PATH
+    export EXPERIMENTS_DB
+
+    local args=("$@")
+    export PARITY_ARGS="${args[*]}"
+
+    python3 -u - <<'PYTHON_EOF'
 import json
 import os
 import sqlite3
@@ -305,3 +348,8 @@ def main():
 if __name__ == "__main__":
     main()
 PYTHON_EOF
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" && "${PARITY_CHECK_LIB_ONLY:-0}" != "1" ]]; then
+    run_parity_check "$@"
+fi
