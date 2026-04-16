@@ -242,3 +242,31 @@ GS実行残量: **0本(全完了)** — cmd_1877で全52ブロック完了(2026-
 |-----|------|------|--------|
 | cmd_1896 | 2体EW β調整(α-CAGR) | 3486ペア×87ヶ月。α-CAGR Top10特定 | `outputs/analysis/alm_research/cmd_1896_l3_beta_adjusted.csv` |
 | cmd_1902 | α版6指標拡張(NHF/MaxDD/MRU/Calmar/UWP) | 3486ペア全量。α-Calmar Top1=⑤kasoku_diff激攻×⑤kasoku_ratio鉄壁(16.39)。L0→L1→L2で5/6指標改善(MRUのみno) | `outputs/analysis/alm_research/cmd_1902_l3_alpha_6metrics.csv` |
+| cmd_1934 | 3体EW全量探索(⑤×⑤) | C(21,3)=1330通り×4手法×6指標。Expanding/WF Top1=kasoku_diff激攻×kasoku_ratio激攻×kasoku_ratio鉄壁 | `outputs/analysis/alm_research/cmd_1934_l3_threebody_stability.csv` |
+
+## L3 N体EW比較(殿指示 2026-04-16)
+
+殿: 「6指標全部でN体を増やすことでどのような変化があるか調べたい」
+
+### 実行計画(直列・OOMリスク回避)
+
+| 順序 | cmd | universe | N体 | 通り数 | status | 殿の裁定 |
+|------|-----|----------|-----|--------|--------|---------|
+| 1st | cmd_1947 | ⑤×⑤ | 1/2/3体 | 21+210+1330 | GATE CLEAR | — |
+| 2nd | cmd_1948 | ①×① | 1/2/3体 | 21+210+1330 | GATE CLEAR | — |
+| 3rd | cmd_1949 | ①2⑤1+2体クロス | 2体441+3体4410 | 4,851 | 進行中 | 軍師スケーラビリティ確認済み(~39秒,1.9MB) |
+| 4th | cmd_1950 | ①1⑤2 | 3体 | 4,410 | 待機 | cmd_1949完了後 |
+
+### 殿の裁定(このセクション全体の経緯)
+- 「並列にするとOOMリスクがある。5×5が完全に終了してから取り掛かろう」→ 直列実行
+- 「1949を2つに分ければ1つあたり4410パターン。そうしたほうが安全」→ cmd_1949/1950分割
+- 「1×5から1×1と5×5は除外するべき」→ クロスのみ(重複除外)
+- 「軍師に道具磨きの必要がないか確認するべき」→ 軍師検証済み(docs/research/gunshi_cmd1934_scalability_42col_20260416.md)
+
+### 成果物
+| cmd | 出力ファイル |
+|-----|------------|
+| cmd_1947 | `outputs/analysis/alm_research/cmd_1947_l3_*.csv`, `cmd_1947_nbody_comparison_summary.md` |
+| cmd_1948 | `outputs/analysis/alm_research/cmd_1948_l3_*.csv`, `cmd_1948_nbody_comparison_1x1_summary.md` |
+| cmd_1949 | `outputs/analysis/alm_research/cmd_1949_l3_*.csv`, `cmd_1949_nbody_cross_1maj_summary.md` |
+| cmd_1950 | `outputs/analysis/alm_research/cmd_1950_l3_*.csv`, `cmd_1950_nbody_cross_5maj_summary.md` |

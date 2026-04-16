@@ -69,6 +69,13 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
                 fi
             else
                 echo "  WARN: $fpath → commit not found"
+                # GP-202補完: commit不在時にファイル実在を代替確認(RESEARCH cmd対応)
+                if [ -f "$PROJECT_DIR/$fpath" ] 2>/dev/null || [ -f "$fpath" ] 2>/dev/null; then
+                    echo "    → FILE EXISTS (untracked/uncommitted)"
+                else
+                    echo "    → FILE NOT FOUND — 成果物不在の可能性"
+                    ERRORS=$((ERRORS + 1))
+                fi
             fi
         done <<< "${FILES_MODIFIED:-}"
 
