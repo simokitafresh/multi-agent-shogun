@@ -527,25 +527,25 @@ QG_TEMPLATE
                 while IFS= read -r _q11_target; do
                     [[ -z "$_q11_target" ]] && continue
                     _q11_base="${_q11_target##*/}"
-                    # rg優先、未インストール環境はgrep -rl にフォールバック（bash -c subshell PATH互換）
+                    # rg優先、未インストール環境はgrep -rl にフォールバック
+                    # 同一ターゲット/basenameを単一走査にまとめ、docs/researchの再読込を削減する
                     if command -v rg >/dev/null 2>&1; then
-                        _Q11_MATCHES=$(
-                            {
-                                rg -l -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
-                                if [[ "$_q11_base" != "$_q11_target" ]]; then
-                                    rg -l -F "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
-                                fi
-                            } | sort -u
-                        )
+                        if [[ "$_q11_base" == "$_q11_target" ]]; then
+                            _Q11_MATCHES=$(rg -l -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                        else
+                            _Q11_MATCHES=$(rg -l -F -e "$_q11_target" -e "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                        fi
                     else
-                        _Q11_MATCHES=$(
-                            {
-                                grep -rl -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
-                                if [[ "$_q11_base" != "$_q11_target" ]]; then
+                        if [[ "$_q11_base" == "$_q11_target" ]]; then
+                            _Q11_MATCHES=$(grep -rl -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                        else
+                            _Q11_MATCHES=$(
+                                {
+                                    grep -rl -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
                                     grep -rl -F "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
-                                fi
-                            } | sort -u
-                        )
+                                } | sort -u
+                            )
+                        fi
                     fi
                     [[ -z "${_Q11_MATCHES:-}" ]] && continue
                     if [[ "$_Q11_ANY_MATCH" == false ]]; then
@@ -966,8 +966,8 @@ check_content_duplicate() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
     [[ ! -f "$QUEUE_FILE" ]] && return 0
 
-    python3 - "$QUEUE_FILE" "$CMD_ID" "${ARCHIVE_CMD_DIR:-}" <<'PY' 2>&1 | cat >&2
-import sys, re, yaml, os
+    python3 - "$QUEUE_FILE" "$CMD_ID" "${ARCHIVE_CMD_DIR:-}" >&2 <<'PY'
+import sys, re, os, json
 
 def tokenize(text):
     """title+purposeをトークン集合に変換。ASCII単語+日本語2gramで混合テキスト対応"""
@@ -988,19 +988,84 @@ def similarity(s1, s2):
     union = s1 | s2
     return len(s1 & s2) / len(union) * 100 if union else 0.0
 
-queue_file, current_cmd, archive_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+def strip_scalar(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    return value
 
-try:
-    with open(queue_file) as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    sys.exit(0)
+def parse_title_purpose(path):
+    commands = {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            lines = fh.readlines()
+    except Exception:
+        return commands
 
-cmds = data.get("commands", {})
-if not isinstance(cmds, dict) or current_cmd not in cmds:
-    sys.exit(0)
+    current_cmd = None
+    current_field = None
+    block_indent = None
 
-current = cmds[current_cmd]
+    def ensure_entry(cmd_id):
+        return commands.setdefault(cmd_id, {"title": "", "purpose": ""})
+
+    def finalize_block():
+        nonlocal current_field, block_indent
+        current_field = None
+        block_indent = None
+
+    for raw_line in lines:
+        line = raw_line.rstrip("\n")
+
+        cmd_match = re.match(r"^  (cmd_\d+):\s*$", line)
+        if cmd_match:
+            current_cmd = cmd_match.group(1)
+            ensure_entry(current_cmd)
+            finalize_block()
+            continue
+
+        if current_cmd is None:
+            continue
+
+        next_cmd_match = re.match(r"^  cmd_\d+:\s*$", line)
+        if next_cmd_match:
+            current_cmd = None
+            finalize_block()
+            continue
+
+        if current_field is not None:
+            indent = len(line) - len(line.lstrip(" "))
+            if not line.strip():
+                commands[current_cmd][current_field] += "\n"
+                continue
+            if indent <= block_indent:
+                finalize_block()
+            else:
+                commands[current_cmd][current_field] += line[block_indent:].rstrip() + "\n"
+                continue
+
+        field_match = re.match(r"^    (title|purpose):\s*(.*)$", line)
+        if not field_match:
+            continue
+
+        field = field_match.group(1)
+        value = field_match.group(2)
+        if value in {"|", ">"} or value == "":
+            commands[current_cmd][field] = ""
+            current_field = field
+            block_indent = 6
+        else:
+            commands[current_cmd][field] = strip_scalar(value)
+            finalize_block()
+
+    for entry in commands.values():
+        for key in ("title", "purpose"):
+            entry[key] = entry[key].strip()
+    return commands
+
+queue_file, current_cmd_id, archive_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+cmds = parse_title_purpose(queue_file)
+current = cmds.get(current_cmd_id)
 if not isinstance(current, dict):
     sys.exit(0)
 
@@ -1012,7 +1077,7 @@ if not new_words:
 
 # Phase 1: キュー内の直近20件と比較
 cmd_ids = sorted(cmds.keys())
-cmd_ids = [c for c in cmd_ids if c != current_cmd][-20:]
+cmd_ids = [c for c in cmd_ids if c != current_cmd_id][-20:]
 
 hits = []
 for cid in cmd_ids:
@@ -1036,19 +1101,84 @@ if hits:
 # Phase 2: archive/cmds/の直近20ファイルと比較
 # os.scandir()でstat情報を一括取得（glob+getmtimeのsyscall×n削減）
 if os.path.isdir(archive_dir):
-    entries = [(e.stat().st_mtime, e.path) for e in os.scandir(archive_dir) if e.name.endswith('.yaml')]
-    entries.sort(reverse=True)
-    archive_files = [e[1] for e in entries[:20]]
+    cache_path = "/tmp/cmd_save_content_dup_cache.json"
+    try:
+        with open(cache_path, encoding="utf-8") as fh:
+            cache = json.load(fh)
+        if not isinstance(cache, dict):
+            cache = {}
+    except Exception:
+        cache = {}
+
+    cache_dirty = False
+    try:
+        archive_dir_stat = os.stat(archive_dir)
+    except OSError:
+        archive_dir_stat = None
+
+    recent_index = cache.get("_archive_recent_files", {})
+    if (
+        archive_dir_stat is not None
+        and isinstance(recent_index, dict)
+        and recent_index.get("archive_dir") == os.path.abspath(archive_dir)
+        and recent_index.get("dir_mtime_ns") == archive_dir_stat.st_mtime_ns
+        and isinstance(recent_index.get("files"), list)
+    ):
+        archive_files = recent_index["files"]
+    else:
+        scanned_files = []
+        for entry in os.scandir(archive_dir):
+            if not entry.name.endswith(".yaml"):
+                continue
+            st = entry.stat()
+            scanned_files.append(
+                {
+                    "path": entry.path,
+                    "mtime_ns": st.st_mtime_ns,
+                    "size": st.st_size,
+                }
+            )
+        scanned_files.sort(key=lambda item: item["mtime_ns"], reverse=True)
+        archive_files = scanned_files[:20]
+        if archive_dir_stat is not None:
+            cache["_archive_recent_files"] = {
+                "archive_dir": os.path.abspath(archive_dir),
+                "dir_mtime_ns": archive_dir_stat.st_mtime_ns,
+                "files": archive_files,
+            }
+            cache_dirty = True
+
     archive_hits = []
-    for af in archive_files:
+    for archive_file in archive_files:
+        af = archive_file.get("path") if isinstance(archive_file, dict) else str(archive_file)
+        if not af:
+            continue
         try:
-            with open(af) as f:
-                adata = yaml.safe_load(f) or {}
-        except Exception:
+            st_mtime_ns = archive_file.get("mtime_ns") if isinstance(archive_file, dict) else None
+            st_size = archive_file.get("size") if isinstance(archive_file, dict) else None
+            if st_mtime_ns is None or st_size is None:
+                st = os.stat(af)
+                st_mtime_ns = st.st_mtime_ns
+                st_size = st.st_size
+        except OSError:
             continue
-        acmds = adata.get("commands", {})
-        if not isinstance(acmds, dict):
-            continue
+        cache_key = os.path.abspath(af)
+        cache_entry = cache.get(cache_key, {})
+        if (
+            isinstance(cache_entry, dict)
+            and cache_entry.get("mtime_ns") == st_mtime_ns
+            and cache_entry.get("size") == st_size
+            and isinstance(cache_entry.get("commands"), dict)
+        ):
+            acmds = cache_entry["commands"]
+        else:
+            acmds = parse_title_purpose(af)
+            cache[cache_key] = {
+                "mtime_ns": st_mtime_ns,
+                "size": st_size,
+                "commands": acmds,
+            }
+            cache_dirty = True
         for acid, aentry in acmds.items():
             if not isinstance(aentry, dict):
                 continue
@@ -1065,6 +1195,15 @@ if os.path.isdir(archive_dir):
         for cid, title, sim in archive_hits:
             print(f"  (archive) {cid}: {title} — 類似度{sim:.0f}%", file=sys.stderr)
         print("  → 過去の完了cmdとの重複でないか確認してください（BLOCKではありません）", file=sys.stderr)
+
+    if cache_dirty:
+        try:
+            tmp_path = f"{cache_path}.tmp"
+            with open(tmp_path, "w", encoding="utf-8") as fh:
+                json.dump(cache, fh, ensure_ascii=False)
+            os.replace(tmp_path, cache_path)
+        except Exception:
+            pass
 PY
 }
 

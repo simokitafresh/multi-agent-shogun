@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T17:36:07+09:00 -->
+<!-- generated_at: 2026-04-16T18:26:48+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-16T18:26:47+09:00 | terminal | response | cmd_1977(cmd_save.sh高速化)委任完了。単発配備。改善完了まで将軍のcmd起票は停止。残りの第五弾(再トライ4本 + stop-lint-gate.sh)はcmd_save.sh改善完了後に起票する。 [meta] st…
+- 2026-04-16T18:25:26+09:00 | terminal | inbound | cmd_save.shを先にやろう
+- 2026-04-16T18:18:01+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 18:17:05|CI緑: run 24501603122
+- 2026-04-16T17:52:32+09:00 | ntfy | outbound | CI赤: run 24500526696 Unit Tests (bats)
+- 2026-04-16T17:46:48+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 17:33:18|cmd_1976 2026-04-16 17:34:38|cmd_1969 2026-04-16 17:35:46|cmd_1968
+- 2026-04-16T17:42:02+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率94% 連勝79
+- 2026-04-16T17:41:54+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-077)
+- 2026-04-16T17:38:31+09:00 | ntfy | outbound | 📊 Dashboard: バッチ3+4全12件GATE CLEAR | idle:5名 | pipeline:0件 | hook復元済み
 - 2026-04-16T17:36:07+09:00 | terminal | response | **全24本 GATE CLEAR。全忍者idle。** 第五弾を起票するか？ [meta] stop_reason=end_turn
 - 2026-04-16T17:34:58+09:00 | terminal | response | **23/24完了。** 残り1968(半蔵 archive_completed.sh)のみ。第五弾を起票するか？ [meta] stop_reason=end_turn
-- 2026-04-16T17:33:41+09:00 | terminal | response | **全体状況:** | バッチ | status | |--------|--------| | 1 (cmd_1953-1958) | **全6本 GATE CLEAR** ✅ | | 2 (cmd_1959-1964) | **全6本…
-- 2026-04-16T17:31:47+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 17:17:00|cmd_1975 2026-04-16 17:20:52|cmd_1973
-- 2026-04-16T17:30:52+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-076)
-- 2026-04-16T17:27:25+09:00 | ntfy | outbound | CI赤: run 24499977025 Unit Tests (bats)
-- 2026-04-16T17:25:39+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-075)
-- 2026-04-16T17:21:14+09:00 | terminal | response | 残り: バッチ3の1968(半蔵), 1969(小太郎) + バッチ4の1976(未配備)。idle 4名(疾風・影丸・才蔵・飛猿)。第五弾を書くか？ [meta] stop_reason=end_turn
-- 2026-04-16T17:20:26+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-074)
-- 2026-04-16T17:17:43+09:00 | terminal | response | バッチ4: 4/6完了(1971, 1972, 1974, 1975)。残り: 1973(影丸CTX:56%), 1976(未配備)。バッチ3残り: 1968(半蔵CTX:54%), 1969(小太郎)。 殿、第五弾を先に書くか？忍者がi…
 
 ## 未解決確認事項
 - 確認完了。殿、第五弾を先に書くか？ [meta] stop_reason=end_turn
@@ -31,8 +31,6 @@
 - 2026-04-16T15:39:43+09:00 | 次のバッチ候補を整理する。殿の「実行回数×小さな差=複利」の指摘を反映して、**秒単位の遅さ**と**高頻度×ms改善**の両方から選ぶ。 **次バッチ候補6本:** | # | 対象 | 現在 | 理由 | |---|------|------|------| | 1 | `…
 
 ## 参照cmd
-- cmd_19
-- cmd_1903
 - cmd_1947
 - cmd_1948
 - cmd_1949
@@ -61,6 +59,8 @@
 - cmd_1973
 - cmd_1974
 - cmd_1975
+- cmd_1976
+- cmd_1977
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
