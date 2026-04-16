@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T19:03:54+09:00 -->
+<!-- generated_at: 2026-04-16T19:04:49+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-16T19:04:49+09:00 | terminal | response | 殿、方針設計書の骨子(§1-§7)の方向は合っているか？ [meta] stop_reason=end_turn
 - 2026-04-16T19:03:54+09:00 | terminal | response | 殿の仰る通り。cmdを出す前に方針設計書を固める。骨子を提示する。 **DM-Signal CoDD適用 方針設計書(骨子)** ``` §1 目的 DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速化する。…
 - 2026-04-16T19:03:50+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率94% 連勝82
 - 2026-04-16T19:03:25+09:00 | terminal | inbound | まずは方針の設計書自体が必要だ。
@@ -13,7 +14,6 @@
 - 2026-04-16T19:01:03+09:00 | terminal | response | 殿の仰る通り。本番稼働中のDM-Signalは慎重に進める必要がある。 **事前準備の論点:** **1. 対象の安全度分類** | レベル | 対象 | 本番影響 | リスク | |--------|------|---------|-…
 - 2026-04-16T19:00:36+09:00 | terminal | inbound | 推薦: DM-Signal(Python)にCoDDを適用する。をやろうか。DM-sigbalは本番が稼働しているから、慎重な対応が必須だな。事前準備をどうするか綿密に練ろう
 - 2026-04-16T19:00:22+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
-- 2026-04-16T19:00:19+09:00 | ntfy | outbound | 【家老】cmd_1984 初回配備開始 (title=CoDD改善#32 — gate_karo_startup.sh再トライ(225ms→目標80ms, 起動ごと), ninja=tobisaru) CoDD改善#32 📋 https:…
 
 ## 未解決確認事項
 - 殿の仰る通り。cmdを出す前に方針設計書を固める。骨子を提示する。 **DM-Signal CoDD適用 方針設計書(骨子)** ``` §1 目的 DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速化する。 本番稼働中のため安全性最優先。 §2 …
@@ -26,6 +26,7 @@
 - **永続化完了:** | 知見 | 永続化先 | 消えない | |------|---------|---------| | 事前100%は怠慢。3層防御 | LS035(lessons_shogun.yaml) | ✅ | | CoDD ACは4段階に分解 | context…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-16T19:04:49+09:00 | 殿、方針設計書の骨子(§1-§7)の方向は合っているか？ [meta] stop_reason=end_turn
 - 2026-04-16T19:03:54+09:00 | 殿の仰る通り。cmdを出す前に方針設計書を固める。骨子を提示する。 **DM-Signal CoDD適用 方針設計書(骨子)** ``` §1 目的 DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速化する。 本番稼働中のため安全性最優先。 §2 …
 - 2026-04-16T19:03:25+09:00 | まずは方針の設計書自体が必要だ。
 - 2026-04-16T16:38:29+09:00 | バッチ3の進捗: 4/6完了(ninja_done, report_field_set, karo_workaround_log, cmd_1965)。残り2本(archive_completed, pre_compact_save)が半蔵・小太郎で進行中。第四弾の起票準備でき…
