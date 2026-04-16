@@ -83,14 +83,17 @@ _HEAVY_CACHE_DIR="/tmp/das_heavy_${_proj_hash}"
 mkdir -p "$_HEAVY_CACHE_DIR" 2>/dev/null || true
 _heavy_key_file="$_HEAVY_CACHE_DIR/.key"
 _heavy_key=$(stat -c '%Y' "$GATE_FIRE_LOG" "$GATE_LOG" "$LESSON_IMPACT_FILE" \
-    "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null | tr '\n' ':')
+    "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null | tr '\n' ':') || true
 _cached_heavy_key=$(cat "$_heavy_key_file" 2>/dev/null || echo "MISS")
 _HEAVY_HIT=false
 if [[ "$_heavy_key" == "$_cached_heavy_key" ]] && [[ -n "$_heavy_key" ]] && \
    [[ "$_heavy_key" != "MISS" ]] && \
    [[ -f "$_HEAVY_CACHE_DIR/ffr.txt" ]] && \
    [[ -f "$_HEAVY_CACHE_DIR/metrics.tsv" ]] && \
-   [[ -f "$_HEAVY_CACHE_DIR/recent30.tsv" ]]; then
+   [[ -f "$_HEAVY_CACHE_DIR/recent30.tsv" ]] && \
+   [[ -f "$_HEAVY_CACHE_DIR/gate_titles.tsv" ]] && \
+   [[ -f "$_HEAVY_CACHE_DIR/task_type_rows.txt" ]] && \
+   [[ -f "$_HEAVY_CACHE_DIR/lesson_threshold.txt" ]]; then
     _HEAVY_HIT=true
 fi
 
@@ -587,38 +590,46 @@ if [[ -f "$KM_MODEL_CACHE" ]] && [[ -s "$KM_MODEL_CACHE" ]]; then
 fi
 
 # Parse lesson effectiveness threshold snapshot (from gate_lesson_health.sh)
-if [[ -f "$LESSON_EFFECT_STATUS_FILE" ]] && [[ -s "$LESSON_EFFECT_STATUS_FILE" ]]; then
-    while IFS=$'\t' read -r _threshold_key _threshold_value; do
-        case "$_threshold_key" in
-            status) _threshold_status="$_threshold_value" ;;
-            rate) _threshold_rate="$_threshold_value" ;;
-            window_cmds) _threshold_window="$_threshold_value" ;;
-            referenced) _threshold_ref="$_threshold_value" ;;
-            injected) _threshold_inj="$_threshold_value" ;;
-        esac
-    done < <(awk -F= '
-        /^(status|rate|window_cmds|referenced|injected)=/ {
-            print $1 "\t" $2
-        }
-    ' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null)
-    if [[ -n "$_threshold_status" ]]; then
-        case "$_threshold_status" in
-            ALERT|WARN|OK)
-                KM_LESSON_THRESHOLD="${_threshold_status} (${_threshold_rate}%, ${_threshold_ref}/${_threshold_inj}, ${_threshold_window}cmd)"
-                ;;
-            NODATA)
-                KM_LESSON_THRESHOLD="NODATA"
-                ;;
-            *)
-                KM_LESSON_THRESHOLD="${_threshold_status}"
-                ;;
-        esac
+# GP-cmd_1981: heavy cacheから復元 or awk実行 (~9ms削減)
+if [[ "$_HEAVY_HIT" == true ]] && [[ -f "$_HEAVY_CACHE_DIR/lesson_threshold.txt" ]]; then
+    KM_LESSON_THRESHOLD=$(cat "$_HEAVY_CACHE_DIR/lesson_threshold.txt" 2>/dev/null || echo "—")
+else
+    if [[ -f "$LESSON_EFFECT_STATUS_FILE" ]] && [[ -s "$LESSON_EFFECT_STATUS_FILE" ]]; then
+        while IFS=$'\t' read -r _threshold_key _threshold_value; do
+            case "$_threshold_key" in
+                status) _threshold_status="$_threshold_value" ;;
+                rate) _threshold_rate="$_threshold_value" ;;
+                window_cmds) _threshold_window="$_threshold_value" ;;
+                referenced) _threshold_ref="$_threshold_value" ;;
+                injected) _threshold_inj="$_threshold_value" ;;
+            esac
+        done < <(awk -F= '
+            /^(status|rate|window_cmds|referenced|injected)=/ {
+                print $1 "\t" $2
+            }
+        ' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null)
+        if [[ -n "$_threshold_status" ]]; then
+            case "$_threshold_status" in
+                ALERT|WARN|OK)
+                    KM_LESSON_THRESHOLD="${_threshold_status} (${_threshold_rate}%, ${_threshold_ref}/${_threshold_inj}, ${_threshold_window}cmd)"
+                    ;;
+                NODATA)
+                    KM_LESSON_THRESHOLD="NODATA"
+                    ;;
+                *)
+                    KM_LESSON_THRESHOLD="${_threshold_status}"
+                    ;;
+            esac
+        fi
     fi
+    echo "$KM_LESSON_THRESHOLD" > "$_HEAVY_CACHE_DIR/lesson_threshold.txt" 2>/dev/null || true
 fi
 
 # ─── Task type injection breakdown (from lesson_impact.tsv) ───
-LESSON_IMPACT_FILE="$PROJECT_DIR/logs/lesson_impact.tsv"
-if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
+# GP-cmd_1981: heavy cacheから復元 or awk実行 (~16ms削減)
+if [[ "$_HEAVY_HIT" == true ]] && [[ -f "$_HEAVY_CACHE_DIR/task_type_rows.txt" ]]; then
+    KM_TASK_TYPE_ROWS=$(cat "$_HEAVY_CACHE_DIR/task_type_rows.txt" 2>/dev/null || echo "")
+elif [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
     KM_TASK_TYPE_ROWS=$(awk -F'\t' '
         NR > 1 && $5 != "" && $9 != "" && ($5 == "injected" || $5 == "skipped") {
             if ($5 == "injected") inj[$9]++
@@ -635,6 +646,9 @@ if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
             }
         }
     ' "$LESSON_IMPACT_FILE" | sort -t'|' -k6 -rn)
+    printf '%s' "$KM_TASK_TYPE_ROWS" > "$_HEAVY_CACHE_DIR/task_type_rows.txt" 2>/dev/null || true
+else
+    printf '%s' "$KM_TASK_TYPE_ROWS" > "$_HEAVY_CACHE_DIR/task_type_rows.txt" 2>/dev/null || true
 fi
 
 # ─── Recent 30 cmd metrics (from lesson_impact.tsv) ───
@@ -643,6 +657,10 @@ declare -A RECENT_TT_INJ=() RECENT_TT_SKIP=() RECENT_TT_RATE=() RECENT_TT_WARN=(
 declare -A RECENT_MDL_RR=() RECENT_MDL_ER=() RECENT_MDL_WARN=()
 
 if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
+    if [[ "$_HEAVY_HIT" == true ]] && [[ -f "$_HEAVY_CACHE_DIR/recent30.tsv" ]]; then
+        # GP-cmd_1981: heavy cacheからTMP_RECENT復元 — gawkをスキップ (~34ms削減)
+        cp "$_HEAVY_CACHE_DIR/recent30.tsv" "$TMP_RECENT"
+    else
     # cmd_1392: Python→gawk化 (TSV集計: Recent 30 cmd metrics)
     gawk -v gate_path="$GATE_LOG" '
 BEGIN { FS="\t"; OFS="\t" }
@@ -736,6 +754,8 @@ END {
         printf "MODEL\t%s\t%s\t%s\t%d\t%s\n", display, r_rr_s, r_rr_s, r_mdl_total[fam]+0, w
     }
 }' "$GATE_LOG" "$LESSON_IMPACT_FILE" > "$TMP_RECENT" 2>/dev/null
+        cp "$TMP_RECENT" "$_HEAVY_CACHE_DIR/recent30.tsv" 2>/dev/null || true
+    fi
 
     while IFS=$'\t' read -r _rtype _rkey _rv1 _rv2 _rv3 _rv4 _rv5; do
         case "$_rtype" in
@@ -764,7 +784,10 @@ fi
 
 # ─── Build cmd→title map (for 戦果 section) ───
 # Priority: gate_metrics.log(9列目) > active STK > archive STK done
-if [[ -f "$GATE_LOG" ]]; then
+# GP-cmd_1981: heavy cacheから復元 or awk実行+キャッシュ保存 (~21ms削減)
+if [[ "$_HEAVY_HIT" == true ]] && [[ -f "$_HEAVY_CACHE_DIR/gate_titles.tsv" ]]; then
+    cat "$_HEAVY_CACHE_DIR/gate_titles.tsv" >> "$TMP_TITLES"
+elif [[ -f "$GATE_LOG" ]]; then
     awk -F'\t' '
         NF >= 9 {
             cmd = $2
@@ -784,12 +807,17 @@ if [[ -f "$GATE_LOG" ]]; then
                 print cmd "\t" latest_title[cmd]
             }
         }
-    ' "$GATE_LOG" >> "$TMP_TITLES"
+    ' "$GATE_LOG" | tee "$_HEAVY_CACHE_DIR/gate_titles.tsv" >> "$TMP_TITLES" 2>/dev/null || true
 fi
 if [[ -s "$TMP_PIPELINE" ]]; then
     awk -F'\t' '{print $1"\t"$2}' "$TMP_PIPELINE" >> "$TMP_TITLES"
 fi
 # GP-082: archive titles already written to TMP_TITLES by unified gawk pass above
+
+# GP-cmd_1981: heavy cacheキーを保存 (全MISS区間完了後)
+if [[ "$_HEAVY_HIT" == false ]] && [[ -n "$_heavy_key" ]]; then
+    echo "$_heavy_key" > "$_heavy_key_file" 2>/dev/null || true
+fi
 
 # ─── Deduplicate TMP_TITLES: keep last occurrence per cmd_id ───
 # Write order: archive(L305) → gate_metrics(L627) → pipeline(L631)
