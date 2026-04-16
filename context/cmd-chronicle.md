@@ -695,3 +695,4 @@
 | cmd_2005 | Phase 4偵察⑤ — B1 preload変更のFE/UI影響範囲確認+設計書追記 | dm-signal | 04-17 | preload条件は monthly_return 値を変え |
 | cmd_karo_ci_fix_ga091 | CI RED修正(GA-091) — gist_index_updateテスト期待値を新カテゴリ体系に更新+CATEGORY_ORDER修正 | infra | 04-17 | gist_index_update.sh のカテゴリ体系を新 |
 | cmd_karo_ci_fix_ga092 | CI RED修正(GA-092) — cmd_delegate inbox_write失敗時のexit code修正 | infra | 04-17 | cmd_delegate の inbox_write失敗仕様 |
+| cmd_2007 | Phase 4事前確認 — preload動作3パターン記録(standardPF/FoF/nestedFoF) | dm-signal | 04-17 | 代表3体(standard/FoF/nestedFoF)を |
