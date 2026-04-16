@@ -74,6 +74,41 @@ resolve_first_pane_target() {
     fi
 }
 
+layout_is_normalized() {
+    local pane_base pane_rows row_count=0
+    local expected_agents=()
+    local expected_count expected_index
+    local pane_index pane_dead agent_id model_name agent_group agent_cli
+
+    if ! declare -F get_all_agents >/dev/null 2>&1; then
+        return 1
+    fi
+
+    read -ra expected_agents <<< "$(get_all_agents 2>/dev/null || echo "")"
+    expected_count=${#expected_agents[@]}
+    [[ "$expected_count" -gt 0 ]] || return 1
+
+    pane_base=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
+    pane_rows=$(tmux list-panes -t "$AGENTS_WINDOW_TARGET" \
+        -F '#{pane_index}|#{pane_dead}|#{@agent_id}|#{@model_name}|#{@agent_group}|#{@agent_cli}' \
+        2>/dev/null) || return 1
+
+    while IFS='|' read -r pane_index pane_dead agent_id model_name agent_group agent_cli; do
+        [[ -n "$pane_index" ]] || continue
+        ((row_count++))
+        expected_index=$((pane_base + row_count - 1))
+
+        [[ "$pane_index" == "$expected_index" ]] || return 1
+        [[ "$pane_dead" == "0" ]] || return 1
+        [[ "$agent_id" == "${expected_agents[$((row_count - 1))]}" ]] || return 1
+        [[ -n "$model_name" ]] || return 1
+        [[ -n "$agent_group" ]] || return 1
+        [[ -n "$agent_cli" ]] || return 1
+    done <<< "$pane_rows"
+
+    [[ "$row_count" -eq "$expected_count" ]]
+}
+
 SHOGUN_WINDOW_TARGET=$(resolve_window_target "shogun:main" "shogun:1")
 AGENTS_WINDOW_TARGET=$(resolve_window_target "shogun:agents" "shogun:2")
 
@@ -170,10 +205,16 @@ echo "[shutsujin] idle flags: created for all agents"
 
 # ─── レイアウト正規化 (agents window) ───
 # ペイン配置・サイズを正規状態に復元（再起動後にレイアウトが崩れる問題の根本対策）
-if [[ "$DRY_RUN" == true ]]; then
+if layout_is_normalized; then
+    echo "[shutsujin] layout: reset_layout.sh skipped (already normalized)"
+elif [[ "$DRY_RUN" == true ]]; then
     log_dry "bash ${SCRIPT_DIR}/scripts/reset_layout.sh --dry-run"
     bash "$SCRIPT_DIR/scripts/reset_layout.sh" --dry-run
 else
     bash "$SCRIPT_DIR/scripts/reset_layout.sh"
 fi
-echo "[shutsujin] layout: reset_layout.sh applied"
+if layout_is_normalized; then
+    echo "[shutsujin] layout: normalized"
+else
+    echo "[shutsujin] layout: reset_layout.sh applied"
+fi

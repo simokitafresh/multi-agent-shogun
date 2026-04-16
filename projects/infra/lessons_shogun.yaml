@@ -318,3 +318,17 @@ lessons:
   created_at: '2026-04-16'
   automated: true
   enforcement: 'lessons_shogun.yaml(起動時通読)+memory/reference_cdp_note_com.md更新要。launch_browser()に--remote-allow-origins追加cmd未起票'
+- id: 'LS033'
+  title: 'inbox盲点 — PostToolUse hookで将軍のinbox未読を強制表示'
+  detail: '事故: 殿に「掲示板やinboxを確認せよ」と言われるまで、軍師の道具確認結果(blt_20260416_134156)やcmd_1947 GATE CLEAR通知に気づかなかった。原因: 殿との対話中にnudgeが埋もれ、次ターンでも殿の新入力を優先してinbox確認をスキップする無限ループ。修正: PostToolUse hook(post-shogun-inbox-check.sh)で将軍のinbox未読件数を全ツール使用後に1行表示。将軍ペインのみ・未読>0のみ・意志依存ゼロ。軍師分析: docs/research/gunshi_idle_shogun_inbox_blindspot_20260416.md'
+  source_cmd: 'cmd_1946'
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: 'settings.json PostToolUse hook(post-shogun-inbox-check.sh)。将軍ペインで全ツール使用後に自動発火'
+- id: 'LS034'
+  title: '進行中計画の即時永続化 — /clearは予告なく来る'
+  detail: '事故ではなく予防。今セッションでN体比較4cmd(cmd_1947-1950)の依存順序・殿の裁定(直列実行/OOM分割/クロス重複除外/軍師確認)がCTXにのみ存在し、/clearで消える状態だった。原因: 完了後に書くつもりで進行中の計画を永続化していなかった。修正: 殿の裁定・cmd間の依存関係はその場でl2-okugi-progress.md等に永続化。完了を待つな。'
+  source_cmd: 'cmd_1947'
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: 'なぜなぜ7回で特定。自動化なし(将軍の自問に依存)。次の自動化ターゲット候補'

@@ -67,6 +67,7 @@ CTX_WARN_CACHE="/tmp/dashboard_ctx_warn_${_proj_hash}.txt"
 CTX_WARN_CACHE_TS="/tmp/dashboard_ctx_warn_${_proj_hash}.ts"
 CI_STATUS_CACHE="/tmp/dashboard_ci_status_${_proj_hash}.txt"
 CI_STATUS_CACHE_TS="/tmp/dashboard_ci_status_${_proj_hash}.ts"
+CI_STATUS_REFRESH_LOCK="/tmp/dashboard_ci_status_${_proj_hash}.lock"
 # L4-R29: git rev-list TTLキャッシュ（60s）— 毎回実行で179-364ms消費を削減
 GIT_REVLIST_CACHE="/tmp/dashboard_git_revlist_${_proj_hash}.txt"
 GIT_REVLIST_CACHE_TS="/tmp/dashboard_git_revlist_${_proj_hash}.ts"
@@ -90,9 +91,16 @@ source "$(dirname "$SCRIPT_DIR")/scripts/lib/agent_config.sh"
 ALL_NINJAS=$(get_ninja_names)
 TOTAL_NINJAS=$(echo "$ALL_NINJAS" | wc -w | tr -d ' ')
 
+declare -A _JP_CACHE=([karo]="家老")
+if [[ -n "${_AGENT_CONFIG_RAW:-}" ]]; then
+    while IFS=$'\t' read -r _jp_name _jp_role _jp_label; do
+        [[ -n "$_jp_name" ]] && _JP_CACHE["$_jp_name"]="${_jp_label:-$_jp_name}"
+    done <<< "$_AGENT_CONFIG_RAW"
+fi
+
 # ─── Helper: Japanese name (settings.yamlから動的取得) ───
 name_jp() {
-    get_japanese_name "$1"
+    echo "${_JP_CACHE[$1]:-$1}"
 }
 
 # ─── Helper: Extract parent_cmd from task YAML ───
@@ -174,6 +182,26 @@ get_model() {
     echo "${_MODEL_CACHE[$1]:-unknown}"
 }
 
+_refresh_lock_age() {
+    local lock_file="$1"
+    [[ -f "$lock_file" ]] || { echo 999999; return; }
+    local _ts
+    _ts=$(stat -c %Y "$lock_file" 2>/dev/null || echo 0)
+    echo $((_CACHE_NOW - _ts))
+}
+
+start_ci_status_refresh_async() {
+    local _tmp_refresh
+    _tmp_refresh=$(mktemp "/tmp/dashboard_ci_status_refresh_${_proj_hash}.XXXXXX")
+    (
+        trap 'rm -f "$_tmp_refresh" "$CI_STATUS_REFRESH_LOCK"' EXIT
+        if bash "$SCRIPT_DIR/ci_status_check.sh" --status > "$_tmp_refresh" 2>/dev/null; then
+            cp "$_tmp_refresh" "$CI_STATUS_CACHE" 2>/dev/null || true
+            date +%s > "$CI_STATUS_CACHE_TS" 2>/dev/null || true
+        fi
+    ) >/dev/null 2>&1 &
+}
+
 # ─── Build cmd→ninjas mapping (from task YAMLs) ───
 declare -A CMD_NINJAS=()
 declare -A NINJA_CMD=()
@@ -194,6 +222,13 @@ done
 # ─── Get idle list from snapshot ───
 IDLE_LIST=""
 [[ -f "$SNAPSHOT" ]] && IDLE_LIST=$(grep '^idle|' "$SNAPSHOT" | head -1 | cut -d'|' -f2 || true)
+declare -A SNAP_STATUS=()
+if [[ -f "$SNAPSHOT" ]]; then
+    while IFS='|' read -r _snap_kind _snap_name _snap_cmd _snap_status _rest; do
+        [[ "$_snap_kind" == "ninja" && -n "$_snap_name" ]] || continue
+        SNAP_STATUS["$_snap_name"]="$_snap_status"
+    done < "$SNAPSHOT"
+fi
 
 # ─── Calculate active ninjas from snapshot ───
 ACTIVE_COUNT=0
@@ -379,8 +414,17 @@ if [[ -f "$CI_STATUS_CACHE_TS" ]]; then
     _ci_ts=$(cat "$CI_STATUS_CACHE_TS" 2>/dev/null || echo 0)
     _ci_age=$(( _CACHE_NOW - _ci_ts ))
 fi
-if (( _ci_age < 60 )) && [[ -f "$CI_STATUS_CACHE" ]]; then
+if [[ -f "$CI_STATUS_CACHE" ]]; then
     cp "$CI_STATUS_CACHE" "$_TMP_CI_STATUS"
+    if (( _ci_age >= 60 )); then
+        _ci_lock_age=$(_refresh_lock_age "$CI_STATUS_REFRESH_LOCK")
+        if (( _ci_lock_age > 180 )); then
+            rm -f "$CI_STATUS_REFRESH_LOCK"
+        fi
+        if ( set -o noclobber; : > "$CI_STATUS_REFRESH_LOCK" ) 2>/dev/null; then
+            start_ci_status_refresh_async
+        fi
+    fi
 else
     bash "$SCRIPT_DIR/ci_status_check.sh" --status > "$_TMP_CI_STATUS" 2>/dev/null &
     _PID_CI=$!
@@ -393,7 +437,7 @@ fi
 _cached_signature=""
 [[ -f "$KM_CACHE_LINES" ]] && _cached_signature=$(tr -d '[:space:]' < "$KM_CACHE_LINES" 2>/dev/null)
 
-if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || ! grep -q '^model_row=' "$KM_MODEL_CACHE" 2>/dev/null; then
+if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || [[ ! -f "$KM_MODEL_CACHE" ]]; then
     bash "$SCRIPT_DIR/knowledge_metrics.sh" --json --by-project --by-model > "$KM_JSON_CACHE" 2>/dev/null &
     _PID_KM=$!
     bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null &
@@ -474,11 +518,19 @@ fi
 
 # Parse lesson effectiveness threshold snapshot (from gate_lesson_health.sh)
 if [[ -f "$LESSON_EFFECT_STATUS_FILE" ]] && [[ -s "$LESSON_EFFECT_STATUS_FILE" ]]; then
-    _threshold_status=$(awk -F= '/^status=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
-    _threshold_rate=$(awk -F= '/^rate=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
-    _threshold_window=$(awk -F= '/^window_cmds=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
-    _threshold_ref=$(awk -F= '/^referenced=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
-    _threshold_inj=$(awk -F= '/^injected=/{print $2; exit}' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null || true)
+    while IFS=$'\t' read -r _threshold_key _threshold_value; do
+        case "$_threshold_key" in
+            status) _threshold_status="$_threshold_value" ;;
+            rate) _threshold_rate="$_threshold_value" ;;
+            window_cmds) _threshold_window="$_threshold_value" ;;
+            referenced) _threshold_ref="$_threshold_value" ;;
+            injected) _threshold_inj="$_threshold_value" ;;
+        esac
+    done < <(awk -F= '
+        /^(status|rate|window_cmds|referenced|injected)=/ {
+            print $1 "\t" $2
+        }
+    ' "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null)
     if [[ -n "$_threshold_status" ]]; then
         case "$_threshold_status" in
             ALERT|WARN|OK)
@@ -716,13 +768,8 @@ fi
         fi
 
         # Status from snapshot (done override)
-        if [[ -f "$SNAPSHOT" ]]; then
-            snap_line=$(grep "^ninja|${ninja}|" "$SNAPSHOT" | head -1 || true)
-            if [[ -n "$snap_line" ]]; then
-                snap_status=$(echo "$snap_line" | cut -d'|' -f4)
-                [[ "$snap_status" == "done" || "$snap_status" == "completed" ]] && status="done"
-            fi
-        fi
+        snap_status="${SNAP_STATUS[$ninja]:-}"
+        [[ "$snap_status" == "done" || "$snap_status" == "completed" ]] && status="done"
 
         # parent_cmd from pre-built NINJA_CMD (O(1) lookup, avoids repeated get_task_parent_cmd)
         cmd="—"

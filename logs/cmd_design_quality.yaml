@@ -5666,3 +5666,223 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-16T02:41:56Z"
+  - cmd_id: "cmd_1946"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T03:51:14Z"
+    notes: "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
+  - cmd_id: "cmd_1946"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T03:51:42Z"
+    diagnosis: "q5にisolated_test不足。gate_report_format.shのwaive_reason判定が非commitACにも適用されるか未検証だった。AC3を検証ステップとして明示"
+    notes: "q11_not_already_done未記入。このcmdのACは既に達成されていないか？現物で確認した方法と結果を記載せよ"
+  - cmd_id: "cmd_1946"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T03:52:10Z"
+    diagnosis: "q5にisolated_test不足。gate_report_format.shのwaive_reason判定が非commitACにも適用されるか未検証だった。AC3を検証ステップとして明示"
+    notes: "AC数4個のcmdはassumptions必須です。前提を明示してからcmd_save.shを再実行せよ(shogun-procedures.md §7参照)"
+  - cmd_id: "cmd_1946"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T03:52:49Z"
+    diagnosis: "q5にisolated_test不足。gate_report_format.shのwaive_reason判定が非commitACにも適用されるか未検証だった。AC3を検証ステップとして明示"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_1946"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T04:01:37Z"
+  - cmd_id: "cmd_1947"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T04:43:07Z"
+  - cmd_id: "cmd_1948"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T04:49:02Z"
+  - cmd_id: "cmd_1951"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:15:58Z"
+    notes: "q5_verified_source未記入。cmdの前提を何で確認したか記載せよ"
+  - cmd_id: "cmd_1951"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:16:22Z"
+    diagnosis: "偵察cmdにq5は不要と思い込んだが、偵察でも前提の確認手段を明示すべき"
+    notes: "q8_why_what未記入。WHY→WHAT因果連鎖を記載してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_1951"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:16:43Z"
+    diagnosis: "q8(WHY→WHAT因果連鎖)を書かなかった。殿の方針が明確なのに因果を明示しなかった"
+    notes: "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
+  - cmd_id: "cmd_1951"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:17:11Z"
+    diagnosis: "q5をcode_readingのみで書いた。偵察cmdでもスクリプト存在・hookエントリ・参照数は実行して確認した事実があるのにレベルを正しく記載しなかった"
+    notes: "q11_not_already_done未記入。このcmdのACは既に達成されていないか？現物で確認した方法と結果を記載せよ"
+  - cmd_id: "cmd_1951"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:17:36Z"
+    diagnosis: "q8に殿の指示引用と複利の問いが欠けていた。q11(既存成果確認)も未記入だった。gateの要求を1つずつ潰すのではなく全項目を最初から書くべき"
+    notes: "AC数4個のcmdはassumptions必須です。前提を明示してからcmd_save.shを再実行せよ(shogun-procedures.md §7参照)"
+  - cmd_id: "cmd_1951"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:18:06Z"
+    diagnosis: "AC>=4なのにassumptions未記入。gateの全要件を最初から満たすべきだが1つずつ後追いで潰している(5回目)"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_1951"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:18:39Z"
+    diagnosis: "assumptions内テキストがgateにファイルパスとして誤検出された。スラッシュ区切りのスクリプト名記述を避けるべきだった"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_1949"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T05:24:37Z"
+  - cmd_id: "cmd_karo_1948_retry"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T05:25:29Z"
+  - cmd_id: "cmd_9999"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:27:34Z"
+    notes: "必須項目 4件 未記入。全て記入してからcmd_save.shを再実行せよ"
+  - cmd_id: "cmd_9998"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-16T05:27:49Z"
+    notes: "必須項目 6件 未記入。全て記入してからcmd_save.shを再実行せよ"
+  - cmd_id: "cmd_1950"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T05:28:01Z"
+  - cmd_id: "cmd_1951"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T05:30:03Z"
+  - cmd_id: "cmd_karo_ci_fix_cmd_save"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T05:36:17Z"
+  - cmd_id: "cmd_1957"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-16T05:42:36Z"

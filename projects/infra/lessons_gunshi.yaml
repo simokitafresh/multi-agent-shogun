@@ -230,3 +230,39 @@ lessons:
   created_at: '2026-04-16'
   automated: true
   enforcement: cmd_1940でgate_lesson_health.sh閾値をuseful率に変更(実装中)
+- id: LG028
+  title: スケーラビリティ推定で内部ループ回数を計上せよ — per_combo固定は過小評価
+  detail: |
+    cmd_1949でスケーラビリティ推定~39s→実測10分超(10倍外れ)。
+    原因: per_combo_ms=8msと仮定し、evaluate_expanding内のfor-loop(63回β推定/combo)を計上しなかった。
+    β推定85回/combo × 4,851combo = 412,335回のOLS。1回≈1ms → 412s ≈ 7分。
+    推定時は「1 combo内で何回の重い計算が走るか」を関数内部まで追跡せよ。
+    対策: _fast_beta関数で10倍高速化(pandas排除→numpy直接OLS)。
+    一般原理: 計算時間推定はO(外側ループ)×O(内側ループ)×単位時間。外側のみで推定するな。
+  source_cmd: cmd_1949_scalability
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: review_logヘッダ+掲示板(blt_20260416_140131)に記録。次回のスケーラビリティ検証時に内部ループ回数を明記
+- id: LG029
+  title: 手段の免除≠目的の免除 — waive時に代替検証を埋め込め
+  detail: |
+    cmd_1948でcommit check免除(waive_ac)→成果物検証経路消失→成果物0件がGATE CLEAR。
+    commit checkの目的は「成果物が確定状態にあること」。手段(commit)を免除しても目的は免除されない。
+    waive_ac導入(cmd_1946)時に代替検証を設計しなかったのが根因。
+    対策: PRE3にファイル実在チェック追加+GP-202(parent_cmdプレフィックス不一致WARN)。
+    一般原理: 手段を免除するとき、目的を達成する代替手段を同時に埋め込め。
+  source_cmd: cmd_1948_gate_failure
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: PRE3(ファイル実在チェック)+GP-202(プレフィックス不一致WARN)+review_logヘッダ
+- id: LG030
+  title: 行動完了≠還流完了 — 実装しても他者のlessonsに届かなければ利他にならない
+  detail: |
+    道具磨き(高速化+引数化+PRE3)を完了し掲示板に投稿したが、忍者・家老のlessonsにlesson_candidateを送信していなかった。
+    「動いた」で満足し「届いた」まで回していない。Phase 8(利他)のサイクルが掲示板投稿で止まる。
+    実装→検証→掲示板→★lesson_candidate送信→lessons登録まで回して初めて利他完了。
+    自分の環境に埋め込む(自立)と他者の環境に埋め込む(利他)は別ステップ。
+  source_cmd: gunshi_session_20260416
+  created_at: '2026-04-16'
+  automated: true
+  enforcement: instructions/gunshi.md サイクルの鉄則に「行動完了≠還流完了」1行埋込み済み。毎サイクル自動読込

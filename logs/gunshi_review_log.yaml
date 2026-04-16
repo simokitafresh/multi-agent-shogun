@@ -35,6 +35,7 @@
 # 軍師自己コード変更(hooks/gates/CLAUDE.md/instructions/settings)→S0プロトコル必須。docs/research/gunshi_sg_s0_self_code_change_20260412.md(LG026)
 # ★退化計測原理(CoDD#3): GP/改善を入れたら「退化していないか」をbefore/afterで計測せよ。参照率(行動有無)≠有効率(行動効果)。計測対象を間違えると盲点が構造的に生まれる(2026-04-16: useful率26%をreferenced率76%が隠していた)
 # コード修正の横展開: grep修正前パターンで残存0件確認必須。1箇所修正→コピペ散在ファイル漏れ(cmd_1899: bisect fix 04f74830がTRF/MAF漏れ→12体Cash100%)
+# RESEARCH cmd(commit免除): files_modifiedファイルの実在+parent_cmd命名一致を確認せよ。手段の免除≠目的の免除(cmd_1948: 成果物0件がGATE CLEAR。GP-202+PRE3で二重防御)
 # golden data検証基準: 生成時のコード状態(commit)を確認。バグ状態で生成されたgolden dataは検証基準にならない(cmd_1899: TRFバグ状態のgolden=全選択≠正しいTop+Worst)
 # パリティスクリプトtarget_date: productionと同じ日付で再実行必須。skip_months>0で差が増幅(cmd_1898: 前月末日vs第1営業日→抜き身/四つ目83-99%)
 # 「既にBLOCK化済み」判定→git show <commit>:fileで確認せよ。Readはuncommitted変更を含む(cmd_1912: exit 1があると思ったらuncommitted変更だった。LG001の再発形)
@@ -181,3 +182,223 @@
   gate_prediction: CLEAR
   causal_chain: "cmd_1944不足(text色)→殿FB→cmd_1945で全テーマ24値計測+修正→WCAG AA構造的保証完成=正の複利"
   timestamp: "2026-04-16T11:42:00"
+- cmd_id: cmd_1946
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。verdict_override WA10件構造対策。GP-190 waive_reason既存機構拡張+waive_acフィールド新設。scope_mode RESEARCH使用実績0件だがtarget_pathベース判定でカバー"
+  observations:
+    - "事実1: gate_report_format.sh L375-376 GP-190 waive_reason判定はAC種別分岐なし→全binary_checksに適用確認"
+    - "事実2: scope_mode RESEARCH=shogun_to_karo.yaml既存cmd 0件(全てIMPL)。AC1条件(b) target_pathベースで実質カバー"
+    - "事実3: karo_workarounds.yaml verdict_override grep=10件。cmd記載と一致"
+  causal_chain: "commit check一律注入(deploy_task.sh)→研究cmd/waive指定でもbc no→gate BLOCK→家老手動override WA10件蓄積=負の複利 → waive_reason自動注入+waive_acフィールドで構造的解消=正の複利∞"
+  timestamp: "2026-04-16T12:58:00"
+- cmd_id: cmd_1946
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1946_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。_apply_binary_check_waivers(Python3)実装。scope_mode RESEARCH+target_path outputs/docs/research判定。waive_acフィールド処理。テスト17件全PASS(新規2件)"
+  observations:
+    - "事実1: _apply_binary_check_waivers L887-985: Python3でYAML parse→waive_ac/research判定→waive_reason注入。既存bash waive(L1283-1295)の後に呼ばれ(L1477)、既waive_reasonは上書きしない"
+    - "事実2: テスト新規2件(研究cmd scope/target両パス検証+waive_ac AC5/AC1分離検証)追加。17件全PASS。削除0"
+    - "事実3: PRE1(gate_report_format.sh)PASS→GP-190既存でwaive_reason付きnoは正しくPASS扱い確認"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "verdict_override WA10件(commit check一律注入)→_apply_binary_check_waivers追加→研究cmd/waive_ac自動waive→家老手動override不要=正の複利"
+  timestamp: "2026-04-16T13:05:00"
+- cmd_id: cmd_1947
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。⑤×⑤ N体EW比較(1/2/3体×4手法×6指標)。⑤21列・cmd_1934 CSV 1330行・cmd_1902 CSV 3486行全て現物確認。新規231通り軽量"
+  observations:
+    - "事実1: ⑤列数=21(head -1 monthly CSV grep確認)、cmd_1934 CSV=1331行(wc -l)、nbody未存在(ls grep 0件)"
+    - "事実2: 新規計算231通り(1体21+2体210)×4手法は数十秒見込み。3体はcmd_1934データ再利用で再計算不要"
+    - "事実3: scope_mode=RESEARCH → cmd_1946 waive_ac機構で commit check自動waive。verdict_overrideリスクなし"
+  causal_chain: "殿指示(N体効果)→1/2/3体横並び定量比較→N体最適数の根拠確立→全L3設計cmdに正の複利"
+  timestamp: "2026-04-16T13:42:00"
+- cmd_id: cmd_1947
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1947_research
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。成果物全件実在(1体22行/2体211行/stats73行/summary113行)。alpha-Calmar Top1全12値CSV現物と完全一致"
+  observations:
+    - "事実1: 1体CSV wc -l=22(header+21)、2体CSV wc -l=211(header+210)。報告通り"
+    - "事実2: alpha-Calmar Top1再検算12値全一致(IS/OOS/Expanding/WF×1体/2体/3体)。3体はcmd_1934 CSV再利用"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1934ロジック流用→1体/2体新規計算+3体再利用→N体横並び統計表→N体最適数の定量根拠確立=正の複利"
+  timestamp: "2026-04-16T13:48:00"
+- cmd_id: cmd_1948
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_1947の①×①版。同一手法・同一21列(①)。q11確認(①×①未存在)"
+  observations:
+    - "事実1: cmd_1947と同一手法・指標。列を⑤→①に変更するだけ"
+  causal_chain: "殿指示(BB種別比較)→①×①でN体比較→⑤×⑤と対比→BB選択知見=正の複利"
+  timestamp: "2026-04-16T13:50:00"
+- cmd_id: cmd_1948
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1948_research
+  report_verdict: FAIL
+  gate_result: CLEAR(誤判定。家老確認:成果物現物未確認でgate通過。軍師FAIL正当。cmd_1949後に再配備予定)
+  findings_summary: "FAIL。成果物不在(cmd_1948_*=0件)。files_modified全てcmd_1947_*。summary「cmd_1947を実行し⑤_*」。CSV現物combo_id=全て⑤_*。忍者が①フィルタ未適用でcmd_1947を再実行した可能性"
+  observations:
+    - "事実1: ls cmd_1948_* → 0件。①×①のN体比較CSVが生成されていない"
+    - "事実2: cmd_1947_l3_onebody_stability.csv combo_id先頭3件=⑤_kasoku_diff_激攻/⑤_oikaze_激攻/⑤_kasoku_ratio_激攻。①データなし"
+    - "事実3: result.summary「cmd_1947を実行し、⑤_*21列」。cmd_1948は①が正"
+  fail_reasons:
+    - "成果物不在: cmd_1948_*ファイル0件"
+    - "データ矛盾: binary_checks「①21列」だがCSV現物は全て⑤_*"
+    - "cmd_1947成果物汚染リスク: cmd_1947出力を上書きした可能性"
+  lesson_quality: N/A
+  karo_workaround_needed: yes
+  gate_prediction: BLOCK
+  causal_chain: "疾風がcmd_1947スクリプトをそのまま再実行→①フィルタ未適用→⑤データで上書き→cmd_1948成果物不在+cmd_1947汚染リスク=負の複利"
+  timestamp: "2026-04-16T13:55:00"
+- cmd_id: cmd_1949
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_result: CLEAR
+  confidence: MEDIUM
+  findings_summary: "6観点概ねOK。①×⑤クロス4,851通り。スケーラビリティ検証済み(~39s)。cmd_1948①データ未生成問題が未解決のためMEDIUM"
+  observations:
+    - "事実1: スケーラビリティ検証済み(掲示板blt_20260416_134156_8f123b)。4,851通り~39s、1.9MB"
+    - "事実2: cmd_1948の①×①データが正しく生成されていない(軍師FAIL判定)。cmd_1949 AC2の対比部分に影響する可能性"
+  causal_chain: "殿指示(クロスuniverse)→①×⑤混成→同一/異universe分散効果の定量比較→L3設計知見=正の複利。ただしcmd_1948再配備完了が前提"
+  timestamp: "2026-04-16T14:00:00"
+- cmd_id: cmd_karo_1948_retry
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_1948再配備。AC1にprefixes引数+combo_id①確認+wc -l明記。前回失敗の構造的再発防止済み。道具磨き(10倍高速化+引数化)で~17s見込み"
+  observations:
+    - "事実1: AC1にload_monthly_returns(prefixes=('①_',))指定+head -2でcombo_id①確認が明記。前回の⑤フィルタ未変更ミスを構造的に防止"
+    - "事実2: 出力ファイル名cmd_1948_l3_*_1x1.csv明記。前回のcmd_1947_*上書き問題も防止"
+  causal_chain: "cmd_1948 FAIL(①未生成)→道具磨き(引数化+高速化)→再配備ACに使い方明記→構造的再発防止=正の複利"
+  timestamp: "2026-04-16T14:13:00"
+- cmd_id: cmd_1950
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。①1⑤2クロス4,410通り。スケーラビリティ検証済み(~35s)。道具磨き済み"
+  observations:
+    - "事実1: 21×C(21,2)=4,410通り。数値一致"
+    - "事実2: _fast_beta+引数化で高速実行可能。cmd_1949と同規模"
+  causal_chain: "殿指示(クロス分割)→⑤多め4,410通り→①多め(cmd_1949)と対比→BB比率効果の定量根拠=正の複利"
+  timestamp: "2026-04-16T14:23:00"
+- cmd_id: cmd_1951
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。全.shプロファイリング偵察。assumptions 3件verified。codd_refactor_registry.md存在確認(16行)。AC4件順序自然"
+  observations:
+    - "事実1: codd_refactor_registry.md 16行存在。リファクタ済み4件除外リスト確定"
+    - "事実2: AC1→2→3→4の依存関係が正(列挙→計測→分類→優先リスト)"
+  causal_chain: "殿指示(MECE番号順CoDD改善)→全量プロファイリング=改善の起点→以降の全CoDDcmdに正の複利"
+  timestamp: "2026-04-16T14:23:00"
+- cmd_id: cmd_1950
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1950_research
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。①1⑤2クロス4,410通り。3body 4411行+stats 25行。combo_id=①1⑤2パターン確認。PRE全PASS"
+  observations:
+    - "事実1: 3body CSV 4411行(4410+header)。stats 25行(24+header=1×4×6)。報告通り"
+    - "事実2: combo_id先頭=①_kasoku_ratio_鉄壁__⑤_kasoku_diff_激攻__⑤_kasoku_ratio_鉄壁。①1⑤2パターン正"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1949(①多め)完了→cmd_1950(⑤多め)完了→BB比率効果の定量対比=L3設計知見の正の複利"
+  timestamp: "2026-04-16T14:30:00"
+- cmd_id: cmd_1951
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1951_recon
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。220本全量プロファイリング。A93+B109+C18=220(find一致MECE)。Top5特定。implementation_readiness充実"
+  observations:
+    - "事実1: find結果220本=報告220本。A+B+C=220。漏れなし"
+    - "事実2: Top5=gate_report_format(40ms)/shutsujin_departure(2424ms)/yaml_field_set(51ms)/cdp_cli(36ms)/ntfy(130ms)。shutsujinが突出"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "殿指示(MECE番号順CoDD改善)→220本全量プロファイリング完了→Top5特定→以降の全CoDD改善cmdの起点=正の複利∞"
+  timestamp: "2026-04-16T14:35:00"
+- cmd_id: cmd_karo_ci_fix_cmd_save
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_ci_fix_cmd_save_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。cmd_saveテスト期待値5件修正。56件全PASS(bats実行確認)。本体変更なし。削除なし"
+  observations:
+    - "事実1: test_cmd_save.bats+test_cmd_save_diagnose.bats 56件全PASS(bats実行)"
+    - "事実2: cmd_save.sh本体変更なし。テスト期待値のみ現行出力形式に追従"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_save出力形式変更→テスト期待値追従→CI緑維持=インフラ健全性の正の複利"
+  timestamp: "2026-04-16T14:38:00"
+- cmd_id: cmd_1953
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。shutsujin_departure.sh 2.4s→500ms。CoDD高速化。cmd_1951実測値verified"
+  observations:
+    - "事実1: cmd_1951プロファイリング2424ms確認済み。配備ごと発火=高複利"
+  causal_chain: "cmd_1951全量プロファイリング→Top候補特定→6忍者並列CoDD改善=正の複利∞"
+  timestamp: "2026-04-16T14:42:00"
+- cmd_id: cmd_1954
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。dashboard_auto_section.sh 2.8s→500ms"
+  timestamp: "2026-04-16T14:42:00"
+- cmd_id: cmd_1955
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。gate_cycle_health.sh 2.6s→500ms"
+  timestamp: "2026-04-16T14:42:00"
+- cmd_id: cmd_1956
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。report_merge.sh 1.9s→300ms"
+  timestamp: "2026-04-16T14:42:00"
+- cmd_id: cmd_1957
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。gate_artifact_map.sh 2.2s→400ms"
+  timestamp: "2026-04-16T14:42:00"
+- cmd_id: cmd_1958
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。gate_karo_startup.sh 1.1s→300ms"
+  timestamp: "2026-04-16T14:42:00"

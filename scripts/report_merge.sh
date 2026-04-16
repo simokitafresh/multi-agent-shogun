@@ -13,7 +13,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 CMD_ID="$1"
 
 write_gate_flag() {
@@ -50,47 +49,63 @@ fi
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 REPORTS_DIR="$SCRIPT_DIR/queue/reports"
 
-# ─── 偵察タスク収集 ───
-# queue/tasks/*.yaml から parent_cmd=<cmd_id> かつ task_type=recon|scout のものを列挙
+# ─── 偵察タスク収集（全ファイルを単一awkパスで処理）───
+# 旧実装: field_get を1ファイルあたり4-5回呼び出し(subshell多数) → 遅い
+# 新実装: awk 1回で全ファイルを走査し、parent_cmd+task_typeを絞り込む
 declare -a RECON_FILES=()
 declare -a RECON_NINJAS=()
 declare -a RECON_STATUSES=()
 declare -a RECON_TASK_IDS=()
 
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-
-    # parent_cmdが一致するか確認
-    local_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null)
-    if [ "$local_parent" != "$CMD_ID" ]; then
+# awkで全タスクファイルを1パス処理: TAB区切りで file|ninja|status|task_id を出力
+while IFS=$'\t' read -r r_file r_ninja r_status r_task_id; do
+    if [ -z "$r_status" ]; then
+        echo "[WARN] Empty status in $r_file" >&2
         continue
     fi
-
-    # task_typeがreconまたはscoutであるか確認
-    local_task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null)
-    if [[ "$local_task_type" != "recon" && "$local_task_type" != "scout" ]]; then
-        continue
-    fi
-
-    # 偵察タスクとして登録
-    local_ninja=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "assigned_to" "" 2>/dev/null)
-    local_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "" 2>/dev/null)
-    [ -z "$local_task_id" ] && local_task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "" 2>/dev/null)
-
-    # L070: field_get経由でインデント変動に対応 + 空結果チェック
-    task_status=""
-    task_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "" 2>/dev/null)
-    if [ -z "$task_status" ]; then
-        echo "[WARN] Empty status in $task_file" >&2
-        continue
-    fi
-    local_status="$task_status"
-
-    RECON_FILES+=("$task_file")
-    RECON_NINJAS+=("$local_ninja")
-    RECON_STATUSES+=("$local_status")
-    RECON_TASK_IDS+=("$local_task_id")
-done
+    RECON_FILES+=("$r_file")
+    RECON_NINJAS+=("$r_ninja")
+    RECON_STATUSES+=("$r_status")
+    RECON_TASK_IDS+=("$r_task_id")
+done < <(
+    shopt -s nullglob
+    files=("$TASKS_DIR"/*.yaml)
+    [ "${#files[@]}" -eq 0 ] && exit 0
+    awk -v cmd_id="$CMD_ID" '
+    function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+    function unquote(s,   c1, cl) {
+        if (length(s) >= 2) {
+            c1 = substr(s,1,1); cl = substr(s,length(s),1)
+            if ((c1 == "\"" && cl == "\"") || (c1 == "\047" && cl == "\047"))
+                return substr(s, 2, length(s)-2)
+        }
+        return s
+    }
+    FNR == 1 {
+        if (NR > 1) process()
+        cur_file = FILENAME
+        parent_cmd = task_type = assigned_to = task_id = ac_task_id = status = ""
+    }
+    /^[[:space:]]*(parent_cmd|task_type|assigned_to|task_id|_ac_task_id|status):/ {
+        colon = index($0, ":")
+        key   = substr($0, 1, colon - 1); gsub(/^[ \t]+/, "", key)
+        val   = substr($0, colon + 1);    val = trim(unquote(val))
+        if      (key == "parent_cmd")  parent_cmd  = val
+        else if (key == "task_type")   task_type   = val
+        else if (key == "assigned_to") assigned_to = val
+        else if (key == "task_id")     task_id     = val
+        else if (key == "_ac_task_id") ac_task_id  = val
+        else if (key == "status")      status      = val
+    }
+    END { process() }
+    function process(   tid) {
+        if (parent_cmd == cmd_id && (task_type == "recon" || task_type == "scout")) {
+            tid = (task_id != "") ? task_id : ac_task_id
+            print cur_file "\t" assigned_to "\t" status "\t" tid
+        }
+    }
+    ' "${files[@]}"
+)
 
 TOTAL=${#RECON_FILES[@]}
 
@@ -110,7 +125,6 @@ PENDING_NINJAS=()
 for i in "${!RECON_NINJAS[@]}"; do
     ninja="${RECON_NINJAS[$i]}"
     status="${RECON_STATUSES[$i]}"
-    task_id="${RECON_TASK_IDS[$i]}"
     report_path="${REPORTS_DIR}/${ninja}_report_${CMD_ID}.yaml"
     if [ ! -f "$report_path" ]; then
         # 後方互換: 旧形式を許容

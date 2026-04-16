@@ -1,14 +1,14 @@
 task:
-  _ac_task_id: cmd_1945_impl
+  _ac_task_id: cmd_1953_impl
   _ac_worker_id: null
-  ac_version: b99834bc
+  ac_version: fa7da702
   acceptance_criteria:
-  - ac: 全テキスト色(textPrimary/Secondary/Tertiary/Muted)がsurface0/surface1に対してコントラスト比4.5:1以上（計算値を報告に記載）
-    type: binary
-  - ac: ビルド成功
-    type: binary
+  - description: before計測記録+ボトルネック特定+実装+after計測。before比で改善を数値で示す
+    id: AC1
+  - description: 既存テスト全PASS。codd_refactor_registry.mdに結果追記
+    id: AC2
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L466: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo\n\
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L464: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -26,26 +26,30 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1945
+  parent_cmd: cmd_1953
   project: infra
-  report_filename: hayate_report_cmd_1945.yaml
-  report_path: queue/reports/hayate_report_cmd_1945.yaml
-  status: done
+  report_filename: hayate_report_cmd_1953.yaml
+  report_path: queue/reports/hayate_report_cmd_1953.yaml
+  status: in_progress
   stop_for: []
-  task_id: cmd_1945_impl
+  task_id: cmd_1953_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 23
+    total_workarounds: 27
     top_pattern: 'verdict_override(4件)'
-    breakdown: 'verdict_override(4件), report_yaml_format(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), deploy_error(1件), uncategorized(1件)'
-    warning: '⚠ 過去23件のworkaround発生。品質に注意'
+    breakdown: 'verdict_override(4件), report_yaml_format(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), uncategorized(2件), ac_injection_failure(1件), stale_report(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), deploy_error(1件), 疾風報告クリーン。AC1-4全yes。deploy_task.sh waiver追加+テスト2件PASS。手動修正なし(1件), 疾風報告クリーン。①×⑤クロスCSV4件健全(combo_id/行数現物確認済み)。WA:なし(1件), 疾風完了。①データ健全だがファイル名cmd_1950命名→家老リネーム。WA:なし(データ正)(1件)'
+    warning: '⚠ 過去27件のworkaround発生。品質に注意'
     gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 5
     - pattern: 'verdict_invalid'
+      count: 2
+    - pattern: 'no_lesson_reason'
       count: 1
-    gate_warning: '⚠ gate頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入'
     gate_blocks:
     - reason: 'report_format'
       count: 14
@@ -96,4 +100,4 @@ task:
   - id: 'L470'
     summary: '''`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive'
     detail: '''`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive'
-  deployed_at: "2026-04-16T11:29:15"
+  deployed_at: "2026-04-16T14:37:40"

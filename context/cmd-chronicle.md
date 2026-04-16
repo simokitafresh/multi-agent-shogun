@@ -672,3 +672,7 @@
 | cmd_1948 | 研究 — N体EW比較(①×①): 1体/2体/3体 × 4手法 × 6指標 | dm-signal | 04-16 | cmd_1947を実行し、⑤_*21列の1体21通り・2体2 |
 | cmd_1949 | 研究 — N体EW比較(①2⑤1): クロス 2体+3体(①多め) × 4手法 × 6指標 | dm-signal | 04-16 | ①×⑤クロス2体441通りと①①⑤の3体4410通りをcmd |
 | cmd_karo_1948_retry | 研究 — N体EW比較(①×①) 再配備: load_monthly_returns引数化済み | dm-signal | 04-16 | ①_* 21列の1/2/3体EWを4手法×6指標で再計算し、 |
+| cmd_1950 | 研究 — N体EW比較(①1⑤2): クロス 3体(⑤多め) × 4手法 × 6指標 | dm-signal | 04-16 | ①1⑤2の3体4410通りをcmd_1934同手法で算出し、 |
+| cmd_1951 | 偵察 — インフラスクリプト全量プロファイリング+CoDD改善リスト作成 | infra | 04-16 | 全220本を計測・分類し docs/research/cod |
+| cmd_karo_ci_fix_cmd_save | CI修正 — cmd_save.shテスト期待値修正(BLOCKメッセージ形式変更対応) | infra | 04-16 | cmd_save の現行出力に合わせて 5 件の失敗テスト期 |
+| cmd_1957 | CoDD改善#5 — gate_artifact_map.sh高速化(2.2s→目標400ms) | infra | 04-16 | gate_artifact_map.sh高速化完了。967m |
