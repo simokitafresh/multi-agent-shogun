@@ -91,12 +91,20 @@ ${verification_questions}"
 fi
 
 # --- 通常モード: Build additionalContext (max 500 chars) ---
+# 未読3件以上: 強い警告を注入（殿との対話中にinbox確認を先送りする構造を強制で潰す）
+inbox_warning=""
+# 1通でも重要な報告が含まれる可能性(殿指摘2026-04-16)。全未読で警告
+if (( unread_count >= 1 )); then
+  inbox_warning="
+⚠️ INBOX ${unread_count}件未読。殿に応答する前にinboxと掲示板を確認せよ。"
+fi
+
 header="=== Session Context (auto-injected) ==="
 fixed_part="${header}
 source: unknown
 timestamp: ${timestamp}
 agent: ${agent_id}
-inbox_unread: ${unread_count}
+inbox_unread: ${unread_count}${inbox_warning}
 --- karo_snapshot ---
 "
 

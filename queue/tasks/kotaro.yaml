@@ -1,15 +1,15 @@
 task:
-  _ac_task_id: cmd_1957_impl
+  _ac_task_id: cmd_1963_impl
   _ac_worker_id: null
-  ac_version: fa7da702
+  ac_version: 9002b0b0
   acceptance_criteria:
-  - description: before計測記録+ボトルネック特定+実装+after計測。before比で改善を数値で示す
+  - description: before計測+ボトルネック特定+実装+after計測。before比で改善を数値で示す
     id: AC1
   - description: 既存テスト全PASS。codd_refactor_registry.mdに結果追記
     id: AC2
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L464: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定\n\
-    ────────────────────────────────────────"
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L463: MainActivity.ktのNavigationBarにimePadding()を適用するとIME\
+    \ insetsが早期消費され後続ColumnのimePad\n────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -26,13 +26,13 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_1957
+  parent_cmd: cmd_1963
   project: infra
-  report_filename: kotaro_report_cmd_1957.yaml
-  report_path: queue/reports/kotaro_report_cmd_1957.yaml
+  report_filename: kotaro_report_cmd_1963.yaml
+  report_path: queue/reports/kotaro_report_cmd_1963.yaml
   status: done
   stop_for: []
-  task_id: cmd_1957_impl
+  task_id: cmd_1963_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -59,6 +59,12 @@ task:
       count: 1
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
   related_lessons:
+  - id: 'L481'
+    summary: 'set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern'
+    detail: 'set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern'
+  - id: 'L480'
+    summary: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加することで解決。テスト環境(空のgate_metrics.log)が本番では現れない条件を先に検出した。'
+    detail: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加することで解決。テスト環境(空のgate_metrics.log)が本番では現れない条件を先に検出した。'
   - id: 'L479'
     summary: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入効果(before/after)の計測を全GP実装時に義務化すべき。IF'
     detail: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入効果(before/after)の計測を全GP実装時に義務化すべき。IF'
@@ -83,10 +89,4 @@ task:
   - id: 'L472'
     summary: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含まれず。変更はローカルのみ。次回以降'
     detail: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含まれず。変更はローカルのみ。次回以降'
-  - id: 'L471'
-    summary: '旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:noをFAIL判定するためverdict_override(WA)が頻発。注入しない方が根本解'
-    detail: '旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:noをFAIL判定するためverdict_override(WA)が頻発。注入しない方が根本解'
-  - id: 'L470'
-    summary: '''`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive'
-    detail: '''`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive'
-  deployed_at: "2026-04-16T14:38:31"
+  deployed_at: "2026-04-16T15:44:48"

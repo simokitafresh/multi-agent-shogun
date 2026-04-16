@@ -1,4 +1,8 @@
-# inbox_write.sh 高速化記録 (cmd_1960)
+# inbox_write.sh CoDD Spec + After Report (cmd_1960)
+
+- cmd: cmd_1960
+- 実施者: saizo
+- CoDD Phase到達: Phase 5(before/after計測+実装+検証)。specは事後作成(2026-04-16)
 
 ## 対象
 

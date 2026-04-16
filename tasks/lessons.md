@@ -3677,3 +3677,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern file || trueで保護が必須。gate_cycle_health.sh高速化cmd_1955影丸で発見。bashスクリプト全般に適用できる一般教訓
+
+### L482: python3 -c heredoc化でShellCheckを回避しつつ変数は環境変数経由で渡す
+- **日付**: 2026-04-16
+- **出典**: cmd_1963
+- **記録者**: kotaro
+- **status**: confirmed
+- **tags**: [universal]
+- python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3 << 'PYEOF'形式に変換すること。シェル変数はGATE_VAR=val python3 << 'PYEOF'の形でos.environ['GATE_VAR']として渡す。yaml.safe_loadはfileオブジェクトにもimportコストがあるため大ファイルは行ベースパーサで代替すると100ms以上削減できる

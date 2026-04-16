@@ -395,3 +395,8 @@ lessons:
   detail: 'cmd_karo_1948_retryで①データは正しく生成されたがファイル名がcmd_1950_l3_pattern1_*になった。スクリプト内のoutput名がハードコードで前cmdの値を引き継いだ。ACに出力ファイル名のプレフィックス(cmd_XXXX_*)を明記し、忍者がそのプレフィックスで出力するよう指示すること。GP-202のWARNが発火するが、発火前に防ぐにはACでの明示が最も効果的'
   source_cmd: 'cmd_karo_1948_retry'
   created_at: '2026-04-16'
+- id: 'LK072'
+  title: 'CoDD改善cmdのACにCoDDパイプライン実行を明示せよ — 手動最適化では設計書が散逸する'
+  detail: 'cmd_1953-1958でACにbefore/after+テストのみ記載しCoDDパイプライン(spec作成→coddコマンド→設計書生成)を含めなかった。結果: 忍者が手動で最適化しregistryに1行追記のみ。設計書が残らず最適化の根拠が散逸。殿指摘「台帳に載らないと記録が散逸する」。ACに具体的に(1)Phase2: spec作成→docs/research/保存 (2)Phase3: coddコマンド実行→設計書生成を含めること。cmdタイトルに「CoDD」と書いてもACになければ忍者は実行しない'
+  source_cmd: 'cmd_1953'
+  created_at: '2026-04-16'

@@ -673,10 +673,16 @@
 | cmd_1949 | 研究 — N体EW比較(①2⑤1): クロス 2体+3体(①多め) × 4手法 × 6指標 | dm-signal | 04-16 | ①×⑤クロス2体441通りと①①⑤の3体4410通りをcmd |
 | cmd_karo_1948_retry | 研究 — N体EW比較(①×①) 再配備: load_monthly_returns引数化済み | dm-signal | 04-16 | ①_* 21列の1/2/3体EWを4手法×6指標で再計算し、 |
 | cmd_1950 | 研究 — N体EW比較(①1⑤2): クロス 3体(⑤多め) × 4手法 × 6指標 | dm-signal | 04-16 | ①1⑤2の3体4410通りをcmd_1934同手法で算出し、 |
-| cmd_1951 | 偵察 — インフラスクリプト全量プロファイリング+CoDD改善リスト作成 | infra | 04-16 | 全220本を計測・分類し docs/research/cod |
+| cmd_1951 | 偵察 — インフラスクリプト全量プロファイリング+CoDD改善リスト作成 | infra | 04-16 | 全220本を計測・分類しCoDD改善リスト作成 |
 | cmd_karo_ci_fix_cmd_save | CI修正 — cmd_save.shテスト期待値修正(BLOCKメッセージ形式変更対応) | infra | 04-16 | cmd_save の現行出力に合わせて 5 件の失敗テスト期 |
 | cmd_1957 | CoDD改善#5 — gate_artifact_map.sh高速化(2.2s→目標400ms) | infra | 04-16 | gate_artifact_map.sh高速化完了。967m |
 | cmd_1954 | CoDD改善#2 — dashboard_auto_section.sh高速化(2.8s→目標500ms) | infra | 04-16 | dashboard_auto_section.sh を高速化 |
 | cmd_1953 | CoDD改善#1 — shutsujin_departure.sh高速化(2.4s→目標500ms) | infra | 04-16 | scripts/shutsujin_departure.sh |
 | cmd_1956 | CoDD改善#4 — report_merge.sh高速化(1.9s→目標300ms) | infra | 04-16 | report_merge.sh: 1ファイルあたり4-5回の |
 | cmd_1955 | CoDD改善#3 — gate_cycle_health.sh高速化(2.6s→目標500ms) | infra | 04-16 | gate_cycle_health.sh を 793ms→2 |
+| cmd_1958 | CoDD改善#6 — gate_karo_startup.sh高速化(1.1s→目標300ms) | infra | 04-16 | gate_karo_startup.sh高速化完了。befo |
+| cmd_1960 | CoDD改善#8 — inbox_write.sh高速化(89ms→目標40ms) | infra | 04-16 | inbox_write.shを高速化。agent_confi |
+| cmd_1961 | CoDD改善#9 — ntfy.sh高速化(130ms→目標50ms) | infra | 04-16 | ntfy.sh高速化: before 33ms→after |
+| cmd_1959 | CoDD改善#7 — gate_recalculate_completeness.sh高速化(4.0s→目標500ms) | infra | 04-16 | gate_recalculate_completeness. |
+| cmd_1963 | CoDD改善#11 — gate_loop_health.sh高速化(493ms→目標100ms) | infra | 04-16 | gate_loop_health.sh 287ms→93ms |
+| cmd_1964 | CoDD改善#12 — gate_lesson_health.sh高速化(228ms→目標50ms) | infra | 04-16 | gate_lesson_health.sh を 666ms |
