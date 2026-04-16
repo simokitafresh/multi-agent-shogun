@@ -43,23 +43,41 @@ classify_gist() {
     key="$(title_key "$title")"
 
     case "$key" in
-        *"note記事"*|*"記事下書き"*|*"解説"*|*"検証"*|*"信じていい"*|*"選べ"*|*"使えない"*|*"p平均"*|*"p-average"*|*"p̄"*)
+        *"奥義"*|*"チャンピオン"*|*"cpcv"*|*"β調整"*)
+            printf '%s\n' "L2奥義研究"
+            ;;
+        *"n体ew"*|*"ew比較"*|*"ew安定"*|*"因子分析"*)
+            printf '%s\n' "L2奥義研究"
+            ;;
+        *"l3"*|*"168体"*|*"3486"*|*"メトリクス比較"*)
+            printf '%s\n' "L2奥義研究"
+            ;;
+        *"note記事"*|*"記事下書き"*|*"解説"*|*"検証"*|*"信じていい"*|*"選べ"*|*"使えない"*|*"p平均"*|*"p-average"*|*"p̄"*|*"戦国ai列伝"*|*"列伝"*)
             printf '%s\n' "note記事"
             ;;
         *"weekly"*)
             printf '%s\n' "週報"
             ;;
+        *"研究日誌"*|*"前処理研究"*)
+            printf '%s\n' "研究日誌"
+            ;;
         *"deepdive"*|*"why深掘り"*|*"因果探索"*|*"why chain"*|*"deep dive"*|*"将軍必読"*)
-            printf '%s\n' "deepdive・将軍記録"
+            printf '%s\n' "deepdive"
+            ;;
+        *"バグ報告"*|*"シグナル"*|*"差異"*|*"忍法"*"一覧"*)
+            printf '%s\n' "DM-Signal運用"
+            ;;
+        *"設計書"*|*"codd"*|*"システム比較"*|*"対比"*)
+            printf '%s\n' "設計書"
+            ;;
+        *"確定申告"*|*"経費管理"*)
+            printf '%s\n' "確定申告"
+            ;;
+        *"gstack"*|*"dashboard"*|*"ダッシュボード"*|*"mcas"*)
+            printf '%s\n' "インフラ"
             ;;
         *"user manual"*|*"マニュアル"*)
             printf '%s\n' "ユーザー向け"
-            ;;
-        *"確定申告"*|*"gstack"*|*"システム比較"*|*"対比"*|*"dashboard"*|*"ダッシュボード"*|*"経費管理"*|*"readme"*)
-            printf '%s\n' "インフラ・確定申告・比較分析"
-            ;;
-        *"前処理研究"*)
-            printf '%s\n' "前処理研究"
             ;;
         *)
             printf '%s\n' "研究データ・分析レポート"
@@ -165,7 +183,8 @@ main() {
 
     local tmpfile
     tmpfile="$(mktemp)"
-    trap 'rm -f "$tmpfile"' EXIT
+    # shellcheck disable=SC2064  # tmpfile is local; expand at definition time is intentional
+    trap "rm -f '$tmpfile'" EXIT
 
     render_header > "$tmpfile"
     local category
@@ -183,7 +202,7 @@ main() {
             "${excluded_counts[ipynb]}"
     } >> "$tmpfile"
 
-    log "category_counts: note記事=${category_counts["note記事"]:-0} 週報=${category_counts["週報"]:-0} 研究データ・分析レポート=${category_counts["研究データ・分析レポート"]:-0} deepdive・将軍記録=${category_counts["deepdive・将軍記録"]:-0} ユーザー向け=${category_counts["ユーザー向け"]:-0} インフラ・確定申告・比較分析=${category_counts["インフラ・確定申告・比較分析"]:-0} 前処理研究=${category_counts["前処理研究"]:-0}"
+    log "category_counts: note記事=${category_counts["note記事"]:-0} 週報=${category_counts["週報"]:-0} L2奥義研究=${category_counts["L2奥義研究"]:-0} 研究日誌=${category_counts["研究日誌"]:-0} deepdive=${category_counts["deepdive"]:-0} DM-Signal運用=${category_counts["DM-Signal運用"]:-0} 設計書=${category_counts["設計書"]:-0} 確定申告=${category_counts["確定申告"]:-0} インフラ=${category_counts["インフラ"]:-0} ユーザー向け=${category_counts["ユーザー向け"]:-0} 研究データ・分析レポート=${category_counts["研究データ・分析レポート"]:-0}"
     log "excluded_counts: self_index=${excluded_counts[self_index]} duplicate_title=${excluded_counts[duplicate_title]} ipynb=${excluded_counts[ipynb]}"
     if [ -n "$excluded_lines" ]; then
         log "excluded_entries_begin"
