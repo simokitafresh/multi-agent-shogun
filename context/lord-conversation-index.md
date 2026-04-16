@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-16T18:26:48+09:00 -->
+<!-- generated_at: 2026-04-16T18:38:17+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-16T18:38:17+09:00 | terminal | response | cmd_save.shのafter結果を確認する。 [meta] stop_reason=tool_use
+- 2026-04-16T18:27:54+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-078)
+- 2026-04-16T18:27:20+09:00 | ntfy | outbound | 【家老】cmd_1977 初回配備開始 (title=CoDD改善#25 — cmd_save.sh高速化(4.0s→目標500ms), ninja=hayate) CoDD改善#25 📋 https://gist.github.com/…
 - 2026-04-16T18:26:47+09:00 | terminal | response | cmd_1977(cmd_save.sh高速化)委任完了。単発配備。改善完了まで将軍のcmd起票は停止。残りの第五弾(再トライ4本 + stop-lint-gate.sh)はcmd_save.sh改善完了後に起票する。 [meta] st…
 - 2026-04-16T18:25:26+09:00 | terminal | inbound | cmd_save.shを先にやろう
 - 2026-04-16T18:18:01+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 18:17:05|CI緑: run 24501603122
@@ -11,11 +14,9 @@
 - 2026-04-16T17:46:48+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-16 17:33:18|cmd_1976 2026-04-16 17:34:38|cmd_1969 2026-04-16 17:35:46|cmd_1968
 - 2026-04-16T17:42:02+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率94% 連勝79
 - 2026-04-16T17:41:54+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-077)
-- 2026-04-16T17:38:31+09:00 | ntfy | outbound | 📊 Dashboard: バッチ3+4全12件GATE CLEAR | idle:5名 | pipeline:0件 | hook復元済み
-- 2026-04-16T17:36:07+09:00 | terminal | response | **全24本 GATE CLEAR。全忍者idle。** 第五弾を起票するか？ [meta] stop_reason=end_turn
-- 2026-04-16T17:34:58+09:00 | terminal | response | **23/24完了。** 残り1968(半蔵 archive_completed.sh)のみ。第五弾を起票するか？ [meta] stop_reason=end_turn
 
 ## 未解決確認事項
+- cmd_save.shのafter結果を確認する。 [meta] stop_reason=tool_use
 - 確認完了。殿、第五弾を先に書くか？ [meta] stop_reason=end_turn
 - 先にCMDだそうか。待つ必要性はあるか？確認せよ
 - 第四弾。プロファイリングリストから未着手を選定する。 **消化済み:** - バッチ1: shutsujin, dashboard_auto, gate_cycle_health, report_merge, gate_artifact_map, gate_karo_start…
@@ -23,7 +24,6 @@
 - **永続化完了:** | 知見 | 永続化先 | 消えない | |------|---------|---------| | 事前100%は怠慢。3層防御 | LS035(lessons_shogun.yaml) | ✅ | | CoDD ACは4段階に分解 | context…
 - **なぜなぜ7回:** 1. なぜACにspec工程が抜けた？ → command欄→AC変換を確認していない 2. なぜ確認していない？ → 事前チェックで100%検出しようとした 3. **なぜ事前100%にこだわった？** → 事後フィードバックの仕組みがないと思い込み、…
 - **確認完了。既に対処済み。** - 旧watcher(PID 1696051, SHOGUN_STATE_DIR未設定) → 停止済み - 新watcher(PID 930575, 16:08起動, `SHOGUN_STATE_DIR=/tmp/shogun_state`) …
-- すでに再起動していないか？確認せよ
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-16T16:38:29+09:00 | バッチ3の進捗: 4/6完了(ninja_done, report_field_set, karo_workaround_log, cmd_1965)。残り2本(archive_completed, pre_compact_save)が半蔵・小太郎で進行中。第四弾の起票準備でき…

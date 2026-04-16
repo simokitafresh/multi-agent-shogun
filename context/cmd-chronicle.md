@@ -695,3 +695,4 @@
 | cmd_1975 | CoDD改善#23 — test_hooks.sh高速化(4.0s timeout→目標500ms) | infra | 04-16 | test_hooks.shを共通evaluator直呼びへ変 |
 | cmd_1976 | CoDD改善#24 — gate_vercel_phase.sh高速化(481ms×7回→目標100ms) | infra | 04-16 | gate_vercel_phase.sh高速化完了。norm |
 | cmd_1969 | CoDD改善#17 — pre_compact_save.sh高速化(141ms×毎compaction→目標40ms) | infra | 04-16 | pre_compact_save.sh高速化完了。jq×2→ |
+| cmd_1977 | CoDD改善#25 — cmd_save.sh高速化(4.0s→目標500ms) | infra | 04-16 | cmd_save.sh高速化結果を記録。warm media |
