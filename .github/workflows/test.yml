@@ -28,7 +28,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-yaml parallel
+          sudo apt-get install -y python3-yaml parallel ripgrep
 
       - name: Run root-level tests (inbox_write.sh etc.)
         run: |
