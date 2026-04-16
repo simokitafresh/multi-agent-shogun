@@ -33,6 +33,8 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | saizo | `scripts/hooks/test_hooks.sh` | Phase 5(計測+実装+検証) | `18.07s → 1.93s` (`-89.3%`, `9.4x`) | spec+after: `docs/research/codd_spec_test_hooks_20260416.md` |
 | 2026-04-16 | hanzo | `scripts/archive_completed.sh` | Phase 5(計測+実装+検証) | `1073ms → 783ms` (`-27%`) | sed×21→gawk単一pass(A)+grep-rl全走査→REPORT_CACHE直接path(B)+sync_stk+trim_stk Python統合(C)+chronicle早期リターン(D)。980/980テストPASS。spec: `docs/research/codd_spec_archive_completed_20260416.md` |
 
+| 2026-04-16 | tobisaru | `scripts/gates/gate_vercel_phase.sh` | Phase 5(計測+実装+検証)。spec事後更新 | `real 1.74s → 0.51s` (`-71%`, `3.4x`) / `CPU 1.61s → 0.23s` (`-86%`, `7.0x`) | normalize_ref(sed×268回)排除+display_path subshell(43回)排除+resolve_context_bases process-sub(268回)→RESOLVE_BASES配列。7/7テストPASS。spec: `docs/research/cmd_1976_gate_vercel_phase_speedup.md` |
+
 ## 運用
 
 - CoDD系リファクタリングを完了したら、この台帳に1行追加する。

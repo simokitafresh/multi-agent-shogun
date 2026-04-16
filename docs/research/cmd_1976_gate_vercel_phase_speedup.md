@@ -56,3 +56,30 @@
 | 実行時間 | 481ms (cmd_1951) | 目標100ms |
 | awk起動回数 | 43 | 1 |
 | process substitution | 268回 | 0 |
+
+## 実測値 (cmd_1976実装後)
+
+計測環境: WSL2 /mnt/c, 10回交互計測。beforeは7cbf2a0(normalize_ref+display_path+resolve_context_bases)。
+
+| 指標 | before | after | 改善 |
+|------|--------|-------|------|
+| real time (avg) | ~1.74s | ~0.51s | **-71% (3.4x)** |
+| CPU time (sys+user, avg) | ~1.61s | ~0.23s | **-86% (7.0x)** |
+| user time | ~1.10s | ~0.13s | -88% |
+| sys time | ~0.52s | ~0.10s | -81% |
+| normalize_ref呼出し | 268回 (sed×4×268) | 0 | 排除 |
+| display_path subshell | 43回 | 0 | 排除 |
+| process substitution (ref解決) | 268回 | 0 | 排除 |
+| awk起動回数 | 43 | 43 (per-file維持) | — |
+
+### 備考
+- single awk (全ファイル一括) は逆効果: Windows Defender一括スキャン→avg 1142ms（per-fileより遅化）→per-file維持に決定
+- real timeの大部分はWSL2 /mnt/c I/O待ち (sys+user 0.23s vs real 0.51s)
+- CPU削減 -86% が本質的改善。I/O待ちは環境依存で変動するため参考値
+
+### 実装内容（AC2）
+1. `normalize_ref()` 関数（sed 4パターン×268回）を完全削除 — awk正規表現がnormalize_ref処理後の文字のみ出力するためno-op
+2. `display_path()` 関数（subshell×43回）を削除 → `${context_file#"$SCRIPT_DIR"/}` bash文字列演算でインライン化
+3. `resolve_context_bases()` process substitution（268回fork）を排除 → `RESOLVE_BASES` 配列を main()で一度構築
+
+テスト: `bats tests/unit/test_gate_vercel_phase.bats` → 7/7 PASS
