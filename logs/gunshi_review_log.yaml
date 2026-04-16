@@ -582,3 +582,18 @@
   gate_prediction: CLEAR
   causal_chain: "cmd_1951→parity_check.sh特定→--help DB接続回避+CRLF除去→300x削減=本番パリティ確認ごとの正の複利"
   timestamp: "2026-04-16T16:57:00"
+- cmd_id: cmd_1974
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_1974_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。post_recalculate_checks.sh CRLF-safe loader+hostaddr+batch queryで6.15→2.23s(-64%)。テストPASS"
+  observations:
+    - "事実1: .envのCRLF問題をcmd_1972(parity_check)と同型のload_database_url()で解決。横展開パターン"
+    - "事実2: L481(grep/pipefail回避)がuseful:trueで活用された。教訓還流の成功例"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1951→post_recalculate_checks.sh特定→DB接続最適化+CRLF修正→-64%=fullrecalculate後チェックごとの正の複利"
+  timestamp: "2026-04-16T17:07:00"

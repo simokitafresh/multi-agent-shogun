@@ -115,18 +115,13 @@ main() {
         return 1
     fi
 
-    # cmd_1976最適化: grep単一起動で全contextファイルを一括処理(awk×43→grep×1)
-    # grep -nHo: filename:lineno:match 形式で全マッチを出力(1行複数マッチも正常処理)
-    # grep -E でdocs/research/参照を抽出; 未マッチファイルはexit 1→|| true で継続
-    while IFS= read -r grep_line; do
-        [ -n "$grep_line" ] || continue
+    # cmd_1976最適化: awk単一起動で全contextファイルを一括処理(awk×43→awk×1)
+    # awk正規表現 [a-zA-Z0-9_./*-]+ はnormalize_refが除去する文字を含まないため
+    # normalize_ref呼び出しを省略。[[ "$ref" == docs/research/* ]] も常にtrue(省略)
+    while IFS=$'\t' read -r context_file line_no raw_ref; do
+        [ -n "$raw_ref" ] || continue
 
-        # 出力形式: /abs/path/file.md:LINENO:docs/research/something.md
-        # ref は [a-zA-Z0-9_./*-]+ でコロンを含まないため末尾から安全に分割可能
-        local ref="${grep_line##*:}"            # 最後の:以降 = ref
-        local linenum_file="${grep_line%:*}"    # 最後の:より前 = path:lineno
-        local line_no="${linenum_file##*:}"     # 最後の:以降 = lineno
-        local context_file="${linenum_file%:*}" # 最後の:より前 = filepath
+        local ref="$raw_ref"
 
         local key="${context_file}|${ref}"
         if [[ -n "${SEEN_REFS[$key]:-}" ]]; then
@@ -159,7 +154,17 @@ main() {
             BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
         fi
     done < <(
-        grep -nHo 'docs/research/[a-zA-Z0-9_./*-]\+' "${ctx_files[@]}" 2>/dev/null || true
+        awk '
+            FNR==1 { fname = FILENAME }
+            {
+                s = $0
+                while (match(s, /docs\/research\/[a-zA-Z0-9_./*-]+/)) {
+                    ref = substr(s, RSTART, RLENGTH)
+                    printf "%s\t%d\t%s\n", fname, FNR, ref
+                    s = substr(s, RSTART + RLENGTH)
+                }
+            }
+        ' "${ctx_files[@]}"
     )
 
     if [ "$BROKEN_REFS" -eq 0 ]; then

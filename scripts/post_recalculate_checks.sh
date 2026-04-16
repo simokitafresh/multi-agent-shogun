@@ -8,28 +8,66 @@
 
 set -euo pipefail
 
-DM_SIGNAL_PATH="/mnt/c/Python_app/DM-signal"
-ENV_PATH="${DM_SIGNAL_PATH}/backend/.env"
+DM_SIGNAL_PATH="${DM_SIGNAL_PATH:-/mnt/c/Python_app/DM-signal}"
+ENV_PATH="${ENV_PATH:-${DM_SIGNAL_PATH}/backend/.env}"
 
-if [[ ! -f "$ENV_PATH" ]]; then
-    echo "FAIL: backend/.env not found at ${ENV_PATH}"
-    exit 1
-fi
+load_database_url() {
+    local env_path="${1:?env path is required}"
+    awk '
+        /^DATABASE_URL=/ {
+            sub(/\r$/, "", $0)
+            print substr($0, index($0, "=") + 1)
+            found = 1
+            exit
+        }
+        END {
+            if (!found) {
+                exit 1
+            }
+        }
+    ' "$env_path"
+}
 
-DATABASE_URL=$(grep '^DATABASE_URL=' "$ENV_PATH" | cut -d= -f2-)
-if [[ -z "$DATABASE_URL" ]]; then
-    echo "FAIL: DATABASE_URL not found in backend/.env"
-    exit 1
-fi
+resolve_database_url() {
+    local database_url="${DATABASE_URL:-}"
+    if [[ -n "$database_url" ]]; then
+        printf '%s\n' "${database_url%$'\r'}"
+        return 0
+    fi
 
-export DATABASE_URL
-export DM_SIGNAL_PATH
+    if [[ ! -f "$ENV_PATH" ]]; then
+        echo "FAIL: backend/.env not found at ${ENV_PATH}" >&2
+        return 1
+    fi
 
-python3 -u - <<'PYTHON_EOF'
+    database_url="$(load_database_url "$ENV_PATH")" || {
+        echo "FAIL: DATABASE_URL not found in backend/.env" >&2
+        return 1
+    }
+
+    if [[ -z "$database_url" ]]; then
+        echo "FAIL: DATABASE_URL not found in backend/.env" >&2
+        return 1
+    fi
+
+    printf '%s\n' "$database_url"
+}
+
+run_post_recalculate_checks() {
+    local database_url
+    database_url="$(resolve_database_url)" || return 1
+
+    export DATABASE_URL="$database_url"
+    export DM_SIGNAL_PATH
+
+    python3 -u - <<'PYTHON_EOF'
 import json
 import os
+import socket
 import sys
+from collections import defaultdict
 from datetime import date
+from urllib.parse import urlparse
 
 import psycopg2
 
@@ -39,13 +77,73 @@ DM_SIGNAL_PATH = os.environ["DM_SIGNAL_PATH"]
 CASH_RATIO_THRESHOLD = 0.5  # 50%超のPFがCashならWARN
 
 def connect():
+    parsed = urlparse(DATABASE_URL)
+    host = parsed.hostname
+    if host:
+        try:
+            return psycopg2.connect(DATABASE_URL, hostaddr=socket.gethostbyname(host))
+        except Exception:
+            pass
     return psycopg2.connect(DATABASE_URL)
+
+
+def load_portfolios(conn):
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, name, type, config, is_active FROM portfolios ORDER BY name")
+        cols = [d[0] for d in cur.description]
+        portfolios = [dict(zip(cols, row)) for row in cur.fetchall()]
+
+    all_pf_ids = {pf["id"] for pf in portfolios}
+    return portfolios, all_pf_ids
+
+
+def load_monthly_returns(conn):
+    monthly_returns = defaultdict(list)
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT portfolio_id, year_month FROM monthly_returns ORDER BY portfolio_id, year_month"
+        )
+        for portfolio_id, year_month in cur.fetchall():
+            monthly_returns[portfolio_id].append(year_month)
+    return monthly_returns
+
+
+def load_latest_signals(conn):
+    latest_signals = {}
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.portfolio_id, s.date, s.holding_signal
+            FROM signals s
+            JOIN (
+                SELECT portfolio_id, MAX(date) AS max_date
+                FROM signals
+                GROUP BY portfolio_id
+            ) latest
+              ON latest.portfolio_id = s.portfolio_id
+             AND latest.max_date = s.date
+            """
+        )
+        for portfolio_id, signal_date, holding_signal in cur.fetchall():
+            latest_signals[portfolio_id] = {
+                "date": signal_date,
+                "holding_signal": holding_signal,
+            }
+    return latest_signals
+
+
+def parse_config(raw_config):
+    if isinstance(raw_config, dict):
+        return raw_config
+    if not raw_config:
+        return {}
+    return json.loads(raw_config)
+
 
 def run_checks():
     conn = connect()
     fail_count = 0
     warn_count = 0
-    details = []
 
     try:
         # ====================================
@@ -55,13 +153,9 @@ def run_checks():
         print("CHECK 1: 全PF健全性チェック")
         print("=" * 60)
 
-        with conn.cursor() as cur:
-            cur.execute("SELECT id, name, type, config, is_active FROM portfolios ORDER BY name")
-            cols = [d[0] for d in cur.description]
-            portfolios = [dict(zip(cols, row)) for row in cur.fetchall()]
-
-            cur.execute("SELECT id FROM portfolios")
-            all_pf_ids = {row[0] for row in cur.fetchall()}
+        portfolios, all_pf_ids = load_portfolios(conn)
+        monthly_returns_by_pf = load_monthly_returns(conn)
+        latest_signals_by_pf = load_latest_signals(conn)
 
         today = date.today()
         prev_month = today.month - 1
@@ -78,7 +172,7 @@ def run_checks():
             pf_id = pf["id"]
             pf_name = pf["name"]
             pf_type = pf["type"]
-            config = pf["config"] if isinstance(pf["config"], dict) else json.loads(pf["config"])
+            config = parse_config(pf["config"])
             issues = []
 
             # (1a) pipeline_config存在 (standard PFのみ)
@@ -88,12 +182,7 @@ def run_checks():
                     issues.append("FAIL:pipeline_config missing")
 
             # (1b) monthly_returns連続性
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT year_month FROM monthly_returns WHERE portfolio_id = %s ORDER BY year_month",
-                    (pf_id,),
-                )
-                year_months = [row[0] for row in cur.fetchall()]
+            year_months = monthly_returns_by_pf.get(pf_id, [])
 
             if not year_months:
                 issues.append("FAIL:no monthly_returns")
@@ -114,13 +203,8 @@ def run_checks():
                     issues.append(f"FAIL:return_gaps({len(gaps)})")
 
             # (1c) signals最新性
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT MAX(date) FROM signals WHERE portfolio_id = %s",
-                    (pf_id,),
-                )
-                row = cur.fetchone()
-                latest_sig = row[0] if row else None
+            latest_signal = latest_signals_by_pf.get(pf_id)
+            latest_sig = latest_signal["date"] if latest_signal else None
 
             if latest_sig is None:
                 issues.append("FAIL:no signals")
@@ -172,9 +256,8 @@ def run_checks():
         fof_weight_failures = []
 
         for pf in fof_portfolios:
-            pf_id = pf["id"]
             pf_name = pf["name"]
-            config = pf["config"] if isinstance(pf["config"], dict) else json.loads(pf["config"])
+            config = parse_config(pf["config"])
             components = config.get("component_portfolios", [])
             weights = config.get("component_weights", config.get("weights", []))
 
@@ -207,15 +290,11 @@ def run_checks():
         for pf in standard_pfs:
             pf_id = pf["id"]
             pf_name = pf["name"]
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT holding_signal FROM signals WHERE portfolio_id = %s ORDER BY date DESC LIMIT 1",
-                    (pf_id,),
-                )
-                row = cur.fetchone()
-            if row and row[0]:
+            latest_signal = latest_signals_by_pf.get(pf_id)
+            holding_signal = latest_signal["holding_signal"] if latest_signal else None
+            if holding_signal:
                 checked_pfs.append(pf_name)
-                if row[0] == "Cash":
+                if holding_signal == "Cash":
                     cash_pfs.append(pf_name)
 
         if checked_pfs:
@@ -258,3 +337,8 @@ def run_checks():
 if __name__ == "__main__":
     run_checks()
 PYTHON_EOF
+}
+
+if [[ "${POST_RECALCULATE_CHECKS_LIB_ONLY:-0}" != "1" ]]; then
+    run_post_recalculate_checks "$@"
+fi

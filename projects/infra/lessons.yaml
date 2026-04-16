@@ -24,6 +24,9 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-16T16:35:30+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-16'
 - id: L480
   title: pipefail下でgrep no-matchは||trueが必須。テストが先に気づける
   summary: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
@@ -1686,7 +1689,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 48
+  helpful_count: 49
   harmful_count: 10
   last_referenced: '2026-04-16'
 - id: L228
@@ -2056,7 +2059,7 @@ lessons:
   summary: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
   tags:
   - recon
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-16'
 - id: L177
