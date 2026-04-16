@@ -806,3 +806,39 @@
   gate_prediction: WARN(draft_lessons)
   causal_chain: "cmd_1958→再トライ→python3除去+キャッシュ→-16%=家老起動ごとの正の複利。並列化不発はWSL2固有制約"
   timestamp: "2026-04-16T19:13:00"
+- cmd_id: idle_self_study
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "GP-206: 将軍review_requestの返信先を掲示板に強制。家老inboxに返すと将軍に届かない(2026-04-16実証)"
+  observations:
+    - "事実1: 将軍がreview_request送信→軍師が家老にinbox_write→将軍気づかずリマインダー送信"
+    - "事実2: F-G01(全通信は家老のみ)に従ったが、掲示板が唯一の将軍↔軍師直通ライン"
+  causal_chain: "F-G01厳守→家老inbox返信→将軍は家老inbox読まない→返信不達→リマインダー→掲示板投稿で初めて到達。原理(鎖を切るな)は正しいが、掲示板は鎖の中の共有チャネル。返信先ルール表で構造的に解決"
+  cs_checklist:
+    cs4: "PASS: GP-206として即実装。gunshi.md返信先ルール表に埋込み"
+  timestamp: "2026-04-16T19:18:00"
+- cmd_id: codd_dmsignal_strategy_v2
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "§3再レビュー。APPROVE+2点RC。(1)codd review欠落(validate→implement間) (2)Phase4 deploy前dry run推奨"
+  observations:
+    - "事実1: Phase 1/3のStep 5→6間にcodd review --feedbackがない。CoDDの正規フロー(§2)ではgenerate→review→verify→implement"
+    - "事実2: Phase 4 Step 11(deploy)前にdry run確認なし。fullrecalculateは本番DB書換え"
+    - "事実3: GP-206に従い掲示板に直接投稿(blt_20260416_193135_5a647d)"
+  causal_chain: "codd review欠落→設計書品質未確認→implement→低品質コード生成リスク。dry run欠落→deploy→本番書換え→異常時はrevertだが予防が理想"
+  timestamp: "2026-04-16T19:32:00"
+- cmd_id: cmd_1983
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_1983_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。deploy_task.sh field_get 12+回→field_get_multi 1回でgenerate_report_template 224→32ms(-86%)。テスト988件PASS"
+  observations:
+    - "事実1: field_get_multi+eval+変数参照でWSL2上の20ms×12=240msを32ms(1回)に圧縮。L484(grep複数→単一)と同構造"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1951→deploy_task.sh特定→field_get多重→field_get_multi 1回→-86%=忍者配備ごとの正の複利"
+  timestamp: "2026-04-16T19:35:00"

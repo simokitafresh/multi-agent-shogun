@@ -2,7 +2,7 @@
 
 <!-- created: 2026-04-16 -->
 <!-- author: shogun -->
-<!-- status: draft → gunshi review待ち -->
+<!-- status: approved (gunshi review APPROVE 2026-04-16 19:16) -->
 
 ## §1 目的
 
@@ -20,30 +20,145 @@ DM-Signal(Python)の計算重スクリプトをCoDDパイプラインで高速�
 | レベル | 対象 | 本番影響 | リスク | 例 |
 |--------|------|---------|--------|-----|
 | A(安全) | 研究スクリプト | なし | 自由に改善可 | GS, oneshot/*, alm_research/, cmd_1934系 |
-| B(中) | バッチ処理 | あり(スケジュール実行) | パリティ確認必須 | fullrecalculate, recalculate_fof |
+| B(中) | バッチ処理 | あり(スケジュール実行) | パリティ確認必須 | fullrecalculate, recalculate_fof(※FoFパリティ確認AC必須) |
 | C(高) | 本番API | 直接影響 | ステージング検証必須 | backend/app/ |
 
 ### 対象外(当面)
 - レベルC(本番API): リスクが高く、速度改善の複利効果も限定的(Renderのレスポンス時間がボトルネック)
 - フロントエンド: Next.js。CoDDのPython適用対象外
 
-## §3 CoDDのPython適用可否
+### 具体的対象ファイル(2026-04-16確認)
 
-### 検証項目
-1. `codd extract` がPythonプロジェクト構造を正しく抽出できるか
-2. `codd plan` → `generate` で設計書が生成されるか
-3. `codd implement` がPythonコードの修正を正しく行えるか
-4. `codd validate` が変更の整合性を検証できるか
+**レベルA(研究) — 高速化対象候補(行数順)**
 
-### 検証方法
-- レベルAの小スクリプト(100行以下)で1本通す
-- 全工程が通れば本格適用。通らなければ手動spec+手動実装(インフラと同方式)にフォールバック
+| 優先 | ファイル | 行数 | 用途 | 備考 |
+|------|---------|------|------|------|
+| A-1 | `scripts/analysis/grid_search/grid_search_metrics_v2.py` | 2300 | GS共通エンジン | 全GS実行のボトルネック |
+| A-2 | `outputs/scripts/l1_alm_wf_engine.py` | 2546 | ALM WFエンジン | 56ブロックで使用 |
+| A-3 | `scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py` | 2645 | 研究エンジン | 4メトリクス計算 |
+| A-4 | `scripts/analysis/grid_search/run_077_*.py` | 1352-1880 | 忍法別GS | 7本。共通部分が多い |
+| A-5 | `scripts/analysis/grid_search/gs_benchmark.py` | 1045 | GSベンチマーク | 速度計測用 |
+| A-6 | `outputs/scripts/champion_selector.py` | — | チャンピオン選出 | 選出ロジック |
+
+**レベルB(バッチ) — 本番影響あり。慎重対応**
+
+| 優先 | ファイル | 行数 | 用途 | 備考 |
+|------|---------|------|------|------|
+| B-1 | `backend/app/jobs/recalculate_fast.py` | 2960 | fullrecalculate本体 | 480s。最大改善対象 |
+| B-2 | `backend/app/jobs/recalculate_fof.py` | 1187 | FoF再計算 | FoFパリティ必須 |
+| B-3 | `backend/app/jobs/generators/trade_performance.py` | 633 | トレード計算 | fullrecalc内部 |
+| B-4 | `backend/app/jobs/generators/monthly_returns.py` | 412 | 月次リターン | fullrecalc内部 |
+
+**Phase 1検証対象(100行以下のレベルA)**
+
+| ファイル | 行数 | 用途 |
+|---------|------|------|
+| `outputs/scripts/cmd_1847_neighbor_analysis.py` | ~100 | パラメータ近傍分析 |
+| `outputs/scripts/cmd_1869_2x2_factor_analysis.py` | ~100 | 2×2因子分析 |
+| `backend/scripts/compare_snapshots.py` | ~100 | スナップショット比較 |
+
+### 実行順序
+
+```
+Phase 1: Phase1検証対象(上記3本から1本)でcodd extract→implement通す
+Phase 2: レベルA全量cProfile計測 → 優先順位リスト
+Phase 3: A-1(GS共通エンジン)から着手 → 全GSの速度に効く
+Phase 4: B-1(fullrecalculate)に慎重適用
+```
+
+## §3 CoDDワークフロー(各Phaseの具体的手順)
+
+DM-Signalは既存コードの改善 = **ブラウンフィールド**系統を使用。
+
+### Phase 1: CoDDのPython適用検証(1本)
+
+```
+Step 1: codd extract <対象.py>
+        → 既存コードから構造・依存を抽出。Pythonで動くか確認
+Step 2: codd require "速度改善: ボトルネックを特定し高速化する"
+        → 改善要件を定義
+Step 3: codd plan
+        → 要件+抽出結果から改善計画を生成
+Step 4: codd generate
+        → 計画に基づき設計書群を生成
+Step 5: codd validate
+        → 設計書の整合性を検証
+Step 5.5: codd review --feedback
+        → 設計書品質を確認(軍師指摘: validate→implement間に必要)
+Step 6: codd implement
+        → 設計書に基づきコード変更を実装
+Step 7: codd measure
+        → 健全性スコアを計測
+Step 8: 手動計測 — time python <対象.py> でbefore/after比較
+Step 9: 出力同一性確認 — diff before_output after_output
+```
+
+**判断ポイント**: Step 1-7が全て通れば本格適用。通らなければフォールバック↓
+
+### フォールバック(CoDDが動かない場合)
+
+```
+Step 1: 手動spec作成(cProfile結果+ボトルネック分析+改善方針)
+Step 2: 手動実装(specに基づく)
+Step 3: before/after計測+出力同一性確認
+        → インフラbash改善と同じ方式
+```
+
+### Phase 2: 全量プロファイリング
+
+```
+Step 1: 対象スクリプト一覧(§2のレベルA全量)
+Step 2: 各スクリプトを cProfile -s cumtime で計測
+Step 3: ホットスポット(上位5関数)を記録
+Step 4: 優先順位リスト作成(実行時間×使用頻度)
+        → docs/research/に成果物保存
+```
+
+### Phase 3: レベルA改善(6並列)
+
+```
+各スクリプトに対して:
+Step 1: cProfile でbefore計測+ホットスポット特定
+Step 2: codd extract <対象.py>
+Step 3: codd require "ホットスポットXXを高速化。目標: YYms→ZZms"
+Step 4: codd plan → generate → validate → review --feedback
+Step 5: codd implement
+Step 6: 出力同一性確認(diff)
+Step 7: time計測でafter確認
+Step 8: codd measure
+Step 9: codd_refactor_registry.mdに結果追記
+```
+
+### Phase 4: レベルB改善(直列・慎重)
+
+```
+Phase 3のStep 1-9に加えて:
+Step 10: parity_check.sh実行 — 本番パリティ確認PASS
+Step 10.5: dry run(計算のみ・書込みなし)で出力検証(軍師推奨。dry runフラグの実装有無は要確認)
+Step 11: 本番deploy(Render)
+Step 12: fullrecalculate実行
+Step 13: 本番パリティ再確認
+Step 14: 異常時 → git revert + 再deploy + fullrecalculate + parity再確認
+```
+
+### CoDDコマンドの実行環境
+
+```bash
+# venv
+source /home/simokitafresh/.codd-venv/bin/activate
+
+# DM-Signal作業ディレクトリ
+cd /mnt/c/Python_app/DM-signal
+
+# codd.yaml設定(ai_command)
+# generate=Opus, implement=Codex(大量コード生成向き)
+```
 
 ## §4 段階的適用計画
 
 | Phase | 内容 | 成功条件 | 判断ポイント |
 |-------|------|---------|-------------|
-| 1 | CoDDのPython適用を1本検証(レベルA小スクリプト) | 全工程が通り、実測で速度改善を確認 | CoDDが使えるか/フォールバックか |
+| 1 | CoDDのPython適用を1本検証(レベルA小スクリプト。候補: oneshot/内の100行以下) | 全工程が通り、実測で速度改善を確認 | CoDDが使えるか/フォールバックか |
 | 2 | レベルA全量プロファイリング+改善(cProfile) | 対象一覧+優先順位リスト作成 | インフラbashと同じ流れ |
 | 3 | レベルA上位スクリプトをCoDD改善(6並列) | before/after計測で改善確認 | 改善率の実績蓄積 |
 | 4 | レベルB(fullrecalculate)に適用 | パリティ確認PASS+速度改善 | 本番影響の安全性確認 |
@@ -126,6 +241,8 @@ acceptance_criteria:
 | LS036: 道具の目的と作業性質を照合 | CoDDの各ステップが対象スクリプトに合うか判断 |
 | Check 22: ステップ数vsAC数 | 同様に適用 |
 | サブシェル→awk化パターン | Python版: subprocess→in-process, pandas→numpy |
+| LG028: スケーラビリティ推定の内部ループ計上 | Python計算スクリプトこそ該当。推定時は関数内部まで追跡(軍師指摘) |
+| WSL2 I/Oパターン(Defender逆効果) | PythonのファイルI/Oにも適用。大量CSV読み書き時に影響(軍師指摘) |
 
 ## §9 リスクと対策
 

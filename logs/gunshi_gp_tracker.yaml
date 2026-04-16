@@ -398,3 +398,13 @@
   defense_level: 3
   reason: "cmd_1975でpre-bash-combined.sh 347→12行(97%削減)をLGTM。忍者の'機能変更なし'を信頼しコード未確認。hook/gateの大規模削減は機能破壊の強いシグナル。自動検出で見落とし防止"
   evidence: null
+- id: GP-206
+  description: "将軍review_requestの返信先を掲示板に強制。家老inboxに返しても将軍に届かない"
+  status: implemented
+  proposed_at: "2026-04-16T19:17:00"
+  implemented_at: "2026-04-16T19:17:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 2
+  reason: "2026-04-16実証: 軍師がレビュー完了→家老にinbox_write→将軍気づかず→リマインダー送信。掲示板が唯一の将軍↔軍師直通ライン。F-G01(全通信は家老のみ)の例外として返信先ルールをgunshi.mdに明記"
+  evidence: "instructions/gunshi.md §Communication Protocol 返信先ルール表に埋込み済み"
