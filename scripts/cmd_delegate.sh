@@ -130,8 +130,8 @@ if find "$PROJECT_DIR/queue/archive/cmds/" -maxdepth 1 -name "${CMD_ID}_*" -prin
     exit 1
 fi
 
-# Step 4: inbox_write.sh で家老に通知
-bash "$SCRIPT_DIR/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
+# Step 4: inbox_write.sh で家老に通知（_CMD_DELEGATE_BYPASSでcmd_new guard通過）
+_CMD_DELEGATE_BYPASS=1 bash "$SCRIPT_DIR/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
     echo "ERROR: inbox_write.sh failed for $CMD_ID" >&2
     exit 1
 }
