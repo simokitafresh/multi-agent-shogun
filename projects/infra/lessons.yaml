@@ -59,8 +59,8 @@ lessons:
   tags:
   - universal
   helpful_count: 8
-  harmful_count: 3
-  last_referenced: '2026-04-16'
+  harmful_count: 4
+  last_referenced: '2026-04-17'
 - id: L480
   title: pipefail下でgrep no-matchは||trueが必須。テストが先に気づける
   summary: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
@@ -195,8 +195,11 @@ lessons:
   summary: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-17T01:25:45+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=4'
   helpful_count: 4
-  harmful_count: 5
+  harmful_count: 4
   last_referenced: '2026-04-16'
 - id: L457
   title: whitelist型.gitignoreではスクリプト追加時にホワイトリストエントリ追加が必須
@@ -1494,7 +1497,7 @@ lessons:
   - bash
   - git
   helpful_count: 7
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-15'
 - id: L261
   title: 全体設定変更時のテスト整合性チェック不足
@@ -1549,7 +1552,7 @@ lessons:
   - yaml
   - lesson
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-15'
 - id: L254
   title: 教訓注入ログの構造化不足が効果検証を阻害
@@ -1730,7 +1733,7 @@ lessons:
   - infra
   - universal
   helpful_count: 66
-  harmful_count: 16
+  harmful_count: 17
   last_referenced: '2026-04-17'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
@@ -2025,8 +2028,8 @@ lessons:
   - git
   - reporting
   helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-15'
+  harmful_count: 1
+  last_referenced: '2026-04-17'
 - id: L187
   title: Compose の zoom 下限は viewport 配下の onTextLayout 幅から計算するな
   summary: IF Compose で terminal の pinch-zoom `minScale` を `contentWidth` から算出する時
@@ -2448,7 +2451,7 @@ lessons:
   tags:
   - universal
   helpful_count: 6
-  harmful_count: 5
+  harmful_count: 4
   last_referenced: '2026-04-16'
 - id: L125
   title: paste-buffer注入先はagent_id検証で防御せよ(defense-in-depth)
