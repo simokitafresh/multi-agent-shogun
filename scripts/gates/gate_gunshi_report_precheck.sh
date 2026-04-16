@@ -206,6 +206,35 @@ else
     echo "  PASS: lesson_candidateなし"
 fi
 
+# ─── SG-PRE13: hook/gate系ファイルの大規模削減検出 (GP-205, cmd_1975反省) ───
+echo ""
+echo "■ SG-PRE13: hook/gate大規模削減検出"
+if [ -n "${FILES_MODIFIED:-}" ]; then
+    HOOK_GATE_WARN=0
+    while IFS= read -r fpath; do
+        case "$fpath" in
+            *.claude/hooks/*|*scripts/hooks/*|*scripts/gates/*)
+                # git diff --statで変更規模を確認
+                added=$(git log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null | awk '{a+=$1}END{print a+0}')
+                deleted=$(git log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null | awk '{d+=$2}END{print d+0}')
+                if [ "$deleted" -gt 0 ]; then
+                    total_before=$((added + deleted))  # 近似: 追加+削除≈変更前行数
+                    delete_ratio=$((deleted * 100 / total_before))
+                    if [ "$delete_ratio" -gt 50 ]; then
+                        echo "  ★★★ WARN: $fpath — 削減率${delete_ratio}%(+${added}/-${deleted})。hook/gateの大規模削減は機能破壊の可能性。git diffで現物確認せよ"
+                        HOOK_GATE_WARN=1
+                    fi
+                fi
+                ;;
+        esac
+    done <<< "$FILES_MODIFIED"
+    if [ "$HOOK_GATE_WARN" -eq 0 ]; then
+        echo "  PASS: hook/gate系の大規模削減なし"
+    fi
+else
+    echo "  SKIP: files_modified不明"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
