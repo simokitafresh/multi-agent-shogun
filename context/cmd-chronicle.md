@@ -713,3 +713,4 @@
 | cmd_2020 | Phase 4設計書v3.0更新 — C面追加+B1/C1実測反映+Render cProfile統合+次ステップ計画 | dm-signal | 04-17 | Phase 4設計書をv3.0三面作戦の完了状態へ同期し、C |
 | cmd_2021 | Phase 4 C1後Render本番計測 — 新ベースライン確定+self time分析 | dm-signal | 04-17 | C1をmainへmerge(PR #12)してRender本 |
 | cmd_2022 | Phase 4締め括り — 設計書v3.1最終更新+研究日誌Phase 34追記+成果サマリ | dm-signal | 04-17 | Phase 4設計書にcmd_2021の実測値(842.90 |
+| cmd_2024 | L3選出(正確版) — 2体EWプール861通り+3体EWプール10150通りから3目的×Top1=6体 | dm-signal | 04-17 | 2体/3体EWプールからWF α 3目的のTop1候補6体を |
