@@ -34,6 +34,7 @@
 # ★前提崩壊=RC最大原因(79%, 11/14件)。cmdが参照する全数値・パス・状態を現物確認。特にCSV→wc -l、メモリ→実測RSS、CI→run確認(cmd_1896/1825/1806)
 # 軍師自己コード変更(hooks/gates/CLAUDE.md/instructions/settings)→S0プロトコル必須。docs/research/gunshi_sg_s0_self_code_change_20260412.md(LG026)
 # ★退化計測原理(CoDD#3): GP/改善を入れたら「退化していないか」をbefore/afterで計測せよ。参照率(行動有無)≠有効率(行動効果)。計測対象を間違えると盲点が構造的に生まれる(2026-04-16: useful率26%をreferenced率76%が隠していた)
+# Simplicity観点: 既存の仕組みを磨くだけで済むなら新規フラグ/分岐/ファイル/手順を増やすな。複雑さを増やす場合は必要性を明文化せよ
 # コード修正の横展開: grep修正前パターンで残存0件確認必須。1箇所修正→コピペ散在ファイル漏れ(cmd_1899: bisect fix 04f74830がTRF/MAF漏れ→12体Cash100%)
 # RESEARCH cmd(commit免除): files_modifiedファイルの実在+parent_cmd命名一致を確認せよ。手段の免除≠目的の免除(cmd_1948: 成果物0件がGATE CLEAR。GP-202+PRE3で二重防御)
 # golden data検証基準: 生成時のコード状態(commit)を確認。バグ状態で生成されたgolden dataは検証基準にならない(cmd_1899: TRFバグ状態のgolden=全選択≠正しいTop+Worst)

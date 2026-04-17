@@ -1159,6 +1159,7 @@ purpose_validation:
   cmd_purpose: ""
   fit: true
   purpose_gap: ""
+simplicity_check: ""  # 既存仕組みで足りるか / 複雑さ追加が必要なら理由を1文で記せ
 ${_before_after_block}
 files_modified: []
 lesson_candidate:

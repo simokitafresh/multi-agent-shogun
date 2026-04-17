@@ -426,6 +426,39 @@ PYEOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "報告テンプレートにsimplicity_checkを追加する" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "simplicity field test"
+  task_type: impl
+  parent_cmd: cmd_2019
+  task_id: cmd_2019_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "報告テンプレートにsimplicity_check行を追加する"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<PYEOF
+import yaml
+from pathlib import Path
+report = Path("$report_path")
+data = yaml.safe_load(report.read_text(encoding="utf-8"))
+assert "simplicity_check" in data, data
+assert data["simplicity_check"] == "", data["simplicity_check"]
+print("OK")
+PYEOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════
