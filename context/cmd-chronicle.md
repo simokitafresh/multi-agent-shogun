@@ -706,3 +706,4 @@
 | cmd_2012 | Phase 4偵察⑥ — DELETE FROM signals 2505s(77%)の真因特定 | dm-signal | 04-17 | signals cleanup経路を特定し、DELETE条件 |
 | cmd_2013 | Phase 4偵察⑦ — fullrecalculate PF×date網羅性検証(UPSERT化可否判定) | dm-signal | 04-17 | full recalcのPF取得・date範囲・inacti |
 | cmd_2016 | Phase 4偵察⑨ — スキーマドリフト修正方法確認(CASCADE本番未反映) | dm-signal | 04-17 | 本番DB FK制約 vs models.py宣言の差分を全件 |
+| cmd_2014 | Phase 4 C1 spec作成 — cleanup UPSERT化の影響範囲設計+他テーブルDELETE時間確認 | dm-signal | 04-17 | C1 UPSERT specを新規作成し、signals D |
