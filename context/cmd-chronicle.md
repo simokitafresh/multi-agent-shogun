@@ -695,3 +695,4 @@
 | cmd_2028 | p̄バッチ実行 — 全active PFの劣化指標+p̄一括再計算 | dm-signal | 04-18 | 本番 deterioration-batch を実行し、秘奥 |
 | cmd_2029 | 偵察 — 全184PFのp̄/Z統計量分布調査+q̄(好調指標)設計材料 | dm-signal | 04-18 | 184 active PFのp_bar+Z(6/12/24) |
 | cmd_2030 | 研究 — ルックバック期間別IC分析(1M-12M) — 特徴量としてのモメンタム効果量 | dm-signal | 04-18 | 本番 monthly_return_open を用いて ac |
+| cmd_2031 | 研究 — L3モメンタムローテーション全量バックテスト(LB 1-12M × Top 1-42 = 504通り) | dm-signal | 04-18 | L2奥義42体(ASS21+SSS21)の月次リターンを本番 |
