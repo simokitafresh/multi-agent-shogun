@@ -701,3 +701,4 @@
 | cmd_2010 | インフラ修正 — cmd初期statusをdraftに変更(gate未通過配備防止) | infra | 04-17 | — |
 | cmd_2006 | Phase 4 B1 impl — monthly_returns preload条件変更(N+1解消) | dm-signal | 04-17 | monthly_returns の FoF partial- |
 | cmd_1997 | Phase 4準備②補足 — compare_snapshots.py列名不一致修正 | dm-signal | 04-17 | compare tool修正はbranch履歴に存在しpus |
+| cmd_2011 | Phase 4設計書更新 — B1実測反映+本番baseline計測位置づけ明記 | dm-signal | 04-17 | docs/research/gunshi_phase4_im |
