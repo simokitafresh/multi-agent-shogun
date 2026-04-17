@@ -708,3 +708,4 @@
 | cmd_2016 | Phase 4偵察⑨ — スキーマドリフト修正方法確認(CASCADE本番未反映) | dm-signal | 04-17 | 本番DB FK制約 vs models.py宣言の差分を全件 |
 | cmd_2014 | Phase 4 C1 spec作成 — cleanup UPSERT化の影響範囲設計+他テーブルDELETE時間確認 | dm-signal | 04-17 | C1 UPSERT specを新規作成し、signals D |
 | cmd_2018 | Phase 4 A2 CoDD spec — _generate_trade_performance ベクトル化設計 | dm-signal | 04-17 | A2 vectorize specを新規作成し、5候補の変更 |
+| cmd_2019 | Karpathy Simplicity導入 — 軍師review_log+忍者報告テンプレートに自問追加 | infra | 04-17 | gunshi_review_log headerとdeplo |
