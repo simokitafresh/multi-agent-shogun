@@ -710,3 +710,4 @@
 | cmd_2018 | Phase 4 A2 CoDD spec — _generate_trade_performance ベクトル化設計 | dm-signal | 04-17 | A2 vectorize specを新規作成し、5候補の変更 |
 | cmd_2019 | Karpathy Simplicity導入 — 軍師review_log+忍者報告テンプレートに自問追加 | infra | 04-17 | gunshi_review_log headerとdeplo |
 | cmd_2017 | Phase 4 C1 impl — signals cleanup DELETE→UPSERT化(fullrecalc 77%削減) | dm-signal | 04-17 | signals cleanup DELETEをskipしてP |
+| cmd_2020 | Phase 4設計書v3.0更新 — C面追加+B1/C1実測反映+Render cProfile統合+次ステップ計画 | dm-signal | 04-17 | Phase 4設計書をv3.0三面作戦の完了状態へ同期し、C |

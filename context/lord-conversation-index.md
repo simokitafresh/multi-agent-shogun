@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-17 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-17T13:40:25+09:00 -->
+<!-- generated_at: 2026-04-17T13:45:21+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-17T13:45:21+09:00 | terminal | response | **cmd_2020 GATE CLEAR。** 設計書v3.0更新完了(疾風)。 現在: - **cmd_2021**(C1後Render計測): 才蔵 in_progress(CTX:20%) - idle忍者: 影丸・半蔵・小太郎 …
+- 2026-04-17T13:44:05+09:00 | ntfy | outbound | 【家老】cmd_2021 初回配備開始 (title=Phase 4 C1後Render本番計測 — 新ベースライン確定+self time分析, ninja=saizo) Phase 4 C1後Render本番計測 📋 https://…
+- 2026-04-17T13:43:35+09:00 | terminal | response | **cmd_2021**(C1後Render本番計測)を家老に委任完了。 殿、2cmd配備: - **cmd_2020**: 設計書v3.0更新(疾風done) - **cmd_2021**: C1後Render本番計測+self tim…
+- 2026-04-17T13:41:13+09:00 | terminal | inbound | その方向で進めよ
 - 2026-04-17T13:40:25+09:00 | terminal | response | 軍師の回答が来た。要旨: **(a) C1後のRender本番計測: 必須。** cProfile overhead≈6.8xで推定精度に限界。UPSERTの新コスト未計上。render jobs createで1回実行するだけ。低コスト…
 - 2026-04-17T13:39:55+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-17 13:30:34|cmd_2017
 - 2026-04-17T13:32:59+09:00 | ntfy | outbound | 【家老】cmd_2020 初回配備開始 (title=Phase 4設計書v3.0更新 — C面追加+B1/C1実測反映+Render cProfile統合+次ステップ計画, ninja=hayate) Phase 4設計書v3.0更新 …
 - 2026-04-17T13:32:32+09:00 | terminal | response | 殿、2つ動かした: 1. **cmd_2020**(設計書v3.0更新) — 家老に委任済み。C面追加+B1/C1実測反映+Render cProfile統合 2. **軍師に次ステップ検討依頼** — C1完了後のA面優先順位、Rend…
 - 2026-04-17T13:32:14+09:00 | ntfy | outbound | 📊 Dashboard: cmd_2017 GATE CLEAR(C1 UPSERT化完了) | idle:5名 | pipeline:0件
 - 2026-04-17T13:26:32+09:00 | terminal | inbound | 設計書を更新しよう
-- 2026-04-17T13:25:50+09:00 | terminal | response | **cmd_2017(C1 impl) — 才蔵完遂。** 報告要旨: - **AC1-AC6 全PASS**。verdict: PASS - **変更4ファイル**: `signal_flush.py`, `recalculate_fa…
-- 2026-04-17T13:25:23+09:00 | terminal | inbound | 2017を確認して
-- 2026-04-17T13:23:41+09:00 | terminal | response | 承知つかまつった。 なお、陣形図を見ると**才蔵がcmd_2017(C1 impl)をdone**にしている。dashboardへの報告が上がってくるはず。殿の指示を待つ。 [meta] stop_reason=end_turn
-- 2026-04-17T13:23:36+09:00 | terminal | inbound | 最新を確認できた
 
 ## 未解決確認事項
 - 軍師の回答が来た。要旨: **(a) C1後のRender本番計測: 必須。** cProfile overhead≈6.8xで推定精度に限界。UPSERTの新コスト未計上。render jobs createで1回実行するだけ。低コスト高リターン。 **(b) A面優先順位:…
@@ -56,6 +56,7 @@
 - cmd_2018
 - cmd_2019
 - cmd_2020
+- cmd_2021
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
