@@ -691,3 +691,5 @@
 | cmd_2024 | L3選出(正確版) — 2体EWプール861通り+3体EWプール10150通りから3目的×Top1=6体 | dm-signal | 04-17 | 2体/3体EWプールからWF α 3目的のTop1候補6体を |
 | cmd_2025 | L3秘奥義6体 本番登録 — フォルダー作成+FoF登録+hide+fullrecalculate+パリティ | dm-signal | 04-17 | 秘奥義6体の本番登録・folder hide・fullrec |
 | cmd_2026 | ⑤奥義-ASS忍法 リネーム+フォルダー整理 — 21体のPF名変更+新フォルダー作成+移動 | dm-signal | 04-18 | 奥義ALMシン21体を奥義-ASS-{}形式へ改名し、新規フ |
+| cmd_2027 | ①奥義-SSS忍法 リネーム+フォルダー整理 — 21体のPF名変更+新フォルダー作成+移動 | dm-signal | 04-18 | 奥義-シン忍法フォルダーとplain奥義21体を奥義-SSS |
+| cmd_2028 | p̄バッチ実行 — 全active PFの劣化指標+p̄一括再計算 | dm-signal | 04-18 | 本番 deterioration-batch を実行し、秘奥 |
