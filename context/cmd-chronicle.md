@@ -699,3 +699,5 @@
 | cmd_2008 | Phase 4 golden data化 — cmd_2007スナップショットを全改善cmdのパリティ基準に固定 | dm-signal | 04-17 | golden baseline固定・設計書作成・compar |
 | cmd_2009 | Phase 4設計書更新 — §3全改善項目にgolden dataパリティ基準を明記 | dm-signal | 04-17 | §3の5改善項目と§6.4 golden data節を設計書 |
 | cmd_2010 | インフラ修正 — cmd初期statusをdraftに変更(gate未通過配備防止) | infra | 04-17 | — |
+| cmd_2006 | Phase 4 B1 impl — monthly_returns preload条件変更(N+1解消) | dm-signal | 04-17 | monthly_returns の FoF partial- |
+| cmd_1997 | Phase 4準備②補足 — compare_snapshots.py列名不一致修正 | dm-signal | 04-17 | compare tool修正はbranch履歴に存在しpus |
