@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-17 -->
+<!-- last_updated: 2026-04-18 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -45,31 +45,6 @@
 | cmd_980 | 偵察 — 教訓注入率低下の原因精査と改善提案 | | infra | 03-16 | — |
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
-| cmd_1037 | cmd_1035で各忍法に適用した高速化手法を横断分析し、忍法間の知見転用でさらなる高速化余地を定量的に特定する | dm-signal | 03-18 | — |
-| cmd_1036 | 全忍法のGSベンチマークを1本の共通スクリプトで統一し、計測方法のブレ・重複実装・ミスを排除する | dm-signal | 03-18 | — |
-| cmd_1039 | ninja_monitorの/clear判定を三段階化し、作業中(acknowledged/in_progress)の忍者を/clearしない | infra | 03-18 | AC1(5観点レビューPASS)+AC2(3テスト全PASS)完了。commit済み(3961379)。pushが既存テスト失敗でブロック。 |
-| cmd_1038 | cmd_1037偵察で実証済みの3高速化手法+tiebreakバグ修正を並列実装し、19.2M GS実行時間を20-30分から10-15分圏内に短縮する | dm-signal | 03-18 | — |
-| cmd_1040 | cmd_1039の実装が殿の三段階仕様と不一致。正しい三段階（Stage 1: YAML確認→Stage 2: 再確認→Stage 3: /clear）に再実装 | infra | 03-18 | — |
-| cmd_1041 | hooks・ninja_monitor・CI/テスト・通信基盤のバグ・エラーを網羅的に洗い出す | infra | 03-18 | — |
-| cmd_1042 | GS高速化の1改良1ベンチ規律を強制するスキル+ベンチスクリプト拡張を整備する | dm-signal | 03-18 | — |
-| cmd_1044 | Read追跡hook — Write/Edit前の未Readファイルを自動ブロック | infra | 03-18 | Read追跡hook作成完了。全3AC達成。 |
-| cmd_1011 | 緊急修正 — DM-Signal本番 304 Not Modified キャッシュ不整合バグ | dm-signal | 03-18 | — |
-| cmd_1012 | 分析 — 忍法二段重ね(2段パイプライン)BT | dm-signal | 03-18 | — |
-| cmd_1013 | 分析 — CPCV+PBO過適合検証（既存忍法+二段重ね全チャンピオン） | dm-signal | 03-18 | — |
-| cmd_1043 | インフラ全修正 — cmd_1041偵察で検出した全問題を殲滅（CRITICAL3+HIGH4+MEDIUM5+LOW3+EH群） | infra | 03-18 | AC8統合レビュー完了。5観点全PASS。19ファイル(+6 |
-| cmd_1045 | 修正 — lessons_usefulゲート穴塞ぎ（string_list/dict_no_usefulすり抜け229件） | infra | 03-18 | — |
-| cmd_1046 | 修正 — CI RED解消（pushトリガー不発+テスト失敗修正） | infra | 03-18 | CI RED修正完了。Unit Tests/Shell Li |
-| cmd_1047 | 全activeプロジェクト(3PJ)のgit状態をクリーンにし、IDEの差分表示を正常化する | infra | 03-18 | DM-Signal gitignore整理+成果物commi |
-| cmd_1048 | 高速化 — kasoku picks vectorize（T3: ctx build 84.8%ボトルネック直撃） | dm-signal | 03-18 | — |
-| cmd_1049 | 修正 — ninja_monitor STALE-TASK判定にデプロイ直後グレースピリオド追加 | infra | 03-18 | — |
-| cmd_1051 | oikaze/kawarimi/yotsumeにT3(picks vectorize)を横展開し、19.2M GS全体を62min→20min以下にする | dm-signal | 03-18 | — |
-| cmd_1050 | 高速化 — nukimi picks vectorize（T3横展開: 残り最大ボトルネック2.3h） | dm-signal | 03-18 | — |
-| cmd_1054 | cmd吸収時に旧cmdで稼働中の忍者を即座に/clearし、無駄な作業時間を防ぐ | infra | 03-18 | cmd_absorb.shにabort_deployed_n |
-| cmd_1053 | ac_versionをACテキスト内容のハッシュに変更し、AC内容差替えを確実に検知する | infra | 03-18 | — |
-| cmd_1052 | oikaze/kawarimi/yotsumeにT3を横展開し、各忍法のGS出力が本番(Render)と完全一致することを検証する | dm-signal | 03-18 | — |
-| cmd_1055 | Playwrightスクレイパーのheadlessモード安定化とUI変更耐性の強化 | google-classroom | 03-18 | scrape_classroom.pyの脆弱なCSSセレクタ |
-| cmd_1060 | Phase 3-4完了済みなのにドキュメントが未更新。32体ユニバース構成の正式定義が設計書にあるがcontext索引に反映されていない。コードとドキュメントの乖離を修復する | dm-signal | 03-18 | context/dm-signal-research.md |
-| cmd_1061 | run_077_*.pyのPORTFOLIO_MAP/CANDIDATE_SETハードコードを外部YAML設定化し、シン四神32体・将来の新構成PFに差し替え可能にする | dm-signal | 03-18 | — |
 | cmd_1062 | T3(picks vectorize)で全量42min→並列12minに到達。さらなる高速化余地を定量的に把握し、Phase 5実行前に追加最適化の要否を判断する材料を得る | dm-signal | 03-19 | — |
 | cmd_1064 | 4忍法のmomentum_cube計算をpandas pct_change→numpy slice一括に置換し、ctx_build高速化+本番パリティ完全一致を確認する | dm-signal | 03-19 | — |
 | cmd_1065 | queue/tasks/*.yamlへのWrite/Editをhookで無条件denyし、deploy_task.sh経由のみでタスクYAML生成を強制する | infra | 03-19 | — |
@@ -714,3 +689,5 @@
 | cmd_2021 | Phase 4 C1後Render本番計測 — 新ベースライン確定+self time分析 | dm-signal | 04-17 | C1をmainへmerge(PR #12)してRender本 |
 | cmd_2022 | Phase 4締め括り — 設計書v3.1最終更新+研究日誌Phase 34追記+成果サマリ | dm-signal | 04-17 | Phase 4設計書にcmd_2021の実測値(842.90 |
 | cmd_2024 | L3選出(正確版) — 2体EWプール861通り+3体EWプール10150通りから3目的×Top1=6体 | dm-signal | 04-17 | 2体/3体EWプールからWF α 3目的のTop1候補6体を |
+| cmd_2025 | L3秘奥義6体 本番登録 — フォルダー作成+FoF登録+hide+fullrecalculate+パリティ | dm-signal | 04-17 | 秘奥義6体の本番登録・folder hide・fullrec |
+| cmd_2026 | ⑤奥義-ASS忍法 リネーム+フォルダー整理 — 21体のPF名変更+新フォルダー作成+移動 | dm-signal | 04-18 | 奥義ALMシン21体を奥義-ASS-{}形式へ改名し、新規フ |
