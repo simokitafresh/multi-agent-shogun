@@ -1160,6 +1160,7 @@ purpose_validation:
   fit: true
   purpose_gap: ""
 simplicity_check: ""  # 既存仕組みで足りるか / 複雑さ追加が必要なら理由を1文で記せ
+assumption_check: ""  # ACの前提に疑問はないか？不明な点があればdecision_candidateに書け(Karpathy原則1)
 ${_before_after_block}
 files_modified: []
 lesson_candidate:
