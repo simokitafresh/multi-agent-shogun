@@ -704,3 +704,4 @@
 | cmd_2011 | Phase 4設計書更新 — B1実測反映+本番baseline計測位置づけ明記 | dm-signal | 04-17 | docs/research/gunshi_phase4_im |
 | cmd_2001 | Phase 4偵察③ — Render上cProfile計測(純Python時間取得) | dm-signal | 04-17 | Render cProfile結果を docs/resear |
 | cmd_2012 | Phase 4偵察⑥ — DELETE FROM signals 2505s(77%)の真因特定 | dm-signal | 04-17 | signals cleanup経路を特定し、DELETE条件 |
+| cmd_2013 | Phase 4偵察⑦ — fullrecalculate PF×date網羅性検証(UPSERT化可否判定) | dm-signal | 04-17 | full recalcのPF取得・date範囲・inacti |
