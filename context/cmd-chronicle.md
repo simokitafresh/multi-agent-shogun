@@ -702,3 +702,5 @@
 | cmd_2006 | Phase 4 B1 impl — monthly_returns preload条件変更(N+1解消) | dm-signal | 04-17 | monthly_returns の FoF partial- |
 | cmd_1997 | Phase 4準備②補足 — compare_snapshots.py列名不一致修正 | dm-signal | 04-17 | compare tool修正はbranch履歴に存在しpus |
 | cmd_2011 | Phase 4設計書更新 — B1実測反映+本番baseline計測位置づけ明記 | dm-signal | 04-17 | docs/research/gunshi_phase4_im |
+| cmd_2001 | Phase 4偵察③ — Render上cProfile計測(純Python時間取得) | dm-signal | 04-17 | Render cProfile結果を docs/resear |
+| cmd_2012 | Phase 4偵察⑥ — DELETE FROM signals 2505s(77%)の真因特定 | dm-signal | 04-17 | signals cleanup経路を特定し、DELETE条件 |
