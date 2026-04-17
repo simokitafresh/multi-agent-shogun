@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-18T01:04:26+09:00 -->
+<!-- generated_at: 2026-04-18T01:15:31+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-18T01:04:26+09:00 | terminal | response | p̄と同じ統計検定の枠組みで「好調度」を測る案。 **p̄はZ統計量のマイナス側（弱体化方向）の確率。同じZのプラス側を使えば「好調確率」になる。追加計算ゼロで既存インフラに乗る。** 具体的には: - p̄ = P(det) = Φ(-…
-- 2026-04-18T01:03:44+09:00 | terminal | inbound | P 平均値と同じような って感じでこう最近の調子がいいか 調べる なんか アイディア ないかな
-- 2026-04-18T01:00:25+09:00 | ntfy | outbound | 【家老】cmd_2028 初回配備開始 (title=p̄バッチ実行 — 全active PFの劣化指標+p̄一括再計算, ninja=saizo) p̄バッチ実行 📋 https://gist.github.com/simokitafr…
-- 2026-04-18T00:59:40+09:00 | terminal | response | **cmd_2028**委任完了。p̄バッチ実行 — `POST /admin/deterioration-batch` で全active PFの劣化指標+p̄を一括再計算。秘奥義6体の結果確認まで含む。 [meta] stop_reas…
-- 2026-04-18T00:58:04+09:00 | terminal | inbound | 平均p値のバッチを実行して
-- 2026-04-18T00:51:14+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 00:36:31|cmd_2027
-- 2026-04-18T00:38:09+09:00 | terminal | response | cmd_2027 GATE CLEAR掲示板通知(重複)。疾風PASS、WA=0。 両cmd完了。全6忍者idle。殿の指示を待つ。 [meta] stop_reason=end_turn
-- 2026-04-18T00:36:44+09:00 | terminal | response | cmd_2026のGATE CLEAR掲示板通知(重複)。WA=0、才蔵PASS。 疾風がcmd_2027(①SSS)を進行中(CTX:20%)。完了を待つ。 [meta] stop_reason=tool_use
-- 2026-04-18T00:35:50+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 00:30:20|cmd_2026
-- 2026-04-18T00:31:58+09:00 | terminal | response | cmd_2026のGATE CLEAR掲示板通知(重複)。WA=0、才蔵PASS。 疾風がcmd_2027(①SSS)を進行中(CTX:20%)。完了を待つ。 [meta] stop_reason=end_turn
+- 2026-04-18T01:15:31+09:00 | terminal | response | その通り。毎月「直近N月」が自動的にスライドするから、常に新しいデータでのランキングになる。固定窓は不要。 ``` 2026-01時点: LB=3M → 2025-10〜12月のリターンでランク → 2026-01実績と比較 2026-0…
+- 2026-04-18T01:15:13+09:00 | terminal | inbound | あいや違うな 直径 N ヶ月でやるから 窓も何もないか 常に新しいものになるんだな
+- 2026-04-18T01:14:47+09:00 | terminal | inbound | これって例えば ビルディングブロック 顧問できるのか なんでここ 全期間でやるのか 窓を作るのか ちょっと詳しく説明して
+- 2026-04-18T01:12:50+09:00 | terminal | response | ## 情報係数(IC: Information Coefficient) ### 一言で **「この特徴量で並べ替えた順番と、実際に儲かった順番はどれくらい一致するか」**を毎月測る指標。 ### 計算の具体例 2026年3月のデータで、…
+- 2026-04-18T01:12:29+09:00 | ntfy | outbound | 【家老】cmd_2030 初回配備開始 (title=研究 — ルックバック期間別IC分析(1M-12M) — 特徴量としてのモメンタム効果量, ninja=hayate) 研究 📋 https://gist.github.com/sim…
+- 2026-04-18T01:12:20+09:00 | terminal | inbound | ちょっとこ の情報係数について もう少し詳しく教えて欲しいんだけど
+- 2026-04-18T01:12:02+09:00 | terminal | response | **cmd_2030**委任完了。LB期間別IC分析(1M-12M)。 現在並列で進行中: - **cmd_2029**: p̄/Z統計量の層別分布偵察（才蔵） - **cmd_2030**: LB期間別IC分析（配備待ち → 家老が並列…
+- 2026-04-18T01:10:55+09:00 | terminal | inbound | これ cmd で出そう 面白そうだな
+- 2026-04-18T01:10:06+09:00 | terminal | response | ある。**情報係数(IC: Information Coefficient)**が最も洗練されていて標準的。 ``` 毎月t、LB=N月について: IC(N, t) = Spearman相関(全PFの直近N月リターン, 全PFの翌月実績リ…
+- 2026-04-18T01:09:38+09:00 | terminal | response | わかる。 **ルックバック期間別モメンタム選出のバックテスト。** 毎月、「直近N月のリターンTop1」を選出 → 翌月の実績リターンを記録。これをN=1M〜12Mで繰り返して、どのルックバック期間が最も強い選出基準か調べる。 ``` 毎…
 
 ## 未解決確認事項
 - **cmd_2028**委任完了。p̄バッチ実行 — `POST /admin/deterioration-batch` で全active PFの劣化指標+p̄を一括再計算。秘奥義6体の結果確認まで含む。 [meta] stop_reason=tool_use
@@ -26,6 +26,7 @@
 - 承知つかまつった。過適合検証の記事、note下書きに保存確認。 殿の指示を待つ。 [meta] stop_reason=end_turn
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-18T01:08:10+09:00 | **cmd_2029**委任完了。全184PFのp̄/Z統計量の層別分布偵察。殿指摘の「層内比較に限定」を反映済み。 偵察結果が出たら、q̄の設計方針を殿と詰める。 [meta] stop_reason=end_turn
 - 2026-04-18T00:38:09+09:00 | cmd_2027 GATE CLEAR掲示板通知(重複)。疾風PASS、WA=0。 両cmd完了。全6忍者idle。殿の指示を待つ。 [meta] stop_reason=end_turn
 - 2026-04-17T20:40:09+09:00 | 復帰完了。状態報告: **陣形図**: 全6忍者idle(CTX:0%)。稼働中cmd=0件。 **前セッション完了**: cmd_2025(L3秘奥義6体登録 GATE CLEAR)、cmd_2024(L3選出)、cmd_2022(Phase 4締め括り)、note下書き保存…
 - 2026-04-17T20:39:58+09:00 | 【将軍】復帰済み。全6忍者idle。cmd完遂: 2025(L3秘奥義登録)+2024(L3選出)+2022(Phase4締括り)。掲示板9件確認中。殿の指示を待つ。
@@ -33,15 +34,10 @@
 - 2026-04-17T17:31:18+09:00 | cmd_2025 GATE CLEAR。L3秘奥義6体本番登録完了。nested FoF MR不在→補完済。L636承認。
 - 2026-04-17T17:02:49+09:00 | **cmd_2025**(L3秘奥義6体 本番登録)を家老に委任完了。 DB排他・直列で進む。フォルダー作成→6体FoF登録→hide→fullrecalculate→パリティの順。殿の指示を待つ。 [meta] stop_reason=tool_use
 - 2026-04-17T15:18:45+09:00 | 旧版(18行)のデータがある。殿の指示はプール合算で6体。このデータからプール合算Top1を抽出できる — 2体EW 9行のうちWF α-{CAGR, NHF, MaxDD}が最も良い1行ずつ、3体EW 9行も同様。 データは手元にある。読み取る: **2体EWプール(9候補)…
-- 2026-04-17T15:09:57+09:00 | よし。才蔵が修正指示を受けて作業中。結果を待つ。 [meta] stop_reason=end_turn
 
 ## 参照cmd
-- cmd_1994
-- cmd_1997
-- cmd_2001
+- cmd_977
 - cmd_2006
-- cmd_2011
-- cmd_2012
 - cmd_2013
 - cmd_2014
 - cmd_2015
@@ -58,6 +54,8 @@
 - cmd_2026
 - cmd_2027
 - cmd_2028
+- cmd_2029
+- cmd_2030
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
