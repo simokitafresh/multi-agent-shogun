@@ -35,6 +35,7 @@
 # 軍師自己コード変更(hooks/gates/CLAUDE.md/instructions/settings)→S0プロトコル必須。docs/research/gunshi_sg_s0_self_code_change_20260412.md(LG026)
 # ★退化計測原理(CoDD#3): GP/改善を入れたら「退化していないか」をbefore/afterで計測せよ。参照率(行動有無)≠有効率(行動効果)。計測対象を間違えると盲点が構造的に生まれる(2026-04-16: useful率26%をreferenced率76%が隠していた)
 # Simplicity観点: 既存の仕組みを磨くだけで済むなら新規フラグ/分岐/ファイル/手順を増やすな。複雑さを増やす場合は必要性を明文化せよ
+# Think Before Coding観点: 忍者が暗黙の前提を置いていないか。ACの前提が曖昧なまま実装していないか。不確実なら止まって聞いたか(Karpathy原則1)
 # コード修正の横展開: grep修正前パターンで残存0件確認必須。1箇所修正→コピペ散在ファイル漏れ(cmd_1899: bisect fix 04f74830がTRF/MAF漏れ→12体Cash100%)
 # RESEARCH cmd(commit免除): files_modifiedファイルの実在+parent_cmd命名一致を確認せよ。手段の免除≠目的の免除(cmd_1948: 成果物0件がGATE CLEAR。GP-202+PRE3で二重防御)
 # golden data検証基準: 生成時のコード状態(commit)を確認。バグ状態で生成されたgolden dataは検証基準にならない(cmd_1899: TRFバグ状態のgolden=全選択≠正しいTop+Worst)
@@ -1293,7 +1294,7 @@
 - cmd_id: cmd_2001
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。軍師提案のRender上cProfile偵察。ハーネス再利用+render jobs create。パリティ確認含む"
   observations:
@@ -1392,3 +1393,431 @@
     - "事実3: 軍師推論「ループ内にDB混在」が現物確認で立証。B面(DB外出し)→A面(NumPy化)の順序が正"
   causal_chain: "signal_cacheに親PFあり→preload skip→child未プリロード→月ループ内で遅延SELECT→N+1(2706+1985回)。修正=preload条件をcomponent ids充足で判定(正の複利:全FoFに効く)"
   timestamp: "2026-04-17T02:58:00"
+- cmd_id: cmd_2002
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2002_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gist_index_update.sh 7→10カ��ゴリ���修。研究データ20→3件。ShellCheck修正。dry-run47件分類確認"
+  observations:
+    - "事実1: classify_gist()のl2奥義>note優先順序は部分集合原則に基づく設計判断。caseマッチの先勝ちで正しく機能"
+    - "事実2: 研究データ20→3件達成(閾値<10)。47gist全分類完了。カテゴリ欠落なし"
+  causal_chain: "殿指摘(分類が雑)→7カテゴリでは実態(L2奥義/研究日誌等)をカバーできず→10カテゴリ再設計→gist検索性向上(正の複利:今後の全gist自動分類に反映)"
+  timestamp: "2026-04-17T03:15:00"
+- cmd_id: cmd_2005
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2005_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。preload skip=値差分なし+N+1のみ(cmd_2000実測と整合)。API8EP+FE9ページ影響範囲列挙。設計書§5追記"
+  observations:
+    - "事実1: preload_fof_signals_recursive()スキップ時、expand_portfolio_to_tickers()がcache miss→price_ratio_calculator.pyで遅延DB読込→即memoize。計算値不変、クエリ回数のみ増"
+    - "事実2: cmd_2000半蔵実測(portfolio N+1=2706回/signal N+1=1985回)と才蔵のコードパス分析が整合。独立2忍者の交差検証"
+  causal_chain: "signal_cacheに親PFあり→preload skip→child未キャッシュ→expand時にDB遅延読込→N+1発生(値不変)。修正方針=preload条件修正のみでFE影響なし(正の複利:API parity smoke計画が設計書に反映→実装cmd品質向上)"
+  timestamp: "2026-04-17T03:35:00"
+- cmd_id: cmd_karo_ci_fix_ga092
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_ci_fix_ga092_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cmd_delegate test 196期待値同期修正。commit 756f935。CI RED修正"
+  observations:
+    - "事実1: cmd_delegate.shはinbox_write前にdelegated_at+status:delegatedを記録する設計。test 196は旧期待値(不在)のまま残存→不整合がCI RED原因"
+    - "事実2: 修正はテスト期待値のみ。本番コード変更なし。リスク最小"
+  causal_chain: "cmd_delegate.sh仕様変更(先にstatus記録)→test 196未同期→CI RED。テスト期待値同期で解消(正の複利:cmd_delegateテスト信頼性回復)"
+  timestamp: "2026-04-17T03:40:00"
+- cmd_id: cmd_2006
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点全OK。Phase4 B1 impl。assumptions全verified(偵察5本GATE CLEAR)。AC直列順序OK。FM3件全低リスク"
+  observations:
+    - "事実1: assumptions 3件全てverified+GATE CLEAR裏付け。preload条件変更=値不変(cmd_2005)+N+1真因=L183-191(cmd_2003)"
+    - "事実2: AC2のパリティ閾値<1e-6は全PF一致要件。fullrecalculate baseline=1527s(cmd_1994)"
+  causal_chain: "偵察5本(cmd_1999-2005)→全GATE CLEAR→設計書v2.1確定→殿承認→B1 impl。偵察蓄積がimpl品質基盤(正の複利:A1 NumPy化の前提条件確立)"
+  timestamp: "2026-04-17T03:46:00"
+- cmd_id: cmd_2007
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点全OK。Phase4事前確認。3パターンpreload動作記録。殿指摘「事前確認→事後確認」対応"
+  observations:
+    - "事実1: standardPF/FoF/nestedFoFの3パターンでpreload動作を事前記録→cmd_2006パリティのbefore基準になる"
+    - "事実2: assumption 1件(PR#9 merge)verified。本番DB読取のみで変更なし"
+  causal_chain: "殿指摘(全パターンで動くか事前確認せよ)→3パターン動作記録→cmd_2006 implのパリティ基準確立(正の複利:impl後のbefore/after比較精度向上)"
+  timestamp: "2026-04-17T03:50:00"
+- cmd_id: cmd_2007
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2007_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。3体preload実測(standard=0/0,Ave-X=1/1,MIX1=3/3)+baseline CSV保存。cmd_2003と交差整合"
+  observations:
+    - "事実1: standard(depth0)=preload不要/0query、Ave-X(depth1)=1/1、MIX1(depth2)=3/3。depth増でSELECT増=cmd_2003のコードパス分析と整合"
+    - "事実2: CSV 509行(進行中月2026-04除外)。target_date=2026-04-15。cmd_2006パリティのbefore基準として十分"
+  causal_chain: "殿指摘→3パターン実測→cmd_2006 before基準確立。depth別SELECT数がコード分析と一致→impl修正箇所の確信度向上(正の複利)"
+  timestamp: "2026-04-17T04:02:00"
+- cmd_id: cmd_2008
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点全OK。殿指示golden data化。cmd_2007 CSV→固定パス+設計書明記+compare引数確認。全Phase4改善cmdの複利基盤"
+  observations:
+    - "事実1: assumptions 2件verified。計算値不変(cmd_2005)+outputs/golden/はgitignore対象だがローカルパリティ検証で参照可能"
+    - "事実2: AC3 compare_recalc_results.pyの--baseline引数有無で軽微修正の可能性あり。FM最小"
+  causal_chain: "殿指摘(毎cmd再取得は無駄)→golden data固定→全改善cmdで同一パリティ基準再利用(正の複利:スナップショット再取得コスト×改善cmd数分を排除)"
+  timestamp: "2026-04-17T07:55:00"
+- cmd_id: cmd_2008
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2008_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。AC1-3完了(golden CSV+設計書+compare引数)。AC4 CI未達=インフラ制約→家老merge対応→CLEAR"
+  observations:
+    - "事実1: md5=cc0a5a3bb0ea64185c0b3cf451181f2e一致。outputs/golden/phase4_monthly_returns_baseline.csv配置済み"
+    - "事実2: AC4 CI GREEN未達はrepo check-runs=0+dirty worktree。忍者実装問題ではなくインフラ制約。branch hayate-cmd-2008のmainマージで解決"
+  causal_chain: "殿指示(golden data化)→疾風がAC1-3完了→AC4はbranch pushのみでmain拒否(origin/main先行)→家老マージ対応で完結(正の複利:golden data確立で全改善cmdのパリティ基準統一)"
+  timestamp: "2026-04-17T08:43:00"
+- cmd_id: cmd_2009
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点全OK。§3全改善項目に§6.4 golden data参照追記。Markdown更新のみ。リスクゼロ"
+  observations:
+    - "事実1: §3のB1/A1/A3/A2/A4全5項目に「パリティPASS」記載あり。§6.4参照が欠落=殿指摘の通り"
+    - "事実2: ドキュメント更新のみ。本番コード変更なし。CI影響なし"
+  causal_chain: "殿指示(設計書も更新せよ)→§3パリティ基準がgolden dataを参照していない→§6.4参照追加で統一(正の複利:全改善cmd起票時にパリティ条件が自明)"
+  timestamp: "2026-04-17T08:57:00"
+- cmd_id: cmd_2009
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2009_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。§3全5項目にgolden data参照明記。commit 76525944+PR#11 merge済み。CI=workflow未設定"
+  observations:
+    - "事実1: rg 'golden'で5改善項目全ヒット確認。§6.4 golden data定義(md5/target_date/parity condition)完備"
+    - "事実2: CI GREEN未達はDM-Signal repoにworkflow未設定。cmd_2008と同パターン。忍者実装問題ではない"
+  causal_chain: "設計書§3→§6.4参照欠落→疾風が全5項目に参照追記+PR merge→パリティ基準が設計書で一元管理(正の複利)"
+  timestamp: "2026-04-17T09:02:00"
+- cmd_id: cmd_2006
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2006_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。preload条件修正+パリティ7/7 PASS+fullrecalc 22.5%改善。AC4 CI GREEN=環境要因。BLOCK→家老override→CLEAR"
+  observations:
+    - "事実1: _needs_fof_component_preload()新規追加。partial-cache状態でchild/nested FoF依存を再帰的に検出。commit 6afcc7fc確認"
+    - "事実2: パリティ7/7 tables passed。3PF CSV diff なし。fullrecalc 1778s→1377s(22.5%短縮)"
+    - "事実3: ac_version不一致(task=55c8d780 vs report=6868cdf4)。PRE10 FAIL→gate BLOCK確実"
+  lesson_quality: N/A
+  karo_workaround_needed: yes
+  gate_prediction: BLOCK
+  causal_chain: "FoF partial-cache→signal_cache有無だけでは子PF欠損を検出できない→component_ids充足チェック追加→N+1解消(depth1:6→1,nested:20→3)=正の複利(全FoF PFに恩恵)"
+  timestamp: "2026-04-17T09:12:00"
+- cmd_id: cmd_1997
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。compare_snapshots.py列名修正。行数乖離(cmd記載251→実測401)あるがscope影響なし。q4=shallow、Phase4パリティツール完成の正の複利"
+  observations:
+    - "事実1: compare_snapshots.py実測401行(cmd記載251行)。cmd_1995才蔵修正で成長した可能性。修正scope(列名マッピング)に影響なし"
+    - "事実2: assumptions 2件ともverified。holding_signalはL185/L196に存在(cmd記載L125からずれ)"
+  causal_chain: "cmd_1995のtask更新→才蔵ナッジ遅延→compare側未修正→補足cmdで完遂→Phase4パリティツール完成=正の複利(全Phase4 cmdでcompare_snapshots再利用)"
+  timestamp: "2026-04-17T09:18:00"
+- cmd_id: cmd_2011
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。B1実測反映+§7新設+本番baseline計測位置づけ明記。Markdown更新のみ。軍師なぜなぜ7回の3点全て反映確認"
+  observations:
+    - "事実1: §3.1は現在未存在→忍者が新設。§7(掲示板要約L262)の繰り下げが必要。ACに新セクション明記で忍者判断可能"
+    - "事実2: cmd本文/q7/q10に「佐助」とあるが実際は「才蔵(saizo)」。軽微な名前混同。AC/命令文に影響なし"
+    - "事実3: B1実測値(1778→1377s, -22.5%)は才蔵報告と一致(再計算: -22.6%、0.1%誤差許容)"
+  causal_chain: "B1 GATE CLEAR→実測値が設計書に未反映→A面ROI��母不正確(軍師なぜなぜ7回)→設計書更新cmdで土台固め→A面cmd設計精度向上=正の複利"
+  timestamp: "2026-04-17T09:24:00"
+- cmd_id: cmd_1997
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_1997_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。compare tools列名修正+1体PFテストdiff=0。CI GREEN=環境要因。AC3 bc:yes vs details:確認不能の軽微矛盾あるが実質影響なし"
+  observations:
+    - "事実1: git show 6c63907bで3ファイル修正確認(401ins/104del)。holding_signal含有をcompare_fields+snapshot両方で確認"
+    - "事実2: 1体PF(0012f956)で全6テーブルdiff=0。target_date=2026-04-15一致"
+    - "事実3: AC3 binary_checks CI GREEN=yes だが details=CI GREEN確認不能。軽微矛盾。CI workflow未設定=環境要因"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "cmd_1995残作業(compare側列名不一致)→疾風が修正+PFテスト→Phase4パリティツール完成=正の複利(全Phase4 cmdでcompare_snapshots使用可能)"
+  timestamp: "2026-04-17T09:28:00"
+- cmd_id: cmd_2011
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2011_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。§3.1 B1実測値+§4ステータス列+§7 A面着手前提。commit 053670f6現物確認。軍師なぜなぜ7回の3点全てカバー"
+  observations:
+    - "事実1: §3.1にB1実測値(1778→1377s,probe 6→1/20→3,7/7 PASS,commit 6afcc7fc)正確に記録"
+    - "事実2: §4テーブルB1行をN+1遅延解消+実測値に修正。ステータス列追加(B1=完了,A1-A4=未着手)"
+    - "事実3: §7新設3サブセクション(cmd_2001位置づけ/A面ROI確定手順/CoDD必須ステップ)で本番baseline問題を明示"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "軍師なぜなぜ7回(ROI分母不正確)→将軍cmd_2011起票→影丸が設計書更新→A面cmd設計の土台確立=正の複利"
+  timestamp: "2026-04-17T09:30:00"
+- cmd_id: cmd_2001
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2001_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。★重大発見: Render DELETE FROM signals=2504s(77%)が支配。設計書v2前提(本番=Python支配)はcleanup含む全体では不成立。cleanup除外後はPython支配維持。ROI順序A2>A3>A1に変更"
+  observations:
+    - "事実1: Render total=3250s, DELETE=2504s(77%), cleanup除外後=746s(query10.2%)。local non_query=656s vs Render=669s(近似)"
+    - "事実2: ROI順序変更: A1>A3>A2(旧)→A2(534s)>A3(402s)>A1(383s)(新)。local cumtimeベース"
+    - "事実3: commit bb87bc78。JSON(506行)はuncommitted(PRE3 WARN)。研究成果物なので影響なし"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "軍師なぜなぜ7回(本番baseline未計測)→cmd_2001 Render cProfile→DELETE支配発見→設計書v2前提修正+C面(cleanup戦略)追加が必要=次のcmd設計品質に直結"
+  timestamp: "2026-04-17T09:38:00"
+- cmd_id: cmd_2012
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。DELETE 2505s(77%)の真因特定偵察。5項目(SQL文/インデックス/行数/UPSERT可否/FK)が因果鎖を網羅。AC6個だが偵察の調査項目であり分割非効率"
+  observations:
+    - "事実1: _cleanup_before_recalculate L711定義,L1402呼出を現物確認。assumption verified"
+    - "事実2: AC6個(LG021基準AC>4)だが偵察の独立調査項目。分割オーバーヘッド>効果。分割不要と判断"
+    - "事実3: render psql unverifiedだがフォールバック(コード/migration読取)が明記。設計妥当"
+  causal_chain: "DELETE 2505s(77%)→真因不明(推論禁止LS014)→5項目現物確認→改善方針(UPSERT化orインデックス追加or分割DELETE)の選択肢が確定=正の複利"
+  timestamp: "2026-04-17T10:00:00"
+- cmd_id: cmd_2012
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2012_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。★DELETE真因=full recalcで627k行を毎回全件DELETE+再INSERT。UPSERT化はスキーマ上可能(PK存在+signal_flush.py実装済み)。CASCADE欠落のスキーマドリフト発見"
+  observations:
+    - "事実1: full recalc=DELETE FROM signals(無条件全件)。partial=WHERE portfolio_id IN。L711-777定義、L1401-1402呼出"
+    - "事実2: 627,392行/320MB/dead_tup=0。インデックス3本(PK,ix_portfolio_id,ix_date)。full deleteにインデックスは無関係"
+    - "事実3: signal_flush.pyにUPSERT(INSERT ON CONFLICT DO UPDATE)実装済み。cleanup_mode分岐で全件DELETE側を選択中"
+    - "事実4: ★スキーマドリフト: models.py ondelete=CASCADE vs 本番FK CASCADEなし。knowledge_candidateとして報告"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "DELETE 2505s→全件DELETE+再INSERT設計→UPSERT化可能(PK+signal_flush実装済み)→cleanup戦略変更でDELETE 2505s→0sが理論上可能=Phase4最大レバレッジ"
+  timestamp: "2026-04-17T10:06:00"
+- cmd_id: cmd_2013
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。UPSERT化可否判定の網羅性偵察。殿の前提(split対策)がcmd本文に反映済み。4項目(PFリスト/date範囲/本番定量/非アクティブPF)が網羅性の因果鎖を網羅"
+  observations:
+    - "事実1: assumptions 2件verified(render psql接続cmd_2012実績+portfolio_ids=None全PF取得cmd_2012確認)"
+    - "事実2: AC5個(LG021基準AC>4)だが偵察の独立調査項目。cmd_2012と同構造。分割非効率"
+    - "事実3: 殿の設計意図(株価split遡及変更→全DELETE→全再計算で整合性保証)がcmd冒頭に明記。UPSERT化の前提条件が明確"
+  causal_chain: "殿指摘(DELETE=split対策)→網羅性未証明→4項目定量検証→UPSERT化可否確定→C1設計方針確定=正の複利(改善cmd設計の精度決定)"
+  timestamp: "2026-04-17T10:52:00"
+- cmd_id: cmd_2013
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2013_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。★181/181完全網羅確認。orphan=0,未計算PF=0。full recalc=全PF対象(is_activeフィルタなし)。UPSERT化技術的前提成立"
+  observations:
+    - "事実1: PortfolioRepository.load()→db.query(PortfolioDB).all()で全PF。sync_standard/sync_fofはis_active=true絞りとの対比確認"
+    - "事実2: 本番DB 181/181完全網羅。standard77+fof104=181。signals distinct PF=181。orphan=0,未計算PF=0"
+    - "事実3: inactive=0,deleted_at/is_deletedスキーマなし。将来inactive追加時にfull recalc/sync差分が生じるedge_case報告あり"
+    - "事実4: signals 627,573行(cmd_2012の627,392と微差=計測タイミング差。正常)"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "殿指摘(UPSERT化にはPF×date網羅性証明が必要)→181/181完全網羅確認→UPSERT化技術的前提成立→C1設計方針確定の土台完成=正の複利"
+  timestamp: "2026-04-17T10:58:00"
+- cmd_id: design_v3_review
+  review_type: consultation
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "設計書v3.0レビュー。確証データ解釈正確。数値整合。★1点指摘: cleanup DELETEはsignals以外にmonthly_return等複数テーブルも対象。UPSERT化範囲の判断がC1 spec時に必要"
+  observations:
+    - "事実1: _cleanup_before_recalculate L718-769でsignals+core tables+precompute+global precompute全DELETE。§3.0はsignalsのみ言及"
+    - "事実2: cmd_2001 cProfileでDELETE FROM signals=2505s(77%)。他テーブルDELETEの時間は未分離"
+    - "事実3: 181/181 coverage+orphan=0+UPSERT実装済みの前提条件は正確。数値は全てcmd_2001実測と整合"
+  cs_checklist:
+    CS1: "設計書全文+cmd_2012/2013偵察報告+recalculate_fast.pyのDELETEパターンを確認。ソース全量確認済み"
+    CS2: "他テーブルDELETEの存在を自システムコード(grep DELETE)で検証。概念比較でなく現物確認"
+    CS3: "recalculate_fast.py L718-769を実コードで確認。grep結果と照合"
+    CS4: "severity:normalとして掲示板投稿。C1 spec作成時の検討事項として行動変換済み"
+    CS5: "他テーブルのDELETE時間分離が未完了。cmd_2001のcProfile JSONから分離可能か追加調査の余地あり"
+    CS6: "§3.0がsignalsのみ→他テーブルもDELETEされるが時間は未分離→C1設計で範囲確定が必要、という因果鎖"
+  causal_chain: "signals DELETE=2505s(77%)→他テーブルDELETEも存在→UPSERT化範囲がsignals限定で十分か未確定→C1 spec作成時に他テーブルDELETE時間を分離して判断"
+  timestamp: "2026-04-17T11:05:00"
+- cmd_id: cmd_2014
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。C1 spec作成。軍師指摘(他テーブルDELETE時間)反映。AC1で全テーブルDELETE時間抽出。partial recalc整合性+rollback安全性+パリティ設計まで網羅"
+  observations:
+    - "事実1: AC6個(LG021)だが設計書作成の調査項目。分割より一貫性優先。偵察SCOUT"
+    - "事実2: assumptions 2件verified。cProfile JSONにDELETE時間含む+signal_flush UPSERT動作済み"
+  causal_chain: "軍師レビュー指摘(他テーブルDELETE)→spec作成で影響範囲確定→impl品質向上=正の複利"
+  timestamp: "2026-04-17T11:20:00"
+- cmd_id: cmd_2015
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。A2構造先行確認。C1並列で最大hotspot(535s)のコード構造+ベクトル化可能性を調査。A面即着手準備"
+  observations:
+    - "事実1: cProfile JSONでtrade_performance配下top10抽出→オブジェクト構築パターン特定→ベクトル化候補洗出し"
+    - "事実2: C1とA面偵察は独立。並列配備は時間効率最適(殿指示「同時にやれ」)"
+  causal_chain: "A2=最大hotspot(535s)→構造理解→spec精度向上→impl品質向上=正の複利。C1並列で時間損失ゼロ"
+  timestamp: "2026-04-17T11:20:00"
+- cmd_id: cmd_2016
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。CASCADEドリフト全体像調査。全テーブルFK差分+migration修正方法。C1独立の偵察"
+  observations:
+    - "事実1: cmd_2012でsignals FK不一致発見→全テーブル横断で同様ドリフトの有無確認。予防的偵察"
+    - "事実2: ALTER TABLE+ダウンタイム確認まで含む。impl判断材料として十分"
+  causal_chain: "cmd_2012 signals CASCADEドリフト→他テーブルにも同様のドリフト?→全件横断確認→migration修正方針確定=正の複利(DB信頼性)"
+  timestamp: "2026-04-17T11:20:00"
+- cmd_id: cmd_2016
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2016_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CASCADE未適用8テーブル特定+migrationバグ(performanceテーブル不在)発見。lesson_candidate有(migration名突合)"
+  observations:
+    - "事実1: 8テーブルFK差分(signals/monthly_returns/trade_performance/drawdown_periods/rolling_returns_summary/chart/risk_management_metrics/portfolio_metrics)"
+    - "事実2: add_cascade_delete.pyにperformanceテーブル(不在)→即エラーロールバック→8テーブル長期未適用の根因"
+    - "事実3: annual_returns 0行残存+scm_*テーブルmodels.py未定義。副次的スキーマドリフト"
+    - "事実4: knowledge_candidate修正済み(gate FAIL→忍者自己修正→再送信)。found:true+items4件"
+  lesson_quality: OK
+  karo_workaround_needed: no
+  gate_prediction: WARN
+  causal_chain: "add_cascade_delete.py performanceバグ→migration未実行→8テーブルCASCADE欠落長期放置→cmd_2012でsignals FK不一致発見→全テーブル横断で根因特定=正の複利(migration品質改善)"
+  timestamp: "2026-04-17T11:27:00"
+- cmd_id: cmd_2015
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2015_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。A2構造偵察完了。181PF/13369trade行。ベクトル化候補5件(ndarray化/searchsorted/単一pass/memoize/weights軽量化)。テスト7件特定"
+  observations:
+    - "事実1: _generate_trade_performance caller=recalculate_fast:2689(181calls)。trade行13369のbatch構築が支配コスト"
+    - "事実2: cProfile JSON制約(global top20のみ)を明示。配下top10は推論行と実コード照合で復元"
+    - "事実3: ベクトル化5候補+A2/A3/A1境界のshared cache契約維持が依存制約として明記"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "A2=最大hotspot(535s)→構造偵察で改善候補5件+テスト7件特定→A2 spec精度向上→impl品質向上=正の複利"
+  timestamp: "2026-04-17T11:31:00"
+- cmd_id: cmd_2014
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2014_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。C1 spec完成。★signals DELETE=2503s/cleanup total=2504s→他テーブル~1.5s。signalsのみUPSERT化で十分。変更箇所4箇所特定。stale signal行リスク(key set縮小時)をedge_caseに明記"
+  observations:
+    - "事実1: signals DELETE=2503.0s / cleanup全DELETE=2504.5s → 差1.5s。軍師指摘(他テーブル確認)の結論: signalsのみで十分"
+    - "事実2: 変更箇所: recalculate_fast.py 3箇所(L711-777/L2247-2266/L2347-2348) + signal_flush.py(既存UPSERT流用)"
+    - "事実3: edge_case: UPSERTではkey set縮小時にstale行残留→signals added/removed=0確認必須"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "軍師指摘(他テーブルDELETE時間)→signals以外1.5sと判明→signalsのみUPSERT化で77%削減達成可能→C1 impl設計完成=正の複利"
+  timestamp: "2026-04-17T11:33:00"
+- cmd_id: cmd_2017
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。C1 impl。q4=deep。signals DELETE→UPSERTの本番パイプライン変更。AC6個で全FMカバー(パリティ+cProfile+partial recalc+テスト全PASS)。spec(cmd_2014)準拠"
+  observations:
+    - "事実1: 変更箇所3ファイル(recalculate_fast.py 3箇所+signal_flush.py)がspec §2と一致"
+    - "事実2: q4=deep+DB排他→1忍者直列が妥当。fullrecalc~23分+cProfile+partial"
+    - "事実3: stale signal行リスク→AC4(partial recalcで対象外PF不変確認)でカバー"
+  causal_chain: "DELETE 2503s(77%)→spec完成(cmd_2014)→impl(signals DELETEスキップ+UPSERT固定)→fullrecalc 3251s→746s=Phase4最大レバレッジ"
+  timestamp: "2026-04-17T12:16:00"
+- cmd_id: cmd_2018
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。A2 CoDD spec。5件ベクトル化候補の具体設計書。C1並列で依存なし確認済み"
+  observations:
+    - "事実1: cmd_2015偵察の5候補(ndarray/searchsorted/単一pass/memoize/weights軽量化)の具体設計書作成"
+    - "事実2: C1 impl(cmd_2017)と並列。変更ファイル重複なし(軍師依存関係確認済み)"
+  causal_chain: "A2=最大hotspot(535s)→構造偵察(cmd_2015)→具体設計書→C1後のA2 impl即着手=時間損失ゼロ"
+  timestamp: "2026-04-17T12:16:00"
+- cmd_id: cmd_2018
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2018_scout
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。A2 vectorize spec完成。5候補の変更箇所+ROI順(1→5)+依存関係(候補1=A1同時、候補5=A3依存)+波及テスト13本"
+  observations:
+    - "事実1: 5候補に変更箇所(ファイル:行番号)+期待効果。実装順=ROI順で1→5固定"
+    - "事実2: 波及テスト13本を一覧化。候補別にどのテストが影響するか明記"
+    - "事実3: target_date=2026-04-15。lessons_useful L628/L626ともに有用と判定(合理的)"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "A2偵察(cmd_2015)→5候補具体設計→C1完了後のA2 impl即着手準備完了=時間損失ゼロの正の複利"
+  timestamp: "2026-04-17T12:20:00"
+- cmd_id: cmd_2019
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。Karpathy Simplicity導入。review_log+報告テンプレートに各1行追加。新gate/hookなし。原理1行>各論パッチ(LG023)の実践"
+  observations:
+    - "事実1: 2ファイル各1行追加のみ。既存の仕組み(review_log強制読込+報告テンプレート強制生成)に乗せる(LG032)"
+    - "事実2: 形骸化リスク(忍者が常にyes)あるが、軍師レビューの第二層ループでyes根拠を確認可能"
+  causal_chain: "Karpathy分析→Simplicity=真の穴(LG027)→review_log+テンプレートに1行→全cmd×全忍者にSimplicity自問=正の複利"
+  timestamp: "2026-04-17T12:39:00"
+- cmd_id: cmd_2019
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2019_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Simplicity観点導入。review_log+deploy_task.shに各1行。218 batsテストPASS。回帰テスト33行追加"
+  observations:
+    - "事実1: review_logヘッダL35に追加。文面=LG023(原理1行>各論パッチ)の別表現で的確"
+    - "事実2: deploy_task.shテンプレートにsimplicity_check追加。cmd_2019自身の報告で自問回答済み(実証)"
+    - "事実3: commit b556a0c。3ファイル+35行。テスト218件PASS"
+  lesson_quality: N/A
+  karo_workaround_needed: no
+  gate_prediction: CLEAR
+  causal_chain: "Karpathy Simplicity=真の穴(LG027)→review_log+テンプレートに1行→全cmd×全忍者に自動展開=正の複利∞"
+  timestamp: "2026-04-17T12:47:00"

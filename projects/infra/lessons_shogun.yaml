@@ -388,3 +388,10 @@ lessons:
   created_at: '2026-04-17'
   automated: true
   enforcement: 'GP-211(stop_check_inbox.sh結論突合警告)+lessons_shogun.yaml LS041(計測鵜呑み)'
+- id: 'LS043'
+  title: 'Karpathy Simplicity=真の穴 — 計測されていないものは改善ループが回らない'
+  detail: '事象: Karpathy4原則を分析。将軍はSurgical Changes(AC外変更検出)をROI 1位と判断→軍師がSG3+LG004で既カバーと現物確認で覆した(車輪の再発明)。真の穴はSimplicity(over-engineering検出)。karo_workaroundsに計測カテゴリが存在しない=計測されていないから見えていない(LG027の再発形)。教訓: (1)外部知見を取り入れる前に既存仕組みを現物確認(LS008/LS014) (2)計測されていないものは改善ループが回らない(LG027) (3)原理1行>各論パッチ(LG023): review_log+テンプレートに1行追加で全cmd×全忍者に効く'
+  source_cmd: 'cmd_2019'
+  created_at: '2026-04-17'
+  automated: true
+  enforcement: 'cmd_2019(Simplicity導入)+将軍直接実装(Think Before Coding)。review_logヘッダ+deploy_task.shテンプレートに各1行追加'
