@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | saizo | `scripts/cmd_save.sh` | Phase 5(再改善: 計測+実装+検証) | `1.06s → 0.98s` (`-7.5%`, warm median, reproduced save path) / delegated block path `0.90s → 0.71s` | spec+after: `docs/research/cmd_2035_codd_batch_7a_20260418.md` |
+| 2026-04-18 | saizo | `scripts/ninja_done.sh` | Phase 5(再改善: 計測+実装+検証) | `168ms → 80ms` (`-52.4%`, archived report success median) | spec+after: `docs/research/cmd_2035_codd_batch_7a_20260418.md` |
+| 2026-04-18 | saizo | `scripts/shutsujin_departure.sh` | Phase 5(再改善: 計測+実装+検証) | `170ms → 130ms` (`-23.5%`, `--dry-run` median) | spec+after: `docs/research/cmd_2035_codd_batch_7a_20260418.md` |
 | 2026-04-18 | hayate | `scripts/lesson_write.sh` | Phase 5(計測+実装+検証) | `133ms → 113ms` (`-15.0%`, same fixture average) | after: `docs/research/cmd_2036_codd_lesson_inbox_batch_20260418.md` |
 | 2026-04-18 | hayate | `scripts/sync_lessons.sh` | Phase 5(計測+実装+検証) | `80ms → 55ms` (`-31.3%`, same fixture average) | after: `docs/research/cmd_2036_codd_lesson_inbox_batch_20260418.md` |
 | 2026-04-18 | hayate | `scripts/inbox_write.sh` | Phase 5(計測+実装+検証)。lock-path軽量化 follow-up | `29ms → 26ms` (`-10.3%`, `/tmp` fixture average) | after: `docs/research/cmd_2036_codd_lesson_inbox_batch_20260418.md` |

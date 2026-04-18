@@ -151,8 +151,19 @@ cmd_block_get_field() {
 show_prior_attempts() {
     [[ -f "$QUALITY_LOG_FILE" ]] || return 0
 
-    local prior_output
-    prior_output=$(CMD_SAVE_CMD_ID="$CMD_ID" CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" python3 - <<'PY'
+    local prior_output cache_file cache_tmp cache_sig cached_sig
+    cache_file="/tmp/cmd_save_prior_attempts_${CMD_ID}.cache"
+    cache_sig="$(stat -c '%Y:%s' "$QUALITY_LOG_FILE" 2>/dev/null || echo "")"
+
+    if [[ -n "$cache_sig" && -f "$cache_file" ]]; then
+        IFS= read -r cached_sig < "$cache_file" || cached_sig=""
+        if [[ "$cached_sig" == "$cache_sig" ]]; then
+            prior_output="$(tail -n +2 "$cache_file")"
+        fi
+    fi
+
+    if [[ -z "${prior_output:-}" ]]; then
+        prior_output=$(CMD_SAVE_CMD_ID="$CMD_ID" CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" python3 - <<'PY'
 import os
 import yaml
 
@@ -189,6 +200,15 @@ for idx, entry in enumerate(filtered, start=1):
         print(f"Attempt {idx}: {reason}")
 PY
 )
+        if [[ -n "$cache_sig" ]]; then
+            cache_tmp="$(mktemp)"
+            {
+                printf '%s\n' "$cache_sig"
+                printf '%s\n' "$prior_output"
+            } > "$cache_tmp"
+            mv "$cache_tmp" "$cache_file"
+        fi
+    fi
 
     PRIOR_ATTEMPT_COUNT=$(echo "$prior_output" | head -n1 | tr -d '[:space:]')
     [[ "${PRIOR_ATTEMPT_COUNT:-0}" =~ ^[0-9]+$ ]] || PRIOR_ATTEMPT_COUNT=0
@@ -435,7 +455,7 @@ QG_TEMPLATE
     _PF_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
     _PF_AC_COUNT=$(( ${_PF_AC_COUNT:-0} + 0 ))
     if [ "$_PF_AC_COUNT" -ge 3 ]; then
-        if ! cmd_block_has_field "assumptions"; then
+        if ! cmd_block_has_field "assumptions" && ! cmd_block_has_field "quality_gate.assumptions"; then
             MISSING_KEYS+=("assumptions")
             MISSING_HINTS+=('  assumptions: [{claim: "...", source: "...", trust: "verified"}]')
         fi
@@ -617,32 +637,79 @@ QG_TEMPLATE
             found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         ')
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
-            _Q11_TARGETS=$(printf '%s\n' "$_Q11_COMMAND_SECTION" | grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)|[A-Za-z0-9_./-]+\.(sh|py)' | sort -u || true)
+            _Q11_TARGETS=$(
+                printf '%s\n' "$_Q11_COMMAND_SECTION" \
+                    | grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)|[A-Za-z0-9_./-]+\.(sh|py)' \
+                    | awk '
+                        function basename_of(path, parts, n) {
+                            n = split(path, parts, "/")
+                            return parts[n]
+                        }
+                        {
+                            item = $0
+                            base = basename_of(item)
+                            items[++count] = item
+                            if (item ~ /\//) {
+                                has_path[base] = 1
+                            }
+                        }
+                        END {
+                            for (i = 1; i <= count; i++) {
+                                item = items[i]
+                                base = basename_of(item)
+                                if (item !~ /\// && has_path[base]) {
+                                    continue
+                                }
+                                if (!seen[item]++) {
+                                    print item
+                                }
+                            }
+                        }
+                    ' \
+                    || true
+            )
             if [[ -n "${_Q11_TARGETS:-}" ]]; then
+                _Q11_CANDIDATE_DOCS=""
+                if command -v rg >/dev/null 2>&1; then
+                    _Q11_PATTERN_ARGS=()
+                    while IFS= read -r _q11_target; do
+                        [[ -z "$_q11_target" ]] && continue
+                        _Q11_PATTERN_ARGS+=(-e "$_q11_target")
+                        _q11_base="${_q11_target##*/}"
+                        if [[ "$_q11_base" != "$_q11_target" ]]; then
+                            _Q11_PATTERN_ARGS+=(-e "$_q11_base")
+                        fi
+                    done <<< "$_Q11_TARGETS"
+                    _Q11_CANDIDATE_DOCS=$(rg -l -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                else
+                    _Q11_PATTERN_ARGS=()
+                    while IFS= read -r _q11_target; do
+                        [[ -z "$_q11_target" ]] && continue
+                        _Q11_PATTERN_ARGS+=(-e "$_q11_target")
+                        _q11_base="${_q11_target##*/}"
+                        if [[ "$_q11_base" != "$_q11_target" ]]; then
+                            _Q11_PATTERN_ARGS+=(-e "$_q11_base")
+                        fi
+                    done <<< "$_Q11_TARGETS"
+                    _Q11_CANDIDATE_DOCS=$(grep -rl -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                fi
+
                 _Q11_ANY_MATCH=false
                 while IFS= read -r _q11_target; do
                     [[ -z "$_q11_target" ]] && continue
                     _q11_base="${_q11_target##*/}"
-                    # rg優先、未インストール環境はgrep -rl にフォールバック
-                    # 同一ターゲット/basenameを単一走査にまとめ、docs/researchの再読込を削減する
-                    if command -v rg >/dev/null 2>&1; then
+                    _Q11_MATCHES=""
+                    while IFS= read -r _q11_doc; do
+                        [[ -z "$_q11_doc" ]] && continue
                         if [[ "$_q11_base" == "$_q11_target" ]]; then
-                            _Q11_MATCHES=$(rg -l -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                            grep -Fq -- "$_q11_target" "$_q11_doc" 2>/dev/null || continue
                         else
-                            _Q11_MATCHES=$(rg -l -F -e "$_q11_target" -e "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                            grep -Fq -- "$_q11_target" "$_q11_doc" 2>/dev/null \
+                                || grep -Fq -- "$_q11_base" "$_q11_doc" 2>/dev/null \
+                                || continue
                         fi
-                    else
-                        if [[ "$_q11_base" == "$_q11_target" ]]; then
-                            _Q11_MATCHES=$(grep -rl -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
-                        else
-                            _Q11_MATCHES=$(
-                                {
-                                    grep -rl -F "$_q11_target" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
-                                    grep -rl -F "$_q11_base" "$_Q11_RESEARCH_DIR" 2>/dev/null || true
-                                } | sort -u
-                            )
-                        fi
-                    fi
+                        _Q11_MATCHES+="${_q11_doc}"$'\n'
+                    done <<< "$_Q11_CANDIDATE_DOCS"
                     [[ -z "${_Q11_MATCHES:-}" ]] && continue
                     if [[ "$_Q11_ANY_MATCH" == false ]]; then
                         echo "INFO: 関連する既存成果物を検出:" >&2

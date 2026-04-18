@@ -41,6 +41,14 @@ $(sed -n '/# q4_depth: 段階的導入/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRI
 }"
     export -f check_q4_depth
 
+    # check_quality_gate が依存する helper 群
+    eval "$(sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^load_cmd_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field
+
     # check_quality_gate: Check 3インラインセクション(質問ゲートブロック)を関数化 + 成功時OK出力
     local _qg_start _qg_end
     _qg_start=$(grep -n '# --- Check 3: quality_gate' "$SRC_SAVE_SCRIPT" | head -1 | cut -d: -f1)
@@ -77,6 +85,10 @@ setup() {
     export CMD_ID="cmd_test"
     export CMD_BLOCK=""
     export CMD_BLOCK_NC=""
+    export CMD_BLOCK_LOADED=0
+    export CMD_BLOCK_FOUND=0
+    export CMD_BLOCK_CACHE_LOADED=0
+    declare -gA CMD_BLOCK_CACHE=()
     # --jobs 8並列実行時の競合を回避するためQUEUE_FILEをテストごとに一意化
     export QUEUE_FILE="${TEST_SHARED_TMP}/queue/shogun_to_karo_${BATS_TEST_NUMBER}.yaml"
 }
@@ -91,8 +103,13 @@ create_queue_file() {
 # --- ヘルパー: CMD_BLOCK/CMD_BLOCK_NCをQUEUE_FILEから設定 ---
 _setup_cmd_block() {
     local cid="${1:-$CMD_ID}"
+    CMD_BLOCK_LOADED=1
+    CMD_BLOCK_FOUND=0
+    CMD_BLOCK_CACHE_LOADED=0
+    declare -gA CMD_BLOCK_CACHE=()
     CMD_BLOCK=$(awk "/^  ${cid}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
     CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+    [[ -n "$CMD_BLOCK" ]] && CMD_BLOCK_FOUND=1
     export CMD_BLOCK CMD_BLOCK_NC
 }
 
@@ -945,8 +962,11 @@ YAML
 # --- Check3-q4: q4_depth ---
 
 @test "Check3-q4: q4_depth=deepでWARNING表示" {
-    CMD_BLOCK_NC='    q4_depth: "deep — 全忍者投入の万全偵察"'
-    export CMD_BLOCK_NC
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    declare -gA CMD_BLOCK_CACHE=()
+    CMD_BLOCK_NC=$'    quality_gate:\n      q4_depth: "deep — 全忍者投入の万全偵察"'
+    export CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED
     run check_q4_depth
     echo "$output" >&2
     [[ "$output" == *"q4_depth=deep/medium"* ]]
@@ -956,8 +976,11 @@ YAML
 }
 
 @test "Check3-q4: q4_depth=mediumでWARNING表示" {
-    CMD_BLOCK_NC='    q4_depth: "medium — 2忍者並列"'
-    export CMD_BLOCK_NC
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    declare -gA CMD_BLOCK_CACHE=()
+    CMD_BLOCK_NC=$'    quality_gate:\n      q4_depth: "medium — 2忍者並列"'
+    export CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED
     run check_q4_depth
     echo "$output" >&2
     [[ "$output" == *"q4_depth=deep/medium"* ]]
@@ -966,8 +989,11 @@ YAML
 }
 
 @test "Check3-q4: q4_depth=shallowでWARNINGなし" {
-    CMD_BLOCK_NC='    q4_depth: "shallow — 1忍者で完結"'
-    export CMD_BLOCK_NC
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    declare -gA CMD_BLOCK_CACHE=()
+    CMD_BLOCK_NC=$'    quality_gate:\n      q4_depth: "shallow — 1忍者で完結"'
+    export CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED
     run check_q4_depth
     echo "$output" >&2
     [[ "$output" != *"q4_depth=deep/medium"* ]]
@@ -976,8 +1002,11 @@ YAML
 }
 
 @test "Check3-q4: q4_depth未記入で従来WARNING表示" {
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    declare -gA CMD_BLOCK_CACHE=()
     CMD_BLOCK_NC='    q1_firefighting: "no"'
-    export CMD_BLOCK_NC
+    export CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED
     run check_q4_depth
     echo "$output" >&2
     [[ "$output" == *"q4_depth未記入"* ]]

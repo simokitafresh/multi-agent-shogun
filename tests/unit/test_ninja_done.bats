@@ -70,7 +70,7 @@ EOF
     run bash "$TEST_ROOT/scripts/ninja_done.sh" hayate cmd_124
     [ "$status" -eq 0 ]
     [ -f "$TEST_ROOT/inbox_write_calls.log" ]
-    grep -F "karo hayate、任務完了。報告YAML確認されたし。 report_received hayate" \
+    grep -F "karo hayate、任務完了。報告YAML確認されたし。 report_received hayate notify_karo" \
         "$TEST_ROOT/inbox_write_calls.log"
 }
 
