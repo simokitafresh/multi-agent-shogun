@@ -184,9 +184,10 @@ for pattern, count in reason_counter.most_common():
         msg = f'高頻度FAIL: {pattern} ({count}回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり'
     else:
         continue
-    # Deduplicate: normalize msg (unescape \" → ") then check prefix against decoded insights
-    msg_norm = msg.replace('\\"', '"')
-    if any(msg_norm[:80] in ex for ex in existing_insights):
+    # Deduplicate: normalize pattern (unescape \" → ") and check if it's in any existing insight
+    # Use pattern (not full msg with count) since count changes each run
+    pattern_norm = pattern.replace('\\"', '"')
+    if any(pattern_norm[:60] in ex.replace('\\"', '"') for ex in existing_insights):
         continue
     new_insights.append(msg)
 
