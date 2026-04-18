@@ -108,13 +108,15 @@ fi
 MARKER_START="<!-- DASHBOARD_AUTO_START -->"
 MARKER_END="<!-- DASHBOARD_AUTO_END -->"
 
-TMPFILE=$(mktemp)
-TMP_METRICS=$(mktemp)
-TMP_PIPELINE=$(mktemp)
-TMP_RESULTS=$(mktemp)
-TMP_TITLES=$(mktemp)
-TMP_RECENT=$(mktemp)
-trap 'rm -f "$TMPFILE" "$TMP_METRICS" "$TMP_PIPELINE" "$TMP_RESULTS" "$TMP_TITLES" "$TMP_RECENT" "${_TMP_CTX_WARN:-}" "${_CFC_CACHE:-}" "${_TMP_CI_STATUS:-}"' EXIT
+# GP-cmd_2081: mktemp×6→mktemp -d(固定パス使用)で6回syscallを1回に削減(~12ms)
+_TMP_DIR=$(mktemp -d)
+TMPFILE="$_TMP_DIR/main"
+TMP_METRICS="$_TMP_DIR/metrics"
+TMP_PIPELINE="$_TMP_DIR/pipeline"
+TMP_RESULTS="$_TMP_DIR/results"
+TMP_TITLES="$_TMP_DIR/titles"
+TMP_RECENT="$_TMP_DIR/recent"
+trap 'rm -rf "$_TMP_DIR"' EXIT
 
 NOW=$(TZ=Asia/Tokyo date '+%H:%M')
 
@@ -238,6 +240,7 @@ start_ci_status_refresh_async() {
 
 # ─── Build cmd→ninjas mapping (from task YAMLs) ───
 # GP-cmd_1981: grep+sed×2+tr×6回 → 単一awk(~20ms削減)
+# GP-cmd_2081: task files MTIMEキャッシュ — stat+tr subshell排除→-nt演算子(~50ms削減)
 declare -A CMD_NINJAS=()
 declare -A NINJA_CMD=()
 _task_files_arr=()
@@ -246,6 +249,39 @@ for _tnn in $ALL_NINJAS; do
     [[ -f "$_tf" ]] && _task_files_arr+=("$_tf")
 done
 if [[ ${#_task_files_arr[@]} -gt 0 ]]; then
+    _TASK_MAP_CACHE="/tmp/das_task_map_${_proj_hash}.txt"
+    _TASK_MAP_KEY="/tmp/das_task_map_${_proj_hash}.key"
+    _task_cache_hit=true
+    if [[ ! -s "$_TASK_MAP_CACHE" ]] || [[ ! -f "$_TASK_MAP_KEY" ]]; then
+        _task_cache_hit=false
+    else
+        for _nt_tf in "${_task_files_arr[@]}"; do
+            if [[ "$_nt_tf" -nt "$_TASK_MAP_KEY" ]]; then
+                _task_cache_hit=false
+                break
+            fi
+        done
+    fi
+    if [[ "$_task_cache_hit" == true ]]; then
+        _task_map_src="$_TASK_MAP_CACHE"
+    else
+        awk '
+            FNR == 1 {
+                fname = FILENAME
+                sub(/.*\//, "", fname)
+                sub(/\.yaml$/, "", fname)
+                ninja = fname
+            }
+            /^[[:space:]]*parent_cmd:/ {
+                v = $0
+                sub(/.*parent_cmd:[[:space:]]*/, "", v)
+                gsub(/["'"'"'[:space:]]/, "", v)
+                if (v != "") { print ninja "|" v; nextfile }
+            }
+        ' "${_task_files_arr[@]}" > "$_TASK_MAP_CACHE" 2>/dev/null || true
+        touch "$_TASK_MAP_KEY" 2>/dev/null || true
+        _task_map_src="$_TASK_MAP_CACHE"
+    fi
     while IFS='|' read -r _n _pcmd; do
         [[ -z "$_pcmd" ]] && continue
         NINJA_CMD[$_n]="$_pcmd"
@@ -255,20 +291,7 @@ if [[ ${#_task_files_arr[@]} -gt 0 ]]; then
         else
             CMD_NINJAS[$_pcmd]="$jp"
         fi
-    done < <(awk '
-        FNR == 1 {
-            fname = FILENAME
-            sub(/.*\//, "", fname)
-            sub(/\.yaml$/, "", fname)
-            ninja = fname
-        }
-        /^[[:space:]]*parent_cmd:/ {
-            v = $0
-            sub(/.*parent_cmd:[[:space:]]*/, "", v)
-            gsub(/["'"'"'[:space:]]/, "", v)
-            if (v != "") { print ninja "|" v; nextfile }
-        }
-    ' "${_task_files_arr[@]}")
+    done < "$_task_map_src"
 fi
 
 # ─── Get idle list from snapshot ───
@@ -406,25 +429,28 @@ KM_TASK_TYPE_ROWS=""
 MODEL_SCOREBOARD_ROWS=""
 # GP-082: Unified gawk archive scan (titles + project/status/date in one pass)
 # GP-083: archiveファイル数キャッシュ（不変ファイルの再スキャン防止）
-_TMP_CTX_WARN=$(mktemp)
-_CFC_CACHE=$(mktemp)
+_TMP_CTX_WARN="$_TMP_DIR/ctx_warn"
+_CFC_CACHE="$_TMP_DIR/cfc"
 _ARCH_TITLES_CACHE="/tmp/dashboard_arch_titles_cache_${_proj_hash}.txt"
 _ARCH_CFC_CACHE="/tmp/dashboard_arch_cfc_cache_${_proj_hash}.txt"
 _ARCH_COUNT_CACHE="/tmp/dashboard_arch_count_cache_${_proj_hash}.txt"
+# GP-cmd_2081: ディレクトリmtimeキャッシュ — globを-nt比較で回避(~24ms削減)
+_ARCH_MTIME_CACHE="/tmp/dashboard_arch_mtime_${_proj_hash}.txt"
 # trap統合済み（L71に一本化）— ここでの再定義は不要
 if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
-    shopt -s nullglob
-    _arch_files=("$ARCHIVE_CMD_DIR"/cmd_*.yaml)
-    shopt -u nullglob
-    _arch_count=${#_arch_files[@]}
-    _cached_arch_count=$(cat "$_ARCH_COUNT_CACHE" 2>/dev/null || echo "0")
-    if (( _arch_count > 0 )); then
-        if [[ "$_arch_count" == "$_cached_arch_count" ]] && [[ -f "$_ARCH_TITLES_CACHE" ]] && [[ -f "$_ARCH_CFC_CACHE" ]]; then
-            # キャッシュヒット: アーカイブファイル数未変更
-            cat "$_ARCH_TITLES_CACHE" >> "$TMP_TITLES"
-            cat "$_ARCH_CFC_CACHE" > "$_CFC_CACHE"
-        else
-            # キャッシュミス: フルスキャン+キャッシュ更新
+    # GP-cmd_2081: globを-nt比較に置換 — dir mtime変化時のみ再スキャン(~24ms削減)
+    if [[ -f "$_ARCH_MTIME_CACHE" ]] && [[ ! "$ARCHIVE_CMD_DIR" -nt "$_ARCH_MTIME_CACHE" ]] && \
+       [[ -f "$_ARCH_TITLES_CACHE" ]] && [[ -f "$_ARCH_CFC_CACHE" ]]; then
+        # キャッシュヒット: glob不要
+        cat "$_ARCH_TITLES_CACHE" >> "$TMP_TITLES"
+        cat "$_ARCH_CFC_CACHE" > "$_CFC_CACHE"
+    else
+        # キャッシュミス: glob + gawk + キャッシュ更新
+        shopt -s nullglob
+        _arch_files=("$ARCHIVE_CMD_DIR"/cmd_*.yaml)
+        shopt -u nullglob
+        if (( ${#_arch_files[@]} > 0 )); then
+            # フルスキャン
             gawk -v titles_out="$TMP_TITLES" -v cfc_out="$_CFC_CACHE" '
                 BEGINFILE {
                     fname = FILENAME; sub(/.*\//, "", fname)
@@ -460,7 +486,7 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
             # キャッシュ保存
             cp "$TMP_TITLES" "$_ARCH_TITLES_CACHE" 2>/dev/null || true
             cp "$_CFC_CACHE" "$_ARCH_CFC_CACHE" 2>/dev/null || true
-            echo "$_arch_count" > "$_ARCH_COUNT_CACHE"
+            touch "$_ARCH_MTIME_CACHE" 2>/dev/null || true
         fi
     fi
 fi
@@ -480,7 +506,7 @@ else
 fi
 # GP-083: ci_status_check.sh parallel launch (2.3s network call)
 # GP-XXX: TTL cache (60s) — skip network call on consecutive runs
-_TMP_CI_STATUS=$(mktemp)
+_TMP_CI_STATUS="$_TMP_DIR/ci_status"
 _PID_CI=""
 _ci_age=999
 if [[ -f "$CI_STATUS_CACHE_TS" ]]; then
