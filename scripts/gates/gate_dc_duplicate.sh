@@ -18,7 +18,10 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+_self="$0"
+SCRIPT_DIR="${_self%/*}"
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+SCRIPT_DIR="${SCRIPT_DIR%/scripts/gates}"
 PENDING_DECISIONS="$SCRIPT_DIR/queue/pending_decisions.yaml"
 
 REPORT_FILE="${1:-}"
@@ -35,6 +38,25 @@ fi
 
 if [ ! -f "$PENDING_DECISIONS" ]; then
     echo "SKIP: pending_decisions.yaml not found"
+    exit 0
+fi
+
+# Fast-path: bash-only check for decision_candidate.found before spawning python3
+if ! grep -q '^decision_candidate:' "$REPORT_FILE" 2>/dev/null; then
+    echo "SKIP: decision_candidate not found"
+    exit 0
+fi
+# found: true を探す (decision_candidate ブロック内の最初の found: 行を確認)
+_found_val=$(awk '
+    /^decision_candidate:/ { in_dc=1; next }
+    in_dc && /^[^[:space:]]/ { exit }
+    in_dc && /^[[:space:]]+found:[[:space:]]*(true|false)/ {
+        match($0, /found:[[:space:]]*(true|false)/, a)
+        print a[1]; exit
+    }
+' "$REPORT_FILE")
+if [ "$_found_val" != "true" ]; then
+    echo "SKIP: decision_candidate.found is not true"
     exit 0
 fi
 

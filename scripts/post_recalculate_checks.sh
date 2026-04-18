@@ -65,7 +65,6 @@ import json
 import os
 import socket
 import sys
-from collections import defaultdict
 from datetime import date
 from urllib.parse import urlparse
 
@@ -89,47 +88,62 @@ def connect():
 
 def load_portfolios(conn):
     with conn.cursor() as cur:
-        cur.execute("SELECT id, name, type, config, is_active FROM portfolios ORDER BY name")
+        cur.execute(
+            """
+            WITH monthly_stats AS (
+                SELECT
+                    portfolio_id,
+                    COUNT(*)::int AS month_count,
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN prev_month IS NOT NULL
+                                 AND month_start <> (prev_month + INTERVAL '1 month')::date
+                                THEN 1
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    )::int AS gap_count
+                FROM (
+                    SELECT
+                        portfolio_id,
+                        to_date(year_month || '-01', 'YYYY-MM-DD') AS month_start,
+                        LAG(to_date(year_month || '-01', 'YYYY-MM-DD'))
+                            OVER (PARTITION BY portfolio_id ORDER BY year_month) AS prev_month
+                    FROM monthly_returns
+                ) monthly_scan
+                GROUP BY portfolio_id
+            ),
+            latest_signals AS (
+                SELECT DISTINCT ON (portfolio_id)
+                    portfolio_id,
+                    date AS latest_signal_date,
+                    holding_signal AS latest_holding_signal
+                FROM signals
+                ORDER BY portfolio_id, date DESC
+            )
+            SELECT
+                p.id,
+                p.name,
+                p.type,
+                p.config,
+                p.is_active,
+                COALESCE(ms.month_count, 0) AS month_count,
+                COALESCE(ms.gap_count, 0) AS gap_count,
+                ls.latest_signal_date,
+                ls.latest_holding_signal
+            FROM portfolios p
+            LEFT JOIN monthly_stats ms ON ms.portfolio_id = p.id
+            LEFT JOIN latest_signals ls ON ls.portfolio_id = p.id
+            ORDER BY p.name
+            """
+        )
         cols = [d[0] for d in cur.description]
         portfolios = [dict(zip(cols, row)) for row in cur.fetchall()]
 
     all_pf_ids = {pf["id"] for pf in portfolios}
     return portfolios, all_pf_ids
-
-
-def load_monthly_returns(conn):
-    monthly_returns = defaultdict(list)
-    with conn.cursor() as cur:
-        cur.execute(
-            "SELECT portfolio_id, year_month FROM monthly_returns ORDER BY portfolio_id, year_month"
-        )
-        for portfolio_id, year_month in cur.fetchall():
-            monthly_returns[portfolio_id].append(year_month)
-    return monthly_returns
-
-
-def load_latest_signals(conn):
-    latest_signals = {}
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT s.portfolio_id, s.date, s.holding_signal
-            FROM signals s
-            JOIN (
-                SELECT portfolio_id, MAX(date) AS max_date
-                FROM signals
-                GROUP BY portfolio_id
-            ) latest
-              ON latest.portfolio_id = s.portfolio_id
-             AND latest.max_date = s.date
-            """
-        )
-        for portfolio_id, signal_date, holding_signal in cur.fetchall():
-            latest_signals[portfolio_id] = {
-                "date": signal_date,
-                "holding_signal": holding_signal,
-            }
-    return latest_signals
 
 
 def parse_config(raw_config):
@@ -154,8 +168,6 @@ def run_checks():
         print("=" * 60)
 
         portfolios, all_pf_ids = load_portfolios(conn)
-        monthly_returns_by_pf = load_monthly_returns(conn)
-        latest_signals_by_pf = load_latest_signals(conn)
 
         today = date.today()
         prev_month = today.month - 1
@@ -182,29 +194,13 @@ def run_checks():
                     issues.append("FAIL:pipeline_config missing")
 
             # (1b) monthly_returns連続性
-            year_months = monthly_returns_by_pf.get(pf_id, [])
-
-            if not year_months:
+            if pf["month_count"] == 0:
                 issues.append("FAIL:no monthly_returns")
-            else:
-                parsed = []
-                for ym in year_months:
-                    parts = ym.split("-")
-                    parsed.append((int(parts[0]), int(parts[1])))
-                parsed.sort()
-                gaps = []
-                for i in range(1, len(parsed)):
-                    py, pm = parsed[i - 1]
-                    cy, cm = parsed[i]
-                    ey, em = (py, pm + 1) if pm < 12 else (py + 1, 1)
-                    if (cy, cm) != (ey, em):
-                        gaps.append(f"{py}-{pm:02d}>{cy}-{cm:02d}")
-                if gaps:
-                    issues.append(f"FAIL:return_gaps({len(gaps)})")
+            elif pf["gap_count"] > 0:
+                issues.append(f"FAIL:return_gaps({pf['gap_count']})")
 
             # (1c) signals最新性
-            latest_signal = latest_signals_by_pf.get(pf_id)
-            latest_sig = latest_signal["date"] if latest_signal else None
+            latest_sig = pf["latest_signal_date"]
 
             if latest_sig is None:
                 issues.append("FAIL:no signals")
@@ -288,10 +284,8 @@ def run_checks():
         checked_pfs = []
 
         for pf in standard_pfs:
-            pf_id = pf["id"]
             pf_name = pf["name"]
-            latest_signal = latest_signals_by_pf.get(pf_id)
-            holding_signal = latest_signal["holding_signal"] if latest_signal else None
+            holding_signal = pf["latest_holding_signal"]
             if holding_signal:
                 checked_pfs.append(pf_name)
                 if holding_signal == "Cash":

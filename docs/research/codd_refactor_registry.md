@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | hanzo | `scripts/gates/gate_report_autofix.sh` | Phase 5(計測+実装+検証) | `~50ms → ~9ms` (`-82%`, NO-FIX-NEEDED fast path median) | fast_no_fix_needed awk正規表現修正(binary_checks `4sp check/result`の誤検出除去+`result`値チェック統合)+SCRIPT_DIR文字列演算化。20/20テストPASS。(spec省略) |
+| 2026-04-18 | hanzo | `scripts/gates/gate_dc_duplicate.sh` | Phase 5(計測+実装+検証) | `~37ms → ~12ms` (`-68%`, SKIP/found:false path median) | bash早期チェック追加(grep+awk で `decision_candidate.found` を判定しpython3起動を回避)+SCRIPT_DIR文字列演算化。機能テストPASS。(spec省略) |
+| 2026-04-18 | hanzo | `scripts/gates/gate_cmd_state.sh` | Phase 5(計測+実装+検証) | `~20ms → ~17ms` (`-15%`, no-pending-cmds path median) | SCRIPT_DIR文字列演算化+source yaml_field_set.sh のlazy load(pending cmdsある場合のみ)。8/8テストPASS。(spec省略) |
 | 2026-04-18 | hayate | `scripts/lesson_harvest.sh` | Phase 5(再改善: 計測+実装+検証) | `10.57s → 3.55s` (`-66.4%`, 3-run median) | spec+after: `docs/research/cmd_2043_codd_infra_batch_11a_20260418.md` |
 | 2026-04-18 | hayate | `scripts/post_recalculate_checks.sh` | Phase 5(再改善: 計測+実装+検証) | `2.23s → 2.15s` (`-3.6%`, 3-run median, live before 2.50s) | spec+after: `docs/research/cmd_2043_codd_infra_batch_11a_20260418.md` |
 | 2026-04-18 | hayate | `scripts/model_switch_preflight.sh` | Phase 5(再改善: 計測+実装+検証) | `1.23s → 0.34s` (`-72.4%`, 3-run median) | spec+after: `docs/research/cmd_2043_codd_infra_batch_11a_20260418.md` |

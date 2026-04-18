@@ -86,27 +86,41 @@ def extract_lesson_field(value):
 
 
 def load_registered_titles():
+    rg_env = os.environ.copy()
+    rg_env["LC_ALL"] = "C"
+    cmd = [
+        "rg",
+        "-uuu",
+        "-n",
+        r"^\s+title:\s*",
+        "--glob",
+        "**/lessons.yaml",
+        "--glob",
+        "**/lessons_archive.yaml",
+        str(projects_dir),
+    ]
+    proc = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+        env=rg_env,
+    )
+    if proc.returncode not in (0, 1):
+        raise RuntimeError(proc.stderr.strip() or "rg failed")
+
     titles = set()
-    for lessons_file in sorted(projects_dir.glob("*/lessons.yaml")):
+    for line in proc.stdout.splitlines():
         try:
-            with lessons_file.open(encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-            if data and isinstance(data, dict):
-                for lesson in data.get("lessons", []):
-                    if isinstance(lesson, dict) and lesson.get("title"):
-                        titles.add(str(lesson["title"]).strip())
-        except Exception:
-            pass
-    for archive_file in sorted(projects_dir.glob("*/lessons_archive.yaml")):
-        try:
-            with archive_file.open(encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-            if data and isinstance(data, dict):
-                for lesson in data.get("lessons", []):
-                    if isinstance(lesson, dict) and lesson.get("title"):
-                        titles.add(str(lesson["title"]).strip())
-        except Exception:
-            pass
+            _, _, text = line.split(":", 2)
+        except ValueError:
+            continue
+        raw = text.split(":", 1)[1].strip()
+        title = str(parse_inline_scalar(raw) or "").strip()
+        if title:
+            titles.add(title)
     return titles
 
 

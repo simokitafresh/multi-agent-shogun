@@ -104,3 +104,23 @@ EOF
     [[ "$output" == *"未登録候補: 1件"* ]]
     [[ "$output" == *"task_900 | kagemaru | block scalar title | first line of detail second line of detail"* ]]
 }
+
+@test "does not treat skill_candidate found:true as lesson candidate" {
+    cat > "$TEST_ARCHIVE/tobisaru_report_cmd_700.yaml" <<'EOF'
+worker_id: tobisaru
+task_id: cmd_700_impl
+parent_cmd: cmd_700
+lesson_candidate:
+  found: false
+  title: lesson should stay ignored
+  detail: ignored detail
+skill_candidate:
+  found: true
+  name: repeated-skill
+  description: repeated steps
+EOF
+
+    run_harvest
+    [ "$status" -eq 0 ]
+    [ "$output" = "未登録候補なし" ]
+}

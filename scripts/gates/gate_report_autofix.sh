@@ -83,9 +83,10 @@ fast_no_fix_needed() {
         }
 
         section == "binary_checks" {
-            if ($0 ~ /^[[:space:]]{2}[^:]+:[[:space:]]+[^[:space:]]/) need_python = 1
-            if ($0 ~ /^[[:space:]]{4}(check|result):/) need_python = 1
+            if ($0 ~ /^[[:space:]]{2}[^-[:space:]][^:]*:[[:space:]]+[^[:space:]]/) need_python = 1
+            if ($0 ~ /^[[:space:]]{4}check:/) need_python = 1
             if ($0 ~ /^[[:space:]]{4}-[[:space:]]/ && $0 !~ /^[[:space:]]{4}-[[:space:]]check:/) need_python = 1
+            if ($0 ~ /^[[:space:]]{4}result:/ && $0 !~ /^[[:space:]]{4}result:[[:space:]]*"?(yes|no)"?[[:space:]]*$/) need_python = 1
             if ($0 ~ /^[[:space:]]{6}result:/ && $0 !~ /^[[:space:]]{6}result:[[:space:]]*"?(yes|no)"?[[:space:]]*$/) need_python = 1
         }
 
@@ -109,8 +110,10 @@ if fast_no_fix_needed "$REPORT_PATH"; then
     exit 0
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+SCRIPT_DIR="${_self%/*}"
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+REPO_ROOT="${SCRIPT_DIR%/scripts/gates}"
 PY_HELPER="$SCRIPT_DIR/gate_report_autofix_main.py"
 RESULT=$(python3 "$PY_HELPER" "$REPORT_PATH" 2>&1) || true
 

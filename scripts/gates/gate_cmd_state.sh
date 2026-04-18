@@ -15,13 +15,14 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+_self="$0"
+SCRIPT_DIR="${_self%/*}"
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+SCRIPT_DIR="${SCRIPT_DIR%/scripts/gates}"
 SHOGUN_TO_KARO="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 KARO_INBOX="$SCRIPT_DIR/queue/inbox/karo.yaml"
 DASHBOARD="$SCRIPT_DIR/dashboard.md"
 SNAPSHOT="$SCRIPT_DIR/queue/karo_snapshot.txt"
-
-source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 
 HAS_ALERT=0
 HAS_WARN=0
@@ -64,6 +65,10 @@ if [ ${#CMD_IDS[@]} -eq 0 ]; then
     echo "--- 総合判定: OK ---"
     exit 0
 fi
+
+# pending cmds がある場合のみ yaml_field_set.sh をロード
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 
 for cmd_id in "${CMD_IDS[@]}"; do
     CHECKED=$((CHECKED + 1))
