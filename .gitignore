@@ -181,6 +181,8 @@ queue/ntfy_batch_queue.txt
 !docs/*.md
 !docs/research/
 !docs/research/*.md
+!docs/research/systems-knowledge-base/
+!docs/research/systems-knowledge-base/**
 
 # Screenshots (masked — no secrets)
 !images/
