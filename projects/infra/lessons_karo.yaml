@@ -457,3 +457,8 @@ lessons:
   detail: 'cmd_complete_gate.shのvercel_phase gateがgit log --grep=CMD_IDでcmd固有commitを検出する際、choreコミットメッセージ内の文脈説明(例:''cmd_2066前後'')を部分一致で拾い無関係なcontext変更を誤認→偽陽性BLOCK。修正: chore:コミットを除外してからdiff-tree。cmd_2066 GATE BLOCK事故で実証。commit:a2c9697(軍師修正)'
   source_cmd: 'cmd_2066'
   created_at: '2026-04-18'
+- id: 'LK084'
+  title: 'bash -lcはPATHをリセットしMOCK_BINを無効化する — CIテストではbash -cを使え'
+  detail: 'batsテストでbash -lcを使うとログインシェル起動でPATHがリセットされ、MOCK_BIN(テスト用偽コマンド)がPATHから消える。CIの並列実行環境で顕著。SSH/SLテスト8箇所で発生(999-1006)。修正: bash -lcをbash -cに変更。mktemp raceも同時解消(#571)。cmd_karo_ci_fix_571(影丸)で実証'
+  source_cmd: 'cmd_karo_ci_fix_571'
+  created_at: '2026-04-18'

@@ -3795,3 +3795,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunでは同一スクリプトが148ms。WSL2のWindows FSオーバーヘッドがpython3プロセス起動コストを倍増させる。コスト削減はプロセス数削減で初めて実効性を持つ。
+
+### L497: bash -lcによるPATHリセット: CI並列テストでMOCK_BIN無効化
+- **日付**: 2026-04-18
+- **出典**: cmd_karo_ci_fix_571
+- **記録者**: kagemaru
+- **status**: draft
+- **tags**: [universal]
+- bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport PATH=$MOCK_BIN:$PATHを設定してもbash -lcサブシェルで無効化される。CI環境はtmuxが非インストールのためMOCK_BINのモックが必要だが機能せず失敗。bash -cに変更で解決。ローカル実行は実tmux存在で発現しない。
