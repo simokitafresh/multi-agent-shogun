@@ -22,6 +22,21 @@ if [[ "${GATE_BLOCK_REASON:-}" == draft_lessons* ]]; then
     exit 0
 fi
 
+# Fast pre-check: lesson_candidate.found must be exactly 'true' (awk, no python3 startup)
+_found_val=$(awk '
+    /^lesson_candidate:/ { in_lc=1; next }
+    in_lc && /^[^ \t]/ { exit }
+    in_lc && /^[[:space:]]+found:[[:space:]]*/ {
+        sub(/^[[:space:]]+found:[[:space:]]*/, "")
+        gsub(/[[:space:]]/, "")
+        print; exit
+    }
+' "$REPORT_PATH")
+if [ "$_found_val" != "true" ]; then
+    echo "[auto_draft] Skipped: not_found (${REPORT_PATH})"
+    exit 0
+fi
+
 # Extract lesson_candidate fields from report YAML
 export REPORT_PATH
 extract_result=$(python3 << 'PYEOF'

@@ -13,6 +13,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-18 | saizo | `scripts/gates/gate_karo_startup.sh` | Phase 5(再改善: 計測+実装+検証) | `190ms → 140ms` (`-26.3%`, median, 10 runs) | spec+after: `docs/research/cmd_2037_codd_gate_batch_8a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/gate_gunshi_cs_checklist.sh` | Phase 5(計測+実装+検証) | `199ms → 10ms` (`-95.0%`, median, 10 runs) | spec+after: `docs/research/cmd_2037_codd_gate_batch_8a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/gate_field_get.sh` | Phase 5(計測+実装+検証) | `404ms → 40ms` (`-90.1%`, median, 10 runs) | spec+after: `docs/research/cmd_2037_codd_gate_batch_8a_20260418.md` |
+| 2026-04-18 | hanzo | `scripts/auto_draft_lesson.sh` | Phase 5(計測+実装+検証) | `80ms → 10ms` (`-87.5%`, skip path median) | awk fast-path(found:false事前判定)でpython3 heredoc+json parse 2呼出し削減。found:true時は従来通りpython3使用 |
+| 2026-04-18 | hanzo | `scripts/gates/gate_yaml_status.sh` | Phase 5(計測+実装+検証) | `62ms → 15ms` (`-75.8%`, dry-run median) | source yaml_field_set.sh 遅延(early-exit path ~8ms削減)+awk両形式対応(list形式・map key形式バグ修正) |
+| 2026-04-18 | hanzo | `scripts/gates/gate_gunshi_observations.sh` | Phase 5(計測+実装+検証) | `30ms → 22ms` (`-26.7%`, median) | python3 -c → awk置換(python3起動コスト削減)。直近10 draft/reportレビューのobservations有無を純awkで検査 |
 | 2026-04-18 | hayate | `scripts/gates/gate_report_format.sh` | Phase 5(計測+実装+検証) | `76.0ms → 71.2ms` (`-6.3%`, valid report / cache miss median) | after: `docs/research/cmd_2038_codd_infra_gate_batch_20260418.md` |
 | 2026-04-18 | hayate | `scripts/lib/yaml_field_set.sh` | Phase 5(計測+実装+検証) | `14.9ms → 13.7ms` (`-8.1%`, `task status done` median) | after: `docs/research/cmd_2038_codd_infra_gate_batch_20260418.md` |
 | 2026-04-18 | hayate | `scripts/gates/gate_pd_sync.sh` | Phase 5(計測+実装+検証) | `35.3ms → 7.2ms` (`-79.6%`, synced fixture median) | after: `docs/research/cmd_2038_codd_infra_gate_batch_20260418.md` |

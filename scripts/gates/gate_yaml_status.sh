@@ -9,7 +9,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
-source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+# source は書き込み直前に遅延（early-exitパスでのコスト削減）
 
 # 引数解析
 CMD_ID=""
@@ -32,11 +32,15 @@ if [ ! -f "$YAML_FILE" ]; then
     exit 1
 fi
 
-# (a) 現在のstatusを確認（awkで安全に抽出。インデントに非依存）
+# (a) 現在のstatusを確認（awkで安全に抽出。list形式とmap key形式の両方に対応）
 current_status=$(awk -v cmd_id="${CMD_ID}" '
-    /- id:/ && index($0, cmd_id) > 0 { found=1; next }
-    found && /- id:/ { exit }
-    found && /status:/ { sub(/.*status: */, ""); gsub(/[[:space:]]/, ""); print; exit }
+    # list形式: "- id: cmd_xxx"
+    /- id:/ && index($0, cmd_id) > 0 { found=1; list_mode=1; next }
+    found && list_mode && /- id:/ { exit }
+    # map key形式: "  cmd_xxx:"
+    !found && $0 ~ ("^[[:space:]]+" cmd_id ":") { found=1; list_mode=0; next }
+    found && !list_mode && /^[[:space:]]+[a-z]/ && !/^[[:space:]][[:space:]][[:space:]]/ { exit }
+    found && /[[:space:]]status:/ { sub(/.*status: */, ""); gsub(/[[:space:]]/, ""); print; exit }
 ' "$YAML_FILE")
 
 if [ -z "$current_status" ]; then
@@ -59,6 +63,9 @@ if [ "$DRY_RUN" = true ]; then
 fi
 
 # (d) yaml_field_setでstatusをcompletedに書き換え（flock+readback検証内包）
+# ここで初めてライブラリをsource（early-exitパスでは不要）
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 if ! yaml_field_set "$YAML_FILE" "$CMD_ID" "status" "completed"; then
     echo "ERROR: yaml_field_set failed for ${CMD_ID}" >&2
     exit 1

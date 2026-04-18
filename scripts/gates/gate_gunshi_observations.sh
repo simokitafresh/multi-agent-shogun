@@ -15,29 +15,29 @@ if [ ! -f "$LOG_FILE" ]; then
     exit 1
 fi
 
-MISSING=$(python3 -c "
-import re
-
-with open('$LOG_FILE') as f:
-    content = f.read()
-
-blocks = re.split(r'\n(?=- (?:id|cmd_id): )', content)
-recent = []
-for block in blocks:
-    is_review = ('review_type: draft' in block or 'review_type: report' in block
-                 or 'type: draft' in block or 'type: report' in block)
-    if not is_review:
-        continue
-    id_match = re.search(r'(?:id|cmd_id): (\S+)', block)
-    entry_id = id_match.group(1) if id_match else '?'
-    has_obs = 'observations:' in block
-    recent.append((entry_id, has_obs))
-
-# Check last 10 draft/report entries
-for entry_id, has_obs in recent[-10:]:
-    if not has_obs:
-        print(entry_id)
-" 2>/dev/null)
+MISSING=$(awk '
+BEGIN { total = 0; cur_id = "?"; in_review = 0; has_obs = 0 }
+/^- (id|cmd_id):/ {
+    if (in_review) {
+        total++
+        ids[total] = cur_id
+        obs[total] = has_obs
+    }
+    in_review = 0; has_obs = 0
+    match($0, /[[:space:]]([^[:space:]]+)$/, a)
+    cur_id = (RLENGTH > 0) ? a[1] : "?"
+    next
+}
+/(review_type|type):[[:space:]]*(draft|report)/ { in_review = 1 }
+/observations:/ { has_obs = 1 }
+END {
+    if (in_review) { total++; ids[total] = cur_id; obs[total] = has_obs }
+    start = (total > 10) ? total - 9 : 1
+    for (i = start; i <= total; i++) {
+        if (!obs[i]) print ids[i]
+    }
+}
+' "$LOG_FILE" 2>/dev/null)
 
 if [ -z "$MISSING" ]; then
     echo "PASS: 直近draft/reportレビュー全てにobservations確認"
