@@ -698,3 +698,4 @@
 | cmd_2031 | 研究 — L3モメンタムローテーション全量バックテスト(LB 1-12M × Top 1-42 = 504通り) | dm-signal | 04-18 | L2奥義42体(ASS21+SSS21)の月次リターンを本番 |
 | cmd_2032 | 偵察 — L3秘奥義6体パフォーマンス取得+cmd_2031モメンタムBestとの比較 | dm-signal | 04-18 | 秘奥義6体EWとcmd_2031主要4パターンの同条件比較を |
 | cmd_2033 | CoDD改善バッチ6-A — insight_write.sh + gate_shogun_memory.sh + gate_skill_quality.sh | infra | 04-18 | 3本のCoDD改善を完了。insight_write 117 |
+| cmd_2036 | CoDD改善バッチ7-B — lesson_write.sh + sync_lessons.sh + inbox_write.sh(再) | infra | 04-18 | lesson_write/sync_lessons/inbo |

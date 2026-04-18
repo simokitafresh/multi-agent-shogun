@@ -64,6 +64,10 @@ resolve_window_target() {
 
 resolve_first_pane_target() {
     local window_target="$1"
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "${window_target}.1"
+        return 0
+    fi
     local pane_index
     pane_index=$(tmux list-panes -t "$window_target" -F '#{pane_index}' 2>/dev/null | head -1)
     if [ -n "$pane_index" ]; then
@@ -152,11 +156,14 @@ run_or_preview \
 run_or_preview \
     "tmux set-option -p -t ${SHOGUN_PANE_TARGET} @agent_id shogun" \
     tmux set-option -p -t "$SHOGUN_PANE_TARGET" @agent_id shogun 2>/dev/null
-shogun_model=$(tmux show-options -p -t "$SHOGUN_PANE_TARGET" -v @model_name 2>/dev/null || echo "")
-if declare -F detect_real_model >/dev/null 2>&1; then
-    detected_model=$(detect_real_model shogun "$SHOGUN_PANE_TARGET" 2>/dev/null || echo "")
-    if [ -n "$detected_model" ]; then
-        shogun_model="$detected_model"
+shogun_model=""
+if [[ "$DRY_RUN" != true ]]; then
+    shogun_model=$(tmux show-options -p -t "$SHOGUN_PANE_TARGET" -v @model_name 2>/dev/null || echo "")
+    if declare -F detect_real_model >/dev/null 2>&1; then
+        detected_model=$(detect_real_model shogun "$SHOGUN_PANE_TARGET" 2>/dev/null || echo "")
+        if [ -n "$detected_model" ]; then
+            shogun_model="$detected_model"
+        fi
     fi
 fi
 if [ -z "$shogun_model" ] && declare -F cli_profile_get >/dev/null 2>&1; then

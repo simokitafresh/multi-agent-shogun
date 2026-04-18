@@ -173,7 +173,8 @@ main() {
         karo \
         "${ninja_name}、任務完了。報告YAML確認されたし。" \
         report_received \
-        "$ninja_name"
+        "$ninja_name" \
+        notify_karo
 }
 
 main "$@"

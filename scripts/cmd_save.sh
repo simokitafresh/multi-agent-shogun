@@ -29,6 +29,10 @@ source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
 CMD_DIAGNOSIS=""
 PRIOR_ATTEMPT_COUNT=0
 CMD_SAVE_STDERR_LOG="$(mktemp)"
+CMD_BLOCK_LOADED=0
+CMD_BLOCK_FOUND=0
+CMD_BLOCK_CACHE_LOADED=0
+declare -A CMD_BLOCK_CACHE=()
 exec 3>&2
 exec 2> >(tee -a "$CMD_SAVE_STDERR_LOG" >&3)
 
@@ -44,6 +48,104 @@ extract_cmd_diagnosis() {
         }
         in_qg && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
     '
+}
+
+trim_inline_yaml_scalar() {
+    local value="${1:-}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+
+    if [[ "$value" == \"*\" && "$value" == *\" && ${#value} -ge 2 ]]; then
+        value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' && ${#value} -ge 2 ]]; then
+        value="${value:1:${#value}-2}"
+        value="${value//\'\'/\'}"
+    fi
+
+    printf '%s' "$value"
+}
+
+load_cmd_block() {
+    if [[ "$CMD_BLOCK_LOADED" -eq 1 ]]; then
+        [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
+        return $?
+    fi
+
+    CMD_BLOCK_LOADED=1
+    CMD_BLOCK_FOUND=0
+    CMD_BLOCK=""
+    CMD_BLOCK_NC=""
+
+    [[ -f "$QUEUE_FILE" ]] || return 1
+
+    CMD_BLOCK=$(awk -v cmd_id="$CMD_ID" '
+        $0 == "  " cmd_id ":" { found = 1; next }
+        found && /^  cmd_[0-9]+:/ { exit }
+        found { print }
+    ' "$QUEUE_FILE")
+
+    [[ -n "$CMD_BLOCK" ]] || return 1
+
+    CMD_BLOCK_NC=$(printf '%s\n' "$CMD_BLOCK" | awk '!/^[[:space:]]*#/')
+    CMD_BLOCK_FOUND=1
+    return 0
+}
+
+load_cmd_block_cache() {
+    local line key value current_section=""
+
+    if [[ "$CMD_BLOCK_CACHE_LOADED" -eq 1 ]]; then
+        [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
+        return $?
+    fi
+
+    CMD_BLOCK_CACHE_LOADED=1
+    [[ "$CMD_BLOCK_FOUND" -eq 1 ]] || return 1
+
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^[[:space:]]{4}([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*(.*)$ ]]; then
+            current_section=""
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            if [[ -z "$value" ]]; then
+                CMD_BLOCK_CACHE["$key"]=""
+                current_section="$key"
+            else
+                CMD_BLOCK_CACHE["$key"]="$(trim_inline_yaml_scalar "$value")"
+            fi
+            continue
+        fi
+
+        if [[ -n "$current_section" && "$line" =~ ^[[:space:]]{6}([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            CMD_BLOCK_CACHE["${current_section}.${key}"]="$(trim_inline_yaml_scalar "$value")"
+        fi
+    done <<< "$CMD_BLOCK_NC"
+
+    return 0
+}
+
+cmd_block_has_field() {
+    local field_name="$1"
+    load_cmd_block_cache || return 1
+    [[ -v "CMD_BLOCK_CACHE[$field_name]" ]]
+}
+
+cmd_block_get_field() {
+    local field_name="$1"
+    local default_value="${2:-}"
+
+    load_cmd_block_cache || {
+        printf '%s' "$default_value"
+        return 0
+    }
+
+    if [[ -v "CMD_BLOCK_CACHE[$field_name]" ]]; then
+        printf '%s' "${CMD_BLOCK_CACHE[$field_name]}"
+    else
+        printf '%s' "$default_value"
+    fi
 }
 
 show_prior_attempts() {
@@ -234,7 +336,7 @@ CMD_BLOCK_NC=""
 if [[ ! -f "$QUEUE_FILE" ]]; then
     echo "WARN: $QUEUE_FILE が存在しません" >&2
     WARN_COUNT=$((WARN_COUNT + 1))
-elif ! grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
+elif ! load_cmd_block; then
     echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
     WARN_COUNT=$((WARN_COUNT + 1))
 fi
@@ -243,11 +345,11 @@ fi
 # cmd_1688事故: 将軍が委任済みcmdを3回上書き→忍者フリーズ→殿指摘
 # delegated_at存在 = 既に家老に委任済み。再保存は設計変更を意味する。
 # CLAUDE.mdルール: 途中修正の二択(別CMD or 神速停止→再CMD)。inbox_writeで途中修正するな
-if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
-    _DELEGATED_AT=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found && /delegated_at:/{print; exit}" "$QUEUE_FILE")
+if load_cmd_block; then
+    _DELEGATED_AT="$(cmd_block_get_field "delegated_at")"
     if [[ -n "$_DELEGATED_AT" ]]; then
         echo "BLOCK: ${CMD_ID} は既に委任済みです。" >&2
-        echo "  $_DELEGATED_AT" >&2
+        echo "  delegated_at: $_DELEGATED_AT" >&2
         echo "  途中修正の二択: (1)別CMD_IDで発令 (2)忍者を神速停止→回復後に新CMD" >&2
         echo "  同一cmd_idの上書きは忍者のフリーズ・成果物無効化を引き起こします(cmd_1688実証済み)" >&2
         exit 1
@@ -264,23 +366,17 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
 fi
 
 # --- Session State: 同一cmdの過去BLOCK履歴を表示 ---
-if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
-    CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
-    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+if load_cmd_block; then
     CMD_DIAGNOSIS="$(extract_cmd_diagnosis "$CMD_BLOCK_NC")"
     show_prior_attempts
 fi
 
 # --- Check 3: quality_gateフィールド検査 ---
 # cmdブロック内にquality_gate（q1_firefighting, q2_learning, q3_next_quality）があるか検査
-if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
-    # cmdブロックを抽出（cmd_id行の次行から、次のcmd_行の直前まで）
-    CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
+if load_cmd_block; then
+    load_cmd_block_cache || true
 
-    # コメント行を事前除去（Check 3内で7回の重複grep -v削減）
-    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
-
-    if ! echo "$CMD_BLOCK_NC" | grep -q "quality_gate:"; then
+    if ! cmd_block_has_field "quality_gate"; then
         echo "BLOCK: quality_gate未記入。3問に答えてからcmd_save.shを実行せよ" >&2
         cat >&2 <<'QG_TEMPLATE'
 ---
@@ -300,7 +396,7 @@ QG_TEMPLATE
     MISSING_HINTS=()
 
     for _QG_KEY in q1_firefighting q2_learning q3_next_quality; do
-        if ! echo "$CMD_BLOCK_NC" | grep -q "${_QG_KEY}:"; then
+        if ! cmd_block_has_field "quality_gate.${_QG_KEY}"; then
             MISSING_KEYS+=("$_QG_KEY")
             case "$_QG_KEY" in
                 q1_firefighting)  MISSING_HINTS+=('  q1_firefighting: "no/yes — 理由"') ;;
@@ -310,26 +406,26 @@ QG_TEMPLATE
         fi
     done
 
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q5_verified_source:"; then
+    if ! cmd_block_has_field "quality_gate.q5_verified_source"; then
         MISSING_KEYS+=("q5_verified_source")
         MISSING_HINTS+=('  q5_verified_source: "structure_verified — 確認方法と対象を記載"')
     fi
 
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q8_why_what:"; then
+    if ! cmd_block_has_field "quality_gate.q8_why_what"; then
         MISSING_KEYS+=("q8_why_what")
         MISSING_HINTS+=('  q8_why_what: "WHY: 殿指示「...」 → WHAT: ...=正の複利(...)"')
     fi
 
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q11_not_already_done:"; then
+    if ! cmd_block_has_field "quality_gate.q11_not_already_done"; then
         MISSING_KEYS+=("q11_not_already_done")
         MISSING_HINTS+=('  q11_not_already_done: "未達成。確認方法と結果を記載"')
     fi
 
     # q7: dm-signal impl のみBLOCK
-    _PF_PROJECT=$(echo "$CMD_BLOCK_NC" | grep "project:" | head -1 | sed 's/.*project: *//' | tr -d '"' | tr -d "'" | xargs)
-    _PF_TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    _PF_PROJECT="$(cmd_block_get_field "project")"
+    _PF_TASK_TYPE="$(cmd_block_get_field "task_type")"
     if [[ "${_PF_PROJECT:-}" == "dm-signal" && "${_PF_TASK_TYPE:-}" == "impl" ]]; then
-        if ! echo "$CMD_BLOCK_NC" | grep -q "q7_definition_verified:"; then
+        if ! cmd_block_has_field "quality_gate.q7_definition_verified"; then
             MISSING_KEYS+=("q7_definition_verified")
             MISSING_HINTS+=('  q7_definition_verified: "yes — 定義を一次情報で照合した事実"')
         fi
@@ -339,7 +435,7 @@ QG_TEMPLATE
     _PF_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
     _PF_AC_COUNT=$(( ${_PF_AC_COUNT:-0} + 0 ))
     if [ "$_PF_AC_COUNT" -ge 3 ]; then
-        if ! echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
+        if ! cmd_block_has_field "assumptions"; then
             MISSING_KEYS+=("assumptions")
             MISSING_HINTS+=('  assumptions: [{claim: "...", source: "...", trust: "verified"}]')
         fi
@@ -357,11 +453,11 @@ QG_TEMPLATE
     fi
 
     # q4_depth: 段階的導入のためBLOCKではなくWARNING（WARN_COUNTに加算しない）
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q4_depth:"; then
+    if ! cmd_block_has_field "quality_gate.q4_depth"; then
         echo "WARNING: q4_depth未記入。深堀り度を記入推奨: q4_depth: \"shallow/medium/deep — 理由\"" >&2
     else
         # q4_depth値チェック: deep/mediumは時間コスト大。概算表示で確認を促す（WARN_COUNTに加算しない）
-        _Q4_VAL=$(echo "$CMD_BLOCK_NC" | grep "q4_depth:" | head -1)
+        _Q4_VAL="$(cmd_block_get_field "quality_gate.q4_depth")"
         if echo "$_Q4_VAL" | grep -qiE '\b(deep|medium)\b'; then
             if echo "$_Q4_VAL" | grep -qiE '\bdeep\b'; then
                 echo "WARNING: q4_depth=deep/medium — 時間コスト概算: 30-60分(全忍者投入)。時間は最も高価な資源。分割・並列化を検討せよ" >&2
@@ -377,11 +473,11 @@ QG_TEMPLATE
     # cmd_1692: code_readingのみでは前提未検証のためBLOCK。追加検証(isolated_test等)があれば通過
     # 除外条件: scope_mode=SCOUT OR scout_exempt=true（偵察cmdは実行前確認が目的のためcode_readingでも可）
     # infraの道具磨き(cmd_1891): q4_depth=shallow は軽微変更のためINFOに留める
-    _q5_scope_mode=$(echo "$CMD_BLOCK_NC" | grep "scope_mode:" | head -1 | sed 's/.*scope_mode: *//' | tr -d '"' || true)
-    _q5_scout_exempt=$(echo "$CMD_BLOCK_NC" | grep "scout_exempt:" | head -1 | sed 's/.*scout_exempt: *//' | tr -d '"' || true)
-    _q5_project=$(echo "$CMD_BLOCK_NC" | grep "project:" | head -1 | sed 's/.*project: *//' | tr -d '"' || true)
-    _q5_depth=$(echo "$CMD_BLOCK_NC" | grep "q4_depth:" | head -1 | sed 's/.*q4_depth: *//' | tr -d '"' || true)
-    q5_val=$(echo "$CMD_BLOCK_NC" | grep "q5_verified_source:" | head -1)
+    _q5_scope_mode="$(cmd_block_get_field "scope_mode")"
+    _q5_scout_exempt="$(cmd_block_get_field "scout_exempt")"
+    _q5_project="$(cmd_block_get_field "project")"
+    _q5_depth="$(cmd_block_get_field "quality_gate.q4_depth")"
+    q5_val="$(cmd_block_get_field "quality_gate.q5_verified_source")"
     if echo "$q5_val" | grep -qiE "code_reading|コード読み|読んだだけ"; then
         if [[ "${_q5_scope_mode:-}" == "SCOUT" || "${_q5_scout_exempt:-}" == "true" ]]; then
             echo "INFO: q5=code_reading。scope_mode=SCOUTまたはscout_exempt=trueのため除外。OK" >&2
@@ -401,7 +497,7 @@ QG_TEMPLATE
     # q6_not_hiding: SG8自動消火チェック（段階的導入 — BLOCKではなくWARNING）
     # 目的: 表面的対処で根源的問題を隠し改革動機を殺すcmdを防止
     # 起源: cmd_1278事件 — lessons.yaml読込削除が7,552行の構造問題を隠蔽
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q6_not_hiding:"; then
+    if ! cmd_block_has_field "quality_gate.q6_not_hiding"; then
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
         echo '  例: q6_not_hiding: "no — Vercel化は構造改革であり表面的対処ではない"' >&2
     fi
@@ -410,10 +506,10 @@ QG_TEMPLATE
     # 起源: L542 — High/Low等の研究用語は実装とテストに同じ意味を固定しないと結論がずれる
     # 目的: cmd固有定義を一次情報に照合した事実をquality_gateに明示させる
     # dm-signal impl cmd → BLOCK昇格（cmd_1903）。infra/他PJ・scout/reconはWARNING維持
-    _Q7_PROJECT=$(echo "$CMD_BLOCK_NC" | grep "project:" | head -1 | sed 's/.*project: *//' | tr -d '"' | tr -d "'" | xargs)
-    _Q7_TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    _Q7_PROJECT="$(cmd_block_get_field "project")"
+    _Q7_TASK_TYPE="$(cmd_block_get_field "task_type")"
     # q7: dm-signal impl BLOCKはpreflight済み。それ以外はWARNING
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q7_definition_verified:"; then
+    if ! cmd_block_has_field "quality_gate.q7_definition_verified"; then
         if [[ "${_Q7_PROJECT:-}" != "dm-signal" || "${_Q7_TASK_TYPE:-}" != "impl" ]]; then
             echo "WARNING: q7_definition_verified未記入。High/Lowなどcmd固有定義を一次情報へ照合したか記載推奨" >&2
             echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
@@ -421,9 +517,9 @@ QG_TEMPLATE
     fi
 
     # q8_why_what: 存在チェックはpreflight済み。以下は内容検証のみ
-    if echo "$CMD_BLOCK_NC" | grep -q "q8_why_what:"; then
+    if cmd_block_has_field "quality_gate.q8_why_what"; then
         # WHAT部分の縮小表現検出（WARN — AC2）
-        _Q8_WW_VAL=$(echo "$CMD_BLOCK_NC" | grep "q8_why_what:" | head -1)
+        _Q8_WW_VAL="$(cmd_block_get_field "quality_gate.q8_why_what")"
         _Q8_WHAT_PART="${_Q8_WW_VAL#*WHAT:}"
         if echo "$_Q8_WHAT_PART" | grep -qE 'のみ|だけ|一部|代表'; then
             echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
@@ -460,14 +556,14 @@ QG_TEMPLATE
         }
     ')
     if echo "$_Q9_SIGNAL_TEXT" | grep -qiE "$FIREFIGHTING_PATTERN"; then
-        if ! echo "$CMD_BLOCK_NC" | grep -q "q9_firefighting_root_cause:"; then
+        if ! cmd_block_has_field "quality_gate.q9_firefighting_root_cause"; then
             echo "BLOCK: 消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ" >&2
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
             exit 1
         fi
         # q9の中身検証: root_cause: と prevention: の両方が含まれ非空であること（GP-176）
         # 存在チェックのみでは "q9: TBD" で通過する = 形式的コンプライアンス = 消火
-        _Q9_VAL=$(echo "$CMD_BLOCK_NC" | grep "q9_firefighting_root_cause:" | head -1 | sed 's/.*q9_firefighting_root_cause:[[:space:]]*//')
+        _Q9_VAL="$(cmd_block_get_field "quality_gate.q9_firefighting_root_cause")"
         if ! echo "$_Q9_VAL" | grep -q "root_cause:"; then
             echo "BLOCK: q9にroot_cause:が含まれていない。真因を具体的に記載せよ" >&2
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
@@ -502,7 +598,7 @@ QG_TEMPLATE
     # q10_knowledge_boundary: 検証済み空間の明示（段階的導入 — WARNING）
     # 起源: cmd_1903 — Phase 31-32の11過ちが全てgateを通過。「無知の知」がcmd起票に強制されていない
     # 目的: cmdの前提が「前Phase/前cmdの到達点(検証済み事実)」に基づいているかを明示させる
-    if ! echo "$CMD_BLOCK_NC" | grep -q "q10_knowledge_boundary:"; then
+    if ! cmd_block_has_field "quality_gate.q10_knowledge_boundary"; then
         echo "WARNING: q10_knowledge_boundary未記入。cmdの前提は検証済み空間内か？前Phase/前cmdの到達点を使っているか？" >&2
         echo '  形式例: q10_knowledge_boundary: "空間内。根拠: Phase30 β調整確立 + cmd_1896結果確認済み"' >&2
     fi
@@ -565,7 +661,7 @@ QG_TEMPLATE
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正
     # 目的: type=impl + 条件分岐キーワード検出時に、本番での分岐実行頻度確認ACの追加を提案
-    _Q8_TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    _Q8_TASK_TYPE="$(cmd_block_get_field "task_type")"
     if [[ "${_Q8_TASK_TYPE:-}" == "impl" ]]; then
         _Q8_FIELDS=$(echo "$CMD_BLOCK_NC" | grep -E '^\s*(purpose|title):' || true)
         if echo "$_Q8_FIELDS" | grep -qiE '\bif\b|\bcase\b|条件|分岐|フラグ|\bflag\b|\belif\b|\bswitch\b'; then
@@ -681,7 +777,7 @@ check_gunshi_analysis_overlap() {
 
     # task_typeがrecon/scoutの場合のみチェック（impl等は対象外）
     local TASK_TYPE
-    TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    TASK_TYPE="$(cmd_block_get_field "task_type")"
     if [[ "$TASK_TYPE" != "recon" && "$TASK_TYPE" != "scout" ]]; then
         return 0
     fi
@@ -800,7 +896,7 @@ check_ac_file_paths() {
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
     local PROJECT_ID PROJECT_WD
-    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    PROJECT_ID="$(cmd_block_get_field "project")"
     [[ -z "$PROJECT_ID" ]] && PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null)
 
     if [[ -n "${PROJECT_ID:-}" ]]; then
@@ -853,12 +949,12 @@ check_impl_push_ac() {
 
     # project取得
     local PROJECT_ID
-    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    PROJECT_ID="$(cmd_block_get_field "project")"
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
 
     # task_type取得
     local TASK_TYPE
-    TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    TASK_TYPE="$(cmd_block_get_field "task_type")"
     [[ "$TASK_TYPE" != "impl" ]] && return 0
 
     # acceptance_criteria セクションを抽出
@@ -921,10 +1017,10 @@ check_research_tool_growth_ac() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
     local PROJECT_ID TASK_TYPE
-    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    PROJECT_ID="$(cmd_block_get_field "project")"
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
 
-    TASK_TYPE=$(echo "$CMD_BLOCK_NC" | awk '/task_type:/{gsub(/.*task_type: */, ""); gsub(/"/, ""); print; exit}')
+    TASK_TYPE="$(cmd_block_get_field "task_type")"
     [[ "$TASK_TYPE" != "impl" ]] && return 0
 
     local COMMAND_SECTION
@@ -1501,14 +1597,14 @@ check_gunshi_design_num_relax() {
     # 軍師設計書参照検出: q5_verified_sourceに設計書パスが含まれる場合（gunshi補足 2026-04-07）
     # 理由: q5は検証ソースの一次情報→設計書参照の信頼性が最も高い判定基準
     local Q5_VAL
-    Q5_VAL=$(echo "$CMD_BLOCK_NC" | grep "q5_verified_source:" | head -1)
+    Q5_VAL="$(cmd_block_get_field "quality_gate.q5_verified_source")"
     if ! echo "$Q5_VAL" | grep -qiE 'gunshi[-_]|設計書|context/gunshi'; then
         return 0
     fi
 
     # q8_why_whatの存在確認（なければ上のBLOCKで終了済み）
     local Q8_LINE
-    Q8_LINE=$(echo "$CMD_BLOCK_NC" | grep "q8_why_what:" | head -1)
+    Q8_LINE="$(cmd_block_get_field "quality_gate.q8_why_what")"
     [[ -z "$Q8_LINE" ]] && return 0
 
     # WHAT部分から数値を抽出
@@ -1570,7 +1666,7 @@ check_research_tool_explicit() {
 
     # project=dm-signalのみ対象
     local PROJECT_ID
-    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+    PROJECT_ID="$(cmd_block_get_field "project")"
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
 
     # title + command本文から研究ツールキーワード検出
@@ -1776,7 +1872,7 @@ AC_TEXT=$(echo "$CMD_BLOCK" | awk '/acceptance_criteria:/,0' | grep 'description
 # トリガー対象はtitle+purpose+AC_TEXTのみ（not_in_scopeの否定文による誤検知防止）
 _CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:|description:' || true)
 # scope_mode=SCOUTは偵察のみ(DB変更なし)→パリティ不要
-_CHECK19_SCOPE=$(echo "$CMD_BLOCK_NC" | grep "scope_mode:" | head -1 | sed 's/.*scope_mode: *//' | tr -d '"' || true)
+_CHECK19_SCOPE="$(cmd_block_get_field "scope_mode")"
 if [[ "${_CHECK19_SCOPE}" != "SCOUT" ]] && echo "$_CHECK19_TRIGGER" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then
     PARITY_MISSING=()
     # P1: holding_signal
@@ -1823,7 +1919,7 @@ if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
             exit 1
         fi
         # AC2: trust:verified + sourceにファイルパスがある場合、プロジェクトWD内の実在確認
-        _ASSUMP_PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '/project:/{gsub(/.*project: */, ""); gsub(/"/, ""); print; exit}')
+        _ASSUMP_PROJECT_ID="$(cmd_block_get_field "project")"
         [[ -z "${_ASSUMP_PROJECT_ID:-}" ]] && _ASSUMP_PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
         if [[ -n "${_ASSUMP_PROJECT_ID:-}" ]]; then
             _ASSUMP_PROJECT_WD=$(awk -v id="$_ASSUMP_PROJECT_ID" '
