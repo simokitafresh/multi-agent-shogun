@@ -710,3 +710,4 @@
 | cmd_2049 | CoDD改善バッチ14-A — session_start_inject.sh + prompt_state_inject.sh + session_end_clear_check.sh | infra | 04-18 | session系hook 3本を高速化し、session_s |
 | cmd_2047 | CoDD改善バッチ13-A — gate_diagnose_check.sh + gate_silent_fallback.sh + gate_mcp_access.sh | infra | 04-18 | gate_diagnose_check/silent_fal |
 | cmd_2050 | CoDD改善バッチ14-B — bash_state_hook.sh + test_result_guard.sh + pre-write-report-deny.sh | infra | 04-18 | bash_state_hook.sh(36ms→~16ms, |
+| cmd_2052 | CoDD改善バッチ15-B — gate_recalculate_completeness.sh(再々) + lesson_write.sh(再) + shutsujin_departure.sh(再々) | infra | 04-18 | 3本のスクリプトをCoDD再々/再改善完了。gate_rec |

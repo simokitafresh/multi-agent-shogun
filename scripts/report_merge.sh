@@ -12,7 +12,10 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# GP-XXX3: SCRIPT_DIR をサブシェル不要のbash文字列操作で取得 (cd+pwd+dirname排除)
+_s="${BASH_SOURCE[0]%/*}"
+SCRIPT_DIR="${_s%/*}"
+unset _s
 CMD_ID="$1"
 
 write_gate_flag() {
@@ -20,23 +23,19 @@ write_gate_flag() {
     local gates_dir="$SCRIPT_DIR/queue/gates"
     mkdir -p "$gates_dir"
     local flag_file="$gates_dir/${cmd_id}_${gate_name}.${result}"
-    cat > "$flag_file" <<EOF2
-timestamp: $(date +%Y-%m-%dT%H:%M:%S)
-cmd_id: $cmd_id
-gate_name: $gate_name
-result: $result
-reason: "$reason"
-EOF2
+    # GP-XXX3: cat+dateサブシェル2個 → printf -v timestamp + printf (subshell排除)
+    local _ts; printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
+    printf 'timestamp: %s\ncmd_id: %s\ngate_name: %s\nresult: %s\nreason: "%s"\n' \
+        "$_ts" "$cmd_id" "$gate_name" "$result" "$reason" > "$flag_file"
 }
 
 write_done_flag() {
     local cmd_id="$1" result="$2"
     local done_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
     mkdir -p "$done_dir"
-    cat > "$done_dir/report_merge.done" <<EOF3
-timestamp: $(date +%Y-%m-%dT%H:%M:%S)
-result: $result
-EOF3
+    # GP-XXX3: cat+dateサブシェル2個 → printf -v timestamp + printf (subshell排除)
+    local _ts; printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
+    printf 'timestamp: %s\nresult: %s\n' "$_ts" "$result" > "$done_dir/report_merge.done"
 }
 
 # ─── 引数バリデーション ───
