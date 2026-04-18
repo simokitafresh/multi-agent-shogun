@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | tobisaru | `scripts/gates/gate_diagnose_check.sh` | Phase 5(計測+実装+検証) | fast-path(early-exit) `32ms→32ms`(unchanged) / slow-path `100ms → 15ms` (`-85%`, `6.7x`, report有り+diagnose_reason空 median) | python3×2呼出し→awk1パス統合(YAML fields一括取得)+python3 CONSECUTIVE計数→awk逆順処理。7/7テストPASS。(spec省略) |
+| 2026-04-18 | tobisaru | `scripts/gates/gate_silent_fallback.sh` | Phase 5(計測+実装+検証) | `27ms → 25ms` (`-7%`, fast-path推定, tmux env) | forループ×2(条件分岐付き文字列連結)→ `IFS='|' ; PATTERNS[*]` bash組込みjoin置換。ループ廃止でオーバーヘッド削減。DM-Signal実パスで動作確認PASS。(spec省略) |
+| 2026-04-18 | tobisaru | `scripts/gates/gate_mcp_access.sh` | Phase 5(計測+実装+検証) | `39ms → 37ms` (`-5%`, no-args median, tmux env推定) | `command -v tmux`チェック廃止(TMUX_PANE/TMUX設定済み=tmux稼働確定)→直接tmux呼出しに短縮。非tmux環境: `10ms → 9ms`(-10%)。deny動作PASS。(spec省略) |
 | 2026-04-18 | hanzo | `scripts/gates/gate_report_autofix.sh` | Phase 5(計測+実装+検証) | `~50ms → ~9ms` (`-82%`, NO-FIX-NEEDED fast path median) | fast_no_fix_needed awk正規表現修正(binary_checks `4sp check/result`の誤検出除去+`result`値チェック統合)+SCRIPT_DIR文字列演算化。20/20テストPASS。(spec省略) |
 | 2026-04-18 | hanzo | `scripts/gates/gate_dc_duplicate.sh` | Phase 5(計測+実装+検証) | `~37ms → ~12ms` (`-68%`, SKIP/found:false path median) | bash早期チェック追加(grep+awk で `decision_candidate.found` を判定しpython3起動を回避)+SCRIPT_DIR文字列演算化。機能テストPASS。(spec省略) |
 | 2026-04-18 | hanzo | `scripts/gates/gate_cmd_state.sh` | Phase 5(計測+実装+検証) | `~20ms → ~17ms` (`-15%`, no-pending-cmds path median) | SCRIPT_DIR文字列演算化+source yaml_field_set.sh のlazy load(pending cmdsある場合のみ)。8/8テストPASS。(spec省略) |

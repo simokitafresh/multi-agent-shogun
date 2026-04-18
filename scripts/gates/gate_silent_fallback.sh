@@ -70,17 +70,11 @@ LEGITIMATE_PATTERNS=(
     '"running"\] = False'
 )
 
-# --- パターン結合（1回のgrepで全パターン検査） ---
-LEGIT_RE=""
-for pat in "${LEGITIMATE_PATTERNS[@]}"; do
-    [[ -n "$LEGIT_RE" ]] && LEGIT_RE+="|"
-    LEGIT_RE+="$pat"
-done
-DATA_RE=""
-for pat in "${DATA_VALUE_PATTERNS[@]}"; do
-    [[ -n "$DATA_RE" ]] && DATA_RE+="|"
-    DATA_RE+="$pat"
-done
+# --- パターン結合（IFS join: forループ廃止、bash組込みのみ） ---
+_ifs_saved="$IFS"; IFS='|'
+LEGIT_RE="${LEGITIMATE_PATTERNS[*]}"
+DATA_RE="${DATA_VALUE_PATTERNS[*]}"
+IFS="$_ifs_saved"
 
 # --- 1パスgrep: 全except Exceptionブロックを一括取得 ---
 if [[ "$MODE" == "diff" ]]; then

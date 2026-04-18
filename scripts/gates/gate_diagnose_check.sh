@@ -23,70 +23,53 @@ fi
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG_FILE="${GATE_FIRE_LOG_FILE:-$REPO_ROOT/logs/gate_fire_log.yaml}"
 
-# --- 1. diagnose_reason 確認 ---
-DIAGNOSE_REASON=$(python3 -c "
-import yaml, sys
-try:
-    with open('$REPORT_PATH') as f:
-        data = yaml.safe_load(f)
-    dr = data.get('diagnose_reason', '') if data else ''
-    print(dr.strip() if isinstance(dr, str) else '')
-except:
-    print('')
-" 2>/dev/null)
-
-# --- 2. 忍者名とcmd_id取得 ---
-read -r NINJA_NAME _cmd_id < <(python3 -c "
-import yaml, sys
-try:
-    with open('$REPORT_PATH') as f:
-        data = yaml.safe_load(f)
-    print(data.get('worker_id','unknown'), data.get('parent_cmd','unknown'))
-except:
-    print('unknown unknown')
-" 2>/dev/null)
+# --- 1+2. YAML fields を一括取得 (awk, python3廃止) ---
+DIAGNOSE_REASON=""
+NINJA_NAME="unknown"
+_cmd_id="unknown"
+while IFS=$'\001' read -r _k _v; do
+    case "$_k" in
+        diagnose_reason) DIAGNOSE_REASON="$_v" ;;
+        worker_id)       NINJA_NAME="${_v:-unknown}" ;;
+        parent_cmd)      _cmd_id="${_v:-unknown}" ;;
+    esac
+done < <(awk '
+/^(diagnose_reason|worker_id|parent_cmd):/ {
+    key = $1; sub(/:$/, "", key)
+    val = substr($0, index($0, ":") + 1)
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+    gsub(/^["\x27]|["\x27]$/, "", val)
+    printf "%s\001%s\n", key, val
+}
+' "$REPORT_PATH" 2>/dev/null)
 
 # --- 3. DIVERGENT: 同一忍者×同一理由の連続回数を計数 (GP-197) ---
 CONSECUTIVE=0
 if [ -f "$LOG_FILE" ] && [ -n "$BLOCK_REASONS" ] && [ "$NINJA_NAME" != "unknown" ]; then
-    # gate_fire_logから同一忍者の直近FAILを逆順で取得
-    # 最新の連続同一理由をカウント
-    CONSECUTIVE=$(python3 -c "
-import sys
-
-ninja = '$NINJA_NAME'
-current_reasons = '$BLOCK_REASONS'
-log_path = '$LOG_FILE'
-count = 0
-
-try:
-    with open(log_path) as f:
-        lines = f.readlines()
-
-    # 逆順で同一忍者のFAILを走査
-    for line in reversed(lines):
-        if 'result: FAIL' not in line:
-            continue
-        if ninja + '_report' not in line:
-            continue
-        # reasons抽出
-        if 'reasons:' in line:
-            idx = line.index('reasons:')
-            reasons_part = line[idx+9:].strip().strip('\"')
-            # 主要理由（最初のセミコロン前）を比較
-            main_reason = reasons_part.split(';')[0].strip()
-            current_main = current_reasons.split(';')[0].strip()
-            if main_reason == current_main:
-                count += 1
-            else:
-                break  # 異なる理由に到達→連続終了
-        else:
-            break
-except:
-    pass
-
-print(count)
-" 2>/dev/null)
+    CONSECUTIVE=$(awk -v ninja="$NINJA_NAME" -v current="$BLOCK_REASONS" '
+    { lines[NR] = $0 }
+    END {
+        # main reason: before first ";"
+        n = split(current, cp, ";")
+        main_current = (n > 0 ? cp[1] : current)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", main_current)
+        count = 0
+        for (i = NR; i >= 1; i--) {
+            line = lines[i]
+            if (line !~ /result: FAIL/) continue
+            if (line !~ (ninja "_report")) continue
+            if (match(line, /reasons:[[:space:]]*/)) {
+                reasons_str = substr(line, RSTART + RLENGTH)
+                gsub(/^["\x27][[:space:]]*|[[:space:]]*["\x27]$/, "", reasons_str)
+                n2 = split(reasons_str, rp, ";")
+                main_reason = (n2 > 0 ? rp[1] : reasons_str)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", main_reason)
+                if (main_reason == main_current) { count++ } else { break }
+            } else { break }
+        }
+        print count
+    }
+    ' "$LOG_FILE" 2>/dev/null)
 fi
 
 # --- 4. 診断メッセージ出力 ---
