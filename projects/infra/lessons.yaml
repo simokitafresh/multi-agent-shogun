@@ -1342,7 +1342,7 @@ lessons:
     skip パタ
   tags:
   - universal
-  helpful_count: 24
+  helpful_count: 25
   harmful_count: 9
   last_referenced: '2026-04-18'
 - id: L282
@@ -1700,8 +1700,8 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 32
-  harmful_count: 14
+  helpful_count: 33
+  harmful_count: 13
   last_referenced: '2026-04-18'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
@@ -1762,7 +1762,7 @@ lessons:
   - process
   - git
   helpful_count: 9
-  harmful_count: 5
+  harmful_count: 4
   last_referenced: '2026-04-18'
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
@@ -1996,7 +1996,7 @@ lessons:
   tags:
   - review
   - git
-  helpful_count: 6
+  helpful_count: 7
   harmful_count: 0
   last_referenced: '2026-04-18'
 - id: L185

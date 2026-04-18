@@ -676,3 +676,17 @@
 - 2026-04-17 cmd_2003: 疾風。Phase4偵察④(ループ構造確認。N+1真因=monthly_returns preload skip L183-191)。GATE CLEAR
 - 2026-04-17 cmd_2004: 影丸。cProfileハーネスbackend/移動→PR#9作成(G2ゲート)。merge待ち
 - 2026-04-17 auto-commit CI RED真因修正: ninja_monitor.sh L462にbuild_instructions.sh追加(500f0cd)
+- 2026-04-18 cmd_2053-2064: CoDD正規改善(スペック補完8cmd+忍者hookA/B+完了処理+通知4cmd)。全12cmd GATE CLEAR。WA=0
+- 2026-04-18 cmd_2051: 疾風。CoDD改善バッチ15-A。cmd_save 980→650ms(-33%)。gate_karo_startup改善不可(revert)。GATE CLEAR
+- 2026-04-18 cmd_2065: 才蔵。stop-lint-gate L3診断推論。現状27.7ms良好→変更なし。spec+台帳。GATE CLEAR
+- 2026-04-18 cmd_2066: 影丸。GP-201実装(CoDD Session State自動注入)。inject_codd_failure_history()。GATE CLEAR
+- 2026-04-18 cmd_2067: 才蔵。CoDD #5深堀り+本家リポジトリ分析。拡張提案5件(P1-P5)。GATE CLEAR
+- 2026-04-18 cmd_2068: 疾風。CoDD拡張P1 Session State v2。diagnose_reason/approach_summary/prior_attempts[]。GATE CLEAR
+- 2026-04-18 cmd_2069: 才蔵。CoDD拡張P5 context/codd.md索引同期。GP矛盾解消+v1.8-1.9追記。GATE CLEAR
+- 2026-04-18 cmd_2070: 疾風。CoDD拡張P2 DIVERGENT v2。仮説一致検知。GATE CLEAR
+- 2026-04-18 cmd_2071: 才蔵。CoDD拡張P3 contamination guard。失敗要約フィルタ。GATE CLEAR
+- 2026-04-18 cmd_2072: 半蔵。CoDD拡張P4 PASS_NO_IMPROVEMENT導入。verdict第三状態+下流3本対応。GATE CLEAR
+- 2026-04-18 cmd_karo_ci_fix_2066: 小太郎。CI RED修正5件(gate_report_format/yaml_field_set/test setup/CMD_BLOCK_NC)
+- 2026-04-18 cmd_karo_ci_fix_568: 飛猿。CI RED修正#568(gate_ninja_workaround_rate)。※最新CIでまだ残存
+- 2026-04-18 軍師根因修正2件: hook stdin fd閉じ(2aeb70b)+vercel_phase chore偽陽性(a2c9697)
+- 2026-04-18 教訓登録: LK082(hook catを$(</dev/stdin)に置換するな)+LK083(git log --grep choreコミット偽陽性)
