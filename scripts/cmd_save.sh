@@ -1096,10 +1096,29 @@ check_research_tool_growth_ac() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
     local PROJECT_ID TASK_TYPE
-    PROJECT_ID="$(cmd_block_get_field "project")"
-    [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
+    if declare -F cmd_block_get_field >/dev/null 2>&1; then
+        PROJECT_ID="$(cmd_block_get_field "project")"
+        TASK_TYPE="$(cmd_block_get_field "task_type")"
+    else
+        PROJECT_ID=$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | awk '
+            /^[[:space:]]*project:[[:space:]]*/ {
+                sub(/^[[:space:]]*project:[[:space:]]*/, "")
+                gsub(/^["'\''"]|["'\''"]$/, "")
+                print
+                exit
+            }
+        ')
+        TASK_TYPE=$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | awk '
+            /^[[:space:]]*task_type:[[:space:]]*/ {
+                sub(/^[[:space:]]*task_type:[[:space:]]*/, "")
+                gsub(/^["'\''"]|["'\''"]$/, "")
+                print
+                exit
+            }
+        ')
+    fi
 
-    TASK_TYPE="$(cmd_block_get_field "task_type")"
+    [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
     [[ "$TASK_TYPE" != "impl" ]] && return 0
 
     local COMMAND_SECTION
