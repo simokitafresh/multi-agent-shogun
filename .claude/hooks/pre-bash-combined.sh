@@ -6,6 +6,10 @@ set -euo pipefail
 payload="$(cat)"
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Bash"'* ]] && exit 0
+command=""
+if [[ "$payload" == *'"tool_input"'* && "$payload" == *'"command"'* ]]; then
+    command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
+fi
 
 emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
@@ -13,8 +17,7 @@ emit_deny() {
 
 # === Guard 0: filter-repo working tree destruction prevention (cmd_1881 incident) ===
 if [[ "$payload" == *'filter-repo'* ]]; then
-    _g0_cmd="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)" || true
-    if [[ -n "$_g0_cmd" && "$_g0_cmd" == *'filter-repo'* && "$_g0_cmd" != *'echo'* && "$_g0_cmd" != *'grep'* && "$_g0_cmd" != *'commit'* ]]; then
+    if [[ -n "$command" && "$command" == *'filter-repo'* && "$command" != *'echo'* && "$command" != *'grep'* && "$command" != *'commit'* ]]; then
         emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
         exit 1
     fi
@@ -24,7 +27,6 @@ fi
 # Outer fast-check: --no-verify, HUSKY=0, or potential git commit -n
 if [[ "$payload" == *'--no-verify'* || "$payload" == *'HUSKY=0'* ]] || \
    [[ "$payload" == *'commit'* && "$payload" == *' -n '* ]]; then
-    command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)" || true
     if [[ -n "$command" ]]; then
         # --no-verify on any git command (push/merge/rebase/cherry-pick, not just commit)
         if [[ "$command" =~ git[[:space:]] && "$command" == *'--no-verify'* ]]; then
@@ -46,7 +48,6 @@ fi
 
 # === Guard 2: yaml-dump ===
 if [[ "$payload" == *'yaml.dump'* || "$payload" == *'yaml.safe_dump'* ]]; then
-    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
     if [[ -n "${command:-}" ]]; then
         if [[ "$command" == *'python3'* || "$command" == *'python '* || "$command" == *'python	'* || "$command" == *'python -'* ]]; then
             for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/"; do
@@ -61,7 +62,6 @@ fi
 
 # === Guard 3: report-deny (bash redirect/tee to report YAML) ===
 if [[ "$payload" == *'queue/reports/'* ]]; then
-    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
     if [[ -n "${command:-}" && "$command" != *'report_field_set.sh'* ]]; then
         redirect_pattern='>+[[:space:]]*[^ ]*queue/reports/[^ ]*\.yaml'
         tee_pattern='tee[[:space:]].*queue/reports/[^ ]*\.yaml'
@@ -79,7 +79,6 @@ fi
 
 # === Guard 5: bats full-run block (test_optimization_journal) ===
 if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* ]]; then
-    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
     if [[ "$command" =~ bats[[:space:]]+tests/unit/?[[:space:]]*$ ]] || \
        [[ "$command" =~ bats[[:space:]]+tests/unit/\* ]]; then
         emit_deny "BLOCK: bats tests/unit/ 全量実行は禁止。変更対象のテストファイルのみ指定せよ(見込み12分超)。"
@@ -89,7 +88,6 @@ fi
 
 # === Guard 6: capture-pane minimum 30 lines (LK037/LK018: 末尾数行で状態を誤判断する防止) ===
 if [[ "$payload" == *'capture-pane'* ]]; then
-    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
     if [[ -n "${command:-}" && "$command" =~ capture-pane.*-S[[:space:]]+-([0-9]+) ]]; then
         lines="${BASH_REMATCH[1]}"
         if (( lines < 30 )); then
@@ -103,7 +101,6 @@ fi
 # Why: mark_read before reading inbox content lets agent bypass stop_check_inbox hook
 #      without processing messages (confirmed 2026-04-07: karo missed hayate completion)
 if [[ "$payload" == *'inbox_mark_read'* ]]; then
-    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
     if [[ -n "${command:-}" && "$command" == *'inbox_mark_read.sh'* ]]; then
         mark_agent=""
         if [[ "$command" =~ inbox_mark_read\.sh[[:space:]]+([a-z_]+) ]]; then
@@ -129,7 +126,6 @@ fi
 # === Guard 8: wf_runner.py parallel execution BLOCK (LG025: OOM Kill実証済み) ===
 # Note: regex limits to python execution context to avoid blocking mentions in message strings
 if [[ "$payload" == *'wf_runner.py'* ]]; then
-    if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
     if [[ -n "${command:-}" && "$command" =~ python[23]?[[:space:]].*wf_runner\.py ]]; then
         emit_deny "BLOCKED: wf_runner.py は並列OOMリスクのため使用禁止(LG025)。代替: l1_alm_wf_engine.py --csv で1本ずつ直列実行せよ。"
         exit 1
@@ -147,10 +143,12 @@ fi
    "$payload" != *'tmux kill'* ]] && exit 0
 
 # Dangerous keyword detected — extract command and run python3 checker
-if [[ -z "${command:-}" ]]; then command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"; fi
 [[ -z "${command:-}" ]] && exit 0
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_pre_bash_self="${BASH_SOURCE[0]}"
+[[ "$_pre_bash_self" != /* ]] && _pre_bash_self="$PWD/$_pre_bash_self"
+SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
+unset _pre_bash_self
 
 reason="$(
     COMMAND="$command" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'

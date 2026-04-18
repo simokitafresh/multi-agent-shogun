@@ -15,7 +15,10 @@ if [ -z "$AGENT_ID" ] || [ "$AGENT_ID" = "shogun" ] || [ "$AGENT_ID" = "karo" ] 
     exit 0
 fi
 
-SHOGUN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_stop_lint_self="${BASH_SOURCE[0]}"
+[[ "$_stop_lint_self" != /* ]] && _stop_lint_self="$PWD/$_stop_lint_self"
+SHOGUN_ROOT="${_stop_lint_self%/.claude/hooks/stop-lint-gate.sh}"
+unset _stop_lint_self
 
 # --- Collect changed files (staged + unstaged tracked files only) ---
 # `git diff --name-only` was the dominant cost on WSL2. Use lighter plumbing commands
@@ -53,11 +56,12 @@ done
 
 # --- Run lint checks ---
 violations=""
+cd "$SHOGUN_ROOT"
 
 # ShellCheck for .sh files (-S warning: info/style除外。既存警告での偽ブロック防止)
 if [ "${#sh_files[@]}" -gt 0 ] && command -v shellcheck >/dev/null 2>&1; then
     sc_out=""
-    if ! sc_out="$(cd "$SHOGUN_ROOT" && shellcheck -S warning "${sh_files[@]}" 2>&1)"; then
+    if ! sc_out="$(shellcheck -S warning "${sh_files[@]}" 2>&1)"; then
         :
     fi
     if [ -n "$sc_out" ]; then
@@ -77,7 +81,7 @@ if [ "${#py_files[@]}" -gt 0 ]; then
     fi
     if [ -n "$ruff_cmd" ]; then
         ruff_out=""
-        if ! ruff_out="$(cd "$SHOGUN_ROOT" && "$ruff_cmd" check --quiet --select E,W,F "${py_files[@]}" 2>&1)"; then
+        if ! ruff_out="$("$ruff_cmd" check --quiet --select E,W,F "${py_files[@]}" 2>&1)"; then
             if [ -n "$ruff_out" ]; then
                 violations="${violations}--- ruff ---"$'\n'"${ruff_out}"$'\n'
             fi
@@ -88,7 +92,7 @@ fi
 # Biome for .ts/.tsx/.js/.jsx files
 if [ "${#ts_js_files[@]}" -gt 0 ] && command -v npx >/dev/null 2>&1; then
     biome_out=""
-    if ! biome_out="$(cd "$SHOGUN_ROOT" && npx --yes biome check "${ts_js_files[@]}" 2>/dev/null)"; then
+    if ! biome_out="$(npx --yes biome check "${ts_js_files[@]}" 2>/dev/null)"; then
         :
     fi
     if [ -n "$biome_out" ]; then

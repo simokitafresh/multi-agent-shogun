@@ -152,79 +152,83 @@ fi
 
 # === Guard 2: commit-reminder ===
 if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-    HOOK_PAYLOAD="$payload" SCRIPT_DIR="$SCRIPT_DIR" python3 - <<'PYCOMMIT'
-import json
-import os
-import subprocess
-import sys
-import yaml
+    _post_bash_self="${BASH_SOURCE[0]}"
+    [[ "$_post_bash_self" != /* ]] && _post_bash_self="$PWD/$_post_bash_self"
+    SCRIPT_DIR="${_post_bash_self%/.claude/hooks/post-bash-combined.sh}"
+    unset _post_bash_self
 
+    command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
+    if [[ -n "$command" && "$command" == *'inbox_write'* && "$command" == *'report_received'* ]]; then
+        ninja_name=""
+        if [[ "$command" =~ report_received[[:space:]]+([a-z_]+) ]]; then
+            ninja_name="${BASH_REMATCH[1]}"
+        fi
 
-def load_payload(raw: str) -> dict:
-    try:
-        data = json.loads(raw)
-    except Exception:
-        return {}
-    return data if isinstance(data, dict) else {}
+        if [[ -n "$ninja_name" ]]; then
+            task_path="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+            if [[ -f "$task_path" ]]; then
+                project="$(awk '
+                    /^task:[[:space:]]*$/ { in_task=1; next }
+                    in_task && /^[^[:space:]]/ { exit }
+                    in_task && /^[[:space:]]+project:[[:space:]]*/ {
+                        sub(/^[[:space:]]+project:[[:space:]]*/, "")
+                        gsub(/^["'\''"]|["'\''"]$/, "")
+                        print
+                        exit
+                    }
+                ' "$task_path" 2>/dev/null || true)"
 
+                if [[ -n "$project" ]]; then
+                    projects_path="$SCRIPT_DIR/config/projects.yaml"
+                    project_path="$(awk -v target="$project" '
+                        /^projects:[[:space:]]*$/ { in_projects=1; next }
+                        in_projects && /^[^[:space:]]/ { exit }
+                        in_projects && /^[[:space:]]+-[[:space:]]id:[[:space:]]*/ {
+                            current=$0
+                            sub(/^[[:space:]]+-[[:space:]]id:[[:space:]]*/, "", current)
+                            gsub(/^["'\''"]|["'\''"]$/, "", current)
+                            next
+                        }
+                        in_projects && current == target && /^[[:space:]]+path:[[:space:]]*/ {
+                            sub(/^[[:space:]]+path:[[:space:]]*/, "")
+                            gsub(/^["'\''"]|["'\''"]$/, "")
+                            print
+                            exit
+                        }
+                    ' "$projects_path" 2>/dev/null || true)"
 
-data = load_payload(os.environ.get("HOOK_PAYLOAD", ""))
-tool_name = data.get("tool_name") or data.get("toolName") or ""
-if tool_name != "Bash": raise SystemExit(0)
-tool_input = data.get("tool_input") or data.get("toolInput") or {}
-command = tool_input.get("command", "") if isinstance(tool_input, dict) else ""
-if "inbox_write" not in command or "report_received" not in command: raise SystemExit(0)
-script_dir = os.environ.get("SCRIPT_DIR", "")
-ninja_name = ""
-parts = command.split()
-for i, p in enumerate(parts):
-    if p == "report_received" and i + 1 < len(parts):
-        ninja_name = parts[i + 1].strip("'\"")
-        break
-if not ninja_name: raise SystemExit(0)
-task_path = os.path.join(script_dir, "queue", "tasks", f"{ninja_name}.yaml")
-if not os.path.exists(task_path): raise SystemExit(0)
-try:
-    with open(task_path) as f:
-        task_data = yaml.safe_load(f)
-    task = task_data.get("task", task_data) if isinstance(task_data, dict) else {}
-    project = task.get("project", "")
-except Exception:
-    raise SystemExit(0)
-if not project: raise SystemExit(0)
-projects_path = os.path.join(script_dir, "config", "projects.yaml")
-if not os.path.exists(projects_path): raise SystemExit(0)
-try:
-    with open(projects_path) as f:
-        projects = yaml.safe_load(f)
-    project_conf = None
-    for p in projects.get("projects", []):
-        if isinstance(p, dict) and p.get("id") == project:
-            project_conf = p
-            break
-    if not project_conf: raise SystemExit(0)
-    project_path = project_conf.get("path", "")
-except Exception:
-    raise SystemExit(0)
-if not project_path or not os.path.isdir(project_path): raise SystemExit(0)
-try:
-    unstaged = subprocess.run(["git", "diff", "--name-only"], capture_output=True, text=True, cwd=project_path, timeout=5)
-    staged = subprocess.run(["git", "diff", "--cached", "--name-only"], capture_output=True, text=True, cwd=project_path, timeout=5)
-except Exception:
-    raise SystemExit(0)
-uncommitted = set()
-if unstaged.returncode == 0 and unstaged.stdout.strip(): uncommitted.update(unstaged.stdout.strip().splitlines())
-if staged.returncode == 0 and staged.stdout.strip(): uncommitted.update(staged.stdout.strip().splitlines())
-filtered = [f for f in uncommitted if not any(f.startswith(p) for p in ("logs/", "queue/", "node_modules/", ".next/", "__pycache__/")) and not f.endswith((".log", ".pyc"))]
-if not filtered: raise SystemExit(0)
-msg = f"\n⚠ COMMIT MISSING 警告 ⚠\nプロジェクト {project} ({project_path}) にuncommitted変更あり:\n"
-for f in sorted(filtered)[:10]: msg += f"  - {f}\n"
-if len(filtered) > 10: msg += f"  ... +{len(filtered) - 10} files\n"
-msg += f"\n報告を提出する前にcommitせよ:\n  cd {project_path} && git add -A && git commit -m 'feat: <cmd_id> <summary>'\n\ncommit漏れはcmd_complete_gateでBLOCKされ家老の手動対応(WA)が発生する。"
-payload_out = {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": msg}}
-print(json.dumps(payload_out, ensure_ascii=False, separators=(",", ":")))
-PYCOMMIT
+                    if [[ -n "$project_path" && -d "$project_path" ]]; then
+                        status_output="$(git -C "$project_path" status --porcelain --untracked-files=no 2>/dev/null || true)"
+                        filtered_files="$(printf '%s\n' "$status_output" | awk '
+                            length($0) >= 4 {
+                                path=substr($0,4)
+                                if (path ~ /^logs\// || path ~ /^queue\// || path ~ /^node_modules\// || path ~ /^\.next\// || path ~ /^__pycache__\//) next
+                                if (path ~ /\.(log|pyc)$/) next
+                                print path
+                            }
+                        ' | sort -u)"
+
+                        if [[ -n "$filtered_files" ]]; then
+                            msg=$'\n'"⚠ COMMIT MISSING 警告 ⚠"$'\n'"プロジェクト ${project} (${project_path}) にuncommitted変更あり:"$'\n'
+                            count=0
+                            while IFS= read -r f; do
+                                [[ -n "$f" ]] || continue
+                                count=$((count + 1))
+                                if (( count <= 10 )); then
+                                    msg+="  - ${f}"$'\n'
+                                fi
+                            done <<< "$filtered_files"
+                            if (( count > 10 )); then
+                                msg+="  ... +$((count - 10)) files"$'\n'
+                            fi
+                            msg+=$'\n'"報告を提出する前にcommitせよ:"$'\n'"  cd ${project_path} && git add -A && git commit -m 'feat: <cmd_id> <summary>'"$'\n'$'\n'"commit漏れはcmd_complete_gateでBLOCKされ家老の手動対応(WA)が発生する。"
+                            printf '%s' "$msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+                        fi
+                    fi
+                fi
+            fi
+        fi
+    fi
 fi
 
 exit 0

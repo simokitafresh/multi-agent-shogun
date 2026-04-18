@@ -719,3 +719,5 @@
 | cmd_2054 | CoDD spec補完(2/8) — parity_check.sh + gate_recalculate_completeness.sh + lesson_write.sh | infra | 04-18 | cmd_2054 の対象3本について CoDD spec を |
 | cmd_2055 | CoDD spec補完(3/8) — shutsujin_departure.sh + gate_diagnose_check.sh + gate_silent_fallback.sh | infra | 04-18 | CoDD spec補完3本完了。shutsujin_depa |
 | cmd_2060 | CoDD spec補完(8/8) — inbox_mark_read.sh + 悪化防止gate追加 | infra | 04-18 | AC1: inbox_mark_read.sh CoDD s |
+| cmd_2059 | CoDD spec補完(7/8) — log_terminal_response.sh + agent_config.sh + field_get.sh | infra | 04-18 | cmd_2059対象3本のCoDD spec補完は既に co |
+| cmd_2062 | CoDD正規改善(忍者hook B) — pre-write-edit-combined.sh + post-write-edit-combined.sh + pre-write-read-tracker.sh | infra | 04-18 | write/edit/read系 hook 3本を正規CoD |
