@@ -59,10 +59,6 @@ read -ra ALL_NINJAS <<< "$(get_ninja_names)"
 check_hardcodes() {
     echo -e "\n${BOLD}=== Check 1: ハードコードgrepスキャン ===${NC}"
 
-    # SSOT・自分自身・CLI固有ドキュメントを除外するフィルタ
-    # grep --exclude はWSL2環境で不安定なため、パイプフィルタで確実に除外
-    local exclude_filter='cli_lookup\.sh|cli_profiles\.yaml|settings\.yaml|model_switch_preflight\.sh|cli_specific/|generated/'
-
     # 動的パターン: 全エージェント×非デフォルトCLI種別の直書き検出
     # settings.yaml/cli_profiles.yamlはexclude_filterで除外済み
     local _all_agents_arr
@@ -76,9 +72,16 @@ check_hardcodes() {
     local combined_pattern="(is_codex|gpt-5\.|claude-(opus|sonnet|haiku)-[0-9]${_agent_patterns})"
 
     local found
-    found=$(git -C "$SCRIPT_DIR" grep -nI -E \
-        "$combined_pattern" -- scripts/ instructions/ config/ context/ 2>/dev/null \
-        | grep -Ev "$exclude_filter" || true)
+    found=$(rg -n \
+        --glob '*.sh' --glob '*.yaml' --glob '*.md' \
+        --glob '!scripts/lib/cli_lookup.sh' \
+        --glob '!config/cli_profiles.yaml' \
+        --glob '!config/settings.yaml' \
+        --glob '!scripts/model_switch_preflight.sh' \
+        --glob '!instructions/generated/**' \
+        --glob '!instructions/cli_specific/**' \
+        "$combined_pattern" \
+        "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/instructions" "$SCRIPT_DIR/config" "$SCRIPT_DIR/context" 2>/dev/null || true)
 
     if [[ -z "$found" ]]; then
         result_pass "ハードコード 0件"
