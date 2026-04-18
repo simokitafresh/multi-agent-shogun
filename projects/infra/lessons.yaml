@@ -1342,7 +1342,7 @@ lessons:
     skip パタ
   tags:
   - universal
-  helpful_count: 21
+  helpful_count: 24
   harmful_count: 9
   last_referenced: '2026-04-18'
 - id: L282
@@ -1700,8 +1700,8 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 29
-  harmful_count: 18
+  helpful_count: 32
+  harmful_count: 14
   last_referenced: '2026-04-18'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
@@ -1762,7 +1762,7 @@ lessons:
   - process
   - git
   helpful_count: 9
-  harmful_count: 9
+  harmful_count: 5
   last_referenced: '2026-04-18'
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
@@ -1996,9 +1996,9 @@ lessons:
   tags:
   - review
   - git
-  helpful_count: 3
+  helpful_count: 6
   harmful_count: 0
-  last_referenced: '2026-04-17'
+  last_referenced: '2026-04-18'
 - id: L185
   title: report_path 注入だけで報告テンプレート未生成→忍者が手動補完
   summary: '`cmd_675` 配備後の `queue/tasks/hayate.yaml` には `report_path: queue/reports/hayate_r'

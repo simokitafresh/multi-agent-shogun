@@ -727,3 +727,5 @@
 | cmd_2065 | stop-lint-gate.sh L3診断推論改善 — Session State付き正規CoDD(失敗履歴注入) | infra | 04-18 | stop-lint-gate.sh を L3診断推論 + S |
 | cmd_2051 | CoDD改善バッチ15-A — cmd_save.sh(再々) + stop-lint-gate.sh(再々) + gate_karo_startup.sh(再々) | infra | 04-18 | cmd_2051 は部分完了。cmd_save.sh の w |
 | cmd_2067 | 研究 — CoDD #5深堀り+本家リポジトリ分析 — 我が軍への応用拡張 | infra | 04-18 | CoDD #5記事と codd-dev 公開実装を深掘りし、 |
+| cmd_2069 | CoDD拡張 P5 — context/codd.md索引同期(GP-198/200/201現状反映) | infra | 04-18 | context/codd.md の索引を 2026-04-1 |
+| cmd_2070 | CoDD拡張 P2 — DIVERGENT v2: 仮説一致検知 | infra | 04-18 | DIVERGENT判定を prior_attempts[] |
