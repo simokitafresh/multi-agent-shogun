@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-18 -->
+<!-- last_updated: 2026-04-19 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -45,20 +45,6 @@
 | cmd_980 | 偵察 — 教訓注入率低下の原因精査と改善提案 | | infra | 03-16 | — |
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
-| cmd_1062 | T3(picks vectorize)で全量42min→並列12minに到達。さらなる高速化余地を定量的に把握し、Phase 5実行前に追加最適化の要否を判断する材料を得る | dm-signal | 03-19 | — |
-| cmd_1064 | 4忍法のmomentum_cube計算をpandas pct_change→numpy slice一括に置換し、ctx_build高速化+本番パリティ完全一致を確認する | dm-signal | 03-19 | — |
-| cmd_1065 | queue/tasks/*.yamlへのWrite/Editをhookで無条件denyし、deploy_task.sh経由のみでタスクYAML生成を強制する | infra | 03-19 | — |
-| cmd_1058 | 日次cronスクレイパー(第一段)のセレクタ劣化をメトリクスで検知し、classroom側スキル(第二段)でaria_snapshot+refによるセレクタ診断・修繕案提示を可能にする二段構えの自己回復機構を構築する | google-classroom | 03-19 | — |
-| cmd_1066 | レビュー報告テンプレートにverdict/self_gate_checkを追加し、ゲートBLOCKによる家老の手戻りを解消する | infra | 03-19 | — |
-| cmd_1068 | 12体レガシー四神で誤実行されたcmd_1057のGS出力18ファイルを削除し、汚染データの後続混入を防ぐ | dm-signal | 03-19 | — |
-| cmd_1067 | queue/reports/*.yamlへのWrite/Editをhookで無条件denyし、report_field_set.sh経由のみで報告YAML更新を強制する | infra | 03-19 | — |
-| cmd_1072 | 家老が/clear後もdeploy_task.sh・report_field_set.shの使い方を知っている状態にし、hookブロック→再学習の無駄サイクルを根絶する | infra | 03-19 | — |
-| cmd_1071 | 'report_merge.shがtask YAMLのtitleフィールド（存在しない）で偵察判定しているバグを修正し、task_type: reconで判定するようにする' | infra | 03-19 | — |
-| cmd_1070 | 忍者が/clear後もreport_field_set.shの使い方を知っている状態にし、hookブロック→再学習の無駄サイクルを根絶する | infra | 03-19 | — |
-| cmd_1069 | run_077_*.pyがuniverse設定をどこから読み、なぜ32体ではなく12体で実行されたかを特定する | dm-signal | 03-19 | — |
-| cmd_1074 | report_field_set.shがpipe入力のYAMLリスト/dictを文字列として格納するバグを修正し、構造化データを正しく保持する | infra | 03-19 | — |
-| cmd_1073 | projects/dm-signal/lessons.yaml の全409件を精査し、本番バックエンド挙動に関する事実（PI候補）を網羅的に抽出する | dm-signal | 03-19 | — |
-| cmd_1057 | 32体シン四神ユニバースで7忍法GS全量実行し、チャンピオンパラメータを決定する | dm-signal | 03-19 | — |
 | cmd_1241 | startup gateにGate 10(idle自走トリガー)を追加し、パイプライン空+全忍者idle時に将軍が自動的にidle時自己分析手順に入る仕組みを作る | infra | 03-22 | — |
 | cmd_1242 | CI赤(run 23387382972)を修正し、全CIジョブを緑に戻す | infra | 03-22 | — |
 | cmd_1244 | commit_missing(変更ありcommitなし)をcmd_complete_gate.shでBLOCK化し、忍者のcommit漏れを構造的に防止する | infra | 03-22 | — |
@@ -750,3 +736,4 @@
 | cmd_2092 | CoDD正規再改善 R2-E — gate_workaround_rate.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_workaround_rate.sh CoDD正規 |
 | cmd_2091 | CoDD正規再改善 R2-D — gate_loop_health.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_loop_health.sh CoDD正規再改善: |
 | cmd_2093 | insightノイズ除去 — 生成時自動done化 + cleanカテゴリALERT除外 | infra | 04-18 | insightノイズの上流生成を停止。auto-done/S |
+| cmd_2094 | 偵察+実装 — 他システム知識辞書 一次知識層作成 (6システム並列調査) | infra | 04-19 | AC4完了。docs/research/systems-kn |
