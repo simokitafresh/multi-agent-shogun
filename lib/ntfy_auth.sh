@@ -13,13 +13,16 @@
 #
 # 設定ファイル: config/ntfy_auth.env (git非追跡)
 
-# --- ntfy_get_auth_args ---
-# curl用の認証引数を標準出力に返す
-# 引数: [auth_env_file] — 認証設定ファイルのパス（省略時はconfig/ntfy_auth.env）
-# 出力: curl引数文字列 (例: "-H" "Authorization: Bearer tk_xxx")
-#        認証設定なしの場合は空文字列（後方互換）
-ntfy_get_auth_args() {
+# --- ntfy_get_auth_args_into_array ---
+# curl用の認証引数を配列へ格納する
+# 引数1: [auth_env_file] — 認証設定ファイルのパス（省略時はconfig/ntfy_auth.env）
+# 引数2: array_name — 格納先配列名
+ntfy_get_auth_args_into_array() {
     local auth_file="${1:-}"
+    local array_name="${2:?ntfy_get_auth_args_into_array: array name is required}"
+    local -n _ntfy_auth_args_ref="$array_name"
+
+    _ntfy_auth_args_ref=()
 
     # auth_fileが未指定の場合、スクリプト位置からの相対パスで解決
     if [ -z "$auth_file" ]; then
@@ -36,18 +39,29 @@ ntfy_get_auth_args() {
 
     # Bearer token認証（優先）
     if [ -n "${NTFY_TOKEN:-}" ]; then
-        printf '%s\n' "-H" "Authorization: Bearer ${NTFY_TOKEN}"
+        _ntfy_auth_args_ref=(-H "Authorization: Bearer ${NTFY_TOKEN}")
         return 0
     fi
 
     # Basic認証（フォールバック）
     if [ -n "${NTFY_USER:-}" ] && [ -n "${NTFY_PASS:-}" ]; then
-        printf '%s\n' "-u" "${NTFY_USER}:${NTFY_PASS}"
+        _ntfy_auth_args_ref=(-u "${NTFY_USER}:${NTFY_PASS}")
         return 0
     fi
 
     # 認証なし（後方互換: 公開ntfy.shではこちら）
     return 0
+}
+
+# --- ntfy_get_auth_args ---
+# curl用の認証引数を標準出力に返す
+# 引数: [auth_env_file] — 認証設定ファイルのパス（省略時はconfig/ntfy_auth.env）
+# 出力: curl引数文字列 (例: "-H" "Authorization: Bearer tk_xxx")
+#        認証設定なしの場合は空文字列（後方互換）
+ntfy_get_auth_args() {
+    local auth_args=()
+    ntfy_get_auth_args_into_array "${1:-}" auth_args || return $?
+    printf '%s\n' "${auth_args[@]}"
 }
 
 # --- ntfy_validate_topic ---

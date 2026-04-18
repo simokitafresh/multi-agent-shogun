@@ -48,7 +48,26 @@ LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/ntfy_auth.sh"
 
-TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
+read_ntfy_topic() {
+  local settings_file="$1"
+  local line value
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ntfy_topic:*)
+        value="${line#*:}"
+        value="${value//[[:space:]\"]/}"
+        [ -n "$value" ] || return 1
+        printf '%s\n' "$value"
+        return 0
+        ;;
+    esac
+  done < "$settings_file"
+
+  return 1
+}
+
+TOPIC="$(read_ntfy_topic "$SETTINGS" || true)"
 if [ -z "$TOPIC" ]; then
   echo "ntfy_topic not configured in settings.yaml" >&2
   exit 1
@@ -59,9 +78,7 @@ ntfy_validate_topic "$TOPIC" || true
 
 # 認証引数を取得（設定がなければ空 = 後方互換）
 AUTH_ARGS=()
-while IFS= read -r line; do
-    [ -n "$line" ] && AUTH_ARGS+=("$line")
-done < <(ntfy_get_auth_args "$SCRIPT_DIR/config/ntfy_auth.env")
+ntfy_get_auth_args_into_array "$SCRIPT_DIR/config/ntfy_auth.env" AUTH_ARGS
 
 LOGFILE="$SCRIPT_DIR/logs/ntfy.log"
 [ -d "$SCRIPT_DIR/logs" ] || mkdir -p "$SCRIPT_DIR/logs"
@@ -69,6 +86,18 @@ LOGFILE="$SCRIPT_DIR/logs/ntfy.log"
 MSG="$1"
 
 NTFY_ENDPOINT="${NTFY_ENDPOINT:-https://ntfy.sh/$TOPIC}"
+
+append_lord_conversation_safe() {
+  local payload="$1"
+
+  if [ -z "${_NTFY_LORD_CONVERSATION_LOADED:-}" ]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/lib/lord_conversation.sh"
+    _NTFY_LORD_CONVERSATION_LOADED=1
+  fi
+
+  append_lord_conversation "$payload" "outbound" "${AGENT_ID:-unknown}" "ntfy" || true
+}
 
 _ntfy_send() {
   local payload="$1"
@@ -90,7 +119,7 @@ send_with_retry() {
 
   http_code=$(_ntfy_send "$payload")
   if [ "$http_code" = "200" ]; then
-    append_lord_conversation "$payload" "outbound" "${AGENT_ID:-unknown}" "ntfy" || true
+    append_lord_conversation_safe "$payload"
     return 0
   fi
 
@@ -106,7 +135,7 @@ send_with_retry() {
   sleep 3
   http_code=$(_ntfy_send "$payload")
   if [ "$http_code" = "200" ]; then
-    append_lord_conversation "$payload" "outbound" "${AGENT_ID:-unknown}" "ntfy" || true
+    append_lord_conversation_safe "$payload"
     printf '%(%Y-%m-%d %H:%M:%S)T RETRY_OK\n' -1 >> "$LOGFILE"
     return 0
   fi
@@ -117,17 +146,10 @@ send_with_retry() {
 }
 
 if [ "${NTFY_SYNC:-0}" = "1" ]; then
-  # Optional sync mode for callers that need delivery observability.
-  # lord_conversation.sh loaded here (sync path only) to keep it off the hot path
-  # shellcheck disable=SC1091
-  source "$SCRIPT_DIR/lib/lord_conversation.sh"
   send_with_retry "$MSG"
   exit $?
 fi
 
 # Default mode: fire-and-forget
-# lord_conversation.sh sourced in background to save ~7ms from main path
-( # shellcheck disable=SC1091
-  source "$SCRIPT_DIR/lib/lord_conversation.sh"
-  send_with_retry "$MSG" ) &
+send_with_retry "$MSG" &
 exit 0

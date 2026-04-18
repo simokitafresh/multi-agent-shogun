@@ -106,6 +106,20 @@ EOF
     echo "$result" | grep -q 'Bearer tk_from_file_12345'
 }
 
+@test "T-AUTH-005b: ntfy_get_auth_args_into_array loads token into caller array" {
+    local auth_file="$TEST_TMPDIR/ntfy_auth.env"
+    cat > "$auth_file" << 'EOF'
+NTFY_TOKEN=tk_array_12345
+EOF
+
+    local auth_args=()
+    ntfy_get_auth_args_into_array "$auth_file" auth_args
+
+    [ "${#auth_args[@]}" -eq 2 ]
+    [ "${auth_args[0]}" = "-H" ]
+    [ "${auth_args[1]}" = "Authorization: Bearer tk_array_12345" ]
+}
+
 # --- T-AUTH-006: 存在しないファイル ---
 
 @test "T-AUTH-006: ntfy_get_auth_args handles missing auth file gracefully" {
@@ -145,6 +159,16 @@ EOF
     run ntfy_validate_topic ""
     [ "$status" -eq 1 ]
     echo "$output" | grep -qi "empty"
+}
+
+@test "T-AUTH-010b: ntfy.sh reads topic without grep/awk/tr pipeline" {
+    local ntfy_script="$PROJECT_ROOT/scripts/ntfy.sh"
+
+    run grep -n "read_ntfy_topic()" "$ntfy_script"
+    [ "$status" -eq 0 ]
+
+    run grep -n "grep 'ntfy_topic:'" "$ntfy_script"
+    [ "$status" -eq 1 ]
 }
 
 # --- T-AUTH-011: ntfy.sh送信（モック） ---

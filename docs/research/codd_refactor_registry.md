@@ -132,7 +132,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 2026-04-18 | kotaro | `.claude/hooks/stop-lint-gate.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `5149ms → 61ms` (`-99%`, `84x`) | git ls-files -m (全tracked file mtime照合 870-1500ms)廃止→staged-only (git diff-index --cached)。前回shebang変更→今回git操作変更。63/63テストPASS。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
 | 2026-04-18 | kotaro | `scripts/hooks/stop_check_inbox.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `37ms → 14ms` (`-62%`, `2.6x`) | jq -e .(validation)+jq -r(stop_hook_active)→bash文字列マッチ2本。jq1本残存(last_assistant_message)。初回改善。63/63テストPASS。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
-| 2026-04-18 | kotaro | `scripts/gates/gate_karo_startup.sh` | Phase 5(実装→regression revert) | `110ms → 131ms cache hit` (REGRESSION) | WA rateキャッシュ(TTL 300s)実装→cache hit 131ms > before 110ms。真因: _META_PIDS awk(deepdive files on /mnt/c/)が~100ms支配→WA rate廃止してもボトルネック不変。revert済み。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
+| 2026-04-18 | kotaro | `scripts/gates/gate_karo_startup.sh` | Phase 5(実装→regression revert) | `110ms → 110ms` (REVERTED: 131ms regression検出→revert) | WA rateキャッシュ(TTL 300s)実装→cache hit 131ms > before 110ms。真因: _META_PIDS awk(deepdive files on /mnt/c/)が~100ms支配→WA rate廃止してもボトルネック不変。現状110ms維持。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
 
 ## 運用
 
