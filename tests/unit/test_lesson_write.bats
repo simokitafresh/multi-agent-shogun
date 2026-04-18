@@ -112,6 +112,15 @@ run_lesson_write_with_sync() {
     [[ "$output" == *"**記録者**: hanzo"* ]]
 }
 
+@test "default tags use inferred project tag when tags omitted" {
+    run_lesson_write testproj "既定タグ確認テスト" "タグ未指定時にproject_id由来のタグが記録されることを確認する" "cmd_201" "hanzo"
+    [ "$status" -eq 0 ]
+
+    run grep -A5 "### L002:" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"**tags**: [testproj]"* ]]
+}
+
 # ============================================================
 # 2. lessons.md append verification
 # ============================================================
