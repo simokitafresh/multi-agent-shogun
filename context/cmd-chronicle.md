@@ -712,3 +712,8 @@
 | cmd_2050 | CoDD改善バッチ14-B — bash_state_hook.sh + test_result_guard.sh + pre-write-report-deny.sh | infra | 04-18 | bash_state_hook.sh(36ms→~16ms, |
 | cmd_2052 | CoDD改善バッチ15-B — gate_recalculate_completeness.sh(再々) + lesson_write.sh(再) + shutsujin_departure.sh(再々) | infra | 04-18 | 3本のスクリプトをCoDD再々/再改善完了。gate_rec |
 | cmd_2044 | CoDD改善バッチ11-B — archive_completed.sh(再) + report_merge.sh(再) + parity_check.sh(再) | infra | 04-18 | archive_completed.sh(783ms→550 |
+| cmd_2057 | CoDD spec補完(5/8) — gate_cmd_state.sh + bash_state_hook.sh + test_result_guard.sh | infra | 04-18 | CoDD spec 3本作成(gate_cmd_state/ |
+| cmd_2056 | CoDD spec補完(4/8) — gate_mcp_access.sh + gate_report_autofix.sh + gate_dc_duplicate.sh | infra | 04-18 | gate_mcp_access/gate_report_au |
+| cmd_2058 | CoDD spec補完(6/8) — pre-write-report-deny.sh + cmd_quality_log.sh + task_deploy.sh | infra | 04-18 | CoDD spec補完(6/8)完了。3本全specをdoc |
+| cmd_2053 | CoDD spec補完+悪化revert — stop-lint-gate revert + spec省略21件の正規CoDDやり直し(1/8) | infra | 04-18 | cmd_2053 の CoDD 正規化を実施し、3本の sp |
+| cmd_2054 | CoDD spec補完(2/8) — parity_check.sh + gate_recalculate_completeness.sh + lesson_write.sh | infra | 04-18 | cmd_2054 の対象3本について CoDD spec を |
