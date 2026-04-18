@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-18T21:23:00+09:00 -->
+<!-- generated_at: 2026-04-18T21:27:24+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-18T21:27:24+09:00 | terminal | response | inbox未読0件。報告完了済みだがGATE CLEAR通知がまだ来ていないcmdが多数ある。 殿、報告する。 **全忍者が報告完了。** 5名idle、半蔵のみ作業中。 | cmd | 対象 | 状態 | |-----|------|-…
+- 2026-04-18T21:26:51+09:00 | terminal | inbound | 進捗は？
+- 2026-04-18T21:24:59+09:00 | ntfy | outbound | 【kagemaru】cmd_2085完了。archive_completed.sh CoDD再改善: 1073ms→962ms(-10%)。11/11テストPASS。
 - 2026-04-18T21:22:59+09:00 | terminal | response | cmd_2088 GATE CLEAR！gate_cycle_health.sh完了。 [meta] stop_reason=tool_use
 - 2026-04-18T21:20:41+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-18T21:18:37+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_cli_lookup 初回配備開始 (title=CI赤修正 — cli_lookup.sh _cli_lookup_profile_getが空行でbreak, ninja=hayate) CI赤修…
@@ -11,9 +14,6 @@
 - 2026-04-18T21:11:03+09:00 | ntfy | outbound | CI赤: run 24604235214 E2E Tests
 - 2026-04-18T21:09:53+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-112)
 - 2026-04-18T21:08:53+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 21:03:43|cmd_karo_sleep_fix
-- 2026-04-18T21:04:02+09:00 | terminal | response | 処理完了。全6忍者が稼働中。残り9cmd消化中。 [meta] stop_reason=end_turn
-- 2026-04-18T21:02:31+09:00 | ntfy | outbound | 【家老】cmd_2089 初回配備開始 (title=CoDD正規再改善 R2-B — gate_artifact_map.sh(spec省略→正規CoDD再改善), ninja=kotaro) CoDD正規再改善 R2-B 📋 http…
-- 2026-04-18T21:01:55+09:00 | ntfy | outbound | 【家老】cmd_2088 初回配備開始 (title=CoDD正規再改善 R2-A — gate_cycle_health.sh(spec省略→正規CoDD再改善), ninja=tobisaru) CoDD正規再改善 R2-A 📋 ht…
 
 ## 未解決確認事項
 - 【家老】復帰済み。CI赤(E2E#5)+疾風cmd_2090報告+忍者5名稼働中を確認。
