@@ -689,4 +689,6 @@
 - 2026-04-18 cmd_karo_ci_fix_2066: 小太郎。CI RED修正5件(gate_report_format/yaml_field_set/test setup/CMD_BLOCK_NC)
 - 2026-04-18 cmd_karo_ci_fix_568: 飛猿。CI RED修正#568(gate_ninja_workaround_rate)。※最新CIでまだ残存
 - 2026-04-18 軍師根因修正2件: hook stdin fd閉じ(2aeb70b)+vercel_phase chore偽陽性(a2c9697)
-- 2026-04-18 教訓登録: LK082(hook catを$(</dev/stdin)に置換するな)+LK083(git log --grep choreコミット偽陽性)
+- 2026-04-18 教訓登録: LK082(hook catを$(</dev/stdin)に置換するな)+LK083(git log --grep choreコミット偽陽性)+LK084(bash -lc PATHリセット)
+- 2026-04-18 cmd_karo_ci_fix_571: 影丸。#571+SSH/SLテスト(999-1006)修正。GATE BLOCK(draft_lessons:1偽陽性—tasks/lessons.md L025見出し"draft"がgrepに引っかかる)。次セッションで要対処
+- 2026-04-18 cmd_2072追加修正: 半蔵。PASS_NO_IMPROVEMENT下流3箇所追加(autofix/RFS/gate_report_autofix)。push:d87edf7
