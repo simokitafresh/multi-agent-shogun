@@ -113,9 +113,11 @@ ensure_cli_lookup_loaded() {
 lock_path() {
     case "$1" in
         /mnt/c/*|/mnt/d/*)
-            local _cksum=""
-            read -r _cksum _ < <(printf '%s' "$1" | cksum)
-            printf '/tmp/shogun_lock_%s.lock' "$_cksum"
+            local sanitized="${1//[^[:alnum:]._-]/_}"
+            if ((${#sanitized} > 180)); then
+                sanitized="${sanitized:0:120}_${sanitized: -40}_${#1}"
+            fi
+            printf '/tmp/shogun_lock_%s.lock' "$sanitized"
             ;;
         *)
             printf '%s.lock' "$1"
@@ -263,12 +265,23 @@ inbox_write_records() {
     mv "$tmp_file" "$inbox_file"
 }
 
-inbox_message_count() {
+inbox_is_empty_file() {
     local inbox_file="$1"
     [[ -f "$inbox_file" ]] || {
-        echo 0
         return 0
     }
+
+    local first_line=""
+    IFS= read -r first_line < "$inbox_file" || first_line=""
+    [[ "$first_line" == "messages: []" ]]
+}
+
+inbox_message_count() {
+    local inbox_file="$1"
+    if inbox_is_empty_file "$inbox_file"; then
+        echo 0
+        return 0
+    fi
     local count
     count=$(grep -c '^- ' "$inbox_file" 2>/dev/null || true)
     printf '%s\n' "${count:-0}"
@@ -485,7 +498,7 @@ inbox_append_message_fast_locked() {
     local inbox_file="$1"
     local message_block="$2"
 
-    if [[ ! -f "$inbox_file" ]] || grep -qx 'messages: \[\]' "$inbox_file" 2>/dev/null; then
+    if inbox_is_empty_file "$inbox_file"; then
         printf 'messages:\n%s' "$message_block" > "$inbox_file"
         return 0
     fi
@@ -499,9 +512,14 @@ inbox_append_message_locked() {
     local -a unread_records=() read_records=() kept_records=()
     local i start_idx=0 existing_count=0
 
-    existing_count=$(inbox_message_count "$inbox_file")
+    if inbox_is_empty_file "$inbox_file"; then
+        printf 'messages:\n%s' "$message_block" > "$inbox_file"
+        return 0
+    fi
+
+    existing_count=$(grep -c '^- ' "$inbox_file" 2>/dev/null || true)
     if (( existing_count < 50 )); then
-        inbox_append_message_fast_locked "$inbox_file" "$message_block"
+        printf '%s' "$message_block" >> "$inbox_file"
         return 0
     fi
 
