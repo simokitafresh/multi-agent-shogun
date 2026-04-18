@@ -3756,3 +3756,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: draft
 - **tags**: [universal]
 - WSL2上の大きいgit worktreeでは、git status --porcelain=v2 -z のNUL区切り出力は bash の while read -d ループより awk 抽出の方が速かった。今回の stop-lint-gate では bash read loop median 0.91s に対し awk 抽出版 median 0.84s を確認した。
+
+### L492: git status -z awk抽出はbash readより速い(WSL2大repo)
+- **日付**: 2026-04-18
+- **出典**: cmd_2039
+- **記録者**: karo
+- **tags**: [universal]
+- WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。bash readのIFS分割+行ループより awk 1-passの方がWSL2 NTFS上で高速。stop-lint-gate cmd_2039で0.84s実証。
