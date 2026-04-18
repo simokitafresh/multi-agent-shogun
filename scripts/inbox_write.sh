@@ -113,7 +113,9 @@ ensure_cli_lookup_loaded() {
 lock_path() {
     case "$1" in
         /mnt/c/*|/mnt/d/*)
-            printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"
+            local _cksum=""
+            read -r _cksum _ < <(printf '%s' "$1" | cksum)
+            printf '/tmp/shogun_lock_%s.lock' "$_cksum"
             ;;
         *)
             printf '%s.lock' "$1"

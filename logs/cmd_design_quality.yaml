@@ -8961,7 +8961,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "REQUEST_CHANGES"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -8983,7 +8983,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -9038,7 +9038,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "REQUEST_CHANGES"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -9060,7 +9060,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -9125,7 +9125,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "REQUEST_CHANGES"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -9146,7 +9146,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "REQUEST_CHANGES"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -9177,7 +9177,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "REQUEST_CHANGES"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -9245,7 +9245,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -9319,3 +9319,21 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-18T10:09:11Z"
+  - cmd_id: "cmd_2074"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T10:48:46Z"
+  - cmd_id: "cmd_2076"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T10:50:57Z"

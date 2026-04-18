@@ -3827,3 +3827,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: approved
 - **tags**: [universal]
 - Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'/'skipped'では検出できない。'# skip'パターンを明示的に追加する必要がある。テストで初回FAIL→修正の典型例。
+
+### L501: gate_karo_startup.sh: 並列ボトルネック誤特定によるキャッシュ効果なし
+- **日付**: 2026-04-18
+- **出典**: cmd_2076
+- **記録者**: kotaro
+- **status**: draft
+- **tags**: [universal]
+- WA rateスクリプト(57ms)が並列ボトルネックと分析→TTL300sキャッシュ実装。しかし_META_PIDS awk(deepdive大ファイル on /mnt/c/)が~100msを占め並列支配。WA rate廃止でもtotal 131ms>before 110ms(regression)。真因: 並列処理のボトルネック特定はsum不可→max(並列全ジョブ)で考えよ。
