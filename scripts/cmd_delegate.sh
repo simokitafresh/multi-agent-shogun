@@ -51,7 +51,7 @@ fi
 
 # Source yaml_field_set for field get/set
 # shellcheck source=/dev/null
-source "$SCRIPT_DIR/lib/yaml_field_set.sh"
+source "$PROJECT_DIR/scripts/lib/yaml_field_set.sh"
 
 find_undeployed_pending_cmds() {
     local yaml_file="$1"
@@ -149,7 +149,7 @@ fi
 
 # Step 3: 初回委任前に cmd_save.sh を強制実行
 cmd_save_exit=0
-if bash "$SCRIPT_DIR/cmd_save.sh" "$CMD_ID"; then
+if bash "$PROJECT_DIR/scripts/cmd_save.sh" "$CMD_ID"; then
     cmd_save_exit=0
 else
     cmd_save_exit=$?
@@ -211,7 +211,7 @@ yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" "\"$TIMESTAMP\"" || {
 }
 
 # Step 5: inbox_write.sh で家老に通知（status=delegated済みなのでguard通過）
-bash "$SCRIPT_DIR/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
+bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
     echo "ERROR: inbox_write.sh failed for $CMD_ID — status=delegatedは維持(手動inbox_writeで再送可)" >&2
     exit 1
 }

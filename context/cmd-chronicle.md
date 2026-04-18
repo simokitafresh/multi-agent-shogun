@@ -702,3 +702,9 @@
 | cmd_2035 | CoDD改善バッチ7-A — cmd_save.sh(再) + ninja_done.sh(再) + shutsujin_departure.sh(再) | infra | 04-18 | cmd_save.sh 1.06s→0.98s、ninja_ |
 | cmd_2038 | CoDD改善バッチ8-B — gate_report_format.sh + yaml_field_set.sh + gate_pd_sync.sh | infra | 04-18 | gate_report_format/yaml_field_ |
 | cmd_2037 | CoDD改善バッチ8-A — gate_karo_startup.sh(再) + gate_gunshi_cs_checklist.sh + gate_field_get.sh | infra | 04-18 | gate_karo_startup.sh・gate_guns |
+| cmd_2039 | CoDD改善バッチ9-A — stop-lint-gate.sh(再) + gate_recalculate_completeness.sh(再) + git-pre-commit.sh | infra | 04-18 | stop-lint-gate を status v2+awk |
+| cmd_2048 | CoDD改善バッチ13-B — mark_no_learning.sh + log_terminal_input.sh + statusline.sh | infra | 04-18 | infra小物3本を高速化し、mark_no_learnin |
+| cmd_2046 | CoDD改善バッチ12-B — cmd_quality_log.sh + task_deploy.sh + log_terminal_response.sh | infra | 04-18 | cmd_quality_log.sh(26ms→~11ms, |
+| cmd_2043 | CoDD改善バッチ11-A — lesson_harvest.sh(再) + post_recalculate_checks.sh(再) + model_switch_preflight.sh(再) | infra | 04-18 | lesson_harvest/post_recalculat |
+| cmd_2045 | CoDD改善バッチ12-A — gate_report_autofix.sh + gate_dc_duplicate.sh + gate_cmd_state.sh | infra | 04-18 | gate_report_autofix/gate_dc_du |
+| cmd_2049 | CoDD改善バッチ14-A — session_start_inject.sh + prompt_state_inject.sh + session_end_clear_check.sh | infra | 04-18 | session系hook 3本を高速化し、session_s |

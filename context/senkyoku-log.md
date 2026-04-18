@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-04-18
+
+| cmd | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2043 | infra batch 11-A の再改善3本を締める | lesson_harvest `10.57s→3.55s`、post_recalculate `2.23s→2.15s`、model_switch `1.23s→0.34s` を確認。研究メモ `docs/research/cmd_2043_codd_infra_batch_11a_20260418.md` 追加、commit `194878e` | `/mnt/c` では report archive 自体の一括走査は維持しつつ、lessons 台帳側の full YAML load を `rg` 抽出へ替える方が効いた。DB 側は monthly/signals 集計を SQL に寄せると Python 側の保持コストを削れた |
+
 ## 2026-04-16
 
 | cmd | 意図 | 結果 | 因果 |
