@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-18T12:58:38+09:00 -->
+<!-- generated_at: 2026-04-18T13:11:16+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-18T13:11:16+09:00 | terminal | response | **cmd_2060 GATE CLEAR。** spec補完8/8(inbox_mark_read + **悪化防止gate追加**)完了。 残り1本: cmd_2059(小太郎)のみ。spec補完7/8(log_terminal_re…
+- 2026-04-18T13:04:53+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-103)
+- 2026-04-18T13:03:01+09:00 | ntfy | outbound | CI赤: run 24596389887 Unit Tests (bats)
+- 2026-04-18T13:01:25+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 12:49:51|cmd_2057 2026-04-18 12:51:22|cmd_2056 2026-04-18 12:52:37|cmd_2058 2026-04-18 12:54:04|cm…
 - 2026-04-18T12:58:38+09:00 | terminal | response | **cmd_2055 GATE CLEAR。** spec補完3/8(shutsujin_departure + gate_diagnose_check + gate_silent_fallback)完了。 残り2本: cmd_2059(…
 - 2026-04-18T12:55:16+09:00 | terminal | response | **cmd_2053 GATE CLEAR。** spec補完1/8 + **stop-lint-gate revert**完了。 進行中: cmd_2054(疾風), cmd_2055(影丸), cmd_2060(半蔵)。残り: cmd…
 - 2026-04-18T12:54:22+09:00 | terminal | response | **cmd_2053 GATE CLEAR。** spec補完1/8 + **stop-lint-gate revert**完了。 進行中: cmd_2054(疾風), cmd_2055(影丸), cmd_2060(半蔵)。残り: cmd…
 - 2026-04-18T12:52:55+09:00 | terminal | response | **cmd_2058 GATE CLEAR。** spec補完6/8(pre-write-report-deny + cmd_quality_log + task_deploy)完了。 進行中: cmd_2053(才蔵), cmd_205…
 - 2026-04-18T12:51:51+09:00 | ntfy | outbound | 【家老】cmd_2060 初回配備開始 (title=CoDD spec補完(8/8) — inbox_mark_read.sh + 悪化防止gate追加, ninja=hanzo) CoDD spec補完(8/8) 📋 https://…
 - 2026-04-18T12:51:38+09:00 | terminal | response | **cmd_2056 GATE CLEAR。** spec補完4/8(gate_mcp_access + gate_report_autofix + gate_dc_duplicate)完了。 進行中: cmd_2053(才蔵), cmd…
-- 2026-04-18T12:50:22+09:00 | ntfy | outbound | 【家老】cmd_2059 初回配備開始 (title=CoDD spec補完(7/8) — log_terminal_response.sh + agent_config.sh + field_get.sh, ninja=kotaro) …
-- 2026-04-18T12:50:12+09:00 | terminal | response | **cmd_2057 GATE CLEAR。** spec補完5/8(gate_cmd_state + bash_state_hook + test_result_guard)完了。 進行中: cmd_2053(才蔵), cmd_2054…
-- 2026-04-18T12:45:11+09:00 | terminal | response | 先ほどのinbox_writeで既に家老inboxにcmd_2053の言及があるため全て重複BLOCK。cmd_2054だけGATE未通過。 家老にはcmd_2053-2060のpending存在が既に伝わっている。ninja_monit…
-- 2026-04-18T12:43:24+09:00 | ntfy | outbound | 【家老】cmd_2056 初回配備開始 (title=CoDD spec補完(4/8) — gate_mcp_access.sh + gate_report_autofix.sh + gate_dc_dupl..., ninja=hanz…
 
 ## 未解決確認事項
 - 対処しよう。過去に同じ事が起きていないか確認。今後起きないような対策。たぶんCoDDなのにCoDDをサボっているせいだろう。過去はきちんとやっていたはずだから以前のセッションの改善CMDも確認せよ
@@ -36,7 +36,6 @@
 - cmd_20
 - cmd_2022
 - cmd_2026
-- cmd_2029
 - cmd_2030
 - cmd_2031
 - cmd_2032
@@ -62,6 +61,7 @@
 - cmd_2052
 - cmd_2053
 - cmd_2054
+- cmd_2055
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
