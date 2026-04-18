@@ -717,3 +717,4 @@
 | cmd_2058 | CoDD spec補完(6/8) — pre-write-report-deny.sh + cmd_quality_log.sh + task_deploy.sh | infra | 04-18 | CoDD spec補完(6/8)完了。3本全specをdoc |
 | cmd_2053 | CoDD spec補完+悪化revert — stop-lint-gate revert + spec省略21件の正規CoDDやり直し(1/8) | infra | 04-18 | cmd_2053 の CoDD 正規化を実施し、3本の sp |
 | cmd_2054 | CoDD spec補完(2/8) — parity_check.sh + gate_recalculate_completeness.sh + lesson_write.sh | infra | 04-18 | cmd_2054 の対象3本について CoDD spec を |
+| cmd_2055 | CoDD spec補完(3/8) — shutsujin_departure.sh + gate_diagnose_check.sh + gate_silent_fallback.sh | infra | 04-18 | CoDD spec補完3本完了。shutsujin_depa |
