@@ -8,6 +8,7 @@
 # 閾値: OK=<15%, WARN=15-30%, ALERT=>30%
 # GATE判定には影響しない（情報表示のみ）
 # 最適化(cmd_1970): python3+grep+awk3本 → awk1本に統合(-44%)
+# 最適化(cmd_2092): BEGIN内getline from tac → gate_log処理21ms→3ms(-86%) 全体36ms→25ms(-31%)
 
 set -e
 
@@ -36,30 +37,37 @@ if [ ! -f "$WA_FILE" ]; then
     exit 0
 fi
 
-# gate_metrics.log が存在する場合は2ファイルをawk1本で処理
-# 不在の場合はkaro_workarounds.yamlのみ処理(fallbackモード)
+# gate_metrics.log が存在する場合:
+#   BEGIN内でtacコマンドからgetlineし、末尾からN件ユニークCLEARを取得(~3ms)
+#   その後karo_workarounds.yamlを1パスで処理(~15ms)
+# 不在の場合: fallbackモード(karo_workarounds.yamlのみ処理)
 if [ -f "$GATE_LOG" ]; then
-    _INPUTS=("$GATE_LOG" "$WA_FILE")
     _HAS_GATE="true"
 else
-    _INPUTS=("$WA_FILE")
     _HAS_GATE="false"
 fi
 
-result=$(awk -F'\t' -v has_gate="$_HAS_GATE" -v last_n="$LAST_N" '
+result=$(awk -v has_gate="$_HAS_GATE" -v gate_log="$GATE_LOG" -v last_n="$LAST_N" '
 BEGIN {
     cur_cmd = ""; has_wa_field = 0; cur_wa = 0; cur_cat = "uncategorized"
     item_count = 0; clear_count = 0
+
+    # gate_pathの場合: tacでgate_logを末尾から読みlast_n件ユニークCLEARを取得
+    # N件見つかり次第breakし、tacにSIGPIPEを送ってI/Oを最小化
+    if (has_gate == "true") {
+        cmd = "tac \"" gate_log "\""
+        while ((cmd | getline line) > 0) {
+            n = split(line, f, "\t")
+            if (f[3] == "CLEAR" && !seen_cl[f[2]]++) {
+                clear_set[f[2]] = 1
+                if (++clear_count >= last_n) break
+            }
+        }
+        close(cmd)
+    }
 }
 
-# Pass 1: gate_metrics.log (tab区切り。FNR==NRは1ファイル目のみ)
-has_gate == "true" && FNR == NR {
-    # $3 == "CLEAR" かつ cmd_id($2)が未出現のものを収集
-    if ($3 == "CLEAR" && !seen[$2]++) clear_lines[clear_count++] = $2
-    next
-}
-
-# Pass 2: karo_workarounds.yaml のエントリ先頭
+# karo_workarounds.yaml のエントリ先頭
 /^- cmd_id:/ {
     flush_item()
     cur_cmd = $0
@@ -87,30 +95,16 @@ has_gate == "true" && FNR == NR {
 END {
     flush_item()
 
-    # gate_log pathの場合: clear_linesの末尾last_n件をclear_setに登録
-    clear_total = 0
-    if (has_gate == "true") {
-        start_i = (clear_count > last_n) ? clear_count - last_n : 0
-        for (i = start_i; i < clear_count; i++) {
-            clear_set[clear_lines[i]] = 1
-            clear_total++
-        }
-    }
-
-    if (has_gate == "true" && clear_total > 0) {
+    if (has_gate == "true" && clear_count > 0) {
         # gate_metrics.logベース: 分母=CLEAR cmd数
         # 同一cmdに複数エントリある場合 workaround=trueが優先
-        total = clear_total; wa_count = 0
+        total = clear_count; wa_count = 0
         for (i = 0; i < item_count; i++) {
             cmd = item_cmd[i]
-            if (cmd in clear_set) {
-                if (item_wa[i] && !(cmd in wa_seen_true)) {
-                    wa_seen_true[cmd] = 1
-                    wa_count++
-                    cats[item_cat[i]]++
-                } else if (!item_wa[i] && !(cmd in wa_seen_true) && !(cmd in wa_seen_false)) {
-                    wa_seen_false[cmd] = 1
-                }
+            if (cmd in clear_set && item_wa[i] && !(cmd in wa_seen_true)) {
+                wa_seen_true[cmd] = 1
+                wa_count++
+                cats[item_cat[i]]++
             }
         }
         source = "gate_metrics"
@@ -151,7 +145,7 @@ function flush_item() {
     }
     cur_cmd = ""; has_wa_field = 0
 }
-' "${_INPUTS[@]}" 2>/dev/null || echo "ERROR|0|0|0|awk_error|unknown")
+' "$WA_FILE" 2>/dev/null || echo "ERROR|0|0|0|awk_error|unknown")
 
 IFS='|' read -r LEVEL RATE WA_COUNT TOTAL CATS SOURCE <<< "$result"
 
