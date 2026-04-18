@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-18T22:17:36+09:00 -->
+<!-- generated_at: 2026-04-18T22:25:28+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-18T22:25:28+09:00 | terminal | response | **cmd_2091 GATE CLEAR！** gate_loop_health.sh正規CoDD再改善完了（影丸）。 **全量再改善一巡完了。19/20 GATE CLEAR。**（cmd_2073のみ前提崩壊で失敗、cmd_2083…
+- 2026-04-18T22:21:25+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 22:17:20|cmd_2092
 - 2026-04-18T22:17:36+09:00 | terminal | response | **cmd_2092 GATE CLEAR！** gate_workaround_rate.sh正規CoDD再改善完了（半蔵）。 進捗: **18/20 GATE CLEAR。** 残り1cmd（cmd_2091 影丸作業中 CTX:56…
 - 2026-04-18T22:06:14+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 21:56:54|cmd_karo_precommit_yaml_dump_fp 2026-04-18 22:00:56|cmd_2080
 - 2026-04-18T22:01:10+09:00 | terminal | response | **cmd_2080 GATE CLEAR！** inbox_write.sh正規CoDD再改善完了（才蔵）。 進捗更新: **17/20 GATE CLEAR。** 残り2cmd（cmd_2091 影丸作業中, cmd_2092 半蔵作…
@@ -12,10 +14,9 @@
 - 2026-04-18T21:58:01+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-114)
 - 2026-04-18T21:52:57+09:00 | ntfy | outbound | 【家老】cmd_2092 初回配備開始 (title=CoDD正規再改善 R2-E — gate_workaround_rate.sh(spec省略→正規CoDD再改善), ninja=hanzo) CoDD正規再改善 R2-E 📋 ht…
 - 2026-04-18T21:52:55+09:00 | terminal | inbound | y
-- 2026-04-18T21:52:49+09:00 | ntfy | outbound | 【SessionEnd 報告】/clear前確認 agent=shogun 殿の言葉 inbound=38件 clear_prep_check=OK [1.PD未決] 0件: なし [2.cmd pending] 1件: AC3 [3.🚨…
-- 2026-04-18T21:52:44+09:00 | ntfy | outbound | 【家老】cmd_2091 初回配備開始 (title=CoDD正規再改善 R2-D — gate_loop_health.sh(spec省略→正規CoDD再改善), ninja=kagemaru) CoDD正規再改善 R2-D 📋 htt…
 
 ## 未解決確認事項
+- **cmd_2091 GATE CLEAR！** gate_loop_health.sh正規CoDD再改善完了（影丸）。 **全量再改善一巡完了。19/20 GATE CLEAR。**（cmd_2073のみ前提崩壊で失敗、cmd_2083はYAML書き漏らしだが台帳で完了確認済…
 - 復帰完了。殿にご報告する。 --- 殿、復帰完了でござる。 **全量再改善の現況:** | 状態 | 件数 | 詳細 | |------|------|------| | ✅ GATE CLEAR | 16cmd | cmd_2074-2079, 2081-2082, 2084…
 - 【将軍】復帰済み。全量再改善16/20 GATE CLEAR。cmd_2080/2091/2092の3cmd作業中。cmd_2083は台帳で完了確認(YAML書き漏らし)。idle3名。
 - 【SessionEnd 報告】/clear前確認 agent=shogun 殿の言葉 inbound=38件 clear_prep_check=OK [1.PD未決] 0件: なし [2.cmd pending] 1件: AC3 [3.🚨要対応] 0件 [4.忍者] 稼働1 /…
@@ -23,9 +24,9 @@
 - GATE CLEAR 15/20。殿の質問「速度改善？」に回答する。台帳の最新エントリを現物確認する。 [meta] stop_reason=tool_use
 - 【家老】復帰済み。CI赤(E2E#5)+疾風cmd_2090報告+忍者5名稼働中を確認。
 - 家老がidle状態。CI赤はE2E flakyのみで**Unit Tests全PASS確認済み**。しかしidle忍者4名への残りcmd配備が止まっている。nudgeする。 [meta] stop_reason=tool_use
-- 定義を確認した。今回のCoDD再改善cmdで消火が発生していないか、GP-107 4問で監査する。 [meta] stop_reason=tool_use
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-18T22:25:28+09:00 | **cmd_2091 GATE CLEAR！** gate_loop_health.sh正規CoDD再改善完了（影丸）。 **全量再改善一巡完了。19/20 GATE CLEAR。**（cmd_2073のみ前提崩壊で失敗、cmd_2083はYAML書き漏らしだが台帳で完了確認済…
 - 2026-04-18T21:58:47+09:00 | 復帰完了。殿にご報告する。 --- 殿、復帰完了でござる。 **全量再改善の現況:** | 状態 | 件数 | 詳細 | |------|------|------| | ✅ GATE CLEAR | 16cmd | cmd_2074-2079, 2081-2082, 2084…
 - 2026-04-18T20:18:08+09:00 | 殿、報告する。 **進んでいる。** 家老が即座に動いた。 | 忍者 | タスク | 状態 | |------|--------|------| | 疾風 | cmd_2090(gate_vercel_phase) | assigned（報告完了済み） | | 影丸 | 未配備…
 - 2026-04-18T20:11:15+09:00 | 処理完了。家老がidle忍者に修正cmd配備予定。殿のご指示をお待ちつかまつる。 [meta] stop_reason=end_turn
@@ -33,7 +34,6 @@
 - 2026-04-18T20:07:01+09:00 | 家老に送信完了。CI赤修正+deploy_task.sh障害修正を最優先で指示した。 殿の仰る通り、最優先。CoDD再改善の消化は一旦止め、CI緑復帰を待つ。 [meta] stop_reason=tool_use
 - 2026-04-18T20:06:37+09:00 | 家老に送信完了。CI赤修正+deploy_task.sh障害修正を最優先で指示した。 殿の仰る通り、最優先。CoDD再改善の消化は一旦止め、CI緑復帰を待つ。 [meta] stop_reason=tool_use
 - 2026-04-18T20:05:54+09:00 | よし指示せよ
-- 2026-04-18T19:52:06+09:00 | 処理完了。ここまでのGATE CLEAR: cmd_2074, cmd_2075, cmd_2076, cmd_2077の4本。残り16cmdが配備中/待ち。殿のご指示をお待ちつかまつる。 [meta] stop_reason=tool_use
 
 ## 参照cmd
 - cmd_2
@@ -41,7 +41,6 @@
 - cmd_1953
 - cmd_2025
 - cmd_2043
-- cmd_2051
 - cmd_2053
 - cmd_2061
 - cmd_2065
@@ -66,6 +65,7 @@
 - cmd_2084
 - cmd_2085
 - cmd_2086
+- cmd_2087
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

@@ -792,3 +792,18 @@
   gate_prediction: "WARN(draft_lessons:1 BLOCKリスク — BLOCK確認済み)"
   causal_chain: "全量scan21ms→tac末尾+early-break3ms(-86%)。1-awk維持がWSL2プロセス起動コスト回避の鍵=正の複利(全gate呼出し高速化)"
   timestamp: "2026-04-18T22:20:00"
+- cmd_id: cmd_2091
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2091_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。gate_loop_health.sh insight dedup修正。json 2段エスケープ不一致→json.loads+pattern[:60]。442→55ms(-87.5%)"
+  observations:
+    - "事実1: 数値検算OK。(442-55)/442=87.6%≈-87.5%。442/55=8.0x一致"
+    - "事実2: insight_write.sh×6回サブプロセス(500ms)がdedup修正で0回に。根因=エスケープ不一致でSKIP全件不発"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: "WARN(draft_lessons:1 — BLOCK確認済み)"
+  causal_chain: "json 2段エスケープ→dedup不一致→insight_write×6(500ms)→json.loads+pattern[:60]→0回→-87.5%=正の複利(insight重複蓄積の根本解消)"
+  timestamp: "2026-04-18T22:25:00"
