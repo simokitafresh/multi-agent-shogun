@@ -22,8 +22,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-CONTEXT_DIR="$SCRIPT_DIR/context"
-CHECK_SCRIPT="$SCRIPT_DIR/scripts/context_freshness_check.sh"
+ROOT_DIR="${CONTEXT_FRESHNESS_ROOT:-$SCRIPT_DIR}"
+CHECK_SCRIPT="${CONTEXT_FRESHNESS_CHECK_SCRIPT:-$ROOT_DIR/scripts/context_freshness_check.sh}"
+NTFY_SCRIPT="${CONTEXT_FRESHNESS_NTFY_SCRIPT:-$ROOT_DIR/scripts/ntfy.sh}"
+TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
 
 HAS_ALERT=0
 HAS_WARN=0
@@ -36,39 +38,57 @@ emit_actionable() {
     echo "  action: $action"
 }
 
-TODAY_EPOCH=$(date +%s)
+if [[ -n "$TODAY_OVERRIDE" ]]; then
+    TODAY_EPOCH=$(date -d "$TODAY_OVERRIDE" +%s 2>/dev/null) || {
+        echo "WARN: CONTEXT_FRESHNESS_TODAY の日付形式不正: $TODAY_OVERRIDE"
+        echo "  action: YYYY-MM-DD 形式に修正せよ。"
+        exit 2
+    }
+else
+    TODAY_EPOCH=$(date +%s)
+fi
 
-if [ ! -f "$CHECK_SCRIPT" ]; then
+if [[ ! -f "$CHECK_SCRIPT" ]]; then
     echo "WARN: context_freshness_check.sh not found"
     echo "  action: scripts/context_freshness_check.sh を復旧せよ。"
     exit 2
 fi
 
-mapfile -t target_rel_paths < <(
+declare -A seen_paths=()
+target_rel_paths=()
+while IFS= read -r rel_path; do
+    [[ -n "$rel_path" ]] || continue
+    if [[ -n "${seen_paths[$rel_path]:-}" ]]; then
+        continue
+    fi
+    seen_paths["$rel_path"]=1
+    target_rel_paths+=("$rel_path")
+done < <(
     bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null \
-        | sed -nE 's/^WARN: ([^ ]+) last_updated .*$/\1/p' \
-        | sort -u
+        | sed -nE 's/^WARN: ([^ ]+) last_updated .*$/\1/p'
 )
 
-if [ "${#target_rel_paths[@]}" -eq 0 ]; then
+if [[ "${#target_rel_paths[@]}" -eq 0 ]]; then
     echo "--- 総合判定: OK ---"
     exit 0
 fi
 
 for rel_path in "${target_rel_paths[@]}"; do
-    file="$SCRIPT_DIR/$rel_path"
-    [ -f "$file" ] || continue
+    file="$ROOT_DIR/$rel_path"
+    [[ -f "$file" ]] || continue
 
     basename_file=$(basename "$file")
+    last_updated=""
+    line_count=0
+    while IFS= read -r line && (( line_count < 10 )); do
+        line_count=$((line_count + 1))
+        if [[ "$line" =~ last_updated:[[:space:]]*([0-9]{4}-[0-9]{2}-[0-9]{2}) ]]; then
+            last_updated="${BASH_REMATCH[1]}"
+            break
+        fi
+    done < "$file"
 
-    # Extract last_updated date from <!-- last_updated: YYYY-MM-DD ... -->
-    # head -10 to limit search to file header
-    last_updated=$(head -10 "$file" \
-        | grep -oE 'last_updated:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}' \
-        | head -1 \
-        | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}') || true
-
-    if [ -z "$last_updated" ]; then
+    if [[ -z "$last_updated" ]]; then
         emit_actionable \
             "WARN: ${basename_file} (last_updated 未記載)" \
             "${basename_file} に <!-- last_updated: YYYY-MM-DD --> を追記せよ。"
@@ -76,7 +96,6 @@ for rel_path in "${target_rel_paths[@]}"; do
         continue
     fi
 
-    # Calculate days since last_updated
     file_epoch=$(date -d "$last_updated" +%s 2>/dev/null) || {
         emit_actionable \
             "WARN: ${basename_file} (last_updated日付パース失敗: ${last_updated})" \
@@ -87,13 +106,13 @@ for rel_path in "${target_rel_paths[@]}"; do
 
     days_ago=$(( (TODAY_EPOCH - file_epoch) / 86400 ))
 
-    if [ "$days_ago" -gt 14 ]; then
+    if [[ "$days_ago" -gt 14 ]]; then
         emit_actionable \
             "ALERT: ${basename_file} (${days_ago}日前更新)" \
             "${basename_file} の内容を確認し、最新情報へ更新せよ。"
         HAS_ALERT=1
         ALERT_LIST+=("${basename_file}(${days_ago}日)")
-    elif [ "$days_ago" -gt 7 ]; then
+    elif [[ "$days_ago" -gt 7 ]]; then
         emit_actionable \
             "WARN: ${basename_file} (${days_ago}日前更新)" \
             "${basename_file} の鮮度を確認し、必要なら更新せよ。"
@@ -103,17 +122,15 @@ for rel_path in "${target_rel_paths[@]}"; do
     fi
 done
 
-# ALERT時のntfy送信（WARNのみの場合は送信しない）
-if [ "$HAS_ALERT" -gt 0 ] && [ ${#ALERT_LIST[@]} -gt 0 ]; then
+if [[ "$HAS_ALERT" -gt 0 && "${#ALERT_LIST[@]}" -gt 0 && -f "$NTFY_SCRIPT" ]]; then
     alert_summary=$(IFS=', '; echo "${ALERT_LIST[*]}")
-    bash "$SCRIPT_DIR/scripts/ntfy.sh" "【将軍】context鮮度ALERT: ${alert_summary}" || true
+    bash "$NTFY_SCRIPT" "【将軍】context鮮度ALERT: ${alert_summary}" >/dev/null 2>&1 || true
 fi
 
-# 総合判定
-if [ "$HAS_ALERT" -gt 0 ]; then
+if [[ "$HAS_ALERT" -gt 0 ]]; then
     echo "--- 総合判定: ALERT ---"
     exit 1
-elif [ "$HAS_WARN" -gt 0 ]; then
+elif [[ "$HAS_WARN" -gt 0 ]]; then
     echo "--- 総合判定: WARN ---"
     exit 2
 else

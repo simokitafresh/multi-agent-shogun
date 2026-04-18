@@ -18,115 +18,104 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+AUDIT_ROOT="${ENFORCEMENT_AUDIT_ROOT:-$SCRIPT_DIR}"
 
-CLAUDE_MD="$SCRIPT_DIR/CLAUDE.md"
-USER_SETTINGS="$HOME/.claude/settings.json"
-PROJECT_SETTINGS="$SCRIPT_DIR/.claude/settings.json"
-PROJECT_LOCAL_SETTINGS="$SCRIPT_DIR/.claude/settings.local.json"
+CLAUDE_MD="${ENFORCEMENT_AUDIT_CLAUDE_MD:-$AUDIT_ROOT/CLAUDE.md}"
+USER_SETTINGS="${ENFORCEMENT_AUDIT_USER_SETTINGS:-$HOME/.claude/settings.json}"
+PROJECT_SETTINGS="${ENFORCEMENT_AUDIT_PROJECT_SETTINGS:-$AUDIT_ROOT/.claude/settings.json}"
+PROJECT_LOCAL_SETTINGS="${ENFORCEMENT_AUDIT_PROJECT_LOCAL_SETTINGS:-$AUDIT_ROOT/.claude/settings.local.json}"
 
 # 許容リスト(手動実行が意図された script は除外)
 # 書式: 1行1 basename。'#' でコメント
-ALLOWLIST_FILE="$SCRIPT_DIR/config/enforcement_audit_allowlist.txt"
+ALLOWLIST_FILE="${ENFORCEMENT_AUDIT_ALLOWLIST:-$AUDIT_ROOT/config/enforcement_audit_allowlist.txt}"
 
 echo "=== 強制度監査 gate $(date -Iseconds) ==="
 
-# ---- Step 1: CLAUDE.md で参照されている bash scripts/* を列挙 ----
 if [[ ! -f "$CLAUDE_MD" ]]; then
   echo "ERROR: $CLAUDE_MD not found"
   exit 2
 fi
 
-# 拾うパターン: `bash scripts/...` または `bash scripts/gates/...` (行内を1つ)
-mapfile -t CLAUDE_REFS < <(
-  grep -oE 'bash[[:space:]]+scripts/[A-Za-z0-9_./-]+\.sh' "$CLAUDE_MD" \
-    | awk '{print $2}' \
-    | sort -u
-)
+python3 - "$CLAUDE_MD" "$ALLOWLIST_FILE" "$USER_SETTINGS" "$PROJECT_SETTINGS" "$PROJECT_LOCAL_SETTINGS" <<'PY'
+from __future__ import annotations
 
-echo "■ CLAUDE.md 参照 script: ${#CLAUDE_REFS[@]} 本"
+import json
+import re
+import sys
+from pathlib import Path
 
-# ---- Step 2: hooks 登録されている script を 3 つの settings から抽出 ----
-collect_hook_scripts() {
-  local f="$1"
-  [[ -f "$f" ]] || return 0
-  # jq でhooks[*].hooks[*].command を全部取り出す
-  python3 - "$f" <<'PY' 2>/dev/null || true
-import json, re, sys
-try:
-    with open(sys.argv[1]) as fp:
-        data = json.load(fp)
-except Exception:
-    sys.exit(0)
-hooks = data.get("hooks", {})
-for event, entries in hooks.items():
-    if not isinstance(entries, list):
+claude_md = Path(sys.argv[1])
+allowlist_file = Path(sys.argv[2])
+settings_paths = [Path(path) for path in sys.argv[3:]]
+
+claude_text = claude_md.read_text(encoding="utf-8")
+claude_refs = sorted({
+    match.group(1)
+    for match in re.finditer(
+        r"bash[ \t]+(scripts/[A-Za-z0-9_./-]+\.sh)",
+        claude_text,
+    )
+})
+
+hook_scripts: set[str] = set()
+for path in settings_paths:
+    if not path.is_file():
         continue
-    for entry in entries:
-        for h in entry.get("hooks", []) or []:
-            cmd = h.get("command", "")
-            for m in re.findall(r'scripts/[A-Za-z0-9_./-]+\.sh', cmd):
-                print(m)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        continue
+    hooks = data.get("hooks", {})
+    if not isinstance(hooks, dict):
+        continue
+    for entries in hooks.values():
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            for hook in entry.get("hooks", []) or []:
+                if not isinstance(hook, dict):
+                    continue
+                command = str(hook.get("command", ""))
+                for match in re.finditer(r"(scripts/[A-Za-z0-9_./-]+\.sh)", command):
+                    hook_scripts.add(match.group(1))
+
+allow_basenames: set[str] = set()
+if allowlist_file.is_file():
+    for raw_line in allowlist_file.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        allow_basenames.add(line)
+
+hook_basenames = {Path(path).name for path in hook_scripts}
+missing = [
+    ref for ref in claude_refs
+    if Path(ref).name not in allow_basenames and Path(ref).name not in hook_basenames
+]
+
+print(f"■ CLAUDE.md 参照 script: {len(claude_refs)} 本")
+print(f"■ settings(*.json) 登録 hook script: {len(hook_scripts)} 本")
+
+if not missing:
+    print("")
+    print("=== 総合判定: OK (意志依存 script 0 本) ===")
+    sys.exit(0)
+
+print("")
+print(f"■ ⚠️ 意志依存 script 検出: {len(missing)} 本")
+for ref in missing:
+    print(f"  - {ref}")
+print("")
+print("これらは CLAUDE.md で参照されているが、どの settings.json の hooks にも未登録です。")
+print("読み手の意志に依存しており、Phase 4 原理「LLM に生存本能はない」により実行スキップ可能。")
+print("")
+print("対処:")
+print("  (A) hook 登録: settings.json の SessionStart / PreToolUse / PostToolUse 等に登録")
+print("  (B) 他スクリプトから自動呼出: session_start_inject.sh のような既存 hook スクリプト内で bash 呼出")
+print(f"  (C) 手動実行が正当: {allowlist_file} に basename を追記して許容")
+print("")
+print("=== 総合判定: ALERT (要対処) ===")
+sys.exit(1)
 PY
-}
-
-HOOK_SCRIPTS="$(
-  {
-    collect_hook_scripts "$USER_SETTINGS"
-    collect_hook_scripts "$PROJECT_SETTINGS"
-    collect_hook_scripts "$PROJECT_LOCAL_SETTINGS"
-  } | sort -u
-)"
-
-hook_count=0
-[[ -n "$HOOK_SCRIPTS" ]] && hook_count=$(echo "$HOOK_SCRIPTS" | wc -l | tr -d ' ')
-echo "■ settings(*.json) 登録 hook script: $hook_count 本"
-
-# ---- Step 3: 許容リストを読み込み ----
-ALLOW_SCRIPTS=""
-if [[ -f "$ALLOWLIST_FILE" ]]; then
-  ALLOW_SCRIPTS="$(grep -vE '^[[:space:]]*(#|$)' "$ALLOWLIST_FILE" | sort -u)"
-fi
-
-# ---- Step 4: CLAUDE.md で参照されているが hooks に未登録の script を抽出 ----
-# = 意志依存 script
-will_dep_list=""
-for ref in "${CLAUDE_REFS[@]}"; do
-  base="$(basename "$ref")"
-  # allowlist に入っていればスキップ
-  if [[ -n "$ALLOW_SCRIPTS" ]] && echo "$ALLOW_SCRIPTS" | grep -qxF "$base"; then
-    continue
-  fi
-  # hook に登録されていればスキップ
-  if echo "$HOOK_SCRIPTS" | grep -qE "(^|/)${base}$"; then
-    continue
-  fi
-  will_dep_list="${will_dep_list}${ref}"$'\n'
-done
-
-will_dep_count=0
-[[ -n "$will_dep_list" ]] && will_dep_count=$(echo -n "$will_dep_list" | grep -c . || true)
-
-# ---- Step 5: 結果表示 ----
-if (( will_dep_count == 0 )); then
-  echo ""
-  echo "=== 総合判定: OK (意志依存 script 0 本) ==="
-  exit 0
-fi
-
-echo ""
-echo "■ ⚠️ 意志依存 script 検出: ${will_dep_count} 本"
-while IFS= read -r line; do
-  [[ -z "$line" ]] && continue
-  echo "  - $line"
-done <<< "$will_dep_list"
-echo ""
-echo "これらは CLAUDE.md で参照されているが、どの settings.json の hooks にも未登録です。"
-echo "読み手の意志に依存しており、Phase 4 原理「LLM に生存本能はない」により実行スキップ可能。"
-echo ""
-echo "対処:"
-echo "  (A) hook 登録: settings.json の SessionStart / PreToolUse / PostToolUse 等に登録"
-echo "  (B) 他スクリプトから自動呼出: session_start_inject.sh のような既存 hook スクリプト内で bash 呼出"
-echo "  (C) 手動実行が正当: $ALLOWLIST_FILE に basename を追記して許容"
-echo ""
-echo "=== 総合判定: ALERT (要対処) ==="
-exit 1

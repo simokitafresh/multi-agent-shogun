@@ -18,7 +18,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-WA_FILE="$REPO_ROOT/logs/karo_workarounds.yaml"
+WA_FILE="${WA_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 FIX_MODE=false
 
 if [[ "${1:-}" == "--fix" ]]; then
@@ -30,177 +30,184 @@ if [[ ! -f "$WA_FILE" ]]; then
     exit 0
 fi
 
-RESULT=$(FIX_MODE="$FIX_MODE" WA_FILE="$WA_FILE" python3 -c "
-import yaml, re, os, sys, copy
+python3 - "$WA_FILE" "$FIX_MODE" <<'PY'
+from __future__ import annotations
 
-wa_file = os.environ['WA_FILE']
-fix_mode = os.environ['FIX_MODE'] == 'true'
+import os
+import sys
+import tempfile
 
-with open(wa_file) as f:
-    raw = f.read()
+import yaml
 
-data = yaml.safe_load(raw)
+wa_file = sys.argv[1]
+fix_mode = sys.argv[2].lower() == "true"
 
-# Support bare list or dict wrapper
+loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
+with open(wa_file, encoding="utf-8") as f:
+    data = yaml.load(f, Loader=loader)
+
 if isinstance(data, list):
     entries = data
     is_bare_list = True
 elif isinstance(data, dict):
-    for key in ('workarounds', 'entries'):
+    for key in ("workarounds", "entries"):
         if key in data:
             entries = data[key]
             is_bare_list = False
+            target_key = key
             break
     else:
         entries = []
         is_bare_list = True
+        target_key = "workarounds"
 else:
     entries = []
     is_bare_list = True
+    target_key = "workarounds"
 
 if not isinstance(entries, list):
-    print('FAIL: entries is not a list')
+    print("FAIL: entries is not a list")
     sys.exit(1)
 
-issues = []
-fixes = []
+issues: list[str] = []
+fixes: list[str] = []
 
-KNOWN_NINJAS = {'hayate', 'kagemaru', 'hanzo', 'saizo', 'kotaro', 'tobisaru', 'unknown'}
-CLEAN_KEYWORDS = ['workaround不要', 'WA不要', '修正なし', '対処不要', '修正不要', '正規フロー完了', '問題なし']
+known_ninjas = {"hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru", "unknown"}
+clean_keywords = ["workaround不要", "WA不要", "修正なし", "対処不要", "修正不要", "正規フロー完了", "問題なし"]
 
-# --- Check 1: False WAs ---
-for i, e in enumerate(entries):
-    if not isinstance(e, dict):
+for i, entry in enumerate(entries):
+    if not isinstance(entry, dict):
         continue
-    wa = e.get('workaround', False)
-    detail = str(e.get('detail', ''))
-    cat = e.get('category', '')
-    cmd_id = str(e.get('cmd_id', ''))
-
-    if wa and cat != 'clean':
-        for kw in CLEAN_KEYWORDS:
-            if kw in detail:
-                issues.append(f'FALSE_WA[{i}]: {cmd_id} — detail contains \"{kw}\" but workaround=true')
+    workaround = entry.get("workaround", False)
+    detail = str(entry.get("detail", ""))
+    category = entry.get("category", "")
+    cmd_id = str(entry.get("cmd_id", ""))
+    if workaround and category != "clean":
+        for keyword in clean_keywords:
+            if keyword in detail:
+                issues.append(f'FALSE_WA[{i}]: {cmd_id} — detail contains "{keyword}" but workaround=true')
                 if fix_mode:
-                    e['workaround'] = False
-                    e['category'] = 'clean'
-                    fixes.append(f'FIX[{i}]: {cmd_id} → workaround=false, category=clean')
+                    entry["workaround"] = False
+                    entry["category"] = "clean"
+                    fixes.append(f"FIX[{i}]: {cmd_id} → workaround=false, category=clean")
                 break
 
-# --- Check 2: Duplicate entries (same cmd_id + ninja) ---
-seen = {}
-dup_indices = []
-for i, e in enumerate(entries):
-    if not isinstance(e, dict):
+seen: dict[str, int] = {}
+dup_indices: list[int] = []
+for i, entry in enumerate(entries):
+    if not isinstance(entry, dict):
         continue
-    cmd_id = str(e.get('cmd_id', ''))
-    ninja = str(e.get('ninja', ''))
-    key = f'{cmd_id}|{ninja}'
+    cmd_id = str(entry.get("cmd_id", ""))
+    ninja = str(entry.get("ninja", ""))
+    key = f"{cmd_id}|{ninja}"
+    if key not in seen:
+        seen[key] = i
+        continue
 
-    if key in seen:
-        prev_i = seen[key]
-        prev_e = entries[prev_i]
-        # If one is clean and other is WA, keep clean
-        prev_wa = prev_e.get('workaround', False)
-        curr_wa = e.get('workaround', False)
+    prev_i = seen[key]
+    prev_entry = entries[prev_i]
+    prev_wa = prev_entry.get("workaround", False)
+    curr_wa = entry.get("workaround", False)
 
-        if not curr_wa and prev_wa:
-            # Current is clean, previous is WA → remove previous
-            issues.append(f'DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{i}]')
-            dup_indices.append(prev_i)
-            seen[key] = i
-        elif curr_wa and not prev_wa:
-            # Previous is clean, current is WA → remove current
-            issues.append(f'DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{prev_i}]')
-            dup_indices.append(i)
-        else:
-            # Both same type → keep latest (higher index)
-            issues.append(f'DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping latest [{i}]')
-            dup_indices.append(prev_i)
-            seen[key] = i
+    if not curr_wa and prev_wa:
+        issues.append(f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{i}]")
+        dup_indices.append(prev_i)
+        seen[key] = i
+    elif curr_wa and not prev_wa:
+        issues.append(f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{prev_i}]")
+        dup_indices.append(i)
     else:
+        issues.append(f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping latest [{i}]")
+        dup_indices.append(prev_i)
         seen[key] = i
 
 if fix_mode and dup_indices:
-    # Remove duplicates (reverse order to preserve indices)
     for idx in sorted(set(dup_indices), reverse=True):
         removed = entries.pop(idx)
-        fixes.append(f'REMOVED[{idx}]: {removed.get(\"cmd_id\",\"?\")}/{removed.get(\"ninja\",\"?\")}')
+        fixes.append(f"REMOVED[{idx}]: {removed.get('cmd_id', '?')}/{removed.get('ninja', '?')}")
 
-# --- Check 3: GP-049 bypass (detail too short) ---
-for i, e in enumerate(entries):
-    if not isinstance(e, dict):
+for i, entry in enumerate(entries):
+    if not isinstance(entry, dict):
         continue
-    wa = e.get('workaround', False)
-    detail = str(e.get('detail', ''))
-    cmd_id = str(e.get('cmd_id', ''))
+    workaround = entry.get("workaround", False)
+    detail = str(entry.get("detail", ""))
+    cmd_id = str(entry.get("cmd_id", ""))
+    if workaround and entry.get("category") != "clean":
+        if detail in ("none", "null", "") or (0 < len(detail) < 10):
+            issues.append(f'GP049_BYPASS[{i}]: {cmd_id} — detail="{detail}" (too short/placeholder)')
 
-    if wa and e.get('category') != 'clean':
-        if detail in ('none', 'null', '') or (0 < len(detail) < 10):
-            issues.append(f'GP049_BYPASS[{i}]: {cmd_id} — detail=\"{detail}\" (too short/placeholder)')
-
-# --- Check 4: Ninja name corruption ---
-for i, e in enumerate(entries):
-    if not isinstance(e, dict):
+for i, entry in enumerate(entries):
+    if not isinstance(entry, dict):
         continue
-    ninja = str(e.get('ninja', ''))
-    cmd_id = str(e.get('cmd_id', ''))
+    ninja = str(entry.get("ninja", ""))
+    cmd_id = str(entry.get("cmd_id", ""))
+    if ninja and ninja not in known_ninjas:
+        issues.append(f'NINJA_CORRUPT[{i}]: {cmd_id} — ninja="{ninja}" not in known list')
 
-    if ninja and ninja not in KNOWN_NINJAS:
-        issues.append(f'NINJA_CORRUPT[{i}]: {cmd_id} — ninja=\"{ninja}\" not in known list')
-
-# --- Output ---
 if not issues:
-    print('PASS: no data quality issues')
+    print("PASS: no data quality issues")
     sys.exit(0)
 
-print(f'ISSUES: {len(issues)}')
-for iss in issues:
-    print(f'  {iss}')
+print(f"ISSUES: {len(issues)}")
+for issue in issues:
+    print(f"  {issue}")
+
+def yaml_scalar(value: object) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    text = str(value)
+    if (
+        not text
+        or ":" in text
+        or "#" in text
+        or text.startswith("{")
+        or text.startswith("[")
+        or "\n" in text
+        or text in ("true", "false", "null", "yes", "no")
+    ):
+        return "'" + text.replace("'", "''") + "'"
+    return text
+
+def write_entry_list(handle, entry_list: list[object], base_indent: str = "") -> None:
+    for entry in entry_list:
+        if not isinstance(entry, dict):
+            continue
+        first = True
+        for key, value in entry.items():
+            prefix = f"{base_indent}- " if first else f"{base_indent}  "
+            handle.write(f"{prefix}{key}: {yaml_scalar(value)}\n")
+            first = False
 
 if fix_mode and fixes:
-    # Write back (yaml.dump禁止: マルチライン消失+pre-commit BLOCK。手書き出力)
-    import tempfile
-    def _yaml_val(v):
-        if isinstance(v, bool):
-            return 'true' if v else 'false'
-        if isinstance(v, (int, float)):
-            return str(v)
-        s = str(v)
-        if not s or ':' in s or '#' in s or s.startswith('{') or s.startswith('[') or '\\n' in s or s in ('true','false','null','yes','no'):
-            return \"'\" + s.replace(\"'\", \"''\") + \"'\"
-        return s
-    out_entries = entries if is_bare_list else data.get('workarounds', data.get('entries', entries))
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(wa_file), suffix='.tmp')
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(wa_file), suffix=".tmp")
     try:
-        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-            for entry in out_entries:
-                if not isinstance(entry, dict):
-                    continue
-                first = True
-                for k, v in entry.items():
-                    prefix = '- ' if first else '  '
-                    f.write(f'{prefix}{k}: {_yaml_val(v)}\\n')
-                    first = False
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as handle:
+            if is_bare_list:
+                write_entry_list(handle, entries)
+            else:
+                for key, value in data.items():
+                    if key == target_key:
+                        handle.write(f"{key}:\n")
+                        write_entry_list(handle, entries, "  ")
+                    else:
+                        handle.write(f"{key}: {yaml_scalar(value)}\n")
         os.replace(tmp_path, wa_file)
     except Exception:
-        try: os.unlink(tmp_path)
-        except OSError: pass
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
         raise
-    print(f'\\nFIXED: {len(fixes)} changes applied')
+
+    print(f"\nFIXED: {len(fixes)} changes applied")
     for fix in fixes:
-        print(f'  {fix}')
+        print(f"  {fix}")
 
 if not fix_mode:
-    print(f'\\nRun with --fix to auto-repair')
+    print("\nRun with --fix to auto-repair")
 
 sys.exit(1)
-" 2>&1) || true
-
-echo "$RESULT"
-
-if echo "$RESULT" | grep -q "^PASS"; then
-    exit 0
-else
-    exit 1
-fi
+PY

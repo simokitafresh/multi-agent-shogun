@@ -7,6 +7,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-18 | saizo | `scripts/insight_write.sh` | Phase 5(計測+実装+検証) | `117ms → 32ms` (`-72.6%`, isolated write path median) | spec+after: `docs/research/cmd_2033_codd_batch_6a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/gate_shogun_memory.sh` | Phase 5(計測+実装+検証) | `22ms → 9ms` (`-59.1%`, live median) | spec+after: `docs/research/cmd_2033_codd_batch_6a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/gate_skill_quality.sh` | Phase 5(計測+実装+検証) | `355ms → 25ms` (`-93.0%`, live median) | spec+after: `docs/research/cmd_2033_codd_batch_6a_20260418.md` |
+| 2026-04-18 | hayate | `scripts/gates/gate_enforcement_audit.sh` | Phase 5(計測+実装+検証) | `73.1ms → 36.1ms` (`-50.6%`, median, same fixture) | spec+after: `docs/research/cmd_2034_codd_gate_batch_20260418.md` |
+| 2026-04-18 | hayate | `scripts/gates/gate_wa_data_quality.sh` | Phase 5(計測+実装+検証) | `106.6ms → 52.9ms` (`-50.4%`, median, same fixture) | spec+after: `docs/research/cmd_2034_codd_gate_batch_20260418.md` |
+| 2026-04-18 | hayate | `scripts/gates/gate_context_freshness.sh` | Phase 5(計測+実装+検証) | `67.1ms → 64.8ms` (`-3.4%`, median, same fixture) | spec+after: `docs/research/cmd_2034_codd_gate_batch_20260418.md` |
 | 2026-04-16 | hayate | `scripts/analysis/grid_search/run_077_yotsume.py` | Phase 5(計測+実装+検証)。monthly fast path化 | `8.528s → 0.119s` (`-98.6%`, first 100 `simulate_pattern`) | spec: `docs/research/cmd_1988_yotsume_codd_spec.md` |
 | 2026-04-16 | 才蔵 | `scripts/report_field_set.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `66-70ms → 11ms` (`-83%`, scalar hot path) | spec+after: `docs/research/report_field_set_after_20260416.md` |
 | 2026-04-16 | 才蔵 | `scripts/inbox_write.sh` | Phase 5(計測+実装+検証)。spec事後作成 | `78ms → 50ms` (`-35.9%`, write path) / `89ms → 10-20ms` (`--help`) | spec+after: `docs/research/inbox_write_after_20260416.md` |
