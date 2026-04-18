@@ -3859,3 +3859,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2 NTFS上ではfindがstatより遅い場合があり、事前の単体計測1回では判断できない。必ず5回median計測してから採用判断せよ。
+
+### L505: line-based YAML scanner は sibling section 間の空行を break 条件にしてはならない
+- **日付**: 2026-04-18
+- **出典**: cmd_karo_ci_fix_cli_lookup
+- **記録者**: hayate
+- **status**: confirmed
+- **tags**: [universal]
+- cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser で次 section を探すときに空行で break すると codex/copilot など後続 section が見えなくなるため、trim 後の空行と comment-only 行は continue で飛ばす。

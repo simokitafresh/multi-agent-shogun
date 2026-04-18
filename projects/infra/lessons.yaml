@@ -1,8 +1,14 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-04-18T21:21:16'
+last_synced: '2026-04-18T21:24:15'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 500
+lesson_count: 501
 lessons:
+- id: L505
+  title: line-based YAML scanner は sibling section 間の空行を break 条件にしてはならない
+  summary: cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser
+    で次 se
+  tags:
+  - universal
 - id: L504
   title: WSL2 NTFS上のfind -mminはstat一括より不安定で遅い場合がある
   summary: find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53
@@ -1682,7 +1688,7 @@ lessons:
   - infra
   - universal
   helpful_count: 23
-  harmful_count: 15
+  harmful_count: 16
   last_referenced: '2026-04-18'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
@@ -1708,7 +1714,7 @@ lessons:
   tags:
   - universal
   helpful_count: 0
-  harmful_count: 3
+  harmful_count: 4
   last_referenced: '2026-04-18'
 - id: L224
   title: MCP obsに運用ルールと殿の好みを混在させると陳腐化が加速する
@@ -1743,7 +1749,7 @@ lessons:
   - process
   - git
   helpful_count: 9
-  harmful_count: 4
+  harmful_count: 5
   last_referenced: '2026-04-18'
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
