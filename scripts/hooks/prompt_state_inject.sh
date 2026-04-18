@@ -2,7 +2,10 @@
 # @source: cmd_452 (UserPromptSubmit snapshot注入hook)
 set -eu
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_prompt_state_self="${BASH_SOURCE[0]}"
+[[ "$_prompt_state_self" != /* ]] && _prompt_state_self="$PWD/$_prompt_state_self"
+SCRIPT_DIR="${_prompt_state_self%/scripts/hooks/prompt_state_inject.sh}"
+unset _prompt_state_self
 
 # --- Read stdin JSON (type: user_prompt_submit) ---
 payload="$(cat 2>/dev/null || true)"
@@ -10,9 +13,9 @@ if [[ -z "$payload" ]]; then
   exit 0
 fi
 
-if ! printf '%s' "$payload" | jq -e . >/dev/null 2>&1; then
+prompt_text="$(jq -r '.prompt // ""' 2>/dev/null <<<"$payload")" || {
   exit 0
-fi
+}
 
 # --- Get agent_id from tmux ---
 agent_id="unknown"
@@ -33,7 +36,10 @@ if [[ "$agent_id" != "shogun" ]]; then
 fi
 
 # --- Timestamp (ISO 8601) ---
-timestamp="$(date -Iseconds 2>/dev/null || date '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo "unavailable")"
+printf -v timestamp '%(%Y-%m-%dT%H:%M:%S%z)T' -1
+if [[ "$timestamp" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
+  timestamp="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
+fi
 
 # --- Inbox unread count ---
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
@@ -49,13 +55,11 @@ fi
 snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
 karo_snapshot="unavailable"
 if [[ -f "$snapshot_file" ]]; then
-  karo_snapshot="$(cat "$snapshot_file" 2>/dev/null || echo "unavailable")"
+  karo_snapshot="$(< "$snapshot_file")"
   if [[ -z "$karo_snapshot" ]]; then
     karo_snapshot="unavailable"
   fi
 fi
-
-prompt_text="$(printf '%s' "$payload" | jq -r '.prompt // ""' 2>/dev/null || true)"
 
 # --- 研究日誌全文注入モード検知 ---
 research_diary_mode=false
@@ -86,7 +90,7 @@ ${karo_snapshot}
 ${diary_content}
 ${verification_questions}"
 
-  printf '%s' "$additional_context" | jq -Rs '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:.}}'
+  jq -Rs '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:.}}' <<<"$additional_context"
   exit 0
 fi
 
@@ -123,6 +127,6 @@ fi
 additional_context="${fixed_part}${karo_snapshot}"
 
 # --- Output JSON ---
-printf '%s' "$additional_context" | jq -Rs '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:.}}'
+jq -Rs '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:.}}' <<<"$additional_context"
 
 exit 0

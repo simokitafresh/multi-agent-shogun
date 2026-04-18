@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | saizo | `scripts/hooks/session_start_inject.sh` | Phase 5(計測+実装+検証) | `61.7ms → 44.3ms` (`-28.2%`, startup fixture median) | spec+after: `docs/research/cmd_2049_codd_infra_hook_batch_20260418.md` |
+| 2026-04-18 | saizo | `scripts/hooks/prompt_state_inject.sh` | Phase 5(計測+実装+検証) | `49.0ms → 30.5ms` (`-37.8%`, shogun prompt fixture median) | spec+after: `docs/research/cmd_2049_codd_infra_hook_batch_20260418.md` |
+| 2026-04-18 | saizo | `scripts/hooks/session_end_clear_check.sh` | Phase 5(計測+実装+検証) | `49.2ms → 29.4ms` (`-40.2%`, shogun clear-prep fixture median) | spec+after: `docs/research/cmd_2049_codd_infra_hook_batch_20260418.md` |
 | 2026-04-18 | tobisaru | `scripts/gates/gate_diagnose_check.sh` | Phase 5(計測+実装+検証) | fast-path(early-exit) `32ms→32ms`(unchanged) / slow-path `100ms → 15ms` (`-85%`, `6.7x`, report有り+diagnose_reason空 median) | python3×2呼出し→awk1パス統合(YAML fields一括取得)+python3 CONSECUTIVE計数→awk逆順処理。7/7テストPASS。(spec省略) |
 | 2026-04-18 | tobisaru | `scripts/gates/gate_silent_fallback.sh` | Phase 5(計測+実装+検証) | `27ms → 25ms` (`-7%`, fast-path推定, tmux env) | forループ×2(条件分岐付き文字列連結)→ `IFS='|' ; PATTERNS[*]` bash組込みjoin置換。ループ廃止でオーバーヘッド削減。DM-Signal実パスで動作確認PASS。(spec省略) |
 | 2026-04-18 | tobisaru | `scripts/gates/gate_mcp_access.sh` | Phase 5(計測+実装+検証) | `39ms → 37ms` (`-5%`, no-args median, tmux env推定) | `command -v tmux`チェック廃止(TMUX_PANE/TMUX設定済み=tmux稼働確定)→直接tmux呼出しに短縮。非tmux環境: `10ms → 9ms`(-10%)。deny動作PASS。(spec省略) |

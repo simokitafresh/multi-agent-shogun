@@ -2,12 +2,10 @@
 # @source: cmd_1808 (SessionEnd clear prep check hook)
 set -eu
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-
-payload="$(cat 2>/dev/null || true)"
-if [[ -n "$payload" ]] && ! printf '%s' "$payload" | jq -e . >/dev/null 2>&1; then
-  exit 0
-fi
+_session_end_self="${BASH_SOURCE[0]}"
+[[ "$_session_end_self" != /* ]] && _session_end_self="$PWD/$_session_end_self"
+SCRIPT_DIR="${_session_end_self%/scripts/hooks/session_end_clear_check.sh}"
+unset _session_end_self
 
 agent_id="${SESSION_END_AGENT_ID:-}"
 if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
@@ -34,7 +32,10 @@ issues=()
 detail_lines=()
 
 if [[ -f "$lc_file" ]]; then
-  inbound_count="$(grep -c '"direction":"inbound"\|"direction": "inbound"' "$lc_file" 2>/dev/null || echo 0)"
+  inbound_count="$(awk '
+    /"direction":"inbound"/ || /"direction": "inbound"/ { c++ }
+    END { print c + 0 }
+  ' "$lc_file" 2>/dev/null || echo 0)"
   detail_lines+=("殿の言葉 inbound=${inbound_count}件")
   if [[ ! "$inbound_count" =~ ^[0-9]+$ ]]; then
     inbound_count=0
@@ -50,8 +51,8 @@ fi
 prep_status="SKIP"
 prep_digest=""
 if [[ -f "$prep_check" ]]; then
-  prep_output="$(bash "$prep_check" 2>&1 || true)"
-  if printf '%s\n' "$prep_output" | grep -q '^\[STATUS\] ALERT'; then
+  prep_output="$("$prep_check" 2>&1 || true)"
+  if [[ "$prep_output" == *"[STATUS] ALERT"* ]]; then
     prep_status="ALERT"
     issues+=("clear_prep_check ALERT")
   else

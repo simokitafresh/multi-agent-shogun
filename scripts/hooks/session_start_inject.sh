@@ -2,7 +2,10 @@
 # @source: cmd_452 (SessionStart context注入hook)
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_session_start_self="${BASH_SOURCE[0]}"
+[[ "$_session_start_self" != /* ]] && _session_start_self="$PWD/$_session_start_self"
+SCRIPT_DIR="${_session_start_self%/scripts/hooks/session_start_inject.sh}"
+unset _session_start_self
 
 # --- Read stdin JSON (type: startup|resume|clear|compact) ---
 payload="$(cat 2>/dev/null || true)"
@@ -10,11 +13,9 @@ if [[ -z "$payload" ]]; then
   exit 0
 fi
 
-if ! printf '%s' "$payload" | jq -e . >/dev/null 2>&1; then
+source_type="$(jq -r '.type // "unknown"' 2>/dev/null <<<"$payload")" || {
   exit 0
-fi
-
-source_type="$(printf '%s' "$payload" | jq -r '.type // "unknown"' 2>/dev/null || echo "unknown")"
+}
 
 # --- Get agent_id from tmux ---
 agent_id="unknown"
@@ -30,7 +31,10 @@ if [[ -z "$agent_id" ]]; then
 fi
 
 # --- Timestamp (ISO 8601) ---
-timestamp="$(date -Iseconds 2>/dev/null || date '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo "unavailable")"
+printf -v timestamp '%(%Y-%m-%dT%H:%M:%S%z)T' -1
+if [[ "$timestamp" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
+  timestamp="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
+fi
 
 # --- Inbox unread count ---
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
@@ -46,7 +50,7 @@ fi
 snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
 karo_snapshot="unavailable"
 if [[ -f "$snapshot_file" ]]; then
-  karo_snapshot="$(cat "$snapshot_file" 2>/dev/null || echo "unavailable")"
+  karo_snapshot="$(< "$snapshot_file")"
   if [[ -z "$karo_snapshot" ]]; then
     karo_snapshot="unavailable"
   fi
@@ -65,15 +69,22 @@ compact_stale_threshold=86400  # 24h in seconds
 if [[ "$source_type" == "clear" ]]; then
   compact_state="(skipped: /clear type does not update compact_state; last value may be stale)"
 elif [[ -f "$compact_file" ]]; then
-  raw_state="$(cat "$compact_file" 2>/dev/null || echo "")"
+  raw_state="$(< "$compact_file")"
   if [[ -z "$raw_state" ]]; then
     compact_state="none"
   else
-    # timestamp行を抽出してepoch比較。quote除去にsedを使用
-    ts_line="$(grep '^timestamp:' "$compact_file" 2>/dev/null | head -1 | sed "s/^timestamp:[[:space:]]*//; s/^'//; s/'$//")"
+    # timestamp行を抽出してepoch比較。quote除去にawkを使用
+    ts_line="$(awk '
+      /^timestamp:/ {
+        sub(/^timestamp:[[:space:]]*/, "")
+        gsub(/^'\''|'\''$/, "")
+        print
+        exit
+      }
+    ' "$compact_file" 2>/dev/null || true)"
     if [[ -n "$ts_line" ]]; then
       ts_epoch="$(date -d "$ts_line" +%s 2>/dev/null || echo 0)"
-      now_epoch="$(date +%s)"
+      printf -v now_epoch '%(%s)T' -1
       age_sec=$((now_epoch - ts_epoch))
       if (( ts_epoch > 0 && age_sec > compact_stale_threshold )); then
         age_days=$((age_sec / 86400))
@@ -124,6 +135,6 @@ fi
 additional_context="${fixed_part}${karo_snapshot}${compact_section}"
 
 # --- Output JSON ---
-printf '%s' "$additional_context" | jq -Rs '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:.}}'
+jq -Rs '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:.}}' <<<"$additional_context"
 
 exit 0
