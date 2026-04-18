@@ -2196,8 +2196,8 @@ lessons:
   tags:
   - gate
   helpful_count: 21
-  harmful_count: 16
-  last_referenced: '2026-04-18'
+  harmful_count: 13
+  last_referenced: '2026-04-19'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
   summary: 'pairwise相関mean 0.610/median 0.623/p90 0.814。3層依存構造: (1)同一ファミリーρ≈0.85-0.99
@@ -2228,7 +2228,7 @@ lessons:
   - api
   - frontend
   - monitor
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-18'
 - id: L277
@@ -2336,8 +2336,8 @@ lessons:
   tags:
   - api
   - frontend
-  helpful_count: 2
-  harmful_count: 4
+  helpful_count: 1
+  harmful_count: 3
   last_referenced: '2026-04-18'
 - id: L261
   title: キャッシュ系 precompute テーブル欠落は health endpoint で degraded に昇格させる
@@ -2560,8 +2560,8 @@ lessons:
   - frontend
   - gate
   helpful_count: 20
-  harmful_count: 24
-  last_referenced: '2026-04-18'
+  harmful_count: 21
+  last_referenced: '2026-04-19'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
   summary: FE api-client.tsはresponse.ok(200-299のみtrue)で成功判定しており、304 Not Modifiedがエラー扱いされる。I
@@ -2623,8 +2623,8 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-17T17:29:01+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=7 > helpful=2'
-  helpful_count: 7
-  harmful_count: 8
+  helpful_count: 3
+  harmful_count: 6
   last_referenced: '2026-04-18'
 - id: L219
   title: 静的ホスト切替だけでは本番UXの主因は消えず、heavy APIが残る限り backend 待ちが支配する
@@ -2969,9 +2969,9 @@ lessons:
   - db
   - deploy
   - testing
-  helpful_count: 1
+  helpful_count: 7
   harmful_count: 0
-  last_referenced: '2026-04-15'
+  last_referenced: '2026-04-19'
 - id: L172
   title: 新規テーブル導入時はインデックス作成をif/else外に置くと自己修復性が上がる
   summary: IF migrationで「新規作成分岐」と「既存追設分岐」を分ける場合、時 THEN migrationで「新規作成分岐」と「既存追設分岐」を分ける場合、

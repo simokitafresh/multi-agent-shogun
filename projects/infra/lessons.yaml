@@ -1436,8 +1436,8 @@ lessons:
   tags:
   - infra
   helpful_count: 21
-  harmful_count: 16
-  last_referenced: '2026-04-18'
+  harmful_count: 13
+  last_referenced: '2026-04-19'
 - id: L282
   title: PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御
   summary: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
@@ -1473,7 +1473,7 @@ lessons:
   - monitor
   - inbox
   - reporting
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-18'
 - id: L277
@@ -1578,8 +1578,8 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 2
-  harmful_count: 4
+  helpful_count: 1
+  harmful_count: 3
   last_referenced: '2026-04-18'
 - id: L261
   title: 全体設定変更時のテスト整合性チェック不足
@@ -1794,8 +1794,8 @@ lessons:
   deprecated_at: '2026-04-18T22:24:29+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=23 > helpful=20'
   helpful_count: 20
-  harmful_count: 24
-  last_referenced: '2026-04-18'
+  harmful_count: 21
+  last_referenced: '2026-04-19'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
   summary: 'ast-grep rule を regex ベースで書く場合、kind を伴わない composite rule は `Rule must
@@ -1860,8 +1860,8 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-18T23:55:48+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=8 > helpful=7'
-  helpful_count: 7
-  harmful_count: 8
+  helpful_count: 3
+  harmful_count: 6
   last_referenced: '2026-04-18'
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
@@ -2177,6 +2177,9 @@ lessons:
   - frontend
   - git
   - reporting
+  helpful_count: 7
+  harmful_count: 0
+  last_referenced: '2026-04-19'
 - id: L172
   title: レビューでは『履歴位置確認』を先に行うと push 可否の誤判定を防げる
   summary: git status の一時表示だけで ahead/behind を判断せず、`git branch -vv` と `git rev-parse
