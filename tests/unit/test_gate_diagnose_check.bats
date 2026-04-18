@@ -6,6 +6,8 @@ setup() {
     GATE="$REPO_ROOT/scripts/gates/gate_diagnose_check.sh"
     TMPDIR_DIAG=$(mktemp -d)
     export GATE_FIRE_LOG_FILE="$TMPDIR_DIAG/gate_fire_log.yaml"
+    export GATE_SESSION_STATE_TASK_DIR="$TMPDIR_DIAG/tasks"
+    mkdir -p "$GATE_SESSION_STATE_TASK_DIR"
     touch "$GATE_FIRE_LOG_FILE"
 }
 
@@ -106,4 +108,50 @@ EOF
 EOF
     run bash "$GATE" "$TMPDIR_DIAG/report.yaml" "binary_checks_fail"
     [ "$status" -eq 0 ]
+}
+
+@test "GP-2070: prior_attempts の diagnose_reason と approach_summary が類似 → DIVERGENT v2 BLOCK" {
+    cat > "$TMPDIR_DIAG/report.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_2070
+diagnose_reason: "verdict を FAIL にすべきところを PASS のまま提出した"
+result:
+  summary: "verdict の判定条件を見直して再提出した"
+verdict: PASS
+EOF
+    cat > "$GATE_SESSION_STATE_TASK_DIR/hayate.yaml" <<'EOF'
+task:
+  session_state:
+    prior_attempts:
+    - attempt: 1
+      block_reason: "verdict_invalid"
+      diagnose_reason: "verdict を FAIL にすべきところを PASS のまま提出した"
+      approach_summary: "verdict の判定条件を見直して再提出した"
+EOF
+    run bash "$GATE" "$TMPDIR_DIAG/report.yaml" "verdict_invalid"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"DIVERGENT v2"* ]]
+}
+
+@test "GP-2070: prior_attempts と一部類似のみ → WARNで通す" {
+    cat > "$TMPDIR_DIAG/report.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_2070
+diagnose_reason: "verdict を FAIL にすべきところを PASS のまま提出した"
+result:
+  summary: "別の観点で result 集計を見直した"
+verdict: PASS
+EOF
+    cat > "$GATE_SESSION_STATE_TASK_DIR/hayate.yaml" <<'EOF'
+task:
+  session_state:
+    prior_attempts:
+    - attempt: 1
+      block_reason: "verdict_invalid"
+      diagnose_reason: "verdict を FAIL にすべきところを PASS のまま提出した"
+      approach_summary: "verdict の判定条件を見直して再提出した"
+EOF
+    run bash "$GATE" "$TMPDIR_DIAG/report.yaml" "verdict_invalid"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: prior_attempts"* ]]
 }
