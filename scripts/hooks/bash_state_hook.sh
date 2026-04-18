@@ -11,14 +11,19 @@
 # The hook reads JSON payload from stdin and determines pre/post from hookEventName.
 set -eu
 
-# Read hook payload from stdin
-payload="$(cat)"
+# Read hook payload from stdin without forking cat subprocess
+IFS='' read -r -d '' payload || true
 if [ -z "${payload//[[:space:]]/}" ]; then
     exit 0
 fi
 
-# Determine pre or post from hookEventName in the payload
-hook_event="$(printf '%s' "$payload" | jq -r '.hook_event_name // .hookEventName // empty' 2>/dev/null || true)"
+# Extract hookEventName using bash regex (avoids jq subprocess)
+hook_event=""
+if [[ "$payload" =~ \"hook_event_name\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+    hook_event="${BASH_REMATCH[1]}"
+elif [[ "$payload" =~ \"hookEventName\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+    hook_event="${BASH_REMATCH[1]}"
+fi
 
 # Resolve pane target for this agent
 pane="${TMUX_PANE:-}"
@@ -29,8 +34,11 @@ fi
 case "$hook_event" in
     PreToolUse)
         # Mark as bash_running + record timestamp for crash detection
+        # printf -v builtin avoids spawning date subprocess
+        _ts=""
+        printf -v _ts '%(%s)T' -1
         tmux set-option -p -t "$pane" @agent_state bash_running 2>/dev/null || true
-        tmux set-option -p -t "$pane" @bash_running_since "$(date +%s)" 2>/dev/null || true
+        tmux set-option -p -t "$pane" @bash_running_since "$_ts" 2>/dev/null || true
         ;;
     PostToolUse)
         # Restore to active

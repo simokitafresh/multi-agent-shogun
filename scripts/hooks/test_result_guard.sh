@@ -3,7 +3,8 @@
 # PostToolUse hook: inject context when Bash test commands report SKIP/FAIL.
 set -eu
 
-payload="$(cat 2>/dev/null || true)"
+# Read stdin without forking cat subprocess
+IFS='' read -r -d '' payload || true
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 
 # Fast-path: skip if not Bash tool

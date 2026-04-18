@@ -8,26 +8,32 @@ set -euo pipefail
 
 emit_deny() {
     local reason="$1"
-    jq -cn --arg reason "$reason" '{
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny",
-        permissionDecisionReason: $reason
-      }
-    }'
+    # printf builtin avoids jq subprocess for JSON generation
+    local escaped="${reason//\\/\\\\}"
+    escaped="${escaped//\"/\\\"}"
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$escaped"
 }
 
-payload="$(cat)"
+# Read stdin without forking cat subprocess
+IFS='' read -r -d '' payload || true
 if [ -z "${payload//[[:space:]]/}" ]; then
     exit 0
 fi
 
-tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // empty' 2>/dev/null || true)"
+# Extract tool_name using bash regex (avoids jq subprocess)
+tool_name=""
+if [[ "$payload" =~ \"tool_name\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+    tool_name="${BASH_REMATCH[1]}"
+fi
 if [[ "$tool_name" != "Write" && "$tool_name" != "Edit" ]]; then
     exit 0
 fi
 
-file_path="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)"
+# Extract file_path using bash regex (avoids jq subprocess)
+file_path=""
+if [[ "$payload" =~ \"file_path\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+    file_path="${BASH_REMATCH[1]}"
+fi
 if [ -z "$file_path" ]; then
     exit 0
 fi
