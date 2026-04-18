@@ -16,7 +16,11 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# cmd_2078: SCRIPT_DIR string ops — $(cd dirname pwd)サブシェル2個→bash文字列演算 (~10ms節約)
+_dt_self="${BASH_SOURCE[0]}"
+[[ "$_dt_self" != /* ]] && _dt_self="$PWD/$_dt_self"
+SCRIPT_DIR="${_dt_self%/scripts/deploy_task.sh}"
+unset _dt_self
 LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
 # cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
@@ -296,13 +300,20 @@ resolve_cmd_to_task() {
         return 1
     }
 
+    # cmd_2078: 6x echo|grep|cut (18 subprocesses) → while+IFS one-pass (0 subprocesses, -17ms)
     local project task_type title purpose _depends_on _scout_exempt_stk
-    project=$(echo "$_resolve_output" | grep '^project=' | cut -d= -f2-)
-    task_type=$(echo "$_resolve_output" | grep '^task_type=' | cut -d= -f2-)
-    title=$(echo "$_resolve_output" | grep '^title=' | cut -d= -f2-)
-    purpose=$(echo "$_resolve_output" | grep '^purpose=' | cut -d= -f2-)
-    _depends_on=$(echo "$_resolve_output" | grep '^depends_on=' | cut -d= -f2-)
-    _scout_exempt_stk=$(echo "$_resolve_output" | grep '^scout_exempt=' | cut -d= -f2-)
+    local _rv_k _rv_v
+    declare -A _rv=()
+    while IFS='=' read -r _rv_k _rv_v; do
+        [[ -n "$_rv_k" ]] && _rv["$_rv_k"]="$_rv_v"
+    done <<< "$_resolve_output"
+    project="${_rv[project]:-}"
+    task_type="${_rv[task_type]:-}"
+    title="${_rv[title]:-}"
+    purpose="${_rv[purpose]:-}"
+    _depends_on="${_rv[depends_on]:-}"
+    _scout_exempt_stk="${_rv[scout_exempt]:-}"
+    unset _rv _rv_k _rv_v
     [ -z "$task_type" ] && task_type="impl"
 
     # LK054: depends_on検出時にAC単位依存分析を促すWARN
@@ -3826,8 +3837,10 @@ deploy_task_main() {
 
     if [ -n "$CMD_ID" ]; then
         # GP-198: session_stateをstale reset前に保存（再配備時のhint注入用）
+        # cmd_2078 B3: awk fast-path — session_stateフィールドが存在しなければpython3をスキップ (~53ms節約)
         _DEPLOY_PREV_SESSION_STATE=""
-        _DEPLOY_PREV_SESSION_STATE=$(python3 -c "
+        if grep -qE '^[[:space:]]+session_state:' "$task_yaml" 2>/dev/null; then
+            _DEPLOY_PREV_SESSION_STATE=$(python3 -c "
 import yaml, json, sys
 try:
     with open('$task_yaml') as f:
@@ -3838,6 +3851,7 @@ try:
 except Exception:
     pass
 " 2>/dev/null || true)
+        fi
         export _DEPLOY_PREV_SESSION_STATE
         reset_stale_fields "$NINJA_NAME"
         if [ "$DIRECT_MODE" = true ]; then

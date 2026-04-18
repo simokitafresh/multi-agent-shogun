@@ -92,7 +92,7 @@ load_cmd_block() {
 }
 
 load_cmd_block_cache() {
-    local line key value current_section=""
+    local line key value current_section="" _tcv
 
     if [[ "$CMD_BLOCK_CACHE_LOADED" -eq 1 ]]; then
         [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
@@ -111,7 +111,17 @@ load_cmd_block_cache() {
                 CMD_BLOCK_CACHE["$key"]=""
                 current_section="$key"
             else
-                CMD_BLOCK_CACHE["$key"]="$(trim_inline_yaml_scalar "$value")"
+                # cmd_2077: trim_inline_yaml_scalarをインライン化してsubshell排除
+                _tcv="$value"
+                _tcv="${_tcv#"${_tcv%%[![:space:]]*}"}"
+                _tcv="${_tcv%"${_tcv##*[![:space:]]}"}"
+                if [[ "$_tcv" == \"*\" && "$_tcv" == *\" && ${#_tcv} -ge 2 ]]; then
+                    _tcv="${_tcv:1:${#_tcv}-2}"
+                elif [[ "$_tcv" == \'*\' && "$_tcv" == *\' && ${#_tcv} -ge 2 ]]; then
+                    _tcv="${_tcv:1:${#_tcv}-2}"
+                    _tcv="${_tcv//\'\'/\'}"
+                fi
+                CMD_BLOCK_CACHE["$key"]="$_tcv"
             fi
             continue
         fi
@@ -119,7 +129,17 @@ load_cmd_block_cache() {
         if [[ -n "$current_section" && "$line" =~ ^[[:space:]]{6}([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*(.*)$ ]]; then
             key="${BASH_REMATCH[1]}"
             value="${BASH_REMATCH[2]}"
-            CMD_BLOCK_CACHE["${current_section}.${key}"]="$(trim_inline_yaml_scalar "$value")"
+            # cmd_2077: trim_inline_yaml_scalarをインライン化してsubshell排除
+            _tcv="$value"
+            _tcv="${_tcv#"${_tcv%%[![:space:]]*}"}"
+            _tcv="${_tcv%"${_tcv##*[![:space:]]}"}"
+            if [[ "$_tcv" == \"*\" && "$_tcv" == *\" && ${#_tcv} -ge 2 ]]; then
+                _tcv="${_tcv:1:${#_tcv}-2}"
+            elif [[ "$_tcv" == \'*\' && "$_tcv" == *\' && ${#_tcv} -ge 2 ]]; then
+                _tcv="${_tcv:1:${#_tcv}-2}"
+                _tcv="${_tcv//\'\'/\'}"
+            fi
+            CMD_BLOCK_CACHE["${current_section}.${key}"]="$_tcv"
         fi
     done <<< "$CMD_BLOCK_NC"
 
@@ -827,8 +847,11 @@ show_uncommitted_changes_warning() {
 }
 
 # --- Check 5: uncommitted changes検出 ---
-# WSL2 NTFS最適化: tracked unstaged差分だけを軽い plumbing で取得
-UNCOMMITTED=$(git -C "$PROJECT_DIR" diff-files --name-only -- scripts/ CLAUDE.md instructions/ config/ 2>/dev/null || true)
+# WSL2 NTFS最適化: git status --porcelain=v2 --no-optional-locks はgit自身のmtime cacheを活用し
+# diff-files(全tracked filesをstat()比較)より高速。cmd_2077で最適化
+UNCOMMITTED=$(git -C "$PROJECT_DIR" status --porcelain=v2 --no-optional-locks \
+    -- scripts/ CLAUDE.md instructions/ config/ 2>/dev/null \
+    | awk '!/^[?!#]/{sub(/.*[[:space:]]/,""); print}' || true)
 show_uncommitted_changes_warning "$UNCOMMITTED"
 
 # --- Check 6: パイプラインGP重複チェック（非BLOCK — WARN_COUNTに加算しない） ---
@@ -1543,7 +1566,8 @@ check_param_space_against_results() {
         }
     ')
     if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "infra" ]]; then
-        PROJECT_ROOT_FOR_CMD="$PROJECT_DIR"
+        # infra projectはGS結果YAMLなし → python3不要 (cmd_2077最適化)
+        return 0
     else
         PROJECT_FILE="$PROJECT_DIR/projects/${PROJECT_ID}.yaml"
         [[ ! -f "$PROJECT_FILE" ]] && return 0
@@ -1558,6 +1582,11 @@ check_param_space_against_results() {
             }
         ' "$PROJECT_FILE")
         [[ -z "$PROJECT_ROOT_FOR_CMD" ]] && return 0
+    fi
+    # results YAML候補が存在しなければpython3不要 (cmd_2077最適化)
+    if ! find "$PROJECT_ROOT_FOR_CMD/outputs/analysis" -name "*.yaml" \
+            -maxdepth 3 2>/dev/null | grep -q .; then
+        return 0
     fi
 
     CMD_SECTION="$CMD_SECTION" \

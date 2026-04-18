@@ -13,6 +13,12 @@
 #
 # キャッシュ: 初回呼び出し時にsettings.yamlを読み込み、同一プロセス内はキャッシュ
 
+# Include guard: re-source時のキャッシュ破壊を防ぐ (cmd_2078: pane_lookup.sh二重source問題修正)
+# pane_lookup.shが source agent_config.sh すると _AGENT_CONFIG_RAW="" がリセットされ
+# awk再実行が2回発生していた。ガードにより初回sourceのキャッシュを保持する。
+[[ -n "${_AGENT_CONFIG_LOADED:-}" ]] && return 0
+_AGENT_CONFIG_LOADED=1
+
 # SCRIPT_DIR: string ops instead of $(cd) subshell (~5ms savings on WSL2)
 if [[ -z "${_AGENT_CONFIG_SCRIPT_DIR:-}" ]]; then
     _ac_self="${BASH_SOURCE[0]}"

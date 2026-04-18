@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-18T18:24:51+09:00 -->
+<!-- generated_at: 2026-04-18T18:57:08+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-18T18:24:51+09:00 | terminal | response | post-bash-combined.shの構文エラーが全Bash呼出しをブロックしている。これは緊急。家老にinbox_writeで報告する必要があるが、Bashツール自体がブロックされている。 殿、post-bash-combined…
-- 2026-04-18T18:23:16+09:00 | terminal | inbound | じゃあ続けて。サイクルを回せ。止まらずに自立自走
-- 2026-04-18T18:22:44+09:00 | ntfy | outbound | 【家老】cmd_2076 初回配備開始 (title=CoDD正規再改善 R1-D — revert retry gates + 未改善Stop hook 3本, ninja=kotaro) CoDD正規再改善 R1-D 📋 https:…
-- 2026-04-18T18:22:11+09:00 | terminal | response | **cmd_2076委任完了。** 殿の仰る通り。1cmd1スクリプトにすれば、対象の現物確認が確実になり休眠ファイル起票のような手戻りがなくなる。次のcmd_2077から1cmd1スクリプトで進める。 次の対象候補：台帳登録済みだがsp…
-- 2026-04-18T18:20:04+09:00 | terminal | inbound | 続けて
-- 2026-04-18T18:12:08+09:00 | terminal | inbound | 続けて
-- 2026-04-18T18:10:56+09:00 | terminal | inbound | では2076
-- 2026-04-18T18:10:35+09:00 | terminal | response | 殿、報告する。 **cmd_2073, cmd_2074が2連続で同一パターンの前提崩壊。** profiling doc(cmd_1951)のA区分リストをそのまま信じて起票したが、cmd_1661以降の統合で休眠化したファイルが多数含…
-- 2026-04-18T18:10:25+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 17:57:29|cmd_karo_ci_fix_571 2026-04-18 17:59:17|cmd_karo_ci_fix_2066 2026-04-18 17:59:45|cmd_karo…
-- 2026-04-18T18:09:37+09:00 | ntfy | outbound | 【家老】cmd_2075 初回配備開始 (title=CoDD正規再改善 R1-C — revert retry Bash hooks 3本(combined+search-guard), ninja=kagemaru) CoDD正規再改…
+- 2026-04-18T18:57:08+09:00 | terminal | response | **cmd_2087委任完了。** --- **Round 1 spec省略リスト完了。** 全量再改善の起票状況: | cmd | 対象 | 状態 | |-----|------|------| | cmd_2073 | (休眠ファイル…
+- 2026-04-18T18:55:06+09:00 | ntfy | outbound | --help
+- 2026-04-18T18:55:06+09:00 | ntfy | outbound | --help
+- 2026-04-18T18:55:06+09:00 | ntfy | outbound | --help
+- 2026-04-18T18:55:06+09:00 | ntfy | outbound | --help
+- 2026-04-18T18:55:06+09:00 | ntfy | outbound | --help
+- 2026-04-18T18:50:27+09:00 | ntfy | outbound | 【家老】cmd_2080 初回配備開始 (title=CoDD正規再改善 R1-H — inbox_write.sh(spec省略→正規CoDD再改善), ninja=hayate) CoDD正規再改善 R1-H 📋 https://gi…
+- 2026-04-18T18:47:12+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
+- 2026-04-18T18:42:28+09:00 | ntfy | outbound | 【家老】cmd_2079 初回配備開始 (title=CoDD正規再改善 R1-G — shutsujin_departure.sh(spec省略→正規CoDD再改善), ninja=hayate) CoDD正規再改善 R1-G 📋 ht…
+- 2026-04-18T18:41:09+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-109)
 
 ## 未解決確認事項
 - **cmd_2076委任完了。** 殿の仰る通り。1cmd1スクリプトにすれば、対象の現物確認が確実になり休眠ファイル起票のような手戻りがなくなる。次のcmd_2077から1cmd1スクリプトで進める。 次の対象候補：台帳登録済みだがspec省略の高頻度スクリプト（cmd_sa…
@@ -37,7 +37,6 @@
 
 ## 参照cmd
 - cmd_2
-- cmd_20
 - cmd_1951
 - cmd_1953
 - cmd_2025
@@ -66,6 +65,7 @@
 - cmd_2059
 - cmd_2060
 - cmd_2061
+- cmd_2062
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

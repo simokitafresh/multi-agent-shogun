@@ -14,7 +14,9 @@ if [[ -z "$payload" ]]; then
   exit 0
 fi
 
-if ! printf '%s' "$payload" | jq -e . >/dev/null 2>&1; then
+# cmd_2076: jq -e . (validation) → bash文字列マッチに変更 (~5ms削減)
+# 初回改善。前回アプローチなし。
+if [[ "$payload" != '{'* ]]; then
   exit 0
 fi
 
@@ -36,7 +38,11 @@ mkdir -p "$STATE_DIR"
 idle_flag="${STATE_DIR}/shogun_idle_${agent_id}"
 last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
 
-stop_hook_active="$(printf '%s' "$payload" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)"
+# cmd_2076: jq -r '.stop_hook_active...' → bash文字列マッチに変更 (~5ms削減)
+stop_hook_active=false
+if [[ "$payload" == *'"stop_hook_active":true'* || "$payload" == *'"stop_hook_active": true'* ]]; then
+  stop_hook_active=true
+fi
 if [[ "$stop_hook_active" == "true" ]]; then
   touch "$idle_flag"
   exit 0

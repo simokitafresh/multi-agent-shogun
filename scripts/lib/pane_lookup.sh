@@ -11,24 +11,48 @@
 #
 # deploy_task.sh resolve_pane() / agent_status.sh PANES連想配列 を統合
 
-_PANE_LOOKUP_SCRIPT_DIR="${_PANE_LOOKUP_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+# SCRIPT_DIR: string ops instead of $(cd dirname pwd) subshells (cmd_2078: pane_lookup.sh最適化)
+if [[ -z "${_PANE_LOOKUP_SCRIPT_DIR:-}" ]]; then
+    _pl_self="${BASH_SOURCE[0]}"
+    [[ "$_pl_self" != /* ]] && _pl_self="$PWD/$_pl_self"
+    _PANE_LOOKUP_SCRIPT_DIR="${_pl_self%/scripts/lib/pane_lookup.sh}"
+fi
 
 # agent_config.shから動的取得（cmd_1136: ハードコード全廃）
+# cmd_2078: includeガード付きagent_config.sh再source(no-op on second call)
 # shellcheck source=/dev/null
 source "${_PANE_LOOKUP_SCRIPT_DIR}/scripts/lib/agent_config.sh"
+unset _pl_self
 
-# 静的フォールバックマッピング（settings.yamlから動的生成）
+# cmd_2078 B1: Lazy initialization — マップ構築をsource時からpane_lookup()初回呼び出し時に遅延
+# 旧: source時に _agent_config_load (awk~17ms) + for loop (~8ms) = +25ms (no-args exit pathで全て無駄)
+# 新: source時は関数定義のみ。マップは pane_lookup() 初回呼び出し時に _pane_lookup_ensure_init() で初期化
+#
+# agent_status.sh等で PANE_LOOKUP_AGENT_ORDER を参照する場合は pane_lookup_ensure_initialized を先に呼べ。
+_PANE_LOOKUP_INITIALIZED=0
 declare -A _PANE_LOOKUP_MAP=()
-_pane_idx=1
-for _agent in $(get_all_agents); do
-    _PANE_LOOKUP_MAP[$_agent]="shogun:agents.${_pane_idx}"
-    ((_pane_idx++)) || true
-done
-unset _pane_idx _agent
-
-# エージェント名の順序リスト（表示用。source先で参照）
 # shellcheck disable=SC2034
-read -ra PANE_LOOKUP_AGENT_ORDER <<< "$(get_all_agents)"
+PANE_LOOKUP_AGENT_ORDER=()
+
+_pane_lookup_ensure_init() {
+    [[ "${_PANE_LOOKUP_INITIALIZED}" == "1" ]] && return 0
+    _agent_config_load  # 親シェルでキャッシュ書込み
+    local _pl_all="karo $_AGENT_CONFIG_ALL_NAMES"
+    local _pl_idx=1
+    local _pl_a
+    for _pl_a in $_pl_all; do
+        _PANE_LOOKUP_MAP[$_pl_a]="shogun:agents.${_pl_idx}"
+        ((_pl_idx++)) || true
+    done
+    # shellcheck disable=SC2034  # Used externally by agent_status.sh
+    read -ra PANE_LOOKUP_AGENT_ORDER <<< "$_pl_all"
+    _PANE_LOOKUP_INITIALIZED=1
+}
+
+# agent_status.sh等: source後に PANE_LOOKUP_AGENT_ORDER を使う場合はこれを呼べ
+pane_lookup_ensure_initialized() {
+    _pane_lookup_ensure_init
+}
 
 pane_lookup() {
     local name="$1"

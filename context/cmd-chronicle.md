@@ -733,3 +733,5 @@
 | cmd_karo_ci_fix_571 | CI RED修正 — test_gate_ninja_workaround_rate #571(再修正) | infra | 04-18 | テスト571（gate_ninja_workaround_r |
 | cmd_karo_ci_fix_2066 | CI RED修正 — test_assumption_invalidation(3件) + test_cmd_save(1件) + test_pending_decision(1件) | infra | 04-18 | 6件のCIテスト失敗を修正。gate_report_form |
 | cmd_karo_ci_fix_568 | CI RED修正 — test_gate_ninja_workaround_rate #568 | infra | 04-18 | gate_ninja_workaround_rate.shの |
+| cmd_2075 | CoDD正規再改善 R1-C — revert retry Bash hooks 3本(combined+search-guard) | infra | 04-18 | pre-bash-combined(jq→awk, guar |
+| cmd_karo_ci_fix_ssh_sl | CI RED修正: SSH/SLテスト(999-1006)CI環境FAIL | infra | 04-18 | unit-tests workflow の再実行でも SSH |

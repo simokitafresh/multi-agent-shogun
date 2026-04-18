@@ -44,23 +44,40 @@ phase_guide_cached() {
     tail -n +2 "$cache_file"
 }
 
-# === 高速化: バックグラウンド並列 + python3 一括呼び出し ===
+# === 高速化: バックグラウンド並列 + WA rateキャッシュ(300s TTL) ===
+# cmd_2076: WA rate スクリプト結果を /tmp にキャッシュ (TTL 300秒)
+# 前回(python3→awk+statusキャッシュ)との差分: WA rate結果自体をキャッシュ (異なる対象)
+# cache hit時: ~2ms。cache miss時: 57ms+53ms (現行と同等)
 
-# (A) gate_workaround_rate.sh / gate_ninja_workaround_rate.sh を即座にバックグラウンド起動
 _WA_RATE_TMP=$(mktemp)
 _NINJA_WA_TMP=$(mktemp)
 WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
 NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
-if [ -x "$WA_RATE_SCRIPT" ]; then
-    bash "$WA_RATE_SCRIPT" --last 10 > "$_WA_RATE_TMP" 2>&1 &
+_WA_RATE_CACHE="/tmp/karo_wa_rate_cache"
+_NINJA_WA_CACHE="/tmp/karo_ninja_wa_cache"
+_WA_CACHE_TTL=300
+
+_now_epoch=$(date +%s)
+
+# WA rate (cache hit or background refresh)
+if [[ -f "$_WA_RATE_CACHE" ]] && (( _now_epoch - $(stat -c %Y "$_WA_RATE_CACHE" 2>/dev/null || echo 0) < _WA_CACHE_TTL )); then
+    cp "$_WA_RATE_CACHE" "$_WA_RATE_TMP"
+    _WA_RATE_PID=""
+elif [ -x "$WA_RATE_SCRIPT" ]; then
+    ( bash "$WA_RATE_SCRIPT" --last 10 2>&1 | tee "$_WA_RATE_TMP" > "$_WA_RATE_CACHE" ) &
     _WA_RATE_PID=$!
 else
     echo "■ Workaround率" > "$_WA_RATE_TMP"
     echo "  SKIP: gate_workaround_rate.sh が存在しないか実行権限なし" >> "$_WA_RATE_TMP"
     _WA_RATE_PID=""
 fi
-if [ -x "$NINJA_WA_SCRIPT" ]; then
-    bash "$NINJA_WA_SCRIPT" --quiet --last 30 > "$_NINJA_WA_TMP" 2>&1 &
+
+# ninja WA rate (cache hit or background refresh)
+if [[ -f "$_NINJA_WA_CACHE" ]] && (( _now_epoch - $(stat -c %Y "$_NINJA_WA_CACHE" 2>/dev/null || echo 0) < _WA_CACHE_TTL )); then
+    cp "$_NINJA_WA_CACHE" "$_NINJA_WA_TMP"
+    _NINJA_WA_PID=""
+elif [ -x "$NINJA_WA_SCRIPT" ]; then
+    ( bash "$NINJA_WA_SCRIPT" --quiet --last 30 2>&1 | tee "$_NINJA_WA_TMP" > "$_NINJA_WA_CACHE" ) &
     _NINJA_WA_PID=$!
 else
     echo "  SKIP: gate_ninja_workaround_rate.sh が存在しないか実行権限なし" > "$_NINJA_WA_TMP"
