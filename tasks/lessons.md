@@ -3875,3 +3875,27 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、挙動を変えず gawk→mawk 優先に切り替えるだけで ready path median 0.11s→0.08s(-27.3%)。大きなロジック変更の前に実行器差分を先に測るべし。
+
+### L507: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
+- **日付**: 2026-04-18
+- **出典**: cmd_2085
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [universal]
+- archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2 NTFSの個別[ -f ]チェック(~7ms/件)の根本問題は解決できていない。TTLキャッシュまたはqueue/gates外部index化が真の解決策。
+
+### L508: WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process 2.2x改善も実測でregression
+- **日付**: 2026-04-18
+- **出典**: cmd_2086
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [universal]
+- 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GILも追加制約。解決策: キャッシュで同一データの繰り返しアクセスを排除(95.5%削減)。並列化はWSL2 NTFSでは逆効果
+
+### L509: hot-cache計測は冷却後性能を過小評価する: cold計測を必ず実施せよ
+- **日付**: 2026-04-18
+- **出典**: cmd_2089
+- **記録者**: kotaro
+- **status**: confirmed
+- **tags**: [universal]
+- before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。
