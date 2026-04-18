@@ -26,6 +26,14 @@ teardown() {
     rm -rf "$TEST_TMPDIR"
 }
 
+shadow_missing_jq() {
+    cat > "$MOCK_BIN/jq" <<'EOF'
+#!/usr/bin/env bash
+exit 127
+EOF
+    chmod +x "$MOCK_BIN/jq"
+}
+
 @test "SL-001: valid percentage is rendered and sent to tmux" {
     run bash -c "printf '%s' '{\"context_window\":{\"used_percentage\":33.7}}' | '$SCRIPT_PATH'"
     [ "$status" -eq 0 ]
@@ -46,4 +54,11 @@ teardown() {
     run bash -c "printf '%s' '{\"context_window\":{\"used_percentage\":-7}}' | '$SCRIPT_PATH'"
     [ "$status" -eq 0 ]
     [ "$output" = "CTX:0%" ]
+}
+
+@test "SL-004: missing jq still renders percentage" {
+    shadow_missing_jq
+    run bash -c "printf '%s' '{\"context_window\":{\"used_percentage\":33.7}}' | '$SCRIPT_PATH'"
+    [ "$status" -eq 0 ]
+    [ "$output" = "CTX:33%" ]
 }

@@ -7,13 +7,79 @@ _prompt_state_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_prompt_state_self%/scripts/hooks/prompt_state_inject.sh}"
 unset _prompt_state_self
 
+_prompt_state_json_get() {
+  local _prompt_state_field="$1"
+  local _prompt_state_default="$2"
+  local _prompt_state_value
+
+  if [[ "$_prompt_state_field" == ".prompt" ]]; then
+    if _prompt_state_value="$(jq -r 'try (.prompt // "") catch ""' 2>/dev/null <<<"$payload")"; then
+      printf '%s' "$_prompt_state_value"
+      return 0
+    fi
+  fi
+
+  JSON_PAYLOAD="$payload" JSON_FIELD="$_prompt_state_field" JSON_DEFAULT="$_prompt_state_default" python3 - <<'PY'
+import json
+import os
+import sys
+
+payload = os.environ.get("JSON_PAYLOAD", "")
+field = os.environ.get("JSON_FIELD", "")
+default = os.environ.get("JSON_DEFAULT", "")
+
+try:
+    obj = json.loads(payload)
+except Exception:
+    raise SystemExit(1)
+
+field_map = {
+    ".prompt": "prompt",
+}
+key = field_map.get(field)
+if key is None:
+    raise SystemExit(1)
+
+value = obj.get(key, default)
+if value is None:
+    value = default
+if not isinstance(value, str):
+    value = str(value)
+sys.stdout.write(value)
+PY
+}
+
+_prompt_state_emit_output() {
+  local _prompt_state_event="$1"
+  local _prompt_state_context="$2"
+  local _prompt_state_json
+
+  if _prompt_state_json="$(jq -Rs --arg event_name "$_prompt_state_event" '{hookSpecificOutput:{hookEventName:$event_name,additionalContext:.}}' 2>/dev/null <<<"$_prompt_state_context")"; then
+    printf '%s\n' "$_prompt_state_json"
+    return 0
+  fi
+
+  printf '%s' "$_prompt_state_context" | HOOK_EVENT_NAME="$_prompt_state_event" python3 -c '
+import json
+import os
+import sys
+
+print(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": os.environ["HOOK_EVENT_NAME"],
+        "additionalContext": sys.stdin.read(),
+    }
+}, ensure_ascii=False))
+'
+}
+
 # --- Read stdin JSON (type: user_prompt_submit) ---
 payload="$(cat 2>/dev/null || true)"
 if [[ -z "$payload" ]]; then
   exit 0
 fi
 
-prompt_text="$(jq -r '.prompt // ""' 2>/dev/null <<<"$payload")" || {
+prompt_text="$(_prompt_state_json_get ".prompt" "")" || {
   exit 0
 }
 
@@ -90,7 +156,7 @@ ${karo_snapshot}
 ${diary_content}
 ${verification_questions}"
 
-  jq -Rs '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:.}}' <<<"$additional_context"
+  _prompt_state_emit_output "UserPromptSubmit" "$additional_context"
   exit 0
 fi
 
@@ -127,6 +193,6 @@ fi
 additional_context="${fixed_part}${karo_snapshot}"
 
 # --- Output JSON ---
-jq -Rs '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:.}}' <<<"$additional_context"
+_prompt_state_emit_output "UserPromptSubmit" "$additional_context"
 
 exit 0

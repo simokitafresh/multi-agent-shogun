@@ -7,13 +7,79 @@ _session_start_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_session_start_self%/scripts/hooks/session_start_inject.sh}"
 unset _session_start_self
 
+_session_start_json_get() {
+  local _session_start_field="$1"
+  local _session_start_default="$2"
+  local _session_start_value
+
+  if [[ "$_session_start_field" == ".type" ]]; then
+    if _session_start_value="$(jq -r 'try (.type // "unknown") catch "unknown"' 2>/dev/null <<<"$payload")"; then
+      printf '%s' "$_session_start_value"
+      return 0
+    fi
+  fi
+
+  JSON_PAYLOAD="$payload" JSON_FIELD="$_session_start_field" JSON_DEFAULT="$_session_start_default" python3 - <<'PY'
+import json
+import os
+import sys
+
+payload = os.environ.get("JSON_PAYLOAD", "")
+field = os.environ.get("JSON_FIELD", "")
+default = os.environ.get("JSON_DEFAULT", "")
+
+try:
+    obj = json.loads(payload)
+except Exception:
+    raise SystemExit(1)
+
+field_map = {
+    ".type": "type",
+}
+key = field_map.get(field)
+if key is None:
+    raise SystemExit(1)
+
+value = obj.get(key, default)
+if value is None:
+    value = default
+if not isinstance(value, str):
+    value = str(value)
+sys.stdout.write(value)
+PY
+}
+
+_session_start_emit_output() {
+  local _session_start_event="$1"
+  local _session_start_context="$2"
+  local _session_start_json
+
+  if _session_start_json="$(jq -Rs --arg event_name "$_session_start_event" '{hookSpecificOutput:{hookEventName:$event_name,additionalContext:.}}' 2>/dev/null <<<"$_session_start_context")"; then
+    printf '%s\n' "$_session_start_json"
+    return 0
+  fi
+
+  printf '%s' "$_session_start_context" | HOOK_EVENT_NAME="$_session_start_event" python3 -c '
+import json
+import os
+import sys
+
+print(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": os.environ["HOOK_EVENT_NAME"],
+        "additionalContext": sys.stdin.read(),
+    }
+}, ensure_ascii=False))
+'
+}
+
 # --- Read stdin JSON (type: startup|resume|clear|compact) ---
 payload="$(cat 2>/dev/null || true)"
 if [[ -z "$payload" ]]; then
   exit 0
 fi
 
-source_type="$(jq -r '.type // "unknown"' 2>/dev/null <<<"$payload")" || {
+source_type="$(_session_start_json_get ".type" "unknown")" || {
   exit 0
 }
 
@@ -135,6 +201,6 @@ fi
 additional_context="${fixed_part}${karo_snapshot}${compact_section}"
 
 # --- Output JSON ---
-jq -Rs '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:.}}' <<<"$additional_context"
+_session_start_emit_output "SessionStart" "$additional_context"
 
 exit 0

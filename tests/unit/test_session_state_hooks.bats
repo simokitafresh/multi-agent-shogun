@@ -39,6 +39,14 @@ teardown() {
     rm -rf "$TEST_TMPDIR"
 }
 
+shadow_missing_jq() {
+    cat > "$MOCK_BIN/jq" <<'EOF'
+#!/usr/bin/env bash
+exit 127
+EOF
+    chmod +x "$MOCK_BIN/jq"
+}
+
 @test "SSH-001: session_start_inject injects agent, unread count, and snapshot" {
     export MOCK_AGENT_ID="saizo"
     cat > "$TEST_TMPDIR/queue/inbox/saizo.yaml" <<'YAML'
@@ -143,4 +151,56 @@ EOF
     run cat "$NTFY_LOG"
     [ "$status" -eq 0 ]
     [[ "$output" == *"【SessionEnd 報告】/clear前確認"* ]]
+}
+
+@test "SSH-006: session_start_inject emits JSON without jq" {
+    shadow_missing_jq
+    export MOCK_AGENT_ID="saizo"
+    cat > "$TEST_TMPDIR/queue/inbox/saizo.yaml" <<'YAML'
+messages:
+  - content: one
+    read: false
+YAML
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"type\":\"startup\"}' | scripts/hooks/session_start_inject.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+obj = json.loads(os.environ["OUTPUT_JSON"])
+ctx = obj["hookSpecificOutput"]["additionalContext"]
+print("agent: saizo" in ctx)
+print("inbox_unread: 1" in ctx)
+print("source: startup" in ctx)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
+}
+
+@test "SSH-007: prompt_state_inject emits JSON without jq" {
+    shadow_missing_jq
+    export MOCK_AGENT_ID="shogun"
+    cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'YAML'
+messages:
+  - content: one
+    read: false
+YAML
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"通常入力\"}' | scripts/hooks/prompt_state_inject.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+obj = json.loads(os.environ["OUTPUT_JSON"])
+ctx = obj["hookSpecificOutput"]["additionalContext"]
+print("agent: shogun" in ctx)
+print("⚠️ INBOX 1件未読" in ctx)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
 }
