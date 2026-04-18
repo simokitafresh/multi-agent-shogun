@@ -29,51 +29,55 @@ if [ "${1:-}" = "--resolve" ]; then
     # Line-by-line edit: avoids full-file YAML rewrite data loss
     INSIGHTS_FILE_ENV="$INSIGHTS_FILE" RESOLVE_ID_ENV="$resolve_id" TS_ENV="$ts" \
     python3 - <<'PYEOF'
-import sys, os
+import os
+import sys
 
 insights_file = os.environ['INSIGHTS_FILE_ENV']
 resolve_id = os.environ['RESOLVE_ID_ENV']
 ts = os.environ['TS_ENV']
 
-with open(insights_file, 'r') as f:
+with open(insights_file, 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
 found = False
 modified = []
-i = 0
-while i < len(lines):
-    line = lines[i]
-    # Detect target entry by id field
-    if not found and 'id:' in line and resolve_id in line:
-        found = True
+in_target = False
+resolved_at_written = False
+
+for line in lines:
+    if line.startswith('- id: '):
+        if in_target and not resolved_at_written:
+            modified.append(f'  resolved_at: "{ts}"\n')
+        current_id = line[len('- id: '):].strip()
+        in_target = current_id == resolve_id
+        if in_target:
+            found = True
+            resolved_at_written = False
         modified.append(line)
-        i += 1
-        # Process fields within this entry block
-        while i < len(lines):
-            line = lines[i]
-            # New list entry at column 0 = end of current block
-            if line.startswith('- '):
-                break
-            # Top-level key (not indented, not comment) = end of block
-            if line[0:1] and not line[0:1].isspace() and not line.lstrip().startswith('#'):
-                break
-            if line.strip().startswith('status:'):
-                indent = line[:len(line) - len(line.lstrip())]
-                modified.append(f'{indent}status: done\n')
-                modified.append(f'{indent}resolved_at: "{ts}"\n')
-                i += 1
-                continue
-            modified.append(line)
-            i += 1
         continue
+
+    if in_target and line.startswith('  status:'):
+        modified.append('  status: done\n')
+        if not resolved_at_written:
+            modified.append(f'  resolved_at: "{ts}"\n')
+            resolved_at_written = True
+        continue
+
+    if in_target and line.startswith('  resolved_at:'):
+        modified.append(f'  resolved_at: "{ts}"\n')
+        resolved_at_written = True
+        continue
+
     modified.append(line)
-    i += 1
+
+if in_target and not resolved_at_written:
+    modified.append(f'  resolved_at: "{ts}"\n')
 
 if not found:
     print(f'ERROR: id not found: {resolve_id}', file=sys.stderr)
     sys.exit(1)
 
-with open(insights_file, 'w') as f:
+with open(insights_file, 'w', encoding='utf-8') as f:
     f.writelines(modified)
 print(f'RESOLVED: {resolve_id}')
 PYEOF
@@ -95,15 +99,19 @@ id="INS-$(date '+%Y%m%d-%H%M%S%3N')-$(cut -c1-4 /proc/sys/kernel/random/uuid)"
 
   # Initialize file if empty or missing
   if [ ! -f "$INSIGHTS_FILE" ] || [ ! -s "$INSIGHTS_FILE" ]; then
-    echo "insights: []" > "$INSIGHTS_FILE"
+    printf 'insights:\n' > "$INSIGHTS_FILE"
+  elif grep -qx 'insights: \[\]' "$INSIGHTS_FILE"; then
+    printf 'insights:\n' > "$INSIGHTS_FILE"
   fi
 
-  # Dedup check + raw YAML append (avoids full-file YAML rewrite data loss)
-  # Pass values via env vars to prevent shell injection (cmd_1407 AC1)
+  # Dedup check + raw YAML append (avoids full-file YAML rewrite data loss).
+  # Parse the controlled YAML shape directly to avoid importing PyYAML on every call.
   result=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" MSG_ENV="$msg" PRIORITY_ENV="$priority" \
            SOURCE_INFO_ENV="$source_info" ID_ENV="$id" TS_ENV="$ts" \
            python3 - <<'PYEOF'
-import yaml, json, sys, os
+import json
+import os
+import sys
 
 insights_file = os.environ['INSIGHTS_FILE_ENV']
 msg = os.environ['MSG_ENV']
@@ -112,33 +120,47 @@ source_info = os.environ['SOURCE_INFO_ENV']
 entry_id = os.environ['ID_ENV']
 ts = os.environ['TS_ENV']
 
-with open(insights_file, 'r') as f:
-    data = yaml.safe_load(f) or {}
+def parse_scalar(raw):
+    value = raw.strip()
+    if value.startswith('"'):
+        return json.loads(value)
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
 
-# Dedup: skip if exact match or first-50-char match with status=pending (single pass)
-for existing in data.get('insights', []):
-    if existing.get('status') != 'pending':
-        continue
-    ex_text = existing.get('insight', '')
-    if ex_text == msg:
-        print('SKIP:' + existing['id'])
-        sys.exit(0)
-    if len(msg) > 0 and ex_text[:50] == msg[:50]:
-        print('SKIP:' + existing['id'] + ' (first-50-char dedup)', file=sys.stderr)
-        print('SKIP:' + existing['id'])
-        sys.exit(0)
+with open(insights_file, 'r', encoding='utf-8') as f:
+    current_id = None
+    current_insight = None
+    current_status = None
 
-# Handle empty insights: rewrite file header for append compatibility
-if not data.get('insights'):
-    with open(insights_file, 'w') as f:
-        f.write('insights:\n')
+    for line in f:
+        if line.startswith('- id: '):
+            if current_status == 'pending' and current_insight is not None:
+                if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
+                    print('SKIP:' + current_id)
+                    sys.exit(0)
+            current_id = line[len('- id: '):].strip()
+            current_insight = None
+            current_status = None
+            continue
+        if current_id is None:
+            continue
+        if line.startswith('  insight:'):
+            current_insight = parse_scalar(line.split(':', 1)[1])
+        elif line.startswith('  status:'):
+            current_status = parse_scalar(line.split(':', 1)[1])
+
+    if current_status == 'pending' and current_insight is not None:
+        if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
+            print('SKIP:' + current_id)
+            sys.exit(0)
 
 # Append raw YAML entry (no full-file rewrite — preserves existing multiline strings)
 def yaml_escape(s):
     """JSON double-quoted strings are valid YAML double-quoted scalars."""
     return json.dumps(s, ensure_ascii=False)
 
-with open(insights_file, 'a') as f:
+with open(insights_file, 'a', encoding='utf-8') as f:
     f.write(f'- id: {entry_id}\n')
     f.write(f'  ts: {yaml_escape(ts)}\n')
     f.write(f'  insight: {yaml_escape(msg)}\n')

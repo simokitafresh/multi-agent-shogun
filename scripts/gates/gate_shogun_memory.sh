@@ -18,20 +18,161 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-MEMORY_FILE="$HOME/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md"
-CLAUDE_MD="$SCRIPT_DIR/CLAUDE.md"
-CHANGELOG="$SCRIPT_DIR/queue/completed_changelog.yaml"
-PENDING_DECISIONS="$SCRIPT_DIR/queue/pending_decisions.yaml"
+SCRIPT_DIR="${SHOGUN_MEMORY_SCRIPT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+MEMORY_FILE="${SHOGUN_MEMORY_FILE:-$HOME/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md}"
+CLAUDE_MD="${SHOGUN_MEMORY_CLAUDE_MD:-$SCRIPT_DIR/CLAUDE.md}"
+CHANGELOG="${SHOGUN_MEMORY_CHANGELOG:-$SCRIPT_DIR/queue/completed_changelog.yaml}"
+PENDING_DECISIONS="${SHOGUN_MEMORY_PENDING_DECISIONS:-$SCRIPT_DIR/queue/pending_decisions.yaml}"
 
 HAS_ALERT=0
 HAS_WARN=0
+
+MEMORY_LINES=-1
+MEMORY_CURATED_DATE=""
+declare -a MEMORY_CMD_IDS=()
+declare -a MEMORY_PD_IDS=()
+declare -a MEMORY_REFS=()
+declare -A COMPLETED_CMD_MAP=()
+declare -A RESOLVED_PD_MAP=()
+declare -A CLAUDE_CMD_MAP=()
+COMPLETED_CMD_LOADED=0
+RESOLVED_PD_LOADED=0
+CLAUDE_CMD_LOADED=0
 
 emit_actionable() {
     local message="$1"
     local action="$2"
     echo "$message"
     echo "action: $action"
+}
+
+load_memory_cache() {
+    [ "$MEMORY_LINES" -ge 0 ] && return
+    [ -f "$MEMORY_FILE" ] || return
+
+    local -A seen_cmd=()
+    local -A seen_pd=()
+    local -A seen_ref=()
+
+    while IFS= read -r record; do
+        case "$record" in
+            LINES:*)
+                MEMORY_LINES=${record#LINES:}
+                ;;
+            CURATED:*)
+                MEMORY_CURATED_DATE=${record#CURATED:}
+                ;;
+            CMD:*)
+                local cmd_id=${record#CMD:}
+                if [ -z "${seen_cmd[$cmd_id]+x}" ]; then
+                    seen_cmd["$cmd_id"]=1
+                    MEMORY_CMD_IDS+=("$cmd_id")
+                fi
+                ;;
+            PD:*)
+                local pd_id=${record#PD:}
+                if [ -z "${seen_pd[$pd_id]+x}" ]; then
+                    seen_pd["$pd_id"]=1
+                    MEMORY_PD_IDS+=("$pd_id")
+                fi
+                ;;
+            REF:*)
+                local ref_path=${record#REF:}
+                if [ -z "${seen_ref[$ref_path]+x}" ]; then
+                    seen_ref["$ref_path"]=1
+                    MEMORY_REFS+=("$ref_path")
+                fi
+                ;;
+        esac
+    done < <(awk '
+        {
+            lines++
+            if (curated == "" && index($0, "Last curated:") > 0 && match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
+                curated = substr($0, RSTART, RLENGTH)
+            }
+
+            ref_line = $0
+            while (match(ref_line, /memory\/[A-Za-z0-9_-]+\.md/)) {
+                print "REF:" substr(ref_line, RSTART, RLENGTH)
+                ref_line = substr(ref_line, RSTART + RLENGTH)
+            }
+
+            if ($0 ~ /^[[:space:]]*\|/) {
+                next
+            }
+
+            cmd_line = $0
+            while (match(cmd_line, /cmd_[0-9]+/)) {
+                print "CMD:" substr(cmd_line, RSTART, RLENGTH)
+                cmd_line = substr(cmd_line, RSTART + RLENGTH)
+            }
+
+            pd_line = $0
+            while (match(pd_line, /PD-[0-9]+/)) {
+                print "PD:" substr(pd_line, RSTART, RLENGTH)
+                pd_line = substr(pd_line, RSTART + RLENGTH)
+            }
+        }
+        END {
+            print "LINES:" lines
+            if (curated != "") {
+                print "CURATED:" curated
+            }
+        }
+    ' "$MEMORY_FILE")
+}
+
+load_completed_cmd_map() {
+    [ "$COMPLETED_CMD_LOADED" -eq 1 ] && return
+    COMPLETED_CMD_LOADED=1
+    [ -f "$CHANGELOG" ] || return
+
+    while IFS= read -r cmd_id; do
+        [ -n "$cmd_id" ] && COMPLETED_CMD_MAP["$cmd_id"]=1
+    done < <(awk '
+        /id:[[:space:]]*cmd_[0-9]+/ {
+            for (i = 1; i <= NF; i++) {
+                if ($i ~ /^cmd_[0-9]+$/) {
+                    print $i
+                }
+            }
+        }
+    ' "$CHANGELOG")
+}
+
+load_resolved_pd_map() {
+    [ "$RESOLVED_PD_LOADED" -eq 1 ] && return
+    RESOLVED_PD_LOADED=1
+    [ -f "$PENDING_DECISIONS" ] || return
+
+    while IFS= read -r pd_id; do
+        [ -n "$pd_id" ] && RESOLVED_PD_MAP["$pd_id"]=1
+    done < <(awk '
+        /^- / {
+            if (id != "" && status == "resolved") {
+                print id
+            }
+            id = ""
+            status = ""
+        }
+        $1 == "id:" { id = $2 }
+        $1 == "status:" { status = $2 }
+        END {
+            if (id != "" && status == "resolved") {
+                print id
+            }
+        }
+    ' "$PENDING_DECISIONS")
+}
+
+load_claude_cmd_map() {
+    [ "$CLAUDE_CMD_LOADED" -eq 1 ] && return
+    CLAUDE_CMD_LOADED=1
+    [ -f "$CLAUDE_MD" ] || return
+
+    while IFS= read -r cmd_id; do
+        [ -n "$cmd_id" ] && CLAUDE_CMD_MAP["$cmd_id"]=1
+    done < <(grep -oE 'cmd_[0-9]+' "$CLAUDE_MD" 2>/dev/null | sort -u)
 }
 
 # ============================================================
@@ -46,8 +187,8 @@ check_line_count() {
         return
     fi
 
-    local lines
-    lines=$(wc -l < "$MEMORY_FILE")
+    load_memory_cache
+    local lines="$MEMORY_LINES"
 
     if [ "$lines" -gt 180 ]; then
         emit_actionable \
@@ -76,38 +217,26 @@ check_staleness() {
         return
     fi
 
+    load_memory_cache
+    load_completed_cmd_map
+    load_resolved_pd_map
+
     local stale_cmds=()
     local stale_pds=()
 
-    # MEMORY.md内のcmd_XXXパターンを抽出(ユニーク)
-    # MCP Memory Indexテーブル行(|始まり)は除外 — 教訓の出典cmd等は陳腐化対象外
-    local -a cmd_ids
-    mapfile -t cmd_ids < <(grep -v '^\s*|' "$MEMORY_FILE" 2>/dev/null | grep -oE 'cmd_[0-9]+' | sort -u)
-
-    # completed_changelog.yamlと照合
-    if [ -f "$CHANGELOG" ] && [ ${#cmd_ids[@]} -gt 0 ]; then
-        for cmd_id in "${cmd_ids[@]}"; do
-            if grep -q "id: ${cmd_id}" "$CHANGELOG" 2>/dev/null; then
+    if [ ${#MEMORY_CMD_IDS[@]} -gt 0 ] && [ ${#COMPLETED_CMD_MAP[@]} -gt 0 ]; then
+        local cmd_id
+        for cmd_id in "${MEMORY_CMD_IDS[@]}"; do
+            if [ -n "${COMPLETED_CMD_MAP[$cmd_id]+x}" ]; then
                 stale_cmds+=("$cmd_id")
             fi
         done
     fi
 
-    # MEMORY.md内のPD-XXXパターンを抽出(ユニーク)
-    # MCP Memory Indexテーブル行(|始まり)は除外 — 裁定記録PDは陳腐化対象外
-    local -a pd_ids
-    mapfile -t pd_ids < <(grep -v '^\s*|' "$MEMORY_FILE" 2>/dev/null | grep -oE 'PD-[0-9]+' | sort -u)
-
-    # pending_decisions.yamlと照合(resolvedのもの)
-    if [ -f "$PENDING_DECISIONS" ] && [ ${#pd_ids[@]} -gt 0 ]; then
-        for pd_id in "${pd_ids[@]}"; do
-            # そのPD IDのブロックを取得し、status: resolvedか確認
-            if awk -v id="$pd_id" '
-                /^- / { in_block=0 }
-                $0 ~ "id: " id { in_block=1 }
-                in_block && /[[:space:]]+status:[[:space:]]+resolved/ { found=1; exit }
-                END { exit !found }
-            ' "$PENDING_DECISIONS" 2>/dev/null; then
+    if [ ${#MEMORY_PD_IDS[@]} -gt 0 ] && [ ${#RESOLVED_PD_MAP[@]} -gt 0 ]; then
+        local pd_id
+        for pd_id in "${MEMORY_PD_IDS[@]}"; do
+            if [ -n "${RESOLVED_PD_MAP[$pd_id]+x}" ]; then
                 stale_pds+=("$pd_id")
             fi
         done
@@ -145,13 +274,13 @@ check_duplication() {
         return
     fi
 
-    # MEMORY.md内の「cmd_XXX完了」パターンを持つ行からcmd_IDを抽出
-    local -a memory_completed_cmds
-    mapfile -t memory_completed_cmds < <(grep -oE 'cmd_[0-9]+' "$MEMORY_FILE" 2>/dev/null | sort -u)
+    load_memory_cache
+    load_claude_cmd_map
 
     local dup_cmds=()
-    for cmd_id in "${memory_completed_cmds[@]}"; do
-        if grep -q "$cmd_id" "$CLAUDE_MD" 2>/dev/null; then
+    local cmd_id
+    for cmd_id in "${MEMORY_CMD_IDS[@]}"; do
+        if [ -n "${CLAUDE_CMD_MAP[$cmd_id]+x}" ]; then
             dup_cmds+=("$cmd_id")
         fi
     done
@@ -185,10 +314,8 @@ check_last_curated() {
         return
     fi
 
-    # Meta欄の「Last curated:」から日付取得
-    local curated_date
-    curated_date=$(grep -oE 'Last curated:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}' "$MEMORY_FILE" 2>/dev/null \
-        | head -1 | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+    load_memory_cache
+    local curated_date="$MEMORY_CURATED_DATE"
 
     if [ -z "$curated_date" ]; then
         emit_actionable \
@@ -230,9 +357,9 @@ check_last_curated() {
 #     staging YAML vs tracker の差分比較で未同期を検知
 # ============================================================
 check_mcp_sync() {
-    local staging_file="$SCRIPT_DIR/queue/mcp_sync_staging.yaml"
-    local tracker_file="$SCRIPT_DIR/queue/mcp_sync_tracker.yaml"
-    local sync_log="$SCRIPT_DIR/logs/mcp_sync.log"
+    local staging_file="${SHOGUN_MEMORY_STAGING_FILE:-$SCRIPT_DIR/queue/mcp_sync_staging.yaml}"
+    local tracker_file="${SHOGUN_MEMORY_TRACKER_FILE:-$SCRIPT_DIR/queue/mcp_sync_tracker.yaml}"
+    local sync_log="${SHOGUN_MEMORY_SYNC_LOG:-$SCRIPT_DIR/logs/mcp_sync.log}"
 
     # staging file がなければ同期対象なし → OK
     if [ ! -f "$staging_file" ]; then
@@ -244,12 +371,28 @@ check_mcp_sync() {
     if [ ! -f "$tracker_file" ]; then
         # staging に entries があるかチェック
         local has_entries
-        has_entries=$(python3 -c "
-import yaml, sys
-with open('$staging_file', encoding='utf-8') as f:
-    d = yaml.safe_load(f) or {}
-print(len(d.get('entries', [])))
-" 2>/dev/null) || has_entries="0"
+        has_entries=$(STAGING_FILE="$staging_file" python3 - <<'PYEOF' 2>/dev/null
+import os
+
+path = os.environ["STAGING_FILE"]
+count = 0
+in_entries = False
+
+with open(path, encoding="utf-8") as fh:
+    for raw in fh:
+        line = raw.rstrip("\n")
+        if not in_entries:
+            if line.startswith("entries:"):
+                in_entries = True
+            continue
+        if line and not line[:1].isspace() and not line.startswith("- "):
+            break
+        if line.lstrip().startswith("- "):
+            count += 1
+
+print(count)
+PYEOF
+) || has_entries="0"
 
         if [ "$has_entries" -gt 0 ]; then
             emit_actionable \
@@ -265,37 +408,82 @@ print(len(d.get('entries', [])))
     # staging vs tracker 差分比較 (python3)
     local result
     result=$(STAGING_FILE="$staging_file" TRACKER_FILE="$tracker_file" python3 << 'PYEOF'
-import yaml, hashlib, sys, os
+import hashlib
+import json
+import os
+import sys
 
 staging_file = os.environ["STAGING_FILE"]
 tracker_file = os.environ["TRACKER_FILE"]
 
-with open(staging_file, encoding='utf-8') as f:
-    staging = yaml.safe_load(f) or {}
 
-with open(tracker_file, encoding='utf-8') as f:
-    tracker = yaml.safe_load(f) or {}
+def parse_scalar(raw: str) -> str:
+    value = raw.strip()
+    if not value:
+        return ""
+    if value.startswith('"'):
+        return json.loads(value)
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
 
-entries = staging.get('entries', [])
+
+def parse_block_list(path: str, root_key: str):
+    items = []
+    current = None
+    in_root = False
+    with open(path, encoding="utf-8") as fh:
+        for raw in fh:
+            line = raw.rstrip("\n")
+            if not in_root:
+                if line.startswith(f"{root_key}:"):
+                    in_root = True
+                continue
+
+            if line and not line[:1].isspace() and not line.startswith("- "):
+                break
+
+            stripped = line.lstrip()
+            if stripped.startswith("- "):
+                if current is not None:
+                    items.append(current)
+                current = {}
+                remainder = stripped[2:]
+                if ":" in remainder:
+                    key, value = remainder.split(":", 1)
+                    current[key.strip()] = parse_scalar(value)
+                continue
+
+            if current is None or ":" not in stripped:
+                continue
+
+            key, value = stripped.split(":", 1)
+            current[key.strip()] = parse_scalar(value)
+
+    if current is not None:
+        items.append(current)
+    return items
+
+
+entries = parse_block_list(staging_file, "entries")
 if not entries:
     print("OK:0")
     sys.exit(0)
 
-# Build set of tracked hashes
-tracked_hashes = set()
-for item in tracker.get('synced', []) or []:
-    if isinstance(item, dict) and 'hash' in item:
-        tracked_hashes.add(item['hash'])
+tracked_hashes = {
+    item.get("hash")
+    for item in parse_block_list(tracker_file, "synced")
+    if item.get("hash")
+}
 
-# Count unsynced: hash = sha256(project:observation)
 unsynced = 0
 for entry in entries:
-    obs = entry.get('observation', '')
+    obs = entry.get("observation", "")
     if not obs:
         continue
-    project = entry.get('project', 'infra')
-    h = hashlib.sha256(f"{project}:{obs}".encode('utf-8')).hexdigest()[:16]
-    if h not in tracked_hashes:
+    project = entry.get("project", "infra")
+    digest = hashlib.sha256(f"{project}:{obs}".encode("utf-8")).hexdigest()[:16]
+    if digest not in tracked_hashes:
         unsynced += 1
 
 print(f"RESULT:{unsynced}:{len(entries)}")
@@ -329,7 +517,10 @@ PYEOF
     # 補助チェック: 同期ログの鮮度(同期自体が長期未実行でないか)
     if [ -f "$sync_log" ]; then
         local last_date
-        last_date=$(tail -1 "$sync_log" | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        last_date=$(awk '
+            /^[0-9]{4}-[0-9]{2}-[0-9]{2}/ { last=$1 }
+            END { print last }
+        ' "$sync_log")
         if [ -n "$last_date" ]; then
             local today_epoch last_epoch days_ago
             today_epoch=$(date +%s)
@@ -358,21 +549,23 @@ check_referenced_files() {
     local memory_dir
     memory_dir="$(dirname "$MEMORY_FILE")"
 
+    load_memory_cache
+
     local missing=()
     local checked=0
+    local ref_path
 
-    while IFS= read -r ref_path; do
+    for ref_path in "${MEMORY_REFS[@]}"; do
         [ -z "$ref_path" ] && continue
         local basename_ref
         basename_ref="${ref_path#memory/}"
         local full_path="$memory_dir/$basename_ref"
-        # project-repo memory/ もチェック
         local alt_path="$SCRIPT_DIR/memory/$basename_ref"
         checked=$((checked + 1))
         if [ ! -f "$full_path" ] && [ ! -f "$alt_path" ]; then
             missing+=("$ref_path")
         fi
-    done < <(grep -oE 'memory/[a-zA-Z0-9_-]+\.md' "$MEMORY_FILE" 2>/dev/null | sort -u)
+    done
 
     if [ ${#missing[@]} -gt 0 ]; then
         emit_actionable \
