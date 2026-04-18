@@ -6,8 +6,10 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export GATE_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_report_format.sh"
+    export GATE_MAIN_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_report_format_main.py"
     export DEPLOY_SCRIPT="$PROJECT_ROOT/scripts/deploy_task.sh"
     [ -f "$GATE_SCRIPT" ] || return 1
+    [ -f "$GATE_MAIN_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -17,8 +19,9 @@ setup() {
              "$TEST_TMPDIR/queue/reports" \
              "$TEST_TMPDIR/queue/tasks" \
              "$TEST_TMPDIR/logs"
-    # gate_report_format.shをtmpdirにコピー（ログ汚染防止）
+    # gate_report_format.sh と companion validator を tmpdir にコピー（ログ汚染防止）
     cp "$GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
+    cp "$GATE_MAIN_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_format_main.py"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
 }
