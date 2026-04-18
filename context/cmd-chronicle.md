@@ -729,3 +729,4 @@
 | cmd_2067 | 研究 — CoDD #5深堀り+本家リポジトリ分析 — 我が軍への応用拡張 | infra | 04-18 | CoDD #5記事と codd-dev 公開実装を深掘りし、 |
 | cmd_2069 | CoDD拡張 P5 — context/codd.md索引同期(GP-198/200/201現状反映) | infra | 04-18 | context/codd.md の索引を 2026-04-1 |
 | cmd_2070 | CoDD拡張 P2 — DIVERGENT v2: 仮説一致検知 | infra | 04-18 | DIVERGENT判定を prior_attempts[] |
+| cmd_2072 | CoDD拡張 P4 — partial failure surfacing: verdict第三状態(PASS_NO_IMPROVEMENT)導入 | infra | 04-18 | gate_report_format_main.pyにPAS |
