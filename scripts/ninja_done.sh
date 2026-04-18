@@ -33,6 +33,20 @@ resolve_report_file() {
         return 0
     fi
 
+    # cmd_2082: date-trial (printf %T builtin) でglobを回避 (~66ms→~3ms)
+    # archiveファイル名: ${ninja}_report_${cmd_id}_${YYYYMMDD}.yaml
+    local _epoch _date_str _candidate _d
+    _epoch=$(date +%s)
+    for _d in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
+        printf -v _date_str '%(%Y%m%d)T' $(( _epoch - _d * 86400 ))
+        _candidate="$ARCHIVE_REPORT_DIR/${ninja_name}_report_${cmd_id}_${_date_str}.yaml"
+        if [ -f "$_candidate" ]; then
+            printf '%s\n' "$_candidate"
+            return 0
+        fi
+    done
+
+    # 14日超の古いreportへのfallback (稀ケース)
     shopt -s nullglob
     local archived_paths=("$ARCHIVE_REPORT_DIR/${ninja_name}_report_${cmd_id}_"*.yaml)
     shopt -u nullglob
@@ -41,9 +55,7 @@ resolve_report_file() {
         return 1
     fi
 
-    local latest_path=""
-    local path=""
-
+    local latest_path="" path
     for path in "${archived_paths[@]}"; do
         if [ -z "$latest_path" ] || [ "$path" -nt "$latest_path" ]; then
             latest_path="$path"
