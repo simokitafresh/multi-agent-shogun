@@ -22,6 +22,8 @@ setup() {
     # gate_report_format.sh と companion validator を tmpdir にコピー（ログ汚染防止）
     cp "$GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
     cp "$GATE_MAIN_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_format_main.py"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$TEST_TMPDIR/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$TEST_TMPDIR/scripts/gates/"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
 }

@@ -38,11 +38,9 @@ RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 2>&1
 echo "$RESULT"
 
 RESULT_IS_PASS=0
-case "$RESULT" in
-    PASS|PASS$'\n'*)
-        RESULT_IS_PASS=1
-        ;;
-esac
+if printf '%s\n' "$RESULT" | grep -qx 'PASS'; then
+    RESULT_IS_PASS=1
+fi
 
 # --- GATE_NO_LOG guard: skip fire_log writing ---
 if [[ "${GATE_NO_LOG:-}" = "1" ]]; then

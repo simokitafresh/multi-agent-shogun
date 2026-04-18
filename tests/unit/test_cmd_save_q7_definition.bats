@@ -10,7 +10,17 @@ setup_file() {
     export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
+    # Extract helper functions that check_q7_definition depends on
+    _helpers="$(sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+
     eval "check_q7_definition() {
+declare -A CMD_BLOCK_CACHE=()
+CMD_BLOCK_CACHE_LOADED=0
+CMD_BLOCK_FOUND=1
+$_helpers
 $(sed -n '/# q7_definition_verified:/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRIPT")
 }"
     export -f check_q7_definition
@@ -38,7 +48,8 @@ setup() {
     CMD_BLOCK_NC='    q1_firefighting: "no"
     q2_learning: "奪わない"
     q3_next_quality: "上がる"
-    q7_definition_verified: "yes — High=rolling maxをテスト期待値へ固定"'
+    quality_gate:
+      q7_definition_verified: "yes — High=rolling maxをテスト期待値へ固定"'
     export CMD_BLOCK_NC
 
     run check_q7_definition

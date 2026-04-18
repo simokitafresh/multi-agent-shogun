@@ -624,24 +624,20 @@ yaml_field_set() {
         local rc=2
 
         if [ "$block_id" = "root" ]; then
-            _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value"
-            rc=$?
+            rc=0; _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value" || rc=$?
             if [ "$rc" -eq 0 ]; then
                 use_root=1
             fi
         else
-            _yaml_field_set_apply_map_scalar "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value"
-            rc=$?
+            rc=0; _yaml_field_set_apply_map_scalar "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value" || rc=$?
             if [ "$rc" -eq 2 ]; then
-                _yaml_field_set_apply "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value"
-                rc=$?
+                rc=0; _yaml_field_set_apply "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value" || rc=$?
             fi
         fi
 
         if [ "$rc" -eq 2 ]; then
             # Fallback: block_id not found → try root-level field update (flat YAML support)
-            _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value"
-            rc=$?
+            rc=0; _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value" || rc=$?
             if [ "$rc" -eq 0 ]; then
                 use_root=1
             fi
