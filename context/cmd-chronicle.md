@@ -737,3 +737,4 @@
 | cmd_karo_ci_fix_ssh_sl | CI RED修正: SSH/SLテスト(999-1006)CI環境FAIL | infra | 04-18 | unit-tests workflow の再実行でも SSH |
 | cmd_2077 | CoDD正規再改善 R1-E — cmd_save.sh(spec省略→正規CoDD再改善) | infra | 04-18 | scripts/cmd_save.sh正規CoDD再改善。b |
 | cmd_2090 | CoDD正規再改善 R2-C — gate_vercel_phase.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_vercel_phase.sh を正規CoDDで再 |
+| cmd_2078 | CoDD正規再改善 R1-F — deploy_task.sh(spec省略→正規CoDD再改善) | infra | 04-18 | deploy_task.sh CoDD正規再改善完了。hot |
