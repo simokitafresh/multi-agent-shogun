@@ -170,3 +170,40 @@ print('DEFAULT OK')
     [ "$status" -eq 0 ]
     [[ "$output" == *"DEFAULT OK"* ]]
 }
+
+@test "自動完了: 修正済みメッセージはdoneで保存される" {
+    run bash "${TEST_TMP}/scripts/insight_write.sh" "foo修正済みのため記録のみ" "medium" "unit_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+
+    run python3 -c "
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml') as f:
+    data = yaml.safe_load(f)
+entry = data['insights'][0]
+assert entry['status'] == 'done', f'status={entry[\"status\"]}'
+assert 'resolved_at' in entry, 'resolved_at missing'
+print('AUTO DONE OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO DONE OK"* ]]
+}
+
+@test "スキップ: test_pattern/test_fix含むメッセージは保存しない" {
+    run bash "${TEST_TMP}/scripts/insight_write.sh" "fixture test_pattern with test_fix marker" "medium" "unit_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "SKIP:test-fixture" ]]
+
+    run python3 -c "
+import os, yaml
+path='${TEST_TMP}/queue/insights.yaml'
+if os.path.exists(path):
+    with open(path) as f:
+        data = yaml.safe_load(f)
+    entries = (data or {}).get('insights', []) if isinstance(data, dict) else []
+    assert len(entries) == 0, f'expected 0 entries, got {len(entries)}'
+print('TEST FIXTURE SKIPPED')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TEST FIXTURE SKIPPED"* ]]
+}

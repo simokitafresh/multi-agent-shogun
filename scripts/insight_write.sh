@@ -90,6 +90,19 @@ priority="${2:-medium}"
 source_info="${3:-manual}"
 ts="$(date -Iseconds)"
 
+# Skip synthetic test fixtures. They are useful in tests, but must not pollute the real queue.
+if [[ "$msg" == *"test_pattern"* || "$msg" == *"test_fix"* ]]; then
+  echo "SKIP:test-fixture"
+  exit 0
+fi
+
+status="pending"
+resolved_at=""
+if [[ "$msg" == *"修正済み"* || "$msg" == *"解消"* || "$msg" == *"登録済み"* || "$msg" == *"対処済み"* ]]; then
+  status="done"
+  resolved_at="$ts"
+fi
+
 # Generate ID: INS-YYYYMMDD-HHMMSSmmm-{4hex} (ミリ秒精度+UUID先頭4桁)
 id="INS-$(date '+%Y%m%d-%H%M%S%3N')-$(cut -c1-4 /proc/sys/kernel/random/uuid)"
 
@@ -107,7 +120,8 @@ id="INS-$(date '+%Y%m%d-%H%M%S%3N')-$(cut -c1-4 /proc/sys/kernel/random/uuid)"
   # Dedup check + raw YAML append (avoids full-file YAML rewrite data loss).
   # Parse the controlled YAML shape directly to avoid importing PyYAML on every call.
   result=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" MSG_ENV="$msg" PRIORITY_ENV="$priority" \
-           SOURCE_INFO_ENV="$source_info" ID_ENV="$id" TS_ENV="$ts" \
+           SOURCE_INFO_ENV="$source_info" ID_ENV="$id" TS_ENV="$ts" STATUS_ENV="$status" \
+           RESOLVED_AT_ENV="$resolved_at" \
            python3 - <<'PYEOF'
 import json
 import os
@@ -119,6 +133,8 @@ priority = os.environ['PRIORITY_ENV']
 source_info = os.environ['SOURCE_INFO_ENV']
 entry_id = os.environ['ID_ENV']
 ts = os.environ['TS_ENV']
+status = os.environ['STATUS_ENV']
+resolved_at = os.environ['RESOLVED_AT_ENV']
 
 def parse_scalar(raw):
     value = raw.strip()
@@ -166,7 +182,9 @@ with open(insights_file, 'a', encoding='utf-8') as f:
     f.write(f'  insight: {yaml_escape(msg)}\n')
     f.write(f'  priority: {yaml_escape(priority)}\n')
     f.write(f'  source: {yaml_escape(source_info)}\n')
-    f.write(f'  status: pending\n')
+    f.write(f'  status: {status}\n')
+    if resolved_at:
+        f.write(f'  resolved_at: {yaml_escape(resolved_at)}\n')
 
 print(entry_id)
 PYEOF

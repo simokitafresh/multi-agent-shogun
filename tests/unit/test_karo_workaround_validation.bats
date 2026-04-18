@@ -43,6 +43,12 @@ SH
 exit 0
 SH
     chmod +x "$TEST_DIR/scripts/insight_write.sh"
+    cat > "$TEST_DIR/scripts/pending_decision_write.sh" <<'SH'
+#!/usr/bin/env bash
+echo "PD:$*" >> "${BASH_SOURCE[0]%.sh}.log"
+exit 0
+SH
+    chmod +x "$TEST_DIR/scripts/pending_decision_write.sh"
 
     # Copy the actual script, replacing REPO_ROOT discovery
     sed "s|REPO_ROOT=.*|REPO_ROOT=\"$TEST_DIR\"|" "$SCRIPT" > "$TEST_DIR/scripts/karo_workaround_log.sh"
@@ -147,4 +153,22 @@ teardown() {
     [[ "$output" != *"root_causeが無効値"* ]]
     [[ "$output" != *"root_causeが短すぎる"* ]]
     [[ "$output" == *"Clean:"* ]]
+}
+
+@test "explicit clean category: 3件目でもALERT/insight/PDを発火しない" {
+    run bash "$TEST_SCRIPT" cmd_test_1 hayate "normal detail" "normal root cause" clean
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Logged:"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_test_2 hayate "normal detail" "normal root cause" clean
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Logged:"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_test_3 hayate "normal detail" "normal root cause" clean
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Logged:"* ]]
+    [[ "$output" != *"ALERT"* ]]
+    [[ "$output" != *"WARN"* ]]
+
+    [ ! -f "$TEST_DIR/scripts/pending_decision_write.log" ]
 }
