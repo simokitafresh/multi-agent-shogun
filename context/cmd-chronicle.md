@@ -700,3 +700,4 @@
 | cmd_2033 | CoDD改善バッチ6-A — insight_write.sh + gate_shogun_memory.sh + gate_skill_quality.sh | infra | 04-18 | 3本のCoDD改善を完了。insight_write 117 |
 | cmd_2036 | CoDD改善バッチ7-B — lesson_write.sh + sync_lessons.sh + inbox_write.sh(再) | infra | 04-18 | lesson_write/sync_lessons/inbo |
 | cmd_2035 | CoDD改善バッチ7-A — cmd_save.sh(再) + ninja_done.sh(再) + shutsujin_departure.sh(再) | infra | 04-18 | cmd_save.sh 1.06s→0.98s、ninja_ |
+| cmd_2038 | CoDD改善バッチ8-B — gate_report_format.sh + yaml_field_set.sh + gate_pd_sync.sh | infra | 04-18 | gate_report_format/yaml_field_ |

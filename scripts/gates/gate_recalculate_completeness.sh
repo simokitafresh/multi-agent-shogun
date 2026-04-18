@@ -134,30 +134,38 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 HOSTADDR = os.environ.get("GATE_RECALCULATE_HOSTADDR", "").strip()
 
 QUERY = """
+WITH active_portfolios AS (
+    SELECT id, name, type
+    FROM portfolios
+    WHERE is_active = true
+),
+signal_portfolios AS (
+    SELECT DISTINCT portfolio_id
+    FROM signals
+),
+monthly_return_portfolios AS (
+    SELECT DISTINCT portfolio_id
+    FROM monthly_returns
+),
+component_weight_portfolios AS (
+    SELECT DISTINCT portfolio_id
+    FROM fof_component_weights
+)
 SELECT
     p.id,
     p.name,
     p.type,
-    EXISTS (
-        SELECT 1
-        FROM signals s
-        WHERE s.portfolio_id = p.id
-    ) AS has_signals,
-    EXISTS (
-        SELECT 1
-        FROM monthly_returns m
-        WHERE m.portfolio_id = p.id
-    ) AS has_monthly_returns,
+    (s.portfolio_id IS NOT NULL) AS has_signals,
+    (m.portfolio_id IS NOT NULL) AS has_monthly_returns,
     CASE
-        WHEN p.type = 'fof' THEN EXISTS (
-            SELECT 1
-            FROM fof_component_weights c
-            WHERE c.portfolio_id = p.id
-        )
+        WHEN p.type = 'fof' THEN (c.portfolio_id IS NOT NULL)
         ELSE NULL
     END AS has_component_weights
-FROM portfolios p
-WHERE p.is_active = true
+FROM active_portfolios p
+LEFT JOIN signal_portfolios s ON s.portfolio_id = p.id
+LEFT JOIN monthly_return_portfolios m ON m.portfolio_id = p.id
+LEFT JOIN component_weight_portfolios c ON c.portfolio_id = p.id
+ORDER BY p.type, p.name, p.id
 """
 
 try:
@@ -180,10 +188,7 @@ try:
     print(f"Active portfolios: {total} (standard={standard}, fof={fofs})")
     print()
 
-    missing_signals = sorted(
-        (row for row in rows if not row[3]),
-        key=lambda row: (row[2], row[1]),
-    )
+    missing_signals = [row for row in rows if not row[3]]
     if missing_signals:
         print(f"FAIL: {len(missing_signals)} portfolios with 0 signals:")
         for row in missing_signals:
@@ -193,10 +198,7 @@ try:
 
     print()
 
-    missing_monthly_returns = sorted(
-        (row for row in rows if not row[4]),
-        key=lambda row: (row[2], row[1]),
-    )
+    missing_monthly_returns = [row for row in rows if not row[4]]
     if missing_monthly_returns:
         print(f"FAIL: {len(missing_monthly_returns)} portfolios with 0 monthly_returns:")
         for row in missing_monthly_returns:
@@ -206,9 +208,9 @@ try:
 
     print()
 
-    missing_component_weights = sorted(
+    missing_component_weights = [
         row[1] for row in rows if row[2] == "fof" and row[5] is False
-    )
+    ]
     if fofs == 0:
         print("INFO: No FoF portfolios found")
     elif missing_component_weights:

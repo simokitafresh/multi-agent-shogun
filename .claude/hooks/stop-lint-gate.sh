@@ -22,8 +22,8 @@ SHOGUN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # and dedupe the staged/unstaged union before dispatching the linters.
 collect_changed_files() {
     local staged_files unstaged_files
-    staged_files="$(cd "$SHOGUN_ROOT" && git diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
-    unstaged_files="$(cd "$SHOGUN_ROOT" && git ls-files -m 2>/dev/null || true)"
+    staged_files="$(GIT_OPTIONAL_LOCKS=0 git -C "$SHOGUN_ROOT" diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
+    unstaged_files="$(GIT_OPTIONAL_LOCKS=0 git -C "$SHOGUN_ROOT" ls-files -m 2>/dev/null || true)"
 
     if [ -z "${staged_files}${unstaged_files}" ]; then
         return 0
@@ -53,11 +53,12 @@ done
 
 # --- Run lint checks ---
 violations=""
+cd "$SHOGUN_ROOT"
 
 # ShellCheck for .sh files (-S warning: info/style除外。既存警告での偽ブロック防止)
 if [ "${#sh_files[@]}" -gt 0 ] && command -v shellcheck >/dev/null 2>&1; then
     sc_out=""
-    if ! sc_out="$(cd "$SHOGUN_ROOT" && shellcheck -S warning "${sh_files[@]}" 2>&1)"; then
+    if ! sc_out="$(shellcheck -S warning "${sh_files[@]}" 2>&1)"; then
         :
     fi
     if [ -n "$sc_out" ]; then
@@ -77,7 +78,7 @@ if [ "${#py_files[@]}" -gt 0 ]; then
     fi
     if [ -n "$ruff_cmd" ]; then
         ruff_out=""
-        if ! ruff_out="$(cd "$SHOGUN_ROOT" && "$ruff_cmd" check --quiet --select E,W,F "${py_files[@]}" 2>&1)"; then
+        if ! ruff_out="$("$ruff_cmd" check --quiet --select E,W,F "${py_files[@]}" 2>&1)"; then
             if [ -n "$ruff_out" ]; then
                 violations="${violations}--- ruff ---"$'\n'"${ruff_out}"$'\n'
             fi
@@ -88,7 +89,7 @@ fi
 # Biome for .ts/.tsx/.js/.jsx files
 if [ "${#ts_js_files[@]}" -gt 0 ] && command -v npx >/dev/null 2>&1; then
     biome_out=""
-    if ! biome_out="$(cd "$SHOGUN_ROOT" && npx --yes biome check "${ts_js_files[@]}" 2>/dev/null)"; then
+    if ! biome_out="$(npx --yes biome check "${ts_js_files[@]}" 2>/dev/null)"; then
         :
     fi
     if [ -n "$biome_out" ]; then
@@ -107,7 +108,7 @@ fail_hash_file="${STOP_LINT_HASH_FILE:-/tmp/stop_hook_${AGENT_ID}_lint_fail_hash
 current_hash="$(printf '%s' "$violations" | md5sum | cut -d' ' -f1)"
 
 if [ -f "$fail_hash_file" ]; then
-    prev_hash="$(cat "$fail_hash_file" 2>/dev/null || true)"
+    prev_hash="$(< "$fail_hash_file")"
     if [ "$current_hash" = "$prev_hash" ]; then
         # Same failure repeated — agent cannot fix this. Block + escalate to karo.
         # 消火禁止: auto-approveは問題を隠す。blockを維持し家老に対処を委ねる。
