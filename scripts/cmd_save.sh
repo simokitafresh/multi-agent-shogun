@@ -409,7 +409,7 @@ if load_cmd_block; then
         echo "  delegated_at: $_DELEGATED_AT" >&2
         echo "  途中修正の二択: (1)別CMD_IDで発令 (2)忍者を神速停止→回復後に新CMD" >&2
         echo "  同一cmd_idの上書きは忍者のフリーズ・成果物無効化を引き起こします(cmd_1688実証済み)" >&2
-        abort_if_block_immediate
+        abort_if_block_immediate || exit 1
     fi
 fi
 
@@ -443,7 +443,7 @@ quality_gate:
   q3_next_quality: "上がる/下がる — 品質への影響"
 ---
 QG_TEMPLATE
-        abort_if_block_immediate
+        abort_if_block_immediate || exit 1
     fi
 
     # --- Preflight: 全必須項目の存在を一括チェック（逐次BLOCK防止） ---
@@ -506,7 +506,7 @@ QG_TEMPLATE
             echo "$_hint" >&2
         done
         echo "  ---" >&2
-        abort_if_block_immediate
+        abort_if_block_immediate || exit 1
     fi
 
     # q4_depth: 段階的導入のためBLOCKではなくWARNING（WARN_COUNTに加算しない）
@@ -543,7 +543,7 @@ QG_TEMPLATE
         elif ! echo "$q5_val" | grep -qiE "isolated_test|structure_verified|production_verified|pipeline_test|実行|execute|本番|production|API応答|DB確認|テスト実行"; then
             record_block_reason "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
             echo '  例: q5_verified_source: "engine.py L107 code_reading + isolated_test(スクリプト実行確認)"' >&2
-            abort_if_block_immediate
+            abort_if_block_immediate || exit 1
         else
             echo "INFO: q5にcode_readingを含むが追加検証あり。OK" >&2
         fi
@@ -616,7 +616,7 @@ QG_TEMPLATE
         if ! cmd_block_has_field "quality_gate.q9_firefighting_root_cause"; then
             record_block_reason "消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate
+            abort_if_block_immediate || exit 1
         fi
         # q9の中身検証: root_cause: と prevention: の両方が含まれ非空であること（GP-176）
         # 存在チェックのみでは "q9: TBD" で通過する = 形式的コンプライアンス = 消火
@@ -624,24 +624,24 @@ QG_TEMPLATE
         if [[ -n "$_Q9_VAL" ]] && ! echo "$_Q9_VAL" | grep -q "root_cause:"; then
             record_block_reason "q9にroot_cause:が含まれていない。真因を具体的に記載せよ"
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate
+            abort_if_block_immediate || exit 1
         fi
         if [[ -n "$_Q9_VAL" ]] && ! echo "$_Q9_VAL" | grep -q "prevention:"; then
             record_block_reason "q9にprevention:が含まれていない。二度と起きない仕組みを記載せよ"
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate
+            abort_if_block_immediate || exit 1
         fi
         _Q9_ROOT=$(echo "$_Q9_VAL" | sed -E 's/.*root_cause:[[:space:]]*([^|]*).*/\1/' | sed 's/[[:space:]]*$//')
         _Q9_PREVENTION=$(echo "$_Q9_VAL" | sed -E 's/.*prevention:[[:space:]]*(.*)/\1/' | sed 's/[[:space:]]*$//')
         if [[ -n "$_Q9_VAL" && ${#_Q9_ROOT} -lt 10 ]]; then
             record_block_reason "q9のroot_causeが短すぎる。10文字以上で具体的に記載せよ"
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate
+            abort_if_block_immediate || exit 1
         fi
         if [[ -n "$_Q9_VAL" && ${#_Q9_PREVENTION} -lt 10 ]]; then
             record_block_reason "q9のpreventionが短すぎる。10文字以上で具体的に記載せよ"
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate
+            abort_if_block_immediate || exit 1
         fi
         if echo "$_Q9_PREVENTION" | grep -qiE '気をつけ|注意し|徹底|意識し|漏れないよう|覚えておく|次は.*ようにする'; then
             echo "WARNING: q9のpreventionが意志依存です。『気をつける/徹底する』ではなく、gate追加・自動化・チェック強制など仕組みに置き換えてください" >&2
@@ -1191,7 +1191,7 @@ check_ac_must_should_mix() {
         echo "  AC定義: 忍者が二値(yes/no)で判定する必須完了基準。推奨/optional/nice-to-haveはnotes欄に" >&2
         echo "  該当行: $(echo "$RECOMMEND_LINES" | head -3 | tr '\n' ' ')" >&2
         echo "  根拠: verdict_override WA 2件(cmd_karo_fix_flock_silent)。推奨にno→FAIL→家老override。WARN→BLOCK昇格(GP-175)" >&2
-        abort_if_block_immediate
+        abort_if_block_immediate || return 1
     fi
 }
 
@@ -2128,7 +2128,7 @@ if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
         # AC1: trust: unverified が含まれる場合BLOCK(exit 1)
         if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
             record_block_reason "未検証前提あり。現物確認してtrust:verifiedに変更せよ"
-            abort_if_block_immediate
+            abort_if_block_immediate || exit 1
         fi
         # AC2: trust:verified + sourceにファイルパスがある場合、プロジェクトWD内の実在確認
         _ASSUMP_PROJECT_ID="$(cmd_block_get_field "project")"
@@ -2186,7 +2186,7 @@ for e in entries:
                 done <<< "$_ASSUMP_VERIFIED_PATHS"
                 if [[ "$_ASSUMP_HAS_MISSING" == true ]]; then
                     echo "  現物確認してからcmd_save.shを再実行せよ" >&2
-                    abort_if_block_immediate
+                    abort_if_block_immediate || exit 1
                 fi
             fi
         fi

@@ -47,7 +47,9 @@ $(sed -n '/# q4_depth: 段階的導入/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRI
     eval "$(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field
+    eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field record_block_reason abort_if_block_immediate
 
     # check_quality_gate: Check 3インラインセクション(質問ゲートブロック)を関数化 + 成功時OK出力
     local _qg_start _qg_end
@@ -57,6 +59,9 @@ $(sed -n '/# q4_depth: 段階的導入/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRI
     eval "check_quality_gate() {
 local WARN_COUNT=0
 $(sed -n "${_qg_start},${_qg_end}p" "$SRC_SAVE_SCRIPT")
+if [[ \"\${BLOCK_COUNT:-0}\" -gt 0 ]]; then
+    return 1
+fi
 echo \"保存確認OK: \${CMD_ID}\"
 }"
     export -f check_quality_gate
@@ -65,6 +70,9 @@ echo \"保存確認OK: \${CMD_ID}\"
     eval "check_20_assumptions() {
 local WARN_COUNT=0
 $(sed -n '/^# --- Check 20:/,/^# --- 結果出力/{/^# --- 結果出力/d;p}' "$SRC_SAVE_SCRIPT")
+if [[ \"\${BLOCK_COUNT:-0}\" -gt 0 ]]; then
+    return 1
+fi
 echo \"OK\"
 }"
     export -f check_20_assumptions
@@ -88,6 +96,9 @@ setup() {
     export CMD_BLOCK_LOADED=0
     export CMD_BLOCK_FOUND=0
     export CMD_BLOCK_CACHE_LOADED=0
+    export CMD_SAVE_ACCUMULATE_BLOCKS=0
+    export BLOCK_COUNT=0
+    declare -ga BLOCK_REASONS=()
     declare -gA CMD_BLOCK_CACHE=()
     # --jobs 8並列実行時の競合を回避するためQUEUE_FILEをテストごとに一意化
     export QUEUE_FILE="${TEST_SHARED_TMP}/queue/shogun_to_karo_${BATS_TEST_NUMBER}.yaml"
