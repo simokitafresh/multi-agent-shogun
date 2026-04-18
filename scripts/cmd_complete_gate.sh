@@ -3786,9 +3786,12 @@ if [ "$ALL_CLEAR" = true ]; then
     fi
 
     # ─── gunshi review_feedback自動送信（GATE CLEAR） ───
+    # GP-209: dedup — 同一cmd+同一resultが既にinboxにあればスキップ
     echo ""
     echo "Gunshi review_feedback (GATE CLEAR):"
-    if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR" review_feedback system 2>/dev/null; then
+    if grep -q "${CMD_ID} gate_result: CLEAR" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" 2>/dev/null; then
+        echo "  gunshi review_feedback: SKIP (dedup — already in inbox)"
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR" review_feedback system 2>/dev/null; then
         echo "  gunshi review_feedback: OK (CLEAR)"
     else
         echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"
@@ -4229,9 +4232,12 @@ else
     bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
 
     # ─── gunshi review_feedback自動送信（GATE BLOCK） ───
+    # GP-209: dedup — 同一cmd+同一resultが既にinboxにあればスキップ
     echo ""
     echo "Gunshi review_feedback (GATE BLOCK):"
-    if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: BLOCK reason=${block_reason}" review_feedback system 2>/dev/null; then
+    if grep -q "${CMD_ID} gate_result: BLOCK" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" 2>/dev/null; then
+        echo "  gunshi review_feedback: SKIP (dedup — already in inbox)"
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: BLOCK reason=${block_reason}" review_feedback system 2>/dev/null; then
         echo "  gunshi review_feedback: OK (BLOCK)"
     else
         echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"
