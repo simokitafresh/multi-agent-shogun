@@ -47,10 +47,14 @@ fi
 
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 REPORTS_DIR="$SCRIPT_DIR/queue/reports"
+AWK_BIN="awk"
+if command -v mawk >/dev/null 2>&1; then
+    AWK_BIN="mawk"
+fi
 
 # ─── 偵察タスク収集（全ファイルを単一awkパスで処理）───
 # 旧実装: field_get を1ファイルあたり4-5回呼び出し(subshell多数) → 遅い
-# 新実装: awk 1回で全ファイルを走査し、parent_cmd+task_typeを絞り込む
+# 現在: awk系実装を優先。WSL2では mawk が gawk より軽いため、あれば優先使用する
 declare -a RECON_FILES=()
 declare -a RECON_NINJAS=()
 declare -a RECON_STATUSES=()
@@ -70,7 +74,7 @@ done < <(
     shopt -s nullglob
     files=("$TASKS_DIR"/*.yaml)
     [ "${#files[@]}" -eq 0 ] && exit 0
-    awk -v cmd_id="$CMD_ID" '
+    "$AWK_BIN" -v cmd_id="$CMD_ID" '
     function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
     function unquote(s,   c1, cl) {
         if (length(s) >= 2) {
@@ -106,6 +110,7 @@ done < <(
     ' "${files[@]}"
 )
 
+# ─── 偵察タスク数 ───
 TOTAL=${#RECON_FILES[@]}
 
 # ─── 偵察タスクなし ───
