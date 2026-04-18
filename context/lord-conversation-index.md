@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-18T20:32:48+09:00 -->
+<!-- generated_at: 2026-04-18T21:00:43+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-18T21:00:43+09:00 | terminal | response | 家老がidle状態。CI赤はE2E flakyのみで**Unit Tests全PASS確認済み**。しかしidle忍者4名への残りcmd配備が止まっている。nudgeする。 [meta] stop_reason=tool_use
+- 2026-04-18T21:00:14+09:00 | terminal | inbound | どうなった？
+- 2026-04-18T20:49:02+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-111)
+- 2026-04-18T20:47:57+09:00 | ntfy | outbound | CI赤: run 24603843546 E2E Tests
+- 2026-04-18T20:40:29+09:00 | terminal | response | GATE CLEAR 11/20。idle 4名だが家老が残りcmdを配備している途中。 [meta] stop_reason=end_turn
+- 2026-04-18T20:38:00+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 20:24:20|cmd_2087 2026-04-18 20:26:16|cmd_2079 2026-04-18 20:30:13|cmd_2078 2026-04-18 20:31:53|cm…
 - 2026-04-18T20:32:48+09:00 | terminal | response | GATE CLEAR 10/20。半分突破。 [meta] stop_reason=end_turn
 - 2026-04-18T20:31:18+09:00 | terminal | response | GATE CLEAR 9/20。idle 4名（疾風/影丸/半蔵/才蔵）。家老が残りcmd配備中。 [meta] stop_reason=end_turn
 - 2026-04-18T20:28:54+09:00 | terminal | response | 殿、現況。 **GATE CLEAR: 8/20cmd。** idle忍者3名（疾風/影丸/才蔵）、家老が次の配備を判断中。 | cmd | 対象 | 状態 | |-----|------|------| | cmd_2074 | pos…
 - 2026-04-18T20:28:33+09:00 | terminal | inbound | 進捗は？
-- 2026-04-18T20:27:26+09:00 | ntfy | outbound | 【家老】cmd_2081 初回配備開始 (title=CoDD正規再改善 R1-I — dashboard_auto_section.sh(spec省略→正規CoDD再改善), ninja=tobisaru) CoDD正規再改善 R1-I…
-- 2026-04-18T20:26:39+09:00 | terminal | response | GATE CLEAR 8cmd目。進捗: 8/20完了。 [meta] stop_reason=end_turn
-- 2026-04-18T20:24:49+09:00 | terminal | response | 処理完了。GATE CLEAR 7cmd目（cmd_2087 ntfy.sh）。残り13cmd消化中。 [meta] stop_reason=end_turn
-- 2026-04-18T20:22:54+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
-- 2026-04-18T20:22:13+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
-- 2026-04-18T20:22:11+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 20:20:18|cmd_2090
 
 ## 未解決確認事項
+- 家老がidle状態。CI赤はE2E flakyのみで**Unit Tests全PASS確認済み**。しかしidle忍者4名への残りcmd配備が止まっている。nudgeする。 [meta] stop_reason=tool_use
 - 定義を確認した。今回のCoDD再改善cmdで消火が発生していないか、GP-107 4問で監査する。 [meta] stop_reason=tool_use
 - 消火とは、そういう意味ではない。品質低下やエラーを隠すような行為をしていないかいう観点だ。どこかで定義しているはず。確認せよ
 - はっ。現物で確認する。 [meta] stop_reason=tool_use
@@ -23,7 +24,6 @@
 - はっ、完了済みcmdの実際の改善結果を現物確認する。 [meta] stop_reason=tool_use
 - ここまでの結果を教えて。確認せよ
 - **cmd_2076委任完了。** 殿の仰る通り。1cmd1スクリプトにすれば、対象の現物確認が確実になり休眠ファイル起票のような手戻りがなくなる。次のcmd_2077から1cmd1スクリプトで進める。 次の対象候補：台帳登録済みだがspec省略の高頻度スクリプト（cmd_sa…
-- 殿、報告する。 **cmd_2073, cmd_2074が2連続で同一パターンの前提崩壊。** profiling doc(cmd_1951)のA区分リストをそのまま信じて起票したが、cmd_1661以降の統合で休眠化したファイルが多数含まれていた。「想像するな確認せよ」（LS…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-18T20:18:08+09:00 | 殿、報告する。 **進んでいる。** 家老が即座に動いた。 | 忍者 | タスク | 状態 | |------|--------|------| | 疾風 | cmd_2090(gate_vercel_phase) | assigned（報告完了済み） | | 影丸 | 未配備…
@@ -43,7 +43,6 @@
 - cmd_2043
 - cmd_2051
 - cmd_2053
-- cmd_2059
 - cmd_2061
 - cmd_2062
 - cmd_2063
@@ -66,6 +65,7 @@
 - cmd_2080
 - cmd_2081
 - cmd_2082
+- cmd_2083
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

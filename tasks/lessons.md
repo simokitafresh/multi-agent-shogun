@@ -3843,3 +3843,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: approved
 - **tags**: [universal]
 - gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file awk を何十回も起動する固定費が重い。存在判定キャッシュは維持しつつ、抽出だけを rg 一括へ寄せると大きく縮む。
+
+### L503: dashboard_auto_section.sh: knowledge_metrics.sh(980ms)がgate_log更新でキャッシュミス→before/after共に高い計測値が出る
+- **日付**: 2026-04-18
+- **出典**: cmd_2081
+- **記録者**: tobisaru
+- **status**: approved
+- **tags**: [universal]
+- CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja gate実行)で毎回キャッシュミスし980msブロック。この問題はmy fix前から存在。before 200msのspec計測は軽量環境(gate_log小)での値。同環境interleaved比較が唯一公正な手法。Fix実施後の同環境比較: 330ms→220ms(-33%)

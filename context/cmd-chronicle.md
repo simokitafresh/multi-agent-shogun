@@ -738,3 +738,4 @@
 | cmd_2077 | CoDD正規再改善 R1-E — cmd_save.sh(spec省略→正規CoDD再改善) | infra | 04-18 | scripts/cmd_save.sh正規CoDD再改善。b |
 | cmd_2090 | CoDD正規再改善 R2-C — gate_vercel_phase.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_vercel_phase.sh を正規CoDDで再 |
 | cmd_2078 | CoDD正規再改善 R1-F — deploy_task.sh(spec省略→正規CoDD再改善) | infra | 04-18 | deploy_task.sh CoDD正規再改善完了。hot |
+| cmd_2081 | CoDD正規再改善 R1-I — dashboard_auto_section.sh(spec省略→正規CoDD再改善) | infra | 04-18 | dashboard_auto_section.sh 3fix |
