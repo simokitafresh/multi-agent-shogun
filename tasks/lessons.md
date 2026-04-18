@@ -3851,3 +3851,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: approved
 - **tags**: [universal]
 - CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja gate実行)で毎回キャッシュミスし980msブロック。この問題はmy fix前から存在。before 200msのspec計測は軽量環境(gate_log小)での値。同環境interleaved比較が唯一公正な手法。Fix実施後の同環境比較: 330ms→220ms(-33%)
+
+### L504: WSL2 NTFS上のfind -mminはstat一括より不安定で遅い場合がある
+- **日付**: 2026-04-18
+- **出典**: cmd_2088
+- **記録者**: tobisaru
+- **status**: confirmed
+- **tags**: [universal]
+- find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2 NTFS上ではfindがstatより遅い場合があり、事前の単体計測1回では判断できない。必ず5回median計測してから採用判断せよ。
