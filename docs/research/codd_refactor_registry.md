@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | saizo | `.claude/hooks/stop-lint-gate.sh` | Phase 5(spec+benchmark+trial revert) | `34.0ms → 35.7ms` (`+5.0%`, regression) → reverted | spec+after: `docs/research/cmd_2061_codd_hook_batch_a_20260418.md` |
+| 2026-04-18 | saizo | `.claude/hooks/pre-bash-combined.sh` | Phase 5(spec+benchmark+trial revert) | `20.6ms → 24.6ms` (`+19.4%`, regression) → reverted | spec+after: `docs/research/cmd_2061_codd_hook_batch_a_20260418.md` |
+| 2026-04-18 | saizo | `.claude/hooks/post-bash-combined.sh` | Phase 5(spec+benchmark+trial revert) | `1082.8ms → 1296.0ms` (`+19.7%`, regression) → reverted baseline `921.2ms` | spec+after: `docs/research/cmd_2061_codd_hook_batch_a_20260418.md` |
 | 2026-04-18 | kagemaru | `scripts/gates/gate_report_format.sh` | Phase 5(再改善: 計測+実装+検証) | `148ms → 90ms` (`-39%`, valid PASS report/cache miss median, real env /mnt/c) | python3プロセス2回(autofix.sh→autofix_main.py + format_main.py)→gate_report_format_combined.pyで1プロセス統合。15/15テストPASS。spec+after: `docs/research/cmd_2063_codd_spec_batch_20260418.md` |
 | 2026-04-18 | kagemaru | `scripts/ninja_done.sh` | Phase 5(再改善: 計測+実装+検証) | `79ms → 64ms` (`-19%`, archived report success path median) | SCRIPT_DIR `$(cd dirname pwd)`→純bash文字列演算(_SELF%/*/..)でサブシェル削減+gate_report_format改善波及。5/5テストPASS。spec+after: `docs/research/cmd_2063_codd_spec_batch_20260418.md` |
 | 2026-04-18 | kagemaru | `.claude/hooks/post-search-completeness-guard.sh` | Phase 5(計測のみ+revert) | `4ms → 4ms` (改善なし→revert。profiling参照17msは別環境での計測値。現実環境4msは最小値) | shebang #!/usr/bin/env bash→#!/bin/sh試行。After=Before=4ms中央値→AC3 revert適用。spec: `docs/research/cmd_2063_codd_spec_batch_20260418.md` |
