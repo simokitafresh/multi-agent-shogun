@@ -1,7 +1,10 @@
-# システム知識辞書 — 拡充ガイドライン
+# AI開発知識辞書 — 拡充ガイドライン
 
 > 今後の偵察結果を辞書に追加する手順書。忍者向けガイド。
-> 金融ML知識辞書(DM-signal/docs/research/knowledge-base/guide.md)の構造を踏襲し、外部システム知識向けにカスタマイズ。
+> 金融ML知識辞書(DM-signal/docs/research/knowledge-base/guide.md)の構造を踏襲し、外部AI開発知識向けにカスタマイズ。
+>
+> **対象範囲**: マルチエージェントシステム (`systems/`) + 開発手法・ツール (`systems/`) + 参考情報源・記事 (`sources/`)
+> ※ スコープ更新: 「他システム知識辞書」→「AI開発知識辞書」(cmd_2097, 2026-04-19)
 
 ## 原則
 
@@ -16,8 +19,9 @@
 
 ### 一次知識層
 
-- 対象: `systems/` 配下の各システムファイル（ace.md, vercel.md, gsd.md, gstack.md, oshio.md, claude-code.md 等）
-- 内容: 各システムの公式ドキュメント、GitHub、ブログ記事、作者発言などの**原典から抽出した知識のみ**
+- 対象: `systems/` 配下の各システムファイル（ace.md, vercel.md, gsd.md, gstack.md, oshio.md, claude-code.md, karpathy-principles.md 等）
+- 対象: `sources/` 配下の記事・知見源ファイル（gyakusegawa.md 等）
+- 内容: 公式ドキュメント、GitHub、ブログ記事、作者発言などの**原典から抽出した知識のみ**
 - ルール: **原典不可侵**。我が軍固有の解釈・優劣判断・採用判断・設計比較を混ぜない
 - 注意: 「このシステムより我が軍の方が優れている」等の評価は厳禁。事実のみ記載（殿厳命）
 
@@ -65,13 +69,15 @@
 
 | カテゴリ | ディレクトリ | 判定基準 |
 |---------|------------|---------|
-| 外部AIエージェントシステム | `systems/` | 他組織が開発・公開しているマルチエージェントフレームワーク、AI開発ツール |
+| 外部AIエージェントシステム・ツール | `systems/` | 他組織が開発・公開しているマルチエージェントフレームワーク、AI開発ツール、開発手法 |
+| 参考情報源・記事 | `sources/` | 特定の作者・ブログ・記事群から得た知見。ツールではなく知識・思想の一次資料 |
 | 解釈・対比分析 | `shogun-analysis/`（将来） | 我が軍固有の採用判断・対比・技術移転計画 |
 
 ### Step 2: ファイル名決定
 
 ```
-systems/{kebab-case-名称}.md
+systems/{kebab-case-名称}.md    # AIシステム・ツール
+sources/{kebab-case-著者名}.md  # 記事・知見源
 ```
 
 - kebab-case（ハイフン区切り小文字）
@@ -185,7 +191,7 @@ systems/{kebab-case-名称}.md
 
 | 金融ML版 | システム版 | 変更理由 |
 |---------|---------|---------|
-| `methods/`, `preprocessing/` 等カテゴリ分割 | `systems/` 単一ディレクトリ（現状） | システム数が少なく分割不要 |
+| `methods/`, `preprocessing/` 等カテゴリ分割 | `systems/` + `sources/` 2ディレクトリ | システム/記事源を分離 |
 | 数学的定式化 必須 | 不要（ソフトウェア仕様に置換） | 数式ではなくアーキテクチャ記述 |
 | DM-Signal適用設計 | shogun-analysis/（将来）に分離 | 我が軍固有解釈を純度保護のため分離 |
 | `methods/_template.md` | `systems/_template.md`（将来作成） | 同構造を外部システム向けに調整 |
