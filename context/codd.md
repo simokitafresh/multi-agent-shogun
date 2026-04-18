@@ -1,8 +1,8 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-04-16 -->
+<!-- last_updated: 2026-04-18 -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
-<!-- verify: codd --version == §1の版数, §4 3層モデルのGP statusが最新か -->
+<!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
 > 詳細原典: `memory/reference_codd_oshio_articles.md`
 > 実戦教訓: `memory/tool_codd_lessons.md`
@@ -15,10 +15,10 @@
 | 作者 | おしお殿 (`@shio_shoppaize`) / Harness as Code |
 | GitHub | `https://github.com/yohey-w/codd-dev` |
 | ローカル実体 | `/home/simokitafresh/.codd-venv/bin/codd` |
-| 版数 | `codd --version` = `1.8.0` |
+| 版数 | ローカルCLI=`1.8.0`。公開repo観測=`1.9.3` (2026-04-18時点、`cmd_2067` 調査) |
 | 位置づけ | CoDDは「設計書を先に整合させ、下流を導出する」ためのパイプライン。設定を増やすのでなく、依存関係とハーネスで整合性を強制する |
 
-## §2 コマンド体系 (v1.8.0)
+## §2 コマンド体系
 
 | 系統 | コマンド列 | 結論 |
 |------|------------|------|
@@ -26,9 +26,17 @@
 | ブラウンフィールド | `extract -> require -> plan -> restore -> scan -> impact -> audit -> measure` | 既存コードから構造を抽出し、差分影響と健全性を測りながら設計を復元する |
 | 変更伝播 | `scan -> impact -> propagate --update` | 変更点から波及先を導出し、更新対象を手で列挙せず伝播させる |
 | 品質 | `validate`, `review --feedback`, `verify`, `policy`, `audit` | 設計整合性・レビュー・検証・方針遵守を段階別に確認する |
-| 修正 | `fix` | v1.8.0の核。診断推論で失敗理由を言語化し、Session Stateで再試行履歴を引き継ぐ |
+| 修正 | `fix` | v1.8.0で Diagnose MANDATORY + Session State を導入。retry前に根本原因を書かせ、失敗履歴を引き継ぐ |
 | 連携 | `mcp-server` | stdio JSON-RPCで外部エージェントや道具からCoDD機能を呼び出せる |
 | 健全性 | `measure` | CoDD運用を0-100で採点し、構造の劣化を数値で監視する |
+
+### 公開差分メモ (2026-04-18確認)
+
+| 版/commit | 差分 | 我が軍への示唆 |
+|-----------|------|----------------|
+| v1.8.0 / `5b15da5` | `codd/fixer.py` に Diagnose MANDATORY + `_SessionState` を実装 | GP-198/200/201 の原典。retryを stateful にする発想の核 |
+| v1.8.1 / `e56b026` | sprint 前提を撤去し、`implement` を flat task-based generation に簡素化 | prompt/parser の暗黙前提を減らす方向が正しい |
+| v1.9.3 / `b27b6c4` | failed task summary を downstream prompt から除外 | failure-context contamination guard を我が軍の注入系へ横展開すべし |
 
 ## §3 核心原理 (記事#1-#5)
 
@@ -48,7 +56,7 @@
 | `extract` | `context/*.md` | どちらも現物から索引層を起こし、必要な文脈だけを読むための圧縮レイヤ |
 | テストFB + DIVERGENT | gate BLOCK + gate_diagnose_check.sh(GP-200) | 失敗を次の行動に変換する事後ハーネス。同一理由2回連続→仮説転換強制 |
 | 診断推論 | なぜなぜ7回 + gate_diagnose_check.sh(GP-198) | 将軍=deepdive、忍者=BLOCK時diagnose_reason必須。全層で根本原因を先に言語化 |
-| Session State | lessons / deepdive / ninja_weak_points | `/clear`を跨いで学びを保持する受動的記憶。タスクレベルSession State(GP-201)は設計済み未実装 |
+| Session State | `session_state` / `previous_failures` / `codd_failure_history` | GP-198/201で実装済み。FAIL時にtask YAMLへ記録し、再配備時に失敗履歴ヒントとして再注入する。ただし本家比で diagnosis/approach/result の粒度はまだ粗い |
 | Harness as Code | 自動化×強制 | 人間依存の注意でなく、環境とフローに正しい動きを埋め込む思想が一致する |
 
 ### 3層モデル対応(§3補足)
@@ -89,6 +97,7 @@
 ## §6 参照
 
 - 記事#0-#5: `memory/reference_codd_oshio_articles.md`
+- `cmd_2067` 深掘り: `docs/research/cmd_2067_codd5_deep_analysis.md`
 - 実戦教訓: `memory/tool_codd_lessons.md`
 - 軍師分析(索引): `context/gunshi-codd-analysis.md`
 - 軍師分析(全文): `docs/research/gunshi_codd_swebench_application_20260416.md`
