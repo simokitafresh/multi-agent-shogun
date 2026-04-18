@@ -745,3 +745,4 @@
 | cmd_2084 | CoDD正規再改善 R1-L — report_merge.sh(spec省略→正規CoDD再改善) | infra | 04-18 | report_merge.sh を mawk優先化し、rea |
 | cmd_2085 | CoDD正規再改善 R1-M — archive_completed.sh(spec省略→正規CoDD再改善) | infra | 04-18 | archive_completed.sh CoDD正規再改善 |
 | cmd_2086 | CoDD正規再改善 R1-N — lesson_harvest.sh(spec省略→正規CoDD再改善) | infra | 04-18 | lesson_harvest.sh CoDD正規再改善: T |
+| cmd_karo_precommit_yaml_dump_fp | pre-commit yaml.dumpチェックのfalse positive修正 | infra | 04-18 | pre-commitのyaml.dump誤検知をpre_ba |

@@ -20,8 +20,17 @@ GATE_LOG_FILE="$LOG_FILE" \
 GATE_WA_FILE="$WORKAROUND_FILE" \
 GATE_REPO_ROOT="$REPO_ROOT" \
 python3 << 'PYEOF'
-import sys, re, os
+import sys, re, os, json
 from collections import Counter, defaultdict
+
+# Pre-compile patterns (minor speedup)
+RE_TS = re.compile(r'ts:\s*"([^"]*)"')
+RE_FILE = re.compile(r'file:\s*"([^"]*)"')
+RE_RESULT = re.compile(r'result:\s*(\w[\w-]*)')
+RE_REASONS = re.compile(r'reasons:\s*"(.*)"$')
+RE_FIXES = re.compile(r'fixes:\s*"(.*)"$')
+RE_LU = re.compile(r'lessons_useful\[\d+\]')
+RE_BC = re.compile(r'binary_checks\.\w+')
 
 log_path = os.environ['GATE_LOG_FILE']
 wa_path = os.environ['GATE_WA_FILE']
@@ -35,11 +44,11 @@ with open(log_path) as f:
         if not line or not line.startswith('- '):
             continue
         entry = {}
-        ts_m = re.search(r'ts:\s*"([^"]*)"', line)
-        file_m = re.search(r'file:\s*"([^"]*)"', line)
-        result_m = re.search(r'result:\s*(\w[\w-]*)', line)
-        reasons_m = re.search(r'reasons:\s*"(.*)"$', line)
-        fixes_m = re.search(r'fixes:\s*"(.*)"$', line)
+        ts_m = RE_TS.search(line)
+        file_m = RE_FILE.search(line)
+        result_m = RE_RESULT.search(line)
+        reasons_m = RE_REASONS.search(line)
+        fixes_m = RE_FIXES.search(line)
         if ts_m:
             entry['ts'] = ts_m.group(1)
         if file_m:
@@ -99,8 +108,8 @@ for e in entries:
         # Normalize: remove specific values, keep pattern
         # e.g., 'verdict: "CONDITIONAL_PASS"' → 'verdict: invalid'
         pattern = reason
-        pattern = re.sub(r'lessons_useful\[\d+\]', 'lessons_useful[N]', pattern)
-        pattern = re.sub(r'binary_checks\.\w+', 'binary_checks.ACx', pattern)
+        pattern = RE_LU.sub('lessons_useful[N]', pattern)
+        pattern = RE_BC.sub('binary_checks.ACx', pattern)
         reason_counter_all[pattern] += 1
         # insight生成用カウンタは直近エントリのみ(時系列原則)
         if id(e) in recent_set:

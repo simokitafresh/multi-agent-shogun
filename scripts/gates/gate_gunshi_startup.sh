@@ -413,3 +413,23 @@ if [ -d "$research_dir" ]; then
 else
     echo "  SKIP: docs/research/不在"
 fi
+
+# --- Check 11: 三層学習ループ健全性計測(2026-04-18殿指摘: 環境に埋め込め) ---
+echo ""
+echo "■ 三層学習ループ健全性"
+_fire_log="$SCRIPT_DIR/logs/gate_fire_log.yaml"
+_wa_log="$SCRIPT_DIR/logs/karo_workarounds.yaml"
+if [ -f "$_fire_log" ]; then
+    _fail_count=$(grep -c 'result: FAIL' "$_fire_log" 2>/dev/null || echo 0)
+    _pass_count=$(grep -c 'result: PASS' "$_fire_log" 2>/dev/null || echo 0)
+    echo "  第三層(免疫効果): gate FAIL=${_fail_count}件(防いだ問題) / PASS=${_pass_count}件"
+fi
+if [ -f "$_wa_log" ]; then
+    _wa_recent=$(tail -50 "$_wa_log" | grep -c 'workaround: true' || true)
+    _clean_recent=$(tail -50 "$_wa_log" | grep -c 'workaround: false' || true)
+    echo "  第二層(対): 直近WA=${_wa_recent}件 / clean=${_clean_recent}件"
+fi
+_lessons_count=$(grep -c '^- id: LG' "$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" 2>/dev/null || echo 0)
+_auto_count=$(grep -c 'automated: true' "$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" 2>/dev/null || echo 0)
+echo "  第一層(個): 教訓${_lessons_count}件(automated:${_auto_count}件)"
+echo "  ★ gate FAIL数=免疫が防いだ問題数。データはあったが見方が間違っていた(LG027再発, 2026-04-18殿指摘)"
