@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | saizo | `.claude/hooks/stop-lint-gate.sh` | Phase 5(L3診断推論+Session State参照。再改善不要判定) | current fixture `27.7ms` vs Attempt1 success `0.65s` (`degradation not present`) | spec+after: `docs/research/cmd_2065_stop_lint_l3_spec_20260418.md` |
 | 2026-04-18 | saizo | `.claude/hooks/stop-lint-gate.sh` | Phase 5(spec+benchmark+trial revert) | `34.0ms → 35.7ms` (`+5.0%`, regression) → reverted | spec+after: `docs/research/cmd_2061_codd_hook_batch_a_20260418.md` |
 | 2026-04-18 | saizo | `.claude/hooks/pre-bash-combined.sh` | Phase 5(spec+benchmark+trial revert) | `20.6ms → 24.6ms` (`+19.4%`, regression) → reverted | spec+after: `docs/research/cmd_2061_codd_hook_batch_a_20260418.md` |
 | 2026-04-18 | saizo | `.claude/hooks/post-bash-combined.sh` | Phase 5(spec+benchmark+trial revert) | `1082.8ms → 1296.0ms` (`+19.7%`, regression) → reverted baseline `921.2ms` | spec+after: `docs/research/cmd_2061_codd_hook_batch_a_20260418.md` |
