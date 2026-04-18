@@ -21,9 +21,20 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+if [ -n "${CMD_DELEGATE_SCRIPT_DIR:-}" ]; then
+    SCRIPT_DIR="$CMD_DELEGATE_SCRIPT_DIR"
+    PROJECT_DIR="${CMD_DELEGATE_PROJECT_DIR:-${SCRIPT_DIR%/scripts}}"
+else
+    _cmd_delegate_self="${BASH_SOURCE[0]}"
+    [[ "$_cmd_delegate_self" != /* ]] && _cmd_delegate_self="$PWD/$_cmd_delegate_self"
+    SCRIPT_DIR="${_cmd_delegate_self%/scripts/cmd_delegate.sh}"
+    PROJECT_DIR="${SCRIPT_DIR%/scripts}"
+    unset _cmd_delegate_self
+fi
 SHOGUN_TO_KARO="$PROJECT_DIR/queue/shogun_to_karo.yaml"
+KARO_INBOX="$PROJECT_DIR/queue/inbox/karo.yaml"
+DASHBOARD="$PROJECT_DIR/dashboard.md"
+ARCHIVE_DIR="$PROJECT_DIR/queue/archive/cmds"
 
 CMD_ID="${1:-}"
 MESSAGE="${2:-}"
@@ -41,6 +52,82 @@ fi
 # Source yaml_field_set for field get/set
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/lib/yaml_field_set.sh"
+
+find_undeployed_pending_cmds() {
+    local yaml_file="$1"
+    local current_cmd="$2"
+
+    awk -v current_cmd="$current_cmd" '
+function trim(s) {
+    sub(/^[[:space:]]+/, "", s)
+    sub(/[[:space:]]+$/, "", s)
+    return s
+}
+function unquote(s) {
+    s = trim(s)
+    if (length(s) >= 2) {
+        if (substr(s, 1, 1) == "\"" && substr(s, length(s), 1) == "\"") {
+            s = substr(s, 2, length(s) - 2)
+        } else if (substr(s, 1, 1) == "'"'"'" && substr(s, length(s), 1) == "'"'"'") {
+            s = substr(s, 2, length(s) - 2)
+        }
+    }
+    return trim(s)
+}
+function flush_block() {
+    if (cmd_id != "" && cmd_id != current_cmd && status == "pending" && delegated_at != "") {
+        print cmd_id " (delegated_at=" delegated_at ")"
+    }
+    cmd_id = ""
+    status = ""
+    delegated_at = ""
+}
+BEGIN {
+    in_commands = 0
+    cmd_id = ""
+    status = ""
+    delegated_at = ""
+}
+/^commands:[[:space:]]*$/ {
+    in_commands = 1
+    next
+}
+in_commands && $0 !~ /^[[:space:]]/ && $0 !~ /^$/ {
+    flush_block()
+    exit
+}
+in_commands && /^  - id:[[:space:]]*/ {
+    flush_block()
+    cmd_id = $0
+    sub(/^  - id:[[:space:]]*/, "", cmd_id)
+    cmd_id = unquote(cmd_id)
+    next
+}
+in_commands && /^  [^[:space:]-][^:]*:[[:space:]]*$/ {
+    flush_block()
+    cmd_id = $0
+    sub(/^  /, "", cmd_id)
+    sub(/:[[:space:]]*$/, "", cmd_id)
+    cmd_id = unquote(cmd_id)
+    next
+}
+in_commands && /^    status:[[:space:]]*/ {
+    status = $0
+    sub(/^    status:[[:space:]]*/, "", status)
+    status = unquote(status)
+    next
+}
+in_commands && /^    delegated_at:[[:space:]]*/ {
+    delegated_at = $0
+    sub(/^    delegated_at:[[:space:]]*/, "", delegated_at)
+    delegated_at = unquote(delegated_at)
+    next
+}
+END {
+    flush_block()
+}
+' "$yaml_file" 2>/dev/null || true
+}
 
 # Step 1: cmd_id が存在し status=pending か検証
 status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/null) || {
@@ -80,28 +167,7 @@ fi
 
 # Step 3.4: 他の未配備cmd検出チェック（status=pending + delegated_at存在 → WARNING）
 # 事故防止: 家老が委任を受けたが配備を忘れたパターンを次の委任前に警告 (cmd_1686事故)
-undeployed_cmds=$(python3 - "$SHOGUN_TO_KARO" "$CMD_ID" <<'PYEOF'
-import sys, yaml
-yaml_file, current_cmd = sys.argv[1], sys.argv[2]
-try:
-    with open(yaml_file) as f:
-        data = yaml.safe_load(f)
-except Exception:
-    sys.exit(0)
-cmds = (data or {}).get('commands', {})
-result = []
-if isinstance(cmds, list):
-    for item in cmds:
-        cid = str(item.get('id', ''))
-        if cid and cid != current_cmd and item.get('status') == 'pending' and item.get('delegated_at'):
-            result.append('%s (delegated_at=%s)' % (cid, item.get('delegated_at', '')))
-elif isinstance(cmds, dict):
-    for cid, info in cmds.items():
-        if str(cid) != current_cmd and isinstance(info, dict) and info.get('status') == 'pending' and info.get('delegated_at'):
-            result.append('%s (delegated_at=%s)' % (cid, info.get('delegated_at', '')))
-print('\n'.join(result))
-PYEOF
-) || true
+undeployed_cmds=$(find_undeployed_pending_cmds "$SHOGUN_TO_KARO" "$CMD_ID")
 
 if [ -n "$undeployed_cmds" ]; then
     echo "WARN: 委任済みだが未配備のcmdを検出。家老が処理していない可能性がある:" >&2
@@ -111,27 +177,30 @@ if [ -n "$undeployed_cmds" ]; then
 fi
 
 # Step 3.5: 家老inboxに既にcmd_idが存在するかチェック（別経路委任の検出）
-KARO_INBOX="$PROJECT_DIR/queue/inbox/karo.yaml"
-if [ -f "$KARO_INBOX" ] && grep -Fqw "$CMD_ID" "$KARO_INBOX" 2>/dev/null; then
+if [ -f "$KARO_INBOX" ] && grep -Fqm1 "$CMD_ID" "$KARO_INBOX" 2>/dev/null; then
     echo "WARN: $CMD_ID is already mentioned in karo inbox (previously sent via another path)" >&2
     echo "BLOCK: Refusing to send duplicate. If re-delegation is intended, remove existing inbox entry first." >&2
     exit 1
 fi
 
 # Step 3.6: dashboardパイプラインに既にcmd_idが載っているかチェック（WARN only — secondary data）
-DASHBOARD="$PROJECT_DIR/dashboard.md"
-if [ -f "$DASHBOARD" ] && grep -Fqw "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
+if [ -f "$DASHBOARD" ] && grep -Fqm1 "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
     echo "WARN: $CMD_ID is already listed in dashboard.md (karo may already be aware). Proceeding — dashboard is secondary data." >&2
 fi
 
 # Step 3.7: archiveに完了済みとして存在するかチェック
-if find "$PROJECT_DIR/queue/archive/cmds/" -maxdepth 1 -name "${CMD_ID}_*" -print -quit 2>/dev/null | grep -q .; then
-    echo "BLOCK: $CMD_ID is already archived (completed). Cannot re-delegate." >&2
-    exit 1
+if [ -d "$ARCHIVE_DIR" ]; then
+    shopt -s nullglob
+    archived_matches=("$ARCHIVE_DIR/${CMD_ID}_"*)
+    shopt -u nullglob
+    if [ "${#archived_matches[@]}" -gt 0 ]; then
+        echo "BLOCK: $CMD_ID is already archived (completed). Cannot re-delegate." >&2
+        exit 1
+    fi
 fi
 
 # Step 4: status=delegated + delegated_at を先に設定（inbox_writeのcmd_new guardがstatus確認するため）
-TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
+printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
 yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "delegated" || {
     echo "ERROR: Failed to set status=delegated for $CMD_ID" >&2
     exit 1

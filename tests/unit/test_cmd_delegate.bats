@@ -61,11 +61,8 @@ exit 1
 MOCK
     chmod +x "${TEST_TMP}/scripts/inbox_write_fail.sh"
 
-    # cmd_delegate.sh をコピーし、パスを調整
-    sed "s|SCRIPT_DIR=\"\$(cd \"\$(dirname \"\${BASH_SOURCE\[0\]}\")\" && pwd)\"|SCRIPT_DIR=\"${TEST_TMP}/scripts\"|" \
-        "$PROJECT_ROOT/scripts/cmd_delegate.sh" | \
-    sed "s|PROJECT_DIR=\"\$(cd \"\$SCRIPT_DIR/..\" && pwd)\"|PROJECT_DIR=\"${TEST_TMP}\"|" \
-        > "${TEST_TMP}/scripts/cmd_delegate.sh"
+    # cmd_delegate.sh をコピー（パスは環境変数オーバーライドで切り替える）
+    cp "$PROJECT_ROOT/scripts/cmd_delegate.sh" "${TEST_TMP}/scripts/cmd_delegate.sh"
     chmod +x "${TEST_TMP}/scripts/cmd_delegate.sh"
 
     # gate_cmd_state.sh をコピーし、パスを調整
@@ -76,6 +73,8 @@ MOCK
 
     export TEST_TMP
     export INBOX_WRITE_TEST=1
+    export CMD_DELEGATE_SCRIPT_DIR="${TEST_TMP}/scripts"
+    export CMD_DELEGATE_PROJECT_DIR="${TEST_TMP}"
 }
 
 teardown() {
