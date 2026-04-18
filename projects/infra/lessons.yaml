@@ -7,19 +7,19 @@ lessons:
   title: 'insight dedup: count変動時にpatternのみで照合すべき'
   summary: gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte
   tags:
-  - universal
+  - infra
   status: confirmed
 - id: L511
   title: 'WSL2 NTFS: BEGIN getline from tac+early-breakが1-pass全量awk比較で-86%'
   summary: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
   tags:
-  - universal
+  - infra
 - id: L510
   title: 三層学習ループ健全性は入力指標(gate数)ではなく出力指標(gate FAIL数=防いだ問題数)で計測せよ
   summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh
     Check '
   tags:
-  - universal
+  - infra
 - id: L509
   title: 'hot-cache計測は冷却後性能を過小評価する: cold計測を必ず実施せよ'
   summary: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
@@ -34,12 +34,12 @@ lessons:
   summary: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python
     GIL
   tags:
-  - universal
+  - infra
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:18+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=8 referenced=0'
@@ -48,7 +48,7 @@ lessons:
   summary: report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML
     走査では、
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:18+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=8 referenced=0'
@@ -62,7 +62,7 @@ lessons:
   title: WSL2 NTFS上のfind -mminはstat一括より不安定で遅い場合がある
   summary: find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:17+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=8 referenced=0'
@@ -70,88 +70,88 @@ lessons:
   title: 'dashboard_auto_section.sh: knowledge_metrics.sh(980ms)がgate_log更新でキャッシュミス→before/after共に高い計測値が出る'
   summary: 'CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninj'
   tags:
-  - universal
+  - infra
 - id: L502
   title: 複数ファイルの軽い抽出は per-file awk より rg 一括抽出を先に疑え
   summary: gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file
     aw
   tags:
-  - universal
+  - infra
 - id: L501
   title: 'gate_karo_startup.sh: 並列ボトルネック誤特定によるキャッシュ効果なし'
   summary: WA rateスクリプト(57ms)が並列ボトルネックと分析→TTL300sキャッシュ実装。しかし_META_PIDS awk(deepdive大ファイル
     on
   tags:
-  - universal
+  - infra
 - id: L500
   title: 'post-bash-combined: bats skip形式は''# skip''。SKIP/skippedだけでは不十分'
   summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
   tags:
-  - universal
+  - infra
 - id: L499
   title: /tmp固定パスのキャッシュファイルがbats --jobsでtest_tmpと混在するリスク
   summary: gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_
   tags:
-  - universal
+  - infra
 - id: L498
   title: set -euo pipefailの呼び元でyaml_field_set内部の中間エラーが伝播する
   summary: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set
     -euo '
   tags:
-  - universal
+  - infra
 - id: L497
   title: 'bash -lcによるPATHリセット: CI並列テストでMOCK_BIN無効化'
   summary: bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport
     PATH=$MOC
   tags:
-  - universal
+  - infra
 - id: L496
   title: 'gate_report_format.sh は/mnt/c実env では148ms(参照値71msの2倍超): /tmp計測は実運用を反映しない'
   summary: cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunで
   tags:
-  - universal
+  - infra
 - id: L495
   title: SCRIPT_DIR/SELF_SCRIPT_PATH string ops化パターン
   summary: report_field_set.sh/inbox_write.shのSCRIPT_DIRとSELF_SCRIPT_PATHで subshell(dirname
   tags:
-  - universal
+  - infra
 - id: L494
   title: 'gate_silent_fallback.sh: WSL2/mnt/c上でrg(ripgrep)はgrepより2-3x速いがブロック解析コストが全体を支配するため全体改善は誤差範囲に留まる'
   summary: grep→rg置換でgrep単独は256ms→112ms(-56%)改善。しかしWSL2のブロック解析(while IFS read+bash正規表現)が~40
   tags:
-  - universal
+  - infra
 - id: L493
   title: gate_yaml_status.shのawkはlist形式のみ対応で、map key形式のcmdを常にERRORで返していた
   summary: 'gate_yaml_status.shのawk(-v cmd_id)は''- id: cmd_xxx''形式のみ検索していた。実際のshogun_to_karo.y'
   tags:
-  - universal
+  - infra
 - id: L492
   title: git status -z awk抽出はbash readより速い(WSL2大repo)
   summary: WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk
     を使うこと。
   tags:
-  - universal
+  - infra
 - id: L491
   title: git status -z は bash read より awk 抽出が速い
   summary: WSL2上の大きいgit worktreeでは、git status --porcelain=v2 -z のNUL区切り出力は bash の
     while rea
   tags:
-  - universal
+  - infra
 - id: L490
   title: watcher起動元スクリプトの環境変数がstop hook側と不整合になるとidle判定が60秒遅延する
   summary: restart_watchers.shがSHOGUN_STATE_DIR=/tmp/shogun_stateで起動→watcher=/tmp/shogun_st
   tags:
-  - universal
+  - infra
 - id: L489
   title: bats並列実行での/tmp固定パス競合
   summary: bats --jobs並列でsetup/teardownが/tmp固定パスに同時アクセスしレースコンディション発生。テスト用状態ファイルはTEST_ROOT配下
   tags:
-  - universal
+  - infra
 - id: L488
   title: bats --jobs並列実行時の/tmp固定パス競合 — テスト用状態ファイルはTEST_ROOT配下に隔離せよ
   summary: stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow
   tags:
-  - universal
+  - infra
 - id: L487
   title: set -euo pipefailスクリプトでファイル不在時のstatパイプはmatch後に|| trueが必須
   summary: stat複数ファイル | trはいずれかのファイルが不在でstatが非ゼロ→pipefailでパイプ全体非ゼロ→set -eで即exit。テスト環境では対象ファ
@@ -161,24 +161,24 @@ lessons:
   title: 'WSL2 tmux capture-pane並列化の効果なし: サブシェル起動コストが相殺'
   summary: gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。W
   tags:
-  - universal
+  - infra
 - id: L485
   title: 'WSL2 /mnt/c でsingle awk一括化は逆効果: Windows Defender一括スキャンが支配'
   summary: 'gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因:
     W'
   tags:
-  - universal
+  - infra
 - id: L484
   title: 高頻度スクリプトのgrep多重呼出はWSL2 I/Oボトルネックを生む。パターン結合で1回に削減せよ
   summary: model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにするこ
   tags:
-  - universal
+  - infra
 - id: L483
   title: hot path の単一用途判定に汎用ライブラリ source を直結するな
   summary: 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に
     so
   tags:
-  - universal
+  - infra
 - id: L482
   title: python3 -c heredoc化でShellCheckを回避しつつ変数は環境変数経由で渡す
   summary: python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3
@@ -200,63 +200,63 @@ lessons:
   title: 計測対象のズレは盲点を構造的に生む — referenced率≠useful率
   summary: gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入
   tags:
-  - universal
+  - infra
 - id: L478
   title: bats --jobs 8並列実行で共有ファイルへの競合書き込みが発生しテストが断続的に失敗する
   summary: QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jo
   tags:
-  - universal
+  - infra
 - id: L477
   title: bats並列実行(--jobs N)の共有ファイル競合 — per-testパス化が必須
   summary: bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL。CI環境(Gi
   tags:
-  - universal
+  - infra
 - id: L476
   title: T-SCI-005のようなタイミング依存テストはinitial check完了後にbackground書込みするよう設計せよ
   summary: T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.0
   tags:
-  - universal
+  - infra
 - id: L475
   title: dashboard_auto_section.shのアーカイブキャッシュはプロジェクト非スコープで異プロジェクト間干渉が発生する
   summary: dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/
   tags:
-  - universal
+  - infra
 - id: L474
   title: ac_assigned注入時はinline/multi-line両YAMLフォーマットを考慮すること
   summary: inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie
   tags:
-  - universal
+  - infra
 - id: L473
   title: gate_shogun_startup.shのゲートセクション間で変数スコープ確認必須
   summary: 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で
   tags:
-  - universal
+  - infra
 - id: L472
   title: shogun-procedures.md は gitignore対象外ファイルのため変更はコミット不可
   summary: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
   tags:
-  - universal
+  - infra
 - id: L471
   title: 'scout_exemptのcommit check: 注入するより注入しない方がシンプル'
   summary: 旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:no
   tags:
-  - universal
+  - infra
 - id: L470
   title: dashboard WARNとgateの監視対象は同一SSOTに揃えよ
   summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive
     proj'
   tags:
-  - universal
+  - infra
 - id: L469
   title: gate_report_formatにautofix pre-stepを組込みFAILサイクル防止
   summary: 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_f
   tags:
-  - universal
+  - infra
 - id: L468
   title: gate_report_formatにautofix pre-stepを組み込むことで忍者のautofix未実行による無駄FAILサイクルを防止できる
   summary: 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:17+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=45 referenced=0'
@@ -264,22 +264,22 @@ lessons:
   title: REPORT-DONE-MISMATCH誤検知はtask_id照合不在が根因。snapshot report cmd_idとtask YAMLのtask_idを比較して旧report残存をスキップせよ
   summary: 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ
   tags:
-  - universal
+  - infra
 - id: L466
   title: CLI死活判定はpane_current_commandで全CLI種別をカバー可能。codex死亡時もbash/zshに戻る
   summary: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo
   tags:
-  - universal
+  - infra
 - id: L465
   title: 道具磨きcmdのテスト実行ACと並行研究cmdの入力衝突チェック
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
   tags:
-  - universal
+  - infra
 - id: L464
   title: 想像した数字を報告するな — 実測値のみ報告せよ
   summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定
   tags:
-  - universal
+  - infra
 - id: L463
   title: EdgeToEdge imePaddingはContent Columnに配置しNavigationBarには置くな
   summary: MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePad
@@ -299,22 +299,22 @@ lessons:
   title: ShogunScreen.ktはgitignore whitelist未登録だった — 新規UIファイル追加時は.gitignoreエントリ追加が必須
   summary: '**dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended'
   tags:
-  - universal
+  - infra
 - id: L459
   title: 新規ファイル追加時は.gitignoreへのwhitelistエントリも同時に追加必須
   summary: .gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じ
   tags:
-  - universal
+  - infra
 - id: L458
   title: deploy_task.sh source追加時はscaffold symlinkも同時更新必須
   summary: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト
   tags:
-  - universal
+  - infra
 - id: L457
   title: whitelist型.gitignoreではスクリプト追加時にホワイトリストエントリ追加が必須
   summary: whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱い
   tags:
-  - universal
+  - infra
 - id: L456
   title: gitignoreファイルのlast_updated日付はgit log不可→作業日を代用
   summary: '**retired_reason**: .gitignore glob化(66a87ab)でcontext/*.mdが追跡対象に。git log使用可能
@@ -325,12 +325,12 @@ lessons:
   title: ignore対象dashboard修正タスクはcommit gateと衝突する
   summary: dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と
   tags:
-  - universal
+  - infra
 - id: L454
   title: whitelist型.gitignoreではスクリプト追加時に.gitignoreへのホワイトリストエントリ追加が必須
   summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:17+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=26 referenced=0'
@@ -346,7 +346,7 @@ lessons:
   title: SCOUT/exempt系テスト関数にもq8_why_whatが必要
   summary: _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:17+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
@@ -354,12 +354,12 @@ lessons:
   title: STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき
   summary: deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、
   tags:
-  - universal
+  - infra
 - id: L450
   title: 軍師直接修正権限 — 軽微事実誤りは鎖維持下で直接修正可
   summary: '殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師'
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:16+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
@@ -367,7 +367,7 @@ lessons:
   title: 分割配備のbinary_checks誤BLOCKはassigned_acsをawk変数で渡してグループスキップで解決
   summary: cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:16+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=29 referenced=0'
@@ -375,7 +375,7 @@ lessons:
   title: '[自動生成] draft教訓の査読を怠った: cmd_karo_fix_precommit_comment'
   summary: draft教訓12件が未査読のままGATE到達
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:16+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=19 referenced=0'
@@ -383,7 +383,7 @@ lessons:
   title: 外部リポのmain pushはG2ゲートで禁止→PRワークフローが必須
   summary: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:16+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
@@ -391,7 +391,7 @@ lessons:
   title: AC3設計書参照検知はq5_verified_sourceベースが信頼性高い
   summary: cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準
   tags:
-  - universal
+  - infra
 - id: L445
   title: yaml.safe_load→yaml.load(SafeLoader)で機能等価かつgrep検知を回避できる
   summary: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
@@ -405,7 +405,7 @@ lessons:
   summary: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:
     co'
   tags:
-  - universal
+  - infra
 - id: L443
   title: awk EXIT後もEND блок実行される。found変数でEND処理の冪等性を保証せよ
   summary: 'awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!fo'
@@ -423,7 +423,7 @@ lessons:
   title: hookが自己のコミットメッセージ/報告テキスト内のトリガー文字列に反応する
   summary: Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストス
   tags:
-  - universal
+  - infra
 - id: L440
   title: 原理1行>各論パッチ30行。既存を磨け
   summary: compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所
@@ -433,35 +433,35 @@ lessons:
   title: 全レビューで複利の問いを含めよ
   summary: cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなか
   tags:
-  - universal
+  - infra
 - id: L438
   title: Pythonの単語境界は日本語隣接のcmd_XXXX抽出に使えない
   summary: Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では
     cmd_1
   tags:
-  - universal
+  - infra
 - id: L437
   title: 複数Fixが同一ファイルを独立読込するパターンはキャッシュ関数で一元化すべき
   summary: gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_l
   tags:
-  - universal
+  - infra
 - id: L436
   title: archive scanは実運用YAMLのネスト形を前提に軽量抽出せよ
   summary: archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル
     `projec
   tags:
-  - universal
+  - infra
 - id: L435
   title: bash のコマンド置換は末尾改行を落とすため YAML レコード連結で明示改行が必要
   summary: 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox
     レコードが癒
   tags:
-  - universal
+  - infra
 - id: L434
   title: inbox分析結果は揮発する — docs/research永続化を同時実行せよ
   summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
   tags:
-  - universal
+  - infra
 - id: L433
   title: モデル切替は/modelではなくrespawn(CLI再起動)が正しい手順。/model opusは200K化、respawnなら1M+CLAUDE.md再読込保証
   summary: '殿裁定: Claude CLIのモデル切替はrespawn方式が正解。(1)/model opusは200Kコンテキストに縮退 (2)claude↔codexは'
@@ -557,7 +557,7 @@ lessons:
   title: 'sed -iの連続呼出しは非原子的: partial-writeで冪等チェックが永久ブロック'
   summary: workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪
   tags:
-  - universal
+  - infra
 - id: L418
   title: classify_categoryの自動分類は実データのカテゴリ分布に基づいて拡張すべき
   summary: karo_workaroundsの実データではuncategorized17件中にreport_yaml_format/double_deploy/stale_
@@ -599,7 +599,7 @@ lessons:
   title: extract_fieldのpipefail即終了パターン
   summary: set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:15+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
@@ -635,7 +635,7 @@ lessons:
   summary: switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set
     -e即死で、P
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:25:15+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
@@ -643,7 +643,7 @@ lessons:
   title: 'L074適用対象の拡張: 境界値チェックはset -e環境の安全弁'
   summary: make_barのpctが100超/負の場合にfilled/emptyが範囲外になり、forループの挙動が不正になる。set -euo pipefail環境では
   tags:
-  - universal
+  - infra
 - id: L406
   title: lesson_deprecation_scanのcmd_num>=900フィルタは全正規cmd(900+)を除外する重大バグ
   summary: cmd_num>=900をテストcmd除外フィルタとして実装したが、cmd番号は1613まで連番で正規使用。1200レコードが黙殺されmax_cmd_numが固
@@ -1226,7 +1226,7 @@ lessons:
   title: 'GP ID重複問題: 同一IDに異なる提案が混在するとトリアージが困難'
   summary: GP-125がFoFログ詳細化とWAバリデーション強化の完全別提案を同一IDで共有。GP-113/GP-114/GP-126も進化・派生で複数エントリ。GP採番
   tags:
-  - universal
+  - infra
 - id: L312
   title: report_templateがSTALE_FIELDSに未登録 — stale残留リスク
   summary: inject_report_template()がtask['report_template']を設定するが、deploy_task.shのSTALE_FIEL
@@ -1368,7 +1368,7 @@ lessons:
   title: チェックリスト参照cmdでは隣接Step制約をACに転写必須
   summary: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は
   tags:
-  - universal
+  - infra
 - id: L292
   title: 新ファイル作成時.gitignore例外登録必須
   summary: ホワイトリスト方式の.gitignoreで新ファイル(scripts/lib/inject_task_modifiers.py)追加時に例外登録漏れ→CI環境に
@@ -1434,7 +1434,7 @@ lessons:
   summary: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の ok N (hash)
     skip パタ
   tags:
-  - universal
+  - infra
   helpful_count: 21
   harmful_count: 16
   last_referenced: '2026-04-18'
@@ -1702,7 +1702,7 @@ lessons:
   title: field_deps.tsvのようなログ追記専用ファイルにはローテーション設計を初期実装時に組込むべき
   summary: field_get.shの_field_get_log()がfield_deps.tsvに無条件追記し続け5.3MB/40K行に肥大。 ログ系ファイルを新設する
   tags:
-  - universal
+  - infra
 - id: L242
   title: 同一データの取得/保存を別関数に分けると重複メンテリスク
   summary: get_context_pct()とupdate_context_pct()がCTX%パース処理を重複実装。一方はecho返却、他方はtmux変数設定。IF
@@ -1789,7 +1789,7 @@ lessons:
   summary: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追
   tags:
   - infra
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:24:29+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=23 > helpful=20'
@@ -1818,7 +1818,7 @@ lessons:
   title: MCP棚卸しではentity/project境界の混入を先に検査すべし
   summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ
   tags:
-  - universal
+  - infra
   deprecated: true
   deprecated_at: '2026-04-18T22:24:29+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=6 > helpful=0'
@@ -1900,7 +1900,7 @@ lessons:
   title: ローカルIDを複数PJで再利用する系ではメトリクスキーを(project,id)にせよ
   summary: 教訓IDをproject非考慮で集計すると注入回数・有効率・退役判定が別PJ間で相互污染する。cmd_874で検出:同一IDの20組が両PJで同一退役理由。fi
   tags:
-  - universal
+  - infra
 - id: L213
   title: サブエージェントは「読み取り専用の一時ツール」に限定せよ — capability制約(Read+Grep+Glob/plan mode/haiku/maxTurns
     4)+behavior制約(判定禁止/所見のみ)の分離設計が必須
@@ -2168,7 +2168,7 @@ lessons:
   title: cmd_608
   summary: watchdogの活動時刻は『read成功』ではなく『意味のあるイベント処理成功』で更新すべし
   tags:
-  - universal
+  - infra
 - id: L173
   title: build_instructions.sh再生成時はCLAUDE.md正本も同期→AGENTS系の旧表記残存を防止
   summary: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md
@@ -2227,7 +2227,7 @@ lessons:
   title: 教訓効果率は『未解決負債』だけでなく『仕組み化後の未退役』でも低下する
   summary: IF 教訓効果率の低い教訓群を分析する時 THEN 自動退役は『低効果』だけでなく『仕組み化完了フラグ』連動で回すべき
   tags:
-  - universal
+  - infra
 - id: L164
   title: Claude Code Hooksのshスクリプトはset -euのみ使用しpipefail禁止
   summary: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
@@ -2471,7 +2471,7 @@ lessons:
   title: 非同期通知ラッパーをif判定に使うと成功誤判定が起きる
   summary: IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時 THEN 同期モードまたは結果ファイル連携で結果を取得せよ
   tags:
-  - universal
+  - infra
 - id: L125
   title: paste-buffer注入先はagent_id検証で防御せよ(defense-in-depth)
   summary: IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
@@ -2592,7 +2592,7 @@ lessons:
   title: dedupログ仕様は文言と0件時出力条件をAC文字列と厳密一致させる
   summary: IF dedupログ仕様時 THEN ACにログ文言が含まれる場合、語順・語彙・プレフィックス空白も含めて一致確認が必要
   tags:
-  - universal
+  - infra
 - id: L106
   title: lesson_impact_analysis.shのload_lesson_summariesパス誤り
   summary: 'L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo'
@@ -2699,7 +2699,7 @@ lessons:
   title: awk state machine複数エージェント属性パース時のリセット位置
   summary: get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた。BEG
   tags:
-  - universal
+  - infra
 - id: L091
   title: 'L085再発(派生ファイル未更新): CLAUDE.md変更時は全派生ファイルをACスコープに含めよ'
   summary: CLAUDE.mdの変更が.github/copilot-instructions.mdとagents/default/system.mdに反映されなかった。C
