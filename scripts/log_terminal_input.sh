@@ -7,8 +7,7 @@ AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null |
 [ "$AGENT_ID" = "shogun" ] || exit 0
 
 # 入力テキスト取得（stdin JSON の .prompt フィールドから）
-payload="$(cat 2>/dev/null || true)"
-INPUT="$(printf '%s' "$payload" | jq -r '.prompt // ""' 2>/dev/null || true)"
+INPUT="$(jq -r '.prompt // ""' 2>/dev/null || true)"
 [ -n "$INPUT" ] || exit 0
 
 # スラッシュコマンド除外
@@ -18,7 +17,10 @@ INPUT="$(printf '%s' "$payload" | jq -r '.prompt // ""' 2>/dev/null || true)"
 [[ "$INPUT" != inbox* ]] || exit 0
 
 # lord_conversation.sh読込・環境変数設定
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+_log_terminal_input_self="${BASH_SOURCE[0]}"
+[[ "$_log_terminal_input_self" != /* ]] && _log_terminal_input_self="$PWD/$_log_terminal_input_self"
+SCRIPT_DIR="${_log_terminal_input_self%/scripts/log_terminal_input.sh}"
+unset _log_terminal_input_self
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/lord_conversation.sh"
 export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
