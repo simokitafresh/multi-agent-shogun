@@ -3514,7 +3514,14 @@ fi
 # Bug fix: HEAD~1がauto-commitの場合、無関係なcontext変更で偽陽性BLOCK(ci_gate_mismatch 13件WA)
 # → cmd固有commitのcontext変更のみ検出。auto-commit由来のcontext変更を除外
 level_heading "[L3]" "Vercel phase link check:"
-changed_contexts=$(git -C "$SCRIPT_DIR" log --grep="${CMD_ID}" --format="" --name-only 2>/dev/null | grep '^context/' | sort -u || true)
+# chore: commitを除外（偽陽性防止: choreメッセージ内の文脈説明にcmd_idが含まれるケース）
+_vercel_hashes=$(git -C "$SCRIPT_DIR" log --grep="${CMD_ID}" --format="%H %s" 2>/dev/null | grep -v ' chore:' | awk '{print $1}' || true)
+changed_contexts=""
+for _vh in $_vercel_hashes; do
+    changed_contexts="$changed_contexts $(git -C "$SCRIPT_DIR" diff-tree --no-commit-id --name-only -r "$_vh" 2>/dev/null | grep '^context/' || true)"
+done
+changed_contexts=$(echo "$changed_contexts" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
+changed_contexts="${changed_contexts% }"
 if [ -n "$changed_contexts" ]; then
     if [ -f "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" ]; then
         # cmd変更context fileのみ走査（全context走査→偽陽性BLOCK防止, GP-137）
