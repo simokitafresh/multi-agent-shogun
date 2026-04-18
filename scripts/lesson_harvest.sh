@@ -26,12 +26,64 @@ import sys
 import re
 import subprocess
 import os
+import pickle
+import hashlib
+import time
 from pathlib import Path
 
 import yaml
 
 archive_dir = Path(sys.argv[1])
 projects_dir = Path(sys.argv[2])
+
+_CACHE_TTL = 300  # 5 minutes
+
+
+def _scan_cache_key():
+    try:
+        return int(archive_dir.stat().st_mtime * 1000)
+    except OSError:
+        return None
+
+
+def _scan_cache_path():
+    h = hashlib.md5(str(archive_dir.resolve()).encode()).hexdigest()[:8]
+    return Path(f"/tmp/lesson_harvest_{h}.pkl")
+
+
+def _load_scan_cache():
+    try:
+        p = _scan_cache_path()
+        if time.time() - p.stat().st_mtime > _CACHE_TTL:
+            return None
+        with p.open("rb") as f:
+            entry = pickle.load(f)
+        if entry.get("key") != _scan_cache_key():
+            return None
+        return entry
+    except Exception:
+        return None
+
+
+def _save_scan_cache(rows, fallback_paths, fallback_results):
+    key = _scan_cache_key()
+    if key is None:
+        return
+    try:
+        p = _scan_cache_path()
+        with p.open("wb") as f:
+            pickle.dump(
+                {
+                    "key": key,
+                    "rows": rows,
+                    "fallback_paths": fallback_paths,
+                    "fallback_results": fallback_results,
+                },
+                f,
+                protocol=pickle.HIGHEST_PROTOCOL,
+            )
+    except Exception:
+        pass
 
 _DICT_RE = re.compile(r"'(?:content|summary|lesson|title)'\s*:\s*['\"](.+)", re.DOTALL)
 _REPORT_LINE_RE = re.compile(
@@ -151,7 +203,8 @@ def load_report_fallback(report_path):
     return (str(cmd_id), str(worker), str(title).strip(), detail)
 
 
-def fast_scan_candidates(registered_titles):
+def _build_scan_data():
+    """Run rg scan, parse results, load fallback YAML. Returns (rows, fallback_paths, fallback_results)."""
     rg_env = os.environ.copy()
     rg_env["LC_ALL"] = "C"
     cmd = [
@@ -236,13 +289,36 @@ def fast_scan_candidates(registered_titles):
             if needs_fallback(raw):
                 fallback_paths.add(path)
 
+    # Load fallback results once (keyed by Path for cache storage)
+    fallback_results = {}
+    for path in sorted(rows):
+        row = rows[path]
+        if not row["lesson_found"]:
+            continue
+        if path in fallback_paths or not row["lesson_title"] or not row["lesson_detail"]:
+            fallback_results[path] = load_report_fallback(path)
+
+    return rows, fallback_paths, fallback_results
+
+
+def fast_scan_candidates(registered_titles):
+    # Try cache (skips expensive rg scan + fallback loading on warm runs)
+    cached = _load_scan_cache()
+    if cached is not None:
+        rows = cached["rows"]
+        fallback_paths = cached["fallback_paths"]
+        fallback_results = cached["fallback_results"]
+    else:
+        rows, fallback_paths, fallback_results = _build_scan_data()
+        _save_scan_cache(rows, fallback_paths, fallback_results)
+
     candidates = []
     for path in sorted(rows):
         row = rows[path]
         if not row["lesson_found"]:
             continue
         if path in fallback_paths or not row["lesson_title"] or not row["lesson_detail"]:
-            fallback = load_report_fallback(path)
+            fallback = fallback_results.get(path)
             if fallback is None:
                 continue
             if fallback[2] in registered_titles:

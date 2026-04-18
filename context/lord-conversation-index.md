@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-18T21:00:43+09:00 -->
+<!-- generated_at: 2026-04-18T21:04:03+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-18T21:04:02+09:00 | terminal | response | 処理完了。全6忍者が稼働中。残り9cmd消化中。 [meta] stop_reason=end_turn
+- 2026-04-18T21:02:31+09:00 | ntfy | outbound | 【家老】cmd_2089 初回配備開始 (title=CoDD正規再改善 R2-B — gate_artifact_map.sh(spec省略→正規CoDD再改善), ninja=kotaro) CoDD正規再改善 R2-B 📋 http…
+- 2026-04-18T21:01:55+09:00 | ntfy | outbound | 【家老】cmd_2088 初回配備開始 (title=CoDD正規再改善 R2-A — gate_cycle_health.sh(spec省略→正規CoDD再改善), ninja=tobisaru) CoDD正規再改善 R2-A 📋 ht…
+- 2026-04-18T21:01:48+09:00 | ntfy | outbound | 【家老】cmd_2086 初回配備開始 (title=CoDD正規再改善 R1-N — lesson_harvest.sh(spec省略→正規CoDD再改善), ninja=hanzo) CoDD正規再改善 R1-N 📋 https://…
+- 2026-04-18T21:01:43+09:00 | ntfy | outbound | 【家老】cmd_2085 初回配備開始 (title=CoDD正規再改善 R1-M — archive_completed.sh(spec省略→正規CoDD再改善), ninja=kagemaru) CoDD正規再改善 R1-M 📋 ht…
+- 2026-04-18T21:01:39+09:00 | ntfy | outbound | 【家老】cmd_2084 初回配備開始 (title=CoDD正規再改善 R1-L — report_merge.sh(spec省略→正規CoDD再改善), ninja=saizo) CoDD正規再改善 R1-L 📋 https://gi…
 - 2026-04-18T21:00:43+09:00 | terminal | response | 家老がidle状態。CI赤はE2E flakyのみで**Unit Tests全PASS確認済み**。しかしidle忍者4名への残りcmd配備が止まっている。nudgeする。 [meta] stop_reason=tool_use
 - 2026-04-18T21:00:14+09:00 | terminal | inbound | どうなった？
 - 2026-04-18T20:49:02+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-111)
 - 2026-04-18T20:47:57+09:00 | ntfy | outbound | CI赤: run 24603843546 E2E Tests
-- 2026-04-18T20:40:29+09:00 | terminal | response | GATE CLEAR 11/20。idle 4名だが家老が残りcmdを配備している途中。 [meta] stop_reason=end_turn
-- 2026-04-18T20:38:00+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-18 20:24:20|cmd_2087 2026-04-18 20:26:16|cmd_2079 2026-04-18 20:30:13|cmd_2078 2026-04-18 20:31:53|cm…
-- 2026-04-18T20:32:48+09:00 | terminal | response | GATE CLEAR 10/20。半分突破。 [meta] stop_reason=end_turn
-- 2026-04-18T20:31:18+09:00 | terminal | response | GATE CLEAR 9/20。idle 4名（疾風/影丸/半蔵/才蔵）。家老が残りcmd配備中。 [meta] stop_reason=end_turn
-- 2026-04-18T20:28:54+09:00 | terminal | response | 殿、現況。 **GATE CLEAR: 8/20cmd。** idle忍者3名（疾風/影丸/才蔵）、家老が次の配備を判断中。 | cmd | 対象 | 状態 | |-----|------|------| | cmd_2074 | pos…
-- 2026-04-18T20:28:33+09:00 | terminal | inbound | 進捗は？
 
 ## 未解決確認事項
 - 家老がidle状態。CI赤はE2E flakyのみで**Unit Tests全PASS確認済み**。しかしidle忍者4名への残りcmd配備が止まっている。nudgeする。 [meta] stop_reason=tool_use

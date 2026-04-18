@@ -902,10 +902,33 @@ archive_reports() {
     fi
 
     # task files キャッシュ (L667-669のfield_get置換)
+    # GP-2085-B: task_files gawk キャッシュ化 (ファイル数不変時はgawk実行をスキップ)
     declare -A _task_parent _task_status
     declare -A _queue_cmd_status _parent_has_active_child
     local _task_glob=("$PROJECT_DIR/queue/tasks"/*.yaml)
     if [ -f "${_task_glob[0]}" ]; then
+        local _TASK_CACHE="/tmp/shogun_task_cache_${_RPT_HASH}.tsv"
+        local _TASK_CACHE_COUNT="/tmp/shogun_task_count_${_RPT_HASH}"
+        local _task_count="${#_task_glob[@]}"
+        local _cached_task_count
+        _cached_task_count=$(cat "$_TASK_CACHE_COUNT" 2>/dev/null || echo "-1")
+        local _task_tsv
+        if [[ "$_task_count" == "$_cached_task_count" ]] && [[ -f "$_TASK_CACHE" ]]; then
+            _task_tsv="$_TASK_CACHE"
+        else
+            gawk '
+                BEGINFILE {
+                    fname = FILENAME; sub(/.*\//, "", fname)
+                    st = ""; pc = ""
+                }
+                /status:/ && !/^#/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", st) }
+                /parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", pc) }
+                ENDFILE { print fname "|" st "|" pc }
+            ' "${_task_glob[@]}" 2>/dev/null > "$TMP/task_fields.tsv"
+            _task_tsv="$TMP/task_fields.tsv"
+            cp "$_task_tsv" "$_TASK_CACHE" 2>/dev/null || true
+            printf '%s\n' "$_task_count" > "$_TASK_CACHE_COUNT" 2>/dev/null || true
+        fi
         while IFS='|' read -r _tf _ts _tp; do
             _task_status["$_tf"]="$_ts"
             _task_parent["$_tf"]="$_tp"
@@ -917,15 +940,7 @@ archive_reports() {
                     fi
                     ;;
             esac
-        done < <(gawk '
-            BEGINFILE {
-                fname = FILENAME; sub(/.*\//, "", fname)
-                st = ""; pc = ""
-            }
-            /status:/ && !/^#/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", st) }
-            /parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", pc) }
-            ENDFILE { print fname "|" st "|" pc }
-        ' "${_task_glob[@]}" 2>/dev/null)
+        done < "$_task_tsv"
     fi
 
     if [ -f "$QUEUE_FILE" ]; then
@@ -966,13 +981,24 @@ archive_reports() {
         ' "$QUEUE_FILE" 2>/dev/null)
     fi
 
-    # GP-XXX2: gate_status事前スキャン (N×grep-q → 1×grep-l + inner-loop [ -f ] 排除)
+    # GP-2085-A: gate_status キャッシュ化 (report_cacheサイズ不変時に[ -f ]×N回をスキップ)
     # _gate_status[cmd]: "missing"=gate不在, "placeholder"=deploy_preflight, "ok"=レビュー完了
-    # 効果: 39×grep-q → 1×grep-l (約60ms削減) + 74×inner-loop [ -f ] → O(1)参照 (約146ms削減)
+    # 効果: キャッシュヒット時 whileループ+[ -f ]×82件(400〜600ms) → TSVロード(5ms)
     declare -A _gate_status=()
-    declare -a _gc_gate_files=()
-    declare -A _gc_file_to_cmd=()
-    if [ -f "$_REPORT_CACHE" ]; then
+    local _GATE_CACHE="/tmp/shogun_gate_status_${_RPT_HASH}.tsv"
+    local _GATE_CACHE_SIZE="/tmp/shogun_gate_cache_size_${_RPT_HASH}"
+    local _cur_rpt_size _cached_gate_size _gate_cache_hit=false
+    _cur_rpt_size=$(wc -l < "$_REPORT_CACHE" 2>/dev/null || echo "0")
+    _cached_gate_size=$(cat "$_GATE_CACHE_SIZE" 2>/dev/null || echo "-1")
+    if [[ "$_cur_rpt_size" == "$_cached_gate_size" ]] && [[ -f "$_GATE_CACHE" ]]; then
+        while IFS='|' read -r _gcmd _gstatus; do
+            [ -n "$_gcmd" ] && _gate_status["$_gcmd"]="$_gstatus"
+        done < "$_GATE_CACHE"
+        _gate_cache_hit=true
+    fi
+    if [ "$_gate_cache_hit" = "false" ] && [ -f "$_REPORT_CACHE" ]; then
+        declare -a _gc_gate_files=()
+        declare -A _gc_file_to_cmd=()
         while IFS='|' read -r _rc_fname _rc_status _rc_parent; do
             [ -z "$_rc_parent" ] && continue
             [ "${_gate_status[$_rc_parent]+x}" = "x" ] && continue  # 重複スキップ
@@ -985,24 +1011,32 @@ archive_reports() {
                 _gate_status["$_rc_parent"]="missing"
             fi
         done < "$_REPORT_CACHE"
+        # 単一grep -l でplaceholderを一括検出(N×grep-q → 1×grep-l)
+        if [ "${#_gc_gate_files[@]}" -gt 0 ]; then
+            while IFS= read -r _gpath; do
+                local _gcmd="${_gc_file_to_cmd[$_gpath]:-}"
+                [ -n "$_gcmd" ] && _gate_status["$_gcmd"]="placeholder"
+            done < <(grep -l "source: deploy_preflight" "${_gc_gate_files[@]}" 2>/dev/null)
+        fi
+        # キャッシュ保存 (CMD_IDなしのentryのみ。CMD_IDは毎回変わるためキャッシュから除外)
+        {
+            for k in "${!_gate_status[@]}"; do
+                printf '%s|%s\n' "$k" "${_gate_status[$k]}"
+            done
+        } > "$_GATE_CACHE" 2>/dev/null || true
+        printf '%s\n' "$_cur_rpt_size" > "$_GATE_CACHE_SIZE" 2>/dev/null || true
     fi
     # CMD_ID指定時: _gate_statusに追加(REPORT_CACHEにない場合あり)
     if [ -n "$CMD_ID" ] && [ "${_gate_status[$CMD_ID]+x}" != "x" ]; then
         local _gc_g="$PROJECT_DIR/queue/gates/${CMD_ID}/review_gate.done"
         if [ -f "$_gc_g" ]; then
             _gate_status["$CMD_ID"]="ok"
-            _gc_gate_files+=("$_gc_g")
-            _gc_file_to_cmd["$_gc_g"]="$CMD_ID"
+            if grep -q "source: deploy_preflight" "$_gc_g" 2>/dev/null; then
+                _gate_status["$CMD_ID"]="placeholder"
+            fi
         else
             _gate_status["$CMD_ID"]="missing"
         fi
-    fi
-    # 単一grep -l でplaceholderを一括検出(N×grep-q → 1×grep-l)
-    if [ "${#_gc_gate_files[@]}" -gt 0 ]; then
-        while IFS= read -r _gpath; do
-            local _gcmd="${_gc_file_to_cmd[$_gpath]:-}"
-            [ -n "$_gcmd" ] && _gate_status["$_gcmd"]="placeholder"
-        done < <(grep -l "source: deploy_preflight" "${_gc_gate_files[@]}" 2>/dev/null)
     fi
 
     for report_file in "${report_files[@]}"; do
