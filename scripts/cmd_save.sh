@@ -1041,9 +1041,15 @@ show_pending_insights
 check_ac_file_paths() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
-    # AC内からファイルパス(拡張子付き)を抽出
-    local PATHS
-    PATHS=$(echo "$CMD_BLOCK_NC" | grep -oE '[A-Za-z0-9_-]+(/[A-Za-z0-9_.+-]+)+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
+    # AC内からファイルパス(拡張子付き)を抽出（ACセクションのみ。command/quality_gate内の説明文は対象外）
+    # awkでacceptance_criteria:ブロックを抽出。終了条件: ACブロック後の同レベルキー(quality_gate/command等)
+    local AC_BLOCK PATHS
+    AC_BLOCK=$(echo "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*acceptance_criteria:/ { in_ac=1; print; next }
+        in_ac && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        in_ac { print }
+    ' || true)
+    PATHS=$(echo "$AC_BLOCK" | grep -oE '[A-Za-z0-9_-]+(/[A-Za-z0-9_.+-]+)+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
