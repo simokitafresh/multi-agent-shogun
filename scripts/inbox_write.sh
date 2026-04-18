@@ -29,8 +29,11 @@
 
 set -e
 
-SCRIPT_DIR="${INBOX_WRITE_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-SELF_SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+# SCRIPT_DIR/SELF_SCRIPT_PATH: string ops instead of dirname/basename/cd subshells (~5ms savings on WSL2)
+_iw_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_iw_self" != /* ]] && _iw_self="$PWD/$_iw_self"
+SCRIPT_DIR="${INBOX_WRITE_ROOT_OVERRIDE:-${_iw_self%/scripts/inbox_write.sh}}"
+SELF_SCRIPT_PATH="$_iw_self"
 NINJA_NAMES=""
 AGENT_CONFIG_LOADED=0
 

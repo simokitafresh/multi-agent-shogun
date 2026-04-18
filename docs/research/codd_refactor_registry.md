@@ -4,6 +4,8 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | hanzo | `scripts/report_field_set.sh` | Phase 5(再改善: 計測+実装+検証) | `~15ms → ~12ms` (`-20%`, result.summary median) | SCRIPT_DIR `$(cd ... && pwd -P)`→string ops(`${BASH_SOURCE[0]%/scripts/report_field_set.sh}`)。22/22テストPASS。spec+after: `docs/research/codd_spec_report_field_set_cmd_2064_20260418.md` |
+| 2026-04-18 | hanzo | `scripts/inbox_write.sh` | Phase 5(再改善: 計測+実装+検証) | test: `~19ms → ~16ms` (`-16%`) / production: `~29ms → ~24ms` (`-17%`) | SELF_SCRIPT_PATH 3 subshells(dirname+cd+pwd+basename)→string ops(-3.1ms)+SCRIPT_DIR fallback `$(cd ...)` →string ops(-1.85ms、production only)。22/22テストPASS。spec+after: `docs/research/codd_spec_inbox_write_cmd_2064_20260418.md` |
 | 2026-04-18 | hayate | `.claude/hooks/pre-write-edit-combined.sh` | Phase 5(計測+実装+検証) | `10.41ms → 6.75ms` (`-35.2%`, replay payload median) | spec+after: `docs/research/cmd_2062_pre_write_edit_combined_spec_20260418.md` |
 | 2026-04-18 | hayate | `.claude/hooks/post-write-edit-combined.sh` | Phase 5(計測+実装+検証) | `10.62ms → 6.82ms` (`-35.8%`, replay payload median) | spec+after: `docs/research/cmd_2062_post_write_edit_combined_spec_20260418.md` |
 | 2026-04-18 | hayate | `.claude/hooks/pre-write-read-tracker.sh` | Phase 5(計測+実装+検証) | `17.55ms → 6.76ms` (`-61.5%`, replay payload median) | spec+after: `docs/research/cmd_2062_pre_write_read_tracker_spec_20260418.md` |
