@@ -3,7 +3,7 @@
 # cmd_1661: 3 hooks → 1 script. Eliminates 2 bash startup costs (~60ms each).
 # GP-095: crash耐性 — PostToolUse hookは非ゼロ終了禁止
 
-payload="$(</dev/stdin)"
+payload="$(cat 2>/dev/null || true)"
 case "$payload" in
     *[![:space:]]*) ;;
     *) exit 0 ;;
@@ -24,7 +24,7 @@ file_path="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) |
 case "$file_path" in
     *queue/reports/*_report_*.yaml) ;;
     *.sh|*.bash) ;;
-    *CLAUDE.md|*instructions/*|*.claude/hooks/*.sh) ;;
+    *CLAUDE.md|*instructions/*) ;;
     *) exit 0 ;;
 esac
 

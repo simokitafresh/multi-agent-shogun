@@ -5,7 +5,7 @@ set -eu
 # - PreToolUse Read: file_pathを /tmp/claude_read_log_{agent_id}.txt に追記
 # - PreToolUse Write|Edit: tmpにfile_pathがあるか確認 → 未Read+既存ファイル → deny
 
-payload="$(</dev/stdin)"
+payload="$(cat 2>/dev/null || true)"
 case "$payload" in
     *[![:space:]]*) ;;
     *) exit 0 ;;
