@@ -4,7 +4,10 @@
 # Non-zero exitで logs/hook_failures.yaml に自動記録。
 # 記録部分は || true で防御（記録エラーでhookの動作を阻害しない）。
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+_git_pre_commit_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_git_pre_commit_self" != /* ]] && _git_pre_commit_self="$PWD/$_git_pre_commit_self"
+REPO_ROOT="${_git_pre_commit_self%/scripts/hooks/git-pre-commit.sh}"
+unset _git_pre_commit_self
 _STDERR_FILE="/tmp/_hook_stderr_precommit_$$"
 
 list_staged_files() {
@@ -104,9 +107,13 @@ _record_hook_failure() {
             ninja_name=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")
             stderr_summary=""
             [ -s "$_STDERR_FILE" ] && stderr_summary=$(head -c 200 "$_STDERR_FILE" 2>/dev/null | tr '\n' ' ' | tr '"' "'")
+            printf -v _hook_failure_ts '%(%Y-%m-%dT%H:%M:%S%z)T' -1
+            if [[ "$_hook_failure_ts" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
+                _hook_failure_ts="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
+            fi
             mkdir -p "$REPO_ROOT/logs"
             {
-                echo "- timestamp: $(date -Iseconds)"
+                echo "- timestamp: ${_hook_failure_ts}"
                 echo "  hook: pre-commit"
                 echo "  ninja: $ninja_name"
                 echo "  exit_code: $exit_code"

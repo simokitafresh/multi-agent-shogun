@@ -18,18 +18,18 @@ fi
 SHOGUN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # --- Collect changed files (staged + unstaged tracked files only) ---
-# `git status --porcelain=v2 -z` was faster than separate staged/unstaged scans on
-# the live WSL2 worktree while still covering tracked changes from both sources.
+# `git diff --name-only` was the dominant cost on WSL2. Use lighter plumbing commands
+# and dedupe the staged/unstaged union before dispatching the linters.
 collect_changed_files() {
-    GIT_OPTIONAL_LOCKS=0 git -C "$SHOGUN_ROOT" status --porcelain=v2 -z --untracked-files=no 2>/dev/null |
-        awk -v RS='\0' '
-            /^[12u] / {
-                print $NF
-                if ($1 == "2") {
-                    getline
-                }
-            }
-        '
+    local staged_files unstaged_files
+    staged_files="$(cd "$SHOGUN_ROOT" && git diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
+    unstaged_files="$(cd "$SHOGUN_ROOT" && git ls-files -m 2>/dev/null || true)"
+
+    if [ -z "${staged_files}${unstaged_files}" ]; then
+        return 0
+    fi
+
+    printf '%s\n%s\n' "$staged_files" "$unstaged_files" | awk 'NF && !seen[$0]++'
 }
 
 mapfile -t changed_files < <(collect_changed_files)
@@ -53,12 +53,11 @@ done
 
 # --- Run lint checks ---
 violations=""
-cd "$SHOGUN_ROOT"
 
 # ShellCheck for .sh files (-S warning: info/style除外。既存警告での偽ブロック防止)
 if [ "${#sh_files[@]}" -gt 0 ] && command -v shellcheck >/dev/null 2>&1; then
     sc_out=""
-    if ! sc_out="$(shellcheck -S warning "${sh_files[@]}" 2>&1)"; then
+    if ! sc_out="$(cd "$SHOGUN_ROOT" && shellcheck -S warning "${sh_files[@]}" 2>&1)"; then
         :
     fi
     if [ -n "$sc_out" ]; then
@@ -78,7 +77,7 @@ if [ "${#py_files[@]}" -gt 0 ]; then
     fi
     if [ -n "$ruff_cmd" ]; then
         ruff_out=""
-        if ! ruff_out="$("$ruff_cmd" check --quiet --select E,W,F "${py_files[@]}" 2>&1)"; then
+        if ! ruff_out="$(cd "$SHOGUN_ROOT" && "$ruff_cmd" check --quiet --select E,W,F "${py_files[@]}" 2>&1)"; then
             if [ -n "$ruff_out" ]; then
                 violations="${violations}--- ruff ---"$'\n'"${ruff_out}"$'\n'
             fi
@@ -89,7 +88,7 @@ fi
 # Biome for .ts/.tsx/.js/.jsx files
 if [ "${#ts_js_files[@]}" -gt 0 ] && command -v npx >/dev/null 2>&1; then
     biome_out=""
-    if ! biome_out="$(npx --yes biome check "${ts_js_files[@]}" 2>/dev/null)"; then
+    if ! biome_out="$(cd "$SHOGUN_ROOT" && npx --yes biome check "${ts_js_files[@]}" 2>/dev/null)"; then
         :
     fi
     if [ -n "$biome_out" ]; then

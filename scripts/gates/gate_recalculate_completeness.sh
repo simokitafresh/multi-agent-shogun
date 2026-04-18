@@ -70,7 +70,8 @@ write_cached_hostaddr() {
     local ip="${3:?ip is required}"
     local _now
     printf -v _now '%(%s)T' -1
-    mkdir -p "${cache_file%/*}"
+    local cache_dir="${cache_file%/*}"
+    [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
     printf '%s|%s|%s\n' "$host" "$ip" "$_now" > "$cache_file"
 }
 
@@ -88,11 +89,7 @@ resolve_hostaddr() {
         return 0
     fi
 
-    if command -v getent >/dev/null 2>&1; then
-        resolved_ip="$(getent ahostsv4 "$host" | awk '$2 == "STREAM" { print $1; exit }')"
-    else
-        resolved_ip=""
-    fi
+    resolved_ip="$(getent ahostsv4 "$host" 2>/dev/null | awk '$2 == "STREAM" { print $1; exit }')" || resolved_ip=""
 
     if [[ -n "$resolved_ip" ]]; then
         write_cached_hostaddr "$cache_file" "$host" "$resolved_ip"
@@ -140,34 +137,32 @@ WITH active_portfolios AS (
     SELECT id, name, type
     FROM portfolios
     WHERE is_active = true
-),
-signal_portfolios AS (
-    SELECT DISTINCT portfolio_id
-    FROM signals
-),
-monthly_return_portfolios AS (
-    SELECT DISTINCT portfolio_id
-    FROM monthly_returns
-),
-component_weight_portfolios AS (
-    SELECT DISTINCT portfolio_id
-    FROM fof_component_weights
 )
 SELECT
     p.id,
     p.name,
     p.type,
-    (s.portfolio_id IS NOT NULL) AS has_signals,
-    (m.portfolio_id IS NOT NULL) AS has_monthly_returns,
+    EXISTS(
+        SELECT 1
+        FROM signals s
+        WHERE s.portfolio_id = p.id
+    ) AS has_signals,
+    EXISTS(
+        SELECT 1
+        FROM monthly_returns m
+        WHERE m.portfolio_id = p.id
+    ) AS has_monthly_returns,
     CASE
-        WHEN p.type = 'fof' THEN (c.portfolio_id IS NOT NULL)
+        WHEN p.type = 'fof' THEN EXISTS(
+            SELECT 1
+            FROM fof_component_weights c
+            WHERE c.portfolio_id = p.id
+        )
         ELSE NULL
     END AS has_component_weights
 FROM active_portfolios p
-LEFT JOIN signal_portfolios s ON s.portfolio_id = p.id
-LEFT JOIN monthly_return_portfolios m ON m.portfolio_id = p.id
-LEFT JOIN component_weight_portfolios c ON c.portfolio_id = p.id
 ORDER BY p.type, p.name, p.id
+),
 """
 
 try:
