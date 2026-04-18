@@ -11,6 +11,39 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 overall="OK"
 alerts=()
 
+phase_guide_cached() {
+    local source_file="${1:?source file required}"
+    local cache_name="${2:?cache name required}"
+    local cache_file="/tmp/${cache_name}.cache"
+    local cache_sig current_sig
+
+    [[ -f "$source_file" ]] || return 1
+    current_sig="$(stat -c '%Y:%s' "$source_file" 2>/dev/null || echo '')"
+    if [[ -f "$cache_file" ]]; then
+        IFS= read -r cache_sig < "$cache_file" || cache_sig=""
+        if [[ "$cache_sig" == "$current_sig" ]]; then
+            tail -n +2 "$cache_file"
+            return 0
+        fi
+    fi
+
+    {
+        printf '%s\n' "$current_sig"
+        awk '
+            /^## Phase/ { titles[++n] = substr($0, 4); lineno[n] = NR }
+            END {
+                if (n == 0) exit
+                printf "    前文: Read(offset=1, limit=%d)\n", lineno[1]-2
+                for (i=1; i<=n; i++) {
+                    end_line = (i<n) ? lineno[i+1]-1 : NR
+                    printf "    %s: Read(offset=%d, limit=%d)\n", titles[i], lineno[i], end_line-lineno[i]+1
+                }
+            }
+        ' "$source_file"
+    } > "$cache_file"
+    tail -n +2 "$cache_file"
+}
+
 # === 高速化: バックグラウンド並列 + python3 一括呼び出し ===
 
 # (A) gate_workaround_rate.sh / gate_ninja_workaround_rate.sh を即座にバックグラウンド起動
@@ -36,78 +69,119 @@ fi
 
 # (B) tmux list-panes を1回だけ呼び出してキャッシュ
 _PANE_MAP=$(tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
+declare -A _PANE_IDX_BY_AGENT
+while IFS=' ' read -r _pane_idx _pane_agent; do
+    [[ -z "${_pane_idx:-}" || -z "${_pane_agent:-}" ]] && continue
+    _PANE_IDX_BY_AGENT["$_pane_agent"]=$_pane_idx
+done <<< "$_PANE_MAP"
 
 # (C) awk/bash で phase guide + session summary + bulletin を取得（python3不要）
+# 大きいファイル読込は並列化して I/O 待ちを重ねる
+_phase_guide_1_tmp=$(mktemp)
+_phase_guide_2_tmp=$(mktemp)
+_session_summary_tmp=$(mktemp)
+_bulletin_tmp=$(mktemp)
+declare -a _META_PIDS=()
 
 # phase guide 1
 _phase_guide_1=""
 if [ -f "$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md" ]; then
-    _phase_guide_1=$(awk '
-        /^## Phase/ { titles[++n] = substr($0, 4); lineno[n] = NR }
-        END {
-            if (n == 0) exit
-            printf "    前文: Read(offset=1, limit=%d)\n", lineno[1]-2
-            for (i=1; i<=n; i++) {
-                end_line = (i<n) ? lineno[i+1]-1 : NR
-                printf "    %s: Read(offset=%d, limit=%d)\n", titles[i], lineno[i], end_line-lineno[i]+1
+    (
+        awk '
+            /^## Phase/ { titles[++n] = substr($0, 4); lineno[n] = NR }
+            END {
+                if (n == 0) exit
+                printf "    前文: Read(offset=1, limit=%d)\n", lineno[1]-2
+                for (i=1; i<=n; i++) {
+                    end_line = (i<n) ? lineno[i+1]-1 : NR
+                    printf "    %s: Read(offset=%d, limit=%d)\n", titles[i], lineno[i], end_line-lineno[i]+1
+                }
             }
-        }
-    ' "$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md")
+        ' "$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md" > "$_phase_guide_1_tmp"
+    ) &
+    _META_PIDS+=($!)
 fi
 
 # phase guide 2
 _phase_guide_2=""
 if [ -f "$SCRIPT_DIR/memory/deepdive_karo_verification_20260405.md" ]; then
-    _phase_guide_2=$(awk '
-        /^## Phase/ { titles[++n] = substr($0, 4); lineno[n] = NR }
-        END {
-            if (n == 0) exit
-            printf "    前文: Read(offset=1, limit=%d)\n", lineno[1]-2
-            for (i=1; i<=n; i++) {
-                end_line = (i<n) ? lineno[i+1]-1 : NR
-                printf "    %s: Read(offset=%d, limit=%d)\n", titles[i], lineno[i], end_line-lineno[i]+1
+    (
+        awk '
+            /^## Phase/ { titles[++n] = substr($0, 4); lineno[n] = NR }
+            END {
+                if (n == 0) exit
+                printf "    前文: Read(offset=1, limit=%d)\n", lineno[1]-2
+                for (i=1; i<=n; i++) {
+                    end_line = (i<n) ? lineno[i+1]-1 : NR
+                    printf "    %s: Read(offset=%d, limit=%d)\n", titles[i], lineno[i], end_line-lineno[i]+1
+                }
             }
-        }
-    ' "$SCRIPT_DIR/memory/deepdive_karo_verification_20260405.md")
+        ' "$SCRIPT_DIR/memory/deepdive_karo_verification_20260405.md" > "$_phase_guide_2_tmp"
+    ) &
+    _META_PIDS+=($!)
 fi
 
 # session summary (JSONLから grep/awk で取得)
 _prev_session_summary=""
 if [ -f "$SCRIPT_DIR/queue/lord_conversation.jsonl" ]; then
-    _prev_session_summary=$(grep '"session_summary"' "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null | \
-        tail -1 | grep -oP '"summary":\s*"\K[^"]*' || true)
+    (
+        awk '
+            /"session_summary"/ {
+                if (match($0, /"summary":[[:space:]]*"[^"]*/)) {
+                    summary = substr($0, RSTART, RLENGTH)
+                    sub(/^"summary":[[:space:]]*"/, "", summary)
+                }
+            }
+            END { if (summary != "") print summary }
+        ' "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null > "$_session_summary_tmp"
+    ) &
+    _META_PIDS+=($!)
 fi
-[ -z "$_prev_session_summary" ] && _prev_session_summary="(前セッション要約なし)"
 
 # bulletin 未確認件数とアイテム（awk YAML近似解析）
 _bulletin_count=0
 _bulletin_items=""
 if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
-    _blt_raw=$(awk '
-        /^- id:/ {
-            if (in_entry && rc && !closed && !karo_c) {
-                count++
-                if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
+    (
+        awk '
+            /^- id:/ {
+                if (in_entry && rc && !closed && !karo_c) {
+                    count++
+                    if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
+                }
+                in_entry=1; rc=0; closed=0; karo_c=0; eid=""; epby=""
             }
-            in_entry=1; rc=0; closed=0; karo_c=0; eid=""; epby=""
-        }
-        in_entry && /^  id:/ { v=$2; gsub(/['"'"'"]/, "", v); eid=v }
-        in_entry && /^  posted_by:/ { v=$2; gsub(/['"'"'"]/, "", v); epby=v }
-        in_entry && /requires_confirmation: true/ { rc=1 }
-        in_entry && /status:.*closed/ { closed=1 }
-        in_entry && /- .karo./ { karo_c=1 }
-        END {
-            if (in_entry && rc && !closed && !karo_c) {
-                count++
-                if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
+            in_entry && /^  id:/ { v=$2; gsub(/['"'"'"]/, "", v); eid=v }
+            in_entry && /^  posted_by:/ { v=$2; gsub(/['"'"'"]/, "", v); epby=v }
+            in_entry && /requires_confirmation: true/ { rc=1 }
+            in_entry && /status:.*closed/ { closed=1 }
+            in_entry && /- .karo./ { karo_c=1 }
+            END {
+                if (in_entry && rc && !closed && !karo_c) {
+                    count++
+                    if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
+                }
+                print "COUNT: " count+0
             }
-            print "COUNT: " count+0
-        }
-    ' "$SCRIPT_DIR/queue/bulletin_board.yaml" 2>/dev/null || echo "COUNT: 0")
-    _bulletin_count=$(echo "$_blt_raw" | grep '^COUNT: ' | sed 's/COUNT: //')
-    _bulletin_items=$(echo "$_blt_raw" | grep '^ITEM: ' | sed 's/^ITEM: /    /')
+        ' "$SCRIPT_DIR/queue/bulletin_board.yaml" 2>/dev/null || echo "COUNT: 0"
+    ) > "$_bulletin_tmp" &
+    _META_PIDS+=($!)
+fi
+for _pid in "${_META_PIDS[@]}"; do wait "$_pid" 2>/dev/null || true; done
+if [[ -f "$_phase_guide_1_tmp" ]]; then _phase_guide_1="$(<"$_phase_guide_1_tmp")"; fi
+if [[ -f "$_phase_guide_2_tmp" ]]; then _phase_guide_2="$(<"$_phase_guide_2_tmp")"; fi
+if [[ -f "$_session_summary_tmp" ]]; then _prev_session_summary="$(<"$_session_summary_tmp")"; fi
+[ -z "$_prev_session_summary" ] && _prev_session_summary="(前セッション要約なし)"
+if [[ -f "$_bulletin_tmp" ]]; then
+    while IFS= read -r _blt_line; do
+        case "$_blt_line" in
+            COUNT:\ *) _bulletin_count=${_blt_line#COUNT: } ;;
+            ITEM:\ *) _bulletin_items="${_bulletin_items}    ${_blt_line#ITEM: }"$'\n' ;;
+        esac
+    done < "$_bulletin_tmp"
 fi
 _bulletin_count=${_bulletin_count:-0}
+rm -f "$_phase_guide_1_tmp" "$_phase_guide_2_tmp" "$_session_summary_tmp" "$_bulletin_tmp"
 
 echo "=== 家老起動チェック $(date '+%H:%M:%S') ==="
 echo ""
@@ -160,7 +234,7 @@ echo ""
 echo "■ 陣形図鮮度"
 snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
 if [ -f "$snapshot" ]; then
-    snap_time=$(head -2 "$snapshot" | grep "Generated:" | sed 's/.*Generated: //')
+    snap_time=$(awk 'NR <= 2 && /Generated:/ { sub(/.*Generated: /, ""); print; exit }' "$snapshot")
     if [ -n "$snap_time" ]; then
         # 経過時間を計算（秒）
         snap_epoch=$(date -d "$snap_time" +%s 2>/dev/null || echo "0")
@@ -205,9 +279,9 @@ declare -A _NINJA_PANE_IDX
 declare -a _CTX_PIDS=()
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
     task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
-    pane_idx=$(echo "$_PANE_MAP" | awk -v n="$ninja" '$2==n{print $1}')
+    pane_idx=${_PANE_IDX_BY_AGENT[$ninja]:-}
     _NINJA_PANE_IDX[$ninja]=$pane_idx
-    if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]] && [ -n "$pane_idx" ]; then
+    if [[ "$task_status" =~ ^(assigned|in_progress)$ ]] && [ -n "$pane_idx" ]; then
         _tmpf=$(mktemp)
         _CTX_TMPF[$ninja]=$_tmpf
         (
@@ -231,8 +305,12 @@ stall_count=0
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
     task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
     pane_idx=${_NINJA_PANE_IDX[$ninja]}
-    if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]] && [ -n "$pane_idx" ]; then
-        ctx=$(cat "${_CTX_TMPF[$ninja]}" 2>/dev/null || true)
+    if [[ "$task_status" =~ ^(assigned|in_progress)$ ]] && [ -n "$pane_idx" ]; then
+        if [[ -f "${_CTX_TMPF[$ninja]}" ]]; then
+            IFS= read -r ctx < "${_CTX_TMPF[$ninja]}" || ctx=""
+        else
+            ctx=""
+        fi
         rm -f "${_CTX_TMPF[$ninja]}"
         if [[ "$task_status" =~ ^(assigned|in_progress)$ && ( "$ctx" == "0%" || -z "$ctx" ) ]]; then
             echo "  ⚠ $ninja: CTX=${ctx:-EMPTY} status=$task_status → STALL疑い"
