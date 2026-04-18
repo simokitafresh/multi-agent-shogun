@@ -721,3 +721,6 @@
 | cmd_2060 | CoDD spec補完(8/8) — inbox_mark_read.sh + 悪化防止gate追加 | infra | 04-18 | AC1: inbox_mark_read.sh CoDD s |
 | cmd_2059 | CoDD spec補完(7/8) — log_terminal_response.sh + agent_config.sh + field_get.sh | infra | 04-18 | cmd_2059対象3本のCoDD spec補完は既に co |
 | cmd_2062 | CoDD正規改善(忍者hook B) — pre-write-edit-combined.sh + post-write-edit-combined.sh + pre-write-read-tracker.sh | infra | 04-18 | write/edit/read系 hook 3本を正規CoD |
+| cmd_2064 | CoDD正規改善(忍者通知) — report_field_set.sh(再) + inbox_write.sh(再) | infra | 04-18 | report_field_set.sh+inbox_writ |
+| cmd_2063 | CoDD正規改善(忍者完了処理) — ninja_done.sh(再) + gate_report_format.sh(再) + post-search-completeness-guard.sh | infra | 04-18 | 3スクリプトCoDD正規改善完了。gate_report_f |
+| cmd_2061 | CoDD正規改善(忍者hook A) — stop-lint-gate.sh + pre-bash-combined.sh + post-bash-combined.sh | infra | 04-18 | hook A 3本を正規 CoDD で再評価し、Before |
