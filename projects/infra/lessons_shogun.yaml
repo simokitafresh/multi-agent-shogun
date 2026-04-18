@@ -395,3 +395,17 @@ lessons:
   created_at: '2026-04-17'
   automated: true
   enforcement: 'cmd_2019(Simplicity導入)+将軍直接実装(Think Before Coding)。review_logヘッダ+deploy_task.shテンプレートに各1行追加'
+- id: 'LS044'
+  title: 'cmd_save.sh BLOCK連続時は検出ロジックを先に確認'
+  detail: '事故: cmd_2093で4回連続BLOCK。1回目でassumptions sourceのパス未解決、2-4回目でcommand/AC/q7内のファイル名がパスと誤検出。毎回1箇所ずつモグラ叩き修正し4回再実行。原因: cmd_save.shのパス検出ロジック(どのフィールドをスキャンするか)を1回目で確認せず、エラーメッセージだけ見て対症修正した。修正: BLOCK 1回目で検出ロジックの対象フィールドを確認し、同じパターンの誤検出を全フィールドで一括修正してから再実行。ファイル名参照はscripts/プレフィックス付きフルパスで記載する。'
+  source_cmd: 'cmd_2093'
+  created_at: '2026-04-18'
+  automated: true
+  enforcement: 'cmd_save.sh Session State(GP-201)が過去BLOCK履歴を自動表示。将軍の自問に依存する部分あり'
+- id: 'LS045'
+  title: '数字を見て中身を確認せよ — 分類の前に実物を読め'
+  detail: '事故: insight 43件pendingを見て分類テーブルから入った。47件中31件は既解決で、先に10件読めば5分でdone化できた。殿に指摘されるまで気づかなかった。原因: 43件という数字に反応し「大量→分類が必要」と想像した。実物を読む=出力がない=仕事に見えない(Phase 2の再現)。修正: 未処理N件を見たら、まず10件中身を読んで既解決率を把握。大半がdoneなら自分で消化して残りだけ殿に報告。分類テーブルを先に出すな。原理: これはinsightに限らない。棚卸し・WA分析・教訓消化・あらゆる未処理N件に共通。'
+  source_cmd: 'cmd_2093'
+  created_at: '2026-04-18'
+  automated: true
+  enforcement: '未自動化。将軍の自問に依存。insight_write.shの自動done化(cmd_2093)で生成側は対処中だが、将軍の確認行動は意志依存のまま'
