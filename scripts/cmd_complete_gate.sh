@@ -1535,7 +1535,7 @@ evaluate_review_report_status() {
 
     _rv_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "")
     _rv_verdict_status="ng"
-    [ "$_rv_verdict" = "PASS" ] || [ "$_rv_verdict" = "FAIL" ] && _rv_verdict_status="ok"
+    [ "$_rv_verdict" = "PASS" ] || [ "$_rv_verdict" = "FAIL" ] || [ "$_rv_verdict" = "PASS_NO_IMPROVEMENT" ] && _rv_verdict_status="ok"
 
     _rv_gate_status="ng"
     if grep -q 'self_gate_check:' "$report_file" 2>/dev/null; then
@@ -1605,9 +1605,9 @@ run_review_quality_check() {
                 review_worker_id=$(printf '%s\n' "$review_status" | cut -f3)
 
                 if [ "$verdict_status" = "ok" ]; then
-                    echo "  ${ninja_name}: OK (verdict=PASS/FAIL)"
+                    echo "  ${ninja_name}: OK (verdict=PASS/FAIL/PASS_NO_IMPROVEMENT)"
                 else
-                    echo "  [CRITICAL] ${ninja_name}: NG ← verdict欠落または不正値（PASS/FAIL必須）"
+                    echo "  [CRITICAL] ${ninja_name}: NG ← verdict欠落または不正値（PASS/FAIL/PASS_NO_IMPROVEMENT必須）"
                     record_block_reason "review report missing verdict field"
                     ALL_CLEAR=false
                 fi

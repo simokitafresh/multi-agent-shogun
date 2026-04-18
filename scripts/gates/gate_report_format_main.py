@@ -307,11 +307,12 @@ def main() -> int:
         errors.append("result: not a dict")
 
     verdict = data.get("verdict")
-    if not isinstance(verdict, str) or verdict not in ("PASS", "FAIL"):
-        errors.append(f'verdict: "{verdict}" is not valid (must be "PASS" or "FAIL")')
-        hints.append("verdictはPASS/FAILの二値のみ。binary_checks全yes→PASS、1つでもno→FAIL")
+    _VALID_VERDICTS = ("PASS", "FAIL", "PASS_NO_IMPROVEMENT")
+    if not isinstance(verdict, str) or verdict not in _VALID_VERDICTS:
+        errors.append(f'verdict: "{verdict}" is not valid (must be "PASS", "FAIL", or "PASS_NO_IMPROVEMENT")')
+        hints.append("verdictはPASS/FAIL/PASS_NO_IMPROVEMENTの三値のみ。binary_checks全yes→PASS、1つでもno→FAIL、revert多数→PASS_NO_IMPROVEMENT")
 
-    if isinstance(verdict, str) and verdict in ("PASS", "FAIL") and isinstance(bc, dict) and bc:
+    if isinstance(verdict, str) and verdict in _VALID_VERDICTS and isinstance(bc, dict) and bc:
         bc_has_no = False
         bc_has_empty = False
         bc_results_found = False
@@ -428,7 +429,32 @@ def main() -> int:
             print(hint)
         return 1
 
-    print("PASS")
+    # --- PASS_NO_IMPROVEMENT detection (cmd_2072) ---
+    # binary_checksでrevert含むACが全ACの50%以上の場合に発動
+    _no_improvement = False
+    if isinstance(bc, dict) and bc:
+        _ac_keys = [k for k in bc.keys() if k.upper().startswith("AC")]
+        if _ac_keys:
+            _revert_acs = []
+            for _ac_key in _ac_keys:
+                _ac_items = bc.get(_ac_key, [])
+                if isinstance(_ac_items, list):
+                    for _item in _ac_items:
+                        if isinstance(_item, dict):
+                            if "revert" in str(_item.get("check", "")).lower():
+                                _revert_acs.append(_ac_key)
+                                break
+            if len(_revert_acs) >= len(_ac_keys) * 0.5:
+                _no_improvement = True
+
+    if _no_improvement:
+        print("PASS_NO_IMPROVEMENT")
+        print(
+            f"WARN: revertが検出されたAC={len(_revert_acs)}/{len(_ac_keys)}件(50%以上)。"
+            "改善未達成。家老に改善未達成を通知せよ。"
+        )
+    else:
+        print("PASS")
     for hint in hints:
         print(hint)
     return 0

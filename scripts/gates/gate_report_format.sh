@@ -38,7 +38,7 @@ RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 2>&1
 echo "$RESULT"
 
 RESULT_IS_PASS=0
-if printf '%s\n' "$RESULT" | grep -qx 'PASS'; then
+if printf '%s\n' "$RESULT" | grep -qxE 'PASS|PASS_NO_IMPROVEMENT'; then
     RESULT_IS_PASS=1
 fi
 

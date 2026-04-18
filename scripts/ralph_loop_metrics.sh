@@ -331,7 +331,7 @@ awk -F'|' '
     else p = 3
     total[p]++
     vl = tolower(v)
-    if (vl == "pass" || vl == "lgtm" || vl == "clear" || vl == "superseded") pass[p]++
+    if (vl == "pass" || vl == "lgtm" || vl == "clear" || vl == "superseded" || vl == "pass_no_improvement") pass[p]++
     else if (vl ~ /fail/) fail[p]++
     else if (vl ~ /^ac[0-9]/) pass[p]++
     else other[p]++
