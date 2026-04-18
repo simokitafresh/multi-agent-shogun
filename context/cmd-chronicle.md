@@ -740,3 +740,4 @@
 | cmd_2078 | CoDD正規再改善 R1-F — deploy_task.sh(spec省略→正規CoDD再改善) | infra | 04-18 | deploy_task.sh CoDD正規再改善完了。hot |
 | cmd_2081 | CoDD正規再改善 R1-I — dashboard_auto_section.sh(spec省略→正規CoDD再改善) | infra | 04-18 | dashboard_auto_section.sh 3fix |
 | cmd_karo_sleep_fix | ninja_monitor.sh sleep -5エラー修正 — codex confirm_waitデフォルト値追加 | infra | 04-18 | ninja_monitor.sh L3060付近: code |
+| cmd_2088 | CoDD正規再改善 R2-A — gate_cycle_health.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_cycle_health.sh CoDD正規再改善 |
