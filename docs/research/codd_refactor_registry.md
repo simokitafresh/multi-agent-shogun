@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | kagemaru | `.claude/hooks/pre-bash-combined.sh` | Phase 5(再挑戦: 計測+実装+検証) | guard path `10ms → 7ms` (`-30%`) / hot path `45ms → 32ms` (`-28.9%`) | jq→awk置換(char-by-char JSON string extract)。前回revert(IFS read)と別アプローチ。9/9テストPASS。spec: `docs/research/cmd_2075_codd_spec_hooks_retry_20260418.md` |
+| 2026-04-18 | kagemaru | `.claude/hooks/post-bash-combined.sh` | Phase 5(再挑戦: 計測+実装+検証) | test path(全PASS) `35ms → 8ms` (`-77%`, median 10run) | fail/skip事前チェック(bash文字列マッチ)でpython3到達頻度を削減。FAIL/SKIP含む場合はpython3経由で正確解析(動作維持)。`# skip`パターン追加修正済み。9/9テストPASS。spec: `docs/research/cmd_2075_codd_spec_hooks_retry_20260418.md` |
+| 2026-04-18 | kagemaru | `.claude/hooks/post-search-completeness-guard.sh` | Phase 5(計測+検証) | `6ms → 5ms` (誤差範囲) | 12行echoのみ。bash起動コスト支配。PASS_NO_IMPROVEMENT。spec: `docs/research/cmd_2075_codd_spec_hooks_retry_20260418.md` |
 | 2026-04-18 | hayate | `scripts/cmd_save.sh` | Phase 5(再々改善: partial retain) | warm cache-hit path `0.98s → ~0.65s` | spec+after: `docs/research/cmd_2051_codd_batch_15a_20260418.md` |
 | 2026-04-18 | hayate | `.claude/hooks/stop-lint-gate.sh` | Phase 5(skipped in batch 15-A) | ownership moved to `cmd_2065` | spec+after: `docs/research/cmd_2051_codd_batch_15a_20260418.md` |
 | 2026-04-18 | hayate | `scripts/gates/gate_karo_startup.sh` | Phase 5(再々改善 trial, no retain) | `140ms → ~146-171ms` (regression / no improvement) | spec+after: `docs/research/cmd_2051_codd_batch_15a_20260418.md` |

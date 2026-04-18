@@ -7,8 +7,22 @@ payload="$(cat)"
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Bash"'* ]] && exit 0
 command=""
+# cmd_2075: jq → awk置換 (jq≈4ms → awk≈2ms, 前回revertとの差: サブシェル維持/ツール軽量化)
+# awk char-by-char で \"エスケープを正しく処理
 if [[ "$payload" == *'"tool_input"'* && "$payload" == *'"command"'* ]]; then
-    command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
+    command="$(printf '%s' "$payload" | awk '
+        match($0, /"command"[[:space:]]*:[[:space:]]*"/) {
+            s = substr($0, RSTART + RLENGTH)
+            n = length(s); result = ""
+            for (i = 1; i <= n; i++) {
+                c = substr(s, i, 1)
+                if (c == "\\" && i < n) { result = result substr(s, i, 2); i++; continue }
+                if (c == "\"") break
+                result = result c
+            }
+            print result; exit
+        }
+    ' 2>/dev/null || true)"
 fi
 
 emit_deny() {

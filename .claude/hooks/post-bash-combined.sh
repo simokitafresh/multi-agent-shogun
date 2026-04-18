@@ -11,6 +11,14 @@ payload="$(cat 2>/dev/null || true)"
 if [[ "$payload" == *'pytest'* || "$payload" == *'bats'* || "$payload" == *'jest'* || \
       "$payload" == *'npm test'* || "$payload" == *'pnpm test'* || "$payload" == *'yarn test'* || \
       "$payload" == *'bun test'* || "$payload" == *'py.test'* ]]; then
+    # cmd_2075: fail/skip事前チェック — fail/skip文字列なし → python3不要 (35ms → ~5ms)
+    # 前回revertとの差: サブシェル維持 / python3到達頻度を削減
+    if [[ "$payload" != *' failed'* && "$payload" != *'FAILED'* && \
+          "$payload" != *'failures'* && "$payload" != *' skipped'* && \
+          "$payload" != *'SKIP'* && "$payload" != *'not ok'* && \
+          "$payload" != *'ERROR'* && "$payload" != *'# skip'* ]]; then
+        : # テスト全PASS確認済み。python3不要
+    else
     # Delegate to existing python3 logic for complex test output parsing
     HOOK_PAYLOAD="$payload" python3 - <<'PYTEST'
 import json
@@ -148,7 +156,8 @@ if messages:
     payload_out = {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": "\n".join(messages)}}
     print(json.dumps(payload_out, ensure_ascii=False, separators=(",", ":")))
 PYTEST
-fi
+    fi  # close inner fail/skip check
+fi  # close Guard 1
 
 # === Guard 2: commit-reminder ===
 if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; then
