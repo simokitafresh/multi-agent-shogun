@@ -175,6 +175,21 @@ run_inject_codd_failure_history() {
     [[ "$task_content" == *"note:"* ]]
 }
 
+@test "AC2-5: codd_failure_historyはdiagnosis+resultのみを注入し spec/date/ninja を持ち込まない" {
+    write_stk_with_codd_cmd "$TEST_PROJECT"
+    write_registry_with_revert "$TEST_PROJECT"
+    write_task_yaml "$TEST_PROJECT" "cmd_9901"
+
+    run_inject_codd_failure_history "sasuke" >/dev/null 2>&1
+
+    task_content=$(cat "$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    [[ "$task_content" == *"diagnosis:"* ]]
+    [[ "$task_content" == *"result:"* ]]
+    [[ "$task_content" != *"spec:"* ]]
+    [[ "$task_content" != *"date:"* ]]
+    [[ "$task_content" != *"ninja:"* ]]
+}
+
 # ─── AC3テスト: revert履歴のないスクリプトでは注入なし ───
 
 @test "AC3-1: 非CoDDコマンドではcodd_failure_historyを注入しない" {

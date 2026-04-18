@@ -2978,11 +2978,17 @@ except Exception:
 if not ss:
     sys.exit(0)
 
+def _one_line(text, limit=180):
+    text = re.sub(r'\s+', ' ', str(text or '')).strip()
+    if len(text) > limit:
+        text = text[:limit - 1].rstrip() + '…'
+    return text
+
 attempt = ss.get('attempt', 0)
-last_reason = ss.get('last_block_reason', '')
-tried = ss.get('tried_approaches', [])
-diagnose_reason = ss.get('diagnose_reason', '')
-approach_summary = ss.get('approach_summary', '')
+last_reason = _one_line(ss.get('last_block_reason', ''))
+tried = [_one_line(t) for t in list(ss.get('tried_approaches', [])) if _one_line(t)]
+diagnose_reason = _one_line(ss.get('diagnose_reason', ''))
+approach_summary = _one_line(ss.get('approach_summary', ''))
 prior_attempts = ss.get('prior_attempts', [])
 
 if not attempt and not last_reason:
@@ -3010,11 +3016,14 @@ if isinstance(prior_attempts, list) and prior_attempts:
         if not isinstance(item, dict):
             continue
         pf_lines.append(f"  - attempt: {int(item.get('attempt', 0) or 0)}")
-        pf_lines.append(f"    block_reason: {_sq(item.get('block_reason', ''))}")
-        if item.get('diagnose_reason'):
-            pf_lines.append(f"    diagnose_reason: {_sq(item.get('diagnose_reason', ''))}")
-        if item.get('approach_summary'):
-            pf_lines.append(f"    approach_summary: {_sq(item.get('approach_summary', ''))}")
+        item_block_reason = _one_line(item.get('block_reason', ''))
+        item_diagnose_reason = _one_line(item.get('diagnose_reason', ''))
+        item_approach_summary = _one_line(item.get('approach_summary', ''))
+        pf_lines.append(f"    block_reason: {_sq(item_block_reason)}")
+        if item_diagnose_reason:
+            pf_lines.append(f"    diagnose_reason: {_sq(item_diagnose_reason)}")
+        if item_approach_summary:
+            pf_lines.append(f"    approach_summary: {_sq(item_approach_summary)}")
 pf_frag = '\n'.join(pf_lines)
 pf_indented = '\n'.join('  ' + l for l in pf_frag.split('\n'))
 
@@ -3089,6 +3098,12 @@ scripts = list(dict.fromkeys(scripts))  # unique, preserve order
 if not scripts:
     sys.exit(0)
 
+def _one_line(text, limit=180):
+    text = re.sub(r'\s+', ' ', str(text or '')).strip()
+    if len(text) > limit:
+        text = text[:limit - 1].rstrip() + '…'
+    return text
+
 # 4. registryからrevert/regressionエントリを検索
 # 台帳形式: | date | ninja | script | phase | before→after | spec |
 failures = []
@@ -3111,12 +3126,12 @@ try:
                     continue
                 if basename in script_col:
                     if re.search(r'revert|regression', result_col + phase_col, re.IGNORECASE):
+                        diagnosis = _one_line(phase_col.strip('`').strip())
+                        result = _one_line(result_col.strip('`').strip())
                         failures.append({
                             'script': script_col.strip('`').strip(),
-                            'date':   cols[1].strip(),
-                            'ninja':  cols[2].strip(),
-                            'result': result_col.strip(),
-                            'spec':   spec_col.strip(),
+                            'diagnosis': diagnosis,
+                            'result': result,
                         })
                         break  # 同一行を重複追加しない
 except Exception as e:
@@ -3142,11 +3157,8 @@ frag_lines = [
 ]
 for fa in failures:
     frag_lines.append(f'  - script: {_sq(fa["script"])}')
-    frag_lines.append(f'    date:   {_sq(fa["date"])}')
-    frag_lines.append(f'    ninja:  {_sq(fa["ninja"])}')
+    frag_lines.append(f'    diagnosis: {_sq(fa["diagnosis"])}')
     frag_lines.append(f'    result: {_sq(fa["result"])}')
-    if fa['spec']:
-        frag_lines.append(f'    spec:   {_sq(fa["spec"])}')
 
 frag     = '\n'.join(frag_lines)
 indented = '\n'.join('  ' + l for l in frag.split('\n'))

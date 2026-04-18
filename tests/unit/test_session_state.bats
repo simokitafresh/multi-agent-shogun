@@ -246,6 +246,40 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+@test "T-SS-004b: inject_session_state_hints は multiline の diagnose/summary を1行へ構造化する" {
+    local task_yaml="$TASK_TMPDIR/sasuke_multiline.yaml"
+    cat > "$task_yaml" << 'YAML'
+task:
+  parent_cmd: cmd_test
+  task_id: cmd_test_impl
+  status: assigned
+  worker_id: sasuke
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        export _DEPLOY_PREV_SESSION_STATE='{"attempt": 2, "last_block_reason": "binary_checks FAIL\nsame failure", "tried_approaches": ["binary_checks FAIL\nsame failure"], "diagnose_reason": "diag line1\nline2", "approach_summary": "summary line1\nline2", "prior_attempts": [{"attempt": 1, "block_reason": "older fail\nagain", "diagnose_reason": "older diag\nmore", "approach_summary": "older summary\nmore"}]}'
+        # shellcheck disable=SC1090
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        inject_session_state_hints "$task_yaml"
+    )
+
+    run grep -q "last_block_reason: 'binary_checks FAIL same failure'" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "diagnose_reason: 'diag line1 line2'" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "approach_summary: 'summary line1 line2'" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "block_reason: 'older fail again'" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "diagnose_reason: 'older diag more'" "$task_yaml"
+    [ "$status" -eq 0 ]
+}
+
 @test "T-SS-005: _DEPLOY_PREV_SESSION_STATEが空の場合はprevious_failuresを注入しない" {
     local task_yaml="$TASK_TMPDIR/sasuke.yaml"
     cat > "$task_yaml" << 'YAML'
