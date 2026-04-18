@@ -100,6 +100,7 @@ run_hook() {
     printf '# change\n' >> "$TEST_ROOT/a.sh"
     printf '# change\n' >> "$TEST_ROOT/b.sh"
     printf '\n# change\n' >> "$TEST_ROOT/c.py"
+    git -C "$TEST_ROOT" add a.sh b.sh c.py
 
     run_hook
     [ "$status" -eq 0 ]
@@ -114,6 +115,7 @@ run_hook() {
 
 @test "blocks on a new lint violation and records its hash" {
     printf '# change\n' >> "$TEST_ROOT/a.sh"
+    git -C "$TEST_ROOT" add a.sh
 
     run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
         MOCK_SHELLCHECK_MODE="fail" STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
@@ -126,6 +128,7 @@ run_hook() {
 
 @test "repeated identical lint violation escalates to karo" {
     printf '# change\n' >> "$TEST_ROOT/a.sh"
+    git -C "$TEST_ROOT" add a.sh
 
     run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
         MOCK_SHELLCHECK_MODE="fail" STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
