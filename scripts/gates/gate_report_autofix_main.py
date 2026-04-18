@@ -298,7 +298,7 @@ def main() -> int:
     # 忍者が自分で記入しなければgateが止める。消火で先送りしない。
 
     verdict_val = data.get("verdict")
-    is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ("PASS", "FAIL")
+    is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ("PASS", "FAIL", "PASS_NO_IMPROVEMENT")
     # verdict推定(blank/invalid→PASS/FAIL)は消火→撤去。gate_report_format.shがBLOCK
     # verdict訂正(PASS→FAIL)も消火→撤去。GP-128でgateがWARN/ERROR
 

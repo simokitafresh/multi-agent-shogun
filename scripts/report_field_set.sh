@@ -224,7 +224,7 @@ if found is True:
             ;;
         verdict)
             # GP-072c2+c3+c4: verdict書込み時に前提条件チェック
-            if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" ]]; then
+            if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" || "$val" == "PASS_NO_IMPROVEMENT" ]]; then
                 REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, sys, os
 rp = os.environ.get('REPORT_PATH', '')

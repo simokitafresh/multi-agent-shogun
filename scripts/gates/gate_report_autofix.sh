@@ -62,7 +62,7 @@ fast_no_fix_needed() {
             } else if (key == "lesson_candidate") {
                 if ($0 ~ /^lesson_candidate:[[:space:]]*\[/) need_python = 1
             } else if (key == "verdict") {
-                if ($0 !~ /^verdict:[[:space:]]*(PASS|FAIL)[[:space:]]*$/ && $0 !~ /^verdict:[[:space:]]*$/) {
+                if ($0 !~ /^verdict:[[:space:]]*(PASS|FAIL|PASS_NO_IMPROVEMENT)[[:space:]]*$/ && $0 !~ /^verdict:[[:space:]]*$/) {
                     need_python = 1
                 }
             }
