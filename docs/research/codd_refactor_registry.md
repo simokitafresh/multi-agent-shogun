@@ -146,6 +146,8 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-18 | kotaro | `scripts/hooks/stop_check_inbox.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `37ms → 14ms` (`-62%`, `2.6x`) | jq -e .(validation)+jq -r(stop_hook_active)→bash文字列マッチ2本。jq1本残存(last_assistant_message)。初回改善。63/63テストPASS。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
 | 2026-04-18 | kotaro | `scripts/gates/gate_karo_startup.sh` | Phase 5(実装→regression revert) | `110ms → 110ms` (REVERTED: 131ms regression検出→revert) | WA rateキャッシュ(TTL 300s)実装→cache hit 131ms > before 110ms。真因: _META_PIDS awk(deepdive files on /mnt/c/)が~100ms支配→WA rate廃止してもボトルネック不変。現状110ms維持。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
 
+| 2026-04-18 | kagemaru | `scripts/gates/gate_loop_health.sh` | Phase 5(計測+spec+実装+検証)。正規CoDD再改善 | `442ms → 55ms` (`-87.5%`, `8x`) | insight dedup修正: json.loads()で\\\"→"正規化+pattern_norm[:60]でcount変動対応。insight_write.sh × 6subprocess(全SKIP)→0回。spec: `docs/research/cmd_2091_codd_spec_gate_loop_health_20260418.md` |
+
 ## 運用
 
 - CoDD系リファクタリングを完了したら、この台帳に1行追加する。
