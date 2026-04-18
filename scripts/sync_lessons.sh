@@ -7,20 +7,24 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_ID="${1:-dm-signal}"
 
-# Get project path from config/projects.yaml
-export SCRIPT_DIR PROJECT_ID
-PROJECT_PATH=$(python3 << 'PYEOF'
-import yaml, os
-script_dir = os.environ["SCRIPT_DIR"]
-project_id = os.environ["PROJECT_ID"]
-with open(f'{script_dir}/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == project_id:
-        print(p['path'])
-        break
-PYEOF
-)
+resolve_project_path() {
+    local project_id="$1"
+    awk -v id="$project_id" '
+        /^[[:space:]]*- id:/ {
+            val = $NF
+            gsub(/"/, "", val)
+            found = (val == id)
+        }
+        found && /^[[:space:]]*path:/ {
+            sub(/^[[:space:]]*[^:]+:[[:space:]]*/, "")
+            gsub(/"/, "")
+            print
+            exit
+        }
+    ' "$SCRIPT_DIR/config/projects.yaml"
+}
+
+PROJECT_PATH="$(resolve_project_path "$PROJECT_ID")"
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
@@ -49,7 +53,7 @@ mkdir -p "$(dirname "$CACHE_FILE")"
     export SSOT_FILE INDEX_FILE ARCHIVE_FILE SCRIPT_DIR PROJECT_ID
     python3 << 'PYEOF'
 import csv
-import re, yaml, os, tempfile, sys, subprocess
+import re, yaml, os, tempfile
 from datetime import datetime
 from collections import defaultdict
 
@@ -499,6 +503,7 @@ try:
         _msg = f'[sync_lessons] INFO: 教訓件数乖離 (expected={_ssot_count} actual={_out_count})'
         print(_msg, file=sys.stderr)
         try:
+            import subprocess
             _script_dir = os.environ.get('SCRIPT_DIR', '')
             _ntfy = os.path.join(_script_dir, 'scripts', 'ntfy_batch.sh') if _script_dir else 'scripts/ntfy_batch.sh'
             subprocess.run(['bash', _ntfy, _msg], timeout=10)

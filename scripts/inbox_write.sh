@@ -36,7 +36,6 @@ AGENT_CONFIG_LOADED=0
 
 FIELD_GET_LOADED=0
 CLI_LOOKUP_LOADED=0
-LOCK_PATH_LOADED=0
 
 usage() {
     cat <<'EOF'
@@ -108,14 +107,15 @@ ensure_cli_lookup_loaded() {
     CLI_LOOKUP_LOADED=1
 }
 
-ensure_lock_path_loaded() {
-    if [ "${LOCK_PATH_LOADED:-0}" = "1" ]; then
-        return 0
-    fi
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
-        || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
-    LOCK_PATH_LOADED=1
+lock_path() {
+    case "$1" in
+        /mnt/c/*|/mnt/d/*)
+            printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"
+            ;;
+        *)
+            printf '%s.lock' "$1"
+            ;;
+    esac
 }
 
 inbox_yaml_field_get() {
@@ -481,7 +481,7 @@ inbox_append_message_fast_locked() {
     local message_block="$2"
 
     if [[ ! -f "$inbox_file" ]] || grep -qx 'messages: \[\]' "$inbox_file" 2>/dev/null; then
-        inbox_write_records "$inbox_file" "$message_block"
+        printf 'messages:\n%s' "$message_block" > "$inbox_file"
         return 0
     fi
 
@@ -833,7 +833,6 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
 fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
-ensure_lock_path_loaded
 LOCKFILE="$(lock_path "$INBOX")"
 
 # Initialize inbox if not exists

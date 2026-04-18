@@ -15,24 +15,53 @@ SOURCE_CMD="${4:-}"
 AUTHOR="${5:-karo}"
 CMD_ID="${6:-""}"
 
-# ── Argument parsing helpers ──
-# Parse --flag <value> pairs from "$@"
-parse_named_arg() {
-    local flag="$1"; shift
-    local prev=""
-    for arg in "$@"; do
-        if [ "$prev" == "$flag" ]; then echo "$arg"; return; fi
-        prev="$arg"
-    done
-}
+# Resolve project metadata once and reuse it in this process.
+PROJECT_META_ID=""
+PROJECT_META_PATH=""
+PROJECT_META_CONTEXT_FILE=""
 
-# Check boolean flags (e.g. --force, --strategic)
-has_flag() {
-    local flag="$1"; shift
-    for arg in "$@"; do
-        if [ "$arg" == "$flag" ]; then return 0; fi
-    done
-    return 1
+load_project_metadata() {
+    local proj_id="$1"
+    local config_file="$SCRIPT_DIR/config/projects.yaml"
+
+    if [ "$PROJECT_META_ID" = "$proj_id" ]; then
+        return 0
+    fi
+
+    local meta
+    meta=$(awk -v id="$proj_id" '
+        /^[[:space:]]*- id:/ {
+            if (seen_target && !first_match_consumed) {
+                exit
+            }
+            val = $NF
+            gsub(/"/, "", val)
+            found = (val == id)
+            if (found) {
+                seen_target = 1
+            }
+            first_match_consumed = 0
+            next
+        }
+        found && /^[[:space:]]*path:/ {
+            path = $0
+            sub(/^[[:space:]]*[^:]+:[[:space:]]*/, "", path)
+            gsub(/"/, "", path)
+            first_match_consumed = 1
+        }
+        found && /^[[:space:]]*context_file:/ {
+            context_file = $0
+            sub(/^[[:space:]]*[^:]+:[[:space:]]*/, "", context_file)
+            gsub(/"/, "", context_file)
+            first_match_consumed = 1
+        }
+        END {
+            printf "%s\t%s\n", path, context_file
+        }
+    ' "$config_file")
+
+    IFS=$'\t' read -r PROJECT_META_PATH PROJECT_META_CONTEXT_FILE <<< "$meta"
+    PROJECT_META_ID="$proj_id"
 }
 
 # Resolve project_id → field value from config/projects.yaml (pure bash, no python3)
@@ -40,20 +69,16 @@ has_flag() {
 resolve_project_field() {
     local proj_id="$1"
     local field="${2:-path}"
-    local config_file="$SCRIPT_DIR/config/projects.yaml"
-    awk -v id="$proj_id" -v field="$field" '
-        /^[[:space:]]*- id:/ {
-            val = $NF
-            gsub(/"/, "", val)
-            found = (val == id)
-        }
-        found && $0 ~ "^[[:space:]]*" field ":" {
-            sub(/^[[:space:]]*[^:]+:[[:space:]]*/, "")
-            gsub(/"/, "")
-            print
-            exit
-        }
-    ' "$config_file"
+
+    load_project_metadata "$proj_id"
+    case "$field" in
+        path)
+            printf '%s\n' "$PROJECT_META_PATH"
+            ;;
+        context_file)
+            printf '%s\n' "$PROJECT_META_CONTEXT_FILE"
+            ;;
+    esac
 }
 
 # Backward-compat wrapper
@@ -115,25 +140,70 @@ if best_match is not None:
 PY
 }
 
-# ── Parse all flags ──
-if has_flag --force "$@"; then FORCE=1; else FORCE=0; fi
-# Fix: --strategic was positional ($7) — now scanned like other flags
-if has_flag --strategic "$@"; then STRATEGIC="--strategic"; else STRATEGIC=""; fi
+# ── Parse all flags in one pass ──
+FORCE=0
+STRATEGIC=""
+STATUS="confirmed"
+TAGS=""
+IF_COND=""
+THEN_ACTION=""
+BECAUSE_REASON=""
+RETIRE_ID=""
+RETAG_ID=""
+RETAG_TAGS=""
 
-STATUS=$(parse_named_arg --status "$@")
-STATUS="${STATUS:-confirmed}"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --force)
+            FORCE=1
+            shift
+            ;;
+        --strategic)
+            STRATEGIC="--strategic"
+            shift
+            ;;
+        --status)
+            STATUS="${2:-}"
+            shift 2
+            ;;
+        --tags)
+            TAGS="${2:-}"
+            shift 2
+            ;;
+        --if)
+            IF_COND="${2:-}"
+            shift 2
+            ;;
+        --then)
+            THEN_ACTION="${2:-}"
+            shift 2
+            ;;
+        --because)
+            BECAUSE_REASON="${2:-}"
+            shift 2
+            ;;
+        --retire)
+            RETIRE_ID="${2:-}"
+            shift 2
+            ;;
+        --retag)
+            RETAG_ID="${2:-}"
+            shift 2
+            ;;
+        --new-tags)
+            RETAG_TAGS="${2:-}"
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
 if [ "$STATUS" != "draft" ] && [ "$STATUS" != "confirmed" ]; then
     echo "ERROR: --status must be 'draft' or 'confirmed' (got: $STATUS)" >&2
     exit 1
 fi
-
-TAGS=$(parse_named_arg --tags "$@")
-IF_COND=$(parse_named_arg --if "$@")
-THEN_ACTION=$(parse_named_arg --then "$@")
-BECAUSE_REASON=$(parse_named_arg --because "$@")
-RETIRE_ID=$(parse_named_arg --retire "$@")
-RETAG_ID=$(parse_named_arg --retag "$@")
-RETAG_TAGS=$(parse_named_arg --new-tags "$@")
 
 # ─── Retag mode: change tags of existing lesson (both lessons.md + sync) ───
 if [ -n "$RETAG_ID" ]; then
@@ -347,7 +417,8 @@ if [ "$DETAIL_LEN" -lt 10 ]; then
     exit 1
 fi
 
-PROJECT_PATH=$(resolve_project_path "$PROJECT_ID")
+load_project_metadata "$PROJECT_ID"
+PROJECT_PATH="$PROJECT_META_PATH"
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
@@ -379,6 +450,8 @@ while [ $attempt -lt $max_attempts ]; do
 
         # Find max ID and append new entry (bash native — no python3)
         _lw_max_id=0
+        _lw_duplicate_id=""
+        _lw_duplicate_title=""
         while IFS= read -r _lw_line; do
             if [[ "$_lw_line" =~ ^##[[:space:]]([0-9]+)\. ]]; then
                 _lw_n=$(( 10#${BASH_REMATCH[1]} ))
@@ -386,32 +459,44 @@ while [ $attempt -lt $max_attempts ]; do
             elif [[ "$_lw_line" =~ ^###[[:space:]]L([0-9]+): ]]; then
                 _lw_n=$(( 10#${BASH_REMATCH[1]} ))
                 (( _lw_n > _lw_max_id )) && _lw_max_id=$_lw_n
+                if [ "${FORCE:-0}" != "1" ] && [[ "$_lw_line" =~ ^###[[:space:]]L([0-9]+):[[:space:]](.+)$ ]]; then
+                    _lw_eid="L$(printf '%03d' $(( 10#${BASH_REMATCH[1]} )))"
+                    _lw_etitle="${BASH_REMATCH[2]}"
+                    if [ "$TITLE" = "$_lw_etitle" ]; then
+                        _lw_duplicate_id="$_lw_eid"
+                        _lw_duplicate_title="$_lw_etitle"
+                    fi
+                fi
             fi
         done < "$LESSONS_FILE"
         _lw_new_id=$(( _lw_max_id + 1 ))
         printf -v _lw_new_id_str 'L%03d' "$_lw_new_id"
 
-        # Duplicate title check (bash native: exact match)
-        if [ "${FORCE:-0}" != "1" ]; then
-            while IFS= read -r _lw_line; do
-                if [[ "$_lw_line" =~ ^###[[:space:]]L([0-9]+):[[:space:]](.+)$ ]]; then
-                    _lw_eid="L$(printf '%03d' $(( 10#${BASH_REMATCH[1]} )))"
-                    _lw_etitle="${BASH_REMATCH[2]}"
-                    if [ "$TITLE" = "$_lw_etitle" ]; then
-                        printf 'ERROR: 類似教訓あり: %s: %s (類似度: 100%%)\n' "$_lw_eid" "$_lw_etitle" >&2
-                        printf '強制登録: --force フラグを追加\n' >&2
-                        echo "duplicate_error" > "${LESSON_ID_FILE}.err" 2>/dev/null || true
-                        exit 1
-                    fi
-                fi
-            done < "$LESSONS_FILE"
+        if [ -n "$_lw_duplicate_id" ]; then
+            printf 'ERROR: 類似教訓あり: %s: %s (類似度: 100%%)\n' "$_lw_duplicate_id" "$_lw_duplicate_title" >&2
+            printf '強制登録: --force フラグを追加\n' >&2
+            echo "duplicate_error" > "${LESSON_ID_FILE}.err" 2>/dev/null || true
+            exit 1
+        fi
 
+        if [ "${FORCE:-0}" != "1" ]; then
             warn_similar_title "$LESSONS_FILE" "$TITLE"
         fi
 
         # Tag processing (bash native)
         if [ -n "${TAGS:-}" ]; then
-            _lw_tags_yaml="[$(echo "${TAGS}" | sed 's/,/, /g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')]"
+            _lw_tags_yaml="["
+            IFS=',' read -r -a _lw_tags_array <<< "$TAGS"
+            for _lw_tag in "${_lw_tags_array[@]}"; do
+                _lw_tag="${_lw_tag#"${_lw_tag%%[![:space:]]*}"}"
+                _lw_tag="${_lw_tag%"${_lw_tag##*[![:space:]]}"}"
+                [ -z "$_lw_tag" ] && continue
+                if [ "$_lw_tags_yaml" != "[" ]; then
+                    _lw_tags_yaml+=", "
+                fi
+                _lw_tags_yaml+="${_lw_tag}"
+            done
+            _lw_tags_yaml+="]"
         else
             _lw_tags_yaml="[universal]"
         fi
@@ -445,7 +530,7 @@ while [ $attempt -lt $max_attempts ]; do
         fi
         # Context索引自動追記 (cmd_300)
         if [ -n "$NEW_LESSON_ID" ]; then
-            CONTEXT_FILE=$(resolve_project_field "$PROJECT_ID" "context_file")
+            CONTEXT_FILE="$PROJECT_META_CONTEXT_FILE"
             if [ -n "$CONTEXT_FILE" ]; then
                 CONTEXT_FULL_PATH="$SCRIPT_DIR/$CONTEXT_FILE"
                 if [ -f "$CONTEXT_FULL_PATH" ]; then
@@ -545,7 +630,29 @@ CTXEOF
         # REFLUX_CHECK: 穴検出3問チェック (cmd_1088)
         # 教訓登録=一回失敗=周辺に穴。キーワードでPI/ランブック/instructionsをgrep、還流漏れを検出
         if [ -n "$NEW_LESSON_ID" ]; then
-            REFLUX_KEYWORDS=$(echo "${TITLE} ${DETAIL}" | grep -oE '[a-zA-Z_]{3,}' | tr '[:upper:]' '[:lower:]' | awk '!seen[$0]++' | head -3 | tr '\n' '|' | sed 's/|$//') || true
+            REFLUX_KEYWORDS=$(printf '%s\n' "${TITLE} ${DETAIL}" | awk '
+                {
+                    line = tolower($0)
+                    while (match(line, /[a-z_][a-z_0-9]{2,}/)) {
+                        token = substr(line, RSTART, RLENGTH)
+                        if (!seen[token]++) {
+                            out[++count] = token
+                            if (count == 3) {
+                                break
+                            }
+                        }
+                        line = substr(line, RSTART + RLENGTH)
+                    }
+                    if (count == 3) {
+                        exit
+                    }
+                }
+                END {
+                    for (i = 1; i <= count; i++) {
+                        printf "%s%s", out[i], (i < count ? "|" : "")
+                    }
+                }
+            ') || true
 
             REFLUX_PI="MISSING"
             REFLUX_RUNBOOK="MISSING"
