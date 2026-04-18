@@ -923,25 +923,61 @@ show_pending_insights() {
     local INSIGHTS_FILE="$PROJECT_DIR/queue/insights.yaml"
     [[ ! -f "$INSIGHTS_FILE" ]] && return 0
 
-    local PENDING_COUNT
-    PENDING_COUNT=$(grep -c 'status: pending' "$INSIGHTS_FILE" 2>/dev/null) || PENDING_COUNT=0
+    local insight_summary PENDING_COUNT
+    insight_summary=$(awk '
+        /^- / {
+            if (in_item && status == "pending") {
+                pending++
+                if (shown < 3 && insight != "") {
+                    text = insight
+                    gsub(/\r/, "", text)
+                    gsub(/\n/, " ", text)
+                    if (length(text) > 70) {
+                        text = substr(text, 1, 70)
+                    }
+                    shown++
+                    lines = lines "  → " text "\n"
+                }
+            }
+            in_item = 1
+            status = ""
+            insight = ""
+            next
+        }
+        in_item && /^[[:space:]]*status:[[:space:]]*/ {
+            status = $0
+            sub(/^[[:space:]]*status:[[:space:]]*/, "", status)
+            gsub(/["'"'"']/, "", status)
+            next
+        }
+        in_item && /^[[:space:]]*insight:[[:space:]]*/ {
+            insight = $0
+            sub(/^[[:space:]]*insight:[[:space:]]*/, "", insight)
+            gsub(/^["'"'"']|["'"'"']$/, "", insight)
+            next
+        }
+        END {
+            if (in_item && status == "pending") {
+                pending++
+                if (shown < 3 && insight != "") {
+                    text = insight
+                    gsub(/\r/, "", text)
+                    gsub(/\n/, " ", text)
+                    if (length(text) > 70) {
+                        text = substr(text, 1, 70)
+                    }
+                    lines = lines "  → " text "\n"
+                }
+            }
+            printf "%d\n%s", pending + 0, lines
+        }
+    ' "$INSIGHTS_FILE" 2>/dev/null)
+    PENDING_COUNT=$(printf '%s\n' "$insight_summary" | head -n1)
+    PENDING_COUNT=$(( ${PENDING_COUNT:-0} + 0 ))
     [[ "$PENDING_COUNT" -eq 0 ]] && return 0
 
     echo "INFO: 未消化insights ${PENDING_COUNT}件 — 起票前に確認推奨:" >&2
-    python3 - "$INSIGHTS_FILE" 3 <<'PY' >&2
-import yaml, sys
-with open(sys.argv[1]) as f:
-    data = yaml.safe_load(f) or {}
-items = data.get("insights", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-limit = int(sys.argv[2])
-shown = 0
-for i in items:
-    if not isinstance(i, dict) or i.get("status") != "pending": continue
-    text = str(i.get("insight", ""))[:70].replace("\n", " ")
-    print(f"  → {text}")
-    shown += 1
-    if shown >= limit: break
-PY
+    printf '%s\n' "$insight_summary" | tail -n +2 >&2
     if [[ "$PENDING_COUNT" -gt 3 ]]; then
         echo "  ... 他 $((PENDING_COUNT - 3))件 (queue/insights.yaml)" >&2
     fi
@@ -2112,8 +2148,11 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
         found && /^\s{4,}/ { print; next }
         found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
     ')
-    _STEP_COUNT=$(echo "$_CMD_SECTION" | grep -cE '^\s*\([0-9]+\)|^\s*[0-9]+[\.\)]\s' 2>/dev/null || echo 0)
-    _AC_COUNT=$(echo "$CMD_BLOCK_NC" | grep -c "description:" 2>/dev/null || echo 0)
+    _STEP_COUNT=$(printf '%s\n' "$_CMD_SECTION" | awk '
+        /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ { c++ }
+        END { print c+0 }
+    ')
+    _AC_COUNT=$(printf '%s\n' "$CMD_BLOCK_NC" | awk '/description:/ { c++ } END { print c+0 }')
     if (( _STEP_COUNT > 0 && _STEP_COUNT > _AC_COUNT )); then
         echo "WARN: command欄に${_STEP_COUNT}ステップあるがACは${_AC_COUNT}個。中間成果物がACに分解されていない可能性" >&2
         echo "  忍者はACにないことは実行しない。各ステップの成果物をACに対応させよ" >&2

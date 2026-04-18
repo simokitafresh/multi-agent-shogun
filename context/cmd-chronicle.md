@@ -708,3 +708,5 @@
 | cmd_2043 | CoDD改善バッチ11-A — lesson_harvest.sh(再) + post_recalculate_checks.sh(再) + model_switch_preflight.sh(再) | infra | 04-18 | lesson_harvest/post_recalculat |
 | cmd_2045 | CoDD改善バッチ12-A — gate_report_autofix.sh + gate_dc_duplicate.sh + gate_cmd_state.sh | infra | 04-18 | gate_report_autofix/gate_dc_du |
 | cmd_2049 | CoDD改善バッチ14-A — session_start_inject.sh + prompt_state_inject.sh + session_end_clear_check.sh | infra | 04-18 | session系hook 3本を高速化し、session_s |
+| cmd_2047 | CoDD改善バッチ13-A — gate_diagnose_check.sh + gate_silent_fallback.sh + gate_mcp_access.sh | infra | 04-18 | gate_diagnose_check/silent_fal |
+| cmd_2050 | CoDD改善バッチ14-B — bash_state_hook.sh + test_result_guard.sh + pre-write-report-deny.sh | infra | 04-18 | bash_state_hook.sh(36ms→~16ms, |

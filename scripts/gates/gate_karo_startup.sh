@@ -193,14 +193,21 @@ fi
 # --- Check 2.5: 忍者ペインCTX実態（snapshot突合） ---
 echo "■ 忍者ペインCTX実態"
 
+# task status を先にキャッシュ。active忍者のみ capture-pane 対象にする
+declare -A _NINJA_STATUS_CACHE
+for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+    _NINJA_STATUS_CACHE[$ninja]=$(awk '/^  status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
+done
+
 # capture-pane を並列実行（R2）
 declare -A _CTX_TMPF
 declare -A _NINJA_PANE_IDX
 declare -a _CTX_PIDS=()
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+    task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
     pane_idx=$(echo "$_PANE_MAP" | awk -v n="$ninja" '$2==n{print $1}')
     _NINJA_PANE_IDX[$ninja]=$pane_idx
-    if [ -n "$pane_idx" ]; then
+    if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]] && [ -n "$pane_idx" ]; then
         _tmpf=$(mktemp)
         _CTX_TMPF[$ninja]=$_tmpf
         (
@@ -220,15 +227,11 @@ for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
 done
 for _pid in "${_CTX_PIDS[@]}"; do wait "$_pid" 2>/dev/null || true; done
 
-# task status をキャッシュ（Check 8 で再利用: R3）
-declare -A _NINJA_STATUS_CACHE
-
 stall_count=0
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
-    task_status=$(awk '/^  status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
-    _NINJA_STATUS_CACHE[$ninja]=$task_status
+    task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
     pane_idx=${_NINJA_PANE_IDX[$ninja]}
-    if [ -n "$pane_idx" ]; then
+    if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]] && [ -n "$pane_idx" ]; then
         ctx=$(cat "${_CTX_TMPF[$ninja]}" 2>/dev/null || true)
         rm -f "${_CTX_TMPF[$ninja]}"
         if [[ "$task_status" =~ ^(assigned|in_progress)$ && ( "$ctx" == "0%" || -z "$ctx" ) ]]; then
@@ -237,6 +240,8 @@ for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
         else
             echo "  $ninja: CTX=${ctx:-?} status=${task_status:-?}"
         fi
+    elif [ -n "$pane_idx" ]; then
+        echo "  $ninja: CTX=- status=${task_status:-?}"
     else
         echo "  $ninja: ペイン不在"
     fi
