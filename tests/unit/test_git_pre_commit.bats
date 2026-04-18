@@ -11,7 +11,7 @@ setup_file() {
 setup() {
     export TEST_ROOT
     TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/git_pre_commit.XXXXXX")"
-    mkdir -p "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/scripts" \
+    mkdir -p "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/scripts/lib" "$TEST_ROOT/scripts" \
         "$TEST_ROOT/instructions/generated" "$TEST_ROOT/tests"
 
     cp "$SOURCE_HOOK" "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
@@ -83,6 +83,33 @@ EOF
     (
         cd "$TEST_ROOT"
         git add tests/helper.py tool.py
+    )
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+}
+
+@test "ignores yaml dump text in markdown/yaml files and pre_bash_combined_guard helper" {
+    mkdir -p "$TEST_ROOT/projects/infra"
+    cat > "$TEST_ROOT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L999
+    summary: "yaml.dumpは運用YAMLで禁止"
+EOF
+    cat > "$TEST_ROOT/README.md" <<'EOF'
+Use `yaml.dump(...)` only as explanatory text here.
+EOF
+    cat > "$TEST_ROOT/scripts/lib/pre_bash_combined_guard.sh" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$command" == *'yaml.dump'* || "$command" == *'yaml.safe_dump'* ]]; then
+    echo "guard"
+fi
+EOF
+    chmod +x "$TEST_ROOT/scripts/lib/pre_bash_combined_guard.sh"
+    (
+        cd "$TEST_ROOT"
+        git add projects/infra/lessons.yaml README.md scripts/lib/pre_bash_combined_guard.sh
     )
 
     run_hook

@@ -19,6 +19,7 @@ is_yaml_dump_scan_target() {
     [[ -n "$file" ]] || return 1
     [[ "$file" == tests/* ]] && return 1
     [[ "$file" == *yaml-dump-guard* ]] && return 1
+    [[ "$file" == *pre_bash_combined_guard* ]] && return 1
     [[ "$file" == scripts/hooks/* ]] && return 1
     [[ "$file" == *.sh || "$file" == *.py ]]
 }
