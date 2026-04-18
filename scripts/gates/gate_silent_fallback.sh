@@ -76,7 +76,10 @@ LEGIT_RE="${LEGITIMATE_PATTERNS[*]}"
 DATA_RE="${DATA_VALUE_PATTERNS[*]}"
 IFS="$_ifs_saved"
 
-# --- 1パスgrep: 全except Exceptionブロックを一括取得 ---
+# --- 1パスgrep/rg: 全except Exceptionブロックを一括取得 (rg優先) ---
+_use_rg=false
+command -v rg >/dev/null 2>&1 && _use_rg=true
+
 if [[ "$MODE" == "diff" ]]; then
     cd "$DM_SIGNAL_PATH"
     mapfile -t diff_files < <(
@@ -88,12 +91,22 @@ if [[ "$MODE" == "diff" ]]; then
     else
         full_paths=()
         for f in "${diff_files[@]}"; do full_paths+=("${DM_SIGNAL_PATH}/$f"); done
-        grep_output=$(grep -Hn -A 10 'except Exception' "${full_paths[@]}" 2>/dev/null || true)
+        if [[ "$_use_rg" == true ]]; then
+            grep_output=$(rg -n -A 10 'except Exception' --type py "${full_paths[@]}" 2>/dev/null || true)
+        else
+            grep_output=$(grep -Hn -A 10 'except Exception' "${full_paths[@]}" 2>/dev/null || true)
+        fi
     fi
 else
-    grep_output=$(grep -rn -A 10 'except Exception' \
-        --include='*.py' --exclude-dir='__pycache__' --exclude-dir='test' --exclude-dir='.venv' \
-        "$TARGET_PATH" 2>/dev/null || true)
+    if [[ "$_use_rg" == true ]]; then
+        grep_output=$(rg -n -A 10 'except Exception' \
+            --type py --glob '!__pycache__' --glob '!test*' --glob '!.venv' \
+            "$TARGET_PATH" 2>/dev/null || true)
+    else
+        grep_output=$(grep -rn -A 10 'except Exception' \
+            --include='*.py' --exclude-dir='__pycache__' --exclude-dir='test' --exclude-dir='.venv' \
+            "$TARGET_PATH" 2>/dev/null || true)
+    fi
 fi
 
 [[ -z "$grep_output" ]] && grep_output=""
