@@ -700,3 +700,4 @@
 - 2026-04-18 cmd_save.sh Check 10修正: スキャン範囲をACセクションのみに限定。command/quality_gate内のファイル名誤検出を構造的解消。17テストPASS
 - 2026-04-18 cmd_2093: 疾風作業中。insightノイズ除去(生成時自動done化+cleanカテゴリALERT除外)
 - 2026-04-18 教訓登録: LS044(cmd_save.sh BLOCK連続時は検出ロジック先確認)+LS045(数字見て分類するな中身読め)
+- cmd_2093: insightキューのノイズ生成を上流で停止(auto-done+clean除外)。将軍のinsight消化効率向上(47件→16件相当)。正の複利。(2026-04-18)

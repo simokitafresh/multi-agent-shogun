@@ -749,3 +749,4 @@
 | cmd_2080 | CoDD正規再改善 R1-H — inbox_write.sh(spec省略→正規CoDD再改善) | infra | 04-18 | inbox_write.sh write path を再改善 |
 | cmd_2092 | CoDD正規再改善 R2-E — gate_workaround_rate.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_workaround_rate.sh CoDD正規 |
 | cmd_2091 | CoDD正規再改善 R2-D — gate_loop_health.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_loop_health.sh CoDD正規再改善: |
+| cmd_2093 | insightノイズ除去 — 生成時自動done化 + cleanカテゴリALERT除外 | infra | 04-18 | insightノイズの上流生成を停止。auto-done/S |

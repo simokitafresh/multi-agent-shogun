@@ -175,9 +175,9 @@ echo ""
 echo "■ SG-PRE9: T1違反予防(binary_checks no検出)"
 if [ "${BC_HAS_NO:-0}" = "1" ]; then
     echo "  ★★★ WARN: binary_checks result:no検出: ${BC_NO_ITEMS}"
-    echo "  → LGTM判定時はgate_prediction: BLOCK/WARN必須"
+    echo "  → gate_prediction: BLOCK固定(waive_reasonがあっても免除なし)"
     echo "  → GP-128: verdict PASS + result:no → gate機械的BLOCK"
-    echo "  → 見落とし実績: cmd_1897, cmd_1900 (T1違反2回)"
+    echo "  → 見落とし実績: cmd_1897, cmd_1900, cmd_2093 (T1違反3回)"
 else
     echo "  PASS: binary_checks全result:yes (or検出対象なし)"
 fi
