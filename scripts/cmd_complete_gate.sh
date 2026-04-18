@@ -3432,6 +3432,17 @@ run_todo_fixme_residual_check "$CMD_ID"
 
 check_gs_bench_gate_warn
 
+# ─── CoDD 退行チェック（台帳の最新エントリでAfter>Beforeを検知、WARN-only） ───
+level_heading "[L3]" "CoDD regression check:"
+if [ -f "$SCRIPT_DIR/scripts/gates/gate_codd_regression.sh" ]; then
+    codd_reg_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_codd_regression.sh" "$SCRIPT_DIR/docs/research/codd_refactor_registry.md" 2>&1)
+    while IFS= read -r line; do
+        echo "  $line"
+    done <<< "$codd_reg_output"
+else
+    echo "  [INFO] gate_codd_regression.sh not found (skip)"
+fi
+
 # ─── テストSKIP検査（skip_count > 0 で BLOCK） ───
 level_heading "[L2]" "Test skip count check:"
 TEST_SKIP_CHECKED=false
