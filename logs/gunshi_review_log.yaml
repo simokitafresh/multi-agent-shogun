@@ -28,6 +28,7 @@
 # SG7 gate_prediction: lesson_candidate有→draft_lessons BLOCKリスク。gate_prediction: WARNに設定せよ(cmd_1811/1814で2連続miss)
 # AC commit check → (a)対象ファイルがgitignore/outputs/なら除外設計か確認 (b)cmd制約にcommit禁止→report review時にSG7 gate_prediction:WARNでGP-128 BLOCK予測を明記。一律適用=負の複利(cmd_1897 LGTM→BLOCK: T1違反)
 # verdict=FAIL報告にLGTM → gate_prediction:BLOCK必須。binary_checks result:noがあればgate機械的BLOCK。報告品質OKでも予測を付記せよ(cmd_1900: T1再発。cmd_1897と同構造)
+# ★SG-PRE9 result:no → gate_prediction:BLOCK固定。waive_reasonの有無に関わらず(GP-190はテンプレート側のみ、gate側にwaive免除なし。cmd_2093で誤予測WARN→実際BLOCK)
 # REQUEST_CHANGES verdict → severity: urgent/normal 必須。欠落→家老がurgent/normal判断できず対応遅延(cmd_1836/1841で2件欠落, 2026-04-11検出)
 # 「既実装」判定 → git show HEAD~1:file で変更前状態を確認。HEADは並行commit影響を受ける(cmd_1860 premature_shelve: LG001違反の変形)
 # AC絶対条件(「全期間」「100%」「全ファイル」)→構造的例外の有無を確認。例外あれば除外条件をAC文面に明示(5件verdict_override共通根因, 2026-04-12分析)
@@ -782,7 +783,7 @@
   report_ninja: hanzo
   report_task_id: cmd_2092_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。gate_workaround_rate.sh BEGIN getline from tac+early-break。36→20ms(-44%)。12テストPASS"
   observations:
     - "事実1: 数値検算OK。(36-20)/36=44.4%一致。gate_log処理21→3ms(-86%)はtac末尾チャンクI/O+N件breakで妥当"
@@ -797,7 +798,7 @@
   report_ninja: kagemaru
   report_task_id: cmd_2091_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。gate_loop_health.sh insight dedup修正。json 2段エスケープ不一致→json.loads+pattern[:60]。442→55ms(-87.5%)"
   observations:
     - "事実1: 数値検算OK。(442-55)/442=87.6%≈-87.5%。442/55=8.0x一致"
@@ -807,3 +808,135 @@
   gate_prediction: "WARN(draft_lessons:1 — BLOCK確認済み)"
   causal_chain: "json 2段エスケープ→dedup不一致→insight_write×6(500ms)→json.loads+pattern[:60]→0回→-87.5%=正の複利(insight重複蓄積の根本解消)"
   timestamp: "2026-04-18T22:25:00"
+- cmd_id: cmd_2093
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。insight_write.sh既解決自動done化+karo_workaround_log.sh clean ALERT除外。2ファイル局所修正。ノイズ生成の上流対処"
+  observations:
+    - "事実1: insight_write.sh L138-155はpending同士dedupのみ。done保存/SKIP未実装を現物確認"
+    - "事実2: karo_workaround_log.sh L239のALERT条件($OCCURRENCE -ge 3)にclean除外なし。PD-020〜023の4件がclean誤検知を実証"
+  causal_chain: "clean記録→ALERT(3件以上)→insight+PD自動生成→ノイズ蓄積→将軍判断品質低下。上流(生成時)でclean除外=正の複利(全セッションでノイズ0)"
+  timestamp: "2026-04-18T23:48:00"
+- cmd_id: cmd_2093
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2093_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。insight auto-done+SKIP+clean ALERT除外。bats1168件全PASS。commit 3ccd334 push済み"
+  observations:
+    - "事実1: commit 3ccd334で対象4ファイル(insight_write.sh/karo_workaround_log.sh+テスト2本)確認。git log -1一致"
+    - "事実2: commit bc:noのwaive_reason妥当(他者運用差分。GP-190経路でgate WARN予測)"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: "★誤予測WARN→実際BLOCK→家老override→CLEAR。commit bc:noでGP-128機械的BLOCK。waive_reasonはgate免除にならない(GP-190はテンプレート側のみ、gate側はresult:noで機械的BLOCK)"
+  causal_chain: "commit bc:no→SG-PRE9 WARN検出→GP-190 waive有でWARN予測→gate機械的BLOCK→家老override→CLEAR。誤予測根因=GP-190実装範囲(テンプレート側)とgate動作を混同"
+  timestamp: "2026-04-18T23:57:00"
+- cmd_id: cmd_2094
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。6システム並列調査+知識辞書一次知識層作成。殿直接指示。6忍者全員投入でidle=0。フォーマット詳細定義済み"
+  observations:
+    - "事実1: 前回調査(system-comparison-2026-03-13.md 272行)から37日経過。辞書形式ではなく対比分析文書"
+    - "事実2: 金融ML知識辞書guide.md(190行)の2層構造(一次知識層+解釈層)を外部システムに適用する新規構造"
+  causal_chain: "殿指示→37日古い対比文書→辞書形式で再構築→6忍者並列→個別更新可能な基盤=正の複利(今後の対比・盗取判断)"
+  timestamp: "2026-04-19T00:16:00"
+- cmd_id: cmd_2095
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。教訓注入精度向上。lesson_write.sh L519 universal→PJ名自動推定+既存318件タグ洗浄。殿直接指示+家老なぜなぜ7回"
+  observations:
+    - "事実1: lesson_write.sh L519に_lw_tags_yaml=[universal]を現物確認。PJ名推定不能時のフォールバック設計あり"
+    - "事実2: projects/*.yamlはgitignore→commit対象外。AC4のcommitはlesson_write.sh+テストのみ"
+  causal_chain: "デフォルトuniversal→全cmdに無条件注入→有効率22%→PJ自動推定+洗浄→PJ固有教訓がPJ内のみ注入=正の複利(教訓活用率恒久向上)"
+  timestamp: "2026-04-19T00:22:00"
+- cmd_id: cmd_2097
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  findings_summary: "5観点OK/premortem NG。AC1(CoDD=おしお殿作)に優劣比較禁止制約の転写漏れ。cmd_2094では殿厳命で明記済み"
+  observations:
+    - "事実1: cmd_2094 L763に「おしお殿は元祖。対比で優劣を論じるな(殿厳命)」明記。cmd_2097のAC1(CoDD)に同制約なし"
+    - "事実2: LG012(隣接制約転写)と同構造。関連cmdの制約がAC/制約に転写されていない"
+  causal_chain: "cmd_2094で殿��命→cmd_2097で転写漏れ→忍者がCoDD記述で優劣比較リスク。LG012パターン再発。制約転写確認=負の複利回避"
+  severity: normal
+  timestamp: "2026-04-19T00:30:00"
+- cmd_id: cmd_2094
+  review_type: report
+  report_ninja: "[hayate,saizo,kagemaru,hanzo,kotaro,tobisaru]"
+  report_task_id: cmd_2094_impl
+  report_verdict: "5xLGTM/1xFAIL(hayate)"
+  gate_result: CLEAR
+  findings_summary: "6報告一括。5名LGTM(vercel/gsd/gstack/oshio/claude-code+guide全て指定フォーマット充実)。hayate FAIL: ace.mdファイル不在(報告では作成主張だがfind+git log確認で実在しない)"
+  observations:
+    - "事実1: docs/research/systems-knowledge-base/systems/に5ファイル(vercel156行/gsd183行/gstack184行/oshio148行/claude-code157行)+guide192行存在。ace.mdのみ不在"
+    - "事実2: hayate報告summaryで'ace.mdを新規作成'と主張。git log --all -- '**/ace.md'で0件。commit漏れまたは作成失敗"
+  lesson_quality: N/A
+  karo_workaround_needed: true
+  gate_prediction: "BLOCK(分割配備=担当外no。GP-194。家老override前提)"
+  causal_chain: "6忍者並列調査→5名成果物OK→hayate ace.md不在(報告と実態の乖離)→FAIL+差し戻し"
+  timestamp: "2026-04-19T00:35:00"
+- cmd_id: cmd_2096
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_save.sh全BLOCK一括表示。殿指摘(3回連続BLOCK)に基づく修正。早期return→フラグ+一括表示"
+  observations:
+    - "事実1: cmd_2095で3回連続BLOCK(q5/q8/q11→q9→パスプレフィックス)。各回1種類のみ表示"
+    - "事実2: cmd_save.sh 2237行の大規模ファイルだが、チェックロジックの実行フロー変更で各チェック自体は概ね独立"
+  causal_chain: "段階的BLOCK→1問ずつ修正→3回ループ→一括表示で1回に=正の複利(全cmdのBLOCK修正効率恒久向上)"
+  timestamp: "2026-04-19T00:38:00"
+- cmd_id: cmd_2095
+  review_type: report
+  report_ninja: "[saizo,kagemaru]"
+  report_task_id: cmd_2095_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "LGTM。lesson_write.sh L594-598 PJ自動推定実装確認。タグ洗浄318→61 universal残。成果物OK"
+  observations:
+    - "事実1: lesson_write.sh L594 infer_default_project_tag()→L596 PJタグ/L598 universalフォールバック。修正確認"
+    - "事実2: dm-signal 210→28残、infra 108→33残。残りはuniversal維持妥当(安全側)"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: "BLOCK(分割配備担当外no。家老override前提)"
+  causal_chain: "universal318件→PJ自動推定+洗浄→61件残→注入精度22%→推定50%+。正の複利"
+  timestamp: "2026-04-19T00:43:00"
+- cmd_id: cmd_2097
+  review_type: report
+  report_ninja: "[hayate,kotaro,tobisaru]"
+  report_task_id: cmd_2097_impl
+  report_verdict: "2xLGTM/1xFAIL(hayate)"
+  gate_result: CLEAR
+  gate_result: CLEAR
+  findings_summary: "kotaro(karpathy)+tobisaru(gyakusegawa+guide)LGTM。hayate FAIL: codd.mdファイル不在(2回連続ファイル不在パターン)"
+  observations:
+    - "事実1: karpathy-principles.md 7642bytes、sources/gyakusegawa.md 9907bytes存在確認"
+    - "事実2: hayateがcmd_2094(ace.md)+cmd_2097(codd.md)で2回連続ファイル不在。報告では作成主張だが実在しない"
+  lesson_quality: N/A
+  karo_workaround_needed: true
+  gate_prediction: "BLOCK(分割配備+hayate FAIL)"
+  causal_chain: "hayate 2回連続ファイル不在→commit漏れまたはwriteパス誤り。忍者固有パターンの可能性→WA履歴でhayate追跡推奨"
+  timestamp: "2026-04-19T00:43:00"
+- cmd_id: cmd_2096
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2096_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cmd_save.sh BLOCK集約型実装。bats63件全PASS。commit b41059a"
+  observations:
+    - "事実1: commit b41059a確認。files_modified 4件(cmd_save.sh+テスト3本)"
+    - "事実2: 新規test_cmd_save_block_aggregation.batsで複数BLOCK同時表示テスト済み"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "段階的BLOCK3回→集約型1回→全cmd正の複利"
+  timestamp: "2026-04-19T01:08:00"

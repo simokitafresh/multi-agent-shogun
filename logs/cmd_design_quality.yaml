@@ -9649,3 +9649,174 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-18T13:25:19Z"
+  - cmd_id: "cmd_2093"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-18T14:41:03Z"
+    diagnosis: "初回起票。殿指摘(2026-04-18)→なぜなぜ7回→生成時フィルタが自動化ターゲット"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_2093"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-18T14:42:07Z"
+    diagnosis: "初回起票。殿指摘(2026-04-18)→なぜなぜ7回→生成時フィルタが自動化ターゲット"
+    notes: "親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ"
+  - cmd_id: "cmd_2093"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-18T14:45:29Z"
+    notes: "cmd_2093 は既に委任済みです。"
+  - cmd_id: "cmd_2093"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T14:55:48Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_2093"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T14:56:25Z"
+  - cmd_id: "cmd_2094"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-18T15:10:23Z"
+    notes: "必須項目 3件 未記入。全て記入してからcmd_save.shを再実行せよ"
+  - cmd_id: "cmd_2095"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-18T15:15:40Z"
+    diagnosis: "初回起票のため診断対象なし"
+    notes: "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
+  - cmd_id: "cmd_2095"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-18T15:15:57Z"
+    diagnosis: "q5にcode_readingのみ記載し実確認レベルを書かなかった。grep集計は実確認(structure_verified)に該当"
+    notes: "消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2095"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-18T15:16:14Z"
+    diagnosis: "q9未記入。gateがタイトルの修正キーワードから消火cmdと判定したため追加"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_2096"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-18T15:18:51Z"
+    diagnosis: "初回起票"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_2094"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T15:39:40Z"
+  - cmd_id: "cmd_2095"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T15:43:32Z"
+  - cmd_id: "cmd_2097"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T15:43:53Z"
+    notes: "tobisaru:binary_checks_fail"
+  - cmd_id: "cmd_2097"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T15:44:19Z"
+    notes: "report_format:kotaro_report_cmd_2097.yaml|report_format:tobisaru_report_cmd_2097.yaml|report_format:hayate_report_cmd_2097.yaml"
+  - cmd_id: "cmd_2097"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T15:44:34Z"
+    notes: "report_format:kotaro_report_cmd_2097.yaml|report_format:tobisaru_report_cmd_2097.yaml|report_format:hayate_report_cmd_2097.yaml"
+  - cmd_id: "cmd_2097"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T15:45:19Z"
+  - cmd_id: "cmd_2096"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T16:07:59Z"
