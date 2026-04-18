@@ -3867,3 +3867,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser で次 section を探すときに空行で break すると codex/copilot など後続 section が見えなくなるため、trim 後の空行と comment-only 行は continue で飛ばす。
+
+### L506: WSL2短命YAML走査は mawk 優先が低リスクで効く
+- **日付**: 2026-04-18
+- **出典**: cmd_2084
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [universal]
+- report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、挙動を変えず gawk→mawk 優先に切り替えるだけで ready path median 0.11s→0.08s(-27.3%)。大きなロジック変更の前に実行器差分を先に測るべし。
