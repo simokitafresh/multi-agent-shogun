@@ -29,17 +29,11 @@ if [ -n "$_MTIME" ] && [ -n "$_GATE_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF
     exit 0
 fi
 
-# --- Pre-step: 機械的修正を自動実行（autofix未実行による無駄FAILを防止）---
-_AUTOFIX_GATE="$(dirname "${BASH_SOURCE[0]}")/gate_report_autofix.sh"
-if [ -f "$_AUTOFIX_GATE" ]; then
-    _AUTOFIX_OUT=$(bash "$_AUTOFIX_GATE" "$REPORT_PATH" 2>&1) || {
-        echo "  [WARN] autofix pre-step failed (exit $?). Output:" >&2
-        echo "$_AUTOFIX_OUT" | head -5 >&2
-    }
-fi
-
-# Python validation — checks all known failure patterns from karo_workarounds
-RESULT=$(python3 "$(dirname "${BASH_SOURCE[0]}")/gate_report_format_main.py" "$REPORT_PATH" 2>&1) || true
+# cmd_2063: autofix + format validation を単一 python3 プロセスで実行
+# 旧: bash gate_report_autofix.sh (→python3) + python3 gate_report_format_main.py = 2プロセス
+# 新: python3 gate_report_format_combined.py (autofix+validation を1プロセス統合) = 1プロセス
+_GATE_DIR="${BASH_SOURCE[0]%/*}"
+RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 2>&1) || true
 
 echo "$RESULT"
 

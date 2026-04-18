@@ -4,7 +4,10 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# cmd_2063: SCRIPT_DIR をサブシェル不要な純bash文字列演算で解決 (~5ms節約)
+_SELF="${BASH_SOURCE[0]}"
+SCRIPT_DIR="${_SELF%/*}/.."
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 REPORTS_DIR="$SCRIPT_DIR/queue/reports"
 ARCHIVE_REPORT_DIR="$SCRIPT_DIR/queue/archive/reports"
 
