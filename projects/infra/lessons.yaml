@@ -1,5 +1,5 @@
 ssot_path: '/mnt/c/tools/multi-agent-shogun/tasks/lessons.md'
-last_synced: '2026-04-18T10:58:00'
+last_synced: '2026-04-18T10:58:48'
 archive_path: '/mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml'
 lesson_count: 488
 lessons:
@@ -1675,7 +1675,7 @@ lessons:
   - 'process'
   - 'git'
   deprecated: true
-  deprecated_at: '2026-04-18T10:58:10+09:00'
+  deprecated_at: '2026-04-18T10:58:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=7 > helpful=0'
   helpful_count: 0
   harmful_count: 7

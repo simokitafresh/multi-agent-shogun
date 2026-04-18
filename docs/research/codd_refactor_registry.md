@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | saizo | `scripts/lib/cli_lookup.sh` | Phase 5(計測+実装+検証) | `113.6ms → 44.8ms` (`-60.6%`, fresh `bash -lc` median) | spec+after: `docs/research/cmd_2041_codd_infra_batch_10a_20260418.md` |
+| 2026-04-18 | saizo | `scripts/cmd_delegate.sh` | Phase 5(計測+実装+検証) | `93.8ms → 59.7ms` (`-36.4%`, temp fixture median) | spec+after: `docs/research/cmd_2041_codd_infra_batch_10a_20260418.md` |
+| 2026-04-18 | saizo | `scripts/gates/gate_ninja_workaround_rate.sh` | Phase 5(計測+実装+検証) | `146.2ms → 38.8ms` (`-73.5%`, cold cache median) | spec+after: `docs/research/cmd_2041_codd_infra_batch_10a_20260418.md` |
 | 2026-04-18 | kagemaru | `scripts/lib/agent_config.sh` | Phase 5(計測+実装+検証) | `36ms → 14ms` (`-61%`, get_ninja_names median) | SCRIPT_DIR $(cd)→string ops+連想配列キャッシュ(echo\|awk排除)。全テストPASS。(spec省略) |
 | 2026-04-18 | kagemaru | `scripts/lib/field_get.sh` | Phase 5(計測+実装+検証) | `33ms → 12ms` (`-64%`, FIELD_GET_NO_LOG=1 median) | SCRIPT_DIR $(cd)→string ops+grep+sed\|sed→grep -m1+bash文字列演算+logサブシェル→ブロック化+date→printf -v。16/16テストPASS。(spec省略) |
 | 2026-04-18 | kagemaru | `scripts/inbox_mark_read.sh` | Phase 5(計測+実装+検証) | `34ms → 16ms` (`-53%`, early-exit path median) | SCRIPT_DIR $(cd)→string ops+python3廃止→bash+sed(mark_all)/awk(mark_specific)。7/7テストPASS。(spec省略) |
